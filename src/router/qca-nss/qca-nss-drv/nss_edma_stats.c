@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -732,6 +732,7 @@ void nss_edma_metadata_ring_stats_sync(struct nss_ctx_instance *nss_ctx, struct 
 		edma_stats.rx_stats[i][NSS_EDMA_STATS_RX_DESC] += nerss->rx_ring[i].desc_cnt;
 		edma_stats.rx_stats[i][NSS_EDMA_STATS_RX_QOS_ERR] += nerss->rx_ring[i].qos_err;
 		edma_stats.rx_stats[i][NSS_EDMA_STATS_RX_SRC_PORT_INVALID] += nerss->rx_ring[i].rx_src_port_invalid;
+		edma_stats.rx_stats[i][NSS_EDMA_STATS_RX_SRC_IF_INVALID] += nerss->rx_ring[i].rx_src_if_invalid;
 	}
 
 	/*

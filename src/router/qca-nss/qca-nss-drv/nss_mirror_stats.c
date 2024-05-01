@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -18,28 +18,19 @@
 
 #include "nss_stats.h"
 #include "nss_core.h"
+#include "nss_mirror.h"
 #include "nss_mirror_stats.h"
+#include "nss_mirror_strings.h"
 
 static struct nss_mirror_stats_debug_instance *stats_db[NSS_MAX_MIRROR_DYNAMIC_INTERFACES];
 					/* Mirror stats data structure. */
 
 /*
- * Data structures to store mirror interface stats.
+ * Atomic notifier data structure for statistics
  */
-static DEFINE_SPINLOCK(nss_mirror_stats_debug_lock);
+ATOMIC_NOTIFIER_HEAD(nss_mirror_stats_notifier);
 
-/*
- * nss_mirror_stats_str
- *	Mirror statistics strings for nss session stats.
- */
-struct nss_stats_info nss_mirror_stats_str[NSS_MIRROR_STATS_MAX] = {
-	{"MIRROR_STATS_PKTS"			, NSS_STATS_TYPE_SPECIAL},
-	{"MIRROR_STATS_BYTES"			, NSS_STATS_TYPE_SPECIAL},
-	{"MIRROR_STATS_TX_FAIL"			, NSS_STATS_TYPE_DROP},
-	{"MIRROR_STATS_DEST_LOOKUP_FAIL"	, NSS_STATS_TYPE_DROP},
-	{"MIRROR_STATS_MEM_ALLOC_FAIL"		, NSS_STATS_TYPE_ERROR},
-	{"MIRROR_STATS_COPY_FAIL"		, NSS_STATS_TYPE_ERROR},
-};
+static DEFINE_SPINLOCK(nss_mirror_stats_lock);
 
 /*
  * nss_mirror_stats_get()
@@ -55,7 +46,7 @@ static void nss_mirror_stats_get(void *stats_mem, uint32_t stats_num)
 		return;
 	}
 
-	spin_lock_bh(&nss_mirror_stats_debug_lock);
+	spin_lock_bh(&nss_mirror_stats_lock);
 	for (i = 0; i < NSS_MAX_MIRROR_DYNAMIC_INTERFACES; i++) {
 
 		/*
@@ -71,7 +62,7 @@ static void nss_mirror_stats_get(void *stats_mem, uint32_t stats_num)
 			}
 		}
 	}
-	spin_unlock_bh(&nss_mirror_stats_debug_lock);
+	spin_unlock_bh(&nss_mirror_stats_lock);
 }
 
 /*
@@ -115,7 +106,7 @@ static ssize_t nss_mirror_stats_read(struct file *fp, char __user *ubuf, size_t 
 	 * Get all stats
 	 */
 	nss_mirror_stats_get((void *)mirror_shadow_stats, mirror_active_instances);
-	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "mirror", NSS_STATS_SINGLE_CORE);
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "mirror stats", NSS_STATS_SINGLE_CORE);
 
 	/*
 	 * Session stats
@@ -137,13 +128,12 @@ static ssize_t nss_mirror_stats_read(struct file *fp, char __user *ubuf, size_t 
 			/*
 			 * Mirror interface exception stats.
 			 */
-			size_wr += nss_stats_print("mirror", "mirror exception stats start",
+			size_wr += nss_stats_print("mirror", "mirror exception stats",
 							 id,
-							 nss_mirror_stats_str,
+							 nss_mirror_strings_stats,
 							 mirror_shadow_stats[id].stats,
 							 NSS_MIRROR_STATS_MAX,
 							 lbuf, size_wr, size_al);
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
 
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, size_wr);
@@ -166,7 +156,7 @@ void nss_mirror_stats_sync(struct nss_ctx_instance *nss_ctx,
 	struct nss_cmn_node_stats *node_stats_ptr = &stats_msg->node_stats;
 	uint32_t *mirror_stats_ptr = (uint32_t *)&stats_msg->mirror_stats;
 
-	spin_lock_bh(&nss_mirror_stats_debug_lock);
+	spin_lock_bh(&nss_mirror_stats_lock);
 	for (i = 0; i < NSS_MAX_MIRROR_DYNAMIC_INTERFACES; i++) {
 		if (!stats_db[i] || (stats_db[i]->if_num != if_num)) {
 			continue;
@@ -178,16 +168,16 @@ void nss_mirror_stats_sync(struct nss_ctx_instance *nss_ctx,
 			 */
 			stats_db[i]->stats[j] += mirror_stats_ptr[j];
 		}
-		spin_unlock_bh(&nss_mirror_stats_debug_lock);
+		spin_unlock_bh(&nss_mirror_stats_lock);
 		goto sync_cmn_stats;
 	}
 
+	spin_unlock_bh(&nss_mirror_stats_lock);
 	nss_warning("Invalid mirror stats sync message received for %d interface\n", if_num);
-	spin_unlock_bh(&nss_mirror_stats_debug_lock);
 	return;
 
 sync_cmn_stats:
-	spin_lock_bh(&nss_top->stats_lock);
+	spin_lock_bh(&nss_mirror_stats_lock);
 
 	/*
 	 * Sync common stats.
@@ -202,7 +192,7 @@ sync_cmn_stats:
 			node_stats_ptr->rx_dropped[i];
 	}
 
-	spin_unlock_bh(&nss_top->stats_lock);
+	spin_unlock_bh(&nss_mirror_stats_lock);
 }
 
 /*
@@ -222,7 +212,7 @@ void nss_mirror_stats_reset(uint32_t if_num)
 	/*
 	 * Reset mirror stats.
 	 */
-	spin_lock_bh(&nss_mirror_stats_debug_lock);
+	spin_lock_bh(&nss_mirror_stats_lock);
 	for (i = 0; i < NSS_MAX_MIRROR_DYNAMIC_INTERFACES; i++) {
 		if (!stats_db[i] || (stats_db[i]->if_num != if_num)) {
 			continue;
@@ -232,7 +222,7 @@ void nss_mirror_stats_reset(uint32_t if_num)
 		stats_db[i] = NULL;
 		break;
 	}
-	spin_unlock_bh(&nss_mirror_stats_debug_lock);
+	spin_unlock_bh(&nss_mirror_stats_lock);
 
 	if (mirror_debug_instance) {
 		vfree(mirror_debug_instance);
@@ -255,7 +245,7 @@ int nss_mirror_stats_init(uint32_t if_num, struct net_device *netdev)
 		return -1;
 	}
 
-	spin_lock_bh(&nss_mirror_stats_debug_lock);
+	spin_lock_bh(&nss_mirror_stats_lock);
 	for (i = 0; i < NSS_MAX_MIRROR_DYNAMIC_INTERFACES; i++) {
 		if (stats_db[i] != NULL) {
 			continue;
@@ -264,10 +254,10 @@ int nss_mirror_stats_init(uint32_t if_num, struct net_device *netdev)
 		stats_db[i] = mirror_debug_instance;
 		stats_db[i]->if_num = if_num;
 		stats_db[i]->if_index = netdev->ifindex;
-		spin_unlock_bh(&nss_mirror_stats_debug_lock);
+		spin_unlock_bh(&nss_mirror_stats_lock);
 		return 0;
 	}
-	spin_unlock_bh(&nss_mirror_stats_debug_lock);
+	spin_unlock_bh(&nss_mirror_stats_lock);
 	vfree(mirror_debug_instance);
 	return -1;
 }
@@ -285,3 +275,50 @@ void nss_mirror_stats_dentry_create(void)
 {
 	nss_stats_create_dentry("mirror", &nss_mirror_stats_ops);
 }
+
+/*
+ * nss_mirror_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_mirror_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_mirror_stats_notification mirror_stats;
+	int i;
+
+	spin_lock_bh(&nss_mirror_stats_lock);
+	for (i = 0; i < NSS_MAX_MIRROR_DYNAMIC_INTERFACES; i++) {
+		if (!stats_db[i] || (stats_db[i]->if_num != if_num)) {
+			continue;
+		}
+
+		memcpy(mirror_stats.stats_ctx, stats_db[i]->stats, sizeof(mirror_stats.stats_ctx));
+		mirror_stats.core_id = nss_ctx->id;
+		mirror_stats.if_num = if_num;
+		spin_unlock_bh(&nss_mirror_stats_lock);
+		atomic_notifier_call_chain(&nss_mirror_stats_notifier, NSS_STATS_EVENT_NOTIFY, &mirror_stats);
+		return;
+	}
+	spin_unlock_bh(&nss_mirror_stats_lock);
+}
+
+/*
+ * nss_mirror_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_mirror_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_mirror_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_mirror_stats_unregister_notifier);
+
+/*
+ * nss_mirror_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_mirror_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_mirror_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_mirror_stats_register_notifier);

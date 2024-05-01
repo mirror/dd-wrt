@@ -21,6 +21,8 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_crypto_cmn.h"
+#include "nss_crypto_cmn_strings.h"
+#include "nss_crypto_cmn_stats.h"
 #include "nss_crypto_cmn_log.h"
 
 /*
@@ -94,6 +96,18 @@ static void nss_crypto_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct 
 	 */
 	nss_crypto_cmn_log_rx_msg(nim);
 
+	switch (nim->cm.type) {
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_NODE_STATS:
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_ENG_STATS:
+	case NSS_CRYPTO_CMN_MSG_TYPE_SYNC_CTX_STATS:
+		/*
+		 * Update driver statistics and send statistics
+		 * notification to the registered modules.
+		 */
+		nss_crypto_cmn_stats_sync(nss_ctx, &nim->msg.stats);
+		nss_crypto_cmn_stats_notify(nss_ctx);
+		break;
+	}
 	/*
 	 * Load, Test & call
 	 */
@@ -212,6 +226,12 @@ nss_tx_status_t nss_crypto_cmn_tx_msg_sync(struct nss_ctx_instance *nss_ctx, str
 	 * further details read Linux/Documentation/memory-barrier.txt
 	 */
 	smp_rmb();
+
+	if (msg->cm.response != NSS_CMN_RESPONSE_ACK) {
+		up(&pvt->sem);
+		return NSS_TX_FAILURE;
+	}
+
 	up(&pvt->sem);
 
 	return NSS_TX_SUCCESS;
@@ -357,6 +377,9 @@ void nss_crypto_cmn_register_handler(void)
 	sema_init(&g_nss_crypto_cmn.sem, 1);
 	init_completion(&g_nss_crypto_cmn.complete);
 	nss_core_register_handler(nss_ctx, NSS_CRYPTO_CMN_INTERFACE, nss_crypto_cmn_msg_handler, NULL);
+
+	nss_crypto_cmn_stats_dentry_create();
+	nss_crypto_cmn_strings_dentry_create();
 }
 
 /*

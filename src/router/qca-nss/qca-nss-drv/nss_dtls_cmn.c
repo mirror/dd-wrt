@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -16,105 +16,21 @@
 
 #include "nss_tx_rx_common.h"
 #include "nss_dtls_cmn_log.h"
+#include "nss_dtls_cmn_stats.h"
+#include "nss_dtls_cmn_strings.h"
 
 #define NSS_DTLS_CMN_TX_TIMEOUT 3000 /* 3 Seconds */
 #define NSS_DTLS_CMN_INTERFACE_MAX_LONG BITS_TO_LONGS(NSS_MAX_NET_INTERFACES)
-#define NSS_DTLS_CMN_STATS_MAX_LINES (NSS_STATS_NODE_MAX + 32)
-#define NSS_DTLS_CMN_STATS_SIZE_PER_IF (NSS_STATS_MAX_STR_LENGTH * NSS_DTLS_CMN_STATS_MAX_LINES)
+
 /*
  * Private data structure.
  */
-static struct nss_dtls_cmn_cmn_pvt {
+static struct nss_dtls_cmn_pvt {
 	struct semaphore sem;
 	struct completion complete;
 	enum nss_dtls_cmn_error resp;
 	unsigned long if_map[NSS_DTLS_CMN_INTERFACE_MAX_LONG];
 } dtls_cmn_pvt;
-
-/*
- * nss_dtls_cmn_stats_sync()
- *	Update dtls_cmn node statistics.
- */
-static void nss_dtls_cmn_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm)
-{
-	struct nss_dtls_cmn_msg *ndcm = (struct nss_dtls_cmn_msg *)ncm;
-	struct nss_top_instance *nss_top = nss_ctx->nss_top;
-	struct nss_dtls_cmn_ctx_stats *msg_stats = &ndcm->msg.stats;
-	uint64_t *if_stats;
-
-	spin_lock_bh(&nss_top->stats_lock);
-
-	/*
-	 * Update common node stats,
-	 * Note: DTLS only supports a single queue for RX.
-	 */
-	if_stats = nss_top->stats_node[ncm->interface];
-	if_stats[NSS_STATS_NODE_RX_PKTS] += msg_stats->pkt.rx_packets;
-	if_stats[NSS_STATS_NODE_RX_BYTES] += msg_stats->pkt.rx_bytes;
-	if_stats[NSS_STATS_NODE_RX_QUEUE_0_DROPPED] += msg_stats->pkt.rx_dropped[0];
-
-	if_stats[NSS_STATS_NODE_TX_PKTS] += msg_stats->pkt.tx_packets;
-	if_stats[NSS_STATS_NODE_TX_BYTES] += msg_stats->pkt.tx_bytes;
-
-	spin_unlock_bh(&nss_top->stats_lock);
-}
-
-/*
- * nss_dtls_cmn_stats_read()
- *	Read dtls_cmn node statiistics.
- */
-static ssize_t nss_dtls_cmn_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	struct nss_ctx_instance *nss_ctx = nss_dtls_cmn_get_context();
-	enum nss_dynamic_interface_type type;
-	ssize_t bytes_read = 0;
-	size_t len = 0, size;
-	uint32_t if_num;
-	char *buf;
-
-	size = NSS_DTLS_CMN_STATS_SIZE_PER_IF * bitmap_weight(dtls_cmn_pvt.if_map, NSS_MAX_NET_INTERFACES);
-
-	buf = kzalloc(size, GFP_KERNEL);
-	if (!buf) {
-		nss_warning("Could not allocate memory for local statistics buffer");
-		return 0;
-	}
-
-	/*
-	 * Common node stats for each DTLS dynamic interface.
-	 */
-	for_each_set_bit(if_num, dtls_cmn_pvt.if_map, NSS_MAX_NET_INTERFACES) {
-
-		type = nss_dynamic_interface_get_type(nss_ctx, if_num);
-
-		switch (type) {
-		case NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_INNER:
-			len += scnprintf(buf + len, size - len, "\nInner if_num:%03u", if_num);
-			break;
-
-		case NSS_DYNAMIC_INTERFACE_TYPE_DTLS_CMN_OUTER:
-			len += scnprintf(buf + len, size - len, "\nOuter if_num:%03u", if_num);
-			break;
-
-		default:
-			len += scnprintf(buf + len, size - len, "\nUnknown(%d) if_num:%03u", type, if_num);
-			break;
-		}
-
-		len += scnprintf(buf + len, size - len, "\n-------------------\n");
-		len += nss_stats_fill_common_stats(if_num, NSS_STATS_SINGLE_INSTANCE, buf, len, size - len, "dtls_cmn");
-	}
-
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
-	kfree(buf);
-
-	return bytes_read;
-}
-
-/*
- * nss_dtls_cmn_stats_ops.
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(dtls_cmn)
 
 /*
  * nss_dtls_cmn_verify_ifnum()
@@ -162,15 +78,17 @@ static void nss_dtls_cmn_handler(struct nss_ctx_instance *nss_ctx, struct nss_cm
 		return;
 	}
 
-	if (ncm->type == NSS_DTLS_CMN_MSG_TYPE_SYNC_STATS)
+	if (ncm->type == NSS_DTLS_CMN_MSG_TYPE_SYNC_STATS) {
 		nss_dtls_cmn_stats_sync(nss_ctx, ncm);
+		nss_dtls_cmn_stats_notify(nss_ctx, ncm->interface);
+	}
 
 	/*
 	 * Update the callback and app_data for NOTIFY messages.
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -218,6 +136,15 @@ static void nss_dtls_cmn_callback(void *app_data, struct nss_cmn_msg *ncm)
 	complete(&dtls_cmn_pvt.complete);
 
 	return;
+}
+
+/*
+ * nss_dtls_cmn_ifmap_get()
+ *	Return DTLS common active interfaces map.
+ */
+unsigned long *nss_dtls_cmn_ifmap_get(void)
+{
+	return dtls_cmn_pvt.if_map;
 }
 
 /*
@@ -519,5 +446,6 @@ void nss_dtls_cmn_register_handler(void)
 {
 	sema_init(&dtls_cmn_pvt.sem, 1);
 	init_completion(&dtls_cmn_pvt.complete);
-	nss_stats_create_dentry("dtls_cmn", &nss_dtls_cmn_stats_ops);
+	nss_dtls_cmn_stats_dentry_create();
+	nss_dtls_cmn_strings_dentry_create();
 }

@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -24,7 +27,12 @@
 #include "nss_pm.h"
 #endif
 #include "nss_tx_rx_common.h"
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 #include "nss_data_plane.h"
+#endif
+#ifdef NSS_DATA_PLANE_LITE_SUPPORT
+#include "nss_data_plane_lite.h"
+#endif
 #include "nss_capwap.h"
 #include "nss_strings.h"
 
@@ -584,48 +592,12 @@ static struct ctl_table nss_general_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_init_dir[] = {
-#if (NSS_FREQ_SCALE_SUPPORT == 1)
-	{
-		.procname               = "clock",
-		.mode                   = 0555,
-		.child                  = nss_freq_table,
-	},
-#endif
-	{
-		.procname               = "general",
-		.mode                   = 0555,
-		.child                  = nss_general_table,
-	},
-#if (NSS_SKB_REUSE_SUPPORT == 1)
-	{
-		.procname               = "skb_reuse",
-		.mode                   = 0555,
-		.child                  = nss_skb_reuse_table,
-	},
-#endif
-	{ }
-};
-
-static struct ctl_table nss_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_init_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_root_dir,
-	},
-	{ }
-};
-
-static struct ctl_table_header *nss_dev_header;
+static struct ctl_table_header *nss_clock_header;
+static struct ctl_table_header *nss_skb_header;
+static struct ctl_table_header *nss_general_header;
+static struct ctl_table *nss_clock_table;
+static struct ctl_table *nss_skb_reuse_tabl;
+static struct ctl_table *nss_general_tabl;
 
 /*
  * nss_init()
@@ -633,10 +605,24 @@ static struct ctl_table_header *nss_dev_header;
  */
 static int __init nss_init(void)
 {
+#if defined(NSS_DRV_POINT_OFFLOAD)
+	struct device_node *pof = NULL;
+#endif
+
+
 #if (NSS_DT_SUPPORT == 1)
 	struct device_node *cmn = NULL;
 #endif
-	nss_info("Init NSS driver");
+
+#if defined(NSS_DRV_POINT_OFFLOAD)
+	pof = of_find_node_by_name(NULL, "reg_update");
+	if ((!pof) || (!of_property_read_bool(pof, "ubi_core_enable"))) {
+		nss_info_always("UBI is not enabled. Disable qca-nss-drv\n");
+		return 0;
+	}
+#endif
+
+nss_info("Init NSS driver");
 
 #if (NSS_DT_SUPPORT == 1)
 	/*
@@ -655,14 +641,18 @@ static int __init nss_init(void)
 #if defined(NSS_HAL_IPQ806X_SUPPORT)
 	if (of_machine_is_compatible("qcom,ipq8064") || of_machine_is_compatible("qcom,ipq8062")) {
 		nss_top_main.hal_ops = &nss_hal_ipq806x_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_gmac_ops;
+#endif
 		nss_top_main.num_nss = 2;
 	}
 #endif
 #if defined(NSS_HAL_IPQ807x_SUPPORT)
 	if (of_machine_is_compatible("qcom,ipq807x") || of_machine_is_compatible("qcom,ipq8074")) {
 		nss_top_main.hal_ops = &nss_hal_ipq807x_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
+#endif
 #if defined(NSS_MEM_PROFILE_LOW)
 		nss_top_main.num_nss = 1;
 #else
@@ -673,21 +663,35 @@ static int __init nss_init(void)
 #if defined(NSS_HAL_IPQ60XX_SUPPORT)
 	if (of_machine_is_compatible("qcom,ipq6018")) {
 		nss_top_main.hal_ops = &nss_hal_ipq60xx_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
+#endif
 		nss_top_main.num_nss = 1;
 	}
 #endif
 #if defined(NSS_HAL_IPQ50XX_SUPPORT)
 	if (of_machine_is_compatible("qcom,ipq5018")) {
 		nss_top_main.hal_ops = &nss_hal_ipq50xx_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
+#endif
 		nss_top_main.num_nss = 1;
 	}
 #endif
+
+#if defined(NSS_HAL_IPQ95XX_SUPPORT)
+	if (of_machine_is_compatible("qcom,ipq9574-emulation") || of_machine_is_compatible("qcom,ipq9574")) {
+		nss_top_main.hal_ops = &nss_hal_ipq95xx_ops;
+		nss_top_main.num_nss = 1;
+	}
+#endif
+
 #if defined(NSS_HAL_FSM9010_SUPPORT)
 	if (of_machine_is_compatible("qcom,fsm9010")) {
 		nss_top_main.hal_ops = &nss_hal_fsm9010_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_gmac_ops;
+#endif
 		nss_top_main.num_nss = 1;
 	}
 #endif
@@ -700,7 +704,9 @@ static int __init nss_init(void)
 	 * For banana, only ipq806x is supported
 	 */
 	nss_top_main.hal_ops = &nss_hal_ipq806x_ops;
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	nss_top_main.data_plane_ops = &nss_data_plane_gmac_ops;
+#endif
 	nss_top_main.num_nss = 2;
 
 #endif /* NSS_DT_SUPPORT */
@@ -709,11 +715,20 @@ static int __init nss_init(void)
 	/*
 	 * Initialize data_plane workqueue
 	 */
+
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	if (nss_data_plane_init_delay_work()) {
 		nss_warning("Error initializing nss_data_plane_workqueue\n");
 		return -EFAULT;
 	}
+#endif
 
+#ifdef NSS_DATA_PLANE_LITE_SUPPORT
+	if (nss_data_plane_lite_init_delay_work()){
+		nss_warning("Error initializing nss_data_plane_lite_workqueue\n");
+		return -EFAULT;
+	}
+#endif
 	/*
 	 * Enable spin locks
 	 */
@@ -734,12 +749,23 @@ static int __init nss_init(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_dev_header = register_sysctl_table(nss_root);
+  // to avoid multiple calls to `register_sysctl_table`
+	nss_general_header = register_sysctl("dev/nss/general", nss_general_table);
+
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+  nss_skb_header = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
+#endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+  nss_clock_header = register_sysctl("dev/nss/clock", nss_freq_table);
+#endif
 
 	/*
 	 * Registering sysctl for ipv4/6 specific config.
 	 */
+#ifdef NSS_DRV_IPV4_ENABLE
 	nss_ipv4_register_sysctl();
+#endif
 #ifdef NSS_DRV_IPV6_ENABLE
 	nss_ipv6_register_sysctl();
 #endif
@@ -775,12 +801,13 @@ static int __init nss_init(void)
 	 */
 	nss_project_register_sysctl();
 
-#ifdef NSS_DRV_PPPOE_ENABLE
 	/*
 	 * Registering sysctl for pppoe specific config.
 	 */
+#ifdef NSS_DRV_PPPOE_ENABLE
 	nss_pppoe_register_sysctl();
 #endif
+
 	/*
 	 * Setup Runtime Sample values
 	 */
@@ -874,6 +901,13 @@ static int __init nss_init(void)
 #endif
 
 	/*
+	 * Init Wi-Fi mesh
+	 */
+#ifdef NSS_DRV_WIFI_MESH_ENABLE
+	nss_wifi_mesh_init();
+#endif
+
+	/*
 	 * Register platform_driver
 	 */
 	return platform_driver_register(&nss_driver);
@@ -887,8 +921,18 @@ static void __exit nss_cleanup(void)
 {
 	nss_info("Exit NSS driver");
 
-	if (nss_dev_header)
-		unregister_sysctl_table(nss_dev_header);
+	if (nss_general_header)
+		unregister_sysctl_table(nss_general_header);
+
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+	if (nss_skb_header)
+	  unregister_sysctl_table(nss_skb_header);
+#endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+	if (nss_clock_header)
+	  unregister_sysctl_table(nss_clock_header);
+#endif
 
 	/*
 	 * Unregister n2h specific sysctl
@@ -907,18 +951,20 @@ static void __exit nss_cleanup(void)
 	nss_c2c_tx_unregister_sysctl();
 #endif
 
-#ifdef NSS_DRV_PPPOE_ENABLE
 	/*
 	 * Unregister pppoe specific sysctl
 	 */
+#ifdef NSS_DRV_PPPOE_ENABLE
 	nss_pppoe_unregister_sysctl();
 #endif
 
 	/*
 	 * Unregister ipv4/6 specific sysctl and free allocated to connection tables
 	 */
+#ifdef NSS_DRV_IPV4_ENABLE
 	nss_ipv4_unregister_sysctl();
 	nss_ipv4_free_conn_tables();
+#endif
 
 #ifdef NSS_DRV_IPV6_ENABLE
 	nss_ipv6_unregister_sysctl();
@@ -926,7 +972,14 @@ static void __exit nss_cleanup(void)
 #endif
 
 	nss_project_unregister_sysctl();
+
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	nss_data_plane_destroy_delay_work();
+#endif
+
+#ifdef NSS_DATA_PLANE_LITE_SUPPORT
+	nss_data_plane_lite_destroy_delay_work();
+#endif
 
 	/*
 	 * cleanup ppe on supported platform

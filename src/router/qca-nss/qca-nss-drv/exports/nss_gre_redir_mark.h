@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -25,6 +25,8 @@
 #define NSS_GRE_REDIR_MARK_HLOS_MAGIC 0xaade	/**< Metadata magic set by HLOS. */
 #define NSS_GRE_REDIR_MARK_NSS_MAGIC 0xaadf	/**< Metadata magic set by NSS. */
 
+extern struct nss_gre_redir_mark_stats gre_mark_stats;
+
 /**
  * nss_gre_redir_mark messages
  *	Message types for GRE redirect mark requests and responses.
@@ -47,6 +49,23 @@ enum nss_gre_redir_mark_error_types {
 };
 
 /**
+ * nss_gre_redir_mark_stats_types
+ *	GRE redirect mark statistics types.
+ */
+enum nss_gre_redir_mark_stats_types {
+	NSS_GRE_REDIR_MARK_STATS_HLOS_MAGIC_FAILED = NSS_STATS_NODE_MAX,
+							/**< HLOS magic fail count. */
+	NSS_GRE_REDIR_MARK_STATS_INV_DST_IF_DROPS,	/**< Invalid transmit interface drop count. */
+	NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE,	/**< Next egress interface enqueue success count. */
+	NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE_DROPS,	/**< Next egress interface enqueue drop count. */
+	NSS_GRE_REDIR_MARK_STATS_INV_APPID,		/**< Invalid application ID for the transmit completion packets. */
+	NSS_GRE_REDIR_MARK_STATS_HEADROOM_UNAVAILABLE,	/**< Packet headroom unavailable to write metadata. */
+	NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_SUCCESS,	/**< Transmit completion host enqueue success count. */
+	NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_DROPS,	/**< Transmit completion host enqueue drop count. */
+	NSS_GRE_REDIR_MARK_STATS_MAX			/**< Maximum statistics type. */
+};
+
+/**
  * nss_gre_redir_mark_metadata
  *	HLOS to NSS per packet downstream metadata.
  */
@@ -55,7 +74,7 @@ struct nss_gre_redir_mark_metadata {
 	uint8_t wifi_tid;		/**< TID value. */
 	uint8_t app_id;			/**< Application ID. */
 	uint16_t hw_hash_idx;		/**< Hardware AST hash index value. */
-	uint32_t tx_status;		/**< Tx status. */
+	uint32_t tx_status;		/**< Transmit status. */
 	uint16_t offset;		/**< Buffer offset from the metadata. */
 	uint16_t magic;			/**< Metadata magic. */
 };
@@ -67,21 +86,31 @@ struct nss_gre_redir_mark_metadata {
 struct nss_gre_redir_mark_stats_sync_msg {
 	struct nss_cmn_node_stats node_stats;	/**< Common node statistics. */
 	uint32_t hlos_magic_fail;               /**< HLOS magic fail count. */
-	uint32_t invalid_dst_drop;		/**< Invalid Tx interface drop count. */
+	uint32_t invalid_dst_drop;		/**< Invalid transmit interface drop count. */
 	uint32_t dst_enqueue_success;		/**< Next egress interface enqueue success count. */
 	uint32_t dst_enqueue_drop;		/**< Next egress interface enqueue drop count. */
-	uint32_t inv_appid;			/**< Invalid application ID for the Tx completion packets. */
+	uint32_t inv_appid;			/**< Invalid application ID for the transmit completion packets. */
 	uint32_t headroom_unavail;		/**< Packet headroom unavailable to write metadata. */
-	uint32_t tx_completion_success;		/**< Tx completion host enqueue success count. */
-	uint32_t tx_completion_drop;		/**< Tx completion host enqueue drop count. */
+	uint32_t tx_completion_success;		/**< Transmit completion host enqueue success count. */
+	uint32_t tx_completion_drop;		/**< Transmit completion host enqueue drop count. */
 };
 
 /**
  * nss_gre_redir_mark_register_cb_msg
- *	Tx completion function register configuration message.
+ *	Transmit completion function register configuration message.
  */
 struct nss_gre_redir_mark_register_cb_msg {
-	uint32_t nss_if_num;			/**< NSS Tx interface number on which callback needs to be registered. */
+	uint32_t nss_if_num;	/**< NSS transmit interface number on which callback needs to be registered. */
+};
+
+/**
+ * nss_gre_redir_mark_stats_notification
+ *	GRE redirect mark transmission statistics structure.
+ */
+struct nss_gre_redir_mark_stats_notification {
+	uint64_t stats_ctx[NSS_GRE_REDIR_MARK_STATS_MAX];	/**< Context transmission statistics. */
+	uint32_t core_id;					/**< Core ID. */
+	uint32_t if_num;					/**< Interface number. */
 };
 
 /**
@@ -211,7 +240,7 @@ extern nss_tx_status_t nss_gre_redir_mark_tx_msg(struct nss_ctx_instance *nss_ct
 extern nss_tx_status_t nss_gre_redir_mark_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss_gre_redir_mark_msg *ngrm);
 
 /**
- * nss_gre_redir_mark_get_stats
+ * nss_gre_redir_mark_stats_get
  *      Gets GRE redirect mark statistics.
  *
  * @datatypes
@@ -223,7 +252,7 @@ extern nss_tx_status_t nss_gre_redir_mark_tx_msg_sync(struct nss_ctx_instance *n
  * @return
  * TRUE or FALSE.
  */
-extern bool nss_gre_redir_mark_get_stats(void *stats);
+extern bool nss_gre_redir_mark_stats_get(struct nss_gre_redir_mark_stats *stats);
 
 /**
  * nss_gre_redir_alloc_and_register_node
@@ -273,6 +302,34 @@ extern struct dentry *nss_gre_redir_mark_get_dentry(void);
  * Pointer to the device.
  */
 extern struct device *nss_gre_redir_mark_get_device(void);
+
+/**
+ * nss_gre_redir_mark_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_gre_redir_mark_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_gre_redir_mark_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_gre_redir_mark_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

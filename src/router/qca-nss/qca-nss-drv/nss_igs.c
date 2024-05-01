@@ -14,12 +14,14 @@
  **************************************************************************
  */
 
-#if 0//def CONFIG_NET_CLS_ACT
-#include <linux/tc_act/tc_nss_mirred.h>
-#endif
-
 #include "nss_tx_rx_common.h"
 #include "nss_igs_stats.h"
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+#ifdef CONFIG_NET_CLS_ACT
+#include <linux/tc_act/tc_nss_mirred.h>
+#endif
+#endif
 
 static struct module *nss_igs_module;
 
@@ -161,13 +163,13 @@ EXPORT_SYMBOL(nss_igs_register_if);
  * nss_igs_get_context()
  *	Get the IGS context.
  */
-struct nss_ctx_instance *nss_igs_get_context()
+struct nss_ctx_instance *nss_igs_get_context(void)
 {
 	return (struct nss_ctx_instance *)&nss_top_main.nss[nss_top_main.igs_handler_id];
 }
 EXPORT_SYMBOL(nss_igs_get_context);
 
-#if 0 //ef CONFIG_NET_CLS_ACT
+#ifdef CONFIG_NET_CLS_ACT
 /*
  * nss_igs_module_save()
  *	Save the ingress shaping module reference.
@@ -175,8 +177,9 @@ EXPORT_SYMBOL(nss_igs_get_context);
 void nss_igs_module_save(struct tc_action_ops *act, struct module *module)
 {
 	nss_assert(act);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 	nss_assert(act->type == TCA_ACT_MIRRED_NSS);
-
+#endif
 	nss_igs_module = module;
 }
 EXPORT_SYMBOL(nss_igs_module_save);
@@ -186,7 +189,7 @@ EXPORT_SYMBOL(nss_igs_module_save);
  * nss_igs_module_get()
  *	Get the ingress shaping module reference.
  */
-bool nss_igs_module_get()
+bool nss_igs_module_get(void)
 {
 	nss_assert(nss_igs_module);
 	return try_module_get(nss_igs_module);
@@ -197,7 +200,7 @@ EXPORT_SYMBOL(nss_igs_module_get);
  * nss_igs_module_put()
  *	Release the ingress shaping module reference.
  */
-void nss_igs_module_put()
+void nss_igs_module_put(void)
 {
 	nss_assert(nss_igs_module);
 	module_put(nss_igs_module);

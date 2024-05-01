@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2017-2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -21,6 +21,9 @@
 #include "nss_tx_rx_common.h"
 
 static int nss_project_wt_stats_enable;
+static uint8_t nss_project_pri_mq_map[NSS_PROJECT_PRI_MQ_MAP_MAX_SIZE] = {0, 1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+module_param_array(nss_project_pri_mq_map, byte, NULL, 0);
+MODULE_PARM_DESC(nss_project_pri_mq_map, "Priority to multi-queue mapping");
 
 /*
  * nss_project_free_wt_stats()
@@ -264,6 +267,57 @@ static int nss_project_wt_stats_handler(struct ctl_table *ctl, int write,
 }
 
 /*
+ * nss_project_pri_mq_map_send_cfg()
+ *	Sends message to firmware to configure priority to multi-queue mapping.
+ */
+static nss_tx_status_t nss_project_pri_mq_map_send_cfg(struct nss_ctx_instance *nss_ctx)
+{
+	struct nss_project_msg *npm;
+	struct nss_cmn_msg *ncm;
+	nss_tx_status_t ret;
+
+	npm = kzalloc(sizeof(*npm), GFP_ATOMIC);
+	if (!npm) {
+		nss_warning("%px: Failed to allocate buffer for message\n", nss_ctx);
+		return NSS_TX_FAILURE;
+	}
+
+	/*
+	 * Populate the message
+	 */
+	ncm = &npm->cm;
+	nss_cmn_msg_init(ncm, NSS_PROJECT_INTERFACE,
+		NSS_PROJECT_MSG_SET_QUEUE_PRI_MAP_CFG,
+		sizeof(struct nss_project_msg_pri_mq_map_cfg),
+		NULL, NULL);
+	memcpy(npm->msg.pri_mq_map_cfg.pri_mq_map, nss_project_pri_mq_map,
+		sizeof(nss_project_pri_mq_map));
+	ret = nss_core_send_cmd(nss_ctx, npm, sizeof(*npm), NSS_NBUF_PAYLOAD_SIZE);
+	kfree(npm);
+	return ret;
+}
+
+/*
+ * nss_project_pri_mq_map_configure()
+ * 	API to configure priority to multi-queue mapping.
+ */
+nss_tx_status_t nss_project_pri_mq_map_configure(struct nss_ctx_instance *nss_ctx)
+{
+	/*
+	 * Check if multi-queue configuration is enabled.
+	 */
+	if (!nss_core_is_mq_enabled()) {
+		nss_warning("%px: Multi-queue is disabled. Please enable multi-queue before configuring mapping\n", nss_ctx);
+		return NSS_TX_FAILURE_NOT_SUPPORTED;
+	}
+
+	/*
+	 * Send configuration message to NSS.
+	 */
+	return nss_project_pri_mq_map_send_cfg(nss_ctx);
+}
+
+/*
  * Tree of ctl_tables used to put the wt_stats proc node in the correct place in
  * the file system. Allows the command $ echo 1 > proc/sys/dev/nss/project/wt_stats
  * to enable worker thread statistics (echoing 0 into the same target will disable).
@@ -279,33 +333,6 @@ static struct ctl_table nss_project_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_project_dir[] = {
-	{
-		.procname		= "project",
-		.mode			= 0555,
-		.child			= nss_project_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_project_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_project_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_project_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_project_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_project_header;
 
 /*
@@ -314,7 +341,7 @@ static struct ctl_table_header *nss_project_header;
  */
 void nss_project_register_sysctl(void)
 {
-	nss_project_header = register_sysctl_table(nss_project_root);
+	nss_project_header = register_sysctl("dev/nss/project", nss_project_table);
 }
 
 /*

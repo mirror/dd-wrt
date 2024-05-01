@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2017-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2017-2018, 2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -59,7 +59,7 @@ enum nss_shaper_config_types {
 	NSS_SHAPER_CONFIG_TYPE_FREE_SHAPER_NODE,
 	NSS_SHAPER_CONFIG_TYPE_SET_DEFAULT,
 	NSS_SHAPER_CONFIG_TYPE_SET_ROOT,
-	NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_BASIC_STATS_GET,
+	NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_STATS_SYNC_MANY,
 	NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_ATTACH,
 	NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_DETACH,
 	NSS_SHAPER_CONFIG_TYPE_SHAPER_NODE_CHANGE_PARAM,
@@ -672,6 +672,7 @@ struct nss_shaper_node_stats {
  *	Statistics response for shaper nodes.
  */
 struct nss_shaper_node_stats_response {
+	uint32_t qos_tag;	/**< QoS tag of the shaper node. */
 	struct nss_shaper_node_stats sn_stats;	/**< Common shaper node statistics. */
 
 	/**
@@ -685,21 +686,27 @@ struct nss_shaper_node_stats_response {
 };
 
 /**
- * nss_shaper_node_stats_get
- *	Statistics of a shaper node.
+ * nss_shaper_node_stats_sync_many
+ * 	Message structure to request shaper node statistics.
  */
-struct nss_shaper_node_stats_get {
+struct nss_shaper_node_stats_sync_many {
 
-	/*
-	 * Request
-	 */
-	uint32_t qos_tag;	/**< QoS tag of the shaper node. */
+        /*
+         * Request/Response
+         */
+        uint32_t last_qos_tag;                  /**< Last QoS tag. Zero indicates a fresh iteration. */
 
-	/*
-	 * Response
-	 */
-	struct nss_shaper_node_stats_response response;
-				/**< Shaper node statistics response */
+        /*
+         * Request
+         */
+        uint16_t size;                          /**< Total buffer size indicated by host. */
+
+        /*
+         * Response
+         */
+        uint16_t count;                         /**< Number of shaper nodes for which statistics are copied. */
+        struct nss_shaper_node_stats_response stats_sync[];
+                                                /**< Response to host. */
 };
 
 /**
@@ -726,8 +733,8 @@ struct nss_shaper_configure {
 				/**< Set a shaper to operate in Hybrid mode. */
 		struct nss_shaper_node_config shaper_node_config;
 				/**< Configuration message for any type of shaper node. */
-		struct nss_shaper_node_stats_get shaper_node_stats_get;
-				/**< Statistics for a shaper node. */
+		struct nss_shaper_node_stats_sync_many stats_get;
+				/**< Statistics of multiple shaper nodes. */
 	} msg;			/**< Types of configuration messages. */
 };
 

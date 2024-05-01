@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2016,2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016,2020-2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -39,9 +39,16 @@ static void nss_data_plane_work_function(struct work_struct *work)
 	 */
 	ret = nss_n2h_update_queue_config_sync(nss_ctx, pn_mq_en, pn_qlimits);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("Failed to send pnode queue config to core 0\n");
+		nss_warning("%px: Failed to send pnode queue config to core 0\n", nss_ctx);
+		goto data_plane_reg;
 	}
 
+	ret = nss_project_pri_mq_map_configure(nss_ctx);
+	if (ret != NSS_TX_SUCCESS) {
+		nss_warning("%px: Failed to send pnode priority to multi-queue config to core 0\n", nss_ctx);
+	}
+
+data_plane_reg:
 	nss_top->data_plane_ops->data_plane_register(nss_ctx);
 }
 

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,6 +18,7 @@
  * nss_ipv6.c
  *	NSS IPv6 APIs
  */
+#include "linux/ipv6.h"
 #include <nss_core.h>
 #include "nss_dscp_map.h"
 #include "nss_ipv6_stats.h"
@@ -377,7 +378,7 @@ EXPORT_SYMBOL(nss_ipv6_get_mgr);
  * nss_ipv6_register_handler()
  *	Register our handler to receive messages for this interface
  */
-void nss_ipv6_register_handler()
+void nss_ipv6_register_handler(void)
 {
 	struct nss_ctx_instance *nss_ctx = nss_ipv6_get_mgr();
 
@@ -428,7 +429,7 @@ static int nss_ipv6_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 
 	nss_info("%px: IPv6 supported connections: %d\n", nss_ctx, conn);
 
-	nss_ipv6_ct_info.ce_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
+	nss_ipv6_ct_info.ce_mem = __get_free_pages(GFP_ATOMIC | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv6_ct_info.ce_table_size));
 	if (!nss_ipv6_ct_info.ce_mem) {
 		nss_warning("%px: Memory allocation failed for IPv6 Connections: %d\n",
@@ -440,7 +441,7 @@ static int nss_ipv6_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 							nss_ctx,
 							conn);
 
-	nss_ipv6_ct_info.cme_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
+	nss_ipv6_ct_info.cme_mem = __get_free_pages(GFP_ATOMIC | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv6_ct_info.cme_table_size));
 	if (!nss_ipv6_ct_info.cme_mem) {
 		nss_warning("%px: Memory allocation failed for IPv6 Connections: %d\n",
@@ -706,33 +707,6 @@ static struct ctl_table nss_ipv6_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_ipv6_dir[] = {
-	{
-		.procname		= "ipv6cfg",
-		.mode			= 0555,
-		.child			= nss_ipv6_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv6_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_ipv6_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv6_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_ipv6_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_ipv6_header;
 
 /*
@@ -747,7 +721,7 @@ void nss_ipv6_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_ipv6_header = register_sysctl_table(nss_ipv6_root);
+	nss_ipv6_header = register_sysctl("dev/nss/ipv6cfg", nss_ipv6_table);
 }
 
 /*

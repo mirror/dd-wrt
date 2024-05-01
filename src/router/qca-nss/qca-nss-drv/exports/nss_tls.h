@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -66,6 +66,43 @@ enum nss_tls_error {
 	NSS_TLS_ERROR_FAIL_NOMEM,           /**< Failed memory allocation. */
 	NSS_TLS_ERROR_FAIL_INVAL_ALGO,	    /**< Invalid algorithm. */
 	NSS_TLS_ERROR_MAX,                  /**< Maximum TLS error. */
+};
+
+/**
+ * nss_tls_stats_types
+ *	TLS statistics types.
+ */
+enum nss_tls_stats_types {
+	NSS_TLS_STATS_SINGLE_REC = NSS_STATS_NODE_MAX,
+						/**< Number of transmit single record datagrams. */
+	NSS_TLS_STATS_MULTI_REC,		/**< Number of multiple transmit record datagrams. */
+	NSS_TLS_STATS_TX_INVAL_REQS,		/**< Number of transmit invalidations successfully requested. */
+	NSS_TLS_STATS_RX_CCS_REC,		/**< Number of change cipher specification records received. */
+	NSS_TLS_STATS_FAIL_CCS,			/**< Failure to switch to new crypto. */
+	NSS_TLS_STATS_ETH_NODE_DEACTIVE,	/**< Ethernet node deactivated because no crypto was available. */
+	NSS_TLS_STATS_CRYPTO_ALLOC_SUCCESS,	/**< Number of successful crypto allocations. */
+	NSS_TLS_STATS_CRYPTO_FREE_REQ,		/**< Number of crypto-free requests. */
+	NSS_TLS_STATS_CRYPTO_FREE_SUCCESS,	/**< Number of crypto-free successes. */
+	NSS_TLS_STATS_FAIL_CRYPTO_ALLOC,	/**< Number of failed crypto allocations. */
+	NSS_TLS_STATS_FAIL_CRYPTO_LOOKUP,	/**< Failure to find an active crypto session. */
+	NSS_TLS_STATS_FAIL_REQ_ALLOC,		/**< Failure to allocate request memory pool.  */
+	NSS_TLS_STATS_FAIL_PBUF_STATS,		/**< Failure in pbuf allocation for statistics. */
+	NSS_TLS_STATS_FAIL_CTX_ACTIVE,		/**< Failure in enqueue due to inactive context. */
+	NSS_TLS_STATS_HW_LEN_ERROR,		/**< Length error. */
+	NSS_TLS_STATS_HW_TOKEN_ERROR,		/**< Token error; unknown token command or instruction. */
+	NSS_TLS_STATS_HW_BYPASS_ERROR,		/**< Token contains too much bypass data. */
+	NSS_TLS_STATS_HW_CRYPTO_ERROR,		/**< Cryptographic block size error. */
+	NSS_TLS_STATS_HW_HASH_ERROR,		/**< Hash block size error. */
+	NSS_TLS_STATS_HW_CONFIG_ERROR,		/**< Invalid command, algorithm, or mode combination. */
+	NSS_TLS_STATS_HW_ALGO_ERROR,		/**< Unsupported algorithm. */
+	NSS_TLS_STATS_HW_HASH_OVF_ERROR,	/**< Hash input overflow. */
+	NSS_TLS_STATS_HW_AUTH_ERROR,		/**< Hash input overflow. */
+	NSS_TLS_STATS_HW_PAD_VERIFY_ERROR,	/**< Pad verification error. */
+	NSS_TLS_STATS_HW_TIMEOUT_ERROR,		/**< Data timed out. */
+	NSS_TLS_STATS_NO_DESC_IN,		/**< Ingress DMA descriptor not available. */
+	NSS_TLS_STATS_NO_DESC_OUT,		/**< Egress DMA descriptor not available. */
+	NSS_TLS_STATS_NO_REQS,			/**< Not enough requests available for records. */
+	NSS_TLS_STATS_MAX,			/**< Maximum statistics type. */
 };
 
 /**
@@ -157,6 +194,16 @@ struct nss_tls_cipher_update {
 };
 
 /**
+ * nss_tls_stats_notification
+ *	TLS transmission statistics structure.
+ */
+struct nss_tls_stats_notification {
+	uint64_t stats_ctx[NSS_TLS_STATS_MAX];		/**< Context transmission statistics. */
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
+};
+
+/**
  * nss_tls_msg
  *	Data for sending and receiving TLS messages.
  */
@@ -245,7 +292,7 @@ extern nss_tx_status_t nss_tls_tx_msg(struct nss_ctx_instance *nss_ctx, struct n
  * @param[in]  if_num   NSS interface number.
  * @param[in]  type     Type of message.
  * @param[in]  len      Size of the payload.
- * @param[in]  nicm     Pointer to the NSS IPsec message.
+ * @param[in]  ntcm     Pointer to the NSS IPsec message.
  *
  * @return
  * Status of the Tx operation.
@@ -253,6 +300,20 @@ extern nss_tx_status_t nss_tls_tx_msg(struct nss_ctx_instance *nss_ctx, struct n
 extern nss_tx_status_t nss_tls_tx_msg_sync(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 						enum nss_tls_msg_type type, uint16_t len,
 						struct nss_tls_msg *ntcm);
+
+/**
+ * nss_tls_unregister_if
+ *	Deregisters a TLS session interface from the NSS.
+ *
+ * @param[in] if_num  NSS interface number.
+ *
+ * @return
+ * None.
+ *
+ * @dependencies
+ * The TLS session interface must have been previously registered.
+ */
+extern void nss_tls_unregister_if(uint32_t if_num);
 
 /**
  * nss_tls_register_if
@@ -284,22 +345,19 @@ extern struct nss_ctx_instance *nss_tls_register_if(uint32_t if_num,
 							 void *app_ctx);
 
 /**
- * nss_tls_unregister_if
- *	Deregisters a TLS session interface from the NSS.
+ * nss_tls_notify_unregister
+ *	Deregisters an event callback.
  *
- * @param[in] if_num  NSS interface number.
+ * @param[in] ifnum  NSS interface number.
  *
  * @return
  * None.
- *
- * @dependencies
- * The TLS session interface must have been previously registered.
  */
-extern void nss_tls_unregister_if(uint32_t if_num);
+extern void nss_tls_notify_unregister(uint32_t ifnum);
 
 /**
  * nss_tls_notify_register
- *	Register an event callback to handle notification from TLS firmware package.
+ *	Registers an event callback to handle notification from TLS firmware package.
  *
  * @datatypes
  * nss_tls_msg_callback_t
@@ -312,17 +370,6 @@ extern void nss_tls_unregister_if(uint32_t if_num);
  * Pointer to NSS core context.
  */
 extern struct nss_ctx_instance *nss_tls_notify_register(uint32_t ifnum, nss_tls_msg_callback_t ev_cb, void *app_data);
-
-/**
- * nss_tls_notify_unregister
- *	Unregister an event callback.
- *
- * @param[in] ifnum  NSS interface number.
- *
- * @return
- * None.
- */
-extern void nss_tls_notify_unregister(uint32_t ifnum);
 
 /**
  * nss_tls_msg_init
@@ -377,6 +424,44 @@ extern struct nss_ctx_instance *nss_tls_get_context(void);
  * Pointer to the device.
  */
 extern struct device *nss_tls_get_dev(struct nss_ctx_instance *nss_ctx);
+
+/**
+ * nss_tls_ifmap_get
+ *	Returns active TLS interfaces.
+ *
+ * @return
+ * Pointer to the interface map.
+ */
+unsigned long *nss_tls_ifmap_get(void);
+
+/**
+ * nss_tls_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_tls_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_tls_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_tls_stats_register_notifier(struct notifier_block *nb);
+
 /**
  * @}
  */

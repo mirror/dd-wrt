@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -18,26 +18,6 @@
 #define __NSS_GRE_REDIR_MARK_STATS_H__
 
 /*
- * GRE REDIR statistics types
- */
-enum nss_gre_redir_mark_stats_types {
-	NSS_GRE_REDIR_MARK_STATS_TX_PKTS,
-	NSS_GRE_REDIR_MARK_STATS_TX_BYTES,
-	NSS_GRE_REDIR_MARK_STATS_RX_PKTS,
-	NSS_GRE_REDIR_MARK_STATS_RX_BYTES,
-	NSS_GRE_REDIR_MARK_STATS_RX_DROPS,
-	NSS_GRE_REDIR_MARK_STATS_HLOS_MAGIC_FAILED,
-	NSS_GRE_REDIR_MARK_STATS_INV_DST_IF_DROPS,
-	NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE,
-	NSS_GRE_REDIR_MARK_STATS_DST_IF_ENQUEUE_DROPS,
-	NSS_GRE_REDIR_MARK_STATS_INV_APPID,
-	NSS_GRE_REDIR_MARK_STATS_HEADROOM_UNAVAILABLE,
-	NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_SUCCESS,
-	NSS_GRE_REDIR_MARK_STATS_TX_COMPLETION_DROPS,
-	NSS_GRE_REDIR_MARK_STATS_MAX
-};
-
-/*
  * NSS core stats -- for H2N/N2H gre_redir_mark debug stats
  */
 struct nss_gre_redir_mark_stats {
@@ -47,6 +27,9 @@ struct nss_gre_redir_mark_stats {
 /*
  * NSS GRE REDIR Mark statistics APIs
  */
+extern void nss_gre_redir_mark_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num);
+extern void nss_gre_redir_mark_stats_sync(struct nss_ctx_instance *nss_ctx, int if_num,
+					struct nss_gre_redir_mark_stats_sync_msg *ngss);
 extern struct dentry *nss_gre_redir_mark_stats_dentry_create(void);
 
 #endif /* __NSS_GRE_REDIR_MARK_STATS_H__ */

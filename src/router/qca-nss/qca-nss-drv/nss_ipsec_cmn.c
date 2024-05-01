@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -19,11 +19,11 @@
 #include "nss_ipsec_cmn.h"
 #include "nss_ppe.h"
 #include "nss_ipsec_cmn_log.h"
+#include "nss_ipsec_cmn_stats.h"
+#include "nss_ipsec_cmn_strings.h"
 
 #define NSS_IPSEC_CMN_TX_TIMEOUT 3000 /* 3 Seconds */
 #define NSS_IPSEC_CMN_INTERFACE_MAX_LONG BITS_TO_LONGS(NSS_MAX_NET_INTERFACES)
-#define NSS_IPSEC_CMN_STATS_MAX_LINES (NSS_STATS_NODE_MAX + 32)
-#define NSS_IPSEC_CMN_STATS_SIZE_PER_IF (NSS_STATS_MAX_STR_LENGTH * NSS_IPSEC_CMN_STATS_MAX_LINES)
 
 /*
  * Private data structure for handling synchronous messaging.
@@ -34,104 +34,6 @@ static struct nss_ipsec_cmn_pvt {
 	struct nss_ipsec_cmn_msg nicm;
 	unsigned long if_map[NSS_IPSEC_CMN_INTERFACE_MAX_LONG];
 } ipsec_cmn_pvt;
-
-/*
- * nss_ipsec_cmn_stats_sync()
- *	Update ipsec_cmn node statistics.
- */
-static void nss_ipsec_cmn_stats_sync(struct nss_ctx_instance *nss_ctx, struct nss_cmn_msg *ncm)
-{
-	struct nss_ipsec_cmn_msg *nicm = (struct nss_ipsec_cmn_msg *)ncm;
-	struct nss_top_instance *nss_top = nss_ctx->nss_top;
-	struct nss_cmn_node_stats *msg_stats = &nicm->msg.ctx_sync.stats.cmn_stats;
-	uint64_t *if_stats;
-	int8_t i;
-
-	spin_lock_bh(&nss_top->stats_lock);
-
-	/*
-	 * Update common node stats,
-	 * Note: DTLS only supports a single queue for RX
-	 */
-	if_stats = nss_top->stats_node[ncm->interface];
-	if_stats[NSS_STATS_NODE_RX_PKTS] += msg_stats->rx_packets;
-	if_stats[NSS_STATS_NODE_RX_BYTES] += msg_stats->rx_bytes;
-
-	for (i = 0; i < NSS_MAX_NUM_PRI; i++) {
-		if_stats[NSS_STATS_NODE_RX_QUEUE_0_DROPPED + i] += msg_stats->rx_dropped[i];
-	}
-
-	if_stats[NSS_STATS_NODE_TX_PKTS] += msg_stats->tx_packets;
-	if_stats[NSS_STATS_NODE_TX_BYTES] += msg_stats->tx_bytes;
-
-	spin_unlock_bh(&nss_top->stats_lock);
-}
-
-/*
- * nss_ipsec_cmn_stats_read()
- *	Read ipsec_cmn node statistics.
- */
-static ssize_t nss_ipsec_cmn_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
-{
-	struct nss_ctx_instance *nss_ctx = nss_ipsec_cmn_get_context();
-	enum nss_dynamic_interface_type type;
-	ssize_t bytes_read = 0;
-	size_t len = 0, size;
-	uint32_t if_num;
-	char *buf;
-
-	size = NSS_IPSEC_CMN_STATS_SIZE_PER_IF * bitmap_weight(ipsec_cmn_pvt.if_map, NSS_MAX_NET_INTERFACES);
-
-	buf = kzalloc(size, GFP_KERNEL);
-	if (!buf) {
-		nss_warning("Could not allocate memory for local statistics buffer\n");
-		return 0;
-	}
-
-	len += nss_stats_banner(buf, len, size, "ipsec_cmn", NSS_STATS_SINGLE_CORE);
-
-	/*
-	 * Common node stats for each IPSEC dynamic interface.
-	 */
-	for_each_set_bit(if_num, ipsec_cmn_pvt.if_map, NSS_MAX_NET_INTERFACES) {
-
-		type = nss_dynamic_interface_get_type(nss_ctx, if_num);
-		switch (type) {
-		case NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_INNER:
-			len += scnprintf(buf + len, size - len, "\nInner if_num:%03u", if_num);
-			break;
-
-		case NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_MDATA_INNER:
-			len += scnprintf(buf + len, size - len, "\nMetadata inner if_num:%03u", if_num);
-			break;
-
-		case NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_OUTER:
-			len += scnprintf(buf + len, size - len, "\nOuter if_num:%03u", if_num);
-			break;
-
-		case NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_MDATA_OUTER:
-			len += scnprintf(buf + len, size - len, "\nMetadata outer if_num:%03u", if_num);
-			break;
-
-		default:
-			len += scnprintf(buf + len, size - len, "\nUnknown(%d) if_num:%03u", type, if_num);
-			break;
-		}
-
-		len += scnprintf(buf + len, size - len, "\n-------------------\n");
-		len += nss_stats_fill_common_stats(if_num, NSS_STATS_SINGLE_INSTANCE, buf, len, size - len, "ipsec_cmn");
-	}
-
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, buf, len);
-	kfree(buf);
-
-	return bytes_read;
-}
-
-/*
- * nss_ipsec_cmn_stats_ops
- */
-NSS_STATS_DECLARE_FILE_OPERATIONS(ipsec_cmn)
 
 /*
  * nss_ipsec_cmn_verify_ifnum()
@@ -189,8 +91,10 @@ static void nss_ipsec_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct n
 		return;
 	}
 
-	if (ncm->type == NSS_IPSEC_CMN_MSG_TYPE_CTX_SYNC)
+	if (ncm->type == NSS_IPSEC_CMN_MSG_TYPE_CTX_SYNC) {
 		nss_ipsec_cmn_stats_sync(nss_ctx, ncm);
+		nss_ipsec_cmn_stats_notify(nss_ctx, ncm->interface);
+	}
 
 	/*
 	 * Update the callback and app_data for NOTIFY messages, ipsec_cmn sends all notify messages
@@ -198,7 +102,7 @@ static void nss_ipsec_cmn_msg_handler(struct nss_ctx_instance *nss_ctx, struct n
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -244,6 +148,15 @@ static void nss_ipsec_cmn_sync_resp(void *app_data, struct nss_cmn_msg *ncm)
 	smp_wmb();
 
 	complete(&ipsec_cmn_pvt.complete);
+}
+
+/*
+ * nss_ipsec_cmn_ifmap_get()
+ *	Return IPsec common active interfaces map.
+ */
+unsigned long *nss_ipsec_cmn_ifmap_get(void)
+{
+	return ipsec_cmn_pvt.if_map;
 }
 
 /*
@@ -422,8 +335,10 @@ struct nss_ctx_instance *nss_ipsec_cmn_register_if(uint32_t if_num, struct net_d
 		return NULL;
 	}
 
+#ifdef NSS_DRV_PPE_ENABLE
 	if (features & NSS_IPSEC_CMN_FEATURE_INLINE_ACCEL)
 		nss_ppe_tx_ipsec_add_intf_msg(nss_ipsec_cmn_get_ifnum_with_coreid(if_num));
+#endif
 
 	/*
 	 * Registering handler for sending tunnel interface msgs to NSS.
@@ -605,5 +520,6 @@ void nss_ipsec_cmn_register_handler(void)
 {
 	sema_init(&ipsec_cmn_pvt.sem, 1);
 	init_completion(&ipsec_cmn_pvt.complete);
-	nss_stats_create_dentry("ipsec_cmn", &nss_ipsec_cmn_stats_ops);
+	nss_ipsec_cmn_stats_dentry_create();
+	nss_ipsec_cmn_strings_dentry_create();
 }

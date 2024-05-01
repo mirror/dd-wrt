@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,15 +25,6 @@
 #include "nss_ppe_vp.h"
 
 /*
- * nss_ppe_vp_log_message_types_str
- *	PPE message strings
- */
-static int8_t *nss_ppe_vp_log_message_types_str[NSS_PPE_VP_MSG_MAX] __maybe_unused = {
-	"PPE VP Config",
-	"PPE VP Stats",
-};
-
-/*
  * nss_ppe_vp_log_error_response_types_str
  *	Strings for error types for PPE-VP messages
  */
@@ -43,15 +34,16 @@ static int8_t *nss_ppe_vp_log_error_response_types_str[NSS_PPE_VP_MSG_ERROR_TYPE
 };
 
 /*
- * nss_ppe_vp_log_config_msg()
- *	Log NSS PPE VP configuration message.
+ * nss_ppe_vp_log_destroy_notify_msg()
+ *	Log NSS PPE VP destroy notification message.
  */
-static void nss_ppe_vp_log_config_msg(struct nss_ppe_vp_msg *npvm)
+static void nss_ppe_vp_log_destroy_notify_msg(struct nss_ppe_vp_msg *npvm)
 {
-	struct nss_ppe_vp_config_msg *npcm __maybe_unused = &npvm->msg.vp_config;
-	nss_trace("%px: NSS PPE VP configuration message:\n"
-		"Dynamic interface type: %d is_vp_support_enable: %d\n",
-		npcm, npcm->type, npcm->vp_enable);
+	struct nss_ppe_vp_destroy_notify_msg *npdnm __maybe_unused = &npvm->msg.destroy_notify;
+
+	nss_trace("%px: NSS PPE VP destroy notification message:\n"
+			"VP number: %u\n",
+			npdnm, npdnm->ppe_port_num);
 }
 
 /*
@@ -61,8 +53,25 @@ static void nss_ppe_vp_log_config_msg(struct nss_ppe_vp_msg *npvm)
 static void nss_ppe_vp_log_verbose(struct nss_ppe_vp_msg *npvm)
 {
 	switch (npvm->cm.type) {
-	case NSS_PPE_VP_MSG_CONFIG:
-		nss_ppe_vp_log_config_msg(npvm);
+
+	case NSS_IF_PPE_PORT_CREATE:
+		nss_info("%px: PPE interface create message type:%d\n", npvm, npvm->cm.type);
+		break;
+
+	case NSS_IF_PPE_PORT_DESTROY:
+		nss_info("%px: PPE interface destroy message type:%d\n", npvm, npvm->cm.type);
+		break;
+
+	case NSS_IF_VSI_ASSIGN:
+		nss_info("%px: PPE interface VSI assign message type:%d\n", npvm, npvm->cm.type);
+		break;
+
+	case NSS_IF_VSI_UNASSIGN:
+		nss_info("%px: PPE interface VSI unassign message type:%d\n", npvm, npvm->cm.type);
+		break;
+
+	case NSS_PPE_VP_MSG_DESTROY_NOTIFY:
+		nss_ppe_vp_log_destroy_notify_msg(npvm);
 		break;
 
 	case NSS_PPE_VP_MSG_SYNC_STATS:
@@ -83,12 +92,13 @@ static void nss_ppe_vp_log_verbose(struct nss_ppe_vp_msg *npvm)
  */
 void nss_ppe_vp_log_tx_msg(struct nss_ppe_vp_msg *npvm)
 {
-	if (npvm->cm.type >= NSS_PPE_VP_MSG_MAX) {
+
+	if (!((npvm->cm.type == NSS_IF_PPE_PORT_CREATE) || (npvm->cm.type == NSS_IF_PPE_PORT_DESTROY))) {
 		nss_warning("%px: Invalid message type\n", npvm);
 		return;
 	}
 
-	nss_info("%px: type[%d]:%s\n", npvm, npvm->cm.type, nss_ppe_vp_log_message_types_str[npvm->cm.type]);
+	nss_info("%px: type:%d\n", npvm, npvm->cm.type);
 	nss_ppe_vp_log_verbose(npvm);
 }
 
@@ -104,23 +114,20 @@ void nss_ppe_vp_log_rx_msg(struct nss_ppe_vp_msg *npvm)
 	}
 
 	if (npvm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (npvm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d]:%s, response[%d]:%s\n", npvm, npvm->cm.type,
-			nss_ppe_vp_log_message_types_str[npvm->cm.type],
+		nss_info("%px: type: %d, response[%d]: %s\n", npvm, npvm->cm.type,
 			npvm->cm.response, nss_cmn_response_str[npvm->cm.response]);
 		goto verbose;
 	}
 
 	if (npvm->cm.error >= NSS_PPE_VP_MSG_ERROR_TYPE_MAX) {
-		nss_warning("%px: msg failure - type[%d]:%s, response[%d]:%s, error[%d]:Invalid error\n",
-			npvm, npvm->cm.type, nss_ppe_vp_log_message_types_str[npvm->cm.type],
-			npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
+		nss_warning("%px: msg failure - type: %d, response[%d]: %s, error[%d]:Invalid error\n",
+			npvm, npvm->cm.type, npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
 			npvm->cm.error);
 		goto verbose;
 	}
 
-	nss_info("%px: msg nack - type[%d]:%s, response[%d]:%s, error[%d]:%s\n",
-		npvm, npvm->cm.type, nss_ppe_vp_log_message_types_str[npvm->cm.type],
-		npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
+	nss_info("%px: msg nack - type: %d, response[%d]: %s, error[%d]: %s\n",
+		npvm, npvm->cm.type, npvm->cm.response, nss_cmn_response_str[npvm->cm.response],
 		npvm->cm.error, nss_ppe_vp_log_error_response_types_str[npvm->cm.error]);
 
 verbose:

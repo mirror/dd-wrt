@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -36,7 +36,7 @@ enum nss_c2c_rx_stats_types {
 						/**< Number of received simple pbufs. */
 	NSS_C2C_RX_STATS_PBUF_SG,		/**< Number of scatter-gather pbufs received. */
 	NSS_C2C_RX_STATS_PBUF_RETURNING,	/**< Number of returning scatter-gather pbufs. */
-	NSS_C2C_RX_STATS_INVAL_DEST,		/**< Number of pbuf enqueue failures because of destination is invalid. */
+	NSS_C2C_RX_STATS_INVAL_DEST,		/**< Number of pbuf enqueue failures because destination is invalid. */
 	NSS_C2C_RX_STATS_MAX,			/**< Maximum message type. */
 };
 
