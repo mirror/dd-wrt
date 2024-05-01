@@ -24,7 +24,7 @@ CFLAGS +=$(call cc-option,-Werror=return-local-addr,)
 
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= $(COPTS) $(MIPS16_OPT) -fPIC
+CFLAGS	+= $(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC
 LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
 #CFLAGS  += -DHAVE_MAGICBOX -fpic
