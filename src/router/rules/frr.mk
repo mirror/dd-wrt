@@ -17,8 +17,8 @@ protobuf-c-configure:
 				--target=$(ARCH)-linux \
 				--host=$(ARCH) \
 				--disable-protoc \
-				CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
-				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT)"  \
+				CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB)"  \
+				CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB)"  \
 				LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 protobuf-c:
@@ -64,8 +64,8 @@ frr-configure: ncurses json-c readline libyang libcap libcares protobuf-c-config
 		--enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d \
 		--enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd \
 		--disable-staticd --enable-bfdd --disable-babeld --enable-pie=no --with-libreadline=$(TOP)/readline \
-		CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src -I$(TOP)/protobuf-c" \
-		CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src" \
+		CFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src -I$(TOP)/protobuf-c" \
+		CPPFLAGS="-fno-strict-aliasing -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libcares/include -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c -L$(TOP)/libyang/build -lyang -L$(TOP)/pcre2/.libs -lpcre2-8 -L$(TOP)/libcap/libcap -lcap -latomic -L$(TOP)/protobuf-c/protobuf-c/.libs" \
 		LIBYANG_CFLAGS="-I$(TOP)/libyang/build -I$(TOP)/libyang/build/src -I$(TOP)/libyang/src/plugins_exts -I$(TOP)/libyang/src -I$(TOP)/pcre2/src -I$(TOP)/libcares/include" \
 		LIBYANG_LIBS="-L$(TOP)/libyang/build -lyang -L$(TOP)/pcre2/.libs -lpcre2-8" \
