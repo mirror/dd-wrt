@@ -156,6 +156,7 @@
 
 #include "dev.h"
 #include "net-sysfs.h"
+#include "skbuff_debug.h"
 
 
 static DEFINE_SPINLOCK(ptype_lock);
@@ -2045,6 +2046,9 @@ static int call_netdevice_notifiers_mtu(unsigned long val,
 	return call_netdevice_notifiers_info(val, &info.info);
 }
 
+bool fast_tc_filter = false;
+EXPORT_SYMBOL_GPL(fast_tc_filter);
+
 #ifdef CONFIG_NET_INGRESS
 static DEFINE_STATIC_KEY_FALSE(ingress_needed_key);
 
@@ -3647,7 +3651,6 @@ struct sk_buff *dev_hard_start_xmit(struct sk_buff *first, struct net_device *de
 
 	while (skb) {
 		struct sk_buff *next = skb->next;
-
 		skb_mark_not_on_list(skb);
 		rc = xmit_one(skb, dev, txq, next != NULL);
 		if (unlikely(!dev_xmit_complete(rc))) {
@@ -3833,6 +3836,60 @@ static int dev_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *q,
 	rc = q->enqueue(skb, q, to_free) & NET_XMIT_MASK;
 	if (rc == NET_XMIT_SUCCESS)
 		trace_qdisc_enqueue(q, txq, skb);
+	return rc;
+}
+
+static inline int __dev_xmit_skb_qdisc(struct sk_buff *skb, struct Qdisc *q,
+				 struct net_device *top_qdisc_dev,
+				 struct netdev_queue *top_txq)
+{
+	spinlock_t *root_lock = qdisc_lock(q);
+	struct sk_buff *to_free = NULL;
+	bool contended;
+	int rc;
+
+	qdisc_calculate_pkt_len(skb, q);
+
+	if (q->flags & TCQ_F_NOLOCK) {
+		rc = q->enqueue(skb, q, &to_free) & NET_XMIT_MASK;
+		if (likely(!netif_xmit_frozen_or_stopped(top_txq)))
+			qdisc_run(q);
+
+		if (unlikely(to_free))
+			kfree_skb_list(to_free);
+		return rc;
+	}
+
+	/*
+	 * Heuristic to force contended enqueues to serialize on a
+	 * separate lock before trying to get qdisc main lock.
+	 * This permits qdisc->running owner to get the lock more
+	 * often and dequeue packets faster.
+	 */
+	contended = qdisc_is_running(q);
+	if (unlikely(contended))
+		spin_lock(&q->busylock);
+
+	spin_lock(root_lock);
+	if (unlikely(test_bit(__QDISC_STATE_DEACTIVATED, &q->state))) {
+		__qdisc_drop(skb, &to_free);
+		rc = NET_XMIT_DROP;
+	} else {
+		rc = q->enqueue(skb, q, &to_free) & NET_XMIT_MASK;
+		if (qdisc_run_begin(q)) {
+			if (unlikely(contended)) {
+				spin_unlock(&q->busylock);
+				contended = false;
+			}
+			__qdisc_run(q);
+			qdisc_run_end(q);
+		}
+	}
+	spin_unlock(root_lock);
+	if (unlikely(to_free))
+		kfree_skb_list(to_free);
+	if (unlikely(contended))
+		spin_unlock(&q->busylock);
 	return rc;
 }
 
@@ -4202,6 +4259,10 @@ bool dev_fast_xmit(struct sk_buff *skb,
 	int cpu;
 	netdev_tx_t rc;
 
+	/* the fast_xmit flag will avoid multiple checks in wifi xmit path */
+	if (likely(!skb_is_nonlinear(skb)))
+		skb->fast_xmit = 1;
+
 	if (unlikely(!(dev->flags & IFF_UP))) {
 		return false;
 	}
@@ -4259,6 +4320,74 @@ fail:
 	return false;
 }
 EXPORT_SYMBOL(dev_fast_xmit);
+
+/**
+ *	dev_fast_xmit_qdisc - fast xmit the skb along with qdisc processing
+ *	@skb:buffer to transmit
+ *	@top_qdisc_dev: the top device on which qdisc is enabled.
+ *	@bottom_dev: the device on which transmission should happen after qdisc processing.
+ *	sucessful return true
+ *	failed return false
+ */
+bool dev_fast_xmit_qdisc(struct sk_buff *skb, struct net_device *top_qdisc_dev, struct net_device *bottom_dev)
+{
+        struct netdev_queue *txq;
+	struct Qdisc *q;
+	int rc = -ENOMEM;
+
+	if (unlikely(!(top_qdisc_dev->flags & IFF_UP))) {
+		return false;
+	}
+
+	skb_reset_mac_header(skb);
+
+	/* Disable soft irqs for various locks below. Also
+	 * stops preemption for RCU.
+	 */
+	rcu_read_lock_bh();
+
+	txq = netdev_core_pick_tx(top_qdisc_dev, skb, NULL);
+	q = rcu_dereference_bh(txq->qdisc);
+	if (unlikely(!q->enqueue)) {
+		rcu_read_unlock_bh();
+		return false;
+	}
+
+	skb_update_prio(skb);
+
+	qdisc_pkt_len_init(skb);
+#ifdef CONFIG_NET_CLS_ACT
+	skb->tc_at_ingress = 0;
+#ifdef CONFIG_NET_EGRESS
+	if (static_branch_unlikely(&egress_needed_key)) {
+		skb = sch_handle_egress(skb, &rc, top_qdisc_dev);
+		if (!skb) {
+			rcu_read_unlock_bh();
+			return true;
+		}
+	}
+#endif
+#endif
+	/* If device/qdisc don't need skb->dst, release it right now while
+	 * its hot in this cpu cache.
+	 * TODO: do we need this ?
+	 */
+	if (top_qdisc_dev->priv_flags & IFF_XMIT_DST_RELEASE)
+		skb_dst_drop(skb);
+	else
+		skb_dst_force(skb);
+
+	trace_net_dev_queue(skb);
+
+	/* Update the dev so that we can transmit to bottom device after qdisc */
+	skb->dev = bottom_dev;
+	skb->fast_qdisc = 1;
+	rc = __dev_xmit_skb_qdisc(skb, q, top_qdisc_dev, txq);
+
+	rcu_read_unlock_bh();
+	return true;
+}
+EXPORT_SYMBOL(dev_fast_xmit_qdisc);
 
 /**
  * __dev_queue_xmit() - transmit a buffer
@@ -4586,8 +4715,21 @@ static int get_rps_cpu(struct net_device *dev, struct sk_buff *skb,
 
 	flow_table = rcu_dereference(rxqueue->rps_flow_table);
 	map = rcu_dereference(rxqueue->rps_map);
-	if (!flow_table && !map)
-		goto done;
+
+	if (!flow_table) {
+		if (!map) {
+			goto done;
+		}
+
+		/* Skip hash calculation & lookup if we have only one CPU to transmit and RFS is disabled */
+		if (map->len == 1) {
+			tcpu = map->cpus[0];
+			if (cpu_online(tcpu)) {
+				cpu = tcpu;
+				goto done;
+			}
+		}
+	}
 
 	skb_reset_network_header(skb);
 	hash = skb_get_hash(skb);
@@ -5435,11 +5577,13 @@ another_round:
 		}
 	}
 
-	fast_recv = rcu_dereference(fast_nat_recv);
-	if (fast_recv) {
-		if (fast_recv(skb)) {
-			ret = NET_RX_SUCCESS;
-			goto out;
+	if (likely(!fast_tc_filter)) {
+		fast_recv = rcu_dereference(fast_nat_recv);
+		if (fast_recv) {
+			if (fast_recv(skb)) {
+				ret = NET_RX_SUCCESS;
+				goto out;
+			}
 		}
 	}
 
@@ -5500,6 +5644,24 @@ skip_classify:
 		else if (unlikely(!skb))
 			goto out;
 	}
+
+	if (unlikely(!fast_tc_filter)) {
+		goto skip_fast_recv;
+	}
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv) {
+		if (pt_prev) {
+			ret = deliver_skb(skb, pt_prev, orig_dev);
+			pt_prev = NULL;
+		}
+
+		if (fast_recv(skb)) {
+			ret = NET_RX_SUCCESS;
+			goto out;
+		}
+	}
+skip_fast_recv:
 
 	rx_handler = rcu_dereference(skb->dev->rx_handler);
 	if (rx_handler) {
@@ -6072,10 +6234,16 @@ static int process_backlog(struct napi_struct *napi, int quota)
 
 	napi->weight = READ_ONCE(dev_rx_weight);
 	while (again) {
-		struct sk_buff *skb;
+		struct sk_buff *skb, *next_skb;
 
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
 			rcu_read_lock();
+
+			next_skb = skb_peek(&sd->process_queue);
+			if (likely(next_skb)) {
+				prefetch(next_skb->data);
+			}
+
 			__netif_receive_skb(skb);
 			rcu_read_unlock();
 			input_queue_head_incr(sd);

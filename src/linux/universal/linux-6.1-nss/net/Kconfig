@@ -334,6 +334,21 @@ config NET_FLOW_LIMIT
 	  with many clients some protection against DoS by a single (spoofed)
 	  flow that greatly exceeds average workload.
 
+config SKB_RECYCLER
+	bool "Generic skb recycling"
+	default y
+	help
+	  SKB_RECYCLER is used to implement RX-to-RX skb recycling.
+	  This config enables the recycling scheme for bridging and
+	  routing workloads. It can reduce skbuff freeing or
+	  reallocation overhead.
+
+
+config SKB_RECYCLER_MULTI_CPU
+	bool "Cross-CPU recycling for CPU-locked workloads"
+	depends on SMP && SKB_RECYCLER
+	default n
+
 menu "Network testing"
 
 config NET_PKTGEN

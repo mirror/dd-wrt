@@ -720,6 +720,40 @@ static inline bool skb_skip_tc_classify(struct sk_buff *skb)
 	return false;
 }
 
+/*
+ * Set skb classify bit field.
+ */
+static inline void skb_set_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	skb->tc_skip_classify_offload = 1;
+#endif
+}
+
+/*
+ * Clear skb classify bit field.
+ */
+static inline void skb_clear_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	skb->tc_skip_classify_offload = 0;
+#endif
+}
+
+/*
+ * Skip skb processing if sent from ifb dev.
+ */
+static inline bool skb_skip_tc_classify_offload(struct sk_buff *skb)
+{
+#ifdef CONFIG_NET_CLS_ACT
+	if (skb->tc_skip_classify_offload) {
+		skb_clear_tc_classify_offload(skb);
+		return true;
+	}
+#endif
+	return false;
+}
+
 /* Reset all TX qdiscs greater than index of a device.  */
 static inline void qdisc_reset_all_tx_gt(struct net_device *dev, unsigned int i)
 {
@@ -1312,6 +1346,11 @@ static inline void qdisc_synchronize(const struct Qdisc *q)
 	while (test_bit(__QDISC_STATE_SCHED, &q->state))
 		msleep(1);
 }
+
+/* QCA NSS Qdisc Support - Start */
+void qdisc_destroy(struct Qdisc *qdisc);
+void tcf_destroy_chain(struct tcf_proto __rcu **fl);
+/* QCA NSS Qdisc Support - End */
 
 /* QCA NSS Qdisc Support - Start */
 void qdisc_destroy(struct Qdisc *qdisc);

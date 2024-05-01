@@ -774,6 +774,7 @@ typedef unsigned char *sk_buff_data_t;
  *	@offload_fwd_mark: Packet was L2-forwarded in hardware
  *	@offload_l3_fwd_mark: Packet was L3-forwarded in hardware
  *	@tc_skip_classify: do not classify packet. set by IFB device
+ *	@tc_skip_classify_offload: do not classify packet set by offload IFB device
  *	@tc_at_ingress: used within tc_classify to distinguish in/egress
  *	@redirected: packet was redirected by packet classifier
  *	@from_ingress: packet was redirected from the ingress path
@@ -972,6 +973,8 @@ struct sk_buff {
 #ifdef CONFIG_NET_CLS_ACT
 	__u8			tc_skip_classify:1;
 	__u8			tc_at_ingress:1;	/* See TC_AT_INGRESS_MASK */
+	__u8			tc_skip_classify_offload:1;
+	__u16			tc_verd_qca_nss; /* QCA NSS Qdisc Support */
 #endif
 #ifdef CONFIG_IPV6_NDISC_NODETYPE
 	__u8			ndisc_nodetype:2;
@@ -1001,6 +1004,20 @@ struct sk_buff {
 	__u8			csum_not_inet:1;
 	__u8			scm_io_uring:1;
 	__u8			fast_forwarded:1;
+	/* Linear packets processed by dev_fast_xmit() */
+	__u8			fast_xmit:1;
+	/* Flag to check if skb is allocated from recycler */
+	__u8			is_from_recycler:1;
+	/* Flag for fast recycle in fast xmit path */
+	__u8			fast_recycled:1;
+
+	/* Flag for recycle in PPE DS */
+	__u8			recycled_for_ds:1;
+	/* 1 or 3 bit hole */
+	__u8			fast_qdisc:1;
+	/* Packets processed in dev_fast_xmit_qdisc() path */
+	__u8			int_pri:4;
+	/* Priority info for hardware qdiscs */
 
 #ifdef CONFIG_NET_SCHED
 	__u16			tc_index;	/* traffic control index */
@@ -1065,6 +1082,10 @@ struct sk_buff {
 #ifdef CONFIG_SKB_EXTENSIONS
 	/* only useable after checking ->active_extensions != 0 */
 	struct skb_ext		*extensions;
+#endif
+
+#ifdef CONFIG_DEBUG_OBJECTS_SKBUFF
+	void			*free_addr;
 #endif
 };
 
@@ -1244,7 +1265,7 @@ static inline void kfree_skb_list(struct sk_buff *segs)
 	kfree_skb_list_reason(segs, SKB_DROP_REASON_NOT_SPECIFIED);
 }
 
-#ifdef CONFIG_TRACEPOINTS
+#ifdef CONFIG_SKB_RECYCLER
 void consume_skb(struct sk_buff *skb);
 #else
 static inline void consume_skb(struct sk_buff *skb)
@@ -1253,6 +1274,8 @@ static inline void consume_skb(struct sk_buff *skb)
 }
 #endif
 
+void consume_skb_list_fast(struct sk_buff_head *skb_list);
+void check_skb_fast_recyclable(struct sk_buff *skb);
 void __consume_stateless_skb(struct sk_buff *skb);
 void  __kfree_skb(struct sk_buff *skb);
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -1260,6 +1283,8 @@ int skb_save_cb(struct sk_buff *skb);
 int skb_restore_cb(struct sk_buff *skb);
 #endif
 extern struct kmem_cache *skbuff_head_cache;
+extern void kfree_skbmem(struct sk_buff *skb);
+extern void skb_release_data(struct sk_buff *skb);
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
@@ -1381,6 +1406,12 @@ static inline int skb_pad(struct sk_buff *skb, int pad)
 	return __skb_pad(skb, pad, true);
 }
 #define dev_kfree_skb(a)	consume_skb(a)
+#define dev_kfree_skb_list_fast(a)	consume_skb_list_fast(a)
+#if defined(SKB_FAST_RECYCLABLE_DEBUG_ENABLE) && defined(CONFIG_SKB_RECYCLER)
+#define dev_check_skb_fast_recyclable(a)       check_skb_fast_recyclable(a)
+#else
+#define dev_check_skb_fast_recyclable(a)
+#endif
 
 int skb_append_pagefrags(struct sk_buff *skb, struct page *page,
 			 int offset, size_t size);
@@ -2676,6 +2707,25 @@ static inline void *pskb_pull(struct sk_buff *skb, unsigned int len)
 void skb_condense(struct sk_buff *skb);
 
 /**
+ *	skb_set_int_pri - sets the int_pri field in skb with given value.
+ *	@skb: buffer to fill
+ *	@int_pri: value that is to be filled
+ */
+static inline void skb_set_int_pri(struct sk_buff *skb, uint8_t int_pri)
+{
+	skb->int_pri = int_pri;
+}
+
+/**
+ *	skb_get_int_pri - gets the int_pri value from the given skb.
+ *	@skb: buffer to check
+ */
+static inline uint8_t skb_get_int_pri(struct sk_buff *skb)
+{
+	return skb->int_pri;
+}
+
+/**
  *	skb_headroom - bytes at buffer head
  *	@skb: buffer to check
  *
@@ -3180,6 +3230,9 @@ static inline void *netdev_alloc_frag_align(unsigned int fragsz,
 }
 
 struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int length,
+				   gfp_t gfp_mask);
+
+struct sk_buff *__netdev_alloc_skb_no_skb_reset(struct net_device *dev, unsigned int length,
 				   gfp_t gfp_mask);
 
 /**

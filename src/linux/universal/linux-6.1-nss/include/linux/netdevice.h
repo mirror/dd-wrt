@@ -3105,6 +3105,7 @@ static inline int dev_direct_xmit(struct sk_buff *skb, u16 queue_id)
 
 bool dev_fast_xmit(struct sk_buff *skb, struct net_device *dev,
 		   netdev_features_t features);
+bool dev_fast_xmit_qdisc(struct sk_buff *skb, struct net_device *top_qdisc_dev, struct net_device *bottom_dev);
 int register_netdevice(struct net_device *dev);
 void unregister_netdevice_queue(struct net_device *dev, struct list_head *head);
 void unregister_netdevice_many(struct list_head *head);
@@ -4638,6 +4639,15 @@ void dev_uc_flush(struct net_device *dev);
 void dev_uc_init(struct net_device *dev);
 
 /**
+ *  ifb_update_offload_stats - Update the IFB interface stats
+ *  @dev: IFB device to update the stats
+ *  @offload_stats: per CPU stats structure
+ *
+ *  Allows update of IFB stats when flows are offloaded to an accelerator.
+ **/
+void ifb_update_offload_stats(struct net_device *dev, struct pcpu_sw_netstats *offload_stats);
+
+/**
  *  __dev_uc_sync - Synchonize device's unicast list
  *  @dev:  device to sync
  *  @sync: function to call if address should be added
@@ -5189,7 +5199,6 @@ static inline bool netif_is_ifb_dev(const struct net_device *dev)
 {
 	return dev->priv_flags_ext & IFF_EXT_IFB;
 }
-
 
 /* This device needs to keep skb dst for qdisc enqueue or ndo_start_xmit() */
 static inline void netif_keep_dst(struct net_device *dev)
