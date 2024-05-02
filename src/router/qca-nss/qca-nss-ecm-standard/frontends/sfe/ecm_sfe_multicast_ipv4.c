@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -315,6 +315,9 @@ static void ecm_sfe_multicast_ipv4_connection_create_callback(void *app_data, st
 	ecm_sfe_ipv4_accelerated_count++;		/* General running counter */
 
 	if (!_ecm_sfe_ipv4_accel_pending_clear(feci, ECM_FRONT_END_ACCELERATION_MODE_ACCEL)) {
+		int assignment_count;
+		int aci_index;
+		struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 		/*
 		 * Increment the no-action counter, this is reset if offload action is seen
 		 */
@@ -322,6 +325,20 @@ static void ecm_sfe_multicast_ipv4_connection_create_callback(void *app_data, st
 
 		spin_unlock_bh(&ecm_sfe_ipv4_lock);
 		spin_unlock_bh(&feci->lock);
+
+		/*
+		 * Get the assigned classifiers and call their create notify callbacks. If they are interested in this type of
+		 * create, they will handle the event.
+		 */
+		assignment_count = ecm_db_connection_classifier_assignments_get_and_ref(feci->ci, assignments);
+		for (aci_index = 0; aci_index < assignment_count; ++aci_index) {
+			struct ecm_classifier_instance *aci;
+			aci = assignments[aci_index];
+			if (aci->notify_create) {
+				aci->notify_create(aci, NULL);
+			}
+		}
+		ecm_db_connection_assignments_release(assignment_count, assignments);
 
 		/*
 		 * Release the connection.
@@ -1642,6 +1659,33 @@ static void ecm_sfe_multicast_ipv4_connection_accelerate(struct ecm_front_end_co
 	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SP_FLOW) {
 		create->rule_flags |= SFE_MC_RULE_CREATE_FLAG_MC_EMESH_SP;
 	}
+
+	/*
+	 * SAWF information
+	 */
+	if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG) {
+		create->sawf_rule.flow_mark = pr->flow_sawf_metadata;
+		create->sawf_rule.return_mark = pr->return_sawf_metadata;
+	}
+
+	/*
+         * VLAN pcp remark set in SAWF classifer, we modify the pcp value in VLAN tag
+         * and send the update VLAN tag to SFE.
+         */
+        if (pr->process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_VLAN_PCP_REMARK) {
+                if (pr->flow_vlan_pcp != SFE_INVALID_VLAN_PCP &&
+                                create->vlan_primary_rule.egress_vlan_tag != SFE_VLAN_ID_NOT_CONFIGURED) {
+                        create->vlan_primary_rule.egress_vlan_tag &= ~VLAN_PRIO_MASK;
+                        create->vlan_primary_rule.egress_vlan_tag |= pr->flow_vlan_pcp << VLAN_PRIO_SHIFT;
+                }
+
+                if (pr->return_vlan_pcp != SFE_INVALID_VLAN_PCP &&
+                                create->vlan_primary_rule.ingress_vlan_tag != SFE_VLAN_ID_NOT_CONFIGURED) {
+                        create->vlan_primary_rule.ingress_vlan_tag &= ~VLAN_PRIO_MASK;
+                        create->vlan_primary_rule.ingress_vlan_tag |= pr->return_vlan_pcp << VLAN_PRIO_SHIFT;
+                }
+        }
+
 #endif
 
 #ifdef ECM_CLASSIFIER_OVS_ENABLE
@@ -2019,11 +2063,6 @@ static bool ecm_sfe_multicast_ipv4_connection_decelerate_msg_send(struct ecm_fro
 			feci, feci->ci, nirdm->tuple.protocol,
 			&nirdm->tuple.flow_ip, nirdm->tuple.flow_ident,
 			&nirdm->tuple.return_ip, nirdm->tuple.return_ident);
-
-	/*
-	 * Right place to free multicast destination interfaces list.
-	 */
-	ecm_db_multicast_connection_to_interfaces_clear(feci->ci);
 
 	/*
 	 * Take a ref to the feci->ci so that it will persist until we get a response from the SFE.

@@ -236,6 +236,7 @@ ccflags-$(ECM_IPV6_ENABLE) += -DECM_IPV6_ENABLE
 # NSS is enabled, using NSS multicast acceleration, otherwise using SFE
 # multicast acceleration.
 # #############################################################################
+ECM_MULTICAST_ENABLE=y
 
 ecm-$(ECM_MULTICAST_ENABLE) += ecm_db/ecm_db_multicast.o
 ccflags-$(ECM_MULTICAST_ENABLE) += -DECM_MULTICAST_ENABLE

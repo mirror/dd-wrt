@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -405,7 +405,7 @@ struct net_device *ecm_interface_dev_find_by_addr(ip_addr_t addr, bool *from_loc
 	 * Try a route to the address instead
 	 * NOTE: This will locate a route entry in the route destination *cache*.
 	 */
-	if (!ecm_interface_find_route_by_addr(addr, &ecm_rt)) {
+	if (!ecm_interface_find_route_by_addr(addr, NULL, &ecm_rt)) {
 		DEBUG_WARN("no route found\n");
 		return NULL;
 	}
@@ -441,7 +441,7 @@ static bool ecm_interface_mac_addr_get_ipv6(ip_addr_t addr, uint8_t *mac_addr, b
 	 * This means we will also work if the neighbours are routers too.
 	 */
 	ECM_IP_ADDR_TO_NIN6_ADDR(daddr, addr);
-	if (!ecm_interface_find_route_by_addr(addr, &ecm_rt)) {
+	if (!ecm_interface_find_route_by_addr(addr, NULL, &ecm_rt)) {
 		*on_link = false;
 		return false;
 	}
@@ -525,7 +525,7 @@ static bool ecm_interface_mac_addr_get_ipv6(ip_addr_t addr, uint8_t *mac_addr, b
  * ecm_interface_find_gateway_ipv6()
  *	Finds the ipv6 gateway ip address of a given ipv6 address.
  */
-static bool ecm_interface_find_gateway_ipv6(ip_addr_t addr, ip_addr_t gw_addr)
+static bool ecm_interface_find_gateway_ipv6(ip_addr_t daddr, ip_addr_t saddr, ip_addr_t gw_addr)
 {
 	struct ecm_interface_route ecm_rt;
 	struct rt6_info *rt;
@@ -534,7 +534,7 @@ static bool ecm_interface_find_gateway_ipv6(ip_addr_t addr, ip_addr_t gw_addr)
 	 * Find the ipv6 route of the given ip address to look up
 	 * whether we have a gateway to reach to that ip address or not.
 	 */
-	if (!ecm_interface_find_route_by_addr(addr, &ecm_rt)) {
+	if (!ecm_interface_find_route_by_addr(daddr, saddr, &ecm_rt)) {
 		return false;
 	}
 	DEBUG_ASSERT(!ecm_rt.v4_route, "Did not locate a v6 route!\n");
@@ -568,7 +568,7 @@ static bool ecm_interface_find_gateway_ipv4(ip_addr_t addr, ip_addr_t gw_addr)
 	 * Find the ipv4 route of the given ip address to look up
 	 * whether we have a gateway to reach to that ip address or not.
 	 */
-	if (!ecm_interface_find_route_by_addr(addr, &ecm_rt)) {
+	if (!ecm_interface_find_route_by_addr(addr, NULL, &ecm_rt)) {
 		return false;
 	}
 	DEBUG_ASSERT(ecm_rt.v4_route, "Did not locate a v4 route!\n");
@@ -595,14 +595,14 @@ static bool ecm_interface_find_gateway_ipv4(ip_addr_t addr, ip_addr_t gw_addr)
  * ecm_interface_find_gateway()
  *	Finds the gateway ip address of a given ECM ip address type.
  */
-bool ecm_interface_find_gateway(ip_addr_t addr, ip_addr_t gw_addr)
+bool ecm_interface_find_gateway(ip_addr_t d_addr, ip_addr_t s_addr, ip_addr_t gw_addr)
 {
-	if (ECM_IP_ADDR_IS_V4(addr)) {
-		return ecm_interface_find_gateway_ipv4(addr, gw_addr);
+	if (ECM_IP_ADDR_IS_V4(d_addr)) {
+		return ecm_interface_find_gateway_ipv4(d_addr, gw_addr);
 	}
 
 #ifdef ECM_IPV6_ENABLE
-	return ecm_interface_find_gateway_ipv6(addr, gw_addr);
+	return ecm_interface_find_gateway_ipv6(d_addr, s_addr, gw_addr);
 #else
 	return false;
 #endif
@@ -670,7 +670,7 @@ static bool ecm_interface_mac_addr_get_ipv4(ip_addr_t addr, uint8_t *mac_addr, b
 	 * We also locate the MAC if the address is a local host address.
 	 */
 	ECM_IP_ADDR_TO_NIN4_ADDR(ipv4_addr, addr);
-	if (!ecm_interface_find_route_by_addr(addr, &ecm_rt)) {
+	if (!ecm_interface_find_route_by_addr(addr, NULL, &ecm_rt)) {
 		*on_link = false;
 		return false;
 	}
@@ -1273,35 +1273,31 @@ static bool ecm_interface_find_route_by_addr_ipv4(ip_addr_t addr, struct ecm_int
 }
 
 #ifdef ECM_IPV6_ENABLE
-struct rt6_info *ecm_interface_ipv6_route_lookup(struct net *netf, struct in6_addr *addr)
-{
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0))
-	return rt6_lookup(netf, addr, NULL, 0, 0);
-#else
-	return rt6_lookup(netf, addr, NULL, 0, NULL, 0);
-#endif
-}
-
 /*
  * ecm_interface_addr_find_route_by_addr_ipv6()
  *	Return the route for the given IP address.  Returns NULL on failure.
  */
-static bool ecm_interface_find_route_by_addr_ipv6(ip_addr_t addr, struct ecm_interface_route *ecm_rt)
+static bool ecm_interface_find_route_by_addr_ipv6(ip_addr_t daddr, ip_addr_t saddr, struct ecm_interface_route *ecm_rt)
 {
-	struct in6_addr naddr;
+	struct in6_addr naddr, nsaddr;
+	struct in6_addr *pnsaddr = NULL;
 
-	ECM_IP_ADDR_TO_NIN6_ADDR(naddr, addr);
+	ECM_IP_ADDR_TO_NIN6_ADDR(naddr, daddr);
+	if (saddr) {
+		ECM_IP_ADDR_TO_NIN6_ADDR(nsaddr, saddr);
+		pnsaddr = &nsaddr;
+	}
 
 	/*
 	 * Get a route to the given IP address, this will allow us to also find the interface
 	 * it is using to communicate with that IP address.
 	 */
-	ecm_rt->rt.rtv6 = ecm_interface_ipv6_route_lookup(&init_net, &naddr);
+	ecm_rt->rt.rtv6 = rt6_lookup(&init_net, &naddr, pnsaddr, 0, NULL, 0);
 	if (!ecm_rt->rt.rtv6) {
-		DEBUG_TRACE("No output route to: " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(addr));
+		DEBUG_TRACE("No output route to: " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(daddr));
 		return NULL;
 	}
-	DEBUG_TRACE("Output route to: " ECM_IP_ADDR_OCTAL_FMT " is: %px\n", ECM_IP_ADDR_TO_OCTAL(addr), ecm_rt->rt.rtv6);
+	DEBUG_TRACE("Output route to: " ECM_IP_ADDR_OCTAL_FMT " is: %px\n", ECM_IP_ADDR_TO_OCTAL(daddr), ecm_rt->rt.rtv6);
 	ecm_rt->dst = (struct dst_entry *)ecm_rt->rt.rtv6;
 	ecm_rt->v4_route = false;
 	return true;
@@ -1316,16 +1312,17 @@ static bool ecm_interface_find_route_by_addr_ipv6(ip_addr_t addr, struct ecm_int
  *
  * Returns true if the route was able to be located.  The route must be released using ecm_interface_route_release().
  */
-bool ecm_interface_find_route_by_addr(ip_addr_t addr, struct ecm_interface_route *ecm_rt)
+bool ecm_interface_find_route_by_addr(ip_addr_t daddr, ip_addr_t saddr, struct ecm_interface_route *ecm_rt)
 {
-	if (ECM_IP_ADDR_IS_V4(addr)) {
-		DEBUG_TRACE("Locate dev for " ECM_IP_ADDR_DOT_FMT "\n", ECM_IP_ADDR_TO_DOT(addr));
-		return ecm_interface_find_route_by_addr_ipv4(addr, ecm_rt);
+	if (ECM_IP_ADDR_IS_V4(daddr)) {
+		DEBUG_TRACE("Locate dev for " ECM_IP_ADDR_DOT_FMT "\n", ECM_IP_ADDR_TO_DOT(daddr));
+		return ecm_interface_find_route_by_addr_ipv4(daddr, ecm_rt);
 	}
 
-	DEBUG_TRACE("Locate dev for " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(addr));
+	DEBUG_TRACE("Locate dev for " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(daddr));
+
 #ifdef ECM_IPV6_ENABLE
-	return ecm_interface_find_route_by_addr_ipv6(addr, ecm_rt);
+	return ecm_interface_find_route_by_addr_ipv6(daddr, saddr, ecm_rt);
 #else
 	return false;
 #endif
@@ -1367,7 +1364,7 @@ void ecm_interface_send_neighbour_solicitation(struct net_device *dev, ip_addr_t
 	/*
 	 * Find the route entry
 	 */
-	rt6i = ecm_interface_ipv6_route_lookup(netf, &dst_addr);
+	rt6i = rt6_lookup(netf, &dst_addr, NULL, 0, NULL, 0);
 	if (!rt6i) {
 		DEBUG_TRACE("IPv6 Route lookup failure for destination IPv6 address " ECM_IP_ADDR_OCTAL_FMT "\n", ECM_IP_ADDR_TO_OCTAL(addr));
 		return;
@@ -1511,7 +1508,6 @@ struct neighbour *ecm_interface_ipv6_neigh_get(struct ecm_front_end_connection_i
  */
 bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
 {
-#ifdef ECM_INTERFACE_PPTP_ENABLE
 	struct net_device *in;
 
 	/*
@@ -1536,7 +1532,6 @@ bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
 	}
 
 	dev_put(in);
-#endif
 	return false;
 }
 
@@ -1549,7 +1544,6 @@ bool ecm_interface_is_pptp(struct sk_buff *skb, const struct net_device *out)
  */
 bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct net_device *out, int ver)
 {
-#ifdef ECM_INTERFACE_L2TPV2_PPTP_ENABLE
 	uint32_t flag = 0;
 	struct net_device *in;
 
@@ -1582,7 +1576,6 @@ bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct n
 	}
 
 	dev_put(in);
-#endif
 	return false;
 }
 
@@ -1595,7 +1588,6 @@ bool ecm_interface_is_l2tp_packet_by_version(struct sk_buff *skb, const struct n
  */
 bool ecm_interface_is_l2tp_pptp(struct sk_buff *skb, const struct net_device *out)
 {
-#ifdef ECM_INTERFACE_L2TPV2_PPTP_ENABLE
 	struct net_device *in;
 
 	/*
@@ -1618,7 +1610,6 @@ bool ecm_interface_is_l2tp_pptp(struct sk_buff *skb, const struct net_device *ou
 	}
 
 	dev_put(in);
-#endif
 	return false;
 }
 
@@ -3254,6 +3245,16 @@ struct ecm_db_iface_instance *ecm_interface_establish_and_ref(struct ecm_front_e
 			ii = ecm_interface_ovs_bridge_interface_establish(&type_info.ovsb, dev_name, dev_interface_num, ae_interface_num, dev_mtu);
 			goto identifier_update;
 		}
+
+		/*
+		 * The below call would return true for internal ports of ovs bridge for which
+		 * offload is not supported. Since ovsmgr_is_ovs_master(dev) it would only match
+		 * for ports which are not bridge ports.
+		 */
+		if (ecm_front_end_is_ovs_bridge_device(dev)) {
+			DEBUG_WARN("%px: ECM offload not supported for OVS internal port: %s\n", feci, dev->name);
+			return NULL;
+		}
 #endif
 
 #ifdef ECM_INTERFACE_BOND_ENABLE
@@ -3616,7 +3617,7 @@ identifier_update:
 		if (skb && (skb->skb_iif == dev->ifindex)) {
 			struct pppol2tp_common_addr info;
 
-			if (ppp_is_multilink(dev) > 0) {
+			if (__ppp_is_multilink(dev) > 0) {
 				DEBUG_TRACE("%px: Net device: %px is MULTILINK PPP - Unknown to the ECM\n", feci, dev);
 				type_info.unknown.os_specific_ident = dev_interface_num;
 
@@ -3626,7 +3627,7 @@ identifier_update:
 				ii = ecm_interface_unknown_interface_establish(&type_info.unknown, dev_name, dev_interface_num, ae_interface_num, dev_mtu);
 				return ii;
 			}
-			channel_count = ppp_hold_channels(dev, ppp_chan, 1);
+			channel_count = __ppp_hold_channels(dev, ppp_chan, 1);
 			if (channel_count != 1) {
 				DEBUG_TRACE("%px: Net device: %px PPP has %d channels - ECM cannot handle this (interface becomes Unknown type)\n",
 					    feci, dev, channel_count);
@@ -4033,11 +4034,7 @@ static uint32_t ecm_interface_multicast_heirarchy_construct_single(struct ecm_fr
 				 * For MLO bond netdevice, destination for multicast is bond netdevice itself
 				 * Therefore, slave lookup is not needed.
 				 */
-#ifdef ECM_FRONT_END_SFE_ENABLE
 				if (ecm_front_end_is_lag_master(dest_dev) && !bond_is_mlo_device(dest_dev)) {
-#else
-				if (ecm_front_end_is_lag_master(dest_dev)) {
-#endif
 					/*
 					 * Link aggregation
 					 * Figure out which slave device of the link aggregation will be used to reach the destination.
@@ -4706,7 +4703,7 @@ static bool ecm_interface_get_next_node_mac_address(ip_addr_t dest_addr,
 	 * If it fails, send the request with the current dest_addr or
 	 * found gateway address.
 	 */
-	if (ecm_interface_find_gateway(dest_addr, gw_addr)) {
+	if (ecm_interface_find_gateway(dest_addr, NULL, gw_addr)) {
 		on_link = false;
 		if (ecm_interface_mac_addr_get_no_route(dest_dev, gw_addr, mac_addr)) {
 			DEBUG_TRACE("Found the mac address for the gateway\n");
@@ -5070,7 +5067,7 @@ int32_t ecm_interface_heirarchy_construct(struct ecm_front_end_connection_instan
 			 * interface hierarchy for IPSEC passthrough / UDP Encapsulated IPSEC traffic. Hence making
 			 * the check specific to routed flow in case of IPSEC passthrough traffic.
 			 */
-			if ((protocol == IPPROTO_IPV6) || ((protocol == IPPROTO_ESP) && is_routed)) {
+			if ((protocol == IPPROTO_IPV6 || protocol == IPPROTO_ESP) && is_routed) {
 				skip = true;
 				break;
 			}
@@ -5095,7 +5092,7 @@ int32_t ecm_interface_heirarchy_construct(struct ecm_front_end_connection_instan
 			 * interface hierarchy for IPSEC passthrough / UDP Encapsulated IPSEC traffic. Hence making
 			 * the check specific to routed flow in case of IPSEC passthrough traffic.
 			 */
-			if ((protocol == IPPROTO_IPIP) || ((protocol == IPPROTO_ESP) && is_routed)) {
+			if ((protocol == IPPROTO_IPIP || protocol == IPPROTO_ESP) && is_routed) {
 				skip = true;
 				break;
 			}
@@ -5467,7 +5464,7 @@ int32_t ecm_interface_heirarchy_construct(struct ecm_front_end_connection_instan
 								/*
 								 * Try one more time with gateway ip address if it exists.
 								 */
-								if (!ecm_interface_find_gateway(dest_addr, gw_addr)) {
+								if (!ecm_interface_find_gateway(dest_addr, NULL, gw_addr)) {
 									goto lag_fail;
 								}
 
@@ -7168,7 +7165,6 @@ static void ecm_interface_regenerate_connections(struct ecm_db_iface_instance *i
 		return;
 	}
 
-#ifdef ECM_DB_XREF_ENABLE
 	for (dir = 0; dir < ECM_DB_OBJ_DIR_MAX; dir++) {
 		/*
 		 * Re-generate all connections associated with this interface
@@ -7184,7 +7180,6 @@ static void ecm_interface_regenerate_connections(struct ecm_db_iface_instance *i
 			ci[dir] = cin;
 		}
 	}
-#endif
 
 #ifdef ECM_MULTICAST_ENABLE
 	/*
@@ -7930,6 +7925,15 @@ static int ecm_interface_neigh_mac_update_notify_event(struct notifier_block *nb
 {
 	struct neigh_mac_update *nmu = (struct neigh_mac_update *)data;
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
+	/*
+	 * We handle only mac addr 'update' event and ignore add/delete
+	 * Below enum is defined only in 5.4 kernel
+	 */
+	if (val != NEIGH_EVENT_NOTIFY_UPDATE) {
+		return NOTIFY_DONE;
+	}
+#endif
 	/*
 	 * If the old and new mac addresses are equal, do nothing.
 	 * This case shouldn't happen.

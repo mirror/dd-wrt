@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -76,8 +76,8 @@
  * Magic numbers
  */
 #define ECM_CLASSIFIER_MSCS_INSTANCE_MAGIC 0x1234
-#define ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS 0x4
-#define ECM_CLASSIFIER_MSCS_UL_ACCEL_DELAY_PACKETS 0x14
+#define ECM_CLASSIFIER_MSCS_SCS_ACCEL_DELAY_PACKETS 0x4
+#define ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS 0x14
 #define ECM_CLASSIFIER_MSCS_INVALID_SPI 0xff
 #define ECM_CLASSIFIER_MSCS_INVALID_RULE_ID 0xffff
 
@@ -112,7 +112,8 @@ struct ecm_classifier_mscs_instance {
 #if (DEBUG_LEVEL > 0)
 	uint16_t magic;
 #endif
-	uint16_t slow_ul_pkts;                                  /* count of slow ul packets */
+	uint16_t slow_ul_pkts;                                  /* count of slow UL packets */
+	uint16_t slow_dl_pkts;                                  /* count of slow DL packets */
 };
 
 /*
@@ -428,8 +429,10 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	struct ecm_db_connection_instance *ci = NULL;
 	struct ecm_front_end_connection_instance *feci;
 	ecm_front_end_acceleration_mode_t accel_mode;
+	int protocol;
 	uint32_t became_relevant = 0;
 	ecm_classifier_mscs_process_callback_t cb = NULL;
+	bool scs_result = false;
 	ecm_classifier_mscs_result_t result = 0;
 	uint8_t smac[ETH_ALEN];
 	uint8_t dmac[ETH_ALEN];
@@ -438,10 +441,10 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	struct net_device *src_dev = NULL;
 	struct net_device *dest_dev = NULL;
 	uint64_t slow_pkts;
-	struct ecm_classifier_mscs_get_priority_info get_priority_info = {0};
 #ifdef ECM_CLASSIFIER_MSCS_SCS_ENABLE
 	struct sp_rule_input_params flow_input_params;
 	struct sp_rule_output_params flow_output_params;
+	struct ecm_classifier_mscs_get_priority_info get_priority_info = {0};
 	struct ecm_classifier_mscs_rule_match_info rule_match_info = {0};
 	ecm_classifier_mscs_scs_priority_callback_t scs_cb = NULL;
 #endif
@@ -478,6 +481,21 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 		cmscsi->process_response.relevance = ECM_CLASSIFIER_RELEVANCE_NO;
 		goto mscs_classifier_out;
 	}
+
+	/*
+	 * If this classifier has seen enough slow packets and no SCS / MSCS has to update the priority,
+	 * make the classifier not relevant.
+	 */
+	if (((cmscsi->slow_ul_pkts > ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS) ||
+			(cmscsi->slow_dl_pkts > ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS)) &&
+			!cmscsi->scs_priority_update && !cmscsi->mscs_priority_update) {
+		/*
+		 * Lock still held
+		 */
+		cmscsi->process_response.relevance = ECM_CLASSIFIER_RELEVANCE_NO;
+		goto mscs_classifier_out;
+	}
+
 	spin_unlock_bh(&ecm_classifier_mscs_lock);
 
 	/*
@@ -526,6 +544,17 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	ecm_db_netdevs_get_and_hold(ci, sender, &src_dev, &dest_dev);
 
 	/*
+	 * Make the classifier relevance NO for non wlan flows.
+	 */
+	if (!src_dev->ieee80211_ptr && !dest_dev->ieee80211_ptr) {
+		DEBUG_TRACE("%px: Non WLAN flow, MSCS classifier is not relevant !\n", ci);
+		ecm_db_connection_deref(ci);
+		spin_lock_bh(&ecm_classifier_mscs_lock);
+		cmscsi->process_response.relevance = ECM_CLASSIFIER_RELEVANCE_NO;
+		goto mscs_classifier_out;
+	}
+
+	/*
 	 * Set the invalid SCS rule id, in case if we do not find any SCS rule.
 	 */
 	cmscsi->rule_id = ECM_CLASSIFIER_MSCS_INVALID_RULE_ID;
@@ -552,7 +581,8 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 			/*
 			 * Set result true for Multi AP mode.
 			 */
-			result = true;
+			scs_result = true;
+
 			/*
 			 * Invoke the WiFi datapath callback registered with MSCS client to check
 			 * if SCS priority is valid for WiFi peer corresponding to
@@ -570,7 +600,7 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 				rule_match_info.dst_mac = dmac;
 				rule_match_info.src_dev = src_dev;
 				rule_match_info.dst_dev = dest_dev;
-				result = scs_cb(&rule_match_info);
+				scs_result = scs_cb(&rule_match_info);
 				spin_unlock_bh(&ecm_classifier_mscs_lock);
 			}
 		}
@@ -579,7 +609,7 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 		 * Check the result of the callback. If we have a valid priority and peer is SCS
 		 * capable, we set the priority (we do not check MSCS as SCS have higher precedence).
 		 */
-		if (result) {
+		if (scs_result) {
 			/*
 			 * Update skb priority.
 			 */
@@ -624,7 +654,6 @@ static void ecm_classifier_mscs_process(struct ecm_classifier_instance *aci, ecm
 	 * Check MSCS classifer.
 	 */
 	if (ecm_classifier_mscs_enabled) {
-		result =  false;
 		/*
 		 * Check if MSCS multi AP mode is enabled or not -
 		 * If yes, we need to query SPM database for rule match.
@@ -706,6 +735,12 @@ mscs_classifier_exit:
 		spin_unlock_bh(&ecm_classifier_mscs_lock);
 	}
 
+	if (dest_dev->ieee80211_ptr) {
+		spin_lock_bh(&ecm_classifier_mscs_lock);
+		cmscsi->slow_dl_pkts++;
+		spin_unlock_bh(&ecm_classifier_mscs_lock);
+	}
+
 	if (ECM_FRONT_END_ACCELERATION_NOT_POSSIBLE(accel_mode)) {
 		DEBUG_TRACE("%x: not relevant accel_mode: %d, this is a race condition while ae switch happens from ppe to sfe\n",feci->ci->serial, accel_mode);
 	}
@@ -730,19 +765,19 @@ mscs_classifier_exit:
 	if (ecm_classifier_scs_enabled) {
 		/*
 		 * If SCS classifier is enabled, give chance to SCS first for 
-		 * ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS packets to see if it
+		 * ECM_CLASSIFIER_MSCS_SCS_ACCEL_DELAY_PACKETS packets to see if it
 		 * has to update the priority, if not fall back to MSCS.
 		 */
-		if (slow_pkts < ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS) {
+		if (slow_pkts < ECM_CLASSIFIER_MSCS_SCS_ACCEL_DELAY_PACKETS) {
 			if (!scs_rule_match && cmscsi->process_response.accel_mode != ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL) {
 				cmscsi->process_response.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_NO;
 				goto mscs_classifier_out;
 			}
 		}
 	} else {
-		if(cmscsi->slow_ul_pkts < ECM_CLASSIFIER_MSCS_UL_ACCEL_DELAY_PACKETS) {
+		if(cmscsi->slow_ul_pkts < ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS) {
 			/*
-			 * Deny acceleration for ECM_CLASSIFIER_MSCS_UL_ACCEL_DELAY_PACKETS
+			 * Deny acceleration for ECM_CLASSIFIER_MSCS_ACCEL_DELAY_PACKETS
 			 * slow uplink packets.
 			 */
 			cmscsi->process_response.accel_mode = ECM_CLASSIFIER_ACCELERATION_MODE_NO;
@@ -766,6 +801,7 @@ mscs_classifier_exit:
 	cmscsi->process_response.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_QOS_TAG;
 	cmscsi->process_response.flow_qos_tag = cmscsi->priority[ECM_CONN_DIR_FLOW];
 	cmscsi->process_response.return_qos_tag = cmscsi->priority[ECM_CONN_DIR_RETURN];
+	cmscsi->process_response.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID;
 
 mscs_classifier_out:
 

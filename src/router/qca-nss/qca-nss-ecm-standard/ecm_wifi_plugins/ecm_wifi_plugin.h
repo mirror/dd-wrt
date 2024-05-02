@@ -1,7 +1,7 @@
 /*
  ***************************************************************************
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,6 +25,7 @@
 
 #ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
 #include <ath_sawf.h>
+#include <ath_fse.h>
 #else
 #include <qca_mscs_if.h>
 #include <qca_mesh_latency_if.h>
@@ -83,36 +84,54 @@
  * ecm_wifi_plugin_emesh_register()
  *	API to register emesh callbacks.
  */
-extern int ecm_wifi_plugin_emesh_register(void);
+int ecm_wifi_plugin_emesh_register(void);
 
 /*
  * ecm_wifi_plugin_emesh_unregister()
  *	API to unregister the emesh callbacks.
  */
-extern void ecm_wifi_plugin_emesh_unregister(void);
-
-#ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
-/*
- * ecm_wifi_plugin_mscs_register()
- *	API to register mscs callbacks.
- */
-extern int ecm_wifi_plugin_mscs_register(void);
-
-/*
- * ecm_wifi_plugin_mscs_unregister()
- *	API to unregister the mscs callbacks.
- */
-extern void ecm_wifi_plugin_mscs_unregister(void);
+void ecm_wifi_plugin_emesh_unregister(void);
 
 /*
  * ecm_wifi_plugin_fse_cb_register()
  *	API to register FSE (Flow Search Engine) programming callbacks.
  */
-extern int ecm_wifi_plugin_fse_cb_register(void);
+int ecm_wifi_plugin_fse_cb_register(void);
 
 /*
  * ecm_wifi_plugin_fse_cb_unregister()
  *	API to unregister FSE (Flow Search Engine) programming callbacks.
  */
-extern void ecm_wifi_plugin_fse_cb_unregister(void);
+void ecm_wifi_plugin_fse_cb_unregister(void);
+
+#ifndef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+/*
+ * ecm_wifi_plugin_sdwf_deprio
+ * 	API to deprioritize a flow
+ */
+void ecm_wifi_plugin_sdwf_deprio(struct qca_sawf_flow_deprioritize_params *param);
+
+/*
+ * ecm_wifi_plugin_adm_ctrl_cb_register()
+ *	API to register admission control callbacks.
+ */
+int ecm_wifi_plugin_adm_ctrl_cb_register(void);
+
+/*
+ * ecm_wifi_plugin_adm_ctrl_cb_unregister()
+ *	API to unregister the admission control callbacks.
+ */
+void ecm_wifi_plugin_adm_ctrl_cb_unregister(void);
+
+/*
+ * ecm_wifi_plugin_mscs_register()
+ *	API to register mscs callbacks.
+ */
+int ecm_wifi_plugin_mscs_register(void);
+
+/*
+ * ecm_wifi_plugin_mscs_unregister()
+ *	API to unregister the mscs callbacks.
+ */
+void ecm_wifi_plugin_mscs_unregister(void);
 #endif

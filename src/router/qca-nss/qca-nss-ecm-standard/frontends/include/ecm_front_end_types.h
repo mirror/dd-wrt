@@ -33,6 +33,12 @@
 #define ECM_FRONT_END_INVALID_VLAN_PCP 0xFF
 
 /*
+ * FLOW DEPRIO flag
+ */
+#define ECM_FRONT_END_DEPRIO_FLOW 0x1
+#define ECM_FRONT_END_DEPRIO_RETURN 0x2
+
+/*
  * Bridge device macros
  */
 #define ecm_front_end_is_bridge_port(dev) (dev && (dev->priv_flags & IFF_BRIDGE_PORT))
@@ -363,6 +369,7 @@ struct ecm_front_end_flowsawf_msg {
 	uint32_t return_dest_ip[4];
 	uint8_t ip_version;
 	uint8_t protocol;
+	uint32_t flags;
 
 	/*
 	 * SAWF meta
@@ -453,8 +460,7 @@ static inline enum ecm_front_end_type ecm_front_end_type_select(void)
 	if ((front_end_selection == ECM_FRONT_END_TYPE_PPE_SFE)
 		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq9574"))
 		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq5332"))
-		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,devsoc"))
-		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,ipq5424"))) {
+		|| ((front_end_selection == ECM_FRONT_END_TYPE_AUTO) && of_machine_is_compatible("qcom,devsoc"))) {
 		return ECM_FRONT_END_TYPE_PPE_SFE;
 	}
 #endif

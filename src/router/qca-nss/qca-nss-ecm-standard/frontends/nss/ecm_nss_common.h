@@ -277,10 +277,8 @@ static inline bool ecm_nss_common_igs_acceleration_is_allowed(struct ecm_front_e
 		 */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 		if (likely(!(to_dev->ingress_cl_list))) {
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-		if (likely(!(to_dev->miniq_ingress))) {
 #else
-		if (likely(!(to_dev->tcx_ingress))) {
+		if (likely(!(to_dev->miniq_ingress))) {
 #endif
 			dev_put(to_dev);
 			continue;

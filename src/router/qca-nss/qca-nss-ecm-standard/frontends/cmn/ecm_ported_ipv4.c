@@ -1107,6 +1107,15 @@ done:
 			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_QOS_TAG;
 		}
 
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+		/*
+		 * HLOS TID override mode
+		 */
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID) {
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID;
+		}
+#endif
+
 #if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
 #ifdef ECM_CLASSIFIER_DSCP_IGS
 		/*

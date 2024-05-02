@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -530,6 +530,7 @@ unsigned int ecm_multicast_ipv4_connection_process(struct net_device *out_dev,
 	int src_port;
 	int dest_port;
 	int src_port_nat = 0;
+	struct ecm_front_end_connection_instance *feci = NULL;
 	struct net_device *in_dev_nat = NULL;
 	struct net_device *out_dev_master = NULL;
 	struct net_device *l3_br_dev = NULL;
@@ -767,7 +768,6 @@ process_packet:
 		struct ecm_db_mapping_instance *mi[ECM_DB_OBJ_DIR_MAX];
 		struct ecm_db_node_instance *ni[ECM_DB_OBJ_DIR_MAX];
 		struct ecm_classifier_default_instance *dci;
-		struct ecm_front_end_connection_instance *feci;
 		struct ecm_db_connection_instance *nci;
 		struct ecm_db_iface_instance *from_list[ECM_DB_IFACE_HEIRARCHY_MAX];
 		struct ecm_db_iface_instance *to_list;
@@ -1235,7 +1235,6 @@ process_packet:
 			int32_t *to_first;
 			int32_t i, interface_idx_cnt;
 			int ret;
-			struct ecm_front_end_connection_instance *feci;
 
 			to_list = (struct ecm_db_iface_instance *)kzalloc(ECM_DB_TO_MCAST_INTERFACES_SIZE, GFP_ATOMIC | __GFP_NOWARN);
 			if (!to_list) {
@@ -1318,7 +1317,7 @@ process_packet:
 	 * Check if IGS feature is enabled or not.
 	 */
 	if (unlikely(ecm_interface_igs_enabled)) {
-		struct ecm_front_end_connection_instance *feci = ecm_db_connection_front_end_get_and_ref(ci);
+		feci = ecm_db_connection_front_end_get_and_ref(ci);
 		if (feci->accel_engine == ECM_FRONT_END_ENGINE_NSS) {
 			if (!ecm_nss_common_igs_acceleration_is_allowed(feci, skb)) {
 				DEBUG_WARN("%px: Multicast IPv4 IGS acceleration denied.\n", ci);
@@ -1355,6 +1354,16 @@ process_packet:
 	if (unlikely(ecm_db_connection_regeneration_required_check(ci))) {
 		ecm_multicast_ipv4_connection_regenerate(ci, sender, out_dev, in_dev, in_dev_nat);
 	}
+
+	/*
+	 * Increment the slow path packet counter.
+	 *
+	 */
+	feci = ecm_db_connection_front_end_get_and_ref(ci);
+	spin_lock_bh(&feci->lock);
+	feci->stats.slow_path_packets++;
+	spin_unlock_bh(&feci->lock);
+	ecm_front_end_connection_deref(feci);
 
 	/*
 	 * Iterate the assignments and call to process!
@@ -1506,6 +1515,28 @@ process_packet:
 					ci, aci, aci->type_get(aci));
 			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SP_FLOW;
 		}
+
+		/*
+		 * E-MESH SAWF metadata is Valid
+		 */
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG) {
+			DEBUG_TRACE("%px: aci: %px, type: %d, E-Mesh SAWF metadata is valid\n",
+					ci, aci, aci->type_get(aci));
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_TAG;
+			prevalent_pr.flow_sawf_metadata = aci_pr.flow_sawf_metadata;
+			prevalent_pr.return_sawf_metadata = aci_pr.return_sawf_metadata;
+		}
+
+		/*
+		 * E-MESH SAWF has valid pcp remark values to be updated in vlan tag.
+		 */
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_VLAN_PCP_REMARK) {
+			DEBUG_TRACE("%px: aci: %px, type: %d, egress vlan pcp remark: %d, ingress vlan pcp remark: %d\n",
+					ci, aci, aci->type_get(aci), aci_pr.flow_vlan_pcp, aci_pr.return_vlan_pcp);
+			prevalent_pr.flow_vlan_pcp = aci_pr.flow_vlan_pcp;
+			prevalent_pr.return_vlan_pcp = aci_pr.return_vlan_pcp;
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_VLAN_PCP_REMARK;
+		}
 #endif
 
 #ifdef ECM_CLASSIFIER_OVS_ENABLE
@@ -1589,13 +1620,13 @@ process_packet:
 	 * Accelerate?
 	 */
 	if (prevalent_pr.accel_mode == ECM_CLASSIFIER_ACCELERATION_MODE_ACCEL) {
-		struct ecm_front_end_connection_instance *feci;
 		feci = ecm_db_connection_front_end_get_and_ref(ci);
 		feci->accelerate(feci, &prevalent_pr, false, NULL, skb);
 		ecm_front_end_connection_deref(feci);
 	}
-	ecm_db_connection_deref(ci);
 
+
+	ecm_db_connection_deref(ci);
 done:
 	if (out_dev_master) {
 		dev_put(out_dev_master);

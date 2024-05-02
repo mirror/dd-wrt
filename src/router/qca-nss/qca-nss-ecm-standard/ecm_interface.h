@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation.  All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -56,7 +56,7 @@ extern struct net_device *bond_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
 bool ecm_interface_mac_addr_get_pppoe(struct net_device *local_dev, uint8_t *node_addr);
 bool ecm_interface_mac_addr_get_no_route(struct net_device *dev, ip_addr_t ip_addr, uint8_t *mac_addr);
 bool ecm_interface_mac_addr_get(ip_addr_t addr, uint8_t *mac_addr, bool *on_link, ip_addr_t gw_addr);
-bool ecm_interface_find_route_by_addr(ip_addr_t addr, struct ecm_interface_route *ecm_rt);
+bool ecm_interface_find_route_by_addr(ip_addr_t daddr, ip_addr_t saddr, struct ecm_interface_route *ecm_rt);
 void ecm_interface_route_release(struct ecm_interface_route *rt);
 #ifdef ECM_IPV6_ENABLE
 struct neighbour *ecm_interface_ipv6_neigh_get(struct ecm_front_end_connection_instance *feci, ecm_db_obj_dir_t dir, ip_addr_t addr);
@@ -118,7 +118,7 @@ struct net_device *ecm_interface_dev_find_by_addr(ip_addr_t addr, bool *from_loc
 struct net_device *ecm_interface_get_and_hold_dev_master(struct net_device *dev);
 void ecm_interface_dev_regenerate_connections(struct net_device *dev);
 struct net_device *ecm_interface_dev_find_by_local_addr(ip_addr_t addr);
-bool ecm_interface_find_gateway(ip_addr_t addr, ip_addr_t gw_addr);
+bool ecm_interface_find_gateway(ip_addr_t daddr, ip_addr_t saddr, ip_addr_t gw_addr);
 void ecm_interface_dev_defunct_connections(struct net_device *dev);
 void ecm_interface_node_connections_defunct(uint8_t *mac, int ip_version);
 void ecm_interface_node_connections_defunct_by_type(uint8_t *mac, int ip_version, ecm_db_connection_defunct_type_t type);

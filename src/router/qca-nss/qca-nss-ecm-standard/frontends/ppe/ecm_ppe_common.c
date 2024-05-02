@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -24,6 +24,7 @@
 #include <linux/module.h>
 #include <linux/inet.h>
 #include <linux/etherdevice.h>
+#include <net/netfilter/nf_conntrack_l4proto.h>
 
 #define DEBUG_LEVEL ECM_PPE_COMMON_DEBUG_LEVEL
 
@@ -44,6 +45,10 @@
 #include "ecm_ppe_ipv4.h"
 #ifdef ECM_INTERFACE_VXLAN_ENABLE
 #include <net/vxlan.h>
+#endif
+
+#ifdef ECM_OPENWRT_SUPPORT
+extern int nf_ct_tcp_no_window_check;
 #endif
 
 #ifdef ECM_IPV6_ENABLE
@@ -187,6 +192,38 @@ int ecm_ppe_ported_get_vxlan_ppe_dev_index(struct ecm_front_end_connection_insta
 bool ecm_ppe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip_hdr)
 {
 	bool inner = 0;
+
+#ifdef ECM_OPENWRT_SUPPORT
+	if (ip_hdr->protocol == IPPROTO_TCP) {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+		uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
+#else
+		struct nf_conn *ct;
+		enum ip_conntrack_info ctinfo;
+		struct nf_tcp_net *tn;
+		uint32_t tcp_no_window_check;
+
+		ct = nf_ct_get(skb, &ctinfo);
+
+		/*
+		 * If there is no ct, we shouldn't care about the conntrack's TCP window check.
+		 * Returning false here will break OVS bridge flow acceleration in PPE, since OVS bridge
+		 * flows do not have ct.
+		 */
+		if (unlikely(!ct)) {
+			DEBUG_TRACE("%px: No Conntrack found for packet\n", skb);
+			return true;
+		}
+
+		tn = nf_tcp_pernet(nf_ct_net(ct));
+		tcp_no_window_check = tn->tcp_no_window_check;
+#endif
+		if(unlikely(tcp_no_window_check == 0)) {
+			DEBUG_TRACE("%px: TCP window check feature not supported for PPE; skip it\n", skb);
+			return false;
+		}
+	}
+#endif
 
 	if (ecm_front_end_is_xfrm_flow(skb, ip_hdr, &inner)) {
 #ifdef ECM_XFRM_ENABLE

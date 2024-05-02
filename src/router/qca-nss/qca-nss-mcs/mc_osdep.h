@@ -21,8 +21,6 @@
 #include <linux/netfilter_bridge.h>
 #include <br_private.h>
 
-int br_pass_frame_up(struct sk_buff *skb, bool promisc);
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0))
 static inline int os_br_pass_frame_up(struct sk_buff *skb)
 {

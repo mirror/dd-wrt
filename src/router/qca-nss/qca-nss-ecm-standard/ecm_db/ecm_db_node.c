@@ -227,10 +227,8 @@ EXPORT_SYMBOL(ecm_db_node_get_and_ref_next);
  */
 int ecm_db_node_deref(struct ecm_db_node_instance *ni)
 {
-#ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	int dir;
-#endif
 #endif
 	DEBUG_CHECK_MAGIC(ni, ECM_DB_NODE_INSTANCE_MAGIC, "%px: magic failed\n", ni);
 
@@ -491,10 +489,8 @@ EXPORT_SYMBOL(ecm_db_node_iface_get_and_ref);
 void ecm_db_node_add(struct ecm_db_node_instance *ni, struct ecm_db_iface_instance *ii, uint8_t *address,
 					ecm_db_node_final_callback_t final, void *arg)
 {
-#ifdef ECM_DB_XREF_ENABLE
 #if (DEBUG_LEVEL >= 1)
 	int dir;
-#endif
 #endif
 	ecm_db_node_hash_t hash_index;
 	struct ecm_db_listener_instance *li;

@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -155,7 +155,7 @@ bool ecm_ipv6_dev_has_ipaddr(struct net_device *dev)
  * Returns NULL on failure.
  */
 struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_end_connection_instance *feci,
-							struct net_device *dev, ip_addr_t addr,
+							struct net_device *dev, ip_addr_t addr, ip_addr_t saddr,
 							struct ecm_db_iface_instance *interface_list[], int32_t interface_list_first,
 							uint8_t *given_node_addr, struct sk_buff *skb)
 {
@@ -353,7 +353,7 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 				if (unlikely(!ecm_interface_mac_addr_get_no_route(local_dev, remote_ip, node_addr))) {
 					ip_addr_t gw_addr = ECM_IP_ADDR_NULL;
 
-					if (!ecm_interface_find_gateway(remote_ip, gw_addr)) {
+					if (!ecm_interface_find_gateway(remote_ip, NULL, gw_addr)) {
 						DEBUG_WARN("%px: failed to obtain Gateway address for host " ECM_IP_ADDR_DOT_FMT "\n", feci, ECM_IP_ADDR_TO_DOT(remote_ip));
 						dev_put(local_dev);
 						return NULL;
@@ -517,7 +517,7 @@ struct ecm_db_node_instance *ecm_ipv6_node_establish_and_ref(struct ecm_front_en
 				/*
 				 * Try one more time with gateway ip address if it exists.
 				 */
-				if (!ecm_interface_find_gateway(addr, gw_addr)) {
+				if (!ecm_interface_find_gateway(addr, saddr, gw_addr)) {
 					DEBUG_WARN("%px: Node establish failed, there is no gateway address for 2nd mac lookup try\n", feci);
 					return NULL;
 				}

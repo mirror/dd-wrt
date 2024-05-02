@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -557,6 +557,9 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 		uint32_t vlan_value = 0;
 		struct net_device *vlan_in_dev = NULL;
 #endif
+#ifdef ECM_INTERFACE_SIT_ENABLE
+		struct net_device *dev_6rd;
+#endif
 #ifdef ECM_INTERFACE_VXLAN_ENABLE
 		struct ecm_db_interface_info_vxlan vxlan_info;
 #endif
@@ -830,6 +833,22 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 			DEBUG_TRACE("%px: VXLAN - unsupported\n", feci);
 #endif
 			break;
+		case ECM_DB_IFACE_TYPE_SIT:
+#ifdef ECM_INTERFACE_SIT_ENABLE
+			dev_6rd = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
+			if (dev_6rd) {
+				struct ip_tunnel *tunnel = netdev_priv(dev_6rd);
+				if (!(tunnel->parms.iph.daddr)) {
+					rule_invalid = true;
+					DEBUG_TRACE("%px: Tun6rd error tunnel parameter.\n", feci);
+				}
+				dev_put(dev_6rd);
+			}
+#else
+			rule_invalid = true;
+			DEBUG_TRACE("%px: Tun6rd - unsupported\n", feci);
+#endif
+			break;
 
 		default:
 			DEBUG_TRACE("%px: Ignoring: %d (%s)\n", feci, ii_type, ii_name);
@@ -866,7 +885,9 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 		uint32_t vlan_value = 0;
 		struct net_device *vlan_out_dev = NULL;
 #endif
-
+#ifdef ECM_INTERFACE_SIT_ENABLE
+		struct net_device *dev_6rd;
+#endif
 		ii = to_ifaces[list_index];
 		ii_type = ecm_db_iface_type_get(ii);
 		ii_name = ecm_db_interface_type_to_string(ii_type);
@@ -1117,6 +1138,23 @@ static void ecm_sfe_ported_ipv6_connection_accelerate(struct ecm_front_end_conne
 #else
 			rule_invalid = true;
 			DEBUG_TRACE("%px: LAG - unsupported\n", feci);
+#endif
+			break;
+
+		case ECM_DB_IFACE_TYPE_SIT:
+#ifdef ECM_INTERFACE_SIT_ENABLE
+			dev_6rd = dev_get_by_index(&init_net, ecm_db_iface_interface_identifier_get(ii));
+			if (dev_6rd) {
+				struct ip_tunnel *tunnel = netdev_priv(dev_6rd);
+				if (!(tunnel->parms.iph.daddr)) {
+					rule_invalid = true;
+					DEBUG_TRACE("%px: Tun6rd error tunnel parameter.\n", feci);
+				}
+				dev_put(dev_6rd);
+			}
+#else
+			rule_invalid = true;
+			DEBUG_TRACE("%px: Tun6rd - unsupported\n", feci);
 #endif
 			break;
 
@@ -2148,6 +2186,7 @@ void ecm_sfe_ported_ipv6_connection_set(struct ecm_front_end_connection_instance
 	feci->ae_interface_type_get = ecm_sfe_common_get_interface_type;
 	feci->regenerate = ecm_sfe_common_connection_regenerate;
 	feci->defunct = ecm_sfe_ported_ipv6_connection_defunct_callback;
+	feci->update_rule = ecm_sfe_common_update_rule;
 
 	ecm_sfe_common_init_fe_info(&feci->fe_info);
 
@@ -2221,7 +2260,6 @@ struct ecm_front_end_connection_instance *ecm_sfe_ported_ipv6_connection_instanc
 
 	feci->protocol = protocol;
 
-	feci->update_rule = ecm_sfe_common_update_rule;
 	ecm_sfe_ported_ipv6_connection_set(feci, accel_flags);
 
 	if (protocol == IPPROTO_TCP) {

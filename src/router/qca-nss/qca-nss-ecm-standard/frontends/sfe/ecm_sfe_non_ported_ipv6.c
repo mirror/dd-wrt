@@ -1670,6 +1670,7 @@ void ecm_sfe_non_ported_ipv6_connection_set(struct ecm_front_end_connection_inst
 	feci->ae_interface_type_get = ecm_sfe_common_get_interface_type;
 	feci->regenerate = ecm_sfe_common_connection_regenerate;
 	feci->defunct = ecm_sfe_non_ported_ipv6_connection_defunct_callback;
+	feci->update_rule = ecm_sfe_common_update_rule;
 
 	ecm_sfe_common_init_fe_info(&feci->fe_info);
 
@@ -1740,25 +1741,6 @@ struct ecm_front_end_connection_instance *ecm_sfe_non_ported_ipv6_connection_ins
 
 	feci->ip_version = 6;
 	feci->protocol = protocol;
-
-	/*
-	 * Populate the methods and callbacks
-	 */
-	feci->accelerate = ecm_sfe_non_ported_ipv6_connection_accelerate;
-	feci->decelerate = ecm_sfe_non_ported_ipv6_connection_decelerate;
-	feci->accel_ceased = ecm_sfe_non_ported_ipv6_connection_accel_ceased;
-#ifdef ECM_STATE_OUTPUT_ENABLE
-	feci->state_get = ecm_sfe_non_ported_ipv6_connection_state_get;
-#endif
-	feci->ae_interface_number_by_dev_get = ecm_sfe_common_get_interface_number_by_dev;
-	feci->ae_interface_number_by_dev_type_get = ecm_sfe_common_get_interface_number_by_dev_type;
-	feci->ae_interface_type_get = ecm_sfe_common_get_interface_type;
-	feci->regenerate = ecm_sfe_common_connection_regenerate;
-	feci->defunct = ecm_sfe_non_ported_ipv6_connection_defunct_callback;
-
-	ecm_sfe_common_init_fe_info(&feci->fe_info);
-
-	feci->update_rule = ecm_sfe_common_update_rule;
 
 	ecm_sfe_non_ported_ipv6_connection_set(feci, accel_flags);
 	return feci;

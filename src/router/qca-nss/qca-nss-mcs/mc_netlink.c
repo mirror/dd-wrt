@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2012, 2015, 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -778,6 +780,38 @@ static void __mc_netlink_receive(struct sk_buff *__skb)
 				if (mc_mdbtbl_fillbuf(mc, msgdata, msghdr->buf_len,
 							&msghdr->bytes_written, &msghdr->bytes_needed))
 					msghdr->status = MC_STATUS_BUFFER_OVERFLOW;
+				spin_unlock_bh(&mc->lock);
+			}
+			break;
+		case MC_MSG_DEL_MDB:
+			{
+				struct __mc_mdb_entry *e = (struct __mc_mdb_entry *)msgdata;
+				struct mc_ip mc_group;
+				 memset(&mc_group, 0, sizeof(struct mc_ip));
+				if (e->group.pro == htons(ETH_P_IP) ) {
+					mc_group.u.ip4=e->group.u.ip4;
+					mc_group.pro=e->group.pro;
+					MC_PRINT("%s:del group=%pI4, ifindex=%d, mac=%pM\n",
+						 __func__, &e->group.u.ip4,e->ifindex, e->mac);
+				}
+				else {
+					mc_group.pro = e->group.pro;
+					memcpy(&mc_group.u.ip6, &e->group.u.ip6, sizeof(struct in6_addr));
+					MC_PRINT("%s:del group=%pI6, ifindex=%d, mac=%pM\n",
+						 __func__, &e->group.u.ip6,e->ifindex, e->mac);
+				}
+
+				spin_lock_bh(&mc->lock);
+				if(mc_mdb_destroy_by_port(mc, &mc_group, (__u8 *)e->mac, e->ifindex)>0)
+				{
+					MC_PRINT("%s(%d):Found group!\n", __func__, __LINE__);
+					msghdr->status=MC_STATUS_SUCCESS;
+				}
+				else
+				{
+					MC_PRINT("%s(%d):Not found group!\n", __func__, __LINE__);
+					msghdr->status=MC_STATUS_NOT_FOUND;
+				}
 				spin_unlock_bh(&mc->lock);
 			}
 			break;

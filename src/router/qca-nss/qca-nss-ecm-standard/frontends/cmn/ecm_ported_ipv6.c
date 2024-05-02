@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -639,7 +639,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, from_list, from_list_first, ECM_DB_OBJ_DIR_FROM);
 
 		DEBUG_TRACE("%px: Create source node\n", nci);
-		ni[ECM_DB_OBJ_DIR_FROM] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_dev, efeici.from_mac_lookup_ip_addr, from_list, from_list_first, src_node_addr, skb);
+		ni[ECM_DB_OBJ_DIR_FROM] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_dev, efeici.from_mac_lookup_ip_addr, efeici.to_nat_mac_lookup_ip_addr, from_list, from_list_first, src_node_addr, skb);
 		ecm_db_connection_interfaces_deref(from_list, from_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_FROM]) {
 			DEBUG_WARN("Failed to establish source node\n");
@@ -665,7 +665,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, to_list, to_list_first, ECM_DB_OBJ_DIR_TO);
 
 		DEBUG_TRACE("%px: Create dest node\n", nci);
-		ni[ECM_DB_OBJ_DIR_TO] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_dev, efeici.to_mac_lookup_ip_addr, to_list, to_list_first, dest_node_addr, skb);
+		ni[ECM_DB_OBJ_DIR_TO] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_dev, efeici.to_mac_lookup_ip_addr, efeici.from_nat_mac_lookup_ip_addr, to_list, to_list_first, dest_node_addr, skb);
 		ecm_db_connection_interfaces_deref(to_list, to_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_TO]) {
 			DEBUG_WARN("Failed to establish dest node\n");
@@ -698,7 +698,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, from_nat_list, from_nat_list_first, ECM_DB_OBJ_DIR_FROM_NAT);
 
 		DEBUG_TRACE("%px: Create source nat node\n", nci);
-		ni[ECM_DB_OBJ_DIR_FROM_NAT] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_nat_dev, efeici.from_nat_mac_lookup_ip_addr, from_nat_list, from_nat_list_first, src_node_addr_nat, skb);
+		ni[ECM_DB_OBJ_DIR_FROM_NAT] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_nat_dev, efeici.from_nat_mac_lookup_ip_addr, efeici.to_nat_mac_lookup_ip_addr, from_nat_list, from_nat_list_first, src_node_addr_nat, skb);
 		ecm_db_connection_interfaces_deref(from_nat_list, from_nat_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_FROM_NAT]) {
 			DEBUG_WARN("Failed to establish source nat node\n");
@@ -723,7 +723,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, to_nat_list, to_nat_list_first, ECM_DB_OBJ_DIR_TO_NAT);
 
 		DEBUG_TRACE("%px: Create dest nat node\n", nci);
-		ni[ECM_DB_OBJ_DIR_TO_NAT] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_nat_dev, efeici.to_nat_mac_lookup_ip_addr, to_nat_list, to_nat_list_first, dest_node_addr_nat, skb);
+		ni[ECM_DB_OBJ_DIR_TO_NAT] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_nat_dev, efeici.to_nat_mac_lookup_ip_addr, efeici.from_nat_mac_lookup_ip_addr, to_nat_list, to_nat_list_first, dest_node_addr_nat, skb);
 
 		ecm_db_connection_interfaces_deref(to_nat_list, to_nat_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_TO_NAT]) {
@@ -1110,6 +1110,15 @@ done:
 			prevalent_pr.return_qos_tag = aci_pr.return_qos_tag;
 			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_QOS_TAG;
 		}
+
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+		/*
+		 * HLOS TID override mode
+		 */
+		if (aci_pr.process_actions & ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID) {
+			prevalent_pr.process_actions |= ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID;
+		}
+#endif
 
 #if defined ECM_CLASSIFIER_DSCP_ENABLE || defined ECM_CLASSIFIER_EMESH_ENABLE
 #ifdef ECM_CLASSIFIER_DSCP_IGS

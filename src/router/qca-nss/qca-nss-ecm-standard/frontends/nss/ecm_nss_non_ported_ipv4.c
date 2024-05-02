@@ -1831,7 +1831,6 @@ struct ecm_front_end_connection_instance *ecm_nss_non_ported_ipv4_connection_ins
 
 	return feci;
 }
-EXPORT_SYMBOL(ecm_nss_non_ported_ipv4_connection_instance_alloc);
 
 /*
  * ecm_nss_non_ported_ipv4_debugfs_init()

@@ -1,6 +1,8 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -15,6 +17,17 @@
  */
 
 #ifdef ECM_MULTICAST_ENABLE
+/*
+ * ecm_db_multicast_iface_list_info
+ * 	The structure contains info of multicast dest_ifindex and
+ * 	src_ifindex information.
+ */
+struct ecm_db_multicast_iface_list_info {
+	uint8_t dest_ifindex[ECM_DB_MULTICAST_IF_MAX];
+	uint8_t dest_dev_count;
+	uint8_t src_ifindex;
+};
+
 struct ecm_db_multicast_tuple_instance *
 ecm_db_multicast_tuple_instance_alloc(ip_addr_t origin,
 				      ip_addr_t group,
@@ -70,4 +83,5 @@ struct vlan_hdr ecm_db_multicast_tuple_get_ovs_ingress_vlan(struct ecm_db_multic
 #endif
 #endif
 void ecm_db_multicast_connection_to_interfaces_leave(struct ecm_db_connection_instance *ci, struct ecm_multicast_if_update *mc_update);
+struct ecm_db_multicast_iface_list_info ecm_db_multicast_netdevs_get_index(struct ecm_db_connection_instance *ci);
 #endif

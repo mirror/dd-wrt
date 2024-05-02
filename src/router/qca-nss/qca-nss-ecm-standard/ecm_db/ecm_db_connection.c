@@ -446,9 +446,7 @@ EXPORT_SYMBOL(ecm_db_connection_make_defunct);
  */
 void ecm_db_connection_data_totals_update(struct ecm_db_connection_instance *ci, bool is_from, uint64_t size, uint64_t packets)
 {
-#ifdef ECM_DB_ADVANCED_STATS_ENABLE
 	int32_t i;
-#endif
 
 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
@@ -547,9 +545,7 @@ EXPORT_SYMBOL(ecm_db_connection_data_totals_update);
  */
 void ecm_db_connection_data_totals_update_dropped(struct ecm_db_connection_instance *ci, bool is_from, uint64_t size, uint64_t packets)
 {
-#ifdef ECM_DB_ADVANCED_STATS_ENABLE
 	int32_t i;
-#endif
 
 	DEBUG_CHECK_MAGIC(ci, ECM_DB_CONNECTION_INSTANCE_MAGIC, "%px: magic failed\n", ci);
 
@@ -1543,7 +1539,6 @@ void ecm_db_connection_defunct_all(void)
 }
 EXPORT_SYMBOL(ecm_db_connection_defunct_all);
 
-#ifdef ECM_INTERFACE_OVS_BRIDGE_ENABLE
 /*
  * ecm_db_connection_defunct_by_classifier()
  *	Make defunct based on masked fields
@@ -1710,7 +1705,6 @@ next_ci:
 				ECM_IP_ADDR_TO_OCTAL(dest_addr_mask), dest_port_mask, proto_mask, cnt);
 	}
 }
-#endif
 
 /*
  * ecm_db_connection_defunct_by_port()
@@ -2000,7 +1994,6 @@ struct ecm_db_node_instance *ecm_db_connection_node_get_and_ref(struct ecm_db_co
 }
 EXPORT_SYMBOL(ecm_db_connection_node_get_and_ref);
 
-#ifdef ECM_DB_XREF_ENABLE
 /*
  * ecm_db_connection_mapping_get_and_ref_next()
  *	Return reference to next connection in the mapping chain in the specified direction.
@@ -2042,7 +2035,6 @@ struct ecm_db_connection_instance *ecm_db_connection_iface_get_and_ref_next(stru
 	return nci;
 }
 EXPORT_SYMBOL(ecm_db_connection_iface_get_and_ref_next);
-#endif
 
 /*
  * ecm_db_connection_mapping_get_and_ref()

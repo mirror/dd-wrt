@@ -28,8 +28,13 @@
  * ecm_wifi_plugin_fill_fse_wlan_info()
  *	Fill the FSE info for wlan FSE rule add / delete.
  */
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+static inline void ecm_wifi_plugin_fill_fse_wlan_info(struct ecm_front_end_fse_info *fse_info,
+						      struct ath_fse_flow_info *fse_wlan_info)
+#else
 static inline void ecm_wifi_plugin_fill_fse_wlan_info(struct ecm_front_end_fse_info *fse_info,
 						      struct qca_fse_flow_info *fse_wlan_info)
+#endif
 {
 	/*
 	 * Fill the wlan tuple info.
@@ -55,13 +60,21 @@ static inline void ecm_wifi_plugin_fill_fse_wlan_info(struct ecm_front_end_fse_i
  */
 bool ecm_wifi_plugin_fse_create_rule(struct ecm_front_end_fse_info *fse_info)
 {
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	struct ath_fse_flow_info fse_wlan_info = {0};
+#else
 	struct qca_fse_flow_info fse_wlan_info = {0};
-
+#endif
 	/*
 	 * Fill the wlan tuple info and call wlan callback.
 	 */
 	ecm_wifi_plugin_fill_fse_wlan_info(fse_info, &fse_wlan_info);
+
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	return ath_fse_add_rule(&fse_wlan_info);
+#else
 	return qca_fse_add_rule(&fse_wlan_info);
+#endif
 }
 
 /*
@@ -70,13 +83,21 @@ bool ecm_wifi_plugin_fse_create_rule(struct ecm_front_end_fse_info *fse_info)
  */
 bool ecm_wifi_plugin_fse_destroy_rule(struct ecm_front_end_fse_info *fse_info)
 {
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	struct ath_fse_flow_info fse_wlan_info = {0};
+#else
 	struct qca_fse_flow_info fse_wlan_info = {0};
-
+#endif
 	/*
 	 * Fill the wlan tuple info and call wlan callback.
 	 */
 	ecm_wifi_plugin_fill_fse_wlan_info(fse_info, &fse_wlan_info);
+
+#ifdef ECM_WIFI_PLUGIN_OPEN_PROFILE_ENABLE
+	return ath_fse_delete_rule(&fse_wlan_info);
+#else
 	return qca_fse_delete_rule(&fse_wlan_info);
+#endif
 }
 
 /*

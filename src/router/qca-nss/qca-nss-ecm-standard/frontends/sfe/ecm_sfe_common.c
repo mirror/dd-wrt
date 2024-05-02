@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -406,10 +405,10 @@ bool ecm_sfe_ipv4_is_conn_limit_reached(void)
 		return false;
 	}
 
-	if (ecm_sfe_ipv4_accelerated_count == sfe_ipv4_max_conn_count()) {
-		DEBUG_INFO("ECM DB connection limit %d reached, for SFE frontend \
-			   new flows cannot be accelerated.\n",
-			   ecm_sfe_ipv4_accelerated_count);
+	if ((ecm_sfe_ipv4_pending_accel_count + ecm_sfe_ipv4_accelerated_count) >= sfe_ipv4_max_conn_count()) {
+		DEBUG_INFO("ECM DB connection limit reached with accelerated count:%d, pending accel count:%d, for SFE frontend \
+				new flows cannot be accelerated.\n",
+				ecm_sfe_ipv4_accelerated_count, ecm_sfe_ipv4_pending_accel_count);
 		return true;
 	}
 
@@ -432,10 +431,10 @@ bool ecm_sfe_ipv6_is_conn_limit_reached(void)
 		return false;
 	}
 
-	if (ecm_sfe_ipv6_accelerated_count == sfe_ipv6_max_conn_count()) {
-		DEBUG_INFO("ECM DB connection limit %d reached, for SFE frontend \
-			   new flows cannot be accelerated.\n",
-			   ecm_sfe_ipv6_accelerated_count);
+	if ((ecm_sfe_ipv6_pending_accel_count + ecm_sfe_ipv6_accelerated_count) >= sfe_ipv6_max_conn_count()) {
+		DEBUG_INFO("ECM DB connection limit reached with accelerated count:%d, pending accel count:%d, for SFE frontend \
+				new flows cannot be accelerated.\n",
+				ecm_sfe_ipv6_accelerated_count, ecm_sfe_ipv6_pending_accel_count);
 		return true;
 	}
 
@@ -783,13 +782,13 @@ void ecm_sfe_common_update_rule(struct ecm_front_end_connection_instance *feci, 
 		mark.flow_mark = ct->mark;
 		mark.return_mark = ct->mark;
 
-		DEBUG_TRACE("%px: Update the mark value for the SFE connection\n", feci);
+		DEBUG_INFO("%px: Update the mark value for the SFE connection\n", feci);
 
 		if (feci->ip_version == 4) {
 			ECM_IP_ADDR_TO_NIN4_ADDR(mark.src_ip[0], src_addr);
 			ECM_IP_ADDR_TO_NIN4_ADDR(mark.dest_ip[0], dest_addr);
 			sfe_ipv4_mark_rule_update(&mark);
-			DEBUG_TRACE("%px: src_ip: %pI4 dest_ip: %pI4 src_port: %d dest_port: %d protocol: %d\n",
+			DEBUG_INFO("%px: src_ip: %pI4 dest_ip: %pI4 src_port: %d dest_port: %d protocol: %d\n",
 				    feci, &mark.src_ip[0], &mark.dest_ip[0],
 				    ntohs(mark.src_port), ntohs(mark.dest_port), mark.protocol);
 		} else {
@@ -827,16 +826,17 @@ void ecm_sfe_common_update_rule(struct ecm_front_end_connection_instance *feci, 
 		int assignment_count;
 		struct ecm_classifier_instance *assignments[ECM_CLASSIFIER_TYPES];
 
+		DEBUG_INFO("control reached to deprio in update rule \n");
 		memset(&mark, 0, sizeof(mark));
 		mark.type = SFE_CONNECTION_MARK_TYPE_SAWFMARK;
 		mark.flow_mark = msg->flow_mark;
 		mark.flow_svc_id = msg->flow_service_class_id;
-		if (SFE_GET_SAWF_TAG(mark.flow_mark) == SFE_SAWF_VALID_TAG) {
+		if (SFE_GET_SAWF_TAG(mark.flow_mark) == SFE_SAWF_VALID_TAG || (msg->flags & ECM_FRONT_END_DEPRIO_FLOW)) {
 			mark.flags |= SFE_SAWF_MARK_FLOW_VALID;
 		}
 		mark.return_mark = msg->return_mark;
 		mark.return_svc_id = msg->return_service_class_id;
-		if (SFE_GET_SAWF_TAG(mark.return_mark) == SFE_SAWF_VALID_TAG) {
+		if (SFE_GET_SAWF_TAG(mark.return_mark) == SFE_SAWF_VALID_TAG || (msg->flags & ECM_FRONT_END_DEPRIO_RETURN)) {
 			mark.flags |= SFE_SAWF_MARK_RETURN_VALID;
 		}
 		mark.protocol = msg->protocol;

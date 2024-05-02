@@ -335,7 +335,7 @@ EXPORT_SYMBOL(ecm_conntrack_ipv4_event);
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 static int ecm_conntrack_event(struct notifier_block *this, unsigned long events, void *ptr)
 #else
-static int ecm_conntrack_event(unsigned int events, const struct nf_ct_event *item)
+static int ecm_conntrack_event(unsigned int events, struct nf_ct_event *item)
 #endif
 {
 #ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
@@ -401,11 +401,7 @@ static struct notifier_block ecm_conntrack_notifier = {
  *	Netfilter conntrack event system to monitor connection tracking changes
  */
 static struct nf_ct_event_notifier ecm_conntrack_notifier = {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 	.fcn	= ecm_conntrack_event,
-#else
-	.ct_event	= ecm_conntrack_event,
-#endif
 };
 #endif
 #endif
@@ -444,16 +440,12 @@ int ecm_conntrack_notifier_init(struct dentry *dentry)
 	/*
 	 * Eventing subsystem is available so we register a notifier hook to get fast notifications of expired connections
 	 */
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-   result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
+	result = nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
 	if (result < 0) {
 		DEBUG_ERROR("Can't register nf notifier hook.\n");
 		debugfs_remove_recursive(ecm_conntrack_notifier_dentry);
 		return result;
 	}
-#else
-   nf_conntrack_register_notifier(&init_net, &ecm_conntrack_notifier);
-#endif
 
 	/*
 	 * Hold netns reference to keep the basic conntrack alive and
@@ -495,16 +487,7 @@ void ecm_conntrack_notifier_exit(void)
 #ifdef ECM_IPV6_ENABLE
 	nf_ct_netns_put(&init_net, NFPROTO_IPV6);
 #endif
-#endif
-
-#ifdef CONFIG_NF_CONNTRACK_CHAIN_EVENTS
 	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
-#else
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
-	nf_conntrack_unregister_notifier(&init_net, &ecm_conntrack_notifier);
-#else
-	nf_conntrack_unregister_notifier(&init_net);
-#endif
 #endif
 	/*
 	 * Remove the debugfs files recursively.

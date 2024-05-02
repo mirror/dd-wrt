@@ -45,9 +45,12 @@
  * With feature_flags_support parameter enabled, registrant can provide
  * additional feature requests (like mirroring) to ECM.
  * It is disabled by default.
+ * 0 : no advance features supported.
+ * 1 : PPE advance features like mirror, policer, ACL.
+ * 2 : Egress interface based ACL processing.
  */
-bool feature_flags_support = false;
-module_param(feature_flags_support, bool, S_IRUGO);
+int feature_flags_support;
+module_param(feature_flags_support, int, S_IRUGO);
 MODULE_PARM_DESC(feature_flags_support, "Enable feature flags support");
 
 /*
@@ -168,6 +171,40 @@ ecm_pcc_test_registrant_deref(struct ecm_classifier_pcc_registrant *r)
 }
 
 /*
+ * __ecm_pcc_test_rule_find_on_egress_dev()
+ *	Find rule for egress dev.
+ *	Note: Caller has to take and release lock on this API.
+ */
+static struct
+ecm_pcc_test_rule *__ecm_pcc_test_rule_find_on_egress_dev(struct net_device *in_dev)
+{
+	struct ecm_pcc_test_rule *rule = NULL;
+
+	list_for_each_entry(rule, &ecm_pcc_test_rules, list) {
+		/*
+		 * Do not process if egress processing based on ACL is not set
+		 * for this rule.
+		 */
+		if (!(rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV))
+			continue;
+
+		/*
+		 * Do not process if there is no valid flow_ap_index.
+		 */
+		if (!rule->ap_info.flow_ap_index)
+			continue;
+
+		/*
+		 * Match the dev with the rule egress dev.
+		 */
+		if (!strcmp(in_dev->name, rule->mirror_info.tuple_mirror_dev))
+			return rule;
+	}
+
+	return NULL;
+}
+
+/*
  * __ecm_pcc_test_rule_find()
  *	Return matching rule
  */
@@ -183,6 +220,9 @@ ecm_pcc_test_rule *__ecm_pcc_test_rule_find(unsigned int proto,
 	struct ecm_pcc_test_rule *rule = NULL;
 
 	list_for_each_entry(rule , &ecm_pcc_test_rules, list) {
+		if (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV)
+			continue;
+
 		if (rule->proto != proto)
 			continue;
 
@@ -223,8 +263,8 @@ try_reverse:
  */
 static void ecm_pcc_test_fill_ap_info(struct ecm_pcc_test_rule *rule, struct ecm_classifier_pcc_info *cinfo)
 {
-	cinfo->ap_info.flow_ap_index = rule->ap_info.flow_ap_index;
-	cinfo->ap_info.return_ap_index = rule->ap_info.return_ap_index;
+	cinfo->output_params.ap_info.flow_ap_index = rule->ap_info.flow_ap_index;
+	cinfo->output_params.ap_info.return_ap_index = rule->ap_info.return_ap_index;
 }
 
 /*
@@ -264,14 +304,59 @@ static int ecm_pcc_test_fill_mirror_info(struct ecm_pcc_test_rule *rule,
 	 * Pass mirror netdevices of both direction to ECM.
 	 */
 	if (!is_reverse) {
-		cinfo->mirror.tuple_mirror_dev = tuple_mirror_netdev;
-		cinfo->mirror.tuple_ret_mirror_dev = tuple_ret_mirror_netdev;
+		cinfo->output_params.mirror.tuple_mirror_dev = tuple_mirror_netdev;
+		cinfo->output_params.mirror.tuple_ret_mirror_dev = tuple_ret_mirror_netdev;
 	} else {
-		cinfo->mirror.tuple_mirror_dev = tuple_ret_mirror_netdev;
-		cinfo->mirror.tuple_ret_mirror_dev = tuple_mirror_netdev;
+		cinfo->output_params.mirror.tuple_mirror_dev = tuple_ret_mirror_netdev;
+		cinfo->output_params.mirror.tuple_ret_mirror_dev = tuple_mirror_netdev;
 	}
 
 	return 0;
+}
+
+/*
+ * ecm_pcc_test_get_accel_info_egress_acl()
+ *	Invoked by the ECM to query if the given connection may be accelerated
+ *	and to get the set of features to be enabled on it.
+ */
+static ecm_classifier_pcc_result_t
+ecm_pcc_test_get_accel_info_egress_acl(struct ecm_classifier_pcc_registrant *r,
+				struct ecm_classifier_pcc_info *cinfo)
+{
+	struct ecm_pcc_test_rule *fwd_rule;
+	struct ecm_pcc_test_rule *rev_rule;
+
+	if (!cinfo) {
+		pr_err("Invalid input parameter\n");
+		return ECM_CLASSIFIER_PCC_RESULT_NOT_YET;
+	}
+
+	/*
+	 * Have a bi-directional lookup in case of egress dev based processing, to get the
+	 * corresponding ACL indexes.
+	 */
+	spin_lock_bh(&ecm_pcc_test_rules_lock);
+	fwd_rule = __ecm_pcc_test_rule_find_on_egress_dev(cinfo->input_params.dev_info.out_dev);
+	rev_rule = __ecm_pcc_test_rule_find_on_egress_dev(cinfo->input_params.dev_info.in_dev);
+
+	if (!fwd_rule && !rev_rule) {
+		spin_unlock_bh(&ecm_pcc_test_rules_lock);
+		pr_debug("Rule not found\n");
+		return ECM_CLASSIFIER_PCC_RESULT_PERMITTED;
+	}
+
+	if (fwd_rule) {
+		cinfo->output_params.ap_info.flow_ap_index = fwd_rule->ap_info.flow_ap_index;
+	}
+
+	if (rev_rule) {
+		cinfo->output_params.ap_info.return_ap_index = rev_rule->ap_info.flow_ap_index;
+	}
+
+	cinfo->feature_flags |= ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV;
+	spin_unlock_bh(&ecm_pcc_test_rules_lock);
+
+	return ECM_CLASSIFIER_PCC_RESULT_PERMITTED;
 }
 
 /*
@@ -305,7 +390,15 @@ ecm_pcc_test_get_accel_info_v4(struct ecm_classifier_pcc_registrant *r,
 			&src_addr, &dest_addr,
 			src_port, dest_port, &is_reverse);
 	if (!rule) {
+		/*
+		 * This case is for ACL processing based on egress dev
+		 * of a flow.
+		 */
 		spin_unlock_bh(&ecm_pcc_test_rules_lock);
+		if (feature_flags_support == 2) {
+			return ecm_pcc_test_get_accel_info_egress_acl(r, cinfo);
+		}
+
 		pr_debug("Rule not found\n");
 		return ECM_CLASSIFIER_PCC_RESULT_NOT_YET;
 	}
@@ -362,6 +455,15 @@ ecm_pcc_test_get_accel_info_v6(struct ecm_classifier_pcc_registrant *r,
 			src_port, dest_port, &is_reverse);
 	if (!rule) {
 		spin_unlock_bh(&ecm_pcc_test_rules_lock);
+
+		/*
+		 * This case is for ACL processing based on egress dev
+		 * of a flow.
+		 */
+		if (feature_flags_support == 2) {
+			return ecm_pcc_test_get_accel_info_egress_acl(r, cinfo);
+		}
+
 		return ECM_CLASSIFIER_PCC_RESULT_NOT_YET;
 	}
 	accel = rule->accel;
@@ -587,15 +689,28 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 {
 	unsigned int ipv, o_feature_flags;
 	struct ecm_pcc_test_rule *rule;
+	struct net_device *tuple_dev;
 	ecm_classifier_pcc_result_t oaccel;
 
+	tuple_dev = dev_get_by_name(&init_net, tuple_mirror_dev);
+	if (!tuple_dev && feature_flags == ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV)
+		return 0;
+
 	spin_lock_bh(&ecm_pcc_test_rules_lock);
-	rule = __ecm_pcc_test_rule_find(proto, src_mac, dest_mac,
-			src_addr, dest_addr, src_port, dest_port, NULL);
+	if (feature_flags == ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) {
+		rule = __ecm_pcc_test_rule_find_on_egress_dev(tuple_dev);
+	} else {
+		rule = __ecm_pcc_test_rule_find(proto, src_mac, dest_mac,
+				src_addr, dest_addr, src_port, dest_port, NULL);
+	}
+
 	if (!rule) {
 		spin_unlock_bh(&ecm_pcc_test_rules_lock);
+		dev_put(tuple_dev);
+
 		return 0;
 	}
+
 	ipv = rule->ipv;
 	oaccel = rule->accel;
 	o_feature_flags = rule->feature_flags;
@@ -610,6 +725,18 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 
 	if (feature_flags_support) {
 		/*
+		 * for egress dev process support, decel based on egress dev and not on 5 tuple rule.
+		 */
+		if (feature_flags_support == 2) {
+			if (o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) {
+				if (flow_ap_index && tuple_dev)
+					ecm_classifier_pcc_decel_by_dev(tuple_dev);
+
+				goto end;
+			}
+		}
+
+		/*
 		 * To have things simple, for now the per field check on the old
 		 * and new rule to figure out whether the rule has actually changed
 		 * or not is being avoided.
@@ -621,18 +748,18 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 			(feature_flags & ECM_CLASSIFIER_PCC_FEATURE_MIRROR)) {
 			ecm_pcc_test_decel(proto, src_mac, dest_mac,
 					src_addr, dest_addr, src_port, dest_port, ipv);
-			return 1;
+			goto end;
 		}
 
 		if ((o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (o_feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
 			ecm_pcc_test_decel(proto, src_mac, dest_mac,
 					src_addr, dest_addr, src_port, dest_port, ipv);
-			return 1;
+			goto end;
 		}
 	}
 
 	if (oaccel == accel)
-		return 1;
+		goto end;
 
 	if (accel == ECM_CLASSIFIER_PCC_RESULT_DENIED)
 		ecm_pcc_test_deny_accel(proto, src_mac, dest_mac,
@@ -640,6 +767,9 @@ static unsigned int ecm_pcc_test_update_rule(char *name,
 	else
 		ecm_pcc_test_permit_accel(proto, src_mac, dest_mac,
 			src_addr, dest_addr, src_port, dest_port, ipv);
+
+end:
+	dev_put(tuple_dev);
 
 	return 1;
 }
@@ -655,18 +785,33 @@ static unsigned int ecm_pcc_test_delete_rule(char *name,
 				uint8_t *src_mac, uint8_t *dest_mac,
 				struct in6_addr *src_addr,
 				struct in6_addr *dest_addr,
-				int src_port, int dest_port)
+				int src_port, int dest_port,
+				char *tuple_mirror_dev, char *tuple_return_mirror_dev,
+				int flow_ap_index, int return_ap_index, unsigned int feature_flags)
 {
-	unsigned int ipv, feature_flags;
+	unsigned int ipv;
 	struct ecm_pcc_test_rule *rule;
+	struct net_device *tuple_dev;
+
+	tuple_dev = dev_get_by_name(&init_net, tuple_mirror_dev);
+	if (!tuple_dev && feature_flags == ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV)
+		return 0;
 
 	spin_lock_bh(&ecm_pcc_test_rules_lock);
-	rule = __ecm_pcc_test_rule_find(proto, src_mac, dest_mac,
-			src_addr, dest_addr, src_port, dest_port, NULL);
+	if (feature_flags == ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) {
+		rule = __ecm_pcc_test_rule_find_on_egress_dev(tuple_dev);
+	} else {
+		rule = __ecm_pcc_test_rule_find(proto, src_mac, dest_mac,
+				src_addr, dest_addr, src_port, dest_port, NULL);
+	}
+
 	if (!rule) {
 		spin_unlock_bh(&ecm_pcc_test_rules_lock);
+		dev_put(tuple_dev);
+
 		return 0;
 	}
+
 	ipv = rule->ipv;
 	accel = rule->accel;
 	feature_flags = rule->feature_flags;
@@ -676,6 +821,18 @@ static unsigned int ecm_pcc_test_delete_rule(char *name,
 
 	if (feature_flags_support) {
 		/*
+		 * for egress dev based processing support, decel based on egress dev and not on 5 tuple rule.
+		 */
+		if (feature_flags_support == 2) {
+			if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) {
+				if (flow_ap_index && tuple_dev)
+					ecm_classifier_pcc_decel_by_dev(tuple_dev);
+
+				goto end;
+			}
+		}
+
+		/*
 		 * If mirror flag is set in the rule, then decelerate the
 		 * existing connection, since the rule is getting deleted.
 		 * The new acceleration decision for this flow should be
@@ -684,19 +841,21 @@ static unsigned int ecm_pcc_test_delete_rule(char *name,
 		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_MIRROR) {
 			ecm_pcc_test_decel(proto, src_mac, dest_mac,
 					src_addr, dest_addr, src_port, dest_port, ipv);
-			return 1;
+			goto end;
 		}
 
 		if ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER))  {
 			ecm_pcc_test_decel(proto, src_mac, dest_mac,
 					src_addr, dest_addr, src_port, dest_port, ipv);
-			return 1;
+			goto end;
 		}
 	}
 
 	if (accel == ECM_CLASSIFIER_PCC_RESULT_DENIED)
 		ecm_pcc_test_permit_accel(proto, src_mac, dest_mac,
 			src_addr, dest_addr, src_port, dest_port, ipv);
+end:
+	dev_put(tuple_dev);
 
 	return 1;
 }
@@ -757,7 +916,25 @@ static unsigned int ecm_pcc_test_add_rule(char *name,
 		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) {
 			return 1;
 		}
+
 		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER) {
+			return 1;
+		}
+
+		/*
+		 * If egress based processing is enabled on egress dev, decel connections on the dev
+		 * while rule addition so that new connections on that dev starts processing the
+		 * packets.
+		 */
+		if (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) {
+			struct net_device *dev = dev_get_by_name(&init_net, tuple_mirror_dev);
+			if (dev) {
+				if (flow_ap_index)
+					ecm_classifier_pcc_decel_by_dev(dev);
+
+				dev_put(dev);
+			}
+
 			return 1;
 		}
 	}
@@ -807,6 +984,14 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	 * e.g.:
 	 * echo "my_rule/1/2/6/00:12:12:34:56:78/192.168.1.33/1234/00:12:12:34:56:22/10.10.10.10/80/1/mirror.0/mirror.1/flow_ap_index/return_ap_index" > /sys/kernel/debug/ecm_pcc_test/rule
 	 * cat /sys/kernel/debug/ecm_pcc_test/rule (shows all rules)
+	 *
+	 * NOTE : feature_flags supported are,
+	 *	0x1 : Mirroring support
+	 *	0x2 : ACL based processing support
+	 *	0x4 : Policer support
+	 *	0x8 : ACL processing support on specific egress device (in this case only flow_ap_index is considered given for egress dev mirror.0
+	 *		in above sample command - all the other 5 tuple parameters, mirror.1 etc are ignored)
+	 *
 	 * In the above rule, flow_ap_index and return_ap_index are either both represented as ACL indexes or Policer indexes based on the usecase.
 	 */
 	rule_buf = kzalloc(count + 100, GFP_ATOMIC);
@@ -858,6 +1043,10 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 		return -EINVAL;
 	}
 
+	if (sscanf(fields[10], "%u", &feature_flags) != 1) {
+		goto sscanf_read_error;
+	}
+
 	if (sscanf(fields[3], "%u", &proto) != 1)
 		goto sscanf_read_error;
 
@@ -868,12 +1057,17 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 	if (sscanf(fields[9], "%d", &dest_port) != 1)
 		goto sscanf_read_error;
 
-	if (sscanf(fields[10], "%u", &feature_flags) != 1) {
-		goto sscanf_read_error;
-	}
-
-	if ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) && (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
-		pr_info("ACL and POLICER both are enabled\n");
+	/*
+	 * Check if multiple flags are given in the rule.
+	 * ACL + POLICER -> NO
+	 * ACL + ACL_EGRESS_DEV -> NO
+	 * POLICER + ACL_EGRESS_DEV -> NO
+	 */
+	if (((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) && ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)
+		|| (feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV)))
+		|| ((feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV) &&
+			(feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER))) {
+		pr_info("Multiple feature flags are enabled 0x%x\n", feature_flags);
 		kfree(rule_buf);
 		return -EINVAL;
 	}
@@ -947,7 +1141,7 @@ static ssize_t ecm_pcc_test_rule_write(struct file *file,
 		pr_info("Delete\n");
 		if (!ecm_pcc_test_delete_rule(name, accel, proto, src_mac,
 						dest_mac, &src_addr, &dest_addr,
-						src_port, dest_port))
+						src_port, dest_port, tuple_mirror_dev, tuple_ret_mirror_dev, flow_ap_index, return_ap_index, feature_flags))
 			return -EINVAL;
 
 	} else if (oper == 1) {
@@ -1028,7 +1222,8 @@ static int ecm_pcc_test_rule_seq_show(struct seq_file *m, void *v)
 			}
 		}
 
-		if ((rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)) {
+		if ((rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL) || (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_POLICER)
+					|| (rule->feature_flags & ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV)) {
 			if (rule->ap_info.flow_ap_index) {
 				seq_printf(m, "flow_ap_index: %d\n", rule->ap_info.flow_ap_index);
 			}

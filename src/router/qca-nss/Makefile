@@ -15,7 +15,7 @@ IPSECMGR_DIR:=v1.0
 IPSECMGR_KLIPS:=
 NSS_CRYPTO_DIR:=v1.0
 
-KERNEL_FLAGS = "-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports"
+KERNEL_FLAGS = "-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs"
 
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) CONFIG_SUPPORT_MLD=y

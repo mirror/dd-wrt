@@ -1,6 +1,8 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -1157,5 +1159,58 @@ void ecm_db_multicast_connection_to_interfaces_leave(struct ecm_db_connection_in
 		ecm_db_multicast_connection_to_interfaces_clear_at_index(ci, i);
 		mc_update->if_leave_cnt--;
 	}
+}
+
+/*
+ * ecm_db_multicast_netdevs_get_index()
+ * 	Gets the list of interface index  of source and destination netdevices for the mulicast flow
+ */
+struct ecm_db_multicast_iface_list_info ecm_db_multicast_netdevs_get_index(struct ecm_db_connection_instance *ci)
+{
+	int32_t to_iface_id, from_iface_id, from_ifaces_first, ret, *to_ifaces_first, *to_ii_first;
+	struct ecm_db_iface_instance *ii_temp, *ii, **ifaces, *ii_single;
+	struct ecm_db_iface_instance *to_ifaces, *from_ifaces[ECM_DB_IFACE_HEIRARCHY_MAX];
+	uint32_t vif;
+	struct ecm_db_multicast_iface_list_info mc_ifindex =  {0};
+
+	ret = ecm_db_multicast_connection_to_interfaces_get_and_ref_all(ci, &to_ifaces, &to_ifaces_first);
+	if (!ret) {
+		DEBUG_TRACE("%px: Failed to get interfaces list\n", ci);
+		return mc_ifindex;
+	}
+
+	for (vif = 0; vif < ECM_DB_MULTICAST_IF_MAX; vif++) {
+		ii_temp = ecm_db_multicast_if_heirarchy_get(to_ifaces, vif);
+		to_ii_first = ecm_db_multicast_if_first_get_at_index(to_ifaces_first, vif);
+
+		if (*to_ii_first < ECM_DB_IFACE_HEIRARCHY_MAX) {
+			ii_single = ecm_db_multicast_if_instance_get_at_index(ii_temp, *to_ii_first);
+			ifaces = (struct ecm_db_iface_instance **)ii_single;
+			ii = *ifaces;
+			to_iface_id = ecm_db_iface_interface_identifier_get(ii);
+			DEBUG_TRACE("%x: Destination interface[%d] index: %d\n", ci->serial, mc_ifindex.dest_dev_count, to_iface_id);
+			mc_ifindex.dest_ifindex[mc_ifindex.dest_dev_count++] = to_iface_id;
+		}
+	}
+	ecm_db_multicast_connection_to_interfaces_deref_all(to_ifaces, to_ifaces_first);
+
+	if (!mc_ifindex.dest_dev_count) {
+		DEBUG_WARN("%px: Failed to get destination net devices\n", ci);
+		return mc_ifindex;
+	}
+
+	from_ifaces_first = ecm_db_connection_interfaces_get_and_ref(ci, from_ifaces, ECM_DB_OBJ_DIR_FROM);
+
+	if (from_ifaces_first != ECM_DB_IFACE_HEIRARCHY_MAX) {
+		from_iface_id = ecm_db_iface_interface_identifier_get(from_ifaces[from_ifaces_first]);
+		DEBUG_TRACE("%x: Source interface index: %d\n", ci->serial, from_iface_id);
+		mc_ifindex.src_ifindex = from_iface_id;
+		ecm_db_connection_interfaces_deref(from_ifaces, from_ifaces_first);
+		return mc_ifindex;
+	}
+
+	DEBUG_WARN("%px: Failed to get source net device\n", ci);
+	memset(&mc_ifindex, 0, sizeof(mc_ifindex));
+	return mc_ifindex;
 }
 #endif

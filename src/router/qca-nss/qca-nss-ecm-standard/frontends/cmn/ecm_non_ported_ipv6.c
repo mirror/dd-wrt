@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -421,7 +421,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, from_list, from_list_first, ECM_DB_OBJ_DIR_FROM);
 
 		DEBUG_TRACE("%px: Create source node\n", nci);
-		ni[ECM_DB_OBJ_DIR_FROM] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_dev, efeici.from_mac_lookup_ip_addr, from_list, from_list_first, src_node_addr, skb);
+		ni[ECM_DB_OBJ_DIR_FROM] = ecm_ipv6_node_establish_and_ref(feci, efeici.from_dev, efeici.from_mac_lookup_ip_addr, efeici.to_nat_mac_lookup_ip_addr, from_list, from_list_first, src_node_addr, skb);
 		ecm_db_connection_interfaces_deref(from_list, from_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_FROM]) {
 			DEBUG_WARN("Failed to establish source node\n");
@@ -449,7 +449,7 @@ feci_alloc_done:
 		ecm_db_connection_interfaces_reset(nci, to_list, to_list_first, ECM_DB_OBJ_DIR_TO);
 
 		DEBUG_TRACE("%px: Create dest node\n", nci);
-		ni[ECM_DB_OBJ_DIR_TO] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_dev, efeici.to_mac_lookup_ip_addr, to_list, to_list_first, dest_node_addr, skb);
+		ni[ECM_DB_OBJ_DIR_TO] = ecm_ipv6_node_establish_and_ref(feci, efeici.to_dev, efeici.to_mac_lookup_ip_addr, efeici.from_nat_mac_lookup_ip_addr, to_list, to_list_first, dest_node_addr, skb);
 		ecm_db_connection_interfaces_deref(to_list, to_list_first);
 		if (!ni[ECM_DB_OBJ_DIR_TO]) {
 			DEBUG_WARN("Failed to establish dest node\n");

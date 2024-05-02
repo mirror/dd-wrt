@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1583,11 +1583,6 @@ static bool ecm_nss_multicast_ipv6_connection_decelerate_msg_send(struct ecm_fro
 			feci, feci->ci,
 			ECM_IP_ADDR_TO_OCTAL(src_ip), nirdm->tuple.flow_ident,
 			ECM_IP_ADDR_TO_OCTAL(dest_ip), nirdm->tuple.return_ident);
-
-	/*
-	 * Right place to free the multicast destination interfaces list.
-	 */
-	ecm_db_multicast_connection_to_interfaces_clear(feci->ci);
 
 	/*
 	 * Take a ref to the feci->ci so that it will persist until we get a response from the NSS.

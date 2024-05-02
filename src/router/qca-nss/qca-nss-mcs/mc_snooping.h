@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2012, 2015, 2017, 2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -33,6 +35,8 @@ int mc_find_acl_rule(struct mc_acl_rule_table *acl, __be32 in4, void *in6, __u8 
 int mc_group_hash(__be32 mdb_salt, __be32 group);
 
 struct mc_mdb_entry *mc_mdb_find(struct hlist_head *head, struct mc_ip *group);
+
+int mc_mdb_destroy_by_port(struct mc_struct *mc, struct mc_ip *mc_group, __u8 *mac, u_int32_t ifindex);
 
 int mc_attach(struct net_device *dev);
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2015-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -575,6 +575,55 @@ static void mc_mdb_rcu_free(struct rcu_head *head)
 	kfree(mdb);
 }
 
+/* mc_mdb_destroy_by_port
+ *	destroy the multicast database entry by the port
+ */
+int mc_mdb_destroy_by_port(struct mc_struct *mc, struct mc_ip *mc_group, __u8 *mac, u_int32_t ifindex)
+{
+	int found = 0;
+	struct mc_mdb_entry *mdb=NULL;
+	struct mc_port_group *pg;
+	struct mc_fdb_group *fg;
+	struct hlist_head *head;
+	struct hlist_node *h;
+
+	if (mc) {
+		head=&mc->hash[mc_group_hash(mc->salt, mc_group->u.ip4)];
+		MC_PRINT("%s(%d):head=%p\n", __func__, __LINE__, head);
+		if(!hlist_empty(head)) {
+			mdb = mc_mdb_find(head, mc_group);
+			MC_PRINT("%s(%d):mdb=%p\n", __func__, __LINE__, mdb);
+			if (mdb) {
+				if (mc_group->pro == htons(ETH_P_IP)) {
+					MC_PRINT("%s(%d):mdb group=%pI4(%d), input group=%pI4(%d)\n", __func__, __LINE__,
+						&mdb->group.u.ip4, mdb->group.pro, &mc_group->u.ip4, mc_group->pro);
+				} else {
+					MC_PRINT("%s(%d):mdb group=%pI6(%d), input group=%pI6(%d)\n", __func__, __LINE__,
+						&mdb->group.u.ip6, mdb->group.pro, &mc_group->u.ip6, mc_group->pro);
+				}
+
+				if(!hlist_empty(&mdb->pslist)) {
+					os_hlist_for_each_entry_rcu(pg, h, &mdb->pslist, pslist) {
+						MC_PRINT("%s(%d):current ifindex=%d\n", __func__, __LINE__, ((struct net_device*) pg->port)->ifindex);
+						if (ifindex == ((struct net_device*) pg->port)->ifindex) {
+							if(!hlist_empty(&pg->fslist)) {
+								fg = mc_fdb_group_find(&pg->fslist, mac);
+								if (fg) {
+									mc_fdb_group_destroy(fg);
+									found = 1;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		MC_PRINT("%s(%d):found=%d\n", __func__, __LINE__, found);
+	}
+
+	return (found);
+}
 
 /* mc_mdb_destroy
  *	destroy the mdb
@@ -2807,7 +2856,7 @@ static int mc_dev_unregister(struct mc_struct *mc)
  */
 static int mc_open(struct mc_struct *mc)
 {
-	struct net_bridge *br;
+	unsigned long expired;
 
 	if (!mc->enable) {
 		MC_PRINT(KERN_DEBUG "%s: mc open failed, feature is disabled\n", __func__);
@@ -2829,15 +2878,25 @@ static int mc_open(struct mc_struct *mc)
 		return -EINVAL;
 	}
 	spin_unlock_bh(&g_mcs_lock);
-	br = netdev_priv(mc->dev);
+
+	/*
+	 * Ovs bridge don't have forward_delay, use forward_delay default
+	 * value 15HZ instead
+	 */
+	if (netif_is_bridge_master(mc->dev)) {
+		struct net_bridge *br = netdev_priv(mc->dev);
+		expired = br->forward_delay;
+	} else {
+		expired = 15 * HZ;
+	}
 	mc->ageing_query = jiffies;
 	mc->startup_queries_sent = 0;
 	mc->started = 1;
 
 	/* Start aging timer and query timer now */
-	mod_timer(&mc->qtimer, jiffies + br->forward_delay);
-	mod_timer(&mc->agingtimer, jiffies + br->forward_delay);
-	mod_timer(&mc->rtimer, jiffies + br->forward_delay);
+	mod_timer(&mc->qtimer, jiffies + expired);
+	mod_timer(&mc->agingtimer, jiffies + expired);
+	mod_timer(&mc->rtimer, jiffies + expired);
 
 	return 0;
 }
@@ -3250,7 +3309,6 @@ int mc_attach(struct net_device *dev)
 	mc->ignore_tbit = 0;		/* Allow IPv6 Multicast Groups, that don’t have the T-Bit enabled, to be snooped */
 	mc->multicast_router = 1;	/* Enable router mode */
 	mc->rp.type = MC_RTPORT_DEFAULT;/* If querier exist, forward IGMP/MLD message to the router port, else flood to all ports. */
-
 
 	mc_acl_table_init(mc);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))

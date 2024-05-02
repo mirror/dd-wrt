@@ -123,6 +123,10 @@ typedef enum ecm_classifier_acceleration_modes ecm_classifier_acceleration_mode_
 #define ECM_CLASSIFIER_PROCESS_ACTION_EMESH_SAWF_LEGACY_SCS_TAG	0x00040000	/* Mark the E-MESH SAWF legacy scs tag */
 #endif
 
+#ifdef ECM_CLASSIFIER_MSCS_ENABLE
+#define ECM_CLASSIFIER_PROCESS_ACTION_HLOS_TID_VALID 0x00080000	/* Mark the HLOS TID tag */
+#endif
+
 /*
  * struct ecm_classifier_process_response
  *	Response structure returned by a process call

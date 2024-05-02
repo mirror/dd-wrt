@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015, 2016, 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -35,6 +35,9 @@
 #include <net/addrconf.h>
 #include <net/gre.h>
 #include <net/xfrm.h>
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+#include <net/tcx.h>
+#endif
 #include <linux/hashtable.h>
 #include <net/sch_generic.h>
 #ifdef ECM_FRONT_END_PPE_ENABLE
@@ -535,7 +538,6 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 							     struct nf_conntrack_tuple *reply_tuple,
 							     int ip_version, uint16_t offset)
 {
-#ifdef ECM_INTERFACE_GRE_ENABLE
 	struct net_device *dev;
 	struct gre_base_hdr *greh;
 
@@ -547,12 +549,10 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 		/*
 		 * Case 1: PPTP locally terminated
 		 */
-#ifdef ECM_INTERFACE_PPTP_ENABLE
 		if (ecm_interface_is_pptp(skb, outdev)) {
 			DEBUG_TRACE("%px: PPTP GRE locally terminated - allow acceleration\n", skb);
 			return true;
 		}
-#endif
 
 		/*
 		 * Case 2: PPTP pass through
@@ -680,10 +680,6 @@ bool ecm_front_end_gre_proto_is_accel_allowed(struct net_device *indev,
 	 */
 	DEBUG_TRACE("%px: GRE IPv%d pass through non NAT - allow acceleration\n", skb, ip_version);
 	return true;
-#else
-	DEBUG_TRACE("%px: GRE%d feature is disabled - do not allow acceleration\n", skb, ip_version);
-	return false;
-#endif
 }
 
 #ifdef ECM_CLASSIFIER_DSCP_ENABLE
@@ -1184,7 +1180,7 @@ static struct ctl_table ecm_front_end_sysctl_tbl[] = {
  * ecm_front_end_common_sysctl_register()
  *	Function to register sysctl node during front end init
  */
-void ecm_front_end_common_sysctl_register(void)
+void ecm_front_end_common_sysctl_register()
 {
 	/*
 	 * Register sysctl table.
@@ -1201,7 +1197,7 @@ void ecm_front_end_common_sysctl_register(void)
  * ecm_front_end_common_sysctl_unregister()
  *	Function to unregister sysctl node during front end exit
  */
-void ecm_front_end_common_sysctl_unregister(void)
+void ecm_front_end_common_sysctl_unregister()
 {
 	/*
 	 * Unregister sysctl table.
@@ -1700,11 +1696,7 @@ bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num)
 {
 #if defined(CONFIG_NET_CLS_ACT)
 	struct net_device *dev;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
-	struct mini_Qdisc *entry;
-#else
-	struct bpf_mprog_entry *entry;
-#endif
+	struct mini_Qdisc *miniq;
 
 	dev = dev_get_by_index(&init_net, interface_num);
 	if (!dev) {
@@ -1713,13 +1705,13 @@ bool ecm_front_end_common_intf_ingress_qdisc_check(int32_t interface_num)
 	}
 
 	BUG_ON(!rcu_read_lock_bh_held());
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
-	entry = rcu_dereference_bh(dev->miniq_ingress);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+	miniq = rcu_dereference_bh(dev->miniq_ingress);
 #else
-	entry = rcu_dereference_bh(dev->tcx_ingress);
+	struct bpf_mprog_entry *entry = rcu_dereference_bh(dev->tcx_ingress);
+	miniq = entry ? tcx_entry(entry)->miniq : NULL;
 #endif
-	if (entry) {
+	if (miniq) {
 		DEBUG_INFO("Ingress Qdisc is present for device[%s]\n", dev->name);
 		dev_put(dev);
 		return true;
@@ -1742,11 +1734,7 @@ bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq)
         struct Qdisc *q;
         int i;
 #if defined(CONFIG_NET_CLS_ACT) && defined(CONFIG_NET_EGRESS)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
-	struct mini_Qdisc *entry;
-#else
-	struct bpf_mprog_entry *entry;
-#endif
+	struct mini_Qdisc *miniq;
 #endif
 
 	*is_ppeq = false;
@@ -1777,12 +1765,13 @@ bool ecm_front_end_common_intf_qdisc_check(int32_t interface_num, bool *is_ppeq)
 	}
 
 #if defined(CONFIG_NET_CLS_ACT) && defined(CONFIG_NET_EGRESS)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
-	entry = rcu_dereference_bh(dev->miniq_egress);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
+	miniq = rcu_dereference_bh(dev->miniq_egress);
 #else
-	entry = rcu_dereference_bh(dev->tcx_egress);
+	struct bpf_mprog_entry *entry = rcu_dereference_bh(dev->tcx_egress);
+	miniq = entry ? tcx_entry(entry)->miniq : NULL;
 #endif
-	if (entry) {
+	if (miniq) {
 		DEBUG_INFO("Egress needed\n");
 		dev_put(dev);
 		return true;

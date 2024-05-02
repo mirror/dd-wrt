@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015, 2021, The Linux Foundation.  All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -47,9 +47,10 @@ typedef enum /** @cond */ ecm_classifier_pcc_results /** @endcond */ ecm_classif
  */
 enum ecm_classifier_pcc_feature_flags {
 	ECM_CLASSIFIER_PCC_FEATURE_NONE,
-	ECM_CLASSIFIER_PCC_FEATURE_MIRROR = 0x1,	/**< Set by the registrant if mirroring is needed on the connection. */
-	ECM_CLASSIFIER_PCC_FEATURE_ACL = 0x2,		/**< Set by the registrant if ACL is needed on the connection. */
-	ECM_CLASSIFIER_PCC_FEATURE_POLICER = 0x4,	/**< Set by the registrant if POLICER is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_MIRROR = 0x1,		/**< Set by the registrant if mirroring is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_ACL = 0x2,			/**< Set by the registrant if ACL is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_POLICER = 0x4,		/**< Set by the registrant if POLICER is needed on the connection. */
+	ECM_CLASSIFIER_PCC_FEATURE_ACL_EGRESS_DEV = 0x8,	/**< Set by the registrant if ACL mirroring based on egress dev is needed on the connection. */
 };
 
 /**
@@ -70,12 +71,35 @@ struct ecm_classifier_pcc_mirror_info {
 };
 
 /**
+ * Additional n-tuple information to be passed to PCC clients for rule match.
+ */
+struct ecm_classifier_pcc_dev_info {
+	struct net_device *in_dev;			/**< In netdevice. */
+	struct net_device *out_dev;			/**< Out netdevice. */
+};
+
+/*
+ * Output parameters from PCC clients to PCC classifier.
+ */
+struct ecm_classifier_pcc_registrant_output {
+	struct ecm_classifier_pcc_mirror_info mirror;	/**< Mirror netdevice information to be used for mirroring an offloaded flow. */
+	struct ecm_classifier_pcc_ap_info ap_info;	/**< Policer or ACL ID. */
+};
+
+/*
+ * Input parameters for PCC clients.
+ */
+struct ecm_classifier_pcc_registrant_input {
+	struct ecm_classifier_pcc_dev_info dev_info;	/**< Flow source and destination netdev info. */
+};
+
+/**
  * Feature information related to the connection, returned by registrant's callback.
  */
 struct ecm_classifier_pcc_info {
-	uint32_t feature_flags;				/**< Bitmap of requested features (ecm_classifier_pcc_feature_ids). */
-	struct ecm_classifier_pcc_mirror_info mirror;		/**< Mirror netdevice information to be used for mirroring an offloaded flow. */
-	struct ecm_classifier_pcc_ap_info ap_info;	/**< Policer or ACL ID. */
+	uint32_t feature_flags;						/**< Bitmap of requested features (ecm_classifier_pcc_feature_ids). */
+	struct ecm_classifier_pcc_registrant_input input_params;	/**< Input parameters to the PCC classifier registrants. */
+	struct ecm_classifier_pcc_registrant_output output_params;	/**< Output parameters from the PCC registrancts to classifier. */
 };
 
 struct ecm_classifier_pcc_registrant;
@@ -232,6 +256,16 @@ extern void ecm_classifier_pcc_permit_accel_v4(uint8_t *src_mac, __be32 src_ip, 
  * None.
  */
 extern void ecm_classifier_pcc_deny_accel_v4(uint8_t *src_mac, __be32 src_ip, int src_port, uint8_t *dest_mac, __be32 dest_ip, int dest_port, int protocol);
+
+/**
+ * Decelerates connections on a particular net device.
+ *
+ * @param	dev		The source net device.
+ *
+ * @return
+ * None.
+ */
+extern void ecm_classifier_pcc_decel_by_dev(struct net_device *dev);
 
 /**
  * Decelerates an existing IPv4 ECM connection.
