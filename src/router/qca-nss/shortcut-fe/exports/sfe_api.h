@@ -660,6 +660,19 @@ struct sfe_ipv4_msg {
 };
 
 /**
+ * Structure used to pass stats during netfn flowmgr single ipv4 stats pull
+ */
+struct sfe_ipv4_single_conn_stats {
+	struct net_device *org_dev;		/**< Source netdevice */
+	struct net_device *reply_dev;		/**< Desination netdevice */
+	struct sfe_ipv4_5tuple tuple;		/**< Conn tuple information */
+	u64 rx_packet_count;			/**< Rx packets */
+	u64 rx_byte_count;			/**< Rx bytes */
+	u64 tx_packet_count;			/**< Tx packets */
+	u64 tx_byte_count;			/**< Tx bytes */
+};
+
+/**
  * @}
  */
 
@@ -891,6 +904,19 @@ struct sfe_ipv6_msg {
 };
 
 /**
+ * Structure used to pass stats during netfn flowmgr single ipv6 stats pull
+ */
+struct sfe_ipv6_single_conn_stats {
+	struct net_device *org_dev;		/**< Source netdevice */
+	struct net_device *reply_dev;		/**< Desination netdevice */
+	struct sfe_ipv6_5tuple tuple;		/**< Conn tuple information */
+	u64 rx_packet_count;			/**< Rx packets */
+	u64 rx_byte_count;			/**< Rx bytes */
+	u64 tx_packet_count;			/**< Tx packets */
+	u64 tx_byte_count;			/**< Tx bytes */
+};
+
+/**
  * @}
  */
 
@@ -979,6 +1005,17 @@ int sfe_ipv4_max_conn_count(void);
 extern sfe_tx_status_t sfe_ipv4_tx(struct sfe_ctx_instance *sfe_ctx, struct sfe_ipv4_msg *msg);
 
 /**
+ * Transmits an IPv4 message to the SFE.
+ *
+ * @param	sfe_ctx		SFE context.
+ * @param	msg		The IPv4 message.
+ *
+ * @return
+ * ACK/NACK msg based on successful accel/deaccel.
+ */
+extern enum sfe_cmn_response sfe_ipv4_tx_with_resp(struct sfe_ctx_instance *sfe_ctx, struct sfe_ipv4_msg *msg);
+
+/**
  * Registers a notifier callback for IPv4 messages from the SFE.
  *
  * @param	one_rule_cb		The callback pointer for one rule.
@@ -1013,6 +1050,17 @@ extern void sfe_ipv4_notify_unregister(void);
 extern void sfe_ipv4_msg_init(struct sfe_ipv4_msg *nim, u16 if_num, u32 type, u32 len,
 			sfe_ipv4_msg_callback_t cb, void *app_data);
 
+
+/**
+ * Allows netfn flowmgr to pull single Connection Stats from SFE
+ *
+ * @param	sfe_ipv4_single_conn_stats	SFE context.
+ *
+ * @return
+ * The status of the pull operation operation (bool).
+ */
+extern bool sfe_ipv4_get_single_conn_stats(struct sfe_ipv4_single_conn_stats *stats);
+
 /**
  * Gets the maximum number of IPv6 connections supported by the SFE acceleration engine.
  *
@@ -1031,6 +1079,17 @@ int sfe_ipv6_max_conn_count(void);
  * The status of the Tx operation (#sfe_tx_status_t).
  */
 extern sfe_tx_status_t sfe_ipv6_tx(struct sfe_ctx_instance *sfe_ctx, struct sfe_ipv6_msg *msg);
+
+/**
+ * Transmits an IPv6 message to the SFE.
+ *
+ * @param	sfe_ctx		The SFE context.
+ * @param	msg		The IPv6 message.
+ *
+ * @return
+ * ACK/NACK msg based on successful accel/deaccel.
+ */
+extern enum sfe_cmn_response sfe_ipv6_tx_with_resp(struct sfe_ctx_instance *sfe_ctx, struct sfe_ipv6_msg *msg);
 
 /**
  * Registers a notifier callback for IPv6 messages from the SFE.
@@ -1119,6 +1178,16 @@ void sfe_ipv4_mark_rule_update(struct sfe_connection_mark *mark);
  * None.
  */
 void sfe_ipv6_mark_rule_update(struct sfe_connection_mark *mark);
+
+/**
+ * Allows netfn flowmgr to pull single Connection Stats from SFE
+ *
+ * @param	sfe_ipv6_single_conn_stats	SFE context.
+ *
+ * @return
+ * The status of the pull operation operation (bool).
+ */
+extern bool sfe_ipv6_get_single_conn_stats(struct sfe_ipv6_single_conn_stats *stats);
 
 /**
  * Gets the acceleration mode of PPPoE bridge.

@@ -203,6 +203,52 @@ sfe_ipv6_find_connection_match_rcu(struct sfe_ipv6 *si, struct net_device *dev, 
 }
 
 /*
+ * sfe_ipv6_get_single_conn_stats()
+ *	Get the tx and rx bytes and packet data for particular 5-tuple
+ */
+bool sfe_ipv6_get_single_conn_stats(struct sfe_ipv6_single_conn_stats *stats)
+{
+	struct sfe_ipv6 *si = &__si6;
+	struct sfe_ipv6_connection_match *original_cm;
+	struct sfe_ipv6_connection_match *reply_cm;
+
+	rcu_read_lock();
+
+	original_cm = sfe_ipv6_find_connection_match_rcu(si, stats->org_dev, stats->tuple.protocol, (struct sfe_ipv6_addr *)stats->tuple.flow_ip, stats->tuple.flow_ident, (struct sfe_ipv6_addr *)stats->tuple.return_ip, stats->tuple.return_ident);
+	if (!original_cm) {
+		if (IPPROTO_TCP == stats->tuple.protocol) {
+			sfe_ipv6_exception_stats_inc(si, SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_FAST_FLAGS);
+		} else {
+			sfe_ipv6_exception_stats_inc(si, SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION);
+		}
+		DEBUG_TRACE("Failed to find connection match entry for the following connection: protocol: %u, src_ip: %pI6, src_port: %u, dest_ip: %pI6, dest_port: %u\n", stats->tuple.protocol, &stats->tuple.flow_ip, stats->tuple.flow_ident, &stats->tuple.return_ip, stats->tuple.return_ident);
+		rcu_read_unlock();
+		return false;
+	}
+
+	reply_cm = original_cm->counter_match;
+ 	if (!reply_cm) {
+		if (IPPROTO_TCP == stats->tuple.protocol) {
+			sfe_ipv6_exception_stats_inc(si, SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_FAST_FLAGS);
+		} else {
+			sfe_ipv6_exception_stats_inc(si, SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION);
+		}
+		DEBUG_TRACE("Failed to find reverse match entry for the following connection: protocol: %u, src_ip: %pI6, src_port: %u, dest_ip: %pI6, dest_port: %u\n", stats->tuple.protocol, &stats->tuple.flow_ip, stats->tuple.flow_ident, &stats->tuple.return_ip, stats->tuple.return_ident);
+		rcu_read_unlock();
+		return false;
+	}
+
+	rcu_read_unlock();
+
+	stats->rx_packet_count = original_cm->rx_packet_count64;
+	stats->rx_byte_count = original_cm->rx_byte_count64;
+	stats->tx_packet_count = reply_cm->rx_packet_count64;
+	stats->tx_byte_count = reply_cm->rx_byte_count64;
+	return true;
+}
+EXPORT_SYMBOL(sfe_ipv6_get_single_conn_stats);
+
+/*
  * sfe_ipv6_connection_mc_dest_compute_translations()
  *	Compute port and address translations for a connection match entry.
  */
@@ -1918,6 +1964,7 @@ update_done:
 	flow_sawf_tag = SFE_GET_SAWF_TAG(msg->sawf_rule.flow_mark);
 	if (likely(SFE_SAWF_TAG_IS_VALID(flow_sawf_tag))) {
 		original_cm->mark = msg->sawf_rule.flow_mark;
+		original_cm->svc_id = msg->sawf_rule.flow_svc_id;
 		original_cm->flags |= SFE_IPV6_CONNECTION_MATCH_FLAG_MARK;
 		original_cm->sawf_valid = true;
 	}
@@ -2314,6 +2361,7 @@ int sfe_ipv6_create_rule(struct sfe_ipv6_rule_create_msg *msg)
 	flow_sawf_tag = SFE_GET_SAWF_TAG(msg->sawf_rule.flow_mark);
 	if (likely(SFE_SAWF_TAG_IS_VALID(flow_sawf_tag))) {
 		original_cm->mark = msg->sawf_rule.flow_mark;
+		original_cm->svc_id = msg->sawf_rule.flow_svc_id;
 		original_cm->sawf_valid = true;
 		original_cm->flags |= SFE_IPV6_CONNECTION_MATCH_FLAG_MARK;
 	}
@@ -2696,6 +2744,7 @@ int sfe_ipv6_create_rule(struct sfe_ipv6_rule_create_msg *msg)
 	return_sawf_tag = SFE_GET_SAWF_TAG(msg->sawf_rule.return_mark);
 	if (likely(SFE_SAWF_TAG_IS_VALID(return_sawf_tag))) {
 		reply_cm->mark = msg->sawf_rule.return_mark;
+		reply_cm->svc_id = msg->sawf_rule.return_svc_id;
 		reply_cm->sawf_valid = true;
 		reply_cm->flags |= SFE_IPV6_CONNECTION_MATCH_FLAG_MARK;
 	}

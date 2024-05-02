@@ -2,7 +2,7 @@
  * sfe_ipv6_frag.c
  *	Shortcut forwarding engine - IPv6 Fragment forwarding support.
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -1126,20 +1126,35 @@ int sfe_ipv6_recv_udp_frag(struct sfe_ipv6 *si, struct sk_buff *skb, struct net_
 				this_cpu_inc(si->stats_pcpu->fragment_dropped64);
 				return 1;
 		}
-	}
 
-	/*
-	 * Forward the fragment.
-	 */
-	ret = sfe_ipv6_frag_udp_forward(si, skb, dev, len, iph, ihl, sync_on_find, l2_info, tun_outer, cm , udph, first_frag);
-	if (!ret) {
-		fie->state = SFE_IPV6_FRAG_FORWARD_DROP;
-		spin_unlock_bh(&fie->lock);
-		rcu_read_unlock();
-		kfree_skb(skb);
-		sfe_ipv6_frag_id_put(sif, fie);
-		this_cpu_inc(si->stats_pcpu->fragment_dropped64);
-		return 1;
+		/*
+		 * If we fail to forward the first fragment, we can exception the packets to host.
+		 * and update the state of the frag_id_entity to exception all the incoming fragmetns as well.
+		 */
+		ret = sfe_ipv6_frag_udp_forward(si, skb, dev, len, iph, ihl, sync_on_find, l2_info, tun_outer, cm , udph, first_frag);
+		if (!ret) {
+			fie->state = SFE_IPV6_FRAG_FORWARD_EXCEPTION;
+			spin_unlock_bh(&fie->lock);
+			rcu_read_unlock();
+			sfe_ipv6_frag_id_put(sif, fie);
+			this_cpu_inc(si->stats_pcpu->fragment_exception64);
+			return 0;
+		}
+	} else {
+
+		/*
+		 * Forward the intermediate fragment.
+		 */
+		ret = sfe_ipv6_frag_udp_forward(si, skb, dev, len, iph, ihl, sync_on_find, l2_info, tun_outer, cm , udph, first_frag);
+		if (!ret) {
+			fie->state = SFE_IPV6_FRAG_FORWARD_DROP;
+			spin_unlock_bh(&fie->lock);
+			rcu_read_unlock();
+			kfree_skb(skb);
+			sfe_ipv6_frag_id_put(sif, fie);
+			this_cpu_inc(si->stats_pcpu->fragment_dropped64);
+			return 1;
+		}
 	}
 
 	/*

@@ -229,7 +229,7 @@ static inline int sfe_ipv6_create_mc_rule(struct sfe_ipv6_mc_rule_create_msg *ms
 
 static inline int sfe_ipv6_destroy_mc__rule(struct sfe_ipv6_mc_rule_destroy_msg *msg)
 {
-	return 0;
+	return;
 }
 
 static inline void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t callback)
