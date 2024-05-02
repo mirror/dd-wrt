@@ -78,6 +78,8 @@ ifeq ($(ECM_NON_PORTED_SUPPORT_ENABLE), y)
 ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_non_ported_ipv6.o
 endif
 
+ECM_MULTICAST_ENABLE=y
+
 #SFE Multicast is enabled in case NSS disabled
 ecm-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
@@ -236,7 +238,6 @@ ccflags-$(ECM_IPV6_ENABLE) += -DECM_IPV6_ENABLE
 # NSS is enabled, using NSS multicast acceleration, otherwise using SFE
 # multicast acceleration.
 # #############################################################################
-ECM_MULTICAST_ENABLE=y
 
 ecm-$(ECM_MULTICAST_ENABLE) += ecm_db/ecm_db_multicast.o
 ccflags-$(ECM_MULTICAST_ENABLE) += -DECM_MULTICAST_ENABLE
