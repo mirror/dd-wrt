@@ -628,6 +628,8 @@ void start_sysinit(void)
 		fclose(fp);
 		free(smem);
 	}
+	log_eval("watchdog"); // system watchdog
+
 	/* 
 	 * 
 	 */
@@ -652,9 +654,10 @@ void start_sysinit(void)
 	insmod("qca-nss-drv");
 	insmod("qca-nss-crypto");
 	insmod("qca-nss-cfi-cryptoapi");
+	insmod("nsh");
 	insmod("openvswitch");
 	insmod("qca-ovsmgr");
-	insmod("bonding");
+	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	insmod("qca-nss-pppoe");
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
@@ -662,13 +665,13 @@ void start_sysinit(void)
 	insmod("qca-nss-l2tpv2");
 	insmod("pptp");
 	insmod("qca-nss-pptp");
-	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	insmod("qca-nss-vlan");
 	insmod("vxlan");
 	insmod("qca-nss-vxlanmgr");
 	insmod("qca-nss-qdisc");
 	insmod("qca-mcs");
 	insmod("nss-ifb");
+	insmod("qca-nss-netlink");
 	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	/*

@@ -30,7 +30,7 @@
 
 void start_watchdog(void)
 {
-	if (!nvram_matchi("disable_watchdog", 1)) {
+	if (!nvram_matchi("disable_watchdog", 1) && pidof("watchdog")<=0) {
 		log_eval("watchdog"); // system watchdog
 	}
 	return;
