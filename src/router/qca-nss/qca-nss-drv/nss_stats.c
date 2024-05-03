@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -146,6 +149,14 @@ int nss_stats_open(struct inode *inode, struct file *filp)
 	filp->private_data = data;
 
 	return 0;
+}
+
+/*
+ * nss_clear_stats_write()
+ *	Clear content of stats.
+ */
+ssize_t nss_clear_stats_write(struct file *fp, const char __user *ubuf, size_t sz, loff_t *ppos) {
+	return -ESRCH;
 }
 
 /*
@@ -389,7 +400,9 @@ void nss_stats_create_dentry(char *name, const struct file_operations *ops)
 /*
  * gmac_stats_ops
  */
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 NSS_STATS_DECLARE_FILE_OPERATIONS(gmac);
+#endif
 
 /*
  * wt_stats_ops
@@ -444,7 +457,9 @@ void nss_stats_init(void)
 	/*
 	 * gmac_stats
 	 */
+#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 	nss_stats_create_dentry("gmac", &nss_gmac_stats_ops);
+#endif
 
 	/*
 	 * Per-project stats

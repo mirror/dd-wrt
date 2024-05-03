@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016-2017, 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2017, 2019-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -177,6 +177,9 @@ void nss_ipv4_stats_node_sync(struct nss_ctx_instance *nss_ctx, struct nss_ipv4_
 	nss_ipv4_stats[NSS_IPV4_STATS_MC_CONNECTION_DESTROY_REQUESTS] += nins->ipv4_mc_connection_destroy_requests;
 	nss_ipv4_stats[NSS_IPV4_STATS_MC_CONNECTION_DESTROY_MISSES] += nins->ipv4_mc_connection_destroy_misses;
 	nss_ipv4_stats[NSS_IPV4_STATS_MC_CONNECTION_FLUSHES] += nins->ipv4_mc_connection_flushes;
+	nss_ipv4_stats[NSS_IPV4_STATS_CONNECTION_CREATE_INVALID_MIRROR_IFNUM] += nins->ipv4_connection_create_invalid_mirror_ifnum;
+	nss_ipv4_stats[NSS_IPV4_STATS_CONNECTION_CREATE_INVALID_MIRROR_IFTYPE] += nins->ipv4_connection_create_invalid_mirror_iftype;
+	nss_ipv4_stats[NSS_IPV4_STATS_MIRROR_FAILURES] += nins->ipv4_mirror_failures;
 
 	for (i = 0; i < NSS_IPV4_EXCEPTION_EVENT_MAX; i++) {
 		nss_ipv4_exception_stats[i] += nins->exception_events[i];

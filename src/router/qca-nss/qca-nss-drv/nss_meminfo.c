@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -408,7 +409,7 @@ static bool nss_meminfo_init_block_lists(struct nss_ctx_instance *nss_ctx)
 
 		if (strcmp(r->name, "profile_dma_ctrl") == 0) {
 			mem_ctx->sdma_ctrl = kern_addr;
-		nss_info_always("%px: set sdma %px\n", nss_ctx, kern_addr);
+		nss_info("%px: set sdma %px\n", nss_ctx, kern_addr);
 		}
 
 		/*
@@ -800,6 +801,6 @@ bool nss_meminfo_init(struct nss_ctx_instance *nss_ctx)
 
 	nss_meminfo_init_debugfs(nss_ctx);
 
-	nss_info_always("%px: meminfo init succeed\n", nss_ctx);
+	nss_info("%px: meminfo init succeed\n", nss_ctx);
 	return true;
 }

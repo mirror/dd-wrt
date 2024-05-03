@@ -140,7 +140,7 @@ ssize_t nss_ipsecmgr_ref_print(struct nss_ipsecmgr_ref *ref, char *buf)
 	/*
 	 * DEBUG check to see if the lock is taken before touching the list
 	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	nss_ipsecmgr_write_lock_is_held(&ipsecmgr_drv->lock);
 
 	len += ref->print(ref, buf);
 
@@ -163,7 +163,7 @@ ssize_t nss_ipsecmgr_ref_print_len(struct nss_ipsecmgr_ref *ref)
 	/*
 	 * DEBUG check to see if the lock is taken before touching the list
 	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	nss_ipsecmgr_write_lock_is_held(&ipsecmgr_drv->lock);
 
 	list_for_each_entry(entry, &ref->head, node) {
 		total_len += nss_ipsecmgr_ref_print_len(entry);
@@ -203,7 +203,7 @@ void nss_ipsecmgr_ref_del(struct nss_ipsecmgr_ref *ref, struct list_head *free_q
 	/*
 	 * DEBUG check to see if the lock is taken before touching the list
 	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	nss_ipsecmgr_write_lock_is_held(&ipsecmgr_drv->lock);
 
 	while (!list_empty(&ref->head)) {
 		entry = list_first_entry(&ref->head, struct nss_ipsecmgr_ref, node);
@@ -231,7 +231,7 @@ void nss_ipsecmgr_ref_add(struct nss_ipsecmgr_ref *child, struct nss_ipsecmgr_re
 	/*
 	 * DEBUG check to see if the lock is taken before touching the list
 	 */
-	BUG_ON(write_can_lock(&ipsecmgr_drv->lock));
+	nss_ipsecmgr_write_lock_is_held(&ipsecmgr_drv->lock);
 
 	/*
 	 * if child is already part of an existing chain then remove it before

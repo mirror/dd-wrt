@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -226,6 +226,7 @@ bool nss_vxlan_unregister_if(uint32_t if_num)
 	}
 
 	nss_core_unregister_handler(nss_ctx, if_num);
+	nss_core_unregister_msg_handler(nss_ctx, if_num);
 	nss_core_unregister_subsys_dp(nss_ctx, if_num);
 	return true;
 }

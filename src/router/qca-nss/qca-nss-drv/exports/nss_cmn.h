@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -27,10 +27,12 @@
  * @{
  */
 
-/*
+/**
  * Interface Number 1 Valid 7 Core 8 Type 16 Index
  */
 typedef int32_t nss_if_num_t;
+#define NSS_IF_IS_TYPE_DYNAMIC(if_num)		(if_num != -1)
+#define NSS_IF_IS_VALID(if_num)		(if_num < NSS_MAX_NET_INTERFACES)
 
 /**
  * @struct nss_ctx_instance

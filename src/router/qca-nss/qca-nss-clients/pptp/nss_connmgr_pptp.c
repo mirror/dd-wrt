@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -156,6 +159,11 @@ static int nss_connmgr_pptp_get_session(struct net_device *dev, struct pptp_opt 
 		return -1;
 	}
 
+	if (ppp_is_cp_enabled(dev)) {
+		nss_connmgr_pptp_warning("%px: rx or tx compression is enabled for PPP\n", dev);
+		return -1;
+	}
+
 	ppp_ch_count = ppp_hold_channels(dev, channel, 1);
 	nss_connmgr_pptp_info("%px: PPP hold channel ret %d\n", dev, ppp_ch_count);
 	if (ppp_ch_count != 1) {
@@ -267,13 +275,12 @@ static void nss_connmgr_pptp_event_receive(void *if_ctx, struct nss_pptp_msg *tn
 
 		if_type = nss_dynamic_interface_get_type(nss_pptp_get_context(), tnlmsg->cm.interface);
 
-		if (if_type == NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER) {
+		if ((if_type == NSS_DYNAMIC_INTERFACE_TYPE_PPTP_OUTER) && sync_stats->node_stats.rx_packets) {
 			ppp_update_stats(netdev,
 				 (unsigned long)sync_stats->node_stats.rx_packets,
 				 (unsigned long)sync_stats->node_stats.rx_bytes,
 				 0, 0, 0, 0, 0, 0);
-		} else {
-
+		} else if ((if_type == NSS_DYNAMIC_INTERFACE_TYPE_PPTP_INNER) && sync_stats->node_stats.tx_packets) {
 			ppp_update_stats(netdev, 0, 0,
 				 (unsigned long)sync_stats->node_stats.tx_packets,
 				 (unsigned long)sync_stats->node_stats.tx_bytes,

@@ -1,6 +1,6 @@
 /*
- **************************************************************************
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ ****************************************************************************
+ * Copyright (c) 2017-2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -11,146 +11,46 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- **************************************************************************
+ ****************************************************************************
  */
 
 #include "nss_core.h"
 #include "nss_gre_redir.h"
 #include "nss_gre_redir_stats.h"
+#include "nss_gre_redir_strings.h"
 
 /*
- * nss_gre_redir_stats_str
- *	GRE REDIR statistics string
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_gre_redir_stats_str[NSS_GRE_REDIR_STATS_MAX] = {
-	"TX Packets",
-	"TX Bytes",
-	"TX Drops",
-	"RX Packets",
-	"RX Bytes",
-	"RX Drops",
-	"TX Sjack Packets",
-	"RX Sjack packets",
-	"TX Offload Packets",
-	"RX Offload Packets",
-	"US exception RX Packets",
-	"US exception TX Packets",
-	"DS exception RX Packets",
-	"DS exception TX Packets",
-	"Encap SG alloc drop",
-	"Decap fail drop",
-	"Decap split drop",
-	"Split SG alloc fail",
-	"Split linear copy fail",
-	"Split not enough tailroom",
-	"Exception ds invalid dst",
-	"Decap eapol frames",
-	"Exception ds invalid appid",
-	"Headroom Unavailable",
-	"Exception ds Tx completion Success",
-	"Exception ds Tx completion drop"
-};
+ATOMIC_NOTIFIER_HEAD(nss_gre_redir_stats_notifier);
 
 /*
- * nss_gre_redir_stats()
- *	Make a row for GRE_REDIR stats.
+ * Spinlock to protect GRE redirect statistics update/read
  */
-static ssize_t nss_gre_redir_stats(char *line, int len, int i, struct nss_gre_redir_tunnel_stats *s)
+DEFINE_SPINLOCK(nss_gre_redir_stats_lock);
+
+/*
+ * Array to hold tunnel stats along with if_num
+ */
+extern struct nss_gre_redir_tunnel_stats tun_stats[NSS_GRE_REDIR_MAX_INTERFACES];
+
+/*
+ * nss_gre_redir_stats_get()
+ *	Get GRE redirect tunnel stats.
+ */
+bool nss_gre_redir_stats_get(int index, struct nss_gre_redir_tunnel_stats *stats)
 {
-	char name[40];
-	uint64_t tcnt = 0;
-	int j = 0;
-
-	switch (i) {
-	case NSS_GRE_REDIR_STATS_TX_PKTS:
-		tcnt = s->node_stats.tx_packets;
-		return snprintf(line, len, "Common node stats start:\n\n%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_TX_BYTES:
-		tcnt = s->node_stats.tx_bytes;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_TX_DROPS:
-		tcnt = s->tx_dropped;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_RX_PKTS:
-		tcnt = s->node_stats.rx_packets;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_RX_BYTES:
-		tcnt = s->node_stats.rx_bytes;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_RX_DROPS:
-		tcnt = s->node_stats.rx_dropped[0];
-		return snprintf(line, len, "%s = %llu\nCommon node stats end.\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_SJACK_TX_PKTS:
-		tcnt = s->sjack_tx_packets;
-		return snprintf(line, len, "Offload stats start:\n\n%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_OFFLOAD_TX_PKTS:
-		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
-			scnprintf(name, sizeof(name), "TX offload pkts for radio %d", j);
-			tcnt += snprintf(line + tcnt, len - tcnt, "%s = %llu\n", name, s->offl_tx_pkts[j]);
-		}
-		return tcnt;
-	case NSS_GRE_REDIR_STATS_SJACK_RX_PKTS:
-		tcnt = s->sjack_rx_packets;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_OFFLOAD_RX_PKTS:
-		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
-			scnprintf(name, sizeof(name), "RX offload pkts for radio %d", j);
-			tcnt += snprintf(line + tcnt, len - tcnt, "%s = %llu\n", name, s->offl_rx_pkts[j]);
-		}
-		return tcnt;
-	case NSS_GRE_REDIR_STATS_EXCEPTION_US_RX_PKTS:
-		tcnt = s->exception_us_rx;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_EXCEPTION_US_TX_PKTS:
-		tcnt = s->exception_us_tx;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_EXCEPTION_DS_RX_PKTS:
-		tcnt = s->exception_ds_rx;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_EXCEPTION_DS_TX_PKTS:
-		tcnt = s->exception_ds_tx;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_ENCAP_SG_ALLOC_DROP:
-		tcnt = s->encap_sg_alloc_drop;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_DECAP_FAIL_DROP:
-		tcnt = s->decap_fail_drop;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_DECAP_SPLIT_DROP:
-		tcnt = s->decap_split_drop;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_SPLIT_SG_ALLOC_FAIL:
-		tcnt = s->split_sg_alloc_fail;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_SPLIT_LINEAR_COPY_FAIL:
-		tcnt = s->split_linear_copy_fail;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_SPLIT_NOT_ENOUGH_TAILROOM:
-		tcnt = s->split_not_enough_tailroom;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_EXCEPTION_DS_INVALID_DST_DROP:
-		tcnt = s->exception_ds_invalid_dst_drop;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_DECAP_EAPOL_FRAMES:
-		tcnt = s->decap_eapol_frames;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_EXCEPTION_DS_INV_APPID:
-		tcnt = s->exception_ds_inv_appid;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_HEADROOM_UNAVAILABLE:
-		tcnt = s->headroom_unavail;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_TX_COMPLETION_SUCCESS:
-		tcnt = s->tx_completion_success;
-		return snprintf(line, len, "%s = %llu\n", nss_gre_redir_stats_str[i], tcnt);
-	case NSS_GRE_REDIR_STATS_TX_COMPLETION_DROP:
-		tcnt = s->tx_completion_drop;
-		return snprintf(line, len, "%s = %llu\nOffload stats end.\n", nss_gre_redir_stats_str[i], tcnt);
-	default:
-		nss_warning("Unknown stats type %d.\n", i);
-		return 0;
+	spin_lock_bh(&nss_gre_redir_stats_lock);
+	if (tun_stats[index].ref_count == 0) {
+		spin_unlock_bh(&nss_gre_redir_stats_lock);
+		return false;
 	}
+
+	memcpy(stats, &tun_stats[index], sizeof(struct nss_gre_redir_tunnel_stats));
+	spin_unlock_bh(&nss_gre_redir_stats_lock);
+	return true;
 }
+EXPORT_SYMBOL(nss_gre_redir_stats_get);
 
 /*
  * nss_gre_redir_stats_read()
@@ -158,13 +58,24 @@ static ssize_t nss_gre_redir_stats(char *line, int len, int i, struct nss_gre_re
  */
 static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size_t sz, loff_t *ppos)
 {
+	 /*
+	  * Max output lines = #stats +
+	  * few blank lines for banner printing + Number of Extra outputlines
+	  * for future reference to add new stats
+	  */
+	uint32_t max_output_lines = NSS_GRE_REDIR_STATS_MAX + NSS_STATS_EXTRA_OUTPUT_LINES;
+	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines * NSS_GRE_REDIR_MAX_INTERFACES;
 	struct nss_stats_data *data = fp->private_data;
-	ssize_t bytes_read = 0;
 	struct nss_gre_redir_tunnel_stats stats;
-	size_t bytes;
-	char line[80 * NSS_GRE_REDIR_MAX_RADIO];
-	int start, end;
+	ssize_t bytes_read = 0;
+	size_t size_wr = 0;
 	int index = 0;
+
+	char *lbuf = kzalloc(size_al, GFP_KERNEL);
+	if (unlikely(!lbuf)) {
+		nss_warning("Could not allocate memory for local statistics buffer");
+		return 0;
+	}
 
 	if (data) {
 		index = data->index;
@@ -174,6 +85,7 @@ static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size
 	 * If we are done accomodating all the GRE_REDIR tunnels.
 	 */
 	if (index >= NSS_GRE_REDIR_MAX_INTERFACES) {
+		kfree(lbuf);
 		return 0;
 	}
 
@@ -183,48 +95,23 @@ static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size
 		/*
 		 * If gre_redir tunnel does not exists, then isthere will be false.
 		 */
-		isthere = nss_gre_redir_get_stats(index, &stats);
+		isthere = nss_gre_redir_stats_get(index, &stats);
 		if (!isthere) {
 			continue;
 		}
 
-		bytes = snprintf(line, sizeof(line), "\nTunnel stats for %s\n", stats.dev->name);
-		if ((bytes_read + bytes) > sz) {
-			break;
-		}
-
-		if (copy_to_user(ubuf + bytes_read, line, bytes) != 0) {
-			bytes_read = -EFAULT;
-			goto fail;
-		}
-		bytes_read += bytes;
-		start = NSS_GRE_REDIR_STATS_TX_PKTS;
-		end = NSS_GRE_REDIR_STATS_MAX;
-		while (bytes_read < sz && start < end) {
-			bytes = nss_gre_redir_stats(line, sizeof(line), start, &stats);
-
-			if ((bytes_read + bytes) > sz)
-				break;
-
-			if (copy_to_user(ubuf + bytes_read, line, bytes) != 0) {
-				bytes_read = -EFAULT;
-				goto fail;
-			}
-
-			bytes_read += bytes;
-			start++;
-		}
+		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "gre_redir stats", NSS_STATS_SINGLE_CORE);
+		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nTunnel stats for %s\n", stats.dev->name);
+		size_wr += nss_stats_print("gre_redir", NULL, NSS_STATS_SINGLE_INSTANCE, nss_gre_redir_strings_stats,
+					&stats.tstats.rx_packets, NSS_GRE_REDIR_STATS_MAX, lbuf, size_wr, size_al);
 	}
 
-	if (bytes_read > 0) {
-		*ppos = bytes_read;
-	}
-
+	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	if (data) {
 		data->index = index;
 	}
 
-fail:
+	kfree(lbuf);
 	return bytes_read;
 }
 
@@ -258,3 +145,168 @@ struct dentry *nss_gre_redir_stats_dentry_create(void)
 
 	return gre_redir;
 }
+
+/*
+ * nss_gre_redir_stats_sync()
+ *	Update gre_redir tunnel stats.
+ */
+void nss_gre_redir_stats_sync(struct nss_ctx_instance *nss_ctx, int if_num, struct nss_gre_redir_stats_sync_msg *ngss)
+{
+	int i, j;
+	uint32_t type;
+	struct net_device *dev;
+	struct nss_gre_redir_tun_stats *node_stats;
+
+	type = nss_dynamic_interface_get_type(nss_ctx, if_num);
+	dev = nss_cmn_get_interface_dev(nss_ctx, if_num);
+	if (!dev) {
+		nss_warning("%px: Unable to find net device for the interface %d\n", nss_ctx, if_num);
+		return;
+	}
+
+	if (!nss_gre_redir_verify_ifnum(if_num)) {
+		nss_warning("%px: Unknown type for interface %d\n", nss_ctx, if_num);
+		return;
+	}
+
+	spin_lock_bh(&nss_gre_redir_stats_lock);
+	for (i = 0; i < NSS_GRE_REDIR_MAX_INTERFACES; i++) {
+		if (tun_stats[i].dev == dev) {
+			break;
+		}
+	}
+
+	if (i == NSS_GRE_REDIR_MAX_INTERFACES) {
+		nss_warning("%px: Unable to find tunnel stats instance for interface %d\n", nss_ctx, if_num);
+		spin_unlock_bh(&nss_gre_redir_stats_lock);
+		return;
+	}
+
+	nss_assert(tun_stats[i].ref_count);
+	node_stats = &tun_stats[i].tstats;
+	switch (type) {
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_WIFI_HOST_INNER:
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_WIFI_OFFL_INNER:
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_SJACK_INNER:
+		node_stats->tx_packets += ngss->node_stats.tx_packets;
+		node_stats->tx_bytes += ngss->node_stats.tx_bytes;
+		node_stats->sjack_tx_packets += ngss->sjack_rx_packets;
+		node_stats->encap_sg_alloc_drop += ngss->encap_sg_alloc_drop;
+		node_stats->tx_dropped += nss_cmn_rx_dropped_sum(&(ngss->node_stats));
+		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
+			node_stats->offl_tx_pkts[j] += ngss->offl_rx_pkts[j];
+		}
+
+		break;
+
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_OUTER:
+		node_stats->rx_packets += ngss->node_stats.rx_packets;
+		node_stats->rx_bytes += ngss->node_stats.rx_bytes;
+		node_stats->sjack_rx_packets += ngss->sjack_rx_packets;
+		node_stats->decap_fail_drop += ngss->decap_fail_drop;
+		node_stats->decap_split_drop += ngss->decap_split_drop;
+		node_stats->split_sg_alloc_fail += ngss->split_sg_alloc_fail;
+		node_stats->split_linear_copy_fail += ngss->split_linear_copy_fail;
+		node_stats->split_not_enough_tailroom += ngss->split_not_enough_tailroom;
+		node_stats->decap_eapol_frames += ngss->decap_eapol_frames;
+		for (j = 0; j < NSS_MAX_NUM_PRI; j++) {
+			node_stats->rx_dropped[j] += ngss->node_stats.rx_dropped[j];
+		}
+
+		for (j = 0; j < NSS_GRE_REDIR_MAX_RADIO; j++) {
+			node_stats->offl_rx_pkts[j] += ngss->offl_rx_pkts[j];
+		}
+
+		break;
+
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_US:
+		node_stats->exception_us_rx += ngss->node_stats.rx_packets;
+		node_stats->exception_us_tx += ngss->node_stats.tx_packets;
+		break;
+
+	case NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_EXCEPTION_DS:
+		node_stats->exception_ds_rx += ngss->node_stats.rx_packets;
+		node_stats->exception_ds_tx += ngss->node_stats.tx_packets;
+		node_stats->exception_ds_invalid_dst_drop += ngss->exception_ds_invalid_dst_drop;
+		node_stats->exception_ds_inv_appid += ngss->exception_ds_inv_appid;
+		node_stats->headroom_unavail += ngss->headroom_unavail;
+		node_stats->tx_completion_success += ngss->tx_completion_success;
+		node_stats->tx_completion_drop += ngss->tx_completion_drop;
+		break;
+	}
+
+	spin_unlock_bh(&nss_gre_redir_stats_lock);
+}
+
+/*
+ * nss_gre_redir_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_gre_redir_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_gre_redir_stats_notification *stats_notify;
+	struct net_device *dev;
+	int i;
+
+	stats_notify = kzalloc(sizeof(struct nss_gre_redir_stats_notification), GFP_ATOMIC);
+	if (!stats_notify) {
+		nss_warning("Unable to allocate memory for stats notification\n");
+		return;
+	}
+
+	dev = nss_cmn_get_interface_dev(nss_ctx, if_num);
+	if (!dev) {
+		nss_warning("%px: Unable to find net device for the interface %d\n", nss_ctx, if_num);
+		kfree(stats_notify);
+		return;
+	}
+
+	if (!nss_gre_redir_verify_ifnum(if_num)) {
+		nss_warning("%px: Unknown type for interface %d\n", nss_ctx, if_num);
+		kfree(stats_notify);
+		return;
+	}
+
+	spin_lock_bh(&nss_gre_redir_stats_lock);
+	for (i = 0; i < NSS_GRE_REDIR_MAX_INTERFACES; i++) {
+		if (tun_stats[i].dev == dev) {
+			break;
+		}
+	}
+
+	if (i == NSS_GRE_REDIR_MAX_INTERFACES) {
+		nss_warning("%px: Unable to find tunnel stats instance for interface %d\n", nss_ctx, if_num);
+		spin_unlock_bh(&nss_gre_redir_stats_lock);
+		kfree(stats_notify);
+		return;
+	}
+
+	stats_notify->core_id = nss_ctx->id;
+	stats_notify->if_num = if_num;
+	memcpy(&(stats_notify->stats_ctx), &(tun_stats[i]), sizeof(stats_notify->stats_ctx));
+	spin_unlock_bh(&nss_gre_redir_stats_lock);
+	atomic_notifier_call_chain(&nss_gre_redir_stats_notifier, NSS_STATS_EVENT_NOTIFY, stats_notify);
+	kfree(stats_notify);
+}
+
+/*
+ * nss_gre_redir_stats_unregister_notifier()
+ *	Degisters statistics notifier.
+ */
+int nss_gre_redir_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_gre_redir_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_gre_redir_stats_unregister_notifier);
+
+/*
+ * nss_gre_redir_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_gre_redir_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_gre_redir_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_gre_redir_stats_register_notifier);

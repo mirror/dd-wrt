@@ -1,4 +1,5 @@
-/* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+/*
+ * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -12,11 +13,10 @@
  * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
  * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
- *
- *
  */
 
-/* nss_ipsec_klips.c
+/*
+ * nss_ipsec_klips.c
  *	NSS IPsec offload glue for Openswan/KLIPS
  */
 #include <linux/version.h>
@@ -51,6 +51,9 @@
 #if defined(NSS_L2TPV2_ENABLED)
 #include <nss_l2tpmgr.h>
 #endif
+#if defined(NSS_VXLAN_ENABLED)
+#include <nss_vxlanmgr.h>
+#endif
 #include "nss_ipsec_klips.h"
 
 #define NSS_IPSEC_KLIPS_BASE_NAME "ipsec"
@@ -59,6 +62,7 @@
 #define NSS_IPSEC_KLIPS_FLAG_NATT 0x00000001
 #define NSS_IPSEC_KLIPS_FLAG_TRANSPORT_MODE 0x00000002
 #define NSS_IPSEC_KLIPS_SKB_CB_MAGIC 0xAAAB
+#define NSS_IPSEC_KLIPS_IP6_ADDR_LEN 4
 
 /*
  * This is used by KLIPS for communicate the device along with the
@@ -344,6 +348,32 @@ static struct net_device *nss_ipsec_klips_get_tun_dev(struct net_device *klips_d
 	return tun_dev;
 }
 
+#if defined(NSS_L2TPV2_ENABLED)
+/*
+ * nss_ipsec_klips_get_inner_ifnum()
+ * 	Get ipsecmgr interface number for klips netdevice
+ *
+ * Calls nss_ipsec_klips_get_tun_dev(), which holds reference for tunnel,
+ * which gets released at the end of this function.
+ */
+static int nss_ipsec_klips_get_inner_ifnum(struct net_device *klips_dev)
+{
+	struct net_device *tun_dev;
+	int32_t ipsec_ifnum;
+
+	tun_dev = nss_ipsec_klips_get_tun_dev(klips_dev);
+	if (!tun_dev) {
+		nss_ipsec_klips_warn("%px: Tunnel device not found for klips dev", klips_dev);
+		return -1;
+	}
+
+	ipsec_ifnum = nss_cmn_get_interface_number_by_dev_and_type(tun_dev, NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_INNER);
+	dev_put(tun_dev);
+
+	return ipsec_ifnum;
+}
+#endif
+
 /*
  * nss_ipsec_klips_get_tun_by_addr()
  * 	Get the tunnel entry for given ip header from tunnel map table.
@@ -371,6 +401,75 @@ static struct nss_ipsec_klips_tun *nss_ipsec_klips_get_tun_by_addr(struct sk_buf
 
 	return NULL;
 }
+
+#if defined(NSS_VXLAN_ENABLED)
+/*
+ * nss_ipsec_klips_tun_match_ip_addr()
+ *	Compare tunnel address with source & destination ip addresses.
+ */
+static bool nss_ipsec_klips_tun_match_ip_addr(struct nss_ipsec_klips_tun *tun, uint8_t ip_ver, uint32_t *local_ip, uint32_t *remote_ip)
+{
+	struct nss_ipsec_klips_tun_addr *addr = &tun->addr;
+	uint32_t status = 0;
+	uint8_t i;
+
+	switch (ip_ver) {
+	case IPVERSION:
+		status += local_ip[0] ^ addr->dest[0];
+		status += remote_ip[0] ^ addr->src[0];
+		status += addr->ver ^ ip_ver;
+		nss_ipsec_klips_trace("%px: tun dev comparing with IPV4 tunnel local_ip: %x & remote_ip: %x IP pair.\n", tun, addr->dest[0], addr->src[0]);
+		return !status;
+
+	case 6:
+		status += addr->ver ^ ip_ver;
+		for (i = 0; i < NSS_IPSEC_KLIPS_IP6_ADDR_LEN; i++) {
+			status += local_ip[i] ^ addr->dest[i];
+			status += remote_ip[i] ^ addr->src[i];
+			nss_ipsec_klips_trace("%px: tun dev comparing with IPV6 tunnel local_ip[%u]: %x & remote_ip[%u]: %x IP pair.\n", tun, i, addr->dest[i], i, addr->src[i]);
+		}
+		return !status;
+
+	default:
+		nss_ipsec_klips_warn("%px: non ip version:%u received", tun, ip_ver);
+		return false;
+	}
+}
+
+/*
+ * nss_ipsec_klips_get_ipsec_ifnum()
+ *	Get ipsecmgr tunnel interface num for klips netdevice
+ */
+static int32_t __maybe_unused nss_ipsec_klips_get_ipsec_ifnum(uint8_t ip_ver, uint32_t *local_ip, uint32_t *remote_ip)
+{
+	struct nss_ipsec_klips_tun *tun;
+	struct net_device *tun_dev;
+	uint32_t if_num = -1;
+	uint32_t i;
+
+	read_lock(&tunnel_map.lock);
+
+	for (i = 0, tun = tunnel_map.tbl; i < tunnel_map.max; i++, tun++) {
+		if (!tun->klips_dev) {
+			nss_ipsec_klips_warn("%px: klips dev is NULL.\n", tun);
+			continue;
+		}
+
+		if (nss_ipsec_klips_tun_match_ip_addr(tun, ip_ver, local_ip, remote_ip)) {
+			tun_dev = tun->nss_dev;
+			if_num = nss_cmn_get_interface_number_by_dev_and_type(tun_dev, NSS_DYNAMIC_INTERFACE_TYPE_IPSEC_CMN_INNER);
+			nss_ipsec_klips_warn("%px: tun dev(with ifnum:%d) is mapped with local & remote IP pair.\n", tun, if_num);
+			read_unlock(&tunnel_map.lock);
+			return if_num;
+		}
+	}
+
+	read_unlock(&tunnel_map.lock);
+
+	nss_ipsec_klips_warn("%px: tun dev not found with the local(%pI4) & remote(%pI4) IP pair.\n", tun, local_ip, remote_ip);
+	return -1;
+}
+#endif
 
 /*
  * nss_ipsec_klips_get_index()
@@ -1971,7 +2070,14 @@ static struct notifier_block nss_ipsec_klips_ecm_conn_notifier = {
 
 #if defined(NSS_L2TPV2_ENABLED)
 static struct l2tpmgr_ipsecmgr_cb nss_ipsec_klips_l2tp =  {
-	.cb = nss_ipsec_klips_get_tun_dev
+	.get_ifnum_by_dev = nss_ipsec_klips_get_inner_ifnum,
+	.get_ifnum_by_ip_addr = NULL
+};
+#endif
+
+#if defined(NSS_VXLAN_ENABLED)
+static struct nss_vxlanmgr_get_ipsec_if_num nss_ipsec_klips_vxlan_cb =  {
+	.get_ifnum_by_ip = nss_ipsec_klips_get_ipsec_ifnum
 };
 #endif
 
@@ -2010,7 +2116,11 @@ int __init nss_ipsec_klips_init_module(void)
 	ecm_interface_ipsec_register_callbacks(&nss_ipsec_klips_ecm);
 	ecm_notifier_register_connection_notify(&nss_ipsec_klips_ecm_conn_notifier);
 #if defined(NSS_L2TPV2_ENABLED)
-	l2tpmgr_register_ipsecmgr_callback(&nss_ipsec_klips_l2tp);
+	l2tpmgr_register_ipsecmgr_callback_by_netdev(&nss_ipsec_klips_l2tp);
+#endif
+
+#if defined(NSS_VXLAN_ENABLED)
+	nss_vxlanmgr_register_ipsecmgr_callback_by_ip(&nss_ipsec_klips_vxlan_cb);
 #endif
 	return 0;
 }
@@ -2032,7 +2142,11 @@ void __exit nss_ipsec_klips_exit_module(void)
 	ecm_notifier_unregister_connection_notify(&nss_ipsec_klips_ecm_conn_notifier);
 	ecm_interface_ipsec_unregister_callbacks();
 #if defined(NSS_L2TPV2_ENABLED)
-	l2tpmgr_unregister_ipsecmgr_callback();
+	l2tpmgr_unregister_ipsecmgr_callback_by_netdev();
+#endif
+
+#if defined(NSS_VXLAN_ENABLED)
+	nss_vxlanmgr_unregister_ipsecmgr_callback_by_ip();
 #endif
 
 	nss_cfi_ocf_unregister_ipsec();

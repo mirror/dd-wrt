@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -365,7 +365,7 @@ struct nss_ctx_instance *nss_register_pptp_if(uint32_t if_num,
 	int i = 0;
 
 	nss_assert(nss_ctx);
-	nss_assert(nss_pptp_verify_if_num());
+	nss_assert(nss_pptp_verify_if_num(if_num));
 
 	nss_ctx->subsys_dp_register[if_num].type = type;
 

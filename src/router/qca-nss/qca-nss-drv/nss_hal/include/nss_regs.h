@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2013, 2015-2017, 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -38,15 +41,25 @@
 #define NSS_REGS_C2C_INTR_CLR_OFFSET		0x001c
 #define NSS_REGS_N2H_INTR_STATUS_OFFSET		0x0020
 #define NSS_REGS_N2H_INTR_SET_OFFSET		0x0024
+
+#if defined(NSS_HAL_IPQ95XX_SUPPORT)
+#define NSS_REGS_CORE_INT_STAT0_ENABLE_OFFSET	0x0028
+#define NSS_REGS_CORE_INT_STAT1_ENABLE_OFFSET	0x002c
+#define NSS_REGS_CORE_INT_STAT2_ENABLE_OFFSET	0x0030
+#define NSS_REGS_CORE_INT_STAT3_ENABLE_OFFSET	0x0034
+#elif defined(NSS_HAL_FSM9010_SUPPORT) || defined(NSS_HAL_IPQ806X_SUPPORT)
 #define NSS_REGS_N2H_INTR_CLR_OFFSET		0x0028
 #define NSS_REGS_N2H_INTR_MASK_OFFSET		0x002c
 #define NSS_REGS_N2H_INTR_MASK_SET_OFFSET	0x0030
 #define NSS_REGS_N2H_INTR_MASK_CLR_OFFSET	0x0034
+#endif
+
 #define NSS_REGS_CORE_INT_STAT0_TYPE_OFFSET	0x0038
 #define NSS_REGS_CORE_INT_STAT1_TYPE_OFFSET	0x003c
 #define NSS_REGS_CORE_INT_STAT2_TYPE_OFFSET	0x0040
 #define NSS_REGS_CORE_INT_STAT3_TYPE_OFFSET	0x0044
 #define NSS_REGS_CORE_IFETCH_RANGE_OFFSET	0x0048
+
 
 /*
  * FPB register offsets

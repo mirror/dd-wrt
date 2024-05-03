@@ -9,20 +9,22 @@ endif
 ccflags-y += -Wall -Werror
 
 obj-m += qca-nss-qdisc.o
-qca-nss-qdisc-objs := 	nss_qdisc.o \
-			nss_fifo.o \
-			nss_codel.o \
-			nss_tbl.o \
-			nss_prio.o \
-			nss_bf.o \
-			nss_wrr.o \
-			nss_htb.o \
+qca-nss-qdisc-objs := 	nss_bf.o \
 			nss_blackhole.o \
-			nss_wred.o
+			nss_codel.o \
+			nss_fifo.o \
+			nss_htb.o \
+			nss_prio.o \
+			nss_qdisc.o \
+			nss_qdisc_htable.o \
+			nss_qdisc_stats.o \
+			nss_tbl.o \
+			nss_wred.o \
+			nss_wrr.o
 
 ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 qca-nss-qdisc-objs += 	nss_ppe.o \
 			nss_ppe_mc.o
 endif
 
-#obj-$(igs)+= igs/
+obj-$(igs)+= igs/

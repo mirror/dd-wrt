@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -70,6 +70,12 @@ struct nss_phys_if_estats {
 	uint32_t gmac_worst_case_ticks;	/**< Worst case iteration of the GMAC in ticks */
 	uint32_t gmac_iterations;	/**< Number of iterations around the GMAC */
 	uint32_t tx_pause_frames;	/**< Number of pause frames sent by the GMAC */
+
+	/*
+	 * On IPQ50xx, we rely on the SSDK to pull the mmc stats.
+	 * The FAL layer does not do this on IPQ806x.
+	 */
+#if defined(NSS_HAL_IPQ806X_SUPPORT)
 	uint32_t mmc_rx_overflow_errors;
 					/**< Number of RX overflow errors */
 	uint32_t mmc_rx_watchdog_timeout_errors;
@@ -94,6 +100,7 @@ struct nss_phys_if_estats {
 	uint32_t mmc_tx_single_col;	/* Number of single collisions */
 	uint32_t mmc_tx_multiple_col;	/* Number of multiple collisions */
 	uint32_t mmc_tx_octets_gb;	/* Number of good/bad octets sent*/
+#endif
 };
 
 /**

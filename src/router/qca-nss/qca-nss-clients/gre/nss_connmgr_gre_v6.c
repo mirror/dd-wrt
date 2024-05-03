@@ -107,6 +107,7 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 	/*
 	 * Find dest MAC address
 	 */
+
 	rt = nss_connmgr_gre_v6_route_lookup(&init_net, &dst_addr);
 	if (!rt) {
 		nss_connmgr_gre_warning("Unable to find route lookup for %pI6", dest_ip);
@@ -118,9 +119,12 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 #else
 	neigh = rt->dst.ops->neigh_lookup(&rt->dst, NULL, &dst_addr);
 #endif
-	if (neigh && !is_valid_ether_addr(neigh->ha)) {
-		neigh_release(neigh);
-		neigh = NULL;
+	if (neigh) {
+		if (!(neigh->nud_state & NUD_VALID) || !is_valid_ether_addr(neigh->ha)) {
+			nss_connmgr_gre_warning("neigh state is either invalid (%x) or mac address is null (%pM) for %pI6", neigh->nud_state, neigh->ha, dest_ip);
+			neigh_release(neigh);
+			neigh = NULL;
+		}
 	}
 
 	if (!neigh) {
@@ -140,7 +144,8 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 		 * Release hold on existing route entry, and find the route entry again
 		 */
 		ip6_rt_put(rt);
-		rt = rt6_lookup(&init_net, &dst_addr, NULL, 0, NULL, 0);
+
+		rt = nss_connmgr_gre_v6_route_lookup(&init_net, &dst_addr);
 		if (!rt) {
 			nss_connmgr_gre_warning("Unable to find route lookup for %pI6\n", dest_ip);
 			return GRE_ERR_NEIGH_LOOKUP;
@@ -151,9 +156,17 @@ static int nss_connmgr_gre_v6_get_mac_address(uint8_t *src_ip, uint8_t *dest_ip,
 #else
 		neigh = rt->dst.ops->neigh_lookup(&rt->dst, NULL, &dst_addr);
 #endif
-		if (!neigh || !is_valid_ether_addr(neigh->ha)) {
+
+		if (!neigh) {
 			ip6_rt_put(rt);
 			nss_connmgr_gre_warning("Err in MAC address, neighbour look up failed\n");
+			return GRE_ERR_NEIGH_LOOKUP;
+		}
+
+		if (!(neigh->nud_state & NUD_VALID) || !is_valid_ether_addr(neigh->ha)) {
+			ip6_rt_put(rt);
+			nss_connmgr_gre_warning("Err in MAC address, invalid neigh state (%x) or invalid mac(%pM)\n", neigh->nud_state, neigh->ha);
+			neigh_release(neigh);
 			return GRE_ERR_NEIGH_LOOKUP;
 		}
 	}

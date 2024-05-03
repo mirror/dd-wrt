@@ -2,7 +2,7 @@
 
 ccflags-y += $(NSS_CCFLAGS) -I$(obj)/../../exports
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
-ccflags-y += -Werror
+ccflags-y += -Wall -Werror
 
 obj-m += qca-nss-ipsecmgr.o
 qca-nss-ipsecmgr-objs := nss_ipsecmgr.o

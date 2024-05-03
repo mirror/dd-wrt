@@ -15,10 +15,13 @@ IPSECMGR_DIR:=v1.0
 IPSECMGR_KLIPS:=
 NSS_CRYPTO_DIR:=v1.0
 
+#KERNEL_FLAGS = "-UCONFIG_NOPRINTK -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch" 
 KERNEL_FLAGS = "-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch" 
 
 all:
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) CONFIG_SUPPORT_MLD=y
+	$(MAKE) -C lib KERNEL_FLAGS=$(KERNEL_FLAGS)
+	$(MAKE) -C nssinfo KERNEL_FLAGS=$(KERNEL_FLAGS)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS)
@@ -26,7 +29,7 @@ all:
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" pppoe=y tunipip6=m l2tpv2=y qdisc=y vxlanmgr=y pptp=y vlan-mgr=y bridge-mgr=y \
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" pppoe=y tunipip6=m l2tpv2=y qdisc=y vxlanmgr=y pptp=y vlan-mgr=y netlink=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) SoC="ipq806x" \
@@ -59,8 +62,12 @@ install:
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 	mkdir -p $(INSTALLDIR)/lib/firmware
 	cp firmware/* $(INSTALLDIR)/lib/firmware
+	mkdir -p $(INSTALLDIR)/usr/sbin
+	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 
 clean:
+	-$(MAKE) -C lib clean KERNEL_FLAGS=$(KERNEL_FLAGS)
+	-$(MAKE) -C nssinfo clean KERNEL_FLAGS=$(KERNEL_FLAGS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS=$(KERNEL_FLAGS) INSTALL_MOD_PATH=$(INSTALLDIR)

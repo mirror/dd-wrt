@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014, 2016-2018, 2020,  The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014, 2016-2018, 2020-2021,  The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -155,10 +155,6 @@ static void nss_codel_destroy(struct Qdisc *sch)
 {
 	struct nss_codel_sched_data *q = qdisc_priv(sch);
 
-	/*
-	 * Stop the polling of basic stats
-	 */
-	nss_qdisc_stop_basic_stats_polling(&q->nq);
 	nss_qdisc_destroy(&q->nq);
 	nss_codel_flow_queues_free(q);
 	nss_qdisc_info("nss_codel destroyed");
@@ -454,11 +450,6 @@ static int nss_codel_init(struct Qdisc *sch, struct nlattr *opt,
 		nss_qdisc_destroy(nq);
 		return -EINVAL;
 	}
-
-	/*
-	 * Start the stats polling timer
-	 */
-	nss_qdisc_start_basic_stats_polling(nq);
 
 	return 0;
 }

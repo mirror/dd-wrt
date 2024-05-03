@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2013, 2015-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -978,12 +981,12 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 	 * Check if turbo is supported
 	 */
 	if (npd->turbo_frequency) {
-		nss_info_always("nss_driver - Turbo Support %d\n", npd->turbo_frequency);
+		nss_info("nss_driver - Turbo Support %d\n", npd->turbo_frequency);
 #if (NSS_PM_SUPPORT == 1)
 		nss_pm_set_turbo();
 #endif
 	} else {
-		nss_info_always("nss_driver - Turbo No Support %d\n", npd->turbo_frequency);
+		nss_info("nss_driver - Turbo No Support %d\n", npd->turbo_frequency);
 	}
 
 	/*
@@ -1082,26 +1085,26 @@ clk_complete:
 		}
 	}
 
-	nss_info_always("Supported Frequencies - ");
+	nss_info("Supported Frequencies - ");
 	for (i = 0; i < NSS_FREQ_MAX_SCALE; i++) {
 		if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_110) {
-			nss_info_always("110Mhz ");
+			nss_info("110Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_275) {
-			nss_info_always("275Mhz ");
+			nss_info("275Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_550) {
-			nss_info_always("550Mhz ");
+			nss_info("550Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_600) {
-			nss_info_always("600Mhz ");
+			nss_info("600Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_733) {
-			nss_info_always("733Mhz ");
+			nss_info("733Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_800) {
-			nss_info_always("800Mhz ");
+			nss_info("800Mhz ");
 		} else {
 			nss_info_always("Error\nNo Table/Invalid Frequency Found - Loading Old Tables -");
 			return -EFAULT;
 		}
 	}
-	nss_info_always("\n");
+	nss_info("\n");
 
 	/*
 	 * Set default frequency

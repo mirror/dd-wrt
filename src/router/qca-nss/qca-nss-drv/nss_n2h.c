@@ -1,9 +1,12 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -30,6 +33,12 @@
 #define NSS_N2H_DEFAULT_EMPTY_POOL_BUF_SZ	8192
 #define NSS_N2H_TX_TIMEOUT 3000 /* 3 Seconds */
 
+/*
+ * Allocate shaper pool memory in multiple chunk of PAGE_SIZE
+ */
+#define NSS_N2H_MIN_QOS_MEM_POOL_SZ		1
+#define NSS_N2H_QOS_MEM_POOL_SZ_MB(size)		(size * 1024 * 1024)
+
 int nss_n2h_empty_pool_buf_cfg[NSS_MAX_CORES] __read_mostly = {-1, -1};
 int nss_n2h_empty_paged_pool_buf_cfg[NSS_MAX_CORES] __read_mostly = {-1, -1};
 int nss_n2h_water_mark[NSS_MAX_CORES][2] __read_mostly = {{-1, -1}, {-1, -1} };
@@ -41,6 +50,7 @@ int nss_n2h_core0_add_buf_pool_size __read_mostly;
 int nss_n2h_core1_add_buf_pool_size __read_mostly;
 int nss_n2h_queue_limit[NSS_MAX_CORES] __read_mostly = {NSS_DEFAULT_QUEUE_LIMIT, NSS_DEFAULT_QUEUE_LIMIT};
 int nss_n2h_host_bp_config[NSS_MAX_CORES] __read_mostly;
+int nss_n2h_shaper_pool_size_cfg __read_mostly;
 
 struct nss_n2h_registered_data {
 	nss_n2h_msg_callback_t n2h_callback;
@@ -57,6 +67,9 @@ static struct nss_n2h_cfg_pvt nss_n2h_q_cfg_pvt;
 static struct nss_n2h_cfg_pvt nss_n2h_q_lim_pvt;
 static struct nss_n2h_cfg_pvt nss_n2h_host_bp_cfg_pvt;
 
+static uint32_t nss_n2h_shaper_pool_cfg_num_pages;
+static nss_tx_status_t nss_n2h_cfg_shaper_pool(struct nss_ctx_instance *nss_ctx)
+;
 /*
  * nss_n2h_interface_handler()
  *	Handle NSS -> HLOS messages for N2H node
@@ -982,6 +995,24 @@ static int nss_n2h_wifi_payloads_handler(struct ctl_table *ctl,
 }
 
 /*
+ * nss_n2h_get_qos_mem_size_cfg_handler()
+ *	Gets the QoS memory pool size
+ */
+static int nss_n2h_get_qos_mem_size_cfg_handler(struct ctl_table *ctl,
+			int write, void __user *buffer,
+			size_t *lenp, loff_t *ppos)
+{
+	int ret = NSS_FAILURE;
+
+	if (!write) {
+		nss_n2h_shaper_pool_size_cfg = NSS_N2H_QOS_MEM_POOL_SZ_MB(nss_core_get_qos_mem_size());
+	}
+
+	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
+	return ret;
+}
+
+/*
  * nss_n2h_update_queue_config_callback()
  *	Callback to handle the completion of queue config command
  */
@@ -1703,6 +1734,13 @@ static struct ctl_table nss_n2h_table_single_core[] = {
 		.mode		= 0644,
 		.proc_handler	= &nss_n2h_host_bp_cfg_core0_handler,
 	},
+	{
+		.procname		= "qos_mem_size",
+		.data			= &nss_n2h_shaper_pool_size_cfg,
+		.maxlen			= sizeof(int),
+		.mode			= 0644,
+		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
+	},
 
 	{ }
 };
@@ -1856,6 +1894,13 @@ static struct ctl_table nss_n2h_table_multi_core[] = {
 		.mode		= 0644,
 		.proc_handler	= &nss_n2h_host_bp_cfg_core1_handler,
 	},
+	{
+		.procname		= "qos_mem_size",
+		.data			= &nss_n2h_shaper_pool_size_cfg,
+		.maxlen			= sizeof(int),
+		.mode			= 0644,
+		.proc_handler	= &nss_n2h_get_qos_mem_size_cfg_handler,
+	},
 	{ }
 };
 
@@ -1930,6 +1975,113 @@ nss_tx_status_t nss_n2h_cfg_empty_pool_size(struct nss_ctx_instance *nss_ctx, ui
 	}
 
 	return nss_tx_status;
+}
+
+static inline void nss_n2h_shaper_pool_free(struct nss_n2h_shaper_mem_cfg_msg *nnsmcm, int num_blks)
+{
+	int blk_count;
+	for (blk_count = 0; blk_count < num_blks; blk_count++) {
+		kfree((void *)nnsmcm->pool_vaddr[blk_count]);
+	}
+}
+
+/*
+ * nss_n2h_cfg_qos_mem_size_callback()
+ *	Call back function for QoS memory pool size configuration
+ */
+static void nss_n2h_cfg_qos_mem_size_callback(void *app_data, struct nss_n2h_msg *nnm)
+{
+	struct nss_ctx_instance *nss_ctx __maybe_unused = (struct nss_ctx_instance *)app_data;
+	struct nss_n2h_shaper_mem_cfg_msg *nnsmcm = &nnm->msg.shaper_mem_cfg;
+	nnsmcm->num_blks = ntohl(nnsmcm->num_blks);
+
+	if (nnm->cm.response != NSS_CMN_RESPONSE_ACK) {
+		nss_warning("%px: Shaper pool configuration failed with error: %d\n", nss_ctx, nnm->cm.error);
+		nss_n2h_shaper_pool_free(nnsmcm, nnsmcm->num_blks);
+		return;
+	}
+
+	nss_core_update_qos_mem_size(nss_core_get_qos_mem_size() + (PAGE_SIZE * nnsmcm->num_blks));
+	nss_n2h_cfg_shaper_pool(nss_ctx);
+	nss_info("%px: shaper pool configuration success\n", nss_ctx);
+}
+
+/*
+ * nss_n2h_cfg_shaper_pool()
+ *	Config QoS memory pool in NSS FW
+ */
+static nss_tx_status_t nss_n2h_cfg_shaper_pool(struct nss_ctx_instance *nss_ctx)
+{
+	struct nss_n2h_msg nnm;
+	struct nss_n2h_shaper_mem_cfg_msg *nnsmcm;
+	nss_tx_status_t nss_tx_status;
+	int blk_count;
+
+	if (!nss_n2h_shaper_pool_cfg_num_pages) {
+		return NSS_TX_SUCCESS;
+	}
+
+	memset(&nnm, 0, sizeof(struct nss_n2h_msg));
+	nss_n2h_msg_init(&nnm, NSS_N2H_INTERFACE,
+			NSS_TX_METADATA_TYPE_N2H_SHAPER_POOL_CFG,
+			sizeof(struct nss_n2h_shaper_mem_cfg_msg),
+			nss_n2h_cfg_qos_mem_size_callback,
+			(void *)nss_ctx);
+
+	nnsmcm = &nnm.msg.shaper_mem_cfg;
+
+	for (blk_count = 0; blk_count < MAX_PAGES_PER_MSG; blk_count++) {
+		void *kern_addr = kzalloc(PAGE_SIZE, GFP_ATOMIC);
+		if (!kern_addr) {
+			nss_warning("%px: memory allocation failed for shaper pool", nss_ctx);
+			return NSS_TX_FAILURE;
+		}
+
+		kmemleak_not_leak(kern_addr);
+		nnsmcm->pool_vaddr[blk_count] = (nss_ptr_t)kern_addr;
+		nnsmcm->pool_addr[blk_count] = dma_map_single(nss_ctx->dev, kern_addr, PAGE_SIZE, DMA_TO_DEVICE);
+	}
+
+	nnsmcm->mem_blk_size = htonl(PAGE_SIZE);
+	nnsmcm->num_blks = htonl(blk_count);
+	nss_tx_status = nss_n2h_tx_msg(nss_ctx, &nnm);
+
+	if (nss_tx_status != NSS_TX_SUCCESS) {
+		nss_n2h_shaper_pool_free(nnsmcm, blk_count);
+		nss_warning("%px: nss_tx error setting shaper pool\n", nss_ctx);
+		return NSS_TX_FAILURE;
+	}
+
+	nss_n2h_shaper_pool_cfg_num_pages--;
+	return NSS_TX_SUCCESS;
+}
+
+/*
+ * nss_n2h_cfg_qos_mem_size()
+ *	Config QoS memory pool size
+ */
+nss_tx_status_t nss_n2h_cfg_qos_mem_size(struct nss_ctx_instance *nss_ctx, uint32_t pool_sz)
+{
+	nss_info("%px: update QoS memory pool size: %dMB\n",
+		nss_ctx, pool_sz);
+
+	if (!pool_sz) {
+		nss_info("%px: No extra memory allocated for QoS memory pool",
+				nss_ctx);
+		return NSS_TX_SUCCESS;
+	}
+
+	if (pool_sz < NSS_N2H_MIN_QOS_MEM_POOL_SZ) {
+		nss_warning("%px: pool size: %d is less than minimum value allowed: %d",
+				nss_ctx, pool_sz, NSS_N2H_MIN_QOS_MEM_POOL_SZ);
+		return NSS_TX_FAILURE;
+	}
+
+	nss_n2h_shaper_pool_cfg_num_pages = ALIGN(NSS_N2H_QOS_MEM_POOL_SZ_MB(pool_sz), PAGE_SIZE)/(PAGE_SIZE * MAX_PAGES_PER_MSG);
+
+	nss_info("%px: shaper pool size:%d bytes\n", nss_ctx, NSS_N2H_QOS_MEM_POOL_SZ_MB(pool_sz));
+
+	return nss_n2h_cfg_shaper_pool(nss_ctx);
 }
 
 /*
@@ -2061,10 +2213,9 @@ void nss_n2h_register_handler(struct nss_ctx_instance *nss_ctx)
 
 	if (nss_ctx->id == NSS_CORE_0) {
 		nss_n2h_stats_dentry_create();
+		nss_n2h_strings_dentry_create();
+		nss_drv_strings_dentry_create();
 	}
-	nss_n2h_strings_dentry_create();
-
-	nss_drv_strings_dentry_create();
 }
 
 /*

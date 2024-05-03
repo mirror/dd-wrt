@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -67,6 +67,20 @@ static inline void nss_ipv4_dscp_map_usage(void)
 	nss_info_always("dscp[0-63] action[0-%u] prio[0-%u]:\n\n",
 				NSS_IPV4_DSCP_MAP_ACTION_MAX - 1,
 				NSS_DSCP_MAP_PRIORITY_MAX - 1);
+}
+
+/*
+ * nss_ipv4_get_total_conn_count()
+ *	 Returns the sum of IPv4 and IPv6 connections.
+ */
+static uint32_t nss_ipv4_get_total_conn_count(int ipv4_num_conn)
+{
+
+#ifdef NSS_DRV_IPV6_ENABLE
+	return ipv4_num_conn + nss_ipv6_conn_cfg;
+#else
+	return ipv4_num_conn;
+#endif
 }
 
 /*
@@ -424,7 +438,7 @@ static int nss_ipv4_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 
 	nss_info("%px: IPv4 supported connections: %d\n", nss_ctx, conn);
 
-	nss_ipv4_ct_info.ce_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
+	nss_ipv4_ct_info.ce_mem = __get_free_pages(GFP_ATOMIC | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv4_ct_info.ce_table_size));
 	if (!nss_ipv4_ct_info.ce_mem) {
 		nss_warning("%px: Memory allocation failed for IPv4 Connections: %d\n",
@@ -433,7 +447,7 @@ static int nss_ipv4_conn_cfg_process(struct nss_ctx_instance *nss_ctx, int conn)
 		goto fail;
 	}
 
-	nss_ipv4_ct_info.cme_mem = __get_free_pages(GFP_KERNEL | __GFP_NOWARN | __GFP_ZERO,
+	nss_ipv4_ct_info.cme_mem = __get_free_pages(GFP_ATOMIC | __GFP_NOWARN | __GFP_ZERO,
 					get_order(nss_ipv4_ct_info.cme_table_size));
 	if (!nss_ipv4_ct_info.ce_mem) {
 		nss_warning("%px: Memory allocation failed for IPv4 Connections: %d\n",
@@ -532,7 +546,8 @@ int nss_ipv4_update_conn_count(int ipv4_num_conn)
 	 * Min. value should be at least 256 connections. This is the
 	 * minimum connections we will support for each of them.
 	 */
-	sum_of_conn = ipv4_num_conn + nss_ipv6_conn_cfg;
+	sum_of_conn = nss_ipv4_get_total_conn_count(ipv4_num_conn);
+
 	if ((ipv4_num_conn & NSS_NUM_CONN_QUANTA_MASK) ||
 		(sum_of_conn > NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6) ||
 		(ipv4_num_conn < NSS_MIN_NUM_CONN)) {

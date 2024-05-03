@@ -1,9 +1,13 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2017, 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2017, 2019-2021, The Linux Foundation. All rights reserved.
+ *
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -85,11 +89,6 @@ static void nss_wrr_destroy_class(struct Qdisc *sch, struct nss_wrr_class_data *
 	 * And now we destroy the child.
 	 */
 	 nss_qdisc_put(cl->qdisc);
-
-	/*
-	 * Stop the stats polling timer and free class
-	 */
-	nss_qdisc_stop_basic_stats_polling(&cl->nq);
 
 	/*
 	 * Destroy the shaper in NSS
@@ -230,7 +229,7 @@ static int nss_wrr_ppe_change_class(struct Qdisc *sch, struct nss_wrr_class_data
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
-		  struct nlattr **tca, unsigned long *arg)
+		  struct nlattr **tca, unsigned long *arg, struct netlink_ext_ack *extack)
 {
 	struct netlink_ext_ack *extack = NULL;
 #else
@@ -352,11 +351,6 @@ static int nss_wrr_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
 		 */
 		qdisc_class_hash_grow(sch, &q->clhash);
 
-		/*
-		 * Start the stats polling timer
-		 */
-		nss_qdisc_start_basic_stats_polling(&cl->nq);
-
 		nss_qdisc_info("Class %u successfully allocated\n", classid);
 	}
 
@@ -418,11 +412,14 @@ static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg)
 	int refcnt;
 
 	/*
-	 * Since all classes are leaf nodes in our case, we dont have to make
-	 * that check.
+	 * If the class is a root class or has a child qdisc attached
+	 * we do not support deleting it.
 	 */
-	if (cl == &q->root)
+	if ((cl == &q->root) || (cl->qdisc != &noop_qdisc)) {
+		nss_qdisc_warning("Cannot delete wrr class %x as it is the "
+				  "root class or has a child qdisc attached\n", cl->nq.qos_tag);
 		return -EBUSY;
+	}
 
 	/*
 	 * The message to NSS should be sent to the parent of this class
@@ -436,16 +433,24 @@ static int nss_wrr_delete_class(struct Qdisc *sch, unsigned long arg)
 	}
 
 	sch_tree_lock(sch);
-	qdisc_reset(cl->qdisc);
 	qdisc_class_hash_remove(&q->clhash, &cl->cl_common);
 
 	refcnt = nss_qdisc_atomic_sub_return(&cl->nq);
 
 	sch_tree_unlock(sch);
+
+	/*
+	 * For 5.4 and above kernels, calling nss_htb_destroy_class
+	 * explicitly as there is no put_class which would have called
+	 * nss_wrr_destroy_class when refcnt becomes zero.
+	 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+	nss_wrr_destroy_class(sch, cl);
+#else
 	if (!refcnt) {
 		nss_qdisc_error("Reference count should not be zero for class %px\n", cl);
 	}
-
+#endif
 	return 0;
 }
 
@@ -721,11 +726,6 @@ static int nss_wrr_init_qdisc(struct Qdisc *sch, struct nlattr *opt,
 
 	nss_qdisc_info("Nsswrr initialized - handle %x parent %x\n", sch->handle, sch->parent);
 
-	/*
-	 * Start the stats polling timer
-	 */
-	nss_qdisc_start_basic_stats_polling(&q->nq);
-
 	return 0;
 }
 
@@ -764,6 +764,11 @@ static int nss_wrr_change_qdisc(struct Qdisc *sch, struct nlattr *opt,
 
 static void nss_wrr_reset_class(struct nss_wrr_class_data *cl)
 {
+	if (cl->qdisc == &noop_qdisc) {
+		nss_qdisc_trace("Class %x has no child qdisc to reset\n", cl->nq.qos_tag);
+		return;
+	}
+
 	nss_qdisc_reset(cl->qdisc);
 	nss_qdisc_info("Nsswrr class resetted %px\n", cl->qdisc);
 }
@@ -834,11 +839,6 @@ static void nss_wrr_destroy_qdisc(struct Qdisc *sch)
 		}
 	}
 	qdisc_class_hash_destroy(&q->clhash);
-
-	/*
-	 * Stop the polling of basic stats
-	 */
-	nss_qdisc_stop_basic_stats_polling(&q->nq);
 
 	/*
 	 * Now we can go ahead and destroy the qdisc.

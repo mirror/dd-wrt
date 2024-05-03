@@ -1,6 +1,6 @@
 /*
  ******************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019, 2021 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -37,6 +37,8 @@ enum nss_vxlanmgr_tun_stats_type {
 	NSS_VXLANMGR_TUN_STATS_TYPE_EXCEPT_VNI_LOOKUP_FAILED,
 	NSS_VXLANMGR_TUN_STATS_TYPE_DROP_MALFORMED,
 	NSS_VXLANMGR_TUN_STATS_TYPE_DROP_NEXT_NODE_QUEUE_FULL,
+	NSS_VXLANMGR_TUN_STATS_TYPE_EXCEPT_INNER_HASH,
+	NSS_VXLANMGR_TUN_STATS_TYPE_DECAP_IPSEC_SRC_INVALID,
 	NSS_VXLANMGR_TUN_STATS_TYPE_MAX,
 };
 

@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,7 +29,7 @@
 #define NSS_RMNET_RX_GET_INDEX(if_num)	(if_num - NSS_DYNAMIC_IF_START)
 
 /*
- * Spinlock to protect the global data structure virt_handle.
+ * Spinlock to protect the global data structure rmnet handle.
  */
 DEFINE_SPINLOCK(nss_rmnet_rx_lock);
 
@@ -243,6 +243,8 @@ static int nss_rmnet_rx_handle_destroy_sync(struct nss_rmnet_rx_handle *handle)
 	rmnet_rx_handle[index_h2n] = NULL;
 	spin_unlock_bh(&nss_rmnet_rx_lock);
 
+	kfree(handle->stats_h2n);
+	kfree(handle->stats_n2h);
 	kfree(handle->pvt);
 	kfree(handle);
 
@@ -523,6 +525,27 @@ error1:
 	return NULL;
 }
 EXPORT_SYMBOL(nss_rmnet_rx_create_sync_nexthop);
+
+/*
+ * nss_rmnet_rx_create()
+ *	Create rmnet_n2h and rmnet_h2n interfaces with generic next hops and associate it with same netdev.
+ *
+ * When rmnet and eth_rx is running at the same core, we directly send packets to eth_rx node.
+ * When they are running at different cores, the packets needs to arrive eth_rx through C2C.
+ */
+struct nss_rmnet_rx_handle *nss_rmnet_rx_create(struct net_device *netdev)
+{
+	uint32_t nexthop_n2h = NSS_N2H_INTERFACE;
+	uint32_t nexthop_h2n = NSS_C2C_TX_INTERFACE;
+
+	if (nss_top_main.rmnet_rx_handler_id == 0) {
+		nexthop_h2n = NSS_ETH_RX_INTERFACE;
+	}
+
+
+	return nss_rmnet_rx_create_sync_nexthop(netdev, nexthop_n2h, nexthop_h2n);
+}
+EXPORT_SYMBOL(nss_rmnet_rx_create);
 
 /*
  * nss_rmnet_rx_tx_buf()

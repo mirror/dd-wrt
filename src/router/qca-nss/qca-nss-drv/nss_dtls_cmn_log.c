@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -32,7 +35,8 @@ static int8_t *nss_dtls_cmn_log_message_types_str[NSS_DTLS_CMN_MSG_MAX] __maybe_
 	"DTLS_CMN Switch DTLS Transform",
 	"DTLS_CMN Deconfigure Context",
 	"DTLS_CMN Synchronize Stats",
-	"DTLS_CMN Node Statistics"
+	"DTLS_CMN Node Statistics",
+	"DTLS_CMN Update VP"
 };
 
 /*
@@ -53,7 +57,9 @@ static int8_t *nss_dtls_cmn_log_error_response_types_str[NSS_DTLS_CMN_ERROR_MAX]
 	"DTLS_CMN Switch Hardware Context Fail",
 	"DTLS_CMN Already Configured",
 	"DTLS_CMN No Memory",
-	"DTLS_CMN Copy Nonce Failure"
+	"DTLS_CMN Copy Nonce Failure",
+	"DTLS_CMN Update VP Failure",
+	"DTLS_CMN Destroy VP Failure"
 };
 
 /*

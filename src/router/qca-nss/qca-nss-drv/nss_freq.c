@@ -299,7 +299,12 @@ void nss_freq_scale_frequency(struct nss_ctx_instance *nss_ctx, uint32_t inst_cn
 
 	if (nss_runtime_samples.freq_scale_rate_limit_down++ >= NSS_FREQUENCY_SCALE_RATE_LIMIT_DOWN) {
 		minimum = nss_runtime_samples.freq_scale[index].minimum;
-		if ((nss_runtime_samples.average < minimum) && (index > 0)) {
+
+		/*
+		 * Check if we need to lower the frequency. For some SoC like IPQ50xx, low frequency
+		 * is not supported. So check if the next lower frequency is configured before shifting down
+		 */
+		if ((nss_runtime_samples.average < minimum) && (index > 0) && nss_runtime_samples.freq_scale[index - 1].maximum) {
 			nss_runtime_samples.freq_scale_index--;
 			nss_runtime_samples.freq_scale_ready = 0;
 

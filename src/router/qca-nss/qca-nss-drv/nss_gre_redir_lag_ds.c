@@ -1,6 +1,6 @@
 /*
- **************************************************************************
- * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
+ ****************************************************************************
+ * Copyright (c) 2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -11,17 +11,18 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- **************************************************************************
+ ****************************************************************************
  */
 
 #include "nss_tx_rx_common.h"
+#include "nss_gre_redir_lag.h"
 #include "nss_gre_redir_lag_ds_stats.h"
 #include "nss_gre_redir_lag_ds_log.h"
+#include "nss_gre_redir_lag_ds_strings.h"
 
 #define NSS_GRE_REDIR_LAG_DS_TX_TIMEOUT 3000 /* 3 Seconds */
 
-static struct nss_gre_redir_lag_ds_tun_stats tun_stats[NSS_GRE_REDIR_LAG_MAX_NODE];
-static DEFINE_SPINLOCK(nss_gre_redir_lag_ds_stats_lock);
+struct nss_gre_redir_lag_ds_tun_stats tun_ds_stats[NSS_GRE_REDIR_LAG_MAX_NODE];
 
 /*
  * Private data structure
@@ -64,11 +65,11 @@ static void nss_gre_redir_lag_ds_callback(void *app_data, struct nss_gre_redir_l
  * nss_gre_redir_lag_ds_get_node_idx()
  *	Returns index of statistics context.
  */
-static inline bool nss_gre_redir_lag_ds_get_node_idx(uint32_t ifnum, uint32_t *idx)
+bool nss_gre_redir_lag_ds_get_node_idx(uint32_t ifnum, uint32_t *idx)
 {
 	uint32_t node_idx;
 	for (node_idx = 0; node_idx < NSS_GRE_REDIR_LAG_MAX_NODE; node_idx++) {
-		if ((tun_stats[node_idx].valid) && (tun_stats[node_idx].ifnum == ifnum)) {
+		if ((tun_ds_stats[node_idx].valid) && (tun_ds_stats[node_idx].ifnum == ifnum)) {
 			*idx = node_idx;
 			return true;
 		}
@@ -78,37 +79,10 @@ static inline bool nss_gre_redir_lag_ds_get_node_idx(uint32_t ifnum, uint32_t *i
 }
 
 /*
- * nss_gre_redir_lag_ds_update_sync_stats()
- *	Update synchonized statistics.
- */
-static void nss_gre_redir_lag_ds_update_sync_stats(struct nss_ctx_instance *nss_ctx, struct nss_gre_redir_lag_ds_sync_stats_msg *ngss, uint32_t ifnum)
-{
-	int idx, j;
-
-	spin_lock_bh(&nss_gre_redir_lag_ds_stats_lock);
-	if (!nss_gre_redir_lag_ds_get_node_idx(ifnum, &idx)) {
-		spin_unlock_bh(&nss_gre_redir_lag_ds_stats_lock);
-		nss_warning("%px: Unable to update hash stats msg. Stats context not found.\n", nss_ctx);
-		return;
-	}
-
-	tun_stats[idx].tx_packets += ngss->node_stats.tx_packets;
-	tun_stats[idx].tx_bytes += ngss->node_stats.tx_bytes;
-	tun_stats[idx].rx_packets += ngss->node_stats.rx_packets;
-	tun_stats[idx].rx_bytes += ngss->node_stats.rx_bytes;
-	for (j = 0; j < NSS_MAX_NUM_PRI; j++) {
-		tun_stats[idx].rx_dropped[j] += ngss->node_stats.rx_dropped[j];
-	}
-	tun_stats[idx].dst_invalid += ngss->ds_stats.dst_invalid;
-	tun_stats[idx].exception_cnt += ngss->ds_stats.exception_cnt;
-	spin_unlock_bh(&nss_gre_redir_lag_ds_stats_lock);
-}
-
-/*
  * nss_gre_redir_lag_ds_verify_ifnum()
  *	Verify interface type.
  */
-static bool nss_gre_redir_lag_ds_verify_ifnum(uint32_t if_num)
+bool nss_gre_redir_lag_ds_verify_ifnum(uint32_t if_num)
 {
 	return nss_dynamic_interface_get_type(nss_gre_redir_lag_ds_get_context(), if_num) == NSS_DYNAMIC_INTERFACE_TYPE_GRE_REDIR_LAG_DS;
 }
@@ -147,7 +121,7 @@ static void nss_gre_redir_lag_ds_msg_handler(struct nss_ctx_instance *nss_ctx, s
 	 */
 	if (ncm->response == NSS_CMN_RESPONSE_NOTIFY) {
 		ncm->cb = (nss_ptr_t)nss_core_get_msg_handler(nss_ctx, ncm->interface);
-		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[nss_ctx->id][ncm->interface].app_data;
+		ncm->app_data = (nss_ptr_t)nss_ctx->nss_rx_interface_handlers[ncm->interface].app_data;
 	}
 
 	/*
@@ -162,7 +136,8 @@ static void nss_gre_redir_lag_ds_msg_handler(struct nss_ctx_instance *nss_ctx, s
 
 	switch (ncm->type) {
 	case NSS_GRE_REDIR_LAG_DS_STATS_SYNC_MSG:
-		nss_gre_redir_lag_ds_update_sync_stats(nss_ctx, &ngrm->msg.ds_sync_stats, ncm->interface);
+		nss_gre_redir_lag_ds_stats_sync(nss_ctx, &ngrm->msg.ds_sync_stats, ncm->interface);
+		nss_gre_redir_lag_ds_stats_notify(nss_ctx, ncm->interface);
 		break;
 	}
 
@@ -217,7 +192,7 @@ static enum nss_gre_redir_lag_err_types nss_gre_redir_lag_ds_unregister_if(uint3
 		return NSS_GRE_REDIR_LAG_ERR_STATS_INDEX_NOT_FOUND;
 	}
 
-	tun_stats[idx].valid = false;
+	tun_ds_stats[idx].valid = false;
 	spin_unlock_bh(&nss_gre_redir_lag_ds_stats_lock);
 	return NSS_GRE_REDIR_LAG_SUCCESS;
 }
@@ -258,9 +233,9 @@ static struct nss_ctx_instance *nss_gre_redir_lag_ds_register_if(uint32_t if_num
 	nss_core_set_subsys_dp_type(nss_ctx, netdev, if_num, type);
 	spin_lock_bh(&nss_gre_redir_lag_ds_stats_lock);
 	for (i = 0; i < NSS_GRE_REDIR_LAG_MAX_NODE; i++) {
-		if (!tun_stats[i].valid) {
-			tun_stats[i].ifnum = if_num;
-			tun_stats[i].valid = true;
+		if (!tun_ds_stats[i].valid) {
+			tun_ds_stats[i].ifnum = if_num;
+			tun_ds_stats[i].valid = true;
 			break;
 		}
 	}
@@ -279,26 +254,6 @@ struct nss_ctx_instance *nss_gre_redir_lag_ds_get_context(void)
 	return (struct nss_ctx_instance *)&nss_top_main.nss[nss_top_main.gre_redir_lag_ds_handler_id];
 }
 EXPORT_SYMBOL(nss_gre_redir_lag_ds_get_context);
-
-/*
- * nss_gre_redir_lag_ds_get_cmn_stats()
- *	Get statistics for downstream LAG node.
- */
-bool nss_gre_redir_lag_ds_get_cmn_stats(struct nss_gre_redir_lag_ds_tun_stats *cmn_stats, uint32_t index)
-{
-	if (index >= NSS_GRE_REDIR_LAG_MAX_NODE) {
-		return false;
-	}
-
-	spin_lock_bh(&nss_gre_redir_lag_ds_stats_lock);
-	if (!tun_stats[index].valid) {
-		spin_unlock_bh(&nss_gre_redir_lag_ds_stats_lock);
-		return false;
-	}
-	memcpy((void *)cmn_stats, (void *)&tun_stats[index], sizeof(*cmn_stats));
-	spin_unlock_bh(&nss_gre_redir_lag_ds_stats_lock);
-	return true;
-}
 
 /*
  * nss_gre_redir_lag_ds_tx_msg()
@@ -441,6 +396,7 @@ void nss_gre_redir_lag_ds_register_handler(void)
 		return;
 	}
 
+	nss_gre_redir_lag_ds_strings_dentry_create();
 	nss_gre_redir_lag_ds_pvt.cb = NULL;
 	nss_gre_redir_lag_ds_pvt.app_data = NULL;
 	sema_init(&nss_gre_redir_lag_ds_pvt.sem, 1);

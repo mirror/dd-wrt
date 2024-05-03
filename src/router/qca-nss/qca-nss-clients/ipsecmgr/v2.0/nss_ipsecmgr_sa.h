@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -62,7 +62,8 @@ struct nss_ipsecmgr_sa_stats_priv {
 	uint64_t fail_hash_len;			/**< Failure in decap due to bad hash block len. */
 	uint64_t fail_transform;		/**< Failure in transformation; general error. */
 	uint64_t fail_crypto;			/**< Failure in crypto transformation. */
-	uint64_t fail_cle;			/* Failure in classification; general failure */
+	uint64_t fail_cle;			/**< Failure in classification; general failure */
+	uint64_t is_stopped;			/**< Indicates if SA is stopped; eg: seq overflow */
 };
 
 /*

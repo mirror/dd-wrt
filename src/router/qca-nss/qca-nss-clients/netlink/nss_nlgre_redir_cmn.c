@@ -1,6 +1,6 @@
 /*
  ***************************************************************************
- * Copyright (c) 2015-2016,2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2016, 2018-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -325,7 +325,7 @@ static struct rtnl_link_stats64 *nss_nlgre_redir_cmn_get_stats64(struct net_devi
 	int i;
 
 	for (i = 0; i < NSS_GRE_REDIR_MAX_INTERFACES; i++) {
-		if (!nss_gre_redir_get_stats(i, &get_stats)) {
+		if (!nss_gre_redir_stats_get(i, &get_stats)) {
 			continue;
 		}
 
@@ -340,15 +340,15 @@ static struct rtnl_link_stats64 *nss_nlgre_redir_cmn_get_stats64(struct net_devi
 	if (found == false)
 		return NULL;
 
-	stats->tx_bytes   = get_stats.node_stats.tx_bytes;
-	stats->tx_packets = get_stats.node_stats.tx_packets;
-	stats->rx_bytes   = get_stats.node_stats.rx_bytes;
-	stats->rx_packets = get_stats.node_stats.rx_packets;
-	for (i = 0;i < ARRAY_SIZE(get_stats.node_stats.rx_dropped); i++) {
-		stats->rx_dropped += get_stats.node_stats.rx_dropped[i];
+	stats->tx_bytes   = get_stats.tstats.tx_bytes;
+	stats->tx_packets = get_stats.tstats.tx_packets;
+	stats->rx_bytes   = get_stats.tstats.rx_bytes;
+	stats->rx_packets = get_stats.tstats.rx_packets;
+	for (i = 0;i < ARRAY_SIZE(get_stats.tstats.rx_dropped); i++) {
+		stats->rx_dropped += get_stats.tstats.rx_dropped[i];
 	}
 
-	stats->tx_dropped = get_stats.tx_dropped;
+	stats->tx_dropped = get_stats.tstats.tx_dropped;
 
 	return stats;
 }
@@ -384,7 +384,7 @@ static int nss_nlgre_redir_cmn_set_mac_address(struct net_device *dev, void *p)
 		return -EINVAL;
 	}
 
-	memcpy(dev->dev_addr, addr->sa_data, ETH_ALEN);
+	memcpy((void *) dev->dev_addr, addr->sa_data, ETH_ALEN);
 	return 0;
 }
 

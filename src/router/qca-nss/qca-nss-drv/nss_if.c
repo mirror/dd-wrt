@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2016, 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2016, 2018-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -160,10 +160,10 @@ nss_tx_status_t nss_if_tx_buf(struct nss_ctx_instance *nss_ctx, struct sk_buff *
 }
 
 /*
- * nss_if_tx_msg()
- *	Transmit a message to the specific interface on this core.
+ * nss_if_tx_msg_with_size()
+ *	Transmit a message to the specific interface on this core with a specified size.
  */
-nss_tx_status_t nss_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_if_msg *nim)
+nss_tx_status_t nss_if_tx_msg_with_size(struct nss_ctx_instance *nss_ctx, struct nss_if_msg *nim, uint32_t size)
 {
 	struct nss_cmn_msg *ncm = &nim->cm;
 	struct net_device *dev;
@@ -198,7 +198,19 @@ nss_tx_status_t nss_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_if_ms
 		return NSS_TX_FAILURE_BAD_PARAM;
 	}
 
-	return nss_core_send_cmd(nss_ctx, nim, sizeof(*nim), NSS_NBUF_PAYLOAD_SIZE);
+	return nss_core_send_cmd(nss_ctx, nim, sizeof(*nim), size);
+}
+EXPORT_SYMBOL(nss_if_tx_msg_with_size);
+
+/*
+ * nss_if_tx_msg()
+ *	Transmit a message to the specific interface on this core.
+ */
+nss_tx_status_t nss_if_tx_msg(struct nss_ctx_instance *nss_ctx, struct nss_if_msg *nim)
+{
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	return nss_if_tx_msg_with_size(nss_ctx, nim, NSS_NBUF_PAYLOAD_SIZE);
 }
 
 /*
@@ -264,6 +276,90 @@ nss_tx_status_t nss_if_set_nexthop(struct nss_ctx_instance *nss_ctx, uint32_t if
 	return nss_if_msg_sync(nss_ctx, &nim);
 }
 EXPORT_SYMBOL(nss_if_set_nexthop);
+
+/*
+ * nss_if_change_mtu()
+ *	Change the MTU of the interface.
+ */
+nss_tx_status_t nss_if_change_mtu(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint16_t mtu)
+{
+	struct nss_if_msg nim;
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	nss_trace("%px: NSS If MTU will be changed to %u, of NSS if num: %u\n", nss_ctx, mtu, if_num);
+
+	nss_cmn_msg_init(&nim.cm, if_num, NSS_IF_MTU_CHANGE,
+				sizeof(struct nss_if_mtu_change), nss_if_callback, NULL);
+
+	nim.msg.mtu_change.min_buf_size = mtu;
+
+	return nss_if_msg_sync(nss_ctx, &nim);
+}
+EXPORT_SYMBOL(nss_if_change_mtu);
+
+/*
+ * nss_if_change_mac_addr()
+ *	Change the MAC address of the interface.
+ */
+nss_tx_status_t nss_if_change_mac_addr(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint8_t *mac_addr)
+{
+	struct nss_if_msg nim;
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	nss_trace("%px: NSS If MAC address will be changed to %s, of NSS if num: %u\n", nss_ctx, mac_addr, if_num);
+
+	nss_cmn_msg_init(&nim.cm, if_num, NSS_IF_MAC_ADDR_SET,
+				sizeof(struct nss_if_mac_address_set), nss_if_callback, NULL);
+
+	memcpy(nim.msg.mac_address_set.mac_addr, mac_addr, ETH_ALEN);
+
+	return nss_if_msg_sync(nss_ctx, &nim);
+}
+EXPORT_SYMBOL(nss_if_change_mac_addr);
+
+/*
+ * nss_if_vsi_unassign()
+ *	API to send VSI detach message to NSS FW.
+ */
+nss_tx_status_t nss_if_vsi_unassign(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint32_t vsi)
+{
+	struct nss_if_msg nim;
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	nss_trace("%px: VSI to be unassigned is %u\n", nss_ctx, vsi);
+
+	nss_cmn_msg_init(&nim.cm, if_num, NSS_IF_VSI_UNASSIGN,
+				sizeof(struct nss_if_vsi_unassign), nss_if_callback, NULL);
+
+	nim.msg.vsi_unassign.vsi = vsi;
+
+	return nss_if_msg_sync(nss_ctx, &nim);
+}
+EXPORT_SYMBOL(nss_if_vsi_unassign);
+
+/*
+ * nss_if_vsi_assign()
+ *	API to send VSI attach message to NSS FW.
+ */
+nss_tx_status_t nss_if_vsi_assign(struct nss_ctx_instance *nss_ctx, nss_if_num_t if_num, uint32_t vsi)
+{
+	struct nss_if_msg nim;
+
+	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+
+	nss_trace("%px: VSI to be assigned is %u\n", nss_ctx, vsi);
+
+	nss_cmn_msg_init(&nim.cm, if_num, NSS_IF_VSI_ASSIGN,
+				sizeof(struct nss_if_vsi_assign), nss_if_callback, NULL);
+
+	nim.msg.vsi_assign.vsi = vsi;
+
+	return nss_if_msg_sync(nss_ctx, &nim);
+}
+EXPORT_SYMBOL(nss_if_vsi_assign);
 
 EXPORT_SYMBOL(nss_if_tx_msg);
 EXPORT_SYMBOL(nss_if_register);

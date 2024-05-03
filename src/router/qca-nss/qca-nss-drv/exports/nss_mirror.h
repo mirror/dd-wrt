@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -79,6 +79,20 @@ enum nss_mirror_error_type {
 };
 
 /**
+ * nss_mirror_stats
+ *	Mirror interface debug statistics.
+ */
+enum nss_mirror_stats {
+	NSS_MIRROR_STATS_PKTS,			/**< Number of packets exceptioned to host. */
+	NSS_MIRROR_STATS_BYTES,			/**< Number of bytes exceptioned to host. */
+	NSS_MIRROR_STATS_TX_SEND_FAIL,		/**< Transmit send failures. */
+	NSS_MIRROR_STATS_DEST_LOOKUP_FAIL,	/**< Destination lookup failures. */
+	NSS_MIRROR_STATS_MEM_ALLOC_FAIL,	/**< Memory allocation failures. */
+	NSS_MIRROR_STATS_COPY_FAIL,		/**< Copy failures. */
+	NSS_MIRROR_STATS_MAX			/**< Maximum statistics count. */
+};
+
+/**
  * nss_mirror_configure_msg
  *	Mirror interface configuration information.
  */
@@ -117,6 +131,16 @@ struct nss_mirror_node_stats {
 struct nss_mirror_stats_sync_msg {
 	struct nss_cmn_node_stats node_stats;	/**< Common node statistics. */
 	struct nss_mirror_node_stats mirror_stats;	/**< Debug statistics for mirror. */
+};
+
+/**
+ * nss_mirror_stats_notification
+ *	Mirror transmission statistics structure.
+ */
+struct nss_mirror_stats_notification {
+	uint64_t stats_ctx[NSS_MIRROR_STATS_MAX];	/**< Context transmission statistics. */
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
 };
 
 /**
@@ -206,6 +230,17 @@ extern nss_tx_status_t nss_mirror_tx_msg(struct nss_ctx_instance *nss_ctx, struc
 extern nss_tx_status_t nss_mirror_tx_msg_sync(struct nss_ctx_instance *nss_ctx, struct nss_mirror_msg *msg);
 
 /**
+ * nss_mirror_unregister_if
+ *	Deregisters a mirror interface from the NSS.
+ *
+ * @param[in] if_num  NSS interface number.
+ *
+ * @return
+ * None.
+ */
+extern void nss_mirror_unregister_if(uint32_t if_num);
+
+/**
  * nss_mirror_register_if
  *	Registers a mirror interface with the NSS for sending and receiving messages.
  *
@@ -229,17 +264,6 @@ extern struct nss_ctx_instance *nss_mirror_register_if(uint32_t if_num,
 		struct net_device *netdev, uint32_t features);
 
 /**
- * nss_mirror_unregister_if
- *	Deregisters a mirror interface from the NSS.
- *
- * @param[in] if_num  NSS interface number.
- *
- * @return
- * None.
- */
-extern void nss_mirror_unregister_if(uint32_t if_num);
-
-/**
  * nss_mirror_verify_if_num
  *	Verify whether the interface is an mirror interface or not.
  *
@@ -258,6 +282,34 @@ extern bool nss_mirror_verify_if_num(uint32_t if_num);
  * None.
  */
 extern void nss_mirror_register_handler(void);
+
+/**
+ * nss_mirror_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_mirror_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_mirror_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_mirror_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

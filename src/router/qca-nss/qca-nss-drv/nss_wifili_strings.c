@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -71,10 +71,12 @@ struct nss_stats_info nss_wifili_strings_stats_tcl[NSS_WIFILI_STATS_TCL_MAX] = {
  *	wifili tx comp stats
  */
 struct nss_stats_info nss_wifili_strings_stats_tx_comp[NSS_WIFILI_STATS_TX_DESC_FREE_MAX] = {
-	{"tx_desc_free_inv_bufsrc"	, NSS_STATS_TYPE_ERROR},
-	{"tx_desc_free_inv_cookie"	, NSS_STATS_TYPE_SPECIAL},
-	{"tx_desc_free_hw_ring_empty"	, NSS_STATS_TYPE_SPECIAL},
-	{"tx_desc_free_reaped"		, NSS_STATS_TYPE_SPECIAL}
+	{"tx_desc_free_inv_bufsrc"		, NSS_STATS_TYPE_ERROR},
+	{"tx_desc_free_inv_cookie"		, NSS_STATS_TYPE_SPECIAL},
+	{"tx_desc_free_hw_ring_empty"		, NSS_STATS_TYPE_SPECIAL},
+	{"tx_desc_free_reaped"			, NSS_STATS_TYPE_SPECIAL},
+	{"tx_capture_enqueue_count"		, NSS_STATS_TYPE_SPECIAL},
+	{"tx_capture_enqueue_fail_count"	, NSS_STATS_TYPE_ERROR}
 };
 
 /*

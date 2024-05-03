@@ -1,6 +1,6 @@
 /*
- **************************************************************************
- * Copyright (c) 2017, 2020, The Linux Foundation. All rights reserved.
+ ****************************************************************************
+ * Copyright (c) 2017, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -11,48 +11,25 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- **************************************************************************
+ ****************************************************************************
  */
 
 #include "nss_tx_rx_common.h"
+#include "nss_gre_tunnel.h"
 #include "nss_gre_tunnel_stats.h"
-
-DEFINE_SPINLOCK(nss_gre_tunnel_stats_session_debug_lock);
-struct nss_gre_tunnel_stats_session_debug nss_gre_tunnel_session_debug_stats[NSS_MAX_GRE_TUNNEL_SESSIONS];
+#include "nss_gre_tunnel_strings.h"
 
 /*
- * nss_gre_tunnel_stats_session_debug_str
- *	GRE Tunnel statistics strings for nss session stats
+ * Declare atomic notifier data structure for statistics.
  */
-static int8_t *nss_gre_tunnel_stats_session_debug_str[NSS_GRE_TUNNEL_STATS_SESSION_MAX] = {
-	"RX_PKTS",
-	"TX_PKTS",
-	"RX_QUEUE_0_DROPPED",
-	"RX_QUEUE_1_DROPPED",
-	"RX_QUEUE_2_DROPPED",
-	"RX_QUEUE_3_DROPPED",
-	"RX_MALFORMED",
-	"RX_INVALID_PROT",
-	"DECAP_QUEUE_FULL",
-	"RX_SINGLE_REC_DGRAM",
-	"RX_INVALID_REC_DGRAM",
-	"BUFFER_ALLOC_FAIL",
-	"BUFFER_COPY_FAIL",
-	"OUTFLOW_QUEUE_FULL",
-	"TX_DROPPED_HROOM",
-	"RX_CBUFFER_ALLOC_FAIL",
-	"RX_CENQUEUE_FAIL",
-	"RX_DECRYPT_DONE",
-	"RX_FORWARD_ENQUEUE_FAIL",
-	"TX_CBUFFER_ALLOC_FAIL",
-	"TX_CENQUEUE_FAIL",
-	"TX_DROPPED_TROOM",
-	"TX_FORWARD_ENQUEUE_FAIL",
-	"TX_CIPHER_DONE",
-	"CRYPTO_NOSUPP",
-	"RX_DROPPED_MH_VERSION",
-	"RX_UNALIGNED_PKT",
-};
+ATOMIC_NOTIFIER_HEAD(nss_gre_tunnel_stats_notifier);
+
+/*
+ * Spinlock to protect gre tunnel statistics update/read
+ */
+DEFINE_SPINLOCK(nss_gre_tunnel_stats_lock);
+
+struct nss_gre_tunnel_stats_session session_stats[NSS_MAX_GRE_TUNNEL_SESSIONS];
 
 /*
  * nss_gre_tunnel_stats_session_sync()
@@ -62,20 +39,20 @@ void nss_gre_tunnel_stats_session_sync(struct nss_ctx_instance *nss_ctx, struct 
 					uint16_t if_num)
 {
 	int i;
-	struct nss_gre_tunnel_stats_session_debug *s = NULL;
+	struct nss_gre_tunnel_stats_session *s = NULL;
 
 	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 
-	spin_lock_bh(&nss_gre_tunnel_stats_session_debug_lock);
+	spin_lock_bh(&nss_gre_tunnel_stats_lock);
 	for (i = 0; i < NSS_MAX_GRE_TUNNEL_SESSIONS; i++) {
-		if (nss_gre_tunnel_session_debug_stats[i].if_num == if_num) {
-			s = &nss_gre_tunnel_session_debug_stats[i];
+		if (session_stats[i].if_num == if_num) {
+			s = &session_stats[i];
 			break;
 		}
 	}
 
 	if (!s) {
-		spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
+		spin_unlock_bh(&nss_gre_tunnel_stats_lock);
 		nss_warning("%px: Session not found: %u", nss_ctx, if_num);
 		return;
 	}
@@ -118,14 +95,14 @@ void nss_gre_tunnel_stats_session_sync(struct nss_ctx_instance *nss_ctx, struct 
 #endif
 	}
 
-	spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
+	spin_unlock_bh(&nss_gre_tunnel_stats_lock);
 }
 
 /*
- * nss_gre_tunnel_stats_session_debug_get()
+ * nss_gre_tunnel_stats_session_get()
  *	Get session GRE Tunnel statitics.
  */
-static void nss_gre_tunnel_stats_session_debug_get(struct nss_gre_tunnel_stats_session_debug *stats)
+static void nss_gre_tunnel_stats_session_get(struct nss_gre_tunnel_stats_session *stats)
 {
 	int i;
 
@@ -134,15 +111,15 @@ static void nss_gre_tunnel_stats_session_debug_get(struct nss_gre_tunnel_stats_s
 		return;
 	}
 
-	spin_lock_bh(&nss_gre_tunnel_stats_session_debug_lock);
+	spin_lock_bh(&nss_gre_tunnel_stats_lock);
 	for (i = 0; i < NSS_MAX_GRE_TUNNEL_SESSIONS; i++) {
-		if (nss_gre_tunnel_session_debug_stats[i].valid) {
-			memcpy(stats, &nss_gre_tunnel_session_debug_stats[i],
-				sizeof(struct nss_gre_tunnel_stats_session_debug));
+		if (session_stats[i].valid) {
+			memcpy(stats, &session_stats[i],
+				sizeof(struct nss_gre_tunnel_stats_session));
 			stats++;
 		}
 	}
-	spin_unlock_bh(&nss_gre_tunnel_stats_session_debug_lock);
+	spin_unlock_bh(&nss_gre_tunnel_stats_lock);
 }
 
 /*
@@ -157,9 +134,10 @@ static ssize_t nss_gre_tunnel_stats_read(struct file *fp, char __user *ubuf,
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines;
 	size_t size_wr = 0;
 	ssize_t bytes_read = 0;
+	uint64_t *stats_shadow;
 	struct net_device *dev;
 	int id, i;
-	struct nss_gre_tunnel_stats_session_debug *gre_tunnel_session_stats = NULL;
+	struct nss_gre_tunnel_stats_session *gre_tunnel_session_stats = NULL;
 
 	char *lbuf = kzalloc(size_al, GFP_KERNEL);
 	if (unlikely(lbuf == NULL)) {
@@ -167,24 +145,31 @@ static ssize_t nss_gre_tunnel_stats_read(struct file *fp, char __user *ubuf,
 		return 0;
 	}
 
-	gre_tunnel_session_stats = kzalloc((sizeof(struct nss_gre_tunnel_stats_session_debug)
+	stats_shadow = kzalloc(NSS_CRYPTO_CMN_RESP_ERROR_MAX * 8, GFP_KERNEL);
+	if (unlikely(!stats_shadow)) {
+		nss_warning("Could not allocate memory for local shadow buffer");
+		kfree(lbuf);
+		return 0;
+	}
+
+	gre_tunnel_session_stats = kzalloc((sizeof(struct nss_gre_tunnel_stats_session)
 						* NSS_MAX_GRE_TUNNEL_SESSIONS), GFP_KERNEL);
 	if (unlikely(gre_tunnel_session_stats == NULL)) {
 		nss_warning("Could not allocate memory for populating GRE Tunnel stats");
 		kfree(lbuf);
+		kfree(stats_shadow);
 		return 0;
 	}
 
 	/*
 	 * Get all stats
 	 */
-	nss_gre_tunnel_stats_session_debug_get(gre_tunnel_session_stats);
+	nss_gre_tunnel_stats_session_get(gre_tunnel_session_stats);
 
 	/*
 	 * Session stats
 	 */
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"\nGRE Tunnel session stats start:\n\n");
+	size_wr += nss_stats_banner(lbuf, size_wr, size_al, "GRE tunnel stats", NSS_STATS_SINGLE_CORE);
 
 	for (id = 0; id < NSS_MAX_GRE_TUNNEL_SESSIONS; id++) {
 		if (!gre_tunnel_session_stats[id].valid)
@@ -203,34 +188,33 @@ static ssize_t nss_gre_tunnel_stats_read(struct file *fp, char __user *ubuf,
 						gre_tunnel_session_stats[id].if_num);
 		}
 
-		for (i = 0; i < NSS_GRE_TUNNEL_STATS_SESSION_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-						"\t%s = %llu\n",
-						nss_gre_tunnel_stats_session_debug_str[i],
-						gre_tunnel_session_stats[id].stats[i]);
-		}
+		size_wr += nss_stats_print("gre_tunnel", NULL, NSS_STATS_SINGLE_INSTANCE,
+					nss_gre_tunnel_strings_stats, gre_tunnel_session_stats[id].stats,
+					NSS_GRE_TUNNEL_STATS_SESSION_MAX, lbuf, size_wr, size_al);
 
 		/*
 		 * Print crypto resp err stats.
 		 * TODO: We are not printing with the right enum string for crypto. This
 		 * is intentional since we atleast want to see some stats for now.
 		 */
+		spin_lock_bh(&nss_gre_tunnel_stats_lock);
 		for (i = 0; i < NSS_CRYPTO_CMN_RESP_ERROR_MAX; i++) {
-			size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-						"\t%s = %llu\n",
-						nss_gre_tunnel_stats_session_debug_str[i],
-						gre_tunnel_session_stats[id].stats[NSS_GRE_TUNNEL_STATS_SESSION_MAX + i]);
+			stats_shadow[i] = gre_tunnel_session_stats[id].stats[NSS_GRE_TUNNEL_STATS_SESSION_MAX + i];
 		}
+
+		spin_unlock_bh(&nss_gre_tunnel_stats_lock);
+		size_wr += nss_stats_print("gre_tunnel", NULL, NSS_STATS_SINGLE_INSTANCE,
+					nss_gre_tunnel_strings_stats, stats_shadow,
+					NSS_CRYPTO_CMN_RESP_ERROR_MAX, lbuf, size_wr, size_al);
 
 		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\n");
 	}
 
-	size_wr += scnprintf(lbuf + size_wr, size_al - size_wr,
-				"\nGRE Tunnel session stats end\n");
 	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, size_wr);
 
 	kfree(gre_tunnel_session_stats);
 	kfree(lbuf);
+	kfree(stats_shadow);
 	return bytes_read;
 }
 
@@ -247,3 +231,52 @@ void nss_gre_tunnel_stats_dentry_create(void)
 {
 	nss_stats_create_dentry("gre_tunnel", &nss_gre_tunnel_stats_ops);
 }
+
+/*
+ * nss_gre_tunnel_stats_notify()
+ *	Sends notifications to all the registered modules.
+ *
+ * Leverage NSS-FW statistics timing to update Netlink.
+ */
+void nss_gre_tunnel_stats_notify(struct nss_ctx_instance *nss_ctx, uint32_t if_num)
+{
+	struct nss_gre_tunnel_stats_notification gre_tunnel_stats;
+	struct nss_gre_tunnel_stats_session *s = NULL;
+	int i;
+
+	spin_lock_bh(&nss_gre_tunnel_stats_lock);
+	for (i = 0; i < NSS_MAX_GRE_TUNNEL_SESSIONS; i++) {
+		if (session_stats[i].if_num != if_num) {
+			continue;
+		}
+
+		s = &session_stats[i];
+		gre_tunnel_stats.core_id = nss_ctx->id;
+		gre_tunnel_stats.if_num = if_num;
+		memcpy(gre_tunnel_stats.stats_ctx, s->stats, sizeof(gre_tunnel_stats.stats_ctx));
+		spin_unlock_bh(&nss_gre_tunnel_stats_lock);
+		atomic_notifier_call_chain(&nss_gre_tunnel_stats_notifier, NSS_STATS_EVENT_NOTIFY, &gre_tunnel_stats);
+		return;
+	}
+	spin_unlock_bh(&nss_gre_tunnel_stats_lock);
+}
+
+/*
+ * nss_gre_tunnel_stats_unregister_notifier()
+ *	Deregisters statistics notifier.
+ */
+int nss_gre_tunnel_stats_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&nss_gre_tunnel_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_gre_tunnel_stats_unregister_notifier);
+
+/*
+ * nss_gre_tunnel_stats_register_notifier()
+ *	Registers statistics notifier.
+ */
+int nss_gre_tunnel_stats_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&nss_gre_tunnel_stats_notifier, nb);
+}
+EXPORT_SYMBOL(nss_gre_tunnel_stats_register_notifier);

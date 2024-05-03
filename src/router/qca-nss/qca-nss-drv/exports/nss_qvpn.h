@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -26,10 +26,6 @@
  * @addtogroup nss_qvpn_subsystem
  * @{
  */
-
-#define NSS_QVPN_INTERFACE_MAX_LONG BITS_TO_LONGS(NSS_MAX_NET_INTERFACES)	/**< QVPN interface mapping bits. */
-#define NSS_QVPN_STATS_MAX_LINES (NSS_STATS_NODE_MAX + 32)			/**< Maxminum number of lines for QVPN statistics dump. */
-#define NSS_QVPN_STATS_SIZE_PER_IF (NSS_STATS_MAX_STR_LENGTH * NSS_QVPN_STATS_MAX_LINES)	/**< Total number of statistics per QVPN interface. */
 
 #define NSS_QVPN_CMDS_MAX 10			/**< Maximum number of QVPN commands supported. */
 #define NSS_QVPN_VPN_HDR_HEAD_SIZE_MAX 64	/**< Maximum size of QVPN header. */
@@ -294,6 +290,16 @@ struct nss_qvpn_stats_sync_msg {
 };
 
 /**
+ * nss_qvpn_stats_notification
+ *	QVPN transmission statistics structure.
+ */
+struct nss_qvpn_stats_notification {
+	uint64_t stats_ctx[NSS_STATS_NODE_MAX];		/**< Context transmission statistics. */
+	uint32_t core_id;				/**< Core ID. */
+	uint32_t if_num;				/**< Interface number. */
+};
+
+/**
  * nss_qvpn_msg
  *	QVPN message structure for configuration and statistics.
  */
@@ -420,6 +426,17 @@ typedef void (*nss_qvpn_callback_t)(struct net_device *netdev, struct sk_buff *s
 typedef void (*nss_qvpn_msg_callback_t)(void *app_data, struct nss_cmn_msg *msg);
 
 /**
+ * nss_qvpn_unregister_if
+ *	Deregisters the QVPN interface from the NSS.
+ *
+ * @param[in] if_num              NSS interface number.
+ *
+ * @return
+ * None.
+ */
+void nss_qvpn_unregister_if(uint32_t if_num);
+
+/**
  * nss_qvpn_register_if
  *	Register to send/receive QVPN messages to NSS.
  *
@@ -440,17 +457,6 @@ typedef void (*nss_qvpn_msg_callback_t)(void *app_data, struct nss_cmn_msg *msg)
 struct nss_ctx_instance *nss_qvpn_register_if(uint32_t if_num, nss_qvpn_callback_t qvpn_data_callback,
 			nss_qvpn_msg_callback_t qvpn_event_callback, struct net_device *netdev,
 			uint32_t features, void *app_ctx);
-
-/**
- * nss_qvpn_unregister_if
- *	Deregisters the QVPN interface from the NSS.
- *
- * @param[in] if_num              NSS interface number.
- *
- * @return
- * None.
- */
-void nss_qvpn_unregister_if(uint32_t if_num);
 
 /**
  * nss_qvpn_ifnum_with_core_id
@@ -480,6 +486,34 @@ void nss_qvpn_register_handler(void);
  * Pointer to interface map.
  */
 unsigned long *nss_qvpn_ifmap_get(void);
+
+/**
+ * nss_qvpn_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_qvpn_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_qvpn_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_qvpn_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

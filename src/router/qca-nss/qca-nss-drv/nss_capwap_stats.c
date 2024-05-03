@@ -50,7 +50,7 @@ static ssize_t nss_capwap_stats_encap(char *line, int len, int i, struct nss_cap
 		tcnt = s->tx_dropped_ver_mis;
 		break;
 	case 5:
-		tcnt = 0;
+		tcnt = s->tx_dropped_inner;
 		break;
 	case 6:
 		tcnt = s->tx_dropped_hroom;
@@ -114,7 +114,7 @@ static ssize_t nss_capwap_stats_decap(char *line, int len, int i, struct nss_cap
 		tcnt = s->rx_frag_gap_drops;
 		break;
 	case 9:
-		tcnt = s->rx_queue_full_drops;
+		tcnt = s->rx_n2h_drops;
 		return snprintf(line, len, "%s = %llu (n2h = %llu)\n", nss_capwap_strings_decap_stats[i].stats_name, tcnt, s->rx_n2h_queue_full_drops);
 	case 10:
 		tcnt = s->rx_n2h_queue_full_drops;
@@ -166,12 +166,22 @@ static ssize_t nss_capwap_stats_read(struct file *fp, char __user *ubuf, size_t 
 
 	for (; if_num <= max_if_num; if_num++) {
 		bool isthere;
+		enum nss_dynamic_interface_type dtype;
 
 		if (nss_is_dynamic_interface(if_num) == false) {
 			continue;
 		}
 
-		if (nss_dynamic_interface_get_type(nss_capwap_get_ctx(), if_num) != NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP) {
+		dtype = nss_dynamic_interface_get_type(nss_capwap_get_ctx(), if_num);
+
+		/*
+		 * Read encap stats from inner node and decap stats from outer node.
+		 */
+		if ((type == 1) && (dtype != NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_HOST_INNER)) {
+			continue;
+		}
+
+		if ((type == 0) && (dtype != NSS_DYNAMIC_INTERFACE_TYPE_CAPWAP_OUTER)) {
 			continue;
 		}
 

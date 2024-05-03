@@ -1,6 +1,6 @@
 /*
  * ********************************************************************************
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -20,6 +20,8 @@
 #define __NSS_IPSECMGR_PRIV_H
 
 #include <net/ipv6.h>
+#include <linux/lockdep.h>
+#include <linux/version.h>
 
 #define NSS_IPSECMGR_DEBUG_LVL_ERROR 1		/**< Turn on debug for an error. */
 #define NSS_IPSECMGR_DEBUG_LVL_WARN 2		/**< Turn on debug for a warning. */
@@ -76,6 +78,16 @@
 #define NSS_IPSECMGR_PRINT_SHORT NSS_IPSECMGR_PRINT_BYTES(2)
 #define NSS_IPSECMGR_PRINT_BYTE NSS_IPSECMGR_PRINT_BYTES(1)
 #define NSS_IPSECMGR_PRINT_IPADDR (NSS_IPSECMGR_PRINT_WORD * 4)
+/*
+ * Check if lock is held
+ */
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(4, 14, 196))
+#define nss_ipsecmgr_write_lock_is_held(x) BUG_ON(write_can_lock(x))
+#define nss_ipsecmgr_lock_is_held(x) BUG_ON(read_can_lock(x))
+#else
+#define nss_ipsecmgr_lock_is_held(x) lockdep_assert_held(x)
+#define nss_ipsecmgr_write_lock_is_held(x) lockdep_assert_held_write(x)
+#endif
 
 /*
  * Statistics dump information

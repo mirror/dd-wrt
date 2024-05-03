@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2016, 2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016, 2018, 2020-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -103,7 +103,9 @@ static void nss_ipv6_log_rule_create_msg(struct nss_ipv6_msg *nim)
 		"flow_qos_tag: %x (%u)\n"
 		"return_qos_tag: %x (%u)\n"
 		"flow_dscp: %x\n"
-		"return_dscp: %x\n",
+		"return_dscp: %x\n"
+		"flow_mirror_ifnum: %u\n"
+		"return_mirror_ifnum: %u\n",
 		nim,
 		nircm->tuple.protocol,
 		nircm->conn_rule.flow_mtu,
@@ -127,7 +129,9 @@ static void nss_ipv6_log_rule_create_msg(struct nss_ipv6_msg *nim)
 		nircm->qos_rule.flow_qos_tag, nircm->qos_rule.flow_qos_tag,
 		nircm->qos_rule.return_qos_tag, nircm->qos_rule.return_qos_tag,
 		nircm->dscp_rule.flow_dscp,
-		nircm->dscp_rule.return_dscp);
+		nircm->dscp_rule.return_dscp,
+		nircm->mirror_rule.flow_ifnum,
+		nircm->mirror_rule.return_ifnum);
 }
 
 /*

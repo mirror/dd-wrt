@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -68,6 +68,50 @@ typedef enum nss_clmap_error_types {
 } nss_clmap_error_t;
 
 /**
+ * nss_clmap_interface_type
+ *	Client map NSS interface type.
+ */
+enum nss_clmap_interface_type {
+	NSS_CLMAP_INTERFACE_TYPE_US,
+	NSS_CLMAP_INTERFACE_TYPE_DS,
+	NSS_CLMAP_INTERFACE_TYPE_MAX
+};
+
+/**
+ * nss_clmap_stats_type
+ *	Client map statistic counters.
+ */
+enum nss_clmap_stats_type {
+	NSS_CLMAP_INTERFACE_STATS_RX_PKTS,			/**< Number of packets received. */
+	NSS_CLMAP_INTERFACE_STATS_RX_BYTES,			/**< Number of bytes received. */
+	NSS_CLMAP_INTERFACE_STATS_TX_PKTS,			/**< Number of packets transmitted. */
+	NSS_CLMAP_INTERFACE_STATS_TX_BYTES,			/**< Number of bytes transmitted. */
+	NSS_CLMAP_INTERFACE_STATS_RX_QUEUE_0_DROPPED,		/**< Dropped receive packets 0. */
+	NSS_CLMAP_INTERFACE_STATS_RX_QUEUE_1_DROPPED,		/**< Dropped receive packets 1. */
+	NSS_CLMAP_INTERFACE_STATS_RX_QUEUE_2_DROPPED,		/**< Dropped receive packets 2. */
+	NSS_CLMAP_INTERFACE_STATS_RX_QUEUE_3_DROPPED,		/**< Dropped receive packets 3. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_MACDB_LOOKUP_FAILED,	/**< Dropped due to MAC database look up failed. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_INVALID_PACKET_SIZE,	/**< Dropped due to invalid size packets. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_LOW_HEADROOM,		/**< Dropped due to insufficent headroom. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_NEXT_NODE_QUEUE_FULL,	/**< Dropped due to next node queue full. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_PBUF_ALLOC_FAILED,	/**< Dropped due to buffer allocation failure. */
+	NSS_CLMAP_INTERFACE_STATS_DROPPED_LINEAR_FAILED,	/**< Dropped due to linear copy failure. */
+	NSS_CLMAP_INTERFACE_STATS_SHARED_PACKET_CNT,		/**< Shared packet count. */
+	NSS_CLMAP_INTERFACE_STATS_ETHERNET_FRAME_ERROR,		/**< Ethernet frame error count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_CREATE_REQUESTS_CNT,	/**< MAC database create requests count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_CREATE_MAC_EXISTS_CNT,	/**< MAC database create failures, MAC exist count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_CREATE_MAC_TABLE_FULL_CNT,
+								/**< MAC database create failures, MAC database full count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_DESTROY_REQUESTS_CNT,	/**< MAC database destroy requests count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_DESTROY_MAC_NOT_FOUND_CNT,
+								/**< MAC database destroy failures, MAC not found count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_DESTROY_MAC_UNHASHED_CNT,
+								/**< MAC database destroy failures, MAC unhashed count. */
+	NSS_CLMAP_INTERFACE_STATS_MACDB_FLUSH_REQUESTS_CNT,	/**< MAC database flush requests count. */
+	NSS_CLMAP_INTERFACE_STATS_MAX,				/**< Maximum statistics type. */
+};
+
+/**
  * nss_clmap_stats_msg
  *	Per-interface statistics messages from the NSS firmware.
  */
@@ -109,6 +153,16 @@ struct nss_clmap_mac_msg {
  */
 struct nss_clmap_flush_mac_msg {
 	uint32_t nexthop_ifnum;			/**< Next hop interface number. */
+};
+
+/**
+ * nss_clmap_stats_notification
+ *	Client map transmission statistics structure.
+ */
+struct nss_clmap_stats_notification {
+	uint64_t stats_ctx[NSS_CLMAP_INTERFACE_STATS_MAX];	/**< Context transmission statistics. */
+	uint32_t core_id;					/**< Core ID. */
+	uint32_t if_num;					/**< Interface number. */
 };
 
 /**
@@ -300,6 +354,34 @@ extern void nss_clmap_init(void);
  */
 extern void nss_clmap_msg_init(struct nss_clmap_msg *ncm, uint16_t if_num, uint32_t type, uint32_t len,
 								nss_clmap_msg_callback_t cb, void *app_data);
+
+/**
+ * nss_clmap_stats_unregister_notifier
+ *	Deregisters a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_clmap_stats_unregister_notifier(struct notifier_block *nb);
+
+/**
+ * nss_clmap_stats_register_notifier
+ *	Registers a statistics notifier.
+ *
+ * @datatypes
+ *	notifier_block
+ *
+ * @param[in] nb Notifier block.
+ *
+ * @return
+ * 0 on success or non-zero on failure.
+ */
+extern int nss_clmap_stats_register_notifier(struct notifier_block *nb);
 
 /**
  * @}

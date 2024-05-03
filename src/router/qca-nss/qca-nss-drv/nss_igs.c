@@ -14,12 +14,14 @@
  **************************************************************************
  */
 
-#if 0//def CONFIG_NET_CLS_ACT
-#include <linux/tc_act/tc_nss_mirred.h>
-#endif
-
 #include "nss_tx_rx_common.h"
 #include "nss_igs_stats.h"
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
+#ifdef CONFIG_NET_CLS_ACT
+#include <linux/tc_act/tc_nss_mirred.h>
+#endif
+#endif
 
 static struct module *nss_igs_module;
 
@@ -167,7 +169,7 @@ struct nss_ctx_instance *nss_igs_get_context()
 }
 EXPORT_SYMBOL(nss_igs_get_context);
 
-#if 0 //ef CONFIG_NET_CLS_ACT
+#ifdef CONFIG_NET_CLS_ACT
 /*
  * nss_igs_module_save()
  *	Save the ingress shaping module reference.

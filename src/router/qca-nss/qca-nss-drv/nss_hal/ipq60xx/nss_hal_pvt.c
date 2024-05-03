@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -207,13 +208,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	npd->nphys = res_nphys.start;
 	npd->qgic_phys = res_qgic_phys.start;
 
-	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
+	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
-	npd->qgic_map = ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
+	npd->qgic_map = ioremap_nocache(npd->qgic_phys, resource_size(&res_qgic_phys));
 	if (!npd->qgic_map) {
 		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
 		goto out;
@@ -433,13 +434,13 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 
 	of_node_put(cmn);
 
-	nss_misc_reset = ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
+	nss_misc_reset = ioremap_nocache(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
 	if (!nss_misc_reset) {
 		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
 		return -EFAULT;
 	}
 
-	nss_misc_reset_flag = ioremap(res_nss_misc_reset_flag.start, resource_size(&res_nss_misc_reset_flag));
+	nss_misc_reset_flag = ioremap_nocache(res_nss_misc_reset_flag.start, resource_size(&res_nss_misc_reset_flag));
 	if (!nss_misc_reset_flag) {
 		pr_err("%px: ioremap fail for nss_misc_reset_flag\n", nss_dev);
 		return -EFAULT;
@@ -491,7 +492,7 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 		nss_runtime_samples.freq_scale[NSS_FREQ_LOW_SCALE].frequency = NSS_FREQ_187;
 		nss_runtime_samples.freq_scale[NSS_FREQ_MID_SCALE].frequency = NSS_FREQ_748;
 		nss_runtime_samples.freq_scale[NSS_FREQ_HIGH_SCALE].frequency = NSS_FREQ_1497;
-		nss_info_always("Running default frequencies\n");
+		nss_info("Running default frequencies\n");
 	}
 
 	/*
@@ -532,22 +533,22 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 		}
 	}
 
-	nss_info_always("Supported Frequencies - ");
+	nss_info("Supported Frequencies - ");
 	for (i = 0; i < NSS_FREQ_MAX_SCALE; i++) {
 		if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_187) {
-			nss_info_always("187.2 MHz ");
+			nss_info("187.2 MHz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_748) {
-			nss_info_always("748.8 MHz ");
+			nss_info("748.8 MHz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_1497) {
-			nss_info_always("1.4976 GHz ");
+			nss_info("1.4976 GHz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_1689) {
-			nss_info_always("1.6896 GHz ");
+			nss_info("1.6896 GHz ");
 		} else {
 			nss_info_always("Error\nNo Table/Invalid Frequency Found\n");
 			return -EFAULT;
 		}
 	}
-	nss_info_always("\n");
+	nss_info("\n");
 
 	/*
 	 * Set values only once for core0. Grab the proper clock.

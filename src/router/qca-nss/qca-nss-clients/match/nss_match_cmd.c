@@ -692,33 +692,6 @@ static struct ctl_table nss_match_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_match_root_dir[] = {
-	{
-		.procname		= "match",
-		.mode			= 0555,
-		.child			= nss_match_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_match_nss_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_match_root_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_match_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_match_nss_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_match_ctl_header;
 
 /*
@@ -726,7 +699,7 @@ static struct ctl_table_header *nss_match_ctl_header;
  * 	Register command line interface for match.
  */
 bool nss_match_ctl_register(void) {
-	nss_match_ctl_header = register_sysctl_table(nss_match_root);
+	nss_match_ctl_header = register_sysctl("dev/nss/match", nss_match_table);
 	if (!nss_match_ctl_header) {
 		nss_match_warn("Unable to register command line interface.\n");
 		return false;

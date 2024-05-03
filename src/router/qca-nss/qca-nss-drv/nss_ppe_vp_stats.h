@@ -28,7 +28,7 @@
  * NSS PPE-VP statistics
  */
 struct nss_ppe_vp_statistics_debug {
-	uint64_t vp_num;			/* VP number */
+	uint64_t ppe_port_num;			/* VP number */
 	uint64_t nss_if;			/* NSS interface number corresponding to VP */
 	uint64_t rx_packets;                    /* Number of packets received. */
 	uint64_t rx_bytes;                    	/* Number of bytes received. */

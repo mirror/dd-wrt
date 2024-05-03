@@ -1,6 +1,6 @@
 /*
  **************************************************************************
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -197,8 +197,7 @@ bool nss_cmn_interface_is_redirect(struct nss_ctx_instance *nss_ctx, int32_t int
 {
 	enum nss_dynamic_interface_type type = nss_dynamic_interface_get_type(nss_ctx, interface_num);
 
-	return type == NSS_DYNAMIC_INTERFACE_TYPE_WIFI
-		|| type == NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H
+	return type == NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_N2H
 		|| type == NSS_DYNAMIC_INTERFACE_TYPE_GENERIC_REDIR_H2N
 		|| type == NSS_DYNAMIC_INTERFACE_TYPE_VIRTIF_DEPRECATED;
 }
