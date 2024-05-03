@@ -89,13 +89,16 @@ static void nss_crypto_log_verbose(struct nss_crypto_msg *ncm)
 	case NSS_CRYPTO_MSG_TYPE_OPEN_ENG:
 		nss_crypto_config_eng_msg(ncm);
 		break;
-
+	case NSS_CRYPTO_MSG_TYPE_CLOSE_ENG:
+		break;
+	case NSS_CRYPTO_MSG_TYPE_STATS:
+		break;
 	case NSS_CRYPTO_MSG_TYPE_UPDATE_SESSION:
 		nss_crypto_config_session_msg(ncm);
 		break;
 
 	default:
-		nss_warning("%px: Invalid message type\n", ncm);
+		nss_warning("%px: Invalid message type %d\n", ncm, ncm->cm.type);
 		break;
 	}
 }
