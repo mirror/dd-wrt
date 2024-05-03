@@ -905,7 +905,7 @@ int nss_nlgre_redir_cmn_set_next_hop(uint32_t next_dev_ifnum, struct nss_nlgre_r
 	}
 
 	nss_nl_info("%px: next hop interface number is %d\n", nss_ctx, next_dev_ifnum);
-	ctx = nss_wifi_get_context();
+	ctx = nss_wifili_get_context();
 
 	ret = nss_wifi_vdev_set_next_hop(ctx, ifnumber, next_dev_ifnum);
 	if (ret != NSS_TX_SUCCESS) {

@@ -333,33 +333,6 @@ static struct ctl_table nss_project_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_project_dir[] = {
-	{
-		.procname		= "project",
-		.mode			= 0555,
-		.child			= nss_project_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_project_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_project_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_project_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_project_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_project_header;
 
 /*
@@ -368,7 +341,7 @@ static struct ctl_table_header *nss_project_header;
  */
 void nss_project_register_sysctl(void)
 {
-	nss_project_header = register_sysctl_table(nss_project_root);
+	nss_project_header = register_sysctl("dev/nss/project", nss_project_table);
 }
 
 /*

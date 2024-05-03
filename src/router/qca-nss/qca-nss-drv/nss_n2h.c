@@ -1904,36 +1904,6 @@ static struct ctl_table nss_n2h_table_multi_core[] = {
 	{ }
 };
 
-/*
- * This table will be overwritten during single-core registration
- */
-static struct ctl_table nss_n2h_dir[] = {
-	{
-		.procname		= "n2hcfg",
-		.mode			= 0555,
-		.child			= nss_n2h_table_multi_core,
-	},
-	{ }
-};
-
-static struct ctl_table nss_n2h_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_n2h_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_n2h_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_n2h_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_n2h_header;
 
 /*
@@ -2282,8 +2252,7 @@ void nss_n2h_single_core_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_n2h_dir[0].child = nss_n2h_table_single_core;
-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
+	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_single_core);
 }
 
 /*
@@ -2381,7 +2350,7 @@ void nss_n2h_multi_core_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_n2h_header = register_sysctl_table(nss_n2h_root);
+	nss_n2h_header = register_sysctl("dev/nss/n2hcfg", nss_n2h_table_multi_core);
 }
 
 /*

@@ -592,48 +592,9 @@ static struct ctl_table nss_general_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_init_dir[] = {
-#if (NSS_FREQ_SCALE_SUPPORT == 1)
-	{
-		.procname               = "clock",
-		.mode                   = 0555,
-		.child                  = nss_freq_table,
-	},
-#endif
-	{
-		.procname               = "general",
-		.mode                   = 0555,
-		.child                  = nss_general_table,
-	},
-#if (NSS_SKB_REUSE_SUPPORT == 1)
-	{
-		.procname               = "skb_reuse",
-		.mode                   = 0555,
-		.child                  = nss_skb_reuse_table,
-	},
-#endif
-	{ }
-};
-
-static struct ctl_table nss_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_init_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_root_dir,
-	},
-	{ }
-};
-
-static struct ctl_table_header *nss_dev_header;
+static struct ctl_table_header *nss_clock_header;
+static struct ctl_table_header *nss_skb_header;
+static struct ctl_table_header *nss_general_header;
 
 /*
  * nss_init()
@@ -785,7 +746,16 @@ nss_info("Init NSS driver");
 	/*
 	 * Register sysctl table.
 	 */
-	nss_dev_header = register_sysctl_table(nss_root);
+  // to avoid multiple calls to `register_sysctl_table`
+	nss_general_header = register_sysctl("dev/nss/general", nss_general_table);
+
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+  nss_skb_header = register_sysctl("dev/nss/skb_reuse", nss_skb_reuse_table);
+#endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+  nss_clock_header = register_sysctl("dev/nss/clock", nss_freq_table);
+#endif
 
 	/*
 	 * Registering sysctl for ipv4/6 specific config.
@@ -948,8 +918,18 @@ static void __exit nss_cleanup(void)
 {
 	nss_info("Exit NSS driver");
 
-	if (nss_dev_header)
-		unregister_sysctl_table(nss_dev_header);
+	if (nss_general_header)
+		unregister_sysctl_table(nss_general_header);
+
+#if (NSS_SKB_REUSE_SUPPORT == 1)
+	if (nss_skb_header)
+	  unregister_sysctl_table(nss_skb_header);
+#endif
+
+#if (NSS_FREQ_SCALE_SUPPORT == 1)
+	if (nss_clock_header)
+	  unregister_sysctl_table(nss_clock_header);
+#endif
 
 	/*
 	 * Unregister n2h specific sysctl

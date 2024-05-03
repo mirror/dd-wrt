@@ -378,33 +378,6 @@ static struct ctl_table nss_dma_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_dma_dir[] = {
-	{
-		.procname		= "dma",
-		.mode			= 0555,
-		.child			= nss_dma_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_dma_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_dma_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_dma_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_dma_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_dma_header;
 
 /*
@@ -422,7 +395,7 @@ void nss_dma_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_dma_header = register_sysctl_table(nss_dma_root);
+	nss_dma_header = register_sysctl("dev/nss/dma", nss_dma_table);
 }
 
 /*

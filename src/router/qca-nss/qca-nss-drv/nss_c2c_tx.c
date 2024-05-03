@@ -334,33 +334,6 @@ static struct ctl_table nss_c2c_tx_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_c2c_tx_dir[] = {
-	{
-		.procname		= "c2c_tx",
-		.mode			= 0555,
-		.child			= nss_c2c_tx_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_c2c_tx_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_c2c_tx_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_c2c_tx_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_c2c_tx_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_c2c_tx_header;
 
 /*
@@ -378,7 +351,7 @@ void nss_c2c_tx_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_c2c_tx_header = register_sysctl_table(nss_c2c_tx_root);
+	nss_c2c_tx_header = register_sysctl("dev/nss/c2c_tx", nss_c2c_tx_table);
 }
 
 /*

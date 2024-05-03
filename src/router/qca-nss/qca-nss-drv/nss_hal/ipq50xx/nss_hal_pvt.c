@@ -185,13 +185,13 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	npd->nphys = res_nphys.start;
 	npd->qgic_phys = res_qgic_phys.start;
 
-	npd->nmap = ioremap_nocache(npd->nphys, resource_size(&res_nphys));
+	npd->nmap = ioremap(npd->nphys, resource_size(&res_nphys));
 	if (!npd->nmap) {
 		nss_info_always("%px: nss%d: ioremap() fail for nphys\n", nss_ctx, nss_ctx->id);
 		goto out;
 	}
 
-	npd->qgic_map = ioremap_nocache(npd->qgic_phys, resource_size(&res_qgic_phys));
+	npd->qgic_map = ioremap(npd->qgic_phys, resource_size(&res_qgic_phys));
 	if (!npd->qgic_map) {
 		nss_info_always("%px: nss%d: ioremap() fail for qgic map\n", nss_ctx, nss_ctx->id);
 		goto out;
@@ -349,7 +349,7 @@ static int __nss_hal_common_reset(struct platform_device *nss_dev)
 
 	of_node_put(cmn);
 
-	nss_misc_reset = ioremap_nocache(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
+	nss_misc_reset = ioremap(res_nss_misc_reset.start, resource_size(&res_nss_misc_reset));
 	if (!nss_misc_reset) {
 		pr_err("%px: ioremap fail for nss_misc_reset\n", nss_dev);
 		return -EFAULT;
@@ -599,7 +599,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		return err;
 	}
 
-	netif_napi_add(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
 	int_ctx->cause = cause;
 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
 	if (err) {

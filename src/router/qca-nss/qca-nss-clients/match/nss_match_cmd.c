@@ -460,10 +460,10 @@ static int nss_match_cmd_procfs_reset_nexthop(struct ctl_table *ctl, int write, 
 	char *cmd_buf = nss_match_data;
 	nss_tx_status_t nss_tx_status;
 	struct nss_ctx_instance *nss_ctx = nss_match_get_context();
-	struct nss_ctx_instance *wifi_nss_ctx = nss_wifi_get_context();
+	struct nss_ctx_instance *wifili_nss_ctx = nss_wifili_get_context();
 
-	if (!nss_ctx || !wifi_nss_ctx) {
-		pr_warn("%px: NSS Context not found. wifi_nss_ctx: %px. Reset nexthop failed", nss_ctx, wifi_nss_ctx);
+	if (!nss_ctx || !wifili_nss_ctx) {
+		pr_warn("%px: NSS Context not found. wifili_nss_ctx: %px. Reset nexthop failed", nss_ctx, wifili_nss_ctx);
 		return -ENOMEM;
 	}
 
@@ -495,9 +495,9 @@ static int nss_match_cmd_procfs_reset_nexthop(struct ctl_table *ctl, int write, 
 	 * nss_phys_if_reset_nexthop: Used for physical interfaces.
 	 * nss_if_reset_nexthop: used for VAP interfaces.
 	 */
-	type = nss_dynamic_interface_get_type(wifi_nss_ctx, if_num);
+	type = nss_dynamic_interface_get_type(wifili_nss_ctx, if_num);
 	if (type == NSS_DYNAMIC_INTERFACE_TYPE_VAP) {
-		nss_tx_status = nss_if_reset_nexthop(wifi_nss_ctx, if_num);
+		nss_tx_status = nss_if_reset_nexthop(wifili_nss_ctx, if_num);
 	} else if (if_num < NSS_MAX_PHYSICAL_INTERFACES) {
 		nss_tx_status = nss_phys_if_reset_nexthop(nss_ctx, if_num);
 	} else {
@@ -528,7 +528,7 @@ static int nss_match_cmd_procfs_set_if_nexthop(struct ctl_table *ctl, int write,
 	uint32_t nh_if_num;
 	int table_id;
 	struct nss_ctx_instance *nss_ctx = nss_match_get_context();
-	struct nss_ctx_instance *wifi_nss_ctx = nss_wifi_get_context();
+	struct nss_ctx_instance *wifili_nss_ctx = nss_wifili_get_context();
 	char *dev_name, *nexthop_msg;
 	char *cmd_buf = NULL;
 	size_t count = *lenp;
@@ -539,8 +539,8 @@ static int nss_match_cmd_procfs_set_if_nexthop(struct ctl_table *ctl, int write,
 		return ret;
 	}
 
-	if (!nss_ctx || !wifi_nss_ctx) {
-		pr_warn("%px: NSS Context not found. wifi_nss_ctx: %px. Set nexthop failed", nss_ctx, wifi_nss_ctx);
+	if (!nss_ctx || !wifili_nss_ctx) {
+		pr_warn("%px: NSS Context not found. wifili_nss_ctx: %px. Set nexthop failed", nss_ctx, wifili_nss_ctx);
 		return -ENOMEM;
 	}
 
@@ -607,9 +607,9 @@ static int nss_match_cmd_procfs_set_if_nexthop(struct ctl_table *ctl, int write,
 	 * nss_phys_if_set_nexthop: Used for physical interfaces.
 	 * nss_if_set_nexthop: used for VAP interfaces.
 	 */
-	type = nss_dynamic_interface_get_type(wifi_nss_ctx, if_num);
+	type = nss_dynamic_interface_get_type(wifili_nss_ctx, if_num);
 	if (type == NSS_DYNAMIC_INTERFACE_TYPE_VAP) {
-		nss_tx_status = nss_if_set_nexthop(wifi_nss_ctx, if_num, nh_if_num);
+		nss_tx_status = nss_if_set_nexthop(wifili_nss_ctx, if_num, nh_if_num);
 	} else if (if_num < NSS_MAX_PHYSICAL_INTERFACES) {
 		nss_tx_status = nss_phys_if_set_nexthop(nss_ctx, if_num, nh_if_num);
 	} else {

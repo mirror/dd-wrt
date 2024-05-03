@@ -18,6 +18,7 @@
  * nss_ipv6.c
  *	NSS IPv6 APIs
  */
+#include "linux/ipv6.h"
 #include <nss_core.h>
 #include "nss_dscp_map.h"
 #include "nss_ipv6_stats.h"
@@ -377,7 +378,7 @@ EXPORT_SYMBOL(nss_ipv6_get_mgr);
  * nss_ipv6_register_handler()
  *	Register our handler to receive messages for this interface
  */
-void nss_ipv6_register_handler()
+void nss_ipv6_register_handler(void)
 {
 	struct nss_ctx_instance *nss_ctx = nss_ipv6_get_mgr();
 
@@ -706,33 +707,6 @@ static struct ctl_table nss_ipv6_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_ipv6_dir[] = {
-	{
-		.procname		= "ipv6cfg",
-		.mode			= 0555,
-		.child			= nss_ipv6_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv6_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_ipv6_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv6_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_ipv6_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_ipv6_header;
 
 /*
@@ -747,7 +721,7 @@ void nss_ipv6_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_ipv6_header = register_sysctl_table(nss_ipv6_root);
+	nss_ipv6_header = register_sysctl("dev/nss/ipv6cfg", nss_ipv6_table);
 }
 
 /*

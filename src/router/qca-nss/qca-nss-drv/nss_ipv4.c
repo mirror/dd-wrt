@@ -712,33 +712,6 @@ static struct ctl_table nss_ipv4_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_ipv4_dir[] = {
-	{
-		.procname		= "ipv4cfg",
-		.mode			= 0555,
-		.child			= nss_ipv4_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv4_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_ipv4_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ipv4_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_ipv4_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_ipv4_header;
 
 /*
@@ -753,7 +726,7 @@ void nss_ipv4_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_ipv4_header = register_sysctl_table(nss_ipv4_root);
+	nss_ipv4_header = register_sysctl("dev/nss/ipv4cfg", nss_ipv4_table);
 }
 
 /*

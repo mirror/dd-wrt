@@ -593,7 +593,9 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	if (npd->wifioffload_enabled == NSS_FEATURE_ENABLED) {
 		nss_top->wifi_handler_id = nss_dev->id;
 		nss_top->dynamic_interface_table[NSS_DYNAMIC_INTERFACE_TYPE_VAP] = nss_dev->id;
+#if defined(NSS_HAL_IPQ806x_SUPPORT)
 		nss_wifi_register_handler();
+#endif
 		nss_wifili_register_handler();
 #ifdef NSS_DRV_WIFI_EXT_VDEV_ENABLE
 		nss_wifi_ext_vdev_register_handler();

@@ -577,33 +577,6 @@ static struct ctl_table nss_rps_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_rps_dir[] = {
-	{
-		.procname		= "rps",
-		.mode			= 0555,
-		.child			= nss_rps_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_rps_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_rps_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_rps_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_rps_root_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_rps_header;
 
 /*
@@ -640,7 +613,7 @@ void nss_rps_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_rps_header = register_sysctl_table(nss_rps_root);
+	nss_rps_header = register_sysctl("dev/nss/rps", nss_rps_table);
 }
 
 /*

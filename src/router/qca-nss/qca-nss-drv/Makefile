@@ -26,7 +26,6 @@ qca-nss-drv-objs := \
 			nss_n2h_stats.o \
 			nss_n2h_strings.o \
 			nss_pm.o \
-			nss_profiler.o \
 			nss_project.o \
 			nss_rps.o \
 			nss_stats.o \
@@ -40,7 +39,6 @@ qca-nss-drv-objs += nss_hal/nss_hal.o
 
 ifneq "$(NSS_DRV_POINT_OFFLOAD)" "y"
 qca-nss-drv-objs += \
-			nss_gmac_stats.o \
 			nss_if.o \
 			nss_if_log.o \
 			nss_phys_if.o \
@@ -352,10 +350,17 @@ endif
 
 ifneq "$(NSS_DRV_WIFIOFFLOAD_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_WIFIOFFLOAD_ENABLE
+ifneq "$(NSS_DRV_WIFI_LEGACY_ENABLE)" "n"
+ccflags-y += -DNSS_DRV_WIFI_LEGACY_ENABLE
 qca-nss-drv-objs += \
 			nss_wifi.o \
 			nss_wifi_log.o \
-			nss_wifi_stats.o \
+			nss_wifi_stats.o
+ifeq ($(SoC),$(filter $(SoC),ipq806x))
+ccflags-y += -DNSS_HAL_IPQ806x_SUPPORT
+endif
+endif
+qca-nss-drv-objs += \
 			nss_wifi_vdev.o \
 			nss_wifili.o \
 			nss_wifili_log.o \
@@ -381,7 +386,9 @@ endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq806x))
 qca-nss-drv-objs += nss_data_plane/nss_data_plane_gmac.o \
-		    nss_hal/ipq806x/nss_hal_pvt.o
+		    nss_hal/ipq806x/nss_hal_pvt.o \
+		    nss_gmac_stats.o \
+		    nss_profiler.o
 
 ifneq "$(NSS_DRV_C2C_ENABLE)" "n"
 ccflags-y += -DNSS_DRV_C2C_ENABLE
@@ -587,11 +594,11 @@ endif
 ccflags-y += -I$(obj)/nss_hal/ipq50xx -DNSS_HAL_IPQ50XX_SUPPORT -DNSS_MULTI_H2N_DATA_RING_SUPPORT
 endif
 
-ccflags-y += -I$(obj)/nss_hal/include -I$(obj)/nss_data_plane/include -I$(obj)/exports -DNSS_DEBUG_LEVEL=0 -DNSS_PKT_STATS_ENABLED=1
+ccflags-y += -I$(obj)/nss_hal/include -I$(obj)/nss_data_plane/include -I$(obj)/exports -DNSS_PKT_STATS_ENABLED=1
 
 ccflags-y += -I$(obj)/nss_data_plane/hal/include
-ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=1
-ccflags-y += -Wall -Werror
+ccflags-y += -DNSS_PM_DEBUG_LEVEL=0 -DNSS_DEBUG_LEVEL=0 -DNSS_SKB_REUSE_SUPPORT=1
+ccflags-y += -Wall
 
 KERNELVERSION := $(word 1, $(subst ., ,$(KERNELVERSION))).$(word 2, $(subst ., ,$(KERNELVERSION)))
 

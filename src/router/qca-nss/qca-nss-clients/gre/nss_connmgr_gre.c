@@ -1672,7 +1672,7 @@ int nss_connmgr_gre_set_wifi_next_hop(struct net_device *wifi_vdev)
 		return GRE_ERR_NEXT_NODE_UNREG_IN_AE;
 	}
 
-	ctx = nss_wifi_get_context();
+	ctx = nss_wifili_get_context();
 	status = nss_wifi_vdev_set_next_hop(ctx, ifnumber, NSS_GRE_INTERFACE);
 	if (status != NSS_TX_SUCCESS) {
 		nss_connmgr_gre_info("%px: wifi drv api failed to set next hop\n", wifi_vdev);

@@ -25,8 +25,11 @@
 #include "nss_hal.h"
 #include "nss_log.h"
 #include <linux/kernel.h>
-#include <linux/panic_notifier.h>	/* for panic_notifier_list */
-#include <linux/notifier.h>	/* for panic_notifier_list */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 14, 0))
+ #include <linux/notifier.h>	/* for panic_notifier_list */
+#else
+#include <linux/panic_notifier.h>
+#endif
 #include <linux/jiffies.h>	/* for time */
 #include "nss_tx_rx_common.h"
 

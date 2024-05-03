@@ -783,24 +783,6 @@ static struct ctl_table nss_ppe_vp_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_ppe_vp_dir[] = {
-	{
-		.procname	= "ppe_vp",
-		.mode		= 0555,
-		.child		= nss_ppe_vp_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_ppe_vp_root_dir[] = {
-	{
-		.procname	= "nss",
-		.mode		= 0555,
-		.child		= nss_ppe_vp_dir,
-	},
-	{ }
-};
-
 static struct ctl_table_header *nss_ppe_vp_procfs_header;
 
 /*
@@ -812,7 +794,7 @@ void nss_ppe_vp_procfs_register(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_ppe_vp_procfs_header = register_sysctl_table(nss_ppe_vp_root_dir);
+	nss_ppe_vp_procfs_header = register_sysctl("dev/nss/ppe_vp", nss_ppe_vp_table);
 }
 
 /*

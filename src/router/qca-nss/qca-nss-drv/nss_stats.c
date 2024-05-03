@@ -88,32 +88,6 @@ static struct ctl_table nss_stats_table[] = {
 	{ }
 };
 
-static struct ctl_table nss_stats_dir[] = {
-	{
-		.procname		= "stats",
-		.mode			= 0555,
-		.child			= nss_stats_table,
-	},
-	{ }
-};
-
-static struct ctl_table nss_stats_root_dir[] = {
-	{
-		.procname		= "nss",
-		.mode			= 0555,
-		.child			= nss_stats_dir,
-	},
-	{ }
-};
-
-static struct ctl_table nss_stats_root[] = {
-	{
-		.procname		= "dev",
-		.mode			= 0555,
-		.child			= nss_stats_root_dir,
-	},
-	{ }
-};
 static struct ctl_table_header *nss_stats_header;
 
 /*
@@ -125,7 +99,7 @@ void nss_stats_register_sysctl(void)
 	/*
 	 * Register sysctl table.
 	 */
-	nss_stats_header = register_sysctl_table(nss_stats_root);
+	nss_stats_header = register_sysctl("dev/nss/stats", nss_stats_table);
 }
 
 /*
@@ -388,8 +362,9 @@ size_t nss_stats_print(char *node, char *stat_details, int instance, struct nss_
  */
 void nss_stats_create_dentry(char *name, const struct file_operations *ops)
 {
-	if (!debugfs_create_file(name, 0400, nss_top_main.stats_dentry, &nss_top_main, ops)) {
-		nss_warning("Failed to create debug entry for subsystem %s\n", name);
+	if (!debugfs_lookup(name, nss_top_main.stats_dentry))
+	  if (!debugfs_create_file(name, 0400, nss_top_main.stats_dentry, &nss_top_main, ops)) {
+	    nss_warning("Failed to create debug entry for subsystem %s\n", name);
 	}
 }
 
@@ -400,9 +375,9 @@ void nss_stats_create_dentry(char *name, const struct file_operations *ops)
 /*
  * gmac_stats_ops
  */
-#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
-NSS_STATS_DECLARE_FILE_OPERATIONS(gmac);
-#endif
+// #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+// NSS_STATS_DECLARE_FILE_OPERATIONS(gmac);
+// #endif
 
 /*
  * wt_stats_ops
@@ -457,9 +432,9 @@ void nss_stats_init(void)
 	/*
 	 * gmac_stats
 	 */
-#ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
-	nss_stats_create_dentry("gmac", &nss_gmac_stats_ops);
-#endif
+// #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
+// 	nss_stats_create_dentry("gmac", &nss_gmac_stats_ops);
+// #endif
 
 	/*
 	 * Per-project stats

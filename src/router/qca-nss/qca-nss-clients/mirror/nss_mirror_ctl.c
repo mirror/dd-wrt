@@ -480,7 +480,7 @@ static int nss_mirror_ctl_parse_enable_ingress_pmc_cmd(char *buffer)
 	type = nss_dynamic_interface_get_type(nss_ctx, if_num);
 
 	if (type == NSS_DYNAMIC_INTERFACE_TYPE_VAP) {
-		status = nss_wifi_vdev_set_next_hop(nss_wifi_get_context(), if_num, mirror_if_num);
+		status = nss_wifi_vdev_set_next_hop(nss_wifili_get_context(), if_num, mirror_if_num);
 	} else if (if_num < NSS_MAX_PHYSICAL_INTERFACES) {
 		status = nss_phys_if_set_nexthop(nss_ctx, if_num, mirror_if_num);
 	} else {
