@@ -652,6 +652,8 @@ void start_sysinit(void)
 	insmod("qca-nss-drv");
 	insmod("qca-nss-crypto");
 	insmod("qca-nss-cfi-cryptoapi");
+	insmod("openvswitch");
+	insmod("qca-ovsmgr");
 	insmod("bonding");
 	insmod("qca-nss-pppoe");
 	insmod("udp_tunnel");
