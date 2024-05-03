@@ -19,6 +19,7 @@ static void dp_detach_port_notify(struct vport *vport)
 	dp = vport->dp;
 	notify = ovs_vport_cmd_build_info(vport, ovs_dp_get_net(dp),
 					  0, 0, OVS_VPORT_CMD_DEL);
+	ovs_dp_port_del_notify(vport->dp, vport);
 	ovs_dp_detach_port(vport);
 	if (IS_ERR(notify)) {
 		genl_set_err(&dp_vport_genl_family, ovs_dp_get_net(dp), 0,

@@ -174,6 +174,37 @@ enum ovs_pkt_hash_types {
 	OVS_PACKET_HASH_L4_BIT = (1ULL << 33),
 };
 
+/**
+ *	struct ovs_accel_callback - OVS acceleration callbacks
+ *	@ovs_accel_dp_add - new data path is created
+ *	@ovs_accel_dp_del - data path is deleted
+ *	@ovs_accel_dp_port_add - new port is added into data path
+ *	@ovs_accel_dp_port_del - port is deleted from data path
+ *	@ovs_accel_dp_flow_add - new flow rule is added in data path
+ *	@ovs_accel_dp_flow_del - flow rule is deleted from data path
+ *	@ovs_accel_dp_flow_set - existing flow rule is modified in data path
+ *	@ovs_accel_dp_flow_tbl_flush - flow table is flushed in data path
+ *	@ovs_accel_dp_pkt_process - Process data path packet
+ */
+struct ovs_accel_callback {
+	void (*ovs_accel_dp_add)(void *dp, struct net_device *dev);
+	void (*ovs_accel_dp_del)(void *dp, struct net_device *dev);
+	void (*ovs_accel_dp_port_add)(void *dp, void *vp,
+				      int vp_num, enum ovs_vport_type vp_type,
+				      const char *master, struct net_device *dev);
+	void (*ovs_accel_dp_port_del)(void *dp,  void *vp,
+				      struct net_device *dev);
+	void (*ovs_accel_dp_flow_add)(void *dp, struct sw_flow *sf);
+	void (*ovs_accel_dp_flow_del)(void *dp, struct sw_flow *sf);
+	void (*ovs_accel_dp_flow_set)(void *dp, struct sw_flow *sf,
+				      struct sw_flow_actions *sfa);
+	void (*ovs_accel_dp_flow_tbl_flush)(void *dp);
+	void (*ovs_accel_dp_pkt_process)(void *dp, struct sk_buff *skb,
+					 struct sw_flow_key *key,
+					 struct sw_flow *sf,
+					 struct sw_flow_actions *sfa);
+};
+
 extern unsigned int ovs_net_id;
 void ovs_lock(void);
 void ovs_unlock(void);
@@ -258,6 +289,7 @@ void ovs_dp_detach_port(struct vport *);
 int ovs_dp_upcall(struct datapath *, struct sk_buff *,
 		  const struct sw_flow_key *, const struct dp_upcall_info *,
 		  uint32_t cutlen);
+void ovs_dp_port_del_notify(struct datapath *dp, struct vport *vp);
 
 u32 ovs_dp_get_upcall_portid(const struct datapath *dp, uint32_t cpu_id);
 
@@ -272,6 +304,21 @@ void ovs_dp_notify_wq(struct work_struct *work);
 
 int action_fifos_init(void);
 void action_fifos_exit(void);
+
+int ovs_register_accelerator(struct ovs_accel_callback *oac);
+void ovs_unregister_accelerator(struct ovs_accel_callback *oac);
+int ovs_accel_flow_stats_update(void *dp, void *out_vport,
+				struct sw_flow_key *sf, int pkts, int bytes);
+struct sw_flow *ovs_accel_flow_find(void *dp, struct sw_flow_key *sfk);
+struct net_device *ovs_accel_dev_find(void *dp, int vport_no);
+struct net_device *ovs_accel_egress_dev_find(void *dp_inst,
+					     struct sw_flow_key *key,
+					     struct sk_buff *skb);
+
+struct sw_flow *ovs_accel_flow_find_by_mac(void *dp_inst,
+						struct net_device *indev,
+						struct net_device *outdev,
+						uint8_t *smac, uint8_t *dmac, uint16_t type);
 
 /* 'KEY' must not have any bits set outside of the 'MASK' */
 #define OVS_MASKED(OLD, KEY, MASK) ((KEY) | ((OLD) & ~(MASK)))

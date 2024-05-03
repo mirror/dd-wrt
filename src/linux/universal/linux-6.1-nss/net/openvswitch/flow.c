@@ -69,13 +69,13 @@ void ovs_flow_stats_update(struct sw_flow *flow, __be16 tcp_flags,
 
 	/* Check if already have CPU-specific stats. */
 	if (likely(stats)) {
-		spin_lock(&stats->lock);
+		spin_lock_bh(&stats->lock);
 		/* Mark if we write on the pre-allocated stats. */
 		if (cpu == 0 && unlikely(flow->stats_last_writer != cpu))
 			flow->stats_last_writer = cpu;
 	} else {
 		stats = rcu_dereference(flow->stats[0]); /* Pre-allocated. */
-		spin_lock(&stats->lock);
+		spin_lock_bh(&stats->lock);
 
 		/* If the current CPU is the only writer on the
 		 * pre-allocated stats keep using them.
@@ -120,7 +120,7 @@ void ovs_flow_stats_update(struct sw_flow *flow, __be16 tcp_flags,
 	stats->byte_count += len;
 	stats->tcp_flags |= tcp_flags;
 unlock:
-	spin_unlock(&stats->lock);
+	spin_unlock_bh(&stats->lock);
 }
 
 /* Must be called with rcu_read_lock or ovs_mutex. */
