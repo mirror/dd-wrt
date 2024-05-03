@@ -415,6 +415,7 @@ static bool nss_meminfo_init_block_lists(struct nss_ctx_instance *nss_ctx)
 		/*
 		 * Flush the updated meminfo request.
 		 */
+		NSS_CORE_DMA_CACHE_MAINT(r, sizeof(struct nss_meminfo_request), DMA_TO_DEVICE);
 		NSS_CORE_DSB();
 
 		/*
@@ -545,7 +546,7 @@ static bool nss_meminfo_configure_n2h_h2n_rings(struct nss_ctx_instance *nss_ctx
 	 * Bring a fresh copy of if_map from memory in order to read it correctly.
 	 */
 	if_map = mem_ctx->if_map;
-	dma_sync_single_for_cpu(nss_ctx->dev, mem_ctx->if_map_dma, sizeof(struct nss_if_mem_map), DMA_FROM_DEVICE);
+	NSS_CORE_DMA_CACHE_MAINT((void *)if_map, sizeof(struct nss_if_mem_map), DMA_FROM_DEVICE);
 	NSS_CORE_DSB();
 
 	if_map->n2h_rings = NSS_N2H_RING_COUNT;
@@ -583,7 +584,7 @@ static bool nss_meminfo_configure_n2h_h2n_rings(struct nss_ctx_instance *nss_ctx
 	/*
 	 * Flush the updated nss_if_mem_map.
 	 */
-	dma_sync_single_for_device(nss_ctx->dev, mem_ctx->if_map_dma, sizeof(struct nss_if_mem_map), DMA_TO_DEVICE);
+	NSS_CORE_DMA_CACHE_MAINT((void *)if_map, sizeof(struct nss_if_mem_map), DMA_TO_DEVICE);
 	NSS_CORE_DSB();
 
 	return true;

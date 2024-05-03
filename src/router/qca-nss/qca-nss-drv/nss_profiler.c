@@ -202,12 +202,11 @@ EXPORT_SYMBOL(nss_profile_dma_deregister_cb);
 struct nss_profile_sdma_ctrl *nss_profile_dma_get_ctrl(struct nss_ctx_instance *nss_ctx)
 {
 	struct nss_profile_sdma_ctrl *ctrl = nss_ctx->meminfo_ctx.sdma_ctrl;
-	int size = offsetof(struct nss_profile_sdma_ctrl, cidx);
 	if (!ctrl) {
 		return ctrl;
 	}
 
-	dma_sync_single_for_cpu(nss_ctx->dev, (dma_addr_t) ctrl, size, DMA_FROM_DEVICE);
+	dmac_inv_range(ctrl, &ctrl->cidx);
 	dsb(sy);
 	return ctrl;
 }

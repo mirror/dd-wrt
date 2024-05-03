@@ -477,8 +477,10 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	/*
 	 * Clear TCM memory used by this core
 	 */
-	for (i = 0; i < resource_size(&res_vphys) ; i += 4)
+	for (i = 0; i < resource_size(&res_vphys) ; i += 4) {
 		nss_write_32(npd->vmap, i, 0);
+		NSS_CORE_DMA_CACHE_MAINT((npd->vmap + i), 4, DMA_TO_DEVICE);
+	}
 
 	NSS_CORE_DSB();
 
@@ -1086,6 +1088,7 @@ clk_complete:
 
 	nss_info("Supported Frequencies - ");
 	for (i = 0; i < NSS_FREQ_MAX_SCALE; i++) {
+		nss_info("idx %d\n",i);
 		if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_110) {
 			nss_info("110Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_275) {
