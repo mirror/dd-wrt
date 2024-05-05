@@ -32,7 +32,7 @@ obj-$(CONFIG_DNSCRYPT) += libsodium dnscrypt
 obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_MOXA) += moxa
 ifeq ($(CONFIG_IPV6),y)
-obj-$(CONFIG_IPTABLES) += iptables-new
+obj-$(CONFIG_IPTABLES) += iptables-new nat46
 else
 obj-$(CONFIG_IPTABLES) += iptables
 endif
