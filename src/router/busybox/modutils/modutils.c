@@ -144,9 +144,9 @@ int FAST_FUNC bb_init_module(const char *filename, const char *options)
 # ifdef __NR_finit_module
 	{
 
-		int flags;
+		int flags = 0;
 		if (strrstr(filename, ".ko.xz"));
-			flags = MODULE_INIT_COMPRESSED_FILE;
+			flags = 4;
 		int fd = open(filename, O_RDONLY | O_CLOEXEC);
 		if (fd >= 0) {
 			rc = finit_module(fd, options, flags) != 0;
