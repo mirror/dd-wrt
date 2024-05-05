@@ -32,9 +32,24 @@ obj-$(CONFIG_DNSCRYPT) += libsodium dnscrypt
 obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_MOXA) += moxa
 ifeq ($(CONFIG_IPV6),y)
-obj-$(CONFIG_IPTABLES) += iptables-new nat46
+obj-$(CONFIG_IPTABLES) += iptables-new
 else
 obj-$(CONFIG_IPTABLES) += iptables
+endif
+ifeq ($(KERNELVERSION),6.1-nss)
+obj-$(CONFIG_IPV6) += nat46
+endif
+ifeq ($(KERNELVERSION),6.1)
+obj-$(CONFIG_IPV6) += nat46
+endif
+ifeq ($(KERNELVERSION),6.6)
+obj-$(CONFIG_IPV6) += nat46
+endif
+ifeq ($(KERNELVERSION),4.14)
+obj-$(CONFIG_IPV6) += nat46
+endif
+ifeq ($(KERNELVERSION),4.9)
+obj-$(CONFIG_IPV6) += nat46
 endif
 obj-$(CONFIG_LIBIPT) += iptables-ipt
 obj-$(CONFIG_IPSEC) += ipsec
