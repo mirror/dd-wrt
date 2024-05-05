@@ -145,7 +145,7 @@ int FAST_FUNC bb_init_module(const char *filename, const char *options)
 	{
 
 		int flags = 0;
-		if (strrstr(filename, ".ko.xz"));
+		if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
 			flags = 4;
 		int fd = open(filename, O_RDONLY | O_CLOEXEC);
 		if (fd >= 0) {

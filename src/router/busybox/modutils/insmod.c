@@ -4082,7 +4082,7 @@ int insmod_main(int argc, char **argv)
 			r = recursive_action(module_dir, ACTION_RECURSE,
 					check_module_name_match, NULL, m_fullName);
 			if (r) {
-				if (!strrstr(m_fullName,".ko.xz"))
+				if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
 					goto repeat;
 				bb_error_msg_and_die("%s: module not found", m_fullName);
 			}
@@ -4090,7 +4090,7 @@ int insmod_main(int argc, char **argv)
 			if (m_filename == NULL
 			 || ((fp = fopen_for_read(m_filename)) == NULL)
 			) {
-				if (!strrstr(m_fullName,".ko.xz"))
+				if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
 					goto repeat;
 				bb_error_msg_and_die("%s: module not found", m_fullName);
 			}
