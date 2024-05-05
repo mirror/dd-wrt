@@ -221,7 +221,10 @@ int nss_nlsock_leave_grp(struct nss_nlsock_ctx *sock, char *grp_name)
 {
 	int error;
 
-	assert(sock->ref_cnt > 0);
+	if (!sock->ref_cnt) {
+	    nss_nlsock_log_error("failed to leave group(%s)\n", grp_name);
+	    return -EINVAL;
+	}
 
 	/*
 	 * Resolve the group

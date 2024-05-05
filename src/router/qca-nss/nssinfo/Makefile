@@ -9,7 +9,7 @@ HEADERS = $(wildcard $(SRCDIR)/include/*.h)
 OBJECTS = $(SOURCES:$(SRCDIR)/src/%.c=$(OBJPATH)/%.o)
 
 INCLUDE += -I../lib/include
-EXTRA_CFLAGS = -Wall -UENABLE_DEBUG -I$(TOP)/libnl/include  -I$(TOP)/qca-nss/qca-nss-clients/exports $(KERNEL_FLAGS) $(MIPS16_OPT) -I$(TOP)/ncurses/include -I$(TOP)/qca-nss/qca-nss-clients/netlink/include -D_GNU_SOURCE -DNEED_PRINTF $(LTO)
+EXTRA_CFLAGS=-Wall -UENABLE_DEBUG -I$(TOP)/libnl/include  -I$(TOP)/qca-nss/qca-nss-clients/exports $(KERNEL_FLAGS) $(MIPS16_OPT) -I$(TOP)/ncurses/include -I$(TOP)/qca-nss/qca-nss-clients/netlink/include -D_GNU_SOURCE -DNEED_PRINTF $(LTO)
 LDFLAGS = $(LDLTO) -L$(TOP)/libnl/lib/.libs -L$(TOP)/ncurses/lib -lnl-nss -lnl-3 -lnl-genl-3 -lncurses
 LDLIBS  = -L../lib/obj
 
