@@ -3959,7 +3959,7 @@ static void print_load_map(struct obj_file *f)
 }
 #else /* !FEATURE_INSMOD_LOAD_MAP */
 void print_load_map(struct obj_file *f);
-#endif6
+#endif
 
 int insmod_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int insmod_main(int argc, char **argv)
