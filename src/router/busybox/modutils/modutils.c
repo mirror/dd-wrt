@@ -121,61 +121,25 @@ char * FAST_FUNC parse_cmdline_module_options(char **argv)
 
 int FAST_FUNC bb_init_module(const char *filename, const char *options)
 {
-	size_t image_size;
+	size_t len = MAXINT(ssize_t);
 	char *image;
-	int rc;
-	bool mmaped;
+	int rc = ENOENT;
 
-	if (!options)
-		options = "";
-
-//TODO: audit bb_init_module_24 to match error code convention
 #if ENABLE_FEATURE_2_4_MODULES
 	if (get_linux_version_code() < KERNEL_VERSION(2,6,0))
 		return bb_init_module_24(filename, options);
 #endif
 
-	/*
-	 * First we try finit_module if available.  Some kernels are configured
-	 * to only allow loading of modules off of secure storage (like a read-
-	 * only rootfs) which needs the finit_module call.  If it fails, we fall
-	 * back to normal module loading to support compressed modules.
-	 */
-# ifdef __NR_finit_module
-	{
-
-		int flags = 0;
-		if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
-			flags = 4;
-		int fd = open(filename, O_RDONLY | O_CLOEXEC);
-		if (fd >= 0) {
-			rc = finit_module(fd, options, flags) != 0;
-			close(fd);
-			if (rc == 0)
-				return rc;
-		}
-	}
-# endif
-
-	image_size = INT_MAX - 4095;
-	mmaped = 0;
-	image = try_to_mmap_module(filename, &image_size);
+	/* Use the 2.6 way */
+	image = xmalloc_open_zipped_read_close(filename, &len);
 	if (image) {
-		mmaped = 1;
-	} else {
-		errno = ENOMEM; /* may be changed by e.g. open errors below */
-		image = xmalloc_open_zipped_read_close(filename, &image_size);
-		if (!image)
-			return -errno;
+		if (init_module(image, len, options) != 0)
+			rc = errno;
+		else
+			rc = 0;
+		free(image);
 	}
 
-	errno = 0;
-	init_module(image, image_size, options);
-	rc = errno;
-	if (mmaped)
-		munmap(image, image_size);
-	else
-		free(image);
 	return rc;
 }
 

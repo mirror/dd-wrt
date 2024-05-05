@@ -825,7 +825,7 @@ static int n_ext_modules;
 static int n_ext_modules_used;
 
 static char *m_filename;
-static char *m_fullName = NULL;
+static char *m_fullName;
 
 
 /*======================================================================*/
@@ -4028,7 +4028,6 @@ int insmod_main(int argc, char **argv)
 
 
 #if ENABLE_FEATURE_2_6_MODULES
-	repeat:;
 	if (k_version > 4)
 		m_fullName = xasprintf("%s.ko", tmp);
 	else
@@ -4081,17 +4080,12 @@ int insmod_main(int argc, char **argv)
 			 * time cast the net a bit wider.  Search /lib/modules/ */
 			r = recursive_action(module_dir, ACTION_RECURSE,
 					check_module_name_match, NULL, m_fullName);
-			if (r) {
-				if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
-					goto repeat;
+			if (r)
 				bb_error_msg_and_die("%s: module not found", m_fullName);
-			}
 			free(module_dir);
 			if (m_filename == NULL
 			 || ((fp = fopen_for_read(m_filename)) == NULL)
 			) {
-				if (strrstr(filename, ".ko.xz") || strrstr(filename, ".ko.zstd") || strrstr(filename, ".ko.gz"));
-					goto repeat;
 				bb_error_msg_and_die("%s: module not found", m_fullName);
 			}
 		}
