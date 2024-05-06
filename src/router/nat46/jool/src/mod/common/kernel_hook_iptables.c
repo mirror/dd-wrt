@@ -5,6 +5,7 @@
 #include "common/iptables.h"
 #include "mod/common/core.h"
 #include "mod/common/log.h"
+#include <linux/version.h>
 
 static verdict find_instance(struct net *ns, const struct target_info *info,
 		struct xlator *result)
@@ -63,7 +64,11 @@ EXPORT_SYMBOL_GPL(target_checkentry);
 
 static struct net *action_param_net(const struct xt_action_param *param)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
+	return param->net;
+#else
 	return param->state->net;
+#endif
 }
 
 static unsigned int verdict2iptables(verdict result, bool enable_debug)
