@@ -1,1 +1,0 @@
-cmd_/home/seg/DEV/ipq806x/src/router/nat46/src/nat46.o := sh ./scripts/gcc-ld -flinker-output=nolto-rel -flto=jobserver -fwhole-program -fipa-cp-clone   -EL -z noexecstack --no-warn-rwx-segments    -r -o /home/seg/DEV/ipq806x/src/router/nat46/src/nat46.o @/home/seg/DEV/ipq806x/src/router/nat46/src/nat46.mod 

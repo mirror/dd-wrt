@@ -1,1 +1,0 @@
-cmd_/home/seg/DEV/ipq806x/src/router/nat46/src/nat46.mod := printf '%s\n'   nat46-netdev.o nat46-module.o nat46-core.o nat46-glue.o | awk '!x[$$0]++ { print("/home/seg/DEV/ipq806x/src/router/nat46/src/"$$0) }' > /home/seg/DEV/ipq806x/src/router/nat46/src/nat46.mod
