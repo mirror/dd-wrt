@@ -1,0 +1,9 @@
+See https://nicmx.github.io/Jool/en/install.html
+
+Quick version:
+
+	./autogen.sh         # If this script does not exist, skip this command.
+	./configure
+	make
+	sudo make install    # userspace tools
+	sudo dkms install .  # kernel modules

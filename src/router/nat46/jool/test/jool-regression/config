@@ -1,0 +1,8 @@
+OLDIFS=$' \t\n'
+IFS=$'\n'
+GIT_DIR=/home/jool/git
+JOOL_DIR=/home/jool/git/Jool
+BRANCH=issue189
+LINUX_KERNEL=($(cat /boot/grub/grub.cfg|grep -e "^\smenuentry"|cut -d"'" -f2))
+LINUX_INDEX=8
+RESULT_LOG=$(pwd)/results.log

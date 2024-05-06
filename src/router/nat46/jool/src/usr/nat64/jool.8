@@ -1,0 +1,426 @@
+.\" Manpage for jool's userspace app.
+
+.TH jool 8 2023-12-22 v4.1.11 "NAT64 Jool's Userspace Client"
+
+.SH NAME
+jool - Interact with NAT64 Jool (the kernel module).
+
+.SH DESCRIPTION
+Sends commands and requests to NAT64 Jool.
+.br
+NAT64 Jool is a kernel module you load into a Linux kernel. It implements RFC 6146.
+
+.SH AVAILABILITY
+Linux is the only OS in which this program makes sense.
+.br
+Kernels 4.14 and up.
+
+.SH SYNTAX
+.RI "jool [" <argp1> "] instance ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| add
+.br
+.I			[<Instance-Name>]
+.br
+		(--netfilter | --iptables)
+.br
+.RI "		--pool6 " <IPv6-prefix>
+.br
+	| remove
+.br
+.I			[<Instance-Name>]
+.br
+	| flush
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] stats ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+		[--all]
+.br
+		[--explain]
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] global ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| update
+.br
+.I			<Key> <Value>
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] pool4 ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+		[--tcp | --udp | --icmp]
+.br
+	| add
+.br
+.I			<IPv4-Address> <Ports>
+.br
+		[--tcp | --udp | --icmp]
+.br
+.RI "		[--mark " <Mark> "]"
+.br
+.RI "		[--max-iterations (auto | infinity | " <Iterations> ")]"
+.br
+		[--force]
+.br
+	| remove
+.br
+.I			<IPv4-Address> <Ports>
+.br
+		[--tcp | --udp | --icmp]
+.br
+.RI "		[--mark " <Mark> "]"
+.br
+		[--quick]
+.br
+	| flush
+.br
+		[--quick]
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] bib ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+		[--tcp | --udp | --icmp]
+.br
+		[--numeric]
+.br
+	| add
+.br
+.I			<IPv6-Transport-Address>
+.br
+.I			<IPv4-Transport-Address>
+.br
+		[--tcp | --udp | --icmp]
+.br
+	| remove
+.br
+.I			[<IPv6-Transport-Address>]
+.br
+.I			[<IPv4-Transport-Address>]
+.br
+		[--tcp | --udp | --icmp]
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] session ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+		[--tcp | --udp | --icmp]
+.br
+		[--numeric]
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool [" <argp1> "] file ("
+.br
+.RI "	handle " <JSON-File>
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.IR <argp1> " := (" <help> " | --instance " <Name> " | --file " <File> ")"
+.P
+.IR <help> " := (--help | --usage | --version)"
+
+.SH OPTIONS
+.SS Modes and Operations
+
+.IP "instance display"
+Show all instances from all namespaces.
+.IP "instance add"
+Create a new instance.
+.IP "instance remove"
+Drop an existing instance.
+.IP "instance flush"
+Drop all instances from the current namespace.
+.IP "stats display"
+Show internal counters.
+.IP "global display"
+Show the current values of the instance's tweakable internal variables.
+.IP "global update"
+Tweak one of the instance's internal variables.
+.IP "pool4 display"
+Show one of the tables from the IPv4 transport address pool.
+.br
+(Each protocol has one table.)
+.IP "pool4 add"
+Upload an entry to the IPv4 transport address pool.
+.IP "pool4 remove"
+Drop transport addresses from the IPv4 transport address pool.
+.IP "pool4 flush"
+Empty the IPv4 transport address pool.
+.IP "bib display"
+Show one of the BIB tables.
+.br
+(Each protocol has one table.)
+.IP "bib add"
+Add a static entry to the BIB.
+.IP "bib remove"
+Remove an entry (static or otherwise) from the BIB.
+.IP "session display"
+Show one of the the session tables.
+.br
+(Each protocol has one table.)
+.IP "file handle"
+Parse all the configuration from a JSON file.
+.br
+Create instance if it doesn't exist, update if it does.
+
+.SS Flags
+.IP "--instance <Name>"
+Name of the instance you want to interact with.
+.br
+It's an ASCII string, 15 characters max. Defaults to 'default'.
+.IP "--file <File>"
+JSON file which contains the name of the instance you want to interact with.
+.br
+Same JSON structure as the one from atomic configuration.
+.IP --tcp
+Apply the operation on the TCP table.
+.br
+(This is the default table.)
+.IP --udp
+Apply the operation on the UDP table.
+.IP --icmp
+Apply the operation on the ICMP table.
+.IP --csv
+Output in CSV table format.
+.IP --no-headers
+Do not print table headers.
+(Nor footer, if applies.)
+.IP --netfilter
+Sit the instance on top of the Netfilter framework.
+.IP --iptables
+Sit the instance on top of the iptables framework.
+.IP "--pool6 <IPv6-prefix>"
+Contents of the new instance's IPv6 pool.
+.br
+The format is 'PREFIX_ADDRESS[/PREFIX_LENGTH]'.
+.IP --all
+Show all the counters.
+.br
+(Otherwise, only the nonzero ones are printed.)
+.IP --explain
+Show a description of each counter.
+.IP "--mark <Mark>"
+The pool4 entry will only be allowed to mask packets carrying this mark.
+.br
+It's a 32-bit unsigned integer. Defaults to zero.
+.IP "--max-iterations (auto | infinity | <Iterations>)"
+Maximum number of times the mask-finding algorithm will be allowed to iterate.
+.br
+.IR auto " computes a recommended default,"
+.br
+.IR infinity " removes the iteration cap,"
+.br
+.IR <Iterations> " (unsigned 32-bit integer) sets the actual number."
+.IP --force
+Apply operation even if certain validations fail.
+.IP --quick
+Do not remove orphaned BIB and session entries.
+.IP --numeric
+Do not query the DNS.
+
+.SS Other Arguments
+.IP "<Key> <Value>"
+Name of the variable you want to edit (see 'Globals' section), and its new value.
+.IP "<IPv4-Address> <Ports>"
+Descriptor of the range of transport addresses you want to add or remove from the pool.
+.br
+<Ports> is a range of ports; it should follow the format '<Min>[-<Max>]'.
+.br
+The command will add or remove addresses <IPv4-Address>#<Min> to <IPv4-Address>#<Max>.
+.IP "<IPv6-transport-address>, <IPv4-transport-address>"
+Transport addresses that shape the BIB entry you want to add or remove.
+.br
+The format is 'IPV6_ADDRESS#PORT' and 'IPV4_ADDRESS#PORT', respectively.
+.IP <Instance-Name>
+Name of the instance you want to add or remove.
+.br
+If --instance or --file were included in <argp1>, then the instance names must match.
+.IP <JSON-file>
+Path to a JSON file.
+
+.SS Globals
+.IP "manually-enabled <Boolean>"
+Enable or disable the instance.
+.IP "pool6 <IPv6 Prefix>"
+The IPv6 pool's prefix.
+.br
+The format is 'PREFIX_ADDRESS[/PREFIX_LENGTH]'.
+.IP "lowest-ipv6-mtu <Unsigned 32-bit integer>"
+Smallest reachable IPv6 MTU.
+.IP "logging-debug <Boolean>"
+Enable logging of debug messages?
+.IP "zeroize-traffic-class <Boolean>"
+Always set the IPv6 header's 'Traffic Class' field as zero?
+.br
+Otherwise copy from IPv4 header's 'TOS'.
+.IP "override-tos <Boolean>"
+Override the IPv4 header's 'TOS' field as --tos?
+.br
+Otherwise copy from IPv6 header's 'Traffic Class'.
+.IP "tos <Unsigned 8-bit integer>"
+Value to override TOS as (only when override-tos is ON)
+.IP "mtu-plateaus <Comma-separated list of unsigned 16-bit integers>"
+Set the list of plateaus for ICMPv4 Fragmentation Neededs with MTU unset.
+.IP "address-dependent-filtering <Boolean>"
+Behave as (address-)restricted-cone NAT?
+.br
+Otherwise behave as full-cone NAT.
+.IP "drop-icmpv6-info <Boolean>"
+Filter ICMPv6 Informational packets?
+.IP "drop-externally-initiated-tcp <Boolean>"
+Drop externally initiated TCP connections?
+.IP "tcp-est-timeout <HH:MM:SS.mmm>"
+Set the TCP established session lifetime.
+.IP "tcp-trans-timeout <HH:MM:SS.mmm>"
+Set the TCP transitory session lifetime.
+.IP "udp-timeout <HH:MM:SS.mmm>"
+Set the UDP session lifetime.
+.IP "icmp-timeout <HH:MM:SS.mmm>"
+Set the ICMP session lifetime.
+.IP "maximum-simultaneous-opens <Unsigned 32-bit integer>"
+Set the maximum allowable 'simultaneous' Simultaneos Opens of TCP connections.
+.IP "source-icmpv6-errors-better <Boolean>"
+Translate source addresses directly on 4-to-6 ICMP errors?
+.IP "f-args <Unsigned 4-bit integer>"
+Defines the arguments that will be sent to F().
+.br
+(F() is defined by algorithm 3 of RFC 6056.)
+.br
+- First (leftmost) bit is source address.
+.br
+- Second bit is source port.
+.br
+- Third bit is destination address.
+.br
+- Fourth (rightmost) bit is destination port.
+.IP "handle-rst-during-fin-rcv <Boolean>"
+Use transitory timer when RST is received during the V6 FIN RCV or V4 FIN RCV states?
+.IP "logging-bib <Boolean>"
+Log BIBs as they are created and destroyed?
+.IP "logging-session <Boolean>"
+Log sessions as they are created and destroyed?
+.IP "trace <Boolean>"
+Log basic packet fields as they are received?
+.IP "ss-enabled <Boolean>"
+Enable Session Synchronization?
+.IP "ss-flush-asap <Boolean>"
+Try to synchronize sessions as soon as possible?
+.IP "ss-flush-deadline <Unsigned 32-bit integer>"
+Inactive milliseconds after which to force a session sync.
+.IP "ss-capacity <Unsigned 32-bit integer>"
+Maximim number of queuable entries.
+.IP "ss-max-payload <Unsigned 32-bit integer>"
+Maximum amount of bytes joold should send per packet.
+
+.SH EXAMPLES
+Create a new instance named "Example":
+.br
+	jool instance add Example --iptables --pool6 64:ff9b::/96
+.P
+Add addresses 192.0.2.10#1024 to 192.0.2.10#2048 to the IPv4/TCP pool:
+.br
+	jool -i Example pool4 add 192.0.2.10 1024-2048 --tcp
+.P
+Print the TCP table of the BIB:
+.br
+	jool -i Example bib display
+.P
+Add an UDP binding to the BIB:
+.br
+	jool -i Example bib add 192.0.2.10#2000 1::1#2000 --tcp
+.P
+Remove the binding from the BIB:
+.br
+	jool -i Example bib remove 192.0.2.10#2000 --tcp
+.P
+Print the TCP session table:
+.br
+	jool -i Example session display
+.P
+Print the global configuration values:
+.br
+	jool -i Example global display
+.P
+Update some global configuration value:
+.br
+	jool -i Example global update address-dependent-filtering ON
+
+.SH NOTES
+TRUE, FALSE, 1, 0, YES, NO, ON and OFF are all valid booleans. You can mix case too.
+
+.SH EXIT STATUS
+Zero on success, non-zero on failure.
+
+.SH AUTHOR
+NIC Mexico & ITESM
+
+.SH REPORTING BUGS
+https://github.com/NICMx/Jool/issues
+
+.SH COPYRIGHT
+Copyright 2023 NIC Mexico.
+.br
+License: GPLv2 (GNU GPL version 2)
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+.SH SEE ALSO
+https://nicmx.github.io/Jool
+.br
+https://nicmx.github.io/Jool/en/documentation.html

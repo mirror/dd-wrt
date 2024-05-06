@@ -1,0 +1,120 @@
+# Compiled source #
+###################
+
+*.o
+*.so
+
+# Libtool?
+*.la
+*.lo
+.libs/
+config.guess
+config.sub
+libtool
+ltmain.sh
+
+# Kernel module
+*.cmd
+*.ko
+*.mod
+*.mod.c
+*.order
+*.symvers
+.tmp_versions
+.cache.mk
+built-in.a
+*.dwo
+
+# ?
+*.o.d
+
+# Userspace binaries
+/src/usr/siit/jool_siit
+/src/usr/nat64/jool
+/src/usr/joold/joold
+/test/graybox/usr/graybox
+
+# Documentation
+docs/_site/
+test/graybox/test-suite/rfc/_site/
+.jekyll-metadata
+
+# git #
+#######
+*.orig
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Package signature
+/*.asc
+
+# Logs #
+########
+*.log
+
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Temporal files
+######################
+*.swp
+*~
+
+# Eclipse
+######################
+.cproject
+.project
+.settings
+.metadata
+Debug/
+
+# autoconf
+##########
+*.in
+*.m4
+.deps
+.dirstamp
+compile
+config.status
+configure
+depcomp
+install-sh
+missing
+autom4te.cache
+
+# Makefiles need to be gitignore'd on an individual basis, because there
+# are plenty of manually generated ones that need to be uploaded.
+/Makefile
+/src/common/Makefile
+/src/usr/Makefile
+/src/usr/argp/Makefile
+/src/usr/joold/Makefile
+/src/usr/nat64/Makefile
+/src/usr/nl/Makefile
+/src/usr/siit/Makefile
+/src/usr/util/Makefile
+/test/graybox/Makefile
+/test/graybox/usr/Makefile
+
+# DKMS version cache
+######################
+dkms.package_version.conf
+
+# Developer playground
+######################
+sandbox/

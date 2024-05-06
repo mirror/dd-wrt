@@ -1,0 +1,332 @@
+.\" Manpage for jool's userspace app.
+
+.TH jool_siit 8 2023-12-22 v4.1.11 "SIIT Jool's Userspace Client"
+
+.SH NAME
+jool_siit - Interact with SIIT Jool (the kernel module).
+
+.SH DESCRIPTION
+Sends commands and requests to SIIT Jool.
+.br
+SIIT Jool is a kernel module you load into a Linux kernel. It implements RFC 7915.
+
+.SH AVAILABILITY
+Linux is the only OS in which this program makes sense.
+.br
+Kernels 4.14 and up.
+
+.SH SYNTAX
+.RI "jool_siit [" <argp1> "] instance ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| add
+.br
+.I			[<Instance-Name>]
+.br
+		(--netfilter | --iptables)
+.br
+.RI "		[--pool6 " <IPv6-prefix> "]"
+.br
+	| remove
+.br
+.I			[<Instance-Name>]
+.br
+	| flush
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] stats ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+		[--all]
+.br
+		[--explain]
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] global ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| update
+.br
+.I			<Key> <Value>
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] eamt ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| add
+.br
+.RI "		<IPv4-prefix> <IPv6-prefix>"
+.br
+		[--force]
+.br
+	| remove
+.br
+.RI "		<IPv4-prefix> <IPv6-prefix>"
+.br
+	| flush
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] address ("
+.br
+.RI "	query [--verbose] " "<IP-Address>"
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] denylist4 ("
+.br
+	display
+.br
+		[--csv]
+.br
+		[--no-headers]
+.br
+	| add
+.br
+.RI "		<IPv4-prefix>"
+.br
+		[--force]
+.br
+	| remove
+.br
+.RI "		<IPv4-prefix>"
+.br
+	| flush
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.RI "jool_siit [" <argp1> "] file ("
+.br
+.RI "	handle " <JSON-File>
+.br
+.RI "	| " <help>
+.br
+)
+.P
+.IR <argp1> " := (" <help> " | --instance " <Name> " | --file " <File> ")"
+.P
+.IR <help> " := (--help | --usage | --version)"
+
+.SH OPTIONS
+.SS Modes and Operations
+
+.IP "instance display"
+Show all instances from all namespaces.
+.IP "instance add"
+Create a new instance.
+.IP "instance remove"
+Drop an existing instance.
+.IP "instance flush"
+Drop all instances from the current namespace.
+.IP "stats display"
+Show internal counters.
+.IP "global display"
+Show the current values of the instance's tweakable internal variables.
+.IP "global update"
+Tweak one of the instance's internal variables.
+.IP "eamt display"
+Show the EAM table.
+.IP "eamt add"
+Upload an entry to the EAM table.
+.IP "eamt remove"
+Drop an entry from the EAM table.
+.IP "eamt flush"
+Empty the EAM table.
+.IP "address query"
+Print the translated version of the given address using the current configuration.
+.IP "denylist4 display"
+Show the denylist.
+.IP "denylist4 add"
+Upload an entry to the denylist.
+.IP "denylist4 remove"
+Drop an entry from the denylist.
+.IP "denylist4 flush"
+Empty the denylist.
+.IP "file handle"
+Parse all the configuration from a JSON file.
+.br
+Create instance if it doesn't exist, update if it does.
+
+.SS Flags
+.IP "--instance <Name>"
+Name of the instance you want to interact with.
+.br
+It's an ASCII string, 15 characters max. Defaults to 'default'.
+.IP "--file <File>"
+JSON file which contains the name of the instance you want to interact with.
+.br
+Same JSON structure as the one from atomic configuration.
+.IP --csv
+Output in CSV table format.
+.IP --no-headers
+Do not print table headers.
+(Nor footer, if applies.)
+.IP --netfilter
+Sit the instance on top of the Netfilter framework.
+.IP --iptables
+Sit the instance on top of the iptables framework.
+.IP "--pool6 <IPv6-prefix>"
+Contents of the new instance's IPv6 pool.
+.br
+The format is 'PREFIX_ADDRESS[/PREFIX_LENGTH]'.
+.IP --all
+Show all the counters.
+.br
+(Otherwise, only the nonzero ones are printed.)
+.IP --explain
+Show a description of each counter.
+.IP --verbose
+Print some details regarding the translation operation.
+.IP --force
+Apply operation even if certain validations fail.
+
+.SS Other Arguments
+.IP "<Key> <Value>"
+Name of the variable you want to edit (see 'Globals' section), and its new value.
+.IP "<IPv6-prefix>"
+The format is IPV6_ADDRESS[/PREFIX_LENGTH]. PREFIX_LENGTH defaults to 128.
+.IP "<IPv4-prefix>"
+The format is IPV4_ADDRESS[/PREFIX_LENGTH]. PREFIX_LENGTH defaults to 32.
+.IP <Instance-Name>
+Name of the instance you want to add or remove.
+.br
+If --instance or --file were included in <argp1>, then the instance names must match.
+.IP <JSON-file>
+Path to a JSON file.
+
+.SS Globals
+.IP "manually-enabled <Boolean>"
+Enable or disable the instance.
+.IP "pool6 (<IPv6 Prefix> | null)"
+The IPv6 pool's prefix.
+.br
+The format is 'PREFIX_ADDRESS[/PREFIX_LENGTH]'.
+.br
+Use null to clear.
+.IP "lowest-ipv6-mtu <Unsigned 32-bit integer>"
+Smallest reachable IPv6 MTU.
+.IP "logging-debug <Boolean>"
+Enable logging of debug messages?
+.IP "zeroize-traffic-class <Boolean>"
+Always set the IPv6 header's 'Traffic Class' field as zero?
+.br
+Otherwise copy from IPv4 header's 'TOS'.
+.IP "override-tos <Boolean>"
+Override the IPv4 header's 'TOS' field as --tos?
+.br
+Otherwise copy from IPv6 header's 'Traffic Class'.
+.IP "tos <Unsigned 8-bit integer>"
+Value to override TOS as (only when override-tos is ON)
+.IP "mtu-plateaus <Comma-separated list of unsigned 16-bit integers>"
+Set the list of plateaus for ICMPv4 Fragmentation Neededs with MTU unset.
+.IP "amend-udp-checksum-zero <Boolean>"
+Compute the UDP checksum of IPv4-UDP packets whose value is zero?
+.br
+Otherwise drop the packet.
+.IP "eam-hairpin-mode (simple | intrinsic | off)"
+Defines how EAM+hairpinning is handled.
+.IP "randomize-rfc6791-addresses <Boolean>"
+Randomize selection of address from the RFC6791 pool?
+.br
+Otherwise choose the 'Hop Limit'th address.
+.IP "rfc6791v6-prefix (<IPv6 Prefix> | null)"
+IPv6 prefix to generate RFC6791v6 addresses from.
+.br
+Use null to clear.
+.IP "rfc6791v4-prefix (<IPv4 Prefix> | null)"
+IPv4 prefix to generate RFC6791v4 addresses from.
+.br
+Use null to clear.
+.IP "trace <Boolean>"
+Log basic packet fields as they are received?
+
+.SH EXAMPLES
+Create a new instance named "Example":
+.br
+	jool_siit instance add Example --iptables
+.P
+Print the globals:
+.br
+	jool_siit -i Example global display
+.P
+Change the IPv6 pool prefix:
+.br
+	jool_siit -i Example global update pool6 2001:db8::/96
+.P
+Print the Explicit Address Mappings Table (EAMT):
+.br
+	jool_siit -i Example eamt display
+.P
+Add an entry to the EAMT:
+.br
+	jool_siit -i Example eamt add 2001:db8::/120 192.0.2.0/24
+.P
+Remove an entry from the EAMT:
+.br
+	jool_siit -i Example eamt remove 2001:db8::/120
+.P
+Add denylist prefix 192.0.2.0/24:
+.br
+	jool_siit -i Example denylist4 add 192.0.2.0/24
+.P
+Allow translation of 192.0.2.0/24:
+.br
+	jool_siit -i Example denylist4 remove 192.0.2.0/24
+
+.SH NOTES
+TRUE, FALSE, 1, 0, YES, NO, ON and OFF are all valid booleans. You can mix case too.
+
+.SH EXIT STATUS
+Zero on success, non-zero on failure.
+
+.SH AUTHOR
+NIC Mexico & ITESM
+
+.SH REPORTING BUGS
+https://github.com/NICMx/Jool/issues
+
+.SH COPYRIGHT
+Copyright 2023 NIC Mexico.
+.br
+License: GPLv2 (GNU GPL version 2)
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+.SH SEE ALSO
+https://nicmx.github.io/Jool
+.br
+https://nicmx.github.io/Jool/en/documentation.html

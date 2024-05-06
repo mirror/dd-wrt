@@ -1,0 +1,8 @@
+Stat,Value,Explanation
+JSTAT_SUCCESS,35,"Successful translations. (Note: 'Successful translation' does not imply that the packet was actually delivered.)"
+JSTAT_BIB_ENTRIES,4,"Number of BIB entries currently held in the BIB."
+JSTAT_SESSIONS,6,"Number of session entries currently held in the BIB."
+JSTAT_BIB4_NOT_FOUND,1,"Translations cancelled: IPv4 packet did not match a BIB entry from the database."
+JSTAT_FAILED_ROUTES,1,"The translated packet could not be routed; the kernel's routing function errored. Cause is unknown. (It usually happens because the packet's destination address could not be found in the routing table.)"
+JSTAT_PKT_TOO_BIG,2,"Translations cancelled: Translated IPv4 packet did not fit in the outgoing interface's MTU. A Packet Too Big or Fragmentation Needed ICMP error was returned to the client."
+JSTAT_ICMP6ERR_SUCCESS,1,"ICMPv6 errors (created by Jool, not translated) sent successfully."

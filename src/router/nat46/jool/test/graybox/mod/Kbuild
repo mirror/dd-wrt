@@ -1,0 +1,12 @@
+ccflags-y := -I$(src)/.. -I$(src)/../../../src
+#EXTRA_CFLAGS += -DDEBUG
+
+obj-m += graybox.o
+
+graybox-objs += diff.o
+graybox-objs += nf_hook.o
+graybox-objs += expecter.o
+graybox-objs += genetlink.o
+graybox-objs += sender.o
+graybox-objs += nl_handler.o
+graybox-objs += ../../../src/mod/common/ipv6_hdr_iterator.o

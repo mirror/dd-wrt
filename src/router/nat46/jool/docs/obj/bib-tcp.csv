@@ -1,0 +1,4 @@
+Protocol,IPv6 Address,IPv6 L4-ID,IPv4 Address,IPv4 L4-ID,Static?
+TCP,6::6,6,4.4.4.4,4,1
+TCP,6::6,66,4.4.4.4,44,1
+TCP,6::6,1234,4.4.4.4,1234,0

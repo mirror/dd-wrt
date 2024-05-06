@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="784"
+   height="208"
+   id="svg2"
+   version="1.1"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   sodipodi:docname="1-ip-address-show.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.5905612"
+     inkscape:cx="392"
+     inkscape:cy="104"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     showguides="false"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1848"
+     inkscape:window-height="1016"
+     inkscape:window-x="1992"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:snap-global="true"
+     inkscape:document-rotation="0"
+     inkscape:snap-nodes="true"
+     inkscape:snap-object-midpoints="true"
+     inkscape:snap-text-baseline="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid917"
+       spacingx="8"
+       spacingy="8"
+       empspacing="8" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Network"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-796.36218)"
+     style="display:inline">
+    <path
+       id="rect915"
+       style="fill:#000000;stroke:none;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:2, 2"
+       d="M 8,804.36218 H 704 V 948.3622 H 148 l -4,4 -4,-4 H 8 Z"
+       sodipodi:nodetypes="cccccccc" />
+    <path
+       id="path4242"
+       style="fill:none;stroke:#000000;stroke-width:0.999996;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       cx="9.5"
+       cy="227"
+       r="2.5"
+       d="" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:14px;line-height:125%;font-family:Sans;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+       x="148"
+       y="981.36218"
+       id="text3042"><tspan
+         sodipodi:role="line"
+         id="tspan3044"
+         x="148"
+         y="981.36218">A</tspan></text>
+    <path
+       id="rect3143"
+       style="display:inline;fill:#666666;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="m 132.35356,964.3622 v 24 l -8,8 h 31.99999 l 8,-8 v -24 z m 2,2 h 27.99999 v 20 h -27.99999 z" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:1.25;font-family:'Courier 10 Pitch';-inkscape-font-specification:'Courier 10 Pitch';text-align:start;letter-spacing:0px;text-anchor:start;display:inline;fill:#ffffff"
+       x="16"
+       y="820.36218"
+       id="text898"><tspan
+         sodipodi:role="line"
+         x="16"
+         y="820.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan887">$ ip address show</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="835.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan870">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="850.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan903">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="865.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan905">    inet 127.0.0.1/8 scope host lo</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="880.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan907">       valid_lft forever preferred_lft forever</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="895.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan909">    inet6 ::1/128 scope host </tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="910.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan911">       valid_lft forever preferred_lft forever</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="925.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan931">2: enp0s31f6: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc fq_codel state DOWN group default qlen 1000</tspan><tspan
+         sodipodi:role="line"
+         x="16"
+         y="940.36218"
+         style="font-size:12px;fill:#ffffff"
+         id="tspan857">    link/ether 1c:1b:0d:62:7a:42 brd ff:ff:ff:ff:ff:ff</tspan></text>
+  </g>
+</svg>

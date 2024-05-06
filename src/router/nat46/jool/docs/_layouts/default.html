@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>{{ page.title }}</title>
+	<link href="../css/style.css" rel="stylesheet" type="text/css" media="screen" />
+	<link href="../css/print.css" rel="stylesheet" type="text/css" media="print" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="../scripts/distro-code.js"></script>
+</head>
+
+<body>
+	<div id="page">
+		<div id="contentwrapper">
+			<div id="sidebar_navigation" class="sidebar">
+				<div class="left_sidebar_menu">
+					<div class="{% if page.category == 'Home'          %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="index.html">Home</a>
+					</div>
+					<div class="{% if page.category == 'Documentation' %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="documentation.html">Documentation</a>
+					</div>
+					<div class="{% if page.category == 'Download'      %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="download.html">Downloads</a>
+					</div>
+					<div class="{% if page.category == 'License'      %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="license.html">Licenses</a>
+					</div>
+					<div class="{% if page.category == 'FAQ'           %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="faq.html">FAQ</a>
+					</div>
+					<div class="{% if page.category == 'ReportBug'     %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="{{ site.repository-url }}/issues" target="_blank">Report a Bug</a>
+					</div>
+					<div class="{% if page.category == 'About'         %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="about.html">About</a>
+					</div>
+					<div class="{% if page.category == 'Contact'       %}left_sidebar_menu_selected{% else %}left_sidebar_menu_button{% endif %}">
+						<a href="contact.html">Contact</a>
+					</div>
+				</div>
+			</div>
+			<div id="content">
+				<div class="worklogo">
+					<a href="index.html"><img src="../images/jool.png" alt="logo-jool" /></a>
+				</div>
+				<div class="workarea">
+					<div class="content_text">
+
+{{ content }}
+
+					</div>
+				</div>
+			</div>
+			<div style="clear: both;">&nbsp;</div>
+		</div>
+	</div>
+
+	<div id="footer">
+		<div class="logo-tec"><a href="http://www.itesm.mx"><img src="../images/logo-tec.png" alt="logo-tec" /></a></div>
+		<div class="logo-nic"><a href="http://www.nicmexico.mx/"><img src="../images/logo-nic.png" alt="logo-nic" /></a></div>
+		<p class="legal">&copy;Jool 2024&nbsp; &#124; &nbsp; <a href="../doc/AP_Jool.pdf" style="color:white;">Privacy Notice</a>&nbsp; &#124; &nbsp; <a href="../doc/20180123_TU_Jool.pdf" style="color:white;">Terms of Use</a></p>
+	</div>
+</body>
+</html>
