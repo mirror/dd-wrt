@@ -1,191 +1,250 @@
-#ifndef SRC_MOD_COMMON_TYPES_H_
-#define SRC_MOD_COMMON_TYPES_H_
+#ifndef SRC_COMMON_TYPES_H_
+#define SRC_COMMON_TYPES_H_
 
 /**
  * @file
- * Kernel-specific core data types and routines.
+ * The NAT64's core data types. Structures used all over the code.
+ *
+ * Both the kernel module and the userspace application can see this file.
  */
 
-#include "common/types.h"
-#include <linux/netfilter.h>
-#include <linux/kernel.h>
-#include "common/xlat.h"
-#include "mod/common/address.h"
-#include "mod/common/error_pool.h"
+#include <linux/types.h>
+#ifdef __KERNEL__
+	#include <linux/in.h>
+	#include <linux/in6.h>
+#else
+	#include <stdbool.h>
+	#include <arpa/inet.h>
+#endif
 
-/**
- * An indicator of what a function expects its caller to do with the packet
- * being translated.
- */
-typedef enum verdict {
-	/** "No problems thus far, processing of the packet can continue." */
-	VERDICT_CONTINUE,
-	/**
-	 * "The packet should be dropped, no matter what."
-	 * Typically, this is because it's corrupted.
-	 *
-	 * Code should rarely use this constant directly. Use drop() or
-	 * drop_icmp() instead.
-	 */
-	VERDICT_DROP,
-	/**
-	 * This leads to NF_ACCEPT. Used when the packet cannot be translated,
-	 * but maybe it was intended for the kernel.
-	 *
-	 * Code should rarely use this constant directly. Use untranlatable()
-	 * or untranslatable_icmp() instead.
-	 */
-	VERDICT_UNTRANSLATABLE,
-	/**
-	 * "I need to keep the packet for a while. Do not free, access or modify
-	 * it."
-	 *
-	 * The packet being stored is THE ORIGINAL PACKET.
-	 * The "original packet" will be different from the "incoming packet" in
-	 * hairpinning.
-	 * Therefore, if your stealing/storing code doesn't include
-	 * skb_original_skb(), then YOU HAVE A KERNEL PANIC.
-	 *
-	 * Code should rarely use this constant directly. Use stolen() instead.
-	 */
-	VERDICT_STOLEN,
-} verdict;
+/** Maximum storable value on a __u8. */
+#define MAX_U8 0xFFU
+/** Maximum storable value on a __u16. */
+#define MAX_U16 0xFFFFU
+/** Maximum storable value on a __u32. */
+#define MAX_U32 0xFFFFFFFFU
+
+typedef unsigned int xlator_flags;
+typedef unsigned int xlator_type; /** Bitwise or'd XT_* constants below. */
+typedef unsigned int xlator_framework; /** Bitwise or'd XF_* constants below. */
+
+#define XT_SIIT (1 << 0)
+#define XT_NAT64 (1 << 1)
+#define XF_NETFILTER (1 << 2)
+#define XF_IPTABLES (1 << 3)
+
+#define XT_ANY (XT_SIIT | XT_NAT64)
+#define XF_ANY (XF_NETFILTER | XF_IPTABLES)
+
+int xf_validate(xlator_framework xf);
+int xt_validate(xlator_type xt);
+
+xlator_type xlator_flags2xt(xlator_flags flags);
+xlator_framework xlator_flags2xf(xlator_flags flags);
+
+#define XT_VALIDATE_ERRMSG \
+	"The instance type must be either SIIT or NAT64."
+
+#ifdef XTABLES_DISABLED
+#define XF_VALIDATE_ERRMSG \
+	"Netfilter is the only available instance framework."
+#else
+#define XF_VALIDATE_ERRMSG \
+	"Netfilter and iptables are the only available instance frameworks."
+#endif
+
+char const *xt2str(xlator_type xt);
 
 /*
- * To test that you're not mixing up verdicts and int errors:
+ * This includes the null chara.
  *
- * 1. Comment the verdict typedef above out.
- * 2. Uncomment the one below.
- * 3. Compile.
+ * 15 looks pallatable for decimal-thinking users :p
  */
-/*
-typedef int *verdict;
+#define INAME_MAX_SIZE 16
+#define INAME_DEFAULT "default"
 
-static int vercontinue = 0;
-static int verdrop = 1;
-static int veruntranslatable = 2;
-static int verstolen = 3;
-
-const static verdict VERDICT_CONTINUE = &vercontinue;
-const static verdict VERDICT_DROP = &verdrop;
-const static verdict VERDICT_UNTRANSLATABLE = &veruntranslatable;
-const static verdict VERDICT_STOLEN = &verstolen;
-*/
+int iname_validate(const char *iname, bool allow_null);
+#define INAME_VALIDATE_ERRMSG \
+	"The instance name must be a null-terminated ascii string, 15 characters max."
 
 /**
- * RFC 6146 tuple.
- *
- * A tuple is sort of a summary of a packet; it is a quick accesor for several
- * of its key elements.
- *
- * Keep in mind that the tuple's values do not always come from places you'd
- * normally expect. Unless you know ICMP errors are not involved, if the RFC
- * says "the tuple's source address", then you *MUST* extract the address from
- * the tuple, not from the packet. Conversely, if it says "the packet's source
- * address", then *DO NOT* extract it from the tuple for convenience. See
- * comments inside for more info.
+ * Network (layer 3) protocols Jool is supposed to support.
+ * We do not use PF_INET, PF_INET6, AF_INET or AF_INET6 because I want the
+ * compiler to pester me during defaultless `switch`s. Also, the zero-based
+ * index is convenient in the Translate Packet module.
  */
-struct tuple {
-	/**
-	 * Most of the time, this is the packet's _source_ address and layer-4
-	 * identifier. When the packet contains a inner packet, this is the
-	 * inner packet's _destination_ address and l4 id.
-	 */
-	union transport_addr src;
+typedef enum l3_protocol {
+	/** RFC 2460. */
+	L3PROTO_IPV6 = 0,
+	/** RFC 791. */
+	L3PROTO_IPV4 = 1,
+} l3_protocol;
 
-	/**
-	 * Most of the time, this is the packet's _destination_ address and
-	 * layer-4 identifier. When the packet contains a inner packet, this is
-	 * the inner packet's _source_ address and l4 id.
-	 */
-	union transport_addr dst;
-
-	/**
-	 * The packet's network protocol. This is the sure way to know which of
-	 * the above union elements should be used.
-	 */
-	l3_protocol l3_proto;
-	/**
-	 * The packet's transport protocol that counts.
-	 *
-	 * Most of the time, this is the packet's simple l4-protocol. When the
-	 * packet contains a inner packet, this is the inner packet's
-	 * l4-protocol.
-	 *
-	 * This dictates whether this is a 5-tuple or a 3-tuple
-	 * (see is_3_tuple()/is_5_tuple()).
-	 */
-	l4_protocol l4_proto;
+/** Returns a string version of "proto". */
+const char *l3proto_to_string(l3_protocol proto);
 
 /**
- * By the way: There's code that relies on src.addr<x>.l4 containing the same
- * value as dst.addr<x>.l4 when l4_proto == L4PROTO_ICMP (i. e. 3-tuples).
+ * Transport (layer 4) protocols Jool is supposed to support.
+ * We do not use IPPROTO_TCP and friends because I want the compiler to pester
+ * me during defaultless `switch`s. Also, the zero-based index is convenient in
+ * the Translate Packet module.
+ *
+ * Please don't change the order; there's at least one for that relies on it.
  */
-#define icmp4_id src.addr4.l4
-#define icmp6_id src.addr6.l4
+typedef enum l4_protocol {
+	/** Signals the presence of a TCP header. */
+	L4PROTO_TCP = 0,
+	/** Signals the presence of a UDP header. */
+	L4PROTO_UDP = 1,
+	/**
+	 * Signals the presence of a ICMP header. Whether the header is ICMPv4
+	 * or ICMPv6 never matters.
+	 * We know that ICMP is not a transport protocol, but for all intents
+	 * and purposes, it behaves exactly like one in IP translation.
+	 */
+	L4PROTO_ICMP = 2,
+	/**
+	 * SIIT Jool should try to translate other protocols in a best effort
+	 * basis.
+	 * It will just copy layer 4 as is, and hope there's nothing to update.
+	 * Because of checksumming nonsense and whatnot, this might usually
+	 * fail, but whatever.
+	 */
+	L4PROTO_OTHER = 3,
+#define L4_PROTO_COUNT 4
+} l4_protocol;
+
+/** Returns a string version of "proto". */
+const char *l4proto_to_string(l4_protocol proto);
+l4_protocol str_to_l4proto(char *str);
+
+#define PLATEAUS_MAX 64
+
+struct mtu_plateaus {
+	__u16 values[PLATEAUS_MAX];
+	/** Actual length of the values array. */
+	__u16 count;
 };
 
-/* IPv6 Tuple Printk Pattern */
-#define T6PP TA6PP " -> " TA6PP " [%s]"
-/* IPv6 Tuple Printk Arguments */
-#define T6PA(t) TA6PA((t)->src.addr6), TA6PA((t)->dst.addr6), \
-		l4proto_to_string((t)->l4_proto)
+/**
+ * A layer-3 (IPv4) identifier attached to a layer-4 identifier.
+ * Because they're paired all the time in this project.
+ */
+struct ipv4_transport_addr {
+	/** The layer-3 identifier. */
+	struct in_addr l3;
+	/** The layer-4 identifier (Either the TCP/UDP port or the ICMP id). */
+	__u16 l4;
+};
 
-/* IPv4 Tuple Printk Pattern */
-#define T4PP TA4PP " -> " TA4PP " [%s]"
-/* IPv4 Tuple Printk Arguments */
-#define T4PA(t) TA4PA((t)->src.addr4), TA4PA((t)->dst.addr4), \
-		l4proto_to_string((t)->l4_proto)
+/* IPv4 Transport Address Prink Pattern */
+#define TA4PP "%pI4#%u"
+/* IPv4 Transport Address Prink Arguments */
+#define TA4PA(ta) &(ta).l3, (ta).l4
 
 /**
- * Returns true if @tuple represents a '3-tuple' (address-address-ICMP id), as
- * defined by RFC 6146.
+ * A layer-3 (IPv6) identifier attached to a layer-4 identifier.
+ * Because they're paired all the time in this project.
  */
-static inline bool is_3_tuple(struct tuple *tuple)
-{
-	return (tuple->l4_proto == L4PROTO_ICMP);
-}
+struct ipv6_transport_addr {
+	/** The layer-3 identifier. */
+	struct in6_addr l3;
+	/** The layer-4 identifier (Either the TCP/UDP port or the ICMP id). */
+	__u16 l4;
+};
+
+/* IPv6 Transport Address Prink Pattern */
+#define TA6PP "%pI6c#%u"
+/* IPv6 Transport Address Prink Arguments */
+#define TA6PA(ta) &(ta).l3, (ta).l4
+
+struct taddr4_tuple {
+	struct ipv4_transport_addr src;
+	struct ipv4_transport_addr dst;
+};
 
 /**
- * Returns true if @tuple represents a '5-tuple'
- * (address-port-address-port-transport protocol), as defined by RFC 6146.
+ * The network component of a IPv4 address.
  */
-static inline bool is_5_tuple(struct tuple *tuple)
-{
-	return !is_3_tuple(tuple);
-}
+struct ipv4_prefix {
+	/** IPv4 prefix. */
+	struct in_addr addr;
+	/** Number of bits from "address" which represent the network. */
+	__u8 len;
+};
 
 /**
- * Prints @tuple pretty in the log.
+ * The network component of a IPv6 address.
  */
-struct xlation;
-void log_tuple(struct xlation *state, struct tuple *tuple);
+struct ipv6_prefix {
+	/** IPv6 prefix. The suffix is most of the time assumed to be zero. */
+	struct in6_addr addr;
+	/** Number of bits from "address" which represent the network. */
+	__u8 len;
+};
 
 /**
- * Returns true if @type (which is assumed to have been extracted from a ICMP
- * header) represents a packet involved in a ping.
+ * Explicit Address Mapping definition.
+ * Intended to be a row in the Explicit Address Mapping Table, bind an IPv4
+ * Prefix to an IPv6 Prefix and vice versa.
  */
-bool is_icmp6_info(__u8 type);
-bool is_icmp4_info(__u8 type);
+struct eamt_entry {
+	struct ipv6_prefix prefix6;
+	struct ipv4_prefix prefix4;
+};
 
-/**
- * Returns true if @type (which is assumed to have been extracted from a ICMP
- * header) represents a packet which is an error response.
+struct port_range {
+	__u16 min;
+	__u16 max;
+};
+
+struct ipv4_range {
+	struct ipv4_prefix prefix;
+	struct port_range ports;
+};
+
+struct pool4_entry {
+	__u32 mark;
+	/**
+	 * BTW: This field is only meaningful if flags has ITERATIONS_SET,
+	 * !ITERATIONS_AUTO and !ITERATIONS_INFINITE.
+	 */
+	__u32 iterations;
+	__u8 flags;
+	__u8 proto;
+	struct ipv4_range range;
+};
+
+/*
+ * A mask that dictates which IPv4 transport address is being used to mask a
+ * given IPv6 (transport) client.
  */
-bool is_icmp6_error(__u8 type);
-bool is_icmp4_error(__u8 type);
+struct bib_entry {
+	/** The service/client being masked. */
+	struct ipv6_transport_addr addr6;
+	/** The mask. */
+	struct ipv4_transport_addr addr4;
+	/** Protocol of the channel. */
+	__u8 l4_proto;
+	/** Created by userspace app client? */
+	bool is_static;
+};
 
-/* Moves all the elements from @src to the tail of @dst. */
-static inline void list_move_all(struct list_head *src, struct list_head *dst)
-{
-	if (list_empty(src))
-		return;
+/* BIB Entry Printk Pattern */
+#define BEPP "[" TA6PP ", " TA4PP ", %s]"
+/* BIB Entry Printk Arguments */
+#define BEPA(b) TA6PA((b)->addr6), TA4PA((b)->addr4), \
+	l4proto_to_string((b)->l4_proto)
 
-	dst->prev->next = src->next;
-	src->next->prev = dst->prev;
-	dst->prev = src->prev;
-	dst->prev->next = dst;
-	INIT_LIST_HEAD(src);
-}
+bool port_range_equals(const struct port_range *r1,
+		const struct port_range *r2);
+bool port_range_touches(const struct port_range *r1,
+		const struct port_range *r2);
+bool port_range_contains(const struct port_range *range, __u16 port);
+unsigned int port_range_count(const struct port_range *range);
+void port_range_fuse(struct port_range *r1, const struct port_range *r2);
 
-#endif /* SRC_MOD_COMMON_TYPES_H_ */
+bool ipv4_range_equals(struct ipv4_range const *r1, struct ipv4_range const *r2);
+bool ipv4_range_touches(struct ipv4_range const *r1, struct ipv4_range const *r2);
+
+#endif /* SRC_COMMON_TYPES_H */

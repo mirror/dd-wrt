@@ -1,0 +1,7 @@
+.TP
+[\fB!\fP] \fB--instance-name\fP \fIstring\fP
+Name of the *iptables* SIIT Jool instance to send the packets to.
+Defaults to "default".
+.PP
+Sends packets to some SIIT Jool instance in the current namespace.
+The instance needs to be configured separately.

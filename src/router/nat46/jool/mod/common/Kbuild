@@ -1,0 +1,79 @@
+#CC=cgcc    # More healthy warnings.
+ccflags-y := -I$(src)/../..
+
+obj-m += jool_common.o
+
+
+jool_common-objs += rfc7915/4to6.o
+jool_common-objs += rfc7915/6to4.o
+jool_common-objs += rfc7915/common.o
+jool_common-objs += rfc7915/core.o
+
+jool_common-objs += address_xlat.o
+jool_common-objs += dev.o
+jool_common-objs += kernel_hook_netfilter.o
+jool_common-objs += kernel_hook_iptables.o
+jool_common-objs += log.o
+jool_common-objs += address.o
+jool_common-objs += atomic_config.o
+jool_common-objs += icmp_wrapper.o
+jool_common-objs += init.o
+jool_common-objs += ipv6_hdr_iterator.o
+jool_common-objs += joold.o
+jool_common-objs += packet.o
+jool_common-objs += rfc6052.o
+jool_common-objs += rtrie.o
+jool_common-objs += stats.o
+jool_common-objs += types.o
+jool_common-objs += translation_state.o
+jool_common-objs += route_out.o
+jool_common-objs += skbuff.o
+jool_common-objs += core.o
+jool_common-objs += error_pool.o
+jool_common-objs += timer.o
+jool_common-objs += trace.o
+jool_common-objs += wkmalloc.o
+jool_common-objs += wrapper-config.o
+jool_common-objs += wrapper-global.o
+jool_common-objs += wrapper-types.o
+jool_common-objs += xlator.o
+
+jool_common-objs += steps/send_packet.o
+
+jool_common-objs += nl/address.o
+jool_common-objs += nl/atomic_config.o
+jool_common-objs += nl/attribute.o
+jool_common-objs += nl/nl_handler.o
+jool_common-objs += nl/nl_core.o
+jool_common-objs += nl/bib.o
+jool_common-objs += nl/denylist4.o
+jool_common-objs += nl/eam.o
+jool_common-objs += nl/global.o
+jool_common-objs += nl/instance.o
+jool_common-objs += nl/joold.o
+jool_common-objs += nl/nl_common.o
+jool_common-objs += nl/pool4.o
+jool_common-objs += nl/session.o
+jool_common-objs += nl/stats.o
+
+jool_common-objs += db/denylist4.o
+jool_common-objs += db/global.o
+jool_common-objs += db/eam.o
+jool_common-objs += db/rbtree.o
+jool_common-objs += db/rfc6791v4.o
+jool_common-objs += db/rfc6791v6.o
+
+jool_common-objs += db/pool4/empty.o
+jool_common-objs += db/pool4/db.o
+jool_common-objs += db/pool4/rfc6056.o
+
+jool_common-objs += db/bib/db.o
+jool_common-objs += db/bib/entry.o
+jool_common-objs += db/bib/pkt_queue.o
+
+jool_common-objs += steps/determine_incoming_tuple.o
+jool_common-objs += steps/filtering_and_updating.o
+jool_common-objs += steps/compute_outgoing_tuple.o
+jool_common-objs += steps/compute_outgoing_tuple_siit.o
+jool_common-objs += steps/handling_hairpinning_siit.o
+jool_common-objs += steps/handling_hairpinning_nat64.o

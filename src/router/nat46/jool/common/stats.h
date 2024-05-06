@@ -1,23 +1,103 @@
-#ifndef SRC_MOD_COMMON_STATS_H_
-#define SRC_MOD_COMMON_STATS_H_
+#ifndef SRC_COMMON_STATS_H_
+#define SRC_COMMON_STATS_H_
 
-#include "common/stats.h"
-#include "mod/common/packet.h"
+/*
+ * TODO (fine) Caller review needed.
+ * Make sure there's a counter for every worthwhile event,
+ * and also check the ICMP errors that sometimes need to be appended to them.
+ */
 
-struct jool_stats;
+/**
+ * NOTE THAT ANY MODIFICATIONS MADE TO THIS STRUCTURE NEED TO BE CASCADED TO
+ * jstat_metadatas.
+ */
+enum jool_stat_id {
+	JSTAT_RECEIVED6 = 1,
+	JSTAT_RECEIVED4,
+	JSTAT_SUCCESS,
 
-struct jool_stats *jstat_alloc(void);
-void jstat_get(struct jool_stats *stats);
-void jstat_put(struct jool_stats *stats);
+	JSTAT_BIB_ENTRIES,
+	JSTAT_SESSIONS,
 
-void jstat_inc(struct jool_stats *stats, enum jool_stat_id stat);
-void jstat_dec(struct jool_stats *stats, enum jool_stat_id stat);
-void jstat_add(struct jool_stats *stats, enum jool_stat_id stat, int addend);
+	JSTAT_ENOMEM,
 
-__u64 *jstat_query(struct jool_stats *stats);
+	JSTAT_XLATOR_DISABLED,
+	JSTAT_POOL6_UNSET,
 
-#ifdef UNIT_TESTING
-int jstat_refcount(struct jool_stats *stats);
-#endif
+	JSTAT_SKB_SHARED,
+	JSTAT_L3HDR_OFFSET,
+	JSTAT_SKB_TRUNCATED,
+	JSTAT_HDR6,
+	JSTAT_HDR4,
 
-#endif /* SRC_MOD_COMMON_STATS_H_ */
+	JSTAT_UNKNOWN_L4_PROTO,
+	JSTAT_UNKNOWN_ICMP6_TYPE,
+	JSTAT_UNKNOWN_ICMP4_TYPE,
+	JSTAT_DOUBLE_ICMP6_ERROR,
+	JSTAT_DOUBLE_ICMP4_ERROR,
+	JSTAT_UNKNOWN_PROTO_INNER,
+
+	JSTAT_HAIRPIN_LOOP,
+	JSTAT_POOL6_MISMATCH,
+	JSTAT_POOL4_MISMATCH,
+	JSTAT_ICMP6_FILTER,
+	JSTAT_UNTRANSLATABLE_DST6,
+	JSTAT_UNTRANSLATABLE_DST4,
+	JSTAT_6056_F,
+	JSTAT_MASK_DOMAIN_NOT_FOUND,
+	JSTAT_BIB6_NOT_FOUND,
+	JSTAT_BIB4_NOT_FOUND,
+	JSTAT_SESSION_NOT_FOUND,
+	JSTAT_ADF,
+	JSTAT_V4_SYN,
+	JSTAT_SYN6_EXPECTED,
+	JSTAT_SYN4_EXPECTED,
+
+	JSTAT_TYPE1PKT,
+	JSTAT_TYPE2PKT,
+	JSTAT_SO_EXISTS,
+	JSTAT_SO_FULL,
+
+	JSTAT64_SRC,
+	JSTAT64_DST,
+	JSTAT64_PSKB_COPY,
+	JSTAT64_6791_ENOENT,
+	JSTAT64_ICMP_CSUM,
+	JSTAT64_UNTRANSLATABLE_PARAM_PROB_PTR,
+	JSTAT64_TTL,
+	JSTAT64_FRAGMENTED_ICMP,
+	JSTAT64_2XFRAG,
+	JSTAT64_FRAG_THEN_EXT,
+	JSTAT64_SEGMENTS_LEFT,
+
+	JSTAT46_SRC,
+	JSTAT46_DST,
+	JSTAT46_PSKB_COPY,
+	JSTAT46_6791_ENOENT,
+	JSTAT46_ICMP_CSUM,
+	JSTAT46_UNTRANSLATABLE_PARAM_PROBLEM_PTR,
+	JSTAT46_TTL,
+	JSTAT46_FRAGMENTED_ICMP,
+	JSTAT46_SRC_ROUTE,
+	JSTAT46_FRAGMENTED_ZERO_CSUM,
+	JSTAT46_BAD_MTU,
+
+	JSTAT_FAILED_ROUTES,
+	JSTAT_PKT_TOO_BIG,
+	JSTAT_DST_OUTPUT,
+
+	JSTAT_ICMP6ERR_SUCCESS,
+	JSTAT_ICMP6ERR_FAILURE,
+	JSTAT_ICMP4ERR_SUCCESS,
+	JSTAT_ICMP4ERR_FAILURE,
+
+	JSTAT_ICMPEXT_BIG,
+
+	/* These 3 need to be last, and in this order. */
+	JSTAT_UNKNOWN, /* "WTF was that" errors only. */
+	JSTAT_PADDING,
+	JSTAT_COUNT,
+#define JSTAT_MAX (JSTAT_COUNT - 1)
+};
+
+#endif /* SRC_COMMON_STATS_H_ */

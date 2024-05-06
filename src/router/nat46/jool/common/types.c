@@ -1,56 +1,95 @@
-#include "mod/common/types.h"
+#include "types.h"
 
-#include <linux/icmp.h>
-#include <linux/icmpv6.h>
-#include <net/ipv6.h>
-#include "mod/common/log.h"
-#include "mod/common/translation_state.h"
+#ifdef __KERNEL__
+#include <linux/string.h>
+#else
+#include <string.h>
+#endif
 
-bool is_icmp6_info(__u8 type)
+const char *l3proto_to_string(l3_protocol l3_proto)
 {
-	return (type == ICMPV6_ECHO_REQUEST) || (type == ICMPV6_ECHO_REPLY);
+	switch (l3_proto) {
+	case L3PROTO_IPV6:
+		return "IPv6";
+	case L3PROTO_IPV4:
+		return "IPv4";
+	}
+
+	return NULL;
 }
 
-bool is_icmp6_error(__u8 type)
+const char *l4proto_to_string(l4_protocol l4_proto)
 {
-	/*
-	 * We do not return !is_icmp6_info(type) because unknown codes should be considered
-	 * untranslatable.
-	 */
-	return (type == ICMPV6_DEST_UNREACH)
-			|| (type == ICMPV6_PKT_TOOBIG)
-			|| (type == ICMPV6_TIME_EXCEED)
-			|| (type == ICMPV6_PARAMPROB);
+	switch (l4_proto) {
+	case L4PROTO_TCP:
+		return "TCP";
+	case L4PROTO_UDP:
+		return "UDP";
+	case L4PROTO_ICMP:
+		return "ICMP";
+	case L4PROTO_OTHER:
+		return "unknown";
+	}
+
+	return NULL;
 }
 
-bool is_icmp4_info(__u8 type)
+l4_protocol str_to_l4proto(char *str)
 {
-	return (type == ICMP_ECHO) || (type == ICMP_ECHOREPLY);
+	if (strcasecmp("TCP", str) == 0)
+		return L4PROTO_TCP;
+	if (strcasecmp("UDP", str) == 0)
+		return L4PROTO_UDP;
+	if (strcasecmp("ICMP", str) == 0)
+		return L4PROTO_ICMP;
+	return L4PROTO_OTHER;
 }
 
-bool is_icmp4_error(__u8 type)
+bool port_range_equals(const struct port_range *r1,
+		const struct port_range *r2)
 {
-	return (type == ICMP_DEST_UNREACH)
-			|| (type == ICMP_SOURCE_QUENCH)
-			|| (type == ICMP_REDIRECT)
-			|| (type == ICMP_TIME_EXCEEDED)
-			|| (type == ICMP_PARAMETERPROB);
+	return (r1->min == r2->min) && (r1->max == r2->max);
 }
 
 /**
-* log_tuple() - Prints the "tuple" tuple in the kernel ring buffer.
-* @tuple: Structure to be dumped on logging.
-*
-* It's a ripoff of nf_ct_dump_tuple(), adjusted to comply to this project's logging requirements.
-*/
-void log_tuple(struct xlation *state, struct tuple *tuple)
+ * Range [1,3] touches [2,6].
+ * Range [1,3] touches [3,6].
+ * Range [1,3] touches [4,6].
+ * Range [1,3] does not touch [5,6].
+ */
+bool port_range_touches(const struct port_range *r1,
+		const struct port_range *r2)
 {
-	switch (tuple->l3_proto) {
-	case L3PROTO_IPV4:
-		log_debug(state, "Tuple: " T4PP, T4PA(tuple));
-		break;
-	case L3PROTO_IPV6:
-		log_debug(state, "Tuple: " T6PP, T6PA(tuple));
-		break;
-	}
+	return r1->max >= (r2->min - 1) && r1->min <= (r2->max + 1);
+}
+
+bool port_range_contains(const struct port_range *range, __u16 port)
+{
+	return range->min <= port && port <= range->max;
+}
+
+unsigned int port_range_count(const struct port_range *range)
+{
+	return range->max - range->min + 1U;
+}
+
+void port_range_fuse(struct port_range *r1, const struct port_range *r2)
+{
+	r1->min = (r1->min < r2->min) ? r1->min : r2->min;
+	r1->max = (r1->max > r2->max) ? r1->max : r2->max;
+}
+
+bool ipv4_range_equals(struct ipv4_range const *r1, struct ipv4_range const *r2)
+{
+	return r1->prefix.addr.s_addr == r2->prefix.addr.s_addr
+			&& r1->prefix.len == r2->prefix.len
+			&& port_range_equals(&r1->ports, &r2->ports);
+}
+
+bool ipv4_range_touches(struct ipv4_range const *r1, struct ipv4_range const *r2)
+{
+	/* TODO (fine) technically inconsistent, but fine for now */
+	return r1->prefix.addr.s_addr == r2->prefix.addr.s_addr
+			&& r1->prefix.len == r2->prefix.len
+			&& port_range_touches(&r1->ports, &r2->ports);
 }
