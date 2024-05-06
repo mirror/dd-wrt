@@ -9,19 +9,19 @@ PWD := $(shell pwd)
 
 all:
 	$(MAKE) -C $(KDIR) M=$(PWD)/nat46 modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/common modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/nat64 modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/siit modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/common modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/nat64 modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/siit modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
 
 install:
 	$(MAKE) -C $(KDIR) M=$(PWD)/nat46 modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/common modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/nat64 modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/siit modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/common modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/nat64 modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/siit modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD)/nat46 clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/common clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/nat64 clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/jool/mod/siit clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/common clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/nat64 clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/jool/src/mod/siit clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time" INSTALL_MOD_PATH=$(INSTALLDIR)
