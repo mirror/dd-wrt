@@ -11,9 +11,7 @@ all:
 	$(MAKE) -C $(KDIR) M=$(PWD)/src modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -Wno-error=date-time"
 
 install:
-	$(MAKE) -C $(KDIR) M=$(PWD)/src modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
-	find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
-	rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
+	$(MAKE) -C $(KDIR) M=$(PWD)/src modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 
 clean:
