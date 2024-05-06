@@ -1,0 +1,1 @@
+cmd_/home/seg/DEV/ipq806x/src/router/nat46/src/Module.symvers :=  sed 's/ko$$/o/'  /home/seg/DEV/ipq806x/src/router/nat46/src/modules.order | scripts/mod/modpost       -o /home/seg/DEV/ipq806x/src/router/nat46/src/Module.symvers -e -i Module.symvers -w -T - 
