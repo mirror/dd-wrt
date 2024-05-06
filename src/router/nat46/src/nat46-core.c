@@ -291,7 +291,12 @@ static int try_reassembly(struct sk_buff *old_skb) {
   int err;
 
 #if IS_ENABLED(CONFIG_NF_CONNTRACK)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
+  if (old_skb->nfct) {
+#else
   if (skb_nfct(old_skb)) {
+#endif
     enum ip_conntrack_info ctinfo;
     const struct nf_conn *ct = nf_ct_get(old_skb, &ctinfo);
 
