@@ -128,6 +128,7 @@ void my_setproctitle(int argc, char **argv, const char *format, ...) {
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <string.h>
 
 /* pipe private to process */
 static int sigpipe[2];
