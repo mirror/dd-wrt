@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 	memset(firsttime, 1, cnt);
 
 	struct tm *currtime;
-	long int tloc;
+	time_t tloc;
 
 	do {
 		time(&tloc); // get time in seconds since epoch

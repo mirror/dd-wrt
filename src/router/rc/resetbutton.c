@@ -1037,7 +1037,7 @@ static void resetbtn_period_check(int sig)
 	unsigned int val = 0;
 
 #ifdef HAVE_MINIDLNA
-	static dlna_counter = 0;
+	static int dlna_counter = 0;
 	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
 		dlna_counter++;
 

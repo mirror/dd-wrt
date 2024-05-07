@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <shutils.h>
+#include <bcmnvram.h>
+#include <utils.h>
+#include <sys/wait.h>
 
 #define start_service(a) eval("startservice", a);
 #define start_service_force(a) eval("startservice", a, "-f");
