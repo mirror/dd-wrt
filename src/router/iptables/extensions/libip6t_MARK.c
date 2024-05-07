@@ -197,7 +197,7 @@ print_mark(unsigned long mark)
 
 /* Prints out the targinfo. */
 static void
-print_v0(const struct ip6t_ip *ip,
+print_v0(const struct ip6t_ip6 *ip,
 	 const struct ip6t_entry_target *target,
 	 int numeric)
 {
@@ -209,7 +209,7 @@ print_v0(const struct ip6t_ip *ip,
 
 /* Saves the union ipt_targinfo in parsable form to stdout. */
 static void
-save_v0(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
+save_v0(const struct ip6t_ip6 *ip, const struct ip6t_entry_target *target)
 {
 	const struct ipt_mark_target_info *markinfo =
 		(const struct ipt_mark_target_info *)target->data;
@@ -220,7 +220,7 @@ save_v0(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
 
 /* Prints out the targinfo. */
 static void
-print_v1(const struct ip6t_ip *ip,
+print_v1(const struct ip6t_ip6 *ip,
 	 const struct ip6t_entry_target *target,
 	 int numeric)
 {
@@ -242,7 +242,7 @@ print_v1(const struct ip6t_ip *ip,
 }
 
 static void
-print_v2(const struct ip6t_ip *ip,
+print_v2(const struct ip6t_ip6 *ip,
 	 const struct ip6t_entry_target *target,
 	 int numeric)
 {
@@ -263,7 +263,7 @@ print_v2(const struct ip6t_ip *ip,
 
 /* Saves the union ipt_targinfo in parsable form to stdout. */
 static void
-save_v1(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
+save_v1(const struct ip6t_ip6 *ip, const struct ip6t_entry_target *target)
 {
 	const struct ipt_mark_target_info_v1 *markinfo =
 		(const struct ipt_mark_target_info_v1 *)target->data;
@@ -283,7 +283,7 @@ save_v1(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
 }
 
 static void
-save_v2(const struct ip6t_ip *ip, const struct ip6t_entry_target *target)
+save_v2(const struct ip6t_ip6 *ip, const struct ip6t_entry_target *target)
 {
 	const struct xt_mark_tginfo2 *info = (const struct xt_mark_tginfo2 *)target->data;
 

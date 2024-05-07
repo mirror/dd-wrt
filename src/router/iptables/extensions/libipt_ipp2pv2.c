@@ -342,7 +342,7 @@ ipp2p_mt_print(const struct ipt_ip *ip,
 	ipp2p_mt_print1(ip, match, true);
 }
 
-static void ipp2p_mt_save(const void *entry, const struct xt_entry_match *match)
+static void ipp2p_mt_save(const struct ipt_ip *entry, const struct xt_entry_match *match)
 {
 	ipp2p_mt_print1(entry, match, true);
 }

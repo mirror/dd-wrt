@@ -35,7 +35,7 @@ static struct option opts[] = {
 
 /* Initialize the target. */
 static void
-init(struct ipt_entry_target *t, unsigned int *nfcache)
+init(struct xt_entry_target *t, unsigned int *nfcache)
 {
 }
 

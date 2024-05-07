@@ -257,6 +257,8 @@ service_to_port(const char *name, const char *proto)
 
 	return -1;
 }
+void
+ip6t_exit_error(enum exittype status, char *msg, ...);
 
 u_int16_t
 parse_port(const char *port, const char *proto)
@@ -287,6 +289,9 @@ static void free_opts(int reset_offset)
 			global_option_offset = 0;
 	}
 }
+
+void
+ip6t_exit_tryhelp(int status);
 
 void
 ip6t_exit_error(enum exittype status, char *msg, ...)

@@ -27,7 +27,7 @@ static struct option opts[] = {
 
 #define ipt_entry ip6t_entry
 #define ipt_entry_match ip6t_entry_match
-#define ipt_ip ip6t_ip
+#define ipt_ip ip6t_ip6
 #define iptables_match ip6tables_match
 #define register_match register_match6
 #define IPT_ALIGN IP6T_ALIGN
