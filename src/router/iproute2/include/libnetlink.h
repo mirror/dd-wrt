@@ -5,6 +5,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <stdio.h>
+#include <string.h>
 
 struct rtnl_handle
 {
