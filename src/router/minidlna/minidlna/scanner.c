@@ -48,11 +48,11 @@
 #include "log.h"
 #include "monitor.h"
 
-#if SCANDIR_CONST
+//#if SCANDIR_CONST
 typedef const struct dirent scan_filter;
-#else
-typedef struct dirent scan_filter;
-#endif
+//#else
+//typedef struct dirent scan_filter;
+//#endif
 #ifndef AV_LOG_PANIC
 #define AV_LOG_PANIC AV_LOG_FATAL
 #endif
