@@ -51,6 +51,7 @@
 //#include <sys/syslog.h>
 
 #include "iwlib.h"		/* Wireless Tools library */
+#include <libgen.h>	/* Basename */
 
 // This would be cool, unfortunately...
 //#include <linux/ethtool.h>	/* Ethtool stuff -> struct ethtool_drvinfo */
