@@ -29,7 +29,7 @@
 static char l7dir[MAX_FN_LEN] = "\0";
 
 /* Function which prints out usage message. */
-static void_help(void)
+static void help(void)
 {
 	printf(
 	"layer7 match options:\n"

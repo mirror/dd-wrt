@@ -49,9 +49,7 @@
 #include <linux/netfilter_ipv6/ip6_tables.h>
 #include <libiptc/libxtc.h>
 
-#ifndef NO_SHARED_LIBS
 #include <dlfcn.h>
-#endif
 #ifndef IPT_SO_GET_REVISION_MATCH /* Old kernel source. */
 #	define IPT_SO_GET_REVISION_MATCH	(IPT_BASE_CTL + 2)
 #	define IPT_SO_GET_REVISION_TARGET	(IPT_BASE_CTL + 3)
