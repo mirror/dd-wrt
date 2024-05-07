@@ -201,7 +201,7 @@ IMPORTANT: Some options will require "make clean" after changes */
 #define DROPBEAR_DH_GROUP14_SHA256 1
 #define DROPBEAR_DH_GROUP16 0
 #define DROPBEAR_CURVE25519 1
-#define DROPBEAR_ECDH 1
+#define DROPBEAR_ECDH 0
 #define DROPBEAR_DH_GROUP1 0
 
 /* When group1 is enabled it will only be allowed by Dropbear client
