@@ -134,7 +134,7 @@ IMPORTANT: Some options will require "make clean" after changes */
  * RSA is recommended.
  *
  * See: RSA_PRIV_FILENAME and DSS_PRIV_FILENAME */
-#define DROPBEAR_RSA 1
+#define DROPBEAR_RSA 0
 /* Newer SSH implementations use SHA256 for RSA signatures. SHA1
  * support is required to communicate with some older implementations.
  * It will be removed in future due to SHA1 insecurity, it can be
@@ -151,7 +151,7 @@ IMPORTANT: Some options will require "make clean" after changes */
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64.
  * See: ECDSA_PRIV_FILENAME  */
-#define DROPBEAR_ECDSA 1
+#define DROPBEAR_ECDSA 0
 
 /* Ed25519 is faster than ECDSA. Compiling in Ed25519 code increases
  * binary size - around 7,5kB on x86-64.
