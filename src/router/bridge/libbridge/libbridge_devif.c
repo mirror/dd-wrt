@@ -415,7 +415,7 @@ int br_set_port_snooping(const char *br, const char *port, const char *addr)
 	sscanf(addr+13, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
 	for (i=0; i < 6; i++)
 	    dest[i+6] = iaddr[i];
-	return port_set(br, port, "port_snooping", dest, BRCTL_SET_PORT_SNOOPING);
+	return port_set(br, port, "port_snooping", (unsigned long )&dest, BRCTL_SET_PORT_SNOOPING);
 }
 
 int br_clear_port_snooping(const char *br, const char *port, const char *addr)
@@ -430,7 +430,7 @@ int br_clear_port_snooping(const char *br, const char *port, const char *addr)
 	sscanf(addr+13, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
 	for (i=0; i < 6; i++)
 	    dest[i+6] = iaddr[i];
-	return port_set(br, port, "port_snooping", dest, BRCTL_CLEAR_PORT_SNOOPING);
+	return port_set(br, port, "port_snooping", (unsigned long )&dest, BRCTL_CLEAR_PORT_SNOOPING);
 }
 
 int br_show_port_snooping(const char *brname)
