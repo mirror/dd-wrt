@@ -933,6 +933,8 @@ const char *getIsoName(char *country)
 {
 	int i;
 #ifdef HAVE_SUPERCHANNEL
+	int issuperchannel(void);
+
 	int sc = issuperchannel();
 #endif
 	for (i = 0; i < N(allCountries); i++) {
@@ -1019,6 +1021,7 @@ char *getCountryList(char *filter)
 {
 	int i;
 #ifdef HAVE_SUPERCHANNEL
+	int issuperchannel(void);
 	int sc = issuperchannel();
 #else
 	int sc = 0;

@@ -11,6 +11,7 @@
  */
 
 #include <sys/ioctl.h>
+#include <arpa/inet.h>
 #include <net/if.h>
 #include <linux_osl.h>
 #include <time.h>
@@ -19,6 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <shutils.h>
+#include <utils.h>
 
 int ifconfig(char *name, int flags, char *addr, char *netmask)
 {

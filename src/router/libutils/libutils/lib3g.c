@@ -1811,13 +1811,13 @@ void get3GControlDevice(void)
 				sprintf(control, "qmi");
 				nvram_set("3gdata", "qmi");
 				nvram_set("3gcontrol", control);
-				return control;
+				return;
 				break;
 			case QMIRAW:
 				sprintf(control, "qmiraw");
 				nvram_set("3gdata", "qmiraw");
 				nvram_set("3gcontrol", control);
-				return control;
+				return;
 				break;
 			}
 #endif

@@ -28,6 +28,7 @@
 #include <list_sort.h>
 
 #include "wlutils.h"
+#include <shutils.h>
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
