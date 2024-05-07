@@ -96,7 +96,7 @@ ffmpeg:
 		--disable-protocols $(FFMPEG_CONFIGURE_PROTOCOLS) \
 		--disable-asm --disable-altivec \
 		--disable-postproc --disable-avfilter \
-		--extra-cflags="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections  -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
+		--extra-cflags="$(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections -Wno-incompatible-pointer-types -Wno-error -D_GNU_SOURCE -I$(TOP)/zlib $(LTO)" \
 		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO)" \
 		--extra-libs="-L$(TOP)/zlib -lz" \
 		--enable-zlib --disable-debug --prefix=''); \
