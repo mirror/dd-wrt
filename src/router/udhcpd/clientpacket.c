@@ -46,6 +46,7 @@
 #include "options.h"
 #include "dhcpc.h"
 #include "debug.h"
+#include "get_time.h"
 
 
 /* Create a random xid */

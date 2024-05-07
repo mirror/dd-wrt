@@ -188,6 +188,10 @@
 				<input class="num" maxlength="8" size="6" name="dnsmasq_cachesize" value="<% nvg("dnsmasq_cachesize"); %>" />
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_forward_max"); %></div>
+				<input class="num" maxlength="8" size="6" name="dnsmasq_forward_max" value="<% nvg("dnsmasq_forward_max"); %>" />
+			</div>
+			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
 					<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
 					<script type="text/javascript">
