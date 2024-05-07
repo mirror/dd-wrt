@@ -267,7 +267,7 @@ static int internal_eval_va(int silence, int space, const char *cmd, va_list arg
 		if (!arg)
 			break;
 	}
-	int ret = _evalpid(s_args, silence ? NULL : ">/dev/console", 0, NULL);
+	int ret = _evalpid((char *const *)s_args, silence ? NULL : ">/dev/console", 0, NULL);
 	i = 1;
 	while (1) {
 		if (!space || !s_args[i])
