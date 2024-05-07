@@ -15,8 +15,8 @@ include $(TOP)/.config
 
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
-CFLAGS += $(COPTS) -DLINUX26 -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS += $(MIPS16_OPT)  -DIPTCSTATIC=
+CFLAGS += $(COPTS) $(LTO) -DLINUX26 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Wno-incompatible-pointer-types
+CFLAGS += $(MIPS16_OPT)  -DIPTCSTATIC= 
 
 LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
 
