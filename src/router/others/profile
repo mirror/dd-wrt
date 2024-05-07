@@ -5,6 +5,8 @@ export TZ=`cat /etc/TZ`
 
 alias ll='ls -lahrt'
 
+[[ -f "/tmp/root/.ashrc" ]] && . /tmp/root/.ashrc
+
 reboot() {
   for f in /opt/etc/init.d/K* ; do
     [ -x "$f" ] && "$f" stop
