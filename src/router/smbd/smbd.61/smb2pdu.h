@@ -466,7 +466,12 @@ struct smb2_tree_connect_rsp {
 #define SHI1005_FLAGS_ENABLE_HASH			0x00002000
 
 /* Possible share capabilities */
-#define SMB2_SHARE_CAP_DFS	cpu_to_le32(0x00000008)
+#define SMB2_SHARE_CAP_DFS cpu_to_le32(0x00000008)
+#define SMB2_SHARE_CAP_CONTINUOUS_AVAILABILITY cpu_to_le32(0x00000010) /* 3.0 */
+#define SMB2_SHARE_CAP_SCALEOUT cpu_to_le32(0x00000020) /* 3.0 */
+#define SMB2_SHARE_CAP_CLUSTER cpu_to_le32(0x00000040) /* 3.0 */
+#define SMB2_SHARE_CAP_ASYMMETRIC cpu_to_le32(0x00000080) /* 3.02 */
+#define SMB2_SHARE_CAP_REDIRECT_TO_OWNER cpu_to_le32(0x00000100) /* 3.1.1 */
 
 struct smb2_tree_disconnect_req {
 	struct smb2_hdr hdr;
