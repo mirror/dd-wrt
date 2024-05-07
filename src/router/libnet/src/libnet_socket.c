@@ -36,7 +36,7 @@
 #include "../include/libnet.h"
 
 int
-libnet_open_raw_sock(prot)
+libnet_open_raw_sock(int prot)
 {
     int fd;
     int one = 1;
