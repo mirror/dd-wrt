@@ -126,6 +126,22 @@ jobs:
               #define DROPBEAR_USE_PASSWORD_ENV 0
               #define DROPBEAR_SFTPSERVER 0
 
+          - name: other algo combos
+            runcheck: 'no'
+            # disables all sha1
+            localoptions: |
+              #define DROPBEAR_SHA1_HMAC 0
+              #define DROPBEAR_RSA_SHA1 0
+              #define DROPBEAR_DH_GROUP14_SHA1 0
+              #define DROPBEAR_ECDSA 0
+              #define DROPBEAR_ED25519 0
+              #define DROPBEAR_SK_KEYS 0
+              #define DROPBEAR_ENABLE_GCM_MODE 1
+              #define DROPBEAR_3DES 1
+              #define DROPBEAR_DH_GROUP16 1
+              #define DROPBEAR_SHA2_512_HMAC 1
+              #define DROPBEAR_CLI_PUBKEY_AUTH 0
+
           # # Fuzzers run standalone. A bit superfluous with cifuzz, but
           # # good to run the whole corpus to keep it working.
           # - name: fuzzing with address sanitizer
@@ -181,9 +197,7 @@ jobs:
 
       - name: localoptions
         run: |
-          echo "$LOCALOPTIONS" > localoptions.h
-          echo "#define DROPBEAR_DSS 1" >> localoptions.h
-          cat localoptions.h
+          echo "$LOCALOPTIONS" | tee localoptions.h
 
       - name: nondefault
         if: ${{ matrix.nondefault }}
@@ -249,9 +263,6 @@ jobs:
       - name: genrsa
         if: ${{ matrix.runcheck != 'no' }}
         run: ~/inst/bin/dropbearkey -t rsa -f testrsa
-      - name: gendss
-        if: ${{ matrix.runcheck != 'no' }}
-        run: ~/inst/bin/dropbearkey -t dss -f testdss
       - name: genecdsa256
         if: ${{ matrix.runcheck != 'no' }}
         run: ~/inst/bin/dropbearkey -t ecdsa -f testec256 -s 256

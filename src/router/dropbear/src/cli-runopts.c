@@ -559,7 +559,9 @@ void loadidentityfile(const char* filename, int warnfail) {
 static char* multihop_passthrough_args(void) {
 	char *args = NULL;
 	unsigned int len, total;
+#if DROPBEAR_CLI_PUBKEY_AUTH
 	m_list_elem *iter;
+#endif
 	/* Sufficient space for non-string args */
 	len = 100;
 
@@ -567,11 +569,13 @@ static char* multihop_passthrough_args(void) {
 	if (cli_opts.proxycmd) {
 		len += strlen(cli_opts.proxycmd);
 	}
+#if DROPBEAR_CLI_PUBKEY_AUTH
 	for (iter = cli_opts.privkeys->first; iter; iter = iter->next)
 	{
 		sign_key * key = (sign_key*)iter->item;
 		len += 4 + strlen(key->filename);
 	}
+#endif
 
 	args = m_malloc(len);
 	total = 0;
