@@ -45,6 +45,7 @@ To add:
 #include <unistd.h>
 #include <stdint.h>
 #include <airbag.h>
+#include <netinet/in.h>
 
 #define INFO_UPTIME 0
 #define INFO_RSSI 1
@@ -89,6 +90,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #endif
 
 char *get_monitor(void);
+int get_mac(char *name, void *buf);
 
 int openMonitorSocket(char *dev);
 void dealWithPacket(wiviz_cfg * cfg, int len, const u_char * packet);
@@ -101,6 +103,8 @@ int stop = 0;
 static int curfreq = 0;
 wiviz_cfg *global_cfg;
 char *wl_dev;
+int set_channel(wiviz_cfg * cfg, char *dev, int channel);
+
 static void shutdown_monitor(void)
 {
 #ifdef HAVE_MADWIFI
@@ -190,6 +194,8 @@ int wiviz_main(int argc, char **argv)
 		sprintf(phy, "phy%d", get_ath9k_phy_ifname(wl_dev));
 		eval("iw", "phy", phy, "interface", "add", get_monitor(), "type", "monitor", "flags", "control", "otherbss");
 	} else {
+		char *getWifi(char *ifname);
+
 		eval("wlanconfig", get_monitor(), "create", "wlandev", getWifi(wl_dev), "wlanmode", "monitor");
 	}
 	eval("ifconfig", get_monitor(), "up");
@@ -427,7 +433,7 @@ void reloadConfig()
 					cfg->curChannel = val;
 					if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
-						set_channel(wl_dev, ieee80211_ieee2mhz(cfg->curChannel, 0));
+						set_channel(cfg, wl_dev, ieee80211_ieee2mhz(cfg->curChannel, 0));
 //          eval("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
 						if (nvram_match("wifi_display", "wl0"))
