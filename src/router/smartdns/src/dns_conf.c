@@ -61,9 +61,6 @@ static time_t dns_conf_dnsmasq_lease_file_time;
 struct dns_hosts_table dns_hosts_table;
 int dns_hosts_record_num;
 
-/* DNS64 */
-struct dns_dns64 dns_conf_dns_dns64;
-
 /* SRV-HOST */
 struct dns_srv_record_table dns_conf_srv_record_table;
 
@@ -2856,6 +2853,11 @@ static int _config_dns64(void *data, int argc, char *argv[])
 
 	subnet = argv[1];
 
+	if (strncmp(subnet, "-", 2U) == 0) {
+		memset(&_config_current_rule_group()->dns_dns64, 0, sizeof(struct dns_dns64));
+		return 0;
+	}
+
 	p = prefix_pton(subnet, -1, &prefix, &errmsg);
 	if (p == NULL) {
 		goto errout;
@@ -2871,8 +2873,9 @@ static int _config_dns64(void *data, int argc, char *argv[])
 		goto errout;
 	}
 
-	memcpy(&dns_conf_dns_dns64.prefix, &prefix.add.sin6.s6_addr, sizeof(dns_conf_dns_dns64.prefix));
-	dns_conf_dns_dns64.prefix_len = prefix.bitlen;
+	struct dns_dns64 *dns64 = &(_config_current_rule_group()->dns_dns64);
+	memcpy(&dns64->prefix, &prefix.add.sin6.s6_addr, sizeof(dns64->prefix));
+	dns64->prefix_len = prefix.bitlen;
 
 	return 0;
 
@@ -6495,6 +6498,10 @@ static void _dns_conf_group_post(void)
 
 		if ((group->dns_rr_ttl_max < group->dns_rr_ttl_min) && group->dns_rr_ttl_max > 0) {
 			group->dns_rr_ttl_max = group->dns_rr_ttl_min;
+		}
+
+		if (group->dns_serve_expired == 1 && group->dns_serve_expired_ttl == 0) {
+			group->dns_serve_expired_ttl = DNS_MAX_SERVE_EXPIRED_TIME;
 		}
 	}
 }

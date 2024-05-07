@@ -61,6 +61,7 @@ extern "C" {
 #define DNS_MAX_REPLY_IP_NUM 8
 #define DNS_MAX_QUERY_LIMIT 65535
 #define DNS_DEFAULT_CHECKPOINT_TIME (3600 * 24)
+#define DNS_MAX_SERVE_EXPIRED_TIME (3600 * 24 * 365)
 #define MAX_INTERFACE_LEN 16
 
 #define SMARTDNS_CONF_FILE "/etc/smartdns/smartdns.conf"
@@ -449,17 +450,27 @@ struct dns_conf_ipset_nftset {
 	struct dns_nftset_names nftset_no_speed;
 };
 
+struct dns_dns64 {
+	unsigned char prefix[DNS_RR_AAAA_LEN];
+	uint32_t prefix_len;
+};
+
 struct dns_conf_group {
 	struct hlist_node node;
 	struct dns_conf_domain_rule domain_rule;
 	struct dns_conf_address_rule address_rule;
 	uint8_t *soa_table;
+	/* === AUTO COPY FIELD BEGIN === */
 	char copy_data_section_begin[0];
 	struct dns_conf_ipset_nftset ipset_nftset;
 	struct dns_domain_check_orders check_orders;
 	/* ECS */
 	struct dns_edns_client_subnet ipv4_ecs;
 	struct dns_edns_client_subnet ipv6_ecs;
+
+	/* DNS64 */
+	struct dns_dns64 dns_dns64;
+
 	int force_AAAA_SOA;
 	int dualstack_ip_selection;
 	int dns_dualstack_ip_allow_force_AAAA;
@@ -478,6 +489,7 @@ struct dns_conf_group {
 	int dns_max_reply_ip_num;
 	enum response_mode_type dns_response_mode;
 	char copy_data_section_end[0];
+	/* === AUTO COPY FIELD END === */
 	const char *group_name;
 };
 
@@ -617,11 +629,6 @@ struct dns_set_rule_flags_callback_args {
 	int is_clear_flag;
 };
 
-struct dns_dns64 {
-	unsigned char prefix[DNS_RR_AAAA_LEN];
-	uint32_t prefix_len;
-};
-
 struct dns_srv_record {
 	struct list_head list;
 	char host[DNS_MAX_CNAME_LEN];
@@ -640,8 +647,6 @@ struct dns_srv_record_table {
 	DECLARE_HASHTABLE(srv, 4);
 };
 extern struct dns_srv_record_table dns_conf_srv_record_table;
-
-extern struct dns_dns64 dns_conf_dns_dns64;
 
 extern struct dns_bind_ip dns_conf_bind_ip[DNS_MAX_BIND_IP];
 extern int dns_conf_bind_ip_num;

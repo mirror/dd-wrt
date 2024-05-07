@@ -625,7 +625,7 @@ static int _dns_server_is_dns64_request(struct dns_request *request)
 		return 0;
 	}
 
-	if (dns_conf_dns_dns64.prefix_len <= 0) {
+	if (request->conf->dns_dns64.prefix_len <= 0) {
 		return 0;
 	}
 
@@ -4041,6 +4041,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 	int ret = 0;
 	int is_skip = 0;
 	int has_result = 0;
+	int is_rcode_set = 0;
 
 	if (packet->head.rcode != DNS_RC_NOERROR && packet->head.rcode != DNS_RC_NXDOMAIN) {
 		if (request->rcode == DNS_RC_SERVFAIL) {
@@ -4095,6 +4096,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					return -1;
 				}
 				request->rcode = packet->head.rcode;
+				is_rcode_set = 1;
 			} break;
 			case DNS_T_AAAA: {
 				ret = _dns_server_process_answer_AAAA(rrs, request, domain, cname, result_flag);
@@ -4107,6 +4109,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					return -1;
 				}
 				request->rcode = packet->head.rcode;
+				is_rcode_set = 1;
 			} break;
 			case DNS_T_NS: {
 				char nsname[DNS_MAX_CNAME_LEN];
@@ -4134,6 +4137,7 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 					continue;
 				}
 				request->rcode = packet->head.rcode;
+				is_rcode_set = 1;
 				if (request->has_ip == 0) {
 					request->passthrough = 1;
 					_dns_server_request_complete(request);
@@ -4143,12 +4147,16 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 			case DNS_T_SOA: {
 				/* if DNS64 enabled, skip check SOA. */
 				if (_dns_server_is_dns64_request(request)) {
+					if (request->has_ip) {
+						_dns_server_request_complete(request);
+					}
 					break;
 				}
 
 				request->has_soa = 1;
 				if (request->rcode != DNS_RC_NOERROR) {
 					request->rcode = packet->head.rcode;
+					is_rcode_set = 1;
 				}
 				dns_get_SOA(rrs, name, 128, &ttl, &request->soa);
 				tlog(TLOG_DEBUG,
@@ -4182,6 +4190,10 @@ static int _dns_server_process_answer(struct dns_request *request, const char *d
 		tlog(TLOG_DEBUG, "result is truncated, %s qtype: %d, rcode: %d, id: %d, retry.", domain, request->qtype,
 			 packet->head.rcode, packet->head.id);
 		return DNS_CLIENT_ACTION_RETRY;
+	}
+
+	if (is_rcode_set == 0 && has_result == 1) {
+		return DNS_CLIENT_ACTION_MAY_RETRY;
 	}
 
 	return DNS_CLIENT_ACTION_OK;
@@ -4518,7 +4530,7 @@ static void _dns_server_query_end(struct dns_request *request)
 		if (request->dualstack_selection_query == 1) {
 			if ((conf->ipset_nftset.ipset_no_speed.ipv4_enable || conf->ipset_nftset.nftset_no_speed.ip_enable ||
 				 conf->ipset_nftset.ipset_no_speed.ipv6_enable || conf->ipset_nftset.nftset_no_speed.ip6_enable) &&
-				dns_conf_dns_dns64.prefix_len == 0) {
+				request->conf->dns_dns64.prefix_len == 0) {
 				/* if speed check fail enabled, we need reply quickly, otherwise wait for ping result.*/
 				_dns_server_request_complete(request);
 			}
@@ -5966,7 +5978,7 @@ _dns_server_process_dns64_callback(struct dns_request *request, struct dns_reque
 	int addr_len = 0;
 
 	if (request->has_ip == 1) {
-		if (memcmp(request->ip_addr, dns_conf_dns_dns64.prefix, 12) != 0) {
+		if (memcmp(request->ip_addr, request->conf->dns_dns64.prefix, 12) != 0) {
 			return DNS_CHILD_POST_SKIP;
 		}
 	}
@@ -5981,11 +5993,12 @@ _dns_server_process_dns64_callback(struct dns_request *request, struct dns_reque
 		request->ttl_cname = child_request->ttl_cname;
 	}
 
-	if (child_request->has_ip == 0) {
+	if (child_request->has_ip == 0 && request->has_ip == 0) {
+		request->rcode = child_request->rcode;
 		if (child_request->has_soa) {
 			memcpy(&request->soa, &child_request->soa, sizeof(struct dns_soa));
 			request->has_soa = 1;
-			return DNS_CHILD_POST_SUCCESS;
+			return DNS_CHILD_POST_SKIP;
 		}
 
 		if (request->has_soa == 0) {
@@ -5995,13 +6008,15 @@ _dns_server_process_dns64_callback(struct dns_request *request, struct dns_reque
 		return DNS_CHILD_POST_FAIL;
 	}
 
-	memcpy(request->ip_addr, dns_conf_dns_dns64.prefix, 16);
-	memcpy(request->ip_addr + 12, child_request->ip_addr, 4);
-	request->ip_ttl = child_request->ip_ttl;
-	request->has_ip = 1;
-	request->has_soa = 0;
+	if (request->has_ip == 0 && child_request->has_ip == 1) {
+		request->rcode = child_request->rcode;
+		memcpy(request->ip_addr, request->conf->dns_dns64.prefix, 12);
+		memcpy(request->ip_addr + 12, child_request->ip_addr, 4);
+		request->ip_ttl = child_request->ip_ttl;
+		request->has_ip = 1;
+		request->has_soa = 0;
+	}
 
-	request->rcode = child_request->rcode;
 	pthread_mutex_lock(&request->ip_map_lock);
 	hash_for_each_safe(request->ip_map, bucket, tmp, addr_map, node)
 	{
@@ -6031,7 +6046,7 @@ _dns_server_process_dns64_callback(struct dns_request *request, struct dns_reque
 
 		new_addr_map->addr_type = DNS_T_AAAA;
 		addr_len = DNS_RR_AAAA_LEN;
-		memcpy(new_addr_map->ip_addr, dns_conf_dns_dns64.prefix, 16);
+		memcpy(new_addr_map->ip_addr, request->conf->dns_dns64.prefix, 16);
 		memcpy(new_addr_map->ip_addr + 12, addr_map->ip_addr, 4);
 
 		new_addr_map->ping_time = addr_map->ping_time;
@@ -6047,7 +6062,7 @@ _dns_server_process_dns64_callback(struct dns_request *request, struct dns_reque
 		return DNS_CHILD_POST_NO_RESPONSE;
 	}
 
-	return DNS_CHILD_POST_SUCCESS;
+	return DNS_CHILD_POST_SKIP;
 }
 
 static int _dns_server_process_dns64(struct dns_request *request)
@@ -6065,6 +6080,8 @@ static int _dns_server_process_dns64(struct dns_request *request)
 		return -1;
 	}
 
+	request->dualstack_selection = 0;
+	child_request->prefetch_flags |= PREFETCH_FLAGS_NO_DUALSTACK;
 	request->request_wait++;
 	int ret = _dns_server_do_query(child_request, 0);
 	if (ret != 0) {
@@ -6074,7 +6091,7 @@ static int _dns_server_process_dns64(struct dns_request *request)
 	}
 
 	_dns_server_request_release_complete(child_request, 0);
-	return 1;
+	return 0;
 
 errout:
 
@@ -6292,6 +6309,10 @@ static int _dns_server_process_cache(struct dns_request *request)
 		} else if (request->qtype == DNS_T_AAAA) {
 			dualstack_qtype = DNS_T_A;
 		} else {
+			goto reply_cache;
+		}
+
+		if (_dns_server_is_dns64_request(request) == 1) {
 			goto reply_cache;
 		}
 
