@@ -324,7 +324,7 @@ void start_ddns(void)
 
 	int flag = nvram_geti("ddns_enable");
 	if (flag > 64 || flag < 1)
-		return -1;
+		return;
 
 	mkdir("/tmp/ddns", 0744);
 

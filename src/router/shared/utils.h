@@ -1617,6 +1617,7 @@ char *getUnmountedDrives(void);
 char *getMountedDrives(void);
 char *getAllDrives(void);
 char *strstrtok(char *str, char del);
+struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr);
 
 #define ETHER_ADDR_STR_LEN 18 /* 18-bytes of Ethernet address buffer length */
 #ifndef ETHER_ADDR_LEN

@@ -111,11 +111,11 @@ void start_finishupgrade(void)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info = p;
+				ipq_smem_bootconfig_v2_info =(ipq_smem_bootconfig_v2_info_t*) p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
 				break;
 			}
 			p++;
@@ -192,11 +192,11 @@ static int getbootdevice(void)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info = p;
+				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t*)p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
 				break;
 			}
 			p++;
@@ -246,11 +246,11 @@ static void setbootdevice(int dev)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info = p;
+				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t*)p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
 				break;
 			}
 			p++;

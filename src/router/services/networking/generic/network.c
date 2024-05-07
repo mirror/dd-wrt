@@ -76,6 +76,7 @@
 #include <etsockio.h>
 #include <bcmparams.h>
 #include <services.h>
+#include <libbridge.h>
 
 #include "../sysinit/devices/ethtools.c"
 
@@ -5116,6 +5117,7 @@ void start_hotplug_net(void)
 		if (nvram_matchi(bridged, 1)) {
 			br_add_interface(getBridge(ifname, tmp), interface);
 #ifdef HAVE_VLANTAGGING
+			void apply_bridgeif(char *ifname, char *realport);
 			apply_bridgeif(ifname, interface);
 #endif
 		}

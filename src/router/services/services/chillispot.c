@@ -168,7 +168,7 @@ void main_config(void)
 	char wan_if_buffer[33];
 
 	FILE *fp;
-	log_level = nvram_matchi("log_enable", "1") ? nvram_geti("log_level") : 0;
+	log_level = nvram_matchi("log_enable", 1) ? nvram_geti("log_level") : 0;
 	mkdir("/tmp/chilli", 0700);
 
 	if (!(fp = fopen("/tmp/chilli/ip-up.sh", "w"))) {

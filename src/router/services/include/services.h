@@ -367,4 +367,15 @@ void runStartup(char *extension);
 char *set_wan_state(int state);
 void create_openvpnserverrules(FILE *fp);
 void create_openvpnrules(FILE *fp);
+void stop_ubus(void);
+void start_ubus(void);
+void stop_usteer(void);
+void start_usteer(void);
+void stop_martd(void);
+void start_smartd(void);
+void start_hostapdwan(void);
+void start_duallink(void);
+void start_deconfigurewifi(void);
+void start_configurewifi(void);
+
 #endif

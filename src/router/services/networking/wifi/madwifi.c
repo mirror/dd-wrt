@@ -53,6 +53,7 @@
 #include "wireless.h"
 #include <services.h>
 #include <wlutils.h>
+#include <libbridge.h>
 
 #ifdef HAVE_MADWIFI
 #include "net80211/ieee80211.h"
@@ -336,6 +337,8 @@ int inline issuperchannel(void)
 {
 	return 0;
 }
+#else
+int issuperchannel(void);
 #endif
 
 static int cansuperchannel(char *prefix)
@@ -2496,6 +2499,8 @@ static void configure_single(int count)
 			eval("iwpriv", var, "addmtikie", "1");
 
 #ifdef HAVE_BONDING
+			int isBond(char *ifname);
+
 			if (!strcmp(mvap, "wdsap") && !isBond(var))
 #else
 			if (!strcmp(mvap, "wdsap"))

@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+#include <wlutils.h>
 
 void start_usteer(void)
 {

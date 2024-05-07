@@ -313,6 +313,7 @@ int ipdown_main(int argc, char **argv)
  */
 
 // by tallest 0407
+void single_pppoe_stop(int pppoe_num);
 int disconnected_pppoe_main(int argc, char **argv)
 {
 	int pppoe_num = atoi(argv[1]);

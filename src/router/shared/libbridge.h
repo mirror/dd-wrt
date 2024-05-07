@@ -22,7 +22,7 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #endif
-#include <net/if.h>
+#include <linux/if.h>
 #include <linux/if_bridge.h>
 
 struct bridge_id {

@@ -140,6 +140,7 @@ static void create_pptp_config(char *servername, char *username)
 
 	fclose(fp);
 }
+void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig);
 
 void run_pptp(int status)
 {

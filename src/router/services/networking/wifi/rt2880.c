@@ -55,6 +55,7 @@
 #include <libbridge.h>
 #include <services.h>
 #include <wlutils.h>
+#include <libbridge.h>
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 extern int br_add_interface(const char *br, const char *dev);

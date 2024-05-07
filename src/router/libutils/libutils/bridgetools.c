@@ -27,7 +27,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
-#include <libbridge.h>
+//#include <libbridge.h>
 
 #ifdef HAVE_MICRO
 
