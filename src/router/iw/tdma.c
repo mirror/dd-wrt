@@ -382,7 +382,7 @@ ooc:
 	    if (strcmp(argv[i], "key") == 0 || strcmp(argv[i], "keys") == 0) {
 		argv = &argv[i+1];
 		argc -= (i + 1);
-		if ( parse_keys(msg, argv, argc)!= 0)
+		if ( parse_keys(msg, &argv, &argc)!= 0)
 		    return 1;
 	    }
 	}
