@@ -7,9 +7,9 @@ datadir= ${prefix}/share
 
 #CC=mipsel-linux-uclibc-gcc -pipe
 #CC= gcc -pipe
-LDFLAGS+=-s -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS+=-s $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LIBS+= -lpthread -L$(TOP)/libpcap -lpcap
-CFLAGS+= $(COPTS) -I$(LINUXDIR)  -DHAVE_CONFIG_H -W -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS+= $(COPTS) $(MIPS16_OPT) $(LTO) -I$(LINUXDIR)  -DHAVE_CONFIG_H -W -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 CPPFLAGS+=-DIPCAD_VERSION=\"3.6.2\"
 CPPFLAGS+=-DCONFIG_FILE=\"${sysconfdir}/ipcad.conf\"
 CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE -I$(TOP)/libpcap
