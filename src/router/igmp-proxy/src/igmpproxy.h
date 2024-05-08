@@ -48,9 +48,7 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
-#ifdef __UCLIBC__
 #include <sys/ioctl.h>
-#endif
 #include <sys/param.h>
 #include <sys/select.h>
 
