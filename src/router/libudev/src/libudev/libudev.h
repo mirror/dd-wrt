@@ -23,6 +23,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #ifdef __cplusplus
 extern "C" {
