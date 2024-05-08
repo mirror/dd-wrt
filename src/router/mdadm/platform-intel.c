@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include <libgen.h>
 
 #define NVME_SUBSYS_PATH "/sys/devices/virtual/nvme-subsystem/"
 

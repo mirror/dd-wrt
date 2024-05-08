@@ -28,6 +28,7 @@
 #include "mdadm.h"
 #include "md_p.h"
 #include <ctype.h>
+#include <libgen.h>
 
 static int scan_assemble(struct supertype *ss,
 			 struct context *c,

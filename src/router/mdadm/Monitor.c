@@ -29,6 +29,7 @@
 #include	<signal.h>
 #include	<limits.h>
 #include	<syslog.h>
+#include	<libgen.h>
 #ifndef NO_LIBUDEV
 #include	<libudev.h>
 #endif
