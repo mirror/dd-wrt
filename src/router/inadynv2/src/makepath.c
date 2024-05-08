@@ -17,6 +17,7 @@
 
 #include <errno.h>
 #include <libgen.h>
+#include <alloca.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "compat.h"
