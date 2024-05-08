@@ -390,7 +390,7 @@ char *xlongp_pp (const long *p) {
 
 
 /* pretty print the given time integer */
-char *time_pp (long t) {
+char *time_pp (time_t t) {
     struct tm *tm = localtime (&t) ;
     static char buf [50] ;
 

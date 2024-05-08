@@ -190,7 +190,7 @@ extern char *ethhdr_pp (const struct    ethhdr*, int verbose);
 
 /* pretty print the given time stamp */
 extern char *stamp_pp (const struct timeval *); /* ptr arg maybe NULL */
-extern char *time_pp (long t) ;
+extern char *time_pp (time_t t) ;
 
 /* pretty print integer pointer values */
 extern char *ulongp_pp  (const  long *);  /* ptr arg maybe NULL */
