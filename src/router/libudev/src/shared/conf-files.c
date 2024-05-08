@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <libgen.h>
 
 #include "macro.h"
 #include "util.h"
