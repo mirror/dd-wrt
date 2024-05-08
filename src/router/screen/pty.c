@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <pty.h>
 
 #if defined(__OpenBSD__)
 #include <utils.h>  /* for openpty() */
