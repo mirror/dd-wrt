@@ -1509,7 +1509,7 @@ void getSystemMac(char *mac);
 
 int do80211priv(const char *ifname, int op, void *data, size_t len);
 int getsocket(void);
-void closesocket(void);
+void dd_closesocket(void);
 int isEMP(char *ifname);
 int isXR36(char *ifname);
 #ifdef HAVE_MADWIFI

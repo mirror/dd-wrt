@@ -52,6 +52,16 @@ int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
 int bcm_gettxpower(char *wlname);
 
+void set_maclist(char *iface, char *buf);
+
+void security_disable(char *iface);
+
+void security_deny(char *iface);
+
+void security_allow(char *iface);
+
+void kick_mac(char *iface, char *mac);
+
 extern int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw);
 
 /*
