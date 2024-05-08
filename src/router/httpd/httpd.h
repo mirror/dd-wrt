@@ -234,5 +234,6 @@ void delete_old_routes(void);
 void delete_old_pbr(void);
 int wfflush(webs_t fp);
 int issuperchannel(void);
+void applytake(char *value);
 
 #endif /* _httpd_h_ */

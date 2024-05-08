@@ -61,6 +61,7 @@
 #include <sha1.h>
 #include <linux/fs.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 void add_raid(webs_t wp)
 {
