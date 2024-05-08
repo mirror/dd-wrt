@@ -5,6 +5,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <airbag.h>
+#include <sys/stat.h>
 
 struct wifi_info {
 	unsigned char mac[6];
