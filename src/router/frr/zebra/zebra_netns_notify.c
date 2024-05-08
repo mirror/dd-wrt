@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
+#include <libgen.h>
 
 #include "frrevent.h"
 #include "ns.h"
