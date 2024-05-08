@@ -59,6 +59,7 @@ static	char sccsid[] = "@(#)pmap_svc.c 1.23 89/04/05 Copyr 1984 Sun Micro";
 #endif
 #include "rpcbind.h"
 #include "xlog.h"
+#include <string.h>
 #include <rpc/svc_soc.h> /* svc_getcaller routine definition */
 static struct pmaplist *find_service_pmap(rpcprog_t, rpcvers_t,
 					       rpcprot_t);
