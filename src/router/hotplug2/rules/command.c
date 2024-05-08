@@ -1,4 +1,5 @@
 #include "command.h"
+#include <sys/sysmacros.h>
 
 struct command_def_t commands[] = {
 	/* Rule name      | Flags                  | Arity | Function pointer */
