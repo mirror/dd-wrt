@@ -4,7 +4,7 @@ export TOOL_PATH=$(TOOLCHAIN)/bin
 export SYS_PATH=$(LINUXDIR)
 export TOOLPREFIX=$(ARCH)-linux-uclibc-
 export KVER=$(KERNEL_VERSION)
-export CFLAGS=$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections
+export CFLAGS=$(COPTS) $(LTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -Wno-misleading-identation -Wno-incompatible-pointer-types -Wno-implicit-function-declaration -Wno-return-mismatch 
 
 
 include ./config
@@ -25,20 +25,20 @@ all: $(BIN_DIR) uslib shell
 	@echo "---Build [SSDK_SH-$(VERSION)] at $(BUILD_DATE) finished."
 
 kslib:kslib_o
-	$(AR) -r $(BIN_DIR)/$(KS_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/KSLIB/*.o)
+	$(AR) -r $(LTOPLUGIN) $(BIN_DIR)/$(KS_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/KSLIB/*.o)
 
 kslib_o:
 	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=KSLIB -C src/$i all || exit 1;)
 
 uslib:uslib_o
-	$(AR) -r $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
+	$(AR) -r $(LTOPLUGIN) $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
 
 uslib_o:
 	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=USLIB -C src/$i all || exit 1;)
 
 shell:uslib shell_o
 	$(CP) $(BLD_DIR)/SHELL/$(SHELLOBJ) $(BIN_DIR)/$(SHELLOBJ)
-	$(STRIP) $(BIN_DIR)/$(SHELLOBJ)
+#	$(STRIP) $(BIN_DIR)/$(SHELLOBJ)
 
 shell_o:
 	$(foreach i, $(SUB_LIB), $(MAKE) MODULE_TYPE=SHELL -C src/$i all || exit 1;)

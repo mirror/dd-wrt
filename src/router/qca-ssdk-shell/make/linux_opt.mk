@@ -263,11 +263,11 @@ ifeq (SHELL, $(MODULE_TYPE))
    	  MODULE_CFLAG += -DKVER24
     endif
 
-    ifeq (TRUE, $(KERNEL_MODE))
-      MODULE_CFLAG += -static
-    else
-      MODULE_CFLAG += -static -DUSER_MODE
-    endif
+#    ifeq (TRUE, $(KERNEL_MODE))
+#      MODULE_CFLAG += 
+#    else
+#      MODULE_CFLAG += -DUSER_MODE
+#    endif
 endif
 
 ifneq (TRUE, $(KERNEL_MODE))
