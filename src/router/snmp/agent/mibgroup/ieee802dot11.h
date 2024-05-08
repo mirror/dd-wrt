@@ -35,6 +35,7 @@
 ****************************************************************************/
 // here are some Linked List MACROS I wanted to use, 
 // but curiously were not in /usr/includes/sys/queue.h
+void shutdown_ieee802dot11 ( void );
 
 #ifndef LIST_EMPTY
   #define	LIST_EMPTY(head)	((head)->lh_first == NULL)
