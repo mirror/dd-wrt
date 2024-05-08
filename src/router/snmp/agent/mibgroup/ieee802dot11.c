@@ -25,6 +25,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
+#include "util_funcs/header_generic.h" /* utility function declarations */
 #include "ieee802dot11.h"
 #include "iwlib.h"
 
@@ -3981,6 +3982,7 @@ load80211Structs ( int skfd, char *ifName, struct wireless_info *wi )
     strcpy  ( nOp.MACAddress, MACAddress );
     nRi.haveManufacturerOUI = TRUE;
     strncpy ( nRi.manufacturerOUI, MACAddress, MAN_OUI_LEN ); 
+unsigned int if_nametoindex (const char *);
 
     ifIndex = if_nametoindex ( ifName );
     if ( !ifIndex ) {
