@@ -52,7 +52,7 @@ int getsocket(void)
 	return s_socket;
 }
 
-void closesocket(void)
+void dd_closesocket(void)
 {
 	if (s_socket >= 0) {
 		close(s_socket);

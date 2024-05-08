@@ -385,7 +385,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	(void)bzero(&wrq, sizeof(struct iwreq));
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
-	closesocket();
+	dd_closesocket();
 	freq = wrq.u.freq.m;
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000) {
@@ -412,7 +412,7 @@ long long wifi_getrate(char *ifname)
 	(void)bzero(&wrq, sizeof(struct iwreq));
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWRATE, &wrq);
-	closesocket();
+	dd_closesocket();
 	return wrq.u.bitrate.value;
 }
 
@@ -429,14 +429,14 @@ int get_radiostate(char *ifname)
 
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 	if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0) {
-		closesocket();
+		dd_closesocket();
 		return -1;
 	}
 	if ((ifr.ifr_flags & IFF_UP)) {
-		closesocket();
+		dd_closesocket();
 		return 1;
 	}
-	closesocket();
+	dd_closesocket();
 	return 0;
 }
 
@@ -1478,7 +1478,7 @@ int wifi_gettxpower(char *ifname)
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 
 	ioctl(getsocket(), SIOCGIWTXPOW, &wrq);
-	closesocket();
+	dd_closesocket();
 	struct iw_param *txpower = &wrq.u.txpower;
 
 	if (txpower->disabled) {
@@ -1693,7 +1693,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	(void)bzero(&wrq, sizeof(struct iwreq));
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
-	closesocket();
+	dd_closesocket();
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	bzero(interface, sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
@@ -1734,10 +1734,10 @@ int get_radiostate(char *ifname)
 
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 	if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0) {
-		closesocket();
+		dd_closesocket();
 		return -1;
 	}
-	closesocket();
+	dd_closesocket();
 	if ((ifr.ifr_flags & IFF_UP)) {
 		return 1;
 	}
@@ -1768,11 +1768,11 @@ int isAssociated(char *ifname)
 	if (iw_get_ext(getsocket(), ifname, SIOCGIWAP, &wrq) >= 0) {
 		for (i = 0; i < 6; i++)
 			if (wrq.u.ap_addr.sa_data[i] != 0) {
-				closesocket();
+				dd_closesocket();
 				return 1;
 			}
 	}
-	closesocket();
+	dd_closesocket();
 	return 0;
 }
 
@@ -1791,7 +1791,7 @@ int getAssocMAC(char *ifname, char *mac)
 		for (i = 0; i < 6; i++)
 			mac[i] = wrq.u.ap_addr.sa_data[i];
 	}
-	closesocket();
+	dd_closesocket();
 	return ret;
 }
 
