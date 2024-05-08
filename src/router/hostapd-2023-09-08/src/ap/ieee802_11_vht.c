@@ -82,6 +82,7 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 	return pos;
 }
 
+int ieee80211_frequency_to_channel(int freq);
 
 u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 {

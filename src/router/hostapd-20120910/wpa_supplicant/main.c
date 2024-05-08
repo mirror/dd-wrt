@@ -15,6 +15,7 @@
 #include "build_features.h"
 #include "wpa_supplicant_i.h"
 #include "driver_i.h"
+#include "utils/eloop.h"
 
 extern struct wpa_driver_ops *wpa_drivers[];
 

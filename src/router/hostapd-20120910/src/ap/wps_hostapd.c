@@ -278,6 +278,7 @@ static void hapd_new_ap_event(struct hostapd_data *hapd, const u8 *attr,
 	}
 }
 
+extern int nvram_set(const char *name, const char *value);
 
 static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 {

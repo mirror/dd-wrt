@@ -391,6 +391,7 @@ static int hapd_wps_reconfig_in_memory(struct hostapd_data *hapd,
 	return 0;
 }
 
+extern int nvram_set(const char *name, const char *value);
 
 static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 {

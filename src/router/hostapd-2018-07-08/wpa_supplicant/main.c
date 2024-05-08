@@ -17,6 +17,7 @@
 #include "wpa_supplicant_i.h"
 #include "driver_i.h"
 #include "p2p_supplicant.h"
+#include "utils/eloop.h"
 
 
 static void usage(void)

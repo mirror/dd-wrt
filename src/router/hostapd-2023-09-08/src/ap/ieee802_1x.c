@@ -2013,6 +2013,7 @@ int addrule(char *mac, int upstream, int downstream)
 	if (!ret)
 		sprintf(newqos,"%s %s %d %d %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
 
+	extern int nvram_set(const char *name, const char *value);
 	nvram_set("svqos_macs",newqos);
 	free(newqos);
 }
