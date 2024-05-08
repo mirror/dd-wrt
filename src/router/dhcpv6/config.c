@@ -58,6 +58,7 @@
 #include <common.h>
 #include <auth.h>
 #include <base64.h>
+#include <net/if.h>
 #ifdef USE_DHCP6SRV
 #include <lease.h>
 #endif

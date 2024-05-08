@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <sys/queue.h>
 #include <sys/ioctl.h>
+#include <time.h>
 
 #include <net/if.h>
 #ifdef __FreeBSD__

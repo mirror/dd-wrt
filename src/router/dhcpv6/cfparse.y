@@ -675,7 +675,7 @@ dhcpoption:
 		{
 			struct cf_list *l;
 			struct rawoption *rawop;
-			char *tmp, *opstr = $2, *datastr = $3;
+			char *tmp, *opstr = (char *)$2, *datastr = $3;
 
 			yywarn("Got raw option: %s %s", opstr, datastr);
 
