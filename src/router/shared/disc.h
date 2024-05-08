@@ -159,4 +159,85 @@ void bailoute(const char *msg, ...);
 
 void set_discmessage_on(void);
 void set_discmessage_off(void);
+
+
+/* in amiga.c */
+int detect_amiga_partmap(SECTION *section, int level);
+int detect_amiga_fs(SECTION *section, int level);
+
+/* in apple.c */
+int detect_apple_partmap(SECTION *section, int level);
+int detect_apple_volume(SECTION *section, int level);
+int detect_udif(SECTION *section, int level);
+
+/* in atari.c */
+int detect_atari_partmap(SECTION *section, int level);
+
+/* in dos.c */
+int detect_dos_partmap(SECTION *section, int level);
+int detect_gpt_partmap(SECTION *section, int level);
+int detect_fat(SECTION *section, int level);
+int detect_exfat(SECTION *section, int level);
+int detect_ntfs(SECTION *section, int level);
+int detect_hpfs(SECTION *section, int level);
+int detect_apfs_volume(SECTION *section, int level);
+int detect_dos_loader(SECTION *section, int level);
+
+/* in cdrom.c */
+int detect_iso(SECTION *section, int level);
+int detect_cdrom_misc(SECTION *section, int level);
+
+/* in udf.c */
+int detect_udf(SECTION *section, int level);
+
+/* in linux.c */
+int detect_ext234(SECTION *section, int level);
+int detect_btrfs(SECTION *section, int level);
+int detect_zfs(SECTION *section, int level);
+int detect_f2fs(SECTION *section, int level);
+int detect_reiser(SECTION *section, int level);
+int detect_reiser4(SECTION *section, int level);
+int detect_linux_raid(SECTION *section, int level);
+int detect_linux_md(SECTION *section, int level);
+int detect_linux_lvm(SECTION *section, int level);
+int detect_linux_lvm2(SECTION *section, int level);
+int detect_linux_swap(SECTION *section, int level);
+int detect_linux_misc(SECTION *section, int level);
+int detect_linux_loader(SECTION *section, int level);
+
+/* in unix.c */
+int detect_jfs(SECTION *section, int level);
+int detect_xfs(SECTION *section, int level);
+int detect_ufs(SECTION *section, int level);
+int detect_sysv(SECTION *section, int level);
+int detect_bsd_disklabel(SECTION *section, int level);
+int detect_bsd_loader(SECTION *section, int level);
+int detect_solaris_disklabel(SECTION *section, int level);
+int detect_solaris_vtoc(SECTION *section, int level);
+int detect_qnx(SECTION *section, int level);
+int detect_vxfs(SECTION *section, int level);
+
+/* in beos.c */
+int detect_bfs(SECTION *section, int level);
+int detect_beos_loader(SECTION *section, int level);
+
+/* in compressed.c */
+int detect_compressed(SECTION *section, int level);
+
+/* in cdimage.c */
+int detect_cdimage(SECTION *section, int level);
+
+/* in vpc.c */
+int detect_vhd(SECTION *section, int level);
+
+/* in cloop.c */
+int detect_cloop(SECTION *section, int level);
+
+/* in archives.c */
+int detect_archive(SECTION *section, int level);
+
+/* in blank.c */
+int detect_blank(SECTION *section, int level);
+int analyze_stat(struct stat *sb, const char *filename);
+
 /* EOF */
