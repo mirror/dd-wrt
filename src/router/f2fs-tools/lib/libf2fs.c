@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #ifndef WITH_ANDROID
 #include <scsi/sg.h>
 #endif
