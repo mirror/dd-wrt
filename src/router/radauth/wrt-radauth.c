@@ -28,6 +28,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <wlutils.h>
+#include <bcmnvram.h>
 //#include <net/ethernet.h>
 
 #include <unistd.h>
@@ -239,7 +240,7 @@ int main(int argc, char **argv)
 		secret = argv[offset++];
 		override = atoi(argv[offset++]);
 		mackey = atoi(argv[offset++]);
-		maxun = atoi(argv[offset++]);
+		maxun = argv[offset++];
 		if (maxun != NULL && strlen(maxun) > 0)
 			maxunauthenticated_users = atoi(maxun);	//read nvram variable
 	}
