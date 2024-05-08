@@ -144,6 +144,7 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	char acname[64];
 	strncpy(acname,(char *)data,sizeof(acname)-1);
 	acname[len > (sizeof(acname)-1) ? 63 : len] = 0;
+	extern int nvram_set(const char *name, const char *value);
 	nvram_set("pppoe_ac_name",acname);
 	if (conn->acName && len == strlen(conn->acName) &&
 	    !strncmp((char *) data, conn->acName, len)) {
