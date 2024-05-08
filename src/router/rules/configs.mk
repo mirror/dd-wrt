@@ -37,7 +37,7 @@ else
 obj-$(CONFIG_IPTABLES) += iptables
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
-obj-$(CONFIG_IPV6) += nat46
+#obj-$(CONFIG_IPV6) += nat46
 endif
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_IPV6) += nat46

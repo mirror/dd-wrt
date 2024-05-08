@@ -25,7 +25,7 @@ endif
 ifeq ($(ARCH),powerpc)
 SNMP_ENDIAN=big
 endif
-SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL 
+SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL -Wno-incompatible-pointer-types
 SNMP_EXTRAMIB=,ddwrt/ddwrt
 ifeq ($(CONFIG_WIRELESS_TOOLS),y)
 SNMP_EXTRALIB=-liw -lnl-tiny
