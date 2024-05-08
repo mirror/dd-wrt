@@ -10,7 +10,7 @@ dep: build_dir $(DEP_LIST)
 	$(DEP_LOOP)
 
 $(OBJ_LIST): %.o : %.c %.d
-	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -c $< -o $(DST_DIR)/$@
+	$(CC) $(CFLAGS) -Wno-incompatible-pointer-types -Wno-implicit-function-declaration -Wno-return-mismatch $(LOCAL_CFLAGS) -c $< -o $(DST_DIR)/$@
 
 $(DEP_LIST) : %.d : %.c
 	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< > $(DST_DIR)/$@.tmp

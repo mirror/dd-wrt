@@ -877,7 +877,7 @@ struct sub_cmd_des_t g_rate_des[] =
 	{"portshaper", "set", SW_API_RATE_PORT_SHAPER_SET, NULL},
 	{"queueshaper", "set", SW_API_RATE_QUEUE_SHAPER_SET, NULL},
 	{"aclpolicer", "set", SW_API_RATE_ACL_POLICER_SET, NULL},
-	{"ptAddRateByte", SW_API_RATE_PT_ADDRATEBYTE_SET, NULL},
+	{"ptAddRateByte", "set", SW_API_RATE_PT_ADDRATEBYTE_SET, NULL},
 	{"ptgolflowen", "set", SW_API_RATE_PT_GOL_FLOW_EN_SET, NULL},
 	{NULL, NULL,  (int)NULL, NULL},/*end of desc*/
 };

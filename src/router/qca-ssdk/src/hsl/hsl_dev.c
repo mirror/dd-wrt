@@ -563,7 +563,7 @@ sw_error_t reduce_hsl_phy_set(a_uint32_t dev,a_uint32_t phy_addr,a_uint32_t reg,
 
 	hsl_api_t *p_api = hsl_api_ptr_get(dev); 
 	if (p_api) { 
-	    rv = p_api->phy_set(dev, phy_addr, reg, value); 
+	    rv = p_api->phy_set(dev, phy_addr, reg, (int)value); 
 	} else { 
 	    rv = SW_NOT_INITIALIZED; 
 	} 

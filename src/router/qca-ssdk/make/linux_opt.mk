@@ -267,7 +267,7 @@ ifeq (KSLIB, $(MODULE_TYPE))
 		MODULE_CFLAG += -DKVER32
 	    MODULE_CFLAG += -DLNX26_22
 	    MODULE_INC += -I$(SYS_PATH) \
-	          -I$(TOOL_PATH)/../lib/gcc/arm-openwrt-linux-muslgnueabi/12.1.0/include/ \
+	          -I$(TOOL_PATH)/../lib/gcc/arm-openwrt-linux-muslgnueabi/14.1.0/include/ \
 	          -I$(SYS_PATH)/include \
               -I$(SYS_PATH)/source/include \
               -I$(SYS_PATH)/source/arch/arm/mach-msm/include \

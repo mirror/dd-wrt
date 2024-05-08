@@ -2873,6 +2873,7 @@ static uint32_t switch_chip_id_adjuest(void)
 #endif
 
 extern struct mii_bus *al_get_mdiobus_by_name(const char *ethname);
+extern struct mii_bus * al_get_mdiobus_by_gpio(void);
 
 static int miibus_get(void)
 {
