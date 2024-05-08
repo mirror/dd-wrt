@@ -22,6 +22,7 @@
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include <sys/sysmacros.h>
 
 #include "list.h"
 #include "logging.h"

@@ -17,6 +17,7 @@
  *
  */
 
+#include <sys/sysmacros.h>
 #include "list.h"
 
 #define UDEVD_PRIORITY			-4
