@@ -23,8 +23,8 @@ mcrypt_symb.c: mcrypt_internal.h
 	@echo "/* This is automatically created. Don't touch... */" >> mcrypt_symb.c
 	@echo "" >> mcrypt_symb.c
 	-@for i in $(EXTRA_ALGOS); do \
-		if test -f ../modules/algorithms/$$i.c; then cat ../modules/algorithms/$$i.c 2>/dev/null|grep define|grep LTX|awk '{print "extern "$$3"();";}' >> mcrypt_symb.c 2>/dev/null; fi; \
-		if test -f ../modules/modes/$$i.c; then cat ../modules/modes/$$i.c 2>/dev/null|grep define|grep LTX|awk '{print "extern "$$3"();";}' >> mcrypt_symb.c 2>/dev/null; fi; \
+		if test -f ../modules/algorithms/$$i.c; then cat ../modules/algorithms/$$i.c 2>/dev/null|grep define|grep LTX|awk '{print "extern int "$$3"();";}' >> mcrypt_symb.c 2>/dev/null; fi; \
+		if test -f ../modules/modes/$$i.c; then cat ../modules/modes/$$i.c 2>/dev/null|grep define|grep LTX|awk '{print "extern int "$$3"();";}' >> mcrypt_symb.c 2>/dev/null; fi; \
 	done
 	@echo "" >> mcrypt_symb.c
 	@echo "const mcrypt_preloaded mps[] = {" >> mcrypt_symb.c
