@@ -686,6 +686,10 @@ EJ_VISIBLE void ej_get_wl_value(webs_t wp, int argc, char_t **argv)
 	}
 	return;
 }
+void show_authtable(webs_t wp, char *prefix, int show80211x);
+void show_owe(webs_t wp, char *prefix);
+void show_80211X(webs_t wp, char *prefix);
+void show_addconfig(webs_t wp, char *prefix);
 
 void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix)
 {

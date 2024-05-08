@@ -807,6 +807,7 @@ static char *selmatch(char *var, char *is, char *ret)
 		return ret;
 	return "";
 }
+void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix);
 
 static char *wpa_enc_label(char *buf, size_t len, char *value)
 {

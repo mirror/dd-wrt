@@ -19,6 +19,8 @@
  *
  * $Id:
  */
+void show_ipnetmask(webs_t wp, char *var);
+
 extern char *getTXQ(char *ifname);
 EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 {

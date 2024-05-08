@@ -13,7 +13,7 @@ void getpacketcounts(char *table, char *chain, unsigned long long *counts, int l
 			continue;
 		i = iptc_first_rule(this, &handle);
 		while (i) {
-			const char *target = iptc_get_target(i, handle);
+			const char *target = iptc_get_target(i, &handle);
 			if (target && !strcmp(target, "RETURN"))
 				goto skip;
 			counts[c++] = i->counters.pcnt;
@@ -41,7 +41,7 @@ unsigned long long getpackettotal(char *table, char *chain)
 			continue;
 		i = iptc_first_rule(this, &handle);
 		while (i) {
-			const char *target = iptc_get_target(i, handle);
+			const char *target = iptc_get_target(i, &handle);
 			if (target && !strcmp(target, "RETURN"))
 				goto skip;
 			count += i->counters.pcnt;

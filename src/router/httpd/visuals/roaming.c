@@ -305,8 +305,6 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 	sprintf(mac, "%s_hwaddr", prefix);
 	char *vifs = nvram_nget("%s_vifs", prefix);
 
-	if (vifs == NULL)
-		return;
 	sprintf(ssid, "%s_ssid", prefix);
 
 	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) && !nvram_nmatch("disabled", "%s_mode", prefix)) {

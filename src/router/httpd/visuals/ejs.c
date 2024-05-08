@@ -1081,6 +1081,7 @@ EJ_VISIBLE void ej_show_forward_spec(webs_t wp, int argc, char_t **argv)
 	}
 	return;
 }
+void ip_forward(webs_t wp, char *type, int which);
 
 EJ_VISIBLE void ej_show_forward_ip(webs_t wp, int argc, char_t **argv)
 {

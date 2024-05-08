@@ -395,7 +395,7 @@ void save_policy(webs_t wp)
 	D("okay");
 }
 
-EJ_VISIBLE sel_filter(webs_t wp)
+EJ_VISIBLE void sel_filter(webs_t wp)
 {
 	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 }
@@ -567,6 +567,7 @@ void addDeletion_route(char *word)
 }
 
 void delete_old_routes(void)
+
 {
 	char word[256], *next;
 	foreach(word, nvram_safe_get("action_service_arg1"), next)
@@ -1497,7 +1498,7 @@ void add_active_mac(webs_t wp)
 
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "onXXX";
-		int *index;
+		char *index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "on", i);
 		index = websGetVar(wp, active_mac, NULL);
@@ -1509,7 +1510,7 @@ void add_active_mac(webs_t wp)
 	}
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "offXXX";
-		int *index;
+		char *index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "off", i);
 		index = websGetVar(wp, active_mac, NULL);
@@ -3080,6 +3081,8 @@ static void macro_rem(char *a, char *nv)
 	}
 	return;
 }
+void delfrom(char *var, char *countvar, int todel);
+void delfrom_qos(char *var, int todel);
 
 void forward_add(webs_t wp)
 {
@@ -6850,10 +6853,10 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbshare_mp_%d", c);
 		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_subdir_%d", c);
-		char *subdir = json_string(websGetVar(wp, var, ""));
+		char *subdir = websGetVar(wp, var, "");
 		if (*subdir == '/')
-			subdir++;
-		json_object_set_new(entry, "sd", subdir);
+			subdir++;	
+		json_object_set_new(entry, "sd", json_string(subdir));
 		sprintf(var, "smbshare_label_%d", c);
 		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);

@@ -123,13 +123,13 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cn
 	iwr.u.data.length = 24 * 1024;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
-		closesocket();
+		dd_closesocket();
 		return globalcnt;
 	}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
-		closesocket();
+		dd_closesocket();
 		return globalcnt;
 	}
 	cp = madbuf;
@@ -194,7 +194,7 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *ifname, int *cn
 		cp += si->isi_len;
 		len -= si->isi_len;
 	} while (len >= sizeof(struct ieee80211req_sta_info) && bufcount < (sizeof(madbuf) - sizeof(struct ieee80211req_sta_info)));
-	closesocket();
+	dd_closesocket();
 
 	return globalcnt;
 }

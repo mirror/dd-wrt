@@ -225,11 +225,11 @@ static char *filter_port_get(char *list, char *type, int which, char *buf, size_
 				}
 			}
 			if (!strcmp(type, "start")) {
-				strncpy(buf, len, start);
+				strncpy(buf, start, len);
 				return buf;
 			}
 			if (!strcmp(type, "end")) {
-				strncpy(buf, len, end);
+				strncpy(buf, end, len);
 				return buf;
 			}
 		}

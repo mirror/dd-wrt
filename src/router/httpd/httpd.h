@@ -226,5 +226,13 @@ void show_bgscan_options(webs_t wp, char *prefix);
 #else
 #define ATH9K_ENABLED() 0
 #endif
+int do_file(unsigned char method, struct mime_handler *handler, char *path,
+	webs_t stream);
+int is_ap(char *prefix);
+
+void delete_old_routes(void);
+void delete_old_pbr(void);
+int wfflush(webs_t fp);
+int issuperchannel(void);
 
 #endif /* _httpd_h_ */

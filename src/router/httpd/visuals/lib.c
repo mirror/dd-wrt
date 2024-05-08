@@ -221,12 +221,12 @@ static void _ej_get_firmware_version(webs_t wp, int argc, char_t **argv, int nor
 
 EJ_VISIBLE void ej_get_firmware_version(webs_t wp, int argc, char_t **argv)
 {
-	_ej_get_firmware_version(wp, argc, argc, 0);
+	_ej_get_firmware_version(wp, argc, argv, 0);
 }
 
 EJ_VISIBLE void ej_get_firmware_version_noreg(webs_t wp, int argc, char_t **argv)
 {
-	_ej_get_firmware_version(wp, argc, argc, 1);
+	_ej_get_firmware_version(wp, argc, argv, 1);
 }
 EJ_VISIBLE void ej_get_firmware_title(webs_t wp, int argc, char_t **argv)
 {

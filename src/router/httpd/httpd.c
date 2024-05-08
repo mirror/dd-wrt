@@ -812,9 +812,7 @@ static int do_file_2(unsigned char method, struct mime_handler *handler, char *p
 	return 0;
 }
 
-int
-//do_file(char *path, FILE *stream)
-do_file(unsigned char method, struct mime_handler *handler, char *path,
+int do_file(unsigned char method, struct mime_handler *handler, char *path,
 	webs_t stream) //jimmy, https, 8/4/2003
 {
 	return do_file_2(method, handler, path, stream, NULL);
@@ -1683,6 +1681,7 @@ int main(int argc, char **argv)
 			keyfile = KEY_FILE;
 #endif
 #ifdef HAVE_OPENSSL
+		void ERR_print_errors_fp(FILE *fp);
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
 		ctx = SSL_CTX_new(SSLv23_server_method());

@@ -84,7 +84,7 @@
 		}                      \
 	}
 
-static struct servent *my_getservent(FILE *servf, struct servent *serv, char *serv_aliases, char *line)
+static struct servent *my_getservent(FILE *servf, struct servent *serv, char **serv_aliases, char *line)
 {
 	char *p;
 	register char *cp, **q;
