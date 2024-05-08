@@ -23,9 +23,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <stdio.h>
-#ifdef __UCLIBC__
 #include <netinet/ether.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>

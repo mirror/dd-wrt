@@ -10,9 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#ifdef __UCLIBC__
 #include <netinet/ether.h>
-#endif
 #include "../include/ebtables_u.h"
 #include <linux/netfilter_bridge/ebt_nat.h>
 
