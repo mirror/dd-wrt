@@ -36,6 +36,7 @@
 #include <services.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/stat.h>
 
 char *tor_deps(void)
 {
