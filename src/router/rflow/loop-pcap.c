@@ -35,6 +35,9 @@ pcap_callback(unsigned char *psp, const struct pcap_pkthdr *ph, const unsigned c
 			packet, ph->caplen);
 }
 
+int
+reopen_packet_source_pcap(packet_source_t *ps, int loop);
+
 void *
 process_pcap(void *psp) {
 	packet_source_t *ps = psp;
