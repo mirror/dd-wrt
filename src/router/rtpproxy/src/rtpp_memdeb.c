@@ -235,6 +235,7 @@ rtpp_memdeb_strdup(const char *ptr, const char *fname, int linen, const char *fu
     memcpy(mpf->real_data, ptr, size);
     return (mpf->real_data);
 }
+#if 0
 
 int
 rtpp_memdeb_asprintf(char **pp, const char *fmt, const char *fname,
@@ -271,6 +272,7 @@ rtpp_memdeb_vasprintf(char **pp, const char *fmt, const char *fname,
     *pp = tp;
     return (rval);
 }
+#endif
 
 static int
 is_approved(const char *funcn)

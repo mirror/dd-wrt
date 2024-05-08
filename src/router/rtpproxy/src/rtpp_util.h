@@ -34,6 +34,10 @@
 
 struct cfg;
 
+double my_trunc(double x);
+double my_round(double x);
+
+
 /* Function prototypes */
 double getdtime(void);
 double ts2dtime(uint32_t, uint32_t);
