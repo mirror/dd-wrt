@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <sys/signalfd.h>
 #include <linux/sockios.h>
+#include <sys/sysmacros.h>
 
 #include "udev.h"
 

@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/sysmacros.h>
 
 #include "udev.h"
 #include "smack-util.h"
