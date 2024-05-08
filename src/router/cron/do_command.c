@@ -21,6 +21,7 @@ static char rcsid[] = "$Id: do_command.c,v 1.2 2003/12/22 13:27:11 honor Exp $";
 
 
 #include "cron.h"
+#include <grp.h>
 #include <sys/signal.h>
 #if defined(sequent)
 # include <sys/universe.h>

@@ -83,7 +83,7 @@ LDFLAGS		+= -s -ffunction-sections -fdata-sections -Wl,--gc-sections
 #################################### end configurable stuff
 
 SHELL		=	/bin/sh
-CFLAGS		=	$(OPTIM) $(INCLUDE) $(COMPAT) $(DEFS) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections 
+CFLAGS		=	$(OPTIM) $(INCLUDE) $(COMPAT) $(DEFS) $(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE
 
 INFOS		=	README CHANGES FEATURES INSTALL CONVERSION THANKS MAIL
 MANPAGES	=	bitstring.3 crontab.5 crontab.1 cron.8 putman.sh

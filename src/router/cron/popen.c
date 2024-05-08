@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) 2/14/89";
 
 #include "cron.h"
 #include <sys/signal.h>
+#include <grp.h>
 
 
 #define WANT_GLOBBING 0
@@ -150,6 +151,7 @@ pfree:
 	return(iop);
 }
 
+#if 0
 int
 cron_pclose(iop)
 	FILE *iop;
@@ -173,3 +175,4 @@ cron_pclose(iop)
 	pids[fdes] = 0;
 	return (pid == -1 ? -1 : WEXITSTATUS(stat_loc));
 }
+#endif
