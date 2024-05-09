@@ -5,7 +5,7 @@ dhcpv6:
 	CPPFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) $(JFLAGS) -DNEED_PRINTF  -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(JFLAGS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram" \
-	$(MAKE) -C dhcpv6 all
+	make -C dhcpv6 all
 	
 dhcpv6-install:
 	install -D dhcpv6/multicall $(INSTALLDIR)/dhcpv6/usr/bin/dhcp6_multicall
@@ -13,7 +13,7 @@ dhcpv6-install:
 	cd $(INSTALLDIR)/dhcpv6/usr/bin && ln -sf dhcp6_multicall dhcp6s
 
 dhcpv6-clean:
-	$(MAKE) -C dhcpv6 clean
+	make -C dhcpv6 clean
 
 dhcpv6-configure: nvram
 	cd dhcpv6 && ./configure --prefix= --with-localdbdir=/var --with-sysconfdir=/etc \
