@@ -523,7 +523,7 @@ tcp_in_window(struct nf_conn *ct, enum ip_conntrack_dir dir,
 	u16 win_raw;
 
 	if (tn->tcp_no_window_check)
-		return true;
+		return NFCT_TCP_ACCEPT;
 
 	/*
 	 * Get the required data from the packet.

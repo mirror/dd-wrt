@@ -475,6 +475,7 @@ static inline bool qdisc_restart(struct Qdisc *q, int *packets)
 		skb->next = NULL;
 
 		if (likely(skb->fast_qdisc)) {
+			printk(KERN_INFO "fast qdisc\n");
 			/*
 			 * For SFE fast_qdisc marked packets, we send packets directly
 			 * to physical interface pointed to by skb->dev
