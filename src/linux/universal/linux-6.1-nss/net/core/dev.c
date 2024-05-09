@@ -5532,6 +5532,8 @@ static inline int nf_ingress(struct sk_buff *skb, struct packet_type **pt_prev,
 }
 int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
 EXPORT_SYMBOL_GPL(fast_nat_recv);
+int (*athrs_fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(athrs_fast_nat_recv);
 
 static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 				    struct packet_type **ppt_prev)
@@ -5544,6 +5546,7 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 	int ret = NET_RX_DROP;
 	__be16 type;
 	int (*fast_recv)(struct sk_buff *skb);
+	int (*athrs_fast_recv)(struct sk_buff *skb);
 
 	net_timestamp_check(!READ_ONCE(netdev_tstamp_prequeue), skb);
 
@@ -5577,10 +5580,19 @@ another_round:
 		}
 	}
 
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv) {
+		if (fast_recv(skb)) {
+			ret = NET_RX_SUCCESS;
+			goto out;
+		}
+	}
+
 	if (likely(!fast_tc_filter)) {
-		fast_recv = rcu_dereference(fast_nat_recv);
-		if (fast_recv) {
-			if (fast_recv(skb)) {
+		athrs_fast_recv = rcu_dereference(athrs_fast_nat_recv);
+		if (athrs_fast_recv) {
+			if (athrs_fast_recv(skb)) {
 				ret = NET_RX_SUCCESS;
 				goto out;
 			}
@@ -5649,14 +5661,14 @@ skip_classify:
 		goto skip_fast_recv;
 	}
 
-	fast_recv = rcu_dereference(fast_nat_recv);
-	if (fast_recv) {
+	athrs_fast_recv = rcu_dereference(fast_nat_recv);
+	if (athrs_fast_recv) {
 		if (pt_prev) {
 			ret = deliver_skb(skb, pt_prev, orig_dev);
 			pt_prev = NULL;
 		}
 
-		if (fast_recv(skb)) {
+		if (athrs_fast_recv(skb)) {
 			ret = NET_RX_SUCCESS;
 			goto out;
 		}
