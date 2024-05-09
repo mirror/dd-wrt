@@ -37,6 +37,11 @@
 #ifndef IFLA_VLAN_MAX
 # define IFLA_VLAN_ID 1
 # define IFLA_VLAN_FLAGS 2
+# define IFLA_VLAN_EGRESS_QOS 3
+# define IFLA_VLAN_INGRESS_QOS 4
+
+#define IFLA_VLAN_MAX	(__IFLA_VLAN_MAX - 1)
+
 struct ifla_vlan_flags {
 	uint32_t	flags;
 	uint32_t	mask;
