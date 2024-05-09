@@ -27,9 +27,9 @@
 #include <linux/of.h>
 #include <linux/if_bridge.h>
 #include <net/bonding.h>
+#include <nss_vlan_mgr.h>
 #if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 #include <ref/ref_vsi.h>
-#include <nss_vlan_mgr.h>
 #include <fal/fal_fdb.h>
 #include <fal/fal_stp.h>
 #include <fal/fal_acl.h>
@@ -1368,6 +1368,7 @@ static int nss_bridge_mgr_netdevice_event(struct notifier_block *unused,
 static struct notifier_block nss_bridge_mgr_netdevice_nb __read_mostly = {
 	.notifier_call = nss_bridge_mgr_netdevice_event,
 };
+#if defined(NSS_BRIDGE_MGR_PPE_SUPPORT)
 
 /*
  * nss_bridge_mgr_is_physical_dev()
@@ -1481,7 +1482,6 @@ static int nss_bridge_mgr_fdb_update_callback(struct notifier_block *notifier,
 static struct notifier_block nss_bridge_mgr_fdb_update_notifier = {
 	.notifier_call = nss_bridge_mgr_fdb_update_callback,
 };
-
 /*
  * nss_bridge_mgr_wan_inf_add_handler
  *	Marks an interface as a WAN interface for special handling by bridge.
@@ -1596,7 +1596,7 @@ static struct ctl_table nss_bridge_mgr_table[] = {
 	},
 	{ }
 };
-
+#endif
 /*
  * nss_bridge_mgr_init_module()
  *	bridge_mgr module init function
@@ -1606,8 +1606,8 @@ int __init nss_bridge_mgr_init_module(void)
 	/*
 	 * Monitor bridge activity only on supported platform
 	 */
-	if (!of_machine_is_compatible("qcom,ipq807x") && !of_machine_is_compatible("qcom,ipq6018") && !of_machine_is_compatible("qcom,ipq8074"))
-		return 0;
+//	if (!of_machine_is_compatible("qcom,ipq807x") && !of_machine_is_compatible("qcom,ipq6018") && !of_machine_is_compatible("qcom,ipq8074"))
+//		return 0;
 
 	INIT_LIST_HEAD(&br_mgr_ctx.list);
 	spin_lock_init(&br_mgr_ctx.lock);
