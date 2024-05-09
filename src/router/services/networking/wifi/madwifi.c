@@ -2929,6 +2929,20 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void) // madwifi implementation for atheros based
 	// cards
 {
+	if (nvram_match("sfe", "1")) {
+		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+	} else if (nvram_match("sfe", "2")) {
+		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+	} else if (nvram_match("sfe", "3")) { // ecm nss
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+	} else if (nvram_match("sfe", "4")) { // ecm sfe
+		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+	} else {
+		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+	}
+
 	invalidate_channelcache();
 #ifdef HAVE_NLD
 	eval("/usr/sbin/nldstop.sh");

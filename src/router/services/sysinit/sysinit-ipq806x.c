@@ -672,7 +672,7 @@ void start_sysinit(void)
 	insmod("qca-mcs");
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
-	sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+	insmod("qca-nss-bridge-mgr");
 	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	/*
 	 * network drivers 
