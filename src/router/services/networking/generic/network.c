@@ -385,10 +385,12 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 #ifdef HAVE_BUSYBOX_UDHCPC
 	dhcp_argv[i++] = "-O";
 	dhcp_argv[i++] = "routes";
-	dhcp_argv[i++] = "-O";
-	dhcp_argv[i++] = "msstaticroutes";
-	dhcp_argv[i++] = "-O";
-	dhcp_argv[i++] = "staticroutes";
+	if (nvram_default_matchi("dhcpc_121", 1, 1)) {
+		dhcp_argv[i++] = "-O";
+		dhcp_argv[i++] = "msstaticroutes";
+		dhcp_argv[i++] = "-O";
+		dhcp_argv[i++] = "staticroutes";
+	}
 #ifdef HAVE_FREECWMP
 	dhcp_argv[i++] = "-O";
 	dhcp_argv[i++] = "vendorspecific";
