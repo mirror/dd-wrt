@@ -288,6 +288,11 @@ enum debug_level {
 struct iperf_test
 {
     pthread_mutex_t print_mutex;
+    atomic_iperf_size_t bytes_sent;
+    atomic_iperf_size_t blocks_sent;
+    atomic_iperf_size_t bytes_received;
+    atomic_iperf_size_t blocks_received;
+
 
     char      role;                             /* 'c' lient or 's' erver */
     enum iperf_mode mode;
@@ -374,11 +379,6 @@ struct iperf_test
 
     int       num_streams;                      /* total streams in the test (-P) */
 
-    atomic_iperf_size_t bytes_sent;
-    atomic_iperf_size_t blocks_sent;
-
-    atomic_iperf_size_t bytes_received;
-    atomic_iperf_size_t blocks_received;
 
     iperf_size_t bitrate_limit_stats_count;               /* Number of stats periods accumulated for server's total bitrate average */
     iperf_size_t *bitrate_limit_intervals_traffic_bytes;  /* Pointer to a cyclic array that includes the last interval's bytes transferred */
