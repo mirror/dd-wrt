@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 restart:
 	if (strstr(argv[0], "btrfstune"))
 		return btrfstune_main(argc, argv);
-	else if (strstr(argv[0], "btrfstune"))
+	else if (strstr(argv[0], "btrfs"))
 		return btrfs_main(argc, argv);
 	else if (strstr(argv[0], "mkfs.btrfs"))
 		return mkfs_main(argc, argv);
@@ -28,6 +28,6 @@ restart:
 		goto restart;
 	}
 
-	fprintf(stderr, "Invalid command.\nUsage: %s mactelnet|mactelnetd|macping|mndp [<arguments>]\n", prog);
+	fprintf(stderr, "Invalid command.\nUsage: %s btrfstune|btrfs|mkfs.btrfs [<arguments>]\n", prog);
 	return 255;
 }
