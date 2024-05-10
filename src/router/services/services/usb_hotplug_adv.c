@@ -381,60 +381,65 @@ repeat:;
 
 	} else
 #endif
-	if (!strcmp(fs, "vfat")) {
-		eval("fsck.vfat","-p",path);
+		if (!strcmp(fs, "vfat")) {
+		eval("fsck.vfat", "-p", path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
 	} else if (!strcmp(fs, "exfat")) {
-		eval("fsck.exfat","-p",path);
+		eval("fsck.exfat", "-p", path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
-	} else if (!strcmp(fs, "ext4")) 
-		eval("fsck.ext4","-p",path);
-		ret = eval("/bin/mount", "-t", fs, "-o", "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", path,
-			   mount_point);
-	} else if (!strcmp(fs, "ext2")) {
-		eval("fsck.ext2","-p",path);
-		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
-	} else if (!strcmp(fs, "ext3")) {
-		eval("fsck.ext3","-p",path);
-		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
-	} else {
-		ret = eval("/bin/mount", "-t", fs, path, mount_point);
-	}
+	} else if (!strcmp(fs, "ext4"))
+		eval("fsck.ext4", "-p", path);
+	ret = eval("/bin/mount", "-t", fs, "-o", "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
+}
+else if (!strcmp(fs, "ext2"))
+{
+	eval("fsck.ext2", "-p", path);
+	ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
+}
+else if (!strcmp(fs, "ext3"))
+{
+	eval("fsck.ext3", "-p", path);
+	ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
+}
+else
+{
+	ret = eval("/bin/mount", "-t", fs, path, mount_point);
+}
 
-	if (ret != 0) { //give it another try
-		first = 0;
+if (ret != 0) { //give it another try
+	first = 0;
 again:;
 #ifdef HAVE_NTFS3G
-		if (!strcmp(fs, "ntfs")) {
+	if (!strcmp(fs, "ntfs")) {
 #ifdef HAVE_LEGACY_KERNEL
-			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 #else
 #ifdef HAVE_NTFS3
-			ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
+		ret = eval("/bin/mount", "-t", "ntfs3", "-o", "nls=utf8,noatime", path, mount_point);
 #else
-			ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
+		ret = eval("/bin/mount", "-t", "antfs", "-o", "utf8", path, mount_point);
 #endif
 #endif
-			if (!first && ret) {
-				first = 1;
-				eval("ntfsfix", "-d", path);
-				goto again;
-			}
-		} else
+		if (!first && ret) {
+			first = 1;
+			eval("ntfsfix", "-d", path);
+			goto again;
+		}
+	} else
 #endif
-			ret = eval("/bin/mount", path, mount_point); //guess fs
-	}
+		ret = eval("/bin/mount", path, mount_point); //guess fs
+}
 
-	if (!strcmp(fs, "swap")) {
-		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
-	} else {
-		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
-		nvram_set("usb_reason", "blockdev_add");
-		nvram_set("usb_dev", mount_point);
-		eval("startservice", "run_rc_usb", "-f");
-	}
-	if (!ret)
-		run_on_mount(path);
+if (!strcmp(fs, "swap")) {
+	sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
+} else {
+	sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+	nvram_set("usb_reason", "blockdev_add");
+	nvram_set("usb_dev", mount_point);
+	eval("startservice", "run_rc_usb", "-f");
+}
+if (!ret)
+	run_on_mount(path);
 }
 
 void start_raid(void);
