@@ -381,7 +381,7 @@ repeat:;
 
 	} else
 #endif
-		if (!strcmp(fs, "vfat")) {
+	if (!strcmp(fs, "vfat")) {
 		eval("fsck.vfat", "-p", path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
 	} else if (!strcmp(fs, "exfat")) {
