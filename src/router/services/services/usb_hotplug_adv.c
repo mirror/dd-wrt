@@ -381,12 +381,21 @@ repeat:;
 
 	} else
 #endif
-		if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
+	if (!strcmp(fs, "vfat")) {
+		eval("fsck.vfat","-p",path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
-	} else if (!strcmp(fs, "ext4")) {
+	} else if (!strcmp(fs, "exfat")) {
+		eval("fsck.exfat","-p",path);
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
+	} else if (!strcmp(fs, "ext4")) 
+		eval("fsck.ext4","-p",path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "init_itable=0,nobarrier,noatime,nobh,nodiratime,barrier=0", path,
 			   mount_point);
-	} else if (!strcmp(fs, "ext2") || !strcmp(fs, "ext3")) {
+	} else if (!strcmp(fs, "ext2")) {
+		eval("fsck.ext2","-p",path);
+		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
+	} else if (!strcmp(fs, "ext3")) {
+		eval("fsck.ext3","-p",path);
 		ret = eval("/bin/mount", "-t", fs, "-o", "nobarrier,noatime,nobh,nodiratime,barrier=0", path, mount_point);
 	} else {
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
