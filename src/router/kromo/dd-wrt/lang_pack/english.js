@@ -1815,6 +1815,7 @@ service.apserv="APServ";
 //DHCPd
 service.dhcp_legend="DHCP Client";
 service.dhcp_vendor="DHCP Vendor Class";
+service.dhcp_121="DHCP Classless Routes (option 121)";
 service.dhcp6c_vendor="DHCP IPv6 Vendor Class";
 service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP Server Setup";

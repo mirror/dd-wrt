@@ -1634,6 +1634,7 @@ service.apserv="APServ";
 //DHCPd
 service.dhcp_legend="DHCP-Client";
 service.dhcp_vendor="Setze Vendorclass";
+service.dhcp_121="DHCP Classless Routes (option 121)";
 service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP-Server";
 service.dhcp_srv="DHCP-Daemon";
