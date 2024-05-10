@@ -108,6 +108,7 @@
  "cron_jobs"  "Additional cron jobs"  "NULL"  "TRUE" "0"
  "dhcp_domain"  "DHCP Domain"  "CHOICE" "2" "wan"  "lan"  "FALSE" "0"
  "dhcpc_vendorclass"  "DHCPC vendorclass"  "NULL" "TRUE" "0"
+ "dhcpc_121"  "DHCPC classless routes (option 121)"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dhcp6c_vendorclass"  "DHCPC vendorclass"  "NULL" "TRUE" "0"
  "dhcpc_requestip"  "DHCPC request ip"  "NULL" "TRUE" "0"
  "dhcpd_usejffs"  "DHCP leases on jffs"  "NULL" "FALSE" "0"
