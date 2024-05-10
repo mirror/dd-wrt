@@ -22,6 +22,7 @@
 #include <linux/sockios.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
+#include <net/if.h>
 #include <linux/if_bridge.h>
 #include <asm/param.h>
 
