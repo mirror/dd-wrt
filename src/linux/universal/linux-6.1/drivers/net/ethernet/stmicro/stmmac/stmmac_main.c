@@ -6940,15 +6940,19 @@ static void stmmac_napi_add(struct net_device *dev)
 
 		if (queue < priv->plat->rx_queues_to_use) {
 			netif_napi_add(dev, &ch->rx_napi, stmmac_napi_poll_rx);
+			dev_set_threaded(dev, true);
 		}
 		if (queue < priv->plat->tx_queues_to_use) {
 			netif_napi_add_tx(dev, &ch->tx_napi,
 					  stmmac_napi_poll_tx);
+			dev_set_threaded(dev, true);
 		}
 		if (queue < priv->plat->rx_queues_to_use &&
 		    queue < priv->plat->tx_queues_to_use) {
 			netif_napi_add(dev, &ch->rxtx_napi,
 				       stmmac_napi_poll_rxtx);
+		    dev_set_threaded(dev, true);
+
 		}
 	}
 }
