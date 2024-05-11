@@ -947,6 +947,8 @@ int nss_gmac_open(struct net_device *netdev)
 
 		netif_napi_add_weight(netdev, &gmacdev->napi, nss_gmac_poll,
 							NSS_GMAC_NAPI_BUDGET);
+		dev_set_threaded(netdev, true);
+
 		/* Initial the RX/TX ring */
 		dma_set_coherent_mask(dev, 0xffffffff);
 		nss_gmac_setup_rx_desc_queue(gmacdev, dev,
