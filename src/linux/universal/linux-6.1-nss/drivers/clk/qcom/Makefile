@@ -15,7 +15,7 @@ clk-qcom-y += clk-regmap-phy-mux.o
 clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-krait.o
 clk-qcom-y += clk-hfpll.o
 clk-qcom-y += reset.o
-clk-qcom-y += fab_scaling.o
+#clk-qcom-y += fab_scaling.o
 clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
 
 # Keep alphabetically sorted by config
