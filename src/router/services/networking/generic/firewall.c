@@ -1093,13 +1093,14 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if (nvram_match("sfe", "0"))
 #endif
 		{
-		#ifndef HAVE_NEW_NOTRACK
+#ifndef HAVE_NEW_NOTRACK
 			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j",
 			     "NOTRACK"); //this speeds up networking alot on slow systems
-		#else
+#else
 			/* the following code must be used in future kernel versions, not yet used. we still need to test it */
-		        eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems
-		#endif
+			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT",
+			     "--notrack"); //this speeds up networking alot on slow systems
+#endif
 		}
 		if (*wanface && wanactive(wanaddr))
 			if (nvram_matchi("wl_br1_enable", 1))

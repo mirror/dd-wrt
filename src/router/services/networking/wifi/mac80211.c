@@ -2064,7 +2064,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			addbssid(fp, prefix);
 			fprintf(fp, "\tscan_ssid=1\n");
 		}
-/*		char scanlist[32];
+		/*		char scanlist[32];
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
 		if (strcmp(sl, "default")) {
