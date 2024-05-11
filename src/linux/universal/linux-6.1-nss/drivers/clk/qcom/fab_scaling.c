@@ -33,6 +33,7 @@
 
 static u32 fab_freq_high;
 static u32 fab_freq_nominal;
+static u32 cpu_freq_threshold;
 
 static struct clk *apps_fab_clk;
 static struct clk *ddr_fab_clk;
@@ -129,6 +130,7 @@ EXPORT_SYMBOL(fab_scaling_unregister);
 static int ipq806x_fab_scaling_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
+	int ret;
 
 	if (!np)
 		return -ENODEV;
@@ -143,21 +145,46 @@ static int ipq806x_fab_scaling_probe(struct platform_device *pdev)
 		fab_freq_nominal = 400000000;
 	}
 
+	if (of_property_read_u32(np, "cpu_freq_threshold", &cpu_freq_threshold)) {
+		pr_err("FABRICS cpu freq threshold not found. Using defaults...\n");
+		cpu_freq_threshold = 1000000000;
+	}
+
 	apps_fab_clk = devm_clk_get(&pdev->dev, APPS_FAB_CLK);
-	if (IS_ERR(apps_fab_clk)) {
-		pr_err("Failed to get APPS FABRIC clock\n");
+	ret = PTR_ERR_OR_ZERO(apps_fab_clk);
+	if (ret) {
 		apps_fab_clk = 0;
-		return -ENODEV;
+		/*
+		 * If apps fab clk node is present, but clock is not yet
+		 * registered, we should try defering probe.
+		 */
+		if (ret != -EPROBE_DEFER) {
+			pr_err("Failed to get APPS FABRIC clock: %d\n", ret);
+			ret = -ENODEV;
+		}
+		goto err;
 	}
 
 	ddr_fab_clk = devm_clk_get(&pdev->dev, DDR_FAB_CLK);
-	if (IS_ERR(ddr_fab_clk)) {
-		pr_err("Failed to get DDR FABRIC clock\n");
+	ret = PTR_ERR_OR_ZERO(ddr_fab_clk);
+	if (ret) {
 		ddr_fab_clk = 0;
-		return -ENODEV;
+		/*
+		 * If ddr fab clk node is present, but clock is not yet
+		 * registered, we should try defering probe.
+		 */
+		if (ret != -EPROBE_DEFER) {
+			pr_err("Failed to get DDR FABRIC clock: %d\n", ret);
+			ddr_fab_clk = NULL;
+			ret = -ENODEV;
+		}
+		goto err;
 	}
-
 	return 0;
+	
+	err:;
+	
+	return ret;
 }
 
 static int ipq806x_fab_scaling_remove(struct platform_device *pdev)
