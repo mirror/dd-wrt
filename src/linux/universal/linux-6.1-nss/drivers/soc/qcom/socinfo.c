@@ -185,6 +185,7 @@ static const struct soc_id soc_id[] = {
 	{ 198, "MSM8126" },
 	{ 199, "APQ8026" },
 	{ 200, "MSM8926" },
+	{ 202, "IPQ8064" },
 	{ 205, "MSM8326" },
 	{ 206, "MSM8916" },
 	{ 207, "MSM8994" },
@@ -393,11 +394,13 @@ QCOM_OPEN(pmic_die_rev, qcom_show_pmic_die_revision);
 QCOM_OPEN(chip_id, qcom_show_chip_id);
 
 #define DEFINE_IMAGE_OPS(type)					\
-static int show_image_##type(struct seq_file *seq, void *p)		  \
+static int show_image_##type(struct seq_file *seq, void *p)	  \
 {								  \
 	struct smem_image_version *image_version = seq->private;  \
-	if (image_version->type[0] != '\0')			  \
-		seq_printf(seq, "%s\n", image_version->type);	  \
+	if(!image_version && !image_version->type[0]) {           \
+		seq_puts(seq, image_version->type);               \
+		seq_puts(seq, "\n");                              \
+	}                                                         \
 	return 0;						  \
 }								  \
 static int open_image_##type(struct inode *inode, struct file *file)	  \
@@ -585,7 +588,7 @@ static int qcom_socinfo_probe(struct platform_device *pdev)
 	if (!qs)
 		return -ENOMEM;
 
-	qs->attr.family = "Snapdragon";
+	qs->attr.family = "IPQ";
 	qs->attr.machine = socinfo_machine(&pdev->dev,
 					   le32_to_cpu(info->id));
 	qs->attr.soc_id = devm_kasprintf(&pdev->dev, GFP_KERNEL, "%u",
@@ -601,6 +604,9 @@ static int qcom_socinfo_probe(struct platform_device *pdev)
 	qs->soc_dev = soc_device_register(&qs->attr);
 	if (IS_ERR(qs->soc_dev))
 		return PTR_ERR(qs->soc_dev);
+
+	pr_info("CPU: %s, SoC Version: %s\ id: %d fmt: %x\n", qs->attr.machine,
+                                   qs->attr.revision, info->id, qs->info.fmt);
 
 	socinfo_debugfs_init(qs, info, item_size);
 
