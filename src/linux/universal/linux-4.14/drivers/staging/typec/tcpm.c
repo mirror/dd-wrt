@@ -3575,6 +3575,7 @@ struct tcpm_port *tcpm_register_port(struct device *dev, struct tcpc_dev *tcpc)
 	else
 		port->try_role = TYPEC_NO_PREFERRED_ROLE;
 
+	port->typec_caps.fwnode = tcpc->fwnode;
 	port->typec_caps.prefer_role = tcpc->config->default_role;
 	port->typec_caps.type = tcpc->config->type;
 	port->typec_caps.revision = 0x0120;	/* Type-C spec release 1.2 */

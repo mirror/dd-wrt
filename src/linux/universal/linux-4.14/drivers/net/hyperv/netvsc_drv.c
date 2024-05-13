@@ -36,6 +36,7 @@
 #include <linux/slab.h>
 #include <linux/rtnetlink.h>
 #include <linux/netpoll.h>
+#include <linux/reciprocal_div.h>
 
 #include <net/arp.h>
 #include <net/route.h>
@@ -54,9 +55,11 @@
 #define LINKCHANGE_INT (2 * HZ)
 #define VF_TAKEOVER_INT (HZ / 10)
 
-static int ring_size = 128;
-module_param(ring_size, int, S_IRUGO);
+static unsigned int ring_size __ro_after_init = 128;
+module_param(ring_size, uint, S_IRUGO);
 MODULE_PARM_DESC(ring_size, "Ring buffer size (# of pages)");
+unsigned int netvsc_ring_bytes __ro_after_init;
+struct reciprocal_value netvsc_ring_reciprocal __ro_after_init;
 
 static const u32 default_msg = NETIF_MSG_DRV | NETIF_MSG_PROBE |
 				NETIF_MSG_LINK | NETIF_MSG_IFUP |
@@ -1013,7 +1016,6 @@ static int netvsc_set_channels(struct net_device *net,
 
 	memset(&device_info, 0, sizeof(device_info));
 	device_info.num_chn = count;
-	device_info.ring_size = ring_size;
 	device_info.send_sections = nvdev->send_section_cnt;
 	device_info.send_section_size = nvdev->send_section_size;
 	device_info.recv_sections = nvdev->recv_section_cnt;
@@ -1111,7 +1113,6 @@ static int netvsc_change_mtu(struct net_device *ndev, int mtu)
 	}
 
 	memset(&device_info, 0, sizeof(device_info));
-	device_info.ring_size = ring_size;
 	device_info.num_chn = nvdev->num_chn;
 	device_info.send_sections = nvdev->send_section_cnt;
 	device_info.send_section_size = nvdev->send_section_size;
@@ -1631,7 +1632,6 @@ static int netvsc_set_ringparam(struct net_device *ndev,
 
 	memset(&device_info, 0, sizeof(device_info));
 	device_info.num_chn = nvdev->num_chn;
-	device_info.ring_size = ring_size;
 	device_info.send_sections = new_tx;
 	device_info.send_section_size = nvdev->send_section_size;
 	device_info.recv_sections = new_rx;
@@ -2082,7 +2082,6 @@ static int netvsc_probe(struct hv_device *dev,
 
 	/* Notify the netvsc driver of the new device */
 	memset(&device_info, 0, sizeof(device_info));
-	device_info.ring_size = ring_size;
 	device_info.num_chn = VRSS_CHANNEL_DEFAULT;
 	device_info.send_sections = NETVSC_DEFAULT_TX;
 	device_info.send_section_size = NETVSC_SEND_SECTION_SIZE;
@@ -2264,16 +2263,23 @@ static int __init netvsc_drv_init(void)
 
 	if (ring_size < RING_SIZE_MIN) {
 		ring_size = RING_SIZE_MIN;
-		pr_info("Increased ring_size to %d (min allowed)\n",
+		pr_info("Increased ring_size to %u (min allowed)\n",
 			ring_size);
 	}
-	ret = vmbus_driver_register(&netvsc_drv);
-
-	if (ret)
-		return ret;
+	netvsc_ring_bytes = ring_size * PAGE_SIZE;
+	netvsc_ring_reciprocal = reciprocal_value(netvsc_ring_bytes);
 
 	register_netdevice_notifier(&netvsc_netdev_notifier);
+
+	ret = vmbus_driver_register(&netvsc_drv);
+	if (ret)
+		goto err_vmbus_reg;
+
 	return 0;
+
+err_vmbus_reg:
+	unregister_netdevice_notifier(&netvsc_netdev_notifier);
+	return ret;
 }
 
 MODULE_LICENSE("GPL");
