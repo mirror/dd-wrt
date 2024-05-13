@@ -922,10 +922,8 @@ register_snapshot_trigger(char *glob, struct event_trigger_ops *ops,
 			  struct event_trigger_data *data,
 			  struct trace_event_file *file)
 {
-	int ret = tracing_alloc_snapshot();
-
-	if (ret < 0)
-		return ret;
+	if (tracing_alloc_snapshot() != 0)
+		return 0;
 
 	return register_trigger(glob, ops, data, file);
 }

@@ -333,6 +333,10 @@ static inline void in6_ifa_hold(struct inet6_ifaddr *ifp)
 	atomic_inc(&ifp->refcnt);
 }
 
+static inline bool in6_ifa_hold_safe(struct inet6_ifaddr *ifp)
+{
+	return atomic_inc_not_zero(&ifp->refcnt);
+}
 
 /*
  *	compute link-local solicited-node multicast address

@@ -2400,6 +2400,9 @@ static int gsmld_open(struct tty_struct *tty)
 	struct gsm_mux *gsm;
 	int ret;
 
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
+
 	if (tty->ops->write == NULL)
 		return -EINVAL;
 
