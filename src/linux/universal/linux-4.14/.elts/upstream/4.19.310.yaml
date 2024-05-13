@@ -1,0 +1,152 @@
+7585522bf089bfebb7bbd22fddb5495f16f250c9:
+  title: 'net: usb: lan78xx: Remove lots of set but unused ''ret'' variables'
+  mainline: 06cd7c46b3ab3f2252c61bf85b191236cf0254e1
+  backport: e2ad089a70e591cf7c886be6f559a0e8503674fc
+09a8c3e4e79157bd3358bc9f0fab1517ae8ad884:
+  title: 'lan78xx: Fix white space and style issues'
+  mainline: 9ceec7d33adf9647293f24d2fd9a055b89c63864
+  backport: f6cbd3c0c4516263a546a791a9eb985ca5ee04a6
+20ccd52bd3b5e1323e58a1049d7d5285650c6c64:
+  title: 'lan78xx: Add missing return code checks'
+  mainline: 3415f6baaddb9b39d7112247ab39ef3c700f882e
+  backport: b70394861f10fc4bb0a53bb4fe54b79f497fdf79
+242c4cd0d906f6f8708c0214b0c926b109f63168:
+  title: 'lan78xx: Fix partial packet errors on suspend/resume'
+  mainline: e1210fe63bf8b080edd0805240e90b81b6b069c1
+  backport: c2688f303badea10dd8526d734db642898128e7e
+513cfa1886cd2a06658410b788236522c2a69583:
+  title: 'lan78xx: Fix race conditions in suspend/resume handling'
+  mainline: 5f4cc6e25148cc141f97afb41b4dfe9eb1cce613
+  backport: cb2fabebb54f6cc12e8d180c40d9ac59076bb666
+575689f40b415299864bf1826d03e71d3d807c73:
+  title: 'net: lan78xx: fix runtime PM count underflow on link stop'
+  mainline: 1eecc7ab82c42133b748e1895275942a054a7f67
+  backport: 30336393906643b4fece662c7c2f1871766222fd
+6463ace2a35d22642c90147ebced20ef6145eac6:
+  title: 'net: move definition of pcpu_lstats to header file'
+  mainline: 52bb6677d530d37055092d86b4eab69dce6c166a
+  backport: de6f8690a982faf789a071b7683e3b26274faf4e
+e431c3227864b5646601c97f5f898d99472f2914:
+  title: 'geneve: make sure to pull inner header in geneve_rx()'
+  mainline: 1ca1ba465e55b9460e4e75dec9fff31e708fec74
+  backport: 3b1e13eb6c7bcbc71e0766dc21ccb55f8d15ab50
+31ea5bcc7d4cd1423de6be327a2c034725704136:
+  title: 'net/ipv6: avoid possible UAF in ip6_route_mpath_notify()'
+  mainline: 685f7d531264599b3f167f1e94bbd22f120e5fab
+  skipped: commit 93531c6743157d7e8c5792f8ed1a5 is not present; backport is too risky
+786854141057751bc08eb26f1b02e97c1631c8f4:
+  title: 'net/rds: fix WARNING in rds_conn_connect_if_down'
+  mainline: c055fc00c07be1f0df7375ab0036cebd1106ed38
+  skipped: backport is too risky
+98db42191329c679f4ca52bec0b319689e1ad8cb:
+  title: 'netfilter: nf_conntrack_h323: Add protection for bmp length out of range'
+  mainline: 767146637efc528b5e3d31297df115e85a2fd362
+  backport: 1c31b4059c9416af2dfb42f087f64edd607eb35f
+7644df766006d4878a556e427e3ecc78c2d5606b:
+  title: 'netrom: Fix a data-race around sysctl_netrom_default_path_quality'
+  mainline: 958d6145a6d9ba9e075c921aead8753fb91c9101
+  backport: 7bab6671e4d56af53eaa19b4e61d349ce3b1cee7
+e3a3718b1723253d4f068e88e81d880d71f1a1e9:
+  title: 'netrom: Fix a data-race around sysctl_netrom_obsolescence_count_initialiser'
+  mainline: cfd9f4a740f772298308b2e6070d2c744fb5cf79
+  backport: 5993b06357724c9656435dcd39ef3f731bb68719
+acc653e8a3aaab1b7103f98645f2cce7be89e3d3:
+  title: 'netrom: Fix data-races around sysctl_netrom_network_ttl_initialiser'
+  mainline: 119cae5ea3f9e35cdada8e572cc067f072fa825a
+  backport: 3babe0b373c89f4557d880edfaee1269e0565619
+500936692ccca8617a955652d1929f079b17a201:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_timeout'
+  mainline: 60a7a152abd494ed4f69098cf0f322e6bb140612
+  backport: 75af2f874a607d406075ebee8872267e7610cc9c
+84b8486e9cedc93875f251ba31abcf73bd586a3a:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_maximum_tries'
+  mainline: e799299aafed417cc1f32adccb2a0e5268b3f6d5
+  backport: 6e9e490c1c0f727effa44d696b29b363b9ddf216
+6133a71c75dacea12fcc85838b4455c2055b0f14:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_acknowledge_delay'
+  mainline: 806f462ba9029d41aadf8ec93f2f99c5305deada
+  backport: 9da1d2a1e6687d4009eff99367df4bf7dee17f6c
+7782e5e7047cae6b9255ee727c99fc73d77cf773:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_busy_delay'
+  mainline: 43547d8699439a67b78d6bb39015113f7aa360fd
+  backport: 943942802104ff9dcb435d85456b08967878b40d
+4f2efa17c3ec5e4be0567b47439b9713c0dc6550:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_requested_window_size'
+  mainline: a2e706841488f474c06e9b33f71afc947fb3bf56
+  backport: 3f661371119e40c7307cff48dfaa28ba19ec6a20
+73426c32e259c767d40613b956d5b80d0c28a9a9:
+  title: 'netrom: Fix a data-race around sysctl_netrom_transport_no_activity_timeout'
+  mainline: f99b494b40431f0ca416859f2345746199398e2b
+  backport: 0a8e233837a214086305549c6cc3c10505960a18
+c13fbb5902bce848759385986d4833f5b90782c1:
+  title: 'netrom: Fix a data-race around sysctl_netrom_routing_control'
+  mainline: b5dffcb8f71bdd02a4e5799985b51b12f4eeaf76
+  backport: 4851e4321fdf86f860623d8541f46916cbd9b8e7
+97a4d8b9f67cc7efe9a0c137e12f6d9e40795bf1:
+  title: 'netrom: Fix a data-race around sysctl_netrom_link_fails_count'
+  mainline: bc76645ebdd01be9b9994dac39685a3d0f6f7985
+  backport: 3c574b4ac9511dee909385868739d64de9abf892
+d623fd5298d95b65d27ef5a618ebf39541074856:
+  title: 'netrom: Fix data-races around sysctl_net_busy_read'
+  mainline: d380ce70058a4ccddc3e5f5c2063165dc07672c6
+  backport: daa941d9ed63191c6d3e13d640ecd55a07d449a3
+40011850de6d613e982c84c854018aeca2c6bb19:
+  title: 'btrfs: ref-verify: free ref cache before clearing mount opt'
+  mainline: f03e274a8b29d1d1c1bbd7f764766cb5ca537ab7
+  skipped: fixes patch not in branch
+becbfcabedfe3ceb9bd6184c172fad00c0a8feb0:
+  title: 'tools/selftest/vm: allow choosing mem size and page size in map_hugetlb'
+  mainline: fa7b9a805c797b729022029aaa3a2b7c35fff4c6
+  backport: 0e37e77f60fe5fe48b7010deb499d284c92003c6
+abdbd5f3e8c504d864fdc032dd5a4eb481cb12bf:
+  title: 'selftests: mm: fix map_hugetlb failure on 64K page size systems'
+  mainline: 91b80cc5b39f00399e8e2d17527cad2c7fa535e2
+  backport: b37d2d9d10c65fabe5b9b53ec84d9388202f4bf2
+90091bdf5df0195de0d2d8e3e4d43aaaee122d34:
+  title: 'um: allow not setting extra rpaths in the linux binary'
+  mainline: 386093c68ba3e8bcfe7f46deba901e0e80713c29
+  backport: fb847632d0d888521c17c0f1109ca827316281a4
+39807e3985ffa2714e46362fdded274a2d768578:
+  title: 'Input: i8042 - fix strange behavior of touchpad on Clevo NS70PU'
+  mainline: a60e6c3918d20848906ffcdfcf72ca6a8cfbcf2e
+  skipped: commit 32863a2d5db62c4fa401ced61388d680421002d6 is not present (unsupported hardware)
+61acc4c4a3c33905b124dc4af206df92c1426500:
+  title: 'hv_netvsc: Make netvsc/VF binding check both MAC and serial number'
+  mainline: 64ff412ad41fe3a5bf759ff4844dc1382176485c
+  skipped: commit 00d7ddba1143623b31bc2c15d18216e2da031b14 is not present
+a2577793ff166cc18fe4192a8b1bca2d37253e6a:
+  title: 'hv_netvsc: use netif_is_bond_master() instead of open code'
+  mainline: c60882a4566a0a62dc3a40c85131103aad83dcb3
+  backport: 8ddca3d65f8a45b7a4e8d844441b30f990e0b015
+bcb7164258d0a9a8aa2e73ddccc2d78f67d2519d:
+  title: 'hv_netvsc: Register VF in netvsc_probe if NET_DEVICE_REGISTER missed'
+  mainline: 9cae43da9867412f8bd09aee5c8a8dc5e8dc3dc2
+  skipped: fixes patch not in branch
+d5e38d6b84d6d21a4f8a4f555a0908b6d9ffe224:
+  title: 'y2038: rusage: use __kernel_old_timeval'
+  mainline: bdd565f817a74b9e30edec108f7cb1dbc762b8a6
+  skipped: 4.14 does not have struct __kernel_old_timeval and backporting would be too risky
+e904c9a4834888cb2b37607d9571f49964f4603f:
+  title: 'getrusage: add the "signal_struct *sig" local variable'
+  mainline: c7ac8231ace9b07306d0299969e42073b189c70a
+  backport: f2348ee837cee8604c0502b6ef9d806ce1cc13ec
+33ec341e3e9588962ff3cf49f642da140d3ecfc0:
+  title: 'getrusage: move thread_group_cputime_adjusted() outside of lock_task_sighand()'
+  mainline: daa694e4137571b4ebec330f9a9b4d54aa8b8089
+  backport: c048d8254a03786c76d3e0f7b687c98f951c7957
+e24772adaaf4b81ac0855cceb17080352526f765:
+  title: 'getrusage: use __for_each_thread()'
+  mainline: 13b7bc60b5353371460a203df6c38ccd38ad7a3a
+  backport: 82f1e0dc48d7753fa960bfc2cec672a0aaf69e01
+c96f49d3a741f6693feecdb067c442b609903d03:
+  title: 'getrusage: use sig->stats_lock rather than lock_task_sighand()'
+  mainline: f7ec1cd5cc7ef3ad964b677ba82b8b77f1c93009
+  backport: 8d11949c478109b80f65d7b3da4927407e61c10a
+71317d703c550c819b5465c3a49ce98650089865:
+  title: 'selftests/vm: fix display of page size in map_hugetlb'
+  mainline: 1ec882fc81e3177faf055877310dbdb0c68eb7db
+  backport: fee13d620a067a56d35582ad3bae29e9fd6dd1f8
+af289249ec5c79200c4ec4ec7f4902378956c4d7:
+  title: 'selftests/vm: fix map_hugetlb length used for testing read and write'
+  mainline: cabc30da10e677c67ab9a136b1478175734715c5
+  backport: f19d6a15935beb1be8aee2845912d846e5649981

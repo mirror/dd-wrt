@@ -1,0 +1,555 @@
+b6367d59022c3d29f26c2674b1d27b9a57fd7611:
+  title: 'ARM: 9303/1: kprobes: avoid missing-declaration warnings'
+  mainline: 1b9c3ddcec6a55e15d3e38e7405e2d078db02020
+6ca1b2d3199e6cc70dbe78e0aac0c645864f254e:
+  title: 'IB/hfi1: Fix sdma.h tx->num_descs off-by-one errors'
+  mainline: fd8958efe8779d3db19c9124fce593ce681ac709
+3897b04a0125d9a98b69d9e640894e989e0111f0:
+  title: 'ALSA: jack: Fix mutex call in snd_jack_report()'
+  mainline: 89dbb335cb6a627a4067bc42caa09c8bc3326d40
+44918a75916b6ac426f3eb490ec190f7267ebe58:
+  title: 'pinctrl: amd: Detect internal GPIO0 debounce handling'
+  mainline: 968ab9261627fa305307e3935ca1a32fcddd36cb
+baf47aad0cfd39d3fa596efcaee9515a4faa5333:
+  title: 'btrfs: fix extent buffer leak after tree mod log failure at split_node()'
+  mainline: ede600e497b1461d06d22a7d17703d9096868bc3
+49d8396c56ccab57ecb82eac5f03d2ddbc6c5d5f:
+  title: 'ext4: fix to check return value of freeze_bdev() in ext4_shutdown()'
+  mainline: c4d13222afd8a64bf11bc7ec68645496ee8b54b9
+e10468ba237d9e21c82e7ba195c65ade5c98f1f6:
+  title: 'iio: addac: stx104: Fix race condition for stx104_write_raw()'
+  mainline: 9740827468cea80c42db29e7171a50e99acf7328
+0610bb030e1533960373b258cc1da102a9797ef4:
+  title: 'block: fix signed int overflow in Amiga partition support'
+  mainline: fc3d092c6bb48d5865fec15ed5b333c12f36288c
+a450641d12ecfdc76146e9adbf9afa97d4066f13:
+  title: 'media: v4l2-fwnode: fix v4l2_fwnode_parse_link handling'
+  mainline: 453b0c8304dcbc6eed2836de8fee90bf5bcc7006
+9e997f74ce0f2fcd1544dfb02dba9e34302e316c:
+  title: 'selftests/ftrace: Add new test case which checks non unique symbol'
+  mainline: 03b80ff8023adae6780e491f66e932df8165e3a0
+c86b5b015e84106b7f27125afa8cab73b6049404:
+  title: 'iio: exynos-adc: request second interupt only when touchscreen mode is used'
+  mainline: 865b080e3229102f160889328ce2e8e97aa65ea0
+1fc95525bb3120beb3ecb973c63d15451af155d1:
+  title: 'tty: Fix uninit-value access in ppp_sync_receive()'
+  mainline: 719639853d88071dfdfd8d9971eca9c283ff314c
+99be7e54736c8c10ef7eb932663e6934e7211d40:
+  title: 'tipc: Fix kernel-infoleak due to uninitialized TLV value'
+  mainline: fb317eb23b5ee4c37b0656a9a52a3db58d9dd072
+4425848d99f2d3b435b82908cb5d97cbe2a8bea0:
+  title: 'xen/events: fix delayed eoi list handling'
+  mainline: 47d970204054f859f35a2237baa75c2d84fcf436
+44bca7e58d3781ecfcc50a057dc543cf1a4f5aa2:
+  title: 'ptp: annotate data-race around q->head and q->tail'
+  mainline: 73bde5a3294853947252cd9092a3517c7cb0cd2d
+3dc6016771b5b1ba4a6b2e5b30bde6a60f58da0a:
+  title: 'ppp: limit MRU to 64K'
+  mainline: c0a2a1b0d631fc460d830f52d06211838874d655
+5637b9415bdd7751c16e7c4bf6f5aac4153b9ad5:
+  title: 'macvlan: Don''t propagate promisc change to lower dev in passthru'
+  mainline: 7e1caeace0418381f36b3aa8403dfd82fc57fc53
+cb012706e5b68819a0621bc309bef26361bc0242:
+  title: 'cifs: spnego: add '';'' in HOST_KEY_LEN'
+  mainline: ff31ba19d732efb9aca3633935d71085e68d5076
+8905c5cb8ab75e1db511953a5ff6bcaabba923ab:
+  title: 'MIPS: KVM: Fix a build warning about variable set but not used'
+  mainline: 83767a67e7b6a0291cde5681ec7e3708f3f8f877
+af8bc7a89e19db227d1dc677274e0551e557be36:
+  title: 'smb3: fix touch -h of symlink'
+  mainline: 475efd9808a3094944a56240b2711349e433fb66
+d4ad1c73b6822d4420f5040e390a469525012265:
+  title: 'fbdev: stifb: Make the STI next font pointer a 32-bit signed offset'
+  mainline: 8a32aa17c1cd48df1ddaa78e45abcb8c7a2220d6
+deff8222bd2f74ee0f6b68d182eda890faaf40ba:
+  title: 'IB/isert: Fix unaligned immediate-data handling'
+  mainline: 0b089c1ef7047652b13b4cdfdb1e0e7dbdb8c9ab
+f22913e1425acf9ecf5c5aa3754d1db3d8606e59:
+  title: 'arm64: dts: mediatek: mt8173-evb: Fix regulator-fixed node names'
+  mainline: 24165c5dad7ba7c7624d05575a5e0cc851396c71
+53a85c328dba07d400e92923f28a176ab66aa4fa:
+  title: 'net: check vlan filter feature in vlan_vids_add_by_dev() and vlan_vids_del_by_dev()'
+  mainline: 01a564bab4876007ce35f312e16797dfe40e4823
+90fe1515b0d0c3b6a6791a8830634866335de049:
+  title: 'pinctrl: at91-pio4: use dedicated lock class for IRQ'
+  mainline: 14694179e561b5f2f7e56a0f590e2cb49a9cc7ab
+cc34811325d1ae1e3058a8dc3223e53ac7a56879:
+  title: 'btrfs: do not allow non subvolume root targets for snapshot'
+  mainline: a8892fd71933126ebae3d60aec5918d4dceaae76
+30e342297e0c2ad1593e205b183bc5d023e587e2:
+  title: 'smb: client: fix OOB in smbCalcSize()'
+  mainline: b35858b3786ddbb56e1c35138ba25d6adf8d0bef
+edaa381535f5630e8a8d28b572eea3c42ff61d19:
+  title: 'usb: fotg210-hcd: delete an incorrect bounds test'
+  mainline: 7fbcd195e2b8cc952e4aeaeb50867b798040314c
+d276b94d1aa48da69d5128bd20dbbd1ddf4eb432:
+  title: 'IB/hfi1: Fix sdma.h tx->num_descs off-by-one error'
+  mainline: e6f57c6881916df39db7d95981a8ad2b9c3458d6
+b46a8405794cad6204be3042221a7c21f77d8c62:
+  title: 'pinctrl: amd: Only use special debounce behavior for GPIO 0'
+  mainline: 0d5ace1a07f7e846d0f6d972af60d05515599d0b
+fdedafcd742d8559f1ad629c189a2536b7db9f46:
+  title: 'PCI: qcom: Disable write access to read only registers for IP v2.3.3'
+  mainline: a33d700e8eea76c62120cb3dbf5e01328f18319a
+c3ac72987ed13ef8fa08a06df187933552352c4f:
+  title: 'ASoC: cs42l51: fix driver to properly autoload with automatic module loading'
+  mainline: e51df4f81b02bcdd828a04de7c1eb6a92988b61e
+e90f7b2f28a78446741403c19d0d68863ee0193a:
+  title: 'x86/topology: Fix erroneous smp_num_siblings on Intel Hybrid platforms'
+  mainline: edc0a2b5957652f4685ef3516f519f84807087db
+52fca5bb0ec336fc31cb97aec94471e9ca07d68c:
+  title: 'regmap: Account for register length in SMBus I/O limits'
+  mainline: 0c9d2eb5e94792fe64019008a04d4df5e57625af
+416820cdafc7f91f2a0657857eb972a4943bd7a4:
+  title: 'sched/rt: pick_next_rt_entity(): check list_entry'
+  mainline: 7c4a5b89a0b5a57a64b601775b296abf77a9fe97
+615179d3ecf2bbc4af25755f5eb29f8b42343a23:
+  title: 'arm64: dts: qcom: msm8996: Add missing interrupt to the USB2 controller'
+  mainline: 36541089c4733355ed844c67eebd0c3936953454
+bfc632c94ee01d6df7f63b34853326caa34903f9:
+  title: 'MIPS: Alchemy: only build mmc support helpers if au1xmmc is enabled'
+  mainline: ef8f8f04a0b25e8f294b24350e8463a8d6a9ba0b
+1c78ca6a42d34e98bbd22bd5eff7cf1313eae907:
+  title: 'xen-netback: use default TX queue size for vifs'
+  mainline: 66cf7435a26917c0c4d6245ad9137e7606e84fdf
+e4325866403488f055694d166f5ce40dd78d8ee4:
+  title: 'r8169: fix the KCSAN reported data-race in rtl_tx while reading TxDescArray[entry].opts1'
+  mainline: dcf75a0f6bc136de94e88178ae5f51b7f879abc9
+89953db2dc4fc004cc9f89585cd614ea925ab64c:
+  title: 'can: dev: can_restart(): don''t crash kernel if carrier is OK'
+  mainline: fe5c9940dfd8ba0c73672dddb30acd1b7a11d4c7
+c9c68fd8c6b4b1d06691978cdeb6db4e24689038:
+  title: 'can: dev: can_restart(): fix race condition between controller restart and netif_carrier_on()'
+  mainline: 6841cab8c4504835e4011689cbdb3351dec693fd
+607895f054178a48f6e1b93d9593204cd7ec23d6:
+  title: 'PCI: keystone: Don''t discard .remove() callback'
+  mainline: 200bddbb3f5202bbce96444fdc416305de14f547
+049e87ba1c0af12f2a20fe643d3279f9f10a9a3e:
+  title: 'PCI: keystone: Don''t discard .probe() callback'
+  mainline: 7994db905c0fd692cf04c527585f08a91b560144
+50115d1f00090102e4710e783df515d082b16df1:
+  title: 'ksmbd: fix wrong name of SMB2_CREATE_ALLOCATION_SIZE'
+  mainline: 13736654481198e519059d4a2e2e3b20fa9fdb3e
+5640235350f177b104ab4398e235eb8896f57eb2:
+  title: 'reset: Fix crash when freeing non-existent optional resets'
+  mainline: 4a6756f56bcf8e64c87144a626ce53aea4899c0e
+af2908904edad8cf9715b47b0e79908a95da3647:
+  title: 'net/rose: fix races in rose_kill_by_device()'
+  mainline: 64b8bc7d5f1434c636a40bdcfcd42b278d1714be
+69af869a0796b07ba9c970573b10c8973bd6d01f:
+  title: 'usb: musb: fix MUSB_QUIRK_B_DISCONNECT_99 handling'
+  mainline: b65ba0c362be665192381cc59e3ac3ef6f0dd1e1
+5a4b3f5db7d61d2da0ba29c2c3093c3e2e6396c9:
+  title: 'Documentation: fix little inconsistencies'
+  mainline: 98bfa34462fb6af70b845d28561072f80bacdb9b
+2913b0ba7f6e2d9cc248bd735c4355521ecfabc9:
+  title: 'irqchip/jcore-aic: Kill use of irq_create_strict_mappings()'
+  mainline: 5f8b938bd790cff6542c7fe3c1495c71f89fef1b
+3e768cbf9216ce85725737f867956a8f2ca0a457:
+  title: 'irqchip/jcore-aic: Fix missing allocation of IRQ descriptors'
+  mainline: 4848229494a323eeaab62eee5574ef9f7de80374
+b6e41b5c2379ff1395ca96b6386c05a32843c2a5:
+  title: 'nfc: constify several pointers to u8, char and sk_buff'
+  mainline: 3df40eb3a2ea58bf404a38f15a7a2768e4762cb0
+45de6db884778ef4e93de4ae7280cd611d884504:
+  title: 'nfc: llcp: fix possible use of uninitialized variable in nfc_llcp_send_connect()'
+  mainline: 0d9b41daa5907756a31772d8af8ac5ff25cf17c1
+3d857eb0919abf307085ca6832f0ac4d93a24a64:
+  title: 'hwrng: virtio - add an internal buffer'
+  mainline: bf3175bc50a3754dc427e2f5046e17a9fafc8be7
+278c136276289aa6d3df570c3b062d9fbeedc89b:
+  title: 'hwrng: virtio - don''t wait on cleanup'
+  mainline: 2bb31abdbe55742c89f4dc0cc26fcbc8467364f6
+97e7381a6f9194c77cd5459f7561193d45a0aa33:
+  title: 'hwrng: virtio - don''t waste entropy'
+  mainline: 5c8e933050044d6dd2a000f9a5756ae73cbe7c44
+7d1e957a222bb21290e580049099d103ced9fd6a:
+  title: 'hwrng: virtio - always add a pending request'
+  mainline: 9a4b612d675b03f7fc9fa1957ca399c8223f3954
+c3e52a599f7f62da2ad63e22410984d9aa60e10d:
+  title: 'hwrng: virtio - Fix race on data_avail and actual data'
+  mainline: ac52578d6e8d300dd50f790f29a24169b1edd26c
+210c0fdcd3a63fbbdd4b235d76dc552da17a1c72:
+  title: 'i2c: xiic: Fix kerneldoc warnings'
+  mainline: bcc156e2289d35673928fecf85c798a9d55f0b14
+95aabd146e569369fd59671b707d6ad8d51bc72d:
+  title: 'i2c: xiic: Add timeout to the rx fifo wait loop'
+  mainline: b4c119dbc300c7a6ee2da70d5c7ba14747b35142
+f19338828b5ef9275e53a562253bba42620b8237:
+  title: 'i2c: xiic: Change code alignment to 1 space only'
+  mainline: 0a9336ee133deb39f962e16b5eca2a48fec4eb52
+bcbf5ebbe44731241b63d63b49fd3f4603d64071:
+  title: 'i2c: xiic: Fix broken locking on tx_msg'
+  mainline: c119e7d00c916881913011e6f4c6ac349a41e4e2
+afe1470c49177fb9d7144561e1d93f4c5a0d4bfc:
+  title: 'i2c: xiic: Defer xiic_wakeup() and __xiic_start_xfer() in xiic_process()'
+  mainline: 743e227a895923c37a333eb2ebf3e391f00c406d
+8a0f82d628a2ab065fc339a5089d567ca7a42f49:
+  title: 'i2c: xiic: Don''t try to handle more interrupt events after error'
+  mainline: cb6e45c9a0ad9e0f8664fd06db0227d185dc76ab
+e30d592833c874df29f606cd7bb8db5ee8a99415:
+  title: 'net: tcp_input: Neaten DBGUNDO'
+  mainline: 3934788a7b4df71f8bd7a2a1f1c0480f06a2076e
+ee0c076e95ebf74f2ba1d795a624452176bcfbbe:
+  title: 'net: bcmgenet: Avoid calling platform_device_put() twice in bcmgenet_mii_exit()'
+  mainline: aa7365e19f8410659ec30503cd8ce866a176c9f4
+e97f35bdb99bd53102c39a90471f8fdefa3c2cf4:
+  title: 'net: bcmgenet: Ensure MDIO unregistration has clocks enabled'
+  mainline: 1b5ea7ffb7a3bdfffb4b7f40ce0d20a3372ee405
+116ca77c4c71f447185ebc9bbe1c71cd4d96c062:
+  title: 'ceph: define argument structure for handle_cap_grant'
+  mainline: a1c6b8358171c16db0f858a7fbb28aa574b07c09
+fea2d6421e6233a9d7ab4b6017303d72b16aae7d:
+  title: 'ceph: don''t let check_caps skip sending responses for revoke msgs'
+  mainline: 257e6172ab36ebbe295a6c9ee9a9dd0fe54c1dc2
+c3b84f9003a993627adf8fb99f2141488f56381e:
+  title: 'net: Replace the limit of TCP_LINGER2 with TCP_FIN_TIMEOUT_MAX'
+  mainline: f0628c524fd188c3f9418e12478dfdfadacba815
+d5a497ae323bb6ab71d7b5eb8b9bae056f920033:
+  title: 'tcp: annotate data-races around tp->linger2'
+  mainline: 9df5335ca974e688389c875546e5819778a80d59
+cd432e4c1b933a42f95ba14762afbcb1f932a9c0:
+  title: 'ext4: rename journal_dev to s_journal_dev inside ext4_sb_info'
+  mainline: ee7ed3aa0f08621dbf897d2a98dc6f2c7e7d0335
+3cacee45e38c0c293d4b4e8b44eaa0ffaf503f72:
+  title: 'ext4: Fix reusing stale buffer heads from last failed mounting'
+  mainline: 26fb5290240dc31cae99b8b4dd2af7f46dfcba6b
+e6dd1522cb62c19dd5d4131710f9d2992548efdf:
+  title: 'dlm: cleanup plock_op vs plock_xop'
+  mainline: bcbb4ba6c9ba81e6975b642a2cade68044cd8a66
+f6f6a0dec0c6cb62d700e6a1b979b67be8d1ef06:
+  title: 'dlm: rearrange async condition return'
+  mainline: a800ba77fd285c6391a82819867ac64e9ab3af46
+95ba3c92f307d3017a4cad2ac37cb94e3ed6e799:
+  title: 'fs: dlm: interrupt posix locks only when process is killed'
+  mainline: 59e45c758ca1b9893ac923dd63536da946ac333b
+a8a61debd3e4dd682b5661b5dd0230622bec22ed:
+  title: 'btrfs: simplify IS_ERR/PTR_ERR checks'
+  mainline: 8d9e220ca0844bf75b98cb5b8e2c25d203c0d0f6
+aa11e1e3cda3cf7e6b8664b93d5af3eaaad8a98d:
+  title: 'btrfs: check for commit error at btrfs_attach_transaction_barrier()'
+  mainline: b28ff3a7d7e97456fd86b68d24caa32e1cfa7064
+eff17aaaaced7877e833d19a0bc679651632c109:
+  title: 'scsi: zfcp: workqueue: set description for port work items with their WWPN as context'
+  mainline: 5c750d58e9d78987e2bda6b65441e6f6b961a01e
+550d8906f7a311955da9e7ec57e92a79ad9b1044:
+  title: 'scsi: zfcp: Defer fc_rport blocking until after ADISC response'
+  mainline: e65851989001c0c9ba9177564b13b38201c0854c
+b54ef4914a396bf6da749e33036fab3b2a84368e:
+  title: 'PM / wakeirq: support enabling wake-up irq after runtime_suspend called'
+  mainline: 259714100d98b50bf04d36a21bf50ca8b829fc11
+16853250e57a8a89839d7f9a5628f433a9c9164f:
+  title: 'PM: sleep: wakeirq: fix wake irq arming'
+  mainline: 8527beb12087238d4387607597b4020bc393c4b4
+d27937e2279cf13e7b7c57ff5c0a6636ca6eea50:
+  title: 'mmc: meson-gx: remove useless lock'
+  mainline: 83076d2268c72d123f3d1eaf186a9f56ec1b943a
+c6bedc5607e55567e777c28af26c57303b08e129:
+  title: 'mmc: meson-gx: remove redundant mmc_request_done() call from irq context'
+  mainline: 3c40eb8145325b0f5b93b8a169146078cb2c49d6
+70868b0c559cc25c2a841c113293a6afc4538d01:
+  title: 'nfsd4: kill warnings on testing stateids with mismatched clientids'
+  mainline: 663e36f07666ff924012defa521f88875f6e5402
+bdc1664459d8064eb02ddb76c315dafb6b571f0e:
+  title: 'nfsd: Remove incorrect check in nfsd4_validate_stateid'
+  mainline: f75546f58a70da5cfdcec5a45ffc377885ccbee8
+a56312f49990de12ec7b3d966bbf8644d89b8187:
+  title: 'dlm: improve plock logging if interrupted'
+  mainline: bcfad4265cedf3adcac355e994ef9771b78407bd
+10d746f6180ca8a78a5f370181ad6c14f587f0dc:
+  title: 'dlm: replace usage of found with dedicated list iterator variable'
+  mainline: dc1acd5c94699389a9ed023e94dd860c846ea1f6
+127999b1f810d0421aa7e553e9cdcde318b1887f:
+  title: 'fs: dlm: add pid to debug log'
+  mainline: 19d7ca051d303622c423b4cb39e6bde5d177328b
+e6bfc1367e60133389f38b4f8e6a0639a27bea78:
+  title: 'fs: dlm: change plock interrupted message to debug again'
+  mainline: ea06d4cabf529eefbe7e89e3a8325f1f89355ccd
+0f6305457b27e01b6a5e4f486d3f49c34bab496e:
+  title: 'fs: dlm: use dlm_plock_info for do_unlock_close'
+  mainline: 4d413ae9ced4180c0e2114553c3a7560b509b0f8
+0b0e05f21ee5f823cc062c2df8a27f292c56007c:
+  title: 'fs: dlm: fix mismatch of plock results from userspace'
+  mainline: 57e2c2f2d94cfd551af91cedfa1af6d972487197
+050f94118e4753e12230982cfc021116d37764c6:
+  title: 'MIPS: cpu-features: Enable octeon_cache by cpu_type'
+  mainline: f641519409a73403ee6612b8648b95a688ab85c2
+129c199aa0d9d5d4e0c1c784c21e0cb9de98c738:
+  title: 'MIPS: cpu-features: Use boot_cpu_type for CPU type based features'
+  mainline: 5487a7b60695a92cf998350e4beac17144c91fcd
+ae7ad73420b84636f3c3ef56ab3395e443de7bc8:
+  title: 'Revert "tty: serial: fsl_lpuart: drop earlycon entry for i.MX8QXP"'
+  mainline: 4e9679738a918d8a482ac6a2cb2bb871f094bb84
+38c48e8208a3aa72af922e6066fff0ccc59059f6:
+  title: 'tty: serial: fsl_lpuart: add earlycon for imx8ulp platform'
+  mainline: e0edfdc15863ec80a1d9ac6e174dbccc00206dd0
+790ba10b696a0644d0d674ccfada612841160654:
+  title: 'fbdev: Improve performance of sys_imageblit()'
+  mainline: 6f29e04938bf509fccfad490a74284cf158891ce
+000e6839ff5a15a30db490549ac2a4b6fd7897f7:
+  title: 'fbdev: Fix sys_imageblit() for arbitrary image widths'
+  mainline: 61bfcb6a3b981e8f19e044ac8c3de6edbe6caf70
+fd2daf94457d373bfc3bec7848c016f7eda8437d:
+  title: 'fbdev: fix potential OOB read in fast_imageblit()'
+  mainline: c2d22806aecb24e2de55c30a06e5d6eb297d161d
+a975f7d7c8a9b294e140eb3ee7decc85a1eef8cf:
+  title: 'net: remove bond_slave_has_mac_rcu()'
+  mainline: 8b0fdcdc3a7d44aff907f0103f5ffb86b12bfe71
+7fb02a7f7d83ee430f670597abb8d6a6d10f0594:
+  title: 'bonding: fix macvlan over alb bond support'
+  mainline: e74216b8def3803e98ae536de78733e9d7f3b109
+43a1a81dc41cc370c7d9d22d9643a2aafcd70416:
+  title: 'mwifiex: drop ''set_consistent_dma_mask'' log message'
+  mainline: f7369179ad32000973fc7a0a76603e0b41792b52
+7a73825cdd948a89445ff03f858517d49ef06194:
+  title: 'mwifiex: switch from ''pci_'' to ''dma_'' API'
+  mainline: 4cf975f640fefdfdf6168a79e882558478ce057a
+e32af8cb49f42d5ab30497922feca00033a72966:
+  title: 'wifi: mwifiex: fix error recovery in PCIE buffer descriptor management'
+  mainline: 288c63d5cb4667a51a04668b3e2bb0ea499bc5f4
+aa5a8b2a894434b1369882e2fd19cd63508998fc:
+  title: 'ath9k: use irqsave() in USB''s complete callback'
+  mainline: 84a0d4669c8fdbe6e3e23937c5083af99a1946f2
+38af08a8cd605518c36e54d4d2b1d60cffc3bfd4:
+  title: 'wifi: ath9k: fix races between ath9k_wmi_cmd and ath9k_wmi_ctrl_rx'
+  mainline: b674fb513e2e7a514fcde287c0f73915d393fdb6
+07da16c6e55bc394a29ba4f4da176e96d9ace43d:
+  title: 'ARM: dts: BCM5301X: Harmonize EHCI/OHCI DT nodes name'
+  mainline: 74abbfe99f43eb7466d26d9e48fbeb46b8f3d804
+73b5bae64a17666626cf1ced507adb32e1a36609:
+  title: 'ARM: dts: BCM53573: Drop nonexistent #usb-cells'
+  mainline: 05d2c3d552b8c92fc397377d9d1112fc58e2cd59
+067937ca477d5457ee6b6ec835436a3b27ac2e8e:
+  title: 'drm/tegra: Remove superfluous error messages around platform_get_irq()'
+  mainline: d12919bb5da571ec50588ef97683d37e36dc2de5
+5bf51969adad6e4fd5a282b05a71cb2351e400ea:
+  title: 'drm/tegra: dpaux: Fix incorrect return value of platform_get_irq'
+  mainline: 2a1ca44b654346cadfc538c4fb32eecd8daf3140
+5e192852448d0cec109afdff412214de340d34e8:
+  title: 'dlm: fix plock lookup when using multiple lockspaces'
+  mainline: 7c53e847ff5e97f033fdd31f71949807633d506b
+8b6eebfbe7e2405bb0024e56b604d9ca3782eaaa:
+  title: 'sc16is7xx: Set iobase to device index'
+  mainline: 5da6b1c079e6804a81e63ab8337224cbd2148c91
+a86abf7ed3e585714e068e259ef50800027bb467:
+  title: 'serial: sc16is7xx: fix broken port 0 uart init'
+  mainline: 2861ed4d6e6d1a2c9de9bf5b0abd996c2dc673d0
+8e8afe4f1480bc9982913b2258a6b1648dfae121:
+  title: 'staging: typec: tcpm: Document data structures'
+  mainline: 98076fa64a05dd2bda3a9f38e171bade15ab507d
+34c3c637cad40733d10132f69f9cc2debd66e33e:
+  title: 'staging: typec: fix endianness mismatch identified by sparse'
+  mainline: 81948cbcf12cb16a6f5fad9c86233a596e2f47ab
+19fac3944e5c31df98b276221f2ebbccc1b6d415:
+  title: 'usb: typec: add fwnode to tcpc'
+  mainline: 5e85a04c8c0d271d7561a770b85741f186398868
+f62619a3cf799ec41e764b406bbdaf660cc332f5:
+  title: 'usb: typec: tcpci: clear the fault status bit'
+  mainline: 23e60c8daf5ec2ab1b731310761b668745fcf6ed
+a14cb6e28662143de003bde6a3a485bda15f0507:
+  title: 'scsi: lpfc: remove redundant null check on eqe'
+  mainline: 858e51e8cbe11a8c59b24aaf4cb40f7f4e7a2feb
+47e59bc230b9b9cabac05b6b9c4ee937d25e3663:
+  title: 'scsi: qla2xxx: Reinstate module parameter ql2xenablemsix'
+  mainline: e7240af5108fc8b068b1b21988e48f0c5005cae6
+0b48bb34020820ef4cc3a1db955cb8da14378547:
+  title: 'scsi: qla2xxx: Add option for use reserve exch for ELS'
+  mainline: 9ecf0b0dd5b934a89eeaa15723d10beb6c33074c
+04b6abf7d75816455738721e49e3ee2e7e1cf2cf:
+  title: 'scsi: qla2xxx: Add protection mask module parameters'
+  mainline: 7855d2ba1172d716d96a628af7c5bafa5725ac57
+fee054173692099ed2621b3b40631837db73a0be:
+  title: 'scsi: qla2xxx: Remove unsupported ql2xenabledif option'
+  mainline: e9105c4b7a9208a21a9bda133707624f12ddabc2
+4b3db74257bb92b7e865c56462749fb0885ba92b:
+  title: 'ext4: remove the ''group'' parameter of ext4_trim_extent'
+  mainline: bd2eea8d0a6b6a9aca22f20bf74f73b71d8808af
+9dd4bb24589fa1264649a51dcab190a086a40b2a:
+  title: 'ext4: add new helper interface ext4_try_to_trim_range()'
+  mainline: 6920b3913235f517728bb69abe9b39047a987113
+c1932c2190bc4572ef8ab809bf8ca96d5cb3e963:
+  title: 'ext4: mark group as trimmed only if it was fully scanned'
+  mainline: d63c00ea435a5352f486c259665a4ced60399421
+12056cb85b8326928109f708af452e9a5e67b08d:
+  title: 'ALSA: hda: Add Intel NUC7i3BNB to the power_save blacklist'
+  mainline: dd6dd5365404a31292715e6f54184f47f9b6aca5
+983c8163037c25396f4705649175f03a8655b2ec:
+  title: 'ALSA: hda - add Lenovo IdeaCentre B550 to the power_save_blacklist'
+  mainline: 721f1e6c1fd137e7e2053d8e103b666faaa2d50c
+17021e3657fa24eb0c8fceaacdde318962cd0dbe:
+  title: 'ALSA: hda: Disable power save for solving pop issue on Lenovo ThinkCentre M70q'
+  mainline: 057a28ef93bdbe84326d34cdb5543afdaab49fe1
+a3a38c97cc8a24d335da2ab40c1f41bd90f4e6e3:
+  title: 'libata: Add new med_power_with_dipm link_power_management_policy setting'
+  mainline: f4ac6476945ff62939420bcf8266e39f8d5d54bd
+7fc967f723e63bfb05694a5042aa7a931740faaa:
+  title: 'libata: make ata_port_type const'
+  mainline: 8df82c13a3756f831b0d748226ce932515728e04
+543828f9c9d5194b02dd0f9148a36e1959f44786:
+  title: 'ata: libata-core: Do not register PM operations for SAS ports'
+  mainline: 75e2bd5f1ede42a2bc88aa34b431e1ace8e0bea0
+481af7a82bed32501d1db0d13469032db4bd6844:
+  title: 'net: nfc: fix races in nfc_llcp_sock_get() and nfc_llcp_sock_get_sn()'
+  mainline: 31c07dffafce914c1d1543c135382a11ff058d93
+759b99e2744b81d7c570679a8055bf3b9ce8e23a:
+  title: 'tcp: Namespace-ify sysctl_tcp_early_retrans'
+  mainline: 2ae21cf527da0e5cf9d7ee14bd5b0909bb9d1a75
+5069afc313ab712506eb20ea71ba74f4fc9fe69c:
+  title: 'tcp: fix excessive TLP and RACK timeouts from HZ rounding'
+  mainline: 1c2709cfff1dedbb9591e989e2f001484208d914
+9908f81a7a4d69b2cab427061bbe8270e4ee9ec4:
+  title: 'tcp: batch tcp_net_metrics_exit'
+  mainline: 789e6ddb0b2fb5d5024b760b178a47876e4de7a6
+96f264346322c9e8e8fcd1c2309484e63b63b994:
+  title: 'tcp_metrics: add missing barriers on delete'
+  mainline: cbc3a153222805d65f821e10f4f78b6afce06f86
+f07ac9ebc8bb931f7d3f44d21a0005f329fab7d8:
+  title: 'regmap: Allow missing device in regmap_name_read_file()'
+  mainline: 12ae3808c160b7be0de3c633ac4cbe8c5f2937bf
+08e96d4f68e8ac7d926c5cbc681f8a51c395d55a:
+  title: 'regmap: debugfs: Fix a erroneous check after snprintf()'
+  mainline: d3601857e14de6369f00ae19564f1d817d175d19
+926415a94426a5f06cae0bf580991003ad6cc541:
+  title: 'leds: pwm: simplify if condition'
+  mainline: b43a8f01fccbfdddbc7f9b2bbad11b7db3fda4e1
+e1f59ea64f2ccca230bac4ab7735707479719591:
+  title: 'leds: pwm: convert to atomic PWM API'
+  mainline: dd47a83453e4a5b0d6a91fe702b7fbc1984fb610
+99196523a0932a647a11e106f7b275ed5eb116bb:
+  title: 'leds: pwm: Don''t disable the PWM when the LED should be off'
+  mainline: 76fe464c8e64e71b2e4af11edeef0e5d85eeb6aa
+d227179970abfcde03c773743472af8fef544327:
+  title: 'ledtrig-cpu: Limit to 8 CPUs'
+  mainline: abcc131292aa8c7de2c5f0ed76a717436c21de63
+eaf18b187c77c62754fb9a79704b1c9f39289058:
+  title: 'leds: trigger: ledtrig-cpu:: Fix ''output may be truncated'' issue for ''cpu'''
+  mainline: ff50f53276131a3059e8307d11293af388ed2bcd
+2a3d11b71743d93a48fb1fca8b6a5b50c43b6a5f:
+  title: 'tools: iio: privatize globals and functions in iio_generic_buffer.c file'
+  mainline: ebe5112535b5cf389ca7d337cf6a0c1d885f9880
+ff9a3a01f25e1bed4d58ac67e97d7838d97e5055:
+  title: 'tools: iio: iio_generic_buffer: Fix some integer type and calculation'
+  mainline: 49d736313d0975ddeb156f4f59801da833f78b30
+d84e1a8ae24bda75c5d07633c00957a31e762cf2:
+  title: 'tools: iio: iio_generic_buffer ensure alignment'
+  mainline: 2d3dff577dd0ea8fe9637a13822f7603c4a881c8
+88750343019d107c221ac35bfcdf0712acca028a:
+  title: 'pwm: sti: Avoid conditional gotos'
+  mainline: fd3ae02bb66f091e55f363d32eca7b4039977bf5
+a2afa76cd56cb36cce6df2844d1bd50fe7cd3326:
+  title: 'pwm: sti: Reduce number of allocations and drop usage of chip_data'
+  mainline: 2d6812b41e0d832919d72c72ebddf361df53ba1b
+1167e186dab9a6e4f145c0200c945e288dc8915e:
+  title: 'hv_netvsc: use reciprocal divide to speed up percent calculation'
+  mainline: a7f99d0f2bbfe3b42ce398cdd37a97762e72cb56
+e72642bece884f0adc7e84170b0cd593ec099dc3:
+  title: 'hv_netvsc: Fix race of register_netdevice_notifier and VF register'
+  mainline: 85520856466ed6bc3b1ccb013cddac70ceb437db
+5efc9b330da9c5d031ff4a2c9ea440b8a4763a4d:
+  title: 'ALSA: hda/realtek - Add support for ALC1220'
+  mainline: 0202f5cd9aab127355f6b1de74058a670424d48a
+717887a04ab8cc073b017de117f49a6f7561fc86:
+  title: 'ALSA: hda/realtek - Clevo P950ER ALC1220 Fixup'
+  mainline: 2f0d520a1a73555ac51c19cd494493f60b4c1cea
+7c1753de173dac57ee577b2879d785c3f50ac923:
+  title: 'ALSA: hda/realtek - Headset microphone and internal speaker support for System76 oryp5'
+  mainline: 7f665b1c3283aae5b61843136d0a8ee808ba3199
+343b68d0d5deba6a0a5ac71c07bbbca09996bc67:
+  title: 'ALSA: hda/realtek - Add quirk for Tuxedo XC 1509'
+  mainline: 80690a276f444a68a332136d98bfea1c338bc263
+c05c727992661edfc7a751a2c548cbdf4b5b1445:
+  title: 'ALSA: hda/realtek: Enable audio jacks of ASUS D700SA with ALC887'
+  mainline: ca184355db8e60290fa34bf61c13308e6f4f50d3
+695490e53275fe3e3ec200eaa23ea9a12480a960:
+  title: 'ALSA: hda/realtek - Fix microphone noise on ASUS TUF B550M-PLUS'
+  mainline: 9bfa7b36343c7d84370bc61c9ed774635b05e4eb
+6ef8acf68b6eca9bc92f3245661611cade8c2803:
+  title: 'hfsplus: unmap the page in the "fail_page" label'
+  mainline: f5b23d6704e478b5a97dbba5df9dea96a9cbf847
+ad3319dd44140ca9ce30a141ef6554eba430567e:
+  title: 'ALSA: hda/realtek: Headset Mic VREF to 100%'
+  mainline: baaacbff64d9f34b64f294431966d035aeadb81c
+2d92e5282406723408007792521bae223b4957ab:
+  title: 's390/mm: fix phys vs virt confusion in mark_kernel_pXd() functions family'
+  mainline: 3784231b1e091857bd129fd9658a8b3cedbdcd58
+617738d9f53ecf196289eff667689692ea688992:
+  title: 's390/cmma: fix detection of DAT pages'
+  mainline: 44d93045247661acbd50b1629e62f415f2747577
+c3b3e5c5fd6af9babc0ae2c40f8dedcb5a971246:
+  title: 'mtd: cfi_cmdset_0001: Support the absence of protection registers'
+  mainline: b359ed5184aebf9d987e54abc5dae7ac03ed29ae
+2d6c830b5b74502a3489e71649bed1a5aa3a0126:
+  title: 'mtd: cfi_cmdset_0001: Byte swap OTP info'
+  mainline: 565fe150624ee77dc63a735cc1b3bff5101f38a3
+aaeb68749011877e3f27f12a2074030416c6e87b:
+  title: 'netfilter: xt_owner: Add supplementary groups option'
+  mainline: ea6cc2fd8a2b89ab6dcd096ba6dbc1ecbdf26564
+c5bb4c9e5197e11029e4e0139bd9f3b418583b8c:
+  title: 'netfilter: xt_owner: Fix for unsafe access of sk->sk_socket'
+  mainline: 7ae836a3d630e146b732fe8ef7d86b243748751f
+704e90cd5aea7b3d54272c79f4426c779c6b6206:
+  title: 'devcoredump : Serialize devcd_del work'
+  mainline: 01daccf748323dfc61112f474cf2ba81015446b0
+e54af988b2b852fdd3e49a71b74d9f390a3ee481:
+  title: 'devcoredump: Send uevent once devcd is ready'
+  mainline: af54d778a03853801d681c98c0c2a6c316ef9ca7
+cf43b6d64c1240c2477e73960d176a4409fafa96:
+  title: Add Acer Aspire Ethos 8951G model quirk
+  mainline: 00066e9733f629e536f6b7957de2ce11a85fe15a
+5b475c173f7dbe4a7d4d30b532fe625a48789159:
+  title: 'ALSA: hda/realtek - More constifications'
+  mainline: 6b0f95c49d890440c01a759c767dfe40e2acdbf2
+52db37c601def3669f3ee12815fad45141c18df6:
+  title: 'ALSA: hda/realtek - Add Headset Mic supported for HP cPC'
+  mainline: 5af29028fd6db9438b5584ab7179710a0a22569d
+1c02322babbd2995262bc53b701915ae21e11822:
+  title: 'ALSA: hda/realtek - Enable headset mic of Acer X2660G with ALC662'
+  mainline: d858c706bdca97698752bd26b60c21ec07ef04f2
+8d8b693c3b4a5f1c7888bb772761b0ce2d8ec1e1:
+  title: 'ALSA: hda/realtek - Enable the headset of Acer N50-600 with ALC662'
+  mainline: a124458a127ccd7629e20cd7bae3e1f758ed32aa
+7f6644d4ab24b8185cac62d3dc4e98c3442c32aa:
+  title: 'ALSA: hda/realtek - The front Mic on a HP machine doesn''t work'
+  mainline: 148ebf548a1af366fc797fcc7d03f0bb92b12a79
+a12a6438dd344448ea3ed430f6304b5179c07e0d:
+  title: 'ALSA: hda/realtek: Fix the mic type detection issue for ASUS G551JW'
+  mainline: a3fd1a986e499a06ac5ef95c3a39aa4611e7444c
+0cef3d6365178cae90fa6873bd24e123c4991b79:
+  title: 'ALSA: hda/realtek - Add headset Mic support for Lenovo ALC897 platform'
+  mainline: d7f32791a9fcf0dae8b073cdea9b79e29098c5f4
+9c603c45f7a062f3f95cf63f2bd30656aa7e4869:
+  title: 'ALSA: hda/realtek - ALC897 headset MIC no sound'
+  mainline: fe6900bd8156467365bd5b976df64928fdebfeb0
+2b52c1d89d88fe46c263396d6a03bdaa946f80ab:
+  title: 'ALSA: hda/realtek: Add quirk for Lenovo TianYi510Pro-14IOB'
+  mainline: 4bf5bf54476dffe60e6b6d8d539f67309ff599e2
+c3378d349af0b3cfa731f780ce4f4a5b32e98326:
+  title: 'ALSA: hda/realtek: Enable headset onLenovo M70/M90'
+  mainline: 4ca110cab46561cd74a2acd9b447435acb4bec5f
+86d3937af58b1883a4864c1920dc1f0a94d1ec1a:
+  title: 'ALSA: hda/realtek: Enable headset on Lenovo M90 Gen5'
+  mainline: 6f7e4664e597440dfbdb8b2931c561b717030d07
+97ad753fc2535621640dceb6901fee3a189579b0:
+  title: 'staging: android: ashmem: Remove use of unlikely()'
+  mainline: 59848d6aded59a644bd3199033a9dc5a66d528f5
+cc4df094fab7ff5c72080d3139993b593e2eecc0:
+  title: 'net: warn if gso_type isn''t set for a GSO SKB'
+  mainline: 1d155dfdf50efc2b0793bce93c06d1a5b23d0877
+2dd12d177fc0e880d57f29006e9789827505ef32:
+  title: 'driver: staging: count ashmem_range into SLAB_RECLAIMBLE'
+  mainline: 3989f5a5f81c97732f9e3b3ae2d1d7923f6e7653
+c1b444cfadfcaa4febb4cd7c2485c7190b26cd21:
+  title: 'net: check dev->gso_max_size in gso_features_check()'
+  mainline: 24ab059d2ebd62fdccc43794796f6ffbabe49ebc
+c79ed0e007099e62a54ac8cf46ef510d539eeb85:
+  title: 'scsi: bnx2fc: Remove set but not used variable ''oxid'''
+  mainline: efcbe99818ac9bd93ac41e8cf954e9aa64dd9971
+041b7f92ebe014ec914efa59e83f72ab1dcbd335:
+  title: 'scsi: bnx2fc: Fix skb double free in bnx2fc_rcv()'
+  mainline: 08c94d80b2da481652fb633e79cbc41e9e326a91
+abd2c4dd779190715bddb438c4cd90a8ce61fe7f:
+  title: 'ANDROID: binder: Add thread->process_todo flag.'
+  mainline: 148ade2c4d4f46b3ecc1ddad1c762371e8708e35
+aaf0101b79c4375c4eafff78d1e4887b273681b2:
+  title: 'binder: signal epoll threads of self-work'
+  mainline: 97830f3c3088638ff90b20dfba2eb4d487bf14d7
