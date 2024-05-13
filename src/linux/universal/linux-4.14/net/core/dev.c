@@ -163,6 +163,7 @@ static DEFINE_SPINLOCK(offload_lock);
 struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head ptype_all __read_mostly;	/* Taps */
 static struct list_head offload_base __read_mostly;
+static struct workqueue_struct *napi_workq __read_mostly;
 
 static int netif_rx_internal(struct sk_buff *skb);
 static int call_netdevice_notifiers_info(unsigned long val,
@@ -1340,27 +1341,6 @@ void netdev_notify_peers(struct net_device *dev)
 	rtnl_unlock();
 }
 EXPORT_SYMBOL(netdev_notify_peers);
-
-static int napi_threaded_poll(void *data);
-
-static int napi_kthread_create(struct napi_struct *n)
-{
-	int err = 0;
-
-	/* Create and wake up the kthread once to put it in
-	 * TASK_INTERRUPTIBLE mode to avoid the blocked task
-	 * warning and work with loadavg.
-	 */
-	n->thread = kthread_run(napi_threaded_poll, n, "napi/%s-%d",
-				n->dev->name, n->napi_id);
-	if (IS_ERR(n->thread)) {
-		err = PTR_ERR(n->thread);
-		pr_err("kthread_run failed with err %d\n", err);
-		n->thread = NULL;
-	}
-
-	return err;
-}
 
 static int __dev_open(struct net_device *dev)
 {
@@ -3657,24 +3637,6 @@ int dev_tx_weight __read_mostly = 64;
 static inline void ____napi_schedule(struct softnet_data *sd,
 				     struct napi_struct *napi)
 {
-	struct task_struct *thread;
-
-	if (test_bit(NAPI_STATE_THREADED, &napi->state)) {
-		/* Paired with smp_mb__before_atomic() in
-		 * napi_enable()/dev_set_threaded().
-		 * Use READ_ONCE() to guarantee a complete
-		 * read on napi->thread. Only call
-		 * wake_up_process() when it's not NULL.
-		 */
-		thread = READ_ONCE(napi->thread);
-		if (thread) {
-			if (thread->state != TASK_INTERRUPTIBLE)
-				set_bit(NAPI_STATE_SCHED_THREADED, &napi->state);
-			wake_up_process(thread);
-			return;
-		}
-	}
-
 	list_add_tail(&napi->poll_list, &sd->poll_list);
 	__raise_softirq_irqoff(NET_RX_SOFTIRQ);
 }
@@ -5396,6 +5358,11 @@ void __napi_schedule(struct napi_struct *n)
 {
 	unsigned long flags;
 
+	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+		queue_work(napi_workq, &n->work);
+		return;
+	}
+
 	local_irq_save(flags);
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	local_irq_restore(flags);
@@ -5449,6 +5416,11 @@ EXPORT_SYMBOL(napi_schedule_prep);
  */
 void __napi_schedule_irqoff(struct napi_struct *n)
 {
+	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+		queue_work(napi_workq, &n->work);
+		return;
+	}
+
 	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
 		____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	else
@@ -5498,8 +5470,7 @@ bool napi_complete_done(struct napi_struct *n, int work_done)
 
 		WARN_ON_ONCE(!(val & NAPIF_STATE_SCHED));
 
-		new = val & ~(NAPIF_STATE_MISSED | NAPIF_STATE_SCHED |
-			      NAPIF_STATE_SCHED_THREADED);
+		new = val & ~(NAPIF_STATE_MISSED | NAPIF_STATE_SCHED);
 
 		/* If STATE_MISSED was set, leave STATE_SCHED set,
 		 * because we will call napi->poll() one more time.
@@ -5691,155 +5662,6 @@ static enum hrtimer_restart napi_watchdog(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
-int dev_set_threaded(struct net_device *dev, bool threaded)
-{
-	struct napi_struct *napi;
-	int err = 0;
-
-	if (dev->threaded == threaded)
-		return 0;
-
-	if (threaded) {
-		list_for_each_entry(napi, &dev->napi_list, dev_list) {
-			if (!napi->thread) {
-				err = napi_kthread_create(napi);
-				if (err) {
-					threaded = false;
-					break;
-				}
-			}
-		}
-	}
-
-	dev->threaded = threaded;
-
-	/* Make sure kthread is created before THREADED bit
-	 * is set.
-	 */
-	smp_mb__before_atomic();
-
-	/* Setting/unsetting threaded mode on a napi might not immediately
-	 * take effect, if the current napi instance is actively being
-	 * polled. In this case, the switch between threaded mode and
-	 * softirq mode will happen in the next round of napi_schedule().
-	 * This should not cause hiccups/stalls to the live traffic.
-	 */
-	list_for_each_entry(napi, &dev->napi_list, dev_list) {
-		if (threaded)
-			set_bit(NAPI_STATE_THREADED, &napi->state);
-		else
-			clear_bit(NAPI_STATE_THREADED, &napi->state);
-	}
-
-	return err;
-}
-EXPORT_SYMBOL(dev_set_threaded);
-
-void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
-		    int (*poll)(struct napi_struct *, int), int weight)
-{
-	int i;
-
-	INIT_LIST_HEAD(&napi->poll_list);
-	hrtimer_init(&napi->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
-	napi->timer.function = napi_watchdog;
-	napi->gro_bitmask = 0;
-	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
-		INIT_LIST_HEAD(&napi->gro_hash[i].list);
-		napi->gro_hash[i].count = 0;
-	}
-	napi->skb = NULL;
-	napi->poll = poll;
-	if (weight > NAPI_POLL_WEIGHT)
-		pr_err_once("netif_napi_add() called with weight %d on device %s\n",
-			    weight, dev->name);
-	napi->weight = weight;
-	napi->dev = dev;
-#ifdef CONFIG_NETPOLL
-	napi->poll_owner = -1;
-#endif
-	set_bit(NAPI_STATE_SCHED, &napi->state);
-	set_bit(NAPI_STATE_NPSVC, &napi->state);
-	list_add_rcu(&napi->dev_list, &dev->napi_list);
-	napi_hash_add(napi);
-	/* Create kthread for this napi if dev->threaded is set.
-	 * Clear dev->threaded if kthread creation failed so that
-	 * threaded mode will not be enabled in napi_enable().
-	 */
-	if (dev->threaded && napi_kthread_create(napi))
-		dev->threaded = 0;
-}
-EXPORT_SYMBOL(netif_napi_add);
-
-void napi_disable(struct napi_struct *n)
-{
-	might_sleep();
-	set_bit(NAPI_STATE_DISABLE, &n->state);
-
-	while (test_and_set_bit(NAPI_STATE_SCHED, &n->state))
-		msleep(1);
-	while (test_and_set_bit(NAPI_STATE_NPSVC, &n->state))
-		msleep(1);
-
-	hrtimer_cancel(&n->timer);
-
-	clear_bit(NAPI_STATE_DISABLE, &n->state);
-	clear_bit(NAPI_STATE_THREADED, &n->state);
-}
-EXPORT_SYMBOL(napi_disable);
-
-/**
- *	napi_enable - enable NAPI scheduling
- *	@n: NAPI context
- *
- * Resume NAPI from being scheduled on this context.
- * Must be paired with napi_disable.
- */
-void napi_enable(struct napi_struct *n)
-{
-	BUG_ON(!test_bit(NAPI_STATE_SCHED, &n->state));
-	smp_mb__before_atomic();
-	clear_bit(NAPI_STATE_SCHED, &n->state);
-	clear_bit(NAPI_STATE_NPSVC, &n->state);
-	if (n->dev->threaded && n->thread)
-		set_bit(NAPI_STATE_THREADED, &n->state);
-}
-EXPORT_SYMBOL(napi_enable);
-
-static void flush_gro_hash(struct napi_struct *napi)
-{
-	int i;
-
-	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
-		struct sk_buff *skb, *n;
-
-		list_for_each_entry_safe(skb, n, &napi->gro_hash[i].list, list)
-			kfree_skb(skb);
-		napi->gro_hash[i].count = 0;
-	}
-}
-
-/* Must be called in process context */
-void netif_napi_del(struct napi_struct *napi)
-{
-	might_sleep();
-	if (napi_hash_del(napi))
-		synchronize_net();
-	list_del_init(&napi->dev_list);
-	napi_free_frags(napi);
-
-	flush_gro_hash(napi);
-	napi->gro_bitmask = 0;
-
-
-	if (napi->thread) {
-		kthread_stop(napi->thread);
-		napi->thread = NULL;
-	}
-}
-EXPORT_SYMBOL(netif_napi_del);
-
-
 static int __napi_poll(struct napi_struct *n, bool *repoll)
 {
 	int work, weight;
@@ -5896,6 +5718,112 @@ static int __napi_poll(struct napi_struct *n, bool *repoll)
 	return work;
 }
 
+static void napi_workfn(struct work_struct *work)
+{
+	struct napi_struct *n = container_of(work, struct napi_struct, work);
+	void *have;
+
+	for (;;) {
+		bool repoll = false;
+
+		local_bh_disable();
+
+		have = netpoll_poll_lock(n);
+		__napi_poll(n, &repoll);
+		netpoll_poll_unlock(have);
+
+		local_bh_enable();
+
+		if (!repoll)
+			return;
+
+		if (!need_resched())
+			continue;
+
+		/*
+		 * have to pay for the latency of task switch even if
+		 * napi is scheduled
+		 */
+		queue_work(napi_workq, work);
+		return;
+	}
+}
+
+void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
+		    int (*poll)(struct napi_struct *, int), int weight)
+{
+	int i;
+
+	INIT_LIST_HEAD(&napi->poll_list);
+	hrtimer_init(&napi->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
+	napi->timer.function = napi_watchdog;
+	napi->gro_bitmask = 0;
+	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
+		INIT_LIST_HEAD(&napi->gro_hash[i].list);
+		napi->gro_hash[i].count = 0;
+	}
+	napi->skb = NULL;
+	napi->poll = poll;
+	if (weight > NAPI_POLL_WEIGHT)
+		pr_err_once("netif_napi_add() called with weight %d on device %s\n",
+			    weight, dev->name);
+	napi->weight = weight;
+	napi->dev = dev;
+#ifdef CONFIG_NETPOLL
+	napi->poll_owner = -1;
+#endif
+	INIT_WORK(&napi->work, napi_workfn);
+	set_bit(NAPI_STATE_SCHED, &napi->state);
+	set_bit(NAPI_STATE_NPSVC, &napi->state);
+	list_add_rcu(&napi->dev_list, &dev->napi_list);
+	napi_hash_add(napi);
+}
+EXPORT_SYMBOL(netif_napi_add);
+
+void napi_disable(struct napi_struct *n)
+{
+	might_sleep();
+	set_bit(NAPI_STATE_DISABLE, &n->state);
+
+	while (test_and_set_bit(NAPI_STATE_SCHED, &n->state))
+		msleep(1);
+	while (test_and_set_bit(NAPI_STATE_NPSVC, &n->state))
+		msleep(1);
+
+	hrtimer_cancel(&n->timer);
+
+	clear_bit(NAPI_STATE_DISABLE, &n->state);
+}
+EXPORT_SYMBOL(napi_disable);
+
+static void flush_gro_hash(struct napi_struct *napi)
+{
+	int i;
+
+	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
+		struct sk_buff *skb, *n;
+
+		list_for_each_entry_safe(skb, n, &napi->gro_hash[i].list, list)
+			kfree_skb(skb);
+		napi->gro_hash[i].count = 0;
+	}
+}
+
+/* Must be called in process context */
+void netif_napi_del(struct napi_struct *napi)
+{
+	might_sleep();
+	cancel_work_sync(&napi->work);
+	if (napi_hash_del(napi))
+		synchronize_net();
+	list_del_init(&napi->dev_list);
+	napi_free_frags(napi);
+
+	flush_gro_hash(napi);
+	napi->gro_bitmask = 0;
+}
+EXPORT_SYMBOL(netif_napi_del);
+
 static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 {
 	bool do_repoll = false;
@@ -5907,66 +5835,12 @@ static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 	have = netpoll_poll_lock(n);
 
 	work = __napi_poll(n, &do_repoll);
-
 	if (do_repoll)
 		list_add_tail(&n->poll_list, repoll);
 
 	netpoll_poll_unlock(have);
 
 	return work;
-}
-
-static int napi_thread_wait(struct napi_struct *napi)
-{
-	bool woken = false;
-
-	set_current_state(TASK_INTERRUPTIBLE);
-
-	while (!kthread_should_stop() && !napi_disable_pending(napi)) {
-		/* Testing SCHED_THREADED bit here to make sure the current
-		 * kthread owns this napi and could poll on this napi.
-		 * Testing SCHED bit is not enough because SCHED bit might be
-		 * set by some other busy poll thread or by napi_disable().
-		 */
-		if (test_bit(NAPI_STATE_SCHED_THREADED, &napi->state) || woken) {
-			WARN_ON(!list_empty(&napi->poll_list));
-			__set_current_state(TASK_RUNNING);
-			return 0;
-		}
-
-		schedule();
-		woken = true;
-		set_current_state(TASK_INTERRUPTIBLE);
-	}
-	__set_current_state(TASK_RUNNING);
-	return -1;
-}
-
-static int napi_threaded_poll(void *data)
-{
-	struct napi_struct *napi = data;
-	void *have;
-
-	while (!napi_thread_wait(napi)) {
-		for (;;) {
-			bool repoll = false;
-
-			local_bh_disable();
-
-			have = netpoll_poll_lock(napi);
-			__napi_poll(napi, &repoll);
-			netpoll_poll_unlock(have);
-
-			__kfree_skb_flush();
-			local_bh_enable();
-
-			if (!repoll)
-				break;
-
-			cond_resched();
-		}
-	}
-	return 0;
 }
 
 static __latent_entropy void net_rx_action(struct softirq_action *h)
@@ -9192,6 +9066,10 @@ static int __init net_dev_init(void)
 		sd->backlog.poll = process_backlog;
 		sd->backlog.weight = weight_p;
 	}
+
+	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_HIGHPRI,
+				     WQ_UNBOUND_MAX_ACTIVE);
+	BUG_ON(!napi_workq);
 
 	dev_boot_phase = 0;
 
