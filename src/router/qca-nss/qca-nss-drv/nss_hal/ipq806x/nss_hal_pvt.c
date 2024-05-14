@@ -1174,13 +1174,19 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 {
 	struct int_ctx_instance *int_ctx = &nss_ctx->int_ctx[irq_num];
 	int err;
-
+//	printk(KERN_INFO "%s: register irq %d npd irq %d ctx irq %d\n", __func__, irq_num, npd->irq[irq_num], int_ctx->irq);
 	if (irq_num == 1) {
 		int_ctx->shift_factor = 15;
-		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
+		if (npd->irq[irq_num]==43)
+			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
+		else
+			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
 	} else {
 		int_ctx->shift_factor = 0;
-		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss", int_ctx);
+		if (npd->irq[irq_num]==44)
+			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core1", int_ctx);
+		else
+			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core2", int_ctx);
 	}
 	if (err) {
 		nss_info_always("%px: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
@@ -1188,8 +1194,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	}
 
 	int_ctx->irq = npd->irq[irq_num];
-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
-	dev_set_threaded(&nss_ctx->napi_ndev, true);
+	netif_threaded_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
 
 	return 0;
 }
