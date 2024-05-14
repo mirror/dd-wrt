@@ -11690,7 +11690,7 @@ static int __init net_dev_init(void)
 		sd->backlog.weight = weight_p;
 	}
 
-	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_HIGHPRI,
+	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_SYSFS | WQ_HIGHPRI,
 				     WQ_UNBOUND_MAX_ACTIVE);
 	BUG_ON(!napi_workq);
 
