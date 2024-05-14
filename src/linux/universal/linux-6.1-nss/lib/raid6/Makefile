@@ -39,7 +39,8 @@ NEON_FLAGS := -ffreestanding $(DISABLE_LTO_GCC)
 # Enable <arm_neon.h>
 NEON_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
 ifeq ($(ARCH),arm)
-NEON_FLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=neon-vfpv4 
+NEON_FLAGS += $(ARMCPU) -mfloat-abi=softfp -mfpu=neon-vfpv4 
+#NEON_FLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=neon-vfpv4 
 endif
 CFLAGS_recov_neon_inner.o += $(NEON_FLAGS) 
 ifeq ($(ARCH),arm64)
