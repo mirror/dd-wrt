@@ -349,6 +349,15 @@ enum {
 	NAPI_STATE_THREADED,	/* Use threaded NAPI */
 };
 
+enum {
+	NAPIF_STATE_SCHED	 = BIT(NAPI_STATE_SCHED),
+	NAPIF_STATE_DISABLE	 = BIT(NAPI_STATE_DISABLE),
+	NAPIF_STATE_NPSVC	 = BIT(NAPI_STATE_NPSVC),
+	NAPIF_STATE_HASHED	 = BIT(NAPI_STATE_HASHED),
+	NAPIF_STATE_NO_BUSY_POLL = BIT(NAPI_STATE_NO_BUSY_POLL),
+	NAPIF_STATE_THREADED	 = BIT(NAPI_STATE_THREADED),
+};
+
 enum gro_result {
 	GRO_MERGED,
 	GRO_MERGED_FREE,
@@ -516,6 +525,9 @@ void napi_hash_add(struct napi_struct *napi);
  * the needed RCU grace periods into a single one.
  */
 bool napi_hash_del(struct napi_struct *napi);
+
+int dev_set_threaded(struct net_device *dev, bool threaded);
+int backlog_set_threaded(bool threaded);
 
 /**
  *	napi_disable - prevent NAPI from scheduling
@@ -2968,6 +2980,7 @@ struct softnet_data {
 	unsigned int		processed;
 	unsigned int		time_squeeze;
 	unsigned int		received_rps;
+	unsigned int		process_queue_empty;
 #ifdef CONFIG_RPS
 	struct softnet_data	*rps_ipi_list;
 #endif

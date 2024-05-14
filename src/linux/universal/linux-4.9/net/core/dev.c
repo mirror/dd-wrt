@@ -3776,7 +3776,7 @@ static void rps_trigger_softirq(void *data)
 {
 	struct softnet_data *sd = data;
 
-	____napi_schedule(sd, &sd->backlog);
+	__napi_schedule_irqoff(&sd->backlog);
 	sd->received_rps++;
 }
 
@@ -3792,7 +3792,7 @@ static int rps_ipi_queued(struct softnet_data *sd)
 #ifdef CONFIG_RPS
 	struct softnet_data *mysd = this_cpu_ptr(&softnet_data);
 
-	if (sd != mysd) {
+	if (sd != mysd && !test_bit(NAPI_STATE_THREADED, &sd->backlog.state)) {
 		sd->rps_ipi_next = mysd->rps_ipi_list;
 		mysd->rps_ipi_list = sd;
 
@@ -4458,6 +4458,8 @@ DEFINE_PER_CPU(struct work_struct, flush_works);
 /* Network device is going away, flush any packets still pending */
 static void flush_backlog(struct work_struct *work)
 {
+	unsigned int process_queue_empty;
+	bool threaded, flush_processq;
 	struct sk_buff *skb, *tmp;
 	struct softnet_data *sd;
 
@@ -4473,8 +4475,18 @@ static void flush_backlog(struct work_struct *work)
 			input_queue_head_incr(sd);
 		}
 	}
+
+	threaded = test_bit(NAPI_STATE_THREADED, &sd->backlog.state);
+	flush_processq = threaded &&
+			 !skb_queue_empty_lockless(&sd->process_queue);
+	if (flush_processq)
+		process_queue_empty = sd->process_queue_empty;
+
 	rps_unlock(sd);
 	local_irq_enable();
+
+	if (threaded)
+		goto out;
 
 	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
 		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
@@ -4485,7 +4497,17 @@ static void flush_backlog(struct work_struct *work)
 	}
 	if (!skb_queue_empty(&sd->tofree_queue))
 		raise_softirq_irqoff(NET_RX_SOFTIRQ);
+out:
 	local_bh_enable();
+
+	while (flush_processq) {
+		msleep(1);
+		local_irq_disable();
+		rps_lock(sd);
+		flush_processq = process_queue_empty == sd->process_queue_empty;
+		rps_unlock(sd);
+		local_irq_enable();
+	}
 
 }
 
@@ -5074,6 +5096,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 		}
 
 		rps_lock(sd);
+		sd->process_queue_empty++;
 		if (skb_queue_empty(&sd->input_pkt_queue)) {
 			/*
 			 * Inline a custom version of __napi_complete().
@@ -5083,7 +5106,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 			 * We can use a plain write instead of clear_bit(),
 			 * and we dont need an smp_mb() memory barrier.
 			 */
-			napi->state = 0;
+			napi->state &= ~NAPIF_STATE_SCHED;
 			again = false;
 		} else {
 			skb_queue_splice_tail_init(&sd->input_pkt_queue,
@@ -5395,6 +5418,53 @@ static void napi_workfn(struct work_struct *work)
 		return;
 	}
 }
+
+int dev_set_threaded(struct net_device *dev, bool threaded) 
+{
+	struct napi_struct *napi;
+
+	if (num_online_cpus() > 1) {
+
+		if (list_empty(&dev->napi_list))
+			return -EOPNOTSUPP;
+
+		list_for_each_entry(napi, &dev->napi_list, dev_list) {
+			if (threaded)
+				set_bit(NAPI_STATE_THREADED, &napi->state);
+			else
+				clear_bit(NAPI_STATE_THREADED, &napi->state);
+		}
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(dev_set_threaded);
+
+int backlog_set_threaded(bool threaded)
+{
+	static bool backlog_threaded;
+	int err = 0;
+	int i;
+
+	if (num_online_cpus() > 1) {
+		if (backlog_threaded == threaded)
+			return 0;
+
+		for_each_possible_cpu(i) {
+			struct softnet_data *sd = &per_cpu(softnet_data, i);
+			struct napi_struct *n = &sd->backlog;
+
+			if (threaded)
+				set_bit(NAPIF_STATE_THREADED, &n->state);
+			else
+				clear_bit(NAPIF_STATE_THREADED, &n->state);
+		}
+
+		backlog_threaded = threaded;
+	}
+	return 0;
+}
+EXPORT_SYMBOL(backlog_set_threaded);
 
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight)
@@ -8374,6 +8444,9 @@ static int dev_cpu_callback(struct notifier_block *nfb,
 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
 	local_irq_enable();
 	preempt_check_resched_rt();
+
+	if (test_bit(NAPI_STATE_THREADED, &oldsd->backlog.state))
+		return 0;
 
 	/* Process offline CPU's input_pkt_queue */
 	while ((skb = __skb_dequeue(&oldsd->process_queue))) {
