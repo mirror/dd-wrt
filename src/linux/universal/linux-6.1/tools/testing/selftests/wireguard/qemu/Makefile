@@ -87,7 +87,7 @@ ifeq ($(HOST_ARCH),$(ARCH))
 QEMU_MACHINE := -cpu host -machine virt,gic_version=host,accel=kvm
 else
 QEMU_MACHINE := -cpu max -machine virt
-CFLAGS += -march=armv7-a -mabi=aapcs-linux
+CFLAGS += $(ARMCPU) -mabi=aapcs-linux
 endif
 else ifeq ($(ARCH),armeb)
 CHOST := armeb-linux-musleabi
@@ -99,7 +99,7 @@ ifeq ($(HOST_ARCH),$(ARCH))
 QEMU_MACHINE := -cpu host -machine virt,gic_version=host,accel=kvm
 else
 QEMU_MACHINE := -cpu max -machine virt
-CFLAGS += -march=armv7-a -mabi=aapcs-linux
+CFLAGS += $(ARMCPU) -mabi=aapcs-linux
 LDFLAGS += -Wl,--be8
 endif
 else ifeq ($(ARCH),x86_64)

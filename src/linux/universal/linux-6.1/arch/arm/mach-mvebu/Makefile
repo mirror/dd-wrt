@@ -2,7 +2,7 @@
 ccflags-y := -I$(srctree)/arch/arm/plat-orion/include
 
 AFLAGS_coherency_ll.o		:= -Wa,-march=armv7-a
-CFLAGS_pmsu.o			:= -march=armv7-a
+CFLAGS_pmsu.o			:= $(ARMCPU)
 
 obj-$(CONFIG_MACH_MVEBU_ANY)	 += system-controller.o mvebu-soc-id.o
 
