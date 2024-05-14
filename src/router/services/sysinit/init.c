@@ -62,6 +62,7 @@ extern int nvram2file(char *varname, char *filename);
 static void set_systunes(void)
 {
 	writeprocsys("vm/dirty_writeback_centisecs", nvram_default_get("vm.dirty_writeback_centisecs", "1500"));
+	writeprocsys("net/core/backlog_threaded", "1");
 }
 
 static void set_tcp_params(void)
