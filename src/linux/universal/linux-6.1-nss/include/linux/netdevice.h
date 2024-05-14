@@ -367,7 +367,7 @@ struct napi_struct {
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
-	struct task_struct	*thread;
+	struct work_struct	work;
 };
 
 enum {
@@ -380,7 +380,6 @@ enum {
 	NAPI_STATE_IN_BUSY_POLL,	/* sk_busy_loop() owns this NAPI */
 	NAPI_STATE_PREFER_BUSY_POLL,	/* prefer busy-polling over softirq processing*/
 	NAPI_STATE_THREADED,		/* The poll is performed inside its own thread*/
-	NAPI_STATE_SCHED_THREADED,	/* Napi is currently scheduled in threaded mode */
 };
 
 enum {
@@ -393,7 +392,6 @@ enum {
 	NAPIF_STATE_IN_BUSY_POLL	= BIT(NAPI_STATE_IN_BUSY_POLL),
 	NAPIF_STATE_PREFER_BUSY_POLL	= BIT(NAPI_STATE_PREFER_BUSY_POLL),
 	NAPIF_STATE_THREADED		= BIT(NAPI_STATE_THREADED),
-	NAPIF_STATE_SCHED_THREADED	= BIT(NAPI_STATE_SCHED_THREADED),
 };
 
 enum gro_result {
@@ -536,7 +534,20 @@ int backlog_set_threaded(bool threaded);
  */
 void napi_disable(struct napi_struct *n);
 
-void napi_enable(struct napi_struct *n);
+/**
+ *	napi_enable - enable NAPI scheduling
+ *	@n: NAPI context
+ *
+ * Resume NAPI from being scheduled on this context.
+ * Must be paired with napi_disable.
+ */
+static inline void napi_enable(struct napi_struct *n)
+{
+	BUG_ON(!test_bit(NAPI_STATE_SCHED, &n->state));
+	smp_mb__before_atomic();
+	clear_bit(NAPI_STATE_SCHED, &n->state);
+	clear_bit(NAPI_STATE_NPSVC, &n->state);
+}
 
 /**
  *	napi_synchronize - wait until NAPI is not running
@@ -2404,7 +2415,6 @@ struct net_device {
 	struct lock_class_key	*qdisc_tx_busylock;
 	bool			proto_down;
 	unsigned		wol_enabled:1;
-	unsigned		threaded:1;
 
 	struct list_head	net_notifier_list;
 
@@ -2638,6 +2648,25 @@ netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	       int (*poll)(struct napi_struct *, int))
 {
 	netif_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+}
+
+
+static inline void netif_threaded_napi_add_weight(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int),
+					   int weight)
+{
+	if (num_online_cpus() > 1) {
+		set_bit(NAPI_STATE_THREADED, &napi->state);
+	}
+	netif_napi_add_weight(dev, napi, poll, weight);
+}
+
+static inline void netif_threaded_napi_add(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int))
+{
+	netif_threaded_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
 static inline void
