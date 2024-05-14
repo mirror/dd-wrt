@@ -581,44 +581,46 @@ static ssize_t phys_switch_id_show(struct device *dev,
 }
 static DEVICE_ATTR_RO(phys_switch_id);
 
-static ssize_t threaded_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
+static int change_napi_threaded(struct net_device *dev, unsigned long val)
 {
-	struct net_device *netdev = to_net_dev(dev);
-	ssize_t ret = -EINVAL;
-
-	if (!rtnl_trylock())
-		return restart_syscall();
-
-	if (dev_isalive(netdev))
-		ret = sysfs_emit(buf, fmt_dec, netdev->threaded);
-
-	rtnl_unlock();
-	return ret;
-}
-
-static int modify_napi_threaded(struct net_device *dev, unsigned long val)
-{
-	int ret;
+	struct napi_struct *napi;
 
 	if (list_empty(&dev->napi_list))
 		return -EOPNOTSUPP;
 
-	if (val != 0 && val != 1)
-		return -EOPNOTSUPP;
+	list_for_each_entry(napi, &dev->napi_list, dev_list) {
+		if (val)
+			set_bit(NAPI_STATE_THREADED, &napi->state);
+		else
+			clear_bit(NAPI_STATE_THREADED, &napi->state);
+	}
 
-	ret = dev_set_threaded(dev, val);
-
-	return ret;
+	return 0;
 }
 
-static ssize_t threaded_store(struct device *dev,
-			      struct device_attribute *attr,
-			      const char *buf, size_t len)
+static ssize_t napi_threaded_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t len)
 {
-	return netdev_store(dev, attr, buf, len, modify_napi_threaded);
+	return netdev_store(dev, attr, buf, len, change_napi_threaded);
 }
-static DEVICE_ATTR_RW(threaded);
+
+static ssize_t napi_threaded_show(struct device *dev,
+				  struct device_attribute *attr,
+				  char *buf)
+{
+	struct net_device *netdev = to_net_dev(dev);
+	struct napi_struct *napi;
+	bool enabled = false;
+
+	list_for_each_entry(napi, &netdev->napi_list, dev_list) {
+		if (test_bit(NAPI_STATE_THREADED, &napi->state))
+			enabled = true;
+	}
+
+	return sprintf(buf, fmt_dec, enabled);
+}
+DEVICE_ATTR_RW(napi_threaded);
 
 static struct attribute *net_class_attrs[] __ro_after_init = {
 	&dev_attr_netdev_group.attr,
@@ -652,7 +654,7 @@ static struct attribute *net_class_attrs[] __ro_after_init = {
 	&dev_attr_proto_down.attr,
 	&dev_attr_carrier_up_count.attr,
 	&dev_attr_carrier_down_count.attr,
-	&dev_attr_threaded.attr,
+	&dev_attr_napi_threaded.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(net_class);
