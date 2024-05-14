@@ -503,8 +503,8 @@ static struct ctl_table net_core_table[] = {
 		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
 		.proc_handler	= backlog_threaded_sysctl,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_ONE
+		.extra1		= &zero,
+		.extra2		= &one
 	},
 #ifdef CONFIG_NET_FLOW_LIMIT
 	{
