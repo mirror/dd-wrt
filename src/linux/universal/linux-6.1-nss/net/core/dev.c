@@ -4798,7 +4798,7 @@ static void rps_trigger_softirq(void *data)
 {
 	struct softnet_data *sd = data;
 
-	____napi_schedule(sd, &sd->backlog);
+	__napi_schedule_irqoff(&sd->backlog);
 	sd->received_rps++;
 }
 
@@ -6231,7 +6231,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 			 * We can use a plain write instead of clear_bit(),
 			 * and we dont need an smp_mb() memory barrier.
 			 */
-			napi->state &= ~(NAPIF_STATE_SCHED);
+			napi->state &= ~NAPIF_STATE_SCHED;
 			again = false;
 		} else {
 			skb_queue_splice_tail_init(&sd->input_pkt_queue,
@@ -6751,9 +6751,9 @@ int backlog_set_threaded(bool threaded)
 			struct napi_struct *n = &sd->backlog;
 
 			if (threaded)
-				set_bit(NAPI_STATE_THREADED, &n->state);
+				set_bit(NAPIF_STATE_THREADED, &n->state);
 			else
-				clear_bit(NAPI_STATE_THREADED, &n->state);
+				clear_bit(NAPIF_STATE_THREADED, &n->state);
 		}
 
 		backlog_threaded = threaded;
@@ -11347,7 +11347,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
 		oldsd->output_queue_tailp = &oldsd->output_queue;
 	}
 	/* Append NAPI poll list from offline CPU, with one exception :
-	 * process_backlog() must be called by cpu owning percpu backlog.
+	 * [5~process_backlog() must be called by cpu owning percpu backlog.
 	 * We properly handle process_queue & input_pkt_queue later.
 	 */
 	while (!list_empty(&oldsd->poll_list)) {
