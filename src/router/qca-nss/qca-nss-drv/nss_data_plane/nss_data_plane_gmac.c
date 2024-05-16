@@ -233,12 +233,14 @@ static bool nss_data_plane_register_to_nss_gmac(struct nss_ctx_instance *nss_ctx
  */
 static void nss_data_plane_unregister_from_nss_gmac(int if_num)
 {
-	nss_gmac_restore_data_plane(nss_data_plane_gmac_params[if_num].dev);
-	nss_data_plane_gmac_params[if_num].dev = NULL;
-	nss_data_plane_gmac_params[if_num].nss_ctx = NULL;
-	nss_data_plane_gmac_params[if_num].if_num = 0;
-	nss_data_plane_gmac_params[if_num].notify_open = 0;
-	nss_data_plane_gmac_params[if_num].bypass_nw_process = 0;
+	if (nss_data_plane_gmac_params[if_num].dev) {
+		nss_gmac_restore_data_plane(nss_data_plane_gmac_params[if_num].dev);
+		nss_data_plane_gmac_params[if_num].dev = NULL;
+		nss_data_plane_gmac_params[if_num].nss_ctx = NULL;
+		nss_data_plane_gmac_params[if_num].if_num = 0;
+		nss_data_plane_gmac_params[if_num].notify_open = 0;
+		nss_data_plane_gmac_params[if_num].bypass_nw_process = 0;
+	}
 }
 
 /*
@@ -250,6 +252,7 @@ static void __nss_data_plane_register(struct nss_ctx_instance *nss_ctx)
 
 	for (i = 0; i < NSS_DATA_PLANE_GMAC_MAX_INTERFACES; i++) {
 		if (!nss_data_plane_register_to_nss_gmac(nss_ctx, i)) {
+			nss_data_plane_gmac_params[i].dev = NULL;
 			nss_warning("%px: Register data plane failed for gmac:%d\n", nss_ctx, i);
 		} else {
 			nss_info("%px: Register data plan to gmac:%d success\n", nss_ctx, i);
@@ -267,6 +270,7 @@ static void __nss_data_plane_unregister(void)
 	for (core = 0; core < nss_top_main.num_nss; core++) {
 		for (i = 0; i < NSS_DATA_PLANE_GMAC_MAX_INTERFACES; i++) {
 			if (nss_top_main.nss[core].subsys_dp_register[i].ndev) {
+				printk(KERN_INFO "unregister core %d and if %d\n", core, i);
 				nss_data_plane_unregister_from_nss_gmac(i);
 				nss_core_unregister_subsys_dp(&nss_top_main.nss[core], i);
 			}
