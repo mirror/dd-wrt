@@ -1644,6 +1644,19 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 
 	cprintf("need reboot\n");
 	int need_reboot = websGetVari(wp, "need_reboot", 0);
+#ifdef HAVE_QCA_NSS
+	int sfe = nvram_geti("sfe");
+	char *newsfe = websGetVar(wp, "sfe", NULL);
+	if (newsfe) {
+	    if (newsfe > 1 && sfe < 2)
+		need_reboot = 1;
+	    if (newsfe < 2 && sfe > 1)
+		need_reboot = 1;
+	if (need_reboot)
+		nvram_seti("do_reboot", 1);
+	}
+	
+#else
 	if (*nvram_safe_get("ctf_disable")) {
 		char *sfe = websGetVar(wp, "sfe", NULL);
 		char *fa = websGetVar(wp, "ctf_fa_mode", NULL);
@@ -1663,6 +1676,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 		if (need_reboot)
 			nvram_seti("do_reboot", 1);
 	}
+#endif
 	if (*nvram_safe_get("vlans")) {
 		char *vlans = websGetVar(wp, "vlans", NULL);
 		if (vlans && nvram_match("vlans", "1")) {
