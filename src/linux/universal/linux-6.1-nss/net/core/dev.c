@@ -5617,7 +5617,7 @@ skip_classify:
 		goto skip_fast_recv;
 	}
 
-	athrs_fast_recv = rcu_dereference(fast_nat_recv);
+	athrs_fast_recv = rcu_dereference(athrs_fast_nat_recv);
 	if (athrs_fast_recv) {
 		if (pt_prev) {
 			ret = deliver_skb(skb, pt_prev, orig_dev);
