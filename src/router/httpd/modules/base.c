@@ -1648,9 +1648,10 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	int sfe = nvram_geti("sfe");
 	char *newsfe = websGetVar(wp, "sfe", NULL);
 	if (newsfe) {
-	    if (newsfe > 1 && sfe < 2)
+		need_reboot = 0;
+	    if (atoi(newsfe) > 1 && sfe < 2)
 		need_reboot = 1;
-	    if (newsfe < 2 && sfe > 1)
+	    if (atoi(newsfe) < 2 && sfe > 1)
 		need_reboot = 1;
 	if (need_reboot)
 		nvram_seti("do_reboot", 1);
