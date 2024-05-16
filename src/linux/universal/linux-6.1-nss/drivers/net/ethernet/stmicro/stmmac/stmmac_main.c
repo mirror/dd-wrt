@@ -6939,15 +6939,15 @@ static void stmmac_napi_add(struct net_device *dev)
 		spin_lock_init(&ch->lock);
 
 		if (queue < priv->plat->rx_queues_to_use) {
-			netif_napi_add(dev, &ch->rx_napi, stmmac_napi_poll_rx);
+			netif_threaded_napi_add(dev, &ch->rx_napi, stmmac_napi_poll_rx);
 		}
 		if (queue < priv->plat->tx_queues_to_use) {
-			netif_napi_add_tx(dev, &ch->tx_napi,
+			netif_threaded_napi_add_tx(dev, &ch->tx_napi,
 					  stmmac_napi_poll_tx);
 		}
 		if (queue < priv->plat->rx_queues_to_use &&
 		    queue < priv->plat->tx_queues_to_use) {
-			netif_napi_add(dev, &ch->rxtx_napi,
+			netif_threaded_napi_add(dev, &ch->rxtx_napi,
 				       stmmac_napi_poll_rxtx);
 		}
 	}

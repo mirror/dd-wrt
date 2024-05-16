@@ -2679,6 +2679,17 @@ netif_napi_add_tx_weight(struct net_device *dev,
 	netif_napi_add_weight(dev, napi, poll, weight);
 }
 
+static inline void
+netif_threaded_napi_add_tx_weight(struct net_device *dev,
+			 struct napi_struct *napi,
+			 int (*poll)(struct napi_struct *, int),
+			 int weight)
+{
+	set_bit(NAPI_STATE_NO_BUSY_POLL, &napi->state);
+	netif_threaded_napi_add_weight(dev, napi, poll, weight);
+}
+
+
 /**
  * netif_napi_add_tx() - initialize a NAPI context to be used for Tx only
  * @dev:  network device
@@ -2694,6 +2705,13 @@ static inline void netif_napi_add_tx(struct net_device *dev,
 				     int (*poll)(struct napi_struct *, int))
 {
 	netif_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+}
+
+static inline void netif_threaded_napi_add_tx(struct net_device *dev,
+				     struct napi_struct *napi,
+				     int (*poll)(struct napi_struct *, int))
+{
+	netif_threaded_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
 /**

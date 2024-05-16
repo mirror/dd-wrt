@@ -503,7 +503,6 @@
 
 &gmac0 {
 	status = "okay";
-	compatible = "qcom,nss-gmac";
 	qcom,id = <0>;
 	qcom,pcs-chanid = <0>;
 	qcom,phy-mdio-addr = <4>;
@@ -530,7 +529,6 @@
 
 &gmac1 {
 	status = "okay";
-	compatible = "qcom,nss-gmac";
 	qcom,id = <1>;
 	qcom,pcs-chanid = <1>;
 	qcom,phy-mdio-addr = <0>;
