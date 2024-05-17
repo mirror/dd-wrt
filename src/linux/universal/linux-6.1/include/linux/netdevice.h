@@ -2669,7 +2669,7 @@ static inline void netif_threaded_napi_add_tx(struct net_device *dev,
 				     struct napi_struct *napi,
 				     int (*poll)(struct napi_struct *, int))
 {
-	netif_threadd_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+	netif_threaded_napi_add_tx_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
 /**
