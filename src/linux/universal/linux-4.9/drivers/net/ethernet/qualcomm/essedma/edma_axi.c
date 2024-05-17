@@ -74,7 +74,7 @@ static int jumbo_mru = EDMA_RX_HEAD_BUFF_SIZE;
 module_param(jumbo_mru, int, 0);
 MODULE_PARM_DESC(jumbo_mru, "enable fraglist support");
 
-static int num_rxq = 4;
+static int num_rxq = 8;
 module_param(num_rxq, int, 0);
 MODULE_PARM_DESC(num_rxq, "change the number of rx queues");
 
