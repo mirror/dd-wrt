@@ -1121,12 +1121,17 @@ static int edma_axi_probe(struct platform_device *pdev)
 	for (i = 0; i < CONFIG_NR_CPUS; i++) {
 		u8 rx_start;
 
-		edma_cinfo->edma_percpu_info[i].napi.state = 0;
+		edma_cinfo->edma_percpu_info[i].rx_napi.state = 0;
+		edma_cinfo->edma_percpu_info[i].tx_napi.state = 0;
 
 		netif_threaded_napi_add(edma_netdev[0],
-			       &edma_cinfo->edma_percpu_info[i].napi,
-			       edma_poll, 64);
-		napi_enable(&edma_cinfo->edma_percpu_info[i].napi);
+			       &edma_cinfo->edma_percpu_info[i].rx_napi,
+			       rx_edma_poll, 64);
+		netif_threaded_tx_napi_add(edma_netdev[0],
+			       &edma_cinfo->edma_percpu_info[i].tx_napi,
+			       tx_edma_poll, 64);
+		napi_enable(&edma_cinfo->edma_percpu_info[i].rx_napi);
+		napi_enable(&edma_cinfo->edma_percpu_info[i].tx_napi);
 		edma_cinfo->edma_percpu_info[i].tx_mask = tx_mask[i];
 		edma_cinfo->edma_percpu_info[i].rx_mask = EDMA_RX_PER_CPU_MASK
 				<< (i << EDMA_RX_PER_CPU_MASK_SHIFT);
@@ -1143,7 +1148,7 @@ static int edma_axi_probe(struct platform_device *pdev)
 		     j < tx_start[i] + 4; j++) {
 			sprintf(&edma_tx_irq[j][0], "edma_eth_tx%d", j);
 			err = request_irq(edma_cinfo->tx_irq[j],
-					  edma_interrupt,
+					  tx_edma_interrupt,
 					  0,
 					  &edma_tx_irq[j][0],
 					  &edma_cinfo->edma_percpu_info[i]);
@@ -1157,7 +1162,7 @@ static int edma_axi_probe(struct platform_device *pdev)
 		     j++) {
 			sprintf(&edma_rx_irq[j][0], "edma_eth_rx%d", j);
 			err = request_irq(edma_cinfo->rx_irq[j],
-					  edma_interrupt,
+					  rx_edma_interrupt,
 					  0,
 					  &edma_rx_irq[j][0],
 					  &edma_cinfo->edma_percpu_info[i]);
@@ -1266,8 +1271,10 @@ err_configure:
 #endif
 err_rmap_add_fail:
 	edma_free_irqs(adapter[0]);
-	for (i = 0; i < CONFIG_NR_CPUS; i++)
-		napi_disable(&edma_cinfo->edma_percpu_info[i].napi);
+	for (i = 0; i < CONFIG_NR_CPUS; i++) {
+		napi_disable(&edma_cinfo->edma_percpu_info[i].rx_napi);
+		napi_disable(&edma_cinfo->edma_percpu_info[i].tx_napi);
+	}
 err_reset:
 err_unregister_sysctl_tbl:
 err_rmap_alloc_fail:
@@ -1314,8 +1321,10 @@ static int edma_axi_remove(struct platform_device *pdev)
 		unregister_netdev(edma_netdev[i]);
 
 	edma_stop_rx_tx(hw);
-	for (i = 0; i < CONFIG_NR_CPUS; i++)
-		napi_disable(&edma_cinfo->edma_percpu_info[i].napi);
+	for (i = 0; i < CONFIG_NR_CPUS; i++) {
+		napi_disable(&edma_cinfo->edma_percpu_info[i].rx_napi);
+		napi_disable(&edma_cinfo->edma_percpu_info[i].tx_napi);
+	}
 
 	edma_irq_disable(edma_cinfo);
 	edma_write_reg(EDMA_REG_RX_ISR, 0xff);

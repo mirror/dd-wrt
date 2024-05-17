@@ -2072,13 +2072,13 @@ int edma_close(struct net_device *netdev)
  * is clear irq status -> clear_tx_irq -> clean_rx_irq->
  * enable interrupts.
  */
-int edma_poll(struct napi_struct *napi, int budget)
+int rx_edma_poll(struct napi_struct *napi, int budget)
 {
 	struct edma_per_cpu_queues_info *edma_percpu_info = container_of(napi,
-		struct edma_per_cpu_queues_info, napi);
+		struct edma_per_cpu_queues_info, rx_napi);
 	struct edma_common_info *edma_cinfo = edma_percpu_info->edma_cinfo;
 	u32 reg_data;
-	u32 shadow_rx_status, shadow_tx_status;
+	u32 shadow_rx_status;
 	int queue_id;
 	int i, work_done = 0;
 	u16 rx_pending_fill;
@@ -2089,22 +2089,6 @@ int edma_poll(struct napi_struct *napi, int budget)
 	edma_read_reg(EDMA_REG_RX_ISR, &reg_data);
 	edma_percpu_info->rx_status |= reg_data & edma_percpu_info->rx_mask;
 	shadow_rx_status = edma_percpu_info->rx_status;
-	edma_read_reg(EDMA_REG_TX_ISR, &reg_data);
-	edma_percpu_info->tx_status |= reg_data & edma_percpu_info->tx_mask;
-	shadow_tx_status = edma_percpu_info->tx_status;
-
-	/* Every core will have a start, which will be computed
-	 * in probe and stored in edma_percpu_info->tx_start variable.
-	 * We will shift the status bit by tx_start to obtain
-	 * status bits for the core on which the current processing
-	 * is happening. Since, there are 4 tx queues per core,
-	 * we will run the loop till we get the correct queue to clear.
-	 */
-	while (edma_percpu_info->tx_status) {
-		queue_id = ffs(edma_percpu_info->tx_status) - 1;
-		edma_tx_complete(edma_cinfo, queue_id);
-		edma_percpu_info->tx_status &= ~(1 << queue_id);
-	}
 
 	/* Every core will have a start, which will be computed
 	 * in probe and stored in edma_percpu_info->tx_start variable.
@@ -2137,7 +2121,6 @@ int edma_poll(struct napi_struct *napi, int budget)
 	 * reflect that the packet transmission/reception went fine.
 	 */
 	edma_write_reg(EDMA_REG_RX_ISR, shadow_rx_status);
-	edma_write_reg(EDMA_REG_TX_ISR, shadow_tx_status);
 
 	/* If budget not fully consumed, exit the polling mode */
 	if (likely(work_done < budget)) {
@@ -2146,6 +2129,54 @@ int edma_poll(struct napi_struct *napi, int budget)
 		/* re-enable the interrupts */
 		for (i = 0; i < edma_cinfo->num_rxq_per_core; i++)
 			edma_write_reg(EDMA_REG_RX_INT_MASK_Q(edma_percpu_info->rx_start + i), 0x1);
+	}
+
+	return work_done;
+}
+
+int tx_edma_poll(struct napi_struct *napi, int budget)
+{
+	struct edma_per_cpu_queues_info *edma_percpu_info = container_of(napi,
+		struct edma_per_cpu_queues_info, tx_napi);
+	struct edma_common_info *edma_cinfo = edma_percpu_info->edma_cinfo;
+	u32 reg_data;
+	u32 shadow_tx_status;
+	int queue_id;
+	int i, work_done = 0;
+
+	/* Store the Rx/Tx status by ANDing it with
+	 * appropriate CPU RX?TX mask
+	 */
+	edma_read_reg(EDMA_REG_TX_ISR, &reg_data);
+	edma_percpu_info->tx_status |= reg_data & edma_percpu_info->tx_mask;
+	shadow_tx_status = edma_percpu_info->tx_status;
+
+	/* Every core will have a start, which will be computed
+	 * in probe and stored in edma_percpu_info->tx_start variable.
+	 * We will shift the status bit by tx_start to obtain
+	 * status bits for the core on which the current processing
+	 * is happening. Since, there are 4 tx queues per core,
+	 * we will run the loop till we get the correct queue to clear.
+	 */
+	while (edma_percpu_info->tx_status) {
+		queue_id = ffs(edma_percpu_info->tx_status) - 1;
+		edma_tx_complete(edma_cinfo, queue_id);
+		edma_percpu_info->tx_status &= ~(1 << queue_id);
+	}
+
+	/* Clear the status register, to avoid the interrupts to
+	 * reoccur.This clearing of interrupt status register is
+	 * done here as writing to status register only takes place
+	 * once the  producer/consumer index has been updated to
+	 * reflect that the packet transmission/reception went fine.
+	 */
+	edma_write_reg(EDMA_REG_TX_ISR, shadow_tx_status);
+
+	/* If budget not fully consumed, exit the polling mode */
+	if (likely(work_done < budget)) {
+		napi_complete(napi);
+
+		/* re-enable the interrupts */
 		for (i = 0; i < edma_cinfo->num_txq_per_core; i++)
 			edma_write_reg(EDMA_REG_TX_INT_MASK_Q(edma_percpu_info->tx_start + i), 0x1);
 	}
@@ -2156,7 +2187,21 @@ int edma_poll(struct napi_struct *napi, int budget)
 /* edma interrupt()
  *	interrupt handler
  */
-irqreturn_t edma_interrupt(int irq, void *dev)
+irqreturn_t tx_edma_interrupt(int irq, void *dev)
+{
+	struct edma_per_cpu_queues_info *edma_percpu_info = (struct edma_per_cpu_queues_info *) dev;
+	struct edma_common_info *edma_cinfo = edma_percpu_info->edma_cinfo;
+	int i;
+
+	for (i = 0; i < edma_cinfo->num_txq_per_core; i++)
+		edma_write_reg(EDMA_REG_TX_INT_MASK_Q(edma_percpu_info->tx_start + i), 0x0);
+
+	napi_schedule(&edma_percpu_info->tx_napi);
+
+	return IRQ_HANDLED;
+}
+
+irqreturn_t rx_edma_interrupt(int irq, void *dev)
 {
 	struct edma_per_cpu_queues_info *edma_percpu_info = (struct edma_per_cpu_queues_info *) dev;
 	struct edma_common_info *edma_cinfo = edma_percpu_info->edma_cinfo;
@@ -2166,10 +2211,7 @@ irqreturn_t edma_interrupt(int irq, void *dev)
 	for (i = 0; i < edma_cinfo->num_rxq_per_core; i++)
 		edma_write_reg(EDMA_REG_RX_INT_MASK_Q(edma_percpu_info->rx_start + i), 0x0);
 
-	for (i = 0; i < edma_cinfo->num_txq_per_core; i++)
-		edma_write_reg(EDMA_REG_TX_INT_MASK_Q(edma_percpu_info->tx_start + i), 0x0);
-
-	napi_schedule(&edma_percpu_info->napi);
+	napi_schedule(&edma_percpu_info->rx_napi);
 
 	return IRQ_HANDLED;
 }

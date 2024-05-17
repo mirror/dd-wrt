@@ -297,7 +297,8 @@ struct edma_sw_desc {
 
 /* per core related information */
 struct edma_per_cpu_queues_info {
-	struct napi_struct napi; /* napi associated with the core */
+	struct napi_struct rx_napi; /* napi associated with the core */
+	struct napi_struct tx_napi; /* napi associated with the core */
 	u32 tx_mask; /* tx interrupt mask */
 	u32 rx_mask; /* rx interrupt mask */
 	u32 tx_status; /* tx interrupt status */
@@ -420,7 +421,8 @@ void edma_free_rx_rings(struct edma_common_info *edma_cinfo);
 void edma_free_queues(struct edma_common_info *edma_cinfo);
 void edma_irq_disable(struct edma_common_info *edma_cinfo);
 int edma_reset(struct edma_common_info *edma_cinfo);
-int edma_poll(struct napi_struct *napi, int budget);
+int rx_edma_poll(struct napi_struct *napi, int budget);
+int tx_edma_poll(struct napi_struct *napi, int budget);
 netdev_tx_t edma_xmit(struct sk_buff *skb,
 		struct net_device *netdev);
 int edma_configure(struct edma_common_info *edma_cinfo);
@@ -429,7 +431,8 @@ void edma_enable_tx_ctrl(struct edma_hw *hw);
 void edma_enable_rx_ctrl(struct edma_hw *hw);
 void edma_stop_rx_tx(struct edma_hw *hw);
 void edma_free_irqs(struct edma_adapter *adapter);
-irqreturn_t edma_interrupt(int irq, void *dev);
+irqreturn_t rx_edma_interrupt(int irq, void *dev);
+irqreturn_t tx_edma_interrupt(int irq, void *dev);
 void edma_write_reg(u16 reg_addr, u32 reg_value);
 void edma_read_reg(u16 reg_addr, volatile u32 *reg_value);
 struct net_device_stats *edma_get_stats(struct net_device *netdev);
