@@ -462,17 +462,17 @@ int wil_if_add(struct wil6210_priv *wil)
 	init_dummy_netdev(&wil->napi_ndev);
 	strcpy(wil->napi_ndev.name, "wil6210-napi");
 	if (wil->use_enhanced_dma_hw) {
-		netif_napi_add(&wil->napi_ndev, &wil->napi_rx,
+		netif_threaded_napi_add(&wil->napi_ndev, &wil->napi_rx,
 			       wil6210_netdev_poll_rx_edma,
 			       WIL6210_NAPI_BUDGET);
-		netif_tx_napi_add(&wil->napi_ndev,
+		netif_threaded_tx_napi_add(&wil->napi_ndev,
 				  &wil->napi_tx, wil6210_netdev_poll_tx_edma,
 				  WIL6210_NAPI_BUDGET);
 	} else {
-		netif_napi_add(&wil->napi_ndev, &wil->napi_rx,
+		netif_threaded_napi_add(&wil->napi_ndev, &wil->napi_rx,
 			       wil6210_netdev_poll_rx,
 			       WIL6210_NAPI_BUDGET);
-		netif_tx_napi_add(&wil->napi_ndev,
+		netif_threaded_tx_napi_add(&wil->napi_ndev,
 				  &wil->napi_tx, wil6210_netdev_poll_tx,
 				  WIL6210_NAPI_BUDGET);
 	}

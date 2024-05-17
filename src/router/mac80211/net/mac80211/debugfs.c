@@ -731,8 +731,7 @@ void debugfs_hw_add(struct ieee80211_local *local)
 	DEBUGFS_ADD_MODE(aql_enable, 0600);
 	DEBUGFS_ADD(aql_pending);
 
-	if (local->ops->wake_tx_queue)
-		DEBUGFS_ADD_MODE_MAC80211(aqm, 0600);
+	DEBUGFS_ADD_MODE_MAC80211(aqm, 0600);
 
 	DEBUGFS_ADD_MODE(airtime_flags, 0600);
 	DEBUGFS_ADD_MODE(turboqam, 0600);

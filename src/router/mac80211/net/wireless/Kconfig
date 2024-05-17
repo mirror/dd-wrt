@@ -3,7 +3,7 @@ config CFG80211
 	tristate "cfg80211 - wireless configuration API"
 	depends on m
 	depends on RFKILL || !RFKILL
-	depends on FW_LOADER
+#	depends on FW_LOADER
 	# may need to update this when certificates are changed and are
 	# using a different algorithm, though right now they shouldn't
 	# (this is here rather than below to allow it to be a module)

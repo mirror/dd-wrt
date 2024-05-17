@@ -26,6 +26,7 @@
 #include <net/codel_impl.h>
 #include <asm/unaligned.h>
 #include <net/fq_impl.h>
+#include <net/udp.h>
 
 #include "ieee80211_i.h"
 #include "driver-ops.h"
@@ -36,6 +37,11 @@
 #include "wme.h"
 #include "rate.h"
 #include "tdma/tdma_i.h"
+
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+#include <net/ip.h>
+#include <net/dsfield.h>
+#endif
 
 /* misc utils */
 
@@ -1088,7 +1094,6 @@ static bool ieee80211_tx_prep_agg(struct ieee80211_tx_data *tx,
 	struct sk_buff *purge_skb = NULL;
 
 	if (test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {
-		info->flags |= IEEE80211_TX_CTL_AMPDU;
 		reset_agg_timer = true;
 	} else if (test_bit(HT_AGG_STATE_WANT_START, &tid_tx->state)) {
 		/*
@@ -1120,7 +1125,6 @@ static bool ieee80211_tx_prep_agg(struct ieee80211_tx_data *tx,
 		if (!tid_tx) {
 			/* do nothing, let packet pass through */
 		} else if (test_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state)) {
-			info->flags |= IEEE80211_TX_CTL_AMPDU;
 			reset_agg_timer = true;
 		} else {
 			queued = true;
@@ -1302,7 +1306,7 @@ static struct txq_info *ieee80211_get_txq(struct ieee80211_local *local,
 			return NULL;
 
 		txq = sta->sta.txq[tid];
-	} else if (vif) {
+	} else {
 		txq = vif->txq;
 	}
 
@@ -1555,6 +1559,12 @@ void ieee80211_txq_set_params(struct ieee80211_local *local)
 		local->hw.wiphy->txq_quantum = local->fq.quantum;
 }
 
+#ifdef CONFIG_ARCH_QCOM
+#define MEMLIMIT 128000
+#else
+#define MEMLIMIT 120000
+#endif
+
 int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 {
 	struct fq *fq = &local->fq;
@@ -1562,9 +1572,6 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 	int i;
 	bool supp_vht = false;
 	enum nl80211_band band;
-
-	if (!local->ops->wake_tx_queue)
-		return 0;
 
 	ret = fq_init(fq, 4096);
 	if (ret)
@@ -1592,8 +1599,17 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 #elif defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6)
 	if (!supp_vht)
 		fq->memory_limit = 4 << 20; /* 4M */
-	else
+	else {
+		struct sysinfo i;
 		fq->memory_limit = 32 << 20; /* 32M */
+		si_meminfo(&i);
+#define K(x) ((x) << (PAGE_SHIFT - 10))
+		if (K(i.totalram) < MEMLIMIT) {
+			printk(KERN_INFO
+			       "TXQ: Device has less than 128MB RAM, enable low memory handling\n");
+			fq->memory_limit = 16 << 20; /* 16M */
+		}
+	}
 #elif defined(CONFIG_ARCH_CNS3XXX)
 	if (!supp_vht)
 		fq->memory_limit = 4 << 20; /* 4M */
@@ -1650,9 +1666,6 @@ void ieee80211_txq_teardown_flows(struct ieee80211_local *local)
 {
 	struct fq *fq = &local->fq;
 
-	if (!local->ops->wake_tx_queue)
-		return;
-
 	kfree(local->cvars);
 	local->cvars = NULL;
 
@@ -1669,8 +1682,7 @@ static bool ieee80211_queue_skb(struct ieee80211_local *local,
 	struct ieee80211_vif *vif;
 	struct txq_info *txqi;
 
-	if (!local->ops->wake_tx_queue ||
-	    sdata->vif.type == NL80211_IFTYPE_MONITOR)
+	if (sdata->vif.type == NL80211_IFTYPE_MONITOR)
 		return false;
 
 	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
@@ -1733,6 +1745,16 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 					return true;
 				}
 			} else {
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+				if (skb_queue_len(&local->pending[q]) >= 1000) {
+					spin_unlock_irqrestore(
+						&local->queue_stop_reason_lock,
+						flags);
+					ieee80211_purge_tx_queue(&local->hw,
+								 skbs);
+					return false;
+				}
+#endif
 
 				/*
 				 * Since queue is stopped, queue up frames for
@@ -2331,6 +2353,10 @@ netdev_tx_t ieee80211_monitor_start_xmit(struct sk_buff *skb,
 	u16 len_rthdr;
 	int hdrlen;
 
+	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	if (unlikely(!ieee80211_sdata_running(sdata)))
+		goto fail;
+
 	memset(info, 0, sizeof(*info));
 	info->flags = IEEE80211_TX_CTL_REQ_TX_STATUS |
 		      IEEE80211_TX_CTL_INJECTED;
@@ -2390,8 +2416,6 @@ netdev_tx_t ieee80211_monitor_start_xmit(struct sk_buff *skb,
 	 * This is necessary, for example, for old hostapd versions that
 	 * don't use nl80211-based management TX/RX.
 	 */
-	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-
 	list_for_each_entry_rcu(tmp_sdata, &local->interfaces, list) {
 		if (!ieee80211_sdata_running(tmp_sdata))
 			continue;
@@ -3778,8 +3802,7 @@ static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	info->band = fast_tx->band;
 	info->control.vif = &sdata->vif;
 	info->flags = IEEE80211_TX_CTL_FIRST_FRAGMENT |
-		      IEEE80211_TX_CTL_DONTFRAG |
-		      (tid_tx ? IEEE80211_TX_CTL_AMPDU : 0);
+		      IEEE80211_TX_CTL_DONTFRAG;
 	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT;
 
 #ifdef CPTCFG_MAC80211_DEBUGFS
@@ -3834,6 +3857,8 @@ struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
 	struct ieee80211_tx_data tx;
 	ieee80211_tx_result r;
 	struct ieee80211_vif *vif = txq->vif;
+	int q = vif->hw_queue[txq->ac];
+	bool q_stopped;
 
 	WARN_ON_ONCE(softirq_count() == 0);
 
@@ -3841,16 +3866,17 @@ struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
 		return NULL;
 
 begin:
-	spin_lock_bh(&fq->lock);
+	spin_lock(&local->queue_stop_reason_lock);
+	q_stopped = local->queue_stop_reasons[q];
+	spin_unlock(&local->queue_stop_reason_lock);
 
-	if (test_bit(IEEE80211_TXQ_STOP, &txqi->flags) ||
-	    test_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags))
-		goto out;
-
-	if (vif->txqs_stopped[txq->ac]) {
-		set_bit(IEEE80211_TXQ_STOP_NETIF_TX, &txqi->flags);
-		goto out;
+	if (unlikely(q_stopped)) {
+		/* mark for waking later */
+		set_bit(IEEE80211_TXQ_DIRTY, &txqi->flags);
+		return NULL;
 	}
+
+	spin_lock_bh(&fq->lock);
 
 	/* Make sure fragments stay together. */
 	skb = __skb_dequeue(&txqi->frags);
@@ -3861,6 +3887,9 @@ begin:
 		IEEE80211_SKB_CB(skb)->control.flags &=
 			~IEEE80211_TX_INTCFL_NEED_TXPROCESSING;
 	} else {
+		if (unlikely(test_bit(IEEE80211_TXQ_STOP, &txqi->flags)))
+			goto out;
+
 		skb = fq_tin_dequeue(fq, tin, fq_tin_dequeue_func);
 	}
 
@@ -3911,9 +3940,8 @@ begin:
 	}
 
 	if (test_bit(IEEE80211_TXQ_AMPDU, &txqi->flags))
-		info->flags |= IEEE80211_TX_CTL_AMPDU;
-	else
-		info->flags &= ~IEEE80211_TX_CTL_AMPDU;
+		info->flags |= (IEEE80211_TX_CTL_AMPDU |
+				IEEE80211_TX_CTL_DONTFRAG);
 
 	if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
 		if (!ieee80211_hw_check(&local->hw, HAS_RATE_CONTROL)) {
@@ -4302,7 +4330,7 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	struct sk_buff *next;
 	int len = skb->len;
 
-	if (unlikely(skb->len < ETH_HLEN)) {
+	if (unlikely(!ieee80211_sdata_running(sdata) || skb->len < ETH_HLEN)) {
 		kfree_skb(skb);
 		return;
 	}
@@ -4321,14 +4349,7 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	if (IS_ERR(sta))
 		sta = NULL;
 
-	if (local->ops->wake_tx_queue) {
-		u16 queue = __ieee80211_select_queue(sdata, sta, skb);
-		skb_set_queue_mapping(skb, queue);
-#if LINUX_VERSION_IS_GEQ(4,4,0)
-		skb_get_hash(skb);
-#endif
-	}
-
+	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
 	ieee80211_aggr_check(sdata, sta, skb);
 
 	if (sta) {
@@ -4507,6 +4528,35 @@ out:
 	rcu_read_unlock();
 }
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+void ieee80211_xmit_nss_fixup(struct sk_buff *skb,
+			      struct net_device *dev)
+{
+	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
+	/* Packets from NSS does not have valid protocol, priority and other
+	 * network stack values. Derive required parameters (priority
+	 * and network_header) from payload for QoS header.
+	 * XXX: Here the assumption is that packet are in 802.3 format.
+	 * As of now priority is handled only for IPv4 and IPv6.
+	 */
+
+	if (sdata->nssctx && likely(!skb->protocol)) {
+		skb_set_network_header(skb, 14);
+		switch (((struct ethhdr *)skb->data)->h_proto) {
+		case htons(ETH_P_IP):
+			skb->priority = (ipv4_get_dsfield(ip_hdr(skb)) &
+					 0xfc) >> 5;
+			break;
+		case htons(ETH_P_IPV6):
+			skb->priority = (ipv6_get_dsfield(ipv6_hdr(skb)) &
+					 0xfc) >> 5;
+			break;
+		}
+	}
+}
+#endif
+
 /**
  * ieee80211_subif_start_xmit - netif start_xmit function for 802.3 vifs
  * @skb: packet to be sent
@@ -4517,6 +4567,11 @@ out:
 netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 				       struct net_device *dev)
 {
+
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+	ieee80211_xmit_nss_fixup(skb, dev);
+#endif
+
 	if (unlikely(ieee80211_multicast_to_unicast(skb, dev))) {
 		struct sk_buff_head queue;
 
@@ -4602,15 +4657,7 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 	u16 queue;
 	u8 tid;
 
-	if (local->ops->wake_tx_queue) {
-		queue = __ieee80211_select_queue(sdata, sta, skb);
-		skb_set_queue_mapping(skb, queue);
-#if LINUX_VERSION_IS_GEQ(4,4,0)
-		skb_get_hash(skb);
-#endif
-	} else {
-		queue = skb_get_queue_mapping(skb);
-	}
+	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
 
 	if (unlikely(test_bit(SCAN_SW_SCANNING, &local->scanning)) &&
 	    test_bit(SDATA_STATE_OFFCHANNEL, &sdata->state))
@@ -4647,8 +4694,6 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 
 	info = IEEE80211_SKB_CB(skb);
 	memset(info, 0, sizeof(*info));
-	if (tid_tx)
-		info->flags |= IEEE80211_TX_CTL_AMPDU;
 
 	info->hw_queue = sdata->vif.hw_queue[queue];
 
@@ -4747,7 +4792,11 @@ netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 	struct ieee80211_key *key;
 	struct sta_info *sta;
 
-	if (unlikely(skb->len < ETH_HLEN)) {
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+	ieee80211_xmit_nss_fixup(skb, dev);
+#endif
+
+	if (unlikely(!ieee80211_sdata_running(sdata) || skb->len < ETH_HLEN)) {
 		kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
@@ -4935,9 +4984,6 @@ void ieee80211_tx_pending(struct tasklet_struct *t)
 			if (!txok)
 				break;
 		}
-
-		if (skb_queue_empty(&local->pending[i]))
-			ieee80211_propagate_queue_wake(local, i);
 	}
 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
 
@@ -6071,7 +6117,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	rcu_read_lock();
 
 	if (ieee80211_lookup_ra_sta(sdata, skb, &sta) == 0 && !IS_ERR(sta)) {
-		u16 queue = __ieee80211_select_queue(sdata, sta, skb);
+		u16 queue = ieee80211_select_queue(sdata, sta, skb);
 
 		skb_set_queue_mapping(skb, queue);
 #if LINUX_VERSION_IS_GEQ(4,4,0)

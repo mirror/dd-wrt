@@ -1102,8 +1102,8 @@ static int _iwl_pcie_rx_init(struct iwl_trans *trans)
 			netif_napi_add(&trans_pcie->napi_dev, &rxq->napi,
 				       poll, NAPI_POLL_WEIGHT);
 #else
-			netif_napi_add(&trans_pcie->napi_dev, &rxq->napi,
-				       poll);
+			netif_napi_add_weight(&trans_pcie->napi_dev, &rxq->napi,
+				       poll, NAPI_POLL_WEIGHT);
 #endif
 			napi_enable(&rxq->napi);
 		}

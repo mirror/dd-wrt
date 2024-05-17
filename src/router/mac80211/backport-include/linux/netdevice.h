@@ -313,6 +313,7 @@ static inline bool backport_napi_complete(struct napi_struct *n)
 
 #if LINUX_VERSION_IS_LESS(4,5,0)
 #define netif_tx_napi_add LINUX_BACKPORT(netif_tx_napi_add)
+#define netif_threaded_tx_napi_add LINUX_BACKPORT(netif_threaded_tx_napi_add)
 /**
  *	netif_tx_napi_add - initialize a napi context
  *	@dev:  network device
@@ -331,11 +332,24 @@ static inline void netif_tx_napi_add(struct net_device *dev,
 {
 	netif_napi_add(dev, napi, poll, weight);
 }
+
+static inline void netif_threaded_tx_napi_add(struct net_device *dev,
+				     struct napi_struct *napi,
+				     int (*poll)(struct napi_struct *, int),
+				     int weight)
+{
+	netif_napi_add(dev, napi, poll, weight);
+}
 #endif /* < 4.5 */
 #if LINUX_VERSION_IS_GEQ(5,10,0)
 static inline void netif_tx_napi_add(struct net_device *dev, struct napi_struct *napi, int (*poll)(struct napi_struct *, int), int weight)
 {
-	netif_napi_add_tx(dev, napi, poll);
+	netif_napi_add_tx_weight(dev, napi, poll, weight);
+}
+
+static inline void netif_threaded_tx_napi_add(struct net_device *dev, struct napi_struct *napi, int (*poll)(struct napi_struct *, int), int weight)
+{
+	netif_threaded_napi_add_tx_weight(dev, napi, poll, weight);
 }
 
 #endif

@@ -1554,8 +1554,10 @@ int mwl_fwcmd_set_cfg_data(struct ieee80211_hw *hw, u16 type)
 	parsed_len = mwl_fwcmd_parse_cal_cfg(priv->cal_data->data,
 						 priv->cal_data->size,
 						 pcmd->data);
-	if (parsed_len == -EINVAL)
+	if (parsed_len == -EINVAL) {
+		mutex_unlock(&priv->fwcmd_mutex);
 		return -EIO;
+	}
 	pcmd->data_len = parsed_len;
 	pcmd->cmd_hdr.cmd = cpu_to_le16(HOSTCMD_CMD_SET_CFG);
 	pcmd->cmd_hdr.len = cpu_to_le16(sizeof(*pcmd) +

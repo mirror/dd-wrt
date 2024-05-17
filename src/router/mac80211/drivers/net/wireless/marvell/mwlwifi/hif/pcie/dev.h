@@ -223,7 +223,7 @@ struct pcie_desc_data {
 struct pcie_dma_data {
 	__le16 fwlen;
 	struct ieee80211_hdr wh;
-	char data[0];
+	char data[];
 } __packed;
 
 /* New Data Path */
@@ -457,7 +457,7 @@ struct rx_info { /* HW Rx buffer */
 	__le32 reserved3[6];
 	__le32 param;
 	__le32 reserved4[2];
-	__le32 hdr[0]; /* Len from HW includes rx_info w/ hdr */
+	__le32 hdr[]; /* Len from HW includes rx_info w/ hdr */
 } __packed;
 
 struct pcie_rx_desc_ndp { /* ToNIC Rx Empty Buffer Ring Entry */
@@ -671,7 +671,7 @@ struct acnt_tx_s { /* Accounting Record For Tx (at Enqueue time) */
 	__le32 tx_cnt;        /* No. of pkt sent                              */
 	struct tx_info tx_info;/* Transmit parameters used for 1st MPDU/AMPDU */
 	struct pcie_dma_data hdr;/* Dot11 header used for 1st MPDU in AMPDU   */
-	u8 payload[0];        /* Variable Payload by use case                 */
+	u8 payload[];        /* Variable Payload by use case                 */
 } __packed;
 
 struct acnt_rx_s { /* Accounting Record for Rx PPDU */

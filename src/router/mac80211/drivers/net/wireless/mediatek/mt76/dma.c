@@ -923,9 +923,6 @@ mt76_dma_init(struct mt76_dev *dev,
 	snprintf(dev->napi_dev.name, sizeof(dev->napi_dev.name), "%s",
 		 wiphy_name(dev->hw->wiphy));
 
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(5,10,0))
-	dev->napi_dev.threaded = 1;
-#endif
 	mt76_for_each_q_rx(dev, i) {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))  && (LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0))
 		netif_threaded_napi_add(&dev->napi_dev, &dev->napi[i], poll,
@@ -935,8 +932,8 @@ mt76_dma_init(struct mt76_dev *dev,
 		netif_napi_add(&dev->napi_dev, &dev->napi[i], poll,
 			       64);
 #else
-		netif_napi_add(&dev->napi_dev, &dev->napi[i], poll);
-
+		netif_threaded_napi_add_weight(&dev->napi_dev, &dev->napi[i], poll,
+			       64);
 #endif
 #endif
 		mt76_dma_rx_fill(dev, &dev->q_rx[i]);

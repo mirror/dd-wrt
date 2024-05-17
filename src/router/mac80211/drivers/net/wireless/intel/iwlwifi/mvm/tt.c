@@ -568,6 +568,7 @@ int iwl_mvm_send_temp_report_ths_cmd(struct iwl_mvm *mvm)
 	 * and uncompressed, the FW should get it compressed and sorted
 	 */
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	/* compress temp_trips to cmd array, remove uninitialized values*/
 	for (i = 0; i < IWL_MAX_DTS_TRIPS; i++) {
 		if (mvm->tz_device.temp_trips[i] != S16_MIN) {
@@ -575,6 +576,15 @@ int iwl_mvm_send_temp_report_ths_cmd(struct iwl_mvm *mvm)
 				cpu_to_le16(mvm->tz_device.temp_trips[i]);
 		}
 	}
+#else
+	/* compress trips to cmd array, remove uninitialized values*/
+	for (i = 0; i < IWL_MAX_DTS_TRIPS; i++) {
+		if (mvm->tz_device.trips[i].temperature != INT_MIN) {
+			cmd.thresholds[idx++] =
+				cpu_to_le16((s16)(mvm->tz_device.trips[i].temperature / 1000));
+		}
+	}
+#endif
 	cmd.num_temps = cpu_to_le32(idx);
 
 	if (!idx)
@@ -588,8 +598,13 @@ int iwl_mvm_send_temp_report_ths_cmd(struct iwl_mvm *mvm)
 	 */
 	for (i = 0; i < idx; i++) {
 		for (j = 0; j < IWL_MAX_DTS_TRIPS; j++) {
+#if LINUX_VERSION_IS_LESS(6,6,0)
 			if (le16_to_cpu(cmd.thresholds[i]) ==
 				mvm->tz_device.temp_trips[j])
+#else
+			if ((int)(le16_to_cpu(cmd.thresholds[i]) * 1000) ==
+				mvm->tz_device.trips[j].temperature)
+#endif
 				mvm->tz_device.fw_trips_index[i] = j;
 		}
 	}
@@ -633,6 +648,7 @@ out:
 	return ret;
 }
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 static int iwl_mvm_tzone_get_trip_temp(struct thermal_zone_device *device,
 				       int trip, int *temp)
 {
@@ -656,14 +672,19 @@ static int iwl_mvm_tzone_get_trip_type(struct thermal_zone_device *device,
 
 	return 0;
 }
+#endif
 
 static int iwl_mvm_tzone_set_trip_temp(struct thermal_zone_device *device,
 				       int trip, int temp)
 {
 	struct iwl_mvm *mvm = (struct iwl_mvm *)device->devdata;
 	struct iwl_mvm_thermal_device *tzone;
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	int i, ret;
 	s16 temperature;
+#else
+	int ret;
+#endif
 
 	mutex_lock(&mvm->mutex);
 
@@ -673,17 +694,21 @@ static int iwl_mvm_tzone_set_trip_temp(struct thermal_zone_device *device,
 		goto out;
 	}
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	if (trip < 0 || trip >= IWL_MAX_DTS_TRIPS) {
 		ret = -EINVAL;
 		goto out;
 	}
+#endif
 
 	if ((temp / 1000) > S16_MAX) {
 		ret = -EINVAL;
 		goto out;
 	}
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	temperature = (s16)(temp / 1000);
+#endif
 	tzone = &mvm->tz_device;
 
 	if (!tzone) {
@@ -691,6 +716,7 @@ static int iwl_mvm_tzone_set_trip_temp(struct thermal_zone_device *device,
 		goto out;
 	}
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	/* no updates*/
 	if (tzone->temp_trips[trip] == temperature) {
 		ret = 0;
@@ -706,6 +732,7 @@ static int iwl_mvm_tzone_set_trip_temp(struct thermal_zone_device *device,
 	}
 
 	tzone->temp_trips[trip] = temperature;
+#endif
 
 	ret = iwl_mvm_send_temp_report_ths_cmd(mvm);
 out:
@@ -715,8 +742,10 @@ out:
 
 static  struct thermal_zone_device_ops tzone_ops = {
 	.get_temp = iwl_mvm_tzone_get_temp,
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	.get_trip_temp = iwl_mvm_tzone_get_trip_temp,
 	.get_trip_type = iwl_mvm_tzone_get_trip_type,
+#endif
 	.set_trip_temp = iwl_mvm_tzone_set_trip_temp,
 };
 
@@ -738,7 +767,12 @@ static void iwl_mvm_thermal_zone_register(struct iwl_mvm *mvm)
 	BUILD_BUG_ON(ARRAY_SIZE(name) >= THERMAL_NAME_LENGTH);
 
 	sprintf(name, "iwlwifi_%u", atomic_inc_return(&counter) & 0xFF);
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	mvm->tz_device.tzone = thermal_zone_device_register(name,
+#else
+	mvm->tz_device.tzone = thermal_zone_device_register_with_trips(name,
+							mvm->tz_device.trips,
+#endif
 							IWL_MAX_DTS_TRIPS,
 							IWL_WRITABLE_TRIPS_MSK,
 							mvm, &tzone_ops,
@@ -761,8 +795,15 @@ static void iwl_mvm_thermal_zone_register(struct iwl_mvm *mvm)
 	/* 0 is a valid temperature,
 	 * so initialize the array with S16_MIN which invalid temperature
 	 */
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	for (i = 0 ; i < IWL_MAX_DTS_TRIPS; i++)
 		mvm->tz_device.temp_trips[i] = S16_MIN;
+#else
+	for (i = 0 ; i < IWL_MAX_DTS_TRIPS; i++) {
+		mvm->tz_device.trips[i].temperature = INT_MIN;
+		mvm->tz_device.trips[i].type = THERMAL_TRIP_PASSIVE;
+	}
+#endif
 }
 
 static int iwl_mvm_tcool_get_max_state(struct thermal_cooling_device *cdev,

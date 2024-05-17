@@ -365,6 +365,8 @@ struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_local *local = sdata->local;
 	struct ieee80211_hw *hw = &local->hw;
 	struct sta_info *sta;
+	void *txq_data;
+	int size;
 	int i;
 
 	sta = kzalloc(sizeof(*sta) + hw->sta_data_size, gfp);
@@ -383,7 +385,7 @@ struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
 	INIT_WORK(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
 	mutex_init(&sta->ampdu_mlme.mtx);
-	sta->ampdu_mlme.dialog_token_allocator = prandom_u32_max(U8_MAX);
+	sta->ampdu_mlme.dialog_token_allocator = get_random_u32_inclusive(0, U8_MAX);
 #ifdef CPTCFG_MAC80211_MESH
 	if (ieee80211_vif_is_mesh(&sdata->vif)) {
 		sta->mesh = kzalloc(sizeof(*sta->mesh), gfp);
@@ -435,21 +437,18 @@ struct sta_info *sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 	for (i = 0; i < ARRAY_SIZE(sta->rx_stats_avg.chain_signal); i++)
 		ewma_signal_init(&sta->rx_stats_avg.chain_signal[i]);
 
-	if (local->ops->wake_tx_queue) {
-		void *txq_data;
-		int size = sizeof(struct txq_info) +
-			   ALIGN(hw->txq_data_size, sizeof(void *));
+	size = sizeof(struct txq_info) +
+	       ALIGN(hw->txq_data_size, sizeof(void *));
 
-		txq_data = kcalloc(ARRAY_SIZE(sta->sta.txq), size, gfp);
-		if (!txq_data)
-			goto free;
+	txq_data = kcalloc(ARRAY_SIZE(sta->sta.txq), size, gfp);
+	if (!txq_data)
+		goto free;
 
-		for (i = 0; i < ARRAY_SIZE(sta->sta.txq); i++) {
-			struct txq_info *txq = txq_data + i * size;
+	for (i = 0; i < ARRAY_SIZE(sta->sta.txq); i++) {
+		struct txq_info *txq = txq_data + i * size;
 
-			/* might not do anything for the bufferable MMPDU TXQ */
-			ieee80211_txq_init(sdata, sta, txq, i);
-		}
+		/* might not do anything for the bufferable MMPDU TXQ */
+		ieee80211_txq_init(sdata, sta, txq, i);
 	}
 
 	if (sta_prepare_rate_control(local, sta, gfp))
@@ -2245,10 +2244,17 @@ static inline u64 sta_get_tidstats_msdu(struct ieee80211_sta_rx_stats *rxstats,
 	u64 value;
 
 	do {
+#if LINUX_VERSION_IS_LESS(6,1,0)
 		start = u64_stats_fetch_begin_irq(&rxstats->syncp);
-		value = rxstats->msdu[tid];
+#else
+		start = u64_stats_fetch_begin(&rxstats->syncp);
+#endif	
+	value = rxstats->msdu[tid];
+#if LINUX_VERSION_IS_LESS(6,1,0)
 	} while (u64_stats_fetch_retry_irq(&rxstats->syncp, start));
-
+#else
+	} while (u64_stats_fetch_retry(&rxstats->syncp, start));
+#endif
 	return value;
 }
 
@@ -2292,7 +2298,7 @@ static void sta_set_tidstats(struct sta_info *sta,
 		tidstats->tx_msdu_failed = sta->status_stats.msdu_failed[tid];
 	}
 
-	if (local->ops->wake_tx_queue && tid < IEEE80211_NUM_TIDS) {
+	if (tid < IEEE80211_NUM_TIDS) {
 		spin_lock_bh(&local->fq.lock);
 		rcu_read_lock();
 
@@ -2311,9 +2317,17 @@ static inline u64 sta_get_stats_bytes(struct ieee80211_sta_rx_stats *rxstats)
 	u64 value;
 
 	do {
+#if LINUX_VERSION_IS_LESS(6,1,0)
 		start = u64_stats_fetch_begin_irq(&rxstats->syncp);
+#else
+		start = u64_stats_fetch_begin(&rxstats->syncp);
+#endif
 		value = rxstats->bytes;
+#if LINUX_VERSION_IS_LESS(6,1,0)
 	} while (u64_stats_fetch_retry_irq(&rxstats->syncp, start));
+#else
+	} while (u64_stats_fetch_retry(&rxstats->syncp, start));
+#endif
 
 	return value;
 }

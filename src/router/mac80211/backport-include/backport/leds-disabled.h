@@ -181,11 +181,17 @@ static inline void led_trigger_event(struct led_trigger *trigger,
 {
 }
 
-/*static inline void led_trigger_blink(struct led_trigger *trigger,
+#undef led_trigger_blink
+#define led_trigger_blink LINUX_BACKPORT(led_trigger_blink)
+
+
+static inline void led_trigger_blink(struct led_trigger *trigger,
 				     unsigned long *delay_on,
 				     unsigned long *delay_off)
 {
 }
+#undef led_trigger_blink_oneshot
+#define led_trigger_blink_oneshot LINUX_BACKPORT(led_trigger_blink_oneshot)
 
 static inline void led_trigger_blink_oneshot(struct led_trigger *trigger,
 					     unsigned long *delay_on,
@@ -193,7 +199,7 @@ static inline void led_trigger_blink_oneshot(struct led_trigger *trigger,
 					     int invert)
 {
 }
-*/
+
 #endif
 
 #endif /* __BACKPORT_LED_DISABLED_SUPPORT */

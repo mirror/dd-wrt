@@ -1419,10 +1419,15 @@ void mhi_driver_unregister(struct mhi_driver *mhi_drv)
 }
 EXPORT_SYMBOL_GPL(mhi_driver_unregister);
 
+#if LINUX_VERSION_IS_LESS(6,2,0)
 static int mhi_uevent(struct device *dev, struct kobj_uevent_env *env)
 {
 	struct mhi_device *mhi_dev = to_mhi_device(dev);
-
+#else
+static int mhi_uevent(const struct device *dev, struct kobj_uevent_env *env)
+{
+	const struct mhi_device *mhi_dev = to_mhi_device(dev);
+#endif
 	return add_uevent_var(env, "MODALIAS=" MHI_DEVICE_MODALIAS_FMT,
 					mhi_dev->name);
 }

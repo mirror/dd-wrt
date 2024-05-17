@@ -129,6 +129,33 @@ static int devcd_free(struct device *dev, void *data)
 	return 0;
 }
 
+#if LINUX_VERSION_IS_GEQ(6,2,0)
+static ssize_t disabled_show(const struct class *class, const struct class_attribute *attr,
+			     char *buf)
+{
+	return sysfs_emit(buf, "%d\n", devcd_disabled);
+}
+
+static ssize_t disabled_store(const struct class *class,const struct class_attribute *attr,
+			      const char *buf, size_t count)
+{
+	long tmp = simple_strtol(buf, NULL, 10);
+
+	/*
+	 * This essentially makes the attribute write-once, since you can't
+	 * go back to not having it disabled. This is intentional, it serves
+	 * as a system lockdown feature.
+	 */
+	if (tmp != 1)
+		return -EINVAL;
+
+	devcd_disabled = true;
+
+	class_for_each_device(&devcd_class, NULL, NULL, devcd_free);
+
+	return count;
+}
+#else
 static ssize_t disabled_show(struct class *class, struct class_attribute *attr,
 			     char *buf)
 {
@@ -154,6 +181,8 @@ static ssize_t disabled_store(struct class *class, struct class_attribute *attr,
 
 	return count;
 }
+
+#endif
 static CLASS_ATTR_RW(disabled);
 
 static struct attribute *devcd_class_attrs[] = {
@@ -169,7 +198,9 @@ ATTRIBUTE_GROUPS_BACKPORT(devcd_class);
 
 static struct class devcd_class = {
 	.name		= "devcoredump",
+#if LINUX_VERSION_IS_LESS(6,2,0)
 	.owner		= THIS_MODULE,
+#endif
 	.dev_release	= devcd_dev_release,
 #if LINUX_VERSION_IS_GEQ(3,11,0)
 	.dev_groups	= devcd_dev_groups,

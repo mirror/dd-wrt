@@ -499,7 +499,11 @@ struct iwl_mvm_tt_mgmt {
  * @tzone: thermal zone device data
 */
 struct iwl_mvm_thermal_device {
+#if LINUX_VERSION_IS_LESS(6,6,0)
 	s16 temp_trips[IWL_MAX_DTS_TRIPS];
+#else
+	struct thermal_trip trips[IWL_MAX_DTS_TRIPS];
+#endif
 	u8 fw_trips_index[IWL_MAX_DTS_TRIPS];
 	struct thermal_zone_device *tzone;
 };

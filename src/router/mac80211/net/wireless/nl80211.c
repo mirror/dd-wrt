@@ -15363,9 +15363,15 @@ static u32 nl80211_internal_flags[] = {
 #undef SELECTOR
 };
 
+#if LINUX_VERSION_IS_LESS(6,2,0)
 static int nl80211_pre_doit(__genl_const struct genl_ops *ops,
 			    struct sk_buff *skb,
 			    struct genl_info *info)
+#else
+static int nl80211_pre_doit(const struct genl_split_ops *ops,
+			    struct sk_buff *skb,
+			    struct genl_info *info)
+#endif
 {
 	struct cfg80211_registered_device *rdev = NULL;
 	struct wireless_dev *wdev;
@@ -15429,9 +15435,15 @@ static int nl80211_pre_doit(__genl_const struct genl_ops *ops,
 	return 0;
 }
 
+#if LINUX_VERSION_IS_LESS(6,2,0)
 static void nl80211_post_doit(__genl_const struct genl_ops *ops,
 			      struct sk_buff *skb,
 			      struct genl_info *info)
+#else
+static void nl80211_post_doit(const struct genl_split_ops *ops,
+			      struct sk_buff *skb,
+			      struct genl_info *info)
+#endif
 {
 	u32 internal_flags = nl80211_internal_flags[ops->internal_flags];
 

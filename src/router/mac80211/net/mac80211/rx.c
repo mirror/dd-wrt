@@ -2566,6 +2566,15 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 	return true;
 }
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+static inline void netif_rx_nss(struct sk_buff *skb, struct ieee80211_sub_if_data *sdata)
+{
+	skb_queue_tail(&sdata->rx_queue, skb);
+
+	schedule_work(&sdata->rx_work);
+}
+#endif
+
 static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
 						 struct ieee80211_rx_data *rx)
 {
@@ -2586,6 +2595,12 @@ static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
 
 		memset(skb->cb, 0, sizeof(skb->cb));
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+		if (sdata->nssctx) {
+			netif_rx_nss(skb, sdata);
+			return;
+		}
+#endif
 		/*
 		 * 802.1X over 802.11 requires that the authenticator address
 		 * be used for EAPOL frames. However, 802.1X allows the use of
@@ -4753,6 +4768,7 @@ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
 {
 	struct ieee80211_sta_rx_stats *stats;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(rx->skb);
+	struct ieee80211_sub_if_data *sdata = rx->sdata;
 	struct sta_info *sta = rx->sta;
 	struct sk_buff *skb = rx->skb;
 	void *sa = skb->data + ETH_ALEN;
@@ -4838,6 +4854,13 @@ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
 	/* deliver to local stack */
 	skb->protocol = eth_type_trans(skb, fast_rx->dev);
 	ieee80211_deliver_skb_to_local_stack(skb, rx);
+
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+       if (sdata->nssctx) {
+               netif_rx_nss(skb, sdata);
+               return;
+       }
+#endif
 }
 
 static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,

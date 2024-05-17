@@ -3,6 +3,7 @@
 #include_next <net/genetlink.h>
 #include <linux/version.h>
 
+#if LINUX_VERSION_IS_LESS(4,12,0)
 static inline void __bp_genl_info_userhdr_set(struct genl_info *info,
 					      void *userhdr)
 {
@@ -14,7 +15,6 @@ static inline void *__bp_genl_info_userhdr(struct genl_info *info)
 	return info->userhdr;
 }
 
-#if LINUX_VERSION_IS_LESS(4,12,0)
 #define GENL_SET_ERR_MSG(info, msg) NL_SET_ERR_MSG(genl_info_extack(info), msg)
 
 static inline int genl_err_attr(struct genl_info *info, int err,
@@ -44,11 +44,13 @@ static inline struct netlink_ext_ack *genl_callback_extack(struct netlink_callba
 #endif
 }
 
+#if LINUX_VERSION_IS_LESS(6,6,0)
 /* this gets put in place of info->userhdr, since we use that above */
 static inline void *genl_info_userhdr(struct genl_info *info)
 {
 	return (u8 *)info->genlhdr + GENL_HDRLEN;
 }
+#endif
 
 /* this is for patches we apply */
 #if LINUX_VERSION_IS_LESS(3,7,0)

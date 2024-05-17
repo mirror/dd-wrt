@@ -992,6 +992,7 @@ static int mwl_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 
 const struct ieee80211_ops mwl_mac80211_ops = {
 	.tx                 = mwl_mac80211_tx,
+	.wake_tx_queue      = ieee80211_handle_wake_tx_queue,
 	.start              = mwl_mac80211_start,
 	.stop               = mwl_mac80211_stop,
 	.add_interface      = mwl_mac80211_add_interface,

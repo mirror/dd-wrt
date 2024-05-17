@@ -1721,7 +1721,8 @@ static void rtw_pci_napi_init(struct rtw_dev *rtwdev)
 	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll,
 		       RTW_NAPI_WEIGHT_NUM);
 #else
-	netif_napi_add(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll);
+	netif_napi_add_weight(&rtwpci->netdev, &rtwpci->napi, rtw_pci_napi_poll,
+		       RTW_NAPI_WEIGHT_NUM);
 #endif
 }
 

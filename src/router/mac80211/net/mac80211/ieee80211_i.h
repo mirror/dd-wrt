@@ -43,6 +43,10 @@
 
 //extern const struct cfg80211_ops mac80211_config_ops;
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+#include <nss_api_if.h>
+#endif
+
 struct ieee80211_local;
 
 /* Maximum number of broadcast/multicast frames to buffer when some of the
@@ -891,7 +895,7 @@ enum txq_info_flags {
 	IEEE80211_TXQ_STOP,
 	IEEE80211_TXQ_AMPDU,
 	IEEE80211_TXQ_NO_AMSDU,
-	IEEE80211_TXQ_STOP_NETIF_TX,
+	IEEE80211_TXQ_DIRTY,
 };
 
 /**
@@ -1103,6 +1107,12 @@ struct ieee80211_sub_if_data {
 #endif
 #endif
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+	struct nss_virt_if_handle *nssctx;
+	struct sk_buff_head rx_queue;
+	struct work_struct rx_work;
+#endif
+
 	/* must be last, dynamically sized area in this! */
 	struct ieee80211_vif vif;
 };
@@ -1285,6 +1295,8 @@ struct ieee80211_local {
 	spinlock_t active_txq_lock[IEEE80211_NUM_ACS];
 	struct list_head active_txqs[IEEE80211_NUM_ACS];
 	u16 schedule_round[IEEE80211_NUM_ACS];
+	/* serializes ieee80211_handle_wake_tx_queue */
+	spinlock_t handle_wake_tx_queue_lock;
 	u16 airtime_flags;
 	u32 aql_txq_limit_bc;
 	u32 aql_txq_limit_low[IEEE80211_NUM_ACS];
@@ -2198,7 +2210,6 @@ static void ieee80211_wake_queue_by_reason(struct ieee80211_hw *hw, int queue,
 static void ieee80211_stop_queue_by_reason(struct ieee80211_hw *hw, int queue,
 				    enum queue_stop_reason reason,
 				    bool refcounted);
-static void ieee80211_propagate_queue_wake(struct ieee80211_local *local, int queue);
 static void ieee80211_add_pending_skb(struct ieee80211_local *local,
 			       struct sk_buff *skb);
 static void ieee80211_add_pending_skbs(struct ieee80211_local *local,
@@ -2259,6 +2270,7 @@ static void ieee80211_txq_remove_vlan(struct ieee80211_local *local,
 static void ieee80211_fill_txq_stats(struct cfg80211_txq_stats *txqstats,
 			      struct txq_info *txqi);
 static void ieee80211_wake_txqs(struct tasklet_struct *t);
+static void wake_tx_queue(struct ieee80211_local *local, struct txq_info *txq);
 static void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
 			 u16 transaction, u16 auth_alg, u16 status,
 			 const u8 *extra, size_t extra_len, const u8 *bssid,

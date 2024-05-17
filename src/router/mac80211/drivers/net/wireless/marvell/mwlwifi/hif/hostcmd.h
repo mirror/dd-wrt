@@ -555,7 +555,7 @@ struct hostcmd_cmd_set_linkadapt_cs_mode {
 /* HOSTCMD_CMD_DUMP_OTP_DATA */
 struct hostcmd_cmd_dump_otp_data {
 	struct hostcmd_header cmd_hdr;
-	u8 pload[0];
+	u8 pload[];
 } __packed;
 
 /* HOSTCMD_CMD_SET_MAC_ADDR, HOSTCMD_CMD_DEL_MAC_ADDR */

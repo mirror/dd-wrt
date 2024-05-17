@@ -16,6 +16,13 @@ comment "CFG80211 needs to be enabled for MAC80211"
 
 if MAC80211 != n
 
+config MAC80211_NSS_SUPPORT
+	bool "Enable NSS support for IPQ platform"
+	default n
+	---help---
+	This option enables support for NSS in boards
+	like AP148.
+
 config MAC80211_HAS_RC
 	bool
 

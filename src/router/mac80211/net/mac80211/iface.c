@@ -423,12 +423,6 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 	if (cancel_scan)
 		ieee80211_scan_cancel(local);
 
-	/*
-	 * Stop TX on this interface first.
-	 */
-	if (sdata->dev)
-		netif_tx_stop_all_queues(sdata->dev);
-
 	ieee80211_roc_purge(local, sdata);
 
 	switch (sdata->vif.type) {
@@ -714,6 +708,15 @@ static int ieee80211_stop(struct net_device *dev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+	if (sdata->nssctx) {
+		cancel_work_sync(&sdata->rx_work);
+		skb_queue_purge(&sdata->rx_queue);
+		nss_virt_if_destroy_sync(sdata->nssctx);
+		sdata->nssctx = NULL;
+		sdata_info(sdata, "Destroyed NSS virtual interface\n");
+	}
+#endif
 	/* close dependent VLAN and MBSSID interfaces before locking wiphy */
 	if (sdata->vif.type == NL80211_IFTYPE_AP) {
 		struct ieee80211_sub_if_data *vlan, *tmpsdata;
@@ -777,33 +780,6 @@ static void ieee80211_uninit(struct net_device *dev)
 	ieee80211_teardown_sdata(IEEE80211_DEV_TO_SUB_IF(dev));
 }
 
-#if LINUX_VERSION_IS_GEQ(5,2,0)
-static u16 ieee80211_netdev_select_queue(struct net_device *dev,
-					 struct sk_buff *skb,
-					 struct net_device *sb_dev)
-#elif LINUX_VERSION_IS_GEQ(4,19,0)
-static u16 ieee80211_netdev_select_queue(struct net_device *dev,
-					 struct sk_buff *skb,
-					 struct net_device *sb_dev,
-					 select_queue_fallback_t fallback)
-#elif LINUX_VERSION_IS_GEQ(3,14,0) || \
-    (LINUX_VERSION_CODE == KERNEL_VERSION(3,13,11) && UTS_UBUNTU_RELEASE_ABI > 30)
-static u16 ieee80211_netdev_select_queue(struct net_device *dev,
-					 struct sk_buff *skb,
-					 void *accel_priv,
-					 select_queue_fallback_t fallback)
-#elif LINUX_VERSION_IS_GEQ(3,13,0)
-static u16 ieee80211_netdev_select_queue(struct net_device *dev,
-					 struct sk_buff *skb,
-					 void *accel_priv)
-#else
-static u16 ieee80211_netdev_select_queue(struct net_device *dev,
-					 struct sk_buff *skb)
-#endif
-{
-	return ieee80211_select_queue(IEEE80211_DEV_TO_SUB_IF(dev), skb);
-}
-
 static void
 ieee80211_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 {
@@ -842,7 +818,6 @@ static const struct net_device_ops ieee80211_dataif_ops = {
 	.ndo_start_xmit		= ieee80211_subif_start_xmit,
 	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
 	.ndo_set_mac_address 	= ieee80211_change_mac,
-	.ndo_select_queue	= ieee80211_netdev_select_queue,
 #if LINUX_VERSION_IS_GEQ(4,11,0)
 	.ndo_get_stats64	= ieee80211_get_stats64,
 #else
@@ -994,7 +969,6 @@ static const struct net_device_ops ieee80211_dataif_8023_ops = {
 	.ndo_start_xmit		= ieee80211_subif_start_xmit_8023,
 	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
 	.ndo_set_mac_address	= ieee80211_change_mac,
-	.ndo_select_queue	= ieee80211_netdev_select_queue,
 #if LINUX_VERSION_IS_GEQ(4,11,0)
 	.ndo_get_stats64	= ieee80211_get_stats64,
 #else
@@ -1262,6 +1236,89 @@ void ieee80211_del_virtual_monitor(struct ieee80211_local *local)
 	kfree(sdata);
 }
 
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+#define case_rtn_string(val) case val: return #val
+
+static const char *nss_tx_status_str(nss_tx_status_t status)
+{
+	switch (status) {
+		case_rtn_string(NSS_TX_SUCCESS);
+		case_rtn_string(NSS_TX_FAILURE);
+		case_rtn_string(NSS_TX_FAILURE_QUEUE);
+		case_rtn_string(NSS_TX_FAILURE_NOT_READY);
+		case_rtn_string(NSS_TX_FAILURE_TOO_LARGE);
+		case_rtn_string(NSS_TX_FAILURE_TOO_SHORT);
+		case_rtn_string(NSS_TX_FAILURE_NOT_SUPPORTED);
+		case_rtn_string(NSS_TX_FAILURE_BAD_PARAM);
+		case_rtn_string(NSS_TX_FAILURE_NOT_ENABLED);
+		case_rtn_string(NSS_TX_FAILURE_SYNC_BAD_PARAM);
+		case_rtn_string(NSS_TX_FAILURE_SYNC_TIMEOUT);
+		case_rtn_string(NSS_TX_FAILURE_SYNC_FW_ERR);
+	default:
+		return "Unknown NSS TX status";
+	}
+}
+
+static void netif_rx_nss_work(struct work_struct *work)
+{
+	int ret;
+	unsigned long flags;
+	struct sk_buff *skb;
+	struct sk_buff_head *list;
+	struct ieee80211_sub_if_data *sdata =
+	    container_of(work, struct ieee80211_sub_if_data, rx_work);
+
+	list = &sdata->rx_queue;
+	skb = skb_dequeue(list);
+
+	while (skb != NULL) {
+		skb_push(skb, ETH_HLEN);
+		ret = nss_virt_if_tx_buf(sdata->nssctx, skb);
+		if (unlikely(ret)) {
+			if (net_ratelimit() && ret != NSS_TX_FAILURE_TOO_SHORT) {
+				sdata_err(sdata, "NSS TX failed with error: %s\n",
+					nss_tx_status_str(ret));
+			}
+			skb_pull(skb, ETH_HLEN);
+			netif_receive_skb(skb);
+		}
+
+		skb = skb_dequeue(list);
+	}
+
+	/* Check if we there are more packet to process and resched */
+	skb = skb_peek(list);
+	if (skb)
+		schedule_work(&sdata->rx_work);
+}
+
+/* This callback is registered for nss redirect to receive packet exceptioned from nss in Rx path.
+ * When packet does not match any of the ecm rules is redirected back here.
+ */
+void receive_from_nss(struct net_device *dev, struct sk_buff *sk_buff, struct napi_struct *napi)
+{
+	struct net_device *netdev;
+	struct sk_buff *skb;
+	struct ieee80211_sub_if_data *sdata;
+
+	if (!dev) {
+		kfree(sk_buff);
+		return;
+	}
+
+	netdev = (struct net_device *)dev;
+	sdata = netdev_priv(netdev);
+	if (sdata->dev != dev) {
+		kfree(sk_buff);
+		return;
+	}
+	skb = (struct sk_buff *)sk_buff;
+	skb->dev = netdev;
+	skb->protocol = eth_type_trans(skb, netdev);
+	napi_gro_receive(napi, skb);
+}
+#endif
+
 /*
  * NOTE: Be very careful when changing this function, it must NOT return
  * an error on interface type changes that have been pre-checked, so most
@@ -1467,8 +1524,6 @@ int ieee80211_do_open(struct wireless_dev *wdev, bool coming_up)
 			sdata->vif.type != NL80211_IFTYPE_STATION);
 	}
 
-	set_bit(SDATA_STATE_RUNNING, &sdata->state);
-
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_WDS:
 		/* Create STA entry for the WDS peer */
@@ -1520,34 +1575,18 @@ int ieee80211_do_open(struct wireless_dev *wdev, bool coming_up)
 
 	ieee80211_recalc_ps(local);
 
-	if (sdata->vif.type == NL80211_IFTYPE_MONITOR ||
-	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
-	    local->ops->wake_tx_queue) {
-		/* XXX: for AP_VLAN, actually track AP queues */
-		if (dev)
-			netif_tx_start_all_queues(dev);
-	} else if (dev) {
-		unsigned long flags;
-		int n_acs = IEEE80211_NUM_ACS;
-		int ac;
+#ifdef CPTCFG_MAC80211_NSS_SUPPORT
+	sdata->nssctx = nss_virt_if_create_sync(dev);
+	if (sdata->nssctx) {
+		sdata_info(sdata, "Created a NSS virtual interface\n");
+		nss_virt_if_register(sdata->nssctx, receive_from_nss, sdata->dev);
+		skb_queue_head_init(&sdata->rx_queue);
+		INIT_WORK(&sdata->rx_work, &netif_rx_nss_work);
+	} else
+		sdata_err(sdata, "Failed to create a NSS virtual interface\n");
+#endif
 
-		if (local->hw.queues < IEEE80211_NUM_ACS)
-			n_acs = 1;
-
-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
-		if (sdata->vif.cab_queue == IEEE80211_INVAL_HW_QUEUE ||
-		    (local->queue_stop_reasons[sdata->vif.cab_queue] == 0 &&
-		     skb_queue_empty(&local->pending[sdata->vif.cab_queue]))) {
-			for (ac = 0; ac < n_acs; ac++) {
-				int ac_queue = sdata->vif.hw_queue[ac];
-
-				if (local->queue_stop_reasons[ac_queue] == 0 &&
-				    skb_queue_empty(&local->pending[ac_queue]))
-					netif_start_subqueue(dev, ac);
-			}
-		}
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
-	}
+	set_bit(SDATA_STATE_RUNNING, &sdata->state);
 
 	return 0;
  err_del_interface:
@@ -1583,18 +1622,13 @@ static void ieee80211_if_setup(struct net_device *dev)
 {
 	ether_setup(dev);
 	dev->priv_flags &= ~IFF_TX_SKB_SHARING;
-	dev->netdev_ops = &ieee80211_dataif_ops;
-	netdev_set_priv_destructor(dev, ieee80211_if_free);
-}
-
-static void ieee80211_if_setup_no_queue(struct net_device *dev)
-{
-	ieee80211_if_setup(dev);
 #if LINUX_VERSION_IS_GEQ(4,3,0)
 	dev->priv_flags |= IFF_NO_QUEUE;
 #else
 	dev->tx_queue_len = 0;
 #endif
+	dev->netdev_ops = &ieee80211_dataif_ops;
+	netdev_set_priv_destructor(dev, ieee80211_if_free);
 }
 
 static void ieee80211_iface_process_skb(struct ieee80211_local *local,
@@ -2186,9 +2220,7 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 	struct net_device *ndev = NULL;
 	struct ieee80211_sub_if_data *sdata = NULL;
 	struct txq_info *txqi;
-	void (*if_setup)(struct net_device *dev);
 	int ret, i;
-	int txqs = 1;
 
 	ASSERT_RTNL();
 
@@ -2210,29 +2242,17 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 				 sizeof(void *));
 		int txq_size = 0;
 
-		if (local->ops->wake_tx_queue &&
-		    type != NL80211_IFTYPE_AP_VLAN &&
+		if (type != NL80211_IFTYPE_AP_VLAN &&
 		    (type != NL80211_IFTYPE_MONITOR ||
 		     (params->flags & MONITOR_FLAG_ACTIVE)))
 			txq_size += sizeof(struct txq_info) +
 				    local->hw.txq_data_size;
 
-		if (local->ops->wake_tx_queue) {
-			if_setup = ieee80211_if_setup_no_queue;
-		} else {
-			if_setup = ieee80211_if_setup;
-			if (local->hw.queues >= IEEE80211_NUM_ACS)
-				txqs = IEEE80211_NUM_ACS;
-		}
-
 		ndev = alloc_netdev_mqs(size + txq_size,
 					name, name_assign_type,
-					if_setup, txqs, 1);
+					ieee80211_if_setup, 1, 1);
 		if (!ndev)
 			return -ENOMEM;
-
-		if (!local->ops->wake_tx_queue && local->hw.wiphy->tx_queue_len)
-			ndev->tx_queue_len = local->hw.wiphy->tx_queue_len;
 
 		dev_net_set(ndev, wiphy_net(local->hw.wiphy));
 
