@@ -155,7 +155,7 @@ skip_alloc:
 	 * handler here (i.e. resume, reset/rebuild, etc.)
 	 */
 	if (vsi->netdev)
-		netif_napi_add(vsi->netdev, &q_vector->napi, ice_napi_poll);
+		netif_threaded_napi_add(vsi->netdev, &q_vector->napi, ice_napi_poll);
 
 out:
 	/* tie q_vector and VSI together */

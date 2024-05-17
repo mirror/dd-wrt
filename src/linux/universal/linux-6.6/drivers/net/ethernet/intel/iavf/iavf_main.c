@@ -1832,7 +1832,7 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
 		q_vector->v_idx = q_idx;
 		q_vector->reg_idx = q_idx;
 		cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
-		netif_napi_add(adapter->netdev, &q_vector->napi,
+		netif_threaded_napi_add(adapter->netdev, &q_vector->napi,
 			       iavf_napi_poll);
 	}
 
