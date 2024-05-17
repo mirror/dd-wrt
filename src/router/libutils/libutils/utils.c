@@ -1165,11 +1165,38 @@ char *cpustring(void)
 #elif HAVE_ALPINE
 	strcpy(buf, "Annapurna Labs Alpine");
 	return buf;
-#elif HAVE_HABANERO
-	strcpy(buf, "QCA IPQ40XX");
-	return buf;
 #elif HAVE_IPQ806X
-	strcpy(buf, "QCA IPQ806X");
+	FILE *fp = fopen("/sys/firmware/devicetree/base/compatible", "rb");
+	if (!fp) {
+failover:
+		strcpy(buf, "QCA IPQXXXX");
+		return buf;
+	}
+	char compatible[128];
+	fread(compatible, 1, sizeof(compatible), fp);
+	fclose(fp);
+	int idx = strlen(compatible);
+	if (idx > 126)
+		goto failover;
+	char *cpu = &compatible[idx + 1];
+	if (strstr(cpu, "ipq8065"))
+		strcpy(buf, "QCA IPQ8065");
+	else if (strstr(cpu, "ipq8064"))
+		strcpy(buf, "QCA IPQ8064");
+	else if (strstr(cpu, "ipq8062"))
+		strcpy(buf, "QCA IPQ8062");
+	else if (strstr(cpu, "ipq8068"))
+		strcpy(buf, "QCA IPQ8068");
+	else if (strstr(cpu, "ipq4019"))
+		strcpy(buf, "QCA IPQ4019");
+	else if (strstr(cpu, "ipq4029"))
+		strcpy(buf, "QCA IPQ4029");
+	else if (strstr(cpu, "ipq4018"))
+		strcpy(buf, "QCA IPQ4018");
+	else if (strstr(cpu, "ipq4028"))
+		strcpy(buf, "QCA IPQ4028");
+	else
+		goto failover;
 	return buf;
 #elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
