@@ -111,6 +111,18 @@ ar40xx_rmw(struct ar40xx_priv *priv, int reg, u32 mask, u32 val)
 	return ret;
 }
 
+static inline void
+ar40xx_reg_set(struct ar40xx_priv *priv, int reg, u32 val)
+{
+	ar40xx_rmw(priv, reg, 0, val);
+}
+
+static inline void
+ar40xx_reg_clear(struct ar40xx_priv *priv, int reg, u32 val)
+{
+	ar40xx_rmw(priv, reg, val, 0);
+}
+
 static void
 ar40xx_psgmii_write(struct ar40xx_priv *priv, int reg, u32 val)
 {
@@ -311,7 +323,7 @@ ar40xx_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 	int i;
 
 	val->len = 0;
-	for (i = 0; i < dev->ports; i++) {
+	for (i = 0; i < AR40XX_NUM_PORTS; i++) {
 		struct switch_port *p;
 
 		if (!(ports & BIT(i)))
@@ -618,7 +630,7 @@ ar40xx_sw_set_port_reset_mib(struct switch_dev *dev,
 	int ret;
 
 	port = val->port_vlan;
-	if (port >= dev->ports)
+	if (port >= AR40XX_NUM_PORTS)
 		return -EINVAL;
 
 	mutex_lock(&priv->mib_lock);
@@ -647,7 +659,7 @@ ar40xx_sw_get_port_mib(struct switch_dev *dev,
 	u32 num_mibs = ARRAY_SIZE(ar40xx_mibs);
 
 	port = val->port_vlan;
-	if (port >= dev->ports)
+	if (port >= AR40XX_NUM_PORTS)
 		return -EINVAL;
 
 	mutex_lock(&priv->mib_lock);
@@ -761,6 +773,96 @@ ar40xx_read_port_link(struct ar40xx_priv *priv, int port,
 }
 
 static int
+ar40xx_sw_set_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
+	int port = val->port_vlan;
+
+	if (port >= AR40XX_NUM_PORTS)
+		return -EINVAL;
+	if (port == AR40XX_PORT_CPU)
+		return -EOPNOTSUPP;
+
+	
+	if (!!(val->value.i))  {
+		priv->disabled[port] = 1;
+		priv->state[port] = ar40xx_read(priv, AR40XX_REG_PORT_STATUS(port));
+		ar40xx_write(priv, AR40XX_REG_PORT_STATUS(port), 0);
+	} else {
+		priv->disabled[port] = 0;
+		if (priv->state[port])
+			ar40xx_write(priv, AR40XX_REG_PORT_STATUS(port), priv->state[port]);
+	}
+
+	return 0;
+}
+
+static int
+ar40xx_sw_get_disable(struct switch_dev *dev,
+		  const struct switch_attr *attr,
+		  struct switch_val *val)
+{
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
+	int port = val->port_vlan;
+	u32 t;
+
+	if (port >= AR40XX_NUM_PORTS)
+		return -EINVAL;
+	if (port == AR40XX_PORT_CPU)
+		return -EOPNOTSUPP;
+
+	t = ar40xx_read(priv, AR40XX_REG_PORT_STATUS(port));
+
+	if (!(t & AR40XX_PORT_AUTO_LINK_EN) && !(t & (AR40XX_PORT_SPEED_10M << AR40XX_PORT_STATUS_SPEED_S)) && !(t & (AR40XX_PORT_SPEED_100M << AR40XX_PORT_STATUS_SPEED_S)) && !(t & (AR40XX_PORT_SPEED_1000M << AR40XX_PORT_STATUS_SPEED_S)))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
+int
+ar40xx_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	if (priv->ledstate == 0) {
+	    priv->ledregs[0] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL0);
+	    priv->ledregs[1] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL1);
+	    priv->ledregs[2] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL2);
+	    priv->ledregs[3] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL3);
+	    priv->ledstate = 1;
+	}
+	if (!!val->value.i) {
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL0, priv->ledregs[0]);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL1, priv->ledregs[1]);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL2, priv->ledregs[2]);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL3, priv->ledregs[3]);
+		priv->ledstate = 1;
+	} else {
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL0, 0);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL1, 0);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL2, 0);
+		ar4xxx_write(priv, AR40XX_REG_LED_CTRL3, 0);
+		priv->ledstate = 2;
+	}
+	return 0;
+}
+
+int
+ar40xx_sw_get_leds(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	if (!priv->ledstate || priv->ledstate == 1)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+	return 0;
+}
+
+static int
 ar40xx_sw_get_port_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link)
 {
@@ -769,6 +871,150 @@ ar40xx_sw_get_port_link(struct switch_dev *dev, int port,
 	ar40xx_read_port_link(priv, port, link);
 	return 0;
 }
+
+static int
+ar40XX_get_port_igmp(struct ar40xx_priv *priv, int port)
+{
+	u32 fwd_ctrl, frame_ack;
+
+	fwd_ctrl = (BIT(port) << AR40XX_FWD_CTRL1_IGMP_S);
+	frame_ack = ((AR40XX_FRAME_ACK_CTRL_IGMP_MLD |
+		      AR40XX_FRAME_ACK_CTRL_IGMP_JOIN |
+		      AR40XX_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+		     AR40XX_FRAME_ACK_CTRL_S(port));
+
+	return (ar40xx_read(priv, AR40XX_REG_FWD_CTRL1) &
+			fwd_ctrl) == fwd_ctrl &&
+		(ar40xx_read(priv, AR40XX_REG_FRAME_ACK_CTRL(port)) &
+			frame_ack) == frame_ack;
+}
+
+static void
+ar40XX_set_port_igmp(struct ar40xx_priv *priv, int port, int enable)
+{
+	int reg_frame_ack = AR40XX_REG_FRAME_ACK_CTRL(port);
+	u32 val_frame_ack = (AR40XX_FRAME_ACK_CTRL_IGMP_MLD |
+			  AR40XX_FRAME_ACK_CTRL_IGMP_JOIN |
+			  AR40XX_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+			 AR40XX_FRAME_ACK_CTRL_S(port);
+
+	if (enable) {
+		ar40xx_rmw(priv, AR40XX_REG_FWD_CTRL1,
+			   BIT(port) << AR40XX_FWD_CTRL1_MC_FLOOD_S,
+			   BIT(port) << AR40XX_FWD_CTRL1_IGMP_S);
+		ar40xx_reg_set(priv, reg_frame_ack, val_frame_ack);
+	} else {
+		ar40xx_rmw(priv, AR40XX_REG_FWD_CTRL1,
+			   BIT(port) << AR40XX_FWD_CTRL1_IGMP_S,
+			   BIT(port) << AR40XX_FWD_CTRL1_MC_FLOOD_S);
+		ar40xx_reg_clear(priv, reg_frame_ack, val_frame_ack);
+	}
+}
+
+int
+ar40xx_sw_get_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= AR40XX_NUM_PORTS)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	val->value.i = ar40xx_get_port_igmp(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar40xx_sw_set_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= AR40XX_NUM_PORTS)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	ar40xx_set_port_igmp(priv, port, val->value.i);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar40xx_sw_get_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < AR40XX_NUM_PORTS; port++) {
+		val->port_vlan = port;
+		if (ar40xx_sw_get_port_igmp_snooping(dev, attr, val) ||
+		    !val->value.i)
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar40xx_sw_set_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < AR40XX_NUM_PORTS; port++) {
+		val->port_vlan = port;
+		if (ar40xx_sw_set_port_igmp_snooping(dev, attr, val))
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar40xx_sw_get_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	u32 val_reg;
+
+	mutex_lock(&priv->reg_mutex);
+	val_reg = ar4xxx_read(priv, AR40XX_REG_FRAME_ACK_CTRL1);
+	val->value.i = ((val_reg & AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN) != 0);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar40xx_sw_set_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	if (val->value.i)
+		ar4xxx_reg_set(priv, AR40XX_REG_FRAME_ACK_CTRL1,
+			       AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN);
+	else
+		ar4xxx_reg_clear(priv, AR40XX_REG_FRAME_ACK_CTRL1,
+				 AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
 
 static const struct switch_attr ar40xx_sw_attr_globals[] = {
 	{
@@ -784,6 +1030,14 @@ static const struct switch_attr ar40xx_sw_attr_globals[] = {
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
 		.set = ar40xx_sw_set_reset_mibs,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "leds",
+		.description = "turn leds on or off",
+		.set = ar40xx_sw_set_leds,
+		.get = ar40xx_sw_get_leds,
+		.max = 1,
 	},
 	{
 		.type = SWITCH_TYPE_INT,
@@ -824,6 +1078,22 @@ static const struct switch_attr ar40xx_sw_attr_globals[] = {
 		.set = ar40xx_sw_set_linkdown,
 		.max = 1
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable IGMP Snooping",
+		.set = ar40xx_sw_set_igmp_snooping,
+		.get = ar40xx_sw_get_igmp_snooping,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_v3",
+		.description = "Enable IGMPv3 support",
+		.set = ar40xx_sw_set_igmp_v3,
+		.get = ar40xx_sw_get_igmp_v3,
+		.max = 1
+	},
 };
 
 static const struct switch_attr ar40xx_sw_attr_port[] = {
@@ -839,6 +1109,22 @@ static const struct switch_attr ar40xx_sw_attr_port[] = {
 		.description = "Get port's MIB counters",
 		.set = NULL,
 		.get = ar40xx_sw_get_port_mib,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Disable Port",
+		.set = ar40xx_sw_set_disable,
+		.get = ar40xx_sw_get_disable,
+		.max = 1,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable port's IGMP Snooping",
+		.set = ar40xx_sw_set_port_igmp_snooping,
+		.get = ar40xx_sw_get_port_igmp_snooping,
+		.max = 1
 	},
 };
 
@@ -2008,6 +2294,8 @@ static int ar40xx_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to read switch_mac_mode\n");
 		return -EINVAL;
 	}
+	priv->ledstate = 0;
+
 	priv->mac_mode = be32_to_cpup(mac_mode);
 
 	ess_clk = of_clk_get_by_name(switch_node, "ess_clk");
