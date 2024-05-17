@@ -826,25 +826,25 @@ int
 ar40xx_sw_set_leds(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 	if (priv->ledstate == 0) {
-	    priv->ledregs[0] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL0);
-	    priv->ledregs[1] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL1);
-	    priv->ledregs[2] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL2);
-	    priv->ledregs[3] = ar4xxx_read(priv, AR40XX_REG_LED_CTRL3);
+	    priv->ledregs[0] = ar40xx_read(priv, AR40XX_REG_LED_CTRL0);
+	    priv->ledregs[1] = ar40xx_read(priv, AR40XX_REG_LED_CTRL1);
+	    priv->ledregs[2] = ar40xx_read(priv, AR40XX_REG_LED_CTRL2);
+	    priv->ledregs[3] = ar40xx_read(priv, AR40XX_REG_LED_CTRL3);
 	    priv->ledstate = 1;
 	}
 	if (!!val->value.i) {
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL0, priv->ledregs[0]);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL1, priv->ledregs[1]);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL2, priv->ledregs[2]);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL3, priv->ledregs[3]);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL0, priv->ledregs[0]);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL1, priv->ledregs[1]);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL2, priv->ledregs[2]);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL3, priv->ledregs[3]);
 		priv->ledstate = 1;
 	} else {
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL0, 0);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL1, 0);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL2, 0);
-		ar4xxx_write(priv, AR40XX_REG_LED_CTRL3, 0);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL0, 0);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL1, 0);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL2, 0);
+		ar40xx_write(priv, AR40XX_REG_LED_CTRL3, 0);
 		priv->ledstate = 2;
 	}
 	return 0;
@@ -854,7 +854,7 @@ int
 ar40xx_sw_get_leds(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 	if (!priv->ledstate || priv->ledstate == 1)
 		val->value.i = 1;
 	else
@@ -873,7 +873,7 @@ ar40xx_sw_get_port_link(struct switch_dev *dev, int port,
 }
 
 static int
-ar40XX_get_port_igmp(struct ar40xx_priv *priv, int port)
+ar40xx_get_port_igmp(struct ar40xx_priv *priv, int port)
 {
 	u32 fwd_ctrl, frame_ack;
 
@@ -890,7 +890,7 @@ ar40XX_get_port_igmp(struct ar40xx_priv *priv, int port)
 }
 
 static void
-ar40XX_set_port_igmp(struct ar40xx_priv *priv, int port, int enable)
+ar40xx_set_port_igmp(struct ar40xx_priv *priv, int port, int enable)
 {
 	int reg_frame_ack = AR40XX_REG_FRAME_ACK_CTRL(port);
 	u32 val_frame_ack = (AR40XX_FRAME_ACK_CTRL_IGMP_MLD |
@@ -916,7 +916,7 @@ ar40xx_sw_get_port_igmp_snooping(struct switch_dev *dev,
 				 const struct switch_attr *attr,
 				 struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 	int port = val->port_vlan;
 
 	if (port >= AR40XX_NUM_PORTS)
@@ -934,7 +934,7 @@ ar40xx_sw_set_port_igmp_snooping(struct switch_dev *dev,
 				 const struct switch_attr *attr,
 				 struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 	int port = val->port_vlan;
 
 	if (port >= AR40XX_NUM_PORTS)
@@ -985,11 +985,11 @@ ar40xx_sw_get_igmp_v3(struct switch_dev *dev,
 		      const struct switch_attr *attr,
 		      struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 	u32 val_reg;
 
 	mutex_lock(&priv->reg_mutex);
-	val_reg = ar4xxx_read(priv, AR40XX_REG_FRAME_ACK_CTRL1);
+	val_reg = ar40xx_read(priv, AR40XX_REG_FRAME_ACK_CTRL1);
 	val->value.i = ((val_reg & AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN) != 0);
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1001,14 +1001,14 @@ ar40xx_sw_set_igmp_v3(struct switch_dev *dev,
 		      const struct switch_attr *attr,
 		      struct switch_val *val)
 {
-	struct ar4xxx_priv *priv = swdev_to_ar4xxx(dev);
+	struct ar40xx_priv *priv = swdev_to_ar40xx(dev);
 
 	mutex_lock(&priv->reg_mutex);
 	if (val->value.i)
-		ar4xxx_reg_set(priv, AR40XX_REG_FRAME_ACK_CTRL1,
+		ar40xx_reg_set(priv, AR40XX_REG_FRAME_ACK_CTRL1,
 			       AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN);
 	else
-		ar4xxx_reg_clear(priv, AR40XX_REG_FRAME_ACK_CTRL1,
+		ar40xx_reg_clear(priv, AR40XX_REG_FRAME_ACK_CTRL1,
 				 AR40XX_FRAME_ACK_CTRL_IGMP_V3_EN);
 	mutex_unlock(&priv->reg_mutex);
 
