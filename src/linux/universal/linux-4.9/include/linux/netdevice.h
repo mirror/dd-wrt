@@ -2211,6 +2211,15 @@ static inline void netif_tx_napi_add(struct net_device *dev,
 	netif_napi_add(dev, napi, poll, weight);
 }
 
+static inline void netif_threaded_tx_napi_add(struct net_device *dev,
+				     struct napi_struct *napi,
+				     int (*poll)(struct napi_struct *, int),
+				     int weight)
+{
+	set_bit(NAPI_STATE_NO_BUSY_POLL, &napi->state);
+	netif_threaded_napi_add(dev, napi, poll, weight);
+}
+
 /**
  *  netif_napi_del - remove a NAPI context
  *  @napi: NAPI context
