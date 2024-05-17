@@ -2604,11 +2604,11 @@ al_eth_init_napi(struct al_eth_adapter *adapter)
 		if (i < adapter->num_rx_queues) {
 			poll = al_eth_rx_poll;
 			napi->qid = i;
-			netif_napi_add(adapter->netdev, &adapter->al_napi[i].napi, poll, 64);
+			netif_threaded_napi_add(adapter->netdev, &adapter->al_napi[i].napi, poll, 64);
 		} else {
 			poll = al_eth_tx_poll;
 			napi->qid = i - adapter->num_rx_queues;
-			netif_napi_add(adapter->netdev, &adapter->al_napi[i].napi, poll, 64);
+			netif_threaded_tx_napi_add(adapter->netdev, &adapter->al_napi[i].napi, poll, 64);
 		}
 		napi->adapter = adapter;
 	}
