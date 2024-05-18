@@ -1177,16 +1177,10 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 
 	if (irq_num == 1) {
 		int_ctx->shift_factor = 15;
-		if (npd->irq[irq_num]==43)
-			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
-		else
-			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue2", int_ctx);
+		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
 	} else {
 		int_ctx->shift_factor = 0;
-		if (npd->irq[irq_num]==44)
-			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core1", int_ctx);
-		else
-			err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core2", int_ctx);
+		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core1", int_ctx);
 	}
 	if (err) {
 		nss_info_always("%px: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
