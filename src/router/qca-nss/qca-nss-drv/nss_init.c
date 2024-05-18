@@ -64,7 +64,6 @@
  * Global declarations
  */
 int nss_ctl_redirect __read_mostly = 0;
-int nss_ctl_gmac = 1;
 int nss_ctl_debug __read_mostly = 0;
 int nss_ctl_logbuf __read_mostly = 0;
 int nss_jumbo_mru  __read_mostly = 0;
@@ -348,27 +347,6 @@ static int nss_get_average_inst_handler(struct ctl_table *ctl, int write, void _
 }
 #endif
 
-static int nss_gmac_handler(struct ctl_table *ctl, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
-{
-	struct nss_top_instance *nss_top = &nss_top_main;
-	struct nss_ctx_instance *nss_ctx = &nss_top_main.nss[NSS_CORE_0];
-	int ret;
-
-	ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
-	if (!ret) {
-		if ((write) && (nss_ctl_gmac != 0)) {
-			printk(KERN_INFO "Enabling GMAC Offload\n");
-			nss_top->data_plane_ops->data_plane_register(nss_ctx);
-		}
-		if ((write) && (nss_ctl_gmac == 0)) {
-			printk(KERN_INFO "Disabling GMAC Offload\n");
-			nss_top->data_plane_ops->data_plane_unregister();
-		}
-	}
-
-	return ret;
-}
-
 #if (NSS_FW_DBG_SUPPORT == 1)
 /*
  * nss_debug_handler()
@@ -573,13 +551,6 @@ static struct ctl_table nss_general_table[] = {
 		.maxlen                 = sizeof(int),
 		.mode                   = 0644,
 		.proc_handler		= proc_dointvec,
-	},
-	{
-		.procname               = "gmac_offload",
-		.data                   = &nss_ctl_gmac,
-		.maxlen                 = sizeof(int),
-		.mode                   = 0644,
-		.proc_handler		= &nss_gmac_handler,
 	},
 #if (NSS_FW_DBG_SUPPORT == 1)
 	{
