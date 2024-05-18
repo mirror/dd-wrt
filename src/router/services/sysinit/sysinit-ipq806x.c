@@ -646,12 +646,12 @@ void start_sysinit(void)
 	insmod("mii");
 	insmod("phylink");
 	insmod("pcs_xpcs");
+	insmod("qcom-wdt");
 	if (nvram_match("sfe","0") || nvram_match("sfe","1")) {
 		insmod("stmmac"); //for debugging purposes compiled as module
 		insmod("stmmac-platform"); //for debugging purposes compiled as module
 		insmod("dwmac-ipq806x"); //for debugging purposes compiled as module
-	}
-	insmod("qcom-wdt");
+	} else {
 	insmod("qca-nss-gmac");
 	insmod("qca-nss-drv");
 	insmod("qca-nss-crypto");
@@ -676,6 +676,7 @@ void start_sysinit(void)
 	insmod("qca-nss-netlink");
 	insmod("qca-nss-bridge-mgr");
 	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	}
 	/*
 	 * network drivers 
 	 */
