@@ -556,7 +556,7 @@ static int nss_gmac_slowpath_if_link_state(void *app_data, uint32_t link_state)
 {
 	struct net_device *netdev = (struct net_device *)app_data;
 	struct nss_gmac_dev *gmacdev = (struct nss_gmac_dev *)netdev_priv(netdev);
-	printk(KERN_INFO "link state %d, present state %d, gmac state %d\n", link_state, gmacdev->link_state, test_bit(__NSS_GMAC_UP, &gmacdev->flags));
+
 	if (link_state) {
 		napi_enable(&gmacdev->napi);
 		nss_gmac_enable_dma_rx(gmacdev);
@@ -1217,36 +1217,16 @@ EXPORT_SYMBOL(nss_gmac_start_data_plane);
 void nss_gmac_restore_data_plane(struct net_device *netdev)
 {
 	struct nss_gmac_dev *gmacdev = (struct nss_gmac_dev *)netdev_priv(netdev);
-	struct device *dev = &netdev->dev;
 
 	/*
 	 * If this gmac is up, close the netdev to force TX/RX stop, and also reset the features
 	 */
 	if (test_bit(__NSS_GMAC_UP, &gmacdev->flags)) {
-		netif_carrier_off(netdev);
-		gmacdev->data_plane_ops->link_state(gmacdev->data_plane_ctx, 0);
-		gmacdev->link_state = LINKDOWN;
-		gmacdev->duplex_mode = 0;
-		gmacdev->speed = 0;
 		nss_gmac_close(netdev);
 		nss_gmac_reset_netdev_features(netdev);
 	}
 	gmacdev->data_plane_ctx = netdev;
 	gmacdev->data_plane_ops = &nss_gmac_slowpath_ops;
-
-	netdev_info(netdev, "%s: offload is not enabled, bring up gmac with slowpath\n",
-								__func__);
-
-	netif_threaded_napi_add_weight(netdev, &gmacdev->napi, nss_gmac_poll,
-							NSS_GMAC_NAPI_BUDGET);
-
-		/* Initial the RX/TX ring */
-	dma_set_coherent_mask(dev, 0xffffffff);
-	nss_gmac_setup_rx_desc_queue(gmacdev, dev,
-					NSS_GMAC_RX_DESC_SIZE, RINGMODE);
-	nss_gmac_setup_tx_desc_queue(gmacdev, dev,
-					NSS_GMAC_TX_DESC_SIZE, RINGMODE);
-	nss_gmac_rx_refill(gmacdev);
 }
 EXPORT_SYMBOL(nss_gmac_restore_data_plane);
 
