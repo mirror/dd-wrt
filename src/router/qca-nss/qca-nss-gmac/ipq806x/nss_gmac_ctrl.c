@@ -1028,6 +1028,7 @@ static int32_t nss_gmac_of_get_pdata(struct device_node *np,
 	of_property_read_u32(np, "qcom,aux-clk-freq", &gmacdev->aux_clk_freq);
 
 	gmaccfg->phy_mii_type = of_get_phy_mode(np, &phyif);
+	gmaccfg->phy_mii_type = phyif;
 	netdev->irq = irq_of_parse_and_map(np, 0);
 	if (!netdev->irq) {
 		pr_err("%s: Can't map interrupt\n", np->name);
