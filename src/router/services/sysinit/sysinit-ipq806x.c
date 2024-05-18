@@ -86,7 +86,7 @@ typedef struct {
 void set_envtools(int mtd, char *offset, char *envsize, char *blocksize)
 {
 	char m[32];
-	sprintf(m,"/dev/mtd%d",mtd);
+	sprintf(m, "/dev/mtd%d", mtd);
 	FILE *fp = fopen("/tmp/fw_env.config", "wb");
 	if (fp) {
 		fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
@@ -111,11 +111,11 @@ void start_finishupgrade(void)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info =(ipq_smem_bootconfig_v2_info_t*) p;
+				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t *)p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
 				break;
 			}
 			p++;
@@ -192,11 +192,11 @@ static int getbootdevice(void)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t*)p;
+				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t *)p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
 				break;
 			}
 			p++;
@@ -246,11 +246,11 @@ static void setbootdevice(int dev)
 		unsigned int *p = smem;
 		for (i = 0; i < 0x60000 - sizeof(ipq_smem_bootconfig_v2_info); i += 4) {
 			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
-				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t*)p;
+				ipq_smem_bootconfig_v2_info = (ipq_smem_bootconfig_v2_info_t *)p;
 				break;
 			}
 			if (*p == _SMEM_DUAL_BOOTINFO_MAGIC) {
-				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t*)p;
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
 				break;
 			}
 			p++;
@@ -647,35 +647,35 @@ void start_sysinit(void)
 	insmod("phylink");
 	insmod("pcs_xpcs");
 	insmod("qcom-wdt");
-	if (nvram_match("sfe","0") || nvram_match("sfe","1")) {
+	if (nvram_match("sfe", "0") || nvram_match("sfe", "1")) {
 		insmod("stmmac"); //for debugging purposes compiled as module
 		insmod("stmmac-platform"); //for debugging purposes compiled as module
 		insmod("dwmac-ipq806x"); //for debugging purposes compiled as module
 	} else {
-	insmod("qca-nss-gmac");
-	insmod("qca-nss-drv");
-	insmod("qca-nss-crypto");
-	insmod("qca-nss-cfi-cryptoapi");
-	insmod("nsh");
-	insmod("openvswitch");
-	insmod("qca-ovsmgr");
-	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-	insmod("qca-nss-pppoe");
-	insmod("udp_tunnel");
-	insmod("ip6_udp_tunnel");
-	insmod("l2tp_core");
-	insmod("qca-nss-l2tpv2");
-	insmod("pptp");
-	insmod("qca-nss-pptp");
-	insmod("qca-nss-vlan");
-	insmod("vxlan");
-	insmod("qca-nss-vxlanmgr");
-	insmod("qca-nss-qdisc");
-	insmod("qca-mcs");
-	insmod("nss-ifb");
-	insmod("qca-nss-netlink");
-	insmod("qca-nss-bridge-mgr");
-	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+		insmod("qca-nss-gmac");
+		insmod("qca-nss-drv");
+		insmod("qca-nss-crypto");
+		insmod("qca-nss-cfi-cryptoapi");
+		insmod("nsh");
+		insmod("openvswitch");
+		insmod("qca-ovsmgr");
+		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+		insmod("qca-nss-pppoe");
+		insmod("udp_tunnel");
+		insmod("ip6_udp_tunnel");
+		insmod("l2tp_core");
+		insmod("qca-nss-l2tpv2");
+		insmod("pptp");
+		insmod("qca-nss-pptp");
+		insmod("qca-nss-vlan");
+		insmod("vxlan");
+		insmod("qca-nss-vxlanmgr");
+		insmod("qca-nss-qdisc");
+		insmod("qca-mcs");
+		insmod("nss-ifb");
+		insmod("qca-nss-netlink");
+		insmod("qca-nss-bridge-mgr");
+		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	}
 	/*
 	 * network drivers 
@@ -683,11 +683,10 @@ void start_sysinit(void)
 
 	//insmod("qdpc-host.ko");
 	mtd = getMTD("APPSBLENV");
-	if (mtd==-1)
+	if (mtd == -1)
 		mtd = getMTD("u_env");
-	if (mtd!=-1)
-	set_envtools(mtd, "0x0", "0x20000", "0x20000");
-	
+	if (mtd != -1)
+		set_envtools(mtd, "0x0", "0x20000", "0x20000");
 
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
