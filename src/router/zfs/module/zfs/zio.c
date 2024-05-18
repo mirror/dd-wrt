@@ -803,9 +803,10 @@ zio_notify_parent(zio_t *pio, zio_t *zio, enum zio_wait_type wait,
 
 		/*
 		 * If we can tell the caller to execute this parent next, do
-		 * so. We only do this if the parent's zio type matches the
-		 * child's type. Otherwise dispatch the parent zio in its
-		 * own taskq.
+		 * so. We do this if the parent's zio type matches the child's
+		 * type, or if it's a zio_null() with no done callback, and so
+		 * has no actual work to do. Otherwise dispatch the parent zio
+		 * in its own taskq.
 		 *
 		 * Having the caller execute the parent when possible reduces
 		 * locking on the zio taskq's, reduces context switch
@@ -825,7 +826,8 @@ zio_notify_parent(zio_t *pio, zio_t *zio, enum zio_wait_type wait,
 		 * of writes for spa_sync(), and the chain of ZIL blocks.
 		 */
 		if (next_to_executep != NULL && *next_to_executep == NULL &&
-		    pio->io_type == zio->io_type) {
+		    (pio->io_type == zio->io_type ||
+		    (pio->io_type == ZIO_TYPE_NULL && !pio->io_done))) {
 			*next_to_executep = pio;
 		} else {
 			zio_taskq_dispatch(pio, type, B_FALSE);
@@ -2021,7 +2023,6 @@ zio_taskq_dispatch(zio_t *zio, zio_taskq_type_t q, boolean_t cutinline)
 {
 	spa_t *spa = zio->io_spa;
 	zio_type_t t = zio->io_type;
-	int flags = (cutinline ? TQ_FRONT : 0);
 
 	/*
 	 * If we're a config writer or a probe, the normal issue and
@@ -2039,23 +2040,18 @@ zio_taskq_dispatch(zio_t *zio, zio_taskq_type_t q, boolean_t cutinline)
 
 	/*
 	 * If this is a high priority I/O, then use the high priority taskq if
-	 * available.
+	 * available or cut the line otherwise.
 	 */
-	if ((zio->io_priority == ZIO_PRIORITY_NOW ||
-	    zio->io_priority == ZIO_PRIORITY_SYNC_WRITE) &&
-	    spa->spa_zio_taskq[t][q + 1].stqs_count != 0)
-		q++;
+	if (zio->io_priority == ZIO_PRIORITY_SYNC_WRITE) {
+		if (spa->spa_zio_taskq[t][q + 1].stqs_count != 0)
+			q++;
+		else
+			cutinline = B_TRUE;
+	}
 
 	ASSERT3U(q, <, ZIO_TASKQ_TYPES);
 
-	/*
-	 * NB: We are assuming that the zio can only be dispatched
-	 * to a single taskq at a time.  It would be a grievous error
-	 * to dispatch the zio to another taskq at the same time.
-	 */
-	ASSERT(taskq_empty_ent(&zio->io_tqent));
-	spa_taskq_dispatch_ent(spa, t, q, zio_execute, zio, flags,
-	    &zio->io_tqent, zio);
+	spa_taskq_dispatch(spa, t, q, zio_execute, zio, cutinline);
 }
 
 static boolean_t
@@ -2532,8 +2528,10 @@ zio_suspend(spa_t *spa, zio_t *zio, zio_suspend_reason_t reason)
 		    "failure and the failure mode property for this pool "
 		    "is set to panic.", spa_name(spa));
 
-	cmn_err(CE_WARN, "Pool '%s' has encountered an uncorrectable I/O "
-	    "failure and has been suspended.\n", spa_name(spa));
+	if (reason != ZIO_SUSPEND_MMP) {
+		cmn_err(CE_WARN, "Pool '%s' has encountered an uncorrectable "
+		    "I/O failure and has been suspended.\n", spa_name(spa));
+	}
 
 	(void) zfs_ereport_post(FM_EREPORT_ZFS_IO_FAILURE, spa, NULL,
 	    NULL, NULL, 0);
@@ -2921,7 +2919,6 @@ static void
 zio_gang_inherit_allocator(zio_t *pio, zio_t *cio)
 {
 	cio->io_allocator = pio->io_allocator;
-	cio->io_wr_iss_tq = pio->io_wr_iss_tq;
 }
 
 static void
@@ -4114,7 +4111,8 @@ zio_vdev_io_done(zio_t *zio)
 		if (zio_injection_enabled && zio->io_error == 0)
 			zio->io_error = zio_handle_label_injection(zio, EIO);
 
-		if (zio->io_error && zio->io_type != ZIO_TYPE_TRIM) {
+		if (zio->io_error && zio->io_type != ZIO_TYPE_FLUSH &&
+		    zio->io_type != ZIO_TYPE_TRIM) {
 			if (!vdev_accessible(vd, zio)) {
 				zio->io_error = SET_ERROR(ENXIO);
 			} else {
@@ -5001,10 +4999,9 @@ zio_done(zio_t *zio)
 			 * Reexecution is potentially a huge amount of work.
 			 * Hand it off to the otherwise-unused claim taskq.
 			 */
-			ASSERT(taskq_empty_ent(&zio->io_tqent));
-			spa_taskq_dispatch_ent(zio->io_spa,
+			spa_taskq_dispatch(zio->io_spa,
 			    ZIO_TYPE_CLAIM, ZIO_TASKQ_ISSUE,
-			    zio_reexecute, zio, 0, &zio->io_tqent, NULL);
+			    zio_reexecute, zio, B_FALSE);
 		}
 		return (NULL);
 	}

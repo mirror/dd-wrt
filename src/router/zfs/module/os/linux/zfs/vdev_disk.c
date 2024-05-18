@@ -397,7 +397,7 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 			if (v->vdev_removed)
 				break;
 
-			schedule_timeout(MSEC_TO_TICK(10));
+			schedule_timeout_interruptible(MSEC_TO_TICK(10));
 		} else if (unlikely(BDH_PTR_ERR(bdh) == -ERESTARTSYS)) {
 			timeout = MSEC2NSEC(zfs_vdev_open_timeout_ms * 10);
 			continue;
@@ -429,8 +429,11 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 	/*  Determine the logical block size */
 	int logical_block_size = bdev_logical_block_size(bdev);
 
-	/* Clear the nowritecache bit, causes vdev_reopen() to try again. */
-	v->vdev_nowritecache = B_FALSE;
+	/*
+	 * If the device has a write cache, clear the nowritecache flag,
+	 * so that we start issuing flush requests again.
+	 */
+	v->vdev_nowritecache = !zfs_bdev_has_write_cache(bdev);
 
 	/* Set when device reports it supports TRIM. */
 	v->vdev_has_trim = bdev_discard_supported(bdev);
