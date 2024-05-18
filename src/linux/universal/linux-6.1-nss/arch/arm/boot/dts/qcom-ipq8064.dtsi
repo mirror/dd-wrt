@@ -1531,7 +1531,7 @@
 
 		gmac2: ethernet@37400000 {
 			device_type = "network";
-			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+			compatible = "qcom,ipq806x-gmac", "snps,dwmac", "qcom,nss-gmac";
 			reg = <0x37400000 0x200000>;
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
