@@ -72,7 +72,7 @@ BCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 HCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/common/include
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -g $(THUMB)
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE $(THUMB)
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
