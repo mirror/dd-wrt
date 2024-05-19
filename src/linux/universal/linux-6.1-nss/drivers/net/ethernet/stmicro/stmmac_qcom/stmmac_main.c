@@ -2438,7 +2438,6 @@ static int stmmac_tx_clean(struct stmmac_priv *priv, u32 queue)
 	}
 
 	spin_unlock(&priv->tx_lock);
-
 	/* Combine decisions from TX clean and XSK TX */
 	return max(count, xmits);
 }
@@ -2722,9 +2721,11 @@ static void stmmac_tx_timer(struct timer_list *t)
 	struct stmmac_tx_queue *tx_q = container_of(t, struct stmmac_tx_queue, txtimer);
 	struct stmmac_priv *priv = tx_q->priv_data;
 	struct stmmac_channel *ch;
-	ch = &priv->channel[tx_q->queue_index];
-
-	stmmac_tx_clean(priv, ch->index);
+	int i;
+	for (i=0;i<priv->plat->tx_queues_to_use;i++) {
+		ch = &priv->channel[i];
+		stmmac_tx_clean(priv, ch->index);
+	}
 }
 
 /**
@@ -4898,10 +4899,14 @@ static int stmmac_napi_poll_rx(struct napi_struct *napi, int budget)
 	struct stmmac_priv *priv = ch->priv_data;
 	u32 chan = ch->index;
 	int work_done;
-
+	
 	priv->xstats.napi_poll++;
-	stmmac_tx_clean(priv, chan);
-
+	int i;
+	for (i=0;i<priv->plat->tx_queues_to_use;i++) {
+		ch = &priv->channel[i];
+		stmmac_tx_clean(priv, ch->index);
+	}
+	
 	work_done = stmmac_rx(priv, budget, chan);
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
 		stmmac_enable_dma_irq(priv, priv->ioaddr, chan, 1, 0);
