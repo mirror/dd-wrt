@@ -479,19 +479,25 @@ static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
 	pthread_spin_lock(&p_mutex);
 
 	db = realloc(db, dblen + sizeof(*db));
+	int nextoffset = dblen/sizeof(*db);
 	dblen += sizeof(*db);
-	struct DBENTRY entry;
-	memcpy(entry.md5sum, sum, 16);
-	entry.fail = fail;
-	entry.pb = pb;
-	entry.lp = lp;
-	entry.lc = lc;
+	memcpy(db[nextoffset].md5sum, sum, 16);
+	db[nextoffset].fail = fail;
+	db[nextoffset].pb = pb;
+	db[nextoffset].lp = lp;
+	db[nextoffset].lc = lc;
+	pthread_spin_unlock(&p_mutex);
+}
+
+static void writedb(void)
+{
+	pthread_spin_lock(&p_mutex);
 	FILE *out = opendatabase("a+");
 	if (!out) {
 		pthread_spin_unlock(&p_mutex);
 		return;
 	}
-	int wr = fwrite(&entry, sizeof(entry), 1, out);
+	fwrite(db, dblen, 1, out);
 	fclose(out);
 	pthread_spin_unlock(&p_mutex);
 }
@@ -536,6 +542,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	free(test2);
 	if (s_fail)
 		test1len = 0;
+	writeparameters(pb, lc, lp, s_fail, md5);
 	return test1len;
 }
 
@@ -567,8 +574,8 @@ void xz_usage()
 
 int xz_deinit(void)
 {
-	writeparameters(pb, lc, lp, s_fail, md5);
 	int testcount;
+	writedb();
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		if (matrix[testcount].used)
 			printf("{%d,%d,%d},\n", matrix[testcount].pb, matrix[testcount].lc, matrix[testcount].lp);
