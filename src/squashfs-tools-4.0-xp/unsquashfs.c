@@ -36,6 +36,7 @@
 #include <sys/resource.h>
 #include <limits.h>
 #include <ctype.h>
+#include <sys/sysmacros.h>
 
 struct cache *fragment_cache, *data_cache;
 struct queue *to_reader, *to_inflate, *to_writer, *from_writer;

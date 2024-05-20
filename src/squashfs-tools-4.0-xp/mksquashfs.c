@@ -60,6 +60,7 @@
 #include <endian.h>
 #include <sys/sysinfo.h>
 #endif
+#include <sys/sysmacros.h>
 
 #include "squashfs_fs.h"
 #include "squashfs_swap.h"

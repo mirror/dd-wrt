@@ -32,18 +32,17 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-static struct bcj bcj[] = {
-	{"x86", LZMA_FILTER_X86, 0},
-	{"powerpc", LZMA_FILTER_POWERPC, 0},
-	{"ia64", LZMA_FILTER_IA64, 0},
-	{"arm", LZMA_FILTER_ARM, 0},
-	{"armthumb", LZMA_FILTER_ARMTHUMB, 0},
-	{"sparc", LZMA_FILTER_SPARC, 0},
-	{"swizzle16", LZMA_FILTER_SWIZZLE16, 0},
-	{"swizzle32", LZMA_FILTER_SWIZZLE32, 0},
-	{"swizzle64", LZMA_FILTER_SWIZZLE64, 0},
-	{NULL, LZMA_VLI_UNKNOWN, 0}
-};
+static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
+			    { "powerpc", LZMA_FILTER_POWERPC, 0 },
+			    { "ia64", LZMA_FILTER_IA64, 0 },
+			    { "arm", LZMA_FILTER_ARM, 0 },
+			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0 },
+			    { "sparc", LZMA_FILTER_SPARC, 0 },
+			    { "swizzle16", LZMA_FILTER_SWIZZLE16, 0 },
+			    { "swizzle32", LZMA_FILTER_SWIZZLE32, 0 },
+			    { "swizzle64", LZMA_FILTER_SWIZZLE64, 0 },
+			    { "delta", LZMA_FILTER_DELTA, 0 },
+			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
 
 static int filter_count = 1;
 
@@ -72,7 +71,8 @@ static int xz_options(char *argv[], int argc)
 				}
 			}
 			if (bcj[i].name == NULL) {
-				fprintf(stderr, "xz: -Xbcj unrecognised " "filter\n");
+				fprintf(stderr, "xz: -Xbcj unrecognised "
+						"filter\n");
 				return -2;
 			}
 		}
@@ -205,40 +205,77 @@ struct MATRIXENTRY {
 	int used;
 };
 
-
-
 static struct MATRIXENTRY matrix[] = {
-{0,0,0},
-{0,0,1},
-{0,0,2},
-{0,1,0},
-{0,1,1},
-{0,2,0},
-{0,2,1},
-{0,3,0},
-{0,3,1},
-{1,0,0},
-{1,0,1},
-{1,0,2},
-{1,0,3},
-{1,1,0},
-{1,1,1},
-{1,1,2},
-{1,2,1},
-{1,3,0},
-{1,3,1},
-{2,0,0},
-{2,0,1},
-{2,0,2},
-{2,0,3},
-{2,1,2},
-{2,2,2},
-{3,0,1},
-{3,0,2},
+	{ 0, 0, 0 }, 
+	{ 0, 0, 1 }, 
+	{ 0, 0, 2 }, 
+	{ 0, 0, 3 }, 
+	{ 0, 1, 0 }, 
+	{ 0, 1, 1 }, 
+	{ 0, 1, 2 }, 
+	{ 0, 1, 3 }, 
+	{ 0, 2, 0 }, 
+	{ 0, 2, 1 }, 
+	{ 0, 2, 2 }, 
+	{ 0, 2, 3 }, 
+	{ 0, 3, 0 }, 
+	{ 0, 3, 1 },
+	{ 0, 3, 2 }, 
+	{ 0, 3, 3 },
+	{ 1, 0, 0 }, 
+	{ 1, 0, 1 }, 
+	{ 1, 0, 2 }, 
+	{ 1, 0, 3 }, 
+	{ 1, 1, 0 }, 
+	{ 1, 1, 1 }, 
+	{ 1, 1, 2 }, 
+	{ 1, 1, 3 }, 
+	{ 1, 2, 0 }, 
+	{ 1, 2, 1 }, 
+	{ 1, 2, 2 }, 
+	{ 1, 2, 3 }, 
+	{ 1, 3, 0 },
+	{ 1, 3, 1 }, 
+	{ 1, 3, 2 },
+	{ 1, 3, 3 }, 
+	{ 2, 0, 0 }, 
+	{ 2, 0, 1 }, 
+	{ 2, 0, 2 }, 
+	{ 2, 0, 3 }, 
+	{ 2, 1, 0 }, 
+	{ 2, 1, 1 }, 
+	{ 2, 1, 2 }, 
+	{ 2, 1, 3 }, 
+	{ 2, 2, 0 }, 
+	{ 2, 2, 1 }, 
+	{ 2, 2, 2 }, 
+	{ 2, 2, 3 }, 
+	{ 2, 3, 0 }, 
+	{ 2, 3, 1 }, 
+	{ 2, 3, 2 }, 
+	{ 2, 3, 3 }, 
+
+	{ 3, 0, 0 }, 
+	{ 3, 0, 1 }, 
+	{ 3, 0, 2 }, 
+	{ 3, 0, 3 }, 
+	{ 3, 1, 0 }, 
+	{ 3, 1, 1 }, 
+	{ 3, 1, 2 }, 
+	{ 3, 1, 3 }, 
+	{ 3, 2, 0 }, 
+	{ 3, 2, 1 }, 
+	{ 3, 2, 2 }, 
+	{ 3, 2, 3 }, 
+	{ 3, 3, 0 }, 
+	{ 3, 3, 1 }, 
+	{ 3, 3, 2 }, 
+	{ 3, 3, 3 }, 
 };
 
-//static struct MATRIXENTRY matrix[4*4*4];
+static pthread_spinlock_t p_mutex;
 
+//static struct MATRIXENTRY matrix[4*4*4];
 
 /*
  * This function is called by mksquashfs to initialise the
@@ -249,12 +286,12 @@ static struct MATRIXENTRY matrix[] = {
  */
 static int xz_init(void **strm, int block_size, int datablock)
 {
-
 	int i, j, filters = datablock ? filter_count : 1;
 	struct filter *filter = malloc(filters * sizeof(struct filter));
 	struct xz_stream *stream;
 	struct lzma_xz_options *opts = lzma_xz_get_options();
-/*	int a,b,c,cnt=0;
+
+	/*	int a,b,c,cnt=0;
 	for (a=0;a<4;a++)
 	for (b=0;b<4;b++)
 	for (c=0;c<4;c++)  {
@@ -265,7 +302,10 @@ static int xz_init(void **strm, int block_size, int datablock)
 
 	if (filter == NULL)
 		goto failed;
-
+	static int inited = 0;
+	if (!inited)
+		pthread_spin_init(&p_mutex, 0);
+	inited = 1;
 	stream = *strm = malloc(sizeof(struct xz_stream));
 	if (stream == NULL)
 		goto failed2;
@@ -283,7 +323,7 @@ static int xz_init(void **strm, int block_size, int datablock)
 
 	for (i = 0, j = 1; datablock && bcj[i].name; i++) {
 		if (bcj[i].selected) {
-			filter[j].buffer = malloc(block_size*4);
+			filter[j].buffer = malloc(block_size * 4);
 			if (filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
@@ -337,7 +377,8 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		stream->opt.dict_size = stream->dictionary_size;
 
 		filter->length = 0;
-		res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length, block_size);
+		res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length,
+						block_size);
 		if (res == LZMA_OK) {
 			if (!selected || selected->length > filter->length)
 				selected = filter;
@@ -358,7 +399,7 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		   dest[selected->length++] = lp;
 		   dest[selected->length++] = pb;
 		   dest[selected->length++] = opts->fb; */
-	}else {
+	} else {
 	}
 	*error = 0;
 	return (int)selected->length;
@@ -372,35 +413,143 @@ failed:
 	return -1;
 }
 
-
 typedef unsigned long uLongf;
+
+#include "md5.h"
+#include <unistd.h>
+typedef struct DBENTRY {
+	char md5sum[16];
+	unsigned char fail;
+	unsigned char pb;
+	unsigned char lc;
+	unsigned char lp;
+} DBENTRY;
+
+static FILE *opendatabase(char *mode)
+{
+	char buf[1024];
+	readlink("/proc/self/exe", buf, sizeof(buf));
+	char *dir = dirname(buf);
+	char name[1024];
+	sprintf(name, "%s/matrix.db", buf);
+	FILE *fp = fopen(name, mode);
+	return fp;
+}
+static struct DBENTRY *db = NULL;
+static size_t dblen;
+static pthread_spinlock_t p_mutex;
+
+static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, char *sum)
+{
+	md5_ctx_t MD;
+	dd_md5_begin(&MD);
+	dd_md5_hash(src, len, &MD);
+	dd_md5_end(sum, &MD);
+	pthread_spin_lock(&p_mutex);
+
+	FILE *in;
+	if (!db) {
+		in = opendatabase("rb");
+		if (!in) {
+			pthread_spin_unlock(&p_mutex);
+			return -1;
+		}
+		fseek(in, 0, SEEK_END);
+		dblen = ftell(in);
+		if (!dblen) {
+			fclose(in);
+			pthread_spin_unlock(&p_mutex);
+			return -1;
+		}
+
+		db = malloc(dblen);
+		rewind(in);
+		if (!db) {
+			fclose(in);
+			pthread_spin_unlock(&p_mutex);
+			return -1;
+		}
+		fread(db, dblen, 1, in);
+		fclose(in);
+	}
+	int i;
+	for (i = 0; i < dblen / sizeof(*db); i++) {
+		if (!memcmp(db[i].md5sum, sum, 16)) {
+			*pb = db[i].pb;
+			*lc = db[i].lc;
+			*lp = db[i].lp;
+			*fail = db[i].fail;
+			pthread_spin_unlock(&p_mutex);
+			return 0;
+		}
+	}
+	pthread_spin_unlock(&p_mutex);
+	return -1;
+}
+
+static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
+{
+	pthread_spin_lock(&p_mutex);
+
+	db = realloc(db, dblen + sizeof(*db));
+	dblen += sizeof(*db);
+	struct DBENTRY entry;
+	memcpy(entry.md5sum, sum, 16);
+	entry.fail = fail;
+	entry.pb = pb;
+	entry.lp = lp;
+	entry.lc = lc;
+	FILE *out = opendatabase("a+");
+	if (!out) {
+		pthread_spin_unlock(&p_mutex);
+		return;
+	}
+	int wr = fwrite(&entry, sizeof(entry), 1, out);
+	fclose(out);
+	pthread_spin_unlock(&p_mutex);
+}
 
 static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int block_size, int *error)
 {
-	int test1len,test3len;
-	int s_fail;
+	int test1len, test3len;
+	int s_fail = 0;
 	int i, a;
 	test1len = block_size * 2;
 	int oldstate;
 	int testcount;
+	int lp;
+	int lc;
+	int pb;
+	char md5[16];
+	int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
+	if (!ret) {
+		if (s_fail)
+			return 0;
+		int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, &error, lc, lp, pb);
+		return len;
+	}
 	unsigned char *test2 = (unsigned char *)malloc(block_size * 4);
 	s_fail = 1;
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		int takelcvalue = matrix[testcount].lc;
 		int takepbvalue = matrix[testcount].pb;
 		int takelpvalue = matrix[testcount].lp;
-		int error=0;
+		int error = 0;
 		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error, takelcvalue, takelpvalue, takepbvalue);
 		if (!error && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
 			s_fail = 0;
 			matrix[testcount].used = 1;
+			pb = takepbvalue;
+			lc = takelcvalue;
+			lp = takelpvalue;
 		}
 	}
 	free(test2);
 	if (s_fail)
 		test1len = 0;
+	writeparameters(pb, lc, lp, s_fail, md5);
 	return test1len;
 }
 
@@ -409,8 +558,7 @@ static int xz_uncompress(void *dest, void *src, int size, int block_size, int *e
 	size_t src_pos = 0;
 	size_t dest_pos = 0;
 	uint64_t memlimit = MEMLIMIT;
-	lzma_ret res = lzma_stream_buffer_decode(&memlimit, 0, NULL,
-						 src, &src_pos, size, dest, &dest_pos, block_size);
+	lzma_ret res = lzma_stream_buffer_decode(&memlimit, 0, NULL, src, &src_pos, size, dest, &dest_pos, block_size);
 	if (res == LZMA_OK && size == (int)src_pos)
 		return (int)dest_pos;
 	else {
@@ -436,25 +584,22 @@ int xz_deinit(void)
 	int testcount;
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		if (matrix[testcount].used)
-			printf("{%d,%d,%d},\n",matrix[testcount].pb,matrix[testcount].lc,matrix[testcount].lp);
+			printf("{%d,%d,%d},\n", matrix[testcount].pb, matrix[testcount].lc, matrix[testcount].lp);
 	}
-	
-	
+
 	return 0;
 }
 
-struct compressor xz_comp_ops = {
-	.init = xz_init,
-	.deinit = xz_deinit,
-	.compress = xz_compress,
-	.uncompress = xz_uncompress,
-	.options = xz_options,
-	.options_post = xz_options_post,
-	.dump_options = xz_dump_options,
-	.extract_options = xz_extract_options,
-//	.display_options = xz_display_options,
-	.usage = xz_usage,
-	.id = XZ_COMPRESSION,
-	.name = "xz",
-	.supported = 1
-};
+struct compressor xz_comp_ops = { .init = xz_init,
+				  .deinit = xz_deinit,
+				  .compress = xz_compress,
+				  .uncompress = xz_uncompress,
+				  .options = xz_options,
+				  .options_post = xz_options_post,
+				  .dump_options = xz_dump_options,
+				  .extract_options = xz_extract_options,
+				  //	.display_options = xz_display_options,
+				  .usage = xz_usage,
+				  .id = XZ_COMPRESSION,
+				  .name = "xz",
+				  .supported = 1 };
