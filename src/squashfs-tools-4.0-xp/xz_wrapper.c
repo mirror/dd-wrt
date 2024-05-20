@@ -492,7 +492,7 @@ static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
 static void writedb(void)
 {
 	pthread_spin_lock(&p_mutex);
-	FILE *out = opendatabase("a+");
+	FILE *out = opendatabase("wb");
 	if (!out) {
 		pthread_spin_unlock(&p_mutex);
 		return;
