@@ -1607,7 +1607,7 @@ void nf_conntrack_tcp_init_net(struct net *net)
 	tn->tcp_be_liberal = 0;
 
 	/* Skip Windows Check */
-	tn->tcp_no_window_check = 0;
+	tn->tcp_no_window_check = 1;
 
 	/* If it's non-zero, we turn off RST sequence number check */
 	tn->tcp_ignore_invalid_rst = 0;
