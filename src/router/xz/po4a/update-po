@@ -1,5 +1,6 @@
 #!/bin/sh
-#
+# SPDX-License-Identifier: 0BSD
+
 #############################################################################
 #
 # Updates xz-man.pot and the *.po files, and generates translated man pages.
@@ -9,9 +10,6 @@
 #############################################################################
 #
 # Author: Lasse Collin
-#
-# This file has been put into the public domain.
-# You can do whatever you want with this file.
 #
 #############################################################################
 
@@ -26,12 +24,31 @@ fi
 if test ! -f po4a.conf; then
 	cd `dirname "$0"` || exit 1
 	if test ! -f po4a.conf; then
-		echo "update-po: Error: Cannot find po4a.conf." >&2
+		echo "po4a/update-po: Error: Cannot find po4a.conf." >&2
 		exit 1
 	fi
 fi
 
 PACKAGE_VERSION=`cd .. && sh build-aux/version.sh` || exit 1
+
+# Put the author info from the .po files into the header comment of
+# the generated man pages.
+for FILE in *.po
+do
+	printf '%s\n.\\"\n' \
+'PO4A-HEADER: position=^\.\\" Author; mode=after; beginboundary=^\.\\"$' \
+		> "$FILE.authors"
+	sed '
+		/^[^#]/,$d
+		/: 0BSD$/d
+		/BSD Zero Clause License/d
+		/distributed under the same license/d
+		/in the public domain/d
+		/The XZ Utils authors and contributors$/d
+		/^#$/d
+		s/^#/.\\"/
+		' "$FILE" >> "$FILE.authors"
+done
 
 # Using --force to get up-to-date version numbers in the output files
 # when nothing else has changed. This makes it slower but it's fine
@@ -41,5 +58,13 @@ set -x
 po4a --force --verbose \
 	--package-name="XZ Utils" \
 	--package-version="$PACKAGE_VERSION" \
-	--copyright-holder="This file is put in the public domain." \
+	--copyright-holder="The XZ Utils authors and contributors" \
 	po4a.conf
+
+# Add the customized POT header which contains the SPDX license
+# identifier and spells out the license name instead of saying
+# "the same license as the XZ Utils package".
+mv xz-man.pot xz-man.pot.tmp
+cat ../po/xz.pot-header > xz-man.pot
+sed '1,/^#$/d' xz-man.pot.tmp >> xz-man.pot
+rm xz-man.pot.tmp

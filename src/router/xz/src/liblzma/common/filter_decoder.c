@@ -1,12 +1,11 @@
+// SPDX-License-Identifier: 0BSD
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 /// \file       filter_decoder.c
 /// \brief      Filter ID mapping to filter-specific functions
 //
 //  Author:     Lasse Collin
-//
-//  This file has been put into the public domain.
-//  You can do whatever you want with this file.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -46,6 +45,12 @@ static const lzma_filter_decoder decoders[] = {
 #ifdef HAVE_DECODER_LZMA1
 	{
 		.id = LZMA_FILTER_LZMA1,
+		.init = &lzma_lzma_decoder_init,
+		.memusage = &lzma_lzma_decoder_memusage,
+		.props_decode = &lzma_lzma_props_decode,
+	},
+	{
+		.id = LZMA_FILTER_LZMA1EXT,
 		.init = &lzma_lzma_decoder_init,
 		.memusage = &lzma_lzma_decoder_memusage,
 		.props_decode = &lzma_lzma_props_decode,
@@ -99,10 +104,26 @@ static const lzma_filter_decoder decoders[] = {
 		.props_decode = &lzma_simple_props_decode,
 	},
 #endif
+#ifdef HAVE_DECODER_ARM64
+	{
+		.id = LZMA_FILTER_ARM64,
+		.init = &lzma_simple_arm64_decoder_init,
+		.memusage = NULL,
+		.props_decode = &lzma_simple_props_decode,
+	},
+#endif
 #ifdef HAVE_DECODER_SPARC
 	{
 		.id = LZMA_FILTER_SPARC,
 		.init = &lzma_simple_sparc_decoder_init,
+		.memusage = NULL,
+		.props_decode = &lzma_simple_props_decode,
+	},
+#endif
+#ifdef HAVE_DECODER_RISCV
+	{
+		.id = LZMA_FILTER_RISCV,
+		.init = &lzma_simple_riscv_decoder_init,
 		.memusage = NULL,
 		.props_decode = &lzma_simple_props_decode,
 	},

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: 0BSD */
+
 /* How many MiB of RAM to assume if the real amount cannot be determined. */
 #define ASSUME_RAM 32
 
@@ -15,6 +17,9 @@
 
 /* Define to 1 if arm decoder is enabled. */
 #define HAVE_DECODER_ARM 1
+
+/* Define to 1 if arm64 decoder is enabled. */
+#define HAVE_DECODER_ARM64 1
 
 /* Define to 1 if armthumb decoder is enabled. */
 #define HAVE_DECODER_ARMTHUMB 1
@@ -46,6 +51,9 @@
 /* Define to 1 if arm encoder is enabled. */
 #define HAVE_ENCODER_ARM 1
 
+/* Define to 1 if arm64 encoder is enabled. */
+#define HAVE_ENCODER_ARM64 1
+
 /* Define to 1 if armthumb encoder is enabled. */
 #define HAVE_ENCODER_ARMTHUMB 1
 
@@ -75,6 +83,9 @@
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
+
+/* Define to 1 if .lz (lzip) decompression support is enabled. */
+#define HAVE_LZIP_DECODER 1
 
 /* Define to 1 to enable bt2 match finder. */
 #define HAVE_MF_BT2 1
@@ -106,14 +117,14 @@
 /* Define to 1 if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
 
-/* Define to 1 if you have the `utimes' function. */
+/* Define to 1 if you have the 'utimes' function. */
 #define HAVE_UTIMES 1
 
 /* Define to 1 or 0, depending whether the compiler supports simple visibility
    declarations. */
 #define HAVE_VISIBILITY 0
 
-/* Define to 1 if the system has the type `_Bool'. */
+/* Define to 1 if the system has the type '_Bool'. */
 #define HAVE__BOOL 1
 
 /* Define to 1 if the GNU C extension __builtin_assume_aligned is supported.
@@ -128,15 +139,15 @@
 #define NDEBUG 1
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "lasse.collin@tukaani.org"
+#define PACKAGE_BUGREPORT "xz@tukaani.org"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "XZ Utils"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL "https://tukaani.org/xz/"
+#define PACKAGE_URL "https://xz.tukaani.org/xz-utils/"
 
-/* The size of `size_t', as computed by sizeof. */
+/* The size of 'size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
 
 /* Define to 1 if the system supports fast unaligned access to 16-bit and

@@ -1,12 +1,13 @@
+/* SPDX-License-Identifier: 0BSD */
+
 /*
  * Author: Lasse Collin
- *
- * This file has been put into the public domain.
- * You can do whatever you want with this file.
  */
 
 #include <winresrc.h>
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 #define LZMA_H_INTERNAL
 #define LZMA_H_INTERNAL_RC
 #include "lzma/version.h"

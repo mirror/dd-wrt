@@ -1,9 +1,5 @@
-##
+## SPDX-License-Identifier: 0BSD
 ## Author: Lasse Collin
-##
-## This file has been put into the public domain.
-## You can do whatever you want with this file.
-##
 
 nodist_bin_SCRIPTS = xzdiff xzgrep xzmore xzless
 dist_man_MANS = xzdiff.1 xzgrep.1 xzmore.1 xzless.1

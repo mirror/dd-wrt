@@ -1,9 +1,5 @@
-##
+## SPDX-License-Identifier: 0BSD
 ## Author: Lasse Collin
-##
-## This file has been put into the public domain.
-## You can do whatever you want with this file.
-##
 
 bin_PROGRAMS = xz
 
@@ -25,6 +21,8 @@ xz_SOURCES = \
 	options.c \
 	options.h \
 	private.h \
+	sandbox.c \
+	sandbox.h \
 	signals.c \
 	signals.h \
 	suffix.c \
@@ -53,7 +51,7 @@ xz_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/api \
 	-I$(top_builddir)/lib
 
-xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la $(CAPSICUM_LIB)
+xz_LDADD = $(top_builddir)/src/liblzma/liblzma.la
 
 if COND_GNULIB
 xz_LDADD += $(top_builddir)/lib/libgnu.a

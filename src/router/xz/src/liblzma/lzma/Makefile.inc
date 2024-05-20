@@ -1,18 +1,11 @@
-##
+## SPDX-License-Identifier: 0BSD
 ## Author: Lasse Collin
-##
-## This file has been put into the public domain.
-## You can do whatever you want with this file.
-##
 
 EXTRA_DIST += lzma/fastpos_tablegen.c
 
-liblzma_la_SOURCES += lzma/lzma_common.h
-
-if COND_FILTER_LZMA1
 liblzma_la_SOURCES += \
+	lzma/lzma_common.h \
 	lzma/lzma_encoder_presets.c
-endif
 
 if COND_ENCODER_LZMA1
 liblzma_la_SOURCES += \

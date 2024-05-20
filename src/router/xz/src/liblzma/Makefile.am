@@ -1,9 +1,5 @@
-##
+## SPDX-License-Identifier: 0BSD
 ## Author: Lasse Collin
-##
-## This file has been put into the public domain.
-## You can do whatever you want with this file.
-##
 
 SUBDIRS = api
 
@@ -24,12 +20,16 @@ liblzma_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblzma/simple \
 	-I$(top_srcdir)/src/common \
 	-DTUKLIB_SYMBOL_PREFIX=lzma_
-liblzma_la_LDFLAGS = -no-undefined -version-info 7:5:2
+liblzma_la_LDFLAGS = -no-undefined -version-info 11:1:6
 
-EXTRA_DIST += liblzma.map validate_map.sh
-if COND_SYMVERS
+EXTRA_DIST += liblzma_generic.map liblzma_linux.map validate_map.sh
+if COND_SYMVERS_GENERIC
 liblzma_la_LDFLAGS += \
-	-Wl,--version-script=$(top_srcdir)/src/liblzma/liblzma.map
+	-Wl,--version-script=$(top_srcdir)/src/liblzma/liblzma_generic.map
+endif
+if COND_SYMVERS_LINUX
+liblzma_la_LDFLAGS += \
+	-Wl,--version-script=$(top_srcdir)/src/liblzma/liblzma_linux.map
 endif
 
 liblzma_la_SOURCES += ../common/tuklib_physmem.c
@@ -68,11 +68,15 @@ endif
 # static liblzma, we overwrite the static object file with an object file
 # compiled from empty input. Note that GNU-specific features are OK here,
 # because on Windows we are compiled with the GNU toolchain.
+#
+# The typedef in empty.c will prevent an empty translation unit, which is
+# not allowed by the C standard. It results in a warning with
+# -Wempty-translation-unit with Clang or -pedantic for GCC.
 .rc.lo:
 	$(LIBTOOL) --mode=compile $(RC) $(DEFS) $(DEFAULT_INCLUDES) \
 		$(INCLUDES) $(liblzma_la_CPPFLAGS) $(CPPFLAGS) $(RCFLAGS) \
 		-i $< -o $@
-	echo > empty.c
+	echo "typedef void empty;" > empty.c
 	$(COMPILE) -c empty.c -o $(*D)/$(*F).o
 
 # Remove ordinals from the generated .def file. People must link by name,

@@ -1,11 +1,10 @@
+# SPDX-License-Identifier: 0BSD
+
 ###############################################################################
 #
 # Makefile to build XZ Utils using DJGPP
 #
 # Author: Lasse Collin
-#
-# This file has been put into the public domain.
-# You can do whatever you want with this file.
 #
 ###############################################################################
 
@@ -62,6 +61,7 @@ SRCS_C = \
 	../src/liblzma/common/block_header_encoder.c \
 	../src/liblzma/common/block_util.c \
 	../src/liblzma/common/common.c \
+	../src/liblzma/common/file_info.c \
 	../src/liblzma/common/filter_common.c \
 	../src/liblzma/common/filter_decoder.c \
 	../src/liblzma/common/filter_encoder.c \
@@ -72,11 +72,13 @@ SRCS_C = \
 	../src/liblzma/common/index_decoder.c \
 	../src/liblzma/common/index_encoder.c \
 	../src/liblzma/common/index_hash.c \
+	../src/liblzma/common/lzip_decoder.c \
 	../src/liblzma/common/stream_decoder.c \
 	../src/liblzma/common/stream_encoder.c \
 	../src/liblzma/common/stream_flags_common.c \
 	../src/liblzma/common/stream_flags_decoder.c \
 	../src/liblzma/common/stream_flags_encoder.c \
+	../src/liblzma/common/string_conversion.c \
 	../src/liblzma/common/vli_decoder.c \
 	../src/liblzma/common/vli_encoder.c \
 	../src/liblzma/common/vli_size.c \
@@ -96,6 +98,7 @@ SRCS_C = \
 	../src/liblzma/lzma/lzma_encoder_presets.c \
 	../src/liblzma/rangecoder/price_table.c \
 	../src/liblzma/simple/arm.c \
+	../src/liblzma/simple/arm64.c \
 	../src/liblzma/simple/armthumb.c \
 	../src/liblzma/simple/ia64.c \
 	../src/liblzma/simple/powerpc.c \

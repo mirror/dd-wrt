@@ -1,5 +1,6 @@
 #!/bin/sh
-#
+# SPDX-License-Identifier: 0BSD
+
 #############################################################################
 #
 # Get the version string from version.h and print it out without
@@ -8,9 +9,6 @@
 #############################################################################
 #
 # Author: Lasse Collin
-#
-# This file has been put into the public domain.
-# You can do whatever you want with this file.
 #
 #############################################################################
 

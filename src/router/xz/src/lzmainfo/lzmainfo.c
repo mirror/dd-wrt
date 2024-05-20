@@ -1,12 +1,11 @@
+// SPDX-License-Identifier: 0BSD
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 /// \file       lzmainfo.c
 /// \brief      lzmainfo tool for compatibility with LZMA Utils
 //
 //  Author:     Lasse Collin
-//
-//  This file has been put into the public domain.
-//  You can do whatever you want with this file.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +25,8 @@
 #endif
 
 
-static void lzma_attribute((__noreturn__))
+tuklib_attr_noreturn
+static void
 help(void)
 {
 	printf(
@@ -45,7 +45,8 @@ _("Usage: %s [--help] [--version] [FILE]...\n"
 }
 
 
-static void lzma_attribute((__noreturn__))
+tuklib_attr_noreturn
+static void
 version(void)
 {
 	puts("lzmainfo (" PACKAGE_NAME ") " LZMA_VERSION_STRING);

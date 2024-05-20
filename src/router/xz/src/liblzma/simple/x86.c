@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: 0BSD
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 /// \file       x86.c
@@ -5,9 +7,6 @@
 ///
 //  Authors:    Igor Pavlov
 //              Lasse Collin
-//
-//  This file has been put into the public domain.
-//  You can do whatever you want with this file.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -141,6 +140,7 @@ x86_coder_init(lzma_next_coder *next, const lzma_allocator *allocator,
 }
 
 
+#ifdef HAVE_ENCODER_X86
 extern lzma_ret
 lzma_simple_x86_encoder_init(lzma_next_coder *next,
 		const lzma_allocator *allocator,
@@ -148,8 +148,10 @@ lzma_simple_x86_encoder_init(lzma_next_coder *next,
 {
 	return x86_coder_init(next, allocator, filters, true);
 }
+#endif
 
 
+#ifdef HAVE_DECODER_X86
 extern lzma_ret
 lzma_simple_x86_decoder_init(lzma_next_coder *next,
 		const lzma_allocator *allocator,
@@ -157,3 +159,4 @@ lzma_simple_x86_decoder_init(lzma_next_coder *next,
 {
 	return x86_coder_init(next, allocator, filters, false);
 }
+#endif
