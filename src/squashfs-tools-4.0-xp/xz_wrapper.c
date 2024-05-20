@@ -406,10 +406,7 @@ typedef unsigned long uLongf;
 #include <unistd.h>
 typedef struct DBENTRY {
 	char md5sum[16];
-	unsigned char fail;
-	unsigned char pb;
-	unsigned char lc;
-	unsigned char lp;
+	unsigned short fail:1, pb:4, lc:4,lp:4;
 } DBENTRY;
 
 static FILE *opendatabase(char *mode)
