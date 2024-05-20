@@ -5069,16 +5069,20 @@ void start_hotplug_net(void)
 		int core = 0;
 		FILE *lc = fopen("/tmp/.lastcore","rb");
 		if (lc) {
-		    core = getc(lc) + 1;
+		    core = getc(lc);
 		    fclose(lc);
+		    if (core >= cpucount)
+			core = 0;
+		    
+		}
+			int cpumask = 0;
+			cpumask = 1 << core;
+		    core++;
 		    lc = fopen("/tmp/.lastcore","wb");
 		    if (lc) {
 		    putc(core,lc);
 		    fclose(lc);
 		    }
-		}
-			int cpumask = 0;
-			cpumask = 1 << core;
 			writenet("queues/rx-0/rps_cpus", cpumask, interface);
 			writenet("queues/rx-1/rps_cpus", cpumask, interface);
 			writenet("queues/rx-2/rps_cpus", cpumask, interface);
