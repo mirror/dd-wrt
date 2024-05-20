@@ -536,7 +536,6 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	free(test2);
 	if (s_fail)
 		test1len = 0;
-	writeparameters(pb, lc, lp, s_fail, md5);
 	return test1len;
 }
 
@@ -568,6 +567,7 @@ void xz_usage()
 
 int xz_deinit(void)
 {
+	writeparameters(pb, lc, lp, s_fail, md5);
 	int testcount;
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		if (matrix[testcount].used)
