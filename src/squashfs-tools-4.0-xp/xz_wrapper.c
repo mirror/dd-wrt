@@ -26,6 +26,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <lzma.h>
+#include <pthread.h>
+#include <libgen.h>
 
 #include "squashfs_fs.h"
 #include "xz_wrapper.h"
@@ -206,58 +208,12 @@ struct MATRIXENTRY {
 };
 
 static struct MATRIXENTRY matrix[] = {
-{0,0,0},
-{0,0,1},
-{0,0,2},
-{0,0,3},
-{0,1,0},
-{0,1,1},
-{0,1,2},
-{0,1,3},
-{0,2,0},
-{0,2,1},
-{0,2,2},
-{0,3,0},
-{0,3,1},
-{1,0,0},
-{1,0,1},
-{1,0,2},
-{1,0,3},
-{1,1,0},
-{1,1,1},
-{1,1,2},
-{1,1,3},
-{1,2,0},
-{1,2,1},
-{1,2,2},
-{1,3,0},
-{1,3,1},
-{2,0,0},
-{2,0,1},
-{2,0,2},
-{2,0,3},
-{2,1,0},
-{2,1,1},
-{2,1,2},
-{2,1,3},
-{2,2,0},
-{2,2,1},
-{2,2,2},
-{2,3,0},
-{2,3,1},
-{3,0,0},
-{3,0,1},
-{3,0,2},
-{3,0,3},
-{3,1,0},
-{3,1,1},
-{3,1,2},
-{3,1,3},
-{3,2,0},
-{3,2,1},
-{3,2,2},
-{3,3,0},
-{3,3,1},
+	{ 0, 0, 0 }, { 0, 0, 1 }, { 0, 0, 2 }, { 0, 0, 3 }, { 0, 1, 0 }, { 0, 1, 1 }, { 0, 1, 2 }, { 0, 1, 3 }, { 0, 2, 0 },
+	{ 0, 2, 1 }, { 0, 2, 2 }, { 0, 3, 0 }, { 0, 3, 1 }, { 1, 0, 0 }, { 1, 0, 1 }, { 1, 0, 2 }, { 1, 0, 3 }, { 1, 1, 0 },
+	{ 1, 1, 1 }, { 1, 1, 2 }, { 1, 1, 3 }, { 1, 2, 0 }, { 1, 2, 1 }, { 1, 2, 2 }, { 1, 3, 0 }, { 1, 3, 1 }, { 2, 0, 0 },
+	{ 2, 0, 1 }, { 2, 0, 2 }, { 2, 0, 3 }, { 2, 1, 0 }, { 2, 1, 1 }, { 2, 1, 2 }, { 2, 1, 3 }, { 2, 2, 0 }, { 2, 2, 1 },
+	{ 2, 2, 2 }, { 2, 3, 0 }, { 2, 3, 1 }, { 3, 0, 0 }, { 3, 0, 1 }, { 3, 0, 2 }, { 3, 0, 3 }, { 3, 1, 0 }, { 3, 1, 1 },
+	{ 3, 1, 2 }, { 3, 1, 3 }, { 3, 2, 0 }, { 3, 2, 1 }, { 3, 2, 2 }, { 3, 3, 0 }, { 3, 3, 1 },
 };
 
 static pthread_spinlock_t p_mutex;
@@ -406,14 +362,14 @@ typedef unsigned long uLongf;
 #include <unistd.h>
 typedef struct DBENTRY {
 	char md5sum[16];
-	unsigned short fail:1, pb:4, lc:4,lp:4;
+	unsigned short fail : 1, pb : 4, lc : 4, lp : 4;
 } DBENTRY;
 
 static FILE *opendatabase(char *mode)
 {
 	char buf[1024];
 	readlink("/proc/self/exe", buf, sizeof(buf));
-	char *dir = dirname(buf);
+	dirname(buf);
 	char name[1024];
 	sprintf(name, "%s/matrix.db", buf);
 	FILE *fp = fopen(name, mode);
@@ -424,7 +380,7 @@ static void unlinkdatabase(void)
 {
 	char buf[1024];
 	readlink("/proc/self/exe", buf, sizeof(buf));
-	char *dir = dirname(buf);
+	dirname(buf);
 	char name[1024];
 	sprintf(name, "%s/matrix.db", buf);
 	unlink(name);
@@ -433,7 +389,8 @@ static void unlinkdatabase(void)
 static struct DBENTRY *db = NULL;
 static size_t dblen;
 static pthread_spinlock_t p_mutex;
-
+static int matchcount = 0;
+static int unmatchcount = 0;
 static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, char *sum)
 {
 	md5_ctx_t MD;
@@ -451,13 +408,13 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		}
 		fseek(in, 0, SEEK_END);
 		dblen = ftell(in);
-		if (dblen > 1024*1024*10) {
+		if (dblen > 1024 * 1024 * 10) {
 			fclose(in);
 			unlinkdatabase();
 			pthread_spin_unlock(&p_mutex);
 			return -1;
 		}
-		    
+
 		if (!dblen) {
 			fclose(in);
 			pthread_spin_unlock(&p_mutex);
@@ -494,7 +451,7 @@ static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
 	pthread_spin_lock(&p_mutex);
 
 	db = realloc(db, dblen + sizeof(*db));
-	size_t nextoffset = dblen/sizeof(*db);
+	size_t nextoffset = dblen / sizeof(*db);
 	dblen += sizeof(*db);
 	memcpy(db[nextoffset].md5sum, sum, 16);
 	db[nextoffset].fail = fail;
@@ -530,22 +487,24 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int pb;
 	char md5[16];
 	if (!special) {
-	int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
-	if (!ret) {
-		if (s_fail)
-			return 0;
-		int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, &error, lc, lp, pb);
-		return len;
+		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
+		if (!ret) {
+			matchcount++;
+			if (s_fail)
+				return 0;
+			int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb);
+			return len;
+		}
 	}
-	}
+	unmatchcount++;
 	unsigned char *test2 = (unsigned char *)malloc(block_size * 4);
 	s_fail = 1;
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
 		int takelcvalue = matrix[testcount].lc;
 		int takepbvalue = matrix[testcount].pb;
 		int takelpvalue = matrix[testcount].lp;
-		int error = 0;
-		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error, takelcvalue, takelpvalue, takepbvalue);
+		int error2 = 0;
+		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue);
 		if (!error && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
@@ -554,6 +513,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 			pb = takepbvalue;
 			lc = takelcvalue;
 			lp = takelpvalue;
+			*error = error2;
 		}
 	}
 	free(test2);
@@ -598,6 +558,8 @@ int xz_deinit(void)
 		if (matrix[testcount].used)
 			printf("{%d,%d,%d},\n", matrix[testcount].pb, matrix[testcount].lc, matrix[testcount].lp);
 	}
+
+	printf("learning db matches %d unmatches %d\n", matchcount, unmatchcount);
 
 	return 0;
 }
