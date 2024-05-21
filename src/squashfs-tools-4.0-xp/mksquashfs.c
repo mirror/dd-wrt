@@ -2438,7 +2438,7 @@ void *frag_deflator(void *arg)
 		struct file_buffer *write_buffer =
 			cache_get(fwriter_buffer, file_buffer->block);
 		c_byte = mangle2(stream, write_buffer->data, file_buffer->data,
-			file_buffer->size, block_size, noF, 1, 1);
+			file_buffer->size, block_size, noF, 1, 0);
 		compressed_size = SQUASHFS_COMPRESSED_SIZE_BLOCK(c_byte);
 		write_buffer->size = compressed_size;
 		pthread_mutex_lock(&fragment_mutex);

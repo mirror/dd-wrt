@@ -40,9 +40,9 @@ static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
 			    { "arm", LZMA_FILTER_ARM, 0 },
 			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0 },
 			    { "sparc", LZMA_FILTER_SPARC, 0 },
-			    { "swizzle16", LZMA_FILTER_SWIZZLE16, 0 },
-			    { "swizzle32", LZMA_FILTER_SWIZZLE32, 0 },
-			    { "swizzle64", LZMA_FILTER_SWIZZLE64, 0 },
+//			    { "swizzle16", LZMA_FILTER_SWIZZLE16, 0 },
+//			    { "swizzle32", LZMA_FILTER_SWIZZLE32, 0 },
+//			    { "swizzle64", LZMA_FILTER_SWIZZLE64, 0 },
 			    { "delta", LZMA_FILTER_DELTA, 0 },
 			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
 
@@ -398,6 +398,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 	dd_md5_hash(src, len, &MD);
 	dd_md5_end(sum, &MD);
 	pthread_spin_lock(&p_mutex);
+	*fail = 0;
 
 	FILE *in;
 	if (!db) {
@@ -476,7 +477,7 @@ static void writedb(void)
 
 static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int block_size, int *error, int special)
 {
-	int test1len, test3len;
+	int test1len, test3len=0;
 	int s_fail = 0;
 	int i, a;
 	test1len = block_size * 2;
@@ -490,8 +491,9 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
 		if (!ret) {
 			matchcount++;
-			if (s_fail)
+			if (s_fail) {
 				return 0;
+			}
 			int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb);
 			return len;
 		}
@@ -505,7 +507,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int takelpvalue = matrix[testcount].lp;
 		int error2 = 0;
 		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue);
-		if (!error && test3len > 0 && test3len < test1len) {
+		if (!error2 && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
 			s_fail = 0;
@@ -519,8 +521,9 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	free(test2);
 	if (s_fail)
 		test1len = 0;
-	if (!special)
+	if (!special) {
 		writeparameters(pb, lc, lp, s_fail, md5);
+	}
 	return test1len;
 }
 
