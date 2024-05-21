@@ -565,15 +565,15 @@ configs-update:
 #	svn update $(LINUXDIR)/../linux-6.1
 #	svn update $(LINUXDIR)/../linux-6.1-nss
 #	svn update $(LINUXDIR)/../linux-6.6
-#	rm -f $(LINUXDIR)/../linux-3.2/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.5/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.10/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.18/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.4/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.9/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.14/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-6.1/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-6.1-nss/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-3.2/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-3.5/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-3.10/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-3.18/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-4.4/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-4.9/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-4.14/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-6.1/scripts/squashfs/matrix.db
+	rm -f $(LINUXDIR)/../linux-6.1-nss/scripts/squashfs/matrix.db
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 
