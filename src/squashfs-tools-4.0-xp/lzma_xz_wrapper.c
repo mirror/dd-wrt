@@ -201,7 +201,7 @@ int count=0;
 //	int block_size, int *error)
 static int lzma_compress(void *dummy, void *dst,
 			      void *src, int sourceLen,
-			      int block_size, int *error)
+			      int block_size, int *error, int special)
 {
 //printf("in %s %d\n",__func__,count);
 

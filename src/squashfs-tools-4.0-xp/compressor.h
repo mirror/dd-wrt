@@ -28,7 +28,7 @@ struct compressor {
 	int supported;
 	int (*init)(void **, int, int);
 	int (*deinit)(void);
-	int (*compress)(void *, void *, void *, int, int, int *);
+	int (*compress)(void *, void *, void *, int, int, int *, int);
 	int (*uncompress)(void *, void *, int, int, int *);
 	int (*options)(char **, int);
 	int (*options_post)(int);
@@ -61,9 +61,9 @@ static inline int compressor_deinit(struct compressor *comp)
 
 
 static inline int compressor_compress(struct compressor *comp, void *strm,
-	void *dest, void *src, int size, int block_size, int *error)
+	void *dest, void *src, int size, int block_size, int *error, int special)
 {
-	return comp->compress(strm, dest, src, size, block_size, error);
+	return comp->compress(strm, dest, src, size, block_size, error, special);
 }
 
 

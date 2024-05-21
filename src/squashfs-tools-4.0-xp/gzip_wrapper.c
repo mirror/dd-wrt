@@ -394,7 +394,7 @@ failed:
 
 
 static int gzip_compress(void *strm, void *d, void *s, int size, int block_size,
-		int *error)
+		int *error, int special)
 {
 	int i, res;
 	struct gzip_stream *stream = strm;

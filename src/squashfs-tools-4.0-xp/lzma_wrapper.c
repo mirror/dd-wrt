@@ -30,7 +30,7 @@
 #define LZMA_HEADER_SIZE	(LZMA_PROPS_SIZE + 8)
 
 static int lzma_compress(void *strm, void *dest, void *src, int size, int block_size,
-		int *error)
+		int *error, int special)
 {
 	unsigned char *d = dest;
 	size_t props_size = LZMA_PROPS_SIZE,

@@ -499,7 +499,7 @@ static void writedb(void)
 	pthread_spin_unlock(&p_mutex);
 }
 
-static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int block_size, int *error)
+static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int block_size, int *error, int special)
 {
 	int test1len, test3len;
 	int s_fail = 0;
@@ -511,12 +511,14 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int lc;
 	int pb;
 	char md5[16];
+	if (!special) {
 	int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
 	if (!ret) {
 		if (s_fail)
 			return 0;
 		int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, &error, lc, lp, pb);
 		return len;
+	}
 	}
 	unsigned char *test2 = (unsigned char *)malloc(block_size * 4);
 	s_fail = 1;
@@ -539,7 +541,8 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	free(test2);
 	if (s_fail)
 		test1len = 0;
-	writeparameters(pb, lc, lp, s_fail, md5);
+	if (!special)
+		writeparameters(pb, lc, lp, s_fail, md5);
 	return test1len;
 }
 

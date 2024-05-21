@@ -404,13 +404,13 @@ void sighandler()
 
 
 int mangle2(void *strm, char *d, char *s, int size,
-	int block_size, int uncompressed, int data_block)
+	int block_size, int uncompressed, int data_block, int special)
 {
 	int error, c_byte = 0;
 
 	if(!uncompressed) {
 		c_byte = compressor_compress(comp, strm, d, s, size, block_size,
-			 &error);
+			 &error, special);
 		if(c_byte == -1)
 			BAD_ERROR("mangle2:: %s compress failed with error "
 				"code %d\n", comp->name, error);
@@ -427,10 +427,10 @@ int mangle2(void *strm, char *d, char *s, int size,
 
 
 int mangle(char *d, char *s, int size, int block_size,
-	int uncompressed, int data_block)
+	int uncompressed, int data_block, int special)
 {
 	return mangle2(stream, d, s, size, block_size, uncompressed,
-		data_block);
+		data_block, special);
 }
 
 
@@ -452,7 +452,7 @@ void *get_inode(int req_size)
 
 		c_byte = mangle(inode_table + inode_bytes + BLOCK_OFFSET,
 			data_cache, SQUASHFS_METADATA_SIZE,
-			SQUASHFS_METADATA_SIZE, noI, 0);
+			SQUASHFS_METADATA_SIZE, noI, 0, 1);
 		TRACE("Inode block @ 0x%x, size %d\n", inode_bytes, c_byte);
 		SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1);
 		inode_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) + BLOCK_OFFSET;
@@ -590,7 +590,7 @@ long long write_inodes()
 		avail_bytes = cache_bytes > SQUASHFS_METADATA_SIZE ?
 			SQUASHFS_METADATA_SIZE : cache_bytes;
 		c_byte = mangle(inode_table + inode_bytes + BLOCK_OFFSET, datap,
-			avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0);
+			avail_bytes, SQUASHFS_METADATA_SIZE, noI, 0, 1);
 		TRACE("Inode block @ 0x%x, size %d\n", inode_bytes, c_byte);
 		SQUASHFS_SWAP_SHORTS(&c_byte, inode_table + inode_bytes, 1); 
 		inode_bytes += SQUASHFS_COMPRESSED_SIZE(c_byte) + BLOCK_OFFSET;
@@ -627,7 +627,7 @@ long long write_directories()
 			SQUASHFS_METADATA_SIZE : directory_cache_bytes;
 		c_byte = mangle(directory_table + directory_bytes +
 			BLOCK_OFFSET, directoryp, avail_bytes,
-			SQUASHFS_METADATA_SIZE, noI, 0);
+			SQUASHFS_METADATA_SIZE, noI, 0, 1);
 		TRACE("Directory block @ 0x%x, size %d\n", directory_bytes,
 			c_byte);
 		SQUASHFS_SWAP_SHORTS(&c_byte,
@@ -1269,7 +1269,7 @@ void write_dir(squashfs_inode *inode, struct dir_info *dir_info,
 		c_byte = mangle(directory_table + directory_bytes +
 				BLOCK_OFFSET, directory_data_cache,
 				SQUASHFS_METADATA_SIZE, SQUASHFS_METADATA_SIZE,
-				noI, 0);
+				noI, 0, 1);
 		TRACE("Directory block @ 0x%x, size %d\n", directory_bytes,
 			c_byte);
 		SQUASHFS_SWAP_SHORTS(&c_byte,
@@ -1647,7 +1647,7 @@ long long generic_write_table(int length, void *buffer, int length2,
 			SQUASHFS_METADATA_SIZE : length;
 		c_byte = mangle(cbuffer + BLOCK_OFFSET, buffer + i *
 			SQUASHFS_METADATA_SIZE , avail_bytes,
-			SQUASHFS_METADATA_SIZE, uncompressed, 0);
+			SQUASHFS_METADATA_SIZE, uncompressed, 0, 1);
 		SQUASHFS_SWAP_SHORTS(&c_byte, cbuffer, 1);
 		list[i] = bytes;
 		compressed_size = SQUASHFS_COMPRESSED_SIZE(c_byte) +
@@ -2405,7 +2405,7 @@ void *deflator(void *arg)
 			write_buffer->c_byte = mangle2(stream,
 				write_buffer->data, file_buffer->data,
 				file_buffer->size, block_size,
-				file_buffer->noD, 1);
+				file_buffer->noD, 1, 0);
 			write_buffer->sequence = file_buffer->sequence;
 			write_buffer->file_size = file_buffer->file_size;
 			write_buffer->block = file_buffer->block;
@@ -2438,7 +2438,7 @@ void *frag_deflator(void *arg)
 		struct file_buffer *write_buffer =
 			cache_get(fwriter_buffer, file_buffer->block);
 		c_byte = mangle2(stream, write_buffer->data, file_buffer->data,
-			file_buffer->size, block_size, noF, 1);
+			file_buffer->size, block_size, noF, 1, 0);
 		compressed_size = SQUASHFS_COMPRESSED_SIZE_BLOCK(c_byte);
 		write_buffer->size = compressed_size;
 		pthread_mutex_lock(&fragment_mutex);
@@ -3142,7 +3142,7 @@ void dir_scan(squashfs_inode *inode, char *pathname,
 		buf.st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFDIR;
 		buf.st_uid = getuid();
 		buf.st_gid = getgid();
-		buf.st_mtime = fixed_time != -1 ? fixed_time : 0;
+		buf.st_mtime = fixed_time != -1 ? fixed_time : time(NULL);
 		buf.st_dev = 0;
 		buf.st_ino = 0;
 		dir_ent->inode = lookup_inode2(&buf, PSEUDO_FILE_OTHER, 0);
@@ -3533,7 +3533,7 @@ void dir_scan2(struct dir_info *dir, struct pseudo *pseudo)
 		buf.st_gid = pseudo_ent->dev->gid;
 		buf.st_rdev = makedev(pseudo_ent->dev->major,
 			pseudo_ent->dev->minor);
-		buf.st_mtime = fixed_time != -1 ? fixed_time : 0;
+		buf.st_mtime = fixed_time != -1 ? fixed_time : time(NULL);
 		buf.st_ino = pseudo_ino ++;
 
 		if(pseudo_ent->dev->type == 'd') {
@@ -5737,7 +5737,7 @@ printOptions:
 	sBlk.flags = SQUASHFS_MKFLAGS(noI, noD, noF, noX, no_fragments,
 		always_use_fragments, duplicate_checking, exportable,
 		no_xattrs, comp_opts);
-	sBlk.mkfs_time = fixed_time != -1 ? fixed_time : 0;
+	sBlk.mkfs_time = fixed_time != -1 ? fixed_time : time(NULL);
 
 	disable_info();
 
