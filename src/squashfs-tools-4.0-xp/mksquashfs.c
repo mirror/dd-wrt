@@ -3142,7 +3142,7 @@ void dir_scan(squashfs_inode *inode, char *pathname,
 		buf.st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFDIR;
 		buf.st_uid = getuid();
 		buf.st_gid = getgid();
-		buf.st_mtime = fixed_time != -1 ? fixed_time : time(NULL);
+		buf.st_mtime = fixed_time != -1 ? fixed_time : 0;
 		buf.st_dev = 0;
 		buf.st_ino = 0;
 		dir_ent->inode = lookup_inode2(&buf, PSEUDO_FILE_OTHER, 0);
@@ -3533,7 +3533,7 @@ void dir_scan2(struct dir_info *dir, struct pseudo *pseudo)
 		buf.st_gid = pseudo_ent->dev->gid;
 		buf.st_rdev = makedev(pseudo_ent->dev->major,
 			pseudo_ent->dev->minor);
-		buf.st_mtime = fixed_time != -1 ? fixed_time : time(NULL);
+		buf.st_mtime = fixed_time != -1 ? fixed_time : 0;
 		buf.st_ino = pseudo_ino ++;
 
 		if(pseudo_ent->dev->type == 'd') {
@@ -5737,7 +5737,7 @@ printOptions:
 	sBlk.flags = SQUASHFS_MKFLAGS(noI, noD, noF, noX, no_fragments,
 		always_use_fragments, duplicate_checking, exportable,
 		no_xattrs, comp_opts);
-	sBlk.mkfs_time = fixed_time != -1 ? fixed_time : time(NULL);
+	sBlk.mkfs_time = fixed_time != -1 ? fixed_time : 0;
 
 	disable_info();
 

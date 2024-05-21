@@ -456,7 +456,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		fread(db, dblen, 1, in);
 		fclose(in);
 	}
-	int i;
+	size_t i;
 	for (i = 0; i < dblen / sizeof(*db); i++) {
 		if (!memcmp(db[i].md5sum, sum, 16)) {
 			*pb = db[i].pb;
@@ -476,7 +476,7 @@ static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
 	pthread_spin_lock(&p_mutex);
 
 	db = realloc(db, dblen + sizeof(*db));
-	int nextoffset = dblen/sizeof(*db);
+	size_t nextoffset = dblen/sizeof(*db);
 	dblen += sizeof(*db);
 	memcpy(db[nextoffset].md5sum, sum, 16);
 	db[nextoffset].fail = fail;
