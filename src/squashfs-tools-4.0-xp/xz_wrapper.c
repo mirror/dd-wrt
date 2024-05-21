@@ -333,8 +333,7 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		stream->opt.lp = lp;
 		stream->opt.pb = pb;
 
-		if (opts->fb)
-			stream->opt.nice_len = opts->fb;
+		stream->opt.nice_len = 273;
 
 		stream->opt.dict_size = stream->dictionary_size;
 

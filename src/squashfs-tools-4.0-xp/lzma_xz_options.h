@@ -82,7 +82,7 @@ extern unsigned int inswap_le32(unsigned int);
 
 #define LZMA_OPT_FB_MIN		5
 #define LZMA_OPT_FB_MAX		273
-#define LZMA_OPT_FB_DEFAULT	64
+#define LZMA_OPT_FB_DEFAULT	273
 
 enum {
 	LZMA_OPT_LZMA = 1,
