@@ -495,8 +495,8 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 			int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb);
 			return len;
 		}
+		unmatchcount++;
 	}
-	unmatchcount++;
 	unsigned char *test2 = (unsigned char *)malloc(block_size * 4);
 	s_fail = 1;
 	for (testcount = 0; testcount < sizeof(matrix) / sizeof(struct MATRIXENTRY); testcount++) {
