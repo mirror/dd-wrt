@@ -419,6 +419,17 @@ static FILE *opendatabase(char *mode)
 	FILE *fp = fopen(name, mode);
 	return fp;
 }
+
+static void unlinkdatabase(void)
+{
+	char buf[1024];
+	readlink("/proc/self/exe", buf, sizeof(buf));
+	char *dir = dirname(buf);
+	char name[1024];
+	sprintf(name, "%s/matrix.db", buf);
+	unlink(name);
+	return;
+}
 static struct DBENTRY *db = NULL;
 static size_t dblen;
 static pthread_spinlock_t p_mutex;
@@ -440,6 +451,13 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		}
 		fseek(in, 0, SEEK_END);
 		dblen = ftell(in);
+		if (dblen > 1024*1024*10) {
+			fclose(in);
+			unlinkdatabase();
+			pthread_spin_unlock(&p_mutex);
+			return -1;
+		}
+		    
 		if (!dblen) {
 			fclose(in);
 			pthread_spin_unlock(&p_mutex);
