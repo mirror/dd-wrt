@@ -562,8 +562,8 @@ configs-update:
 	svn update $(LINUXDIR)/../linux-4.4
 	svn update $(LINUXDIR)/../linux-4.9
 	svn update $(LINUXDIR)/../linux-4.14
-	svn update $(LINUXDIR)/../linux-6.1
-	svn update $(LINUXDIR)/../linux-6.1-nss
+#	svn update $(LINUXDIR)/../linux-6.1
+#	svn update $(LINUXDIR)/../linux-6.1-nss
 #	svn update $(LINUXDIR)/../linux-6.6
 	rm -f $(LINUXDIR)/../linux-3.2/scripts/squashfs/matrix.db
 	rm -f $(LINUXDIR)/../linux-3.5/scripts/squashfs/matrix.db
