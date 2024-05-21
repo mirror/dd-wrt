@@ -33,8 +33,8 @@ static const char const *lzmaver_str[] = { "", "lzma", "xz" };
 
 static struct lzma_xz_options options = {
 	.flags		= 0,
-	.preset		= 6,
-	.extreme	= 0,
+	.preset		= 9,
+	.extreme	= 1,
 	.lc		= LZMA_OPT_LC_DEFAULT,
 	.lp		= LZMA_OPT_LP_DEFAULT,
 	.pb		= LZMA_OPT_PB_DEFAULT,

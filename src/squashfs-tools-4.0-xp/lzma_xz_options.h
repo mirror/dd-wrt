@@ -98,6 +98,7 @@ struct lzma_xz_options {
 	int fb;
 	int dict_size;
 	int flags;
+	int nice;
 };
 
 struct lzma_xz_options *lzma_xz_get_options(void);
