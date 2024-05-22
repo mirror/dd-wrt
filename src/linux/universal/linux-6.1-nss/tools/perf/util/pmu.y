@@ -9,6 +9,7 @@
 #include <linux/bitmap.h>
 #include <string.h>
 #include "pmu.h"
+#include "pmu-flex.h"
 
 #define ABORT_ON(val) \
 do { \

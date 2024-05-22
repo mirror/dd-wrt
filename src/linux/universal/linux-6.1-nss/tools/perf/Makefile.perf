@@ -779,12 +779,12 @@ $(OUTPUT)perf-%: %.o $(PERFLIBS)
 
 ifndef NO_PERF_READ_VDSO32
 $(OUTPUT)perf-read-vdso32: perf-read-vdso.c util/find-map.c
-	$(QUIET_CC)$(CC) -m32 $(filter -static,$(LDFLAGS)) -Wall -Werror -o $@ perf-read-vdso.c
+	$(QUIET_CC)$(CC) -m32 $(filter -static,$(LDFLAGS)) -Wall -o $@ perf-read-vdso.c
 endif
 
 ifndef NO_PERF_READ_VDSOX32
 $(OUTPUT)perf-read-vdsox32: perf-read-vdso.c util/find-map.c
-	$(QUIET_CC)$(CC) -mx32 $(filter -static,$(LDFLAGS)) -Wall -Werror -o $@ perf-read-vdso.c
+	$(QUIET_CC)$(CC) -mx32 $(filter -static,$(LDFLAGS)) -Wall -o $@ perf-read-vdso.c
 endif
 
 $(OUTPUT)dlfilters/%.o: dlfilters/%.c include/perf/perf_dlfilter.h
@@ -1070,7 +1070,7 @@ else
 endif
 
 $(SKEL_TMP_OUT)/%.bpf.o: util/bpf_skel/%.bpf.c $(LIBBPF) $(SKEL_OUT)/vmlinux.h | $(SKEL_TMP_OUT)
-	$(QUIET_CLANG)$(CLANG) -g -O2 -target bpf -Wall -Werror $(BPF_INCLUDE) \
+	$(QUIET_CLANG)$(CLANG) -g -O2 -target bpf -Wall $(BPF_INCLUDE) \
 	  -c $(filter util/bpf_skel/%.bpf.c,$^) -o $@ && $(LLVM_STRIP) -g $@
 
 $(SKEL_OUT)/%.skel.h: $(SKEL_TMP_OUT)/%.bpf.o | $(BPFTOOL)
