@@ -27,6 +27,18 @@ struct nf_conn_rtcache *nf_ct_rtcache_find(const struct nf_conn *ct)
 #endif
 }
 
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
+bool nf_conn_rtcache_match_dev(const struct sk_buff *skb,
+			       const struct net_device *dev);
+#else
+static inline bool
+nf_conn_rtcache_match_dev(const struct sk_buff *skb,
+			  const struct net_device *dev)
+{
+	return false;
+}
+#endif
+
 static inline int nf_conn_rtcache_iif_get(const struct nf_conn_rtcache *rtc,
 					  enum ip_conntrack_dir dir)
 {
