@@ -56,7 +56,7 @@ static const u8 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
 	[NF_CT_EXT_ACT_CT] = sizeof(struct nf_conn_act_ct_ext),
 #endif
 #ifdef CONFIG_NF_CONNTRACK_RTCACHE
-	[NF_CT_EXT_DSCPREMARK] = sizeof(struct nf_conn_rtcache),
+	[NF_CT_EXT_RTCACHE] = sizeof(struct nf_conn_rtcache),
 #endif
 };
 
