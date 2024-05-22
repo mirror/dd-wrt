@@ -661,6 +661,12 @@ static void writethrough_endio(struct bio *bio, int err)
 	struct per_bio_data *pb = get_per_bio_data(bio, PB_DATA_SIZE_WT);
 	bio->bi_end_io = pb->saved_bi_end_io;
 
+	/*
+	 * Must bump bi_remaining to allow bio to complete with
+	 * restored bi_end_io.
+	 */
+	atomic_inc(&bio->bi_remaining);
+
 	if (err) {
 		bio_endio(bio, err);
 		return;

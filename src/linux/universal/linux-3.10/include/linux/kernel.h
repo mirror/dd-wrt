@@ -224,7 +224,11 @@ void _panic(const char *fmt, ...)
 #define panic _panic
 #else
 extern void emergency_restart(void) __noreturn;
+#if defined(CONFIG_NOPRINTK)
+#define panic _panic
+#else
 #define panic(fmt, ...) emergency_restart()
+#endif
 #endif
 extern void oops_enter(void);
 extern void oops_exit(void);
