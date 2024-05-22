@@ -16,6 +16,8 @@
 #include <linux/netfilter/xt_rpfilter.h>
 #include <linux/netfilter/x_tables.h>
 
+#include <net/netfilter/nf_conntrack_rtcache.h>
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Florian Westphal <fw@strlen.de>");
 MODULE_DESCRIPTION("Xtables: IPv6 reverse path filter match");
@@ -84,7 +86,7 @@ static bool rpfilter_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	struct ipv6hdr *iph;
 	bool invert = info->flags & XT_RPFILTER_INVERT;
 
-	if (rpfilter_is_local(skb))
+	if (rpfilter_is_local(skb) || nf_conn_rtcache_match_dev(skb, par->in))
 		return true ^ invert;
 
 	iph = ipv6_hdr(skb);
