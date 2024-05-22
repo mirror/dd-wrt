@@ -31,6 +31,9 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	NF_CT_EXT_ACT_CT,
 #endif
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
+	NF_CT_EXT_RTCACHE,
+#endif
 	NF_CT_EXT_NUM,
 };
 
@@ -75,5 +78,7 @@ void *nf_ct_ext_add(struct nf_conn *ct, enum nf_ct_ext_id id, gfp_t gfp);
  */
 extern atomic_t nf_conntrack_ext_genid;
 void nf_ct_ext_bump_genid(void);
+
+void nf_conn_rtcache_destroy(struct nf_conn *ct);
 
 #endif /* _NF_CONNTRACK_EXTEND_H */

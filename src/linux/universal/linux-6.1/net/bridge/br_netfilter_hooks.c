@@ -665,6 +665,12 @@ static int br_nf_forward_finish(struct net *net, struct sock *sk, struct sk_buff
 	}
 	nf_bridge_push_encap_header(skb);
 
+#ifdef HAVE_JUMP_LABEL
+	if (__builtin_constant_p(NF_BR_FORWARD) &&
+	    __builtin_constant_p(hook) &&
+	    !static_key_false(&nf_hooks_needed[NF_BR_FORWARD][hook]))
+		return br_forward_finish(net, sk, skb);
+#endif
 	br_nf_hook_thresh(NF_BR_FORWARD, net, sk, skb, in, skb->dev,
 			  br_forward_finish);
 	return 0;

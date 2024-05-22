@@ -34,7 +34,7 @@ obj-$(CONFIG_NETFILTER_NETLINK_HOOK) += nfnetlink_hook.o
 # connection tracking
 obj-$(CONFIG_NF_CONNTRACK) += nf_conntrack.o
 
-#obj-$(CONFIG_NF_CONNTRACK_RTCACHE) += nf_conntrack_rtcache.o
+obj-$(CONFIG_NF_CONNTRACK_RTCACHE) += nf_conntrack_rtcache.o
 
 # netlink interface for nf_conntrack
 obj-$(CONFIG_NF_CT_NETLINK) += nf_conntrack_netlink.o

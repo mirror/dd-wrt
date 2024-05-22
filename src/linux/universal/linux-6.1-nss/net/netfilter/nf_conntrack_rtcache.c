@@ -37,7 +37,7 @@ static void __nf_conn_rtcache_destroy(struct nf_conn_rtcache *rtc,
 	dst_release(dst);
 }
 
-static void nf_conn_rtcache_destroy(struct nf_conn *ct)
+void nf_conn_rtcache_destroy(struct nf_conn *ct)
 {
 	struct nf_conn_rtcache *rtc = nf_ct_rtcache_find(ct);
 
@@ -79,8 +79,8 @@ static u32 nf_rtcache_get_cookie(int pf, const struct dst_entry *dst)
 	if (pf == NFPROTO_IPV6) {
 		const struct rt6_info *rt = (const struct rt6_info *)dst;
 
-		if (rt->rt6i_node)
-			return (u32)rt->rt6i_node->fn_sernum;
+		if (rt->from && rt->from->fib6_node)
+			return (u32)rt->from->fib6_node->fn_sernum;
 	}
 #endif
 	return 0;
@@ -267,9 +267,15 @@ static int nf_rtcache_netdev_event(struct notifier_block *this,
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	struct net *net = dev_net(dev);
+	struct nf_ct_iter_data iter_data = {
+		.net	= net,
+		.data	= dev,
+		.portid = 0,
+		.report = 0,
+	};
 
 	if (event == NETDEV_DOWN)
-		nf_ct_iterate_cleanup_net(net, nf_rtcache_dst_remove, dev, 0, 0);
+		nf_ct_iterate_cleanup_net(nf_rtcache_dst_remove, &iter_data);
 
 	return NOTIFY_DONE;
 }
@@ -307,12 +313,18 @@ static struct nf_hook_ops rtcache_ops[] = {
 #endif
 };
 
-static struct nf_ct_ext_type rtcache_extend __read_mostly = {
+/*static struct nf_ct_ext_type rtcache_extend __read_mostly = {
 	.len	= sizeof(struct nf_conn_rtcache),
 	.align	= __alignof__(struct nf_conn_rtcache),
 	.id	= NF_CT_EXT_RTCACHE,
 	.destroy = nf_conn_rtcache_destroy,
 };
+*/
+
+static int __net_init rtcache_net_init(struct net *net)
+{
+	return nf_register_net_hooks(net, rtcache_ops, ARRAY_SIZE(rtcache_ops));
+}
 
 static void __net_exit rtcache_net_exit(struct net *net)
 {
@@ -321,37 +333,20 @@ static void __net_exit rtcache_net_exit(struct net *net)
 }
 
 static struct pernet_operations rtcache_ops_net_ops = {
+	.init	= rtcache_net_init,
 	.exit	= rtcache_net_exit,
 };
 
 static int __init nf_conntrack_rtcache_init(void)
 {
-	int ret = nf_ct_extend_register(&rtcache_extend);
-
-	if (ret < 0) {
-		pr_err("nf_conntrack_rtcache: Unable to register extension\n");
-		return ret;
-	}
-
+	int ret;
 	ret = register_pernet_subsys(&rtcache_ops_net_ops);
-	if (ret) {
-		nf_ct_extend_unregister(&rtcache_extend);
-		return ret;
-	}
-
-	ret = nf_register_net_hooks(&init_net, rtcache_ops,
-				    ARRAY_SIZE(rtcache_ops));
 	if (ret < 0) {
-		nf_ct_extend_unregister(&rtcache_extend);
-		unregister_pernet_subsys(&rtcache_ops_net_ops);
 		return ret;
 	}
 
 	ret = register_netdevice_notifier(&nf_rtcache_notifier);
 	if (ret) {
-		nf_unregister_net_hooks(&init_net, rtcache_ops,
-					ARRAY_SIZE(rtcache_ops));
-		nf_ct_extend_unregister(&rtcache_extend);
 		unregister_pernet_subsys(&rtcache_ops_net_ops);
 	}
 
@@ -397,16 +392,26 @@ static void __exit nf_conntrack_rtcache_fini(void)
 {
 	struct net *net;
 	int count = 0;
+	struct nf_ct_iter_data iter_data = {
+		.data	= NULL,
+		.portid = 0,
+		.report = 0,
+	};
 
 	synchronize_net();
 
 	unregister_netdevice_notifier(&nf_rtcache_notifier);
+	unregister_pernet_subsys(&rtcache_ops_net_ops);
+
+	synchronize_net();
 
 	rtnl_lock();
 
 	/* zap all conntracks with rtcache extension */
-	for_each_net(net)
-		nf_ct_iterate_cleanup_net(net, nf_rtcache_ext_remove, NULL, 0, 0);
+	for_each_net(net) {
+		iter_data.net = net;
+		nf_ct_iterate_cleanup_net(nf_rtcache_ext_remove, &iter_data);
+	}
 
 	for_each_net(net) {
 		/* .. and make sure they're gone from dying list, too */
@@ -417,8 +422,8 @@ static void __exit nf_conntrack_rtcache_fini(void)
 	}
 
 	rtnl_unlock();
+
 	synchronize_net();
-	nf_ct_extend_unregister(&rtcache_extend);
 }
 module_init(nf_conntrack_rtcache_init);
 module_exit(nf_conntrack_rtcache_fini);

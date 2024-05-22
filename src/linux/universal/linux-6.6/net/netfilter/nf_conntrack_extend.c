@@ -23,6 +23,7 @@
 #include <net/netfilter/nf_conntrack_labels.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
 #include <net/netfilter/nf_conntrack_act_ct.h>
+#include <net/netfilter/nf_conntrack_rtcache.h>
 #include <net/netfilter/nf_nat.h>
 
 #define NF_CT_EXT_PREALLOC	128u /* conntrack events are on by default */
@@ -53,6 +54,9 @@ static const u8 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
 #endif
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 	[NF_CT_EXT_ACT_CT] = sizeof(struct nf_conn_act_ct_ext),
+#endif
+#ifdef CONFIG_NF_CONNTRACK_RTCACHE
+	[NF_CT_EXT_DSCPREMARK] = sizeof(struct nf_conn_rtcache),
 #endif
 };
 
@@ -85,6 +89,9 @@ static __always_inline unsigned int total_extension_size(void)
 #endif
 #if IS_ENABLED(CONFIG_NET_ACT_CT)
 		+ sizeof(struct nf_conn_act_ct_ext)
+#endif
+#ifdef CONFIG_NF_CONNTRACK_RTCACHE
+		+ sizeof(struct nf_conn_rtcache)
 #endif
 	;
 }

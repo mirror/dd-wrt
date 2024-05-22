@@ -65,6 +65,7 @@ struct ctnetlink_list_dump_ctx {
 	struct nf_conn *last;
 	unsigned int cpu;
 	bool done;
+	bool retrans_done;
 };
 
 static int ctnetlink_dump_tuples_proto(struct sk_buff *skb,
@@ -1772,9 +1773,53 @@ static int ctnetlink_dump_one_entry(struct sk_buff *skb,
 #endif
 
 static int
-ctnetlink_dump_unconfirmed(struct sk_buff *skb, struct netlink_callback *cb)
+ctnetlink_dump_list(struct sk_buff *skb, struct netlink_callback *cb, bool dying)
 {
-	return 0;
+	struct ctnetlink_list_dump_ctx *ctx = (void *)cb->ctx;
+	struct nf_conn *ct, *last;
+	struct nf_conntrack_tuple_hash *h;
+	struct hlist_nulls_node *n;
+	struct hlist_nulls_head *list;
+	struct net *net = sock_net(skb->sk);
+	int res, cpu;
+
+	if (ctx->done)
+		return 0;
+
+	last = ctx->last;
+
+	for (cpu = ctx->cpu; cpu < nr_cpu_ids; cpu++) {
+		struct ct_pcpu *pcpu;
+
+		if (!cpu_possible(cpu))
+			continue;
+
+		pcpu = per_cpu_ptr(net->ct.pcpu_lists, cpu);
+		spin_lock_bh(&pcpu->lock);
+		list = dying ? &pcpu->dying : &pcpu->unconfirmed;
+restart:
+		hlist_nulls_for_each_entry(h, n, list, hnnode) {
+			ct = nf_ct_tuplehash_to_ctrack(h);
+
+			res = ctnetlink_dump_one_entry(skb, cb, ct, dying);
+			if (res < 0) {
+				ctx->cpu = cpu;
+				spin_unlock_bh(&pcpu->lock);
+				goto out;
+			}
+		}
+		if (ctx->last) {
+			ctx->last = NULL;
+			goto restart;
+		}
+		spin_unlock_bh(&pcpu->lock);
+	}
+	ctx->done = true;
+out:
+	if (last)
+		nf_ct_put(last);
+
+	return skb->len;
 }
 
 static int
@@ -1789,8 +1834,8 @@ ctnetlink_dump_dying(struct sk_buff *skb, struct netlink_callback *cb)
 	struct hlist_nulls_node *n;
 #endif
 
-	if (ctx->done)
-		return 0;
+	if (ctx->retrans_done)
+		return ctnetlink_dump_list(skb, cb, true);
 
 	ctx->last = NULL;
 
@@ -1819,10 +1864,10 @@ ctnetlink_dump_dying(struct sk_buff *skb, struct netlink_callback *cb)
 
 	spin_unlock_bh(&ecache_net->dying_lock);
 #endif
-	ctx->done = true;
 	nf_ct_put(last);
+	ctx->retrans_done = true;
 
-	return skb->len;
+	return ctnetlink_dump_list(skb, cb, true);
 }
 
 static int ctnetlink_get_ct_dying(struct sk_buff *skb,
@@ -1838,6 +1883,12 @@ static int ctnetlink_get_ct_dying(struct sk_buff *skb,
 	}
 
 	return -EOPNOTSUPP;
+}
+
+static int
+ctnetlink_dump_unconfirmed(struct sk_buff *skb, struct netlink_callback *cb)
+{
+	return ctnetlink_dump_list(skb, cb, false);
 }
 
 static int ctnetlink_get_ct_unconfirmed(struct sk_buff *skb,
