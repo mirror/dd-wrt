@@ -26,6 +26,8 @@
 #include <net/netfilter/nf_queue.h>
 #include <net/sock.h>
 
+#include <net/netfilter/nf_conntrack_rtcache.h>
+
 #include "nf_internals.h"
 
 const struct nf_ipv6_ops __rcu *nf_ipv6_ops __read_mostly;
@@ -767,6 +769,35 @@ const struct nf_conntrack_zone nf_ct_zone_dflt = {
 	.dir	= NF_CT_DEFAULT_ZONE_DIR,
 };
 EXPORT_SYMBOL_GPL(nf_ct_zone_dflt);
+
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
+/* returns true if dev matches the last recorded
+ * input interface of the conntrack attached to skb.
+ *
+ * This is not in conntrack to avoid module dependency.
+ */
+bool nf_conn_rtcache_match_dev(const struct sk_buff *skb,
+			       const struct net_device *dev)
+{
+	struct nf_conn_rtcache *rtc;
+	enum ip_conntrack_info ctinfo;
+	enum ip_conntrack_dir dir;
+	struct nf_conn *ct;
+	int iif;
+
+	ct = nf_ct_get(skb, &ctinfo);
+	rtc = nf_ct_rtcache_find(ct);
+	if (!rtc)
+		return false;
+
+	dir = CTINFO2DIR(ctinfo);
+	iif = nf_conn_rtcache_iif_get(rtc, dir);
+
+	return iif == dev->ifindex;
+}
+EXPORT_SYMBOL_GPL(nf_conn_rtcache_match_dev);
+#endif
+
 #endif /* CONFIG_NF_CONNTRACK */
 
 static void __net_init
