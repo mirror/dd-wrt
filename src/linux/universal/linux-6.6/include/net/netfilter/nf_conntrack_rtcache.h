@@ -7,7 +7,7 @@ struct dst_entry;
 struct nf_conn_dst_cache {
 	struct dst_entry *dst;
 	int iif;
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 	u32 cookie;
 #endif
 

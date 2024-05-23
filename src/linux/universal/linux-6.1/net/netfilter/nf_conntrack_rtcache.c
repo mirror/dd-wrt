@@ -25,7 +25,7 @@
 #include <net/netfilter/nf_conntrack_extend.h>
 #include <net/netfilter/nf_conntrack_rtcache.h>
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 #include <net/ip6_fib.h>
 #endif
 
@@ -75,7 +75,7 @@ nf_conn_rtcache_dst_get(const struct nf_conn_rtcache *rtc,
 
 static u32 nf_rtcache_get_cookie(int pf, const struct dst_entry *dst)
 {
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 	if (pf == NFPROTO_IPV6) {
 		const struct rt6_info *rt = (const struct rt6_info *)dst;
 
@@ -102,7 +102,7 @@ static void nf_conn_rtcache_dst_set(int pf,
 		old = xchg(&rtc->cached_dst[dir].dst, dst);
 		dst_release(old);
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 		if (pf == NFPROTO_IPV6)
 			rtc->cached_dst[dir].cookie =
 				nf_rtcache_get_cookie(pf, dst);
@@ -235,7 +235,7 @@ static unsigned int nf_rtcache_forward4(void *priv,
 	return nf_rtcache_forward(NFPROTO_IPV4, skb, state);
 }
 
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 static unsigned int nf_rtcache_in6(void *priv,
 				  struct sk_buff *skb,
 				  const struct nf_hook_state *state)
@@ -303,7 +303,7 @@ static struct nf_hook_ops rtcache_ops[] = {
 		.hooknum        = NF_INET_FORWARD,
 		.priority       = NF_IP_PRI_LAST,
 	},
-#if IS_ENABLED(CONFIG_NF_CONNTRACK_IPV6)
+#if IS_ENABLED(CONFIG_IPV6)
 	{
 		.hook		= nf_rtcache_in6,
 		.pf		= NFPROTO_IPV6,
@@ -318,14 +318,6 @@ static struct nf_hook_ops rtcache_ops[] = {
 	},
 #endif
 };
-
-/*static struct nf_ct_ext_type rtcache_extend __read_mostly = {
-	.len	= sizeof(struct nf_conn_rtcache),
-	.align	= __alignof__(struct nf_conn_rtcache),
-	.id	= NF_CT_EXT_RTCACHE,
-	.destroy = nf_conn_rtcache_destroy,
-};
-*/
 
 static int __net_init rtcache_net_init(struct net *net)
 {
