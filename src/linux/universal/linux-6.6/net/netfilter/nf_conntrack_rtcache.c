@@ -142,6 +142,9 @@ static unsigned int nf_rtcache_in(u_int8_t pf,
 	if (!ct)
 		return NF_ACCEPT;
 
+	if (unlikely(ctinfo == IP_CT_UNTRACKED))
+		return NF_ACCEPT;
+
 	rtc = nf_ct_rtcache_find_usable(ct);
 	if (!rtc)
 		return NF_ACCEPT;
@@ -199,6 +202,9 @@ static unsigned int nf_rtcache_forward(u_int8_t pf,
 		nf_ct_rtcache_ext_add(ct);
 		return NF_ACCEPT;
 	}
+
+	if (unlikely(ctinfo == IP_CT_UNTRACKED))
+		return NF_ACCEPT;
 
 	rtc = nf_ct_rtcache_find_usable(ct);
 	if (!rtc)
