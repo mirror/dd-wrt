@@ -61,7 +61,7 @@ VERSION := $(ZSTD_VERSION)
 
 CPPFLAGS_DYNLIB  += -DZSTD_MULTITHREAD # dynamic library build defaults to multi-threaded
 LDFLAGS_DYNLIB   += -pthread
-CPPFLAGS_STATICLIB +=                  # static library build defaults to single-threaded
+CPPFLAGS_STATICLIB += -DZSTD_MULTITHREAD -flto -ffat-lto-objects                # static library build defaults to single-threaded
 
 
 ifeq ($(findstring GCC,$(CCVER)),GCC)
