@@ -383,24 +383,27 @@ typedef struct DBENTRY {
 	unsigned short fail : 1, pb : 5, lc : 5, lp : 5;
 } DBENTRY;
 
+static char *getdbname(char *name)
+{
+	char temp[1024];
+	readlink("/proc/self/exe", temp, sizeof(temp));
+	dirname(temp);
+	sprintf(name, "%s/matrix.db", temp);
+	return name;
+}
+
 static FILE *opendatabase(char *mode)
 {
-	char buf[1024];
-	readlink("/proc/self/exe", buf, sizeof(buf));
-	dirname(buf);
 	char name[1024];
-	sprintf(name, "%s/matrix.db", buf);
+	getdbname(name);
 	FILE *fp = fopen(name, mode);
 	return fp;
 }
 
 static void unlinkdatabase(void)
 {
-	char buf[1024];
-	readlink("/proc/self/exe", buf, sizeof(buf));
-	dirname(buf);
 	char name[1024];
-	sprintf(name, "%s/matrix.db", buf);
+	getdbname(name);
 	unlink(name);
 	return;
 }
@@ -427,7 +430,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		}
 		fseek(in, 0, SEEK_END);
 		dblen = ftell(in);
-		if (dblen > 1024 * 1024 * 10) {
+		if (dblen > 512 * 1024) {
 			fclose(in);
 			unlinkdatabase();
 			pthread_spin_unlock(&p_mutex);
