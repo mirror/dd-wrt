@@ -73,9 +73,9 @@ asterisk-configure: util-linux-configure jansson editline zlib sqlite
 	SYSTEMD_INCLUDE=" " \
 	SYSTEMD_LIB=' ' \
 	SYSTEMD_LIBS=' ' \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/sqlite/.libs -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -L$(TOP)/sqlite/.libs -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
 	LDFLAGS="-L$(TOP)/util-linux/.libs" \
 	SQLITE3_LIB="-L$(TOP)/sqlite/.libs -lsqlite3" \
 	SQLITE3_INCLUDE="-I$(TOP)/sqlite -I$(TOP)/openssl/include -L$(TOP)/openssl" \
