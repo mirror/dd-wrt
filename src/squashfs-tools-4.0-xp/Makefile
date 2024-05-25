@@ -123,7 +123,7 @@ CC=gcc-13
 CFLAGS ?= -O3 -mtune=znver3 -march=znver3 -flto -fwhole-program -fcommon
 CFLAGS += $(EXTRA_CFLAGS) $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE_SOURCE -D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" \
-	-Wall
+	-Wall -s
 
 LIBS = -lpthread -lm
 ifeq ($(GZIP_SUPPORT),1)

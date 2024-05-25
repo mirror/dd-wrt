@@ -310,7 +310,7 @@ failed:
 	return -1;
 }
 
-static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb)
+static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb, int *filterid)
 {
 	int i;
 	lzma_ret res = 0;
@@ -332,7 +332,6 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		stream->opt.lc = lc;
 		stream->opt.lp = lp;
 		stream->opt.pb = pb;
-
 		stream->opt.nice_len = 273;
 
 		stream->opt.dict_size = stream->dictionary_size;
@@ -341,11 +340,74 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length,
 						block_size);
 		if (res == LZMA_OK) {
-			if (!selected || selected->length > filter->length)
+			if (!selected || selected->length > filter->length) {
+				*filterid = i;
 				selected = filter;
+			}
 		} else if (res != LZMA_BUF_ERROR)
 			goto failed;
 	}
+
+	if (!selected) {
+		/*
+		 * Output buffer overflow.  Return out of buffer space
+		 */
+		return 0;
+	}
+
+	if (selected->buffer != dest) {
+		memcpy(dest, selected->buffer, selected->length);
+		/*      dest[selected->length++] = lc;
+		   dest[selected->length++] = lp;
+		   dest[selected->length++] = pb;
+		   dest[selected->length++] = opts->fb; */
+	} else {
+	}
+	*error = 0;
+	return (int)selected->length;
+
+failed:
+	/*
+	 * All other errors return failure, with the compressor
+	 * specific error code in *error
+	 */
+	*error = res;
+	return -1;
+}
+
+static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb, int i)
+{
+	lzma_ret res = 0;
+	struct xz_stream *stream = strm;
+	struct filter *selected = NULL;
+	struct lzma_xz_options *opts = lzma_xz_get_options();
+
+	stream->filter[0].buffer = dest;
+	
+		uint32_t preset = opts->preset;
+		struct filter *filter = &stream->filter[i];
+		filter->length = 0;
+		preset |= LZMA_PRESET_EXTREME;
+
+		if (lzma_lzma_preset(&stream->opt, preset))
+			goto failed;
+
+		stream->opt.lc = lc;
+		stream->opt.lp = lp;
+		stream->opt.pb = pb;
+		stream->opt.nice_len = 273;
+
+		stream->opt.dict_size = stream->dictionary_size;
+
+		filter->length = 0;
+		res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length,
+						block_size);
+		if (res == LZMA_OK) {
+			if (!selected || selected->length > filter->length) {
+				selected = filter;
+			}
+		} else if (res != LZMA_BUF_ERROR)
+			goto failed;
 
 	if (!selected) {
 		/*
@@ -381,6 +443,7 @@ typedef unsigned long uLongf;
 typedef struct DBENTRY {
 	char md5sum[16];
 	unsigned short fail : 1, pb : 5, lc : 5, lp : 5;
+	unsigned char filterid;
 } DBENTRY;
 
 static char *getdbname(char *name)
@@ -412,7 +475,7 @@ static size_t dblen;
 static pthread_spinlock_t p_mutex;
 static int matchcount = 0;
 static int unmatchcount = 0;
-static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, char *sum)
+static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, char *sum)
 {
 	md5_ctx_t MD;
 	dd_md5_begin(&MD);
@@ -460,6 +523,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			*lc = db[i].lc;
 			*lp = db[i].lp;
 			*fail = db[i].fail;
+			*filterid = db[i].filterid;
 			pthread_spin_unlock(&p_mutex);
 			return 0;
 		}
@@ -468,7 +532,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 	return -1;
 }
 
-static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
+static void writeparameters(int pb, int lc, int lp, int fail,int filterid, char *sum)
 {
 	pthread_spin_lock(&p_mutex);
 
@@ -480,6 +544,7 @@ static void writeparameters(int pb, int lc, int lp, int fail, char *sum)
 	db[nextoffset].pb = pb;
 	db[nextoffset].lp = lp;
 	db[nextoffset].lc = lc;
+	db[nextoffset].filterid = filterid;
 	pthread_spin_unlock(&p_mutex);
 }
 
@@ -507,15 +572,16 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int lp;
 	int lc;
 	int pb;
+	int filterid = 0;
 	char md5[16];
 	if (!special) {
-		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, md5);
+		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, md5);
 		if (!ret) {
 			matchcount++;
 			if (s_fail) {
 				return 0;
 			}
-			int len = xz_compress2(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb);
+			int len = xz_compress2_byfilter(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb, filterid);
 			return len;
 		}
 		unmatchcount++;
@@ -527,7 +593,8 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int takepbvalue = matrix[testcount].pb;
 		int takelpvalue = matrix[testcount].lp;
 		int error2 = 0;
-		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue);
+		int f;
+		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue, &f);
 		if (!error2 && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
@@ -536,6 +603,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 			pb = takepbvalue;
 			lc = takelcvalue;
 			lp = takelpvalue;
+			filterid = f;
 			*error = error2;
 		}
 	}
@@ -543,7 +611,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	if (s_fail)
 		test1len = 0;
 	if (!special) {
-		writeparameters(pb, lc, lp, s_fail, md5);
+		writeparameters(pb, lc, lp, s_fail, filterid, md5);
 	}
 	return test1len;
 }
