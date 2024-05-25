@@ -34,7 +34,7 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-#define DBVERSION 0
+#define DBVERSION 1
 static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0 },
@@ -495,7 +495,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			return -1;
 		}
 		fseek(in, 0, SEEK_END);
-		dblen = ftell(in);
+		dblen = ftell(in) - 1;
 		if (dblen > 512 * 1024) {
 			fclose(in);
 			unlinkdatabase();
@@ -520,6 +520,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		if (version != DBVERSION) {
 			fclose(in);
 			unlinkdatabase();
+			dblen = 0;
 			pthread_spin_unlock(&p_mutex);
 			return -1;
 		}
