@@ -516,7 +516,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			pthread_spin_unlock(&p_mutex);
 			return -1;
 		}
-		int version = getc(db);
+		int version = getc(in);
 		if (version != DBVERSION) {
 			fclose(in);
 			unlinkdatabase();
@@ -566,7 +566,7 @@ static void writedb(void)
 		pthread_spin_unlock(&p_mutex);
 		return;
 	}
-	putc(DBVERSION, db);
+	putc(DBVERSION, out);
 	fwrite(db, dblen, 1, out);
 	fclose(out);
 	pthread_spin_unlock(&p_mutex);
