@@ -34,6 +34,7 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
+#define DBVERSION 0
 static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0 },
@@ -310,7 +311,8 @@ failed:
 	return -1;
 }
 
-static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb, int *filterid)
+static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb,
+			int *filterid)
 {
 	int i;
 	lzma_ret res = 0;
@@ -375,7 +377,8 @@ failed:
 	return -1;
 }
 
-static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb, int i)
+static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp,
+				 int pb, int i)
 {
 	lzma_ret res = 0;
 	struct xz_stream *stream = strm;
@@ -383,31 +386,31 @@ static int xz_compress2_byfilter(void *strm, unsigned char *dest, void *src, int
 	struct lzma_xz_options *opts = lzma_xz_get_options();
 
 	stream->filter[0].buffer = dest;
-	
-		uint32_t preset = opts->preset;
-		struct filter *filter = &stream->filter[i];
-		filter->length = 0;
-		preset |= LZMA_PRESET_EXTREME;
 
-		if (lzma_lzma_preset(&stream->opt, preset))
-			goto failed;
+	uint32_t preset = opts->preset;
+	struct filter *filter = &stream->filter[i];
+	filter->length = 0;
+	preset |= LZMA_PRESET_EXTREME;
 
-		stream->opt.lc = lc;
-		stream->opt.lp = lp;
-		stream->opt.pb = pb;
-		stream->opt.nice_len = 273;
+	if (lzma_lzma_preset(&stream->opt, preset))
+		goto failed;
 
-		stream->opt.dict_size = stream->dictionary_size;
+	stream->opt.lc = lc;
+	stream->opt.lp = lp;
+	stream->opt.pb = pb;
+	stream->opt.nice_len = 273;
 
-		filter->length = 0;
-		res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length,
-						block_size);
-		if (res == LZMA_OK) {
-			if (!selected || selected->length > filter->length) {
-				selected = filter;
-			}
-		} else if (res != LZMA_BUF_ERROR)
-			goto failed;
+	stream->opt.dict_size = stream->dictionary_size;
+
+	filter->length = 0;
+	res = lzma_stream_buffer_encode(filter->filter, LZMA_CHECK_CRC32, NULL, src, size, filter->buffer, &filter->length,
+					block_size);
+	if (res == LZMA_OK) {
+		if (!selected || selected->length > filter->length) {
+			selected = filter;
+		}
+	} else if (res != LZMA_BUF_ERROR)
+		goto failed;
 
 	if (!selected) {
 		/*
@@ -513,6 +516,13 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			pthread_spin_unlock(&p_mutex);
 			return -1;
 		}
+		int version = getc(db);
+		if (version != DBVERSION) {
+			fclose(in);
+			unlinkdatabase();
+			pthread_spin_unlock(&p_mutex);
+			return -1;
+		}
 		fread(db, dblen, 1, in);
 		fclose(in);
 	}
@@ -532,7 +542,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 	return -1;
 }
 
-static void writeparameters(int pb, int lc, int lp, int fail,int filterid, char *sum)
+static void writeparameters(int pb, int lc, int lp, int fail, int filterid, char *sum)
 {
 	pthread_spin_lock(&p_mutex);
 
@@ -556,6 +566,7 @@ static void writedb(void)
 		pthread_spin_unlock(&p_mutex);
 		return;
 	}
+	putc(DBVERSION, db);
 	fwrite(db, dblen, 1, out);
 	fclose(out);
 	pthread_spin_unlock(&p_mutex);
@@ -594,7 +605,8 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int takelpvalue = matrix[testcount].lp;
 		int error2 = 0;
 		int f;
-		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue, &f);
+		test3len =
+			xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue, &f);
 		if (!error2 && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
