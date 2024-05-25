@@ -32,7 +32,7 @@
 			qcom,saw = <&saw0>;
 			clocks = <&kraitcc 0>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
+			clock-latency = <256000>;
 			operating-points-v2 = <&opp_table0>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
@@ -51,7 +51,7 @@
 			qcom,saw = <&saw1>;
 			clocks = <&kraitcc 1>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
+			clock-latency = <256000>;
 			operating-points-v2 = <&opp_table0>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
@@ -78,21 +78,21 @@
 		opp-384000000 {
 			opp-hz = /bits/ 64 <384000000>;
 			opp-microvolt = <1100000>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <0>;
 		};
 
 		opp-1000000000 {
 			opp-hz = /bits/ 64 <1000000000>;
 			opp-microvolt = <1100000>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <1>;
 		};
 
 		opp-1200000000 {
 			opp-hz = /bits/ 64 <1200000000>;
 			opp-microvolt = <1150000>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <2>;
 		};
 	};
@@ -111,7 +111,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <875000 831250 918750>;
 			opp-microvolt-speed0-pvs3-v0 = <800000 760000 840000>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <0>;
 		};
 
@@ -122,7 +122,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <925000 878750 971250>;
 			opp-microvolt-speed0-pvs3-v0 = <850000 807500 892500>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <1>;
 		};
 
@@ -133,7 +133,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <995000 945250 1044750>;
 			opp-microvolt-speed0-pvs3-v0 = <900000 855000 945000>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <1>;
 		};
 
@@ -144,7 +144,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <1025000 973750 1076250>;
 			opp-microvolt-speed0-pvs3-v0 = <950000 902500 997500>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <1>;
 		};
 
@@ -155,7 +155,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <1075000 1021250 1128750>;
 			opp-microvolt-speed0-pvs3-v0 = <1000000 950000 1050000>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <2>;
 		};
 
@@ -166,7 +166,7 @@
 			opp-microvolt-speed0-pvs2-v0 = <1125000 1068750 1181250>;
 			opp-microvolt-speed0-pvs3-v0 = <1050000 997500 1102500>;
 			opp-supported-hw = <0x1>;
-			clock-latency-ns = <100000>;
+			clock-latency-ns = <256000>;
 			opp-level = <2>;
 		};
 	};
