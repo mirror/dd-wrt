@@ -34,13 +34,15 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-#define DBVERSION 1
+#define DBVERSION 3
 static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0 },
 			    { "arm", LZMA_FILTER_ARM, 0 },
 			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0 },
 			    { "sparc", LZMA_FILTER_SPARC, 0 },
+			    { "arm64", LZMA_FILTER_ARM64, 0 },
+			    { "riscv", LZMA_FILTER_RISCV, 0 },
 			    //			    { "swizzle16", LZMA_FILTER_SWIZZLE16, 0 },
 			    //			    { "swizzle32", LZMA_FILTER_SWIZZLE32, 0 },
 			    //			    { "swizzle64", LZMA_FILTER_SWIZZLE64, 0 },
@@ -290,6 +292,11 @@ static int xz_init(void **strm, int block_size, int datablock)
 			if (filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
+			if (bcj[i].id == LZMA_FILTER_DELTA) {
+				static lzma_options_delta opt;
+				opt.dist = 1;
+				filter[j].filter[0].options = &opt;
+			}
 			filter[j].filter[1].id = LZMA_FILTER_LZMA2;
 			filter[j].filter[1].options = &stream->opt;
 			filter[j].filter[2].id = LZMA_VLI_UNKNOWN;
@@ -346,8 +353,10 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 				*filterid = i;
 				selected = filter;
 			}
-		} else if (res != LZMA_BUF_ERROR)
+		} else if (res != LZMA_BUF_ERROR) {
+			//			printf("fail %d\n",res);
 			goto failed;
+		}
 	}
 
 	if (!selected) {
@@ -447,7 +456,7 @@ typedef struct DBENTRY {
 	char md5sum[16];
 	unsigned short fail : 1, pb : 5, lc : 5, lp : 5;
 	unsigned char filterid;
-} DBENTRY;
+} __attribute__((packed)) DBENTRY;
 
 static char *getdbname(char *name)
 {
@@ -473,7 +482,7 @@ static void unlinkdatabase(void)
 	unlink(name);
 	return;
 }
-static struct DBENTRY *db = NULL;
+static DBENTRY *db = NULL;
 static size_t dblen;
 static pthread_spinlock_t p_mutex;
 static int matchcount = 0;
@@ -593,6 +602,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 			if (s_fail) {
 				return 0;
 			}
+			//			printf("db entry %d, lc %d lp %d pb %d filterid %d\n", sizeof(*db), lc, lp, pb, filterid);
 			int len = xz_compress2_byfilter(s_strm, dst, src, sourceLen, block_size, error, lc, lp, pb, filterid);
 			return len;
 		}
