@@ -523,14 +523,14 @@ static enum xz_ret dec_block_header(struct xz_dec *s)
 		if (s->temp.size - s->temp.pos < 2)
 			return XZ_OPTIONS_ERROR;
 		
-		int id = s->temp.buf[s->temp.pos++];
+		id = s->temp.buf[s->temp.pos++];
 
 		/*
 		 * We don't support custom start offset,
 		 * so Size of Properties must be zero.
 		 */
-		int optlen = s->temp.buf[s->temp.pos++];
-		if ((id != 0x3 && optlen != 0x00) || (id == 0x3 && optlen != 1)
+		optlen = s->temp.buf[s->temp.pos++];
+		if ((id != 0x3 && optlen != 0x00) || (id == 0x3 && optlen != 1))
 			return XZ_OPTIONS_ERROR;
 
 		ret = xz_dec_bcj_reset(s->bcj, id, optlen > 0 ? s->temp.buf[s->temp.pos++] : 0);

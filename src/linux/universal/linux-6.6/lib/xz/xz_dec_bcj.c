@@ -86,6 +86,7 @@ struct xz_dec_bcj {
 	 */
 #	define LZMA_DELTA_DIST_MAX 256
 
+#ifdef XZ_DEC_DELTA
 	size_t distance;
 
 	/// Position in history[]
@@ -93,6 +94,7 @@ struct xz_dec_bcj {
 
 	/// Buffer to hold history of the original data
 	uint8_t history[LZMA_DELTA_DIST_MAX];
+#endif
 };
 
 #ifdef XZ_DEC_X86
