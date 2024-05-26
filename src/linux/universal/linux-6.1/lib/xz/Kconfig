@@ -49,6 +49,11 @@ config XZ_DEC_RISCV
 	default y
 	select XZ_DEC_BCJ
 
+config XZ_DEC_DELTA
+	bool "Delta BCJ filter decoder" if EXPERT
+	default y
+	select XZ_DEC_BCJ
+
 config XZ_DEC_MICROLZMA
 	bool "MicroLZMA decoder"
 	default n
