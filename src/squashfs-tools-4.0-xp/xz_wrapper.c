@@ -487,6 +487,7 @@ static size_t dblen;
 static pthread_spinlock_t p_mutex;
 static int matchcount = 0;
 static int unmatchcount = 0;
+static int counts[256];
 static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, char *sum)
 {
 	md5_ctx_t MD;
@@ -555,7 +556,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 static void writeparameters(int pb, int lc, int lp, int fail, int filterid, char *sum)
 {
 	pthread_spin_lock(&p_mutex);
-
+	counts[filterid]++;
 	db = realloc(db, dblen + sizeof(*db));
 	size_t nextoffset = dblen / sizeof(*db);
 	dblen += sizeof(*db);
@@ -675,7 +676,12 @@ int xz_deinit(void)
 	}
 
 	printf("learning db matches %d unmatches %d\n", matchcount, unmatchcount);
-
+	int i;
+	for (i=0;i<256;i++)
+	    {
+	    if (counts[i])
+		printf("%d items are encoded with filter %s\n", counts[i], bcj[i].name);
+	    }
 	return 0;
 }
 
