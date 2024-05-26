@@ -1,11 +1,10 @@
+/* SPDX-License-Identifier: 0BSD */
+
 /*
  * XZ decompressor
  *
  * Authors: Lasse Collin <lasse.collin@tukaani.org>
  *          Igor Pavlov <https://7-zip.org/>
- *
- * This file has been put into the public domain.
- * You can do whatever you want with this file.
  */
 
 #ifndef XZ_H
@@ -17,6 +16,10 @@
 #else
 #	include <stddef.h>
 #	include <stdint.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* In Linux, this is used to make extern functions static when needed. */
@@ -194,7 +197,7 @@ struct xz_dec;
 XZ_EXTERN struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max);
 
 /**
- * xz_dec_run() - Run the XZ decoder
+ * xz_dec_run() - Run the XZ decoder for a single XZ stream
  * @s:          Decoder state allocated using xz_dec_init()
  * @b:          Input and output buffers
  *
@@ -210,8 +213,50 @@ XZ_EXTERN struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max);
  * cannot give the single-call decoder a too small buffer and then expect to
  * get that amount valid data from the beginning of the stream. You must use
  * the multi-call decoder if you don't want to uncompress the whole stream.
+ *
+ * Use xz_dec_run() when XZ data is stored inside some other file format.
+ * The decoding will stop after one XZ stream has been decompressed. To
+ * decompress regular .xz files which might have multiple concatenated
+ * streams, use xz_dec_catrun() instead.
  */
 XZ_EXTERN enum xz_ret xz_dec_run(struct xz_dec *s, struct xz_buf *b);
+
+/**
+ * xz_dec_catrun() - Run the XZ decoder with support for concatenated streams
+ * @s:          Decoder state allocated using xz_dec_init()
+ * @b:          Input and output buffers
+ * @finish:     This is an int instead of bool to avoid requiring stdbool.h.
+ *              As long as more input might be coming, finish must be false.
+ *              When the caller knows that it has provided all the input to
+ *              the decoder (some possibly still in b->in), it must set finish
+ *              to true. Only when finish is true can this function return
+ *              XZ_STREAM_END to indicate successful decompression of the
+ *              file. In single-call mode (XZ_SINGLE) finish is assumed to
+ *              always be true; the caller-provided value is ignored.
+ *
+ * This is like xz_dec_run() except that this makes it easy to decode .xz
+ * files with multiple streams (multiple .xz files concatenated as is).
+ * The rarely-used Stream Padding feature is supported too, that is, there
+ * can be null bytes after or between the streams. The number of null bytes
+ * must be a multiple of four.
+ *
+ * When finish is false and b->in_pos == b->in_size, it is possible that
+ * XZ_BUF_ERROR isn't returned even when no progress is possible (XZ_OK is
+ * returned instead). This shouldn't matter because in this situation a
+ * reasonable caller will attempt to provide more input or set finish to
+ * true for the next xz_dec_catrun() call anyway.
+ *
+ * For any struct xz_dec that has been initialized for multi-call mode:
+ * Once decoding has been started with xz_dec_run() or xz_dec_catrun(),
+ * the same function must be used until xz_dec_reset() or xz_dec_end().
+ * Switching between the two decoding functions without resetting results
+ * in undefined behavior.
+ *
+ * xz_dec_catrun() is only available if XZ_DEC_CONCATENATED was defined
+ * at compile time.
+ */
+XZ_EXTERN enum xz_ret xz_dec_catrun(struct xz_dec *s, struct xz_buf *b,
+				    int finish);
 
 /**
  * xz_dec_reset() - Reset an already allocated decoder state
@@ -353,6 +398,22 @@ extern void xz_dec_microlzma_end(struct xz_dec_microlzma *s);
 #	endif
 #endif
 
+/*
+ * If CRC64 support has been enabled with XZ_USE_CRC64, a CRC64
+ * implementation is needed too.
+ */
+#ifndef XZ_USE_CRC64
+#	undef XZ_INTERNAL_CRC64
+#	define XZ_INTERNAL_CRC64 0
+#endif
+#ifndef XZ_INTERNAL_CRC64
+#	ifdef __KERNEL__
+#		error Using CRC64 in the kernel has not been implemented.
+#	else
+#		define XZ_INTERNAL_CRC64 1
+#	endif
+#endif
+
 #if XZ_INTERNAL_CRC32
 /*
  * This must be called before any other xz_* function to initialize
@@ -367,4 +428,24 @@ XZ_EXTERN void xz_crc32_init(void);
  */
 XZ_EXTERN uint32_t xz_crc32(const uint8_t *buf, size_t size, uint32_t crc);
 #endif
+
+#if XZ_INTERNAL_CRC64
+/*
+ * This must be called before any other xz_* function (except xz_crc32_init())
+ * to initialize the CRC64 lookup table.
+ */
+XZ_EXTERN void xz_crc64_init(void);
+
+/*
+ * Update CRC64 value using the polynomial from ECMA-182. To start a new
+ * calculation, the third argument must be zero. To continue the calculation,
+ * the previously returned value is passed as the third argument.
+ */
+XZ_EXTERN uint64_t xz_crc64(const uint8_t *buf, size_t size, uint64_t crc);
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
