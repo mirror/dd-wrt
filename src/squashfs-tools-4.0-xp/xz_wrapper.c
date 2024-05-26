@@ -680,7 +680,7 @@ int xz_deinit(void)
 	for (i=0;i<256;i++)
 	    {
 	    if (counts[i])
-		printf("%d items are encoded with filter %s\n", counts[i], bcj[i].name);
+		printf("%d items are encoded with filter %d\n", counts[i], i);
 	    }
 	return 0;
 }
