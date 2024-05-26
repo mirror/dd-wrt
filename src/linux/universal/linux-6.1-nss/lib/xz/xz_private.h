@@ -147,7 +147,7 @@ XZ_EXTERN struct xz_dec_bcj *xz_dec_bcj_create(bool single_call);
  * is needed. Returns XZ_OK if the given Filter ID is supported.
  * Otherwise XZ_OPTIONS_ERROR is returned.
  */
-XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id);
+XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id, uint8_t opt);
 
 /*
  * Decode raw BCJ + LZMA2 stream. This must be used only if there actually is

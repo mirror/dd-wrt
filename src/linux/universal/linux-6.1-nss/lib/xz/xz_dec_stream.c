@@ -519,19 +519,23 @@ static enum xz_ret dec_block_header(struct xz_dec *s)
 	/* If there are two filters, the first one must be a BCJ filter. */
 	s->bcj_active = s->temp.buf[1] & 0x01;
 	if (s->bcj_active) {
+		int id, optlen;
 		if (s->temp.size - s->temp.pos < 2)
 			return XZ_OPTIONS_ERROR;
-
-		ret = xz_dec_bcj_reset(s->bcj, s->temp.buf[s->temp.pos++]);
-		if (ret != XZ_OK)
-			return ret;
+		
+		int id = s->temp.buf[s->temp.pos++];
 
 		/*
 		 * We don't support custom start offset,
 		 * so Size of Properties must be zero.
 		 */
-		if (s->temp.buf[s->temp.pos++] != 0x00)
+		int optlen = s->temp.buf[s->temp.pos++];
+		if ((id != 0x3 && optlen != 0x00) || (id == 0x3 && optlen != 1)
 			return XZ_OPTIONS_ERROR;
+
+		ret = xz_dec_bcj_reset(s->bcj, id, optlen > 0 ? s->temp.buf[s->temp.pos++] : 0);
+		if (ret != XZ_OK)
+			return ret;
 	}
 #endif
 

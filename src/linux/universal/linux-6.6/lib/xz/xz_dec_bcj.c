@@ -18,6 +18,7 @@
 struct xz_dec_bcj {
 	/* Type of the BCJ filter being used */
 	enum {
+		BCJ_DELTA = 3,      /* Delta */
 		BCJ_X86 = 4,        /* x86 or x86-64 */
 		BCJ_POWERPC = 5,    /* Big endian only */
 		BCJ_IA64 = 6,       /* Big or little endian */
@@ -74,6 +75,24 @@ struct xz_dec_bcj {
 		 */
 		uint8_t buf[16];
 	} temp;
+
+	/**
+	 * \brief       Minimum value for lzma_options_delta.dist.
+	 */
+#	define LZMA_DELTA_DIST_MIN 1
+
+	/**
+	 * \brief       Maximum value for lzma_options_delta.dist.
+	 */
+#	define LZMA_DELTA_DIST_MAX 256
+
+	size_t distance;
+
+	/// Position in history[]
+	uint8_t hist_pos;
+
+	/// Buffer to hold history of the original data
+	uint8_t history[LZMA_DELTA_DIST_MAX];
 };
 
 #ifdef XZ_DEC_X86
@@ -481,7 +500,22 @@ static size_t bcj_riscv(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	return i;
 }
 #endif
+#ifdef XZ_DEC_DELTA
+static size_t bcj_delta(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
 
+	size_t i;
+	const size_t distance = coder->distance;
+
+	for (i = 0; i < size; ++i) {
+		buf[i] += s->history[(distance + s->hist_pos) & 0xFF];
+		s->history[s->hist_pos-- & 0xFF] = buf[i];
+	}
+
+	return i;
+}
+
+#endif
 /*
  * Apply the selected BCJ filter. Update *pos and s->pos to match the amount
  * of data that got filtered.
@@ -537,6 +571,11 @@ static void bcj_apply(struct xz_dec_bcj *s,
 #ifdef XZ_DEC_RISCV
 	case BCJ_RISCV:
 		filtered = bcj_riscv(s, buf, size);
+		break;
+#endif
+#ifdef XZ_DEC_DELTA
+	case BCJ_DELTA:
+		filtered = bcj_delta(s, buf, size);
 		break;
 #endif
 	default:
@@ -691,9 +730,15 @@ XZ_EXTERN struct xz_dec_bcj *xz_dec_bcj_create(bool single_call)
 	return s;
 }
 
-XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id)
+XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id, uint8_t opt)
 {
 	switch (id) {
+#ifdef XZ_DEC_DELTA
+	case BCJ_DELTA:
+	s->distance = opt + 1;
+	s->hist_pos = 0;
+	memset(s->history, 0, LZMA_DELTA_DIST_MAX);
+#endif
 #ifdef XZ_DEC_X86
 	case BCJ_X86:
 #endif
