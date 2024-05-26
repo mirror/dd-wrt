@@ -22,7 +22,7 @@
 	opp-1400000000 {
 		opp-hz = /bits/ 64 <1400000000>;
 		opp-microvolt = <1150000>;
-		clock-latency-ns = <256000>;
+		clock-latency-ns = <100000>;
 		opp-level = <2>;
 	};
 };
@@ -100,7 +100,7 @@
 		opp-microvolt-speed0-pvs5-v0 = <1100000 1045000 1155000>;
 		opp-microvolt-speed0-pvs6-v0 = <1050000 997500 1102500>;
 		opp-supported-hw = <0x1>;
-		clock-latency-ns = <256000>;
+		clock-latency-ns = <100000>;
 		opp-level = <2>;
 	};
 };
