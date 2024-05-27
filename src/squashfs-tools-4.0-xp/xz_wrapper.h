@@ -49,6 +49,7 @@ struct bcj {
 	char	 	*name;
 	lzma_vli	id;
 	int		selected;
+	int 		dist;
 };
 
 struct filter {

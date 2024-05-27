@@ -43,10 +43,11 @@ static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
 			    { "sparc", LZMA_FILTER_SPARC, 0 },
 			    { "arm64", LZMA_FILTER_ARM64, 0 },
 			    { "riscv", LZMA_FILTER_RISCV, 0 },
-			    //			    { "swizzle16", LZMA_FILTER_SWIZZLE16, 0 },
-			    //			    { "swizzle32", LZMA_FILTER_SWIZZLE32, 0 },
-			    //			    { "swizzle64", LZMA_FILTER_SWIZZLE64, 0 },
-			    { "delta", LZMA_FILTER_DELTA, 0 },
+			    { "delta", LZMA_FILTER_DELTA, 0, 1 },
+			    { "delta-2", LZMA_FILTER_DELTA, 0, 2 },
+			    { "delta-4", LZMA_FILTER_DELTA, 0, 4 },
+			    { "delta-8", LZMA_FILTER_DELTA, 0, 8 },
+			    { "delta-16", LZMA_FILTER_DELTA, 0, 16 },
 			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
 
 static int filter_count = 1;
@@ -292,9 +293,9 @@ static int xz_init(void **strm, int block_size, int datablock)
 			if (filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
-			if (bcj[i].id == LZMA_FILTER_DELTA) {
+			if (i>=8) {
 				static lzma_options_delta opt;
-				opt.dist = 1;
+				opt.dist = bcj[i].dist;
 				filter[j].filter[0].options = &opt;
 			}
 			filter[j].filter[1].id = LZMA_FILTER_LZMA2;
