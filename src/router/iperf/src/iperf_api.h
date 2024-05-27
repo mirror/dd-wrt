@@ -31,9 +31,7 @@
 #include <sys/time.h>
 #include <setjmp.h>
 #include <stdio.h>
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
 #ifdef __cplusplus
 extern "C" { /* open extern "C" */
 #endif
@@ -100,7 +98,9 @@ typedef atomic_uint_fast64_t atomic_iperf_size_t;
 #define OPT_IDLE_TIMEOUT 25
 #define OPT_DONT_FRAGMENT 26
 #define OPT_RCV_TIMEOUT 27
-#define OPT_SND_TIMEOUT 28
+#define OPT_JSON_STREAM 28
+#define OPT_SND_TIMEOUT 29
+#define OPT_USE_PKCS1_PADDING 30
 
 /* states */
 #define TEST_START 1
@@ -151,6 +151,7 @@ char*	iperf_get_test_template( struct iperf_test* ipt );
 int	iperf_get_test_protocol_id( struct iperf_test* ipt );
 int	iperf_get_test_json_output( struct iperf_test* ipt );
 char*	iperf_get_test_json_output_string ( struct iperf_test* ipt );
+int	iperf_get_test_json_stream( struct iperf_test* ipt );
 int	iperf_get_test_zerocopy( struct iperf_test* ipt );
 int	iperf_get_test_get_server_output( struct iperf_test* ipt );
 char	iperf_get_test_unit_format(struct iperf_test *ipt);
@@ -195,6 +196,7 @@ void	iperf_set_test_server_hostname( struct iperf_test* ipt, const char* server_
 void    iperf_set_test_template( struct iperf_test *ipt, const char *tmp_template );
 void	iperf_set_test_reverse( struct iperf_test* ipt, int reverse );
 void	iperf_set_test_json_output( struct iperf_test* ipt, int json_output );
+void	iperf_set_test_json_stream( struct iperf_test* ipt, int json_stream );
 int	iperf_has_zerocopy( void );
 void	iperf_set_test_zerocopy( struct iperf_test* ipt, int zerocopy );
 void	iperf_set_test_get_server_output( struct iperf_test* ipt, int get_server_output );

@@ -1,4 +1,4 @@
-# iperf, Copyright (c) 2014-2023, The Regents of the University of
+# iperf, Copyright (c) 2014-2024, The Regents of the University of
 # California, through Lawrence Berkeley National Laboratory (subject
 # to receipt of any required approvals from the U.S. Dept. of
 # Energy).  All rights reserved.
@@ -25,7 +25,7 @@
 
 # Initialize the autoconf system for the specified tool, version and mailing list
 AC_PREREQ([2.00])
-AC_INIT([iperf],[3.16],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
+AC_INIT([iperf],[3.17.1],[https://github.com/esnet/iperf],[iperf],[https://software.es.net/iperf/])
 m4_include([config/ax_check_openssl.m4])
 m4_include([config/iperf_config_static_bin.m4])
 AC_LANG(C)
@@ -91,7 +91,19 @@ CXX="$PTHREAD_CXX"
 ])
 
 # Atomics
-AC_CHECK_HEADERS([stdatomic.h])
+AC_CHECK_HEADERS([stdatomic.h],
+    [AC_MSG_CHECKING([whether libatomic is required])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdatomic.h>]], [[atomic_uint_fast64_t i; i++;]])],
+        [AC_MSG_RESULT([no])],
+        [save_LIBS="$LIBS"
+        LIBS="$LIBS -latomic"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdatomic.h>]], [[atomic_uint_fast64_t i; i++;]])],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_ERROR([failed to find working configuration with atomics])]
+        )]
+    )],
+    []
+)
 
 # Check for poll.h (it's in POSIX so everyone should have it?)
 AC_CHECK_HEADERS([poll.h])

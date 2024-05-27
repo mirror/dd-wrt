@@ -47,10 +47,6 @@ iperf_err(struct iperf_test *test, const char *format, ...)
     struct tm *ltm = NULL;
     char *ct = NULL;
 
-    if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
-        perror("iperf_err: pthread_mutex_lock");
-    }
-
     /* Timestamp if requested */
     if (test != NULL && test->timestamps) {
 	time(&now);
@@ -64,6 +60,10 @@ iperf_err(struct iperf_test *test, const char *format, ...)
     if (test != NULL && test->json_output && test->json_top != NULL)
 	cJSON_AddStringToObject(test->json_top, "error", str);
     else {
+        if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+            perror("iperf_err: pthread_mutex_lock");
+        }
+
 	if (test && test->outfile && test->outfile != stdout) {
 	    if (ct) {
 		fprintf(test->outfile, "%s", ct);
@@ -76,12 +76,13 @@ iperf_err(struct iperf_test *test, const char *format, ...)
 	    }
 	    fprintf(stderr, "iperf3: %s\n", str);
 	}
+
+        if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+            perror("iperf_err: pthread_mutex_unlock");
+        }
+
     }
     va_end(argp);
-
-    if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
-        perror("iperf_err: pthread_mutex_unlock");
-    }
 }
 
 /* Do a printf to stderr or log file as appropriate, then exit. */
@@ -93,10 +94,6 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
     time_t now;
     struct tm *ltm = NULL;
     char *ct = NULL;
-
-    if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
-        perror("iperf_errexit: pthread_mutex_lock");
-    }
 
     /* Timestamp if requested */
     if (test != NULL && test->timestamps) {
@@ -113,7 +110,11 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 	    cJSON_AddStringToObject(test->json_top, "error", str);
         }
 	iperf_json_finish(test);
-    } else
+    } else {
+        if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+            perror("iperf_errexit: pthread_mutex_lock");
+        }
+
 	if (test && test->outfile && test->outfile != stdout) {
 	    if (ct) {
 		fprintf(test->outfile, "%s", ct);
@@ -127,8 +128,9 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 	    fprintf(stderr, "iperf3: %s\n", str);
 	}
 
-    if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
-        perror("iperf_errexit: pthread_mutex_unlock");
+        if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+            perror("iperf_errexit: pthread_mutex_unlock");
+        }
     }
 
     va_end(argp);
@@ -166,7 +168,7 @@ iperf_strerror(int int_errno)
             snprintf(errstr, len, "some option you are trying to set is client only");
             break;
         case IEDURATION:
-            snprintf(errstr, len, "test duration too long (maximum = %d seconds)", MAX_TIME);
+            snprintf(errstr, len, "test duration valid values are 0 to %d seconds", MAX_TIME);
             break;
         case IENUMSTREAMS:
             snprintf(errstr, len, "number of parallel streams too large (maximum = %d)", MAX_STREAMS);

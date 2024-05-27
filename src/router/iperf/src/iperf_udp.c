@@ -34,9 +34,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
+#include <inttypes.h>
 #include <sys/time.h>
 #include <sys/select.h>
 
@@ -47,19 +46,6 @@
 #include "timer.h"
 #include "net.h"
 #include "cjson.h"
-#include "portable_endian.h"
-
-#if defined(HAVE_INTTYPES_H)
-# include <inttypes.h>
-#else
-# ifndef PRIu64
-#  if sizeof(long) == 8
-#   define PRIu64		"lu"
-#  else
-#   define PRIu64		"llu"
-#  endif
-# endif
-#endif
 
 
 #ifndef be64toh

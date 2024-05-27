@@ -31,9 +31,8 @@
 
 #include <sys/time.h>
 #include <sys/types.h>
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
+#include <inttypes.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #ifndef _GNU_SOURCE
@@ -51,31 +50,18 @@
 #include <sys/cpuset.h>
 #endif /* HAVE_CPUSET_SETAFFINITY */
 
-#if defined(HAVE_INTTYPES_H)
-# include <inttypes.h>
-#else
-# ifndef PRIu64
-#  if sizeof(long) == 8
-#   define PRIu64		"lu"
-#  else
-#   define PRIu64		"llu"
-#  endif
-# endif
-#endif
-
 #include "timer.h"
 #include "queue.h"
 #include "cjson.h"
 #include "iperf_time.h"
+#include "portable_endian.h"
 
 #if defined(HAVE_SSL)
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #endif // HAVE_SSL
 
-#ifdef HAVE_PTHREAD
-#include <pthread.h>
-#endif // HAVE_PTHREAD
+#include "iperf_pthread.h"
 
 /*
  * Atomic types highly desired, but if not, we approximate what we need
@@ -92,6 +78,10 @@ typedef uint64_t atomic_uint_fast64_t;
 typedef uint_fast64_t iperf_size_t;
 typedef atomic_uint_fast64_t atomic_iperf_size_t;
 #endif // __IPERF_API_H
+
+#if (defined(__vxworks)) || (defined(__VXWORKS__))
+typedef unsigned int uint
+#endif // __vxworks or __VXWORKS__
 
 struct iperf_interval_results
 {
@@ -335,6 +325,7 @@ struct iperf_test
     char      *server_authorized_users;
     EVP_PKEY  *server_rsa_private_key;
     int       server_skew_threshold;
+    int       use_pkcs1_padding;
 #endif // HAVE_SSL
 
     /* boolean variables for Options */
@@ -345,6 +336,7 @@ struct iperf_test
     int       bidirectional;                    /* --bidirectional */
     int	      verbose;                          /* -V option - verbose mode */
     int	      json_output;                      /* -J option - JSON output */
+    int	      json_stream;                      /* --json-stream */
     int	      zerocopy;                         /* -Z option - use sendfile */
     int       debug;				/* -d option - enable debug */
     enum      debug_level debug_level;          /* -d option option - level of debug messages to show */

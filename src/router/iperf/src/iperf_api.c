@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2022, The Regents of the University of
+ * iperf, Copyright (c) 2014-2024, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -46,9 +46,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#endif
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
@@ -102,6 +100,7 @@ static int diskfile_recv(struct iperf_stream *sp);
 static int JSON_write(int fd, cJSON *json);
 static void print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *json_interval_streams);
 static cJSON *JSON_read(int fd);
+static int JSONStream_Output(struct iperf_test *test, const char* event_name, cJSON* obj);
 
 
 /*************************** Print usage functions ****************************/
@@ -324,6 +323,12 @@ char *
 iperf_get_test_json_output_string(struct iperf_test *ipt)
 {
     return ipt->json_output_string;
+}
+
+int
+iperf_get_test_json_stream(struct iperf_test *ipt)
+{
+    return ipt->json_stream;
 }
 
 int
@@ -682,6 +687,12 @@ iperf_set_test_json_output(struct iperf_test *ipt, int json_output)
     ipt->json_output = json_output;
 }
 
+void
+iperf_set_test_json_stream(struct iperf_test *ipt, int json_stream)
+{
+    ipt->json_stream = json_stream;
+}
+
 int
 iperf_has_zerocopy( void )
 {
@@ -881,7 +892,7 @@ void
 iperf_on_test_start(struct iperf_test *test)
 {
     if (test->json_output) {
-	cJSON_AddItemToObject(test->json_start, "test_start", iperf_json_printf("protocol: %s  num_streams: %d  blksize: %d  omit: %d  duration: %d  bytes: %d  blocks: %d  reverse: %d  tos: %d  target_bitrate: %d bidir: %d fqrate: %d", test->protocol->name, (int64_t) test->num_streams, (int64_t) test->settings->blksize, (int64_t) test->omit, (int64_t) test->duration, (int64_t) test->settings->bytes, (int64_t) test->settings->blocks, test->reverse?(int64_t)1:(int64_t)0, (int64_t) test->settings->tos, (int64_t) test->settings->rate, (int64_t) test->bidirectional, (uint64_t) test->settings->fqrate));
+	cJSON_AddItemToObject(test->json_start, "test_start", iperf_json_printf("protocol: %s  num_streams: %d  blksize: %d  omit: %d  duration: %d  bytes: %d  blocks: %d  reverse: %d  tos: %d  target_bitrate: %d bidir: %d fqrate: %d interval: %f", test->protocol->name, (int64_t) test->num_streams, (int64_t) test->settings->blksize, (int64_t) test->omit, (int64_t) test->duration, (int64_t) test->settings->bytes, (int64_t) test->settings->blocks, test->reverse?(int64_t)1:(int64_t)0, (int64_t) test->settings->tos, (int64_t) test->settings->rate, (int64_t) test->bidirectional, (uint64_t) test->settings->fqrate, test->stats_interval));
     } else {
 	if (test->verbose) {
 	    if (test->settings->bytes)
@@ -892,7 +903,11 @@ iperf_on_test_start(struct iperf_test *test)
 		iperf_printf(test, test_start_time, test->protocol->name, test->num_streams, test->settings->blksize, test->omit, test->duration, test->settings->tos);
 	}
     }
+    if (test->json_stream) {
+        JSONStream_Output(test, "start", test->json_start);
+    }
 }
+
 
 /* This converts an IPv6 string address from IPv4-mapped format into regular
 ** old IPv4 format, which is easier on the eyes of network veterans.
@@ -1059,6 +1074,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"one-off", no_argument, NULL, '1'},
         {"verbose", no_argument, NULL, 'V'},
         {"json", no_argument, NULL, 'J'},
+        {"json-stream", no_argument, NULL, OPT_JSON_STREAM},
         {"version", no_argument, NULL, 'v'},
         {"server", no_argument, NULL, 's'},
         {"client", required_argument, NULL, 'c'},
@@ -1122,6 +1138,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     {"rsa-private-key-path", required_argument, NULL, OPT_SERVER_RSA_PRIVATE_KEY},
     {"authorized-users-path", required_argument, NULL, OPT_SERVER_AUTHORIZED_USERS},
     {"time-skew-threshold", required_argument, NULL, OPT_SERVER_SKEW_THRESHOLD},
+    {"use-pkcs1-padding", no_argument, NULL, OPT_USE_PKCS1_PADDING},
 #endif /* HAVE_SSL */
 	{"fq-rate", required_argument, NULL, OPT_FQ_RATE},
 	{"pacing-timer", required_argument, NULL, OPT_PACING_TIMER},
@@ -1211,6 +1228,10 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             case 'J':
                 test->json_output = 1;
                 break;
+            case OPT_JSON_STREAM:
+                test->json_output = 1;
+                test->json_stream = 1;
+                break;
             case 'v':
                 printf("%s (cJSON %s)\n%s\n%s\n", version, cJSON_Version(), get_system_info(),
 		       get_optional_features());
@@ -1297,7 +1318,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	        break;
             case 't':
                 test->duration = atoi(optarg);
-                if (test->duration > MAX_TIME) {
+                if (test->duration > MAX_TIME || test->duration < 0) {
                     i_errno = IEDURATION;
                     return -1;
                 }
@@ -1614,6 +1635,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 return -1;
             }
             break;
+	case OPT_USE_PKCS1_PADDING:
+	    test->use_pkcs1_padding = 1;
+	    break;
 #endif /* HAVE_SSL */
 	    case OPT_PACING_TIMER:
 		test->settings->pacing_timer = unit_atoi(optarg);
@@ -2054,7 +2078,7 @@ int test_is_authorized(struct iperf_test *test){
     if (test->settings->authtoken){
         char *username = NULL, *password = NULL;
         time_t ts;
-        int rc = decode_auth_setting(test->debug, test->settings->authtoken, test->server_rsa_private_key, &username, &password, &ts);
+        int rc = decode_auth_setting(test->debug, test->settings->authtoken, test->server_rsa_private_key, &username, &password, &ts, test->use_pkcs1_padding);
 	if (rc) {
 	    return -1;
 	}
@@ -2239,7 +2263,7 @@ send_parameters(struct iperf_test *test)
 #if defined(HAVE_SSL)
 	/* Send authentication parameters */
 	if (test->settings->client_username && test->settings->client_password && test->settings->client_rsa_pubkey){
-	    int rc = encode_auth_setting(test->settings->client_username, test->settings->client_password, test->settings->client_rsa_pubkey, &test->settings->authtoken);
+	    int rc = encode_auth_setting(test->settings->client_username, test->settings->client_password, test->settings->client_rsa_pubkey, &test->settings->authtoken, test->use_pkcs1_padding);
 
 	    if (rc) {
 		cJSON_Delete(j);
@@ -2742,6 +2766,35 @@ JSON_read(int fd)
 
 /*************************************************************/
 /**
+ * JSONStream_Output - outputs an obj as event without distrubing it
+ */
+
+static int
+JSONStream_Output(struct iperf_test * test, const char * event_name, cJSON * obj)
+{
+    cJSON *event = cJSON_CreateObject();
+    if (!event)
+        return -1;
+    cJSON_AddStringToObject(event, "event", event_name);
+    cJSON_AddItemReferenceToObject(event, "data", obj);
+    char *str = cJSON_PrintUnformatted(event);
+    if (str == NULL)
+        return -1;
+    if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+        perror("iperf_json_finish: pthread_mutex_lock");
+    }
+    fprintf(test->outfile, "%s\n", str);
+    if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+        perror("iperf_json_finish: pthread_mutex_unlock");
+    }
+    iflush(test);
+    cJSON_free(str);
+    cJSON_Delete(event);
+    return 0;
+}
+
+/*************************************************************/
+/**
  * add_to_interval_list -- adds new interval to the interval_list
  */
 
@@ -3213,6 +3266,7 @@ iperf_reset_test(struct iperf_test *test)
     test->settings->socket_bufsize = 0;
     test->settings->blksize = DEFAULT_TCP_BLKSIZE;
     test->settings->rate = 0;
+    test->settings->fqrate = 0;
     test->settings->burst = 0;
     test->settings->mss = 0;
     test->settings->tos = 0;
@@ -3404,6 +3458,7 @@ iperf_print_intermediate(struct iperf_test *test)
 
     int lower_mode, upper_mode;
     int current_mode;
+    int discard_json;
 
     /*
      * Due to timing oddities, there can be cases, especially on the
@@ -3449,11 +3504,20 @@ iperf_print_intermediate(struct iperf_test *test)
 	return;
     }
 
+    /*
+     * When we use streamed json, we don't actually need to keep the interval
+     * results around unless we're the server and the client requested the server output.
+     *
+     * This avoids unneeded memory build up for long sessions.
+     */
+    discard_json = test->json_stream == 1 && !(test->role == 's' && test->get_server_output);
+
     if (test->json_output) {
         json_interval = cJSON_CreateObject();
 	if (json_interval == NULL)
 	    return;
-	cJSON_AddItemToArray(test->json_intervals, json_interval);
+        if (!discard_json)
+	    cJSON_AddItemToArray(test->json_intervals, json_interval);
         json_interval_streams = cJSON_CreateArray();
 	if (json_interval_streams == NULL)
 	    return;
@@ -3604,6 +3668,11 @@ iperf_print_intermediate(struct iperf_test *test)
             }
         }
     }
+
+    if (test->json_stream)
+        JSONStream_Output(test, "interval", json_interval);
+    if (discard_json)
+        cJSON_Delete(json_interval);
 }
 
 /**
@@ -4718,7 +4787,15 @@ iperf_create_pidfile(struct iperf_test *test)
 		if (pid > 0) {
 
 		    /* See if the process exists. */
+#if (defined(__vxworks)) || (defined(__VXWORKS__))
+#if (defined(_WRS_KERNEL)) && (defined(_WRS_CONFIG_LP64))
+			if (kill((_Vx_TASK_ID)pid, 0) == 0) {
+#else
+			if (kill(pid, 0) == 0) {
+#endif // _WRS_KERNEL and _WRS_CONFIG_LP64
+#else
 		    if (kill(pid, 0) == 0) {
+#endif // __vxworks or __VXWORKS__
 			/*
 			 * Make sure not to try to delete existing PID file by
 			 * scribbling over the pathname we'd use to refer to it.
@@ -4806,31 +4883,51 @@ iperf_json_finish(struct iperf_test *test)
         if (test->server_output_text) {
             cJSON_AddStringToObject(test->json_top, "server_output_text", test->server_output_text);
         }
-        // Get ASCII rendering of JSON structure.  Then make our
-        // own copy of it and return the storage that cJSON allocated
-        // on our behalf.  We keep our own copy around.
-        char *str = cJSON_Print(test->json_top);
-        if (str == NULL) {
-            return -1;
-        }
-        test->json_output_string = strdup(str);
-        cJSON_free(str);
-        if (test->json_output_string == NULL) {
-            return -1;
-        }
 
-        if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
-            perror("iperf_json_finish: pthread_mutex_lock");
+        /* --json-stream, so we print various individual objects */
+        if (test->json_stream) {
+            cJSON *error = cJSON_GetObjectItem(test->json_top, "error");
+            if (error) {
+                JSONStream_Output(test, "error", error);
+            }
+            if (test->json_server_output) {
+                JSONStream_Output(test, "server_output_json", test->json_server_output);
+            }
+            if (test->server_output_text) {
+                JSONStream_Output(test, "server_output_text", cJSON_CreateString(test->server_output_text));
+            }
+            JSONStream_Output(test, "end", test->json_end);
         }
-        fprintf(test->outfile, "%s\n", test->json_output_string);
-        if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
-            perror("iperf_json_finish: pthread_mutex_unlock");
+        /* Original --json output, single monolithic object */
+        else {
+            /*
+             * Get ASCII rendering of JSON structure.  Then make our
+             * own copy of it and return the storage that cJSON
+             * allocated on our behalf.  We keep our own copy
+             * around.
+             */
+            char *str = cJSON_Print(test->json_top);
+            if (str == NULL) {
+                return -1;
+            }
+            test->json_output_string = strdup(str);
+            cJSON_free(str);
+            if (test->json_output_string == NULL) {
+                return -1;
+            }
+            if (pthread_mutex_lock(&(test->print_mutex)) != 0) {
+                perror("iperf_json_finish: pthread_mutex_lock");
+            }
+            fprintf(test->outfile, "%s\n", test->json_output_string);
+            if (pthread_mutex_unlock(&(test->print_mutex)) != 0) {
+                perror("iperf_json_finish: pthread_mutex_unlock");
+            }
+            iflush(test);
         }
-        iflush(test);
         cJSON_Delete(test->json_top);
-        test->json_top = NULL;
     }
-    test->json_start = test->json_connected = test->json_intervals = test->json_server_output = test->json_end = NULL;
+
+    test->json_top = test->json_start = test->json_connected = test->json_intervals = test->json_server_output = test->json_end = NULL;
     return 0;
 }
 
