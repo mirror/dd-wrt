@@ -120,7 +120,7 @@ UNSQUASHFS_OBJS = unsquashfs.o unsquash-1.o unsquash-2.o unsquash-3.o \
 	unsquash-4.o swap.o compressor.o unsquashfs_info.o
 
 CC=gcc-13
-CFLAGS ?= -O3 -mtune=znver3 -march=znver3 -flto -fwhole-program -fcommon
+CFLAGS ?= -O3 -mtune=native -march=native -flto -fwhole-program -fcommon
 CFLAGS += $(EXTRA_CFLAGS) $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE_SOURCE -D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" \
 	-Wall -s
@@ -146,8 +146,8 @@ endif
 
 ifeq ($(LZMA_XZ_SUPPORT),1)
 CFLAGS += -DLZMA_SUPPORT
-MKSQUASHFS_OBJS += lzma_xz_wrapper.o md5c.o
-UNSQUASHFS_OBJS += lzma_xz_wrapper.o md5c.o
+MKSQUASHFS_OBJS += lzma_xz_wrapper.o
+UNSQUASHFS_OBJS += lzma_xz_wrapper.o
 COMPRESSORS += lzma
 endif
 
@@ -237,7 +237,7 @@ endif
 all: mksquashfs unsquashfs
 
 mksquashfs: $(MKSQUASHFS_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -flto=jobserver -fuse-linker-plugin $(EXTRA_LDFLAGS) $(MKSQUASHFS_OBJS) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) -flto=jobserver -fuse-linker-plugin $(EXTRA_LDFLAGS) $(MKSQUASHFS_OBJS)  $(LIBS) -o $@
 
 mksquashfs.o: Makefile mksquashfs.c squashfs_fs.h squashfs_swap.h mksquashfs.h \
 	sort.h pseudo.h compressor.h xattr.h action.h error.h progressbar.h \

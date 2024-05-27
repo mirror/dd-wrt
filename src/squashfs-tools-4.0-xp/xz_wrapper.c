@@ -34,21 +34,15 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-#define DBVERSION 3
-static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0 },
-			    { "powerpc", LZMA_FILTER_POWERPC, 0 },
-			    { "ia64", LZMA_FILTER_IA64, 0 },
-			    { "arm", LZMA_FILTER_ARM, 0 },
-			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0 },
-			    { "sparc", LZMA_FILTER_SPARC, 0 },
-			    { "arm64", LZMA_FILTER_ARM64, 0 },
-			    { "riscv", LZMA_FILTER_RISCV, 0 },
-			    { "delta", LZMA_FILTER_DELTA, 0, 1 },
-			    { "delta-2", LZMA_FILTER_DELTA, 0, 2 },
-			    { "delta-4", LZMA_FILTER_DELTA, 0, 4 },
-			    { "delta-8", LZMA_FILTER_DELTA, 0, 8 },
-			    { "delta-16", LZMA_FILTER_DELTA, 0, 16 },
-			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
+#define DBVERSION 5
+static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },		{ "powerpc", LZMA_FILTER_POWERPC, 0, 0 },
+			    { "ia64", LZMA_FILTER_IA64, 0, 0 },		{ "arm", LZMA_FILTER_ARM, 0, 0 },
+			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0, 0 }, { "sparc", LZMA_FILTER_SPARC, 0, 0 },
+			    { "arm64", LZMA_FILTER_ARM64, 0, 0 },	{ "riscv", LZMA_FILTER_RISCV, 0, 0 },
+			    { "lzma2", LZMA_FILTER_LZMA2, 0, 0 }, // dummy
+			    { "delta", LZMA_FILTER_DELTA, 0, 1 },	{ "delta-2", LZMA_FILTER_DELTA, 0, 2 },
+			    { "delta-4", LZMA_FILTER_DELTA, 0, 4 },	{ "delta-8", LZMA_FILTER_DELTA, 0, 8 },
+			    { "delta-16", LZMA_FILTER_DELTA, 0, 16 },	{ NULL, LZMA_VLI_UNKNOWN, 0 } };
 
 static int filter_count = 1;
 
@@ -67,6 +61,8 @@ static int xz_options(char *argv[], int argc)
 		while (name[0] != '\0') {
 			for (i = 0; bcj[i].name; i++) {
 				int n = strlen(bcj[i].name);
+				if (!strncmp(name, "lzma2", n))
+					continue;
 				if ((strncmp(name, bcj[i].name, n) == 0) && (name[n] == '\0' || name[n] == ',')) {
 					if (bcj[i].selected == 0) {
 						bcj[i].selected = 1;
@@ -293,10 +289,11 @@ static int xz_init(void **strm, int block_size, int datablock)
 			if (filter[j].buffer == NULL)
 				goto failed3;
 			filter[j].filter[0].id = bcj[i].id;
-			if (i>=8) {
-				static lzma_options_delta opt;
-				opt.dist = bcj[i].dist;
-				filter[j].filter[0].options = &opt;
+			if (i >= 9) {
+				lzma_options_delta *opt = malloc(sizeof(lzma_options_delta));
+				memset(opt, 0, sizeof(*opt));
+				opt->dist = bcj[i].dist;
+				filter[j].filter[0].options = opt;
 			}
 			filter[j].filter[1].id = LZMA_FILTER_LZMA2;
 			filter[j].filter[1].options = &stream->opt;
@@ -320,7 +317,7 @@ failed:
 }
 
 static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, int block_size, int *error, int lc, int lp, int pb,
-			int *filterid)
+			int *filterid, int *bcjid)
 {
 	int i;
 	lzma_ret res = 0;
@@ -352,6 +349,15 @@ static int xz_compress2(void *strm, unsigned char *dest, void *src, int size, in
 		if (res == LZMA_OK) {
 			if (!selected || selected->length > filter->length) {
 				*filterid = i;
+				int o = 0;
+				if (filter->filter[0].id == LZMA_FILTER_DELTA) {
+					lzma_options_delta *opt = filter->filter[0].options;
+					o = opt->dist;
+				}
+				int a;
+				for (a = 0; a < sizeof(bcj) / sizeof(struct bcj); a++)
+					if (bcj[a].id == filter->filter[0].id && bcj[a].dist == o)
+						*bcjid = a;
 				selected = filter;
 			}
 		} else if (res != LZMA_BUF_ERROR) {
@@ -451,10 +457,10 @@ failed:
 
 typedef unsigned long uLongf;
 
-#include "md5.h"
+#include "sha256.c"
 #include <unistd.h>
 typedef struct DBENTRY {
-	char md5sum[16];
+	char hash[32];
 	unsigned short fail : 1, pb : 5, lc : 5, lp : 5;
 	unsigned char filterid;
 } __attribute__((packed)) DBENTRY;
@@ -489,12 +495,12 @@ static pthread_spinlock_t p_mutex;
 static int matchcount = 0;
 static int unmatchcount = 0;
 static int counts[256];
-static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, char *sum)
+static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, unsigned char *sum)
 {
-	md5_ctx_t MD;
-	dd_md5_begin(&MD);
-	dd_md5_hash(src, len, &MD);
-	dd_md5_end(sum, &MD);
+	struct sha256 sha;
+	sha256_init(&sha);
+	sha256_update(&sha, src, len);
+	sha256_sum(&sha, sum);
 	pthread_spin_lock(&p_mutex);
 	*fail = 0;
 
@@ -540,7 +546,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 	}
 	size_t i;
 	for (i = 0; i < dblen / sizeof(*db); i++) {
-		if (!memcmp(db[i].md5sum, sum, 16)) {
+		if (!memcmp(db[i].hash, sum, 32)) {
 			*pb = db[i].pb;
 			*lc = db[i].lc;
 			*lp = db[i].lp;
@@ -554,14 +560,13 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 	return -1;
 }
 
-static void writeparameters(int pb, int lc, int lp, int fail, int filterid, char *sum)
+static void writeparameters(int pb, int lc, int lp, int fail, int filterid, unsigned char *sum)
 {
 	pthread_spin_lock(&p_mutex);
-	counts[filterid]++;
 	db = realloc(db, dblen + sizeof(*db));
 	size_t nextoffset = dblen / sizeof(*db);
 	dblen += sizeof(*db);
-	memcpy(db[nextoffset].md5sum, sum, 16);
+	memcpy(db[nextoffset].hash, sum, 32);
 	db[nextoffset].fail = fail;
 	db[nextoffset].pb = pb;
 	db[nextoffset].lp = lp;
@@ -595,10 +600,12 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int lp;
 	int lc;
 	int pb;
+	int b = -1;
 	int filterid = 0;
-	char md5[16];
+	int taken = -1;
+	unsigned char hash[32];
 	if (!special) {
-		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, md5);
+		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, hash);
 		if (!ret) {
 			matchcount++;
 			if (s_fail) {
@@ -618,8 +625,8 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 		int takelpvalue = matrix[testcount].lp;
 		int error2 = 0;
 		int f;
-		test3len =
-			xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue, &f);
+		test3len = xz_compress2(s_strm, test2, src, sourceLen, block_size, &error2, takelcvalue, takelpvalue, takepbvalue,
+					&f, &b);
 		if (!error2 && test3len > 0 && test3len < test1len) {
 			test1len = test3len;
 			memcpy(dst, test2, test3len);
@@ -629,6 +636,7 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 			lc = takelcvalue;
 			lp = takelpvalue;
 			filterid = f;
+			taken = b;
 			*error = error2;
 		}
 	}
@@ -636,7 +644,9 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	if (s_fail)
 		test1len = 0;
 	if (!special) {
-		writeparameters(pb, lc, lp, s_fail, filterid, md5);
+		if (taken >= 0)
+			counts[taken]++;
+		writeparameters(pb, lc, lp, s_fail, filterid, hash);
 	}
 	return test1len;
 }
@@ -678,11 +688,11 @@ int xz_deinit(void)
 
 	printf("learning db matches %d unmatches %d\n", matchcount, unmatchcount);
 	int i;
-	for (i=0;i<256;i++)
-	    {
-	    if (counts[i])
-		printf("%d items are encoded with filter %d\n", counts[i], i);
-	    }
+	for (i = 0; i < 256; i++) {
+		if (counts[i]) {
+			printf("%d items are encoded with filter %s\n", counts[i], bcj[i].name);
+		}
+	}
 	return 0;
 }
 
