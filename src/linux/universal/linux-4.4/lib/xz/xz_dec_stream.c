@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: 0BSD
+
 /*
  * .xz Stream decoder
  *
  * Author: Lasse Collin <lasse.collin@tukaani.org>
- *
- * This file has been put into the public domain.
- * You can do whatever you want with this file.
  */
 
 #include "xz_private.h"
 #include "xz_stream.h"
+
+#ifdef XZ_USE_CRC64
+#	define IS_CRC64(check_type) ((check_type) == XZ_CHECK_CRC64)
+#else
+#	define IS_CRC64(check_type) false
+#endif
 
 /* Hash used to validate the Index field */
 struct xz_dec_hash {
@@ -29,7 +34,8 @@ struct xz_dec {
 		SEQ_INDEX,
 		SEQ_INDEX_PADDING,
 		SEQ_INDEX_CRC32,
-		SEQ_STREAM_FOOTER
+		SEQ_STREAM_FOOTER,
+		SEQ_STREAM_PADDING
 	} sequence;
 
 	/* Position in variable-length integers and Check fields */
@@ -42,8 +48,13 @@ struct xz_dec {
 	size_t in_start;
 	size_t out_start;
 
+#ifdef XZ_USE_CRC64
+	/* CRC32 or CRC64 value in Block or CRC32 value in Index */
+	uint64_t crc;
+#else
 	/* CRC32 value in Block or Index */
-	uint32_t crc32;
+	uint32_t crc;
+#endif
 
 	/* Type of the integrity check calculated from uncompressed data */
 	enum xz_check check_type;
@@ -208,8 +219,8 @@ static enum xz_ret dec_vli(struct xz_dec *s, const uint8_t *in,
  * the observed compressed and uncompressed sizes of the Block so that
  * they don't exceed the values possibly stored in the Block Header
  * (validation assumes that no integer overflow occurs, since vli_type
- * is normally uint64_t). Update the CRC32 if presence of the CRC32
- * field was indicated in Stream Header.
+ * is normally uint64_t). Update the CRC32 or CRC64 value if presence of
+ * the CRC32 or CRC64 field was indicated in Stream Header.
  *
  * Once the decoding is finished, validate that the observed sizes match
  * the sizes possibly stored in the Block Header. Update the hash and
@@ -242,8 +253,13 @@ static enum xz_ret dec_block(struct xz_dec *s, struct xz_buf *b)
 		return XZ_DATA_ERROR;
 
 	if (s->check_type == XZ_CHECK_CRC32)
-		s->crc32 = xz_crc32(b->out + s->out_start,
-				b->out_pos - s->out_start, s->crc32);
+		s->crc = xz_crc32(b->out + s->out_start,
+				b->out_pos - s->out_start, s->crc);
+#ifdef XZ_USE_CRC64
+	else if (s->check_type == XZ_CHECK_CRC64)
+		s->crc = xz_crc64(b->out + s->out_start,
+				b->out_pos - s->out_start, s->crc);
+#endif
 
 	if (ret == XZ_STREAM_END) {
 		if (s->block_header.compressed != VLI_UNKNOWN
@@ -264,6 +280,8 @@ static enum xz_ret dec_block(struct xz_dec *s, struct xz_buf *b)
 #else
 		if (s->check_type == XZ_CHECK_CRC32)
 			s->block.hash.unpadded += 4;
+		else if (IS_CRC64(s->check_type))
+			s->block.hash.unpadded += 8;
 #endif
 
 		s->block.hash.uncompressed += s->block.uncompressed;
@@ -282,7 +300,7 @@ static void index_update(struct xz_dec *s, const struct xz_buf *b)
 {
 	size_t in_used = b->in_pos - s->in_start;
 	s->index.size += in_used;
-	s->crc32 = xz_crc32(b->in + s->in_start, in_used, s->crc32);
+	s->crc = xz_crc32(b->in + s->in_start, in_used, s->crc);
 }
 
 /*
@@ -340,23 +358,25 @@ static enum xz_ret dec_index(struct xz_dec *s, struct xz_buf *b)
 }
 
 /*
- * Validate that the next four input bytes match the value of s->crc32.
- * s->pos must be zero when starting to validate the first byte.
+ * Validate that the next four or eight input bytes match the value
+ * of s->crc. s->pos must be zero when starting to validate the first byte.
+ * The "bits" argument allows using the same code for both CRC32 and CRC64.
  */
-static enum xz_ret crc32_validate(struct xz_dec *s, struct xz_buf *b)
+static enum xz_ret crc_validate(struct xz_dec *s, struct xz_buf *b,
+				uint32_t bits)
 {
 	do {
 		if (b->in_pos == b->in_size)
 			return XZ_OK;
 
-		if (((s->crc32 >> s->pos) & 0xFF) != b->in[b->in_pos++])
+		if (((s->crc >> s->pos) & 0xFF) != b->in[b->in_pos++])
 			return XZ_DATA_ERROR;
 
 		s->pos += 8;
 
-	} while (s->pos < 32);
+	} while (s->pos < bits);
 
-	s->crc32 = 0;
+	s->crc = 0;
 	s->pos = 0;
 
 	return XZ_STREAM_END;
@@ -397,10 +417,11 @@ static enum xz_ret dec_stream_header(struct xz_dec *s)
 		return XZ_OPTIONS_ERROR;
 
 	/*
-	 * Of integrity checks, we support only none (Check ID = 0) and
-	 * CRC32 (Check ID = 1). However, if XZ_DEC_ANY_CHECK is defined,
-	 * we will accept other check types too, but then the check won't
-	 * be verified and a warning (XZ_UNSUPPORTED_CHECK) will be given.
+	 * Of integrity checks, we support none (Check ID = 0),
+	 * CRC32 (Check ID = 1), and optionally CRC64 (Check ID = 4).
+	 * However, if XZ_DEC_ANY_CHECK is defined, we will accept other
+	 * check types too, but then the check won't be verified and
+	 * a warning (XZ_UNSUPPORTED_CHECK) will be given.
 	 */
 	if (s->temp.buf[HEADER_MAGIC_SIZE + 1] > XZ_CHECK_MAX)
 		return XZ_OPTIONS_ERROR;
@@ -408,10 +429,10 @@ static enum xz_ret dec_stream_header(struct xz_dec *s)
 	s->check_type = s->temp.buf[HEADER_MAGIC_SIZE + 1];
 
 #ifdef XZ_DEC_ANY_CHECK
-	if (s->check_type > XZ_CHECK_CRC32)
+	if (s->check_type > XZ_CHECK_CRC32 && !IS_CRC64(s->check_type))
 		return XZ_UNSUPPORTED_CHECK;
 #else
-	if (s->check_type > XZ_CHECK_CRC32)
+	if (s->check_type > XZ_CHECK_CRC32 && !IS_CRC64(s->check_type))
 		return XZ_OPTIONS_ERROR;
 #endif
 
@@ -498,19 +519,23 @@ static enum xz_ret dec_block_header(struct xz_dec *s)
 	/* If there are two filters, the first one must be a BCJ filter. */
 	s->bcj_active = s->temp.buf[1] & 0x01;
 	if (s->bcj_active) {
+		int id, optlen;
 		if (s->temp.size - s->temp.pos < 2)
 			return XZ_OPTIONS_ERROR;
-
-		ret = xz_dec_bcj_reset(s->bcj, s->temp.buf[s->temp.pos++]);
-		if (ret != XZ_OK)
-			return ret;
+		
+		id = s->temp.buf[s->temp.pos++];
 
 		/*
 		 * We don't support custom start offset,
 		 * so Size of Properties must be zero.
 		 */
-		if (s->temp.buf[s->temp.pos++] != 0x00)
+		optlen = s->temp.buf[s->temp.pos++];
+		if ((id != 0x3 && optlen != 0x00) || (id == 0x3 && optlen != 1))
 			return XZ_OPTIONS_ERROR;
+
+		ret = xz_dec_bcj_reset(s->bcj, id, optlen > 0 ? s->temp.buf[s->temp.pos++] : 0);
+		if (ret != XZ_OK)
+			return ret;
 	}
 #endif
 
@@ -583,6 +608,8 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 			if (ret != XZ_OK)
 				return ret;
 
+			fallthrough;
+
 		case SEQ_BLOCK_START:
 			/* We need one byte of input to continue. */
 			if (b->in_pos == b->in_size)
@@ -606,6 +633,8 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 			s->temp.pos = 0;
 			s->sequence = SEQ_BLOCK_HEADER;
 
+			fallthrough;
+
 		case SEQ_BLOCK_HEADER:
 			if (!fill_temp(s, b))
 				return XZ_OK;
@@ -616,12 +645,16 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 
 			s->sequence = SEQ_BLOCK_UNCOMPRESS;
 
+			fallthrough;
+
 		case SEQ_BLOCK_UNCOMPRESS:
 			ret = dec_block(s, b);
 			if (ret != XZ_STREAM_END)
 				return ret;
 
 			s->sequence = SEQ_BLOCK_PADDING;
+
+			fallthrough;
 
 		case SEQ_BLOCK_PADDING:
 			/*
@@ -643,9 +676,16 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 
 			s->sequence = SEQ_BLOCK_CHECK;
 
+			fallthrough;
+
 		case SEQ_BLOCK_CHECK:
 			if (s->check_type == XZ_CHECK_CRC32) {
-				ret = crc32_validate(s, b);
+				ret = crc_validate(s, b, 32);
+				if (ret != XZ_STREAM_END)
+					return ret;
+			}
+			else if (IS_CRC64(s->check_type)) {
+				ret = crc_validate(s, b, 64);
 				if (ret != XZ_STREAM_END)
 					return ret;
 			}
@@ -664,6 +704,8 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 				return ret;
 
 			s->sequence = SEQ_INDEX_PADDING;
+
+			fallthrough;
 
 		case SEQ_INDEX_PADDING:
 			while ((s->index.size + (b->in_pos - s->in_start))
@@ -687,19 +729,27 @@ static enum xz_ret dec_main(struct xz_dec *s, struct xz_buf *b)
 
 			s->sequence = SEQ_INDEX_CRC32;
 
+			fallthrough;
+
 		case SEQ_INDEX_CRC32:
-			ret = crc32_validate(s, b);
+			ret = crc_validate(s, b, 32);
 			if (ret != XZ_STREAM_END)
 				return ret;
 
 			s->temp.size = STREAM_HEADER_SIZE;
 			s->sequence = SEQ_STREAM_FOOTER;
 
+			fallthrough;
+
 		case SEQ_STREAM_FOOTER:
 			if (!fill_temp(s, b))
 				return XZ_OK;
 
 			return dec_stream_footer(s);
+
+		case SEQ_STREAM_PADDING:
+			/* Never reached, only silencing a warning */
+			break;
 		}
 	}
 
@@ -767,6 +817,79 @@ XZ_EXTERN enum xz_ret xz_dec_run(struct xz_dec *s, struct xz_buf *b)
 	return ret;
 }
 
+#ifdef XZ_DEC_CONCATENATED
+XZ_EXTERN enum xz_ret xz_dec_catrun(struct xz_dec *s, struct xz_buf *b,
+				    int finish)
+{
+	enum xz_ret ret;
+
+	if (DEC_IS_SINGLE(s->mode)) {
+		xz_dec_reset(s);
+		finish = true;
+	}
+
+	while (true) {
+		if (s->sequence == SEQ_STREAM_PADDING) {
+			/*
+			 * Skip Stream Padding. Its size must be a multiple
+			 * of four bytes which is tracked with s->pos.
+			 */
+			while (true) {
+				if (b->in_pos == b->in_size) {
+					/*
+					 * Note that if we are repeatedly
+					 * given no input and finish is false,
+					 * we will keep returning XZ_OK even
+					 * though no progress is being made.
+					 * The lack of XZ_BUF_ERROR support
+					 * isn't a problem here because a
+					 * reasonable caller will eventually
+					 * provide more input or set finish
+					 * to true.
+					 */
+					if (!finish)
+						return XZ_OK;
+
+					if (s->pos != 0)
+						return XZ_DATA_ERROR;
+
+					return XZ_STREAM_END;
+				}
+
+				if (b->in[b->in_pos] != 0x00) {
+					if (s->pos != 0)
+						return XZ_DATA_ERROR;
+
+					break;
+				}
+
+				++b->in_pos;
+				s->pos = (s->pos + 1) & 3;
+			}
+
+			/*
+			 * More input remains. It should be a new Stream.
+			 *
+			 * In single-call mode xz_dec_run() will always call
+			 * xz_dec_reset(). Thus, we need to do it here only
+			 * in multi-call mode.
+			 */
+			if (DEC_IS_MULTI(s->mode))
+				xz_dec_reset(s);
+		}
+
+		ret = xz_dec_run(s, b);
+
+		if (ret != XZ_STREAM_END)
+			break;
+
+		s->sequence = SEQ_STREAM_PADDING;
+	}
+
+	return ret;
+}
+#endif
+
 XZ_EXTERN struct xz_dec *xz_dec_init(enum xz_mode mode, uint32_t dict_max)
 {
 	struct xz_dec *s = kmalloc(sizeof(*s), GFP_KERNEL);
@@ -802,7 +925,7 @@ XZ_EXTERN void xz_dec_reset(struct xz_dec *s)
 	s->sequence = SEQ_STREAM_HEADER;
 	s->allow_buf_error = false;
 	s->pos = 0;
-	s->crc32 = 0;
+	s->crc = 0;
 	memzero(&s->block, sizeof(s->block));
 	memzero(&s->index, sizeof(s->index));
 	s->temp.pos = 0;

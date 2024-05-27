@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: 0BSD
+
 /*
  * Branch/Call/Jump (BCJ) filter decoders
  *
  * Authors: Lasse Collin <lasse.collin@tukaani.org>
- *          Igor Pavlov <http://7-zip.org/>
- *
- * This file has been put into the public domain.
- * You can do whatever you want with this file.
+ *          Igor Pavlov <https://7-zip.org/>
  */
 
 #include "xz_private.h"
@@ -19,16 +18,15 @@
 struct xz_dec_bcj {
 	/* Type of the BCJ filter being used */
 	enum {
-		BCJ_DELTA = 3,        /* Delta encoding */
+		BCJ_DELTA = 3,      /* Delta */
 		BCJ_X86 = 4,        /* x86 or x86-64 */
 		BCJ_POWERPC = 5,    /* Big endian only */
 		BCJ_IA64 = 6,       /* Big or little endian */
 		BCJ_ARM = 7,        /* Little endian only */
 		BCJ_ARMTHUMB = 8,   /* Little endian only */
-		BCJ_SPARC = 9,       /* Big or little endian */
-		BCJ_SWIZZLE16 = 10,  /* Swizzle 16 Bit */
-		BCJ_SWIZZLE32 = 11, /* Swizzle 32 Bit */
-		BCJ_SWIZZLE64 = 12  /* Swizzle 64 Bit */
+		BCJ_SPARC = 9,      /* Big or little endian */
+		BCJ_ARM64 = 10,     /* AArch64 */
+		BCJ_RISCV = 11      /* RV32GQC_Zfh, RV64GQC_Zfh */
 	} type;
 
 	/*
@@ -77,6 +75,26 @@ struct xz_dec_bcj {
 		 */
 		uint8_t buf[16];
 	} temp;
+
+	/**
+	 * \brief       Minimum value for lzma_options_delta.dist.
+	 */
+#	define LZMA_DELTA_DIST_MIN 1
+
+	/**
+	 * \brief       Maximum value for lzma_options_delta.dist.
+	 */
+#	define LZMA_DELTA_DIST_MAX 256
+
+#ifdef XZ_DEC_DELTA
+	size_t distance;
+
+	/// Position in history[]
+	uint8_t hist_pos;
+
+	/// Buffer to hold history of the original data
+	uint8_t history[LZMA_DELTA_DIST_MAX];
+#endif
 };
 
 #ifdef XZ_DEC_X86
@@ -166,7 +184,9 @@ static size_t bcj_powerpc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	size_t i;
 	uint32_t instr;
 
-	for (i = 0; i + 4 <= size; i += 4) {
+	size &= ~(size_t)3;
+
+	for (i = 0; i < size; i += 4) {
 		instr = get_unaligned_be32(buf + i);
 		if ((instr & 0xFC000003) == 0x48000001) {
 			instr &= 0x03FFFFFC;
@@ -223,7 +243,9 @@ static size_t bcj_ia64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	/* Instruction normalized with bit_res for easier manipulation */
 	uint64_t norm;
 
-	for (i = 0; i + 16 <= size; i += 16) {
+	size &= ~(size_t)15;
+
+	for (i = 0; i < size; i += 16) {
 		mask = branch_table[buf[i] & 0x1F];
 		for (slot = 0, bit_pos = 5; slot < 3; ++slot, bit_pos += 41) {
 			if (((mask >> slot) & 1) == 0)
@@ -271,7 +293,9 @@ static size_t bcj_arm(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	size_t i;
 	uint32_t addr;
 
-	for (i = 0; i + 4 <= size; i += 4) {
+	size &= ~(size_t)3;
+
+	for (i = 0; i < size; i += 4) {
 		if (buf[i + 3] == 0xEB) {
 			addr = (uint32_t)buf[i] | ((uint32_t)buf[i + 1] << 8)
 					| ((uint32_t)buf[i + 2] << 16);
@@ -294,7 +318,12 @@ static size_t bcj_armthumb(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	size_t i;
 	uint32_t addr;
 
-	for (i = 0; i + 4 <= size; i += 2) {
+	if (size < 4)
+		return 0;
+
+	size -= 4;
+
+	for (i = 0; i <= size; i += 2) {
 		if ((buf[i + 1] & 0xF8) == 0xF0
 				&& (buf[i + 3] & 0xF8) == 0xF8) {
 			addr = (((uint32_t)buf[i + 1] & 0x07) << 19)
@@ -322,7 +351,9 @@ static size_t bcj_sparc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 	size_t i;
 	uint32_t instr;
 
-	for (i = 0; i + 4 <= size; i += 4) {
+	size &= ~(size_t)3;
+
+	for (i = 0; i < size; i += 4) {
 		instr = get_unaligned_be32(buf + i);
 		if ((instr >> 22) == 0x100 || (instr >> 22) == 0x1FF) {
 			instr <<= 2;
@@ -338,37 +369,155 @@ static size_t bcj_sparc(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 }
 #endif
 
-static size_t bcj_swizzleX(struct xz_dec_bcj *s, uint8_t *buf, size_t size, int len)
+#ifdef XZ_DEC_ARM64
+static size_t bcj_arm64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 {
 	size_t i;
-	int a, cnt = 0;
-	int d = size / len;
-	uint8_t *dest = kmalloc(size, GFP_KERNEL);
-	memcpy(dest, buf, size);
-	for (i = 0; i + len <= size; i += len) {
-		for (a = 0;a < len;a++) {
-		    buf[i + a] = dest[cnt + (d * a)];
-		}	
-		cnt++;
+	uint32_t instr;
+	uint32_t addr;
+
+	size &= ~(size_t)3;
+
+	for (i = 0; i < size; i += 4) {
+		instr = get_unaligned_le32(buf + i);
+
+		if ((instr >> 26) == 0x25) {
+			/* BL instruction */
+			addr = instr - ((s->pos + (uint32_t)i) >> 2);
+			instr = 0x94000000 | (addr & 0x03FFFFFF);
+			put_unaligned_le32(instr, buf + i);
+
+		} else if ((instr & 0x9F000000) == 0x90000000) {
+			/* ADRP instruction */
+			addr = ((instr >> 29) & 3) | ((instr >> 3) & 0x1FFFFC);
+
+			/* Only convert values in the range +/-512 MiB. */
+			if ((addr + 0x020000) & 0x1C0000)
+				continue;
+
+			addr -= (s->pos + (uint32_t)i) >> 12;
+
+			instr &= 0x9000001F;
+			instr |= (addr & 3) << 29;
+			instr |= (addr & 0x03FFFC) << 3;
+			instr |= (0U - (addr & 0x020000)) & 0xE00000;
+
+			put_unaligned_le32(instr, buf + i);
+		}
 	}
-	kfree(dest);
+
+	return i;
+}
+#endif
+
+#ifdef XZ_DEC_RISCV
+static size_t bcj_riscv(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+	size_t i;
+	uint32_t b1;
+	uint32_t b2;
+	uint32_t b3;
+	uint32_t instr;
+	uint32_t instr2;
+	uint32_t instr2_rs1;
+	uint32_t addr;
+
+	if (size < 8)
+		return 0;
+
+	size -= 8;
+
+	for (i = 0; i <= size; i += 2) {
+		instr = buf[i];
+
+		if (instr == 0xEF) {
+			/* JAL */
+			b1 = buf[i + 1];
+			if ((b1 & 0x0D) != 0)
+				continue;
+
+			b2 = buf[i + 2];
+			b3 = buf[i + 3];
+
+			addr = ((b1 & 0xF0) << 13) | (b2 << 9) | (b3 << 1);
+			addr -= s->pos + (uint32_t)i;
+
+			buf[i + 1] = (uint8_t)((b1 & 0x0F)
+					| ((addr >> 8) & 0xF0));
+
+			buf[i + 2] = (uint8_t)(((addr >> 16) & 0x0F)
+					| ((addr >> 7) & 0x10)
+					| ((addr << 4) & 0xE0));
+
+			buf[i + 3] = (uint8_t)(((addr >> 4) & 0x7F)
+					| ((addr >> 13) & 0x80));
+
+			i += 4 - 2;
+
+		} else if ((instr & 0x7F) == 0x17) {
+			/* AUIPC */
+			instr |= (uint32_t)buf[i + 1] << 8;
+			instr |= (uint32_t)buf[i + 2] << 16;
+			instr |= (uint32_t)buf[i + 3] << 24;
+
+			if (instr & 0xE80) {
+				/* AUIPC's rd doesn't equal x0 or x2. */
+				instr2 = get_unaligned_le32(buf + i + 4);
+
+				if (((instr << 8) ^ (instr2 - 3)) & 0xF8003) {
+					i += 6 - 2;
+					continue;
+				}
+
+				addr = (instr & 0xFFFFF000) + (instr2 >> 20);
+
+				instr = 0x17 | (2 << 7) | (instr2 << 12);
+				instr2 = addr;
+			} else {
+				/* AUIPC's rd equals x0 or x2. */
+				instr2_rs1 = instr >> 27;
+
+				if ((uint32_t)((instr - 0x3117) << 18)
+						>= (instr2_rs1 & 0x1D)) {
+					i += 4 - 2;
+					continue;
+				}
+
+				addr = get_unaligned_be32(buf + i + 4);
+				addr -= s->pos + (uint32_t)i;
+
+				instr2 = (instr >> 12) | (addr << 20);
+
+				instr = 0x17 | (instr2_rs1 << 7)
+					| ((addr + 0x800) & 0xFFFFF000);
+			}
+
+			put_unaligned_le32(instr, buf + i);
+			put_unaligned_le32(instr2, buf + i + 4);
+
+			i += 8 - 2;
+		}
+	}
+
+	return i;
+}
+#endif
+#ifdef XZ_DEC_DELTA
+static size_t bcj_delta(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
+{
+
+	size_t i;
+	const size_t distance = coder->distance;
+
+	for (i = 0; i < size; ++i) {
+		buf[i] += s->history[(distance + s->hist_pos) & 0xFF];
+		s->history[s->hist_pos-- & 0xFF] = buf[i];
+	}
+
 	return i;
 }
 
-static size_t bcj_swizzle16(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
-{
-	return bcj_swizzleX(s, buf, size, 2);
-}
-
-static size_t bcj_swizzle32(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
-{
-	return bcj_swizzleX(s, buf, size, 4);
-}
-
-static size_t bcj_swizzle64(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
-{
-	return bcj_swizzleX(s, buf, size, 8);
-}
+#endif
 /*
  * Apply the selected BCJ filter. Update *pos and s->pos to match the amount
  * of data that got filtered.
@@ -416,15 +565,21 @@ static void bcj_apply(struct xz_dec_bcj *s,
 		filtered = bcj_sparc(s, buf, size);
 		break;
 #endif
-	case BCJ_SWIZZLE16:
-		filtered = bcj_swizzle16(s, buf, size);
+#ifdef XZ_DEC_ARM64
+	case BCJ_ARM64:
+		filtered = bcj_arm64(s, buf, size);
 		break;
-	case BCJ_SWIZZLE32:
-		filtered = bcj_swizzle32(s, buf, size);
+#endif
+#ifdef XZ_DEC_RISCV
+	case BCJ_RISCV:
+		filtered = bcj_riscv(s, buf, size);
 		break;
-	case BCJ_SWIZZLE64:
-		filtered = bcj_swizzle64(s, buf, size);
+#endif
+#ifdef XZ_DEC_DELTA
+	case BCJ_DELTA:
+		filtered = bcj_delta(s, buf, size);
 		break;
+#endif
 	default:
 		/* Never reached but silence compiler warnings. */
 		filtered = 0;
@@ -466,7 +621,7 @@ XZ_EXTERN enum xz_ret xz_dec_bcj_run(struct xz_dec_bcj *s,
 
 	/*
 	 * Flush pending already filtered data to the output buffer. Return
-	 * immediatelly if we couldn't flush everything, or if the next
+	 * immediately if we couldn't flush everything, or if the next
 	 * filter in the chain had already returned XZ_STREAM_END.
 	 */
 	if (s->temp.filtered > 0) {
@@ -577,9 +732,15 @@ XZ_EXTERN struct xz_dec_bcj *xz_dec_bcj_create(bool single_call)
 	return s;
 }
 
-XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id)
+XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id, uint8_t opt)
 {
 	switch (id) {
+#ifdef XZ_DEC_DELTA
+	case BCJ_DELTA:
+	s->distance = opt + 1;
+	s->hist_pos = 0;
+	memset(s->history, 0, LZMA_DELTA_DIST_MAX);
+#endif
 #ifdef XZ_DEC_X86
 	case BCJ_X86:
 #endif
@@ -598,9 +759,12 @@ XZ_EXTERN enum xz_ret xz_dec_bcj_reset(struct xz_dec_bcj *s, uint8_t id)
 #ifdef XZ_DEC_SPARC
 	case BCJ_SPARC:
 #endif
-	case BCJ_SWIZZLE16:
-	case BCJ_SWIZZLE32:
-	case BCJ_SWIZZLE64:
+#ifdef XZ_DEC_ARM64
+	case BCJ_ARM64:
+#endif
+#ifdef XZ_DEC_RISCV
+	case BCJ_RISCV:
+#endif
 		break;
 
 	default:

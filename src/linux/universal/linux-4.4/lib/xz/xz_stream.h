@@ -1,10 +1,9 @@
+/* SPDX-License-Identifier: 0BSD */
+
 /*
  * Definitions for handling the .xz file format
  *
  * Author: Lasse Collin <lasse.collin@tukaani.org>
- *
- * This file has been put into the public domain.
- * You can do whatever you want with this file.
  */
 
 #ifndef XZ_STREAM_H
@@ -19,7 +18,7 @@
 
 /*
  * See the .xz file format specification at
- * http://tukaani.org/xz/xz-file-format.txt
+ * https://tukaani.org/xz/xz-file-format.txt
  * to understand the container format.
  */
 
