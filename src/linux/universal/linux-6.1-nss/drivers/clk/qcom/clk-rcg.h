@@ -14,7 +14,7 @@
 
 struct freq_conf {
 	u8 src;
-	u8 pre_div;
+	u16 pre_div;
 	u16 m;
 	u16 n;
 };
