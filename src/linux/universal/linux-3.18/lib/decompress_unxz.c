@@ -123,28 +123,14 @@
  * For boot time use, we enable only the BCJ filter of the current
  * architecture or none if no BCJ filter is available for the architecture.
  */
-#ifdef CONFIG_X86
 #	define XZ_DEC_X86
-#endif
-#if defined(CONFIG_PPC) && defined(CONFIG_CPU_BIG_ENDIAN)
 #	define XZ_DEC_POWERPC
-#endif
-#ifdef CONFIG_ARM
-#	ifdef CONFIG_THUMB2_KERNEL
-#		define XZ_DEC_ARMTHUMB
-#	else
-#		define XZ_DEC_ARM
-#	endif
-#endif
-#ifdef CONFIG_ARM64
+#	define XZ_DEC_ARMTHUMB
+#	define XZ_DEC_ARM
 #	define XZ_DEC_ARM64
-#endif
-#ifdef CONFIG_RISCV
 #	define XZ_DEC_RISCV
-#endif
-#ifdef CONFIG_SPARC
 #	define XZ_DEC_SPARC
-#endif
+#	define XZ_DEC_DELTA
 
 /*
  * This will get the basic headers so that memeq() and others
