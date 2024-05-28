@@ -40,6 +40,8 @@ static unsigned int pri_mux_map[] = {
 	0,
 };
 
+static DEFINE_SPINLOCK(qcom_notifier_lock);
+
 /*
  * Notifier function for switching the muxes to safe parent
  * while the hfpll is getting reprogrammed.
@@ -49,8 +51,10 @@ static int krait_notifier_cb(struct notifier_block *nb,
 			     void *data)
 {
 	int ret = 0;
+	unsigned long flags;
 	struct krait_mux_clk *mux = container_of(nb, struct krait_mux_clk,
 						 clk_nb);
+	spin_lock_irqsave(&qcom_notifier_lock, flags);
 	/* Switch to safe parent */
 	if (event == PRE_RATE_CHANGE) {
 		mux->old_index = krait_mux_clk_ops.get_parent(&mux->hw);
@@ -67,6 +71,7 @@ static int krait_notifier_cb(struct notifier_block *nb,
 							   mux->old_index);
 	}
 
+	spin_unlock_irqrestore(&qcom_notifier_lock, flags);
 	return notifier_from_errno(ret);
 }
 

@@ -59,13 +59,13 @@ static int set_target(struct cpufreq_policy *policy, unsigned int index)
 	struct private_data *priv = policy->driver_data;
 	unsigned long freq = policy->freq_table[index].frequency * 1000;
 	int cpu;
-//	int policy_cpu = policy->cpu;
+	int policy_cpu = policy->cpu;
 //	printk(KERN_INFO "table freq %ld\n", freq);
-//	for_each_present_cpu(cpu)
-//		if (cpu != policy_cpu)
-//			freq = max(
-//				freq,
-//				(unsigned long)cpufreq_quick_get(cpu) * 1000);
+	for_each_present_cpu(cpu)
+		if (cpu != policy_cpu)
+			freq = max(
+				freq,
+				(unsigned long)cpufreq_quick_get(cpu) * 1000);
 
 	for_each_present_cpu(cpu) {
 		struct device *cpu_dev = get_cpu_device(cpu);
@@ -139,10 +139,11 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	if (!transition_latency)
 		transition_latency = CPUFREQ_ETERNAL;
 
-	for_each_present_cpu(cpu) {
-		cpumask_set_cpu(cpu, policy->cpus);
-		cpumask_set_cpu(cpu, priv->cpus);
-	}
+	cpumask_copy(policy->cpus, priv->cpus);
+//	for_each_present_cpu(cpu) {
+//		cpumask_set_cpu(cpu, policy->cpus);
+//		cpumask_set_cpu(cpu, priv->cpus);
+//	}
 	policy->driver_data = priv;
 	policy->clk = cpu_clk;
 	policy->freq_table = priv->freq_table;
