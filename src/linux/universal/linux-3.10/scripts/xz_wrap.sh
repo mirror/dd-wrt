@@ -13,11 +13,15 @@ BCJ=
 LZMA2OPTS=
 
 case $SRCARCH in
-	x86)            BCJ=--x86 ;;
-	powerpc)        BCJ=--powerpc ;;
+	x86)            BCJ=--x86; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	x86_64)         BCJ=--x86; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	powerpc)        BCJ=--powerpc; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	ia64)           BCJ=--ia64; LZMA2OPTS=pb=4 ;;
-	arm)            BCJ=--arm ;;
-	sparc)          BCJ=--sparc ;;
+	arm)            BCJ=--arm; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	arm64)          BCJ=--arm64; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	riscv)          BCJ=--riscv; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	sparc)          BCJ=--sparc; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	mips)           LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 esac
 
 exec xz --check=crc32 $BCJ --lzma2=$LZMA2OPTS,dict=32MiB
