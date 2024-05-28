@@ -23,8 +23,7 @@ case $SRCARCH in
 	riscv)          BCJ=--riscv; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	sparc)          BCJ=--sparc; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	mips)           LZMA2OPTS=pb=2,lp=2,lc=1 ;;
-	mips64)           LZMA2OPTS=pb=2,lp=2,lc=1 ;;
+	mips64)         LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 esac
 
--lc1 -lp2 -pb2
-exec $XZ --check=crc32 $BCJ --lzma2=$LZMA2OPTS,dict=32MiB
+exec $XZ --check=crc32 -9 -e $BCJ --lzma2=$LZMA2OPTS,dict=32MiB

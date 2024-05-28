@@ -10,7 +10,7 @@
 
 #define STATIC static
 #define STATIC_RW_DATA	/* non-static please */
-
+#define KERNEL_DECOMPRESS
 /* Diagnostic functions */
 #ifdef DEBUG
 #  define Assert(cond,msg) {if(!(cond)) error(msg);}
