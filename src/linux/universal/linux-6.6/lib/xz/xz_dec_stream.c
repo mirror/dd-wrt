@@ -465,7 +465,9 @@ static enum xz_ret dec_stream_footer(struct xz_dec *s)
 	 */
 	return XZ_STREAM_END;
 }
-
+#ifdef KERNEL_DECOMPRESS
+#define printk(fmt, ...) do { } while(0)
+#endif
 /* Decode the Block Header and initialize the filter chain. */
 static enum xz_ret dec_block_header(struct xz_dec *s)
 {

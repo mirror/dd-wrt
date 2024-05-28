@@ -507,7 +507,7 @@ static size_t bcj_delta(struct xz_dec_bcj *s, uint8_t *buf, size_t size)
 {
 
 	size_t i;
-	const size_t distance = coder->distance;
+	const size_t distance = s->distance;
 
 	for (i = 0; i < size; ++i) {
 		buf[i] += s->history[(distance + s->hist_pos) & 0xFF];

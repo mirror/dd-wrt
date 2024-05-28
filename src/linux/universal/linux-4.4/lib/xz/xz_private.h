@@ -42,6 +42,9 @@
 #		ifdef CONFIG_XZ_DEC_RISCV
 #			define XZ_DEC_RISCV
 #		endif
+#		ifdef CONFIG_XZ_DEC_DELTA
+#			define XZ_DEC_DELTA
+#		endif
 #		ifdef CONFIG_XZ_DEC_MICROLZMA
 #			define XZ_DEC_MICROLZMA
 #		endif
