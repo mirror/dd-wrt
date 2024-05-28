@@ -57,19 +57,18 @@ static struct private_data *cpufreq_dt_find_data(int cpu)
 static int set_target(struct cpufreq_policy *policy, unsigned int index)
 {
 	struct private_data *priv = policy->driver_data;
-	unsigned long freq = policy->freq_table[index].frequency * 1000;
+	unsigned long freq = policy->freq_table[index].frequency;
 	int cpu;
 	int policy_cpu = policy->cpu;
-//	printk(KERN_INFO "table freq %ld\n", freq);
-	for_each_present_cpu(cpu)
+	for_each_present_cpu(cpu) {
 		if (cpu != policy_cpu)
 			freq = max(
 				freq,
-				(unsigned long)cpufreq_quick_get(cpu) * 1000);
-
+				(unsigned long)cpufreq_quick_get(cpu));
+	}
 	for_each_present_cpu(cpu) {
 		struct device *cpu_dev = get_cpu_device(cpu);
-		dev_pm_opp_set_rate(cpu_dev, freq);
+		dev_pm_opp_set_rate(cpu_dev, freq * 1000);
 	}
 	return 0;
 }
