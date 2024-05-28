@@ -532,13 +532,11 @@ static enum xz_ret dec_block_header(struct xz_dec *s)
 		optlen = s->temp.buf[s->temp.pos++];
 		if ((id != 0x3 && optlen != 0x00) || (id == 0x3 && optlen != 1))
 		{
-			printk(KERN_INFO "decode error for filter %d\n", id);
 			return XZ_OPTIONS_ERROR;
 		}
 		
 		ret = xz_dec_bcj_reset(s->bcj, id, optlen > 0 ? s->temp.buf[s->temp.pos++] : 0);
 		if (ret != XZ_OK) {
-			printk(KERN_INFO "unsupported filter %d optlen %d, opt %d\n", id, optlen, optlen > 0 ? s->temp.buf[s->temp.pos-1] : 0);
 			return ret;
 		}
 	}
@@ -547,7 +545,6 @@ static enum xz_ret dec_block_header(struct xz_dec *s)
 	/* Valid Filter Flags always take at least two bytes. */
 	if (s->temp.size - s->temp.pos < 2)
 	{
-		printk(KERN_INFO "filter flags wrong %d\n", s->temp.size - s->temp.pos);
 		return XZ_DATA_ERROR;
 	}
 	/* Filter ID = LZMA2 */
