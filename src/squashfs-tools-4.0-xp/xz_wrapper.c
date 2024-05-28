@@ -522,7 +522,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 		}
 		fseek(in, 0, SEEK_END);
 		dblen = ftell(in) - 1;
-		if (dblen > 512 * 1024) {
+		if (dblen > 1024 * 1024) {
 			fclose(in);
 			unlinkdatabase();
 			pthread_spin_unlock(&p_mutex);
