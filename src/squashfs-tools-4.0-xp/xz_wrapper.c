@@ -292,6 +292,7 @@ static int xz_init(void **strm, int block_size, int datablock)
 			if (i >= 9) {
 				lzma_options_delta *opt = malloc(sizeof(lzma_options_delta));
 				memset(opt, 0, sizeof(*opt));
+				opt->type = LZMA_DELTA_TYPE_BYTE;
 				opt->dist = bcj[i].dist;
 				filter[j].filter[0].options = opt;
 			}
