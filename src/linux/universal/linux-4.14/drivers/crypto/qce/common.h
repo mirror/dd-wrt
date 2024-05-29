@@ -55,6 +55,8 @@
 #define QCE_MODE_CCM			BIT(12)
 #define QCE_MODE_MASK			GENMASK(12, 8)
 
+#define QCE_MODE_CCM_RFC4309		BIT(13)
+
 /* cipher encryption/decryption operations */
 #define QCE_ENCRYPT			BIT(13)
 #define QCE_DECRYPT			BIT(14)

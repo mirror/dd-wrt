@@ -591,6 +591,98 @@ out:
 	return 0;
 }
 
+static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct ar8327_data *data = priv->chip_data;
+	u32 t;
+	if (port == AR8216_PORT_CPU) {
+		return -EINVAL;
+	}
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
+		return -EINVAL;
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+	} else {
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			if (!ar8xxx_has_gige(priv))
+				return  -EINVAL;
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
+	return 0;
+}
+
+static int ar8216_sw_set_port_link(struct switch_dev *dev, int port,
+			     struct switch_port_link *link)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	struct ar8327_data *data = priv->chip_data;
+	u32 t;
+	if (port == AR8216_PORT_CPU) {
+		return -EINVAL;
+	}
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !ar8xxx_has_gige(priv))
+		return -EINVAL;
+	t = ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
+	t &= ~(t & AR8216_PORT_STATUS_SPEED) <<
+		 AR8216_PORT_STATUS_SPEED_S;
+	t &= ~AR8216_PORT_STATUS_LINK_AUTO;
+	t &= ~AR8216_PORT_STATUS_DUPLEX;
+
+	if (link->duplex)
+		t |= AR8216_PORT_STATUS_DUPLEX;
+	if (link->aneg) {
+		t |= AR8216_PORT_STATUS_LINK_AUTO;
+	} else {
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			t |= AR8216_PORT_SPEED_10M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_100:
+			t |= AR8216_PORT_SPEED_100M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			if (!ar8xxx_has_gige(priv))
+				return  -EINVAL;
+			t |= AR8216_PORT_SPEED_1000M <<
+			 AR8216_PORT_STATUS_SPEED_S;
+			break;
+		default:
+			t |= AR8216_PORT_STATUS_LINK_AUTO;
+			break;
+		}
+	}
+	ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port), t);
+	return 0;
+}
+
 static void
 ar8316_init_globals(struct ar8216_priv *priv)
 {
