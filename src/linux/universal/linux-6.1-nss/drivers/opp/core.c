@@ -490,7 +490,8 @@ static bool _compare_exact(struct dev_pm_opp **opp, struct dev_pm_opp *temp_opp,
 
 	return false;
 }
-
+static unsigned long failed_opp_key;
+static unsigned long failed_key;
 static bool _compare_ceil(struct dev_pm_opp **opp, struct dev_pm_opp *temp_opp,
 			  unsigned long opp_key, unsigned long key)
 {
@@ -498,6 +499,8 @@ static bool _compare_ceil(struct dev_pm_opp **opp, struct dev_pm_opp *temp_opp,
 		*opp = temp_opp;
 		return true;
 	}
+	failed_opp_key = opp_key;
+	failed_key = key;
 
 	return false;
 }
@@ -511,7 +514,7 @@ static bool _compare_floor(struct dev_pm_opp **opp, struct dev_pm_opp *temp_opp,
 	*opp = temp_opp;
 	return false;
 }
-
+int fail_avail;
 /* Generic key finding helpers */
 static struct dev_pm_opp *_opp_table_find_key(struct opp_table *opp_table,
 		unsigned long *key, int index, bool available,
@@ -529,6 +532,7 @@ static struct dev_pm_opp *_opp_table_find_key(struct opp_table *opp_table,
 	mutex_lock(&opp_table->lock);
 
 	list_for_each_entry(temp_opp, &opp_table->opp_list, node) {
+		fail_avail = temp_opp->available;
 		if (temp_opp->available == available) {
 			if (compare(&opp, temp_opp, read(temp_opp, index), *key))
 				break;
@@ -1087,7 +1091,7 @@ static int _disable_opp_table(struct device *dev, struct opp_table *opp_table)
 }
 
 static int _set_opp(struct device *dev, struct opp_table *opp_table,
-		    struct dev_pm_opp *opp, void *clk_data, bool forced)
+		    struct dev_pm_opp *opp, void *clk_data, bool forced, bool nofree)
 {
 	struct dev_pm_opp *old_opp;
 	int scaling_down, ret;
@@ -1175,10 +1179,12 @@ static int _set_opp(struct device *dev, struct opp_table *opp_table,
 	}
 
 	opp_table->enabled = true;
+	if (!nofree) {
 	dev_pm_opp_put(old_opp);
 
 	/* Make sure current_opp doesn't get freed */
 	dev_pm_opp_get(opp);
+	}
 	opp_table->current_opp = opp;
 
 	return ret;
@@ -1236,8 +1242,10 @@ int dev_pm_opp_set_rate(struct device *dev, unsigned long target_freq)
 		opp = _find_freq_ceil(opp_table, &temp_freq);
 		if (IS_ERR(opp)) {
 			ret = PTR_ERR(opp);
-			dev_err(dev, "%s: failed to find OPP for freq %lu (%d)\n",
-				__func__, freq, ret);
+			printk(KERN_INFO "failed for opp_key %ld and key %ld %d\n", failed_opp_key, failed_key, fail_avail);
+
+			dev_err(dev, "%s: failed to find OPP for freq %lu (%d) (%s)\n",
+				__func__, freq, ret, opp_table->prop_name ? opp_table->prop_name : "none");
 			goto put_opp_table;
 		}
 
@@ -1251,10 +1259,12 @@ int dev_pm_opp_set_rate(struct device *dev, unsigned long target_freq)
 		forced = opp_table->rate_clk_single != freq;
 	}
 
-	ret = _set_opp(dev, opp_table, opp, &freq, forced);
+	ret = _set_opp(dev, opp_table, opp, &freq, forced, true);
 
-	if (freq)
-		dev_pm_opp_put(opp);
+	if (freq) {
+//		printk(KERN_INFO "remove %ld \n", freq);
+//	    	dev_pm_opp_put(opp);
+	}
 
 put_opp_table:
 	dev_pm_opp_put_opp_table(opp_table);
@@ -1283,7 +1293,7 @@ int dev_pm_opp_set_opp(struct device *dev, struct dev_pm_opp *opp)
 		return PTR_ERR(opp_table);
 	}
 
-	ret = _set_opp(dev, opp_table, opp, NULL, false);
+	ret = _set_opp(dev, opp_table, opp, NULL, false, false);
 	dev_pm_opp_put_opp_table(opp_table);
 
 	return ret;
@@ -1614,7 +1624,6 @@ void dev_pm_opp_remove(struct device *dev, unsigned long freq)
 		goto put_table;
 
 	mutex_lock(&opp_table->lock);
-
 	list_for_each_entry(iter, &opp_table->opp_list, node) {
 		if (iter->rates[0] == freq) {
 			opp = iter;

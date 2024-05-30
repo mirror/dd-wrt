@@ -937,7 +937,7 @@ static struct dev_pm_opp *_opp_add_static_v2(struct opp_table *opp_table,
 
 	/* Check if the OPP supports hardware's hierarchy of versions or not */
 	if (!_opp_is_supported(dev, opp_table, np)) {
-		dev_dbg(dev, "OPP not supported by hardware: %s\n",
+		dev_warn(dev, "OPP not supported by hardware: %s\n",
 			of_node_full_name(np));
 		goto free_opp;
 	}
