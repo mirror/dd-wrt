@@ -67,7 +67,7 @@ static void get_krait_bin_format_a(struct device *cpu_dev,
 		*speed = 0;
 		dev_warn(cpu_dev, "Speed bin: Defaulting to %d\n", *speed);
 	} else {
-		dev_dbg(cpu_dev, "Speed bin: %d\n", *speed);
+		dev_info(cpu_dev, "Speed bin: %d\n", *speed);
 	}
 
 	*pvs = (pte_efuse >> 10) & 0x7;
@@ -78,7 +78,7 @@ static void get_krait_bin_format_a(struct device *cpu_dev,
 		*pvs = 0;
 		dev_warn(cpu_dev, "PVS bin: Defaulting to %d\n", *pvs);
 	} else {
-		dev_dbg(cpu_dev, "PVS bin: %d\n", *pvs);
+		dev_info(cpu_dev, "PVS bin: %d\n", *pvs);
 	}
 }
 
@@ -110,9 +110,9 @@ static void get_krait_bin_format_b(struct device *cpu_dev,
 
 	/* Check SPEED_BIN_BLOW_STATUS */
 	if (pte_efuse & BIT(3)) {
-		dev_dbg(cpu_dev, "Speed bin: %d\n", *speed);
+		dev_info(cpu_dev, "Speed bin: %d\n", *speed);
 	} else {
-		dev_warn(cpu_dev, "Speed bin not set. Defaulting to 0!\n");
+		dev_info(cpu_dev, "Speed bin not set. Defaulting to 0!\n");
 		*speed = 0;
 	}
 
@@ -120,13 +120,13 @@ static void get_krait_bin_format_b(struct device *cpu_dev,
 	pte_efuse = *(((u32 *)buf) + 1);
 	pte_efuse &= BIT(21);
 	if (pte_efuse) {
-		dev_dbg(cpu_dev, "PVS bin: %d\n", *pvs);
+		dev_info(cpu_dev, "PVS bin: %d\n", *pvs);
 	} else {
 		dev_warn(cpu_dev, "PVS bin not set. Defaulting to 0!\n");
 		*pvs = 0;
 	}
 
-	dev_dbg(cpu_dev, "PVS version: %d\n", *pvs_ver);
+	dev_info(cpu_dev, "PVS version: %d\n", *pvs_ver);
 }
 
 static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
@@ -200,7 +200,7 @@ static int qcom_cpufreq_krait_name_version(struct device *cpu_dev,
 		 speed, pvs, pvs_ver);
 
 	drv->versions = (1 << speed);
-
+	printk(KERN_INFO "drv versions = %d\n", drv->versions);
 len_error:
 	kfree(speedbin);
 	return ret;
@@ -271,7 +271,8 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
 	const struct of_device_id *match;
 	int ret;
 
-	cpu_dev = get_cpu_device(0);
+	for_each_possible_cpu(cpu) {
+	cpu_dev = get_cpu_device(cpu);
 	if (!cpu_dev)
 		return -ENODEV;
 
@@ -313,7 +314,7 @@ static int qcom_cpufreq_probe(struct platform_device *pdev)
 		nvmem_cell_put(speedbin_nvmem);
 	}
 	of_node_put(np);
-
+	}
 	drv->opp_tokens = kcalloc(num_possible_cpus(), sizeof(*drv->opp_tokens),
 				  GFP_KERNEL);
 	if (!drv->opp_tokens) {
