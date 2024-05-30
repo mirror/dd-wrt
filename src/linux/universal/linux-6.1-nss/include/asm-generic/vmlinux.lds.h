@@ -81,16 +81,6 @@
 #define RO_EXCEPTION_TABLE
 #endif
 
-#ifndef SYMTAB_KEEP
-#define SYMTAB_KEEP KEEP(*(SORT(___ksymtab+*)))
-#define SYMTAB_KEEP_GPL KEEP(*(SORT(___ksymtab_gpl+*)))
-#endif
-
-#ifndef SYMTAB_DISCARD
-#define SYMTAB_DISCARD
-#define SYMTAB_DISCARD_GPL
-#endif
-
 /* Align . to a 8 byte boundary equals to maximum function alignment. */
 #define ALIGN_FUNCTION()  . = ALIGN(8)
 
@@ -521,14 +511,14 @@
 	/* Kernel symbol table: Normal symbols */			\
 	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
 		__start___ksymtab = .;					\
-		SYMTAB_KEEP						\
+		KEEP(*(SORT(___ksymtab+*)))				\
 		__stop___ksymtab = .;					\
 	}								\
 									\
 	/* Kernel symbol table: GPL-only symbols */			\
 	__ksymtab_gpl     : AT(ADDR(__ksymtab_gpl) - LOAD_OFFSET) {	\
 		__start___ksymtab_gpl = .;				\
-		SYMTAB_KEEP_GPL						\
+		KEEP(*(SORT(___ksymtab_gpl+*)))				\
 		__stop___ksymtab_gpl = .;				\
 	}								\
 									\
@@ -548,7 +538,7 @@
 									\
 	/* Kernel symbol table: strings */				\
         __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
-		*(__ksymtab_strings+*)					\
+		*(__ksymtab_strings)					\
 	}								\
 									\
 	/* __*init sections */						\
@@ -1052,8 +1042,6 @@
 #define COMMON_DISCARDS							\
 	SANITIZER_DISCARDS						\
 	PATCHABLE_DISCARDS						\
-	SYMTAB_DISCARD							\
-	SYMTAB_DISCARD_GPL						\
 	*(.discard)							\
 	*(.discard.*)							\
 	*(.modinfo)							\

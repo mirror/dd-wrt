@@ -31,12 +31,6 @@
 #endif
 .endm
 
-#ifdef MODULE
-#define __EXPORT_SUFFIX(name)
-#else
-#define __EXPORT_SUFFIX(name) + #name
-#endif
-
 /*
  * note on .section use: we specify progbits since usage of the "M" (SHF_MERGE)
  * section flag requires it. Use '%progbits' instead of '@progbits' since the
@@ -50,7 +44,7 @@
 __ksymtab_\name:
 	__put \val, __kstrtab_\name
 	.previous
-	.section __ksymtab_strings __EXPORT_SUFFIX(name),"aMS",%progbits,1
+	.section __ksymtab_strings,"aMS",%progbits,1
 __kstrtab_\name:
 	.asciz "\name"
 	.previous
