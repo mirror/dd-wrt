@@ -873,8 +873,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 1);
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		break;
@@ -887,8 +889,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 4);
 		nvram_seti("sw_lan4", 5);
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		break;
@@ -902,8 +906,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 2);
 		nvram_seti("sw_lan3", 3);
 		nvram_seti("sw_lan4", 4);
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "600000");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		break;
