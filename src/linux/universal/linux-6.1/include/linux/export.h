@@ -71,13 +71,6 @@ struct kernel_symbol {
 #define ___EXPORT_SYMBOL(sym, sec, ns)	__GENKSYMS_EXPORT_SYMBOL(sym)
 
 #else
-
-#ifdef MODULE
-#define __EXPORT_SUFFIX(sym)
-#else
-#define __EXPORT_SUFFIX(sym) "+" #sym
-#endif
-
 /*
  * For every exported symbol, do the following:
  *
@@ -91,9 +84,9 @@ struct kernel_symbol {
  */
 #define ___EXPORT_SYMBOL(sym, sec, ns)						\
 	extern typeof(sym) sym;							\
-	extern const char __visible __kstrtab_##sym[];				\
+	extern const char __visible __kstrtab_##sym[]; 				\
 	extern const char __visible __kstrtabns_##sym[];			\
-	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1	\n"	\
+	asm("	.section \"__ksymtab_strings\",\"aMS\",%progbits,1	\n"	\
 	    "	.globl __kstrtab_" #sym "				\n"	\
 	    "__kstrtab_" #sym ":					\n"	\
 	    "	.asciz 	\"" #sym "\"					\n"	\
@@ -131,6 +124,7 @@ struct kernel_symbol {
 #define __EXPORT_SYMBOL(sym, sec, ns)					\
 	__ksym_marker(sym);						\
 	__cond_export_sym(sym, sec, ns, __is_defined(__KSYM_##sym))
+
 #define __cond_export_sym(sym, sec, ns, conf)				\
 	___cond_export_sym(sym, sec, ns, conf)
 #define ___cond_export_sym(sym, sec, ns, enabled)			\

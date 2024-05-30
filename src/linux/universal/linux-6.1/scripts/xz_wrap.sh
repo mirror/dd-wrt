@@ -15,7 +15,7 @@ LZMA2OPTS=
 case $SRCARCH in
 	x86)            BCJ=--x86; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	x86_64)            BCJ=--x86; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
-	powerpc)        BCJ=--powerpc; LZMA2OPTS=pb=2,lp=2,lc=1;;
+	powerpc)        BCJ=--powerpc; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	ia64)           BCJ=--ia64; LZMA2OPTS=pb=4 ;;
 	arm)            BCJ=--arm; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 	armeb)          BCJ=--arm; LZMA2OPTS=pb=2,lp=2,lc=1 ;;
