@@ -68,7 +68,8 @@ static int set_target(struct cpufreq_policy *policy, unsigned int index)
 	}
 	for_each_present_cpu(cpu) {
 		struct device *cpu_dev = get_cpu_device(cpu);
-		dev_pm_opp_set_rate(cpu_dev, freq * 1000);
+		if (cpufreq_quick_get(cpu) != freq)
+			dev_pm_opp_set_rate(cpu_dev, freq * 1000);
 	}
 	return 0;
 }
