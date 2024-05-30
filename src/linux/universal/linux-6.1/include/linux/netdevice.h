@@ -2599,6 +2599,24 @@ netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	netif_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
 }
 
+static inline void netif_threaded_napi_add_weight(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int),
+					   int weight)
+{
+	if (num_online_cpus() > 1) {
+		set_bit(NAPI_STATE_THREADED, &napi->state);
+	}
+	netif_napi_add_weight(dev, napi, poll, weight);
+}
+
+static inline void netif_threaded_napi_add(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int))
+{
+	netif_threaded_napi_add_weight(dev, napi, poll, NAPI_POLL_WEIGHT);
+}
+
 static inline void
 netif_napi_add_tx_weight(struct net_device *dev,
 			 struct napi_struct *napi,
