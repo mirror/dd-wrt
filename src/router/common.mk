@@ -251,3 +251,106 @@ endif
 #	rm -f $(TARGETDIR)/lib/*.map
 #	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+
+kernel-relink-prep:
+	rm -rf $(LINUXDIR)/include/ksym
+	rm -f $(LINUXDIR)/include/generated/autoksyms.h
+	rm -f $(LINUXDIR)/whitelist.h
+	touch $(LINUXDIR)/whitelist.h
+
+kernel-relink:
+	
+	rm -rf $(TARGETDIR)/lib/modules
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+	-$(MAKE) -f Makefile.$(MAKEEXT) ath9k
+	-$(MAKE) -f Makefile.$(MAKEEXT) ath9k-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) libutils
+	-$(MAKE) -f Makefile.$(MAKEEXT) madwifi
+	-$(MAKE) -f Makefile.$(MAKEEXT) madwifi-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv
+	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter
+	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter-install
+ifeq ($(CONFIG_NTFS3G),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) ntfs3
+	-$(MAKE) -f Makefile.$(MAKEEXT) ntfs3-install
+endif
+ifeq ($(CONFIG_IPV6),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) nat46
+	-$(MAKE) -f Makefile.$(MAKEEXT) nat46-install
+endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) zfs
+	-$(MAKE) -f Makefile.$(MAKEEXT) zfs-install
+endif
+ifeq ($(CONFIG_QCA_NSS),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) qca-nss
+	-$(MAKE) -f Makefile.$(MAKEEXT) qca-nss-install
+endif
+ifeq ($(CONFIG_SMBD),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) smbd
+	-$(MAKE) -f Makefile.$(MAKEEXT) smbd-install
+endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) wireguard
+	-$(MAKE) -f Makefile.$(MAKEEXT) wireguard-install
+endif
+ifeq ($(CONFIG_OPENVPN),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) openvpn-dco
+	-$(MAKE) -f Makefile.$(MAKEEXT) openvpn-dco-install
+endif
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) i2c-custom-gpio
+	-$(MAKE) -f Makefile.$(MAKEEXT) i2c-custom-gpio-install
+endif
+ifeq ($(CONFIG_CAKE),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) cake
+	-$(MAKE) -f Makefile.$(MAKEEXT) cake-install
+	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast
+	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast-install
+endif
+
+	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
+	mkdir -p $(ARCH)-uclibc/target/lib/crda
+
+#	cp $(TOP)/qtnhost/host/arm/qdpc-host.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
+
+	
+	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | awk '/^[0-9a-f]+ [rR] __ksymtab_/ {print substr($$$$3,11)}' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		cat $(LINUXDIR)/mod_symtab.txt | \
+			awk '{print "#undef __KSYM_" $$$$1 " " }'; \
+		cat $(LINUXDIR)/mod_symtab.txt | \
+			awk '{print "#define __KSYM_" $$$$1 " 1" }'; \
+		echo; \
+	) > $(LINUXDIR)/whitelist.h
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+	#rm -f $(LINUXDIR)/vmlinux
+	touch $(LINUXDIR)/include/generated/autoksyms.h
+	make -j 4 -C $(LINUXDIR) zImage dtbs MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
