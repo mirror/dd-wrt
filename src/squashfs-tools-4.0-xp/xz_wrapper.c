@@ -503,8 +503,9 @@ static size_t dblen;
 static pthread_spinlock_t p_mutex;
 static int matchcount = 0;
 static int unmatchcount = 0;
+static int db_filters = 0;
 static int counts[256];
-static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, unsigned char *sum)
+static int checkparameters(struct xz_stream *stream, char *src, int len, int *pb, int *lc, int *lp, int *fail, int *filterid, unsigned char *sum)
 {
 	struct sha256 sha;
 	sha256_init(&sha);
@@ -521,7 +522,7 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			return -1;
 		}
 		fseek(in, 0, SEEK_END);
-		dblen = ftell(in) - 1;
+		dblen = ftell(in) - 2;
 		if (dblen > 1024 * 1024) {
 			fclose(in);
 			unlinkdatabase();
@@ -543,11 +544,13 @@ static int checkparameters(char *src, int len, int *pb, int *lc, int *lp, int *f
 			return -1;
 		}
 		int version = getc(in);
-		if (version != DBVERSION) {
+		db_filters = getc(in);
+		if (version != DBVERSION || db_filters != stream->filters) {
 			fclose(in);
 			unlinkdatabase();
 			dblen = 0;
 			pthread_spin_unlock(&p_mutex);
+			db_filters = stream->filters;
 			return -1;
 		}
 		fread(db, dblen, 1, in);
@@ -593,6 +596,7 @@ static void writedb(void)
 		return;
 	}
 	putc(DBVERSION, out);
+	putc(db_filters, out);
 	fwrite(db, dblen, 1, out);
 	fclose(out);
 	pthread_spin_unlock(&p_mutex);
@@ -613,8 +617,9 @@ static int xz_compress(void *s_strm, void *dst, void *src, int sourceLen, int bl
 	int filterid = 0;
 	int taken = -1;
 	unsigned char hash[32];
+	struct xz_stream *stream = s_strm;
 	if (!special) {
-		int ret = checkparameters(src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, hash);
+		int ret = checkparameters(stream, src, sourceLen, &pb, &lc, &lp, &s_fail, &filterid, hash);
 		if (!ret) {
 			matchcount++;
 			if (s_fail) {
