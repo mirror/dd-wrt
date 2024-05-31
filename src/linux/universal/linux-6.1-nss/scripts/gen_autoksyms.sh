@@ -60,4 +60,3 @@ sort -u |
 # when the final .ko's are linked.
 grep -v '^__this_module$' |
 sed -e 's/\(.*\)/#define __KSYM_\1 1/' >> "$output_file"
-echo "#include \"../../whitelist.h\"" >> "$output_file"
