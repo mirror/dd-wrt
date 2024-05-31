@@ -82,7 +82,7 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
 #endif
 
-
+export THUMB:=-mthumb
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)gcc-ar
@@ -123,6 +123,7 @@ build_date:
 	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
+include common.mk
 
 kernel:
 	cp $(LINUXDIR)/.config_alpine $(LINUXDIR)/.config
@@ -130,94 +131,17 @@ kernel:
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
+	$(MAKE) -f Makefile.alpine kernel-relink-prep MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) uImage dtbs CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
-	
+		
+	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
+	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
 
-	
-	
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-
-	-$(MAKE) -f Makefile.alpine ath9k
-	-$(MAKE) -f Makefile.alpine ath9k-install
-	-$(MAKE) -f Makefile.alpine libutils
-	-$(MAKE) -f Makefile.alpine madwifi
-	-$(MAKE) -f Makefile.alpine madwifi-install
-	-$(MAKE) -f Makefile.alpine batman-adv
-	-$(MAKE) -f Makefile.alpine batman-adv-install
-	-$(MAKE) -f Makefile.alpine ndpi-netfilter
-	-$(MAKE) -f Makefile.alpine ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.alpine ntfs3
-	-$(MAKE) -f Makefile.alpine ntfs3-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.alpine zfs
-	-$(MAKE) -f Makefile.alpine zfs-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.alpine smbd
-	-$(MAKE) -f Makefile.alpine smbd-install
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.alpine wireguard
-	-$(MAKE) -f Makefile.alpine wireguard-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.alpine cake
-	-$(MAKE) -f Makefile.alpine cake-install
-	-$(MAKE) -f Makefile.alpine fq_codel_fast
-	-$(MAKE) -f Makefile.alpine fq_codel_fast-install
-endif
-#	-$(MAKE) -f Makefile.alpine uniwip-gpio
-#	-$(MAKE) -f Makefile.alpine uniwip-gpio-install
-
-
-	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
-
-	mkdir -p $(ARCH)-uclibc/target/lib/crda
-
-#	cp $(TOP)/qtnhost/host/arm/qdpc-host.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-
-	
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	#rm -f $(LINUXDIR)/vmlinux
-	#$(MAKE) -j 4 -C $(LINUXDIR) uImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
-	
-
-include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory

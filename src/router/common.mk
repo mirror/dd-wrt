@@ -274,6 +274,10 @@ kernel-relink:
 	-$(MAKE) -f Makefile.$(MAKEEXT) batman-adv-install
 	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter
 	-$(MAKE) -f Makefile.$(MAKEEXT) ndpi-netfilter-install
+ifeq ($(CONFIG_ALPINE),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) qca-ssdk
+	-$(MAKE) -f Makefile.$(MAKEEXT) qca-ssdk-install
+endif
 ifeq ($(CONFIG_NTFS3G),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) ntfs3
 	-$(MAKE) -f Makefile.$(MAKEEXT) ntfs3-install
