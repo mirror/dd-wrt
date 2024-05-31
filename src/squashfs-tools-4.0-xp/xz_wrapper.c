@@ -34,7 +34,7 @@
 #include "compressor.h"
 #include "lzma_xz_options.h"
 
-#define DBVERSION 5
+#define DBVERSION 6
 static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0, 0 },
