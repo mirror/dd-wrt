@@ -114,6 +114,7 @@ build_date:
 	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
+include common.mk
 
 kernel:
 	cp $(LINUXDIR)/.config_mvebu $(LINUXDIR)/.config
@@ -127,105 +128,18 @@ endif
 	
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
-
+	$(MAKE) -f Makefile.mvebu kernel-relink-prep MAKEEXT=mvebu
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
-	
-	#noch extra rules.mk machen wie in ~/TODO
-#	#$(MAKE) -C "$(TOP)/compat-wireless" CROSS_COMPILE="$(ARCH)-openwrt-linux-" EXTRA_CFLAGS="-I$(TOP)/compat-wireless/include" KLIB_BUILD="$(LINUXDIR)" MODPROBE=true KLIB="$(LINUXDIR)" BACKPORT_PWD="$(TOP)/compat-wireless" KERNEL_SUBLEVEL=18 KBUILD_LDFLAGS_MODULE_PREREQ= 
 
-#	$(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE="$(ARCH)-openwrt-linux-" SUBDIRS="$(TOP)/mwlwifi" NOSTDINC_FLAGS="-I$(TOP)/mwlwifi -I$(TOP)/mwlwifi/mac80211-backport/uapi -I$(TOP)/mwlwifi/mac80211-backport -I$(TOP)/mwlwifi/mac80211/uapi -I$(TOP)/mwlwifi/mac80211 -include backport/backport.h " 
-	
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-
-	-$(MAKE) -f Makefile.mvebu ath9k
-	-$(MAKE) -f Makefile.mvebu ath9k-install
-	-$(MAKE) -f Makefile.mvebu libutils
-	-$(MAKE) -f Makefile.mvebu madwifi
-	-$(MAKE) -f Makefile.mvebu madwifi-install
-	-$(MAKE) -f Makefile.mvebu batman-adv
-	-$(MAKE) -f Makefile.mvebu batman-adv-install
-	-$(MAKE) -f Makefile.mvebu ndpi-netfilter
-	-$(MAKE) -f Makefile.mvebu ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.mvebu ntfs3
-	-$(MAKE) -f Makefile.mvebu ntfs3-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.mvebu zfs
-	-$(MAKE) -f Makefile.mvebu zfs-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.mvebu smbd
-	-$(MAKE) -f Makefile.mvebu smbd-install
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.mvebu wireguard
-	-$(MAKE) -f Makefile.mvebu wireguard-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.mvebu cake
-	-$(MAKE) -f Makefile.mvebu cake-install
-	-$(MAKE) -f Makefile.mvebu fq_codel_fast
-	-$(MAKE) -f Makefile.mvebu fq_codel_fast-install
-endif
-#	-$(MAKE) -f Makefile.mvebu uniwip-gpio
-#	-$(MAKE) -f Makefile.mvebu uniwip-gpio-install
-
-
-	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
-#	cp tools/wrt1900ac/strace $(ARCH)-uclibc/target/usr/sbin/
-#	mkdir -p $(ARCH)-uclibc/target/lib/firmware/mwlwifi
-#	cp mwlwifi/bin/firmware/* $(ARCH)-uclibc/target/lib/firmware/mwlwifi/
-
-#	mkdir -p $(ARCH)-uclibc/target/lib/crda
-#	cp tools/wrt1900ac/regulatory.bin $(ARCH)-uclibc/target/lib/crda/
-
-#	cp env/fw_printenv $(ARCH)-uclibc/target/usr/sbin/
-#	cp env/fw_setenv $(ARCH)-uclibc/target/usr/sbin/
-#	cp mwlwifi/mwlwifi.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-#	cp compat-wireless/compat/compat.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-#	cp compat-wireless/net/wireless/cfg80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-#	cp compat-wireless/net/mac80211/mac80211.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-	
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	#rm -f $(LINUXDIR)/vmlinux
-	#$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	$(MAKE) -f Makefile.mvebu kernel-relink MAKEEXT=mvebu KBUILD_TARGETS="zImage dtbs"
+	$(MAKE) -f Makefile.mvebu kernel-relink MAKEEXT=mvebu KBUILD_TARGETS="zImage dtbs"
 	
 
-include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory

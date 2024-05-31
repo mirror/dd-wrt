@@ -69,6 +69,7 @@ export BASEOPT:=-Os -fno-unwind-tables -fno-asynchronous-unwind-tables
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fhonour-copts -msoft-float
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic -fno-caller-saves 
 export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -mvectorize-with-neon-quad
+#export MIPS16_OPT:= -mthumb
 #export THUMB:=-mthumb
 #endif
 
@@ -116,6 +117,8 @@ build_date:
 
 include kernel-features.mk
 
+include common.mk
+
 kernel:
 	cp $(LINUXDIR)/.config_ipq806x $(LINUXDIR)/.config
 ifeq ($(CONFIG_R7500),y)
@@ -155,98 +158,19 @@ endif
 
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig
-	
+	$(MAKE) -f Makefile.ipq806x kernel-relink-prep MAKEEXT=ipq806x
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
+	    make -j 4 -C $(LINUXDIR) zImage dtbs MAKE=make CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS= KALLSYMS_EXTRA_PASS=1; \
+	    make -j 4 -C $(LINUXDIR) modules MAKE=make CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
 	fi
+
+	# we need to run this multiple times until all is resolved
+	$(MAKE) -f Makefile.ipq806x kernel-relink MAKEEXT=ipq806x KBUILD_TARGETS="zImage dtbs"
+	$(MAKE) -f Makefile.ipq806x kernel-relink MAKEEXT=ipq806x KBUILD_TARGETS="zImage dtbs"
 	
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-
-	-$(MAKE) -f Makefile.ipq806x ath9k
-	-$(MAKE) -f Makefile.ipq806x ath9k-install
-	-$(MAKE) -f Makefile.ipq806x libutils
-	-$(MAKE) -f Makefile.ipq806x madwifi
-	-$(MAKE) -f Makefile.ipq806x madwifi-install
-	-$(MAKE) -f Makefile.ipq806x batman-adv
-	-$(MAKE) -f Makefile.ipq806x batman-adv-install
-	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter
-	-$(MAKE) -f Makefile.ipq806x ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.ipq806x ntfs3
-	-$(MAKE) -f Makefile.ipq806x ntfs3-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.ipq806x zfs
-	-$(MAKE) -f Makefile.ipq806x zfs-install
-endif
-ifeq ($(CONFIG_QCA_NSS),y)
-	-$(MAKE) -f Makefile.ipq806x qca-nss
-	-$(MAKE) -f Makefile.ipq806x qca-nss-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.ipq806x smbd
-	-$(MAKE) -f Makefile.ipq806x smbd-install
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.ipq806x wireguard
-	-$(MAKE) -f Makefile.ipq806x wireguard-install
-endif
-ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
-	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio
-	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.ipq806x cake
-	-$(MAKE) -f Makefile.ipq806x cake-install
-	-$(MAKE) -f Makefile.ipq806x fq_codel_fast
-	-$(MAKE) -f Makefile.ipq806x fq_codel_fast-install
-endif
-#	-$(MAKE) -f Makefile.ipq806x uniwip-gpio
-#	-$(MAKE) -f Makefile.ipq806x uniwip-gpio-install
-
-
-	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
-
-	mkdir -p $(ARCH)-uclibc/target/lib/crda
-
-#	cp $(TOP)/qtnhost/host/arm/qdpc-host.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-
-	
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	#rm -f $(LINUXDIR)/vmlinux
-	# $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" KALLSYMS_EXTRA_PASS=1 CFLAGS=
-	
+#	$(MAKE) -C $(LINUXDIR)/tools/perf
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage; 
 	-rm -rf $(ARCH)-uclibc/ipq806x;
 	-mkdir -p $(ARCH)-uclibc/ipq806x;
@@ -324,7 +248,6 @@ endif
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-EA8500.uImage.final;
 
 
-include common.mk
 
 its:
 ifeq ($(CONFIG_ANTAIRA),y)
@@ -426,6 +349,7 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+	#xz -z -T 0 --arm -e $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/*.ko
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
@@ -461,6 +385,7 @@ endif
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-tew827.dtb >> $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-ea8500.dtb >> $(ARCH)-uclibc/ipq806x-EA8500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-asrockg10.dtb >> $(ARCH)-uclibc/ipq806x-G10-uImage;
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm,armthumb,arm64,x86,powerpc,ia64,riscv,delta,delta-2,delta-3,delta-4,delta-8,delta-16 -b 262144
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	

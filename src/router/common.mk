@@ -354,4 +354,4 @@ endif
 	) > $(LINUXDIR)/symtab.h
 	#rm -f $(LINUXDIR)/vmlinux
 	touch $(LINUXDIR)/include/generated/autoksyms.h
-	make -j 4 -C $(LINUXDIR) zImage dtbs MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
