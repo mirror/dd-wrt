@@ -152,6 +152,7 @@ build_date:
 	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
+include common.mk
 
 kernel:
         # Also build kernel
@@ -162,107 +163,22 @@ ifeq ($(CONFIG_ISOFS),y)
 endif
 	$(kernelfeatures)
 	make -C $(LINUXDIR) oldconfig
+	$(MAKE) -f Makefile.x64 kernel-relink-prep MAKEEXT=mvebu KBUILD_TARGETS="bzImage"
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) MAKE=make bzImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) MAKE=make modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ;\
 	fi
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.x64 ath9k
-	-$(MAKE) -f Makefile.x64 ath9k-install
-	-$(MAKE) -f Makefile.x64 libutils
-	-$(MAKE) -f Makefile.x64 madwifi
-	-$(MAKE) -f Makefile.x64 madwifi-install
-	-$(MAKE) -f Makefile.x64 batman-adv
-	-$(MAKE) -f Makefile.x64 batman-adv-install
-	-$(MAKE) -f Makefile.x64 ndpi-netfilter
-	-$(MAKE) -f Makefile.x64 ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.x64 ntfs3
-	-$(MAKE) -f Makefile.x64 ntfs3-install
-endif
-ifeq ($(CONFIG_RTL8125),y)
-	-$(MAKE) -f Makefile.x64 rtl8125
-	-$(MAKE) -f Makefile.x64 rtl8125-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.x64 zfs
-	-$(MAKE) -f Makefile.x64 zfs-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.x64 cake
-	-$(MAKE) -f Makefile.x64 cake-install
-	-$(MAKE) -f Makefile.x64 fq_codel_fast
-	-$(MAKE) -f Makefile.x64 fq_codel_fast-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.x64 smbd
-	-$(MAKE) -f Makefile.x64 smbd-install
-endif
-	-$(MAKE) -f Makefile.x64 yukon
-	-$(MAKE) -f Makefile.x64 yukon-install
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.x64 wireguard
-	-$(MAKE) -f Makefile.x64 wireguard-install
-endif
-	-$(MAKE) -f Makefile.x64 uniwip-gpio
-	-$(MAKE) -f Makefile.x64 uniwip-gpio-install
-
-
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __export_symbol' | sed -e 's,................ r __export_symbol_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,................ r __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,................ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___export_symbol+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___export_symbol+" $$$$1 ") \\" }'; \
-		echo; \
-	) >> $(LINUXDIR)/symtab.h
-	rm -f $(LINUXDIR)/vmlinux
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache x86_64-linux-uclibc-" ; \
-	    $(MAKE) -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache x86_64-linux-uclibc-" ; \
-	fi
+	$(MAKE) -f Makefile.x64 kernel-relink MAKEEXT=x64 KBUILD_TARGETS="bzImage"
+	$(MAKE) -f Makefile.x64 kernel-relink MAKEEXT=x64 KBUILD_TARGETS="bzImage"
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
 #	make -C lzma-loader/rb500 clean
 #	make -C lzma-loader/rb500 
 #	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
 
-include common.mk
 
 strip:
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \

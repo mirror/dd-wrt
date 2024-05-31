@@ -159,6 +159,7 @@ kernelsource:
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
 include kernel-features.mk
+include common.mk
 
 kernel:
 	# Also build kernel
@@ -167,83 +168,16 @@ kernel:
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
+	$(MAKE) -f Makefile.thunderx kernel-relink-prep MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs"
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make Image ARCH=arm64 dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make modules ARCH=arm64 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
+	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs"
+	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs"
 
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) MAKE=make modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-
-	-$(MAKE) -f Makefile.thunderx ath9k
-	-$(MAKE) -f Makefile.thunderx ath9k-install
-	-$(MAKE) -f Makefile.thunderx libutils
-	-$(MAKE) -f Makefile.thunderx madwifi
-	-$(MAKE) -f Makefile.thunderx madwifi-install
-	-$(MAKE) -f Makefile.thunderx batman-adv
-	-$(MAKE) -f Makefile.thunderx batman-adv-install
-	-$(MAKE) -f Makefile.thunderx ndpi-netfilter
-	-$(MAKE) -f Makefile.thunderx ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.thunderx ntfs3
-	-$(MAKE) -f Makefile.thunderx ntfs3-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.thunderx zfs
-	-$(MAKE) -f Makefile.thunderx zfs-install
-endif
-ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
-	-$(MAKE) -f Makefile.thunderx i2c-custom-gpio
-	-$(MAKE) -f Makefile.thunderx i2c-custom-gpio-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.thunderx smbd
-	-$(MAKE) -f Makefile.thunderx smbd-install
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.thunderx wireguard
-	-$(MAKE) -f Makefile.thunderx wireguard-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.thunderx cake
-	-$(MAKE) -f Makefile.thunderx cake-install
-	-$(MAKE) -f Makefile.thunderx fq_codel_fast
-	-$(MAKE) -f Makefile.thunderx fq_codel_fast-install
-endif
-	-$(MAKE) -f Makefile.thunderx uniwip-gpio
-	-$(MAKE) -f Makefile.thunderx uniwip-gpio-install
-
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,................ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,................ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) MAKE=make Image dtbs  ARCH=arm64 EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	
 testimage:
@@ -268,7 +202,6 @@ endif
 	gzip -k -f $(ARCH)-uclibc/newport.img 
 	./tools/newp $(ARCH)-uclibc/newport.img $(ARCH)-uclibc/newport-webupgrade.bin
 
-include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
