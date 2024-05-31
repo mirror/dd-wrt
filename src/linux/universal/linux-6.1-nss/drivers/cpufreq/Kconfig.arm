@@ -156,7 +156,6 @@ config ARM_QCOM_CPUFREQ_NVMEM
 	depends on NVMEM_QCOM_QFPROM
 	depends on QCOM_SMEM
 	select PM_OPP
-	select CPUFREQ_DT_QCOM
 	help
 	  This adds the CPUFreq driver for Qualcomm Kryo SoC based boards.
 

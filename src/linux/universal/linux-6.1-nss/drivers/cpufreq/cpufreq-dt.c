@@ -271,7 +271,7 @@ static int dt_cpufreq_early_init(struct device *dev, int cpu)
 		ret = -ENODEV;
 		goto out;
 	}
-	printk(KERN_INFO "opp table length %d for cpu %d\n", ret, cpu);
+
 	if (fallback) {
 		cpumask_setall(priv->cpus);
 		ret = dev_pm_opp_set_sharing_cpus(cpu_dev, priv->cpus);

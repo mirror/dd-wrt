@@ -208,18 +208,6 @@ comment "CPU frequency scaling drivers"
 
 config CPUFREQ_DT
 	tristate "Generic DT based cpufreq driver"
-	depends on HAVE_CLK && OF && !CPUFREQ_DT_QCOM
-	select CPUFREQ_DT_PLATDEV
-	select PM_OPP
-	help
-	  This adds a generic DT based cpufreq driver for frequency management.
-	  It supports both uniprocessor (UP) and symmetric multiprocessor (SMP)
-	  systems.
-
-	  If in doubt, say N.
-
-config CPUFREQ_DT_QCOM
-	tristate "Generic DT based cpufreq driver"
 	depends on HAVE_CLK && OF
 	select CPUFREQ_DT_PLATDEV
 	select PM_OPP
@@ -234,7 +222,7 @@ config CPUFREQ_DT_PLATDEV
 	bool
 	help
 	  This adds a generic DT based cpufreq platdev driver for frequency
-	  management. [5~ This creates a 'cpufreq-dt' platform device, on the
+	  management.  This creates a 'cpufreq-dt' platform device, on the
 	  supported platforms.
 
 	  If in doubt, say N.
