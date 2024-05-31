@@ -255,8 +255,8 @@ endif
 kernel-relink-prep:
 	rm -rf $(LINUXDIR)/include/ksym
 	rm -f $(LINUXDIR)/include/generated/autoksyms.h
-	rm -f $(LINUXDIR)/whitelist.h
-	touch $(LINUXDIR)/whitelist.h
+	rm -f $(LINUXDIR)/mod_symtab.txt
+	touch $(LINUXDIR)/mod_symtab.txt
 
 kernel-relink:
 	
@@ -329,13 +329,6 @@ endif
 	-grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 
 	( \
-		cat $(LINUXDIR)/mod_symtab.txt | \
-			awk '{print "#undef __KSYM_" $$$$1 " " }'; \
-		cat $(LINUXDIR)/mod_symtab.txt | \
-			awk '{print "#define __KSYM_" $$$$1 " 1" }'; \
-		echo; \
-	) > $(LINUXDIR)/whitelist.h
-	( \
 		echo '#define SYMTAB_KEEP \'; \
 		cat $(LINUXDIR)/sym_include.txt | \
 			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
@@ -355,4 +348,6 @@ endif
 	) > $(LINUXDIR)/symtab.h
 	#rm -f $(LINUXDIR)/vmlinux
 	touch $(LINUXDIR)/include/generated/autoksyms.h
-	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	touch $(LINUXDIR)/include/linux/exports.h
+	touch $(LINUXDIR)/include/asm-generic/exports.h
+	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
