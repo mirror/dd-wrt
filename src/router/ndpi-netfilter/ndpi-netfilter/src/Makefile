@@ -30,7 +30,7 @@ test::
 
 modules:
 	$(info $$xt_ndpi-y is [${xt_ndpi-y}] ${ccflags-y}) \
-	make  -C ${KERNEL_DIR} M=$$PWD $@ $(MFLAGS);
+	make  -C ${KERNEL_DIR} M=$$PWD  KBUILD_MODPOST_WARN=1 $@ $(MFLAGS);
 
 modules_install:
 	install -D xt_ndpi.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/xt_ndpi.ko
