@@ -328,9 +328,9 @@ endif
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | awk '/^[0-9a-f]+ [rR] __ksymtab_/ {print substr($$3,11)}' > $(LINUXDIR)/kernel_symtab.txt
-#	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	cat $(LINUXDIR)/mod_symtab.txt > $(LINUXDIR)/sym_include.txt
-	-grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+#	cat $(LINUXDIR)/mod_symtab.txt >> $(LINUXDIR)/sym_include.txt
+	-grep -vf $(LINUXDIR)/mod_include.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 
 	( \
 		echo '#define SYMTAB_KEEP \'; \
@@ -354,4 +354,6 @@ endif
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
+ifneq ($(KERNELVERSION),4.9)
 	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+endif
