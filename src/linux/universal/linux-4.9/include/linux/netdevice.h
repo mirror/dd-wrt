@@ -527,7 +527,6 @@ void napi_hash_add(struct napi_struct *napi);
 bool napi_hash_del(struct napi_struct *napi);
 
 int dev_set_threaded(struct net_device *dev, bool threaded);
-int backlog_set_threaded(bool threaded);
 
 /**
  *	napi_disable - prevent NAPI from scheduling
