@@ -137,7 +137,6 @@ endif
 	fi
 
 	$(MAKE) -f Makefile.mvebu kernel-relink MAKEEXT=mvebu KBUILD_TARGETS="zImage dtbs"
-	$(MAKE) -f Makefile.mvebu kernel-relink MAKEEXT=mvebu KBUILD_TARGETS="zImage dtbs"
 	
 
 

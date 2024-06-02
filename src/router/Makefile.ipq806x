@@ -168,7 +168,6 @@ endif
 
 	# we need to run this multiple times until all is resolved
 	$(MAKE) -f Makefile.ipq806x kernel-relink MAKEEXT=ipq806x KBUILD_TARGETS="zImage dtbs"
-	$(MAKE) -f Makefile.ipq806x kernel-relink MAKEEXT=ipq806x KBUILD_TARGETS="zImage dtbs"
 	
 #	$(MAKE) -C $(LINUXDIR)/tools/perf
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage; 

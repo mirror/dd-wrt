@@ -172,7 +172,6 @@ endif
 	fi
 
 	$(MAKE) -f Makefile.x64 kernel-relink MAKEEXT=x64 KBUILD_TARGETS="bzImage"
-	$(MAKE) -f Makefile.x64 kernel-relink MAKEEXT=x64 KBUILD_TARGETS="bzImage"
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
 #	make -C lzma-loader/rb500 clean

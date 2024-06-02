@@ -256,9 +256,11 @@ kernel-relink-prep:
 	rm -rf $(LINUXDIR)/include/ksym
 	rm -f $(LINUXDIR)/include/generated/autoksyms.h
 	rm -f $(LINUXDIR)/mod_symtab.txt
+	rm -f $(LINUXDIR)/sym_include.txt
+	rm -f $(LINUXDIR)/kernel_symtab.txt.tmp
 	touch $(LINUXDIR)/mod_symtab.txt
 
-kernel-relink:
+kernel-relink-phase:
 	
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -323,15 +325,13 @@ endif
 #	cp $(TOP)/qtnhost/host/arm/qdpc-host.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
 
 	
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
+	find $(ARCH)-uclibc -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | awk '/^[0-9a-f]+ [rR] __ksymtab_/ {print substr($$3,11)}' > $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-#	cat $(LINUXDIR)/mod_symtab.txt >> $(LINUXDIR)/sym_include.txt
-	-grep -vf $(LINUXDIR)/mod_include.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-
+	grep -Ff $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_include.txt
+	grep -Fvf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_exclude.txt
 	( \
 		echo '#define SYMTAB_KEEP \'; \
 		cat $(LINUXDIR)/sym_include.txt | \
@@ -354,6 +354,11 @@ endif
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
+	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+endif
+
+kernel-relink:
 ifneq ($(KERNELVERSION),4.9)
-	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 endif

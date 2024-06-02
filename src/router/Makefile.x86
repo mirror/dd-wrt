@@ -168,7 +168,6 @@ endif
 	    $(MAKE) -C $(LINUXDIR) MAKE=make modules MAKE=make CROSS_COMPILE="ccache i386-linux-uclibc-" ; \
 	fi
 	$(MAKE) -f Makefile.x86 kernel-relink MAKEEXT=x86 KBUILD_TARGETS="bzImage"
-	$(MAKE) -f Makefile.x86 kernel-relink MAKEEXT=x86 KBUILD_TARGETS="bzImage"
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
 #	make -C lzma-loader/rb500 clean
