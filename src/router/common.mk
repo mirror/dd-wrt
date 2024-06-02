@@ -330,8 +330,8 @@ endif
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | awk '/^[0-9a-f]+ [rR] __ksymtab_/ {print substr($$3,11)}' > $(LINUXDIR)/kernel_symtab.txt
-	grep -Ff $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_include.txt
-	grep -Fvf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_exclude.txt
+	-grep -Ff $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_include.txt
+	-grep -Fvf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt > $(LINUXDIR)/sym_exclude.txt
 	( \
 		echo '#define SYMTAB_KEEP \'; \
 		cat $(LINUXDIR)/sym_include.txt | \
