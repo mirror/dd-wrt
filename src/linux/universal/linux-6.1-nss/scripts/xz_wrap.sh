@@ -26,4 +26,4 @@ case $SRCARCH in
 	mips64)         LZMA2OPTS=pb=2,lp=2,lc=1 ;;
 esac
 
-exec $XZ --check=crc32 -9 -e $BCJ --lzma2=$LZMA2OPTS,dict=32MiB
+exec $XZ --check=crc32 $BCJ --lzma2=$LZMA2OPTS,dict=32MiB
