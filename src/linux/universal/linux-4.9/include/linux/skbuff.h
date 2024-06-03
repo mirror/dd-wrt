@@ -1218,12 +1218,6 @@ static inline int skb_queue_empty(const struct sk_buff_head *list)
 	return list->next == (const struct sk_buff *) list;
 }
 
-
-static inline bool skb_queue_empty_lockless(const struct sk_buff_head *list)
-{
-	return READ_ONCE(list->next) == (const struct sk_buff *) list;
-}
-
 /**
  *	skb_queue_is_last - check if skb is the last entry in the queue
  *	@list: queue head
