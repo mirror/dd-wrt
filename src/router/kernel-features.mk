@@ -44,6 +44,9 @@ define kernelfeatures
 	if [ "$(CONFIG_FRR)" = "y" ]; then \
 		sed -i 's/\# CONFIG_TCP_MD5SIG is not set/CONFIG_TCP_MD5SIG=y/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_QUAGGA)" = "y" ]; then \
+		sed -i 's/\# CONFIG_TCP_MD5SIG is not set/CONFIG_TCP_MD5SIG=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_ANTAIRA)" = "y" ]; then \
 		sed -i 's/\# CONFIG_GPIO_ANTAIRA is not set/CONFIG_GPIO_ANTAIRA=m/g' $(LINUXDIR)/.config; \
 	else \
