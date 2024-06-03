@@ -3951,16 +3951,10 @@ static int nft_verdict_init(const struct nft_ctx *ctx, struct nft_data *data,
 	data->verdict = ntohl(nla_get_be32(tb[NFTA_VERDICT_CODE]));
 
 	switch (data->verdict) {
-	default:
-		switch (data->verdict & NF_VERDICT_MASK) {
-		case NF_ACCEPT:
-		case NF_DROP:
-		case NF_QUEUE:
-			break;
-		default:
-			return -EINVAL;
-		}
-		/* fall through */
+	case NF_ACCEPT:
+	case NF_DROP:
+	case NF_QUEUE:
+		break;
 	case NFT_CONTINUE:
 	case NFT_BREAK:
 	case NFT_RETURN:
@@ -3981,6 +3975,8 @@ static int nft_verdict_init(const struct nft_ctx *ctx, struct nft_data *data,
 		data->chain = chain;
 		desc->len = sizeof(data);
 		break;
+	default:
+		return -EINVAL;
 	}
 
 	desc->type = NFT_DATA_VERDICT;
