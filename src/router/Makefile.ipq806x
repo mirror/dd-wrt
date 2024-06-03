@@ -159,13 +159,6 @@ endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	$(MAKE) -f Makefile.ipq806x kernel-relink-prep MAKEEXT=ipq806x
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) zImage dtbs MAKE=make CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) modules MAKE=make CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
-	fi
-
 	# we need to run this multiple times until all is resolved
 	$(MAKE) -f Makefile.ipq806x kernel-relink MAKEEXT=ipq806x KBUILD_TARGETS="zImage dtbs"
 	

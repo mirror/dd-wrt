@@ -357,6 +357,12 @@ endif
 	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
+	-if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
+	fi
+	-if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    make -j 4 -C $(LINUXDIR) modules MAKE=make CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
+	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase

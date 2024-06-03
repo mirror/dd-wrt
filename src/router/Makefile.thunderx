@@ -169,12 +169,6 @@ kernel:
 	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
 	$(MAKE) -f Makefile.thunderx kernel-relink-prep MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make Image ARCH=arm64 dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) MAKE=make modules ARCH=arm64 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
-	fi
 	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
 	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
 

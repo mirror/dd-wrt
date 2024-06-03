@@ -132,14 +132,6 @@ kernel:
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
 	$(MAKE) -f Makefile.alpine kernel-relink-prep MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) uImage dtbs CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
-	fi
-		
-	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
 	$(MAKE) -f Makefile.alpine kernel-relink MAKEEXT=alpine KBUILD_TARGETS="uImage dtbs"
 
 

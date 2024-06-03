@@ -129,13 +129,6 @@ endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	$(MAKE) -f Makefile.mvebu kernel-relink-prep MAKEEXT=mvebu
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
-	fi
-
 	$(MAKE) -f Makefile.mvebu kernel-relink MAKEEXT=mvebu KBUILD_TARGETS="zImage dtbs"
 	
 
