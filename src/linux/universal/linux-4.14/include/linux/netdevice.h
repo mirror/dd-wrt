@@ -2156,10 +2156,10 @@ static inline void netif_threaded_napi_add(struct net_device *dev,
 					   int (*poll)(struct napi_struct *, int),
 					   int weight)
 {
-	if (num_online_cpus() > 1) {
-		dev->threaded = 1;
-	}
 	netif_napi_add(dev, napi, poll, weight);
+	if (num_online_cpus() > 1) {
+		dev_set_threaded(dev, true);
+	}
 }
 
 /**
