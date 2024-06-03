@@ -31,7 +31,6 @@ static int min_rcvbuf = SOCK_MIN_RCVBUF;
 static int max_skb_frags = MAX_SKB_FRAGS;
 static long long_one __maybe_unused = 1;
 static long long_max __maybe_unused = LONG_MAX;
-static int backlog_threaded;
 
 static int net_msg_warn;	/* Unused, but still a sysctl */
 
@@ -102,23 +101,6 @@ static int rps_sock_flow_sysctl(struct ctl_table *table, int write,
 	return ret;
 }
 #endif /* CONFIG_RPS */
-
-static int backlog_threaded_sysctl(struct ctl_table *table, int write,
-			       void __user *buffer, size_t *lenp, loff_t *ppos)
-{
-	static DEFINE_MUTEX(backlog_threaded_mutex);
-	int ret;
-
-	mutex_lock(&backlog_threaded_mutex);
-
-	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
-	if (write && !ret)
-		ret = backlog_set_threaded(backlog_threaded);
-
-	mutex_unlock(&backlog_threaded_mutex);
-
-	return ret;
-}
 
 #ifdef CONFIG_NET_FLOW_LIMIT
 static DEFINE_MUTEX(flow_limit_update_mutex);
@@ -497,15 +479,6 @@ static struct ctl_table net_core_table[] = {
 		.proc_handler	= rps_sock_flow_sysctl
 	},
 #endif
-	{
-		.procname	= "backlog_threaded",
-		.data		= &backlog_threaded,
-		.maxlen		= sizeof(unsigned int),
-		.mode		= 0644,
-		.proc_handler	= backlog_threaded_sysctl,
-		.extra1		= &zero,
-		.extra2		= &one
-	},
 #ifdef CONFIG_NET_FLOW_LIMIT
 	{
 		.procname	= "flow_limit_cpu_bitmap",

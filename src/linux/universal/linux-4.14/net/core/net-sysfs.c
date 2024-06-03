@@ -441,46 +441,44 @@ static ssize_t proto_down_store(struct device *dev,
 }
 NETDEVICE_SHOW_RW(proto_down, fmt_dec);
 
-static int change_napi_threaded(struct net_device *dev, unsigned long val)
+static ssize_t threaded_show(struct device *dev,
+			     struct device_attribute *attr, char *buf)
 {
-	struct napi_struct *napi;
+	struct net_device *netdev = to_net_dev(dev);
+	ssize_t ret = -EINVAL;
+
+	if (!rtnl_trylock())
+		return restart_syscall();
+
+	if (dev_isalive(netdev))
+		ret = sprintf(buf, fmt_dec, netdev->threaded);
+
+	rtnl_unlock();
+	return ret;
+}
+
+static int modify_napi_threaded(struct net_device *dev, unsigned long val)
+{
+	int ret;
 
 	if (list_empty(&dev->napi_list))
 		return -EOPNOTSUPP;
 
-	list_for_each_entry(napi, &dev->napi_list, dev_list) {
-		if (val)
-			set_bit(NAPI_STATE_THREADED, &napi->state);
-		else
-			clear_bit(NAPI_STATE_THREADED, &napi->state);
-	}
+	if (val != 0 && val != 1)
+		return -EOPNOTSUPP;
 
-	return 0;
+	ret = dev_set_threaded(dev, val);
+
+	return ret;
 }
 
-static ssize_t napi_threaded_store(struct device *dev,
-				struct device_attribute *attr,
-				const char *buf, size_t len)
+static ssize_t threaded_store(struct device *dev,
+			      struct device_attribute *attr,
+			      const char *buf, size_t len)
 {
-	return netdev_store(dev, attr, buf, len, change_napi_threaded);
+	return netdev_store(dev, attr, buf, len, modify_napi_threaded);
 }
-
-static ssize_t napi_threaded_show(struct device *dev,
-				  struct device_attribute *attr,
-				  char *buf)
-{
-	struct net_device *netdev = to_net_dev(dev);
-	struct napi_struct *napi;
-	bool enabled = false;
-
-	list_for_each_entry(napi, &netdev->napi_list, dev_list) {
-		if (test_bit(NAPI_STATE_THREADED, &napi->state))
-			enabled = true;
-	}
-
-	return sprintf(buf, fmt_dec, enabled);
-}
-DEVICE_ATTR_RW(napi_threaded);
+static DEVICE_ATTR_RW(threaded);
 
 static ssize_t phys_port_id_show(struct device *dev,
 				 struct device_attribute *attr, char *buf)
@@ -576,8 +574,8 @@ static struct attribute *net_class_attrs[] __ro_after_init = {
 	&dev_attr_mtu.attr,
 	&dev_attr_flags.attr,
 	&dev_attr_tx_queue_len.attr,
+	&dev_attr_threaded.attr,
 	&dev_attr_gro_flush_timeout.attr,
-	&dev_attr_napi_threaded.attr,
 	&dev_attr_phys_port_id.attr,
 	&dev_attr_phys_port_name.attr,
 	&dev_attr_phys_switch_id.attr,
