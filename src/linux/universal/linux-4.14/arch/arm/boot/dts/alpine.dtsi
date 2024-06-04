@@ -1,83 +1,68 @@
 /*
- * Copyright 2013 Annapurna Labs Ltd.
+ * Copyright 2015 Annapurna Labs Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
+ *
+ * Alternatively, redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   *   Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ *
+ *   *   Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in
+ *       the documentation and/or other materials provided with the
+ *       distribution.
  *
  * This program is distributed in the hope it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Addressing RMN: 1024
- *
- * RMN description:
- * The PCIe core reserve the lower 1MB for cfg_mem, and return UR (unsupported
- * request) for inbound access to this addresses.
- *
- * Software flow:
- * Reserve the first 1MB
- */
-/memreserve/ 0x0 0x100000;
-
-/include/ "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "skeleton64.dtsi"
 
 / {
-	compatible = "annapurna-labs,alpine";
-	#address-cells = <2>;
-	#size-cells = <2>;
-	clock-ranges;
-
-	memory {
-		device_type = "memory";
-		reg = <0 0 0 0>;
-	};
+	/* SOC compatibility */
+	compatible = "al,alpine";
 
 	/* CPU Configuration */
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		enable-method = "al,alpine-smp";
 
 		cpu@0 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
 			reg = <0>;
-			clocks = <&cpuclk>;
-			clock-names = "cpu";
-			clock-frequency = <0>; /* Filled by U-Boot */
+			clock-frequency = <1700000000>;
 		};
 
 		cpu@1 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
 			reg = <1>;
-			clocks = <&cpuclk>;
-			clock-names = "cpu";
-			clock-frequency = <0>; /* Filled by U-Boot */
+			clock-frequency = <1700000000>;
 		};
 
 		cpu@2 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
 			reg = <2>;
-			clocks = <&cpuclk>;
-			clock-names = "cpu";
-			clock-frequency = <0>; /* Filled by U-Boot */
+			clock-frequency = <1700000000>;
 		};
 
 		cpu@3 {
 			compatible = "arm,cortex-a15";
 			device_type = "cpu";
 			reg = <3>;
-			clocks = <&cpuclk>;
-			clock-names = "cpu";
-			clock-frequency = <0>; /* Filled by U-Boot */
+			clock-frequency = <1700000000>;
 		};
 	};
 
@@ -85,22 +70,22 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		compatible = "simple-bus";
-		interrupt-parent = <&gic_main>;
+		interrupt-parent = <&gic>;
 		ranges;
 
-		/* Architected Timer */
 		arch-timer {
 			compatible = "arm,cortex-a15-timer",
 				     "arm,armv7-timer";
-			interrupts = <1 13 0xf08>,
-				     <1 14 0xf08>,
-				     <1 11 0xf08>,
-				     <1 10 0xf08>;
+			interrupts =
+				<GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+				<GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
 			clock-frequency = <50000000>;
 		};
 
 		/* Interrupt Controller */
-		gic_main: gic_main {
+		gic: gic@fb001000 {
 			compatible = "arm,cortex-a15-gic";
 			#interrupt-cells = <3>;
 			#size-cells = <0>;
@@ -108,553 +93,78 @@
 			interrupt-controller;
 			reg = <0x0 0xfb001000 0x0 0x1000>,
 			      <0x0 0xfb002000 0x0 0x2000>,
-			      <0x0 0xfb004000 0x0 0x1000>,
+			      <0x0 0xfb004000 0x0 0x2000>,
 			      <0x0 0xfb006000 0x0 0x2000>;
-		    interrupts = <1 9 0xf04>;
+			interrupts =
+				<GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
 		};
 
-		/**
-		  * Secondary Interrupt Controller
-		  * Connected to main GIC PPI 15, all CPUs, high level
-		  */
-		/*gic_secondary {
-			compatible = "arm,cortex-a15-gic";
-			#interrupt-cells = <3>;
-			#size-cells = <0>;
-			#address-cells = <1>;
-			interrupt-controller;
-			reg = <0x0 0xfb009000 0x0 0x1000>,
-			      <0x0 0xfb00a000 0x0 0x100>;
-			interrupts = <1 15 0xf04>;
-		};*/
-
-		/* CPU Resume */
-		cpu_resume {
-			compatible = "annapurna-labs,al-cpu-resume";
+		/* CPU Resume registers */
+		cpu-resume@fbff5ec0 {
+			compatible = "al,alpine-cpu-resume";
 			reg = <0x0 0xfbff5ec0 0x0 0x30>;
 		};
 
-		ccu {
-			compatible = "annapurna-labs,al-ccu";
-			reg = <0x0 0xfb090000 0x0 0x10000>;
-			io_coherency = <1>;
-		};
-
 		/* North Bridge Service Registers */
-		nb_service {
-			compatible = "annapurna-labs,al-nb-service";
+		sysfabric-service@fb070000 {
+			compatible = "al,alpine-sysfabric-service", "syscon";
 			reg = <0x0 0xfb070000 0x0 0x10000>;
-			interrupts = <0 64 4  0 65 4  0 66 4  0 67 4>;
-			dev_ord_relax = <0>;
 		};
 
-		/* PBS Registers */
-		pbs {
-			compatible = "annapurna-labs,al-pbs";
-			reg = <0x0 0xfd8a8000 0x0 0x00001000>;
+		/* Performance Monitor Unit */
+		pmu {
+			compatible = "arm,cortex-a15-pmu";
+			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
-		/* MSIX Configuration */
-		msix {
+		uart0: uart@fd883000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd883000 0x0 0x1000>;
+			clock-frequency = <375000000>;
+			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+		};
+
+		uart1: uart@fd884000 {
+			compatible = "ns16550a";
+			reg = <0x0 0xfd884000 0x0 0x1000>;
+			clock-frequency = <375000000>;
+			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+		};
+
+		/* Internal PCIe Controller */
+		pcie@fbc00000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			#size-cells = <2>;
+			#address-cells = <3>;
+			#interrupt-cells = <1>;
+			reg = <0x0 0xfbc00000 0x0 0x100000>;
+			interrupt-map-mask = <0xf800 0 0 7>;
+			/* Add legacy interrupts for SATA devices only */
+			interrupt-map =	<0x4000 0 0 1 &gic 0 43 4>,
+					<0x4800 0 0 1 &gic 0 44 4>;
+
+			/* 32 bit non prefetchable memory space */
+			ranges = <0x02000000 0x0 0xfe000000 0x0 0xfe000000 0x0 0x1000000>;
+
+			bus-range = <0x00 0x00>;
+			msi-parent = <&msix>;
+		};
+
+		msix: msix@fbe00000 {
 			compatible = "al,alpine-msix";
 			reg = <0x0 0xfbe00000 0x0 0x100000>;
 			interrupt-controller;
 			msi-controller;
 			al,msi-base-spi = <96>;
 			al,msi-num-spis = <64>;
-		};
-
-		/* Performance Monitor Unit */
-		pmu {
-			compatible = "arm,cortex-a15-pmu";
-			interrupts = <0 68 4  0 69 4  0 70 4  0 71 4>;
-		};
-
-		/* Timer 0 */
-		timer0 {
-			compatible = "arm,sp804", "arm,primecell";
-			reg = <0x0 0xfd890000 0x0 0x1000>;
-			interrupts = <0 9 4>;	/* SPI 9, active high level */
-			clocks = <&sbclk>;
-			clock-names = "sbclk";
-		};
-
-		/* Timer 1 */
-		timer1 {
-			compatible = "arm,sp804", "arm,primecell";
-			reg = <0x0 0xfd891000 0x0 0x1000>;
-			interrupts = <0 10 4>;	/* SPI 10, active high level */
-			clocks = <&sbclk>;
-			clock-names = "sbclk";
-		};
-
-		/* Timer 2 */
-		timer2 {
-			compatible = "arm,sp804", "arm,primecell";
-			reg = <0x0 0xfd892000 0x0 0x1000>;
-			interrupts = <0 11 4>;	/* SPI 11, active high level */
-			clocks = <&sbclk>;
-			clock-names = "sbclk";
-		};
-
-		/* Timer 3 */
-		timer3 {
-			compatible = "arm,sp804", "arm,primecell";
-			reg = <0x0 0xfd893000 0x0 0x1000>;
-			interrupts = <0 12 4>;	/* SPI 12, active high level */
-			clocks = <&sbclk>;
-			clock-names = "sbclk";
-		};
-
-		/* WDT 0 */
-		wdt0 {
-			compatible = "arm,sp805", "arm,primecell";
-			reg = <0x0 0xfd88c000 0x0 0x1000>;
-			interrupts = <0 13 4>;	/* SPI 13, active high level */
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-		};
-
-		/* WDT 1 */
-		wdt1 {
-			compatible = "arm,sp805", "arm,primecell";
-			reg = <0x0 0xfd88d000 0x0 0x1000>;
-			interrupts = <0 14 4>;	/* SPI 14, active high level */
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-		};
-
-		/* WDT 2 */
-		wdt2 {
-			compatible = "arm,sp805", "arm,primecell";
-			reg = <0x0 0xfd88e000 0x0 0x1000>;
-			interrupts = <0 15 4>;	/* SPI 15, active high level */
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-		};
-
-		/* WDT 3 */
-		wdt3 {
-			compatible = "arm,sp805", "arm,primecell";
-			reg = <0x0 0xfd88f000 0x0 0x1000>;
-			interrupts = <0 16 4>;	/* SPI 16, active high level */
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-		};
-
-		/* I2C Preloader */
-		i2c-pld  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			reg = <0x0 0xfd880000  0x0 0x1000>;
-			interrupts = <0 21 4>;
-			clocks = <&sbclk>;
-			clock-frequency = <400000>;
-		};
-
-		/* I2C Generic */
-		i2c-gen  {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			reg = <0x0 0xfd894000  0x0 0x1000>;
-			interrupts = <0 8 4>;
-			clocks = <&sbclk>;
-			clock-frequency = <400000>;
-		};
-
-		/* GPIO 0 */
-		gpio0: gpio0 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd887000 0x0 0x1000>;
-			interrupts = <0 2 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <0>;
-		};
-
-		/* GPIO 1 */
-		gpio1: gpio1 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd888000 0x0 0x1000>;
-			interrupts = <0 3 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <8>;
-		};
-
-		/* GPIO 2 */
-		gpio2: gpio2 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd889000 0x0 0x1000>;
-			interrupts = <0 4 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <16>;
-		};
-
-		/* GPIO 3 */
-		gpio3: gpio3 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd88a000 0x0 0x1000>;
-			interrupts = <0 5 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <24>;
-		};
-
-		/* GPIO 4 */
-		gpio4: gpio4 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd88b000 0x0 0x1000>;
-			interrupts = <0 6 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <32>;
-		};
-
-		/* GPIO 5 */
-		gpio5: gpio5 {
-			#gpio-cells = <2>;
-			compatible = "arm,pl061", "arm,primecell";
-			gpio-controller;
-			reg = <0x0 0xfd897000 0x0 0x1000>;
-			interrupts = <0 7 4>;
-			clocks = <&sbclk>;
-			clock-names = "apb_pclk";
-			baseidx = <40>;
-		};
-
-		/* UART 0 */
-		uart0 {
-			compatible = "ns16550a";
-			reg = <0x0 0xfd883000 0x0 0x1000>;
-			clock-frequency = <0>; /* Filled by U-Boot */
-			interrupts = <0 17 4>; /* SPI 17, active high level */
-			reg-shift = <2>;
-			reg-io-width = <4>;
-		};
-
-		/* UART 1 */
-		uart1 {
-			compatible = "ns16550a";
-			reg = <0x0 0xfd884000 0x0 0x1000>;
-			clock-frequency = <0>; /* Filled by U-Boot */
-			interrupts = <0 18 4>; /* SPI 18, active high level */
-			reg-shift = <2>;
-			reg-io-width = <4>;
-		};
-
-		/* UART 2 */
-		uart2 {
-			compatible = "ns16550a";
-			reg = <0x0 0xfd885000 0x0 0x1000>;
-			clock-frequency = <0>; /* Filled by U-Boot */
-			interrupts = <0 19 4>; /* SPI 19, active high level */
-			reg-shift = <2>;
-			reg-io-width = <4>;
-		};
-
-		/* UART 3 */
-		uart3 {
-			compatible = "ns16550a";
-			reg = <0x0 0xfd886000 0x0 0x1000>;
-			clock-frequency = <0>; /* Filled by U-Boot */
-			interrupts = <0 20 4>; /* SPI 20, active high level */
-			reg-shift = <2>;
-			reg-io-width = <4>;
-		};
-
-		/* Internal PCIe Controller */
-		pcie-internal {
-			compatible = "annapurna-labs,al-internal-pcie";
-			device_type = "pci";
-			#size-cells = <2>;
-			#address-cells = <3>;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&gic_main>;
-			interrupt-map-mask = <0xf800 0 0 7>;
-			interrupt-map = <0x3000 0 0 1 &gic_main 0 32 4>,
-					<0x3800 0 0 1 &gic_main 0 36 4>,
-					<0x4000 0 0 1 &gic_main 0 43 4>,
-					<0x4800 0 0 1 &gic_main 0 44 4>;
-				     /* -> CAUSE INt 128 to disapear !!!!!
-					<0x0000 0 0 1 &gic_main 0 96 4>,
-					<0x0800 0 0 1 &gic_main 0 112 4>,
-					<0x1000 0 0 1 &gic_main 0 128 4>,
-					<0x1800 0 0 1 &gic_main 0 144 4>,
-					<0x2000 0 0 1 &gic_main 0 160 4>,
-					<0x2800 0 0 1 &gic_main 0 176 4>,
-					<0x3000 0 0 1 &gic_main 0 32 4>,
-					<0x3800 0 0 1 &gic_main 0 36 4>,
-					<0x4000 0 0 1 &gic_main 0 43 4>,
-					<0x4800 0 0 1 &gic_main 0 44 4>; */
-
-			/* ranges:
-			 * - ECAM - non prefetchable config space
-			 * - 32 bit non prefetchable memory space
-			 */
-			ranges = <0x00000000 0x0 0xfbc00000 0x0 0xfbc00000 0x0 0x100000
-				  0x02000000 0x0 0xfe000000 0x0 0xfe000000 0x0 0x1000000>;
-
-			bus-range = <0x00 0x00>;
-		};
-
-		/* External PCIe Controller 0*/
-		pcie-external0 {
-			compatible = "annapurna-labs,al-pci";
-			reg = <0x0 0xfd800000 0x0 0x00020000>; /* controller 0 registers */
-			device_type = "pci";
-			#size-cells = <2>;
-			#address-cells = <3>;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&gic_main>;
-			interrupt-map-mask = <0x00 0 0 7>;
-			interrupt-map = <0x0000 0 0 1 &gic_main 0 40 4>;
-
-			/* ranges:
-			 * Controller 0:
-			 * - ECAM - non prefetchable config space: 2MB
-			 * - IO - IO port space 64KB, reserve 64KB from target memory windows
-			 *   real IO address on the pci bus starts at 0x10000
-			 * - 32 bit non prefetchable memory space: 128MB - 64KB
-			 */
-			ranges = <0x00000000 0x0 0xfb600000 0x0 0xfb600000 0x0 0x00200000
-				  0x01000000 0x0 0x00010000 0x0 0xe0000000 0x0 0x00010000
-				  0x02000000 0x0 0xe0010000 0x0 0xe0010000 0x0 0x07ff0000>;
-
-			bus-range = <0x00 0xff>;
-		};
-
-		/* External PCIe Controllers 1*/
-		pcie-external1 {
-			compatible = "annapurna-labs,al-pci";
-			reg = <0x0 0xfd820000 0x0 0x00020000>; /* controller 1 registers */
-			device_type = "pci";
-			#size-cells = <2>;
-			#address-cells = <3>;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&gic_main>;
-			interrupt-map-mask = <0x0 0 0 7>;
-			interrupt-map = <0x0000 0 0 1 &gic_main 0 41 4>;
-
-			/* ranges:
-			 * - ECAM - non prefetchable config space: 2MB
-			 * - IO - IO port space 64KB, reserve 64KB from target memory windows
-			 *   real IO address on the pci bus starts at 0x20000
-			 * - 32 bit non prefetchable memory space: 64MB - 64KB
-			 */
-			ranges = <0x00000000 0x0 0xfb800000 0x0 0xfb800000 0x0 0x00200000
-				  0x01000000 0x0 0x00020000 0x0 0xe8000000 0x0 0x00010000
-				  0x02000000 0x0 0xe8010000 0x0 0xe8010000 0x0 0x03ff0000>;
-
-			bus-range = <0x00 0xff>;
-		};
-
-		/* External PCIe Controllers 2*/
-		pcie-external2 {
-			compatible = "annapurna-labs,al-pci";
-			reg = <0x0 0xfd840000 0x0 0x00020000>; /* controller 2 registers */
-			device_type = "pci";
-			#size-cells = <2>;
-			#address-cells = <3>;
-			#interrupt-cells = <1>;
-			interrupt-parent = <&gic_main>;
-			interrupt-map-mask = <0x0 0 0 7>;
-			interrupt-map = <0x0000 0 0 1 &gic_main 0 42 4>;
-
-			/* ranges:
-			 * - ECAM - non prefetchable config space: 2MB
-			 * - IO - IO port space 64KB, reserve 64KB from target memory windows
-			 *   real IO address on the pci bus starts at 0x30000
-			 * - 32 bit non prefetchable memory space: 64MB - 64KB
-			 */
-			ranges = <0x00000000 0x0 0xfba00000 0x0 0xfba00000 0x0 0x00200000
-				  0x01000000 0x0 0x00030000 0x0 0xec000000 0x0 0x00010000
-				  0x02000000 0x0 0xec010000 0x0 0xec010000 0x0 0x03ff0000>;
-
-			bus-range = <0x00 0xff>;
-		};
-
-		/* Thermal sensor */
-		thermal {
-			compatible = "annapurna-labs,al-thermal";
-			reg = <0x0 0xfd860a00 0x0 0x00000100>;
-		};
-
-		/* NOR flash */
-		nor_flash {
-			compatible = "cfi-flash";
-			reg = <0x0 0xf4000000 0x0 0x4000000>;
-			bank-width = <1>;
-			device-width = <1>;
-
-			/* TODO: Add partitions */
-		};
-
-		/* NAND flash */
-		nand-flash {
-			compatible = "annapurna-labs,al-nand";
-			reg = <0x0 0xfa100000 0x0 0x00202000>;
-			interrupts = <0 1 4>;
-		};
-
-		/* SPI Bus */
-		spi {
-			compatible = "snps,dw-spi-mmio";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x0 0xfd882000 0x0 0x1000>;
-			interrupts = <0 23 4>;
-			num-chipselect = <4>;
-			bus-num = <0>;
-			clocks = <&sbclk>;
-			clock-names = "sbclk";
-		};
-
-		/* Clocks */
-		clocks {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			/* Reference clock */
-			refclk: refclk {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <24000000>; /* Filled by U-Boot */
-			};
-
-			/* South Bridge Clock */
-			sbclk: sbclk {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <1000000>; /* Filled by U-Boot */
-			};
-
-			/* North Bridge Clock */
-			nbclk: nbclk {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <1000000>; /* Filled by U-Boot */
-			};
-
-			/* CPU Clock */
-			cpuclk: cpuclk {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <1000000>; /* Filled by U-Boot */
-			};
-		};
-
-		/* SerDes */
-		serdes {
-			compatible = "annapurna-labs,al-serdes";
-			reg = <0x0 0xfd8c0000 0x0 0x1000>;
-		};
-
-		/* Memory Controller Registers */
-		mc {
-			compatible = "annapurna-labs,al-mc";
-			reg = <0x0 0xfb080000 0x0 0x00010000>;
-		};
-
-		/* Pin control (Multi usage I/O) */
-		pinctrl {
-			compatible = "annapurna-labs,al-pinctrl";
-			reg = <0x0 0xfd8a8000 0x0 0x00001000>;
-
-			if_nor_8: if_nor_8 { id = "if_nor_8"; arg = <0>; };
-			if_nor_16: if_nor_16 { id = "if_nor_16"; arg = <0>; };
-			if_nor_cs_0: if_nor_cs_0 { id = "if_nor_cs_0"; arg = <0>; };
-			if_nor_cs_1: if_nor_cs_1 { id = "if_nor_cs_1"; arg = <0>; };
-			if_nor_cs_2: if_nor_cs_2 { id = "if_nor_cs_2"; arg = <0>; };
-			if_nor_cs_3: if_nor_cs_3 { id = "if_nor_cs_3"; arg = <0>; };
-			if_nor_wp: if_nor_wp { id = "if_nor_wp"; arg = <0>; };
-			if_nand_8: if_nand_8 { id = "if_nand_8"; arg = <0>; };
-			if_nand_16: if_nand_16 { id = "if_nand_16"; arg = <0>; };
-			if_nand_cs_0: if_nand_cs_0 { id = "if_nand_cs_0"; arg = <0>; };
-			if_nand_cs_1: if_nand_cs_1 { id = "if_nand_cs_1"; arg = <0>; };
-			if_nand_cs_2: if_nand_cs_2 { id = "if_nand_cs_2"; arg = <0>; };
-			if_nand_cs_3: if_nand_cs_3 { id = "if_nand_cs_3"; arg = <0>; };
-			if_nand_wp: if_nand_wp { id = "if_nand_wp"; arg = <0>; };
-			if_sram_8: if_sram_8 { id = "if_sram_8"; arg = <0>; };
-			if_sram_16: if_sram_16 { id = "if_sram_16"; arg = <0>; };
-			if_sram_cs_0: if_sram_cs_0 { id = "if_sram_cs_0"; arg = <0>; };
-			if_sram_cs_1: if_sram_cs_1 { id = "if_sram_cs_1"; arg = <0>; };
-			if_sram_cs_2: if_sram_cs_2 { id = "if_sram_cs_2"; arg = <0>; };
-			if_sram_cs_3: if_sram_cs_3 { id = "if_sram_cs_3"; arg = <0>; };
-			if_sata_0_leds: if_sata_0_leds { id = "if_sata_0_leds"; arg = <0>; };
-			if_sata_1_leds: if_sata_1_leds { id = "if_sata_1_leds"; arg = <0>; };
-			if_eth_leds: if_eth_leds { id = "if_eth_leds"; arg = <0>; };
-			if_eth_gpio: if_eth_gpio { id = "if_eth_gpio"; arg = <0>; };
-			if_uart_1: if_uart_1 { id = "if_uart_1"; arg = <0>; };
-			if_uart_1_modem: if_uart_1_modem { id = "if_uart_1_modem"; arg = <0>; };
-			if_uart_2: if_uart_2 { id = "if_uart_2"; arg = <0>; };
-			if_uart_3: if_uart_3 { id = "if_uart_3"; arg = <0>; };
-			if_i2c_gen: if_i2c_gen { id = "if_i2c_gen"; arg = <0>; };
-			if_ulpi_0_rst_n: if_ulpi_0_rst_n { id = "if_ulpi_0_rst_n"; arg = <0>; };
-			if_ulpi_1_rst_n: if_ulpi_1_rst_n { id = "if_ulpi_1_rst_n"; arg = <0>; };
-			if_pci_ep_int_a: if_pci_ep_int_a { id = "if_pci_ep_int_a"; arg = <0>; };
-			if_pci_ep_reset_out: if_pci_ep_reset_out { id = "if_pci_ep_reset_out"; arg = <0>; };
-			if_spim_a_ss_1: if_spim_a_ss_1 { id = "if_spim_a_ss_1"; arg = <0>; };
-			if_spim_a_ss_2: if_spim_a_ss_2 { id = "if_spim_a_ss_2"; arg = <0>; };
-			if_spim_a_ss_3: if_spim_a_ss_3 { id = "if_spim_a_ss_3"; arg = <0>; };
-			if_ulpi_1_b: if_ulpi_1_b { id = "if_ulpi_1_b"; arg = <0>; };
-			if_gpio0: if_gpio0 { id = "if_gpio"; arg = <0>; };
-			if_gpio1: if_gpio1 { id = "if_gpio"; arg = <1>; };
-			if_gpio2: if_gpio2 { id = "if_gpio"; arg = <2>; };
-			if_gpio3: if_gpio3 { id = "if_gpio"; arg = <3>; };
-			if_gpio4: if_gpio4 { id = "if_gpio"; arg = <4>; };
-			if_gpio5: if_gpio5 { id = "if_gpio"; arg = <5>; };
-			if_gpio6: if_gpio6 { id = "if_gpio"; arg = <6>; };
-			if_gpio7: if_gpio7 { id = "if_gpio"; arg = <7>; };
-			if_gpio8: if_gpio8 { id = "if_gpio"; arg = <8>; };
-			if_gpio9: if_gpio9 { id = "if_gpio"; arg = <9>; };
-			if_gpio10: if_gpio10 { id = "if_gpio"; arg = <10>; };
-			if_gpio11: if_gpio11 { id = "if_gpio"; arg = <11>; };
-			if_gpio12: if_gpio12 { id = "if_gpio"; arg = <12>; };
-			if_gpio13: if_gpio13 { id = "if_gpio"; arg = <13>; };
-			if_gpio14: if_gpio14 { id = "if_gpio"; arg = <14>; };
-			if_gpio15: if_gpio15 { id = "if_gpio"; arg = <15>; };
-			if_gpio16: if_gpio16 { id = "if_gpio"; arg = <16>; };
-			if_gpio17: if_gpio17 { id = "if_gpio"; arg = <17>; };
-			if_gpio18: if_gpio18 { id = "if_gpio"; arg = <18>; };
-			if_gpio19: if_gpio19 { id = "if_gpio"; arg = <19>; };
-			if_gpio20: if_gpio20 { id = "if_gpio"; arg = <20>; };
-			if_gpio21: if_gpio21 { id = "if_gpio"; arg = <21>; };
-			if_gpio22: if_gpio22 { id = "if_gpio"; arg = <22>; };
-			if_gpio23: if_gpio23 { id = "if_gpio"; arg = <23>; };
-			if_gpio24: if_gpio24 { id = "if_gpio"; arg = <24>; };
-			if_gpio25: if_gpio25 { id = "if_gpio"; arg = <25>; };
-			if_gpio26: if_gpio26 { id = "if_gpio"; arg = <26>; };
-			if_gpio27: if_gpio27 { id = "if_gpio"; arg = <27>; };
-			if_gpio28: if_gpio28 { id = "if_gpio"; arg = <28>; };
-			if_gpio29: if_gpio29 { id = "if_gpio"; arg = <29>; };
-			if_gpio30: if_gpio30 { id = "if_gpio"; arg = <30>; };
-			if_gpio31: if_gpio31 { id = "if_gpio"; arg = <31>; };
-			if_gpio32: if_gpio32 { id = "if_gpio"; arg = <32>; };
-			if_gpio33: if_gpio33 { id = "if_gpio"; arg = <33>; };
-			if_gpio34: if_gpio34 { id = "if_gpio"; arg = <34>; };
-			if_gpio35: if_gpio35 { id = "if_gpio"; arg = <35>; };
-			if_gpio36: if_gpio36 { id = "if_gpio"; arg = <36>; };
-			if_gpio37: if_gpio37 { id = "if_gpio"; arg = <37>; };
-			if_gpio38: if_gpio38 { id = "if_gpio"; arg = <38>; };
-			if_gpio39: if_gpio39 { id = "if_gpio"; arg = <39>; };
-			if_gpio40: if_gpio40 { id = "if_gpio"; arg = <40>; };
-			if_gpio41: if_gpio41 { id = "if_gpio"; arg = <41>; };
-			if_gpio42: if_gpio42 { id = "if_gpio"; arg = <42>; };
-			if_gpio43: if_gpio43 { id = "if_gpio"; arg = <43>; };
 		};
 	};
 };

@@ -237,11 +237,6 @@
 		pagesize = <16>;
 	};
 
-	hwmon: gsc@29 {
-		compatible = "gw,gsp";
-		reg = <0x29>;
-	};
-
 	dts1672: rtc@68 {
 		compatible = "dallas,ds1672";
 		reg = <0x68>;

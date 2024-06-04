@@ -349,7 +349,3 @@
 &pinctrl {
 	compatible = "marvell,mv78260-pinctrl";
 };
-
-&pinctrl {
-	compatible = "marvell,mv78260-pinctrl";
-};

@@ -15,37 +15,14 @@
  */
 
 #include "qcom-ipq4019.dtsi"
-#include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
 	model = "Qualcomm Technologies, Inc. IPQ4019/AP-DK01.1";
 	compatible = "qcom,ipq4019";
 
 	soc {
-		tcsr@194b000 {
-			/* select hostmode */
-			compatible = "qcom,tcsr";
-			reg = <0x194b000 0x100>;
-			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		rng@22000 {
 			status = "ok";
-		};
-
-		ess_tcsr@1953000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1953000 0x1000>;
-			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
-		};
-
-		tcsr@1949000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1949000 0x100>;
-			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
-		};
-
-		tcsr@1957000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1957000 0x100>;
-			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
 		pinctrl@1000000 {
@@ -89,6 +66,14 @@
 			pinctrl-names = "default";
 			status = "ok";
 			cs-gpios = <&tlmm 54 0>;
+
+			mx25l25635e@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0>;
+				compatible = "mx25l25635e";
+				spi-max-frequency = <24000000>;
+			};
 		};
 
 		serial@78af000 {
@@ -109,48 +94,12 @@
 			status = "ok";
 		};
 
-		usb3_ss_phy: ssphy@9a000 {
-			status = "ok";
-		};
-
-		usb3_hs_phy: hsphy@a6000 {
-			status = "ok";
-		};
-
-		usb3: usb3@8af8800 {
-			status = "ok";
-		};
-
-		usb2_hs_phy: hsphy@a8000 {
-			status = "ok";
-		};
-
-		usb2: usb2@60f8800 {
-			status = "ok";
-		};
-
-		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
-
 		wifi@a000000 {
-			status = "okay";
+			status = "ok";
 		};
 
 		wifi@a800000 {
-			status = "okay";
+			status = "ok";
 		};
 	};
 };

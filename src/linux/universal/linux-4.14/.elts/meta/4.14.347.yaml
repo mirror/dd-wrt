@@ -1,0 +1,226 @@
+7a2c5465ee29605fd2c0c2a6d22f8e9787cc93b4:
+  title: 'dmaengine: pl330: issue_pending waits until WFP state'
+  mainline: 22a9d9585812440211b0b34a6bc02ade62314be4
+  upstream: e588495c211a58a593c0b35bde105e50a80f1587
+1be5dfb4ae2059ec9c905e05c28525082863a716:
+  title: 'dmaengine: Revert "dmaengine: pl330: issue_pending waits until WFP state"'
+  mainline: afc89870ea677bd5a44516eb981f7a259b74280c
+  upstream: 15097ae79c7231684158d7fd6306853e7042979d
+de3ac5d3e761015a4e4ad472aac54347deae0b60:
+  title: 'wifi: nl80211: don''t free NULL coalescing rule'
+  mainline: 801ea33ae82d6a9d954074fbcf8ea9d18f1543a7
+  upstream: 327382dc0f16b268950b96e0052595efd80f7b0a
+52cab27f08d73efcb58ca69bb59475c2809abb21:
+  title: 'net: slightly optimize eth_type_trans'
+  mainline: 45cf7959c30402d7c4ea43568a6f1bab0ba6ca63
+  upstream: a82fcda87f9ba6ca65d8c0020de72237d5462766
+269a33dfbc3eaaf920f438cc933fce8ca1d6293e:
+  title: 'net: create netdev->dev_addr assignment helpers'
+  mainline: 48eab831ae8b9f7002a533fa4235eed63ea1f1a3
+36bdbf757991cf19077cac99ee29f44e4164ffcf:
+  title: 'ethernet: add a helper for assigning port addresses'
+  mainline: e80094a473eefad9d856ce3ab0d7afdbb64800c4
+  upstream: 51fcea1b7c52abc3ff5af354e199731582a34ebf
+ba10f69d1e654aff90e015383bfd641dc8556e5a:
+  title: 'ethernet: Add helper for assigning packet type when dest address does not match device address'
+  mainline: 6e159fd653d7ebf6290358e0330a0cb8a75cf73b
+  upstream: 3d63a6c77b51c1a7cef2987a7f70ec9d91b04d95
+bdf517d3858a65b97d7f0d7df1acbc6ba5766bfd:
+  title: 'pinctrl: core: delete incorrect free in pinctrl_enable()'
+  mainline: 5038a66dad0199de60e5671603ea6623eb9e5c79
+  upstream: 735f4c6b6771eafe336404c157ca683ad72a040d
+525562e5df5cc30f7d0e86974730550a7753941f:
+  title: 'power: rt9455: hide unused rt9455_boost_voltage_values'
+  mainline: 452d8950db3e839aba1bb13bc5378f4bac11fa04
+  upstream: c8d8b7f650b5bfddd9ac8b39fa3455716ddcbaff
+b290fe8f786a5c701623bc3a4522f728ff6511ad:
+  title: 'pinctrl: devicetree: fix refcount leak in pinctrl_dt_to_map()'
+  mainline: a0cedbcc8852d6c77b00634b81e41f17f29d9404
+  upstream: 06780473cb8a858d1d6cab2673e021b072a852d1
+6e4174bf8ee5e72fa57859378ac90172b5a4ee88:
+  title: 'bna: ensure the copied buf is NUL terminated'
+  mainline: 8c34096c7fdf272fd4c0c37fe411cd2e3ed0ee9f
+  upstream: bd502ba81cd1d515deddad7dbc6b812b14b97147
+945365c6ab9e246eaa46aa79d0e090c43e983191:
+  title: 'nsh: Restore skb->{protocol,data,mac_header} for outer header in nsh_gso_segment().'
+  mainline: 4b911a9690d72641879ea6d13cce1de31d346d79
+  upstream: a7c2c3c1caabcb4a3d6c47284c397507aaf54fe9
+f3cbc47fef3fd6e96761cb7986e48698353fc74c:
+  title: 'net l2tp: drop flow hash on forward'
+  mainline: 42f853b42899d9b445763b55c3c8adc72be0f0e1
+  upstream: b6e4b93edc0100a88d7d4f3140bba25a529c5166
+f2c7931f8a50c6da3a1f5ec513b2f8b3c52919e0:
+  title: 'net: dsa: mv88e6xxx: Add number of MACs in the ATU'
+  mainline: d9ea56206c4df77175321874544eb4ca48c0bac8
+  upstream: 4b1f3253bfa5a709d0c0003e3272c5a284a36771
+18b5e4742fea56bceaac0d8ad276711a0f7c8062:
+  title: 'net: dsa: mv88e6xxx: Fix name of switch 88E6141'
+8bba49c34aecc6bed2a9a282710963f4af19460d:
+  title: 'net: dsa: mv88e6xxx: Fix number of databases for 88E6141 / 88E6341'
+  mainline: b9a61c20179fda7bdfe2c1210aa72451991ab81a
+  upstream: 0c27eb63bd9feaf34ec3049873c1b1889b569a85
+74703c09c98e094af2885ff2ff052d66b2731fe4:
+  title: 'net: bridge: fix multicast-to-unicast with fraglist GSO'
+  mainline: 59c878cbcdd80ed39315573b3511d0acfd3501b5
+  upstream: 01386957ca757e31fb66caceb303f71f9e577b83
+f6d438b693a934d982288ee2eee89e9e30bb8a18:
+  title: 'tipc: fix a possible memleak in tipc_buf_append'
+  mainline: 97bf6f81b29a8efaf5d0983251a7450e5794370d
+  upstream: 01cd1b7b685751ee422d00d050292a3d277652d6
+17f4f66e30c9de03ade16f70122bbab83424be13:
+  title: 'scsi: lpfc: Update lpfc_ramp_down_queue_handler() logic'
+  mainline: bb011631435c705cdeddca68d5c85fd40a4320f9
+  upstream: b241595d3d09d24c60cd9e594dc81fa1b0f6b280
+4f09d935a3265126515304a5496b7dee43998e85:
+  title: 'wifi: mac80211: fix ieee80211_bss_*_flags kernel-doc'
+  mainline: 774f8841f55d7ac4044c79812691649da203584a
+  upstream: fd10730c905db4e7984109f1342d9aa43ee63c8f
+b6f6bed5092bdbc36b99ee09a6b07a00bf0f6012:
+  title: 'net: mark racy access on sk->sk_rcvbuf'
+  mainline: c2deb2e971f5d9aca941ef13ee05566979e337a4
+  upstream: 9e7538cb8131946817218f793ceb334c63cfcdb8
+e5f7fdcb7c0455dc9dd4d9de1729261dc7f215a2:
+  title: 'scsi: bnx2fc: Remove spin_lock_bh while releasing resources after upload'
+  mainline: c214ed2a4dda35b308b0b28eed804d7ae66401f9
+  upstream: 468f3e3c15076338367b0945b041105b67cf31e3
+7a1f974c7345abc254eaad100b67e2093c68fcba:
+  title: 'ALSA: line6: Zero-initialize message buffers'
+  mainline: c4e51e424e2c772ce1836912a8b0b87cd61bc9d5
+  upstream: c957c9432f957007fef152a3efc9aabe4337ef4a
+c4cefd5df74348cc94d3b934e448c9dd5ab64416:
+  title: 'net: bcmgenet: Reset RBUF on first open'
+  mainline: 0a6380cb4c6b5c1d6dad226ba3130f9090f0ccea
+  upstream: 510e7b18fdad4b55849d7a73b8ff2c3e8ad2f7af
+532051585e477a5ef3e62ad8f006288b18cd5727:
+  title: 'ata: sata_gemini: Check clk_enable() result'
+  mainline: e85006ae7430aef780cc4f0849692e266a102ec0
+  upstream: 47325095299e50d274da30525f7b41d638c22a8e
+3b969e6e4d466989104ad6d6f95296b9e9f37d54:
+  title: 'firewire: ohci: mask bus reset interrupts between ISR and bottom half'
+  mainline: 752e3c53de0fa3b7d817a83050b6699b8e9c6ec9
+  upstream: b3948c69d60279fce5b2eeda92a07d66296c8130
+5c0a4f90868a9e879228c6ed8d058ee8f1c70213:
+  title: 'tools/power turbostat: Fix added raw MSR output'
+  mainline: e5f4e68eed85fa8495d78cd966eecc2b27bb9e53
+  upstream: e13c8b6b8675c7848e54145b77e7c0d2c52a3422
+096fb209120164d95c7046009ee24600fdb0eb43:
+  title: 'tools/power turbostat: Fix Bzy_MHz documentation typo'
+  mainline: 0b13410b52c4636aacb6964a4253a797c0fa0d16
+  upstream: 5225091f94af36e1dddc5bc71abd317dcac4847e
+89b804f254ae731be5f86e671b3ac126f2f452a8:
+  title: 'scsi: target: Fix SELinux error when systemd-modules loads the target module'
+  mainline: 97a54ef596c3fd24ec2b227ba8aaf2cf5415e779
+  upstream: 2c9cb7a564bdd454df694b8e08eecbf925199eac
+3fc20d8d310b70b29dca23bf8733cd18d08e1ec4:
+  title: 'selftests: timers: Fix valid-adjtimex signed left-shift undefined behavior'
+  mainline: 076361362122a6d8a4c45f172ced5576b2d4a50d
+  upstream: 968908c39d985bc636e069769772155f66586664
+99b4d7e3ea1c9056962bafc600bbed0ba6035e91:
+  title: 'fs/9p: only translate RWX permissions for plain 9P2000'
+  mainline: cd25e15e57e68a6b18dc9323047fe9c68b99290b
+  upstream: e90bc596a74bb905e0a45bf346038c3f9d1e868d
+83f6d606db87a09db262083d62866aa1eb8309e2:
+  title: 'fs/9p: translate O_TRUNC into OTRUNC'
+  mainline: 87de39e70503e04ddb58965520b15eb9efa7eef3
+  upstream: 0ce2676013818e62b18504d39211b65d8b54bc24
+8b2c6a57cf512e211fdeb0bd08938647547b7639:
+  title: '9p: explicitly deny setlease attempts'
+  mainline: 7a84602297d36617dbdadeba55a2567031e5165b
+  upstream: 1b90be6698e8d67a2edb8d260e9654d539e7cb51
+48c6238101a2be011c58503b7fbe9c6ded8afac3:
+  title: 'gpio: wcove: Use -ENOTSUPP consistently'
+  mainline: 0c3b532ad3fbf82884a2e7e83e37c7dcdd4d1d99
+  upstream: a0c966b4d7fe7d701d31aebbd3cc32d1e7ee266e
+d7cb3d68d0dd185840ff94aca7e798229de8d0dc:
+  title: 'gpio: crystalcove: Use -ENOTSUPP consistently'
+  mainline: ace0ebe5c98d66889f19e0f30e2518d0c58d0e04
+  upstream: e4c744a9c1da845faecba1532ba70154630b94ed
+7fdb44bf63d8d7e30340c10846aeaeeeb9530ba5:
+  title: 'fs/9p: drop inodes immediately on non-.L too'
+  mainline: 7fd524b9bd1be210fe79035800f4bd78a41b349f
+  upstream: cc3d6fbd645449298d03d96006e3e9bcae00bc1a
+4d26ff1d302a1cfb1a6ec136b4e88b18605a266a:
+  title: 'net:usb:qmi_wwan: support Rolling modules'
+  mainline: d362046021ea122309da8c8e0b6850c792ca97b5
+  upstream: a1a3346ef3e9a7fa0954903355bc4366e72da9a3
+22dc505fb63ec90f4f89fd3f6b58cad1c68e059c:
+  title: 'tcp: remove redundant check on tskb'
+  mainline: d1edc085559744fbda7a55e97eeae8bd6135a11b
+  upstream: 6f7082e284ec3fa32694e5704da510194229ef12
+426be5e0e2e245b5f7aa5c8b735f7350e41e3ba7:
+  title: 'tcp: defer shutdown(SEND_SHUTDOWN) for TCP_SYN_RECV sockets'
+  mainline: 94062790aedb505bdda209b10bea47b294d6394f
+  upstream: 34e41a031fd7523bf1cd00a2adca2370aebea270
+8f75b925397684e4842eed1ae96fa57c441bd283:
+  title: 'Bluetooth: Fix use-after-free bugs caused by sco_sock_timeout'
+  mainline: 483bc08181827fc475643272ffb69c533007e546
+  upstream: 1b33d55fb7355e27f8c82cd4ecd560f162469249
+db1b3cb8b825fb48230e12d00652500c9fa29e2e:
+  title: 'Bluetooth: l2cap: fix null-ptr-deref in l2cap_chan_timeout'
+  mainline: adf0398cee86643b8eacde95f17d073d022f782c
+  upstream: e137e2ba96e51902dc2878131823a96bf8e638ae
+5301db4a62df009136d5e53d6c9daf4d35a0049d:
+  title: 'rtnetlink: Correct nested IFLA_VF_VLAN_LIST attribute validation'
+  mainline: 1aec77b2bb2ed1db0f5efc61c4c1ca3813307489
+  upstream: 8ac69ff2d0d5be9734c4402de932aa3dc8549c1a
+ada1bc85dc1c41f4d40845ea46ef94553db632a3:
+  title: 'phonet: fix rtm_phonet_notify() skb allocation'
+  mainline: d8cac8568618dcb8a51af3db1103e8d4cc4aeea7
+  upstream: ec1f71c05caeba0f814df77e0f511d8b4618623a
+b497c0ef92d390bcb8fa79846d2a02509e17d071:
+  title: 'net: bridge: use DEV_STATS_INC()'
+  mainline: 44bdb313da57322c9b3c108eb66981c6ec6509f4
+71ccd14baaa895a643aac754b686592608eda7da:
+  title: 'net: bridge: fix corrupted ethernet header on multicast-to-unicast'
+  mainline: 86b29d830ad69eecff25b22dc96c14c6573718e6
+  upstream: e96b4e3e5e2d03e72d251aa46853cf609f4f8960
+3868d9c979084977fa44b477b1daed205ca5224b:
+  title: 'net/ipv6: Refactor fib6_rule_action'
+fd6963c88a807bea816c6b6eed4896715ac5c552:
+  title: 'ipv6: fib6_rules: avoid possible NULL dereference in fib6_rule_action()'
+  mainline: d101291b2681e5ab938554e3e323f7a7ee33e3aa
+  upstream: 4a5a573387da6a6b23a4cc62147453ff1bc32afa
+40d8d26e718b40b76be38e01998d92e982e6fe36:
+  title: 'af_unix: Do not use atomic ops for unix_sk(sk)->inflight.'
+  mainline: 97af84a6bba2ab2b9c704c08e67de3b5ea551bb2
+  upstream: c8a2b1f7208b0ea0a4ad4355e0510d84f508a9ff
+e987e6352bc9cbc7d925c7110aedd4c254bce439:
+  title: 'af_unix: Fix garbage collector racing against connect()'
+  mainline: 47d8ac011fe1c9251070e1bd64cb10b48193ec51
+  upstream: a36ae0ec2353015f0f6762e59f4c2dbc0c906423
+3e595e41a1d31b9dad72dc959b6e85bae59c62a9:
+  title: 'firewire: nosy: ensure user_length is taken into account when fetching packet contents'
+  mainline: 38762a0763c10c24a4915feee722d7aa6e73eb98
+  upstream: 67f34f093c0f7bf33f5b4ae64d3d695a3b978285
+8ed9c2744b2925a670e1cacb329cf26029bad6b0:
+  title: 'usb: gadget: composite: fix OS descriptors w_value logic'
+  mainline: ec6ce7075ef879b91a8710829016005dc8170f17
+  upstream: c037e0ebc0cabb1906203ca3322ad9dc7eeddc8e
+9c25fd19c4e377b891db0435e4ebcb264714bde7:
+  title: 'usb: gadget: f_fs: Fix a race condition when processing setup packets.'
+  mainline: 0aea736ddb877b93f6d2dd8cf439840d6b4970a9
+  upstream: af3f22e07de457965352950d1a535edbf84444f0
+5fc482f94740a21c8101f0f7f01d7b42a895efc1:
+  title: 'tipc: fix UAF in error path'
+  mainline: 080cbb890286cd794f1ee788bbc5463e2deb7c2b
+  upstream: e19ec8ab0e25bc4803d7cc91c84e84532e2781bd
+8aa195d14b00d30a14b28f066a0c0ca21d1b3bae:
+  title: 'dyndbg: fix old BUG_ON in >control parser'
+  mainline: 00e7d3bea2ce7dac7bee1cf501fb071fd0ea8f6c
+  upstream: 3c718bddddca9cbef177ac475b94c5c91147fb38
+9804a24b7ac34a1ce3cbb9914940853a59997055:
+  title: 'drm/vmwgfx: Fix invalid reads in fence signaled events'
+  mainline: a37ef7613c00f2d72c8fc08bd83fb6cc76926c8c
+  upstream: 2f527e3efd37c7c5e85e8aa86308856b619fa59f
+cc156d9fc5bcab07f124ade0fb47174c7c1efb65:
+  title: 'net: fix out-of-bounds access in ops_init'
+  mainline: a26ff37e624d12e28077e5b24d2b264f62764ad6
+  upstream: 3cdc34d76c4f777579e28ad373979d36c030cfd3
+bade56293ac77e3f0c05d39b9719cf42e75a7077:
+  title: 'af_unix: Suppress false-positive lockdep splat for spin_lock() in __unix_gc().'
+  mainline: 1971d13ffa84a551d29a81fdf5b5ec5be166ac83
+  upstream: b29dcdd0582c00cd6ee0bd7c958d3639aa9db27f
+7410069cb98b2623f694bc855a997f3836900f56:
+  title: 'RDS: IB: Use DEFINE_PER_CPU_SHARED_ALIGNED for rds_ib_stats'
+4a89fa4873851d33bed1eee79f5009cef636e526:
+  title: 'rds: Fix build regression.'

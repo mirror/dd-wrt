@@ -154,11 +154,6 @@
 		#gpio-cells = <2>;
 	};
 
-	hwmon: gsc@29 {
-		compatible = "gw,gsp";
-		reg = <0x29>;
-	};
-
 	rtc: ds1672@68 {
 		compatible = "dallas,ds1672";
 		reg = <0x68>;

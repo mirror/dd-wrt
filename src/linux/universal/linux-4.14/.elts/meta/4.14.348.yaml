@@ -1,0 +1,18 @@
+ebc7ed8686acc9ab4fc68b9c9ad601b094c37a9c:
+  title: 'Revert "selftests: mm: fix map_hugetlb failure on 64K page size systems"'
+dcd987848b62bdf1bbc0a44b0af4d42c364e8d1e:
+  title: 'dm: limit the number of targets and parameter size area'
+  mainline: bd504bcfec41a503b32054da5472904b404341a4
+  upstream: 1ddc0c3f4996c4ca1216ede1fa7699a803204590
+30741c3b9f4e080264a6b52a95391902a9b71108:
+  title: 'btrfs: add missing mutex_unlock in btrfs_relocate_sys_chunks()'
+  mainline: 9af503d91298c3f2945e73703f0e00995be08c30
+  upstream: 6ffbcb3704046668ede6551b236960597d71a005
+1d8ba83736394d3167acb51f49623624d74ac1e0:
+  title: 'serial: kgdboc: Fix NMI-safety problems from keyboard reset code'
+  mainline: b2aba15ad6f908d1a620fd97f6af5620c3639742
+  upstream: 512b9385201c7dec1b8d490711e9b578ae50525e
+fb341e5794b05a39dfaa8f073dc5a23072b09992:
+  title: 'docs: kernel_include.py: Cope with docutils 0.21'
+  mainline: d43ddd5c91802a46354fa4c4381416ef760676e2
+  upstream: 4b431a786f0ca86614b2d00e17b313956d7ef035

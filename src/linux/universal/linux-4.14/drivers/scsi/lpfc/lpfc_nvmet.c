@@ -1039,7 +1039,7 @@ lpfc_nvmet_setup_io_context(struct lpfc_hba *phba)
 		nvmewqe = ctx_buf->iocbq;
 		wqe = (union lpfc_wqe128 *)&nvmewqe->wqe;
 		/* Initialize WQE */
-		memset(wqe, 0, sizeof(union lpfc_wqe));
+		memset(wqe, 0, sizeof(*wqe));
 		/* Word 7 */
 		bf_set(wqe_ct, &wqe->generic.wqe_com, SLI4_CT_RPI);
 		bf_set(wqe_class, &wqe->generic.wqe_com, CLASS3);

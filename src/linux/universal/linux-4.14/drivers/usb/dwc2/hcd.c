@@ -2904,8 +2904,11 @@ enum dwc2_transaction_type dwc2_hcd_select_transactions(
 			hsotg->available_host_channels--;
 		}
 		qh = list_entry(qh_ptr, struct dwc2_qh, qh_list_entry);
-		if (dwc2_assign_and_init_hc(hsotg, qh))
+		if (dwc2_assign_and_init_hc(hsotg, qh)) {
+			if (hsotg->params.uframe_sched)
+				hsotg->available_host_channels++;
 			break;
+		}
 
 		/*
 		 * Move the QH from the periodic ready schedule to the
@@ -2938,8 +2941,11 @@ enum dwc2_transaction_type dwc2_hcd_select_transactions(
 			hsotg->available_host_channels--;
 		}
 
-		if (dwc2_assign_and_init_hc(hsotg, qh))
+		if (dwc2_assign_and_init_hc(hsotg, qh)) {
+			if (hsotg->params.uframe_sched)
+				hsotg->available_host_channels++;
 			break;
+		}
 
 		/*
 		 * Move the QH from the non-periodic inactive schedule to the
@@ -4343,6 +4349,8 @@ void dwc2_host_complete(struct dwc2_hsotg *hsotg, struct dwc2_qtd *qtd,
 			 urb->actual_length);
 
 	if (usb_pipetype(urb->pipe) == PIPE_ISOCHRONOUS) {
+		if (!hsotg->params.dma_desc_enable)
+			urb->start_frame = qtd->qh->start_active_frame;
 		urb->error_count = dwc2_hcd_urb_get_error_count(qtd->urb);
 		for (i = 0; i < urb->number_of_packets; ++i) {
 			urb->iso_frame_desc[i].actual_length =
@@ -5478,9 +5486,16 @@ int dwc2_backup_host_registers(struct dwc2_hsotg *hsotg)
 	/* Backup Host regs */
 	hr = &hsotg->hr_backup;
 	hr->hcfg = dwc2_readl(hsotg->regs + HCFG);
+	hr->hflbaddr = dwc2_readl(hsotg->regs + HFLBADDR);
 	hr->haintmsk = dwc2_readl(hsotg->regs + HAINTMSK);
-	for (i = 0; i < hsotg->params.host_channels; ++i)
+	for (i = 0; i < hsotg->params.host_channels; ++i) {
+		hr->hcchar[i] = dwc2_readl(hsotg->regs + HCCHAR(i));
+		hr->hcsplt[i] = dwc2_readl(hsotg->regs + HCSPLT(i));
 		hr->hcintmsk[i] = dwc2_readl(hsotg->regs + HCINTMSK(i));
+		hr->hctsiz[i] = dwc2_readl(hsotg->regs + HCTSIZ(i));
+		hr->hcidma[i] = dwc2_readl(hsotg->regs + HCDMA(i));
+		hr->hcidmab[i] = dwc2_readl(hsotg->regs + HCDMAB(i));
+	}
 
 	hr->hprt0 = dwc2_read_hprt0(hsotg);
 	hr->hfir = dwc2_readl(hsotg->regs + HFIR);
@@ -5513,10 +5528,17 @@ int dwc2_restore_host_registers(struct dwc2_hsotg *hsotg)
 	hr->valid = false;
 
 	dwc2_writel(hr->hcfg, hsotg->regs + HCFG);
+	dwc2_writel(hr->hflbaddr, hsotg->regs + HFLBADDR);
 	dwc2_writel(hr->haintmsk, hsotg->regs + HAINTMSK);
 
-	for (i = 0; i < hsotg->params.host_channels; ++i)
+	for (i = 0; i < hsotg->params.host_channels; ++i) {
+		dwc2_writel(hr->hcchar[i], hsotg->regs + HCCHAR(i));
+		dwc2_writel(hr->hcsplt[i], hsotg->regs + HCSPLT(i));
 		dwc2_writel(hr->hcintmsk[i], hsotg->regs + HCINTMSK(i));
+		dwc2_writel(hr->hctsiz[i], hsotg->regs + HCTSIZ(i));
+		dwc2_writel(hr->hcidma[i], hsotg->regs + HCDMA(i));
+		dwc2_writel(hr->hcidmab[i], hsotg->regs + HCDMAB(i));
+	}
 
 	dwc2_writel(hr->hprt0, hsotg->regs + HPRT0);
 	dwc2_writel(hr->hfir, hsotg->regs + HFIR);

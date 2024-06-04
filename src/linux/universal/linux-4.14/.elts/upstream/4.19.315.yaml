@@ -1,0 +1,70 @@
+aa62ab6ada92ba8780aa9355184720ee950242a7:
+  title: 'Revert "selftests: mm: fix map_hugetlb failure on 64K page size systems"'
+1ddc0c3f4996c4ca1216ede1fa7699a803204590:
+  title: 'dm: limit the number of targets and parameter size area'
+  mainline: bd504bcfec41a503b32054da5472904b404341a4
+  backport: dcd987848b62bdf1bbc0a44b0af4d42c364e8d1e
+6ffbcb3704046668ede6551b236960597d71a005:
+  title: 'btrfs: add missing mutex_unlock in btrfs_relocate_sys_chunks()'
+  mainline: 9af503d91298c3f2945e73703f0e00995be08c30
+  backport: 30741c3b9f4e080264a6b52a95391902a9b71108
+e57b1e9a69dfc0cad4f338115a11ea676ec52447:
+  title: 'tracing: Simplify creation and deletion of synthetic events'
+  mainline: faacb361f271be4baf2d807e2eeaba87e059225f
+  skipped: not applicable to 4.14
+7d00580499a839de612fa06340141c5ae1018fb2:
+  title: 'tracing: Add unified dynamic event framework'
+  mainline: 5448d44c38557fc15d1c53b608a9c9f0e1ca8f86
+  skipped: not applicable to 4.14
+73b24eeb0eb3b349b33f8e2d8f5ef9c839b51fde:
+  title: 'tracing: Use dyn_event framework for synthetic events'
+  mainline: 7bbab38d07f3185fddf6fce126e2239010efdfce
+  skipped: not applicable to 4.14
+8f7139ab2b533aa03c5c8b7cd5f3119405e605e7:
+  title: 'tracing: Remove unneeded synth_event_mutex'
+  mainline: 0e2b81f7b52a1c1a8c46986f9ca01eb7b3c421f8
+  skipped: not applicable to 4.14
+13b957b785b0c58b99608c8b677368ed14e973ce:
+  title: 'tracing: Consolidate trace_add/remove_event_call back to the nolock functions'
+  mainline: 7e1413edd6194a9807aa5f3ac0378b9b4b9da879
+  skipped: not applicable to 4.14
+1415e7a48bb2a4418495fa2c6d94bbcb0b23ff33:
+  title: 'string.h: Add str_has_prefix() helper function'
+  mainline: 72921427d46bf9731a1ab7864adc64c43dfae29f
+  skipped: not applicable to 4.14
+03aacb9039bfd4ec096e6b2c91cd749242ed968e:
+  title: 'tracing: Use str_has_prefix() helper for histogram code'
+  mainline: 754481e6954cbef53f8bc4412ad48dde611e21d3
+  skipped: not applicable to 4.14
+b2aba66d3117e19481a4ac2f7263b78e1a2f5d7e:
+  title: 'tracing: Use str_has_prefix() instead of using fixed sizes'
+  mainline: b6b2735514bcd70ad1556a33892a636b20ece671
+  skipped: not applicable to 4.14
+647c999c9e03097855e64a409a297cef6422ab65:
+  title: 'tracing: Have the historgram use the result of str_has_prefix() for len of prefix'
+  mainline: 036876fa56204ae0fa59045bd6bbb2691a060633
+  skipped: not applicable to 4.14
+5dc8fe9c75f4ad8dfadef2e269b6e8f67a75c330:
+  title: 'tracing: Refactor hist trigger action code'
+  mainline: 7d18a10c316783357fb1b2b649cfcf97c70a7bee
+  skipped: not applicable to 4.14
+93b9409a082d1662b5ec8d5b6a6c47ab5dbecd9f:
+  title: 'tracing: Split up onmatch action data'
+  mainline: c3e49506a0f426a850675e39419879214060ca8b
+  skipped: not applicable to 4.14
+19ff3696807411eb05a3ece07397416ddb6c8263:
+  title: 'tracing: Generalize hist trigger onmax and save action'
+  mainline: 466f4528fbc692ea56deca278fa6aeb79e6e8b21
+  skipped: not applicable to 4.14
+3fe17266dba8f84e12758f1f6d057e733d2b52a8:
+  title: 'tracing: Remove unnecessary var_ref destroy in track_data_destroy()'
+  mainline: ff9d31d0d46672e201fc9ff59c42f1eef5f00c77
+  skipped: not applicable to 4.14
+512b9385201c7dec1b8d490711e9b578ae50525e:
+  title: 'serial: kgdboc: Fix NMI-safety problems from keyboard reset code'
+  mainline: b2aba15ad6f908d1a620fd97f6af5620c3639742
+  backport: 1d8ba83736394d3167acb51f49623624d74ac1e0
+4b431a786f0ca86614b2d00e17b313956d7ef035:
+  title: 'docs: kernel_include.py: Cope with docutils 0.21'
+  mainline: d43ddd5c91802a46354fa4c4381416ef760676e2
+  backport: fb341e5794b05a39dfaa8f073dc5a23072b09992

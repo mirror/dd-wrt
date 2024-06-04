@@ -1,0 +1,308 @@
+04720ea2e6c64459a90ca28570ea78335eccd924:
+  title: 'batman-adv: Avoid infinite loop trying to resize local TT'
+  mainline: b1f532a3b1e6d2e5559c7ace49322922637a28aa
+  backport: e4f4588b3c0869ac39c79a84669bba92b50c2205
+89a32741f4217856066c198a4a7267bcdd1edd67:
+  title: 'Bluetooth: Fix memory leak in hci_req_sync_complete()'
+  mainline: 45d355a926ab40f3ae7bc0b0a00cb0e3e8a5a810
+  backport: fcab8bb833c33df8d7619a7c8367231f89577f70
+7b30bcac7f8bd82dcb9ee61d04926d286060a19f:
+  title: 'nouveau: fix function cast warning'
+  mainline: 185fdb4697cc9684a02f2fab0530ecdd0c2f15d4
+  backport: f67ff0072a70883c601e426a97085753f0ea4d23
+43be590456e1f3566054ce78ae2dbb68cbe1a536:
+  title: 'geneve: fix header validation in geneve[6]_xmit_skb'
+  mainline: d8a6213d70accb403b82924a1c229e733433a5ef
+  backport: 5f11455435b6294f64eb70b163dba59ba4239ea0
+3e2c1fbbb372005e98ac75a239ca02da3ef9ba5b:
+  title: 'ipv6: fib: hide unused ''pn'' variable'
+  mainline: 74043489fcb5e5ca4074133582b5b8011b67f9e7
+  skipped: should not be applied to 4.14
+0b48182b06f631781987c38be150d76b0f483923:
+  title: 'ipv4/route: avoid unused-but-set-variable warning'
+  mainline: cf1b7201df59fb936f40f4a807433fe3f2ce310a
+  backport: 016fcada2b407eccf84eb18626994945ee51f78c
+b4b3b69a19016d4e7fbdbd1dbcc184915eb862e1:
+  title: 'ipv6: fix race condition between ipv6_get_ifaddr and ipv6_del_addr'
+  mainline: 7633c4da919ad51164acbf1aa322cc1a3ead6129
+  backport: fee87d38713d366ea650216d07a3ac962d2b7f1c
+de0139719cdda82806a47580ca0df06fc85e0bd2:
+  title: 'net/mlx5: Properly link new fs rules into the tree'
+  mainline: 7c6782ad4911cbee874e85630226ed389ff2e453
+  backport: bfa99d232f459aae39a87cb7bc7a28e772325080
+8bfa576fe3c6df875a16f3eb27f7ec3fdd7f3168:
+  title: 'tracing: hide unused ftrace_event_id_fops'
+  mainline: 5281ec83454d70d98b71f1836fb16512566c01cd
+  backport: 39f0520cea332cf14036a8d90902938fa0f2475c
+60bb8b451c6a9dc993c876e1f2abf188f9bc97c1:
+  title: 'vhost: Add smp_rmb() in vhost_vq_avail_empty()'
+  mainline: 22e1992cf7b034db5325660e98c41ca5afa5f519
+  backport: 79a4cc09e1dd7c1d8d6d3f5906d1cdb04ce14d43
+3004d8f3f9ddb7c43b4af98203c8bb9a31bf8b51:
+  title: 'selftests: timers: Fix abs() warning in posix_timers test'
+  mainline: ed366de8ec89d4f960d66c85fc37d9de22f7bf6d
+  backport: f5e66cc721903d6adf93b7e9bb7fe06f6033dce2
+38ecf8d8a293c9677a4659ede4810ecacb06dcda:
+  title: 'x86/apic: Force native_apic_mem_read() to use the MOV instruction'
+  mainline: 5ce344beaca688f4cdea07045e0b8f03dc537e74
+  backport: b1c1aa9e9a32ff9503c37d3a47e7eacc66cd809a
+f9392292ff4c01b092c12d1bfdae5471496cca1e:
+  title: 'btrfs: record delayed inode root in transaction'
+  mainline: 71537e35c324ea6fbd68377a4f26bb93a831ae35
+  skipped: fixes patch not in branch
+0a8b2a0410e7fdcd899e58015d025004808559f6:
+  title: 'selftests/ftrace: Limit length in subsystem-enable tests'
+  mainline: 1a4ea83a6e67f1415a1f17c1af5e9c814c882bb5
+  backport: a3f786dc93abeaa911663b647c4a9a48b021e9c1
+b5808d40093403334d939e2c3c417144d12a6f33:
+  title: 'kprobes: Fix possible use-after-free issue on kprobe registration'
+  mainline: 325f3fb551f8cd672dbbfc4cf58b14f9ee3fc9e8
+  backport: b13c030fd2b3a061d1659003a770b3986c24f7b5
+34925d01baf3ee62ab21c21efd9e2c44c24c004a:
+  title: 'Revert "tracing/trigger: Fix to return error if failed to alloc snapshot"'
+  mainline: 0958b33ef5a04ed91f61cef4760ac412080c4e08
+  backport: 638cc92651d52087ea7e22c3cee5dfaa472e835b
+97f097a8091261ffa07c8889550c4026e59b6c14:
+  title: 'netfilter: nf_tables: __nft_expr_type_get() selects specific family type'
+  mainline: 9cff126f73a7025bcb0883189b2bed90010a57d4
+  backport: cf9d94023df9b8d5ee9885351ac7b0bb280a39da
+939109c0a8e2a006a6cc8209e262d25065f4403a:
+  title: 'netfilter: nf_tables: Fix potential data-race in __nft_expr_type_get()'
+  mainline: f969eb84ce482331a991079ab7a5c4dc3b7f89bf
+  backport: 59c0769283b97b4a2e14c2846703d5ef9a10c86e
+68459b8e3ee554ce71878af9eb69659b9462c588:
+  title: 'tun: limit printing rate when illegal packet received by tun dev'
+  mainline: f8bbc07ac535593139c875ffa19af924b1084540
+  backport: eaa8c23a83b5a719ac9bc795481595bbfc02fc18
+4d0f5f7f583875236ccc649825cdc7cdadccd1f9:
+  title: 'RDMA/mlx5: Fix port number for counter query in multi-port configuration'
+  mainline: be121ffb384f53e966ee7299ffccc6eeb61bc73d
+  skipped: fixes patch not in branch
+c2b97f26f081ceec3298151481687071075a25cb:
+  title: 'drm: nv04: Fix out of bounds access'
+  mainline: cf92bb778eda7830e79452c6917efa8474a30c1e
+  backport: cfe1ce127436f4025381610721ccca95be5661eb
+3a63ae0348d990e137cca04eced5b08379969ea9:
+  title: 'comedi: vmk80xx: fix incomplete endpoint checking'
+  mainline: d1718530e3f640b7d5f0050e725216eab57a85d8
+  backport: 40aa14ae1d3360c716476ef5bf841e83b4044a74
+69a02273e288011b521ee7c1f3ab2c23fda633ce:
+  title: 'serial/pmac_zilog: Remove flawed mitigation for rx irq flood'
+  mainline: 1be3226445362bfbf461c92a5bcdb1723f2e4907
+  backport: e9606f845b0e6e58ea7f0a1cb83f3ca8b6c22c27
+9a5402ed97bc701eef3d1f04cad469604aaae0ad:
+  title: 'USB: serial: option: add Fibocom FM135-GL variants'
+  mainline: 356952b13af5b2c338df1e06889fd1b5e12cbbf4
+  backport: 32343abd61668292ae454465c0b9f5afb5560d0d
+5809919a53225cb041d171661af398de05fd5499:
+  title: 'USB: serial: option: add support for Fibocom FM650/FG650'
+  mainline: fb1f4584b1215e8c209f6b3a4028ed8351a0e961
+  backport: 2f8adbc57c1c78ec6d9d12bf3cd5924e1d11b98b
+6efc183ddca84d2d67db97243897c9c01dae3941:
+  title: 'USB: serial: option: add Lonsung U8300/U9300 product'
+  mainline: cf16ffa17c398434a77b8a373e69287c95b60de2
+  backport: 7a6940c22f654a3953351f2e6d4f990a18293284
+44af06ae8bc16e7b325029dc1da51c68169d395d:
+  title: 'USB: serial: option: support Quectel EM060K sub-models'
+  mainline: c840244aba7ad2b83ed904378b36bd6aef25511c
+  backport: 1ce24d37d83eb52cd418553e5e364234d2eb301c
+19301bdc1d265877e47bba58cb58738e51efb120:
+  title: 'USB: serial: option: add Rolling RW101-GL and RW135-GL support'
+  mainline: 311f97a4c7c22a01f8897bddf00428dfd0668e79
+  backport: 2193ac5e795e5513c453c321c8eeb5a0a5e63a5c
+36c159eded196bbca23f0f344202815528545d2d:
+  title: 'USB: serial: option: add Telit FN920C04 rmnet compositions'
+  mainline: 582ee2f9d268d302595db3e36b985e5cbb93284d
+  backport: 5f912f0cb02da4f3c48151fbaa4490f695556cc5
+347cca11bb78b9f3c29b45a9c52e70258bd008bf:
+  title: 'Revert "usb: cdc-wdm: close race between read and workqueue"'
+  mainline: 1607830dadeefc407e4956336d9fcd9e9defd810
+  backport: 519eedb563740160edd7c1a150b730c311d2a1f5
+257d313e37d66c3bcc87197fb5b8549129c45dfe:
+  title: 'usb: dwc2: host: Fix dereference issue in DDMA completion flow.'
+  mainline: eed04fa96c48790c1cce73c8a248e9d460b088f8
+  backport: ccbc9d463cf6f7c018cb20bb05bc98483c63eaaa
+756c5cb7c09e537b87b5d3acafcb101b2ccf394f:
+  title: 'speakup: Avoid crash on very long word'
+  mainline: c8d2f34ea96ea3bce6ba2535f867f0d4ee3b22e1
+  backport: 68e8ffca8bcb4619d8a20a711cf51a3464530790
+f28bba37fe244889b81bb5c508d3f6e5c6e342c5:
+  title: 'fs: sysfs: Fix reference leak in sysfs_break_active_protection()'
+  mainline: a90bca2228c0646fc29a72689d308e5fe03e6d78
+  backport: 8005cde96bd7db2593c25a75b9a2ccb18087cf8e
+bba8ec5e9b16649d85bc9e9086bf7ae5b5716ff9:
+  title: 'nouveau: fix instmem race condition around ptr stores'
+  mainline: fff1386cc889d8fb4089d285f883f8cba62d82ce
+  skipped: fixes patch not in branch
+054f29e9ca05be3906544c5f2a2c7321c30a4243:
+  title: 'nilfs2: fix OOB in nilfs_set_de_type'
+  mainline: c4a7dc9523b59b3e73fd522c73e95e072f876b16
+  backport: 66881703734d16aba33608bf449cc2586b6a51fc
+d74f1a1f913b4a1592dec3cc30640ddd9f8aeda4:
+  title: 'tracing: Remove hist trigger synth_var_refs'
+  mainline: 912201345f7c39e6b0ac283207be2b6641fa47b9
+  skipped: commit did not cherry-pick cleanly
+3dc763bdb05ea12afafb5af62cf37e88d8f7f6dd:
+  title: 'tracing: Use var_refs[] for hist trigger reference checking'
+  mainline: e4f6d245031e04bdd12db390298acec0474a1a46
+  skipped: commit did not cherry-pick cleanly
+e0fbabb4865a9f2eebfa8688765fd6fd76185bba:
+  title: 'arm64: dts: rockchip: fix alphabetical ordering RK3399 puma'
+  mainline: f0abb4b2c7acf3c3e4130dc3f54cd90cf2ae62bc
+  backport: f2b908139433610ec7b0803abd46fcf0b3b43fb4
+8ada42c66029ee8ec7918b2a5bb2feb9dbe461f1:
+  title: 'arm64: dts: rockchip: enable internal pull-up on PCIE_WAKE# for RK3399 Puma'
+  mainline: 945a7c8570916650a415757d15d83e0fa856a686
+  backport: 655536c706fd7a9534ac7aec8a63a178d62fe415
+19e43d5a9e9439dcf2cbb7a8ecb7cfd725968f8f:
+  title: 'arm64: dts: mediatek: mt7622: fix IR nodename'
+  mainline: 800dc93c3941e372c94278bf4059e6e82f60bd66
+  skipped: fixes patch not in branch
+f81938d0666c0e812d72b8ba9127fb7577ab393a:
+  title: 'arm64: dts: mediatek: mt7622: fix ethernet controller "compatible"'
+  mainline: 208add29ce5b7291f6c466e4dfd9cbf61c72888e
+  skipped: fixes patch not in branch
+084db3d6ec6f934b7678afac57fcdb32b7c99dbf:
+  title: 'arm64: dts: mediatek: mt7622: drop "reset-names" from thermal block'
+  mainline: ecb5b0034f5bcc35003b4b965cf50c6e98316e79
+  skipped: fixes patch not in branch
+60874cc9e4d57c357266ad8b1b1b3b960be8af77:
+  title: 'ARC: [plat-hsdk]: Remove misplaced interrupt-cells property'
+  mainline: 61231eb8113ce47991f35024f9c20810b37996bf
+  backport: ed92aae0da0019d4e7db47d37501752a7affbaa3
+961711809db16bcf24853bfb82653d1b1b37f3bf:
+  title: 'vxlan: drop packets from invalid src-address'
+  mainline: f58f45c1e5b92975e91754f5407250085a6ae7cf
+  backport: 61c51e051a59e94a3c62f81c01f949e94958559e
+4235cc4d207b535969eef8f3e610f9caafac7295:
+  title: 'mlxsw: core: Unregister EMAD trap using FORWARD action'
+  mainline: 976c44af48141cd8595601c0af2a19a43c5b228b
+  backport: 8a7045c992202504ab6a4f059f662f83463ace78
+33ba7baa3cba4b49190635ff883770dd2ae5a3e5:
+  title: 'NFC: trf7970a: disable all regulators on removal'
+  mainline: 6bea4f03c6a4e973ef369e15aac88f37981db49e
+  backport: 52ada5a71f0a8be64f0ddaa20583efcf6e8e0411
+571d30b27680591a576c29782617d95820e765ee:
+  title: 'net: usb: ax88179_178a: stop lying about skb->truesize'
+  mainline: 4ce62d5b2f7aecd4900e7d6115588ad7f9acccca
+  backport: 49adc83f7ee5de31ecf4715cf3c1ee131b957815
+07b20d0a3dc13fb1adff10b60021a4924498da58:
+  title: 'net: gtp: Fix Use-After-Free in gtp_dellink'
+  mainline: f2a904107ee2b647bb7794a1a82b67740d7c8a64
+  backport: a4fb866fbb951f1c5908c99221021a6e923ee72e
+740a06078ac58840494934ace6055eb879f267fb:
+  title: 'ipvs: Fix checksumming on GSO of SCTP packets'
+  mainline: e10d3ba4d434ed172914617ed8d74bd411421193
+  backport: 02cac8715a217aa9d6e76a4dca2e0f2d8242f832
+fb885da71cc33a6487f142e016e7cd44d70cb8a6:
+  title: 'net: openvswitch: ovs_ct_exit to be done under ovs_lock'
+  mainline: 27de77cec985233bdf6546437b9761853265c505
+  skipped: fixes patch not in branch
+2db9a8c0a01fa1c762c1e61a13c212c492752994:
+  title: 'net: openvswitch: Fix Use-After-Free in ovs_ct_exit'
+  mainline: 5ea7b72d4fac2fdbc0425cd8f2ea33abe95235b2
+  skipped: fixes patch not in branch
+09b54d29f05129b092f7c793a70b689ffb3c7b2c:
+  title: 'i40e: Do not use WQ_MEM_RECLAIM flag for workqueue'
+  mainline: 2cc7d150550cc981aceedf008f5459193282425c
+  backport: bca56f5107b108ae5c63b5478b0ebaeab77cf5ac
+dcc8ed283f841e217ad23a65453f7b8c6068d6c5:
+  title: 'serial: core: Provide port lock wrappers'
+  mainline: b0af4bcb49464c221ad5f95d40f2b1b252ceedcc
+  backport: c112e92e7e9009b25113d00c387517474d00350f
+56434e295bd446142025913bfdf1587f5e1970ad:
+  title: 'serial: mxs-auart: add spinlock around changing cts state'
+  mainline: 54c4ec5f8c471b7c1137a1f769648549c423c026
+  backport: 7b5287213ee5429e42b281d104e07e08d50c2d9a
+605134e35a72a8cf1ff1cf433664a2b4a4924488:
+  title: 'drm/amdgpu: restrict bo mapping within gpu address limits'
+  mainline: 8b80d74bdb2285d3022b349c8451eb16535f7906
+  backport: 06da784dbd29c1e42dd9ced075d829704914864b
+82aace80cfaab778245bd2f9e31b67953725e4d0:
+  title: 'amdgpu: validate offset_in_bo of drm_amdgpu_gem_va'
+  mainline: 9f0bcf49e9895cb005d78b33a5eebfa11711b425
+  backport: 5dd0e09eeab9c87b6a91fcf9ef0b10295d68ff2d
+d4da6b084f1c5625937d49bb6722c5b4aef11b8d:
+  title: 'drm/amdgpu: validate the parameters of bo mapping operations more clearly'
+  mainline: 6fef2d4c00b5b8561ad68dd2b68173f5c6af1e75
+  backport: 3e99e112aa1d6c9af57da0446cef785190e95634
+69dc8fc8307640b717b37056549d88a664273206:
+  title: 'Revert "crypto: api - Disallow identical driver names"'
+  mainline: 27016f75f5ed47e2d8e0ca75a8ff1f40bc1a5e27
+  backport: a039a95bde00995c63312c1870c870187dcaa60f
+78b92d50fe6ab79d536f4b12c5bde15f2751414d:
+  title: 'tracing: Show size of requested perf buffer'
+  mainline: a90afe8d020da9298c98fddb19b7a6372e2feb45
+  backport: e3b3f139e8a216c0dc590c0349a0824c1918ed86
+c8d5402dcd1834747bb3dbd9b6fe51defd3d636b:
+  title: 'tracing: Increase PERF_MAX_TRACE_SIZE to handle Sentinel1 and docker together'
+  mainline: e531e90b5ab0f7ce5ff298e165214c1aec6ed187
+  backport: edc56d2275828b9e3a8258681c30bb666cfdf8f7
+92d26492b4acdc05a3ad1f7795b6cae91292b00d:
+  title: 'Bluetooth: Fix type of len in {l2cap,sco}_sock_getsockopt_old()'
+  mainline: 9bf4e919ccad613b3596eebf1ff37b05b6405307
+  backport: 75613ba0ee43c74bb35bb8f80961e8e0ea496f9f
+689efe22e9b5b7d9d523119a9a5c3c17107a0772:
+  title: 'btrfs: fix information leak in btrfs_ioctl_logical_to_ino()'
+  mainline: 2f7ef5bb4a2f3e481ef05fab946edb97c84f67cf
+  backport: cccd878ed43e046f7dc286fb677079dd801d2626
+6d5692510d683ab57f81f82fd3d5282e33dd416f:
+  title: 'arm64: dts: rockchip: enable internal pull-up for Q7_THRM# on RK3399 Puma'
+  mainline: 0ac417b8f124427c90ec8c2ef4f632b821d924cc
+  backport: 336db5bbf15c2e86555a7b369f8faa7b3d4abe0f
+f5417ff561b8ac9a7e53c747b8627a7ab58378ae:
+  title: 'irqchip/gic-v3-its: Prevent double free on error'
+  mainline: c26591afd33adce296c022e3480dea4282b7ef91
+  backport: 94db4962aa554ced828a4fbee5e96941a3fb2e7f
+1aeede3a0217741120725c4c9cebf039c6fff7ef:
+  title: 'net: b44: set pause params only when interface is up'
+  mainline: e3eb7dd47bd4806f00e104eb6da092c435f9fb21
+  backport: 98b91fb5ede664960c3890efcd2f952affb11dee
+79b25b1a58d0a6b53dfd685bca8a1984c86710dd:
+  title: 'stackdepot: respect __GFP_NOLOCKDEP allocation flag'
+  mainline: 6fe60465e1d53ea321ee909be26d97529e8f746c
+  backport: 9485c0dda576f58a9579b81e4d10b72bebda58de
+153adb5d7878d18e2b9be173996034f858fbce8e:
+  title: 'mtd: diskonchip: work around ubsan link failure'
+  mainline: 21c9fb611c25d5cd038f6fe485232e7884bb0b3d
+  backport: cd3a5b7416bf89cb599e05f6e81e519211413cba
+9f06ebd1daf5914afb21b95781cf637a025e9f9a:
+  title: 'tcp: Clean up kernel listener''s reqsk in inet_twsk_purge()'
+  mainline: 740ea3c4a0b2e326b23d7cdf05472a0e92aa39bc
+  skipped: fixes patch not in branch
+4212fa80f700b06358a13cc7ea9d25788beff877:
+  title: 'tcp: Fix NEW_SYN_RECV handling in inet_twsk_purge()'
+  mainline: 1c4e97dd2d3c9a3e84f7e26346aa39bc426d3249
+  skipped: fixes patch not in branch
+2628eb4bcc87953b3d10b5babde75853f38ad8fe:
+  title: 'dmaengine: owl: fix register access functions'
+  mainline: 43c633ef93a5d293c96ebcedb40130df13128428
+  skipped: fixes patch not in branch
+ffe3f362de3479f5d75a97a7004a279a650ee7cd:
+  title: 'idma64: Don''t try to serve interrupts when device is powered off'
+  mainline: 9140ce47872bfd89fca888c2f992faa51d20c2bc
+  backport: 063e3bb968e0b88dfd0eca06c56d3eb95b43e40b
+40f1d79f07b49c8a64a861706e5163f2db4bd95d:
+  title: 'i2c: smbus: fix NULL function pointer dereference'
+  mainline: 91811a31b68d3765b3065f4bb6d7d6d84a7cfc9f
+  backport: c8c86b3d8008e24fba2c5956a2849ed47c9ce817
+21bfca822cfc1e71796124e93b46e0d9fa584401:
+  title: 'HID: i2c-hid: remove I2C_HID_READ_PENDING flag to prevent lock-up'
+  mainline: 9c0f59e47a90c54d0153f8ddc0f80d7a36207d0e
+  backport: 674f9950629e4a2071b81cd12e58e5e190754121
+9bc1f1791de3cb5e3073bd8c5811d0d02b7dde31:
+  title: 'Revert "loop: Remove sector_t truncation checks"'
+  mainline: 083a6a50783ef54256eec3499e6575237e0e3d53
+  skipped: reverted patch is not in branch
+271b53d629d6329f1d99177b0590dce7c3cbf28b:
+  title: 'Revert "y2038: rusage: use __kernel_old_timeval"'
+  mainline: bdd565f817a74b9e30edec108f7cb1dbc762b8a6
+  skipped: reverted patch is not in branch
+4fc0b7838c253cf443de3a40a9acb224377740e6:
+  title: 'udp: preserve the connected status if only UDP cmsg'
+  mainline: 680d11f6e5427b6af1321932286722d24a8b16c1
+  skipped: fixes patch not in branch
+6e5937b23a13ce6bbe8bf17319efa34598f1650a:
+  title: 'serial: core: fix kernel-doc for uart_port_unlock_irqrestore()'
+  mainline: 29bff582b74ed0bdb7e6986482ad9e6799ea4d2f
+  backport: 67c9c69cedb11331c684e306485b2767c9ed0ffc

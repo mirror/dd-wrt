@@ -502,7 +502,7 @@ static int ext4_shutdown(struct super_block *sb, unsigned long arg)
 {
 	struct ext4_sb_info *sbi = EXT4_SB(sb);
 	__u32 flags;
-	int ret;
+	struct super_block *ret;
 
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
@@ -521,8 +521,8 @@ static int ext4_shutdown(struct super_block *sb, unsigned long arg)
 	switch (flags) {
 	case EXT4_GOING_FLAGS_DEFAULT:
 		ret = freeze_bdev(sb->s_bdev);
-		if (ret)
-			return ret;
+		if (IS_ERR(ret))
+			return PTR_ERR(ret);
 		set_bit(EXT4_FLAGS_SHUTDOWN, &sbi->s_ext4_flags);
 		thaw_bdev(sb->s_bdev, sb);
 		break;

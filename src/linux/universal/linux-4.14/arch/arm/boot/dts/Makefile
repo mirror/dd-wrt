@@ -2,8 +2,7 @@
 ifeq ($(CONFIG_OF),y)
 
 dtb-$(CONFIG_ARCH_ALPINE) += \
-	alpine-r9000.dtb 
-
+	alpine-db.dtb
 dtb-$(CONFIG_MACH_ARTPEC6) += \
 	artpec6-devboard.dtb
 dtb-$(CONFIG_MACH_ASM9260) += \
@@ -699,26 +698,12 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-apq8084-ifc6540.dtb \
 	qcom-apq8084-mtp.dtb \
 	qcom-ipq4019-ap.dk01.1-c1.dtb \
-	qcom-ipq4019-ap.dk04.1-c1.dtb \
-	qcom-ipq4019-fritz4040.dtb \
-	qcom-ipq4019-nbg6617.dtb \
-	qcom-ipq4019-rt-ac58u.dtb \
 	qcom-ipq8064-ap148.dtb \
-	qcom-ipq8064-c2600.dtb \
-	qcom-ipq8064-d7800.dtb \
-	qcom-ipq8064-db149.dtb \
-	qcom-ipq8064-ea8500.dtb \
-	qcom-ipq8064-r7500.dtb \
-	qcom-ipq8064-r7500v2.dtb \
-	qcom-ipq8065-nbg6817.dtb \
-	qcom-ipq8065-r7800.dtb \
-	qcom-ipq8064-tew827.dtb \
-	qcom-ipq8064-asrockg10.dtb \
-	qcom-ipq8064-ea8500.dtb \
 	qcom-msm8660-surf.dtb \
 	qcom-msm8960-cdp.dtb \
 	qcom-msm8974-lge-nexus5-hammerhead.dtb \
-	qcom-msm8974-sony-xperia-honami.dtb
+	qcom-msm8974-sony-xperia-honami.dtb \
+	qcom-mdm9615-wp8548-mangoh-green.dtb
 dtb-$(CONFIG_ARCH_REALVIEW) += \
 	arm-realview-pb1176.dtb \
 	arm-realview-pb11mp.dtb \
@@ -1037,16 +1022,33 @@ dtb-$(CONFIG_MACH_ARMADA_370) += \
 dtb-$(CONFIG_MACH_ARMADA_375) += \
 	armada-375-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_38X) += \
+	armada-385-db-ap.dtb \
 	armada-385-linksys-caiman.dtb \
 	armada-385-linksys-cobra.dtb \
 	armada-385-linksys-rango.dtb \
 	armada-385-linksys-shelby.dtb \
-	armada-385-linksys-venom.dtb \
-	armada-385-turris-omnia.dtb
+	armada-385-synology-ds116.dtb \
+	armada-385-turris-omnia.dtb \
+	armada-388-clearfog.dtb \
+	armada-388-clearfog-base.dtb \
+	armada-388-clearfog-pro.dtb \
+	armada-388-db.dtb \
+	armada-388-gp.dtb \
+	armada-388-rd.dtb
 dtb-$(CONFIG_MACH_ARMADA_39X) += \
 	armada-398-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_XP) += \
-	armada-xp-linksys-mamba.dtb
+	armada-xp-axpwifiap.dtb \
+	armada-xp-db.dtb \
+	armada-xp-db-dxbc2.dtb \
+	armada-xp-db-xc3-24g4xg.dtb \
+	armada-xp-gp.dtb \
+	armada-xp-lenovo-ix4-300d.dtb \
+	armada-xp-linksys-mamba.dtb \
+	armada-xp-matrix.dtb \
+	armada-xp-netgear-rn2120.dtb \
+	armada-xp-openblocks-ax3-4.dtb \
+	armada-xp-synology-ds414.dtb
 dtb-$(CONFIG_MACH_DOVE) += \
 	dove-cubox.dtb \
 	dove-cubox-es.dtb \

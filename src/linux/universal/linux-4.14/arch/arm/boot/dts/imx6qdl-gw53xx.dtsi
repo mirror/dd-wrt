@@ -187,17 +187,11 @@
 		pagesize = <16>;
 	};
 
-
 	gpio: pca9555@23 {
 		compatible = "nxp,pca9555";
 		reg = <0x23>;
 		gpio-controller;
 		#gpio-cells = <2>;
-	};
-
-	hwmon: gsc@29 {
-		compatible = "gw,gsp";
-		reg = <0x29>;
 	};
 
 	rtc: ds1672@68 {

@@ -402,7 +402,7 @@
 
 			pit: timer@fffffd30 {
 				compatible = "atmel,at91sam9260-pit";
-I			reg = <0xfffffd30 0xf>;
+				reg = <0xfffffd30 0xf>;
 				interrupts = <1 IRQ_TYPE_LEVEL_HIGH 7>;
 				clocks = <&mck>;
 			};
