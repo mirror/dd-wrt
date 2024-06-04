@@ -944,6 +944,23 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		save2file_A_prerouting("-d %s -j DNAT --to-destination %s%s", wanaddr, lan_cclass, nvram_safe_get("dmz_ipaddr"));
 }
 
+static void add_rawtable(void)
+{
+#ifdef HAVE_SFE
+	if (!nvram_match("sfe", "1") && !nvram_match("sfe", "4") && !nvram_match("sfe", "5"))
+#endif
+	{
+#ifndef HAVE_NEW_NOTRACK
+		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j",
+		     "NOTRACK"); //this speeds up networking alot on slow systems
+#else
+		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
+		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT",
+		     "--notrack"); //this speeds up networking alot on slow systems
+#endif
+	}
+}
+
 static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 {
 	char word[80], *tmp;
@@ -1085,23 +1102,11 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
 		//              }
 	} else {
-//              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
-//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
-//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
-//              }
-#ifdef HAVE_SFE
-		if (!nvram_match("sfe", "1") && !nvram_match("sfe", "4") && !nvram_match("sfe", "5"))
-#endif
-		{
-#ifndef HAVE_NEW_NOTRACK
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j",
-			     "NOTRACK"); //this speeds up networking alot on slow systems
-#else
-			/* the following code must be used in future kernel versions, not yet used. we still need to test it */
-			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT",
-			     "--notrack"); //this speeds up networking alot on slow systems
-#endif
-		}
+		//              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
+		//              }
+		add_rawtable();
 		if (*wanface && wanactive(wanaddr))
 			if (nvram_matchi("wl_br1_enable", 1))
 				save2file_A_postrouting("-o %s -j SNAT --to-source %s", wanface, wanaddr);
@@ -3010,6 +3015,7 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 		nat_postrouting(wanface, wanaddr, vifs);
 	} else {
 		nat_prerouting_bridged(NULL, vifs);
+		add_rawtable();
 	}
 	save2file("COMMIT");
 }
