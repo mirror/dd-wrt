@@ -304,6 +304,14 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) wireguard
 	-$(MAKE) -f Makefile.$(MAKEEXT) wireguard-install
 endif
+ifeq ($(CONFIG_SERVICEGATE),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) servicegate
+	-$(MAKE) -f Makefile.$(MAKEEXT) servicegate-install
+endif
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) i2c-gpio-custom
+	-$(MAKE) -f Makefile.$(MAKEEXT) i2c-gpio-custom-install
+endif
 ifeq ($(CONFIG_OPENVPN),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) openvpn-dco
 	-$(MAKE) -f Makefile.$(MAKEEXT) openvpn-dco-install
@@ -318,12 +326,54 @@ ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast
 	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast-install
 endif
-
-	mkdir -p $(ARCH)-uclibc/target/usr/sbin/
-	mkdir -p $(ARCH)-uclibc/target/lib/crda
-
-#	cp $(TOP)/qtnhost/host/arm/qdpc-host.ko $(ARCH)-uclibc/target/lib/modules/$(KERNELRELEASE)/
-
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_BONDING),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
+endif
+ifneq ($(CONFIG_USBIP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/cdrom
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/exportfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_UQMI),y)
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb/qmi_wwan.ko
+endif
+ifeq ($(CONFIG_3G_ONLY),y)
+#	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
+endif
 	
 	find $(ARCH)-uclibc -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
