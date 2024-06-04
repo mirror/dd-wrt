@@ -542,6 +542,18 @@ static inline void eth_hw_addr_gen(struct net_device *dev, const u8 *base_addr,
 	eth_hw_addr_set(dev, addr);
 }
 
+static inline bool
+eth_check_local_mask(const void *addr1, const void *addr2, const void *mask)
+{
+	const u16 *a1 = addr1;
+	const u16 *a2 = addr2;
+	const u16 *m = mask;
+
+	return (((a1[0] ^ a2[0]) & ~m[0]) |
+		((a1[1] ^ a2[1]) & ~m[1]) |
+		((a1[2] ^ a2[2]) & ~m[2]));
+}
+
 /**
  * eth_skb_pkt_type - Assign packet type if destination address does not match
  * @skb: Assigned a packet type if address does not match @dev address
