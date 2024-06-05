@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include "ipq6018-512m.dtsi"
+#include "ipq6018-thermal.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
 #include "ipq6018-ess.dtsi"
 #include <dt-bindings/gpio/gpio.h>
@@ -340,7 +341,6 @@
 
 &wifi {
  	qcom,ath11k-calibration-variant = "Yuncore-FAP650";
-	qcom,ath11k-fw-memory-mode = <1>;
 	status = "okay";
 };
 
