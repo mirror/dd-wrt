@@ -263,7 +263,7 @@ kernel-relink-prep:
 kernel-relink-phase:
 	
 	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ARCH=$(KERNEL_HEADER_ARCH)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
@@ -409,21 +409,19 @@ endif
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
-	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
 	-if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
+	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
 	-if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    make -j 4 -C $(LINUXDIR) modules MAKE=make CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
+	    make -j 4 -C $(LINUXDIR) modules MAKE=make ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
 	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
-	#$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
-	#$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 endif
