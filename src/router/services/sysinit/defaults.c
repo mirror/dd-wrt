@@ -3204,6 +3204,10 @@ struct nvram_param srouter_defaults[] = {
 	{ "antaira_agent_connect_url", "/v2/connect" },
 	{ "antaira_agent_configuration_url", "/v2/configuration" },
 	{ "antaira_agent_wan_ifname", "br0" },
+	{ "chronyd_enable", "0" },
+#endif
+#ifdef HAVE_CHRONY
+        { "chronyd_enable", "0" },
 #endif
 #ifdef HAVE_KODATA
 	{ "newhttp_username", "bJ/GddyoJuiU2" },
