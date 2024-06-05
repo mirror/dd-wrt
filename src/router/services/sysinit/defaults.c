@@ -3085,6 +3085,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "static_leases", "" },
 	{ "static_leasenum", "0" },
 	{ "dhcpc_vendorclass", "" },	// vendor class id for client
+	{ "dhcpc_121", "1" },
 	// (optional)
 	{ "dhcpc_requestip", "" },	// request ip (optional)
 #ifdef HAVE_DDLAN
