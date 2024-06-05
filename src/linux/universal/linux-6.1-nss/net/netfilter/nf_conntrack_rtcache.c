@@ -360,6 +360,8 @@ static int nf_rtcache_ext_remove(struct nf_conn *ct, void *data)
 
 static bool __exit nf_conntrack_rtcache_wait_for_dying(struct net *net)
 {
+
+/*
 	bool wait = false;
 	int cpu;
 
@@ -384,6 +386,8 @@ static bool __exit nf_conntrack_rtcache_wait_for_dying(struct net *net)
 	}
 
 	return wait;
+*/
+	return true;
 }
 
 static void __exit nf_conntrack_rtcache_fini(void)
