@@ -170,7 +170,6 @@ kernel:
 
 	$(MAKE) -f Makefile.thunderx kernel-relink-prep MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
 	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
-	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
 
 	
 testimage:
