@@ -326,6 +326,9 @@ ifeq ($(CONFIG_CAKE),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast
 	-$(MAKE) -f Makefile.$(MAKEEXT) fq_codel_fast-install
 endif
+ifneq ($(KERNELVERSION),6.1)
+ifneq ($(KERNELVERSION),6.1-nss)
+ifneq ($(KERNELVERSION),6.6)
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
 endif
@@ -374,7 +377,9 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
 endif
-	
+endif
+endif
+endif
 	find $(ARCH)-uclibc -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
@@ -407,6 +412,9 @@ endif
 	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
+	touch $(LINUXDIR)/include/generated/autoksyms.h
+	touch $(LINUXDIR)/include/linux/exports.h
+	touch $(LINUXDIR)/include/asm-generic/exports.h
 	-if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
@@ -416,5 +424,6 @@ kernel-relink:
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+	#$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 	#$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 endif
