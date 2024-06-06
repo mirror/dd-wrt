@@ -220,6 +220,7 @@ static int parse_fixed_partitions(struct mtd_info *master,
 		if (!strcmp(partname, "linux") || !strcmp(partname, "linux2")) {
 			int offset = parts[i].offset;
 			while ((offset + master->erasesize) < master->size) {
+				size_t len;
 				mtd_read(master, offset, sizeof(sb), &len, (void *)&sb);
 				if (le32_to_cpu(sb.s_magic) == 0x23494255) {
 					printk(KERN_EMERG "found ubi at %X, skipping scan\n", offset);
@@ -368,18 +369,6 @@ static int __init ofpart_parser_init(void)
 	register_mtd_parser(&ofoldpart_parser);
 	return 0;
 }
-
-static int __init active_root(char *str)
-{
-	get_option(&str, &mangled_rootblock);
-
-	if (!mangled_rootblock)
-		return 1;
-
-	return 1;
-}
-
-__setup("mangled_rootblock=", active_root);
 
 static int __init active_root(char *str)
 {

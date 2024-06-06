@@ -36,7 +36,9 @@ void MFREE(void *ptr)
 }
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
-static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+static char *nvram_buf;
+
+//static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
 extern char *_nvram_get(const char *name);
 extern int _nvram_set(const char *name, const char *value);
@@ -521,6 +523,7 @@ static void dev_nvram_exit(void)
 		mem_map_unreserve(page);
 
 	_nvram_exit();
+	kfree(nvram_buf);
 }
 
 static int __init dev_nvram_init(void)
@@ -528,10 +531,13 @@ static int __init dev_nvram_init(void)
 	int order = 0, ret = 0;
 	struct page *page, *end;
 	unsigned int i;
-
+printk(KERN_INFO "alloc nvram\n");
+	/* Allocate and reserve memory to mmap() */
+	nvram_buf = kmalloc(NVRAM_SPACE, GFP_KERNEL);
 	/* Allocate and reserve memory to mmap() */
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
 		order++;
+printk(KERN_INFO "page nvram\n");
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
 		mem_map_reserve(page);

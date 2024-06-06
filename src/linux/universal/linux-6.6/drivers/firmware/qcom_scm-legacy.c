@@ -13,9 +13,6 @@
 #include <linux/arm-smccc.h>
 #include <linux/dma-mapping.h>
 
-#include <asm/cacheflush.h>
-#include <asm/outercache.h>
-
 #include "qcom_scm.h"
 
 static DEFINE_MUTEX(qcom_scm_lock);
@@ -120,25 +117,6 @@ static void __scm_legacy_do(const struct arm_smccc_args *smc,
 	} while (res->a0 == QCOM_SCM_INTERRUPTED);
 }
 
-static void qcom_scm_inv_range(unsigned long start, unsigned long end)
-{
-	u32 cacheline_size, ctr;
-
-	asm volatile("mrc p15, 0, %0, c0, c0, 1" : "=r" (ctr));
-	cacheline_size = 4 << ((ctr >> 16) & 0xf);
-
-	start = round_down(start, cacheline_size);
-	end = round_up(end, cacheline_size);
-	outer_inv_range(start, end);
-	while (start < end) {
-		asm ("mcr p15, 0, %0, c7, c6, 1" : : "r" (start)
-		     : "memory");
-		start += cacheline_size;
-	}
-	dsb();
-	isb();
-}
-
 /**
  * scm_legacy_call() - Sends a command to the SCM and waits for the command to
  * finish processing.
@@ -185,16 +163,10 @@ int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 
 	rsp = scm_legacy_command_to_response(cmd);
 
-	if (dev) {
-		cmd_phys = dma_map_single(dev, cmd, alloc_len, DMA_TO_DEVICE);
-		if (dma_mapping_error(dev, cmd_phys)) {
-			kfree(cmd);
-			return -ENOMEM;
-		}
-	} else {
-		cmd_phys = virt_to_phys(cmd);
-		__cpuc_flush_dcache_area(cmd, alloc_len);
-		outer_flush_range(cmd_phys, cmd_phys + alloc_len);
+	cmd_phys = dma_map_single(dev, cmd, alloc_len, DMA_TO_DEVICE);
+	if (dma_mapping_error(dev, cmd_phys)) {
+		kfree(cmd);
+		return -ENOMEM;
 	}
 
 	smc.args[0] = 1;
@@ -210,26 +182,13 @@ int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 		goto out;
 
 	do {
-		if (dev) {
-			dma_sync_single_for_cpu(dev, cmd_phys + sizeof(*cmd) +
-						cmd_len, sizeof(*rsp),
-						DMA_FROM_DEVICE);
-		} else {
-			unsigned long start = (uintptr_t)cmd + sizeof(*cmd) +
-					      cmd_len;
-			qcom_scm_inv_range(start, start + sizeof(*rsp));
-		}
+		dma_sync_single_for_cpu(dev, cmd_phys + sizeof(*cmd) + cmd_len,
+					sizeof(*rsp), DMA_FROM_DEVICE);
 	} while (!rsp->is_complete);
 
-	if (dev) {
-		dma_sync_single_for_cpu(dev, cmd_phys + sizeof(*cmd) + cmd_len +
-					le32_to_cpu(rsp->buf_offset),
-					resp_len, DMA_FROM_DEVICE);
-	} else {
-		unsigned long start = (uintptr_t)cmd + sizeof(*cmd) + cmd_len +
-				      le32_to_cpu(rsp->buf_offset);
-		qcom_scm_inv_range(start, start + resp_len);
-	}
+	dma_sync_single_for_cpu(dev, cmd_phys + sizeof(*cmd) + cmd_len +
+				le32_to_cpu(rsp->buf_offset),
+				resp_len, DMA_FROM_DEVICE);
 
 	if (res) {
 		res_buf = scm_legacy_get_response_buffer(rsp);
@@ -237,8 +196,7 @@ int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 			res->result[i] = le32_to_cpu(res_buf[i]);
 	}
 out:
-	if (dev)
-		dma_unmap_single(dev, cmd_phys, alloc_len, DMA_TO_DEVICE);
+	dma_unmap_single(dev, cmd_phys, alloc_len, DMA_TO_DEVICE);
 	kfree(cmd);
 	return ret;
 }

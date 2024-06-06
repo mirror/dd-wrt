@@ -19,15 +19,13 @@ ifeq ($(CONFIG_RELOCATABLE), y)
 LDFLAGS_vmlinux		+= -shared -Bsymbolic -z notext \
 			$(call ld-option, --no-apply-dynamic-relocs)
 
-# Generate position independent code without relying on a Global Offset Table
-KBUILD_CFLAGS_KERNEL   += -fpie -include $(srctree)/include/linux/hidden.h
-
 endif
-
+ 
 ifeq ($(CONFIG_ARM64_ERRATUM_843419),y)
   ifeq ($(CONFIG_ARM64_LD_HAS_FIX_ERRATUM_843419),y)
 LDFLAGS_vmlinux	+= --fix-cortex-a53-843419
   endif
+
 endif
 
 cc_has_k_constraint := $(call try-run,echo				\

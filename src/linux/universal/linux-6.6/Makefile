@@ -392,6 +392,19 @@ include $(srctree)/scripts/subarch.include
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 ARCH		?= $(SUBARCH)
 
+ifeq ($(ARCH),armeb)
+ARCH := arm
+endif
+ifeq ($(ARCH),aarch64)
+ARCH := arm64
+endif
+ifeq ($(ARCH),mips64)
+ARCH := mips
+endif
+ifeq ($(ARCH),mipsel)
+ARCH=mips
+endif
+
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)

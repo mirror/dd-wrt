@@ -235,7 +235,127 @@
 		nand-bus-width = <8>;
 
 		partitions {
-			compatible = "qcom,smem-part";
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "sbl1";
+				reg = <0x0 0x180000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "mibib";
+				reg = <0x180000 0x100000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "qsee";
+				reg = <0x280000 0x380000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "devcfg";
+				reg = <0x600000 0x80000>;
+				read-only;
+			};
+
+			partition@680000 {
+				label = "rpm";
+				reg = <0x680000 0x80000>;
+				read-only;
+			};
+
+			partition@700000 {
+				label = "cdt";
+				reg = <0x700000 0x80000>;
+				read-only;
+			};
+
+			partition@780000 {
+				label = "appsblenv";
+				reg = <0x780000 0x80000>;
+				read-only;
+			};
+
+			partition@800000 {
+				label = "appsbl";
+				reg = <0x800000 0x180000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "art";
+				reg = <0x980000 0x80000>;
+			};
+
+			partition@a00000 {
+				label = "wififw";
+				reg = <0xa00000 0x900000>;
+				read-only;
+			};
+
+			partition@1300000 {
+				label = "ethphyfw";
+				reg = <0x1300000 0x80000>;
+				read-only;
+			};
+
+			partition@1380000 {
+				label = "u_env";
+				reg = <0x1380000 0x80000>;
+				// writable -- U-Boot environment
+			};
+
+			partition@1400000 {
+				label = "s_env";
+				reg = <0x1400000 0x40000>;
+				// writable -- Boot counter records
+			};
+
+			partition@1440000 {
+				label = "devinfo";
+				reg = <0x1440000 0x40000>;
+				read-only;
+			};
+
+			partition@1480000 {
+				label = "linux";
+				reg = <0x1480000 0x5200000>;
+			};
+
+			partition@1c80000 {
+				label = "rootfs";
+				reg = <0x1c80000 0x4a00000>;
+			};
+
+			partition@6680000 {
+				label = "linux2";
+				reg = <0x6680000 0x5100000>;
+			};
+
+			partition@6e80000 {
+				label = "alt_rootfs";
+				reg = <0x6e80000 0x4900000>;
+			};
+
+			partition@b780000 {
+				label = "nvram";
+				reg = <0xb780000 0x100000>;
+			};
+
+			partition@b880000 {
+				label = "sysdiag";
+				reg = <0xb880000 0x200000>;
+				read-only;
+			};
+			partition@ba80000 {
+				label = "ddwrt";
+				reg = <0xba80000 0x4400000>;
+			};
 		};
 	};
 };

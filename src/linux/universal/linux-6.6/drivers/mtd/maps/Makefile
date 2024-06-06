@@ -3,6 +3,8 @@
 # linux/drivers/maps/Makefile
 #
 
+EXTRA_CFLAGS := -g
+
 ifeq ($(CONFIG_MTD_COMPLEX_MAPPINGS),y)
 obj-$(CONFIG_MTD)		+= map_funcs.o
 endif
@@ -82,3 +84,4 @@ obj-$(CONFIG_MTD_RALINK)        += ralink-flash.o
 obj-$(CONFIG_CAVIUM_OCTEON_SOC) += nvram_kernel.o
 
 endif
+
