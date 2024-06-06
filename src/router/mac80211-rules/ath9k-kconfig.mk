@@ -122,6 +122,17 @@ ifeq ($(CONFIG_ATH11K),y)
   CPTCFG_MHI_QRTR=y
   CPTCFG_QRTR_MHI=y
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+  CPTCFG_ATH11K=y
+  CPTCFG_ATH11K_DEBUGFS=y
+  CPTCFG_ATH11K_THERMAL=y
+  CPTCFG_ATH11K_SPECTRAL=y
+  CPTCFG_ATH11K_PCI=y
+  CPTCFG_ATH11K_AHB=y
+  CPTCFG_MHI_BUS=y
+  CPTCFG_MHI_QRTR=y
+  CPTCFG_QRTR_MHI=y
+endif
 ifeq ($(CONFIG_MCPHERSON),y)
   BUILDFLAGS += -DHAVE_MCPHERSON
 endif
@@ -221,6 +232,17 @@ ifeq ($(CONFIG_ATH11K),y)
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+	echo "CPTCFG_ATH11K=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_AHB=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
