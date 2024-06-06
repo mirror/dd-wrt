@@ -367,16 +367,6 @@
 	};
 };
 
-&pmm8155au_1_gpios {
-	pmm8155au_1_sdc2_cd: sdc2-cd-default-state {
-		pins = "gpio4";
-		function = "normal";
-		input-enable;
-		bias-pull-up;
-		power-source = <0>;
-	};
-};
-
 &qupv3_id_1 {
 	status = "okay";
 };
@@ -394,10 +384,10 @@
 &sdhc_2 {
 	status = "okay";
 
-	cd-gpios = <&pmm8155au_1_gpios 4 GPIO_ACTIVE_LOW>;
+	cd-gpios = <&tlmm 4 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default", "sleep";
-	pinctrl-0 = <&sdc2_on &pmm8155au_1_sdc2_cd>;
-	pinctrl-1 = <&sdc2_off &pmm8155au_1_sdc2_cd>;
+	pinctrl-0 = <&sdc2_on>;
+	pinctrl-1 = <&sdc2_off>;
 	vqmmc-supply = <&vreg_l13c_2p96>; /* IO line power */
 	vmmc-supply = <&vreg_l17a_2p96>;  /* Card power line */
 	bus-width = <4>;
@@ -515,6 +505,13 @@
 			bias-pull-up;		/* pull up */
 			drive-strength = <16>;	/* 16 MA */
 		};
+
+		sd-cd-pins {
+			pins = "gpio96";
+			function = "gpio";
+			bias-pull-up;		/* pull up */
+			drive-strength = <2>;	/* 2 MA */
+		};
 	};
 
 	sdc2_off: sdc2-off-state {
@@ -532,6 +529,13 @@
 
 		data-pins {
 			pins = "sdc2_data";
+			bias-pull-up;		/* pull up */
+			drive-strength = <2>;	/* 2 MA */
+		};
+
+		sd-cd-pins {
+			pins = "gpio96";
+			function = "gpio";
 			bias-pull-up;		/* pull up */
 			drive-strength = <2>;	/* 2 MA */
 		};
