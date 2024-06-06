@@ -214,22 +214,22 @@ obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_UDPXY) += udpxy
 obj-$(CONFIG_SKYTRON) += skytron
 ifeq ($(KERNELVERSION),6.1)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifeq ($(KERNELVERSION),6.6)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifeq ($(KERNELVERSION),4.9)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifeq ($(KERNELVERSION),4.14)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifeq ($(KERNELVERSION),4.4)
-obj-$(CONFIG_OPENVPN) += libnl
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
 ifneq ($(CONFIG_MUSL),y)
 obj-$(CONFIG_OPENVPN) += lzo openvpn
