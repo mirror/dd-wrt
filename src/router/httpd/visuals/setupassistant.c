@@ -31,6 +31,7 @@
 
 #include <broadcom.h>
 #include <wlutils.h>
+int iscpe(void);
 
 void sas_show_wep(webs_t wp, char *prefix);
 void sas_show_preshared(webs_t wp, char *prefix);

@@ -7,6 +7,9 @@
 #include <errno.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+
+int isregistered_real(void);
+int isregistered(void);
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 
 static void watchdog(void)

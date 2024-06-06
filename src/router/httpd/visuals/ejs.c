@@ -51,6 +51,7 @@
 #include <jansson.h>
 #endif
 #include <glob.h>
+int iscpe(void);
 
 struct onload onloads[] = {
 	// { "Filters", filter_onload },

@@ -73,6 +73,7 @@
 
 #define TXPWR_MAX 1000
 #define TXPWR_DEFAULT 28
+int isregistered_real(void);
 
 void start_restore_defaults(void);
 static void rc_signal(int sig);

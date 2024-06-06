@@ -633,6 +633,7 @@ void check_cryptomod(char *prefix)
 /*
  * MADWIFI Encryption Setup 
  */
+int isregistered(void);
 
 void setupSupplicant(char *prefix, char *ssidoverride)
 {
@@ -2022,6 +2023,7 @@ static void setMacFilter(char *iface)
 }
 #endif
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+int iscpe(void);
 
 static void configure_single(int count)
 {

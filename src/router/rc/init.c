@@ -26,6 +26,8 @@
 #include <revision.h>
 #include <bcmnvram.h>
 
+int isregistered_real(void);
+
 #define loop_forever()    \
 	do {              \
 		sleep(1); \

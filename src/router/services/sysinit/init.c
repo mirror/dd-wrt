@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <airbag.h>
 
+int isregistered_real(void);
+
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 

@@ -38,6 +38,7 @@ struct menucontext {
 #define MENU_QOS 5
 #define MENU_ADMIN 6
 #define MENU_STATUS 7
+int iscpe(void);
 
 static struct menucontext *init_menu(webs_t wp)
 {

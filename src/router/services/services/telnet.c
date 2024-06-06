@@ -28,6 +28,8 @@
 #include <signal.h>
 #include <services.h>
 
+int isregistered_real(void);
+
 char *telnetd_deps(void)
 {
 	return "telnetd_enable http_username http_passwd";

@@ -51,6 +51,8 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
+
+int iscpe(void);
 #if defined(HAVE_80211AC) || (defined(HAVE_BRCMFMAC) && defined(HAVE_NORTHSTAR))
 #define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
 #else

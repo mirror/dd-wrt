@@ -196,6 +196,9 @@ static dd_atomic8_t superchannel = -1;
 #define IS_REGISTERED_REAL(conn_fp) (1)
 #endif
 
+int isregistered(void);
+int isregistered_real(void);
+
 #define DEFAULT_HTTP_PORT 80
 static char pid_file[80];
 static char *server_dir = NULL;

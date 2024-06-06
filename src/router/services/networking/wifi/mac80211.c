@@ -297,6 +297,7 @@ static void setchanbw(char *wif, char *driver, int bw)
 	sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/%s/chanbw", bw, wif, driver);
 }
 
+int iscpe(void);
 void configure_single_ath9k(int count)
 {
 	char *next;
@@ -1353,6 +1354,7 @@ static void setMacFilter(FILE *fp, char *iface)
 	}
 	LEAVE;
 }
+int isregistered(void);
 
 static int ieee80211_aton(char *str, unsigned char mac[6])
 {

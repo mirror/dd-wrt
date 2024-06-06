@@ -35,6 +35,7 @@
 #include <code_pattern.h>
 #include <cy_conf.h>
 #include <revision.h>
+int iscpe(void);
 
 EJ_VISIBLE void ej_compile_date(webs_t wp, int argc, char_t **argv)
 {
@@ -51,6 +52,8 @@ EJ_VISIBLE void ej_compile_time(webs_t wp, int argc, char_t **argv)
 {
 	websWrite(wp, "%s", __TIME__);
 }
+
+int getTrialCount(void);
 
 EJ_VISIBLE void ej_get_backup_name(webs_t wp, int argc, char_t **argv)
 {

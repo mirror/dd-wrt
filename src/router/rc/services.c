@@ -30,6 +30,8 @@
 #include <wlutils.h>
 #include <nvparse.h>
 
+int isregistered_real(void);
+
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
 
 #define TXPWR_MAX 1000

@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+int isregistered_real(void);
 
 char *mactelnetd_deps(void)
 {

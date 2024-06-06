@@ -37,6 +37,8 @@
 #include <services.h>
 #include <broadcom.h>
 
+int isregistered_real(void);
+
 static char *get_wanface(char *buf)
 {
 	char *dev = safe_get_wan_face(buf);

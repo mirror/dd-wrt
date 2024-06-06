@@ -61,6 +61,7 @@
 #include <sys/klog.h>
 #include <sys/wait.h>
 #define sys_stats(url) eval("stats", (url))
+int iscpe(void);
 
 // tofu
 int do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
@@ -1505,7 +1506,7 @@ static int gozila_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 		int d = websGetVari(wp, "browser_ts", 0);
 		if (d != 0) {
 			char cmd[32];
-			snprintf(&cmd, 32, "date -s '@%d'", d);
+			snprintf(cmd, 32, "date -s '@%d'", d);
 			system(cmd);
 			system("hwclock -w -u");
 		}
