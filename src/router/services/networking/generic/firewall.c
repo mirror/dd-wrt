@@ -944,6 +944,18 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		save2file_A_prerouting("-d %s -j DNAT --to-destination %s%s", wanaddr, lan_cclass, nvram_safe_get("dmz_ipaddr"));
 }
 
+static void del_rawtable(void)
+{
+#ifndef HAVE_NEW_NOTRACK
+		eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j",
+		     "NOTRACK"); //this speeds up networking alot on slow systems
+#else
+		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
+		eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j", "CT",
+		     "--notrack"); //this speeds up networking alot on slow systems
+#endif
+
+}
 static void add_rawtable(void)
 {
 #ifdef HAVE_SFE
@@ -1101,6 +1113,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
 		//              }
+		del_rawtable();
 	} else {
 		//              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems
