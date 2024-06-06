@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#if defined(CONFIG_CPU_BIG_ENDIAN)
+#include "appe_l2_vp_reg_be.h"
+#else
+
+#ifndef APPE_VP_REG_H
+#define APPE_VP_REG_H
+
+/*[register] VP_LRN_LIMIT_COUNTER*/
+#define VP_LRN_LIMIT_COUNTER
+#define VP_LRN_LIMIT_COUNTER_ADDRESS 0xb00
+#define VP_LRN_LIMIT_COUNTER_NUM     256
+#define VP_LRN_LIMIT_COUNTER_INC     0x4
+#define VP_LRN_LIMIT_COUNTER_TYPE    REG_TYPE_RO
+#define VP_LRN_LIMIT_COUNTER_DEFAULT 0x0
+	/*[field] LRN_CNT*/
+	#define VP_LRN_LIMIT_COUNTER_LRN_CNT
+	#define VP_LRN_LIMIT_COUNTER_LRN_CNT_OFFSET  0
+	#define VP_LRN_LIMIT_COUNTER_LRN_CNT_LEN     12
+	#define VP_LRN_LIMIT_COUNTER_LRN_CNT_DEFAULT 0x0
+
+struct vp_lrn_limit_counter {
+	a_uint32_t  lrn_cnt:12;
+	a_uint32_t  _reserved0:20;
+};
+
+union vp_lrn_limit_counter_u {
+	a_uint32_t val;
+	struct vp_lrn_limit_counter bf;
+};
+
+/*[table] L2_VP_PORT_TBL*/
+#define L2_VP_PORT_TBL
+#define L2_VP_PORT_TBL_ADDRESS 0x38000
+#define L2_VP_PORT_TBL_NUM     256
+#define L2_VP_PORT_TBL_INC     0x10
+#define L2_VP_PORT_TBL_TYPE    REG_TYPE_RW
+#define L2_VP_PORT_TBL_DEFAULT 0x0
+	/*[field] INVALID_VSI_FORWARDING_EN*/
+	#define L2_VP_PORT_TBL_INVALID_VSI_FORWARDING_EN
+	#define L2_VP_PORT_TBL_INVALID_VSI_FORWARDING_EN_OFFSET  0
+	#define L2_VP_PORT_TBL_INVALID_VSI_FORWARDING_EN_LEN     1
+	#define L2_VP_PORT_TBL_INVALID_VSI_FORWARDING_EN_DEFAULT 0x0
+	/*[field] PROMISC_EN*/
+	#define L2_VP_PORT_TBL_PROMISC_EN
+	#define L2_VP_PORT_TBL_PROMISC_EN_OFFSET  1
+	#define L2_VP_PORT_TBL_PROMISC_EN_LEN     1
+	#define L2_VP_PORT_TBL_PROMISC_EN_DEFAULT 0x0
+	/*[field] DST_INFO*/
+	#define L2_VP_PORT_TBL_DST_INFO
+	#define L2_VP_PORT_TBL_DST_INFO_OFFSET  2
+	#define L2_VP_PORT_TBL_DST_INFO_LEN     8
+	#define L2_VP_PORT_TBL_DST_INFO_DEFAULT 0x0
+	/*[field] PHYSICAL_PORT*/
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_OFFSET  10
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_LEN     3
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_DEFAULT 0x0
+	/*[field] NEW_ADDR_LRN_EN*/
+	#define L2_VP_PORT_TBL_NEW_ADDR_LRN_EN
+	#define L2_VP_PORT_TBL_NEW_ADDR_LRN_EN_OFFSET  13
+	#define L2_VP_PORT_TBL_NEW_ADDR_LRN_EN_LEN     1
+	#define L2_VP_PORT_TBL_NEW_ADDR_LRN_EN_DEFAULT 0x0
+	/*[field] NEW_ADDR_FWD_CMD*/
+	#define L2_VP_PORT_TBL_NEW_ADDR_FWD_CMD
+	#define L2_VP_PORT_TBL_NEW_ADDR_FWD_CMD_OFFSET  14
+	#define L2_VP_PORT_TBL_NEW_ADDR_FWD_CMD_LEN     2
+	#define L2_VP_PORT_TBL_NEW_ADDR_FWD_CMD_DEFAULT 0x0
+	/*[field] STATION_MOVE_LRN_EN*/
+	#define L2_VP_PORT_TBL_STATION_MOVE_LRN_EN
+	#define L2_VP_PORT_TBL_STATION_MOVE_LRN_EN_OFFSET  16
+	#define L2_VP_PORT_TBL_STATION_MOVE_LRN_EN_LEN     1
+	#define L2_VP_PORT_TBL_STATION_MOVE_LRN_EN_DEFAULT 0x0
+	/*[field] STATION_MOVE_FWD_CMD*/
+	#define L2_VP_PORT_TBL_STATION_MOVE_FWD_CMD
+	#define L2_VP_PORT_TBL_STATION_MOVE_FWD_CMD_OFFSET  17
+	#define L2_VP_PORT_TBL_STATION_MOVE_FWD_CMD_LEN     2
+	#define L2_VP_PORT_TBL_STATION_MOVE_FWD_CMD_DEFAULT 0x0
+	/*[field] LRN_LMT_CNT*/
+	#define L2_VP_PORT_TBL_LRN_LMT_CNT
+	#define L2_VP_PORT_TBL_LRN_LMT_CNT_OFFSET  19
+	#define L2_VP_PORT_TBL_LRN_LMT_CNT_LEN     12
+	#define L2_VP_PORT_TBL_LRN_LMT_CNT_DEFAULT 0x0
+	/*[field] LRN_LMT_EN*/
+	#define L2_VP_PORT_TBL_LRN_LMT_EN
+	#define L2_VP_PORT_TBL_LRN_LMT_EN_OFFSET  31
+	#define L2_VP_PORT_TBL_LRN_LMT_EN_LEN     1
+	#define L2_VP_PORT_TBL_LRN_LMT_EN_DEFAULT 0x0
+	/*[field] LRN_LMT_EXCEED_FWD*/
+	#define L2_VP_PORT_TBL_LRN_LMT_EXCEED_FWD
+	#define L2_VP_PORT_TBL_LRN_LMT_EXCEED_FWD_OFFSET  32
+	#define L2_VP_PORT_TBL_LRN_LMT_EXCEED_FWD_LEN     2
+	#define L2_VP_PORT_TBL_LRN_LMT_EXCEED_FWD_DEFAULT 0x0
+	/*[field] EG_VLAN_FLTR_CMD*/
+	#define L2_VP_PORT_TBL_EG_VLAN_FLTR_CMD
+	#define L2_VP_PORT_TBL_EG_VLAN_FLTR_CMD_OFFSET  34
+	#define L2_VP_PORT_TBL_EG_VLAN_FLTR_CMD_LEN     1
+	#define L2_VP_PORT_TBL_EG_VLAN_FLTR_CMD_DEFAULT 0x0
+	/*[field] PORT_ISOLATION_BITMAP*/
+	#define L2_VP_PORT_TBL_PORT_ISOLATION_BITMAP
+	#define L2_VP_PORT_TBL_PORT_ISOLATION_BITMAP_OFFSET  35
+	#define L2_VP_PORT_TBL_PORT_ISOLATION_BITMAP_LEN     8
+	#define L2_VP_PORT_TBL_PORT_ISOLATION_BITMAP_DEFAULT 0x0
+	/*[field] ISOL_PROFILE*/
+	#define L2_VP_PORT_TBL_ISOL_PROFILE
+	#define L2_VP_PORT_TBL_ISOL_PROFILE_OFFSET  43
+	#define L2_VP_PORT_TBL_ISOL_PROFILE_LEN     6
+	#define L2_VP_PORT_TBL_ISOL_PROFILE_DEFAULT 0x0
+	/*[field] ISOL_EN*/
+	#define L2_VP_PORT_TBL_ISOL_EN
+	#define L2_VP_PORT_TBL_ISOL_EN_OFFSET  49
+	#define L2_VP_PORT_TBL_ISOL_EN_LEN     1
+	#define L2_VP_PORT_TBL_ISOL_EN_DEFAULT 0x0
+	/*[field] POLICER_EN*/
+	#define L2_VP_PORT_TBL_POLICER_EN
+	#define L2_VP_PORT_TBL_POLICER_EN_OFFSET  50
+	#define L2_VP_PORT_TBL_POLICER_EN_LEN     1
+	#define L2_VP_PORT_TBL_POLICER_EN_DEFAULT 0x0
+	/*[field] POLICER_INDEX*/
+	#define L2_VP_PORT_TBL_POLICER_INDEX
+	#define L2_VP_PORT_TBL_POLICER_INDEX_OFFSET  51
+	#define L2_VP_PORT_TBL_POLICER_INDEX_LEN     9
+	#define L2_VP_PORT_TBL_POLICER_INDEX_DEFAULT 0x0
+	/*[field] VP_STATE_CHECK_EN*/
+	#define L2_VP_PORT_TBL_VP_STATE_CHECK_EN
+	#define L2_VP_PORT_TBL_VP_STATE_CHECK_EN_OFFSET  60
+	#define L2_VP_PORT_TBL_VP_STATE_CHECK_EN_LEN     1
+	#define L2_VP_PORT_TBL_VP_STATE_CHECK_EN_DEFAULT 0x0
+	/*[field] VP_TYPE*/
+	#define L2_VP_PORT_TBL_VP_TYPE
+	#define L2_VP_PORT_TBL_VP_TYPE_OFFSET  61
+	#define L2_VP_PORT_TBL_VP_TYPE_LEN     1
+	#define L2_VP_PORT_TBL_VP_TYPE_DEFAULT 0x0
+	/*[field] VP_CONTEXT_ACTIVE*/
+	#define L2_VP_PORT_TBL_VP_CONTEXT_ACTIVE
+	#define L2_VP_PORT_TBL_VP_CONTEXT_ACTIVE_OFFSET  62
+	#define L2_VP_PORT_TBL_VP_CONTEXT_ACTIVE_LEN     1
+	#define L2_VP_PORT_TBL_VP_CONTEXT_ACTIVE_DEFAULT 0x0
+	/*[field] VP_EG_DATA_VALID*/
+	#define L2_VP_PORT_TBL_VP_EG_DATA_VALID
+	#define L2_VP_PORT_TBL_VP_EG_DATA_VALID_OFFSET  63
+	#define L2_VP_PORT_TBL_VP_EG_DATA_VALID_LEN     1
+	#define L2_VP_PORT_TBL_VP_EG_DATA_VALID_DEFAULT 0x0
+	/*[field] PHYSICAL_PORT_MTU_CHECK_EN*/
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_MTU_CHECK_EN
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_MTU_CHECK_EN_OFFSET  64
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_MTU_CHECK_EN_LEN     1
+	#define L2_VP_PORT_TBL_PHYSICAL_PORT_MTU_CHECK_EN_DEFAULT 0x0
+	/*[field] MTU_CHECK_TYPE*/
+	#define L2_VP_PORT_TBL_MTU_CHECK_TYPE
+	#define L2_VP_PORT_TBL_MTU_CHECK_TYPE_OFFSET  65
+	#define L2_VP_PORT_TBL_MTU_CHECK_TYPE_LEN     1
+	#define L2_VP_PORT_TBL_MTU_CHECK_TYPE_DEFAULT 0x0
+	/*[field] EXTRA_HEADER_LEN*/
+	#define L2_VP_PORT_TBL_EXTRA_HEADER_LEN
+	#define L2_VP_PORT_TBL_EXTRA_HEADER_LEN_OFFSET  66
+	#define L2_VP_PORT_TBL_EXTRA_HEADER_LEN_LEN     8
+	#define L2_VP_PORT_TBL_EXTRA_HEADER_LEN_DEFAULT 0x0
+	/*[field] EG_VLAN_FMT_VALID*/
+	#define L2_VP_PORT_TBL_EG_VLAN_FMT_VALID
+	#define L2_VP_PORT_TBL_EG_VLAN_FMT_VALID_OFFSET  74
+	#define L2_VP_PORT_TBL_EG_VLAN_FMT_VALID_LEN     1
+	#define L2_VP_PORT_TBL_EG_VLAN_FMT_VALID_DEFAULT 0x0
+	/*[field] EG_STAG_FMT*/
+	#define L2_VP_PORT_TBL_EG_STAG_FMT
+	#define L2_VP_PORT_TBL_EG_STAG_FMT_OFFSET  75
+	#define L2_VP_PORT_TBL_EG_STAG_FMT_LEN     1
+	#define L2_VP_PORT_TBL_EG_STAG_FMT_DEFAULT 0x0
+	/*[field] EG_CTAG_FMT*/
+	#define L2_VP_PORT_TBL_EG_CTAG_FMT
+	#define L2_VP_PORT_TBL_EG_CTAG_FMT_OFFSET  76
+	#define L2_VP_PORT_TBL_EG_CTAG_FMT_LEN     1
+	#define L2_VP_PORT_TBL_EG_CTAG_FMT_DEFAULT 0x0
+	/*[field] EXCEPTION_FMT_CTRL*/
+	#define L2_VP_PORT_TBL_EXCEPTION_FMT_CTRL
+	#define L2_VP_PORT_TBL_EXCEPTION_FMT_CTRL_OFFSET  77
+	#define L2_VP_PORT_TBL_EXCEPTION_FMT_CTRL_LEN     1
+	#define L2_VP_PORT_TBL_EXCEPTION_FMT_CTRL_DEFAULT 0x0
+	/*[field] ENQ_SERVICE_CODE_EN*/
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_EN
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_EN_OFFSET  78
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_EN_LEN     1
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_EN_DEFAULT 0x0
+	/*[field] ENQ_SERVICE_CODE*/
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_OFFSET  79
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_LEN     8
+	#define L2_VP_PORT_TBL_ENQ_SERVICE_CODE_DEFAULT 0x0
+	/*[field] ENQ_PHY_PORT*/
+	#define L2_VP_PORT_TBL_ENQ_PHY_PORT
+	#define L2_VP_PORT_TBL_ENQ_PHY_PORT_OFFSET  87
+	#define L2_VP_PORT_TBL_ENQ_PHY_PORT_LEN     3
+	#define L2_VP_PORT_TBL_ENQ_PHY_PORT_DEFAULT 0x0
+	/*[field] APP_CTRL_PROFILE*/
+	#define L2_VP_PORT_TBL_APP_CTRL_PROFILE
+	#define L2_VP_PORT_TBL_APP_CTRL_PROFILE_OFFSET  90
+	#define L2_VP_PORT_TBL_APP_CTRL_PROFILE_LEN     8
+	#define L2_VP_PORT_TBL_APP_CTRL_PROFILE_DEFAULT 0x0
+
+struct l2_vp_port_tbl {
+	a_uint32_t  invalid_vsi_forwarding_en:1;
+	a_uint32_t  promisc_en:1;
+	a_uint32_t  dst_info:8;
+	a_uint32_t  physical_port:3;
+	a_uint32_t  new_addr_lrn_en:1;
+	a_uint32_t  new_addr_fwd_cmd:2;
+	a_uint32_t  station_move_lrn_en:1;
+	a_uint32_t  station_move_fwd_cmd:2;
+	a_uint32_t  lrn_lmt_cnt:12;
+	a_uint32_t  lrn_lmt_en:1;
+	a_uint32_t  lrn_lmt_exceed_fwd:2;
+	a_uint32_t  eg_vlan_fltr_cmd:1;
+	a_uint32_t  port_isolation_bitmap:8;
+	a_uint32_t  isol_profile:6;
+	a_uint32_t  isol_en:1;
+	a_uint32_t  policer_en:1;
+	a_uint32_t  policer_index:9;
+	a_uint32_t  vp_state_check_en:1;
+	a_uint32_t  vp_type:1;
+	a_uint32_t  vp_context_active:1;
+	a_uint32_t  vp_eg_data_valid:1;
+	a_uint32_t  physical_port_mtu_check_en:1;
+	a_uint32_t  mtu_check_type:1;
+	a_uint32_t  extra_header_len:8;
+	a_uint32_t  eg_vlan_fmt_valid:1;
+	a_uint32_t  eg_stag_fmt:1;
+	a_uint32_t  eg_ctag_fmt:1;
+	a_uint32_t  exception_fmt_ctrl:1;
+	a_uint32_t  enq_service_code_en:1;
+	a_uint32_t  enq_service_code:8;
+	a_uint32_t  enq_phy_port:3;
+	a_uint32_t  app_ctrl_profile_0:6;
+	a_uint32_t  app_ctrl_profile_1:2;
+	a_uint32_t  _reserved0:30;
+};
+
+union l2_vp_port_tbl_u {
+	a_uint32_t val[4];
+	struct l2_vp_port_tbl bf;
+};
+#endif
+#endif

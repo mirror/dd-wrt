@@ -1,0 +1,952 @@
+/*
+ * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+
+#ifndef _MHT_REG_H
+#define _MHT_REG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+#define MHT_DEVICE_ID  0x17
+
+#define HSL_RW 1
+#define HSL_RO 0
+
+/*
+ * Manhattan GCC Gloabl Control Register
+ */
+ /*global intr status*/
+#define GLOBAL_INTR_STATUS
+#define GLOBAL_INTR_STATUS_ID                           0
+#define GLOBAL_INTR_STATUS_OFFSET                       0xC90F004
+#define GLOBAL_INTR_STATUS_E_LENGTH                     4
+#define GLOBAL_INTR_STATUS_E_OFFSET                     0
+#define GLOBAL_INTR_STATUS_NR_E                         1
+
+/*switch_int_status*/
+#define GLOBAL_INTR_STATUS_SWITCH
+#define GLOBAL_INTR_STATUS_SWITCH_BOFFSET               11
+#define GLOBAL_INTR_STATUS_SWITCH_BLEN                  1
+#define GLOBAL_INTR_STATUS_SWITCH_FLAG                  HSL_RW
+
+/*global intr enable*/
+#define GLOBAL_INTR_ENABLE
+#define GLOBAL_INTR_ENABLE_ID                           0
+#define GLOBAL_INTR_ENABLE_OFFSET                       0xC90F008
+#define GLOBAL_INTR_ENABLE_E_LENGTH                     4
+#define GLOBAL_INTR_ENABLE_E_OFFSET                     0
+#define GLOBAL_INTR_ENABLE_NR_E                         1
+
+/*switch_int_enable*/
+#define GLOBAL_INTR_ENABLE_SWITCH
+#define GLOBAL_INTR_ENABLE_SWITCH_BOFFSET               11
+#define GLOBAL_INTR_ENABLE_SWITCH_BLEN                  1
+#define GLOBAL_INTR_ENABLE_SWITCH_FLAG                  HSL_RW
+
+/*phy0 intr enable*/
+#define GLOBAL_INTR_ENABLE_PHY0
+#define GLOBAL_INTR_ENABLE_PHY0_BOFFSET                 7
+#define GLOBAL_INTR_ENABLE_PHY0_BLEN                    1
+#define GLOBAL_INTR_ENABLE_PHY0_FLAG                    HSL_RW
+
+/*phy1 intr enable*/
+#define GLOBAL_INTR_ENABLE_PHY1
+#define GLOBAL_INTR_ENABLE_PHY1_BOFFSET                 6
+#define GLOBAL_INTR_ENABLE_PHY1_BLEN                    1
+#define GLOBAL_INTR_ENABLE_PHY1_FLAG                    HSL_RW
+
+/*phy2 intr enable*/
+#define GLOBAL_INTR_ENABLE_PHY2
+#define GLOBAL_INTR_ENABLE_PHY2_BOFFSET                 5
+#define GLOBAL_INTR_ENABLE_PHY2_BLEN                    1
+#define GLOBAL_INTR_ENABLE_PHY2_FLAG                    HSL_RW
+
+/*phy3 intr enable*/
+#define GLOBAL_INTR_ENABLE_PHY3
+#define GLOBAL_INTR_ENABLE_PHY3_BOFFSET                 4
+#define GLOBAL_INTR_ENABLE_PHY3_BLEN                    1
+#define GLOBAL_INTR_ENABLE_PHY3_FLAG                    HSL_RW
+
+/*WOL intr enable*/
+#define WOLL_INTR_ENABLE
+#define WOL_INTR_ENABLE_ID                              0
+#define WOL_INTR_ENABLE_OFFSET                          0xC90F010
+#define WOL_INTR_ENABLE_E_LENGTH                        4
+#define WOL_INTR_ENABLE_E_OFFSET                        0
+#define WOL_INTR_ENABLE_NR_E                            1
+
+/*phy0 WOL intr enable*/
+#define WOL_INTR_ENABLE_PHY0
+#define WOL_INTR_ENABLE_PHY0_BOFFSET                    0
+#define WOL_INTR_ENABLE_PHY0_BLEN                       1
+#define WOL_INTR_ENABLE_PHY0_FLAG                       HSL_RW
+
+/*phy1 WOL intr enable*/
+#define WOL_INTR_ENABLE_PHY1
+#define WOL_INTR_ENABLE_PHY1_BOFFSET                    1
+#define WOL_INTR_ENABLE_PHY1_BLEN                       1
+#define WOL_INTR_ENABLE_PHY1_FLAG                       HSL_RW
+
+/*phy2 WOL intr enable*/
+#define WOL_INTR_ENABLE_PHY2
+#define WOL_INTR_ENABLE_PHY2_BOFFSET                    2
+#define WOL_INTR_ENABLE_PHY2_BLEN                       1
+#define WOL_INTR_ENABLE_PHY2_FLAG                       HSL_RW
+
+/*phy3 WOL intr enable*/
+#define WOL_INTR_ENABLE_PHY3
+#define WOL_INTR_ENABLE_PHY3_BOFFSET                    3
+#define WOL_INTR_ENABLE_PHY3_BLEN                       1
+#define WOL_INTR_ENABLE_PHY3_FLAG                       HSL_RW
+
+/* work mode */
+#define WORK_MODE
+#define WORK_MODE_ID                                    0
+#define WORK_MODE_OFFSET                                0xC90F030
+#define WORK_MODE_E_LENGTH                              4
+#define WORK_MODE_E_OFFSET                              0
+#define WORK_MODE_NR_E                                  1
+
+/* port5 sel */
+#define WORK_MODE_PORT5_SEL
+#define WORK_MODE_PORT5_SEL_BOFFSET                     5
+#define WORK_MODE_PORT5_SEL_BLEN                        1
+#define WORK_MODE_PORT5_SEL_FLAG                        HSL_RW
+
+/* phy3 sel1 */
+#define WORK_MODE_PHY3_SEL1
+#define WORK_MODE_PHY3_SEL1_BOFFSET                     4
+#define WORK_MODE_PHY3_SEL1_BLEN                        1
+#define WORK_MODE_PHY3_SEL1_FLAG                        HSL_RW
+
+/* phy3 sel0 */
+#define WORK_MODE_PHY3_SEL0
+#define WORK_MODE_PHY3_SEL0_BOFFSET                     3
+#define WORK_MODE_PHY3_SEL0_BLEN                        1
+#define WORK_MODE_PHY3_SEL0_FLAG                        HSL_RW
+
+/* phy2 sel */
+#define WORK_MODE_PHY2_SEL
+#define WORK_MODE_PHY2_SEL_BOFFSET                      2
+#define WORK_MODE_PHY2_SEL_BLEN                         1
+#define WORK_MODE_PHY2_SEL_FLAG                         HSL_RW
+
+/* phy1 sel */
+#define WORK_MODE_PHY1_SEL
+#define WORK_MODE_PHY1_SEL_BOFFSET                      1
+#define WORK_MODE_PHY1_SEL_BLEN                         1
+#define WORK_MODE_PHY1_SEL_FLAG                         HSL_RW
+
+/* phy0 sel */
+#define WORK_MODE_PHY0_SEL
+#define WORK_MODE_PHY0_SEL_BOFFSET                      0
+#define WORK_MODE_PHY0_SEL_BLEN                         1
+#define WORK_MODE_PHY0_SEL_FLAG                         HSL_RW
+
+/* serdes cfg */
+#define SERDES_CFG
+#define SERDES_CFG_ID                                   0
+#define SERDES_CFG_OFFSET                               0xC90F014
+#define SERDES_CFG_E_LENGTH                             4
+#define SERDES_CFG_E_OFFSET                             0
+#define SERDES_CFG_NR_E                                 1
+
+/*serdes1 address*/
+#define SERDES_CFG_S1_XPCS_ADDR
+#define SERDES_CFG_S1_XPCS_ADDR_BOFFSET                 10
+#define SERDES_CFG_S1_XPCS_ADDR_BLEN                    5
+#define SERDES_CFG_S1_XPCS_ADDR_FLAG                    HSL_RW
+
+/*serdes1 address*/
+#define SERDES_CFG_S1_ADDR
+#define SERDES_CFG_S1_ADDR_BOFFSET                      5
+#define SERDES_CFG_S1_ADDR_BLEN                         5
+#define SERDES_CFG_S1_ADDR_FLAG                         HSL_RW
+
+/*serdes0 address*/
+#define SERDES_CFG_S0_ADDR
+#define SERDES_CFG_S0_ADDR_BOFFSET                      0
+#define SERDES_CFG_S0_ADDR_BLEN                         5
+#define SERDES_CFG_S0_ADDR_FLAG                         HSL_RW
+
+/* ephy cfg */
+#define EPHY_CFG
+#define EPHY_CFG_ID                                     0
+#define EPHY_CFG_OFFSET                                 0xC90F018
+#define EPHY_CFG_E_LENGTH                               4
+#define EPHY_CFG_E_OFFSET                               0
+#define EPHY_CFG_NR_E                                   1
+
+/*ephy3 phy address*/
+#define EPHY_CFG_EPHY3_ADDR
+#define EPHY_CFG_EPHY3_ADDR_BOFFSET                     15
+#define EPHY_CFG_EPHY3_ADDR_BLEN                        5
+#define EPHY_CFG_EPHY3_ADDR_FLAG                        HSL_RW
+
+/*ephy2 phy address*/
+#define EPHY_CFG_EPHY2_ADDR
+#define EPHY_CFG_EPHY2_ADDR_BOFFSET                     10
+#define EPHY_CFG_EPHY2_ADDR_BLEN                        5
+#define EPHY_CFG_EPHY2_ADDR_FLAG                        HSL_RW
+
+/*ephy1 phy address*/
+#define EPHY_CFG_EPHY1_ADDR
+#define EPHY_CFG_EPHY1_ADDR_BOFFSET                     5
+#define EPHY_CFG_EPHY1_ADDR_BLEN                        5
+#define EPHY_CFG_EPHY1_ADDR_FLAG                        HSL_RW
+
+/*ephy0 phy address*/
+#define EPHY_CFG_EPHY0_ADDR
+#define EPHY_CFG_EPHY0_ADDR_BOFFSET                     0
+#define EPHY_CFG_EPHY0_ADDR_BLEN                        5
+#define EPHY_CFG_EPHY0_ADDR_FLAG                        HSL_RW
+
+#define GCC_SWITCH_CORE_CBCR
+#define GCC_SWITCH_CORE_CBCR_ID                         0
+#define GCC_SWITCH_CORE_CBCR_OFFSET                     0xC800008
+#define GCC_SWITCH_CORE_CBCR_E_LENGTH                   4
+#define GCC_SWITCH_CORE_CBCR_E_OFFSET                   0
+#define GCC_SWITCH_CORE_CBCR_NR_E                       0
+
+/* reset switch core */
+#define GCC_SWITCH_CORE_CBCR_CLK_ARES
+#define GCC_SWITCH_CORE_CBCR_CLK_ARES_BOFFSET           2
+#define GCC_SWITCH_CORE_CBCR_CLK_ARES_BLEN              1
+#define GCC_SWITCH_CORE_CBCR_CLK_ARES_FLAG              HSL_RW
+
+#define GCC_GLOBAL_CTL
+#define GCC_GLOBAL_CTL_ID                               1
+#define GCC_GLOBAL_CTL_OFFSET                           0xC800308
+#define GCC_GLOBAL_CTL_E_LENGTH                         4
+#define GCC_GLOBAL_CTL_E_OFFSET                         0
+#define GCC_GLOBAL_CTL_NR_E                             0
+
+/* reset soc */
+#define GCC_GLOBAL_CTL_GCC_TOP_FUNC_ARES
+#define GCC_GLOBAL_CTL_GCC_TOP_FUNC_ARES_BOFFSET        0
+#define GCC_GLOBAL_CTL_GCC_TOP_FUNC_ARES_BLEN           1
+#define GCC_GLOBAL_CTL_GCC_TOP_FUNC_ARES_FLAG           HSL_RW
+
+/* WAN DSCP To Priority Register */
+#define DSCP_TO_EHPRI
+#define DSCP_TO_EHPRI_OFFSET     0x0730
+#define DSCP_TO_EHPRI_E_LENGTH   4
+#define DSCP_TO_EHPRI_E_OFFSET   0x0004
+#define DSCP_TO_EHPRI_NR_E       8
+
+/* WAN UP To Priority Register */
+#define UP_TO_EHPRI
+#define UP_TO_EHPRI_OFFSET     0x0750
+#define UP_TO_EHPRI_E_LENGTH   4
+#define UP_TO_EHPRI_E_OFFSET   0x0004
+#define UP_TO_EHPRI_NR_E       1
+
+/* port flow control threshold Register */
+#define PORT_FLOC_CTRL_THRESH
+#define PORT_FLOC_CTRL_THRESH_OFFSET	0x9b0
+#define PORT_FLOC_CTRL_THRESH_E_LENGTH   4
+#define PORT_FLOC_CTRL_THRESH_E_OFFSET   0x0004
+#define PORT_FLOC_CTRL_THRESH_NR_E       7
+
+#define XON
+#define PORT_FLOC_CTRL_THRESH_XON_BOFFSET        16
+#define PORT_FLOC_CTRL_THRESH_XON_BLEN           10
+#define PORT_FLOC_CTRL_THRESH_XON_FLAG           HSL_RW
+
+#define XOFF
+#define PORT_FLOC_CTRL_THRESH_XOFF_BOFFSET        0
+#define PORT_FLOC_CTRL_THRESH_XOFF_BLEN           10
+#define PORT_FLOC_CTRL_THRESH_XOFF_FLAG           HSL_RW
+
+#define FlOW_CMD_CTL
+#define FlOW_CMD_CTL_OFFSET                           0x0ea0
+#define FlOW_CMD_CTL_E_LENGTH                         4
+#define FlOW_CMD_CTL_E_OFFSET                         0x4
+#define FlOW_CMD_CTL_NR_E                             8
+
+#define LAN_2_LAN_DEFAULT
+#define FlOW_CMD_CTL_LAN_2_LAN_DEFAULT_BOFFSET        26
+#define FlOW_CMD_CTL_LAN_2_LAN_DEFAULT_BLEN           2
+#define FlOW_CMD_CTL_LAN_2_LAN_DEFAULT_FLAG           HSL_RW
+
+#define WAN_2_LAN_DEFAULT
+#define FlOW_CMD_CTL_WAN_2_LAN_DEFAULT_BOFFSET        24
+#define FlOW_CMD_CTL_WAN_2_LAN_DEFAULT_BLEN           2
+#define FlOW_CMD_CTL_WAN_2_LAN_DEFAULT_FLAG           HSL_RW
+
+#define LAN_2_WAN_DEFAULT
+#define FlOW_CMD_CTL_LAN_2_WAN_DEFAULT_BOFFSET        22
+#define FlOW_CMD_CTL_LAN_2_WAN_DEFAULT_BLEN           2
+#define FlOW_CMD_CTL_LAN_2_WAN_DEFAULT_FLAG           HSL_RW
+
+#define WAN_2_WAN_DEFAULT
+#define FlOW_CMD_CTL_WAN_2_WAN_DEFAULT_BOFFSET        20
+#define FlOW_CMD_CTL_WAN_2_WAN_DEFAULT_BLEN           2
+#define FlOW_CMD_CTL_WAN_2_WAN_DEFAULT_FLAG           HSL_RW
+
+#define FlOW_RT_CMD_CTL
+#define FlOW_RT_CMD_CTL_OFFSET                       0x0ec0
+#define FlOW_RT_CMD_CTL_E_LENGTH                     4
+#define FlOW_RT_CMD_CTL_E_OFFSET                     0x4
+#define FlOW_RT_CMD_CTL_NR_E                         8
+
+#define LAN_2_LAN_DEFAULT
+#define FlOW_RT_CMD_CTL_LAN_2_LAN_DEFAULT_BOFFSET    26
+#define FlOW_RT_CMD_CTL_LAN_2_LAN_DEFAULT_BLEN       2
+#define FlOW_RT_CMD_CTL_LAN_2_LAN_DEFAULT_FLAG       HSL_RW
+
+#define WAN_2_LAN_DEFAULT
+#define FlOW_RT_CMD_CTL_WAN_2_LAN_DEFAULT_BOFFSET    24
+#define FlOW_RT_CMD_CTL_WAN_2_LAN_DEFAULT_BLEN       2
+#define FlOW_RT_CMD_CTL_WAN_2_LAN_DEFAULT_FLAG       HSL_RW
+
+#define LAN_2_WAN_DEFAULT
+#define FlOW_RT_CMD_CTL_LAN_2_WAN_DEFAULT_BOFFSET    22
+#define FlOW_RT_CMD_CTL_LAN_2_WAN_DEFAULT_BLEN       2
+#define FlOW_RT_CMD_CTL_LAN_2_WAN_DEFAULT_FLAG       HSL_RW
+
+#define WAN_2_WAN_DEFAULT
+#define FlOW_RT_CMD_CTL_WAN_2_WAN_DEFAULT_BOFFSET    20
+#define FlOW_RT_CMD_CTL_WAN_2_WAN_DEFAULT_BLEN       2
+#define FlOW_RT_CMD_CTL_WAN_2_WAN_DEFAULT_FLAG       HSL_RW
+
+#define IP4_DEFAULT_ROUTE_ENTRY
+#define IP4_DEFAULT_ROUTE_ENTRY_OFFSET                     0x004c4
+#define IP4_DEFAULT_ROUTE_ENTRY_E_LENGTH                   4
+#define IP4_DEFAULT_ROUTE_ENTRY_E_OFFSET                   0x0
+#define IP4_DEFAULT_ROUTE_ENTRY_NR_E                       8
+
+#define VALID
+#define IP4_DEFAULT_ROUTE_ENTRY_VALID_BOFFSET          11
+#define IP4_DEFAULT_ROUTE_ENTRY_VALID_BLEN             1
+#define IP4_DEFAULT_ROUTE_ENTRY_VALID_FLAG             HSL_RW
+
+#define VRF
+#define IP4_DEFAULT_ROUTE_ENTRY_VRF_BOFFSET          8
+#define IP4_DEFAULT_ROUTE_ENTRY_VRF_BLEN             3
+#define IP4_DEFAULT_ROUTE_ENTRY_VRF_FLAG             HSL_RW
+
+#define ARP_WCMP_TYPE
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_BOFFSET          7
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_BLEN             1
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_FLAG             HSL_RW
+
+#define ARP_WCMP_INDEX
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_BOFFSET          0
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_BLEN             7
+#define IP4_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_FLAG             HSL_RW
+
+#define IP6_DEFAULT_ROUTE_ENTRY
+#define IP6_DEFAULT_ROUTE_ENTRY_OFFSET                     0x004c4
+#define IP6_DEFAULT_ROUTE_ENTRY_E_LENGTH                   4
+#define IP6_DEFAULT_ROUTE_ENTRY_E_OFFSET                   0x0
+#define IP6_DEFAULT_ROUTE_ENTRY_NR_E                       8
+
+#define VALID
+#define IP6_DEFAULT_ROUTE_ENTRY_VALID_BOFFSET          11
+#define IP6_DEFAULT_ROUTE_ENTRY_VALID_BLEN             1
+#define IP6_DEFAULT_ROUTE_ENTRY_VALID_FLAG             HSL_RW
+
+#define VRF
+#define IP6_DEFAULT_ROUTE_ENTRY_VRF_BOFFSET          8
+#define IP6_DEFAULT_ROUTE_ENTRY_VRF_BLEN             3
+#define IP6_DEFAULT_ROUTE_ENTRY_VRF_FLAG             HSL_RW
+
+#define ARP_WCMP_TYPE
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_BOFFSET          7
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_BLEN             1
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_TYPE_FLAG             HSL_RW
+
+#define ARP_WCMP_INDEX
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_BOFFSET          0
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_BLEN             7
+#define IP6_DEFAULT_ROUTE_ENTRY_ARP_WCMP_INDEX_FLAG             HSL_RW
+
+#define IP4_HOST_ROUTE_ENTRY0
+#define IP4_HOST_ROUTE_ENTRY0_OFFSET                     0x5b000
+#define IP4_HOST_ROUTE_ENTRY0_E_LENGTH                   4
+#define IP4_HOST_ROUTE_ENTRY0_E_OFFSET                   0x0
+#define IP4_HOST_ROUTE_ENTRY0_NR_E                       16
+
+#define IP4_ADDRL
+#define IP4_HOST_ROUTE_ENTRY0_IP4_ADDRL_BOFFSET          5
+#define IP4_HOST_ROUTE_ENTRY0_IP4_ADDRL_BLEN             27
+#define IP4_HOST_ROUTE_ENTRY0_IP4_ADDRL_FLAG             HSL_RW
+
+#define PREFIX_LENGTH
+#define IP4_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_BOFFSET     0
+#define IP4_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_BLEN        5
+#define IP4_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_FLAG        HSL_RW
+
+#define IP4_HOST_ROUTE_ENTRY1
+#define IP4_HOST_ROUTE_ENTRY1_OFFSET                     0x5b004
+#define IP4_HOST_ROUTE_ENTRY1_E_LENGTH                   4
+#define IP4_HOST_ROUTE_ENTRY1_E_OFFSET                   0x0
+#define IP4_HOST_ROUTE_ENTRY1_NR_E                       16
+
+#define VALID
+#define IP4_HOST_ROUTE_ENTRY1_VALID_BOFFSET          8
+#define IP4_HOST_ROUTE_ENTRY1_VALID_BLEN             1
+#define IP4_HOST_ROUTE_ENTRY1_VALID_FLAG             HSL_RW
+
+#define VRF
+#define IP4_HOST_ROUTE_ENTRY1_VRF_BOFFSET          5
+#define IP4_HOST_ROUTE_ENTRY1_VRF_BLEN             3
+#define IP4_HOST_ROUTE_ENTRY1_VRF_FLAG             HSL_RW
+
+#define IP4_ADDRH
+#define IP4_HOST_ROUTE_ENTRY1_IP4_ADDRH_BOFFSET     0
+#define IP4_HOST_ROUTE_ENTRY1_IP4_ADDRH_BLEN        5
+#define IP4_HOST_ROUTE_ENTRY1_IP4_ADDRH_FLAG        HSL_RW
+
+#define IP6_HOST_ROUTE_ENTRY0
+#define IP6_HOST_ROUTE_ENTRY0_OFFSET                     0x5b100
+#define IP6_HOST_ROUTE_ENTRY0_E_LENGTH                   4
+#define IP6_HOST_ROUTE_ENTRY0_E_OFFSET                   0x0
+#define IP6_HOST_ROUTE_ENTRY0_NR_E                       16
+
+#define PREFIX_LENGTH
+#define IP6_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_BOFFSET          0
+#define IP6_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_BLEN             7
+#define IP6_HOST_ROUTE_ENTRY0_PREFIX_LENGTH_FLAG             HSL_RW
+
+#define IP6_ADDR0L
+#define IP6_HOST_ROUTE_ENTRY0_IP6_ADDR0L_BOFFSET          7
+#define IP6_HOST_ROUTE_ENTRY0_IP6_ADDR0L_BLEN             25
+#define IP6_HOST_ROUTE_ENTRY0_IP6_ADDR0L_FLAG             HSL_RW
+
+#define IP6_HOST_ROUTE_ENTRY1
+#define IP6_HOST_ROUTE_ENTRY1_OFFSET                     0x5b104
+#define IP6_HOST_ROUTE_ENTRY1_E_LENGTH                   4
+#define IP6_HOST_ROUTE_ENTRY1_E_OFFSET                   0x0
+#define IP6_HOST_ROUTE_ENTRY1_NR_E                       16
+
+#define IP6_ADDR0H
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR0H_BOFFSET          0
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR0H_BLEN             7
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR0H_FLAG             HSL_RW
+
+#define IP6_ADDR1L
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR1L_BOFFSET          7
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR1L_BLEN             25
+#define IP6_HOST_ROUTE_ENTRY1_IP6_ADDR1L_FLAG             HSL_RW
+
+#define IP6_HOST_ROUTE_ENTRY2
+#define IP6_HOST_ROUTE_ENTRY2_OFFSET                     0x5b108
+#define IP6_HOST_ROUTE_ENTRY2_E_LENGTH                   4
+#define IP6_HOST_ROUTE_ENTRY2_E_OFFSET                   0x0
+#define IP6_HOST_ROUTE_ENTRY2_NR_E                       16
+
+#define IP6_ADDR1H
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR1H_BOFFSET          0
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR1H_BLEN             7
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR1H_FLAG             HSL_RW
+
+#define IP6_ADDR2L
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR2L_BOFFSET          7
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR2L_BLEN             25
+#define IP6_HOST_ROUTE_ENTRY2_IP6_ADDR2L_FLAG             HSL_RW
+
+#define IP6_HOST_ROUTE_ENTRY3
+#define IP6_HOST_ROUTE_ENTRY3_OFFSET                     0x5b10c
+#define IP6_HOST_ROUTE_ENTRY3_E_LENGTH                   4
+#define IP6_HOST_ROUTE_ENTRY3_E_OFFSET                   0x0
+#define IP6_HOST_ROUTE_ENTRY3_NR_E                       16
+
+#define IP6_ADDR2H
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR2H_BOFFSET          0
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR2H_BLEN             7
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR2H_FLAG             HSL_RW
+
+#define IP6_ADDR3L
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR3L_BOFFSET          7
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR3L_BLEN             25
+#define IP6_HOST_ROUTE_ENTRY3_IP6_ADDR3L_FLAG             HSL_RW
+
+#define IP6_HOST_ROUTE_ENTRY4
+#define IP6_HOST_ROUTE_ENTRY4_OFFSET                     0x5b110
+#define IP6_HOST_ROUTE_ENTRY4_E_LENGTH                   4
+#define IP6_HOST_ROUTE_ENTRY4_E_OFFSET                   0x0
+#define IP6_HOST_ROUTE_ENTRY4_NR_E                       16
+
+#define IP6_ADDR3H
+#define IP6_HOST_ROUTE_ENTRY4_IP6_ADDR3H_BOFFSET          0
+#define IP6_HOST_ROUTE_ENTRY4_IP6_ADDR3H_BLEN             7
+#define IP6_HOST_ROUTE_ENTRY4_IP6_ADDR3H_FLAG             HSL_RW
+
+#define VRF
+#define IP6_HOST_ROUTE_ENTRY4_VRF_BOFFSET          7
+#define IP6_HOST_ROUTE_ENTRY4_VRF_BLEN             3
+#define IP6_HOST_ROUTE_ENTRY4_VRF_FLAG             HSL_RW
+
+#define VALID
+#define IP6_HOST_ROUTE_ENTRY4_VALID_BOFFSET          10
+#define IP6_HOST_ROUTE_ENTRY4_VALID_BLEN             1
+#define IP6_HOST_ROUTE_ENTRY4_VALID_FLAG             HSL_RW
+
+/* Flow Congestion Drop CTRL0 */
+#define FLOW_CONGE_DROP_CTRL0
+#define FLOW_CONGE_DROP_CTRL0_OFFSET         0x0b74
+#define FLOW_CONGE_DROP_CTRL0_E_LENGTH       4
+#define FLOW_CONGE_DROP_CTRL0_E_OFFSET       4
+#define FLOW_CONGE_DROP_CTRL0_NR_E           1
+
+#define EN5
+#define FLOW_CONGE_DROP_CTRL0_EN5_BOFFSET        22
+#define FLOW_CONGE_DROP_CTRL0_EN5_BLEN           6
+#define FLOW_CONGE_DROP_CTRL0_EN5_FLAG           HSL_RW
+
+#define EN4
+#define FLOW_CONGE_DROP_CTRL0_EN4_BOFFSET        18
+#define FLOW_CONGE_DROP_CTRL0_EN4_BLEN           4
+#define FLOW_CONGE_DROP_CTRL0_EN4_FLAG           HSL_RW
+
+#define EN3
+#define FLOW_CONGE_DROP_CTRL0_EN3_BOFFSET        14
+#define FLOW_CONGE_DROP_CTRL0_EN3_BLEN           4
+#define FLOW_CONGE_DROP_CTRL0_EN3_FLAG           HSL_RW
+
+#define EN2
+#define FLOW_CONGE_DROP_CTRL0_EN2_BOFFSET        10
+#define FLOW_CONGE_DROP_CTRL0_EN2_BLEN           4
+#define FLOW_CONGE_DROP_CTRL0_EN2_FLAG           HSL_RW
+
+#define EN1
+#define FLOW_CONGE_DROP_CTRL0_EN1_BOFFSET        6
+#define FLOW_CONGE_DROP_CTRL0_EN1_BLEN           4
+#define FLOW_CONGE_DROP_CTRL0_EN1_FLAG           HSL_RW
+
+#define EN0
+#define FLOW_CONGE_DROP_CTRL0_EN0_BOFFSET        0
+#define FLOW_CONGE_DROP_CTRL0_EN0_BLEN           6
+#define FLOW_CONGE_DROP_CTRL0_EN0_FLAG           HSL_RW
+
+#define FLOW_CONGE_DROP_CTRL1
+#define FLOW_CONGE_DROP_CTRL1_OFFSET         0x0b78
+#define FLOW_CONGE_DROP_CTRL1_E_LENGTH       4
+#define FLOW_CONGE_DROP_CTRL1_E_OFFSET       4
+#define FLOW_CONGE_DROP_CTRL1_NR_E           1
+
+#define EN6
+#define FLOW_CONGE_DROP_CTRL1_EN6_BOFFSET        0
+#define FLOW_CONGE_DROP_CTRL1_EN6_BLEN           6
+#define FLOW_CONGE_DROP_CTRL1_EN6_FLAG           HSL_RW
+
+/* SWITCH GLOBAL FLOW CTRL THRESHOLD REGISTER  */
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_OFFSET	0x800
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_E_LENGTH	4
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_E_OFFSET	0
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_NR_E		1
+
+#define XON_THRES
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XON_THRES_BOFFSET	16
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XON_THRES_BLEN	11
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XON_THRES_FLAG	HSL_RW
+
+#define XOFF_THRES
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XOFF_THRES_BOFFSET	0
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XOFF_THRES_BLEN	11
+#define SWITCH_GLOBAL_FLOW_CTRL_THRESHOLD_XOFF_THRES_FLAG	HSL_RW
+
+/* Ring Flow Control Threshold Register*/
+#define RING_FLOW_CTRL_THRES
+#define RING_FLOW_CTRL_THRES_OFFSET         0x0b80
+#define RING_FLOW_CTRL_THRES_E_LENGTH       4
+#define RING_FLOW_CTRL_THRES_E_OFFSET       4
+#define RING_FLOW_CTRL_THRES_NR_E           8
+
+#define XON
+#define RING_FLOW_CTRL_THRES_XON_BOFFSET        16
+#define RING_FLOW_CTRL_THRES_XON_BLEN           10
+#define RING_FLOW_CTRL_THRES_XON_FLAG           HSL_RW
+
+#define XOFF
+#define RING_FLOW_CTRL_THRES_XOFF_BOFFSET        0
+#define RING_FLOW_CTRL_THRES_XOFF_BLEN           10
+#define RING_FLOW_CTRL_THRES_XOFF_FLAG           HSL_RW
+
+/* PORT5 Ring Flow Control Threshold Register*/
+#define PORT5_RING_FLOW_CTRL_THRES
+#define PORT5_RING_FLOW_CTRL_THRES_OFFSET         0x0ba0
+#define PORT5_RING_FLOW_CTRL_THRES_E_LENGTH       4
+#define PORT5_RING_FLOW_CTRL_THRES_E_OFFSET       4
+#define PORT5_RING_FLOW_CTRL_THRES_NR_E           8
+
+#define XON
+#define PORT5_RING_FLOW_CTRL_THRES_XON_BOFFSET        16
+#define PORT5_RING_FLOW_CTRL_THRES_XON_BLEN           10
+#define PORT5_RING_FLOW_CTRL_THRES_XON_FLAG           HSL_RW
+
+#define XOFF
+#define PORT5_RING_FLOW_CTRL_THRES_XOFF_BOFFSET        0
+#define PORT5_RING_FLOW_CTRL_THRES_XOFF_BLEN           10
+#define PORT5_RING_FLOW_CTRL_THRES_XOFF_FLAG           HSL_RW
+
+/* PORT0 PORT5 RING UNION */
+#define PORT0_PORT5_RING_UNION
+#define PORT0_PORT5_RING_UNION_OFFSET         0x0bc0
+#define PORT0_PORT5_RING_UNION_E_LENGTH       4
+#define PORT0_PORT5_RING_UNION_E_OFFSET       0
+#define PORT0_PORT5_RING_UNION_NR_E           1
+
+#define EN
+#define PORT0_PORT5_RING_UNION_EN_BOFFSET	0
+#define PORT0_PORT5_RING_UNION_EN_BLEN		1
+#define PORT0_PORT5_RING_UNION_EN_FLAG		HSL_RW
+
+/* RING FC EN */
+#define SWITCH_CORE_SWITCH_RING_FC
+#define SWITCH_CORE_SWITCH_RING_FC_OFFSET         0x280
+#define SWITCH_CORE_SWITCH_RING_FC_E_LENGTH       4
+#define SWITCH_CORE_SWITCH_RING_FC_E_OFFSET       0
+#define SWITCH_CORE_SWITCH_RING_FC_NR_E           1
+
+#define EN
+#define SWITCH_CORE_SWITCH_RING_FC_EN_BOFFSET	0
+#define SWITCH_CORE_SWITCH_RING_FC_EN_BLEN	1
+#define SWITCH_CORE_SWITCH_RING_FC_EN_FLAG	HSL_RW
+
+/* QM Debug Address Register */
+#define SWITCH_QM_DEBUG_ADDR
+#define SWITCH_QM_DEBUG_ADDR_OFFSET		0x820
+#define SWITCH_QM_DEBUG_ADDR_E_LENGTH		4
+#define SWITCH_QM_DEBUG_ADDR_E_OFFSET		0
+#define SWITCH_QM_DEBUG_ADDR_NR_E		1
+
+/* QM Debug Data Register */
+#define SWITCH_QM_DEBUG_DATA
+#define SWITCH_QM_DEBUG_DATA_OFFSET		0x824
+#define SWITCH_QM_DEBUG_DATA_E_LENGTH		4
+#define SWITCH_QM_DEBUG_DATA_E_OFFSET		0
+#define SWITCH_QM_DEBUG_DATA_NR_E		1
+
+/* PTP1588 MUX Register */
+#define PTP_MUX
+#define PTP_MUX_OFFSET					0xC90F034
+#define PTP_MUX_E_LENGTH				4
+#define PTP_MUX_E_OFFSET				0
+#define PTP_MUX_NR_E					1
+
+#define PTP_MUX_SEL_RTC_REF_CLK_EXT_0
+#define PTP_MUX_SEL_RTC_REF_CLK_EXT_0_BOFFSET		0
+#define PTP_MUX_SEL_RTC_REF_CLK_EXT_0_BLEN		1
+#define PTP_MUX_SEL_RTC_REF_CLK_EXT_0_FLAG		HSL_RW
+
+#define PTP_MUX_SEL_TOD_IN_EXT_0
+#define PTP_MUX_SEL_TOD_IN_EXT_0_BOFFSET		4
+#define PTP_MUX_SEL_TOD_IN_EXT_0_BLEN			1
+#define PTP_MUX_SEL_TOD_IN_EXT_0_FLAG			HSL_RW
+
+#define PTP_MUX_SEL_EVENT_TRG_I_EXT_0
+#define PTP_MUX_SEL_EVENT_TRG_I_EXT_0_BOFFSET		8
+#define PTP_MUX_SEL_EVENT_TRG_I_EXT_0_BLEN		1
+#define PTP_MUX_SEL_EVENT_TRG_I_EXT_0_FLAG		HSL_RW
+
+#define PTP_MUX_SEL_PPS_IN_EXT_0
+#define PTP_MUX_SEL_PPS_IN_EXT_0_BOFFSET		12
+#define PTP_MUX_SEL_PPS_IN_EXT_0_BLEN			1
+#define PTP_MUX_SEL_PPS_IN_EXT_0_FLAG			HSL_RW
+
+#define PTP_MUX_EXT_PPS_P12_SEL
+#define PTP_MUX_EXT_PPS_P12_SEL_BOFFSET			16
+#define PTP_MUX_EXT_PPS_P12_SEL_BLEN			1
+#define PTP_MUX_EXT_PPS_P12_SEL_FLAG			HSL_RW
+
+#define PTP_MUX_EXT_PPS_P34_SEL
+#define PTP_MUX_EXT_PPS_P34_SEL_BOFFSET			17
+#define PTP_MUX_EXT_PPS_P34_SEL_BLEN			1
+#define PTP_MUX_EXT_PPS_P34_SEL_FLAG			HSL_RW
+
+#define PTP_MUX_EXT_PPS_IN_SEL
+#define PTP_MUX_EXT_PPS_IN_SEL_BOFFSET			18
+#define PTP_MUX_EXT_PPS_IN_SEL_BLEN			2
+#define PTP_MUX_EXT_PPS_IN_SEL_FLAG			HSL_RW
+
+#define PTP_MUX_EXT_TOD_SEL
+#define PTP_MUX_EXT_TOD_SEL_BOFFSET			20
+#define PTP_MUX_EXT_TOD_SEL_BLEN			1
+#define PTP_MUX_EXT_TOD_SEL_FLAG			HSL_RW
+
+#define PTP_MUX_EXT_RTC_REF_CLK_SEL
+#define PTP_MUX_EXT_RTC_REF_CLK_SEL_BOFFSET		21
+#define PTP_MUX_EXT_RTC_REF_CLK_SEL_BLEN		1
+#define PTP_MUX_EXT_RTC_REF_CLK_SEL_FLAG		HSL_RW
+
+/* MDIO CTRL0 Register */
+#define MHT_MDIO_CTRL0
+#define MDIO_CTRL0_OFFSET				0xC90F03C
+#define MDIO_CTRL0_E_LENGTH				4
+#define MDIO_CTRL0_E_OFFSET				0
+#define MDIO_CTRL0_NR_E					1
+
+#define MDIO_CTRL0_DIV_FACTOR
+#define MDIO_CTRL0_DIV_FACTOR_BOFFSET			0
+#define MDIO_CTRL0_DIV_FACTOR_BLEN			8
+#define MDIO_CTRL0_DIV_FACTOR_FLAG			HSL_RW
+
+#define MDIO_CTRL0_TIMER_EN
+#define MDIO_CTRL0_TIMER_EN_BOFFSET			8
+#define MDIO_CTRL0_TIMER_EN_BLEN			1
+#define MDIO_CTRL0_TIMER_EN_FLAG			HSL_RW
+
+#define MDIO_CTRL0_TRIGGER
+#define MDIO_CTRL0_TRIGGER_BOFFSET			9
+#define MDIO_CTRL0_TRIGGER_BLEN				1
+#define MDIO_CTRL0_TRIGGER_FLAG				HSL_RW
+
+#define MDIO_CTRL0_PREAMBLE_BITS
+#define MDIO_CTRL0_PREAMBLE_BITS_BOFFSET		10
+#define MDIO_CTRL0_PREAMBLE_BITS_BLEN			16
+#define MDIO_CTRL0_PREAMBLE_BITS_FLAG			HSL_RW
+
+/* MDIO CTRL1 Register */
+#define MHT_MDIO_CTRL1
+#define MDIO_CTRL1_OFFSET				0xC90F040
+#define MDIO_CTRL1_E_LENGTH				4
+#define MDIO_CTRL1_E_OFFSET				0
+#define MDIO_CTRL1_NR_E					1
+
+#define MDIO_CTRL1_TIMER_COUNT
+#define MDIO_CTRL1_TIMER_COUNT_BOFFSET			0
+#define MDIO_CTRL1_TIMER_COUNT_BLEN			32
+#define MDIO_CTRL1_TIMER_COUNT_FLAG			HSL_RW
+
+#define MEM_CTRL
+#define MEM_CTRL_OFFSET					0xC90F044
+#define MEM_CTRL_E_LENGTH				4
+#define MEM_CTRL_E_OFFSET				0
+#define MEM_CTRL_NR_E					1
+
+#define MEM_CTRL_DVS_SA_RELAX
+#define MEM_CTRL_DVS_SA_RELAX_BOFFSET			4
+#define MEM_CTRL_DVS_SA_RELAX_BLEN			1
+#define MEM_CTRL_DVS_SA_RELAX_FLAG			HSL_RW
+
+#define MEM_CTRL_DVS_RAWA_ASSERT
+#define MEM_CTRL_DVS_RAWA_ASSERT_BOFFSET		5
+#define MEM_CTRL_DVS_RAWA_ASSERT_BLEN			1
+#define MEM_CTRL_DVS_RAWA_ASSERT_FLAG			HSL_RW
+
+#define MEM_ACC_0
+#define MEM_ACC_0_OFFSET				0xC90F048
+#define MEM_ACC_0_E_LENGTH				4
+#define MEM_ACC_0_E_OFFSET				0
+#define MEM_ACC_0_NR_E					1
+
+#define MEM_ACC_0_VALUE
+#define MEM_ACC_0_VALUE_BOFFSET				0
+#define MEM_ACC_0_VALUE_BLEN				32
+#define MEM_ACC_0_VALUE_FLAG				HSL_RW
+
+#define QFPROM_RAW_PTE_ROW0_LSB
+#define QFPROM_RAW_PTE_ROW0_LSB_OFFSET			0xC900000
+#define QFPROM_RAW_PTE_ROW0_LSB_E_LENGTH		4
+#define QFPROM_RAW_PTE_ROW0_LSB_E_OFFSET		0
+#define QFPROM_RAW_PTE_ROW0_LSB_NR_E			1
+
+#define QFPROM_RAW_PTE_ROW2_MSB
+#define QFPROM_RAW_PTE_ROW2_MSB_OFFSET		0xC900014
+#define QFPROM_RAW_PTE_ROW2_MSB_E_LENGTH	4
+#define QFPROM_RAW_PTE_ROW2_MSB_E_OFFSET	0
+#define QFPROM_RAW_PTE_ROW2_MSB_NR_E		1
+
+#define QFPROM_RAW_CALIBRATION_ROW4_LSB
+#define QFPROM_RAW_CALIBRATION_ROW4_LSB_OFFSET		0xC900048
+#define QFPROM_RAW_CALIBRATION_ROW4_LSB_E_LENGTH	4
+#define QFPROM_RAW_CALIBRATION_ROW4_LSB_E_OFFSET	0
+#define QFPROM_RAW_CALIBRATION_ROW4_LSB_NR_E		1
+
+#define QFPROM_RAW_CALIBRATION_ROW6_MSB
+#define QFPROM_RAW_CALIBRATION_ROW6_MSB_OFFSET		0xC90005C
+#define QFPROM_RAW_CALIBRATION_ROW6_MSB_E_LENGTH	4
+#define QFPROM_RAW_CALIBRATION_ROW6_MSB_E_OFFSET	0
+#define QFPROM_RAW_CALIBRATION_ROW6_MSB_NR_E		1
+
+#define QFPROM_RAW_CALIBRATION_ROW7_LSB
+#define QFPROM_RAW_CALIBRATION_ROW7_LSB_OFFSET		0xC900060
+#define QFPROM_RAW_CALIBRATION_ROW7_LSB_E_LENGTH	4
+#define QFPROM_RAW_CALIBRATION_ROW7_LSB_E_OFFSET	0
+#define QFPROM_RAW_CALIBRATION_ROW7_LSB_NR_E		1
+
+#define QFPROM_RAW_CALIBRATION_ROW8_LSB
+#define QFPROM_RAW_CALIBRATION_ROW8_LSB_OFFSET		0xC900068
+#define QFPROM_RAW_CALIBRATION_ROW8_LSB_E_LENGTH	4
+#define QFPROM_RAW_CALIBRATION_ROW8_LSB_E_OFFSET	0
+#define QFPROM_RAW_CALIBRATION_ROW8_LSB_NR_E		1
+
+    /* Global Interrupt Status Register1 */
+#define MHT_GBL_INT_STATUS1
+#define MHT_GBL_INT_STATUS1_ID					1
+#define MHT_GBL_INT_STATUS1_OFFSET				0x0024
+#define MHT_GBL_INT_STATUS1_E_LENGTH				4
+#define MHT_GBL_INT_STATUS1_E_OFFSET				0
+#define MHT_GBL_INT_STATUS1_NR_E				1
+
+#define LINK_CHG_INT_S
+#define MHT_GBL_INT_STATUS1_LINK_CHG_INT_S_BOFFSET		0
+#define MHT_GBL_INT_STATUS1_LINK_CHG_INT_S_BLEN			7
+#define MHT_GBL_INT_STATUS1_LINK_CHG_INT_S_FLAG			HSL_RW
+
+#define PHY_INT_S
+#define MHT_GBL_INT_STATUS1_PHY_INT_S_BOFFSET			15
+#define MHT_GBL_INT_STATUS1_PHY_INT_S_BLEN			1
+#define MHT_GBL_INT_STATUS1_PHY_INT_S_FLAG			HSL_RO
+
+    /* Global Interrupt Mask Register1 */
+#define MHT_GBL_INT_MASK1
+#define MHT_GBL_INT_MASK1_ID					1
+#define MHT_GBL_INT_MASK1_OFFSET				0x002c
+#define MHT_GBL_INT_MASK1_E_LENGTH				4
+#define MHT_GBL_INT_MASK1_E_OFFSET				0
+#define MHT_GBL_INT_MASK1_NR_E					1
+
+#define LINK_CHG_INT_M
+#define MHT_GBL_INT_MASK1_LINK_CHG_INT_M_BOFFSET		0
+#define MHT_GBL_INT_MASK1_LINK_CHG_INT_M_BLEN			7
+#define MHT_GBL_INT_MASK1_LINK_CHG_INT_M_FLAG			HSL_RW
+
+#define PHY_INT_M
+#define MHT_GBL_INT_MASK1_PHY_INT_M_BOFFSET			15
+#define MHT_GBL_INT_MASK1_PHY_INT_M_BLEN			1
+#define MHT_GBL_INT_MASK1_PHY_INT_M_FLAG			HSL_RO
+
+    /* Trunk Hash Mode Register */
+#define MHT_TRUNK_HASH_MODE
+#define MHT_TRUNK_HASH_MODE_OFFSET				0x0270
+#define MHT_TRUNK_HASH_MODE_E_LENGTH				4
+#define MHT_TRUNK_HASH_MODE_E_OFFSET				0x4
+#define MHT_TRUNK_HASH_MODE_NR_E				1
+
+#define DIP_EN
+#define MHT_TRUNK_HASH_MODE_DIP_EN_BOFFSET			3
+#define MHT_TRUNK_HASH_MODE_DIP_EN_BLEN				1
+#define MHT_TRUNK_HASH_MODE_DIP_EN_FLAG				HSL_RW
+
+#define SIP_EN
+#define MHT_TRUNK_HASH_MODE_SIP_EN_BOFFSET			2
+#define MHT_TRUNK_HASH_MODE_SIP_EN_BLEN				1
+#define MHT_TRUNK_HASH_MODE_SIP_EN_FLAG				HSL_RW
+
+#define SA_EN
+#define MHT_TRUNK_HASH_MODE_SA_EN_BOFFSET			1
+#define MHT_TRUNK_HASH_MODE_SA_EN_BLEN				1
+#define MHT_TRUNK_HASH_MODE_SA_EN_FLAG				HSL_RW
+
+#define DA_EN
+#define MHT_TRUNK_HASH_MODE_DA_EN_BOFFSET			0
+#define MHT_TRUNK_HASH_MODE_DA_EN_BLEN				1
+#define MHT_TRUNK_HASH_MODE_DA_EN_FLAG				HSL_RW
+
+    /* Port HOL CTL0 Register */
+#define MHT_PORT_HOL_CTL0
+#define MHT_PORT_HOL_CTL0_OFFSET				0x0970
+#define MHT_PORT_HOL_CTL0_E_LENGTH				4
+#define MHT_PORT_HOL_CTL0_E_OFFSET				0x0008
+#define MHT_PORT_HOL_CTL0_NR_E					7
+
+#define PORT_DESC_NR
+#define MHT_PORT_HOL_CTL0_PORT_DESC_NR_BOFFSET			24
+#define MHT_PORT_HOL_CTL0_PORT_DESC_NR_BLEN			8
+#define MHT_PORT_HOL_CTL0_PORT_DESC_NR_FLAG			HSL_RW
+
+#define QUEUE3_DESC_NR
+#define MHT_PORT_HOL_CTL0_QUEUE3_DESC_NR_BOFFSET		18
+#define MHT_PORT_HOL_CTL0_QUEUE3_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL0_QUEUE3_DESC_NR_FLAG			HSL_RW
+
+#define QUEUE2_DESC_NR
+#define MHT_PORT_HOL_CTL0_QUEUE2_DESC_NR_BOFFSET		12
+#define MHT_PORT_HOL_CTL0_QUEUE2_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL0_QUEUE2_DESC_NR_FLAG			HSL_RW
+
+#define QUEUE1_DESC_NR
+#define MHT_PORT_HOL_CTL0_QUEUE1_DESC_NR_BOFFSET		6
+#define MHT_PORT_HOL_CTL0_QUEUE1_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL0_QUEUE1_DESC_NR_FLAG			HSL_RW
+
+#define QUEUE0_DESC_NR
+#define MHT_PORT_HOL_CTL0_QUEUE0_DESC_NR_BOFFSET		0
+#define MHT_PORT_HOL_CTL0_QUEUE0_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL0_QUEUE0_DESC_NR_FLAG			HSL_RW
+
+    /* Port HOL CTL1 Register */
+#define MHT_PORT_HOL_CTL1
+#define MHT_PORT_HOL_CTL1_OFFSET				0x0974
+#define MHT_PORT_HOL_CTL1_E_LENGTH				4
+#define MHT_PORT_HOL_CTL1_E_OFFSET				0x0008
+#define MHT_PORT_HOL_CTL1_NR_E					7
+
+#define QUEUE5_DESC_NR
+#define MHT_PORT_HOL_CTL1_QUEUE5_DESC_NR_BOFFSET		26
+#define MHT_PORT_HOL_CTL1_QUEUE5_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL1_QUEUE5_DESC_NR_FLAG			HSL_RW
+
+#define QUEUE4_DESC_NR
+#define MHT_PORT_HOL_CTL1_QUEUE4_DESC_NR_BOFFSET		20
+#define MHT_PORT_HOL_CTL1_QUEUE4_DESC_NR_BLEN			6
+#define MHT_PORT_HOL_CTL1_QUEUE4_DESC_NR_FLAG			HSL_RW
+
+#define EG_MIRROR_EN
+#define MHT_PORT_HOL_CTL1_EG_MIRROR_EN_BOFFSET			16
+#define MHT_PORT_HOL_CTL1_EG_MIRROR_EN_BLEN			1
+#define MHT_PORT_HOL_CTL1_EG_MIRROR_EN_FLAG			HSL_RW
+
+#define PORT_RED_EN
+#define MHT_PORT_HOL_CTL1_PORT_RED_EN_BOFFSET			8
+#define MHT_PORT_HOL_CTL1_PORT_RED_EN_BLEN			1
+#define MHT_PORT_HOL_CTL1_PORT_RED_EN_FLAG			HSL_RW
+
+#define PORT_DESC_EN
+#define MHT_PORT_HOL_CTL1_PORT_DESC_EN_BOFFSET			7
+#define MHT_PORT_HOL_CTL1_PORT_DESC_EN_BLEN			1
+#define MHT_PORT_HOL_CTL1_PORT_DESC_EN_FLAG			HSL_RW
+
+#define QUEUE_DESC_EN
+#define MHT_PORT_HOL_CTL1_QUEUE_DESC_EN_BOFFSET			6
+#define MHT_PORT_HOL_CTL1_QUEUE_DESC_EN_BLEN			1
+#define MHT_PORT_HOL_CTL1_QUEUE_DESC_EN_FLAG			HSL_RW
+
+#define PORT_IN_DESC_EN
+#define MHT_PORT_HOL_CTL1_PORT_IN_DESC_EN_BOFFSET		0
+#define MHT_PORT_HOL_CTL1_PORT_IN_DESC_EN_BLEN			6
+#define MHT_PORT_HOL_CTL1_PORT_IN_DESC_EN_FLAG			HSL_RW
+
+    /* PORT FLOW CTRL THRESHOLD REGISTER  */
+#define MHT_PORT_FLOW_CTRL_THRESHOLD
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_OFFSET			0x09B0
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_E_LENGTH			4
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_E_OFFSET			0x0004
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_NR_E			7
+
+#define XON_THRES
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XON_THRES_BOFFSET		16
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XON_THRES_BLEN		10
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XON_THRES_FLAG		HSL_RW
+
+#define XOFF_THRES
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XOFF_THRES_BOFFSET		0
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XOFF_THRES_BLEN		10
+#define MHT_PORT_FLOW_CTRL_THRESHOLD_XOFF_THRES_FLAG		HSL_RW
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* _MHT_REG_H */
