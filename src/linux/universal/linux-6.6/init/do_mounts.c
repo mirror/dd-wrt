@@ -427,7 +427,7 @@ int __init mount_root(char *root_device_name)
 {
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 	if (!mount_ubi_rootfs())
-		return;
+		return 0;
 #endif
 
 	switch (ROOT_DEV) {
