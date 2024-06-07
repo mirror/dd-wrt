@@ -45,6 +45,9 @@ enum switch_port_speed {
 	SWITCH_PORT_SPEED_10 = 10,
 	SWITCH_PORT_SPEED_100 = 100,
 	SWITCH_PORT_SPEED_1000 = 1000,
+	SWITCH_PORT_SPEED_2500 = 2500,
+	SWITCH_PORT_SPEED_5000 = 5000,
+	SWITCH_PORT_SPEED_10000 = 10000
 };
 
 struct switch_port_link {
@@ -146,6 +149,12 @@ struct switch_portmap {
 	const char *s;
 };
 
+struct switch_ext {
+	const char *option_name;
+	const char *option_value;
+	struct switch_ext *next;
+};
+
 struct switch_val {
 	const struct switch_attr *attr;
 	unsigned int port_vlan;
@@ -155,6 +164,7 @@ struct switch_val {
 		u32 i;
 		struct switch_port *ports;
 		struct switch_port_link *link;
+		struct switch_ext *ext_val;
 	} value;
 };
 
