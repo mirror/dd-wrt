@@ -790,6 +790,29 @@ char *strnstr(const char *s1, const char *s2, size_t len)
 EXPORT_SYMBOL(strnstr);
 #endif
 
+#if defined(CONFIG_ARCH_HAS_FAST_MULTIPLIER) && BITS_PER_LONG == 64
+
+#define MEMCHR_MASK_GEN(mask) (mask *= 0x0101010101010101ULL)
+
+#elif defined(CONFIG_ARCH_HAS_FAST_MULTIPLIER)
+
+#define MEMCHR_MASK_GEN(mask)                                                  \
+	do {                                                                   \
+		mask *= 0x01010101;                                            \
+		mask |= mask << 32;                                            \
+	} while (0)
+
+#else
+
+#define MEMCHR_MASK_GEN(mask)                                                  \
+	do {                                                                   \
+		mask |= mask << 8;                                             \
+		mask |= mask << 16;                                            \
+		mask |= mask << 32;                                            \
+	} while (0)
+
+#endif
+
 #ifndef __HAVE_ARCH_MEMCHR
 /**
  * memchr - Find a character in an area of memory.
@@ -800,7 +823,7 @@ EXPORT_SYMBOL(strnstr);
  * returns the address of the first occurrence of @c, or %NULL
  * if @c is not found
  */
-void *memchr(const void *p, int c, unsigned long length)
+void *memchr(const void *p, int c, size_t length)
 {
 	u64 mask, val;
 	const void *end = p + length;
@@ -812,8 +835,8 @@ void *memchr(const void *p, int c, unsigned long length)
 
 		for (; p <= end - 8; p += 8) {
 			val = *(u64 *)p ^ mask;
-			if ((val + 0xfefefefefefefeffu) &
-			    (~val & 0x8080808080808080u))
+			if ((val + 0xfefefefefefefeffull) &
+			    (~val & 0x8080808080808080ull))
 				break;
 		}
 	}
@@ -857,16 +880,7 @@ void *memchr_inv(const void *start, int c, size_t bytes)
 		return check_bytes8(start, value, bytes);
 
 	value64 = value;
-#if defined(CONFIG_ARCH_HAS_FAST_MULTIPLIER) && BITS_PER_LONG == 64
-	value64 *= 0x0101010101010101ULL;
-#elif defined(CONFIG_ARCH_HAS_FAST_MULTIPLIER)
-	value64 *= 0x01010101;
-	value64 |= value64 << 32;
-#else
-	value64 |= value64 << 8;
-	value64 |= value64 << 16;
-	value64 |= value64 << 32;
-#endif
+	MEMCHR_MASK_GEN(value64);
 
 	prefix = (unsigned long)start % 8;
 	if (prefix) {
