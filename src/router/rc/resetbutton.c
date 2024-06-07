@@ -178,6 +178,11 @@ static int getbuttonstate()
 	int ret = !get_gpio(31);
 	return ret;
 }
+#elif defined(HAVE_IPQ6018)
+static int getbuttonstate()
+{
+	return !get_gpio(57);
+}
 #elif defined(HAVE_IPQ806X)
 static int getbuttonstate()
 {
