@@ -107,7 +107,7 @@ int get_gpio(int pin)
 	return get_linux_gpio(pin);
 }
 
-#elif HAVE_WDR4900
+#elif defined(HAVE_WDR4900)
 void set_gpio(int gpio, int value)
 {
 	switch (gpio) {
@@ -131,7 +131,7 @@ int get_gpio(int gpio)
 	return get_linux_gpio(480 + gpio);
 }
 
-#elif HAVE_WRT1900AC
+#elif defined(HAVE_WRT1900AC)
 
 int get_gpio(int pin)
 {
@@ -379,7 +379,7 @@ void set_gpio(int gpio, int value)
 		}
 	}
 }
-#elif HAVE_ALPINE
+#elif defined(HAVE_ALPINE)
 
 int get_gpio(int gpio)
 {
@@ -390,7 +390,7 @@ void set_gpio(int gpio, int value)
 {
 	set_linux_gpio(gpio, value);
 }
-#elif HAVE_IPQ6018
+#elif defined(HAVE_IPQ6018)
 int get_gpio(int gpio)
 {
 	return get_linux_gpio(gpio + 512);
@@ -404,7 +404,7 @@ void set_gpio(int gpio, int value)
 	set_linux_gpio(gpio + 512, value);
 }
 
-#elif HAVE_IPQ806X
+#elif defined(HAVE_IPQ806X)
 
 int get_gpio(int gpio)
 {
@@ -573,7 +573,7 @@ int get_gpio(int gpio)
 #undef GPIOMAX
 }
 
-#elif HAVE_NORTHSTAR
+#elif defined(HAVE_NORTHSTAR)
 
 static void set_gpio_base(int pin, int value)
 {
@@ -629,7 +629,7 @@ int get_gpio(int pin)
 	close(gpioouten);
 	return gpio;
 }
-#elif HAVE_XSCALE
+#elif defined(HAVE_XSCALE)
 #define u8 unsigned char
 #define u32 unsigned long
 
