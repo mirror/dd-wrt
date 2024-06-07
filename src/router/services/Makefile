@@ -1026,6 +1026,9 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 ATH9KCFLAGS  += -DHAVE_ATH11K
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+ATH9KCFLAGS  += -DHAVE_ATH11K
+endif
 
 endif
 endif
@@ -1033,6 +1036,9 @@ ifeq ($(CONFIG_ATH10K),y)
 ATH9KCFLAGS += -DHAVE_ATH10K
 endif
 ifeq ($(CONFIG_ATH11K),y)
+ATH9KCFLAGS  += -DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_IPQ6018),y)
 ATH9KCFLAGS  += -DHAVE_ATH11K
 endif
 
