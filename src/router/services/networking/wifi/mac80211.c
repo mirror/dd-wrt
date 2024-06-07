@@ -1152,8 +1152,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-						if (color > 0 && color < 64) {
-							fprintf(fp, "he_bss_color=\n", color);
+						if (c > 0 && c < 64) {
+							fprintf(fp, "he_bss_color=%d\n", c);
 						}
 					}
 				}
@@ -1265,8 +1265,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 				fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-				if (color > 0 && color < 64) {
-					fprintf(fp, "he_bss_color=\n", color);
+				if (c > 0 && c < 64) {
+					fprintf(fp, "he_bss_color=%d\n", c);
 				}
 			}
 			fprintf(fp, "hw_mode=g\n");
