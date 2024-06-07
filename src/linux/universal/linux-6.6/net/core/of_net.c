@@ -164,7 +164,7 @@ static int of_get_mac_address_mtd(struct device_node *np, u8 *addr)
 	ret = of_get_mac_addr(np, "mac-address", addr);
 	if (!ret) {
 		memcpy(addr, mac, ETH_ALEN);
-		return addr;
+		return 0;
 	}
 
 	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
@@ -177,7 +177,8 @@ static int of_get_mac_address_mtd(struct device_node *np, u8 *addr)
 	if (!prop->value || of_add_property(np, prop))
 		goto free;
 
-	return prop->value;
+	memcpy(addr, prop->value, ETH_ALEN);
+	return 0;
 free:
 	kfree(prop->value);
 	kfree(prop);
