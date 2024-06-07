@@ -54,7 +54,7 @@ void start_jffs2(void)
 		return;
 	int ubidev = 1;
 
-#ifdef HAVE_IPQ806X
+#ifdef defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
@@ -64,6 +64,7 @@ void start_jffs2(void)
 	case ROUTER_ASROCK_G10:
 	case ROUTER_NETGEAR_R9000:
 	case ROUTER_LINKSYS_EA8300:
+	case ROUTER_LINKSYS_MR7350:
 		ubidev = 1;
 		break;
 	case ROUTER_LINKSYS_EA8500:
@@ -94,7 +95,7 @@ void start_jffs2(void)
 			itworked = eval("erase", rwpart);
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (classic) {
 				itworked = eval("mtd", "erase", rwpart);
 				itworked = eval("flash_erase", dev, "0", "0");
@@ -110,7 +111,7 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 #endif
 
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (classic) {
 				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
 				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
@@ -128,7 +129,7 @@ void start_jffs2(void)
 			}
 
 		} else {
-#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (classic) {
 				itworked = eval("mtd", "unlock", rwpart);
 				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
