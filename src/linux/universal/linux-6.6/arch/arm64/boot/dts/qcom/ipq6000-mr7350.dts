@@ -31,7 +31,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wps-button {
+/*		wps-button {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
@@ -41,7 +41,7 @@
 			label = "reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
-		};
+		};*/
 	};
 
 	leds {
