@@ -401,6 +401,25 @@ void set_gpio(int gpio, int value)
 	//value 0 off 255 on
 	if (value == 1)
 		value = 255;
+	int brand = getRouterBrand();
+	if (brand == ROUTER_LINKSYS_MR7350) {
+		switch (gpio) {
+		case 0: // power
+			writeint("/sys/class/leds/red:status/brightness", value);
+			break;
+		case 1: // 2G
+			writeint("/sys/class/leds/green:status/brightness", value);
+			break;
+		case 2: // 5G
+			writeint("/sys/class/leds/blue:status/brightness", value);
+			break;
+		default:
+			set_linux_gpio(gpio, value);
+			break;
+		}
+	} else
+		set_linux_gpio(gpio, value);
+
 	set_linux_gpio(gpio + 512, value);
 }
 
@@ -410,7 +429,7 @@ int get_gpio(int gpio)
 {
 	int brand = getRouterBrand();
 	if (brand == ROUTER_HABANERO || brand == ROUTER_ASUS_AC58U || brand == ROUTER_LINKSYS_EA8300) {
-			return get_linux_gpio(gpio);
+		return get_linux_gpio(gpio);
 	}
 	return get_linux_gpio(gpio + 443);
 }
@@ -482,7 +501,7 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	} else if (brand == ROUTER_HABANERO || brand == ROUTER_ASUS_AC58U || brand == ROUTER_LINKSYS_EA8300) {
-			set_linux_gpio(gpio, value);
+		set_linux_gpio(gpio, value);
 	} else {
 		if (gpio <= 64)
 			set_linux_gpio(gpio + 443, value);
