@@ -390,6 +390,20 @@ void set_gpio(int gpio, int value)
 {
 	set_linux_gpio(gpio, value);
 }
+#elif HAVE_IPQ6018
+int get_gpio(int gpio)
+{
+	return get_linux_gpio(gpio + 512);
+}
+
+void set_gpio(int gpio, int value)
+{
+	//value 0 off 255 on
+	if (value == 1)
+		value = 255;
+	set_linux_gpio(gpio + 512, value);
+}
+
 #elif HAVE_IPQ806X
 
 int get_gpio(int gpio)
