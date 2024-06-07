@@ -193,8 +193,8 @@ static int syn_dp_if_init(struct nss_dp_data_plane_ctx *dpc)
 		netif_napi_add(netdev, &rx_info->napi_rx, syn_dp_napi_poll_rx, SYN_DP_NAPI_BUDGET_RX);
 		netif_napi_add(netdev, &tx_info->napi_tx, syn_dp_napi_poll_tx, SYN_DP_NAPI_BUDGET_TX);
 #else
-		netif_napi_add_weight(netdev, &rx_info->napi_rx, syn_dp_napi_poll_rx, SYN_DP_NAPI_BUDGET_RX);
-		netif_napi_add_weight(netdev, &tx_info->napi_tx, syn_dp_napi_poll_tx, SYN_DP_NAPI_BUDGET_TX);
+		netif_threaded_napi_add_weight(netdev, &rx_info->napi_rx, syn_dp_napi_poll_rx, SYN_DP_NAPI_BUDGET_RX);
+		netif_threaded_napi_add_weight(netdev, &tx_info->napi_tx, syn_dp_napi_poll_tx, SYN_DP_NAPI_BUDGET_TX);
 #endif
 
 		/*

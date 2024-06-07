@@ -845,7 +845,7 @@ void edma_cfg_tx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev, u
 		netif_napi_add(netdev, &txcmpl_ring->napi,
 				edma_tx_napi_poll, nss_dp_tx_napi_budget);
 #else
-		netif_napi_add_weight(netdev, &txcmpl_ring->napi,
+		netif_threaded_napi_add_weight(netdev, &txcmpl_ring->napi,
 				edma_tx_napi_poll, nss_dp_tx_napi_budget);
 #endif
 		txcmpl_ring->napi_added = true;
@@ -867,7 +867,7 @@ void edma_cfg_tx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev, u
 					edma_tx_napi_poll,
 					nss_dp_tx_napi_budget);
 #else
-			netif_napi_add_weight(netdev, &txcmpl_ring->napi,
+			netif_threaded_napi_add_weight(netdev, &txcmpl_ring->napi,
 					edma_tx_napi_poll,
 					nss_dp_tx_napi_budget);
 #endif

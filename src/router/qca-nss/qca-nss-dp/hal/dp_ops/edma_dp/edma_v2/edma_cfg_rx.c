@@ -1495,10 +1495,10 @@ void edma_cfg_rx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev)
 #else
 		if (nss_dp_capwap_vp_rx_core == i) {
 			edma_info("Adding capwap napi for ring_id %d for core3\n", nss_dp_capwap_vp_rx_core);
-			netif_napi_add_weight(netdev, &rxdesc_ring->napi,
+			netif_threaded_napi_add_weight(netdev, &rxdesc_ring->napi,
 				edma_rx_napi_capwap_poll, nss_dp_rx_napi_budget);
 		} else {
-			netif_napi_add_weight(netdev, &rxdesc_ring->napi,
+			netif_threaded_napi_add_weight(netdev, &rxdesc_ring->napi,
 				 edma_rx_napi_poll, nss_dp_rx_napi_budget);
 		}
 #endif

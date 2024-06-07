@@ -15,10 +15,15 @@ DTLSMGR_DIR:=v1.0
 IPSECMGR_DIR:=v1.0
 # KLIPS plugin not needed
 IPSECMGR_KLIPS:=
-NSS_CRYPTO_DIR:=v1.0
 
 #KERNEL_FLAGS = "-UCONFIG_NOPRINTK -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch" 
+ifeq ($(CONFIG_IPQ6018),y)
+KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v2.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
+NSS_CRYPTO_DIR:=v2.0
+else
 KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
+NSS_CRYPTO_DIR:=v1.0
+endif
 
 LNX_CONFIG_OPTS = LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB modules
 
@@ -30,11 +35,11 @@ SSDK_MAKE_FLAGS+= \
 	KVER=$(KERNEL_VERSION) \
 	ARCH=arm64 \
 	TARGET_SUFFIX= \
-	GCC_VERSION=13.2.1 \
+	GCC_VERSION=14.1.0 \
 	EXTRA_CFLAGS="-fno-stack-protector" \
 	SoC=ipq60xx \
 	SHELL="/usr/bin/bash" \
-	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \
+	PTP_FEATURE=disable SWCONFIG_FEATURE=enable \
 	ISISC_ENABLE=disable IN_QCA803X_PHY=FALSE \
 	IN_QCA808X_PHY=FALSE IN_MALIBU_PHY=FALSE
 
@@ -78,9 +83,16 @@ endif
 
 install:
 ifeq ($(CONFIG_IPQ6018),y)
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 	cp qca-ssdk/*.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
+	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
+	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
+	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
+	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates
+	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
+	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update
+	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 else
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
@@ -102,8 +114,10 @@ else
 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
+	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
+	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
-	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update 
+	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 	mkdir -p $(INSTALLDIR)/lib/firmware
 	cp firmware/akronite/* $(INSTALLDIR)/lib/firmware
