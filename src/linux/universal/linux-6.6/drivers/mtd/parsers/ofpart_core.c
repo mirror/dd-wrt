@@ -223,7 +223,7 @@ static int parse_fixed_partitions(struct mtd_info *master,
 				size_t len;
 				mtd_read(master, offset, sizeof(sb), &len, (void *)&sb);
 				if (le32_to_cpu(sb.s_magic) == 0x23494255) {
-					printk(KERN_EMERG "found ubi at %X, skipping scan\n", offset);
+					printk(KERN_INFO "found ubi at %X, skipping scan\n", offset);
 					break; // skip if ubifs has been found
 				}
 				if (le32_to_cpu(sb.s_magic) == SQUASHFS_MAGIC) {
@@ -232,7 +232,7 @@ static int parse_fixed_partitions(struct mtd_info *master,
 					len += (master->erasesize - 1);
 					len &= ~(master->erasesize - 1);
 					len -= (offset & 0x000fffff);
-					printk(KERN_EMERG "found squashfs at %X with len of %d bytes\n", offset, len);
+					printk(KERN_INFO "found squashfs at %X with len of %d bytes\n", offset, len);
 					i++;
 					parts[i].offset = offset;
 					if (!strcmp(partname, "linux2"))
