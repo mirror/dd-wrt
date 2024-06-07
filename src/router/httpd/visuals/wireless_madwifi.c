@@ -510,19 +510,20 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, " (%d MHz", freq);
 		char *vht = "HT";
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_qam256(prefix) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", prefix))
+		if (has_qam256(prefix) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", prefix)) {
 			vht = "VHT";
-		else {
-			if (has_ac(prefix)) {
-				if (!strcmp(netmode, "acn-mixed") || //
-				    !strcmp(netmode, "ac-only") || //
-				    !strcmp(netmode, "ax-only") || //
-				    !strcmp(netmode, "xacn-mixed") || //
-				    !strcmp(netmode, "mixed")) {
-					vht = "VHT";
-				}
+		} else if (freq < 4000) {
+			vht = "HT";
+		} else if (has_ac(prefix)) {
+			if (!strcmp(netmode, "acn-mixed") || //
+			    !strcmp(netmode, "ac-only") || //
+			    !strcmp(netmode, "ax-only") || //
+			    !strcmp(netmode, "xacn-mixed") || //
+			    !strcmp(netmode, "mixed")) {
+				vht = "VHT";
 			}
 		}
+
 		if (has_ax(prefix)) {
 			if (!strcmp(netmode, "xacn-mixed") || //
 			    !strcmp(netmode, "ax-only ") || //
