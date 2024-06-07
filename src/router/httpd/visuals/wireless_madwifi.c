@@ -509,8 +509,29 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		}
 		websWrite(wp, " (%d MHz", freq);
 		char *vht = "HT";
+		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (has_qam256(prefix) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", prefix))
 			vht = "VHT";
+		else {
+			if (has_ac(prefix)) {
+				if (!strcmp(netmode, "acn-mixed") || //
+				    !strcmp(netmode, "ac-only") || //
+				    !strcmp(netmode, "ax-only") || //
+				    !strcmp(netmode, "xacn-mixed") || //
+				    !strcmp(netmode, "mixed")) {
+					vht = "VHT";
+				}
+			}
+		}
+		if (has_ax(prefix)) {
+			if (!strcmp(netmode, "xacn-mixed") || //
+			    !strcmp(netmode, "ax-only ") || //
+			    !strcmp(netmode, "axg-only ") || //
+			    !strcmp(netmode, "mixed")) {
+				vht = "HE";
+			}
+		}
+
 		if (is_mac80211(prefix)) {
 			int ht = has_ht(prefix);
 			switch (interface->width) {
@@ -550,13 +571,13 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 						  " Turbo"); //ath5k turbo mode
 				break;
 			case 80:
-				websWrite(wp, " VHT80");
+				websWrite(wp, " %s80", vht);
 				break;
 			case 8080:
-				websWrite(wp, " VHT80+80");
+				websWrite(wp, " %s80+80", vht);
 				break;
 			case 160:
-				websWrite(wp, " VHT160");
+				websWrite(wp, " %s160", vht);
 				break;
 			}
 		}
@@ -596,7 +617,7 @@ EJ_VISIBLE void ej_get_high_5ghz(webs_t wp, int argc, char_t **argv)
 		return;
 	}
 	if ((is_ath10k("wlan0") && has_wave2("wlan0")) || (is_ath10k("wlan1") && has_wave2("wlan1"))) {
-		websWrite(wp, "6180"); // need to find out the real maximum which is way higher than 7 ghz 
+		websWrite(wp, "6180"); // need to find out the real maximum which is way higher than 7 ghz
 		return;
 	}
 	if ((is_ath10k("wlan0")) || (is_ath10k("wlan1"))) {
