@@ -18,6 +18,7 @@
 #include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
+#include <stdio.h>
 
 /*
  * Unfortunately, there are no portable functions for DNS RR parsing,
