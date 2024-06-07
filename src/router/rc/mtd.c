@@ -913,6 +913,7 @@ again:;
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	switch (brand) {
 	case ROUTER_LINKSYS_EA8500:
+	case ROUTER_LINKSYS_MR7350:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);
@@ -931,7 +932,6 @@ again:;
 	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_32X:
 	case ROUTER_LINKSYS_EA8300:
-	case ROUTER_LINKSYS_MR7350:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);
