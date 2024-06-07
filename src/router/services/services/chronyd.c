@@ -12,6 +12,7 @@
 #include <services.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 char *chronyd_deps(void)
 {
