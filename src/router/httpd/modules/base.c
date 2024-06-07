@@ -1645,7 +1645,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 
 	cprintf("need reboot\n");
 	int need_reboot = websGetVari(wp, "need_reboot", 0);
-#ifdef HAVE_QCA_NSS
+#if defined(HAVE_QCA_NSS) && !defined(HAVE_IPQ6018)
 	int sfe = nvram_geti("sfe");
 	char *newsfe = websGetVar(wp, "sfe", NULL);
 	if (newsfe) {
@@ -1657,7 +1657,13 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	if (need_reboot)
 		nvram_seti("do_reboot", 1);
 	}
-	
+#elif defined(HAVE_IPQ6018)
+	char *wproto = nvram_safe_get("wan_proto");
+	char *newwproto = websGetVar(wp, "wan_proto", NULL);
+	if (newwproto && *wproto) {
+		if ((!strcmp(newwproto,"dhcp") && strcmp(wproto,"dhcp")) || (strcmp(newwproto,"dhcp") && !strcmp(wproto,"dhcp")))
+		    need_reboot=1;
+	}
 #else
 	if (*nvram_safe_get("ctf_disable")) {
 		char *sfe = websGetVar(wp, "sfe", NULL);
