@@ -797,7 +797,7 @@
 
 #define ROUTER_IPQ6018 0x1120ff
 
-#define ROUTER_LINKSYS_MR7350 0x1130ff
+#define ROUTER_LINKSYS_MR7350 0x113139
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
