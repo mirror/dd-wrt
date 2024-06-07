@@ -657,7 +657,7 @@ void reset_hwaddr(char *ifname)
 #if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
 	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||       \
 	defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) ||   \
-	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || \
+	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_IPQ6018) || \
 	defined(HAVE_EROUTER)
 			nvram_set("et0macaddr", def);
 #endif
@@ -1681,6 +1681,16 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif defined(HAVE_IPQ6018)
+	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth4");
+	}
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_VENTANA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -2029,7 +2039,7 @@ void start_lan(void)
 	!defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) &&       \
 	!defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) &&   \
 	!defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) &&                   \
-	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000)
+	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "wlan0");
 			} else
@@ -2513,6 +2523,9 @@ void start_lan(void)
 #define HAVE_RB500
 #endif
 #ifdef HAVE_VENTANA
+#define HAVE_RB500
+#endif
+#ifdef HAVE_IPQ6018
 #define HAVE_RB500
 #endif
 #ifdef HAVE_NEWPORT

@@ -53,6 +53,20 @@
 #endif
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
+#elif HAVE_IPQ6018
+EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000);
+	} else {
+		websWrite(wp, "800");
+		return;
+	}
+}
 #elif HAVE_VENTANA
 EJ_VISIBLE void ej_get_clkfreq(webs_t wp, int argc, char_t **argv)
 {

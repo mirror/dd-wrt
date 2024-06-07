@@ -1385,6 +1385,23 @@ generic:;
 #elif HAVE_R9000
 	setRouter("Netgear Nighthawk X10");
 	return ROUTER_NETGEAR_R9000;
+#elif HAVE_IPQ6018
+	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
+	if (!fp) {
+		fprintf(stderr, "error opening device tree\n");
+		setRouter("Qualcomm IPQ6018");
+		return ROUTER_IPQ6018;
+	}
+	char vendorstr[32];
+	char modelstr[32];
+	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
+	fclose(fp);
+	if (!strcmp(modelstr, "MR7350")) {
+		setRouter("Linksys MR7350");
+		return ROUTER_LINKSYS_MR7350;
+	}
+	setRouter("Qualcomm IPQ6018");
+	return ROUTER_IPQ6018;
 #elif HAVE_IPQ806X
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
 	if (!fp) {

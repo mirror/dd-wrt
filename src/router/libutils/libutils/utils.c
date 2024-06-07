@@ -682,7 +682,7 @@ static char *getUEnvExt(char *name)
 #endif
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) ||           \
-	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || \
+	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || defined(HAVE_IPQ6018) || \
 	defined(HAVE_PERU)
 void *getUEnv(char *name)
 {
@@ -1165,7 +1165,8 @@ char *cpustring(void)
 #elif HAVE_ALPINE
 	strcpy(buf, "Annapurna Labs Alpine");
 	return buf;
-#elif HAVE_IPQ806X
+
+#elif defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	FILE *fp = fopen("/sys/firmware/devicetree/base/compatible", "rb");
 	if (!fp) {
 failover:
@@ -1195,6 +1196,8 @@ failover:
 		strcpy(buf, "QCA IPQ4018");
 	else if (strstr(cpu, "ipq4028"))
 		strcpy(buf, "QCA IPQ4028");
+	else if (strstr(cpu, "ipq6018"))
+		strcpy(buf, "QCA IPQ6018");
 	else
 		goto failover;
 	return buf;

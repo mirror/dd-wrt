@@ -315,7 +315,7 @@ static int write_main(int argc, char *argv[])
 
 	char *part;
 
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	switch (brand) {
 	case ROUTER_WRT_1900AC:
 	case ROUTER_WRT_1200AC:
@@ -325,6 +325,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_WRT_32X:
 	case ROUTER_LINKSYS_EA8500:
 	case ROUTER_LINKSYS_EA8300:
+	case ROUTER_LINKSYS_MR7350:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);
@@ -909,7 +910,7 @@ again:;
 		dd_loginfo("flash", "Write Belkin magic...done.\n");
 	} // end
 #endif
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	switch (brand) {
 	case ROUTER_LINKSYS_EA8500:
 		part = getUEnv("boot_part");
@@ -930,6 +931,7 @@ again:;
 	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_32X:
 	case ROUTER_LINKSYS_EA8300:
+	case ROUTER_LINKSYS_MR7350:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);

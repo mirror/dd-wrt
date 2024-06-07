@@ -1,5 +1,5 @@
 /*
- * sysinit-laguna.c
+ * sysinit-thunderx.c
  *
  * Copyright (C) 2010 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *

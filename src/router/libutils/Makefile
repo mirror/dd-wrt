@@ -186,6 +186,9 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 CFLAGS += -DHAVE_ATH11K
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+CFLAGS += -DHAVE_ATH11K
+endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 CFLAGS += -DHAVE_BRCMFMAC
 endif
@@ -440,6 +443,9 @@ ifeq ($(CONFIG_MVEBU),y)
 endif
 ifeq ($(CONFIG_IPQ806X),y)
   CFLAGS += -DHAVE_IPQ806X
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+  CFLAGS += -DHAVE_IPQ6018
 endif
 ifeq ($(CONFIG_WIL6210),y)
   CFLAGS += -DHAVE_WIL6210
