@@ -243,6 +243,9 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 ATH9KCFLAGS += -DHAVE_ATH11K
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+ATH9KCFLAGS += -DHAVE_ATH11K
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services/networking/wifi -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 

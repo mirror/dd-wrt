@@ -702,6 +702,8 @@ void *getUEnv(char *name)
 #define UOFFSET 0x0
 #elif HAVE_MVEBU
 #define UOFFSET 0x0
+#elif HAVE_IPQ6018
+#define UOFFSET 0x0
 #elif HAVE_IPQ806X
 #define UOFFSET 0x0
 #elif HAVE_PERU
@@ -722,6 +724,8 @@ void *getUEnv(char *name)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 #elif HAVE_VENTANA
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
+#elif HAVE_IPQ6018
+	FILE *fp = fopen("/dev/mtdblock/11", "rb");
 #elif HAVE_IPQ806X
 	int brand = getRouterBrand();
 	FILE *fp;
