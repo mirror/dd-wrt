@@ -156,14 +156,15 @@ static void rtnetlink_read(int sock, void *data __attribute__ ((unused)), unsign
   int len, plen;
   struct iovec iov;
   struct sockaddr_nl nladdr;
+
   struct msghdr msg = {
-    &nladdr,
-    sizeof(nladdr),
-    &iov,
-    1,
-    NULL,
-    0,
-    0
+    .msg_name = &nladdr,
+    .msg_namelen = sizeof(nladdr),
+    .msg_iov = &iov,
+    .msg_iovlen = 1,
+    .msg_control = NULL,
+    .msg_controllen = 0,
+    .msg_flags = 0
   };
 
   char buffer[4096];
