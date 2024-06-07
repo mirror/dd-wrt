@@ -1065,7 +1065,7 @@ static void resetbtn_period_check(int sig)
 	defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) ||         \
 	defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) ||            \
 	defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_AC622) || \
-	defined(HAVE_AC722) || defined(HAVE_EROUTER)
+	defined(HAVE_AC722) || defined(HAVE_EROUTER) || defined(HAVE_IPQ6018)
 	val = getbuttonstate();
 #ifdef HAVE_WRK54G
 	val = !val;
