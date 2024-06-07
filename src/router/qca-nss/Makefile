@@ -52,6 +52,8 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cp	qca-nss-dp/hal/soc_ops/ipq60xx/nss_ipq60xx.h qca-nss-dp/exports/nss_dp_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) $(SSDK_MAKE_FLAGS) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)
 else
 
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
