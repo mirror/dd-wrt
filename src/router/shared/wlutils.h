@@ -369,6 +369,8 @@ struct wifi_interface {
 	int width;
 	int center1;
 	int center2;
+	int txpower;
+	unsigned int he:1,vht:1,ht:1;
 };
 
 typedef struct STAINFO {
