@@ -1135,7 +1135,7 @@ int getMTD(char *name)
 			if (dev[4] == ':') {
 				device = dev[3] - '0';
 			} else {
-				device = 10 + (dev[4] - '0');
+				device = ((dev[3] - '0') * 10) + (dev[4] - '0');
 			}
 
 			break;
