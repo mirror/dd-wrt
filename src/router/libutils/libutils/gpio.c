@@ -418,9 +418,7 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	} else
-		set_linux_gpio(gpio, value);
-
-	set_linux_gpio(gpio + 512, value);
+		set_linux_gpio(gpio + 512, value);
 }
 
 #elif defined(HAVE_IPQ806X)
