@@ -1661,7 +1661,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	char *wproto = nvram_safe_get("wan_proto");
 	char *newwproto = websGetVar(wp, "wan_proto", NULL);
 	if (newwproto && *wproto) {
-		if ((!strcmp(newwproto,"dhcp") && strcmp(wproto,"dhcp")) || (strcmp(newwproto,"dhcp") && !strcmp(wproto,"dhcp")))
+		if (strcmp(wproto,newwproto))
 		    need_reboot=1;
 	}
 #else
