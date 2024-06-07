@@ -910,7 +910,7 @@ int inline issuperchannel(void)
 	return 0;
 }
 #else
-	int issuperchannel(void);
+int issuperchannel(void);
 
 #endif
 
