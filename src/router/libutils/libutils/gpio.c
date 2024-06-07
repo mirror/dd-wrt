@@ -414,7 +414,7 @@ void set_gpio(int gpio, int value)
 			writeint("/sys/class/leds/blue:status/brightness", value);
 			break;
 		default:
-			set_linux_gpio(gpio, value);
+			set_linux_gpio(gpio + 512, value);
 			break;
 		}
 	} else
