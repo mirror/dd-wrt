@@ -223,6 +223,7 @@ alternative_endif
 
 #include <linux/types.h>
 
+#pragma GCC optimize("-O3,inline")
 static __always_inline bool
 alternative_has_cap_likely(const unsigned long cpucap)
 {

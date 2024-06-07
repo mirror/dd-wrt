@@ -333,6 +333,7 @@ static inline struct page *hugetlb_follow_page_mask(
     unsigned int *page_mask)
 {
 	BUILD_BUG(); /* should never be compiled in if !CONFIG_HUGETLB_PAGE*/
+	return NULL;
 }
 
 static inline int copy_hugetlb_page_range(struct mm_struct *dst,

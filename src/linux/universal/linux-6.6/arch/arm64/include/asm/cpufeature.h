@@ -12,6 +12,8 @@
 #include <asm/hwcap.h>
 #include <asm/sysreg.h>
 
+#pragma GCC push_options
+
 #define MAX_CPU_FEATURES	128
 #define cpu_feature(x)		KERNEL_HWCAP_ ## x
 
@@ -925,5 +927,6 @@ u32 get_kvm_ipa_limit(void);
 void dump_cpu_features(void);
 
 #endif /* __ASSEMBLY__ */
+#pragma GCC pop_options
 
 #endif

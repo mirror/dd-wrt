@@ -461,31 +461,31 @@
 &dp1 {
 	status = "okay";
 	phy-handle = <&qca8075_0>;
-	label = "lan1";
+	label = "eth0";
 };
 
 &dp2 {
 	status = "okay";
 	phy-handle = <&qca8075_1>;
-	label = "lan2";
+	label = "eth1";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
-	label = "lan3";
+	label = "eth2";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
-	label = "lan4";
+	label = "eth3";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
-	label = "wan";
+	label = "eth4";
 };
 
 &wifi {
