@@ -159,8 +159,10 @@ void start_sysinit(void)
 	set_hwaddr("eth3", ethaddr);
 	set_hwaddr("eth4", ethaddr);
 	MAC_ADD(ethaddr);
+	nvram_set("wlan0_hwaddr",ethaddr);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy0/macaddress", ethaddr);
 	MAC_ADD(ethaddr);
+	nvram_set("wlan1_hwaddr",ethaddr);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
 
 /*		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
