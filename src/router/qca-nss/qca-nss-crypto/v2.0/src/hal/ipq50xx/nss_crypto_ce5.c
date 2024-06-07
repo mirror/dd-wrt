@@ -288,7 +288,7 @@ int nss_crypto_ce5_engine_init(struct platform_device *pdev, struct resource *cr
 	 * remap the I/O addresses for crypto
 	 */
 	eng->crypto_paddr = crypto_res->start;
-	eng->crypto_vaddr = ioremap_nocache(crypto_res->start, resource_size(crypto_res));
+	eng->crypto_vaddr = ioremap(crypto_res->start, resource_size(crypto_res));
 	if (!eng->crypto_vaddr) {
 		nss_crypto_warn("%px: unable to remap crypto_addr(0x%px)\n", node, (void *)eng->crypto_paddr);
 		nss_crypto_engine_free(eng);
@@ -299,7 +299,7 @@ int nss_crypto_ce5_engine_init(struct platform_device *pdev, struct resource *cr
 	 * remap the I/O addresses for bam
 	 */
 	eng->dma_paddr = bam_res->start;
-	eng->dma_vaddr = ioremap_nocache(bam_res->start, resource_size(bam_res));
+	eng->dma_vaddr = ioremap(bam_res->start, resource_size(bam_res));
 	if (!eng->dma_vaddr) {
 		iounmap(eng->crypto_vaddr);
 		nss_crypto_warn("%px: unable to remap dma_addr(0x%px)\n", node, (void *)eng->dma_paddr);

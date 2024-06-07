@@ -55,8 +55,14 @@
 #include <linux/interrupt.h>
 #include <linux/delay.h>
 #include <linux/vmalloc.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 #include <linux/cryptohash.h>
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#endif
 #include <crypto/aes.h>
 #include <crypto/des.h>
 #include <crypto/ghash.h>

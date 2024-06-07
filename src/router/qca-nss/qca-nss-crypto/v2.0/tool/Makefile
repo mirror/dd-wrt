@@ -5,6 +5,6 @@ $(TOOL_MOD_NAME)-objs = nss_crypto_bench.o
 
 obj ?= .
 #ccflags-y += -DCONFIG_NSS_CRYPTO_TOOL_DBG
-ccflags-y += -DNSS_CRYPTO_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y, %H:%M:%S')'\"
+ccflags-y += -DNSS_CRYPTO_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y)'\"
 ccflags-y += -I$(obj)/../include -I$(obj)/../src -I$(obj)/
 ccflags-y += -Werror

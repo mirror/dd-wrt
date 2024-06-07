@@ -38,7 +38,13 @@
 #include <linux/debugfs.h>
 #include <linux/log2.h>
 #include <linux/completion.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
+#endif
 #include <crypto/des.h>
 #include <crypto/aes.h>
 #include <crypto/md5.h>
