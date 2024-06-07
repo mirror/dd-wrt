@@ -1076,10 +1076,10 @@ struct mtu_lists mtu_list[] = {
 #else
 	{ "pppoe", "576", "1492" },
 #endif
-	{ "pppoe_dual", "576", "1492" }, { "pppoa", "576", "16320" },	{ "pptp", "576", "1460" },
-	{ "l2tp", "576", "1460" },	 { "dhcp", "576", "16320" },	{ "dhcp_auth", "576", "16320" },
-	{ "iphone", "576", "1500" }, { "android", "576", "1500" },	 { "static", "576", "16320" },
-	{ "heartbeat", "576", "1500" }, { "3g", "576", "1500" },	 { "default", "576", "16320" }, // The value must be at last
+	{ "pppoe_dual", "576", "1492" }, { "pppoa", "576", "16320" },  { "pptp", "576", "1460" },
+	{ "l2tp", "576", "1460" },	 { "dhcp", "576", "16320" },   { "dhcp_auth", "576", "16320" },
+	{ "iphone", "576", "1500" },	 { "android", "576", "1500" }, { "static", "576", "16320" },
+	{ "heartbeat", "576", "1500" },	 { "3g", "576", "1500" },      { "default", "576", "16320" }, // The value must be at last
 };
 
 struct mtu_lists *get_mtu(char *proto)

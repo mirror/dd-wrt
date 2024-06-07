@@ -407,10 +407,10 @@ void set_gpio(int gpio, int value)
 		case 0: // power
 			writeint("/sys/class/leds/red:status/brightness", value);
 			break;
-		case 1: // 2G
+		case 1:
 			writeint("/sys/class/leds/green:status/brightness", value);
 			break;
-		case 2: // 5G
+		case 2:
 			writeint("/sys/class/leds/blue:status/brightness", value);
 			break;
 		default:
