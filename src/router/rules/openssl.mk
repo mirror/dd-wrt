@@ -119,7 +119,9 @@ ifneq ($(ARCH),mips64)
 ifneq ($(ARCH),x86_64)
 ifneq ($(ARCH),i386)
 ifneq ($(ARCH),aarch64)
+ifneq ($(ARCH),arm)
 OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
+endif
 endif
 endif
 endif
