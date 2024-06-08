@@ -178,7 +178,7 @@ obj-$(CONFIG_MINIDLNA) += jansson
 ifeq ($(CONFIG_LEGACY_KERNEL),y)
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 else
-ifeq ($(CONFIG_NTFS3),y)
+ifeq ($(CONFIG_NTFS3G),y)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
