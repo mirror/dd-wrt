@@ -1682,6 +1682,7 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_IPQ6018)
+	if (getRouterBrand() == ROUTER_LINKSYS_MR7350) {
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
@@ -1691,6 +1692,17 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+	}else{
+	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 wlan0 wlan1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth0");
+	}
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+	}
 #elif defined(HAVE_VENTANA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
 	if (getSTA() || getWET() || CANBRIDGE()) {

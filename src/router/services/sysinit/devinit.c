@@ -280,7 +280,7 @@ void start_devinit(void)
 		/* do not start irqbalance if it doesnt make sense at all, it will just create bogus warnings */
 		mkdir("/var/run/irqbalance", 0777);
 #ifdef HAVE_IPQ6018
-		eval("irqbalance", "-t", "10", "-i", "33", "-i", "34", "-i", "35", "-i", "36", "-i", "47", "-i", "53", "-i", "56", "-i","57","-i", "59","-i", "61", "-i", "62", "-i", "63", "-i", "64");
+//		eval("irqbalance", "-t", "10", "-i", "33", "-i", "34", "-i", "35", "-i", "36", "-i", "47", "-i", "53", "-i", "56", "-i","57","-i", "59","-i", "61", "-i", "62", "-i", "63", "-i", "64");
 #else
 		eval("irqbalance", "-t", "10");
 #endif
