@@ -181,7 +181,14 @@ static int getbuttonstate()
 #elif defined(HAVE_IPQ6018)
 static int getbuttonstate()
 {
-	return !get_gpio(57);
+	switch (getRouterBrand()) {
+	case ROUTER_LINKSYS_MR7350:
+		return !get_gpio(57);
+	case ROUTER_LINKSYS_MX4200:
+		return !get_gpio(52);
+	default:
+		return 0;
+	}
 }
 #elif defined(HAVE_IPQ806X)
 static int getbuttonstate()
@@ -1359,8 +1366,16 @@ static void resetbtn_period_check(int sig)
 	sesgpio = 0x005;
 	val |= get_gpio(5) << 5; //aoss pushbutton
 #elif defined(HAVE_IPQ6018)
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
 		sesgpio = 0x105;
 		val |= get_gpio(56) << 5;
+		break;
+	case ROUTER_LINKSYS_MX4200:
+		sesgpio = 0x105;
+		val |= get_gpio(67) << 5;
+		break;
+	}
 #elif defined(HAVE_IPQ806X)
 	switch (brand) {
 	case ROUTER_LINKSYS_EA8500:
