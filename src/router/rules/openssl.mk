@@ -132,7 +132,7 @@ endif
 ifeq ($(ARCH),x86_64)
 OPENSSL_OPTIONS += -O3
 endif
-ifneq ($(ARCH),i386)
+ifeq ($(ARCH),i386)
 OPENSSL_OPTIONS += -O3
 endif
 ifeq ($(ARCH),aarch64)
