@@ -419,7 +419,7 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	break:
+	break;
 	default:
 		set_linux_gpio(gpio + 512, value);
 	break;
