@@ -164,14 +164,14 @@ void start_sysinit(void)
 	MAC_ADD(ethaddr);
 	nvram_set("wlan1_hwaddr",ethaddr);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
-	writeproc("/proc/irq/61/smp_affinity", "4");
-	writeproc("/proc/irq/62/smp_affinity", "2");
-	writeproc("/proc/irq/63/smp_affinity", "4");
-	writeproc("/proc/irq/64/smp_affinity", "2");
+	writeproc("/proc/irq/61/smp_affinity", "8");
+	writeproc("/proc/irq/62/smp_affinity", "4");
+	writeproc("/proc/irq/63/smp_affinity", "2");
+	writeproc("/proc/irq/64/smp_affinity", "1");
 
 	writeproc("/proc/irq/47/smp_affinity", "4");
 	writeproc("/proc/irq/53/smp_affinity", "2");
-	writeproc("/proc/irq/56/smp_affinity", "4");
+	writeproc("/proc/irq/56/smp_affinity", "1");
 
 	writeproc("/proc/irq/57/smp_affinity", "2");
 	writeproc("/proc/irq/59/smp_affinity", "4");
