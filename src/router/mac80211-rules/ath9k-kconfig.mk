@@ -127,7 +127,7 @@ ifeq ($(CONFIG_IPQ6018),y)
   CPTCFG_ATH11K_DEBUGFS=y
   CPTCFG_ATH11K_THERMAL=y
   CPTCFG_ATH11K_SPECTRAL=y
-  CPTCFG_ATH11K_PCI=y
+  CPTCFG_ATH11K_PCI=n
   CPTCFG_ATH11K_AHB=y
   CPTCFG_MHI_BUS=y
   CPTCFG_MHI_QRTR=y
@@ -241,11 +241,12 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
-	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_PCI=n" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_AHB=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
+
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
@@ -443,6 +444,19 @@ endif
 ifeq ($(CONFIG_ATH11K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ6018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ8074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
+
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
