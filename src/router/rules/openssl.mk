@@ -81,6 +81,7 @@ openssl-install:
 #	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
 #endif
 ifeq ($(CONFIG_FREERADIUS),y)
+	$(MAKE) -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
 	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
@@ -114,9 +115,15 @@ endif
 ifeq ($(CONFIG_ALPINE),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST 
 endif
+ifneq ($(ARCH),mips64)
+ifneq ($(ARCH),x86_64)
+ifneq ($(ARCH),i386)
+ifneq ($(ARCH),aarch64)
 OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
-
-
+endif
+endif
+endif
+endif
 
 openssl-configure:
 	cd openssl && CROSS_COMPILE= && ./Configure $(OPENSSL_TARGET) \
