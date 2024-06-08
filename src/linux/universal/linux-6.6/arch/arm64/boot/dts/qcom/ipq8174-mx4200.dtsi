@@ -417,25 +417,25 @@
 &dp2 {
 	status = "okay";
 	phy-handle = <&qca8075_1>;
-	label = "wan";
+	label = "eth0";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
-	label = "lan1";
+	label = "eth1";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
-	label = "lan2";
+	label = "eth2";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
-	label = "lan3";
+	label = "eth3";
 };
 
 &ssphy_0 {
