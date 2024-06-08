@@ -5,24 +5,29 @@ IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/sched
 KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
+
+
+#KERNEL_FLAGS = "-UCONFIG_NOPRINTK -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch" 
+ifeq ($(CONFIG_IPQ6018),y)
+CFI_CRYPTOAPI_DIR:=cryptoapi/v2.0
+CFI_OCF_DIR:=ocf/v2.0
+CFI_IPSEC_DIR:=ipsec/v2.0
+KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v2.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
+NSS_CRYPTO_DIR:=v2.0
+DTLSMGR_DIR:=v2.0
+IPSECMGR_KLIPS:=
+else
 CFI_CRYPTOAPI_DIR:=cryptoapi/v1.1
 CFI_OCF_DIR:=ocf/v1.0
 CFI_IPSEC_DIR:=ipsec/v1.0
-
+KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
+NSS_CRYPTO_DIR:=v1.0
 # DTLS Manager v1.0 for Akronite.
 DTLSMGR_DIR:=v1.0
 # IPsec Manager v1.0 for Akronite.
 IPSECMGR_DIR:=v1.0
 # KLIPS plugin not needed
 IPSECMGR_KLIPS:=
-
-#KERNEL_FLAGS = "-UCONFIG_NOPRINTK -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch" 
-ifeq ($(CONFIG_IPQ6018),y)
-KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v2.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
-NSS_CRYPTO_DIR:=v2.0
-else
-KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK
-NSS_CRYPTO_DIR:=v1.0
 endif
 
 LNX_CONFIG_OPTS = LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB modules
@@ -59,6 +64,11 @@ ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) $(SSDK_MAKE_FLAGS) $(LNX_CONFIG_OPTS) -C qca-ssdk $(LNX_CONFIG_OPTS)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
 		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
+#	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modulesMODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 else
 
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
@@ -129,6 +139,11 @@ clean:
 ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) $(SSDK_MAKE_FLAGS) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/qca-ssdk MODULE_TYPE=KSLIB clean -C qca-ssdk clean
+	rm -f qca-ssdk/qca-ssdk.*
+	rm -f qca-ssdk/*.dep
+	rm -f qca-ssdk/modules.order
+	rm -f qca-ssdk/Module.symvers
+	rm -f qca-ssdk/.*.cmd
 else
 
 	-$(MAKE) -C lib clean KERNEL_FLAGS="$(KERNEL_FLAGS)"
