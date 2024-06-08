@@ -1403,12 +1403,12 @@ generic:;
 
 	if (!strcmp(modelstr, "MX4200v1")) {
 		setRouter("Linksys MX4200 v1");
-		return ROUTER_LINKSYS_MX4200;
+		return ROUTER_LINKSYS_MX4200V1;
 	}
 
 	if (!strcmp(modelstr, "MX4200v2")) {
 		setRouter("Linksys MX4200 v2");
-		return ROUTER_LINKSYS_MX4200;
+		return ROUTER_LINKSYS_MX4200V2;
 	}
 	setRouter("Qualcomm IPQ6018");
 	return ROUTER_IPQ6018;

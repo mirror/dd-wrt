@@ -1667,12 +1667,8 @@ static void getledconfig(struct ledconfig *cfg)
 #endif
 		break;
 	case ROUTER_LINKSYS_MR7350:
-		cfg->power_gpio = 0x1; // power led / green
-		cfg->diag_gpio = 0x0; // diag led / red 
-		cfg->diag_gpio_disabled = 0x1; 
-		cfg->connected_gpio = 0x2; // blue wan led
-		break;
-	case ROUTER_LINKSYS_MX4200:
+	case ROUTER_LINKSYS_MX4200V1:
+	case ROUTER_LINKSYS_MX4200V2:
 		cfg->power_gpio = 0x1; // power led / green
 		cfg->diag_gpio = 0x0; // diag led / red 
 		cfg->diag_gpio_disabled = 0x1; 

@@ -404,7 +404,8 @@ void set_gpio(int gpio, int value)
 	int brand = getRouterBrand();
 	switch(brand) {
 	case ROUTER_LINKSYS_MR7350:
-	case ROUTER_LINKSYS_MX4200:
+	case ROUTER_LINKSYS_MX4200V1:
+	case ROUTER_LINKSYS_MX4200V2:
 		switch (gpio) {
 		case 0: // power
 			writeint("/sys/class/leds/red:status/brightness", value);
