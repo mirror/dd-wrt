@@ -62,9 +62,9 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 	FILE *fp = fopen("/tmp/fw_env.config", "wb");
 	if (fp) {
 		if (nums)
-		fprintf(fp, "%s\t%s\t%s\t%s\t%d\n", m, offset, envsize, blocksize, nums);
+			fprintf(fp, "%s\t%s\t%s\t%s\t%d\n", m, offset, envsize, blocksize, nums);
 		else
-		fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
+			fprintf(fp, "%s\t%s\t%s\t%s\n", m, offset, envsize, blocksize);
 		fclose(fp);
 	}
 }
@@ -93,6 +93,54 @@ void *get_deviceinfo_mr7350(char *var)
 	}
 	free(mem);
 	return NULL;
+}
+
+void calcchecksum(void *caldata, int offset, int size)
+{
+	int i;
+	unsigned short *cdata = (unsigned short *)caldata;
+	unsigned short *ptr_eeprom = (unsigned short *)caldata;
+	unsigned short crc = 0;
+	ptr_eeprom += offset / 2;
+	fprintf(stderr, "orig checksum %X\n", cdata[5]);
+	cdata[0x5] = 0;
+	for (i = 0; i < size - offset; i += 2) {
+		crc ^= le16toh(*ptr_eeprom);
+		ptr_eeprom++;
+	}
+	crc = ~crc;
+	cdata[0x5] = htole16(crc);
+	fprintf(stderr, "checksum %X\n", crc);
+}
+
+void patchmac(char *file, int offset, char *binmac)
+{
+	FILE *fp = fopen(file, "rb");
+	if (fp) {
+		char *mem = malloc(0x10000);
+		for (i = 0; i < 0x10000; i++)
+			mem[i] = getc(fp);
+		fclose(fp);
+		memcpy(mem + offset, binmac, 6);
+		calcchecksum(mem, 0, 0x10000);
+		FILE *fp = fopen(file, "wb");
+		for (i = 0; i < 0x10000; i++)
+			putc(mem[i], fp);
+		fclose(fp);
+		free(mem);
+	}
+}
+void chksum_main(int argc, char *argv[])
+{
+	FILE *fp = fopen("/tmp/caldata.bin", "rb");
+	int offset = atoi(argv[1]);
+	int size = atoi(argv[2]);
+	char *mem = malloc(0x10000);
+	int i;
+	for (i = 0; i < 0x10000; i++)
+		mem[i] = getc(fp);
+	fclose(fp);
+	calcchecksum(mem, offset, size);
 }
 
 void start_sysinit(void)
@@ -139,9 +187,9 @@ void start_sysinit(void)
 	}
 	if (!nvram_match("nobcreset", "1"))
 		eval("mtd", "resetbc", "s_env");
-	set_envtools(11, "0x0", "0x40000", "0x20000",2);
+	set_envtools(11, "0x0", "0x40000", "0x20000", 2);
 	char *maddr = get_deviceinfo_mr7350("hw_mac_addr");
-	int newmac[5];
+	unsigned char newmac[6];
 	if (maddr) {
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
 		sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
@@ -159,22 +207,34 @@ void start_sysinit(void)
 	set_hwaddr("eth3", ethaddr);
 	set_hwaddr("eth4", ethaddr);
 	MAC_ADD(ethaddr);
-	nvram_set("wlan0_hwaddr",ethaddr);
+	nvram_set("wlan0_hwaddr", ethaddr);
+	sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+	patchmac(("/tmp/caldata.bin",14, newmac);
+	patchmac(("/tmp/board.bin",14, newmac);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy0/macaddress", ethaddr);
 	MAC_ADD(ethaddr);
 	nvram_set("wlan1_hwaddr",ethaddr);
+	sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
+	patchmac(("/tmp/caldata.bin",20, newmac);
+	patchmac(("/tmp/board.bin",20, newmac);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
-	writeproc("/proc/irq/61/smp_affinity", "8");
-	writeproc("/proc/irq/62/smp_affinity", "4");
-	writeproc("/proc/irq/63/smp_affinity", "2");
-	writeproc("/proc/irq/64/smp_affinity", "1");
+	writeproc("/proc/irq/61/smp_affinity", "1");
+	writeproc("/proc/irq/62/smp_affinity", "2");
+	writeproc("/proc/irq/63/smp_affinity", "4");
+	writeproc("/proc/irq/64/smp_affinity", "8");
 
-	writeproc("/proc/irq/47/smp_affinity", "4");
+	writeproc("/proc/irq/47/smp_affinity", "1");
 	writeproc("/proc/irq/53/smp_affinity", "2");
-	writeproc("/proc/irq/56/smp_affinity", "1");
+	writeproc("/proc/irq/56/smp_affinity", "4");
 
 	writeproc("/proc/irq/57/smp_affinity", "2");
 	writeproc("/proc/irq/59/smp_affinity", "4");
+
+
+	writeproc("/proc/irq/33/smp_affinity", "4");
+	writeproc("/proc/irq/34/smp_affinity", "4");
+	writeproc("/proc/irq/35/smp_affinity", "4");
+	writeproc("/proc/irq/36/smp_affinity", "4");
 
 
 /*		sysprintf("echo netdev > /sys/devices/platform/leds/leds/rt-ac58u:blue:lan/trigger");
