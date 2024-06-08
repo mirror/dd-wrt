@@ -61,6 +61,11 @@
 #include <nss_cryptoapi.h>
 #include "nss_cryptoapi_private.h"
 
+static inline u32 crypto_tfm_alg_flags(struct crypto_tfm *tfm)
+{
+	return tfm->__crt_alg->cra_flags & ~CRYPTO_ALG_TYPE_MASK;
+}
+
 /*
  * nss_cryptoapi_aead_ctx2session()
  *	Cryptoapi function to get the session ID for an AEAD
@@ -202,7 +207,6 @@ int nss_cryptoapi_aead_setkey_noauth(struct crypto_aead *aead, const u8 *key, un
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), keylen, 0);
 	if (!ctx->info) {
 		nss_cfi_err("%px: Unable to find algorithm with keylen\n", ctx);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -ENOENT;
 	}
 
@@ -234,7 +238,6 @@ int nss_cryptoapi_aead_setkey_noauth(struct crypto_aead *aead, const u8 *key, un
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
 		nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 
@@ -266,14 +269,12 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	 */
 	if (crypto_authenc_extractkeys(&keys, key, keylen) != 0) {
 		nss_cfi_err("%px: Unable to extract keys\n", ctx);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EIO;
 	}
 
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), keys.enckeylen, crypto_aead_maxauthsize(aead));
 	if (!ctx->info) {
 		nss_cfi_err("%px: Unable to find algorithm with keylen\n", ctx);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -ENOENT;
 	}
 
@@ -294,7 +295,6 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	 */
 	if (keys.authkeylen > ctx->info->auth_blocksize) {
 		nss_cfi_err("%px: Auth keylen(%d) exceeds supported\n", ctx, keys.authkeylen);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
 
@@ -337,7 +337,6 @@ int nss_cryptoapi_aead_setkey(struct crypto_aead *aead, const u8 *key, unsigned 
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
 		nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
-// 		crypto_aead_set_flags(aead, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 

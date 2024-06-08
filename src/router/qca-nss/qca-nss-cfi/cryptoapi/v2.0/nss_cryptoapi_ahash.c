@@ -192,7 +192,6 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
 
 	ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), 0, crypto_ahash_digestsize(ahash));
 	if (!ctx->info) {
-// 		crypto_ahash_set_flags(ahash, CRYPTO_TFM_RES_BAD_KEY_LEN);
 		return -EINVAL;
 	}
 
@@ -215,7 +214,6 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
 	status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 	if (status < 0) {
 		nss_cfi_warn("%px: Unable to allocate crypto session(%d)\n", ctx, status);
-// 		crypto_ahash_set_flags(ahash, CRYPTO_TFM_RES_BAD_FLAGS);
 		return status;
 	}
 
@@ -299,7 +297,6 @@ int nss_cryptoapi_ahash_init(struct ahash_request *req)
 		 */
 		ctx->info = nss_cryptoapi_cra_name2info(crypto_tfm_alg_name(tfm), 0, 0);
 		if (!ctx->info) {
-// 			crypto_ahash_set_flags(ahash, CRYPTO_TFM_RES_BAD_KEY_LEN);
 			return -EINVAL;
 		}
 
@@ -314,7 +311,6 @@ int nss_cryptoapi_ahash_init(struct ahash_request *req)
 		status = nss_crypto_session_alloc(ctx->user, &data, &ctx->sid);
 		if (status < 0) {
 			nss_cfi_err("%px: Unable to allocate crypto session(%d)\n", ctx, status);
-// 			crypto_ahash_set_flags(ahash, CRYPTO_TFM_RES_BAD_FLAGS);
 			return status;
 		}
 

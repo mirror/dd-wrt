@@ -248,14 +248,16 @@ extern void nss_cryptoapi_aead_tx_proc(struct nss_cryptoapi_ctx *ctx, struct aea
 				struct nss_cryptoapi_info *info, bool encrypt);
 
 /*
- * ABLKCIPHER
+ * SKCIPHER
  */
-extern int nss_cryptoapi_ablkcipher_init(struct crypto_tfm *tfm);
-extern void nss_cryptoapi_ablkcipher_exit(struct crypto_tfm *tfm);
-extern int nss_cryptoapi_ablk_setkey(struct crypto_ablkcipher *cipher, const u8 *key, unsigned int len);
-extern int nss_cryptoapi_ablk_encrypt(struct ablkcipher_request *req);
-extern int nss_cryptoapi_ablk_decrypt(struct ablkcipher_request *req);
+#if defined(NSS_CRYPTOAPI_SKCIPHER)
+extern int nss_cryptoapi_skcipher_init(struct crypto_skcipher *tfm);
+extern void nss_cryptoapi_skcipher_exit(struct crypto_skcipher *tfm);
+extern int nss_cryptoapi_skcipher_setkey(struct crypto_skcipher *cipher, const u8 *key, unsigned int len);
+extern int nss_cryptoapi_skcipher_encrypt(struct skcipher_request *req);
+extern int nss_cryptoapi_skcipher_decrypt(struct skcipher_request *req);
 extern void nss_cryptoapi_copy_iv(struct nss_cryptoapi_ctx *ctx, struct scatterlist *sg, uint8_t *iv, uint8_t iv_len);
+#endif
 
 /*
  * AHASH
