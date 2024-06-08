@@ -11,6 +11,7 @@ ifneq ($(CONFIG_PYTHON),y)
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
 endif
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
+	-rm -rf $(INSTALLDIR)/libffi/usr/include
 	-mv $(INSTALLDIR)/libffi/usr/lib64/* $(INSTALLDIR)/libffi/usr/lib
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib64
 	-rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
