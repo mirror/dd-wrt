@@ -323,6 +323,7 @@ static void checkupgrade(void)
 		fclose(in);
 		// prevent double call of
 		// this
+		eval("ledtool", "500");
 		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 again:;
 		sleep(30);
