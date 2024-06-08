@@ -113,19 +113,35 @@ ifeq ($(CONFIG_MVEBU),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST 
 endif
 ifeq ($(CONFIG_ALPINE),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST 
+OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
 endif
 ifneq ($(ARCH),mips64)
 ifneq ($(ARCH),x86_64)
 ifneq ($(ARCH),i386)
 ifneq ($(ARCH),aarch64)
 ifneq ($(ARCH),arm)
-OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT -O3
+OPENSSL_OPTIONS += -DOPENSSL_SMALL_FOOTPRINT
 endif
 endif
 endif
 endif
 endif
+ifeq ($(ARCH),mips64)
+OPENSSL_OPTIONS += -O3
+endif
+ifeq ($(ARCH),x86_64)
+OPENSSL_OPTIONS += -O3
+endif
+ifneq ($(ARCH),i386)
+OPENSSL_OPTIONS += -O3
+endif
+ifeq ($(ARCH),aarch64)
+OPENSSL_OPTIONS += -O3
+endif
+ifeq ($(ARCH),arm)
+OPENSSL_OPTIONS += -O3
+endif
+
 
 openssl-configure:
 	cd openssl && CROSS_COMPILE= && ./Configure $(OPENSSL_TARGET) \
