@@ -799,6 +799,8 @@
 
 #define ROUTER_LINKSYS_MR7350 0x113139
 
+#define ROUTER_LINKSYS_MX4200 0x114134
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

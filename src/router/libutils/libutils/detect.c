@@ -1400,6 +1400,16 @@ generic:;
 		setRouter("Linksys MR7350");
 		return ROUTER_LINKSYS_MR7350;
 	}
+
+	if (!strcmp(modelstr, "MX4200v1")) {
+		setRouter("Linksys MX4200 v1");
+		return ROUTER_LINKSYS_MX4200;
+	}
+
+	if (!strcmp(modelstr, "MX4200v2")) {
+		setRouter("Linksys MX4200 v2");
+		return ROUTER_LINKSYS_MX4200;
+	}
 	setRouter("Qualcomm IPQ6018");
 	return ROUTER_IPQ6018;
 #elif HAVE_IPQ806X

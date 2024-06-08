@@ -402,7 +402,9 @@ void set_gpio(int gpio, int value)
 	if (value == 1)
 		value = 255;
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350) {
+	switch(brand) {
+	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MX4200:
 		switch (gpio) {
 		case 0: // power
 			writeint("/sys/class/leds/red:status/brightness", value);
@@ -417,8 +419,11 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	} else
+	break:
+	default:
 		set_linux_gpio(gpio + 512, value);
+	break;
+	}
 }
 
 #elif defined(HAVE_IPQ806X)

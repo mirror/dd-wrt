@@ -117,6 +117,7 @@ void patchmac(char *file, int offset, char *binmac)
 {
 	FILE *fp = fopen(file, "rb");
 	if (fp) {
+		int i;
 		char *mem = malloc(0x10000);
 		for (i = 0; i < 0x10000; i++)
 			mem[i] = getc(fp);
@@ -209,14 +210,14 @@ void start_sysinit(void)
 	MAC_ADD(ethaddr);
 	nvram_set("wlan0_hwaddr", ethaddr);
 	sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
-	patchmac(("/tmp/caldata.bin",14, newmac);
-	patchmac(("/tmp/board.bin",14, newmac);
+	patchmac("/tmp/caldata.bin",14, newmac);
+	patchmac("/tmp/board.bin",14, newmac);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy0/macaddress", ethaddr);
 	MAC_ADD(ethaddr);
 	nvram_set("wlan1_hwaddr",ethaddr);
 	sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
-	patchmac(("/tmp/caldata.bin",20, newmac);
-	patchmac(("/tmp/board.bin",20, newmac);
+	patchmac("/tmp/caldata.bin",20, newmac);
+	patchmac("/tmp/board.bin",20, newmac);
 	sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
 	writeproc("/proc/irq/61/smp_affinity", "1");
 	writeproc("/proc/irq/62/smp_affinity", "2");
