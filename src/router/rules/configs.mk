@@ -71,6 +71,7 @@ obj-$(CONFIG_PPPOE) += pppoe
 #obj-$(CONFIG_UDHCPD) += udhcpd
 obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
@@ -80,6 +81,9 @@ obj-$(CONFIG_MADWIFI) += madwifi relayd
 endif
 else
 obj-$(CONFIG_MADWIFI) += madwifi
+endif
+else
+obj-$(CONFIG_MADWIFI) += relayd
 endif
 else
 obj-$(CONFIG_MADWIFI) += relayd
@@ -178,7 +182,8 @@ obj-$(CONFIG_MINIDLNA) += jansson
 ifeq ($(CONFIG_LEGACY_KERNEL),y)
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 else
-ifeq ($(CONFIG_NTFS3G),y)
+ifeq ($(CONFIG_NTFS3),y)
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
@@ -192,6 +197,10 @@ endif
 else
 obj-$(CONFIG_NTFS3G) += ntfs-3g
 endif
+else
+obj-$(CONFIG_NTFS3G) += ntfs-3g
+endif
+
 else
 obj-$(CONFIG_NTFS3G) += antfs ntfs-3g
 endif
@@ -219,6 +228,9 @@ endif
 ifeq ($(KERNELVERSION),6.1-nss)
 obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
+ifeq ($(KERNELVERSION),6.6-nss)
+obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
+endif
 ifeq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_OPENVPN) += libnl openvpn-dco
 endif
@@ -241,6 +253,9 @@ ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
+obj-$(CONFIG_BATMANADV) += batman-adv
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
 obj-$(CONFIG_BATMANADV) += batman-adv
 endif
 ifeq ($(KERNELVERSION),6.6)
@@ -341,6 +356,9 @@ ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
+obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox ubus libnltiny usteer
 endif
 ifeq ($(KERNELVERSION),6.6)
@@ -447,10 +465,12 @@ obj-$(CONFIG_EXFAT) += exfat-utils
 obj-$(CONFIG_DOSFSTOOLS) += dosfstools
 obj-$(CONFIG_FLASHROM) += flashrom
 obj-$(CONFIG_SMARTMONTOOLS) += smartmontools
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.1-nss)
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_RTL8125) += rtl8125
+endif
 endif
 endif
 endif
@@ -478,17 +498,21 @@ obj-$(CONFIG_NEWPORT) += cpt8x
 obj-$(CONFIG_RSYNC) += libucontext openssl zstd rsync
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
 endif
 endif
 endif
+endif
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_APFS) += apfs
+endif
 endif
 endif
 endif
@@ -497,8 +521,10 @@ obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre libucontext openssl zlib nginx
 ifneq ($(KERNELVERSION),6.1)
 ifneq ($(KERNELVERSION),6.1-nss)
+ifneq ($(KERNELVERSION),6.6-nss)
 ifneq ($(KERNELVERSION),6.6)
 obj-$(CONFIG_X86) += yukon
+endif
 endif
 endif
 endif
