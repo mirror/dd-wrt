@@ -3676,6 +3676,7 @@ void start_nvram(void)
 #endif
 	}
 
+	int doreboot = nvram_geti("nvram_ver") > 0;
 	if (nvram_geti("nvram_ver") < 10) {
 		nvram_seti("nvram_ver", 10);
 		nvram_unset("port0vlans");
@@ -3687,7 +3688,8 @@ void start_nvram(void)
 		nvram_unset("port6vlans");
 		nvram_seti("vlans", 0);
 		nvram_commit();
-		eval("reboot");
+		if (doreboot)
+			eval("reboot");
 	}
 
 	return;
