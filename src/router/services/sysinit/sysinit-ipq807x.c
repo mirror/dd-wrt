@@ -100,7 +100,7 @@ void *get_deviceinfo_mr7350(char *var)
 }
 void *get_deviceinfo_mx4200(char *var)
 {
-	return get_deviceinfo("/dev/mtd21", var);
+	return get_deviceinfo("/dev/mtd20", var);
 }
 
 void calcchecksum(void *caldata, int offset, int size)
