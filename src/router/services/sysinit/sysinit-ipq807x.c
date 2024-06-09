@@ -313,22 +313,6 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch(ethaddr, 20);
-		writeproc("/proc/irq/61/smp_affinity", "1");
-		writeproc("/proc/irq/62/smp_affinity", "2");
-		writeproc("/proc/irq/63/smp_affinity", "4");
-		writeproc("/proc/irq/64/smp_affinity", "8");
-
-		writeproc("/proc/irq/47/smp_affinity", "1");
-		writeproc("/proc/irq/53/smp_affinity", "2");
-		writeproc("/proc/irq/56/smp_affinity", "4");
-
-		writeproc("/proc/irq/57/smp_affinity", "2");
-		writeproc("/proc/irq/59/smp_affinity", "4");
-
-		writeproc("/proc/irq/33/smp_affinity", "4");
-		writeproc("/proc/irq/34/smp_affinity", "4");
-		writeproc("/proc/irq/35/smp_affinity", "4");
-		writeproc("/proc/irq/36/smp_affinity", "4");
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V2) {
 		MAC_ADD(ethaddr);
@@ -347,6 +331,24 @@ void start_sysinit(void)
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	}
+	if (brand == ROUTER_LINKSYS_MR7350) {
+		writeproc("/proc/irq/61/smp_affinity", "1");
+		writeproc("/proc/irq/62/smp_affinity", "2");
+		writeproc("/proc/irq/63/smp_affinity", "4");
+		writeproc("/proc/irq/64/smp_affinity", "8");
+
+		writeproc("/proc/irq/47/smp_affinity", "1");
+		writeproc("/proc/irq/53/smp_affinity", "2");
+		writeproc("/proc/irq/56/smp_affinity", "4");
+
+		writeproc("/proc/irq/57/smp_affinity", "2");
+		writeproc("/proc/irq/59/smp_affinity", "4");
+
+		writeproc("/proc/irq/33/smp_affinity", "4");
+		writeproc("/proc/irq/34/smp_affinity", "4");
+		writeproc("/proc/irq/35/smp_affinity", "4");
+		writeproc("/proc/irq/36/smp_affinity", "4");
 	}
 
 	return;
