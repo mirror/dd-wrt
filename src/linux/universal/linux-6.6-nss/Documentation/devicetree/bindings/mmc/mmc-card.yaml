@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mmc/mmc-card.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: MMC Card / eMMC Generic
+
+maintainers:
+  - Ulf Hansson <ulf.hansson@linaro.org>
+
+description: |
+  This documents describes the devicetree bindings for a mmc-host controller
+  child node describing a mmc-card / an eMMC.
+
+properties:
+  compatible:
+    const: mmc-card
+
+  reg:
+    const: 0
+
+  broken-hpi:
+    $ref: /schemas/types.yaml#/definitions/flag
+    description:
+      Use this to indicate that the mmc-card has a broken hpi
+      implementation, and that hpi should not be used.
+
+  block:
+    $ref: /schemas/block/block-device.yaml#
+    description:
+      Represents the block storage provided by an SD card or the
+      main hardware partition of an eMMC.
+
+patternProperties:
+  '^boot[0-9]+':
+    $ref: /schemas/block/block-device.yaml#
+    description:
+      Represents a boot hardware partition on an eMMC.
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    mmc {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        card@0 {
+            compatible = "mmc-card";
+            reg = <0>;
+            broken-hpi;
+
+            block {
+                partitions {
+                    cal_data: block-partition-rf {
+                        partnum = <3>;
+                        partname = "rf";
+
+                        nvmem-layout {
+                            compatible = "fixed-layout";
+                            #address-cells = <1>;
+                            #size-cells = <1>;
+
+                            eeprom@0 {
+                                reg = <0x0 0x1000>;
+                            };
+                        };
+                    };
+                };
+            };
+
+            boot1 {
+                nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    macaddr: macaddr@a {
+                        compatible = "mac-base";
+                        reg = <0xa 0x6>;
+                        #nvmem-cell-cells = <1>;
+                    };
+                };
+            };
+        };
+    };
+
+...

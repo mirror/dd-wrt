@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# PCS Layer Configuration
+#
+
+menu "PCS device drivers"
+
+config PCS_XPCS
+	tristate
+	select PHYLINK
+	help
+	  This module provides helper functions for Synopsys DesignWare XPCS
+	  controllers.
+
+config PCS_LYNX
+	tristate
+	help
+	  This module provides helpers to phylink for managing the Lynx PCS
+	  which is part of the Layerscape and QorIQ Ethernet SERDES.
+
+config PCS_MTK_LYNXI
+	tristate
+	select REGMAP
+	help
+	  This module provides helpers to phylink for managing the LynxI PCS
+	  which is part of MediaTek's SoC and Ethernet switch ICs.
+
+config PCS_MTK_USXGMII
+	tristate "MediaTek USXGMII PCS"
+	select PCS_MTK_LYNXI
+	select PHY_MTK_PEXTP
+	select PHYLINK
+	help
+	  This module provides a driver for MediaTek's USXGMII PCS supporting
+	  10GBase-R, 5GBase-R and USXGMII interface modes.
+	  1000Base-X, 2500Base-X and Cisco SGMII are supported on the same
+	  differential pairs via an embedded LynxI PHY.
+
+config PCS_RZN1_MIIC
+	tristate "Renesas RZ/N1 MII converter"
+	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
+	help
+	  This module provides a driver for the MII converter that is available
+	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
+	  pass-through mode for MII.
+
+endmenu
