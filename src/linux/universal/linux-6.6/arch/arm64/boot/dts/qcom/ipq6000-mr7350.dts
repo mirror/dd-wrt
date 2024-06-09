@@ -6,6 +6,7 @@
 #include "ipq6018-thermal.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
 #include "ipq6018-ess.dtsi"
+#include "ipq6018-nss.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
@@ -25,7 +26,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " root=/dev/ubiblock0_0";
+		bootargs-append = " root=/dev/ubiblock0_0 mitigations=off";
 	};
 
 	keys {
