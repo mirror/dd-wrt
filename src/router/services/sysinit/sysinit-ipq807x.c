@@ -214,11 +214,19 @@ void chksum_main(int argc, char *argv[])
 	calcchecksum(mem, offset, size);
 }
 
-#define arraycopy(a, b, len)              \
-	{                                 \
-		int i;                    \
-		for (i = 0; i < len; i++) \
-			a[i] = b[i];      \
+#define patch(ethaddr, offset)                                                                                               \
+	{                                                                                                                    \
+		unsigned char binmac[6];                                                                                     \
+		int i;                                                                                                       \
+		unsigned int newmac[6];                                                                                      \
+		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
+		       &newmac[5]);                                                                                          \
+		for (i = 0; i < 6; i++)                                                                                      \
+			binmac[i] = newmac[i];                                                                               \
+		patchmac("/tmp/caldata.bin", offset, binmac);                                                                \
+		patchmac("/tmp/board.bin", offset, binmac);                                                                  \
+		setmacflag("/tmp/caldata.bin");                                                                              \
+		setmacflag("/tmp/board.bin");                                                                                \
 	}
 
 void start_sysinit(void)
@@ -260,7 +268,6 @@ void start_sysinit(void)
 
 	insmod("qca-ssdk");
 	insmod("qca-nss-dp");
-	eval("modprobe", "ath11k_ahb");
 	int mtd = getMTD("art");
 	if (mtd == -1)
 		mtd = getMTD("ART");
@@ -281,13 +288,7 @@ void start_sysinit(void)
 		fclose(out);
 		fclose(fp);
 	}
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
-		if (!nvram_match("nobcreset", "1"))
-			eval("mtd", "resetbc", "s_env");
-		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
-	}
 	unsigned int newmac[6];
-	unsigned char binmac[6];
 	char ethaddr[32];
 	if (maddr) {
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
@@ -308,20 +309,10 @@ void start_sysinit(void)
 	if (brand == ROUTER_LINKSYS_MR7350) {
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
-		       &newmac[5]);
-		arraycopy(binmac, newmac, 6);
-		patchmac("/tmp/caldata.bin", 14, binmac);
-		patchmac("/tmp/board.bin", 14, binmac);
-		sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy0/macaddress", ethaddr);
+		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
-		       &newmac[5]);
-		arraycopy(binmac, newmac, 6);
-		patchmac("/tmp/caldata.bin", 20, binmac);
-		patchmac("/tmp/board.bin", 20, binmac);
-		sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
+		patch(ethaddr, 20);
 		writeproc("/proc/irq/61/smp_affinity", "1");
 		writeproc("/proc/irq/62/smp_affinity", "2");
 		writeproc("/proc/irq/63/smp_affinity", "4");
@@ -338,34 +329,25 @@ void start_sysinit(void)
 		writeproc("/proc/irq/34/smp_affinity", "4");
 		writeproc("/proc/irq/35/smp_affinity", "4");
 		writeproc("/proc/irq/36/smp_affinity", "4");
-		setmacflag("/tmp/caldata.bin");
-		setmacflag("/tmp/board.bin");
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V2) {
 		MAC_ADD(ethaddr);
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
-		       &newmac[5]);
-		arraycopy(binmac, newmac, 6);
-		patchmac("/tmp/caldata.bin", 20, binmac);
-		patchmac("/tmp/board.bin", 20, binmac);
+		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
-		       &newmac[5]);
-		arraycopy(binmac, newmac, 6);
-		patchmac("/tmp/caldata.bin", 14, binmac);
-		patchmac("/tmp/board.bin", 14, binmac);
+		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
-		       &newmac[5]);
-		arraycopy(binmac, newmac, 6);
-		patchmac("/tmp/caldata.bin", 26, binmac);
-		patchmac("/tmp/board.bin", 26, binmac);
-		setmacflag("/tmp/caldata.bin");
-		setmacflag("/tmp/board.bin");
+		patch(ethaddr, 26);
 	}
 
 	removeregdomain("/tmp/caldata.bin");
 	removeregdomain("/tmp/board.bin");
+	eval("modprobe", "ath11k_ahb");
+
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		if (!nvram_match("nobcreset", "1"))
+			eval("mtd", "resetbc", "s_env");
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	}
 
 	return;
 }
