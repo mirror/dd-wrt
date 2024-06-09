@@ -195,6 +195,30 @@ void removeregdomain(char *file)
 	}
 }
 
+void setmacflag(char *file)
+{
+	FILE *fp = fopen(file, "rb");
+	if (fp) {
+		fseek(fp, 0, SEEK_END);
+		size_t len = ftell(fp);
+		rewind(fp);
+		int i;
+		unsigned short *s;
+		unsigned char *mem = malloc(len);
+		s = (unsigned short *)mem;
+		for (i = 0; i < len; i++)
+			mem[i] = getc(fp);
+		fclose(fp);
+		s[62 / 2] = 1;
+		calcchecksum(mem, 0, len);
+		FILE *fp = fopen(file, "wb");
+		for (i = 0; i < len; i++)
+			putc(mem[i], fp);
+		fclose(fp);
+		free(mem);
+	}
+}
+
 void chksum_main(int argc, char *argv[])
 {
 	FILE *fp = fopen("/tmp/caldata.bin", "rb");
@@ -276,13 +300,13 @@ void start_sysinit(void)
 		newmac[4] & 0xff, newmac[5] & 0xff);
 	nvram_set("et0macaddr", ethaddr);
 	nvram_set("et0macaddr_safe", ethaddr);
+	set_hwaddr("eth0", ethaddr);
+	set_hwaddr("eth1", ethaddr);
+	set_hwaddr("eth2", ethaddr);
+	set_hwaddr("eth3", ethaddr);
+	set_hwaddr("eth4", ethaddr);
 
 	if (brand == ROUTER_LINKSYS_MR7350) {
-		set_hwaddr("eth0", ethaddr);
-		set_hwaddr("eth1", ethaddr);
-		set_hwaddr("eth2", ethaddr);
-		set_hwaddr("eth3", ethaddr);
-		set_hwaddr("eth4", ethaddr);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
@@ -318,7 +342,40 @@ void start_sysinit(void)
 		writeproc("/proc/irq/34/smp_affinity", "4");
 		writeproc("/proc/irq/35/smp_affinity", "4");
 		writeproc("/proc/irq/36/smp_affinity", "4");
+		setmacflag("/tmp/caldata.bin");
+		setmacflag("/tmp/board.bin");
 	}
+	if (brand == ROUTER_LINKSYS_MX4200V2) {
+		MAC_ADD(ethaddr);
+		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+		       &newmac[5]);
+		int i;
+		for (i = 0; i < 6; i++)
+			binmac[i] = newmac[i];
+		patchmac("/tmp/caldata.bin", 20, binmac);
+		patchmac("/tmp/board.bin", 20, binmac);
+
+		MAC_ADD(ethaddr);
+		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+		       &newmac[5]);
+		int i;
+		for (i = 0; i < 6; i++)
+			binmac[i] = newmac[i];
+		patchmac("/tmp/caldata.bin", 14, binmac);
+		patchmac("/tmp/board.bin", 14, binmac);
+
+		MAC_ADD(ethaddr);
+		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+		       &newmac[5]);
+		int i;
+		for (i = 0; i < 6; i++)
+			binmac[i] = newmac[i];
+		patchmac("/tmp/caldata.bin", 26, binmac);
+		patchmac("/tmp/board.bin", 26, binmac);
+		setmacflag("/tmp/caldata.bin");
+		setmacflag("/tmp/board.bin");
+	}
+
 	removeregdomain("/tmp/caldata.bin");
 	removeregdomain("/tmp/board.bin");
 
