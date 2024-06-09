@@ -277,16 +277,17 @@ void start_sysinit(void)
 		fclose(out);
 		fclose(fp);
 	}
-	if (!nvram_match("nobcreset", "1"))
-		eval("mtd", "resetbc", "s_env");
-	set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		if (!nvram_match("nobcreset", "1"))
+			eval("mtd", "resetbc", "s_env");
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	}
 	unsigned int newmac[6];
 	unsigned char binmac[6];
 	if (maddr) {
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
 		sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-	}
 
 	char ethaddr[32];
 	sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
@@ -298,6 +299,7 @@ void start_sysinit(void)
 	set_hwaddr("eth2", ethaddr);
 	set_hwaddr("eth3", ethaddr);
 	set_hwaddr("eth4", ethaddr);
+	}
 
 	if (brand == ROUTER_LINKSYS_MR7350) {
 		MAC_ADD(ethaddr);

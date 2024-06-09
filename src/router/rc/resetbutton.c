@@ -186,6 +186,7 @@ static int getbuttonstate()
 		return !get_gpio(57);
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(52);
 	default:
 		return 0;
@@ -1376,6 +1377,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_LINKSYS_MX4200V2:
 		sesgpio = 0x105;
 		val |= get_gpio(67) << 5;
+		break;
+	case ROUTER_DYNALINK_DLWRX36:
+		sesgpio = 0x105;
+		val |= get_gpio(63) << 5;
 		break;
 	}
 #elif defined(HAVE_IPQ806X)

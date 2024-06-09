@@ -729,6 +729,8 @@ void *getUEnv(char *name)
 	FILE *fp;
 	if (brand == ROUTER_LINKSYS_MR7350) 
 		fp = fopen("/dev/mtdblock/11", "rb");
+	else if (brand == ROUTER_DYNALINK_DLWRX36) 
+		fp = fopen("/dev/mtdblock/14", "rb");
 	else
 		fp = fopen("/dev/mtdblock/18", "rb");
 #elif HAVE_IPQ806X

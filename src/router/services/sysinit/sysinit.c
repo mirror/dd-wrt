@@ -1081,7 +1081,7 @@ void start_restore_defaults(void)
 						{ "wan_default", "eth0" },
 						{ 0, 0 } };
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_LINKSYS_MR7350)
+	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)
 		generic = generic_mr7350;
 	else
 		generic = generic_mx4200;

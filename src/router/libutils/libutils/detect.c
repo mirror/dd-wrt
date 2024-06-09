@@ -1410,6 +1410,11 @@ generic:;
 		setRouter("Linksys MX4200 v2");
 		return ROUTER_LINKSYS_MX4200V2;
 	}
+
+	if (!strcmp(modelstr, "DL-WRX36")) {
+		setRouter("Dynalink DL-WRX36");
+		return ROUTER_DYNALINK_DLWRX36;
+	}
 	setRouter("Qualcomm IPQ6018");
 	return ROUTER_IPQ6018;
 #elif HAVE_IPQ806X
