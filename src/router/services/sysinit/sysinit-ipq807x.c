@@ -243,11 +243,15 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 	char *maddr = NULL;
 	int fwlen = 0x10000;
-	if (brand == ROUTER_LINKSYS_MR7350)
+	if (brand == ROUTER_LINKSYS_MR7350) {
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
-	else {
+		insmod("qca-ssdk-ipq60xx");
+		insmod("qca-nss-dp-ipq60xx");
+	} else {
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		insmod("qca-ssdk-ipq807x");
+		insmod("qca-nss-dp-ipq807x");
 	}
 
 	insmod("qca-ssdk");
