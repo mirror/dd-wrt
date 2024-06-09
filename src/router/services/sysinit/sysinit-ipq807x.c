@@ -247,6 +247,10 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		insmod("qca-ssdk-ipq60xx");
 		insmod("qca-nss-dp-ipq60xx");
+	} else if (brand == ROUTER_DYNALINK_DLWRX36) {
+		fwlen = 0x20000;
+		insmod("qca-ssdk-ipq807x");
+		insmod("qca-nss-dp-ipq807x");
 	} else {
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
