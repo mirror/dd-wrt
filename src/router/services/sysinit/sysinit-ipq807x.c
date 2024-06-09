@@ -146,7 +146,7 @@ void patchmac(char *file, int offset, unsigned char *binmac)
 // IPQ8074 regdomain offset 52, 1112, 1280, 1448
 // IPQ6018 regdomain offset 52, 1104
 
-void removeregdomain(char *file)
+void removeregdomain(char *file, int type)
 {
 	FILE *fp = fopen(file, "rb");
 	if (fp) {
@@ -162,12 +162,13 @@ void removeregdomain(char *file)
 		fclose(fp);
 		int regdomain = s[52 / 2];
 		s[52 / 2] = 0;
-		if (s[1112 / 2] == regdomain)
+		if (type==0) {
+			s[1104 / 2] = 0;
+		} else {
 			s[1112 / 2] = 0;
-		if (s[1280 / 2] == regdomain)
 			s[1280 / 2] = 0;
-		if (s[1448 / 2] == regdomain)
 			s[1448 / 2] = 0;
+		}
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
 		for (i = 0; i < len; i++)
@@ -313,6 +314,8 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch(ethaddr, 20);
+		removeregdomain("/tmp/caldata.bin", 0);
+		removeregdomain("/tmp/board.bin", 0);
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V2) {
 		MAC_ADD(ethaddr);
@@ -321,10 +324,13 @@ void start_sysinit(void)
 		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
 		patch(ethaddr, 26);
+		removeregdomain("/tmp/caldata.bin", 1);
+		removeregdomain("/tmp/board.bin", 1);
 	}
-
-	removeregdomain("/tmp/caldata.bin");
-	removeregdomain("/tmp/board.bin");
+	if (brand == ROUTER_LINKSYS_MX4200V1) {
+		removeregdomain("/tmp/caldata.bin", 1);
+		removeregdomain("/tmp/board.bin", 1);
+	}
 	eval("modprobe", "ath11k_ahb");
 
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
