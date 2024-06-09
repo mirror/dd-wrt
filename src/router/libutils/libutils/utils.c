@@ -725,6 +725,7 @@ void *getUEnv(char *name)
 #elif HAVE_VENTANA
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
 #elif HAVE_IPQ6018
+	int brand = getRouterBrand();
 	FILE *fp;
 	if (brand == ROUTER_LINKSYS_MR7350) 
 		fp = fopen("/dev/mtdblock/11", "rb");
