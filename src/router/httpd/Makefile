@@ -197,6 +197,9 @@ endif
 ifeq ($(KERNELVERSION),6.1-nss)
 CFLAGS += -DHAVE_8021AD
 endif
+ifeq ($(KERNELVERSION),6.6-nss)
+CFLAGS += -DHAVE_8021AD
+endif
 ifeq ($(KERNELVERSION),6.6)
 CFLAGS += -DHAVE_8021AD
 endif
