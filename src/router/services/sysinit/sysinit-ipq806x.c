@@ -745,7 +745,7 @@ void start_sysinit(void)
 
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
-		nvram_default_get("clkfreq","716");
+		nvram_default_get("clkfreq", "716");
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 
@@ -761,12 +761,12 @@ void start_sysinit(void)
 		sysprintf("echo \"link tx rx\" > /sys/devices/platform/leds/leds/rt-ac58u:blue:wan/mode");
 		break;
 	case ROUTER_LINKSYS_EA8300:
-		nvram_default_get("clkfreq","716");
+		nvram_default_get("clkfreq", "716");
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 		break;
 	case ROUTER_HABANERO:
-		nvram_default_get("clkfreq","716");
+		nvram_default_get("clkfreq", "716");
 #ifdef HAVE_ANTAIRA
 		eval("insmod", "i2c-gpio-custom", "bus2=2,11,10");
 		eval("insmod", "rtc-pcf8523");

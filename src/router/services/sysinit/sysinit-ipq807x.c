@@ -69,11 +69,11 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 	}
 }
 
-void *get_deviceinfo_mr7350(char *var)
+void *get_deviceinfo(char *mtd, char *var)
 {
 	static char res[256];
 	bzero(res, sizeof(res));
-	FILE *fp = fopen("/dev/mtd13", "rb");
+	FILE *fp = fopen(mtd, "rb");
 	if (!fp)
 		return NULL;
 	char newname[64];
@@ -94,31 +94,13 @@ void *get_deviceinfo_mr7350(char *var)
 	free(mem);
 	return NULL;
 }
-
+void *get_deviceinfo_mr7350(char *var)
+{
+	return get_deviceinfo("/dev/mtd13", var);
+}
 void *get_deviceinfo_mx4200(char *var)
 {
-	static char res[256];
-	bzero(res, sizeof(res));
-	FILE *fp = fopen("/dev/mtd21", "rb");
-	if (!fp)
-		return NULL;
-	char newname[64];
-	snprintf(newname, 64, "%s=", var);
-	char *mem = safe_malloc(0x2000);
-	fread(mem, 0x2000, 1, fp);
-	fclose(fp);
-	int s = (0x2000 - 1) - strlen(newname);
-	int i;
-	int l = strlen(newname);
-	for (i = 0; i < s; i++) {
-		if (!strncmp(mem + i, newname, l)) {
-			strncpy(res, mem + i + l, 17);
-			free(mem);
-			return res;
-		}
-	}
-	free(mem);
-	return NULL;
+	return get_deviceinfo("/dev/mtd21", var);
 }
 
 void calcchecksum(void *caldata, int offset, int size)
@@ -139,7 +121,7 @@ void calcchecksum(void *caldata, int offset, int size)
 	fprintf(stderr, "checksum %X\n", crc);
 }
 
-void patchmac(char *file, int offset, char *binmac)
+void patchmac(char *file, int offset, unsigned char *binmac)
 {
 	FILE *fp = fopen(file, "rb");
 	if (fp) {
@@ -232,6 +214,13 @@ void chksum_main(int argc, char *argv[])
 	calcchecksum(mem, offset, size);
 }
 
+#define arraycopy(a, b, len)              \
+	{                                 \
+		int i;                    \
+		for (i = 0; i < len; i++) \
+			a[i] = b[i];      \
+	}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -311,9 +300,7 @@ void start_sysinit(void)
 		nvram_set("wlan0_hwaddr", ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-		int i;
-		for (i = 0; i < 6; i++)
-			binmac[i] = newmac[i];
+		arraycopy(binmac, newmac, 6);
 		patchmac("/tmp/caldata.bin", 14, binmac);
 		patchmac("/tmp/board.bin", 14, binmac);
 		sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy0/macaddress", ethaddr);
@@ -321,8 +308,7 @@ void start_sysinit(void)
 		nvram_set("wlan1_hwaddr", ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-		for (i = 0; i < 6; i++)
-			binmac[i] = newmac[i];
+		arraycopy(binmac, newmac, 6);
 		patchmac("/tmp/caldata.bin", 20, binmac);
 		patchmac("/tmp/board.bin", 20, binmac);
 		sysprintf("echo %s > /sys/devices/platform/soc@0/c000000.wifi/ieee80211/phy1/macaddress", ethaddr);
@@ -349,27 +335,19 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-		int i;
-		for (i = 0; i < 6; i++)
-			binmac[i] = newmac[i];
+		arraycopy(binmac, newmac, 6);
 		patchmac("/tmp/caldata.bin", 20, binmac);
 		patchmac("/tmp/board.bin", 20, binmac);
-
 		MAC_ADD(ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-		int i;
-		for (i = 0; i < 6; i++)
-			binmac[i] = newmac[i];
+		arraycopy(binmac, newmac, 6);
 		patchmac("/tmp/caldata.bin", 14, binmac);
 		patchmac("/tmp/board.bin", 14, binmac);
-
 		MAC_ADD(ethaddr);
 		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
-		int i;
-		for (i = 0; i < 6; i++)
-			binmac[i] = newmac[i];
+		arraycopy(binmac, newmac, 6);
 		patchmac("/tmp/caldata.bin", 26, binmac);
 		patchmac("/tmp/board.bin", 26, binmac);
 		setmacflag("/tmp/caldata.bin");
