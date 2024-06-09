@@ -4,22 +4,22 @@
 
 obj ?= .
 
-obj-m += qca-nss-dp.o
+obj-m += qca-nss-dp-$(SoC).o
 
-qca-nss-dp-objs += nss_dp_attach.o \
+qca-nss-dp-$(SoC)-objs += nss_dp_attach.o \
 		   nss_dp_ethtools.o \
 		   nss_dp_main.o \
 		   hal/soc_ops/$(SoC)/nss_$(SoC).o
 
 ifneq ($(CONFIG_NET_SWITCHDEV),)
-qca-nss-dp-objs += nss_dp_switchdev.o
+qca-nss-dp-$(SoC)-objs += nss_dp_switchdev.o
 endif
 
 NSS_DP_INCLUDE = -I$(obj)/include -I$(obj)/exports -I$(obj)/hal/include \
 		 -I$(obj)/hal/dp_ops/include
 
 ifeq ($(SoC),$(filter $(SoC),ipq807x ipq60xx))
-qca-nss-dp-objs += hal/dp_ops/edma_dp/edma_v1/edma_cfg.o \
+qca-nss-dp-$(SoC)-objs += hal/dp_ops/edma_dp/edma_v1/edma_cfg.o \
 		   hal/dp_ops/edma_dp/edma_v1/edma_data_plane.o \
 		   hal/dp_ops/edma_dp/edma_v1/edma_tx_rx.o \
 		   hal/gmac_ops/qcom/qcom_if.o \
@@ -41,7 +41,7 @@ ccflags-y += -DNSS_DP_MHT_SW_PORT_MAP
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq50xx))
-qca-nss-dp-objs += hal/dp_ops/syn_gmac_dp/syn_dp_cfg_rx.o \
+qca-nss-dp-$(SoC)-objs += hal/dp_ops/syn_gmac_dp/syn_dp_cfg_rx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp_cfg_tx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp_rx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp_tx.o \
@@ -52,7 +52,7 @@ ccflags-y += -DNSS_DP_IPQ50XX -DNSS_DP_ENABLE_NAPI_GRO
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq95xx ipq53xx))
-qca-nss-dp-objs += nss_dp_vp_main.o \
+qca-nss-dp-$(SoC)-objs += nss_dp_vp_main.o \
 		   nss_dp_ethtool_priv.o \
 		   hal/dp_ops/edma_dp/edma_v2/edma.o \
 		   hal/dp_ops/edma_dp/edma_v2/edma_cfg_rx.o \
@@ -68,11 +68,11 @@ qca-nss-dp-objs += nss_dp_vp_main.o \
 		   hal/gmac_ops/syn/xgmac/syn_if.o
 
 ifeq ($(dp-ppe-ds),y)
-qca-nss-dp-objs += hal/dp_ops/edma_dp/edma_v2/edma_ppeds.o
+qca-nss-dp-$(SoC)-objs += hal/dp_ops/edma_dp/edma_v2/edma_ppeds.o
 ccflags-y += -DNSS_DP_PPEDS_SUPPORT
 endif
 ifeq ($(dp-net-standby),y)
-qca-nss-dp-objs += nss_dp_netstandby.o
+qca-nss-dp-$(SoC)-objs += nss_dp_netstandby.o
 ccflags-y += -DNSS_DP_NETSTANDBY
 endif
 NSS_DP_INCLUDE += -I$(obj)/hal/dp_ops/edma_dp/edma_v2
