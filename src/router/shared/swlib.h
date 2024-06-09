@@ -143,6 +143,7 @@ struct switch_val {
 		char *s;
 		int i;
 		struct switch_port *ports;
+	struct switch_ext *ext_val;
 		struct switch_port_link *link;
 	} value;
 };
@@ -165,6 +166,12 @@ struct switch_port {
 struct switch_portmap {
 	unsigned int virt;
 	char *segment;
+};
+
+struct switch_ext {
+	const char *option_name;
+	const char *option_value;
+	struct switch_ext *next;
 };
 
 struct switch_port_link {
