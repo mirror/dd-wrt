@@ -254,6 +254,7 @@ endif
 	# copy openwrt rootfs to image
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm64 -b 262144
 
+#mr7350
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
@@ -269,7 +270,46 @@ endif
 	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR7350" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mr7350.bin
 	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mr7350-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+
+#mx4200 v1
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh  -D linksys_mx4200v1 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v1.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
+	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin of=$(TOP)/$(ARCH)-uclibc/Image-factory.bin.new bs=6144k conv=sync
+	mv $(TOP)/$(ARCH)-uclibc/Image-factory.bin.new $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cat $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4200" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4200v1.bin
+	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mx4200v1-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+
+#mx4200 v2
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh  -D linksys_mx4200v2 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v2.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
+	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin of=$(TOP)/$(ARCH)-uclibc/Image-factory.bin.new bs=6144k conv=sync
+	mv $(TOP)/$(ARCH)-uclibc/Image-factory.bin.new $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cat $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4200" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4200v2.bin
+	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mx4200v2-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 	
 
