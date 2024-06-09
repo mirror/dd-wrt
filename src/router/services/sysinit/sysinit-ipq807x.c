@@ -284,21 +284,21 @@ void start_sysinit(void)
 	}
 	unsigned int newmac[6];
 	unsigned char binmac[6];
+	char ethaddr[32];
 	if (maddr) {
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
 		sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
 
-	char ethaddr[32];
-	sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff, newmac[3] & 0xff,
-		newmac[4] & 0xff, newmac[5] & 0xff);
-	nvram_set("et0macaddr", ethaddr);
-	nvram_set("et0macaddr_safe", ethaddr);
-	set_hwaddr("eth0", ethaddr);
-	set_hwaddr("eth1", ethaddr);
-	set_hwaddr("eth2", ethaddr);
-	set_hwaddr("eth3", ethaddr);
-	set_hwaddr("eth4", ethaddr);
+		sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
+			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
+		nvram_set("et0macaddr", ethaddr);
+		nvram_set("et0macaddr_safe", ethaddr);
+		set_hwaddr("eth0", ethaddr);
+		set_hwaddr("eth1", ethaddr);
+		set_hwaddr("eth2", ethaddr);
+		set_hwaddr("eth3", ethaddr);
+		set_hwaddr("eth4", ethaddr);
 	}
 
 	if (brand == ROUTER_LINKSYS_MR7350) {
