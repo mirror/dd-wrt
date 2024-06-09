@@ -326,9 +326,7 @@ nla_put_failure:
 	return -1;
 }
 
-
-static int
-send_attr_ext(struct nl_msg *msg, struct switch_val *val)
+static int send_attr_ext(struct nl_msg *msg, struct switch_val *val)
 {
 	struct nlattr *n;
 	struct switch_ext *switch_ext_p;
@@ -339,7 +337,7 @@ send_attr_ext(struct nl_msg *msg, struct switch_val *val)
 		goto nla_put_failure;
 
 	switch_ext_p = val->value.ext_val;
-	while(switch_ext_p) {
+	while (switch_ext_p) {
 		struct nlattr *np;
 		np = nla_nest_start(msg, SWITCH_ATTR_EXT);
 		if (!np)
