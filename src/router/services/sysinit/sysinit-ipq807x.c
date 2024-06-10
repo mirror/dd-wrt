@@ -110,7 +110,6 @@ void calcchecksum(void *caldata, int offset, int size)
 	unsigned short *ptr_eeprom = (unsigned short *)caldata;
 	unsigned short crc = 0;
 	ptr_eeprom += offset / 2;
-	fprintf(stderr, "orig checksum %X\n", cdata[5]);
 	cdata[0x5] = 0;
 	for (i = 0; i < size - offset; i += 2) {
 		crc ^= le16toh(*ptr_eeprom);
@@ -118,7 +117,6 @@ void calcchecksum(void *caldata, int offset, int size)
 	}
 	crc = ~crc;
 	cdata[0x5] = htole16(crc);
-	fprintf(stderr, "checksum %X\n", crc);
 }
 
 void patchmac(char *file, int offset, unsigned char *binmac)
@@ -130,14 +128,12 @@ void patchmac(char *file, int offset, unsigned char *binmac)
 		rewind(fp);
 		int i;
 		char *mem = malloc(len);
-		for (i = 0; i < len; i++)
-			mem[i] = getc(fp);
+		fread(mem, len, 1, fp);
 		fclose(fp);
 		memcpy(mem + offset, binmac, 6);
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
-		for (i = 0; i < len; i++)
-			putc(mem[i], fp);
+		fwrite(mem, len, 1, fp);
 		fclose(fp);
 		free(mem);
 	}
@@ -157,12 +153,11 @@ void removeregdomain(char *file, int type)
 		unsigned short *s;
 		unsigned char *mem = malloc(len);
 		s = (unsigned short *)mem;
-		for (i = 0; i < len; i++)
-			mem[i] = getc(fp);
+		fread(mem, len, 1, fp);
 		fclose(fp);
 		int regdomain = s[52 / 2];
 		s[52 / 2] = 0;
-		if (type==0) {
+		if (type == 0) {
 			s[1104 / 2] = 0;
 		} else {
 			s[1112 / 2] = 0;
@@ -171,8 +166,7 @@ void removeregdomain(char *file, int type)
 		}
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
-		for (i = 0; i < len; i++)
-			putc(mem[i], fp);
+		fwrite(mem, len, 1, fp);
 		fclose(fp);
 		free(mem);
 	}
@@ -189,30 +183,59 @@ void setmacflag(char *file)
 		unsigned short *s;
 		unsigned char *mem = malloc(len);
 		s = (unsigned short *)mem;
-		for (i = 0; i < len; i++)
-			mem[i] = getc(fp);
+		fread(mem, len, 1, fp);
 		fclose(fp);
 		s[62 / 2] = 1;
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
-		for (i = 0; i < len; i++)
-			putc(mem[i], fp);
+		fwrite(mem, len, 1, fp);
 		fclose(fp);
 		free(mem);
 	}
 }
 
-void chksum_main(int argc, char *argv[])
+/*WHAL_OPFLAGS_11G                     = 0x00000002,
+WHAL_OPFLAGS_5G_HT40            = 0x00000004,
+WHAL_OPFLAGS_2G_HT40            = 0x00000008,
+WHAL_OPFLAGS_5G_HT20            = 0x00000010,
+WHAL_OPFLAGS_2G_HT20            = 0x00000020,
+WHAL_OPFLAGS_5G_VHT20         = 0x00000040,
+WHAL_OPFLAGS_2G_VHT20         = 0x00000080,
+WHAL_OPFLAGS_5G_VHT40         = 0x00000100,
+WHAL_OPFLAGS_2G_VHT40         = 0x00000200,
+WHAL_OPFLAGS_5G_VHT80         = 0x00000400,
+WHAL_OPFLAGS_5G_VHT80P80  = 0x00000800,
+WHAL_OPFLAGS_5G_VHT160      = 0x00001000
+*/
+void patchvht160(char *file)
 {
-	FILE *fp = fopen("/tmp/caldata.bin", "rb");
-	int offset = atoi(argv[1]);
-	int size = atoi(argv[2]);
-	char *mem = malloc(0x10000);
-	int i;
-	for (i = 0; i < 0x10000; i++)
-		mem[i] = getc(fp);
-	fclose(fp);
-	calcchecksum(mem, offset, size);
+	FILE *fp = fopen(file, "rb");
+	if (fp) {
+		fseek(fp, 0, SEEK_END);
+		size_t len = ftell(fp);
+		rewind(fp);
+		int i;
+		unsigned int *s;
+		unsigned char *mem = malloc(len);
+		s = (unsigned int *)mem;
+		fread(mem, len, 1, fp);
+		fclose(fp);
+
+		//		fprintf(stderr, "old boardflag = %X\n", s[68 / 4]);
+		//		s[68 / 4] |= 0x800;
+		//		s[68 / 4] |= 0x1000;
+		//		fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
+
+		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
+		s[1040 / 4] |= 0x800;
+		s[1040 / 4] |= 0x1000;
+		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
+		calcchecksum(mem, 0, len);
+		FILE *fp = fopen(file, "wb");
+		fwrite(mem, len, 1, fp);
+		fclose(fp);
+		free(mem);
+	}
 }
 
 #define patch(ethaddr, offset)                                                                                               \
