@@ -2671,10 +2671,12 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 			}
 		}
 	}
+#if 0
 	if (tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]) {
 		int txp = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]);
 		interface->txpower = txp;
 	}
+#endif
 	nlmsg_free(msg);
 	unlock();
 	return interface;
