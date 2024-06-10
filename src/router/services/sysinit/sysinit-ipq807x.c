@@ -356,7 +356,6 @@ void start_sysinit(void)
 		removeregdomain("/tmp/caldata.bin", 1);
 		removeregdomain("/tmp/board.bin", 1);
 	}
-	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
@@ -404,7 +403,6 @@ void start_sysinit(void)
 		writeproc("/proc/irq/32/smp_affinity", "4");
 		writeproc("/proc/irq/33/smp_affinity", "4");
 	}
-	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 
 	return;
 }
