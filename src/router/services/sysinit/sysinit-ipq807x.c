@@ -311,6 +311,8 @@ void start_sysinit(void)
 			putc(getc(fp), out);
 		fclose(out);
 		fclose(fp);
+	} else {
+		fprintf(stderr, "board data failed\n");
 	}
 	unsigned int newmac[6];
 	char ethaddr[32];
@@ -354,12 +356,15 @@ void start_sysinit(void)
 		removeregdomain("/tmp/caldata.bin", 1);
 		removeregdomain("/tmp/board.bin", 1);
 	}
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 	eval("modprobe", "ath11k_ahb");
-
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	}
+	if (brand == ROUTER_DYNALINK_DLWRX36) {
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 	}
 	if (brand == ROUTER_LINKSYS_MR7350) {
 		writeproc("/proc/irq/61/smp_affinity", "1");
@@ -379,6 +384,27 @@ void start_sysinit(void)
 		writeproc("/proc/irq/35/smp_affinity", "4");
 		writeproc("/proc/irq/36/smp_affinity", "4");
 	}
+
+	if (brand == ROUTER_DYNALINK_DLWRX36 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		writeproc("/proc/irq/62/smp_affinity", "1");
+		writeproc("/proc/irq/63/smp_affinity", "2");
+		writeproc("/proc/irq/64/smp_affinity", "4");
+		writeproc("/proc/irq/65/smp_affinity", "8");
+
+		writeproc("/proc/irq/44/smp_affinity", "1");
+		writeproc("/proc/irq/50/smp_affinity", "2");
+		writeproc("/proc/irq/53/smp_affinity", "4");
+
+		writeproc("/proc/irq/56/smp_affinity", "2");
+		writeproc("/proc/irq/58/smp_affinity", "4");
+		writeproc("/proc/irq/60/smp_affinity", "8");
+
+		writeproc("/proc/irq/30/smp_affinity", "4");
+		writeproc("/proc/irq/31/smp_affinity", "4");
+		writeproc("/proc/irq/32/smp_affinity", "4");
+		writeproc("/proc/irq/33/smp_affinity", "4");
+	}
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 
 	return;
 }

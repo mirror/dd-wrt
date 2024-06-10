@@ -140,7 +140,7 @@ void start_post_sysinit(void)
 	led_control(LED_SEC, LED_OFF);
 	led_control(LED_SEC0, LED_OFF);
 	led_control(LED_SEC1, LED_OFF);
-
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 	start_nvram();
 
 	/* 
@@ -151,16 +151,19 @@ void start_post_sysinit(void)
 	nvram_set("vlan0ports", "0 1 2 3 4 5*");
 	nvram_set("vlan1ports", "");
 #else
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 
 	if (brand == ROUTER_WRT600N || brand == ROUTER_WRT610N) {
 		nvram_set("vlan2hwname", "et0");
 	}
 #endif
 	start_restore_defaults();
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 
 	set_ip_forward('1');
 	set_tcp_params();
 	set_systunes();
+	fprintf(stderr, "%s:%d test = %s\n", __func__, __LINE__, nvram_safe_get("test"));
 #ifdef HAVE_MMC
 	start_mmc();
 #endif

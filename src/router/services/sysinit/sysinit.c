@@ -3676,7 +3676,7 @@ void start_nvram(void)
 #endif
 	}
 
-	int doreboot = nvram_geti("nvram_ver") > 0;
+	int doreboot = *nvram_safe_get("nvram_ver");
 	if (nvram_geti("nvram_ver") < 10) {
 		nvram_seti("nvram_ver", 10);
 		nvram_unset("port0vlans");
