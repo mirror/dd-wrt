@@ -186,8 +186,9 @@ static int getbuttonstate()
 		return !get_gpio(57);
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
-	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(52);
+	case ROUTER_DYNALINK_DLWRX36:
+		return !get_gpio(34);
 	default:
 		return 0;
 	}
