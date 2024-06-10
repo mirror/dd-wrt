@@ -1209,6 +1209,8 @@ failover:
 		strcpy(buf, "QCA IPQ4028");
 	else if (strstr(cpu, "ipq6018"))
 		strcpy(buf, "QCA IPQ6018");
+	else if (strstr(cpu, "ipq8074"))
+		strcpy(buf, "QCA IPQ8074");
 	else
 		goto failover;
 	return buf;
