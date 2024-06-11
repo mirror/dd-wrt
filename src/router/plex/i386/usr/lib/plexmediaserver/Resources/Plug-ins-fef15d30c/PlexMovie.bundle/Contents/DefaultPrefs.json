@@ -1,0 +1,138 @@
+[
+  {
+    "id":"title",
+    "label":"Localized titles",
+    "type":"bool",
+    "default":"false"
+  },
+  {
+    "id":"extras",
+    "label":"Find trailers and extras automatically (Plex Pass required)",
+    "type":"bool",
+    "default":"true"
+  },
+  {
+    "id":"only_trailers",
+    "label":"Skip extras which aren't trailers",
+    "type":"bool",
+    "default":"false"
+  },
+  {
+    "id":"redband",
+    "label":"Use red band (restricted audiences) trailers when available",
+    "type":"bool",
+    "default":"false"
+  },
+  {
+    "id":"native_subs",
+    "label":"Include extras with subtitles in Library language",
+    "type":"bool",
+    "default":"false"
+  },
+  {
+    "id": "cast_list",
+    "label": "Cast List Source: ",
+    "type": "enum",
+    "values": [
+      "IMDb",
+      "The Movie Database"
+    ],
+    "default": "The Movie Database"
+  },
+  {
+    "id": "ratings",
+    "label": "Ratings Source: ",
+    "type": "enum",
+    "values": [
+      "Rotten Tomatoes",
+      "IMDb",
+      "The Movie Database"
+    ],
+    "default": "Rotten Tomatoes"
+  },
+  {
+    "id": "summary",
+    "label": "Plot Summary Source: ",
+    "type": "enum",
+    "values": [
+      "IMDb",
+      "The Movie Database"
+    ],
+    "default": "The Movie Database"
+  },
+  {
+    "id": "country",
+    "label": "Country: ",
+    "type": "enum",
+    "values": [
+      "Argentina",
+      "Australia",
+      "Austria",
+      "Belgium",
+      "Belize",
+      "Bolivia",
+      "Brazil",
+      "Canada",
+      "Chile",
+      "Colombia",
+      "Costa Rica",
+      "Czech Republic",
+      "Denmark",
+      "Dominican Republic",
+      "Ecuador",
+      "El Salvador",
+      "France",
+      "Germany",
+      "Guatemala",
+      "Honduras",
+      "Hong Kong SAR",
+      "Ireland",
+      "Italy",
+      "Jamaica",
+      "Korea",
+      "Liechtenstein",
+      "Luxembourg",
+      "Mexico",
+      "Netherlands",
+      "New Zealand",
+      "Nicaragua",
+      "Panama",
+      "Paraguay",
+      "Peru",
+      "Portugal",
+      "Peoples Republic of China",
+      "Puerto Rico",
+      "Russia",
+      "Singapore",
+      "South Africa",
+      "Spain",
+      "Sweden",
+      "Switzerland",
+      "Taiwan",
+      "Trinidad",
+      "United Kingdom",
+      "United States",
+      "Uruguay",
+      "Venezuela"
+    ],
+    "default": "United States"
+  },
+  {
+    "id": "collections",
+    "label": "Use collection info from The Movie Database",
+    "type": "bool",
+    "default": "false"
+  },
+  {
+    "id": "localart",
+    "label": "Prefer artwork based on library language",
+    "type": "bool",
+    "default": "true"
+  },
+  {
+    "id": "adult",
+    "label": "Include adult content",
+    "type": "bool",
+    "default": "false"
+  }
+]
