@@ -2291,8 +2291,17 @@ nla_put_failure:
 	return 0;
 }
 
+static int mac80211_get_antennas(char *prefix, int which, int direction);
+
 void mac80211_set_antennas(char *prefix, uint32_t tx_ant, uint32_t rx_ant)
 {
+	int maxrxchain = mac80211_get_antennas(prefix, 0, 1);
+	int maxtxchain = mac80211_get_antennas(prefix, 0, 0);
+	if (maxrxchain > 15 && (maxrxchain & 0xf) == 0)
+	    maxrxchain <<= 4;
+	if (maxtxchain > 15 && (maxtxchain & 0xf) == 0)
+	    maxtxchain <<= 4;
+
 	int phy = get_ath9k_phy_ifname(prefix);
 	mac80211_init();
 	struct nl_msg *msg;
@@ -2553,6 +2562,8 @@ int has_cmic(const char *prefix)
 int mac80211_get_avail_tx_antenna(char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 0, 0);
+	if (ret > 15 && (ret & 0x0f) == 0)
+	    ret >>= 4;
 	if (is_ap8x(prefix) && ret == 3)
 		ret = 5;
 	return (ret);
@@ -2560,13 +2571,22 @@ int mac80211_get_avail_tx_antenna(char *prefix)
 
 int mac80211_get_avail_rx_antenna(char *prefix)
 {
-	return (mac80211_get_antennas(prefix, 0, 1));
+	int ret = mac80211_get_antennas(prefix, 0, 1);
+	if (ret > 15 && (ret & 0x0f) == 0)
+	    ret >>= 4;
+	return ret;
 }
 
 int mac80211_get_configured_tx_antenna(char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 1, 0);
 	int avail = mac80211_get_antennas(prefix, 0, 0);
+
+	if (ret > 15 && (ret & 0x0f) == 0)
+	    ret >>= 4;
+	if (avail > 15 && (avail & 0x0f) == 0)
+	    avail >>= 4;
+
 	if (is_ap8x(prefix) && avail == 3 && ret == 3)
 		ret = 5;
 	if (is_ap8x(prefix) && avail == 3 && ret == 2)
@@ -2576,7 +2596,10 @@ int mac80211_get_configured_tx_antenna(char *prefix)
 
 int mac80211_get_configured_rx_antenna(char *prefix)
 {
-	return (mac80211_get_antennas(prefix, 1, 1));
+	int ret = mac80211_get_antennas(prefix, 1, 1);
+	if (ret > 15 && (ret & 0x0f) == 0)
+	    ret >>= 4;
+	return ret;
 }
 
 struct wifi_interface *mac80211_get_interface(char *dev)
