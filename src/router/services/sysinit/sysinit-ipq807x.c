@@ -404,14 +404,16 @@ void start_sysinit(void)
 		writeproc("/proc/irq/33/smp_affinity", "4");
 	}
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
-		/*	sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
-	sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:yellow:wan/trigger");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/tx");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/rx");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_10");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
-	sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");*/
+		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/tx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/rx");
+		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:yellow:wan/trigger");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/tx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/rx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_10");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
 	}
 	return;
 }
