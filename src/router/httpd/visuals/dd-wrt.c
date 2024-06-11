@@ -51,7 +51,6 @@
 #include <bcmnvram.h>
 //#include <l7protocols.h>
 
-
 int iscpe(void);
 #if defined(HAVE_80211AC) || (defined(HAVE_BRCMFMAC) && defined(HAVE_NORTHSTAR))
 #define COUNTRYLIST "EU DE GB FR NL ES IT CN US JP AU SG BR RU TW CA KR LA"
@@ -3751,7 +3750,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		maxrx = mac80211_get_avail_rx_antenna(prefix);
 		maxtx = mac80211_get_avail_tx_antenna(prefix);
 #endif
-		if (maxtx > 1) {
+		if (maxtx > 0) {
 			websWrite(
 				wp,
 				"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.txchainmask)</script></div><select name=\"%s\" >\n",
@@ -3771,6 +3770,19 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			if (maxtx > 7)
 				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
 					  nvram_matchi(wl_txantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 15)
+				websWrite(wp, "document.write(\"<option value=\\\"31\\\" %s >1+2+3+4+5</option>\");\n",
+					  nvram_matchi(wl_txantenna, 31) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 31)
+				websWrite(wp, "document.write(\"<option value=\\\"63\\\" %s >1+2+3+4+5+6</option>\");\n",
+					  nvram_matchi(wl_txantenna, 63) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 63)
+				websWrite(wp, "document.write(\"<option value=\\\"127\\\" %s >1+2+3+4+5+6+7</option>\");\n",
+					  nvram_matchi(wl_txantenna, 127) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 127)
+				websWrite(wp, "document.write(\"<option value=\\\"255\\\" %s >1+2+3+4+5+6+7+8</option>\");\n",
+					  nvram_matchi(wl_txantenna, 255) ? "selected=\\\"selected\\\"" : "");
+
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -3784,6 +3796,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 				  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+
 			if (maxrx > 1)
 				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 					  nvram_matchi(wl_rxantenna, 3) ? "selected=\\\"selected\\\"" : "");
@@ -3796,6 +3809,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			if (maxrx > 7)
 				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
 					  nvram_matchi(wl_rxantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 15)
+				websWrite(wp, "document.write(\"<option value=\\\"31\\\" %s >1+2+3+4+5</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 31) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 31)
+				websWrite(wp, "document.write(\"<option value=\\\"63\\\" %s >1+2+3+4+5+6</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 63) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 63)
+				websWrite(wp, "document.write(\"<option value=\\\"127\\\" %s >1+2+3+4+5+6+7</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 127) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 127)
+				websWrite(wp, "document.write(\"<option value=\\\"255\\\" %s >1+2+3+4+5+6+7+8</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 255) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -5295,6 +5320,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			if (maxtx > 7)
 				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
 					  nvram_matchi(wl_txantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 15)
+				websWrite(wp, "document.write(\"<option value=\\\"31\\\" %s >1+2+3+4+5</option>\");\n",
+					  nvram_matchi(wl_txantenna, 31) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 31)
+				websWrite(wp, "document.write(\"<option value=\\\"63\\\" %s >1+2+3+4+5+6</option>\");\n",
+					  nvram_matchi(wl_txantenna, 63) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 63)
+				websWrite(wp, "document.write(\"<option value=\\\"127\\\" %s >1+2+3+4+5+6+7</option>\");\n",
+					  nvram_matchi(wl_txantenna, 127) ? "selected=\\\"selected\\\"" : "");
+			if (maxtx > 127)
+				websWrite(wp, "document.write(\"<option value=\\\"255\\\" %s >1+2+3+4+5+6+7+8</option>\");\n",
+					  nvram_matchi(wl_txantenna, 255) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
@@ -5308,6 +5345,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 				  nvram_matchi(wl_rxantenna, 1) ? "selected=\\\"selected\\\"" : "");
+
 			if (maxrx > 1)
 				websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >1+2</option>\");\n",
 					  nvram_matchi(wl_rxantenna, 3) ? "selected=\\\"selected\\\"" : "");
@@ -5320,6 +5358,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			if (maxrx > 7)
 				websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >1+2+3+4</option>\");\n",
 					  nvram_matchi(wl_rxantenna, 15) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 15)
+				websWrite(wp, "document.write(\"<option value=\\\"31\\\" %s >1+2+3+4+5</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 31) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 31)
+				websWrite(wp, "document.write(\"<option value=\\\"63\\\" %s >1+2+3+4+5+6</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 63) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 63)
+				websWrite(wp, "document.write(\"<option value=\\\"127\\\" %s >1+2+3+4+5+6+7</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 127) ? "selected=\\\"selected\\\"" : "");
+			if (maxrx > 127)
+				websWrite(wp, "document.write(\"<option value=\\\"255\\\" %s >1+2+3+4+5+6+7+8</option>\");\n",
+					  nvram_matchi(wl_rxantenna, 255) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n");
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
