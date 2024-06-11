@@ -1677,7 +1677,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_DYNALINK_DLWRX36:
 		cfg->power_gpio = 0x1a; // power led / green
 		cfg->diag_gpio = 0x19; // diag led / red 
-		cfg->diag_gpio_disabled = GPIO_LOW | 0x19; 
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x1a; 
 		break;
 	case ROUTER_NETGEAR_R7800:
 		cfg->power_gpio = 0x0; // power led
