@@ -524,7 +524,7 @@ void configure_single_ath9k(int count)
 	MAC80211DEBUG();
 	char macaddr[32];
 	// interface is created at this point, so that should work
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	int board = getRouterBrand();
 	if (board == ROUTER_ASROCK_G10) {
 		getMacAddr(dev, macaddr, sizeof(macaddr));
@@ -1152,7 +1152,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-						if (
 						if (c > 0) {
 							fprintf(fp, "he_bss_color=%d\n", c);
 						}

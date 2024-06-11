@@ -612,6 +612,8 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "20480"));
 #elif HAVE_MVEBU
 	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
+#elif HAVE_IPQ6018
+	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_IPQ806X
 	writeprocsys("vm/min_free_kbytes", nvram_default_get("vm.min_free_kbytes", "65536"));
 #elif HAVE_X86
