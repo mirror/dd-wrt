@@ -27,6 +27,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod cifs
     insmod md4
     insmod md5
+    insmod libdes
     insmod des_generic
     insmod hmac
     insmod sha256_generic
