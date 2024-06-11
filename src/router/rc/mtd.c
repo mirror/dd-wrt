@@ -339,6 +339,10 @@ static int write_main(int argc, char *argv[])
 			dd_logerror("flash", "no boot partition info found\n", mtd);
 		}
 		break;
+	case ROUTER_DYNALINK_DLWRX36:
+		if (!nvram_match("ignore_flashpart","1"))
+			mtd = "rootfs";
+		break;
 	}
 #endif
 
