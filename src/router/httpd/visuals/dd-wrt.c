@@ -3303,7 +3303,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		    !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
-			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 3, 3, 0);
 		}
 	}
 
@@ -5126,7 +5126,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		    !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_he_bss_color", prefix);
-			showInputNum(wp, "wl_basic.he_bss_color", color, 2, 2, 0);
+			showInputNum(wp, "wl_basic.he_bss_color", color, 3, 3, 0);
 		}
 	}
 	if (has_ldpc(prefix)) {
