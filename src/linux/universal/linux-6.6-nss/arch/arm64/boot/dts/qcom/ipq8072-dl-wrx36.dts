@@ -253,7 +253,7 @@
 			};
 
 			partition@e400000 {
-				label = "ubifs";
+				label = "ddwrt";
 				reg = <0xe400000 0x1600000>;
 			};
 
