@@ -1125,7 +1125,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					    !strcmp(netmode, "ax-only")) {
 						char color[32];
 						sprintf(color, "%s_he_bss_color", prefix);
-						int c = nvram_default_geti(color, 0);
+						int c = nvram_default_geti(color, 128);
 						fprintf(fp, "he_default_pe_duration=4\n");
 						fprintf(fp, "he_rts_threshold=1023\n");
 						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1152,7 +1152,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-						if (c > 0 && c < 64) {
+						if (
+						if (c > 0) {
 							fprintf(fp, "he_bss_color=%d\n", c);
 						}
 					}
@@ -1238,7 +1239,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				fprintf(fp, "ieee80211ax=1\n");
 				char color[32];
 				sprintf(color, "%s_he_bss_color", prefix);
-				int c = nvram_default_geti(color, 0);
+				int c = nvram_default_geti(color, 128);
 				fprintf(fp, "he_default_pe_duration=4\n");
 				fprintf(fp, "he_rts_threshold=1023\n");
 				fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1265,7 +1266,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 				fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-				if (c > 0 && c < 64) {
+				if (c > 0) {
 					fprintf(fp, "he_bss_color=%d\n", c);
 				}
 			}
