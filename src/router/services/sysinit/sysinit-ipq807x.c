@@ -385,23 +385,23 @@ void start_sysinit(void)
 	}
 
 	if (brand == ROUTER_DYNALINK_DLWRX36 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
-		writeproc("/proc/irq/62/smp_affinity", "1");
-		writeproc("/proc/irq/63/smp_affinity", "2");
-		writeproc("/proc/irq/64/smp_affinity", "4");
-		writeproc("/proc/irq/65/smp_affinity", "8");
+		writeproc("/proc/irq/64/smp_affinity", "1");
+		writeproc("/proc/irq/65/smp_affinity", "2");
+		writeproc("/proc/irq/66/smp_affinity", "4");
+		writeproc("/proc/irq/67/smp_affinity", "8");
 
-		writeproc("/proc/irq/44/smp_affinity", "1");
-		writeproc("/proc/irq/50/smp_affinity", "2");
-		writeproc("/proc/irq/53/smp_affinity", "4");
+		writeproc("/proc/irq/47/smp_affinity", "1");
+		writeproc("/proc/irq/53/smp_affinity", "2");
+		writeproc("/proc/irq/56/smp_affinity", "4");
 
-		writeproc("/proc/irq/56/smp_affinity", "2");
-		writeproc("/proc/irq/58/smp_affinity", "4");
-		writeproc("/proc/irq/60/smp_affinity", "8");
+		writeproc("/proc/irq/58/smp_affinity", "2");
+		writeproc("/proc/irq/60/smp_affinity", "4");
+		writeproc("/proc/irq/62/smp_affinity", "8");
 
-		writeproc("/proc/irq/30/smp_affinity", "4");
-		writeproc("/proc/irq/31/smp_affinity", "4");
 		writeproc("/proc/irq/32/smp_affinity", "4");
 		writeproc("/proc/irq/33/smp_affinity", "4");
+		writeproc("/proc/irq/34/smp_affinity", "4");
+		writeproc("/proc/irq/35/smp_affinity", "4");
 	}
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
