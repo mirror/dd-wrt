@@ -365,14 +365,19 @@ circuit_receive_relay_cell(cell_t *cell, circuit_t *circ,
                                   * we might kill the circ before we relay
                                   * the cells. */
 
-  append_cell_to_circuit_queue(circ, chan, cell, cell_direction, 0);
+  if (append_cell_to_circuit_queue(circ, chan, cell, cell_direction, 0) < 0) {
+    return -END_CIRC_REASON_RESOURCELIMIT;
+  }
   return 0;
 }
 
 /** Package a relay cell from an edge:
  *  - Encrypt it to the right layer
  *  - Append it to the appropriate cell_queue on <b>circ</b>.
- */
+ *
+ * Return 1 if the cell was successfully sent as in queued on the circuit.
+ * Return 0 if the cell needs to be dropped as in ignored.
+ * Return -1 on error for which the circuit should be marked for close. */
 MOCK_IMPL(int,
 circuit_package_relay_cell, (cell_t *cell, circuit_t *circ,
                            cell_direction_t cell_direction,
@@ -430,8 +435,8 @@ circuit_package_relay_cell, (cell_t *cell, circuit_t *circ,
   }
   ++stats_n_relay_cells_relayed;
 
-  append_cell_to_circuit_queue(circ, chan, cell, cell_direction, on_stream);
-  return 0;
+  return append_cell_to_circuit_queue(circ, chan, cell,
+                                      cell_direction, on_stream);
 }
 
 /** If cell's stream_id matches the stream_id of any conn that's
@@ -742,12 +747,22 @@ relay_send_command_from_edge_,(streamid_t stream_id, circuit_t *orig_circ,
     circuit_sent_valid_data(origin_circ, rh.length);
   }
 
-  if (circuit_package_relay_cell(&cell, circ, cell_direction, cpath_layer,
-                                 stream_id, filename, lineno) < 0) {
-    log_warn(LD_BUG,"circuit_package_relay_cell failed. Closing.");
+  int ret = circuit_package_relay_cell(&cell, circ, cell_direction,
+                                       cpath_layer, stream_id, filename,
+                                       lineno);
+  if (ret < 0) {
     circuit_mark_for_close(circ, END_CIRC_REASON_INTERNAL);
     return -1;
+  } else if (ret == 0) {
+    /* This means we should drop the cell or that the circuit was already
+     * marked for close. At this point in time, we do NOT close the circuit if
+     * the cell is dropped. It is not the case with arti where each circuit
+     * protocol violation will lead to closing the circuit. */
+    return 0;
   }
+
+  /* At this point, we are certain that the cell was queued on the circuit and
+   * thus will be sent on the wire. */
 
   if (circ->conflux) {
     conflux_note_cell_sent(circ->conflux, circ, relay_command);
@@ -3381,8 +3396,13 @@ relay_consensus_has_changed(const networkstatus_t *ns)
  * The given <b>cell</b> is copied onto the circuit queue so the caller must
  * cleanup the memory.
  *
- * This function is part of the fast path. */
-void
+ * This function is part of the fast path.
+ *
+ * Return 1 if the cell was successfully sent.
+ * Return 0 if the cell can not be sent. The caller MUST NOT close the circuit.
+ * Return -1 indicating an error and that the caller should mark the circuit
+ * for close. */
+int
 append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
                              cell_t *cell, cell_direction_t direction,
                              streamid_t fromstream)
@@ -3393,8 +3413,9 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   int32_t max_queue_size;
   int circ_blocked;
   int exitward;
-  if (circ->marked_for_close)
-    return;
+  if (circ->marked_for_close) {
+    return 0;
+  }
 
   exitward = (direction == CELL_DIRECTION_OUT);
   if (exitward) {
@@ -3424,9 +3445,8 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
            "Closing circuit for safety reasons.",
            (exitward) ? "Outbound" : "Inbound", queue->n,
            max_queue_size);
-    circuit_mark_for_close(circ, END_CIRC_REASON_RESOURCELIMIT);
     stats_n_circ_max_cell_reached++;
-    return;
+    return -1;
   }
 
   /* Very important that we copy to the circuit queue because all calls to
@@ -3437,8 +3457,9 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   /* Check and run the OOM if needed. */
   if (PREDICT_UNLIKELY(cell_queues_check_size())) {
     /* We ran the OOM handler which might have closed this circuit. */
-    if (circ->marked_for_close)
-      return;
+    if (circ->marked_for_close) {
+      return 0;
+    }
   }
 
   /* If we have too many cells on the circuit, note that it should
@@ -3462,6 +3483,7 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
 
   /* New way: mark this as having waiting cells for the scheduler */
   scheduler_channel_has_waiting_cells(chan);
+  return 1;
 }
 
 /** Append an encoded value of <b>addr</b> to <b>payload_out</b>, which must

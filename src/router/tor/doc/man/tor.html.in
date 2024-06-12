@@ -5068,7 +5068,7 @@ types of statistics that Tor relays collect and publish:</p></div>
 <div class="ulist"><ul>
 <li>
 <p>
-Onionskins are starting to be dropped.
+A certain ratio of ntor onionskins are dropped.
 </p>
 </li>
 <li>
@@ -5078,23 +5078,17 @@ The OOM was invoked.
 </li>
 <li>
 <p>
-(Exit only) DNS timeout occurs X% of the time over Y seconds (values
-          controlled by consensus parameters, see param-spec.txt).
-    <br />
-    If ExtraInfoStatistics is enabled, it can also put two more specific
-    overload lines in the extra-info document if at least one of these
-    conditions is met:
-</p>
-</li>
-<li>
-<p>
 TCP Port exhaustion.
 </p>
-</li>
-<li>
-<p>
-Connection rate limits have been reached (read and write side).
-</p>
+<div class="literalblock">
+<div class="content">
+<pre><code> +
+If ExtraInfoStatistics is enabled, it can also put two more specific
+overload lines in the extra-info document if at least one of these
+conditions is met:
+    - Connection rate limits have been reached (read and write side).
+    - File descriptors are exhausted.</code></pre>
+</div></div>
 </li>
 </ul></div>
 </dd>

@@ -2795,17 +2795,16 @@ types of statistics that Tor relays collect and publish:
      +
     A relay is considered overloaded if at least one of these conditions is
     met:
-        - Onionskins are starting to be dropped.
+        - A certain ratio of ntor onionskins are dropped.
         - The OOM was invoked.
+        - TCP Port exhaustion.
 
-        - (Exit only) DNS timeout occurs X% of the time over Y seconds (values
-          controlled by consensus parameters, see param-spec.txt).
      +
     If ExtraInfoStatistics is enabled, it can also put two more specific
     overload lines in the extra-info document if at least one of these
     conditions is met:
-        - TCP Port exhaustion.
         - Connection rate limits have been reached (read and write side).
+        - File descriptors are exhausted.
 
 [[PaddingStatistics]] **PaddingStatistics** **0**|**1**::
     Relays and bridges only.

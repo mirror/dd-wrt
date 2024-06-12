@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 04/10/2024
+.\"      Date: 06/06/2024
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "04/10/2024" "Tor" "Tor Manual"
+.TH "TOR" "1" "06/06/2024" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2674,7 +2674,7 @@ A relay is considered overloaded if at least one of these conditions is met:
 .sp -1
 .IP \(bu 2.3
 .\}
-Onionskins are starting to be dropped\&.
+A certain ratio of ntor onionskins are dropped\&.
 .RE
 .sp
 .RS 4
@@ -2696,31 +2696,22 @@ The OOM was invoked\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-(Exit only) DNS timeout occurs X% of the time over Y seconds (values controlled by consensus parameters, see param\-spec\&.txt)\&.
-
-If ExtraInfoStatistics is enabled, it can also put two more specific overload lines in the extra\-info document if at least one of these conditions is met:
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
 TCP Port exhaustion\&.
-.RE
 .sp
+.if n \{\
 .RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
 .\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
+.nf
+ +
+If ExtraInfoStatistics is enabled, it can also put two more specific
+overload lines in the extra\-info document if at least one of these
+conditions is met:
+    \- Connection rate limits have been reached (read and write side)\&.
+    \- File descriptors are exhausted\&.
+.fi
+.if n \{\
+.RE
 .\}
-Connection rate limits have been reached (read and write side)\&.
 .RE
 .RE
 .PP

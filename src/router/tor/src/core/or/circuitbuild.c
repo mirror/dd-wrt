@@ -816,8 +816,10 @@ circuit_deliver_create_cell,(circuit_t *circ,
   circuit_set_n_circid_chan(circ, id, circ->n_chan);
   cell.circ_id = circ->n_circ_id;
 
-  append_cell_to_circuit_queue(circ, circ->n_chan, &cell,
-                               CELL_DIRECTION_OUT, 0);
+  if (append_cell_to_circuit_queue(circ, circ->n_chan, &cell,
+                                   CELL_DIRECTION_OUT, 0) < 0) {
+    return -1;
+  }
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
     /* Update began timestamp for circuits starting their first hop */

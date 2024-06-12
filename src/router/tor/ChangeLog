@@ -1,3 +1,31 @@
+Changes in version 0.4.8.12 - 2024-06-06
+  This is a minor release with couple bugfixes affecting conflux and logging.
+  We also have the return of faravahar directory authority with new keys and
+  address.
+
+  o Minor feature (dirauth):
+    - Add back faravahar with a new address and new keys. Closes 40689.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 06, 2024.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2024/06/06.
+
+  o Minor bugfix (circuit):
+    - Remove a log_warn being triggered by a protocol violation that
+      already emits a protocol warning log. Fixes bug 40932; bugfix
+      on 0.4.8.1-alpha.
+
+  o Minor bugfixes (conflux):
+    - Avoid a potential hard assert (crash) when sending a cell on a
+      Conflux set. Fixes bug 40921; bugfix on 0.4.8.1-alpha.
+    - Make sure we don't process a closed circuit when packaging data.
+      This lead to a non fatal BUG() spamming logs. Fixes bug 40908;
+      bugfix on 0.4.8.1-alpha.
+
+
 Changes in version 0.4.8.11 - 2024-04-10
   This is a minor release mostly to upgrade the fallbackdir list. Worth noting
   also that directory authority running this version will now automatically

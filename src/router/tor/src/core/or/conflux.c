@@ -531,7 +531,10 @@ conflux_note_cell_sent(conflux_t *cfx, circuit_t *circ, uint8_t relay_command)
   }
 
   leg = conflux_get_leg(cfx, circ);
-  tor_assert(leg);
+  if (leg == NULL) {
+    log_fn(LOG_PROTOCOL_WARN, LD_BUG, "No Conflux leg after sending a cell");
+    return;
+  }
 
   leg->last_seq_sent++;
 

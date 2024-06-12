@@ -33,6 +33,13 @@ int
 circuit_get_package_window(circuit_t *circ,
                            const crypt_path_t *cpath)
 {
+  /* We believe it is possible to get a closed circuit related to the
+   * on_circuit pointer of a connection not being nullified before ending up
+   * here. Else, this can lead to loud bug like experienced in #40908. */
+  if (circ->marked_for_close) {
+    return 0;
+  }
+
   if (circ->conflux) {
     if (CIRCUIT_IS_ORIGIN(circ)) {
       tor_assert_nonfatal(circ->purpose ==
