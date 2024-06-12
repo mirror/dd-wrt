@@ -127,6 +127,7 @@ static bool is_default_regd(struct ath_regulatory *reg)
 
 static bool dynamic_country_user_possible(struct ath_regulatory *reg)
 {
+/*
 	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
 		return true;
 
@@ -199,18 +200,18 @@ static bool dynamic_country_user_possible(struct ath_regulatory *reg)
 	case CTRY_JAPAN59:
 		return false;
 	}
-
+*/
 	return true;
 }
 
 static bool ath_reg_dyn_country_user_allow(struct ath_regulatory *reg)
 {
-	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
+/*	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
 		return true;
-	if (!IS_ENABLED(CPTCFG_ATH_REG_DYNAMIC_USER_REG_HINTS))
-		return false;
+//	if (!IS_ENABLED(CPTCFG_ATH_REG_DYNAMIC_USER_REG_HINTS))
+//		return false;
 	if (!dynamic_country_user_possible(reg))
-		return false;
+		return false;*/
 	return true;
 }
 

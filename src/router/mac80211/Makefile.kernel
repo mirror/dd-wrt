@@ -40,6 +40,7 @@ obj-y += compat/
 obj-$(CPTCFG_CFG80211) += net/wireless/
 obj-$(CPTCFG_MAC80211) += net/mac80211/
 obj-$(CPTCFG_QRTR) += net/qrtr/
+obj-$(CPTCFG_QCOM_QMI_HELPERS) += drivers/soc/qcom/
 obj-$(CPTCFG_MHI_BUS) += drivers/bus/mhi/
 obj-$(CPTCFG_WLAN) += drivers/net/wireless/
 obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/

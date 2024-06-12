@@ -1576,7 +1576,8 @@ int ieee80211_do_open(struct wireless_dev *wdev, bool coming_up)
 	ieee80211_recalc_ps(local);
 
 #ifdef CPTCFG_MAC80211_NSS_SUPPORT
-	sdata->nssctx = nss_virt_if_create_sync(dev);
+	if (nss_virt_if_create_sync)
+		sdata->nssctx = nss_virt_if_create_sync(dev);
 	if (sdata->nssctx) {
 		sdata_info(sdata, "Created a NSS virtual interface\n");
 		nss_virt_if_register(sdata->nssctx, receive_from_nss, sdata->dev);

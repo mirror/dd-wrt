@@ -227,7 +227,7 @@ static inline void u64_to_ether_addr(u64 u, u8 *addr)
 }
 #endif /* LINUX_VERSION_IS_LESS(4,11,0) */
 
-#if LINUX_VERSION_IS_LESS(5,15,0)
+#if LINUX_VERSION_IS_LESS(4,14,0)
 /**
  * eth_hw_addr_set - Assign Ethernet address to a net_device
  * @dev: pointer to net_device structure

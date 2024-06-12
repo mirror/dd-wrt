@@ -238,6 +238,96 @@ config BACKPORTED_MHI_BUS_DEBUG
 config BACKPORTED_MHI_BUS_PCI_GENERIC
 	tristate
 	default MHI_BUS_PCI_GENERIC
+config BACKPORTED_QCOM_AOSS_QMP
+	tristate
+	default QCOM_AOSS_QMP
+config BACKPORTED_QCOM_COMMAND_DB
+	tristate
+	default QCOM_COMMAND_DB
+config BACKPORTED_QCOM_CPR
+	tristate
+	default QCOM_CPR
+config BACKPORTED_QCOM_GENI_SE
+	tristate
+	default QCOM_GENI_SE
+config BACKPORTED_QCOM_GSBI
+	tristate
+	default QCOM_GSBI
+config BACKPORTED_QCOM_LLCC
+	tristate
+	default QCOM_LLCC
+config BACKPORTED_QCOM_KRYO_L2_ACCESSORS
+	tristate
+	default QCOM_KRYO_L2_ACCESSORS
+config BACKPORTED_QCOM_MDT_LOADER
+	tristate
+	default QCOM_MDT_LOADER
+config BACKPORTED_QCOM_OCMEM
+	tristate
+	default QCOM_OCMEM
+config BACKPORTED_QCOM_PDR_HELPERS
+	tristate
+	default QCOM_PDR_HELPERS
+config BACKPORTED_QCOM_PMIC_GLINK
+	tristate
+	default QCOM_PMIC_GLINK
+config BACKPORTED_QCOM_QMI_HELPERS
+	tristate
+	default QCOM_QMI_HELPERS
+config BACKPORTED_QCOM_RAMP_CTRL
+	tristate
+	default QCOM_RAMP_CTRL
+config BACKPORTED_QCOM_RMTFS_MEM
+	tristate
+	default QCOM_RMTFS_MEM
+config BACKPORTED_QCOM_RPM_MASTER_STATS
+	tristate
+	default QCOM_RPM_MASTER_STATS
+config BACKPORTED_QCOM_RPMH
+	tristate
+	default QCOM_RPMH
+config BACKPORTED_QCOM_RPMHPD
+	tristate
+	default QCOM_RPMHPD
+config BACKPORTED_QCOM_RPMPD
+	tristate
+	default QCOM_RPMPD
+config BACKPORTED_QCOM_SMEM
+	tristate
+	default QCOM_SMEM
+config BACKPORTED_QCOM_SMD_RPM
+	tristate
+	default QCOM_SMD_RPM
+config BACKPORTED_QCOM_SMEM_STATE
+	tristate
+	default QCOM_SMEM_STATE
+config BACKPORTED_QCOM_SMP2P
+	tristate
+	default QCOM_SMP2P
+config BACKPORTED_QCOM_SMSM
+	tristate
+	default QCOM_SMSM
+config BACKPORTED_QCOM_SOCINFO
+	tristate
+	default QCOM_SOCINFO
+config BACKPORTED_QCOM_SPM
+	tristate
+	default QCOM_SPM
+config BACKPORTED_QCOM_STATS
+	tristate
+	default QCOM_STATS
+config BACKPORTED_QCOM_WCNSS_CTRL
+	tristate
+	default QCOM_WCNSS_CTRL
+config BACKPORTED_QCOM_APR
+	tristate
+	default QCOM_APR
+config BACKPORTED_QCOM_ICC_BWMON
+	tristate
+	default QCOM_ICC_BWMON
+config BACKPORTED_QCOM_INLINE_CRYPTO_ENGINE
+	tristate
+	default QCOM_INLINE_CRYPTO_ENGINE
 config BACKPORTED_WLAN
 	tristate
 	default WLAN

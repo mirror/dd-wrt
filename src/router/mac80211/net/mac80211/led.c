@@ -328,7 +328,9 @@ static void tpt_trig_timer(struct timer_list *t)
 		}
 	}
 
-#if LINUX_VERSION_IS_LESS(5,10,0)
+#if LINUX_VERSION_IS_GEQ(6,6,0)
+	led_trigger_blink(&local->tpt_led, on, off);
+#elif LINUX_VERSION_IS_LESS(5,10,0)
 	read_lock(&local->tpt_led.leddev_list_lock);
 	list_for_each_entry(led_cdev, &local->tpt_led.led_cdevs, trig_list)
 		led_blink_set(led_cdev, &on, &off);

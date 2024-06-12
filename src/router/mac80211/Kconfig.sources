@@ -4,6 +4,7 @@ source "$BACKPORT_DIR/compat/Kconfig"
 # these are copied from the kernel
 source "$BACKPORT_DIR/net/wireless/Kconfig"
 source "$BACKPORT_DIR/net/mac80211/Kconfig"
+source "$BACKPORT_DIR/drivers/soc/qcom/Kconfig"
 source "$BACKPORT_DIR/net/bluetooth/Kconfig"
 source "$BACKPORT_DIR/net/qrtr/Kconfig"
 source "$BACKPORT_DIR/drivers/bus/mhi/Kconfig"
