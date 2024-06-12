@@ -326,38 +326,6 @@ nla_put_failure:
 	return -1;
 }
 
-static int send_attr_ext(struct nl_msg *msg, struct switch_val *val)
-{
-	struct nlattr *n;
-	struct switch_ext *switch_ext_p;
-	int i;
-
-	n = nla_nest_start(msg, SWITCH_ATTR_OP_VALUE_EXT);
-	if (!n)
-		goto nla_put_failure;
-
-	switch_ext_p = val->value.ext_val;
-	while (switch_ext_p) {
-		struct nlattr *np;
-		np = nla_nest_start(msg, SWITCH_ATTR_EXT);
-		if (!np)
-			goto nla_put_failure;
-
-		NLA_PUT_STRING(msg, SWITCH_EXT_NAME, switch_ext_p->option_name);
-		NLA_PUT_STRING(msg, SWITCH_EXT_VALUE, switch_ext_p->option_value);
-
-		nla_nest_end(msg, np);
-		switch_ext_p = switch_ext_p->next;
-	}
-
-	nla_nest_end(msg, n);
-done:
-	return 0;
-
-nla_put_failure:
-	return -1;
-}
-
 static int send_attr_link(struct nl_msg *msg, struct switch_val *val)
 {
 	struct switch_port_link *link = val->value.link;
@@ -406,10 +374,6 @@ static int send_attr_val(struct nl_msg *msg, void *arg)
 		break;
 	case SWITCH_TYPE_PORTS:
 		if (send_attr_ports(msg, val) < 0)
-			goto nla_put_failure;
-		break;
-	case SWITCH_TYPE_EXT:
-		if (send_attr_ext(msg, val) < 0)
 			goto nla_put_failure;
 		break;
 	case SWITCH_TYPE_LINK:
@@ -565,9 +529,6 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		if (str && !strcmp(str, "0"))
 			return 0;
 
-		break;
-	case SWITCH_TYPE_EXT:
-		val.value.ext_val = (struct switch_ext *)str;
 		break;
 	default:
 		return -1;
