@@ -501,7 +501,6 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 					   struct nf_conn *ct)
 {
 	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
-	int locked;
 	switch (p_sic->protocol) {
 	case IPPROTO_TCP:
 		p_sic->src_td_window_scale = ct->proto.tcp.seen[0].td_scale;
@@ -524,21 +523,11 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-		locked = spin_trylock(&ct->lock); // this here might deadlock
 			if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-			    if (locked)
-				    spin_unlock(&ct->lock);
-			fast_classifier_incr_exceptions(
-				FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
-			DEBUG_TRACE(
-				"connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
-				ct->proto.tcp.state, &p_sic->src_ip,
-				ntohs(p_sic->src_port), &p_sic->dest_ip,
-				ntohs(p_sic->dest_port));
+				fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
+			}
 			return 0;
 		}
-		if (locked)
-			spin_unlock(&ct->lock);
 		break;
 
 	case IPPROTO_UDP:
