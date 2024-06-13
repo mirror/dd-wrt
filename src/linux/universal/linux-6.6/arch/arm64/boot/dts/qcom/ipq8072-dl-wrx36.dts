@@ -147,13 +147,11 @@
 			partition@200000 {
 				label = "bootconfig";
 				reg = <0x200000 0x80000>;
-				read-only;
 			};
 
 			partition@280000 {
 				label = "bootconfig1";
 				reg = <0x280000 0x80000>;
-				read-only;
 			};
 
 			partition@300000 {
