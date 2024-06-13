@@ -308,7 +308,6 @@
 			partition@13f00000 {
 				label = "ddwrt";
 				reg = <0x13f00000 0xb800000>;
-				read-only;
 			};
 			partition@1f700000 {
 				label = "wififw";
