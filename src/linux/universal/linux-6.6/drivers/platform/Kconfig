@@ -16,3 +16,7 @@ source "drivers/platform/surface/Kconfig"
 source "drivers/platform/x86/Kconfig"
 
 source "drivers/platform/mikrotik/Kconfig"
+
+if ARCH_QCOM
+source "drivers/platform/ipq/Kconfig"
+endif
