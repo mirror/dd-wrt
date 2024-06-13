@@ -404,10 +404,10 @@ void addvhtcaps(char *prefix, FILE *fp)
 					mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
 				}
 			}
-			if (mask) {
-				fprintf(fp, "\tvht_capa=0\n");
-				fprintf(fp, "\tvht_capa_mask=%d\n", mask);
-			}
+//			if (mask) {
+//				fprintf(fp, "\tvht_capa=0\n");
+//				fprintf(fp, "\tvht_capa_mask=%d\n", mask);
+//			}
 		}
 	}
 #ifdef HAVE_ATH9K
