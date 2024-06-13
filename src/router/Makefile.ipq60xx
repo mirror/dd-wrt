@@ -102,7 +102,7 @@ export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloa
 endif
 ifeq ($(ARCH),aarch64)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
-export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crypto -mcpu=cortex-a53+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec
+export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -271,7 +271,7 @@ endif
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MR7350" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mr7350.bin
-	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mr7350-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mr7350-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx4200 v1
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
@@ -290,7 +290,7 @@ endif
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4200" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4200v1.bin
-	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mx4200v1-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4200v1-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #mx4200 v2
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
@@ -309,7 +309,19 @@ endif
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4200" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4200v2.bin
-	-./tools/trx_n -m 84000000 -o $(ARCH)-uclibc/linksys_mx4200v2-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4200v2-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+
+#
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh  -D dynalink_dl-wrx36 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8072-dl-wrx36.dtb -a 0x41000000 -e 0x41000000 -c config@rt5010w-d350-rev0 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/dynalink_dlwrx36-webflash.bin $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 
 	
 
