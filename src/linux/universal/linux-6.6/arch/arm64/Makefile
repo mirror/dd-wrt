@@ -175,12 +175,6 @@ install: KBUILD_IMAGE := $(boot)/Image
 install zinstall:
 	$(call cmd,install)
 
-PHONY += vdso_install
-vdso_install:
-	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@
-	$(if $(CONFIG_COMPAT_VDSO), \
-		$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso32 $@)
-
 archprepare:
 	$(Q)$(MAKE) $(build)=arch/arm64/tools kapi
 ifeq ($(CONFIG_ARM64_ERRATUM_843419),y)
@@ -210,6 +204,9 @@ ifdef CONFIG_COMPAT_VDSO
 	include/generated/vdso32-offsets.h arch/arm64/kernel/vdso32/vdso.so
 endif
 endif
+
+vdso-install-y				+= arch/arm64/kernel/vdso/vdso.so.dbg
+vdso-install-$(CONFIG_COMPAT_VDSO)	+= arch/arm64/kernel/vdso32/vdso.so.dbg:vdso32.so
 
 include $(srctree)/scripts/Makefile.defconf
 
