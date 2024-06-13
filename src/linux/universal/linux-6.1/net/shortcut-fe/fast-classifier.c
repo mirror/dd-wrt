@@ -523,9 +523,9 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-			if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-				fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
-			}
+		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
+			fast_classifier_incr_exceptions(
+				FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
 			return 0;
 		}
 		break;
