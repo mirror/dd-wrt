@@ -293,6 +293,7 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.$(MAKEEXT) zfs-install
 endif
 ifeq ($(CONFIG_QCA_NSS),y)
+	-$(MAKE) -f Makefile.$(MAKEEXT) qca-nss-clean
 	-$(MAKE) -f Makefile.$(MAKEEXT) qca-nss
 	-$(MAKE) -f Makefile.$(MAKEEXT) qca-nss-install
 endif
@@ -409,16 +410,16 @@ endif
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
-	-make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
-	-if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
-	-if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    make -j 4 -C $(LINUXDIR) modules MAKE=make ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  CFLAGS=; \
 	fi
 ifneq ($(KERNELVERSION),4.9)
