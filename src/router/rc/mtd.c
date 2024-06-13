@@ -342,6 +342,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_DYNALINK_DLWRX36:
 		if (!nvram_match("ignore_flashpart","1"))
 			mtd = "rootfs";
+		eval("startservice", "finishupgrade", "-f");
 		break;
 	}
 #endif
