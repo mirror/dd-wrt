@@ -346,7 +346,7 @@ static int write_main(int argc, char *argv[])
 		break;
 	}
 #endif
-
+	rewrite:;
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
 		writeubi = 1;
@@ -1000,6 +1000,11 @@ fail:
 			break;
 		}
 	}
+	if (board == ROUTER_DYNALINK_DLWRX36 && !strcmp(mtd,"rootfs"))
+	    {
+	    mtd = "rootfs_1";
+	    goto rewrite;
+	    }
 	// eval("fischecksum");
 	return ret;
 }
