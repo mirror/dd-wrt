@@ -641,6 +641,7 @@ exit_error:;
 			fp = fopen(n, "rb");
 			if (fp) {
 				fscanf(fp, "%s", driver);
+				fclose(fp);
 			}
 			sprintf(p, "%sin%d_input", sysfs, b);
 			sprintf(n, "%sin%d_label", sysfs, b);
