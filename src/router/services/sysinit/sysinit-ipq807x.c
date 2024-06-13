@@ -55,6 +55,63 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+#define ALT_PART_NAME_LENGTH 16
+struct per_part_info {
+	char name[ALT_PART_NAME_LENGTH];
+	uint32_t primaryboot;
+};
+
+#define NUM_ALT_PARTITION 9
+typedef struct {
+#define SMEM_DUAL_BOOTINFO_MAGIC_START 0xA3A2A1A0
+#define SMEM_DUAL_BOOTINFO_MAGIC_START_TRYMODE 0xA3A2A1A1
+#define SMEM_DUAL_BOOTINFO_MAGIC_END 0xB3B2B1B0
+	uint32_t magic;
+	uint32_t age;
+	uint32_t numaltpart;
+	struct per_part_info per_part_entry[NUM_ALT_PARTITION];
+	uint32_t magic_end;
+} ipq_smem_bootconfig_info_t;
+
+void start_finishupgrade(void)
+{
+	char mtdpath[64];
+	int mtd = getMTD("bootconfig");
+	sprintf(mtdpath, "/dev/mtdblock%d", mtd);
+
+	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
+
+	unsigned int *smem = (unsigned int *)calloc(0x80000, 1);
+	FILE *fp = fopen(mtdpath, "rb");
+	if (fp) {
+		fread(smem, 0x80000, 1, fp);
+		fclose(fp);
+		int i;
+		unsigned int *p = smem;
+		for (i = 0; i < 0x80000 - sizeof(ipq_smem_bootconfig_info); i += 4) {
+			if (*p == SMEM_DUAL_BOOTINFO_MAGIC_START) {
+				ipq_smem_bootconfig_info = (ipq_smem_bootconfig_info_t *)p;
+				break;
+			}
+			p++;
+		}
+	}
+	if (ipq_smem_bootconfig_info) {
+		int i;
+		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
+				ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = 0;
+			}
+		}
+	}
+	fp = fopen(mtdpath, "wb");
+	if (fp) {
+		fwrite(smem, 0x80000, 1, fp);
+	}
+	fclose(fp);
+	free(smem);
+}
+
 void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int nums)
 {
 	char m[32];
