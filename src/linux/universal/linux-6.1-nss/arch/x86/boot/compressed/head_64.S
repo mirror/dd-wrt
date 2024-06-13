@@ -405,6 +405,11 @@ SYM_CODE_START(startup_64)
 	/* Set up the stack */
 	leaq	rva(boot_stack_end)(%rbx), %rsp
 
+	/* Preserve only the CR4 bits that must be preserved, and clear the rest */
+	movq	%cr4, %rax
+	andl	$(X86_CR4_PAE | X86_CR4_MCE | X86_CR4_LA57), %eax
+	movq	%rax, %cr4
+
 	/*
 	 * At this point we are in long mode with 4-level paging enabled,
 	 * but we might want to enable 5-level paging or vice versa.
