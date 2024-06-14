@@ -71,7 +71,7 @@ QCASSDK_CONFIG_OPTS+= TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-li
                 SYS_PATH=$(LINUXDIR) \
 		TOOLPREFIX=$(ARCH)-linux- \
                 KVER=$(KERNEL_VERSION) \
-                CFLAGS="$(COPTS) $(LTO)" \
+                CFLAGS="$(COPTS) $(LTO) -DNEED_PRINTF" \
                 LDFLAGS="$(LDLTO)" \
                 ARCH=arm64
 
@@ -86,8 +86,8 @@ ifeq ($(CONFIG_IPQ6018),y)
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
-#	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modulesMODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
-#	$(MAKE) $(SSDK_MAKE_FLAGS_IPQ807X) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/ssdk-shell MODULE_TYPE=KSLIB clean -C ssdk-shell
+#	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
+	make $(QCASSDK_CONFIG_OPTS) -C ssdk-shell
 else
 
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
@@ -164,6 +164,8 @@ ifeq ($(CONFIG_IPQ6018),y)
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
+	mkdir -p $(INSTALLDIR)/usr/sbin
+	cp ssdk-shell/build/bin/ssdk_sh $(INSTALLDIR)/usr/sbin
 else
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
@@ -207,6 +209,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	rm -f qca-ssdk/modules.order
 	rm -f qca-ssdk/Module.symvers
 	rm -f qca-ssdk/.*.cmd
+	$(MAKE) $(QCASSDK_CONFIG_OPTS) -C ssdk-shell clean
 else
 
 	-$(MAKE) -C lib clean KERNEL_FLAGS="$(KERNEL_FLAGS)"
