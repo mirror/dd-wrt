@@ -67,6 +67,14 @@ SSDK_MAKE_FLAGS_IPQ807X+= \
 SSDK_MAKE_FLAGS_IPQ807X+= CHIP_TYPE=HPPE
 SSDK_MAKE_FLAGS_IPQ6018+= CHIP_TYPE=CPPE
 
+QCASSDK_CONFIG_OPTS+= TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-linux-gcc}} \
+                SYS_PATH=$(LINUXDIR) \
+		TOOLPREFIX=$(ARCH)-linux- \
+                KVER=$(KERNEL_VERSION) \
+                CFLAGS="$(COPTS) $(LTO)" \
+                LDFLAGS="$(LDLTO)" \
+                ARCH=arm64
+
 
 all:
 ifeq ($(CONFIG_IPQ6018),y)
