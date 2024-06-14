@@ -1972,7 +1972,9 @@ PHP_FUNCTION(socket_set_option)
 			break;
 		}
 #endif
-
+#ifndef SKF_AD_CPU
+#define SKF_AD_CPU	36
+#endif
 #ifdef SO_ATTACH_REUSEPORT_CBPF
 		case SO_ATTACH_REUSEPORT_CBPF: {
 			convert_to_long(arg4);
