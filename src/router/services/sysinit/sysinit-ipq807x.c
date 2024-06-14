@@ -76,8 +76,11 @@ typedef struct {
 void start_finishupgrade(void)
 {
 	char mtdpath[64];
+	char mtdpath1[64];
 	int mtd = getMTD("bootconfig");
 	sprintf(mtdpath, "/dev/mtdblock%d", mtd);
+	int mtd1 = getMTD("bootconfig1");
+	sprintf(mtdpath1, "/dev/mtdblock%d", mtd1);
 
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 
@@ -104,7 +107,13 @@ void start_finishupgrade(void)
 			}
 		}
 	}
+	ipq_smem_bootconfig_info->age++;
 	fp = fopen(mtdpath, "wb");
+	if (fp) {
+		fwrite(smem, 0x80000, 1, fp);
+	}
+	fclose(fp);
+	fp = fopen(mtdpath1, "wb");
 	if (fp) {
 		fwrite(smem, 0x80000, 1, fp);
 	}
@@ -439,6 +448,8 @@ void start_sysinit(void)
 		writeproc("/proc/irq/34/smp_affinity", "4");
 		writeproc("/proc/irq/35/smp_affinity", "4");
 		writeproc("/proc/irq/36/smp_affinity", "4");
+
+
 	}
 
 	if (brand == ROUTER_DYNALINK_DLWRX36 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
@@ -472,6 +483,21 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
 	}
+
+	sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
+	sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
+	sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
+	sysprintf("ssdk_sh acl list create 56 48");
+	sysprintf("ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf("ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf("ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf("ssdk_sh acl list bind 56 0 2 1");
+	sysprintf("ssdk_sh fdb portLearn set 0 disable");
+	sysprintf("ssdk_sh fdb portLearn set 1 disable");
+	sysprintf("ssdk_sh fdb portLearn set 2 disable");
+	sysprintf("ssdk_sh fdb portLearn set 3 disable");
+	sysprintf("ssdk_sh fdb portLearn set 4 disable");
+	sysprintf("ssdk_sh fdb portLearn set 5 disable");
 	return;
 }
 
