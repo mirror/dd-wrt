@@ -79,6 +79,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
 #	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modulesMODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
+#	$(MAKE) $(SSDK_MAKE_FLAGS_IPQ807X) LNX_MAKEOPTS='' PRJ_PATH=$(TOP)/qca-nss/ssdk-shell MODULE_TYPE=KSLIB clean -C ssdk-shell
 else
 
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"

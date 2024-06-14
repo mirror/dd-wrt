@@ -456,7 +456,7 @@ qca_switch_init(a_uint32_t dev_id)
 #endif
 
 #ifdef IN_FDB
-			fal_fdb_port_learn_set(dev_id, i, A_TRUE);
+			fal_fdb_port_learn_set(dev_id, i, A_FALSE);
 #endif
 #ifdef IN_STP
 			fal_stp_port_state_set(dev_id, 0, i, FAL_STP_FARWARDING);
