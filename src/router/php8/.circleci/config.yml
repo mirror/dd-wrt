@@ -5,7 +5,7 @@ jobs:
     resource_class: arm.medium
     docker:
       - image: cimg/base:current-22.04
-      - image: mysql:8
+      - image: mysql:8.3
         environment:
           MYSQL_ALLOW_EMPTY_PASSWORD: true
           MYSQL_ROOT_PASSWORD: ''
@@ -184,6 +184,8 @@ jobs:
               -d opcache.enable_cli=1 \
               -d opcache.jit_buffer_size=16M \
               -d opcache.jit=tracing \
+              -d zend_test.observer.enabled=1 \
+              -d zend_test.observer.show_output=0 \
               -P -q -x -j2 \
               -g FAIL,BORK,LEAK,XLEAK \
               --no-progress \

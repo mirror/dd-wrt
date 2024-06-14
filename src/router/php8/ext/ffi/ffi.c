@@ -2160,7 +2160,7 @@ static zend_result zend_ffi_cdata_get_closure(zend_object *obj, zend_class_entry
 	if (EXPECTED(EG(trampoline).common.function_name == NULL)) {
 		func = &EG(trampoline);
 	} else {
-		func = ecalloc(sizeof(zend_internal_function), 1);
+		func = ecalloc(1, sizeof(zend_internal_function));
 	}
 	func->type = ZEND_INTERNAL_FUNCTION;
 	func->common.arg_flags[0] = 0;
@@ -2912,7 +2912,7 @@ static zend_function *zend_ffi_get_func(zend_object **obj, zend_string *name, co
 	if (EXPECTED(EG(trampoline).common.function_name == NULL)) {
 		func = &EG(trampoline);
 	} else {
-		func = ecalloc(sizeof(zend_internal_function), 1);
+		func = ecalloc(1, sizeof(zend_internal_function));
 	}
 	func->common.type = ZEND_INTERNAL_FUNCTION;
 	func->common.arg_flags[0] = 0;
@@ -3282,7 +3282,11 @@ static zend_ffi *zend_ffi_load(const char *filename, bool preload) /* {{{ */
 
 	code_size = buf.st_size;
 	code = emalloc(code_size + 1);
-	fd = open(filename, O_RDONLY, 0);
+	int open_flags = O_RDONLY;
+#ifdef PHP_WIN32
+	open_flags |= _O_BINARY;
+#endif
+	fd = open(filename, open_flags, 0);
 	if (fd < 0 || read(fd, code, code_size) != code_size) {
 		if (preload) {
 			zend_error(E_WARNING, "FFI: Failed pre-loading '%s', cannot read_file", filename);

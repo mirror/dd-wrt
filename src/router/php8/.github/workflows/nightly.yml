@@ -161,7 +161,7 @@ jobs:
       image: ubuntu:${{ (matrix.branch.ref == 'PHP-8.3' || matrix.branch.ref == 'master') && '22.04' || '20.04' }}
     services:
       mysql:
-        image: mysql:8
+        image: mysql:8.3
         ports:
           - 3306:3306
         env:
@@ -801,6 +801,7 @@ jobs:
         with:
           key: "${{github.job}}-${{hashFiles('php/main/php_version.h')}}"
           append-timestamp: false
+          save: ${{ github.event_name != 'pull_request' }}
       - name: build PHP
         run: |
           cd php

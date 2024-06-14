@@ -1,5 +1,225 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+06 Jun 2024, PHP 8.3.8
+
+- CGI:
+  . Fixed buffer limit on Windows, replacing read call usage by _read.
+    (David Carlier)
+  . Fixed bug GHSA-3qgc-jrrr-25jv (Bypass of CVE-2012-1823, Argument Injection
+    in PHP-CGI). (CVE-2024-4577) (nielsdos)    
+
+- CLI:
+  . Fixed bug GH-14189 (PHP Interactive shell input state incorrectly handles
+    quoted heredoc literals.). (nielsdos)
+
+- Core:
+  . Fixed bug GH-13970 (Incorrect validation of #[Attribute] flags type for
+    non-compile-time expressions). (ilutov)
+
+- DOM:
+  . Fix crashes when entity declaration is removed while still having entity
+    references. (nielsdos)
+  . Fix references not handled correctly in C14N. (nielsdos)
+  . Fix crash when calling childNodes next() when iterator is exhausted.
+    (nielsdos)
+  . Fix crash in ParentNode::append() when dealing with a fragment
+    containing text nodes. (nielsdos)
+
+- Filter:
+  . Fixed bug GHSA-w8qr-v226-r27w (Filter bypass in filter_var FILTER_VALIDATE_URL).
+    (CVE-2024-5458) (nielsdos)
+
+- FPM:
+  . Fix bug GH-14175 (Show decimal number instead of scientific notation in
+    systemd status). (Benjamin Cremer)
+
+- Hash:
+  . ext/hash: Swap the checking order of `__has_builtin` and `__GNUC__`
+    (Saki Takamachi)
+
+- Intl:
+  . Fixed build regression on systems without C++17 compilers. (Calvin Buckley,
+    Peter Kokot)
+
+- MySQLnd:
+  . Fix bug GH-14255 (mysqli_fetch_assoc reports error from
+    nested query). (Kamil Tekiela)
+
+- Opcache:
+  . Fixed bug GH-14109 (Fix accidental persisting of internal class constant in
+    shm). (ilutov)
+
+- OpenSSL:
+  . The openssl_private_decrypt function in PHP, when using PKCS1 padding
+    (OPENSSL_PKCS1_PADDING, which is the default), is vulnerable to the Marvin Attack
+    unless it is used with an OpenSSL version that includes the changes from this pull
+    request: https://github.com/openssl/openssl/pull/13817 (rsa_pkcs1_implicit_rejection).
+    These changes are part of OpenSSL 3.2 and have also been backported to stable
+    versions of various Linux distributions, as well as to the PHP builds provided for
+    Windows since the previous release. All distributors and builders should ensure that
+    this version is used to prevent PHP from being vulnerable. (CVE-2024-2408)
+
+- Standard:
+  . Fixed bug GHSA-9fcc-425m-g385 (Bypass of CVE-2024-1874).
+    (CVE-2024-5585) (nielsdos)        
+
+- XML:
+  . Fixed bug GH-14124 (Segmentation fault with XML extension under certain
+    memory limit). (nielsdos)
+
+- XMLReader:
+  . Fixed bug GH-14183 (XMLReader::open() can't be overridden). (nielsdos)
+
+09 May 2024, PHP 8.3.7
+
+- Core:
+  . Fixed zend_call_stack build with Linux/uclibc-ng without thread support.
+    (Fabrice Fontaine)
+  . Fixed bug GH-13772 (Invalid execute_data->opline pointers in observer fcall
+    handlers when JIT is enabled). (Bob)
+  . Fixed bug GH-13931 (Applying zero offset to null pointer in
+    Zend/zend_opcode.c). (nielsdos)
+  . Fixed bug GH-13942 (Align the behavior of zend-max-execution-timers with
+    other timeout implementations). (Kévin Dunglas)
+  . Fixed bug GH-14003 (Broken cleanup of unfinished calls with callable convert
+    parameters). (ilutov)
+  . Fixed bug GH-14013 (Erroneous dnl appended in configure). (Peter Kokot)
+  . Fixed bug GH-10232 (If autoloading occurs during constant resolution
+    filename and lineno are identified incorrectly). (ranvis)
+  . Fixed bug GH-13727 (Missing void keyword). (Peter Kokot)
+
+- Fibers:
+  . Fixed bug GH-13903 (ASAN false positive underflow when executing copy()).
+    (nielsdos)
+
+- Fileinfo:
+  . Fixed bug GH-13795 (Test failing in ext/fileinfo/tests/bug78987.phpt on
+    big-endian PPC). (orlitzky)
+
+- FPM:
+  . Fixed bug GH-13563 (Setting bool values via env in FPM config fails).
+    (Jakub Zelenka)
+
+- Intl:
+  . Fixed build for icu 74 and onwards. (dunglas)
+
+- MySQLnd:
+  . Fix shift out of bounds on 32-bit non-fast-path platforms. (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-13433 (Segmentation Fault in zend_class_init_statics when
+    using opcache.preload). (nielsdos)
+  . Fixed incorrect assumptions across compilation units for static calls.
+    (ilutov)
+
+- OpenSSL:
+  . Fixed bug GH-10495 (feof on OpenSSL stream hangs indefinitely).
+    (Jakub Zelenka)
+
+- PDO SQLite:
+  . Fix GH-13984 (Buffer size is now checked before memcmp). (Saki Takamachi)
+  . Fix GH-13998 (Manage refcount of agg_context->val correctly).
+    (Saki Takamachi)
+
+- Phar:
+  . Fixed bug GH-13836 (Renaming a file in a Phar to an already existing
+    filename causes a NULL pointer dereference). (nielsdos)
+  . Fixed bug GH-13833 (Applying zero offset to null pointer in zend_hash.c).
+    (nielsdos)
+  . Fix potential NULL pointer dereference before calling EVP_SignInit. (icy17)
+
+- PHPDBG:
+  . Fixed bug GH-13827 (Null pointer access of type 'zval' in phpdbg_frame).
+    (nielsdos)
+
+- Posix:
+  . Fix usage of reentrant functions in ext/posix. (Arnaud)
+
+- Session:
+  . Fixed bug GH-13856 (Member access within null pointer of type 'ps_files' in
+    ext/session/mod_files.c). (nielsdos)
+  . Fixed bug GH-13891 (memleak and segfault when using ini_set with
+    session.trans_sid_hosts). (nielsdos, kamil-tekiela)
+  . Fixed buffer _read/_write size limit on windows for the file mode. (David Carlier)
+
+- Streams:
+  . Fixed file_get_contents() on Windows fails with "errno=22 Invalid
+    argument". (Damian Wójcik)
+  . Fixed bug GH-13264 (Part 1 - Memory leak on stream filter failure).
+    (Jakub Zelenka)
+  . Fixed bug GH-13860 (Incorrect PHP_STREAM_OPTION_CHECK_LIVENESS case in
+    ext/openssl/xp_ssl.c - causing use of dead socket). (nielsdos)
+  . Fixed bug GH-11678 (Build fails on musl 1.2.4 - lfs64). (Arnaud)
+
+- Treewide:
+  . Fix gcc-14 Wcalloc-transposed-args warnings. (Cristian Rodríguez)
+
+28 Mar 2024, PHP 8.3.5RC1
+
+- Core:
+  . Fixed GH-13569 (GC buffer unnecessarily grows up to GC_MAX_BUF_SIZE when
+    scanning WeakMaps). (Arnaud)
+  . Fixed bug GH-13612 (Corrupted memory in destructor with weak references).
+    (nielsdos)
+  . Fixed bug GH-13446 (Restore exception handler after it finishes). (ilutov)
+  . Fixed bug GH-13784 (AX_GCC_FUNC_ATTRIBUTE failure). (Remi)
+  . Fixed bug GH-13670 (GC does not scale well with a lot of objects created in
+    destructor). (Arnaud)
+
+- DOM:
+  . Add some missing ZPP checks. (nielsdos)
+  . Fix potential memory leak in XPath evaluation results. (nielsdos)
+
+- FPM:
+  . Fixed GH-11086 (FPM: config test runs twice in daemonised mode).
+    (Jakub Zelenka)
+  . Fixed incorrect check in fpm_shm_free(). (nielsdos)
+
+- GD:
+  . Fixed bug GH-12019 (add GDLIB_CFLAGS in feature tests). (Michael Orlitzky)
+
+- Gettext:
+  . Fixed sigabrt raised with dcgettext/dcngettext calls with gettext 0.22.5
+    with category set to LC_ALL. (David Carlier)
+
+- MySQLnd:
+  . Fix GH-13452 (Fixed handshake response [mysqlnd]). (Saki Takamachi)
+  . Fix incorrect charset length in check_mb_eucjpms(). (nielsdos)
+
+- Opcache:
+  . Fixed GH-13508 (JITed QM_ASSIGN may be optimized out when op1 is null).
+    (Arnaud, Dmitry)
+  . Fixed GH-13712 (Segmentation fault for enabled observers when calling trait
+    method of internal trait when opcache is loaded). (Bob)
+
+- Random:
+  . Fixed bug GH-13544 (Pre-PHP 8.2 compatibility for mt_srand with unknown
+    modes). (timwolla)
+  . Fixed bug GH-13690 (Global Mt19937 is not properly reset in-between
+    requests when MT_RAND_PHP is used). (timwolla)
+
+- Session:
+  . Fixed bug GH-13680 (Segfault with session_decode and compilation error).
+    (nielsdos)
+
+- SPL:
+  . Fixed bug GH-13685 (Unexpected null pointer in zend_string.h). (nielsdos)
+
+- Standard:
+  . Fixed bug GH-11808 (Live filesystem modified by tests). (nielsdos)
+  . Fixed GH-13402 (Added validation of `\n` in $additional_headers of mail()).
+    (SakiTakamachi)
+  . Fixed bug GH-13203 (file_put_contents fail on strings over 4GB on Windows).
+    (divinity76)
+  . Fixed bug GHSA-pc52-254m-w9w7 (Command injection via array-ish $command
+    parameter of proc_open). (CVE-2024-1874) (Jakub Zelenka)
+  . Fixed bug GHSA-wpj3-hf5j-x4v4 (__Host-/__Secure- cookie bypass due to
+    partial CVE-2022-31629 fix). (CVE-2024-2756) (nielsdos)
+  . Fixed bug GHSA-h746-cjrr-wfmr (password_verify can erroneously return true,
+    opening ATO risk). (CVE-2024-3096) (Jakub Zelenka)
+  . Fixed bug GHSA-fjp9-9hwx-59fq (mb_encode_mimeheader runs endlessly for some
+    inputs). (CVE-2024-2757) (Alex Dowad)
+
 14 Mar 2024, PHP 8.3.4
 
 - Core:
@@ -93,7 +313,7 @@ PHP                                                                        NEWS
    (David Carlier).
 
 - PDO_Firebird:
-  . Fix GH-13119 (Changed to convert float and double values ​​into strings using
+  . Fix GH-13119 (Changed to convert float and double values into strings using
     `H` format). (SakiTakamachi)
 
 - Phar:

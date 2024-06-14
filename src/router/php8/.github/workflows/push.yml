@@ -45,9 +45,10 @@ env:
   CXX: ccache g++
 jobs:
   LINUX_X64:
+    if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
     services:
       mysql:
-        image: mysql:8
+        image: mysql:8.3
         ports:
           - 3306:3306
         env:
@@ -72,7 +73,7 @@ jobs:
             zts: true
             asan: true
     name: "LINUX_X64_${{ matrix.debug && 'DEBUG' || 'RELEASE' }}_${{ matrix.zts && 'ZTS' || 'NTS' }}${{ matrix.asan && '_ASAN' || '' }}"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-${{ !matrix.asan && '22' || '20' }}.04
     container:
       image: ${{ matrix.asan && 'ubuntu:23.04' || null }}
     steps:
@@ -104,6 +105,7 @@ jobs:
           # job id, not the job name)
           key: "LINUX_X64_${{ matrix.debug && 'DEBUG' || 'RELEASE' }}_${{ matrix.zts && 'ZTS' || 'NTS' }}${{ matrix.asan && '_ASAN' || '' }}-${{hashFiles('main/php_version.h')}}"
           append-timestamp: false
+          save: ${{ github.event_name != 'pull_request' }}
       - name: ./configure
         uses: ./.github/actions/configure-x64
         with:
@@ -137,6 +139,7 @@ jobs:
         if: ${{ !matrix.asan }}
         uses: ./.github/actions/verify-generated-files
   MACOS_DEBUG_NTS:
+    if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
     runs-on: macos-12
     steps:
       - name: git checkout
@@ -148,6 +151,7 @@ jobs:
         with:
           key: "${{github.job}}-${{hashFiles('main/php_version.h')}}"
           append-timestamp: false
+          save: ${{ github.event_name != 'pull_request' }}
       - name: ./configure
         uses: ./.github/actions/configure-macos
         with:
@@ -170,6 +174,7 @@ jobs:
       - name: Verify generated files are up to date
         uses: ./.github/actions/verify-generated-files
   WINDOWS:
+    if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
     name: WINDOWS_X64_ZTS
     runs-on: windows-2019
     env:
@@ -196,7 +201,7 @@ jobs:
         run: .github/scripts/windows/test.bat
   BENCHMARKING:
     name: BENCHMARKING
-    if: github.repository_owner == 'php' || github.event_name == 'pull_request'
+    if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     steps:
       - name: git checkout
@@ -220,6 +225,7 @@ jobs:
         with:
           key: "${{github.job}}-${{hashFiles('main/php_version.h')}}"
           append-timestamp: false
+          save: ${{ github.event_name != 'pull_request' }}
       - name: ./configure
         run: |
           set -x

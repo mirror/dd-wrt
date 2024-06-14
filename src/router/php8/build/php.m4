@@ -1261,27 +1261,27 @@ dnl PHP_MISSING_TIME_R_DECL
 dnl
 AC_DEFUN([PHP_MISSING_TIME_R_DECL],[
   AC_MSG_CHECKING([for missing declarations of reentrant functions])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm *(*func)() = localtime_r]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm *(*func)(void) = localtime_r]])],[
     :
   ],[
     AC_DEFINE(MISSING_LOCALTIME_R_DECL,1,[Whether localtime_r is declared])
   ])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm *(*func)() = gmtime_r]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[struct tm *(*func)(void) = gmtime_r]])],[
     :
   ],[
     AC_DEFINE(MISSING_GMTIME_R_DECL,1,[Whether gmtime_r is declared])
   ])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[char *(*func)() = asctime_r]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[char *(*func)(void) = asctime_r]])],[
     :
   ],[
     AC_DEFINE(MISSING_ASCTIME_R_DECL,1,[Whether asctime_r is declared])
   ])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[char *(*func)() = ctime_r]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <time.h>]], [[char *(*func)(void) = ctime_r]])],[
     :
   ],[
     AC_DEFINE(MISSING_CTIME_R_DECL,1,[Whether ctime_r is declared])
   ])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]], [[char *(*func)() = strtok_r]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <string.h>]], [[char *(*func)(void) = strtok_r]])],[
     :
   ],[
     AC_DEFINE(MISSING_STRTOK_R_DECL,1,[Whether strtok_r is declared])
@@ -1315,7 +1315,7 @@ dnl See if we have broken header files like SunOS has.
 dnl
 AC_DEFUN([PHP_MISSING_FCLOSE_DECL],[
   AC_MSG_CHECKING([for fclose declaration])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[int (*func)() = fclose]])],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[int (*func)(void) = fclose]])],[
     AC_DEFINE(MISSING_FCLOSE_DECL,0,[ ])
     AC_MSG_RESULT([ok])
   ],[
@@ -1643,7 +1643,7 @@ AC_DEFUN([PHP_TEST_BUILD], [
   LIBS="$4 $LIBS"
   AC_LINK_IFELSE([AC_LANG_SOURCE([[
     $5
-    char $1();
+    char $1(void);
     int main(void) {
       $1();
       return 0;
@@ -1929,13 +1929,8 @@ AC_DEFUN([PHP_SETUP_ICU],[
   ICU_CFLAGS="$ICU_CFLAGS -DU_NO_DEFAULT_INCLUDE_UTF_HEADERS=1"
   ICU_CXXFLAGS="$ICU_CXXFLAGS -DUNISTR_FROM_CHAR_EXPLICIT=explicit -DUNISTR_FROM_STRING_EXPLICIT=explicit"
 
-  if test "$PKG_CONFIG icu-io --atleast-version=60"; then
-    ICU_CFLAGS="$ICU_CFLAGS -DU_HIDE_OBSOLETE_UTF_OLD_H=1"
-  fi
-
-  if test "$PKG_CONFIG icu-io --atleast-version=68"; then
-    ICU_CFLAGS="$ICU_CFLAGS -DU_DEFINE_FALSE_AND_TRUE=1"
-  fi
+  AS_IF([$PKG_CONFIG icu-io --atleast-version=60],
+    [ICU_CFLAGS="$ICU_CFLAGS -DU_HIDE_OBSOLETE_UTF_OLD_H=1"])
 ])
 
 dnl
