@@ -616,10 +616,8 @@ cmd_socket_init(int dev_id)
 #endif
     init_cfg.chip_type=CHIP_UNSPECIFIED;
 /*qca808x_end*/
-#ifndef IOCTL_COMPAT
     init_cfg.reg_func.mdio_set = NULL;
     init_cfg.reg_func.mdio_get = NULL;
-#endif
 /*qca808x_start*/
     rv = ssdk_init(dev_id, &init_cfg);
     if (SW_OK == rv)
