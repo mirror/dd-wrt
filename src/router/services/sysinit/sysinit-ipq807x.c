@@ -498,6 +498,13 @@ void start_sysinit(void)
 	sysprintf("ssdk_sh fdb portLearn set 3 disable");
 	sysprintf("ssdk_sh fdb portLearn set 4 disable");
 	sysprintf("ssdk_sh fdb portLearn set 5 disable");
+	sysprintf("ssdk_sh stp portState set 0 0 forward");
+	sysprintf("ssdk_sh stp portState set 0 1 forward");
+	sysprintf("ssdk_sh stp portState set 0 2 forward");
+	sysprintf("ssdk_sh stp portState set 0 3 forward");
+	sysprintf("ssdk_sh stp portState set 0 4 forward");
+	sysprintf("ssdk_sh stp portState set 0 5 forward");
+	sysprintf("ssdk_sh fdb entry flush 1");
 	return;
 }
 
