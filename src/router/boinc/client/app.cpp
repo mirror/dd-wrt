@@ -150,6 +150,9 @@ ACTIVE_TASK::ACTIVE_TASK() {
     safe_strcpy(remote_desktop_addr, "");
     async_copy = NULL;
     finish_file_time = 0;
+    sporadic_ca_state = CA_NONE;
+    sporadic_ac_state = AC_NONE;
+    sporadic_ignore_until = 0;
 }
 
 bool ACTIVE_TASK::process_exists() {
@@ -167,7 +170,7 @@ bool ACTIVE_TASK::process_exists() {
 // called from the CLIENT_STATE::enforce_schedule()
 // and ACTIVE_TASK_SET::suspend_all()
 //
-int ACTIVE_TASK::preempt(int preempt_type, int reason) {
+int ACTIVE_TASK::preempt(PREEMPT_TYPE preempt_type, int reason) {
     bool remove=false;
 
     switch (preempt_type) {

@@ -290,6 +290,12 @@ CAdvancedFrame::~CAdvancedFrame() {
         wxCHECK_RET(DeleteNotebook(), _T("Failed to delete notebook."));
     }
 
+#ifdef __WXGTK__
+    if (wxGetApp().GetEventLog()) {
+        wxGetApp().GetEventLog()->Close();
+    }
+#endif
+
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::~CAdvancedFrame - Function End"));
 }
 
@@ -1134,7 +1140,11 @@ void CAdvancedFrame::OnMenuOpening( wxMenuEvent &event) {
     // File->Shutdown connected client...
     wxMenuItem* shutClientItem = menu->FindChildItem(ID_SHUTDOWNCORECLIENT, NULL);
     if (shutClientItem) {
+#ifdef __WXGTK__
+        shutClientItem->Enable(isConnected && (pDoc->m_pClientManager->WasBOINCStartedByManager() || !pDoc->m_pClientManager->IsBOINCConfiguredAsDaemon()));
+#else
         shutClientItem->Enable(isConnected);
+#endif
     }
 
     wxLogTrace(wxT("Function Start/End"), wxT("CAdvancedFrame::OnMenuOpening - Function End"));

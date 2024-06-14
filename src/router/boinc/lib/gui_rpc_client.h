@@ -148,6 +148,7 @@ struct PROJECT {
     RSC_DESC rsc_desc_nvidia;
     RSC_DESC rsc_desc_ati;
     RSC_DESC rsc_desc_intel_gpu;
+    RSC_DESC rsc_desc_apple_gpu;
 
     double sched_priority;
 
@@ -262,7 +263,7 @@ struct RESULT {
     double final_cpu_time;
     double final_elapsed_time;
     int state;
-    int scheduler_state;
+    SCHEDULER_STATE scheduler_state;
     int exit_status;
     int signal;
     //std::string stderr_out;

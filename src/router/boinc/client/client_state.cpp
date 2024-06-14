@@ -186,6 +186,7 @@ CLIENT_STATE::CLIENT_STATE()
 #ifdef _WIN32
     have_sysmon_msg = false;
 #endif
+    have_sporadic_app = false;
 }
 
 void CLIENT_STATE::show_host_info() {
@@ -583,6 +584,13 @@ int CLIENT_STATE::init() {
             coprocs.add(coprocs.intel_gpu);
         }
     }
+    if (coprocs.have_apple_gpu()) {
+        if (rsc_index(GPU_TYPE_APPLE)>0) {
+            msg_printf(NULL, MSG_INFO, "APPLE GPU info taken from cc_config.xml");
+        } else {
+            coprocs.add(coprocs.apple_gpu);
+        }
+    }
     coprocs.add_other_coproc_types();
 
     host_info.coprocs = coprocs;
@@ -610,6 +618,10 @@ int CLIENT_STATE::init() {
     // for projects with no account file
     //
     parse_state_file();
+
+    if (app_test) {
+        app_test_init();
+    }
 
     bool new_client = is_new_client();
 
@@ -854,6 +866,8 @@ int CLIENT_STATE::init() {
     client_thread_mutex.lock();
     throttle_thread.run(throttler, NULL);
 
+    sporadic_init();
+
     initialized = true;
     return 0;
 }
@@ -945,6 +959,7 @@ void CLIENT_STATE::do_io_or_sleep(double max_time) {
 // possibly triggering state transitions.
 // Returns true if something happened
 // (in which case should call this again immediately)
+// Called every POLL_INTERVAL (1 sec)
 //
 bool CLIENT_STATE::poll_slow_events() {
     int actions = 0, retval;
@@ -1157,6 +1172,9 @@ bool CLIENT_STATE::poll_slow_events() {
     }
     if (!network_suspended) {
         POLL_ACTION(scheduler_rpc          , scheduler_rpc_poll     );
+    }
+    if (have_sporadic_app) {
+        sporadic_poll();
     }
     retval = write_state_file_if_needed();
     if (retval) {

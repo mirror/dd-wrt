@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -106,9 +106,14 @@ static pthread_mutexattr_t saver_mutex_attr;
 pthread_mutex_t saver_mutex;
 static char passwd_buf[256];
 char gUserName[64];
-bool gIsHighSierra = false;  // OS 10.13 or later
+bool gIsHighSierra = false; // OS 10.13 or later
 bool gIsMojave = false;     // OS 10.14 or later
 bool gIsCatalina = false;   // OS 10.15 or later
+bool gIsSonoma = false;     // OS 14.0 or later
+
+// As of MacOS 14.0, the legacyScreenSave sandbox
+// prevents using bootstrap_look_up.
+bool gMach_bootstrap_unavailable_to_screensavers = false;
 
 const char *  CantLaunchCCMsg = "Unable to launch BOINC application.";
 const char *  LaunchingCCMsg = "Launching BOINC application.";
@@ -182,6 +187,13 @@ void drawPreview(CGContextRef myContext) {
 };
 
 
+void stopAllGFXApps() {
+    if (gspScreensaver) {
+        gspScreensaver->Shared_Offscreen_Buffer_Unavailable();
+    }
+}
+
+
 // If there are multiple displays, this may get called
 // multiple times (once for each display), so we need to guard
 // against any problems that may cause.
@@ -194,7 +206,7 @@ void closeBOINCSaver() {
 }
 
 
-void incompatibleGfxApp(char * appPath, pid_t pid, int slot){
+void incompatibleGfxApp(char * appPath, char * wuName, pid_t pid, int slot){
     char *p;
     static char buf[1024];
     static double msgstartTime = 0.0;
@@ -240,8 +252,8 @@ void incompatibleGfxApp(char * appPath, pid_t pid, int slot){
         }   // End if (msgstartTime == 0.0)
 
         if (msgstartTime && (getDTime() - msgstartTime > 5.0)) {
-            gspScreensaver->markAsIncompatible(appPath);
-            launchedGfxApp("", 0, -1);
+            gspScreensaver->markAsIncompatible(wuName);
+            launchedGfxApp("", "", 0, -1);
             msgstartTime = 0.0;
             gspScreensaver->terminate_v6_screensaver(pid);
         }
@@ -343,7 +355,6 @@ CScreensaver::CScreensaver() {
     GetDefaultDisplayPeriods(periods);
     m_bShow_default_ss_first = periods.Show_default_ss_first;
 
-
     m_fGFXDefaultPeriod = periods.GFXDefaultPeriod;
     m_fGFXSciencePeriod = periods.GFXSciencePeriod;
     m_fGFXChangePeriod = periods.GFXChangePeriod;
@@ -400,7 +411,7 @@ int CScreensaver::Create() {
         strlcpy(m_gfx_Cleanup_Path, "\"", sizeof(m_gfx_Cleanup_Path));
         strlcat(m_gfx_Cleanup_Path, m_gfx_Switcher_Path, sizeof(m_gfx_Cleanup_Path));
         strlcat(m_gfx_Switcher_Path, "/gfx_switcher", sizeof(m_gfx_Switcher_Path));
-        strlcat(m_gfx_Cleanup_Path, "/gfx_cleanup\"", sizeof(m_gfx_Switcher_Path));
+        strlcat(m_gfx_Cleanup_Path, "/gfx_cleanup\"", sizeof(m_gfx_Cleanup_Path));
 
         // Launch helper app to work around a bug in OS 10.15 Catalina to
         // kill current graphics app if ScreensaverEngine exits without
@@ -657,6 +668,11 @@ void CScreensaver::drawPreview(CGContextRef myContext) {
 }
 
 
+void CScreensaver::Shared_Offscreen_Buffer_Unavailable() {
+    DestroyDataManagementThread();  // Kills current GFX app
+}
+
+
 void CScreensaver::ShutdownSaver() {
     DestroyDataManagementThread();
 
@@ -688,6 +704,14 @@ void CScreensaver::ShutdownSaver() {
         fprintf(m_gfx_Cleanup_IPC, "Quit\n");
         fflush(m_gfx_Cleanup_IPC);
         pclose(m_gfx_Cleanup_IPC);
+    }
+
+    // Under MacOS 14.0 Sonoma, screensavers continue to run and "draw" invisibly
+    // after they are dismissed by user activity, to allow them to be used as
+    // wallpaper. Since we don't want the BOINC screensaver to be used as wallpaper,
+    // this would waste system resources.
+    if (gIsSonoma) {
+        KillScreenSaver();
     }
 }
 
@@ -1014,9 +1038,8 @@ void print_to_log_file(const char *format, ...) {
     char buf[256];
     time_t t;
 #if USE_SPECIAL_LOG_FILE
-    safe_strcpy(buf, "/Users/");
-    safe_strcat(buf, getlogin());
-    safe_strcat(buf, "/Documents/test_log.txt");
+    safe_strcat(buf, getenv("HOME"));
+    safe_strcat(buf, "/Documents/ss_test_log.txt");
     FILE *f;
     f = fopen(buf, "a");
     if (!f) return;

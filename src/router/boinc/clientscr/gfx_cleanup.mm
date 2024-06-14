@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -51,9 +51,17 @@ int GFX_PidFromScreensaver = 0;
 pthread_t MonitorParentThread = 0;
 bool quit_MonitorParentThread = false;
 
+// struct ss_shmem_data must be kept in sync in these files:
+// screensaver.cpp
+// gfx_switcher.cpp
+// gfx_cleanup.mm
+// graphics2_unix.cpp
 struct ss_shmem_data {
     pid_t gfx_pid;
     int gfx_slot;
+    int major_version;
+    int minor_version;
+    int release;
 };
 
 static struct ss_shmem_data* ss_shmem = NULL;
@@ -122,6 +130,9 @@ void killGfxApp(pid_t thePID) {
     if (ss_shmem) {
         rpc->run_graphics_app("stop", ss_shmem->gfx_slot, "");
         ss_shmem->gfx_slot = -1;
+        ss_shmem->major_version = 0;
+        ss_shmem->minor_version = 0;
+        ss_shmem->release = 0;
     }
 
     rpc->close();
@@ -207,7 +218,13 @@ int main(int argc, char* argv[]) {
 #endif
     parentPid = getppid();
 
-    bool cover_gfx_window = (compareOSVersionTo(10, 13) >= 0);
+    // Under MacOS 14.0, the legacyScreenSaver continues to run after the
+    // screensaver is dismissed. Our code elsewhere now kills it, but if
+    // that were to fail this black cover would block the user from
+    // accessing the desktop, so don't use the cover in MacOS 14 for now.
+
+    bool cover_gfx_window = (compareOSVersionTo(10, 13) >= 0) &&
+                                (compareOSVersionTo(10, 14) < 0);
 
     // Create shared app instance
     [NSApplication sharedApplication];

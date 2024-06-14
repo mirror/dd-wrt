@@ -6,7 +6,7 @@ dnl not sure exactly what the minimum version is (but 2.13 wont work)
 AC_PREREQ(2.58)
 
 dnl Set the BOINC version here.  You can also use the set-version script.
-AC_INIT(BOINC, 7.24.1)
+AC_INIT(BOINC, 8.0.2)
 AC_CONFIG_MACRO_DIR([m4])
 LIBBOINC_VERSION=`echo ${PACKAGE_VERSION} | sed 's/\./:/g'`
 AC_SUBST([LIBBOINC_VERSION])
@@ -14,8 +14,11 @@ AC_SUBST([LIBBOINC_VERSION])
 WRAPPER_RELEASE=26018
 AC_SUBST([WRAPPER_RELEASE])
 
-VBOXWRAPPER_RELEASE=26206
+VBOXWRAPPER_RELEASE=26207
 AC_SUBST([VBOXWRAPPER_RELEASE])
+
+WORKER_RELEASE=2
+AC_SUBST([WORKER_RELEASE])
 
 AC_CANONICAL_TARGET
 
@@ -569,6 +572,10 @@ if test "${isWIN32}" = "yes" ; then
    SAH_CHECK_LIB([winmm], [fopen],
        [BOINC_EXTRA_LIBS="${BOINC_EXTRA_LIBS} ${sah_lib_last}"])
    SAH_CHECK_LIB([msimg32], [fopen],
+       [BOINC_EXTRA_LIBS="${BOINC_EXTRA_LIBS} ${sah_lib_last}"])
+fi
+if test "x${enable_manager}" = "xyes" -a "${isWIN32}" = "no"; then
+    SAH_CHECK_LIB([xkbcommon], [xkb_state_key_get_utf8],
        [BOINC_EXTRA_LIBS="${BOINC_EXTRA_LIBS} ${sah_lib_last}"])
 fi
 

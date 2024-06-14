@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2023 University of California
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -1678,19 +1678,26 @@ OSErr UpdateAllVisibleUsers(long brandID, long oldBrandID)
         }
     }
 
-    if (! saverAlreadySetForAll) {
-        if (gCommandLineInstall) {
-            err = stat("/tmp/setboincsaver.txt", &sbuf);
-            if (err == noErr) {
-                puts("setboincsaver.txt file detected\n");
-                fflush(stdout);
-                unlink("/tmp/setboincsaver.txt");
-                setSaverForAllUsers = true;
-            }
-        } else {
-            setSaverForAllUsers = ShowMessage(true,
+    // As of MacOS 14.0 Sonoma, we can't set the screensaver
+    //automatically. I have filed bug report FB13270885 about this.
+    // The response to my bug report is that it will be fixed in a
+    // future rlease of MacOS.
+    // See also the comment at top of SetScreenSaverSelection().
+    if (compareOSVersionTo(14, 0) < 0) {
+        if (! saverAlreadySetForAll) {
+            if (gCommandLineInstall) {
+                err = stat("/tmp/setboincsaver.txt", &sbuf);
+                if (err == noErr) {
+                    puts("setboincsaver.txt file detected\n");
+                    fflush(stdout);
+                    unlink("/tmp/setboincsaver.txt");
+                    setSaverForAllUsers = true;
+                }
+            } else {
+                setSaverForAllUsers = ShowMessage(true,
                     (char *)_("Do you want to set %s as the screensaver for all %s users on this Mac?"),
                     brandName[brandID], brandName[brandID]);
+            }
         }
     }
 
@@ -2008,6 +2015,11 @@ OSErr UpdateAllVisibleUsers(long brandID, long oldBrandID)
 }
 
 
+// As of MacOS 14.0 Sonoma, this code no longer will detect the current screensaver,
+// and will need to be rewritten. See the comment at top of SetScreenSaverSelection().
+// It is unclear whether this will be fixed in a uture rlease of MacOS.
+// This Applescript stoll works:
+//    tell application "System Events" to set mysaver to name of current screen saver
 OSErr GetCurrentScreenSaverSelection(passwd *pw, char *moduleName, size_t maxLen) {
     char                buf[1024];
     FILE                *f;
@@ -2047,6 +2059,11 @@ OSErr GetCurrentScreenSaverSelection(passwd *pw, char *moduleName, size_t maxLen
 }
 
 
+// As of MacOS 14.0 Sonoma, we can't set the screensaver automatically.
+// I have filed bug report FB13270885 about this. After this is fixed,
+// probably need to put an AppleScript to do this in the launch agent
+// we add for each user. See also:
+// https://forum.iscreensaver.com/t/understanding-the-macos-sonoma-screensaver-plist/718
 OSErr SetScreenSaverSelection(char *moduleName, char *modulePath, int type) {
     OSErr err = noErr;
     CFStringRef preferenceName = CFSTR("com.apple.screensaver");

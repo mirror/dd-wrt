@@ -2,6 +2,10 @@
 
 include $(top_srcdir)/Makefile.incl
 
+export WRAPPER_RELEASE_VERSION=$(WRAPPER_RELEASE)
+export VBOXWRAPPER_RELEASE_VERSION=$(VBOXWRAPPER_RELEASE)
+export WORKER_RELEASE_VERSION=$(WORKER_RELEASE)
+
 if BUILD_WITH_MINGW
     export BUILD_WITH_MINGW="yes"
 endif
@@ -16,7 +20,7 @@ endif
 
 ## list the apps that should be build
 ## NOTE: nvcuda and wrappture need external libraries
-SUBDIRS = condor example_app multi_thread sleeper worker wrapper
+SUBDIRS = condor example_app multi_thread sleeper sporadic worker wrapper
 
 if BUILD_WITH_VBOX
     SUBDIRS += vboxmonitor vboxwrapper

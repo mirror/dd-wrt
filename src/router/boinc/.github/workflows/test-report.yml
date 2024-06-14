@@ -26,10 +26,17 @@ jobs:
   report:
     runs-on: ubuntu-latest
     steps:
-    - uses: dorny/test-reporter@v1
-      with:
-        artifact: /(.*)_tests_results/ # artifact name
-        name: $1 Tests Report          # Name of the check run which will be created
-        path: '*.xml'                  # Path to test results (inside artifact .zip)
-        reporter: java-junit
-        fail-on-error: false
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
+      - name: Download artifacts
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        with:
+          github-token: ${{ secrets.ACTIONS_TEST_REPORT_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: test-reports
+          pattern: '*_tests_results'
+      - uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
+        with:
+          name: 'Tests Report'
+          path: 'test-reports/**/*.xml'
+          reporter: java-junit
+          fail-on-error: false

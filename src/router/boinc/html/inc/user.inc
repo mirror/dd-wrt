@@ -204,6 +204,16 @@ function notify_description($notify) {
     return null;
 }
 
+// a string that can be used to authenticate some operations,
+// but can't be used to log in to the account
+// (e.g. can't be used to change email addr or passwd)
+//
+// this is a function of
+// - authenticator (never changes)
+// - user ID (never changes)
+// - password
+// - email addr
+//
 function weak_auth($user) {
     $x = md5($user->authenticator.$user->passwd_hash);
     return "{$user->id}_$x";
@@ -216,6 +226,8 @@ function weak_auth($user) {
 // it to a canonical form, with the protocol prefix.
 //
 function normalize_user_url($url) {
+    $url = sanitize_user_url($url);
+    if (!$url) return '';
     $x = strtolower($url);
     if (substr($x, 0, 7) == 'http://') {
         return 'http://'.substr($url, 7);
@@ -239,11 +251,12 @@ function show_user_info_private($user) {
         }
         row2(tra("Email address"), $email_text);
     }
-    if (USER_URL) {
-        if ($user->url) {
-            $u = normalize_user_url($user->url);
-            row2(tra("URL"), sprintf('<a href="%s">%s</a>', $u, $u));
-        }
+    if (USER_URL && $user->url) {
+        $u = normalize_user_url($user->url);
+        row2(
+            tra("URL"),
+            $u?sprintf('<a href="%s">%s</a>', $u, $u):tra('Invalid URL')
+        );
     }
     if (USER_COUNTRY) {
         row2(tra("Country"), $user->country);
@@ -451,14 +464,12 @@ function show_user_summary_public($user) {
     if (USER_COUNTRY) {
         row2(tra("Country"), $user->country);
     }
-    if (USER_URL) {
+    if (USER_URL && $user->url) {
         // don't show URL if user has no recent credit (spam suppression)
         //
-        if ($user->url) {
-            if (!NO_COMPUTING || $user->expavg_credit > 1) {
-                $u = normalize_user_url($user->url);
-                row2(tra("URL"), sprintf('<a href="%s">%s</a>', $u, $u));
-            }
+        if (!NO_COMPUTING || $user->expavg_credit > 1) {
+            $u = normalize_user_url($user->url);
+            row2(tra("URL"), sprintf('<a href="%s">%s</a>', $u, $u));
         }
     }
     if (!NO_COMPUTING) {

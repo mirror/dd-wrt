@@ -316,6 +316,9 @@ int handle_file_upload(FILE* in, R_RSA_PUBLIC_KEY& key) {
     strcpy(name, "");
     strcpy(xml_signature, "");
     bool found_data = false;
+
+    // TODO: use XML parser
+
     while (boinc::fgets(buf, 256, in)) {
         log_messages.printf(MSG_DETAIL, "got:%s\n", buf);
         if (match_tag(buf, "<file_info>")) continue;
@@ -343,7 +346,10 @@ int handle_file_upload(FILE* in, R_RSA_PUBLIC_KEY& key) {
             found_data = true;
             break;
         }
-        log_messages.printf(MSG_WARNING, "unrecognized: %s", buf);
+        strip_whitespace(buf);
+        if (strlen(buf)) {
+            log_messages.printf(MSG_WARNING, "unrecognized: %s", buf);
+        }
     }
     if (strlen(name) == 0) {
         return return_error(ERR_PERMANENT, "Missing name");

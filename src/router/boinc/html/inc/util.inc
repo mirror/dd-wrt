@@ -20,10 +20,6 @@
 // Stuff that's not web-specific (e.g. that's used in non-web scripts)
 // should go in util_basic.inc
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
-ini_set('display_startup_errors', true);
-
 require_once("../inc/util_basic.inc");
 require_once("../project/project.inc");
 require_once("../inc/countries.inc");
@@ -33,7 +29,7 @@ require_once("../inc/translation.inc");
 require_once("../inc/profile.inc");
 require_once("../inc/bootstrap.inc");
 
-// parse some stuff from config.xml (do it here for efficiency)
+// parse config.xml (do it here for efficiency)
 //
 $config = get_config();
 global $master_url;
@@ -41,28 +37,21 @@ $master_url = parse_config($config , "<master_url>");
 $recaptcha_public_key = parse_config($config, "<recaptcha_public_key>");
 $recaptcha_private_key = parse_config($config, "<recaptcha_private_key>");
 
-// the following default to on
-//
+// Set parameters to defaults if not defined in config.xml
+
 $x = parse_config($config, "<user_country>");
 define('USER_COUNTRY', ($x===null)?1:(int)$x);
 
 $x = parse_config($config, "<user_url>");
 define('USER_URL', ($x===null)?1:(int)$x);
 
-// don't allow /... at the end of URL
-//
-if (array_key_exists("PATH_INFO", $_SERVER)) {
-    die("bad URL");
-}
+// Set parameters to defaults if not defined in project.inc
 
-// define TIMEZONE in project.inc
-//
 if (defined('TIMEZONE')) {
     date_default_timezone_set(TIMEZONE);
 } else {
     date_default_timezone_set('UTC');
 }
-
 if (!defined('DISABLE_PROFILES')) {
     define('DISABLE_PROFILES', false);
 }
@@ -111,9 +100,14 @@ if (!defined('POST_MAX_LINKS')) {
 if (!defined('DARK_MODE')) {
     define('DARK_MODE', false);
 }
-// require validated email to post in forums, send PMs, or make a profile
 if (!defined('VALIDATE_EMAIL_TO_POST')) {
     define('VALIDATE_EMAIL_TO_POST', false);
+}
+
+// don't allow anything between .php and ? in URL
+//
+if (array_key_exists("PATH_INFO", $_SERVER)) {
+    die("bad URL");
 }
 
 // sleep this long on any login failure
@@ -414,46 +408,46 @@ function error_page($msg) {
     exit();
 }
 
-// takes argument in second and returns a human formatted time string
-// in the form D days + h Hours + m Min + s sec.
+// convert time interval in seconds to a string of the form
+// 'D days h hours m min s sec'.
 
 function time_diff($x, $res=3) {
+    $x = (int)$x;
     $days    = (int)($x/86400);
     $hours   = (int)(($x-$days*86400)/3600);
     $minutes = (int)(($x-$days*86400-$hours*3600)/60);
-    $seconds = (int)($x % 60);
+    $seconds = $x % 60;
 
-    $datestring = "";
+    $s = "";
     if ($days) {
-        $datestring .= "$days ".tra("days")." ";
+        $s .= "$days ".tra("days")." ";
     }
-    if ($res>0 && ($hours || strlen($datestring))) {
-        $datestring .= "$hours ".tra("hours")." ";
+    if ($res>0 && ($hours || strlen($s))) {
+        $s .= "$hours ".tra("hours")." ";
     }
-    if ($res>1 && ($minutes || strlen($datestring))) {
-        $datestring .= "$minutes ".tra("min")." ";
+    if ($res>1 && ($minutes || strlen($s))) {
+        $s .= "$minutes ".tra("min")." ";
     }
-    if ($res>2 && ($seconds)) {
-        $datestring .= "$seconds ".tra("sec")." ";
+    if ($res>2) {
+        $s .= "$seconds ".tra("sec")." ";
     }
-
-    return $datestring;
+    return $s;
 }
 
 
 function date_str($x) {
     if ($x == 0) return "---";
-    return gmdate('j M Y', $x);
+    return gmdate('j M Y', (int)$x);
 }
 
 function time_str($x) {
     if ($x == 0) return "---";
-    return gmdate('j M Y, G:i:s', $x) . " UTC";
+    return gmdate('j M Y, G:i:s', (int)$x) . " UTC";
 }
 
 function local_time_str($x) {
     if ($x == 0) return "---";
-    return date('j M Y, H:i T', $x);
+    return date('j M Y, H:i T', (int)$x);
 }
 
 function pretty_time_str($x) {
@@ -988,6 +982,7 @@ function get_app_types() {
     $t->cuda = false;
     $t->ati = false;
     $t->intel_gpu = false;
+    $t->apple_gpu = false;
     $t->count = 0;
     $avs = BoincAppVersion::enum("deprecated=0");
     foreach ($avs as $av) {
@@ -1006,6 +1001,9 @@ function get_app_types() {
         } else if (strstr($av->plan_class, "intel_gpu")) {
             $t->intel_gpu = true;
             $t->count++;
+        } else if (strstr($av->plan_class, "apple_gpu")) {
+            $t->apple_gpu = true;
+            $t->count++;
         } else {
             $t->cpu = true;
             $t->count++;
@@ -1019,11 +1017,33 @@ function get_app_types() {
 // "next_url" arguments (must be local, not full URLs)
 //
 function sanitize_local_url($x) {
+    if (!$x) return $x;
     $x = trim($x, "/");
     if (strstr($x, "/")) return "";
     if (strstr($x, "<")) return "";
     if (strstr($x, "\"")) return "";
     return $x;
+}
+
+function sanitize_user_url($x) {
+    // if protocol is given, must be http: or https:
+    $y = explode('//', $x);
+    switch (count($y)) {
+    case 1:
+        $z = $x;
+        break;
+    case 2:
+        $z = $y[1];
+        if (strtolower($y[0]) == 'http:') break;
+        if (strtolower($y[0]) == 'https:') break;
+        return '';
+    default: return '';
+    }
+    // everything else must be alphanumeric, or -_/.#?&=
+    if (preg_match('/^[-_.\/#?&=a-zA-Z0-9]*$/', $z)) {
+        return $x;
+    }
+    return '';
 }
 
 // strip HTML tags
@@ -1034,13 +1054,10 @@ function sanitize_tags($x) {
 }
 
 function sanitize_numeric($x) {
-    if (is_numeric($x)) {
-        return $x;
-    } else if (trim($x) == '' ) {
+    if (!$x || !is_numeric($x)) {
         return '';
-    } else {
-        return "not numeric";
     }
+    return $x;
 }
 
 function sanitize_email($x) {

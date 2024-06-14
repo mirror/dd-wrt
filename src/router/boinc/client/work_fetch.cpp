@@ -456,6 +456,9 @@ void WORK_FETCH::copy_requests() {
         case PROC_TYPE_INTEL_GPU:
             rsc_work_fetch[i].copy_request(coprocs.intel_gpu);
             break;
+        case PROC_TYPE_APPLE_GPU:
+            rsc_work_fetch[i].copy_request(coprocs.apple_gpu);
+            break;
         default:
             rsc_work_fetch[i].copy_request(coprocs.coprocs[i]);
             break;
@@ -736,11 +739,13 @@ void WORK_FETCH::setup() {
 PROJECT* WORK_FETCH::choose_project() {
     PROJECT* p;
 
-    if (log_flags.work_fetch_debug) {
-        msg_printf(0, MSG_INFO, "choose_project(): %f", gstate.now);
-    }
     p = non_cpu_intensive_project_needing_work();
-    if (p) return p;
+    if (p) {
+        if (log_flags.work_fetch_debug) {
+            msg_printf(p, MSG_INFO, "[work_fetch] fetching work for NCI project");
+        }
+        return p;
+    }
 
     setup();
 
@@ -1287,7 +1292,7 @@ const char* project_reason_string(PROJECT* p, char* buf, int len) {
         if (coprocs.n_rsc == 1) {
             snprintf(buf, len,
                 "don't need (%s)",
-                rsc_reason_string(rsc_work_fetch[0].dont_fetch_reason)
+                rsc_reason_string(p->rsc_pwf[0].rsc_project_reason)
             );
         } else {
             string x;
@@ -1297,7 +1302,7 @@ const char* project_reason_string(PROJECT* p, char* buf, int len) {
                 snprintf(buf2, sizeof(buf2),
                     "%s: %s",
                     rsc_name_long(i),
-                    rsc_reason_string(rsc_work_fetch[i].dont_fetch_reason)
+                    rsc_reason_string(p->rsc_pwf[i].rsc_project_reason)
                 );
                 x += buf2;
                 if (i < coprocs.n_rsc-1) {

@@ -23,7 +23,7 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron:  '0 0 * * 0'
+    - cron:  '0 0 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -47,7 +47,7 @@ jobs:
           snap_file: boinc_amd64.snap
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
 
     - name: Install dependencies
       run: |
@@ -66,7 +66,7 @@ jobs:
 
     - name: Configure docker qemu
       if: success()
-      uses: docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3
 
     - name: Build boinc snap
       if: success()
@@ -115,7 +115,7 @@ jobs:
 
     - name: Upload logs on failure
       if: ${{ failure() }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
       with:
         name: snap_logs_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}
         path: deploy/logs.7z
@@ -125,7 +125,7 @@ jobs:
       run: python ./deploy/prepare_deployment.py linux_snap
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
       if: success()
       with:
         name: linux_snap_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}

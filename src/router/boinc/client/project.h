@@ -168,8 +168,8 @@ struct PROJECT : PROJ_AM {
         // app_versions.xml file found in project dir;
         // use those apps rather then getting from server
     bool non_cpu_intensive;
-        // All this project's apps are non-CPU-intensive.
-        // Apps can also be individually marked as NCI
+        // The project has asserted (in sched reply) that
+        // all its apps are non-CPU-intensive.
     bool use_symlinks;
     bool report_results_immediately;
     bool sched_req_no_work[MAX_RSC];
@@ -202,6 +202,8 @@ struct PROJECT : PROJ_AM {
     std::vector<FILE_REF> user_files;
     std::vector<FILE_REF> project_files;
         // files not specific to apps or work - e.g. icons
+    bool app_test;
+        // this is the project created by --app_test
 
     ///////////////// member functions /////////////////
 

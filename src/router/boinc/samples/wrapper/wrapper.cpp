@@ -16,7 +16,7 @@
 // along with BOINC.  If not, see <http://www.gnu.org/licenses/>.
 
 // BOINC wrapper - lets you use non-BOINC apps with BOINC
-// See https://boinc.berkeley.edu/trac/wiki/WrapperApp
+// See https://github.com/BOINC/boinc/wiki/WrapperApp
 //
 // cmdline options:
 // --device N       macro-substitute N for $GPU_DEVICE_NUM
@@ -26,6 +26,9 @@
 // --trickle X      send a trickle-up message reporting runtime every X sec
 //                  of runtime (use this for credit granting
 //                  if your app does its own job management)
+// --use_tstp       use SIGTSTP instead of SIGSTOP to suspend children
+//                  (Unix only).  SIGTSTP can be caught.
+//                  Use this if the wrapped program is itself a wrapper.
 //
 // Handles:
 // - suspend/resume/quit/abort
@@ -75,7 +78,6 @@
 #include "app_ipc.h"
 #include "graphics2.h"
 #include "boinc_zip.h"
-#include "diagnostics.h"
 #include "error_numbers.h"
 #include "filesys.h"
 #include "parse.h"
@@ -89,6 +91,8 @@
 
 using std::vector;
 using std::string;
+
+bool use_tstp = false;
 
 #ifdef DEBUG
 inline void debug_msg(const char* x) {
@@ -997,7 +1001,7 @@ void TASK::kill() {
     kill_descendants(pid);
 #endif
 }
-
+#ifdef _WIN32
 void TASK::stop() {
     if (multi_process) {
         suspend_or_resume_descendants(false);
@@ -1006,6 +1010,17 @@ void TASK::stop() {
     }
     suspended = true;
 }
+#else
+void TASK::stop() {
+    if (multi_process) {
+        suspend_or_resume_descendants(false, use_tstp);
+    }
+    else {
+        suspend_or_resume_process(pid, false, use_tstp);
+    }
+    suspended = true;
+}
+#endif
 
 void TASK::resume() {
     if (multi_process) {
@@ -1161,6 +1176,19 @@ void check_executables() {
     check_execs(daemons);
 }
 
+void usage() {
+    fprintf(stderr,
+        "Options:\n"
+        "   --nthreads N\n"
+        "   --device N\n"
+        "   --sporadic\n"
+        "   --trickle X\n"
+        "   --version\n"
+        "   --use_tstp\n"
+    );
+    boinc_finish(EXIT_INIT_FAILURE);
+}
+
 int main(int argc, char** argv) {
     BOINC_OPTIONS options;
     int retval, ntasks_completed;
@@ -1169,6 +1197,7 @@ int main(int argc, char** argv) {
     double checkpoint_cpu_time;
         // total CPU time at last checkpoint
     char buf[256];
+    bool is_sporadic = false;
 
     // Log banner
     //
@@ -1186,6 +1215,8 @@ int main(int argc, char** argv) {
             nthreads = atoi(argv[++j]);
         } else if (!strcmp(argv[j], "--device")) {
             gpu_device_num = atoi(argv[++j]);
+        } else if (!strcmp(argv[j], "--sporadic")) {
+            is_sporadic = true;
         } else if (!strcmp(argv[j], "--trickle")) {
             trickle_period = atof(argv[++j]);
 #if !(defined(_WIN32) || defined(__APPLE__))
@@ -1193,8 +1224,12 @@ int main(int argc, char** argv) {
             fprintf(stderr, "%s\n", SVN_VERSION);
             boinc_finish(0);
 #endif
+        } else if (!strcmp(argv[j], "--use_tstp")) {
+            use_tstp = true;
+        } else {
+            fprintf(stderr, "Unrecognized option %s\n", argv[j]);
+            usage();
         }
-
     }
 
     retval = parse_job_file();
@@ -1227,14 +1262,6 @@ int main(int argc, char** argv) {
     options.handle_process_control = true;
 
     boinc_init_options(&options);
-    fprintf(stderr,
-        "%s wrapper (%d.%d.%d): starting\n",
-        boinc_msg_prefix(buf, sizeof(buf)),
-        BOINC_MAJOR_VERSION,
-        BOINC_MINOR_VERSION,
-        WRAPPER_RELEASE
-    );
-
     boinc_get_init_data(aid);
 
 #ifdef CHECK_EXECUTABLES
@@ -1253,6 +1280,14 @@ int main(int argc, char** argv) {
         total_weight += tasks[i].weight;
         // need to substitute macros after boinc_init_options() and boinc_get_init_data()
         tasks[i].substitute_macros();
+    }
+
+    if (is_sporadic) {
+        retval = boinc_sporadic_dir(".");
+        if (retval) {
+            fprintf(stderr, "can't create sporadic files\n");
+            boinc_finish(retval);
+        }
     }
 
     retval = start_daemons(argc, argv);

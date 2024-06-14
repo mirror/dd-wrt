@@ -244,6 +244,11 @@ struct CLIENT_STATE {
     PROJECT_LIST project_list;
     void process_autologin(bool first);
 
+// --------------- app_test.cpp:
+    bool app_test;
+    string app_test_file;
+    void app_test_init();
+
 // --------------- current_version.cpp:
     string newer_version;
     string client_version_check_url;
@@ -454,6 +459,11 @@ struct CLIENT_STATE {
     PROJECT* find_project_with_overdue_results(bool network_suspend_soon);
     bool had_or_requested_work;
     bool scheduler_rpc_poll();
+
+// --------------- cs_sporadic.cpp:
+    bool have_sporadic_app;
+    void sporadic_poll();
+    void sporadic_init();
 
 // --------------- cs_statefile.cpp:
     void set_client_state_dirty(const char*);

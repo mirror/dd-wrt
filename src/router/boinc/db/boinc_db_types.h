@@ -210,6 +210,7 @@ struct USER {
         // the "external CPID" that  gets exported to stats sites
         // is MD5(cpid, email)
     char passwd_hash[256];
+        // MD5(password, email_addr)
     bool email_validated;           // deprecated
     int donated;
     char login_token[32];
@@ -366,7 +367,7 @@ struct HOST {
     // but not stored in the DB
     // TODO: move this stuff to a derived class HOST_SCHED
     //
-    char p_features[1024];
+    char p_features[P_FEATURES_SIZE];
     char virtualbox_version[256];
     bool p_vm_extensions_disabled;
     int num_opencl_cpu_platforms;
@@ -581,7 +582,8 @@ struct CREDITED_JOB {
 #define ANON_PLATFORM_CPU     -2
 #define ANON_PLATFORM_NVIDIA  -3
 #define ANON_PLATFORM_ATI     -4
-#define ANON_PLATFORM_INTEL   -5
+#define ANON_PLATFORM_INTEL_GPU   -5
+#define ANON_PLATFORM_APPLE_GPU   -6
 
 struct RESULT {
     DB_ID_TYPE id;

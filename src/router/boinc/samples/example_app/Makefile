@@ -56,7 +56,7 @@ ifdef BUILD_WITH_VCPKG
     -L$(VCPKG_DIR)/lib
 
   LIBUI = -lX11 -lXmu -lXrandr -lXxf86vm -lXi
-  LIBFTGL = -lftgl -lfreetype -lpng -lbz2 -lbrotlidec-static -lbrotlienc-static -lbrotlicommon-static -lz
+  LIBFTGL = -lftgl -lfreetype -lpng -lbz2 -lbrotlidec -lbrotlienc -lbrotlicommon -lz
 endif
 
 ifdef BUILD_WITH_MINGW
@@ -64,7 +64,7 @@ ifdef BUILD_WITH_MINGW
   LIBGLU = -lglu32
   LIBGL= -lopengl32
   LIBUI = -lgdi32 -lwinmm
-  LIBFTGL = -lftgl -lfreetype -lpng -lbz2 -lbrotlidec-static -lbrotlienc-static -lbrotlicommon-static -lz
+  LIBFTGL = -lftgl -lfreetype -lpng -lbz2 -lbrotlidec -lbrotlienc -lbrotlicommon -lz
 endif
 
 PROGS = uc2 ucn
@@ -83,7 +83,7 @@ all: $(PROGS)
 gui: $(GUI_PROGS)
 
 libstdc++.a:
-	ln -s `$(CXX) -print-file-name=libstdc++.a`
+	ln -s `$(CXX) $(CXXFLAGS) -print-file-name=libstdc++.a`
 
 ttfont.cpp:
 	ln -s ../../api/ttfont.cpp .
@@ -108,16 +108,16 @@ ucn: ucn.o $(MAKEFILE_STDLIB) $(BOINC_API_DIR)/libboinc_api.a $(BOINC_LIB_DIR)/l
 	-lboinc_api -lboinc $(MAKEFILE_LDFLAGS) \
 	$(STDCPPTC)
 
-uc2_graphics: uc2_graphics.o ttfont.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2_graphics uc2_graphics.o ttfont.o libstdc++.a -pthread \
+uc2_graphics: uc2_graphics.o ttfont.o $(MAKEFILE_STDLIB) $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o uc2_graphics uc2_graphics.o ttfont.o $(MAKEFILE_LDFLAGS) \
 	$(BOINC_API_DIR)/libboinc_graphics2.a \
 	$(BOINC_API_DIR)/libboinc_api.a \
 	$(BOINC_LIB_DIR)/libboinc.a \
     $(LIBGLUT) $(LIBGLU) $(LIBJPEG) \
     $(LIBFTGL) $(LIBGL) $(LIBUI) -lm
 
-slide_show: slide_show.o libstdc++.a $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
-	$(CXX) $(CXXFLAGS) -o slide_show slide_show.o libstdc++.a -pthread \
+slide_show: slide_show.o $(MAKEFILE_STDLIB) $(BOINC_LIB_DIR)/libboinc.a $(BOINC_API_DIR)/libboinc_graphics2.a
+	$(CXX) $(CXXFLAGS) -o slide_show slide_show.o $(MAKEFILE_LDFLAGS) \
 	$(MINGW_ZIP_FIX) \
 	$(BOINC_API_DIR)/libboinc_graphics2.a \
 	$(BOINC_API_DIR)/libboinc_api.a \

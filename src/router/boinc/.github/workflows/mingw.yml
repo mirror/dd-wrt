@@ -23,7 +23,7 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron:  '0 0 * * 0'
+    - cron:  '0 0 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -43,7 +43,7 @@ jobs:
         type: [libs-mingw, apps-mingw, apps-mingw-vcpkg, libs-mingw-cmake]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
 
       - name: Check if build is running from origin repo
         if: ${{ success() && env.AWS_ACCESS_KEY_ID != 0 && env.AWS_SECRET_ACCESS_KEY != 0 }}
@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload logs on failure
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
           name: mingw_logs_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}
           path: deploy/logs.7z
@@ -124,7 +124,7 @@ jobs:
         run: python ./deploy/prepare_deployment.py win_${{ matrix.type }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         if: ${{! contains(matrix.type, 'libs')}}
         with:
           name: win_${{ matrix.type }}_${{ github.event.pull_request.head.sha }}

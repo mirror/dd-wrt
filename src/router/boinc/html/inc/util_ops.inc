@@ -18,13 +18,11 @@
 
 // utility functions for admin web pages
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
-ini_set('display_startup_errors', true);
-
 require_once("../inc/db_ops.inc");
 require_once("../inc/util.inc");
 require_once("../project/project.inc");
+
+display_errors();
 
 function admin_page_head($title) {
     echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">";
@@ -83,7 +81,7 @@ function print_text_field($text,$name,$value) {
 }
 
 function row($x, $y) {
-    echo "<tr><td valign=\"top\" align=\"right\">$x</td>\n<td>$y</td>\n</tr>\n";
+    echo "<tr><td width=30% valign=\"top\" align=\"right\">$x &nbsp;&nbsp; </td>\n<td>$y</td>\n</tr>\n";
 }
 
 function c_row2($color, $x, $y) {
@@ -284,8 +282,10 @@ function app_version_desc($avid) {
         return "Anonymous platform: NVIDIA GPU";
     case ANON_PLATFORM_ATI:
         return "Anonymous platform: AMD GPU";
-    case ANON_PLATFORM_INTEL:
+    case ANON_PLATFORM_INTEL_GPU:
         return "Anonymous platform: Intel GPU";
+    case ANON_PLATFORM_APPLE_GPU:
+        return "Anonymous platform: Apple GPU";
     }
     if ($avid <= 0) {
         return "unknown: $avid";

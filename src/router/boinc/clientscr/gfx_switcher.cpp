@@ -1,6 +1,6 @@
 // This file is part of BOINC.
 // http://boinc.berkeley.edu
-// Copyright (C) 2022 University of California
+// Copyright (C) 2024 University of California
 //
 // BOINC is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License
@@ -18,9 +18,9 @@
 // gfx_switcher.C
 //
 // Used by screensaver to:
-//  - launch graphics application at given slot number as user & group boinc_project
-//  - launch default graphics application as user & group boinc_project
-//  - kill graphics application with given process ID as user & group boinc_project
+//  - launch graphics application at given slot number
+//  - launch default graphics application
+//  - kill graphics application with given process ID
 //
 
 // Special logic used only under OS 10.15 Catalina and later:
@@ -35,11 +35,11 @@
 // app. This script then launches gfx_switcher, which uses fork and execv to
 // launch the project graphics app. gfx_switcher writes the graphics app's
 // process ID to shared memory, to be read by the Screensaver Coordinator.
-// gfx_switcher waits for the graphics app to exit and notifies then notifies
-// the Screensaver Coordinator by writing 0 to the shared memory.
+// gfx_switcher waits for the graphics app to exit and then notifies the
+// Screensaver Coordinator by writing 0 to the shared memory.
 //
 // This Rube Goldberg process is necessary due to limitations on screensavers
-// introduced in OS 10.15 Catalina.
+// introduced in OS 10.15 Catalina and OS 14.0 Sonoma.
 //
 
 
@@ -82,9 +82,17 @@ static void strip_cr(char *buf);
 
 void * MonitorScreenSaverEngine(void* param);
 
+// struct ss_shmem_data must be kept in sync in these files:
+// screensaver.cpp
+// gfx_switcher.cpp
+// gfx_cleanup.mm
+// graphics2_unix.cpp
 struct ss_shmem_data {
     pid_t gfx_pid;
     int gfx_slot;
+    int major_version;
+    int minor_version;
+    int release;
 };
 
 static struct ss_shmem_data* ss_shmem = NULL;
@@ -106,7 +114,7 @@ int main(int argc, char** argv) {
 
     CFStringRef cf_gUserName = SCDynamicStoreCopyConsoleUser(NULL, NULL, NULL);
     CFStringGetCString(cf_gUserName, user_name, sizeof(user_name), kCFStringEncodingUTF8);
-//    strlcpy(user_name, getlogin(), sizeof(user_name));
+//    strlcpy(user_name, getenv("USER"), sizeof(user_name));
     strlcpy(group_name, "boinc_project", sizeof(group_name));
 
     // Under fast user switching, the BOINC client may be running under a
@@ -222,6 +230,9 @@ int main(int argc, char** argv) {
             pthread_cancel(monitorScreenSaverEngineThread);
             if (ss_shmem != 0) {
                 ss_shmem->gfx_pid = 0;
+                ss_shmem->major_version = 0;
+                ss_shmem->minor_version = 0;
+                ss_shmem->release = 0;
             }
             return 0;
         }
@@ -287,6 +298,9 @@ int main(int argc, char** argv) {
             pthread_cancel(monitorScreenSaverEngineThread);
             if (ss_shmem != 0) {
                 ss_shmem ->gfx_pid = 0;
+                ss_shmem->major_version = 0;
+                ss_shmem->minor_version = 0;
+                ss_shmem->release = 0;
             }
             return 0;
         }
@@ -318,6 +332,10 @@ void * MonitorScreenSaverEngine(void* param) {
 #if VERBOSE           // For debugging only
         print_to_log_file("MonitorScreenSaverEngine: ScreenSaverEngine_Pid=%d", ScreenSaverEngine_Pid);
 #endif
+        if (ScreenSaverEngine_Pid == 0) {
+            // legacyScreenSaver name under MacOS 14 Sonoma
+            ScreenSaverEngine_Pid = getPidIfRunning("com.apple.ScreenSaver.Engine.legacyScreenSaver");
+        }
         if (ScreenSaverEngine_Pid == 0) {
 #ifdef __x86_64__
             ScreenSaverEngine_Pid = getPidIfRunning("com.apple.ScreenSaver.Engine.legacyScreenSaver.x86_64");

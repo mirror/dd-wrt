@@ -22,6 +22,7 @@
 
 #include "util.h"
 #include "coproc.h"
+#include "hostinfo.h"
 
 #include "sched_config.h"
 #include "sched_customize.h"
@@ -78,6 +79,18 @@ static double os_version_num(HOST h) {
     // could not determine numerical OS version
     //
     return 0;
+}
+
+// if os_version has [...|libc 2.27 ...], return 227.  else 0
+//
+static int libc_version(HOST &h) {
+    char *p = strstr(h.os_version, "|libc ");
+    if (!p) return 0;
+    p += strlen("|libc ");
+    int maj, min;
+    int n = sscanf(p, "%d.%d", &maj, &min);
+    if (n != 2) return 0;
+    return maj*100+min;
 }
 
 // parse version# from "(Android 4.3.1)" or "(Android 4.3)" or "(Android 4)"
@@ -257,7 +270,7 @@ bool PLAN_CLASS_SPEC::check(
     // so we can look for them with strstr()
     //
     if (!cpu_features.empty()) {
-        char buf[8192], buf2[512];
+        char buf[P_FEATURES_SIZE], buf2[512];
         sprintf(buf, " %s ", sreq.host.p_features);
         char* p = strrchr(sreq.host.p_model, '[');
         if (p) {
@@ -377,6 +390,21 @@ bool PLAN_CLASS_SPEC::check(
                 log_messages.printf(MSG_NORMAL,
                     "[version] plan_class_spec: Android version '%s' too high (%d / %d)\n",
                     sreq.host.os_version, host_android_version, max_android_version
+                );
+            }
+            return false;
+        }
+    }
+
+    // libc version (linux)
+    //
+    if (min_libc_version) {
+        int v = libc_version(sreq.host);
+        if (v < min_libc_version) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: libc version too low (%d < %d)\n",
+                    v, min_libc_version
                 );
             }
             return false;
@@ -755,6 +783,33 @@ bool PLAN_CLASS_SPEC::check(
             log_messages.printf(MSG_NORMAL, "%s\n", msg.c_str());
         }
 
+    // Apple GPU
+
+    } else if (!strcmp(gpu_type, "apple_cpu")) {
+        COPROC& cp = sreq.coprocs.apple_gpu;
+        cpp = &cp;
+
+        if (!cp.count) {
+            if (config.debug_version_select) {
+                log_messages.printf(MSG_NORMAL,
+                    "[version] plan_class_spec: No Apple GPUs found\n"
+                );
+            }
+            return false;
+        }
+        if (min_gpu_ram_mb) {
+            gpu_requirements[PROC_TYPE_APPLE_GPU].update(0, min_gpu_ram_mb * MEGA);
+        }
+        if (cp.bad_gpu_peak_flops("Apple GPU", msg)) {
+            log_messages.printf(MSG_NORMAL, "%s\n", msg.c_str());
+        }
+
+        if (min_metal_support) {
+            if (sreq.coprocs.apple_gpu.metal_support < min_metal_support) {
+                return false;
+            }
+        }
+
     // custom GPU type
     //
     } else if (strlen(gpu_type)) {
@@ -916,8 +971,8 @@ bool PLAN_CLASS_SPEC::check(
         } else if (strstr(gpu_type, "intel")==gpu_type) {
             hu.proc_type = PROC_TYPE_INTEL_GPU;
             hu.gpu_usage = gpu_usage;
-        } else if (!strcmp(gpu_type, "miner_asic")) {
-            hu.proc_type = PROC_TYPE_MINER_ASIC;
+        } else if (strstr(gpu_type, "apple_gpu")==gpu_type) {
+            hu.proc_type = PROC_TYPE_APPLE_GPU;
             hu.gpu_usage = gpu_usage;
         } else {
             if (config.debug_version_select) {
@@ -1099,6 +1154,7 @@ int PLAN_CLASS_SPEC::parse(XML_PARSER& xp) {
         if (xp.parse_double("max_os_version", max_os_version)) continue;
         if (xp.parse_int("min_android_version", min_android_version)) continue;
         if (xp.parse_int("max_android_version", max_android_version)) continue;
+        if (xp.parse_int("min_libc_version", min_libc_version)) continue;
         if (xp.parse_str("project_prefs_tag", project_prefs_tag, sizeof(project_prefs_tag))) continue;
         if (xp.parse_str("project_prefs_regex", buf, sizeof(buf))) {
             if (regcomp(&(project_prefs_regex), buf, REG_EXTENDED|REG_NOSUB) ) {
@@ -1144,6 +1200,8 @@ int PLAN_CLASS_SPEC::parse(XML_PARSER& xp) {
         if (xp.parse_int("min_opencl_driver_revision", min_opencl_driver_revision)) continue;
         if (xp.parse_int("max_opencl_driver_revision", max_opencl_driver_revision)) continue;
         if (xp.parse_bool("double_precision_fp", double_precision_fp)) continue;
+
+        if (xp.parse_int("min_metal_support", min_metal_support)) continue;
 
         if (xp.parse_int("min_vbox_version", min_vbox_version)) continue;
         if (xp.parse_int("max_vbox_version", max_vbox_version)) continue;
@@ -1201,6 +1259,7 @@ PLAN_CLASS_SPEC::PLAN_CLASS_SPEC() {
     max_os_version = 0;
     min_android_version = 0;
     max_android_version = 0;
+    min_libc_version = 0;
     strcpy(project_prefs_tag, "");
     have_project_prefs_regex = false;
     project_prefs_default_true = false;

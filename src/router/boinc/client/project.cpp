@@ -126,6 +126,7 @@ void PROJECT::init() {
     app_configs.clear();
     upload_backoff.is_upload = true;
     download_backoff.is_upload = false;
+    app_test = false;
 
 #ifdef SIM
     idle_time = 0;
@@ -603,9 +604,9 @@ void PROJECT::copy_state_fields(PROJECT& p) {
     pwf = p.pwf;
     send_full_workload = p.send_full_workload;
     dont_use_dcf = p.dont_use_dcf;
+    non_cpu_intensive = p.non_cpu_intensive;
     send_time_stats_log = p.send_time_stats_log;
     send_job_log = p.send_job_log;
-    non_cpu_intensive = p.non_cpu_intensive;
     suspended_via_gui = p.suspended_via_gui;
     dont_request_more_work = p.dont_request_more_work;
     detach_when_done = p.detach_when_done;

@@ -1,6 +1,6 @@
 name: boinc
 base: core22
-version: "7.24.1"
+version: "8.0.2"
 summary: BOINC lets you help cutting-edge science research using your computer.
 description: |
   BOINC lets you help cutting-edge science research using your computer. The BOINC app, running on your computer, downloads scientific computing jobs and runs them invisibly in the background. It's easy and safe.
@@ -44,6 +44,7 @@ slots:
 parts:
   boinc:
     build-packages:
+    - autopoint
     - libftgl-dev
     - freeglut3-dev
     - libnotify-dev
@@ -104,8 +105,7 @@ parts:
 
       # aws
       ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
-      sudo add-apt-repository ppa:lizthegrey/misc
-      DEBIAN_FRONTEND=noninteractive sudo apt install awscli -y
+      snap install aws-cli --classic
       aws --version
 
       # ninja
@@ -113,6 +113,8 @@ parts:
       pip install -U --user pip
       pip install --user ninja
       ninja --version
+
+      pip install --user jinja2
 
       export CFLAGS=-w
       export CMAKE_C_FLAGS=-w

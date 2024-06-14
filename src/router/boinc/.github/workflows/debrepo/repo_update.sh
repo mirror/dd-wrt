@@ -2,7 +2,7 @@
 
 # This file is part of BOINC.
 # http://boinc.berkeley.edu
-# Copyright (C) 2023 University of California
+# Copyright (C) 2024 University of California
 #
 # BOINC is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License
@@ -29,7 +29,7 @@ function exit_on_fail() {
 
 function exit_usage() {
 	printf "Fail: $1\n"
-	printf "Usage: repo_update.sh <allow-create> <repo-url> <incoming-dir> [osversion(jammy,focal,buster,bullseye)] [release-type(stable,alpha)] [release-key]\n"
+	printf "Usage: repo_update.sh <allow-create> <repo-url> <incoming-dir> [osversion(jammy,focal,buster,bullseye)] [release-type(stable,alpha,nightly)] [release-key]\n"
 	exit 1
 }
 
@@ -57,6 +57,8 @@ if [[ ! "$5" == "" ]]; then
 	"stable") TYPE="stable"
 			  ;;
 	"alpha") TYPE="alpha"
+			  ;;
+	"nightly") TYPE="nightly"
 			  ;;
 	"*")  exit_usage "Unrecognized repo type specified: $5"
 			  ;;

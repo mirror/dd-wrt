@@ -314,6 +314,8 @@ int PROJECT::parse(XML_PARSER& xp) {
         if (xp.parse_double("ati_backoff_interval", rsc_desc_ati.backoff_interval)) continue;
         if (xp.parse_double("intel_gpu_backoff_time", rsc_desc_intel_gpu.backoff_time)) continue;
         if (xp.parse_double("intel_gpu_backoff_interval", rsc_desc_intel_gpu.backoff_interval)) continue;
+        if (xp.parse_double("apple_gpu_backoff_time", rsc_desc_apple_gpu.backoff_time)) continue;
+        if (xp.parse_double("apple_gpu_backoff_interval", rsc_desc_apple_gpu.backoff_interval)) continue;
         if (xp.parse_double("last_rpc_time", last_rpc_time)) continue;
 
         // deprecated elements
@@ -335,6 +337,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                         rsc_desc_ati.backoff_time = value;
                     } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                         rsc_desc_intel_gpu.backoff_time = value;
+                    } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                        rsc_desc_apple_gpu.backoff_time = value;
                     }
                     break;
                 }
@@ -355,6 +359,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                         rsc_desc_ati.backoff_interval = value;
                     } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                         rsc_desc_intel_gpu.backoff_interval = value;
+                    } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                        rsc_desc_apple_gpu.backoff_interval = value;
                     }
                     break;
                 }
@@ -372,6 +378,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                 rsc_desc_ati.no_rsc_ams = true;
             } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                 rsc_desc_intel_gpu.no_rsc_ams = true;
+            } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                rsc_desc_apple_gpu.no_rsc_ams = true;
             }
             continue;
         }
@@ -384,6 +392,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                 rsc_desc_ati.no_rsc_apps = true;
             } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                 rsc_desc_intel_gpu.no_rsc_apps = true;
+            } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                rsc_desc_apple_gpu.no_rsc_apps = true;
             }
             continue;
         }
@@ -396,6 +406,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                 rsc_desc_ati.no_rsc_pref = true;
             } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                 rsc_desc_intel_gpu.no_rsc_pref = true;
+            } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                rsc_desc_apple_gpu.no_rsc_pref = true;
             }
             continue;
         }
@@ -408,6 +420,8 @@ int PROJECT::parse(XML_PARSER& xp) {
                 rsc_desc_ati.no_rsc_config = true;
             } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_INTEL_GPU))) {
                 rsc_desc_intel_gpu.no_rsc_config = true;
+            } else if (!strcmp(buf, proc_type_name_xml(PROC_TYPE_APPLE_GPU))) {
+                rsc_desc_apple_gpu.no_rsc_config = true;
             }
             continue;
         }
@@ -622,6 +636,7 @@ RESULT::RESULT() {
 }
 
 int RESULT::parse(XML_PARSER& xp) {
+    int i;
     while (!xp.get_tag()) {
         if (xp.match_tag("/result")) {
             // if CPU time is nonzero but elapsed time is zero,
@@ -660,7 +675,10 @@ int RESULT::parse(XML_PARSER& xp) {
         if (xp.parse_double("final_cpu_time", final_cpu_time)) continue;
         if (xp.parse_double("final_elapsed_time", final_elapsed_time)) continue;
         if (xp.parse_int("state", state)) continue;
-        if (xp.parse_int("scheduler_state", scheduler_state)) continue;
+        if (xp.parse_int("scheduler_state", i)) {
+            scheduler_state = (SCHEDULER_STATE)i;
+            continue;
+        }
         if (xp.parse_int("exit_status", exit_status)) continue;
         if (xp.parse_int("signal", signal)) continue;
         if (xp.parse_int("active_task_state", active_task_state)) continue;
@@ -716,7 +734,7 @@ void RESULT::clear() {
     final_cpu_time = 0;
     final_elapsed_time = 0;
     state = 0;
-    scheduler_state = 0;
+    scheduler_state = CPU_SCHED_UNINITIALIZED;
     exit_status = 0;
     signal = 0;
     //stderr_out.clear();
