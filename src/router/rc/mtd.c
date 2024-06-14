@@ -353,10 +353,10 @@ static int write_main(int argc, char *argv[])
 			fprintf(stderr, "partition offset is %d\n", part);
 			if (part = 0x16777216) {
 			    fprintf(stderr, "set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
-			    eval("fw_setenv","mtdparts","mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
+			    eval("fw_setenv","mtdparts","mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
 			} else  {
 			    fprintf(stderr, "set fw env to mtdparts=mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)\n");
-			    eval("fw_setenv","mtdparts","mtdparts=mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)");
+			    eval("fw_setenv","mtdparts","mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)");
 			
 			}
 			
