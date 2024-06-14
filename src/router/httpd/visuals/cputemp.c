@@ -33,6 +33,20 @@ struct SENSORS {
 	int type;
 };
 static struct SENSORS *sensors = NULL;
+static int opencount = 0;
+
+static FILE *my_fopen(char *file, char *mode)
+{
+	FILE *fp = fopen(file, mode);
+	if (fp)
+		opencount++;
+	return fp;
+}
+static void my_fclose(FILE *fp)
+{
+	opencount--;
+	fclose(fp);
+}
 
 static void sensorreset(void)
 {
@@ -151,10 +165,10 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 			int scale = sensors[cnt].scale;
 			int sensor = -1;
 			if (sensors[cnt].path) {
-				FILE *fp = fopen(sensors[cnt].path, "rb");
+				FILE *fp = my_fopen(sensors[cnt].path, "rb");
 				if (fp) {
 					fscanf(fp, "%d", &sensor);
-					fclose(fp);
+					my_fclose(fp);
 				}
 			}
 			if (sensors[cnt].method)
@@ -185,12 +199,12 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 {
 	if (alreadyshowed(path))
 		return 1;
-	FILE *fp = fopen(path, "rb");
+	FILE *fp = my_fopen(path, "rb");
 	if (fp || method) {
 		int sensor;
 		if (fp) {
 			fscanf(fp, "%d", &sensor);
-			fclose(fp);
+			my_fclose(fp);
 		}
 		if (method)
 			sensor = method();
@@ -276,14 +290,14 @@ int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 	while (1) {
 		int tidx;
 		sprintf(path, "/sys/class/hwmon/hwmon%d/name", idx);
-		FILE *fp = fopen(path, "rb");
+		FILE *fp = my_fopen(path, "rb");
 		if (!fp) {
 			*ridx = -1;
 			return 0;
 		}
 		char name[64];
 		fscanf(fp, "%s", name);
-		fclose(fp);
+		my_fclose(fp);
 		if (acpi && !strncmp(name, "acpitz", 6)) {
 			snprintf(p, len, "/sys/class/hwmon/hwmon%d", idx);
 			*ridx = 0;
@@ -291,17 +305,17 @@ int getCoreTemp(char *p, size_t len, int *ridx, int acpi)
 		}
 		for (tidx = 0; tidx < 32; tidx++) {
 			sprintf(path, "/sys/class/hwmon/hwmon%d/temp%d_label", idx, tidx);
-			FILE *fp = fopen(path, "rb");
+			FILE *fp = my_fopen(path, "rb");
 			if (!fp)
 				continue;
 			fscanf(fp, "%s", name);
 			if (!strncmp(name, "Core", 4)) {
-				fclose(fp);
+				my_fclose(fp);
 				snprintf(p, len, "/sys/class/hwmon/hwmon%d", idx);
 				*ridx = tidx;
 				return 1;
 			}
-			fclose(fp);
+			my_fclose(fp);
 		}
 		idx++;
 	}
@@ -433,9 +447,9 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	present[1] = 1;
 #endif
 #ifdef HAVE_NORTHSTAR
-	fp = fopen("/proc/dmu/temperature", "rb");
+	fp = my_fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
-		fclose(fp);
+		my_fclose(fp);
 		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
 	}
 #endif
@@ -469,40 +483,40 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
 	path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input";
-	fp = fopen(path, "rb");
+	fp = my_fopen(path, "rb");
 	if (!fp) {
 		path = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input";
-		fp = fopen(path, "rb");
+		fp = my_fopen(path, "rb");
 	}
 #elif HAVE_LAGUNA
 	TEMP_MUL = 10;
 	path = "/sys/bus/i2c/devices/0-0029/temp0_input";
-	fp = fopen(path, "rb");
+	fp = my_fopen(path, "rb");
 #elif HAVE_UNIWIP
 	path = "/sys/bus/i2c/devices/0-0049/temp1_input";
-	fp = fopen(path, "rb");
+	fp = my_fopen(path, "rb");
 #elif HAVE_VENTANA
 	SYSTEMP_MUL = 10;
 	path = "/sys/class/hwmon/hwmon1/temp1_input";
-	fp = fopen(path, "rb");
+	fp = my_fopen(path, "rb");
 	if (!fp) {
 		path = "/sys/class/hwmon/hwmon0/temp1_input";
-		fp = fopen(path, "rb");
+		fp = my_fopen(path, "rb");
 	}
 	char *pathsys = "/sys/class/hwmon/hwmon0/temp0_input";
-	fpsys = fopen(pathsys, "rb");
+	fpsys = my_fopen(pathsys, "rb");
 #ifdef HAVE_NEWPORT
 	if (!fpsys) {
 		SYSTEMP_MUL = 1000;
 		pathsys = "/sys/class/hwmon/hwmon0/temp2_input";
-		fpsys = fopen(path, "rb");
+		fpsys = my_fopen(path, "rb");
 	}
 #endif
 
 #else
 #ifdef HAVE_X86
 
-	fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+	fp = my_fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
 		TEMP_MUL = 100;
 
@@ -527,25 +541,25 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		if (!hascore) {
 			if (!fp) {
 				path = "/sys/class/hwmon/hwmon0/temp1_input";
-				fp = fopen(path, "rb");
+				fp = my_fopen(path, "rb");
 			}
 			if (!fp) {
 				path = "/sys/class/hwmon/hwmon0/device/temp1_input";
-				fp = fopen(path, "rb");
+				fp = my_fopen(path, "rb");
 			}
 			if (!fp) {
 				path = "/sys/class/hwmon/hwmon0/temp2_input";
-				fp = fopen(path, "rb");
+				fp = my_fopen(path, "rb");
 			}
 			if (!fp) {
 				path = "/sys/class/hwmon/hwmon1/temp1_input";
-				fp = fopen(path, "rb");
+				fp = my_fopen(path, "rb");
 			}
 		}
 	}
 #else
 	path = "/sys/class/hwmon/hwmon0/temp1_input";
-	fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
+	fp = my_fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 #endif
 
@@ -562,17 +576,17 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 		int scan = 0;
 		for (scan = 0; scan < 20; scan++) {
 			sprintf(s_path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
-			fp2 = fopen(s_path, "rb");
+			fp2 = my_fopen(s_path, "rb");
 			if (fp2)
 				break;
 			sprintf(s_path, "/sys/class/ieee80211/phy%d/hwmon%d/temp1_input", i, scan);
-			fp2 = fopen(s_path, "rb");
+			fp2 = my_fopen(s_path, "rb");
 			if (fp2)
 				break;
 		}
 
 		if (fp2 != NULL) {
-			fclose(fp2);
+			my_fclose(fp2);
 			char name[64];
 			sprintf(name, "WLAN%d", i);
 			if (!checkhwmon(s_path))
@@ -584,11 +598,11 @@ exit_error:;
 
 #if !defined(HAVE_IPQ806X) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
 	if (fp != NULL) {
-		fclose(fp);
+		my_fclose(fp);
 		cpufound |= showsensor(wp, path, NULL, "CPU", TEMP_MUL, CELSIUS);
 	}
 	if (fpsys != NULL) {
-		fclose(fpsys);
+		my_fclose(fpsys);
 		cpufound |= showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, CELSIUS);
 	}
 	int a, b;
@@ -603,26 +617,26 @@ exit_error:;
 			sprintf(n, "%stemp%d_label", sysfs, b);
 			char p[64];
 			sprintf(p, "%stemp%d_input", sysfs, b);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				char sname[64];
 				fscanf(fp, "%s", sname);
-				fclose(fp);
+				my_fclose(fp);
 				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				continue;
 			}
 			sprintf(n, "%sname", sysfs);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				char sname[64];
 				fscanf(fp, "%s", sname);
-				fclose(fp);
+				my_fclose(fp);
 				sprintf(n, "%sdevice/model", sysfs);
-				fp = fopen(n, "rb");
+				fp = my_fopen(n, "rb");
 				if (fp) {
 					char dname[64];
 					fgets(dname, 63, fp);
-					fclose(fp);
+					my_fclose(fp);
 					sprintf(sname, "%s %s", dname, sname);
 					cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 
@@ -638,18 +652,18 @@ exit_error:;
 			char p[64] = { 0 };
 			char driver[64] = { 0 };
 			sprintf(n, "%sname", sysfs);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				fscanf(fp, "%s", driver);
-				fclose(fp);
+				my_fclose(fp);
 			}
 			sprintf(p, "%sin%d_input", sysfs, b);
 			sprintf(n, "%sin%d_label", sysfs, b);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				char sname[64];
 				fscanf(fp, "%s", sname);
-				fclose(fp);
+				my_fclose(fp);
 				sprintf(sname, "%s %s", driver, sname);
 				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
 			} else {
@@ -664,18 +678,18 @@ exit_error:;
 			char p[64] = { 0 };
 			char driver[64] = { 0 };
 			sprintf(n, "%sname", sysfs);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				fscanf(fp, "%s", driver);
-				fclose(fp);
+				my_fclose(fp);
 			}
 			sprintf(p, "%sfan%d_input", sysfs, b);
 			sprintf(n, "%sfan%d_label", sysfs, b);
-			fp = fopen(n, "rb");
+			fp = my_fopen(n, "rb");
 			if (fp) {
 				char sname[64];
 				fscanf(fp, "%s", sname);
-				fclose(fp);
+				my_fclose(fp);
 				sprintf(sname, "%s %s", driver, sname);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			} else {
@@ -687,6 +701,7 @@ exit_error:;
 	}
 #endif
 #endif
+//	fprintf(stderr, "open %d\n", opencount);
 	if (!cpufound) {
 		return 1;
 	}
