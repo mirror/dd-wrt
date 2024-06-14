@@ -526,8 +526,8 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 
 		if (has_ax(prefix)) {
 			if (!strcmp(netmode, "xacn-mixed") || //
-			    !strcmp(netmode, "ax-only ") || //
-			    !strcmp(netmode, "axg-only ") || //
+			    !strcmp(netmode, "ax-only") || //
+			    !strcmp(netmode, "axg-only") || //
 			    !strcmp(netmode, "mixed")) {
 				vht = "HE";
 			}
