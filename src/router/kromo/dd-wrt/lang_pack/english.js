@@ -3154,6 +3154,7 @@ wl_basic.mubf="Multi User Beamforming";
 wl_basic.atf="Airtime Fairness";
 wl_basic.fc="Frame Compression";
 wl_basic.shortgi="Short GI";
+wl_basic.twt_required="Target Wake Time Required";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
 wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
