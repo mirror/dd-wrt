@@ -427,5 +427,5 @@ kernel-relink:
 	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
-#	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 endif
