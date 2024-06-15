@@ -2297,10 +2297,14 @@ void mac80211_set_antennas(char *prefix, uint32_t tx_ant, uint32_t rx_ant)
 {
 	int maxrxchain = mac80211_get_antennas(prefix, 0, 1);
 	int maxtxchain = mac80211_get_antennas(prefix, 0, 0);
+	if (has_vht160_2by2(prefix) && (nvram_nmatch("160","%s_channelbw",prefix) || nvram_nmatch("8080","%s_channelbw",prefix) && tx_ant==0xf && rx_ant==0xf) {
+	    rx_ant = 0x3;
+	    tx_ant = 0x3;
+	}
 	if (maxrxchain > 15 && (maxrxchain & 0xf) == 0)
-	    maxrxchain <<= 4;
+	    rx_ant <<= 4;
 	if (maxtxchain > 15 && (maxtxchain & 0xf) == 0)
-	    maxtxchain <<= 4;
+	    tx_ant <<= 4;
 
 	int phy = get_ath9k_phy_ifname(prefix);
 	mac80211_init();
