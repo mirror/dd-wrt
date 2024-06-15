@@ -1575,33 +1575,29 @@ static void __print_eht_capa(int band,
 			printf("%s\t\tEHT bw=20 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
 			       pre, mcs[i],
 			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
-	}
+	} else {
+		if (he_phy_cap[0] & (BIT(2) << 8)) {
+			for (i = 0; i < 3; i++)
+				printf("%s\t\tEHT bw <= 80 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+				       pre, mcs[i + 1],
+				       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+		}
+		mcs_set += 3;
 
-	mcs_set += 4;
-	if (he_phy_cap[0] & (BIT(2) << 8)) {
-		for (i = 0; i < 3; i++)
-			printf("%s\t\tEHT bw <= 80 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
-			       pre, mcs[i + 1],
-			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+		if (he_phy_cap[0] & (BIT(3) << 8)) {
+			for (i = 0; i < 3; i++)
+				printf("%s\t\tEHT bw=160 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+				       pre, mcs[i + 1],
+				       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+		}
 
-	}
-
-	mcs_set += 3;
-	if (he_phy_cap[0] & (BIT(3) << 8)) {
-		for (i = 0; i < 3; i++)
-			printf("%s\t\tEHT bw=160 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
-			       pre, mcs[i + 1],
-			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
-
-	}
-
-	mcs_set += 3;
-	if (band == NL80211_BAND_6GHZ && (phy_cap[0] & BIT(1))) {
-		for (i = 0; i < 3; i++)
-			printf("%s\t\tEHT bw=320 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
-			       pre, mcs[i + 1],
-			       mcs_set[i] & 0xf, mcs_set[i] >> 4);
-
+		mcs_set += 3;
+		if (band == NL80211_BAND_6GHZ && (phy_cap[0] & BIT(1))) {
+			for (i = 0; i < 3; i++)
+				printf("%s\t\tEHT bw=320 MHz, max NSS for MCS %s: Rx=%u, Tx=%u\n",
+				       pre, mcs[i + 1],
+				       mcs_set[i] & 0xf, mcs_set[i] >> 4);
+		}
 	}
 
 	if (ppet && ppet_len && (phy_cap[1] & BIT(11))) {
