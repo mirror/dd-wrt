@@ -12,6 +12,7 @@ boinc-configure: zlib openssl curl
 	--disable-manager \
 	--enable-client \
 	--enable-libraries \
+	--enable-optimize \
 	--with-opencl=no \
 	--disable-boinczip \
 	--enable-install-headers \
@@ -31,6 +32,7 @@ boinc-configure: zlib openssl curl
 	--disable-manager \
 	--enable-client \
 	--enable-libraries \
+	--enable-optimize \
 	--disable-boinczip \
 	--with-opencl=no \
 	--enable-install-headers \
