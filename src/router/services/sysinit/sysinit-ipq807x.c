@@ -292,7 +292,7 @@ void patchvht160(char *file, int phynum)
 		//		s[68 / 4] |= 0x1000;
 		//		fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
 
-		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
+//		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
 		switch (phynum) {
 		case 0:
 			s[1040 / 4] |= 0x800;
@@ -307,7 +307,7 @@ void patchvht160(char *file, int phynum)
 			s[1376 / 4] |= 0x1000;
 			break;
 		}
-		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
+//		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
 		fwrite(mem, len, 1, fp);
