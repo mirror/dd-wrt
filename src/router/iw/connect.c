@@ -77,6 +77,9 @@ static int iw_conn(struct nl80211_state *state,
 	if (argc && strcmp(*argv, "key") != 0 && strcmp(*argv, "keys") != 0)
 		return 1;
 
+	if (!argc)
+		return 0;
+
 	argv++;
 	argc--;
 

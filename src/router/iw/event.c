@@ -942,7 +942,7 @@ static int print_event(struct nl_msg *msg, void *arg)
 
 			memset(buf, 0, 255);
 			strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
-			printf("[%s.%06lu]: ", buf, args->ts.tv_usec);
+			printf("[%s.%06lu]: ", buf, (unsigned long )args->ts.tv_usec);
 		} else {
 			printf("%llu.%06llu: ", usecs/1000000, usecs % 1000000);
 		}

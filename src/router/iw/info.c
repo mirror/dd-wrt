@@ -169,6 +169,124 @@ static void ext_feat_print(enum nl80211_ext_feature_index idx)
 	}
 }
 
+static void __print_ftm_capability(struct nlattr *ftm_capa)
+{
+#define PRINT_FTM_FLAG(T, NAME) \
+	do { \
+		if (T[NL80211_PMSR_FTM_CAPA_ATTR_##NAME]) \
+			printf("\t\t\t" #NAME "\n"); \
+	} while (0)
+
+#define PRINT_FTM_U8(T, NAME) \
+	do { \
+		if (T[NL80211_PMSR_FTM_CAPA_ATTR_##NAME]) \
+			printf("\t\t\t" #NAME ": %d\n", \
+				nla_get_u8(T[NL80211_PMSR_FTM_CAPA_ATTR_##NAME])); \
+	} while (0)
+
+	struct nlattr *tb[NL80211_PMSR_FTM_CAPA_ATTR_MAX + 1];
+	int ret;
+
+	printf("\t\tFTM (Fine time measurement or Flight time measurement)\n");
+
+	ret = nla_parse_nested(tb, NL80211_PMSR_FTM_CAPA_ATTR_MAX, ftm_capa,
+			       NULL);
+	if (ret)
+		return;
+
+	if (tb[NL80211_PMSR_FTM_CAPA_ATTR_PREAMBLES]) {
+#define PRINT_PREAMBLE(P, V) \
+	do { \
+		if (P & BIT(NL80211_PREAMBLE_##V)) \
+			printf(" " #V); \
+	} while (0)
+
+		uint32_t preambles =
+			nla_get_u32(tb[NL80211_PMSR_FTM_CAPA_ATTR_PREAMBLES]);
+		printf("\t\t\tPreambles:");
+
+		PRINT_PREAMBLE(preambles, LEGACY);
+		PRINT_PREAMBLE(preambles, HT);
+		PRINT_PREAMBLE(preambles, VHT);
+		PRINT_PREAMBLE(preambles, DMG);
+		printf("\n");
+#undef PRINT_PREAMBLE
+	}
+	if (tb[NL80211_PMSR_FTM_CAPA_ATTR_BANDWIDTHS]) {
+#define PRINT_BANDWIDTH(B, V) \
+	do { \
+		if (B & BIT(NL80211_CHAN_WIDTH_##V)) \
+			printf(" " #V); \
+	} while (0)
+
+		uint32_t bandwidth =
+			nla_get_u32(tb[NL80211_PMSR_FTM_CAPA_ATTR_BANDWIDTHS]);
+		printf("\t\t\tBandwidth:");
+		PRINT_BANDWIDTH(bandwidth, 20_NOHT);
+		PRINT_BANDWIDTH(bandwidth, 20);
+		PRINT_BANDWIDTH(bandwidth, 40);
+		PRINT_BANDWIDTH(bandwidth, 80);
+		PRINT_BANDWIDTH(bandwidth, 80P80);
+		PRINT_BANDWIDTH(bandwidth, 160);
+		PRINT_BANDWIDTH(bandwidth, 5);
+		PRINT_BANDWIDTH(bandwidth, 10);
+		PRINT_BANDWIDTH(bandwidth, 1);
+		PRINT_BANDWIDTH(bandwidth, 2);
+		PRINT_BANDWIDTH(bandwidth, 4);
+		PRINT_BANDWIDTH(bandwidth, 8);
+		PRINT_BANDWIDTH(bandwidth, 16);
+		PRINT_BANDWIDTH(bandwidth, 320);
+		printf("\n");
+#undef PRINT_BANDWIDTH
+	}
+	PRINT_FTM_U8(tb, MAX_BURSTS_EXPONENT);
+	PRINT_FTM_U8(tb, MAX_FTMS_PER_BURST);
+	PRINT_FTM_FLAG(tb, ASAP);
+	PRINT_FTM_FLAG(tb, NON_ASAP);
+	PRINT_FTM_FLAG(tb, REQ_LCI);
+	PRINT_FTM_FLAG(tb, REQ_CIVICLOC);
+	PRINT_FTM_FLAG(tb, TRIGGER_BASED);
+	PRINT_FTM_FLAG(tb, NON_TRIGGER_BASED);
+
+#undef PRINT_FTM_U8
+#undef PRINT_FTM_FLAG
+}
+
+static void print_pmsr_capabilities(struct nlattr *pmsr_capa)
+{
+	struct nlattr *tb[NL80211_PMSR_ATTR_MAX + 1];
+	struct nlattr *nla;
+	int size;
+	int ret;
+
+	printf("\tPeer measurement (PMSR)\n");
+	ret = nla_parse_nested(tb, NL80211_PMSR_ATTR_MAX, pmsr_capa, NULL);
+	if (ret) {
+		printf("\t\tMalformed PMSR\n");
+		return;
+	}
+
+	if (tb[NL80211_PMSR_ATTR_MAX_PEERS])
+		printf("\t\tMax peers: %d\n",
+		       nla_get_u32(tb[NL80211_PMSR_ATTR_MAX_PEERS]));
+	if (tb[NL80211_PMSR_ATTR_REPORT_AP_TSF])
+		printf("\t\tREPORT_AP_TSF\n");
+	if (tb[NL80211_PMSR_ATTR_RANDOMIZE_MAC_ADDR])
+		printf("\t\tRANDOMIZE_MAC_ADDR\n");
+
+	if (tb[NL80211_PMSR_ATTR_TYPE_CAPA]) {
+		nla_for_each_nested(nla, tb[NL80211_PMSR_ATTR_TYPE_CAPA], size) {
+			switch (nla_type(nla)) {
+			case NL80211_PMSR_TYPE_FTM:
+				__print_ftm_capability(nla);
+				break;
+			}
+		}
+	} else {
+		printf("\t\tPMSR type is missing\n");
+	}
+}
+
 static int print_phy_handler(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
@@ -746,6 +864,9 @@ broken_combination:
 			rule->max_rules, pat->max_patterns, pat->min_pattern_len,
 			pat->max_pattern_len, pat->max_pkt_offset, rule->max_delay);
 	}
+
+	if (tb_msg[NL80211_ATTR_PEER_MEASUREMENTS])
+		print_pmsr_capabilities(tb_msg[NL80211_ATTR_PEER_MEASUREMENTS]);
 
 	if (tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA])
 		printf("\tMaximum associated stations in AP mode: %u\n",

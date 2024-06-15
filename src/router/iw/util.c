@@ -492,6 +492,7 @@ enum nl80211_chan_width str_to_bw(const char *str)
 		{ .name = "80", .val = NL80211_CHAN_WIDTH_80, },
 		{ .name = "80+80", .val = NL80211_CHAN_WIDTH_80P80, },
 		{ .name = "160", .val = NL80211_CHAN_WIDTH_160, },
+		{ .name = "320", .val = NL80211_CHAN_WIDTH_320, },
 	};
 	unsigned int i;
 
@@ -604,7 +605,7 @@ static int parse_freqs(struct chandef *chandef, int argc, char **argv,
  *   <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]
  *
  * And if frequency is set:
- *   <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]
+ *   <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz|320MHz]
  *   <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
  *
  * If the mode/channel width is not given the NOHT is assumed.
@@ -1725,6 +1726,8 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 				6195, 6995 };
 	unsigned int bw160[] = { 5180, 5500, 5955, 6115, 6275, 6435,
 				  6595, 6755, 6915 };
+	/* based on 11be D2 E.1 Country information and operating classes */
+	unsigned int bw320[] = {5955, 6115, 6275, 6435, 6595, 6755};
 
 	switch (chanmode->width) {
 	case NL80211_CHAN_WIDTH_80:
@@ -1751,6 +1754,18 @@ int get_cf1(const struct chanmode *chanmode, unsigned long freq)
 			break;
 
 		cf1 = bw160[j] + 70;
+		break;
+	case NL80211_CHAN_WIDTH_320:
+		/* setup center_freq1 */
+		for (j = 0; j < ARRAY_SIZE(bw320); j++) {
+			if (freq >= bw320[j] && freq < bw320[j] + 160)
+				break;
+		}
+
+		if (j == ARRAY_SIZE(bw320))
+			break;
+
+		cf1 = bw320[j] + 150;
 		break;
 	default:
 		cf1 = freq + chanmode->freq1_diff;

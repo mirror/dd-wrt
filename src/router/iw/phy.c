@@ -199,13 +199,13 @@ static int handle_freq(struct nl80211_state *state, struct nl_msg *msg,
 }
 
 COMMAND(set, freq,
-	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
+	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz|320MHz]\n"
 	"<control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	NL80211_CMD_SET_WIPHY, 0, CIB_PHY, handle_freq,
 	"Set frequency/channel the hardware is using, including HT\n"
 	"configuration.");
 COMMAND(set, freq,
-	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz]\n"
+	"<freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz|160MHz|320MHz]\n"
 	"<control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_freq, NULL);
 
@@ -301,6 +301,15 @@ static int handle_cac_trigger(struct nl80211_state *state,
 	return put_chandef(msg, &chandef);
 }
 
+static int handle_cac_background(struct nl80211_state *state,
+				 struct nl_msg *msg,
+				 int argc, char **argv,
+				 enum id_input id)
+{
+	nla_put_flag(msg, NL80211_ATTR_RADAR_BACKGROUND);
+	return handle_cac_trigger(state, msg, argc, argv, id);
+}
+
 static int no_seq_check(struct nl_msg *msg, void *arg)
 {
 	return NL_OK;
@@ -379,6 +388,14 @@ COMMAND(cac, trigger,
 	"freq <frequency> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
 	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_trigger,
 	"Start or trigger a channel availability check (CAC) looking to look for\n"
+	"radars on the given channel.");
+
+COMMAND(cac, background,
+	"channel <channel> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+	"freq <frequency> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]\n"
+	"freq <frequency> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]",
+	NL80211_CMD_RADAR_DETECT, 0, CIB_NETDEV, handle_cac_background,
+	"Start background channel availability check (CAC) looking to look for\n"
 	"radars on the given channel.");
 
 static int handle_fragmentation(struct nl80211_state *state,
