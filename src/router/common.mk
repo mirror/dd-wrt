@@ -410,7 +410,10 @@ endif
 	touch $(LINUXDIR)/include/generated/autoksyms.h
 	touch $(LINUXDIR)/include/linux/exports.h
 	touch $(LINUXDIR)/include/asm-generic/exports.h
-	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	rm -f $(LINUXDIR)/vmlinux
+	rm -f $(LINUXDIR)/vmlinux.o
+	make -j 4 -C $(LINUXDIR) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
 	touch $(LINUXDIR)/include/generated/autoksyms.h
@@ -424,5 +427,5 @@ kernel-relink:
 	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
-	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+#	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
 endif
