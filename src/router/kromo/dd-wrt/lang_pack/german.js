@@ -2759,6 +2759,7 @@ wl_basic.mixed="Gemischt";
 wl_basic.bft="Direktes Beamforming";
 wl_basic.bfr="Indirektes Beamforming";
 wl_basic.overlap="Erlaube Kanalüberlappungen";
+wl_basic.twt_required="Target Wake Time Benötigt";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
 wl_basic.clientRelaydDefaultGwMode="Default GW Mode";
