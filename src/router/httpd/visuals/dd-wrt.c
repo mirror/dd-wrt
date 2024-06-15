@@ -3032,6 +3032,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_doth[32];
 	char wl_csma[32];
 	char wl_shortgi[32];
+	char wl_twt[32];
 	char wl_subf[32];
 	char wl_mubf[32];
 	char wl_bssid[32];
@@ -3422,6 +3423,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
+	sprintf(wl_twt, "%s_twt_required", prefix);
 	sprintf(wl_subf, "%s_subf", prefix);
 	sprintf(wl_mubf, "%s_mubf", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -3530,6 +3532,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+	if (has_ax(prefix)) {
+		nvram_default_get(wl_twt, "0");
+		showRadio(wp, "wl_basic.twt_required", wl_twt);	
 	}
 	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix)) {
@@ -4486,6 +4492,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
+	sprintf(wl_twt, "%s_twt_required", prefix);
 	sprintf(wl_subf, "%s_subf", prefix);
 	sprintf(wl_mubf, "%s_mubf", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -5220,6 +5227,10 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+	if (has_ax(prefix)) {
+		nvram_default_get(wl_twt, "0");
+		showRadio(wp, "wl_basic.twt_required", wl_twt);	
 	}
 	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix)) {
