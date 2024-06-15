@@ -1469,8 +1469,12 @@ static void print_capabilities(const uint8_t type, uint8_t len,
 			CAPA(72, "Reserved");
 			CAPA(73, "Extended Spectrum Management Capable");
 			CAPA(74, "Reserved");
+			CAPA(77, "TWT Requester Support");
+			CAPA(78, "TWT Responder Support");
+			CAPA(79, "OBSS Narrow Bandwith RU in UL OFDMA Tolerance Support");
+
 			default:
-				printf(" %d", bit);
+				printf(" %d", bit + base);
 				break;
 			}
 #undef ADD_BIT_VAL
