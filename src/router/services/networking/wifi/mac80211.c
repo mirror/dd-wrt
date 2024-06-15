@@ -1123,9 +1123,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				if (has_ax(prefix)) {
 					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") ||
 					    !strcmp(netmode, "ax-only")) {
-						char color[32];
-						sprintf(color, "%s_he_bss_color", prefix);
-						int c = nvram_default_geti(color, 128);
 						fprintf(fp, "he_default_pe_duration=4\n");
 						fprintf(fp, "he_rts_threshold=1023\n");
 						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1152,9 +1149,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+						char color[32];
+						sprintf(color, "%s_bss_color", prefix);
+						int c = nvram_default_geti(color, 128);
 						if (c > 0) {
 							fprintf(fp, "he_bss_color=%d\n", c);
 						}
+						fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial",prefix) ? 1 : 0);
 						fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required",prefix) ? 1 : 0);
 					}
 				}
@@ -1237,9 +1238,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 					fprintf(fp, "he_su_beamformee=1\n");
 				}
 				fprintf(fp, "ieee80211ax=1\n");
-				char color[32];
-				sprintf(color, "%s_he_bss_color", prefix);
-				int c = nvram_default_geti(color, 128);
 				fprintf(fp, "he_default_pe_duration=4\n");
 				fprintf(fp, "he_rts_threshold=1023\n");
 				fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
@@ -1266,9 +1264,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
 				fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
 				fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+				char color[32];
+				sprintf(color, "bss_color", prefix);
+				int c = nvram_default_geti(color, 128);
 				if (c > 0) {
 					fprintf(fp, "he_bss_color=%d\n", c);
 				}
+				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial",prefix) ? 1 : 0);
+				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required",prefix) ? 1 : 0);
 			}
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
