@@ -4065,7 +4065,9 @@ static char *vapsettings[] = {
 	"time_advertisement",
 	"time_zone",
 	"usteer",
-	"he_bss_color",
+	"bss_color",
+	"bss_partial",
+	"twt_required",
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -5467,7 +5469,9 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv_prefix(wp, "antgain", prefix);
-	copytonv_prefix(wp, "he_bss_color", prefix);
+	copytonv_prefix(wp, "bss_color", prefix);
+	copytonv_prefix(wp, "bss_color_partial", prefix);
+	copytonv_prefix(wp, "twt_required", prefix);
 	copytonv_prefix(wp, "power_override", prefix);
 	copytonv_prefix(wp, "regulatory", prefix);
 	snprintf(n, sizeof(n), "%s_scanlist", prefix);
