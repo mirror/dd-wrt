@@ -273,7 +273,7 @@ WHAL_OPFLAGS_5G_VHT80         = 0x00000400,
 WHAL_OPFLAGS_5G_VHT80P80  = 0x00000800,
 WHAL_OPFLAGS_5G_VHT160      = 0x00001000
 */
-void patchvht160(char *file)
+void patchvht160(char *file, int phynum)
 {
 	FILE *fp = fopen(file, "rb");
 	if (fp) {
@@ -293,8 +293,20 @@ void patchvht160(char *file)
 		//		fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
 
 		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
-		s[1040 / 4] |= 0x800;
-		s[1040 / 4] |= 0x1000;
+		switch (phynum) {
+		case 0:
+			s[1040 / 4] |= 0x800;
+			s[1040 / 4] |= 0x1000;
+			break;
+		case 1:
+			s[1280 / 4] |= 0x800;
+			s[1280 / 4] |= 0x1000;
+			break;
+		case 2:
+			s[1376 / 4] |= 0x800;
+			s[1376 / 4] |= 0x1000;
+			break;
+		}
 		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
@@ -422,6 +434,12 @@ void start_sysinit(void)
 		removeregdomain("/tmp/caldata.bin", 1);
 		removeregdomain("/tmp/board.bin", 1);
 	}
+	if (brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		patchvht160("/tmp/caldata.bin", 0);
+		patchvht160("/tmp/caldata.bin", 2);
+		patchvht160("/tmp/board.bin", 0);
+		patchvht160("/tmp/board.bin", 2);
+	}
 	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
@@ -448,8 +466,6 @@ void start_sysinit(void)
 		writeproc("/proc/irq/34/smp_affinity", "4");
 		writeproc("/proc/irq/35/smp_affinity", "4");
 		writeproc("/proc/irq/36/smp_affinity", "4");
-
-
 	}
 
 	if (brand == ROUTER_DYNALINK_DLWRX36 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
@@ -488,9 +504,12 @@ void start_sysinit(void)
 	sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
 	sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
 	sysprintf("ssdk_sh acl list create 56 48");
-	sysprintf("ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-	sysprintf("ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-	sysprintf("ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf(
+		"ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf(
+		"ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+	sysprintf(
+		"ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
 	sysprintf("ssdk_sh acl list bind 56 0 2 1");
 	sysprintf("ssdk_sh fdb portLearn set 0 disable");
 	sysprintf("ssdk_sh fdb portLearn set 1 disable");
