@@ -749,7 +749,7 @@ broken_combination:
 
 	if (tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA])
 		printf("\tMaximum associated stations in AP mode: %u\n",
-		       nla_get_u16(tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA]));
+		       nla_get_u32(tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA]));
 
 	return NL_SKIP;
 }
