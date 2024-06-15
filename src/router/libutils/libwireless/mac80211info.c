@@ -2298,8 +2298,8 @@ void mac80211_set_antennas(char *prefix, uint32_t tx_ant, uint32_t rx_ant)
 	int maxrxchain = mac80211_get_antennas(prefix, 0, 1);
 	int maxtxchain = mac80211_get_antennas(prefix, 0, 0);
 	if (has_vht160_2by2(prefix) && (nvram_nmatch("160","%s_channelbw",prefix) || nvram_nmatch("8080","%s_channelbw",prefix) && tx_ant==0xf && rx_ant==0xf) {
-	    rx_ant = 0x3;
-	    tx_ant = 0x3;
+		rx_ant = 0x3;
+		tx_ant = 0x3;
 	}
 	if (maxrxchain > 15 && (maxrxchain & 0xf) == 0)
 	    rx_ant <<= 4;
@@ -2567,7 +2567,7 @@ int mac80211_get_avail_tx_antenna(char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 0, 0);
 	if (ret > 15 && (ret & 0x0f) == 0)
-	    ret >>= 4;
+		ret >>= 4;
 	if (is_ap8x(prefix) && ret == 3)
 		ret = 5;
 	return (ret);
@@ -2577,7 +2577,7 @@ int mac80211_get_avail_rx_antenna(char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 0, 1);
 	if (ret > 15 && (ret & 0x0f) == 0)
-	    ret >>= 4;
+		ret >>= 4;
 	return ret;
 }
 
@@ -2587,9 +2587,9 @@ int mac80211_get_configured_tx_antenna(char *prefix)
 	int avail = mac80211_get_antennas(prefix, 0, 0);
 
 	if (ret > 15 && (ret & 0x0f) == 0)
-	    ret >>= 4;
+		ret >>= 4;
 	if (avail > 15 && (avail & 0x0f) == 0)
-	    avail >>= 4;
+		avail >>= 4;
 
 	if (is_ap8x(prefix) && avail == 3 && ret == 3)
 		ret = 5;
@@ -2602,7 +2602,7 @@ int mac80211_get_configured_rx_antenna(char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 1, 1);
 	if (ret > 15 && (ret & 0x0f) == 0)
-	    ret >>= 4;
+		ret >>= 4;
 	return ret;
 }
 
