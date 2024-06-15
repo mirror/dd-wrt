@@ -1155,6 +1155,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						if (c > 0) {
 							fprintf(fp, "he_bss_color=%d\n", c);
 						}
+						fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required",prefix) ? 1 : 0);
 					}
 				}
 				fprintf(fp, "no_country_ie=1\n");
