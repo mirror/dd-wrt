@@ -225,6 +225,6 @@ static inline bool cpu_mitigations_off(void)
 static inline bool cpu_mitigations_auto_nosmt(void)
 {
 	return false;
-
+}
 #endif
 #endif /* _LINUX_CPU_H_ */
