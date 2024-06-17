@@ -1159,6 +1159,9 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	PRINT_VHT_CAPA(5, "short GI (80 MHz)");
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
 	PRINT_VHT_CAPA(7, "TX STBC");
+	if (capa&(BIT(8) | BIT(9))) {
+		printf("\t\t\tRX_STBC%d\n",(capa>>8) & 0x3);
+	}
 	/* RX STBC */
 	PRINT_VHT_CAPA(11, "SU Beamformer");
 	PRINT_VHT_CAPA(12, "SU Beamformee");
