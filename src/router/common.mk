@@ -1,4 +1,4 @@
-export MAKE := make -j $(shell getconf _NPROCESSORS_ONLN)
+export MAKE := make -j 4
 export LTO := -flto -fwhole-program -flto-partition=none 
 export LTOAUTO := -flto=auto -fno-fat-lto-objects
 export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin

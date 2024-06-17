@@ -1,4 +1,4 @@
-export MAKE := make -j $(shell getconf _NPROCESSORS_ONLN)
+export MAKE := make -j 4
 
 
 COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG
