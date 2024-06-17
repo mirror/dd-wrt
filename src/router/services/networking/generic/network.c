@@ -5092,24 +5092,36 @@ void start_hotplug_net(void)
 
 	if (!strcmp(action, "add")) {
 		if (cpucount > 1) {
-			int cpumask = 0;
-			cpumask = (1 << cpucount) - 1;
-			writenet("queues/rx-0/rps_cpus", cpumask, interface);
-			writenet("queues/rx-1/rps_cpus", cpumask, interface);
-			writenet("queues/rx-2/rps_cpus", cpumask, interface);
-			writenet("queues/rx-3/rps_cpus", cpumask, interface);
-			writenet("queues/rx-4/rps_cpus", cpumask, interface);
-			writenet("queues/rx-5/rps_cpus", cpumask, interface);
-			writenet("queues/rx-6/rps_cpus", cpumask, interface);
-			writenet("queues/rx-7/rps_cpus", cpumask, interface);
-			writenet("queues/tx-0/xps_cpus", cpumask, interface);
-			writenet("queues/tx-1/xps_cpus", cpumask, interface);
-			writenet("queues/tx-2/xps_cpus", cpumask, interface);
-			writenet("queues/tx-3/xps_cpus", cpumask, interface);
-			writenet("queues/tx-4/xps_cpus", cpumask, interface);
-			writenet("queues/tx-5/xps_cpus", cpumask, interface);
-			writenet("queues/tx-6/xps_cpus", cpumask, interface);
-			writenet("queues/tx-7/xps_cpus", cpumask, interface);
+//			int cpumask = 0;
+//			cpumask = (1 << cpucount) - 1;
+			writenet("queues/rx-0/rps_cpus", (1 << 0) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-1/rps_cpus", (1 << 1) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-2/rps_cpus", (1 << 2) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-3/rps_cpus", (1 << 3) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-4/rps_cpus", (1 << 4) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-5/rps_cpus", (1 << 5) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-6/rps_cpus", (1 << 6) & ((1 << cpucount)-1) , interface);
+			writenet("queues/rx-7/rps_cpus", (1 << 7) & ((1 << cpucount)-1) , interface);
+
+
+			writenet("queues/tx-0/xps_cpus", (1 << 0) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-1/xps_cpus", (1 << 1) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-2/xps_cpus", (1 << 2) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-3/xps_cpus", (1 << 3) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-4/xps_cpus", (1 << 4) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-5/xps_cpus", (1 << 5) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-6/xps_cpus", (1 << 6) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-7/xps_cpus", (1 << 7) & ((1 << cpucount)-1) , interface);
+
+			writenet("queues/rx-0/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-1/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-2/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-3/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-4/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-5/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-6/rps_flow_cnt", 256, interface);
+			writenet("queues/rx-7/rps_flow_cnt", 256, interface);
+			sysprintf("echo 1024 > /proc/sys/net/core/rps_sock_flow_entries");
 		}
 	}
 #ifdef HAVE_MADWIFI
