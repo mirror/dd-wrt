@@ -29,7 +29,7 @@ obj-$(CONFIG_BUSYBOX) += busybox
 obj-$(CONFIG_DNSSEC)  += zlib pcre gmp nettle
 obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_DNSCRYPT) += libsodium dnscrypt
-obj-$(CONFIG_ETHTOOL) += ethtool
+obj-$(CONFIG_ETHTOOL) += libmnl ethtool
 obj-$(CONFIG_MOXA) += moxa
 ifeq ($(CONFIG_IPV6),y)
 obj-$(CONFIG_IPTABLES) += iptables-new
