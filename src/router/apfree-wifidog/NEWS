@@ -1,0 +1,7 @@
+ApFree WiFiDog 1.12.797：
+ 1，支持https跳转
+ 2，使用http长连接，优化auth接口的数据传输效率（服务器端支持keep-alive），降低服务器端的压力
+ 3，优化了域名解析方式，将原来的阻塞方式的域名解析换为非阻塞的方式
+ 4，优化了网页跳转速度
+ 5，移除默认微信域名白名单（szextshort.weixin.qq.com,short.weixin.qq.com,wifi.weixin.qq.com,dns.weixin.qq.com）
+ 6，修复了判断用户在线的问题，排除ping包导致的用户流量变化导致的在线误报

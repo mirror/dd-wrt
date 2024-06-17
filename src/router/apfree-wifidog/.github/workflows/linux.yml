@@ -1,0 +1,71 @@
+name: compile apfree-wifidog in ubuntu system
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout changes
+      uses: actions/checkout@v2
+    
+    - name: install other depend lib
+      run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libjson-c-dev
+          sudo apt-get install -y libevent-dev
+          sudo apt-get install -y lua5.1 lua5.1-dev
+          sudo apt-get install -y nftables
+          sudo apt-get install -y libnetfilter-queue-dev
+
+    - name: install libubox
+      run: |
+        git clone https://github.com/git-openwrt-org-mirror/libubox.git
+        cd libubox
+        mkdir build && cd build && cmake ..
+        sudo make install
+        
+    - name: install uci
+      run: |
+        git clone https://github.com/git-openwrt-org-mirror/uci.git
+        cd uci
+        mkdir build && cd build && cmake ..
+        sudo make install
+    
+    - name: compile apfree-wifidog fw4
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+        ldd src/wifidogx
+        ldd src/wdctlx
+          
+    - name: install iptables lib for apfree wifidog
+      run: | 
+        git clone https://github.com/liudf0716/iptables-apfree-wifidog.git
+        cd iptables-apfree-wifidog
+        ./autogen.sh
+        ./configure --disable-nftables
+        make
+        sudo make install
+
+    - name: compile apfree-wifidog fw3
+      run: |
+        cd build
+        rm -rf *
+        cmake -DAW_FW3=ON ..
+        make
+    
+      

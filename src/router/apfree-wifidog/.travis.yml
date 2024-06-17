@@ -1,0 +1,53 @@
+os:
+  - linux
+dist: trusty
+sudo: true
+language: c
+
+compiler:
+  - gcc
+
+addons:
+  apt:
+    sources:
+    - sourceline: 'ppa:linuxjedi/ppa'
+    packages:
+    - build-essential
+    - libjson-c-dev
+    - iptables-dev
+
+before_install:
+  wget https://sources.lede-project.org/libubox-2018-07-25-c83a84af.tar.xz &&
+  xzcat libubox-2018-07-25-c83a84af.tar.xz | tar -x && 
+  cd libubox-2018-07-25-c83a84af&&
+  cmake -DBUILD_LUA=off &&
+  sudo make install &&
+  cd -
+  
+  wget https://sources.lede-project.org/uci-2018-08-11-4c8b4d6e.tar.xz &&
+  xzcat uci-2018-08-11-4c8b4d6e.tar.xz | tar -x && 
+  cd uci-2018-08-11-4c8b4d6e &&
+  cmake -DBUILD_LUA=off &&
+  sudo make install &&
+  cd -
+  
+  sudo apt-get install -y debhelper libc-ares-dev libssl-dev libwrap0-dev python-all python3-all uthash-dev uuid-dev libuuid1 xsltproc docbook-xsl
+  
+  wget https://github.com/libevent/libevent/releases/download/release-2.1.8-stable/libevent-2.1.8-stable.tar.gz &&
+  tar -zxf libevent-2.1.8-stable.tar.gz &&
+  cd libevent-2.1.8-stable &&
+  ./configure &&
+  make &&
+  sudo make install &&
+  cd -
+  
+  wget https://github.com/eclipse/mosquitto/archive/v1.5.1.tar.gz &&
+  tar -zxf v1.5.1.tar.gz &&
+  cd mosquitto-1.5.1 &&
+  make &&
+  sudo make install &&
+  cd -
+  
+script:
+  - cmake .
+  - make
