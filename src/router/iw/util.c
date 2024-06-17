@@ -1164,6 +1164,9 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	PRINT_VHT_CAPA(12, "SU Beamformee");
 	/* compressed steering */
 	/* # of sounding dimensions */
+	PRINT_VHT_CAPA(16, "Sounding Dimension 2");
+	PRINT_VHT_CAPA(17, "Sounding Dimension 3");
+	PRINT_VHT_CAPA(18, "Sounding Dimension 4");
 	PRINT_VHT_CAPA(19, "MU Beamformer");
 	PRINT_VHT_CAPA(20, "MU Beamformee");
 	PRINT_VHT_CAPA(21, "VHT TXOP PS");
