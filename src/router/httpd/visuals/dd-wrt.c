@@ -3304,7 +3304,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		    !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_bss_color", prefix);
-			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 0);
+			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 128);
 			sprintf(color, "%s_bss_color_partial", prefix);
 			nvram_default_get(color, "0");
 			showRadio(wp, "wl_basic.bss_color_partial", color);
@@ -5136,7 +5136,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		    !strcmp(netmode, "axg-only")) {
 			char color[32];
 			sprintf(color, "%s_bss_color", prefix);
-			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 0);
+			showInputNum(wp, "wl_basic.bss_color", color, 3, 3, 128);
 			sprintf(color, "%s_bss_color_partial", prefix);
 			nvram_default_get(color, "0");
 			showRadio(wp, "wl_basic.bss_color_partial", color);
