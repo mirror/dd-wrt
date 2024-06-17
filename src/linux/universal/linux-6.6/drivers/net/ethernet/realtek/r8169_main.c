@@ -5379,7 +5379,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	dev->ethtool_ops = &rtl8169_ethtool_ops;
 
-	netif_threaded_napi_add(dev, &tp->napi, rtl8169_poll);
+//	netif_threaded_napi_add(dev, &tp->napi, rtl8169_poll);
 
 	dev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 			   NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;
@@ -5456,7 +5456,7 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	netdev_info(dev, "%s, %pM, XID %03x, IRQ %d\n",
 		    rtl_chip_infos[chipset].name, dev->dev_addr, xid, tp->irq);
 
-	dev_set_threaded(dev, true);
+//	dev_set_threaded(dev, true);
 	if (jumbo_max)
 		netdev_info(dev, "jumbo features [frames: %d bytes, tx checksumming: %s]\n",
 			    jumbo_max, tp->mac_version <= RTL_GIGA_MAC_VER_06 ?
