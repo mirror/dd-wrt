@@ -276,6 +276,7 @@ void start_devinit(void)
 	int cpucount = 1
 #endif
 #ifdef HAVE_IRQBALANCE
+	if (nvram_mach("irqbalance_enabled","1")) {
 	if (cpucount > 1) {
 		/* do not start irqbalance if it doesnt make sense at all, it will just create bogus warnings */
 		mkdir("/var/run/irqbalance", 0777);
@@ -284,6 +285,7 @@ void start_devinit(void)
 #else
 		eval("irqbalance", "-t", "10");
 #endif
+	}
 	}
 #endif
 #ifdef HAVE_X86
