@@ -3715,6 +3715,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "boot_fail_open", "0" },
 	{ "boot_fail_keepip", "0" },
 	{ "switch_leds", "1" },
+#ifdef HAVE_IRQBALANCE
+	{ "irqbalance_enabled", "1" },
+#endif
 	{ 0, 0 }
 };
 #else
