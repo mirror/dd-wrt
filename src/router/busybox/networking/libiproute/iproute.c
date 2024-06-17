@@ -801,16 +801,19 @@ static int iproute_list_or_flush(char **argv, int flush)
 		KW_main,
 	};
 	int arg, parm;
-
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	iproute_reset_filter();
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	G_filter.tb = RT_TABLE_MAIN;
 
 	if (flush && !*argv)
 		bb_error_msg_and_die(bb_msg_requires_arg, "\"ip route flush\"");
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	while (*argv) {
 		arg = index_in_substrings(keywords, *argv);
 		if (arg == KW_proto) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			uint32_t prot = 0;
 			NEXT_ARG();
 			//G_filter.protocolmask = -1;
@@ -822,15 +825,19 @@ static int iproute_list_or_flush(char **argv, int flush)
 			}
 			//G_filter.protocol = prot;
 		} else if (arg == KW_dev || arg == KW_oif) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			NEXT_ARG();
 			od = *argv;
 		} else if (arg == KW_iif) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			NEXT_ARG();
 			id = *argv;
 		} else if (arg == KW_via) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			NEXT_ARG();
 			get_prefix(&G_filter.rvia, *argv, do_ipv6);
 		} else if (arg == KW_table) { /* table all/cache/main */
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			NEXT_ARG();
 			parm = index_in_substrings(keywords, *argv);
 			if (parm == KW_cache)
@@ -848,10 +855,12 @@ static int iproute_list_or_flush(char **argv, int flush)
 #endif
 			}
 		} else if (arg == KW_cache) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			/* The command 'ip route flush cache' is used by OpenSWAN.
 			 * Assuming it's a synonym for 'ip route flush table cache' */
 			G_filter.tb = -1;
 		} else if (arg == KW_scope) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			uint32_t scope;
 			NEXT_ARG();
 			G_filter.scopemask = -1;
@@ -863,6 +872,7 @@ static int iproute_list_or_flush(char **argv, int flush)
 			}
 			G_filter.scope = scope;
 		} else if (arg == KW_from) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			NEXT_ARG();
 			parm = index_in_substrings(keywords, *argv);
 			if (parm == KW_root) {
@@ -878,6 +888,7 @@ static int iproute_list_or_flush(char **argv, int flush)
 				G_filter.rsrc = G_filter.msrc;
 			}
 		} else { /* "to" is the default parameter */
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			if (arg == KW_to) {
 				NEXT_ARG();
 				arg = index_in_substrings(keywords, *argv);
@@ -899,12 +910,16 @@ static int iproute_list_or_flush(char **argv, int flush)
 		argv++;
 	}
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	if (do_ipv6 == AF_UNSPEC && G_filter.tb) {
 		do_ipv6 = AF_INET;
 	}
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	xrtnl_open(&rth);
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	ll_init_map(&rth);
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 
 	if (id || od)  {
 		int idx;
@@ -918,13 +933,17 @@ static int iproute_list_or_flush(char **argv, int flush)
 			G_filter.oif = idx;
 		}
 	}
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 
 	if (flush) {
 		char flushb[4096-512];
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		if (G_filter.tb == -1) { /* "flush table cache" */
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			if (do_ipv6 != AF_INET6)
 				iproute_flush_cache();
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			if (do_ipv6 == AF_INET)
 				return 0;
 		}
@@ -934,23 +953,35 @@ static int iproute_list_or_flush(char **argv, int flush)
 		G_filter.flushe = sizeof(flushb);
 		G_filter.rth = &rth;
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		for (;;) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			xrtnl_wilddump_request(&rth, do_ipv6, RTM_GETROUTE);
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			G_filter.flushed = 0;
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			xrtnl_dump_filter(&rth, print_route, NULL);
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			if (G_filter.flushed == 0)
 				return 0;
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 			if (flush_update())
 				return 1;
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		}
 	}
 
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	if (G_filter.tb != -1) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		xrtnl_wilddump_request(&rth, do_ipv6, RTM_GETROUTE);
 	} else if (rtnl_rtcache_request(&rth, do_ipv6) < 0) {
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 		bb_simple_perror_msg_and_die("can't send dump request");
 	}
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 	xrtnl_dump_filter(&rth, print_route, NULL);
+fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 
 	return 0;
 }
