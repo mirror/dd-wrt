@@ -25,7 +25,7 @@ irqbalance-clean:
 
 irqbalance-install: 
 	$(MAKE) -C irqbalance install DESTDIR=$(INSTALLDIR)/irqbalance
-	install -D irqbalance/config/irqbalance.webconfig $(INSTALLDIR)/irqbalance/etc/config/irqbalance.webhotspot
+	install -D irqbalance/config/irqbalance.webservices $(INSTALLDIR)/irqbalance/etc/config/irqbalance.webservices
 	install -D irqbalance/config/irqbalance.nvramconfig $(INSTALLDIR)/irqbalance/etc/config/irqbalance.nvramconfig
 	$(MAKE) -C irqbalance install DESTDIR=$(INSTALLDIR)/irqbalance
 	mkdir -p $(INSTALLDIR)/irqbalance/etc/irqbalance
