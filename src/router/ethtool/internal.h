@@ -21,13 +21,19 @@
 #include <unistd.h>
 #include <endian.h>
 #include <sys/ioctl.h>
-#include <net/if.h>
+#define __UAPI_DEF_IF_IFNAMSIZ	1
+#define __UAPI_DEF_IF_IFMAP	1
+#define __UAPI_DEF_IF_IFREQ	1
+#include <linux/if.h>
 
-/* ethtool.h expects these to be defined by <linux/types.h> */
-#ifndef HAVE_BE_TYPES
-typedef uint16_t __be16;
-typedef uint32_t __be32;
-typedef unsigned long long __be64;
+#include "json_writer.h"
+#include "json_print.h"
+
+#define __maybe_unused __attribute__((__unused__))
+
+/* internal for netlink interface */
+#ifdef ETHTOOL_ENABLE_NETLINK
+struct nl_context;
 #endif
 
 typedef unsigned long long u64;
@@ -36,14 +42,8 @@ typedef uint16_t u16;
 typedef uint8_t u8;
 typedef int32_t s32;
 
-/* ethtool.h epxects __KERNEL_DIV_ROUND_UP to be defined by <linux/kernel.h> */
-#include <linux/kernel.h>
-#ifndef __KERNEL_DIV_ROUND_UP
-#define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
-#endif
-
-#include "ethtool-copy.h"
-#include "net_tstamp-copy.h"
+#include <linux/ethtool.h>
+#include <linux/net_tstamp.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 static inline u16 cpu_to_be16(u16 value)
@@ -104,6 +104,20 @@ static inline int test_bit(unsigned int nr, const unsigned long *addr)
 #ifndef SIOCETHTOOL
 #define SIOCETHTOOL     0x8946
 #endif
+
+/* debugging flags */
+enum {
+	DEBUG_PARSE,
+	DEBUG_NL_MSGS,		/* incoming/outgoing netlink messages */
+	DEBUG_NL_DUMP_SND,	/* dump outgoing netlink messages */
+	DEBUG_NL_DUMP_RCV,	/* dump incoming netlink messages */
+	DEBUG_NL_PRETTY_MSG,	/* pretty print of messages and errors */
+};
+
+static inline bool debug_on(unsigned long debug, unsigned int bit)
+{
+	return (debug & (1 << bit));
+}
 
 /* Internal values for old-style offload flags.  Values and names
  * must not clash with the flags defined for ETHTOOL_{G,S}FLAGS.
@@ -188,13 +202,29 @@ static inline int ethtool_link_mode_set_bit(unsigned int nr, u32 *mask)
 	return 0;
 }
 
+/* Struct for managing module EEPROM pages */
+struct ethtool_module_eeprom {
+	u32	offset;
+	u32	length;
+	u8	page;
+	u8	bank;
+	u8	i2c_address;
+	u8	*data;
+};
+
 /* Context for sub-commands */
 struct cmd_context {
 	const char *devname;	/* net device name */
 	int fd;			/* socket suitable for ethtool ioctl */
 	struct ifreq ifr;	/* ifreq suitable for ethtool ioctl */
-	int argc;		/* number of arguments to the sub-command */
+	unsigned int argc;	/* number of arguments to the sub-command */
 	char **argp;		/* arguments to the sub-command */
+	unsigned long debug;	/* debugging mask */
+	bool json;		/* Output JSON, if supported */
+	bool show_stats;	/* include command-specific stats */
+#ifdef ETHTOOL_ENABLE_NETLINK
+	struct nl_context *nlctx;	/* netlink context (opaque) */
+#endif
 };
 
 #ifdef TEST_ETHTOOL
@@ -330,22 +360,54 @@ int altera_tse_dump_regs(struct ethtool_drvinfo *info,
 /* VMware vmxnet3 ethernet controller */
 int vmxnet3_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
 
+/* hns3 ethernet controller */
+int hns3_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
 /* Rx flow classification */
 int rxclass_parse_ruleopts(struct cmd_context *ctx,
-			   struct ethtool_rx_flow_spec *fsp);
+			   struct ethtool_rx_flow_spec *fsp, __u32 *rss_context);
 int rxclass_rule_getall(struct cmd_context *ctx);
 int rxclass_rule_get(struct cmd_context *ctx, __u32 loc);
 int rxclass_rule_ins(struct cmd_context *ctx,
-		     struct ethtool_rx_flow_spec *fsp);
+		     struct ethtool_rx_flow_spec *fsp, __u32 rss_context);
 int rxclass_rule_del(struct cmd_context *ctx, __u32 loc);
 
 /* Module EEPROM parsing code */
-void sff8079_show_all(const __u8 *id);
+void sff8079_show_all_ioctl(const __u8 *id);
+int sff8079_show_all_nl(struct cmd_context *ctx);
 
 /* Optics diagnostics */
 void sff8472_show_all(const __u8 *id);
 
 /* QSFP Optics diagnostics */
-void sff8636_show_all(const __u8 *id, __u32 eeprom_len);
+void sff8636_show_all_ioctl(const __u8 *id, __u32 eeprom_len);
+int sff8636_show_all_nl(struct cmd_context *ctx);
+
+/* FUJITSU Extended Socket network device */
+int fjes_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* MICROCHIP LAN78XX USB ETHERNET Controller */
+int lan78xx_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* Distributed Switch Architecture */
+int dsa_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* i.MX Fast Ethernet Controller */
+int fec_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* Freescale/NXP ENETC Ethernet Controller */
+int fsl_enetc_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* Intel(R) Ethernet Controller I225-LM/I225-V adapter family */
+int igc_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* Broadcom Ethernet Controller */
+int bnxt_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* TI CPSW Ethernet Switch */
+int cpsw_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
+
+/* Microchip Ethernet Controller */
+int lan743x_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs);
 
 #endif /* ETHTOOL_INTERNAL_H__ */

@@ -52,13 +52,17 @@
 .\"
 .ds MA \fIxx\fP\fB:\fP\fIyy\fP\fB:\fP\fIzz\fP\fB:\fP\fIaa\fP\fB:\fP\fIbb\fP\fB:\fP\fIcc\fP
 .\"
+.\"	\(*MS - master-slave property
+.\"
+.ds MS \fBpreferred-master\fP|\fBpreferred-slave\fP|\fBforced-master\fP|\fBforced-slave\fP
+.\"
 .\"	\(*PA - IP address
 .\"
 .ds PA \fIip-address\fP
 .\"
 .\"	\(*WO - wol flags
 .\"
-.ds WO \fBp\fP|\fBu\fP|\fBm\fP|\fBb\fP|\fBa\fP|\fBg\fP|\fBs\fP|\fBd\fP...
+.ds WO \fBp\fP|\fBu\fP|\fBm\fP|\fBb\fP|\fBa\fP|\fBg\fP|\fBs\fP|\fBf|\fBd\fP...
 .\"
 .\"	\(*FL - flow type values
 .\"
@@ -75,7 +79,7 @@
 .\"	\(*NC - Network Classifier type values
 .\"
 .ds NC \fBether\fP|\fBip4\fP|\fBtcp4\fP|\fBudp4\fP|\fBsctp4\fP|\fBah4\fP|\fBesp4\fP|\fBip6\fP|\fBtcp6\fP|\fBudp6\fP|\fBah6\fP|\fBesp6\fP|\fBsctp6\fP
-..
+.
 .\"
 .\" Start URL.
 .de UR
@@ -113,7 +117,7 @@
 .  hy \\n(HY
 ..
 .
-.TH ETHTOOL 8 "October 2016" "Ethtool version 4.8"
+.TH ETHTOOL 8 "May 2024" "Ethtool version 6.9"
 .SH NAME
 ethtool \- query or control network driver and hardware settings
 .
@@ -128,6 +132,23 @@ ethtool \- query or control network driver and hardware settings
 .B ethtool \-h|\-\-help
 .HP
 .B ethtool \-\-version
+.HP
+.B ethtool
+.BN --debug
+.I args
+.HP
+.B ethtool [--json]
+.I args
+.HP
+.B ethtool [-I | --include-statistics]
+.I args
+.HP
+.B ethtool \-\-monitor
+[
+.I command
+] [
+.I devname
+]
 .HP
 .B ethtool \-a|\-\-show\-pause
 .I devname
@@ -165,6 +186,11 @@ ethtool \- query or control network driver and hardware settings
 .BN tx\-usecs\-high
 .BN tx\-frames\-high
 .BN sample\-interval
+.B2 cqe\-mode\-rx on off
+.B2 cqe\-mode\-tx on off
+.BN tx\-aggr\-max\-bytes
+.BN tx\-aggr\-max\-frames
+.BN tx\-aggr\-time\-usecs
 .HP
 .B ethtool \-g|\-\-show\-ring
 .I devname
@@ -175,6 +201,12 @@ ethtool \- query or control network driver and hardware settings
 .BN rx\-mini
 .BN rx\-jumbo
 .BN tx
+.BN rx\-buf\-len
+.B3 tcp\-data\-split auto on off
+.BN cqe\-size
+.BN tx\-push
+.BN rx\-push
+.BN tx\-push\-buf\-len
 .HP
 .B ethtool \-i|\-\-driver
 .I devname
@@ -219,6 +251,12 @@ ethtool \- query or control network driver and hardware settings
 .HP
 .B ethtool \-S|\-\-statistics
 .I devname
+.RB [\fB\-\-all\-groups\fP|\fB\-\-groups
+.RB [\fBeth\-phy\fP]
+.RB [\fBeth\-mac\fP]
+.RB [\fBeth\-ctrl\fP]
+.RB [\fBrmon\fP]
+.RB ]
 .HP
 .B ethtool \-\-phy\-statistics
 .I devname
@@ -230,17 +268,24 @@ ethtool \- query or control network driver and hardware settings
 .B ethtool \-s
 .I devname
 .BN speed
+.BN lanes
 .B2 duplex half full
-.B4 port tp aui bnc mii fibre
+.B4 port tp aui bnc mii fibre da
 .B3 mdix auto on off
 .B2 autoneg on off
-.BN advertise
+.RB [ advertise \ \fIN\fP[\fB/\fP\fIM\fP]
+|
+.BI advertise \ mode
+.A1 on off
+.RB ...]
 .BN phyad
 .B2 xcvr internal external
-.RB [ wol \ \*(WO]
+.RB [ wol \ \fIN\fP[\fB/\fP\fIM\fP]
+.RB | \ wol \ \*(WO]
 .RB [ sopass \ \*(MA]
+.RB [ master-slave \ \*(MS]
 .RB [ msglvl
-.IR N \ |
+.IR N\fP[/\fIM\fP] \ |
 .BI msglvl \ type
 .A1 on off
 .RB ...]
@@ -274,6 +319,7 @@ ethtool \- query or control network driver and hardware settings
 .BM user\-def
 .RB [ dst-mac \ \*(MA\ [ m \ \*(MA]]
 .BN action
+.BN context
 .BN loc
 .RB |
 .br
@@ -296,11 +342,20 @@ ethtool \- query or control network driver and hardware settings
 .B ethtool \-X|\-\-set\-rxfh\-indir|\-\-rxfh
 .I devname
 .RB [ hkey \ \*(MA:\...]
+.RB [ start
+.IR N ]
 .RB [\  equal
 .IR N \ |
 .BI weight\  W0
 .IR W1
 .RB ...\ | \ default \ ]
+.RB [ hfunc
+.IR FUNC ]
+.B2 xfrm symmetric-xor none
+.RB [ context
+.I CTX
+.RB |\  new ]
+.RB [ delete ]
 .HP
 .B ethtool \-f|\-\-flash
 .I devname file
@@ -322,6 +377,9 @@ ethtool \- query or control network driver and hardware settings
 .B2 hex on off
 .BN offset
 .BN length
+.BN page
+.BN bank
+.BN i2c
 .HP
 .B ethtool \-\-show\-priv\-flags
 .I devname
@@ -340,6 +398,144 @@ ethtool \- query or control network driver and hardware settings
 .B2 tx-lpi on off
 .BN tx-timer
 .BN advertise
+.HP
+.B ethtool \-\-set\-phy\-tunable
+.I devname
+.RB [
+.B downshift
+.A1 on off
+.BN count
+.RB ]
+.RB [
+.B fast\-link\-down
+.A1 on off
+.BN msecs
+.RB ]
+.RB [
+.B energy\-detect\-power\-down
+.A1 on off
+.BN msecs
+.RB ]
+.HP
+.B ethtool \-\-get\-phy\-tunable
+.I devname
+.RB [ downshift ]
+.RB [ fast-link-down ]
+.RB [ energy-detect-power-down ]
+.HP
+.B ethtool \-\-get\-tunable
+.I devname
+.RB [ rx-copybreak ]
+.RB [ tx-copybreak ]
+.RB [ tx-buf-size ]
+.RB [ pfc-prevention-tout ]
+.HP
+.B ethtool \-\-set\-tunable
+.I devname
+.BN rx\-copybreak
+.BN tx\-copybreak
+.BN tx\-buf\-size
+.BN pfc\-prevention\-tout
+.HP
+.B ethtool \-\-reset
+.I devname
+.BN flags
+.RB [ mgmt ]
+.RB [ mgmt-shared ]
+.RB [ irq ]
+.RB [ irq-shared ]
+.RB [ dma ]
+.RB [ dma-shared ]
+.RB [ filter ]
+.RB [ filter-shared ]
+.RB [ offload ]
+.RB [ offload-shared ]
+.RB [ mac ]
+.RB [ mac-shared ]
+.RB [ phy ]
+.RB [ phy-shared ]
+.RB [ ram ]
+.RB [ ram-shared ]
+.RB [ ap ]
+.RB [ ap-shared ]
+.RB [ dedicated ]
+.RB [ all ]
+.HP
+.B ethtool \-\-show\-fec
+.I devname
+.HP
+.B ethtool \-\-set\-fec
+.I devname
+.B encoding
+.BR auto | off | rs | baser | llrs \ [...]
+.HP
+.B ethtool \-Q|\-\-per\-queue
+.I devname
+.RB [ queue_mask
+.IR %x ]
+.I sub_command
+.RB ...
+.HP
+.B ethtool \-\-cable\-test
+.I devname
+.HP
+.B ethtool \-\-cable\-test\-tdr
+.I devname
+.BN first N
+.BN last N
+.BN step N
+.BN pair N
+.HP
+.B ethtool \-\-show\-tunnels
+.I devname
+.HP
+.B ethtool \-\-show\-module
+.I devname
+.HP
+.B ethtool \-\-set\-module
+.I devname
+.RB [ power\-mode\-policy
+.BR high | auto ]
+.HP
+.B ethtool \-\-get\-plca\-cfg
+.I devname
+.HP
+.B ethtool \-\-set\-plca\-cfg
+.I devname
+.RB [ enable
+.BR on | off ]
+.BN node\-id N
+.BN node\-cnt N
+.BN to\-tmr N
+.BN burst\-cnt N
+.BN burst\-tmr N
+.HP
+.B ethtool \-\-get\-plca\-status
+.I devname
+.HP
+.B ethtool \-\-show\-mm
+.I devname
+.HP
+.B ethtool \-\-set\-mm
+.I devname
+.RB [ verify\-enabled
+.BR on | off ]
+.RB [ verify\-time
+.BR N ]
+.RB [ tx\-enabled
+.BR on | off ]
+.RB [ pmac\-enabled
+.BR on | off ]
+.RB [ tx\-min\-frag\-size
+.BR N ]
+.HP
+.B ethtool \-\-show\-pse
+.I devname
+.HP
+.B ethtool \-\-set\-pse
+.I devname
+.RB [ podl\-pse\-admin\-control
+.BR enable | disable ]
 .
 .\" Adjust lines (i.e. full justification) and hyphenate.
 .ad
@@ -364,8 +560,38 @@ Shows a short help message.
 .B \-\-version
 Shows the ethtool version number.
 .TP
+.BI \-\-debug \ N
+Turns on debugging messages. Argument is interpreted as a mask:
+.TS
+nokeep;
+lB	l.
+0x01  Parser information
+0x02  Summary of netlink messages
+0x04  Hex dump of sent netlink messages
+0x08  Hex dump of received netlink messages
+0x10  Structure of netlink messages
+.TE
+.TP
+.BI \-\-json
+Output results in JavaScript Object Notation (JSON). Only a subset of
+options support this. Those which do not will continue to output
+plain text in the presence of this option.
+.TP
+.B \-I \-\-include\-statistics
+Include command-related statistics in the output. This option allows
+displaying relevant device statistics for selected get commands.
+.TP
 .B \-a \-\-show\-pause
 Queries the specified Ethernet device for pause parameter information.
+.RS 4
+.TP
+.A3 \fB\-\-src \fBaggregate\fP \fBemac\fP \fBpmac\fP
+If the MAC Merge layer is supported, request a particular source of device
+statistics (eMAC or pMAC, or their aggregate). Only valid if ethtool was
+invoked with the
+.B \-I \-\-include\-statistics
+argument.
+.RE
 .TP
 .B \-A \-\-pause
 Changes the pause parameters of the specified Ethernet device.
@@ -405,6 +631,25 @@ Changes the number of ring entries for the Rx Jumbo ring.
 .TP
 .BI tx \ N
 Changes the number of ring entries for the Tx ring.
+.TP
+.BI rx\-buf\-len \ N
+Changes the size of a buffer in the Rx ring.
+.TP
+.BI tcp\-data\-split \ auto|on|off
+Specifies the state of TCP data split.
+.TP
+.BI cqe\-size \ N
+Changes the size of completion queue event.
+.TP
+.BI tx\-push \ on|off
+Specifies whether TX push should be enabled.
+.TP
+.BI rx\-push \ on|off
+Specifies whether RX push should be enabled.
+.TP
+.BI tx\-push\-buf\-len \ N
+Specifies the maximum number of bytes of a transmitted packet a driver can push
+directly to the underlying device
 .RE
 .TP
 .B \-i \-\-driver
@@ -509,8 +754,24 @@ Restarts auto-negotiation on the specified Ethernet device, if
 auto-negotiation is enabled.
 .TP
 .B \-S \-\-statistics
-Queries the specified network device for NIC- and driver-specific
-statistics.
+Queries the specified network device for standard (IEEE, IETF, etc.), or NIC-
+and driver-specific statistics. NIC- and driver-specific statistics are
+requested when no group of statistics is specified.
+
+NIC- and driver-specific statistics and standard statistics are independent,
+devices may implement either, both or none. There is little commonality between
+naming of NIC- and driver-specific statistics across vendors.
+.RS 4
+.TP
+.B \fB\-\-all\-groups
+.TP
+.B \fB\-\-groups [\fBeth\-phy\fP] [\fBeth\-mac\fP] [\fBeth\-ctrl\fP] [\fBrmon\fP]
+Request groups of standard device statistics.
+.TP
+.A3 \fB\-\-src \fBaggregate\fP \fBemac\fP \fBpmac\fP
+If the MAC Merge layer is supported, request a particular source of device
+statistics (eMAC or pMAC, or their aggregate).
+.RE
 .TP
 .B \-\-phy\-statistics
 Queries the specified network device for PHY specific statistics.
@@ -543,11 +804,28 @@ Set speed in Mb/s.
 .B ethtool
 with just the device name as an argument will show you the supported device speeds.
 .TP
+.BI lanes \ N
+Set number of lanes.
+.TP
 .A2 duplex half full
 Sets full or half duplex mode.
 .TP
-.A4 port tp aui bnc mii fibre
+.A4 port tp aui bnc mii fibre da
 Selects device port.
+.TP
+.BR master-slave \ \*(MS
+Configure MASTER/SLAVE role of the PHY. When the PHY is configured as MASTER,
+the PMA Transmit function shall source TX_TCLK from a local clock source. When
+configured as SLAVE, the PMA Transmit function shall source TX_TCLK from the
+clock recovered from data stream provided by MASTER. Not all devices support this.
+.TS
+nokeep;
+lB	l.
+preferred-master	Prefer MASTER role on autonegotiation
+preferred-slave	Prefer SLAVE role on autonegotiation
+forced-master	Force the PHY in MASTER role. Can be used without autonegotiation
+forced-slave	Force the PHY in SLAVE role. Can be used without autonegotiation
+.TE
 .TP
 .A3 mdix auto on off
 Selects MDI-X mode for port. May be used to override the automatic
@@ -570,21 +848,32 @@ nokeep;
 lB	l	lB.
 0x001	10baseT Half
 0x002	10baseT Full
+0x100000000000000000000000	10baseT1L Full
+0x8000000000000000000000000	10baseT1S Full
+0x10000000000000000000000000	10baseT1S Half
+0x20000000000000000000000000	10baseT1S_P2MP Half
 0x004	100baseT Half
 0x008	100baseT Full
+0x80000000000000000	100baseT1 Full
+0x40000000000000000000000	100baseFX Half
+0x80000000000000000000000	100baseFX Full
 0x010	1000baseT Half	(not supported by IEEE standards)
 0x020	1000baseT Full
 0x20000	1000baseKX Full
 0x20000000000	1000baseX Full
+0x100000000000000000	1000baseT1 Full
 0x8000	2500baseX Full	(not supported by IEEE standards)
+0x800000000000	2500baseT Full
+0x1000000000000	5000baseT Full
 0x1000	10000baseT Full
 0x40000	10000baseKX4 Full
 0x80000	10000baseKR Full
-0x40000000000	10000baseCR  Full
-0x80000000000	10000baseSR  Full
-0x100000000000	10000baseLR  Full
+0x100000	10000baseR_FEC
+0x40000000000	10000baseCR Full
+0x80000000000	10000baseSR Full
+0x100000000000	10000baseLR Full
 0x200000000000	10000baseLRM Full
-0x400000000000	10000baseER  Full
+0x400000000000	10000baseER Full
 0x200000	20000baseMLD2 Full	(not supported by IEEE standards)
 0x400000	20000baseKR2 Full	(not supported by IEEE standards)
 0x80000000	25000baseCR Full
@@ -597,10 +886,55 @@ lB	l	lB.
 0x400000000	50000baseCR2 Full
 0x800000000	50000baseKR2 Full
 0x10000000000	50000baseSR2 Full
+0x10000000000000	50000baseKR Full
+0x20000000000000	50000baseSR Full
+0x40000000000000	50000baseCR Full
+0x80000000000000	50000baseLR_ER_FR Full
+0x100000000000000	50000baseDR Full
+0x8000000	56000baseKR4 Full
+0x10000000	56000baseCR4 Full
+0x20000000	56000baseSR4 Full
+0x40000000	56000baseLR4 Full
 0x1000000000	100000baseKR4 Full
 0x2000000000	100000baseSR4 Full
 0x4000000000	100000baseCR4 Full
 0x8000000000	100000baseLR4_ER4 Full
+0x200000000000000	100000baseKR2 Full
+0x400000000000000	100000baseSR2 Full
+0x800000000000000	100000baseCR2 Full
+0x1000000000000000	100000baseLR2_ER2_FR2 Full
+0x2000000000000000	100000baseDR2 Full
+0x8000000000000000000	100000baseKR Full
+0x10000000000000000000	100000baseSR Full
+0x20000000000000000000	100000baseLR_ER_FR Full
+0x40000000000000000000	100000baseCR Full
+0x80000000000000000000	100000baseDR Full
+0x4000000000000000	200000baseKR4 Full
+0x8000000000000000	200000baseSR4 Full
+0x10000000000000000	200000baseLR4_ER4_FR4 Full
+0x20000000000000000	200000baseDR4 Full
+0x40000000000000000	200000baseCR4 Full
+0x100000000000000000000	200000baseKR2 Full
+0x200000000000000000000	200000baseSR2 Full
+0x400000000000000000000	200000baseLR2_ER2_FR2 Full
+0x800000000000000000000	200000baseDR2 Full
+0x1000000000000000000000	200000baseCR2 Full
+0x200000000000000000	400000baseKR8 Full
+0x400000000000000000	400000baseSR8 Full
+0x800000000000000000	400000baseLR8_ER8_FR8 Full
+0x1000000000000000000	400000baseDR8 Full
+0x2000000000000000000	400000baseCR8 Full
+0x2000000000000000000000	400000baseKR4 Full
+0x4000000000000000000000	400000baseSR4 Full
+0x8000000000000000000000	400000baseLR4_ER4_FR4 Full
+0x10000000000000000000000	400000baseDR4 Full
+0x20000000000000000000000	400000baseCR4 Full
+0x200000000000000000000000	800000baseCR8 Full
+0x400000000000000000000000	800000baseKR8 Full
+0x800000000000000000000000	800000baseDR8 Full
+0x1000000000000000000000000	800000baseDR8_2 Full
+0x2000000000000000000000000	800000baseSR8 Full
+0x4000000000000000000000000	800000baseVR8 Full
 .TE
 .TP
 .BI phyad \ N
@@ -623,12 +957,13 @@ b	Wake on broadcast messages
 a	Wake on ARP
 g	Wake on MagicPacket\[tm]
 s	Enable SecureOn\[tm] password for MagicPacket\[tm]
+f	Wake on filter(s)
 d	T{
 Disable (wake on nothing).  This option clears all previous options.
 T}
 .TE
 .TP
-.B sopass \*(MA\c
+.B sopass \*(MA
 Sets the SecureOn\[tm] password.  The argument to this option must be 6
 bytes in Ethernet MAC hex format (\*(MA).
 .PP
@@ -814,8 +1149,22 @@ Specifies the Rx queue to send packets to, or some other action.
 nokeep;
 lB	l.
 -1	Drop the matched flow
+-2	Use the matched flow as a Wake-on-LAN filter
 0 or higher	Rx queue to route the flow
 .TE
+.TP
+.BI context \ N
+Specifies the RSS context to spread packets over multiple queues; either
+.B 0
+for the default RSS context, or a value returned by
+.BI ethtool\ -X\  ... \ context
+.BR new .
+.TP
+.BI vf \ N
+Specifies the Virtual Function the filter applies to. Not compatible with action.
+.TP
+.BI queue \ N
+Specifies the Rx queue to send packets to. Not compatible with action.
 .TP
 .BI loc \ N
 Specify the location/ID to insert the rule. This will overwrite
@@ -853,6 +1202,27 @@ Sets RSS hash key of the specified network device. RSS hash key should be of dev
 Hash key format must be in xx:yy:zz:aa:bb:cc format meaning both the nibbles of a byte should be mentioned
 even if a nibble is zero.
 .TP
+.BI hfunc
+Sets RSS hash function of the specified network device.
+List of RSS hash functions which kernel supports is shown as a part of the --show-rxfh command output.
+.TP
+.BI xfrm
+Sets the RSS input transformation. Currently, only the
+.B symmetric-xor
+transformation is supported where the NIC XORs the L3 and/or L4 source and
+destination fields (as selected by
+.B --config-nfc rx-flow-hash
+) before passing them to the hash algorithm. The RSS hash function will
+then yield the same hash for the other flow direction where the source and
+destination fields are swapped (i.e. Symmetric RSS). Note that XORing the
+input parameters reduces the entropy of the input set and the hash algorithm
+could potentially be exploited. Switch off (default) by
+.B xfrm none.
+.TP
+.BI start\  N
+For the \fBequal\fR and \fBweight\fR options, sets the starting receive queue
+for spreading flows to \fIN\fR.
+.TP
 .BI equal\  N
 Sets the receive flow hash indirection table to spread flows evenly
 between the first \fIN\fR receive queues.
@@ -864,6 +1234,22 @@ must be non-zero and must not exceed the size of the indirection table.
 .TP
 .BI default
 Sets the receive flow hash indirection table to its default value.
+.TP
+\fBcontext \fICTX\fR | \fBnew\fR
+Specifies an RSS context to act on; either
+.B new
+to allocate a new RSS context, or
+.IR CTX ,
+a value returned by a previous
+.IB ... \ context
+.BR new .
+.TP
+.B delete
+Delete the specified RSS context.  May only be used in conjunction with
+.B context
+and a non-zero
+.I CTX
+value.
 .RE
 .TP
 .B \-f \-\-flash
@@ -909,6 +1295,17 @@ Changes the number of multi-purpose channels.
 Retrieves and if possible decodes the EEPROM from plugin modules, e.g SFP+, QSFP.
 If the driver and module support it, the optical diagnostic information is also
 read and decoded.
+When either one of
+.I page,
+.I bank
+or
+.I i2c
+parameters is specified, dumps only of a single page or its portion is
+allowed. In such a case
+.I offset
+and
+.I length
+parameters are treated relatively to EEPROM page boundaries.
 .TP
 .B \-\-show\-priv\-flags
 Queries the specified network device for its private flags.  The
@@ -947,6 +1344,434 @@ Values are as for
 Sets the amount of time the device should stay in idle mode prior to asserting
 its Tx LPI (in microseconds). This has meaning only when Tx LPI is enabled.
 .RE
+.TP
+.B \-\-set\-phy\-tunable
+Sets the PHY tunable parameters.
+.RS 4
+.TP
+.A2 downshift on off
+Specifies whether downshift should be enabled.
+.TS
+nokeep;
+lB	l.
+.BI count \ N
+	Sets the PHY downshift re-tries count.
+.TE
+.TP
+.A2 fast-link-down on off
+Specifies whether Fast Link Down should be enabled and time until link down (if supported).
+.TS
+nokeep;
+lB	l.
+.BI msecs \ N
+	Sets the period after which the link is reported as down. Note that the PHY may choose
+	the closest supported value. Only on reading back the tunable do you get the actual value.
+.TE
+.TP
+.A2 energy-detect-power-down on off
+Specifies whether Energy Detect Power Down (EDPD) should be enabled (if supported).
+This will put the RX and TX circuit blocks into a low power mode, and the PHY will
+wake up periodically to send link pulses to avoid any lock-up situation with a peer
+PHY that may also have EDPD enabled. By default, this setting will also enable the
+periodic transmission of TX pulses.
+.TS
+nokeep;
+lB	l.
+.BI msecs \ N
+	Some PHYs support configuration of the wake-up interval to send TX pulses.
+	This setting allows the control of this interval, and 0 disables TX pulses
+	if the PHY supports this. Disabling TX pulses can create a lock-up situation
+	where neither of the PHYs wakes the other one. If unspecified the default
+	value (in milliseconds) will be used by the PHY.
+.TE
+.TP
+.PD
+.RE
+.TP
+.B \-\-get\-phy\-tunable
+Gets the PHY tunable parameters.
+.RS 4
+.TP
+.B downshift
+For operation in cabling environments that are incompatible with 1000BASE-T,
+PHY device provides an automatic link speed downshift operation.
+Link speed downshift after N failed 1000BASE-T auto-negotiation attempts.
+Downshift is useful where cable does not have the 4 pairs instance.
+
+Gets the PHY downshift count/status.
+.TP
+.B fast\-link\-down
+Depending on the mode it may take 0.5s - 1s until a broken link is reported as down.
+In certain use cases a link-down event needs to be reported as soon as possible.
+Some PHYs support a Fast Link Down Feature and may allow configuration of the delay
+before a broken link is reported as being down.
+
+Gets the PHY Fast Link Down status / period.
+.TP
+.B energy\-detect\-power\-down
+Gets the current configured setting for Energy Detect Power Down (if supported).
+
+.RE
+.TP
+.B \-\-get\-tunable
+Get the tunable parameters.
+.RS 4
+.TP
+.B rx\-copybreak
+Get the current rx copybreak value in bytes.
+.TP
+.B tx\-copybreak
+Get the current tx copybreak value in bytes.
+.TP
+.B tx\-buf\-size
+Get the current tx copybreak buffer size in bytes.
+.TP
+.B pfc\-prevention\-tout
+Get the current pfc prevention timeout value in msecs.
+.RE
+.TP
+.B \-\-set\-tunable
+Set driver's tunable parameters.
+.RS 4
+.TP
+.BI rx\-copybreak \ N
+Set the rx copybreak value in bytes.
+.TP
+.BI tx\-copybreak \ N
+Set the tx copybreak value in bytes.
+.TP
+.BI tx\-buf\-size \ N
+Set the tx copybreak buffer size in bytes.
+.TP
+.BI pfc\-prevention\-tout \ N
+Set pfc prevention timeout in msecs. Value of 0 means disable and 65535 means auto.
+.RE
+.TP
+.B \-\-reset
+Reset hardware components specified by flags and components listed below
+.RS 4
+.TP
+.BI flags \ N
+Resets the components based on direct flags mask
+.TP
+.B mgmt
+Management processor
+.TP
+.B irq
+Interrupt requester
+.TP
+.B dma
+DMA engine
+.TP
+.B filter
+Filtering/flow direction
+.TP
+.B offload
+Protocol offload
+.TP
+.B mac
+Media access controller
+.TP
+.B phy
+Transceiver/PHY
+.TP
+.B ram
+RAM shared between multiple components
+.B ap
+Application Processor
+.TP
+.B dedicated
+All components dedicated to this interface
+.TP
+.B all
+All components used by this interface, even if shared
+.RE
+.TP
+.B \-\-show\-fec
+Queries the specified network device for its support of Forward Error Correction.
+.TP
+.B \-\-set\-fec
+Configures Forward Error Correction for the specified network device.
+
+Forward Error Correction modes selected by a user are expected to be persisted
+after any hotplug events. If a module is swapped that does not support the
+current FEC mode, the driver or firmware must take the link down
+administratively and report the problem in the system logs for users to correct.
+.RS 4
+.TP
+.BR encoding\ auto | off | rs | baser | llrs \ [...]
+
+Sets the FEC encoding for the device.  Combinations of options are specified as
+e.g.
+.B encoding auto rs
+; the semantics of such combinations vary between drivers.
+.TS
+nokeep;
+lB	l.
+auto	Use the driver's default encoding
+off	Turn off FEC
+RS	Force RS-FEC encoding
+BaseR	Force BaseR encoding
+LLRS	Force LLRS-FEC encoding
+.TE
+.RE
+.TP
+.B \-Q|\-\-per\-queue
+Applies provided sub command to specific queues.
+.RS 4
+.TP
+.B queue_mask %x
+Sets the specific queues which the sub command is applied to.
+If queue_mask is not set, the sub command will be applied to all queues.
+.TP
+.B sub_command
+Sub command to apply. The supported sub commands include --show-coalesce and
+--coalesce.
+.RE
+.TP
+.B \-\-cable\-test
+Perform a cable test and report the results. What results are returned depends
+on the capabilities of the network interface. Typically open pairs and shorted
+pairs can be reported, along with pairs being O.K. When a fault is detected
+the approximate distance to the fault may be reported.
+.TP
+.B \-\-cable\-test\-tdr
+Perform a cable test and report the raw Time Domain Reflectometer
+data.  A pulse is sent down a cable pair and the amplitude of the
+reflection, for a given distance, is reported. A break in the cable
+returns a big reflection. Minor damage to the cable returns a small
+reflection. If the cable is shorted, the amplitude of the reflection
+can be negative. By default, data is returned for lengths between 0
+and 150m at 1m steps, for all pairs. However parameters can be passed
+to restrict the collection of data. It should be noted, that the
+interface will round the distances to whatever granularity is actually
+implemented. This is often 0.8 of a meter. The results should include
+the actual rounded first and last distance and step size.
+.RS 4
+.TP
+.B first \ N
+Distance along the cable, in meters, where the first measurement
+should be made.
+.TP
+.B last \ N
+Distance along the cable, in meters, where the last measurement should
+be made.
+.TP
+.B step \ N
+Distance, in meters, between each measurement.
+.TP
+.B pair \ N
+Which pair should be measured. Typically a cable has 4 pairs. 0 = Pair A, 1 = Pair B, ...
+.RE
+.TP
+.B \-\-monitor
+Listens to netlink notification and displays them.
+.RS 4
+.TP
+.I command
+If argument matching a command is used, ethtool only shows notifications of
+this type. Without such argument or with --all, all notification types are
+shown.
+.TP
+.I devname
+If a device name is used as argument, only notification for this device are
+shown. Default is to show notifications for all devices.
+.RE
+.TP
+.B \-\-show\-tunnels
+Show tunnel-related device capabilities and state.
+List UDP ports kernel has programmed the device to parse as VxLAN,
+or GENEVE tunnels.
+.RE
+.TP
+.B \-\-show\-module
+Show the transceiver module's parameters.
+.RE
+.TP
+.B \-\-set\-module
+Set the transceiver module's parameters.
+.RS 4
+.TP
+.A2 power-mode-policy high auto
+Set the power mode policy for the module. When set to \fBhigh\fR, the module
+always operates at high power mode. When set to \fBauto\fR, the module is
+transitioned by the host to high power mode when the first port using it is put
+administratively up and to low power mode when the last port using it is put
+administratively down. The power mode policy can be set before a module is
+plugged-in.
+.RE
+.TP
+.B \-\-get\-plca\-cfg
+Show the current PLCA parameters for the given interface.
+.RE
+.TP
+.B \-\-set\-plca\-cfg
+Change the PLCA settings for the given interface.
+.RS 4
+.TP
+.A2 enable on off
+Enables or disables the PLCA function. When the PLCA RS is disabled (default),
+the PHY operates in plain CSMA/CD mode. To enable PLCA, the PHY must be assigned
+a unique \fBplca\-id\fR other than 255. This one can be configured concurrently
+with the enable parameter. The \fBenable\fR parameter maps to IEEE 802.3cg-2019
+clause 30.16.1.1.1 (aPLCAAdminState) and clause 30.16.1.2.1 (acPLCAAdminControl).
+.TP
+.BI node\-id \ N
+The unique node identifier in the range [0 .. 255]. Node ID 0 is reserved for
+the coordinator node, the one generating the BEACON signal. There must be
+exactly one coordinator on a PLCA network. Setting the node ID to 255 (default)
+disables the node. This parameter maps to IEEE 802.3cg-2019 clause 30.16.1.1.4
+(aPLCALocalNodeID).
+.TP
+.BI node\-cnt \ N
+The node-cnt [1 .. 255] should be set after the maximum number of nodes that
+can be plugged to the multi-drop network. This parameter regulates the minimum
+length of the PLCA cycle. Therefore, it is only meaningful for the coordinator
+node (\fBnod-id\fR = 0). Setting this parameter on a follower node has no
+effect. The \fBnode\-cnt\fR parameter maps to IEEE 802.3cg-2019 clause
+30.16.1.1.3 (aPLCANodeCount).
+.TP
+.BI to\-tmr \ N
+The TO timer parameter sets the value of the transmit opportunity timer in
+bit-times, and shall be set equal across all the nodes sharing the same
+medium for PLCA to work. The default value of 32 is enough to cover a link of
+roughly 50 mt. This parameter maps to  IEEE 802.3cg-2019 clause 30.16.1.1.5
+(aPLCATransmitOpportunityTimer).
+.TP
+.BI burst\-cnt \ N
+The \fBburst\-cnt\fR parameter [0 .. 255] indicates the extra number of packets
+that the node is allowed to send during a single transmit opportunity.
+By default, this attribute is 0, meaning that the node can send a sigle frame
+per TO. When greater than 0, the PLCA RS keeps the TO after any transmission,
+waiting for the MAC to send a new frame for up to \fBburst\-tmr\fR BTs. This can
+only happen a number of times per PLCA cycle up to the value of this parameter.
+After that, the burst is over and the normal counting of TOs resumes.
+This parameter maps to IEEE 802.3cg-2019 clause 30.16.1.1.6 (aPLCAMaxBurstCount).
+.TP
+.BI burst\-tmr \ N
+The \fBburst\-tmr\fR parameter [0 .. 255] sets how many bit-times the PLCA RS
+waits for the MAC to initiate a new transmission when \fBburst\-cnt\fR is
+greater than 0. If the MAC fails to send a new frame within this time, the burst
+ends and the counting of TOs resumes. Otherwise, the new frame is sent as part
+of the current burst. This parameter maps to IEEE 802.3cg-2019 clause
+30.16.1.1.7 (aPLCABurstTimer). The value of \fBburst\-tmr\fR should be set
+greater than the Inter-Frame-Gap (IFG) time of the MAC (plus some margin)
+for PLCA burst mode to work as intended.
+.RE
+.TP
+.B \-\-get\-plca\-status
+Show the current PLCA status for the given interface. If \fBon\fR, the PHY is
+successfully receiving or generating the BEACON signal. If \fBoff\fR, the PLCA
+function is temporarily disabled and the PHY is operating in plain CSMA/CD mode.
+.RE
+.TP
+.B \-\-show\-mm
+Show the MAC Merge layer state. The ethtool argument
+.B \-I \-\-include\-statistics
+can be used with this command, and MAC Merge layer statistics counters will
+also be retrieved.
+.RS 4
+.TP
+.B pmac-enabled
+Shows whether the pMAC is enabled and capable of receiving traffic and SMD-V
+frames (and responding to them with SMD-R replies).
+.TP
+.B tx-enabled
+Shows whether transmission on the pMAC is administratively enabled.
+.TP
+.B tx-active
+Shows whether transmission on the pMAC is active (verification is either
+successful, or was disabled).
+.TP
+.B tx-min-frag-size
+Shows the minimum size (in octets) of transmitted non-final fragments which
+can be received by the link partner. Corresponds to the standard addFragSize
+variable using the formula:
+
+tx-min-frag-size = 64 * (1 + addFragSize) - 4
+.TP
+.B rx-min-frag-size
+Shows the minimum size (in octets) of non-final fragments which the local
+device supports receiving.
+.TP
+.B verify-enabled
+Shows whether the verification state machine is enabled. This process, if
+successful, ensures that preemptible frames transmitted by the local device
+will not be dropped as error frames by the link partner.
+.TP
+.B verify-time
+Shows the interval in ms between verification attempts, represented as an
+integer between 1 and 128 ms. The standard defines a fixed number of
+verification attempts (verifyLimit) before failing the verification process.
+.TP
+.B max-verify-time
+Shows the maximum value for verify-time accepted by the local device, which
+may be less than 128 ms.
+.TP
+.B verify-status
+Shows the current state of the verification state machine of the local device.
+Values can be
+.B INITIAL,
+.B VERIFYING,
+.B SUCCEEDED,
+.B FAILED
+or
+.B DISABLED.
+
+.RE
+.TP
+.B \-\-set\-mm
+Set the MAC Merge layer parameters.
+.RS 4
+.TP
+.A2 pmac-enabled \ on off
+Enable reception for the pMAC.
+.TP
+.A2 tx-enabled \ on off
+Administatively enable transmission for the pMAC.
+.TP
+.B tx-min-frag-size \ N
+Set the minimum size (in octets) of transmitted non-final fragments which can
+be received by the link partner.
+.TP
+.A2 verify-enabled \ on off
+Enable or disable the verification state machine.
+.TP
+.B verify-time \ N
+Set the interval in ms between verification attempts.
+
+.RE
+.TP
+.B \-\-show\-pse
+Show the current Power Sourcing Equipment (PSE) status for the given interface.
+.RS 4
+.TP
+.B podl-pse-admin-state
+This attribute indicates the operational status of PoDL PSE functions, which
+can be modified using the
+.B podl-pse-admin-control
+parameter. It corresponds to IEEE 802.3-2018 30.15.1.1.2 (aPoDLPSEAdminState),
+with potential values being
+.B enabled, disabled
+.TP
+.B podl-pse-power-detection-status
+This attribute indicates the power detection status of the PoDL PSE. The
+status depend on internal PSE state machine and automatic PD classification
+support. It corresponds to IEEE 802.3-2018 30.15.1.1.3
+(aPoDLPSEPowerDetectionStatus) with potential values being
+.B disabled, searching, delivering power, sleep, idle, error
+.RE
+
+.RE
+.TP
+.B \-\-set\-pse
+Set Power Sourcing Equipment (PSE) parameters.
+.RS 4
+.TP
+.A2 podl-pse-admin-control \ enable disable
+This parameter manages PoDL PSE Admin operations in accordance with the IEEE
+802.3-2018 30.15.1.2.1 (acPoDLPSEAdminControl) specification.
+
 .SH BUGS
 Not supported (in part or whole) on all network drivers.
 .SH AUTHOR
@@ -964,7 +1789,8 @@ Andi Kleen,
 Alexander Duyck,
 Sucheta Chakraborty,
 Jesse Brandeburg,
-Ben Hutchings.
+Ben Hutchings,
+Scott Branden.
 .SH AVAILABILITY
 .B ethtool
 is available from

@@ -12,6 +12,12 @@
 #define TEST_NO_WRAPPERS
 #include "internal.h"
 
+#ifdef ETHTOOL_ENABLE_NETLINK
+#define IS_NL 1
+#else
+#define IS_NL 0
+#endif
+
 static struct test_case {
 	int rc;
 	const char *args;
@@ -19,7 +25,10 @@ static struct test_case {
 	{ 1, "" },
 	{ 0, "devname" },
 	{ 0, "15_char_devname" },
-	{ 1, "16_char_devname!" },
+	/* netlink interface allows names up to 127 characters */
+	{ !IS_NL, "16_char_devname!" },
+	{ !IS_NL, "127_char_devname0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde" },
+	{ 1, "128_char_devname0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" },
 	/* Argument parsing for -s is specialised */
 	{ 0, "-s devname" },
 	{ 0, "--change devname speed 100 duplex half mdix auto" },
@@ -55,7 +64,8 @@ static struct test_case {
 	{ 0, "-s devname phyad 1" },
 	{ 1, "--change devname phyad foo" },
 	{ 1, "-s devname phyad" },
-	{ 0, "--change devname xcvr external" },
+	/* Deprecated 'xcvr' detected by netlink parser */
+	{ IS_NL, "--change devname xcvr external" },
 	{ 1, "-s devname xcvr foo" },
 	{ 1, "--change devname xcvr" },
 	{ 0, "-s devname wol p" },
@@ -69,7 +79,9 @@ static struct test_case {
 	{ 0, "-s devname msglvl hw on rx_status off" },
 	{ 1, "--change devname msglvl hw foo" },
 	{ 1, "-s devname msglvl hw" },
-	{ 0, "--change devname speed 100 duplex half port tp autoneg on advertise 0x1 phyad 1 xcvr external wol p sopass 01:23:45:67:89:ab msglvl 1" },
+	{ 0, "--change devname speed 100 duplex half port tp autoneg on advertise 0x1 phyad 1 wol p sopass 01:23:45:67:89:ab msglvl 1" },
+	/* Deprecated 'xcvr' detected by netlink parser */
+	{ IS_NL, "--change devname speed 100 duplex half port tp autoneg on advertise 0x1 phyad 1 xcvr external wol p sopass 01:23:45:67:89:ab msglvl 1" },
 	{ 1, "-s devname foo" },
 	{ 1, "-s" },
 	{ 0, "-a devname" },
@@ -194,7 +206,11 @@ static struct test_case {
 	{ 1, "-X devname equal 0" },
 	{ 1, "--set-rxfh-indir devname equal foo" },
 	{ 1, "-X devname equal" },
+	{ 1, "-X devname start" },
+	{ 1, "-X devname start 3" },
+	{ 0, "-X devname start 4 equal 2" },
 	{ 0, "--set-rxfh-indir devname weight 1 2 3 4" },
+	{ 0, "--set-rxfh-indir devname start 4 weight 1 2 3 4" },
 	{ 0, "--rxfh devname hkey 48:15:6e:bb:d8:bd:6f:b1:a4:c6:7a:c4:76:1c:29:98:da:e1:ae:6c:2e:12:2f:c0:b9:be:61:3d:00:54:35:9e:09:05:c7:d7:93:72:4a:ee" },
 	{ 0, "-X devname hkey 48:15:6e:bb:d8:bd:6f:b1:a4:c6:7a:c4:76:1c:29:98:da:e1:ae:6c:2e:12:2f:c0:b9:be:61:3d:00:54:35:9e:09:05:c7:d7:93:72:4a:ee" },
 #if 0
@@ -266,6 +282,16 @@ static struct test_case {
 	{ 0, "--set-eee devname tx-timer 42 advertise 0x4321" },
 	{ 1, "--set-eee devname tx-timer foo" },
 	{ 1, "--set-eee devname advertise foo" },
+	{ 1, "--set-fec devname" },
+	{ 0, "--set-fec devname encoding auto" },
+	{ 0, "--set-fec devname encoding off" },
+	{ 0, "--set-fec devname encoding baser rs" },
+	{ 0, "--set-fec devname encoding auto auto" },
+	/* encoding names are validated by kernel with netlink */
+	{ !IS_NL, "--set-fec devname encoding foo" },
+	{ !IS_NL, "--set-fec devname encoding auto foo" },
+	{ !IS_NL, "--set-fec devname encoding none" },
+	{ 1, "--set-fec devname auto" },
 	/* can't test --set-priv-flags yet */
 	{ 0, "-h" },
 	{ 0, "--help" },
@@ -275,11 +301,23 @@ static struct test_case {
 	{ 1, "-0" },
 };
 
-int send_ioctl(struct cmd_context *ctx, void *cmd)
+int send_ioctl(struct cmd_context *ctx __maybe_unused, void *cmd __maybe_unused)
 {
 	/* If we get this far then parsing succeeded */
 	test_exit(0);
 }
+
+#ifdef ETHTOOL_ENABLE_NETLINK
+struct nl_socket;
+struct nl_msg_buff;
+
+ssize_t nlsock_sendmsg(struct nl_socket *nlsk __maybe_unused,
+		       struct nl_msg_buff *altbuff __maybe_unused)
+{
+	/* If we get this far then parsing succeeded */
+	test_exit(0);
+}
+#endif
 
 int main(void)
 {

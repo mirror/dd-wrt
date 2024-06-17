@@ -1,5 +1,5 @@
 Name		: ethtool
-Version		: 4.8
+Version		: 6.9
 Release		: 1
 Group		: Utilities
 
@@ -22,7 +22,7 @@ network devices, especially Ethernet devices.
 
 
 %build
-CFLAGS="${RPM_OPT_FLAGS}" ./configure --prefix=/usr --mandir=%{_mandir}
+CFLAGS="${RPM_OPT_FLAGS}" ./configure --prefix=%{_prefix} --mandir=%{_mandir}
 make
 
 
@@ -32,8 +32,9 @@ make install DESTDIR=${RPM_BUILD_ROOT}
 
 %files
 %defattr(-,root,root)
-/usr/sbin/ethtool
+%{_sbindir}/ethtool
 %{_mandir}/man8/ethtool.8*
+%{_datadir}/bash-completion/completions/ethtool
 %doc AUTHORS COPYING NEWS README
 
 

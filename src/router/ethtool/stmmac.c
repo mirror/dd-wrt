@@ -14,7 +14,11 @@
 #include <string.h>
 #include "internal.h"
 
-int st_mac100_dump_regs(struct ethtool_drvinfo *info,
+#define MAC100_DMA_REG_NUM	9
+#define GMAC_REG_NUM		55
+#define GMAC_DMA_REG_NUM	23
+
+int st_mac100_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
 			struct ethtool_regs *regs)
 {
 	int i;
@@ -36,7 +40,7 @@ int st_mac100_dump_regs(struct ethtool_drvinfo *info,
 
 	fprintf(stdout, "\n");
 	fprintf(stdout, "DMA Registers\n");
-	for (i = 0; i < 9; i++)
+	for (i = 0; i < MAC100_DMA_REG_NUM; i++)
 		fprintf(stdout, "CSR%d  0x%08X\n", i, *stmmac_reg++);
 
 	fprintf(stdout, "DMA cur tx buf addr 0x%08X\n", *stmmac_reg++);
@@ -47,19 +51,20 @@ int st_mac100_dump_regs(struct ethtool_drvinfo *info,
 	return 0;
 }
 
-int st_gmac_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int st_gmac_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		      struct ethtool_regs *regs)
 {
 	int i;
 	unsigned int *stmmac_reg = (unsigned int *)regs->data;
 
 	fprintf(stdout, "ST GMAC Registers\n");
 	fprintf(stdout, "GMAC Registers\n");
-	for (i = 0; i < 55; i++)
+	for (i = 0; i < GMAC_REG_NUM; i++)
 		fprintf(stdout, "Reg%d  0x%08X\n", i, *stmmac_reg++);
 
 	fprintf(stdout, "\n");
 	fprintf(stdout, "DMA Registers\n");
-	for (i = 0; i < 22; i++)
+	for (i = 0; i < GMAC_DMA_REG_NUM; i++)
 		fprintf(stdout, "Reg%d  0x%08X\n", i, *stmmac_reg++);
 
 	return 0;

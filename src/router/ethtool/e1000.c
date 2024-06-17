@@ -254,8 +254,7 @@ enum e1000_mac_type {
 	e1000_num_macs
 };
 
-static enum e1000_mac_type
-e1000_get_mac_type(u16 device_id, u8 revision_id)
+static enum e1000_mac_type e1000_get_mac_type(u16 device_id)
 {
 	enum e1000_mac_type mac_type = e1000_undefined;
 
@@ -364,12 +363,12 @@ e1000_get_mac_type(u16 device_id, u8 revision_id)
 	return mac_type;
 }
 
-int
-e1000_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int e1000_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		    struct ethtool_regs *regs)
 {
 	u32 *regs_buff = (u32 *)regs->data;
 	u16 hw_device_id = (u16)regs->version;
-	u8 hw_revision_id = (u8)(regs->version >> 16);
+	/* u8 hw_revision_id = (u8)(regs->version >> 16); */
 	u8 version = (u8)(regs->version >> 24);
 	enum e1000_mac_type mac_type;
 	u32 reg;
@@ -377,7 +376,7 @@ e1000_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 	if (version != 1)
 		return -1;
 
-	mac_type = e1000_get_mac_type(hw_device_id, hw_revision_id);
+	mac_type = e1000_get_mac_type(hw_device_id);
 
 	if(mac_type == e1000_undefined)
 		return -1;

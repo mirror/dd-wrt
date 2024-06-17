@@ -168,7 +168,8 @@ ixgbe_get_mac_type(u16 device_id)
 }
 
 int
-ixgbe_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+ixgbe_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		struct ethtool_regs *regs)
 {
 	u32 *regs_buff = (u32 *)regs->data;
 	u32 regs_buff_len = regs->len / sizeof(*regs_buff);
@@ -232,9 +233,9 @@ ixgbe_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		"       Receive Priority Flow Control Packets:         %s\n",
 		reg,
 		reg & IXGBE_MFLCN_RFCE    ? "enabled"  : "disabled",
-		reg & IXGBE_FCTRL_DPF     ? "enabled"  : "disabled",
-		reg & IXGBE_FCTRL_PMCF    ? "enabled"  : "disabled",
-		reg & IXGBE_FCTRL_RPFCE   ? "enabled"  : "disabled");
+		reg & IXGBE_MFLCN_DPF     ? "enabled"  : "disabled",
+		reg & IXGBE_MFLCN_PMCF    ? "enabled"  : "disabled",
+		reg & IXGBE_MFLCN_RPFCE   ? "enabled"  : "disabled");
 	}
 
 	reg = regs_buff[516];
@@ -1263,6 +1264,32 @@ ixgbe_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		fprintf(stdout,
 			"0x03300: PBRXECC     (Packet Buffer Rx ECC)           0x%08X\n",
 			regs_buff[1127]);
+	}
+
+	if (regs_buff_len > 1139 && mac_type != ixgbe_mac_82598EB) {
+		fprintf(stdout,
+			"0x08800: SECTXCTRL   (Security Tx Control)            0x%08X\n",
+			regs_buff[1139]);
+
+		fprintf(stdout,
+			"0x08804: SECTXSTAT   (Security Tx Status)             0x%08X\n",
+			regs_buff[1140]);
+
+		fprintf(stdout,
+			"0x08808: SECTXBUFFAF (Security Tx Buffer Almost Full) 0x%08X\n",
+			regs_buff[1141]);
+
+		fprintf(stdout,
+			"0x08800: SECTXMINIFG (Security Tx Buffer Minimum IFG) 0x%08X\n",
+			regs_buff[1142]);
+
+		fprintf(stdout,
+			"0x08800: SECRXCTRL   (Security Rx Control)            0x%08X\n",
+			regs_buff[1143]);
+
+		fprintf(stdout,
+			"0x08800: SECRXSTAT   (Security Rx Status)             0x%08X\n",
+			regs_buff[1144]);
 	}
 
 	return 0;

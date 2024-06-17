@@ -111,8 +111,8 @@ print_rx_missed(u32 csr8)
 	}
 }
 
-static void
-de21040_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+static void de21040_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+			      struct ethtool_regs *regs)
 {
 	u32 tmp, v, *data = (u32 *)regs->data;
 
@@ -417,8 +417,8 @@ de21040_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		v & (1<<0) ? "      Jabber disable\n" : "");
 }
 
-static void
-de21041_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+static void de21041_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+			      struct ethtool_regs *regs)
 {
 	u32 tmp, v, *data = (u32 *)regs->data;
 

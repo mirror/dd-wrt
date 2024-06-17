@@ -12,8 +12,8 @@ static char *hw_versions[] = {
         "     505AMX",
 };
 
-int
-at76c50x_usb_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int at76c50x_usb_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+			   struct ethtool_regs *regs)
 {
 	u8 version = (u8)(regs->version >> 24);
 	u8 rev_id = (u8)(regs->version);

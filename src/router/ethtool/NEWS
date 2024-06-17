@@ -1,3 +1,354 @@
+Version 6.9 - May 23, 2024
+	* Feature: support for rx-flow-hash gtp (-N)
+	* Feature: support for RSS input transformation (-X)
+	* Fix: typo in coalescing output (-c)
+	* Fix: document all debugging flags in man page
+
+Version 6.7 - January 29, 2024
+	* Feature: support for setting TCP data split
+	* Fix: fix new gcc14 warning
+	* Fix: fix SFF-8472 transceiver module identification (-m)
+	* Misc: code cleanup
+
+Version 6.6 - November 23, 2023
+	* Feature: support for more CMIS transceiver modules (-m)
+	* Fix: fix build on systems with old kernel uapi headers
+
+Version 6.5 - September 12, 2023
+	* Feature: register dump for hns3 driver (-d)
+	* Fix: fix fallback to ioctl for sset (-s)
+	* Fix: fix empty slot search in rmgr (-N)
+
+Version 6.4 - July 1, 2023
+	* Feature: get/set Tx push buffer length (-G)
+	* Feature: sff-8636 and cmis: report LOL / LOS / Tx Fault (-m)
+	* Fix: fix duplex setting parser (-s)
+	* Misc: check and require C11 language standard
+	* Misc: clean up obsolete pre-build checks
+
+Version 6.3 - May 8, 2023
+	* Feature: PLCA support (--[gs]et-plca-cfg, --get-plca-status)
+	* Feature: MAC Merge layer support (--show-mm, --set-mm)
+	* Feature: pass source of statistics for port stats
+	* Feature: get/set rx push in ringparams (-g and -G)
+	* Feature: coalesce tx aggregation parameters (-c and -C)
+	* Feature: PSE and PD devices (--show-pse, --set-pse)
+	* Fix: minor fixes of help text (--help)
+	* Fix: fix build on systems with older system headers
+	* Fix: fix netlink support when PLCA is not present (no option)
+	* Fix: fixes for issues found with gcc13 -fanalyzer
+	* Fix: fix return code in rxclass_rule_ins (-N)
+	* Fix: more robust argc/argv handling
+
+Version 6.2 - February 21, 2023
+	* Feature: link down event statistics (no option)
+	* Feature: JSON output for coalesce (-c)
+	* Feature: new link modes (no option)
+	* Feature: JSON output for ring (-g)
+	* Feature: netlink handler for RSS get (-x)
+	* Fix: fix boolean value output in JSON output
+	* Fix: fix build errors and warnings
+
+Version 6.1 - December 19, 2022
+	* Feature: update link mode tables
+	* Feature: register dump for NXP ENETC driver (-d)
+	* Feature: report TCP header-data split (-g)
+	* Feature: support new message types in pretty print
+	* Fix: fix compiler warnings
+	* Fix: man page syntax fixes
+
+Version 6.0 - October 10, 2022
+	* Fix: advertisement modes autoselection by lanes (-s)
+
+Version 5.19 - August 22, 2022
+	* Feature: get/set tx push (-g and -G)
+	* Feature: register dump support for TI CPSW (-d)
+	* Feature: register dump support for lan743x chipset (-d)
+	* Fix: fix missing sff-8472 output in netlink path (-m)
+	* Fix: fix EEPROM byte write (-E)
+
+Version 5.18 - June 14, 2022
+	* Feature: get/set cqe size (-g and -G)
+	* Fix: fix typo in man page
+	* Fix: fix help text alignment
+	* Fix: improve attribute label (--show-fec)
+
+Version 5.17 - April 4, 2022
+	* Feature: transceiver module power mode (--set-module)
+	* Feature: transceiver module extended state (--show-module)
+	* Feature: get/set rx buffer length (-g and -G)
+	* Feature: tx copybreak buffer size (--get-tunable and --set-tunable)
+	* Feature: JSON output for features (-k)
+	* Feature: support OSFP transceiver modules (-m)
+	* Fix: add missing free() calls (--get-tunable and --set-tunable)
+
+Version 5.16 - January 19, 2022
+	* Feature: use memory maps for module EEPROM parsing (-m)
+	* Feature: show CMIS diagnostic information (-m)
+	* Fix: fix dumping advertised FEC modes (--show-fec)
+	* Fix: ignore cable test notifications from other devices (--cable-test)
+	* Fix: do not show duplicate options in help text (--help)
+
+Version 5.15 - November 9, 2021
+	* Feature: new extended link substates for bad signal (no arg)
+	* Feature: coalesce cqe mode attributes (-c and -C)
+	* Fix: multiple fixes of EEPROM module data parsing (-m)
+	* Fix: fix condition to display MDI-X info (no arg)
+
+Version 5.14 - September 12, 2021
+	* Feature: do not silently ignore --json if unsupported
+	* Feature: support new message types in pretty print
+
+Version 5.13 - July 9, 2021
+	* Feature: netlink handler for FEC (--show-fec and --set-fec)
+	* Feature: FEC stats support (--show-fec)
+	* Feature: standard based stats support (-S)
+	* Feature: netlink handler for module EEPROM dump (-m)
+	* Feature: page, bank and i2c selection in module dump (-m)
+
+Version 5.12 - May 2, 2021
+	* Feature: support lanes count (no option and -s)
+	* Fix: fix help message for master-slave parameter (-s)
+	* Fix: better error message for master-slave in ioctl code path
+	* Fix: get rid of compiler warnings in "make check"
+
+Version 5.10 - Dec 16, 2020
+	* Feature: infrastructure for JSON output
+	* Feature: separate FLAGS in -h output
+	* Feature: use policy dumps to check flags support
+	* Feature: show pause stats (-a)
+	* Feature: pretty printing of policy dumps
+	* Feature: improve error message when SFP module is missing
+	* Fix: use after free in netlink_run_handler()
+	* Fix: leaked instances of struct nl_socket
+	* Fix: improve compatibility between netlink and ioctl (-s)
+
+Version 5.9 - Oct 15, 2020
+	* Feature: extended link state
+	* Feature: QSFP-DD support
+	* Feature: tunnel information (--show-tunnels)
+	* Feature: Broadcom bnxt support
+	* Fix: improve compatibility between ioctl and netlink output
+	* Fix: cable test TDR amplitude output
+	* Fix: get rid of build warnings
+	* Fix: null pointer dereference running against old kernel (no arg)
+	* Fix: update link mode tables
+	* Fix: fix memory leaks and error handling found by static analysis
+
+Version 5.8 - Aug 4, 2020
+	* Feature: more ethtool netlink message format descriptions
+	* Feature: omit test-features if netlink is enabled
+	* Feature: netlink handler for gfeatures (-k)
+	* Feature: netlink handler for sfeatures (-K)
+	* Feature: netlink handler for gprivflags (--show-priv-flags)
+	* Feature: netlink handler for sprivflags (--set-priv-flags)
+	* Feature: netlink handler for gring (-g)
+	* Feature: netlink handler for sring (-G)
+	* Feature: netlink handler for gchannels (-l)
+	* Feature: netlink handler for schannels (-L)
+	* Feature: netlink handler for gcoalesce (-c)
+	* Feature: netlink handler for scoalesce (-C)
+	* Feature: netlink handler for gpause (-a)
+	* Feature: netlink handler for spause (-A)
+	* Feature: netlink handler for geee (--show-eee)
+	* Feature: netlink handler for seee (--set-eee)
+	* Feature: netlink handler for tsinfo (-T)
+	* Feature: master/slave configuration support
+	* Feature: LINKSTATE SQI support
+	* Feature: cable test support
+	* Feature: cable test TDR support
+	* Feature: JSON output for cable test commands
+	* Feature: igc driver support
+	* Feature: support for get/set ethtool_tunable
+	* Feature: dsa: mv88e6xxx: add pretty dump for 88E6352 SERDES
+	* Fix: fix build warnings
+	* Fix: fix nest type grouping in parser
+	* Fix: fix msgbuff_append() helper
+	* Fix: fix unwanted switch fall through in family_info_cb()
+	* Fix: fix netlink error message suppression
+	* Fix: fix netlink bitmasks when sent as NOMASK
+	* Fix: use "Not reported" when no FEC modes are provided
+	* Fix: ioctl: do not pass transceiver value back to kernel
+	* Fix: ethtool.spec: Add bash completion script
+
+Version 5.7 - Jun 4, 2020
+	* Feature: ethtool: Add support for Low Latency Reed Solomon
+	* Fix: ethtool.c: Report transceiver correctly
+	* Feature: features: accept long legacy flag names when setting features
+	* Feature: refactor interface between ioctl and netlink code
+	* Feature: netlink: use genetlink ops information to decide about fallback
+	* Feature: netlink: show netlink error even without extack
+	* Feature: ethtool: add support for newer SFF-8024 compliance codes
+	* Feature: Rewrite printf() due to -Werror=format-security
+
+Version 5.6 - May 12, 2020
+	* Feature: add --debug option to control debugging messages
+	* Feature: use named initializers in command line option list
+	* Feature: netlink: add netlink related UAPI header files
+	* Feature: netlink: introduce the netlink interface
+	* Feature: netlink: message buffer and composition helpers
+	* Feature: netlink: netlink socket wrapper and helpers
+	* Feature: netlink: initialize ethtool netlink socket
+	* Feature: netlink: add support for string sets
+	* Feature: netlink: add notification monitor
+	* Feature: netlink: add bitset helpers
+	* Feature: netlink: partial netlink handler for gset (no option)
+	* Feature: netlink: support getting wake-on-lan and debugging settings
+	* Feature: netlink: add basic command line parsing helpers
+	* Feature: netlink: add bitset command line parser handlers
+	* Feature: netlink: add netlink handler for sset (-s)
+	* Feature: netlink: support tests with netlink enabled
+	* Feature: netlink: add handler for permaddr (-P)
+	* Feature: netlink: support for pretty printing netlink messages
+	* Feature: netlink: message format description for ethtool netlink
+	* Feature: netlink: message format descriptions for genetlink control
+	* Feature: netlink: message format descriptions for rtnetlink
+	* Feature: netlink: use pretty printing for ethtool netlink messages
+
+Version 5.4 - January 10, 2020
+
+	* Feature: ethtool: implement support for Energy Detect Power Down
+	* Fix: fix arithmetic on pointer to void is a GNU extension warning
+	* Fix: fix unused parameter warnings in do_version() and show_usage()
+	* Fix: fix unused parameter warning in find_option()
+	* Fix: fix unused parameter warning in dump_eeprom()
+	* Fix: fix unused parameter warning in altera_tse_dump_regs()
+	* Fix: fix unused parameter warning in sfc_dump_regs()
+	* Fix: fix unused parameter warning in print_simple_table()
+	* Fix: fix unused parameter warning in natsemi_dump_regs()
+	* Fix: fix unused parameter warning in netsemi_dump_eeprom()
+	* Fix: fix unused parameter warning in ixgbe_dump_regs()
+	* Fix: fix unused parameter warning in realtek_dump_regs()
+	* Fix: fix unused parameter warning in lan78xx_dump_regs()
+	* Fix: fix unused parameter warning in {skge, sky2}_dump_regs()
+	* Fix: fix unused parameter warning in dsa_dump_regs()
+	* Fix: fix unused parameter warning in vmxnet3_dump_regs()
+	* Fix: fix unused parameter warning in st_{mac100, gmac}_dump_regs()
+	* Fix: fix unused parameter warning in ixgbevf_dump_regs()
+	* Fix: fix unused parameter warning in fec_8xx_dump_regs()
+	* Fix: fix unused parameter warning in tg3_dump_{eeprom, regs}()
+	* Fix: fix unused parameter warning in vioc_dump_regs()
+	* Fix: fix unused parameter warning in e100_dump_regs()
+	* Fix: fix unused parameter warning in de2104[01]_dump_regs()
+	* Fix: fix unused parameter warning in igb_dump_regs()
+	* Fix: fix unused parameter warning in e1000_dump_regs()
+	* Fix: fix unused parameter warning in smsc911x_dump_regs()
+	* Fix: fix unused parameter warning in at76c50x_usb_dump_regs()
+	* Fix: fix unused parameter warning in fec_dump_regs()
+	* Fix: fix unused parameter warning in amd8111e_dump_regs()
+	* Fix: fix unused parameter warning in et131x_dump_regs()
+	* Fix: fix unused parameter warning in ibm_emac_dump_regs()
+	* Fix: fix unused parameter warning in ixgb_dump_regs()
+	* Fix: fix unused parameter warning in fjes_dump_regs()
+	* Fix: fix unused parameter warning in e1000_get_mac_type()
+	* Fix: ethtool: correctly interpret bitrate of 255
+	* Fix: ethtool: mark 10G Base-ER as SFF-8472 revision 10.4 onwards
+	* Fix: ethtool: add 0x16 and 0x1c extended compliance codes
+
+Version 5.3 - September 23, 2019
+	* Feature: igb: dump RR2DCDELAY register
+	* Feature: dump nested registers
+
+Version 5.2 - July 25, 2019
+	* Feature: Add 100BaseT1 and 1000BaseT1 link modes
+	* Feature: Use standard file location macros in ethtool.spec
+
+Version 5.1 - May 17, 2019
+	* Feature: Add support for 200Gbps (50Gbps per lane) link mode
+	* Feature: simplify handling of PHY tunable downshift
+	* Feature: add support for PHY tunable Fast Link Down
+	* Feature: add PHY Fast Link Down tunable to man page
+	* Feature: Add a 'start N' option when specifying the Rx flow hash indirection table.
+	* Feature: Add bash-completion script
+	* Feature: add 10000baseR_FEC link mode name
+	* Fix: qsfp: fix special value comparison
+	* Feature: move option parsing related code into function
+	* Feature: move cmdline_coalesce out of do_scoalesce
+	* Feature: introduce new ioctl for per-queue settings
+	* Feature: support per-queue sub command --show-coalesce
+	* Feature: support per-queue sub command --coalesce
+	* Fix: fix up dump_coalesce output to match actual option names
+	* Feature: fec: add pretty dump
+
+Version 5.0 - March 13, 2019
+	* Feature: don't report UFO on kernels v4.14 and above
+	* Fix: zero initialize coalesce struct
+	* Feature: dsa: add pretty dump
+	* Feature: dsa: mv88e6xxx: add pretty dump
+	* Feature: dsa: mv88e6xxx: add pretty dump for 88E6185
+	* Feature: dsa: mv88e6xxx: add pretty dump for 88E6161
+	* Feature: dsa: mv88e6xxx: add pretty dump for 88E6352
+	* Feature: dsa: mv88e6xxx: add pretty dump for 88E6390
+	* Feature: dsa: mv88e6xxx: add pretty dump for others
+
+Version 4.19 - November 2, 2018
+	* Feature: support combinations of FEC modes
+	* Feature: better syntax for combinations of FEC modes
+	* Fix: Fix uninitialized variable use at qsfp dump
+
+Version 4.18 - August 24, 2018
+	* Feature: Add support for WAKE_FILTER (WoL using filters)
+	* Feature: Add support for action value -2 (wake-up filter)
+	* Fix: document WoL filters option also in help message
+	* Feature: ixgbe dump strings for security registers
+
+Version 4.17 - June 15, 2018
+
+	* Fix: In ethtool.8, remove superfluous and incorrect \c.
+	* Fix: fix uninitialized return value
+	* Fix: fix RING_VF assignment
+	* Fix: remove unused global variable
+	* Fix: several fixes in do_gregs()
+	* Fix: correctly free hkey when get_stringset() fails
+	* Fix: remove unreachable code
+	* Fix: fix stack clash in do_get_phy_tunable and do_set_phy_tunable
+	* Feature: Add register dump support for MICROCHIP LAN78xx
+
+Version 4.16 - April 13, 2018
+
+	* Feature: add support for extra RSS contexts and RSS steering filters
+	* Feature: Document RSS context control and RSS filters
+	* Fix: don't fall back to grxfhindir when context was specified
+	* Fix: correct display of VF when showing vf/queue filters
+	* Fix: show VF and queue in the help for -N
+	* Fix: correct VF index values for the ring_cookie parameter
+	* Feature: Add SFF 8636 date code parsing support
+
+Version 4.15 - February 1, 2018
+
+	* Feature: Support for FEC encoding control
+	* Fix: Fix coding style warnings and errors reported by checkpatch
+	* Feature: Add extended compliance codes parsing to sfp modules
+	* Fix: Revert "ethtool: Add DMA Coalescing support"
+	* Feature: Add ETHTOOL_RESET support via --reset command
+	* Fix: fix MFLCN register dump for 82599 and newer
+
+Version 4.13 - October 27, 2017
+
+	* Fix: Do not return error code if no changes were attempted.
+	* Fix: Fix formatting of advertise bitmask
+	* Feature: Document 56000 advertise link modes
+	* Fix: fix the rx vs tx mixup in set channel message
+	* Feature: add support for HWTSTAMP_FILTER_NTP_ALL
+	* Feature: Add DMA Coalescing support
+	* Feature: Remove UDP Fragmentation Offload error prints
+	* Feature: stmmac: Add macros for number of registers
+	* Feature: stmmac: Add DMA HW Feature Register
+
+Version 4.11 - June 2, 2017
+
+	* Feature: Support for configurable RSS hash function
+	* Feature: support queue and VF fields for rxclass filters
+	* Feature: Add support for 2500baseT/5000baseT link modes
+	* Fix: Fix SFF 8079 cable technology bit parsing
+	* Fix: sync help output for -x/-X with man page
+
+Version 4.10 - March 24, 2017
+
+	* Fix: Fix the "advertise" parameter logic.
+	* Feature: Implement ETHTOOL_PHY_GTUNABLE/ETHTOOL_PHY_STUNABLE and PHY downshift
+	* Feature: add register dump support for fjes driver (-d option)
+
 Version 4.8 - October 3, 2016
 
 	* Feature: QSFP Plus/QSFP28 Diagnostics Information Support

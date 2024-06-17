@@ -31,14 +31,6 @@
 #define	SFF8636_ID_OFFSET	0x00
 
 #define	SFF8636_REV_COMPLIANCE_OFFSET	0x01
-#define	 SFF8636_REV_UNSPECIFIED		0x00
-#define	 SFF8636_REV_8436_48			0x01
-#define	 SFF8636_REV_8436_8636			0x02
-#define	 SFF8636_REV_8636_13			0x03
-#define	 SFF8636_REV_8636_14			0x04
-#define	 SFF8636_REV_8636_15			0x05
-#define	 SFF8636_REV_8636_20			0x06
-#define	 SFF8636_REV_8636_27			0x07
 
 #define	SFF8636_STATUS_2_OFFSET	0x02
 /* Flat Memory:0- Paging, 1- Page 0 only */
@@ -62,6 +54,8 @@
 #define	 SFF8636_TX3_FAULT_AW	(1 << 2)
 #define	 SFF8636_TX2_FAULT_AW	(1 << 1)
 #define	 SFF8636_TX1_FAULT_AW	(1 << 0)
+
+#define	SFF8636_LOL_AW_OFFSET	0x05
 
 /* Module Monitor Interrupt Flags - 6-8 */
 #define	SFF8636_TEMP_AW_OFFSET	0x06
@@ -188,7 +182,7 @@
 
 #define	SFF8636_PWR_MODE_OFFSET		0x5D
 #define	 SFF8636_HIGH_PWR_ENABLE		(1 << 2)
-#define	 SFF8636_LOW_PWR_MODE			(1 << 1)
+#define	 SFF8636_LOW_PWR_SET			(1 << 1)
 #define	 SFF8636_PWR_OVERRIDE			(1 << 0)
 
 #define	SFF8636_TX_APP_SELECT_4_OFFSET	0x5E
@@ -496,10 +490,52 @@
 #define	 SFF8636_ETHERNET_100G_AOC2		0x18
 #define	 SFF8636_ETHERNET_100G_ACC2		0x19
 
+#define  SFF8636_ETHERNET_100GE_DWDM2        0x1A
+#define  SFF8636_ETHERNET_100G_1550NM_WDM    0x1B
+#define  SFF8636_ETHERNET_10G_BASET_SR       0x1C
+#define  SFF8636_ETHERNET_5G_BASET           0x1D
+#define  SFF8636_ETHERNET_2HALFG_BASET       0x1E
+#define  SFF8636_ETHERNET_40G_SWDM4          0x1F
+#define  SFF8636_ETHERNET_100G_SWDM4         0x20
+#define  SFF8636_ETHERNET_100G_PAM4_BIDI     0x21
+#define  SFF8636_ETHERNET_4WDM10_MSA         0x22
+#define  SFF8636_ETHERNET_4WDM20_MSA         0x23
+#define  SFF8636_ETHERNET_4WDM40_MSA         0x24
+#define  SFF8636_ETHERNET_100G_DR            0x25
+#define  SFF8636_ETHERNET_100G_FR_NOFEC      0x26
+#define  SFF8636_ETHERNET_100G_LR_NOFEC      0x27
+/*  28h-2Fh reserved */
+#define  SFF8636_ETHERNET_200G_ACC1          0x30
+#define  SFF8636_ETHERNET_200G_AOC1          0x31
+#define  SFF8636_ETHERNET_200G_ACC2          0x32
+#define  SFF8636_ETHERNET_200G_A0C2          0x33
+/*  34h-3Fh reserved */
+#define  SFF8636_ETHERNET_200G_CR4           0x40
+#define  SFF8636_ETHERNET_200G_SR4           0x41
+#define  SFF8636_ETHERNET_200G_DR4           0x42
+#define  SFF8636_ETHERNET_200G_FR4           0x43
+#define  SFF8636_ETHERNET_200G_PSM4          0x44
+#define  SFF8636_ETHERNET_50G_LR             0x45
+#define  SFF8636_ETHERNET_200G_LR4           0x46
+/*  47h-4Fh reserved */
+#define  SFF8636_ETHERNET_64G_EA             0x50
+#define  SFF8636_ETHERNET_64G_SW             0x51
+#define  SFF8636_ETHERNET_64G_LW             0x52
+#define  SFF8636_ETHERNET_128FC_EA           0x53
+#define  SFF8636_ETHERNET_128FC_SW           0x54
+#define  SFF8636_ETHERNET_128FC_LW           0x55
+/*  56h-5Fh reserved */
+
 #define	 SFF8636_OPTION_2_OFFSET	0xC1
+/* Tx input equalizers auto-adaptive */
+#define	  SFF8636_O2_TX_EQ_AUTO		(1 << 3)
 /* Rx output amplitude */
 #define	  SFF8636_O2_RX_OUTPUT_AMP	(1 << 0)
 #define	 SFF8636_OPTION_3_OFFSET	0xC2
+/* Tx CDR Loss of Lock */
+#define	  SFF8636_O3_TX_LOL		(1 << 5)
+/* Rx CDR Loss of Lock */
+#define	  SFF8636_O3_RX_LOL		(1 << 4)
 /* Rx Squelch Disable */
 #define	  SFF8636_O3_RX_SQL_DSBL	(1 << 3)
 /* Rx Output Disable capable */
@@ -535,6 +571,8 @@
 #define	  SFF8636_DATE_MONTH_LEN		2
 #define	 SFF8636_DATE_DAY_OFFSET	0xD8
 #define	  SFF8636_DATE_DAY_LEN			2
+#define	 SFF8636_DATE_VENDOR_LOT_OFFSET 0xDA
+#define	  SFF8636_DATE_VENDOR_LOT_LEN		2
 
 /* Diagnostic Monitoring Type - 220 */
 #define	 SFF8636_DIAG_TYPE_OFFSET	0xDC
@@ -562,32 +600,35 @@
  * Offset - Page Num(3) * PageSize(0x80) + Page offset
  */
 
+/* 3 * 128 + Lower page 00h(128) */
+#define SFF8636_PAGE03H_OFFSET (128 * 4)
+
 /* Module Thresholds (48 Bytes) 128-175 */
 /* MSB at low address, LSB at high address */
-#define	SFF8636_TEMP_HALRM		0x200
-#define	SFF8636_TEMP_LALRM		0x202
-#define	SFF8636_TEMP_HWARN		0x204
-#define	SFF8636_TEMP_LWARN		0x206
+#define	SFF8636_TEMP_HALRM	0x80
+#define	SFF8636_TEMP_LALRM	0x82
+#define	SFF8636_TEMP_HWARN	0x84
+#define	SFF8636_TEMP_LWARN	0x86
 
-#define	SFF8636_VCC_HALRM		0x210
-#define	SFF8636_VCC_LALRM		0x212
-#define	SFF8636_VCC_HWARN		0x214
-#define	SFF8636_VCC_LWARN		0x216
+#define	SFF8636_VCC_HALRM	0x90
+#define	SFF8636_VCC_LALRM	0x92
+#define	SFF8636_VCC_HWARN	0x94
+#define	SFF8636_VCC_LWARN	0x96
 
-#define	SFF8636_RX_PWR_HALRM		0x230
-#define	SFF8636_RX_PWR_LALRM		0x232
-#define	SFF8636_RX_PWR_HWARN		0x234
-#define	SFF8636_RX_PWR_LWARN		0x236
+#define	SFF8636_RX_PWR_HALRM	0xB0
+#define	SFF8636_RX_PWR_LALRM	0xB2
+#define	SFF8636_RX_PWR_HWARN	0xB4
+#define	SFF8636_RX_PWR_LWARN	0xB6
 
-#define	SFF8636_TX_BIAS_HALRM		0x238
-#define	SFF8636_TX_BIAS_LALRM		0x23A
-#define	SFF8636_TX_BIAS_HWARN		0x23C
-#define	SFF8636_TX_BIAS_LWARN		0x23E
+#define	SFF8636_TX_BIAS_HALRM	0xB8
+#define	SFF8636_TX_BIAS_LALRM	0xBA
+#define	SFF8636_TX_BIAS_HWARN	0xBC
+#define	SFF8636_TX_BIAS_LWARN	0xBE
 
-#define	SFF8636_TX_PWR_HALRM		0x240
-#define	SFF8636_TX_PWR_LALRM		0x242
-#define	SFF8636_TX_PWR_HWARN		0x244
-#define	SFF8636_TX_PWR_LWARN		0x246
+#define	SFF8636_TX_PWR_HALRM	0xC0
+#define	SFF8636_TX_PWR_LALRM	0xC2
+#define	SFF8636_TX_PWR_HWARN	0xC4
+#define	SFF8636_TX_PWR_LWARN	0xC6
 
 #define	ETH_MODULE_SFF_8636_MAX_LEN	640
 #define	ETH_MODULE_SFF_8436_MAX_LEN	640

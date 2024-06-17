@@ -1,16 +1,13 @@
 /* ethtool-config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define this to support netlink interface to talk to kernel. */
+#undef ETHTOOL_ENABLE_NETLINK
+
 /* Define this to enable register, EEPROM and SFP pretty dumps. */
 #undef ETHTOOL_ENABLE_PRETTY_DUMP
 
-/* Define to 1 if <linux/types.h> defines big-endian types */
-#undef HAVE_BE_TYPES
-
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
-
-/* Define to 1 if you have the `strtol' function. */
-#undef HAVE_STRTOL
 
 /* Name of package */
 #undef PACKAGE

@@ -511,6 +511,17 @@ int send_ioctl(struct cmd_context *ctx, void *cmd)
 	return rc;
 }
 
+#ifdef ETHTOOL_ENABLE_NETLINK
+struct nl_socket;
+struct nl_msg_buff;
+
+ssize_t nlsock_sendmsg(struct nl_socket *nlsk, struct nl_msg_buff *altbuff)
+{
+	/* Should not be called with test-features */
+	exit(1);
+}
+#endif
+
 int main(void)
 {
 	const struct test_case *tc;

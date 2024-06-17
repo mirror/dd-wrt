@@ -2,7 +2,8 @@
 #include <string.h>
 #include "internal.h"
 
-int et131x_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int et131x_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		     struct ethtool_regs *regs)
 {
 	u8 version = (u8)(regs->version >> 24);
 	u32 *reg = (u32 *)regs->data;

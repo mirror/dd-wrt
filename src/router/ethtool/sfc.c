@@ -3083,9 +3083,6 @@ static const struct efx_nic_reg_field efx_nic_reg_fields_TX_PACE[] = {
 	REGISTER_FIELD_BZ(TX_PACE_SB_AF),
 	REGISTER_FIELD_BZ(TX_PACE_SB_NOT_AF),
 };
-static const struct efx_nic_reg_field efx_nic_reg_fields_TX_PACE_DROP_QID[] = {
-	REGISTER_FIELD_BZ(TX_PACE_QID_DRP_CNT),
-};
 static const struct efx_nic_reg_field efx_nic_reg_fields_TX_VLAN[] = {
 	REGISTER_FIELD_BB(TX_VLAN0),
 	REGISTER_FIELD_BB(TX_VLAN0_PORT0_EN),
@@ -3811,8 +3808,7 @@ print_single_register(unsigned revision, const struct efx_nic_reg *reg,
 }
 
 static const void *
-print_simple_table(unsigned revision, const struct efx_nic_reg_table *table,
-		   const void *buf)
+print_simple_table(const struct efx_nic_reg_table *table, const void *buf)
 {
 	const struct efx_nic_reg_field *field = &table->fields[0];
 	size_t value_width = (field->width + 3) >> 2;
@@ -3894,7 +3890,8 @@ print_complex_table(unsigned revision, const struct efx_nic_reg_table *table,
 }
 
 int
-sfc_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+sfc_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+	      struct ethtool_regs *regs)
 {
 	const struct efx_nic_reg *reg;
 	const struct efx_nic_reg_table *table;
@@ -3921,7 +3918,7 @@ sfc_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 		    revision <= table->max_revision) {
 			printf("\n%s:\n", table->name);
 			if (table->field_count == 1)
-				buf = print_simple_table(revision, table, buf);
+				buf = print_simple_table(table, buf);
 			else
 				buf = print_complex_table(revision, table, buf);
 		}

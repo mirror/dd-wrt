@@ -25,7 +25,7 @@ bitset(u32 val, int bit)
 	return 0;
 }
 
-int altera_tse_dump_regs(struct ethtool_drvinfo *info,
+int altera_tse_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
 			 struct ethtool_regs *regs)
 {
 	int i;

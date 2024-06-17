@@ -2,7 +2,8 @@
 #include <string.h>
 #include "internal.h"
 
-int smsc911x_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int smsc911x_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		       struct ethtool_regs *regs)
 {
 	unsigned int *smsc_reg = (unsigned int *)regs->data;
 

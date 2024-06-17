@@ -190,8 +190,8 @@ static float befloattoh(const __u32 *source)
 
 static void sff8472_calibration(const __u8 *id, struct sff_diags *sd)
 {
-	int i;
 	__u16 rx_reading;
+	unsigned int i;
 
 	/* Calibration should occur for all values (threshold and current) */
 	for (i = 0; i < ARRAY_SIZE(sd->bias_cur); ++i) {
@@ -241,7 +241,7 @@ static void sff8472_parse_eeprom(const __u8 *id, struct sff_diags *sd)
 
 void sff8472_show_all(const __u8 *id)
 {
-	struct sff_diags sd;
+	struct sff_diags sd = {0};
 	char *rx_power_string = NULL;
 	int i;
 

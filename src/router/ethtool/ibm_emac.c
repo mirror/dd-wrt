@@ -238,7 +238,7 @@ static void *print_mal_regs(void *buf)
 {
 	struct emac_ethtool_regs_subhdr *hdr = buf;
 	struct mal_regs *p = (struct mal_regs *)(hdr + 1);
-	int i;
+	unsigned int i;
 
 	printf("MAL%d Registers\n", hdr->index);
 	printf("-----------------\n");
@@ -314,7 +314,8 @@ static void *print_tah_regs(void *buf)
 	return p + 1;
 }
 
-int ibm_emac_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int ibm_emac_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		       struct ethtool_regs *regs)
 {
 	struct emac_ethtool_regs_hdr *hdr =
 	    (struct emac_ethtool_regs_hdr *)regs->data;

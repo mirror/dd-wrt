@@ -323,7 +323,8 @@ static void __print_intr(int d, int intr, const char *name,
 } while (0)
 
 int
-natsemi_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+natsemi_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		  struct ethtool_regs *regs)
 {
 	u32 *data = (u32 *)regs->data;
 	u32 tmp;
@@ -963,10 +964,11 @@ natsemi_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
 }
 
 int
-natsemi_dump_eeprom(struct ethtool_drvinfo *info, struct ethtool_eeprom *ee)
+natsemi_dump_eeprom(struct ethtool_drvinfo *info __maybe_unused,
+		    struct ethtool_eeprom *ee)
 {
-	int i;
 	u16 *eebuf = (u16 *)ee->data;
+	unsigned int i;
 
 	if (ee->magic != NATSEMI_MAGIC) {
 		fprintf(stderr, "Magic number 0x%08x does not match 0x%08x\n",

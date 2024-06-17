@@ -47,7 +47,8 @@ struct fec {
 				(unsigned long)(offsetof(struct fec, x)), \
 				#x, f->x)
 
-int fec_8xx_dump_regs(struct ethtool_drvinfo *info, struct ethtool_regs *regs)
+int fec_8xx_dump_regs(struct ethtool_drvinfo *info __maybe_unused,
+		      struct ethtool_regs *regs)
 {
 	struct fec *f = (struct fec *)regs->data;
 

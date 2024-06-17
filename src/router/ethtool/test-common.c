@@ -293,12 +293,14 @@ int test_ioctl(const struct cmd_expect *expect, void *cmd)
 
 int test_cmdline(const char *args)
 {
-	int argc, i;
-	char **argv;
+	int volatile orig_stdout_fd = -1;
+	int volatile orig_stderr_fd = -1;
+	char **volatile argv;
+	int volatile argc;
+	int dev_null = -1;
 	const char *arg;
 	size_t len;
-	int dev_null = -1, orig_stdout_fd = -1, orig_stderr_fd = -1;
-	int rc;
+	int rc, i;
 
 	/* Convert line to argv */
 	argc = 1;
