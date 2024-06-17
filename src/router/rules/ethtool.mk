@@ -1,5 +1,5 @@
 ethtool-configure:
-	cd ethtool && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr
+	cd ethtool && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF $(MIPS16_OPT) $(LTO) -I$(TOP)/libmnl/include" LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) -L$(TOP)/libmnl/src/.libs" --prefix=/usr 
 
 ethtool:
 	make   -C ethtool
