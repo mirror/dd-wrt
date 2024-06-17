@@ -1065,30 +1065,30 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 			 ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB) ? "[VHT-LINK-ADAPT3]" : "") :
 						    ""),
 			 ((cap >> 23) & 7),
-			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 1) ?
-				  "[BF-ANTENNA-2]" :
-				  ""),
-			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 1) ?
-				  "[SOUNDING-DIMENSION-2]" :
-				  ""),
-			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 2) ?
-				  "[BF-ANTENNA-3]" :
-				  ""),
-			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 2) ?
-				  "[SOUNDING-DIMENSION-3]" :
-				  ""),
-			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 4) ?
-				  "[BF-ANTENNA-4]" :
-				  ""),
-			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ||
-					  ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 4) ?
-				  "[SOUNDING-DIMENSION-4]" :
-				  ""));
+			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf)) &&
+					 (bfantenna & 1) ?
+				 "[BF-ANTENNA-2]" :
+				 "",
+			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf)) &&
+					 (sodimension & 1) ?
+				 "[SOUNDING-DIMENSION-2]" :
+				 "",
+			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf)) &&
+					 (bfantenna & 2) ?
+				 "[BF-ANTENNA-3]" :
+				 "",
+			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf)) &&
+					 (sodimension & 2) ?
+				 "[SOUNDING-DIMENSION-3]" :
+				 "",
+			 (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf)) &&
+					 (bfantenna & 4) ?
+				 "[BF-ANTENNA-4]" :
+				 "",
+			 (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf)) &&
+					 (sodimension & 4) ?
+				 "[SOUNDING-DIMENSION-4]" :
+				 "");
 	}
 out:
 nla_put_failure:
