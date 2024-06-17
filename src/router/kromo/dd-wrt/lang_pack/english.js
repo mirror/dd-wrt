@@ -1804,6 +1804,7 @@ service.h2="Services Management";
 service.apserv_legend="APServ Remote Configuration";
 service.apserv="APServ";
 
+service.irqbalance="irqbalance";
 //kaid
 //service.kaid_legend="Xbox Kaid";
 //service.kaid_srv="Start Kaid";
