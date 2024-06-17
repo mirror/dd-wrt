@@ -1093,13 +1093,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 
 				if (has_ax(prefix)) {
 					if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
-						if (nvram_match(mubf, "1")) {
-							fprintf(fp, "he_mu_beamformer=1\n");
-						}
-						if (nvram_match(subf, "1")) {
-							fprintf(fp, "he_su_beamformer=1\n");
-							fprintf(fp, "he_su_beamformee=1\n");
-						}
 						fprintf(fp, "ieee80211ax=1\n");
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
@@ -1123,6 +1116,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				if (has_ax(prefix)) {
 					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") ||
 					    !strcmp(netmode, "ax-only")) {
+						if (nvram_match(mubf, "1")) {
+							fprintf(fp, "he_mu_beamformer=1\n");
+						}
+						if (nvram_match(subf, "1")) {
+							fprintf(fp, "he_su_beamformer=1\n");
+							fprintf(fp, "he_su_beamformee=1\n");
+						}
 						fprintf(fp, "he_default_pe_duration=4\n");
 						fprintf(fp, "he_rts_threshold=1023\n");
 						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
