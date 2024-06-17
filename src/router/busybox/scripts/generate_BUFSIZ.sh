@@ -27,7 +27,7 @@ regenerate() {
 generate_std_and_exit() {
 	$debug && echo "Configuring: bb_common_bufsiz1[] in bss"
 	{
-	echo "enum { COMMON_BUFSIZE = 1024 };"
+	echo "enum { COMMON_BUFSIZE = 2048 };"
 	echo "extern char bb_common_bufsiz1[];"
 	echo "#define setup_common_bufsiz() ((void)0)"
 	} | regenerate "$common_bufsiz_h"
@@ -47,14 +47,14 @@ generate_big_and_exit() {
 }
 
 generate_1k_and_exit() {
-	generate_big_and_exit 1024 "1k"
+	generate_big_and_exit 2048 "1k"
 }
 
 round_down_COMMON_BUFSIZE() {
-	COMMON_BUFSIZE=1024
+	COMMON_BUFSIZE=2048
 	test "$1" -le 32 && return
 	COMMON_BUFSIZE=$(( ($1-32) & 0x0ffffff0 ))
-	COMMON_BUFSIZE=$(( COMMON_BUFSIZE < 1024 ? 1024 : COMMON_BUFSIZE ))
+	COMMON_BUFSIZE=$(( COMMON_BUFSIZE < 2048 ? 2048 : COMMON_BUFSIZE ))
 }
 
 # User does not want any funky stuff?
@@ -93,7 +93,7 @@ if $postcompile; then
 	test x"$PAGE_SIZE" = x"" && exit 1
 	$debug && echo "PAGE_SIZE:0x$PAGE_SIZE $((0x$PAGE_SIZE))"
 	PAGE_SIZE=$((0x$PAGE_SIZE))
-	test $PAGE_SIZE -lt 1024 && exit 1
+	test $PAGE_SIZE -lt 2048 && exit 1
 
 	# How much space between _end[] and next page?
 	PAGE_MASK=$((PAGE_SIZE-1))
@@ -106,11 +106,11 @@ if $postcompile; then
 		md5sum <.config | cut -d' ' -f1
 		stat -c "%Y" .config
 		} >"$common_bufsiz_h.1k.OK"
-		round_down_COMMON_BUFSIZE $((1024 + TAIL_SIZE))
+		round_down_COMMON_BUFSIZE $((2048 + TAIL_SIZE))
 		# emit message only if COMMON_BUFSIZE is indeed larger
-		test $COMMON_BUFSIZE -gt 1024 \
+		test $COMMON_BUFSIZE -gt 2048 \
 			&& echo "Rerun make to use larger COMMON_BUFSIZE ($COMMON_BUFSIZE)"
-		test $COMMON_BUFSIZE = 1024 && generate_1k_and_exit
+		test $COMMON_BUFSIZE = 2048 && generate_1k_and_exit
 		generate_big_and_exit $COMMON_BUFSIZE "big"
 	fi
 fi
@@ -125,8 +125,8 @@ if test -f "$common_bufsiz_h.1k.OK"; then
 	if test x"$oldcfg" = x"$curcfg"; then
 		# Try bigger COMMON_BUFSIZE if possible
 		TAIL_SIZE=`head -n1 -- "$common_bufsiz_h.1k.OK"`
-		round_down_COMMON_BUFSIZE $((1024 + TAIL_SIZE))
-		test $COMMON_BUFSIZE = 1024 && generate_1k_and_exit
+		round_down_COMMON_BUFSIZE $((2048 + TAIL_SIZE))
+		test $COMMON_BUFSIZE = 2048 && generate_1k_and_exit
 		generate_big_and_exit $COMMON_BUFSIZE "big"
 	fi
 	# config did change
