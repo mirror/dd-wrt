@@ -415,26 +415,3 @@ Index: lib/libspl/include/sys/backtrace.h
  void libspl_backtrace(int fd);
  
  #endif
-Index: patches/dd-wrt-patches.patch
-===================================================================
---- patches/dd-wrt-patches.patch	(revision 56411)
-+++ patches/dd-wrt-patches.patch	(working copy)
-@@ -400,3 +400,18 @@
-  ZFS_MODULE_CFLAGS += -Wmissing-prototypes
-  ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
-  
-+Index: lib/libspl/include/sys/backtrace.h
-+===================================================================
-+--- lib/libspl/include/sys/backtrace.h	(revision 56411)
-++++ lib/libspl/include/sys/backtrace.h	(working copy)
-+@@ -27,6 +27,10 @@
-+ #ifndef _LIBSPL_SYS_BACKTRACE_H
-+ #define	_LIBSPL_SYS_BACKTRACE_H
-+ 
-++#ifndef __maybe_unused
-++#define	__maybe_unused __attribute__((unused))
-++#endif
-++
-+ void libspl_backtrace(int fd);
-+ 
-+ #endif
