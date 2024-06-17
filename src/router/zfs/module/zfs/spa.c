@@ -6827,7 +6827,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	 */
 	char *name = kmem_alloc(MAXPATHLEN, KM_SLEEP);
 	(void) snprintf(name, MAXPATHLEN, "%s-%llx-%s",
-	    TRYIMPORT_NAME, (u_longlong_t)curthread, poolname);
+	    TRYIMPORT_NAME, (u_longlong_t)(uintptr_t)curthread, poolname);
 
 	mutex_enter(&spa_namespace_lock);
 	spa = spa_add(name, tryconfig, NULL);
@@ -10168,6 +10168,9 @@ spa_sync(spa_t *spa, uint64_t txg)
 
 	metaslab_class_evict_old(spa->spa_normal_class, txg);
 	metaslab_class_evict_old(spa->spa_log_class, txg);
+	/* spa_embedded_log_class has only one metaslab per vdev. */
+	metaslab_class_evict_old(spa->spa_special_class, txg);
+	metaslab_class_evict_old(spa->spa_dedup_class, txg);
 
 	spa_sync_close_syncing_log_sm(spa);
 
