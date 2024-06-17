@@ -1,0 +1,8 @@
+<fieldset>
+	<legend><% tran("service.irqbalance"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.irqbalance"); %></div>
+		<input class="spaceradio" type="radio" name="irqbalance_enabled" value="1" <% nvram_checked("irqbalance_enabled", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="irqbalance_enabled" value="0" <% nvram_checked("irqbalance_enabled", "0"); %> /><% tran("share.disable"); %>
+	</div>
+</fieldset><br />
