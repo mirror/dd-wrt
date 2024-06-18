@@ -503,7 +503,7 @@ static	struct kmem_cache *osdpi_flow_cache = NULL;
 static struct kmem_cache *ct_info_cache = NULL;
 static struct kmem_cache *bt_port_cache = NULL;
 
-struct ndpi_flow_input_info input_info = {
+static struct ndpi_flow_input_info input_info = {
 	.in_pkt_dir = NDPI_IN_PKT_DIR_C_TO_S,
 	.seen_flow_beginning = NDPI_FLOW_BEGINNING_UNKNOWN
 };
