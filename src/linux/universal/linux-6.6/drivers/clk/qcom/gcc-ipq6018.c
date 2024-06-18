@@ -518,6 +518,7 @@ static const struct freq_tbl ftbl_nss_port5_rx_clk_src[] = {
 	F(78125000, P_UNIPHY1_RX, 4, 0, 0),
 	F(125000000, P_UNIPHY1_RX, 2.5, 0, 0),
 	F(125000000, P_UNIPHY0_RX, 1, 0, 0),
+	F(125000000, P_UNIPHY1_RX, 1, 0, 0),
 	F(156250000, P_UNIPHY1_RX, 2, 0, 0),
 	F(312500000, P_UNIPHY1_RX, 1, 0, 0),
 	{ }
@@ -565,6 +566,7 @@ static const struct freq_tbl ftbl_nss_port5_tx_clk_src[] = {
 	F(78125000, P_UNIPHY1_TX, 4, 0, 0),
 	F(125000000, P_UNIPHY1_TX, 2.5, 0, 0),
 	F(125000000, P_UNIPHY0_TX, 1, 0, 0),
+	F(125000000, P_UNIPHY1_TX, 1, 0, 0),
 	F(156250000, P_UNIPHY1_TX, 2, 0, 0),
 	F(312500000, P_UNIPHY1_TX, 1, 0, 0),
 	{ }
