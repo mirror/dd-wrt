@@ -75,7 +75,8 @@ void start_syslog(void)
 	update_timezone();
 	if (nvram_matchi("syslogd_jffs2", 1) && !nvram_matchi("flash_active", 1)) {
 		mkdir("/jffs/log", 0700);
-		eval("mv", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
+		eval("cp", "-f", "/jffs/log/messages.old", "/jffs/log/messages.old.old");
+		eval("cp", "-f", "/jffs/log/messages", "/jffs/log/messages.old");
 		FILE *fp = fopen("/jffs/log/messages", "wb");
 		if (!fp)
 			goto fallback;
