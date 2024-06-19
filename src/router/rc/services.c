@@ -85,9 +85,6 @@ static int start_services_main(int argc, char **argv)
 {
 	update_timezone();
 	nvram_seti("qos_done", 0);
-#ifdef HAVE_SYSLOG
-	start_service_force_f("syslog");
-#endif
 #ifdef HAVE_SMARTD
 	start_service_force_f("smartd");
 #endif
