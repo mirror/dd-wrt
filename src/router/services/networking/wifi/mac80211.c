@@ -1596,6 +1596,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
+	int iswpa2sha384 = nvhas(akm, "wpa2-sha384");
 	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
 	int iswep = nvhas(akm, "wep");
 	MAC80211DEBUG();
@@ -1652,7 +1653,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
+	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384 ||
 		   ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {

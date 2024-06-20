@@ -464,7 +464,7 @@ void start_sysinit(void)
 
 		writeproc("/proc/irq/33/smp_affinity", "4");
 		writeproc("/proc/irq/34/smp_affinity", "4");
-		writeproc("/proc/irq/35/smp_affinity", "4");
+		writeproc("/proc/irq/35/smp_affinity", "2");
 		writeproc("/proc/irq/36/smp_affinity", "4");
 	}
 
