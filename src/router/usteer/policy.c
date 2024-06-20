@@ -193,7 +193,7 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 			ev->si_other = si;
 			ev->select_reasons = reasons;
 		}
-		int extra = config->prefer_he ? (si->node->he ? 5 : 0) : 0;
+		int extra = config.prefer_he ? (si->node->he ? 5 : 0) : 0;
 		if (candidate) {
 			if (si->node->freq < 4000 && candidate->node->freq > 4000) {
 				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_5ghz + extra > usteer_signal_to_snr(candidate->node,candidate->signal)) {
