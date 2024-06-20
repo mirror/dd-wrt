@@ -142,6 +142,7 @@ void start_usteer(void)
 		 "\"link_measurement_interval\": %d," //
 		 "\"budget_5ghz\": %d," //
 		 "\"prefer_5ghz\": %s," //
+		 "\"prefer_he\": %s," //
 		 "\"interfaces\": [ " //
 		 "\"br0\" " //
 		 "]," //
@@ -196,6 +197,7 @@ void start_usteer(void)
 				    30000), //
 		 nvram_default_geti("usteer_budget_5ghz", 5), //
 		 nvram_default_geti("usteer_prefer_5ghz", 0) ? "true" : "false", //
+		 nvram_default_geti("usteer_prefer_he", 0) ? "true" : "false", //
 		 ssid_list);
 	char *cmdline;
 	int len = strlen(config);
