@@ -164,6 +164,7 @@ struct usteer_config {
 	uint32_t measurement_report_timeout;
 	int32_t budget_5ghz;
 	bool prefer_5ghz;
+	bool prefer_he;
 
 	bool assoc_steering;
 	bool probe_steering;

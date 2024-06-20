@@ -182,6 +182,7 @@ struct cfg_item {
 	_cfg(U32, initial_connect_delay), \
 	_cfg(I32, budget_5ghz), \
 	_cfg(BOOL, prefer_5ghz), \
+	_cfg(BOOL, prefer_he), \
 	_cfg(BOOL, load_kick_enabled), \
 	_cfg(U32, load_kick_threshold), \
 	_cfg(U32, load_kick_delay), \
