@@ -523,6 +523,7 @@ void start_sysinit(void)
 	sysprintf("ssdk_sh stp portState set 0 3 forward");
 	sysprintf("ssdk_sh stp portState set 0 4 forward");
 	sysprintf("ssdk_sh stp portState set 0 5 forward");
+	sysprintf("ssdk_sh fdb learnCtrl set disable");
 	sysprintf("ssdk_sh fdb entry flush 1");
 	return;
 }
