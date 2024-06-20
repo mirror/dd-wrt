@@ -193,10 +193,10 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 			ev->si_other = si;
 			ev->select_reasons = reasons;
 		}
+		int extra = config->prefer_he ? (si->node->he ? 5 : 0) : 0;
 		if (candidate) {
-			int extra = config->prefer_he ? (si->node->he ? 5 : 0) : 0;
 			if (si->node->freq < 4000 && candidate->node->freq > 4000) {
-				if (usteer_signal_to_snr(si->node, si->signal) + config_budget_5ghz + extra > usteer_signal_to_snr(candidate->node,candidate->signal)) {
+				if (usteer_signal_to_snr(si->node, si->signal) + config.budget_5ghz + extra > usteer_signal_to_snr(candidate->node,candidate->signal)) {
 					candidate = si;
 				}
 			} else {
@@ -210,7 +210,6 @@ find_better_candidate(struct sta_info *si_ref, struct uevent *ev, uint32_t requi
 		}
 		
 		if (si->node->freq > 4000) {
-			int extra = config->prefer_he ? (si->node->he ? 5 : 0) : 0;
 			if (!candidate_5ghz || (usteer_signal_to_snr(si->node, si->signal) + extra > usteer_signal_to_snr(candidate_5ghz->node,candidate_5ghz->signal))) {
 				candidate_5ghz = si;
 			}
