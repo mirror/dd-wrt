@@ -1245,6 +1245,7 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa", prefix);
 		_copytonv_prefix(wp, "wpa2", prefix);
 		_copytonv_prefix(wp, "wpa2-sha256", prefix);
+		_copytonv_prefix(wp, "wpa2-sha384", prefix);
 		_copytonv_prefix(wp, "wpa3", prefix);
 		_copytonv_prefix(wp, "wpa3-192", prefix);
 		_copytonv_prefix(wp, "wpa3-128", prefix);
@@ -1271,6 +1272,8 @@ _8021xprv
 			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
 			strspcattach(akm, "wpa2-sha256");
+		if (nvram_nmatch("1", "%s_wpa2-sha384", prefix))
+			strspcattach(akm, "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
 			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_owe", prefix))
@@ -1296,6 +1299,7 @@ _8021xprv
 		_copytonv_prefix(wp, "wpa", prefix);
 		_copytonv_prefix(wp, "wpa2", prefix);
 		_copytonv_prefix(wp, "wpa2-sha256", prefix);
+		_copytonv_prefix(wp, "wpa2-sha384", prefix);
 		_copytonv_prefix(wp, "wpa3", prefix);
 		_copytonv_prefix(wp, "wpa3-192", prefix);
 		_copytonv_prefix(wp, "wpa3-128", prefix);
@@ -1316,6 +1320,8 @@ _8021xprv
 			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", prefix))
 			strspcattach(akm, "wpa2-sha256");
+		if (nvram_nmatch("1", "%s_wpa2-sha384", prefix))
+			strspcattach(akm, "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", prefix))
 			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix)) {
@@ -4010,6 +4016,7 @@ static char *vapsettings[] = {
 	"wpa",
 	"wpa2",
 	"wpa2-sha256",
+	"wpa2-sha384",
 	"wpa3",
 	"wpa3-128",
 	"wpa3-192",
@@ -6131,6 +6138,7 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa", ifname);
 		_copytonv_prefix(wp, "wpa2", ifname);
 		_copytonv_prefix(wp, "wpa2-sha256", ifname);
+		_copytonv_prefix(wp, "wpa2-sha384", ifname);
 		_copytonv_prefix(wp, "wpa3", ifname);
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
@@ -6156,6 +6164,7 @@ void set_security(webs_t wp)
 		_copytonv_prefix(wp, "wpa", ifname);
 		_copytonv_prefix(wp, "wpa2", ifname);
 		_copytonv_prefix(wp, "wpa2-sha256", ifname);
+		_copytonv_prefix(wp, "wpa2-sha384", ifname);
 		_copytonv_prefix(wp, "wpa3", ifname);
 		_copytonv_prefix(wp, "wpa3-192", ifname);
 		_copytonv_prefix(wp, "wpa3-128", ifname);
@@ -6165,6 +6174,8 @@ void set_security(webs_t wp)
 			strspcattach(akm, "wpa2");
 		if (nvram_nmatch("1", "%s_wpa2-sha256", ifname))
 			strspcattach(akm, "wpa2-sha256");
+		if (nvram_nmatch("1", "%s_wpa2-sha384", ifname))
+			strspcattach(akm, "wpa2-sha384");
 		if (nvram_nmatch("1", "%s_wpa3", ifname))
 			strspcattach(akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", ifname)) {

@@ -62,7 +62,7 @@ void show_roaming(webs_t wp, char *var)
 		v_show_preshared = 1;
 	if (strstr(akm, "owe"))
 		v_show_owe = 1;
-	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") ||
+	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa2-sha384") || strstr(akm, "wpa3") ||
 	    strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
 		v_show_wparadius = 1;
 

@@ -1949,6 +1949,8 @@ static void showencstatus(webs_t wp, char *prefix)
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2");
 		if (nvhas(akm, "wpa2-sha256"))
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-SHA256");
+		if (nvhas(akm, "wpa2-sha384"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-SHA384");
 		if (nvhas(akm, "wpa3"))
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3");
 		if (nvhas(akm, "wpa3-128"))
@@ -1977,6 +1979,8 @@ static void showencstatus(webs_t wp, char *prefix)
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-EAP");
 		if (nvhas(akm, "wpa2-sha256"))
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-EAP-SHA256");
+		if (nvhas(akm, "wpa2-sha384"))
+			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA2-EAP-SHA384");
 		if (nvhas(akm, "wpa3"))
 			sprintf(type, "%s%s%s", type, type[0] ? "/" : "", "WPA3-EAP");
 		if (nvhas(akm, "wpa3-128"))

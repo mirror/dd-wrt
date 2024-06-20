@@ -2776,6 +2776,7 @@ wpa.psk3="WPA3 Personal / SAE";
 wpa.wpa="WPA Enterprise";
 wpa.wpa2="WPA2 Enterprise";
 wpa.wpa2_sha256="WPA2 Enterprise with SHA256";
+wpa.wpa2_sha384="WPA2 Enterprise with SHA384";
 wpa.wpa3="WPA3 Enterprise";
 wpa.wpa3_128="WPA3 Enterprise Suite-B 128-bit";
 wpa.wpa3_192="WPA3 Enterprise CNSA Suite-B 192-bit";

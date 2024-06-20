@@ -844,6 +844,8 @@ static char *wpa_enc_label(char *buf, size_t len, char *value)
 			return "WPA2-EAP";
 		} else if (!strcmp(value, "wpa2-sha256")) {
 			return "WPA2-EAP-SHA256";
+		} else if (!strcmp(value, "wpa2-sha384")) {
+			return "WPA2-EAP-SHA384";
 		} else if (!strcmp(value, "wpa3")) {
 			return "WPA3-EAP-SUITE-B";
 		} else if (!strcmp(value, "wpa3-192")) {
@@ -5869,6 +5871,7 @@ static int wpaauth(const char *prefix)
 		return nvram_nmatch("1", "%s_wpa", prefix) || //
 		       nvram_nmatch("1", "%s_wpa2", prefix) || //
 		       nvram_nmatch("1", "%s_wpa2-sha256", prefix) || //
+		       nvram_nmatch("1", "%s_wpa2-sha384", prefix) || //
 		       nvram_nmatch("1", "%s_wpa3", prefix) || //
 		       nvram_nmatch("1", "%s_wpa3-128", prefix) || //
 		       nvram_nmatch("1", "%s_wpa3-192", prefix);
@@ -5881,6 +5884,7 @@ static int wpaauth(const char *prefix)
 	       nvram_nmatch("1", "%s_wpa", prefix) || //
 	       nvram_nmatch("1", "%s_wpa2", prefix) || //
 	       nvram_nmatch("1", "%s_wpa2-sha256", prefix) || //
+	       nvram_nmatch("1", "%s_wpa2-sha384", prefix) || //
 	       nvram_nmatch("1", "%s_wpa3", prefix) || //
 	       nvram_nmatch("1", "%s_wpa3-128", prefix) || //
 	       nvram_nmatch("1", "%s_wpa3-192", prefix);
@@ -5956,6 +5960,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 					 { "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
 					 { "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
 					 { "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
+					 { "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh },
 					 { "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
 					 { "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
 					 { "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
@@ -5963,6 +5968,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_authpair_80211x[] = { { "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
 					    { "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
 					    { "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue },
+					    { "wpa.wpa2_sha384", "wpa2-sha384", has_wpa3, alwaystrue, alwaystrue },
 					    { "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue },
 					    { "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
 					    { "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
