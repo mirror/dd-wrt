@@ -1486,6 +1486,7 @@ void roaming_save(webs_t wp)
 	copytonv(wp, "usteer_link_measurement_interval");
 	copytonv(wp, "usteer_budget_5ghz");
 	copytonv(wp, "usteer_prefer_5ghz");
+	copytonv(wp, "usteer_prefer_he");
 
 	applytake(value);
 }

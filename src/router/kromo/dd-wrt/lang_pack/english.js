@@ -2738,6 +2738,7 @@ roaming.ft_over_ds="FT over DS";
 roaming.ft_over_air="FT over the Air";
 roaming.budget_5ghz="5 GHz Budget in DBm";
 roaming.prefer_5ghz="Prefer 5 GHz";
+roaming.prefer_he="Prefer 802.11ax";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 var wpa=new Object();
