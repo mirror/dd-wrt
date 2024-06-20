@@ -19,6 +19,7 @@ OBJS_LIB=$(patsubst %.c,%.o,$(wildcard lib/*.c))
 OBJS_MAIN=$(patsubst %.c,%.o,$(wildcard *.c))
 OBJS=$(OBJS_MAIN) $(OBJS_LIB)
 
+
 # cflags
 ifndef CFLAGS
 CFLAGS =-O2 -g -Wall -Wstrict-prototypes -fno-omit-frame-pointer -Wstrict-aliasing -funwind-tables -Wmissing-prototypes -Wshadow -Wextra -Wno-unused-parameter -Wno-implicit-fallthrough
@@ -27,6 +28,12 @@ override CFLAGS +=-Iinclude $(LTO)
 override CFLAGS += -DBASE_FILE_NAME='"$(notdir $<)"'
 ifdef VER
 override CFLAGS += -DSMARTDNS_VERION='"$(VER)"'
+endif
+
+HASH := \#
+HAS_UNWIND := $(shell echo '$(HASH)include <unwind.h>\nvoid main() { _Unwind_Backtrace(0, 0);}' | $(CC) -x c - -o /dev/null >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(HAS_UNWIND), 1)
+override CFLAGS += -DHAVE_UNWIND_BACKTRACE
 endif
 
 CXXFLAGS=-O2 -g -Wall -std=c++11 

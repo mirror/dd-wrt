@@ -1909,7 +1909,13 @@ static int _dns_client_recv(struct dns_server_info *server_info, unsigned char *
 			_dns_replied_check_remove(query, from, from_len);
 			atomic_inc(&query->dns_request_sent);
 			if (ret == DNS_CLIENT_ACTION_RETRY) {
-				/* retry immdiately */
+				/*
+				 * retry immdiately
+				 * The socket needs to be re-created to avoid being limited, such as 1.1.1.1
+				 */
+				pthread_mutex_lock(&client.server_list_lock);
+				_dns_client_close_socket(server_info);
+				pthread_mutex_unlock(&client.server_list_lock);
 				_dns_client_retry_dns_query(query);
 			}
 		} else {
@@ -2090,9 +2096,6 @@ errout:
 
 	return -1;
 }
-
-#include <net/if.h>
-#include <sys/ioctl.h>
 
 static int _dns_client_create_socket_udp_mdns(struct dns_server_info *server_info)
 {

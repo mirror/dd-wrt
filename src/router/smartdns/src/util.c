@@ -53,7 +53,9 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef HAVE_UNWIND_BACKTRACE
 #include <unwind.h>
+#endif
 
 #define TMP_BUFF_LEN_32 32
 
@@ -1692,6 +1694,8 @@ uint64_t get_free_space(const char *path)
 	return size;
 }
 
+#ifdef HAVE_UNWIND_BACKTRACE
+
 struct backtrace_state {
 	void **current;
 	void **end;
@@ -1739,6 +1743,9 @@ void print_stack(void)
 		tlog(TLOG_FATAL, "#%.2d: %p %s() from %s+%p", idx + 1, addr, symbol, info.dli_fname, offset);
 	}
 }
+#else
+void print_stack(void) { }
+#endif
 
 void bug_ext(const char *file, int line, const char *func, const char *errfmt, ...)
 {
