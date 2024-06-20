@@ -138,13 +138,6 @@ static int hostapd_ctrl_iface_new_sta(struct hostapd_data *hapd,
 	return 0;
 }
 
-static int hostapd_ctrl_iface_set_down(struct hostapd_data *hapd)
-{
-	if (hapd->driver->stop_ap)
-		hapd->driver->stop_ap(hapd->drv_priv);
-	return 0;
-}
-
 static char *get_option(char *opt, char *str)
 {
 	int len = strlen(str);

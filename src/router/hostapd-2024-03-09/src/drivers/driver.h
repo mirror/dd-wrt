@@ -19,7 +19,7 @@
 
 #define WPA_SUPPLICANT_DRIVER_VERSION 4
 
-#include "ap/sta_info.h"
+//#include "ap/sta_info.h"
 #include "common/defs.h"
 #include "common/ieee802_11_defs.h"
 #include "common/wpa_common.h"

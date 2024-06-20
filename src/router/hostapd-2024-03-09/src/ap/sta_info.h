@@ -51,8 +51,6 @@
 
 /* Maximum number of supported rates (from both Supported Rates and Extended
  * Supported Rates IEs). */
-#define WLAN_SUPP_RATES_MAX 32
-
 struct hostapd_data;
 
 struct mbo_non_pref_chan_info {

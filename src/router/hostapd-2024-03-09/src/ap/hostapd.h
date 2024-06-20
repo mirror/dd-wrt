@@ -34,6 +34,7 @@ struct hostapd_data;
 struct sta_info;
 struct ieee80211_ht_capabilities;
 struct full_dynamic_vlan;
+
 enum wps_event;
 union wps_event_data;
 #ifdef CONFIG_MESH
@@ -177,6 +178,7 @@ struct hostapd_openwrt_stats {
 		u64 bss_transition_response_rx;
 	} wnm;
 };
+
 
 /**
  * struct hostapd_data - hostapd per-BSS data structure
