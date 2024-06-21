@@ -126,7 +126,11 @@ EJ_VISIBLE void ej_show_vlantagging(webs_t wp, int argc, char_t **argv)
 	sprintf(var, "%d", totalcount);
 	nvram_set("vlan_tagcount", var);
 	websWrite(wp, "<tr>\n");
+#ifdef HAVE_8021AD
+	websWrite(wp, "<td colspan=\"4\">&nbsp;</td>\n");
+#else
 	websWrite(wp, "<td colspan=\"3\">&nbsp;</td>\n");
+#endif
 	websWrite(wp, "<td class=\"center\">\n");
 	websWrite(
 		wp,
