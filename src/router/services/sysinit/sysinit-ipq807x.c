@@ -498,6 +498,11 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
 	}
 
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+
 	sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
 	sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
 	sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
