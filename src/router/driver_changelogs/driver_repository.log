@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7872 | brainslayer | 2024-06-21 22:48:53 +0700 (Fri, 21 Jun 2024) | 1 line
+
+this is suspicious, ac override seem to be a copy and paste error from ath10k
+------------------------------------------------------------------------
 r7871 | brainslayer | 2024-06-20 16:46:10 +0700 (Thu, 20 Jun 2024) | 1 line
 
 fix ce count
