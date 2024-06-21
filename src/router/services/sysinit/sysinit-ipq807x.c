@@ -292,7 +292,7 @@ void patchvht160(char *file, int phynum)
 		//		s[68 / 4] |= 0x1000;
 		//		fprintf(stderr, "new boardflag = %X\n", s[68 / 4]);
 
-//		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
+		//		fprintf(stderr, "old boardflag = %X\n", s[1040 / 4]);
 		switch (phynum) {
 		case 0:
 			s[1040 / 4] |= 0x800;
@@ -307,7 +307,7 @@ void patchvht160(char *file, int phynum)
 			s[1376 / 4] |= 0x1000;
 			break;
 		}
-//		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
+		//		fprintf(stderr, "new boardflag = %X\n", s[1040 / 4]);
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
 		fwrite(mem, len, 1, fp);
@@ -442,8 +442,6 @@ void start_sysinit(void)
 	}
 	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
-		if (!nvram_match("nobcreset", "1"))
-			eval("mtd", "resetbc", "s_env");
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 	}
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
@@ -555,4 +553,13 @@ char *set_wan_state(int state)
 
 void start_devinit_arch(void)
 {
+}
+
+void start_resetbc(void)
+{
+	int brand = getRouterBrand();
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		if (!nvram_match("nobcreset", "1"))
+			eval("mtd", "resetbc", "s_env");
+	}
 }

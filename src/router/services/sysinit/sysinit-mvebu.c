@@ -123,8 +123,6 @@ void start_sysinit(void)
 	char *recovery = getUEnv("auto_recovery");
 	if (recovery && strcmp(recovery, "yes"))
 		eval("ubootenv", "set", "auto_recovery", "yes");
-	if (!nvram_match("nobcreset", "1"))
-		eval("mtd", "resetbc", "s_env"); // reset boot counter
 
 	/*
 	 * Set a sane date 
@@ -228,4 +226,10 @@ char *set_wan_state(int state)
 
 void start_devinit_arch(void)
 {
+}
+
+void start_resetbc(void)
+{
+	if (!nvram_match("nobcreset", "1"))
+		eval("mtd", "resetbc", "s_env");
 }

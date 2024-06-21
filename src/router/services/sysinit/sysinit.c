@@ -2133,11 +2133,11 @@ void start_restore_defaults(void)
 	/*
 	 * Restore defaults 
 	 */
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_MAGICBOX) ||   \
-	defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) ||                   \
-	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) ||                  \
-	defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) ||  \
-	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || \
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||          \
+	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) ||                      \
+	defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || \
+	defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) ||        \
+	defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) ||       \
 	defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || defined(HAVE_80211AC) || defined(HAVE_OCTEON)
 	if (restore_defaults) {
 		nvram_clear();

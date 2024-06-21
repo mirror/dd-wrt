@@ -715,8 +715,6 @@ void start_sysinit(void)
 		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 		break;
 	case ROUTER_LINKSYS_EA8300:
-		if (!nvram_match("nobcreset", "1"))
-			eval("mtd", "resetbc", "s_env");
 		set_envtools(7, "0x0", "0x40000", "0x20000");
 		break;
 	case ROUTER_LINKSYS_EA8500:
@@ -726,8 +724,6 @@ void start_sysinit(void)
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
-		if (!nvram_match("nobcreset", "1"))
-			eval("mtd", "resetbc", "s_env");
 		set_envtools(10, "0x0", "0x20000", "0x20000");
 		break;
 	case ROUTER_NETGEAR_R7500V2:
@@ -1002,4 +998,16 @@ char *set_wan_state(int state)
 
 void start_devinit_arch(void)
 {
+}
+
+void start_resetbc(void)
+{
+	int board = getRouterBrand();
+	switch (board) {
+	case ROUTER_LINKSYS_EA8300:
+	case ROUTER_LINKSYS_EA8500:
+		if (!nvram_match("nobcreset", "1"))
+			eval("mtd", "resetbc", "s_env");
+		break;
+	}
 }
