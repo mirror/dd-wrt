@@ -476,6 +476,7 @@ static void reset_bootfails(void)
 		nvram_seti("boot_fails", 0);
 		nvram_async_commit();
 	}
+	start_service_force("resetbc");
 }
 
 static void check_bootfails(void)
