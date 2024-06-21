@@ -943,7 +943,6 @@ config MIKROTIK_RB532
 config CAVIUM_OCTEON_SOC
 	bool "Cavium Networks Octeon SoC based boards"
 	select CEVT_R4K
-	select HAVE_EFFICIENT_UNALIGNED_ACCESS
 	select ARCH_PHYS_ADDR_T_64BIT
 	select DMA_COHERENT
 	select SYS_SUPPORTS_64BIT_KERNEL
