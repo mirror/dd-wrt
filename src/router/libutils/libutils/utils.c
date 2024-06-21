@@ -1041,7 +1041,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
 		return 0;
-	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo", "teql", "gre", "ppp", "aux", "ctf", "tap", "sit", "ip6tnl" };
+	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo", "teql", "gre", "ppp", "aux", "ctf", "tap", "sit", "ip6tnl", "miireg" };
 	char ifname[32];
 
 	// skip the first 2 lines
