@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: ee73a571aedb81939bb72ac36b65089adee681ac $
+ * Version:	$Id: dbb2167e28189720df35cbf677ff84afc1d86dfa $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: ee73a571aedb81939bb72ac36b65089adee681ac $")
+RCSID("$Id: dbb2167e28189720df35cbf677ff84afc1d86dfa $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -55,7 +55,7 @@ RCSID("$Id: ee73a571aedb81939bb72ac36b65089adee681ac $")
 #ifdef WITH_TLS
 #include <netinet/tcp.h>
 
-#  ifdef __APPLE__
+#  if defined(__APPLE__) || defined(__FreeBSD__) || defined(__illumos__) || defined(__sun__)
 #    if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #      define SOL_TCP IPPROTO_TCP
 #    endif
@@ -385,6 +385,7 @@ int rad_status_server(REQUEST *request)
 		if (sock->state == LISTEN_TLS_CHECKING) {
 			int autz_type = PW_AUTZ_TYPE;
 			char const *name = "Autz-Type";
+			rad_listen_t *listener = request->listener;
 
 			if (request->listener->type == RAD_LISTEN_ACCT) {
 				autz_type = PW_ACCT_TYPE;
@@ -404,11 +405,22 @@ int rad_status_server(REQUEST *request)
 			if ((rcode == RLM_MODULE_OK) || (rcode == RLM_MODULE_UPDATED)) {
 				RDEBUG("(TLS) Connection is authorized");
 				request->reply->code = PW_CODE_ACCESS_ACCEPT;
+
+				listener->status = RAD_LISTEN_STATUS_RESUME;
+
+				rad_assert(sock->request->packet != request->packet);
+
+				sock->state = LISTEN_TLS_SETUP;
+
 			} else {
 				RWDEBUG("(TLS) Connection is not authorized - closing TCP socket.");
 				request->reply->code = PW_CODE_ACCESS_REJECT;
+
+				listener->status = RAD_LISTEN_STATUS_EOL;
+				listener->tls = NULL; /* parent owns this! */
 			}
 
+			radius_update_listener(listener);
 			return 0;
 		}
 	}
@@ -720,7 +732,12 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 #endif
 
 #ifdef WITH_RADIUSV11
-static const unsigned char radiusv11_alpn_protos[] = {
+static const unsigned char radiusv11_allow_protos[] = {
+	10, 'r', 'a', 'd', 'i', 'u', 's', '/', '1', '.', '1', /* prefer this */
+	10, 'r', 'a', 'd', 'i', 'u', 's', '/', '1', '.', '0',
+};
+
+static const unsigned char radiusv11_require_protos[] = {
 	10, 'r', 'a', 'd', 'i', 'u', 's', '/', '1', '.', '1',
 };
 
@@ -750,23 +767,28 @@ static int radiusv11_server_alpn_cb(SSL *ssl,
 	memcpy(&hack, &out, sizeof(out)); /* const issues */
 
 	/*
-	 *	The RADIUSv11 configuration for this socket is a combination of what we require, and what we
+	 *	The RADIUS/1.1 configuration for this socket is a combination of what we require, and what we
 	 *	require of the client.
 	 */
 	switch (this->radiusv11) {
 		/*
-		 *	If we forbid RADIUSv11, then we never advertised it via ALPN, and this callback should
+		 *	If we forbid RADIUS/1.1, then we never advertised it via ALPN, and this callback should
 		 *	never have been registered.
 		 */
 	case FR_RADIUSV11_FORBID:
-		*out = NULL;
-		*outlen = 0;
-		return SSL_TLSEXT_ERR_OK;
+		fr_assert(0);
+		server =  radiusv11_allow_protos + 11;
+		server_len = 11;
+		break;
 
 	case FR_RADIUSV11_ALLOW:
+		server = radiusv11_allow_protos;
+		server_len = sizeof(radiusv11_allow_protos);
+		break;
+
 	case FR_RADIUSV11_REQUIRE:
-		server = radiusv11_alpn_protos;
-		server_len = sizeof(radiusv11_alpn_protos);
+		server = radiusv11_require_protos;
+		server_len = sizeof(radiusv11_require_protos);
 		break;
 	}
 
@@ -786,6 +808,7 @@ static int radiusv11_server_alpn_cb(SSL *ssl,
 		 */
 		fr_assert(*outlen == 10);
 		sock->radiusv11 = (server[9] == '1');
+		sock->alpn_checked = true;
 
 		RDEBUG("(TLS) ALPN server negotiated application protocol \"%.*s\"", (int) *outlen, server);
 		return SSL_TLSEXT_ERR_OK;
@@ -798,6 +821,26 @@ static int radiusv11_server_alpn_cb(SSL *ssl,
 	return SSL_TLSEXT_ERR_ALERT_FATAL;
 }
 
+static int radiusv11_client_hello_cb(UNUSED SSL *s, int *alert, void *arg)
+{
+	rad_listen_t *this = arg;
+	listen_socket_t *sock = this->data;
+
+	/*
+	 *	The server_alpn_cb ran, and checked that the configured ALPN matches the negotiated one.
+	 */
+	if (sock->alpn_checked) return SSL_CLIENT_HELLO_SUCCESS;
+
+	/*
+	 *	The server_alpn_cb did NOT run (???) but we still have a client hello.  We require ALPN and
+	 *	none was negotiated, so we return an error.
+	 */
+	*alert = SSL_AD_NO_APPLICATION_PROTOCOL;
+
+	return SSL_CLIENT_HELLO_ERROR;
+}
+
+
 int fr_radiusv11_client_init(fr_tls_server_conf_t *tls);
 int fr_radiusv11_client_get_alpn(rad_listen_t *listener);
 
@@ -805,11 +848,15 @@ int fr_radiusv11_client_init(fr_tls_server_conf_t *tls)
 {
 	switch (tls->radiusv11) {
 	case FR_RADIUSV11_ALLOW:
-	case FR_RADIUSV11_REQUIRE:
-		if (SSL_CTX_set_alpn_protos(tls->ctx, radiusv11_alpn_protos, sizeof(radiusv11_alpn_protos)) != 0) {
-			ERROR("Failed setting RADIUSv11 negotiation flags");
+		if (SSL_CTX_set_alpn_protos(tls->ctx, radiusv11_allow_protos, sizeof(radiusv11_allow_protos)) != 0) {
+		fail_protos:
+			ERROR("Failed setting RADIUS/1.1 negotiation flags");
 			return -1;
 		}
+		break;
+
+	case FR_RADIUSV11_REQUIRE:
+		if (SSL_CTX_set_alpn_protos(tls->ctx, radiusv11_require_protos, sizeof(radiusv11_require_protos)) != 0) goto fail_protos;
 		break;
 
 	default:
@@ -827,41 +874,53 @@ int fr_radiusv11_client_get_alpn(rad_listen_t *listener)
 
 	SSL_get0_alpn_selected(sock->ssn->ssl, &data, &len);
 	if (!data) {
-		DEBUG("(TLS) ALPN home server did not send any application protocol");
+		DEBUG("(TLS) ALPN server did not send any application protocol");
 		if (listener->radiusv11 == FR_RADIUSV11_REQUIRE) {
 			DEBUG("(TLS) We have 'radiusv11 = require', but the home server has not negotiated it - closing socket");
 			return -1;
 		}
 
-		DEBUG("(TLS) ALPN assuming historical RADIUS");
-		return 0;
+		DEBUG("(TLS) ALPN assuming \"radius/1.0\"");
+		return 0;	/* allow radius/1.0 */
 	}
 
-	DEBUG("(TLS) ALPN home server sent application protocol \"%.*s\"", (int) len, data);
+	DEBUG("(TLS) ALPN server sent application protocol \"%.*s\"", (int) len, data);
 
 	if (len != 10) {
 	radiusv11_unknown:
-		DEBUG("(TLS) ALPN home server sent unknown application protocol - closing connection");
+		DEBUG("(TLS) ALPN server sent unknown application protocol - closing connection to home server");
 		return -1;
 	}
 
 	/*
-	 *	Should always be "radius/1.1".  The server MUST echo back one of the strings
+	 *	Should always be "radius/1.0" or "radius/1.1".  The server MUST echo back one of the strings
 	 *	we sent.  If it doesn't, it's a bad server.
 	 */
-	if (memcmp(data, "radius/1.1", 10) != 0) goto radiusv11_unknown;
+	if (memcmp(data, "radius/1.", 9) != 0) goto radiusv11_unknown;
+
+	if ((data[9] != '0') && (data[9] != '1')) goto radiusv11_unknown;
 
 	/*
 	 *	Double-check what the server sent us.  It SHOULD be sane, but it never hurts to check.
 	 */
 	switch (listener->radiusv11) {
 	case FR_RADIUSV11_FORBID:
-		DEBUG("(TLS) ALPN home server sent \"radius/v1.1\" but we forbid it - closing connection to home server");
-		return -1;
+		if (data[9] != '0') {
+			DEBUG("(TLS) ALPN server did not send \"radius/v1.0\" - closing connection to home server");
+			return -1;
+		}
+		break;
 
 	case FR_RADIUSV11_ALLOW:
+		sock->radiusv11 = (data[9] == '1');
+		break;
+
 	case FR_RADIUSV11_REQUIRE:
-		DEBUG("(TLS) ALPN using \"radius/1.1\"");
+		if (data[9] != '1') {
+			DEBUG("(TLS) ALPN server did not send \"radius/v1.1\" - closing connection to home server");
+			return -1;
+		}
+
 		sock->radiusv11 = true;
 		break;
 	}
@@ -1066,15 +1125,30 @@ static int dual_tcp_accept(rad_listen_t *listener)
 			SSL_CTX_set_tlsext_servername_callback(this->tls->ctx, tls_sni_callback);
 			SSL_CTX_set_tlsext_servername_arg(this->tls->ctx, this->tls);
 #ifdef WITH_RADIUSV11
-			/*
-			 *      Default is "forbid" (0).  In which case we don't set any ALPN callbacks, and
-			 *      the ServerHello does not contain an ALPN section.
-			 */
-			if (client->radiusv11 != FR_RADIUSV11_FORBID) {
+			switch (client->radiusv11) {
+				/*
+				 *	We don't set any callbacks.  If the client sends ALPN (or not), we
+				 *	just do normal RADIUS.
+				 */
+			case FR_RADIUSV11_FORBID:
+				DEBUG("(TLS) ALPN radiusv11 = forbid");
+				break;
+
+				/*
+				 *	Setting the client hello callback catches the case where we send ALPN,
+				 *	and the client doesn't send anything.
+				 */
+			case FR_RADIUSV11_REQUIRE:
+				SSL_CTX_set_client_hello_cb(this->tls->ctx, radiusv11_client_hello_cb, this);
+				/* FALL-THROUGH */
+
+				/*
+				 *	We're willing to do normal RADIUS, but we send ALPN, and then check if
+				 *	(or what) the client sends back as ALPN.
+				 */
+			case FR_RADIUSV11_ALLOW:
 				SSL_CTX_set_alpn_select_cb(this->tls->ctx, radiusv11_server_alpn_cb, this);
 				DEBUG("(TLS) ALPN radiusv11 = allow / require");
-			} else {
-				DEBUG("(TLS) ALPN radiusv11 = forbid");
 			}
 #endif
 		}
@@ -1313,6 +1387,12 @@ static CONF_PARSER limit_config[] = {
 	{ "max_connections", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.max_connections), "16" },
 	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.lifetime), "0" },
 	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.idle_timeout), STRINGIFY(30) },
+#ifdef SO_RCVTIMEO
+	{ "read_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.read_timeout), NULL },
+#endif
+#ifdef SO_SNDTIMEO
+	{ "write_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, listen_socket_t, limit.write_timeout), NULL },
+#endif
 #endif
 	CONF_PARSER_TERMINATOR
 };
@@ -1466,6 +1546,8 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			if (!this->tls) {
 				return -1;
 			}
+
+			this->tls->name = "RADIUS/TLS";
 
 #ifdef HAVE_PTHREAD_H
 			if (pthread_mutex_init(&sock->mutex, NULL) < 0) {
@@ -2663,7 +2745,7 @@ static int proxy_socket_encode(RADIUSV11_UNUSED rad_listen_t *listener, REQUEST 
 }
 
 
-static int proxy_socket_decode(UNUSED rad_listen_t *listener, REQUEST *request)
+static int proxy_socket_decode(RADIUSV11_UNUSED rad_listen_t *listener, REQUEST *request)
 {
 #ifdef WITH_RADIUSV11
 	listen_socket_t *sock = listener->data;
@@ -2907,6 +2989,9 @@ static int listen_bind(rad_listen_t *this)
 	 */
 	if (sock->interface) {
 #ifdef SO_BINDTODEVICE
+		/*
+		 *	Linux: Bind to an interface by name.
+		 */
 		struct ifreq ifreq;
 
 		memset(&ifreq, 0, sizeof(ifreq));
@@ -2919,45 +3004,81 @@ static int listen_bind(rad_listen_t *this)
 		if (rcode < 0) {
 			close(this->fd);
 			ERROR("Failed binding to interface %s: %s",
-			       sock->interface, fr_syserror(errno));
+			      sock->interface, fr_syserror(errno));
 			return -1;
-		} /* else it worked. */
+		}
 #else
+
+		/*
+		 *	If we don't bind to an interface by name, we usually bind to it by index.
+		 */
+		int idx = if_nametoindex(sock->interface);
+
+		if (idx == 0) {
+			close(this->fd);
+			ERROR("Failed finding interface %s: %s",
+			      sock->interface, fr_syserror(errno));
+			return -1;
+		}
+
+#ifdef IP_BOUND_IF
+		/*
+		 *	OSX / ?BSD / Solaris: bind to interface by index for IPv4
+		 */
+		if (sock->my_ipaddr.af == AF_INET) {
+			rad_suid_up();
+			rcode = setsockopt(this->fd, IPPROTO_IP, IP_BOUND_IF, &idx, sizeof(idx));
+			rad_suid_down();
+			if (rcode < 0) {
+				close(this->fd);
+				ERROR("Failed binding to interface %s: %s",
+				      sock->interface, fr_syserror(errno));
+				return -1;
+			}
+		} else
+#endif
+
+#ifdef IPV6_BOUND_IF
+		/*
+		 *	OSX / ?BSD / Solaris: bind to interface by index for IPv6
+		 */
+		if (sock->my_ipaddr.af == AF_INET6) {
+			rad_suid_up();
+			rcode = setsockopt(this->fd, IPPROTO_IPV6, IPV6_BOUND_IF, &idx, sizeof(idx));
+			rad_suid_down();
+			if (rcode < 0) {
+				close(this->fd);
+				ERROR("Failed binding to interface %s: %s",
+				      sock->interface, fr_syserror(errno));
+				return -1;
+			}
+		} else
+#endif
+
 #ifdef HAVE_STRUCT_SOCKADDR_IN6
 #ifdef HAVE_NET_IF_H
 		/*
-		 *	Odds are that any system supporting "bind to
-		 *	device" also supports IPv6, so this next bit
-		 *	isn't necessary.  But it's here for
-		 *	completeness.
-		 *
-		 *	If we're doing IPv6, and the scope hasn't yet
-		 *	been defined, set the scope to the scope of
-		 *	the interface.
+		 *	Otherwise generic IPv6: set the scope to the
+		 *	interface, and hope that all of the read/write
+		 *	routines respect that.
 		 */
 		if (sock->my_ipaddr.af == AF_INET6) {
 			if (sock->my_ipaddr.scope == 0) {
-				sock->my_ipaddr.scope = if_nametoindex(sock->interface);
-				if (sock->my_ipaddr.scope == 0) {
-					close(this->fd);
-					ERROR("Failed finding interface %s: %s",
-					       sock->interface, fr_syserror(errno));
-					return -1;
-				}
-			} /* else scope was defined: we're OK. */
+				sock->my_ipaddr.scope = idx;
+			} /* else scope was already defined */
 		} else
 #endif
 #endif
-				/*
-				 *	IPv4: no link local addresses,
-				 *	and no bind to device.
-				 */
+
+		/*
+		 *	IPv4, or no socket options to bind to interface.
+		 */
 		{
 			close(this->fd);
 			ERROR("Failed binding to interface %s: \"bind to device\" is unsupported", sock->interface);
 			return -1;
 		}
-#endif
+#endif	/* SO_BINDTODEVICE */
 	}
 
 #ifdef WITH_TCP
@@ -3067,6 +3188,7 @@ static int listen_bind(rad_listen_t *this)
 		int on = 1;
 
 		if (setsockopt(this->fd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) < 0) {
+			close(this->fd);
 			ERROR("Can't set broadcast option: %s",
 			       fr_syserror(errno));
 			return -1;
@@ -3115,6 +3237,7 @@ static int listen_bind(rad_listen_t *this)
 			memset(&src, 0, sizeof_src);
 			if (getsockname(this->fd, (struct sockaddr *) &src,
 					&sizeof_src) < 0) {
+				close(this->fd);
 				ERROR("Failed getting socket name: %s",
 				       fr_syserror(errno));
 				return -1;
@@ -3122,6 +3245,7 @@ static int listen_bind(rad_listen_t *this)
 
 			if (!fr_sockaddr2ipaddr(&src, sizeof_src,
 						&sock->my_ipaddr, &sock->my_port)) {
+				close(this->fd);
 				ERROR("Socket has unsupported address family");
 				return -1;
 			}
@@ -3131,9 +3255,9 @@ static int listen_bind(rad_listen_t *this)
 #ifdef WITH_TCP
 	if (sock->proto == IPPROTO_TCP) {
 		/*
-		 *	Woker threads are blocking.
+		 *	If we dedicate a worker thread to each socket, then the socket is blocking.
 		 *
-		 *	Otherwise, they're non-blocking.
+		 *	Otherwise, all input TCP sockets are non-blocking.
 		 */
 		if (!this->workers) {
 			if (fr_nonblock(this->fd) < 0) {
@@ -3331,11 +3455,15 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		 *	FIXME: connect() is blocking!
 		 *	We do this with the proxy mutex locked, which may
 		 *	cause large delays!
-		 *
-		 *	http://www.developerweb.net/forum/showthread.php?p=13486
 		 */
 		this->fd = fr_socket_client_tcp(&home->src_ipaddr,
-						&home->ipaddr, home->port, false);
+						&home->ipaddr, home->port,
+#ifdef WITH_TLS
+						!this->nonblock
+#else
+						false
+#endif
+			);
 
 		/*
 		 *	Set max_requests, lifetime, and idle_timeout from the home server.
@@ -3407,6 +3535,38 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 				}
 			}
 #endif
+		} else {
+			/*
+			 *	Only set timeouts when the socket is nonblocking.  This allows blocking
+			 *	sockets to still time out when the underlying socket is dead.
+			 */
+#ifdef SO_RCVTIMEO
+			if (sock->limit.read_timeout) {
+				struct timeval tv;
+
+				tv.tv_sec = sock->limit.read_timeout;
+				tv.tv_usec = 0;
+
+				if (setsockopt(this->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+					ERROR("(TLS) Failed to set read_timeout: %s", fr_syserror(errno));
+					goto error;
+				}
+			}
+#endif
+
+#ifdef SO_SNDTIMEO
+			if (sock->limit.write_timeout) {
+				struct timeval tv;
+
+				tv.tv_sec = sock->limit.write_timeout;
+				tv.tv_usec = 0;
+
+				if (setsockopt(this->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
+					ERROR("(TLS) Failed to set write_timeout: %s", fr_syserror(errno));
+					goto error;
+				}
+			}
+#endif
 		}
 
 		/*
@@ -3426,6 +3586,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			goto error;
 		}
 #endif
+
 
 		sock->connect_timeout = home->connect_timeout;
 
@@ -3575,7 +3736,9 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 	char const	*value;
 	fr_dlhandle	handle;
 	CONF_SECTION	*server_cs;
+#ifdef WITH_TCP
 	char const	*p;
+#endif
 	char		buffer[32];
 
 	cp = cf_pair_find(cs, "type");
@@ -3864,7 +4027,9 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head, bool spawn_flag)
 		if (override) {
 			cs = cf_section_sub_find_name2(config, "server",
 						       main_config.name);
-			if (cs) this->server = main_config.name;
+			if (!cs) cs = cf_section_sub_find_name2(config, "server",
+						       "default");
+			if (cs) this->server = cf_section_name2(cs);
 		}
 
 		*last = this;

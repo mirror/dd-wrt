@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: d327c575fc8ff204e9f980cd64ee8bb22e716c8a $
+ * Version:     $Id: 482fdca64066835ed3b49ce7b87ea9f36d7ac6ac $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  *
  */
 
-RCSID("$Id: d327c575fc8ff204e9f980cd64ee8bb22e716c8a $")
+RCSID("$Id: 482fdca64066835ed3b49ce7b87ea9f36d7ac6ac $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #ifdef HAVE_OPENSSL_RAND_H
@@ -71,19 +71,6 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 		ERROR("rlm_eap_tls: Failed initializing SSL context");
 		return -1;
 	}
-
-#ifdef TLS1_3_VERSION
-	if ((inst->tls_conf->max_version == TLS1_3_VERSION) ||
-	    (inst->tls_conf->min_version == TLS1_3_VERSION)) {
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		WARN("!! Most supplicants do not support EAP-TLS with TLS 1.3");
-		WARN("!! Please set tls_max_version = \"1.2\"");
-		WARN("!! FreeRADIUS only supports TLS 1.3 for special builds of wpa_supplicant and Windows");
-		WARN("!! This limitation is likely to change in late 2021.");
-		WARN("!! If you are using this version of FreeRADIUS after 2021, you will probably need to upgrade");
-		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	}
-#endif
 
 	return 0;
 }
@@ -135,7 +122,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	 *	TLS session initialization is over.  Now handle TLS
 	 *	related handshaking or application data.
 	 */
-	status = eaptls_start(handler->eap_ds, ssn->peap_flag);
+	status = eaptls_request(handler->eap_ds, ssn, true);
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {

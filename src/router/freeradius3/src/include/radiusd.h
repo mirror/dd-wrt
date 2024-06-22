@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 594a6bde8721b540dcaf6f51d461046c5836ab12 $
+ * $Id: 982f2124c62f8309bddfbebb2c5f57f6734fd5f0 $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 594a6bde8721b540dcaf6f51d461046c5836ab12 $")
+RCSIDH(radiusd_h, "$Id: 982f2124c62f8309bddfbebb2c5f57f6734fd5f0 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -140,6 +140,8 @@ typedef struct main_config {
 							//!< timing out.
 	uint32_t	cleanup_delay;			//!< How long before cleaning up cached responses.
 	uint32_t	max_requests;
+
+	uint32_t       	proxy_dedup_window;		//!< suppress duplicate retransmitssions from a NAS
 
 	bool		postauth_client_lost;		//!< Whether to run Post-Auth-Type Client-Lost section
 

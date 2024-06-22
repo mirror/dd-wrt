@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: aaa43ab73d7d47b87cb1cad7b969fae90a0d32bc $
+ * $Id: 48deaa37a6a0a9edc39c4661678e15ee20629b05 $
  * @file rlm_python3.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: aaa43ab73d7d47b87cb1cad7b969fae90a0d32bc $")
+RCSID("$Id: 48deaa37a6a0a9edc39c4661678e15ee20629b05 $")
 
 #define LOG_PREFIX "rlm_python3 - "
 
@@ -56,11 +56,11 @@ RCSID("$Id: aaa43ab73d7d47b87cb1cad7b969fae90a0d32bc $")
 static uint32_t		python_instances = 0;
 static void		*python_dlhandle;
 
-static PyThreadState	*main_interpreter;	//!< Main interpreter (cext safe)
-static PyObject		*main_module;		//!< Pthon configuration dictionary.
+static PyThreadState	*main_interpreter = NULL;	//!< Main interpreter (cext safe)
+static PyObject		*main_module = NULL;		//!< Pthon configuration dictionary.
 
-static rlm_python_t *current_inst;		//!< Needed to pass parameter to PyInit_radiusd
-static CONF_SECTION *current_conf;		//!< Needed to pass parameter to PyInit_radiusd
+static rlm_python_t *current_inst = NULL;		//!< Needed to pass parameter to PyInit_radiusd
+static CONF_SECTION *current_conf = NULL;		//!< Needed to pass parameter to PyInit_radiusd
 
 /*
  *	A mapping of configuration file names to internal variables.
@@ -387,6 +387,7 @@ static int mod_populate_vptuple(PyObject *pPair, VALUE_PAIR *vp)
 		ERROR("%s:%d, vp->da->name: %s", __func__, __LINE__, vp->da->name);
 		if (PyErr_Occurred()) {
 			python_error_log();
+			PyErr_Clear();
 		}
 		
 		return -1;
@@ -567,6 +568,7 @@ static rlm_rcode_t do_python_single(REQUEST *request, PyObject *pFunc, char cons
 		ERROR("%s:%d, %s - pRet is NULL", __func__, __LINE__, funcname);
 		if (PyErr_Occurred()) {
 			python_error_log();
+			PyErr_Clear();
 		}
 		ret = RLM_MODULE_FAIL;
 		goto finish;
@@ -674,17 +676,22 @@ finish:
 	if (ret == RLM_MODULE_FAIL) {
 		ERROR("%s:%d, %s - RLM_MODULE_FAIL", __func__, __LINE__, funcname);
 	}
+
+	if (PyErr_Occurred()) {
+		ERROR("Unhandled Python exception (see below); clearing.");
+		python_error_log();
+		PyErr_Clear();
+	}
+
 	return ret;
 }
 
 static void python_interpreter_free(PyThreadState *interp)
 {
-DIAG_OFF(deprecated-declarations)
-	PyEval_AcquireLock();
+	PyEval_RestoreThread(interp);
 	PyThreadState_Swap(interp);
 	Py_EndInterpreter(interp);
-	PyEval_ReleaseLock();
-DIAG_ON(deprecated-declarations)
+	PyEval_SaveThread();
 }
 
 /** Destroy a thread state
@@ -1094,6 +1101,8 @@ static PyMODINIT_FUNC PyInit_radiusd(void)
  */
 static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 {
+	bool locked = false;
+
 	/*
 	 * prepare radiusd module to be loaded
 	 */
@@ -1115,7 +1124,33 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 		python_dlhandle = dlopen_libpython(RTLD_NOW | RTLD_GLOBAL);
 		if (!python_dlhandle) WARN("Failed loading libpython symbols into global symbol table");
 
-#if PY_VERSION_HEX >= 0x03050000
+#if PY_VERSION_HEX > 0x030a0000
+		{
+			PyStatus status;
+			PyConfig config;
+			wchar_t  *name;
+
+			/*
+			 *	Isolated config: Don't override signal handlers - noop on subs calls
+			 */
+			PyConfig_InitIsolatedConfig(&config);
+
+			MEM(name = Py_DecodeLocale(main_config.name, NULL));
+			status = PyConfig_SetString(&config, &config.program_name, name);
+			PyMem_RawFree(name);
+			if (PyStatus_Exception(status)) {
+				PyConfig_Clear(&config);
+				return -1;
+			}
+
+			status = Py_InitializeFromConfig(&config);
+			if (PyStatus_Exception(status)) {
+				PyConfig_Clear(&config);
+				return -1;
+			}
+			PyConfig_Clear(&config);
+		}
+#elif PY_VERSION_HEX >= 0x03050000
 		{
 			wchar_t  *name;
 
@@ -1132,9 +1167,12 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 		}
 #endif
 
+#if PY_VERSION_HEX <= 0x030a0000
 		Py_InitializeEx(0);			/* Don't override signal handlers - noop on subs calls */
 		PyEval_InitThreads(); 			/* This also grabs a lock (which we then need to release) */
+#endif
 		main_interpreter = PyThreadState_Get();	/* Store reference to the main interpreter */
+		locked = true;
 	}
 	rad_assert(PyEval_ThreadsInitialized());
 
@@ -1153,6 +1191,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 		inst->sub_interpreter = main_interpreter;
 	}
 
+	if (!locked) PyEval_AcquireThread(inst->sub_interpreter);
 	PyThreadState_Swap(inst->sub_interpreter);
 
 	/*

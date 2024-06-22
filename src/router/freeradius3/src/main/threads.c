@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: a1871060d0a0de7ab4d681050b61d1075ca121ab $
+ * Version:	$Id: 5730b5e8448e77a8c0bd8b37195f2070581f8b57 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: a1871060d0a0de7ab4d681050b61d1075ca121ab $")
+RCSID("$Id: 5730b5e8448e77a8c0bd8b37195f2070581f8b57 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -291,7 +291,7 @@ static void tls_mutexes_destroy(void)
 #ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 	int i, num;
 
-	rad_assert(ssl_mutex != NULL);
+	rad_assert(ssl_mutexes != NULL);
 
 	num = CRYPTO_num_locks();
 

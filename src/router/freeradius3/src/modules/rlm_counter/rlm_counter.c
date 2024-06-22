@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: ff46aef0c327708efe9fa164ae87794d03aa3b28 $
+ * $Id: 9e3c7530cfbb03c8e4a6084ae39ab7571da8cf97 $
  * @file rlm_counter.c
  * @brief Provides a packet counter to track data usage and other values.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  Alan DeKok <aland@ox.org>
  * @copyright 2001-2003  Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: ff46aef0c327708efe9fa164ae87794d03aa3b28 $")
+RCSID("$Id: 9e3c7530cfbb03c8e4a6084ae39ab7571da8cf97 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -839,7 +839,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 		/*
 		 * User is denied access, send back a reply message
 		*/
-		sprintf(msg, "Your maximum %s usage time has been reached", inst->reset);
+		snprintf(msg, sizeof(msg), "Your maximum %s usage time has been reached", inst->reset);
 		pair_make_reply("Reply-Message", msg, T_OP_EQ);
 
 		REDEBUG("Maximum %s usage time reached", inst->reset);

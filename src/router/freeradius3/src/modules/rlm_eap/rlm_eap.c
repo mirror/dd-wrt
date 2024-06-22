@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: efb9660464ae2188741d763bc010c0df42811e1e $
+ * $Id: 18eb1c439cf0d6723cf198ce94eb244f5c879863 $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: efb9660464ae2188741d763bc010c0df42811e1e $")
+RCSID("$Id: 18eb1c439cf0d6723cf198ce94eb244f5c879863 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -38,7 +38,9 @@ static const CONF_PARSER module_config[] = {
 	{ "max_eap_type", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_eap_t, max_eap_type), "52" },
 	{ "ignore_unknown_eap_types", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_t, ignore_unknown_types), "no" },
 	{ "cisco_accounting_username_bug", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_t, mod_accounting_username_bug), "no" },
+	{ "allow_empty_identities", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_eap_t, allow_empty_identities), NULL },
 	{ "max_sessions", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_eap_t, max_sessions), "2048" },
+	{ "dedup_key", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_eap_t, dedup_key), "" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -98,6 +100,21 @@ static int eap_handler_cmp(void const *a, void const *b)
 	return 0;
 }
 
+/*
+ *	Compare two handlers by dedup key
+ */
+static int CC_HINT(nonnull) dedup_cmp(void const *a, void const *b)
+{
+	eap_handler_t const *one = a;
+	eap_handler_t const *two = b;
+
+	if (!one->dedup && two->dedup) return -1;
+	if (one->dedup && !two->dedup) return +1;
+
+	if (!one->dedup && !two->dedup) return 0;
+
+	return strcmp(one->dedup, two->dedup);
+}
 
 /*
  * read the config section and load all the eap authentication types present.
@@ -185,6 +202,7 @@ static int mod_instantiate(CONF_SECTION *cs, void *instance)
 		case PW_EAP_TTLS:
 		case PW_EAP_PEAP:
 		case PW_EAP_PWD:
+		case PW_EAP_TEAP:
 			WARN("rlm_eap (%s): Ignoring EAP method %s because we don't have OpenSSL support",
 			     inst->xlat_name, name);
 			continue;
@@ -254,6 +272,16 @@ static int mod_instantiate(CONF_SECTION *cs, void *instance)
 		return -1;
 	}
 #endif
+
+	if (!inst->dedup_key || !*inst->dedup_key) {
+		return 0;
+	}
+
+	inst->dedup_tree = rbtree_create(NULL, dedup_cmp, NULL,  0);
+	if (!inst->dedup_tree) {
+		ERROR("rlm_eap (%s): Cannot initialize dedup tree", inst->xlat_name);
+		return -1;
+	}
 
 	return 0;
 }
@@ -560,19 +588,16 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void *instance, REQUEST *reque
 
 
 #ifdef WITH_PROXY
-static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(void *instance, REQUEST *request)
+static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(UNUSED void *instance, REQUEST *request)
 {
 	VALUE_PAIR	*vp;
-	size_t		length;
-	rlm_eap_t	*inst = instance;
+	size_t		length, eap_length;
 
 	vp = fr_pair_find_by_num(request->packet->vps, PW_EAP_MESSAGE, 0, TAG_ANY);
 	if (!vp) return RLM_MODULE_NOOP;
 
-	if (vp->vp_length < 4) return RLM_MODULE_NOOP;
-
-	if ((vp->vp_octets[0] == 0) ||( vp->vp_octets[0] > 6)) {
-		RDEBUG("EAP header byte zero has invalid value");
+	if (vp->vp_length < 4) {
+		RDEBUG("EAP packet is too small");
 
 	add_error_cause:
 		/*
@@ -582,21 +607,20 @@ static rlm_rcode_t CC_HINT(nonnull) mod_pre_proxy(void *instance, REQUEST *reque
 		return RLM_MODULE_REJECT;
 	}
 
+	/*
+	 *	The length field has to match the length of all EAP-Messages.
+	 */
 	length = (vp->vp_octets[2] << 8) | vp->vp_octets[3];
-	if (length != vp->vp_length) {
-		RDEBUG("EAP length does not match attribute length");
-		return RLM_MODULE_REJECT;
+
+	/*
+	 *	Get length of all EAP-Message attributes
+	 */
+	for (eap_length = 0; vp != NULL; vp = vp->next) {
+		eap_length += vp->vp_length;
 	}
 
-	if (vp->vp_octets[0] != PW_EAP_REQUEST) return RLM_MODULE_NOOP;
-	if (!inst->max_eap_type) return RLM_MODULE_NOOP;
-
-	if (vp->vp_length < 5) return RLM_MODULE_NOOP;
-
-	if (vp->vp_octets[4] == 254) return RLM_MODULE_NOOP; /* allow extended types */
-
-	if (vp->vp_octets[4] > inst->max_eap_type) {
-		RDEBUG("EAP method %u is too large", vp->vp_octets[4]);
+	if (length != eap_length) {
+		RDEBUG("EAP length does not match attribute length");
 		goto add_error_cause;
 	}
 

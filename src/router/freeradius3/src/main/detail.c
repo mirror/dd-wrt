@@ -1,7 +1,7 @@
 /*
  * detail.c	Process the detail file
  *
- * Version:	$Id: a5e8437e1c5c091fb84b7915c7687ba46f4133ef $
+ * Version:	$Id: 3b7e38204251c95685ed1ee561507f686bf47098 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: a5e8437e1c5c091fb84b7915c7687ba46f4133ef $")
+RCSID("$Id: 3b7e38204251c95685ed1ee561507f686bf47098 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -910,8 +910,16 @@ open_file:
 			rad_assert(vp != NULL);
 			fr_pair_add(&packet->vps, vp);
 		}
+
+		/*
+		 *	Update Acct-Delay-Time, but make sure that it doesn't go backwards.
+		 */
 		if (data->timestamp != 0) {
-			vp->vp_integer += time(NULL) - data->timestamp;
+			time_t now = time(NULL);
+
+			if (((time_t) data->timestamp) < now) {
+				vp->vp_integer += time(NULL) - data->timestamp;
+			}
 		}
 	}
 

@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-#  Version:	$Id: 60e183c3841911f148aeb6e5e42cb87551b906b0 $
+#  Version:	$Id: b7777ed987540591cf9b183bb5b63a52b2fa036d $
 #
 
 #
@@ -381,7 +381,7 @@ rpm: rpmbuild/SOURCES/freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 		echo "ERROR: Required depdendencies not found, install them with: yum-builddep redhat/freeradius.spec"; \
 		exit 1; \
 	fi
-	${Q}QA_RPATHS=0x0003 rpmbuild --define "_topdir `pwd`/rpmbuild" -bb redhat/freeradius.spec
+	${Q}QA_RPATHS=0x0003 rpmbuild --define "_topdir `pwd`/rpmbuild" -bb $(RPMBUILD_FLAGS) redhat/freeradius.spec
 
 #
 #  Developer checks

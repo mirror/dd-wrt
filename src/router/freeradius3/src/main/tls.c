@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: c8cae3be46a94cfd1239d09eef77d79e51d9fdf4 $
+ * Version:     $Id: 8bbc7aac33e18e8ac074967146fbb440200392ac $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c8cae3be46a94cfd1239d09eef77d79e51d9fdf4 $")
+RCSID("$Id: 8bbc7aac33e18e8ac074967146fbb440200392ac $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -404,7 +404,7 @@ static unsigned int psk_server_callback(SSL *ssl, const char *identity,
 		 *	The passed identity is weird.  Deny it.
 		 */
 		if (!identity_is_safe(identity)) {
-			RWDEBUG("(TLS) Invalid characters in PSK identity %s", identity);
+			RWDEBUG("(TLS) %s - Invalid characters in PSK identity %s", conf->name, identity);
 			return 0;
 		}
 
@@ -421,7 +421,7 @@ static unsigned int psk_server_callback(SSL *ssl, const char *identity,
 		hex_len = radius_xlat(buffer, sizeof(buffer), request, conf->psk_query,
 				      NULL, NULL);
 		if (!hex_len) {
-			RWDEBUG("(TLS) PSK expansion returned an empty string.");
+			RWDEBUG("(TLS) %s - PSK expansion returned an empty string.", conf->name);
 			return 0;
 		}
 
@@ -431,7 +431,7 @@ static unsigned int psk_server_callback(SSL *ssl, const char *identity,
 		 *	the truncation, and complain about it.
 		 */
 		if (hex_len > (2 * max_psk_len)) {
-			RWDEBUG("(TLS) Returned PSK is too long (%u > %u)",
+			RWDEBUG("(TLS) %s - Returned PSK is too long (%u > %u)", conf->name,
 				(unsigned int) hex_len, 2 * max_psk_len);
 			return 0;
 		}
@@ -681,7 +681,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 
 	rad_assert(request != NULL);
 
-	RDEBUG2("(TLS) Initiating new session");
+	RDEBUG2("(TLS) %s -Initiating new session", conf->name);
 
 	/*
 	 *	Replace X509 store if it is time to update CRLs/certs in ca_path
@@ -690,10 +690,10 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 		pthread_mutex_lock(&conf->mutex);
 		/* recheck conf->ca_path_last_reload because it may be inaccurate without mutex */
 		if (conf->ca_path_last_reload + conf->ca_path_reload_interval <= request->timestamp) {
-			RDEBUG2("Flushing X509 store to re-read data from ca_path dir");
+			RDEBUG2("(TLS) Flushing X509 store to re-read data from ca_path dir");
 
 			if ((new_cert_store = fr_init_x509_store(conf)) == NULL) {
-				RERROR("(TLS) Error replacing X509 store, out of memory (?)");
+				RERROR("(TLS) %s - Error replacing X509 store, out of memory (?)", conf->name);
 			} else {
 				if (conf->old_x509_store) X509_STORE_free(conf->old_x509_store);
 				/*
@@ -752,7 +752,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 	SSL_set_app_data(new_tls, NULL);
 
 	if ((state = talloc_zero(ctx, tls_session_t)) == NULL) {
-		RERROR("(TLS) Error allocating memory for SSL state");
+		RERROR("(TLS) %s - Error allocating memory for SSL state", conf->name);
 		return NULL;
 	}
 	session_init(state);
@@ -808,7 +808,7 @@ tls_session_t *tls_new_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *conf, REQU
 		VALUE_PAIR *key = fr_pair_find_by_num(request->config, PW_TLS_SESSION_CERT_PRIVATE_KEY_FILE, 0, TAG_ANY);
 		if (!key) key = vp;
 
-		RDEBUG2("(TLS) Loading session certificate file \"%s\"", vp->vp_strvalue);
+		RDEBUG2("(TLS) %s - Loading session certificate file \"%s\"", conf->name, vp->vp_strvalue);
 
 		if (conf->realms) {
 			fr_realm_ctx_t my_r, *r;
@@ -887,11 +887,18 @@ after_chain:
 	 *	Verify the peer certificate, if asked.
 	 */
 	if (client_cert) {
-		RDEBUG2("(TLS) Setting verify mode to require certificate from client");
+		RDEBUG2("(TLS) %s - Setting verify mode to require certificate from client", conf->name);
 		verify_mode = SSL_VERIFY_PEER;
 		verify_mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
 		verify_mode |= SSL_VERIFY_CLIENT_ONCE;
 	}
+#ifdef PSK_MAX_IDENTITY_LEN
+	else if (conf->psk_identity) {
+		RDEBUG2("(TLS) %s - Setting verify peer mode due to PSK", conf->name);
+		verify_mode = SSL_VERIFY_PEER;
+		verify_mode |= SSL_VERIFY_CLIENT_ONCE;
+	}
+#endif
 	SSL_set_verify(state->ssl, verify_mode, cbtls_verify);
 
 	SSL_set_ex_data(state->ssl, FR_TLS_EX_INDEX_CONF, (void *)conf);
@@ -970,14 +977,14 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 	int err;
 
 	if (ssn->invalid_hb_used) {
-		REDEBUG("(TLS) OpenSSL Heartbeat attack detected.  Closing connection");
+		REDEBUG("(TLS) %s - OpenSSL Heartbeat attack detected.  Closing connection", ssn->conf->name);
 		return 0;
 	}
 
 	if (ssn->dirty_in.used > 0) {
 		err = BIO_write(ssn->into_ssl, ssn->dirty_in.data, ssn->dirty_in.used);
 		if (err != (int) ssn->dirty_in.used) {
-			REDEBUG("(TLS) Failed writing %zd bytes to SSL BIO: %d", ssn->dirty_in.used, err);
+			REDEBUG("(TLS) %s - Failed writing %zd bytes to SSL BIO: %d", ssn->conf->name, ssn->dirty_in.used, err);
 			record_init(&ssn->dirty_in);
 			return 0;
 		}
@@ -998,7 +1005,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		VALUE_PAIR *vp;
 		char const *str_version;
 
-		RDEBUG2("(TLS) Connection Established");
+		RDEBUG2("(TLS) %s - Connection Established", ssn->conf->name);
 		ssn->is_init_finished = true;
 
 		vp = fr_pair_afrom_num(request->state_ctx, PW_TLS_SESSION_CIPHER_SUITE, 0);
@@ -1049,10 +1056,10 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 			REXDENT();
 		}
 	}
-	else if (SSL_in_init(ssn->ssl)) { RDEBUG2("(TLS) In Handshake Phase"); }
-	else if (SSL_in_before(ssn->ssl)) { RDEBUG2("(TLS) Before Handshake Phase"); }
-	else if (SSL_in_accept_init(ssn->ssl)) { RDEBUG2("(TLS) In Accept mode"); }
-	else if (SSL_in_connect_init(ssn->ssl)) { RDEBUG2("(TLS) In Connect mode"); }
+	else if (SSL_in_init(ssn->ssl)) { RDEBUG2("(TLS) %s - In Handshake Phase", ssn->conf->name); }
+	else if (SSL_in_before(ssn->ssl)) { RDEBUG2("(TLS) %s - Before Handshake Phase", ssn->conf->name); }
+	else if (SSL_in_accept_init(ssn->ssl)) { RDEBUG2("(TLS) %s- In Accept mode", ssn->conf->name); }
+	else if (SSL_in_connect_init(ssn->ssl)) { RDEBUG2("(TLS) %s - In Connect mode", ssn->conf->name); }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10001000L
 	/*
@@ -1070,7 +1077,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		 *	to get the session is a hard fail.
 		 */
 		if (!ssn->ssl_session && ssn->is_init_finished) {
-			RDEBUG("(TLS) Failed getting session");
+			RDEBUG("(TLS) %s - Failed getting session", ssn->conf->name);
 			return 0;
 		}
 	}
@@ -1084,12 +1091,12 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 		err = BIO_read(ssn->from_ssl, ssn->dirty_out.data,
 			       sizeof(ssn->dirty_out.data));
 		if (err > 0) {
-			RDEBUG3("(TLS) got %d bytes of data", err);
+			RDEBUG3("(TLS) %s- got %d bytes of data", ssn->conf->name, err);
 			ssn->dirty_out.used = err;
 
 		} else if (BIO_should_retry(ssn->from_ssl)) {
 			record_init(&ssn->dirty_in);
-			RDEBUG2("(TLS) Asking for more data in tunnel.");
+			RDEBUG2("(TLS) %s - Asking for more data in tunnel.", ssn->conf->name);
 			return 1;
 
 		} else {
@@ -1098,7 +1105,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 			return 0;
 		}
 	} else {
-		RDEBUG2("(TLS) Application data.");
+		RDEBUG2("(TLS) %s - Application data.", ssn->conf->name);
 		/* Its clean application data, leave whatever is in the buffer */
 #if 0
 		record_init(&ssn->clean_out);
@@ -1245,6 +1252,7 @@ void tls_session_information(tls_session_t *tls_session)
 	REQUEST *request;
 	VALUE_PAIR *vp;
 	char content_type[16], alert_buf[16];
+	char name_buf[128];
 	char buffer[32];
 
 	/*
@@ -1262,7 +1270,12 @@ void tls_session_information(tls_session_t *tls_session)
 	request = SSL_get_ex_data(tls_session->ssl, FR_TLS_EX_INDEX_REQUEST);
 	if (!request) return;
 
-	str_write_p = tls_session->info.origin ? "(TLS) send" : "(TLS) recv";
+	if (tls_session->info.origin) {
+		snprintf(name_buf, sizeof(name_buf), "(TLS) %s - send", tls_session->conf->name);
+	} else {
+		snprintf(name_buf, sizeof(name_buf), "(TLS) %s - recv", tls_session->conf->name);
+	}
+	str_write_p = name_buf;
 
 #define FROM_CLIENT (tls_session->info.origin == 0)
 
@@ -1605,7 +1618,7 @@ void tls_session_information(tls_session_t *tls_session)
 
 	RDEBUG2("%s", tls_session->info.info_description);
 
-	if (FROM_CLIENT && details) RDEBUG2("(TLS) The client is informing us that %s.", details);
+	if (FROM_CLIENT && details) RDEBUG2("(TLS) %s - The client is informing us that %s.", tls_session->conf->name, details);
 }
 
 static CONF_PARSER cache_config[] = {
@@ -1735,6 +1748,10 @@ static CONF_PARSER tls_client_config[] = {
 	{ "certificate_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, fr_tls_server_conf_t, certificate_file), NULL },
 	{ "ca_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, fr_tls_server_conf_t, ca_file), NULL },
 	{ "private_key_password", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_SECRET, fr_tls_server_conf_t, private_key_password), NULL },
+#ifdef PSK_MAX_IDENTITY_LEN
+	{ "psk_identity", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, psk_identity), NULL },
+	{ "psk_hexphrase", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_SECRET, fr_tls_server_conf_t, psk_password), NULL },
+#endif
 	{ "dh_file", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, dh_file), NULL },
 	{ "random_file", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, random_file), NULL },
 	{ "fragment_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, fragment_size), "1024" },
@@ -1923,7 +1940,7 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 		blob_len = i2d_SSL_SESSION(sess, NULL);
 		if (blob_len < 1) {
 			/* something went wrong */
-			if (request) RWDEBUG("(TLS) Session serialisation failed, could not determine required buffer length");
+			if (request) RWDEBUG("(TLS) %s - Session serialisation failed, could not determine required buffer length", conf->name);
 			return 0;
 		}
 
@@ -1931,14 +1948,14 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 		/* alloc and convert to ASN.1 */
 		sess_blob = malloc(blob_len);
 		if (!sess_blob) {
-			RWDEBUG("(TLS) Session serialisation failed, couldn't allocate buffer (%d bytes)", blob_len);
+			RWDEBUG("(TLS) %s - Session serialisation failed, couldn't allocate buffer (%d bytes)", conf->name, blob_len);
 			return 0;
 		}
 		/* openssl mutates &p */
 		p = sess_blob;
 		rv = i2d_SSL_SESSION(sess, &p);
 		if (rv != blob_len) {
-			if (request) RWDEBUG("(TLS) Session serialisation failed");
+			if (request) RWDEBUG("(TLS) %s - Session serialisation failed", conf->name);
 			goto error;
 		}
 
@@ -1947,8 +1964,8 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 			 conf->session_cache_path, FR_DIR_SEP, buffer);
 		fd = open(filename, O_RDWR|O_CREAT|O_EXCL, S_IWUSR);
 		if (fd < 0) {
-			if (request) RERROR("(TLS) Session serialisation failed, failed opening session file %s: %s",
-					    filename, fr_syserror(errno));
+			if (request) RERROR("(TLS) %s - Session serialisation failed, failed opening session file %s: %s",
+					    conf->name, filename, fr_syserror(errno));
 			goto error;
 		}
 
@@ -1970,7 +1987,7 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 		while (todo > 0) {
 			rv = write(fd, p, todo);
 			if (rv < 1) {
-				if (request) RWDEBUG("(TLS) Failed writing session: %s", fr_syserror(errno));
+				if (request) RWDEBUG("(TLS) %s - Failed writing session: %s", conf->name, fr_syserror(errno));
 				close(fd);
 				goto error;
 			}
@@ -1978,7 +1995,7 @@ static int cbtls_new_session(SSL *ssl, SSL_SESSION *sess)
 			todo -= rv;
 		}
 		close(fd);
-		if (request) RWDEBUG("(TLS) Wrote session %s to %s (%d bytes)", buffer, filename, blob_len);
+		if (request) RWDEBUG("(TLS) %s - Wrote session %s to %s (%d bytes)", conf->name, buffer, filename, blob_len);
 	}
 
 error:
@@ -2101,20 +2118,20 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 		snprintf(filename, sizeof(filename), "%s%c%s.asn1", conf->session_cache_path, FR_DIR_SEP, buffer);
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
-			RWDEBUG("(TLS) No persisted session file %s: %s", filename, fr_syserror(errno));
+			RWDEBUG("(TLS) %s - No persisted session file %s: %s", conf->name, filename, fr_syserror(errno));
 			goto error;
 		}
 
 		rv = fstat(fd, &st);
 		if (rv < 0) {
-			RWDEBUG("(TLS) Failed stating persisted session file %s: %s", filename, fr_syserror(errno));
+			RWDEBUG("(TLS) %s - Failed stating persisted session file %s: %s", conf->name, filename, fr_syserror(errno));
 			close(fd);
 			goto error;
 		}
 
 		sess_data = talloc_array(NULL, unsigned char, st.st_size);
 		if (!sess_data) {
-			RWDEBUG("(TLS) Failed allocating buffer for persisted session (%d bytes)", (int) st.st_size);
+			RWDEBUG("(TLS) %s- Failed allocating buffer for persisted session (%d bytes)", conf->name, (int) st.st_size);
 			close(fd);
 			goto error;
 		}
@@ -2124,7 +2141,7 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 		while (todo > 0) {
 			rv = read(fd, q, todo);
 			if (rv < 1) {
-				RWDEBUG("(TLS) Failed reading persisted session: %s", fr_syserror(errno));
+				RWDEBUG("(TLS) %s - Failed reading persisted session: %s", conf->name, fr_syserror(errno));
 				close(fd);
 				goto error;
 			}
@@ -2148,7 +2165,7 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 		memcpy(&o, &p, sizeof(o));
 		sess = d2i_SSL_SESSION(NULL, o, st.st_size);
 		if (!sess) {
-			RWDEBUG("(TLS) Failed loading persisted session: %s", ERR_error_string(ERR_get_error(), NULL));
+			RWDEBUG("(TLS) %s - Failed loading persisted session: %s", conf->name, ERR_error_string(ERR_get_error(), NULL));
 			goto error;
 		}
 
@@ -2158,7 +2175,7 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 		rv = pairlist_read(talloc_ctx, filename, &pairlist, 1);
 		if (rv < 0) {
 			/* not safe to un-persist a session w/o VPs */
-			RWDEBUG("(TLS) Failed loading persisted VPs for session %s", buffer);
+			RWDEBUG("(TLS) %s - Failed loading persisted VPs for session %s", conf->name, buffer);
 			SSL_SESSION_free(sess);
 			sess = NULL;
 			goto error;
@@ -2172,7 +2189,7 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 			time_t expires;
 
 			if (ocsp_asn1time_to_epoch(&expires, vp->vp_strvalue) < 0) {
-				RDEBUG2("Failed getting certificate expiration, removing cache entry for session %s - %s", buffer, fr_strerror());
+				RDEBUG2("(TLS) %s - Failed getting certificate expiration, removing cache entry for session %s - %s", conf->name, buffer, fr_strerror());
 				SSL_SESSION_free(sess);
 				sess = NULL;
 				goto error;
@@ -2192,8 +2209,8 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 			if (vp) {
 				if ((request->timestamp + vp->vp_integer) > expires) {
 					vp->vp_integer = expires - request->timestamp;
-					RWDEBUG2("(TLS) Updating Session-Timeout to %u, due to impending certificate expiration",
-						 vp->vp_integer);
+					RWDEBUG2("(TLS) %s - Updating Session-Timeout to %u, due to impending certificate expiration",
+						 conf->name, vp->vp_integer);
 				}
 			}
 		}
@@ -2207,8 +2224,8 @@ static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int l
 			VALUE_PAIR *type = fr_pair_find_by_num(request->packet->vps, PW_EAP_TYPE, 0, TAG_ANY);
 
 			if (type && (type->vp_integer != vp->vp_integer)) {
-				REDEBUG("Resumption has changed EAP types for session %s", buffer);
-				REDEBUG("Rejecting session due to protocol violations");
+				REDEBUG("(TLS) %s - Resumption has changed EAP types for session %s", conf->name, buffer);
+				REDEBUG("(TLS) %s - Rejecting session due to protocol violations", conf->name);
 				goto error;
 			}
 		}
@@ -2523,8 +2540,8 @@ static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int le
 		if (vp) {
 			if ((request->timestamp + vp->vp_integer) > expires) {
 				vp->vp_integer = expires - request->timestamp;
-				RWDEBUG2("(TLS) Updating Session-Timeout to %u, due to impending certificate expiration",
-					 vp->vp_integer);
+				RWDEBUG2("(TLS) %s - Updating Session-Timeout to %u, due to impending certificate expiration",
+					 conf->name, vp->vp_integer);
 			}
 		}
 	}
@@ -2534,7 +2551,7 @@ static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int le
 	 */
 	vp = fr_pair_find_by_num(fake->state, PW_TLS_SESSION_DATA, 0, TAG_ANY);
 	if (!vp) {
-		RWDEBUG("(TLS) Failed to find TLS-Session-Data in 'session-state' list for session %s", buffer);
+		RWDEBUG("(TLS) %s - Failed to find TLS-Session-Data in 'session-state' list for session %s", conf->name, buffer);
 		goto error;
 	}
 
@@ -2551,7 +2568,7 @@ static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int le
 	p = vp->vp_octets;
 	sess = d2i_SSL_SESSION(NULL, &p, vp->vp_length);
 	if (!sess) {
-		RWDEBUG("(TLS) Failed loading persisted session: %s", ERR_error_string(ERR_get_error(), NULL));
+		RWDEBUG("(TLS) %s - Failed loading persisted session: %s", conf->name, ERR_error_string(ERR_get_error(), NULL));
 		goto error;
 	}
 
@@ -2628,7 +2645,7 @@ typedef enum {
 } ocsp_status_t;
 
 static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issuer_cert, X509 *client_cert,
-				fr_tls_server_conf_t *conf)
+				STACK_OF(X509) *untrusted, fr_tls_server_conf_t *conf)
 {
 	OCSP_CERTID	*certid;
 	OCSP_REQUEST	*req;
@@ -2809,7 +2826,7 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		REDEBUG("ocsp: Response has wrong nonce value");
 		goto ocsp_end;
 	}
-	if (OCSP_basic_verify(bresp, NULL, store, 0)!=1){
+	if (OCSP_basic_verify(bresp, untrusted, store, 0)!=1){
 		REDEBUG("ocsp: Couldn't verify OCSP basic response");
 		goto ocsp_end;
 	}
@@ -3047,7 +3064,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	buf[0] = '\0';
 	sn = X509_get_serialNumber(client_cert);
 
-	RDEBUG2("(TLS) Creating attributes from %s certificate", cert_names[lookup ]);
+	RDEBUG2("(TLS) %s - Creating attributes from %s certificate", conf->name, cert_names[lookup ]);
  	RINDENT();
 
 	/*
@@ -3339,8 +3356,8 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 
 #if 0
 		ASN1_TIME_print(bio_err, X509_get_notAfter(ctx->current_cert));
-#endif
 		break;
+#endif
 	}
 
 	/*
@@ -3365,8 +3382,10 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 			if (conf->disallow_untrusted || RDEBUG_ENABLED2) {
 				int  i;
 
-				WARN("Certificate chain - %i cert(s) untrusted",
+				WARN("Certificate chain - %i intermediate CA cert(s) untrusted",
 				     X509_STORE_CTX_get_num_untrusted(ctx));
+				WARN("To forbid these certificates see 'reject_unknown_intermediate_ca'");
+
 				for (i = sk_X509_num(untrusted); i > 0 ; i--) {
 					X509 *this_cert = sk_X509_value(untrusted, i - 1);
 
@@ -3416,7 +3435,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 			}
 		} /* check_cert_cn */
 
-#ifdef HAVE_OPENSSL_OCSP_H
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && defined(HAVE_OPENSSL_OCSP_H)
 		if (my_ok) {
 			/*
 			 *	No OCSP, allow external verification.
@@ -3446,7 +3465,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				 *	run the external verification routine.  If it's marked as
 				 *	"skip verify on OK", then we don't do verify.
 				 */
-				my_ok = ocsp_check(request, ocsp_store, issuer_cert, client_cert, conf);
+				my_ok = ocsp_check(request, ocsp_store, issuer_cert, client_cert, untrusted, conf);
 				if (my_ok != OCSP_STATUS_FAILED) {
 					do_verify = !conf->verify_skip_if_ocsp_ok;
 				}
@@ -4160,6 +4179,16 @@ post_ca:
 			ERROR("Unknown or unsupported value for tls_min_version '%s'", conf->tls_min_version);
 			return NULL;
 		}
+
+#ifdef WITH_RADIUSV11
+		/*
+		 *	RADIUS 1.1 requires TLS 1.3 or later.
+		 */
+		if (conf->radiusv11 && (min_version < TLS1_3_VERSION)) {
+			WARN(LOG_PREFIX ": The configuration allows TLS <1.3.  RADIUS/1.1 MUST use TLS 1.3");
+			WARN(LOG_PREFIX ": Please set: tls_min_version = '1.3'");
+		}
+#endif
 	} else {
 #ifdef WITH_RADIUSV11
 		/*

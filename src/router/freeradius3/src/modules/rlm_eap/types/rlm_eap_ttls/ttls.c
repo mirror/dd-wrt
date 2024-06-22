@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: cbe423951a7a27f5da1ded6eb12fd7e9587ccaed $
+ * Version:     $Id: d997e3ea3b6ac46555518ea4bc35fe18a440287a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: cbe423951a7a27f5da1ded6eb12fd7e9587ccaed $")
+RCSID("$Id: d997e3ea3b6ac46555518ea4bc35fe18a440287a $")
 
 #include "eap_ttls.h"
 #include "eap_chbind.h"
@@ -877,6 +877,8 @@ static int CC_HINT(nonnull) eapttls_postproxy(eap_handler_t *handler, void *data
 		request->proxy_reply = talloc_steal(request, fake->reply);
 		fake->reply = NULL;
 
+		request->proxy->dst_port = 0; /* hacks for state.c lookups */
+
 		/*
 		 *	And we're done with this request.
 		 */
@@ -914,7 +916,7 @@ static int CC_HINT(nonnull) eapttls_postproxy(eap_handler_t *handler, void *data
 
 	case RLM_MODULE_HANDLED:
 		RDEBUG("Reply was handled");
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		request->proxy_reply->code = PW_CODE_ACCESS_CHALLENGE;
 		return 1;
 

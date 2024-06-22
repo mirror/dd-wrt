@@ -6,12 +6,15 @@
 #
 #	Based on https://www.calix.com/content/dam/calix/mycalix-misc/lib/tp/cms/ug/r15-x/index.htm?toc136037.htm?5793.htm
 #
-#	$Id: 0a663263f7e142f37970da9ef1ae6d58072fff22 $
+#	$Id: 4bcd1bf407894f53beb774926dec0e12a08a37c1 $
 #
 ##############################################################################
 
 VENDOR		Calix				6321
 
+BEGIN-VENDOR	Calix
+
+ATTRIBUTE	Calix-Role				1	string
 ATTRIBUTE	Calix-CMS-User-Group			220	string
 ATTRIBUTE	Calix-CMS-Alarm-Filter			221	integer
 
@@ -27,3 +30,5 @@ ATTRIBUTE	Calix-CMS-Threshold-Event-Filter	223	integer
 
 VALUE	Calix-CMS-Threshold-Event-Filter Disabled		0
 VALUE	Calix-CMS-Threshold-Event-Filter Enabled		1
+
+END-VENDOR	Calix

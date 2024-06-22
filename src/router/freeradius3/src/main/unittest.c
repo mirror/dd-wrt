@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: 72fdadcbf1bee0b98dd328fd9e215df67fc75ca5 $
+ * Version:	$Id: c82d31dcfa2233ac41477e41e95559a3c228e2a1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 72fdadcbf1bee0b98dd328fd9e215df67fc75ca5 $")
+RCSID("$Id: c82d31dcfa2233ac41477e41e95559a3c228e2a1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -55,7 +55,7 @@ char const *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
 #endif
 ;
 
-fr_event_list_t	*el = NULL;
+static fr_event_list_t	*el = NULL;
 
 /*
  *	Static functions.

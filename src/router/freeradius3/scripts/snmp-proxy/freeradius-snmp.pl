@@ -40,7 +40,7 @@ my $cfg = {
 
     radius => {
         host => 'localhost',
-        port => 18120,
+        port => 18121,
         secret => 'adminsecret',
 #        dictionary => '../radiusd/share/dictionary',
         dictionary => 'dictionary.hacked',
@@ -167,7 +167,7 @@ sub radius_stats_get {
 #  Wrappers for specific types of stats
 #
 sub radius_stats_get_global { return radius_stats_get(0x1f); }
-sub radius_stats_get_client { return radius_stats_get(0x3f, 'FreeRADIUS-Stats-Client-Number' => $_[0]); }
+sub radius_stats_get_client { return radius_stats_get(0x23, 'FreeRADIUS-Stats-Client-Number' => $_[0]); }
 
 #
 #  Main loop of thread fetching status from freeradius server

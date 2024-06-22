@@ -2,7 +2,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 2f37663df142a3e22867a51330d8d05eddb0df00 $
+ * Version:     $Id: 424c4b5c0135ff2f36affd8fa56e75269441df9e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  *
  */
 
-RCSID("$Id: 2f37663df142a3e22867a51330d8d05eddb0df00 $")
+RCSID("$Id: 424c4b5c0135ff2f36affd8fa56e75269441df9e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -68,6 +68,9 @@ tls_session_t *eaptls_session(eap_handler_t *handler, fr_tls_server_conf_t *tls_
 	REQUEST		*request = handler->request;
 
 	handler->tls = true;
+
+	tls_conf->name = dict_valnamebyattr(PW_EAP_TYPE, 0, handler->type);
+	if (!tls_conf->name) tls_conf->name = "???";
 
 	/*
 	 *	Every new session is started only from EAP-TLS-START.
@@ -101,29 +104,6 @@ tls_session_t *eaptls_session(eap_handler_t *handler, fr_tls_server_conf_t *tls_
 
 	return talloc_steal(handler, ssn); /* ssn */
 }
-
-/*
-   The S flag is set only within the EAP-TLS start message
-   sent from the EAP server to the peer.
-*/
-int eaptls_start(EAP_DS *eap_ds, int peap_flag)
-{
-	EAPTLS_PACKET 	reply;
-
-	reply.code = FR_TLS_START;
-	reply.length = TLS_HEADER_LEN + 1/*flags*/;
-
-	reply.flags = peap_flag;
-	reply.flags = SET_START(reply.flags);
-
-	reply.data = NULL;
-	reply.dlen = 0;
-
-	eaptls_compose(eap_ds, &reply);
-
-	return 1;
-}
-
 
 /** Send an EAP-TLS success
  *
@@ -186,12 +166,11 @@ int eaptls_success(eap_handler_t *handler, int peap_flag)
 			/* Should never happen */
 			rad_assert(0);
 			return 0;
-			break;
 		}
 		eaptls_gen_mppe_keys(request,
 				     tls_session->ssl, tls_session->label,
 				     context, context_size);
-	} else if (handler->type != PW_EAP_FAST) {
+	} else if ((handler->type != PW_EAP_FAST) && (handler->type != PW_EAP_TEAP)) {
 		RWDEBUG("(TLS) EAP Not adding MPPE keys because there is no PRF label");
 	}
 
@@ -230,13 +209,21 @@ int eaptls_fail(eap_handler_t *handler, int peap_flag)
  *	EAP-Request.  We always embed the TLS-length in all EAP-TLS
  *	packets that we send, for easy reference purpose.  Handle
  *	fragmentation and sending the next fragment etc.
+ *
+ *	FIXME: support fragmented start due to TEAP outer tlvs
  */
-int eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn)
+int eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn, bool start)
 {
 	EAPTLS_PACKET	reply;
 	unsigned int	size;
-	unsigned int 	nlen;
 	unsigned int 	lbit = 0;
+	unsigned int 	obit = 0;
+	VALUE_PAIR	*vp;
+	vp_cursor_t	cursor;
+	uint32_t	nlen;
+	uint16_t	ohdr[2];
+	uint32_t	olen = 0;
+	uint32_t	tls_mtu;
 
 	/* This value determines whether we set (L)ength flag for
 		EVERY packet we send and add corresponding
@@ -257,16 +244,46 @@ int eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn)
 	if (ssn->length_flag) {
 		lbit = 4;
 	}
+
+	/*
+	 *	This is included in the first fragment, and then never
+	 *	afterwards.
+	 */
+	if (start && ssn->outer_tlvs) {
+		for (vp = fr_cursor_init(&cursor, &ssn->outer_tlvs);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			if (vp->da->type != PW_TYPE_OCTETS) {
+				DEBUG("FIXME Outer-TLV %s is of not type octets", vp->da->name);
+				continue;
+			}
+			obit = 4;
+			olen += sizeof(ohdr) + vp->vp_length;
+			break;
+		}
+	}
+
 	if (ssn->fragment == 0) {
 		ssn->tls_msg_len = ssn->dirty_out.used;
 	}
 
-	reply.code = FR_TLS_REQUEST;
+	reply.code = start ? FR_TLS_START : FR_TLS_REQUEST;
 	reply.flags = ssn->peap_flag;
+	if (start) reply.flags = SET_START(reply.flags);
+
+	/*
+	 *	This is only true for TEAP, so only TEAP has to check the return value of this function.
+	 */
+	if (lbit + obit + olen >= ssn->mtu) {
+		ERROR("fragment_size is too small for outer TLVs");
+		return -1;
+	}
+
+	tls_mtu = ssn->mtu - lbit - obit - olen;
 
 	/* Send data, NOT more than the FRAGMENT size */
-	if (ssn->dirty_out.used > ssn->mtu) {
-		size = ssn->mtu;
+	if (ssn->dirty_out.used > tls_mtu) {
+		size = tls_mtu;
 		reply.flags = SET_MORE_FRAGMENTS(reply.flags);
 		/* Length MUST be included if it is the First Fragment */
 		if (ssn->fragment == 0) {
@@ -278,7 +295,7 @@ int eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn)
 		ssn->fragment = 0;
 	}
 
-	reply.dlen = lbit + size;
+	reply.dlen = lbit + obit + size + olen;
 	reply.length = TLS_HEADER_LEN + 1/*flags*/ + reply.dlen;
 
 	reply.data = talloc_array(eap_ds, uint8_t, reply.length);
@@ -286,10 +303,59 @@ int eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn)
 
 	if (lbit) {
 		nlen = htonl(ssn->tls_msg_len);
-		memcpy(reply.data, &nlen, lbit);
+		memcpy(reply.data, &nlen, sizeof(nlen));
 		reply.flags = SET_LENGTH_INCLUDED(reply.flags);
 	}
-	(ssn->record_minus)(&ssn->dirty_out, reply.data + lbit, size);
+
+	if (obit) {
+		nlen = 0;
+		for (vp = fr_cursor_init(&cursor, &ssn->outer_tlvs);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			if (vp->da->type != PW_TYPE_OCTETS) continue;
+			nlen += sizeof(ohdr) + vp->vp_length;
+		}
+
+		ssn->outer_tlvs_octets = talloc_array(ssn, uint8_t, olen);
+		if (!ssn->outer_tlvs_octets) return 0;
+
+		nlen = htonl(nlen);
+		memcpy(reply.data + lbit, &nlen, sizeof(nlen));
+		reply.flags = SET_OUTER_TLV_INCLUDED(reply.flags);
+	}
+
+	(ssn->record_minus)(&ssn->dirty_out, reply.data + lbit + obit, size);
+
+	/*
+	 *	Tack on the outer TLVs after the TLS data.
+	 */
+	if (obit) {
+		olen = 0;
+		for (vp = fr_cursor_init(&cursor, &ssn->outer_tlvs);
+		     vp;
+		     vp = fr_cursor_next(&cursor)) {
+			if (vp->da->type != PW_TYPE_OCTETS) continue;
+
+			/* FIXME duplicates eap_teap_tlv_append */
+
+			/*
+			 *	RFC7170, Section 4.3.1 - Outer TLVs must be marked optional
+			 */
+			ohdr[0] = htons((vp->da->attr >> fr_attr_shift[1]) & fr_attr_mask[1]);
+			ohdr[1] = htons(vp->vp_length);
+
+			/* use by Crypto-Binding TLV */
+			memcpy(ssn->outer_tlvs_octets + olen, ohdr, sizeof(ohdr));
+			olen += sizeof(ohdr);
+			memcpy(ssn->outer_tlvs_octets + olen, vp->vp_octets, vp->vp_length);
+			olen += vp->vp_length;
+
+			memcpy(reply.data + lbit + obit + size, ohdr, sizeof(ohdr));
+			size += sizeof(ohdr);
+			memcpy(reply.data + lbit + obit + size, vp->vp_octets, vp->vp_length);
+			size += vp->vp_length;
+		}
+	}
 
 	eaptls_compose(eap_ds, &reply);
 	talloc_free(reply.data);
@@ -425,6 +491,9 @@ static fr_tls_status_t eaptls_verify(eap_handler_t *handler)
 	 *	from a fragment acknowledgement.
 	 */
 	if (TLS_LENGTH_INCLUDED(eaptls_packet->flags)) {
+		/*
+		 *	data[0] and data[1] are always zero, vi eap_vp2packet()
+		 */
 		size_t total_len = eaptls_packet->data[2] * 256 | eaptls_packet->data[3];
 
 		if (frag_len > total_len) {
@@ -463,6 +532,14 @@ static fr_tls_status_t eaptls_verify(eap_handler_t *handler)
 				return FR_TLS_FIRST_FRAGMENT;
 			}
 
+			/*
+			 *	The "O" bit is only allowed for the first fragment.
+			 */
+			if (TLS_OUTER_TLV_INCLUDED(eaptls_packet->flags)) {
+				REDEBUG("(TLS) EAP Peer set 'O' bit after initial fragment");
+				return FR_TLS_INVALID;
+			}
+
 			RDEBUG2("(TLS) EAP Got additional fragment with length (%zu bytes).  "
 				"Peer says more fragments will follow", frag_len);
 
@@ -492,6 +569,10 @@ static fr_tls_status_t eaptls_verify(eap_handler_t *handler)
 		RDEBUG2("(TLS) EAP Got all data (%zu bytes)", frag_len);
 		return FR_TLS_LENGTH_INCLUDED;
 	}
+
+	/*
+	 *	eap_vp2packet() ensures that the 'O' bit is not set here.
+	 */
 
 	/*
 	 *	The previous packet had the M flags set, but this one doesn't,
@@ -563,7 +644,7 @@ static EAPTLS_PACKET *eaptls_extract(REQUEST *request, EAP_DS *eap_ds, fr_tls_st
 {
 	EAPTLS_PACKET	*tlspacket;
 	uint32_t	data_len = 0;
-	uint32_t	len = 0;
+	uint32_t	obit = 0;
 	uint8_t		*data = NULL;
 
 	if (status == FR_TLS_INVALID) return NULL;
@@ -599,36 +680,8 @@ static EAPTLS_PACKET *eaptls_extract(REQUEST *request, EAP_DS *eap_ds, fr_tls_st
 	tlspacket->flags = eap_ds->response->type.data[0];
 
 	/*
-	 *	A quick sanity check of the flags.  If we've been told
-	 *	that there's a length, and there isn't one, then stop.
+	 *	eaptls_verify() ensures that all of the flags are correct.
 	 */
-	if (TLS_LENGTH_INCLUDED(tlspacket->flags) &&
-	    (tlspacket->length < 5)) { /* flags + TLS message length */
-		REDEBUG("(TLS) EAP Invalid packet received: Length bit is set,"
-			"but packet too short to contain length field");
-		talloc_free(tlspacket);
-		return NULL;
-	}
-
-	/*
-	 *	If the final TLS packet is larger than we can handle, die
-	 *	now.
-	 *
-	 *	Likewise, if the EAP packet says N bytes, and the TLS
-	 *	packet says there's fewer bytes, it's a problem.
-	 */
-	if (TLS_LENGTH_INCLUDED(tlspacket->flags)) {
-		memcpy(&data_len, &eap_ds->response->type.data[1], 4);
-		data_len = ntohl(data_len);
-		if (data_len > MAX_RECORD_SIZE) {
-			REDEBUG("(TLS) EAP Reassembled data will be %u bytes, "
-				"greater than the size that we can handle (" STRINGIFY(MAX_RECORD_SIZE) " bytes)",
-				data_len);
-			talloc_free(tlspacket);
-			return NULL;
-		}
-	}
-
 	switch (status) {
 	/*
 	 *	The TLS Message Length field is four octets, and
@@ -640,39 +693,28 @@ static EAPTLS_PACKET *eaptls_extract(REQUEST *request, EAP_DS *eap_ds, fr_tls_st
 	 *	length should solve the problem.
 	 */
 	case FR_TLS_FIRST_FRAGMENT:
+		obit = TLS_OUTER_TLV_INCLUDED(tlspacket->flags) << 2;
+
+		/*
+		 *	@todo - decode outer TLVs, too
+		 */
+
+		/* FALL-THROUGH */
+
 	case FR_TLS_LENGTH_INCLUDED:
 	case FR_TLS_MORE_FRAGMENTS_WITH_LENGTH:
-		if (tlspacket->length < 5) { /* flags + TLS message length */
-			REDEBUG("(TLS) EAP Invalid packet received: Expected length, got none");
-			talloc_free(tlspacket);
-			return NULL;
-		}
+		eap_ds->response->type.data += 4 + obit;
+		eap_ds->response->type.length -= 4 + obit;
 
-		/*
-		 *	Extract all the TLS fragments from the
-		 *	previous eap_ds Start appending this
-		 *	fragment to the above ds
-		 */
-		memcpy(&data_len, &eap_ds->response->type.data[1], sizeof(uint32_t));
-		data_len = ntohl(data_len);
-		data = (eap_ds->response->type.data + 5/*flags+TLS-Length*/);
-		len = eap_ds->response->type.length - 5/*flags+TLS-Length*/;
-
-		/*
-		 *	Hmm... this should be an error, too.
-		 */
-		if (data_len > len) {
-			data_len = len;
-		}
-		break;
+		/* FALL-THROUGH */
 
 		/*
 		 *	Data length is implicit, from the EAP header.
 		 */
 	case FR_TLS_MORE_FRAGMENTS:
 	case FR_TLS_OK:
-		data_len = eap_ds->response->type.length - 1/*flags*/;
-		data = eap_ds->response->type.data + 1/*flags*/;
+		data_len = eap_ds->response->type.length - 1;
+		data = eap_ds->response->type.data + 1;
 		break;
 
 	default:
@@ -689,6 +731,7 @@ static EAPTLS_PACKET *eaptls_extract(REQUEST *request, EAP_DS *eap_ds, fr_tls_st
 			talloc_free(tlspacket);
 			return NULL;
 		}
+
 		memcpy(tlspacket->data, data, data_len);
 	}
 
@@ -784,7 +827,7 @@ static fr_tls_status_t eaptls_operation(fr_tls_status_t status, eap_handler_t *h
 	 *	TLS proper can decide what to do, then.
 	 */
 	if (tls_session->dirty_out.used > 0) {
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		return FR_TLS_HANDLED;
 	}
 
@@ -890,7 +933,7 @@ fr_tls_status_t eaptls_process(eap_handler_t *handler)
 	 *	of fragments" phase.
 	 */
 	case FR_TLS_REQUEST:
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		status = FR_TLS_HANDLED;
 		goto done;
 

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: dfdc81a80912261172602cfb8f958deb937af8b5 $
+ * $Id: 03cdb922b6fe1c2e46d34b4bb11b17458b5fff9d $
  * @file rlm_unpack.c
  * @brief Unpack binary data
  *
  * @copyright 2014 The FreeRADIUS server project
  * @copyright 2014 Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: dfdc81a80912261172602cfb8f958deb937af8b5 $")
+RCSID("$Id: 03cdb922b6fe1c2e46d34b4bb11b17458b5fff9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -287,7 +287,7 @@ static ssize_t substring_xlat(UNUSED void *instance, REQUEST *request,
 	/*
 	 *  Trim whitespace
 	 */
-	while (isspace((uint8_t) *p) && p++);
+	while (isspace((uint8_t) *p)) p++;
 
 	/*
 	 * Find numeric parameters at the end.

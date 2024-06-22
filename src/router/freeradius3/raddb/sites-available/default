@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: 78b7ae7f37a487276e963d8e9b67913285e8ab18 $
+#	$Id: b4339bde9e22910fb01159fd89b6a92cbb2cae24 $
 #
 ######################################################################
 #
@@ -348,6 +348,20 @@ authorize {
 #	digest
 
 	#
+	#  The dpsk module implements dynamic PSK.
+	#
+	#  If the request contains FreeRADIUS-802.1X-Anonce
+	#  and FreeRADIUS-802.1X-EAPoL-Key-Msg, then it will set
+	#  	&control:Auth-Type := dpsk
+	#
+	#  The "rewrite_called_station_id" policy creates the
+	#  Called-Station-MAC attribute, which is needed by
+	#  the dpsk module.
+	#
+#	rewrite_called_station_id
+#	dpsk
+
+	#
 	#  The WiMAX specification says that the Calling-Station-Id
 	#  is 6 octets of the MAC.  This definition conflicts with
 	#  RFC 3580, and all common RADIUS practices.  If you are using
@@ -537,6 +551,8 @@ authenticate {
 	Auth-Type PAP {
 		pap
 	}
+
+#	dpsk
 
 	#
 	#  Most people want CHAP authentication

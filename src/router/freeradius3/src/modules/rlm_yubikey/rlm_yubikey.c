@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 83b76558cab621d042f2c7740787dd050a80eaa3 $
+ * $Id: 5bbed114bc54c58c82b8bfc5d5ab831121fffcf3 $
  * @file rlm_yubikey.c
  * @brief Authentication for yubikey OTP tokens.
  *
@@ -23,7 +23,7 @@
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Network RADIUS <info@networkradius.com>
  */
-RCSID("$Id: 83b76558cab621d042f2c7740787dd050a80eaa3 $")
+RCSID("$Id: 5bbed114bc54c58c82b8bfc5d5ab831121fffcf3 $")
 
 #include "rlm_yubikey.h"
 
@@ -77,19 +77,16 @@ static ssize_t modhex2hex(char const *modhex, uint8_t *hex, size_t len)
 	size_t i;
 	char *c1, *c2;
 
-	for (i = 0; i < len; i++) {
-		if (modhex[i << 1] == '\0') {
-			break;
-		}
+	for (i = 0; i < len; i += 2) {
+		if (modhex[i] == '\0') break;
 
 		/*
 		 *	We only deal with whole bytes
 		 */
-		if (modhex[(i << 1) + 1] == '\0')
-			return -1;
+		if (modhex[i + 1] == '\0') return -1;
 
-		if (!(c1 = memchr(modhextab, tolower((uint8_t) modhex[i << 1]), 16)) ||
-		    !(c2 = memchr(modhextab, tolower((uint8_t) modhex[(i << 1) + 1]), 16)))
+		if (!(c1 = memchr(modhextab, tolower((uint8_t) modhex[i]), 16)) ||
+		    !(c2 = memchr(modhextab, tolower((uint8_t) modhex[i + 1]), 16)))
 			return -1;
 
 		hex[i] = hextab[c1 - modhextab];
@@ -124,6 +121,10 @@ static ssize_t modhex_to_hex_xlat(UNUSED void *instance, REQUEST *request, char 
 		return -1;
 	}
 
+	if (len < (ssize_t) outlen) {
+		out[len] = '\0';
+	}
+
 	return len;
 }
 
@@ -142,7 +143,7 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 	}
 #endif
 
-	if (!cf_section_name2(conf)) return 0;
+	if (cf_section_name2(conf)) return 0;
 
 	xlat_register("modhextohex", modhex_to_hex_xlat, NULL, inst);
 

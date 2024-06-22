@@ -1,7 +1,7 @@
 /*
  * rlm_eap_peap.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: d9f850cef27441dabc04c99040466741e2f7fe19 $
+ * Version:     $Id: 704b86c2629d2e62c1fdf45f092e51e328a91de2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: d9f850cef27441dabc04c99040466741e2f7fe19 $")
+RCSID("$Id: 704b86c2629d2e62c1fdf45f092e51e328a91de2 $")
 
 #include "eap_peap.h"
 
@@ -233,7 +233,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	 *	TLS session initialization is over.  Now handle TLS
 	 *	related handshaking or application data.
 	 */
-	status = eaptls_start(handler->eap_ds, ssn->peap_flag);
+	status = eaptls_request(handler->eap_ds, ssn, true);
 	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
 		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
 	} else {
@@ -357,7 +357,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 		goto done;
 
 	case RLM_MODULE_HANDLED:
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		ret = 1;
 		goto done;
 

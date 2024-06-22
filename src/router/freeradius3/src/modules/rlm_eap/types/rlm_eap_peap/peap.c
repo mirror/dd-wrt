@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id: a8589aeaea4dc61370cc6d6d5ef44743bd295183 $
+ * Version:     $Id: efe9b102d3e82095316d34f0875f30bf1f3ecc04 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: a8589aeaea4dc61370cc6d6d5ef44743bd295183 $")
+RCSID("$Id: efe9b102d3e82095316d34f0875f30bf1f3ecc04 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_peap.h"
@@ -591,8 +591,6 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 			fprintf(fr_log_fp, "server %s {\n", fake->server);
 		}
 
-		fake->reply->code = PW_CODE_ACCESS_ACCEPT;
-
 		/*
 		 *	Perform a post-auth stage, which will get the EAP
 		 *	handler, too...
@@ -622,6 +620,8 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 		request->proxy_reply = talloc_steal(request, fake->reply);
 		fake->reply = NULL;
 
+		request->proxy->dst_port = 0; /* hacks for state.c lookups */
+		
 		/*
 		 *	And we're done with this request.
 		 */
@@ -667,7 +667,7 @@ static int CC_HINT(nonnull) eappeap_postproxy(eap_handler_t *handler, void *data
 
 	case RLM_MODULE_HANDLED:
 		RDEBUG2("Reply was handled");
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		request->proxy_reply->code = PW_CODE_ACCESS_CHALLENGE;
 		return 1;
 

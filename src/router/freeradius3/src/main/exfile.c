@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 59e6a05d80f79ac4533e75713ccbaa5680c30b7e $
+ * $Id: 1b498cedb6461341dee9bc6c0913b3016724dcf1 $
  *
  * @file exfile.c
  * @brief Allow multiple threads to write to the same set of files.
@@ -170,7 +170,20 @@ static int exfile_open_mkdir(exfile_t *ef, char const *filename, mode_t permissi
 			oflag = O_RDWR;
 		}
 
-		fd = open(filename, oflag, permissions);
+		/*
+		 *	Just dup stdout / stderr if it's possible.
+		 */
+		if ((default_log.dst == L_DST_STDOUT) &&
+		    (strcmp(filename, "/dev/stdout") == 0)) {
+			fd = dup(STDOUT_FILENO);
+
+		} else if ((default_log.dst == L_DST_STDERR) &&
+			   (strcmp(filename, "/dev/stderr") == 0)) {
+			fd = dup(STDERR_FILENO);
+		} else {
+			fd = open(filename, oflag, permissions);
+		}
+
 		if (fd < 0) {
 			fr_strerror_printf("Failed to open file %s: %s",
 					   filename, strerror(errno));

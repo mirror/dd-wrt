@@ -1,7 +1,7 @@
 /*
  * eap.h    Header file containing the interfaces for all EAP types.
  *
- * Version:     $Id: b487c086508d9e01b13079e61bb679e21b99185a $
+ * Version:     $Id: 0724463d0abc4e34afeea9d84f6eb325b00a13fd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_H
 #define _EAP_H
 
-RCSIDH(eap_h, "$Id: b487c086508d9e01b13079e61bb679e21b99185a $")
+RCSIDH(eap_h, "$Id: 0724463d0abc4e34afeea9d84f6eb325b00a13fd $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -59,7 +59,6 @@ typedef enum operation_t {
 	INITIATE = 0,
 	PROCESS
 } operation_t;
-
 
 /*
  * eap_handler_t is the interface for any EAP-Type.
@@ -103,7 +102,9 @@ typedef struct _eap_handler {
 
 	REQUEST		*request;
 
-	char		*identity;	//!< User name from EAP-Identity
+	char const     	*identity;	//!< User name from EAP-Identity
+
+	char const	*dedup;		//!< dedup key
 
 	EAP_DS 		*prev_eapds;
 	EAP_DS 		*eap_ds;

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 1aad02d62d01b819bb27a85f450a48c470b4be90 $
+ * $Id: c5ebd34455283b23122fc6555755c5383c5f95d8 $
  * @file rlm_expr.c
  * @brief Register many xlat expansions including the expr expansion.
  *
  * @copyright 2001,2006  The FreeRADIUS server project
  * @copyright 2002  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 1aad02d62d01b819bb27a85f450a48c470b4be90 $")
+RCSID("$Id: c5ebd34455283b23122fc6555755c5383c5f95d8 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -681,7 +681,7 @@ static ssize_t randstr_xlat(UNUSED void *instance, UNUSED REQUEST *request,
 			return -1;
 		}
 
-		if (number > 0) {
+		if (number > 1) {
 			number--;
 			goto redo;
 		}

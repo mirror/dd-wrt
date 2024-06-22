@@ -3,7 +3,7 @@
  *
  * most contents moved from modules/rlm_eap/eap.h
  *
- * Version:     $Id: c6568ffedf26ab895717e9de961ffde82f011224 $
+ * Version:     $Id: beee998651bc47d5f11b42d47a06f70f806129e2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #ifndef _EAP_TYPES_H
 #define _EAP_TYPES_H
 
-RCSIDH(eap_methods_h, "$Id: c6568ffedf26ab895717e9de961ffde82f011224 $")
+RCSIDH(eap_methods_h, "$Id: beee998651bc47d5f11b42d47a06f70f806129e2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -98,7 +98,9 @@ typedef enum eap_method {
 	PW_EAP_GPSK,			/* 51 */
 	PW_EAP_PWD,			/* 52 */
 	PW_EAP_EKE,			/* 53 */
-	PW_EAP_MAX_TYPES		/* 54 - for validation */
+	PW_EAP_PT_EAP,			/* 54 */
+	PW_EAP_TEAP,			/* 55 */
+	PW_EAP_MAX_TYPES		/* 56 - for validation */
 } eap_type_t;
 
 #define PW_EAP_EXPANDED_TYPE	(254)

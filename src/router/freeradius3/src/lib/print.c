@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 57455b6f30bf167abd138ac2281cd2b5d304d0c5 $
+ * Version:	$Id: 83aa26744bc5233e2efd60ff3c9c0588b6147379 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 57455b6f30bf167abd138ac2281cd2b5d304d0c5 $")
+RCSID("$Id: 83aa26744bc5233e2efd60ff3c9c0588b6147379 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -529,6 +529,7 @@ size_t vp_prints_value_json(char *out, size_t outlen, VALUE_PAIR const *vp, bool
 
 	switch (vp->da->type) {
 	case PW_TYPE_STRING:
+	case PW_TYPE_OCTETS:	
 		for (q = vp->vp_strvalue; q < vp->vp_strvalue + vp->vp_length; q++) {
 			/* Indicate truncation */
 			if (freespace < 3) return outlen + 1;

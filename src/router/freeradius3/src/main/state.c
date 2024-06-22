@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3700062f642826a067b6de0fe6914398a5ede83e $
+ * $Id: ab7a1802c6aec9d359fb5f6034cb284f719179cd $
  *
  * @brief Multi-packet state handling
  * @file main/state.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSID("$Id: 3700062f642826a067b6de0fe6914398a5ede83e $")
+RCSID("$Id: ab7a1802c6aec9d359fb5f6034cb284f719179cd $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/state.h>
@@ -33,13 +33,14 @@ RCSID("$Id: 3700062f642826a067b6de0fe6914398a5ede83e $")
 #include <freeradius-devel/process.h>
 
 typedef struct state_entry_t {
-	uint8_t		state[AUTH_VECTOR_LEN];
+	uint8_t		state[MD5_DIGEST_LENGTH];
 
 	time_t		cleanup;
 	struct state_entry_t *prev;
 	struct state_entry_t *next;
 
 	int		tries;
+	bool		ours;
 
 	TALLOC_CTX		*ctx;
 	VALUE_PAIR		*vps;
@@ -379,7 +380,52 @@ static void fr_state_cleanup(state_entry_t *head)
 			request_inject(request);
 		}
 
+		if (entry->opaque) {
+			entry->free_opaque(entry->opaque);
+		}
+
+		if (entry->ctx) talloc_free(entry->ctx);
+
 		talloc_free(entry);
+	}
+}
+
+static void state_entry_calc(REQUEST *request, state_entry_t *entry, VALUE_PAIR *vp)
+{
+	/*
+	 *	Assume our own State first.  This is where the state
+	 *	is the correct size, AND we're not proxying it to an
+	 *	external home server.  If we are proxying it to an
+	 *	external home server, then that home server creates
+	 *	the State attribute, and we don't control it.
+	 */
+	if (entry->ours ||
+	    (vp->vp_length == sizeof(entry->state) &&
+	     (!request->proxy || (request->proxy->dst_port == 0)))) {
+		memcpy(entry->state, vp->vp_octets, sizeof(entry->state));
+		entry->ours = true;
+
+	} else {
+		FR_MD5_CTX ctx;
+
+		/*
+		 *	We don't control the external State attribute.
+		 *	As a result, different home servers _may_
+		 *	create the same State attribute.  In order to
+		 *	differentiate them, we "mix in" the User-Name,
+		 *	which should contain the realm.  And we then
+		 *	hope that different home servers in the same
+		 *	realm don't create overlapping State
+		 *	attributes.
+		 */
+		fr_md5_init(&ctx);
+		fr_md5_update(&ctx, vp->vp_octets, vp->vp_length);
+
+		vp = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+		if (vp) fr_md5_update(&ctx, vp->vp_octets, vp->vp_length);
+
+		fr_md5_final(entry->state, &ctx);
+		fr_md5_destroy(&ctx);
 	}
 }
 
@@ -430,17 +476,18 @@ static state_entry_t *fr_state_entry_create(fr_state_t *state, REQUEST *request,
 	 */
 	if (old) {
 		entry->tries = old->tries + 1;
+		entry->ours = old->ours;
 
 		/*
 		 *	Track State
 		 */
-		if (!vp) {
+		if (!vp && entry->ours) {
 			memcpy(entry->state, old->state, sizeof(entry->state));
 
 			entry->state[1] = entry->state[0] ^ entry->tries;
-			entry->state[8] = entry->state[2] ^ ((((uint32_t) HEXIFY(RADIUSD_VERSION)) >> 16) & 0xff);
+			entry->state[8] = entry->state[2] ^ (((uint32_t) HEXIFY(RADIUSD_VERSION)) & 0xff);
 			entry->state[10] = entry->state[2] ^ ((((uint32_t) HEXIFY(RADIUSD_VERSION)) >> 8) & 0xff);
-			entry->state[12] = entry->state[2] ^ (((uint32_t) HEXIFY(RADIUSD_VERSION)) & 0xff);
+			entry->state[12] = entry->state[2] ^ ((((uint32_t) HEXIFY(RADIUSD_VERSION)) >> 16) & 0xff);
 		}
 
 		/*
@@ -457,6 +504,8 @@ static state_entry_t *fr_state_entry_create(fr_state_t *state, REQUEST *request,
 			x = fr_rand();
 			memcpy(entry->state + (i * 4), &x, sizeof(x));
 		}
+
+		entry->ours = true; /* we created it */
 	}
 
 	/*
@@ -464,27 +513,8 @@ static state_entry_t *fr_state_entry_create(fr_state_t *state, REQUEST *request,
 	 *	one we created above.
 	 */
 	if (vp) {
-		/*
-		 *	Assume our own State first.
-		 */
-		if (vp->vp_length == sizeof(entry->state)) {
-			memcpy(entry->state, vp->vp_octets, sizeof(entry->state));
+		state_entry_calc(request, entry, vp);
 
-			/*
-			 *	Too big?  Get the MD5 hash, in order
-			 *	to depend on the entire contents of State.
-			 */
-		} else if (vp->vp_length > sizeof(entry->state)) {
-			fr_md5_calc(entry->state, vp->vp_octets, vp->vp_length);
-
-			/*
-			 *	Too small?  Use the whole thing, and
-			 *	set the rest of entry->state to zero.
-			 */
-		} else {
-			memcpy(entry->state, vp->vp_octets, vp->vp_length);
-			memset(&entry->state[vp->vp_length], 0, sizeof(entry->state) - vp->vp_length);
-		}
 	} else {
 		vp = fr_pair_afrom_num(packet, PW_STATE, 0);
 		fr_pair_value_memcpy(vp, entry->state, sizeof(entry->state));
@@ -497,7 +527,7 @@ static state_entry_t *fr_state_entry_create(fr_state_t *state, REQUEST *request,
 		/*
 		 *	Make unique for different virtual servers handling same request
 		 */
-		*((uint32_t *)(&entry->state[4])) ^= fr_hash_string(request->server);
+		if (entry->ours) *((uint32_t *)(&entry->state[4])) ^= fr_hash_string(request->server);
 
 		/*
 		 *	Copy server to state in case it's needed for cleanup
@@ -520,7 +550,7 @@ static state_entry_t *fr_state_entry_create(fr_state_t *state, REQUEST *request,
 /*
  *	Find the entry, based on the State attribute.
  */
-static state_entry_t *fr_state_find(fr_state_t *state, const char *server, RADIUS_PACKET *packet)
+static state_entry_t *fr_state_find(REQUEST *request, fr_state_t *state, const char *server, RADIUS_PACKET *packet)
 {
 	VALUE_PAIR *vp;
 	state_entry_t *entry, my_entry;
@@ -528,31 +558,12 @@ static state_entry_t *fr_state_find(fr_state_t *state, const char *server, RADIU
 	vp = fr_pair_find_by_num(packet->vps, PW_STATE, 0, TAG_ANY);
 	if (!vp) return NULL;
 
-	/*
-	 *	Assume our own State first.
-	 */
-	if (vp->vp_length == sizeof(my_entry.state)) {
-		memcpy(my_entry.state, vp->vp_octets, sizeof(my_entry.state));
-
-		/*
-		 *	Too big?  Get the MD5 hash, in order
-		 *	to depend on the entire contents of State.
-		 */
-	} else if (vp->vp_length > sizeof(my_entry.state)) {
-		fr_md5_calc(my_entry.state, vp->vp_octets, vp->vp_length);
-
-		/*
-		 *	Too small?  Use the whole thing, and
-		 *	set the rest of my_entry.state to zero.
-		 */
-	} else {
-		memcpy(my_entry.state, vp->vp_octets, vp->vp_length);
-		memset(&my_entry.state[vp->vp_length], 0, sizeof(my_entry.state) - vp->vp_length);
-	}
+	my_entry.ours = false;
+	state_entry_calc(request, &my_entry, vp);
 
 	/*	Make unique for different virtual servers handling same request
 	 */
-	if (server) *((uint32_t *)(&my_entry.state[4])) ^= fr_hash_string(server);
+	if (server && my_entry.ours) *((uint32_t *)(&my_entry.state[4])) ^= fr_hash_string(server);
 
 	entry = rbtree_finddata(state->tree, &my_entry);
 
@@ -576,7 +587,7 @@ void fr_state_discard(REQUEST *request, RADIUS_PACKET *original)
 	request->state = NULL;
 
 	PTHREAD_MUTEX_LOCK(&state->mutex);
-	entry = fr_state_find(state, request->server, original);
+	entry = fr_state_find(request, state, request->server, original);
 	if (entry) state_entry_free(state, entry);
 	PTHREAD_MUTEX_UNLOCK(&state->mutex);
 }
@@ -601,7 +612,7 @@ void fr_state_get_vps(REQUEST *request, RADIUS_PACKET *packet)
 	rad_assert(request->state == NULL);
 
 	PTHREAD_MUTEX_LOCK(&state->mutex);
-	entry = fr_state_find(state, request->server, packet);
+	entry = fr_state_find(request, state, request->server, packet);
 
 	/*
 	 *	This has to be done in a mutex lock, because talloc
@@ -683,7 +694,7 @@ bool fr_state_put_vps(REQUEST *request, RADIUS_PACKET *original, RADIUS_PACKET *
 	cleanup_list = fr_state_cleanup_find(state);
 
 	if (original) {
-		old = fr_state_find(state, request->server, original);
+		old = fr_state_find(request, state, request->server, original);
 	} else {
 		old = NULL;
 	}

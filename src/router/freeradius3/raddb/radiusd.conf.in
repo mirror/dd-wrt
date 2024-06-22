@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: 366dce419dee0e4ab8ea47351f6f2953bcba2899 $
+##	$Id: 12fac7abd5e3cd5ec083621a227cfce89c26979d $
 ##
 
 ######################################################################
@@ -270,6 +270,27 @@ hostname_lookups = no
 #postauth_client_lost = no
 
 #
+#  Some NASes will aggressively retransmit packets, and cause a DoS of
+#  the RADIUS infrastructure.  They should follow he recommended
+#  retransmission behavior of RFC 5080 Section 2.2.2, but it seems
+#  that only (some) RADIUS servers follow that guidance.
+#
+#  When a duplicate packet is received from the NAS, the server will
+#  see when the last retransmission was done.  If it is within the
+#  "proxy_dedup_window", the retransmitted packet is dropped.
+#
+#  i.e. There is zero benefit to sending the same RADIUS packet
+#  multiple times in one second.  There is, in fact, serious harm
+#  in doing so.  Aggressive retransmissions can result in network
+#  congestion, and ultimately failure of the RADIUS infrastructure.
+#
+#  This behavior *cannot* be disabled.
+#
+#  Allowed values here are 1..10.  Only integers are supported.
+#
+#proxy_dedup_window = 1
+
+#
 #  Logging section.  The various "log_*" configuration items
 #  will eventually be moved here.
 #
@@ -424,6 +445,16 @@ ENV {
 	#  Delete environment variable `BAR`.
 	#
 #	BAR
+
+
+	#
+	#  If the server needs kerberos credentials, then they can be placed
+	#  into the following keytab file.
+	#
+	#  This also permits the server to use those credentials when it is
+	#  run in debug mode.
+	#
+#	KRB5_CLIENT_KTNAME = ${raddbdir}/radiusd.keytab
 
 	#
 	#  `LD_PRELOAD` is special.  It is normally set before the

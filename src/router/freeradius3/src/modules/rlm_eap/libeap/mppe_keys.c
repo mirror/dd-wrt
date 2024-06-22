@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 385441c62ff409762aefdea20900f7606bbeb05e $
+ * Version:     $Id: 43561641920d14c46a55a87946aa1a7c6bd8ac3d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 385441c62ff409762aefdea20900f7606bbeb05e $")
+RCSID("$Id: 43561641920d14c46a55a87946aa1a7c6bd8ac3d $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -32,6 +32,35 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/provider.h>
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#include <openssl/kdf.h>
+
+void TLS_PRF(SSL *ssl,
+	     unsigned char *sec, size_t seclen,
+	     struct iovec *iov, size_t iovcnt,
+	     unsigned char *key, size_t keylen)
+{
+	const EVP_MD *md = SSL_CIPHER_get_handshake_digest(SSL_get_current_cipher(ssl));
+	EVP_MD *unconst_md;
+	EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_TLS1_PRF, NULL);
+
+	EVP_PKEY_derive_init(pctx);
+
+	memcpy(&unconst_md, &md, sizeof(md)); /* const issues */
+	EVP_PKEY_CTX_set_tls1_prf_md(pctx, unconst_md);
+
+	EVP_PKEY_CTX_set1_tls1_prf_secret(pctx, sec, seclen);
+
+	for (unsigned int i = 0; i < iovcnt; i++) {
+		EVP_PKEY_CTX_add1_tls1_prf_seed(pctx, iov[i].iov_base, iov[i].iov_len);
+	}
+
+	EVP_PKEY_derive(pctx, key, &keylen);
+
+	EVP_PKEY_CTX_free(pctx);
+}
 #endif
 
 /*
@@ -210,23 +239,20 @@ void T_PRF(unsigned char const *secret, unsigned int secret_len,
 #define EAPTLS_MPPE_KEY_LEN     32
 
 /*
- *	Generate keys according to RFC 2716 and add to reply
+ *	Generate keys according to RFC 5216 (section 2.3)
  */
-void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t const *context, UNUSED size_t context_size)
+void eaptls_gen_keys_only(UNUSED REQUEST *request, SSL *s, char const *label, uint8_t const *context, UNUSED size_t context_size, uint8_t *out, size_t outlen)
 {
-	uint8_t out[4 * EAPTLS_MPPE_KEY_LEN];
-	uint8_t *p;
-	size_t len;
-
-	len = strlen(label);
+	size_t len = strlen(label);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10001000L
-	if (SSL_export_keying_material(s, out, sizeof(out), label, len, context, context_size, context != NULL) != 1) {
+	if (SSL_export_keying_material(s, out, outlen, label, len, context, context_size, context != NULL) != 1) {
 		ERROR("Failed generating keying material");
 		return;
 	}
 #else
 	{
+		uint8_t *p;
 		uint8_t seed[64 + (2 * SSL3_RANDOM_SIZE) + (context ? 2 + context_size : 0)];
 		uint8_t buf[4 * EAPTLS_MPPE_KEY_LEN];
 
@@ -255,9 +281,20 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 		}
 
 		PRF(s->session->master_key, s->session->master_key_length,
-		    seed, len, out, buf, sizeof(out));
+		    seed, len, out, buf, outlen);
 	}
 #endif
+}
+
+/*
+ *	Generate keys according to RFC 5216 (section 2.3) and add to reply
+ */
+void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t const *context, UNUSED size_t context_size)
+{
+	uint8_t out[4 * EAPTLS_MPPE_KEY_LEN];
+	uint8_t *p;
+
+	eaptls_gen_keys_only(request, s, label, context, context_size, out, sizeof(out));
 
 	p = out;
 	eap_add_reply(request, "MS-MPPE-Recv-Key", p, EAPTLS_MPPE_KEY_LEN);
@@ -267,7 +304,6 @@ void eaptls_gen_mppe_keys(REQUEST *request, SSL *s, char const *label, uint8_t c
 	eap_add_reply(request, "EAP-MSK", out, 64);
 	eap_add_reply(request, "EAP-EMSK", out + 64, 64);
 }
-
 
 #define FR_TLS_PRF_CHALLENGE		"ttls challenge"
 

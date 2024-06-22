@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: ee9e539a239a432dff7892efc3d57411bddd58cb $
+##	$Id: d149707f02427234b09974effc33cb0db0dc48fb $
 
 #######################################################################
 #
@@ -32,6 +32,28 @@ eap {
 	#  expire, and are deleted.
 	#
 	timer_expire = 60
+
+	#
+	#  Some supplicants may misbehave by starting many thousands
+	#  of EAP sessions, but never finishing them.  These sessions
+	#  can cause the server to hit 'max_sessions' very quickly.
+	#  The 'timer_expire' configuration above does not help as
+	#  much as it could, because the old (duplicate) session
+	#  should be deleted as soon as the new one comes in.
+	#
+	#  If you set the 'dedup_key' below, whenever the EAP module
+	#  starts a new session, it will check for a previous session
+	#  which has the same dedup key.  If a previous session
+	#  is found, it is deleted.
+	#
+	#  Setting this configuration item may cause issues if the
+	#  same device uses multiple EAP sessions at the same time.
+	#  But that device behavior should be rare to non-existent.
+	#
+	#  The configuration item is commented out so that upgrades
+	#  do not change existing behavior.
+	#
+#	dedup_key = "%{Calling-Station-Id}"
 
 	#  There are many EAP types, but the server has support
 	#  for only a limited subset.  If the server receives
@@ -230,6 +252,9 @@ eap {
 		#
 		#  Directory where multiple CAs are stored.  Both
 		#  "ca_file" and "ca_path" can be used at the same time.
+		#
+		#  Each file in this directory must contain one
+		#  certificate, and ONLY one certificate.
 		#
 		ca_path = ${cadir}
 
@@ -1060,6 +1085,56 @@ eap {
 		#  If 'cipher_list' is set here, it will over-ride the
 		#  'cipher_list' configuration from the 'tls-common'
 		#  configuration.  The EAP-FAST module has it's own
+		#  over-ride for 'cipher_list' because the
+		#  specifications mandata a different set of ciphers
+		#  than are used by the other EAP methods.
+		#
+		#  cipher_list though must include "ADH" for anonymous provisioning.
+		#  This is not as straight forward as appending "ADH" alongside
+		#  "DEFAULT" as "DEFAULT" contains "!aNULL" so instead it is
+		#  recommended "ALL:!EXPORT:!eNULL:!SSLv2" is used
+		#
+	#	cipher_list = "ALL:!EXPORT:!eNULL:!SSLv2"
+
+		#  PAC lifetime in seconds (default: seven days)
+		#
+	#	pac_lifetime = 604800
+
+		#  Authority ID of the server
+		#
+		#  If you are running a cluster of RADIUS servers, you should make
+		#  the value chosen here (and for "pac_opaque_key") the same on all
+		#  your RADIUS servers.  This value should be unique to your
+		#  installation.  We suggest using a domain name.
+		#
+	#	authority_identity = "1234"
+
+		#  PAC Opaque encryption key (must be exactly 32 bytes in size)
+		#
+		#  This value MUST be secret, and MUST be generated using
+		#  a secure method, such as via 'openssl rand -hex 32'
+		#
+	#	pac_opaque_key = "0123456789abcdef0123456789ABCDEF"
+
+		#  Same as for TTLS, PEAP, etc.
+		#
+	#	virtual_server = inner-tunnel
+	#}
+
+	#  EAP-TEAP
+	#
+	#  The TEAP module implements the EAP-TEAP protocol
+	#
+	#teap {
+		#  Point to the common TLS configuration
+		#
+	#	tls = tls-common
+
+	#	default_eap_type = mschapv2
+
+		#  If 'cipher_list' is set here, it will over-ride the
+		#  'cipher_list' configuration from the 'tls-common'
+		#  configuration.  The EAP-TEAP module has it's own
 		#  over-ride for 'cipher_list' because the
 		#  specifications mandata a different set of ciphers
 		#  than are used by the other EAP methods.

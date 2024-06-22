@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 49da461149995f7f8bbeadfcfffc5b491563fc9e $
+ * Version:	$Id: bd6fd44d0bd6e1feeb248fd6299aa7f059fac94a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 49da461149995f7f8bbeadfcfffc5b491563fc9e $")
+RCSID("$Id: bd6fd44d0bd6e1feeb248fd6299aa7f059fac94a $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -1053,6 +1053,9 @@ static int send_one_packet(rc_request_t *request)
 
 	if (fr_log_fp) {
 		fr_packet_header_print(fr_log_fp, request->packet, false);
+
+		if (fr_debug_lvl > 2) rad_print_hex(request->packet);
+
 		if (fr_debug_lvl > 0) vp_printlist(fr_log_fp, request->packet->vps);
 	}
 
@@ -1100,6 +1103,8 @@ static int recv_one_packet(int wait_time)
 #endif
 		return -1;	/* bad packet */
 	}
+
+	if (fr_debug_lvl > 2) rad_print_hex(reply);
 
 	packet_p = fr_packet_list_find_byreply(pl, reply);
 	if (!packet_p) {
@@ -1562,6 +1567,7 @@ int main(int argc, char **argv)
 		int n = parallel;
 		rc_request_t *next;
 		char const *filename = NULL;
+		time_t wake = 0;
 
 		done = true;
 		sleep_time = -1;
@@ -1569,6 +1575,15 @@ int main(int argc, char **argv)
 		/*
 		 *	Walk over the packets, sending them.
 		 */
+		for (this = request_head; this != NULL; this = this->next) {
+			if (this->reply) continue;
+
+			if (!this->timestamp) continue;
+
+			if (!wake || (wake > (this->timestamp + ((int) timeout) * (retries - this->tries)))) {
+				wake = this->timestamp + ((int) timeout) * (retries - this->tries);
+			}
+		}
 
 		for (this = request_head; this != NULL; this = next) {
 			next = this->next;
@@ -1611,6 +1626,10 @@ int main(int argc, char **argv)
 				if (send_one_packet(this) < 0) {
 					talloc_free(this);
 					break;
+				}
+
+				if (!wake || (wake > (this->timestamp + ((int) timeout) * (retries - this->tries)))) {
+					wake = this->timestamp + ((int) timeout) * (retries - this->tries);
 				}
 
 				/*
@@ -1664,7 +1683,18 @@ int main(int argc, char **argv)
 		 *	Still have outstanding requests.
 		 */
 		if (fr_packet_list_num_elements(pl) > 0) {
+			time_t now = time(NULL);
 			done = false;
+
+			/*
+			 *	The last time we wake up for a packet.
+			 *
+			 *	If we're past that time, then give up.
+			 */
+			if (wake < now) {
+				break;
+			}
+
 		} else {
 			sleep_time = 0;
 		}

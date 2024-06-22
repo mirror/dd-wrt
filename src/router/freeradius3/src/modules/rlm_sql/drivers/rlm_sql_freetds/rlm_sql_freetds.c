@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a5c3b937e8da84a872a712cf355deddc18a4dbf5 $
+ * $Id: da7d7fcc65aec7b2fa61021e4beb908ea8700f96 $
  * @file rlm_sql.c
  * @brief Implements FreeTDS rlm_sql driver.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mattias Sjostrom <mattias@nogui.se>
  */
 
-RCSID("$Id: a5c3b937e8da84a872a712cf355deddc18a4dbf5 $")
+RCSID("$Id: da7d7fcc65aec7b2fa61021e4beb908ea8700f96 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -458,7 +458,7 @@ static sql_rcode_t sql_select_query(rlm_sql_handle_t *handle, rlm_sql_config_t *
 
 			for (i = 0; i < colcount; i++) {
 				/* Space to hold the result data */
-				rowdata[i] = talloc_array(rowdata, char, MAX_DATASTR_LEN + 1);
+				rowdata[i] = talloc_zero_array(rowdata, char, MAX_DATASTR_LEN + 1);
 
 				/* Associate the target buffer with the data */
 				if (ct_bind(conn->command, i + 1, &descriptor, rowdata[i], NULL, NULL) != CS_SUCCEED) {

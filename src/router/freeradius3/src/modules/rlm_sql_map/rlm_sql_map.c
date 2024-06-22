@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: b6a27e50db0537b57ea85b644c0441a0a938cd5b $
+ * $Id: 28e263424835d515ac98b9b5fac238b89999a527 $
  * @file rlm_sql_map.c
  * @brief Tracks data usage and other counters using SQL.
  *
  * @copyright 2021  The FreeRADIUS server project
  * @copyright 2021  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: b6a27e50db0537b57ea85b644c0441a0a938cd5b $")
+RCSID("$Id: 28e263424835d515ac98b9b5fac238b89999a527 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -31,8 +31,6 @@ RCSID("$Id: b6a27e50db0537b57ea85b644c0441a0a938cd5b $")
 #include <ctype.h>
 
 #include <rlm_sql.h>
-
-#define MAX_QUERY_LEN 2048
 
 typedef struct rlm_sql_map_t {
 	char const	*sql_instance_name;	//!< Instance of SQL module to use,

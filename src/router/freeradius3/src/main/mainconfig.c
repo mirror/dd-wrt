@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 227ae4acfde86d209b249e15174b6bc83be1d5ec $
+ * Version:	$Id: 80cfedd77596f69d4abd5371a6487ed498a6bfa4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 227ae4acfde86d209b249e15174b6bc83be1d5ec $")
+RCSID("$Id: 80cfedd77596f69d4abd5371a6487ed498a6bfa4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -86,6 +86,8 @@ static char const	*syslog_facility = NULL;
 static bool		do_colourise = false;
 
 static char const	*radius_dir = NULL;	//!< Path to raddb directory
+
+static uint32_t		max_fds = 0;
 
 /**********************************************************************
  *
@@ -195,8 +197,12 @@ static const CONF_PARSER server_config[] = {
 	{ "panic_action", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.panic_action), NULL},
 	{ "hostname_lookups", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &fr_dns_lookups), "no" },
 	{ "max_request_time", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.max_request_time), STRINGIFY(MAX_REQUEST_TIME) },
+	{ "proxy_dedup_window", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.proxy_dedup_window), "1" },
 	{ "cleanup_delay", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.cleanup_delay), STRINGIFY(CLEANUP_DELAY) },
 	{ "max_requests", FR_CONF_POINTER(PW_TYPE_INTEGER, &main_config.max_requests), STRINGIFY(MAX_REQUESTS) },
+#ifndef HAVE_KQUEUE
+	{ "max_fds", FR_CONF_POINTER(PW_TYPE_INTEGER, &max_fds), "512" },
+#endif
 	{ "postauth_client_lost", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.postauth_client_lost), "no" },
 	{ "pidfile", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.pid_file), "${run_dir}/radiusd.pid"},
 	{ "checkrad", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.checkrad), "${sbindir}/checkrad" },
@@ -1144,6 +1150,10 @@ do {\
 	if ((main_config.reject_delay.tv_sec != 0) || (main_config.reject_delay.tv_usec != 0)) {
 		FR_TIMEVAL_BOUND_CHECK("reject_delay", &main_config.reject_delay, >=, 1, 0);
 	}
+
+	FR_INTEGER_BOUND_CHECK("proxy_dedup_window", main_config.proxy_dedup_window, <=, 10);
+	FR_INTEGER_BOUND_CHECK("proxy_dedup_window", main_config.proxy_dedup_window, >=, 1);
+
 	FR_TIMEVAL_BOUND_CHECK("reject_delay", &main_config.reject_delay, <=, 10, 0);
 
 	FR_INTEGER_BOUND_CHECK("cleanup_delay", main_config.cleanup_delay, <=, 30);
@@ -1158,6 +1168,29 @@ do {\
 	 */
 	main_config.init_delay.tv_sec = 0;
 	main_config.init_delay.tv_usec = 2* (1000000 / 3);
+
+#ifndef HAVE_KQUEUE
+	/*
+	 *	select() is limited to 1024 file descriptors. :(
+	 */
+	if (max_fds) {
+		if (max_fds > FD_SETSIZE) {
+			fr_ev_max_fds = FD_SETSIZE;
+		} else {
+			/*
+			 *	Round up to the next highest power of 2.
+			 */
+			max_fds--;
+			max_fds |= max_fds >> 1;
+			max_fds |= max_fds >> 2;
+			max_fds |= max_fds >> 4;
+			max_fds |= max_fds >> 8;
+			max_fds |= max_fds >> 16;
+			max_fds++;
+			fr_ev_max_fds = max_fds;
+		}
+	}
+#endif
 
 	/*
 	 *	Free the old configuration items, and replace them

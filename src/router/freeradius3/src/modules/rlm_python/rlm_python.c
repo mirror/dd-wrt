@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2adba0e5f61c531909bbfc718fde88d7c1a977a7 $
+ * $Id: 412859c06bc33a7485a5c61bfe045f4beb25b5aa $
  * @file rlm_python.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 2adba0e5f61c531909bbfc718fde88d7c1a977a7 $")
+RCSID("$Id: 412859c06bc33a7485a5c61bfe045f4beb25b5aa $")
 
 #define LOG_PREFIX "rlm_python - "
 
@@ -996,6 +996,7 @@ static void *dlopen_libpython(int flags)
 static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 {
 	int i;
+	bool locked = false;
 
 	/*
 	 *	Explicitly load libpython, so symbols will be available to lib-dynload modules
@@ -1023,6 +1024,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 		Py_InitializeEx(0);			/* Don't override signal handlers - noop on subs calls */
 		PyEval_InitThreads(); 			/* This also grabs a lock (which we then need to release) */
 		main_interpreter = PyThreadState_Get();	/* Store reference to the main interpreter */
+		locked = true;
 	}
 	rad_assert(PyEval_ThreadsInitialized());
 
@@ -1041,6 +1043,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 		inst->sub_interpreter = main_interpreter;
 	}
 
+	if (!locked) PyEval_AcquireThread(inst->sub_interpreter);
 	PyThreadState_Swap(inst->sub_interpreter);
 
 	/*

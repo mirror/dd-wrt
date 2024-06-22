@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 03c98d38fff6024502e980afa8b17a15b2b2a16b $
+#  $Id: 9487c4bc9e9e83667ac3e5da747a46fa0ece23e5 $
 
 #
 #  This file contains an instance of the ldap module which has been
@@ -21,7 +21,7 @@
 #  username and password.  That username and password should be used
 #  below.
 #
-#  Ensure the Goolge client configuration which is used for FreeRADIUS
+#  Ensure the Google client configuration which is used for FreeRADIUS
 #  has sufficient permissions to read user information, and, if group
 #  membership is part of the FreeRADIUS policy, ensure that the client
 #  can read group information.  This configuration is done on Google's

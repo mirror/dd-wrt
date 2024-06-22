@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: aa6abf8fbf54432dd80fd990c13b85ef90e5cf9d $
+ * Version:	$Id: 5a3116cc58cd6ed3dd25c23f418a1e0357da121a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: aa6abf8fbf54432dd80fd990c13b85ef90e5cf9d $")
+RCSID("$Id: 5a3116cc58cd6ed3dd25c23f418a1e0357da121a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -311,7 +311,7 @@ static rlm_rcode_t CC_HINT(nonnull) call_modsingle(rlm_components_t component, m
 	 */
 	blocked = (request->master_state == REQUEST_STOP_PROCESSING);
 	if (blocked) {
-		RWARN("Module %s became unblocked", sp->modinst->entry->name);
+		RWARN("Module %s(%s) became unblocked", sp->modinst->name, sp->modinst->entry->name);
 	}
 
  fail:

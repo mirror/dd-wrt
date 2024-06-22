@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id: 6be8ca4af78f039850e5eb24bc572b9dc512b288 $
+ * Version:     $Id: 680c8791301adef97effe3f935869adff565419b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id: 6be8ca4af78f039850e5eb24bc572b9dc512b288 $")
+RCSID("$Id: 680c8791301adef97effe3f935869adff565419b $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
@@ -37,6 +37,9 @@ RCSID("$Id: 6be8ca4af78f039850e5eb24bc572b9dc512b288 $")
 #define PTHREAD_MUTEX_LOCK(_x)
 #define PTHREAD_MUTEX_UNLOCK(_x)
 #endif
+
+static eap_handler_t *eaplist_delete(rlm_eap_t *inst, REQUEST *request,
+				     eap_handler_t *handler, char const *msg, bool delete);
 
 /*
  * Allocate a new eap_packet_t
@@ -78,11 +81,6 @@ void eap_ds_free(EAP_DS **eap_ds_p)
 
 static int _eap_handler_free(eap_handler_t *handler)
 {
-	if (handler->identity) {
-		talloc_free(handler->identity);
-		handler->identity = NULL;
-	}
-
 	if (handler->prev_eapds) eap_ds_free(&(handler->prev_eapds));
 	if (handler->eap_ds) eap_ds_free(&(handler->eap_ds));
 
@@ -124,9 +122,10 @@ static int _eap_handler_free(eap_handler_t *handler)
 /*
  * Allocate a new eap_handler_t
  */
-eap_handler_t *eap_handler_alloc(rlm_eap_t *inst)
+eap_handler_t *eap_handler_alloc(rlm_eap_t *inst, REQUEST *request)
 {
-	eap_handler_t	*handler;
+	eap_handler_t	*handler, *old;
+	char buffer[256];
 
 	handler = talloc_zero(NULL, eap_handler_t);
 	if (!handler) {
@@ -137,6 +136,20 @@ eap_handler_t *eap_handler_alloc(rlm_eap_t *inst)
 
 	/* Doesn't need to be inside the critical region */
 	talloc_set_destructor(handler, _eap_handler_free);
+
+	if (!inst->dedup_tree) return handler;
+
+	if (radius_xlat(buffer, sizeof(buffer), request, inst->dedup_key, NULL, NULL) < 0) return handler;
+
+	handler->dedup = talloc_strdup(handler, buffer);
+
+	/*
+	 *	Delete any old handler
+	 */
+	PTHREAD_MUTEX_LOCK(&(inst->session_mutex));
+	old = rbtree_finddata(inst->dedup_tree, handler);
+	if (old) (void) eaplist_delete(inst, request, old, "Cancelling", true);
+	PTHREAD_MUTEX_UNLOCK(&(inst->session_mutex));
 
 	return handler;
 }
@@ -172,21 +185,24 @@ static uint32_t eap_rand(fr_randctx *ctx)
 
 
 static eap_handler_t *eaplist_delete(rlm_eap_t *inst, REQUEST *request,
-				   eap_handler_t *handler)
+				     eap_handler_t *handler, char const *msg, bool delete)
 {
 	rbnode_t *node;
+
+	if (delete && inst->dedup_tree) (void) rbtree_deletebydata(inst->dedup_tree, handler);
 
 	node = rbtree_find(inst->session_tree, handler);
 	if (!node) return NULL;
 
 	handler = rbtree_node2data(inst->session_tree, node);
 
-	RDEBUG("Finished EAP session with state "
-	       "0x%02x%02x%02x%02x%02x%02x%02x%02x",
+	RDEBUG("%s EAP session with state "
+	       "0x%02x%02x%02x%02x%02x%02x%02x%02x", msg,
 	       handler->state[0], handler->state[1],
 	       handler->state[2], handler->state[3],
 	       handler->state[4], handler->state[5],
 	       handler->state[6], handler->state[7]);
+
 	/*
 	 *	Delete old handler from the tree.
 	 */
@@ -207,7 +223,28 @@ static eap_handler_t *eaplist_delete(rlm_eap_t *inst, REQUEST *request,
 	}
 	handler->prev = handler->next = NULL;
 
-	return handler;
+	if (!delete) return handler;
+
+
+#ifdef WITH_TLS
+	/*
+	 *	Remove expired TLS sessions.
+	 */
+	switch (handler->type) {
+	case PW_EAP_TLS:
+	case PW_EAP_TTLS:
+	case PW_EAP_PEAP:
+	case PW_EAP_FAST:
+		tls_fail(handler->opaque); /* MUST be a tls_session! */
+		break;
+
+	default:
+		break;
+	}
+#endif
+
+	talloc_free(handler);
+	return NULL;
 }
 
 
@@ -227,52 +264,12 @@ static void eaplist_expire(rlm_eap_t *inst, REQUEST *request, time_t timestamp)
 		handler = inst->session_head;
 		if (!handler) break;
 
-		RDEBUG("Expiring EAP session with state "
-		       "0x%02x%02x%02x%02x%02x%02x%02x%02x",
-		       handler->state[0], handler->state[1],
-		       handler->state[2], handler->state[3],
-		       handler->state[4], handler->state[5],
-		       handler->state[6], handler->state[7]);
-
 		/*
 		 *	Expire entries from the start of the list.
 		 *	They should be the oldest ones.
 		 */
 		if ((timestamp - handler->timestamp) > (int)inst->timer_limit) {
-			rbnode_t *node;
-			node = rbtree_find(inst->session_tree, handler);
-			rad_assert(node != NULL);
-			rbtree_delete(inst->session_tree, node);
-
-			/*
-			 *	handler == inst->session_head
-			 */
-			inst->session_head = handler->next;
-			if (handler->next) {
-				handler->next->prev = NULL;
-			} else {
-				inst->session_head = NULL;
-				inst->session_tail = NULL;
-			}
-
-#ifdef WITH_TLS
-			/*
-			 *	Remove expired TLS sessions.
-			 */
-			switch (handler->type) {
-			case PW_EAP_TLS:
-			case PW_EAP_TTLS:
-			case PW_EAP_PEAP:
-			case PW_EAP_FAST:
-				tls_fail(handler->opaque); /* MUST be a tls_session! */
-				break;
-
-			default:
-				break;
-			}
-#endif
-
-			talloc_free(handler);
+			(void) eaplist_delete(inst, request, handler, "Expiring", true);
 		} else {
 			break;
 		}
@@ -347,7 +344,9 @@ int eaplist_add(rlm_eap_t *inst, eap_handler_t *handler)
 	handler->state[4] = handler->trips ^ handler->state[0];
 	handler->state[5] = handler->eap_id ^ handler->state[1];
 	handler->state[6] = handler->type ^ handler->state[2];
-	handler->state[12] = handler->state[2] ^ (RADIUSD_VERSION & 0xff);
+	handler->state[8] = handler->state[2] ^ (((uint32_t) HEXIFY(RADIUSD_VERSION)) & 0xff);
+	handler->state[10] = handler->state[2] ^ ((((uint32_t) HEXIFY(RADIUSD_VERSION)) >> 8) & 0xff);
+	handler->state[12] = handler->state[2] ^ ((((uint32_t) HEXIFY(RADIUSD_VERSION)) >> 16) & 0xff);
 
 	fr_pair_value_memcpy(state, handler->state, sizeof(handler->state));
 
@@ -452,7 +451,7 @@ eap_handler_t *eaplist_find(rlm_eap_t *inst, REQUEST *request,
 
 	eaplist_expire(inst, request, request->timestamp);
 
-	handler = eaplist_delete(inst, request, &myHandler);
+	handler = eaplist_delete(inst, request, &myHandler, "Removing", false);
 	PTHREAD_MUTEX_UNLOCK(&(inst->session_mutex));
 
 	/*

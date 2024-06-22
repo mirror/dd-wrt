@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: bc6008ccfad76403c937ab861f534d68a7b43714 $
+#	$Id: 7871fe11effb3415e66d97e63eee2557e9f86866 $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -235,6 +235,10 @@ ATTRIBUTE	MS-CHAP-New-NT-Password			1137	octets
 
 ATTRIBUTE	Stripped-User-Domain			1138	string
 ATTRIBUTE	Called-Station-SSID			1139	string
+ATTRIBUTE	Called-Station-MAC			1140	octets
+ATTRIBUTE	Pre-Shared-Key				1141	string
+ATTRIBUTE	Pairwise-Master-Key			1142	octets
+ATTRIBUTE	PSK-Identity				1143	string
 
 ATTRIBUTE	OTP-Challenge				1145	string
 ATTRIBUTE	EAP-Session-Id				1146	octets
@@ -405,6 +409,8 @@ ATTRIBUTE	EAP-Type-EAP-AKA2			1330	octets
 ATTRIBUTE	EAP-Type-EAP-GPSK			1331	octets
 ATTRIBUTE	EAP-Type-EAP-PWD			1332	octets
 ATTRIBUTE	EAP-Type-EAP-EVEv1			1333	octets
+ATTRIBUTE	EAP-Type-EAP-PT-EAP			1334	octets
+ATTRIBUTE	EAP-Type-EAP-TEAP			1335	octets
 
 ATTRIBUTE	EAP-Type-Microsoft-MS-CHAPv2		1306	octets
 ATTRIBUTE	EAP-Type-Cisco-MS-CHAPv2		1309	octets
@@ -651,7 +657,7 @@ ATTRIBUTE	Radclient-Test-Name			2200	string
 #		Free
 #
 #	Range:	3000-3999
-#		Site-local attributes (see raddb/dictionary.in)
+#		Site-local attributes (see raddb/dictionary)
 #		Do NOT define attributes in this range!
 #
 #	Range:	4000-65535
@@ -861,6 +867,8 @@ VALUE	EAP-Type			AKA2			50
 VALUE	EAP-Type			GPSK			51
 VALUE	EAP-Type			PWD			52
 VALUE	EAP-Type			EKEv1			53
+VALUE	EAP-Type			PT-EAP			54
+VALUE	EAP-Type			TEAP			55
 
 #
 #	And this is what most people mean by MS-CHAPv2

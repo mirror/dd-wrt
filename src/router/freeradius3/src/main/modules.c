@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: fd4334db96e213beee068d9dcac00e4c6ed4a978 $
+ * Version:	$Id: 9ccb3103ae0a129b258c2e8c84e92b033144a46f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: fd4334db96e213beee068d9dcac00e4c6ed4a978 $")
+RCSID("$Id: 9ccb3103ae0a129b258c2e8c84e92b033144a46f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -571,10 +571,10 @@ static int module_conf_parse(module_instance_t *node, void **handle)
 	 *	If there is supposed to be instance data, allocate it now.
 	 *	Also parse the configuration data, if required.
 	 */
-	if (node->entry->module->inst_size) {
-		*handle = talloc_zero_array(node, uint8_t, node->entry->module->inst_size);
-		rad_assert(*handle);
+	*handle = talloc_zero_array(node, uint8_t, node->entry->module->inst_size);
+	rad_assert(*handle);
 
+	if (node->entry->module->inst_size) {
 		talloc_set_name(*handle, "rlm_%s_t",
 				node->entry->module->name ? node->entry->module->name : "config");
 

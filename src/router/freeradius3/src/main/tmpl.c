@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6ec25987ba8470e555cb7dea7456c2c9e71eae10 $
+ * $Id: 6746bdec8d9f8f61bb0cc5b0e271994c150e6169 $
  *
  * @brief #VALUE_PAIR template functions
  * @file main/tmpl.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014-2015 The FreeRADIUS server project
  */
-RCSID("$Id: 6ec25987ba8470e555cb7dea7456c2c9e71eae10 $")
+RCSID("$Id: 6746bdec8d9f8f61bb0cc5b0e271994c150e6169 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -579,6 +579,7 @@ ssize_t tmpl_from_attr_substr(vp_tmpl_t *vpt, char const *name,
 	long num;
 	char *q;
 	tmpl_type_t type = TMPL_TYPE_ATTR;
+	DICT_ATTR const *da;
 
 	value_pair_tmpl_attr_t attr;	/* So we don't fill the tmpl with junk and then error out */
 
@@ -692,6 +693,16 @@ ssize_t tmpl_from_attr_substr(vp_tmpl_t *vpt, char const *name,
 
 		goto do_num;
 	}
+
+	/*
+	 *	Canonicalize the attribute.
+	 *
+	 *	We can define multiple names for one attribute.  In
+	 *	which case we only use the canonical name.
+	 */
+	da = dict_attrbyvalue(attr.da->attr, attr.da->vendor);
+	if (da && (attr.da != da)) attr.da = da;
+
 
 	/*
 	 *	The string MIGHT have a tag.

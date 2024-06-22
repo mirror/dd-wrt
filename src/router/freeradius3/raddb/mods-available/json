@@ -1,7 +1,7 @@
 #  -*- text -*-
 #
 #
-#  $Id: 02a62aed489a7ae071e17918ef9b303fa5d33be9 $
+#  $Id: 88f17c030bfed7e11f2144a6f74874e662d3e38c $
 
 #######################################################################
 #
@@ -142,7 +142,7 @@ json {
 #  .Example
 #
 #  ```
-#  %{json_encode:&request[*] !&reply[*] &control.User-Name}
+#  %{json_encode:&request[*] !&reply[*] &control:User-Name}
 #  ```
 #
 #  #### Output format modes

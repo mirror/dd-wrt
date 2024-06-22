@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b2de15b2524886fd1fa192f52a4754342d98e1a5 $
+ * $Id: 5dc78c3106ee90d10dc77c7d1f295c0fff4697fb $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: b2de15b2524886fd1fa192f52a4754342d98e1a5 $")
+RCSID("$Id: 5dc78c3106ee90d10dc77c7d1f295c0fff4697fb $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -536,7 +536,7 @@ static void make_secret(uint8_t *digest, uint8_t const *vector,
 	fr_md5_destroy(&context);
 }
 
-#define MAX_PASS_LEN (128)
+#define MAX_PASS_LEN (256)
 static void make_passwd(uint8_t *output, ssize_t *outlen,
 			uint8_t const *input, size_t inlen,
 			char const *secret, uint8_t const *vector)
@@ -1945,7 +1945,7 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 		/*
 		 *	Do not encode Message-Authenticator for RADIUS/1.1
 		 */
-		if ((reply->da->vendor == 0) && (reply->da->attr == PW_MESSAGE_AUTHENTICATOR)) {
+		if (packet->radiusv11 && (reply->da->vendor == 0) && (reply->da->attr == PW_MESSAGE_AUTHENTICATOR)) {
 			reply = reply->next;
 			continue;
 		}
@@ -1954,7 +1954,7 @@ int rad_encode(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 		/*
 		 *	Do not encode Original-Packet-Code for RADIUS/1.1
 		 */
-		if (reply->da->vendor == ((unsigned int) PW_EXTENDED_ATTRIBUTE_1 << 24) && (reply->da->attr == 4)) {
+		if (packet->radiusv11 && reply->da->vendor == ((unsigned int) PW_EXTENDED_ATTRIBUTE_1 << 24) && (reply->da->attr == 4)) {
 			reply = reply->next;
 			continue;
 		}
@@ -2152,11 +2152,7 @@ int rad_sign(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 
 		case PW_CODE_ACCOUNTING_REQUEST:
 		case PW_CODE_DISCONNECT_REQUEST:
-		case PW_CODE_DISCONNECT_ACK:
-		case PW_CODE_DISCONNECT_NAK:
 		case PW_CODE_COA_REQUEST:
-		case PW_CODE_COA_ACK:
-		case PW_CODE_COA_NAK:
 			memset(hdr->vector, 0, AUTH_VECTOR_LEN);
 			break;
 
@@ -2164,6 +2160,10 @@ int rad_sign(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 		case PW_CODE_ACCESS_ACCEPT:
 		case PW_CODE_ACCESS_REJECT:
 		case PW_CODE_ACCESS_CHALLENGE:
+		case PW_CODE_DISCONNECT_ACK:
+		case PW_CODE_DISCONNECT_NAK:
+		case PW_CODE_COA_ACK:
+		case PW_CODE_COA_NAK:
 			memcpy(hdr->vector, original->vector, AUTH_VECTOR_LEN);
 			break;
 
@@ -3938,7 +3938,7 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 	VALUE_PAIR *vp;
 	uint8_t const *data = start;
 	char *p;
-	uint8_t buffer[256];
+	uint8_t buffer[MAX_PASS_LEN];
 
 	/*
 	 *	FIXME: Attrlen can be larger than 253 for extended attrs!
@@ -4054,7 +4054,7 @@ ssize_t data2vp(TALLOC_CTX *ctx,
 					     attrlen, secret,
 					     packet->vector);
 			}
-			buffer[253] = '\0';
+			buffer[attrlen] = '\0';
 
 			/*
 			 *	MS-CHAP-MPPE-Keys are 24 octets, and
@@ -4654,22 +4654,24 @@ int rad_decode(RADIUS_PACKET *packet, RADIUS_PACKET *original,
 		ssize_t my_len;
 
 #ifdef WITH_RADIUSV11
-		/*
-		 *	Don't decode Message-Authenticator
-		 */
-		if (ptr[0] == PW_MESSAGE_AUTHENTICATOR) {
-			packet_length -= ptr[1];
-			ptr += ptr[1];
-			continue;
-		}
+		if (packet->radiusv11) {
+			/*
+			 *	Don't decode Message-Authenticator
+			 */
+			if (ptr[0] == PW_MESSAGE_AUTHENTICATOR) {
+				packet_length -= ptr[1];
+				ptr += ptr[1];
+				continue;
+			}
 
-		/*
-		 *	Don't decode Original-Packet-Code
-		 */
-		if ((ptr[0] == PW_EXTENDED_ATTRIBUTE_1) && (ptr[1] >= 3) && (ptr[2] == 4)) {
-			packet_length -= ptr[1];
-			ptr += ptr[1];
-			continue;
+			/*
+			 *	Don't decode Original-Packet-Code
+			 */
+			if ((ptr[0] == PW_EXTENDED_ATTRIBUTE_1) && (ptr[1] >= 3) && (ptr[2] == 4)) {
+				packet_length -= ptr[1];
+				ptr += ptr[1];
+				continue;
+			}
 		}
 #endif
 
@@ -4761,7 +4763,7 @@ int rad_pwencode(char *passwd, size_t *pwlen, char const *secret,
 	 */
 	len = *pwlen;
 
-	if (len > 128) len = 128;
+	if (len > MAX_STRING_LEN) len = MAX_STRING_LEN;
 
 	if (len == 0) {
 		memset(passwd, 0, AUTH_PASS_LEN);
@@ -4819,13 +4821,6 @@ int rad_pwdecode(char *passwd, size_t pwlen, char const *secret,
 	uint8_t	digest[AUTH_VECTOR_LEN];
 	int	i;
 	size_t	n, secretlen;
-
-	/*
-	 *	The RFC's say that the maximum is 128.
-	 *	The buffer we're putting it into above is 254, so
-	 *	we don't need to do any length checking.
-	 */
-	if (pwlen > 128) pwlen = 128;
 
 	/*
 	 *	Catch idiots.

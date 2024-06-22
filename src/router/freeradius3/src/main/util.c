@@ -1,7 +1,7 @@
 /*
  * util.c	Various utility functions.
  *
- * Version:     $Id: b216cc9a5170f90a4ae0d02f0fb551d5bf928189 $
+ * Version:     $Id: 607bcaa92cd39c90380b81ec09cb0c67cc3bebf1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: b216cc9a5170f90a4ae0d02f0fb551d5bf928189 $")
+RCSID("$Id: 607bcaa92cd39c90380b81ec09cb0c67cc3bebf1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -398,15 +398,15 @@ size_t rad_filename_escape(UNUSED REQUEST *request, char *out, size_t outlen, ch
 
 			switch (utf8_len) {
 			case 2:
-				snprintf(out, freespace, "-%x-%x", in[0], in[1]);
+				snprintf(out, freespace, "-%x-%x", (uint8_t)in[0], (uint8_t)in[1]);
 				break;
 
 			case 3:
-				snprintf(out, freespace, "-%x-%x-%x", in[0], in[1], in[2]);
+				snprintf(out, freespace, "-%x-%x-%x", (uint8_t)in[0], (uint8_t)in[1], (uint8_t)in[2]);
 				break;
 
 			case 4:
-				snprintf(out, freespace, "-%x-%x-%x-%x", in[0], in[1], in[2], in[3]);
+				snprintf(out, freespace, "-%x-%x-%x-%x", (uint8_t)in[0], (uint8_t)in[1], (uint8_t)in[2], (uint8_t)in[3]);
 				break;
 			}
 

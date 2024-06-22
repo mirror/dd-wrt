@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 0f435add70c1816005deb12975aabee5d64e5e1c $
+##	$Id: 68ac4da753b5db0671e2cd1bd1589daec4bf1b1e $
 
 ######################################################################
 #
@@ -291,6 +291,23 @@ sql {
 		#
 		#  Setting 'max' to MORE than the number of threads means
 		#  that there are more connections than necessary.
+		#
+		#  The setting here should be lower than the maximum
+		#  number of connections allowed by the database.
+		#
+		#  i.e. There is no point in telling FreeRADIUS to use
+		#  64 connections, while the database is limited to 32
+		#  connections.  That configuration will cause the
+		#  server to be "starved" of connections, and it will
+		#  block during normal operations, even when the
+		#  database is largely idle.
+		#
+		#  At the same time, if the database is slow, there is
+		#  no point in increasing "max".  More connections
+		#  will just cause the database to run more slowly.
+		#  The correct fix for a slow database is to fix it, so
+		#  that it responds to FreeRADIUS quickly.
+		#
 		max = ${thread[pool].max_servers}
 
 		#  Spare connections to be left idle
@@ -370,6 +387,21 @@ sql {
 	# This entry should be used for the default instance (sql {})
 	# of the SQL module.
 	group_attribute = "SQL-Group"
+
+	#  When attributes read from the network are used in SQL queries
+	#  their values are escaped to make them safe.
+	#  By default FreeRADIUS uses its escaping routine which replaces
+	#  unsafe characters with their mime-encoded equivalent.
+	#  The list of safe characters is conservative, to allow for differences
+	#  between different SQL implementations.
+	#
+	#  If you are using the mysql or postgresql drivers, those have their
+	#  own escaping functions which only escape characters as required
+	#  by those databases.
+	#
+	#  Set this option to yes to use the database driver provided escape
+	#  function.
+#	auto_escape = no
 
 	# Read database-specific queries
 	$INCLUDE ${modconfdir}/${.:name}/main/${dialect}/queries.conf

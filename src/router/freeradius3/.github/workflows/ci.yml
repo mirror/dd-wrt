@@ -89,7 +89,7 @@ jobs:
           MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: yes
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 10
+        options: --health-cmd="mariadb-admin ping" --health-interval 10s --health-timeout 5s --health-retries 10
 
       postgres:
         image: ${{ needs.pre-ci.outputs.docker_prefix }}postgres
@@ -201,7 +201,7 @@ jobs:
 
     - name: 'Restore OpenSSL 3.0 from the cache'
       if: ${{ matrix.env.LIBS_ALT == 'yes' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: openssl-cache
       with:
         path: /opt/openssl/
@@ -233,7 +233,7 @@ jobs:
         [ -d /opt/openssl ] && export PATH=/opt/openssl/bin:$PATH
         printf "\nopenssl: " ; openssl version
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Build eapol_test
       run: |
@@ -290,7 +290,7 @@ jobs:
       if: ${{ matrix.env.CC == 'clang' }}
 
     - name: "Clang Static Analyzer: Store assets on failure"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: clang-scan.tgz
         path: build/plist/**/*.html
@@ -460,14 +460,14 @@ jobs:
     runs-on: ubuntu-latest
     name: "Merge into upstream"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         lfs: false
         persist-credentials: false
-    #  Note: This also opportunistically updates the developer's branch with commits from 
+    #  Note: This also opportunistically updates the developer's branch with commits from
     #  the main repository.
-    #  This update may fail if the developer has pushed additional commits since the 
+    #  This update may fail if the developer has pushed additional commits since the
     #  workflow started.  This is normal, and we ignore the failure.
     - name: "Merge into upstream dev branch and update local branch"
       run: |

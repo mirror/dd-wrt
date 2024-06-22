@@ -1,0 +1,13 @@
+#
+#  Input packet
+#
+Packet-Type = Access-Request
+User-Name = 'Bob'
+User-Password = 'Alice'
+Tmp-Integer-6 = 0
+
+#
+#  Expected answer
+#
+Response-Packet-Type == Access-Accept
+

@@ -4,7 +4,7 @@
 #	This is a virtual server that handles *only* inner tunnel
 #	requests for EAP-TTLS and PEAP types.
 #
-#	$Id: c178baad0f720d5b87608d22c70d4485a43feee4 $
+#	$Id: 1197e084d77e469f7208306489f2b15588546a4e $
 #
 ######################################################################
 
@@ -194,7 +194,7 @@ authorize {
 	#  LDAP servers can only do PAP.  They cannot do CHAP, MS-CHAP,
 	#  or EAP.
 	#
-#	if (!&control.Auth-Type && &User-Password) {
+#	if (!&control:Auth-Type && &User-Password) {
 #		update control {
 #		       &Auth-Type := LDAP
 #		}
@@ -409,6 +409,13 @@ post-auth {
 			&Module-Failure-Message := &request:Module-Failure-Message
 		}
 	}
+
+	#
+	#  Access-Challenge packets are sent through the Challenge sub-section
+	#  of the post-auth section.
+	#
+	#Post-Auth-Type Challenge {
+	#}
 }
 
 #

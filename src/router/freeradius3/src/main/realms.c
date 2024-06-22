@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 2959d8278a2a839c3f5aaa047e12b15630127485 $
+ * Version:     $Id: 3ebcb66fb9d2f0d954d21a6ddf592120b97c9c75 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 2959d8278a2a839c3f5aaa047e12b15630127485 $")
+RCSID("$Id: 3ebcb66fb9d2f0d954d21a6ddf592120b97c9c75 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -452,6 +452,12 @@ static CONF_PARSER limit_config[] = {
 	{ "max_requests", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.max_requests), "0" },
 	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.lifetime), "0" },
 	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.idle_timeout), "0" },
+#ifdef SO_RCVTIMEO
+	{ "read_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.read_timeout), NULL },
+#endif
+#ifdef SO_SNDTIMEO
+	{ "write_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.write_timeout), NULL },
+#endif
 	CONF_PARSER_TERMINATOR
 };
 
@@ -1120,6 +1126,8 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 			if (!home->tls) {
 				goto error;
 			}
+
+			home->tls->name = "RADIUS/TLS";
 
 			/*
 			 *	Connection timeouts for outgoing TLS connections.
@@ -3181,7 +3189,7 @@ int home_server_afrom_file(char const *filename)
 		goto error;
 	}
 
-#ifdef COA_TUNNEL
+#ifdef WITH_COA_TUNNEL
 	if (home->recv_coa) {
 		fr_strerror_printf("Dynamic home_server '%s' cannot receive CoA requests'", p);
 		talloc_free(home);

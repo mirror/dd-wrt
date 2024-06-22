@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c3569214b7b7a195007f422786662e24a49bf034 $
+ * $Id: d35cb20f36257f39c233e59e9fd2f5f21e155278 $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1295,8 +1295,9 @@ void rlm_ldap_check_reply(rlm_ldap_t const *inst, REQUEST *request)
 		    !fr_pair_find_by_num(request->config, PW_CRYPT_PASSWORD, 0, TAG_ANY)) {
 			RWDEBUG("No \"known good\" password added. Ensure the admin user has permission to "
 				"read the password attribute");
-			RWDEBUG("PAP authentication will *NOT* work with Active Directory (if that is what you "
+			RWDEBUG("CHAP / MS-CHAP authentication will *NOT* work with Active Directory (if that is what you "
 				"were trying to configure)");
+			RWDEBUG("PAP authentication to Active Directory *MUST* set 'Auth-Type := LDAP'");
 		}
        }
 }

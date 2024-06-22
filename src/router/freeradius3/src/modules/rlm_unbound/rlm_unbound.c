@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: dddc3bf4bf939a64939f0c5225caf79b0f5af0fe $
+ * $Id: c5e837ae6530fd04c94c5f5caeae60cbfbe9d428 $
  * @file rlm_unbound.c
  * @brief DNS services via libunbound.
  *
  * @copyright 2013 The FreeRADIUS server project
  * @copyright 2013 Brian S. Julin <bjulin@clarku.edu>
  */
-RCSID("$Id: dddc3bf4bf939a64939f0c5225caf79b0f5af0fe $")
+RCSID("$Id: c5e837ae6530fd04c94c5f5caeae60cbfbe9d428 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -709,7 +709,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	return -1;
 }
 
-static int mod_detach(UNUSED void *instance)
+static int mod_detach(void *instance)
 {
 	rlm_unbound_t *inst = instance;
 

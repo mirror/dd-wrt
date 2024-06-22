@@ -1,7 +1,7 @@
 /*
  * eap.c    rfc2284 & rfc2869 implementation
  *
- * Version:     $Id: 1ece323072c7b2bdb615885fa5a5c4179cee25bb $
+ * Version:     $Id: 5c0bba0c3b9a5fd1f33a27e5cbead952965dc361 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
 
 #include <freeradius-devel/modpriv.h>
 
-RCSID("$Id: 1ece323072c7b2bdb615885fa5a5c4179cee25bb $")
+RCSID("$Id: 5c0bba0c3b9a5fd1f33a27e5cbead952965dc361 $")
 
 #include "rlm_eap.h"
 #include <ctype.h>
@@ -803,7 +803,7 @@ int eap_start(rlm_eap_t *inst, REQUEST *request)
 	    ((eap_msg->vp_octets[4] == 0) ||
 	     (eap_msg->vp_octets[4] >= PW_EAP_MAX_TYPES) ||
 	     (!inst->methods[eap_msg->vp_octets[4]]))) {
-		RDEBUG2("Ignoring Unknown EAP type");
+		RDEBUG2("Ignoring Unknown EAP type %02x", eap_msg->vp_octets[4]);
 		return EAP_NOOP;
 	}
 
@@ -833,6 +833,8 @@ int eap_start(rlm_eap_t *inst, REQUEST *request)
 	}
 
 	if ((eap_msg->vp_octets[4] == PW_EAP_TTLS) ||
+	    (eap_msg->vp_octets[4] == PW_EAP_FAST) ||
+	    (eap_msg->vp_octets[4] == PW_EAP_TEAP) ||
 	    (eap_msg->vp_octets[4] == PW_EAP_PEAP)) {
 		RDEBUG2("Continuing tunnel setup");
 		return EAP_OK;
@@ -1214,7 +1216,7 @@ eap_handler_t *eap_handler(rlm_eap_t *inst, eap_packet_raw_t **eap_packet_p,
 		       }
 	       }
 	} else {		/* packet was EAP identity */
-		handler = eap_handler_alloc(inst);
+		handler = eap_handler_alloc(inst, request);
 		if (!handler) {
 			goto error;
 		}
@@ -1224,10 +1226,14 @@ eap_handler_t *eap_handler(rlm_eap_t *inst, eap_packet_raw_t **eap_packet_p,
 		 */
 		handler->identity = eap_identity(request, handler, eap_packet);
 		if (!handler->identity) {
-			RDEBUG("Identity Unknown, authentication failed");
-		error2:
-			talloc_free(handler);
-			goto error;
+			if (!inst->allow_empty_identities) {
+				RDEBUG("Identity Unknown, authentication failed");
+			error2:
+				talloc_free(handler);
+				goto error;
+			}
+
+			handler->identity = "";
 		}
 
 	       vp = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);

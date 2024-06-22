@@ -1,7 +1,7 @@
 /*
  * rlm_eap_fast.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 093dc868cd0c32e487d442da21f5ba84f7ab2d09 $
+ * Version:     $Id: d1f45b7976b006f8cee77555bc8e130862eacdbb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 093dc868cd0c32e487d442da21f5ba84f7ab2d09 $")
+RCSID("$Id: d1f45b7976b006f8cee77555bc8e130862eacdbb $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 
@@ -479,7 +479,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	case PW_CODE_ACCESS_CHALLENGE:
 		RDEBUG("Challenge");
 		tls_handshake_send(request, tls_session);
-		eaptls_request(handler->eap_ds, tls_session);
+		eaptls_request(handler->eap_ds, tls_session, false);
 		ret = 1;
 		goto done;
 

@@ -4,7 +4,7 @@
 /*
  * event.h	Simple event queue
  *
- * Version:	$Id: 04097287a6324e24d15768b78642d5dc6c7d1c71 $
+ * Version:	$Id: 822da968c79b87e73676f148b7a1e477942383d0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2007 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(event_h, "$Id: 04097287a6324e24d15768b78642d5dc6c7d1c71 $")
+RCSIDH(event_h, "$Id: 822da968c79b87e73676f148b7a1e477942383d0 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +38,8 @@ typedef	void (*fr_event_status_t)(struct timeval *);
 typedef void (*fr_event_fd_handler_t)(fr_event_list_t *el, int sock, void *ctx);
 
 fr_event_list_t *fr_event_list_create(TALLOC_CTX *ctx, fr_event_status_t status);
+
+extern int fr_ev_max_fds;	/* must be a power of 2 */
 
 int fr_event_list_num_fds(fr_event_list_t *el);
 int fr_event_list_num_elements(fr_event_list_t *el);

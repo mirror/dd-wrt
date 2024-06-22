@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 988f43bb02451d9ad744d23bc60fac69f2a92e13 $
+ * Version:	$Id: 266366b2a8f395e42a1048dd4b3863d305e34cdc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -2701,7 +2701,7 @@ static int command_stats_socket(rad_listen_t *listener, int argc, char *argv[])
 	return command_print_stats(listener, &sock->stats, auth, 0);
 }
 
-static int command_stats_pool(rad_listen_t *listener, UNUSED int argc, UNUSED char *argv[])
+static int command_stats_pool(rad_listen_t *listener, int argc, char *argv[])
 {
 	CONF_SECTION *cs;
 	module_instance_t *mi;

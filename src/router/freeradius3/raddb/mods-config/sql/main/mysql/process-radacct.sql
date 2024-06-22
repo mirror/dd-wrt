@@ -2,7 +2,7 @@
 #
 #  main/mysql/process-radacct.sql -- Schema extensions for processing radacct entries
 #
-#  $Id: 8902338e308dc6bc48bdcf10bdf30167dc7c6ed6 $
+#  $Id: 0696603ae0fd2478ff9af5f85137e91eee706981 $
 
 --  ---------------------------------
 --  - Per-user data usage over time -
@@ -45,7 +45,7 @@
 --      +----------------+----------------+-----------------+
 --      7 rows in set (0.000 sec)
 --
-CREATE TABLE data_usage_by_period (
+CREATE TABLE IF NOT EXISTS data_usage_by_period (
     username VARCHAR(64),
     period_start DATETIME,
     period_end DATETIME,

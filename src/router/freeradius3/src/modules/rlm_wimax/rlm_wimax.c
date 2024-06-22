@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: d2125eb3a5b65b21ccedd23fbfe09ef80629c5fd $
+ * $Id: eb83e25c1c508cf9888b740b328b83a068e9ab20 $
  * @file rlm_wimax.c
  * @brief Supports various WiMax functionality.
  *
  * @copyright 2008 Alan DeKok <aland@networkradius.com>
  */
-RCSID("$Id: d2125eb3a5b65b21ccedd23fbfe09ef80629c5fd $")
+RCSID("$Id: eb83e25c1c508cf9888b740b328b83a068e9ab20 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -35,20 +35,13 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #include <freeradius-devel/openssl3.h>
 
 #define WIMAX_EPSAKA_RAND_SIZE	16
-#define WIMAX_EPSAKA_KI_SIZE	16
-#define WIMAX_EPSAKA_OPC_SIZE	16
-#define WIMAX_EPSAKA_AMF_SIZE	2
 #define WIMAX_EPSAKA_SQN_SIZE	6
-#define WIMAX_EPSAKA_MAC_A_SIZE	8
-#define WIMAX_EPSAKA_MAC_S_SIZE	8
 #define WIMAX_EPSAKA_XRES_SIZE	8
 #define WIMAX_EPSAKA_CK_SIZE	16
 #define WIMAX_EPSAKA_IK_SIZE	16
 #define WIMAX_EPSAKA_AK_SIZE	6
-#define WIMAX_EPSAKA_AK_RESYNC_SIZE	6
 #define WIMAX_EPSAKA_KK_SIZE	32
 #define WIMAX_EPSAKA_KS_SIZE	14
-#define WIMAX_EPSAKA_PLMN_SIZE	3
 #define WIMAX_EPSAKA_KASME_SIZE	32
 #define WIMAX_EPSAKA_AUTN_SIZE	16
 #define WIMAX_EPSAKA_AUTS_SIZE  14

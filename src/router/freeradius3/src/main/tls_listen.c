@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: fa8c382738e315f8965155d17f6bd9ac6d2cbc95 $
+ * Version:     $Id: 351cbf1297879b2abca45f789300ef57011fced8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: fa8c382738e315f8965155d17f6bd9ac6d2cbc95 $")
+RCSID("$Id: 351cbf1297879b2abca45f789300ef57011fced8 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -580,6 +580,7 @@ check_for_setup:
 		 *	or any other contents.
 		 */
 		request->packet->code = PW_CODE_STATUS_SERVER;
+		request->packet->id = request->reply->id = 0;
 		request->packet->data = talloc_zero_array(request->packet, uint8_t, 20);
 		request->packet->data[0] = PW_CODE_STATUS_SERVER;
 		request->packet->data[3] = 20;
@@ -874,6 +875,7 @@ int dual_tls_send(rad_listen_t *listener, REQUEST *request)
 	 */
 	if (sock->state == LISTEN_TLS_CHECKING) {
 		if (request->reply->code != PW_CODE_ACCESS_ACCEPT) {
+			RDEBUG("(TLS) Connection checks failed - closing connection");
 			listener->status = RAD_LISTEN_STATUS_EOL;
 			listener->tls = NULL; /* parent owns this! */
 
@@ -887,6 +889,7 @@ int dual_tls_send(rad_listen_t *listener, REQUEST *request)
 		/*
 		 *	Resume reading from the listener.
 		 */
+		RDEBUG("(TLS) Connection checks succeeded - continuing with normal reads");
 		listener->status = RAD_LISTEN_STATUS_RESUME;
 		radius_update_listener(listener);
 
@@ -1406,9 +1409,11 @@ int proxy_tls_send(rad_listen_t *listener, REQUEST *request)
 				return -1;
 			}
 
+			RDEBUG3("(TLS) has %zu bytes in the buffer", sock->ssn->clean_out.used);
+
 			memcpy(sock->ssn->clean_out.data + sock->ssn->clean_out.used, request->proxy->data, request->proxy->data_len);
 			sock->ssn->clean_out.used += request->proxy->data_len;
-			RDEBUG3("(TLS) Writing %zu bytes for later (total %zu)", request->proxy->data_len, sock->ssn->clean_out.used);
+			RDEBUG3("(TLS) Saving %zu bytes of RADIUS traffic for later (total %zu)", request->proxy->data_len, sock->ssn->clean_out.used);
 
 			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 			return 0;

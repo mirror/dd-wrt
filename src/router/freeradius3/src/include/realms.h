@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: 23806f4bb1e0eeaa51c22da15a50bb2c1108400c $
+ * Version:	$Id: c7a1add52d3fe64eb767913d179d01dff2aec73e $
  *
  */
 
-RCSIDH(realms_h, "$Id: 23806f4bb1e0eeaa51c22da15a50bb2c1108400c $")
+RCSIDH(realms_h, "$Id: c7a1add52d3fe64eb767913d179d01dff2aec73e $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +58,8 @@ typedef struct fr_socket_limit_t {
 	uint32_t	num_requests;
 	uint32_t	lifetime;
 	uint32_t	idle_timeout;
+	uint32_t	read_timeout;
+	uint32_t	write_timeout;
 } fr_socket_limit_t;
 
 typedef struct home_server {

@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: e59fcec6f056eea50493c1fd77c4b77d1514b24e $
+ * $Id: 34683a2e1295282d2d6ae05e360412df6d83c667 $
  *
  * @brief map / template functions
  * @file main/map.c
@@ -26,7 +26,7 @@
  * @copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: e59fcec6f056eea50493c1fd77c4b77d1514b24e $")
+RCSID("$Id: 34683a2e1295282d2d6ae05e360412df6d83c667 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1108,7 +1108,7 @@ int map_to_request(REQUEST *request, vp_map_t const *map, radius_map_getvalue_t 
 	 */
 	if (((map->lhs->tmpl_list == PAIR_LIST_COA) ||
 	     (map->lhs->tmpl_list == PAIR_LIST_DM)) && !request->coa) {
-		if (request->parent) {
+		if (context->parent) {
 			REDEBUG("You can only do 'update coa' when processing a packet which was received from the network");
 			return -2;
 		}

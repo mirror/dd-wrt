@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 695365f7d2c05a34da935ea2a9ca0dec55518195 $
+#  $Id: 96f8913c798478e9f150a2bd11d80a7c58d10660 $
 
 #
 #  Time-based One-Time Passwords (TOTP)
@@ -12,6 +12,12 @@
 #  The Base32-encoded secret should be placed into:
 #
 #	&control:TOTP-Secret
+#
+#  Any "bare" key should be placed into:
+#
+#	&control:TOTP-Key
+#
+#  If TOTP-Key exists, then it will be used instead of TOTP-Secret.
 #
 #  The TOTP password entered by the user should be placed into:
 #
@@ -32,9 +38,34 @@
 #	https://linux.die.net/man/1/qrencode
 #
 #  and then run that locally to get an image.
-#  
-#
-#  The module takes no configuration items.
 #
 totp {
+	#
+	#  Default time step between time changes
+	#
+	time_step = 30
+
+	#
+	#  Length of the one-time password.
+	#
+	#  Must be 6 or 8
+	#
+	otp_length = 8
+
+	#
+	#  How many steps backward in time we look for a matching OTP
+	#
+	lookback_steps = 1
+
+	#
+	#  How many steps forward in time we look for a matching OTP
+	#
+	lookforward_steps = 0
+
+	#
+	#  Time delta between steps.
+	#
+	#  Cannot be larger than time_step
+	#
+	lookback_interval = 30
 }

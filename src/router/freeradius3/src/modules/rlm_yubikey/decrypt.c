@@ -1,5 +1,5 @@
 /**
- * $Id: 20b6df8e2ef945ba79014706635df0a44914c49d $
+ * $Id: 2bf454354aefd7b7e0357e197e7b33db2c766607 $
  * @file decrypt.c
  * @brief Authentication for yubikey OTP tokens using the yubikey library.
  *
@@ -106,7 +106,7 @@ rlm_rcode_t rlm_yubikey_decrypt(rlm_yubikey_t *inst, REQUEST *request, char cons
 	 *	Combine the two counter fields together so we can do
 	 *	replay attack checks.
 	 */
-	counter = (yubikey_counter(token.ctr) << 16) | token.use;
+	counter = (yubikey_counter(token.ctr) << 8) | token.use;
 
 	vp = fr_pair_make(request->packet, &request->packet->vps, "Yubikey-Counter", NULL, T_OP_SET);
 	if (!vp) {

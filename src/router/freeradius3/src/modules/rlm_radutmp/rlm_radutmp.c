@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: b3d0037312a7366a36a87b485d57f927720e1b4b $
+ * $Id: 999e6c49e3965a4cc699e43482010ce54f356950 $
  * @file rlm_radutmp.c
  * @brief Tracks sessions.
  *
  * @copyright 2000-2013  The FreeRADIUS server project
  */
-RCSID("$Id: b3d0037312a7366a36a87b485d57f927720e1b4b $")
+RCSID("$Id: 999e6c49e3965a4cc699e43482010ce54f356950 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>
@@ -489,7 +489,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_accounting(void *instance, REQUEST *requ
 		 *	easier than searching through the entire file.
 		 */
 		if (!cache) {
-			cache = talloc_zero(NULL, NAS_PORT);
+			cache = talloc_zero(inst, NAS_PORT);
 			if (cache) {
 				cache->nasaddr = ut.nas_address;
 				cache->port = ut.nas_port;

@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: 84889b8c6fe6037af4f97b9d64e3850a9b7ae530 $
+ * Version:	$Id: 2dc3e602322c8dc1e61ac64f350834b37ce6613d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 84889b8c6fe6037af4f97b9d64e3850a9b7ae530 $")
+RCSID("$Id: 2dc3e602322c8dc1e61ac64f350834b37ce6613d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -850,8 +850,8 @@ int rad_virtual_server(REQUEST *request)
 			break;
 
 		case PW_AUTH_TYPE_REJECT:
-				request->reply->code = PW_CODE_ACCESS_REJECT;
-				break;
+			request->reply->code = PW_CODE_ACCESS_REJECT;
+			break;
 
 		default:
 			break;
@@ -861,6 +861,12 @@ int rad_virtual_server(REQUEST *request)
 	if (request->reply->code == PW_CODE_ACCESS_REJECT) {
 		fr_pair_delete_by_num(&request->config, PW_POST_AUTH_TYPE, 0, TAG_ANY);
 		vp = pair_make_config("Post-Auth-Type", "Reject", T_OP_SET);
+		if (vp) rad_postauth(request);
+	}
+
+	if (request->reply->code == PW_CODE_ACCESS_CHALLENGE) {
+		fr_pair_delete_by_num(&request->config, PW_POST_AUTH_TYPE, 0, TAG_ANY);
+		vp = pair_make_config("Post-Auth-Type", "Challenge", T_OP_SET);
 		if (vp) rad_postauth(request);
 	}
 

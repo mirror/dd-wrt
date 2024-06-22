@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: ed778392775bf73339d813da56974765500408e4 $
+ * $Id: fb2abfb82a56d1e5bfad731ae4ffa2aa7a157235 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: ed778392775bf73339d813da56974765500408e4 $")
+RCSID("$Id: fb2abfb82a56d1e5bfad731ae4ffa2aa7a157235 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -1486,7 +1486,7 @@ static void request_finish(REQUEST *request, int action)
 	/*
 	 *	Maybe originate a CoA request.
 	 */
-	if ((action == FR_ACTION_RUN) && !request->proxy && request->coa) {
+	if ((action == FR_ACTION_RUN) && (!request->proxy || request->proxy->dst_port == 0) && request->coa) {
 		request_coa_originate(request);
 	}
 #endif
@@ -1591,9 +1591,14 @@ static void request_finish(REQUEST *request, int action)
 #ifdef WITH_PROXY
 		/*
 		 *	If we timed out a proxy packet, don't delay
-		 *	the reject any more.
+		 *	the reject any more.  Or, if we proxied it to
+		 *	a real home server, then don't delay it.
+		 *
+		 *	We don't want to have each proxy in a chain
+		 *	adding their own reject delay, which would
+		 *	result in N*reject_delays being applied.
 		 */
-		if (request->proxy && !request->proxy_reply) {
+		if (request->proxy && (!request->proxy_reply || request->proxy->dst_port != 0)) {
 			request->response_delay.tv_sec = 0;
 			request->response_delay.tv_usec = 0;
 		}
@@ -2024,6 +2029,10 @@ static REQUEST *request_setup(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PA
 		return NULL;
 	}
 
+#ifdef WITH_RADIUSV11
+	request->reply->radiusv11 = packet->radiusv11;
+#endif
+
 	request->listener = listener;
 	request->client = client;
 	request->packet = talloc_steal(request, packet);
@@ -2286,16 +2295,6 @@ static void remove_from_proxy_hash_nl(REQUEST *request, bool yank)
 
 	if (!request->in_proxy_hash) return;
 
-#ifdef COA_TUNNEL
-	/*
-	 *	Track how many IDs are used.  This information
-	 *	helps the listen_coa_find() function get a
-	 *	listener which has free IDs.
-	 */
-	rad_assert(request->proxy_listener->num_ids_used > 0);
-	request->proxy_listener->num_ids_used--;
-#endif
-
 	fr_packet_list_id_free(proxy_list, request->proxy, yank);
 	request->in_proxy_hash = false;
 
@@ -2341,6 +2340,18 @@ static void remove_from_proxy_hash_nl(REQUEST *request, bool yank)
 
 	if (request->proxy_listener) {
 		request->proxy_listener->count--;
+
+#ifdef WITH_COA_TUNNEL
+		/*
+		 *	Track how many IDs are used.  This information
+		 *	helps the listen_coa_find() function get a
+		 *	listener which has free IDs.
+		 */
+		if (request->proxy_listener->send_coa) {
+			rad_assert(request->proxy_listener->num_ids_used > 0);
+			request->proxy_listener->num_ids_used--;
+		}
+#endif
 	}
 	request->proxy_listener = NULL;
 
@@ -2360,18 +2371,6 @@ static void remove_from_proxy_hash(REQUEST *request)
 	 *	lot faster that way.
 	 */
 	if (!request->in_proxy_hash) return;
-
-#ifdef WITH_TCP
-	/*
-	 *	Status-Server packets aren't removed from the proxy hash.  They're reused.
-	 *
-	 *	Unless we're tearing down the listener.
-	 */
-	if ((request->proxy->proto == IPPROTO_TCP) && (request->proxy->code == PW_CODE_STATUS_SERVER) &&
-	    request->proxy_listener && (request->proxy_listener->status < RAD_LISTEN_STATUS_EOL)) {
-		return;
-	}
-#endif
 
 	/*
 	 *	The "not in hash" flag is definitive.  However, if the
@@ -2493,13 +2492,13 @@ static int insert_into_proxy_hash(REQUEST *request)
 			goto fail;
 		}
 
-#ifdef COA_TUNNEL
+#ifdef WITH_COA_TUNNEL
 		/*
 		 *	Track how many IDs are used.  This information
 		 *	helps the listen_coa_find() function get a
 		 *	listener which has free IDs.
 		 */
-		request->proxy_listener->num_ids_used++;
+		if (request->proxy_listener->send_coa) request->proxy_listener->num_ids_used++;
 #endif
 
 		/*
@@ -2862,6 +2861,18 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 	request->priority = RAD_LISTEN_PROXY;
 
 #ifdef WITH_STATS
+	/*
+	 *	The average includes our time to receive packets and
+	 *	look them up in the hashes, which should be the same
+	 *	for all packets.
+	 *
+	 *	We update the response time only for the FIRST packet
+	 *	we receive.
+	 */
+	if (request->home_server->ema.window > 0) {
+		radius_stats_ema(&request->home_server->ema, &request->proxy->timestamp, &now);
+	}
+
 	/*
 	 *	Update the proxy listener stats here, because only one
 	 *	thread accesses that at a time.  The home_server and
@@ -3361,7 +3372,7 @@ static int request_will_proxy(REQUEST *request)
 	home = home_server_ldb(realmname, pool, request);
 
 	if (!home) {
-		REDEBUG2("Failed to find live home server: Cancelling proxy");
+		REDEBUG2("Failed to find live home server for realm %s: Cancelling proxy", realmname);
 		return -1;
 	}
 
@@ -3373,7 +3384,11 @@ do_home:
 	 *	Once we've decided to proxy a request, we cannot send
 	 *	a CoA packet.  So we free up any CoA packet here.
 	 */
-	if (request->coa) request_done(request->coa, FR_ACTION_COA_CANCELLED);
+	if (request->coa) {
+		RWDEBUG("Cannot proxy and originate CoA packets at the same time.  Cancelling CoA request");
+		request_done(request->coa, FR_ACTION_COA_CANCELLED);
+		request->coa = NULL;
+	}
 #endif
 
 	/*
@@ -3605,6 +3620,7 @@ static int request_proxy(REQUEST *request)
 	if (request->coa) {
 		RWDEBUG("Cannot proxy and originate CoA packets at the same time.  Cancelling CoA request");
 		request_done(request->coa, FR_ACTION_COA_CANCELLED);
+		request->coa = NULL;
 	}
 #endif
 
@@ -3817,6 +3833,7 @@ static void request_ping(REQUEST *request, int action)
 		break;
 
 	case FR_ACTION_PROXY_REPLY:
+	default:
 		rad_assert(request->in_proxy_hash);
 
 		request->home_server->num_received_pings++;
@@ -3855,9 +3872,10 @@ static void request_ping(REQUEST *request, int action)
 		mark_home_server_alive(request, home);
 		break;
 
-	default:
+	case FR_ACTION_RUN:
+	case FR_ACTION_DUP:
 		RDEBUG3("%s: Ignoring action %s", __FUNCTION__, action_codes[action]);
-		break;
+		return;
 	}
 
 	rad_assert(!request->in_request_hash);
@@ -4339,10 +4357,10 @@ static void proxy_wait_for_reply(REQUEST *request, int action)
 		 *	and should be suppressed by the proxy.
 		 */
 		when = request->proxy->timestamp;
-		when.tv_sec++;
+		when.tv_sec += main_config.proxy_dedup_window;
 
 		if (timercmp(&now, &when, <)) {
-			DEBUG2("Suppressing duplicate proxied request (too fast) to home server %s port %d proto TCP - ID: %d",
+			DEBUG2("Suppressing duplicate proxied request (too fast) to home server %s port %d - ID: %d",
 			       inet_ntop(request->proxy->dst_ipaddr.af,
 					 &request->proxy->dst_ipaddr.ipaddr,
 					 buffer, sizeof(buffer)),
@@ -4543,9 +4561,9 @@ static void request_coa_originate(REQUEST *request)
 	VERIFY_REQUEST(request);
 
 	rad_assert(request->coa != NULL);
-	rad_assert(request->proxy == NULL);
+	rad_assert(request->proxy == NULL || request->proxy->dst_port == 0);
 	rad_assert(!request->in_proxy_hash);
-	rad_assert(request->proxy_reply == NULL);
+	rad_assert(request->proxy_reply == NULL || request->proxy_reply->src_port == 0);
 
 	/*
 	 *	Check whether we want to originate one, or cancel one.
@@ -5018,7 +5036,11 @@ static bool coa_max_time(REQUEST *request)
 					 buffer, sizeof(buffer)),
 			       request->proxy->dst_port,
 			       mrd);
-			request_done(request, FR_ACTION_DONE);
+			if (setup_post_proxy_fail(request)) {
+				request_queue_or_run(request, coa_no_reply);
+			} else {
+				request_done(request, FR_ACTION_DONE);
+			}
 			return true;
 		}
 
@@ -5386,7 +5408,6 @@ static void listener_free_cb(void *ctx)
 	talloc_free(this);
 }
 
-#ifdef WITH_TCP
 #ifdef WITH_PROXY
 static int proxy_eol_cb(void *ctx, void *data)
 {
@@ -5426,7 +5447,6 @@ static int proxy_eol_cb(void *ctx, void *data)
 	return 0;
 }
 #endif	/* WITH_PROXY */
-#endif	/* WITH_TCP */
 
 static void event_new_fd(rad_listen_t *this)
 {
@@ -5602,6 +5622,7 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		this->print(this, buffer, sizeof(buffer));
 		ERROR("Failed adding event handler for socket %s: %s", buffer, fr_strerror());
+
 		this->status = RAD_LISTEN_STATUS_EOL;
 		goto listener_is_eol;
 	} /* end of INIT */
@@ -5645,6 +5666,7 @@ static void event_new_fd(rad_listen_t *this)
 		fr_event_fd_delete(el, 0, this->fd);
 		this->status = RAD_LISTEN_STATUS_REMOVE_NOW;
 	}
+#endif	/* WITH_TCP */
 
 	/*
 	 *	The socket has had a catastrophic error.  Close it.
@@ -5708,7 +5730,6 @@ static void event_new_fd(rad_listen_t *this)
 		 */
 		this->status = RAD_LISTEN_STATUS_REMOVE_NOW;
 	} /* socket is at EOL */
-#endif	  /* WITH_TCP */
 
 	if (this->dead) goto wait_some_more;
 
@@ -6147,7 +6168,7 @@ static void check_proxy(rad_listen_t *head)
 			if (sock->my_ipaddr.af == AF_INET) has_v4 = true;
 			if (sock->my_ipaddr.af == AF_INET6) has_v6 = true;
 			break;
-			
+
 		default:
 			break;
 		}

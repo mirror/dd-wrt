@@ -1,8 +1,10 @@
-FROM ubuntu:18.04
-
-ARG gccver=4.9
-ARG clangver=5.0
-ARG osname=bionic
+# Auto generated for ubuntu18
+# from scripts/crossbuild/m4/Dockerfile.deb.m4
+#
+# Rebuild this file with `make crossbuild.ubuntu18.regen`
+#
+ARG from=ubuntu:18.04
+FROM ${from} as build
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -10,9 +12,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 #  Install add-apt-repository
 #
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get install -y software-properties-common gnupg2 procps && \
     apt-get clean && \
     rm -r /var/lib/apt/lists/*
+
 
 RUN apt-get update && \
 #  Development utilities
@@ -29,9 +32,9 @@ RUN apt-get update && \
 #  - doxygen & JSON.pm
 RUN apt-get install -y doxygen graphviz libjson-perl
 #  - antora (npm needed)
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt-get install -y nodejs
-RUN npm i -g @antora/cli@2.1 @antora/site-generator-default@2.1
+RUN npm i -g @antora/cli@3.1.7 @antora/site-generator-default@3.1.7
 #  - pandoc
 WORKDIR /tmp
 RUN curl -OL $(curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep "browser_download_url.*deb" | cut -d '"' -f 4)
@@ -39,6 +42,8 @@ RUN apt-get install -y ./pandoc-*.deb
 #  - asciidoctor
 RUN apt-get install -y ruby-dev
 RUN gem install asciidoctor
+
+
 
 #
 #  Setup a src dir in /usr/local
@@ -61,5 +66,9 @@ WORKDIR freeradius-server
 RUN for i in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null | sed -e 's#origin/##' | egrep "^(v[3-9]*\.[0-9x]*\.x|master)$");\
 	do \
 		git checkout $i; \
-		if [ -e ./debian/control.in ] ; then debian/rules debian/control ; fi ; echo 'y' | mk-build-deps -irt'apt-get -yV' debian/control ; \
+		if [ -e ./debian/control.in ] ; then \
+			debian/rules debian/control ; \
+		fi ; \
+		echo 'y' | \
+		mk-build-deps -irt'apt-get -yV' debian/control ; \
 	done
