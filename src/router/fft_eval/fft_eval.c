@@ -34,6 +34,7 @@
 #include <string.h>
 #include <math.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
 #define _BSD_SOURCE
 #ifdef	__FreeBSD__
@@ -151,6 +152,7 @@ struct fft_sample_ath11k {
 	u8 chan_width_mhz;
 	s8 max_index;
 	u8 max_exp;
+	bool is_primary;
 	uint16_t freq1;
 	uint16_t freq2;
 	uint16_t max_magnitude;
@@ -420,12 +422,27 @@ static int print_values()
 			{
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
+				unsigned short frequency;
+				unsigned char width;
 				int i;
 				if (!rnum)
 					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath11k.header.tsf, result->sample.ath11k.header.freq1,
 					       result->sample.ath11k.header.rssi, result->sample.ath11k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath11k.header) - sizeof(result->sample.ath11k.header.tlv));
+
+				/* If freq2 is non zero and not equal to freq1 then the scan results are fragmented */
+				if (result->sample.ath11k.header.freq2 &&
+				    result->sample.ath11k.header.freq1 != result->sample.ath11k.header.freq2) {
+					width = result->sample.ath11k.header.chan_width_mhz / 2;
+					if (result->sample.ath11k.header.is_primary)
+						frequency = result->sample.ath11k.header.freq1;
+					else
+			    			frequency = result->sample.ath11k.header.freq2;
+				}  else {
+					frequency = result->sample.ath11k.header.freq1;
+					width = result->sample.ath11k.header.chan_width_mhz;
+				}
 
 				for (i = 0; i < bins; i++) {
 					int data;
@@ -445,7 +462,8 @@ static int print_values()
 					float freq;
 					int data;
 					float signal;
-					freq = result->sample.ath11k.header.freq1 - (result->sample.ath11k.header.chan_width_mhz) / 2 + (result->sample.ath11k.header.chan_width_mhz * (i + 0.5) / bins);
+
+					freq = frequency - width / 2 + (width * (i + 0.5) / bins);
 
 					data = result->sample.ath11k.data[i];
 					if (data == 0)
@@ -587,6 +605,13 @@ static int read_scandata(char *fname)
 				break;
 			}
 
+			/*
+			 * Zero noise level should not happen in a real environment
+			 * but some datasets contain it which creates bogus results.
+			 */
+			if (result->sample.ath10k.header.noise == 0)
+				break;
+
 			CONVERT_BE16(result->sample.ath10k.header.freq1);
 			CONVERT_BE16(result->sample.ath10k.header.freq2);
 			CONVERT_BE16(result->sample.ath10k.header.noise);
@@ -609,6 +634,13 @@ static int read_scandata(char *fname)
 				fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
+
+			/*
+			 * Zero noise level should not happen in a real environment
+			 * but some datasets contain it which creates bogus results.
+			 */
+			if (result->sample.ath11k.header.noise == 0)
+				break;
 
 			CONVERT_BE16(result->sample.ath11k.header.freq1);
 			CONVERT_BE16(result->sample.ath11k.header.freq2);
