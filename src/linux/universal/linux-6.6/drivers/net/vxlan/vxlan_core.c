@@ -1450,6 +1450,10 @@ static bool vxlan_snoop(struct net_device *dev,
 	if (is_multicast_ether_addr(src_mac) || is_zero_ether_addr(src_mac))
 		return false;
 
+	/* Ignore packets from invalid src-address */
+	if (!is_valid_ether_addr(src_mac))
+		return true;
+
 #if IS_ENABLED(CONFIG_IPV6)
 	if (src_ip->sa.sa_family == AF_INET6 &&
 	    (ipv6_addr_type(&src_ip->sin6.sin6_addr) & IPV6_ADDR_LINKLOCAL))
