@@ -653,9 +653,9 @@ void start_sysinit(void)
 		insmod("dwmac-ipq806x"); //for debugging purposes compiled as module
 	} else {
 		insmod("qca-nss-gmac");
-		insmod("qca-nss-drv");
-		insmod("qca-nss-crypto");
-		insmod("qca-nss-cfi-cryptoapi");
+		insmod("qca-nss-drv-ipq806x");
+		insmod("qca-nss-crypto-ipq806x");
+		insmod("qca-nss-cfi-cryptoapi-ipq806x");
 		insmod("nsh");
 		insmod("openvswitch");
 		insmod("qca-ovsmgr");
