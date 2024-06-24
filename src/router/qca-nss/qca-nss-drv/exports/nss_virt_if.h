@@ -235,7 +235,7 @@ extern int nss_virt_if_create(struct net_device *netdev, nss_virt_if_msg_callbac
  * @return
  * Pointer to nss_virt_if_handle.
  */
-extern struct nss_virt_if_handle *nss_virt_if_create_sync(struct net_device *netdev);
+extern WEAK struct nss_virt_if_handle *nss_virt_if_create_sync(struct net_device *netdev);
 
 /**
  * nss_virt_if_create_sync_nexthop
@@ -291,7 +291,7 @@ extern nss_tx_status_t nss_virt_if_destroy(struct nss_virt_if_handle *handle, ns
  * @dependencies
  * The interface must have been previously created.
  */
-extern nss_tx_status_t nss_virt_if_destroy_sync(struct nss_virt_if_handle *handle);
+extern WEAK nss_tx_status_t nss_virt_if_destroy_sync(struct nss_virt_if_handle *handle);
 
 /**
  * nss_virt_if_tx_msg
@@ -324,7 +324,7 @@ extern nss_tx_status_t nss_virt_if_tx_msg(struct nss_ctx_instance *nss_ctx, stru
  * @return
  * Status of the Tx operation.
  */
-extern nss_tx_status_t nss_virt_if_tx_buf(struct nss_virt_if_handle *handle,
+extern WEAK nss_tx_status_t nss_virt_if_tx_buf(struct nss_virt_if_handle *handle,
 						struct sk_buff *skb);
 
 /**
@@ -376,7 +376,7 @@ extern void nss_virt_if_xmit_callback_unregister(struct nss_virt_if_handle *hand
  * @return
  * Status of the Tx operation.
  */
-extern void nss_virt_if_register(struct nss_virt_if_handle *handle,
+extern WEAK void nss_virt_if_register(struct nss_virt_if_handle *handle,
 					nss_virt_if_data_callback_t data_callback,
 					struct net_device *netdev);
 

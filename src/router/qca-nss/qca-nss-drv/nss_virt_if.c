@@ -693,6 +693,7 @@ void get_mac80211_api(void **a, void **b, void **c, void **d) {
 *d = &nss_virt_if_register;
 }
 
+EXPORT_SYMBOL(get_mac80211_api);
 /*
  * nss_virt_if_unregister()
  */
