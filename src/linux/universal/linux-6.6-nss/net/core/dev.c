@@ -2072,6 +2072,9 @@ static int call_netdevice_notifiers_mtu(unsigned long val,
 	return call_netdevice_notifiers_info(val, &info.info);
 }
 
+bool fast_tc_filter = false;
+EXPORT_SYMBOL_GPL(fast_tc_filter);
+
 #ifdef CONFIG_NET_INGRESS
 static DEFINE_STATIC_KEY_FALSE(ingress_needed_key);
 
@@ -5504,6 +5507,9 @@ void netdev_rx_handler_unregister(struct net_device *dev)
 }
 EXPORT_SYMBOL_GPL(netdev_rx_handler_unregister);
 
+int (*athrs_fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(athrs_fast_nat_recv);
+
 /*
  * Limit the use of PFMEMALLOC reserves to those protocols that implement
  * the special handling of PFMEMALLOC skbs.
@@ -5555,6 +5561,7 @@ static int __netif_receive_skb_core(struct sk_buff **pskb, bool pfmemalloc,
 	int ret = NET_RX_DROP;
 	__be16 type;
 	int (*fast_recv)(struct sk_buff *skb);
+	int (*athr_fast_recv)(struct sk_buff *skb);
 
 	net_timestamp_check(!READ_ONCE(netdev_tstamp_prequeue), skb);
 
@@ -5595,11 +5602,22 @@ another_round:
 		}
 	}
 
+	if (likely(!fast_tc_filter)) {
+		athr_fast_recv = rcu_dereference(athrs_fast_nat_recv);
+		if (athr_fast_recv) {
+			if (athr_fast_recv(skb)) {
+				ret = NET_RX_SUCCESS;
+				goto out;
+			}
+		}
+	}
+
 	if (eth_type_vlan(skb->protocol)) {
 		skb = skb_vlan_untag(skb);
 		if (unlikely(!skb))
 			goto out;
 	}
+
 
 	if (skb_skip_tc_classify(skb))
 		goto skip_classify;
@@ -5652,6 +5670,24 @@ skip_classify:
 		else if (unlikely(!skb))
 			goto out;
 	}
+
+	if (unlikely(!fast_tc_filter)) {
+		goto skip_fast_recv;
+	}
+
+	athr_fast_recv = rcu_dereference(athrs_fast_nat_recv);
+	if (athr_fast_recv) {
+		if (pt_prev) {
+			ret = deliver_skb(skb, pt_prev, orig_dev);
+			pt_prev = NULL;
+		}
+
+		if (athr_fast_recv(skb)) {
+			ret = NET_RX_SUCCESS;
+			goto out;
+		}
+	}
+skip_fast_recv:
 
 	rx_handler = rcu_dereference(skb->dev->rx_handler);
 	if (rx_handler) {

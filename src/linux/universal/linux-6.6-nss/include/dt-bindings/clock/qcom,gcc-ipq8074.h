@@ -230,10 +230,19 @@
 #define GCC_GP1_CLK				221
 #define GCC_GP2_CLK				222
 #define GCC_GP3_CLK				223
-#define GCC_PCIE0_AXI_S_BRIDGE_CLK		224
-#define GCC_PCIE0_RCHNG_CLK_SRC			225
-#define GCC_PCIE0_RCHNG_CLK			226
-#define GCC_CRYPTO_PPE_CLK			227
+#define GCC_CRYPTO_PPE_CLK             224
+#define GCC_PCIE0_RCHNG_CLK_SRC        225
+#define GCC_PCIE0_RCHNG_CLK            226
+#define GCC_PCIE0_AXI_S_BRIDGE_CLK         227
+#define GCC_SNOC_BUS_TIMEOUT2_AHB_CLK      228
+#define GCC_SNOC_BUS_TIMEOUT3_AHB_CLK      229
+#define GCC_DCC_CLK                230
+#define ADSS_PWM_CLK_SRC           231
+#define GCC_ADSS_PWM_CLK           232
+#define QDSS_TSCTR_CLK_SRC         233
+#define QDSS_AT_CLK_SRC            234
+#define GCC_QDSS_AT_CLK            235
+#define GCC_QDSS_DAP_CLK           236
 
 #define GCC_BLSP1_BCR				0
 #define GCC_BLSP1_QUP1_BCR			1
