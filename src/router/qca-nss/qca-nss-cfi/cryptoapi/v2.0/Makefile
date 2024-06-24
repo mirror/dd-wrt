@@ -1,6 +1,6 @@
 # Cryptoapi specifc NSS cfi Makefile
 
-NSS_CRYPTOAPI_MOD_NAME=qca-nss-cfi-cryptoapi
+NSS_CRYPTOAPI_MOD_NAME=qca-nss-cfi-cryptoapi-$(SoC)
 
 obj-m += $(NSS_CRYPTOAPI_MOD_NAME).o
 $(NSS_CRYPTOAPI_MOD_NAME)-objs = nss_cryptoapi.o

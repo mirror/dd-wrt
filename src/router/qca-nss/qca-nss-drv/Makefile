@@ -561,6 +561,7 @@ ccflags-y += -I$(obj)/nss_hal/ipq60xx -DNSS_HAL_IPQ60XX_SUPPORT -DNSS_MULTI_H2N_
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq50xx ipq50xx_64))
+ccflags-y += -DNSS_HAL_IPQ50XX_SUPPORT
 qca-nss-drv-$(SoC)-objs += nss_data_plane/nss_data_plane.o \
 		    nss_hal/ipq50xx/nss_hal_pvt.o \
 		    nss_data_plane/hal/nss_ipq50xx.o

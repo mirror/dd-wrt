@@ -5,6 +5,7 @@ ccflags-y := -I$(obj)/../exports -I$(srctree)/net/bridge -DNSS_QDISC_DEBUG_LEVEL
 ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64 ipq60xx ipq60xx_64))
 ccflags-y += -DNSS_QDISC_PPE_SUPPORT -DNSS_QDISC_BRIDGE_SUPPORT
 endif
+ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 
 ccflags-y += -Wall -Werror
 

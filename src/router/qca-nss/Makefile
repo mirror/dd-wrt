@@ -17,6 +17,10 @@ KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-dp/ex
 NSS_CRYPTO_DIR:=v2.0
 DTLSMGR_DIR:=v2.0
 IPSECMGR_KLIPS:=
+
+IPSECMGR_DIR:=v2.0
+# KLIPS plugin not needed
+IPSECMGR_KLIPS:=
 else
 CFI_CRYPTOAPI_DIR:=cryptoapi/v1.1
 CFI_OCF_DIR:=ocf/v1.0
@@ -79,6 +83,8 @@ QCASSDK_CONFIG_OPTS+= TOOL_PATH=${shell dirname ${shell which $(ARCH)-openwrt-li
 
 all:
 ifeq ($(CONFIG_IPQ6018),y)
+	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
+	$(MAKE) -C nssinfo KERNEL_FLAGS="$(KERNEL_FLAGS)"
 	cp	qca-nss-dp/hal/soc_ops/ipq60xx/nss_ipq60xx.h qca-nss-dp/exports/nss_dp_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
@@ -89,14 +95,19 @@ ifeq ($(CONFIG_IPQ6018),y)
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard modules MODPROBE=true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules MODPROBE=true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" pppoe=y tunipip6=m l2tpv2=y qdisc=y vxlanmgr=y pptp=y vlan-mgr=y netlink=y bridge-mgr=y \
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" pppoe=y qdisc=y vlan-mgr=y netlink=y bridge-mgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)"
+	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
 	make $(QCASSDK_CONFIG_OPTS) -C ssdk-shell
 else
 
@@ -144,6 +155,18 @@ ifeq ($(CONFIG_IPQ6018),y)
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq60xx.ko
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
@@ -167,6 +190,24 @@ ifeq ($(CONFIG_IPQ6018),y)
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq807x.ko
 
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" pppoe=y qdisc=y vlan-mgr=y netlink=y bridge-mgr=y \
+		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
+		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/updates -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
@@ -176,6 +217,15 @@ ifeq ($(CONFIG_IPQ6018),y)
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp ssdk-shell/build/bin/ssdk_sh $(INSTALLDIR)/usr/sbin
+
+	mkdir -p $(INSTALLDIR)/lib/firmware
+	cp firmware/hawkeye/* $(INSTALLDIR)/lib/firmware
+	cp firmware/cypress/* $(INSTALLDIR)/lib/firmware
+	cp firmware/maple/* $(INSTALLDIR)/lib/firmware
+	cp firmware/crypto/* $(INSTALLDIR)/lib/firmware
+	mkdir -p $(INSTALLDIR)/usr/sbin
+	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
+
 else
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
@@ -217,6 +267,20 @@ ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean MODPROBE=true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y ECM_INTERFACE_OVS_BRIDGE_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
+	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-cfi clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
+		CFI_OCF_DIR=$(CFI_OCF_DIR) \
+		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" pppoe=y qdisc=y vlan-mgr=y bridge-mgr=y \
+		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
+		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx" \
+		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
 	rm -f qca-ssdk/qca-ssdk.*
 	rm -f qca-ssdk/*.dep
 	rm -f qca-ssdk/modules.order
@@ -235,9 +299,11 @@ else
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
 		CFI_OCF_DIR=$(CFI_OCF_DIR) \
 		CFI_IPSEC_DIR=$(CFI_IPSEC_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
+
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" pppoe=y tunipip6=m l2tpv2=y qdisc=y vxlanmgr=y pptp=y vlan-mgr=y bridge-mgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
+
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-crypto clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" \
 		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR) INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)

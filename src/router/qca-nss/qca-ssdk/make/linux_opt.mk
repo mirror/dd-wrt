@@ -308,7 +308,7 @@ ifeq (TRUE, $(DEBUG_ON))
   MODULE_CFLAG += -g
 endif
 
-MODULE_CFLAG += $(OPT_FLAG) -Wall -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\" -DOS=\"$(OS)\" -D"KBUILD_STR(s)=\#s"
+MODULE_CFLAG += $(OPT_FLAG) -Wall -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"NONE\" -DOS=\"$(OS)\" -D"KBUILD_STR(s)=\#s"
 
 MODULE_INC += -I$(PRJ_PATH)/include \
                    -I$(PRJ_PATH)/include/common \

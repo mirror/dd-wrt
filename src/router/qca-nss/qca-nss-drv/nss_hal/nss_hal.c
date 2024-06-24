@@ -49,8 +49,19 @@
 /*
  * Macros
  */
+#ifdef defined(NSS_HAL_IPQ807x_SUPPORT)
+#define NSS_AP0_IMAGE "qca-nss0-hawkeye.bin"
+#define NSS_AP1_IMAGE "qca-nss1-hawkeye.bin"
+#elif defined(NSS_HAL_IPQ60XX_SUPPORT)
+#define NSS_AP0_IMAGE "qca-nss0-cypress.bin"
+#define NSS_AP1_IMAGE "qca-nss1-cypress.bin"
+#elif defined(NSS_HAL_IPQ50XX_SUPPORT)
+#define NSS_AP0_IMAGE "qca-nss0-maple.bin"
+#define NSS_AP1_IMAGE "qca-nss1-maple.bin"
+#else
 #define NSS_AP0_IMAGE "qca-nss0.bin"
 #define NSS_AP1_IMAGE "qca-nss1.bin"
+#endif
 
 /*
  * File local/Static variables/functions
