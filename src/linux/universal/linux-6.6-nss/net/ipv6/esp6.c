@@ -15,6 +15,7 @@
 
 #include <crypto/aead.h>
 #include <crypto/authenc.h>
+#include <crypto/algapi.h>
 #include <linux/err.h>
 #include <linux/module.h>
 #include <net/ip.h>
