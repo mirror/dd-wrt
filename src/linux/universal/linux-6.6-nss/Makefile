@@ -405,6 +405,7 @@ ifeq ($(ARCH),mipsel)
 ARCH=mips
 endif
 
+CROSS_COMPILE	?= ccache $(CONFIG_CROSS_COMPILE:"%"=%)
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
 SRCARCH 	:= $(ARCH)

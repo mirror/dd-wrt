@@ -1777,8 +1777,9 @@ enum netdev_priv_flags_ext {
 	IFF_EXT_GRE_V4_TAP		= 1<<4,
 	IFF_EXT_GRE_V6_TAP		= 1<<5,
 	IFF_EXT_IFB			    = 1<<6,
- IFF_EXT_MAPT			  = 1<<7,
- IFF_EXT_HW_NO_OFFLOAD	= 1<<8,
+	IFF_EXT_MAPT			  = 1<<7,
+	IFF_EXT_HW_NO_OFFLOAD	= 1<<8,
+	IFF_EXT_ETH_L2TPV3		= 1<<9,
 };
 
 #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
@@ -3222,6 +3223,7 @@ static inline int dev_direct_xmit(struct sk_buff *skb, u16 queue_id)
 
 bool dev_fast_xmit(struct sk_buff *skb, struct net_device *dev,
 		   netdev_features_t features);
+bool dev_fast_xmit_qdisc(struct sk_buff *skb, struct net_device *top_qdisc_dev, struct net_device *bottom_dev);
 int register_netdevice(struct net_device *dev);
 void unregister_netdevice_queue(struct net_device *dev, struct list_head *head);
 void unregister_netdevice_many(struct list_head *head);

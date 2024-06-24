@@ -1000,6 +1000,8 @@ struct sk_buff {
 	__u8			csum_not_inet:1;
 #endif
 	__u8			fast_forwarded:1;
+	__u8			fast_qdisc:1;
+	/* Packets processed in dev_fast_xmit_qdisc() path */
 
 #if defined(CONFIG_NET_SCHED) || defined(CONFIG_NET_XGRESS)
 	__u16			tc_index;	/* traffic control index */
