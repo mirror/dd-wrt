@@ -657,8 +657,8 @@ void reset_hwaddr(char *ifname)
 #if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
 	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||       \
 	defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) ||   \
-	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || defined(HAVE_IPQ6018) || \
-	defined(HAVE_EROUTER)
+	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || \
+	defined(HAVE_IPQ6018) || defined(HAVE_EROUTER)
 			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_XSCALE
@@ -756,6 +756,7 @@ void start_lan(void)
 		PORTSETUPWAN("eth0");
 	}
 
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -768,6 +769,7 @@ void start_lan(void)
 		PORTSETUPWAN("eth0");
 	}
 
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -780,6 +782,7 @@ void start_lan(void)
 		PORTSETUPWAN("eth0");
 	}
 
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -793,6 +796,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
 			PORTSETUPWAN("eth1");
 		}
+		nvram_set("wan_default", "eth1");
 	} else {
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
@@ -801,6 +805,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
 			PORTSETUPWAN("eth0");
 		}
+		nvram_set("wan_default", "eth0");
 	}
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -829,6 +834,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0");
 			PORTSETUPWAN("eth0");
 		}
+		nvram_set("wan_default", "eth0");
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
 	case ROUTER_ASUS_AC58U:
@@ -841,6 +847,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
 			PORTSETUPWAN("eth1");
 		}
+		nvram_set("wan_default", "eth1");
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		break;
 	default:
@@ -851,6 +858,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
 			PORTSETUPWAN("eth0");
 		}
+		nvram_set("wan_default", "eth1");
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
 	}
@@ -875,6 +883,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -897,6 +906,7 @@ void start_lan(void)
 		} else {
 			PORTSETUPWAN("eth0");
 		}
+		nvram_set("wan_default", "eth0");
 	}
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -943,6 +953,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -953,6 +964,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -983,6 +995,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1003,6 +1016,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1013,6 +1027,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1023,6 +1038,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1033,6 +1049,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1048,6 +1065,7 @@ void start_lan(void)
 #else
 		PORTSETUPWAN("eth1");
 #endif
+		nvram_set("wan_default", "eth1");
 	}
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
@@ -1059,6 +1077,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1069,6 +1088,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1079,6 +1099,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1089,6 +1110,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1099,6 +1121,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1119,6 +1142,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1129,6 +1153,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1139,6 +1164,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1149,6 +1175,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1169,6 +1196,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1199,6 +1227,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1209,6 +1238,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1219,6 +1249,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1229,6 +1260,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1279,6 +1311,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1289,6 +1322,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1299,6 +1333,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1309,6 +1344,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1319,6 +1355,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1329,6 +1366,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1339,6 +1377,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1349,6 +1388,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1359,6 +1399,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1369,6 +1410,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1379,6 +1421,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1389,6 +1432,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1399,6 +1443,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1409,6 +1454,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1419,6 +1465,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1429,6 +1476,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1439,6 +1487,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1449,6 +1498,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1459,6 +1509,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1469,6 +1520,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1479,6 +1531,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1489,6 +1542,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1565,6 +1619,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1575,6 +1630,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1621,6 +1677,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1631,6 +1688,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1642,6 +1700,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1668,6 +1727,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1678,31 +1738,33 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36) {
-	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1");
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		PORTSETUPWAN("");
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1");
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			PORTSETUPWAN("");
+		} else {
+			PORTSETUPWAN("eth4");
+		}
+		nvram_set("wan_default", "eth4");
+		if (nvram_match("et0macaddr", ""))
+			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
+		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else {
-		PORTSETUPWAN("eth4");
-	}
-	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
-	strcpy(mac, nvram_safe_get("et0macaddr"));
-	}else{
-	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 wlan0 wlan1");
-	if (getSTA() || getWET() || CANBRIDGE()) {
-		PORTSETUPWAN("");
-	} else {
-		PORTSETUPWAN("eth0");
-	}
-	if (nvram_match("et0macaddr", ""))
-		nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
-	strcpy(mac, nvram_safe_get("et0macaddr"));
+		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 wlan0 wlan1");
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			PORTSETUPWAN("");
+		} else {
+			PORTSETUPWAN("eth0");
+		}
+		if (nvram_match("et0macaddr", ""))
+			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
+		strcpy(mac, nvram_safe_get("et0macaddr"));
 	}
 #elif defined(HAVE_VENTANA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
@@ -1711,6 +1773,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -1724,6 +1787,7 @@ void start_lan(void)
 		} else {
 			PORTSETUPWAN("eth1");
 		}
+		nvram_set("wan_default", "eth1");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 wlan0");
 		if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1731,6 +1795,7 @@ void start_lan(void)
 		} else {
 			PORTSETUPWAN("eth0");
 		}
+		nvram_set("wan_default", "eth0");
 	}
 
 	if (nvram_match("et0macaddr", ""))
@@ -1782,6 +1847,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -1794,6 +1860,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -1806,6 +1873,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth0");
 	}
+	nvram_set("wan_default", "eth0");
 
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -1818,6 +1886,7 @@ void start_lan(void)
 	} else {
 		PORTSETUPWAN("eth1");
 	}
+	nvram_set("wan_default", "eth1");
 
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
@@ -1830,8 +1899,10 @@ void start_lan(void)
 		nvram_setz(lan_ifnames, "vlan0 vlan1 wlan0 wlan1");
 	} else if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		nvram_setz(lan_ifnames, "eth0 wlan0 wlan1");
+		nvram_set("wan_default", "eth0");
 	} else {
 		nvram_setz(lan_ifnames, "eth0 wlan0");
+		nvram_set("wan_default", "eth0");
 	}
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
@@ -5092,26 +5163,25 @@ void start_hotplug_net(void)
 
 	if (!strcmp(action, "add")) {
 		if (cpucount > 1) {
-//			int cpumask = 0;
-//			cpumask = (1 << cpucount) - 1;
-			writenet("queues/rx-0/rps_cpus", (1 << 0) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-1/rps_cpus", (1 << 1) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-2/rps_cpus", (1 << 2) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-3/rps_cpus", (1 << 3) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-4/rps_cpus", (1 << 4) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-5/rps_cpus", (1 << 5) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-6/rps_cpus", (1 << 6) & ((1 << cpucount)-1) , interface);
-			writenet("queues/rx-7/rps_cpus", (1 << 7) & ((1 << cpucount)-1) , interface);
+			//			int cpumask = 0;
+			//			cpumask = (1 << cpucount) - 1;
+			writenet("queues/rx-0/rps_cpus", (1 << 0) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-1/rps_cpus", (1 << 1) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-2/rps_cpus", (1 << 2) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-3/rps_cpus", (1 << 3) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-4/rps_cpus", (1 << 4) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-5/rps_cpus", (1 << 5) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-6/rps_cpus", (1 << 6) & ((1 << cpucount) - 1), interface);
+			writenet("queues/rx-7/rps_cpus", (1 << 7) & ((1 << cpucount) - 1), interface);
 
-
-			writenet("queues/tx-0/xps_cpus", (1 << 0) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-1/xps_cpus", (1 << 1) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-2/xps_cpus", (1 << 2) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-3/xps_cpus", (1 << 3) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-4/xps_cpus", (1 << 4) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-5/xps_cpus", (1 << 5) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-6/xps_cpus", (1 << 6) & ((1 << cpucount)-1) , interface);
-			writenet("queues/tx-7/xps_cpus", (1 << 7) & ((1 << cpucount)-1) , interface);
+			writenet("queues/tx-0/xps_cpus", (1 << 0) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-1/xps_cpus", (1 << 1) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-2/xps_cpus", (1 << 2) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-3/xps_cpus", (1 << 3) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-4/xps_cpus", (1 << 4) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-5/xps_cpus", (1 << 5) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-6/xps_cpus", (1 << 6) & ((1 << cpucount) - 1), interface);
+			writenet("queues/tx-7/xps_cpus", (1 << 7) & ((1 << cpucount) - 1), interface);
 
 			writenet("queues/rx-0/rps_flow_cnt", 256, interface);
 			writenet("queues/rx-1/rps_flow_cnt", 256, interface);
