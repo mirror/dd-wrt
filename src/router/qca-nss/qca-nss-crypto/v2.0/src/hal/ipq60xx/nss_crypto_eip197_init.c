@@ -625,6 +625,7 @@ static void nss_crypto_eip197_hw_boot_ofpp(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
+	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -676,6 +677,7 @@ static void nss_crypto_eip197_hw_boot_opue(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
+	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -727,6 +729,7 @@ static void nss_crypto_eip197_hw_boot_ifpp(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
+	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -778,6 +781,7 @@ static void nss_crypto_eip197_hw_boot_ipue(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
+	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
