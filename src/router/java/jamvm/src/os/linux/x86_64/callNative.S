@@ -20,7 +20,6 @@
 
 #include  "config.h"
 
-#ifndef USE_FFI
 .text
 .align  2
 .global callJNIMethod
@@ -266,4 +265,7 @@ float_ret:
     movss   %xmm0, (%rcx)
     addq    $8, %rcx
     jmp     return
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
 #endif

@@ -23,7 +23,6 @@
 #include "hash.h"
 #include "zip.h"
 
-#ifdef USE_ZIP
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
@@ -344,17 +343,3 @@ error:
     sysFree(decomp_buff);
     return NULL;
 }
-#else
-ZipFile *processArchive(char *path) {
-    return NULL;
-}
-
-char *findArchiveDirEntry(char *pathname, ZipFile *zip) {
-    return NULL;
-}
-
-char *findArchiveEntry(char *pathname, ZipFile *zip, int *entry_len) {
-    return NULL;
-}
-#endif
-

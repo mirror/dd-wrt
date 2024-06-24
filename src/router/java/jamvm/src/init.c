@@ -72,8 +72,8 @@ void setDefaultInitArgs(InitArgs *args) {
 #ifdef INLINING
     args->replication_threshold = 10;
     args->profile_threshold     = 10;
-    args->branch_patching_dup   = TRUE;
-    args->branch_patching       = TRUE;
+    args->branch_patching_dup   = FALSE;
+    args->branch_patching       = FALSE;
     args->print_codestats       = FALSE;
     args->join_blocks           = TRUE;
     args->profiling             = TRUE;

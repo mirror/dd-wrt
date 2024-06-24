@@ -19,11 +19,9 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-/* Ensure operand stack and stack pointer are double-word aligned.
-   On x86, this leads to better double floating-point performance.
-   It's mandatory for non-x86 hardware with strict alignment rules. */
-
-#define ALIGN(pntr) (uintptr_t*)(((uintptr_t)(pntr) + 7) & ~7)
+/* Ensure operand stack is double-word aligned.  This leads to
+   better double floating-point performance */
+#define ALIGN_OSTACK(pntr) (uintptr_t*)(((uintptr_t)(pntr) + 7) & ~7)
 
 #define CREATE_TOP_FRAME(ee, class, mb, sp, ret)                \
 {                                                               \
@@ -32,9 +30,9 @@
     Frame *new_frame;                                           \
     uintptr_t *new_ostack;                                      \
                                                                 \
-    ret = (void*) (sp = ALIGN(dummy + 1));                      \
+    ret = (void*) (sp = (uintptr_t*)(dummy+1));                 \
     new_frame = (Frame *)(sp + mb->max_locals);                 \
-    new_ostack = ALIGN(new_frame + 1);                          \
+    new_ostack = ALIGN_OSTACK(new_frame + 1);                   \
                                                                 \
     if((char*)(new_ostack + mb->max_stack) > ee->stack_end) {   \
         if(ee->overflow++) {                                    \

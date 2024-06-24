@@ -154,6 +154,9 @@ jint JVM_GetInterfaceVersion() {
     return JVM_INTERFACE_VERSION;
 }
 
+void JVM_BeforeHalt() {
+
+}
 
 /* JVM_CurrentTimeMillis */
 
@@ -522,27 +525,23 @@ jclass JVM_FindClassFromBootLoader(JNIEnv *env, const char *name) {
 jclass JVM_FindClassFromClassLoader(JNIEnv *env, const char *name,
                                     jboolean init, jobject loader,
                                     jboolean throw_error) {
-    Class *class;
 
     TRACE("JVM_FindClassFromClassLoader(env=%p, name=%s, init=%d, loader=%p,"
           " throw_error=%d)", env, name, init, loader, throw_error);
 
-    class = findClassFromClassLoader((char *)name, loader);
+    return findClassFromLoader((char *)name, init, loader, throw_error);
+}
 
-    if(class == NULL) {
-        if(!throw_error) {
-            Object *excep = exceptionOccurred();
-            char *dot_name = slash2DotsDup((char*)name);
 
-            clearException();
-            signalChainedException(java_lang_ClassNotFoundException,
-                                   dot_name, excep);
-            sysFree(dot_name);
-        }
-    } else if(init)
-        initClass(class);
+/* JVM_FindClassFromCaller */
 
-    return class;
+jclass JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
+                               jobject loader, jclass caller) {
+
+    TRACE("JVM_FindClassFromCaller(env=%p, name=%s, init=%d, loader=%p,"
+          " caller=%p)", env, name, init, loader, caller);
+
+    return findClassFromLoader((char *)name, init, loader, FALSE);
 }
 
 
@@ -669,6 +668,35 @@ void JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers) {
     cb->signers = signers;
 }
 
+
+/* JVM_GetResourceLookupCacheURLs
+   is part of the
+   JDK-8061651 JDK8u API
+*/
+
+jobjectArray JVM_GetResourceLookupCacheURLs(JNIEnv *env, jobject loader) {
+    return NULL; // tell OpenJDK 8 that the lookup cache API is unavailable
+}
+
+/* JVM_GetResourceLookupCache
+   is unused however it is part of the
+   JDK-8061651 JDK8u API
+*/
+
+jintArray JVM_GetResourceLookupCache(JNIEnv *env, jobject loader, const char *resource_name) {
+    UNIMPLEMENTED("JVM_GetResourceLookupCache");
+    return 0;
+}
+
+/* JVM_KnownToNotExist
+   is unused however it is part of the
+   JDK-8061651 JDK8u API
+*/
+
+jboolean JVM_KnownToNotExist(JNIEnv *env, jobject loader, const char *classname) {
+    UNIMPLEMENTED("JVM_KnownToNotExist");
+    return 0;
+}
 
 /* JVM_GetProtectionDomain */
 
@@ -1937,6 +1965,10 @@ jint JVM_GetArrayLength(JNIEnv *env, jobject arr) {
 }
 
 
+jboolean JVM_IsUseContainerSupport() {
+    return FALSE;
+}
+
 /* JVM_GetArrayElement */
 
 jobject JVM_GetArrayElement(JNIEnv *env, jobject arr, jint index) {
@@ -1973,7 +2005,6 @@ jobject JVM_GetArrayElement(JNIEnv *env, jobject arr, jint index) {
         }
     }
 }
-
 
 /* JVM_GetPrimitiveArrayElement */
 
@@ -2962,6 +2993,24 @@ void JVM_GetVersionInfo(JNIEnv *env, jvm_version_info *info, size_t info_size) {
     info->jvm_version = ((VERSION_MAJOR & 0xff) << 24) |
                         ((VERSION_MINOR & 0xff) << 16) |
                          (VERSION_MICRO & 0xff);
+}
+
+
+/* JVM_GetTemporaryDirectory
+ * Return the temporary directory that the VM uses for the attach
+ * and perf data files.
+ *
+ * It is important that this directory is well-known and the
+ * same for all VM instances. It cannot be affected by configuration
+ * variables such as java.io.tmpdir.
+ *
+ * JamVM do not support the jvmstat framework thus this is left unimplemented.
+ */
+
+jstring JVM_GetTemporaryDirectory(JNIEnv *env) {
+    UNIMPLEMENTED("JVM_GetTemporaryDirectory");
+
+    return 0;
 }
 
 

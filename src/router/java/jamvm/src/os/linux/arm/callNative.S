@@ -21,7 +21,6 @@
 
 #include "config.h"
 
-#ifndef USE_FFI
 #ifdef __ARM_EABI__
 #ifdef __ARM_PCS_VFP
 #ifdef __ARM_ARCH_7A__
@@ -35,4 +34,7 @@
 #else
 #include "callNativeOABI.S"
 #endif
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
 #endif

@@ -22,8 +22,7 @@
 
 .text
 .align  2
-.global callJNIMethod
-.type   callJNIMethod,function
+.globl _callJNIMethod
 
 /*
  * Arguments passed in:
@@ -36,7 +35,7 @@
  * %r9  function pntr
  */
 
-callJNIMethod:
+_callJNIMethod:
     pushq   %rbp
     movq    %rsp, %rbp
 

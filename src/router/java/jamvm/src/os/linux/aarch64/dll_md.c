@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2008 Robert Lougher <rob@jamvm.org.uk>.
+ * Copyright (C) 2003, 2004, 2005, 2006, 2007, 2008, 2010, 2011
+ * Robert Lougher <rob@jamvm.org.uk>.
+ * Copyright (C) 2020 Simon South <simon@simonsouth.net>.
  *
  * This file is part of JamVM.
  *
@@ -18,38 +20,36 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "../../../jam.h"
-
-#include <stdio.h>
+#include "jam.h"
 
 int nativeExtraArg(MethodBlock *mb) {
     char *sig = mb->type;
-    int stack_space;
-    int iargs = 0;
-    int fargs = 0;
+    int stack_args = 0;
+    int int_args = 6;
+    int fp_args = 8;
 
     while(*++sig != ')')
         switch(*sig) {
-            case 'D':
-            case 'F':
-                fargs++;
-                break;
+        case 'F':
+        case 'D':
+            if(fp_args == 0)
+                stack_args += 8;
+            else
+                fp_args--;
 
-            default:
-                iargs++;
+        default:
+            if(int_args == 0)
+                stack_args += 8;
+            else
+                int_args--;
 
-                if(*sig == '[')
-                    while(*++sig == '[');
-                if(*sig == 'L')
-                    while(*++sig != ';');
-                break;
+            if(*sig == '[')
+                while(*++sig == '[');
+            if(*sig == 'L')
+                while(*++sig != ';');
+            break;
         }
 
-    stack_space = ((iargs > 4 ? iargs - 4 : 0) +
-                   (fargs > 8 ? fargs - 8 : 0)) << 3;
-
-    /* Ensure the stack remains 16 byte aligned.  As
-       callJNIMethod pushes an even number of registers
-       the extra space must also be even. */
-    return (stack_space + 15) & ~15;
+    /* Ensure the stack remains 16 byte aligned. */
+    return (stack_args + 15) & ~15;
 }

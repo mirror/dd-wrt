@@ -20,5 +20,5 @@
 ##
 
 SUBDIRS = @os@
-DIST_SUBDIRS = linux darwin bsd solaris
+DIST_SUBDIRS = linux darwin bsd
 

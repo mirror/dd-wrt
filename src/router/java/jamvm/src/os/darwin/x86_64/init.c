@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003, 2004, 2005, 2006, 2007
+ * Copyright (C) 2003, 2004, 2006, 2007
  * Robert Lougher <rob@jamvm.org.uk>.
  *
  * This file is part of JamVM.
@@ -19,18 +19,10 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "config.h"
+/* This is needed on Linux/i386.  Find out if it's
+   needed on Darwin/i386, and how to set it. */
+void setDoublePrecision() {
+}
 
-/* The iPhone currently appears to use a slightly modified
-   OABI convention, where r7 is used as a frame pointer.
-   CallNativeOABI.S does not modify or use r7.
-
-   EABI support is included in case iPhone moves to EABI.
-   Most ARM Linux distributions have made this move.
-*/
-
-#ifdef __ARM_EABI__
-#include "callNativeEABI.S"
-#else
-#include "callNativeOABI.S"
-#endif
+void initialisePlatform() {
+}

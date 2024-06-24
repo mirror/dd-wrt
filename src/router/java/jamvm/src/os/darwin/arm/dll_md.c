@@ -29,7 +29,6 @@
    Most ARM Linux distributions have made this move.
 */
 
-#ifndef USE_FFI
 #include <string.h>
 
 #ifdef __ARM_EABI__
@@ -98,5 +97,4 @@ int nativeExtraArg(MethodBlock *mb) {
     return 4;
 #endif
 }
-#endif
 #endif

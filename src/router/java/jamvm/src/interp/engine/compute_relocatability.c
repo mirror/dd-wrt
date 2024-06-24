@@ -21,8 +21,8 @@
 
 #include <stdio.h>
 
-#include "jam.h"
-#include "inlining.h"
+#include "../../jam.h"
+#include "../inlining.h"
 
 int handler_sizes[HANDLERS][LABELS_SIZE];
 int inlining_inited = FALSE;
@@ -137,6 +137,10 @@ Object *allocObject(Class *class) {
 }
 
 Object *allocArray(Class *class, int size, int el_size) {
+    return NULL;
+}
+
+Object *allocObjectArray(Class *class, int size) {
     return NULL;
 }
 

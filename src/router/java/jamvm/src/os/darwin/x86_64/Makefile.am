@@ -19,10 +19,7 @@
 ## Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 ##
 
-SUBDIRS = @arch@
-DIST_SUBDIRS = arm x86_64 i386 powerpc
-
-noinst_LTLIBRARIES = libos.la
-libos_la_SOURCES = os.c
+noinst_LTLIBRARIES = libnative.la
+libnative_la_SOURCES = init.c dll_md.c callNative.S
 
 AM_CPPFLAGS = -I$(top_builddir)/src

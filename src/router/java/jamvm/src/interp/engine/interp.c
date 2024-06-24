@@ -2287,10 +2287,7 @@ uintptr_t *executeJava() {
  
     DEF_OPC_210(OPC_ANEWARRAY_QUICK, {
         Class *class = RESOLVED_CLASS(pc);
-        char *name = CLASS_CB(class)->name;
         int count = *--ostack;
-        Class *array_class;
-        char *ac_name;
         Object *obj;
 
         frame->last_pc = pc;
@@ -2300,20 +2297,8 @@ uintptr_t *executeJava() {
             goto throwException;
         }
 
-        ac_name = sysMalloc(strlen(name) + 4);
-
-        if(name[0] == '[')
-            strcat(strcpy(ac_name, "["), name);
-        else
-            strcat(strcat(strcpy(ac_name, "[L"), name), ";");
-
-        array_class = findArrayClassFromClass(ac_name, mb->class);
-        free(ac_name);
-
-        if(exceptionOccurred0(ee))
-            goto throwException;
-
-        if((obj = allocArray(array_class, count, sizeof(Object*))) == NULL)
+        obj = allocObjectArray(class, count);
+        if(obj == NULL)
             goto throwException;
 
         PUSH_0((uintptr_t)obj, 3);
@@ -2434,7 +2419,7 @@ invokeMethod:
     Object *sync_ob = NULL;
 
     frame->last_pc = pc;
-    ostack = ALIGN(new_frame + 1);
+    ostack = ALIGN_OSTACK(new_frame + 1);
 
     if((char*)(ostack + new_mb->max_stack) > ee->stack_end) {
         if(ee->overflow++) {

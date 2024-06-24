@@ -21,7 +21,6 @@
 
 #include "../../../jam.h"
 
-#ifndef USE_FFI
 #include <stdio.h>
 
 #ifdef __ARM_EABI__
@@ -90,5 +89,4 @@ int nativeExtraArg(MethodBlock *mb) {
     return 4;
 #endif
 }
-#endif
 #endif

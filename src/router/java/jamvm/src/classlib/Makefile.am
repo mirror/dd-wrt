@@ -19,5 +19,5 @@
 ##
 
 SUBDIRS = @classlib@
-DIST_SUBDIRS = gnuclasspath openjdk
+DIST_SUBDIRS = openjdk
 

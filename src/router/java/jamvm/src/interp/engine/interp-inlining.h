@@ -78,8 +78,17 @@
    4.3, we need to insert a label, and ensure its address
    is taken (to stop it being optimised out).  However,
    this reduces performance on PowerPC by approx 1 - 2%.
+
+   With gcc 5 and newer an asm statement with a "memory"
+   clobber argument explicitly sets a memory barrier for the
+   compiler, preventing it from reordering memory accesses
+   in a way that breaks decaching.
 */
-#if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)
+#if (__GNUC__ > 4)
+#define DEF_GUARD_TABLE(level) /* none */
+#define GUARD(opcode, level)   __asm__("" ::: "memory");
+#define GUARD_TBLS             /* none */
+#elif (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)
 #define DEF_GUARD_TABLE(level) DEF_HANDLER_TABLE(level, GUARD)
 #define GUARD(opcode, level)   label(opcode, level, GUARD)
 #define GUARD_TBLS             , HNDLR_TBLS(GUARD)

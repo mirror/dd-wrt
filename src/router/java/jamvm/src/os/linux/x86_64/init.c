@@ -19,14 +19,12 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifdef __linux__
-#define _FPU_EXTENDED 0x300	/* libm requires double extended precision.  */
-#define _FPU_DOUBLE   0x200
-#define _FPU_GETCW(cw) __asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
-#define _FPU_SETCW(cw) __asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
-typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
+#include "config.h"
 
-
+#if defined(HAVE_FENV_H)
+#include <fenv.h>
+#else
+#include <fpu_control.h>
 #endif
 
 /* Change the x87 FPU precision to double (64-bit) from the extended
@@ -36,7 +34,14 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 */
 
 void setDoublePrecision() {
-#ifdef __linux__
+#if defined(HAVE_FENV_H)
+    fenv_t fenv;
+
+    fegetenv(&fenv);
+    fenv.__control_word &= ~0x300; /*_FPU_EXTENDED */
+    fenv.__control_word |= 0x200; /*_FPU_DOUBLE */
+    fesetenv(&fenv);
+#else
     fpu_control_t cw;
 
     _FPU_GETCW(cw);

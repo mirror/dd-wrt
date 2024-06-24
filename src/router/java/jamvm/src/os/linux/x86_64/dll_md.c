@@ -20,7 +20,6 @@
 
 #include "jam.h"
 
-#ifndef USE_FFI
 #include <stdio.h>
 
 int nativeExtraArg(MethodBlock *mb) {
@@ -54,4 +53,3 @@ int nativeExtraArg(MethodBlock *mb) {
        the extra space must also be even. */
     return (stack_space + 15) & ~15;
 }
-#endif

@@ -6,6 +6,17 @@ DIE=0
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
+# On macOS, all commands have been installed with the prefix "g" via brew
+# installation.
+# See https://formulae.brew.sh/formula/libtool
+case "$(uname -sr)" in
+  Darwin*)
+    export PATH="$(brew --prefix)/opt/libtool/libexec/gnubin:$PATH"
+    ;;
+  *)
+    ;;
+esac
+
 (libtoolize --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`libtool' installed to compile JamVM."
@@ -54,13 +65,6 @@ test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
 
 if test "$DIE" -eq 1; then
   exit 1
-fi
-
-if test -z "$*" -a x$NOCONFIGURE = x; then
-  echo "**Warning**: I am going to run \`configure' with no arguments."
-  echo "If you wish to pass any to it, please specify them on the"
-  echo \`$0\'" command line."
-  echo
 fi
 
 echo "Running aclocal $ACLOCAL_FLAGS ..."

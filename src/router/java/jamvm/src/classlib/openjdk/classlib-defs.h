@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2011, 2013, 2014 Robert Lougher <rob@jamvm.org.uk>.
+ * Copyright (C) 2011, 2013, 2014, 2015
+ * Robert Lougher <rob@jamvm.org.uk>.
  *
  * This file is part of JamVM.
  *
@@ -21,26 +22,64 @@
 #define JTHREAD                 512
 #define CLASSLIB_CLASS_SPECIAL  JTHREAD
 
-#if OPENJDK_VERSION == 8
-#define CLASSLIB_CLASS_PAD_SIZE 10*sizeof(Object*)+1*sizeof(int)
+/* In OpenJDK 9 the class loader and array component type fields have been
+   moved to the Java-level class object.  To support this in JamVM, the
+   class_loader and component_class fields have been removed from ClassBlock
+   and made part of the classlib.  For versions before OpenJDK 9, they are
+   defined as extra fields.  Being references they also require marking and
+   threading by GC.  For OpenJDK 9, however, they are defined as part of the
+   ClassBlock padding (thus shadowing the Java class object).  They also do
+   not need special handling by GC, as being part of the Java object they
+   are handled as any other Java-level reference. */
+
+#if OPENJDK_VERSION == 9
+#define CLASSLIB_CLASS_PAD                     \
+    char pad1[7*sizeof(Object*)];              \
+    union {                                    \
+        Class *component_class;                \
+        Object *host_class;                    \
+    };                                         \
+    Object *class_loader;                      \
+    char pad2[3*sizeof(Object*)+1*sizeof(int)];
+#elif OPENJDK_VERSION == 8
+#define CLASSLIB_CLASS_PAD char pad[11*sizeof(Object*)+1*sizeof(int)];
 #elif OPENJDK_VERSION == 7
-#define CLASSLIB_CLASS_PAD_SIZE 18*sizeof(Object*)+2*sizeof(int)
+#define CLASSLIB_CLASS_PAD char pad[18*sizeof(Object*)+2*sizeof(int)];
 #else
-#define CLASSLIB_CLASS_PAD_SIZE 17*sizeof(Object*)+2*sizeof(int)
+#define CLASSLIB_CLASS_PAD char pad[17*sizeof(Object*)+2*sizeof(int)];
 #endif
 
+#if OPENJDK_VERSION == 9
 #define CLASSLIB_CLASS_EXTRA_FIELDS  \
    Object *protection_domain;        \
-   Object *host_class;               \
    Object *signers;
-
-#define CLASSLIB_THREAD_EXTRA_FIELDS \
-    /* NONE */
 
 #define CLASSLIB_CLASSBLOCK_REFS_DO(action, cb, ...) \
     action(cb, protection_domain, ## __VA_ARGS__);   \
+    action(cb, signers, ## __VA_ARGS__)
+
+#define CLASSLIB_ARRAY_CLASS_EXTRA_FIELDS
+#define CLASSLIB_CLASSBLOCK_ARRAY_REFS_DO(action, cb, ...)
+#else
+#define CLASSLIB_CLASS_EXTRA_FIELDS  \
+   Object *protection_domain;        \
+   Object *class_loader;             \
+   Object *host_class;               \
+   Object *signers;
+
+#define CLASSLIB_CLASSBLOCK_REFS_DO(action, cb, ...) \
+    action(cb, protection_domain, ## __VA_ARGS__);   \
+    action(cb, class_loader, ## __VA_ARGS__);        \
     action(cb, host_class, ## __VA_ARGS__);          \
     action(cb, signers, ## __VA_ARGS__)
+
+#define CLASSLIB_ARRAY_CLASS_EXTRA_FIELDS Class *component_class;
+#define CLASSLIB_CLASSBLOCK_ARRAY_REFS_DO(action, cb, ...) \
+    action(cb, component_class, ## __VA_ARGS__);
+#endif
+
+#define CLASSLIB_THREAD_EXTRA_FIELDS \
+    /* NONE */
 
 #ifdef JSR292
 #define ID_invokeGeneric   (MB_PREPARED + 1)

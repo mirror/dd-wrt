@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2003, 2004, 2005, 2006, 2007
- * Robert Lougher <rob@jamvm.org.uk>.
+ * Copyright (C) 2008 Robert Lougher <rob@lougher.org.uk>.
  *
  * This file is part of JamVM.
  *
@@ -19,18 +18,8 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "config.h"
-
-/* The iPhone currently appears to use a slightly modified
-   OABI convention, where r7 is used as a frame pointer.
-   CallNativeOABI.S does not modify or use r7.
-
-   EABI support is included in case iPhone moves to EABI.
-   Most ARM Linux distributions have made this move.
-*/
-
-#ifdef __ARM_EABI__
-#include "callNativeEABI.S"
+#ifdef __x86_64__
+#include "arch/x86_64.h"
 #else
-#include "callNativeOABI.S"
+#include "arch/i386.h"
 #endif
