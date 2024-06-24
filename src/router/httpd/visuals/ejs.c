@@ -569,7 +569,7 @@ static int rule_sfe(char *name)
 
 static int rule_nss(char *name)
 {
-#if defined(HAVE_QCA_NSS) && !defined(HAVE_IPQ6018)
+#if defined(HAVE_QCA_NSS)
 	return 1;
 #else
 	return 0;
