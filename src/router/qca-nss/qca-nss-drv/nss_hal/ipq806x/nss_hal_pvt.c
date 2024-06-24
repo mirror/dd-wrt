@@ -479,7 +479,6 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	 */
 	for (i = 0; i < resource_size(&res_vphys) ; i += 4) {
 		nss_write_32(npd->vmap, i, 0);
-		NSS_CORE_DMA_CACHE_MAINT((npd->vmap + i), 4, DMA_TO_DEVICE);
 	}
 
 	NSS_CORE_DSB();
