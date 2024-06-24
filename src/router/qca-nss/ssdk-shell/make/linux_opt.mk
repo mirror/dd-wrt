@@ -200,7 +200,7 @@ ifeq (TRUE, $(DEBUG_ON))
   MODULE_CFLAG += -g
 endif
 
-MODULE_CFLAG += $(OPT_FLAG) -Wall -Werror -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\" -DCPU=\"$(CPU)\" -DOS=\"$(OS)\"
+MODULE_CFLAG += $(OPT_FLAG) -Wall -Werror -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"NONE\" -DCPU=\"$(CPU)\" -DOS=\"$(OS)\"
 
 MODULE_INC += -I$(PRJ_PATH)/include \
                    -I$(PRJ_PATH)/include/common \

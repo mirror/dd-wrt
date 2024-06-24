@@ -1203,7 +1203,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info_always("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 

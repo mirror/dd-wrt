@@ -49,7 +49,7 @@
 /*
  * Macros
  */
-#ifdef defined(NSS_HAL_IPQ807x_SUPPORT)
+#if defined(NSS_HAL_IPQ807x_SUPPORT)
 #define NSS_AP0_IMAGE "qca-nss0-hawkeye.bin"
 #define NSS_AP1_IMAGE "qca-nss1-hawkeye.bin"
 #elif defined(NSS_HAL_IPQ60XX_SUPPORT)
