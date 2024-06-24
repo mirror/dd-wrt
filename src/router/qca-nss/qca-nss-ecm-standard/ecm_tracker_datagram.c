@@ -203,7 +203,7 @@ static void ecm_tracker_datagram_datagram_discard(struct ecm_tracker_datagram_in
  * ecm_tracker_datagram_discard_all()
  *	Discard all tracked data
  */
-static void ecm_tracker_datagram_discard_all(struct ecm_tracker_datagram_internal_instance *dtii)
+void ecm_tracker_datagram_discard_all(struct ecm_tracker_datagram_internal_instance *dtii)
 {
 	int32_t src_count;
 	int32_t dest_count;
@@ -364,7 +364,7 @@ static void ecm_tracker_datagram_datagram_discard_callback(struct ecm_tracker_in
  * ecm_tracker_datagram_datagram_size_get()
  *	Return size in bytes of datagram at index i that was sent to the target
  */
-static int32_t ecm_tracker_datagram_datagram_size_get(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i)
+int32_t ecm_tracker_datagram_datagram_size_get(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 
@@ -412,7 +412,7 @@ static int32_t ecm_tracker_datagram_datagram_size_get_callback(struct ecm_tracke
  * ecm_tracker_datagram_datagram_read()
  *	Read size bytes from datagram at index i into the buffer
  */
-static int ecm_tracker_datagram_datagram_read(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i, int32_t offset, int32_t size, void *buffer)
+int ecm_tracker_datagram_datagram_read(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, int32_t i, int32_t offset, int32_t size, void *buffer)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 	int res;
@@ -466,7 +466,7 @@ static int ecm_tracker_datagram_datagram_read_callback(struct ecm_tracker_instan
  * ecm_tracker_datagram_datagram_add()
  *	Append the datagram onto the tracker queue for the given target
  */
-static bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, struct sk_buff *skb)
+bool ecm_tracker_datagram_datagram_add(struct ecm_tracker_datagram_instance *uti, ecm_tracker_sender_type_t sender, struct sk_buff *skb)
 {
 	struct ecm_tracker_datagram_internal_instance *dtii = (struct ecm_tracker_datagram_internal_instance *)uti;
 	struct sk_buff *skbc;

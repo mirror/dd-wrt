@@ -291,7 +291,7 @@ static int nss_wred_change(struct Qdisc *sch, struct nlattr *opt,
 
 	nim.msg.shaper_configure.config.msg.shaper_node_config.qos_tag = q->nq.qos_tag;
 	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.limit = qopt->limit;
-	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.weight_mode = qopt->weight_mode;
+	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.weight_mode = (nss_shaper_config_wred_weight_mode_t)qopt->weight_mode;
 	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.weight_mode_value = qopt->weight_mode_value;
 	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.rap.min = qopt->rap.min;
 	nim.msg.shaper_configure.config.msg.shaper_node_config.snc.wred_param.rap.max = qopt->rap.max;

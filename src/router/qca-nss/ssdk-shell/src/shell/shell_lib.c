@@ -456,7 +456,6 @@ handle_help(void)
     int pmatch_id = GCMD_DESC_NO_MATCH, pmatch_sub_id = GCMD_DESC_NO_MATCH, pmatch_act_id = GCMD_DESC_NO_MATCH;
     int cmd_nr = 0, pmatch_nr = 0, pmatch_sub_nr = 0;
     char *tmp_str[3], *cmd_strp_cp = strdup(cmd_strp), *str_save;
-
     if (!cmd_strp_cp)
         return;
 
@@ -471,7 +470,7 @@ handle_help(void)
             break;
         tmp_str[cmd_nr] = (void *) strtok_r(NULL, " ", &str_save);
     }
-
+    
     /*echo input ? */
     printf("?\n");
 

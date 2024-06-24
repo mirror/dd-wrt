@@ -2,7 +2,7 @@
 # # Makefile for the NSS driver
 # ###################################################
 
-NSS_CRYPTO_MOD_NAME=qca-nss-crypto
+NSS_CRYPTO_MOD_NAME=qca-nss-crypto-$(SoC)
 
 #ccflags-y += -DNSS_CRYPTO_DBG
 ccflags-y += -DNSS_CRYPTO_DEBUG_LEVEL=2

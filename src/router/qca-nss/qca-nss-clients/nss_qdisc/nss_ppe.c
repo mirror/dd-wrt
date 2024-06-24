@@ -642,7 +642,7 @@ static int nss_ppe_l1_queue_scheduler_configure(struct nss_qdisc *nq)
 	l1cfg.e_pri = NSS_PPE_PRIORITY_MAX - npq->scheduler.priority;
 	l1cfg.c_drr_id = npq->l1c_drrid;
 	l1cfg.e_drr_id = npq->l1e_drrid;
-	l1cfg.drr_frame_mode = NSS_PPE_FRAME_CRC;
+	l1cfg.drr_frame_mode = FAL_DRR_FRAME_CRC;
 
 	nss_qdisc_trace("SSDK level1 configuration: Port:%d, l0spid:%d, c_drrid:%d, c_pri:%d, c_drr_wt:%d, e_drrid:%d, e_pri:%d, e_drr_wt:%d, l1spid:%d\n",
 			port_num, npq->l0spid, l1cfg.c_drr_id, l1cfg.c_pri, l1cfg.c_drr_wt, l1cfg.e_drr_id, l1cfg.e_pri, l1cfg.e_drr_wt, l1cfg.sp_id);
@@ -935,7 +935,7 @@ static int nss_ppe_l0_queue_scheduler_configure(struct nss_qdisc *nq)
 	l0cfg.e_pri = NSS_PPE_PRIORITY_MAX - npq->scheduler.priority;
 	l0cfg.c_drr_id = npq->l0c_drrid;
 	l0cfg.e_drr_id = npq->l0e_drrid;
-	l0cfg.drr_frame_mode = NSS_PPE_FRAME_CRC;
+	l0cfg.drr_frame_mode = FAL_DRR_FRAME_CRC;
 
 	nss_qdisc_trace("SSDK level0 configuration: Port:%d, ucast_qid:%d, c_drrid:%d, c_pri:%d, c_drr_wt:%d, e_drrid:%d, e_pri:%d, e_drr_wt:%d, l0spid:%d\n",
 			port_num, npq->q.ucast_qid, l0cfg.c_drr_id, l0cfg.c_pri, l0cfg.c_drr_wt, l0cfg.e_drr_id, l0cfg.e_pri, l0cfg.e_drr_wt, l0cfg.sp_id);
@@ -1059,7 +1059,7 @@ static int nss_ppe_port_shaper_set(struct nss_qdisc *nq)
 	cfg.c_shaper_en = 1;
 	cfg.cbs = npq->shaper.cburst;
 	cfg.cir = (npq->shaper.crate / 1000) * 8;
-	cfg.shaper_frame_mode = NSS_PPE_FRAME_CRC;
+	cfg.shaper_frame_mode = FAL_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration
@@ -1141,7 +1141,7 @@ static int nss_ppe_flow_shaper_set(struct nss_qdisc *nq)
 	cfg.e_shaper_en = 1;
 	cfg.ebs = npq->shaper.cburst;
 	cfg.eir = ((npq->shaper.crate / 1000) * 8) - cfg.cir;
-	cfg.shaper_frame_mode = NSS_PPE_FRAME_CRC;
+	cfg.shaper_frame_mode = FAL_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration
@@ -1225,7 +1225,7 @@ static int nss_ppe_queue_shaper_set(struct nss_qdisc *nq)
 	cfg.e_shaper_en = 1;
 	cfg.ebs = npq->shaper.cburst;
 	cfg.eir = ((npq->shaper.crate / 1000) * 8) - cfg.cir;
-	cfg.shaper_frame_mode = NSS_PPE_FRAME_CRC;
+	cfg.shaper_frame_mode = FAL_FRAME_CRC;
 
 	/*
 	 * Take HW scaling into consideration

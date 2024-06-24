@@ -35,7 +35,7 @@ ccflags-y += -I$(CURDIR) \
 ccflags-$(CONFIG_SUPPORT_MLD) += -DMC_SUPPORT_MLD
 
 # Module extra compilation flags
-ccflags-y += -Werror -Wall -g
+ccflags-y += -Werror -Wall
 
 
 ifneq ($(KERNELRELEASE),)
