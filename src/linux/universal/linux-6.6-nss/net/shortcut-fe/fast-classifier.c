@@ -209,9 +209,7 @@ fast_classifier_incr_exceptions(fast_classifier_exception_t except)
 {
 	struct fast_classifier *sc = &__fsc;
 
-	spin_lock_bh(&sc->lock);
 	sc->exceptions[except]++;
-	spin_unlock_bh(&sc->lock);
 }
 #else
 static inline void
@@ -501,7 +499,6 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 					   struct nf_conn *ct)
 {
 	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
-	int locked;
 	switch (p_sic->protocol) {
 	case IPPROTO_TCP:
 		p_sic->src_td_window_scale = ct->proto.tcp.seen[0].td_scale;
@@ -524,21 +521,11 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic,
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-		locked = spin_trylock(&ct->lock); // this here might deadlock
-			if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-			    if (locked)
-				    spin_unlock(&ct->lock);
+		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
 			fast_classifier_incr_exceptions(
 				FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
-			DEBUG_TRACE(
-				"connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
-				ct->proto.tcp.state, &p_sic->src_ip,
-				ntohs(p_sic->src_port), &p_sic->dest_ip,
-				ntohs(p_sic->dest_port));
 			return 0;
 		}
-		if (locked)
-			spin_unlock(&ct->lock);
 		break;
 
 	case IPPROTO_UDP:
@@ -1729,14 +1716,11 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	 * Only update if this is not a fixed timeout
 	 */
 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
-		spin_lock_bh(&ct->lock);
 		ct->timeout += sis->delta_jiffies;
-		spin_unlock_bh(&ct->lock);
 	}
 
 	acct = nf_conn_acct_find(ct);
 	if (acct) {
-		spin_lock_bh(&ct->lock);
 		atomic64_add(
 			sis->src_new_packet_count,
 			&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets);
@@ -1746,12 +1730,10 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			     &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
 		atomic64_add(sis->dest_new_byte_count,
 			     &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes);
-		spin_unlock_bh(&ct->lock);
 	}
 
 	switch (sis->protocol) {
 	case IPPROTO_TCP:
-		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.seen[0].td_maxwin < sis->src_td_max_window) {
 			ct->proto.tcp.seen[0].td_maxwin =
 				sis->src_td_max_window;
@@ -1775,7 +1757,6 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			  sis->dest_td_max_end) < 0) {
 			ct->proto.tcp.seen[1].td_maxend = sis->dest_td_max_end;
 		}
-		spin_unlock_bh(&ct->lock);
 		break;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
 	case IPPROTO_UDP: {
@@ -1805,7 +1786,6 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			timeouts = udp_get_timeouts(nf_ct_net(ct));
 		}
 
-		spin_lock_bh(&ct->lock);
 		if (test_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {
 			ct->timeout =
 				nfct_time_stamp + timeouts[UDP_CT_REPLIED];
@@ -1813,7 +1793,6 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			ct->timeout =
 				nfct_time_stamp + timeouts[UDP_CT_UNREPLIED];
 		}
-		spin_unlock_bh(&ct->lock);
 	} break;
 #endif
 	}
@@ -1988,7 +1967,6 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 	int idx, len;
 	struct fast_classifier *sc = &__fsc;
 
-	spin_lock_bh(&sc->lock);
 	for (len = 0, idx = 0; idx < FAST_CL_EXCEPTION_MAX; idx++) {
 		if (sc->exceptions[idx]) {
 			len += snprintf(
@@ -1998,7 +1976,6 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 				sc->exceptions[idx]);
 		}
 	}
-	spin_unlock_bh(&sc->lock);
 
 	return len;
 }
@@ -2241,8 +2218,6 @@ static int __init fast_classifier_init(void)
 	}
 
 	printk(KERN_ALERT "fast-classifier: registered\n");
-
-	spin_lock_init(&sc->lock);
 
 	/*
 	 * Hook the receive path in the network stack.

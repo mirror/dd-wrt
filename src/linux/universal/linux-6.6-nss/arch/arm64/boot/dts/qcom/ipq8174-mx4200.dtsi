@@ -288,7 +288,7 @@
 
 			partition@ac80000 {
 				label = "alt_rootfs";
-				reg = <0xac800000 0x8f00000>;
+				reg = <0xac80000 0x8f00000>;
 			};
 			partition@13b80000 {
 				label = "nvram";
@@ -308,7 +308,6 @@
 			partition@13f00000 {
 				label = "ddwrt";
 				reg = <0x13f00000 0xb800000>;
-				read-only;
 			};
 			partition@1f700000 {
 				label = "wififw";

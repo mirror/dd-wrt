@@ -1189,8 +1189,8 @@ static void q6v5_wcss_remove(struct platform_device *pdev)
 
 static const struct wcss_data wcss_ipq8074_res_init = {
 	.init_clock = ipq_init_clock,
-	.q6_firmware_name = "IPQ8074/q6_fw.mdt",
-	.m3_firmware_name = "IPQ8074/m3_fw.mdt",
+	.q6_firmware_name = "ath11k/IPQ8074/hw2.0/q6_fw.mdt",
+	.m3_firmware_name = "ath11k/IPQ8074/hw2.0/m3_fw.mdt",
 	.crash_reason_smem = WCSS_CRASH_REASON,
 	.aon_reset_required = true,
 	.wcss_q6_reset_required = true,
