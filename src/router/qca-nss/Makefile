@@ -114,7 +114,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
 	make $(QCASSDK_CONFIG_OPTS) -C ssdk-shell
 else
-	ln -sf qca-nss-drv/exports/nss_arch.h qca-nss-drv/exports/nss_ipq806x.h
+	ln -sf arch/nss_ipq806x.h qca-nss-drv/exports/nss_arch.h
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
 	$(MAKE) -C nssinfo KERNEL_FLAGS="$(KERNEL_FLAGS)"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)"
@@ -250,7 +250,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 else
-	ln -sf qca-nss-drv/exports/nss_arch.h qca-nss-drv/exports/nss_ipq806x.h
+	ln -sf arch/nss_ipq806x.h qca-nss-drv/exports/nss_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-mcs modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR) CONFIG_SUPPORT_MLD=y CONFIG_SUPPORT_OVS=y
 	$(MAKE) -C $(KDIR) M=$(PWD)/shortcut-fe modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
