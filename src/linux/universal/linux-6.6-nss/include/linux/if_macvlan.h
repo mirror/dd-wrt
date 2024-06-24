@@ -15,6 +15,13 @@ struct macvlan_port;
 #define MACVLAN_MC_FILTER_BITS	8
 #define MACVLAN_MC_FILTER_SZ	(1 << MACVLAN_MC_FILTER_BITS)
 
+/* QCA NSS ECM Support - Start */
+/*
+ * Callback for updating interface statistics for macvlan flows offloaded from host CPU.
+ */
+typedef void (*macvlan_offload_stats_update_cb_t)(struct net_device *dev, struct rtnl_link_stats64 *stats, bool update_mcast_rx_stats);
+/* QCA NSS ECM Support - End */
+
 struct macvlan_dev {
 	struct net_device	*dev;
 	struct list_head	list;
@@ -35,6 +42,7 @@ struct macvlan_dev {
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	struct netpoll		*netpoll;
 #endif
+	macvlan_offload_stats_update_cb_t	offload_stats_update; /* QCA NSS ECM support */
 };
 
 static inline void macvlan_count_rx(const struct macvlan_dev *vlan,
@@ -107,4 +115,26 @@ static inline int macvlan_release_l2fw_offload(struct net_device *dev)
 	macvlan->accel_priv = NULL;
 	return dev_uc_add(macvlan->lowerdev, dev->dev_addr);
 }
+
+/* QCA NSS ECM Support - Start */
+#if IS_ENABLED(CONFIG_MACVLAN)
+static inline void
+macvlan_offload_stats_update(struct net_device *dev,
+			     struct rtnl_link_stats64 *stats,
+			     bool update_mcast_rx_stats)
+{
+	struct macvlan_dev *macvlan = netdev_priv(dev);
+
+	macvlan->offload_stats_update(dev, stats, update_mcast_rx_stats);
+}
+
+static inline enum
+macvlan_mode macvlan_get_mode(struct net_device *dev)
+{
+	struct macvlan_dev *macvlan = netdev_priv(dev);
+
+	return macvlan->mode;
+}
+#endif
+/* QCA NSS ECM Support - End */
 #endif /* _LINUX_IF_MACVLAN_H */

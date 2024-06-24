@@ -86,6 +86,11 @@
 #define CRYPTO_NOLOAD			0x00008000
 
 /*
+ * Set this flag if algorithm does not support SG list transforms
+ */
+#define CRYPTO_ALG_NOSUPP_SG		0x0000c000
+
+/*
  * The algorithm may allocate memory during request processing, i.e. during
  * encryption, decryption, or hashing.  Users can request an algorithm with this
  * flag unset if they can't handle memory allocation failures.

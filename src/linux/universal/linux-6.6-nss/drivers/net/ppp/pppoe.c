@@ -62,6 +62,7 @@
 #include <linux/inetdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
+#include <linux/if_arp.h>
 #include <linux/init.h>
 #include <linux/if_ether.h>
 #include <linux/if_pppox.h>
@@ -87,7 +88,7 @@
 static int __pppoe_xmit(struct sock *sk, struct sk_buff *skb);
 
 static const struct proto_ops pppoe_ops;
-static const struct ppp_channel_ops pppoe_chan_ops;
+static const struct pppoe_channel_ops pppoe_chan_ops;
 
 /* per-net private data for this module */
 static unsigned int pppoe_net_id __read_mostly;
@@ -692,7 +693,7 @@ static int pppoe_connect(struct socket *sock, struct sockaddr *uservaddr,
 
 		po->chan.mtu = dev->mtu - sizeof(struct pppoe_hdr) - 2;
 		po->chan.private = sk;
-		po->chan.ops = &pppoe_chan_ops;
+		po->chan.ops = (struct ppp_channel_ops *)&pppoe_chan_ops;
 
 		error = ppp_register_net_channel(dev_net(dev), &po->chan);
 		if (error) {
@@ -995,9 +996,80 @@ static int pppoe_fill_forward_path(struct net_device_path_ctx *ctx,
 	return 0;
 }
 
-static const struct ppp_channel_ops pppoe_chan_ops = {
-	.start_xmit = pppoe_xmit,
-	.fill_forward_path = pppoe_fill_forward_path,
+/************************************************************************
+ *
+ * function called by generic PPP driver to hold channel
+ *
+ ***********************************************************************/
+static void pppoe_hold_chan(struct ppp_channel *chan)
+{
+	struct sock *sk = (struct sock *)chan->private;
+
+	sock_hold(sk);
+}
+
+/************************************************************************
+ *
+ * function called by generic PPP driver to release channel
+ *
+ ***********************************************************************/
+static void pppoe_release_chan(struct ppp_channel *chan)
+{
+	struct sock *sk = (struct sock *)chan->private;
+
+	sock_put(sk);
+}
+
+/************************************************************************
+ *
+ * function called to get the channel protocol type
+ *
+ ***********************************************************************/
+static int pppoe_get_channel_protocol(struct ppp_channel *chan)
+{
+	return PX_PROTO_OE;
+}
+
+/************************************************************************
+ *
+ * function called to get the PPPoE channel addressing
+ * NOTE: This function returns a HOLD to the netdevice
+ *
+ ***********************************************************************/
+static int pppoe_get_addressing(struct ppp_channel *chan,
+				 struct pppoe_opt *addressing)
+{
+	struct sock *sk = (struct sock *)chan->private;
+	struct pppox_sock *po = pppox_sk(sk);
+	int err = 0;
+
+	*addressing = po->proto.pppoe;
+	if (!addressing->dev)
+		return -ENODEV;
+
+	dev_hold(addressing->dev);
+	return err;
+}
+
+/* pppoe_channel_addressing_get()
+ *	Return PPPoE channel specific addressing information.
+ */
+int pppoe_channel_addressing_get(struct ppp_channel *chan,
+				  struct pppoe_opt *addressing)
+{
+	return pppoe_get_addressing(chan, addressing);
+}
+EXPORT_SYMBOL(pppoe_channel_addressing_get);
+
+static const struct pppoe_channel_ops pppoe_chan_ops = {
+	/* PPPoE specific channel ops */
+	.get_addressing = pppoe_get_addressing,
+	/* General ppp channel ops */
+	.ops.start_xmit = pppoe_xmit,
+	.ops.get_channel_protocol = pppoe_get_channel_protocol,
+	.ops.hold = pppoe_hold_chan,
+	.ops.release = pppoe_release_chan,
+	.ops.fill_forward_path = pppoe_fill_forward_path,
 };
 
 static int pppoe_recvmsg(struct socket *sock, struct msghdr *m,

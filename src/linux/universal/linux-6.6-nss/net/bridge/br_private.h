@@ -929,6 +929,7 @@ void br_manage_promisc(struct net_bridge *br);
 int nbp_backup_change(struct net_bridge_port *p, struct net_device *backup_dev);
 
 /* br_input.c */
+int br_pass_frame_up(struct sk_buff *skb, bool promisc); /* QCA qca-mcs support */
 int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb);
 rx_handler_func_t *br_get_rx_handler(const struct net_device *dev);
 
@@ -1584,6 +1585,7 @@ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
 int br_vlan_fill_forward_path_mode(struct net_bridge *br,
 				   struct net_bridge_port *dst,
 				   struct net_device_path *path);
+void br_vlan_disable_default_pvid(struct net_bridge *br);
 
 static inline struct net_bridge_vlan_group *br_vlan_group(
 					const struct net_bridge *br)
@@ -2332,4 +2334,19 @@ void br_do_suppress_nd(struct sk_buff *skb, struct net_bridge *br,
 		       u16 vid, struct net_bridge_port *p, struct nd_msg *msg);
 struct nd_msg *br_is_nd_neigh_msg(struct sk_buff *skb, struct nd_msg *m);
 bool br_is_neigh_suppress_enabled(const struct net_bridge_port *p, u16 vid);
+
+/* QCA NSS ECM support - Start */
+#define __br_get(__hook, __default, __args ...) \
+		(__hook ? (__hook(__args)) : (__default))
+/* QCA NSS ECM support - End */
+
+/* QCA qca-mcs support - Start */
+static inline void __br_notify(int group, int type, const void *data)
+{
+	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
+
+	if (notify_hook)
+		notify_hook(group, type, data);
+}
+/* QCA qca-mcs support - End */
 #endif

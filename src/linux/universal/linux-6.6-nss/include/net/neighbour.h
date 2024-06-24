@@ -609,4 +609,15 @@ static inline void neigh_update_is_router(struct neighbour *neigh, u32 flags,
 		*notify = 1;
 	}
 }
+
+/* QCA NSS ECM support - Start */
+struct neigh_mac_update {
+	unsigned char old_mac[ALIGN(MAX_ADDR_LEN, sizeof(unsigned long))];
+	unsigned char update_mac[ALIGN(MAX_ADDR_LEN, sizeof(unsigned long))];
+};
+
+extern void neigh_mac_update_register_notify(struct notifier_block *nb);
+extern void neigh_mac_update_unregister_notify(struct notifier_block *nb);
+/* QCA NSS ECM support - End */
+
 #endif

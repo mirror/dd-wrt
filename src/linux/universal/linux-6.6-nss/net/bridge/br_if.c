@@ -27,6 +27,12 @@
 #include "br_private.h"
 #include "br_private_offload.h"
 
+/* QCA NSS ECM support - Start */
+/* Hook for external forwarding logic */
+br_port_dev_get_hook_t __rcu *br_port_dev_get_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_port_dev_get_hook);
+/* QCA NSS ECM support - End */
+
 /*
  * Determine initial path cost based on speed.
  * using recommendations from 802.1d standard
@@ -698,6 +704,8 @@ int br_add_if(struct net_bridge *br, struct net_device *dev,
 
 	kobject_uevent(&p->kobj, KOBJ_ADD);
 
+	call_netdevice_notifiers(NETDEV_BR_JOIN, dev); /* QCA NSS ECM support */
+
 	return 0;
 
 err6:
@@ -732,6 +740,8 @@ int br_del_if(struct net_bridge *br, struct net_device *dev)
 	p = br_port_get_rtnl(dev);
 	if (!p || p->br != br)
 		return -EINVAL;
+
+	call_netdevice_notifiers(NETDEV_BR_LEAVE, dev); /* QCA NSS ECM support */
 
 	/* Since more than one interface can be attached to a bridge,
 	 * there still maybe an alternate path for netconsole to use;
@@ -799,3 +809,84 @@ void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlsta
 	local_bh_enable();
 }
 EXPORT_SYMBOL_GPL(br_dev_update_stats);
+
+
+/* QCA NSS ECM support - Start */
+/* API to know if hairpin feature is enabled/disabled on this bridge port */
+bool br_is_hairpin_enabled(struct net_device *dev)
+{
+	struct net_bridge_port *port = br_port_get_check_rcu(dev);
+
+	if (likely(port))
+		return port->flags & BR_HAIRPIN_MODE;
+	return false;
+}
+EXPORT_SYMBOL_GPL(br_is_hairpin_enabled);
+
+/* br_port_dev_get()
+ *      If a skb is provided, and the br_port_dev_get_hook_t hook exists,
+ *      use that to try and determine the egress port for that skb.
+ *      If not, or no egress port could be determined, use the given addr
+ *      to identify the port to which it is reachable,
+ *	returing a reference to the net device associated with that port.
+ *
+ * NOTE: Return NULL if given dev is not a bridge or the mac has no
+ * associated port.
+ */
+struct net_device *br_port_dev_get(struct net_device *dev, unsigned char *addr,
+				   struct sk_buff *skb,
+				   unsigned int cookie)
+{
+#if !IS_ENABLED(CONFIG_BRIDGE_VLAN_FILTERING)
+	struct net_bridge_fdb_entry *fdbe;
+	struct net_bridge *br;
+#endif
+	struct net_device *netdev = NULL;
+	u16 __maybe_unused vid;
+
+	/* Is this a bridge? */
+	if (!(dev->priv_flags & IFF_EBRIDGE))
+		return NULL;
+
+	rcu_read_lock();
+
+	/* If the hook exists and the skb isn't NULL, try and get the port */
+	if (skb) {
+		br_port_dev_get_hook_t *port_dev_get_hook;
+
+		port_dev_get_hook = rcu_dereference(br_port_dev_get_hook);
+		if (port_dev_get_hook) {
+			struct net_bridge_port *pdst =
+				__br_get(port_dev_get_hook, NULL, dev, skb,
+					 addr, cookie);
+			if (pdst) {
+				dev_hold(pdst->dev);
+				netdev = pdst->dev;
+				goto out;
+			}
+		}
+	}
+
+	/* Either there is no hook, or can't
+	 * determine the port to use - fall back to using FDB
+	 */
+
+#if IS_ENABLED(CONFIG_BRIDGE_VLAN_FILTERING)
+	/* Lookup the fdb entry and get reference to the port dev.
+	 * dev_hold() is done as part of br_fdb_find_vid_by_mac()
+	 */
+	netdev = br_fdb_find_vid_by_mac(dev, addr, &vid);
+#else
+	br = netdev_priv(dev);
+	fdbe = br_fdb_find_rcu(br, addr, 0);
+	if (fdbe && fdbe->dst) {
+		netdev = fdbe->dst->dev; /* port device */
+		dev_hold(netdev);
+	}
+#endif
+
+out:
+	rcu_read_unlock();
+	return netdev;
+}
+EXPORT_SYMBOL_GPL(br_port_dev_get);

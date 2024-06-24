@@ -48,6 +48,7 @@
 #include <net/slhc_vj.h>
 #include <linux/atomic.h>
 #include <linux/refcount.h>
+#include <linux/if_pppox.h>
 
 #include <linux/nsproxy.h>
 #include <net/net_namespace.h>
@@ -253,6 +254,39 @@ struct ppp_net {
 /* Compare multilink sequence numbers (assumed to be 32 bits wide) */
 #define seq_before(a, b)	((s32)((a) - (b)) < 0)
 #define seq_after(a, b)		((s32)((a) - (b)) > 0)
+
+/* Return the PPP net device index */
+int ppp_dev_index(struct ppp_channel *chan)
+{
+	struct channel *pch = chan->ppp;
+	int ifindex = 0;
+
+	if (pch) {
+		read_lock_bh(&pch->upl);
+		if (pch->ppp && pch->ppp->dev)
+			ifindex = pch->ppp->dev->ifindex;
+		read_unlock_bh(&pch->upl);
+	}
+	return ifindex;
+}
+
+/*
+ * Registration/Unregistration methods
+ * for PPP channel connect and disconnect event notifications.
+ */
+RAW_NOTIFIER_HEAD(ppp_channel_connection_notifier_list);
+
+void ppp_channel_connection_register_notify(struct notifier_block *nb)
+{
+	raw_notifier_chain_register(&ppp_channel_connection_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(ppp_channel_connection_register_notify);
+
+void ppp_channel_connection_unregister_notify(struct notifier_block *nb)
+{
+	raw_notifier_chain_unregister(&ppp_channel_connection_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(ppp_channel_connection_unregister_notify);
 
 /* Prototypes. */
 static int ppp_unattached_ioctl(struct net *net, struct ppp_file *pf,
@@ -3469,7 +3503,10 @@ ppp_connect_channel(struct channel *pch, int unit)
 	struct ppp_net *pn;
 	int ret = -ENXIO;
 	int hdrlen;
+	int ppp_proto;
+	int version;
 
+	int notify = 0;
 	pn = ppp_pernet(pch->chan_net);
 
 	mutex_lock(&pn->all_ppp_mutex);
@@ -3501,13 +3538,40 @@ ppp_connect_channel(struct channel *pch, int unit)
 	++ppp->n_channels;
 	pch->ppp = ppp;
 	refcount_inc(&ppp->file.refcnt);
+
+	/* Set the netdev priv flag if the prototype
+	 * is L2TP or PPTP. Return success in all cases
+	 */
+	if (!pch->chan)
+		goto out2;
+
+	ppp_proto = ppp_channel_get_protocol(pch->chan);
+	if (ppp_proto == PX_PROTO_PPTP) {
+		ppp->dev->priv_flags_ext |= IFF_EXT_PPP_PPTP;
+	} else if (ppp_proto == PX_PROTO_OL2TP) {
+		version = ppp_channel_get_proto_version(pch->chan);
+		if (version == 2)
+			ppp->dev->priv_flags_ext |= IFF_EXT_PPP_L2TPV2;
+		else if (version == 3)
+			ppp->dev->priv_flags_ext |= IFF_EXT_PPP_L2TPV3;
+	}
+	notify = 1;
+
+ out2:
 	ppp_unlock(ppp);
 	ret = 0;
-
  outl:
 	write_unlock_bh(&pch->upl);
  out:
 	mutex_unlock(&pn->all_ppp_mutex);
+
+	if (notify && ppp && ppp->dev) {
+		dev_hold(ppp->dev);
+		raw_notifier_call_chain(&ppp_channel_connection_notifier_list,
+					   PPP_CHANNEL_CONNECT, ppp->dev);
+		dev_put(ppp->dev);
+	}
+
 	return ret;
 }
 
@@ -3525,6 +3589,13 @@ ppp_disconnect_channel(struct channel *pch)
 	pch->ppp = NULL;
 	write_unlock_bh(&pch->upl);
 	if (ppp) {
+		if (ppp->dev) {
+			dev_hold(ppp->dev);
+			raw_notifier_call_chain(&ppp_channel_connection_notifier_list,
+					   PPP_CHANNEL_DISCONNECT, ppp->dev);
+			dev_put(ppp->dev);
+		}
+
 		/* remove it from the ppp unit's list */
 		ppp_lock(ppp);
 		list_del(&pch->clist);
@@ -3604,6 +3675,323 @@ static void *unit_find(struct idr *p, int n)
 	return idr_find(p, n);
 }
 
+/* Updates the PPP interface statistics. */
+void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
+		      unsigned long rx_bytes, unsigned long tx_packets,
+		      unsigned long tx_bytes, unsigned long rx_errors,
+		      unsigned long tx_errors, unsigned long rx_dropped,
+		      unsigned long tx_dropped)
+{
+	struct ppp *ppp;
+
+	if (!dev)
+		return;
+
+	if (dev->type != ARPHRD_PPP)
+		return;
+
+	ppp = netdev_priv(dev);
+
+	ppp_xmit_lock(ppp);
+	ppp->stats64.tx_packets += tx_packets;
+	ppp->stats64.tx_bytes += tx_bytes;
+	ppp->dev->stats.tx_errors += tx_errors;
+	ppp->dev->stats.tx_dropped += tx_dropped;
+	if (tx_packets)
+		ppp->last_xmit = jiffies;
+	ppp_xmit_unlock(ppp);
+
+	ppp_recv_lock(ppp);
+	ppp->stats64.rx_packets += rx_packets;
+	ppp->stats64.rx_bytes += rx_bytes;
+	ppp->dev->stats.rx_errors += rx_errors;
+	ppp->dev->stats.rx_dropped += rx_dropped;
+	if (rx_packets)
+		ppp->last_recv = jiffies;
+	ppp_recv_unlock(ppp);
+}
+
+/* Returns true if Compression is enabled on PPP device
+ */
+bool ppp_is_cp_enabled(struct net_device *dev)
+{
+	struct ppp *ppp;
+	bool flag = false;
+
+	if (!dev)
+		return false;
+
+	if (dev->type != ARPHRD_PPP)
+		return false;
+
+	ppp = netdev_priv(dev);
+	ppp_lock(ppp);
+	flag = !!(ppp->xstate & SC_COMP_RUN) || !!(ppp->rstate & SC_DECOMP_RUN);
+	ppp_unlock(ppp);
+
+	return flag;
+}
+EXPORT_SYMBOL(ppp_is_cp_enabled);
+
+/* Returns >0 if the device is a multilink PPP netdevice, 0 if not or < 0 if
+ * the device is not PPP.
+ */
+int ppp_is_multilink(struct net_device *dev)
+{
+	struct ppp *ppp;
+	unsigned int flags;
+
+	if (!dev)
+		return -1;
+
+	if (dev->type != ARPHRD_PPP)
+		return -1;
+
+	ppp = netdev_priv(dev);
+	ppp_lock(ppp);
+	flags = ppp->flags;
+	ppp_unlock(ppp);
+
+	if (flags & SC_MULTILINK)
+		return 1;
+
+	return 0;
+}
+EXPORT_SYMBOL(ppp_is_multilink);
+
+/* __ppp_is_multilink()
+ *      Returns >0 if the device is a multilink PPP netdevice, 0 if not or < 0
+ *      if the device is not PPP. Caller should acquire ppp_lock before calling
+ *      this function
+ */
+int __ppp_is_multilink(struct net_device *dev)
+{
+	struct ppp *ppp;
+	unsigned int flags;
+
+	if (!dev)
+		return -1;
+
+	if (dev->type != ARPHRD_PPP)
+		return -1;
+
+	ppp = netdev_priv(dev);
+	flags = ppp->flags;
+
+	if (flags & SC_MULTILINK)
+		return 1;
+
+	return 0;
+}
+EXPORT_SYMBOL(__ppp_is_multilink);
+
+/* ppp_channel_get_protocol()
+ *	Call this to obtain the underlying protocol of the PPP channel,
+ *	e.g. PX_PROTO_OE
+ *
+ * NOTE: Some channels do not use PX sockets so the protocol value may be very
+ * different for them.
+ * NOTE: -1 indicates failure.
+ * NOTE: Once you know the channel protocol you may then either cast 'chan' to
+ * its sub-class or use the channel protocol specific API's as provided by that
+ * channel sub type.
+ */
+int ppp_channel_get_protocol(struct ppp_channel *chan)
+{
+	if (!chan->ops->get_channel_protocol)
+		return -1;
+
+	return chan->ops->get_channel_protocol(chan);
+}
+EXPORT_SYMBOL(ppp_channel_get_protocol);
+
+/* ppp_channel_get_proto_version()
+ *	Call this to get channel protocol version
+ */
+int ppp_channel_get_proto_version(struct ppp_channel *chan)
+{
+	if (!chan->ops->get_channel_protocol_ver)
+		return -1;
+
+	return chan->ops->get_channel_protocol_ver(chan);
+}
+EXPORT_SYMBOL(ppp_channel_get_proto_version);
+
+/* ppp_channel_hold()
+ *	Call this to hold a channel.
+ *
+ * Returns true on success or false if the hold could not happen.
+ *
+ * NOTE: chan must be protected against destruction during this call -
+ * either by correct locking etc. or because you already have an implicit
+ * or explicit hold to the channel already and this is an additional hold.
+ */
+bool ppp_channel_hold(struct ppp_channel *chan)
+{
+	if (!chan->ops->hold)
+		return false;
+
+	chan->ops->hold(chan);
+	return true;
+}
+EXPORT_SYMBOL(ppp_channel_hold);
+
+/* ppp_channel_release()
+ *	Call this to release a hold you have upon a channel
+ */
+void ppp_channel_release(struct ppp_channel *chan)
+{
+	chan->ops->release(chan);
+}
+EXPORT_SYMBOL(ppp_channel_release);
+
+/* Check if ppp xmit lock is on hold */
+bool ppp_is_xmit_locked(struct net_device *dev)
+{
+	struct ppp *ppp;
+
+	if (!dev)
+		return false;
+
+	if (dev->type != ARPHRD_PPP)
+		return false;
+
+	ppp = netdev_priv(dev);
+	if (!ppp)
+		return false;
+
+	if (spin_is_locked(&(ppp)->wlock))
+		return true;
+
+	return false;
+}
+EXPORT_SYMBOL(ppp_is_xmit_locked);
+
+/* ppp_hold_channels()
+ *	Returns the PPP channels of the PPP device, storing each one into
+ *	channels[].
+ *
+ * channels[] has chan_sz elements.
+ * This function returns the number of channels stored, up to chan_sz.
+ * It will return < 0 if the device is not PPP.
+ *
+ * You MUST release the channels using ppp_release_channels().
+ */
+int ppp_hold_channels(struct net_device *dev, struct ppp_channel *channels[],
+		      unsigned int chan_sz)
+{
+	struct ppp *ppp;
+	int c;
+	struct channel *pch;
+
+	if (!dev)
+		return -1;
+
+	if (dev->type != ARPHRD_PPP)
+		return -1;
+
+	ppp = netdev_priv(dev);
+
+	c = 0;
+	ppp_lock(ppp);
+	list_for_each_entry(pch, &ppp->channels, clist) {
+		struct ppp_channel *chan;
+
+		if (!pch->chan) {
+			/* Channel is going / gone away */
+			continue;
+		}
+
+		if (c == chan_sz) {
+			/* No space to record channel */
+			ppp_unlock(ppp);
+			return c;
+		}
+
+		/* Hold the channel, if supported */
+		chan = pch->chan;
+		if (!chan->ops->hold)
+			continue;
+
+		chan->ops->hold(chan);
+
+		 /* Record the channel */
+		channels[c++] = chan;
+	}
+	ppp_unlock(ppp);
+	return c;
+}
+EXPORT_SYMBOL(ppp_hold_channels);
+
+/* __ppp_hold_channels()
+ *	Returns the PPP channels of the PPP device, storing each one into
+ *	channels[].
+ *
+ * channels[] has chan_sz elements.
+ * This function returns the number of channels stored, up to chan_sz.
+ * It will return < 0 if the device is not PPP.
+ *
+ * You MUST release the channels using ppp_release_channels().
+ */
+int __ppp_hold_channels(struct net_device *dev, struct ppp_channel *channels[],
+		      unsigned int chan_sz)
+{
+	struct ppp *ppp;
+	int c;
+	struct channel *pch;
+
+	if (!dev)
+		return -1;
+
+	if (dev->type != ARPHRD_PPP)
+		return -1;
+
+	ppp = netdev_priv(dev);
+
+	c = 0;
+	list_for_each_entry(pch, &ppp->channels, clist) {
+		struct ppp_channel *chan;
+
+		if (!pch->chan) {
+			/* Channel is going / gone away */
+			continue;
+		}
+
+		if (c == chan_sz) {
+			/* No space to record channel */
+			return c;
+		}
+
+		/* Hold the channel, if supported */
+		chan = pch->chan;
+		if (!chan->ops->hold)
+			continue;
+
+		chan->ops->hold(chan);
+
+		 /* Record the channel */
+		channels[c++] = chan;
+	}
+	return c;
+}
+EXPORT_SYMBOL(__ppp_hold_channels);
+
+/* ppp_release_channels()
+ *	Releases channels
+ */
+void ppp_release_channels(struct ppp_channel *channels[], unsigned int chan_sz)
+{
+	unsigned int c;
+
+	for (c = 0; c < chan_sz; ++c) {
+		struct ppp_channel *chan;
+
+		chan = channels[c];
+		chan->ops->release(chan);
+	}
+}
+EXPORT_SYMBOL(ppp_release_channels);
+
 /* Module/initialization stuff */
 
 module_init(ppp_init);
@@ -3615,12 +4003,14 @@ EXPORT_SYMBOL(ppp_unregister_channel);
 EXPORT_SYMBOL(ppp_channel_index);
 EXPORT_SYMBOL(ppp_unit_number);
 EXPORT_SYMBOL(ppp_dev_name);
+EXPORT_SYMBOL(ppp_dev_index);
 EXPORT_SYMBOL(ppp_device);
 EXPORT_SYMBOL(ppp_input);
 EXPORT_SYMBOL(ppp_input_error);
 EXPORT_SYMBOL(ppp_output_wakeup);
 EXPORT_SYMBOL(ppp_register_compressor);
 EXPORT_SYMBOL(ppp_unregister_compressor);
+EXPORT_SYMBOL(ppp_update_stats);
 MODULE_LICENSE("GPL");
 MODULE_ALIAS_CHARDEV(PPP_MAJOR, 0);
 MODULE_ALIAS_RTNL_LINK("ppp");

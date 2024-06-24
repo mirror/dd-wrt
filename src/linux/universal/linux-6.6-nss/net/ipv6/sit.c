@@ -1734,6 +1734,23 @@ nla_put_failure:
 	return -EMSGSIZE;
 }
 
+/* QCA NSS Clients Support - Start */
+void ipip6_update_offload_stats(struct net_device *dev, void *ptr)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(dev->tstats);
+	const struct pcpu_sw_netstats *offload_stats =
+					(struct pcpu_sw_netstats *)ptr;
+
+	u64_stats_update_begin(&tstats->syncp);
+	u64_stats_add(&tstats->tx_packets, u64_stats_read(&offload_stats->tx_packets));
+	u64_stats_add(&tstats->tx_bytes, u64_stats_read(&offload_stats->tx_bytes));
+	u64_stats_add(&tstats->rx_packets, u64_stats_read(&offload_stats->rx_packets));
+	u64_stats_add(&tstats->rx_bytes, u64_stats_read(&offload_stats->rx_bytes));
+	u64_stats_update_end(&tstats->syncp);
+}
+EXPORT_SYMBOL(ipip6_update_offload_stats);
+/* QCA NSS Clients Support - End */
+
 static const struct nla_policy ipip6_policy[IFLA_IPTUN_MAX + 1] = {
 	[IFLA_IPTUN_LINK]		= { .type = NLA_U32 },
 	[IFLA_IPTUN_LOCAL]		= { .type = NLA_U32 },

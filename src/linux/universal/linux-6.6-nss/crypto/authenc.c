@@ -415,6 +415,8 @@ static int crypto_authenc_create(struct crypto_template *tmpl,
 		     enc->base.cra_driver_name) >= CRYPTO_MAX_ALG_NAME)
 		goto err_free_inst;
 
+	inst->alg.base.cra_flags |= (auth_base->cra_flags |
+				    enc->base.cra_flags) & CRYPTO_ALG_NOSUPP_SG;
 	inst->alg.base.cra_priority = enc->base.cra_priority * 10 +
 				      auth_base->cra_priority;
 	inst->alg.base.cra_blocksize = enc->base.cra_blocksize;

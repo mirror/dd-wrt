@@ -658,6 +658,7 @@ static int esp_output(struct xfrm_state *x, struct sk_buff *skb)
 	struct ip_esp_hdr *esph;
 	struct crypto_aead *aead;
 	struct esp_info esp;
+	bool nosupp_sg;
 
 	esp.inplace = true;
 
@@ -668,6 +669,11 @@ static int esp_output(struct xfrm_state *x, struct sk_buff *skb)
 
 	aead = x->data;
 	alen = crypto_aead_authsize(aead);
+
+	nosupp_sg = crypto_tfm_alg_type(&aead->base) & CRYPTO_ALG_NOSUPP_SG;
+	if (nosupp_sg && skb_linearize(skb)) {
+		return -ENOMEM;
+	}
 
 	esp.tfclen = 0;
 	if (x->tfcpad) {
@@ -890,12 +896,19 @@ static int esp_input(struct xfrm_state *x, struct sk_buff *skb)
 	u8 *iv;
 	struct scatterlist *sg;
 	int err = -EINVAL;
+	bool nosupp_sg;
 
 	if (!pskb_may_pull(skb, sizeof(struct ip_esp_hdr) + ivlen))
 		goto out;
 
 	if (elen <= 0)
 		goto out;
+
+	nosupp_sg = crypto_tfm_alg_type(&aead->base) & CRYPTO_ALG_NOSUPP_SG;
+	if (nosupp_sg && skb_linearize(skb)) {
+		err = -ENOMEM;
+		goto out;
+	}
 
 	assoclen = sizeof(struct ip_esp_hdr);
 	seqhilen = 0;

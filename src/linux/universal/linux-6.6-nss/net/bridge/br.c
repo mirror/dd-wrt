@@ -43,6 +43,10 @@ static int br_device_event(struct notifier_block *unused, unsigned long event, v
 			return notifier_from_errno(err);
 
 		if (event == NETDEV_REGISTER) {
+#if IS_ENABLED(CONFIG_BRIDGE_VLAN_FILTERING)
+			br_vlan_disable_default_pvid(netdev_priv(dev));
+#endif
+
 			/* register of bridge completed, add sysfs entries */
 			err = br_sysfs_addbr(dev);
 			if (err)
@@ -479,6 +483,12 @@ static void __exit br_deinit(void)
 	br_offload_fini();
 	br_fdb_fini();
 }
+
+/* QCA qca-mcs support - Start */
+/* Hook for bridge event notifications */
+br_notify_hook_t __rcu *br_notify_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_notify_hook);
+/* QCA qca-mcs support - End */
 
 module_init(br_init)
 module_exit(br_deinit)

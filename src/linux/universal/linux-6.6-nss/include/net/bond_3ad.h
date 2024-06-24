@@ -302,8 +302,15 @@ int bond_3ad_lacpdu_recv(const struct sk_buff *skb, struct bonding *bond,
 			 struct slave *slave);
 int bond_3ad_set_carrier(struct bonding *bond);
 void bond_3ad_update_lacp_rate(struct bonding *bond);
+/* QCA NSS ECM bonding support */
+struct net_device *bond_3ad_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
+				       uint8_t *dst_mac, void *src,
+				       void *dst, uint16_t protocol,
+				       struct net_device *bond_dev,
+				       __be16 *layer4hdr);
+/* QCA NSS ECM bonding support */
+
 void bond_3ad_update_ad_actor_settings(struct bonding *bond);
 int bond_3ad_stats_fill(struct sk_buff *skb, struct bond_3ad_stats *stats);
 size_t bond_3ad_stats_size(void);
 #endif /* _NET_BOND_3AD_H */
-

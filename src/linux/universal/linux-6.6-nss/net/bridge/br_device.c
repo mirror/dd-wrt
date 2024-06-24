@@ -89,6 +89,12 @@ netdev_tx_t br_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (is_broadcast_ether_addr(dest)) {
 		br_flood(br, skb, BR_PKT_BROADCAST, false, true, vid);
 	} else if (is_multicast_ether_addr(dest)) {
+		/* QCA qca-mcs support - Start */
+		br_multicast_handle_hook_t *multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
+		if (!__br_get(multicast_handle_hook, true, NULL, skb))
+			goto out;
+		/* QCA qca-mcs support - End */
+
 		if (unlikely(netpoll_tx_running(dev))) {
 			br_flood(br, skb, BR_PKT_MULTICAST, false, true, vid);
 			goto out;

@@ -23,6 +23,7 @@
 #include <net/netfilter/nf_conntrack_labels.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
 #include <net/netfilter/nf_conntrack_act_ct.h>
+#include <net/netfilter/nf_conntrack_dscpremark_ext.h>
 #include <net/netfilter/nf_conntrack_rtcache.h>
 #include <net/netfilter/nf_nat.h>
 
@@ -58,6 +59,9 @@ static const u8 nf_ct_ext_type_len[NF_CT_EXT_NUM] = {
 #ifdef CONFIG_NF_CONNTRACK_RTCACHE
 	[NF_CT_EXT_RTCACHE] = sizeof(struct nf_conn_rtcache),
 #endif
+#ifdef CONFIG_NF_CONNTRACK_DSCPREMARK_EXT
+	[NF_CT_EXT_DSCPREMARK] = sizeof(struct nf_ct_dscpremark_ext),
+#endif
 };
 
 static __always_inline unsigned int total_extension_size(void)
@@ -92,6 +96,9 @@ static __always_inline unsigned int total_extension_size(void)
 #endif
 #ifdef CONFIG_NF_CONNTRACK_RTCACHE
 		+ sizeof(struct nf_conn_rtcache)
+#endif
+#ifdef CONFIG_NF_CONNTRACK_DSCPREMARK_EXT
+	    + sizeof(struct nf_ct_dscpremark_ext)
 #endif
 	;
 }

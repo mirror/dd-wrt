@@ -657,6 +657,7 @@ void br_info_notify(int event, const struct net_bridge *br,
 		kfree_skb(skb);
 		goto errout;
 	}
+	__br_notify(RTNLGRP_LINK, event, port); /* QCA qca-mcs support */
 	rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
 	return;
 errout:

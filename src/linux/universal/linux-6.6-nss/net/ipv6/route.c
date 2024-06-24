@@ -3855,6 +3855,9 @@ out_free:
 	return ERR_PTR(err);
 }
 
+/* Define route change notification chain. */
+ATOMIC_NOTIFIER_HEAD(ip6route_chain);	/* QCA NSS ECM support */
+
 int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
 		  struct netlink_ext_ack *extack)
 {
@@ -3866,6 +3869,10 @@ int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
 		return PTR_ERR(rt);
 
 	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
+	if (!err)
+		atomic_notifier_call_chain(&ip6route_chain,
+					   RTM_NEWROUTE, rt);
+
 	fib6_info_release(rt);
 
 	return err;
@@ -3887,6 +3894,9 @@ static int __ip6_del_rt(struct fib6_info *rt, struct nl_info *info)
 	err = fib6_del(rt, info);
 	spin_unlock_bh(&table->tb6_lock);
 
+	if (!err)
+		atomic_notifier_call_chain(&ip6route_chain,
+					   RTM_DELROUTE, rt);
 out:
 	fib6_info_release(rt);
 	return err;
@@ -6333,6 +6343,20 @@ static int ip6_route_dev_notify(struct notifier_block *this,
 
 	return NOTIFY_OK;
 }
+
+/* QCA NSS ECM support - Start */
+int rt6_register_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&ip6route_chain, nb);
+}
+EXPORT_SYMBOL(rt6_register_notifier);
+
+int rt6_unregister_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&ip6route_chain, nb);
+}
+EXPORT_SYMBOL(rt6_unregister_notifier);
+/* QCA NSS ECM support - End */
 
 /*
  *	/proc

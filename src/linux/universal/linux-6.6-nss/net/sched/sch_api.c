@@ -314,6 +314,7 @@ struct Qdisc *qdisc_lookup(struct net_device *dev, u32 handle)
 out:
 	return q;
 }
+EXPORT_SYMBOL(qdisc_lookup);
 
 struct Qdisc *qdisc_lookup_rcu(struct net_device *dev, u32 handle)
 {
@@ -2388,5 +2389,27 @@ static int __init pktsched_init(void)
 
 	return 0;
 }
+
+/* QCA NSS Qdisc Support - Start */
+bool tcf_destroy(struct tcf_proto *tp, bool force)
+{
+	tp->ops->destroy(tp, force, NULL);
+	module_put(tp->ops->owner);
+	kfree_rcu(tp, rcu);
+
+	return true;
+}
+
+void tcf_destroy_chain(struct tcf_proto __rcu **fl)
+{
+	struct tcf_proto *tp;
+
+	while ((tp = rtnl_dereference(*fl)) != NULL) {
+		RCU_INIT_POINTER(*fl, tp->next);
+		tcf_destroy(tp, true);
+	}
+}
+EXPORT_SYMBOL(tcf_destroy_chain);
+/* QCA NSS Qdisc Support - End */
 
 subsys_initcall(pktsched_init);

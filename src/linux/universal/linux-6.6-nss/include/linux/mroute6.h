@@ -137,4 +137,47 @@ static inline int ip6mr_sk_ioctl(struct sock *sk, unsigned int cmd,
 	return 1;
 }
 #endif
+
+/* QCA qca-mcs support - Start */
+#define IP6MR_MFC_EVENT_UPDATE   1
+#define IP6MR_MFC_EVENT_DELETE   2
+
+/*
+ * Callback to registered modules in the event of updates to a multicast group
+ */
+typedef void (*ip6mr_mfc_event_offload_callback_t)(struct in6_addr *origin,
+						   struct in6_addr *group,
+						   u32 max_dest_dev,
+						   u32 dest_dev_idx[],
+						   uint8_t op);
+
+/*
+ * Register the callback used to inform offload modules when updates occur
+ * to MFC. The callback is registered by offload modules
+ */
+extern bool ip6mr_register_mfc_event_offload_callback(
+			ip6mr_mfc_event_offload_callback_t mfc_offload_cb);
+
+/*
+ * De-Register the callback used to inform offload modules when updates occur
+ * to MFC
+ */
+extern void ip6mr_unregister_mfc_event_offload_callback(void);
+
+/*
+ * Find the destination interface list given a multicast group and source
+ */
+extern int ip6mr_find_mfc_entry(struct net *net, struct in6_addr *origin,
+				struct in6_addr *group, u32 max_dst_cnt,
+				u32 dest_dev[]);
+
+/*
+ * Out-of-band multicast statistics update for flows that are offloaded from
+ * Linux
+ */
+extern int ip6mr_mfc_stats_update(struct net *net, struct in6_addr *origin,
+				  struct in6_addr *group, uint64_t pkts_in,
+				  uint64_t bytes_in, uint64_t pkts_out,
+				  uint64_t bytes_out);
+/* QCA qca-mcs support - End */
 #endif

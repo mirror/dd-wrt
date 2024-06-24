@@ -398,6 +398,31 @@ err_tlock:
 }
 EXPORT_SYMBOL_GPL(l2tp_session_register);
 
+void l2tp_stats_update(struct l2tp_tunnel *tunnel,
+                       struct l2tp_session *session,
+                       struct l2tp_stats *stats)
+{
+        atomic_long_add(atomic_long_read(&stats->rx_packets),
+                        &tunnel->stats.rx_packets);
+        atomic_long_add(atomic_long_read(&stats->rx_bytes),
+                        &tunnel->stats.rx_bytes);
+        atomic_long_add(atomic_long_read(&stats->tx_packets),
+                        &tunnel->stats.tx_packets);
+        atomic_long_add(atomic_long_read(&stats->tx_bytes),
+                        &tunnel->stats.tx_bytes);
+
+        atomic_long_add(atomic_long_read(&stats->rx_packets),
+                        &session->stats.rx_packets);
+        atomic_long_add(atomic_long_read(&stats->rx_bytes),
+                        &session->stats.rx_bytes);
+        atomic_long_add(atomic_long_read(&stats->tx_packets),
+                        &session->stats.tx_packets);
+        atomic_long_add(atomic_long_read(&stats->tx_bytes),
+                        &session->stats.tx_bytes);
+}
+EXPORT_SYMBOL_GPL(l2tp_stats_update);
+
+
 /*****************************************************************************
  * Receive data handling
  *****************************************************************************/

@@ -34,6 +34,44 @@ static const struct rhashtable_params br_fdb_rht_params = {
 
 static struct kmem_cache *br_fdb_cache __read_mostly;
 
+/* QCA NSS ECM support - Start */
+ATOMIC_NOTIFIER_HEAD(br_fdb_notifier_list);
+ATOMIC_NOTIFIER_HEAD(br_fdb_update_notifier_list);
+
+void br_fdb_register_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_register(&br_fdb_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(br_fdb_register_notify);
+
+void br_fdb_unregister_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_unregister(&br_fdb_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(br_fdb_unregister_notify);
+
+void br_fdb_update_register_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_register(&br_fdb_update_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(br_fdb_update_register_notify);
+
+void br_fdb_update_unregister_notify(struct notifier_block *nb)
+{
+	atomic_notifier_chain_unregister(&br_fdb_update_notifier_list, nb);
+}
+EXPORT_SYMBOL_GPL(br_fdb_update_unregister_notify);
+/* QCA NSS ECM support - End */
+
+/* QCA NSS bridge-mgr support - Start */
+struct net_device *br_fdb_bridge_dev_get_and_hold(struct net_bridge *br)
+{
+	dev_hold(br->dev);
+	return br->dev;
+}
+EXPORT_SYMBOL_GPL(br_fdb_bridge_dev_get_and_hold);
+/* QCA NSS bridge-mgr support - End */
+
 int __init br_fdb_init(void)
 {
 	br_fdb_cache = kmem_cache_create("bridge_fdb_cache",
@@ -195,7 +233,26 @@ static void fdb_notify(struct net_bridge *br,
 
 	br_offload_fdb_update(fdb);
 
-	if (swdev_notify)
+	/* QCA NSS ECM support - Start */
+	if (fdb->dst) {
+		int event;
+		struct br_fdb_event fdb_event;
+
+		if (type == RTM_NEWNEIGH)
+			event = BR_FDB_EVENT_ADD;
+		else
+			event = BR_FDB_EVENT_DEL;
+
+		fdb_event.dev = fdb->dst->dev;
+		ether_addr_copy(fdb_event.addr, fdb->key.addr.addr);
+		fdb_event.is_local = test_bit(BR_FDB_LOCAL, &fdb->flags);
+		atomic_notifier_call_chain(&br_fdb_notifier_list,
+					   event,
+					   (void *)&fdb_event);
+	}
+	/* QCA NSS ECM support - End */
+
+   if (swdev_notify)
 		br_switchdev_fdb_notify(br, fdb, type);
 
 	skb = nlmsg_new(fdb_nlmsg_size(), GFP_ATOMIC);
@@ -209,7 +266,8 @@ static void fdb_notify(struct net_bridge *br,
 		kfree_skb(skb);
 		goto errout;
 	}
-	rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
+   __br_notify(RTNLGRP_NEIGH, type, fdb); /* QCA qca-mcs support */
+   rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
 	return;
 errout:
 	rtnl_set_sk_err(net, RTNLGRP_NEIGH, err);
@@ -275,6 +333,7 @@ struct net_bridge_fdb_entry *br_fdb_find_rcu(struct net_bridge *br,
 {
 	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
 }
+EXPORT_SYMBOL_GPL(br_fdb_find_rcu); /* QCA qca-mcs support */
 
 /* When a static FDB entry is added, the mac address from the entry is
  * added to the bridge private HW address list and all required ports
@@ -532,6 +591,7 @@ void br_fdb_cleanup(struct work_struct *work)
 	unsigned long delay = hold_time(br);
 	unsigned long work_delay = delay;
 	unsigned long now = jiffies;
+	struct br_fdb_event fdb_event; /* QCA NSS bridge-mgr support */
 
 	/* this part is tricky, in order to avoid blocking learning and
 	 * consequently forwarding, we rely on rcu to delete objects with
@@ -558,8 +618,16 @@ void br_fdb_cleanup(struct work_struct *work)
 			work_delay = min(work_delay, this_timer - now);
 		} else {
 			spin_lock_bh(&br->hash_lock);
-			if (!hlist_unhashed(&f->fdb_node))
+			if (!hlist_unhashed(&f->fdb_node)) {
+				memset(&fdb_event, 0, sizeof(fdb_event));
+				ether_addr_copy(fdb_event.addr, f->key.addr.addr);
 				fdb_delete(br, f, true);
+				/* QCA NSS ECM support - Start */
+				atomic_notifier_call_chain(
+					&br_fdb_update_notifier_list, 0,
+					(void *)&fdb_event);
+				/* QCA NSS ECM support - End */
+			}
 			spin_unlock_bh(&br->hash_lock);
 		}
 	}
@@ -859,6 +927,7 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 		   const unsigned char *addr, u16 vid, unsigned long flags)
 {
 	struct net_bridge_fdb_entry *fdb;
+	struct br_fdb_event fdb_event; /* QCA NSS bridge-mgr support */
 
 	/* some users want to always flood. */
 	if (hold_time(br) == 0)
@@ -884,6 +953,12 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 			if (unlikely(source != READ_ONCE(fdb->dst) &&
 				     !test_bit(BR_FDB_STICKY, &fdb->flags))) {
 				br_switchdev_fdb_notify(br, fdb, RTM_DELNEIGH);
+				/* QCA NSS bridge-mgr support - Start */
+				ether_addr_copy(fdb_event.addr, addr);
+				fdb_event.br = br;
+				fdb_event.orig_dev = READ_ONCE(fdb->dst->dev);
+				fdb_event.dev = source->dev;
+				/* QCA NSS bridge-mgr support - End */
 				WRITE_ONCE(fdb->dst, source);
 				fdb_modified = true;
 				/* Take over HW learned entry */
@@ -896,6 +971,12 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 				 */
 				if (unlikely(test_bit(BR_FDB_LOCKED, &fdb->flags)))
 					clear_bit(BR_FDB_LOCKED, &fdb->flags);
+
+				/* QCA NSS ECM support - Start */
+				atomic_notifier_call_chain(
+					&br_fdb_update_notifier_list,
+					0, (void *)&fdb_event);
+				/* QCA NSS ECM support - End */
 			}
 
 			if (unlikely(test_bit(BR_FDB_ADDED_BY_USER, &flags)))
@@ -1513,3 +1594,62 @@ void br_fdb_clear_offload(const struct net_device *dev, u16 vid)
 	spin_unlock_bh(&p->br->hash_lock);
 }
 EXPORT_SYMBOL_GPL(br_fdb_clear_offload);
+
+/* QCA NSS ECM support - Start */
+/* Refresh FDB entries for bridge packets being forwarded by offload engines */
+void br_refresh_fdb_entry(struct net_device *dev, const char *addr)
+{
+	struct net_bridge_port *p = br_port_get_rcu(dev);
+
+	if (!p || p->state == BR_STATE_DISABLED)
+		return;
+
+	if (!is_valid_ether_addr(addr)) {
+		pr_info("bridge: Attempt to refresh with invalid ether address %pM\n",
+			addr);
+		return;
+	}
+
+	rcu_read_lock();
+	br_fdb_update(p->br, p, addr, 0, true);
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL_GPL(br_refresh_fdb_entry);
+
+/* Update timestamp of FDB entries for bridge packets being forwarded by offload engines */
+void br_fdb_entry_refresh(struct net_device *dev, const char *addr, __u16 vid)
+{
+	struct net_bridge_fdb_entry *fdb;
+	struct net_bridge_port *p = br_port_get_rcu(dev);
+
+	if (!p || p->state == BR_STATE_DISABLED)
+		return;
+
+	rcu_read_lock();
+	fdb = fdb_find_rcu(&p->br->fdb_hash_tbl, addr, vid);
+	if (likely(fdb)) {
+		fdb->updated = jiffies;
+	}
+	rcu_read_unlock();
+}
+EXPORT_SYMBOL_GPL(br_fdb_entry_refresh);
+
+/* Look up the MAC address in the device's bridge fdb table */
+struct net_bridge_fdb_entry *br_fdb_has_entry(struct net_device *dev,
+					      const char *addr, __u16 vid)
+{
+	struct net_bridge_port *p = br_port_get_rcu(dev);
+	struct net_bridge_fdb_entry *fdb;
+
+	if (!p || p->state == BR_STATE_DISABLED)
+		return NULL;
+
+	rcu_read_lock();
+	fdb = fdb_find_rcu(&p->br->fdb_hash_tbl, addr, vid);
+	rcu_read_unlock();
+
+	return fdb;
+}
+EXPORT_SYMBOL_GPL(br_fdb_has_entry);
+/* QCA NSS ECM support - End */
+

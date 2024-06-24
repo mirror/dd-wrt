@@ -566,4 +566,52 @@ static int __init vlan_offload_init(void)
 	return 0;
 }
 
+/* QCA NSS ECM support - Start */
+/* Update the VLAN device with statistics from network offload engines */
+void __vlan_dev_update_accel_stats(struct net_device *dev,
+				   struct rtnl_link_stats64 *nlstats)
+{
+	struct vlan_pcpu_stats *stats;
+
+	if (!is_vlan_dev(dev))
+		return;
+
+	stats = per_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats, 0);
+
+	u64_stats_update_begin(&stats->syncp);
+	u64_stats_add(&stats->rx_packets, nlstats->rx_packets);
+	u64_stats_add(&stats->rx_bytes, nlstats->rx_bytes);
+	u64_stats_add(&stats->tx_packets, nlstats->tx_packets);
+	u64_stats_add(&stats->tx_bytes, nlstats->tx_bytes);
+	u64_stats_update_end(&stats->syncp);
+}
+EXPORT_SYMBOL(__vlan_dev_update_accel_stats);
+
+/* Lookup the 802.1p egress_map table and return the 802.1p value */
+u16 vlan_dev_get_egress_prio(struct net_device *dev, u32 skb_prio)
+{
+	struct vlan_priority_tci_mapping *mp;
+
+	mp = vlan_dev_priv(dev)->egress_priority_map[(skb_prio & 0xf)];
+	while (mp) {
+		if (mp->priority == skb_prio) {
+			/* This should already be shifted
+			 * to mask correctly with the
+			 * VLAN's TCI
+			 */
+			return mp->vlan_qos;
+		}
+		mp = mp->next;
+	}
+	return 0;
+}
+EXPORT_SYMBOL(vlan_dev_get_egress_prio);
+
+struct net_device *vlan_dev_next_dev(const struct net_device *dev)
+{
+	return vlan_dev_priv(dev)->real_dev;
+}
+EXPORT_SYMBOL(vlan_dev_next_dev);
+/* QCA NSS ECM support - End */
+
 fs_initcall(vlan_offload_init);

@@ -23,6 +23,7 @@
 #include <linux/etherdevice.h>
 #include <linux/reciprocal_div.h>
 #include <linux/if_link.h>
+#include <net/cfg80211.h>
 
 #include <net/bond_3ad.h>
 #include <net/bond_alb.h>
@@ -82,6 +83,8 @@
  */
 #define bond_for_each_slave(bond, pos, iter) \
 	netdev_for_each_lower_private((bond)->dev, pos, iter)
+
+extern struct bond_cb __rcu *bond_cb; /* QCA NSS ECM bonding support */
 
 /* Caller must have rcu_read_lock */
 #define bond_for_each_slave_rcu(bond, pos, iter) \
@@ -197,6 +200,22 @@ struct bond_up_slave {
 	struct slave	*arr[];
 };
 
+/**
+ * mlo_bond_info - mlo_bond_info structure maintains members corresponding to wifi 7
+ * @bond_mlo_xmit_netdev: Callback function to provide skb to wifi driver for xmit
+ * @bond_get_mlo_tx_netdev: Callback function to get link interface from wifi driver for transmit
+ * @bond_mlo_ctx: Private member for wifi driver
+ * @wdev: ieee80211_ptr for wifi VAP
+ * @bond_mlo_netdev_priv_destructor: Callback function to remove wiphy instance from wifi driver
+ */
+struct mlo_bond_info {
+	int (*bond_mlo_xmit_netdev)(struct sk_buff *skb, struct net_device *bond_dev);
+	struct net_device *(*bond_get_mlo_tx_netdev)(void *bond_mlo_ctx, void *dst);
+	void *bond_mlo_ctx;
+	struct wireless_dev *wdev;
+	void (*bond_mlo_netdev_priv_destructor)(struct net_device *bond_dev);
+};
+
 /*
  * Link pseudo-state only used internally by monitors
  */
@@ -261,6 +280,9 @@ struct bonding {
 	spinlock_t ipsec_lock;
 #endif /* CONFIG_XFRM_OFFLOAD */
 	struct bpf_prog *xdp_prog;
+   u32    id; /* QCA NSS ECM bonding support */
+    /* MLO mode info */
+    struct mlo_bond_info mlo_info;
 };
 
 #define bond_slave_get_rcu(dev) \
@@ -276,6 +298,19 @@ struct bond_vlan_tag {
 	__be16		vlan_proto;
 	unsigned short	vlan_id;
 };
+
+/**
+ * Returns False if the net_device is not MLO bond netdvice
+ *
+ */
+static inline bool bond_is_mlo_device(struct net_device *bond_dev)
+{
+	struct bonding *bond = netdev_priv(bond_dev);
+	if (BOND_MODE(bond) == BOND_MODE_MLO)
+		return true;
+
+	return false;
+}
 
 /*
  * Returns NULL if the net_device does not belong to any of the bond's slaves
@@ -641,6 +676,12 @@ static inline __be32 bond_confirm_addr(struct net_device *dev, __be32 dst, __be3
 	return addr;
 }
 
+static inline struct mlo_bond_info *bond_get_mlo_priv(struct net_device *bond_dev)
+{
+	struct bonding *bond = netdev_priv(bond_dev);
+	return &bond->mlo_info;
+}
+
 struct bond_net {
 	struct net		*net;	/* Associated network namespace */
 	struct list_head	dev_list;
@@ -652,16 +693,20 @@ struct bond_net {
 
 int bond_rcv_validate(const struct sk_buff *skb, struct bonding *bond, struct slave *slave);
 netdev_tx_t bond_dev_queue_xmit(struct bonding *bond, struct sk_buff *skb, struct net_device *slave_dev);
+int bond_get_id(struct net_device *bond_dev); /* QCA NSS ECM bonding support */
 int bond_create(struct net *net, const char *name);
+extern struct net_device *bond_create_mlo(struct net *net, const char *name, struct mlo_bond_info *mlo_info);
+extern void *bond_get_mlo_ctx(struct net_device *bond_dev);
+extern bool bond_destroy_mlo(struct net_device *bond_dev);
 int bond_create_sysfs(struct bond_net *net);
 void bond_destroy_sysfs(struct bond_net *net);
 void bond_prepare_sysfs_group(struct bonding *bond);
 int bond_sysfs_slave_add(struct slave *slave);
 void bond_sysfs_slave_del(struct slave *slave);
 void bond_xdp_set_features(struct net_device *bond_dev);
-int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
+extern int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 		 struct netlink_ext_ack *extack);
-int bond_release(struct net_device *bond_dev, struct net_device *slave_dev);
+extern int bond_release(struct net_device *bond_dev, struct net_device *slave_dev);
 u32 bond_xmit_hash(struct bonding *bond, struct sk_buff *skb);
 int bond_set_carrier(struct bonding *bond);
 void bond_select_active_slave(struct bonding *bond);
@@ -683,6 +728,12 @@ struct bond_vlan_tag *bond_verify_device_path(struct net_device *start_dev,
 					      int level);
 int bond_update_slave_arr(struct bonding *bond, struct slave *skipslave);
 void bond_slave_arr_work_rearm(struct bonding *bond, unsigned long delay);
+/* QCA NSS ECM bonding support - Start */
+uint32_t bond_xmit_hash_without_skb(uint8_t *src_mac, uint8_t *dst_mac,
+				    void *psrc, void *pdst, uint16_t protocol,
+				    struct net_device *bond_dev,
+				    __be16 *layer4hdr);
+/* QCA NSS ECM bonding support - End */
 void bond_work_init_all(struct bonding *bond);
 
 #ifdef CONFIG_PROC_FS
@@ -786,5 +837,19 @@ static inline netdev_tx_t bond_tx_drop(struct net_device *dev, struct sk_buff *s
 	dev_kfree_skb_any(skb);
 	return NET_XMIT_DROP;
 }
+
+/* QCA NSS ECM bonding support - Start */
+struct bond_cb {
+	void (*bond_cb_link_up)(struct net_device *slave);
+	void (*bond_cb_link_down)(struct net_device *slave);
+	void (*bond_cb_enslave)(struct net_device *slave);
+	void (*bond_cb_release)(struct net_device *slave);
+	void (*bond_cb_delete_by_slave)(struct net_device *slave);
+	void (*bond_cb_delete_by_mac)(uint8_t *mac_addr);
+};
+
+extern int bond_register_cb(struct bond_cb *cb);
+extern void bond_unregister_cb(void);
+/* QCA NSS ECM bonding support - End */
 
 #endif /* _NET_BONDING_H */

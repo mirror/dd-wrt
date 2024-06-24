@@ -1084,6 +1084,7 @@ void qdisc_destroy(struct Qdisc *qdisc)
 
 	__qdisc_destroy(qdisc);
 }
+EXPORT_SYMBOL(qdisc_destroy);
 
 void qdisc_put(struct Qdisc *qdisc)
 {

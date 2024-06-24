@@ -518,4 +518,9 @@ int if6_proc_init(void);
 void if6_proc_exit(void);
 #endif
 
+/* QCA NSS ECM support - Start */
+struct net_device *ipv6_dev_find_and_hold(struct net *net, struct in6_addr *addr,
+				 						  int strict);
+/* QCA NSS ECM support - End */
+
 #endif

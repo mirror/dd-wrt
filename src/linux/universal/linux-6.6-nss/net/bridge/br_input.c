@@ -24,6 +24,16 @@
 #include "br_private_tunnel.h"
 #include "br_private_offload.h"
 
+/* QCA qca-mcs support - Start */
+/* Hook for external Multicast handler */
+br_multicast_handle_hook_t __rcu *br_multicast_handle_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_multicast_handle_hook);
+
+/* Hook for external forwarding logic */
+br_get_dst_hook_t __rcu *br_get_dst_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_get_dst_hook);
+/* QCA qca-mcs support - End */
+
 static int
 br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
@@ -31,7 +41,7 @@ br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
 	return netif_receive_skb(skb);
 }
 
-static int br_pass_frame_up(struct sk_buff *skb, bool promisc)
+int br_pass_frame_up(struct sk_buff *skb, bool promisc)
 {
 	struct net_device *indev, *brdev = BR_INPUT_SKB_CB(skb)->brdev;
 	struct net_bridge *br = netdev_priv(brdev);
@@ -72,6 +82,7 @@ static int br_pass_frame_up(struct sk_buff *skb, bool promisc)
 		       dev_net(indev), NULL, skb, indev, NULL,
 		       br_netif_receive_skb);
 }
+EXPORT_SYMBOL_GPL(br_pass_frame_up); /* QCA qca-mcs support */
 
 /* note: already called with rcu_read_lock */
 int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
@@ -88,6 +99,11 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 	bool promisc;
 	u16 vid = 0;
 	u8 state;
+	/* QCA qca-mcs support - Start */
+	br_multicast_handle_hook_t *multicast_handle_hook;
+	struct net_bridge_port *pdst = NULL;
+	br_get_dst_hook_t *get_dst_hook = rcu_dereference(br_get_dst_hook);
+	/* QCA qca-mcs support - End */
 
 	if (!p)
 		goto drop;
@@ -185,6 +201,11 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 
 	switch (pkt_type) {
 	case BR_PKT_MULTICAST:
+		/* QCA qca-mcs support - Start */
+		multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
+		if (!__br_get(multicast_handle_hook, true, p, skb))
+			goto out;
+		/* QCA qca-mcs support - End */
 		mdst = br_mdb_get(brmctx, skb, vid);
 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
 		    br_multicast_querier_exists(brmctx, eth_hdr(skb), mdst)) {
@@ -200,8 +221,15 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 		}
 		break;
 	case BR_PKT_UNICAST:
-		dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
-		break;
+		/* QCA qca-mcs support - Start */
+		pdst = __br_get(get_dst_hook, NULL, p, &skb);
+		if (pdst) {
+			if (!skb)
+				goto out;
+		} else {
+		/* QCA qca-mcs support - End */
+			dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
+		}
 	default:
 		break;
 	}
@@ -217,6 +245,12 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 		br_forward(dst->dst, skb, local_rcv, false);
 	} else {
 		br_offload_skb_disable(skb);
+       /* QCA qca-mcs support - Start */
+		if (pdst) {
+			br_forward(pdst, skb, local_rcv, false);
+			goto out;
+		}
+		/* QCA qca-mcs support - End */
 		if (!mcast_hit)
 			br_flood(br, skb, pkt_type, local_rcv, false, vid);
 		else

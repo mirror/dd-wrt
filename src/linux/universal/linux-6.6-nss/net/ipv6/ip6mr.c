@@ -102,6 +102,17 @@ static int ip6mr_rtm_dumproute(struct sk_buff *skb,
 static void mroute_clean_tables(struct mr_table *mrt, int flags);
 static void ipmr_expire_process(struct timer_list *t);
 
+/* QCA qca-mcs support - Start */
+/* Spinlock for offload */
+static DEFINE_SPINLOCK(lock);
+
+static struct mfc6_cache *ip6mr_cache_find(struct mr_table *mrt,
+					   const struct in6_addr *origin,
+					   const struct in6_addr *mcastgrp);
+static ip6mr_mfc_event_offload_callback_t __rcu
+				ip6mr_mfc_event_offload_callback;
+/* QCA qca-mcs support - End */
+
 #ifdef CONFIG_IPV6_MROUTE_MULTIPLE_TABLES
 #define ip6mr_for_each_table(mrt, net) \
 	list_for_each_entry_rcu(mrt, &net->ipv6.mr6_tables, list, \
@@ -379,6 +390,227 @@ static struct mr_table_ops ip6mr_mr_table_ops = {
 	.rht_params = &ip6mr_rht_params,
 	.cmparg_any = &ip6mr_mr_table_ops_cmparg_any,
 };
+
+/* QCA qca-mcs support - Start */
+/* ip6mr_sync_entry_update()
+ * Call the registered offload callback to report an update to a multicast
+ * route entry. The callback receives the list of destination interfaces and
+ * the interface count
+ */
+static void ip6mr_sync_entry_update(struct mr_table *mrt,
+				    struct mfc6_cache *cache)
+{
+	int vifi, dest_if_count = 0;
+	u32 dest_dev[MAXMIFS];
+	struct in6_addr mc_origin, mc_group;
+	ip6mr_mfc_event_offload_callback_t offload_update_cb_f;
+
+	memset(dest_dev, 0, sizeof(dest_dev));
+
+	spin_lock(&mrt_lock);
+
+	for (vifi = 0; vifi < cache->_c.mfc_un.res.maxvif; vifi++) {
+		if (!((cache->_c.mfc_un.res.ttls[vifi] > 0) &&
+		      (cache->_c.mfc_un.res.ttls[vifi] < 255))) {
+			continue;
+		}
+
+		if (dest_if_count == MAXMIFS) {
+			spin_unlock(&mrt_lock);
+			return;
+		}
+
+		if (!VIF_EXISTS(mrt, vifi)) {
+			spin_unlock(&mrt_lock);
+			return;
+		}
+
+		dest_dev[dest_if_count] = mrt->vif_table[vifi].dev->ifindex;
+		dest_if_count++;
+	}
+
+	memcpy(&mc_origin, &cache->mf6c_origin, sizeof(struct in6_addr));
+	memcpy(&mc_group, &cache->mf6c_mcastgrp, sizeof(struct in6_addr));
+	spin_unlock(&mrt_lock);
+
+	rcu_read_lock();
+	offload_update_cb_f = rcu_dereference(ip6mr_mfc_event_offload_callback);
+
+	if (!offload_update_cb_f) {
+		rcu_read_unlock();
+		return;
+	}
+
+	offload_update_cb_f(&mc_group, &mc_origin, dest_if_count, dest_dev,
+			    IP6MR_MFC_EVENT_UPDATE);
+	rcu_read_unlock();
+}
+
+/* ip6mr_sync_entry_delete()
+ * Call the registered offload callback to inform of a multicast route entry
+ * delete event
+ */
+static void ip6mr_sync_entry_delete(struct in6_addr *mc_origin,
+				    struct in6_addr *mc_group)
+{
+	ip6mr_mfc_event_offload_callback_t offload_update_cb_f;
+
+	rcu_read_lock();
+	offload_update_cb_f = rcu_dereference(ip6mr_mfc_event_offload_callback);
+
+	if (!offload_update_cb_f) {
+		rcu_read_unlock();
+		return;
+	}
+
+	offload_update_cb_f(mc_group, mc_origin, 0, NULL,
+			    IP6MR_MFC_EVENT_DELETE);
+	rcu_read_unlock();
+}
+
+/* ip6mr_register_mfc_event_offload_callback()
+ * Register the IPv6 multicast update callback for offload modules
+ */
+bool ip6mr_register_mfc_event_offload_callback(
+		ip6mr_mfc_event_offload_callback_t mfc_offload_cb)
+{
+	ip6mr_mfc_event_offload_callback_t offload_update_cb_f;
+
+	rcu_read_lock();
+	offload_update_cb_f = rcu_dereference(ip6mr_mfc_event_offload_callback);
+
+	if (offload_update_cb_f) {
+		rcu_read_unlock();
+		return false;
+	}
+	rcu_read_unlock();
+
+	spin_lock(&lock);
+	rcu_assign_pointer(ip6mr_mfc_event_offload_callback, mfc_offload_cb);
+	spin_unlock(&lock);
+	synchronize_rcu();
+	return true;
+}
+EXPORT_SYMBOL(ip6mr_register_mfc_event_offload_callback);
+
+/* ip6mr_unregister_mfc_event_offload_callback()
+ * De-register the IPv6 multicast update callback for offload modules
+ */
+void ip6mr_unregister_mfc_event_offload_callback(void)
+{
+	spin_lock(&lock);
+	rcu_assign_pointer(ip6mr_mfc_event_offload_callback, NULL);
+	spin_unlock(&lock);
+	synchronize_rcu();
+}
+EXPORT_SYMBOL(ip6mr_unregister_mfc_event_offload_callback);
+
+/* ip6mr_find_mfc_entry()
+ * Return the destination interface list for a particular multicast flow, and
+ * the number of interfaces in the list
+ */
+int ip6mr_find_mfc_entry(struct net *net, struct in6_addr *origin,
+			 struct in6_addr *group, u32 max_dest_cnt,
+			 u32 dest_dev[])
+{
+	int vifi, dest_if_count = 0;
+	struct mr_table *mrt;
+	struct mfc6_cache *cache;
+
+	mrt = ip6mr_get_table(net, RT6_TABLE_DFLT);
+	if (!mrt)
+		return -ENOENT;
+
+	spin_lock(&mrt_lock);
+	cache = ip6mr_cache_find(mrt, origin, group);
+	if (!cache) {
+		spin_unlock(&mrt_lock);
+		return -ENOENT;
+	}
+
+	for (vifi = 0; vifi < cache->_c.mfc_un.res.maxvif; vifi++) {
+		if (!((cache->_c.mfc_un.res.ttls[vifi] > 0) &&
+		      (cache->_c.mfc_un.res.ttls[vifi] < 255))) {
+			continue;
+		}
+
+		/* We have another valid destination interface entry. Check if
+		 * the number of the destination interfaces for the route is
+		 * exceeding the size of the array given to us
+		 */
+		if (dest_if_count == max_dest_cnt) {
+			spin_unlock(&mrt_lock);
+			return -EINVAL;
+		}
+
+		if (!VIF_EXISTS(mrt, vifi)) {
+			spin_unlock(&mrt_lock);
+			return -EINVAL;
+		}
+
+		dest_dev[dest_if_count] = mrt->vif_table[vifi].dev->ifindex;
+		dest_if_count++;
+	}
+	spin_unlock(&mrt_lock);
+
+	return dest_if_count;
+}
+EXPORT_SYMBOL(ip6mr_find_mfc_entry);
+
+/* ip6mr_mfc_stats_update()
+ * Update the MFC/VIF statistics for offloaded flows
+ */
+int ip6mr_mfc_stats_update(struct net *net, struct in6_addr *origin,
+			   struct in6_addr *group, u64 pkts_in,
+			   u64 bytes_in, uint64_t pkts_out,
+			   u64 bytes_out)
+{
+	int vif, vifi;
+	struct mr_table *mrt;
+	struct mfc6_cache *cache;
+
+	mrt = ip6mr_get_table(net, RT6_TABLE_DFLT);
+
+	if (!mrt)
+		return -ENOENT;
+
+	spin_lock(&mrt_lock);
+	cache = ip6mr_cache_find(mrt, origin, group);
+	if (!cache) {
+		spin_unlock(&mrt_lock);
+		return -ENOENT;
+	}
+
+	vif = cache->_c.mfc_parent;
+
+	if (!VIF_EXISTS(mrt, vif)) {
+		spin_unlock(&mrt_lock);
+		return -EINVAL;
+	}
+
+	mrt->vif_table[vif].pkt_in += pkts_in;
+	mrt->vif_table[vif].bytes_in += bytes_in;
+	cache->_c.mfc_un.res.pkt += pkts_out;
+	cache->_c.mfc_un.res.bytes += bytes_out;
+
+	for (vifi = cache->_c.mfc_un.res.minvif;
+			vifi < cache->_c.mfc_un.res.maxvif; vifi++) {
+		if ((cache->_c.mfc_un.res.ttls[vifi] > 0) &&
+		    (cache->_c.mfc_un.res.ttls[vifi] < 255)) {
+			if (!VIF_EXISTS(mrt, vifi)) {
+				spin_unlock(&mrt_lock);
+				return -EINVAL;
+			}
+			mrt->vif_table[vifi].pkt_out += pkts_out;
+			mrt->vif_table[vifi].bytes_out += bytes_out;
+		}
+	}
+
+	spin_unlock(&mrt_lock);
+	return 0;
+}
+EXPORT_SYMBOL(ip6mr_mfc_stats_update);
+/* QCA qca-mcs support - End */
 
 static struct mr_table *ip6mr_new_table(struct net *net, u32 id)
 {
@@ -1221,6 +1453,7 @@ static int ip6mr_mfc_delete(struct mr_table *mrt, struct mf6cctl *mfc,
 			    int parent)
 {
 	struct mfc6_cache *c;
+	struct in6_addr mc_origin, mc_group; /* QCA qca-mcs support */
 
 	/* The entries are added/deleted only under RTNL */
 	rcu_read_lock();
@@ -1229,6 +1462,12 @@ static int ip6mr_mfc_delete(struct mr_table *mrt, struct mf6cctl *mfc,
 	rcu_read_unlock();
 	if (!c)
 		return -ENOENT;
+
+	/* QCA qca-mcs support - Start */
+	memcpy(&mc_origin, &c->mf6c_origin, sizeof(struct in6_addr));
+	memcpy(&mc_group, &c->mf6c_mcastgrp, sizeof(struct in6_addr));
+	/* QCA qca-mcs support - End */
+
 	rhltable_remove(&mrt->mfc_hash, &c->_c.mnode, ip6mr_rht_params);
 	list_del_rcu(&c->_c.list);
 
@@ -1236,6 +1475,12 @@ static int ip6mr_mfc_delete(struct mr_table *mrt, struct mf6cctl *mfc,
 				       FIB_EVENT_ENTRY_DEL, c, mrt->id);
 	mr6_netlink_event(mrt, c, RTM_DELROUTE);
 	mr_cache_put(&c->_c);
+
+	/* QCA qca-mcs support - Start */
+	/* Inform offload modules of the delete event */
+	ip6mr_sync_entry_delete(&mc_origin, &mc_group);
+	/* QCA qca-mcs support - End */
+
 	return 0;
 }
 
@@ -1457,6 +1702,12 @@ static int ip6mr_mfc_add(struct net *net, struct mr_table *mrt,
 		call_ip6mr_mfc_entry_notifiers(net, FIB_EVENT_ENTRY_REPLACE,
 					       c, mrt->id);
 		mr6_netlink_event(mrt, c, RTM_NEWROUTE);
+
+		/* QCA qca-mcs support - Start */
+		/* Inform offload modules of the update event */
+		ip6mr_sync_entry_update(mrt, c);
+		/* QCA qca-mcs support - End */
+
 		return 0;
 	}
 
@@ -1519,6 +1770,10 @@ static int ip6mr_mfc_add(struct net *net, struct mr_table *mrt,
 
 static void mroute_clean_tables(struct mr_table *mrt, int flags)
 {
+	/* QCA qca-mcs support - Start */
+	struct mfc6_cache *cache;
+	struct in6_addr mc_origin, mc_group;
+	/* QCA qca-mcs support - End */
 	struct mr_mfc *c, *tmp;
 	LIST_HEAD(list);
 	int i;
@@ -1541,13 +1796,23 @@ static void mroute_clean_tables(struct mr_table *mrt, int flags)
 			if (((c->mfc_flags & MFC_STATIC) && !(flags & MRT6_FLUSH_MFC_STATIC)) ||
 			    (!(c->mfc_flags & MFC_STATIC) && !(flags & MRT6_FLUSH_MFC)))
 				continue;
+			/* QCA qca-mcs support - Start */
+			cache = (struct mfc6_cache *)c;
+			memcpy(&mc_origin, &cache->mf6c_origin, sizeof(struct in6_addr));
+			memcpy(&mc_group, &cache->mf6c_mcastgrp, sizeof(struct in6_addr));
+			/* QCA qca-mcs support - End */
 			rhltable_remove(&mrt->mfc_hash, &c->mnode, ip6mr_rht_params);
 			list_del_rcu(&c->list);
 			call_ip6mr_mfc_entry_notifiers(read_pnet(&mrt->net),
 						       FIB_EVENT_ENTRY_DEL,
-						       (struct mfc6_cache *)c, mrt->id);
-			mr6_netlink_event(mrt, (struct mfc6_cache *)c, RTM_DELROUTE);
+						       cache, mrt->id);
+			mr6_netlink_event(mrt, cache, RTM_DELROUTE);
 			mr_cache_put(c);
+
+			/* QCA qca-mcs support - Start */
+			/* Inform offload modules of the delete event */
+			ip6mr_sync_entry_delete(&mc_origin, &mc_group);
+			/* QCA qca-mcs support - End */
 		}
 	}
 

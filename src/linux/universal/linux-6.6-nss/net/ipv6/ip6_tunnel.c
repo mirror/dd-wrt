@@ -2412,6 +2412,26 @@ nla_put_failure:
 	return -EMSGSIZE;
 }
 
+/* QCA NSS Client Support - Start */
+/*
+ * Update offload stats
+ */
+void ip6_update_offload_stats(struct net_device *dev, void *ptr)
+{
+	struct pcpu_sw_netstats *tstats = this_cpu_ptr(dev->tstats);
+	const struct pcpu_sw_netstats *offload_stats =
+					(struct pcpu_sw_netstats *)ptr;
+
+	u64_stats_update_begin(&tstats->syncp);
+	u64_stats_add(&tstats->tx_packets, u64_stats_read(&offload_stats->tx_packets));
+	u64_stats_add(&tstats->tx_bytes, u64_stats_read(&offload_stats->tx_bytes));
+	u64_stats_add(&tstats->rx_packets, u64_stats_read(&offload_stats->rx_packets));
+	u64_stats_add(&tstats->rx_bytes, u64_stats_read(&offload_stats->rx_bytes));
+	u64_stats_update_end(&tstats->syncp);
+}
+EXPORT_SYMBOL(ip6_update_offload_stats);
+/* QCA NSS Client Support - End */
+
 struct net *ip6_tnl_get_link_net(const struct net_device *dev)
 {
 	struct ip6_tnl *tunnel = netdev_priv(dev);

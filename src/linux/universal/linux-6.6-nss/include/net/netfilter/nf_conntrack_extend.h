@@ -34,6 +34,10 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
 	NF_CT_EXT_RTCACHE,
 #endif
+#ifdef CONFIG_NF_CONNTRACK_DSCPREMARK_EXT
+	NF_CT_EXT_DSCPREMARK,   /* QCA NSS ECM support */
+#endif
+
 	NF_CT_EXT_NUM,
 };
 

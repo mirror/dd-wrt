@@ -666,6 +666,7 @@ void ndisc_send_ns(struct net_device *dev, const struct in6_addr *solicit,
 	if (skb)
 		ndisc_send_skb(skb, daddr, saddr);
 }
+EXPORT_SYMBOL(ndisc_send_ns);
 
 void ndisc_send_rs(struct net_device *dev, const struct in6_addr *saddr,
 		   const struct in6_addr *daddr)
