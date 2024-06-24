@@ -342,6 +342,11 @@ static void load_nss_ipq60xx(void)
 	insmod("qca-nss-pppoe");
 	insmod("qca-nss-vlan");
 	insmod("qca-nss-qdisc");
+	insmod("qca-nss-pptp");
+	insmod("qca-nss-l2tpv2");
+	insmod("qca-nss-vxlanmgr");
+	insmod("qca-nss-tunipip6");
+	insmod("qca-nss-tlsmgr");
 	insmod("qca-mcs");
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
@@ -358,6 +363,11 @@ static void load_nss_ipq807x(void)
 	insmod("qca-nss-pppoe");
 	insmod("qca-nss-vlan");
 	insmod("qca-nss-qdisc");
+	insmod("qca-nss-pptp");
+	insmod("qca-nss-l2tpv2");
+	insmod("qca-nss-vxlanmgr");
+	insmod("qca-nss-tunipip6");
+	insmod("qca-nss-tlsmgr");
 	insmod("qca-mcs");
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
