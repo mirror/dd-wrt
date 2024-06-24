@@ -22,6 +22,7 @@
 SUBDIRS = os interp classlib
 DIST_SUBDIRS = os arch interp classlib
 
+bin_PROGRAMS = jamvm
 noinst_HEADERS = jni.h
 
 lib_LTLIBRARIES = libjvm.la
@@ -36,8 +37,10 @@ libcore_la_SOURCES = alloc.c alloc.h cast.c class.c dll.c excep.c execute.c \
                      jni-internal.h properties.h sig.c stubs.h stubs.c \
                      jni-stubs.c annotations.h
 
+jamvm_SOURCES = jam.c
 libjvm_la_SOURCES =
 
+jamvm_LDADD = libcore.la
 libjvm_la_LIBADD = libcore.la
 libjvm_la_LDFLAGS = -avoid-version
 libcore_la_LIBADD = interp/libinterp.la os/@os@/@arch@/libnative.la \
