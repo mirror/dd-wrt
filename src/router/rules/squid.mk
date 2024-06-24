@@ -34,7 +34,7 @@ endif
 squid-configure: openssl
 	cd squid && ./bootstrap.sh
 	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
-	CC="$(ARCH)-linux-uclibc-gcc $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CC="ccache $(ARCH)-linux-uclibc-gcc $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LIBOPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
 	LIBOPENSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \

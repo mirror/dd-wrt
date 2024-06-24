@@ -1,7 +1,7 @@
 
 zabbix: zlib
 	install -D zabbix/config/zabbix.webservices httpd/ej_temp/zabbix.webservices
-	CC="$(ARCH)-linux-uclibc-gcc" \
+	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -lz -fPIC" \

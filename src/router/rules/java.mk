@@ -1,7 +1,7 @@
 java-configure: zlib
 	cd $(TOP)/java/classpath && ./configure \
-	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS=" $(COPTS) $(LTO) $(MIPS16_OPT) -DNEED_PRINTF" \
+	--host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-gmp="$(TOP)/gmp" \
 	--prefix=/usr \
@@ -21,7 +21,7 @@ java-configure: zlib
 	
 	cd $(TOP)/java/jamvm && ./autogen.sh 
 	cd $(TOP)/java/jamvm && ./configure \
-	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
+	--host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(LTO) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-java-runtime-library=gnuclasspath \
@@ -35,7 +35,7 @@ java-configure: zlib
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 #	cd $(TOP)/java/cacao && ./configure \
-#	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
+#	--host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" \
 #	CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF -fPIC" \
 #	CXXFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF -fPIC" \
 #	CPPFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF -fPIC" \

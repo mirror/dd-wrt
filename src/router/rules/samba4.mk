@@ -50,7 +50,7 @@ samba4-configure: gnutls icu zlib
 		export AR_FLAGS="cru $(LTOPLUGIN)" && \
 		export RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" && \
 		cd samba4 && ./buildtools/bin/waf configure \
-		--hostcc="$(ARCH)-linux-uclibc-gcc" \
+		--hostcc="ccache $(ARCH)-linux-uclibc-gcc" \
 		--cross-compile \
 		--cross-answers=cross-answers.txt \
 		--disable-cups \
