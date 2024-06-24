@@ -325,13 +325,13 @@ ifeq ($(CONFIG_ATH10KUSB),y)
 	echo "CPTCFG_ATH10K_SDIO=m" >> $(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH10K_USB=m" >> $(MAC80211_PATH)/.config_temp
 endif
-ifeq ($(CONFIG_IPQ806X),y)
-	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
 ifeq ($(CONFIG_QCA_NSS),y)
 	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >> $(MAC80211_PATH)/.config_temp
 else
 	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_IPQ806X),y)
+	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
 else
 	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
