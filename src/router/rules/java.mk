@@ -1,7 +1,7 @@
 java-configure: zlib
 	cd $(TOP)/java/classpath && ./configure \
 	--host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(LTO) -D_GNU_SOURCE $(MIPS16_OPT) -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-gmp="$(TOP)/gmp" \
 	--prefix=/usr \
@@ -22,7 +22,7 @@ java-configure: zlib
 	cd $(TOP)/java/jamvm && ./autogen.sh 
 	cd $(TOP)/java/jamvm && ./configure \
 	--host=$(ARCH)-linux CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(LTO) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(LTO) -D_GNU_SOURCE -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
 	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-java-runtime-library=gnuclasspath \
 	--with-classpath-install-dir=/usr \
