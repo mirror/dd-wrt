@@ -685,6 +685,14 @@ void nss_virt_if_register(struct nss_virt_if_handle *handle,
 }
 EXPORT_SYMBOL(nss_virt_if_register);
 
+
+void get_mac80211_api(void **a, void **b, void **c, void **d) {
+*a = &nss_virt_if_create_sync;
+*b = &nss_virt_if_destroy_sync;
+*c = &nss_virt_if_tx_buf;
+*d = &nss_virt_if_register;
+}
+
 /*
  * nss_virt_if_unregister()
  */

@@ -250,7 +250,7 @@ nss_tlsmgr_status_t nss_tlsmgr_crypto_update_null(struct net_device *dev, struct
 	status = nss_tls_tx_msg_sync(ctx->nss_ctx, ctx->ifnum, msg_type, sizeof(*ntcu), &ntm);
 	if (status != NSS_TX_SUCCESS) {
 		nss_tlsmgr_warn("%px: Failed to configure decap, status:%d, error:%d", ctx, status, ntm.cm.error);
-		return false;
+		return NSS_TLSMGR_FAIL;
 	}
 
 	/*
@@ -361,7 +361,7 @@ nss_tlsmgr_status_t nss_tlsmgr_crypto_update_decap(struct net_device *dev, struc
 	if (status != NSS_TX_SUCCESS) {
 		nss_tlsmgr_crypto_free(crypto);
 		nss_tlsmgr_warn("%px: Failed to configure decap, status:%d, error:%d", ctx, status, ntm.cm.error);
-		return false;
+		return NSS_TLSMGR_FAIL;
 	}
 
 	/*
