@@ -331,6 +331,40 @@ void patchvht160(char *file, int phynum)
 		setmacflag("/tmp/board.bin");                                                                                \
 	}
 
+static void load_nss_ipq60xx(void)
+{
+	insmod("qca-ssdk-ipq60xx");
+
+	insmod("qca-nss-dp-ipq60xx");
+	insmod("qca-nss-drv-ipq60xx");
+	insmod("qca-nss-crypto-ipq60xx");
+	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
+	insmod("qca-nss-pppoe");
+	insmod("qca-nss-vlan");
+	insmod("qca-nss-qdisc");
+	insmod("qca-mcs");
+	insmod("nss-ifb");
+	insmod("qca-nss-netlink");
+	insmod("qca-nss-bridge-mgr");
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+}
+static void load_nss_ipq807x(void)
+{
+	insmod("qca-ssdk-ipq807x");
+	insmod("qca-nss-dp-ipq807x");
+	insmod("qca-nss-drv-ipq807x");
+	insmod("qca-nss-crypto-ipq807x");
+	insmod("qca-nss-cfi-cryptoapi-ipq807x");
+	insmod("qca-nss-pppoe");
+	insmod("qca-nss-vlan");
+	insmod("qca-nss-qdisc");
+	insmod("qca-mcs");
+	insmod("nss-ifb");
+	insmod("qca-nss-netlink");
+	insmod("qca-nss-bridge-mgr");
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -355,17 +389,14 @@ void start_sysinit(void)
 	int fwlen = 0x10000;
 	if (brand == ROUTER_LINKSYS_MR7350) {
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
-		insmod("qca-ssdk-ipq60xx");
-		insmod("qca-nss-dp-ipq60xx");
+		load_nss_ipq60xx();
 	} else if (brand == ROUTER_DYNALINK_DLWRX36) {
 		fwlen = 0x20000;
-		insmod("qca-ssdk-ipq807x");
-		insmod("qca-nss-dp-ipq807x");
+		load_nss_ipq807x();
 	} else {
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
-		insmod("qca-ssdk-ipq807x");
-		insmod("qca-nss-dp-ipq807x");
+		load_nss_ipq807x();
 	}
 
 	insmod("qca-ssdk");
