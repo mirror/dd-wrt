@@ -325,7 +325,7 @@ struct sbl_if_dualboot_info_type_v2 *read_bootconfig_mtd(
 	return bootconfig_mtd;
 }
 
-#ifdef CONFIG_MMC
+#if 1 //def CONFIG_MMC
 struct sbl_if_dualboot_info_type_v2 *read_bootconfig_emmc(struct block_device *bdev)
 {
 	sector_t n;
@@ -580,11 +580,9 @@ static int write_to_flash (struct sbl_if_dualboot_info_type_v2 *data,
 	size_t retlen;
 	uint8_t *flash_data;
 	int i, ret = -1;
-#ifdef CONFIG_MMC
-	struct gendisk *disk = NULL;
 	struct block_device *bdev;
+	struct gendisk *disk = NULL;
 	unsigned long idx;
-#endif
 
 	printk("Restoring %s\n",partition);
 
