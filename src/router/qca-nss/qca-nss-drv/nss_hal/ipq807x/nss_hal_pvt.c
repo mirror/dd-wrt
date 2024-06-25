@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -529,7 +532,7 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 		nss_runtime_samples.freq_scale[NSS_FREQ_LOW_SCALE].frequency = NSS_FREQ_187;
 		nss_runtime_samples.freq_scale[NSS_FREQ_MID_SCALE].frequency = NSS_FREQ_748;
 		nss_runtime_samples.freq_scale[NSS_FREQ_HIGH_SCALE].frequency = NSS_FREQ_1497;
-		nss_info_always("Running default frequencies\n");
+		nss_info("Running default frequencies\n");
 	}
 
 	/*
@@ -581,11 +584,11 @@ static int __nss_hal_clock_configure(struct nss_ctx_instance *nss_ctx, struct pl
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_1689) {
 			nss_info("1.6896 GHz ");
 		} else {
-			nss_info_always("Error\nNo Table/Invalid Frequency Found\n");
+			nss_info("Error\nNo Table/Invalid Frequency Found\n");
 			return -EFAULT;
 		}
 	}
-	nss_info_always("\n");
+	nss_info("\n");
 
 	/*
 	 * Set values only once for core0. Grab the proper clock.
@@ -734,7 +737,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info_always("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 

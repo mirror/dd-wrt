@@ -477,9 +477,8 @@ static struct nss_platform_data *__nss_hal_of_get_pdata(struct platform_device *
 	/*
 	 * Clear TCM memory used by this core
 	 */
-	for (i = 0; i < resource_size(&res_vphys) ; i += 4) {
+	for (i = 0; i < resource_size(&res_vphys) ; i += 4)
 		nss_write_32(npd->vmap, i, 0);
-	}
 
 	NSS_CORE_DSB();
 
@@ -1087,7 +1086,6 @@ clk_complete:
 
 	nss_info("Supported Frequencies - ");
 	for (i = 0; i < NSS_FREQ_MAX_SCALE; i++) {
-		nss_info("idx %d\n",i);
 		if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_110) {
 			nss_info("110Mhz ");
 		} else if (nss_runtime_samples.freq_scale[i].frequency == NSS_FREQ_275) {
@@ -1179,7 +1177,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_queue1", int_ctx);
 	} else {
 		int_ctx->shift_factor = 0;
-		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss_core1", int_ctx);
+		err = request_irq(npd->irq[irq_num], nss_hal_handle_irq, 0, "nss", int_ctx);
 	}
 	if (err) {
 		nss_info_always("%px: IRQ%d request failed", nss_ctx, npd->irq[irq_num]);
@@ -1187,7 +1185,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	}
 
 	int_ctx->irq = npd->irq[irq_num];
-	netif_threaded_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
+	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, nss_core_handle_napi, 64);
 
 	return 0;
 }
@@ -1203,7 +1201,7 @@ void __nss_hal_init_imem(struct nss_ctx_instance *nss_ctx)
 	mem_ctx->imem_end = mem_ctx->imem_head + NSS_IMEM_SIZE;
 	mem_ctx->imem_tail = mem_ctx->imem_head;
 
-	nss_info_always("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
+	nss_info("%px: IMEM init: head: 0x%x end: 0x%x tail: 0x%x\n", nss_ctx,
 			mem_ctx->imem_head, mem_ctx->imem_end, mem_ctx->imem_tail);
 }
 
