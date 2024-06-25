@@ -136,4 +136,4 @@ BIN_DIR=$(PRJ_PATH)/build/bin
 VER=3.1.0
 BUILD_NUMBER=$(shell cat $(PRJ_PATH)/make/.build_number)
 VERSION=$(VER).$(BUILD_NUMBER)
-BUILD_DATE=$(shell date -u  +%F-%T)
+BUILD_DATE=NONE
