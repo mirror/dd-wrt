@@ -94,7 +94,6 @@ static const struct bond_opt_value bond_mode_tbl[] = {
 	{ "802.3ad",       BOND_MODE_8023AD,       0},
 	{ "balance-tlb",   BOND_MODE_TLB,          0},
 	{ "balance-alb",   BOND_MODE_ALB,          0},
-	{ "mode mlo",      BOND_MODE_MLO,          0},
 	{ NULL,            -1,                     0},
 };
 

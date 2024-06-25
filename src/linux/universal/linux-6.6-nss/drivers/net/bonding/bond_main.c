@@ -210,6 +210,7 @@ atomic_t netpoll_block_tx = ATOMIC_INIT(0);
 #endif
 
 unsigned int bond_net_id __read_mostly;
+static unsigned long bond_id_mask = 0xFFFFFFF0; /* QCA NSS ECM bonding support */
 
 static const struct flow_dissector_key flow_keys_bonding_keys[] = {
 	{
@@ -254,8 +255,6 @@ static const struct flow_dissector_key flow_keys_bonding_keys[] = {
 	},
 };
 
-static unsigned long bond_id_mask = 0xFFFFFFF0; /* QCA NSS ECM bonding support */
-
 static struct flow_dissector flow_keys_bonding __read_mostly;
 
 /*-------------------------- Forward declarations ---------------------------*/
@@ -288,6 +287,21 @@ const char *bond_mode_name(int mode)
 
 	return names[mode];
 }
+
+/* QCA NSS ECM bonding support */
+int bond_get_id(struct net_device *bond_dev)
+{
+	struct bonding *bond;
+
+	if (!((bond_dev->priv_flags & IFF_BONDING) &&
+	      (bond_dev->flags & IFF_MASTER)))
+		return -EINVAL;
+
+	bond = netdev_priv(bond_dev);
+	return bond->id;
+}
+EXPORT_SYMBOL(bond_get_id);
+/* QCA NSS ECM bonding support */
 
 /**
  * bond_dev_queue_xmit - Prepare skb for xmit.
@@ -1436,10 +1450,6 @@ static netdev_features_t bond_fix_features(struct net_device *dev,
 	return features;
 }
 
-#define BOND_MLO_VLAN_FEATURES	(NETIF_F_SG | \
-				 NETIF_F_FRAGLIST | \
-				 NETIF_F_HIGHDMA | NETIF_F_LRO)
-
 #define BOND_VLAN_FEATURES	(NETIF_F_HW_CSUM | NETIF_F_SG | \
 				 NETIF_F_FRAGLIST | NETIF_F_GSO_SOFTWARE | \
 				 NETIF_F_HIGHDMA | NETIF_F_LRO)
@@ -1470,25 +1480,13 @@ static void bond_compute_features(struct bonding *bond)
 
 	if (!bond_has_slaves(bond))
 		goto done;
-
-	/*
-	 * Use features specific to bond MLO
-	 */
-	if (BOND_MODE(bond) == BOND_MODE_MLO) {
-		vlan_features = BOND_MLO_VLAN_FEATURES;
-	}
-
 	vlan_features &= NETIF_F_ALL_FOR_ALL;
 	mpls_features &= NETIF_F_ALL_FOR_ALL;
 
 	bond_for_each_slave(bond, slave, iter) {
-		if (BOND_MODE(bond) == BOND_MODE_MLO) {
-			vlan_features = netdev_increment_features(vlan_features,
-				slave->dev->vlan_features, BOND_MLO_VLAN_FEATURES);
-		} else {
-			vlan_features = netdev_increment_features(vlan_features,
-				slave->dev->vlan_features, BOND_VLAN_FEATURES);
-		}
+		vlan_features = netdev_increment_features(vlan_features,
+			slave->dev->vlan_features, BOND_VLAN_FEATURES);
+
 		enc_features = netdev_increment_features(enc_features,
 							 slave->dev->hw_enc_features,
 							 BOND_ENC_FEATURES);
@@ -1631,16 +1629,6 @@ static rx_handler_result_t bond_handle_frame(struct sk_buff **pskb)
 		}
 		bond_hw_addr_copy(eth_hdr(skb)->h_dest, bond->dev->dev_addr,
 				  bond->dev->addr_len);
-	}
-
-	/*
-	 * Set the PACKET_HOST for MLO mode as
-	 * MLO bond netdevice needs to support routing
-	 */
-	if (BOND_MODE(bond) == BOND_MODE_MLO) {
-		if (ether_addr_equal(bond->dev->dev_addr, eth_hdr(skb)->h_dest)) {
-			skb->pkt_type = PACKET_HOST;
-		}
 	}
 
 	return ret;
@@ -1878,7 +1866,7 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 	struct slave *new_slave = NULL, *prev_slave;
 	struct sockaddr_storage ss;
 	struct bond_cb *lag_cb_main; /* QCA NSS ECM bonding support */
-   int link_reporting;
+	int link_reporting;
 	int res = 0, i;
 
 	if (slave_dev->flags & IFF_MASTER &&
@@ -1887,8 +1875,6 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 			    "Device type (master device) cannot be enslaved");
 		return -EPERM;
 	}
-
-	ASSERT_RTNL();
 
 	if (!bond->params.use_carrier &&
 	    slave_dev->ethtool_ops->get_link == NULL &&
@@ -2003,17 +1989,13 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 	call_netdevice_notifiers(NETDEV_JOIN, slave_dev);
 
 	/* If this is the first slave, then we need to set the master's hardware
-	 * address to be the same as the slave's except for BOND_MODE_MLO.
-	 * For BOND_MODE_MLO, master's mac address is MLD address which should
-	 * not be same as slave's address.
+	 * address to be the same as the slave's.
 	 */
-	if (BOND_MODE(bond) != BOND_MODE_MLO) {
-		if (!bond_has_slaves(bond) &&
-		    bond->dev->addr_assign_type == NET_ADDR_RANDOM) {
-			res = bond_set_dev_addr(bond->dev, slave_dev);
-			if (res)
-				goto err_undo_flags;
-		}
+	if (!bond_has_slaves(bond) &&
+	    bond->dev->addr_assign_type == NET_ADDR_RANDOM) {
+		res = bond_set_dev_addr(bond->dev, slave_dev);
+		if (res)
+			goto err_undo_flags;
 	}
 
 	new_slave = bond_alloc_slave(bond, slave_dev);
@@ -2042,21 +2024,18 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 	bond_hw_addr_copy(new_slave->perm_hwaddr, slave_dev->dev_addr,
 			  slave_dev->addr_len);
 
-	/* Set slave to master's mac address except for BOND_MODE_MLO
-	 * as for MLO mode master's mac address is not same as slave's mac address.
-	 * The application already set the master's mac address to that of the first slave
-	 */
-	if (BOND_MODE(bond) != BOND_MODE_MLO) {
-		if (!bond->params.fail_over_mac ||
-		    BOND_MODE(bond) != BOND_MODE_ACTIVEBACKUP) {
-			memcpy(ss.__data, bond_dev->dev_addr, bond_dev->addr_len);
-			ss.ss_family = slave_dev->type;
-			res = dev_set_mac_address(slave_dev, (struct sockaddr *)&ss,
-					extack);
-			if (res) {
-				slave_err(bond_dev, slave_dev, "Error %d calling set_mac_address\n", res);
-				goto err_restore_mtu;
-			}
+	if (!bond->params.fail_over_mac ||
+	    BOND_MODE(bond) != BOND_MODE_ACTIVEBACKUP) {
+		/* Set slave to master's mac address.  The application already
+		 * set the master's mac address to that of the first slave
+		 */
+		memcpy(ss.__data, bond_dev->dev_addr, bond_dev->addr_len);
+		ss.ss_family = slave_dev->type;
+		res = dev_set_mac_address(slave_dev, (struct sockaddr *)&ss,
+					  extack);
+		if (res) {
+			slave_err(bond_dev, slave_dev, "Error %d calling set_mac_address\n", res);
+			goto err_restore_mtu;
 		}
 	}
 
@@ -2332,14 +2311,14 @@ int bond_enslave(struct net_device *bond_dev, struct net_device *slave_dev,
 		   bond_is_active_slave(new_slave) ? "an active" : "a backup",
 		   new_slave->link != BOND_LINK_DOWN ? "an up" : "a down");
 
-   /* QCA NSS ECM bonding support - Start */
+	/* QCA NSS ECM bonding support - Start */
 	rcu_read_lock();
 	lag_cb_main = rcu_dereference(bond_cb);
 	if (lag_cb_main && lag_cb_main->bond_cb_enslave)
 		lag_cb_main->bond_cb_enslave(slave_dev);
 
 	rcu_read_unlock();
-   /* QCA NSS ECM bonding support - End */
+	/* QCA NSS ECM bonding support - End */
 
 	/* enslave is successful */
 	bond_queue_slave_event(new_slave);
@@ -2406,18 +2385,17 @@ err_undo_flags:
 		}
 	}
 
-   /* QCA NSS ECM bonding support - Start */
+	/* QCA NSS ECM bonding support - Start */
 	rcu_read_lock();
 	lag_cb_main = rcu_dereference(bond_cb);
 	if (lag_cb_main && lag_cb_main->bond_cb_enslave)
 		lag_cb_main->bond_cb_enslave(slave_dev);
 
 	rcu_read_unlock();
-   /* QCA NSS ECM bonding support - End */
+	/* QCA NSS ECM bonding support - End */
 
 	return res;
 }
-EXPORT_SYMBOL(bond_enslave);
 
 /* Try to release the slave device <slave> from the bond device <master>
  * It is legal to access curr_active_slave without a lock because all the function
@@ -2437,9 +2415,9 @@ static int __bond_release_one(struct net_device *bond_dev,
 	struct bonding *bond = netdev_priv(bond_dev);
 	struct slave *slave, *oldcurrent;
 	struct sockaddr_storage ss;
-	int old_flags = bond_dev->flags;
 	struct bond_cb *lag_cb_main; /* QCA NSS ECM bonding support */
-   netdev_features_t old_features = bond_dev->features;
+	int old_flags = bond_dev->flags;
+	netdev_features_t old_features = bond_dev->features;
 
 	/* slave is not a slave or master is not master of this slave */
 	if (!(slave_dev->flags & IFF_SLAVE) ||
@@ -2460,14 +2438,14 @@ static int __bond_release_one(struct net_device *bond_dev,
 
 	bond_set_slave_inactive_flags(slave, BOND_SLAVE_NOTIFY_NOW);
 
-   /* QCA NSS ECM bonding support - Start */
+	/* QCA NSS ECM bonding support - Start */
 	rcu_read_lock();
 	lag_cb_main = rcu_dereference(bond_cb);
 	if (lag_cb_main && lag_cb_main->bond_cb_release)
 		lag_cb_main->bond_cb_release(slave_dev);
 
 	rcu_read_unlock();
-   /* QCA NSS ECM bonding support - End */
+	/* QCA NSS ECM bonding support - End */
 
 	bond_sysfs_slave_del(slave);
 
@@ -2539,23 +2517,13 @@ static int __bond_release_one(struct net_device *bond_dev,
 	}
 
 	bond_set_carrier(bond);
-
-	/*
-	 * Avoid changing the mac address of bond netdevice for MLO case,
-	 * This will only be supported from wifi driver.
-	 */
-	if (BOND_MODE(bond) != BOND_MODE_MLO) {
-		if (!bond_has_slaves(bond))
-			eth_hw_addr_random(bond_dev);
-	}
+	if (!bond_has_slaves(bond))
+		eth_hw_addr_random(bond_dev);
 
 	unblock_netpoll_tx();
 	synchronize_rcu();
 	bond->slave_cnt--;
 
-	/*
-	 * TODO: Avoid MAC address change notification for BOND_MODE_MLO
-	 */
 	if (!bond_has_slaves(bond)) {
 		call_netdevice_notifiers(NETDEV_CHANGEADDR, bond->dev);
 		call_netdevice_notifiers(NETDEV_RELEASE, bond->dev);
@@ -2625,7 +2593,6 @@ int bond_release(struct net_device *bond_dev, struct net_device *slave_dev)
 {
 	return __bond_release_one(bond_dev, slave_dev, false, false);
 }
-EXPORT_SYMBOL(bond_release);
 
 /* First release a slave and then destroy the bond if no more slaves are left.
  * Must be under rtnl_lock when this function is called.
@@ -2646,29 +2613,6 @@ static int bond_release_and_destroy(struct net_device *bond_dev,
 	}
 	return ret;
 }
-
-/* Destroy the bond for BOND_MODE_MLO if no more slaves are left.
- * Must be under rtnl_lock when this function is called.
- */
-bool bond_destroy_mlo(struct net_device *bond_dev)
-{
-	struct bonding *bond = netdev_priv(bond_dev);
-
-	ASSERT_RTNL();
-
-	if (!bond_has_slaves(bond)) {
-		bond_dev->priv_flags |= IFF_DISABLE_NETPOLL;
-		netdev_info(bond_dev, "Destroying bond as no slaves are present\n");
-		bond_remove_proc_entry(bond);
-		unregister_netdevice(bond_dev);
-		return true;
-	}
-
-	pr_err("%p: Not able to destroy bond netdevice: %s as slaves are present\n", bond_dev, bond_dev->name);
-
-	return false;
-}
-EXPORT_SYMBOL(bond_destroy_mlo);
 
 static void bond_info_query(struct net_device *bond_dev, struct ifbond *info)
 {
@@ -2826,7 +2770,7 @@ static void bond_miimon_commit(struct bonding *bond)
 	bool do_failover = false;
 	struct list_head *iter;
 	struct net_device *slave_dev = NULL; /* QCA NSS ECM bonding support */
-   struct bond_cb *lag_cb_main; /* QCA NSS ECM bonding support */
+	struct bond_cb *lag_cb_main; /* QCA NSS ECM bonding support */
 
 	ASSERT_RTNL();
 
@@ -2866,11 +2810,11 @@ static void bond_miimon_commit(struct bonding *bond)
 				bond_set_active_slave(slave);
 			}
 
-           /* QCA NSS ECM bonding support - Start */
+			/* QCA NSS ECM bonding support - Start */
 			if ((bond->params.mode == BOND_MODE_XOR) &&
 			    (!slave_dev))
 				slave_dev = slave->dev;
-           /* QCA NSS ECM bonding support - End */
+			/* QCA NSS ECM bonding support - End */
 
 			slave_info(bond->dev, slave->dev, "link status definitely up, %u Mbps %s duplex\n",
 				   slave->speed == SPEED_UNKNOWN ? 0 : slave->speed,
@@ -2920,7 +2864,7 @@ static void bond_miimon_commit(struct bonding *bond)
 		unblock_netpoll_tx();
 	}
 
-   /* QCA NSS ECM bonding support - Start */
+	/* QCA NSS ECM bonding support - Start */
 	rcu_read_lock();
 	lag_cb_main = rcu_dereference(bond_cb);
 
@@ -2928,7 +2872,7 @@ static void bond_miimon_commit(struct bonding *bond)
 		lag_cb_main->bond_cb_link_up(slave_dev);
 
 	rcu_read_unlock();
-   /* QCA NSS ECM bonding support - End */
+	/* QCA NSS ECM bonding support - End */
 
 	bond_set_carrier(bond);
 }
@@ -4326,24 +4270,6 @@ static struct net_device *bond_xor_get_tx_dev(struct sk_buff *skb,
 	return NULL;
 }
 
-/* Transmit function for BOND_MODE_MLO.
- * Get transmit link interface from registered callback.
- */
-struct net_device *bond_mlo_get_tx_dev(struct net_device *bond_dev, u8 *dst_mac)
-{
-	struct net_device *slave_dev = NULL;
-	struct mlo_bond_info *mlo_info = NULL;
-	void *bond_mlo_ctx;
-
-	mlo_info = bond_get_mlo_priv(bond_dev);
-	if (mlo_info->bond_get_mlo_tx_netdev) {
-		bond_mlo_ctx = bond_get_mlo_ctx(bond_dev);
-		slave_dev = mlo_info->bond_get_mlo_tx_netdev(bond_mlo_ctx, dst_mac);
-	}
-
-        return slave_dev;
-}
-
 /* bond_get_tx_dev - Calculate egress interface for a given packet.
  *
  * Supports 802.3AD and balance-xor modes
@@ -4384,9 +4310,6 @@ struct net_device *bond_get_tx_dev(struct sk_buff *skb, uint8_t *src_mac,
 		return bond_3ad_get_tx_dev(skb, src_mac, dst_mac,
 					   src, dst, protocol,
 					   bond_dev, layer4hdr);
-	case BOND_MODE_MLO:
-		return bond_mlo_get_tx_dev(bond_dev, dst_mac);
-
 	default:
 		return NULL;
 	}
@@ -4786,24 +4709,6 @@ static int bond_get_lowest_level_rcu(struct net_device *dev)
 }
 #endif
 
-/* QCA NSS ECM bonding support */
-int bond_get_id(struct net_device *bond_dev)
-{
-    struct bonding *bond;
-    int bond_id = 0;
-
-    if (!((bond_dev->priv_flags & IFF_BONDING) &&
-          (bond_dev->flags & IFF_MASTER)))
-        return -EINVAL;
-
-    bond = netdev_priv(bond_dev);
-    bond_id = bond->id;
-
-    return bond_id;
-}
-EXPORT_SYMBOL(bond_get_id);
-/* QCA NSS ECM bonding support */
-
 static void bond_get_stats(struct net_device *bond_dev,
 			   struct rtnl_link_stats64 *stats)
 {
@@ -5145,26 +5050,20 @@ static int bond_set_mac_address(struct net_device *bond_dev, void *addr)
 	if (!is_valid_ether_addr(ss->__data))
 		return -EADDRNOTAVAIL;
 
-	/*
-	 * Do not allow mac address change for slave netdevice for BOND_MODE_MLO
-	 * as master's mac address is not same as slave's mac address.
-	 */
-	if (BOND_MODE(bond) != BOND_MODE_MLO) {
-		bond_for_each_slave(bond, slave, iter) {
-			slave_dbg(bond_dev, slave->dev, "%s: slave=%p\n",
-				  __func__, slave);
-			res = dev_set_mac_address(slave->dev, addr, NULL);
-			if (res) {
-				/* TODO: consider downing the slave
-				 * and retry ?
-				 * User should expect communications
-				 * breakage anyway until ARP finish
-				 * updating, so...
-				 */
-				slave_dbg(bond_dev, slave->dev, "%s: err %d\n",
-					  __func__, res);
-				goto unwind;
-			}
+	bond_for_each_slave(bond, slave, iter) {
+		slave_dbg(bond_dev, slave->dev, "%s: slave=%p\n",
+			  __func__, slave);
+		res = dev_set_mac_address(slave->dev, addr, NULL);
+		if (res) {
+			/* TODO: consider downing the slave
+			 * and retry ?
+			 * User should expect communications
+			 * breakage anyway until ARP finish
+			 * updating, so...
+			 */
+			slave_dbg(bond_dev, slave->dev, "%s: err %d\n",
+				  __func__, res);
+			goto unwind;
 		}
 	}
 
@@ -5568,23 +5467,18 @@ static netdev_tx_t bond_3ad_xor_xmit(struct sk_buff *skb,
 				     struct net_device *dev)
 {
 	struct bonding *bond = netdev_priv(dev);
-    /* QCA NSS ECM bonding support - Start */
-    struct net_device *outdev = NULL;
-    outdev = bond_3ad_get_tx_dev(skb, NULL, NULL, NULL,
+	/* QCA NSS ECM bonding support - Start */
+	struct net_device *outdev = NULL;
+
+	outdev = bond_3ad_get_tx_dev(skb, NULL, NULL, NULL,
 				     NULL, 0, dev, NULL);
+	if (!outdev) {
+		dev_kfree_skb(skb);
+		return NETDEV_TX_OK;
+	}
 
-   if (!outdev)
-		goto out;
-
-	bond_dev_queue_xmit(bond, skb, outdev);
-	goto final;
-
-out:
-	dev_kfree_skb(skb);
-
-final:
-   return NETDEV_TX_OK;
-/* QCA NSS ECM bonding support - End */
+	return bond_dev_queue_xmit(bond, skb, outdev);
+	/* QCA NSS ECM bonding support - End */
 }
 
 /* in broadcast mode, we send everything to all usable interfaces. */
@@ -5816,27 +5710,6 @@ static netdev_tx_t bond_tls_device_xmit(struct bonding *bond, struct sk_buff *sk
 }
 #endif
 
-/* In bond_xmit_mlo(), we send the packet and bond netdevice
- * to registered callback for final xmit.
- */
-static netdev_tx_t bond_xmit_mlo(struct sk_buff *skb, struct net_device *bond_dev)
-{
-	struct bonding *bond = netdev_priv(bond_dev);
-	int slave_cnt, ret;
-	struct mlo_bond_info *mlo_info = bond_get_mlo_priv(bond_dev);
-
-	slave_cnt = READ_ONCE(bond->slave_cnt);
-	if (unlikely(slave_cnt == 0) || unlikely(!mlo_info->bond_mlo_xmit_netdev)) {
-		bond_tx_drop(bond_dev, skb);
-	} else {
-		ret = mlo_info->bond_mlo_xmit_netdev(skb, bond_dev);
-		if (ret != NET_XMIT_SUCCESS)
-			netdev_err(bond_dev, "Xmit failed with mode %d %p\n", BOND_MODE(bond), skb);
-	}
-
-	return NETDEV_TX_OK;
-}
-
 static netdev_tx_t __bond_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct bonding *bond = netdev_priv(dev);
@@ -5856,8 +5729,8 @@ static netdev_tx_t __bond_start_xmit(struct sk_buff *skb, struct net_device *dev
 	case BOND_MODE_ACTIVEBACKUP:
 		return bond_xmit_activebackup(skb, dev);
 	case BOND_MODE_XOR:
-       return bond_xmit_xor(skb, dev); /* QCA NSS ECM bonding support */
-    case BOND_MODE_8023AD:
+		return bond_xmit_xor(skb, dev); /* QCA NSS ECM bonding support */
+	case BOND_MODE_8023AD:
 		return bond_3ad_xor_xmit(skb, dev);
 	case BOND_MODE_BROADCAST:
 		return bond_xmit_broadcast(skb, dev);
@@ -5865,8 +5738,6 @@ static netdev_tx_t __bond_start_xmit(struct sk_buff *skb, struct net_device *dev
 		return bond_alb_xmit(skb, dev);
 	case BOND_MODE_TLB:
 		return bond_tlb_xmit(skb, dev);
-	case BOND_MODE_MLO:
-		return bond_xmit_mlo(skb, dev);
 	default:
 		/* Should never happen, mode already checked */
 		netdev_err(dev, "Unknown bonding mode %d\n", BOND_MODE(bond));
@@ -6296,21 +6167,12 @@ static void bond_destructor(struct net_device *bond_dev)
 	if (bond->wq)
 		destroy_workqueue(bond->wq);
 
+	/* QCA NSS ECM bonding support - Start */
+	if (bond->id != (~0U))
+		clear_bit(bond->id, &bond_id_mask);
+	/* QCA NSS ECM bonding support - End */
+
 	free_percpu(bond->rr_tx_counter);
-
-   /* QCA NSS ECM bonding support */
-   if (bond->id != (~0U))
-       clear_bit(bond->id, &bond_id_mask);
-	/* QCA NSS ECM bonding support */
-
-   /*
-	 * Wifi driver registered callback to destroy wiphy for MLO bond netdevice
-	 */
-	if (bond_is_mlo_device(bond_dev)) {
-		if (bond->mlo_info.bond_mlo_netdev_priv_destructor) {
-			bond->mlo_info.bond_mlo_netdev_priv_destructor(bond_dev);
-		}
-	}
 }
 
 void bond_setup(struct net_device *bond_dev)
@@ -6859,88 +6721,17 @@ int bond_create(struct net *net, const char *name)
 
 	bond_work_init_all(bond);
 
-   /* QCA NSS ECM bonding support - Start */
-   bond->id = ~0U;
-   if (bond_id_mask != (~0UL)) {
-       bond->id = (u32)ffz(bond_id_mask);
-       set_bit(bond->id, &bond_id_mask);
-   }
-	/* QCA NSS ECM bonding support - End */
-
-out:
-	rtnl_unlock();
-	return res;
-}
-
-/* bond_create_mlo()
- * Create bond netdevice for BOND_MODE_MLO with MLO specific callback and context.
- */
-struct net_device *bond_create_mlo(struct net *net, const char *name, struct mlo_bond_info *mlo_info)
-{
-	struct net_device *bond_dev;
-	struct bonding *bond;
-	int res;
-
-	ASSERT_RTNL();
-
-	bond_dev = alloc_netdev_mq(sizeof(struct bonding),
-				   name ? name : "bond%d", NET_NAME_UNKNOWN,
-				   bond_setup, tx_queues);
-	if (!bond_dev) {
-		pr_err("%s: eek! can't alloc netdev!\n", name);
-		return NULL;
-	}
-
-	bond = netdev_priv(bond_dev);
-
-	dev_net_set(bond_dev, net);
-	bond_dev->rtnl_link_ops = &bond_link_ops;
-
-	/*
-	 * MLO specific initialization.
-	 */
-	bond_dev->ieee80211_ptr = mlo_info->wdev;
-	bond->params.mode = BOND_MODE_MLO;
-	mlo_info->wdev->netdev = bond_dev;
-
-	memcpy((void *)&bond->mlo_info, (void *)mlo_info, sizeof(*mlo_info));
-	eth_hw_addr_random(bond_dev);
-
-	/*
-	 * Disable HW CSUM as wlan driver doesn't support
-	 */
-	bond_dev->hw_features &= ~(NETIF_F_HW_CSUM);
-	bond_dev->features &= ~(NETIF_F_HW_CSUM);
-
-	res = register_netdevice(bond_dev);
-	if (res < 0) {
-		free_netdev(bond_dev);
-		return NULL;
-	}
-
-	netif_carrier_off(bond_dev);
-	bond_work_init_all(bond);
-
+	/* QCA NSS ECM bonding support - Start */
 	bond->id = ~0U;
 	if (bond_id_mask != (~0UL)) {
 		bond->id = (u32)ffz(bond_id_mask);
 		set_bit(bond->id, &bond_id_mask);
 	}
-
-	return bond_dev;
+	/* QCA NSS ECM bonding support - End */
+out:
+	rtnl_unlock();
+	return res;
 }
-EXPORT_SYMBOL(bond_create_mlo);
-
-/* bond_get_mlo_ctx
- * Returns MLO context stored in netdev priv of bond netdevice
- */
-void *bond_get_mlo_ctx(struct net_device *bond_dev)
-{
-	struct mlo_bond_info *mlo_info = bond_get_mlo_priv(bond_dev);
-
-	return mlo_info->bond_mlo_ctx;
-}
-EXPORT_SYMBOL(bond_get_mlo_ctx);
 
 static int __net_init bond_net_init(struct net *net)
 {

@@ -115,6 +115,7 @@ static void ad_marker_info_received(struct bond_marker *marker_info,
 static void ad_marker_response_received(struct bond_marker *marker,
 					struct port *port);
 static void ad_update_actor_keys(struct port *port, bool reset);
+
 /* QCA NSS ECM bonding support - Start */
 struct bond_cb __rcu *bond_cb;
 
@@ -462,6 +463,7 @@ static u16 __ad_timer_to_ticks(u16 timer_type, u16 par)
 
 	return retval;
 }
+
 
 /* ================= ad_rx_machine helper functions ================== */
 
@@ -1106,8 +1108,8 @@ static void ad_mux_machine(struct port *port, bool *update_slave_arr)
 							   update_slave_arr);
 			port->ntt = true;
 
-           /* QCA NSS ECM bonding support - Start */
-           /* Send a notificaton about change in state of this
+		/* QCA NSS ECM bonding support - Start */
+			/* Send a notificaton about change in state of this
 			* port. We only want to handle case where port moves
 			* from AD_MUX_COLLECTING_DISTRIBUTING ->
 			* AD_MUX_ATTACHED.
@@ -1128,7 +1130,8 @@ static void ad_mux_machine(struct port *port, bool *update_slave_arr)
 				rcu_read_unlock();
 			}
 
-           break; /* QCA NSS ECM bonding support - End */
+			break;
+		/* QCA NSS ECM bonding support - End */
 		case AD_MUX_COLLECTING_DISTRIBUTING:
 			port->actor_oper_port_state |= LACP_STATE_COLLECTING;
 			port->actor_oper_port_state |= LACP_STATE_DISTRIBUTING;
@@ -1973,7 +1976,7 @@ static void ad_enable_collecting_distributing(struct port *port,
 {
 	if (port->aggregator->is_active) {
 		struct bond_cb *lag_cb_main; /* QCA NSS ECM bonding support */
-       slave_dbg(port->slave->bond->dev, port->slave->dev,
+		slave_dbg(port->slave->bond->dev, port->slave->dev,
 			  "Enabling port %d (LAG %d)\n",
 			  port->actor_port_number,
 			  port->aggregator->aggregator_identifier);
@@ -1981,7 +1984,7 @@ static void ad_enable_collecting_distributing(struct port *port,
 		/* Slave array needs update */
 		*update_slave_arr = true;
 
-       /* QCA NSS ECM bonding support - Start */
+		/* QCA NSS ECM bonding support - Start */
 		rcu_read_lock();
 		lag_cb_main = rcu_dereference(bond_cb);
 
@@ -1989,7 +1992,7 @@ static void ad_enable_collecting_distributing(struct port *port,
 			lag_cb_main->bond_cb_link_up(port->slave->dev);
 
 		rcu_read_unlock();
-       /* QCA NSS ECM bonding support - End */
+		/* QCA NSS ECM bonding support - End */
 	}
 }
 
