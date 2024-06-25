@@ -333,15 +333,17 @@ void patchvht160(char *file, int phynum)
 
 static void load_nss_ipq60xx(void)
 {
-/*	insmod("udp_tunnel");
+	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
 	insmod("l2tp_core");
 	insmod("pptp");
 	insmod("vxlan");
-*/
+
 	insmod("qca-ssdk-ipq60xx");
 	insmod("qca-nss-dp-ipq60xx");
-/*	insmod("qca-nss-drv-ipq60xx");
+	insmod("qca-nss-drv-ipq60xx");
 	insmod("qca-nss-crypto-ipq60xx");
 	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 	insmod("qca-nss-pppoe");
@@ -356,20 +358,22 @@ static void load_nss_ipq60xx(void)
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
 	insmod("qca-nss-bridge-mgr");
-	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");*/
+//	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 }
 static void load_nss_ipq807x(void)
 {
-/*	insmod("udp_tunnel");
+	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
 	insmod("l2tp_core");
 	insmod("pptp");
 	insmod("vxlan");
-*/
+
 
 	insmod("qca-ssdk-ipq807x");
 	insmod("qca-nss-dp-ipq807x");
-/*	insmod("qca-nss-drv-ipq807x");
+	insmod("qca-nss-drv-ipq807x");
 	insmod("qca-nss-crypto-ipq807x");
 	insmod("qca-nss-cfi-cryptoapi-ipq807x");
 	insmod("qca-nss-netlink");
@@ -377,8 +381,9 @@ static void load_nss_ipq807x(void)
 	sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
 	sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
 	sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
-*/
-/*
+
+
+	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	insmod("qca-nss-pppoe");
 	insmod("qca-nss-vlan");
 	insmod("qca-nss-qdisc");
@@ -391,7 +396,8 @@ static void load_nss_ipq807x(void)
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
 	insmod("qca-nss-bridge-mgr");
-	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");*/
+//	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	
 }
 
 void start_sysinit(void)
