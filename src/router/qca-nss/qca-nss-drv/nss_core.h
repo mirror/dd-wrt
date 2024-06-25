@@ -512,6 +512,15 @@ struct nss_ctx_instance {
 };
 
 /*
+ * NSS stats read context
+ */
+struct nss_stats_buff {
+	uint16_t msg_len;		/* Length of message copied */
+	char *msg_base_ptr;		/* base buffer pointer */
+	char *msg_cur_ptr;		/* current buffer pointer */
+};
+
+/*
  * Main NSS context structure (singleton)
  */
 struct nss_top_instance {
@@ -693,6 +702,7 @@ struct nss_top_instance {
 	struct nss_data_plane_ops *data_plane_ops;
 					/* nss_data_plane ops for this target platform */
 #endif
+	struct nss_stats_buff stats_buff;
 };
 
 #if (NSS_PKT_STATS_ENABLED == 1)

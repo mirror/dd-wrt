@@ -451,7 +451,7 @@ EXPORT_SYMBOL(nss_virt_if_create_sync_nexthop);
 struct nss_virt_if_handle *nss_virt_if_create_sync(struct net_device *netdev)
 {
 	if (!nss_ctl_redirect)
-		return NULL;
+	  return NULL;
 	/*
 	 * NSS_N2H_INTERFACE is the nexthop of the dynamic interface which is created for handling the
 	 * n2h traffic.
@@ -685,15 +685,6 @@ void nss_virt_if_register(struct nss_virt_if_handle *handle,
 }
 EXPORT_SYMBOL(nss_virt_if_register);
 
-
-void get_mac80211_api(void **a, void **b, void **c, void **d) {
-*a = &nss_virt_if_create_sync;
-*b = &nss_virt_if_destroy_sync;
-*c = &nss_virt_if_tx_buf;
-*d = &nss_virt_if_register;
-}
-
-EXPORT_SYMBOL(get_mac80211_api);
 /*
  * nss_virt_if_unregister()
  */

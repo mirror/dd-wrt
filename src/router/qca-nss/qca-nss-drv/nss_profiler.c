@@ -124,6 +124,7 @@ void *nss_profiler_alloc_dma(struct nss_ctx_instance *nss_ctx, struct nss_profil
 {
 	int size;
 	void *kaddr;
+	dma_addr_t dma_addr;
 	struct nss_profile_sdma_producer *dma;
 	struct nss_profile_sdma_ctrl *ctrl = (struct nss_profile_sdma_ctrl *)nss_ctx->meminfo_ctx.sdma_ctrl;
 	if (!ctrl)
@@ -135,7 +136,13 @@ void *nss_profiler_alloc_dma(struct nss_ctx_instance *nss_ctx, struct nss_profil
 	kaddr = kmalloc(size, GFP_KERNEL | __GFP_ZERO);
 
 	if (kaddr) {
-		dma->desc_ring = dma_map_single(nss_ctx->dev, kaddr, size, DMA_FROM_DEVICE);
+		dma_addr = dma_map_single(nss_ctx->dev, kaddr, size, DMA_FROM_DEVICE);
+		if (unlikely(dma_mapping_error(nss_ctx->dev, dma_addr))) {
+			nss_info_always("%px: failed to map DDR block\n", nss_ctx);
+			kfree(kaddr);
+			return NULL;
+		}
+		dma->desc_ring = dma_addr;
 		NSS_CORE_DSB();
 	}
 	ctrl->consumer[0].ring.kp = kaddr;

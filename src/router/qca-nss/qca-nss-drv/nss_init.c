@@ -595,6 +595,9 @@ static struct ctl_table nss_general_table[] = {
 static struct ctl_table_header *nss_clock_header;
 static struct ctl_table_header *nss_skb_header;
 static struct ctl_table_header *nss_general_header;
+static struct ctl_table *nss_clock_table;
+static struct ctl_table *nss_skb_reuse_tabl;
+static struct ctl_table *nss_general_tabl;
 
 /*
  * nss_init()

@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -32,7 +35,8 @@ static int8_t *nss_pvxlan_log_message_types_str[NSS_PVXLAN_MSG_TYPE_MAX] __maybe
 	"PVxLAN Enable Tunnel",
 	"PVxLAN Disable Tunnel",
 	"PVxLAN Add MAC rule",
-	"PVxLAN Delete MAC rule"
+	"PVxLAN Delete MAC rule",
+	"PVxLAN Config VP"
 };
 
 /*
@@ -49,7 +53,8 @@ static int8_t *nss_pvxlan_log_error_response_types_str[NSS_PVXLAN_ERROR_MAX] __m
 	"PVXLAN Invalid Flag",
 	"PVXLAN MAC Table Full",
 	"PVXLAN MAC Exists",
-	"PVXLAN MAC Does Not Exist"
+	"PVXLAN MAC Does Not Exist",
+	"PVXLAN Config VP failed"
 };
 
 /*
@@ -154,6 +159,30 @@ static void nss_pvxlan_log_mac_del_msg(struct nss_pvxlan_msg *npvm)
 }
 
 /*
+ * nss_pvxlan_log_unconfig_vp_msg()
+ *	Log NSS PVXLAN unconfig VP message.
+ */
+static void nss_pvxlan_log_unconfig_vp_msg(struct nss_pvxlan_msg *npvm)
+{
+	nss_trace("%px: NSS PVXLAN unconfigure VP number\n", npvm);
+}
+
+/*
+ * nss_pvxlan_log_config_vp_msg()
+ *	Log NSS PVXLAN config VP message.
+ */
+static void nss_pvxlan_log_config_vp_msg(struct nss_pvxlan_msg *npvm)
+{
+	struct nss_pvxlan_vp_msg *vpm __maybe_unused = &npvm->msg.vp_config;
+
+	nss_trace("%px: NSS PVXLAN update_vp_num %d\n"
+		"NSS PVXLAN ppe to host mode %s\n",
+		vpm,
+		vpm->vp_num,
+		vpm->ppe_to_host ? "enabled" : "disabled");
+}
+
+/*
  * nss_pvxlan_log_verbose()
  *	Log message contents.
  */
@@ -182,6 +211,14 @@ static void nss_pvxlan_log_verbose(struct nss_pvxlan_msg *npvm)
 
 	case NSS_PVXLAN_MSG_TYPE_MAC_DEL:
 		nss_pvxlan_log_mac_del_msg(npvm);
+		break;
+
+	case NSS_PVXLAN_MSG_TYPE_CONFIG_VP:
+		nss_pvxlan_log_config_vp_msg(npvm);
+		break;
+
+	case NSS_PVXLAN_MSG_TYPE_UNCONFIG_VP:
+		nss_pvxlan_log_unconfig_vp_msg(npvm);
 		break;
 
 	case NSS_PVXLAN_MSG_TYPE_SYNC_STATS:

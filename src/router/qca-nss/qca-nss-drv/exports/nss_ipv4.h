@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -290,6 +290,7 @@ enum nss_ipv4_stats_types {
 #define NSS_IPV4_RULE_CREATE_IDENTIFIER_VALID 0x1000
 		/**< Identifier is valid. */
 #define NSS_IPV4_RULE_CREATE_MIRROR_VALID 0x2000	/**< Mirror fields are valid. */
+#define NSS_IPV4_RULE_CREATE_RAWIP_VALID 0x4000		/**< RAW IP fields are valid. */
 
 /*
  * Multicast command rule flags

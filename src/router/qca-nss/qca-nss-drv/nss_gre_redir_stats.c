@@ -53,6 +53,38 @@ bool nss_gre_redir_stats_get(int index, struct nss_gre_redir_tunnel_stats *stats
 EXPORT_SYMBOL(nss_gre_redir_stats_get);
 
 /*
+ * nss_gre_redir_stats_copy_rem_buf()
+ *	Copy the local buffer to kernel user buffer
+ */
+static int nss_gre_redir_stats_copy_rem_buf(struct nss_stats_buff *ws, char *buffer,
+					    size_t length, int *total_read)
+{
+	int bytes_read;
+	int return_value = 0;
+
+	bytes_read = ws->msg_len;
+
+	/*
+	 * Calculate total bytes read to the current buffer
+	 */
+	if ((bytes_read + *total_read) >= length) {
+		bytes_read = length - *total_read;
+		return_value = -ENOMEM;
+	}
+
+	if (copy_to_user(buffer + *total_read, ws->msg_cur_ptr, bytes_read)) {
+		return -EFAULT;
+	}
+
+	ws->msg_len -= bytes_read;
+	ws->msg_cur_ptr += bytes_read;
+
+	*total_read += bytes_read;
+
+	return return_value;
+}
+
+/*
  * nss_gre_redir_stats_read()
  *	READ gre_redir tunnel stats.
  */
@@ -67,14 +99,27 @@ static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size
 	size_t size_al = NSS_STATS_MAX_STR_LENGTH * max_output_lines * NSS_GRE_REDIR_MAX_INTERFACES;
 	struct nss_stats_data *data = fp->private_data;
 	struct nss_gre_redir_tunnel_stats stats;
-	ssize_t bytes_read = 0;
-	size_t size_wr = 0;
+	struct nss_stats_buff *ws;
+	int bytes_read = 0;
 	int index = 0;
+	int status = 0;
 
-	char *lbuf = kzalloc(size_al, GFP_KERNEL);
-	if (unlikely(!lbuf)) {
-		nss_warning("Could not allocate memory for local statistics buffer");
-		return 0;
+	size_al = PAGE_SIZE;
+
+	ws = (struct nss_stats_buff *)&nss_top_main.stats_buff;
+
+	if (ws->msg_len) {
+		status = nss_gre_redir_stats_copy_rem_buf(ws, ubuf, sz, &bytes_read);
+		if (status < 0) {
+			goto done;
+		}
+	} else {
+		ws->msg_base_ptr = kmalloc(size_al, GFP_KERNEL);
+		if (!ws->msg_base_ptr) {
+			nss_warning("Could not allocate memory for local statistics buffer");
+			return -ENOMEM;
+		}
+		ws->msg_cur_ptr = ws->msg_base_ptr;
 	}
 
 	if (data) {
@@ -85,8 +130,7 @@ static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size
 	 * If we are done accomodating all the GRE_REDIR tunnels.
 	 */
 	if (index >= NSS_GRE_REDIR_MAX_INTERFACES) {
-		kfree(lbuf);
-		return 0;
+		goto done;
 	}
 
 	for (; index < NSS_GRE_REDIR_MAX_INTERFACES; index++) {
@@ -100,18 +144,36 @@ static ssize_t nss_gre_redir_stats_read(struct file *fp, char __user *ubuf, size
 			continue;
 		}
 
-		size_wr += nss_stats_banner(lbuf, size_wr, size_al, "gre_redir stats", NSS_STATS_SINGLE_CORE);
-		size_wr += scnprintf(lbuf + size_wr, size_al - size_wr, "\nTunnel stats for %s\n", stats.dev->name);
-		size_wr += nss_stats_print("gre_redir", NULL, NSS_STATS_SINGLE_INSTANCE, nss_gre_redir_strings_stats,
-					&stats.tstats.rx_packets, NSS_GRE_REDIR_STATS_MAX, lbuf, size_wr, size_al);
+		ws->msg_cur_ptr = ws->msg_base_ptr;
+
+		ws->msg_len = nss_stats_banner(ws->msg_base_ptr, ws->msg_len, size_al, "gre_redir stats", NSS_STATS_SINGLE_CORE);
+		ws->msg_len += scnprintf(ws->msg_base_ptr + ws->msg_len, size_al - ws->msg_len, "\nTunnel stats for %s\n", stats.dev->name);
+		ws->msg_len += nss_stats_print("gre_redir", NULL, NSS_STATS_SINGLE_INSTANCE, nss_gre_redir_strings_stats,
+					&stats.tstats.rx_packets, NSS_GRE_REDIR_STATS_MAX, ws->msg_base_ptr, ws->msg_len, size_al);
+
+		status = nss_gre_redir_stats_copy_rem_buf(ws, ubuf, sz, &bytes_read);
+
+		if (status < 0) {
+			index++;
+			break;
+		}
+
 	}
 
-	bytes_read = simple_read_from_buffer(ubuf, sz, ppos, lbuf, strlen(lbuf));
 	if (data) {
 		data->index = index;
 	}
 
-	kfree(lbuf);
+done:
+	if (status == -EFAULT) {
+		bytes_read = -EFAULT;
+	}
+
+	if (!ws->msg_len && ws->msg_base_ptr) {
+		kfree(ws->msg_base_ptr);
+		ws->msg_base_ptr = NULL;
+	}
+
 	return bytes_read;
 }
 

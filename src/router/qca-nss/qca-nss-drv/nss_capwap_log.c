@@ -1,9 +1,12 @@
 /*
  **************************************************************************
  * Copyright (c) 2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -163,7 +166,7 @@ static void nss_capwap_flow_rule_msg(struct nss_capwap_flow_rule_msg *ncfrm)
 		"CAPWAP Destination Port: %d\n"
 		"CAPWAP Source IP: %x %x %x %x\n"
 		"CAPWAP Destination IP: %x %x %x %x"
-		"CAPWAP Flow ID: %d",
+		"CAPWAP Flow type:%d Flow ID: %d SCS_SDWF ID: %d",
 		ncfrm,
 		ncfrm->ip_version, ncfrm->protocol,
 		ncfrm->src_port, ncfrm->dst_port,
@@ -171,7 +174,9 @@ static void nss_capwap_flow_rule_msg(struct nss_capwap_flow_rule_msg *ncfrm)
 		ncfrm->src_ip[2], ncfrm->src_ip[3],
 		ncfrm->dst_ip[0], ncfrm->dst_ip[1],
 		ncfrm->dst_ip[2], ncfrm->dst_ip[3],
-		ncfrm->flow_id);
+		ncfrm->flow_attr.type,
+		ncfrm->flow_attr.flow_id,
+		ncfrm->flow_attr.scs_sdwf_id);
 }
 
 /*

@@ -26,6 +26,8 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/sizes.h>
 #include <nss_hal.h>
 #include <net/dst.h>
 #ifdef CONFIG_BRIDGE_NETFILTER
@@ -61,8 +63,9 @@
 (((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)))) || \
 (((LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)))) || \
 (((LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)))) || \
-(((LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)))) || \
-(((LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0))))))
+(((LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0)))) || \
+(((LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(5, 16, 0)))) || \
+(((LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0))))))
 #error "Check skb recycle code in this file to match Linux version"
 #endif
 
@@ -491,50 +494,38 @@ static void nss_core_handle_crypto_pkt(struct nss_ctx_instance *nss_ctx, unsigne
  */
 static uint32_t nss_soc_mem_info(void)
 {
-	struct device_node *node;
-	struct device_node *snode;
-	int addr_cells;
-	int size_cells;
-	int n_items;
-	uint32_t nss_msize = 8 << 20;	/* default: 8MB */
-	const __be32 *ppp;
+	struct device_node *common_node, *memory_node;
+	struct resource r;
+	int ret;
 
-	node = of_find_node_by_name(NULL, "reserved-memory");
-	if (!node) {
-		nss_info_always("reserved-memory not found\n");
-		return nss_msize;
+	common_node = of_find_compatible_node(NULL, NULL, "qcom,nss-common");
+	if (!common_node) {
+		nss_info_always("NSS common node not found!\n");
+		goto err_use_default_memsize;
 	}
 
-	ppp = (__be32 *)of_get_property(node, "#address-cells", NULL);
-	addr_cells = ppp ? be32_to_cpup(ppp) : 2;
-	nss_info("%px addr cells %d\n", ppp, addr_cells);
-	ppp = (__be32 *)of_get_property(node, "#size-cells", NULL);
-	size_cells = ppp ? be32_to_cpup(ppp) : 2;
-	nss_info("%px size cells %d\n", ppp, size_cells);
-
-	for_each_child_of_node(node, snode) {
-		/*
-		 * compare (snode->full_name, "/reserved-memory/nss@40000000") may be safer
-		 */
-		nss_info("%px snode %s fn %s\n", snode, snode->name, snode->full_name);
-		if (strcmp(snode->name, "nss") == 0)
-			break;
-	}
-	of_node_put(node);
-	if (!snode) {
-		nss_info_always("nss@node not found: needed to determine NSS reserved DDR\n");
-		return nss_msize;
+	memory_node = of_parse_phandle(common_node, "memory-region", 0);
+	if (!memory_node) {
+		nss_info_always("NSS reserved-memory node not found!\n");
+		goto err_use_default_memsize;
 	}
 
-	ppp = (__be32 *)of_get_property(snode, "reg", &n_items);
-	if (ppp) {
-		n_items /= sizeof(ppp[0]);
-		nss_msize = be32_to_cpup(ppp + addr_cells + size_cells - 1);
-		nss_info("addr/size storage words %d %d # words %d in DTS, ddr size %x\n",
-				addr_cells, size_cells, n_items, nss_msize);
+	ret = of_address_to_resource(memory_node, 0, &r);
+	of_node_put(common_node);
+	of_node_put(memory_node);
+	if (ret) {
+		nss_info_always("NSS reserved-memory resource not found!\n");
+		goto err_use_default_memsize;
 	}
-	of_node_put(snode);
-	return nss_msize;
+
+	nss_info("NSS DDR size is 0x%x\n", (uint32_t) resource_size(&r));
+
+	return resource_size(&r);
+
+err_use_default_memsize:
+	nss_info_always("Using default NSS reserved-memory size of 0x%x !\n", SZ_8M);
+
+	return SZ_8M;
 }
 
 /*
@@ -2704,11 +2695,8 @@ static inline bool nss_core_skb_can_reuse(struct nss_ctx_instance *nss_ctx,
 	if (unlikely(irqs_disabled()))
 		return false;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 	if (unlikely(skb_shinfo(nbuf)->flags & SKBFL_ZEROCOPY_ENABLE))
-#else
-	if (unlikely(skb_shinfo(nbuf)->tx_flags & SKBTX_DEV_ZEROCOPY))
-#endif
+		return false;
 
 	if (unlikely(skb_is_nonlinear(nbuf)))
 		return false;

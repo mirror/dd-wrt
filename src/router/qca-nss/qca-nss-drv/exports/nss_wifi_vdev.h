@@ -1,6 +1,8 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -170,6 +172,7 @@ enum nss_wifi_vdev_ext_data_pkt_type {
 	NSS_WIFI_VDEV_EXT_DATA_PKT_TYPE_4ADDR = 17,	/**< 4 address exception to host. */
 	NSS_WIFI_VDEV_EXT_DATA_MPDU_INFO = 18,		/**< MPDU metadata information. */
 	NSS_WIFI_VDEV_EXT_DATA_PKT_TYPE_EAPOL = 19,	/**< EAPOL packets. */
+	NSS_WIFI_VDEV_EXT_DATA_PKT_TYPE_PN_ERR = 20,	/**< PN Error packets. */
 	NSS_WIFI_VDEV_EXT_DATA_PKT_TYPE_MAX
 };
 
@@ -861,6 +864,15 @@ struct nss_wifi_vdev_addr4_data_metadata {
 };
 
 /**
+ * nss_wifi_vdev_reo_pn_err_metadata
+ *	Metadata per REO pn error packet.
+ */
+struct nss_wifi_vdev_reo_pn_err_metadata {
+	uint8_t peer_mac_addr[ETH_ALEN];	/**< Peer mac address. */
+	uint8_t sec_type;	/**< Security type. */
+};
+
+/**
  * nss_wifi_vdev_per_packet_metadata
  *	Wi-Fi per packet metadata content.
  */
@@ -895,6 +907,8 @@ struct nss_wifi_vdev_per_packet_metadata {
 			/**< Per packet Tx metadata structure for Tx capture info per MPDU. */
 		struct nss_wifi_vdev_eapol_per_packet_metadata eapol_metadata;
 			/**< Per packet metadata structure for EAPOL. */
+		struct nss_wifi_vdev_reo_pn_err_metadata reo_pn_err_metadata;
+			/**< Per packet metadata structure for reo pn error. */
 	} metadata;
 			/**< Metadata payload for special data receive message. */
 };

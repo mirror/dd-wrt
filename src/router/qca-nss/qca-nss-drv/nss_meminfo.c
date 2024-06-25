@@ -86,7 +86,7 @@ static uint32_t nss_meminfo_alloc_imem(struct nss_ctx_instance *nss_ctx, uint32_
 	int mask;
 
 	mask = alignment - 1;
-//	nss_info_always("%px: alloc IMEM %u\n", nss_ctx, size);
+
 	/*
 	 * Alignment has to be a power of 2.
 	 */
@@ -101,7 +101,7 @@ static uint32_t nss_meminfo_alloc_imem(struct nss_ctx_instance *nss_ctx, uint32_
 		new_tail = (new_tail + mask) & ~mask;
 
 	if (size > (mem_ctx->imem_end - new_tail)) {
-		nss_info_always("%px: failed to alloc an IMEM block of size %u imem end %u\n", nss_ctx, size, mem_ctx->imem_end);
+		nss_info_always("%px: failed to alloc an IMEM block of size %u\n", nss_ctx, size);
 		return addr;
 	}
 
