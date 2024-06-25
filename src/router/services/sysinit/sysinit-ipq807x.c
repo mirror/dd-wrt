@@ -335,7 +335,8 @@ static void load_nss_ipq60xx(void)
 {
 	insmod("qca-ssdk-ipq60xx");
 	insmod("qca-nss-dp-ipq60xx");
-	insmod("qca-nss-drv-ipq60xx");
+
+/*	insmod("qca-nss-drv-ipq60xx");
 	insmod("qca-nss-crypto-ipq60xx");
 	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 	insmod("qca-nss-netlink");
@@ -359,11 +360,11 @@ static void load_nss_ipq60xx(void)
 	insmod("qca-nss-netlink");
 	insmod("qca-nss-bridge-mgr");
 	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-
+*/
 }
 static void load_nss_ipq807x(void)
 {
-	insmod("udp_tunnel");
+/*	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
 	insmod("tunnel6");
 	insmod("ip6_tunnel");
@@ -371,10 +372,10 @@ static void load_nss_ipq807x(void)
 	insmod("pptp");
 	insmod("vxlan");
 
-
+*/
 	insmod("qca-ssdk-ipq807x");
 	insmod("qca-nss-dp-ipq807x");
-	insmod("qca-nss-drv-ipq807x");
+/*	insmod("qca-nss-drv-ipq807x");
 	insmod("qca-nss-crypto-ipq807x");
 	insmod("qca-nss-cfi-cryptoapi-ipq807x");
 	insmod("qca-nss-netlink");
@@ -397,7 +398,7 @@ static void load_nss_ipq807x(void)
 	insmod("nss-ifb");
 	insmod("qca-nss-netlink");
 	insmod("qca-nss-bridge-mgr");
-	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");*/
 	
 }
 
@@ -552,14 +553,14 @@ void start_sysinit(void)
 		writeproc("/proc/irq/34/smp_affinity", "4");
 		writeproc("/proc/irq/35/smp_affinity", "4");
 
-		writeproc("/proc/irq/39/smp_affinity", "1");
+/*		writeproc("/proc/irq/39/smp_affinity", "1");
 		writeproc("/proc/irq/49/smp_affinity", "1");
 		writeproc("/proc/irq/40/smp_affinity", "2");
 		writeproc("/proc/irq/50/smp_affinity", "2");
 		writeproc("/proc/irq/41/smp_affinity", "4");
 		writeproc("/proc/irq/51/smp_affinity", "4");
 		writeproc("/proc/irq/42/smp_affinity", "8");
-		writeproc("/proc/irq/52/smp_affinity", "8");
+		writeproc("/proc/irq/52/smp_affinity", "8");*/
 
 	}
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
