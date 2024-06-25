@@ -2287,6 +2287,8 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
 #endif
+	size = SKB_DATA_ALIGN(size);
+	size += SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 
 	data = kmalloc_reserve(&size, gfp_mask, NUMA_NO_NODE, NULL);
 	if (!data)
