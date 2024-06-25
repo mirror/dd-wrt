@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -302,8 +302,8 @@ struct mht_pinctrl_setting {
 sw_error_t mht_gpio_set_bit(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t value);
 sw_error_t mht_gpio_get_bit(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t *data);
 sw_error_t mht_gpio_pin_mux_set(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t func);
-sw_error_t mht_gpio_pin_cfg_set_bias(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t bias);
-sw_error_t mht_gpio_pin_cfg_get_bias(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t *bias);
+sw_error_t mht_gpio_pin_cfg_set_bias(a_uint32_t dev_id, a_uint32_t pin, enum pin_config_param bias);
+sw_error_t mht_gpio_pin_cfg_get_bias(a_uint32_t dev_id, a_uint32_t pin, enum pin_config_param *bias);
 sw_error_t mht_gpio_pin_cfg_set_drvs(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t drvs);
 sw_error_t mht_gpio_pin_cfg_get_drvs(a_uint32_t dev_id, a_uint32_t pin, a_uint32_t *drvs);
 sw_error_t mht_gpio_pin_cfg_set_oe(a_uint32_t dev_id, a_uint32_t pin, a_bool_t oe);

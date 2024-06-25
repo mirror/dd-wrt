@@ -173,7 +173,9 @@ _adpt_phy_status_get_from_ppe(a_uint32_t dev_id, a_uint32_t port_id,
 							&reg_field);
 			SW_RTN_ON_ERROR(rv);
 		}
-	} else if (port_id == SSDK_PHYSICAL_PORT1) {
+	} else if ((port_id == SSDK_PHYSICAL_PORT1) ||
+		((adpt_ppe_type_get(dev_id) == CPPE_TYPE) && (port_id == SSDK_PHYSICAL_PORT4)))
+	{
 		rv = hppe_port_phy_status_0_port1_phy_status_get(dev_id,
 				&reg_field);
 		SW_RTN_ON_ERROR (rv);
@@ -3340,8 +3342,10 @@ _adpt_hppe_gmac_port_interface_eee_cfg_set(a_uint32_t dev_id, fal_port_t port_id
 	/*configure wakeup timer and sleep timer*/
 	rv = hppe_lpi_timer_get(dev_id, port_id, &lpi_port_timer);
 	SW_RTN_ON_ERROR (rv);
-	lpi_port_timer.bf.lpi_port_wakeup_timer = port_eee_cfg->lpi_wakeup_timer;
-	lpi_port_timer.bf.lpi_port_sleep_timer = port_eee_cfg->lpi_sleep_timer;
+	if(port_eee_cfg->lpi_wakeup_timer != 0)
+		lpi_port_timer.bf.lpi_port_wakeup_timer = port_eee_cfg->lpi_wakeup_timer;
+	if(port_eee_cfg->lpi_sleep_timer != 0)
+		lpi_port_timer.bf.lpi_port_sleep_timer = port_eee_cfg->lpi_sleep_timer;
 	rv = hppe_lpi_timer_set(dev_id, port_id, &lpi_port_timer);
 	SW_RTN_ON_ERROR (rv);
 
@@ -3487,9 +3491,11 @@ _adpt_hppe_xgmac_port_interface_eee_cfg_set(a_uint32_t dev_id, fal_port_t port_i
 	rv = hppe_mac_lpi_timers_control_get(dev_id, xgmac_id, &mac_lpi_timers_control);
 	SW_RTN_ON_ERROR (rv);
 	/*sleep timer as 100us*/
-	mac_lpi_timers_control.bf.lst = port_eee_cfg->lpi_sleep_timer;
+	if(port_eee_cfg->lpi_sleep_timer)
+		mac_lpi_timers_control.bf.lst = port_eee_cfg->lpi_sleep_timer;
 	/*wake up timer, 2.5G:40us, 1G:22us, 100M:28us*/
-	mac_lpi_timers_control.bf.twt = port_eee_cfg->lpi_wakeup_timer;
+	if(port_eee_cfg->lpi_wakeup_timer != 0)
+		mac_lpi_timers_control.bf.twt = port_eee_cfg->lpi_wakeup_timer;
 	rv = hppe_mac_lpi_timers_control_set(dev_id, xgmac_id, &mac_lpi_timers_control);
 	SW_RTN_ON_ERROR (rv);
 

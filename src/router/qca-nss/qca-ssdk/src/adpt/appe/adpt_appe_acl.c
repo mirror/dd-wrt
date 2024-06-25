@@ -59,9 +59,12 @@ enum{
 
 sw_error_t
 _adpt_appe_pre_acl_tunnel_info_fields_check(a_uint32_t dev_id, a_uint32_t rule_id,
-		a_uint32_t rule_nr, fal_acl_tunnel_info_t * rule, a_uint32_t *rule_type_map)
+		a_uint32_t rule_nr, fal_acl_tunnel_info_t * rule, a_uint32_t *rule_type_map,
+		a_uint32_t *tunnel_inverse_rule_type_count)
 {
-	SSDK_DEBUG("tunnel_info_fields[0] = 0x%x,", rule->field_flg[0]);
+	SSDK_DEBUG("tunnel_info_fields 0x%x-0x%x\n",
+			rule->field_flg[0], rule->inverse_field_flg[0]);
+
 	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_TYPE) ||
 		FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE) ||
 		FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_KEY_VALID) ||
@@ -70,13 +73,21 @@ _adpt_appe_pre_acl_tunnel_info_fields_check(a_uint32_t dev_id, a_uint32_t rule_i
 	{
 		*rule_type_map |= (1<<ADPT_ACL_APPE_TUNNEL_RULE);
 	}
-	SSDK_DEBUG("rule_type_map = 0x%x\n", *rule_type_map);
+	/* inverse tunnel fields */
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_TYPE))
+		(*tunnel_inverse_rule_type_count)++;
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE))
+		(*tunnel_inverse_rule_type_count)++;
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_KEY))
+		(*tunnel_inverse_rule_type_count)++;
+
 	return SW_OK;
 }
 
 sw_error_t
 _adpt_appe_acl_udf_fields_check(a_uint32_t dev_id, a_uint32_t rule_id,
-		a_uint32_t rule_nr, fal_acl_rule_t * rule, a_uint32_t *rule_type_map)
+		a_uint32_t rule_nr, fal_acl_rule_t * rule,
+		ADPT_HPPE_ACL_RULE_MAP *rule_map)
 {
 	a_uint32_t udf_rule_type_map = 0;
 
@@ -153,8 +164,19 @@ _adpt_appe_acl_udf_fields_check(a_uint32_t dev_id, a_uint32_t rule_id,
 			}
 		}
 	}
-	*rule_type_map |= udf_rule_type_map;
-	SSDK_DEBUG("rule_type_map = 0x%x\n", *rule_type_map);
+	rule_map->rule_type_map |= udf_rule_type_map;
+	/* inverse UDF fileds */
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_UDFPROFILE))
+		rule_map->inverse_rule_type_count[ADPT_ACL_APPE_EXT_UDF0_RULE] ++;
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_UDF0))
+		rule_map->inverse_rule_type_count[ADPT_ACL_HPPE_UDF0_RULE] ++;
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_UDF3))
+		rule_map->inverse_rule_type_count[ADPT_ACL_HPPE_UDF1_RULE] ++;
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_UDF1))
+		rule_map->inverse_rule_type_count[ADPT_ACL_HPPE_UDF1_RULE] ++;
+	/* ext udf1 can match both udf2 mask and range */
+	if(FAL_FIELD_FLG_TST(rule->inverse_field_flg, FAL_ACL_FIELD_UDF2))
+		rule_map->inverse_rule_type_count[ADPT_ACL_APPE_EXT_UDF1_RULE] ++;
 
 	return SW_OK;
 }
@@ -521,29 +543,49 @@ _adpt_appe_pre_acl_action_sw_2_hw(a_uint32_t dev_id,
 
 sw_error_t
 _adpt_appe_pre_acl_tunnel_rule_sw_2_hw(fal_acl_tunnel_info_t *rule,
-	ADPT_APPE_ACL_TUNNEL_RULE *tunnelrule, ADPT_APPE_ACL_TUNNEL_RULE_MASK *tunnelrule_mask)
+	ADPT_APPE_ACL_TUNNEL_RULE *tunnelrule, ADPT_APPE_ACL_TUNNEL_RULE_MASK *tunnelrule_mask,
+	a_uint8_t inverse_en)
 {
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_TYPE))
+	fal_acl_tunnel_field_map_t field_flg = {0};
+
+	if (inverse_en)
+		field_flg[0] |= rule->inverse_field_flg[0];
+	else
+		field_flg[0] |= rule->field_flg[0];
+
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_TUNNEL_TYPE))
 	{
 		tunnelrule->tunnel_type = rule->tunnel_type;
 		tunnelrule_mask->tunnel_type_mask = rule->tunnel_type_mask&0x1f;
+		if(inverse_en) {
+			FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_TYPE);
+			return SW_OK;
+		}
 	}
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE))
 	{
 		tunnelrule->tunnel_inner_type = rule->inner_type;
 		tunnelrule_mask->tunnel_inner_type_mask = rule->inner_type_mask&0x3;
+		if(inverse_en) {
+			FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE);
+			return SW_OK;
+		}
 	}
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_KEY_VALID))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_TUNNEL_KEY_VALID))
 	{
 		tunnelrule->tunnel_info_valid = rule->tunnel_key_valid;
 		tunnelrule_mask->tunnel_info_valid_mask = rule->tunnel_key_valid_mask;
 	}
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_KEY))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_TUNNEL_KEY))
 	{
 		tunnelrule->tunnel_info = rule->tunnel_key;
 		tunnelrule_mask->tunnel_info_mask = rule->tunnel_key_mask;
+		if(inverse_en) {
+			FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_TUNNEL_KEY);
+			return SW_OK;
+		}
 	}
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_TUNNEL_DECAP_EN))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_TUNNEL_DECAP_EN))
 	{
 		tunnelrule->tunnel_decap_en = rule->tunnel_decap_en;
 		tunnelrule_mask->tunnel_decap_en_mask = rule->tunnel_decap_en_mask;
@@ -554,23 +596,38 @@ _adpt_appe_pre_acl_tunnel_rule_sw_2_hw(fal_acl_tunnel_info_t *rule,
 sw_error_t
 _adpt_appe_acl_ext_udf_rule_sw_2_hw(fal_acl_rule_t *rule, a_uint32_t is_win1,
 	ADPT_APPE_ACL_EXT_UDF_RULE * extudfrule, ADPT_APPE_ACL_EXT_UDF_RULE_MASK *extudfrule_mask,
-	a_uint8_t *range_en)
+	a_uint8_t *range_en, a_uint8_t inverse_en)
 {
+	fal_acl_field_map_t field_flg = {0};
+
+	if (inverse_en)
+		FAL_FIELD_FLG_CPY(field_flg, rule->inverse_field_flg);
+	else
+		FAL_FIELD_FLG_CPY(field_flg, rule->field_flg);
+
 	if(is_win1)
 	{
-		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDF3))
+		if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_UDF3))
 		{
 			extudfrule->udf1_valid = 1;
 			extudfrule->udf1 = rule->udf3_val;
 			extudfrule_mask->udf1_valid = 1;
 			extudfrule_mask->udf1_mask = rule->udf3_mask;
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDF3);
+				return SW_OK;
+			}
 		}
-		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDFPROFILE))
+		if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_UDFPROFILE))
 		{
 			extudfrule->udfprofile_valid= 1;
 			extudfrule->udfprofile= rule->udfprofile_val;
 			extudfrule_mask->udfprofile_valid= 1;
 			extudfrule_mask->udfprofile_mask= rule->udfprofile_mask;
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDFPROFILE);
+				return SW_OK;
+			}
 		}
 		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDF2))
 		{
@@ -605,26 +662,38 @@ _adpt_appe_acl_ext_udf_rule_sw_2_hw(fal_acl_rule_t *rule, a_uint32_t is_win1,
 				extudfrule_mask->udf0_mask = max;
 				*range_en = 1;
 			}
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDF2);
+				return SW_OK;
+			}
 		}
 	}
 	else
 	{
-		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDF1) &&
+		if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_UDF1) &&
 			FAL_ACL_FIELD_MASK == rule->udf1_op)
 		{
 			extudfrule->udf1_valid = 1;
 			extudfrule->udf1 = rule->udf1_val;
 			extudfrule_mask->udf1_valid = 1;
 			extudfrule_mask->udf1_mask = rule->udf1_mask;
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDF1);
+				return SW_OK;
+			}
 		}
-		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDFPROFILE))
+		if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_UDFPROFILE))
 		{
 			extudfrule->udfprofile_valid= 1;
 			extudfrule->udfprofile= rule->udfprofile_val;
 			extudfrule_mask->udfprofile_valid= 1;
 			extudfrule_mask->udfprofile_mask= rule->udfprofile_mask;
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDFPROFILE);
+				return SW_OK;
+			}
 		}
-		if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_UDF0))
+		if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_UDF0))
 		{
 			extudfrule->udf0_valid = 1;
 			extudfrule_mask->udf0_valid = 1;
@@ -657,15 +726,19 @@ _adpt_appe_acl_ext_udf_rule_sw_2_hw(fal_acl_rule_t *rule, a_uint32_t is_win1,
 				extudfrule_mask->udf0_mask = max;
 				*range_en = 1;
 			}
+			if(inverse_en) {
+				FAL_FIELD_FLG_CLR(rule->inverse_field_flg, FAL_ACL_FIELD_UDF0);
+				return SW_OK;
+			}
 		}
 	}
 
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_IP))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_IP))
 	{
 		extudfrule->is_ip = rule->is_ip_val;
 		extudfrule_mask->is_ip = 1;
 	}
-	if(FAL_FIELD_FLG_TST(rule->field_flg, FAL_ACL_FIELD_IPV6))
+	if(FAL_FIELD_FLG_TST(field_flg, FAL_ACL_FIELD_IPV6))
 	{
 		extudfrule->is_ipv6= rule->is_ipv6_val;
 		extudfrule_mask->is_ipv6 = 1;
@@ -861,38 +934,46 @@ _adpt_appe_pre_acl_action_hw_2_sw(a_uint32_t dev_id,
 
 sw_error_t
 _adpt_appe_pre_acl_tunnel_rule_hw_2_sw(ADPT_APPE_ACL_TUNNEL_RULE *tunnelrule,
-		ADPT_APPE_ACL_TUNNEL_RULE_MASK *tunnelrule_mask, fal_acl_tunnel_info_t * rule)
+		ADPT_APPE_ACL_TUNNEL_RULE_MASK *tunnelrule_mask, a_uint8_t inverse_en,
+		fal_acl_tunnel_info_t * rule)
 {
+	fal_acl_tunnel_field_map_t field_flg = {0};
+
 	if(tunnelrule_mask->tunnel_type_mask)
 	{
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_TUNNEL_TYPE);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_TUNNEL_TYPE);
 		rule->tunnel_type = tunnelrule->tunnel_type;
 		rule->tunnel_type_mask = tunnelrule_mask->tunnel_type_mask;
 	}
 	if(tunnelrule_mask->tunnel_inner_type_mask)
 	{
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_TUNNEL_INNER_TYPE);
 		rule->inner_type = tunnelrule->tunnel_inner_type;
 		rule->inner_type_mask = tunnelrule_mask->tunnel_inner_type_mask;
 	}
 	if(tunnelrule_mask->tunnel_info_valid_mask)
 	{
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_TUNNEL_KEY_VALID);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_TUNNEL_KEY_VALID);
 		rule->tunnel_key_valid = tunnelrule->tunnel_info_valid;
 		rule->tunnel_key_valid_mask = tunnelrule_mask->tunnel_info_valid_mask;
 	}
 	if(tunnelrule_mask->tunnel_info_mask)
 	{
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_TUNNEL_KEY);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_TUNNEL_KEY);
 		rule->tunnel_key = tunnelrule->tunnel_info;
 		rule->tunnel_key_mask = tunnelrule_mask->tunnel_info_mask;
 	}
 	if(tunnelrule_mask->tunnel_decap_en_mask)
 	{
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_TUNNEL_DECAP_EN);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_TUNNEL_DECAP_EN);
 		rule->tunnel_decap_en = tunnelrule->tunnel_decap_en;
 		rule->tunnel_decap_en_mask = tunnelrule_mask->tunnel_decap_en_mask;
 	}
+	if (inverse_en)
+		rule->inverse_field_flg[0] |= field_flg[0];
+	else
+		rule->field_flg[0] |= field_flg[0];
+
 	return SW_OK;
 }
 
@@ -901,25 +982,27 @@ sw_error_t
 _adpt_appe_acl_ext_udf_rule_hw_2_sw(a_uint32_t is_win1,
 	ADPT_APPE_ACL_EXT_UDF_RULE * extudfrule,
 	ADPT_APPE_ACL_EXT_UDF_RULE_MASK *extudfrule_mask,
-	a_uint8_t range_en, fal_acl_rule_t *rule)
+	a_uint8_t range_en, a_uint8_t inverse_en, fal_acl_rule_t *rule)
 {
+	fal_acl_field_map_t field_flg = {0};
+
 	if(is_win1)
 	{
 		if(extudfrule->udfprofile_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDFPROFILE);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDFPROFILE);
 			rule->udfprofile_val = extudfrule->udfprofile;
 			rule->udfprofile_mask = extudfrule_mask->udfprofile_mask;
 		}
 		if(extudfrule->udf1_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDF3);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDF3);
 			rule->udf3_val = extudfrule->udf1;
 			rule->udf3_mask = extudfrule_mask->udf1_mask;
 		}
 		if(extudfrule->udf0_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDF2);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDF2);
 			if(range_en == 1)
 			{
 				if(extudfrule->udf0 == 0)
@@ -951,19 +1034,19 @@ _adpt_appe_acl_ext_udf_rule_hw_2_sw(a_uint32_t is_win1,
 	{
 		if(extudfrule->udfprofile_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDFPROFILE);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDFPROFILE);
 			rule->udfprofile_val = extudfrule->udfprofile;
 			rule->udfprofile_mask = extudfrule_mask->udfprofile_mask;
 		}
 		if(extudfrule->udf1_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDF1);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDF1);
 			rule->udf1_val = extudfrule->udf1;
 			rule->udf1_mask = extudfrule_mask->udf1_mask;
 		}
 		if(extudfrule->udf0_valid == 1)
 		{
-			FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_UDF0);
+			FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_UDF0);
 			if(range_en == 1)
 			{
 				if(extudfrule->udf0 == 0)
@@ -995,13 +1078,18 @@ _adpt_appe_acl_ext_udf_rule_hw_2_sw(a_uint32_t is_win1,
 	if(extudfrule_mask->is_ip)
 	{
 		rule->is_ip_val = extudfrule->is_ip;
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_IP);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_IP);
 	}
 	if(extudfrule_mask->is_ipv6)
 	{
 		rule->is_ipv6_val = extudfrule->is_ipv6;
-		FAL_FIELD_FLG_SET(rule->field_flg, FAL_ACL_FIELD_IPV6);
+		FAL_FIELD_FLG_SET(field_flg, FAL_ACL_FIELD_IPV6);
 	}
+	if (inverse_en)
+		FAL_FIELD_FLG_CPY(rule->inverse_field_flg, field_flg);
+	else
+		FAL_FIELD_FLG_CPY(rule->field_flg, field_flg);
+
 	return SW_OK;
 }
 
@@ -1050,20 +1138,6 @@ _adpt_appe_pre_acl_rule_sw_query(a_uint32_t dev_id,
 		_adpt_hppe_acl_rule_hw_2_sw(dev_id, hw_reg.bf.rule_type,
 			hw_reg.bf.range_en, hw_reg.bf.inverse_en, &hw_reg, &hw_mask, sw_rule);
 
-		if(hw_reg.bf.inverse_en == 1)
-		{
-			if(hw_reg.bf.rule_type == ADPT_ACL_APPE_TUNNEL_RULE)
-			{
-				FAL_FIELD_FLG_SET(rule->tunnel_info.field_flg,
-					FAL_ACL_FIELD_TUNNEL_INVERSE_ALL);
-			}
-			else
-			{
-				FAL_FIELD_FLG_SET(sw_rule->field_flg,
-					FAL_ACL_FIELD_INVERSE_ALL);
-			}
-		}
-
 		_adpt_appe_pre_acl_action_hw_2_sw(dev_id, &hw_act, rule);
 
 		rv |= appe_pre_ipo_cnt_tbl_get(dev_id,
@@ -1090,9 +1164,11 @@ _adpt_appe_pre_acl_rule_hw_add(a_uint32_t dev_id, a_uint32_t list_pri,
 	union pre_ipo_mask_reg_u hw_mask = {0};
 	union pre_ipo_action_u hw_act = {0};
 	sw_error_t rv = 0;
-	a_uint32_t hw_entry = 0, rule_type = 0, rule_type_bmap = 0;
+	a_uint32_t hw_entry = 0, rule_type = 0;
+	ADPT_HPPE_ACL_RULE_MAP tmp_rule_map;
 	a_uint8_t inner_outer_sel = 0, range_en = 0;
 	fal_acl_rule_t *sw_rule = NULL;
+	aos_mem_zero(&tmp_rule_map, sizeof(ADPT_HPPE_ACL_RULE_MAP));
 
 	hw_reg.bf.res_chain = rule->acl_pool;
 	hw_reg.bf.pri = (list_pri<<3)|rule->pri;
@@ -1103,71 +1179,109 @@ _adpt_appe_pre_acl_rule_hw_add(a_uint32_t dev_id, a_uint32_t list_pri,
 		hw_reg.bf.inner_outer_sel = inner_outer_sel;
 		if(inner_outer_sel == 0)
 		{ /*outer*/
-			rule_type_bmap = rule_map->rule_type_map;
+			aos_mem_copy(&tmp_rule_map,
+				rule_map, sizeof(ADPT_HPPE_ACL_RULE_MAP));
 			sw_rule = rule;
 		}
 		else
 		{ /*inner*/
-			rule_type_bmap = inner_rule_map->rule_type_map;
+			aos_mem_copy(&tmp_rule_map,
+				inner_rule_map, sizeof(ADPT_HPPE_ACL_RULE_MAP));
 			sw_rule = inner_rule;
 		}
 		for( rule_type = 0; rule_type < ADPT_ACL_HPPE_RULE_TYPE_NUM; rule_type++)
 		{
-			if(!((1<<rule_type)&rule_type_bmap))
-			{
-				continue;
-			}
-			hw_reg.bf.rule_field_0 = 0;
-			hw_reg.bf.rule_field_1 = 0;
-			hw_reg.bf.inverse_en = 0;
-			memset(&hw_mask, 0, sizeof(hw_mask));
-			memset(&hw_act, 0, sizeof(hw_act));
+			if ((BIT(rule_type)) & tmp_rule_map.rule_type_map) {
+				hw_reg.bf.rule_field_0 = 0;
+				hw_reg.bf.rule_field_1 = 0;
+				hw_reg.bf.inverse_en = 0;
+				memset(&hw_mask, 0, sizeof(hw_mask));
+				memset(&hw_act, 0, sizeof(hw_act));
 
-			/*set 53bit rule fields of hw rule reg*/
-			_adpt_hppe_acl_rule_sw_2_hw(dev_id, sw_rule, rule_type,
-				&hw_entry, &allocated_entries, &range_en,
-				&hw_reg, &hw_mask, 0);
-			/*set rule_type, range_en, inverse_en fields of hw rule reg*/
-			hw_reg.bf.rule_type = rule_type;
-			hw_reg.bf.range_en = range_en;
-			if (rule_type == ADPT_ACL_APPE_TUNNEL_RULE)
-			{
-				if (FAL_FIELD_FLG_TST(rule->tunnel_info.field_flg,
-						FAL_ACL_FIELD_TUNNEL_INVERSE_ALL))
+				/*set 53bit rule fields of hw rule reg*/
+				_adpt_hppe_acl_rule_sw_2_hw(dev_id, sw_rule, rule_type,
+					&hw_entry, &allocated_entries, &range_en,
+					&hw_reg, &hw_mask, 0);
+				/*set rule_type, range_en, inverse_en fields of hw rule reg*/
+				hw_reg.bf.rule_type = rule_type;
+				hw_reg.bf.range_en = range_en;
+				if (rule_type == ADPT_ACL_APPE_TUNNEL_RULE)
 				{
-					hw_reg.bf.inverse_en = 1;
+					if (FAL_FIELD_FLG_TST(rule->tunnel_info.field_flg,
+							FAL_ACL_FIELD_TUNNEL_INVERSE_ALL))
+					{
+						hw_reg.bf.inverse_en = 1;
+					}
 				}
-			}
-			else
-			{
-				if (FAL_FIELD_FLG_TST(sw_rule->field_flg,
-						FAL_ACL_FIELD_INVERSE_ALL))
+				else
 				{
-					hw_reg.bf.inverse_en = 1;
+					if (FAL_FIELD_FLG_TST(sw_rule->field_flg,
+							FAL_ACL_FIELD_INVERSE_ALL))
+					{
+						hw_reg.bf.inverse_en = 1;
+					}
 				}
+				/*debug info*/
+				SSDK_DEBUG("inner_outer_sel %d, chain %d, pri %d, src_1 %d, "
+				"src_0 %d src_type %d rule_type %d, inverse %d, range %d\n",
+				hw_reg.bf.inner_outer_sel, hw_reg.bf.res_chain, hw_reg.bf.pri,
+				hw_reg.bf.src_1, hw_reg.bf.src_0, hw_reg.bf.src_type,
+				hw_reg.bf.rule_type, hw_reg.bf.inverse_en, hw_reg.bf.range_en);
+				SSDK_DEBUG("rule and mask set hw_entry = %d\n",
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry);
+
+				rv |= appe_pre_ipo_rule_reg_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_reg);
+
+				rv |= appe_pre_ipo_mask_reg_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_mask);
+
+				/*set action fields*/
+				_adpt_appe_pre_acl_action_sw_2_hw(dev_id, rule, &hw_act);
+				rv |= appe_pre_ipo_action_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_act);
+				SW_RTN_ON_ERROR(rv);
 			}
-			/*debug info*/
-			SSDK_DEBUG("inner_outer_sel %d, chain %d, pri %d, src_1 %d, src_0 %d,"
-			"src_type %d rule_type %d, inverse %d, range %d\n",
-			hw_reg.bf.inner_outer_sel, hw_reg.bf.res_chain, hw_reg.bf.pri,
-			hw_reg.bf.src_1, hw_reg.bf.src_0, hw_reg.bf.src_type, hw_reg.bf.rule_type,
-			hw_reg.bf.inverse_en, hw_reg.bf.range_en);
-			SSDK_DEBUG("rule and mask set hw_entry = %d\n",
-				hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry);
+			/* inverse rule */
+			for (; tmp_rule_map.inverse_rule_type_count[rule_type] > 0;
+					tmp_rule_map.inverse_rule_type_count[rule_type] --) {
+				hw_reg.bf.rule_field_0 = 0;
+				hw_reg.bf.rule_field_1 = 0;
+				memset(&hw_mask, 0, sizeof(hw_mask));
+				memset(&hw_act, 0, sizeof(hw_act));
 
-			rv |= appe_pre_ipo_rule_reg_set(dev_id,
-				hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry, &hw_reg);
+				/*set 53bit rule fields of hw rule reg*/
+				_adpt_hppe_acl_rule_sw_2_hw(dev_id, sw_rule, rule_type,
+					&hw_entry, &allocated_entries, &range_en,
+					&hw_reg, &hw_mask, 1);
 
-			rv |= appe_pre_ipo_mask_reg_set(dev_id,
-				hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry, &hw_mask);
+				/*set rule_type, range_en, inverse_en fields of hw rule reg*/
+				hw_reg.bf.rule_type = rule_type;
+				hw_reg.bf.range_en = range_en;
+				hw_reg.bf.inverse_en = 1;
 
-			/*set action fields*/
-			_adpt_appe_pre_acl_action_sw_2_hw(dev_id, rule, &hw_act);
-			rv |= appe_pre_ipo_action_set(dev_id,
-				hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry, &hw_act);
-			if(rv != SW_OK)
-			{
-				return rv;
+				SSDK_DEBUG("rule_type %d, inverse_rule_type_count %d "
+					" rule_hw_entry %d\n",
+					rule_type, tmp_rule_map.inverse_rule_type_count[rule_type],
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST + hw_entry);
+
+				rv |= appe_pre_ipo_rule_reg_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_reg);
+
+				rv |= appe_pre_ipo_mask_reg_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_mask);
+
+				/*set action fields*/
+				_adpt_appe_pre_acl_action_sw_2_hw(dev_id, rule, &hw_act);
+				rv |= appe_pre_ipo_action_set(dev_id,
+					hw_list_id*ADPT_PRE_ACL_ENTRY_NUM_PER_LIST+hw_entry,
+					&hw_act);
+				SW_RTN_ON_ERROR(rv);
 			}
 		}
 	}

@@ -10,9 +10,7 @@ src_list_loop: src_list
 	$(foreach i, $(SUB_DIR), $(MAKE) -C $(i) src_list_loop || exit 1;)
 
 src_list:
-	echo "$(LOC_SRC_FILE) " >> $(PRJ_PATH)/src_list.dep
-	awk 'NF' $(PRJ_PATH)/src_list.dep > $(PRJ_PATH)/src_list.dep2
-	rm -rf $(PRJ_PATH)/src_list.dep; mv $(PRJ_PATH)/src_list.dep2 $(PRJ_PATH)/src_list.dep
+	echo -n "$(LOC_SRC_FILE) " >>  $(PRJ_PATH)/src_list.dep
 
 ####################################################################
 # 			SSDK-Style Makefile

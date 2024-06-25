@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -331,7 +331,10 @@ qcaphy_c45_set_eee_adv(a_uint32_t dev_id, a_uint32_t phy_addr,
 	rv = hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD7_NUM,
 		QCAPHY_MMD7_8023AZ_EEE_CTRL1, QCAPHY_EEE_MASK1, phy_data);
 	SW_RTN_ON_ERROR(rv);
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+	rv = hsl_phydev_eee_update(dev_id, phy_addr, adv);
+	SW_RTN_ON_ERROR(rv);
+#endif
 	return qcaphy_c45_autoneg_restart(dev_id, phy_addr);
 }
 /******************************************************************************

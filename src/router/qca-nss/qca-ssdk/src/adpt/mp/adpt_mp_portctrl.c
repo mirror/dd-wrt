@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -838,8 +838,10 @@ adpt_mp_port_interface_eee_cfg_set(a_uint32_t dev_id, fal_port_t port_id,
 
 	rv = mp_mac_lpi_timer_ctrl_get(dev_id, gmac_id, &mac_lpi_timer_ctrl);
 	SW_RTN_ON_ERROR (rv);
-	mac_lpi_timer_ctrl.bf.lpi_tw_timer = port_eee_cfg->lpi_wakeup_timer;
-	mac_lpi_timer_ctrl.bf.lpi_ls_timer = port_eee_cfg->lpi_sleep_timer;
+	if(port_eee_cfg->lpi_wakeup_timer != 0)
+		mac_lpi_timer_ctrl.bf.lpi_tw_timer = port_eee_cfg->lpi_wakeup_timer;
+	if(port_eee_cfg->lpi_sleep_timer != 0)
+		mac_lpi_timer_ctrl.bf.lpi_ls_timer = port_eee_cfg->lpi_sleep_timer;
 	rv = mp_mac_lpi_timer_ctrl_set(dev_id, gmac_id, &mac_lpi_timer_ctrl);
 	SW_RTN_ON_ERROR (rv);
 

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, 2016-2018, 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -105,8 +105,8 @@ extern "C" {
 #define FAL_SEC_EXP_UDP_LITE_CSM_COV_CROSS_BORDER    66
 #define FAL_SEC_EXP_UDP_LITE_CHECKSUM_ERR            67
 /*Exception:  Reserved */
-#define FAL_SEC_EXP_RESERVE0                         68
-#define FAL_SEC_EXP_RESERVE1                         69
+#define FAL_SEC_EXP_TUNNEL_DECAP_INNER_IPV4_PADDING  68
+#define FAL_SEC_EXP_TUNNEL_DECAP_INNER_IPV6_PADDING  69
 /* Exception:  Tunnel */
 #define FAL_SEC_EXP_TUNNEL_DECAP_ECN                 70
 #define FAL_SEC_EXP_INNER_PACKET_TOO_SHORT           71

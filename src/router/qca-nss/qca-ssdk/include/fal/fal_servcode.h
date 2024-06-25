@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2018, 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -177,6 +177,9 @@ enum {
 	TL_WRONG_PKT_FMT_L4_BYP,
 	TL_WRONG_PKT_FMT_TUNNEL_BYP,
 	TL_PRE_IPO_BYP = 20,
+	TL_PADDING_STRIP_CKSUM_BYP,
+	TL_INNER_IP_LEN_UPDATE_BYP,
+	TL_INNER_IP_PADDING_EXP_BYP,
 };
 
 typedef struct {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2017, 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -362,6 +363,143 @@ _fal_flow_qos_get(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_qos_t *flow
 	rv = p_api->adpt_flow_qos_get(dev_id, flow_index, flow_qos);
 	return rv;
 }
+
+sw_error_t
+_fal_flow_npt66_prefix_add(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t prefix_len)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_prefix_add)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_prefix_add(dev_id, l3_if_index, ip6, prefix_len);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_prefix_get(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t *prefix_len)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_prefix_get)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_prefix_get(dev_id, l3_if_index, ip6, prefix_len);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_prefix_del(a_uint32_t dev_id, a_uint32_t l3_if_index)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_prefix_del)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_prefix_del(dev_id, l3_if_index);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_iid_cal(a_uint32_t dev_id,            fal_flow_npt66_iid_calc_t *iid_cal, 
+								fal_flow_npt66_iid_t *iid_result)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_iid_cal)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_iid_cal(dev_id, iid_cal, iid_result);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_iid_add(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_npt66_iid_t *iid)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_iid_add)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_iid_add(dev_id, flow_index, iid);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_iid_get(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_npt66_iid_t *iid)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_iid_get)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_iid_get(dev_id, flow_index, iid);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_iid_del(a_uint32_t dev_id, a_uint32_t flow_index)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_iid_del)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_iid_del(dev_id, flow_index);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_status_set(a_uint32_t dev_id, a_bool_t enable)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_status_set)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_status_set(dev_id, enable);
+	return rv;
+}
+
+sw_error_t
+_fal_flow_npt66_status_get(a_uint32_t dev_id, a_bool_t *enable)
+{
+	adpt_api_t *p_api;
+	sw_error_t rv = SW_OK;
+
+	SW_RTN_ON_NULL(p_api = adpt_api_ptr_get(dev_id));
+
+	if (NULL == p_api->adpt_flow_npt66_status_get)
+		return SW_NOT_SUPPORTED;
+
+	rv = p_api->adpt_flow_npt66_status_get(dev_id, enable);
+	return rv;
+}
+
 /*insert flag for inner fal, don't remove it*/
 
 sw_error_t
@@ -622,6 +760,106 @@ fal_flow_qos_get(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_qos_t *flow_
 	return rv;
 }
 
+sw_error_t
+fal_flow_npt66_prefix_add(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t prefix_len)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_prefix_add(dev_id, l3_if_index, ip6, prefix_len);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_prefix_get(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t *prefix_len)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_prefix_get(dev_id, l3_if_index, ip6, prefix_len);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_prefix_del(a_uint32_t dev_id, a_uint32_t l3_if_index)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_prefix_del(dev_id, l3_if_index);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_iid_cal(a_uint32_t dev_id,            fal_flow_npt66_iid_calc_t *iid_cal, 
+								fal_flow_npt66_iid_t *iid_result)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_iid_cal(dev_id, iid_cal, iid_result);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_iid_add(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_npt66_iid_t *iid_entry)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_iid_add(dev_id, flow_index, iid_entry);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_iid_get(a_uint32_t dev_id, a_uint32_t flow_index, fal_flow_npt66_iid_t *iid_entry)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_iid_get(dev_id, flow_index, iid_entry);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_iid_del(a_uint32_t dev_id, a_uint32_t flow_index)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_iid_del(dev_id, flow_index);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_status_get(a_uint32_t dev_id, a_bool_t *enable)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_status_get(dev_id, enable);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
+sw_error_t
+fal_flow_npt66_status_set(a_uint32_t dev_id, a_bool_t enable)
+{
+	sw_error_t rv = SW_OK;
+
+	FAL_API_LOCK;
+	rv = _fal_flow_npt66_status_set(dev_id, enable);
+	FAL_API_UNLOCK;
+	return rv;
+}
+
 #if !defined(IN_FLOW_MINI)
 EXPORT_SYMBOL(fal_flow_age_timer_get);
 EXPORT_SYMBOL(fal_flow_age_timer_set);
@@ -646,5 +884,14 @@ EXPORT_SYMBOL(fal_flow_counter_get);
 EXPORT_SYMBOL(fal_flow_counter_cleanup);
 EXPORT_SYMBOL(fal_flow_mgmt_get);
 EXPORT_SYMBOL(fal_flow_mgmt_set);
+EXPORT_SYMBOL(fal_flow_npt66_prefix_add);
+EXPORT_SYMBOL(fal_flow_npt66_prefix_get);
+EXPORT_SYMBOL(fal_flow_npt66_prefix_del);
+EXPORT_SYMBOL(fal_flow_npt66_iid_cal);
+EXPORT_SYMBOL(fal_flow_npt66_iid_add);
+EXPORT_SYMBOL(fal_flow_npt66_iid_get);
+EXPORT_SYMBOL(fal_flow_npt66_iid_del);
+EXPORT_SYMBOL(fal_flow_npt66_status_get);
+EXPORT_SYMBOL(fal_flow_npt66_status_set);
 
 /*insert flag for outter fal, don't remove it*/

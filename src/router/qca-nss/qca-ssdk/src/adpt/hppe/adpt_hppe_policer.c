@@ -125,7 +125,6 @@ hppe_policer_burst_size[NR_ADPT_HPPE_POLICER_METER_UNIT][NR_ADPT_HPPE_POLICER_ME
 	},
 };
 
-#ifndef IN_POLICER_MINI
 sw_error_t
 adpt_hppe_acl_policer_counter_get(a_uint32_t dev_id, a_uint32_t index,
 		fal_policer_counter_t *counter)
@@ -188,7 +187,6 @@ adpt_hppe_port_policer_counter_get(a_uint32_t dev_id, fal_port_t port_id,
 
 	return SW_OK;
 }
-#endif
 
 sw_error_t
 adpt_hppe_port_compensation_byte_get(a_uint32_t dev_id, fal_port_t port_id,
@@ -1216,8 +1214,6 @@ sw_error_t adpt_hppe_policer_init(a_uint32_t dev_id)
 		return SW_FAIL;
 
 #ifndef IN_POLICER_MINI
-	p_adpt_api->adpt_acl_policer_counter_get = adpt_hppe_acl_policer_counter_get;
-	p_adpt_api->adpt_port_policer_counter_get = adpt_hppe_port_policer_counter_get;
 	p_adpt_api->adpt_policer_global_counter_get = adpt_hppe_policer_global_counter_get;
 #ifdef APPE
 	if (adpt_chip_type_get(dev_id) == CHIP_APPE) {
@@ -1226,6 +1222,8 @@ sw_error_t adpt_hppe_policer_init(a_uint32_t dev_id)
 	}
 #endif
 #endif
+	p_adpt_api->adpt_acl_policer_counter_get = adpt_hppe_acl_policer_counter_get;
+	p_adpt_api->adpt_port_policer_counter_get = adpt_hppe_port_policer_counter_get;
 	p_adpt_api->adpt_port_compensation_byte_get = adpt_hppe_port_compensation_byte_get;
 	p_adpt_api->adpt_port_policer_entry_get = adpt_hppe_port_policer_entry_get;
 	p_adpt_api->adpt_acl_policer_entry_get = adpt_hppe_acl_policer_entry_get;

@@ -259,7 +259,7 @@ ifeq ($(SoC),$(filter $(SoC),ipq53xx ipq95xx ipq807x ipq60xx))
 	PTP_FEATURE=enable
 endif
 
-ifeq ($(SoC),$(filter $(SoC),ipq53xx ipq95xx))
+ifeq ($(SoC),$(filter $(SoC),ipq53xx ipq95xx ipq60xx))
 	MHT_ENABLE=enable
 endif
 
@@ -413,8 +413,13 @@ ifeq ($(MINI_SSDK), enable)
 	ifeq ($(MHT_ENABLE), enable)
 		IN_INTERFACECONTROL=TRUE
 		IN_NAT=TRUE
+		IN_IGMP=TRUE
 	endif
-	
+
+	ifeq ($(ISISC_ENABLE), enable)
+		IN_IGMP=TRUE
+	endif
+
 	ifeq ($(HNAT_FEATURE), enable)
 		IN_MISC_MINI=FALSE
 		IN_PORTVLAN_MINI=FALSE

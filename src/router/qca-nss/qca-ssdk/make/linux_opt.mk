@@ -275,6 +275,10 @@ ifeq (TRUE, $(IN_ATHTAG))
   MODULE_CFLAG += -DIN_ATHTAG
 endif
 
+ifeq (TRUE, $(IN_PKTEDIT))
+  MODULE_CFLAG += -DIN_PKTEDIT
+endif
+
 ifneq (TRUE, $(FAL))
   MODULE_CFLAG += -DHSL_STANDALONG
 endif
@@ -308,7 +312,7 @@ ifeq (TRUE, $(DEBUG_ON))
   MODULE_CFLAG += -g
 endif
 
-MODULE_CFLAG += $(OPT_FLAG) -Wall -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"NONE\" -DOS=\"$(OS)\" -D"KBUILD_STR(s)=\#s"
+MODULE_CFLAG += $(OPT_FLAG) -Wall -DVERSION=\"$(VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\" -DOS=\"$(OS)\" -D"KBUILD_STR(s)=\#s"
 
 MODULE_INC += -I$(PRJ_PATH)/include \
                    -I$(PRJ_PATH)/include/common \

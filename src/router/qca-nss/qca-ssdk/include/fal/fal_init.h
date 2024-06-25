@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2016-2019, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -62,6 +62,7 @@ enum{
 	FAL_MODULE_MAPT,
 	FAL_MODULE_LED,
 	FAL_MODULE_ATHTAG,
+	FAL_MODULE_PKTEDIT,
 /* auto_insert_flag */
 	FAL_MODULE_MAX,
 };

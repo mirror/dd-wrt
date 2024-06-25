@@ -1690,6 +1690,7 @@ int ssdk_uniphy_valid_check(a_uint32_t dev_id,
 		case QCOM_ID_IPQ5300:
 		case QCOM_ID_IPQ5322:
 		case QCOM_ID_IPQ5332:
+		case QCOM_ID_IPQ5321:
 			if (index == SSDK_UNIPHY_INSTANCE2)
 				ret = A_FALSE;
 			break;

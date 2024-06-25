@@ -2029,18 +2029,18 @@ _adpt_hppe_acl_rule_hw_2_sw(a_uint32_t dev_id, a_uint32_t rule_type,
 	{
 		_adpt_appe_acl_ext_udf_rule_hw_2_sw(0,
 		(ADPT_APPE_ACL_EXT_UDF_RULE *)hw_rule,
-		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, rule);
+		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, inverse_en, rule);
 	}
 	if(rule_type == ADPT_ACL_APPE_EXT_UDF1_RULE)
 	{
 		_adpt_appe_acl_ext_udf_rule_hw_2_sw(1,
 		(ADPT_APPE_ACL_EXT_UDF_RULE *)hw_rule,
-		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, rule);
+		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, inverse_en, rule);
 	}
 	if(rule_type == ADPT_ACL_APPE_TUNNEL_RULE)
 	{
 		_adpt_appe_pre_acl_tunnel_rule_hw_2_sw((ADPT_APPE_ACL_TUNNEL_RULE *)hw_rule,
-		(ADPT_APPE_ACL_TUNNEL_RULE_MASK *)hw_rule_mask, &rule->tunnel_info);
+		(ADPT_APPE_ACL_TUNNEL_RULE_MASK *)hw_rule_mask, inverse_en, &rule->tunnel_info);
 	}
 #endif
 	return SW_OK;
@@ -4053,19 +4053,19 @@ _adpt_hppe_acl_rule_sw_2_hw(a_uint32_t dev_id, fal_acl_rule_t * rule, a_uint32_t
 	{
 		_adpt_appe_acl_ext_udf_rule_sw_2_hw(rule, 0,
 		(ADPT_APPE_ACL_EXT_UDF_RULE *)hw_rule,
-		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en);
+		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, inverse_en);
 	}
 	else if(rule_type == ADPT_ACL_APPE_EXT_UDF1_RULE)
 	{
 		_adpt_appe_acl_ext_udf_rule_sw_2_hw(rule, 1,
 		(ADPT_APPE_ACL_EXT_UDF_RULE *)hw_rule,
-		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en);
+		(ADPT_APPE_ACL_EXT_UDF_RULE_MASK *)hw_rule_mask, range_en, inverse_en);
 	}
 	else if(rule_type == ADPT_ACL_APPE_TUNNEL_RULE)
 	{
 		_adpt_appe_pre_acl_tunnel_rule_sw_2_hw(&rule->tunnel_info,
 		(ADPT_APPE_ACL_TUNNEL_RULE *)hw_rule,
-		(ADPT_APPE_ACL_TUNNEL_RULE_MASK *)hw_rule_mask);
+		(ADPT_APPE_ACL_TUNNEL_RULE_MASK *)hw_rule_mask, inverse_en);
 	}
 #endif
 
@@ -4400,6 +4400,8 @@ void acl_rule_field_convert(fal_acl_rule_t * rule,
         /*fields flag*/
         aos_mem_copy(rule_field->field_flg,
             rule->field_flg, sizeof(fal_acl_field_map_t));
+	aos_mem_copy(rule_field->inverse_field_flg,
+            rule->inverse_field_flg, sizeof(fal_acl_field_map_t));
 
         /*mac fields*/
         rule_field->is_fake_mac_header_mask = rule->is_fake_mac_header_mask;
@@ -4521,6 +4523,8 @@ void acl_rule_field_convert(fal_acl_rule_t * rule,
         /*fields flag*/
         aos_mem_copy(rule->field_flg,
             rule_field->field_flg, sizeof(fal_acl_field_map_t));
+	aos_mem_copy(rule->inverse_field_flg,
+            rule_field->inverse_field_flg, sizeof(fal_acl_field_map_t));
 
         /*mac fields*/
         rule->is_fake_mac_header_mask = rule_field->is_fake_mac_header_mask;
@@ -4674,8 +4678,9 @@ _adpt_hppe_acl_rule_type_map(a_uint32_t dev_id, a_uint32_t rule_id, a_uint32_t r
 		ADPT_HPPE_ACL_RULE_MAP *rule_map,
 		ADPT_HPPE_ACL_RULE_MAP *inner_rule_map)
 {
-	a_uint32_t tunnel_rule_type_map = 0;
-
+#if defined(APPE)
+	a_uint32_t tunnel_rule_type_map = 0, tunnel_inverse_rule_type_count = 0;
+#endif
 	SSDK_DEBUG("fields 0x%x:0x%x-0x%x:0x%x, inverse_fileds 0x%x:0x%x-0x%x:0x%x\n",
 		   rule->field_flg[0], rule->field_flg[1],
 		   inner_rule->field_flg[0], inner_rule->field_flg[1],
@@ -4699,7 +4704,7 @@ _adpt_hppe_acl_rule_type_map(a_uint32_t dev_id, a_uint32_t rule_id, a_uint32_t r
 	if(adpt_chip_type_get(dev_id) == CHIP_APPE)
 	{
 #if defined(APPE)
-		_adpt_appe_acl_udf_fields_check(dev_id, rule_id, rule_nr, rule, &rule_map->rule_type_map);
+		_adpt_appe_acl_udf_fields_check(dev_id, rule_id, rule_nr, rule, rule_map);
 
 		if(rule->rule_type == FAL_ACL_RULE_TUNNEL_MAC ||
 			rule->rule_type == FAL_ACL_RULE_TUNNEL_IP4 ||
@@ -4719,9 +4724,10 @@ _adpt_hppe_acl_rule_type_map(a_uint32_t dev_id, a_uint32_t rule_id, a_uint32_t r
 			_adpt_hppe_acl_l2_fields_check(dev_id, rule_id, rule_nr, inner_rule,
 					inner_rule_map);
 			_adpt_appe_acl_udf_fields_check(dev_id, rule_id, rule_nr, inner_rule,
-					&inner_rule_map->rule_type_map);
+					inner_rule_map);
 			_adpt_appe_pre_acl_tunnel_info_fields_check(dev_id, rule_id, rule_nr,
-					&rule->tunnel_info, &tunnel_rule_type_map);
+					&rule->tunnel_info, &tunnel_rule_type_map,
+					&tunnel_inverse_rule_type_count);
 			if(inner_rule_map->rule_type_map == 0)
 			{ /*inner ip_nonip/ip_ver*/
 				if((FAL_FIELD_FLG_TST(inner_rule->field_flg, FAL_ACL_FIELD_IP)) ||
@@ -4747,8 +4753,13 @@ _adpt_hppe_acl_rule_type_map(a_uint32_t dev_id, a_uint32_t rule_id, a_uint32_t r
 		}
 	}
 
+#if defined(APPE)
 	if(tunnel_rule_type_map != 0)
 		rule_map->rule_type_map |= tunnel_rule_type_map;
+	if(tunnel_inverse_rule_type_count)
+		rule_map->inverse_rule_type_count[ADPT_ACL_APPE_TUNNEL_RULE] +=
+			tunnel_inverse_rule_type_count;
+#endif
 
 	/* select one rule type to match all if none is slected */
 	if (_adpt_hppe_rule_type_count(rule_map, inner_rule_map) == 0)

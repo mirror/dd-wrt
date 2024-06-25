@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2017, 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -261,6 +262,40 @@ hppe_eg_flow_tree_map_tbl_set(
 		a_uint32_t dev_id,
 		a_uint32_t index,
 		union eg_flow_tree_map_tbl_u *value);
+
+sw_error_t
+hppe_eg_ipv6_prefix_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_ipv6_prefix_tbl_u *value);
+
+sw_error_t
+hppe_eg_ipv6_prefix_tbl_set(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_ipv6_prefix_tbl_u *value);
+
+sw_error_t
+hppe_eg_flow_ipv6_iid_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_flow_ipv6_iid_tbl_u *value);
+
+sw_error_t
+hppe_eg_flow_ipv6_iid_tbl_set(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_flow_ipv6_iid_tbl_u *value);
+
+sw_error_t
+hppe_eg_global_ctrl_get(
+		a_uint32_t dev_id,
+		union eg_global_ctrl_u *value);
+
+sw_error_t
+hppe_eg_global_ctrl_set(
+		a_uint32_t dev_id,
+		union eg_global_ctrl_u *value);
 
 #if 0
 sw_error_t

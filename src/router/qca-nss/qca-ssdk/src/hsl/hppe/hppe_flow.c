@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2017, 2020-2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -602,6 +602,85 @@ hppe_eg_flow_tree_map_tbl_set(
 				value->val);
 }
 #endif
+
+sw_error_t
+hppe_eg_ipv6_prefix_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_ipv6_prefix_tbl_u *value)
+{
+	return hppe_reg_tbl_get(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_IPV6_PREFIX_TBL_ADDRESS + \
+				index * EG_IPV6_PREFIX_TBL_INC,
+				value->val,
+				ARRAY_SIZE(value->val));
+}
+
+sw_error_t
+hppe_eg_ipv6_prefix_tbl_set(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_ipv6_prefix_tbl_u *value)
+{
+	return hppe_reg_tbl_set(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_IPV6_PREFIX_TBL_ADDRESS + \
+				index * EG_IPV6_PREFIX_TBL_INC,
+				value->val,
+				ARRAY_SIZE(value->val));
+}
+
+sw_error_t
+hppe_eg_flow_ipv6_iid_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_flow_ipv6_iid_tbl_u *value)
+{
+	return hppe_reg_tbl_get(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_FLOW_IPV6_IID_TBL_ADDRESS + \
+				(index/2) * EG_FLOW_IPV6_IID_TBL_INC,
+				value->val,
+				ARRAY_SIZE(value->val));
+}
+
+sw_error_t
+hppe_eg_flow_ipv6_iid_tbl_set(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union eg_flow_ipv6_iid_tbl_u *value)
+{
+	return hppe_reg_tbl_set(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_FLOW_IPV6_IID_TBL_ADDRESS + \
+				(index/2) * EG_FLOW_IPV6_IID_TBL_INC,
+				value->val,
+				ARRAY_SIZE(value->val));
+}
+
+sw_error_t
+hppe_eg_global_ctrl_get(
+		a_uint32_t dev_id,
+		union eg_global_ctrl_u *value)
+{
+	return hppe_reg_get(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_GLOBAL_CTRL_ADDRESS,
+				&value->val);
+}
+
+sw_error_t
+hppe_eg_global_ctrl_set(
+		a_uint32_t dev_id,
+		union eg_global_ctrl_u *value)
+{
+	return hppe_reg_set(
+				dev_id,
+				NSS_PTX_CSR_BASE_ADDR + EG_GLOBAL_CTRL_ADDRESS,
+				value->val);
+}
+
 
 #if 0
 sw_error_t

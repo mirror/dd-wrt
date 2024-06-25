@@ -1888,7 +1888,16 @@ extern "C" {
     SW_API_DEF(SW_API_FLOW_ENTRY_EN_SET, fal_flow_entry_en_set), \
     SW_API_DEF(SW_API_FLOW_ENTRY_EN_GET, fal_flow_entry_en_get), \
     SW_API_DEF(SW_API_FLOW_QOS_SET, fal_flow_qos_set), \
-    SW_API_DEF(SW_API_FLOW_QOS_GET, fal_flow_qos_get),
+    SW_API_DEF(SW_API_FLOW_QOS_GET, fal_flow_qos_get), \
+    SW_API_DEF(SW_API_FLOW_NPT66_PREFIX_ADD, fal_flow_npt66_prefix_add), \
+    SW_API_DEF(SW_API_FLOW_NPT66_PREFIX_GET, fal_flow_npt66_prefix_get), \
+    SW_API_DEF(SW_API_FLOW_NPT66_PREFIX_DEL, fal_flow_npt66_prefix_del), \
+    SW_API_DEF(SW_API_FLOW_NPT66_IID_CAL, fal_flow_npt66_iid_cal), \
+    SW_API_DEF(SW_API_FLOW_NPT66_IID_ADD, fal_flow_npt66_iid_add), \
+    SW_API_DEF(SW_API_FLOW_NPT66_IID_GET, fal_flow_npt66_iid_get), \
+    SW_API_DEF(SW_API_FLOW_NPT66_IID_DEL, fal_flow_npt66_iid_del), \
+    SW_API_DEF(SW_API_FLOW_NPT66_STATUS_GET, fal_flow_npt66_status_get), \
+    SW_API_DEF(SW_API_FLOW_NPT66_STATUS_SET, fal_flow_npt66_status_set),
 
 #define FLOW_API_PARAM \
     SW_API_DESC(SW_API_FLOW_STATUS_SET) \
@@ -1911,7 +1920,17 @@ extern "C" {
     SW_API_DESC(SW_API_FLOW_ENTRY_EN_SET) \
     SW_API_DESC(SW_API_FLOW_ENTRY_EN_GET) \
     SW_API_DESC(SW_API_FLOW_QOS_SET) \
-    SW_API_DESC(SW_API_FLOW_QOS_GET)
+    SW_API_DESC(SW_API_FLOW_QOS_GET) \
+    SW_API_DESC(SW_API_FLOW_NPT66_PREFIX_ADD) \
+    SW_API_DESC(SW_API_FLOW_NPT66_PREFIX_GET) \
+    SW_API_DESC(SW_API_FLOW_NPT66_PREFIX_DEL) \
+    SW_API_DESC(SW_API_FLOW_NPT66_IID_CAL) \
+    SW_API_DESC(SW_API_FLOW_NPT66_IID_ADD) \
+    SW_API_DESC(SW_API_FLOW_NPT66_IID_GET) \
+    SW_API_DESC(SW_API_FLOW_NPT66_IID_DEL) \
+    SW_API_DESC(SW_API_FLOW_NPT66_STATUS_GET) \
+    SW_API_DESC(SW_API_FLOW_NPT66_STATUS_SET)
+
 #else
 #define FLOW_API \
     SW_API_DEF(SW_API_FLOW_STATUS_SET, fal_flow_status_set), \
@@ -2692,6 +2711,8 @@ extern "C" {
 #define POLICER_API \
     SW_API_DEF(SW_API_POLICER_TIMESLOT_SET, fal_policer_timeslot_set), \
     SW_API_DEF(SW_API_POLICER_TIMESLOT_GET, fal_policer_timeslot_get), \
+    SW_API_DEF(SW_API_POLICER_PORT_COUNTER_GET, fal_port_policer_counter_get), \
+    SW_API_DEF(SW_API_POLICER_ACL_COUNTER_GET, fal_acl_policer_counter_get), \
     SW_API_DEF(SW_API_POLICER_COMPENSATION_SET, fal_port_policer_compensation_byte_set), \
     SW_API_DEF(SW_API_POLICER_COMPENSATION_GET, fal_port_policer_compensation_byte_get), \
     SW_API_DEF(SW_API_POLICER_ACL_ENTRY_SET, fal_acl_policer_entry_set), \
@@ -2706,6 +2727,8 @@ extern "C" {
 #define POLICER_API_PARAM \
     SW_API_DESC(SW_API_POLICER_TIMESLOT_SET)  \
     SW_API_DESC(SW_API_POLICER_TIMESLOT_GET)  \
+    SW_API_DESC(SW_API_POLICER_PORT_COUNTER_GET) \
+    SW_API_DESC(SW_API_POLICER_ACL_COUNTER_GET) \
     SW_API_DESC(SW_API_POLICER_COMPENSATION_SET) \
     SW_API_DESC(SW_API_POLICER_COMPENSATION_GET) \
     SW_API_DESC(SW_API_POLICER_PORT_ENTRY_SET) \
@@ -3202,6 +3225,18 @@ extern "C" {
 #define ATHTAG_API_PARAM
 #endif
 
+#ifdef IN_PKTEDIT
+#define PKTEDIT_API \
+        SW_API_DEF(SW_API_PKTEDIT_PADDING_SET, fal_pktedit_padding_set), \
+        SW_API_DEF(SW_API_PKTEDIT_PADDING_GET, fal_pktedit_padding_get),
+#define PKTEDIT_API_PARAM \
+        SW_API_DESC(SW_API_PKTEDIT_PADDING_SET) \
+        SW_API_DESC(SW_API_PKTEDIT_PADDING_GET)
+#else
+#define PKTEDIT_API
+#define PKTEDIT_API_PARAM
+#endif
+
 /* auto_insert_flag */
 /*qca808x_start*/
 #define SSDK_API \
@@ -3254,6 +3289,7 @@ extern "C" {
     TUNNEL_PROGRAM_API \
     MAPT_API \
     ATHTAG_API \
+    PKTEDIT_API \
 /* auto_insert_flag_1 */ \
 /*qca808x_start*/\
     SW_API_DEF(SW_API_MAX, NULL),
@@ -3313,6 +3349,7 @@ extern "C" {
     TUNNEL_PROGRAM_API_PARAM \
     MAPT_API_PARAM \
     ATHTAG_API_PARAM \
+    PKTEDIT_API_PARAM \
 /* auto_insert_flag_2 */ \
 /*qca808x_start*/\
     SW_PARAM_DEF(SW_API_MAX, SW_UINT32, 4, SW_PARAM_IN, "Dev ID"),

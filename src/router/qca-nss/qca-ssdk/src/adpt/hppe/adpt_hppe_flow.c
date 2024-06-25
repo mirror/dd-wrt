@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2017, 2019, 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -2483,6 +2483,282 @@ adpt_hppe_flow_global_cfg_set(
 	return SW_OK;
 }
 
+/* clear ip6 address low bits */
+fal_ip6_addr_t
+ip6_clear_low_bits(fal_ip6_addr_t ip6, a_uint32_t len) 
+{
+	a_uint8_t i = 0;
+	a_uint8_t ints_to_clear = len / 32;
+	a_uint8_t bits_to_clear = len % 32;
+	a_uint32_t *addr = ip6.ul;
+
+	for (i = 0; i < ints_to_clear; i++) {
+		addr[3 - i] = 0;
+	}
+
+	if (bits_to_clear > 0) {
+	    addr[3 - ints_to_clear] &= ~((1U << bits_to_clear) - 1);
+	}
+
+	return ip6;
+}
+
+/* one's complement checksum of ip6 array*/
+a_uint16_t
+ip6_csum(fal_ip6_addr_t ip6)
+{
+	a_uint32_t *addr = ip6.ul;
+	a_uint32_t sum = 0;
+	a_uint8_t i;
+
+	for (i = 0; i < 4; i++) {
+		sum += (addr[i] >> 16) & 0xFFFF;
+		sum += addr[i] & 0xFFFF;
+	}
+
+	while (0xFFFF < sum) {
+		sum += 1 - 0x10000;
+	}
+
+	return  (a_uint16_t)(~sum);
+}
+
+/* One's complement sum */
+a_uint16_t
+ip6_csum_add(a_uint16_t       csum1, a_uint16_t csum2)
+{
+	a_uint32_t result = csum1 + csum2;
+	
+	while (0xFFFF < result) {
+		result += 1 - 0x10000;
+	}
+
+	 return (a_uint16_t)result;
+}
+
+/* One's complement difference */
+a_uint16_t
+ip6_csum_sub(a_uint16_t       csum1, a_uint16_t csum2)
+{
+	return ip6_csum_add(csum1, ~csum2);
+}
+
+/*search first non-0xffff from ip6_prefix_len*/
+a_int32_t
+ip6_offset_find(fal_ip6_addr_t ip6, a_uint32_t prefix_len)
+{
+	a_uint32_t *addr = ip6.ul, val;
+	a_int32_t start;
+
+	if(prefix_len <= 48)
+		return 48;
+
+	/*When prefix_len is in the range (49~64), start from 64*/
+	start = ((prefix_len / 16) * 16) + ((prefix_len % 16)? 16:0);
+
+	while(start < 128) {
+		val = addr[start/32] >> (16 - (start%32));
+		if ((val & 0xFFFF) != 0xFFFF)
+			return start;
+		start += 16;
+	}
+
+	return -1;
+}
+
+#define SWAP_IP6(dst, src) \
+	do { \
+		(dst)[3] = (src)[0]; \
+		(dst)[2] = (src)[1]; \
+		(dst)[1] = (src)[2]; \
+		(dst)[0] = (src)[3]; \
+	} while (0)
+
+sw_error_t
+adpt_hppe_flow_npt66_prefix_add(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t prefix_len)
+{
+	union eg_ipv6_prefix_tbl_u entry = { 0 };
+
+	SWAP_IP6(entry.bf.prefix, ip6->ul);
+	entry.bf.length = prefix_len;
+
+	hppe_eg_ipv6_prefix_tbl_set(dev_id, l3_if_index, &entry);
+
+	SSDK_DEBUG("**********%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, l3_if_index, 
+		entry.bf.prefix[0], entry.bf.prefix[1], entry.bf.prefix[2], entry.bf.prefix[3], entry.bf.length);
+
+	return SW_OK;
+	/*
+		EG_IPV6_PREFIX_TBL[255:0]
+			PREFIX	ipv6_addr		128
+			LENGTH					7
+	*/
+}
+
+sw_error_t
+adpt_hppe_flow_npt66_prefix_get(a_uint32_t dev_id, a_uint32_t l3_if_index, fal_ip6_addr_t *ip6, a_uint32_t *prefix_len)
+{
+	union eg_ipv6_prefix_tbl_u entry = { 0 };
+
+	hppe_eg_ipv6_prefix_tbl_get(dev_id, l3_if_index, &entry);
+
+	SWAP_IP6(ip6->ul, entry.bf.prefix);
+	*prefix_len = entry.bf.length;
+
+	SSDK_DEBUG("**********%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, l3_if_index, 
+		entry.bf.prefix[0], entry.bf.prefix[1], entry.bf.prefix[2], entry.bf.prefix[3], entry.bf.length);
+
+	return SW_OK;
+}
+
+sw_error_t
+adpt_hppe_flow_npt66_prefix_del(a_uint32_t dev_id, a_uint32_t l3_if_index)
+{
+	union eg_ipv6_prefix_tbl_u entry = { 0 };
+
+	hppe_eg_ipv6_prefix_tbl_set(dev_id, l3_if_index, &entry);
+
+	SSDK_DEBUG("**********%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, l3_if_index, 
+		entry.bf.prefix[0], entry.bf.prefix[1], entry.bf.prefix[2], entry.bf.prefix[3], entry.bf.length);
+
+	return SW_OK;
+}
+
+#define IP6_MAX_LEN 128
+#define EG_FLOW_IPV6_IID_OFFSET_TO_FILED_VAL(offset) ((offset)/16)
+sw_error_t
+adpt_hppe_flow_npt66_iid_cal(a_uint32_t dev_id,               fal_flow_npt66_iid_calc_t *iid_cal, fal_flow_npt66_iid_t *iid_result)
+{
+	a_uint32_t prefix_len = iid_cal->prefix_len;
+	a_uint32_t tip_prefix_len = iid_cal->tip_prefix_len;
+	a_uint32_t clear_len = IP6_MAX_LEN-prefix_len;
+	a_uint32_t tip_clear_len = IP6_MAX_LEN-tip_prefix_len;
+	fal_ip6_addr_t org_ip = (iid_cal->is_dnat)?iid_cal->dip:iid_cal->sip;
+	fal_ip6_addr_t tip = iid_cal->tip;
+	a_uint16_t tip_csum, org_csum, iid_org, iid_val, csum_adj;
+	a_uint32_t iid_offset = ip6_offset_find(org_ip, max(prefix_len, tip_prefix_len));
+	
+	if(iid_offset == -1)
+		return SW_BAD_PARAM;
+	
+	tip_csum = ip6_csum(ip6_clear_low_bits(tip,tip_clear_len));
+	org_csum = ip6_csum(ip6_clear_low_bits(org_ip,clear_len));
+	iid_org = (org_ip.ul[iid_offset/32]>>(16-(iid_offset % 32)))&0xFFFF;
+	csum_adj = ip6_csum_sub(tip_csum, org_csum);
+	iid_val = ip6_csum_add(csum_adj, iid_org);
+
+	iid_result->iid = (a_uint32_t)((iid_val==0xFFFF)? 0 : iid_val);
+	iid_result->iid_offset = EG_FLOW_IPV6_IID_OFFSET_TO_FILED_VAL(iid_offset);
+	iid_result->is_dnat = iid_cal->is_dnat;
+
+	SSDK_DEBUG("iid calc is_dnat:%d org_ip:%08x:%08x:%08x:%08x tip:%08x:%08x:%08x:%08x prefix_len:%d tip_prefix_len:%d\n"
+			"==>tip_csum:%04x - org_csum:%04x + iid_org:%04x = iid:%04x (offset:%d)\n",
+			iid_result->is_dnat,org_ip.ul[0], org_ip.ul[1], org_ip.ul[2], org_ip.ul[3],
+			tip.ul[0], tip.ul[1], tip.ul[2], tip.ul[3],	prefix_len, tip_prefix_len,
+			tip_csum, org_csum, iid_org, iid_val, iid_offset);
+
+	return SW_OK;
+}
+
+
+sw_error_t
+adpt_hppe_flow_npt66_iid_add(a_uint32_t dev_id,   a_uint32_t flow_index, fal_flow_npt66_iid_t *iid)
+{
+	union eg_flow_ipv6_iid_tbl_u entry = { 0 };
+
+	entry.bf.iid = iid->iid;
+	entry.bf.offset =  iid->iid_offset;
+	entry.bf.iid_update = 1;
+	entry.bf.prefix_update = 1;
+	entry.bf.src_dst = iid->is_dnat;
+	hppe_eg_flow_ipv6_iid_tbl_set(dev_id, flow_index, &entry);
+
+	SSDK_DEBUG("******%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, flow_index, 
+		entry.bf.iid, entry.bf.offset, entry.bf.iid_update, entry.bf.prefix_update, entry.bf.src_dst);
+
+	return SW_OK;
+
+	/*
+		EG_FLOW_IPV6_IID_TBL[2047:0]
+			IID 	16	0	Outbound: IID = External_csum(from table) - Internal_csm(from packet) + 16Bit_IID (src address)
+						 	 Inbound: IID = Internal_csm(from table) - External_csum(from packet) + 16Bit_IID (dst address)
+			OFFSET	3	0  "0: IPv6_addr[0..15]
+							1: IPv6_addr[16..31]
+							2: IPv6_addr[32..47]
+							3: IPv6_addr[48..63]
+							4: IPv6_addr[64..79]
+							5: IPv6_addr[80..95]
+							6: IPv6_addr[96..111]
+							7: IPv6_addr[112..127]"
+			IID_UPDATE		1	0	1: enable update
+			PREFIX_UPDATE	1	0	1: enable update
+			SRC_DST 		1	0	0: source address; 1: destination address
+	*/
+}
+sw_error_t
+adpt_hppe_flow_npt66_iid_get(a_uint32_t dev_id,   a_uint32_t flow_index, fal_flow_npt66_iid_t *iid)
+{
+	union eg_flow_ipv6_iid_tbl_u entry = { 0 };
+
+	hppe_eg_flow_ipv6_iid_tbl_get(dev_id, flow_index, &entry);
+
+	memset(iid, 0, sizeof(fal_flow_npt66_iid_t));
+
+	if(	entry.bf.iid_update&&entry.bf.prefix_update) {
+		iid->iid = entry.bf.iid;
+		iid->iid_offset= entry.bf.offset;
+		iid->is_dnat = entry.bf.src_dst;
+	} else {
+		return SW_NOT_FOUND;
+	}
+
+	SSDK_DEBUG("*******%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, flow_index, 
+		entry.bf.iid, entry.bf.offset, entry.bf.iid_update, entry.bf.prefix_update, entry.bf.src_dst);
+
+	return SW_OK;
+}
+
+sw_error_t
+adpt_hppe_flow_npt66_iid_del(a_uint32_t dev_id,   a_uint32_t flow_index)
+{
+	union eg_flow_ipv6_iid_tbl_u entry = { 0 };
+	
+	hppe_eg_flow_ipv6_iid_tbl_set(dev_id, flow_index, &entry);
+	SSDK_DEBUG("******%s:%d*****[%d]*%x:%x:%x:%x %d*******\n", __func__, __LINE__, flow_index, 
+		entry.bf.iid, entry.bf.offset, entry.bf.iid_update, entry.bf.prefix_update, entry.bf.src_dst);
+
+	return SW_OK;
+}
+
+sw_error_t
+adpt_hppe_flow_npt66_status_set(a_uint32_t dev_id, a_bool_t enable)
+{
+	union eg_global_ctrl_u eg_global_ctrl = {0};
+
+	ADPT_DEV_ID_CHECK(dev_id);
+	eg_global_ctrl.bf.prefix_xlt_en = enable;
+
+	return hppe_eg_global_ctrl_set(dev_id, &eg_global_ctrl);
+}
+
+sw_error_t
+adpt_hppe_flow_npt66_status_get(a_uint32_t dev_id, a_bool_t *enable)
+{
+	sw_error_t rv = SW_OK;
+	union eg_global_ctrl_u eg_global_ctrl = {0};
+
+	ADPT_DEV_ID_CHECK(dev_id);
+	ADPT_NULL_POINT_CHECK(enable);
+
+	rv = hppe_eg_global_ctrl_get(dev_id, &eg_global_ctrl);
+	if( rv != SW_OK )
+		return rv;
+
+	*enable = eg_global_ctrl.bf.prefix_xlt_en;
+
+	return SW_OK;
+}
+
 sw_error_t adpt_hppe_flow_init(a_uint32_t dev_id)
 {
 	adpt_api_t *p_adpt_api = NULL;
@@ -2515,6 +2791,15 @@ sw_error_t adpt_hppe_flow_init(a_uint32_t dev_id)
 	p_adpt_api->adpt_flow_qos_get = adpt_hppe_flow_qos_get;
 	p_adpt_api->adpt_flow_ctrl_get = adpt_hppe_flow_ctrl_get;
 	p_adpt_api->adpt_flow_ctrl_set = adpt_hppe_flow_ctrl_set;
+	p_adpt_api->adpt_flow_npt66_prefix_add = adpt_hppe_flow_npt66_prefix_add;
+	p_adpt_api->adpt_flow_npt66_prefix_get = adpt_hppe_flow_npt66_prefix_get;
+	p_adpt_api->adpt_flow_npt66_prefix_del = adpt_hppe_flow_npt66_prefix_del;
+	p_adpt_api->adpt_flow_npt66_iid_cal = adpt_hppe_flow_npt66_iid_cal;
+	p_adpt_api->adpt_flow_npt66_iid_add = adpt_hppe_flow_npt66_iid_add;
+	p_adpt_api->adpt_flow_npt66_iid_get = adpt_hppe_flow_npt66_iid_get;
+	p_adpt_api->adpt_flow_npt66_iid_del = adpt_hppe_flow_npt66_iid_del;
+	p_adpt_api->adpt_flow_npt66_status_set = adpt_hppe_flow_npt66_status_set;
+	p_adpt_api->adpt_flow_npt66_status_get = adpt_hppe_flow_npt66_status_get;
 
 	return SW_OK;
 }

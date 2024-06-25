@@ -314,6 +314,7 @@ typedef struct
 {
 	fal_acl_rule_type_t rule_type;/*mac, IP4, IP6 ,UDF*/
 	fal_acl_field_map_t field_flg;/*Indicate which fields are selected*/
+	fal_acl_field_map_t inverse_field_flg;
 
 	/* fields of mac rule */
 	fal_mac_addr_t src_mac_val;/*source mac*/
@@ -450,6 +451,7 @@ typedef a_uint32_t fal_acl_tunnel_field_map_t[1];
 typedef struct
 {
 	fal_acl_tunnel_field_map_t field_flg;/*Indicate which fields are selected*/
+	fal_acl_tunnel_field_map_t inverse_field_flg;
 	fal_tunnel_type_t tunnel_type;
 	a_uint8_t tunnel_type_mask;
 	fal_hdr_type_t inner_type;

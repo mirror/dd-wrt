@@ -30,18 +30,12 @@
 /*
  *@ basic data types.
  */
-
-#ifdef NSS_CLIENT_BUILD_ID
-#define A_FALSE false
-#define A_TRUE true
-typedef bool a_bool_t;
-#else
 typedef enum
 {
     A_FALSE,
     A_TRUE
 } a_bool_t;
-#endif
+
 typedef __a_uint8_t    a_uint8_t;
 typedef __a_int8_t     a_int8_t;
 typedef __a_uint16_t   a_uint16_t;

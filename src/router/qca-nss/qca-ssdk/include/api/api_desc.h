@@ -3959,6 +3959,72 @@ extern "C" {
     SW_PARAM_DEF(SW_API_FLOW_QOS_GET, SW_FLOW_QOS, \
 		    sizeof(fal_flow_qos_t), SW_PARAM_PTR|SW_PARAM_OUT, "Flow qos"),
 
+#define SW_API_FLOW_NPT66_PREFIX_ADD_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_ADD, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_ADD, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "L3 if index"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_ADD, SW_IP6ADDR, \
+			sizeof(fal_ip6_addr_t), SW_PARAM_PTR|SW_PARAM_IN, "Ip6 address"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_ADD, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Prefix length"),
+
+#define SW_API_FLOW_NPT66_PREFIX_GET_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_GET, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_GET, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "L3 if index"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_GET, SW_IP6ADDR, \
+			sizeof(fal_ip6_addr_t), SW_PARAM_PTR|SW_PARAM_OUT, "Ip6 address"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_GET, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_PTR|SW_PARAM_OUT, "Prefix length"),
+
+		
+#define SW_API_FLOW_NPT66_PREFIX_DEL_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_DEL, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_PREFIX_DEL, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "L3 if index"),
+
+#define SW_API_FLOW_NPT66_STATUS_SET_DESC \
+		SW_PARAM_DEF(SW_API_FLOW_NPT66_STATUS_SET, SW_UINT32, 4, SW_PARAM_IN, "Dev ID"),	\
+		SW_PARAM_DEF(SW_API_FLOW_NPT66_STATUS_SET, SW_UINT32, 4, SW_PARAM_IN, "status"),
+
+#define SW_API_FLOW_NPT66_STATUS_GET_DESC \
+		SW_PARAM_DEF(SW_API_FLOW_NPT66_STATUS_GET, SW_UINT32, 4, SW_PARAM_IN, "Dev ID"),	\
+		SW_PARAM_DEF(SW_API_FLOW_NPT66_STATUS_GET, SW_UINT32, 4, SW_PARAM_PTR|SW_PARAM_OUT, "status"),
+
+#define SW_API_FLOW_NPT66_IID_CAL_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_CAL, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_CAL, SW_FLOW_NPT66_IID_CAL, \
+			sizeof(fal_flow_npt66_iid_calc_t), SW_PARAM_PTR|SW_PARAM_IN, "iid cal entry"), \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_CAL, SW_FLOW_NPT66_IID, \
+			sizeof(fal_flow_npt66_iid_t), SW_PARAM_PTR|SW_PARAM_OUT, "iid entry"),
+
+#define SW_API_FLOW_NPT66_IID_ADD_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_ADD, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_ADD, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "flow index"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_ADD, SW_FLOW_NPT66_IID, \
+			sizeof(fal_flow_npt66_iid_t), SW_PARAM_PTR|SW_PARAM_IN, "iid entry"),
+	
+#define SW_API_FLOW_NPT66_IID_GET_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_GET, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_GET, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "flow index"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_GET, SW_FLOW_NPT66_IID, \
+			sizeof(fal_flow_npt66_iid_t), SW_PARAM_PTR|SW_PARAM_OUT, "iid entry"),
+
+#define SW_API_FLOW_NPT66_IID_DEL_DESC \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_DEL, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "Dev ID"),  \
+	SW_PARAM_DEF(SW_API_FLOW_NPT66_IID_DEL, SW_UINT32, \
+			sizeof(a_uint32_t), SW_PARAM_IN, "flow index"),
+
+
 #define SW_API_NAT_ADD_DESC \
     SW_PARAM_DEF(SW_API_NAT_ADD, SW_UINT32, 4, SW_PARAM_IN, "Dev ID"),   \
     SW_PARAM_DEF(SW_API_NAT_ADD, SW_NATENTRY, \
@@ -6131,6 +6197,18 @@ extern "C" {
 			sizeof(a_uint32_t), SW_PARAM_IN, "Dev Id"),\
 	SW_PARAM_DEF(SW_API_TOEPLITZ_HASH_CONFIG_GETNEXT, SW_TOEPLITZ_CONFIG, \
 			sizeof(fal_toeplitz_hash_config_t), SW_PARAM_PTR|SW_PARAM_IN|SW_PARAM_OUT, "Hash config"),
+
+#define SW_API_PKTEDIT_PADDING_SET_DESC \
+	SW_PARAM_DEF(SW_API_PKTEDIT_PADDING_SET, SW_UINT32, \
+		     sizeof(a_uint32_t), SW_PARAM_IN, "Dev Id "),\
+	SW_PARAM_DEF(SW_API_PKTEDIT_PADDING_SET, SW_PKTEDIT_PADDING, \
+		     sizeof(fal_pktedit_padding_t), SW_PARAM_PTR|SW_PARAM_IN, "Padding"),
+
+#define SW_API_PKTEDIT_PADDING_GET_DESC \
+	SW_PARAM_DEF(SW_API_PKTEDIT_PADDING_GET, SW_UINT32, \
+		     sizeof(a_uint32_t), SW_PARAM_IN, "Dev Id "),\
+	SW_PARAM_DEF(SW_API_PKTEDIT_PADDING_GET, SW_PKTEDIT_PADDING, \
+		     sizeof(fal_pktedit_padding_t), SW_PARAM_PTR|SW_PARAM_OUT, "Padding"),
 
 /* auto_insert_flag */
 /*qca808x_start*/

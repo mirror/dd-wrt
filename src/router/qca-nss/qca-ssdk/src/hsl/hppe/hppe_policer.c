@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2017, 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022, 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -278,20 +278,6 @@ hppe_in_port_meter_crdt_tbl_set(
 }
 
 sw_error_t
-hppe_in_port_meter_cnt_tbl_get(
-		a_uint32_t dev_id,
-		a_uint32_t index,
-		union in_port_meter_cnt_tbl_u *value)
-{
-	return hppe_reg_tbl_get(
-				dev_id,
-				INGRESS_POLICER_BASE_ADDR + IN_PORT_METER_CNT_TBL_ADDRESS + \
-				index * IN_PORT_METER_CNT_TBL_INC,
-				value->val,
-				3);
-}
-
-sw_error_t
 hppe_in_port_meter_cnt_tbl_set(
 		a_uint32_t dev_id,
 		a_uint32_t index,
@@ -301,20 +287,6 @@ hppe_in_port_meter_cnt_tbl_set(
 				dev_id,
 				INGRESS_POLICER_BASE_ADDR + IN_PORT_METER_CNT_TBL_ADDRESS + \
 				index * IN_PORT_METER_CNT_TBL_INC,
-				value->val,
-				3);
-}
-
-sw_error_t
-hppe_in_acl_meter_cnt_tbl_get(
-		a_uint32_t dev_id,
-		a_uint32_t index,
-		union in_acl_meter_cnt_tbl_u *value)
-{
-	return hppe_reg_tbl_get(
-				dev_id,
-				INGRESS_POLICER_BASE_ADDR + IN_ACL_METER_CNT_TBL_ADDRESS + \
-				index * IN_ACL_METER_CNT_TBL_INC,
 				value->val,
 				3);
 }
@@ -361,6 +333,34 @@ hppe_pc_global_cnt_tbl_set(
 				3);
 }
 #endif
+
+sw_error_t
+hppe_in_port_meter_cnt_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union in_port_meter_cnt_tbl_u *value)
+{
+	return hppe_reg_tbl_get(
+				dev_id,
+				INGRESS_POLICER_BASE_ADDR + IN_PORT_METER_CNT_TBL_ADDRESS + \
+				index * IN_PORT_METER_CNT_TBL_INC,
+				value->val,
+				3);
+}
+
+sw_error_t
+hppe_in_acl_meter_cnt_tbl_get(
+		a_uint32_t dev_id,
+		a_uint32_t index,
+		union in_acl_meter_cnt_tbl_u *value)
+{
+	return hppe_reg_tbl_get(
+				dev_id,
+				INGRESS_POLICER_BASE_ADDR + IN_ACL_METER_CNT_TBL_ADDRESS + \
+				index * IN_ACL_METER_CNT_TBL_INC,
+				value->val,
+				3);
+}
 
 sw_error_t
 hppe_drop_cpu_cnt_tbl_get(

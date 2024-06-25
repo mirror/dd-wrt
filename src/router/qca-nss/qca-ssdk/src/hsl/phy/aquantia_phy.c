@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -896,17 +896,13 @@ aquantia_phy_get_magic_frame_mac(a_uint32_t dev_id, a_uint32_t phy_addr,
 	return SW_OK;
 }
 #endif
-sw_error_t
-aquantia_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
-	fal_port_interface_mode_t interface_mode)
+static sw_error_t
+aquantia_phy_interface_set_mode_by_speed(a_uint32_t dev_id, a_uint32_t phy_addr,
+	fal_port_speed_t speed, fal_port_interface_mode_t interface_mode)
 {
 	a_uint16_t phy_data = 0;
 	a_uint32_t phy_register = 0;
-	fal_port_speed_t speed = FAL_SPEED_BUTT;
-	sw_error_t rv =SW_OK;
 
-	rv = aquantia_phy_get_speed(dev_id, phy_addr, &speed);
-	PHY_RTN_ON_ERROR(rv);
 	switch (speed)
 	{
 		case FAL_SPEED_10:
@@ -962,6 +958,20 @@ aquantia_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 	}
 	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE,
 		AQUANTIA_MMD_GLOBAL_REGISTERS, phy_register, BITS(0, 3), phy_data);
+}
+
+sw_error_t
+aquantia_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
+	fal_port_interface_mode_t interface_mode)
+{
+	fal_port_speed_t speed = FAL_SPEED_BUTT;
+	sw_error_t rv =SW_OK;
+
+	rv = aquantia_phy_get_speed(dev_id, phy_addr, &speed);
+	PHY_RTN_ON_ERROR(rv);
+
+	return aquantia_phy_interface_set_mode_by_speed(dev_id, phy_addr, speed,
+		interface_mode);
 }
 
 /******************************************************************************
@@ -1323,6 +1333,7 @@ sw_error_t
 aquantia_phy_hw_init(a_uint32_t dev_id,  a_uint32_t port_bmp)
 {
 	a_uint32_t port_id = 0, phy_addr = 0, aq_phy_id = 0;
+	struct phy_device *phydev = NULL;
 	sw_error_t rv = SW_OK;
 
 	for (port_id = 0; port_id < SW_MAX_NR_PORT; port_id ++)
@@ -1389,6 +1400,20 @@ aquantia_phy_hw_init(a_uint32_t dev_id,  a_uint32_t port_bmp)
 				FAL_PHY_ADV_XGE_SPEED_ALL | FAL_PHY_ADV_100TX_FD |
 				FAL_PHY_ADV_10T_FD | FAL_PHY_ADV_1000T_FD);
 			PHY_RTN_ON_ERROR(rv);
+			/*update aquantia phy supported ability*/
+			rv = hsl_phy_phydev_get(dev_id, phy_addr, &phydev);
+			if(rv == SW_OK) {
+				rv = hsl_phy_adv_to_linkmode_adv((FAL_PHY_ADV_XGE_SPEED_ALL |
+					FAL_PHY_ADV_PAUSE | FAL_PHY_ADV_ASY_PAUSE |
+					FAL_PHY_ADV_100TX_FD | FAL_PHY_ADV_10T_FD |
+					FAL_PHY_ADV_1000T_FD), phydev->supported);
+				SW_RTN_ON_ERROR(rv);
+			}
+			/*force the interface mode as usxgmii for 5G speed,
+                        as the uniphy did not support 5gbaser*/
+			rv = aquantia_phy_interface_set_mode_by_speed(dev_id, phy_addr,
+				FAL_SPEED_5000, PORT_USXGMII);
+			SW_RTN_ON_ERROR(rv);
 		}
 	}
 

@@ -17,8 +17,8 @@ include $(PRJ_PATH)/Makefile.modules
 ####################################################################
 # 			SSDK-Style Makefile
 ####################################################################
-all: kslib $(BIN_DIR)
-	rm -rf ./temp/;mkdir -p ./temp/;cd ./temp;cp ../build/bin/ssdk_ks_km.a ./;ar -x ssdk_ks_km.a; cp ../ko_Makefile ./Makefile;
+all: $(BIN_DIR) kslib
+	mkdir -p ./temp/;cd ./temp;cp ../build/bin/ssdk_ks_km.a ./;ar -x ssdk_ks_km.a; cp ../ko_Makefile ./Makefile;
 	make -C $(SYS_PATH) M=$(PRJ_PATH)/temp/ CROSS_COMPILE=$(TOOLPREFIX) modules
 	cp $(PRJ_PATH)/temp/Module.symvers $(PRJ_PATH)/Module.symvers;
 	cp temp/*.ko build/bin;
@@ -28,7 +28,7 @@ all: kslib $(BIN_DIR)
 ####################################################################
 # 			LNX Modules-Style Makefile
 ####################################################################
-modules: kslib_c $(BIN_DIR)
+modules: $(BIN_DIR) kslib_c
 	@$(MAKE) -C $(SYS_PATH) M=$(PRJ_PATH) $(LNX_MAKEOPTS) modules
 	@echo "---Build [SSDK-$(VERSION)] at $(BUILD_DATE) finished."
 

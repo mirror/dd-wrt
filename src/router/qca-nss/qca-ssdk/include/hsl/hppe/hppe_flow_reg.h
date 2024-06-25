@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2197,6 +2197,116 @@ union in_flow_cnt_tbl_u {
 	a_uint32_t val[3];
 	struct in_flow_cnt_tbl bf;
 };
+
+
+/*[table] IN_L3_IF_TBL*/
+#define EG_IPV6_PREFIX_TBL
+#define EG_IPV6_PREFIX_TBL_ADDRESS 0x3e000
+#define EG_IPV6_PREFIX_TBL_INC     0x20
+
+
+#define EG_IPV6_PREFIX_TBL_NUM     256
+#define EG_IPV6_PREFIX_TBL_TYPE    REG_TYPE_RW
+#define EG_IPV6_PREFIX_TBL_DEFAULT 0x0
+	/*[field] PREFIX*/
+	#define EG_IPV6_PREFIX_TBL_PREFIX
+	#define EG_IPV6_PREFIX_TBL_PREFIX_OFFSET  0
+	#define EG_IPV6_PREFIX_TBL_PREFIX_LEN     128
+	#define EG_IPV6_PREFIX_TBL_PREFIX_DEFAULT 0x0
+
+	/*[field] LENGTH*/
+	#define EG_IPV6_PREFIX_TBL_LENGTH
+	#define EG_IPV6_PREFIX_TBL_LENGTH_OFFSET  128
+	#define EG_IPV6_PREFIX_TBL_LENGTH_LEN	  7
+	#define EG_IPV6_PREFIX_TBL_LENGTH_DEFAULT 0x0
+
+
+#define EG_FLOW_IPV6_IID_TBL_ADDRESS 0x30000
+#define EG_FLOW_IPV6_IID_TBL_INC     0x4
+
+
+#define EG_FLOW_IPV6_IID_TBL_NUM     2047
+#define EG_FLOW_IPV6_IID_TBL_TYPE    REG_TYPE_RW
+#define EG_FLOW_IPV6_IID_TBL_DEFAULT 0x0
+	/*[field] IID*/
+	#define EG_FLOW_IPV6_IID_TBL_IID
+	#define EG_FLOW_IPV6_IID_TBL_IID_OFFSET  0
+	#define EG_FLOW_IPV6_IID_TBL_IID_LEN     16
+	#define EG_FLOW_IPV6_IID_TBL_IID_DEFAULT 0x0
+
+	/*[field] OFFSET*/
+	#define EG_FLOW_IPV6_IID_TBL_OFFSET
+	#define EG_FLOW_IPV6_IID_TBL_OFFSET_OFFSET  16
+	#define EG_FLOW_IPV6_IID_TBL_OFFSET_LEN	  	3
+	#define EG_FLOW_IPV6_IID_TBL_OFFSET_DEFAULT 0x0
+
+	/*[field] IID_UPDATE*/
+	#define EG_FLOW_IPV6_IID_TBL_IID_UPDATE
+	#define EG_FLOW_IPV6_IID_TBL_IID_UPDATE_OFFSET	19
+	#define EG_FLOW_IPV6_IID_TBL_IID_UPDATE_LEN   	1
+	#define EG_FLOW_IPV6_IID_TBL_IID_UPDATE_DEFAULT 0x0
+
+	/*[field] PREFIX_UPDATE*/
+	#define EG_FLOW_IPV6_IID_TBL_PREFIX_UPDATE
+	#define EG_FLOW_IPV6_IID_TBL_PREFIX_UPDATE_OFFSET	20
+	#define EG_FLOW_IPV6_IID_TBL_PREFIX_UPDATE_LEN   	1
+	#define EG_FLOW_IPV6_IID_TBL_PREFIX_UPDATE_DEFAULT 	0x0
+
+	/*[field] SRC_DST*/
+	#define EG_FLOW_IPV6_IID_TBL_SRC_DST
+	#define EG_FLOW_IPV6_IID_TBL_SRC_DST_OFFSET			21
+	#define EG_FLOW_IPV6_IID_TBL_SRC_DST_LEN	 		1
+	#define EG_FLOW_IPV6_IID_TBL_SRC_DST_DEFAULT 		0x0
+
+/*[register] EG_GLOBAL_CTRL*/
+#define EG_GLOBAL_CTRL
+#define EG_GLOBAL_CTRL_ADDRESS 0xe0
+
+#define EG_GLOBAL_CTRL_NUM     1
+#define EG_GLOBAL_CTRL_INC     0x4
+#define EG_GLOBAL_CTRL_TYPE    REG_TYPE_RW
+	/*[field] PREFIX_XLT_EN*/
+	#define EG_GLOBAL_CTRL_PREFIX_XLT_EN
+	#define EG_GLOBAL_CTRL_PREFIX_XLT_EN_OFFSET  0
+	#define EG_GLOBAL_CTRL_PREFIX_XLT_EN_LEN     1
+	#define EG_GLOBAL_CTRL_PREFIX_XLT_EN_DEFAULT 0x0
+
+struct eg_ipv6_prefix_tbl {
+	a_uint32_t  prefix[4];
+	a_uint32_t  length:7;
+	a_uint32_t  _reserved0:25;
+};
+
+union eg_ipv6_prefix_tbl_u {
+	a_uint32_t val[5];
+	struct eg_ipv6_prefix_tbl bf;
+};
+
+struct eg_flow_ipv6_iid_tbl {
+	a_uint32_t  iid:16;
+	a_uint32_t  offset:3;
+	a_uint32_t  iid_update:1;
+	a_uint32_t  prefix_update:1;
+	a_uint32_t  src_dst:1;
+	a_uint32_t  _reserved0:10;
+
+};
+
+union eg_flow_ipv6_iid_tbl_u {
+	a_uint32_t val[1];
+	struct eg_flow_ipv6_iid_tbl bf;
+};
+
+struct eg_global_ctrl {
+	a_uint32_t  prefix_xlt_en:1;
+	a_uint32_t  _reserved0:31;
+};
+
+union eg_global_ctrl_u {
+	a_uint32_t val;
+	struct eg_global_ctrl bf;
+};
+
 
 #endif
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -507,7 +507,7 @@ a_bool_t ssdk_mht_clk_is_enabled(a_uint32_t dev_id, const char *clock_id)
 sw_error_t ssdk_mht_clk_enable(a_uint32_t dev_id, const char *clock_id)
 {
 	struct clk_lookup *clk;
-	a_uint32_t cbc_reg = 0, reg_val = 0;
+	a_uint32_t cbc_reg = 0;
 
 	clk = ssdk_mht_clk_find(clock_id);
 	if (!clk) {
@@ -517,13 +517,7 @@ sw_error_t ssdk_mht_clk_enable(a_uint32_t dev_id, const char *clock_id)
 
 	cbc_reg = MHT_CLK_BASE_REG + clk->cbc;
 	qca_mht_mii_update(dev_id, cbc_reg, CBCR_CLK_ENABLE, CBCR_CLK_ENABLE);
-
 	udelay(1);
-	reg_val = qca_mht_mii_read(dev_id, cbc_reg);
-	if (reg_val & CBCR_CLK_OFF) {
-		SSDK_ERROR("CLK %s is not enabled!\n", clock_id);
-		return SW_FAIL;
-	}
 
 	return SW_OK;
 }

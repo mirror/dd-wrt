@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2018, 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -148,7 +148,6 @@ sw_error_t
 fal_acl_policer_entry_get(a_uint32_t dev_id, a_uint32_t index,
 		fal_policer_config_t *policer, fal_policer_action_t *action);
 
-#ifndef IN_POLICER_MINI
 sw_error_t
 fal_port_policer_counter_get(a_uint32_t dev_id, fal_port_t port_id,
 		fal_policer_counter_t *counter);
@@ -157,6 +156,7 @@ sw_error_t
 fal_acl_policer_counter_get(a_uint32_t dev_id, a_uint32_t index,
 		fal_policer_counter_t *counter);
 
+#ifndef IN_POLICER_MINI
 sw_error_t
 fal_policer_global_counter_get(a_uint32_t dev_id,
 		fal_policer_global_counter_t *counter);

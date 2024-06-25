@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2017, 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -28,7 +28,6 @@
 #include <linux/module.h>
 
 
-#ifndef IN_POLICER_MINI
 sw_error_t
 _fal_acl_policer_counter_get(a_uint32_t dev_id, a_uint32_t index,
 		fal_policer_counter_t *counter)
@@ -59,7 +58,6 @@ _fal_port_policer_counter_get(a_uint32_t dev_id, fal_port_t port_id,
     rv = p_api->adpt_port_policer_counter_get(dev_id, port_id, counter);
     return rv;
 }
-#endif
 
 sw_error_t
 _fal_port_policer_entry_get(a_uint32_t dev_id, fal_port_t port_id,
@@ -302,6 +300,7 @@ _fal_policer_global_counter_get(a_uint32_t dev_id,
 }
 
 /*insert flag for inner fal, don't remove it*/
+#endif
 
 sw_error_t
 fal_acl_policer_counter_get(a_uint32_t dev_id, a_uint32_t index,
@@ -325,7 +324,6 @@ fal_port_policer_counter_get(a_uint32_t dev_id, fal_port_t port_id,
     FAL_API_UNLOCK;
     return rv;
 }
-#endif
 
 sw_error_t
 fal_port_policer_entry_get(a_uint32_t dev_id, fal_port_t port_id,
@@ -505,12 +503,12 @@ fal_policer_ctrl_set(a_uint32_t dev_id, fal_policer_ctrl_t *ctrl)
 }
 
 #ifndef IN_POLICER_MINI
-EXPORT_SYMBOL(fal_acl_policer_counter_get);
-EXPORT_SYMBOL(fal_port_policer_counter_get);
 EXPORT_SYMBOL(fal_policer_global_counter_get);
 EXPORT_SYMBOL(fal_policer_priority_remap_get);
 EXPORT_SYMBOL(fal_policer_priority_remap_set);
 #endif
+EXPORT_SYMBOL(fal_acl_policer_counter_get);
+EXPORT_SYMBOL(fal_port_policer_counter_get);
 EXPORT_SYMBOL(fal_port_policer_entry_set);
 EXPORT_SYMBOL(fal_port_policer_entry_get);
 EXPORT_SYMBOL(fal_acl_policer_entry_set);

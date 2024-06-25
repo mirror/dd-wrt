@@ -766,6 +766,8 @@ hsl_phy_phydev_get(a_uint32_t dev_id, a_uint32_t phy_addr,
 a_bool_t
 hsl_phy_autoneg_adv_check(a_uint32_t dev_id, a_uint32_t phy_addr,
 	a_uint32_t adv);
+sw_error_t
+hsl_phy_adv_to_linkmode_adv(a_uint32_t autoadv, a_ulong_t *advertising);
 #ifdef IN_LED
 sw_error_t
 hsl_port_phy_led_ctrl_pattern_set(a_uint32_t dev_id, led_pattern_group_t group,
@@ -1027,6 +1029,10 @@ hsl_port_phy_wol_status_get(a_uint32_t dev_id, fal_port_t port_id, a_bool_t * en
 sw_error_t
 hsl_port_phy_mode_get(a_uint32_t dev_id, a_uint32_t port_id,
 	fal_port_interface_mode_t *mode);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+sw_error_t
+hsl_phydev_eee_update(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t adv);
+#endif
 #endif
 #ifdef __cplusplus
 }

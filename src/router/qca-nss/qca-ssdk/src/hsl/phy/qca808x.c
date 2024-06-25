@@ -216,8 +216,12 @@ static int qca808x_config_intr(struct phy_device *phydev)
 	a_uint16_t phy_data;
 	a_uint32_t dev_id = 0, phy_id = 0;
 	qca808x_priv *priv = phydev->priv;
-	const struct qca808x_phy_info *pdata = priv->phy_info;
+	struct qca808x_phy_info *pdata = NULL;
+	/*if priv is null, no need to configure the phy device*/
+	if(!priv)
+		return 0;
 
+	pdata = priv->phy_info;
 	if (!pdata) {
 		return SW_FAIL;
 	}
@@ -489,26 +493,30 @@ static int qca808x_read_status(struct phy_device *phydev)
 	} else {
 		phydev->link = QCA808X_PHY_LINK_DOWN;
 	}
-
-	switch (phy_status.speed) {
-		case FAL_SPEED_2500:
-			phydev->speed = SPEED_2500;
-			break;
-		case FAL_SPEED_1000:
-			phydev->speed = SPEED_1000;
-			break;
-		case FAL_SPEED_100:
-			phydev->speed = SPEED_100;
-			break;
-		default:
-			phydev->speed = SPEED_10;
-			break;
-	}
-
-	if (phy_status.duplex == FAL_FULL_DUPLEX) {
-		phydev->duplex = DUPLEX_FULL;
+	if(!phydev->link) {
+		phydev->speed = SPEED_UNKNOWN;
+		phydev->duplex = DUPLEX_UNKNOWN;
 	} else {
-		phydev->duplex = DUPLEX_HALF;
+		switch (phy_status.speed) {
+			case FAL_SPEED_2500:
+				phydev->speed = SPEED_2500;
+				break;
+			case FAL_SPEED_1000:
+				phydev->speed = SPEED_1000;
+				break;
+			case FAL_SPEED_100:
+				phydev->speed = SPEED_100;
+				break;
+			default:
+				phydev->speed = SPEED_10;
+				break;
+		}
+
+		if (phy_status.duplex == FAL_FULL_DUPLEX) {
+			phydev->duplex = DUPLEX_FULL;
+		} else {
+			phydev->duplex = DUPLEX_HALF;
+		}
 	}
 	/*get the link partner ability*/
 	qca808x_phy_get_partner_ability(dev_id, phy_id, &lp_adv);
