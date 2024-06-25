@@ -1073,6 +1073,10 @@ struct sk_buff {
 	/* only useable after checking ->active_extensions != 0 */
 	struct skb_ext		*extensions;
 #endif
+
+#ifdef CONFIG_DEBUG_OBJECTS_SKBUFF
+	void			*free_addr;
+#endif
 };
 
 /* if you move pkt_type around you also must adapt those constants */
@@ -1258,7 +1262,7 @@ static inline void kfree_skb_list(struct sk_buff *segs)
 	kfree_skb_list_reason(segs, SKB_DROP_REASON_NOT_SPECIFIED);
 }
 
-#ifdef CONFIG_TRACEPOINTS
+#ifdef CONFIG_SKB_RECYCLER
 void consume_skb(struct sk_buff *skb);
 #else
 static inline void consume_skb(struct sk_buff *skb)
@@ -1275,6 +1279,9 @@ int skb_restore_cb(struct sk_buff *skb);
 void __consume_stateless_skb(struct sk_buff *skb);
 void  __kfree_skb(struct sk_buff *skb);
 extern struct kmem_cache *skbuff_cache;
+extern void kfree_skbmem(struct sk_buff *skb);
+extern void skb_release_data(struct sk_buff *skb, enum skb_drop_reason reason,
+			     bool napi_safe);
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,

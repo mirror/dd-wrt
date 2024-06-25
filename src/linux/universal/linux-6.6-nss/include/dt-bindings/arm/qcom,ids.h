@@ -263,6 +263,7 @@
 #define QCOM_ID_IPQ5312			594
 #define QCOM_ID_IPQ5302			595
 #define QCOM_ID_IPQ5300			624
+#define QCOM_ID_IPQ5321			650
 
 /*
  * The board type and revision information, used by Qualcomm bootloaders and

@@ -6239,10 +6239,16 @@ static int process_backlog(struct napi_struct *napi, int quota)
 
 	napi->weight = READ_ONCE(dev_rx_weight);
 	while (again) {
-		struct sk_buff *skb;
+		struct sk_buff *skb, *next_skb;
 
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
 			rcu_read_lock();
+
+			next_skb = skb_peek(&sd->process_queue);
+			if (likely(next_skb)) {
+				prefetch(next_skb->data);
+			}
+
 			__netif_receive_skb(skb);
 			rcu_read_unlock();
 			input_queue_head_incr(sd);
