@@ -11,7 +11,7 @@
  * Copyright 2008 Jouni Malinen <jouni.malinen@atheros.com>
  * Copyright 2008 Colin McCabe <colin@cozybit.com>
  * Copyright 2015-2017	Intel Deutschland GmbH
- * Copyright (C) 2018-2022 Intel Corporation
+ * Copyright (C) 2018-2023 Intel Corporation
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -44,18 +44,18 @@
 
 #define NL80211_GENL_NAME "nl80211"
 
-#define NL80211_MULTICAST_GROUP_CONFIG "config"
-#define NL80211_MULTICAST_GROUP_SCAN "scan"
-#define NL80211_MULTICAST_GROUP_REG "regulatory"
-#define NL80211_MULTICAST_GROUP_MLME "mlme"
-#define NL80211_MULTICAST_GROUP_VENDOR "vendor"
-#define NL80211_MULTICAST_GROUP_NAN "nan"
-#define NL80211_MULTICAST_GROUP_TESTMODE "testmode"
+#define NL80211_MULTICAST_GROUP_CONFIG		"config"
+#define NL80211_MULTICAST_GROUP_SCAN		"scan"
+#define NL80211_MULTICAST_GROUP_REG		"regulatory"
+#define NL80211_MULTICAST_GROUP_MLME		"mlme"
+#define NL80211_MULTICAST_GROUP_VENDOR		"vendor"
+#define NL80211_MULTICAST_GROUP_NAN		"nan"
+#define NL80211_MULTICAST_GROUP_TESTMODE	"testmode"
 
-#define NL80211_EDMG_BW_CONFIG_MIN 4
-#define NL80211_EDMG_BW_CONFIG_MAX 15
-#define NL80211_EDMG_CHANNELS_MIN 1
-#define NL80211_EDMG_CHANNELS_MAX 0x3c /* 0b00111100 */
+#define NL80211_EDMG_BW_CONFIG_MIN	4
+#define NL80211_EDMG_BW_CONFIG_MAX	15
+#define NL80211_EDMG_CHANNELS_MIN	1
+#define NL80211_EDMG_CHANNELS_MAX	0x3c /* 0b00111100 */
 
 /**
  * DOC: Station handling
@@ -377,14 +377,22 @@
  *	the non-transmitting interfaces are deleted as well.
  *
  * @NL80211_CMD_GET_KEY: Get sequence counter information for a key specified
- *	by %NL80211_ATTR_KEY_IDX and/or %NL80211_ATTR_MAC.
+ *	by %NL80211_ATTR_KEY_IDX and/or %NL80211_ATTR_MAC. %NL80211_ATTR_MAC
+ *	represents peer's MLD address for MLO pairwise key. For MLO group key,
+ *	the link is identified by %NL80211_ATTR_MLO_LINK_ID.
  * @NL80211_CMD_SET_KEY: Set key attributes %NL80211_ATTR_KEY_DEFAULT,
  *	%NL80211_ATTR_KEY_DEFAULT_MGMT, or %NL80211_ATTR_KEY_THRESHOLD.
+ *	For MLO connection, the link to set default key is identified by
+ *	%NL80211_ATTR_MLO_LINK_ID.
  * @NL80211_CMD_NEW_KEY: add a key with given %NL80211_ATTR_KEY_DATA,
  *	%NL80211_ATTR_KEY_IDX, %NL80211_ATTR_MAC, %NL80211_ATTR_KEY_CIPHER,
- *	and %NL80211_ATTR_KEY_SEQ attributes.
+ *	and %NL80211_ATTR_KEY_SEQ attributes. %NL80211_ATTR_MAC represents
+ *	peer's MLD address for MLO pairwise key. The link to add MLO
+ *	group key is identified by %NL80211_ATTR_MLO_LINK_ID.
  * @NL80211_CMD_DEL_KEY: delete a key identified by %NL80211_ATTR_KEY_IDX
- *	or %NL80211_ATTR_MAC.
+ *	or %NL80211_ATTR_MAC. %NL80211_ATTR_MAC represents peer's MLD address
+ *	for MLO pairwise key. The link to delete group key is identified by
+ *	%NL80211_ATTR_MLO_LINK_ID.
  *
  * @NL80211_CMD_GET_BEACON: (not used)
  * @NL80211_CMD_SET_BEACON: change the beacon on an access point interface
@@ -416,7 +424,8 @@
  *	interface identified by %NL80211_ATTR_IFINDEX.
  * @NL80211_CMD_DEL_STATION: Remove a station identified by %NL80211_ATTR_MAC
  *	or, if no MAC address given, all stations, on the interface identified
- *	by %NL80211_ATTR_IFINDEX. %NL80211_ATTR_MGMT_SUBTYPE and
+ *	by %NL80211_ATTR_IFINDEX. For MLD station, MLD address is used in
+ *	%NL80211_ATTR_MAC. %NL80211_ATTR_MGMT_SUBTYPE and
  *	%NL80211_ATTR_REASON_CODE can optionally be used to specify which type
  *	of disconnection indication should be sent to the station
  *	(Deauthentication or Disassociation frame and reason code for that
@@ -764,6 +773,13 @@
  *	%NL80211_ATTR_CSA_C_OFFSETS_TX is an array of offsets to CSA
  *	counters which will be updated to the current value. This attribute
  *	is used during CSA period.
+ *	For TX on an MLD, the frequency can be omitted and the link ID be
+ *	specified, or if transmitting to a known peer MLD (with MLD addresses
+ *	in the frame) both can be omitted and the link will be selected by
+ *	lower layers.
+ *	For RX notification, %NL80211_ATTR_RX_HW_TIMESTAMP may be included to
+ *	indicate the frame RX timestamp and %NL80211_ATTR_TX_HW_TIMESTAMP may
+ *	be included to indicate the ack TX timestamp.
  * @NL80211_CMD_FRAME_WAIT_CANCEL: When an off-channel TX was requested, this
  *	command may be used with the corresponding cookie to cancel the wait
  *	time if it is known that it is no longer necessary.  This command is
@@ -774,7 +790,9 @@
  *	transmitted with %NL80211_CMD_FRAME. %NL80211_ATTR_COOKIE identifies
  *	the TX command and %NL80211_ATTR_FRAME includes the contents of the
  *	frame. %NL80211_ATTR_ACK flag is included if the recipient acknowledged
- *	the frame.
+ *	the frame. %NL80211_ATTR_TX_HW_TIMESTAMP may be included to indicate the
+ *	tx timestamp and %NL80211_ATTR_RX_HW_TIMESTAMP may be included to
+ *	indicate the ack RX timestamp.
  * @NL80211_CMD_ACTION_TX_STATUS: Alias for @NL80211_CMD_FRAME_TX_STATUS for
  *	backward compatibility.
  *
@@ -1119,6 +1137,12 @@
  *	has been received. %NL80211_ATTR_FRAME is used to specify the
  *	frame contents.  The frame is the raw EAPoL data, without ethernet or
  *	802.11 headers.
+ *	For an MLD transmitter, the %NL80211_ATTR_MLO_LINK_ID may be given and
+ *	its effect will depend on the destination: If the destination is known
+ *	to be an MLD, this will be used as a hint to select the link to transmit
+ *	the frame on. If the destination is not an MLD, this will select both
+ *	the link to transmit on and the source address will be set to the link
+ *	address of that link.
  *	When used as an event indication %NL80211_ATTR_CONTROL_PORT_ETHERTYPE,
  *	%NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT and %NL80211_ATTR_MAC are added
  *	indicating the protocol type of the received frame; whether the frame
@@ -1142,6 +1166,23 @@
  *	status. User space indicates the authentication status through
  *	%NL80211_ATTR_STATUS_CODE attribute in %NL80211_CMD_EXTERNAL_AUTH
  *	command interface.
+ *
+ *	Host driver sends MLD address of the AP with %NL80211_ATTR_MLD_ADDR in
+ *	%NL80211_CMD_EXTERNAL_AUTH event to indicate user space to enable MLO
+ *	during the authentication offload in STA mode while connecting to MLD
+ *	APs. Host driver should check %NL80211_ATTR_MLO_SUPPORT flag capability
+ *	in %NL80211_CMD_CONNECT to know whether the user space supports enabling
+ *	MLO during the authentication offload or not.
+ *	User space should enable MLO during the authentication only when it
+ *	receives the AP MLD address in authentication offload request. User
+ *	space shouldn't enable MLO when the authentication offload request
+ *	doesn't indicate the AP MLD address even if the AP is MLO capable.
+ *	User space should use %NL80211_ATTR_MLD_ADDR as peer's MLD address and
+ *	interface address identified by %NL80211_ATTR_IFINDEX as self MLD
+ *	address. User space and host driver to use MLD addresses in RA, TA and
+ *	BSSID fields of the frames between them, and host driver translates the
+ *	MLD addresses to/from link addresses based on the link chosen for the
+ *	authentication.
  *
  *	Host driver reports this status on an authentication failure to the
  *	user space through the connect result as the user space would have
@@ -1254,19 +1295,42 @@
  *	without %NL80211_ATTR_MLO_LINK_ID as an easy way to remove all links
  *	in preparation for e.g. roaming to a regular (non-MLO) AP.
  *
+ * @NL80211_CMD_ADD_LINK_STA: Add a link to an MLD station
+ * @NL80211_CMD_MODIFY_LINK_STA: Modify a link of an MLD station
+ * @NL80211_CMD_REMOVE_LINK_STA: Remove a link of an MLD station
+ *
+ * @NL80211_CMD_SET_HW_TIMESTAMP: Enable/disable HW timestamping of Timing
+ *	measurement and Fine timing measurement frames. If %NL80211_ATTR_MAC
+ *	is included, enable/disable HW timestamping only for frames to/from the
+ *	specified MAC address. Otherwise enable/disable HW timestamping for
+ *	all TM/FTM frames (including ones that were enabled with specific MAC
+ *	address). If %NL80211_ATTR_HW_TIMESTAMP_ENABLED is not included, disable
+ *	HW timestamping.
+ *	The number of peers that HW timestamping can be enabled for concurrently
+ *	is indicated by %NL80211_ATTR_MAX_HW_TIMESTAMP_PEERS.
+ *
+ * @NL80211_CMD_LINKS_REMOVED: Notify userspace about the removal of STA MLD
+ *	setup links due to AP MLD removing the corresponding affiliated APs with
+ *	Multi-Link reconfiguration. %NL80211_ATTR_MLO_LINKS is used to provide
+ *	information about the removed STA MLD setup links.
+ *
+ * @NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS: Updated MU-EDCA parameters from driver.
+ *	This event is used to update dynamic MU-EDCA parameters in Beacon frame,
+ *	coming from driver and now need to be reflected in Beacon frame.
+ *
  * @NL80211_CMD_MAX: highest used command number
  * @__NL80211_CMD_AFTER_LAST: internal use
  */
 enum nl80211_commands {
-	/* don't change the order or add anything between, this is ABI! */
+/* don't change the order or add anything between, this is ABI! */
 	NL80211_CMD_UNSPEC,
 
-	NL80211_CMD_GET_WIPHY, /* can dump */
+	NL80211_CMD_GET_WIPHY,		/* can dump */
 	NL80211_CMD_SET_WIPHY,
 	NL80211_CMD_NEW_WIPHY,
 	NL80211_CMD_DEL_WIPHY,
 
-	NL80211_CMD_GET_INTERFACE, /* can dump */
+	NL80211_CMD_GET_INTERFACE,	/* can dump */
 	NL80211_CMD_SET_INTERFACE,
 	NL80211_CMD_NEW_INTERFACE,
 	NL80211_CMD_DEL_INTERFACE,
@@ -1509,12 +1573,12 @@ enum nl80211_commands {
 
 	NL80211_CMD_LINKS_REMOVED,
 
+	NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS,
+	/* add new commands above here */
 	NL80211_CMD_JOIN_TDMA,
 	NL80211_CMD_LEAVE_TDMA,
 	NL80211_CMD_EXT_SYNC_TDMA,
 	NL80211_CMD_QUERY_SYNC_TDMA,
-
-	/* add new commands above here */
 
 	/* used to define NL80211_CMD_MAX below */
 	__NL80211_CMD_AFTER_LAST,
@@ -2373,8 +2437,10 @@ enum nl80211_commands {
  *
  * @NL80211_ATTR_IFTYPE_EXT_CAPA: Nested attribute of the following attributes:
  *	%NL80211_ATTR_IFTYPE, %NL80211_ATTR_EXT_CAPA,
- *	%NL80211_ATTR_EXT_CAPA_MASK, to specify the extended capabilities per
- *	interface type.
+ *	%NL80211_ATTR_EXT_CAPA_MASK, to specify the extended capabilities and
+ *	other interface-type specific capabilities per interface type. For MLO,
+ *	%NL80211_ATTR_EML_CAPABILITY and %NL80211_ATTR_MLD_CAPA_AND_OPS are
+ *	present.
  *
  * @NL80211_ATTR_MU_MIMO_GROUP_DATA: array of 24 bytes that defines a MU-MIMO
  *	groupID for monitor mode.
@@ -2700,13 +2766,72 @@ enum nl80211_commands {
  *	various commands that need a link ID to operate.
  * @NL80211_ATTR_MLO_LINKS: A nested array of links, each containing some
  *	per-link information and a link ID.
+ * @NL80211_ATTR_MLD_ADDR: An MLD address, used with various commands such as
+ *	authenticate/associate.
  *
+ * @NL80211_ATTR_MLO_SUPPORT: Flag attribute to indicate user space supports MLO
+ *	connection. Used with %NL80211_CMD_CONNECT. If this attribute is not
+ *	included in NL80211_CMD_CONNECT drivers must not perform MLO connection.
+ *
+ * @NL80211_ATTR_MAX_NUM_AKM_SUITES: U16 attribute. Indicates maximum number of
+ *	AKM suites allowed for %NL80211_CMD_CONNECT, %NL80211_CMD_ASSOCIATE and
+ *	%NL80211_CMD_START_AP in %NL80211_CMD_GET_WIPHY response. If this
+ *	attribute is not present userspace shall consider maximum number of AKM
+ *	suites allowed as %NL80211_MAX_NR_AKM_SUITES which is the legacy maximum
+ *	number prior to the introduction of this attribute.
+ *
+ * @NL80211_ATTR_EML_CAPABILITY: EML Capability information (u16)
+ * @NL80211_ATTR_MLD_CAPA_AND_OPS: MLD Capabilities and Operations (u16)
+ *
+ * @NL80211_ATTR_TX_HW_TIMESTAMP: Hardware timestamp for TX operation in
+ *	nanoseconds (u64). This is the device clock timestamp so it will
+ *	probably reset when the device is stopped or the firmware is reset.
+ *	When used with %NL80211_CMD_FRAME_TX_STATUS, indicates the frame TX
+ *	timestamp. When used with %NL80211_CMD_FRAME RX notification, indicates
+ *	the ack TX timestamp.
+ * @NL80211_ATTR_RX_HW_TIMESTAMP: Hardware timestamp for RX operation in
+ *	nanoseconds (u64). This is the device clock timestamp so it will
+ *	probably reset when the device is stopped or the firmware is reset.
+ *	When used with %NL80211_CMD_FRAME_TX_STATUS, indicates the ack RX
+ *	timestamp. When used with %NL80211_CMD_FRAME RX notification, indicates
+ *	the incoming frame RX timestamp.
+ * @NL80211_ATTR_TD_BITMAP: Transition Disable bitmap, for subsequent
+ *	(re)associations.
+ *
+ * @NL80211_ATTR_PUNCT_BITMAP: (u32) Preamble puncturing bitmap, lowest
+ *	bit corresponds to the lowest 20 MHz channel. Each bit set to 1
+ *	indicates that the sub-channel is punctured. Higher 16 bits are
+ *	reserved.
+ *
+ * @NL80211_ATTR_MAX_HW_TIMESTAMP_PEERS: Maximum number of peers that HW
+ *	timestamping can be enabled for concurrently (u16), a wiphy attribute.
+ *	A value of 0xffff indicates setting for all peers (i.e. not specifying
+ *	an address with %NL80211_CMD_SET_HW_TIMESTAMP) is supported.
+ * @NL80211_ATTR_HW_TIMESTAMP_ENABLED: Indicates whether HW timestamping should
+ *	be enabled or not (flag attribute).
+ *
+ * @NL80211_ATTR_EMA_RNR_ELEMS: Optional nested attribute for
+ *	reduced neighbor report (RNR) elements. This attribute can be used
+ *	only when NL80211_MBSSID_CONFIG_ATTR_EMA is enabled.
+ *	Userspace is responsible for splitting the RNR into multiple
+ *	elements such that each element excludes the non-transmitting
+ *	profiles already included in the MBSSID element
+ *	(%NL80211_ATTR_MBSSID_ELEMS) at the same index. Each EMA beacon
+ *	will be generated by adding MBSSID and RNR elements at the same
+ *	index. If the userspace includes more RNR elements than number of
+ *	MBSSID elements then these will be added in every EMA beacon.
+ *
+ * @NL80211_ATTR_MLO_LINK_DISABLED: Flag attribute indicating that the link is
+ *	disabled.
+ *
+ * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
+ *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
  * @NL80211_ATTR_MAX: highest attribute number currently defined
  * @__NL80211_ATTR_AFTER_LAST: internal use
  */
 enum nl80211_attrs {
-	/* don't change the order or add anything between, this is ABI! */
+/* don't change the order or add anything between, this is ABI! */
 	NL80211_ATTR_UNSPEC,
 
 	NL80211_ATTR_WIPHY,
@@ -2795,6 +2920,7 @@ enum nl80211_attrs {
 	NL80211_ATTR_FREQ_AFTER,
 
 	NL80211_ATTR_FREQ_FIXED,
+
 
 	NL80211_ATTR_WIPHY_RETRY_SHORT,
 	NL80211_ATTR_WIPHY_RETRY_LONG,
@@ -3216,7 +3342,6 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_MLO_LINKS,
 	NL80211_ATTR_MLO_LINK_ID,
-
 	NL80211_ATTR_MLD_ADDR,
 
 	NL80211_ATTR_MLO_SUPPORT,
@@ -3239,11 +3364,14 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_MLO_LINK_DISABLED,
 
-	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+	NL80211_ATTR_HE_MUEDCA_PARAMS,
 
 	/* add attributes here, update the policy in nl80211.c */
-	NL80211_ATTR_TDMA_VERSION,
 
+	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+
+	NL80211_ATTR_TDMA_VERSION,
+ 
 	NL80211_ATTR_TDMA_NODES,
 
 	NL80211_ATTR_TDMA_BWMODE,
@@ -3270,8 +3398,6 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_MTIKWDS,
 
-	/* add attributes here, update the policy in nl80211.c */
-
 	__NL80211_ATTR_AFTER_LAST,
 	NUM_NL80211_ATTR = __NL80211_ATTR_AFTER_LAST,
 	NL80211_ATTR_MAX = __NL80211_ATTR_AFTER_LAST - 1
@@ -3279,7 +3405,7 @@ enum nl80211_attrs {
 
 /* source-level API compatibility */
 #define NL80211_ATTR_SCAN_GENERATION NL80211_ATTR_GENERATION
-#define NL80211_ATTR_MESH_PARAMS NL80211_ATTR_MESH_CONFIG
+#define	NL80211_ATTR_MESH_PARAMS NL80211_ATTR_MESH_CONFIG
 #define NL80211_ATTR_IFACE_SOCKET_OWNER NL80211_ATTR_SOCKET_OWNER
 #define NL80211_ATTR_SAE_DATA NL80211_ATTR_AUTH_DATA
 #define NL80211_ATTR_CSA_C_OFF_BEACON NL80211_ATTR_CNTDWN_OFFS_BEACON
@@ -3311,29 +3437,34 @@ enum nl80211_attrs {
 #define NL80211_ATTR_KEYS NL80211_ATTR_KEYS
 #define NL80211_ATTR_FEATURE_FLAGS NL80211_ATTR_FEATURE_FLAGS
 
-#define NL80211_WIPHY_NAME_MAXLEN 64
+#define NL80211_WIPHY_NAME_MAXLEN		64
 
-#define NL80211_MAX_SUPP_RATES 32
-#define NL80211_MAX_SUPP_HT_RATES 77
-#define NL80211_MAX_SUPP_REG_RULES 128
-#define NL80211_TKIP_DATA_OFFSET_ENCR_KEY 0
-#define NL80211_TKIP_DATA_OFFSET_TX_MIC_KEY 16
-#define NL80211_TKIP_DATA_OFFSET_RX_MIC_KEY 24
-#define NL80211_HT_CAPABILITY_LEN 26
-#define NL80211_VHT_CAPABILITY_LEN 12
-#define NL80211_HE_MIN_CAPABILITY_LEN 16
-#define NL80211_HE_MAX_CAPABILITY_LEN 54
-#define NL80211_MAX_NR_CIPHER_SUITES 5
-#define NL80211_MAX_NR_AKM_SUITES 2
-#define NL80211_EHT_MIN_CAPABILITY_LEN 13
-#define NL80211_EHT_MAX_CAPABILITY_LEN 51
+#define NL80211_MAX_SUPP_RATES			32
+#define NL80211_MAX_SUPP_HT_RATES		77
+#define NL80211_MAX_SUPP_REG_RULES		128
+#define NL80211_TKIP_DATA_OFFSET_ENCR_KEY	0
+#define NL80211_TKIP_DATA_OFFSET_TX_MIC_KEY	16
+#define NL80211_TKIP_DATA_OFFSET_RX_MIC_KEY	24
+#define NL80211_HT_CAPABILITY_LEN		26
+#define NL80211_VHT_CAPABILITY_LEN		12
+#define NL80211_HE_MIN_CAPABILITY_LEN           16
+#define NL80211_HE_MAX_CAPABILITY_LEN           54
+#define NL80211_MAX_NR_CIPHER_SUITES		5
 
-#define NL80211_MIN_REMAIN_ON_CHANNEL_TIME 10
+/*
+ * NL80211_MAX_NR_AKM_SUITES is obsolete when %NL80211_ATTR_MAX_NUM_AKM_SUITES
+ * present in %NL80211_CMD_GET_WIPHY response.
+ */
+#define NL80211_MAX_NR_AKM_SUITES		2
+#define NL80211_EHT_MIN_CAPABILITY_LEN          13
+#define NL80211_EHT_MAX_CAPABILITY_LEN          51
+
+#define NL80211_MIN_REMAIN_ON_CHANNEL_TIME	10
 
 /* default RSSI threshold for scan results if none specified. */
-#define NL80211_SCAN_RSSI_THOLD_OFF -300
+#define NL80211_SCAN_RSSI_THOLD_OFF		-300
 
-#define NL80211_CQM_TXE_MAX_INTVL 1800
+#define NL80211_CQM_TXE_MAX_INTVL		1800
 
 /**
  * enum nl80211_iftype - (virtual) interface types
@@ -3440,7 +3571,7 @@ enum nl80211_sta_p2p_ps_status {
 	NUM_NL80211_P2P_PS_STATUS,
 };
 
-#define NL80211_STA_FLAG_MAX_OLD_API NL80211_STA_FLAG_TDLS_PEER
+#define NL80211_STA_FLAG_MAX_OLD_API	NL80211_STA_FLAG_TDLS_PEER
 
 /**
  * struct nl80211_sta_flag_update - station flags mask/set
@@ -3594,6 +3725,13 @@ enum nl80211_eht_ru_alloc {
  *	(u8, see &enum nl80211_eht_gi)
  * @NL80211_RATE_INFO_EHT_RU_ALLOC: EHT RU allocation, if not present then
  *	non-OFDMA was used (u8, see &enum nl80211_eht_ru_alloc)
+ * @NL80211_RATE_INFO_S1G_MCS: S1G MCS index (u8, 0-10)
+ * @NL80211_RATE_INFO_S1G_NSS: S1G NSS value (u8, 1-4)
+ * @NL80211_RATE_INFO_1_MHZ_WIDTH: 1 MHz S1G rate
+ * @NL80211_RATE_INFO_2_MHZ_WIDTH: 2 MHz S1G rate
+ * @NL80211_RATE_INFO_4_MHZ_WIDTH: 4 MHz S1G rate
+ * @NL80211_RATE_INFO_8_MHZ_WIDTH: 8 MHz S1G rate
+ * @NL80211_RATE_INFO_16_MHZ_WIDTH: 16 MHz S1G rate
  * @__NL80211_RATE_INFO_AFTER_LAST: internal use
  */
 enum nl80211_rate_info {
@@ -3620,6 +3758,13 @@ enum nl80211_rate_info {
 	NL80211_RATE_INFO_EHT_NSS,
 	NL80211_RATE_INFO_EHT_GI,
 	NL80211_RATE_INFO_EHT_RU_ALLOC,
+	NL80211_RATE_INFO_S1G_MCS,
+	NL80211_RATE_INFO_S1G_NSS,
+	NL80211_RATE_INFO_1_MHZ_WIDTH,
+	NL80211_RATE_INFO_2_MHZ_WIDTH,
+	NL80211_RATE_INFO_4_MHZ_WIDTH,
+	NL80211_RATE_INFO_8_MHZ_WIDTH,
+	NL80211_RATE_INFO_16_MHZ_WIDTH,
 
 	/* keep last */
 	__NL80211_RATE_INFO_AFTER_LAST,
@@ -3784,6 +3929,7 @@ enum nl80211_sta_info {
 	NL80211_STA_INFO_AIRTIME_LINK_METRIC,
 	NL80211_STA_INFO_ASSOC_AT_BOOTTIME,
 	NL80211_STA_INFO_CONNECTED_TO_AS,
+
 	NL80211_STA_INFO_TX_COMPRESSED,
 	NL80211_STA_INFO_RX_COMPRESSED,
 	NL80211_STA_INFO_TX_COMPRESSED_BYTES64,
@@ -3797,6 +3943,7 @@ enum nl80211_sta_info {
 
 /* we renamed this - stay compatible */
 #define NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG NL80211_STA_INFO_ACK_SIGNAL_AVG
+
 
 /**
  * enum nl80211_tid_stats - per TID statistics attributes
@@ -3875,11 +4022,11 @@ enum nl80211_txq_stats {
  * @NL80211_MPATH_FLAG_RESOLVED: the mesh path discovery process succeeded
  */
 enum nl80211_mpath_flags {
-	NL80211_MPATH_FLAG_ACTIVE = 1 << 0,
-	NL80211_MPATH_FLAG_RESOLVING = 1 << 1,
-	NL80211_MPATH_FLAG_SN_VALID = 1 << 2,
-	NL80211_MPATH_FLAG_FIXED = 1 << 3,
-	NL80211_MPATH_FLAG_RESOLVED = 1 << 4,
+	NL80211_MPATH_FLAG_ACTIVE =	1<<0,
+	NL80211_MPATH_FLAG_RESOLVING =	1<<1,
+	NL80211_MPATH_FLAG_SN_VALID =	1<<2,
+	NL80211_MPATH_FLAG_FIXED =	1<<3,
+	NL80211_MPATH_FLAG_RESOLVED =	1<<4,
 };
 
 /**
@@ -3992,6 +4139,10 @@ enum nl80211_band_iftype_attr {
  * @NL80211_BAND_ATTR_EDMG_BW_CONFIG: Channel BW Configuration subfield encodes
  *	the allowed channel bandwidth configurations.
  *	Defined by IEEE P802.11ay/D4.0 section 9.4.2.251, Table 13.
+ * @NL80211_BAND_ATTR_S1G_MCS_NSS_SET: S1G capabilities, supported S1G-MCS and NSS
+ *	set subfield, as in the S1G information IE, 5 bytes
+ * @NL80211_BAND_ATTR_S1G_CAPA: S1G capabilities information subfield as in the
+ *	S1G information IE, 10 bytes
  * @NL80211_BAND_ATTR_MAX: highest band attribute currently defined
  * @__NL80211_BAND_ATTR_AFTER_LAST: internal use
  */
@@ -4011,6 +4162,9 @@ enum nl80211_band_attr {
 
 	NL80211_BAND_ATTR_EDMG_CHANNELS,
 	NL80211_BAND_ATTR_EDMG_BW_CONFIG,
+
+	NL80211_BAND_ATTR_S1G_MCS_NSS_SET,
+	NL80211_BAND_ATTR_S1G_CAPA,
 
 	/* keep last */
 	__NL80211_BAND_ATTR_AFTER_LAST,
@@ -4156,10 +4310,11 @@ enum nl80211_frequency_attr {
 };
 
 #define NL80211_FREQUENCY_ATTR_MAX_TX_POWER NL80211_FREQUENCY_ATTR_MAX_TX_POWER
-#define NL80211_FREQUENCY_ATTR_PASSIVE_SCAN NL80211_FREQUENCY_ATTR_NO_IR
-#define NL80211_FREQUENCY_ATTR_NO_IBSS NL80211_FREQUENCY_ATTR_NO_IR
-#define NL80211_FREQUENCY_ATTR_NO_IR NL80211_FREQUENCY_ATTR_NO_IR
-#define NL80211_FREQUENCY_ATTR_GO_CONCURRENT NL80211_FREQUENCY_ATTR_IR_CONCURRENT
+#define NL80211_FREQUENCY_ATTR_PASSIVE_SCAN	NL80211_FREQUENCY_ATTR_NO_IR
+#define NL80211_FREQUENCY_ATTR_NO_IBSS		NL80211_FREQUENCY_ATTR_NO_IR
+#define NL80211_FREQUENCY_ATTR_NO_IR		NL80211_FREQUENCY_ATTR_NO_IR
+#define NL80211_FREQUENCY_ATTR_GO_CONCURRENT \
+					NL80211_FREQUENCY_ATTR_IR_CONCURRENT
 
 /**
  * enum nl80211_bitrate_attr - bitrate attributes
@@ -4317,7 +4472,8 @@ enum nl80211_sched_scan_match_attr {
 
 	/* keep last */
 	__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST,
-	NL80211_SCHED_SCAN_MATCH_ATTR_MAX = __NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST - 1
+	NL80211_SCHED_SCAN_MATCH_ATTR_MAX =
+		__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST - 1
 };
 
 /* only for backward compatibility */
@@ -4346,35 +4502,38 @@ enum nl80211_sched_scan_match_attr {
  * @NL80211_RRF_NO_160MHZ: 160MHz operation not allowed
  * @NL80211_RRF_NO_HE: HE operation not allowed
  * @NL80211_RRF_NO_320MHZ: 320MHz operation not allowed
+ * @NL80211_RRF_NO_EHT: EHT operation not allowed
  */
 enum nl80211_reg_rule_flags {
-	NL80211_RRF_NO_OFDM = 1 << 0,
-	NL80211_RRF_NO_CCK = 1 << 1,
-	NL80211_RRF_NO_INDOOR = 1 << 2,
-	NL80211_RRF_NO_OUTDOOR = 1 << 3,
-	NL80211_RRF_DFS = 1 << 4,
-	NL80211_RRF_PTP_ONLY = 1 << 5,
-	NL80211_RRF_PTMP_ONLY = 1 << 6,
-	NL80211_RRF_NO_IR = 1 << 7,
-	__NL80211_RRF_NO_IBSS = 1 << 8,
-	NL80211_RRF_AUTO_BW = 1 << 11,
-	NL80211_RRF_IR_CONCURRENT = 1 << 12,
-	NL80211_RRF_NO_HT40MINUS = 1 << 13,
-	NL80211_RRF_NO_HT40PLUS = 1 << 14,
-	NL80211_RRF_NO_80MHZ = 1 << 15,
-	NL80211_RRF_NO_160MHZ = 1 << 16,
-	NL80211_RRF_NO_HE = 1 << 17,
-	NL80211_RRF_NO_320MHZ = 1 << 18,
+	NL80211_RRF_NO_OFDM		= 1<<0,
+	NL80211_RRF_NO_CCK		= 1<<1,
+	NL80211_RRF_NO_INDOOR		= 1<<2,
+	NL80211_RRF_NO_OUTDOOR		= 1<<3,
+	NL80211_RRF_DFS			= 1<<4,
+	NL80211_RRF_PTP_ONLY		= 1<<5,
+	NL80211_RRF_PTMP_ONLY		= 1<<6,
+	NL80211_RRF_NO_IR		= 1<<7,
+	__NL80211_RRF_NO_IBSS		= 1<<8,
+	NL80211_RRF_AUTO_BW		= 1<<11,
+	NL80211_RRF_IR_CONCURRENT	= 1<<12,
+	NL80211_RRF_NO_HT40MINUS	= 1<<13,
+	NL80211_RRF_NO_HT40PLUS		= 1<<14,
+	NL80211_RRF_NO_80MHZ		= 1<<15,
+	NL80211_RRF_NO_160MHZ		= 1<<16,
+	NL80211_RRF_NO_HE		= 1<<17,
+	NL80211_RRF_NO_320MHZ		= 1<<18,
+	NL80211_RRF_NO_EHT		= 1<<19,
 };
 
-#define NL80211_RRF_PASSIVE_SCAN NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_IBSS NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_IR NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_HT40 (NL80211_RRF_NO_HT40MINUS | NL80211_RRF_NO_HT40PLUS)
-#define NL80211_RRF_GO_CONCURRENT NL80211_RRF_IR_CONCURRENT
+#define NL80211_RRF_PASSIVE_SCAN	NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IBSS		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IR		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_HT40		(NL80211_RRF_NO_HT40MINUS |\
+					 NL80211_RRF_NO_HT40PLUS)
+#define NL80211_RRF_GO_CONCURRENT	NL80211_RRF_IR_CONCURRENT
 
 /* For backport compatibility with older userspace */
-#define NL80211_RRF_NO_IR_ALL (NL80211_RRF_NO_IR | __NL80211_RRF_NO_IBSS)
+#define NL80211_RRF_NO_IR_ALL		(NL80211_RRF_NO_IR | __NL80211_RRF_NO_IBSS)
 
 /**
  * enum nl80211_dfs_regions - regulatory DFS regions
@@ -4385,10 +4544,10 @@ enum nl80211_reg_rule_flags {
  * @NL80211_DFS_JP: Country follows DFS master rules from JP/MKK/Telec
  */
 enum nl80211_dfs_regions {
-	NL80211_DFS_UNSET = 0,
-	NL80211_DFS_FCC = 1,
-	NL80211_DFS_ETSI = 2,
-	NL80211_DFS_JP = 3,
+	NL80211_DFS_UNSET	= 0,
+	NL80211_DFS_FCC		= 1,
+	NL80211_DFS_ETSI	= 2,
+	NL80211_DFS_JP		= 3,
 };
 
 /**
@@ -4409,9 +4568,9 @@ enum nl80211_dfs_regions {
  *	platform is operating in an indoor environment.
  */
 enum nl80211_user_reg_hint_type {
-	NL80211_USER_REG_HINT_USER = 0,
+	NL80211_USER_REG_HINT_USER	= 0,
 	NL80211_USER_REG_HINT_CELL_BASE = 1,
-	NL80211_USER_REG_HINT_INDOOR = 2,
+	NL80211_USER_REG_HINT_INDOOR    = 2,
 };
 
 /**
@@ -4465,11 +4624,11 @@ enum nl80211_survey_info {
 };
 
 /* keep old names for compatibility */
-#define NL80211_SURVEY_INFO_CHANNEL_TIME NL80211_SURVEY_INFO_TIME
-#define NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY NL80211_SURVEY_INFO_TIME_BUSY
-#define NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY NL80211_SURVEY_INFO_TIME_EXT_BUSY
-#define NL80211_SURVEY_INFO_CHANNEL_TIME_RX NL80211_SURVEY_INFO_TIME_RX
-#define NL80211_SURVEY_INFO_CHANNEL_TIME_TX NL80211_SURVEY_INFO_TIME_TX
+#define NL80211_SURVEY_INFO_CHANNEL_TIME		NL80211_SURVEY_INFO_TIME
+#define NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY		NL80211_SURVEY_INFO_TIME_BUSY
+#define NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY	NL80211_SURVEY_INFO_TIME_EXT_BUSY
+#define NL80211_SURVEY_INFO_CHANNEL_TIME_RX		NL80211_SURVEY_INFO_TIME_RX
+#define NL80211_SURVEY_INFO_CHANNEL_TIME_TX		NL80211_SURVEY_INFO_TIME_TX
 
 /**
  * enum nl80211_mntr_flags - monitor configuration flags
@@ -4786,14 +4945,20 @@ enum nl80211_txq_attr {
 	NL80211_TXQ_ATTR_MAX = __NL80211_TXQ_ATTR_AFTER_LAST - 1
 };
 
-enum nl80211_ac { NL80211_AC_VO, NL80211_AC_VI, NL80211_AC_BE, NL80211_AC_BK, NL80211_NUM_ACS };
+enum nl80211_ac {
+	NL80211_AC_VO,
+	NL80211_AC_VI,
+	NL80211_AC_BE,
+	NL80211_AC_BK,
+	NL80211_NUM_ACS
+};
 
 /* backward compat */
-#define NL80211_TXQ_ATTR_QUEUE NL80211_TXQ_ATTR_AC
-#define NL80211_TXQ_Q_VO NL80211_AC_VO
-#define NL80211_TXQ_Q_VI NL80211_AC_VI
-#define NL80211_TXQ_Q_BE NL80211_AC_BE
-#define NL80211_TXQ_Q_BK NL80211_AC_BK
+#define NL80211_TXQ_ATTR_QUEUE	NL80211_TXQ_ATTR_AC
+#define NL80211_TXQ_Q_VO	NL80211_AC_VO
+#define NL80211_TXQ_Q_VI	NL80211_AC_VI
+#define NL80211_TXQ_Q_BE	NL80211_AC_BE
+#define NL80211_TXQ_Q_BK	NL80211_AC_BK
 
 /**
  * enum nl80211_channel_type - channel type
@@ -4804,7 +4969,12 @@ enum nl80211_ac { NL80211_AC_VO, NL80211_AC_VI, NL80211_AC_BE, NL80211_AC_BK, NL
  * @NL80211_CHAN_HT40PLUS: HT40 channel, secondary channel
  *	above the control channel
  */
-enum nl80211_channel_type { NL80211_CHAN_NO_HT, NL80211_CHAN_HT20, NL80211_CHAN_HT40MINUS, NL80211_CHAN_HT40PLUS };
+enum nl80211_channel_type {
+	NL80211_CHAN_NO_HT,
+	NL80211_CHAN_HT20,
+	NL80211_CHAN_HT40MINUS,
+	NL80211_CHAN_HT40PLUS
+};
 
 /**
  * enum nl80211_key_mode - Key mode
@@ -4821,7 +4991,11 @@ enum nl80211_channel_type { NL80211_CHAN_NO_HT, NL80211_CHAN_HT20, NL80211_CHAN_
  *	The unicast key identified by idx and mac is cleared for Tx and becomes
  *	the preferred Tx key for the station.
  */
-enum nl80211_key_mode { NL80211_KEY_RX_TX, NL80211_KEY_NO_TX, NL80211_KEY_SET_TX };
+enum nl80211_key_mode {
+	NL80211_KEY_RX_TX,
+	NL80211_KEY_NO_TX,
+	NL80211_KEY_SET_TX
+};
 
 /**
  * enum nl80211_chan_width - channel width definitions
@@ -4865,6 +5039,7 @@ enum nl80211_chan_width {
 	NL80211_CHAN_WIDTH_16,
 	NL80211_CHAN_WIDTH_320,
 	NL80211_CHAN_WIDTH_3,
+
 };
 
 /**
@@ -4936,6 +5111,8 @@ enum nl80211_bss_scan_width {
  *	Contains a nested array of signal strength attributes (u8, dBm),
  *	using the nesting index as the antenna number.
  * @NL80211_BSS_FREQUENCY_OFFSET: frequency offset in KHz
+ * @NL80211_BSS_MLO_LINK_ID: MLO link ID of the BSS (u8).
+ * @NL80211_BSS_MLD_ADDR: MLD address of this BSS if connected to it.
  * @__NL80211_BSS_AFTER_LAST: internal
  * @NL80211_BSS_MAX: highest BSS attribute
  */
@@ -5149,7 +5326,7 @@ enum nl80211_tx_rate_attributes {
 };
 
 #define NL80211_TXRATE_MCS NL80211_TXRATE_HT
-#define NL80211_VHT_NSS_MAX 8
+#define NL80211_VHT_NSS_MAX		8
 
 /**
  * struct nl80211_txrate_vht - VHT MCS/NSS txrate bitmap
@@ -5159,7 +5336,7 @@ struct nl80211_txrate_vht {
 	__u16 mcs[NL80211_VHT_NSS_MAX];
 };
 
-#define NL80211_HE_NSS_MAX 8
+#define NL80211_HE_NSS_MAX		8
 /**
  * struct nl80211_txrate_he - HE MCS/NSS txrate bitmap
  * @mcs: MCS bitmap table for each NSS (array index 0 for 1 stream, etc.)
@@ -5269,6 +5446,7 @@ enum nl80211_cqm_rssi_threshold_event {
 	NL80211_CQM_RSSI_THRESHOLD_EVENT_HIGH,
 	NL80211_CQM_RSSI_BEACON_LOSS_EVENT,
 };
+
 
 /**
  * enum nl80211_tx_power_setting - TX power adjustment
@@ -5698,7 +5876,10 @@ enum nl80211_attr_coalesce_rule {
  * @NL80211_COALESCE_CONDITION_NO_MATCH: coalesce Rx packets when patterns
  *	in a rule are not matched.
  */
-enum nl80211_coalesce_condition { NL80211_COALESCE_CONDITION_MATCH, NL80211_COALESCE_CONDITION_NO_MATCH };
+enum nl80211_coalesce_condition {
+	NL80211_COALESCE_CONDITION_MATCH,
+	NL80211_COALESCE_CONDITION_NO_MATCH
+};
 
 /**
  * enum nl80211_iface_limit_attrs - limit attributes
@@ -5784,6 +5965,7 @@ enum nl80211_if_combination_attrs {
 	MAX_NL80211_IFACE_COMB = NUM_NL80211_IFACE_COMB - 1
 };
 
+
 /**
  * enum nl80211_plink_state - state of a mesh peer link finite state machine
  *
@@ -5832,11 +6014,13 @@ enum plink_actions {
 	NUM_NL80211_PLINK_ACTIONS,
 };
 
-#define NL80211_KCK_LEN 16
-#define NL80211_KEK_LEN 16
-#define NL80211_KCK_EXT_LEN 24
-#define NL80211_KEK_EXT_LEN 32
-#define NL80211_REPLAY_CTR_LEN 8
+
+#define NL80211_KCK_LEN			16
+#define NL80211_KEK_LEN			16
+#define NL80211_KCK_EXT_LEN		24
+#define NL80211_KEK_EXT_LEN		32
+#define NL80211_KCK_EXT_LEN_32		32
+#define NL80211_REPLAY_CTR_LEN		8
 
 /**
  * enum nl80211_rekey_data - attributes for GTK rekey offload
@@ -5869,7 +6053,11 @@ enum nl80211_rekey_data {
  * @NL80211_HIDDEN_SSID_ZERO_CONTENTS: hide SSID by using correct length of SSID
  *	element in Beacon frames but zero out each byte in the SSID
  */
-enum nl80211_hidden_ssid { NL80211_HIDDEN_SSID_NOT_IN_USE, NL80211_HIDDEN_SSID_ZERO_LEN, NL80211_HIDDEN_SSID_ZERO_CONTENTS };
+enum nl80211_hidden_ssid {
+	NL80211_HIDDEN_SSID_NOT_IN_USE,
+	NL80211_HIDDEN_SSID_ZERO_LEN,
+	NL80211_HIDDEN_SSID_ZERO_CONTENTS
+};
 
 /**
  * enum nl80211_sta_wme_attr - station WME attributes
@@ -5937,7 +6125,7 @@ enum nl80211_tdls_operation {
  *	"start ap" with %NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT.
  */
 enum nl80211_ap_sme_features {
-	NL80211_AP_SME_SA_QUERY_OFFLOAD = 1 << 0,
+	NL80211_AP_SME_SA_QUERY_OFFLOAD		= 1 << 0,
 };
 
 /**
@@ -5949,7 +6137,7 @@ enum nl80211_ap_sme_features {
  * @NL80211_FEATURE_INACTIVITY_TIMER: This driver takes care of freeing up
  *	the connected inactive stations in AP mode.
  * @NL80211_FEATURE_CELL_BASE_REG_HINTS: This driver has been tested
- *	to work properly to suppport receiving regulatory hints from
+ *	to work properly to support receiving regulatory hints from
  *	cellular base stations.
  * @NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL: (no longer available, only
  *	here to reserve the value for API/ABI compatibility)
@@ -6034,38 +6222,38 @@ enum nl80211_ap_sme_features {
  *	be set for scheduled scan and the MAC address mask/value will be used.
  */
 enum nl80211_feature_flags {
-	NL80211_FEATURE_SK_TX_STATUS = 1 << 0,
-	NL80211_FEATURE_HT_IBSS = 1 << 1,
-	NL80211_FEATURE_INACTIVITY_TIMER = 1 << 2,
-	NL80211_FEATURE_CELL_BASE_REG_HINTS = 1 << 3,
-	NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL = 1 << 4,
-	NL80211_FEATURE_SAE = 1 << 5,
-	NL80211_FEATURE_LOW_PRIORITY_SCAN = 1 << 6,
-	NL80211_FEATURE_SCAN_FLUSH = 1 << 7,
-	NL80211_FEATURE_AP_SCAN = 1 << 8,
-	NL80211_FEATURE_VIF_TXPOWER = 1 << 9,
-	NL80211_FEATURE_NEED_OBSS_SCAN = 1 << 10,
-	NL80211_FEATURE_P2P_GO_CTWIN = 1 << 11,
-	NL80211_FEATURE_P2P_GO_OPPPS = 1 << 12,
+	NL80211_FEATURE_SK_TX_STATUS			= 1 << 0,
+	NL80211_FEATURE_HT_IBSS				= 1 << 1,
+	NL80211_FEATURE_INACTIVITY_TIMER		= 1 << 2,
+	NL80211_FEATURE_CELL_BASE_REG_HINTS		= 1 << 3,
+	NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL	= 1 << 4,
+	NL80211_FEATURE_SAE				= 1 << 5,
+	NL80211_FEATURE_LOW_PRIORITY_SCAN		= 1 << 6,
+	NL80211_FEATURE_SCAN_FLUSH			= 1 << 7,
+	NL80211_FEATURE_AP_SCAN				= 1 << 8,
+	NL80211_FEATURE_VIF_TXPOWER			= 1 << 9,
+	NL80211_FEATURE_NEED_OBSS_SCAN			= 1 << 10,
+	NL80211_FEATURE_P2P_GO_CTWIN			= 1 << 11,
+	NL80211_FEATURE_P2P_GO_OPPPS			= 1 << 12,
 	/* bit 13 is reserved */
-	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS = 1 << 14,
-	NL80211_FEATURE_FULL_AP_CLIENT_STATE = 1 << 15,
-	NL80211_FEATURE_USERSPACE_MPM = 1 << 16,
-	NL80211_FEATURE_ACTIVE_MONITOR = 1 << 17,
-	NL80211_FEATURE_AP_MODE_CHAN_WIDTH_CHANGE = 1 << 18,
-	NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES = 1 << 19,
-	NL80211_FEATURE_WFA_TPC_IE_IN_PROBES = 1 << 20,
-	NL80211_FEATURE_QUIET = 1 << 21,
-	NL80211_FEATURE_TX_POWER_INSERTION = 1 << 22,
-	NL80211_FEATURE_ACKTO_ESTIMATION = 1 << 23,
-	NL80211_FEATURE_STATIC_SMPS = 1 << 24,
-	NL80211_FEATURE_DYNAMIC_SMPS = 1 << 25,
-	NL80211_FEATURE_SUPPORTS_WMM_ADMISSION = 1 << 26,
-	NL80211_FEATURE_MAC_ON_CREATE = 1 << 27,
-	NL80211_FEATURE_TDLS_CHANNEL_SWITCH = 1 << 28,
-	NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR = 1 << 29,
-	NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR = 1 << 30,
-	NL80211_FEATURE_ND_RANDOM_MAC_ADDR = 1U << 31,
+	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS		= 1 << 14,
+	NL80211_FEATURE_FULL_AP_CLIENT_STATE		= 1 << 15,
+	NL80211_FEATURE_USERSPACE_MPM			= 1 << 16,
+	NL80211_FEATURE_ACTIVE_MONITOR			= 1 << 17,
+	NL80211_FEATURE_AP_MODE_CHAN_WIDTH_CHANGE	= 1 << 18,
+	NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES	= 1 << 19,
+	NL80211_FEATURE_WFA_TPC_IE_IN_PROBES		= 1 << 20,
+	NL80211_FEATURE_QUIET				= 1 << 21,
+	NL80211_FEATURE_TX_POWER_INSERTION		= 1 << 22,
+	NL80211_FEATURE_ACKTO_ESTIMATION		= 1 << 23,
+	NL80211_FEATURE_STATIC_SMPS			= 1 << 24,
+	NL80211_FEATURE_DYNAMIC_SMPS			= 1 << 25,
+	NL80211_FEATURE_SUPPORTS_WMM_ADMISSION		= 1 << 26,
+	NL80211_FEATURE_MAC_ON_CREATE			= 1 << 27,
+	NL80211_FEATURE_TDLS_CHANNEL_SWITCH		= 1 << 28,
+	NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR		= 1 << 29,
+	NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR	= 1 << 30,
+	NL80211_FEATURE_ND_RANDOM_MAC_ADDR		= 1U << 31,
 };
 
 /**
@@ -6249,6 +6437,23 @@ enum nl80211_feature_flags {
  * @NL80211_EXT_FEATURE_RADAR_BACKGROUND: Device supports background radar/CAC
  *	detection.
  *
+ * @NL80211_EXT_FEATURE_POWERED_ADDR_CHANGE: Device can perform a MAC address
+ *	change without having to bring the underlying network device down
+ *	first. For example, in station mode this can be used to vary the
+ *	origin MAC address prior to a connection to a new AP for privacy
+ *	or other reasons. Note that certain driver specific restrictions
+ *	might apply, e.g. no scans in progress, no offchannel operations
+ *	in progress, and no active connections.
+ *
+ * @NL80211_EXT_FEATURE_PUNCT: Driver supports preamble puncturing in AP mode.
+ *
+ * @NL80211_EXT_FEATURE_SECURE_NAN: Device supports NAN Pairing which enables
+ *	authentication, data encryption and message integrity.
+ *
+ * @NL80211_EXT_FEATURE_AUTH_AND_DEAUTH_RANDOM_TA: Device supports randomized TA
+ *	in authentication and deauthentication frames sent to unassociated peer
+ *	using @NL80211_CMD_FRAME.
+ *
  * @NUM_NL80211_EXT_FEATURES: number of extended features.
  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
  */
@@ -6320,8 +6525,6 @@ enum nl80211_ext_feature_index {
 	NL80211_EXT_FEATURE_PUNCT,
 	NL80211_EXT_FEATURE_SECURE_NAN,
 	NL80211_EXT_FEATURE_AUTH_AND_DEAUTH_RANDOM_TA,
-	NL80211_EXT_FEATURE_OWE_OFFLOAD,
-	NL80211_EXT_FEATURE_OWE_OFFLOAD_AP,
 
 	/* add new features before the definition below */
 	NUM_NL80211_EXT_FEATURES,
@@ -6343,10 +6546,10 @@ enum nl80211_ext_feature_index {
  * @NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U: Support for 802.11u
  */
 enum nl80211_probe_resp_offload_support_attr {
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS = 1 << 0,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 = 1 << 1,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P = 1 << 2,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U = 1 << 3,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS =	1<<0,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 =	1<<1,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P =	1<<2,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U =	1<<3,
 };
 
 /**
@@ -6436,25 +6639,33 @@ enum nl80211_timeout_reason {
  * @NL80211_SCAN_FLAG_FREQ_KHZ: report scan results with
  *	%NL80211_ATTR_SCAN_FREQ_KHZ. This also means
  *	%NL80211_ATTR_SCAN_FREQUENCIES will not be included.
- * @NL80211_SCAN_FLAG_COLOCATED_6GHZ: scan for colocated APs reported by
- *	2.4/5 GHz APs
+ * @NL80211_SCAN_FLAG_COLOCATED_6GHZ: scan for collocated APs reported by
+ *	2.4/5 GHz APs. When the flag is set, the scan logic will use the
+ *	information from the RNR element found in beacons/probe responses
+ *	received on the 2.4/5 GHz channels to actively scan only the 6GHz
+ *	channels on which APs are expected to be found. Note that when not set,
+ *	the scan logic would scan all 6GHz channels, but since transmission of
+ *	probe requests on non PSC channels is limited, it is highly likely that
+ *	these channels would passively be scanned. Also note that when the flag
+ *	is set, in addition to the colocated APs, PSC channels would also be
+ *	scanned if the user space has asked for it.
  */
 enum nl80211_scan_flags {
-	NL80211_SCAN_FLAG_LOW_PRIORITY = 1 << 0,
-	NL80211_SCAN_FLAG_FLUSH = 1 << 1,
-	NL80211_SCAN_FLAG_AP = 1 << 2,
-	NL80211_SCAN_FLAG_RANDOM_ADDR = 1 << 3,
-	NL80211_SCAN_FLAG_FILS_MAX_CHANNEL_TIME = 1 << 4,
-	NL80211_SCAN_FLAG_ACCEPT_BCAST_PROBE_RESP = 1 << 5,
-	NL80211_SCAN_FLAG_OCE_PROBE_REQ_HIGH_TX_RATE = 1 << 6,
-	NL80211_SCAN_FLAG_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION = 1 << 7,
-	NL80211_SCAN_FLAG_LOW_SPAN = 1 << 8,
-	NL80211_SCAN_FLAG_LOW_POWER = 1 << 9,
-	NL80211_SCAN_FLAG_HIGH_ACCURACY = 1 << 10,
-	NL80211_SCAN_FLAG_RANDOM_SN = 1 << 11,
-	NL80211_SCAN_FLAG_MIN_PREQ_CONTENT = 1 << 12,
-	NL80211_SCAN_FLAG_FREQ_KHZ = 1 << 13,
-	NL80211_SCAN_FLAG_COLOCATED_6GHZ = 1 << 14,
+	NL80211_SCAN_FLAG_LOW_PRIORITY				= 1<<0,
+	NL80211_SCAN_FLAG_FLUSH					= 1<<1,
+	NL80211_SCAN_FLAG_AP					= 1<<2,
+	NL80211_SCAN_FLAG_RANDOM_ADDR				= 1<<3,
+	NL80211_SCAN_FLAG_FILS_MAX_CHANNEL_TIME			= 1<<4,
+	NL80211_SCAN_FLAG_ACCEPT_BCAST_PROBE_RESP		= 1<<5,
+	NL80211_SCAN_FLAG_OCE_PROBE_REQ_HIGH_TX_RATE		= 1<<6,
+	NL80211_SCAN_FLAG_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION	= 1<<7,
+	NL80211_SCAN_FLAG_LOW_SPAN				= 1<<8,
+	NL80211_SCAN_FLAG_LOW_POWER				= 1<<9,
+	NL80211_SCAN_FLAG_HIGH_ACCURACY				= 1<<10,
+	NL80211_SCAN_FLAG_RANDOM_SN				= 1<<11,
+	NL80211_SCAN_FLAG_MIN_PREQ_CONTENT			= 1<<12,
+	NL80211_SCAN_FLAG_FREQ_KHZ				= 1<<13,
+	NL80211_SCAN_FLAG_COLOCATED_6GHZ			= 1<<14,
 };
 
 /**
@@ -6550,7 +6761,7 @@ enum nl80211_dfs_state {
  *	%NL80211_ATTR_WDEV.
  */
 enum nl80211_protocol_features {
-	NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP = 1 << 0,
+	NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP =	1 << 0,
 };
 
 /**
@@ -6572,7 +6783,7 @@ enum nl80211_crit_proto_id {
 };
 
 /* maximum duration for critical protocol measures */
-#define NL80211_CRIT_PROTO_MAX_DURATION 5000 /* msec */
+#define NL80211_CRIT_PROTO_MAX_DURATION		5000 /* msec */
 
 /**
  * enum nl80211_rxmgmt_flags - flags for received management frame.
@@ -6595,7 +6806,7 @@ enum nl80211_rxmgmt_flags {
  * a Linux nl80211 vendor ID is used (no such IDs are allocated
  * yet, so that's not valid so far)
  */
-#define NL80211_VENDOR_ID_IS_LINUX 0x80000000
+#define NL80211_VENDOR_ID_IS_LINUX	0x80000000
 
 /**
  * struct nl80211_vendor_cmd_info - vendor command data
@@ -6622,10 +6833,10 @@ struct nl80211_vendor_cmd_info {
  * @NL80211_TDLS_PEER_HE: TDLS peer is HE capable.
  */
 enum nl80211_tdls_peer_capability {
-	NL80211_TDLS_PEER_HT = 1 << 0,
-	NL80211_TDLS_PEER_VHT = 1 << 1,
-	NL80211_TDLS_PEER_WMM = 1 << 2,
-	NL80211_TDLS_PEER_HE = 1 << 3,
+	NL80211_TDLS_PEER_HT = 1<<0,
+	NL80211_TDLS_PEER_VHT = 1<<1,
+	NL80211_TDLS_PEER_WMM = 1<<2,
+	NL80211_TDLS_PEER_HE = 1<<3,
 };
 
 /**
@@ -6648,7 +6859,8 @@ enum nl80211_sched_scan_plan {
 
 	/* keep last */
 	__NL80211_SCHED_SCAN_PLAN_AFTER_LAST,
-	NL80211_SCHED_SCAN_PLAN_MAX = __NL80211_SCHED_SCAN_PLAN_AFTER_LAST - 1
+	NL80211_SCHED_SCAN_PLAN_MAX =
+		__NL80211_SCHED_SCAN_PLAN_AFTER_LAST - 1
 };
 
 /**
@@ -6660,7 +6872,7 @@ enum nl80211_sched_scan_plan {
  */
 struct nl80211_bss_select_rssi_adjust {
 	__u8 band;
-	char delta;
+	__s8 delta;
 } __attribute__((packed));
 
 /**
@@ -7496,7 +7708,8 @@ enum nl80211_unsol_bcast_probe_resp_attributes {
 
 	/* keep last */
 	__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST,
-	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX = __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
+	NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
+		__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
 };
 
 /**
@@ -7677,8 +7890,8 @@ enum nl80211_mbssid_config_attributes {
  *	userspace.
  */
 enum nl80211_ap_settings_flags {
-	NL80211_AP_SETTINGS_EXTERNAL_AUTH_SUPPORT = 1 << 0,
-	NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT = 1 << 1,
+	NL80211_AP_SETTINGS_EXTERNAL_AUTH_SUPPORT	= 1 << 0,
+	NL80211_AP_SETTINGS_SA_QUERY_OFFLOAD_SUPPORT	= 1 << 1,
 };
 
 #endif /* __LINUX_NL80211_H */
