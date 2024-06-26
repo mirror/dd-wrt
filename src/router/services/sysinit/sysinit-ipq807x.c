@@ -336,6 +336,7 @@ static void load_nss_ipq60xx(int profile)
 	insmod("qca-ssdk-ipq60xx");
 	insmod("qca-nss-dp-ipq60xx");
 
+	nvram_default_get("nss","1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq60xx");
 		insmod("qca-nss-crypto-ipq60xx");
@@ -382,6 +383,7 @@ static void load_nss_ipq807x(int profile)
 {
 	insmod("qca-ssdk-ipq807x");
 	insmod("qca-nss-dp-ipq807x");
+	nvram_default_get("nss","1");
 	if (nvram_match("nss", "1")) {
 		insmod("udp_tunnel");
 		insmod("ip6_udp_tunnel");
