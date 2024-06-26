@@ -1639,6 +1639,59 @@ void set_smp_affinity(int irq, int cpu)
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", irq);
 }
 
+void set_named_smp_affinity(char *name, int core, int entry)
+{
+	FILE *in = fopen("/proc/interrupts", "rb");
+	if (!in)
+		return;
+	char line[256];
+	int e = 0;
+	char irq[256];
+	while (fgets(line, sizeof(line) - 1, in)) {
+		strncpy(irq, line, sizeof(irq) - 1);
+		int i;
+		int cnt = 0;
+		if (!strchr(line, ':'))
+			continue;
+		for (i = 0; i < strlen(line); i++) {
+			if (isdigit(line[i]))
+				irq[cnt++] = line[i];
+			if (line[i] == ':') {
+				irq[cnt++] = 0;
+				break;
+			}
+		}
+		char match[256];
+		memset(match, 0, sizeof(match));
+		cnt = sizeof(match) - 1;
+		int offset = strlen(line) - 2;
+		int start = 0;
+		i = offset;
+		while(i--) {
+			if (line[i]!=0x20)
+				start = i;
+			else
+				break;
+		}
+		if (!start)
+			continue;
+		strcpy(match, &line[start]);
+		match[strlen(match)-1]=0;
+		if (!strcmp(match, name))
+			e++;
+		if (e == entry) {
+			goto out;
+		}
+	}
+	fclose(in);
+	return;
+out:;
+	fclose(in);
+	char s_cpu[32];
+	snprintf(s_cpu, sizeof(s_cpu), "%d", 1 << core);
+	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", atoi(irq));
+}
+
 void getPortMapping(int *vlanmap)
 {
 	if (nvram_match("vlan1ports", "0 5")) {

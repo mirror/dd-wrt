@@ -433,57 +433,6 @@ static void load_nss_ipq807x(int profile)
 	}
 }
 
-void set_named_smp_affinity(char *name, int core, int entry)
-{
-	FILE *in = fopen("/proc/interrupts", "rb");
-	if (!in)
-		return;
-	char line[256];
-	int e = 0;
-	char irq[256];
-	while (fgets(line, sizeof(line) - 1, in)) {
-		strncpy(irq, line, sizeof(irq) - 1);
-		int i;
-		int cnt = 0;
-		if (!strchr(line, ':'))
-			continue;
-		for (i = 0; i < strlen(line); i++) {
-			if (isdigit(line[i]))
-				irq[cnt++] = line[i];
-			if (line[i] == ':') {
-				irq[cnt++] = 0;
-				break;
-			}
-		}
-		char match[256];
-		memset(match, 0, sizeof(match));
-		cnt = sizeof(match) - 1;
-		int offset = strlen(line) - 2;
-		int start = 0;
-		i = offset;
-		while(i--) {
-			if (line[i]!=0x20)
-				start = i;
-			else
-				break;
-		}
-		if (!start)
-			continue;
-		strcpy(match, &line[start]);
-		match[strlen(match)-1]=0;
-		if (!strcmp(match, name))
-			e++;
-		if (e == entry) {
-			goto out;
-		}
-	}
-	fclose(in);
-	return;
-out:;
-	fclose(in);
-	sysprintf("echo %d > /proc/irq/%s/smp_affinity", 1 << core, irq);
-}
-
 void start_setup_affinity(void)
 {
 	set_named_smp_affinity("reo2host-destination-ring1", 0, 1);

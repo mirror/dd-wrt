@@ -1616,6 +1616,7 @@ int writeprocsysnet(char *path, char *value);
 int writeprocsys(char *path, char *value);
 
 void set_smp_affinity(int irq, int cpu);
+void set_named_smp_affinity(char *name, int core, int entry);
 
 int writevaproc(char *value, char *fmt, ...);
 
