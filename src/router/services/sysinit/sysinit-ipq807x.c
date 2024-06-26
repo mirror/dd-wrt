@@ -541,7 +541,14 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
 	}
-	eval("modprobe", "ath11k_ahb");
+	insmod("compat");
+	insmod("compat_firmware_class");
+	insmod("cfg80211");
+	insmod("mac80211");
+	insmod("qmi_helpers");
+	insmod("ath11k");
+	insmod("ath11k_ahb");
+//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 	}
