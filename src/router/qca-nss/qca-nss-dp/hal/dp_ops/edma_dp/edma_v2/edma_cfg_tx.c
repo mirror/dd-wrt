@@ -842,7 +842,7 @@ void edma_cfg_tx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev, u
 #endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-		netif_napi_add(netdev, &txcmpl_ring->napi,
+		netif_threaded_napi_add(netdev, &txcmpl_ring->napi,
 				edma_tx_napi_poll, nss_dp_tx_napi_budget);
 #else
 		netif_threaded_napi_add_weight(netdev, &txcmpl_ring->napi,
@@ -863,7 +863,7 @@ void edma_cfg_tx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev, u
 			txcmpl_ring = &egc->txcmpl_rings[ring_idx];
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-			netif_napi_add(netdev, &txcmpl_ring->napi,
+			netif_threaded_napi_add(netdev, &txcmpl_ring->napi,
 					edma_tx_napi_poll,
 					nss_dp_tx_napi_budget);
 #else

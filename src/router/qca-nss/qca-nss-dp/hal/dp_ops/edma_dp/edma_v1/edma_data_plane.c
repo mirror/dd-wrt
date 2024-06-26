@@ -853,7 +853,7 @@ static int edma_register_netdevice(struct net_device *netdev, uint32_t macid)
 	 */
 	if (!edma_hw.napi_added) {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-		netif_napi_add(netdev, &edma_hw.napi, edma_napi,
+		netif_threaded_napi_add(netdev, &edma_hw.napi, edma_napi,
 				NAPI_POLL_WEIGHT);
 #else
 		netif_threaded_napi_add(netdev, &edma_hw.napi, edma_napi);

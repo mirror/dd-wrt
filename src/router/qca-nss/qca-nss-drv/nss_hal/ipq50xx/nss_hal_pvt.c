@@ -599,7 +599,7 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 		return err;
 	}
 
-	netif_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
+	netif_threaded_napi_add_weight(&nss_ctx->napi_ndev, &int_ctx->napi, napi_poll_cb, napi_wgt);
 	int_ctx->cause = cause;
 	err = request_irq(irq, nss_hal_handle_irq, 0, irq_name, int_ctx);
 	if (err) {
