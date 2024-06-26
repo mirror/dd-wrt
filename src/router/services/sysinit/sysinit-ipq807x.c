@@ -51,6 +51,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <ctype.h>
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
@@ -336,7 +337,7 @@ static void load_nss_ipq60xx(int profile)
 	insmod("qca-ssdk-ipq60xx");
 	insmod("qca-nss-dp-ipq60xx");
 
-	nvram_default_get("nss","1");
+	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq60xx");
 		insmod("qca-nss-crypto-ipq60xx");
@@ -376,14 +377,13 @@ static void load_nss_ipq60xx(int profile)
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink");
 		insmod("qca-nss-bridge-mgr");
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	}
 }
 static void load_nss_ipq807x(int profile)
 {
 	insmod("qca-ssdk-ipq807x");
 	insmod("qca-nss-dp-ipq807x");
-	nvram_default_get("nss","1");
+	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("udp_tunnel");
 		insmod("ip6_udp_tunnel");
@@ -430,8 +430,94 @@ static void load_nss_ipq807x(int profile)
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink");
 		insmod("qca-nss-bridge-mgr");
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	}
+}
+
+void set_named_smp_affinity(char *name, int core, int entry)
+{
+	FILE *in = fopen("/proc/interrupts", "rb");
+	if (!in)
+		return;
+	char line[256];
+	int e = 0;
+	char irq[256];
+	while (fgets(line, sizeof(line) - 1, in)) {
+		strncpy(irq, line, sizeof(irq) - 1);
+		int i;
+		int cnt = 0;
+		if (!strchr(line, ':'))
+			continue;
+		for (i = 0; i < strlen(line); i++) {
+			if (isdigit(line[i]))
+				irq[cnt++] = line[i];
+			if (line[i] == ':') {
+				irq[cnt++] = 0;
+				break;
+			}
+		}
+		char match[256];
+		memset(match, 0, sizeof(match));
+		cnt = sizeof(match) - 1;
+		int offset = strlen(line) - 2;
+		int start = 0;
+		i = offset;
+		while(i--) {
+			if (line[i]!=0x20)
+				start = i;
+			else
+				break;
+		}
+		if (!start)
+			continue;
+		strcpy(match, &line[start]);
+		match[strlen(match)-1]=0;
+		if (!strcmp(match, name))
+			e++;
+		if (e == entry) {
+			goto out;
+		}
+	}
+	fclose(in);
+	return;
+out:;
+	fclose(in);
+	sysprintf("echo %d > /proc/irq/%s/smp_affinity", 1 << core, irq);
+}
+
+void start_setup_affinity(void)
+{
+	set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+	set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+	set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+	set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+
+	set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+
+	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
+
+	set_named_smp_affinity("edma_txcmpl", 3, 1);
+	set_named_smp_affinity("edma_rxfill", 3, 1);
+	set_named_smp_affinity("edma_rxdesc", 3, 1);
+	set_named_smp_affinity("edma_misc", 3, 1);
+
+	set_named_smp_affinity("nss_queue0", 1, 1);
+	set_named_smp_affinity("nss_queue1", 2, 1);
+	set_named_smp_affinity("nss_queue2", 3, 1);
+	set_named_smp_affinity("nss_queue3", 0, 1);
+
+	set_named_smp_affinity("nss_queue0", 2, 2);
+	set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
+	set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
+	set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
+
+	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
+
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 }
 
 void start_sysinit(void)
@@ -543,6 +629,12 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
 	}
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+	}
+	if (brand == ROUTER_DYNALINK_DLWRX36) {
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
+	}
 	insmod("compat");
 	insmod("compat_firmware_class");
 	insmod("cfg80211");
@@ -550,60 +642,7 @@ void start_sysinit(void)
 	insmod("qmi_helpers");
 	insmod("ath11k");
 	insmod("ath11k_ahb");
-//	eval("modprobe", "ath11k_ahb");
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
-		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
-	}
-	if (brand == ROUTER_DYNALINK_DLWRX36) {
-		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
-	}
-	if (brand == ROUTER_LINKSYS_MR7350) {
-		writeproc("/proc/irq/61/smp_affinity", "1");
-		writeproc("/proc/irq/62/smp_affinity", "2");
-		writeproc("/proc/irq/63/smp_affinity", "4");
-		writeproc("/proc/irq/64/smp_affinity", "8");
-
-		writeproc("/proc/irq/47/smp_affinity", "1");
-		writeproc("/proc/irq/53/smp_affinity", "2");
-		writeproc("/proc/irq/56/smp_affinity", "4");
-
-		writeproc("/proc/irq/57/smp_affinity", "2");
-		writeproc("/proc/irq/59/smp_affinity", "4");
-
-		writeproc("/proc/irq/33/smp_affinity", "4");
-		writeproc("/proc/irq/34/smp_affinity", "4");
-		writeproc("/proc/irq/35/smp_affinity", "2");
-		writeproc("/proc/irq/36/smp_affinity", "4");
-	}
-
-	if (brand == ROUTER_DYNALINK_DLWRX36 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
-		writeproc("/proc/irq/64/smp_affinity", "1");
-		writeproc("/proc/irq/65/smp_affinity", "2");
-		writeproc("/proc/irq/66/smp_affinity", "4");
-		writeproc("/proc/irq/67/smp_affinity", "8");
-
-		writeproc("/proc/irq/47/smp_affinity", "1");
-		writeproc("/proc/irq/53/smp_affinity", "2");
-		writeproc("/proc/irq/56/smp_affinity", "4");
-
-		writeproc("/proc/irq/58/smp_affinity", "2");
-		writeproc("/proc/irq/60/smp_affinity", "4");
-		writeproc("/proc/irq/62/smp_affinity", "8");
-
-		writeproc("/proc/irq/32/smp_affinity", "4");
-		writeproc("/proc/irq/33/smp_affinity", "4");
-		writeproc("/proc/irq/34/smp_affinity", "4");
-		writeproc("/proc/irq/35/smp_affinity", "4");
-
-		writeproc("/proc/irq/39/smp_affinity", "1");
-		writeproc("/proc/irq/49/smp_affinity", "1");
-		writeproc("/proc/irq/40/smp_affinity", "2");
-		writeproc("/proc/irq/50/smp_affinity", "2");
-		writeproc("/proc/irq/41/smp_affinity", "4");
-		writeproc("/proc/irq/51/smp_affinity", "4");
-		writeproc("/proc/irq/42/smp_affinity", "8");
-		writeproc("/proc/irq/52/smp_affinity", "8");
-	}
+	//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
@@ -621,6 +660,7 @@ void start_sysinit(void)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+	start_setup_affinity();
 
 	sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
 	sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
