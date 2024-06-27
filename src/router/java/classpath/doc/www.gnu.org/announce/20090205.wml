@@ -1,0 +1,143 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.98 Announcement (2009-02-05)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.98 "Better Late Than Never"</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.98.
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example JamVM, CACAO and Kaffe can make use of an installed
+copy of GNU Classpath 0.98, while GCC (gcj) will use the developer
+snapshots as a base for future versions. For more projects based on GNU
+Classpath, <createlink url="http://www.gnu.org/software/classpath/stories.html">
+</p>
+<p>
+This release brings with it a number of interesting new features:
+</p>
+<ul>
+<li>A GMP (<createlink url="http://gmplib.org/">) backend for java.math (PR28664)</li>
+<li>Integration of the Java Activation Framework implementation developed by the ClasspathX project
+(<createlink url="http://www.gnu.org/software/classpathx/">) to provide the javax.activation API introduced in 1.6.</li>
+<li>Integration of GJDoc, a documentation generator (example output: <createlink url="http://developer.classpath.org/doc/"> or <createlink url="http://fuseyism.com/classpath/doc/">)</li>
+<li>Updated to use CLDR 1.5.1 (PR35237)</li>
+<li>Preliminary support for java.util.Scanner (PR30436)</li>
+</ul>
+<p>
+There have also been many bugfixes over the past year. Those relevant to 0.98 can be found at
+<createlink url="http://gcc.gnu.org/bugzilla/buglist.cgi?product=classpath&target_milestone=0.98">
+</p>
+<p>
+With the 0.95 release, we switched fully towards the 1.5 generics work that we previously released separately as classpath-generics. All this work is now fully integrated in the main release and various runtimes (gcj, cacao, jamvm, ikvm, etc) have been extended to take advantage of the new generics, annotations and enumeration support in the core library. As a consequence, only 1.5 capable compilers (currently the Eclipse Compiler for Java (ecj) and Sun's javac) may be used to build Classpath.
+</p>
+<p>
+The GNU Classpath developers site
+<createlink url="http://developer.classpath.org/">
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.
+<p>
+For each snapshot release generated documentation is provided through
+the GNU Classpath Tools gjdoc project,which will become part of GNU Classpath
+itself with the release of 0.98.  A documentation generation
+framework for java source files used by the GNU project. Full
+documentation on the currently implementated packages and classes can
+be found at: <createlink url="http://developer.classpath.org/doc/">
+We are looking into how to extend the documentation experience in the
+future. Please contact the mailinglist if you would like to help with
+this effort.
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.98 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/">
+or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html"> or the Classpath
+continuous integration system <createlink url="http://builder.classpath.org/dist">
+<p><pre>
+File: classpath-0.98.tar.gz
+MD5sum: 90c6571b8b0309e372faa0f9f6255ea9
+SHA1sum: 1d6e8d1b3542a35bbd1013c61fab3cfae083decb
+</pre></p>
+<p>
+New in release 0.98 (Feb 05, 2009)
+</p>
+<ul>
+<li>Native support for BigInteger is now provided using the GMP library. A new option, --enable/disable-gmp is provided, and the option is enabled by default if GMP is found.</li>
+<li>Classpath now makes use of a new StringBuilder implementation internally called CPStringBuilder. In addition to being unsynchronised, like StringBuilder, this also avoids copying the
+array when toString or substring is called. While StringBuffer/Builder always retain their own array, which is only altered during resizing, CPStringBuilder gives away its array when the result is generated by toString()/substring() and starts afresh. The default capacity of CPStringBuilder can also be configured using the gnu.classpath.cpstringbuilder.capacity property. (PR21869)</li>
+<li>gjdoc is now built as part of tools.zip</li>
+<li>Import of the Java Activation Framework from ClasspathX to provide javax.activation (part of 1.6)</li>
+<li>Preliminary version of java.util.Scanner (PR30436)</li>
+<li>Reduce cost of ThreadLocal(s) to improve Jython performance (PR33690)</li>
+<li>Updated to use CLDR 1.5.1 (PR35237)</li>
+<li>Many bug fixes including:
+<ul>
+<li>PR22851: zoneStrings in gnu/java/locale/LocaleInformation*</li>
+<li>PR31895: setCurrency(Currency) does not actually change the currency.</li>
+<li>PR32028: Make fails at gjdoc</li>
+<li>PR34840: Mismatch between Sun and Classpath's java.lang.Appendable</li>
+<li>PR35487: gcj causes ConcurrentModificationException during tomcat5</li>
+<li>PR35690: javax.tools.FileObject.toUri is in wrong case</li>
+<li>PR36085: java.util.regex escape-sequence handling</li>
+<li>PR36147: Apache Tomcat fails to read descriptors using GNU XML</li>
+<li>PR36219: gnu.xml.transform.SortKey isn't subclass</li>
+<li>PR36220: NPEs in gnu.xml.transform.* clone methods</li>
+<li>PR36221: DomDOMException running SPEC jvm 2008 xml.transform</li>
+<li>PR36477: OOME in CPStringBuilder when running Eclipse</li>
+<li>PR36522: Policy file is not read at all</li>
+<li>PR36636: gjar -u doesn't work</li>
+<li>PR36637: --without-fastjar doesn't wor</li>
+<li>PR36677: Omission bug in JDWP VirtualMachineCommandSet</li>
+<li>PR38417: gnu.java.security.util.PRNG produces easily predictable values</li>
+<li>PR38473: Segmentation fault in retrieving font outline decomposition</li>
+<li>PR38861: Support XULRunner 1.9.1.</li>
+<li>PR38912: XMLParser not interning element names</li>
+</ul></li>
+</ul>
+<p>Runtime interface changes:</p>
+<ul>
+<li>VMSecureRandom has moved to gnu.java.security.jce.prng.VMSecureRandom as part of the fix for PR38417.</li>
+<li>gnu.java.lang.VMCPStringBuilder has been added and should be added to avoid the inefficency of reflection when creating non-copied String objects.</li>
+</ul>
+<p>
+The following people helped with this release:
+</p>
+<p>
+Chris Burdess, David Daney, David Edelsohn, Daniel Frampton, Michael Franz, Jeroen Frijters, David P Grove, Andrew Haley, Laszlo Andras Hernadi, Andrew John Hughes, Matthias Klose, Byeogncheol Lee, Robert Lougher, Raif S. Naffah, Xavier Poinsard, Ian Rogers, Robert Schuster, Archit Shah, Joshua Sumali, Christian Thalinger, Mario Torre, Tom Tromey, Ralf Wildenhues, Mark Wielaard
+</p>
+<p>
+We would also like to thank the numerous bug reporters and testers!  In 
+addition, we'd like to extend our thanks to all those who've contributed over 
+the years and have helped in building a thriving and friendly community 
+around the GNU Classpath project.
+</p>
+</boxitem>
+</box>

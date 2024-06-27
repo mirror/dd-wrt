@@ -1,5 +1,5 @@
 /* InvalidClassException.java -- invalid/unknown class reference id exception
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -50,6 +50,17 @@ import gnu.classpath.jdwp.JdwpConstants;
 public class InvalidClassException
   extends JdwpException
 {
+
+  /**
+   * Constructs a new exception thrown due to
+   * a null class ID.
+   */
+  public InvalidClassException ()
+  {
+    super (JdwpConstants.Error.INVALID_CLASS,
+           "invalid class id (null)");
+  }
+
   public InvalidClassException (long id)
   {
     super (JdwpConstants.Error.INVALID_CLASS,

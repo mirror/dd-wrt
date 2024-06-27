@@ -99,7 +99,9 @@ public final class MinExclusiveFacet
       {
         if (!(test.getClass().equals(value.getClass())))
           return false;
-        return ((Comparable) test).compareTo(value) > 0;
+	@SuppressWarnings("unchecked")
+	  Comparable<Object> comp = (Comparable<Object>) test;
+        return comp.compareTo(value) > 0;
       }
     Number nvalue = (Number) value;
     if (!(test instanceof Number))

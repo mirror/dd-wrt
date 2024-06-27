@@ -1,5 +1,6 @@
 /* DSSKeyPairRawCodec.java --
-   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006, 2015
+   Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -55,6 +56,7 @@ public class DSSKeyPairRawCodec
 {
   // implicit 0-arguments constructor
 
+  @Override
   public int getFormatID()
   {
     return RAW_FORMAT;
@@ -99,6 +101,7 @@ public class DSSKeyPairRawCodec
    *           (Digital Signature Standard) one.
    * @see Registry#MAGIC_RAW_DSS_PUBLIC_KEY
    */
+  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     if (! (key instanceof DSSPublicKey))
@@ -148,6 +151,7 @@ public class DSSKeyPairRawCodec
     return baos.toByteArray();
   }
 
+  @Override
   public PublicKey decodePublicKey(byte[] k)
   {
     // magic
@@ -241,6 +245,7 @@ public class DSSKeyPairRawCodec
    * @throws IllegalArgumentException if the designated key is not a DSS
    *           (Digital Signature Standard) one.
    */
+  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     if (! (key instanceof DSSPrivateKey))
@@ -290,6 +295,7 @@ public class DSSKeyPairRawCodec
     return baos.toByteArray();
   }
 
+  @Override
   public PrivateKey decodePrivateKey(byte[] k)
   {
     // magic

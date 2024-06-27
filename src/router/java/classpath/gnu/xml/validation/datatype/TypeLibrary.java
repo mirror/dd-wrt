@@ -101,10 +101,10 @@ public class TypeLibrary
   public static final SimpleType UNSIGNED_BYTE = new UnsignedByteType();
   public static final SimpleType POSITIVE_INTEGER = new PositiveIntegerType();
 
-  private static Map byName;
+  private static Map<String,SimpleType> byName;
   static
   {
-    byName = new HashMap();
+    byName = new HashMap<String,SimpleType>();
     byName.put("anySimpleType", ANY_SIMPLE_TYPE);
     byName.put("string", STRING);
     byName.put("boolean", BOOLEAN);

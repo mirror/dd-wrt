@@ -1,5 +1,5 @@
 /* SRPKeyPairGenerator.java --
-   Copyright (C) 2003, 2006, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006, 2010, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,6 +47,9 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -68,7 +71,7 @@ public class SRPKeyPairGenerator
   private static final BigInteger THREE = BigInteger.valueOf(3L);
   /** Property name of the length (Integer) of the modulus (N) of an SRP key. */
   public static final String MODULUS_LENGTH = "gnu.crypto.srp.L";
-  /** Property name of the Boolean indicating wether or not to use defaults. */
+  /** Property name of the Boolean indicating whether or not to use defaults. */
   public static final String USE_DEFAULTS = "gnu.crypto.srp.use.defaults";
   /** Property name of the modulus (N) of an SRP key. */
   public static final String SHARED_MODULUS = "gnu.crypto.srp.N";
@@ -95,6 +98,10 @@ public class SRPKeyPairGenerator
   private BigInteger v;
   /** Our default source of randomness. */
   private PRNG prng = null;
+  /** Flag to indicate whether the generator has been initialized */
+  private AtomicBoolean initialized = new AtomicBoolean(false);
+  /** Lock to prevent concurrent initialization */
+  private Lock initLock = new ReentrantLock();
 
   // implicit 0-arguments constructor
 
@@ -105,73 +112,83 @@ public class SRPKeyPairGenerator
 
   public void setup(Map attributes)
   {
-    // do we have a SecureRandom, or should we use our own?
-    rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
-    N = (BigInteger) attributes.get(SHARED_MODULUS);
-    if (N != null)
+    initLock.lock();
+    try
       {
-        l = N.bitLength();
-        g = (BigInteger) attributes.get(GENERATOR);
-        if (g == null)
-          g = TWO;
-        SRPAlgorithm.checkParams(N, g);
+	// do we have a SecureRandom, or should we use our own?
+	rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
+	N = (BigInteger) attributes.get(SHARED_MODULUS);
+	if (N != null)
+	  {
+	    l = N.bitLength();
+	    g = (BigInteger) attributes.get(GENERATOR);
+	    if (g == null)
+	      g = TWO;
+	    SRPAlgorithm.checkParams(N, g);
+	  }
+	else
+	  { // generate or use default values for N and g
+	    Boolean useDefaults = (Boolean) attributes.get(USE_DEFAULTS);
+	    if (useDefaults == null)
+	      useDefaults = Boolean.TRUE;
+	    Integer L = (Integer) attributes.get(MODULUS_LENGTH);
+	    l = DEFAULT_MODULUS_LENGTH;
+	    if (useDefaults.equals(Boolean.TRUE))
+	      {
+		if (L != null)
+		  {
+		    l = L.intValue();
+		    switch (l)
+		      {
+		      case 512:
+			N = SRPAlgorithm.N_512;
+			break;
+		      case 640:
+			N = SRPAlgorithm.N_640;
+			break;
+		      case 768:
+			N = SRPAlgorithm.N_768;
+			break;
+		      case 1024:
+			N = SRPAlgorithm.N_1024;
+			break;
+		      case 1280:
+			N = SRPAlgorithm.N_1280;
+			break;
+		      case 1536:
+			N = SRPAlgorithm.N_1536;
+			break;
+		      case 2048:
+			N = SRPAlgorithm.N_2048;
+			break;
+		      default:
+			throw new IllegalArgumentException(
+                          "unknown default shared modulus bit length");
+		      }
+		    g = TWO;
+		    l = N.bitLength();
+		  }
+	      }
+	    else // generate new N and g
+	      {
+		if (L != null)
+		  {
+		    l = L.intValue();
+		    if ((l % 256) != 0 || l < 512 || l > 2048)
+		      throw new IllegalArgumentException(
+                        "invalid shared modulus bit length");
+		  }
+	      }
+	  }
+	// are we using this generator on the server side, or the client side?
+	v = (BigInteger) attributes.get(USER_VERIFIER);
+
+	initialized.set(true);
       }
-    else
-      { // generate or use default values for N and g
-        Boolean useDefaults = (Boolean) attributes.get(USE_DEFAULTS);
-        if (useDefaults == null)
-          useDefaults = Boolean.TRUE;
-        Integer L = (Integer) attributes.get(MODULUS_LENGTH);
-        l = DEFAULT_MODULUS_LENGTH;
-        if (useDefaults.equals(Boolean.TRUE))
-          {
-            if (L != null)
-              {
-                l = L.intValue();
-                switch (l)
-                  {
-                  case 512:
-                    N = SRPAlgorithm.N_512;
-                    break;
-                  case 640:
-                    N = SRPAlgorithm.N_640;
-                    break;
-                  case 768:
-                    N = SRPAlgorithm.N_768;
-                    break;
-                  case 1024:
-                    N = SRPAlgorithm.N_1024;
-                    break;
-                  case 1280:
-                    N = SRPAlgorithm.N_1280;
-                    break;
-                  case 1536:
-                    N = SRPAlgorithm.N_1536;
-                    break;
-                  case 2048:
-                    N = SRPAlgorithm.N_2048;
-                    break;
-                  default:
-                    throw new IllegalArgumentException(
-                        "unknown default shared modulus bit length");
-                  }
-                g = TWO;
-                l = N.bitLength();
-              }
-          }
-        else // generate new N and g
-          {
-            if (L != null)
-              {
-                l = L.intValue();
-                if ((l % 256) != 0 || l < 512 || l > 2048)
-                  throw new IllegalArgumentException(
-                      "invalid shared modulus bit length");
-              }
-          }
+    finally
+      {
+	initLock.unlock();
       }
-    // are we using this generator on the server side, or the client side?
-    v = (BigInteger) attributes.get(USER_VERIFIER);
   }
 
   public KeyPair generate()
@@ -280,5 +297,28 @@ public class SRPKeyPairGenerator
       prng = PRNG.getInstance();
 
     return prng;
+  }
+
+  @Override
+  public boolean isInitialized()
+  {
+    boolean initFlag = false;
+
+    initLock.lock();
+    try
+      {
+	initFlag = initialized.get();
+      }
+    finally
+      {
+	initLock.unlock();
+      }
+    return initFlag;
+  }
+
+  @Override
+  public int getDefaultKeySize()
+  {
+    return DEFAULT_MODULUS_LENGTH;
   }
 }

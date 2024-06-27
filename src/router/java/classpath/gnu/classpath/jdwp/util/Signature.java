@@ -1,5 +1,5 @@
 /* Signature.java -- utility class to compute class and method signatures
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -59,7 +59,7 @@ public class Signature
    * @param theClass  the class for which to compute the signature
    * @return          the class's type signature
    */
-  public static String computeClassSignature (Class theClass)
+  public static String computeClassSignature (Class<?> theClass)
   {
     CPStringBuilder sb = new CPStringBuilder ();
     _addToSignature (sb, theClass);
@@ -92,8 +92,8 @@ public class Signature
                               method.getParameterTypes ());
   }
 
-  private static String _computeSignature (Class returnType,
-                                           Class[] paramTypes)
+  private static String _computeSignature (Class<?> returnType,
+                                           Class<?>[] paramTypes)
   {
     CPStringBuilder sb = new CPStringBuilder ("(");
     if (paramTypes != null)
@@ -106,7 +106,7 @@ public class Signature
     return sb.toString();
   }
 
-  private static void _addToSignature (CPStringBuilder sb, Class k)
+  private static void _addToSignature (CPStringBuilder sb, Class<?> k)
   {
     // For some reason there's no easy way to get the signature of a
     // class.

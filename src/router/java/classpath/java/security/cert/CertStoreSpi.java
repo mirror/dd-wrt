@@ -1,5 +1,5 @@
 /* CertStoreSpi -- certificate store service provider interface.
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -69,6 +69,7 @@ public abstract class CertStoreSpi
    * @throws InvalidAlgorithmParameterException If the specified
    *         parameters are inappropriate for this class.
    */
+  @SuppressWarnings("unused")
   public CertStoreSpi(CertStoreParameters params)
     throws InvalidAlgorithmParameterException
   {

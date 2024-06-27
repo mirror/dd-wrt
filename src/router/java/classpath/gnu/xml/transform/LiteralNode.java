@@ -1,5 +1,5 @@
 /* LiteralNode.java --
-   Copyright (C) 2004,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006,2015, 2016 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -62,7 +62,7 @@ final class LiteralNode
    */
   final Node source;
 
-  final Collection elementExcludeResultPrefixes;
+  final Collection<String> elementExcludeResultPrefixes;
 
   LiteralNode(Node source)
   {
@@ -74,13 +74,13 @@ final class LiteralNode
                                          "exclude-result-prefixes");
         if (attr != null)
           {
-            elementExcludeResultPrefixes = new HashSet();
+            elementExcludeResultPrefixes = new HashSet<String>();
             StringTokenizer st = new StringTokenizer(attr.getNodeValue());
             while (st.hasMoreTokens())
               elementExcludeResultPrefixes.add(st.nextToken());
           }
         else
-          elementExcludeResultPrefixes = Collections.EMPTY_SET;
+          elementExcludeResultPrefixes = Collections.<String>emptySet();
       }
     else
       elementExcludeResultPrefixes = null;

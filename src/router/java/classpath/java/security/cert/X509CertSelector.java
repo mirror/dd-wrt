@@ -1,5 +1,5 @@
 /* X509CertSelector.java -- selects X.509 certificates by criteria.
-   Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2006, 2014, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,7 +47,6 @@ import gnu.java.security.x509.ext.Extension;
 import gnu.java.security.x509.ext.GeneralName;
 import gnu.java.security.x509.ext.GeneralSubtree;
 import gnu.java.security.x509.ext.NameConstraints;
-import gnu.java.security.x509.ext.GeneralName.Kind;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -87,7 +86,7 @@ import javax.security.auth.x500.X500Principal;
  * @author Casey Marshall (csm@gnu.org)
  * @since 1.4
  */
-public class X509CertSelector implements CertSelector, Cloneable
+public class X509CertSelector implements CertSelector
 {
 
   // Constants and fields.
@@ -107,7 +106,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     byte[] nameBytes = null;
     GeneralName.Kind kind = GeneralName.Kind.forTag(id);
-    switch (Kind.forTag(id))
+    switch (kind)
     {
       case dNSName:
       case rfc822Name:
@@ -133,6 +132,7 @@ public class X509CertSelector implements CertSelector, Cloneable
       case ediPartyName:
       case x400Address:
       case otherName:
+      default:
         throw new IOException("cannot decode string representation of "
                               + kind);
     }
@@ -259,6 +259,7 @@ public class X509CertSelector implements CertSelector, Cloneable
     altNames.add(generalName);
   }
 
+  @Override
   public Object clone()
   {
     try
@@ -281,9 +282,8 @@ public class X509CertSelector implements CertSelector, Cloneable
   public byte[] getAuthorityKeyIdentifier()
   {
     if (authKeyId != null)
-      return (byte[]) authKeyId.clone();
-    else
-      return null;
+      return authKeyId.clone();
+    return null;
   }
 
   /**
@@ -317,8 +317,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (certValid != null)
       return (Date) certValid.clone();
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -332,8 +331,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (keyPurposeSet != null)
       return Collections.unmodifiableSet(keyPurposeSet);
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -346,8 +344,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (issuer != null)
       return issuer.getEncoded();
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -360,8 +357,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (issuer != null)
       return issuer.getName();
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -373,9 +369,8 @@ public class X509CertSelector implements CertSelector, Cloneable
   public boolean[] getKeyUsage()
   {
     if (keyUsage != null)
-      return (boolean[]) keyUsage.clone();
-    else
-      return null;
+      return keyUsage.clone();
+    return null;
   }
 
   /**
@@ -400,9 +395,8 @@ public class X509CertSelector implements CertSelector, Cloneable
   public byte[] getNameConstraints()
   {
     if (nameConstraints != null)
-      return (byte[]) nameConstraints.clone();
-    else
-      return null;
+      return nameConstraints.clone();
+    return null;
   }
 
   public Collection<List<?>> getPathToNames()
@@ -413,7 +407,7 @@ public class X509CertSelector implements CertSelector, Cloneable
         for (GeneralName name : pathToNames)
           {
             List<Object> n = new ArrayList<Object>(2);
-            n.add(name.kind().tag());
+            n.add(Integer.valueOf(name.kind().tag()));
             n.add(name.name());
             names.add(n);
           }
@@ -456,6 +450,7 @@ public class X509CertSelector implements CertSelector, Cloneable
    *
    * @return Null.
    */
+  @SuppressWarnings("static-method")
   public Date getPrivateKeyValid()
   {
     return null;
@@ -489,7 +484,7 @@ public class X509CertSelector implements CertSelector, Cloneable
         for (GeneralName name : altNames)
           {
             List<Object> n = new ArrayList<Object>(2);
-            n.add(name.kind().tag());
+            n.add(Integer.valueOf(name.kind().tag()));
             n.add(name.name());
             names.add(n);
           }
@@ -508,8 +503,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (subject != null)
       return subject.getEncoded();
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -522,8 +516,7 @@ public class X509CertSelector implements CertSelector, Cloneable
   {
     if (subject != null)
       return subject.getName();
-    else
-      return null;
+    return null;
   }
 
   /**
@@ -536,9 +529,8 @@ public class X509CertSelector implements CertSelector, Cloneable
   public byte[] getSubjectKeyIdentifier()
   {
     if (subjectKeyId != null)
-      return (byte[]) subjectKeyId.clone();
-    else
-      return null;
+      return subjectKeyId.clone();
+    return null;
   }
 
   /**
@@ -571,17 +563,18 @@ public class X509CertSelector implements CertSelector, Cloneable
    * @param certificate The certificate to check.
    * @return true if the certificate matches all criteria.
    */
+  @Override
   public boolean match(Certificate certificate)
   {
     if (!(certificate instanceof X509Certificate))
       return false;
-    X509Certificate cert = (X509Certificate) certificate;
-    if (this.cert != null)
+    X509Certificate other = (X509Certificate) certificate;
+    if (cert != null)
       {
         try
           {
-            byte[] e1 = this.cert.getEncoded();
-            byte[] e2 = cert.getEncoded();
+            byte[] e1 = cert.getEncoded();
+            byte[] e2 = other.getEncoded();
             if (!Arrays.equals(e1, e2))
               return false;
           }
@@ -592,14 +585,14 @@ public class X509CertSelector implements CertSelector, Cloneable
       }
     if (serialNo != null)
       {
-        if (!serialNo.equals(cert.getSerialNumber()))
+        if (!serialNo.equals(other.getSerialNumber()))
           return false;
       }
     if (certValid != null)
       {
         try
           {
-            cert.checkValidity(certValid);
+            other.checkValidity(certValid);
           }
         catch (CertificateException ce)
           {
@@ -608,48 +601,48 @@ public class X509CertSelector implements CertSelector, Cloneable
       }
     if (issuer != null)
       {
-        if (!issuer.equals(cert.getIssuerX500Principal()))
+        if (!issuer.equals(other.getIssuerX500Principal()))
           return false;
       }
     if (subject != null)
       {
-        if (!subject.equals(cert.getSubjectX500Principal()))
+        if (!subject.equals(other.getSubjectX500Principal()))
           return false;
       }
     if (sigId != null)
       {
-        if (!sigId.toString().equals(cert.getSigAlgOID()))
+        if (!sigId.toString().equals(other.getSigAlgOID()))
           return false;
       }
     if (subjectKeyId != null)
       {
-        byte[] b = cert.getExtensionValue(SUBJECT_KEY_ID);
+        byte[] b = other.getExtensionValue(SUBJECT_KEY_ID);
         if (!Arrays.equals(b, subjectKeyId))
           return false;
       }
     if (authKeyId != null)
       {
-        byte[] b = cert.getExtensionValue(AUTH_KEY_ID);
+        byte[] b = other.getExtensionValue(AUTH_KEY_ID);
         if (!Arrays.equals(b, authKeyId))
           return false;
       }
     if (keyUsage != null)
       {
-        boolean[] b = cert.getKeyUsage();
+        boolean[] b = other.getKeyUsage();
         if (!Arrays.equals(b, keyUsage))
           return false;
       }
     if (basicConstraints >= 0)
       {
-        if (cert.getBasicConstraints() != basicConstraints)
+        if (other.getBasicConstraints() != basicConstraints)
           return false;
       }
     if (keyPurposeSet != null)
       {
-        List kp = null;
+        List<String> kp = null;
         try
           {
-            kp = cert.getExtendedKeyUsage();
+            kp = other.getExtendedKeyUsage();
           }
         catch (CertificateParsingException cpe)
           {
@@ -657,7 +650,7 @@ public class X509CertSelector implements CertSelector, Cloneable
           }
         if (kp == null)
           return false;
-        for (Iterator it = keyPurposeSet.iterator(); it.hasNext(); )
+        for (Iterator<String> it = keyPurposeSet.iterator(); it.hasNext(); )
           {
             if (!kp.contains(it.next()))
               return false;
@@ -668,7 +661,7 @@ public class X509CertSelector implements CertSelector, Cloneable
         Collection<List<?>> an = null;
         try
           {
-            an = cert.getSubjectAlternativeNames();
+            an = other.getSubjectAlternativeNames();
           }
         catch (CertificateParsingException cpe)
           {
@@ -709,7 +702,7 @@ public class X509CertSelector implements CertSelector, Cloneable
       }
     if (nameConstraints != null)
       {
-        byte[] nc = cert.getExtensionValue(NAME_CONSTRAINTS_ID);
+        byte[] nc = other.getExtensionValue(NAME_CONSTRAINTS_ID);
         if (!Arrays.equals(nameConstraints, nc))
           return false;
       }
@@ -717,15 +710,15 @@ public class X509CertSelector implements CertSelector, Cloneable
     if (policy != null)
       {
         CertificatePolicies policies = null;
-        if (cert instanceof GnuPKIExtension)
+        if (other instanceof GnuPKIExtension)
           {
             policies = (CertificatePolicies)
-              ((GnuPKIExtension) cert).getExtension(CertificatePolicies.ID).getValue();
+              ((GnuPKIExtension) other).getExtension(CertificatePolicies.ID).getValue();
           }
         else
           {
             byte[] policiesDer =
-              cert.getExtensionValue(CertificatePolicies.ID.toString());
+              other.getExtensionValue(CertificatePolicies.ID.toString());
             try
               {
                 policies = new CertificatePolicies(policiesDer);
@@ -745,16 +738,16 @@ public class X509CertSelector implements CertSelector, Cloneable
     if (pathToNames != null)
       {
         NameConstraints nc = null;
-        if (cert instanceof GnuPKIExtension)
+        if (other instanceof GnuPKIExtension)
           {
             Extension e =
-              ((GnuPKIExtension) cert).getExtension(NameConstraints.ID);
+              ((GnuPKIExtension) other).getExtension(NameConstraints.ID);
             if (e != null)
               nc = (NameConstraints) e.getValue();
           }
         else
           {
-            byte[] b = cert.getExtensionValue(NameConstraints.ID.toString());
+            byte[] b = other.getExtensionValue(NameConstraints.ID.toString());
             if (b != null)
               {
                 try
@@ -846,14 +839,20 @@ public class X509CertSelector implements CertSelector, Cloneable
         return;
       }
     Set<String> s = new HashSet<String>();
-    for (Iterator it = keyPurposeSet.iterator(); it.hasNext(); )
+    for (Iterator<String> it = keyPurposeSet.iterator(); it.hasNext(); )
       {
-        Object o = it.next();
-        if (!(o instanceof String))
-          throw new IOException("not a string: " + o);
+	String o = null;
+	try
+	  {
+	    o = it.next();
+	  }
+	catch (ClassCastException ce)
+	  {
+	    throw new IOException("not a string: " + o, ce);
+	  }
         try
           {
-            OID oid = new OID((String) o);
+            OID oid = new OID(o);
             int[] comp = oid.getIDs();
             if (!checkOid(comp))
               throw new IOException("malformed OID: " + o);
@@ -951,6 +950,7 @@ public class X509CertSelector implements CertSelector, Cloneable
    * @throws IOException If the argument is not a valid DER-encoded
    *         name constraints.
    */
+  @SuppressWarnings("unused")
   public void setNameConstraints(byte[] nameConstraints)
     throws IOException
   {
@@ -959,7 +959,7 @@ public class X509CertSelector implements CertSelector, Cloneable
 
     // But we just compare raw byte arrays.
     this.nameConstraints = nameConstraints != null
-      ? (byte[]) nameConstraints.clone() : null;
+      ? nameConstraints.clone() : null;
   }
 
   /**
@@ -1050,6 +1050,7 @@ public class X509CertSelector implements CertSelector, Cloneable
    *
    * @param UNUSED Is silently ignored.
    */
+  @SuppressWarnings("unused")
   public void setPrivateKeyValid(Date UNUSED)
   {
   }
@@ -1210,8 +1211,7 @@ public class X509CertSelector implements CertSelector, Cloneable
     try
       {
         KeyFactory enc = KeyFactory.getInstance("X.509");
-        subjectKeySpec = (X509EncodedKeySpec)
-          enc.getKeySpec(key, X509EncodedKeySpec.class);
+        subjectKeySpec = enc.getKeySpec(key, X509EncodedKeySpec.class);
       }
     catch (Exception x)
       {
@@ -1250,6 +1250,7 @@ public class X509CertSelector implements CertSelector, Cloneable
       this.sigId = null;
   }
 
+  @Override
   public String toString()
   {
     CPStringBuilder str = new CPStringBuilder(X509CertSelector.class.getName());

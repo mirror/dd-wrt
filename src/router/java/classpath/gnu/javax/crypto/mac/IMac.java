@@ -1,5 +1,5 @@
 /* IMac.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -129,7 +129,7 @@ public interface IMac
    * @exception IllegalStateException if the instance is already initialised.
    * @see #MAC_KEY_MATERIAL
    */
-  void init(Map attributes) throws InvalidKeyException, IllegalStateException;
+  void init(Map<String,Object> attributes) throws InvalidKeyException, IllegalStateException;
 
   /**
    * Continues a <i>MAC</i> operation using the input byte.

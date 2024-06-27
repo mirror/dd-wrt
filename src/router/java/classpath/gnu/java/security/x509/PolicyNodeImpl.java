@@ -1,5 +1,5 @@
 /* PolicyNodeImpl.java -- An implementation of a policy tree node.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -56,9 +56,9 @@ public final class PolicyNodeImpl implements PolicyNode
   // -------------------------------------------------------------------------
 
   private String policy;
-  private final Set expectedPolicies;
-  private final Set qualifiers;
-  private final Set children;
+  private final Set<String> expectedPolicies;
+  private final Set<PolicyQualifierInfo> qualifiers;
+  private final Set<PolicyNode> children;
   private PolicyNodeImpl parent;
   private int depth;
   private boolean critical;
@@ -69,9 +69,9 @@ public final class PolicyNodeImpl implements PolicyNode
 
   public PolicyNodeImpl()
   {
-    expectedPolicies = new HashSet();
-    qualifiers = new HashSet();
-    children = new HashSet();
+    expectedPolicies = new HashSet<String>();
+    qualifiers = new HashSet<PolicyQualifierInfo>();
+    children = new HashSet<PolicyNode>();
     readOnly = false;
     critical = false;
   }
@@ -90,11 +90,13 @@ public final class PolicyNodeImpl implements PolicyNode
     children.add(node);
   }
 
-  public Iterator getChildren()
+  @Override
+  public Iterator<? extends PolicyNode> getChildren()
   {
     return Collections.unmodifiableSet(children).iterator();
   }
 
+  @Override
   public int getDepth()
   {
     return depth;
@@ -107,38 +109,44 @@ public final class PolicyNodeImpl implements PolicyNode
     this.depth = depth;
   }
 
-  public void addAllExpectedPolicies(Set policies)
+  public void addAllExpectedPolicies(Set<String> policies)
   {
     if (readOnly)
       throw new IllegalStateException("read only");
     expectedPolicies.addAll(policies);
   }
 
-  public void addExpectedPolicy(String policy)
+  public void addExpectedPolicy(String expectedPolicy)
   {
     if (readOnly)
       throw new IllegalStateException("read only");
-    expectedPolicies.add(policy);
+    expectedPolicies.add(expectedPolicy);
   }
 
-  public Set getExpectedPolicies()
+  @Override
+  public Set<String> getExpectedPolicies()
   {
     return Collections.unmodifiableSet(expectedPolicies);
   }
 
+  @Override
   public PolicyNode getParent()
   {
     return parent;
   }
 
-  public void addAllPolicyQualifiers (Collection qualifiers)
+  public void addAllPolicyQualifiers (Collection<? extends PolicyQualifierInfo> policyQualifiers)
   {
-    for (Iterator it = qualifiers.iterator(); it.hasNext(); )
+    try
       {
-        if (!(it.next() instanceof PolicyQualifierInfo))
-          throw new IllegalArgumentException ("can only add PolicyQualifierInfos");
+	for (Iterator<? extends PolicyQualifierInfo> it = policyQualifiers.iterator(); it.hasNext();) { it.next(); }
       }
-    qualifiers.addAll (qualifiers);
+    catch (ClassCastException ex)
+      {
+	throw new IllegalArgumentException ("can only add PolicyQualifierInfos",
+					    ex);
+      }
+    qualifiers.addAll (policyQualifiers);
   }
 
   public void addPolicyQualifier (PolicyQualifierInfo qualifier)
@@ -148,11 +156,13 @@ public final class PolicyNodeImpl implements PolicyNode
     qualifiers.add(qualifier);
   }
 
-  public Set getPolicyQualifiers()
+  @Override
+  public Set<? extends PolicyQualifierInfo> getPolicyQualifiers()
   {
     return Collections.unmodifiableSet(qualifiers);
   }
 
+  @Override
   public String getValidPolicy()
   {
     return policy;
@@ -165,6 +175,7 @@ public final class PolicyNodeImpl implements PolicyNode
     this.policy = policy;
   }
 
+  @Override
   public boolean isCritical()
   {
     return critical;
@@ -182,10 +193,11 @@ public final class PolicyNodeImpl implements PolicyNode
     if (readOnly)
       return;
     readOnly = true;
-    for (Iterator it = getChildren(); it.hasNext(); )
+    for (Iterator<? extends PolicyNode> it = getChildren(); it.hasNext(); )
       ((PolicyNodeImpl) it.next()).setReadOnly();
   }
-
+  
+  @Override
   public String toString()
   {
     CPStringBuilder buf = new CPStringBuilder();
@@ -205,7 +217,7 @@ public final class PolicyNodeImpl implements PolicyNode
     buf.append(expectedPolicies);
     buf.append(") (children (");
     final String nl = System.getProperty("line.separator");
-    for (Iterator it = getChildren(); it.hasNext(); )
+    for (Iterator<? extends PolicyNode> it = getChildren(); it.hasNext(); )
       {
         buf.append(nl);
         buf.append(it.next().toString());

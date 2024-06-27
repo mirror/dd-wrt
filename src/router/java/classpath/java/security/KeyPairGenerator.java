@@ -1,5 +1,5 @@
 /* KeyPairGenerator.java --- Key Pair Generator Class
-   Copyright (C) 1999, 2002, 2003, 2004, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2004, 2005, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -236,6 +236,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi
    *          the {@link SecureRandom} to use.
    * @since 1.2
    */
+  @Override
   public void initialize(int keysize, SecureRandom random)
   {
   }
@@ -269,6 +270,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi
    *           if the designated specifications are invalid.
    * @since 1.2
    */
+  @Override
   public void initialize(AlgorithmParameterSpec params, SecureRandom random)
     throws InvalidAlgorithmParameterException
   {
@@ -276,9 +278,17 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi
   }
 
   /**
-   * Generates a new "DSA" {@link KeyPair} from the "GNU" security provider.
-   *
-   * <p>This method generates a unique key-pair each time it is called.</p>
+   * <p>
+   * Generates a new key pair. If a provider hasn't been selected,
+   * it defaults to generating a "DSA" {@link KeyPair} using the "GNU"
+   * security provider. If the provider hasn't been initialised, then
+   * the provider-specified default key size and other parameters are
+   * used.
+   * </p>
+   * <p>
+   * A new key pair is generated on each call to this method. It
+   * is functionally equivalent to {@link #genKeyPair()}.
+   * </p>
    *
    * @return a new unique {@link KeyPair}.
    * @see #generateKeyPair()
@@ -286,9 +296,44 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi
    */
   public final KeyPair genKeyPair()
   {
+    return generateKeyPair();
+  }
+
+  /**
+   * <p>
+   * Generates a new key pair. If a provider hasn't been selected,
+   * it defaults to generating a "DSA" {@link KeyPair} using the "GNU"
+   * security provider. If the provider hasn't been initialised, then
+   * the provider-specified default key size and other parameters are
+   * used.
+   * </p>
+   * <p>
+   * A new key pair is generated on each call to this method. It
+   * is functionally equivalent to {@link #generateKeyPair()}.
+   * </p>
+   *
+   * @return a new unique {@link KeyPair}.
+   * @see #genKeyPair()
+   */
+  @Override
+  public KeyPair generateKeyPair()
+  {
     try
       {
-        return getInstance("DSA", "GNU").generateKeyPair();
+	Provider providerToUse = null;
+	String algToUse = null;
+
+	if (provider == null)
+	  providerToUse = Security.getProvider("GNU");
+	else
+	  providerToUse = provider;
+
+	if (algorithm == null)
+	  algToUse = "DSA";
+	else
+	  algToUse = algorithm;
+
+        return getInstance(algToUse, providerToUse).generateKeyPair();
       }
     catch (Exception e)
       {
@@ -296,18 +341,5 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi
         e.printStackTrace();
         return null;
       }
-  }
-
-  /**
-   * Generates a new "DSA" {@link KeyPair} from the "GNU" security provider.
-   *
-   * <p>This method generates a unique key pair each time it is called.</p>
-   *
-   * @return a new unique {@link KeyPair}.
-   * @see #genKeyPair()
-   */
-  public KeyPair generateKeyPair()
-  {
-    return genKeyPair();
   }
 }

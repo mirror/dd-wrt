@@ -1,5 +1,6 @@
 /* Provider.java -- Security provider information
-   Copyright (C) 1998, 1999, 2000, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 1998, 1999, 2000, 2002, 2006, 2014, 2015
+   Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -37,7 +38,6 @@ exception statement from your version. */
 
 package java.security;
 
-import java.io.Serializable;
 import java.util.Properties;
 
 /**
@@ -53,7 +53,6 @@ import java.util.Properties;
  */
 public abstract class Provider
     extends Properties
-    implements Serializable
 {
   private static final long serialVersionUID = -4298000515446427739L;
 
@@ -138,6 +137,8 @@ public abstract class Provider
    * @see java.lang.Object#equals(Object)
    * @see java.util.Hashtable#get(Object)
    */
+  @Override
+  @SuppressWarnings("sync-override") // Calls super-class
   public Object put(Object key, Object value)
   {
     SecurityManager sm = System.getSecurityManager();
@@ -147,6 +148,8 @@ public abstract class Provider
   }
 
   // overrides same in java.util.Hashtable
+  @Override
+  @SuppressWarnings("sync-override") // Calls super-class
   public Object get(Object key)
   {
     return super.get(toCanonicalKey(key));
@@ -167,6 +170,8 @@ public abstract class Provider
    * @return The previous value for this key, or <code>null</code> if no
    * previous value.
    */
+  @Override
+  @SuppressWarnings("sync-override") // Calls super-class
   public Object remove(Object key)
   {
     SecurityManager sm = System.getSecurityManager();
@@ -188,6 +193,8 @@ public abstract class Provider
    * {@link SecurityManager#checkPermission(Permission)} for a
    * <code>SecurityPermission("clearProviderProperties." + name)</code>.
    */
+  @Override
+  @SuppressWarnings("sync-override") // Calls super-class
   public void clear()
   {
     SecurityManager sm = System.getSecurityManager();
@@ -203,13 +210,15 @@ public abstract class Provider
    *
    * @return A <code>String</code> representation of this object.
    */
+  @Override
+  @SuppressWarnings("sync-override") // Doesn't access collection
   public String toString()
   {
     return (getClass().getName() + ": name=" + getName() + " version=" +
             version);
   }
 
-  private Object toCanonicalKey(Object key)
+  private static Object toCanonicalKey(Object key)
   {
     if (key.getClass().isAssignableFrom(String.class)) // is it ours?
       return ((String) key).toUpperCase(); // use default locale

@@ -1,0 +1,174 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.99 Announcement (2012-03-07)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.99</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.99.
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example JamVM, CACAO and Kaffe can make use of an installed
+copy of GNU Classpath 0.99, while GCC (gcj) will use the developer
+snapshots as a base for future versions. For more projects based on GNU
+Classpath, <createlink url="http://www.gnu.org/software/classpath/stories.html">
+</p>
+<p>
+This release brings with it a number of interesting new features:
+</p>
+<ul>
+<li>Addition of java.util.regex.Pattern.quote.</li>
+<li>Addition of java.io.IOError.</li>
+<li>Addition of java.io.Console.</li>
+</ul>
+<p>
+There have also been many bugfixes over the past year. Those relevant to 0.99 can be found at 
+<createlink url="http://gcc.gnu.org/bugzilla/buglist.cgi?product=classpath&target_milestone=0.99">
+</p>
+<p>
+With the 0.95 release, we switched fully towards the 1.5 generics work that we previously released separately as classpath-generics. All this work is now fully integrated in the main release and various runtimes (gcj, cacao, jamvm, ikvm, etc) have been extended to take advantage of the new generics, annotations and enumeration support in the core library. As a consequence, only 1.5 capable compilers (currently the Eclipse Compiler for Java (ecj) and Sun's javac) may be used to build Classpath.
+</p>
+<p>
+The GNU Classpath developers site
+<createlink url="http://developer.classpath.org/">
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.
+<p>
+For each snapshot release generated documentation is provided through
+the GNU Classpath Tools gjdoc project,which will become part of GNU Classpath
+itself with the release of 0.99.  A documentation generation
+framework for java source files used by the GNU project. Full
+documentation on the currently implementated packages and classes can
+be found at: <createlink url="http://developer.classpath.org/doc/">
+We are looking into how to extend the documentation experience in the
+future. Please contact the mailinglist if you would like to help with
+this effort.
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.99 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/">
+or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html"> or the Classpath
+continuous integration system <createlink url="http://builder.classpath.org/dist">
+<p><pre>
+File: classpath-0.99.tar.gz
+SHA256sum: f929297f8ae9b613a1a167e231566861893260651d913ad9b6c11933895fecc8
+</pre></p>
+<p>
+New in release 0.99 (Mar 07, 2012)
+</p>
+<ul>
+<li>Addition of java.util.regex.Pattern.quote.</li>
+<li>Addition of java.io.IOError.</li>
+<li>Addition of java.io.Console.</li>
+<li>Bug fixes:
+</li>
+<ul>
+<li>PR39408: gjavah doesn't generate constants in header files where they occur in a superclass</li>
+<li>PR40590: namespace namespace broken in CNI</li>
+<li>PR40630: java.util.Scanner fails when used for charset generation by the OpenJDK build</li>
+<li>PR40653: Issue with XML stream writer and namespaces</li>
+<li>PR40663: Support Stax API 1.0.1</li>
+<li>PR39177: trunk revision 144128 - jar: internal error: java.lang.NullPointerException</li>
+<li>PR41696: java.util.zip.Inflater:finished () returns false when it should return true</li>
+<li>PR43536: CopyOnWriteArrayList bug in delete() when empty</li>
+<li>PR36560: java.util.zip: Error parsing zip file with larger files in it</li>
+<li>Restrict access to VM classes.</li>
+<li>Cleanup use of message resources.</li>
+<li>Throw exception when encrypted zip file entries are encountered.</li>
+<li>Fix infinite recursion in javax.print.attribute.standard.JobStateReasons.add.</li>
+<li>Native code cleanups in GtkToolkit.c and jcl.c.</li>
+<li>Only log when debugging is on.</li>
+<li>PR44411: System.nanoTime() is not independent of wall-clock time</li>
+<li>PR46775: Calling Policy.setPolicy with a new Policy object has no effect on the DefaultSecurityManager</li>
+<li>Use implementation of VMClass.getSimpleName from gcj.</li>
+<li>Simplify security determination in ProtectionDomain in situations where all permissions are available.</li>
+<li>PR42390: Missing Security Manager checks in classpath apis</li>
+<li>Throw NullPointerExceptions appropriately for compatibility with OpenJDK.</li>
+<li>Use Integer.parseInt in preference to Integer.decode in java.util.Formatter.</li>
+<li>Use same default capacity in java.util.HashMap as documented in OpenJDK.</li>
+<li>Check for hashcode equality before calling equals in java.util.HashMap.put</li>
+<li>Make sure match is within input data limits in java.util.regex.Matcher.find.</li>
+<li>Fix misuse of ArrayList.set in javax.swing.text.html.StyleSheet.resolveStyle.</li>
+<li>PR48131: java.util.zip.ZipException: incomplete dynamic bit lengths tree</li>
+<li>Check for negative capacity in VMDirectByteBuffer's native code.</li>
+<li>PR42823: tcp/ip sockets read/write operations causes memory leak</li> 
+<li>Generate META-INF/INDEX.LST for glibj.zip</li>
+<li>Fix issues when building with -Werror and gcc 4.6.</li>
+<li>PR40188: javah creates constants using name of superclass</li>
+<li>PR45527: gjavah encodes $ as used in inner classes as 00024 where Oracle's javah does not</li>
+<li>PR45526: gjavah does not implicitly produce header files for inner classes</li>
+<li>Fix NullPointerException for null keys in java.util.HashMap.put.</li>
+<li>Fix BEAST security issue in gnu.javax.net.ssl.provider.</li>
+<li>RH712013: pdftk crashes with java.lang.ArrayIndexOutOfBoundsException</li>
+</ul>
+<li>Updated to libtool 2.x.
+</li>
+<li>Lots of warning fixes / addition of generics.
+</li>
+<li>Fix license headers in tools.
+</li>
+<li>Normalise whitespace.
+</li>
+<li>Maintenance work on javac detection.
+</li>
+<li>Mark plugin as unmaintained and disable by default.
+</li>
+</ul>
+<p>
+The following people helped with this release:
+</p>
+<ul>
+<li>Roland Brand</li>
+<li>Gert Brettlecker</li>
+<li>Chris Burdess</li>
+<li>Ludovic Claude</li>
+<li>Pekka Enberg</li>
+<li>Jeroen Frijters</li>
+<li>Richard Guenther</li>
+<li>Andrew Haley</li>
+<li>Andrew John Hughes</li>
+<li>Ivan Maidanski</li>
+<li>Daniel Noll</li>
+<li>Rainer Orth</li>
+<li>Mike Stump</li>
+<li>Tom Tromey</li>
+<li>Mark Wielaard</li>
+<li>Ralf Wildenhues</li>
+</ul>
+<p>
+We would also like to thank the numerous bug reporters and testers!  In 
+addition, we'd like to extend our thanks to all those who've contributed over 
+the years and have helped in building a thriving and friendly community 
+around the GNU Classpath project.
+</p>
+</boxitem>
+</box>

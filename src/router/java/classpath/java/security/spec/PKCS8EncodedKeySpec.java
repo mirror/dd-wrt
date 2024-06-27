@@ -1,5 +1,5 @@
 /* PKCS8EncodedKeySpec.java --- PKCS8 Encoded Key Specificaton class
-   Copyright (C) 1999, 2001 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2001, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -63,6 +63,7 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec
 
         @returns the encoded key
 */
+  @Override
   public byte[] getEncoded()
   {
     return super.getEncoded();
@@ -73,6 +74,7 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec
 
         @return a string representing the name
 */
+  @Override
   public final String getFormat()
   {
     return "PKCS#8";

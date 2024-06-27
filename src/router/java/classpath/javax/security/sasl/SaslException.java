@@ -1,5 +1,5 @@
 /* SaslException.java
-   Copyright (C) 2003, 2005, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2005, 2015, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -41,16 +41,13 @@ package javax.security.sasl;
 import gnu.java.lang.CPStringBuilder;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.Serializable;
 
 /**
  * This class represents an error that has occurred when using SASL.
  *
  * @since 1.5
  */
-public class SaslException extends IOException implements Serializable
+public class SaslException extends IOException
 {
 
   // Constants and variables
@@ -106,7 +103,7 @@ public class SaslException extends IOException implements Serializable
    */
   public SaslException(String detail, Throwable ex)
   {
-    super(detail);
+    super(detail, ex);
     _exception = ex;
   }
 
@@ -123,49 +120,23 @@ public class SaslException extends IOException implements Serializable
    *
    * @return the possibly <code>null</code> exception that caused this exception.
    */
+  @Override
   public Throwable getCause()
   {
     return _exception;
   }
 
   /**
-   * Prints this exception's stack trace to <code>System.err</code>. If this
-   * exception has a root exception; the stack trace of the root exception is
-   * also printed to <code>System.err</code>.
+   * @inheritDoc
    */
-  public void printStackTrace()
+  @Override
+  public Throwable initCause(Throwable cause)
   {
-    super.printStackTrace();
-    if (_exception != null)
-      _exception.printStackTrace();
-  }
-
-  /**
-   * Prints this exception's stack trace to a print stream. If this exception
-   * has a root exception; the stack trace of the root exception is also
-   * printed to the print stream.
-   *
-   * @param ps the non-null print stream to which to print.
-   */
-  public void printStackTrace(PrintStream ps)
-  {
-    super.printStackTrace(ps);
-    if (_exception != null)
-      _exception.printStackTrace(ps);
-  }
-
-  /**
-   * Prints this exception's stack trace to a print writer. If this exception
-   * has a root exception; the stack trace of the root exception is also
-   * printed to the print writer.
-   *
-   * @param pw the non-null print writer to use for output.
-   */
-  public void printStackTrace(PrintWriter pw)
-  {
-    super.printStackTrace(pw);
-    if (_exception != null)
-      _exception.printStackTrace(pw);
+    super.initCause(cause);
+    // Sync our copy if the superclass one changed
+    if (super.getCause() == cause)
+      _exception = cause;
+    return this;
   }
 
   /**
@@ -178,6 +149,7 @@ public class SaslException extends IOException implements Serializable
    * @return the non-null string representation of this exception.
    * @see Throwable#getMessage()
    */
+  @Override
   public String toString()
   {
     CPStringBuilder sb = new CPStringBuilder(this.getClass().getName())

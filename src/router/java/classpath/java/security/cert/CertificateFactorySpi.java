@@ -1,5 +1,5 @@
 /* CertificateFactorySpi.java --- Certificate Factory Class
-   Copyright (C) 1999,2003 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -172,6 +172,7 @@ public abstract class CertificateFactorySpi
    * @throws CertificateException If an error occurs decoding the
    * CertPath.
    */
+  @SuppressWarnings({"unused","static-method"})
   public CertPath engineGenerateCertPath(InputStream inStream)
     throws CertificateException
   {
@@ -188,6 +189,7 @@ public abstract class CertificateFactorySpi
    * @throws CertificateException If an error occurs decoding the
    *   CertPath.
    */
+  @SuppressWarnings({"unused","static-method"})
   public CertPath engineGenerateCertPath(InputStream inStream, String encoding)
     throws CertificateException
   {
@@ -204,6 +206,7 @@ public abstract class CertificateFactorySpi
    * @throws CertificateException If an error occurs generating the
    *   CertPath.
    */
+  @SuppressWarnings({"unused","static-method"})
   public CertPath engineGenerateCertPath(List<? extends Certificate> certificates)
     throws CertificateException
   {
@@ -217,6 +220,7 @@ public abstract class CertificateFactorySpi
    *
    * @return The Iterator of supported encodings.
    */
+  @SuppressWarnings("static-method")
   public Iterator<String> engineGetCertPathEncodings()
   {
     throw new UnsupportedOperationException("not implemented");

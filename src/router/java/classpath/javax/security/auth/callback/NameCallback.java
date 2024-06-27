@@ -1,5 +1,5 @@
 /* NameCallback.java -- callback for user names.
-   Copyright (C) 2003, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -52,6 +52,8 @@ public class NameCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = 3770938795909392253L;
 
   /**
    * @serial

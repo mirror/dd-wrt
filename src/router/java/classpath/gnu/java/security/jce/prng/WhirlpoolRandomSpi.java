@@ -1,5 +1,5 @@
 /* WhirlpoolRandomSpi.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,6 +47,8 @@ import gnu.java.security.Registry;
 public class WhirlpoolRandomSpi
     extends SecureRandomAdapter
 {
+  private static final long serialVersionUID = -3118094409789615934L;
+
   public WhirlpoolRandomSpi()
   {
     super(Registry.WHIRLPOOL_HASH);

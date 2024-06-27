@@ -1,5 +1,5 @@
 /* PKIXParameters.java -- parameters for the PKIX cert path algorithm
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -65,16 +65,16 @@ public class PKIXParameters implements CertPathParameters
   // ------------------------------------------------------------------------
 
   /** The trusted certificates. */
-  private final Set trustAnchors;
+  private final Set<TrustAnchor> trustAnchors;
 
   /** The set of initial policy identifiers. */
-  private final Set initPolicies;
+  private final Set<String> initPolicies;
 
   /** The list of certificate stores. */
-  private final List certStores;
+  private final List<CertStore> certStores;
 
   /** The list of path checkers. */
-  private final List pathCheckers;
+  private final List<PKIXCertPathChecker> pathCheckers;
 
   /** The revocation enabled flag. */
   private boolean revocationEnabled;
@@ -120,9 +120,9 @@ public class PKIXParameters implements CertPathParameters
     throws KeyStoreException, InvalidAlgorithmParameterException
   {
     this();
-    for (Enumeration e = keystore.aliases(); e.hasMoreElements(); )
+    for (Enumeration<String> e = keystore.aliases(); e.hasMoreElements(); )
       {
-        String alias = (String) e.nextElement();
+        String alias = e.nextElement();
         if (!keystore.isCertificateEntry(alias))
           continue;
         Certificate cert = keystore.getCertificate(alias);
@@ -157,10 +157,10 @@ public class PKIXParameters implements CertPathParameters
    */
   private PKIXParameters()
   {
-    trustAnchors = new HashSet();
-    initPolicies = new HashSet();
-    certStores = new LinkedList();
-    pathCheckers = new LinkedList();
+    trustAnchors = new HashSet<TrustAnchor>();
+    initPolicies = new HashSet<String>();
+    certStores = new LinkedList<CertStore>();
+    pathCheckers = new LinkedList<PKIXCertPathChecker>();
     revocationEnabled = true;
     exPolicyRequired = false;
     policyMappingInhibited = false;
@@ -223,9 +223,9 @@ public class PKIXParameters implements CertPathParameters
     if (trustAnchors.isEmpty())
       throw new InvalidAlgorithmParameterException("no trust anchors");
     this.trustAnchors.clear();
-    for (Iterator i = trustAnchors.iterator(); i.hasNext(); )
+    for (Iterator<TrustAnchor> i = trustAnchors.iterator(); i.hasNext(); )
       {
-        this.trustAnchors.add((TrustAnchor) i.next());
+        this.trustAnchors.add(i.next());
       }
   }
 
@@ -255,9 +255,9 @@ public class PKIXParameters implements CertPathParameters
     this.initPolicies.clear();
     if (initPolicies == null)
       return;
-    for (Iterator i = initPolicies.iterator(); i.hasNext(); )
+    for (String ip : initPolicies)
       {
-        this.initPolicies.add((String) i.next());
+        this.initPolicies.add(ip);
       }
   }
 
@@ -294,9 +294,9 @@ public class PKIXParameters implements CertPathParameters
     this.certStores.clear();
     if (certStores == null)
       return;
-    for (Iterator i = certStores.iterator(); i.hasNext(); )
+    for (Iterator<CertStore> i = certStores.iterator(); i.hasNext(); )
       {
-        this.certStores.add((CertStore) i.next());
+        this.certStores.add(i.next());
       }
   }
 
@@ -465,9 +465,9 @@ public class PKIXParameters implements CertPathParameters
     this.pathCheckers.clear();
     if (pathCheckers == null)
       return;
-    for (Iterator i = pathCheckers.iterator(); i.hasNext(); )
+    for (Iterator<PKIXCertPathChecker> i = pathCheckers.iterator(); i.hasNext(); )
       {
-        this.pathCheckers.add((PKIXCertPathChecker) i.next());
+        this.pathCheckers.add(i.next());
       }
   }
 
@@ -521,6 +521,7 @@ public class PKIXParameters implements CertPathParameters
    *
    * @return The copy.
    */
+  @Override
   public Object clone()
   {
     return new PKIXParameters(this);
@@ -531,6 +532,7 @@ public class PKIXParameters implements CertPathParameters
    *
    * @return A printable representation of these parameters.
    */
+  @Override
   public String toString() {
     return "[ Trust Anchors: " + trustAnchors + "; Initial Policy OIDs="
       + (initPolicies != null ? initPolicies.toString() : "any")

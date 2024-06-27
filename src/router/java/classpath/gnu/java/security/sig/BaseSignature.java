@@ -1,5 +1,5 @@
 /* BaseSignature.java --
-   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -94,12 +94,15 @@ public abstract class BaseSignature
     this.md = md;
   }
 
+  @Override
   public String name()
   {
     return schemeName + "-" + md.name();
   }
 
-  public void setupVerify(Map attributes) throws IllegalArgumentException
+  @Override
+  public void setupVerify(Map<String,Object> attributes)
+    throws IllegalArgumentException
   {
     setup(attributes);
     // do we have a public key?
@@ -108,7 +111,9 @@ public abstract class BaseSignature
       setupForVerification(key);
   }
 
-  public void setupSign(Map attributes) throws IllegalArgumentException
+  @Override
+  public void setupSign(Map<String,Object> attributes)
+    throws IllegalArgumentException
   {
     setup(attributes);
     // do we have a private key?
@@ -117,6 +122,7 @@ public abstract class BaseSignature
       setupForSigning(key);
   }
 
+  @Override
   public void update(byte b)
   {
     if (md == null)
@@ -125,6 +131,7 @@ public abstract class BaseSignature
     md.update(b);
   }
 
+  @Override
   public void update(byte[] b, int off, int len)
   {
     if (md == null)
@@ -133,6 +140,7 @@ public abstract class BaseSignature
     md.update(b, off, len);
   }
 
+  @Override
   public Object sign()
   {
     if (md == null || privateKey == null)
@@ -141,6 +149,7 @@ public abstract class BaseSignature
     return generateSignature();
   }
 
+  @Override
   public boolean verify(Object sig)
   {
     if (md == null || publicKey == null)
@@ -149,6 +158,7 @@ public abstract class BaseSignature
     return verifySignature(sig);
   }
 
+  @Override
   public abstract Object clone();
 
   protected abstract void setupForVerification(PublicKey key)
@@ -198,7 +208,7 @@ public abstract class BaseSignature
       getDefaultPRNG().nextBytes(buffer);
   }
 
-  private void setup(Map attributes)
+  private void setup(Map<String,Object> attributes)
   {
     init();
     // do we have a Random or SecureRandom, or should we use our own?

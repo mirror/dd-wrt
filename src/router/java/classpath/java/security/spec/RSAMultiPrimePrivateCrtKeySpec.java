@@ -1,5 +1,5 @@
-/* PSSParameterSpec.java --
-   Copyright (C) 2003, Free Software Foundation, Inc.
+/* RSAMultiPrimePrivateCrtKeySpec.java --
+   Copyright (C) 2003, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -129,10 +129,11 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec
     if (crtCoefficient == null)
       throw new NullPointerException("crtCoefficient");
     if (otherPrimeInfo != null)
-      if (otherPrimeInfo.length == 0)
-        throw new IllegalArgumentException();
-      else
-        this.otherPrimeInfo = (RSAOtherPrimeInfo[]) otherPrimeInfo.clone();
+      {
+	if (otherPrimeInfo.length == 0)
+	  throw new IllegalArgumentException();
+	this.otherPrimeInfo = otherPrimeInfo.clone();
+      }
 
     this.publicExponent = publicExponent;
     this.primeP = primeP;

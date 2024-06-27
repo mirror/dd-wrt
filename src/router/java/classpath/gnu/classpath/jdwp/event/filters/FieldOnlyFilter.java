@@ -1,5 +1,5 @@
 /* FieldOnlyFilter.java -- filter on field
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -69,11 +69,14 @@ public class FieldOnlyFilter
   public FieldOnlyFilter (ReferenceTypeId refId, /*Field*/ReferenceTypeId fid)
     throws InvalidClassException, InvalidFieldException
   {
-    if (refId == null || refId.getReference().get () == null)
+    if (refId == null)
+      throw new InvalidClassException();
+
+    if (refId.getReference().get () == null)
       throw new InvalidClassException (refId.getId ());
 
     if (fid == null)
-      throw new InvalidFieldException (fid.getId ());
+      throw new InvalidFieldException ();
 
     _refId = refId;
     _fieldId = fid;

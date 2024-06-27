@@ -242,6 +242,7 @@ public class RSA
     return result;
   }
 
+  @SuppressWarnings("null") // r != null if rsaBlinding = true
   private static final BigInteger RSADP(final RSAPrivateKey K, BigInteger c)
   {
     // 1. If the representative c is not between 0 and n - 1, output

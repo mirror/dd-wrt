@@ -53,14 +53,15 @@ done >> ${top_builddir}/lib/classes.1
 vm_dirlist=`echo "@vm_classes@" | sed -e 's/:/ /g'`
 echo "Adding java source files from VM directory $vm_dirlist"
 for dir in $vm_dirlist; do
-   (cd $dir
+   abs_dir=`cd $dir; pwd`
+   (cd $abs_dir
    for subdir in java javax gnu org com sun; do
       if test -d $subdir; then
 	 @FIND@ $subdir -name '*.java' -print
       fi
    done) | sed -e 's,/\([^/]*\)$, \1,' |
    while read pkg file; do
-      echo $pkg $dir $pkg/$file >> vm.add
+      echo $pkg $abs_dir $pkg/$file >> vm.add
       echo $pkg/$file >> vm.omit
    done
 done
@@ -124,8 +125,10 @@ done
 if test -n "$vm_omitlist"; then
    cat $vm_omitlist | sed "$sed_omit_hash" > tmp.awk
    cat $vm_omitlist | sed "$sed_omit_main_loop" >> tmp.awk
+   @AWK@ -f tmp.awk < vm.add >> ${top_builddir}/lib/classes.1
+else
+   cat vm.add >> ${top_builddir}/lib/classes.1
 fi
-@AWK@ -f tmp.awk < vm.add >>${top_builddir}/lib/classes.1
 
 rm -f vm.omit vm.add tmp.omit tmp.awk
 

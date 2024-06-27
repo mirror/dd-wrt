@@ -1,5 +1,5 @@
 /* DummyKeyPairGenerator.java - Wrapper for KeyPairGeneratorSpi
-   Copyright (C) 1999, 2002 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -49,6 +49,7 @@ final class DummyKeyPairGenerator extends KeyPairGenerator
     this.kpgSpi = kpgSpi;
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException
   {
     KeyPairGenerator result = new DummyKeyPairGenerator
@@ -57,17 +58,20 @@ final class DummyKeyPairGenerator extends KeyPairGenerator
     return result;
   }
 
+  @Override
   public void initialize(int keysize, SecureRandom random)
   {
     kpgSpi.initialize(keysize, random);
   }
 
+  @Override
   public void initialize(AlgorithmParameterSpec params, SecureRandom random)
     throws InvalidAlgorithmParameterException
   {
     kpgSpi.initialize(params, random);
   }
 
+  @Override
   public KeyPair generateKeyPair()
   {
     return kpgSpi.generateKeyPair();

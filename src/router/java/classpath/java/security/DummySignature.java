@@ -1,5 +1,5 @@
 /* DummySignature.java - Signature wrapper for SignatureSpi.
-   Copyright (C) 1999, 2002 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,6 +47,7 @@ final class DummySignature extends Signature
     this.sigSpi = sigSpi;
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException
   {
     Signature result = new DummySignature
@@ -55,45 +56,53 @@ final class DummySignature extends Signature
     return result;
   }
 
+  @Override
   protected void engineInitVerify(PublicKey publicKey)
     throws InvalidKeyException
   {
     sigSpi.engineInitVerify(publicKey);
   }
 
+  @Override
   protected void engineInitSign(PrivateKey privateKey)
     throws InvalidKeyException
   {
     sigSpi.engineInitSign(privateKey);
   }
 
+  @Override
   protected void engineUpdate(byte b) throws SignatureException
   {
     sigSpi.engineUpdate(b);
   }
 
+  @Override
   protected void engineUpdate(byte[]b, int off, int len)
     throws SignatureException
   {
     sigSpi.engineUpdate(b, off, len);
   }
 
+  @Override
   protected byte[] engineSign() throws SignatureException
   {
     return sigSpi.engineSign();
   }
 
+  @Override
   protected boolean engineVerify(byte[]sigBytes) throws SignatureException
   {
     return sigSpi.engineVerify(sigBytes);
   }
 
+  @Override
   protected void engineSetParameter(String param, Object value)
     throws InvalidParameterException
   {
     sigSpi.engineSetParameter(param, value);
   }
 
+  @Override
   protected Object engineGetParameter(String param)
     throws InvalidParameterException
   {

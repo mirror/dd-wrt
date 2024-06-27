@@ -1,5 +1,5 @@
 /* Signer.java --- Signer Class
-   Copyright (C) 1999, 2003, Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -45,6 +45,7 @@ package java.security;
  * @deprecated Replaced by <code>java.security.KeyStore</code>, the
  * <code>java.security.cert</code> package, and <code>java.security.Principal</code>.
  */
+@Deprecated
 public abstract class Signer extends Identity
 {
   private static final long serialVersionUID = -1763464102261361480L;
@@ -141,6 +142,7 @@ public abstract class Signer extends Identity
   }
 
   /** @returns a string representing this <code>Signer</code>. */
+  @Override
   public String toString()
   {
     return (getName() + ": " + privateKey);

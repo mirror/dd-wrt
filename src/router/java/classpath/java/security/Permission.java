@@ -1,5 +1,6 @@
 /* Permission.java -- The superclass for all permission objects
-   Copyright (C) 1998, 2001, 2002, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2002, 2005, 2014, 2015
+   Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -105,6 +106,7 @@ public abstract class Permission implements Guard, Serializable
    * @see GuardedObject
    * @see SecurityManager#checkPermission(Permission)
    */
+  @Override
   public void checkGuard(Object obj)
   {
     SecurityManager sm = System.getSecurityManager();
@@ -127,6 +129,7 @@ public abstract class Permission implements Guard, Serializable
    *
    * @param obj the object to compare to
    */
+  @Override
   public abstract boolean equals(Object obj);
 
   /**
@@ -136,6 +139,7 @@ public abstract class Permission implements Guard, Serializable
    *
    * @return a hash value
    */
+  @Override
   public abstract int hashCode();
 
   /**
@@ -168,6 +172,7 @@ public abstract class Permission implements Guard, Serializable
    *
    * @return a new <code>PermissionCollection</code>
    */
+  @SuppressWarnings("static-method")
   public PermissionCollection newPermissionCollection()
   {
     return null;
@@ -181,6 +186,7 @@ public abstract class Permission implements Guard, Serializable
    *
    * @return this object as a <code>String</code>
    */
+  @Override
   public String toString()
   {
     CPStringBuilder string = new CPStringBuilder();

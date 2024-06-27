@@ -1,5 +1,5 @@
 /* X509CRLEntry.java --- X.509 Certificate Revocation List Entry
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -89,6 +89,7 @@ public abstract class X509CRLEntry implements X509Extension
 
      @return true if equal, false otherwise
   */
+  @Override
   public boolean equals(Object other)
   {
     if( other instanceof X509CRLEntry ) {
@@ -118,6 +119,7 @@ public abstract class X509CRLEntry implements X509Extension
 
      @return A hash code of this class
   */
+  @Override
   public int hashCode()
   {
     return super.hashCode();
@@ -164,6 +166,7 @@ public abstract class X509CRLEntry implements X509Extension
 
      @return a string representing this X509CRLEntry.
   */
+  @Override
   public abstract String toString();
 
 }

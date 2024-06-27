@@ -4,8 +4,9 @@ EXTRA_DIST = README.jaxp texi2pod.pl
 
 info_TEXINFOS = cp-hacking.texinfo cp-vmintegration.texinfo cp-tools.texinfo
 
+# POSIX locale necessary to make grep work; see http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=586134
 .texinfo.dvi:
-	texi2dvi $<
+	LC_ALL=POSIX texi2dvi --build-dir=$(builddir) -o $@ $<
 
 .dvi.ps:
 	dvips -o $@ $<
@@ -87,3 +88,5 @@ gjdoc.pod: $(srcdir)/cp-tools.texinfo
 
 CLEANFILES = $(TOOLS_MANFILES)
 
+clean-local:
+	-rm -rf *.t2d

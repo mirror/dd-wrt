@@ -1,5 +1,5 @@
 /* KeyStore.java --- Key Store Class
-   Copyright (C) 1999, 2002, 2003, 2004  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2004, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -171,7 +171,7 @@ public class KeyStore
    *
    * @param type the type of keystore to create.
    * @param provider the provider to use.
-   * @return a <code>KeyStore</code> repesenting the desired type.
+   * @return a <code>KeyStore</code> representing the desired type.
    * @throws KeyStoreException if the designated type is not implemented by the
    *           given provider.
    * @throws IllegalArgumentException if either <code>type</code> or
@@ -215,6 +215,7 @@ public class KeyStore
     // Security reads every property in java.security so it
     // will return this property if it exists.
     String tmp = AccessController.doPrivileged(new PrivilegedAction<String> () {
+	@Override
         public String run()
         {
           return Security.getProperty("keystore.type");

@@ -115,7 +115,7 @@ public abstract class URLLoader
    * useful in situations where the subclass has a more direct way of
    * making <code>Class</code> objects.
    */
-  public Class getClass(String className)
+  public Class<?> getClass(String className)
   {
     return null;
   }

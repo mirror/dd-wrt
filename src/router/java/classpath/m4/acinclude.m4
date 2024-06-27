@@ -190,6 +190,8 @@ AC_DEFUN([CLASSPATH_WITH_GJDOC],
     case ${gjdoc_version} in
       0.7.9) ;;
       0.8*) ;;
+      0.9*) ;;
+      1*) ;;
       *) AC_MSG_ERROR([Building documentation requires GJDoc >= 0.7.9, ${gjdoc_version} found.]) ;;
     esac
   fi
@@ -287,3 +289,23 @@ AC_DEFUN([CLASSPATH_COND_IF],
      m4_default([$4], [:])
    fi
 ])])
+
+dnl ---------------------------------------------------------------
+dnl IT_USING_ECJ
+dnl ---------------------------------------------------------------
+dnl Taken from IcedTea 2.x. Determines if javac is ecj or not
+dnl ---------------------------------------------------------------
+AC_DEFUN_ONCE([IT_USING_ECJ],[
+AC_REQUIRE([AC_PROG_JAVAC])
+AC_CACHE_CHECK([if we are using ecj as javac], it_cv_ecj, [
+if $JAVAC -version 2>&1| grep '^Eclipse' >&AS_MESSAGE_LOG_FD ; then
+  it_cv_ecj=yes;
+else
+  it_cv_ecj=no;
+fi
+])
+USING_ECJ=$it_cv_ecj
+AC_SUBST(USING_ECJ)
+AM_CONDITIONAL(ECJ_JAVAC, test x"${USING_ECJ}" = xyes)
+AC_PROVIDE([$0])dnl
+])

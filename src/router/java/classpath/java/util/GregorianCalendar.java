@@ -838,13 +838,11 @@ public class GregorianCalendar extends Calendar
 
     fields[DAY_OF_WEEK_IN_MONTH] = (fields[DAY_OF_MONTH] + 6) / 7;
 
-    // which day of the week are we (0..6), relative to getFirstDayOfWeek
-    int relativeWeekday = (7 + fields[DAY_OF_WEEK] - getFirstDayOfWeek()) % 7;
-
     // which day of the week is the first of this month?
     // nb 35 is the smallest multiple of 7 that ensures that
     // the left hand side of the modulo operator is positive.
-    int relativeWeekdayOfFirst = (relativeWeekday - fields[DAY_OF_MONTH]
+    int relativeWeekdayOfFirst = (getRelativeWeekday(fields[DAY_OF_WEEK])
+				  - fields[DAY_OF_MONTH]
                                   + 1 + 35) % 7;
 
     // which week of the month is the first of this month in?
@@ -855,14 +853,49 @@ public class GregorianCalendar extends Calendar
     fields[WEEK_OF_MONTH] = (fields[DAY_OF_MONTH]
                              + relativeWeekdayOfFirst - 1) / 7 + weekOfFirst;
 
-    int weekOfYear = (fields[DAY_OF_YEAR] - relativeWeekday + 6) / 7;
+    int weekOfYear = getBaseWeekOfYear(fields[DAY_OF_WEEK], fields[DAY_OF_YEAR],
+				       fields[YEAR]);
 
-    // Do the Correction: getMinimalDaysInFirstWeek() is always in the
-    // first week.
-    int firstWeekday = (7 + getWeekDay(fields[YEAR], minDays)
-                       - getFirstDayOfWeek()) % 7;
-    if (minDays - firstWeekday < 1)
-      weekOfYear++;
+    // Do the last days of this year constitute days from the
+    // first week of the new year?
+    if (fields[MONTH] == 11)
+      {
+	// Find out the weekday of the 1st of January in the next year
+	int firstDayInJan = getFirstDayOfMonth(fields[YEAR] + 1, 0);
+	// Find out the date of the end of that week
+	// e.g. if weeks start on Sundays, what date is the first Saturday?
+	int currentDay = firstDayInJan;
+	int dateOfEndOfWeek = 0;
+	while (currentDay != getFirstDayOfWeek())
+	  {
+	    ++currentDay;
+	    ++dateOfEndOfWeek;
+	    if (currentDay > SATURDAY) currentDay = SUNDAY;
+	  }
+	// Do we have an incomplete week?
+	if (dateOfEndOfWeek < 7 && dateOfEndOfWeek >= minDays)
+	  {
+	    // Week one runs back into the preceding year
+	    // Calculate where in December it starts and set weekOfYear
+	    // to 1 if the date is equal to or greater than this date.
+	    int daysInPrevYear = 7 - dateOfEndOfWeek;
+	    int firstDayOfFirstWeek = 31 - (daysInPrevYear - 1);
+	    if (fields[DAY_OF_MONTH] >= firstDayOfFirstWeek)
+	      weekOfYear = 1;
+	  }
+      }
+    if (weekOfYear == 0)
+      {
+	// There is an incomplete week at the start which
+	// is below the number of minimum days in the week.
+	// This is part of the last week of the previous year.
+	int lastYear = fields[YEAR] - 1;
+	int lastDayOfPrevYear = isLeapYear(lastYear) ? 366 : 365;
+	int lastWeekdayOfPrevYear = getWeekDay(lastYear, lastDayOfPrevYear);
+	weekOfYear = getBaseWeekOfYear(lastWeekdayOfPrevYear, lastDayOfPrevYear,
+				       lastYear);
+      }
+
     fields[WEEK_OF_YEAR] = weekOfYear;
 
     int hourOfDay = millisInDay / (60 * 60 * 1000);
@@ -1362,4 +1395,39 @@ public class GregorianCalendar extends Calendar
         return maximums[field];
       }
   }
+
+  /**
+   * Calculates the base week of the year value, prior to adjustments
+   * for weeks that run across the end of the year.
+   *
+   * @param dayOfWeek the current weekday.
+   * @param dayOfYear the current day of the year.
+   * @param year the current year.
+   * @return the current week of the year.
+   */
+  private int getBaseWeekOfYear(int dayOfWeek, int dayOfYear, int year)
+  {
+    // which day of the week are we (0..6), relative to getFirstDayOfWeek
+    int relativeWeekday = getRelativeWeekday(dayOfWeek);
+    int weekOfYear = (dayOfYear - relativeWeekday + 6) / 7;
+    // Do the Correction: getMinimalDaysInFirstWeek() is always in the
+    // first week.
+    int firstWeekdayOfYear = (7 + getWeekDay(year, getMinimalDaysInFirstWeek())
+			      - getFirstDayOfWeek()) % 7;
+    if (getMinimalDaysInFirstWeek() - firstWeekdayOfYear < 1)
+      weekOfYear++;
+    return weekOfYear;
+  }
+
+  /**
+   * Returns the day of the week (0..6), relative to getFirstDayOfWeek
+   *
+   * @param dayOfWeek the day of the week (SUNDAY..SATURDAY)
+   * @return the relative day of the week.
+   */
+  private int getRelativeWeekday(int dayOfWeek)
+  {
+    return (7 + dayOfWeek - getFirstDayOfWeek()) % 7;
+  }
+
 }

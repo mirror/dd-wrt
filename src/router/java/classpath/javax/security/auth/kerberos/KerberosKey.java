@@ -1,5 +1,5 @@
 /* KerberosKey.java -- kerberos key
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -40,8 +40,6 @@ package javax.security.auth.kerberos;
 
 import gnu.classpath.NotImplementedException;
 
-import java.io.Serializable;
-
 import javax.crypto.SecretKey;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.Destroyable;
@@ -54,7 +52,7 @@ import javax.security.auth.Destroyable;
  * @since 1.4
  */
 public class KerberosKey
-    implements Serializable, SecretKey, Destroyable
+    implements SecretKey, Destroyable
 {
   private static final long serialVersionUID = -4625402278148246993L;
 
@@ -95,6 +93,7 @@ public class KerberosKey
   /**
    * Return the name of the algorithm used to create this key.
    */
+  @Override
   public final String getAlgorithm()
   {
     checkDestroyed();
@@ -104,6 +103,7 @@ public class KerberosKey
   /**
    * Return the format of this key.  This implementation always returns "RAW".
    */
+  @Override
   public final String getFormat()
   {
     checkDestroyed();
@@ -141,15 +141,17 @@ public class KerberosKey
   /**
    * Return the encoded form of this key.
    */
+  @Override
   public final byte[] getEncoded()
   {
     checkDestroyed();
-    return (byte[]) key.key.clone();
+    return key.key.clone();
   }
 
   /**
    * Destroy this key.
    */
+  @Override
   public void destroy() throws DestroyFailedException
   {
     if (key == null)
@@ -161,6 +163,7 @@ public class KerberosKey
    * Return true if this key has been destroyed.  After this has been
    * called, other methods on this object will throw IllegalStateException.
    */
+  @Override
   public boolean isDestroyed()
   {
     return key == null;
@@ -172,6 +175,7 @@ public class KerberosKey
       throw new IllegalStateException("key is destroyed");
   }
 
+  @Override
   public String toString()
   {
     // FIXME: random choice here.

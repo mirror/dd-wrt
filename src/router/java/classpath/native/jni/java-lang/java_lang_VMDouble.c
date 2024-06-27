@@ -158,17 +158,6 @@ Java_java_lang_VMDouble_longBitsToDouble
   return val.d;
 }
 
-static void free_Bigints(struct _Jv_Bigint *p)
-{
-     struct _Jv_Bigint *l = p;
-     while (l)
-     {
-         struct _Jv_Bigint *next = l->_next;
-         free (l);
-         l = next;
-     }
-}
- 
 /**
  * Parse a double from a char array.
  */
@@ -178,7 +167,7 @@ parseDoubleFromChars(JNIEnv * env, const char * buf)
   char *endptr;
   jdouble val = 0.0;
   const char *p = buf, *end, *last_non_ws, *temp;
-  int i, ok = 1;
+  int ok = 1;
 
 #ifdef DEBUG
   fprintf (stderr, "java.lang.VMDouble.parseDouble (%s)\n", buf);
@@ -234,18 +223,6 @@ parseDoubleFromChars(JNIEnv * env, const char * buf)
       memset (&reent, 0, sizeof reent);
 
       val = _strtod_r (&reent, p, &endptr);
-
-      for (i = 0; i < reent._max_k; ++i)
-      {
-          free_Bigints(reent._freelist[i]);
-      }
-      if (reent._freelist)
-          free (reent._freelist);
-
-      if (reent._result)
-          free (reent._result);
-
-      free_Bigints(reent._p5s);
 
 #ifdef DEBUG
       fprintf (stderr, "java.lang.VMDouble.parseDouble val = %g\n", val);

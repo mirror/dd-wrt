@@ -1,5 +1,5 @@
 /* SessionImpl.java -- concrete definition of SSLSession.
-   Copyright (C) 2006  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -286,7 +286,7 @@ public abstract class Session implements SSLSession, Serializable
   /**
    * An SSL or TLS session ID.
    */
-  public static final class ID implements Comparable, Serializable
+  public static final class ID implements Comparable<ID>, Serializable
   {
 
     // Fields.
@@ -319,6 +319,7 @@ public abstract class Session implements SSLSession, Serializable
       return (byte[]) id.clone();
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (!(other instanceof ID))
@@ -326,6 +327,7 @@ public abstract class Session implements SSLSession, Serializable
       return Arrays.equals(id, ((ID) other).id);
     }
 
+    @Override
     public int hashCode()
     {
       int code = 0;
@@ -334,9 +336,10 @@ public abstract class Session implements SSLSession, Serializable
       return code;
     }
 
-    public int compareTo(Object other)
+    @Override
+    public int compareTo(ID other)
     {
-      byte[] id2 = ((ID) other).id;
+      byte[] id2 = other.id;
       if (id.length != id2.length)
         return (id.length < id2.length) ? -1 : 1;
       for (int i = 0; i < id.length; i++)
@@ -349,6 +352,7 @@ public abstract class Session implements SSLSession, Serializable
       return 0;
     }
 
+    @Override
     public String toString()
     {
       CPStringBuilder str = new CPStringBuilder (3 * id.length + 1);

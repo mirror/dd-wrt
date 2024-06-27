@@ -1,5 +1,5 @@
 /* Sha256.java --
-   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -110,7 +110,7 @@ public class Sha256
     this.h6 = md.h6;
     this.h7 = md.h7;
     this.count = md.count;
-    this.buffer = (byte[]) md.buffer.clone();
+    this.buffer = md.buffer.clone();
   }
 
   public static final int[] G(int hh0, int hh1, int hh2, int hh3, int hh4,
@@ -118,12 +118,14 @@ public class Sha256
   {
     return sha(hh0, hh1, hh2, hh3, hh4, hh5, hh6, hh7, in, offset);
   }
-
+  
+  @Override
   public Object clone()
   {
     return new Sha256(this);
   }
 
+  @Override
   protected void transform(byte[] in, int offset)
   {
     int[] result = sha(h0, h1, h2, h3, h4, h5, h6, h7, in, offset);
@@ -137,6 +139,7 @@ public class Sha256
     h7 = result[7];
   }
 
+  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -157,6 +160,7 @@ public class Sha256
     return result;
   }
 
+  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -170,6 +174,7 @@ public class Sha256
         (byte)(h7 >>> 24), (byte)(h7 >>> 16), (byte)(h7 >>> 8), (byte) h7 };
   }
 
+  @Override
   protected void resetContext()
   {
     // magic SHA-256 initialisation constants
@@ -183,6 +188,7 @@ public class Sha256
     h7 = 0x5be0cd19;
   }
 
+  @Override
   public boolean selfTest()
   {
     if (valid == null)

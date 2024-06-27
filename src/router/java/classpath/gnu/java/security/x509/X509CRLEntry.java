@@ -1,5 +1,5 @@
 /* X509CRLEntry.java -- an entry in a X.509 CRL.
-   Copyright (C) 2003, 2004, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2010, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -52,7 +52,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -78,7 +77,7 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
   private Date revocationDate;
 
   /** The CRL entry extensions. */
-  private HashMap extensions;
+  private HashMap<OID,Extension> extensions;
 
   // Constructor.
   // ------------------------------------------------------------------------
@@ -96,7 +95,7 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
     throws CRLException, IOException
   {
     super();
-    extensions = new HashMap();
+    extensions = new HashMap<OID,Extension>();
     try
       {
         parse(version, encoded);
@@ -114,6 +113,7 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
   // X509CRLEntry methods.
   // ------------------------------------------------------------------------
 
+  @Override
   public boolean equals(Object o)
   {
     if (!(o instanceof X509CRLEntry))
@@ -122,31 +122,37 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
            ((X509CRLEntry) o).getRevocationDate().equals(revocationDate);
   }
 
+  @Override
   public int hashCode()
   {
     return serialNo.hashCode();
   }
 
+  @Override
   public byte[] getEncoded() throws CRLException
   {
-    return (byte[]) encoded.clone();
+    return encoded.clone();
   }
 
+  @Override
   public BigInteger getSerialNumber()
   {
     return serialNo;
   }
 
+  @Override
   public Date getRevocationDate()
   {
     return (Date) revocationDate.clone();
   }
 
+  @Override
   public boolean hasExtensions()
   {
     return ! extensions.isEmpty();
   }
 
+  @Override
   public String toString()
   {
     return "X509CRLEntry serial=" + serialNo + " revocation date="
@@ -156,41 +162,42 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
   // X509Extension methods.
   // -------------------------------------------------------------------------
 
+  @Override
   public boolean hasUnsupportedCriticalExtension()
   {
-    for (Iterator it = extensions.values().iterator(); it.hasNext(); )
+    for (Extension e : extensions.values())
       {
-        Extension e = (Extension) it.next();
         if (e.isCritical() && !e.isSupported())
           return true;
       }
     return false;
   }
 
-  public Set getCriticalExtensionOIDs()
+  @Override
+  public Set<String> getCriticalExtensionOIDs()
   {
-    HashSet s = new HashSet();
-    for (Iterator it = extensions.values().iterator(); it.hasNext(); )
+    HashSet<String> s = new HashSet<String>();
+    for (Extension e : extensions.values())
       {
-        Extension e = (Extension) it.next();
         if (e.isCritical())
           s.add(e.getOid().toString());
       }
     return Collections.unmodifiableSet(s);
   }
 
-  public Set getNonCriticalExtensionOIDs()
+  @Override
+  public Set<String> getNonCriticalExtensionOIDs()
   {
-    HashSet s = new HashSet();
-    for (Iterator it = extensions.values().iterator(); it.hasNext(); )
+    HashSet<String> s = new HashSet<String>();
+    for (Extension e : extensions.values())
       {
-        Extension e = (Extension) it.next();
         if (!e.isCritical())
           s.add(e.getOid().toString());
       }
     return Collections.unmodifiableSet(s);
   }
 
+  @Override
   public byte[] getExtensionValue(String oid)
   {
     Extension e = getExtension(new OID(oid));
@@ -204,12 +211,14 @@ class X509CRLEntry extends java.security.cert.X509CRLEntry
   // GnuPKIExtension method.
   // -------------------------------------------------------------------------
 
+  @Override
   public Extension getExtension(OID oid)
   {
-    return (Extension) extensions.get(oid);
+    return extensions.get(oid);
   }
 
-  public Collection getExtensions()
+  @Override
+  public Collection<Extension> getExtensions()
   {
     return extensions.values();
   }

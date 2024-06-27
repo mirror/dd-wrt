@@ -1,5 +1,5 @@
 /* DocumentFunction.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -66,8 +66,8 @@ final class DocumentFunction
 
   final Stylesheet stylesheet;
   final Node base;
-  List args;
-  List values;
+  List<Expr> args;
+  List<Object> values;
 
   DocumentFunction(Stylesheet stylesheet, Node base)
   {
@@ -75,14 +75,15 @@ final class DocumentFunction
     this.base = base;
   }
 
+  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
-    values = args;
+    values = (List<Object>) args;
     return evaluate(null, 1, 1);
   }
 
-  public void setArguments(List args)
+  public void setArguments(List<Expr> args)
   {
     this.args = args;
   }
@@ -92,10 +93,10 @@ final class DocumentFunction
     int arity = args.size();
     if (values == null)
       {
-        values = new ArrayList(arity);
+        values = new ArrayList<Object>(arity);
         for (int i = 0; i < arity; i++)
           {
-            Expr arg = (Expr) args.get(i);
+            Expr arg = args.get(i);
             values.add(arg.evaluate(context, pos, len));
           }
       }
@@ -106,11 +107,11 @@ final class DocumentFunction
         Object arg = values.get(0);
         if (arg instanceof Collection)
           {
-            Collection ns = (Collection) arg;
-            Collection acc = new TreeSet();
-            for (Iterator i = ns.iterator(); i.hasNext(); )
+            Collection<?> ns = (Collection<?>) arg;
+            Collection<Node> acc = new TreeSet<Node>();
+	    for (Object o : ns)
               {
-                Node node = (Node) i.next();
+		Node node = (Node) o;
                 String s = Expr.stringValue(node);
                 acc.addAll(document(s, node.getBaseURI()));
               }
@@ -127,14 +128,14 @@ final class DocumentFunction
         Object arg2 = values.get(1);
         if (!(arg2 instanceof Collection))
           throw new RuntimeException("second argument is not a node-set");
-        Collection arg2ns = (Collection) arg2;
+        Collection<?> arg2ns = (Collection<?>) arg2;
         String base2 = arg2ns.isEmpty() ? null :
           ((Node) arg2ns.iterator().next()).getBaseURI();
         if (arg1 instanceof Collection)
           {
-            Collection arg1ns = (Collection) arg1;
-            Collection acc = new TreeSet();
-            for (Iterator i = arg1ns.iterator(); i.hasNext(); )
+            Collection<?> arg1ns = (Collection<?>) arg1;
+            Collection<Node> acc = new TreeSet<Node>();
+            for (Iterator<?> i = arg1ns.iterator(); i.hasNext(); )
               {
                 Node node = (Node) i.next();
                 String s = Expr.stringValue(node);
@@ -161,7 +162,7 @@ final class DocumentFunction
    * @param uri the URI from which to retrieve nodes
    * @param base the base URI for relative URIs
    */
-  Collection document(String uri, String base)
+  Collection<Node> document(String uri, String base)
   {
     if ("".equals(uri) || uri == null)
       uri = this.base.getBaseURI();
@@ -203,9 +204,15 @@ final class DocumentFunction
             if (!(ret instanceof Collection))
               {
                 // XXX Report error?
-                return Collections.EMPTY_SET;
+                return Collections.<Node>emptySet();
               }
-            return (Collection) ret;
+	    Collection<Node> collRet = new TreeSet<Node>();
+	    for (Object o : (Collection<?>) ret)
+	      {
+		if (o instanceof Node)
+		  collRet.add((Node) o);
+	      }
+            return collRet;
           }
       }
     catch (TransformerException e)
@@ -224,18 +231,18 @@ final class DocumentFunction
       s = (Stylesheet) context;
     DocumentFunction f = new DocumentFunction(s, base);
     int len = args.size();
-    List args2 = new ArrayList(len);
+    List<Expr> args2 = new ArrayList<Expr>(len);
     for (int i = 0; i < len; i++)
-      args2.add(((Expr) args.get(i)).clone(context));
+      args2.add(args.get(i).clone(context));
     f.setArguments(args2);
     return f;
   }
 
   public boolean references(QName var)
   {
-    for (Iterator i = args.iterator(); i.hasNext(); )
+    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
       {
-        if (((Expr) i.next()).references(var))
+        if (i.next().references(var))
           return true;
       }
     return false;

@@ -1,8 +1,8 @@
 ## Input file for automake to generate the Makefile.in used by configure
 
 # lib first, to compile .class files before native code, last examples
-SUBDIRS = lib external include native resource scripts $(TOOLSDIR) $(EXAMPLESDIR)
-DIST_SUBDIRS = lib external include native resource scripts tools examples
+SUBDIRS = lib doc external include native resource scripts $(TOOLSDIR) $(EXAMPLESDIR)
+DIST_SUBDIRS = lib doc external include native resource scripts tools examples
 
 # Allow users to pass site-specific flags to autoreconf via an env var. 
 ACLOCAL_AMFLAGS = -I m4 ${LOCAL_AUTORECONF_FLAGS}

@@ -1,5 +1,5 @@
 /* BasicPermission.java -- implements a simple named permission
-   Copyright (C) 1998, 1999, 2002, 2003, 2004, 2005, 2006
+   Copyright (C) 1998, 1999, 2002, 2003, 2004, 2005, 2006, 2014, 2015
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -39,7 +39,6 @@ exception statement from your version. */
 
 package java.security;
 
-import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -74,7 +73,6 @@ import java.util.Hashtable;
  * @status updated to 1.4
  */
 public abstract class BasicPermission extends Permission
-  implements Serializable
 {
   /**
    * Compatible with JDK 1.1+.
@@ -111,6 +109,7 @@ public abstract class BasicPermission extends Permission
    * @throws NullPointerException if name is null
    * @throws IllegalArgumentException if name is invalid
    */
+  @SuppressWarnings("unused")
   public BasicPermission(String name, String actions)
   {
     this(name);
@@ -128,6 +127,7 @@ public abstract class BasicPermission extends Permission
    * @param perm the <code>Permission</code> object to test against
    * @return true if the specified permission is implied
    */
+  @Override
   public boolean implies(Permission perm)
   {
     if (! getClass().isInstance(perm))
@@ -155,6 +155,7 @@ public abstract class BasicPermission extends Permission
    * @param obj the <code>Object</code> to test for equality
    * @return true if obj is semantically equal to this
    */
+  @Override
   public boolean equals(Object obj)
   {
     return getClass().isInstance(obj)
@@ -168,6 +169,7 @@ public abstract class BasicPermission extends Permission
    *
    * @return a hash value for this object
    */
+  @Override
   public int hashCode()
   {
     return getName().hashCode();
@@ -180,6 +182,7 @@ public abstract class BasicPermission extends Permission
    *
    * @return the action list
    */
+  @Override
   public String getActions()
   {
     return "";
@@ -194,6 +197,7 @@ public abstract class BasicPermission extends Permission
    *
    * @return a new empty <code>PermissionCollection</code> object
    */
+  @Override
   public PermissionCollection newPermissionCollection()
   {
     return new BasicPermissionCollection(getClass());
@@ -217,7 +221,7 @@ public abstract class BasicPermission extends Permission
      *
      * @serial a hash mapping name to permissions, all of type permClass
      */
-    private final Hashtable permissions = new Hashtable();
+    private final Hashtable<String,Permission> permissions = new Hashtable<String,Permission>();
 
     /**
      * If "*" is in the collection.
@@ -231,14 +235,14 @@ public abstract class BasicPermission extends Permission
      *
      * @serial the limiting subclass of this collection
      */
-    private final Class permClass;
+    private final Class<? extends BasicPermission> permClass;
 
     /**
      * Construct a collection over the given runtime class.
      *
      * @param c the class
      */
-    BasicPermissionCollection(Class c)
+    BasicPermissionCollection(Class<? extends BasicPermission> c)
     {
       permClass = c;
     }
@@ -251,6 +255,7 @@ public abstract class BasicPermission extends Permission
      * @throws IllegalArgumentException if perm is not the correct type
      * @throws SecurityException if the collection is read-only
      */
+    @Override
     public void add(Permission perm)
     {
       if (isReadOnly())
@@ -270,6 +275,7 @@ public abstract class BasicPermission extends Permission
      * @param permission the permission to check
      * @return true if it is implied by this
      */
+    @Override
     public boolean implies(Permission permission)
     {
       if (! permClass.isInstance(permission))
@@ -300,7 +306,8 @@ public abstract class BasicPermission extends Permission
      *
      * @return an enumeration of the collection contents
      */
-    public Enumeration elements()
+    @Override
+    public Enumeration<Permission> elements()
     {
       return permissions.elements();
     }

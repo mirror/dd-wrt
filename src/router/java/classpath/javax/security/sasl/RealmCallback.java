@@ -1,5 +1,5 @@
 /* RealmCallback.java --
-   Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -48,6 +48,8 @@ import javax.security.auth.callback.TextInputCallback;
  */
 public class RealmCallback extends TextInputCallback
 {
+
+  private static final long serialVersionUID = -4342673378785456908L;
 
   /**
    * Constructs a <code>RealmCallback</code> with a prompt.

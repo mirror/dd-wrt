@@ -1,5 +1,5 @@
 /* FormatUtil.java -- Encoding and decoding format utility methods
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -60,7 +60,7 @@ public class FormatUtil
    */
   public static final String getEncodingName(int formatID)
   {
-    String result = null;
+    String result;
     switch (formatID)
       {
       case Registry.RAW_ENCODING_ID:
@@ -75,6 +75,8 @@ public class FormatUtil
       case Registry.ASN1_ENCODING_ID:
         result = Registry.ASN1_ENCODING;
         break;
+      default:
+	result = null;
       }
 
     return result;
@@ -90,7 +92,7 @@ public class FormatUtil
    */
   public static final String getEncodingShortName(int formatID)
   {
-    String result = null;
+    String result;
     switch (formatID)
       {
       case Registry.RAW_ENCODING_ID:
@@ -105,6 +107,8 @@ public class FormatUtil
       case Registry.ASN1_ENCODING_ID:
         result = Registry.ASN1_ENCODING_SHORT_NAME;
         break;
+      default:
+	result = null;
       }
 
     return result;

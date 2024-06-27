@@ -49,7 +49,7 @@ final class AnySimpleType
   {
     super(new QName(XMLConstants.W3C_XML_SCHEMA_NS_URI, "anySimpleType"),
           ANY, /* variety */
-          (Set) null, /* facets */
+          null, /* facets */
           0, /* fundametalFacets */
           (SimpleType) Type.ANY_TYPE, /* baseType */
           null);

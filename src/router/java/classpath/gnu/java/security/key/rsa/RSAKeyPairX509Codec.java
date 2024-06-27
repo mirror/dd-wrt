@@ -1,5 +1,5 @@
 /* RSAKeyPairX509Codec.java -- X.509 Encoding/Decoding handler
-   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -72,6 +72,7 @@ public class RSAKeyPairX509Codec
 
   // implicit 0-arguments constructor
 
+  @Override
   public int getFormatID()
   {
     return X509_FORMAT;
@@ -115,6 +116,7 @@ public class RSAKeyPairX509Codec
    *        of {@link GnuRSAPublicKey} or if an exception occurs during the
    *        marshalling process.
    */
+  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     if (Configuration.DEBUG)
@@ -131,13 +133,13 @@ public class RSAKeyPairX509Codec
     DERValue derN = new DERValue(DER.INTEGER, n);
     DERValue derE = new DERValue(DER.INTEGER, e);
 
-    ArrayList algorithmID = new ArrayList(2);
+    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
     algorithmID.add(derOID);
     algorithmID.add(new DERValue(DER.NULL, null));
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
                                            algorithmID);
 
-    ArrayList publicKey = new ArrayList(2);
+    ArrayList<DERValue> publicKey = new ArrayList<DERValue>(2);
     publicKey.add(derN);
     publicKey.add(derE);
     DERValue derPublicKey = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -145,7 +147,7 @@ public class RSAKeyPairX509Codec
     byte[] spkBytes = derPublicKey.getEncoded();
     DERValue derSPK = new DERValue(DER.BIT_STRING, new BitString(spkBytes));
 
-    ArrayList spki = new ArrayList(2);
+    ArrayList<DERValue> spki = new ArrayList<DERValue>(2);
     spki.add(derAlgorithmID);
     spki.add(derSPK);
     DERValue derSPKI = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, spki);
@@ -171,6 +173,7 @@ public class RSAKeyPairX509Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
+  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     throw new InvalidParameterException("Wrong format for private keys");
@@ -184,6 +187,7 @@ public class RSAKeyPairX509Codec
    * @throw InvalidParameterException if an exception occurs during the
    *        unmarshalling process.
    */
+  @Override
   public PublicKey decodePublicKey(byte[] input)
   {
     if (Configuration.DEBUG)
@@ -245,6 +249,7 @@ public class RSAKeyPairX509Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
+  @Override
   public PrivateKey decodePrivateKey(byte[] input)
   {
     throw new InvalidParameterException("Wrong format for private keys");

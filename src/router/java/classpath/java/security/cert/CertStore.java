@@ -1,5 +1,5 @@
 /* CertStore -- stores and retrieves certificates.
-   Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -41,12 +41,12 @@ package java.security.cert;
 import gnu.java.lang.CPStringBuilder;
 
 import gnu.java.security.Engine;
+import gnu.java.security.action.GetSecurityPropertyAction;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
@@ -112,17 +112,9 @@ public class CertStore
    */
   public static final synchronized String getDefaultType()
   {
-    String type = null;
-    type = (String) java.security.AccessController.doPrivileged(
-      new PrivilegedAction() {
-        public Object run() {
-          return Security.getProperty("certstore.type");
-        }
-      }
+    return java.security.AccessController.doPrivileged(
+      new GetSecurityPropertyAction("certstore.type", "LDAP")
     );
-    if (type == null)
-      type = "LDAP";
-    return type;
   }
 
   /**

@@ -1,5 +1,5 @@
 /* Jdwp.java -- Virtual machine to JDWP back-end programming interface
-   Copyright (C) 2005, 2006, 2007 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -79,7 +79,7 @@ public class Jdwp
   private Thread _ppThread;
 
   // JDWP configuration properties
-  private HashMap _properties;
+  private HashMap<String,String> _properties;
 
   // The suspend property of the configure string
   // (-Xrunjdwp:..suspend=<boolean>)
@@ -253,8 +253,8 @@ public class Jdwp
       {
         byte suspendPolicy = JdwpConstants.SuspendPolicy.NONE;
         EventManager em = EventManager.getDefault();
-        ArrayList allEvents = new ArrayList ();
-        ArrayList allRequests = new ArrayList ();
+        ArrayList<Event> allEvents = new ArrayList<Event>();
+        ArrayList<EventRequest> allRequests = new ArrayList<EventRequest>();
         for (int i = 0; i < events.length; ++i)
           {
             EventRequest[] r = em.getEventRequests(events[i]);
@@ -403,7 +403,7 @@ public class Jdwp
   {
     // Loop through configuration arguments looking for a
     // transport name
-    _properties = new HashMap ();
+    _properties = new HashMap<String,String>();
     String[] options = configString.split (",");
     for (int i = 0; i < options.length; ++i)
       {

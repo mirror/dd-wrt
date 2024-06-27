@@ -1,5 +1,5 @@
 /* CertificatePolicies.java -- certificate policy extension.
-   Copyright (C) 2004, 2006  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006, 2014, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -113,24 +113,49 @@ public class CertificatePolicies extends Extension.Value
   public CertificatePolicies (final List<OID> policies,
                               final Map<OID, List<PolicyQualifierInfo>> policyQualifierInfos)
   {
-    for (Iterator it = policies.iterator(); it.hasNext(); )
-      if (!(it.next() instanceof OID))
-        throw new IllegalArgumentException ("policies must be OIDs");
-    for (Iterator it = policyQualifierInfos.entrySet().iterator(); it.hasNext();)
+    List<OID> polCopy = new ArrayList<OID>(policies.size());
+    try
       {
-        Map.Entry e = (Map.Entry) it.next();
-        if (!(e.getKey() instanceof OID) || !policies.contains (e.getKey()))
-          throw new IllegalArgumentException
-            ("policyQualifierInfos keys must be OIDs");
-        if (!(e.getValue() instanceof List))
-          throw new IllegalArgumentException
-            ("policyQualifierInfos values must be Lists of PolicyQualifierInfos");
-        for (Iterator it2 = ((List) e.getValue()).iterator(); it.hasNext(); )
-          if (!(it2.next() instanceof PolicyQualifierInfo))
-            throw new IllegalArgumentException
-              ("policyQualifierInfos values must be Lists of PolicyQualifierInfos");
+	for (OID o : policies) { polCopy.add(o); }
       }
-    this.policies = Collections.unmodifiableList (new ArrayList<OID>(policies));
+    catch (ClassCastException e) 
+      {
+        throw new IllegalArgumentException ("policies must be OIDs", e);
+      }
+    for (Map.Entry<OID,List<PolicyQualifierInfo>> e : policyQualifierInfos.entrySet())
+      {
+	try
+	  {
+	    if (!policies.contains (e.getKey()))
+	      throw new IllegalArgumentException
+		("policyQualifierInfos keys must be OIDs");
+	  }
+	catch (ClassCastException cce)
+	  {
+	    throw new IllegalArgumentException
+	      ("policyQualifierInfos keys must be OIDs", cce);
+	  }
+	try
+	  {
+	    e.getValue();
+	  }
+	catch (ClassCastException cce)
+	  {
+	    throw new IllegalArgumentException
+	      ("policyQualifierInfos values must be Lists of PolicyQualifierInfos", cce);
+	  }
+	try
+	  {
+	    Iterator<PolicyQualifierInfo> i = e.getValue().iterator();
+	    while (i.hasNext()) { i.next(); }
+	  }
+	catch (ClassCastException cce)
+	  {
+            throw new IllegalArgumentException
+              ("policyQualifierInfos values must be Lists of PolicyQualifierInfos", cce);
+	  }
+      }
+    this.policies = Collections.unmodifiableList (polCopy);
     this.policyQualifierInfos = Collections.unmodifiableMap
       (new HashMap<OID, List<PolicyQualifierInfo>>(policyQualifierInfos));
   }
@@ -163,6 +188,7 @@ public class CertificatePolicies extends Extension.Value
     return policyQualifierInfos.get(oid);
   }
 
+  @Override
   public byte[] getEncoded()
   {
     if (encoded == null)
@@ -194,9 +220,10 @@ public class CertificatePolicies extends Extension.Value
           }
         encoded = new DERValue(DER.CONSTRUCTED|DER.SEQUENCE, pol).getEncoded();
       }
-    return (byte[]) encoded.clone();
+    return encoded.clone();
   }
 
+  @Override
   public String toString()
   {
     return CertificatePolicies.class.getName() + " [ policies=" + policies +

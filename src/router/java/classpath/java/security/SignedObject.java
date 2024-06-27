@@ -1,5 +1,5 @@
 /* SignedObject.java --- Signed Object Class
-   Copyright (C) 1999, 2003, Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -155,7 +155,7 @@ public final class SignedObject implements Serializable
    */
   public byte[] getSignature()
   {
-    return (byte[]) signature.clone();
+    return signature.clone();
 
   }
 
@@ -197,7 +197,7 @@ public final class SignedObject implements Serializable
     throws IOException, ClassNotFoundException
   {
     s.defaultReadObject();
-    content = (byte[]) content.clone();
-    signature = (byte[]) signature.clone();
+    content = content.clone();
+    signature = signature.clone();
   }
 }

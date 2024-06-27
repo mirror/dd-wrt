@@ -1,5 +1,5 @@
 /* EAX.java --
-   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -110,37 +110,44 @@ public class EAX
     init = false;
   }
 
+  @Override
   public Object clone()
   {
     return new EAX((IBlockCipher) cipher.clone(), cipherBlockSize);
   }
 
+  @Override
   public String name()
   {
     return Registry.EAX_MODE + "(" + cipher.name() + ")";
   }
 
+  @Override
   public int defaultBlockSize()
   {
     return ctr.defaultBlockSize();
   }
 
+  @Override
   public int defaultKeySize()
   {
     return ctr.defaultKeySize();
   }
 
-  public Iterator blockSizes()
+  @Override
+  public Iterator<Integer> blockSizes()
   {
     return ctr.blockSizes();
   }
 
-  public Iterator keySizes()
+  @Override
+  public Iterator<Integer> keySizes()
   {
     return ctr.keySizes();
   }
 
-  public void init(Map attrib) throws InvalidKeyException
+  @Override
+  public void init(Map<String,Object> attrib) throws InvalidKeyException
   {
     byte[] nonce = (byte[]) attrib.get(IV);
     if (nonce == null)
@@ -151,7 +158,7 @@ public class EAX
 
     Arrays.fill(t_n, (byte) 0);
     nonceOmac.reset();
-    nonceOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, key));
+    nonceOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, (Object) key));
     nonceOmac.update(t_n, 0, t_n.length);
     nonceOmac.update(nonce, 0, nonce.length);
     byte[] N = nonceOmac.digest();
@@ -160,16 +167,16 @@ public class EAX
     nonceOmac.update(nonce, 0, nonce.length);
     t_n[t_n.length - 1] = 1;
     headerOmac.reset();
-    headerOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, key));
+    headerOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, (Object) key));
     headerOmac.update(t_n, 0, t_n.length);
     t_n[t_n.length - 1] = 2;
     msgOmac.reset();
-    msgOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, key));
+    msgOmac.init(Collections.singletonMap(MAC_KEY_MATERIAL, (Object) key));
     msgOmac.update(t_n, 0, t_n.length);
     Integer modeSize = (Integer) attrib.get(MODE_BLOCK_SIZE);
     if (modeSize == null)
       modeSize = Integer.valueOf(cipherBlockSize);
-    HashMap ctrAttr = new HashMap();
+    HashMap<String,Object> ctrAttr = new HashMap<String,Object>();
     ctrAttr.put(KEY_MATERIAL, key);
     ctrAttr.put(IV, N);
     ctrAttr.put(STATE, Integer.valueOf(ENCRYPTION));
@@ -196,11 +203,13 @@ public class EAX
     init = true;
   }
 
+  @Override
   public int currentBlockSize()
   {
     return ctr.currentBlockSize();
   }
 
+  @Override
   public void encryptBlock(byte[] in, int inOff, byte[] out, int outOff)
   {
     if (! init)
@@ -211,6 +220,7 @@ public class EAX
     msgOmac.update(out, outOff, ctr.currentBlockSize());
   }
 
+  @Override
   public void decryptBlock(byte[] in, int inOff, byte[] out, int outOff)
   {
     if (! init)
@@ -236,6 +246,7 @@ public class EAX
       }
   }
 
+  @Override
   public void reset()
   {
     nonceOmac.reset();
@@ -244,16 +255,19 @@ public class EAX
     ctr.reset();
   }
 
+  @Override
   public boolean selfTest()
   {
     return true; // XXX
   }
 
+  @Override
   public int macSize()
   {
     return tagSize;
   }
 
+  @Override
   public byte[] digest()
   {
     byte[] tag = new byte[tagSize];
@@ -273,6 +287,7 @@ public class EAX
     reset();
   }
 
+  @Override
   public void update(byte b)
   {
     if (! init)
@@ -280,6 +295,7 @@ public class EAX
     headerOmac.update(b);
   }
 
+  @Override
   public void update(byte[] buf, int off, int len)
   {
     if (! init)

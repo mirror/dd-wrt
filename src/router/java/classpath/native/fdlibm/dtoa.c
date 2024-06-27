@@ -883,16 +883,6 @@ ret1:
   return s0;
 }
 
-void free_Bigints(struct _Jv_Bigint *p)
-{
-    struct _Jv_Bigint *l = p;
-    while (l)
-	{
-	  struct _Jv_Bigint *next = l->_next;
-	  free (l);
-	  l = next;
-	}
-}
 
 _VOID
 _DEFUN (_dtoa,
@@ -915,15 +905,16 @@ _DEFUN (_dtoa,
   p = _dtoa_r (&reent, _d, mode, ndigits, decpt, sign, rve, float_type);
   strcpy (buf, p);
 
-  for (i = 0; i < reent._max_k; ++i)
+  for (i = 0; i < reent._result_k; ++i)
     {
-        free_Bigints(reent._freelist[i]);
+      struct _Jv_Bigint *l = reent._freelist[i];
+      while (l)
+	{
+	  struct _Jv_Bigint *next = l->_next;
+	  free (l);
+	  l = next;
+	}
     }
   if (reent._freelist)
     free (reent._freelist);
-
-  if (reent._result)
-    free(reent._result);
-
-  free_Bigints(reent._p5s);
 }

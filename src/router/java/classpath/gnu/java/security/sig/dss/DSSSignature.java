@@ -1,5 +1,5 @@
 /* DSSSignature.java --
-   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -133,7 +133,7 @@ public class DSSSignature
   public static final BigInteger[] sign(final DSAPrivateKey k, final byte[] h)
   {
     final DSSSignature sig = new DSSSignature();
-    final Map attributes = new HashMap();
+    final Map<String,Object> attributes = new HashMap<String,Object>();
     attributes.put(ISignature.SIGNER_KEY, k);
     sig.setupSign(attributes);
     return sig.computeRS(h);
@@ -143,7 +143,7 @@ public class DSSSignature
                                         Random rnd)
   {
     final DSSSignature sig = new DSSSignature();
-    final Map attributes = new HashMap();
+    final Map<String,Object> attributes = new HashMap<String,Object>();
     attributes.put(ISignature.SIGNER_KEY, k);
     if (rnd != null)
       attributes.put(ISignature.SOURCE_OF_RANDOMNESS, rnd);
@@ -156,7 +156,7 @@ public class DSSSignature
                                         IRandom irnd)
   {
     final DSSSignature sig = new DSSSignature();
-    final Map attributes = new HashMap();
+    final Map<String,Object> attributes = new HashMap<String,Object>();
     attributes.put(ISignature.SIGNER_KEY, k);
     if (irnd != null)
       attributes.put(ISignature.SOURCE_OF_RANDOMNESS, irnd);
@@ -169,17 +169,19 @@ public class DSSSignature
                                      final BigInteger[] rs)
   {
     final DSSSignature sig = new DSSSignature();
-    final Map attributes = new HashMap();
+    final Map<String,Object> attributes = new HashMap<String,Object>();
     attributes.put(ISignature.VERIFIER_KEY, k);
     sig.setupVerify(attributes);
     return sig.checkRS(rs, h);
   }
 
+  @Override
   public Object clone()
   {
     return new DSSSignature(this);
   }
 
+  @Override
   protected void setupForVerification(PublicKey k)
       throws IllegalArgumentException
   {
@@ -189,6 +191,7 @@ public class DSSSignature
     this.publicKey = k;
   }
 
+  @Override
   protected void setupForSigning(PrivateKey k) throws IllegalArgumentException
   {
     if (! (k instanceof DSAPrivateKey))
@@ -197,12 +200,14 @@ public class DSSSignature
     this.privateKey = k;
   }
 
+  @Override
   protected Object generateSignature() throws IllegalStateException
   {
     final BigInteger[] rs = computeRS(md.digest());
     return encodeSignature(rs[0], rs[1]);
   }
 
+  @Override
   protected boolean verifySignature(Object sig) throws IllegalStateException
   {
     final BigInteger[] rs = decodeSignature(sig);
@@ -215,7 +220,7 @@ public class DSSSignature
    * @return an object encapsulating the DSS signature pair <code>r</code> and
    *         <code>s</code>.
    */
-  private Object encodeSignature(BigInteger r, BigInteger s)
+  private static Object encodeSignature(BigInteger r, BigInteger s)
   {
     return new BigInteger[] { r, s };
   }
@@ -226,7 +231,7 @@ public class DSSSignature
    *
    * @return the DSS signature pair <code>r</code> and <code>s</code>.
    */
-  private BigInteger[] decodeSignature(Object signature)
+  private static BigInteger[] decodeSignature(Object signature)
   {
     return (BigInteger[]) signature;
   }

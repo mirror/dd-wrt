@@ -1,5 +1,5 @@
 /* DestroyFailedException.java -- signals an object could not be destroyed.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -46,6 +46,8 @@ package javax.security.auth;
  */
 public class DestroyFailedException extends Exception
 {
+
+  private static final long serialVersionUID = -7790152857282749162L;
 
   /**
    * Creates a new DestroyFailedException with no detail message.

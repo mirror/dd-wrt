@@ -1,5 +1,5 @@
 /* KerberosPrincipal.java -- a kerberos principal
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -55,7 +55,7 @@ public final class KerberosPrincipal
     implements Serializable, Principal
 {
   // Uncomment when serialization is correct.
-  // private static final long serialVersionUID = -7374788026156829911L;
+  private static final long serialVersionUID = -7374788026156829911L;
 
   /**
    * Constant from the RFC: "Just the name of the principal as in DCE, or
@@ -165,6 +165,7 @@ public final class KerberosPrincipal
   /**
    * Return the name of this principal.
    */
+  @Override
   public String getName()
   {
     return name;
@@ -186,11 +187,13 @@ public final class KerberosPrincipal
     return type;
   }
 
+  @Override
   public int hashCode()
   {
     return name.hashCode();
   }
 
+  @Override
   public boolean equals(Object other)
   {
     if (! (other instanceof KerberosPrincipal))
@@ -199,6 +202,7 @@ public final class KerberosPrincipal
     return name.equals(kp.name) && type == kp.type;
   }
 
+  @Override
   public String toString()
   {
     // This is what came to mind.

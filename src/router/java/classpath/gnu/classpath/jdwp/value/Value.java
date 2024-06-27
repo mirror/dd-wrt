@@ -1,5 +1,5 @@
 /* Value.java -- base class of JDWP values
-   Copyright (C) 2007 Free Software Foundation
+   Copyright (C) 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -130,7 +130,7 @@ public abstract class Value
    * @throws JdwpInternalErrorException
    * @throws InvalidObjectException
    */
-  public static Object getUntaggedObject(ByteBuffer bb, Class type)
+  public static Object getUntaggedObject(ByteBuffer bb, Class<?> type)
     throws JdwpInternalErrorException, InvalidObjectException, InvalidClassException
   {
     Value val = ValueFactory.createFromUntagged(bb, type);

@@ -1,0 +1,120 @@
+GNU Classpath GStreamer Sound Backend README - Last updated: October 8, 2007
+(for release 0.96)
+
+* Introduction
+
+  From 0.96, GNU Classpath has a preliminary backend implementation for the
+  Java Sound API based on the GStreamer framework.
+
+  The backend is considered unstable and is currently disabled by default. To
+  enable it, you should pass "--enable-gstreamer-peer" to configure.
+
+  We suggest that you leave this option set to the default on production systems,
+  but enable it for testing. The backend has only been tested successfully on Linux
+  i386 and amd64. There are known issues on powerpc64 (see bug:
+  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33701)
+
+  The peer supports any kind of stream you have a gstreamer plugin for (modulo
+  the eventual bugs of course!!) and no special steps are needed to enable them.
+  The only requirement is a working installation of at least gstreamer,
+  gstreamer-base and gstreamer-plugins-base, all with a version number of at least
+  0.10.10.
+
+  The minor version number could eventually be lowered but the peer was
+  developed on a Fedora 7 machine with GStreamer 0.10.10, so they may rely on
+  new functions introduced during the GStreamer 0.10 timeline. GStreamer 0.8
+  will most likely not work due to API changes, but porting to the old system
+  should not be too hard, as the backend only uses a small subset of all the
+  API.
+
+  Currently, most methods in the backend are missings or are just stubbed.
+  The lack of event handling routines especially prevents this backend being
+  useful for anything other than simple examples.
+
+  We have included in the example directory a simple implementation of an audio
+  player. To run the example just type on the command line:
+  
+  $ java -cp examples/examples.zip \
+    gnu.classpath.examples.sound.AudioPlayerSample audio_file
+
+  Where "java" is a GNU Classpath based VM and audio_file can be any type of
+  audio file that can be read by your GStreamer installation (e.g. ogg and wav).
+
+* Implementation details
+
+  Currently the backend relies on filesystem named pipes to pass data from the
+  java layer to the native gstreamer layer. This is because GStreamer is heavily
+  multi-threaded; reading requests are asynchronous and performed by the
+  framework. While it's possible to control this flow, we have found through
+  experimentation that the best performance occurs when the framework itself handles
+  all the buffering, reading and streaming of audio data.
+  
+  The file detection routines instead read directly from an InputStream with a
+  special GStreamer plugin. This will change in the next few releases to also use
+  filesystem named pipes as a more reliable way to pass data from one side of
+  the peer to the other as we have found that the current process of reading from a
+  java InputStream has a few drawbacks.  For example, sometimes data is not handled
+  correctly, or even introduces the risk of deadlocks (see below).
+	
+* Know Bugs and Limitations
+
+  * Not all the methods described by the API are implemented.
+  
+  * The peer is not currently tested on all the architectures.
+  
+  * There is a bug in the file detection code (native code) that deadlocks the
+    application. This is usually triggered when you obtain both an
+    AudioInputStream and AudioFileFormat from the same file, in (bad) code
+    like the following:
+
+    AudioInputStream is = AudioSystem.getAudioInputStream(new File(file));
+
+    AudioFileFormat ff = AudioSystem.getAudioFileFormat(new File(file));
+    
+    [... use ff or is at your need ...]
+    
+    This is a corner case, but indeed may happen and may also trigger the bug.
+
+  * No event handling is implemented. We will add that in the next release.
+  
+  * The backend relies on filesystem named pipes to stream audio data and will
+    not work if the system is not allowed to create named pipes (for example,
+    when GNU Classpath is built for systems without a filesystem).
+
+  * To allow correct behaviour of the "available" method (return the free space
+    in the pipeline) we measure the number of bytes currently in the pipeline for
+    processing and substract that from the size of the pipeline.
+
+    Few operating systems allow us to know in advance the size of a pipeline (usually
+    you can retrieve the number of bytes waiting for processing or tell if the next
+    write will block, but not the number of bytes you can write before
+    blocking), so we detect the size of the pipeline when the backend is first used.
+    This operation can be time consuming, so the result is stored as a preference
+    and used each time instead of detecting again.
+
+    If you use the MemoryBasedPreferences preference backend, no data is
+    actually written in a persistent storage, so the detection routine is called
+    again each time the class is initialized.  Currently this occurs in the
+    constructor! A better approach would be to move this in to the static initializer,
+    and this will be fixed in the next release.
+
+    The preference node for this value is:
+      
+      * gnu.javax.sound.sampled.gstreamer.lines.GStreamer
+
+    and the key:
+
+      * Capacity
+
+    If you use the GConf preference backend, it's easy to edit this node, just
+    search for this key (assuming all the default values are used, otherwise,
+    pay attention to the defined root node if it's different than
+    "/apps/classpath"):
+
+      * /apps/classpath/gnu/javax/sound/sampled/gstreamer/lines/GStreamer
+
+    and edit the key Capacity. Do this only if you know the correct size of the
+    pipe and you think the detection code will not work reliably on your system
+    (for example, if you have tweaked the kernel to allow very large named pipes
+    the operation may require a lot of time to complete, as all that the code
+    does is write bytes to the pipe until it becomes full).

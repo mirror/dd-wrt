@@ -1,5 +1,5 @@
 /* SignatureAdapter.java --
-   Copyright 2001, 2002, 2006, 2010 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2006, 2010, 2014, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -39,7 +39,6 @@ exception statement from your version.  */
 package gnu.java.security.jce.sig;
 
 import gnu.java.security.Configuration;
-import gnu.java.security.sig.BaseSignature;
 import gnu.java.security.sig.ISignature;
 import gnu.java.security.sig.ISignatureCodec;
 import gnu.java.security.sig.SignatureFactory;
@@ -109,15 +108,17 @@ class SignatureAdapter
     this.codec = codec;
   }
 
+  @Override
   public Object clone()
   {
     return new SignatureAdapter((ISignature) adaptee.clone(), codec);
   }
 
+  @Override
   public void engineInitVerify(PublicKey publicKey) throws InvalidKeyException
   {
-    HashMap attributes = new HashMap();
-    attributes.put(BaseSignature.VERIFIER_KEY, publicKey);
+    HashMap<String,Object> attributes = new HashMap<String,Object>();
+    attributes.put(ISignature.VERIFIER_KEY, publicKey);
     try
       {
         adaptee.setupVerify(attributes);
@@ -128,10 +129,11 @@ class SignatureAdapter
       }
   }
 
+  @Override
   public void engineInitSign(PrivateKey privateKey) throws InvalidKeyException
   {
-    HashMap attributes = new HashMap();
-    attributes.put(BaseSignature.SIGNER_KEY, privateKey);
+    HashMap<String,Object> attributes = new HashMap<String,Object>();
+    attributes.put(ISignature.SIGNER_KEY, privateKey);
     try
       {
         adaptee.setupSign(attributes);
@@ -142,12 +144,13 @@ class SignatureAdapter
       }
   }
 
+  @Override
   public void engineInitSign(PrivateKey privateKey, SecureRandom random)
       throws InvalidKeyException
   {
-    HashMap attributes = new HashMap();
-    attributes.put(BaseSignature.SIGNER_KEY, privateKey);
-    attributes.put(BaseSignature.SOURCE_OF_RANDOMNESS, random);
+    HashMap<String,Object> attributes = new HashMap<String,Object>();
+    attributes.put(ISignature.SIGNER_KEY, privateKey);
+    attributes.put(ISignature.SOURCE_OF_RANDOMNESS, random);
     try
       {
         adaptee.setupSign(attributes);
@@ -158,6 +161,7 @@ class SignatureAdapter
       }
   }
 
+  @Override
   public void engineUpdate(byte b) throws SignatureException
   {
     try
@@ -170,6 +174,7 @@ class SignatureAdapter
       }
   }
 
+  @Override
   public void engineUpdate(byte[] b, int off, int len)
       throws SignatureException
   {
@@ -183,6 +188,7 @@ class SignatureAdapter
       }
   }
 
+  @Override
   public byte[] engineSign() throws SignatureException
   {
     Object signature = null;
@@ -198,6 +204,7 @@ class SignatureAdapter
     return result;
   }
 
+  @Override
   public int engineSign(byte[] outbuf, int offset, int len)
       throws SignatureException
   {
@@ -210,6 +217,7 @@ class SignatureAdapter
     return result;
   }
 
+  @Override
   public boolean engineVerify(byte[] sigBytes) throws SignatureException
   {
     if (Configuration.DEBUG)
@@ -231,18 +239,21 @@ class SignatureAdapter
   }
 
   // Deprecated. Replaced by engineSetParameter.
+  @Override
   public void engineSetParameter(String param, Object value)
       throws InvalidParameterException
   {
     throw new InvalidParameterException("deprecated");
   }
 
+  @Override
   public void engineSetParameter(AlgorithmParameterSpec params)
       throws InvalidAlgorithmParameterException
   {
   }
 
   // Deprecated
+  @Override
   public Object engineGetParameter(String param)
       throws InvalidParameterException
   {

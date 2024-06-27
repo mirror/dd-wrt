@@ -74,7 +74,7 @@ public final class Component extends Level
    * Signifies that everything should be logged. This should be used to
    * enable or disable levels only; logging code should not use it.
    */
-  public static final Component EVERYTHING = new Component ("*", 0, 11);
+  public static final Component EVERYTHING = new Component ("*", 0, 13);
 
   /**
    * Signifies that all SSL related messages should be logged. This should
@@ -86,22 +86,22 @@ public final class Component extends Level
   /**
    * Traces the progression of an SSL handshake.
    */
-  public static final Component SSL_HANDSHAKE = new Component ("SSL HANDSHAKE", 0);
+  public static final Component SSL_HANDSHAKE = new Component ("SSL_HANDSHAKE", 0);
 
   /**
    * Traces record layer messages during SSL communications.
    */
-  public static final Component SSL_RECORD_LAYER = new Component ("SSL RECORD LAYER", 1);
+  public static final Component SSL_RECORD_LAYER = new Component ("SSL_RECORD_LAYER", 1);
 
   /**
    * Trace details about the SSL key exchange.
    */
-  public static final Component SSL_KEY_EXCHANGE = new Component ("SSL KEY EXCHANGE", 2);
+  public static final Component SSL_KEY_EXCHANGE = new Component ("SSL_KEY_EXCHANGE", 2);
 
   /**
    * Trace running of delegated tasks.
    */
-  public static final Component SSL_DELEGATED_TASK = new Component ("SSL DELEGATED TASK", 3);
+  public static final Component SSL_DELEGATED_TASK = new Component ("SSL_DELEGATED_TASK", 3);
 
   /* Index 4 reserved for future use by SSL components. */
 
@@ -125,6 +125,21 @@ public final class Component extends Level
    * Trace ipp implementation.
    */
   public static final Component IPP = new Component ("IPP", 10);
+
+  /**
+   * Service loading.
+   */
+  public static final Component SERVICE_LOADING = new Component("SERVICE_LOADING", 11, 13);
+
+  /**
+   * Service loading warnings.
+   */
+  public static final Component SERVICE_LOADING_WARNING = new Component("SERVICE_LOADING_WARNING", 11);
+
+  /**
+   * Service loading verbose messages.
+   */
+  public static final Component SERVICE_LOADING_VERBOSE = new Component("SERVICE_LOADING_VERBOSE ", 12);
 
   private final int startIndex;
   private final int endIndex;

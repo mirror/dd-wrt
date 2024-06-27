@@ -1,5 +1,5 @@
 /* RipeMD128.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -114,14 +114,16 @@ public class RipeMD128
     this.h2 = md.h2;
     this.h3 = md.h3;
     this.count = md.count;
-    this.buffer = (byte[]) md.buffer.clone();
+    this.buffer = md.buffer.clone();
   }
 
+  @Override
   public Object clone()
   {
     return new RipeMD128(this);
   }
 
+  @Override
   protected void transform(byte[] in, int offset)
   {
     int A, B, C, D, Ap, Bp, Cp, Dp, T, s, i;
@@ -206,6 +208,7 @@ public class RipeMD128
     h0 = T;
   }
 
+  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -226,6 +229,7 @@ public class RipeMD128
     return result;
   }
 
+  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -236,6 +240,7 @@ public class RipeMD128
     };
   }
 
+  @Override
   protected void resetContext()
   {
     // magic RIPEMD128 initialisation constants
@@ -245,6 +250,7 @@ public class RipeMD128
     h3 = 0x10325476;
   }
 
+  @Override
   public boolean selfTest()
   {
     if (valid == null)

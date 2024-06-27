@@ -34,6 +34,13 @@ if $have_libtool ; then : ; else
 	DIE=1
 fi
 
+if [ ! -e $(aclocal --print-ac-dir)/gettext.m4 ] ; then
+	echo
+	echo "You must have gettext package and, if applicable to your"
+	echo "system, gettext-devel package installed to compile $PROJECT."
+	DIE=1
+fi
+
 if test "$DIE" -eq 1; then
 	exit 1
 fi

@@ -52,7 +52,7 @@ final class DurationType
 {
 
   static class Duration
-    implements Comparable
+    implements Comparable<Duration>
   {
     int years;
     int months;
@@ -60,6 +60,7 @@ final class DurationType
     int minutes;
     float seconds;
 
+    @Override
     public int hashCode()
     {
       int hc = years;
@@ -70,6 +71,7 @@ final class DurationType
       return hc;
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (other instanceof Duration)
@@ -84,24 +86,20 @@ final class DurationType
       return false;
     }
 
-    public int compareTo(Object other)
+    @Override
+    public int compareTo(Duration duration)
     {
-      if (other instanceof Duration)
-        {
-          Duration duration = (Duration) other;
-          if (duration.years != years)
-            return years - duration.years;
-          if (duration.months != months)
-            return months - duration.months;
-          if (duration.days != days)
-            return days - duration.days;
-          if (duration.minutes != minutes)
-            return minutes = duration.minutes;
-          if (duration.seconds == seconds)
-            return 0;
-          return (seconds < duration.seconds) ? -1 : 1;
-        }
-      return 0;
+      if (duration.years != years)
+	return years - duration.years;
+      if (duration.months != months)
+	return months - duration.months;
+      if (duration.days != days)
+	return days - duration.days;
+      if (duration.minutes != minutes)
+	return minutes = duration.minutes;
+      if (duration.seconds == seconds)
+	return 0;
+      return (seconds < duration.seconds) ? -1 : 1;
     }
 
   }
@@ -173,8 +171,7 @@ final class DurationType
 
   public Object createValue(String value, ValidationContext context) {
     boolean negative = false;
-    int days = 0, months = 0, years = 0;
-    int minutes = 0;
+    int days = 0, years = 0, minutes = 0;
     float seconds = 0.0f;
     int len = value.length();
     char expect = 'P';
@@ -232,6 +229,7 @@ final class DurationType
     duration.days = days;
     duration.minutes = minutes;
     duration.seconds = seconds;
+    duration.years = years;
     return duration;
   }
 

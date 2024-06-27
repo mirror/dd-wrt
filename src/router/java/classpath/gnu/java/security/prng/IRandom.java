@@ -1,5 +1,5 @@
 /* IRandom.java --
-   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -93,7 +93,7 @@ public interface IRandom
    * @exception IllegalArgumentException if at least one of the defined name/
    *              value pairs contains invalid data.
    */
-  void init(Map attributes);
+  void init(Map<String,Object> attributes);
 
   /**
    * Returns the next 8 bits of random data generated from this instance.

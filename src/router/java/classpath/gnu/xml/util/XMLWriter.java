@@ -1,5 +1,5 @@
 /* XMLWriter.java --
-   Copyright (C) 1999,2000,2001 Free Software Foundation, Inc.
+   Copyright (C) 1999,2000,2001, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -172,7 +172,7 @@ public class XMLWriter
     private boolean             prettyPrinting;
     private int                 column;
     private boolean             noWrap;
-    private Stack               space = new Stack ();
+    private Stack<String>       space = new Stack<String>();
 
     // this is not a hard'n'fast rule -- longer lines are OK,
     // but are to be avoided.  Here, prettyprinting is more to
@@ -932,7 +932,7 @@ public class XMLWriter
                 else if (atts != null)
                     whitespace = atts.getValue ("xml:space");
                 if (whitespace == null)
-                    whitespace = (String) space.peek ();
+                    whitespace = space.peek ();
                 space.push (whitespace);
 
                 if ("default".equals (whitespace)) {

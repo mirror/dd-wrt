@@ -1,5 +1,5 @@
 /* AuthPermission.java -- permissions related to authentication.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -121,6 +121,8 @@ import java.security.BasicPermission;
  */
 public final class AuthPermission extends BasicPermission
 {
+
+  private static final long serialVersionUID = 5806031445061587174L;
 
   /**
    * Creates a new authentication permission for the given target name.

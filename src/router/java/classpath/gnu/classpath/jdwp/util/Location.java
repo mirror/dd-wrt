@@ -1,5 +1,5 @@
 /* Location.java -- class to read/write JDWP locations
-   Copyright (C) 2005, 2006, 2007 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -80,10 +80,10 @@ public class Location
   public Location(ByteBuffer bb)
     throws IOException, JdwpException
   {
-    byte tag = bb.get();
+    bb.get();
     ClassReferenceTypeId classId =
       (ClassReferenceTypeId) VMIdManager.getDefault().readReferenceTypeId(bb);
-    Class klass = classId.getType();
+    Class<?> klass = classId.getType();
     method = VMMethod.readId(klass, bb);
     index = bb.getLong();
   }

@@ -1,5 +1,5 @@
 /* Properties.java -- a set of persistent properties
-   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -439,12 +439,12 @@ label   = Name:\\u0020</pre>
       writer.println("#" + header);
     writer.println ("#" + Calendar.getInstance ().getTime ());
 
-    Iterator iter = entrySet ().iterator ();
+    Iterator<Map.Entry<Object,Object>> iter = entrySet().iterator();
     int i = size ();
     CPStringBuilder s = new CPStringBuilder (); // Reuse the same buffer.
     while (--i >= 0)
       {
-        Map.Entry entry = (Map.Entry) iter.next ();
+        Map.Entry<Object,Object> entry = iter.next ();
         formatForOutput ((String) entry.getKey (), s, true);
         s.append ('=');
         formatForOutput ((String) entry.getValue (), s, false);
@@ -516,7 +516,7 @@ label   = Name:\\u0020</pre>
     // for that. This prevents modifications from ruining the enumeration,
     // as well as ignoring duplicates.
     Properties prop = this;
-    Set s = new HashSet();
+    Set<Object> s = new HashSet<Object>();
     // Eliminate tail recursion.
     do
       {
@@ -525,6 +525,42 @@ label   = Name:\\u0020</pre>
       }
     while (prop != null);
     return Collections.enumeration(s);
+  }
+
+  /**
+   * <p>
+   * Returns the set of keys in this property list, including keys
+   * from the default properties which are distinct from those in the
+   * main property list. Only entries where both the key and its value
+   * are {@code String} objects are returned; any other entries are
+   * omitted.
+   * </p>
+   * <p>
+   * The returned set is not backed by this object, so any modifications
+   * to it will <emph>not</emph> be reflected in this object.
+   * </p>
+   *
+   * @return all keys from the main and default property lists which are
+   *         {@code} String objects.
+   * @since 1.6
+   */
+  public Set<String> stringPropertyNames()
+  {
+    Properties prop = this;
+    Set<String> s = new HashSet<String>();
+    do
+      {
+	for (Map.Entry<Object,Object> entry : entrySet())
+	  {
+	    Object key = entry.getKey();
+	    if (key instanceof String &&
+		entry.getValue() instanceof String)
+	      s.add((String) key);
+	  }
+        prop = prop.defaults;
+      }
+    while (prop != null);
+    return s;
   }
 
   /**

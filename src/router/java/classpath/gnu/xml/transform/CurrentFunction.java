@@ -1,5 +1,5 @@
 /* CurrentFunction.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -63,6 +63,7 @@ final class CurrentFunction
     this.stylesheet = stylesheet;
   }
 
+  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -71,7 +72,7 @@ final class CurrentFunction
     return Collections.EMPTY_SET;
   }
 
-  public void setArguments(List args)
+  public void setArguments(List<Expr> args)
   {
   }
 

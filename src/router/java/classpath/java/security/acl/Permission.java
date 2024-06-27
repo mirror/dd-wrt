@@ -1,5 +1,5 @@
 /* Permission.java -- Information about an ACL permission
-   Copyright (C) 1998 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -56,6 +56,7 @@ public interface Permission
    *
    * @return <code>true</code> if the specified permission is the same as this one, <code>false</code> otherwise
    */
+  @Override
   boolean equals (Object perm);
 
   /**
@@ -63,5 +64,6 @@ public interface Permission
    *
    * @return A <code>String</code> representing this permission.
    */
+  @Override
   String toString();
 }

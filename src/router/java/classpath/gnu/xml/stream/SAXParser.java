@@ -1,5 +1,5 @@
 /* SAXParser.java --
-   Copyright (C) 2005, 2006, 2007  Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006, 2007, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -37,6 +37,8 @@ exception statement from your version. */
 
 package gnu.xml.stream;
 
+import gnu.xml.stream.XMLParser.AttributeDecl;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Reader;
@@ -46,7 +48,6 @@ import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
-import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLReporter;
 import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamConstants;
@@ -132,28 +133,33 @@ public class SAXParser
 
   // -- SAXParser --
 
+  @Override
   public Parser getParser()
     throws SAXException
   {
     return null;
   }
 
+  @Override
   public XMLReader getXMLReader()
     throws SAXException
   {
     return this;
   }
 
+  @Override
   public boolean isNamespaceAware()
   {
     return namespaceAware;
   }
 
+  @Override
   public boolean isValidating()
   {
     return validating;
   }
 
+  @Override
   public void setProperty(String name, Object value)
     throws SAXNotRecognizedException, SAXNotSupportedException
   {
@@ -192,6 +198,7 @@ public class SAXParser
       throw new SAXNotSupportedException(name);
   }
 
+  @Override
   public Object getProperty(String name)
     throws SAXNotRecognizedException, SAXNotSupportedException
   {
@@ -236,11 +243,13 @@ public class SAXParser
     throw new SAXNotRecognizedException(name);
   }
 
+  @Override
   public boolean isXIncludeAware()
   {
     return xIncludeAware;
   }
 
+  @Override
   public void reset()
   {
     parser = null;
@@ -251,6 +260,7 @@ public class SAXParser
 
   // -- XMLReader --
 
+  @Override
   public boolean getFeature(String name)
     throws SAXNotRecognizedException, SAXNotSupportedException
   {
@@ -260,52 +270,62 @@ public class SAXParser
     throw new SAXNotSupportedException(name);
   }
 
+  @Override
   public void setFeature(String name, boolean value)
     throws SAXNotRecognizedException, SAXNotSupportedException
   {
     setProperty(name, value ? Boolean.TRUE : Boolean.FALSE);
   }
 
+  @Override
   public void setEntityResolver(EntityResolver resolver)
   {
     entityResolver = resolver;
   }
 
+  @Override
   public EntityResolver getEntityResolver()
   {
     return entityResolver;
   }
 
+  @Override
   public void setDTDHandler(DTDHandler handler)
   {
     dtdHandler = handler;
   }
 
+  @Override
   public DTDHandler getDTDHandler()
   {
     return dtdHandler;
   }
 
+  @Override
   public void setContentHandler(ContentHandler handler)
   {
     contentHandler = handler;
   }
 
+  @Override
   public ContentHandler getContentHandler()
   {
     return contentHandler;
   }
 
+  @Override
   public void setErrorHandler(ErrorHandler handler)
   {
     errorHandler = handler;
   }
 
+  @Override
   public ErrorHandler getErrorHandler()
   {
     return errorHandler;
   }
 
+  @Override
   public synchronized void parse(InputSource input)
     throws IOException, SAXException
   {
@@ -525,9 +545,9 @@ public class SAXParser
                     String systemId2 = doctype.systemId;
                     lexicalHandler.startDTD(rootName, publicId, systemId2);
                   }
-                for (Iterator i = doctype.entryIterator(); i.hasNext(); )
+                for (Iterator<String> i = doctype.entryIterator(); i.hasNext(); )
                   {
-                    String entry = (String) i.next();
+                    String entry = i.next();
                     char c = entry.charAt(0);
                     String name = entry.substring(1);
                     if ('E' == c)
@@ -545,13 +565,12 @@ public class SAXParser
                         // Attlist decl
                         if (declHandler != null)
                           {
-                            for (Iterator j = doctype.attlistIterator(name);
-                                 j.hasNext(); )
+                            for (Iterator<Map.Entry<String,AttributeDecl>> j
+				   = doctype.attlistIterator(name); j.hasNext(); )
                               {
-                                Map.Entry att = (Map.Entry) j.next();
-                                String aname = (String) att.getKey();
-                                XMLParser.AttributeDecl decl =
-                                  (XMLParser.AttributeDecl) att.getValue();
+                                Map.Entry<String,AttributeDecl> att = j.next();
+                                String aname = att.getKey();
+                                AttributeDecl decl = att.getValue();
                                 String type = decl.type;
                                 String value = decl.value;
                                 String mode = null;
@@ -566,6 +585,9 @@ public class SAXParser
                                   case XMLParser.ATTRIBUTE_DEFAULT_IMPLIED:
                                     mode = "#IMPLIED";
                                     break;
+				  default:
+				    throw new SAXNotRecognizedException("Unknown declaration type:" +
+									decl.valueType);
                                   }
                                 declHandler.attributeDecl(name, aname,
                                                           type, mode, value);
@@ -650,10 +672,16 @@ public class SAXParser
                   }
                 if (lexicalHandler != null)
                   lexicalHandler.endDTD();
+		break;
+	      default:
+		Location loc = reader.getLocation();
+		throw new SAXParseException("Unhandled parser event: " + event,
+					    loc.getPublicId(), loc.getSystemId(),
+					    loc.getLineNumber(), loc.getColumnNumber());
               }
           }
         reset();
-        if (opened)
+        if (in != null && opened)
           in.close();
       }
     catch (Exception e)
@@ -674,42 +702,40 @@ public class SAXParser
             // Ignored, we will rethrow the original exception.
           }
         reset();
-        if (opened)
+        if (in != null && opened)
           in.close();
         if (e instanceof SAXException)
           throw (SAXException) e;
         if (e instanceof IOException)
           throw (IOException) e;
-        else
-          throw e2;
+	throw e2;
       }
   }
 
   /**
    * Indicates whether the specified characters are ignorable whitespace.
    */
-  private boolean isIgnorableWhitespace(XMLParser reader, char[] b,
-                                        boolean testCharacters)
-    throws XMLStreamException
+  private boolean isIgnorableWhitespace(XMLParser r, char[] b,
+					boolean testCharacters)
   {
-    XMLParser.Doctype doctype = reader.doctype;
+    XMLParser.Doctype doctype = r.doctype;
     if (doctype == null)
       return false;
-    String currentElement = reader.getCurrentElement();
+    String currentElement = r.getCurrentElement();
     // check for xml:space
-    int ac = reader.getAttributeCount();
+    int ac = r.getAttributeCount();
     for (int i = 0; i < ac; i++)
       {
-        QName aname = reader.getAttributeName(i);
+        QName aname = r.getAttributeName(i);
         if ("space".equals(aname.getLocalPart()) &&
             XMLConstants.XML_NS_URI.equals(aname.getNamespaceURI()))
           {
-            if ("preserve".equals(reader.getAttributeValue(i)))
+            if ("preserve".equals(r.getAttributeValue(i)))
               return false;
           }
       }
     XMLParser.ContentModel model = doctype.getElementModel(currentElement);
-    if (model == null || model.type != XMLParser.ContentModel.ELEMENT)
+    if (model == null || model.type != XMLParser.ContentModel.Type.ELEMENT)
       return false;
     if (model.external && xmlStandalone)
       return false;
@@ -728,6 +754,7 @@ public class SAXParser
     return white;
   }
 
+  @Override
   public void parse(String systemId)
     throws IOException, SAXException
   {
@@ -736,6 +763,7 @@ public class SAXParser
 
   // -- Attributes2 --
 
+  @Override
   public int getIndex(String qName)
   {
     int len = reader.getAttributeCount();
@@ -751,6 +779,7 @@ public class SAXParser
     return -1;
   }
 
+  @Override
   public int getIndex(String uri, String localName)
   {
     int len = reader.getAttributeCount();
@@ -769,16 +798,19 @@ public class SAXParser
     return -1;
   }
 
+  @Override
   public int getLength()
   {
     return reader.getAttributeCount();
   }
 
+  @Override
   public String getLocalName(int index)
   {
     return reader.getAttributeLocalName(index);
   }
 
+  @Override
   public String getQName(int index)
   {
     QName q = reader.getAttributeName(index);
@@ -787,6 +819,7 @@ public class SAXParser
     return ("".equals(prefix)) ? localName : prefix + ":" + localName;
   }
 
+  @Override
   public String getType(int index)
   {
     String ret = reader.getAttributeType(index);
@@ -794,69 +827,81 @@ public class SAXParser
     return ("ENUMERATION".equals(ret)) ? "NMTOKEN" : ret;
   }
 
+  @Override
   public String getType(String qName)
   {
     int index = getIndex(qName);
     return (index == -1) ? null : getType(index);
   }
 
+  @Override
   public String getType(String uri, String localName)
   {
     int index = getIndex(uri, localName);
     return (index == -1) ? null : getType(index);
   }
 
+  @Override
   public String getURI(int index)
   {
     String ret = reader.getAttributeNamespace(index);
     return (ret == null) ? "" : ret;
   }
 
+  @Override
   public String getValue(int index)
   {
     return reader.getAttributeValue(index);
   }
 
+  @Override
   public String getValue(String qName)
   {
     int index = getIndex(qName);
     return (index == -1) ? null : getValue(index);
   }
 
+  @Override
   public String getValue(String uri, String localName)
   {
     int index = getIndex(uri, localName);
     return (index == -1) ? null : getValue(index);
   }
 
+  @Override
   public boolean isDeclared(int index)
   {
     return parser.isAttributeDeclared(index);
   }
 
+  @Override
   public boolean isDeclared(String qName)
   {
     int index = getIndex(qName);
     return (index == -1) ? false : isDeclared(index);
   }
 
+  @Override
   public boolean isDeclared(String uri, String localName)
   {
     int index = getIndex(uri, localName);
     return (index == -1) ? false : isDeclared(index);
   }
 
+  @Override
   public boolean isSpecified(int index)
   {
     return reader.isAttributeSpecified(index);
   }
 
+  @Override
   public boolean isSpecified(String qName)
   {
     int index = getIndex(qName);
     return (index == -1) ? false : isSpecified(index);
   }
 
+  @Override
   public boolean isSpecified(String uri, String localName)
   {
     int index = getIndex(uri, localName);
@@ -864,36 +909,42 @@ public class SAXParser
   }
 
   // -- Locator2 --
-
+  
+  @Override
   public int getColumnNumber()
   {
     Location l = reader.getLocation();
     return l.getColumnNumber();
   }
 
+  @Override
   public int getLineNumber()
   {
     Location l = reader.getLocation();
     return l.getLineNumber();
   }
 
+  @Override
   public String getPublicId()
   {
     Location l = reader.getLocation();
     return l.getPublicId();
   }
 
+  @Override
   public String getSystemId()
   {
     Location l = reader.getLocation();
     return l.getSystemId();
   }
 
+  @Override
   public String getEncoding()
   {
     return encoding;
   }
 
+  @Override
   public String getXMLVersion()
   {
     return xmlVersion;
@@ -901,8 +952,9 @@ public class SAXParser
 
   // -- XMLResolver --
 
+  @Override
   public Object resolveEntity(String publicId, String systemId,
-                              String baseURI, String namespace)
+                              String base, String namespace)
     throws XMLStreamException
   {
     if (entityResolver != null)
@@ -939,22 +991,9 @@ public class SAXParser
     return null;
   }
 
-  public XMLEventReader resolveAsXMLEventReader(String uri)
-    throws XMLStreamException
-  {
-    // unused
-    return null;
-  }
-
-  public XMLStreamReader resolveAsXMLStreamReader(String uri)
-    throws XMLStreamException
-  {
-    // unused
-    return null;
-  }
-
   // -- XMLReporter --
 
+  @Override
   public void report(String message, String errorType,
                      Object relatedInformation, Location location)
     throws XMLStreamException
@@ -1014,7 +1053,7 @@ public class SAXParser
         ContentHandler handler = null;
         if (callbackClass != null)
           {
-            Class t = Class.forName(callbackClass);
+            Class<?> t = Class.forName(callbackClass);
             handler = (ContentHandler) t.newInstance();
           }
         else

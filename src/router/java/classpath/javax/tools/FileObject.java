@@ -1,4 +1,4 @@
-/* FileObject.java --
+/* FileObject.java -- File object abstraction.
    Copyright (C) 2008  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.

@@ -1,5 +1,5 @@
 /* ConfigFileParser.java -- JAAS Login Configuration default syntax parser
-   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -95,7 +95,8 @@ public final class ConfigFileParser
                 Logger.getLogger(ConfigFileParser.class.getName()) : null;
 
   private ConfigFileTokenizer cft;
-  private final Map map = new HashMap();
+  private final Map<String,List<AppConfigurationEntry>> map =
+    new HashMap<String,List<AppConfigurationEntry>>();
 
   // default 0-arguments constructor
 
@@ -106,7 +107,7 @@ public final class ConfigFileParser
    * encountered, for that application name in the just parsed configuration
    * file.
    */
-  public Map getLoginModulesMap()
+  public Map<String,List<AppConfigurationEntry>> getLoginModulesMap()
   {
     return map;
   }
@@ -129,7 +130,7 @@ public final class ConfigFileParser
       }
   }
 
-  private void initParser(Reader r) throws IOException
+  private void initParser(Reader r)
   {
     map.clear();
 
@@ -159,7 +160,7 @@ public final class ConfigFileParser
     if (cft.nextToken() != '{')
       abort("Missing '{' after APP_NAME_OR_OTHER");
 
-    List lmis = new ArrayList();
+    List<AppConfigurationEntry> lmis = new ArrayList<AppConfigurationEntry>();
     while (parseACE(lmis))
       {
         /* do nothing */
@@ -173,10 +174,10 @@ public final class ConfigFileParser
     if (c != ';')
       abort("Was expecting ';' but found " + (char) c);
 
-    List listOfACEs = (List) map.get(appName);
+    List<AppConfigurationEntry> listOfACEs = map.get(appName);
     if (listOfACEs == null)
       {
-        listOfACEs = new ArrayList();
+        listOfACEs = new ArrayList<AppConfigurationEntry>();
         map.put(appName, listOfACEs);
       }
     listOfACEs.addAll(lmis);
@@ -188,7 +189,8 @@ public final class ConfigFileParser
    * Returns <code>false</code> otherwise.
    * @throws IOException if an exception occurs while parsing the input.
    */
-  private boolean parseACE(List listOfACEs) throws IOException
+  private boolean parseACE(List<AppConfigurationEntry> listOfACEs)
+    throws IOException
   {
     int c = cft.nextToken();
     if (c != ConfigFileTokenizer.TT_WORD)
@@ -219,7 +221,7 @@ public final class ConfigFileParser
     else
       abort("Unknown Flag: " + flag);
 
-    Map options = new HashMap();
+    Map<String,String> options = new HashMap<String,String>();
     String paramName, paramValue;
     c = cft.nextToken();
     while (c != ';')
@@ -302,7 +304,7 @@ public final class ConfigFileParser
    * the string is not a known System property name, then the complete sequence
    * (incl. the ${} characters are passed AS IS.
    */
-  private String expandParamValue(String s)
+  private static String expandParamValue(String s)
   {
     String result = s;
     try

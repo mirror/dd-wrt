@@ -1,6 +1,6 @@
 /* ClassPrepareEvent.java -- An event specifying that a class has been
    prepared by the virtual machine
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -65,7 +65,7 @@ public class ClassPrepareEvent
   private Thread _thread;
 
   // The class that was prepared
-  private Class _class;
+  private Class<?> _class;
 
   // Prepare flags
   private int _status;
@@ -101,7 +101,7 @@ public class ClassPrepareEvent
    * @param clazz   class which was prepared
    * @param flags   prepare status flags
    */
-  public ClassPrepareEvent (Thread thread, Class clazz, int flags)
+  public ClassPrepareEvent (Thread thread, Class<?> clazz, int flags)
   {
     super (JdwpConstants.EventKind.CLASS_PREPARE);
     _thread = thread;

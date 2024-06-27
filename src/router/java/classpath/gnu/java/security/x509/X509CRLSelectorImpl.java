@@ -1,5 +1,5 @@
 /* X509CRLSelectorImpl.java -- implementation of an X509CRLSelector.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -48,7 +48,6 @@ import java.security.cert.X509CRL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
@@ -63,14 +62,14 @@ public class X509CRLSelectorImpl implements CRLSelector
   // Fields.
   // -------------------------------------------------------------------------
 
-  private Set issuerNames;
+  private Set<X500DistinguishedName> issuerNames;
 
   // Constructor.
   // -------------------------------------------------------------------------
 
   public X509CRLSelectorImpl()
   {
-    issuerNames = new HashSet();
+    issuerNames = new HashSet<X500DistinguishedName>();
   }
 
   // Instance methods.
@@ -81,7 +80,7 @@ public class X509CRLSelectorImpl implements CRLSelector
     issuerNames.add(new X500DistinguishedName(issuerName));
   }
 
-  public void addIssuerName(String issuerName)
+  public void addIssuerName(String issuerName) throws IOException
   {
     issuerNames.add(new X500DistinguishedName(issuerName));
   }
@@ -89,18 +88,19 @@ public class X509CRLSelectorImpl implements CRLSelector
   public void addIssuerName(Principal issuerName) throws IOException
   {
     if (issuerName instanceof X500DistinguishedName)
-      issuerNames.add(issuerName);
+      issuerNames.add((X500DistinguishedName) issuerName);
     else if (issuerName instanceof X500Principal)
       issuerNames.add(new X500DistinguishedName(((X500Principal) issuerName).getEncoded()));
     else
       issuerNames.add(new X500DistinguishedName(issuerName.getName()));
   }
 
-  public Collection getIssuerNames()
+  public Collection<X500DistinguishedName> getIssuerNames()
   {
     return Collections.unmodifiableSet(issuerNames);
   }
 
+  @Override
   public Object clone()
   {
     X509CRLSelectorImpl copy = new X509CRLSelectorImpl();
@@ -108,6 +108,7 @@ public class X509CRLSelectorImpl implements CRLSelector
     return copy;
   }
 
+  @Override
   public boolean match(CRL crl)
   {
     if (!(crl instanceof X509CRL))
@@ -122,9 +123,8 @@ public class X509CRLSelectorImpl implements CRLSelector
           thisName = new X500DistinguishedName(((X500Principal) p).getEncoded());
         else
           thisName = new X500DistinguishedName(p.getName());
-        for (Iterator it = issuerNames.iterator(); it.hasNext(); )
+	for (X500DistinguishedName name : issuerNames)
           {
-            X500DistinguishedName name = (X500DistinguishedName) it.next();
             if (thisName.equals(name))
               return true;
           }

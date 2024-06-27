@@ -53,16 +53,18 @@ final class TimeType
 {
 
   static class Time
-    implements Comparable
+    implements Comparable<Time>
   {
     int minutes;
     float seconds;
 
+    @Override
     public int hashCode()
     {
       return minutes * 31 + new Float(seconds).hashCode();
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (other instanceof Time)
@@ -73,18 +75,14 @@ final class TimeType
       return false;
     }
 
-    public int compareTo(Object other)
+    @Override
+    public int compareTo(Time time)
     {
-      if (other instanceof Time)
-        {
-          Time time = (Time) other;
-          if (time.minutes != minutes)
-            return minutes - time.minutes;
-          if (time.seconds == seconds)
-            return 0;
-          return (seconds < time.seconds) ? -1 : 1;
-        }
-      return 0;
+      if (time.minutes != minutes)
+	return minutes - time.minutes;
+      if (time.seconds == seconds)
+	return 0;
+      return (seconds < time.seconds) ? -1 : 1;
     }
 
   }

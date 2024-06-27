@@ -1,5 +1,5 @@
 /* X509CRL.java --- X.509 Certificate Revocation List
-   Copyright (C) 1999, 2004  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2004, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -119,6 +119,7 @@ public abstract class X509CRL extends CRL implements X509Extension
 
      @return true if equal, false otherwise
   */
+  @Override
   public boolean equals(Object other)
   {
     if( other instanceof X509CRL ) {
@@ -148,6 +149,7 @@ public abstract class X509CRL extends CRL implements X509Extension
 
      @return A hash code of this class
   */
+  @Override
   public int hashCode()
   {
     return super.hashCode();
@@ -390,6 +392,7 @@ public abstract class X509CRL extends CRL implements X509Extension
    * @return The issuer's X.500 distinguished name.
    * @since JDK 1.4
    */
+  @SuppressWarnings("static-method")
   public X500Principal getIssuerX500Principal()
   {
     throw new UnsupportedOperationException();

@@ -1,5 +1,5 @@
 /* FortunaImpl.java -- Fortuna SecureRandom adapter.
-   Copyright (C) 2006  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -64,7 +64,7 @@ public final class FortunaImpl
       {
         if (virgin)
           {
-            adaptee.init (Collections.singletonMap (Fortuna.SEED, seed));
+            adaptee.init (Collections.singletonMap (Fortuna.SEED, (Object) seed));
             virgin = false;
           }
         else

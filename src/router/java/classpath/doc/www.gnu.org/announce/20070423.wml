@@ -1,0 +1,190 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.95 Announcement (2007-04-23)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.95 "Take Five"</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.95 "Take Five"
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example the GCC (gcj) and Kaffe projects will use the
+developer snapshots as a base for future versions. More projects based
+on GNU Classpath:
+<createlink url="http://www.gnu.org/software/classpath/stories.html">
+<p>
+<p>
+This release adds some serious jazz (more extensive list below):
+<blockquot>
+  Full merge of 1.5 generics work. Bootstrappable with OpenJDK javac
+  compiler. URLConnection timeout support. TimeZone can use platform
+  zoneinfo file when available. The Collection classes, lang.management
+  and util.spi have been updated to 1.6. Addition of 1.6 ServiceLoader.
+  Speedup for cairo and freetype Graphics2D support. The ASM library
+  is now included. Better detection of browser plugin mechanisms for
+  gcjwebplugin applet support in mozilla, iceweasel and firefox.
+</blockquote>
+Screenshots of applications (eclipse, jedit, jfreechart, "jgecko",
+statcvs and more) working out of the box with GNU Classpath can be
+found at <createlink url="http://developer.classpath.org/screenshots/">
+<p>
+This release switches fully towards the 1.5 generics work that we
+previously released separately as classpath-generics. All this work is
+now fully integrated in the main release and various runtimes (gcj,
+cacao, jamvm, ikvm, etc) have been extended to take advantage of the
+new generics, annotations and enumeration support in the core
+library. From now on we intend to no longer release both a
+non-generics and a generics version. But if there is demand we might
+consider resurrecting the non-generics 1.4 branch with selected
+bug-fixes (depending on having a branch maintainer). Work is on the
+way to also add the new 1.6 additions, a start for selected packages
+has been made in this release.
+<p>
+On November 13 2006 (now known as Java Liberation Day) Sun decided to
+start releasing all its Java ME, SE and EE implementations under the
+GPL.  http://www.sun.com/software/opensource/java/ For the last decade
+the GNU Classpath community has worked together with various other
+free software projects to help people avoid the so called "Java Trap"
+<createlink url="http://www.gnu.org/philosophy/java-trap.html">
+As the FSF press release
+welcoming the Sun announcement said: 'Now, Sun has begun disarming the
+"Java Trap", turning it from a pitfall into a valuable foundation for
+future free software development.'
+<createlink url="http://www.fsf.org/news/fsf-welcomes-gpl-java.html">
+<p>
+This release supports compiling and running the GPL OpenJDK javac
+compiler using GNU Classpath based runtimes and compilers and to
+compile the GNU Classpath core libraries, tools and examples with the
+OpenJDK javac compiler itself. Making it a full bootstrap compiler for
+GNU Classpath and related projects. We hope to extend support and work
+together with the OpenJDK community over time.
+<p>
+The GNU Classpath developers site
+<createlink url="http://developer.classpath.org/">
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.
+<p>
+For each snapshot release generated documentation is provided through
+the GNU Classpath Tools gjdoc project.  A documentation generation
+framework for java source files used by the GNU project. Full
+documentation on the currently implementated packages and classes can
+be found at: <createlink url="http://developer.classpath.org/doc/">
+<p>
+Since gjdoc does not yet fully support all the new 1.5 language
+additions used in this version of GNU Classpath the documentation has
+also been generated using the GPL project sinjdoc which doesn't
+provide all the features gjdoc has (-linksource, -licensetext,
+-validhtml, @Link support in comments in particular) but has a better
+1.5 language parser: <createlink url="http://developer.classpath.org/sinjdoc/">
+<p>
+We are looking into how to extend the documentation experience based
+on these two tools in the future. Please contact the mailinglist if
+you like to help with this effort.
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.95 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/"> or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html">
+<p>
+<pre>
+GNU Classpath 0.95 can be downloaded from
+ftp://ftp.gnu.org/pub/gnu/classpath/
+or one of the ftp.gnu.org mirrors
+http://www.gnu.org/order/ftp.html
+
+File: classpath-0.95.tar.gz
+MD5sum: 08638bb9221460cc311a1c5508083ed8
+SHA1sum: 9a3b276853a07ecc8753217a6db24afffab2cb2c
+
+New in release 0.95 (Apr 23, 2007)
+(See the ChangeLog file for a full list of changes.)
+
+* Full merge of 1.5 generics work.
+* Added 1.6 java.util.ServiceLoader support.
+* The ASM library is now included.  A separate copy is no longer
+  needed.  gjavah works out of the box now.
+* The setReadTimeout and getReadTimeout methods have been added to
+  java.net.URLConnection.  They are now fully implemented for http URLs.
+* The java.lang.management implementation now includes the new features
+  added in 1.6
+* java.util.TimeZone now reads time zone information from the system
+  zoneinfo files (see also runtime interface changes below).
+* The collection classes have been updated to support all the 1.6
+  additions.
+* java.util.spi 1.6 package has been added and is used in java.text.
+* Bootstrappable with OpenJDK javac compiler
+  (use configure --with-javac).
+* Large speedups (and locking behaviour updated) in Graphics2D cairo
+  and freetype support.
+* Better detection of browser plugin mechanism for mozilla, iceweasel,
+  firefox on various platforms.
+* Inclusion of generic javadoc classes in tools.zip to support more
+  javadoc processing tools.
+* Added documentation for command lines options for the included GNU
+  Classpath Tools gjar, gjavah, gnative2ascii, gorbd, grmid,
+  grmiregistry, gserialver and gtnameserv.
+
+Runtime interface changes:
+
+* gnu.java.lang.management.VMThreadMXBeanImpl has gained three new
+  optional native methods to allow the 1.6 version of the threading
+  bean to be supported.  One (getMonitorInfo) fills in information
+  about object monitor locks held by a thread and is only required
+  if the monitoring of object monitor locks is supported by the VM.
+  The other two (findDeadlockedThreads and getLockInfo) are related
+  to ownable synchronizers (part of the java.util.concurrent suite)
+  and only required if monitoring of locks relating to these is
+  supported by the VM.
+* java.util.VMTimeZone and java.util.TimeZone have been refactored
+  to simplify the reference implementation.  VMTimeZone.readtzFile()
+  and VMTimeZone.skipFully() have been removed, and a new method
+  VMTimeZone.readSysconfigClockFile() has been introduced.
+* VMs need to set the system property "gnu.java.util.zoneinfo.dir"
+  to point to the directory where zoneinfo files live.  In libgcj
+  this is set to the value of the TZDATA environment variable, or
+  "/usr/share/zoneinfo" if this is not set.
+* VMFile has been extended to support new 1.6 methods (canExecute,
+  setReadable, setWritable, setExecutable).
+
+The following people helped with this release:
+
+Andreas Tobler, Andrew Haley, Andrew John Hughes, Cameron McCormack,
+Casey Marshall, Chris Burdess, Christian Thalinger, Dalibor Topic,
+David Daney, Edwin Steiner, Francis Kung, Gary Benson, Ito Kazumitsu,
+Jakub Jelinek, Jeroen Frijters, Keith Seitz, Kyle Galloway, Marco
+Trudel, Mario Torre, Mark Wielaard, Matthias Klose, Petteri Raty,
+Rafael Teixeira, Raif S. Naffah, Roman Kennke, Stepan Kasal, Sven de
+Marothy, Tania Bento, Thomas Fitzsimmons and Tom Tromey
+
+We would also like to thank the numerous bug reporters and testers!
+</pre>
+</boxitem>
+</box>

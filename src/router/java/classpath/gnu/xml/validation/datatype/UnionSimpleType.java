@@ -56,11 +56,11 @@ public class UnionSimpleType
   /**
    * The member types in this union.
    */
-  public final List memberTypes;
+  public final List<SimpleType> memberTypes;
 
-  public UnionSimpleType(QName name, Set facets,
+  public UnionSimpleType(QName name, Set<Facet> facets,
                          int fundamentalFacets, SimpleType baseType,
-                         Annotation annotation, List memberTypes)
+                         Annotation annotation, List<SimpleType> memberTypes)
   {
     super(name, UNION, facets, fundamentalFacets, baseType, annotation);
     this.memberTypes = memberTypes;
@@ -70,9 +70,9 @@ public class UnionSimpleType
     throws DatatypeException
   {
     super.checkValid(value, context);
-    for (Iterator i = memberTypes.iterator(); i.hasNext(); )
+    for (Iterator<SimpleType> i = memberTypes.iterator(); i.hasNext(); )
       {
-        SimpleType type = (SimpleType) i.next();
+        SimpleType type = i.next();
         if (type.isValid(value, context))
           return;
       }

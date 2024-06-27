@@ -1,0 +1,13 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.96.1 Announcement (2007-10-16)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.96.1 "Staying Alive"</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.96.1 "Staying Alive",
+a minor bug fix release to solve some build issues.
+</boxitem>
+</box>

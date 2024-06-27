@@ -1,5 +1,5 @@
 /* RealmChoiceCallback.java --
-   Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -48,6 +48,8 @@ import javax.security.auth.callback.ChoiceCallback;
  */
 public class RealmChoiceCallback extends ChoiceCallback
 {
+
+  private static final long serialVersionUID = -8588141348846281332L;
 
   /**
    * Constructs a <code>RealmChoiceCallback</code> with a prompt, a list of

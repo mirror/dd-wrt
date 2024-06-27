@@ -8,7 +8,7 @@
 #define __IEEE_LITTLE_ENDIAN
 #endif
 
-#if defined(__arm__) || defined(__aarch64__) || defined(__thumb__)
+#if defined(__arm__) || defined(__thumb__)
 /* ARM traditionally used big-endian words; and within those words the
    byte ordering was big or little endian depending upon the target.  
    Modern floating-point formats are naturally ordered; in this case

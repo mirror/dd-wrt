@@ -1,5 +1,5 @@
 /* BERReader.java -- basic encoding rules (BER) reader.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -73,6 +73,7 @@ public class BERReader extends DERReader implements BER
     super(in);
   }
 
+  @Override
   public DERValue read() throws IOException
   {
     in.mark(2);
@@ -86,11 +87,8 @@ public class BERReader extends DERReader implements BER
           return END_OF_SEQUENCE;
         return new BERValue(tag, CONSTRUCTED_VALUE, new byte[] { (byte) tag, 0 });
       }
-    else
-      {
-        in.reset();
-        return super.read();
-      }
+    in.reset();
+    return super.read();
   }
 
   public int peek() throws IOException

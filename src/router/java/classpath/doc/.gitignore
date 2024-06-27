@@ -1,0 +1,15 @@
+Makefile
+Makefile.in
+*.info
+*.aux
+*.cp
+*.dvi
+*.fn
+*.ky
+*.log
+*.pg
+*.toc
+*.tp
+*.vr
+*.1
+texinfo.tex

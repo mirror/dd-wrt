@@ -1,5 +1,5 @@
 /* MD4.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -105,14 +105,16 @@ public class MD4
     this.c = that.c;
     this.d = that.d;
     this.count = that.count;
-    this.buffer = (byte[]) that.buffer.clone();
+    this.buffer = that.buffer.clone();
   }
-
+  
+  @Override
   public Object clone()
   {
     return new MD4(this);
   }
 
+  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -122,6 +124,7 @@ public class MD4
         (byte) d, (byte)(d >>> 8), (byte)(d >>> 16), (byte)(d >>> 24) };
   }
 
+  @Override
   protected void resetContext()
   {
     a = A;
@@ -130,16 +133,18 @@ public class MD4
     d = D;
   }
 
+  @Override
   public boolean selfTest()
   {
     if (valid == null)
       {
-        String d = Util.toString(new MD4().digest());
-        valid = Boolean.valueOf(DIGEST0.equals(d));
+        String digest = Util.toString(new MD4().digest());
+        valid = Boolean.valueOf(DIGEST0.equals(digest));
       }
     return valid.booleanValue();
   }
 
+  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_LENGTH);
@@ -158,6 +163,7 @@ public class MD4
     return pad;
   }
 
+  @Override
   protected void transform(byte[] in, int i)
   {
     int X0 = (in[i++] & 0xFF)

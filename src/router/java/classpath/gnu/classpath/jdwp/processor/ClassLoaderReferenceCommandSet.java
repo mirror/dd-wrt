@@ -1,6 +1,6 @@
 /* ClassLoaderReferenceCommandSet.java -- class to implement the
    ClassLoaderReference Command Set
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -95,11 +95,13 @@ public class ClassLoaderReferenceCommandSet
   {
     ObjectId oId = idMan.readObjectId(bb);
     ClassLoader cl = (ClassLoader) oId.getObject();
-    ArrayList loadRequests = VMVirtualMachine.getLoadRequests(cl);
+    // VMWARN: Suppress warning until VM layer is upgraded to generics
+    @SuppressWarnings("unchecked")
+      ArrayList<Class<?>> loadRequests = VMVirtualMachine.getLoadRequests(cl);
     os.writeInt(loadRequests.size());
-    for (Iterator iter = loadRequests.iterator(); iter.hasNext();)
+    for (Iterator<Class<?>> iter = loadRequests.iterator(); iter.hasNext();)
       {
-        Class clazz = (Class)iter.next();
+        Class<?> clazz = iter.next();
         ReferenceTypeId refId = idMan.getReferenceTypeId(clazz);
         refId.writeTagged(os);
       }

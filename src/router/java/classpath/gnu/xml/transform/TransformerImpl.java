@@ -1,5 +1,5 @@
 /* TransformerImpl.java --
-   Copyright (C) 2004,2005,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2005,2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -293,7 +293,7 @@ class TransformerImpl
       parent.setUserData("media-type", mediaType, stylesheet);
     if (cdataSectionElements != null)
       {
-        List list = new LinkedList();
+        List<QName> list = new LinkedList<QName>();
         StringTokenizer st = new StringTokenizer(cdataSectionElements);
         while (st.hasMoreTokens())
           {
@@ -564,7 +564,7 @@ class TransformerImpl
           new StreamSerializer(outputMethod, encoding, null);
         if (stylesheet != null)
           {
-            Collection celem = stylesheet.outputCdataSectionElements;
+            Collection<String> celem = stylesheet.outputCdataSectionElements;
             serializer.setCdataSectionElements(celem);
           }
         serializer.serialize(node, out);
@@ -686,7 +686,7 @@ class TransformerImpl
       {
         boolean markupContent = false;
         boolean textContent = false;
-        List children = new LinkedList();
+        List<Node> children = new LinkedList<Node>();
         Node ctx = node.getFirstChild();
         while (ctx != null)
           {
@@ -716,9 +716,9 @@ class TransformerImpl
             int nodeType = node.getNodeType();
             if (nodeType == Node.DOCUMENT_NODE)
               {
-                for (Iterator i = children.iterator(); i.hasNext(); )
+                for (Iterator<Node> i = children.iterator(); i.hasNext(); )
                   {
-                    ctx = (Node) i.next();
+                    ctx = i.next();
                     reindent(doc, ctx, offset);
                   }
               }
@@ -729,9 +729,9 @@ class TransformerImpl
                 for (int i = 0; i < offset + 1; i++)
                   buf.append(INDENT_WHITESPACE);
                 String ws = buf.toString();
-                for (Iterator i = children.iterator(); i.hasNext(); )
+                for (Iterator<Node> i = children.iterator(); i.hasNext(); )
                   {
-                    ctx = (Node) i.next();
+                    ctx = i.next();
                     node.insertBefore(doc.createTextNode(ws), ctx);
                     reindent(doc, ctx, offset + 1);
                   }
@@ -750,14 +750,13 @@ class TransformerImpl
    * Converts the text node children of any cdata-section-elements in the
    * tree to CDATA section nodes.
    */
-  void convertCdataSectionElements(Document doc, Node node, List list)
+  void convertCdataSectionElements(Document doc, Node node, List<QName> list)
   {
     if (node.getNodeType() == Node.ELEMENT_NODE)
       {
         boolean match = false;
-        for (Iterator i = list.iterator(); i.hasNext(); )
+	for (QName qname : list)
           {
-            QName qname = (QName) i.next();
             if (match(qname, node))
               {
                 match = true;

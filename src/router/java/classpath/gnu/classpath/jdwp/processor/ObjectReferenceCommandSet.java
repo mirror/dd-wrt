@@ -1,6 +1,6 @@
 /* ObjectReferenceCommandSet.java -- class to implement the ObjectReference
    Command Set
-   Copyright (C) 2005, 2007 Free Software Foundation
+   Copyright (C) 2005, 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -117,7 +117,7 @@ public class ObjectReferenceCommandSet
   {
     ObjectId oid = idMan.readObjectId(bb);
     Object obj = oid.getObject();
-    Class clazz = obj.getClass();
+    Class<?> clazz = obj.getClass();
     ReferenceTypeId refId = idMan.getReferenceTypeId(clazz);
     refId.writeTagged(os);
   }
@@ -211,7 +211,7 @@ public class ObjectReferenceCommandSet
     Thread thread = (Thread) tid.getObject();
 
     ReferenceTypeId rid = idMan.readReferenceTypeId(bb);
-    Class clazz = rid.getType();
+    Class<?> clazz = rid.getType();
 
     VMMethod method = VMMethod.readId(clazz, bb);
 

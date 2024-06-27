@@ -1,5 +1,5 @@
 /* InvalidFieldException.java -- an invalid field id exception
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -50,6 +50,16 @@ import gnu.classpath.jdwp.JdwpConstants;
 public class InvalidFieldException
   extends JdwpException
 {
+  /**
+   * Constructs a new exception thrown due to
+   * a null field ID.
+   */
+  public InvalidFieldException ()
+  {
+    super (JdwpConstants.Error.INVALID_FIELDID,
+           "invalid field id (null)");
+  }
+
   public InvalidFieldException (long id)
   {
     super (JdwpConstants.Error.INVALID_FIELDID,

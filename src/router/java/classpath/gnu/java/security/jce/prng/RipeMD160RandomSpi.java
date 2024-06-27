@@ -1,5 +1,5 @@
 /* RipeMD160RandomSpi.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,6 +47,8 @@ import gnu.java.security.Registry;
 public class RipeMD160RandomSpi
     extends SecureRandomAdapter
 {
+  private static final long serialVersionUID = -1826833146069540489L;
+
   public RipeMD160RandomSpi()
   {
     super(Registry.RIPEMD160_HASH);

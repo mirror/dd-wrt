@@ -1,5 +1,5 @@
 /* KeyFunction.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -64,13 +64,14 @@ final class KeyFunction
 {
 
   final Stylesheet stylesheet;
-  List args;
+  List<Expr> args;
 
   KeyFunction(Stylesheet stylesheet)
   {
     this.stylesheet = stylesheet;
   }
 
+  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -78,7 +79,7 @@ final class KeyFunction
     return Collections.EMPTY_SET;
   }
 
-  public void setArguments(List args)
+  public void setArguments(List<Expr> args)
   {
     this.args = args;
   }
@@ -86,17 +87,17 @@ final class KeyFunction
   public boolean matches(Node context)
   {
     Object ret = evaluate(context, 1, 1);
-    return !((Collection) ret).isEmpty();
+    return !((Collection<?>) ret).isEmpty();
   }
 
   public Object evaluate(Node context, int pos, int len)
   {
     // Evaluate arguments
     int arity = args.size();
-    List values = new ArrayList(arity);
+    List<Object> values = new ArrayList<Object>(arity);
     for (int i = 0; i < arity; i++)
       {
-        Expr arg = (Expr) args.get(i);
+        Expr arg = args.get(i);
         values.add(arg.evaluate(context, pos, len));
       }
     // Get key name
@@ -115,10 +116,9 @@ final class KeyFunction
           }
       }
     // Compute matching key set
-    Collection keySet = new LinkedList();
-    for (Iterator i = stylesheet.keys.iterator(); i.hasNext(); )
+    Collection<Key> keySet = new LinkedList<Key>();
+    for (Key key : stylesheet.keys)
       {
-        Key key = (Key) i.next();
         if (key.name.equals(keyName))
           {
             keySet.add(key);
@@ -126,12 +126,12 @@ final class KeyFunction
       }
     // Get target
     Object target = values.get(1);
-    Collection acc = new LinkedHashSet();
+    Collection<Node> acc = new LinkedHashSet<Node>();
     Document doc = (context instanceof Document) ? (Document) context :
       context.getOwnerDocument();
     if (target instanceof Collection)
       {
-        for (Iterator i = ((Collection) target).iterator(); i.hasNext(); )
+        for (Iterator<?> i = ((Collection<?>) target).iterator(); i.hasNext(); )
           {
             String val = Expr.stringValue((Node) i.next());
             addKeyNodes(doc, keySet, val, acc);
@@ -142,13 +142,13 @@ final class KeyFunction
         String val = Expr._string(context, target);
         addKeyNodes(doc, keySet, val, acc);
       }
-    List ret = new ArrayList(acc);
+    List<Node> ret = new ArrayList<Node>(acc);
     Collections.sort(ret, documentOrderComparator);
     return ret;
   }
 
-  final void addKeyNodes(Node node, Collection keySet,
-                         String value, Collection acc)
+  final void addKeyNodes(Node node, Collection<Key> keySet,
+                         String value, Collection<Node> acc)
   {
     addKeyNodeIfMatch(node, keySet, value, acc);
     // Apply children
@@ -159,18 +159,17 @@ final class KeyFunction
       }
   }
 
-  final void addKeyNodeIfMatch(Node node, Collection keySet,
-                               String value, Collection acc)
+  final void addKeyNodeIfMatch(Node node, Collection<Key> keySet,
+                               String value, Collection<Node> acc)
   {
-    for (Iterator i = keySet.iterator(); i.hasNext(); )
+    for (Key key : keySet)
       {
-        Key key = (Key) i.next();
         if (key.match.matches(node))
           {
             Object eval = key.use.evaluate(node, 1, 1);
             if (eval instanceof Collection)
               {
-                for (Iterator j = ((Collection) eval).iterator();
+                for (Iterator<?> j = ((Collection<?>) eval).iterator();
                      j.hasNext(); )
                   {
                     String keyValue = Expr.stringValue((Node) j.next());
@@ -203,10 +202,10 @@ final class KeyFunction
       }
     KeyFunction f = new KeyFunction(s);
     int len = args.size();
-    List args2 = new ArrayList(len);
+    List<Expr> args2 = new ArrayList<Expr>(len);
     for (int i = 0; i < len; i++)
       {
-        args2.add(((Expr) args.get(i)).clone(context));
+        args2.add(args.get(i).clone(context));
       }
     f.setArguments(args2);
     return f;
@@ -214,9 +213,9 @@ final class KeyFunction
 
   public boolean references(QName var)
   {
-    for (Iterator i = args.iterator(); i.hasNext(); )
+    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
       {
-        if (((Expr) i.next()).references(var))
+        if (i.next().references(var))
           {
             return true;
           }

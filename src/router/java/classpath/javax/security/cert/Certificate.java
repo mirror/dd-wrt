@@ -1,5 +1,5 @@
 /* Certificate.java -- base class of public-key certificates.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -74,6 +74,7 @@ public abstract class Certificate
    * @param other The object to test.
    * @return True if the certificates are equal.
    */
+  @Override
   public boolean equals(Object other)
   {
     if (other == null || !(other instanceof Certificate))
@@ -99,6 +100,7 @@ public abstract class Certificate
    *
    * @return The hash code.
    */
+  @Override
   public int hashCode()
   {
     try
@@ -165,6 +167,7 @@ public abstract class Certificate
    *
    * @return The string.
    */
+  @Override
   public abstract String toString();
 
   /**

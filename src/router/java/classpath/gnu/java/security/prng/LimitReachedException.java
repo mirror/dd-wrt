@@ -1,5 +1,5 @@
 /* LimitReachedException.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -45,6 +45,8 @@ package gnu.java.security.prng;
 public class LimitReachedException
     extends Exception
 {
+  private static final long serialVersionUID = 6859108040075545065L;
+
   public LimitReachedException()
   {
     super();

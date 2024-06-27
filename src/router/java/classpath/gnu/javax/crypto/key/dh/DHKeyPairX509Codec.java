@@ -1,5 +1,5 @@
 /* DHKeyPairX509Codec.java -- X.509 DER encoder/decoder for DH keys
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -132,13 +132,13 @@ public class DHKeyPairX509Codec
     DERValue derG = new DERValue(DER.INTEGER, g);
     DERValue derQ = new DERValue(DER.INTEGER, q);
 
-    ArrayList params = new ArrayList(3);
+    ArrayList<DERValue> params = new ArrayList<DERValue>(3);
     params.add(derP);
     params.add(derG);
     params.add(derQ);
     DERValue derParams = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, params);
 
-    ArrayList algorithmID = new ArrayList(2);
+    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
     algorithmID.add(derOID);
     algorithmID.add(derParams);
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -148,7 +148,7 @@ public class DHKeyPairX509Codec
     byte[] yBytes = derDHPublicKey.getEncoded();
     DERValue derSPK = new DERValue(DER.BIT_STRING, new BitString(yBytes));
 
-    ArrayList spki = new ArrayList(2);
+    ArrayList<DERValue> spki = new ArrayList<DERValue>(2);
     spki.add(derAlgorithmID);
     spki.add(derSPK);
     DERValue derSPKI = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, spki);

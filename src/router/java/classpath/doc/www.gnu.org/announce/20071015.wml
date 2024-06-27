@@ -1,0 +1,161 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.96 Announcement (2007-10-15)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.96 "Staying Alive"</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.96 "Staying Alive"
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example the GCC (gcj) and Kaffe projects will use the
+developer snapshots as a base for future versions. More projects based
+on GNU Classpath:
+<createlink url="http://www.gnu.org/software/classpath/stories.html">
+<p>
+<p>
+This release is primarily a maintenance release.  The recent release of the 
+majority of Sun's class library as Free Software on May the 8th, under the 
+auspices of the OpenJDK project (<createlink url="http://openjdk.java.net">)
+has changed the position of GNU Classpath within the community and recent efforts
+have  focused on bringing together Classpath and OpenJDK code under the umbrella of 
+IcedTea (<createlink url="http://icedtea.classpath.org">) and on using the new
+OpenJDK code  within existing Free runtime environments such as cacao 
+(<createlink url="http://www.cacaojvm.org/">) and IKVM
+(<createlink url="http://www.ikvm.net/">).  We hope to 
+extend support and work together with the OpenJDK community over time.
+<p>
+This release switches fully towards the 1.5 generics work that we
+previously released separately as classpath-generics. All this work is
+now fully integrated in the main release and various runtimes (gcj,
+cacao, jamvm, ikvm, etc) have been extended to take advantage of the
+new generics, annotations and enumeration support in the core
+library. From now on we intend to no longer release both a
+non-generics and a generics version. But if there is demand we might
+consider resurrecting the non-generics 1.4 branch with selected
+bug-fixes (depending on having a branch maintainer). Work is on the
+way to also add the new 1.6 additions, a start for selected packages
+has been made in this release.
+<p>
+That said, the main feature of this release is our new experimental GStreamer 
+peer arising from the work of Mario Torre on his Google Summer of Code 
+project (<createlink url="http://code.google.com/soc/2007">).  This provides
+support for the  javax.sound API using the GStreamer library
+(<createlink url="http://gstreamer.freedesktop.org">), allowing any sound file
+supported by GStreamer to be played from Java.  Full  details are provided in
+the included README.gstreamer file.  The peer is not yet ready for production
+use, but please try it and give us your feedback.
+<p>
+We've also improved our support for interacting with the outside world.  Our 
+JNI header has been updated to 1.6, we now better support choosing a compiler 
+to use to build Classpath (either ecj or OpenJDK javac, the latter now having 
+support for using the -J option to avoid out of memory errors) and our tools 
+support has improved so as to better stand as a substitute for Sun's toolset.
+<p>
+AWT and Swing have seen a host of bug fixes and updates, including much 
+improved Escher peers.  Our thanks to Roman Kennke and others working on 
+Classpath's GUI support.  Screenshots of applications (eclipse, jedit, 
+jfreechart, "jgecko", statcvs and more) working out of the box with GNU 
+Classpath can be found at <createlink url="http://developer.classpath.org/screenshots/">.
+<p>
+With our last release, 0.95, we switched fully towards the 1.5 generics work 
+that we previously released separately as classpath-generics. All this work 
+is now fully integrated in the main release and various runtimes (gcj,
+cacao, jamvm, ikvm, etc) have been extended to take advantage of the
+new generics, annotations and enumeration support in the core
+library. As a consequence, only 1.5 capable compilers (currently the Eclipse 
+Compiler for Java (ecj) and Sun's javac) may be used to build Classpath.
+<p>
+The GNU Classpath developers site
+<createlink url="http://developer.classpath.org/">
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.
+<p>
+For each snapshot release generated documentation is provided through
+the GNU Classpath Tools gjdoc project.  A documentation generation
+framework for java source files used by the GNU project. Full
+documentation on the currently implementated packages and classes can
+be found at: <createlink url="http://developer.classpath.org/doc/">
+We are looking into how to extend the documentation experience based
+on these two tools in the future. Please contact the mailinglist if
+you like to help with this effort.
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.96 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/"> or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html">
+<p>
+<pre>
+GNU Classpath 0.96 can be downloaded from
+ftp://ftp.gnu.org/pub/gnu/classpath/
+or one of the ftp.gnu.org mirrors
+http://www.gnu.org/order/ftp.html
+or the Classpath continuous integration system
+http://builder.classpath.org/dist
+
+File: classpath-0.96.tar.gz
+MD5sum: 650dd3ac4ae2939f296c81f885d24a36 
+SHA1sum: dcb71d1f0b915f8529361faf862a850b7f404dba
+
+New in release 0.96 (Oct 15, 2007)
+(See the ChangeLog file for a full list of changes.)
+
+* New experimental GStreamer javax.sound peer (see README.gstreamer)
+* The JNI interface has been updated to 1.6
+* Better support for the OpenJDK javac compiler
+* Support for using javah via tools.zip and com.sun.tools.javah.Main
+* Much improved Escher AWT peers
+* Many bug fixes including improvements to AWT and Swing support
+
+Runtime interface changes:
+
+* Add VMFloat.toString(float) and VMFloat.parseFloat(String). Default
+  implementations are the same as previous behavior.
+* Add new default implementations of VMMemoryMXBean.getHeapUsage()
+  and VMMemoryMXBean.getNonHeapUsage() via iteration over the memory
+  pools of the appropriate type.
+
+The following people helped with this release:
+
+Andreas Tobler, Andrew Haley, Andrew John Hughes, Casey Marshall, Chris 
+Burdess, Christian Thalinger, Dalibor Topic, David P Grove, Francis Kung, 
+Gary Benson, Ian Rogers, Ito Kazumitsu, Jeroen Frijters, Keith Seitz, Kyle 
+Galloway, Mario Torre, Mark Wielaard, Matthias Klose, Paul Jenner, Robert 
+Schuster, Robin Garner, Roman Kennke, Tania Bento, Thomas Fitzsimmons and
+Tom Tromey.
+
+We would also like to thank the numerous bug reporters and testers!  In 
+addition, we'd like to extend our thanks to all those who've contributed over 
+the years and have helped in building a thriving and friendly community 
+around the GNU Classpath project.
+</pre>
+</boxitem>
+</box>

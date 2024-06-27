@@ -1,5 +1,5 @@
 /* PasswordCallback.java -- callback for passwords.
-   Copyright (C) 2003, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -52,6 +52,8 @@ public class PasswordCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = 2267422647454909926L;
 
   /**
    * @serial

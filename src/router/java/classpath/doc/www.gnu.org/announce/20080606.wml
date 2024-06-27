@@ -1,0 +1,124 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.97.2 Announcement (2008-06-06)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.97.2</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.97.2,
+the second bugfix release for GNU Classpath 0.97.
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example JamVM, CACAO and Kaffe can make use of an installed
+copy of GNU Classpath 0.97.2, while GCC (gcj) will use the developer
+snapshots as a base for future versions. For more projects based on GNU
+Classpath, <createlink url="http://www.gnu.org/software/classpath/stories.html">
+</p>
+<p>
+This is the second of a new series of bugfix releases that follow a major (0.x)
+release. A 0.x.y release will only contain minor bug fixes. It will not cause
+major changes in the functionality of GNU Classpath, either for better or for
+worse. 
+</p>
+<p> 
+With this bugfix release, the following issues have been resolved: 
+</p>
+<ul>
+<li>Include headers in the release tarball.</li>
+<li>Allow the building of tools to be optional.</li>
+<li>Only check for a Java compiler when required.</li>
+<li>Allow VMOperatingSystemMXBeanImpl to compile on Solaris.</li>
+<li>Documentation typo fixe.</li>
+<li>Fix memory leak in native/jni/classpath/jcl.</li>
+<li>Web page updates (PR classpath/22883.</li>
+<li>Fixes to pass the JSR166 TCK.</li>
+<li>Use awk to construct the classlist on buildin.</li>
+<li>Fix deadlock in Logger (PR classpath/35974.</li>
+<li>Fix regression in java.lang.String (PR classpath/35482.</li>
+<li>Allow Classpath tools to handle @file options.</li>
+<li>Allow parseInt to handle a + prefix correctly.</li>
+<li>Remove use of 1.5 language constructs in the VM layer.</li>
+</ul>
+<p>
+From the 0.95 release, we switched fully towards the 1.5 generics work 
+that we previously released separately as classpath-generics. All this work 
+is now fully integrated in the main release and various runtimes (gcj,
+cacao, jamvm, ikvm, etc) have been extended to take advantage of the
+new generics, annotations and enumeration support in the core
+library. As a consequence, only 1.5 capable compilers (currently the Eclipse 
+Compiler for Java (ecj) and Sun's javac) may be used to build Classpath.
+<p>
+The GNU Classpath developers site
+<createlink url="http://developer.classpath.org/">
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.
+<p>
+For each snapshot release generated documentation is provided through
+the GNU Classpath Tools gjdoc project,which will become part of GNU Classpath
+itself with the release of 0.98.  A documentation generation
+framework for java source files used by the GNU project. Full
+documentation on the currently implementated packages and classes can
+be found at: <createlink url="http://developer.classpath.org/doc/">
+We are looking into how to extend the documentation experience in the
+future. Please contact the mailinglist if you would like to help with
+this effort.
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.97.2 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/">
+or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html"> or the Classpath
+continuous integration system <createlink url="http://builder.classpath.org/dist">
+<p><pre>
+File: classpath-0.97.2.tar.gz
+MD5sum: 6a35347901ace03c31cc49751b338f31
+SHA1sum: 627e9781f9bb744b1a70e4aaff88d2d0440cbf1f
+</pre></p>
+<p>
+The following people helped fix bugs in Classpath 0.97.1:
+</p>
+<p>
+Andrew John Hughes, Michael Koch, Jim Meyering, Robert Schuster, Mario Torre, Tom Tromey, Ralf Wildenhues
+</p>
+<p>
+The following people helped with the release of Classpath 0.97 and/or 0.97.1:
+</p>
+<p>
+Luciano Chavez, Thomas Fitzsimmons, Bernhard Fischer, Jeroen Frijters, Stefan Huehner, Andrew John Hughes, Jakub Jelinek, Ito Kazumitsu, Roman Kennke, Alexandre Oliva, Petteri Raety, Ian Rogers, Robert Schuster, Leen Toelen, Mario Torre, Dalibor Topic, Tom Tromey, David Walluck, Mark Wielaard and Ralf Wildenhues.
+</p>
+<p>
+We would also like to thank the numerous bug reporters and testers!  In 
+addition, we'd like to extend our thanks to all those who've contributed over 
+the years and have helped in building a thriving and friendly community 
+around the GNU Classpath project.
+</p>
+</boxitem>
+</box>

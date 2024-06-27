@@ -1,0 +1,224 @@
+#!wml --include=..
+
+#use wml::std::page
+#use wml::std::lang
+#use wml::fmt::isolatin
+#use wml::std::case global=upper
+
+<lang:star:slice:>
+
+<set-var last-modified-author="mjw">
+
+#include <include/macros.wml>
+
+<header title="GNU Classpath 0.90 Announcement (2006-03-06)"> 
+<pre>
+GNU Classpath 0.90 "A La Mort Subite" released
+
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example the GCC (gcj) and Kaffe projects will use the
+developer snapshots as a base for future versions. More projects based
+on GNU Classpath: http://www.gnu.org/software/classpath/stories.html
+
+Some highlights of changes in this release (more extensive list below):
+
+  JTables can be rearranged and resized. Free Swing text components
+  support highlighting and clipboard. Much improved styled text. Fast
+  event dispatching and lower memory consumption. Better support for
+  mixing lightweight and heavyweight components in AWT containers. GNU
+  Crypto and Jessie cryptographic algorithms have been added providing
+  ssl3/tls1 and https support. Unicode 4.0.0 support. GIOP and RMI
+  stub and tie source code tools. XML validaton support for RELAX NG
+  and W3C XML schemas. New file backend for util.prefs. Updated
+  gnu.regexp from POSIX to util.regex syntax.
+
+GNU Classpath also comes in a "generic" version.
+classpath-0.90-generics contains a version of the core library that
+uses the new 1.5 language features such as generics and
+enumerations. ECJ, JamVM, IKVM and Cacao are known to support the
+generics release. And you should be able to run Eclipse 3.1 with it to
+develop programs that use the new 1.5 language and core library
+additions. classpath-generics is a work in progress and not as
+extensively tested as our regular releases. But please try it out if
+you want to help us test the new 1.5 support of the core libraries.
+
+The GNU Classpath developers site http://developer.classpath.org/
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.  For each snapshot release generated
+documentation is provided through the GNU Classpath Tools gjdoc
+project.  A documentation generation framework for java source
+files used by the GNU project. Full documentation on the currently
+implementated packages and classes can be found at:
+http://developer.classpath.org/doc/
+
+For more information about the project see also:
+
+- GNU Classpath home page:
+  http://www.gnu.org/software/classpath/
+
+- Developer information (wiki):
+  http://developer.classpath.org/
+
+- Full class documentation
+  http://developer.classpath.org/doc/
+
+- GNU Classpath hackers:
+  http://planet.classpath.org/
+
+- Autobuilder, current build status, build snapshots:
+  http://builder.classpath.org/
+
+- Application test pages (wiki)
+  http://developer.classpath.org/mediation/FreeAWTTestApps
+  http://developer.classpath.org/mediation/FreeSwingTestApps
+  http://developer.classpath.org/mediation/FreeSWTTestApps
+
+- GNU Classpath hacking with Eclipse (wiki)
+  http://developer.classpath.org/mediation/ClasspathHackingWithEclipse
+
+- GNU Classpath promotion banners:
+  http://developer.classpath.org/mediation/ClasspathBanners
+
+This release depends on gtk+ 2.4 for AWT support. But gtk+ 2.6 or
+higher is recommended. Included, but not activated by default in this
+release is a Graphics2D implementation based on the Cairo Graphics
+framework (http://www.cairographics.org). Enabling this makes programs
+like JFreeChart and JEdit start up on GNU Classpath based runtimes.
+To enable this support install the cairo 0.5.x snapshot, configure GNU
+Classpath with --enable-gtk-cairo.
+
+One of the major focuses of the GNU Classpath project is expanding and
+using the Mauve test suite for Compatibility, Completeness and
+Correctness checking.  Various groups around GNU Classpath collaborate
+on the free software Mauve test suite which contains around 44.000
+core library tests.  Mauve has various modules for testing core class
+library implementations, byte code verifiers, source to byte code and
+native code compiler tests.  Mauve also contains the Wonka visual test
+suite and the Jacks Compiler Killer Suite.
+See for more information: http://www.sourceware.org/mauve/
+This release passes 43856 out of 44429 Mauve core library tests.
+
+Conformance reports for the included jaxp support can be found in the
+doc/README.jaxp file.
+
+GNU Classpath 0.90 can be downloaded from
+ftp://ftp.gnu.org/pub/gnu/classpath/
+or one of the ftp.gnu.org mirrors
+http://www.gnu.org/order/ftp.html
+
+File: classpath-0.90.tar.gz
+MD5sum: cf5aaaf07fe43567fa605b33165355d7
+SHA1sum: 267dcd6345b90486cce17f1c73fbf33ee0d06f7c
+
+File: classpath-0.20-generics.tar.gz (EXPERIMENTAL)
+MD5sum: 55a56f0e797c21e906c0d61620ca00eb
+SHA1sum: 5863cdf1c567efd8517dc8cc5445efe272b38a21
+
+New in release 0.90 (March 6, 2006)
+(See the ChangeLog file for a full list of changes.)
+
+* Free Swing improvements: JTable columns are rearrangeable and
+  resizeable with mouse. Painting and scrolling are now much
+  faster. Plain text components now support highlighting and
+  copy+paste to the system clipboard. Support for styled text has been
+  improved, including some very basic HTML support. JFileChooser is
+  now usable. Global event dispatching has been implemented. Memory
+  consumption of Swing components has been reduced. Lots of general
+  bugfixes. Added new system property to turn off Graphics2D use in
+  Swing, even if Graphics2D is available: gnu.javax.swing.noGraphics2D
+
+* AWT. Improved support for mixing "lightweight" and "heavyweight"
+  Components in Containers. Better support for dynamically updated
+  menus. Better 1.0 event model support for Scrollbars. Better class
+  documentation of gtk+ awt peers.
+
+* GNU Crypto and Jessie have been merged into GNU Classpath; this
+  provides Classpath with a wide array of cryptographic algorithms
+  (ciphers, message digests, etc.) and implementations of SSL version
+  3 and TLS version 1. These roughly complement the public
+  `java.security.' `javax.crypto,' and `javax.net.ssl' packages, and
+  are service providers implementing the underlying algorithms.
+
+* Updated HTTP and FTP URLConnection protocol handlers. HTTPS support
+  out of the box.
+
+* Unicode 4.0.0 is supported. Character now includes support for using
+  ether a char or an int to identify code points.
+
+* More correct handling of Object methods and serialization support
+  for Proxy and abstract classes.
+
+* The new folder tools includes GIOP and RMI stub and tie source code
+  generators, IOR parser and both transient and persistent GIOP naming
+  services.
+
+* Added experimental support for dynamic creation of the RMI stubs
+  using proxy classes. The rmic compiler is no longer required (unless
+  for research and specific stubs).
+
+* XML validaton support for RELAX NG and W3C XML schema namespace
+  URIs. RELAX NG pluggable XML schema datatype library API and an
+  implementation for XML Schema Datatypes
+  (http://www.w3.org/TR/xmlschema-2/).
+
+* Updated StAX implementaton to be compatible with final JSWDP 2.0.
+
+* The default back end for java.util.prefs has been changed.  The new
+  default is capable of saving and restoring preferences to and from
+  the file system.
+
+* javax.imageio.plugins.bmp implementation.
+
+* Added --enable-collections configure option which builds
+  "collections.jar", a 1.1 VM compatibility jar.
+
+* gnu.regexp updated from GNU/Posix syntax to support util.regex
+  syntax including various Unicode blocks, categories and properties.
+
+Runtime interface changes:
+
+* A new class, VMMath, is now available which separates the native
+  mathematical functions from java.lang.Math.  The previous fdlibm
+  implementation now forms the reference material for this class.
+
+* Updated VMObjectInputStream class to return Thread context class
+  loader if no other class loader is found.
+
+* Updated documentation on InstrumentationImpl in vmintegration guide.
+
+New/Untested/Disabled Features:
+
+  The following new features are included, but not ready for
+  production yet. They are explicitly disabled and not supported. But
+  if you want to help with the development of these new features we
+  are interested in feedback. You will have to explicitly enable them
+  to try them out (and they will most likely contain bugs). If you are
+  interested in any of these then please join the mailing-list and
+  follow development in CVS.
+
+* Cairo Gtk+ Graphics2D support, enabled by giving configure
+  --enable-gtk-cairo.
+* QT4 AWT peers, enable by giving configure --enable-qt-peer.
+
+The following people helped with this release:
+
+Andrew John Hughes, Anthony Balkissoon, Anthony Green,
+Artemus Harper, Audrius Meskauskas, Beat Wolf, Casey Marshall,
+Chris Burdess, Christian Thalinger, Dalibor Topic, David Daney,
+David Gilbert, Dimitri Fontaine, Egon Willighagen, Gary Benson,
+Guilhem Lavaux, Ingo Proetel, Ito Kazumitsu, James Damour,
+Jeroen Frijters, Keith Seitz, Lillian Angel, Mark Wielaard,
+Michael Kay, Michael Koch, Nicolas Geoffray, Olivier Jolly,
+Paul Jenner, Pedro Izecksohn, Rafael Teixeira, Raif S. Naffah,
+Robert Schuster, Roman Kennke Stuart Ballard, Thomas Fitzsimmons,
+Tom Tromey, and Wolfgang Baer
+
+We would also like to thank the numerous bug reporters and testers!
+</pre>
+<footer>

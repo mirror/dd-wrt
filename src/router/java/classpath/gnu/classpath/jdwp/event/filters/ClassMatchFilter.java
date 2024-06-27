@@ -1,5 +1,5 @@
 /* ClassMatchFilter.java -- filter on class name (inclusive)
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -93,7 +93,7 @@ public class ClassMatchFilter
     Object type = event.getParameter (Event.EVENT_CLASS);
     if (type != null)
       {
-        Class eventClass = (Class) type;
+        Class<?> eventClass = (Class<?>) type;
         String name = eventClass.getName ();
 
         if (_pattern.startsWith ("*"))

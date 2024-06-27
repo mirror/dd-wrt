@@ -1,5 +1,5 @@
 /* KeyImpl.java -- kerberos key implementation
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,18 +38,16 @@ exception statement from your version. */
 
 package javax.security.auth.kerberos;
 
-import java.io.Serializable;
-
 import javax.crypto.SecretKey;
 
 /**
  * Note that the name of this class is fixed by the serialization
  * spec, even though the class itself is not public.
  */
-final class KeyImpl implements Serializable, SecretKey
+final class KeyImpl implements SecretKey
 {
   // Enable this when serialization works.
-  // private static final long serialVersionUID = -7889313790214321193L;
+  private static final long serialVersionUID = -7889313790214321193L;
 
   public String algorithm;
   public int type;
@@ -65,7 +63,7 @@ final class KeyImpl implements Serializable, SecretKey
     else
       this.algorithm = "FIXME";
     this.type = type;
-    this.key = (byte[]) key.clone();
+    this.key = key.clone();
   }
 
   public KeyImpl(char[] passwd, String algo)
@@ -75,22 +73,26 @@ final class KeyImpl implements Serializable, SecretKey
     this.key = null; // double FIXME
   }
 
+  @Override
   public String getAlgorithm()
   {
     return algorithm;
   }
 
+  @Override
   public byte[] getEncoded()
   {
     return key;
   }
 
+  @Override
   public String getFormat()
   {
     // FIXME.
     return null;
   }
 
+  @Override
   public String toString()
   {
     return getClass().getName() +

@@ -1,5 +1,5 @@
 /* AuthenticationException.java --
-   Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -54,6 +54,8 @@ package javax.security.sasl;
  */
 public class AuthenticationException extends SaslException
 {
+
+  private static final long serialVersionUID = -3579708765071815007L;
 
   // Constants and variables
   // -------------------------------------------------------------------------

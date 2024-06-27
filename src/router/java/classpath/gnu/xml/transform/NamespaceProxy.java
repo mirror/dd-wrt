@@ -1,5 +1,5 @@
 /* NamespaceProxy.java --
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -68,7 +68,7 @@ class NamespaceProxy
     return (node == null) ? null : node.lookupPrefix(namespaceURI);
   }
 
-  public Iterator getPrefixes(String namespaceURI)
+  public Iterator<String> getPrefixes(String namespaceURI)
   {
     // TODO
     return Collections.singleton(getPrefix(namespaceURI)).iterator();

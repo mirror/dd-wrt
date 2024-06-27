@@ -1,5 +1,5 @@
 /* DelegationPermission.java -- kerberos delegation permission
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -50,8 +50,7 @@ import java.util.Vector;
 public final class DelegationPermission
     extends BasicPermission
 {
-  // FIXME: Enable this when serialization works.
-  // private static final long serialVersionUID = 883133252142523922L;
+  private static final long serialVersionUID = 883133252142523922L;
 
   /**
    * Create a new instance with the given name.
@@ -91,19 +90,22 @@ public final class DelegationPermission
       throw new IllegalArgumentException("invalid syntax for principals");
   }
 
+  @Override
   public boolean implies(Permission perm)
   {
     return equals(perm);
   }
 
+  @Override
   public PermissionCollection newPermissionCollection()
   {
     // FIXME: don't know how to serialize here.  I suspect this
     // class has to have a particular name, etc ...
     return new PermissionCollection()
     {
-      private Vector permissions = new Vector();
+      private Vector<Permission> permissions = new Vector<Permission>();
 
+      @Override
       public void add(Permission perm)
       {
         if (isReadOnly())
@@ -113,21 +115,23 @@ public final class DelegationPermission
         permissions.add(perm);
       }
 
+      @Override
       public boolean implies(Permission perm)
       {
         if (! (perm instanceof DelegationPermission))
           return false;
-        Enumeration e = elements();
+        Enumeration<Permission> e = elements();
         while (e.hasMoreElements())
           {
-            DelegationPermission dp = (DelegationPermission) e.nextElement();
+            Permission dp = e.nextElement();
             if (dp.implies(perm))
               return true;
           }
         return false;
       }
 
-      public Enumeration elements()
+      @Override
+      public Enumeration<Permission> elements()
       {
         return permissions.elements();
       }

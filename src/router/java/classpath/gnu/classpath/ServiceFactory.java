@@ -38,6 +38,12 @@ exception statement from your version. */
 
 package gnu.classpath;
 
+import static gnu.classpath.debug.Component.SERVICE_LOADING_VERBOSE;
+import static gnu.classpath.debug.Component.SERVICE_LOADING_WARNING;
+import static gnu.classpath.debug.SystemLogger.SYSTEM;
+
+import gnu.classpath.debug.Component;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -51,10 +57,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
 
 /**
  * A factory for plug-ins that conform to a service provider
@@ -168,15 +170,6 @@ import java.util.logging.Logger;
  */
 public final class ServiceFactory
 {
-  /**
-   * A logger that gets informed when a service gets loaded, or
-   * when there is a problem with loading a service.
-   *
-   * <p>Because {@link java.util.logging.Logger#getLogger(String)}
-   * is thread-safe, we do not need to worry about synchronization
-   * here.
-   */
-  private static final Logger LOGGER = Logger.getLogger("gnu.classpath");
 
   /**
    * Declared private in order to prevent constructing instances of
@@ -291,7 +284,7 @@ public final class ServiceFactory
          * providers. In this case, we simply return an iterator that
          * does not return anything (no providers installed).
          */
-        log(Level.WARNING, "cannot access {0}", resourceName, ioex);
+        log(SERVICE_LOADING_WARNING, ioex, "cannot access {0}", resourceName);
         if (error)
           throw new ServiceConfigurationError("Failed to access + " +
                                               resourceName, ioex);
@@ -486,8 +479,8 @@ public final class ServiceFactory
             }
           catch (IOException readProblem)
             {
-              log(Level.WARNING, "IOException upon reading {0}", currentURL,
-                  readProblem);
+              log(SERVICE_LOADING_WARNING, readProblem,
+		  "IOException upon reading {0}", currentURL);
               line = null;
               if (error)
                 throw new ServiceConfigurationError("Error reading " +
@@ -503,6 +496,10 @@ public final class ServiceFactory
               continue;
             }
 
+	  // Trim comments from end of life.
+	  int hashIndex = line.indexOf('#');
+	  if (hashIndex != -1)
+	    line = line.substring(0, hashIndex);
 
           // Skip whitespace at the beginning and end of each line.
           line = line.trim();
@@ -517,11 +514,10 @@ public final class ServiceFactory
 
           try
             {
-              log(Level.FINE,
+              log(SERVICE_LOADING_VERBOSE, null,
                   "Loading service provider \"{0}\", specified"
                   + " by \"META-INF/services/{1}\" in {2}.",
-                  new Object[] { line, spi.getName(), currentURL },
-                  null);
+                  line, spi.getName(), currentURL);
 
               /* Load the class in the security context that was
                * active when calling lookupProviders.
@@ -540,9 +536,8 @@ public final class ServiceFactory
                   + " of \"{1}\". Specified"
                   + " by \"META-INF/services/{1}\" in {2}.";
 
-              log(Level.WARNING, msg,
-                  new Object[] { line, spi.getName(), currentURL },
-                  ex);
+              log(SERVICE_LOADING_WARNING, ex,
+		  msg, line, spi.getName(), currentURL);
               if (error)
                 throw new ServiceConfigurationError("Cannot load service "+
                                                     "provider class " +
@@ -565,11 +560,11 @@ public final class ServiceFactory
               try
                 {
                   reader.close();
-                  log(Level.FINE, "closed {0}", currentURL, null);
+                  log(SERVICE_LOADING_VERBOSE, null, "closed {0}", currentURL);
                 }
               catch (Exception ex)
                 {
-                  log(Level.WARNING, "cannot close {0}", currentURL, ex);
+                  log(SERVICE_LOADING_WARNING, ex, "cannot close {0}", currentURL);
                   if (error)
                     throw new ServiceConfigurationError("Cannot close " +
                                                         currentURL, ex);
@@ -586,11 +581,11 @@ public final class ServiceFactory
           {
             reader = new BufferedReader(new InputStreamReader(
               currentURL.openStream(), "UTF-8"));
-            log(Level.FINE, "opened {0}", currentURL, null);
+            log(SERVICE_LOADING_VERBOSE, null, "opened {0}", currentURL);
           }
         catch (Exception ex)
           {
-            log(Level.WARNING, "cannot open {0}", currentURL, ex);
+            log(SERVICE_LOADING_WARNING, ex, "cannot open {0}", currentURL);
             if (error)
               throw new ServiceConfigurationError("Cannot open " +
                                                   currentURL, ex);
@@ -600,54 +595,28 @@ public final class ServiceFactory
     }
   }
 
-
-  // Package-private to avoid a trampoline.
   /**
    * Passes a log message to the <code>java.util.logging</code>
    * framework. This call returns very quickly if no log message will
    * be produced, so there is not much overhead in the standard case.
    *
    * @param level the severity of the message, for instance {@link
-   * Level#WARNING}.
-   *
+   * Component#SERVICE_LOGGING_WARNING}.
+   * @param t a Throwable that is associated with the log record, or
+   * <code>null</code> if the log message is not associated with a
+   * Throwable.
    * @param msg the log message, for instance <code>&#x201c;Could not
-   * load {0}.&#x201d;</code>
-   *
-   * @param param the parameter(s) for the log message, or
+   * load {0}.&#x201d;</code> 
+   * @param params the parameter(s) for the log message, or
    * <code>null</code> if <code>msg</code> does not specify any
    * parameters. If <code>param</code> is not an array, an array with
    * <code>param</code> as its single element gets passed to the
    * logging framework.
-   *
-   * @param t a Throwable that is associated with the log record, or
-   * <code>null</code> if the log message is not associated with a
-   * Throwable.
    */
-  static void log(Level level, String msg, Object param, Throwable t)
+  static void log(Component level, Throwable t, String msg, Object... params)
   {
-    LogRecord rec;
-
-    // Return quickly if no log message will be produced.
-    if (!LOGGER.isLoggable(level))
-      return;
-
-    rec = new LogRecord(level, msg);
-    if (param != null && param.getClass().isArray())
-      rec.setParameters((Object[]) param);
-    else
-      rec.setParameters(new Object[] { param });
-
-    rec.setThrown(t);
-
-    // While java.util.logging can sometimes infer the class and
-    // method of the caller, this automatic inference is not reliable
-    // on highly optimizing VMs. Also, log messages make more sense to
-    // developers when they display a public method in a public class;
-    // otherwise, they might feel tempted to figure out the internals
-    // of ServiceFactory in order to understand the problem.
-    rec.setSourceClassName(ServiceFactory.class.getName());
-    rec.setSourceMethodName("lookupProviders");
-
-    LOGGER.log(rec);
+    SYSTEM.logp(level, ServiceFactory.class.getName(), "lookupProviders",
+		t, msg, params);
   }
+
 }

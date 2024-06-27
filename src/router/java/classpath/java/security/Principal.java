@@ -1,5 +1,5 @@
 /* Principal.java -- A security entity
-   Copyright (C) 1998, 2002, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2005, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -56,6 +56,7 @@ public interface Principal
    * @param obj the Object to test for equality
    * @return true if the specified <code>Principal</code> is equal
    */
+  @Override
   boolean equals(Object obj);
 
   /**
@@ -64,6 +65,7 @@ public interface Principal
    *
    * @return this <code>Principal</code> represented as a <code>String</code>
    */
+  @Override
   String toString();
 
   /**
@@ -73,6 +75,7 @@ public interface Principal
    *
    * @return a hash value
    */
+  @Override
   int hashCode();
 
   /**

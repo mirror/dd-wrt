@@ -1,5 +1,5 @@
 /* CodeSource.java -- Code location and certifcates
-   Copyright (C) 1998, 2002, 2004  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2004, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -82,7 +82,7 @@ public class CodeSource implements Serializable
   private final URL location;
 
   /** The set of certificates for this code base. */
-  private transient HashSet certs;
+  private transient HashSet<Certificate> certs;
 
   /**
    * This creates a new instance of <code>CodeSource</code> that loads code
@@ -96,7 +96,7 @@ public class CodeSource implements Serializable
   {
     this.location = location;
     if (certs != null)
-      this.certs = new HashSet(Arrays.asList(certs));
+      this.certs = new HashSet<Certificate>(Arrays.asList(certs));
   }
 
   /**
@@ -104,6 +104,7 @@ public class CodeSource implements Serializable
    *
    * @return a hash value for this object
    */
+  @Override
   public int hashCode()
   {
     return (location == null ? 0 : location.hashCode())
@@ -118,6 +119,7 @@ public class CodeSource implements Serializable
    * @param obj the <code>Object</code> to test against
    * @return true if the specified object is equal to this one
    */
+  @Override
   public boolean equals(Object obj)
   {
     if (! (obj instanceof CodeSource))
@@ -259,6 +261,7 @@ public class CodeSource implements Serializable
    *
    * @return a <code>String</code> for this object
    */
+  @Override
   public String toString()
   {
     CPStringBuilder sb = new CPStringBuilder("(").append(location);
@@ -266,7 +269,7 @@ public class CodeSource implements Serializable
       sb.append(" <no certificates>");
     else
       {
-        Iterator iter = certs.iterator();
+        Iterator<Certificate> iter = certs.iterator();
         for (int i = certs.size(); --i >= 0; )
           sb.append(' ').append(iter.next());
       }
@@ -288,7 +291,7 @@ public class CodeSource implements Serializable
   {
     s.defaultReadObject();
     int count = s.readInt();
-    certs = new HashSet();
+    certs = new HashSet<Certificate>();
     while (--count >= 0)
       {
         String type = (String) s.readObject();
@@ -327,10 +330,10 @@ public class CodeSource implements Serializable
       {
         int count = certs.size();
         s.writeInt(count);
-        Iterator iter = certs.iterator();
+        Iterator<Certificate> iter = certs.iterator();
         while (--count >= 0)
           {
-            Certificate c = (Certificate) iter.next();
+            Certificate c = iter.next();
             s.writeObject(c.getType());
             byte[] encoded;
             try

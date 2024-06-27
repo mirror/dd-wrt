@@ -1,5 +1,5 @@
 /* ClassObjectId.java -- class object IDs
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -53,7 +53,9 @@ public class ClassObjectId
   /**
    * The object class that this id represents
    */
-  public static final Class typeClass = Class.class;
+  // Seems to produce a bogus warning
+  @SuppressWarnings("unchecked")
+    public static final Class<Class> typeClass = Class.class;
 
   /**
    * Constructs a new <code>ClassObjectId</code>
@@ -69,10 +71,10 @@ public class ClassObjectId
    * @throws InvalidClassException if Class is garbage collected,
    *           or otherwise invalid
    */
-  public Class getClassObject ()
+  public Class<?> getClassObject ()
     throws InvalidClassException
   {
-    Class cl = (Class) _reference.get ();
+    Class<?> cl = (Class<?>) _reference.get ();
 
     if (cl == null)
       throw new InvalidClassException (getId ());

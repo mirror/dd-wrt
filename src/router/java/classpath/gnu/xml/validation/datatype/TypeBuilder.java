@@ -59,7 +59,7 @@ public class TypeBuilder
   {
     this.type = type;
     // TODO fundamental facets
-    type.facets = new LinkedHashSet();
+    type.facets = new LinkedHashSet<Facet>();
   }
 
   public void addParameter(String name, String value, ValidationContext context)

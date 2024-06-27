@@ -1,5 +1,5 @@
 /* PRNG.java -- A Utility methods for default source of randomness
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -72,16 +72,7 @@ public class PRNG
     IRandom delegate = new MDGenerator();
     try
       {
-        HashMap map = new HashMap();
-        // initialise it with a seed
-        long t = System.currentTimeMillis();
-        byte[] seed = new byte[] {
-            (byte)(t >>> 56), (byte)(t >>> 48),
-            (byte)(t >>> 40), (byte)(t >>> 32),
-            (byte)(t >>> 24), (byte)(t >>> 16),
-            (byte)(t >>>  8), (byte) t };
-        map.put(MDGenerator.SEEED, seed);
-        delegate.init(map); // default is to use SHA-1 hash
+	initialiseDelegate(delegate);
       }
     catch (Exception x)
       {
@@ -121,15 +112,7 @@ public class PRNG
       {
         try
           {
-            HashMap map = new HashMap();
-            long t = System.currentTimeMillis();
-            byte[] seed = new byte[] {
-                (byte)(t >>> 56), (byte)(t >>> 48),
-                (byte)(t >>> 40), (byte)(t >>> 32),
-                (byte)(t >>> 24), (byte)(t >>> 16),
-                (byte)(t >>>  8), (byte) t };
-            map.put(MDGenerator.SEEED, seed);
-            delegate.init(map); // default is to use SHA-1 hash
+	    initialiseDelegate(delegate);
             delegate.nextBytes(buffer, offset, length);
           }
         catch (Exception y)
@@ -138,4 +121,24 @@ public class PRNG
           }
       }
   }
+
+  /**
+   * Initialise the delegate with a seed.
+   *
+   * @param the delegate to initialise.
+   */
+  private static final void initialiseDelegate(IRandom delegate)
+  {
+    HashMap<String,Object> map = new HashMap<String,Object>();
+    // initialise it with a seed
+    long t = System.currentTimeMillis();
+    byte[] seed = new byte[] {
+      (byte)(t >>> 56), (byte)(t >>> 48),
+      (byte)(t >>> 40), (byte)(t >>> 32),
+      (byte)(t >>> 24), (byte)(t >>> 16),
+      (byte)(t >>>  8), (byte) t };
+    map.put(MDGenerator.SEEED, seed);
+    delegate.init(map); // default is to use SHA-1 hash
+  }
+
 }

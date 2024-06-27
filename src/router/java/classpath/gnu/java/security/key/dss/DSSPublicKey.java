@@ -1,5 +1,6 @@
 /* DSSPublicKey.java --
-   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006, 2014, 2015
+   Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -46,7 +47,6 @@ import gnu.java.security.key.IKeyPairCodec;
 
 import java.math.BigInteger;
 import java.security.AccessController;
-import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
 
 /**
@@ -56,8 +56,10 @@ import java.security.interfaces.DSAPublicKey;
  */
 public class DSSPublicKey
     extends DSSKey
-    implements PublicKey, DSAPublicKey
+    implements DSAPublicKey
 {
+  private  static final long serialVersionUID = 4662188565230532792L;
+
   /**
    * <code>y = g<sup>x</sup> mod p</code> where <code>x</code> is the
    * private part of the DSA key.
@@ -132,6 +134,7 @@ public class DSSPublicKey
     return (DSSPublicKey) new DSSKeyPairX509Codec().decodePublicKey(k);
   }
 
+  @Override
   public BigInteger getY()
   {
     return y;
@@ -147,6 +150,7 @@ public class DSSPublicKey
    * @exception IllegalArgumentException if the format is not supported.
    * @see DSSKeyPairRawCodec
    */
+  @Override
   public byte[] getEncoded(int format)
   {
     byte[] result;
@@ -174,6 +178,7 @@ public class DSSPublicKey
    * @return <code>true</code> if the designated object is of the same type
    *         and value as this one.
    */
+  @Override
   public boolean equals(Object obj)
   {
     if (obj == null)
@@ -186,11 +191,26 @@ public class DSSPublicKey
     return super.equals(that) && y.equals(that.getY());
   }
 
+  /**
+   * Provides a hash code for this object using the DSA
+   * parameter values, mirroring the {@link #equals(Object)}
+   * implementation.
+   *
+   * @return the hash code of this object.
+   * @see #equals(Object)
+   */
+  @Override
+  public int hashCode()
+  {
+    return 31 * super.hashCode() + y.hashCode();
+  }
+
+  @Override
   public String toString()
   {
     if (str == null)
       {
-        String ls = (String) AccessController.doPrivileged
+        String ls = AccessController.doPrivileged
             (new GetPropertyAction("line.separator"));
         str = new CPStringBuilder(this.getClass().getName()).append("(")
             .append(super.toString()).append(",").append(ls)

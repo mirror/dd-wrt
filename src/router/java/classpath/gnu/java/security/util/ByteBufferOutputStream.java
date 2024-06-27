@@ -1,6 +1,6 @@
 /* ByteBufferOutputStream.java -- output stream with a growable underlying
                                   byte buffer.
-   Copyright (C) 2006  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -98,6 +98,7 @@ public class ByteBufferOutputStream extends OutputStream
     return ((ByteBuffer) buffer.duplicate().flip()).slice();
   }
 
+  @Override
   public String toString()
   {
     return super.toString() + " [ buffer: " + buffer + " ]";

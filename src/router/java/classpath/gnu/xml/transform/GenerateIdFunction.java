@@ -1,5 +1,5 @@
 /* GenerateIdFunction.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -59,8 +59,9 @@ final class GenerateIdFunction
   implements XPathFunction, Function
 {
 
-  List args;
+  List<Expr> args;
 
+  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -68,7 +69,7 @@ final class GenerateIdFunction
     return Collections.EMPTY_SET;
   }
 
-  public void setArguments(List args)
+  public void setArguments(List<Expr> args)
   {
     this.args = args;
   }
@@ -76,24 +77,29 @@ final class GenerateIdFunction
   public Object evaluate(Node context, int pos, int len)
   {
     int arity = args.size();
-    List values = new ArrayList(arity);
+    List<Object> values = new ArrayList<Object>(arity);
     for (int i = 0; i < arity; i++)
       {
-        Expr arg = (Expr) args.get(i);
+        Expr arg = args.get(i);
         values.add(arg.evaluate(context, pos, len));
       }
     Node node;
-    Collection ns = (arity == 0) ? Collections.EMPTY_SET :
-      (Collection) values.get(0);
+    Collection<?> ns = (arity == 0) ? Collections.<Object>emptySet() :
+      (Collection<?>) values.get(0);
     if (ns.isEmpty())
       {
         node = context;
       }
     else
       {
-        List list = new ArrayList(ns);
+        List<Node> list = new ArrayList<Node>();
+	for (Object o : ns)
+	  {
+	    if (o instanceof Node)
+	      list.add((Node) o);
+	  }
         Collections.sort(list, documentOrderComparator);
-        node = (Node) list.get(0);
+        node = list.get(0);
       }
 
     String name = node.getNodeName();
@@ -115,10 +121,10 @@ final class GenerateIdFunction
   {
     GenerateIdFunction f = new GenerateIdFunction();
     int len = args.size();
-    List args2 = new ArrayList(len);
+    List<Expr> args2 = new ArrayList<Expr>(len);
     for (int i = 0; i < len; i++)
       {
-        args2.add(((Expr) args.get(i)).clone(context));
+        args2.add(args.get(i).clone(context));
       }
     f.setArguments(args2);
     return f;
@@ -126,9 +132,9 @@ final class GenerateIdFunction
 
   public boolean references(QName var)
   {
-    for (Iterator i = args.iterator(); i.hasNext(); )
+    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
       {
-        if (((Expr) i.next()).references(var))
+        if (i.next().references(var))
           {
             return true;
           }

@@ -52,7 +52,7 @@ public class AtomicSimpleType
 {
 
   public AtomicSimpleType(QName name,
-                          Set facets,
+                          Set<Facet> facets,
                           int fundamentalFacets,
                           SimpleType baseType,
                           Annotation annotation)

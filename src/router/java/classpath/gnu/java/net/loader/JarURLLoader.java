@@ -36,7 +36,7 @@ public final class JarURLLoader extends URLLoader
   // If not null, a mapping from INDEX.LIST for this jar only.
   // This is a set of all prefixes and top-level files that
   // ought to be available in this jar.
-  Set indexSet;
+  Set<String> indexSet;
 
   // This constructor is used internally.  It purposely does not open
   // the jar file -- it defers this until later.  This allows us to
@@ -44,7 +44,7 @@ public final class JarURLLoader extends URLLoader
   private JarURLLoader(URLClassLoader classloader, URLStreamHandlerCache cache,
                        URLStreamHandlerFactory factory,
                        URL baseURL, URL absoluteUrl,
-                       Set indexSet)
+                       Set<String> indexSet)
   {
     super(classloader, cache, factory, baseURL, absoluteUrl);
 

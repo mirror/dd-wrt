@@ -1,5 +1,5 @@
 /* MessageDigest.java --- The message digest interface.
-   Copyright (C) 1999, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -288,6 +288,7 @@ public abstract class MessageDigest extends MessageDigestSpi
    *
    * @return a string representation of this instance.
    */
+  @Override
   public String toString()
   {
     return (getClass()).getName() + " Message Digest <" + digestToString() + ">";
@@ -353,6 +354,7 @@ public abstract class MessageDigest extends MessageDigestSpi
    * @throws CloneNotSupportedException
    *           the implementation does not support cloning.
    */
+  @Override
   public Object clone() throws CloneNotSupportedException
   {
     return super.clone();

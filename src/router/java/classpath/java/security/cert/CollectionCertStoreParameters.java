@@ -1,5 +1,5 @@
 /* CollectionCertStoreParameters -- collection-based cert store parameters
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -60,7 +60,7 @@ public class CollectionCertStoreParameters implements CertStoreParameters
   // ------------------------------------------------------------------------
 
   /** The underlying collection. */
-  private final Collection collection;
+  private final Collection<?> collection;
 
   // Constructors.
   // ------------------------------------------------------------------------
@@ -92,9 +92,10 @@ public class CollectionCertStoreParameters implements CertStoreParameters
   // Instance methods.
   // ------------------------------------------------------------------------
 
+  @Override
   public Object clone()
   {
-    return new CollectionCertStoreParameters(new ArrayList(collection));
+    return new CollectionCertStoreParameters(new ArrayList<Object>(collection));
   }
 
   /**
@@ -114,6 +115,7 @@ public class CollectionCertStoreParameters implements CertStoreParameters
    *
    * @return The string representation of these parameters.
    */
+  @Override
   public String toString()
   {
     return "CollectionCertStoreParameters: [ collection: "

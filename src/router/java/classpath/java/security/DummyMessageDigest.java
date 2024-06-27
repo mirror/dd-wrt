@@ -1,5 +1,5 @@
 /* DummyMessageDigest.java - Wrapper for MessageDigestSpi
-   Copyright (C) 1999, 2002 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,6 +47,7 @@ final class DummyMessageDigest extends MessageDigest
     this.mdSpi = mdSpi;
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException
   {
     MessageDigest result = new DummyMessageDigest
@@ -57,32 +58,38 @@ final class DummyMessageDigest extends MessageDigest
 
   // java.security.MessageDigestSpi abstract methods implementation ---------
 
+  @Override
   public byte[] engineDigest()
   {
     return mdSpi.engineDigest();
   }
 
+  @Override
   public int engineDigest(byte[] buf, int offset, int len)
     throws DigestException
   {
     return mdSpi.engineDigest(buf, offset, len);
   }
 
+  @Override
   public int engineGetDigestLength()
   {
     return mdSpi.engineGetDigestLength();
   }
 
+  @Override
   public void engineReset()
   {
     mdSpi.engineReset();
   }
 
+  @Override
   public void engineUpdate(byte input)
   {
     mdSpi.engineUpdate(input);
   }
 
+  @Override
   public void engineUpdate(byte[] input, int offset, int len)
   {
     mdSpi.engineUpdate(input, offset, len);

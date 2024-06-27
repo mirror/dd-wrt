@@ -1,0 +1,262 @@
+#!wml --include=..
+
+#include "include/layout.wml"
+
+<subject "GNU Classpath 0.93 Announcement (2006-12-11)"> 
+
+<box>
+<boxtitle>GNU Classpath 0.93 "Dreamland"</boxtitle>
+<boxitem>
+We are proud to announce the release of GNU Classpath 0.93 "Dreamland"
+<p>
+Read on for highlights of new features in this release, pointers to
+supported applications and screenshots, the status and future of the
+1.4 and 1.5 generics branches.  An update on the Summer of Code
+student work.  Plus some prelimenary ideas on cooperating with the Sun
+GPL OpenJDK Java project.  And the GNU Classpath commitments to the
+Free Software community for the future of various projects around GNU
+Classpath, the users and GNU/Linux distros relying on our work.
+<p>
+Highlights of new features in this release (more extensive list below):
+<blockquote>
+  NIO Selector epoll (linux 2.6 kernel) and kio (BSD and Darwin)
+  notification mechanisms added. Fast, direct call, support for in
+  runtime CORBA objects. Support for user JNDI context factories (plus
+  corbaname: and rmi: jndi urls). New javah tool included.  JSSE
+  SSLEngine support including TLSv1.1 and pre-shared key ciphersuites.
+  Full lang.management MX Beans ManagementFactory implementation.
+  99.95% api coverage for 1.4, 95.5% api coverage for 1.5.  Much
+  better swing HTML support (aka JGecko). Graphics2D on cairo speedups
+  and make it respects interpolation hints, better gradient
+  support and custom Composites and Paints.
+</blockquote>
+Screenshots of applications (eclipse, jedit, jfreechart, "jgecko",
+statcvs.png) working out of the box with GNU Classpath 0.93 can be
+found at <createlink url="http://developer.classpath.org/screenshots/">
+<p>
+With this release our 1.4 library work is 99.95 API complete.
+Although this doesn't mean GNU Classpath is fully compatible and a
+perfect drop in replacement for proprietary 1.4 JDKs yet, it is pretty
+close and any divergence should be considered a bug.  Our 1.5 library
+work is now 95.5% API complete.
+<p>
+This is the last release that will have two separate library releases
+for 1.4 and 1.5. The next release will be based on our 1.5 generics
+branch work.  We are willing to maintain a 1.4 branch based the
+non-generic 0.93 release if people are interested in support for
+this.  Please contact the mailinglist classpath@gnu.org if you are.
+<p>
+This release contains two large contributions sponsored by the Google
+Summer of Code project.  Casey Marshall rewrote the SSL library to use
+the NIO model of JSSE (implementing SSLEngine) and added support for
+TLSv1.1 and pre-shared key ciphersuites.  Originally developed on the
+ssl-nio-branch this work is now available in the generics release.
+Andrew John Hughes wrote a lang.management MX Beans ManagementFactory
+implementation, which allows a runtime based on GNU Classpath to
+provide various MX Beans through javax.management services that a user
+can use to query the status and usage of various low level vm
+resources.  The the original implementation was written for GCJ, but
+for this release other runtimes (e.g. jamvm and cacao) have added
+support based on the generic vm-interface designed by Andrew.
+<p>
+GNU Classpath, essential libraries for java, is a project to create
+free core class libraries for use with runtimes, compilers and tools
+for the java programming language.
+<p>
+The GNU Classpath developer snapshot releases are not directly aimed
+at the end user but are meant to be integrated into larger development
+platforms. For example the GCC (gcj) and Kaffe projects will use the
+developer snapshots as a base for future versions. More projects based
+on GNU Classpath: <createlink url="http://www.gnu.org/software/classpath/stories.html">
+<p>
+On November 13 (now known as Java Liberation Day) Sun decided to start
+releasing all its Java ME, SE and EE implementations under the GPL.
+<createlink url="http://www.sun.com/software/opensource/java/"> For the last decade the
+GNU Classpath community has worked together with various other free
+software projects to help people avoid the so called "Java Trap"
+<createlink url="http://www.gnu.org/philosophy/java-trap.html">
+As the FSF press release welcoming the Sun announcement said: 'Now,
+Sun has begun disarming the "Java Trap", turning it from a pitfall
+into a valuable foundation for future free software development.'
+<createlink url="http://www.fsf.org/news/fsf-welcomes-gpl-java.html">
+<p>
+The new project 'OpenJDK' started by Sun will provide a full SE Java
+environment. Only parts have been released now. And the GNU Classpath
+community already started adopting independent parts to make them work
+on a full free stack. With the 0.93 generics release you should be
+able to compile and run the GPl javac compiler with some tricks.
+<createlink url="http://gnu.wildebeest.org/diary/index.php?p=172">
+We hope to cooperate more substantially with the OpenJDK community in
+the future.
+<p>
+Not all code has been released by Sun, in particular the core class
+libraries will not be release till somewhere next year. And some parts
+might be encumbered preventing Sun from releasing those parts. We will
+try and help plugg any holes left. It is too early to claim we already
+know how our communities will interact and work together. But the
+general feeling is positive. Sun has been very open, clear and
+cooperative about OpenJDK and letting the GNU Classpath community know
+about their plans and willingness to work with the existing free
+software communities.
+<p>
+The GNU Classpath community is happy with this development and
+although it is too early to see what the future might bring we know we
+have the following commitments to our developers, users, projects and
+GNU/Linux distros depending on our work:
+<p>
+<ul>
+<li> We will not regress on freedom. For anything Sun cannot release
+ (now) under the GPL we will provide free replacements.
+
+<li> We will not regress on coverage. The platforms, architectures,
+  projects and programs that run now with GNU Classpath should run in
+  the future.
+
+<li> We will not regress on having fun, innovating and hacking together!
+</ul>
+We want to make it easy to adopt and collaborate. We want to make it
+easy for people to improve together with GNU Classpath and OpenJDK by
+helping also the smaller projects and platforms with less resources to
+adopt the new innovation (coordinating new VM and Platform interfaces)
+<p>
+Various individual GNU Classpath hackers have made personal statements
+about all this (from Planet Classpath - http://planet.classpath.org/):
+<ul>
+<li>Mario Torre <createlink url="http://jroller.com/page/neugens?entry=watch_out_we_have_changed" name="Watch out, we have changed history...">
+
+<li>Roman Kennke <createlink url="http://kennke.org/blog/?p=25" name="First Rays of a New Rising Sun">
+
+<li>Brian Jones <createlink url="http://cbj.livejournal.com/234857.html" name="Nov. 13 2006, is a notable bookmark in the history of free software">
+
+<li>David Gilbert <createlink url="http://jroller.com/page/dgilbert?entry=on_walled_gardens" name="On Walled Gardens">
+
+<li>Anthony Green <createlink url="http://spindazzle.org/greenblog/index.php?/archives/43-Now-thats-what-I-call-harmony....html" name="Now that's what I call harmony...">
+
+<li>Casey Marshall <createlink url="http://metastatic.org/text/Concern/2006/11/13/107/" name="Free Java!">
+
+<li>Andrew Hughes <createlink url="http://blog.fuseyism.com/?p=18" name="Victory! Pigs Fly as Java is GPLed and javac compiles Freely">
+
+<li>Dalibor Topic <createlink url="http://robilad.livejournal.com/2056.html" name="San i java">
+
+<li>Jeroen Frijters <createlink url="http://weblog.ikvm.net/PermaLink.aspx?guid=3620697a-52f4-4067-9afa-863b3066317b" name="Sun Open Sourcing Java">
+
+<li>Andrew Overholt <createlink url="http://overholt.ca/wp/?p=74" name="Sun commits to 'GPL + Exception'ing Their Java Implementation">
+
+<li>Thomas Fitzsimmons <createlink url="http://fitzsim.org/blog/?p=13" name="The New Free Java Project">
+
+<li>Mark Wielaard <createlink url="http://gnu.wildebeest.org/diary/index.php?p=171" name="Collaborate"> and
+  <createlink url="http://gnu.wildebeest.org/diary/index.php?p=175" name="GNU Classpath, Sun, Java, GPL, Reflections & The Future">
+
+<li>Tom Tromey <createlink url="http://tromey.com/blog/?p=293" name="Sun Frees Java">
+</ul>
+The GNU Classpath developers site http://developer.classpath.org/
+provides detailed information on how to start with helping the GNU
+Classpath project and gives an overview of the core class library
+packages currently provided.  For each snapshot release generated
+documentation is provided through the GNU Classpath Tools gjdoc
+project.  A documentation generation framework for java source
+files used by the GNU project. Full documentation on the currently
+implementated packages and classes can be found at:
+http://developer.classpath.org/doc/
+<p>
+For more information about the project see also:
+<ul>
+<li>GNU Classpath home page: <createlink url="http://www.gnu.org/software/classpath/">
+
+<li>Developer information (wiki): <createlink url="http://developer.classpath.org/">
+
+<li>Full class documentation: <createlink url="http://developer.classpath.org/doc/">
+
+<li>GNU Classpath hackers: <createlink url="http://planet.classpath.org/">
+
+<li>Autobuilder, current build status, build snapshots: <createlink url="http://builder.classpath.org/">
+
+<li>Application test pages (wiki)
+  <createlink url="http://developer.classpath.org/mediation/Applets">
+  <createlink url="http://developer.classpath.org/mediation/FreeAWTTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSwingTestApps">
+  <createlink url="http://developer.classpath.org/mediation/FreeSWTTestApps">
+
+<li>GNU Classpath hacking with Eclipse (wiki)
+  <createlink url="http://developer.classpath.org/mediation/ClasspathHackingWithEclipse">
+
+<li>GNU Classpath promotion banners: <createlink url="http://developer.classpath.org/mediation/ClasspathBanners">
+</ul>
+GNU Classpath 0.93 can be downloaded from <createlink url="ftp://ftp.gnu.org/pub/gnu/classpath/"> or one of the ftp.gnu.org mirrors <createlink url="http://www.gnu.org/order/ftp.html">
+<p>
+<pre>
+File: classpath-0.93.tar.gz
+MD5sum: ffa9e9cac31c5acbf0ea9eff9efa923d
+SHA1sum: 336cae589ec91a4fe212c2149c57b51dab2ca002
+
+File: classpath-0.93-generics.tar.gz
+MD5sum: 9d3f5941b9fc0d8bc056344cb07a5c86
+SHA1sum: 4362433a4bd985baf00a00586c355939905861ff
+
+New in release 0.93 (Dec 8, 2006)
+(See the ChangeLog file for a full list of changes.)
+
+* CORBA objects that exist on the same virtual machine and only are
+  connected to another ORB are now accessed directly and no longer via
+  network. It is the same feature that RMI implementation
+  provides. These faster calls should be completely transparent, as the
+  parameters are cloned, where required. Currently the direct calls are
+  only possible for the non-deprecated objects that are connected to the
+  ORB via POA.
+* The 'javah' tool has been added.  It requires the ASM library
+  (see asm.objectweb.org); it can be enabled with the --with-asm
+  option to configure
+* Added the rmi and corbaname URL context factories for JNDI.
+* Fixes in the JNDI InitialContext now allows to plug-in user
+  implementations.
+* Removed currentClassLoader method from
+  vm/reference/java/io/ObjectInputStream.java.
+* Added firstNonNullClassLoader method to
+  vm/reference/gnu/classpath/VMStackWalker.java. VMs are encouraged to
+  provide a more efficient implementation.
+* Added aton method to vm/reference/java/net/VMInetAddress.java.
+* NetworkInterface has been implemented for systems that provide the
+  `getifaddrs' function.
+* java.nio.channels.Selector implementations have been added that use
+  the kqueue notification mechanism on Mac OS X and *BSD, and that use
+  the epoll notification mechanism on Linux 2.6.
+* java.nio has been refactored to support more non-blocking operations
+  natively. Blocking IO classes have been refactored to call
+  non-blocking classes. Non-blocking accepts, connects, and
+  scatter-gather IO should now be better supported.
+* HTML support for Swing has been greatly enhanced.
+
+Runtime interface changes:
+
+* java.net.VMNetworkInterface and java.net.NetworkInterface have been
+  updated to keep native-modified state in the former, and to simplify
+  the native code in our reference implementation.
+* gnu.java.nio.VMChannel has been expanded to better support native
+  non-blocking IO. Most native state data (such as file descriptor
+  integers) has been abstracted away into private state in the runtime
+  interface.
+* gnu.java.nio.VMPipe has been similarly changed.
+* gnu.java.net.VMPlainSocketImpl has been changed to remove some
+  functionality now provided by VMChannel; datagram socket-specific
+  methods have also been moved here, deprecating VMPlainDatagramSocketImpl.
+* gnu.java.net.VMPlainDatagramSocketImpl removed.
+
+The following people helped with this release:
+
+Aaron M. Ucko, Andreas Tobler, Andrew John Hughes, Audrius Meskauskas,
+Ben Konrath, Cameron McCormack, Casey Marshall, Chris Burdess,
+Christian Elias Naur, Christian Thalinger, Dalibor Topic, David Daney,
+David Fu, David Gilbert, David Pirkle, Edwin Steiner, Francis Kung,
+Friedjof Siebert, Gary Benson, Guilhem Lavaux, Helmer Kraemer,
+Ian Rogers, Ingo Proetel, Ito Kazumitsu, Jeroen Frijters,
+Keith Seitz, Lillian Angel, Marco Trudel, Mario Torre, Mark Wielaard,
+Martin Platter, Matthew Burgess, Michael Franz, Michael Koch,
+Paul Jenner, Raif S. Naffah, Riccardo Mottola, Robert Lougher,
+Robert Schuster, Roger Sayle, Roman Kennke, Sven de Marothy,
+Tania Bento, Thomas Fitzsimmons and Tom Tromey
+
+We would also like to thank the numerous bug reporters and testers!
+
+</pre>
+</boxitem>
+</box>

@@ -1,5 +1,5 @@
 /* CertificateException.java -- certificate exception.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,6 +47,8 @@ package javax.security.cert;
  */
 public class CertificateException extends Exception
 {
+
+  private static final long serialVersionUID = 3192535253797119798L;
 
   public CertificateException()
   {

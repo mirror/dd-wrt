@@ -1,5 +1,5 @@
 /* ExceptionOnlyFilter.java -- filter for excetions by caught/uncaught and type
-   Copyright (C) 2005, 2006 Free Software Foundation
+   Copyright (C) 2005, 2006, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -103,8 +103,8 @@ public class ExceptionOnlyFilter
       {
         try
           {
-            Class klass
-              = (Class) event.getParameter(Event.EVENT_EXCEPTION_CLASS);
+            Class<?> klass
+              = (Class<?>) event.getParameter(Event.EVENT_EXCEPTION_CLASS);
             classMatch = klass == _refId.getType();
           }
         catch (InvalidClassException ex)

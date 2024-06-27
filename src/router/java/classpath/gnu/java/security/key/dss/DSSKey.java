@@ -1,5 +1,5 @@
 /* DSSKey.java --
-   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006, 2014, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -50,6 +50,7 @@ import java.security.Key;
 import java.security.interfaces.DSAKey;
 import java.security.interfaces.DSAParams;
 import java.security.spec.DSAParameterSpec;
+import java.util.Objects;
 
 /**
  * A base asbtract class for both public and private DSS (Digital Signature
@@ -73,6 +74,8 @@ import java.security.spec.DSAParameterSpec;
 public abstract class DSSKey
     implements Key, DSAKey
 {
+  private static final long serialVersionUID = -621913609497224901L;
+
   /**
    * A prime modulus, where
    * <code>2<sup>L-1</sup> &lt; p &lt; 2<sup>L</sup></code> for
@@ -126,22 +129,26 @@ public abstract class DSSKey
     this.g = g;
   }
 
+  @Override
   public DSAParams getParams()
   {
     return new DSAParameterSpec(p, q, g);
   }
 
+  @Override
   public String getAlgorithm()
   {
-    return Registry.DSS_KPG;
+    return "DSA";
   }
 
   /** @deprecated see getEncoded(int). */
+  @Override @Deprecated
   public byte[] getEncoded()
   {
     return getEncoded(defaultFormat);
   }
 
+  @Override
   public String getFormat()
   {
     return FormatUtil.getEncodingShortName(defaultFormat);
@@ -161,6 +168,7 @@ public abstract class DSSKey
    * @return <code>true</code> if the designated object is of the same type
    *         and value as this one.
    */
+  @Override
   public boolean equals(Object obj)
   {
     if (hasInheritedParameters())
@@ -178,11 +186,24 @@ public abstract class DSSKey
            && g.equals(that.getParams().getG());
   }
 
+  /**
+   * Returns the hash code of the key, computed from its
+   * parameter values.
+   *
+   * @return the hash code.
+   */
+  @Override
+  public int hashCode()
+  {
+    return Objects.hash(p, q, g);
+  }
+
+  @Override
   public String toString()
   {
     if (str == null)
       {
-        String ls = (String) AccessController.doPrivileged(new GetPropertyAction("line.separator"));
+        String ls = AccessController.doPrivileged(new GetPropertyAction("line.separator"));
         CPStringBuilder sb = new CPStringBuilder(ls)
             .append("defaultFormat=").append(defaultFormat).append(",")
             .append(ls);

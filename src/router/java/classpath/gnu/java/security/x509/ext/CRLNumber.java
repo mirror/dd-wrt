@@ -1,5 +1,5 @@
 /* CRLNumber.java -- CRL number extension.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -81,15 +81,17 @@ public class CRLNumber extends Extension.Value
     return number;
   }
 
+  @Override
   public byte[] getEncoded()
   {
     if (encoded == null)
       {
         encoded = new DERValue (DER.INTEGER, number).getEncoded();
       }
-    return (byte[]) encoded.clone();
+    return encoded.clone();
   }
 
+  @Override
   public String toString()
   {
     return CRLNumber.class.getName() + " [ " + number + " ]";

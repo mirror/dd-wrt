@@ -1,5 +1,5 @@
 /* ByteArray.java -- wrapper around a byte array, with nice toString output.
-   Copyright (C) 2005  Free Software Foundation, Inc.
+   Copyright (C) 2005, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -57,6 +57,7 @@ public final class ByteArray
     return value;
   }
 
+  @Override
   public String toString ()
   {
     StringWriter str = new StringWriter ();

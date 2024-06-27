@@ -1,5 +1,5 @@
 /* Security.java --- Java base security class implementation
-   Copyright (C) 1999, 2001, 2002, 2003, 2004, 2005, 2006
+   Copyright (C) 1999, 2001, 2002, 2003, 2004, 2005, 2006, 2014
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -48,10 +48,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -68,7 +66,7 @@ public final class Security
 {
   private static final String ALG_ALIAS = "Alg.Alias.";
 
-  private static Vector providers = new Vector();
+  private static Vector<Provider> providers = new Vector<Provider>();
   private static Properties secprops = new Properties();
 
   static
@@ -139,7 +137,7 @@ public final class Security
             try
               {
                 ClassLoader sys = ClassLoader.getSystemClassLoader();
-                providers.addElement(Class.forName(name, true, sys).newInstance());
+                providers.addElement((Provider) Class.forName(name, true, sys).newInstance());
               }
             catch (ClassNotFoundException x)
               {
@@ -185,19 +183,17 @@ public final class Security
    *             {@link AlgorithmParameters} and {@link KeyFactory} engine
    *             classes instead.
    */
+  @Deprecated
   public static String getAlgorithmProperty(String algName, String propName)
   {
     if (algName == null || propName == null)
       return null;
 
     String property = String.valueOf(propName) + "." + String.valueOf(algName);
-    Provider p;
-    for (Iterator i = providers.iterator(); i.hasNext(); )
+    for (Provider p : providers)
       {
-        p = (Provider) i.next();
-        for (Iterator j = p.keySet().iterator(); j.hasNext(); )
+	for (String key : p.stringPropertyNames())
           {
-            String key = (String) j.next();
             if (key.equalsIgnoreCase(property))
               return p.getProperty(key);
           }
@@ -235,7 +231,7 @@ public final class Security
     int max = providers.size ();
     for (int i = 0; i < max; i++)
       {
-        if (((Provider) providers.elementAt(i)).getName().equals(provider.getName()))
+        if (providers.elementAt(i).getName().equals(provider.getName()))
           return -1;
       }
 
@@ -291,7 +287,7 @@ public final class Security
     int max = providers.size ();
     for (int i = 0; i < max; i++)
       {
-        if (((Provider) providers.elementAt(i)).getName().equals(name))
+        if (providers.elementAt(i).getName().equals(name))
           {
             providers.remove(i);
             break;
@@ -327,17 +323,15 @@ public final class Security
   {
     if (name == null)
       return null;
-    else
-      {
-        name = name.trim();
-        if (name.length() == 0)
-          return null;
-      }
+    name = name.trim();
+    if (name.length() == 0)
+      return null;
+
     Provider p;
     int max = providers.size ();
     for (int i = 0; i < max; i++)
       {
-        p = (Provider) providers.elementAt(i);
+        p = providers.elementAt(i);
         if (p.getName().equals(name))
           return p;
       }
@@ -419,12 +413,12 @@ public final class Security
       return result;
 
     serviceName = serviceName.toUpperCase()+".";
-    Provider[] providers = getProviders();
+    Provider[] provs = getProviders();
     int ndx;
-    for (int i = 0; i < providers.length; i++)
-      for (Enumeration e = providers[i].propertyNames(); e.hasMoreElements(); )
+    for (int i = 0; i < provs.length; i++)
+      for (String s : provs[i].stringPropertyNames())
         {
-          String service = ((String) e.nextElement()).trim();
+          String service = s.trim();
           if (service.toUpperCase().startsWith(serviceName))
             {
               service = service.substring(serviceName.length()).trim();
@@ -490,7 +484,7 @@ public final class Security
     if (filter == null || filter.length() == 0)
       return getProviders();
 
-    HashMap map = new HashMap(1);
+    HashMap<String,String> map = new HashMap<String,String>(1);
     int i = filter.indexOf(':');
     if (i == -1) // <service>.<algorithm>
       map.put(filter, "");
@@ -505,7 +499,7 @@ public final class Security
    * set of <i>selection</i> criteria.
    *
    * <p>The <i>selection</i> criteria are defined in a {@link Map} where each
-   * element specifies a <i>selection</i> querry. The <i>Keys</i> in this
+   * element specifies a <i>selection</i> query. The <i>Keys</i> in this
    * {@link Map} must be in one of the two following forms:</p>
    *
    * <ul>
@@ -531,7 +525,7 @@ public final class Security
    * </ul>
    *
    * @param filter
-   *          a {@link Map} of <i>selection querries</i>.
+   *          a {@link Map} of <i>selection queries</i>.
    * @return all currently installed {@link Provider}s which satisfy ALL the
    *         <i>selection</i> criteria defined in <code>filter</code>.
    *         Returns ALL installed {@link Provider}s if <code>filter</code>
@@ -549,68 +543,67 @@ public final class Security
     if (filter == null)
       return getProviders();
 
-    Set<String> querries = filter.keySet();
-    if (querries == null || querries.isEmpty())
+    Set<String> queries = filter.keySet();
+    if (queries == null || queries.isEmpty())
       return getProviders();
 
-    LinkedHashSet result = new LinkedHashSet(providers); // assume all
+    LinkedHashSet<Provider> result = new LinkedHashSet<Provider>(providers); // assume all
     int dot, ws;
-    String querry, service, algorithm, attribute, value;
-    LinkedHashSet serviceProviders = new LinkedHashSet(); // preserve insertion order
-    for (Iterator i = querries.iterator(); i.hasNext(); )
+    String service, algorithm, attribute, value;
+    LinkedHashSet<Provider> serviceProviders = new LinkedHashSet<Provider>(); // preserve insertion order
+    for (String query : queries)
       {
-        querry = (String) i.next();
-        if (querry == null) // all providers
+        if (query == null) // all providers
           continue;
 
-        querry = querry.trim();
-        if (querry.length() == 0) // all providers
+        query = query.trim();
+        if (query.length() == 0) // all providers
           continue;
 
-        dot = querry.indexOf('.');
+        dot = query.indexOf('.');
         if (dot == -1) // syntax error
           throw new InvalidParameterException(
-              "missing dot in '" + String.valueOf(querry)+"'");
+              "missing dot in '" + String.valueOf(query)+"'");
 
-        value = filter.get(querry);
-        // deconstruct querry into [service, algorithm, attribute]
+        value = filter.get(query);
+        // deconstruct query into [service, algorithm, attribute]
         if (value == null || value.trim().length() == 0) // <service>.<algorithm>
           {
             value = null;
             attribute = null;
-            service = querry.substring(0, dot).trim();
-            algorithm = querry.substring(dot+1).trim();
+            service = query.substring(0, dot).trim();
+            algorithm = query.substring(dot+1).trim();
           }
         else // <service>.<algorithm> <attribute>
           {
-            ws = querry.indexOf(' ');
+            ws = query.indexOf(' ');
             if (ws == -1)
               throw new InvalidParameterException(
                   "value (" + String.valueOf(value) +
-                  ") is not empty, but querry (" + String.valueOf(querry) +
+                  ") is not empty, but query (" + String.valueOf(query) +
                   ") is missing at least one space character");
             value = value.trim();
-            attribute = querry.substring(ws+1).trim();
+            attribute = query.substring(ws+1).trim();
             // was the dot in the attribute?
             if (attribute.indexOf('.') != -1)
               throw new InvalidParameterException(
                   "attribute_name (" + String.valueOf(attribute) +
-                  ") in querry (" + String.valueOf(querry) + ") contains a dot");
+                  ") in query (" + String.valueOf(query) + ") contains a dot");
 
-            querry = querry.substring(0, ws).trim();
-            service = querry.substring(0, dot).trim();
-            algorithm = querry.substring(dot+1).trim();
+            query = query.substring(0, ws).trim();
+            service = query.substring(0, dot).trim();
+            algorithm = query.substring(dot+1).trim();
           }
 
         // service and algorithm must not be empty
         if (service.length() == 0)
           throw new InvalidParameterException(
-              "<crypto_service> in querry (" + String.valueOf(querry) +
+              "<crypto_service> in query (" + String.valueOf(query) +
               ") is empty");
 
         if (algorithm.length() == 0)
           throw new InvalidParameterException(
-              "<algorithm_or_type> in querry (" + String.valueOf(querry) +
+              "<algorithm_or_type> in query (" + String.valueOf(query) +
               ") is empty");
 
         selectProviders(service, algorithm, attribute, value, result, serviceProviders);
@@ -622,17 +615,16 @@ public final class Security
     if (result.isEmpty())
       return null;
 
-    return (Provider[]) result.toArray(new Provider[result.size()]);
+    return result.toArray(new Provider[result.size()]);
   }
 
   private static void selectProviders(String svc, String algo, String attr,
-                                      String val, LinkedHashSet providerSet,
-                                      LinkedHashSet result)
+                                      String val, LinkedHashSet<Provider> providerSet,
+                                      LinkedHashSet<Provider> result)
   {
     result.clear(); // ensure we start with an empty result set
-    for (Iterator i = providerSet.iterator(); i.hasNext(); )
+    for (Provider p : providerSet)
       {
-        Provider p = (Provider) i.next();
         if (provides(p, svc, algo, attr, val))
           result.add(p);
       }
@@ -641,9 +633,7 @@ public final class Security
   private static boolean provides(Provider p, String svc, String algo,
                                   String attr, String val)
   {
-    Iterator it;
-    String serviceDotAlgorithm = null;
-    String key = null;
+    String serviceDotAlgorithm = "";
     String realVal;
     boolean found = false;
     // if <svc>.<algo> <attr> is in the set then so is <svc>.<algo>
@@ -651,9 +641,8 @@ public final class Security
     outer: for (int r = 0; r < 3; r++) // guard against circularity
       {
         serviceDotAlgorithm = (svc+"."+String.valueOf(algo)).trim();
-        for (it = p.keySet().iterator(); it.hasNext(); )
+	for (String key : p.stringPropertyNames())
           {
-            key = (String) it.next();
             if (key.equalsIgnoreCase(serviceDotAlgorithm)) // eureka
               {
                 found = true;
@@ -679,9 +668,8 @@ public final class Security
     // <service>.<algorithm> <attribute>; find the key entry that match
     String realAttr;
     int limit = serviceDotAlgorithm.length() + 1;
-    for (it = p.keySet().iterator(); it.hasNext(); )
+    for (String key : p.stringPropertyNames())
       {
-        key = (String) it.next();
         if (key.length() <= limit)
           continue;
 

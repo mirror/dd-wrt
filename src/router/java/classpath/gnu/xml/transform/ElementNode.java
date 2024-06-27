@@ -1,5 +1,5 @@
 /* ElementNode.java --
-   Copyright (C) 2004,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006, 2015, 2016 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -42,7 +42,6 @@ import gnu.java.lang.CPStringBuilder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -67,7 +66,7 @@ final class ElementNode
   final TemplateNode namespace;
   final String uas;
   final Node source;
-  final Collection elementExcludeResultPrefixes;
+  final Collection<String> elementExcludeResultPrefixes;
 
   ElementNode(TemplateNode name,
               TemplateNode namespace, String uas, Node source)
@@ -81,13 +80,13 @@ final class ElementNode
                                      "exclude-result-prefixes");
     if (attr != null)
       {
-        elementExcludeResultPrefixes = new HashSet();
+        elementExcludeResultPrefixes = new HashSet<String>();
         StringTokenizer st = new StringTokenizer(attr.getNodeValue());
         while (st.hasMoreTokens())
           elementExcludeResultPrefixes.add(st.nextToken());
       }
     else
-      elementExcludeResultPrefixes = Collections.EMPTY_SET;
+      elementExcludeResultPrefixes = Collections.<String>emptySet();
   }
 
   TemplateNode clone(Stylesheet stylesheet)
@@ -209,9 +208,8 @@ final class ElementNode
     throws TransformerException
   {
     stylesheet.bindings.global = true;
-    for (Iterator i = stylesheet.attributeSets.iterator(); i.hasNext(); )
+    for (AttributeSet as : stylesheet.attributeSets)
       {
-        AttributeSet as = (AttributeSet) i.next();
         if (!as.name.equals(attributeSet))
           continue;
         if (as.uas != null)

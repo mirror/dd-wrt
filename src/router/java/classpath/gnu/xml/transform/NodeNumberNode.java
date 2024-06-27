@@ -1,5 +1,5 @@
 /* NodeNumberNode.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -43,10 +43,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import javax.xml.transform.TransformerException;
+
 import org.w3c.dom.Node;
+
 import gnu.xml.xpath.Expr;
 import gnu.xml.xpath.Pattern;
 import gnu.xml.xpath.Selector;
+import gnu.xml.xpath.Test;
 import gnu.xml.xpath.UnionExpr;
 
 /**
@@ -145,7 +148,7 @@ final class NodeNumberNode
         return (context == null) ? new int[0] :
           new int[] { (context == current) ? pos : getIndex(current, context) };
       case MULTIPLE:
-        List ancestors = new ArrayList();
+        List<Node> ancestors = new ArrayList<Node>();
         while (context != null)
           {
             if (countMatches(current, context))
@@ -161,21 +164,21 @@ final class NodeNumberNode
         int[] ret = new int[ancestors.size()];
         for (int i = 0; i < ret.length; i++)
           {
-            ret[i] = getIndex(current, (Node) ancestors.get(i));
+            ret[i] = getIndex(current, ancestors.get(i));
           }
         return ret;
       case ANY:
         Expr preceding = new Selector(Selector.PRECEDING,
-                                      Collections.EMPTY_LIST);
+                                      Collections.<Test>emptyList());
         Expr ancestorOrSelf = new Selector(Selector.ANCESTOR_OR_SELF,
-                                           Collections.EMPTY_LIST);
+                                           Collections.<Test>emptyList());
         Expr any = new UnionExpr(preceding, ancestorOrSelf);
         Object eval = any.evaluate(context, pos, len);
         if (eval instanceof Collection)
           {
-            Collection ns = (Collection) eval;
-            List candidates = new ArrayList();
-            for (Iterator i = ns.iterator(); i.hasNext(); )
+            Collection<?> ns = (Collection<?>) eval;
+            List<Node> candidates = new ArrayList<Node>();
+            for (Iterator<?> i = ns.iterator(); i.hasNext(); )
               {
                 Node candidate = (Node) i.next();
                 if (countMatches(current, candidate))

@@ -1,5 +1,5 @@
 /* X509KeyManagerFactory.java -- X.509 key manager factory.
-   Copyright (C) 2006  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -75,6 +75,7 @@ import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
+
 import gnu.javax.net.ssl.NullManagerParameters;
 import gnu.javax.net.ssl.PrivateCredentials;
 
@@ -113,9 +114,13 @@ public class X509KeyManagerFactory extends KeyManagerFactorySpi
   protected void engineInit(ManagerFactoryParameters params)
     throws InvalidAlgorithmParameterException
   {
+    Map<String, X509Certificate[]> certMap;
+    Map<String, PrivateKey> keyMap;
+
     if (params instanceof NullManagerParameters)
       {
-        current = new Manager(Collections.EMPTY_MAP, Collections.EMPTY_MAP);
+	certMap = Collections.emptyMap();
+	keyMap = Collections.emptyMap();
       }
     else if (params instanceof PrivateCredentials)
       {
@@ -124,10 +129,8 @@ public class X509KeyManagerFactory extends KeyManagerFactorySpi
         List<PrivateKey> keys
           = ((PrivateCredentials) params).getPrivateKeys();
         int i = 0;
-        HashMap<String, X509Certificate[]> certMap
-          = new HashMap<String, X509Certificate[]>();
-        HashMap<String, PrivateKey> keyMap
-          = new HashMap<String, PrivateKey>();
+        certMap  = new HashMap<String, X509Certificate[]>();
+        keyMap  = new HashMap<String, PrivateKey>();
         Iterator<X509Certificate[]> c = chains.iterator();
         Iterator<PrivateKey> k = keys.iterator();
         while (c.hasNext() && k.hasNext())
@@ -136,12 +139,12 @@ public class X509KeyManagerFactory extends KeyManagerFactorySpi
             keyMap.put(String.valueOf(i), k.next());
             i++;
           }
-        current = new Manager(keyMap, certMap);
       }
     else
       {
         throw new InvalidAlgorithmParameterException();
       }
+    current = new Manager(keyMap, certMap);
   }
 
   protected void engineInit(KeyStore store, char[] passwd)
@@ -175,11 +178,11 @@ public class X509KeyManagerFactory extends KeyManagerFactorySpi
     HashMap<String, PrivateKey> p = new HashMap<String, PrivateKey>();
     HashMap<String, X509Certificate[]> c
       = new HashMap<String, X509Certificate[]>();
-    Enumeration aliases = store.aliases();
+    Enumeration<String> aliases = store.aliases();
     UnrecoverableKeyException exception = null;
     while (aliases.hasMoreElements())
       {
-        String alias = (String) aliases.nextElement();
+        String alias = aliases.nextElement();
         if (!store.isKeyEntry(alias))
           {
             continue;
@@ -316,9 +319,9 @@ public class X509KeyManagerFactory extends KeyManagerFactorySpi
     private String[] getAliases(String keyType, Principal[] issuers)
     {
       LinkedList<String> l = new LinkedList<String>();
-      for (Iterator i = privateKeys.keySet().iterator(); i.hasNext(); )
+      for (Iterator<String> i = privateKeys.keySet().iterator(); i.hasNext(); )
         {
-          String alias = (String) i.next();
+          String alias = i.next();
           X509Certificate[] chain = getCertificateChain(alias);
           if (chain.length == 0)
             continue;

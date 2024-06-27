@@ -1,5 +1,5 @@
 /* Haval.java --
-   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -176,14 +176,16 @@ public class Haval
     this.h6 = md.h6;
     this.h7 = md.h7;
     this.count = md.count;
-    this.buffer = (byte[]) md.buffer.clone();
+    this.buffer = md.buffer.clone();
   }
 
+  @Override
   public Object clone()
   {
     return new Haval(this);
   }
 
+  @Override
   protected synchronized void transform(byte[] in, int i)
   {
     int X0 = (in[i++] & 0xFF)
@@ -511,6 +513,7 @@ public class Haval
     h0 += t0;
   }
 
+  @Override
   protected byte[] padBuffer()
   {
     // pad out to 118 mod 128. other 10 bytes have special use.
@@ -540,6 +543,7 @@ public class Haval
     return result;
   }
 
+  @Override
   protected byte[] getResult()
   {
     tailorDigestBits(); // tailor context for the designated output size
@@ -592,6 +596,7 @@ public class Haval
     return result;
   }
 
+  @Override
   protected void resetContext()
   {
     h0 = 0x243F6A88;
@@ -604,6 +609,7 @@ public class Haval
     h7 = 0xEC4E6C89;
   }
 
+  @Override
   public boolean selfTest()
   {
     if (valid == null)
@@ -676,6 +682,9 @@ public class Haval
         h4 += ((h7 >>>  9) & 0x0F);
         h5 += ((h7 >>>  4) & 0x1F);
         h6 +=  (h7         & 0x0F);
+	break;
+      default:
+	// do nothing
       }
   }
 
@@ -772,35 +781,35 @@ public class Haval
     return (t >>> 7 | t << 25) + (x7 >>> 11 | x7 << 21) + w + c;
   }
 
-  private int FF5(int x7, int x6, int x5, int x4, int x3, int x2, int x1,
-                  int x0, int w, int c)
+  private static int FF5(int x7, int x6, int x5, int x4, int x3, int x2, int x1,
+			 int x0, int w, int c)
   {
     int t = f5(x2, x5, x0, x6, x4, x3, x1);
     return (t >>> 7 | t << 25) + (x7 >>> 11 | x7 << 21) + w + c;
   }
 
-  private int f1(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
+  private static int f1(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
   {
     return x1 & (x0 ^ x4) ^ x2 & x5 ^ x3 & x6 ^ x0;
   }
 
-  private int f2(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
+  private static int f2(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
   {
     return x2 & (x1 & ~x3 ^ x4 & x5 ^ x6 ^ x0) ^ x4 & (x1 ^ x5) ^ x3 & x5 ^ x0;
   }
 
-  private int f3(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
+  private static int f3(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
   {
     return x3 & (x1 & x2 ^ x6 ^ x0) ^ x1 & x4 ^ x2 & x5 ^ x0;
   }
 
-  private int f4(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
+  private static int f4(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
   {
     return x4 & (x5 & ~x2 ^ x3 & ~x6 ^ x1 ^ x6 ^ x0) ^ x3
            & (x1 & x2 ^ x5 ^ x6) ^ x2 & x6 ^ x0;
   }
 
-  private int f5(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
+  private static int f5(int x6, int x5, int x4, int x3, int x2, int x1, int x0)
   {
     return x0 & (x1 & x2 & x3 ^ ~x5) ^ x1 & x4 ^ x2 & x5 ^ x3 & x6;
   }

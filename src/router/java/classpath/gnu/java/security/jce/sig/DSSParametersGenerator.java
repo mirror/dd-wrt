@@ -1,5 +1,5 @@
 /* DSSParametersGenerator.java -- JCE Adapter for a generator of DSS parameters
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -73,7 +73,7 @@ public class DSSParametersGenerator
   private FIPS186 fips;
 
   // default 0-arguments constructor
-
+  @Override
   protected void engineInit(int size, SecureRandom random)
   {
     if ((size % 64) != 0 || size < 512 || size > 1024)
@@ -85,6 +85,7 @@ public class DSSParametersGenerator
     this.rnd = random;
   }
 
+  @Override
   protected void engineInit(AlgorithmParameterSpec spec, SecureRandom random)
       throws InvalidAlgorithmParameterException
   {
@@ -97,6 +98,7 @@ public class DSSParametersGenerator
     this.engineInit(size, random);
   }
 
+  @Override
   protected AlgorithmParameters engineGenerateParameters()
   {
     if (modulusLength < 1)

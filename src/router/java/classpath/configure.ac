@@ -6,7 +6,7 @@ dnl -----------------------------------------------------------
 dnl define([AC_CACHE_LOAD], )dnl
 dnl define([AC_CACHE_SAVE], )dnl
 
-AC_INIT([GNU Classpath],[0.99],[classpath@gnu.org],[classpath])
+AC_INIT([GNU Classpath],[0.99.1-pre],[classpath@gnu.org],[classpath])
 AC_CONFIG_SRCDIR(java/lang/System.java)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -37,7 +37,7 @@ AC_SUBST(CLASSPATH_MODULE)
 CLASSPATH_CONVENIENCE="-no-undefined"
 AC_SUBST(CLASSPATH_CONVENIENCE)
 
-AC_PREREQ(2.65)
+AC_PREREQ(2.63)
 AM_INIT_AUTOMAKE([1.9.0 gnu std-options tar-ustar -Wno-portability])
 AC_CONFIG_HEADERS([include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/classpath)
@@ -143,9 +143,9 @@ AC_ARG_ENABLE([Werror],
               [case "${enableval}" in
                 yes) ENABLE_WERROR=yes ;;
                 no) ENABLE_WERROR=no ;;
-                *) ENABLE_WERROR=default ;;
+                *) ENABLE_WERROR=no ;;
               esac],
-              [ENABLE_WERROR=default])
+              [ENABLE_WERROR=no])
 
 dnl -----------------------------------------------------------
 dnl Default AWT toolkit
@@ -419,7 +419,6 @@ if test "x${COMPILE_JNI}" = xyes; then
   dnl BSD_COMP is defined; just including sys/filio.h is simpler.
   dnl Check for crt_externs.h on Darwin.
   dnl Check for netinet/in_systm.h, netinet/ip.h and net/if.h for Windows CE.
-  dnl Check for sys/loadavg.h for getloadavg() on Solaris 9.
   dnl Check for sys/sockio.h for SIOCGIFFLAGS on OpenSolaris.
   AC_CHECK_HEADERS([unistd.h sys/types.h sys/config.h sys/ioctl.h \
 		    asm/ioctls.h \
@@ -433,7 +432,7 @@ if test "x${COMPILE_JNI}" = xyes; then
                     sys/event.h sys/epoll.h \
 		    ifaddrs.h \
 		    netinet/in_systm.h netinet/ip.h net/if.h \
-		    sys/loadavg.h sys/sockio.h])
+		    sys/sockio.h])
 
   AC_EGREP_HEADER(uint32_t, stdint.h, AC_DEFINE(HAVE_INT32_DEFINED, 1, [Define to 1 if you have uint32_t]))
   AC_EGREP_HEADER(uint32_t, inttypes.h, AC_DEFINE(HAVE_INT32_DEFINED, 1, [Define to 1 if you have uint32_t]))
@@ -654,7 +653,11 @@ if test "x${COMPILE_JNI}" = xyes; then
 	QT_CFLAGS="$QT_CFLAGS -I$EXTRA_QT_INCLUDE_DIR",
 	AC_MSG_WARN([QWidget not found])))
 	AC_CHECK_PROG(MOC, [moc], [moc])
-	AC_CHECK_PROG(MOC, [moc-qt4], [moc-qt4])
+	AC_CHECK_PROG(MOC4, [moc-qt4], [moc-qt4])
+	if test x"$MOC4" != x ; then
+	  AC_MSG_NOTICE([Using $MOC4 as moc])
+	  MOC=$MOC4;
+	fi
     fi
     if test "x$HAVE_QT4" = "xno"; then
       AC_MSG_NOTICE([Looking for QT_CFLAGS and QT_LIBS without pkg-config])
@@ -850,6 +853,35 @@ AC_ARG_ENABLE([debug],
 AC_SUBST(LIBDEBUG)
 
 dnl -----------------------------------------------------------
+dnl Enable warnings at compile time.
+dnl -----------------------------------------------------------
+AC_MSG_CHECKING([whether to enable warnings])
+AC_ARG_ENABLE([warnings],
+              [AS_HELP_STRING(--enable-warnings,enable warnings during compiling)],
+              [case "${enableval}" in 
+                yes) 
+              	WARNINGS="true"
+              	;;
+                no)
+		WARNINGS="false"
+		;;
+                *)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-warnings) ;;
+              esac],
+              [WARNINGS="false"])
+AC_MSG_RESULT(${WARNINGS})
+if test "x$WARNINGS" = "xtrue"; then
+  JAVAC_WARNINGS="-Xlint:unchecked,cast,divzero,empty,finally,overrides"
+  ECJ_WARNINGS="-warn:+all -warn:-deprecation,emptyBlock,nls,resource,serial,unavoidableGenericProblems,unqualifiedField,unusedPrivate,paramAssign,super,boxing"
+  AC_SUBST(JAVAC_WARNINGS)
+  AC_SUBST(ECJ_WARNINGS)
+else
+  JAVAC_WARNINGS="-nowarn"
+  ECJ_WARNINGS="-nowarn"
+fi
+AC_SUBST(WARNINGS)
+
+dnl -----------------------------------------------------------
 dnl Enable execution of all static initializer loadLibrary() 
 dnl calls at compile time.  By default most people will not
 dnl want to disable this, but some VMs (gcj) don't need or want 
@@ -974,26 +1006,37 @@ esac;
 AM_CONDITIONAL(USE_PREBUILT_GLIBJ_ZIP, test x$use_glibj_zip = xtrue)
 AC_SUBST(PATH_TO_GLIBJ_ZIP)
 
-if test "x${TOOLSDIR}" != x; then
-  if test "x${COMPILE_WRAPPERS}" = xno; then
-    AC_PROG_JAVA_WORKS
-  fi
-  if test "x${COMPILE_GJDOC}" = xyes; then
-    AC_LIB_ANTLR
-    if test "x${REGENERATE_GJDOC_PARSER}" = xyes; then
-	AC_PROG_ANTLR(2,7,1)
-    fi
-  fi
-fi
+dnl -----------------------------------------------------------
+dnl Checks for javac and other java tools
+dnl -----------------------------------------------------------
+dnl Note:
+dnl - AC_PROG_JAVAC must be called before AC_PROG_JAVA
+dnl - Make sure the AM_CONDITIONALS for GCJ_JAVAC and ECJ_JAVAC
+dnl   are always invoked, even if AC_PROG_JAVAC / IT_USING_ECJ
+dnl   didn't run
 
-# Check for javac if we need to build either the class library,
-# the examples or the tools
 if test "x${use_glibj_zip}" = xfalse || \
    test "x${EXAMPLESDIR}" != x || \
    test "x${TOOLSDIR}" != x && \
    test "x${build_class_files}" != xno; then 	
-	AC_PROG_JAVAC_WORKS
-  	CLASSPATH_JAVAC_MEM_CHECK
+    AC_PROG_JAVAC
+    CLASSPATH_JAVAC_MEM_CHECK
+    IT_USING_ECJ
+
+  if test "x${TOOLSDIR}" != x; then
+    if test "x${COMPILE_WRAPPERS}" = xno; then
+      AC_PROG_JAVA
+    fi
+    if test "x${COMPILE_GJDOC}" = xyes; then
+      AC_LIB_ANTLR
+      if test "x${REGENERATE_GJDOC_PARSER}" = xyes; then
+        AC_PROG_ANTLR(2,7,1)
+      fi
+    fi
+  fi    
+else
+  AM_CONDITIONAL(GCJ_JAVAC, false)
+  AM_CONDITIONAL(ECJ_JAVAC, false)
 fi
 
 dnl -----------------------------------------------------------
@@ -1147,8 +1190,10 @@ AC_CONFIG_COMMANDS([gjavah], [chmod 755 tools/gjavah])
 
 if test "x${COMPILE_GJDOC}" = xyes
 then
-AC_CONFIG_FILES([tools/gjdoc])
+CLASSPATH_COND_IF([CREATE_WRAPPERS], [test "x${COMPILE_WRAPPERS}" = xyes], [],
+[AC_CONFIG_FILES([tools/gjdoc])
 AC_CONFIG_COMMANDS([gjdoc], [chmod 755 tools/gjdoc])
+])
 fi
 
 AC_CONFIG_COMMANDS([gen-classlist],[chmod 755 lib/gen-classlist.sh])

@@ -1,5 +1,5 @@
 /* CertPath.java -- a sequence of certificates
-   Copyright (C) 2002, 2005  Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -173,6 +173,7 @@ public abstract class CertPath implements Serializable
    * @param o the object to compare to
    * @return true if the two are equal
    */
+  @Override
   public boolean equals(Object o)
   {
     if (! (o instanceof CertPath))
@@ -188,14 +189,16 @@ public abstract class CertPath implements Serializable
    *
    * @return the hashcode
    */
+  @Override
   public int hashCode()
   {
     return 31 * type.hashCode() + getCertificates().hashCode();
   }
 
+  @Override
   public String toString()
   {
-    List l = getCertificates();
+    List<? extends Certificate> l = getCertificates();
     int size = l.size();
     int i = 0;
     CPStringBuilder result = new CPStringBuilder(type);

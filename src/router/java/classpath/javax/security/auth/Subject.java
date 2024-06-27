@@ -1,5 +1,5 @@
 /* Subject.java -- a single entity in the system.
-   Copyright (C) 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -70,24 +70,24 @@ public final class Subject implements Serializable
    * @serial The set of principals. The type of this field is SecureSet, a
    *  private inner class.
    */
-  private final Set principals;
+  private final Set<Principal> principals;
 
   /**
    * @serial The read-only flag.
    */
   private boolean readOnly;
 
-  private final transient SecureSet pubCred;
-  private final transient SecureSet privCred;
+  private final transient SecureSet<Object> pubCred;
+  private final transient SecureSet<Object> privCred;
 
   // Constructors.
   // -------------------------------------------------------------------------
 
   public Subject()
   {
-    principals = new SecureSet (this, SecureSet.PRINCIPALS);
-    pubCred = new SecureSet (this, SecureSet.PUBLIC_CREDENTIALS);
-    privCred = new SecureSet (this, SecureSet.PRIVATE_CREDENTIALS);
+    principals = new SecureSet<Principal> (this, SecureSet.PRINCIPALS);
+    pubCred = new SecureSet<Object> (this, SecureSet.PUBLIC_CREDENTIALS);
+    privCred = new SecureSet<Object> (this, SecureSet.PRIVATE_CREDENTIALS);
     readOnly = false;
   }
 
@@ -99,9 +99,9 @@ public final class Subject implements Serializable
       {
         throw new NullPointerException();
       }
-    this.principals = new SecureSet (this, SecureSet.PRINCIPALS, principals);
-    this.pubCred = new SecureSet (this, SecureSet.PUBLIC_CREDENTIALS, pubCred);
-    this.privCred = new SecureSet (this, SecureSet.PRIVATE_CREDENTIALS, privCred);
+    this.principals = new SecureSet<Principal> (this, SecureSet.PRINCIPALS, principals);
+    this.pubCred = new SecureSet<Object> (this, SecureSet.PUBLIC_CREDENTIALS, pubCred);
+    this.privCred = new SecureSet<Object> (this, SecureSet.PRIVATE_CREDENTIALS, privCred);
     this.readOnly = readOnly;
   }
 
@@ -150,7 +150,7 @@ public final class Subject implements Serializable
    * @throws SecurityException If the caller is not allowed to run under a
    *  different identity (<code>"doAs"</code> target of {@link AuthPermission}.
    */
-  public static Object doAs (final Subject subject, final PrivilegedAction action)
+  public static <T> T doAs (final Subject subject, final PrivilegedAction<T> action)
   {
     final SecurityManager sm = System.getSecurityManager();
     if (sm != null)
@@ -176,8 +176,8 @@ public final class Subject implements Serializable
    *  different identity (<code>"doAs"</code> target of {@link AuthPermission}.
    * @throws PrivilegedActionException If the action throws an exception.
    */
-  public static Object doAs (final Subject subject,
-                             final PrivilegedExceptionAction action)
+  public static <T> T doAs (final Subject subject,
+			    final PrivilegedExceptionAction<T> action)
     throws PrivilegedActionException
   {
     final SecurityManager sm = System.getSecurityManager();
@@ -205,9 +205,9 @@ public final class Subject implements Serializable
    *  different identity (<code>"doAsPrivileged"</code> target of {@link
    *  AuthPermission}.
    */
-  public static Object doAsPrivileged (final Subject subject,
-                                       final PrivilegedAction action,
-                                       final AccessControlContext acc)
+  public static <T> T doAsPrivileged (final Subject subject,
+				      final PrivilegedAction<T> action,
+				      final AccessControlContext acc)
   {
     final SecurityManager sm = System.getSecurityManager();
     if (sm != null)
@@ -234,9 +234,9 @@ public final class Subject implements Serializable
    *  {@link AuthPermission}.
    * @throws PrivilegedActionException If the action throws an exception.
    */
-  public static Object doAsPrivileged (final Subject subject,
-                                       final PrivilegedExceptionAction action,
-                                       AccessControlContext acc)
+  public static <T> T doAsPrivileged (final Subject subject,
+				      final PrivilegedExceptionAction<T> action,
+				      AccessControlContext acc)
     throws PrivilegedActionException
   {
     final SecurityManager sm = System.getSecurityManager();
@@ -253,7 +253,7 @@ public final class Subject implements Serializable
 
   // Instance methods.
   // -------------------------------------------------------------------------
-
+  @Override
   public boolean equals (Object o)
   {
     if (!(o instanceof Subject))
@@ -273,13 +273,13 @@ public final class Subject implements Serializable
 
   public <T extends Principal> Set<T> getPrincipals(Class<T> clazz)
   {
-    HashSet result = new HashSet (principals.size());
-    for (Iterator it = principals.iterator(); it.hasNext(); )
+    HashSet<T> result = new HashSet<T> (principals.size());
+    for (Iterator<Principal> it = principals.iterator(); it.hasNext(); )
       {
-        Object o = it.next();
+        Principal o = it.next();
         if (o != null && clazz.isAssignableFrom (o.getClass()))
           {
-            result.add(o);
+            result.add(clazz.cast(o));
           }
       }
     return Collections.unmodifiableSet (result);
@@ -292,13 +292,13 @@ public final class Subject implements Serializable
 
   public <T> Set<T> getPrivateCredentials (Class<T> clazz)
   {
-    HashSet result = new HashSet (privCred.size());
-    for (Iterator it = privCred.iterator(); it.hasNext(); )
+    HashSet<T> result = new HashSet<T> (privCred.size());
+    for (Iterator<Object> it = privCred.iterator(); it.hasNext(); )
       {
         Object o = it.next();
         if (o != null && clazz.isAssignableFrom (o.getClass()))
           {
-            result.add(o);
+            result.add(clazz.cast(o));
           }
       }
     return Collections.unmodifiableSet (result);
@@ -311,18 +311,19 @@ public final class Subject implements Serializable
 
   public <T> Set<T> getPublicCredentials (Class<T> clazz)
   {
-    HashSet result = new HashSet (pubCred.size());
-    for (Iterator it = pubCred.iterator(); it.hasNext(); )
+    HashSet<T> result = new HashSet<T> (pubCred.size());
+    for (Iterator<Object> it = pubCred.iterator(); it.hasNext(); )
       {
         Object o = it.next();
         if (o != null && clazz.isAssignableFrom (o.getClass()))
           {
-            result.add(o);
+            result.add(clazz.cast(o));
           }
       }
     return Collections.unmodifiableSet (result);
   }
 
+  @Override
   public int hashCode()
   {
     return principals.hashCode() + privCred.hashCode() + pubCred.hashCode();
@@ -355,6 +356,7 @@ public final class Subject implements Serializable
     readOnly = true;
   }
 
+  @Override
   public String toString()
   {
     return Subject.class.getName() + " [ principals=" + principals +
@@ -368,7 +370,7 @@ public final class Subject implements Serializable
   /**
    * An undocumented inner class that is used for sets in the parent class.
    */
-  private static class SecureSet extends AbstractSet implements Serializable
+  private static class SecureSet<E> extends AbstractSet<E> implements Serializable
   {
     // Fields.
     // -----------------------------------------------------------------------
@@ -380,25 +382,24 @@ public final class Subject implements Serializable
     static final int PRIVATE_CREDENTIALS = 2;
 
     private final Subject subject;
-    private final LinkedList elements;
+    private final LinkedList<E> elements;
     private final transient int type;
 
     // Constructors.
     // -----------------------------------------------------------------------
 
-    SecureSet (final Subject subject, final int type, final Collection inElements)
+    SecureSet (final Subject subject, final int type, final Collection<? extends E> inElements)
     {
       this (subject, type);
-      for (Iterator it = inElements.iterator(); it.hasNext(); )
+      for (E e : inElements)
         {
-          Object o = it.next();
-          if (type == PRINCIPALS && !(o instanceof Principal))
+          if (type == PRINCIPALS && !(e instanceof Principal))
             {
-              throw new IllegalArgumentException(o+" is not a Principal");
+              throw new IllegalArgumentException(e+" is not a Principal");
             }
-          if (!this.elements.contains (o))
+          if (!this.elements.contains (e))
             {
-              this.elements.add (o);
+              this.elements.add (e);
             }
         }
     }
@@ -407,23 +408,26 @@ public final class Subject implements Serializable
     {
       this.subject = subject;
       this.type = type;
-      this.elements = new LinkedList();
+      this.elements = new LinkedList<E>();
     }
 
     // Instance methods.
     // -----------------------------------------------------------------------
 
+    @Override
     public synchronized int size()
     {
       return elements.size();
     }
 
-    public Iterator iterator()
+    @Override
+    public Iterator<E> iterator()
     {
       return elements.iterator();
     }
 
-    public synchronized boolean add(Object element)
+    @Override
+    public synchronized boolean add(E element)
     {
       if (subject.isReadOnly())
         {
@@ -468,7 +472,8 @@ public final class Subject implements Serializable
 
       return elements.add (element);
     }
-
+    
+    @Override
     public synchronized boolean remove (final Object element)
     {
       if (subject.isReadOnly())
@@ -510,12 +515,14 @@ public final class Subject implements Serializable
       return elements.remove(element);
     }
 
+    @Override
     public synchronized boolean contains (final Object element)
     {
       return elements.contains (element);
     }
 
-    public boolean removeAll (final Collection c)
+    @Override
+    public boolean removeAll (final Collection<?> c)
     {
       if (subject.isReadOnly())
         {
@@ -524,7 +531,8 @@ public final class Subject implements Serializable
       return super.removeAll (c);
     }
 
-    public boolean retainAll (final Collection c)
+    @Override
+    public boolean retainAll (final Collection<?> c)
     {
       if (subject.isReadOnly())
         {
@@ -533,6 +541,7 @@ public final class Subject implements Serializable
       return super.retainAll (c);
     }
 
+    @Override
     public void clear()
     {
       if (subject.isReadOnly())

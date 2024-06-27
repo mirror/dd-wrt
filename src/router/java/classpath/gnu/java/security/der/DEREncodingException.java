@@ -1,5 +1,5 @@
 /* DEREncodingException.java --- DER Encoding Exception
-   Copyright (C) 1999,2003 Free Software Foundation, Inc.
+   Copyright (C) 1999,2003,2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -42,6 +42,8 @@ import java.io.IOException;
 
 public class DEREncodingException extends IOException
 {
+  private static final long serialVersionUID = 5763366374058841017L;
+
   public DEREncodingException()
   {
     super ();

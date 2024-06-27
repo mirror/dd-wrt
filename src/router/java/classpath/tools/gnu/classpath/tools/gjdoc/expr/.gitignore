@@ -1,0 +1,8 @@
+.deps
+.dirstamp
+.libs
+*.lo
+JavaLexer.java
+JavaRecognizer.java
+JavaTokenTypes.java
+JavaTokenTypes.txt

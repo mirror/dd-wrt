@@ -1,5 +1,5 @@
 /* XMLParser.java --
-   Copyright (C) 2005  Free Software Foundation, Inc.
+   Copyright (C) 2005, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -70,12 +70,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.xml.XMLConstants;
@@ -157,17 +161,17 @@ public class XMLParser
    * The input representing the XML input stream or reader is always the
    * first element in this stack.
    */
-  private LinkedList inputStack = new LinkedList();
+  private Deque<Input> inputStack = new LinkedList<Input>();
 
   /**
    * Stack of start-entity events to be reported.
    */
-  private LinkedList startEntityStack = new LinkedList();
+  private Deque<String> startEntityStack = new LinkedList<String>();
 
   /**
    * Stack of end-entity events to be reported.
    */
-  private LinkedList endEntityStack = new LinkedList();
+  private Deque<String> endEntityStack = new LinkedList<String>();
 
   /**
    * Current parser state within the main state machine.
@@ -183,42 +187,42 @@ public class XMLParser
    * The element name stack. The first element in this stack will be the
    * root element.
    */
-  private LinkedList stack = new LinkedList();
+  private Deque<String> stack = new LinkedList<String>();
 
   /**
    * Stack of namespace contexts. These are maps specifying prefix-to-URI
    * mappings. The first element in this stack is the most recent namespace
    * context (i.e. the other way around from the element name stack).
    */
-  private LinkedList namespaces = new LinkedList();
+  private Deque<Map<String,String>> namespaces = new LinkedList<Map<String,String>>();
 
   /**
    * The base-URI stack. This holds the base URI context for each element.
    * The first element in this stack is the most recent context (i.e. the
    * other way around from the element name stack).
    */
-  private LinkedList bases = new LinkedList();
+  private Deque<String> bases = new LinkedList<String>();
 
   /**
    * The list of attributes for the current element, in the order defined in
    * the XML stream.
    */
-  private ArrayList attrs = new ArrayList();
+  private List<Attribute> attrs = new ArrayList<Attribute>();
 
   /**
    * Buffer for text and character data.
    */
-  private StringBuffer buf = new StringBuffer();
+  private StringBuilder buf = new StringBuilder();
 
   /**
    * Buffer for NMTOKEN strings (markup).
    */
-  private StringBuffer nmtokenBuf = new StringBuffer();
+  private StringBuilder nmtokenBuf = new StringBuilder();
 
   /**
    * Buffer for string literals. (e.g. attribute values)
    */
-  private StringBuffer literalBuf = new StringBuffer();
+  private StringBuilder literalBuf = new StringBuilder();
 
   /**
    * Temporary Unicode character buffer used during character data reads.
@@ -236,14 +240,14 @@ public class XMLParser
    * elements match the content model for the element. The last entry in
    * this stack represents the current element.
    */
-  private LinkedList validationStack;
+  private Deque<List<String>> validationStack;
 
   /**
    * These sets contain the IDs and the IDREFs seen in the document, to
    * ensure that IDs are unique and that each IDREF refers to an ID in the
    * document.
    */
-  private HashSet ids, idrefs;
+  private Set<String> ids, idrefs;
 
   /**
    * The target and data associated with the current processing instruction
@@ -358,7 +362,8 @@ public class XMLParser
   /**
    * The general entities predefined by the XML specification.
    */
-  private static final LinkedHashMap PREDEFINED_ENTITIES = new LinkedHashMap();
+  private static final Map<String,String> PREDEFINED_ENTITIES
+    = new LinkedHashMap<String,String>();
   static
   {
     PREDEFINED_ENTITIES.put("amp", "&");
@@ -417,9 +422,9 @@ public class XMLParser
     this.resolver = resolver;
     if (validating)
       {
-        validationStack = new LinkedList();
-        ids = new HashSet();
-        idrefs = new HashSet();
+        validationStack = new LinkedList<List<String>>();
+        ids = new HashSet<String>();
+        idrefs = new HashSet<String>();
       }
     String debug = System.getProperty("gnu.xml.debug.input");
     if (debug != null)
@@ -492,9 +497,9 @@ public class XMLParser
     this.resolver = resolver;
     if (validating)
       {
-        validationStack = new LinkedList();
-        ids = new HashSet();
-        idrefs = new HashSet();
+        validationStack = new LinkedList<List<String>>();
+        ids = new HashSet<String>();
+        idrefs = new HashSet<String>();
       }
     String debug = System.getProperty("gnu.xml.debug.input");
     if (debug != null)
@@ -517,64 +522,56 @@ public class XMLParser
 
   // -- NamespaceContext --
 
+  @Override
   public String getNamespaceURI(String prefix)
   {
     if (XMLConstants.XML_NS_PREFIX.equals(prefix))
       return XMLConstants.XML_NS_URI;
     if (XMLConstants.XMLNS_ATTRIBUTE.equals(prefix))
       return XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
-    for (Iterator i = namespaces.iterator(); i.hasNext(); )
+    for (Map<String,String> ctx : namespaces)
       {
-        LinkedHashMap ctx = (LinkedHashMap) i.next();
-        String namespaceURI = (String) ctx.get(prefix);
+        String namespaceURI = ctx.get(prefix);
         if (namespaceURI != null)
           return namespaceURI;
       }
     return null;
   }
 
+  @Override
   public String getPrefix(String namespaceURI)
   {
     if (XMLConstants.XML_NS_URI.equals(namespaceURI))
       return XMLConstants.XML_NS_PREFIX;
     if (XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(namespaceURI))
       return XMLConstants.XMLNS_ATTRIBUTE;
-    for (Iterator i = namespaces.iterator(); i.hasNext(); )
+    for (Map<String,String> ctx : namespaces)
       {
-        LinkedHashMap ctx = (LinkedHashMap) i.next();
-        if (ctx.containsValue(namespaceURI))
+        for (Map.Entry<String,String> entry : ctx.entrySet())
           {
-            for (Iterator j = ctx.entrySet().iterator(); j.hasNext(); )
-              {
-                Map.Entry entry = (Map.Entry) i.next();
-                String uri = (String) entry.getValue();
-                if (uri.equals(namespaceURI))
-                  return (String) entry.getKey();
-              }
+            String uri = entry.getValue();
+            if (uri.equals(namespaceURI))
+              return entry.getKey();
           }
       }
     return null;
   }
 
-  public Iterator getPrefixes(String namespaceURI)
+  @Override
+  public Iterator<String> getPrefixes(String namespaceURI)
   {
     if (XMLConstants.XML_NS_URI.equals(namespaceURI))
       return Collections.singleton(XMLConstants.XML_NS_PREFIX).iterator();
     if (XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(namespaceURI))
       return Collections.singleton(XMLConstants.XMLNS_ATTRIBUTE).iterator();
-    LinkedList acc = new LinkedList();
-    for (Iterator i = namespaces.iterator(); i.hasNext(); )
+    List<String> acc = new LinkedList<String>();
+    for (Map<String,String> ctx : namespaces)
       {
-        LinkedHashMap ctx = (LinkedHashMap) i.next();
-        if (ctx.containsValue(namespaceURI))
+        for (Map.Entry<String,String> entry : ctx.entrySet())
           {
-            for (Iterator j = ctx.entrySet().iterator(); j.hasNext(); )
-              {
-                Map.Entry entry = (Map.Entry) i.next();
-                String uri = (String) entry.getValue();
-                if (uri.equals(namespaceURI))
-                  acc.add(entry.getKey());
-              }
+            String uri = entry.getValue();
+            if (uri.equals(namespaceURI))
+              acc.add(entry.getKey());
           }
       }
     return acc.iterator();
@@ -582,6 +579,7 @@ public class XMLParser
 
   // -- XMLStreamReader --
 
+  @Override
   public void close()
     throws XMLStreamException
   {
@@ -598,45 +596,48 @@ public class XMLParser
     idrefs = null;
   }
 
+  @Override
   public NamespaceContext getNamespaceContext()
   {
     return this;
   }
 
+  @Override
   public int getAttributeCount()
   {
     return attrs.size();
   }
 
+  @Override
   public String getAttributeLocalName(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
-    return a.localName;
+    return attrs.get(index).localName;
   }
 
+  @Override
   public String getAttributeNamespace(int index)
   {
-    String prefix = getAttributePrefix(index);
-    return getNamespaceURI(prefix);
+    return getNamespaceURI(getAttributePrefix(index));
   }
 
+  @Override
   public String getAttributePrefix(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
-    return a.prefix;
+    return attrs.get(index).prefix;
   }
 
+  @Override
   public QName getAttributeName(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
+    Attribute a = attrs.get(index);
     String namespaceURI = getNamespaceURI(a.prefix);
     return new QName(namespaceURI, a.localName, a.prefix);
   }
 
+  @Override
   public String getAttributeType(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
-    return a.type;
+    return attrs.get(index).type;
   }
 
   private String getAttributeType(String elementName, String attName)
@@ -650,17 +651,17 @@ public class XMLParser
     return "CDATA";
   }
 
+  @Override
   public String getAttributeValue(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
-    return a.value;
+    return attrs.get(index).value;
   }
 
+  @Override
   public String getAttributeValue(String namespaceURI, String localName)
   {
-    for (Iterator i = attrs.iterator(); i.hasNext(); )
+    for (Attribute a : attrs)
       {
-        Attribute a = (Attribute) i.next();
         if (a.localName.equals(localName))
           {
             String uri = getNamespaceURI(a.prefix);
@@ -676,23 +677,26 @@ public class XMLParser
   {
     if (doctype == null)
       return false;
-    Attribute a = (Attribute) attrs.get(index);
+    Attribute a = attrs.get(index);
     String qn = ("".equals(a.prefix)) ? a.localName :
       a.prefix + ":" + a.localName;
     String elementName = buf.toString();
     return doctype.isAttributeDeclared(elementName, qn);
   }
 
+  @Override
   public String getCharacterEncodingScheme()
   {
     return xmlEncoding;
   }
 
+  @Override
   public String getElementText()
     throws XMLStreamException
   {
     if (event != XMLStreamConstants.START_ELEMENT)
-      throw new XMLStreamException("current event must be START_ELEMENT");
+      throw new XMLStreamException("Current event must be START_ELEMENT",
+                                   getLocation());
     CPStringBuilder elementText = new CPStringBuilder();
     int depth = stack.size();
     while (event != XMLStreamConstants.END_ELEMENT || stack.size() > depth)
@@ -701,22 +705,41 @@ public class XMLParser
           {
           case XMLStreamConstants.CHARACTERS:
           case XMLStreamConstants.SPACE:
+          case XMLStreamConstants.CDATA:
+          case XMLStreamConstants.ENTITY_REFERENCE:
             elementText.append(buf.toString());
+            break;
+          case XMLStreamConstants.PROCESSING_INSTRUCTION:
+          case XMLStreamConstants.COMMENT:
+            // skip
+            break;
+          case XMLStreamConstants.END_DOCUMENT:
+            throw new XMLStreamException("Unexpected end of document",
+                                         getLocation());
+          case XMLStreamConstants.START_ELEMENT:
+            throw new XMLStreamException("Element text content must not " +
+                                         "contain start element", getLocation());
+          default:
+            throw new XMLStreamException("Unexpected event type " + event,
+                                         getLocation());
           }
       }
     return elementText.toString();
   }
 
+  @Override
   public String getEncoding()
   {
     return (input.inputEncoding == null) ? "UTF-8" : input.inputEncoding;
   }
 
+  @Override
   public int getEventType()
   {
     return event;
   }
 
+  @Override
   public String getLocalName()
   {
     switch (event)
@@ -734,11 +757,13 @@ public class XMLParser
       }
   }
 
+  @Override
   public Location getLocation()
   {
     return input;
   }
 
+  @Override
   public QName getName()
   {
     switch (event)
@@ -762,34 +787,34 @@ public class XMLParser
       }
   }
 
+  @Override
   public int getNamespaceCount()
   {
-    if (!namespaceAware || namespaces.isEmpty())
+    if (!namespaceAware || namespaces.size() == 0)
       return 0;
     switch (event)
       {
       case XMLStreamConstants.START_ELEMENT:
       case XMLStreamConstants.END_ELEMENT:
-        LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
-        return ctx.size();
+        return namespaces.getFirst().size();
       default:
         return 0;
       }
   }
 
+  @Override
   public String getNamespacePrefix(int index)
   {
-    LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
     int count = 0;
-    for (Iterator i = ctx.keySet().iterator(); i.hasNext(); )
+    for (String prefix : namespaces.getFirst().keySet())
       {
-        String prefix = (String) i.next();
         if (count++ == index)
           return prefix;
       }
     return null;
   }
 
+  @Override
   public String getNamespaceURI()
   {
     switch (event)
@@ -807,29 +832,31 @@ public class XMLParser
       }
   }
 
+  @Override
   public String getNamespaceURI(int index)
   {
-    LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
     int count = 0;
-    for (Iterator i = ctx.values().iterator(); i.hasNext(); )
+    for (String uri : namespaces.getFirst().values())
       {
-        String uri = (String) i.next();
         if (count++ == index)
           return uri;
       }
     return null;
   }
 
+  @Override
   public String getPIData()
   {
     return piData;
   }
 
+  @Override
   public String getPITarget()
   {
     return piTarget;
   }
 
+  @Override
   public String getPrefix()
   {
     switch (event)
@@ -849,6 +876,7 @@ public class XMLParser
       }
   }
 
+  @Override
   public Object getProperty(String name)
     throws IllegalArgumentException
   {
@@ -881,16 +909,19 @@ public class XMLParser
     return null;
   }
 
+  @Override
   public String getText()
   {
     return buf.toString();
   }
 
+  @Override
   public char[] getTextCharacters()
   {
     return buf.toString().toCharArray();
   }
 
+  @Override
   public int getTextCharacters(int sourceStart, char[] target,
                                int targetStart, int length)
     throws XMLStreamException
@@ -901,21 +932,25 @@ public class XMLParser
     return length;
   }
 
+  @Override
   public int getTextLength()
   {
     return buf.length();
   }
 
+  @Override
   public int getTextStart()
   {
     return 0;
   }
 
+  @Override
   public String getVersion()
   {
     return (xmlVersion == null) ? "1.0" : xmlVersion;
   }
 
+  @Override
   public boolean hasName()
   {
     switch (event)
@@ -928,6 +963,7 @@ public class XMLParser
       }
   }
 
+  @Override
   public boolean hasText()
   {
     switch (event)
@@ -940,37 +976,43 @@ public class XMLParser
       }
   }
 
+  @Override
   public boolean isAttributeSpecified(int index)
   {
-    Attribute a = (Attribute) attrs.get(index);
-    return a.specified;
+    return attrs.get(index).specified;
   }
 
+  @Override
   public boolean isCharacters()
   {
     return (event == XMLStreamConstants.CHARACTERS);
   }
 
+  @Override
   public boolean isEndElement()
   {
     return (event == XMLStreamConstants.END_ELEMENT);
   }
 
+  @Override
   public boolean isStandalone()
   {
     return Boolean.TRUE.equals(xmlStandalone);
   }
 
+  @Override
   public boolean isStartElement()
   {
     return (event == XMLStreamConstants.START_ELEMENT);
   }
 
+  @Override
   public boolean isWhiteSpace()
   {
     return (event == XMLStreamConstants.SPACE);
   }
 
+  @Override
   public int nextTag()
     throws XMLStreamException
   {
@@ -994,6 +1036,7 @@ public class XMLParser
     return event;
   }
 
+  @Override
   public void require(int type, String namespaceURI, String localName)
     throws XMLStreamException
   {
@@ -1012,40 +1055,43 @@ public class XMLParser
       }
   }
 
+  @Override
   public boolean standaloneSet()
   {
     return (xmlStandalone != null);
   }
 
+  @Override
   public boolean hasNext()
     throws XMLStreamException
   {
     return (event != XMLStreamConstants.END_DOCUMENT && event != -1);
   }
 
+  @Override
   public int next()
     throws XMLStreamException
   {
     if (event == XMLStreamConstants.END_ELEMENT)
       {
         // Pop namespace context
-        if (namespaceAware && !namespaces.isEmpty())
+        if (namespaceAware && namespaces.size() > 0)
           namespaces.removeFirst();
         // Pop base context
-        if (baseAware && !bases.isEmpty())
+        if (baseAware && bases.size() > 0)
           bases.removeFirst();
       }
-    if (!startEntityStack.isEmpty())
+    if (startEntityStack.size() > 0)
       {
-        String entityName = (String) startEntityStack.removeFirst();
+        String entityName = startEntityStack.removeFirst();
         buf.setLength(0);
         buf.append(entityName);
         event = START_ENTITY;
         return extendedEventTypes ? event : next();
       }
-    else if (!endEntityStack.isEmpty())
+    else if (endEntityStack.size() > 0)
       {
-        String entityName = (String) endEntityStack.removeFirst();
+        String entityName = endEntityStack.removeFirst();
         buf.setLength(0);
         buf.append(entityName);
         event = END_ENTITY;
@@ -1061,7 +1107,7 @@ public class XMLParser
             if (tryRead(TEST_END_ELEMENT))
               {
                 readEndElement();
-                if (stack.isEmpty())
+                if (stack.size() == 0)
                   state = MISC;
                 event = XMLStreamConstants.END_ELEMENT;
               }
@@ -1105,7 +1151,7 @@ public class XMLParser
                         readCh(); // &
                         readReference();
                         String ref = buf.toString();
-                        String text = (String) PREDEFINED_ENTITIES.get(ref);
+                        String text = PREDEFINED_ENTITIES.get(ref);
                         if (text != null)
                           {
                             event = readCharData(text);
@@ -1139,10 +1185,10 @@ public class XMLParser
               }
             break;
           case EMPTY_ELEMENT:
-            String elementName = (String) stack.removeLast();
+            String elementName = stack.removeLast();
             buf.setLength(0);
             buf.append(elementName);
-            state = stack.isEmpty() ? MISC : CONTENT;
+            state = stack.size() == 0 ? MISC : CONTENT;
             event = XMLStreamConstants.END_ELEMENT;
             if (validating && doctype != null)
               endElementValidationHook();
@@ -1225,7 +1271,7 @@ public class XMLParser
    */
   String getCurrentElement()
   {
-    return (String) stack.getLast();
+    return stack.getLast();
   }
 
   // private
@@ -1494,9 +1540,8 @@ public class XMLParser
   {
     if (baseAware)
       {
-        for (Iterator i = bases.iterator(); i.hasNext(); )
+        for (String base : bases)
           {
-            String base = (String) i.next();
             if (base != null)
               return base;
           }
@@ -1509,14 +1554,13 @@ public class XMLParser
    */
   private void pushInput(String name, String text, boolean report,
                          boolean normalize)
-    throws IOException, XMLStreamException
+    throws XMLStreamException
   {
     // Check for recursion
     if (name != null && !"".equals(name))
       {
-        for (Iterator i = inputStack.iterator(); i.hasNext(); )
+        for (Input ctx : inputStack)
           {
-            Input ctx = (Input) i.next();
             if (name.equals(ctx.name))
               error("entities may not be self-recursive", name);
           }
@@ -1531,17 +1575,16 @@ public class XMLParser
   /**
    * Push the specified external input source.
    */
-  private void pushInput(String name, ExternalIds ids, boolean report,
+  private void pushInput(String name, ExternalIds exIDs, boolean report,
                          boolean normalize)
     throws IOException, XMLStreamException
   {
     if (!externalEntities)
       return;
-    String url = canonicalize(absolutize(input.systemId, ids.systemId));
+    String url = canonicalize(absolutize(input.systemId, exIDs.systemId));
     // Check for recursion
-    for (Iterator i = inputStack.iterator(); i.hasNext(); )
+    for (Input ctx : inputStack)
       {
-        Input ctx = (Input) i.next();
         if (url.equals(ctx.systemId))
           error("entities may not be self-recursive", url);
         if (name != null && !"".equals(name) && name.equals(ctx.name))
@@ -1552,7 +1595,7 @@ public class XMLParser
     InputStream in = null;
     if (resolver != null)
       {
-        Object obj = resolver.resolveEntity(ids.publicId, url, getXMLBase(),
+        Object obj = resolver.resolveEntity(exIDs.publicId, url, getXMLBase(),
                                             null);
         if (obj instanceof InputStream)
           in = (InputStream) obj;
@@ -1561,8 +1604,8 @@ public class XMLParser
       in = resolve(url);
     if (in == null)
       error("unable to resolve external entity",
-            (ids.systemId != null) ? ids.systemId : ids.publicId);
-    pushInput(new Input(in, null, ids.publicId, url, name, null, report,
+            (exIDs.systemId != null) ? exIDs.systemId : exIDs.publicId);
+    pushInput(new Input(in, null, exIDs.publicId, url, name, null, report,
                         normalize));
     input.init();
     if (tryRead(TEST_XML_DECL))
@@ -1573,14 +1616,14 @@ public class XMLParser
   /**
    * Push the specified input source (general entity) onto the input stack.
    */
-  private void pushInput(Input input)
+  private void pushInput(Input in)
   {
-    if (input.report)
-      startEntityStack.addFirst(input.name);
-    inputStack.addLast(input);
-    if (this.input != null)
-      input.xml11 = this.input.xml11;
-    this.input = input;
+    if (in.report)
+      startEntityStack.addFirst(in.name);
+    inputStack.addLast(in);
+    if (input != null)
+      in.xml11 = input.xml11;
+    input = in;
   }
 
   /**
@@ -1734,10 +1777,10 @@ public class XMLParser
    */
   private void popInput()
   {
-    Input old = (Input) inputStack.removeLast();
+    Input old = inputStack.removeLast();
     if (old.report)
       endEntityStack.addFirst(old.name);
-    input = (Input) inputStack.getLast();
+    input = inputStack.getLast();
   }
 
   /**
@@ -1756,7 +1799,7 @@ public class XMLParser
           input.xml11 = false;
         else if ("1.1".equals(v))
           {
-            Input i1 = (Input) inputStack.getFirst();
+            Input i1 = inputStack.getFirst();
             if (!i1.xml11)
               error("external entity specifies later version number");
             input.xml11 = true;
@@ -1834,9 +1877,9 @@ public class XMLParser
     requireWhitespace();
     String rootName = readNmtoken(true);
     skipWhitespace();
-    ExternalIds ids = readExternalIds(false, true);
+    ExternalIds exIDs = readExternalIds(false, true);
     doctype =
-      this.new Doctype(rootName, ids.publicId, ids.systemId);
+      this.new Doctype(rootName, exIDs.publicId, exIDs.systemId);
 
     // Parse internal subset first
     skipWhitespace();
@@ -1849,18 +1892,17 @@ public class XMLParser
             expandPE = false;
             if (tryRead(']'))
               break;
-            else
-              readMarkupdecl(false);
+            readMarkupdecl(false);
           }
       }
     skipWhitespace();
     require('>');
 
     // Parse external subset
-    if (ids.systemId != null && externalEntities)
+    if (exIDs.systemId != null && externalEntities)
       {
         pushInput("", ">", false, false);
-        pushInput("[dtd]", ids, true, true);
+        pushInput("[dtd]", exIDs, true, true);
         // loop until we get back to ">"
         while (true)
           {
@@ -1982,6 +2024,8 @@ public class XMLParser
                     break;
                   case -1:
                     throw new EOFException();
+                  default:
+                    // All other characters are ignored
                   }
               }
             expandPE = saved;
@@ -2111,7 +2155,7 @@ public class XMLParser
         return model; // done
       case 0x7c: // '|'
         model.or = true;
-        // fall through
+        //$FALL-THROUGH$
       case 0x2c: // ','
         separator = c;
         acc.append(Character.toChars(c));
@@ -2241,18 +2285,17 @@ public class XMLParser
     String name = readNmtoken(true);
     requireWhitespace();
     CPStringBuilder acc = new CPStringBuilder();
-    HashSet values = new HashSet();
+    Set<String> values = new HashSet<String>();
     String type = readAttType(acc, values);
     if (validating)
       {
         if ("ID".equals(type))
           {
             // VC: One ID per Element Type
-            for (Iterator i = doctype.attlistIterator(elementName);
-                 i.hasNext(); )
+            for (Iterator<Map.Entry<String,AttributeDecl>> i =
+                   doctype.attlistIterator(elementName); i.hasNext(); )
               {
-                Map.Entry entry = (Map.Entry) i.next();
-                AttributeDecl decl = (AttributeDecl) entry.getValue();
+                AttributeDecl decl = i.next().getValue();
                 if ("ID".equals(decl.type))
                   error("element types must not have more than one ID " +
                         "attribute");
@@ -2261,18 +2304,17 @@ public class XMLParser
         else if ("NOTATION".equals(type))
           {
             // VC: One Notation Per Element Type
-            for (Iterator i = doctype.attlistIterator(elementName);
-                 i.hasNext(); )
+            for (Iterator<Map.Entry<String,AttributeDecl>> i =
+                   doctype.attlistIterator(elementName); i.hasNext(); )
               {
-                Map.Entry entry = (Map.Entry) i.next();
-                AttributeDecl decl = (AttributeDecl) entry.getValue();
+                AttributeDecl decl = i.next().getValue();
                 if ("NOTATION".equals(decl.type))
                   error("element types must not have more than one NOTATION " +
                         "attribute");
               }
             // VC: No Notation on Empty Element
             ContentModel model = doctype.getElementModel(elementName);
-            if (model != null && model.type == ContentModel.EMPTY)
+            if (model != null && model.type == ContentModel.Type.EMPTY)
               error("attributes of type NOTATION must not be declared on an " +
                     "element declared EMPTY");
           }
@@ -2289,7 +2331,7 @@ public class XMLParser
   /**
    * Parse an attribute type.
    */
-  private String readAttType(CPStringBuilder acc, HashSet values)
+  private String readAttType(CPStringBuilder acc, Set<String> values)
     throws IOException, XMLStreamException
   {
     if (tryRead('('))
@@ -2297,36 +2339,30 @@ public class XMLParser
         readEnumeration(false, acc, values);
         return "ENUMERATION";
       }
-    else
+    String typeString = readNmtoken(true);
+    if ("NOTATION".equals(typeString))
       {
-        String typeString = readNmtoken(true);
-        if ("NOTATION".equals(typeString))
-          {
-            readNotationType(acc, values);
-            return typeString;
-          }
-        else if ("CDATA".equals(typeString) ||
-                 "ID".equals(typeString) ||
-                 "IDREF".equals(typeString) ||
-                 "IDREFS".equals(typeString) ||
-                 "ENTITY".equals(typeString) ||
-                 "ENTITIES".equals(typeString) ||
-                 "NMTOKEN".equals(typeString) ||
-                 "NMTOKENS".equals(typeString))
-          return typeString;
-        else
-          {
-            error("illegal attribute type", typeString);
-            return null;
-          }
+        readNotationType(acc, values);
+        return typeString;
       }
+    if ("CDATA".equals(typeString) ||
+        "ID".equals(typeString) ||
+        "IDREF".equals(typeString) ||
+        "IDREFS".equals(typeString) ||
+        "ENTITY".equals(typeString) ||
+        "ENTITIES".equals(typeString) ||
+        "NMTOKEN".equals(typeString) ||
+        "NMTOKENS".equals(typeString))
+      return typeString;
+    error("illegal attribute type", typeString);
+    return null;
   }
 
   /**
    * Parse an enumeration.
    */
   private void readEnumeration(boolean isNames, CPStringBuilder acc,
-                               HashSet values)
+                               Set<String> values)
     throws IOException, XMLStreamException
   {
     acc.append('(');
@@ -2356,7 +2392,7 @@ public class XMLParser
   /**
    * Parse a notation type for an attribute.
    */
-  private void readNotationType(CPStringBuilder acc, HashSet values)
+  private void readNotationType(CPStringBuilder acc, Set<String> values)
     throws IOException, XMLStreamException
   {
     requireWhitespace();
@@ -2368,12 +2404,12 @@ public class XMLParser
    * Parse the default value for an attribute.
    */
   private void readDefault(String elementName, String name,
-                           String type, String enumeration, HashSet values)
+                           String type, String enumeration, Set<String> values)
     throws IOException, XMLStreamException
   {
     int valueType = ATTRIBUTE_DEFAULT_SPECIFIED;
     int flags = LIT_ATTRIBUTE;
-    String value = null, defaultType = null;
+    String value = null;
     boolean saved = expandPE;
 
     if (!"CDATA".equals(type))
@@ -2384,19 +2420,16 @@ public class XMLParser
       {
         if (tryRead("FIXED"))
           {
-            defaultType = "#FIXED";
             valueType = ATTRIBUTE_DEFAULT_FIXED;
             requireWhitespace();
             value = readLiteral(flags, false);
           }
         else if (tryRead("REQUIRED"))
           {
-            defaultType = "#REQUIRED";
             valueType = ATTRIBUTE_DEFAULT_REQUIRED;
           }
         else if (tryRead("IMPLIED"))
           {
-            defaultType = "#IMPLIED";
             valueType = ATTRIBUTE_DEFAULT_IMPLIED;
           }
         else
@@ -2548,7 +2581,7 @@ public class XMLParser
       }
     else
       {
-        ExternalIds ids = readExternalIds(false, false);
+        ExternalIds exIDs = readExternalIds(false, false);
         // Check for NDATA
         boolean white = tryWhitespace();
         if (!peFlag && tryRead("NDATA"))
@@ -2556,9 +2589,9 @@ public class XMLParser
             if (!white)
               error("whitespace required before NDATA");
             requireWhitespace();
-            ids.notationName = readNmtoken(true);
+            exIDs.notationName = readNmtoken(true);
           }
-        doctype.addEntityDecl(name, ids, inExternalSubset);
+        doctype.addEntityDecl(name, exIDs, inExternalSubset);
       }
     // finish
     skipWhitespace();
@@ -2583,9 +2616,9 @@ public class XMLParser
           error("duplicate notation name", notationName);
       }
     requireWhitespace();
-    ExternalIds ids = readExternalIds(true, false);
-    ids.notationName = notationName;
-    doctype.addNotationDecl(notationName, ids, inExternalSubset);
+    ExternalIds exIDs = readExternalIds(true, false);
+    exIDs.notationName = notationName;
+    doctype.addNotationDecl(notationName, exIDs, inExternalSubset);
     skipWhitespace();
     require('>');
   }
@@ -2598,12 +2631,12 @@ public class XMLParser
   {
     int c;
     int flags = LIT_DISABLE_CREF | LIT_DISABLE_PE | LIT_DISABLE_EREF;
-    ExternalIds ids = new ExternalIds();
+    ExternalIds exIDs = new ExternalIds();
 
     if (tryRead("PUBLIC"))
       {
         requireWhitespace();
-        ids.publicId = readLiteral(LIT_NORMALIZE | LIT_PUBID | flags, false);
+        exIDs.publicId = readLiteral(LIT_NORMALIZE | LIT_PUBID | flags, false);
         if (inNotation)
           {
             skipWhitespace();
@@ -2613,19 +2646,19 @@ public class XMLParser
             if (c == 0x22 || c == 0x27) // " | '
               {
                 String href = readLiteral(flags, false);
-                ids.systemId = absolutize(input.systemId, href);
+                exIDs.systemId = absolutize(input.systemId, href);
               }
           }
         else
           {
             requireWhitespace();
             String href = readLiteral(flags, false);
-            ids.systemId = absolutize(input.systemId, href);
+            exIDs.systemId = absolutize(input.systemId, href);
           }
         // Check valid URI characters
-        for (int i = 0; i < ids.publicId.length(); i++)
+        for (int i = 0; i < exIDs.publicId.length(); i++)
           {
-            char d = ids.publicId.charAt(i);
+            char d = exIDs.publicId.charAt(i);
             if (d >= 'a' && d <= 'z')
               continue;
             if (d >= 'A' && d <= 'Z')
@@ -2640,18 +2673,18 @@ public class XMLParser
       {
         requireWhitespace();
         String href = readLiteral(flags, false);
-        ids.systemId = absolutize(input.systemId, href);
+        exIDs.systemId = absolutize(input.systemId, href);
       }
     else if (!isSubset)
       {
         error("missing SYSTEM or PUBLIC keyword");
       }
-    if (ids.systemId != null && !inNotation)
+    if (exIDs.systemId != null && !inNotation)
       {
-        if (ids.systemId.indexOf('#') != -1)
-          error("SYSTEM id has a URI fragment", ids.systemId);
+        if (exIDs.systemId.indexOf('#') != -1)
+          error("SYSTEM id has a URI fragment", exIDs.systemId);
       }
-    return ids;
+    return exIDs;
   }
 
   /**
@@ -2670,7 +2703,7 @@ public class XMLParser
         if (elementName.charAt(0) == ':' ||
             elementName.charAt(elementName.length() - 1) == ':')
           error("not a QName", elementName);
-        namespaces.addFirst(new LinkedHashMap());
+        namespaces.addFirst(new LinkedHashMap<String,String>());
       }
     // Read element content
     boolean white = tryWhitespace();
@@ -2690,11 +2723,12 @@ public class XMLParser
     // supply defaulted attributes
     if (doctype != null)
       {
-        for (Iterator i = doctype.attlistIterator(elementName); i.hasNext(); )
+        for (Iterator<Map.Entry<String,AttributeDecl>> i
+               = doctype.attlistIterator(elementName); i.hasNext(); )
           {
-            Map.Entry entry = (Map.Entry) i.next();
-            String attName = (String) entry.getKey();
-            AttributeDecl decl = (AttributeDecl) entry.getValue();
+            Map.Entry<String,AttributeDecl> entry = i.next();
+            String attName = entry.getKey();
+            AttributeDecl decl = entry.getValue();
             if (validating)
               {
                 switch (decl.valueType)
@@ -2706,28 +2740,27 @@ public class XMLParser
                     break;
                   case ATTRIBUTE_DEFAULT_FIXED:
                     // VC: Fixed Attribute Default
-                    for (Iterator j = attrs.iterator(); j.hasNext(); )
+                    for (Attribute a : attrs)
                       {
-                        Attribute a = (Attribute) j.next();
                         if (attName.equals(a.name) &&
                             !decl.value.equals(a.value))
                           error("value for " + attName + " attribute must be " +
                                 decl.value);
                       }
                     break;
+                  default:
+                    // do nothing
                   }
               }
             if (namespaceAware && attName.equals("xmlns"))
               {
-                LinkedHashMap ctx =
-                  (LinkedHashMap) namespaces.getFirst();
+                Map<String,String> ctx = namespaces.getFirst();
                 if (ctx.containsKey(XMLConstants.DEFAULT_NS_PREFIX))
                   continue; // namespace was specified
               }
             else if (namespaceAware && attName.startsWith("xmlns:"))
               {
-                LinkedHashMap ctx =
-                  (LinkedHashMap) namespaces.getFirst();
+                Map<String,String> ctx = namespaces.getFirst();
                 if (ctx.containsKey(attName.substring(6)))
                   continue; // namespace was specified
               }
@@ -2769,9 +2802,8 @@ public class XMLParser
             else if (input.xml11 && "".equals(uri))
               error("XML 1.1 unbound element prefix", prefix);
           }
-        for (Iterator i = attrs.iterator(); i.hasNext(); )
+        for (Attribute attr : attrs)
           {
-            Attribute attr = (Attribute) i.next();
             if (attr.prefix != null &&
                 !XMLConstants.XMLNS_ATTRIBUTE.equals(attr.prefix))
               {
@@ -2789,7 +2821,7 @@ public class XMLParser
         currentContentModel = doctype.getElementModel(elementName);
         if (currentContentModel == null)
           error("no element declaration", elementName);
-        validationStack.add(new LinkedList());
+        validationStack.add(new LinkedList<String>());
       }
     // make element name available for read
     buf.setLength(0);
@@ -2803,8 +2835,9 @@ public class XMLParser
       case 0x2f: // '/'
         require('>');
         return EMPTY_ELEMENT;
+      default:
+        return -1; // to satisfy compiler
       }
-    return -1; // to satisfy compiler
   }
 
   /**
@@ -2813,9 +2846,8 @@ public class XMLParser
    */
   private boolean attributeSpecified(String attName)
   {
-    for (Iterator j = attrs.iterator(); j.hasNext(); )
+    for (Attribute a : attrs)
       {
-        Attribute a = (Attribute) j.next();
         if (attName.equals(a.name))
           return true;
       }
@@ -2825,6 +2857,7 @@ public class XMLParser
   /**
    * Parse an attribute.
    */
+  @SuppressWarnings("null") // decl.type is checked for null
   private void readAttribute(String elementName)
     throws IOException, XMLStreamException
   {
@@ -2845,13 +2878,13 @@ public class XMLParser
           error("not a QName", attributeName);
         else if (attributeName.equals("xmlns"))
           {
-            LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
+            Map<String,String> ctx = namespaces.getFirst();
             if (ctx.containsKey(XMLConstants.DEFAULT_NS_PREFIX))
               error("duplicate default namespace");
           }
         else if (attributeName.startsWith("xmlns:"))
           {
-            LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
+            Map<String,String> ctx = namespaces.getFirst();
             if (ctx.containsKey(attributeName.substring(6)))
               error("duplicate namespace", attributeName.substring(6));
           }
@@ -2948,7 +2981,7 @@ public class XMLParser
   {
     if ("xmlns".equals(attr.name))
       {
-        LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
+        Map<String,String> ctx = namespaces.getFirst();
         if (ctx.get(XMLConstants.DEFAULT_NS_PREFIX) != null)
           error("Duplicate default namespace declaration");
         if (XMLConstants.XML_NS_URI.equals(attr.value))
@@ -2958,7 +2991,7 @@ public class XMLParser
       }
     else if ("xmlns".equals(attr.prefix))
       {
-        LinkedHashMap ctx = (LinkedHashMap) namespaces.getFirst();
+        Map<String,String> ctx = namespaces.getFirst();
         if (ctx.get(attr.localName) != null)
           error("Duplicate namespace declaration for prefix",
                 attr.localName);
@@ -2990,7 +3023,7 @@ public class XMLParser
     throws IOException, XMLStreamException
   {
     // pop element off stack
-    String expected = (String) stack.removeLast();
+    String expected = stack.removeLast();
     require(expected);
     skipWhitespace();
     require('>');
@@ -3010,11 +3043,11 @@ public class XMLParser
   {
     validateEndElement();
     validationStack.removeLast();
-    if (stack.isEmpty())
+    if (stack.size() == 0)
       currentContentModel = null;
     else
       {
-        String parent = (String) stack.getLast();
+        String parent = stack.getLast();
         currentContentModel = doctype.getElementModel(parent);
       }
   }
@@ -3163,8 +3196,7 @@ public class XMLParser
                     c = readCh(); // &
                     String entityName = readNmtoken(true);
                     require(';');
-                    String text =
-                      (String) PREDEFINED_ENTITIES.get(entityName);
+                    String text = PREDEFINED_ENTITIES.get(entityName);
                     if (text != null)
                       buf.append(text);
                     else
@@ -3257,9 +3289,9 @@ public class XMLParser
                   error("reference to external entity in standalone document");
                 else if (value instanceof ExternalIds)
                   {
-                    ExternalIds ids = (ExternalIds) value;
-                    if (ids.notationName != null &&
-                        doctype.isNotationExternal(ids.notationName))
+                    ExternalIds exIDs = (ExternalIds) value;
+                    if (exIDs.notationName != null &&
+                        doctype.isNotationExternal(exIDs.notationName))
                       error("reference to external notation in " +
                             "standalone document");
                   }
@@ -3319,7 +3351,7 @@ public class XMLParser
         if (inputStack.size() > 1)
           {
             inputStack.removeLast();
-            input = (Input) inputStack.getLast();
+            input = inputStack.getLast();
             // Don't issue end-entity
             c = recognizePEs ? readCh() : read();
           }
@@ -3396,8 +3428,7 @@ public class XMLParser
                     reset();
                     String entityName = readNmtoken(true);
                     require(';');
-                    String text =
-                      (String) PREDEFINED_ENTITIES.get(entityName);
+                    String text = PREDEFINED_ENTITIES.get(entityName);
                     if (text != null)
                       literalBuf.append(text);
                     else
@@ -3443,14 +3474,14 @@ public class XMLParser
    * This discards leading and trailing whitespace, and replaces sequences
    * of whitespace with a single space.
    */
-  private StringBuffer normalize(StringBuffer buf)
+  private static StringBuilder normalize(StringBuilder buffer)
   {
-    StringBuffer acc = new StringBuffer();
-    int len = buf.length();
+    StringBuilder acc = new StringBuilder();
+    int len = buffer.length();
     int avState = 0;
     for (int i = 0; i < len; i++)
       {
-        char c = buf.charAt(i);
+        char c = buffer.charAt(i);
         if (c == ' ')
           avState = (avState == 0) ? 0 : 1;
         else
@@ -3469,15 +3500,15 @@ public class XMLParser
    * This may be necessary if combinations of CR or LF were declared as
    * (character) entity references in the input.
    */
-  private void normalizeCRLF(StringBuffer buf)
+  private static void normalizeCRLF(StringBuilder buffer)
   {
-    int len = buf.length() - 1;
+    int len = buffer.length() - 1;
     for (int i = 0; i < len; i++)
       {
-        char c = buf.charAt(i);
-        if (c == '\r' && buf.charAt(i + 1) == '\n')
+        char c = buffer.charAt(i);
+        if (c == '\r' && buffer.charAt(i + 1) == '\n')
           {
-            buf.deleteCharAt(i--);
+            buffer.deleteCharAt(i--);
             len--;
           }
       }
@@ -3489,7 +3520,7 @@ public class XMLParser
   private void expandPEReference()
     throws IOException, XMLStreamException
   {
-    String name = readNmtoken(true, new StringBuffer());
+    String name = readNmtoken(true, new StringBuilder());
     require(';');
     mark(1); // ensure we don't reset to before the semicolon
     if (doctype != null)
@@ -3575,10 +3606,10 @@ public class XMLParser
    * @param isName if a Name, otherwise an NMTOKEN
    * @param buf the character buffer to use
    */
-  private String readNmtoken(boolean isName, StringBuffer buf)
+  private String readNmtoken(boolean isName, StringBuilder buffer)
     throws IOException, XMLStreamException
   {
-    buf.setLength(0);
+    buffer.setLength(0);
     int c = readCh();
     if (isName)
       {
@@ -3592,7 +3623,7 @@ public class XMLParser
           error("not a name character",
                 "U+" + Integer.toHexString(c));
       }
-    buf.append(Character.toChars(c));
+    buffer.append(Character.toChars(c));
     do
       {
         mark(1);
@@ -3621,13 +3652,13 @@ public class XMLParser
           case 0x2f: // '/'
           case -1:
             reset();
-            return intern(buf.toString());
+            return intern(buffer.toString());
           default:
             if (!isNameCharacter(c, input.xml11))
               error("not a name character",
                     "U+" + Integer.toHexString(c));
             else
-              buf.append(Character.toChars(c));
+              buffer.append(Character.toChars(c));
           }
       }
     while (true);
@@ -3713,8 +3744,7 @@ public class XMLParser
               (c >= 0xF900 && c <= 0xFDCF) ||
               (c >= 0xFDF0 && c <= 0xFFFD) ||
               (c >= 0x10000 && c <= 0xEFFFF));
-    else
-      return (c == 0x5f || c == 0x3a || isLetter(c));
+    return (c == 0x5f || c == 0x3a || isLetter(c));
   }
 
   /**
@@ -3745,10 +3775,9 @@ public class XMLParser
               (c >= 0xF900 && c <= 0xFDCF) ||
               (c >= 0xFDF0 && c <= 0xFFFD) ||
               (c >= 0x10000 && c <= 0xEFFFF));
-    else
-      return (c == 0x2e || c == 0x2d || c == 0x5f || c == 0x3a ||
-              isLetter(c) || isDigit(c) ||
-              isCombiningChar(c) || isExtender(c));
+    return (c == 0x2e || c == 0x2d || c == 0x5f || c == 0x3a ||
+            isLetter(c) || isDigit(c) ||
+            isCombiningChar(c) || isExtender(c));
   }
 
   /**
@@ -4128,7 +4157,7 @@ public class XMLParser
    * Interns the specified text or not, depending on the value of
    * stringInterning.
    */
-  private String intern(String text)
+  String intern(String text)
   {
     return stringInterning ? text.intern() : text;
   }
@@ -4136,7 +4165,7 @@ public class XMLParser
   /**
    * Report a parsing error.
    */
-  private void error(String message)
+  private static void error(String message)
     throws XMLStreamException
   {
     error(message, null);
@@ -4145,7 +4174,7 @@ public class XMLParser
   /**
    * Report a parsing error.
    */
-  private void error(String message, Object info)
+  private static void error(String message, Object info)
     throws XMLStreamException
   {
     if (info != null)
@@ -4153,7 +4182,7 @@ public class XMLParser
         if (info instanceof String)
           message += ": \"" + ((String) info) + "\"";
         else if (info instanceof Character)
-          message += ": '" + ((Character) info) + "'";
+          message += ": '" + info + "'";
       }
     throw new XMLStreamException(message);
   }
@@ -4175,18 +4204,20 @@ public class XMLParser
     // VC: Element Valid
     switch (currentContentModel.type)
       {
-      case ContentModel.EMPTY:
+      case EMPTY:
         error("child element found in empty element", elementName);
         break;
-      case ContentModel.ELEMENT:
-        LinkedList ctx = (LinkedList) validationStack.getLast();
+      case ELEMENT:
+        List<String> ctx = validationStack.getLast();
         ctx.add(elementName);
         break;
-      case ContentModel.MIXED:
+      case MIXED:
         MixedContentModel mm = (MixedContentModel) currentContentModel;
         if (!mm.containsName(elementName))
           error("illegal element for content model", elementName);
         break;
+      default:
+        // do nothing for ANY
       }
   }
 
@@ -4207,11 +4238,13 @@ public class XMLParser
     // VC: Element Valid
     switch (currentContentModel.type)
       {
-      case ContentModel.ELEMENT:
-        LinkedList ctx = (LinkedList) validationStack.getLast();
+      case ELEMENT:
+        List<String> ctx = validationStack.getLast();
         ElementContentModel ecm = (ElementContentModel) currentContentModel;
         validateElementContent(ecm, ctx);
         break;
+      default:
+        // Do nothing
       }
   }
 
@@ -4224,10 +4257,10 @@ public class XMLParser
     // VC: Element Valid
     switch (currentContentModel.type)
       {
-      case ContentModel.EMPTY:
+      case EMPTY:
         error("character data found in empty element", text);
         break;
-      case ContentModel.ELEMENT:
+      case ELEMENT:
         boolean white = true;
         int len = text.length();
         for (int i = 0; i < len; i++)
@@ -4246,6 +4279,8 @@ public class XMLParser
           error("whitespace in element content of externally declared " +
                 "element in standalone document");
         break;
+      default:
+        // do nothing for ANY and MIXED
       }
   }
 
@@ -4254,17 +4289,17 @@ public class XMLParser
    * against the element content model for the current element.
    */
   private void validateElementContent(ElementContentModel model,
-                                      LinkedList children)
+                                      List<String> children)
     throws XMLStreamException
   {
     // Use regular expression
-    CPStringBuilder buf = new CPStringBuilder();
-    for (Iterator i = children.iterator(); i.hasNext(); )
+    CPStringBuilder buffer = new CPStringBuilder();
+    for (Iterator<String> i = children.iterator(); i.hasNext(); )
       {
-        buf.append((String) i.next());
-        buf.append(' ');
+        buffer.append(i.next());
+        buffer.append(' ');
       }
-    String c = buf.toString();
+    String c = buffer.toString();
     String regex = createRegularExpression(model);
     if (!c.matches(regex))
       error("element content "+model.text+" does not match expression "+regex, c);
@@ -4278,46 +4313,47 @@ public class XMLParser
   {
     if (model.regex == null)
       {
-        CPStringBuilder buf = new CPStringBuilder();
-        buf.append('(');
-        for (Iterator i = model.contentParticles.iterator(); i.hasNext(); )
+        CPStringBuilder buffer = new CPStringBuilder();
+        buffer.append('(');
+        for (Iterator<ContentParticle> i = model.contentParticles.iterator();
+             i.hasNext(); )
           {
-            ContentParticle cp = (ContentParticle) i.next();
+            ContentParticle cp = i.next();
             if (cp.content instanceof String)
               {
-                buf.append('(');
-                buf.append((String) cp.content);
-                buf.append(' ');
-                buf.append(')');
+                buffer.append('(');
+                buffer.append((String) cp.content);
+                buffer.append(' ');
+                buffer.append(')');
                 if (cp.max == -1)
                   {
                     if (cp.min == 0)
-                      buf.append('*');
+                      buffer.append('*');
                     else
-                      buf.append('+');
+                      buffer.append('+');
                   }
                 else if (cp.min == 0)
-                  buf.append('?');
+                  buffer.append('?');
               }
             else
               {
                 ElementContentModel ecm = (ElementContentModel) cp.content;
-                buf.append(createRegularExpression(ecm));
+                buffer.append(createRegularExpression(ecm));
               }
             if (model.or && i.hasNext())
-              buf.append('|');
+              buffer.append('|');
           }
-        buf.append(')');
+        buffer.append(')');
         if (model.max == -1)
           {
             if (model.min == 0)
-              buf.append('*');
+              buffer.append('*');
             else
-              buf.append('+');
+              buffer.append('+');
           }
         else if (model.min == 0)
-          buf.append('?');
-        model.regex = buf.toString();
+          buffer.append('?');
+        model.regex = buffer.toString();
       }
     return model.regex;
   }
@@ -4328,20 +4364,21 @@ public class XMLParser
   void validateDoctype()
     throws XMLStreamException
   {
-    for (Iterator i = doctype.entityIterator(); i.hasNext(); )
+    for (Iterator<Map.Entry<String,Object>> i = doctype.entityIterator();
+         i.hasNext(); )
       {
-        Map.Entry entry = (Map.Entry) i.next();
+        Map.Entry<String,Object> entry = i.next();
         Object entity = entry.getValue();
         if (entity instanceof ExternalIds)
           {
-            ExternalIds ids = (ExternalIds) entity;
-            if (ids.notationName != null)
+            ExternalIds exIDs = (ExternalIds) entity;
+            if (exIDs.notationName != null)
               {
                 // VC: Notation Declared
-                ExternalIds notation = doctype.getNotation(ids.notationName);
+                ExternalIds notation = doctype.getNotation(exIDs.notationName);
                 if (notation == null)
                   error("Notation name must match the declared name of a " +
-                        "notation", ids.notationName);
+                        "notation", exIDs.notationName);
               }
           }
       }
@@ -4566,54 +4603,70 @@ public class XMLParser
         }
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (other instanceof Attribute)
         {
           Attribute a = (Attribute) other;
-          if (namespaceAware)
+          if (isNamespaceAware())
             {
               if (!a.localName.equals(localName))
                 return false;
               String auri = getNamespaceURI(a.prefix);
               String uri = getNamespaceURI(prefix);
+              boolean xml11 = isXML11();
               if (uri == null && (auri == null ||
-                                  (input.xml11 && "".equals(auri))))
+                                  (xml11 && "".equals(auri))))
                return true;
               if (uri != null)
                 {
-                  if ("".equals(uri) && input.xml11 && "".equals(auri))
+                  if ("".equals(uri) && xml11 && "".equals(auri))
                     return true;
                   return uri.equals(auri);
                 }
               return false;
             }
-          else
-            return a.name.equals(name);
+          return a.name.equals(name);
         }
       return false;
     }
 
+    /**
+     * Mirror {@link #equals(Object)} method with
+     * hash code implementation.
+     *
+     * @return the hash code of the object.
+     */
+    @Override
+    public int hashCode()
+    {
+      if (isNamespaceAware())
+        return Objects.hash(localName, prefix);
+      return 31 * name.hashCode();
+    }
+
+    @Override
     public String toString()
     {
-      CPStringBuilder buf = new CPStringBuilder(getClass().getName());
-      buf.append('[');
-      buf.append("name=");
-      buf.append(name);
+      CPStringBuilder buffer = new CPStringBuilder(getClass().getName());
+      buffer.append('[');
+      buffer.append("name=");
+      buffer.append(name);
       if (value != null)
         {
-          buf.append(",value=");
-          buf.append(value);
+          buffer.append(",value=");
+          buffer.append(value);
         }
       if (type != null)
         {
-          buf.append(",type=");
-          buf.append(type);
+          buffer.append(",type=");
+          buffer.append(type);
         }
       if (specified)
-        buf.append(",specified");
-      buf.append(']');
-      return buf.toString();
+        buffer.append(",specified");
+      buffer.append(']');
+      return buffer.toString();
     }
 
   }
@@ -4642,48 +4695,50 @@ public class XMLParser
     /**
      * Map of element names to content models.
      */
-    private final LinkedHashMap elements = new LinkedHashMap();
+    private final Map<String,ContentModel> elements
+      = new LinkedHashMap<String,ContentModel>();
 
     /**
      * Map of element names to maps of attribute declarations.
      */
-    private final LinkedHashMap attlists = new LinkedHashMap();
+    private final Map<String,Map<String,AttributeDecl>> attlists
+      = new LinkedHashMap<String,Map<String,AttributeDecl>>();
 
     /**
      * Map of entity names to entities (String or ExternalIds).
      */
-    private final LinkedHashMap entities = new LinkedHashMap();
+    private final Map<String,Object> entities = new LinkedHashMap<String,Object>();
 
     /**
      * Map of notation names to ExternalIds.
      */
-    private final LinkedHashMap notations = new LinkedHashMap();
+    private final Map<String,ExternalIds> notations = new LinkedHashMap<String,ExternalIds>();
 
     /**
      * Map of anonymous keys to comments.
      */
-    private final LinkedHashMap comments = new LinkedHashMap();
+    private final Map<String,String> comments = new LinkedHashMap<String,String>();
 
     /**
      * Map of anonymous keys to processing instructions (String[2]
      * containing {target, data}).
      */
-    private final LinkedHashMap pis = new LinkedHashMap();
+    private final Map<String,String[]> pis = new LinkedHashMap<String,String[]>();
 
     /**
      * List of keys to all markup entries in the DTD.
      */
-    private final LinkedList entries = new LinkedList();
+    private final List<String> entries = new LinkedList<String>();
 
     /**
      * Set of the entities defined in the external subset.
      */
-    private final HashSet externalEntities = new HashSet();
+    private final Set<String> externalEntitiesSet = new HashSet<String>();
 
     /**
      * Set of the notations defined in the external subset.
      */
-    private final HashSet externalNotations = new HashSet();
+    private final Set<String> externalNotations = new HashSet<String>();
 
     /**
      * Counter for making anonymous keys.
@@ -4711,7 +4766,7 @@ public class XMLParser
       if (elements.containsKey(name))
         return;
       model.text = text;
-      model.external = (inputStack.size() != 1);
+      model.external = (getInputSize() != 1);
       elements.put(name, model);
       entries.add("E" + name);
     }
@@ -4724,10 +4779,10 @@ public class XMLParser
      */
     void addAttributeDecl(String ename, String aname, AttributeDecl decl)
     {
-      LinkedHashMap attlist = (LinkedHashMap) attlists.get(ename);
+      Map<String,AttributeDecl> attlist = attlists.get(ename);
       if (attlist == null)
         {
-          attlist = new LinkedHashMap();
+          attlist = new LinkedHashMap<String,AttributeDecl>();
           attlists.put(ename, attlist);
         }
       else if (attlist.containsKey(aname))
@@ -4751,7 +4806,7 @@ public class XMLParser
       entities.put(name, text);
       entries.add("e" + name);
       if (inExternalSubset)
-        externalEntities.add(name);
+        externalEntitiesSet.add(name);
     }
 
     /**
@@ -4760,14 +4815,14 @@ public class XMLParser
      * @param ids the external IDs
      * @param inExternalSubset if we are in the exernal subset
      */
-    void addEntityDecl(String name, ExternalIds ids, boolean inExternalSubset)
+    void addEntityDecl(String name, ExternalIds exIDs, boolean inExternalSubset)
     {
       if (entities.containsKey(name))
         return;
-      entities.put(name, ids);
+      entities.put(name, exIDs);
       entries.add("e" + name);
       if (inExternalSubset)
-        externalEntities.add(name);
+        externalEntitiesSet.add(name);
     }
 
     /**
@@ -4776,11 +4831,11 @@ public class XMLParser
      * @param ids the external IDs
      * @param inExternalSubset if we are in the exernal subset
      */
-    void addNotationDecl(String name, ExternalIds ids, boolean inExternalSubset)
+    void addNotationDecl(String name, ExternalIds exIDs, boolean inExternalSubset)
     {
       if (notations.containsKey(name))
         return;
-      notations.put(name, ids);
+      notations.put(name, exIDs);
       entries.add("n" + name);
       if (inExternalSubset)
         externalNotations.add(name);
@@ -4812,7 +4867,7 @@ public class XMLParser
      */
     ContentModel getElementModel(String name)
     {
-      return (ContentModel) elements.get(name);
+      return elements.get(name);
     }
 
     /**
@@ -4822,8 +4877,8 @@ public class XMLParser
      */
     AttributeDecl getAttributeDecl(String ename, String aname)
     {
-      LinkedHashMap attlist = (LinkedHashMap) attlists.get(ename);
-      return (attlist == null) ? null : (AttributeDecl) attlist.get(aname);
+      Map<String,AttributeDecl> attlist = attlists.get(ename);
+      return (attlist == null) ? null : attlist.get(aname);
     }
 
     /**
@@ -4833,7 +4888,7 @@ public class XMLParser
      */
     boolean isAttributeDeclared(String ename, String aname)
     {
-      LinkedHashMap attlist = (LinkedHashMap) attlists.get(ename);
+      Map<String,AttributeDecl> attlist = attlists.get(ename);
       return (attlist == null) ? false : attlist.containsKey(aname);
     }
 
@@ -4842,9 +4897,9 @@ public class XMLParser
      * given element.
      * @param ename the element name
      */
-    Iterator attlistIterator(String ename)
+    Iterator<Map.Entry<String,AttributeDecl>> attlistIterator(String ename)
     {
-      LinkedHashMap attlist = (LinkedHashMap) attlists.get(ename);
+      Map<String,AttributeDecl> attlist = attlists.get(ename);
       return (attlist == null) ? Collections.EMPTY_LIST.iterator() :
         attlist.entrySet().iterator();
     }
@@ -4863,13 +4918,13 @@ public class XMLParser
      */
     boolean isEntityExternal(String name)
     {
-      return externalEntities.contains(name);
+      return externalEntitiesSet.contains(name);
     }
 
     /**
      * Returns an iterator over the entity map entries.
      */
-    Iterator entityIterator()
+    Iterator<Map.Entry<String,Object>> entityIterator()
     {
       return entities.entrySet().iterator();
     }
@@ -4879,7 +4934,7 @@ public class XMLParser
      */
     ExternalIds getNotation(String name)
     {
-      return (ExternalIds) notations.get(name);
+      return notations.get(name);
     }
 
     /**
@@ -4896,7 +4951,7 @@ public class XMLParser
      */
     String getComment(String key)
     {
-      return (String) comments.get(key);
+      return comments.get(key);
     }
 
     /**
@@ -4905,14 +4960,14 @@ public class XMLParser
      */
     String[] getPI(String key)
     {
-      return (String[]) pis.get(key);
+      return pis.get(key);
     }
 
     /**
      * Returns an iterator over the keys of the markup entries in this DTD,
      * in the order declared.
      */
-    Iterator entryIterator()
+    Iterator<String> entryIterator()
     {
       return entries.iterator();
     }
@@ -4944,20 +4999,23 @@ public class XMLParser
   /**
    * A content model.
    */
-  abstract class ContentModel
+  static abstract class ContentModel
   {
-    static final int EMPTY = 0;
-    static final int ANY = 1;
-    static final int ELEMENT = 2;
-    static final int MIXED = 3;
+    static enum Type
+    {
+      EMPTY,
+      ANY,
+      ELEMENT,
+      MIXED;
+    }
 
     int min;
     int max;
-    final int type;
+    final Type type;
     String text;
     boolean external;
 
-    ContentModel(int type)
+    ContentModel(Type type)
     {
       this.type = type;
       min = 1;
@@ -4969,13 +5027,13 @@ public class XMLParser
   /**
    * The EMPTY content model.
    */
-  class EmptyContentModel
+  static class EmptyContentModel
     extends ContentModel
   {
 
     EmptyContentModel()
     {
-      super(ContentModel.EMPTY);
+      super(ContentModel.Type.EMPTY);
       min = 0;
       max = 0;
     }
@@ -4985,13 +5043,13 @@ public class XMLParser
   /**
    * The ANY content model.
    */
-  class AnyContentModel
+  static class AnyContentModel
     extends ContentModel
   {
 
     AnyContentModel()
     {
-      super(ContentModel.ANY);
+      super(ContentModel.Type.ANY);
       min = 0;
       max = -1;
     }
@@ -5001,18 +5059,18 @@ public class XMLParser
   /**
    * An element content model.
    */
-  class ElementContentModel
+  static class ElementContentModel
     extends ContentModel
   {
 
-    LinkedList contentParticles;
+    List<ContentParticle> contentParticles;
     boolean or;
     String regex; // regular expression cache
 
     ElementContentModel()
     {
-      super(ContentModel.ELEMENT);
-      contentParticles = new LinkedList();
+      super(ContentModel.Type.ELEMENT);
+      contentParticles = new LinkedList<ContentParticle>();
     }
 
     void addContentParticle(ContentParticle cp)
@@ -5022,7 +5080,7 @@ public class XMLParser
 
   }
 
-  class ContentParticle
+  static class ContentParticle
   {
 
     int min = 1;
@@ -5034,16 +5092,16 @@ public class XMLParser
   /**
    * A mixed content model.
    */
-  class MixedContentModel
+  static class MixedContentModel
     extends ContentModel
   {
 
-    private HashSet names;
+    private Set<String> names;
 
     MixedContentModel()
     {
-      super(ContentModel.MIXED);
-      names = new HashSet();
+      super(ContentModel.Type.MIXED);
+      names = new HashSet<String>();
     }
 
     void addName(String name)
@@ -5061,7 +5119,7 @@ public class XMLParser
   /**
    * An attribute definition.
    */
-  class AttributeDecl
+  static class AttributeDecl
   {
 
     /**
@@ -5087,7 +5145,7 @@ public class XMLParser
     /**
      * The enumeration tokens.
      */
-    final HashSet values;
+    final Set<String> values;
 
     /**
      * Whether this attribute declaration occurred in the external subset.
@@ -5096,7 +5154,7 @@ public class XMLParser
 
     AttributeDecl(String type, String value,
                   int valueType, String enumeration,
-                  HashSet values, boolean external)
+                  Set<String> values, boolean external)
     {
       this.type = type;
       this.value = value;
@@ -5162,26 +5220,31 @@ public class XMLParser
 
     // -- Location --
 
+    @Override
     public int getCharacterOffset()
     {
       return offset;
     }
 
+    @Override
     public int getColumnNumber()
     {
       return column;
     }
 
+    @Override
     public int getLineNumber()
     {
       return line;
     }
 
+    @Override
     public String getPublicId()
     {
       return publicId;
     }
 
+    @Override
     public String getSystemId()
     {
       return systemId;
@@ -5429,6 +5492,21 @@ public class XMLParser
       mark(1);
     }
 
+  }
+
+  boolean isNamespaceAware()
+  {
+    return namespaceAware;
+  }
+
+  boolean isXML11()
+  {
+    return input.xml11;
+  }
+
+  int getInputSize()
+  {
+    return inputStack.size();
   }
 
 }

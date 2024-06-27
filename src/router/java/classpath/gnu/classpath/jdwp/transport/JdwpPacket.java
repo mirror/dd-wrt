@@ -1,5 +1,5 @@
 /* JdwpPacket.java -- Base class for JDWP command and reply packets
-   Copyright (C) 2005 Free Software Foundation
+   Copyright (C) 2005, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -199,7 +199,7 @@ public abstract class JdwpPacket
               | (bytes[i++] & 0xff) << 8 | (bytes[i++] & 0xff));
         flags = bytes[i++];
 
-        Class clazz = null;
+        Class<?> clazz = null;
         if (flags == 0)
           clazz = JdwpCommandPacket.class;
         else if ((flags & JDWP_FLAG_REPLY) != 0)

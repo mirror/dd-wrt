@@ -1,5 +1,5 @@
 /* DSAParameterSpec.java --- DSA Parameter Specificaton class
-   Copyright (C) 1999, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -74,6 +74,7 @@ public class DSAParameterSpec implements AlgorithmParameterSpec, DSAParams
    *
    * @return Returns the requested BigInteger
    */
+  @Override
   public BigInteger getP()
   {
     return this.p;
@@ -84,6 +85,7 @@ public class DSAParameterSpec implements AlgorithmParameterSpec, DSAParams
    *
    * @return Returns the requested BigInteger
    */
+  @Override
   public BigInteger getQ()
   {
     return this.q;
@@ -94,6 +96,7 @@ public class DSAParameterSpec implements AlgorithmParameterSpec, DSAParams
    *
    * @return Returns the requested BigInteger
    */
+  @Override
   public BigInteger getG()
   {
     return this.g;

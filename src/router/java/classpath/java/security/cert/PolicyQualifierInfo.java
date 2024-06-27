@@ -1,5 +1,5 @@
 /* PolicyQualifierInfo.java -- policy qualifier info object.
-   Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -102,7 +102,7 @@ PolicyQualifierId ::= OBJECT IDENTIFIER
   {
     if (encoded == null)
       throw new IOException("null bytes");
-    this.encoded = (byte[]) encoded.clone();
+    this.encoded = encoded.clone();
     DERReader in = new DERReader(new ByteArrayInputStream(this.encoded));
     DERValue qualInfo = in.read();
     if (!qualInfo.isConstructed())
@@ -139,7 +139,7 @@ PolicyQualifierId ::= OBJECT IDENTIFIER
    */
   public final byte[] getEncoded()
   {
-    return (byte[]) encoded.clone();
+    return encoded.clone();
   }
 
   /**
@@ -161,6 +161,7 @@ PolicyQualifierId ::= OBJECT IDENTIFIER
    *
    * @return The string representation.
    */
+  @Override
   public String toString()
   {
     return "PolicyQualifierInfo { policyQualifierId ::= " + oid

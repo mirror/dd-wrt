@@ -1,5 +1,5 @@
 /* XCat.java --
-   Copyright (C) 2001 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -650,7 +650,6 @@ System.err.println ("nyet unhexing public id: " + publicId);
         // we can't trust other sources to normalize correctly
         if (full) {
             StringTokenizer     tokens;
-            String              token;
 
             tokens = new StringTokenizer (publicId, " \r\n");
             publicId = null;
@@ -735,20 +734,20 @@ System.err.println ("nyet unhexing public id: " + publicId);
         boolean         hasPreference;
         boolean         usingPublic;
 
-        Hashtable       publicIds;
-        Hashtable       publicDelegations;
+        Hashtable<String, String> publicIds;
+        Hashtable<String, Object> publicDelegations;
 
-        Hashtable       systemIds;
-        Hashtable       systemRewrites;
-        Hashtable       systemDelegations;
+        Hashtable<String, String> systemIds;
+        Hashtable<String, String> systemRewrites;
+        Hashtable<String, Object> systemDelegations;
 
-        Hashtable       uris;
-        Hashtable       uriRewrites;
-        Hashtable       uriDelegations;
+        Hashtable<String, String> uris;
+        Hashtable<String, String> uriRewrites;
+        Hashtable<String, Object> uriDelegations;
 
-        Hashtable       doctypes;
+        Hashtable<String,String> doctypes;
 
-        Vector          next;
+        Vector<Object> next;
 
         // nonpublic!
         Catalog () { }
@@ -778,15 +777,15 @@ System.err.println ("nyet unhexing public id: " + publicId);
         // steps as found in OASIS XML catalog spec 7.1.2 or 7.2.2
         private InputSource mapURI (
             String      uri,
-            Hashtable   ids,
-            Hashtable   rewrites,
-            Hashtable   delegations
+            Hashtable<String,String> ids,
+            Hashtable<String,String> rewrites,
+            Hashtable<String,Object> delegations
         ) throws SAXException, IOException
         {
             // 7.1.2: 2. return (first) 'system' entry
             // 7.2.2: 2. return (first) 'uri' entry
             if (ids != null) {
-                String  retval = (String) ids.get (uri);
+                String  retval = ids.get (uri);
                 if (retval != null) {
                     // IF the URI is accessible ...
                     return new InputSource (retval);
@@ -800,10 +799,10 @@ System.err.println ("nyet unhexing public id: " + publicId);
                 String  replace = null;
                 int     prefixLen = -1;
 
-                for (Enumeration e = rewrites.keys ();
+                for (Enumeration<String> e = rewrites.keys ();
                         e.hasMoreElements ();
                         /* NOP */) {
-                    String      temp = (String) e.nextElement ();
+                    String      temp = e.nextElement ();
                     int         len = -1;
 
                     if (!uri.startsWith (temp))
@@ -813,7 +812,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
                         continue;
                     prefix = temp;
                     prefixLen = len;
-                    replace = (String) rewrites.get (temp);
+                    replace = rewrites.get (temp);
                 }
                 if (prefix != null) {
                     CPStringBuilder     buf = new CPStringBuilder (replace);
@@ -943,7 +942,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
         throws SAXException, IOException
         {
             if (doctypes != null) {
-                String  value = (String) doctypes.get (name);
+                String  value = doctypes.get (name);
                 if (value != null) {
                     // IF the URI is accessible ...
                     return new InputSource (value);
@@ -990,25 +989,25 @@ System.err.println ("nyet unhexing public id: " + publicId);
         }
 
         private InputSource checkDelegations (
-            Hashtable   delegations,
+            Hashtable<String,Object>   delegations,
             String      id,
             String      publicId,       // only one of public/system
             String      systemId        // will be non-null...
         ) throws SAXException, IOException
         {
-            Vector      matches = null;
+            Vector<String> matches = null;
             int         length = 0;
 
             // first, see if any prefixes match.
-            for (Enumeration e = delegations.keys ();
+            for (Enumeration<String> e = delegations.keys ();
                     e.hasMoreElements ();
                     /* NOP */) {
-                String  prefix = (String) e.nextElement ();
+                String  prefix = e.nextElement ();
 
                 if (!id.startsWith (prefix))
                     continue;
                 if (matches == null)
-                    matches = new Vector ();
+                    matches = new Vector<String>();
 
                 // maintain in longer->shorter sorted order
                 // NOTE:  assumes not many matches will fire!
@@ -1038,7 +1037,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
 
                 // get this catalog.  we may not have read it yet.
                 synchronized (delegations) {
-                    Object      prefix = matches.elementAt (i);
+                    String      prefix = matches.elementAt (i);
                     Object      cat = delegations.get (prefix);
 
                     if (cat instanceof Catalog)
@@ -1091,8 +1090,8 @@ System.err.println ("nyet unhexing public id: " + publicId);
         private int             ignoreDepth;
         private Locator         locator;
         private boolean         started;
-        private Hashtable       externals;
-        private Stack           bases;
+        private Hashtable<String, String> externals;
+        private Stack<URL> bases;
 
         Catalog                 cat = new Catalog ();
 
@@ -1142,7 +1141,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
 
             // otherwise, let's hope the JDK handles this URI scheme.
             try {
-                URL     base = (URL) bases.peek ();
+                URL     base = bases.peek ();
                 return new URL (base, uri).toString ();
             } catch (Exception e) {
                 fatal ("can't absolutize URI: " + uri);
@@ -1190,7 +1189,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
         {
             if (locator == null)
                 error ("no locator!");
-            bases = new Stack ();
+            bases = new Stack<URL>();
             String      uri = locator.getSystemId ();
             try {
                 bases.push (new URL (uri));
@@ -1220,7 +1219,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
         throws SAXException
         {
             if (externals == null)
-                externals = new Hashtable ();
+	        externals = new Hashtable<String,String>();
             if (externals.get (name) == null)
                 externals.put (name, pub);
         }
@@ -1230,7 +1229,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
         {
             if (externals == null)
                 return;
-            String uri = (String) externals.get (name);
+            String uri = externals.get (name);
 
             // NOTE: breaks if an EntityResolver substitutes these URIs.
             // If toplevel loader supports one, must intercept calls...
@@ -1247,7 +1246,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
         {
             if (externals == null)
                 return;
-            String value = (String) externals.get (name);
+            String value = externals.get (name);
 
             if (value != null)
                 bases.pop ();
@@ -1279,7 +1278,7 @@ System.err.println ("nyet unhexing public id: " + publicId);
             String      xmlbase = atts.getValue ("xml:base");
 
             if (xmlbase != null) {
-                URL     base = (URL) bases.peek ();
+                URL     base = bases.peek ();
                 try {
                     base = new URL (base, xmlbase);
                 } catch (IOException e) {
@@ -1370,9 +1369,9 @@ fatal ("<group prefer=...> case not handled");
                 publicId = normalizePublicId (true, publicId);
                 uri = nofrag (uri);
                 if (cat.publicIds == null)
-                    cat.publicIds = new Hashtable ();
+		    cat.publicIds = new Hashtable<String,String>();
                 else
-                    value = (String) cat.publicIds.get (publicId);
+                    value = cat.publicIds.get (publicId);
                 if (value != null) {
                     if (!value.equals (uri))
                         warn ("ignoring <public...> entry for " + publicId);
@@ -1392,7 +1391,7 @@ fatal ("<group prefer=...> case not handled");
                 publicIdStartString = normalizePublicId (true,
                         publicIdStartString);
                 if (cat.publicDelegations == null)
-                    cat.publicDelegations = new Hashtable ();
+		    cat.publicDelegations = new Hashtable<String,Object>();
                 else
                     value = cat.publicDelegations.get (publicIdStartString);
                 if (value != null) {
@@ -1421,11 +1420,11 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.systemIds == null) {
-                    cat.systemIds = new Hashtable ();
+		    cat.systemIds = new Hashtable<String,String>();
                     if (unified)
                         cat.uris = cat.systemIds;
                 } else
-                    value = (String) cat.systemIds.get (systemId);
+                    value = cat.systemIds.get (systemId);
                 if (value != null) {
                     if (!value.equals (uri))
                         warn ("ignoring <system...> entry for " + systemId);
@@ -1444,7 +1443,7 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.systemRewrites == null) {
-                    cat.systemRewrites = new Hashtable ();
+		    cat.systemRewrites = new Hashtable<String,String>();
                     if (unified)
                         cat.uriRewrites = cat.systemRewrites;
                 } else
@@ -1467,7 +1466,7 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.systemDelegations == null) {
-                    cat.systemDelegations = new Hashtable ();
+		    cat.systemDelegations = new Hashtable<String,Object>();
                     if (unified)
                         cat.uriDelegations = cat.systemDelegations;
                 } else
@@ -1498,11 +1497,11 @@ fatal ("<group prefer=...> case not handled");
                 }
                 name = normalizeURI (name);
                 if (cat.uris == null) {
-                    cat.uris = new Hashtable ();
+		    cat.uris = new Hashtable<String,String>();
                     if (unified)
                         cat.systemIds = cat.uris;
                 } else
-                    value = (String) cat.uris.get (name);
+                    value = cat.uris.get (name);
                 if (value != null) {
                     if (!value.equals (uri))
                         warn ("ignoring <uri...> entry for " + name);
@@ -1521,11 +1520,11 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.uriRewrites == null) {
-                    cat.uriRewrites = new Hashtable ();
+		   cat.uriRewrites = new Hashtable<String,String>();
                     if (unified)
                         cat.systemRewrites = cat.uriRewrites;
                 } else
-                    value = (String) cat.uriRewrites.get (uriStartString);
+                    value = cat.uriRewrites.get (uriStartString);
                 if (value != null) {
                     if (!value.equals (rewritePrefix))
                         warn ("ignoring <rewriteURI...> entry for "
@@ -1542,7 +1541,7 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.uriDelegations == null) {
-                    cat.uriDelegations = new Hashtable ();
+		    cat.uriDelegations = new Hashtable<String,Object>();
                     if (unified)
                         cat.systemDelegations = cat.uriDelegations;
                 } else
@@ -1563,7 +1562,7 @@ fatal ("<group prefer=...> case not handled");
                     return;
                 }
                 if (cat.next == null)
-                    cat.next = new Vector ();
+		    cat.next = new Vector<Object>();
                 cat.next.addElement (catalog);
 
             //
@@ -1579,9 +1578,9 @@ fatal ("<group prefer=...> case not handled");
                 }
                 name = normalizeURI (name);
                 if (cat.doctypes == null)
-                    cat.doctypes = new Hashtable ();
+		    cat.doctypes = new Hashtable<String,String>();
                 else
-                    value = (String) cat.doctypes.get (name);
+                    value = cat.doctypes.get (name);
                 if (value != null) {
                     if (!value.equals (uri))
                         warn ("ignoring <doctype...> entry for "

@@ -1,5 +1,5 @@
 /* RSAPKCS1V1_5SignatureRawCodec.java -- Raw RSA PKCS1 v1.5 signature codeec
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -50,6 +50,7 @@ import gnu.java.security.sig.ISignatureCodec;
 public class RSAPKCS1V1_5SignatureRawCodec
     implements ISignatureCodec
 {
+  @Override
   public int getFormatID()
   {
     return RAW_FORMAT;
@@ -79,6 +80,7 @@ public class RSAPKCS1V1_5SignatureRawCodec
    * @exception IllegalArgumentException if the designated signature is not an
    *              RSA-PKCS#1 (v1.5) one.
    */
+  @Override
   public byte[] encodeSignature(Object signature)
   {
     byte[] buffer;
@@ -124,6 +126,7 @@ public class RSAPKCS1V1_5SignatureRawCodec
    *           with the right <i>magic</i> characters, or if the <i>version</i>
    *           is not supported.
    */
+  @Override
   public Object decodeSignature(byte[] input)
   {
     // magic

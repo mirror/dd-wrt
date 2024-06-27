@@ -121,7 +121,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    * to be black. This object must never be used as a key in a TreeMap, or
    * it will break bounds checking of a SubMap.
    */
-  static final Node nil = new Node(null, null, BLACK);
+  static final Node<Object,Object> nil = new Node<Object,Object>(null, null, BLACK);
   static
     {
       // Nil is self-referential, so we must initialize it after creation.
@@ -133,7 +133,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   /**
    * The root node of this TreeMap.
    */
-  private transient Node root;
+  private transient Node<K,V> root;
 
   /**
    * The size of this TreeMap. Package visible for use by nested classes.
@@ -182,11 +182,11 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     int color;
 
     /** The left child node. */
-    Node<K, V> left = nil;
+    Node<K, V> left;
     /** The right child node. */
-    Node<K, V> right = nil;
+    Node<K, V> right;
     /** The parent node. */
-    Node<K, V> parent = nil;
+    Node<K, V> parent;
 
     /**
      * Simple constructor.
@@ -196,6 +196,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     Node(K key, V value, int color)
     {
       super(key, value);
+      @SuppressWarnings("unchecked") Node<K,V> typedNil = (Node<K,V>) nil;
+      parent = left = right = typedNil;
       this.color = color;
     }
   }
@@ -211,7 +213,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public TreeMap()
   {
-    this((Comparator) null);
+    this((Comparator<? super K>) null);
   }
 
   /**
@@ -245,7 +247,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public TreeMap(Map<? extends K, ? extends V> map)
   {
-    this((Comparator) null);
+    this((Comparator<? super K>) null);
     putAll(map);
   }
 
@@ -260,15 +262,12 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   public TreeMap(SortedMap<K, ? extends V> sm)
   {
     this(sm.comparator());
-    int pos = sm.size();
-    Iterator itr = sm.entrySet().iterator();
 
-    fabricateTree(pos);
-    Node node = firstNode();
+    fabricateTree(sm.size());
+    Node<K,V> node = firstNode();
 
-    while (--pos >= 0)
+    for (Map.Entry<K,? extends V> me : sm.entrySet())
       {
-        Map.Entry me = (Map.Entry) itr.next();
         node.key = me.getKey();
         node.value = me.getValue();
         node = successor(node);
@@ -283,7 +282,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     if (size > 0)
       {
         modCount++;
-        root = nil;
+	@SuppressWarnings("unchecked")
+	  Node<K,V> typedNil = (Node<K,V>) nil;
+        root = typedNil;
         size = 0;
       }
   }
@@ -296,19 +297,21 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public Object clone()
   {
-    TreeMap copy = null;
+    Object clone = null;
     try
       {
-        copy = (TreeMap) super.clone();
+	clone = super.clone();
       }
     catch (CloneNotSupportedException x)
       {
       }
+    @SuppressWarnings("unchecked")
+      TreeMap<K,V> copy = (TreeMap<K,V>) clone;
     copy.entries = null;
     copy.fabricateTree(size);
 
-    Node node = firstNode();
-    Node cnode = copy.firstNode();
+    Node<K,V> node = firstNode();
+    Node<K,V> cnode = copy.firstNode();
 
     while (node != nil)
       {
@@ -342,7 +345,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public boolean containsKey(Object key)
   {
-    return getNode((K) key) != nil;
+    @SuppressWarnings("unchecked") K k = (K) key;
+    return getNode(k) != nil;
   }
 
   /**
@@ -354,7 +358,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public boolean containsValue(Object value)
   {
-    Node node = firstNode();
+    Node<K,V> node = firstNode();
     while (node != nil)
       {
         if (equals(value, node.value))
@@ -415,8 +419,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public V get(Object key)
   {
+    @SuppressWarnings("unchecked") K k = (K) key;
     // Exploit fact that nil.value == null.
-    return getNode((K) key).value;
+    return getNode(k).value;
   }
 
   /**
@@ -459,7 +464,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public NavigableMap<K, V> headMap(K toKey, boolean inclusive)
   {
-    return new SubMap((K)(Object)nil, inclusive
+    @SuppressWarnings("unchecked") K nilKey = (K) nil;
+    return new SubMap(nilKey, inclusive
                       ? successor(getNode(toKey)).key : toKey);
   }
 
@@ -513,7 +519,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   public V put(K key, V value)
   {
     Node<K,V> current = root;
-    Node<K,V> parent = nil;
+    @SuppressWarnings("unchecked") Node<K,V> parent = (Node<K,V>) nil;
     int comparison = 0;
 
     // Find new node's parent.
@@ -530,7 +536,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       }
 
     // Set up new node.
-    Node n = new Node(key, value, RED);
+    Node<K,V> n = new Node<K,V>(key, value, RED);
     n.parent = parent;
 
     // Insert node in tree.
@@ -565,13 +571,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public void putAll(Map<? extends K, ? extends V> m)
   {
-    Iterator itr = m.entrySet().iterator();
-    int pos = m.size();
-    while (--pos >= 0)
-      {
-        Map.Entry<K,V> e = (Map.Entry<K,V>) itr.next();
-        put(e.getKey(), e.getValue());
-      }
+    for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
+      put(e.getKey(), e.getValue());
   }
 
   /**
@@ -589,7 +590,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public V remove(Object key)
   {
-    Node<K, V> n = getNode((K)key);
+    @SuppressWarnings("unchecked") K k = (K) key;
+    Node<K, V> n = getNode(k);
     if (n == nil)
       return null;
     // Note: removeNode can alter the contents of n, so save value now.
@@ -700,8 +702,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive)
   {
+    @SuppressWarnings("unchecked") K nilKey = (K) nil;
     return new SubMap(inclusive ? fromKey : successor(getNode(fromKey)).key,
-                      (K)(Object)nil);
+                      nilKey);
   }
 
   /**
@@ -728,7 +731,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
         public Iterator<V> iterator()
         {
-          return new TreeIterator(VALUES);
+          return new TreeIterator<V>(VALUES);
         }
 
         public void clear()
@@ -749,13 +752,13 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    *         or are not Comparable with natural ordering
    * @throws NullPointerException if o1 or o2 is null with natural ordering
    */
+  @SuppressWarnings("unchecked")
   final int compare(K o1, K o2)
   {
     return (comparator == null
-            ? ((Comparable) o1).compareTo(o2)
+            ? ((Comparable<? super K>) o1).compareTo(o2)
             : comparator.compare(o1, o2));
   }
-
   /**
    * Maintain red-black balance after deleting a node.
    *
@@ -873,7 +876,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   {
     if (count == 0)
       {
-        root = nil;
+	@SuppressWarnings("unchecked")
+	  Node<K,V> typedNil = (Node<K,V>) nil;
+        root = typedNil;
         size = 0;
         return;
       }
@@ -884,25 +889,25 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     // then updating those links to the children when working on the next row.
 
     // Make the root node.
-    root = new Node(null, null, BLACK);
+    root = new Node<K,V>(null, null, BLACK);
     size = count;
-    Node row = root;
+    Node<K,V> row = root;
     int rowsize;
 
     // Fill each row that is completely full of nodes.
     for (rowsize = 2; rowsize + rowsize <= count; rowsize <<= 1)
       {
-        Node parent = row;
-        Node last = null;
+        Node<K,V> parent = row;
+        Node<K,V> last = null;
         for (int i = 0; i < rowsize; i += 2)
           {
-            Node left = new Node(null, null, BLACK);
-            Node right = new Node(null, null, BLACK);
+            Node<K,V> left = new Node<K,V>(null, null, BLACK);
+            Node<K,V> right = new Node<K,V>(null, null, BLACK);
             left.parent = parent;
             left.right = right;
             right.parent = parent;
             parent.left = left;
-            Node next = parent.right;
+            Node<K,V> next = parent.right;
             parent.right = right;
             parent = next;
             if (last != null)
@@ -914,33 +919,34 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     // Now do the partial final row in red.
     int overflow = count - rowsize;
-    Node parent = row;
+    Node<K,V> parent = row;
     int i;
     for (i = 0; i < overflow; i += 2)
       {
-        Node left = new Node(null, null, RED);
-        Node right = new Node(null, null, RED);
+        Node<K,V> left = new Node<K,V>(null, null, RED);
+        Node<K,V> right = new Node<K,V>(null, null, RED);
         left.parent = parent;
         right.parent = parent;
         parent.left = left;
-        Node next = parent.right;
+        Node<K,V> next = parent.right;
         parent.right = right;
         parent = next;
       }
+    @SuppressWarnings("unchecked") Node<K,V> nilNode = (Node<K,V>) nil;
     // Add a lone left node if necessary.
     if (i - overflow == 0)
       {
-        Node left = new Node(null, null, RED);
+        Node<K,V> left = new Node<K,V>(null, null, RED);
         left.parent = parent;
         parent.left = left;
         parent = parent.right;
-        left.parent.right = nil;
+        left.parent.right = nilNode;
       }
     // Unlink the remaining nodes of the previous row.
     while (parent != nil)
       {
-        Node next = parent.right;
-        parent.right = nil;
+        Node<K,V> next = parent.right;
+        parent.right = nilNode;
         parent = next;
       }
   }
@@ -954,7 +960,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   final Node<K, V> firstNode()
   {
     // Exploit fact that nil.left == nil.
-    Node node = root;
+    Node<K,V> node = root;
     while (node.left != nil)
       node = node.left;
     return node;
@@ -1010,7 +1016,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     if (key == nil)
       return lastNode();
 
-    Node<K,V> last = nil;
+    @SuppressWarnings("unchecked") Node<K,V> last = (Node<K,V>) nil;
     Node<K,V> current = root;
     int comparison = 0;
 
@@ -1042,7 +1048,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       {
         if (n.parent == n.parent.parent.left)
           {
-            Node uncle = n.parent.parent.right;
+	    Node<K,V> uncle = n.parent.parent.right;
             // Uncle may be nil, in which case it is BLACK.
             if (uncle.color == RED)
               {
@@ -1072,7 +1078,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
         else
           {
             // Mirror image of above code.
-            Node uncle = n.parent.parent.left;
+            Node<K,V> uncle = n.parent.parent.left;
             // Uncle may be nil, in which case it is BLACK.
             if (uncle.color == RED)
               {
@@ -1111,7 +1117,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   private Node<K,V> lastNode()
   {
     // Exploit fact that nil.right == nil.
-    Node node = root;
+    Node<K,V> node = root;
     while (node.right != nil)
       node = node.right;
     return node;
@@ -1143,10 +1149,12 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   final Node<K,V> lowestGreaterThan(K key, boolean first, boolean equal)
   {
-    if (key == nil)
-      return first ? firstNode() : nil;
+    @SuppressWarnings("unchecked") Node<K,V> nilNode = (Node<K,V>) nil;
 
-    Node<K,V> last = nil;
+    if (key == nil)
+	return first ? firstNode() : nilNode;
+
+    Node<K,V> last = nilNode;
     Node<K,V> current = root;
     int comparison = 0;
 
@@ -1180,7 +1188,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
         return node;
       }
 
-    Node parent = node.parent;
+    Node<K,V> parent = node.parent;
     // Exploit fact that nil.left == nil and node is non-nil.
     while (node == parent.left)
       {
@@ -1196,36 +1204,38 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    *
    * @param s the stream to read from
    * @param count the number of keys to read
-   * @param readValues true to read values, false to insert "" as the value
+   * @param readValues null to read values, non-null to insert itself as the value
    * @throws ClassNotFoundException if the underlying stream fails
    * @throws IOException if the underlying stream fails
    * @see #readObject(ObjectInputStream)
    * @see TreeSet#readObject(ObjectInputStream)
    */
+  @SuppressWarnings("unchecked")
   final void putFromObjStream(ObjectInputStream s, int count,
-                              boolean readValues)
+                              V readValues)
     throws IOException, ClassNotFoundException
   {
     fabricateTree(count);
-    Node node = firstNode();
+    Node<K,V> node = firstNode();
 
     while (--count >= 0)
       {
-        node.key = s.readObject();
-        node.value = readValues ? s.readObject() : "";
+        node.key = (K) s.readObject();
+        node.value = (readValues == null) ? (V) s.readObject() : readValues;
         node = successor(node);
       }
   }
 
   /**
-   * Construct a tree from sorted keys in linear time, with values of "".
+   * Construct a tree from sorted keys in linear time, with the given value.
    * Package visible for use by TreeSet, which uses a value type of String.
    *
    * @param keys the iterator over the sorted keys
    * @param count the number of nodes to insert
+   * @param value the value to use.
    * @see TreeSet#TreeSet(SortedSet)
    */
-  final void putKeysLinear(Iterator<K> keys, int count)
+  final void putKeysLinear(Iterator<K> keys, int count, V value)
   {
     fabricateTree(count);
     Node<K,V> node = firstNode();
@@ -1233,7 +1243,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     while (--count >= 0)
       {
         node.key = keys.next();
-        node.value = (V) "";
+        node.value = value;
         node = successor(node);
       }
   }
@@ -1252,7 +1262,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   {
     s.defaultReadObject();
     int size = s.readInt();
-    putFromObjStream(s, size, true);
+    putFromObjStream(s, size, null);
   }
 
   /**
@@ -1295,7 +1305,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       }
 
     // Unlink splice from the tree.
-    Node parent = splice.parent;
+    Node<K,V> parent = splice.parent;
     if (child != nil)
       child.parent = parent;
     if (parent == nil)
@@ -1320,7 +1330,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   private void rotateLeft(Node<K,V> node)
   {
-    Node child = node.right;
+    Node<K,V> child = node.right;
     // if (node == nil || child == nil)
     //   throw new InternalError();
 
@@ -1353,7 +1363,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    */
   private void rotateRight(Node<K,V> node)
   {
-    Node child = node.left;
+    Node<K,V> child = node.left;
     // if (node == nil || child == nil)
     //   throw new InternalError();
 
@@ -1418,7 +1428,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
   {
     s.defaultWriteObject();
 
-    Node node = firstNode();
+    Node<K,V> node = firstNode();
     s.writeInt(size);
     while (node != nil)
       {
@@ -1434,7 +1444,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
    *
    * @author Eric Blake (ebb9@email.byu.edu)
    */
-  private final class TreeIterator implements Iterator
+  private final class TreeIterator<T> implements Iterator<T>
   {
     /**
      * The type of this Iterator: {@link #KEYS}, {@link #VALUES},
@@ -1444,22 +1454,23 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     /** The number of modifications to the backing Map that we know about. */
     private int knownMod = modCount;
     /** The last Entry returned by a next() call. */
-    private Node last;
+    private Node<K,V> last;
     /** The next entry that should be returned by next(). */
-    private Node next;
+    private Node<K,V> next;
     /**
      * The last node visible to this iterator. This is used when iterating
      * on a SubMap.
      */
-    private final Node max;
+    private final Node<K,V> max;
 
     /**
      * Construct a new TreeIterator with the supplied type.
      * @param type {@link #KEYS}, {@link #VALUES}, or {@link #ENTRIES}
      */
+    @SuppressWarnings("unchecked")
     TreeIterator(int type)
     {
-      this(type, firstNode(), nil);
+      this(type, firstNode(), (Node<K,V>) nil);
     }
 
     /**
@@ -1470,7 +1481,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
      * @param first where to start iteration, nil for empty iterator
      * @param max the cutoff for iteration, nil for all remaining nodes
      */
-    TreeIterator(int type, Node first, Node max)
+    TreeIterator(int type, Node<K,V> first, Node<K,V> max)
     {
       this.type = type;
       this.next = first;
@@ -1492,7 +1503,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
      * @throws ConcurrentModificationException if the TreeMap was modified
      * @throws NoSuchElementException if there is none
      */
-    public Object next()
+    @SuppressWarnings("unchecked")
+    public T next()
     {
       if (knownMod != modCount)
         throw new ConcurrentModificationException();
@@ -1502,10 +1514,10 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       next = successor(last);
 
       if (type == VALUES)
-        return last.value;
+        return (T) last.value;
       else if (type == KEYS)
-        return last.key;
-      return last;
+        return (T) last.key;
+      return (T) last;
     }
 
     /**
@@ -1622,17 +1634,17 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     public NavigableMap<K,V> descendingMap()
     {
       if (descendingMap == null)
-        descendingMap = new DescendingMap(this);
+        descendingMap = new DescendingMap<K,V>(this);
       return descendingMap;
     }
 
     public void clear()
     {
-      Node next = lowestGreaterThan(minKey, true);
-      Node max = lowestGreaterThan(maxKey, false);
+      Node<K,V> next = lowestGreaterThan(minKey, true);
+      Node<K,V> max = lowestGreaterThan(maxKey, false);
       while (next != max)
         {
-          Node current = next;
+          Node<K,V> current = next;
           next = successor(current);
           removeNode(current);
         }
@@ -1645,13 +1657,14 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public boolean containsKey(Object key)
     {
-      return keyInRange((K) key) && TreeMap.this.containsKey(key);
+      @SuppressWarnings("unchecked") K typedKey = (K) key;
+      return keyInRange(typedKey) && TreeMap.this.containsKey(typedKey);
     }
 
     public boolean containsValue(Object value)
     {
-      Node node = lowestGreaterThan(minKey, true);
-      Node max = lowestGreaterThan(maxKey, false);
+      Node<K,V> node = lowestGreaterThan(minKey, true);
+      Node<K,V> max = lowestGreaterThan(maxKey, false);
       while (node != max)
         {
           if (equals(value, node.getValue()))
@@ -1705,8 +1718,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public V get(Object key)
     {
-      if (keyInRange((K) key))
-        return TreeMap.this.get(key);
+      @SuppressWarnings("unchecked") K typedKey = (K) key;
+      if (keyInRange(typedKey))
+        return TreeMap.this.get(typedKey);
       return null;
     }
 
@@ -1813,15 +1827,16 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public V remove(Object key)
     {
-      if (keyInRange((K)key))
+      @SuppressWarnings("unchecked") K typedKey = (K) key;
+      if (keyInRange(typedKey))
         return TreeMap.this.remove(key);
       return null;
     }
 
     public int size()
     {
-      Node node = lowestGreaterThan(minKey, true);
-      Node max = lowestGreaterThan(maxKey, false);
+      Node<K,V> node = lowestGreaterThan(minKey, true);
+      Node<K,V> max = lowestGreaterThan(maxKey, false);
       int count = 0;
       while (node != max)
         {
@@ -1863,7 +1878,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       if (this.values == null)
         // Create an AbstractCollection with custom implementations of those
         // methods that can be overriden easily and efficiently.
-        this.values = new AbstractCollection()
+        this.values = new AbstractCollection<V>()
         {
           public int size()
           {
@@ -1872,9 +1887,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
           public Iterator<V> iterator()
           {
-            Node first = lowestGreaterThan(minKey, true);
-            Node max = lowestGreaterThan(maxKey, false);
-            return new TreeIterator(VALUES, first, max);
+            Node<K,V> first = lowestGreaterThan(minKey, true);
+            Node<K,V> max = lowestGreaterThan(maxKey, false);
+            return new TreeIterator<V>(VALUES, first, max);
           }
 
           public void clear()
@@ -1895,9 +1910,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
       public Iterator<K> iterator()
       {
-        Node first = lowestGreaterThan(minKey, true);
-        Node max = lowestGreaterThan(maxKey, false);
-        return new TreeIterator(KEYS, first, max);
+        Node<K,V> first = lowestGreaterThan(minKey, true);
+        Node<K,V> max = lowestGreaterThan(maxKey, false);
+        return new TreeIterator<K>(KEYS, first, max);
       }
 
       public void clear()
@@ -1907,16 +1922,18 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
       public boolean contains(Object o)
       {
-        if (! keyInRange((K) o))
+	@SuppressWarnings("unchecked") K key = (K) o;
+        if (! keyInRange(key))
           return false;
-        return getNode((K) o) != nil;
+        return getNode(key) != nil;
       }
 
       public boolean remove(Object o)
       {
-        if (! keyInRange((K) o))
+	@SuppressWarnings("unchecked") K key = (K) o;
+        if (! keyInRange(key))
           return false;
-        Node n = getNode((K) o);
+        Node<K,V> n = getNode(key);
         if (n != nil)
           {
             removeNode(n);
@@ -1949,7 +1966,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
       public NavigableSet<K> descendingSet()
       {
-        return new DescendingSet(this);
+        return new DescendingSet<K>(this);
       }
 
       public K first()
@@ -2035,9 +2052,9 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public Iterator<Map.Entry<K,V>> iterator()
     {
-      Node first = lowestGreaterThan(minKey, true);
-      Node max = lowestGreaterThan(maxKey, false);
-      return new TreeIterator(ENTRIES, first, max);
+      Node<K,V> first = lowestGreaterThan(minKey, true);
+      Node<K,V> max = lowestGreaterThan(maxKey, false);
+      return new TreeIterator<Map.Entry<K,V>>(ENTRIES, first, max);
     }
 
     public void clear()
@@ -2049,7 +2066,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     {
       if (! (o instanceof Map.Entry))
         return false;
-      Map.Entry<K,V> me = (Map.Entry<K,V>) o;
+      @SuppressWarnings("unchecked") Map.Entry<K,V> me = (Map.Entry<K,V>) o;
       K key = me.getKey();
       if (! keyInRange(key))
         return false;
@@ -2061,7 +2078,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     {
       if (! (o instanceof Map.Entry))
         return false;
-      Map.Entry<K,V> me = (Map.Entry<K,V>) o;
+      @SuppressWarnings("unchecked") Map.Entry<K,V> me = (Map.Entry<K,V>) o;
       K key = me.getKey();
       if (! keyInRange(key))
         return false;
@@ -2103,7 +2120,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
       public NavigableSet<Entry<K,V>> descendingSet()
       {
-        return new DescendingSet(this);
+        return new DescendingSet<Entry<K,V>>(this);
       }
 
       public Entry<K,V> first()
@@ -2173,7 +2190,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       public NavigableSet<Entry<K,V>> tailSet(Entry<K,V> from, boolean inclusive)
       {
         return (NavigableSet<Entry<K,V>>)
-          SubMap.this.tailMap(from.getKey(), inclusive).navigableKeySet();
+          SubMap.this.tailMap(from.getKey(), inclusive).entrySet();
       }
 
   } // class SubMap.NavigableEntrySet
@@ -2616,7 +2633,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableMap<DK,DV> headMap(DK toKey, boolean inclusive)
     {
-      return new DescendingMap(map.tailMap(toKey, inclusive));
+      return new DescendingMap<DK,DV>(map.tailMap(toKey, inclusive));
     }
 
     public Entry<DK,DV> higherEntry(DK key)
@@ -2706,8 +2723,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     public NavigableMap<DK,DV> subMap(DK fromKey, boolean fromInclusive,
                                       DK toKey, boolean toInclusive)
     {
-      return new DescendingMap(map.subMap(fromKey, fromInclusive,
-                                          toKey, toInclusive));
+      return new DescendingMap<DK,DV>(map.subMap(fromKey, fromInclusive,
+						 toKey, toInclusive));
     }
 
     public SortedMap<DK,DV> tailMap(DK fromKey)
@@ -2717,7 +2734,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableMap<DK,DV> tailMap(DK fromKey, boolean inclusive)
     {
-      return new DescendingMap(map.headMap(fromKey, inclusive));
+      return new DescendingMap<DK,DV>(map.headMap(fromKey, inclusive));
     }
 
     public String toString()
@@ -2741,7 +2758,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
       if (values == null)
         // Create an AbstractCollection with custom implementations of those
         // methods that can be overriden easily and efficiently.
-        values = new AbstractCollection()
+        values = new AbstractCollection<DV>()
           {
             public int size()
             {
@@ -2808,7 +2825,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public Iterator<K> iterator()
     {
-      return new TreeIterator(KEYS);
+      return new TreeIterator<K>(KEYS);
     }
 
     public void clear()
@@ -2823,7 +2840,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public boolean remove(Object key)
     {
-      Node<K,V> n = getNode((K) key);
+      @SuppressWarnings("unchecked") K typedKey = (K) key;
+      Node<K,V> n = getNode(typedKey);
       if (n == nil)
         return false;
       removeNode(n);
@@ -3032,7 +3050,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableSet<D> headSet(D to, boolean inclusive)
     {
-      return new DescendingSet(set.tailSet(to, inclusive));
+      return new DescendingSet<D>(set.tailSet(to, inclusive));
     }
 
     public D higher(D e)
@@ -3130,8 +3148,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     public NavigableSet<D> subSet(D from, boolean fromInclusive,
                                   D to, boolean toInclusive)
     {
-      return new DescendingSet(set.subSet(from, fromInclusive,
-                                          to, toInclusive));
+      return new DescendingSet<D>(set.subSet(from, fromInclusive,
+					     to, toInclusive));
     }
 
     public SortedSet<D> tailSet(D from)
@@ -3141,12 +3159,12 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableSet<D> tailSet(D from, boolean inclusive)
     {
-      return new DescendingSet(set.headSet(from, inclusive));
+      return new DescendingSet<D>(set.headSet(from, inclusive));
     }
 
     public Object[] toArray()
     {
-      D[] array = (D[]) set.toArray();
+      @SuppressWarnings("unchecked") D[] array = (D[]) set.toArray();
       Arrays.sort(array, comparator());
       return array;
     }
@@ -3154,7 +3172,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     public <T> T[] toArray(T[] a)
     {
       T[] array = set.toArray(a);
-      Arrays.sort(array, (Comparator<? super T>) comparator());
+      @SuppressWarnings("unchecked") D[] ourArray = (D[]) array;
+      Arrays.sort(ourArray, comparator());
       return array;
     }
 
@@ -3187,7 +3206,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public Iterator<Map.Entry<K,V>> iterator()
     {
-      return new TreeIterator(ENTRIES);
+      return new TreeIterator<Map.Entry<K,V>>(ENTRIES);
     }
 
     public void clear()
@@ -3199,7 +3218,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     {
       if (! (o instanceof Map.Entry))
         return false;
-      Map.Entry<K,V> me = (Map.Entry<K,V>) o;
+      @SuppressWarnings("unchecked") Map.Entry<K,V> me = (Map.Entry<K,V>) o;
       Node<K,V> n = getNode(me.getKey());
       return n != nil && AbstractSet.equals(me.getValue(), n.value);
     }
@@ -3208,7 +3227,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     {
       if (! (o instanceof Map.Entry))
         return false;
-      Map.Entry<K,V> me = (Map.Entry<K,V>) o;
+      @SuppressWarnings("unchecked") Map.Entry<K,V> me = (Map.Entry<K,V>) o;
       Node<K,V> n = getNode(me.getKey());
       if (n != nil && AbstractSet.equals(me.getValue(), n.value))
         {
@@ -3247,7 +3266,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableSet<Entry<K,V>> descendingSet()
     {
-      return new DescendingSet(this);
+      return new DescendingSet<Entry<K,V>>(this);
     }
 
     public Entry<K,V> first()
@@ -3314,7 +3333,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
 
     public NavigableSet<Entry<K,V>> tailSet(Entry<K,V> from, boolean inclusive)
     {
-      return (NavigableSet<Entry<K,V>>) tailMap(from.getKey(), inclusive).navigableKeySet();
+      return (NavigableSet<Entry<K,V>>) tailMap(from.getKey(), inclusive).entrySet();
     }
 
   } // class NavigableEntrySet

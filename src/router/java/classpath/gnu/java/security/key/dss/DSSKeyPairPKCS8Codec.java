@@ -1,5 +1,5 @@
 /* DSSKeyPairPKCS8Codec.java -- PKCS#8 Encoding/Decoding handler
-   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -74,6 +74,7 @@ public class DSSKeyPairPKCS8Codec
 
   // implicit 0-arguments constructor
 
+  @Override
   public int getFormatID()
   {
     return PKCS8_FORMAT;
@@ -82,6 +83,7 @@ public class DSSKeyPairPKCS8Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
+  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     throw new InvalidParameterException("Wrong format for public keys");
@@ -115,6 +117,7 @@ public class DSSKeyPairPKCS8Codec
    * @throw InvalidParameterException if an error occurs during the marshalling
    *        process.
    */
+  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     if (! (key instanceof DSSPrivateKey))
@@ -130,13 +133,13 @@ public class DSSKeyPairPKCS8Codec
     BigInteger g = pk.getParams().getG();
     BigInteger x = pk.getX();
 
-    ArrayList params = new ArrayList(3);
+    ArrayList<DERValue> params = new ArrayList<DERValue>(3);
     params.add(new DERValue(DER.INTEGER, p));
     params.add(new DERValue(DER.INTEGER, q));
     params.add(new DERValue(DER.INTEGER, g));
     DERValue derParams = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, params);
 
-    ArrayList algorithmID = new ArrayList(2);
+    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
     algorithmID.add(derOID);
     algorithmID.add(derParams);
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -146,7 +149,7 @@ public class DSSKeyPairPKCS8Codec
     DERValue derX = new DERValue(DER.INTEGER, x);
     DERValue derPrivateKey = new DERValue(DER.OCTET_STRING, derX.getEncoded());
 
-    ArrayList pki = new ArrayList(3);
+    ArrayList<DERValue> pki = new ArrayList<DERValue>(3);
     pki.add(derVersion);
     pki.add(derAlgorithmID);
     pki.add(derPrivateKey);
@@ -171,6 +174,7 @@ public class DSSKeyPairPKCS8Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
+  @Override
   public PublicKey decodePublicKey(byte[] input)
   {
     throw new InvalidParameterException("Wrong format for public keys");
@@ -184,6 +188,7 @@ public class DSSKeyPairPKCS8Codec
    * @throw InvalidParameterException if an exception occurs during the
    *        unmarshalling process.
    */
+  @Override
   public PrivateKey decodePrivateKey(byte[] input)
   {
     if (Configuration.DEBUG)

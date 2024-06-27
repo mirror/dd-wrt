@@ -1,5 +1,5 @@
 /* MessageDigestAdapter.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -89,31 +89,37 @@ class MessageDigestAdapter
     this.adaptee = adaptee;
   }
 
+  @Override
   public Object clone()
   {
     return new MessageDigestAdapter((IMessageDigest) adaptee.clone());
   }
 
+  @Override
   public int engineGetDigestLength()
   {
     return adaptee.hashSize();
   }
-
+  
+  @Override
   public void engineUpdate(byte input)
   {
     adaptee.update(input);
   }
 
+  @Override
   public void engineUpdate(byte[] input, int offset, int len)
   {
     adaptee.update(input, offset, len);
   }
 
+  @Override
   public byte[] engineDigest()
   {
     return adaptee.digest();
   }
 
+  @Override
   public int engineDigest(byte[] buf, int offset, int len)
       throws DigestException
   {
@@ -126,6 +132,7 @@ class MessageDigestAdapter
     return result;
   }
 
+  @Override
   public void engineReset()
   {
     adaptee.reset();

@@ -1,5 +1,5 @@
 /* TrustAnchor.java -- an ultimately-trusted certificate.
-   Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -40,6 +40,7 @@ package java.security.cert;
 
 import gnu.java.security.x509.X500DistinguishedName;
 
+import java.io.IOException;
 import java.security.PublicKey;
 
 /**
@@ -87,7 +88,7 @@ public class TrustAnchor
     caName = null;
     caKey = null;
     if (nameConstraints != null)
-      this.nameConstraints = (byte[]) nameConstraints.clone();
+      this.nameConstraints = nameConstraints.clone();
     else
       this.nameConstraints = null;
   }
@@ -102,6 +103,10 @@ public class TrustAnchor
    * @params caName The CA's distinguished name.
    * @params caKey The CA's public key.
    * @params nameConstraints The encoded nameConstraints.
+   * @throws NullPointerException if the specified CA name or key is
+   *         {@code null}.
+   * @throws IllegalArgumentException if the CA name is of zero length or
+   *         incorrectly formatted, or the name constraints can't be decoded.
    */
   public TrustAnchor(String caName, PublicKey caKey, byte[] nameConstraints)
   {
@@ -110,10 +115,17 @@ public class TrustAnchor
     if (caName.length() == 0)
       throw new IllegalArgumentException();
     trustedCert = null;
-    this.caName = new X500DistinguishedName(caName);
+    try
+      {
+	this.caName = new X500DistinguishedName(caName);
+      }
+    catch (IOException ex)
+      {
+	throw new IllegalArgumentException("Couldn't parse name", ex);
+      }
     this.caKey = caKey;
     if (nameConstraints != null)
-      this.nameConstraints = (byte[]) nameConstraints.clone();
+      this.nameConstraints = nameConstraints.clone();
     else
       this.nameConstraints = null;
   }
@@ -167,7 +179,7 @@ public class TrustAnchor
   {
     if (nameConstraints == null)
       return null;
-    return (byte[]) nameConstraints.clone();
+    return nameConstraints.clone();
   }
 
   /**
@@ -175,6 +187,7 @@ public class TrustAnchor
    *
    * @return The printable representation.
    */
+  @Override
   public String toString()
   {
     if (trustedCert == null)

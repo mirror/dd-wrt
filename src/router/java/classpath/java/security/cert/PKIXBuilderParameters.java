@@ -1,5 +1,5 @@
 /* PKIXBuilderParameters.java -- parameters for PKIX cert path builders
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -140,6 +140,7 @@ public class PKIXBuilderParameters extends PKIXParameters
     this.maxPathLength = maxPathLength;
   }
 
+  @Override
   public String toString()
   {
     CPStringBuilder buf = new CPStringBuilder(super.toString());

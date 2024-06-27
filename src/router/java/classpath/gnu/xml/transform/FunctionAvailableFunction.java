@@ -1,5 +1,5 @@
 /* FunctionAvailableFunction.java --
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
@@ -61,11 +62,11 @@ class FunctionAvailableFunction
   implements Function, XPathFunction
 {
 
-  static final Collection xsltFunctions;
-  static final Collection xpathFunctions;
+  static final Collection<String> xsltFunctions;
+  static final Collection<String> xpathFunctions;
   static
   {
-    TreeSet acc = new TreeSet();
+    SortedSet<String> acc = new TreeSet<String>();
     acc.add("document");
     acc.add("key");
     acc.add("format-number");
@@ -76,7 +77,7 @@ class FunctionAvailableFunction
     acc.add("element-available");
     acc.add("function-available");
     xsltFunctions = Collections.unmodifiableSet(acc);
-    acc = new TreeSet();
+    acc = new TreeSet<String>();
     acc.add("boolean");
     acc.add("ceiling");
     acc.add("concat");
@@ -108,13 +109,14 @@ class FunctionAvailableFunction
   }
 
   final NamespaceContext nsctx;
-  List args;
+  List<Expr> args;
 
   FunctionAvailableFunction(NamespaceContext nsctx)
   {
     this.nsctx = nsctx;
   }
 
+  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -122,14 +124,14 @@ class FunctionAvailableFunction
     return Collections.EMPTY_SET;
   }
 
-  public void setArguments(List args)
+  public void setArguments(List<Expr> args)
   {
     this.args = args;
   }
 
   public Object evaluate(Node context, int pos, int len)
   {
-    Expr arg = (Expr) args.get(0);
+    Expr arg = args.get(0);
     Object val = arg.evaluate(context, pos, len);
     String name = _string(context, val);
     String prefix, localName, uri;
@@ -167,18 +169,18 @@ class FunctionAvailableFunction
       n = (NamespaceContext) context;
     FunctionAvailableFunction f = new FunctionAvailableFunction(n);
     int len = args.size();
-    List args2 = new ArrayList(len);
+    List<Expr> args2 = new ArrayList<Expr>(len);
     for (int i = 0; i < len; i++)
-      args2.add(((Expr) args.get(i)).clone(context));
+      args2.add(args.get(i).clone(context));
     f.setArguments(args2);
     return f;
   }
 
   public boolean references(QName var)
   {
-    for (Iterator i = args.iterator(); i.hasNext(); )
+    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
       {
-        if (((Expr) i.next()).references(var))
+        if (i.next().references(var))
           return true;
       }
     return false;

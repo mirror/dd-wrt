@@ -52,16 +52,18 @@ final class GDayType
 {
 
   static class GDay
-    implements Comparable
+    implements Comparable<GDay>
   {
 
     int day;
 
+    @Override
     public int hashCode()
     {
       return day;
     }
 
+    @Override
     public boolean equals(Object other)
     {
       if (other instanceof GDay)
@@ -69,16 +71,12 @@ final class GDayType
       return false;
     }
 
-    public int compareTo(Object other)
+    @Override
+    public int compareTo(GDay gd)
     {
-      if (other instanceof GDay)
-        {
-          GDay gd = (GDay) other;
-          if (gd.day == day)
-            return 0;
-          return (day < gd.day) ? -1 : 1;
-        }
-      return 0;
+      if (gd.day == day)
+	return 0;
+      return (day < gd.day) ? -1 : 1;
     }
 
   }

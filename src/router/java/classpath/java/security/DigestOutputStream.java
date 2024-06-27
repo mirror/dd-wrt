@@ -1,5 +1,5 @@
 /* DigestOutputStream.java --- An output stream tied to a message digest
-   Copyright (C) 1999, 2004, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2004, 2005, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -108,6 +108,7 @@ public class DigestOutputStream extends FilterOutputStream
    * @exception IOException if the underlying output stream
    * cannot write the byte, this is thrown.
    */
+  @Override
   public void write(int b) throws IOException
   {
     if (state)
@@ -127,6 +128,7 @@ public class DigestOutputStream extends FilterOutputStream
    * @exception IOException if the underlying output stream
    * cannot write the bytes, this is thrown.
    */
+  @Override
   public void write(byte[]b, int off, int len) throws IOException
   {
     if (state)
@@ -151,6 +153,7 @@ public class DigestOutputStream extends FilterOutputStream
    *
    * @return A string representing the output stream and message digest.
    */
+  @Override
   public String toString()
   {
     return "[Digest Output Stream] " + digest.toString();

@@ -1,5 +1,5 @@
 /* TransformerFactoryImpl.java --
-   Copyright (C) 2004,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -43,7 +43,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -171,7 +170,7 @@ public class TransformerFactoryImpl
           }
         Document doc = (node instanceof Document) ? (Document) node :
           node.getOwnerDocument();
-        LinkedList matches = new LinkedList();
+        LinkedList<URL> matches = new LinkedList<URL>();
         for (node = doc.getFirstChild();
              node != null;
              node = node.getNextSibling())
@@ -179,7 +178,7 @@ public class TransformerFactoryImpl
             if (node.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE &&
                 "xml-stylesheet".equals(node.getNodeName()))
               {
-                Map params = parseParameters(node.getNodeValue());
+                Map<String,String> params = parseParameters(node.getNodeValue());
                 if (media != null && !media.equals(params.get("media")))
                   {
                     continue;
@@ -192,7 +191,7 @@ public class TransformerFactoryImpl
                   {
                     continue;
                   }
-                String href = (String) params.get("href");
+                String href = params.get("href");
                 URL url = resolver.resolveURL(null, node.getBaseURI(), href);
                 matches.add(url);
               }
@@ -217,9 +216,8 @@ public class TransformerFactoryImpl
             root.getAttributes().setNamedItemNS(version);
             ssDoc.appendChild(root);
             // Create xsl:import for each URL
-            for (Iterator i = matches.iterator(); i.hasNext(); )
+	    for (URL url : matches)
               {
-                URL url = (URL) i.next();
                 Node imp =
                   ssDoc.createElementNS(Stylesheet.XSL_NS, "import");
                 Node href =
@@ -242,9 +240,9 @@ public class TransformerFactoryImpl
       }
   }
 
-  Map parseParameters(String data)
+  Map<String,String> parseParameters(String data)
   {
-    Map ret = new LinkedHashMap();
+    Map<String,String> ret = new LinkedHashMap<String,String>();
     int len = data.length();
     String key = null;
     int start = 0;

@@ -1,5 +1,5 @@
 /* RefreshFailedException.java -- signals a failed refresh.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -43,6 +43,8 @@ package javax.security.auth;
  */
 public class RefreshFailedException extends Exception
 {
+
+  private static final long serialVersionUID = 5058444488565265840L;
 
   /**
    * Create a new RefreshFailedException with no detail message.

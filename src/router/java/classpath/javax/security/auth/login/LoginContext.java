@@ -1,5 +1,5 @@
 /* LoginContext.java
-   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -59,7 +59,7 @@ public class LoginContext
   private final Subject subject;
   private final AppConfigurationEntry[] entries;
   private final LoginModule[] modules;
-  private final Map sharedState;
+  private final Map<String,?> sharedState;
 
   public LoginContext (final String name) throws LoginException
   {
@@ -96,15 +96,15 @@ public class LoginContext
     this.cbHandler = cbHandler;
     if (config == null)
       config = Configuration.getConfig();
-    AppConfigurationEntry[] entries = config.getAppConfigurationEntry (name);
-    if (entries == null)
-      entries = config.getAppConfigurationEntry (OTHER);
-    if (entries == null)
+    AppConfigurationEntry[] appEntries = config.getAppConfigurationEntry (name);
+    if (appEntries == null)
+      appEntries = config.getAppConfigurationEntry (OTHER);
+    if (appEntries == null)
       throw new LoginException ("no configured modules for application "
                                 + name);
-    this.entries = entries;
+    this.entries = appEntries;
     modules = new LoginModule[entries.length];
-    sharedState = new HashMap();
+    sharedState = new HashMap<String,Object>();
     for (int i = 0; i < entries.length; i++)
       modules[i] = lookupModule (entries[i], subject, sharedState);
   }
@@ -195,7 +195,7 @@ public class LoginContext
   {
     GetSecurityPropertyAction act =
       new GetSecurityPropertyAction ("auth.login.defaultCallbackHandler");
-    String classname = (String) AccessController.doPrivileged (act);
+    String classname = AccessController.doPrivileged (act);
     if (classname != null)
       {
         try
@@ -223,7 +223,7 @@ public class LoginContext
   }
 
   private LoginModule lookupModule (AppConfigurationEntry entry,
-                                    Subject subject, Map sharedState)
+                                    Subject subj, Map<String,?> state)
     throws LoginException
   {
     LoginModule module = null;
@@ -231,7 +231,7 @@ public class LoginContext
     try
       {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Class c = Class.forName(entry.getLoginModuleName(), true, cl);
+        Class<?> c = Class.forName(entry.getLoginModuleName(), true, cl);
         module = (LoginModule) c.newInstance();
       }
     catch (ClassNotFoundException cnfe)
@@ -251,7 +251,7 @@ public class LoginContext
         cause = ie;
       }
 
-    if (cause != null)
+    if (module == null)
       {
         LoginException le = new LoginException ("could not load module "
                                                 + entry.getLoginModuleName());
@@ -259,7 +259,7 @@ public class LoginContext
         throw le;
       }
 
-    module.initialize (subject, cbHandler, sharedState, entry.getOptions());
+    module.initialize (subj, cbHandler, state, entry.getOptions());
     return module;
   }
 }

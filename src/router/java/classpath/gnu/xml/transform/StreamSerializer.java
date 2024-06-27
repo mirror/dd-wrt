@@ -1,5 +1,5 @@
 /* StreamSerializer.java --
-   Copyright (C) 2004,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -50,9 +50,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import javax.xml.XMLConstants;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -79,28 +79,29 @@ public class StreamSerializer
   /**
    * HTML 4.01 boolean attributes
    */
-  static final Map HTML_BOOLEAN_ATTRIBUTES = new HashMap();
+  static final Map<String,Set<String>> HTML_BOOLEAN_ATTRIBUTES =
+    new HashMap<String,Set<String>>();
   static
   {
-    HashSet set;
+    Set<String> set;
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("nohref");
     HTML_BOOLEAN_ATTRIBUTES.put("area", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("ismap");
     HTML_BOOLEAN_ATTRIBUTES.put("img", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("declare");
     HTML_BOOLEAN_ATTRIBUTES.put("object", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("noshade");
     HTML_BOOLEAN_ATTRIBUTES.put("hr", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("compact");
     HTML_BOOLEAN_ATTRIBUTES.put("dl", set);
     HTML_BOOLEAN_ATTRIBUTES.put("ol", set);
@@ -108,52 +109,52 @@ public class StreamSerializer
     HTML_BOOLEAN_ATTRIBUTES.put("dir", set);
     HTML_BOOLEAN_ATTRIBUTES.put("menu", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("checked");
     set.add("disabled");
     set.add("readonly");
     set.add("ismap");
     HTML_BOOLEAN_ATTRIBUTES.put("input", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("multiple");
     set.add("disabled");
     HTML_BOOLEAN_ATTRIBUTES.put("select", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("disabled");
     HTML_BOOLEAN_ATTRIBUTES.put("optgroup", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("selected");
     set.add("disabled");
     HTML_BOOLEAN_ATTRIBUTES.put("option", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("disabled");
     set.add("readonly");
     HTML_BOOLEAN_ATTRIBUTES.put("textarea", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("disabled");
     HTML_BOOLEAN_ATTRIBUTES.put("button", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("nowrap");
     HTML_BOOLEAN_ATTRIBUTES.put("th", set);
     HTML_BOOLEAN_ATTRIBUTES.put("td", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("noresize");
     HTML_BOOLEAN_ATTRIBUTES.put("frame", set);
 
-    set = new HashSet();
+    set = new HashSet<String>();
     set.add("defer");
     HTML_BOOLEAN_ATTRIBUTES.put("script", set);
   }
 
   // HTML namespace URIs
-  static final HashSet HTML_URIS = new HashSet();
+  static final Set<String> HTML_URIS = new HashSet<String>();
   static {
     HTML_URIS.add("http://www.w3.org/1999/xhtml");
   }
@@ -162,9 +163,9 @@ public class StreamSerializer
   final Charset charset;
   final CharsetEncoder encoder;
   final int mode;
-  final LinkedList namespaces;
+  final LinkedList<Map<String,String>> namespaces;
   protected String eol;
-  Collection cdataSectionElements = Collections.EMPTY_SET;
+  Collection<String> cdataSectionElements = Collections.<String>emptySet();
 
   protected boolean discardDefaultContent;
   protected boolean xmlDeclaration = true;
@@ -191,10 +192,10 @@ public class StreamSerializer
     charset = Charset.forName(this.encoding);
     encoder = charset.newEncoder();
     this.eol = (eol != null) ? eol : System.getProperty("line.separator");
-    namespaces = new LinkedList();
+    namespaces = new LinkedList<Map<String,String>>();
   }
 
-  void setCdataSectionElements(Collection c)
+  void setCdataSectionElements(Collection<String> c)
   {
     cdataSectionElements = c;
   }
@@ -554,10 +555,9 @@ public class StreamSerializer
       return "xmlns".equals(prefix);
     if (prefix == null)
       prefix = "";
-    for (Iterator i = namespaces.iterator(); i.hasNext(); )
+    for (Map<String,String> ctx : namespaces)
       {
-        Map ctx = (Map) i.next();
-        String val = (String) ctx.get(uri);
+        String val = ctx.get(uri);
         if (val != null && val.equals(prefix))
           return true;
       }
@@ -566,14 +566,14 @@ public class StreamSerializer
 
   void pushNamespaceContext()
   {
-    namespaces.addFirst(new HashMap());
+    namespaces.addFirst(new HashMap<String,String>());
   }
 
   String define(String uri, String prefix)
   {
     if (namespaces.isEmpty())
       return prefix;
-    HashMap ctx = (HashMap) namespaces.getFirst();
+    Map<String,String> ctx = namespaces.getFirst();
     while (ctx.containsValue(prefix))
       {
         // Fabricate new prefix
@@ -741,8 +741,8 @@ public class StreamSerializer
         elementName = element.getNodeName();
       }
     elementName = elementName.toLowerCase();
-    Collection attributes =
-      (Collection) HTML_BOOLEAN_ATTRIBUTES.get(elementName);
+    Collection<String> attributes =
+      HTML_BOOLEAN_ATTRIBUTES.get(elementName);
     return (attributes != null && attributes.contains(attrName));
   }
 

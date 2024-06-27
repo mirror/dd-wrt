@@ -1,5 +1,5 @@
 /* ChoiceCallback.java -- callback for a choice of values.
-   Copyright (C) 2003, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -53,6 +53,8 @@ public class ChoiceCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = -3975664071579892167L;
 
   /**
    * @serial

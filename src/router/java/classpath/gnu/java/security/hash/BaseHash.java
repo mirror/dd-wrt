@@ -1,5 +1,5 @@
 /* BaseHash.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -78,21 +78,25 @@ public abstract class BaseHash
     resetContext();
   }
 
+  @Override
   public String name()
   {
     return name;
   }
-
+  
+  @Override
   public int hashSize()
   {
     return hashSize;
   }
 
+  @Override
   public int blockSize()
   {
     return blockSize;
   }
 
+  @Override
   public void update(byte b)
   {
     // compute number of bytes still unhashed; ie. present in buffer
@@ -103,11 +107,13 @@ public abstract class BaseHash
       transform(buffer, 0);
   }
 
+  @Override
   public void update(byte[] b)
   {
     update(b, 0, b.length);
   }
 
+  @Override
   public void update(byte[] b, int offset, int len)
   {
     int n = (int) (count % blockSize);
@@ -128,7 +134,8 @@ public abstract class BaseHash
     if (i < len)
       System.arraycopy(b, offset + i, buffer, n, len - i);
   }
-
+  
+  @Override
   public byte[] digest()
   {
     byte[] tail = padBuffer(); // pad remaining bytes in buffer
@@ -140,6 +147,7 @@ public abstract class BaseHash
     return result;
   }
 
+  @Override
   public void reset()
   { // reset this instance for future re-use
     count = 0L;
@@ -149,8 +157,10 @@ public abstract class BaseHash
     resetContext();
   }
 
+  @Override
   public abstract Object clone();
 
+  @Override
   public abstract boolean selfTest();
 
   /**

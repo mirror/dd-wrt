@@ -1,5 +1,5 @@
 /* TextInputCallback.java -- callbacks for user input.
-   Copyright (C) 2003, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -52,6 +52,8 @@ public class TextInputCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = -8064222478852811804L;
 
   /**
    * @serial

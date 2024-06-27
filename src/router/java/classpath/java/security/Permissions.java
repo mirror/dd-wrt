@@ -1,5 +1,6 @@
 /* Permissions.java -- a collection of permission collections
-   Copyright (C) 1998, 2001, 2002, 2004, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2002, 2004, 2005, 2014, 2015
+   Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,7 +39,6 @@ exception statement from your version. */
 
 package java.security;
 
-import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
@@ -58,7 +58,6 @@ import java.util.NoSuchElementException;
  * @since 1.1
  */
 public final class Permissions extends PermissionCollection
-  implements Serializable
 {
   /**
    * Compatible with JDK 1.1+.
@@ -78,7 +77,8 @@ public final class Permissions extends PermissionCollection
    *
    * @serial maps Class to PermissionCollection
    */
-  final Hashtable perms = new Hashtable();
+  final Hashtable<Class<?>,PermissionCollection> perms =
+    new Hashtable<Class<?>,PermissionCollection>();
 
   /**
    * This method initializes a new instance of <code>Permissions</code>.
@@ -99,6 +99,7 @@ public final class Permissions extends PermissionCollection
    * @param perm the <code>Permission</code> to add
    * @throws SecurityException if this collection is marked as read only
    */
+  @Override
   public void add(Permission perm)
   {
     if (isReadOnly())
@@ -114,8 +115,7 @@ public final class Permissions extends PermissionCollection
       }
     else
       {
-        PermissionCollection pc
-          = (PermissionCollection) perms.get(perm.getClass());
+        PermissionCollection pc = perms.get(perm.getClass());
         if (pc == null)
           {
             pc = perm.newPermissionCollection();
@@ -134,12 +134,12 @@ public final class Permissions extends PermissionCollection
    * @param perm the <code>Permission</code> to test
    * @return true if the specified permission is implied by this
    */
+  @Override
   public boolean implies(Permission perm)
   {
     if (allPermission != null)
       return true;
-    PermissionCollection pc
-      = (PermissionCollection) perms.get(perm.getClass());
+    PermissionCollection pc = perms.get(perm.getClass());
     return pc == null ? false : pc.implies(perm);
   }
 
@@ -150,41 +150,43 @@ public final class Permissions extends PermissionCollection
    *
    * @return an <code>Enumeration</code> of this collection's elements
    */
+  @Override
   public Enumeration<Permission> elements()
   {
-    return new Enumeration()
+    return new Enumeration<Permission>()
     {
-      Enumeration main_enum = perms.elements();
-      Enumeration sub_enum;
+      Enumeration<PermissionCollection> mainEnum = perms.elements();
+      Enumeration<Permission> subEnum;
 
+      @Override
       public boolean hasMoreElements()
       {
-        if (sub_enum == null)
+        if (subEnum == null)
           {
-            if (main_enum == null)
+            if (mainEnum == null)
               return false;
-            if (! main_enum.hasMoreElements())
+            if (! mainEnum.hasMoreElements())
               {
-                main_enum = null;
+                mainEnum = null;
                 return false;
               }
-            PermissionCollection pc =
-              (PermissionCollection) main_enum.nextElement();
-            sub_enum = pc.elements();
+            PermissionCollection pc = mainEnum.nextElement();
+            subEnum = pc.elements();
           }
-        if (! sub_enum.hasMoreElements())
+        if (! subEnum.hasMoreElements())
           {
-            sub_enum = null;
+            subEnum = null;
             return hasMoreElements();
           }
         return true;
       }
 
-      public Object nextElement()
+      @Override
+      public Permission nextElement()
       {
         if (! hasMoreElements())
           throw new NoSuchElementException();
-        return sub_enum.nextElement();
+        return subEnum.nextElement();
       }
     };
   }
@@ -207,7 +209,12 @@ public final class Permissions extends PermissionCollection
      *
      * @serial the stored permissions, both as key and value
      */
-    private final Hashtable perms = new Hashtable();
+    private final Hashtable<Permission,Permission> perms;
+
+    public PermissionsHash()
+    {
+      perms = new Hashtable<Permission,Permission>();
+    }
 
     /**
      * Add a permission. We don't need to check for read-only, as this
@@ -216,7 +223,8 @@ public final class Permissions extends PermissionCollection
      *
      * @param perm the permission to add
      */
-    public void add(Permission perm)
+    @Override
+    public synchronized void add(Permission perm)
     {
       perms.put(perm, perm);
     }
@@ -227,14 +235,15 @@ public final class Permissions extends PermissionCollection
      * @param perm the permission to check
      * @return true if it is implied
      */
-    // FIXME: Should this method be synchronized?
-    public boolean implies(Permission perm)
+    // Synchronized to avoid elements being added mid-iteration
+    @Override
+    public synchronized boolean implies(Permission perm)
     {
-      Enumeration elements = elements();
+      Enumeration<Permission> elements = elements();
 
       while (elements.hasMoreElements())
         {
-          Permission p = (Permission)elements.nextElement();
+          Permission p = elements.nextElement();
           if (p.implies(perm))
             return true;
         }
@@ -246,7 +255,8 @@ public final class Permissions extends PermissionCollection
      *
      * @return the elements
      */
-    public Enumeration elements()
+    @Override
+    public Enumeration<Permission> elements()
     {
       return perms.elements();
     }

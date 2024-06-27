@@ -1,5 +1,5 @@
 /* DomParser.java --
-   Copyright (C) 1999,2000,2001 Free Software Foundation, Inc.
+   Copyright (C) 1999,2000,2001, 2016 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -775,7 +775,7 @@ final public class DomParser implements XMLReader
 // XXX
                     throw new RuntimeException (
                         "NYI, ns lookup when parsing L1 DOM");
-                for (Enumeration e = prefixStack.getDeclaredPrefixes ();
+                for (Enumeration<?> e = prefixStack.getDeclaredPrefixes ();
                         e.hasMoreElements ();
                         ) {
                     contentHandler.endPrefixMapping ((String) e.nextElement ());

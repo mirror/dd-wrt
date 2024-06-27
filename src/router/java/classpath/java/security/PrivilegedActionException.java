@@ -1,5 +1,5 @@
 /* PrivilegedActionException.java -- wrap an exception in a privileged action
-   Copyright (C) 1998, 2002, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2005, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -92,18 +92,10 @@ public class PrivilegedActionException extends Exception
    * @return the cause
    * @since 1.4
    */
+  @Override
   public Throwable getCause()
   {
     return exception;
   }
 
-  /**
-   * Convert this to a String.
-   *
-   * @return the string representation
-   */
-  public String toString()
-  {
-    return super.toString();
-  }
 }

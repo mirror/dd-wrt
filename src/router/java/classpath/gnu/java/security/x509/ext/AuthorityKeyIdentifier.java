@@ -1,5 +1,5 @@
 /* AuthorityKeyIdentifier.java -- Authority key identifier extension.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -123,6 +123,7 @@ public class AuthorityKeyIdentifier extends Extension.Value
     return authorityCertSerialNumber;
   }
 
+  @Override
   public String toString()
   {
     return AuthorityKeyIdentifier.class.getName() + " [ keyId=" +

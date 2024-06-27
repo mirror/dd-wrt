@@ -1,5 +1,5 @@
 /* BaseMode.java --
-   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -91,6 +91,7 @@ public abstract class BaseMode
     state = -1;
   }
 
+  @Override
   public void update(byte[] in, int inOffset, byte[] out, int outOffset)
       throws IllegalStateException
   {
@@ -110,6 +111,7 @@ public abstract class BaseMode
       }
   }
 
+  @Override
   public String name()
   {
     return new CPStringBuilder(name).append('(').append(cipher.name()).append(')')
@@ -128,6 +130,7 @@ public abstract class BaseMode
    * @return the default value, in bytes, of the mode's block size.
    * @see ModeFactory
    */
+  @Override
   public int defaultBlockSize()
   {
     return cipherBlockSize;
@@ -139,6 +142,7 @@ public abstract class BaseMode
    *
    * @return the default value, in bytes, of the underlying cipher's key size.
    */
+  @Override
   public int defaultKeySize()
   {
     return cipher.defaultKeySize();
@@ -155,9 +159,10 @@ public abstract class BaseMode
    *
    * @return an {@link Iterator} over the supported block sizes.
    */
-  public Iterator blockSizes()
+  @Override
+  public Iterator<Integer> blockSizes()
   {
-    ArrayList al = new ArrayList();
+    ArrayList<Integer> al = new ArrayList<Integer>();
     al.add(Integer.valueOf(cipherBlockSize));
     return Collections.unmodifiableList(al).iterator();
   }
@@ -169,12 +174,14 @@ public abstract class BaseMode
    *
    * @return an {@link Iterator} over the supported key sizes.
    */
-  public Iterator keySizes()
+  @Override
+  public Iterator<Integer> keySizes()
   {
     return cipher.keySizes();
   }
 
-  public void init(Map attributes) throws InvalidKeyException,
+  @Override
+  public void init(Map<String,Object> attributes) throws InvalidKeyException,
       IllegalStateException
   {
     synchronized (lock)
@@ -208,6 +215,7 @@ public abstract class BaseMode
       }
   }
 
+  @Override
   public int currentBlockSize()
   {
     if (state == -1)
@@ -215,6 +223,7 @@ public abstract class BaseMode
     return modeBlockSize;
   }
 
+  @Override
   public void reset()
   {
     synchronized (lock)
@@ -226,6 +235,7 @@ public abstract class BaseMode
       }
   }
 
+  @Override
   public boolean selfTest()
   {
     int ks;
@@ -240,6 +250,7 @@ public abstract class BaseMode
     return true;
   }
 
+  @Override
   public abstract Object clone();
 
   /** The initialisation phase of the concrete mode implementation. */
@@ -248,8 +259,10 @@ public abstract class BaseMode
   /** The termination phase of the concrete mode implementation. */
   public abstract void teardown();
 
+  @Override
   public abstract void encryptBlock(byte[] in, int i, byte[] out, int o);
 
+  @Override
   public abstract void decryptBlock(byte[] in, int i, byte[] out, int o);
 
   private boolean testSymmetry(int ks, int bs)

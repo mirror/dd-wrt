@@ -1,5 +1,5 @@
 /* BEREncodingException.java --- BER Encoding Exception
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -42,6 +42,8 @@ import gnu.java.security.der.DEREncodingException;
 
 public class BEREncodingException extends DEREncodingException
 {
+  private static final long serialVersionUID = 5155616917834322362L;
+
   public BEREncodingException()
   {
     super ();

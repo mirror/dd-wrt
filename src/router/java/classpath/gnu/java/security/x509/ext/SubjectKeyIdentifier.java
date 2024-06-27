@@ -1,5 +1,5 @@
 /* SubjectKeyIdentifier.java -- subject key identifier extension.
-   Copyright (C) 2004  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -73,9 +73,10 @@ public class SubjectKeyIdentifier extends Extension.Value
 
   public byte[] getKeyIdentifier()
   {
-    return (byte[]) keyIdentifier.clone();
+    return keyIdentifier.clone();
   }
 
+  @Override
   public String toString()
   {
     return SubjectKeyIdentifier.class.getName() + " [ " +

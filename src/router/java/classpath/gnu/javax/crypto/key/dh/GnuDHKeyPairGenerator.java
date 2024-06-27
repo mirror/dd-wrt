@@ -1,5 +1,5 @@
 /* GnuDHKeyPairGenerator.java --
-   Copyright (C) 2003, 2006, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006, 2010, 2015 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -49,6 +49,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import javax.crypto.spec.DHGenParameterSpec;
@@ -112,6 +115,10 @@ public class GnuDHKeyPairGenerator
   private PRNG prng = null;
   /** Preferred encoding format of generated keys. */
   private int preferredFormat;
+  /** Flag to indicate whether the generator has been initialized */
+  private AtomicBoolean initialized = new AtomicBoolean(false);
+  /** Lock to prevent concurrent initialization */
+  private Lock initLock = new ReentrantLock();
 
   // default 0-arguments constructor
 
@@ -122,50 +129,60 @@ public class GnuDHKeyPairGenerator
 
   public void setup(Map attributes)
   {
-    // do we have a SecureRandom, or should we use our own?
-    rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
-    // are we given a set of Diffie-Hellman generation parameters or we shall
-    // use our own?
-    Object params = attributes.get(DH_PARAMETERS);
-    // find out the desired sizes
-    if (params instanceof DHGenParameterSpec)
+    initLock.lock();
+    try
       {
-        DHGenParameterSpec jceSpec = (DHGenParameterSpec) params;
-        l = jceSpec.getPrimeSize();
-        m = jceSpec.getExponentSize();
+	// do we have a SecureRandom, or should we use our own?
+	rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
+	// are we given a set of Diffie-Hellman generation parameters or we shall
+	// use our own?
+	Object params = attributes.get(DH_PARAMETERS);
+	// find out the desired sizes
+	if (params instanceof DHGenParameterSpec)
+	  {
+	    DHGenParameterSpec jceSpec = (DHGenParameterSpec) params;
+	    l = jceSpec.getPrimeSize();
+	    m = jceSpec.getExponentSize();
+	  }
+	else if (params instanceof DHParameterSpec)
+	  {
+	    // FIXME: I'm not sure this is correct. It seems to behave the
+	    // same way as Sun's RI, but I don't know if this behavior is
+	    // documented anywhere.
+	    DHParameterSpec jceSpec = (DHParameterSpec) params;
+	    p = jceSpec.getP();
+	    g = jceSpec.getG();
+	    l = p.bitLength();
+	    m = jceSpec.getL();
+	    // If no exponent size was given, generate an exponent as
+	    // large as the prime.
+	    if (m == 0)
+	      m = l;
+	  }
+	else
+	  {
+	    Integer bi = (Integer) attributes.get(PRIME_SIZE);
+	    l = (bi == null ? DEFAULT_PRIME_SIZE : bi.intValue());
+	    bi = (Integer) attributes.get(EXPONENT_SIZE);
+	    m = (bi == null ? DEFAULT_EXPONENT_SIZE : bi.intValue());
+	  }
+	if ((l % 256) != 0 || l < DEFAULT_PRIME_SIZE)
+	  throw new IllegalArgumentException("invalid modulus size");
+	if ((m % 8) != 0 || m < DEFAULT_EXPONENT_SIZE)
+	  throw new IllegalArgumentException("invalid exponent size");
+	if (m > l)
+	  throw new IllegalArgumentException("exponent size > modulus size");
+	// what is the preferred encoding format
+	Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
+	preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
+                                           : formatID.intValue();
+
+	initialized.set(true);
       }
-    else if (params instanceof DHParameterSpec)
+    finally
       {
-        // FIXME: I'm not sure this is correct. It seems to behave the
-        // same way as Sun's RI, but I don't know if this behavior is
-        // documented anywhere.
-        DHParameterSpec jceSpec = (DHParameterSpec) params;
-        p = jceSpec.getP();
-        g = jceSpec.getG();
-        l = p.bitLength();
-        m = jceSpec.getL();
-        // If no exponent size was given, generate an exponent as
-        // large as the prime.
-        if (m == 0)
-          m = l;
+	initLock.unlock();
       }
-    else
-      {
-        Integer bi = (Integer) attributes.get(PRIME_SIZE);
-        l = (bi == null ? DEFAULT_PRIME_SIZE : bi.intValue());
-        bi = (Integer) attributes.get(EXPONENT_SIZE);
-        m = (bi == null ? DEFAULT_EXPONENT_SIZE : bi.intValue());
-      }
-    if ((l % 256) != 0 || l < DEFAULT_PRIME_SIZE)
-      throw new IllegalArgumentException("invalid modulus size");
-    if ((m % 8) != 0 || m < DEFAULT_EXPONENT_SIZE)
-      throw new IllegalArgumentException("invalid exponent size");
-    if (m > l)
-      throw new IllegalArgumentException("exponent size > modulus size");
-    // what is the preferred encoding format
-    Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
-    preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
-                                       : formatID.intValue();
   }
 
   public KeyPair generate()
@@ -230,5 +247,28 @@ public class GnuDHKeyPairGenerator
       prng = PRNG.getInstance();
 
     return prng;
+  }
+
+  @Override
+  public boolean isInitialized()
+  {
+    boolean initFlag = false;
+
+    initLock.lock();
+    try
+      {
+	initFlag = initialized.get();
+      }
+    finally
+      {
+	initLock.unlock();
+      }
+    return initFlag;
+  }
+
+  @Override
+  public int getDefaultKeySize()
+  {
+    return DEFAULT_PRIME_SIZE;
   }
 }

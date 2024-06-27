@@ -1,5 +1,5 @@
 /* SelfCertCmd.java -- The selfcert command handler of the keytool
-   Copyright (C) 2006 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -423,6 +423,7 @@ class SelfCertCmd extends Command
   }
 
   private void setDName(String name, X500Principal defaultName)
+    throws IOException
   {
     if (name != null && name.trim().length() > 0)
       name = name.trim();

@@ -1,5 +1,5 @@
 /* CallTemplateNode.java --
-   Copyright (C) 2004,2006 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -58,9 +58,9 @@ final class CallTemplateNode
 {
 
   final QName name;
-  final List withParams;
+  final List<WithParam> withParams;
 
-  CallTemplateNode(QName name, List withParams)
+  CallTemplateNode(QName name, List<WithParam> withParams)
   {
     this.name = name;
     this.withParams = withParams;
@@ -69,9 +69,9 @@ final class CallTemplateNode
   TemplateNode clone(Stylesheet stylesheet)
   {
     int len = withParams.size();
-    List withParams2 = new ArrayList(len);
+    List<WithParam> withParams2 = new ArrayList<WithParam>(len);
     for (int i = 0; i < len; i++)
-      withParams2.add(((WithParam) withParams.get(i)).clone(stylesheet));
+      withParams2.add(withParams.get(i).clone(stylesheet));
     TemplateNode ret = new CallTemplateNode(name, withParams2);
     if (children != null)
       ret.children = children.clone(stylesheet);
@@ -91,10 +91,9 @@ final class CallTemplateNode
         if (!withParams.isEmpty())
           {
             // compute the parameter values
-            LinkedList values = new LinkedList();
-            for (Iterator i = withParams.iterator(); i.hasNext(); )
+            LinkedList<Object[]> values = new LinkedList<Object[]>();
+	    for (WithParam p : withParams)
               {
-                WithParam p = (WithParam) i.next();
                 if (t.hasParam(p.name)) // ignore parameters not specified
                   {
                     Object value = p.getValue(stylesheet, mode, context,
@@ -108,9 +107,8 @@ final class CallTemplateNode
             // push the parameter context
             stylesheet.bindings.push(Bindings.WITH_PARAM);
             // set the parameters
-            for (Iterator i = values.iterator(); i.hasNext(); )
+	    for (Object[] pair : values)
               {
-                Object[] pair = (Object[]) i.next();
                 QName name = (QName) pair[0];
                 Object value = pair[1];
                 stylesheet.bindings.set(name, value, Bindings.WITH_PARAM);
@@ -135,9 +133,9 @@ final class CallTemplateNode
 
   public boolean references(QName var)
   {
-    for (Iterator i = withParams.iterator(); i.hasNext(); )
+    for (Iterator<WithParam> i = withParams.iterator(); i.hasNext(); )
       {
-        if (((WithParam) i.next()).references(var))
+        if (i.next().references(var))
           return true;
       }
     return super.references(var);

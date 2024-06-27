@@ -108,6 +108,8 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable
 
   public PriorityQueue(int cap, Comparator<? super E> comp)
   {
+    if (cap < 1)
+      throw new IllegalArgumentException();      
     this.used = 0;
     this.storage = (E[]) new Object[cap];
     this.comparator = comp;
@@ -170,6 +172,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable
       public void remove()
       {
         PriorityQueue.this.remove(index);
+	index--;
       }
     };
   }

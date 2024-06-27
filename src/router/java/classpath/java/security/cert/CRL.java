@@ -1,5 +1,5 @@
 /* CRL.java --- Certificate Revocation List
-   Copyright (C) 1999 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -81,6 +81,7 @@ public abstract class CRL
 
      @return a string representing the CRL.
   */
+  @Override
   public abstract String toString();
 
   /**

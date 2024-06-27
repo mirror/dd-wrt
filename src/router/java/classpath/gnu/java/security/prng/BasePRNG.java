@@ -1,5 +1,6 @@
 /* BasePRNG.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014, 2015
+   Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -72,12 +73,14 @@ public abstract class BasePRNG
     buffer = new byte[0];
   }
 
+  @Override
   public String name()
   {
     return name;
   }
 
-  public void init(Map attributes)
+  @Override
+  public void init(Map<String,Object> attributes)
   {
     this.setup(attributes);
 
@@ -85,6 +88,7 @@ public abstract class BasePRNG
     initialised = true;
   }
 
+  @Override
   public byte nextByte() throws IllegalStateException, LimitReachedException
   {
     if (! initialised)
@@ -99,6 +103,7 @@ public abstract class BasePRNG
     nextBytes(out, 0, out.length);
   }
 
+  @Override
   public void nextBytes(byte[] out, int offset, int length)
       throws IllegalStateException, LimitReachedException
   {
@@ -132,17 +137,20 @@ public abstract class BasePRNG
       }
   }
 
+  @Override
   public void addRandomByte(byte b)
   {
     throw new UnsupportedOperationException("random state is non-modifiable");
   }
 
-  public void addRandomBytes(byte[] buffer)
+  @Override  
+  public void addRandomBytes(byte[] buf)
   {
-    addRandomBytes(buffer, 0, buffer.length);
+    addRandomBytes(buf, 0, buf.length);
   }
 
-  public void addRandomBytes(byte[] buffer, int offset, int length)
+  @Override
+  public void addRandomBytes(byte[] buf, int offset, int length)
   {
     throw new UnsupportedOperationException("random state is non-modifiable");
   }
@@ -163,16 +171,17 @@ public abstract class BasePRNG
     return buffer[ndx++];
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException
   {
     BasePRNG result = (BasePRNG) super.clone();
-    if (this.buffer != null)
-      result.buffer = (byte[]) this.buffer.clone();
+    if (buffer != null)
+      result.buffer = buffer.clone();
 
     return result;
   }
 
-  public abstract void setup(Map attributes);
+  public abstract void setup(Map<String,Object> attributes);
 
   public abstract void fillBlock() throws LimitReachedException;
 }

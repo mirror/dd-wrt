@@ -1,6 +1,6 @@
 /* ClassTypeCommandSet.java -- class to implement the ClassType
    Command Set
-   Copyright (C) 2005, 2007 Free Software Foundation
+   Copyright (C) 2005, 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -105,8 +105,8 @@ public class ClassTypeCommandSet
       throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class clazz = refId.getType();
-    Class superClazz = clazz.getSuperclass();
+    Class<?> clazz = refId.getType();
+    Class<?> superClazz = clazz.getSuperclass();
 
     if (superClazz == null) {
         os.writeLong(0L);
@@ -119,10 +119,7 @@ public class ClassTypeCommandSet
   private void executeSetValues(ByteBuffer bb, DataOutputStream os)
       throws JdwpException, IOException
   {
-    ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-
-    // We don't actually seem to need this...
-    Class clazz = refId.getType();
+    idMan.readReferenceTypeId(bb);
 
     int numValues = bb.getInt();
 
@@ -183,7 +180,7 @@ public class ClassTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class clazz = refId.getType();
+    Class<?> clazz = refId.getType();
 
     ObjectId tId = idMan.readObjectId(bb);
     Thread thread = (Thread) tId.getObject();

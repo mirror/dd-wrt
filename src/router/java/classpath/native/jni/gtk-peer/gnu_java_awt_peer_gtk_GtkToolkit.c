@@ -273,7 +273,9 @@ init_glib_threads(JNIEnv *env, jint portableNativeSync, jobject lock)
           global_lock = (*env)->NewGlobalRef(env, lock);
           gdk_threads_set_lock_functions(&jni_lock_cb, &jni_unlock_cb);
         }
+#if GLIB_MINOR_VERSION < 32
       g_thread_init(NULL);
+#endif
     }
   else
     {

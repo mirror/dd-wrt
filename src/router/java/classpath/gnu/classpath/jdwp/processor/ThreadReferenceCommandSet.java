@@ -1,5 +1,5 @@
 /* ThreadReferenceCommandSet.java -- class to implement the ThreadReference
-   Command Set Copyright (C) 2005, 2007 Free Software Foundation
+   Command Set Copyright (C) 2005, 2007, 2013 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -176,11 +176,14 @@ public class ThreadReferenceCommandSet
     int startFrame = bb.getInt();
     int length = bb.getInt();
 
-    ArrayList frames = VMVirtualMachine.getFrames(thread, startFrame, length);
+    // VMWARN: Suppress warning until VM layer is upgraded to generics
+    @SuppressWarnings("unchecked")
+      ArrayList<VMFrame> frames =
+      VMVirtualMachine.getFrames(thread, startFrame, length);
     os.writeInt(frames.size());
     for (int i = 0; i < frames.size(); i++)
       {
-        VMFrame frame = (VMFrame) frames.get(i);
+        VMFrame frame = frames.get(i);
         os.writeLong(frame.getId());
         Location loc = frame.getLocation();
         loc.write(os);

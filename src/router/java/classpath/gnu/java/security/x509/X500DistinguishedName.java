@@ -1,5 +1,5 @@
 /* X500DistinguishedName.java -- X.500 distinguished name.
-   Copyright (C) 2004, 2006  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006, 2014, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -83,8 +83,8 @@ public class X500DistinguishedName implements Principal
   public static final OID DC         = new OID("0.9.2342.19200300.100.1.25");
   public static final OID UID        = new OID("0.9.2342.19200300.100.1.1");
 
-  private List components;
-  private Map currentRdn;
+  private List<Map<OID,String>> components;
+  private Map<OID,String> currentRdn;
   private boolean fixed;
   private String stringRep;
   private byte[] encoded;
@@ -94,22 +94,15 @@ public class X500DistinguishedName implements Principal
 
   public X500DistinguishedName()
   {
-    components = new LinkedList();
-    currentRdn = new LinkedHashMap();
+    components = new LinkedList<Map<OID,String>>();
+    currentRdn = new LinkedHashMap<OID,String>();
     components.add(currentRdn);
   }
 
-  public X500DistinguishedName(String name)
+  public X500DistinguishedName(String name) throws IOException
   {
     this();
-    try
-      {
-        parseString(name);
-      }
-    catch (IOException ioe)
-      {
-        throw new IllegalArgumentException(ioe.toString());
-      }
+    parseString(name);
   }
 
   public X500DistinguishedName(byte[] encoded) throws IOException
@@ -127,6 +120,7 @@ public class X500DistinguishedName implements Principal
   // Instance methods.
   // -------------------------------------------------------------------------
 
+  @Override
   public String getName()
   {
     return toString();
@@ -135,7 +129,7 @@ public class X500DistinguishedName implements Principal
   public void newRelativeDistinguishedName()
   {
     if (fixed || currentRdn.isEmpty()) return;
-    currentRdn = new LinkedHashMap();
+    currentRdn = new LinkedHashMap<OID,String>();
     components.add(currentRdn);
   }
 
@@ -147,19 +141,19 @@ public class X500DistinguishedName implements Principal
   public int countComponents()
   {
     int count = 0;
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        count += ((Map) it.next()).size();
+        count += it.next().size();
       }
     return count;
   }
 
   public boolean containsComponent(OID oid, String value)
   {
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        Map rdn = (Map) it.next();
-        String s = (String) rdn.get(oid);
+        Map<OID,String> rdn = it.next();
+        String s = rdn.get(oid);
         if (s == null)
           continue;
         if (compressWS(value).equalsIgnoreCase(compressWS(s)))
@@ -170,11 +164,11 @@ public class X500DistinguishedName implements Principal
 
   public String getComponent(OID oid)
   {
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        Map rdn = (Map) it.next();
+        Map<OID,String> rdn = it.next();
         if (rdn.containsKey(oid))
-          return (String) rdn.get(oid);
+          return rdn.get(oid);
       }
     return null;
   }
@@ -183,7 +177,7 @@ public class X500DistinguishedName implements Principal
   {
     if (rdn >= size())
       return null;
-    return (String) ((Map) components.get(rdn)).get(oid);
+    return components.get(rdn).get(oid);
   }
 
   public void putComponent(OID oid, String value)
@@ -234,26 +228,27 @@ public class X500DistinguishedName implements Principal
   {
     if (fixed) return;
     fixed = true;
-    List newComps = new ArrayList(components.size());
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    List<Map<OID,String>> newComps =
+      new ArrayList<Map<OID,String>>(components.size());
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        Map rdn = (Map) it.next();
+        Map<OID,String> rdn = it.next();
         rdn = Collections.unmodifiableMap(rdn);
         newComps.add(rdn);
       }
     components = Collections.unmodifiableList(newComps);
-    currentRdn = Collections.EMPTY_MAP;
+    currentRdn = Collections.emptyMap();
   }
 
+  @Override
   public int hashCode()
   {
     int sum = 0;
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        Map m = (Map) it.next();
-        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
+        Map<OID,String> m = it.next();
+        for (Map.Entry<OID,String> e : m.entrySet())
           {
-            Map.Entry e = (Map.Entry) it2.next();
             sum += e.getKey().hashCode();
             sum += e.getValue().hashCode();
           }
@@ -261,6 +256,7 @@ public class X500DistinguishedName implements Principal
     return sum;
   }
 
+  @Override
   public boolean equals(Object o)
   {
     if (!(o instanceof X500DistinguishedName))
@@ -269,12 +265,11 @@ public class X500DistinguishedName implements Principal
       return false;
     for (int i = 0; i < size(); i++)
       {
-        Map m = (Map) components.get(i);
-        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
+        Map<OID,String> m = components.get(i);
+        for (Map.Entry<OID,String> e : m.entrySet())
           {
-            Map.Entry e = (Map.Entry) it2.next();
-            OID oid = (OID) e.getKey();
-            String v1 = (String) e.getValue();
+            OID oid = e.getKey();
+            String v1 = e.getValue();
             String v2 = ((X500DistinguishedName) o).getComponent(oid, i);
             if (!compressWS(v1).equalsIgnoreCase(compressWS(v2)))
               return false;
@@ -283,19 +278,21 @@ public class X500DistinguishedName implements Principal
     return true;
   }
 
+  @Override
   public String toString()
   {
     if (fixed && stringRep != null)
       return stringRep;
     CPStringBuilder str = new CPStringBuilder();
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
       {
-        Map m = (Map) it.next();
-        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
+	Map<OID,String> m = it.next();
+        for (Iterator<Map.Entry<OID,String>> it2 = m.entrySet().iterator(); 
+	     it2.hasNext(); )
           {
-            Map.Entry entry = (Map.Entry) it2.next();
-            OID oid = (OID) entry.getKey();
-            String value = (String) entry.getValue();
+	    Map.Entry<OID,String> entry = it2.next();
+            OID oid = entry.getKey();
+            String value = entry.getValue();
             if (oid.equals(CN))
               str.append("CN");
             else if (oid.equals(C))
@@ -332,20 +329,18 @@ public class X500DistinguishedName implements Principal
   public byte[] getDer()
   {
     if (fixed && encoded != null)
-      return (byte[]) encoded.clone();
+      return encoded.clone();
 
-    ArrayList name = new ArrayList(components.size());
-    for (Iterator it = components.iterator(); it.hasNext(); )
+    ArrayList<DERValue> name = new ArrayList<DERValue>(components.size());
+    for (Map<OID,String> m : components)
       {
-        Map m = (Map) it.next();
         if (m.isEmpty())
           continue;
 
-        Set rdn = new HashSet();
-        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
+        Set<DERValue> rdn = new HashSet<DERValue>();
+	for (Map.Entry<OID,String> e : m.entrySet())
           {
-            Map.Entry e = (Map.Entry) it2.next();
-            ArrayList atav = new ArrayList(2);
+            ArrayList<DERValue> atav = new ArrayList<DERValue>(2);
             atav.add(new DERValue(DER.OBJECT_IDENTIFIER, e.getKey()));
             atav.add(new DERValue(DER.UTF8_STRING, e.getValue()));
             rdn.add(new DERValue(DER.SEQUENCE|DER.CONSTRUCTED, atav));
@@ -353,7 +348,7 @@ public class X500DistinguishedName implements Principal
         name.add(new DERValue(DER.SET|DER.CONSTRUCTED, rdn));
       }
     DERValue val = new DERValue(DER.SEQUENCE|DER.CONSTRUCTED, name);
-    return (byte[]) (encoded = val.getEncoded()).clone();
+    return (encoded = val.getEncoded()).clone();
   }
 
   // Own methods.
@@ -377,7 +372,7 @@ public class X500DistinguishedName implements Principal
     setUnmodifiable();
   }
 
-  private String readAttributeType(Reader in) throws IOException
+  private static String readAttributeType(Reader in) throws IOException
   {
     CPStringBuilder buf = new CPStringBuilder();
     int ch;

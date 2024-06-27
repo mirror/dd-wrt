@@ -1,5 +1,5 @@
 /* TextOutputCallback.java -- callback for text output.
-   Copyright (C) 2003 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -53,6 +53,8 @@ public class TextOutputCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = 1689502495511663102L;
 
   /** Information message */
   public static final int INFORMATION = 0;

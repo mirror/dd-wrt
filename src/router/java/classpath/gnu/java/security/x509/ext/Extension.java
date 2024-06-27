@@ -1,5 +1,5 @@
 /* Extension.java -- an X.509 certificate or CRL extension.
-   Copyright (C) 2004, 2006, 2010  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006, 2010, 2015  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -85,7 +85,7 @@ public class Extension
 
   public Extension(byte[] encoded) throws IOException
   {
-    this.encoded = (byte[]) encoded.clone();
+    this.encoded = encoded.clone();
     DERReader der = new DERReader(encoded);
 
     // Extension ::= SEQUENCE {
@@ -220,9 +220,10 @@ public class Extension
   {
     if (encoded == null)
       encode();
-    return (byte[]) encoded.clone();
+    return encoded.clone();
   }
 
+  @Override
   public String toString()
   {
     return Extension.class.getName() + " [ id=" + oid + " critical=" +
@@ -262,7 +263,7 @@ public class Extension
 
     public Value(byte[] encoded)
     {
-      this.encoded = (byte[]) encoded.clone();
+      this.encoded = encoded.clone();
     }
 
     protected Value() { }
@@ -272,9 +273,10 @@ public class Extension
 
     public byte[] getEncoded()
     {
-      return (byte[]) encoded;
+      return encoded;
     }
 
+    @Override
     public int hashCode()
     {
       int result = 0;
@@ -283,6 +285,7 @@ public class Extension
       return result;
     }
 
+    @Override
     public boolean equals(Object o)
     {
       if (!(o instanceof Value))
@@ -290,6 +293,7 @@ public class Extension
       return Arrays.equals(encoded, ((Value) o).encoded);
     }
 
+    @Override
     public String toString()
     {
       return Util.toHexString(encoded, ':');

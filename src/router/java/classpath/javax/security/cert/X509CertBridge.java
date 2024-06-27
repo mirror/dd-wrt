@@ -1,5 +1,5 @@
 /* X509CertBridge.java -- bridge between JDK and JSSE cert APIs.
-   Copyright (C) 2004 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -70,6 +70,7 @@ final class X509CertBridge extends X509Certificate
   // Instance methods.
   // -------------------------------------------------------------------------
 
+  @Override
   public byte[] getEncoded() throws CertificateEncodingException
   {
     try
@@ -82,6 +83,7 @@ final class X509CertBridge extends X509Certificate
       }
   }
 
+  @Override
   public void verify(PublicKey key)
     throws CertificateException, NoSuchAlgorithmException, InvalidKeyException,
            NoSuchProviderException, SignatureException
@@ -96,6 +98,7 @@ final class X509CertBridge extends X509Certificate
       }
   }
 
+  @Override
   public void verify(PublicKey key, String sigProvider)
     throws CertificateException, NoSuchAlgorithmException, InvalidKeyException,
            NoSuchProviderException, SignatureException
@@ -110,16 +113,19 @@ final class X509CertBridge extends X509Certificate
       }
   }
 
+  @Override
   public String toString()
   {
     return cert.toString();
   }
 
+  @Override
   public PublicKey getPublicKey()
   {
     return cert.getPublicKey();
   }
 
+  @Override
   public void checkValidity()
     throws CertificateExpiredException, CertificateNotYetValidException
   {
@@ -137,6 +143,7 @@ final class X509CertBridge extends X509Certificate
       }
   }
 
+  @Override
   public void checkValidity(Date date)
     throws CertificateExpiredException, CertificateNotYetValidException
   {
@@ -154,46 +161,55 @@ final class X509CertBridge extends X509Certificate
       }
   }
 
+  @Override
   public int getVersion()
   {
     return cert.getVersion();
   }
 
+  @Override
   public BigInteger getSerialNumber()
   {
     return cert.getSerialNumber();
   }
 
+  @Override
   public Principal getIssuerDN()
   {
     return cert.getIssuerDN();
   }
 
+  @Override
   public Principal getSubjectDN()
   {
     return cert.getSubjectDN();
   }
 
+  @Override
   public Date getNotBefore()
   {
     return cert.getNotBefore();
   }
 
+  @Override
   public Date getNotAfter()
   {
     return cert.getNotAfter();
   }
 
+  @Override
   public String getSigAlgName()
   {
     return cert.getSigAlgName();
   }
 
+  @Override
   public String getSigAlgOID()
   {
     return cert.getSigAlgOID();
   }
 
+  @Override
   public byte[] getSigAlgParams()
   {
     return cert.getSigAlgParams();

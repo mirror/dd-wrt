@@ -1,5 +1,5 @@
 /* UnsupportedCallbackException.java -- signals an unsupported callback type.
-   Copyright (C) 2003, Free Software Foundation, Inc.
+   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -48,6 +48,8 @@ public class UnsupportedCallbackException extends Exception
 
   // Constants and variables
   // -------------------------------------------------------------------------
+
+  private static final long serialVersionUID = -6873556327655666839L;
 
   /** @serial */
   private Callback callback;

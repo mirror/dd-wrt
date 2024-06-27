@@ -139,7 +139,7 @@ public abstract class Formatter
     ResourceBundle  bundle;
     Object[]        params;
 
-    /* This will throw a NullPointerExceptionif record is null. */
+    /* This will throw a NullPointerException if record is null. */
     msg = record.getMessage();
     if (msg == null)
       msg = "";

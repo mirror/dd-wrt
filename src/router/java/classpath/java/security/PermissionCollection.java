@@ -1,5 +1,5 @@
 /* PermissionCollection.java -- A collection of permission objects
-   Copyright (C) 1998, 2001, 2002, 2005  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2002, 2005, 2014  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -156,6 +156,7 @@ public abstract class PermissionCollection implements Serializable
    *
    * @return a <code>String</code> representing this object
    */
+  @Override
   public String toString()
   {
     CPStringBuilder sb = new CPStringBuilder(super.toString());

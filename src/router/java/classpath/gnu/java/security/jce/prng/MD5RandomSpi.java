@@ -1,5 +1,5 @@
 /* MD5RandomSpi.java --
-   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,6 +47,8 @@ import gnu.java.security.Registry;
 public class MD5RandomSpi
     extends SecureRandomAdapter
 {
+  private static final long serialVersionUID = -8922813416432084255L;
+
   public MD5RandomSpi()
   {
     super(Registry.MD5_HASH);
