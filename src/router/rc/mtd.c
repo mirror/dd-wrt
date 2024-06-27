@@ -328,6 +328,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MR5500:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);
@@ -941,6 +942,7 @@ again:;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MR5500:
 		part = getUEnv("boot_part");
 		if (part) {
 			dd_loginfo("flash", "boot partiton is %s\n", part);

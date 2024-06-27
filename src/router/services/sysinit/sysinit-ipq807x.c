@@ -165,6 +165,10 @@ void *get_deviceinfo_mr7350(char *var)
 {
 	return get_deviceinfo("/dev/mtd13", var);
 }
+void *get_deviceinfo_mr5500(char *var)
+{
+	return get_deviceinfo("/dev/mtd11", var);
+}
 void *get_deviceinfo_mx4200(char *var)
 {
 	return get_deviceinfo("/dev/mtd20", var);
@@ -501,6 +505,10 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
+	} else if (brand == ROUTER_LINKSYS_MR5500) {
+		fwlen = 0x20000;
+		maddr = get_deviceinfo_mr5500("hw_mac_addr");
+//		load_nss_ipq807x(1024);
 	} else {
 		fwlen = 0x20000;
 		load_nss_ipq807x(512);

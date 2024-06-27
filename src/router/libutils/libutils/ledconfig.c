@@ -1666,6 +1666,8 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->beeper_gpio = 0xD7; //gpio 215 on i2c slave antaira-gpio
 #endif
 		break;
+	case ROUTER_LINKSYS_MR5500:
+		break;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:

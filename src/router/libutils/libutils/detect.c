@@ -1411,6 +1411,11 @@ generic:;
 		return ROUTER_LINKSYS_MX4200V2;
 	}
 
+	if (!strcmp(modelstr, "MR5500")) {
+		setRouter("Linksys MR5500");
+		return ROUTER_LINKSYS_MR5500;
+	}
+
 	if (!strcmp(modelstr, "DL-WRX36")) {
 		setRouter("Dynalink DL-WRX36");
 		return ROUTER_DYNALINK_DLWRX36;

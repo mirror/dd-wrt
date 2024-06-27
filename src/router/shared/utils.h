@@ -805,6 +805,8 @@
 
 #define ROUTER_DYNALINK_DLWRX36 0x116122
 
+#define ROUTER_LINKSYS_MR5500 0x1170ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
