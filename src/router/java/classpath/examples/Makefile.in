@@ -303,8 +303,8 @@ top_srcdir = @top_srcdir@
 uudecode = @uudecode@
 vm_classes = @vm_classes@
 GLIBJ_CLASSPATH = '$(top_builddir)/lib/glibj.zip:$(top_builddir)/lib'
-@GCJ_JAVAC_FALSE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.5 -target 1.5 -encoding UTF-8 -bootclasspath $(GLIBJ_CLASSPATH) -classpath '$(top_builddir)/tools/tools.zip'
-@GCJ_JAVAC_TRUE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --encoding=UTF-8 --bootclasspath=$(GLIBJ_CLASSPATH) --classpath='$(top_builddir)/tools/tools.zip'
+@GCJ_JAVAC_FALSE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_CLASSPATH) -classpath '$(top_builddir)/tools/tools.zip'
+@GCJ_JAVAC_TRUE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.6 -ftarget=1.6 --encoding=UTF-8 --bootclasspath=$(GLIBJ_CLASSPATH) --classpath='$(top_builddir)/tools/tools.zip'
 
 # All our example java source files
 EXAMPLE_JAVA_FILES = $(srcdir)/gnu/classpath/examples/*/*.java $(srcdir)/gnu/classpath/examples/*/*/*.java $(srcdir)/gnu/classpath/examples/*/*/*/*.java

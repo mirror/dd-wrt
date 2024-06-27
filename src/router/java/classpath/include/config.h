@@ -413,7 +413,7 @@
 /* #undef SIZEOF_VOIDP */
 
 /* The number of bytes in type void * */
-#define SIZEOF_VOID_P 4
+#define SIZEOF_VOID_P 8
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

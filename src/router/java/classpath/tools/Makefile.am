@@ -16,7 +16,7 @@ GLIBJ_CLASSPATH=asm:$(ANTLR_CLASSPATH)
 if GCJ_JAVAC
 JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --encoding=UTF-8 --bootclasspath=$(GLIBJ_BOOTCLASSPATH) --classpath=$(GLIBJ_CLASSPATH)
 else
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.5 -target 1.5 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
 endif
 
 if CREATE_WRAPPERS

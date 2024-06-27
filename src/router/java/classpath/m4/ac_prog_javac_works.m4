@@ -35,7 +35,7 @@ EOF
 if test x$JAVAC_IS_GCJ = xyes; then
   CMD="$JAVAC $JAVACFLAGS -fsource=1.5 -ftarget=1.5 $JAVA_TEST"
 else
-  CMD="$JAVAC $JAVACFLAGS -source 1.5 -target 1.5 $JAVA_TEST"
+  CMD="$JAVAC $JAVACFLAGS -source 1.6 -target 1.6 $JAVA_TEST"
 fi
 if AC_TRY_COMMAND($CMD) >/dev/null 2>&1; then
   ac_cv_prog_javac_works=yes

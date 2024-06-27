@@ -4,7 +4,7 @@ GLIBJ_CLASSPATH='$(top_builddir)/lib/glibj.zip:$(top_builddir)/lib'
 if GCJ_JAVAC
 JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --encoding=UTF-8 --bootclasspath=$(GLIBJ_CLASSPATH) --classpath='$(top_builddir)/tools/tools.zip'
 else
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.5 -target 1.5 -encoding UTF-8 -bootclasspath $(GLIBJ_CLASSPATH) -classpath '$(top_builddir)/tools/tools.zip'
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_CLASSPATH) -classpath '$(top_builddir)/tools/tools.zip'
 endif
 
 # All our example java source files

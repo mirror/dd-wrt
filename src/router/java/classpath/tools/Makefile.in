@@ -455,10 +455,10 @@ vm_classes = @vm_classes@
 @CREATE_GJDOC_TRUE@ANTLR_CLASSPATH = $(ANTLR_JAR):$(gjdoc_gendir)
 GLIBJ_BOOTCLASSPATH = '$(top_builddir)/lib/glibj.zip:$(top_builddir)/lib'
 GLIBJ_CLASSPATH = asm:$(ANTLR_CLASSPATH)
-@GCJ_JAVAC_FALSE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.5 -target 1.5 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
+@GCJ_JAVAC_FALSE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
 
 # Setup the compiler to use the GNU Classpath library we just built.
-@GCJ_JAVAC_TRUE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --encoding=UTF-8 --bootclasspath=$(GLIBJ_BOOTCLASSPATH) --classpath=$(GLIBJ_CLASSPATH)
+@GCJ_JAVAC_TRUE@JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.6 -ftarget=1.6 --encoding=UTF-8 --bootclasspath=$(GLIBJ_BOOTCLASSPATH) --classpath=$(GLIBJ_CLASSPATH)
 @CREATE_WRAPPERS_FALSE@bin_SCRIPTS = gappletviewer gjarsigner gkeytool \
 @CREATE_WRAPPERS_FALSE@	gjar gnative2ascii gserialver gjavah \
 @CREATE_WRAPPERS_FALSE@	grmiregistry gtnameserv gorbd grmid \
