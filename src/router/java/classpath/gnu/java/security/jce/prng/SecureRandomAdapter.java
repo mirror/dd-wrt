@@ -1,5 +1,5 @@
 /* SecureRandomAdapter.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -71,12 +71,14 @@ import java.net.URL;
 public abstract class SecureRandomAdapter
   extends SecureRandomSpi
 {
-  private static final long serialVersionUID = 999603727925481878L;
 
   private boolean isSeeded = false;
 
   /** Our underlying prng instance. */
   private MDGenerator adaptee = new MDGenerator();
+
+  /** The name of the message digest algorithm used by the adaptee. */
+  private String mdName;
 
   private static final Logger logger =
     Logger.getLogger(SecureRandom.class.getName());
@@ -93,7 +95,8 @@ public abstract class SecureRandomAdapter
   {
     super();
 
-    adaptee.init (Collections.singletonMap (MDGenerator.MD_NAME, (Object) mdName));
+    this.mdName = mdName;
+    adaptee.init (Collections.singletonMap (MDGenerator.MD_NAME, mdName));
   }
 
   public static final byte[] getSeed(int numBytes)
@@ -107,7 +110,7 @@ public abstract class SecureRandomAdapter
       new GetSecurityPropertyAction(SECURERANDOM_SOURCE);
     try
       {
-        urlStr = AccessController.doPrivileged(action);
+        urlStr = (String) AccessController.doPrivileged(action);
         if (urlStr != null)
           sourceUrl = new URL(urlStr);
       }
@@ -153,13 +156,11 @@ public abstract class SecureRandomAdapter
     return buffer;
   }
 
-  @Override
   public byte[] engineGenerateSeed(int numBytes)
   {
     return getSeed(numBytes);
   }
 
-  @Override
   public void engineNextBytes(byte[] bytes)
   {
     if (!isSeeded)
@@ -175,7 +176,6 @@ public abstract class SecureRandomAdapter
       }
   }
 
-  @Override
   public void engineSetSeed(byte[] seed)
   {
     adaptee.addRandomBytes (seed);

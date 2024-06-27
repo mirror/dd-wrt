@@ -1,5 +1,5 @@
 /* ReferenceTypeId.java -- a base class for all reference type IDs
-   Copyright (C) 2005, 2006, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -67,10 +67,10 @@ public class ReferenceTypeId
    * @returns the class
    * @throws InvalidClassException if the class is not valid
    */
-  public Class<?> getType ()
+  public Class getType ()
     throws InvalidClassException
   {
-    Class<?> clazz = (Class<?>) _reference.get ();
+    Class clazz = (Class) _reference.get ();
     if (clazz == null)
       throw new InvalidClassException (_id);
 

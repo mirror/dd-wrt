@@ -46,7 +46,6 @@ package javax.sound.midi;
  *
  */
 public interface MidiDevice
-  extends AutoCloseable
 {
   /**
    * Get the Info object describing this device.

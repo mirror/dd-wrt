@@ -79,9 +79,6 @@ final class VMProcess extends Process
   // New processes waiting to be spawned by processThread.
   static final LinkedList workList = new LinkedList();
 
-  // Number of threads waiting in waitFor() or destroy()
-  static int waiters;
-
   // Return values set by nativeReap() when a child is reaped.
   // These are only accessed by processThread so no locking required.
   static long reapedPid;
@@ -111,18 +108,6 @@ final class VMProcess extends Process
 
     // Max time (in ms) we'll delay before trying to reap another child.
     private static final int MAX_REAP_DELAY = 1000;
-
-    // Default polling delay (in ms) in "fast polling mode", i.e. when
-    // there are threads waiting in waitFor() or destroy().
-    // Can be changed using the gnu.lang.process.fastPolling system property.
-    private static final int DEFAULT_FAST_POLLING_DELAY = 100;
-
-    // Actual polling delay in fast polling mode
-    private static final int fastPollingDelay;
-    static
-    {
-      fastPollingDelay = Integer.getInteger("gnu.lang.process.fastPolling", DEFAULT_FAST_POLLING_DELAY);
-    }
 
     // Processes created but not yet terminated; maps Long(pid) -> VMProcess
     // Only used in run() and spawn() method from this Thread, so no locking.
@@ -167,7 +152,7 @@ final class VMProcess extends Process
                     {
                       process.exitValue = exitValue;
                       process.state = TERMINATED;
-                      process.notifyAll();
+                      process.notify();
                     }
                 }
               else
@@ -180,9 +165,8 @@ final class VMProcess extends Process
           // If there is nothing left to do, exit this thread. Otherwise,
           // sleep a little while, and then check again for reapable children.
           // We will get woken up immediately if there are new processes to
-          // spawn, and also from waitFor() and destroy(), but not if there
-          // are new children to reap. So we only sleep a short time, in
-          // effect polling while processes are active.
+          // spawn, but not if there are new children to reap. So we only
+          // sleep a short time, in effect polling while processes are active.
           synchronized (workList)
             {
               if (!workList.isEmpty())
@@ -195,7 +179,7 @@ final class VMProcess extends Process
 
               try
                 {
-                  workList.wait(waiters > 0 ? fastPollingDelay : MAX_REAP_DELAY);
+                  workList.wait(MAX_REAP_DELAY);
                 }
               catch (InterruptedException e)
                 {
@@ -230,7 +214,7 @@ final class VMProcess extends Process
               process.state = TERMINATED;
               process.exception = t;
             }
-          process.notifyAll();
+          process.notify();
         }
     }
   }
@@ -259,14 +243,24 @@ final class VMProcess extends Process
           }
         else
           {
-            workList.notifyAll();
+            workList.notify();
           }
       }
 
     // Wait for processThread to spawn this process and update its state
     synchronized (this)
       {
-        waitForStateUninterruptibly(INITIAL, true);
+        while (state == INITIAL)
+          {
+            try
+              {
+                wait();
+              }
+            catch (InterruptedException e)
+              {
+                /* ignore */
+              }
+          }
       }
 
     // If spawning failed, rethrow the exception in this thread
@@ -345,35 +339,10 @@ final class VMProcess extends Process
     return stderr;
   }
 
-  private void addWaiter()
-  {
-    synchronized (workList)
-      {
-        waiters++;
-        workList.notify();
-      }
-  }
-
-  private void removeWaiter()
-  {
-    synchronized (workList)
-      {
-        waiters--;
-      }
-  }
-
   public synchronized int waitFor() throws InterruptedException
   {
-    try
-      {
-        addWaiter();
-        while (state != TERMINATED)
-          wait();
-      }
-    finally
-      {
-        removeWaiter();
-      }
+    while (state != TERMINATED)
+      wait();
     return exitValue;
   }
 
@@ -391,16 +360,7 @@ final class VMProcess extends Process
 
     nativeKill(pid);
 
-    addWaiter();
-    waitForStateUninterruptibly(TERMINATED, false);
-    removeWaiter();
-  }
-
-  private void waitForStateUninterruptibly(int state, boolean eq)
-  {
-    boolean interrupted = Thread.interrupted();
-
-    while ((this.state == state) == eq)
+    while (state != TERMINATED)
       {
         try
           {
@@ -408,13 +368,9 @@ final class VMProcess extends Process
           }
         catch (InterruptedException e)
           {
-            interrupted = true;
+            /* ignore */
           }
       }
-
-    // Ensure interrupted status is not lost
-    if (interrupted)
-      Thread.currentThread().interrupt();
   }
 
   /**

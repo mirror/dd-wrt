@@ -97,8 +97,6 @@ public final class System
    */
   public static final PrintStream out = VMSystem.makeStandardOutputStream();
 
-  private static final String LINE_SEPARATOR = SystemProperties.getProperty("line.separator");
-
   /**
    * The standard output PrintStream.  This is assigned at startup and
    * starts its life perfectly valid. Although it is marked final, you can
@@ -712,16 +710,6 @@ public final class System
   public static Console console()
   {
     return Console.console();
-  }
-
-  /**
-   * Returns the system-dependent line separator.
-   *
-   * @return the system-dependent line separator.
-   */
-  public static String lineSeparator()
-  {
-    return LINE_SEPARATOR;
   }
 
   /**

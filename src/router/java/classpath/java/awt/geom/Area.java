@@ -91,18 +91,18 @@ public class Area implements Shape, Cloneable
    * Segment vectors containing solid areas and holes
    * This is package-private to avoid an accessor method.
    */
-  Vector<Segment> solids;
+  Vector solids;
 
   /**
    * Segment vectors containing solid areas and holes
    * This is package-private to avoid an accessor method.
    */
-  Vector<Segment> holes;
+  Vector holes;
 
   /**
    * Vector (temporary) storing curve-curve intersections
    */
-  private Vector<double[]> ccIntersections;
+  private Vector cc_intersections;
 
   /**
    * Winding rule WIND_NON_ZERO used, after construction,
@@ -115,8 +115,8 @@ public class Area implements Shape, Cloneable
    */
   public Area()
   {
-    solids = new Vector<Segment>();
-    holes = new Vector<Segment>();
+    solids = new Vector();
+    holes = new Vector();
   }
 
   /**
@@ -135,7 +135,7 @@ public class Area implements Shape, Cloneable
   {
     this();
 
-    Vector<Segment> p = makeSegment(s);
+    Vector p = makeSegment(s);
 
     // empty path
     if (p == null)
@@ -143,7 +143,7 @@ public class Area implements Shape, Cloneable
 
     // delete empty paths
     for (int i = 0; i < p.size(); i++)
-      if (p.elementAt(i).getSignedArea() == 0.0)
+      if (((Segment) p.elementAt(i)).getSignedArea() == 0.0)
         p.remove(i--);
 
     /*
@@ -157,11 +157,12 @@ public class Area implements Shape, Cloneable
      * 4: Repeat (3) until no segments remain in the list
      * 5: Remove redundant paths and sort into solids and holes
      */
+    Vector paths = new Vector();
     Segment v;
 
     for (int i = 0; i < p.size(); i++)
       {
-        Segment path = p.elementAt(i);
+        Segment path = (Segment) p.elementAt(i);
         createNodesSelf(path);
       }
 
@@ -170,18 +171,18 @@ public class Area implements Shape, Cloneable
         for (int i = 0; i < p.size() - 1; i++)
           for (int j = i + 1; j < p.size(); j++)
             {
-              Segment path1 = p.elementAt(i);
-              Segment path2 = p.elementAt(j);
+              Segment path1 = (Segment) p.elementAt(i);
+              Segment path2 = (Segment) p.elementAt(j);
               createNodes(path1, path2);
             }
       }
 
     // we have intersecting points.
-    Vector<Segment> segments = new Vector<Segment>();
+    Vector segments = new Vector();
 
     for (int i = 0; i < p.size(); i++)
       {
-        Segment path = v = p.elementAt(i);
+        Segment path = v = (Segment) p.elementAt(i);
         do
           {
             segments.add(v);
@@ -190,7 +191,7 @@ public class Area implements Shape, Cloneable
         while (v != path);
       }
 
-    Vector<Segment> paths = weilerAtherton(segments);
+    paths = weilerAtherton(segments);
     deleteRedundantPaths(paths);
   }
 
@@ -207,34 +208,36 @@ public class Area implements Shape, Cloneable
 
     Area B = (Area) area.clone();
 
-    Vector<Segment> pathA = new Vector<Segment>();
-    Vector<Segment> pathB = new Vector<Segment>();
+    Vector pathA = new Vector();
+    Vector pathB = new Vector();
     pathA.addAll(solids);
     pathA.addAll(holes);
     pathB.addAll(B.solids);
     pathB.addAll(B.holes);
 
+    int nNodes = 0;
+
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment a = pathA.elementAt(i);
+        Segment a = (Segment) pathA.elementAt(i);
         for (int j = 0; j < pathB.size(); j++)
           {
-            Segment b = pathB.elementAt(j);
-            createNodes(a, b);
+            Segment b = (Segment) pathB.elementAt(j);
+            nNodes += createNodes(a, b);
           }
       }
 
-    Vector<Segment> paths = new Vector<Segment>();
+    Vector paths = new Vector();
     Segment v;
 
     // we have intersecting points.
-    Vector<Segment> segments = new Vector<Segment>();
+    Vector segments = new Vector();
 
     // In a union operation, we keep all
     // segments of A oustide B and all B outside A
     for (int i = 0; i < pathA.size(); i++)
       {
-        v = pathA.elementAt(i);
+        v = (Segment) pathA.elementAt(i);
         Segment path = v;
         do
           {
@@ -247,7 +250,7 @@ public class Area implements Shape, Cloneable
 
     for (int i = 0; i < pathB.size(); i++)
       {
-        v = pathB.elementAt(i);
+        v = (Segment) pathB.elementAt(i);
         Segment path = v;
         do
           {
@@ -278,7 +281,7 @@ public class Area implements Shape, Cloneable
         return;
       }
 
-    Vector<Segment> pathA = new Vector<Segment>();
+    Vector pathA = new Vector();
     Area B = (Area) area.clone();
     pathA.addAll(solids);
     pathA.addAll(holes);
@@ -287,23 +290,27 @@ public class Area implements Shape, Cloneable
     setDirection(B.holes, true);
     setDirection(B.solids, false);
 
-    Vector<Segment> pathB = new Vector<Segment>();
+    Vector pathB = new Vector();
     pathB.addAll(B.solids);
     pathB.addAll(B.holes);
+
+    int nNodes = 0;
 
     // create nodes
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment a = pathA.elementAt(i);
+        Segment a = (Segment) pathA.elementAt(i);
         for (int j = 0; j < pathB.size(); j++)
           {
-            Segment b = pathB.elementAt(j);
-            createNodes(a, b);
+            Segment b = (Segment) pathB.elementAt(j);
+            nNodes += createNodes(a, b);
           }
       }
 
+    Vector paths = new Vector();
+
     // we have intersecting points.
-    Vector<Segment> segments = new Vector<Segment>();
+    Vector segments = new Vector();
 
     // In a subtraction operation, we keep all
     // segments of A oustide B and all B within A
@@ -311,7 +318,7 @@ public class Area implements Shape, Cloneable
     // and the segments before and after any node
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment v = pathA.elementAt(i);
+        Segment v = (Segment) pathA.elementAt(i);
         Segment path = v;
         if (v.isSegmentOutside(area) && v.node == null)
           segments.add(v);
@@ -350,7 +357,7 @@ public class Area implements Shape, Cloneable
         while (v != path);
       }
 
-    Vector<Segment> paths = weilerAtherton(segments);
+    paths = weilerAtherton(segments);
     deleteRedundantPaths(paths);
   }
 
@@ -369,28 +376,32 @@ public class Area implements Shape, Cloneable
     if (equals(area))
       return;
 
-    Vector<Segment> pathA = new Vector<Segment>();
+    Vector pathA = new Vector();
     Area B = (Area) area.clone();
     pathA.addAll(solids);
     pathA.addAll(holes);
 
-    Vector<Segment> pathB = new Vector<Segment>();
+    Vector pathB = new Vector();
     pathB.addAll(B.solids);
     pathB.addAll(B.holes);
+
+    int nNodes = 0;
 
     // create nodes
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment a = pathA.elementAt(i);
+        Segment a = (Segment) pathA.elementAt(i);
         for (int j = 0; j < pathB.size(); j++)
           {
-            Segment b = pathB.elementAt(j);
-            createNodes(a, b);
+            Segment b = (Segment) pathB.elementAt(j);
+            nNodes += createNodes(a, b);
           }
       }
 
+    Vector paths = new Vector();
+
     // we have intersecting points.
-    Vector<Segment> segments = new Vector<Segment>();
+    Vector segments = new Vector();
 
     // In an intersection operation, we keep all
     // segments of A within B and all B within A
@@ -399,7 +410,7 @@ public class Area implements Shape, Cloneable
     // and the segments before and after any node
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment v = pathA.elementAt(i);
+        Segment v = (Segment) pathA.elementAt(i);
         Segment path = v;
         if (! v.isSegmentOutside(area) && v.node == null)
           segments.add(v);
@@ -419,7 +430,7 @@ public class Area implements Shape, Cloneable
 
     for (int i = 0; i < pathB.size(); i++)
       {
-        Segment v = pathB.elementAt(i);
+        Segment v = (Segment) pathB.elementAt(i);
         Segment path = v;
         if (! v.isSegmentOutside(this) && v.node == null)
           segments.add(v);
@@ -438,7 +449,7 @@ public class Area implements Shape, Cloneable
         while (v != path);
       }
 
-    Vector<Segment> paths = weilerAtherton(segments);
+    paths = weilerAtherton(segments);
     deleteRedundantPaths(paths);
   }
 
@@ -465,10 +476,10 @@ public class Area implements Shape, Cloneable
         return;
       }
 
-    Vector<Segment> pathA = new Vector<Segment>();
+    Vector pathA = new Vector();
 
     Area B = (Area) area.clone();
-    Vector<Segment> pathB = new Vector<Segment>();
+    Vector pathB = new Vector();
     pathA.addAll(solids);
     pathA.addAll(holes);
 
@@ -478,25 +489,28 @@ public class Area implements Shape, Cloneable
     pathB.addAll(B.solids);
     pathB.addAll(B.holes);
 
+    int nNodes = 0;
+
     for (int i = 0; i < pathA.size(); i++)
       {
-        Segment a = pathA.elementAt(i);
+        Segment a = (Segment) pathA.elementAt(i);
         for (int j = 0; j < pathB.size(); j++)
           {
-            Segment b = pathB.elementAt(j);
-            createNodes(a, b);
+            Segment b = (Segment) pathB.elementAt(j);
+            nNodes += createNodes(a, b);
           }
       }
 
+    Vector paths = new Vector();
     Segment v;
 
     // we have intersecting points.
-    Vector<Segment> segments = new Vector<Segment>();
+    Vector segments = new Vector();
 
     // In an XOR operation, we operate on all segments
     for (int i = 0; i < pathA.size(); i++)
       {
-        v = pathA.elementAt(i);
+        v = (Segment) pathA.elementAt(i);
         Segment path = v;
         do
           {
@@ -508,7 +522,7 @@ public class Area implements Shape, Cloneable
 
     for (int i = 0; i < pathB.size(); i++)
       {
-        v = pathB.elementAt(i);
+        v = (Segment) pathB.elementAt(i);
         Segment path = v;
         do
           {
@@ -518,7 +532,7 @@ public class Area implements Shape, Cloneable
         while (v != path);
       }
 
-    Vector<Segment> paths = weilerAtherton(segments);
+    paths = weilerAtherton(segments);
     deleteRedundantPaths(paths);
   }
 
@@ -527,8 +541,8 @@ public class Area implements Shape, Cloneable
    */
   public void reset()
   {
-    solids = new Vector<Segment>();
-    holes = new Vector<Segment>();
+    solids = new Vector();
+    holes = new Vector();
   }
 
   /**
@@ -542,9 +556,9 @@ public class Area implements Shape, Cloneable
 
     double totalArea = 0;
     for (int i = 0; i < solids.size(); i++)
-      totalArea += Math.abs(solids.elementAt(i).getSignedArea());
+      totalArea += Math.abs(((Segment) solids.elementAt(i)).getSignedArea());
     for (int i = 0; i < holes.size(); i++)
-      totalArea -= Math.abs(holes.elementAt(i).getSignedArea());
+      totalArea -= Math.abs(((Segment) holes.elementAt(i)).getSignedArea());
     if (totalArea <= EPSILON)
       return true;
 
@@ -558,10 +572,10 @@ public class Area implements Shape, Cloneable
   public boolean isPolygonal()
   {
     for (int i = 0; i < holes.size(); i++)
-      if (!holes.elementAt(i).isPolygonal())
+      if (! ((Segment) holes.elementAt(i)).isPolygonal())
         return false;
     for (int i = 0; i < solids.size(); i++)
-      if (!solids.elementAt(i).isPolygonal())
+      if (! ((Segment) solids.elementAt(i)).isPolygonal())
         return false;
     return true;
   }
@@ -585,7 +599,7 @@ public class Area implements Shape, Cloneable
     if (holes.size() != 0 || solids.size() != 1)
       return false;
 
-    Segment path = solids.elementAt(0);
+    Segment path = (Segment) solids.elementAt(0);
     if (! path.isPolygonal())
       return false;
 
@@ -643,12 +657,12 @@ public class Area implements Shape, Cloneable
     double xmax;
     double ymin;
     double ymax;
-    xmin = xmax = solids.elementAt(0).P1.getX();
-    ymin = ymax = solids.elementAt(0).P1.getY();
+    xmin = xmax = ((Segment) solids.elementAt(0)).P1.getX();
+    ymin = ymax = ((Segment) solids.elementAt(0)).P1.getY();
 
     for (int path = 0; path < solids.size(); path++)
       {
-        Rectangle2D r = solids.elementAt(path).getPathBounds();
+        Rectangle2D r = ((Segment) solids.elementAt(path)).getPathBounds();
         xmin = Math.min(r.getMinX(), xmin);
         ymin = Math.min(r.getMinY(), ymin);
         xmax = Math.max(r.getMaxX(), xmax);
@@ -682,9 +696,9 @@ public class Area implements Shape, Cloneable
       {
         Area clone = new Area();
         for (int i = 0; i < solids.size(); i++)
-          clone.solids.add(solids.elementAt(i).cloneSegmentList());
+          clone.solids.add(((Segment) solids.elementAt(i)).cloneSegmentList());
         for (int i = 0; i < holes.size(); i++)
-          clone.holes.add(holes.elementAt(i).cloneSegmentList());
+          clone.holes.add(((Segment) holes.elementAt(i)).cloneSegmentList());
         return clone;
       }
     catch (CloneNotSupportedException e)
@@ -713,10 +727,10 @@ public class Area implements Shape, Cloneable
         || holes.size() != area.holes.size())
       return false;
 
-    Vector<Segment> pathA = new Vector<Segment>();
+    Vector pathA = new Vector();
     pathA.addAll(solids);
     pathA.addAll(holes);
-    Vector<Segment> pathB = new Vector<Segment>();
+    Vector pathB = new Vector();
     pathB.addAll(area.solids);
     pathB.addAll(area.holes);
 
@@ -727,8 +741,8 @@ public class Area implements Shape, Cloneable
       {
         for (int j = 0; j < nPaths; j++)
           {
-            Segment p1 = pathA.elementAt(i);
-            Segment p2 = pathB.elementAt(j);
+            Segment p1 = (Segment) pathA.elementAt(i);
+            Segment p2 = (Segment) pathB.elementAt(j);
             if (! match[0][i] && ! match[1][j])
               if (p1.pathEquals(p2))
                 match[0][i] = match[1][j] = true;
@@ -749,9 +763,9 @@ public class Area implements Shape, Cloneable
   public void transform(AffineTransform at)
   {
     for (int i = 0; i < solids.size(); i++)
-      solids.elementAt(i).transformSegmentList(at);
+      ((Segment) solids.elementAt(i)).transformSegmentList(at);
     for (int i = 0; i < holes.size(); i++)
-      holes.elementAt(i).transformSegmentList(at);
+      ((Segment) holes.elementAt(i)).transformSegmentList(at);
 
     // Note that the orientation is not invariant under inversion
     if ((at.getType() & AffineTransform.TYPE_FLIP) != 0)
@@ -786,11 +800,11 @@ public class Area implements Shape, Cloneable
   {
     int n = 0;
     for (int i = 0; i < solids.size(); i++)
-      if (solids.elementAt(i).contains(x, y))
+      if (((Segment) solids.elementAt(i)).contains(x, y))
         n++;
 
     for (int i = 0; i < holes.size(); i++)
-      if (holes.elementAt(i).contains(x, y))
+      if (((Segment) holes.elementAt(i)).contains(x, y))
         n--;
 
     return (n != 0);
@@ -840,7 +854,7 @@ public class Area implements Shape, Cloneable
           {
             Segment v;
             Segment start;
-            start = v = solids.elementAt(path);
+            start = v = (Segment) solids.elementAt(path);
             do
               {
                 if (l[i].hasIntersections(v))
@@ -853,7 +867,7 @@ public class Area implements Shape, Cloneable
           {
             Segment v;
             Segment start;
-            start = v = holes.elementAt(path);
+            start = v = (Segment) holes.elementAt(path);
             do
               {
                 if (l[i].hasIntersections(v))
@@ -872,7 +886,7 @@ public class Area implements Shape, Cloneable
     // but encloses a hole?
     Rectangle2D r = new Rectangle2D.Double(x, y, w, h);
     for (int path = 0; path < holes.size(); path++)
-      if (! holes.elementAt(path).isSegmentOutside(r))
+      if (! ((Segment) holes.elementAt(path)).isSegmentOutside(r))
         return false;
 
     return true;
@@ -924,7 +938,7 @@ public class Area implements Shape, Cloneable
           {
             Segment v;
             Segment start;
-            start = v = solids.elementAt(path);
+            start = v = (Segment) solids.elementAt(path);
             do
               {
                 if (l[i].hasIntersections(v))
@@ -937,7 +951,7 @@ public class Area implements Shape, Cloneable
           {
             Segment v;
             Segment start;
-            start = v = holes.elementAt(path);
+            start = v = (Segment) holes.elementAt(path);
             do
               {
                 if (l[i].hasIntersections(v))
@@ -953,7 +967,7 @@ public class Area implements Shape, Cloneable
       return true;
 
     // What if the rectangle encloses the whole shape?
-    Point2D p = solids.elementAt(0).getMidPoint();
+    Point2D p = ((Segment) solids.elementAt(0)).getMidPoint();
     if ((new Rectangle2D.Double(x, y, w, h)).contains(p))
       return true;
     return false;
@@ -1006,7 +1020,7 @@ public class Area implements Shape, Cloneable
    */
   private class AreaIterator implements PathIterator
   {
-    private Vector<IteratorSegment> segments;
+    private Vector segments;
     private int index;
     private AffineTransform at;
 
@@ -1031,14 +1045,14 @@ public class Area implements Shape, Cloneable
     {
       this.at = at;
       index = 0;
-      segments = new Vector<IteratorSegment>();
-      Vector<Segment> allpaths = new Vector<Segment>();
+      segments = new Vector();
+      Vector allpaths = new Vector();
       allpaths.addAll(solids);
       allpaths.addAll(holes);
 
       for (int i = 0; i < allpaths.size(); i++)
         {
-          Segment v = allpaths.elementAt(i);
+          Segment v = (Segment) allpaths.elementAt(i);
           Segment start = v;
 
           IteratorSegment is = new IteratorSegment();
@@ -1064,7 +1078,7 @@ public class Area implements Shape, Cloneable
 
     public int currentSegment(double[] coords)
     {
-      IteratorSegment s = segments.elementAt(index);
+      IteratorSegment s = (IteratorSegment) segments.elementAt(index);
       if (at != null)
         at.transform(s.coords, 0, coords, 0, 3);
       else
@@ -1075,7 +1089,7 @@ public class Area implements Shape, Cloneable
 
     public int currentSegment(float[] coords)
     {
-      IteratorSegment s = segments.elementAt(index);
+      IteratorSegment s = (IteratorSegment) segments.elementAt(index);
       double[] d = new double[6];
       if (at != null)
         {
@@ -1115,13 +1129,13 @@ public class Area implements Shape, Cloneable
    *
    * Returns a Vector of the resulting paths.
    */
-  private Vector<Segment> weilerAtherton(Vector<Segment> segments)
+  private Vector weilerAtherton(Vector segments)
   {
-    Vector<Segment> paths = new Vector<Segment>();
+    Vector paths = new Vector();
     while (segments.size() > 0)
       {
         // Iterate over the path
-        Segment start = segments.elementAt(0);
+        Segment start = (Segment) segments.elementAt(0);
         Segment s = start;
         do
           {
@@ -1238,7 +1252,7 @@ public class Area implements Shape, Cloneable
         double[] temp = new double[2];
         temp[0] = t1 + s * w1;
         temp[1] = t2 + t * w1;
-        ccIntersections.add(temp);
+        cc_intersections.add(temp);
         return;
       }
 
@@ -1314,28 +1328,28 @@ public class Area implements Shape, Cloneable
     if (! r1.intersects(r2))
       return null;
 
-    ccIntersections = new Vector<double[]>();
+    cc_intersections = new Vector();
     recursiveSubdivide(curve1.getCubicCurve2D(), curve2.getCubicCurve2D(),
                        getRecursionDepth(curve1), getRecursionDepth(curve2),
                        0.0, 0.0, 1.0, 1.0);
 
-    if (ccIntersections.size() == 0)
+    if (cc_intersections.size() == 0)
       return null;
 
-    Intersection[] results = new Intersection[ccIntersections.size()];
-    for (int i = 0; i < ccIntersections.size(); i++)
+    Intersection[] results = new Intersection[cc_intersections.size()];
+    for (int i = 0; i < cc_intersections.size(); i++)
       {
-        double[] temp = ccIntersections.elementAt(i);
+        double[] temp = (double[]) cc_intersections.elementAt(i);
         results[i] = new Intersection(curve1.evaluatePoint(temp[0]), temp[0],
                                       temp[1]);
       }
-    ccIntersections = null;
+    cc_intersections = null;
     return (results);
   }
 
   /**
    * Returns the intersections between a line and a quadratic bezier
-   * Or null if no intersections are found.
+   * Or null if no intersections are found1
    * This is done through combining the line's equation with the
    * parametric form of the Bezier and solving the resulting quadratic.
    * This is package-private to avoid an accessor method.
@@ -1608,9 +1622,9 @@ public class Area implements Shape, Cloneable
    * Helper method
    * Turns a shape into a Vector of Segments
    */
-  private Vector<Segment> makeSegment(Shape s)
+  private Vector makeSegment(Shape s)
   {
-    Vector<Segment> paths = new Vector<Segment>();
+    Vector paths = new Vector();
     PathIterator pi = s.getPathIterator(null);
     double[] coords = new double[6];
     Segment subpath = null;
@@ -1772,7 +1786,7 @@ public class Area implements Shape, Cloneable
       }
     while (a != A); // until one wrap.
 
-    return nNodes;
+    return (nNodes);
   }
 
   /**
@@ -1810,7 +1824,7 @@ public class Area implements Shape, Cloneable
    * solid areas) Clears any nodes. Sorts the remaining paths into solids
    * and holes, sets their orientation and sets the solids and holes lists.
    */
-  private void deleteRedundantPaths(Vector<Segment> paths)
+  private void deleteRedundantPaths(Vector paths)
   {
     int npaths = paths.size();
 
@@ -1822,19 +1836,19 @@ public class Area implements Shape, Cloneable
     neg = ((windingRule == PathIterator.WIND_NON_ZERO) ? -1 : 1);
 
     for (int i = 0; i < npaths; i++)
-      bb[i] = paths.elementAt(i).getPathBounds();
+      bb[i] = ((Segment) paths.elementAt(i)).getPathBounds();
 
     // Find which path contains which, assign winding numbers
     for (int i = 0; i < npaths; i++)
       {
-        Segment pathA = paths.elementAt(i);
+        Segment pathA = (Segment) paths.elementAt(i);
         pathA.nullNodes(); // remove any now-redundant nodes, in case.
         int windingA = pathA.hasClockwiseOrientation() ? 1 : neg;
 
         for (int j = 0; j < npaths; j++)
           if (i != j)
             {
-              Segment pathB = paths.elementAt(j);
+              Segment pathB = (Segment) paths.elementAt(j);
 
               // A contains B
               if (bb[i].intersects(bb[j]))
@@ -1862,8 +1876,8 @@ public class Area implements Shape, Cloneable
         windingNumbers[i][1] = contains[i][i];
       }
 
-    Vector<Segment> solids = new Vector<Segment>();
-    Vector<Segment> holes = new Vector<Segment>();
+    Vector solids = new Vector();
+    Vector holes = new Vector();
 
     if (windingRule == PathIterator.WIND_NON_ZERO)
       {
@@ -1899,12 +1913,12 @@ public class Area implements Shape, Cloneable
    * @param clockwise gives the direction,
    * true = clockwise, false = counter-clockwise
    */
-  private void setDirection(Vector<Segment> paths, boolean clockwise)
+  private void setDirection(Vector paths, boolean clockwise)
   {
     Segment v;
     for (int i = 0; i < paths.size(); i++)
       {
-        v = paths.elementAt(i);
+        v = (Segment) paths.elementAt(i);
         if (clockwise != v.hasClockwiseOrientation())
           v.reverseAll();
       }
@@ -2143,7 +2157,7 @@ public class Area implements Shape, Cloneable
      */
     Segment cloneSegmentList() throws CloneNotSupportedException
     {
-      Vector<Segment> list = new Vector<Segment>();
+      Vector list = new Vector();
       Segment v = next;
 
       while (v != this)
@@ -2156,7 +2170,7 @@ public class Area implements Shape, Cloneable
       v = clone;
       for (int i = 0; i < list.size(); i++)
         {
-          clone.next = (Segment) list.elementAt(i).clone();
+          clone.next = (Segment) ((Segment) list.elementAt(i)).clone();
           clone = clone.next;
         }
       clone.next = v;
@@ -2195,7 +2209,7 @@ public class Area implements Shape, Cloneable
      */
     protected int createNodes(Segment b, Intersection[] x)
     {
-      Vector<Intersection> v = new Vector<Intersection>();
+      Vector v = new Vector();
       for (int i = 0; i < x.length; i++)
         {
           Point2D p = x[i].p;
@@ -2208,7 +2222,7 @@ public class Area implements Shape, Cloneable
       Intersection[] A = new Intersection[nNodes];
       Intersection[] B = new Intersection[nNodes];
       for (int i = 0; i < nNodes; i++)
-        A[i] = B[i] = v.elementAt(i);
+        A[i] = B[i] = (Intersection) v.elementAt(i);
 
       // Create two lists sorted by the parameter
       // Bubble sort, OK I suppose, since the number of intersections

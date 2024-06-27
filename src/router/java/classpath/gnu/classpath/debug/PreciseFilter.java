@@ -40,7 +40,6 @@ package gnu.classpath.debug;
 
 import java.util.BitSet;
 import java.util.logging.Filter;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 public final class PreciseFilter implements Filter
@@ -94,10 +93,13 @@ public final class PreciseFilter implements Filter
 
   public boolean isLoggable (final LogRecord record)
   {
-    Level level = record.getLevel();
-    if (level instanceof Component)
-      return isEnabled ((Component) level);
-    return true;
+    try
+      {
+        return isEnabled ((Component) record.getLevel ());
+      }
+    catch (ClassCastException cce)
+      {
+        return true;
+      }
   }
-
 }

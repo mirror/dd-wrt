@@ -1,5 +1,5 @@
 /* DSSKeyPairGenerator.java --
-   Copyright 2001, 2002, 2003, 2006, 2010, 2014, 2015 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006, 2010 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -51,9 +51,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.DSAParameterSpec;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -214,13 +211,6 @@ public class DSSKeyPairGenerator
   /** Preferred encoding format of generated keys. */
   private int preferredFormat;
 
-  /** Flag to indicate whether the generator has been initialized */
-  private AtomicBoolean initialized = new AtomicBoolean(false);
-
-  /** Lock to prevent concurrent initialization */
-  private Lock initLock = new ReentrantLock();
-
-  @Override
   public String name()
   {
     return Registry.DSS_KPG;
@@ -234,91 +224,81 @@ public class DSSKeyPairGenerator
    *              is not greater than 512, less than 1024 and not of the form
    *              <code>512 + 64j</code>.
    */
-  @Override
-  public void setup(Map<String,Object> attributes)
+  public void setup(Map attributes)
   {
-    initLock.lock();
-    try
+    // find out the modulus length
+    Integer l = (Integer) attributes.get(MODULUS_LENGTH);
+    L = (l == null ? DEFAULT_MODULUS_LENGTH : l.intValue());
+    if ((L % 64) != 0 || L < 512 || L > 1024)
+      throw new IllegalArgumentException(MODULUS_LENGTH);
+
+    // should we use the default pre-computed params?
+    Boolean useDefaults = (Boolean) attributes.get(USE_DEFAULTS);
+    if (useDefaults == null)
+      useDefaults = Boolean.TRUE;
+
+    Boolean strictDefaults = (Boolean) attributes.get(STRICT_DEFAULTS);
+    if (strictDefaults == null)
+      strictDefaults = Boolean.FALSE;
+
+    // are we given a set of DSA params or we shall use/generate our own?
+    DSAParameterSpec params = (DSAParameterSpec) attributes.get(DSS_PARAMETERS);
+    if (params != null)
       {
-	// find out the modulus length
-	Integer l = (Integer) attributes.get(MODULUS_LENGTH);
-	L = (l == null ? DEFAULT_MODULUS_LENGTH : l.intValue());
-	if ((L % 64) != 0 || L < 512 || L > 1024)
-	  throw new IllegalArgumentException("The modulus length must be a " +
-					     "factor of 64 between 512 and 1024");
-
-	// should we use the default pre-computed params?
-	Boolean useDefaults = (Boolean) attributes.get(USE_DEFAULTS);
-	if (useDefaults == null)
-	  useDefaults = Boolean.TRUE;
-
-	Boolean strictDefaults = (Boolean) attributes.get(STRICT_DEFAULTS);
-	if (strictDefaults == null)
-	  strictDefaults = Boolean.FALSE;
-
-	// are we given a set of DSA params or we shall use/generate our own?
-	DSAParameterSpec params = (DSAParameterSpec) attributes.get(DSS_PARAMETERS);
-	if (params != null)
-	  {
-	    p = params.getP();
-	    q = params.getQ();
-	    g = params.getG();
-	  }
-	else if (useDefaults.equals(Boolean.TRUE))
-	  {
-	    switch (L)
-	      {
-	      case 512:
-		p = KEY_PARAMS_512.getP();
-		q = KEY_PARAMS_512.getQ();
-		g = KEY_PARAMS_512.getG();
-		break;
-	      case 768:
-		p = KEY_PARAMS_768.getP();
-		q = KEY_PARAMS_768.getQ();
-		g = KEY_PARAMS_768.getG();
-		break;
-	      case 1024:
-		p = KEY_PARAMS_1024.getP();
-		q = KEY_PARAMS_1024.getQ();
-		g = KEY_PARAMS_1024.getG();
-		break;
-	      default:
-		if (strictDefaults.equals(Boolean.TRUE))
-		  throw new IllegalArgumentException(
-                    "Does not provide default parameters for " + L
-                    + "-bit modulus length");
-		p = null;
-		q = null;
-		g = null;
-	      }
-	  }
-	else
-	  {
-	    p = null;
-	    q = null;
-	    g = null;
-	  }
-	// do we have a SecureRandom, or should we use our own?
-	rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
-	// what is the preferred encoding format
-	Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
-	preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
-                                           : formatID.intValue();
-	// set the seed-key
-	byte[] kb = new byte[20]; // we need 160 bits of randomness
-	nextRandomBytes(kb);
-	XKEY = new BigInteger(1, kb).setBit(159).setBit(0);
-
-	initialized.set(false);
+        p = params.getP();
+        q = params.getQ();
+        g = params.getG();
       }
-    finally
+    else if (useDefaults.equals(Boolean.TRUE))
       {
-	initLock.unlock();
+        switch (L)
+          {
+          case 512:
+            p = KEY_PARAMS_512.getP();
+            q = KEY_PARAMS_512.getQ();
+            g = KEY_PARAMS_512.getG();
+            break;
+          case 768:
+            p = KEY_PARAMS_768.getP();
+            q = KEY_PARAMS_768.getQ();
+            g = KEY_PARAMS_768.getG();
+            break;
+          case 1024:
+            p = KEY_PARAMS_1024.getP();
+            q = KEY_PARAMS_1024.getQ();
+            g = KEY_PARAMS_1024.getG();
+            break;
+          default:
+            if (strictDefaults.equals(Boolean.TRUE))
+              throw new IllegalArgumentException(
+                  "Does not provide default parameters for " + L
+                  + "-bit modulus length");
+            else
+              {
+                p = null;
+                q = null;
+                g = null;
+              }
+          }
       }
+    else
+      {
+        p = null;
+        q = null;
+        g = null;
+      }
+    // do we have a SecureRandom, or should we use our own?
+    rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
+    // what is the preferred encoding format
+    Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
+    preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
+                                       : formatID.intValue();
+    // set the seed-key
+    byte[] kb = new byte[20]; // we need 160 bits of randomness
+    nextRandomBytes(kb);
+    XKEY = new BigInteger(1, kb).setBit(159).setBit(0);
   }
 
-  @Override
   public KeyPair generate()
   {
     if (p == null)
@@ -399,28 +379,5 @@ public class DSSKeyPairGenerator
       prng = PRNG.getInstance();
 
     return prng;
-  }
-
-  @Override
-  public boolean isInitialized()
-  {
-    boolean initFlag = false;
-
-    initLock.lock();
-    try
-      {
-	initFlag = initialized.get();
-      }
-    finally
-      {
-	initLock.unlock();
-      }
-    return initFlag;
-  }
-
-  @Override
-  public int getDefaultKeySize()
-  {
-    return DEFAULT_MODULUS_LENGTH;
   }
 }

@@ -1,5 +1,5 @@
 /* SFHelper -- A .SF file helper
-   Copyright (C) 2006, 2007, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2007 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -229,7 +229,7 @@ public class SFHelper
     else
       throw new SecurityException(Messages.getString("SFHelper.6")); //$NON-NLS-1$
 
-    Map<String,Object> signatureAttributes = new HashMap<String,Object>();
+    Map signatureAttributes = new HashMap();
     signatureAttributes.put(ISignature.SIGNER_KEY, signerKey);
     signatureAlgorithm.setupSign(signatureAttributes);
     signatureAlgorithm.update(sfBytes, 0, sfBytes.length);

@@ -1,5 +1,5 @@
 /* XSLComparator.java --
-   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,6 +38,7 @@ exception statement from your version. */
 package gnu.xml.transform;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.text.Collator;

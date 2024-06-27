@@ -293,7 +293,7 @@ public class DefaultMutableTreeNode
    *
    * @return an enumeration of tree nodes
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration children()
   {
     if (children.size() == 0)
@@ -718,7 +718,7 @@ public class DefaultMutableTreeNode
    *
    * @return Enumeration
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration preorderEnumeration()
   {
     return new PreorderEnumeration(this);
@@ -729,7 +729,7 @@ public class DefaultMutableTreeNode
    *
    * @return Enumeration
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration postorderEnumeration()
   {
     return new PostorderEnumeration(this);
@@ -740,7 +740,7 @@ public class DefaultMutableTreeNode
    *
    * @return Enumeration
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration breadthFirstEnumeration()
   {
     return new BreadthFirstEnumeration(this);
@@ -751,7 +751,7 @@ public class DefaultMutableTreeNode
    *
    * @return Enumeration
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration depthFirstEnumeration()
   {
     return postorderEnumeration();
@@ -764,7 +764,7 @@ public class DefaultMutableTreeNode
    *
    * @return Enumeration
    */
-  @SuppressWarnings("rawtypes") // Required for API compatibility
+  @SuppressWarnings("unchecked") // Required for API compatibility
   public Enumeration pathFromAncestorEnumeration(TreeNode node)
   {
     if (node == null)
@@ -1073,6 +1073,7 @@ public class DefaultMutableTreeNode
           return !queue.isEmpty();
       }
 
+      @SuppressWarnings("unchecked")
       public TreeNode nextElement()
       {
           if (queue.isEmpty())
@@ -1080,7 +1081,6 @@ public class DefaultMutableTreeNode
 
           TreeNode node = queue.removeFirst();
 
-	  @SuppressWarnings("unchecked")
           Enumeration<TreeNode> children =
             (Enumeration<TreeNode>) node.children();
           while (children.hasMoreElements())
@@ -1100,13 +1100,11 @@ public class DefaultMutableTreeNode
       Stack<Enumeration<TreeNode>> childrenEnums =
         new Stack<Enumeration<TreeNode>>();
 
+      @SuppressWarnings("unchecked")
       PreorderEnumeration(TreeNode node)
       {
           next = node;
-	  @SuppressWarnings("unchecked")
-	      Enumeration<TreeNode> children =
-	      (Enumeration<TreeNode>) node.children();
-          childrenEnums.push(children);
+          childrenEnums.push((Enumeration<TreeNode>) node.children());
       }
 
       public boolean hasMoreElements()
@@ -1129,16 +1127,14 @@ public class DefaultMutableTreeNode
           return current;
       }
 
+      @SuppressWarnings("unchecked")
       private TreeNode traverse(Enumeration<TreeNode> children)
       {
           // If more children are available step down.
           if (children.hasMoreElements())
           {
               TreeNode child = children.nextElement();
-	      @SuppressWarnings("unchecked")
-		  Enumeration<TreeNode> grandchildren =
-		  (Enumeration<TreeNode>) child.children();
-              childrenEnums.push(grandchildren);
+              childrenEnums.push((Enumeration<TreeNode>) child.children());
 
               return child;
           }
@@ -1167,13 +1163,11 @@ public class DefaultMutableTreeNode
        Stack<Enumeration<TreeNode>> childrenEnums =
          new Stack<Enumeration<TreeNode>>();
 
+       @SuppressWarnings("unchecked")
        PostorderEnumeration(TreeNode node)
        {
            nodes.push(node);
-	   @SuppressWarnings("unchecked")
-	       Enumeration<TreeNode> children =
-	       (Enumeration<TreeNode>) node.children();
-           childrenEnums.push(children);
+           childrenEnums.push((Enumeration<TreeNode>) node.children());
        }
 
        public boolean hasMoreElements()
@@ -1191,6 +1185,7 @@ public class DefaultMutableTreeNode
            return traverse(children);
        }
 
+       @SuppressWarnings("unchecked")
        private TreeNode traverse(Enumeration<TreeNode> children)
        {
            if (children.hasMoreElements())
@@ -1198,9 +1193,8 @@ public class DefaultMutableTreeNode
                TreeNode node = children.nextElement();
                nodes.push(node);
 
-	       @SuppressWarnings("unchecked")
-		   Enumeration<TreeNode> newChildren =
-		   (Enumeration<TreeNode>) node.children();
+               Enumeration<TreeNode> newChildren =
+                 (Enumeration<TreeNode>) node.children();
                childrenEnums.push(newChildren);
 
                return traverse(newChildren);

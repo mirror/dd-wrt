@@ -1,5 +1,5 @@
 /* EncodedKeyFactory.java -- JCE Encoded key factory Adapter
-   Copyright (C) 2006, 2010, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -84,10 +84,10 @@ public class EncodedKeyFactory
   private static Object invokeConstructor(String className, Object[] params)
       throws InvalidKeySpecException
   {
-    Class<?> clazz = getConcreteClass(className);
+    Class clazz = getConcreteClass(className);
     try
       {
-        Constructor<?> ctor = getConcreteCtor(clazz);
+        Constructor ctor = getConcreteCtor(clazz);
         Object result = ctor.newInstance(params);
         return result;
       }
@@ -105,12 +105,12 @@ public class EncodedKeyFactory
       }
   }
 
-  private static Class<?> getConcreteClass(String className)
+  private static Class getConcreteClass(String className)
       throws InvalidKeySpecException
   {
     try
       {
-        Class<?> result = Class.forName(className);
+        Class result = Class.forName(className);
         return result;
       }
     catch (ClassNotFoundException x)
@@ -119,12 +119,12 @@ public class EncodedKeyFactory
       }
   }
 
-  private static Constructor<?> getConcreteCtor(Class<?> clazz)
+  private static Constructor getConcreteCtor(Class clazz)
       throws InvalidKeySpecException
   {
     try
       {
-        Constructor<?> result = clazz.getConstructor(new Class[] {int.class,
+        Constructor result = clazz.getConstructor(new Class[] {int.class,
                                                                BigInteger.class,
                                                                BigInteger.class,
                                                                BigInteger.class,
@@ -140,7 +140,7 @@ public class EncodedKeyFactory
   private static Object invokeValueOf(String className, byte[] encoded)
       throws InvalidKeySpecException
   {
-    Class<?> clazz = getConcreteClass(className);
+    Class clazz = getConcreteClass(className);
     try
       {
         Method valueOf = getValueOfMethod(clazz);
@@ -157,7 +157,7 @@ public class EncodedKeyFactory
       }
   }
 
-  private static Method getValueOfMethod(Class<?> clazz)
+  private static Method getValueOfMethod(Class clazz)
       throws InvalidKeySpecException
   {
     try
@@ -171,7 +171,6 @@ public class EncodedKeyFactory
       }
   }
 
-  @Override
   protected PublicKey engineGeneratePublic(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -223,8 +222,7 @@ public class EncodedKeyFactory
       log.exiting(this.getClass().getName(), "engineGeneratePublic()", result);
     return result;
   }
-  
-  @Override
+
   protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -276,25 +274,23 @@ public class EncodedKeyFactory
       log.exiting(this.getClass().getName(), "engineGeneratePrivate()", result);
     return result;
   }
-  
-  @Override
-  protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)
+
+  protected KeySpec engineGetKeySpec(Key key, Class keySpec)
       throws InvalidKeySpecException
   {
     if (key instanceof PublicKey
         && Registry.X509_ENCODING_SORT_NAME.equalsIgnoreCase(key.getFormat())
         && keySpec.isAssignableFrom(X509EncodedKeySpec.class))
-      return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
+      return new X509EncodedKeySpec(key.getEncoded());
 
     if (key instanceof PrivateKey
         && Registry.PKCS8_ENCODING_SHORT_NAME.equalsIgnoreCase(key.getFormat())
         && keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class))
-      return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
+      return new PKCS8EncodedKeySpec(key.getEncoded());
 
     throw new InvalidKeySpecException("Unsupported format or invalid key spec class");
   }
 
-  @Override
   protected Key engineTranslateKey(Key key) throws InvalidKeyException
   {
     throw new InvalidKeyException("Key translation not supported");
@@ -305,7 +301,7 @@ public class EncodedKeyFactory
    * @return an instance of {@link DSSPublicKey} constructed from the
    *         information in the designated key-specification.
    */
-  private static DSSPublicKey decodeDSSPublicKey(DSAPublicKeySpec spec)
+  private DSSPublicKey decodeDSSPublicKey(DSAPublicKeySpec spec)
   {
     BigInteger p = spec.getP();
     BigInteger q = spec.getQ();
@@ -319,7 +315,7 @@ public class EncodedKeyFactory
    * @return an instance of {@link GnuRSAPublicKey} constructed from the
    *         information in the designated key-specification.
    */
-  private static GnuRSAPublicKey decodeRSAPublicKey(RSAPublicKeySpec spec)
+  private GnuRSAPublicKey decodeRSAPublicKey(RSAPublicKeySpec spec)
   {
     BigInteger n = spec.getModulus();
     BigInteger e = spec.getPublicExponent();
@@ -334,7 +330,7 @@ public class EncodedKeyFactory
    *           {@link DHPublicKey} interface exists at run-time, or if an
    *           exception occurs during its instantiation.
    */
-  private static DHPublicKey decodeDHPublicKey(DHPublicKeySpec spec)
+  private DHPublicKey decodeDHPublicKey(DHPublicKeySpec spec)
       throws InvalidKeySpecException
   {
     BigInteger p = spec.getP();
@@ -355,7 +351,7 @@ public class EncodedKeyFactory
    *           {@link DHPublicKey} interface exists at run-time, or if an
    *           exception occurs during its instantiation.
    */
-  private static DHPublicKey decodeDHPublicKey(byte[] encoded)
+  private DHPublicKey decodeDHPublicKey(byte[] encoded)
       throws InvalidKeySpecException
   {
     Object obj = invokeValueOf("gnu.javax.crypto.key.dh.GnuDHPublicKey",
@@ -368,7 +364,7 @@ public class EncodedKeyFactory
    * @return an instance of {@link DSSPrivateKey} constructed from the
    *         information in the designated key-specification.
    */
-  private static PrivateKey decodeDSSPrivateKey(DSAPrivateKeySpec spec)
+  private PrivateKey decodeDSSPrivateKey(DSAPrivateKeySpec spec)
   {
     BigInteger p = spec.getP();
     BigInteger q = spec.getQ();
@@ -382,7 +378,7 @@ public class EncodedKeyFactory
    * @return an instance of {@link GnuRSAPrivateKey} constructed from the
    *         information in the designated key-specification.
    */
-  private static PrivateKey decodeRSAPrivateKey(RSAPrivateCrtKeySpec spec)
+  private PrivateKey decodeRSAPrivateKey(RSAPrivateCrtKeySpec spec)
   {
     BigInteger n = spec.getModulus();
     BigInteger e = spec.getPublicExponent();
@@ -404,7 +400,7 @@ public class EncodedKeyFactory
    *           {@link DHPrivateKey} interface exists at run-time, or if an
    *           exception occurs during its instantiation.
    */
-  private static DHPrivateKey decodeDHPrivateKey(DHPrivateKeySpec spec)
+  private DHPrivateKey decodeDHPrivateKey(DHPrivateKeySpec spec)
       throws InvalidKeySpecException
   {
     BigInteger p = spec.getP();
@@ -425,7 +421,7 @@ public class EncodedKeyFactory
    *           {@link DHPrivateKey} interface exists at run-time, or if an
    *           exception occurs during its instantiation.
    */
-  private static DHPrivateKey decodeDHPrivateKey(byte[] encoded)
+  private DHPrivateKey decodeDHPrivateKey(byte[] encoded)
       throws InvalidKeySpecException
   {
     Object obj = invokeValueOf("gnu.javax.crypto.key.dh.GnuDHPrivateKey",

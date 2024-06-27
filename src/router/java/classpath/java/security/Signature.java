@@ -1,5 +1,5 @@
 /* Signature.java --- Signature Class
-   Copyright (C) 1999, 2002, 2003, 2004, 2014  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -332,7 +332,8 @@ public abstract class Signature extends SignatureSpi
   {
     if (state == SIGN)
       return engineSign();
-    throw new SignatureException();
+    else
+      throw new SignatureException();
   }
 
   /**
@@ -364,7 +365,8 @@ public abstract class Signature extends SignatureSpi
   {
     if (state == SIGN)
       return engineSign(outbuf, offset, len);
-    throw new SignatureException();
+    else
+      throw new SignatureException();
   }
 
   /**
@@ -381,7 +383,8 @@ public abstract class Signature extends SignatureSpi
   {
     if (state == VERIFY)
       return engineVerify(signature);
-    throw new SignatureException();
+    else
+      throw new SignatureException();
   }
 
   /**
@@ -507,7 +510,6 @@ public abstract class Signature extends SignatureSpi
    *
    * @return a rstring representation of this instance.
    */
-  @Override
   public String toString()
   {
     return (algorithm + " Signature");
@@ -525,7 +527,6 @@ public abstract class Signature extends SignatureSpi
    *           can not be changed, a security exception occured, etc.
    * @deprecated use the other setParameter
    */
-  @Deprecated
   public final void setParameter(String param, Object value)
     throws InvalidParameterException
   {
@@ -572,7 +573,6 @@ public abstract class Signature extends SignatureSpi
    *           if the parameter is invalid.
    * @deprecated use the other getParameter
    */
-  @Deprecated
   public final Object getParameter(String param)
     throws InvalidParameterException
   {
@@ -586,7 +586,6 @@ public abstract class Signature extends SignatureSpi
    * @throws CloneNotSupportedException
    *           if the implementation does not support cloning.
    */
-  @Override
   public Object clone() throws CloneNotSupportedException
   {
     return super.clone();

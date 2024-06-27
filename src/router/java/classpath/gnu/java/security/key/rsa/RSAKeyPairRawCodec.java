@@ -1,6 +1,5 @@
 /* RSAKeyPairRawCodec.java --
-   Copyright 2001, 2002, 2003, 2006, 2015
-   Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -56,7 +55,6 @@ public class RSAKeyPairRawCodec
 {
   // implicit 0-arguments constructor
 
-  @Override
   public int getFormatID()
   {
     return RAW_FORMAT;
@@ -89,7 +87,6 @@ public class RSAKeyPairRawCodec
    * @exception IllegalArgumentException if the designated key is not an RSA
    *                                     one.
    */
-  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     if (! (key instanceof GnuRSAPublicKey))
@@ -123,7 +120,6 @@ public class RSAKeyPairRawCodec
     return baos.toByteArray();
   }
 
-  @Override
   public PublicKey decodePublicKey(byte[] k)
   {
     // magic
@@ -198,7 +194,6 @@ public class RSAKeyPairRawCodec
    * @param key the key to encode.
    * @return the <i>Raw</i> format encoding of the designated key.
    */
-  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     if (! (key instanceof GnuRSAPrivateKey))
@@ -248,7 +243,6 @@ public class RSAKeyPairRawCodec
     return baos.toByteArray();
   }
 
-  @Override
   public PrivateKey decodePrivateKey(byte[] k)
   {
     // magic

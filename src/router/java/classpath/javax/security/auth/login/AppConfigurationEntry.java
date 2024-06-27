@@ -1,5 +1,5 @@
 /* AppConfigurationEntry.java
-   Copyright (C) 2004, 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -49,7 +49,7 @@ public class AppConfigurationEntry
 
   private final String loginModuleName;
   private final LoginModuleControlFlag controlFlag;
-  private final Map<String,?> options;
+  private final Map options;
 
   // Constructor.
   // -------------------------------------------------------------------------
@@ -72,7 +72,7 @@ public class AppConfigurationEntry
 
     this.loginModuleName = loginModuleName;
     this.controlFlag = controlFlag;
-    this.options = Collections.unmodifiableMap (new HashMap<String,Object>(options));
+    this.options = Collections.unmodifiableMap (new HashMap (options));
   }
 
   // Instance methods.
@@ -95,7 +95,6 @@ public class AppConfigurationEntry
 
   // Object methods ----------------------------------------------------------
 
-  @Override
   public String toString()
   {
 
@@ -128,7 +127,6 @@ public class AppConfigurationEntry
     // Instance methods.
     // -----------------------------------------------------------------------
 
-    @Override
     public String toString()
     {
       if (this == LoginModuleControlFlag.REQUIRED)

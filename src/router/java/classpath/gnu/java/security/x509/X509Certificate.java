@@ -1,5 +1,5 @@
 /* X509Certificate.java -- X.509 certificate.
-   Copyright (C) 2003, 2004, 2006, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -56,6 +56,7 @@ import gnu.java.security.x509.ext.SubjectAlternativeNames;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
@@ -83,6 +84,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +98,7 @@ import javax.security.auth.x500.X500Principal;
  * @author Casey Marshall (rsdio@metastatic.org)
  */
 public class X509Certificate extends java.security.cert.X509Certificate
-  implements GnuPKIExtension
+  implements Serializable, GnuPKIExtension
 {
 
   // Constants and fields.
@@ -184,14 +186,12 @@ public class X509Certificate extends java.security.cert.X509Certificate
   // X509Certificate methods.
   // ------------------------------------------------------------------------
 
-  @Override
   public void checkValidity()
     throws CertificateExpiredException, CertificateNotYetValidException
   {
     checkValidity(new Date());
   }
 
-  @Override
   public void checkValidity(Date date)
     throws CertificateExpiredException, CertificateNotYetValidException
   {
@@ -204,68 +204,57 @@ public class X509Certificate extends java.security.cert.X509Certificate
         throw new CertificateExpiredException();
       }
   }
- 
-  @Override
+
   public int getVersion()
   {
     return version;
   }
 
-  @Override
   public BigInteger getSerialNumber()
   {
     return serialNo;
   }
 
-  @Override
   public Principal getIssuerDN()
   {
     return issuer;
   }
 
-  @Override
   public X500Principal getIssuerX500Principal()
   {
     return new X500Principal(issuer.getDer());
   }
 
-  @Override
   public Principal getSubjectDN()
   {
     return subject;
   }
 
-  @Override
   public X500Principal getSubjectX500Principal()
   {
     return new X500Principal(subject.getDer());
   }
 
-  @Override
   public Date getNotBefore()
   {
     return (Date) notBefore.clone();
   }
 
-  @Override
   public Date getNotAfter()
   {
     return (Date) notAfter.clone();
   }
 
-  @Override
   public byte[] getTBSCertificate() throws CertificateEncodingException
   {
-    return tbsCertBytes.clone();
+    return (byte[]) tbsCertBytes.clone();
   }
 
-  @Override
   public byte[] getSignature()
   {
-    return signature.clone();
+    return (byte[]) signature.clone();
   }
 
-  @Override
   public String getSigAlgName()
   {
     if (sigAlgId.equals(ID_DSA_WITH_SHA1))
@@ -287,19 +276,16 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return "unknown";
   }
 
-  @Override
   public String getSigAlgOID()
   {
     return sigAlgId.toString();
   }
 
-  @Override
   public byte[] getSigAlgParams()
   {
-    return sigAlgVal.clone();
+    return (byte[]) sigAlgVal.clone();
   }
 
-  @Override
   public boolean[] getIssuerUniqueID()
   {
     if (issuerUniqueId != null)
@@ -309,7 +295,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return null;
   }
 
-  @Override
   public boolean[] getSubjectUniqueID()
   {
     if (subjectUniqueId != null)
@@ -319,7 +304,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return null;
   }
 
-  @Override
   public boolean[] getKeyUsage()
   {
     Extension e = getExtension(KeyUsage.ID);
@@ -334,7 +318,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return null;
   }
 
-  @Override
   public List<String> getExtendedKeyUsage() throws CertificateParsingException
   {
     Extension e = getExtension(ExtendedKeyUsage.ID);
@@ -349,7 +332,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return null;
   }
 
-  @Override
   public int getBasicConstraints()
   {
     Extension e = getExtension(BasicConstraints.ID);
@@ -360,7 +342,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return -1;
   }
 
-  @Override
   public Collection<List<?>> getSubjectAlternativeNames()
     throws CertificateParsingException
   {
@@ -373,7 +354,7 @@ public class X509Certificate extends java.security.cert.X509Certificate
         for (GeneralName name : names)
           {
             List<Object> n = new ArrayList<Object>(2);
-            n.add(Integer.valueOf(name.kind().tag()));
+            n.add(name.kind().tag());
             n.add(name.name());
             list.add(n);
           }
@@ -382,7 +363,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return null;
   }
 
-  @Override
   public Collection<List<?>> getIssuerAlternativeNames()
     throws CertificateParsingException
   {
@@ -395,7 +375,7 @@ public class X509Certificate extends java.security.cert.X509Certificate
         for (GeneralName name : names)
           {
             List<Object> n = new ArrayList<Object>(2);
-            n.add(Integer.valueOf(name.kind().tag()));
+            n.add(name.kind().tag());
             n.add(name.name());
             list.add(n);
           }
@@ -406,19 +386,18 @@ public class X509Certificate extends java.security.cert.X509Certificate
 
 // X509Extension methods.
   // ------------------------------------------------------------------------
-  
-  @Override
+
   public boolean hasUnsupportedCriticalExtension()
   {
-    for (Extension e : extensions.values())
+    for (Iterator it = extensions.values().iterator(); it.hasNext(); )
       {
+        Extension e = (Extension) it.next();
         if (e.isCritical() && !e.isSupported())
           return true;
       }
     return false;
   }
 
-  @Override
   public Set<String> getCriticalExtensionOIDs()
   {
     HashSet<String> s = new HashSet<String>();
@@ -430,7 +409,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return Collections.unmodifiableSet(s);
   }
 
-  @Override
   public Set<String> getNonCriticalExtensionOIDs()
   {
     HashSet<String> s = new HashSet<String>();
@@ -442,7 +420,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return Collections.unmodifiableSet(s);
   }
 
-  @Override
   public byte[] getExtensionValue(String oid)
   {
     Extension e = getExtension(new OID(oid));
@@ -456,14 +433,12 @@ public class X509Certificate extends java.security.cert.X509Certificate
   // GnuPKIExtension method.
   // -------------------------------------------------------------------------
 
-  @Override
   public Extension getExtension(OID oid)
   {
-    return extensions.get(oid);
+    return (Extension) extensions.get(oid);
   }
 
-  @Override
-  public Collection<Extension> getExtensions()
+  public Collection getExtensions()
   {
     return extensions.values();
   }
@@ -471,13 +446,11 @@ public class X509Certificate extends java.security.cert.X509Certificate
   // Certificate methods.
   // -------------------------------------------------------------------------
 
-  @Override
   public byte[] getEncoded() throws CertificateEncodingException
   {
-    return encoded.clone();
+    return (byte[]) encoded.clone();
   }
 
-  @Override
   public void verify(PublicKey key)
     throws CertificateException, NoSuchAlgorithmException,
            InvalidKeyException, NoSuchProviderException, SignatureException
@@ -486,7 +459,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     doVerify(sig, key);
   }
 
-  @Override
   public void verify(PublicKey key, String provider)
     throws CertificateException, NoSuchAlgorithmException,
            InvalidKeyException, NoSuchProviderException, SignatureException
@@ -495,7 +467,6 @@ public class X509Certificate extends java.security.cert.X509Certificate
     doVerify(sig, key);
   }
 
-  @Override
   public String toString()
   {
     StringWriter str = new StringWriter();
@@ -531,9 +502,9 @@ public class X509Certificate extends java.security.cert.X509Certificate
     out.println("    issuerUniqueId  = " + issuerUniqueId + ";");
     out.println("    subjectUniqueId = " + subjectUniqueId + ";");
     out.println("    extensions = {");
-    for (Extension e : extensions.values())
+    for (Iterator it = extensions.values().iterator(); it.hasNext(); )
       {
-        out.println("      " + e);
+        out.println("      " + it.next());
       }
     out.println("    }");
     out.println("  }");
@@ -544,13 +515,11 @@ public class X509Certificate extends java.security.cert.X509Certificate
     return str.toString();
   }
 
-  @Override
   public PublicKey getPublicKey()
   {
     return subjectKey;
   }
 
-  @Override
   public boolean equals(Object other)
   {
     if (!(other instanceof X509Certificate))
@@ -592,11 +561,11 @@ public class X509Certificate extends java.security.cert.X509Certificate
   /**
    * Parse a DER stream into an X.509 certificate.
    *
-   * @param enc The encoded bytes.
+   * @param encoded The encoded bytes.
    */
-  private void parse(InputStream enc) throws Exception
+  private void parse(InputStream encoded) throws Exception
   {
-    DERReader der = new DERReader(enc);
+    DERReader der = new DERReader(encoded);
 
     // Certificate ::= SEQUENCE {
     DERValue cert = der.read();
@@ -665,7 +634,7 @@ public class X509Certificate extends java.security.cert.X509Certificate
             algVal = val.getEncoded();
 
             if (val.isConstructed())
-              enc.skip(val.getLength());
+              encoded.skip(val.getLength());
           }
         logger.log (Component.X509, "read algorithm parameters == {0}", algVal);
       }
@@ -774,11 +743,11 @@ public class X509Certificate extends java.security.cert.X509Certificate
           }
         else
           {
-            sigAlgVal = val.getEncoded();
+            sigAlgVal = (byte[]) val.getEncoded();
           }
         if (val.isConstructed())
           {
-            enc.skip(val.getLength());
+            encoded.skip(val.getLength());
           }
         logger.log (Component.X509, "read parameters == {0}", sigAlgVal);
       }

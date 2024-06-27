@@ -1,5 +1,5 @@
 /* ConsoleCallbackHandler.java --
-   Copyright (C) 2005, 2006, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -85,7 +85,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
   protected void handleChoice(ChoiceCallback c) throws IOException
   {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -125,7 +124,7 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
       }
     else
       {
-        TreeSet<Integer> indices = new TreeSet<Integer>();
+        TreeSet indices = new TreeSet();
         StringTokenizer tok = new StringTokenizer(reply, ",");
         String[] replies = new String[tok.countTokens()];
         int idx = 0;
@@ -147,14 +146,13 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
           {
             int[] ii = new int[indices.size()];
             int i = 0;
-            for (Iterator<Integer> it = indices.iterator(); it.hasNext(); )
-              ii[i++] = it.next().intValue();
+            for (Iterator it = indices.iterator(); it.hasNext(); )
+              ii[i++] = ((Integer) it.next()).intValue();
             c.setSelectedIndexes(ii);
           }
       }
   }
 
-  @Override
   protected void handleConfirmation(ConfirmationCallback c) throws IOException
   {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -251,7 +249,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
     c.setSelectedIndex(c.getDefaultOption());
   }
 
-  @Override
   protected void handleLanguage(LanguageCallback c) throws IOException
   {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -268,7 +265,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
       }
   }
 
-  @Override
   protected void handleName(NameCallback c) throws IOException
   {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -278,7 +274,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
       c.setName(name.trim());
   }
 
-  @Override
   protected void handlePassword(PasswordCallback c) throws IOException
   {
     out.print(c.getPrompt());
@@ -288,7 +283,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
     c.setPassword(pass.toCharArray());
   }
 
-  @Override
   protected void handleTextInput(TextInputCallback c) throws IOException
   {
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -298,7 +292,6 @@ public class ConsoleCallbackHandler extends AbstractCallbackHandler
       c.setText(text);
   }
 
-  @Override
   protected void handleTextOutput(TextOutputCallback c)
   {
     out.print(c.getMessage());

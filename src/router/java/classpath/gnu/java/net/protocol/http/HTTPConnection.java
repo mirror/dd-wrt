@@ -392,7 +392,8 @@ public class HTTPConnection
                       {
                         long currentTime = System.currentTimeMillis();
 
-                        HTTPConnection c = connectionPool.getFirst();
+                        HTTPConnection c =
+                          (HTTPConnection)connectionPool.getFirst();
 
                         long waitTime = c.timeLastUsed
                           + connectionTTL - currentTime;
@@ -510,10 +511,10 @@ public class HTTPConnection
 
       HTTPConnection c = null;
 
-      ListIterator<HTTPConnection> it = connectionPool.listIterator(0);
+      ListIterator it = connectionPool.listIterator(0);
       while (it.hasNext())
         {
-          HTTPConnection cc = it.next();
+          HTTPConnection cc = (HTTPConnection)it.next();
           if (matches(cc, host, port, secure))
             {
               c = cc;
@@ -572,7 +573,7 @@ public class HTTPConnection
      */
     void removeOldest()
     {
-      HTTPConnection cx = connectionPool.removeFirst();
+      HTTPConnection cx = (HTTPConnection)connectionPool.removeFirst();
       try
         {
           cx.closeConnection();
@@ -738,11 +739,12 @@ public class HTTPConnection
                   {
                     if (!handshakeCompletedListeners.isEmpty())
                       {
-                        for (Iterator<HandshakeCompletedListener> i =
+                        for (Iterator i =
                              handshakeCompletedListeners.iterator();
                              i.hasNext(); )
                           {
-                            HandshakeCompletedListener l = i.next();
+                            HandshakeCompletedListener l =
+                              (HandshakeCompletedListener) i.next();
                             ss.addHandshakeCompletedListener(l);
                           }
                       }

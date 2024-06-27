@@ -1,5 +1,5 @@
 /* AbstractNumberNode.java --
-   Copyright (C) 2004, 2016 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -116,8 +116,8 @@ abstract class AbstractNumberNode
       }
     int start = 0, end = 0, len = format.length(); // region of format
     // Tokenize
-    List<String> tokens = new ArrayList<String>((number.length * 2) + 1);
-    List<Boolean> types = new ArrayList<Boolean>(tokens.size());
+    List tokens = new ArrayList((number.length * 2) + 1);
+    List types = new ArrayList(tokens.size());
     while (end < len)
       {
         while (end < len && !isAlphanumeric(format.charAt(end)))
@@ -147,8 +147,9 @@ abstract class AbstractNumberNode
     int pos = 0;
     for (int i = 0; i < len; i++)
       {
-        String token = (i < 0) ? "." : tokens.get(i);
-        boolean alpha = (i < 0) ? true : types.get(i).booleanValue();
+        String token = (i < 0) ? "." : (String) tokens.get(i);
+        boolean alpha = (i < 0) ? true :
+          ((Boolean) types.get(i)).booleanValue();
         if (!alpha)
           {
             buf.append(token);

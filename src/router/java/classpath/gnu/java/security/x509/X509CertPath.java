@@ -1,5 +1,5 @@
 /* X509CertPath.java -- an X.509 certificate path.
-   Copyright (C) 2004, 2014, 2015  Free Software Fonudation, Inc.
+   Copyright (C) 2004  Free Software Fonudation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -71,25 +71,25 @@ public class X509CertPath extends CertPath
   // Fields.
   // -------------------------------------------------------------------------
 
-  public static final List<String> ENCODINGS = Collections.unmodifiableList(
+  public static final List ENCODINGS = Collections.unmodifiableList(
     Arrays.asList(new String[] { "PkiPath", "PKCS7" }));
 
   private static final OID PKCS7_SIGNED_DATA = new OID("1.2.840.113549.1.7.2");
   private static final OID PKCS7_DATA = new OID("1.2.840.113549.1.7.1");
 
   /** The certificate path. */
-  private List<Certificate> path;
+  private List path;
 
   /** The cached PKCS #7 encoded bytes. */
-  private byte[] pkcsEncoded;
+  private byte[] pkcs_encoded;
 
   /** The cached PkiPath encoded bytes. */
-  private byte[] pkiEncoded;
+  private byte[] pki_encoded;
 
   // Constructor.
   // -------------------------------------------------------------------------
 
-  public X509CertPath(List<? extends Certificate> path)
+  public X509CertPath(List path)
   {
     super("X.509");
     this.path = Collections.unmodifiableList(path);
@@ -97,7 +97,7 @@ public class X509CertPath extends CertPath
 
   public X509CertPath(InputStream in) throws CertificateEncodingException
   {
-    this(in, ENCODINGS.get(0));
+    this(in, (String) ENCODINGS.get(0));
   }
 
   public X509CertPath(InputStream in, String encoding)
@@ -117,57 +117,53 @@ public class X509CertPath extends CertPath
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
-  public List<Certificate> getCertificates()
+  public List getCertificates()
   {
     return path; // already unmodifiable
   }
 
-  @Override
   public byte[] getEncoded() throws CertificateEncodingException
   {
-    return getEncoded(ENCODINGS.get(0));
+    return getEncoded((String) ENCODINGS.get(0));
   }
 
-  @Override
   public byte[] getEncoded(String encoding) throws CertificateEncodingException
   {
     if (encoding.equalsIgnoreCase("PkiPath"))
       {
-        if (pkiEncoded == null)
+        if (pki_encoded == null)
           {
             try
               {
-                pkiEncoded = encodePki();
+                pki_encoded = encodePki();
               }
             catch (IOException ioe)
               {
                 throw new CertificateEncodingException();
               }
           }
-        return pkiEncoded.clone();
+        return (byte[]) pki_encoded.clone();
       }
     else if (encoding.equalsIgnoreCase("PKCS7"))
       {
-        if (pkcsEncoded == null)
+        if (pkcs_encoded == null)
           {
             try
               {
-                pkcsEncoded = encodePKCS();
+                pkcs_encoded = encodePKCS();
               }
             catch (IOException ioe)
               {
                 throw new CertificateEncodingException();
               }
           }
-        return pkcsEncoded.clone();
+        return (byte[]) pkcs_encoded.clone();
       }
     else
       throw new CertificateEncodingException("unknown encoding: " + encoding);
   }
 
-  @Override
-  public Iterator<String> getEncodings()
+  public Iterator getEncodings()
   {
     return ENCODINGS.iterator(); // already unmodifiable
   }
@@ -179,12 +175,12 @@ public class X509CertPath extends CertPath
     throws CertificateEncodingException, IOException
   {
     DERReader der = new DERReader(in);
-    DERValue parsedPath = null;
+    DERValue path = null;
     if (encoding.equalsIgnoreCase("PkiPath"))
       {
         // PKI encoding is just a SEQUENCE of X.509 certificates.
-        parsedPath = der.read();
-        if (!parsedPath.isConstructed())
+        path = der.read();
+        if (!path.isConstructed())
           throw new DEREncodingException("malformed PkiPath");
       }
     else if (encoding.equalsIgnoreCase("PKCS7"))
@@ -230,16 +226,16 @@ public class X509CertPath extends CertPath
         if (!value.isConstructed())
           throw new DEREncodingException("malformed ContentInfo");
         der.skip(value.getLength());
-        parsedPath = der.read();
-        if (!parsedPath.isConstructed() || parsedPath.getTag() != 0)
+        path = der.read();
+        if (!path.isConstructed() || path.getTag() != 0)
           throw new DEREncodingException("no certificates");
       }
     else
       throw new CertificateEncodingException("unknown encoding: " + encoding);
 
-    LinkedList<Certificate> certs = new LinkedList<Certificate>();
+    LinkedList certs = new LinkedList();
     int len = 0;
-    while (len < parsedPath.getLength())
+    while (len < path.getLength())
       {
         DERValue cert = der.read();
         try
@@ -254,7 +250,7 @@ public class X509CertPath extends CertPath
         der.skip(cert.getLength());
       }
 
-    path = Collections.unmodifiableList(certs);
+    this.path = Collections.unmodifiableList(certs);
   }
 
   private byte[] encodePki()
@@ -263,9 +259,9 @@ public class X509CertPath extends CertPath
     synchronized (path)
       {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (Iterator<Certificate> i = path.iterator(); i.hasNext(); )
+        for (Iterator i = path.iterator(); i.hasNext(); )
           {
-            out.write(i.next().getEncoded());
+            out.write(((Certificate) i.next()).getEncoded());
           }
         byte[] b = out.toByteArray();
         DERValue val = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -279,7 +275,7 @@ public class X509CertPath extends CertPath
   {
     synchronized (path)
       {
-        ArrayList<DERValue> signedData = new ArrayList<DERValue>(5);
+        ArrayList signedData = new ArrayList(5);
         signedData.add(new DERValue(DER.INTEGER, BigInteger.ONE));
         signedData.add(new DERValue(DER.CONSTRUCTED | DER.SET,
                                     Collections.EMPTY_SET));
@@ -287,9 +283,9 @@ public class X509CertPath extends CertPath
           Collections.singletonList(
             new DERValue(DER.OBJECT_IDENTIFIER, PKCS7_DATA))));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (Iterator<Certificate> i = path.iterator(); i.hasNext(); )
+        for (Iterator i = path.iterator(); i.hasNext(); )
           {
-            out.write(i.next().getEncoded());
+            out.write(((Certificate) i.next()).getEncoded());
           }
         byte[] b = out.toByteArray();
         signedData.add(new DERValue(DER.CONSTRUCTED | DER.CONTEXT,
@@ -297,7 +293,7 @@ public class X509CertPath extends CertPath
         DERValue sdValue = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
                                         signedData);
 
-        ArrayList<DERValue> contentInfo = new ArrayList<DERValue>(2);
+        ArrayList contentInfo = new ArrayList(2);
         contentInfo.add(new DERValue(DER.OBJECT_IDENTIFIER, PKCS7_SIGNED_DATA));
         contentInfo.add(new DERValue(DER.CONSTRUCTED | DER.CONTEXT, sdValue));
         return new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,

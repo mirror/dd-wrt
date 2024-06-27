@@ -1,5 +1,5 @@
 /* X509CRLSelector.java -- selects X.509 CRLs by criteria.
-   Copyright (C) 2004, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -72,7 +72,7 @@ import javax.security.auth.x500.X500Principal;
  * @author Casey Marshall (csm@gnu.org)
  * @since 1.4
  */
-public class X509CRLSelector implements CRLSelector
+public class X509CRLSelector implements CRLSelector, Cloneable
 {
 
   // Fields.
@@ -80,7 +80,7 @@ public class X509CRLSelector implements CRLSelector
 
   private static final String CRL_NUMBER_ID = "2.5.29.20";
 
-  private List<X500Principal> issuerNames;
+  private List issuerNames;
   private BigInteger maxCrlNumber;
   private BigInteger minCrlNumber;
   private Date date;
@@ -121,7 +121,7 @@ public class X509CRLSelector implements CRLSelector
         throw ioe;
       }
     if (issuerNames == null)
-      issuerNames = new LinkedList<X500Principal>();
+      issuerNames = new LinkedList();
     issuerNames.add(p);
   }
 
@@ -146,7 +146,7 @@ public class X509CRLSelector implements CRLSelector
         throw ioe;
       }
     if (issuerNames == null)
-      issuerNames = new LinkedList<X500Principal>();
+      issuerNames = new LinkedList();
     issuerNames.add(p);
   }
 
@@ -166,12 +166,12 @@ public class X509CRLSelector implements CRLSelector
         issuerNames = null;
         return;
       }
-    List<X500Principal> l = new ArrayList<X500Principal>(names.size());
-    for (Iterator<?> it = names.iterator(); it.hasNext(); )
+    List l = new ArrayList(names.size());
+    for (Iterator it = names.iterator(); it.hasNext(); )
       {
         Object o = it.next();
         if (o instanceof X500Principal)
-          l.add((X500Principal) o);
+          l.add(o);
         else if (o instanceof String)
           {
             try
@@ -222,20 +222,16 @@ public class X509CRLSelector implements CRLSelector
   /**
    * Returns the set of issuer names that are matched by this selector,
    * or <code>null</code> if this criteria is not set. The returned
-   * collection is not modifiable and is a deep copy of the original.
+   * collection is not modifiable.
    *
    * @return The set of issuer names.
    */
   public Collection<Object> getIssuerNames()
   {
     if (issuerNames != null)
-      {
-	List<Object> iNames = new ArrayList<Object>();
-	for (X500Principal principal : issuerNames)
-	  iNames.add(principal.getName());
-	return Collections.unmodifiableList(iNames);
-      }
-    return null;
+      return Collections.unmodifiableList(issuerNames);
+    else
+      return null;
   }
 
   /**
@@ -338,7 +334,6 @@ public class X509CRLSelector implements CRLSelector
    *
    * @return The string.
    */
-  @Override
   public String toString()
   {
     CPStringBuilder str = new CPStringBuilder(X509CRLSelector.class.getName());
@@ -367,7 +362,6 @@ public class X509CRLSelector implements CRLSelector
    * @param _crl The CRL being checked.
    * @return True if the CRL matches, false otherwise.
    */
-  @Override
   public boolean match(CRL _crl)
   {
     if (!(_crl instanceof X509CRL))
@@ -434,7 +428,6 @@ public class X509CRLSelector implements CRLSelector
    *
    * @return The copy.
    */
-  @Override
   public Object clone()
   {
     try

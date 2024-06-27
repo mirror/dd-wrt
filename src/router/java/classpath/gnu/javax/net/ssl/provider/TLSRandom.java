@@ -1,5 +1,5 @@
 /* TLSRandom.java -- The TLS pseudo-random function.
-   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -62,8 +62,8 @@ class TLSRandom implements IRandom
    */
   static final String SEED = "jessie.tls.prng.seed";
 
-  private final IMac hmacSHA, hmacMD5;
-  private byte[] shaA, md5A;
+  private final IMac hmac_sha, hmac_md5;
+  private byte[] sha_a, md5_a;
   private byte[] seed;
   private final byte[] buffer;
   private int idx;
@@ -74,8 +74,8 @@ class TLSRandom implements IRandom
 
   TLSRandom()
   {
-    hmacSHA = new TLSHMac(HashFactory.getInstance("SHA1"));
-    hmacMD5 = new TLSHMac(HashFactory.getInstance("MD5"));
+    hmac_sha = new TLSHMac(HashFactory.getInstance("SHA1"));
+    hmac_md5 = new TLSHMac(HashFactory.getInstance("MD5"));
     buffer = new byte[80];   // 80 == LCM of 16 and 20.
     idx = 0;
     init = false;
@@ -84,7 +84,6 @@ class TLSRandom implements IRandom
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
   public Object clone()
   {
     try
@@ -97,22 +96,22 @@ class TLSRandom implements IRandom
       }
   }
 
-  public void init(Map<String,Object> attributes)
+  public void init(Map attributes)
   {
-    HashMap<String,Object> shaAttr = new HashMap<String,Object>();
-    HashMap<String,Object> md5Attr = new HashMap<String,Object>();
+    HashMap sha_attr = new HashMap();
+    HashMap md5_attr = new HashMap();
     byte[] secret = (byte[]) attributes.get(SECRET);
     if (secret != null)
       {
         int l = (secret.length >>> 1) + (secret.length & 1);
         byte[] s1 = Util.trim(secret, 0, l);
         byte[] s2 = Util.trim(secret, secret.length - l, l);
-        md5Attr.put(IMac.MAC_KEY_MATERIAL, s1);
-        shaAttr.put(IMac.MAC_KEY_MATERIAL, s2);
+        md5_attr.put(IMac.MAC_KEY_MATERIAL, s1);
+        sha_attr.put(IMac.MAC_KEY_MATERIAL, s2);
         try
           {
-            hmacMD5.init(md5Attr);
-            hmacSHA.init(shaAttr);
+            hmac_md5.init(md5_attr);
+            hmac_sha.init(sha_attr);
           }
         catch (InvalidKeyException ike)
           {
@@ -137,23 +136,21 @@ class TLSRandom implements IRandom
     // else re-use
 
     // A(0) is the seed, A(1) = HMAC_hash(secret, A(0)).
-    hmacMD5.update(seed, 0, seed.length);
-    md5A = hmacMD5.digest();
-    hmacMD5.reset();
-    hmacSHA.update(seed, 0, seed.length);
-    shaA = hmacSHA.digest();
-    hmacSHA.reset();
+    hmac_md5.update(seed, 0, seed.length);
+    md5_a = hmac_md5.digest();
+    hmac_md5.reset();
+    hmac_sha.update(seed, 0, seed.length);
+    sha_a = hmac_sha.digest();
+    hmac_sha.reset();
     fillBuffer();
     init = true;
   }
 
-  @Override
   public String name()
   {
     return "TLSRandom";
   }
 
-  @Override
   public byte nextByte()
   {
     if (!init)
@@ -163,7 +160,6 @@ class TLSRandom implements IRandom
     return buffer[idx++];
   }
 
-  @Override
   public void nextBytes(byte[] buf, int off, int len)
   {
     if (!init)
@@ -187,17 +183,14 @@ class TLSRandom implements IRandom
   }
 
   // For future versions of GNU Crypto. No-ops.
-  @Override
   public void addRandomByte (byte b)
   {
   }
 
-  @Override
   public void addRandomBytes(byte[] buffer) {
     addRandomBytes(buffer, 0, buffer.length);
   }
 
-  @Override
   public void addRandomBytes (byte[] b, int i, int j)
   {
   }
@@ -227,32 +220,32 @@ class TLSRandom implements IRandom
    */
   private synchronized void fillBuffer()
   {
-    int len = hmacMD5.macSize();
+    int len = hmac_md5.macSize();
     for (int i = 0; i < buffer.length; i += len)
       {
-        hmacMD5.update(md5A, 0, md5A.length);
-        hmacMD5.update(seed, 0, seed.length);
-        byte[] b = hmacMD5.digest();
-        hmacMD5.reset();
+        hmac_md5.update(md5_a, 0, md5_a.length);
+        hmac_md5.update(seed, 0, seed.length);
+        byte[] b = hmac_md5.digest();
+        hmac_md5.reset();
         System.arraycopy(b, 0, buffer, i, len);
-        hmacMD5.update(md5A, 0, md5A.length);
-        md5A = hmacMD5.digest();
-        hmacMD5.reset();
+        hmac_md5.update(md5_a, 0, md5_a.length);
+        md5_a = hmac_md5.digest();
+        hmac_md5.reset();
       }
-    len = hmacSHA.macSize();
+    len = hmac_sha.macSize();
     for (int i = 0; i < buffer.length; i += len)
       {
-        hmacSHA.update(shaA, 0, shaA.length);
-        hmacSHA.update(seed, 0, seed.length);
-        byte[] b = hmacSHA.digest();
-        hmacSHA.reset();
+        hmac_sha.update(sha_a, 0, sha_a.length);
+        hmac_sha.update(seed, 0, seed.length);
+        byte[] b = hmac_sha.digest();
+        hmac_sha.reset();
         for (int j = 0; j < len; j++)
           {
             buffer[j + i] ^= b[j];
           }
-        hmacSHA.update(shaA, 0, shaA.length);
-        shaA = hmacSHA.digest();
-        hmacSHA.reset();
+        hmac_sha.update(sha_a, 0, sha_a.length);
+        sha_a = hmac_sha.digest();
+        hmac_sha.reset();
       }
     idx = 0;
   }

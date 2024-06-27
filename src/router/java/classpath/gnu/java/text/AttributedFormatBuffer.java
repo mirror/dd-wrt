@@ -1,5 +1,5 @@
 /* AttributedFormatBuffer.java -- Implements an attributed FormatBuffer.
-   Copyright (C) 2004, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -41,10 +41,6 @@ import gnu.java.lang.CPStringBuilder;
 import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static java.text.AttributedCharacterIterator.Attribute;
 
 /**
  * This class is an implementation of a FormatBuffer with attributes.
@@ -57,12 +53,12 @@ import static java.text.AttributedCharacterIterator.Attribute;
 public class AttributedFormatBuffer implements FormatBuffer
 {
   private final CPStringBuilder buffer;
-  private final ArrayList<Integer> ranges;
-  private final ArrayList<Map<Attribute,Object>> attributes;
-  private int[] aRanges;
-  private List<Map<Attribute,Object>> aAttributes;
+  private final ArrayList ranges;
+  private final ArrayList attributes;
+  private int[] a_ranges;
+  private HashMap[] a_attributes;
   private int startingRange;
-  Attribute defaultAttr;
+  AttributedCharacterIterator.Attribute defaultAttr;
 
   /**
    * This constructor accepts a StringBuffer. If the buffer contains
@@ -71,8 +67,8 @@ public class AttributedFormatBuffer implements FormatBuffer
   public AttributedFormatBuffer(CPStringBuilder buffer)
   {
     this.buffer = new CPStringBuilder(buffer);
-    this.ranges = new ArrayList<Integer>();
-    this.attributes = new ArrayList<Map<Attribute,Object>>();
+    this.ranges = new ArrayList();
+    this.attributes = new ArrayList();
     this.defaultAttr = null;
     if (buffer.length() != 0)
       {
@@ -98,23 +94,23 @@ public class AttributedFormatBuffer implements FormatBuffer
    * and attributes it adds exactly one attribute for the range of characters
    * comprised between the last entry in 'ranges' and the specified new range.
    *
-   * @param newRange A new range to insert in the list.
+   * @param new_range A new range to insert in the list.
    * @param attr A new attribute to insert in the list.
    */
-  private final void addAttribute(int newRange, Attribute attr)
+  private final void addAttribute(int new_range, AttributedCharacterIterator.Attribute attr)
   {
-    Map<Attribute,Object> map;
+    HashMap map;
 
     if (attr != null)
       {
-        map = new HashMap<Attribute,Object>();
+        map = new HashMap();
         map.put(attr, attr);
         attributes.add(map);
       }
     else
       attributes.add(null);
 
-    ranges.add(Integer.valueOf(newRange));
+    ranges.add(new Integer(new_range));
   }
 
   public void append(String s)
@@ -124,7 +120,7 @@ public class AttributedFormatBuffer implements FormatBuffer
     buffer.append(s);
   }
 
-  public void append(String s, Attribute attr)
+  public void append(String s, AttributedCharacterIterator.Attribute attr)
   {
     setDefaultAttribute(attr);
     startingRange = buffer.length();
@@ -132,7 +128,7 @@ public class AttributedFormatBuffer implements FormatBuffer
     setDefaultAttribute(null);
   }
 
-  public void append(String s, int[] ranges, List<Map<Attribute,Object>> attrs)
+  public void append(String s, int[] ranges, HashMap[] attrs)
   {
     int curPos = buffer.length();
 
@@ -141,8 +137,8 @@ public class AttributedFormatBuffer implements FormatBuffer
       {
         for (int i = 0; i < ranges.length; i++)
           {
-            this.ranges.add(Integer.valueOf(ranges[i] + curPos));
-            this.attributes.add(attrs.get(i));
+            this.ranges.add(new Integer(ranges[i] + curPos));
+            this.attributes.add(attrs[i]);
           }
       }
     startingRange = buffer.length();
@@ -156,14 +152,14 @@ public class AttributedFormatBuffer implements FormatBuffer
     buffer.append(c);
   }
 
-  public void append(char c, Attribute attr)
+  public void append(char c, AttributedCharacterIterator.Attribute attr)
   {
     setDefaultAttribute(attr);
     buffer.append(c);
     setDefaultAttribute(null);
   }
 
-  public void setDefaultAttribute(Attribute attr)
+  public void setDefaultAttribute(AttributedCharacterIterator.Attribute attr)
   {
     if (attr == defaultAttr)
       return;
@@ -178,7 +174,7 @@ public class AttributedFormatBuffer implements FormatBuffer
     startingRange = currentPos;
   }
 
-  public Attribute getDefaultAttribute()
+  public AttributedCharacterIterator.Attribute getDefaultAttribute()
   {
     return defaultAttr;
   }
@@ -213,11 +209,12 @@ public class AttributedFormatBuffer implements FormatBuffer
 
     addAttribute(buffer.length(), defaultAttr);
 
-    aRanges = new int[ranges.size()];
-    for (int i = 0; i < aRanges.length; i++)
-      aRanges[i] = ranges.get (i).intValue();
+    a_ranges = new int[ranges.size()];
+    for (int i = 0; i < a_ranges.length; i++)
+      a_ranges[i] = ((Integer)(ranges.get (i))).intValue();
 
-    aAttributes = new ArrayList<Map<Attribute,Object>>(attributes);
+    a_attributes = new HashMap[attributes.size()];
+    System.arraycopy(attributes.toArray(), 0, a_attributes, 0, a_attributes.length);
   }
 
   /**
@@ -238,17 +235,17 @@ public class AttributedFormatBuffer implements FormatBuffer
    */
   public int[] getRanges()
   {
-    return aRanges;
+    return a_ranges;
   }
 
   /**
    * This method returns the array containing the map on the
    * attributes.
    *
-   * @return A {@link java.util.List} of {@link java.util.Map}s containing the attributes.
+   * @return An array of {@link java.util.Map} containing the attributes.
    */
-  public List<Map<Attribute,Object>> getAttributes()
+  public HashMap[] getAttributes()
   {
-    return aAttributes;
+    return a_attributes;
   }
 }

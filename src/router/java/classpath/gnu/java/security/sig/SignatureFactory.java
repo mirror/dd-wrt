@@ -1,5 +1,5 @@
 /* SignatureFactory.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -51,7 +51,7 @@ import java.util.Set;
  */
 public class SignatureFactory
 {
-  private static Set<String> names;
+  private static Set names;
 
   /** Trivial constructor to enforce Singleton pattern. */
   private SignatureFactory()
@@ -87,11 +87,11 @@ public class SignatureFactory
    *
    * @return a {@link Set} of signature-with-appendix scheme names (Strings).
    */
-  public static synchronized final Set<String> getNames()
+  public static synchronized final Set getNames()
   {
     if (names == null)
       {
-        HashSet<String> hs = new HashSet<String>();
+        HashSet hs = new HashSet();
         hs.add(Registry.DSS_SIG);
         hs.addAll(RSASignatureFactory.getNames());
         names = Collections.unmodifiableSet(hs);

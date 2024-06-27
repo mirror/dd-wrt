@@ -1,6 +1,5 @@
 /* PKIXCertPathValidatorImpl.java -- PKIX certificate path validator.
-   Copyright (C) 2004, 2005, 2006, 2010, 2014, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2006, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -58,7 +57,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.cert.CRL;
-import java.security.cert.Certificate;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidatorException;
@@ -70,8 +68,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.PKIXParameters;
-import java.security.cert.PolicyNode;
-import java.security.cert.PolicyQualifierInfo;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -111,7 +107,6 @@ public class PKIXCertPathValidatorImpl
     super();
   }
 
-  @Override
   public CertPathValidatorResult engineValidate(CertPath path,
                                                 CertPathParameters params)
       throws CertPathValidatorException, InvalidAlgorithmParameterException
@@ -131,7 +126,7 @@ public class PKIXCertPathValidatorImpl
     // Because this is the X.509 algorithm, we also check if all
     // cerificates are of type X509Certificate.
     PolicyNodeImpl rootNode = new PolicyNodeImpl();
-    Set<String> initPolicies = ((PKIXParameters) params).getInitialPolicies();
+    Set initPolicies = ((PKIXParameters) params).getInitialPolicies();
     rootNode.setValidPolicy(ANY_POLICY);
     rootNode.setCritical(false);
     rootNode.setDepth(0);
@@ -139,14 +134,14 @@ public class PKIXCertPathValidatorImpl
       rootNode.addAllExpectedPolicies(initPolicies);
     else
       rootNode.addExpectedPolicy(ANY_POLICY);
-    List<PKIXCertPathChecker> checks = ((PKIXParameters) params).getCertPathCheckers();
-    List<? extends Certificate> l = path.getCertificates();
+    List checks = ((PKIXParameters) params).getCertPathCheckers();
+    List l = path.getCertificates();
     if (l == null || l.size() == 0)
       throw new CertPathValidatorException();
     X509Certificate[] p = null;
     try
       {
-        p = l.toArray(new X509Certificate[l.size()]);
+        p = (X509Certificate[]) l.toArray(new X509Certificate[l.size()]);
       }
     catch (ClassCastException cce)
       {
@@ -157,7 +152,7 @@ public class PKIXCertPathValidatorImpl
     Date now = ((PKIXParameters) params).getDate();
     if (now == null)
       now = new Date();
-    LinkedList<int[]> policyConstraints = new LinkedList<int[]>();
+    LinkedList policyConstraints = new LinkedList();
     for (int i = p.length - 1; i >= 0; i--)
       {
         try
@@ -168,12 +163,12 @@ public class PKIXCertPathValidatorImpl
           {
             throw new CertPathValidatorException(ce.toString());
           }
-        Set<String> uce = getCritExts(p[i]);
-        for (PKIXCertPathChecker checker : checks)
+        Set uce = getCritExts(p[i]);
+        for (Iterator check = checks.iterator(); check.hasNext();)
           {
             try
               {
-                checker.check(p[i], uce);
+                ((PKIXCertPathChecker) check.next()).check(p[i], uce);
               }
             catch (Exception x)
               {
@@ -264,13 +259,14 @@ public class PKIXCertPathValidatorImpl
               {
                 throw new CertPathValidatorException("error selecting CRLs");
               }
-            List<CertStore> certStores = ((PKIXParameters) params).getCertStores();
-            List<CRL> crls = new LinkedList<CRL>();
-            for (CertStore cs : certStores)
+            List certStores = ((PKIXParameters) params).getCertStores();
+            List crls = new LinkedList();
+            for (Iterator it = certStores.iterator(); it.hasNext();)
               {
+                CertStore cs = (CertStore) it.next();
                 try
                   {
-                    Collection<? extends CRL> c = cs.getCRLs(selector);
+                    Collection c = cs.getCRLs(selector);
                     crls.addAll(c);
                   }
                 catch (CertStoreException cse)
@@ -280,8 +276,9 @@ public class PKIXCertPathValidatorImpl
             if (crls.isEmpty())
               throw new CertPathValidatorException("no CRLs for issuer");
             boolean certOk = false;
-            for (CRL crl : crls)
+            for (Iterator it = crls.iterator(); it.hasNext();)
               {
+                CRL crl = (CRL) it.next();
                 if (! (crl instanceof X509CRL))
                   continue;
                 X509CRL xcrl = (X509CRL) crl;
@@ -289,7 +286,8 @@ public class PKIXCertPathValidatorImpl
                   continue;
                 if (xcrl.isRevoked(p[i - 1]))
                   throw new CertPathValidatorException("certificate is revoked");
-		certOk = true;
+                else
+                  certOk = true;
               }
             if (! certOk)
               throw new CertPathValidatorException(
@@ -300,9 +298,10 @@ public class PKIXCertPathValidatorImpl
     // Now ensure that the first certificate in the chain was issued
     // by a trust anchor.
     Exception cause = null;
-    Set<TrustAnchor> anchors = ((PKIXParameters) params).getTrustAnchors();
-    for (TrustAnchor anchor : anchors)
+    Set anchors = ((PKIXParameters) params).getTrustAnchors();
+    for (Iterator i = anchors.iterator(); i.hasNext();)
       {
+        TrustAnchor anchor = (TrustAnchor) i.next();
         X509Certificate anchorCert = null;
         PublicKey anchorKey = null;
         if (anchor.getTrustedCert() != null)
@@ -336,13 +335,14 @@ public class PKIXCertPathValidatorImpl
                     }
                 else
                   selector.addIssuerName(anchor.getCAName());
-                List<CertStore> certStores = ((PKIXParameters) params).getCertStores();
-                List<CRL> crls = new LinkedList<CRL>();
-                for (CertStore cs : certStores)
+                List certStores = ((PKIXParameters) params).getCertStores();
+                List crls = new LinkedList();
+                for (Iterator it = certStores.iterator(); it.hasNext();)
                   {
+                    CertStore cs = (CertStore) it.next();
                     try
                       {
-                        Collection<? extends CRL> c = cs.getCRLs(selector);
+                        Collection c = cs.getCRLs(selector);
                         crls.addAll(c);
                       }
                     catch (CertStoreException cse)
@@ -351,8 +351,9 @@ public class PKIXCertPathValidatorImpl
                   }
                 if (crls.isEmpty())
                   continue;
-		for (CRL crl : crls)
+                for (Iterator it = crls.iterator(); it.hasNext();)
                   {
+                    CRL crl = (CRL) it.next();
                     if (! (crl instanceof X509CRL))
                       continue;
                     X509CRL xcrl = (X509CRL) crl;
@@ -413,7 +414,7 @@ public class PKIXCertPathValidatorImpl
    */
   private static boolean checkCRL(X509CRL crl, X509Certificate[] path,
                                   Date now, X509Certificate pubKeyCert,
-                                  PublicKey pubKey, List<CertStore> certStores)
+                                  PublicKey pubKey, List certStores)
   {
     Date nextUpdate = crl.getNextUpdate();
     if (nextUpdate != null && nextUpdate.compareTo(now) < 0)
@@ -460,10 +461,10 @@ public class PKIXCertPathValidatorImpl
       {
         X509CertSelectorImpl select = new X509CertSelectorImpl();
         select.addSubjectName(crl.getIssuerDN());
-        List<Certificate> certs = new LinkedList<Certificate>();
-        for (Iterator<CertStore> it = certStores.iterator(); it.hasNext();)
+        List certs = new LinkedList();
+        for (Iterator it = certStores.iterator(); it.hasNext();)
           {
-            CertStore cs = it.next();
+            CertStore cs = (CertStore) it.next();
             try
               {
                 certs.addAll(cs.getCertificates(select));
@@ -472,7 +473,7 @@ public class PKIXCertPathValidatorImpl
               {
               }
           }
-        for (Iterator<Certificate> it = certs.iterator(); it.hasNext();)
+        for (Iterator it = certs.iterator(); it.hasNext();)
           {
             X509Certificate c = (X509Certificate) it.next();
             for (int i = 0; i < path.length; i++)
@@ -508,15 +509,15 @@ public class PKIXCertPathValidatorImpl
     return false;
   }
 
-  private static Set<String> getCritExts(X509Certificate cert)
+  private static Set getCritExts(X509Certificate cert)
   {
-    HashSet<String> s = new HashSet<String>();
+    HashSet s = new HashSet();
     if (cert instanceof GnuPKIExtension)
       {
-        Collection<Extension> exts =
-	  ((GnuPKIExtension) cert).getExtensions();
-	for (Extension ext : exts)
+        Collection exts = ((GnuPKIExtension) cert).getExtensions();
+        for (Iterator it = exts.iterator(); it.hasNext();)
           {
+            Extension ext = (Extension) it.next();
             if (ext.isCritical() && ! ext.isSupported())
               s.add(ext.getOid().toString());
           }
@@ -581,16 +582,16 @@ public class PKIXCertPathValidatorImpl
   {
     if (Configuration.DEBUG)
       log.fine("updatePolicyTree depth == " + depth);
-    Set<PolicyNode> nodes = new HashSet<PolicyNode>();
-    LinkedList<Iterator<? extends PolicyNode>> stack = new LinkedList<Iterator<? extends PolicyNode>>();
-    Iterator<? extends PolicyNode> current = null;
+    Set nodes = new HashSet();
+    LinkedList stack = new LinkedList();
+    Iterator current = null;
     stack.addLast(Collections.singleton(root).iterator());
     do
       {
-        current = stack.removeLast();
+        current = (Iterator) stack.removeLast();
         while (current.hasNext())
           {
-            PolicyNode p = current.next();
+            PolicyNodeImpl p = (PolicyNodeImpl) current.next();
             if (Configuration.DEBUG)
               log.fine("visiting node == " + p);
             if (p.getDepth() == depth - 1)
@@ -612,6 +613,7 @@ public class PKIXCertPathValidatorImpl
 
     Extension e = null;
     CertificatePolicies policies = null;
+    List qualifierInfos = null;
     if (cert instanceof GnuPKIExtension)
       {
         e = ((GnuPKIExtension) cert).getExtension(CertificatePolicies.ID);
@@ -619,24 +621,25 @@ public class PKIXCertPathValidatorImpl
           policies = (CertificatePolicies) e.getValue();
       }
 
-    List<OID> cp = null;
+    List cp = null;
     if (policies != null)
       cp = policies.getPolicies();
     else
-      cp = Collections.emptyList();
+      cp = Collections.EMPTY_LIST;
     boolean match = false;
     if (Configuration.DEBUG)
       {
         log.fine("nodes are == " + nodes);
         log.fine("cert policies are == " + cp);
       }
-    for (Iterator<PolicyNode> it = nodes.iterator(); it.hasNext();)
+    for (Iterator it = nodes.iterator(); it.hasNext();)
       {
         PolicyNodeImpl parent = (PolicyNodeImpl) it.next();
         if (Configuration.DEBUG)
           log.fine("adding policies to " + parent);
-	for (OID policy : cp)
+        for (Iterator it2 = cp.iterator(); it2.hasNext();)
           {
+            OID policy = (OID) it2.next();
             if (Configuration.DEBUG)
               log.fine("trying to add policy == " + policy);
             if (policy.toString().equals(ANY_POLICY)
@@ -662,8 +665,7 @@ public class PKIXCertPathValidatorImpl
               }
             if (match && policies != null)
               {
-                List<PolicyQualifierInfo> qualifiers =
-		  policies.getPolicyQualifierInfos(policy);
+                List qualifiers = policies.getPolicyQualifierInfos(policy);
                 if (qualifiers != null)
                   child.addAllPolicyQualifiers(qualifiers);
               }
@@ -673,12 +675,13 @@ public class PKIXCertPathValidatorImpl
       throw new CertPathValidatorException("policy tree building failed");
   }
 
-  private static boolean checkExplicitPolicy(int depth, List<int[]> explicitPolicies)
+  private boolean checkExplicitPolicy(int depth, List explicitPolicies)
   {
     if (Configuration.DEBUG)
       log.fine("checkExplicitPolicy depth=" + depth);
-    for (int[] i : explicitPolicies)
+    for (Iterator it = explicitPolicies.iterator(); it.hasNext();)
       {
+        int[] i = (int[]) it.next();
         int caDepth = i[0];
         int limit = i[1];
         if (Configuration.DEBUG)

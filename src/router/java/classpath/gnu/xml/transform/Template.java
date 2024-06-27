@@ -1,5 +1,5 @@
 /* Template.java --
-   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -56,7 +56,7 @@ import gnu.xml.xpath.Test;
  * @author <a href='mailto:dog@gnu.org'>Chris Burdess</a>
  */
 class Template
-  implements Comparable<Template>
+  implements Comparable
 {
 
   static final double DEFAULT_PRIORITY = 0.5d;
@@ -156,15 +156,18 @@ class Template
                         isAnyNode);
   }
 
-  @Override
-  public int compareTo(Template t)
+  public int compareTo(Object other)
   {
-    int d = t.precedence - precedence;
-    if (d != 0)
-      return d;
-    double d2 = t.priority - priority;
-    if (d2 != 0.0d)
-      return (int) Math.round(d2 * 1000.0d);
+    if (other instanceof Template)
+      {
+        Template t = (Template) other;
+        int d = t.precedence - precedence;
+        if (d != 0)
+          return d;
+        double d2 = t.priority - priority;
+        if (d2 != 0.0d)
+          return (int) Math.round(d2 * 1000.0d);
+      }
     return 0;
   }
 

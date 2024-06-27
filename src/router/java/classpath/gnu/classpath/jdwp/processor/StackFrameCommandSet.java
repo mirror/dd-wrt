@@ -1,5 +1,5 @@
 /* StackFrameCommandSet.java -- class to implement the StackFrame Command Set
-   Copyright (C) 2005, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -65,6 +65,7 @@ public class StackFrameCommandSet
   public boolean runCommand(ByteBuffer bb, DataOutputStream os, byte command)
       throws JdwpException
   {
+    boolean keepRunning = true;
     try
       {
         switch (command)

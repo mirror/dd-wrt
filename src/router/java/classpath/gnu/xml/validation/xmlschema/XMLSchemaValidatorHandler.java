@@ -75,16 +75,16 @@ final class XMLSchemaValidatorHandler
   ContentHandler contentHandler;
   ErrorHandler errorHandler;
   LSResourceResolver resourceResolver;
-  final LinkedList<XMLSchemaElementTypeInfo> context; // element context
-  final ArrayList<XMLSchemaAttributeTypeInfo> attributes; // attribute context;
+  final LinkedList context; // element context
+  final ArrayList attributes; // attribute context;
 
   XMLSchemaValidatorHandler(XMLSchema schema)
   {
     this.schema = schema;
     typeInfoProvider = new XMLSchemaTypeInfoProvider(this);
     namespaceSupport = new NamespaceSupport();
-    context = new LinkedList<XMLSchemaElementTypeInfo>();
-    attributes = new ArrayList<XMLSchemaAttributeTypeInfo>();
+    context = new LinkedList();
+    attributes = new ArrayList();
     final String ns = XMLConstants.W3C_XML_SCHEMA_NS_URI;
     typeLibrary = new DatatypeLibraryLoader().createDatatypeLibrary(ns);
   }
@@ -126,23 +126,25 @@ final class XMLSchemaValidatorHandler
 
   TypeInfo getElementTypeInfo()
   {
-    return context.getFirst();
+    return (XMLSchemaElementTypeInfo) context.getFirst();
   }
 
   TypeInfo getAttributeTypeInfo(int index)
   {
-    return attributes.get(index);
+    return (XMLSchemaAttributeTypeInfo) attributes.get(index);
   }
 
   boolean isIdAttribute(int index)
   {
-    XMLSchemaAttributeTypeInfo typeInfo = attributes.get(index);
+    XMLSchemaAttributeTypeInfo typeInfo =
+      (XMLSchemaAttributeTypeInfo) attributes.get(index);
     return typeInfo.id;
   }
 
   boolean isSpecified(int index)
   {
-    XMLSchemaAttributeTypeInfo typeInfo = attributes.get(index);
+    XMLSchemaAttributeTypeInfo typeInfo =
+      (XMLSchemaAttributeTypeInfo) attributes.get(index);
     return typeInfo.specified;
   }
 
@@ -201,7 +203,8 @@ final class XMLSchemaValidatorHandler
   {
     namespaceSupport.pushContext();
     QName name = new QName(uri, localName);
-    ElementDeclaration decl = schema.elementDeclarations.get(name);
+    ElementDeclaration decl =
+      (ElementDeclaration) schema.elementDeclarations.get(name);
     // Validation Rule: Element Locally Valid (Element)
     String xsiType =
       atts.getValue(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type");

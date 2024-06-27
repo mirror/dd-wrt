@@ -1,5 +1,5 @@
 /* MD5.java --
-   Copyright (C) 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -88,16 +88,14 @@ public class MD5
     this.h2 = md.h2;
     this.h3 = md.h3;
     this.count = md.count;
-    this.buffer = md.buffer.clone();
+    this.buffer = (byte[]) md.buffer.clone();
   }
 
-  @Override
   public Object clone()
   {
     return new MD5(this);
   }
 
-  @Override
   protected synchronized void transform(byte[] in, int i)
   {
     int X0 = (in[i++] & 0xFF)
@@ -323,7 +321,6 @@ public class MD5
     h3 += D;
   }
 
-  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -344,7 +341,6 @@ public class MD5
     return result;
   }
 
-  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -354,7 +350,6 @@ public class MD5
         (byte) h3, (byte)(h3 >>> 8), (byte)(h3 >>> 16), (byte)(h3 >>> 24) };
   }
 
-  @Override
   protected void resetContext()
   {
     // magic MD5/RIPEMD128 initialisation constants
@@ -364,7 +359,6 @@ public class MD5
     h3 = 0x10325476;
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)

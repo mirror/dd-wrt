@@ -1,5 +1,5 @@
 /* GeneralNames.java -- the GeneralNames object
-   Copyright (C) 2004, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -82,7 +82,6 @@ public class GeneralNames
     return Collections.unmodifiableList(names);
   }
 
-  @Override
   public String toString()
   {
     return GeneralNames.class.getName() + " [ " + names + " ]";

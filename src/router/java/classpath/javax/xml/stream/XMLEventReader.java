@@ -43,7 +43,7 @@ import javax.xml.stream.events.XMLEvent;
 /**
  * An XML parser.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings("unchecked")
 public interface XMLEventReader
   extends Iterator
 {

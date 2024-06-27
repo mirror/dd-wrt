@@ -1,5 +1,5 @@
 /* CertPathValidator -- validates certificate paths.
-   Copyright (C) 2003, 2004, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,14 +39,15 @@ exception statement from your version. */
 package java.security.cert;
 
 import gnu.java.lang.CPStringBuilder;
+
 import gnu.java.security.Engine;
-import gnu.java.security.action.GetSecurityPropertyAction;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 
@@ -111,9 +112,18 @@ public class CertPathValidator {
    * @return The default validator type.
    */
   public static synchronized String getDefaultType() {
-    return AccessController.doPrivileged(
-      new GetSecurityPropertyAction("certpathvalidator.type", "PKIX")
+    String type = (String) AccessController.doPrivileged(
+      new PrivilegedAction()
+        {
+          public Object run()
+          {
+            return Security.getProperty("certpathvalidator.type");
+          }
+        }
     );
+    if (type == null)
+      type = "PKIX";
+    return type;
   }
 
   /**

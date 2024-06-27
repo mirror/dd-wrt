@@ -53,7 +53,7 @@ class DataPattern
 
   Datatype type;
   DatatypeLibrary datatypeLibrary;
-  List<Param> params = new LinkedList<Param>();
+  List params = new LinkedList();
   Pattern exceptPattern;
 
 }

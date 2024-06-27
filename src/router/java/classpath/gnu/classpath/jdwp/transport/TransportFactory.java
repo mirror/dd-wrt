@@ -1,5 +1,5 @@
 /* TransportFactory.java -- Factory for transports
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -56,8 +56,8 @@ public class TransportFactory
   private static class TransportMethod
   {
     String name;
-    Class<?> clazz;
-    public TransportMethod (String name, Class<?> clazz)
+    Class clazz;
+    public TransportMethod (String name, Class clazz)
     {
       this.name = name;
       this.clazz = clazz;
@@ -79,12 +79,12 @@ public class TransportFactory
    * @returns             the created and configured transport
    * @throws  TransportException for invalid configurations
    */
-  public static ITransport newInstance (HashMap<String,String> properties)
+  public static ITransport newInstance (HashMap properties)
     throws TransportException
   {
     String name = null;
     if (properties != null)
-      name = properties.get (_TRANSPORT_PROPERTY);
+      name = (String) properties.get (_TRANSPORT_PROPERTY);
     if (name == null)
       throw new TransportException ("no transport specified");
 

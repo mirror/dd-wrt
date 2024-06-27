@@ -1,5 +1,5 @@
 /* KeyPairGeneratorFactory.java --
-   Copyright 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -92,9 +92,9 @@ public class KeyPairGeneratorFactory
    *
    * @return a {@link Set} of keypair generator names (Strings).
    */
-  public static final Set<String> getNames()
+  public static final Set getNames()
   {
-    HashSet<String> hs = new HashSet<String>();
+    HashSet hs = new HashSet();
     hs.add(Registry.DSS_KPG);
     hs.add(Registry.DSA_KPG);
     hs.add(Registry.RSA_KPG);
@@ -107,8 +107,8 @@ public class KeyPairGeneratorFactory
   {
     try
       {
-        Class<?> c = Class.forName(clazz);
-        Constructor<?> ctor = c.getConstructor(new Class[0]);
+        Class c = Class.forName(clazz);
+        Constructor ctor = c.getConstructor(new Class[0]);
         return (IKeyPairGenerator) ctor.newInstance(new Object[0]);
       }
     catch (Exception x)

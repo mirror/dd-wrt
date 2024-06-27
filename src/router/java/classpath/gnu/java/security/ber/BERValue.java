@@ -1,5 +1,5 @@
 /* BERReader.java -- basic encoding rules (BER) value.
-   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -73,7 +73,6 @@ public class BERValue extends DERValue
     return indefinite;
   }
 
-  @Override
   public int getLength()
   {
     if (indefinite)

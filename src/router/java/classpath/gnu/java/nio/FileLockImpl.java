@@ -88,11 +88,6 @@ public final class FileLockImpl extends FileLock
     return valid;
   }
 
-  public void close() throws Exception
-  {
-    release();
-  }
-
   /**
    * Releases the lock if it is still valid. Marks this lock as invalid.
    */

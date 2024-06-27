@@ -68,7 +68,7 @@ public class _DynStructStub
   /**
    * The purpose and value of this field are not documented.
    */
-  @SuppressWarnings("rawtypes") // Needed for API compatibility
+  @SuppressWarnings("unchecked") // Needed for API compatibility
   public static final Class _opsClass = DynStructOperations.class;
 
   /**

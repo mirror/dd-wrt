@@ -1,5 +1,5 @@
 /* ITransport.java -- An interface defining JDWP transports
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -58,7 +58,7 @@ public interface ITransport
    * @param   properties  properties of the transport configuration
    * @throws  TransportException on configury error
    */
-  public void configure (HashMap<String,String> properties)
+  public void configure (HashMap properties)
     throws TransportException;
 
   /**

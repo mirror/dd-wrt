@@ -1,5 +1,5 @@
 /* EventManager.java -- event management and notification infrastructure
-   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -74,7 +74,7 @@ public class EventManager
   private static EventManager _instance = null;
 
   // maps event (EVENT_*) to lists of EventRequests
-  private Hashtable<Byte,Hashtable<Integer,EventRequest>> _requests = null;
+  private Hashtable _requests = null;
 
   /**
    * Returns an instance of the event manager
@@ -92,41 +92,41 @@ public class EventManager
   // Private constructs a new <code>EventManager</code>
   private EventManager ()
   {
-    _requests = new Hashtable<Byte,Hashtable<Integer,EventRequest>>();
+    _requests = new Hashtable ();
 
     // Add lists for all the event types
-    _requests.put (Byte.valueOf(EventRequest.EVENT_SINGLE_STEP),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_BREAKPOINT),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_FRAME_POP),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_EXCEPTION),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_USER_DEFINED),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_THREAD_START),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_THREAD_END),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_CLASS_PREPARE),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_CLASS_UNLOAD),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_CLASS_LOAD),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_FIELD_ACCESS),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_FIELD_MODIFY),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_METHOD_ENTRY),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_METHOD_EXIT),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_VM_INIT),
-                   new Hashtable<Integer,EventRequest>());
-    _requests.put (Byte.valueOf(EventRequest.EVENT_VM_DEATH),
-                   new Hashtable<Integer,EventRequest>());
+    _requests.put (new Byte (EventRequest.EVENT_SINGLE_STEP),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_BREAKPOINT),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_FRAME_POP),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_EXCEPTION),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_USER_DEFINED),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_THREAD_START),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_THREAD_END),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_CLASS_PREPARE),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_CLASS_UNLOAD),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_CLASS_LOAD),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_FIELD_ACCESS),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_FIELD_MODIFY),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_METHOD_ENTRY),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_METHOD_EXIT),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_VM_INIT),
+                   new Hashtable ());
+    _requests.put (new Byte (EventRequest.EVENT_VM_DEATH),
+                   new Hashtable ());
 
     // Add auto-generated event notifications
     // only two: VM_INIT, VM_DEATH
@@ -157,10 +157,10 @@ public class EventManager
    */
   public EventRequest[] getEventRequests(Event event)
   {
-    ArrayList<EventRequest> interestedEvents = new ArrayList<EventRequest>();
-    Hashtable<Integer,EventRequest> requests;
-    Byte kind = Byte.valueOf(event.getEventKind());
-    requests = _requests.get(kind);
+    ArrayList interestedEvents = new ArrayList();
+    Hashtable requests;
+    Byte kind = new Byte(event.getEventKind());
+    requests = (Hashtable) _requests.get(kind);
     if (requests == null)
       {
         // Did not get a valid event type
@@ -169,10 +169,10 @@ public class EventManager
 
     // Loop through the requests. Must look at ALL requests in order
     // to evaluate all filters (think count filter).
-    Iterator<EventRequest> rIter = requests.values().iterator();
+    Iterator rIter = requests.values().iterator();
     while (rIter.hasNext())
       {
-        EventRequest request = rIter.next();
+        EventRequest request = (EventRequest) rIter.next();
         if (request.matches(event))
           interestedEvents.add(request);
       }
@@ -200,9 +200,9 @@ public class EventManager
     throws JdwpException
   {
     // Add request to request list
-    Hashtable<Integer,EventRequest> requests;
+    Hashtable requests;
     Byte kind = new Byte (request.getEventKind ());
-    requests = _requests.get (kind);
+    requests = (Hashtable) _requests.get (kind);
     if (requests == null)
       {
         // Did not get a valid event type
@@ -211,7 +211,7 @@ public class EventManager
 
     // Register the event with the VM
     VMVirtualMachine.registerEvent (request);
-    requests.put (Integer.valueOf (request.getId ()), request);
+    requests.put (new Integer (request.getId ()), request);
   }
 
   /**
@@ -225,16 +225,16 @@ public class EventManager
   public void deleteRequest (byte kind, int id)
     throws JdwpException
   {
-    Hashtable<Integer,EventRequest> requests;
-    requests = _requests.get (Byte.valueOf (kind));
+    Hashtable requests;
+    requests = (Hashtable) _requests.get (new Byte (kind));
     if (requests == null)
       {
         // Did not get a valid event type
         throw new IllegalArgumentException ("invalid event kind: " + kind);
       }
 
-    Integer iid = Integer.valueOf (id);
-    EventRequest request = requests.get (iid);
+    Integer iid = new Integer (id);
+    EventRequest request = (EventRequest) requests.get (iid);
     if (request != null)
       {
         VMVirtualMachine.unregisterEvent (request);
@@ -252,7 +252,7 @@ public class EventManager
   public void clearRequests (byte kind)
     throws JdwpException
   {
-    Hashtable<Integer,EventRequest> requests = _requests.get (Byte.valueOf(kind));
+    Hashtable requests = (Hashtable) _requests.get (new Byte (kind));
     if (requests == null)
       {
         // Did not get a valid event type
@@ -274,14 +274,14 @@ public class EventManager
    */
   public EventRequest getRequest (byte kind, int id)
   {
-    Hashtable<Integer,EventRequest> requests = _requests.get(Byte.valueOf(kind));
+    Hashtable requests = (Hashtable) _requests.get (new Byte (kind));
     if (requests == null)
       {
         // Did not get a valid event type
         throw new IllegalArgumentException ("invalid event kind: " + kind);
       }
 
-    return requests.get (Integer.valueOf(id));
+    return (EventRequest) requests.get (new Integer (id));
   }
 
   /**
@@ -291,10 +291,9 @@ public class EventManager
    * @returns a <code>Collection</code> of all the registered requests
    * @throws IllegalArgumentException for invalid event kind
    */
-  public Collection<EventRequest> getRequests (byte kind)
+  public Collection getRequests (byte kind)
   {
-    Hashtable<Integer,EventRequest> requests =
-      _requests.get (Byte.valueOf (kind));
+    Hashtable requests = (Hashtable) _requests.get (new Byte (kind));
     if (requests == null)
       {
         // Did not get a valid event type

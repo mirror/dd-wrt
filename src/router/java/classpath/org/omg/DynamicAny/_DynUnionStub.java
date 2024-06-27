@@ -68,7 +68,7 @@ public class _DynUnionStub
   /**
    * The purpose and value of this field are not documented.
    */
-  @SuppressWarnings("rawtypes") // Needed for API compatibility
+  @SuppressWarnings("unchecked") // Needed for API compatibility
   public static final Class _opsClass = DynUnionOperations.class;
 
   /**

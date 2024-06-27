@@ -1,5 +1,5 @@
 /* MethodCommandSet.java -- class to implement the Method Command Set
-   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -101,7 +101,7 @@ public class MethodCommandSet
       throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     VMMethod method = VMMethod.readId(clazz, bb);
     LineTable lt = method.getLineTable();
@@ -112,7 +112,7 @@ public class MethodCommandSet
       throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     VMMethod method = VMMethod.readId(clazz, bb);
     VariableTable vt = method.getVariableTable();
@@ -129,7 +129,7 @@ public class MethodCommandSet
       }
 
     ReferenceTypeId id = idMan.readReferenceTypeId(bb);
-    Class<?> klass = id.getType();
+    Class klass = id.getType();
     VMMethod method = VMMethod.readId(klass, bb);
     byte[] bytecode = VMVirtualMachine.getBytecodes(method);
     os.writeInt(bytecode.length);

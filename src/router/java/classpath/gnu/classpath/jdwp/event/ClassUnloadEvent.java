@@ -1,5 +1,5 @@
 /* ClassUnloadEvent.java -- event generated when a class is unloaded
- Copyright (C) 2006, 2013 Free Software Foundation, Inc.
+ Copyright (C) 2006 Free Software Foundation, Inc.
 
  This file is part of GNU Classpath.
 
@@ -88,7 +88,7 @@ public class ClassUnloadEvent
   protected void _writeData(DataOutputStream outStream)
     throws IOException
   {
-    VMIdManager.getDefault();
+    VMIdManager idm = VMIdManager.getDefault();
 
     JdwpString.writeString(outStream, _signature);
   }

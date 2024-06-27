@@ -13,19 +13,10 @@ GLIBJ_BOOTCLASSPATH='$(top_builddir)/lib/glibj.zip:$(top_builddir)/lib'
 GLIBJ_CLASSPATH=asm:$(ANTLR_CLASSPATH)
 
 # Setup the compiler to use the GNU Classpath library we just built.
-
-# source, target and classpath options
-GCJ_OPTS = -fsource=1.6 -ftarget=1.6 --encoding=UTF-8 --bootclasspath=$(GLIBJ_BOOTCLASSPATH) --classpath=$(GLIBJ_CLASSPATH)
-ECJ_OPTS = -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
-
 if GCJ_JAVAC
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(GCJ_OPTS)
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --encoding=UTF-8 --bootclasspath=$(GLIBJ_BOOTCLASSPATH) --classpath=$(GLIBJ_CLASSPATH)
 else
-if ECJ_JAVAC
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(ECJ_WARNINGS) $(ECJ_OPTS)
-else
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(JAVAC_WARNINGS) $(ECJ_OPTS)
-endif
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) -source 1.6 -target 1.6 -encoding UTF-8 -bootclasspath $(GLIBJ_BOOTCLASSPATH) -classpath $(GLIBJ_CLASSPATH)
 endif
 
 if CREATE_WRAPPERS
@@ -117,6 +108,23 @@ if CREATE_GJDOC
 bin_SCRIPTS += gjdoc
 endif
 bin_PROGRAMS =
+## FIXME: remove these unneeded dependency lines once we can
+## require Automake 1.11.
+gappletviewer: gappletviewer.in
+gjarsigner: gjarsigner.in
+gkeytool: gkeytool.in
+gjar: gjar.in
+gnative2ascii: gnative2ascii.in
+gserialver: gserialver.in
+gjavah: gjavah.in
+grmiregistry: grmiregistry.in
+gtnameserv: gtnameserv.in
+gorbd: gorbd.in
+grmid: grmid.in
+grmic: grmic.in
+if CREATE_GJDOC
+gjdoc: gjdoc.in
+endif
 endif
 EXTRA_DIST = toolwrapper.c gappletviewer.in gjarsigner.in gkeytool.in \
 	gjar.in gnative2ascii.in gserialver.in gjavah.in grmiregistry.in \

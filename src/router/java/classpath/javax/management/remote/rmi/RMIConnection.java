@@ -152,7 +152,7 @@ public interface RMIConnection
    *                                                      NotificationFilter,
    *                                                      Object)
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   void addNotificationListener(ObjectName name, ObjectName listener,
                                MarshalledObject filter, MarshalledObject passback,
                                Subject delegationSubject)
@@ -224,7 +224,7 @@ public interface RMIConnection
    *                                                      NotificationFilter,
    *                                                      Object)
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   Integer[] addNotificationListeners(ObjectName[] names, MarshalledObject[] filters,
                                      Subject[] delegationSubjects)
     throws InstanceNotFoundException, IOException;
@@ -298,7 +298,7 @@ public interface RMIConnection
    * @throws IOException if an I/O error occurred in communicating with
    *                     the bean server.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   ObjectInstance createMBean(String className, ObjectName name,
                              MarshalledObject params, String[] sig,
                              Subject delegationSubject)
@@ -367,7 +367,7 @@ public interface RMIConnection
    * @throws IOException if an I/O error occurred in communicating with
    *                     the bean server.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   ObjectInstance createMBean(String className, ObjectName name,
                              ObjectName loaderName, MarshalledObject params,
                              String[] sig, Subject delegationSubject)
@@ -767,7 +767,7 @@ public interface RMIConnection
    *                     the bean server.
    * @see DynamicMBean#invoke(String, Object[], String[])
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   Object invoke(ObjectName bean, String name, MarshalledObject params,
                 String[] sig, Subject delegationSubject)
     throws InstanceNotFoundException, MBeanException,
@@ -871,7 +871,7 @@ public interface RMIConnection
    * @throws SecurityException if the client or delegated subject (if any) does
    *                           not have permission to invoke this operation.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   Set<ObjectInstance> queryMBeans(ObjectName name, MarshalledObject query,
                                   Subject delegationSubject)
     throws IOException;
@@ -914,7 +914,7 @@ public interface RMIConnection
    * @throws IOException if an I/O error occurred in communicating with
    *                     the bean server.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   Set<ObjectName> queryNames(ObjectName name, MarshalledObject query,
                              Subject delegationSubject)
     throws IOException;
@@ -960,7 +960,7 @@ public interface RMIConnection
    *                                                     NotificationFilter,
    *                                                     Object)
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   void removeNotificationListener(ObjectName name,
                                   ObjectName listener,
                                   MarshalledObject filter,
@@ -1080,7 +1080,7 @@ public interface RMIConnection
    * @see #getAttribute(ObjectName, String, Subject)
    * @see javax.management.DynamicMBean#setAttribute(Attribute)
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   void setAttribute(ObjectName name, MarshalledObject attribute,
                     Subject delegationSubject)
     throws InstanceNotFoundException, AttributeNotFoundException,
@@ -1121,7 +1121,7 @@ public interface RMIConnection
    * @see #getAttributes(ObjectName, String[])
    * @see DynamicMBean#setAttributes(AttributeList)
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   AttributeList setAttributes(ObjectName name, MarshalledObject attributes,
                               Subject delegationSubject)
     throws InstanceNotFoundException, ReflectionException,

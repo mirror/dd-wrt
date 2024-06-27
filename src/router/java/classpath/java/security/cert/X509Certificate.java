@@ -1,5 +1,5 @@
 /* X509Certificate.java --- X.509 Certificate class
-   Copyright (C) 1999, 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 1999,2003, 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -488,7 +488,6 @@ public abstract class X509Certificate
    * @throws CertificateParsingException If this extension cannot be
    * parsed from its encoded form.
    */
-  @SuppressWarnings({"unused","static-method"})
   public java.util.List<String> getExtendedKeyUsage()
     throws CertificateParsingException
   {
@@ -533,7 +532,6 @@ public abstract class X509Certificate
    * be parsed.
    * @since JDK 1.4
    */
-  @SuppressWarnings({"unused","static-method"})
   public java.util.Collection<List<?>> getSubjectAlternativeNames()
     throws CertificateParsingException
   {
@@ -561,7 +559,6 @@ public abstract class X509Certificate
    * be parsed.
    * @since JDK 1.4
    */
-  @SuppressWarnings({"unused","static-method"})
   public java.util.Collection<List<?>> getIssuerAlternativeNames()
     throws CertificateParsingException
   {
@@ -574,7 +571,6 @@ public abstract class X509Certificate
    * @return The subject's X.500 distinguished name.
    * @since JDK 1.4
    */
-  @SuppressWarnings("static-method")
   public javax.security.auth.x500.X500Principal getSubjectX500Principal()
   {
     throw new UnsupportedOperationException();
@@ -586,7 +582,6 @@ public abstract class X509Certificate
    * @return The issuer's X.500 distinguished name.
    * @since JDK 1.4
    */
-  @SuppressWarnings("static-method")
   public javax.security.auth.x500.X500Principal getIssuerX500Principal()
   {
     throw new UnsupportedOperationException();

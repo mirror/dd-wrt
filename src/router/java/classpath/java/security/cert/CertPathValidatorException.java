@@ -1,6 +1,6 @@
 /* CertPathValidatorException.java -- wraps an exception during validation
    of a CertPath
-   Copyright (C) 2002, 2005, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,6 +39,8 @@ exception statement from your version. */
 
 package java.security.cert;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 
 /**
@@ -133,7 +135,8 @@ public class CertPathValidatorException extends GeneralSecurityException
   public CertPathValidatorException(String msg, Throwable cause,
                                     CertPath certPath, int index)
   {
-    super(msg, cause);
+    super(msg);
+    initCause(cause);
     if (index < -1 || (certPath != null
                        && index >= certPath.getCertificates().size()))
       throw new IndexOutOfBoundsException();
@@ -141,6 +144,16 @@ public class CertPathValidatorException extends GeneralSecurityException
       throw new IllegalArgumentException();
     this.certPath = certPath;
     this.index = index;
+  }
+
+  /**
+   * Get the detail message.
+   *
+   * @return the detail message
+   */
+  public String getMessage()
+  {
+    return super.getMessage();
   }
 
   /**
@@ -163,4 +176,51 @@ public class CertPathValidatorException extends GeneralSecurityException
     return index;
   }
 
+  /**
+   * Get the cause, null if unknown.
+   *
+   * @return the cause
+   */
+  public Throwable getCause()
+  {
+    return super.getCause();
+  }
+
+  /**
+   * Convert this to a string, including its cause.
+   *
+   * @return the string conversion
+   */
+  public String toString()
+  {
+    return super.toString();
+  }
+
+  /**
+   * Print the stack trace to <code>System.err</code>.
+   */
+  public void printStackTrace()
+  {
+    super.printStackTrace();
+  }
+
+  /**
+   * Print the stack trace to a stream.
+   *
+   * @param stream the stream
+   */
+  public void printStackTrace(PrintStream stream)
+  {
+    super.printStackTrace(stream);
+  }
+
+  /**
+   * Print the stack trace to a stream.
+   *
+   * @param stream the stream
+   */
+  public void printStackTrace(PrintWriter stream)
+  {
+    super.printStackTrace(stream);
+  }
 }

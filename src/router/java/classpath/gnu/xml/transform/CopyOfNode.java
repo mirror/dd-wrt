@@ -1,5 +1,5 @@
 /* CopyOfNode.java --
-   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -42,6 +42,7 @@ import gnu.java.lang.CPStringBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.transform.TransformerException;
@@ -87,16 +88,12 @@ final class CopyOfNode
       parent.getOwnerDocument();
     if (ret instanceof Collection)
       {
-        Collection<?> ns = (Collection<?>) ret;
-        List<Node> list = new ArrayList<Node>();
-	for (Object o : ns)
-	  {
-	    if (o instanceof Node)
-	      list.add((Node) o);
-	  }
+        Collection ns = (Collection) ret;
+        List list = new ArrayList(ns);
         Collections.sort(list, documentOrderComparator);
-	for (Node src : list)
+        for (Iterator i = list.iterator(); i.hasNext(); )
           {
+            Node src = (Node) i.next();
             short nodeType = src.getNodeType();
             if (nodeType == Node.DOCUMENT_NODE)
               {

@@ -1,5 +1,5 @@
 /* Certificate.java -- deprecated interface for modeling digital certificates
-   Copyright (C) 1998, 2002, 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -45,7 +45,7 @@ import java.io.OutputStream;
 /**
  * This interface models a digital certificate which verifies the
  * authenticity of a party.  This class simply allows certificate
- * information to be queried; it does not guarantee that the certificate
+ * information to be queried, it does not guarantee that the certificate
  * is valid.
  *
  * <p>This class is deprecated in favor of the new java.security.cert package.
@@ -56,7 +56,6 @@ import java.io.OutputStream;
  * @deprecated use {@link java.security.cert} instead
  * @status updated to 1.4
  */
-@Deprecated
 public interface Certificate
 {
   /**

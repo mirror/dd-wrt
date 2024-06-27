@@ -1,5 +1,5 @@
 /* RSAPSSSignatureX509Codec.java -- X.509 encoder/decoder for RSA signatures
-   Copyright (C) 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -87,7 +87,6 @@ public class RSAPKCS1V1_5SignatureX509Codec
 {
   // default 0-arguments constructor
 
-  @Override
   public int getFormatID()
   {
     return Registry.X509_ENCODING_ID;
@@ -104,7 +103,6 @@ public class RSAPKCS1V1_5SignatureX509Codec
    * @return the raw bytes of an RSA signature which could be then used as the
    *         contents of a BIT STRING as per rfc-2459.
    */
-  @Override
   public byte[] encodeSignature(Object signature)
   {
     byte[] result = (byte[]) signature;
@@ -120,7 +118,6 @@ public class RSAPKCS1V1_5SignatureX509Codec
    *         case of RSA PKCS1 (v1.5) this is the same as the input.
    * @throw InvalidParameterException if the <code>input</code> array is null.
    */
-  @Override
   public Object decodeSignature(byte[] input)
   {
     if (input == null)

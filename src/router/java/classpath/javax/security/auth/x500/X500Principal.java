@@ -1,5 +1,5 @@
 /* X500Principal.java -- X.500 principal.
-   Copyright (C) 2003, 2004, 2005, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -89,8 +89,9 @@ public final class X500Principal implements Principal, Serializable
   private static final OID DC         = new OID("0.9.2342.19200300.100.1.25");
   private static final OID UID        = new OID("0.9.2342.19200300.100.1.1");
 
-  private transient List<Map<OID,String>> components;
-  private transient Map<OID,String> currentRdn;
+  private transient List components;
+  private transient Map currentRdn;
+  private transient boolean fixed;
   private transient byte[] encoded;
 
   // Constructors.
@@ -98,8 +99,8 @@ public final class X500Principal implements Principal, Serializable
 
   private X500Principal()
   {
-    components = new LinkedList<Map<OID,String>>();
-    currentRdn = new LinkedHashMap<OID,String>();
+    components = new LinkedList();
+    currentRdn = new LinkedHashMap();
     components.add (currentRdn);
   }
 
@@ -141,23 +142,22 @@ public final class X500Principal implements Principal, Serializable
   // Instance methods.
   // ------------------------------------------------------------------------
 
-  @Override
   public int hashCode()
   {
     int result = size();
     for (int i = 0; i < size(); ++i)
       {
-        Map<OID,String> m = components.get(i);
-	for (Map.Entry<OID,String> e : m.entrySet())
+        Map m = (Map) components.get(i);
+        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
           {
+            Map.Entry e = (Map.Entry) it2.next();
             // We don't bother looking at the value of the entry.
-            result = result * 31 + e.getKey().hashCode();
+            result = result * 31 + ((OID) e.getKey()).hashCode();
           }
       }
     return result;
   }
 
-  @Override
   public boolean equals(Object o)
   {
     if (!(o instanceof X500Principal))
@@ -166,11 +166,12 @@ public final class X500Principal implements Principal, Serializable
       return false;
     for (int i = 0; i < size(); i++)
       {
-        Map<OID,String> m = components.get (i);
-	for (Map.Entry<OID,String> e : m.entrySet())
+        Map m = (Map) components.get (i);
+        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
           {
-            OID oid = e.getKey();
-            String v1 = e.getValue();
+            Map.Entry e = (Map.Entry) it2.next();
+            OID oid = (OID) e.getKey();
+            String v1 = (String) e.getValue();
             String v2 = ((X500Principal) o).getComponent (oid, i);
             if (v2 == null)
               return false;
@@ -185,10 +186,9 @@ public final class X500Principal implements Principal, Serializable
   {
     if (encoded == null)
       encodeDer();
-    return encoded.clone();
+    return (byte[]) encoded.clone();
   }
 
-  @Override
   public String getName()
   {
     return getName (RFC2253);
@@ -203,14 +203,14 @@ public final class X500Principal implements Principal, Serializable
     if (! (rfc2253 || rfc1779 || canon))
       throw new IllegalArgumentException ("unsupported format " + format);
     CPStringBuilder str = new CPStringBuilder();
-    for (Iterator<Map<OID,String>> it = components.iterator(); it.hasNext(); )
+    for (Iterator it = components.iterator(); it.hasNext(); )
       {
-        Map<OID,String> m = it.next();
-        for (Iterator<Map.Entry<OID,String>> it2 = m.entrySet().iterator(); it2.hasNext(); )
+        Map m = (Map) it.next();
+        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
           {
-            Map.Entry<OID,String> entry = it2.next();
-            OID oid = entry.getKey();
-            String value = entry.getValue();
+            Map.Entry entry = (Map.Entry) it2.next();
+            OID oid = (OID) entry.getKey();
+            String value = (String) entry.getValue();
             if (oid.equals (CN))
               str.append ("CN");
             else if (oid.equals (C))
@@ -244,7 +244,6 @@ public final class X500Principal implements Principal, Serializable
     return str.toString();
   }
 
-  @Override
   public String toString()
   {
     return getName (RFC2253);
@@ -279,20 +278,22 @@ public final class X500Principal implements Principal, Serializable
   {
     if (rdn >= size())
       return null;
-    return components.get(rdn).get(oid);
+    return (String) ((Map) components.get (rdn)).get (oid);
   }
 
   private void encodeDer()
   {
-    ArrayList<DERValue> name = new ArrayList<DERValue>(components.size());
-    for (Map<OID,String> m : components)
+    ArrayList name = new ArrayList(components.size());
+    for (Iterator it = components.iterator(); it.hasNext(); )
       {
+        Map m = (Map) it.next();
         if (m.isEmpty())
           continue;
-        Set<DERValue> rdn = new HashSet<DERValue>();
-	for (Map.Entry<OID,String> e : m.entrySet())
+        Set rdn = new HashSet();
+        for (Iterator it2 = m.entrySet().iterator(); it2.hasNext(); )
           {
-            ArrayList<DERValue> atav = new ArrayList<DERValue>(2);
+            Map.Entry e = (Map.Entry) it2.next();
+            ArrayList atav = new ArrayList(2);
             atav.add(new DERValue(DER.OBJECT_IDENTIFIER, e.getKey()));
             atav.add(new DERValue(DER.UTF8_STRING, e.getValue()));
             rdn.add(new DERValue(DER.SEQUENCE|DER.CONSTRUCTED, atav));
@@ -322,7 +323,7 @@ public final class X500Principal implements Principal, Serializable
       }
   }
 
-  private static String readAttributeType(Reader in) throws IOException
+  private String readAttributeType(Reader in) throws IOException
   {
     CPStringBuilder buf = new CPStringBuilder();
     int ch;
@@ -445,9 +446,9 @@ public final class X500Principal implements Principal, Serializable
       }
   }
 
-  private void parseDer (InputStream encodedStream) throws IOException
+  private void parseDer (InputStream encoded) throws IOException
   {
-    DERReader der = new DERReader (encodedStream);
+    DERReader der = new DERReader (encoded);
     DERValue name = der.read();
     if (!name.isConstructed())
       throw new IOException ("malformed Name");
@@ -483,7 +484,7 @@ public final class X500Principal implements Principal, Serializable
 
   private void newRelativeDistinguishedName()
   {
-    currentRdn = new LinkedHashMap<OID,String>();
+    currentRdn = new LinkedHashMap();
     components.add(currentRdn);
   }
 

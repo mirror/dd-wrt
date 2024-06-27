@@ -1,5 +1,5 @@
 /* DERWriter.java -- write Java types in DER format.
-   Copyright (C) 2003, 2004, 2005, 2010, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -106,17 +106,9 @@ public class DERWriter implements DER
     else if (value instanceof String)
       return writeString(out, object.getExternalTag(), (String) value);
     else if (value instanceof List)
-      {
-	@SuppressWarnings("unchecked")
-	  List<DERValue> dvList = (List<DERValue>) value;
-	return writeSequence(out, dvList);
-      }
+      return writeSequence(out, (List) value);
     else if (value instanceof Set)
-      {
-	@SuppressWarnings("unchecked")
-	  Set<DERValue> dvSet = (Set<DERValue>) value;
-	return writeSet(out, dvSet);
-      }
+      return writeSet(out, (Set) value);
     else if (value instanceof BitString)
       return writeBitString(out, (BitString) value);
     else if (value instanceof OID)
@@ -189,13 +181,13 @@ public class DERWriter implements DER
     return bytes.length;
   }
 
-  private static int writeSequence(OutputStream out, List<DERValue> sequence)
+  private static int writeSequence(OutputStream out, List sequence)
     throws IOException
   {
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    for (Iterator<DERValue> i = sequence.iterator(); i.hasNext(); )
+    for (Iterator i = sequence.iterator(); i.hasNext(); )
       {
-        write(bout, i.next());
+        write(bout, (DERValue) i.next());
       }
     byte[] buf = bout.toByteArray();
     writeLength(out, buf.length);
@@ -203,13 +195,13 @@ public class DERWriter implements DER
     return buf.length;
   }
 
-  private static int writeSet(OutputStream out, Set<DERValue> set)
+  private static int writeSet(OutputStream out, Set set)
     throws IOException
   {
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    for (Iterator<DERValue> i = set.iterator(); i.hasNext(); )
+    for (Iterator i = set.iterator(); i.hasNext(); )
       {
-        write(bout, i.next());
+        write(bout, (DERValue) i.next());
       }
     byte[] buf = bout.toByteArray();
     writeLength(out, buf.length);

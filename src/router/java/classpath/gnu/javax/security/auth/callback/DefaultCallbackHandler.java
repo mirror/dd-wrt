@@ -1,5 +1,5 @@
 /* DefaultCallbackHandler.java --
-   Copyright (C) 2004, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -66,13 +66,11 @@ public class DefaultCallbackHandler extends AbstractCallbackHandler
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
   protected void handleChoice(ChoiceCallback c)
   {
     c.setSelectedIndex(c.getDefaultChoice());
   }
 
-  @Override
   protected void handleConfirmation(ConfirmationCallback c)
   {
     if (c.getOptionType() == ConfirmationCallback.YES_NO_OPTION)
@@ -85,31 +83,26 @@ public class DefaultCallbackHandler extends AbstractCallbackHandler
       c.setSelectedIndex(c.getDefaultOption());
   }
 
-  @Override
   protected void handleLanguage(LanguageCallback c)
   {
     c.setLocale(Locale.getDefault());
   }
 
-  @Override
   protected void handleName(NameCallback c)
   {
     c.setName(System.getProperty("user.name"));
   }
 
-  @Override
   protected void handlePassword(PasswordCallback c)
   {
     c.setPassword(new char[0]);
   }
 
-  @Override
   protected void handleTextInput(TextInputCallback c)
   {
     c.setText("");
   }
 
-  @Override
   protected void handleTextOutput(TextOutputCallback c)
   {
   }

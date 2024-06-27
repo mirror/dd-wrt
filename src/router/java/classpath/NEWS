@@ -1,42 +1,4 @@
-Key:
-
-SX  - http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=X
-RHX - https://bugzilla.redhat.com/show_bug.cgi?id=X
-DX  - http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=X
-GX  - http://bugs.gentoo.org/show_bug.cgi?id=X
-CAX - http://server.complang.tuwien.ac.at/cgi-bin/bugzilla/show_bug.cgi?id=X
-LPX - https://bugs.launchpad.net/bugs/X 
-PRX - http://gcc.gnu.org/bugzilla/show_bug.cgi?id=X
-
-CVE-XXXX-YYYY: http://www.cve.mitre.org/cgi-bin/cvename.cgi?name=XXXX-YYYY
-
-New in release 0.99.1 (XXX XX, 2012)
-
-* Addition of java.util.Objects
-* Addition of java.lang.model.*
-* Addition of java.lang.model.element.*
-* Addition of java.lang.model.type.*
-* Addition of java.lang.model.util.*
-* Addition of javax.annotation.processing.*
-* Addition of javax.tools.*
-* Bug fixes:
-  - PR42134: NPE in java.text.Bidi
-  - PR54931: Classpath will not build docs with version of GJDoc included with itself
-  - PR54960: Avoid NullPointerException in SAXSerializer.
-  - PR42551: Avoid overwriting length of message when computing length representation.
-  - PR44208: Ensure a handle for the enum is registered before its constant.
-  - PR41689: javax.security.sasl.CREDIENTIALS field is missing
-  - PR55140: Addition of exception to codePointBefore breaks OpenJDK GenerateBreakIteratorData tool
-  - PR57070: VMProcess needs to notifyAll() instead of notify()
-  - PR58688: gnu.java.security.x509.PolicyNodeImpl#addAllPolicyQualifiers does not work
-  - PR64109: Missing symbol in libjavautil.so
-  - PR64176: Week of year field during end of year transition is incorrect
-  - PR64881: KeyPairGenerator.genKeyPair() ends up calling the default generateKeyPair method which returns a DSA generator
-  - PR64902: Keys returned by KeyPairGenerator don't use standardised algorithm names
-  - PR64904: KeyPairGenerator.genKeyPair() fails if not explicitly initialised
-  - PR66376: Lack of method stringPropertyNames
-
-New in release 0.99 (Feb 15, 2012)
+New in release 0.99 (Mar 08, 2012)
 
 * Addition of java.util.regex.Pattern.quote.
 * Addition of java.io.IOError.

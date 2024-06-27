@@ -39,11 +39,10 @@
 #include <pango/pango.h>
 #include <pango/pangoft2.h>
 #include <pango/pangofc-font.h>
-#include <ft2build.h>
-#include FT_GLYPH_H
-#include FT_OUTLINE_H
-#include FT_TYPES_H
-#include FT_TRUETYPE_TABLES_H
+#include <freetype/ftglyph.h>
+#include <freetype/ftoutln.h>
+#include <freetype/fttypes.h>
+#include <freetype/tttables.h>
 #include "gdkfont.h"
 #include "gtkpeer.h"
 #include "gnu_java_awt_peer_gtk_GdkFontPeer.h"
@@ -60,14 +59,14 @@ enum java_awt_font_baseline {
   java_awt_font_HANGING_BASELINE = 2
 };
 
-static PangoFontMap *font_map = NULL;
+static PangoFT2FontMap *ft2_map = NULL;
 
 JNIEXPORT void JNICALL
 Java_gnu_java_awt_peer_gtk_GdkFontPeer_initStaticState 
   (JNIEnv *env, jclass clazz __attribute__((unused)))
 {
   gtkpeer_init_font_IDs(env);
-  font_map = pango_ft2_font_map_new();
+  ft2_map = PANGO_FT2_FONT_MAP(pango_ft2_font_map_new());
 }
 
 JNIEXPORT void JNICALL
@@ -288,7 +287,7 @@ Java_gnu_java_awt_peer_gtk_GdkFontPeer_setFont
   pango_font_description_set_size (pfont->desc, size * PANGO_SCALE);
   
   /* Create new context */
-  pfont->ctx = pango_font_map_create_context (font_map);
+  pfont->ctx = pango_ft2_font_map_create_context (ft2_map);
   g_assert (pfont->ctx != NULL);
   
   pango_context_set_font_description (pfont->ctx, pfont->desc);

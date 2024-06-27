@@ -1,5 +1,5 @@
 /* PrivateCredentialPermission.java -- permissions governing private credentials.
-   Copyright (C) 2004, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -64,6 +64,7 @@ import java.util.StringTokenizer;
  * wildcard character.</p>
  */
 public final class PrivateCredentialPermission extends Permission
+  implements Serializable
 {
   /**
    * For compatability with Sun's JDK 1.4.2 rev. 5
@@ -82,7 +83,7 @@ public final class PrivateCredentialPermission extends Permission
    * @serial The principals, a set of CredOwner objects (an undocumented
    *  inner class of this class).
    */
-  private final Set<CredOwner> principals;
+  private final Set principals;
 
   /**
    * @serial Who knows?
@@ -108,7 +109,7 @@ public final class PrivateCredentialPermission extends Permission
         throw new IllegalArgumentException("actions must be \"read\"");
       }
     StringTokenizer st = new StringTokenizer (name, " \"'");
-    principals = new HashSet<CredOwner>();
+    principals = new HashSet();
     if (st.countTokens() < 3 || (st.countTokens() & 1) == 0)
       {
         throw new IllegalArgumentException ("badly formed credential name");
@@ -124,7 +125,6 @@ public final class PrivateCredentialPermission extends Permission
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
   public boolean equals (Object o)
   {
     if (! (o instanceof PrivateCredentialPermission))
@@ -141,20 +141,20 @@ public final class PrivateCredentialPermission extends Permission
         return false;
       }
 
-    final String[][] thisPrincipals = getPrincipals();
-    final String[][] thatPrincipals = that.getPrincipals();
-    if (thatPrincipals == null)
+    final String[][] principals = getPrincipals();
+    final String[][] that_principals = that.getPrincipals();
+    if (that_principals == null)
       {
         return false;
       }
-    if (thatPrincipals.length != thisPrincipals.length)
+    if (that_principals.length != principals.length)
       {
         return false;
       }
-    for (int i = 0; i < thisPrincipals.length; i++)
+    for (int i = 0; i < principals.length; i++)
       {
-        if (!thisPrincipals[i][0].equals (thatPrincipals[i][0]) ||
-            !thisPrincipals[i][1].equals (thatPrincipals[i][1]))
+        if (!principals[i][0].equals (that_principals[i][0]) ||
+            !principals[i][1].equals (that_principals[i][1]))
           {
             return false;
           }
@@ -168,7 +168,6 @@ public final class PrivateCredentialPermission extends Permission
    *
    * @return The list of actions.
    */
-  @Override
   public String getActions()
   {
     return "read";
@@ -197,16 +196,15 @@ public final class PrivateCredentialPermission extends Permission
   public String[][] getPrincipals()
   {
     String[][] ret = new String[principals.size()][];
-    Iterator<CredOwner> it = principals.iterator();
+    Iterator it = principals.iterator();
     for (int i = 0; i < principals.size() && it.hasNext(); i++)
       {
-        CredOwner co = it.next();
+        CredOwner co = (CredOwner) it.next();
         ret[i] = new String[] { co.getPrincipalClass(), co.getPrincipalName() };
       }
     return ret;
   }
 
-  @Override
   public int hashCode()
   {
     return credentialClass.hashCode() + principals.hashCode();
@@ -230,7 +228,6 @@ public final class PrivateCredentialPermission extends Permission
    * @param p The permission to check.
    * @return True if this permission implies <i>p</i>.
    */
-  @Override
   public boolean implies (Permission p)
   {
     if (! (p instanceof PrivateCredentialPermission))
@@ -243,19 +240,19 @@ public final class PrivateCredentialPermission extends Permission
       {
         return false;
       }
-    String[][] thisPrincipals = getPrincipals();
-    String[][] thatPrincipals = that.getPrincipals();
-    if (thatPrincipals == null)
+    String[][] principals = getPrincipals();
+    String[][] that_principals = that.getPrincipals();
+    if (that_principals == null)
       {
         return false;
       }
-    for (int i = 0; i < thisPrincipals.length; i++)
+    for (int i = 0; i < principals.length; i++)
       {
-        for (int j = 0; j < thatPrincipals.length; j++)
+        for (int j = 0; j < that_principals.length; j++)
           {
-            if (thisPrincipals[i][0].equals (thatPrincipals[j][0]) &&
-                (thisPrincipals[i][1].equals ("*") ||
-                 thisPrincipals[i][1].equals (thatPrincipals[j][1])))
+            if (principals[i][0].equals (that_principals[j][0]) &&
+                (principals[i][1].equals ("*") ||
+                 principals[i][1].equals (that_principals[j][1])))
               {
                 return true;
               }
@@ -269,7 +266,6 @@ public final class PrivateCredentialPermission extends Permission
    *
    * @return null.
    */
-  @Override
   public PermissionCollection newPermissionCollection()
   {
     return null;
@@ -283,8 +279,6 @@ public final class PrivateCredentialPermission extends Permission
    */
   private static class CredOwner implements Serializable
   {
-
-    private static final long serialVersionUID = -5607449830436408266L;
 
     // Fields.
     // -----------------------------------------------------------------------
@@ -304,7 +298,6 @@ public final class PrivateCredentialPermission extends Permission
     // Instance methods.
     // -----------------------------------------------------------------------
 
-    @Override
     public boolean equals (Object o)
     {
       if (!(o instanceof CredOwner))
@@ -315,7 +308,6 @@ public final class PrivateCredentialPermission extends Permission
         principalName.equals (((CredOwner) o).getPrincipalName());
     }
 
-    @Override
     public int hashCode()
     {
       return principalClass.hashCode() + principalName.hashCode();

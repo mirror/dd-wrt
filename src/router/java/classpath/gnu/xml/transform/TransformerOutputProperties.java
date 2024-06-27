@@ -1,5 +1,5 @@
 /* TransformerOutputProperties.java --
-   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -98,14 +98,14 @@ class TransformerOutputProperties
                               stylesheet.outputSystemId);
       }
     CPStringBuilder buf = new CPStringBuilder();
-    for (Iterator<String> i = stylesheet.outputCdataSectionElements.iterator();
+    for (Iterator i = stylesheet.outputCdataSectionElements.iterator();
          i.hasNext(); )
       {
         if (buf.length() > 0)
           {
             buf.append(' ');
           }
-        buf.append(i.next());
+        buf.append((String) i.next());
       }
     defaultProperties.put(OutputKeys.CDATA_SECTION_ELEMENTS, buf.toString());
     defaultProperties.put(OutputKeys.INDENT,
@@ -172,7 +172,7 @@ class TransformerOutputProperties
     stylesheet.outputSystemId = getProperty(OutputKeys.DOCTYPE_SYSTEM);
     StringTokenizer st =
       new StringTokenizer(getProperty(OutputKeys.CDATA_SECTION_ELEMENTS));
-    Collection<String> acc = new LinkedHashSet<String>();
+    Collection acc = new LinkedHashSet();
     while (st.hasMoreTokens())
       {
         acc.add(st.nextToken());

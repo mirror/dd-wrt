@@ -1,5 +1,5 @@
 /* Sha512RandomSpi.java --
-   Copyright (C) 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,8 +47,6 @@ import gnu.java.security.Registry;
 public class Sha512RandomSpi
     extends SecureRandomAdapter
 {
-  private static final long serialVersionUID = 3471561597377786188L;
-
   public Sha512RandomSpi()
   {
     super(Registry.SHA512_HASH);

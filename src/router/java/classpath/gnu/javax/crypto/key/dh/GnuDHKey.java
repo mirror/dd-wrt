@@ -1,5 +1,5 @@
 /* GnuDHKey.java --
-   Copyright (C) 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -113,7 +113,7 @@ public abstract class GnuDHKey
 
   public String getAlgorithm()
   {
-    return "DH";
+    return Registry.DH_KPG;
   }
 
   /** @deprecated see getEncoded(int). */

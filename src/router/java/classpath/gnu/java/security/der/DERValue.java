@@ -1,5 +1,5 @@
 /* DERValue.java -- a value read or written to a DER encoding.
-   Copyright (C) 2003, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -67,7 +67,7 @@ public class DERValue implements DER
     this.length = length;
     this.value = value;
     if (encoded != null)
-      this.encoded = encoded.clone();
+      this.encoded = (byte[]) encoded.clone();
   }
 
   public DERValue(int tag, Object value)
@@ -125,9 +125,9 @@ public class DERValue implements DER
 
   public Object getValueAs (final int derType) throws IOException
   {
-    byte[] enc = getEncoded();
-    enc[0] = (byte) derType;
-    return DERReader.read(enc).getValue();
+    byte[] encoded = getEncoded ();
+    encoded[0] = (byte) derType;
+    return DERReader.read (encoded).getValue ();
   }
 
   public byte[] getEncoded()
@@ -147,7 +147,7 @@ public class DERValue implements DER
             throw iae;
           }
       }
-    return encoded.clone();
+    return (byte[]) encoded.clone();
   }
 
   public int getEncodedLength()
@@ -170,7 +170,6 @@ public class DERValue implements DER
     return encoded.length;
   }
 
-  @Override
   public String toString()
   {
     String start = "DERValue ( [";

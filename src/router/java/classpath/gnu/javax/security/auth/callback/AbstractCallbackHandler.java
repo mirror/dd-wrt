@@ -1,5 +1,5 @@
 /* AbstractCallbackHandler.java --
-   Copyright (C) 2005, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2005, 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -42,6 +42,7 @@ import gnu.java.security.Engine;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import java.security.NoSuchAlgorithmException;
@@ -78,7 +79,7 @@ public abstract class AbstractCallbackHandler implements CallbackHandler
   protected AbstractCallbackHandler (final String name)
   {
     super();
-    messages = ResourceBundle.getBundle("gnu/javax/security/auth/callback/MessagesBundle");
+    messages = PropertyResourceBundle.getBundle("gnu/javax/security/auth/callback/MessagesBundle");
     this.name = name;
   }
 
@@ -178,7 +179,6 @@ public abstract class AbstractCallbackHandler implements CallbackHandler
     throw x;
   }
 
-  @Override
   public void handle(Callback[] callbacks)
     throws IOException, UnsupportedCallbackException
   {
@@ -220,70 +220,63 @@ public abstract class AbstractCallbackHandler implements CallbackHandler
    *
    * @param callback The choice callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleChoice(ChoiceCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link ConfirmationCallback}.
    *
    * @param callback The confirmation callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleConfirmation(ConfirmationCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link LanguageCallback}.
    *
    * @param callback The language callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleLanguage(LanguageCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link NameCallback}.
    *
    * @param callback The name callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleName(NameCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link PasswordCallback}.
    *
    * @param callback The password callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handlePassword(PasswordCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link TextInputCallback}.
    *
    * @param callback The text input callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleTextInput(TextInputCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles a {@link TextOutputCallback}.
    *
    * @param callback The text output callback.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the callback can't be handled.
    */
   protected abstract void handleTextOutput(TextOutputCallback callback)
-    throws IOException, UnsupportedCallbackException;
+    throws IOException;
 
   /**
    * Handles an unknown callback. The default implementation simply throws
@@ -291,10 +284,9 @@ public abstract class AbstractCallbackHandler implements CallbackHandler
    *
    * @param callback The callback to handle.
    * @throws IOException If an I/O error occurs.
-   * @throws UnsupportedCallbackException if the specified callback is not
+   * @throws UnsupportedCallbackException If the specified callback is not
    *   supported.
    */
-  @SuppressWarnings({"static-method","unused"})
   protected void handleOther(Callback callback)
     throws IOException, UnsupportedCallbackException
   {

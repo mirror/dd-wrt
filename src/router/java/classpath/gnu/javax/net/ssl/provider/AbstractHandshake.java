@@ -1,5 +1,5 @@
 /* AbstractHandshake.java -- abstract handshake handler.
-   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -588,7 +588,7 @@ Certificate.signature.sha_hash
         clientRandom.buffer().get(seed, serverRandom.length(),
                                   clientRandom.length());
         prf = new SSLRandom();
-        HashMap<String,Object> attr = new HashMap<String,Object>(2);
+        HashMap<String,byte[]> attr = new HashMap<String,byte[]>(2);
         attr.put(SSLRandom.SECRET, session.privateData.masterSecret);
         attr.put(SSLRandom.SEED, seed);
         prf.init(attr);
@@ -606,7 +606,7 @@ Certificate.signature.sha_hash
                                   clientRandom.length());
 
         prf = new TLSRandom();
-        HashMap<String,Object> attr = new HashMap<String,Object>(2);
+        HashMap<String,byte[]> attr = new HashMap<String,byte[]>(2);
         attr.put(TLSRandom.SECRET, session.privateData.masterSecret);
         attr.put(TLSRandom.SEED, seed);
         prf.init(attr);
@@ -650,7 +650,7 @@ Certificate.signature.sha_hash
             else
               {
                 TLSRandom prf2 = new TLSRandom();
-                HashMap<String,Object> attr = new HashMap<String,Object>(2);
+                HashMap<String,byte[]> attr = new HashMap<String,byte[]>(2);
                 attr.put(TLSRandom.SECRET, keys[2]);
                 byte[] seed = new byte[CLIENT_WRITE_KEY.length +
                                        clientRandom.length() +
@@ -910,7 +910,7 @@ Certificate.signature.sha_hash
                                   MASTER_SECRET.length + clientRandom.length(),
                                   serverRandom.length());
         TLSRandom prf = new TLSRandom();
-        HashMap<String,Object> attr = new HashMap<String,Object>(2);
+        HashMap<String,byte[]> attr = new HashMap<String,byte[]>(2);
         attr.put(TLSRandom.SECRET, preMasterSecret);
         attr.put(TLSRandom.SEED, seed);
         prf.init(attr);

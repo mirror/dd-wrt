@@ -78,55 +78,53 @@ class FullSyntaxBuilder
   /**
    * Complete vocabulary (elements and attributes) of the full syntax.
    */
-  static final Map<String,Set<String>> VOCABULARY = new HashMap<String,Set<String>>();
-  static final Set<String> STRIPPED_ATTRIBUTES = new HashSet<String>();
-  static final Set<String> PATTERN_ELEMENTS = new HashSet<String>();
-  static final Set<String> EMPTY_STRING_SET = Collections.emptySet();
-
+  static final Map VOCABULARY = new HashMap();
+  static final Set STRIPPED_ATTRIBUTES = new HashSet();
+  static final Set PATTERN_ELEMENTS = new HashSet();
   static
   {
-    Set<String> elementAttrs = Collections.singleton("name");
-    Set<String> dataAttrs = new HashSet<String>();
+    Set elementAttrs = Collections.singleton("name");
+    Set dataAttrs = new HashSet();
     dataAttrs.add("type");
     dataAttrs.add("datatypeLibrary");
-    Set<String> valueAttrs = new HashSet<String>();
+    Set valueAttrs = new HashSet();
     valueAttrs.add("type");
     valueAttrs.add("datatypeLibrary");
     valueAttrs.add("ns");
-    Set<String> externalAttrs = Collections.singleton("href");
-    Set<String> startAttrs = Collections.singleton("combine");
-    Set<String> defineAttrs = new HashSet<String>();
+    Set externalAttrs = Collections.singleton("href");
+    Set startAttrs = Collections.singleton("combine");
+    Set defineAttrs = new HashSet();
     defineAttrs.add("name");
     defineAttrs.add("combine");
-    Set<String> nsAttrs = Collections.singleton("ns");
+    Set nsAttrs = Collections.singleton("ns");
 
     VOCABULARY.put("element", elementAttrs);
     VOCABULARY.put("attribute", elementAttrs);
-    VOCABULARY.put("group", EMPTY_STRING_SET);
-    VOCABULARY.put("interleave", EMPTY_STRING_SET);
-    VOCABULARY.put("choice", EMPTY_STRING_SET);
-    VOCABULARY.put("optional", EMPTY_STRING_SET);
-    VOCABULARY.put("zeroOrMore", EMPTY_STRING_SET);
-    VOCABULARY.put("oneOrMore", EMPTY_STRING_SET);
-    VOCABULARY.put("list", EMPTY_STRING_SET);
-    VOCABULARY.put("mixed", EMPTY_STRING_SET);
+    VOCABULARY.put("group", Collections.EMPTY_SET);
+    VOCABULARY.put("interleave", Collections.EMPTY_SET);
+    VOCABULARY.put("choice", Collections.EMPTY_SET);
+    VOCABULARY.put("optional", Collections.EMPTY_SET);
+    VOCABULARY.put("zeroOrMore", Collections.EMPTY_SET);
+    VOCABULARY.put("oneOrMore", Collections.EMPTY_SET);
+    VOCABULARY.put("list", Collections.EMPTY_SET);
+    VOCABULARY.put("mixed", Collections.EMPTY_SET);
     VOCABULARY.put("ref", elementAttrs);
     VOCABULARY.put("parentRef", elementAttrs);
-    VOCABULARY.put("empty", EMPTY_STRING_SET);
-    VOCABULARY.put("text", EMPTY_STRING_SET);
+    VOCABULARY.put("empty", Collections.EMPTY_SET);
+    VOCABULARY.put("text", Collections.EMPTY_SET);
     VOCABULARY.put("value", valueAttrs);
     VOCABULARY.put("data", dataAttrs);
-    VOCABULARY.put("notAllowed", EMPTY_STRING_SET);
+    VOCABULARY.put("notAllowed", Collections.EMPTY_SET);
     VOCABULARY.put("externalRef", externalAttrs);
-    VOCABULARY.put("grammar", EMPTY_STRING_SET);
+    VOCABULARY.put("grammar", Collections.EMPTY_SET);
     VOCABULARY.put("param", elementAttrs);
-    VOCABULARY.put("except", EMPTY_STRING_SET);
-    VOCABULARY.put("div", EMPTY_STRING_SET);
+    VOCABULARY.put("except", Collections.EMPTY_SET);
+    VOCABULARY.put("div", Collections.EMPTY_SET);
     VOCABULARY.put("include", externalAttrs);
     VOCABULARY.put("start", startAttrs);
     VOCABULARY.put("define", defineAttrs);
     VOCABULARY.put("name", nsAttrs);
-    VOCABULARY.put("anyName", EMPTY_STRING_SET);
+    VOCABULARY.put("anyName", Collections.EMPTY_SET);
     VOCABULARY.put("nsName", nsAttrs);
 
     STRIPPED_ATTRIBUTES.add("name");
@@ -154,9 +152,9 @@ class FullSyntaxBuilder
     PATTERN_ELEMENTS.add("grammar");
   }
 
-  private Set<String> urls; // recursion checking
+  private Set urls; // recursion checking
   private int refCount; // creation of ref names
-  private Map<String,DatatypeLibrary> datatypeLibraries;
+  private Map datatypeLibraries;
 
   /**
    * Parse the specified document into a grammar.
@@ -164,7 +162,7 @@ class FullSyntaxBuilder
   synchronized Grammar parse(Document doc)
     throws IOException
   {
-    urls = new HashSet<String>();
+    urls = new HashSet();
     refCount = 1;
 
     doc.normalizeDocument(); // Normalize XML document
@@ -197,24 +195,24 @@ class FullSyntaxBuilder
       }
 
     // 4.19. define and ref elements
-    Set<Element> allDefines = new HashSet<Element>(), reachableDefines = new HashSet<Element>();
+    Set allDefines = new HashSet(), reachableDefines = new HashSet();
     getDefines(allDefines, grammar, grammar, false);
     getDefines(reachableDefines, grammar, start, true);
     allDefines.removeAll(reachableDefines);
-    for (Iterator<Element> i = allDefines.iterator(); i.hasNext(); )
+    for (Iterator i = allDefines.iterator(); i.hasNext(); )
       {
         // remove unreachable defines
-        Element d = i.next();
+        Element d = (Element) i.next();
         Node parent = d.getParentNode();
         parent.removeChild(d);
       }
     // replace all elements that are not children of defines by refs to new
     // defines
-    Set<Element> elements = new HashSet<Element>();
+    Set elements = new HashSet();
     getElements(elements, grammar, grammar);
-    for (Iterator<Element> i = elements.iterator(); i.hasNext(); )
+    for (Iterator i = elements.iterator(); i.hasNext(); )
       {
-        Element element = i.next();
+        Element element = (Element) i.next();
         Node parent = element.getParentNode();
         if (!reachableDefines.contains(parent))
           {
@@ -232,9 +230,9 @@ class FullSyntaxBuilder
           }
       }
     // Get defines that don't have element children
-    for (Iterator<Element> i = reachableDefines.iterator(); i.hasNext(); )
+    for (Iterator i = reachableDefines.iterator(); i.hasNext(); )
       {
-        Element d = i.next();
+        Element d = (Element) i.next();
         Element child = getFirstChildElement(d);
         if (child != null && "element".equals(child.getLocalName()))
           i.remove();
@@ -242,9 +240,9 @@ class FullSyntaxBuilder
     // Expand refs that refer to these defines
     expandRefs(reachableDefines, grammar);
     // Remove any defines that don't have element children
-    for (Iterator<Element> i = reachableDefines.iterator(); i.hasNext(); )
+    for (Iterator i = reachableDefines.iterator(); i.hasNext(); )
       {
-        Element d = i.next();
+        Element d = (Element) i.next();
         Node parent = d.getParentNode();
         parent.removeChild(d);
       }
@@ -256,7 +254,7 @@ class FullSyntaxBuilder
     return ret;
   }
 
-  private void getDefines(Set<Element> defines, Element grammar, Element node,
+  private void getDefines(Set defines, Element grammar, Element node,
                           boolean followRefs)
   {
     String elementName = node.getLocalName();
@@ -283,7 +281,7 @@ class FullSyntaxBuilder
       getDefines(defines, grammar, child, followRefs);
   }
 
-  private void getElements(Set<Element> elements, Element grammar, Element node)
+  private void getElements(Set elements, Element grammar, Element node)
   {
     String elementName = node.getLocalName();
     if ("element".equals(elementName))
@@ -293,16 +291,16 @@ class FullSyntaxBuilder
       getElements(elements, grammar, child);
   }
 
-  private void expandRefs(Set<Element> defines, Element node)
+  private void expandRefs(Set defines, Element node)
     throws GrammarException
   {
     String elementName = node.getLocalName();
     if ("ref".equals(elementName))
       {
         String rname = node.getAttribute("name");
-        for (Iterator<Element> i = defines.iterator(); i.hasNext(); )
+        for (Iterator i = defines.iterator(); i.hasNext(); )
           {
-            Element define = i.next();
+            Element define = (Element) i.next();
             String dname = define.getAttribute("name");
             if (rname.equals(dname))
               {
@@ -353,7 +351,7 @@ class FullSyntaxBuilder
           parent.removeChild(node);
         else
           {
-            Set<String> allowedAttrs = VOCABULARY.get(elementName);
+            Set allowedAttrs = (Set) VOCABULARY.get(elementName);
             NamedNodeMap attrs = node.getAttributes();
             int len = attrs.getLength();
             for (int i = len - 1; i >= 0; i--)
@@ -469,19 +467,19 @@ class FullSyntaxBuilder
                 transform(element);
                 urls.remove(href);
                 // handle components
-                List<Element> includeComponents = getComponents(include);
-                List<Element> grammarComponents = getComponents(element);
-                for (Iterator<Element> i = includeComponents.iterator(); i.hasNext(); )
+                List includeComponents = getComponents(include);
+                List grammarComponents = getComponents(element);
+                for (Iterator i = includeComponents.iterator(); i.hasNext(); )
                   {
-                    Element comp = i.next();
+                    Element comp = (Element) i.next();
                     String compName = comp.getLocalName();
                     if ("start".equals(compName))
                       {
                         boolean found = false;
-                        for (Iterator<Element> j = grammarComponents.iterator();
+                        for (Iterator j = grammarComponents.iterator();
                              j.hasNext(); )
                           {
-                            Element c2 = j.next();
+                            Element c2 = (Element) j.next();
                             if ("start".equals(c2.getLocalName()))
                               {
                                 c2.getParentNode().removeChild(c2);
@@ -496,10 +494,10 @@ class FullSyntaxBuilder
                       {
                         String name = comp.getAttribute("name");
                         boolean found = false;
-                        for (Iterator<Element> j = grammarComponents.iterator();
+                        for (Iterator j = grammarComponents.iterator();
                              j.hasNext(); )
                           {
-                            Element c2 = j.next();
+                            Element c2 = (Element) j.next();
                             if ("define".equals(c2.getLocalName()) &&
                                 name.equals(c2.getAttribute("name")))
                               {
@@ -708,7 +706,7 @@ class FullSyntaxBuilder
                   forbidDescendants(node, Collections.singleton("anyName"));
                 else if ("nsName".equals(parentName))
                   {
-                    Set<String> names = new HashSet<String>();
+                    Set names = new HashSet();
                     names.add("nsName");
                     names.add("anyName");
                     forbidDescendants(node, names);
@@ -750,7 +748,7 @@ class FullSyntaxBuilder
             else if ("grammar".equals(elementName))
               {
                 String combine = null;
-                List<Node> nodes = new LinkedList<Node>();
+                List nodes = new LinkedList();
                 Node ctx = node.getFirstChild();
                 while (ctx != null)
                   {
@@ -769,8 +767,8 @@ class FullSyntaxBuilder
                 if (!nodes.isEmpty())
                   combineNodes(node, combine, "start", nodes);
                 // defines
-                Map<String,List<Node>> defines = new HashMap<String,List<Node>>();
-                Map<String,String> defineCombines = new HashMap<String,String>();
+                Map defines = new HashMap();
+                Map defineCombines = new HashMap();
                 ctx = node.getFirstChild();
                 while (ctx != null)
                   {
@@ -778,7 +776,7 @@ class FullSyntaxBuilder
                     if ("define".equals(ctx.getLocalName()))
                       {
                         String name = ((Element) ctx).getAttribute("name");
-                        combine = defineCombines.get(name);
+                        combine = (String) defineCombines.get(name);
                         String c = ((Element) ctx).getAttribute("combine");
                         if (combine != null && !combine.equals(c))
                           throw new GrammarException("multiple define " +
@@ -786,21 +784,21 @@ class FullSyntaxBuilder
                                                      name + "' but no " +
                                                      "combine attribute");
                         defineCombines.put(name, c);
-                        nodes = defines.get(name);
+                        nodes = (List) defines.get(name);
                         if (nodes == null)
                           {
-                            nodes = new LinkedList<Node>();
+                            nodes = new LinkedList();
                             defines.put(name, nodes);
                           }
                         nodes.add(ctx);
                       }
                     ctx = next;
                   }
-                for (Iterator<String> i = defines.keySet().iterator(); i.hasNext(); )
+                for (Iterator i = defines.keySet().iterator(); i.hasNext(); )
                   {
-                    String name = i.next();
-                    combine = defineCombines.get(name);
-                    nodes = defines.get(name);
+                    String name = (String) i.next();
+                    combine = (String) defineCombines.get(name);
+                    nodes = (List) defines.get(name);
                     if (!nodes.isEmpty())
                       combineNodes(node, combine, "define", nodes);
                   }
@@ -939,7 +937,7 @@ class FullSyntaxBuilder
               grammar = grammar1;
 
             String name = ((Element) node).getAttribute("name");
-            if (name == null)
+            if (name != null)
               throw new GrammarException("no name attribute on " +
                                          elementName);
             Node define = null;
@@ -1207,9 +1205,9 @@ class FullSyntaxBuilder
   /**
    * Returns the "components" of an element, as described in section 4.7.
    */
-  private List<Element> getComponents(Node node)
+  private List getComponents(Node node)
   {
-    List<Element> ret = new LinkedList<Element>();
+    List ret = new LinkedList();
     for (Node ctx = node.getFirstChild(); ctx != null;
          ctx = ctx.getNextSibling())
       {
@@ -1222,7 +1220,7 @@ class FullSyntaxBuilder
         if ("div".equals(name))
           ret.addAll(getComponents(ctx));
         else if (VOCABULARY.containsKey(name))
-          ret.add((Element) ctx);
+          ret.add(ctx);
       }
     return ret;
   }
@@ -1259,7 +1257,7 @@ class FullSyntaxBuilder
     return (Element) ctx;
   }
 
-  private static void forbidDescendants(Node node, Set<String> names)
+  private static void forbidDescendants(Node node, Set names)
     throws GrammarException
   {
     for (Node ctx = node.getFirstChild(); ctx != null;
@@ -1291,7 +1289,7 @@ class FullSyntaxBuilder
   }
 
   private static void combineNodes(Node node, String combine, String name,
-                                   List<Node> nodes)
+                                   List nodes)
   {
     Document doc = node.getOwnerDocument();
     Node child =
@@ -1300,9 +1298,9 @@ class FullSyntaxBuilder
       doc.createElementNS(XMLConstants.RELAXNG_NS_URI, combine);
     child.appendChild(combineNode);
     boolean inserted = false;
-    for (Iterator<Node> i = nodes.iterator(); i.hasNext(); )
+    for (Iterator i = nodes.iterator(); i.hasNext(); )
       {
-        Node startNode = i.next();
+        Node startNode = (Node) i.next();
         if (!inserted)
           {
             node.insertBefore(child, startNode);
@@ -1637,8 +1635,8 @@ class FullSyntaxBuilder
     throws GrammarException
   {
     if (datatypeLibraries == null)
-      datatypeLibraries = new HashMap<String,DatatypeLibrary>();
-    DatatypeLibrary library = datatypeLibraries.get(uri);
+      datatypeLibraries = new HashMap();
+    DatatypeLibrary library = (DatatypeLibrary) datatypeLibraries.get(uri);
     if (library == null)
       {
         library = new DatatypeLibraryLoader().createDatatypeLibrary(uri);

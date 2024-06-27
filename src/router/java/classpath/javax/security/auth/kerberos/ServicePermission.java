@@ -1,5 +1,5 @@
 /* ServicePermission.java -- kerberos service permission
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -54,7 +54,8 @@ import java.util.Vector;
 public final class ServicePermission
     extends Permission
 {
-  private static final long serialVersionUID = -1227585031618624935L;
+  // FIXME: Enable this when serialization works.
+  // private static final long serialVersionUID = -1227585031618624935L;
 
   private static final int INITIATE = 1;
   private static final int ACCEPT = 2;
@@ -81,7 +82,6 @@ public final class ServicePermission
     parseActions(action);
   }
 
-  @Override
   public boolean implies(Permission perm)
   {
     if (! (perm instanceof ServicePermission))
@@ -92,7 +92,6 @@ public final class ServicePermission
     return getName().equals(sp.getName());
   }
 
-  @Override
   public boolean equals(Object obj)
   {
     if (! (obj instanceof ServicePermission))
@@ -101,7 +100,6 @@ public final class ServicePermission
     return flags == sp.flags && getName().equals(sp.getName());
   }
 
-  @Override
   public int hashCode()
   {
     return getName().hashCode() + flags;
@@ -110,7 +108,6 @@ public final class ServicePermission
   /**
    * Return a string representing the actions.
    */
-  @Override
   public String getActions()
   {
     if (flags == (INITIATE | ACCEPT))
@@ -122,14 +119,12 @@ public final class ServicePermission
     return "";
   }
 
-  @Override
   public PermissionCollection newPermissionCollection()
   {
     return new PermissionCollection()
     {
-      private Vector<Permission> permissions = new Vector<Permission>();
+      private Vector permissions = new Vector();
 
-      @Override
       public void add(Permission perm)
       {
         if (isReadOnly())
@@ -139,23 +134,21 @@ public final class ServicePermission
         permissions.add(perm);
       }
 
-      @Override
       public boolean implies(Permission perm)
       {
         if (! (perm instanceof ServicePermission))
           return false;
-        Enumeration<Permission> e = elements();
+        Enumeration e = elements();
         while (e.hasMoreElements())
           {
-            Permission sp = e.nextElement();
+            ServicePermission sp = (ServicePermission) e.nextElement();
             if (sp.implies(perm))
               return true;
           }
         return false;
       }
 
-      @Override
-      public Enumeration<Permission> elements()
+      public Enumeration elements()
       {
         return permissions.elements();
       }

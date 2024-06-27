@@ -1,5 +1,5 @@
 /* DSSKeyPairX509Codec.java -- X.509 Encoding/Decoding handler
-   Copyright (C) 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -67,7 +67,6 @@ public class DSSKeyPairX509Codec
 
   // implicit 0-arguments constructor
 
-  @Override
   public int getFormatID()
   {
     return X509_FORMAT;
@@ -117,7 +116,6 @@ public class DSSKeyPairX509Codec
    *        of {@link DSSPublicKey} or if an exception occurs during the
    *        marshalling process.
    */
-  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     if (! (key instanceof DSSPublicKey))
@@ -139,14 +137,14 @@ public class DSSKeyPairX509Codec
         DERValue derQ = new DERValue(DER.INTEGER, q);
         DERValue derG = new DERValue(DER.INTEGER, g);
 
-        ArrayList<DERValue> params = new ArrayList<DERValue>(3);
+        ArrayList params = new ArrayList(3);
         params.add(derP);
         params.add(derQ);
         params.add(derG);
         derParams = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, params);
       }
 
-    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
+    ArrayList algorithmID = new ArrayList(2);
     algorithmID.add(derOID);
     algorithmID.add(derParams);
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -157,7 +155,7 @@ public class DSSKeyPairX509Codec
     byte[] yBytes = derDSAPublicKey.getEncoded();
     DERValue derSPK = new DERValue(DER.BIT_STRING, new BitString(yBytes));
 
-    ArrayList<DERValue> spki = new ArrayList<DERValue>(2);
+    ArrayList spki = new ArrayList(2);
     spki.add(derAlgorithmID);
     spki.add(derSPK);
     DERValue derSPKI = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, spki);
@@ -181,7 +179,6 @@ public class DSSKeyPairX509Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
-  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     throw new InvalidParameterException("Wrong format for private keys");
@@ -195,7 +192,6 @@ public class DSSKeyPairX509Codec
    * @throw InvalidParameterException if an exception occurs during the
    *        unmarshalling process.
    */
-  @Override
   public PublicKey decodePublicKey(byte[] input)
   {
     if (input == null)
@@ -273,7 +269,6 @@ public class DSSKeyPairX509Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
-  @Override
   public PrivateKey decodePrivateKey(byte[] input)
   {
     throw new InvalidParameterException("Wrong format for private keys");

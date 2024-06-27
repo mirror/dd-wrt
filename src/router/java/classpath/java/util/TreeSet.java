@@ -154,7 +154,7 @@ public class TreeSet<T> extends AbstractSet<T>
     map = new TreeMap<T, String>
       ((Comparator<? super T>)sortedSet.comparator());
     itr = ((SortedSet<T>) sortedSet).iterator();
-    ((TreeMap<T, String>) map).putKeysLinear(itr, sortedSet.size(), "");
+    ((TreeMap<T, String>) map).putKeysLinear(itr, sortedSet.size());
   }
 
   /**
@@ -489,7 +489,7 @@ public class TreeSet<T> extends AbstractSet<T>
     Comparator<? super T> comparator = (Comparator<? super T>) s.readObject();
     int size = s.readInt();
     map = new TreeMap<T, String>(comparator);
-    ((TreeMap<T, String>) map).putFromObjStream(s, size, "");
+    ((TreeMap<T, String>) map).putFromObjStream(s, size, false);
   }
 
   /**

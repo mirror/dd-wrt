@@ -120,12 +120,10 @@ public class MetaMessage extends MidiMessage
 
     // Now compute the length representation
     long buffer = length & 0x7F;
-    // Avoid altering length variable; PR42551
-    lengthValue = length;
-    while ((lengthValue >>= 7) > 0)
+    while ((length >>= 7) > 0)
     {
       buffer <<= 8;
-      buffer |= ((lengthValue & 0x7F) | 0x80);
+      buffer |= ((length & 0x7F) | 0x80);
     }
 
     // Now store the variable length length value

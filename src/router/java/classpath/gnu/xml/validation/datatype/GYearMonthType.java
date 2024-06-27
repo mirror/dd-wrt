@@ -52,19 +52,17 @@ final class GYearMonthType
 {
 
   static class GYearMonth
-    implements Comparable<GYearMonth>
+    implements Comparable
   {
 
     int year;
     int month;
 
-    @Override
     public int hashCode()
     {
       return year * 31 + month;
     }
 
-    @Override
     public boolean equals(Object other)
     {
       if (other instanceof GYearMonth)
@@ -75,16 +73,20 @@ final class GYearMonthType
       return false;
     }
 
-    @Override
-    public int compareTo(GYearMonth gmy)
+    public int compareTo(Object other)
     {
-      if (gmy.year == year)
+      if (other instanceof GYearMonth)
         {
-          if (gmy.month == month)
-            return 0;
-          return (month < gmy.month) ? -1 : 1;
+          GYearMonth gmy = (GYearMonth) other;
+          if (gmy.year == year)
+            {
+              if (gmy.month == month)
+                return 0;
+              return (month < gmy.month) ? -1 : 1;
+            }
+          return (year < gmy.year) ? -1 : 1;
         }
-      return (year < gmy.year) ? -1 : 1;
+      return 0;
     }
 
   }

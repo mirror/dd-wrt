@@ -1,5 +1,5 @@
 /* MessageDigestSpi.java --- The message digest service provider interface.
-   Copyright (C) 1999, 2005, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -76,7 +76,6 @@ public abstract class MessageDigestSpi
 
      @since 1.2
    */
-  @SuppressWarnings("static-method")
   protected int engineGetDigestLength()
   {
     return 0;
@@ -168,7 +167,6 @@ public abstract class MessageDigestSpi
      implementation has to overload this class in order to be
      cloneable.
    */
-  @Override
   public Object clone() throws CloneNotSupportedException
   {
     return super.clone();

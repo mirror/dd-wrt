@@ -1,5 +1,5 @@
 /* GnuConfiguration.java -- GNU Classpath implementation of JAAS Configuration
-   Copyright (C) 2006, 2010, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,6 +47,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Security;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -135,7 +136,7 @@ public final class GnuConfiguration extends Configuration
    * this map is a {@link List} of {@link AppConfigurationEntry}s for that
    * application name.
    */
-  private Map<String,List<AppConfigurationEntry>> loginModulesMap;
+  private Map loginModulesMap;
   /** Our reference to our default syntax parser. */
   private ConfigFileParser cp;
 
@@ -147,7 +148,7 @@ public final class GnuConfiguration extends Configuration
   {
     super();
 
-    loginModulesMap = new HashMap<String,List<AppConfigurationEntry>>();
+    loginModulesMap = new HashMap();
     cp = new ConfigFileParser();
     init();
   }
@@ -163,7 +164,6 @@ public final class GnuConfiguration extends Configuration
   /* (non-Javadoc)
    * @see javax.security.auth.login.Configuration#getAppConfigurationEntry(java.lang.String)
    */
-  @Override
   public AppConfigurationEntry[] getAppConfigurationEntry(String appName)
   {
     if (appName == null)
@@ -173,13 +173,13 @@ public final class GnuConfiguration extends Configuration
     if (appName.length() == 0)
       return null;
 
-    List<AppConfigurationEntry> loginModules = loginModulesMap.get(appName);
+    List loginModules = (List) loginModulesMap.get(appName);
     if (loginModules == null || loginModules.size() == 0)
       return null;
 
     if (gnu.java.security.Configuration.DEBUG)
       log.fine(appName + " -> " + loginModules.size() + " entry(ies)");
-    return loginModules.toArray(new AppConfigurationEntry[loginModules.size()]);
+    return (AppConfigurationEntry[]) loginModules.toArray(new AppConfigurationEntry[0]);
   }
 
   /**
@@ -194,7 +194,6 @@ public final class GnuConfiguration extends Configuration
    * <code>refreshLoginConfiguration</code>.
    * @see AuthPermission
    */
-  @Override
   public void refresh()
   {
     SecurityManager sm = System.getSecurityManager();
@@ -242,7 +241,7 @@ public final class GnuConfiguration extends Configuration
    * <i>java.security.auth.login.config.url.N</i>.
    *
    * @return <code>true</code> if it succeeds, and <code>false</code>
-   *         otherwise.
+   *         otherwsie.
    */
   private boolean processSecurityProperties()
   {
@@ -291,7 +290,7 @@ public final class GnuConfiguration extends Configuration
    * @throws IOException
    *           if an exception occurs during the operation.
    */
-  private static InputStream getInputStreamFromURL(String s) throws IOException
+  private InputStream getInputStreamFromURL(String s) throws IOException
   {
     InputStream result = null;
     try
@@ -387,22 +386,23 @@ public final class GnuConfiguration extends Configuration
   private void parseConfig(InputStream configStream) throws IOException
   {
     cp.parse(new InputStreamReader(configStream, "UTF-8"));
-    mergeLoginModules(cp.getLoginModulesMap());
+    Map loginModulesMap = cp.getLoginModulesMap();
+    mergeLoginModules(loginModulesMap);
   }
 
-  private void mergeLoginModules(Map<String,List<AppConfigurationEntry>> otherLoginModules)
+  private void mergeLoginModules(Map otherLoginModules)
   {
     if (otherLoginModules == null || otherLoginModules.size() < 1)
       return;
 
-    for (Map.Entry<String,List<AppConfigurationEntry>> entry : otherLoginModules.entrySet())
+    for (Iterator it = otherLoginModules.keySet().iterator(); it.hasNext();)
       {
-        String appName = entry.getKey();
-        List<AppConfigurationEntry> thatListOfACEs = entry.getValue();
+        String appName = (String) it.next();
+        List thatListOfACEs = (List) otherLoginModules.get(appName);
         if (thatListOfACEs == null || thatListOfACEs.size() < 1)
           continue;
 
-        List<AppConfigurationEntry> thisListsOfACEs = loginModulesMap.get(appName);
+        List thisListsOfACEs = (List) loginModulesMap.get(appName);
         if (thisListsOfACEs == null)
           loginModulesMap.put(appName, thatListOfACEs);
         else
@@ -410,7 +410,7 @@ public final class GnuConfiguration extends Configuration
       }
   }
 
-  private static File getUserHome()
+  private File getUserHome()
   {
     String uh = System.getProperty("user.home");
     if (uh == null || uh.trim().length() == 0)
@@ -442,7 +442,7 @@ public final class GnuConfiguration extends Configuration
     return result;
   }
 
-  private static File getConfigFromUserHome(File userHome, String fileName)
+  private File getConfigFromUserHome(File userHome, String fileName)
   {
     File result = new File(userHome, fileName);
     if (! result.exists())

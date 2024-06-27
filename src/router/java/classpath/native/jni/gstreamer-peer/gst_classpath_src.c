@@ -45,7 +45,6 @@ exception statement from your version. */
  * TODO: Maybe this should be moved in config.h instead?
  */
 #define CLASSPATH_GST_PLUGIN_VERSION PACKAGE_VERSION
-#define GLIB_DISABLE_DEPRECATION_WARNINGS
 
 #include <stdio.h>
 #include <string.h>

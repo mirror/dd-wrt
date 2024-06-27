@@ -53,7 +53,7 @@ class Grammar
 {
 
   Pattern start;
-  List<Define> defines = new LinkedList<Define>();
+  List defines = new LinkedList();
 
   public Validator newValidator()
   {

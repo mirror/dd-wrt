@@ -1,5 +1,5 @@
 /* SSLRandom.java -- SSLv3 pseudo-random function.
-   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -72,8 +72,7 @@ class SSLRandom implements IRandom
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
-  public void init(Map<String,Object> attrib)
+  public void init(Map attrib)
   {
     secret = (byte[]) attrib.get(SECRET);
     seed = (byte[]) attrib.get(SEED);
@@ -91,13 +90,11 @@ class SSLRandom implements IRandom
     return "SSLRandom";
   }
 
-  @Override
   public Object clone()
   {
     throw new UnsupportedOperationException();
   }
 
-  @Override
   public byte nextByte() throws LimitReachedException
   {
     if (buffer == null)
@@ -107,7 +104,6 @@ class SSLRandom implements IRandom
     return buffer[idx++];
   }
 
-  @Override
   public void nextBytes(byte[] buf, int off, int len)
     throws LimitReachedException
   {
@@ -135,17 +131,14 @@ class SSLRandom implements IRandom
   }
 
   // For future versions of GNU Crypto. No-ops.
-  @Override
   public void addRandomByte (byte b)
   {
   }
 
-  @Override
   public void addRandomBytes(byte[] buffer) {
     addRandomBytes(buffer, 0, buffer.length);
   }
 
-  @Override
   public void addRandomBytes (byte[] b, int i, int j)
   {
   }

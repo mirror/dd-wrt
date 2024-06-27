@@ -1,5 +1,5 @@
 /* Acl.java -- An access control list
-   Copyright (C) 1998, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1998 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -149,6 +149,5 @@ public interface Acl extends Owner
    *
    * @return A <code>String</code> representation of this ACL
    */
-  @Override
   String toString();
 }

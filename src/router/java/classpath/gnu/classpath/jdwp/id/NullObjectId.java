@@ -1,5 +1,5 @@
 /* NullObjectId.java -- special objectId for null values
-   Copyright (C) 2007, 2013 Free Software Foundation
+   Copyright (C) 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -56,7 +56,7 @@ public class NullObjectId
   /**
    * The object class that this id represents
    */
-  public static final Class<NullObject> typeClass = NullObject.class;
+  public static final Class typeClass = NullObject.class;
 
   /**
    * Constructs a new <code>NullObjectId</code>
@@ -65,7 +65,7 @@ public class NullObjectId
   {
     super();
     setId((long) 0);
-    _reference = new SoftReference<Object>(new NullObject());
+    _reference = new SoftReference<NullObject>(new NullObject());
     try
       {
         disableCollection();

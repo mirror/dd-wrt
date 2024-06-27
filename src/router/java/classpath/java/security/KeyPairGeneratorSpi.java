@@ -1,5 +1,5 @@
 /* KeyPairGeneratorSpi.java --- Key Pair Generator SPI Class
-   Copyright (C) 1999, 2002, 2015 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -76,7 +76,6 @@ public abstract class KeyPairGeneratorSpi
 
      @throws InvalidAlgorithmParameterException
    */
-  @SuppressWarnings({"unused","static-method"})
   public void initialize(AlgorithmParameterSpec params, SecureRandom random)
     throws InvalidAlgorithmParameterException
   {
@@ -96,7 +95,6 @@ public abstract class KeyPairGeneratorSpi
    * We override clone here to make it accessible for use by
    * DummyKeyPairGenerator.
    */
-  @Override
   protected Object clone() throws CloneNotSupportedException
   {
     return super.clone();

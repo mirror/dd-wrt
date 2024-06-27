@@ -1,5 +1,5 @@
 /* KeyPairCodecFactory.java --
-   Copyright 2001, 2002, 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -62,7 +62,7 @@ import java.util.Set;
  */
 public class KeyPairCodecFactory
 {
-  private static Set<String> names;
+  private static Set names;
 
   /** Trivial constructor to enforce Singleton pattern. */
   private KeyPairCodecFactory()
@@ -154,14 +154,13 @@ public class KeyPairCodecFactory
         return getX509Codec(name);
       case Registry.PKCS8_ENCODING_ID:
         return getPKCS8Codec(name);
-      default:
-	return null;
       }
 
+    return null;
   }
 
   /**
-   * Returns an instance of a keypair codec, given a key.
+   * Returns an instance of a keypair codec given a key.
    *
    * @param key the key to encode.
    * @return an instance of the keypair codec, or <code>null</code> if none
@@ -185,10 +184,9 @@ public class KeyPairCodecFactory
         return getX509Codec(key);
       case Registry.PKCS8_ENCODING_ID:
         return getPKCS8Codec(key);
-      default:
-	return null;
       }
 
+    return null;
   }
 
   /**
@@ -196,11 +194,11 @@ public class KeyPairCodecFactory
    *
    * @return a {@link Set} of the names of supported key-pair codec (Strings).
    */
-  public static synchronized final Set<String> getNames()
+  public static synchronized final Set getNames()
   {
     if (names == null)
       {
-        HashSet<String> hs = new HashSet<String>();
+        HashSet hs = new HashSet();
         hs.add(Registry.DSS_KPG + "/" + Registry.RAW_ENCODING_SHORT_NAME);
         hs.add(Registry.DSS_KPG + "/" + Registry.X509_ENCODING_SORT_NAME);
         hs.add(Registry.DSS_KPG + "/" + Registry.PKCS8_ENCODING_SHORT_NAME);
@@ -218,8 +216,8 @@ public class KeyPairCodecFactory
   {
     try
       {
-        Class<?> c = Class.forName (clazz);
-        Constructor<?> ctor = c.getConstructor (new Class[0]);
+        Class c = Class.forName (clazz);
+        Constructor ctor = c.getConstructor (new Class[0]);
         return (IKeyPairCodec) ctor.newInstance (new Object[0]);
       }
     catch (Exception x)
@@ -236,7 +234,7 @@ public class KeyPairCodecFactory
   {
     try
       {
-        Class<?> c = Class.forName (clazz);
+        Class c = Class.forName (clazz);
         return c.isAssignableFrom (o.getClass ());
       }
     catch (Exception x)

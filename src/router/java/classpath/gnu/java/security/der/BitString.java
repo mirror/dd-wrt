@@ -1,5 +1,5 @@
 /* BitString.java -- Java representation of the BIT STRING type.
-   Copyright (C) 2003, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -55,7 +55,7 @@ import java.util.Arrays;
  *
  * @author Casey Marshall (csm@gnu.org)
  */
-public class BitString implements Cloneable, Comparable<BitString>
+public class BitString implements Cloneable, Comparable
 {
 
   // Fields.
@@ -197,10 +197,10 @@ public class BitString implements Cloneable, Comparable<BitString>
   public byte[] toByteArray()
   {
     if (ignoredBits == 0)
-      return bytes.clone();
+      return (byte[]) bytes.clone();
     if (externBytes == null)
       externBytes = new BigInteger(bytes).shiftRight(ignoredBits).toByteArray();
-    return externBytes.clone();
+    return (byte[]) externBytes.clone();
   }
 
   /**
@@ -212,7 +212,7 @@ public class BitString implements Cloneable, Comparable<BitString>
    */
   public byte[] getShiftedByteArray()
   {
-    return bytes.clone();
+    return (byte[]) bytes.clone();
   }
 
   /**
@@ -258,10 +258,9 @@ public class BitString implements Cloneable, Comparable<BitString>
               }
           }
       }
-    return boolVal.clone();
+    return (boolean[]) boolVal.clone();
   }
 
-  @Override
   public Object clone()
   {
     try
@@ -274,9 +273,9 @@ public class BitString implements Cloneable, Comparable<BitString>
       }
   }
 
-  @Override
-  public int compareTo(BitString that)
+  public int compareTo(Object o)
   {
+    BitString that = (BitString) o;
     if (this.equals(that))
       return 0;
     if (this.bytes.length != that.bytes.length)
@@ -289,7 +288,6 @@ public class BitString implements Cloneable, Comparable<BitString>
     return 0; // not reached.
   }
 
-  @Override
   public int hashCode()
   {
     int result = 0;
@@ -303,7 +301,6 @@ public class BitString implements Cloneable, Comparable<BitString>
     return result;
   }
 
-  @Override
   public boolean equals(Object o)
   {
     if (!(o instanceof BitString))
@@ -317,7 +314,6 @@ public class BitString implements Cloneable, Comparable<BitString>
     return false;
   }
 
-  @Override
   public String toString()
   {
     CPStringBuilder sb = new CPStringBuilder();

@@ -313,7 +313,7 @@ Java_gnu_java_awt_peer_gtk_GtkImage_initFromBuffer(JNIEnv *env, jobject obj,
 JNIEXPORT void JNICALL
 Java_gnu_java_awt_peer_gtk_GtkImage_freePixbuf(JNIEnv *env, jobject obj)
 {
-  g_object_unref (cp_gtk_image_get_pixbuf (env, obj));
+  gdk_pixbuf_unref (cp_gtk_image_get_pixbuf (env, obj));
 }
 
 /**

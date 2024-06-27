@@ -283,20 +283,15 @@ JNIEXPORT void JNICALL
 Java_gnu_javax_sound_midi_dssi_DSSISynthesizer_open_1 
   (JNIEnv *env, jclass clazz __attribute__((unused)), jlong handle)
 {
-  unsigned int port_count, j, cindex, ret;
+  unsigned int port_count, j, cindex;
   const char **ports;
   int controller = 0;
   dssi_data *data = (dssi_data *) (long) handle;
-  jack_status_t status;
-  char buffer[31];
-
-  if ((data->jack_client = jack_client_open (data->desc->LADSPA_Plugin->Label,
-					     JackUseExactName, &status)) == 0)
+  if ((data->jack_client = jack_client_new (data->desc->LADSPA_Plugin->Label)) == 0)
     {
-      ret = snprintf(buffer, 31, "can't create jack client: %4d", status);
-      assert (ret == 30);
-      JCL_ThrowException (env, "javax/sound/midi/MidiUnavailableException",
-			  buffer);
+      /*	JCL_ThrowException (env, "javax/sound/midi/MidiUnavailableException",   */
+      JCL_ThrowException (env, "java/io/IOException", 
+			  "can't create jack client");
       return;
     } 
 

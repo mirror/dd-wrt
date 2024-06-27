@@ -1,5 +1,5 @@
 /* gnu.classpath.tools.gjdoc.Main
-   Copyright (C) 2001, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -142,6 +142,11 @@ public final class Main
   private String option_doclet = "gnu.classpath.tools.doclets.htmldoclet.HtmlDoclet";
 
   /**
+   * Option "-overview": path to the special overview file.
+   */
+  private String option_overview;
+
+  /**
    * Option "-coverage": which members to include in generated documentation.
    */
   private int option_coverage = COVERAGE_PROTECTED;
@@ -157,10 +162,30 @@ public final class Main
   private String option_docletpath;
 
   /**
+   * Option "-classpath": path to additional classes.
+   */
+  private String option_classpath;
+
+  /**
    * Option "-sourcepath": path to the Java source files to be documented.
    * FIXME: this should be a list of paths
    */
-  private List<File> option_sourcepath = new ArrayList<File>();
+  private List option_sourcepath = new ArrayList();
+
+  /**
+   * Option "-extdirs": path to Java extension files.
+   */
+  private String option_extdirs;
+
+  /**
+   * Option "-verbose": Be verbose when generating documentation.
+   */
+  private boolean option_verbose;
+
+  /**
+   * Option "-nowarn": Do not print warnings.
+   */
+  private boolean option_nowarn;
 
   /**
    * Option "-locale:" Specify the locale charset of Java source files.
@@ -173,6 +198,11 @@ public final class Main
   private String option_encoding;
 
   /**
+   * Option "-J": Specify flags to be passed to Java runtime.
+   */
+  private List option_java_flags = new LinkedList(); //ArrayList();
+
+  /**
    * Option "-source:" should be 1.4 to handle assertions, 1.1 is no
    * longer supported.
    */
@@ -182,12 +212,12 @@ public final class Main
    * Option "-subpackages": list of subpackages to be recursively
    * added.
    */
-  private List<String> option_subpackages = new ArrayList<String>();
+  private List option_subpackages = new ArrayList();
 
   /**
    * Option "-exclude": list of subpackages to exclude.
    */
-  private List<String> option_exclude = new ArrayList<String>();
+  private List option_exclude = new ArrayList();
 
   /**
    * Option "-breakiterator" - whether to use BreakIterator for
@@ -233,7 +263,7 @@ public final class Main
    *
    * @param allOptions List of all command line tokens
    */
-  private boolean startDoclet(List<String> allOptions)
+  private boolean startDoclet(List allOptions)
   {
 
     try
@@ -243,7 +273,7 @@ public final class Main
 
       Debug.log(1, "loading doclet class...");
 
-      Class<?> docletClass;
+      Class docletClass;
 
       if (null != option_docletpath) {
         try {
@@ -311,14 +341,14 @@ public final class Main
       //--- Feed the custom command line tokens to the Doclet
 
       // stores all recognized options
-      List<String[]> options = new LinkedList<String[]>();
+      List options = new LinkedList();
 
       // stores packages and classes defined on the command line
-      List<String> packageAndClasses = new LinkedList<String>();
+      List packageAndClasses = new LinkedList();
 
-      for (Iterator<String> it = allOptions.iterator(); it.hasNext();)
+      for (Iterator it = allOptions.iterator(); it.hasNext();)
       {
-        String option = it.next();
+        String option = (String) it.next();
 
         Debug.log(9, "parsing option '" + option + "'");
 
@@ -418,13 +448,13 @@ public final class Main
       //         check that it exists and find out whether it is a class
       //         or a package
 
-      for (Iterator<String> it = option_subpackages.iterator(); it.hasNext();)
+      for (Iterator it = option_subpackages.iterator(); it.hasNext();)
       {
-        String subpackage =  it.next();
-        Set<String> foundPackages = new LinkedHashSet<String>();
+        String subpackage = (String) it.next();
+        Set foundPackages = new LinkedHashSet();
 
-        for (Iterator<File> pit = option_sourcepath.iterator(); pit.hasNext(); ) {
-          File sourceDir = pit.next();
+        for (Iterator pit = option_sourcepath.iterator(); pit.hasNext(); ) {
+          File sourceDir = (File)pit.next();
           File packageDir = new File(sourceDir, subpackage.replace('.', File.separatorChar));
           findPackages(subpackage, packageDir, foundPackages);
         }
@@ -433,14 +463,14 @@ public final class Main
       }
 
       if (option_all) {
-        Set<String> foundPackages = new LinkedHashSet<String>();
-        for (Iterator<File> pit = option_sourcepath.iterator(); pit.hasNext(); ) {
-          File sourceDir = pit.next();
+        Set foundPackages = new LinkedHashSet();
+        for (Iterator pit = option_sourcepath.iterator(); pit.hasNext(); ) {
+          File sourceDir = (File)pit.next();
           findPackages("", sourceDir, foundPackages);
         }
         addFoundPackages(null, foundPackages);
-        for (Iterator<String> packageIt = foundPackages.iterator(); packageIt.hasNext(); ) {
-          String packageName = packageIt.next();
+        for (Iterator packageIt = foundPackages.iterator(); packageIt.hasNext(); ) {
+          String packageName = (String)packageIt.next();
           if (null == packageName) {
             packageName = "";
           }
@@ -448,16 +478,16 @@ public final class Main
         }
       }
 
-      for (Iterator<String> it = packageAndClasses.iterator(); it.hasNext();)
+      for (Iterator it = packageAndClasses.iterator(); it.hasNext();)
       {
 
-        String classOrPackage = it.next();
+        String classOrPackage = (String) it.next();
 
         boolean foundSourceFile = false;
 
         if (classOrPackage.endsWith(".java")) {
-          for (Iterator<File> pit = option_sourcepath.iterator(); pit.hasNext() && !foundSourceFile; ) {
-            File sourceDir = pit.next();
+          for (Iterator pit = option_sourcepath.iterator(); pit.hasNext() && !foundSourceFile; ) {
+            File sourceDir = (File)pit.next();
             File sourceFile = new File(sourceDir, classOrPackage);
             if (sourceFile.exists() && !sourceFile.isDirectory()) {
               rootDoc.addSpecifiedSourceFile(sourceFile);
@@ -495,8 +525,8 @@ public final class Main
         //--- Create one file object each for a possible package directory
         //         and a possible class file, and find out if they exist.
 
-        List<File> packageDirs = rootDoc.findSourceFiles(classOrPackageRelPath);
-        List<File> sourceFiles = rootDoc.findSourceFiles(classOrPackageRelPath + ".java");
+        List packageDirs = rootDoc.findSourceFiles(classOrPackageRelPath);
+        List sourceFiles = rootDoc.findSourceFiles(classOrPackageRelPath + ".java");
 
         boolean packageDirExists = !packageDirs.isEmpty();
         boolean sourceFileExists = !sourceFiles.isEmpty();
@@ -524,10 +554,10 @@ public final class Main
 
           else
             if (packageDirExists) {
-              Iterator<File> packageDirIt = packageDirs.iterator();
+              Iterator packageDirIt = packageDirs.iterator();
               boolean packageDirFound = false;
               while (packageDirIt.hasNext()) {
-                File packageDir = packageDirIt.next();
+                File packageDir = (File)packageDirIt.next();
                 if (packageDir.isDirectory()) {
                   rootDoc.addSpecifiedPackageName(classOrPackage);
                   packageDirFound = true;
@@ -641,19 +671,19 @@ public final class Main
     }
   }
 
-  private void addFoundPackages(String subpackage, Set<String> foundPackages)
+  private void addFoundPackages(String subpackage, Set foundPackages)
   {
     if (foundPackages.isEmpty()) {
       reporter.printWarning("No classes found under subpackage " + subpackage);
     }
     else {
       boolean onePackageAdded = false;
-      for (Iterator<String> rit = foundPackages.iterator(); rit.hasNext();) {
-        String foundPackage = rit.next();
+      for (Iterator rit = foundPackages.iterator(); rit.hasNext();) {
+        String foundPackage = (String)rit.next();
         boolean excludeThisPackage = false;
 
-        for (Iterator<String> eit = option_exclude.iterator(); eit.hasNext();) {
-          String excludePackage = eit.next();
+        for (Iterator eit = option_exclude.iterator(); eit.hasNext();) {
+          String excludePackage = (String)eit.next();
           if (foundPackage.equals(excludePackage) ||
               foundPackage.startsWith(excludePackage + ":")) {
             excludeThisPackage = true;
@@ -787,7 +817,7 @@ public final class Main
    */
   private void findPackages(String subpackage,
                             File packageDir,
-                            Set<String> result)
+                            Set result)
   {
     File[] files = packageDir.listFiles();
     if (null != files) {
@@ -996,7 +1026,7 @@ public final class Main
     //--- Collect unparsed arguments in array and resolve references
     //         to external argument files.
 
-    List<String> arguments = new ArrayList<String>(args.length);
+    List arguments = new ArrayList(args.length);
 
     for (int i = 0; i < args.length; ++i)
     {
@@ -1032,7 +1062,7 @@ public final class Main
     //         Contains objects of type String[], where each entry
     //         specifies an option along with its aguments.
 
-    List<String[]> options = new LinkedList<String[]>();
+    List options = new LinkedList();
 
     //--- This will hold all command line tokens not recognized
     //         to be part of a standard option.
@@ -1040,17 +1070,17 @@ public final class Main
     //         Contains objects of type String, where each entry is
     //         one unrecognized token.
 
-    List<String> customOptions = new LinkedList<String>();
+    List customOptions = new LinkedList();
 
     rootDoc = new RootDocImpl();
     reporter = rootDoc.getReporter();
 
     //--- Iterate over all options given on the command line
 
-    for (Iterator<String> it = arguments.iterator(); it.hasNext();)
+    for (Iterator it = arguments.iterator(); it.hasNext();)
     {
 
-      String arg = it.next();
+      String arg = (String) it.next();
 
       //--- Check if gjdoc recognizes this option as a standard option
       //         and remember the options' argument count
@@ -1099,7 +1129,8 @@ public final class Main
 
     //--- Create an array of String arrays from the dynamic array built above
 
-    String[][] optionArr = options.toArray(new String[options.size()][0]);
+    String[][] optionArr = (String[][]) options.toArray(new String[options
+        .size()][0]);
 
     //--- Validate all options and issue warnings/errors
 
@@ -1150,7 +1181,6 @@ public final class Main
     return reporter.getErrorCount();
   }
 
-  /*
   private void addJavaLangClasses()
     throws IOException
   {
@@ -1171,7 +1201,6 @@ public final class Main
       }
     }
   }
-  */
 
   /**
    * Helper class for parsing command line arguments. An instance of this class
@@ -1212,7 +1241,7 @@ public final class Main
    * Initialized only once by method initOptions(). FIXME: Rename to
    * 'optionProcessors'.
    */
-  private static Map<String,OptionProcessor> options = null;
+  private static Map options = null;
 
   /**
    * Initialize all OptionProcessor objects needed to scan/parse command line
@@ -1222,7 +1251,7 @@ public final class Main
   private void initOptions()
   {
 
-    options = new HashMap<String,OptionProcessor>();
+    options = new HashMap();
 
     //--- Put one OptionProcessor object into the map
     //         for each option recognized.
@@ -1232,7 +1261,7 @@ public final class Main
 
         void process(String[] args)
         {
-          System.err.println("WARNING: Unsupported option -overview ignored");
+          option_overview = args[0];
         }
       });
     options.put("-public", new OptionProcessor(1)
@@ -1299,7 +1328,7 @@ public final class Main
 
           void process(String[] args)
           {
-            System.err.println("WARNING: Unsupported option -nowarn ignored");
+            option_nowarn = true;
           }
         });
     options.put("-source", new OptionProcessor(2)
@@ -1308,17 +1337,12 @@ public final class Main
           void process(String[] args)
           {
             option_source = args[0];
-            if ("1.5".equals(option_source)
-                || "1.6".equals(option_source)
-                || "1.7".equals(option_source)) {
-              System.err.println("WARNING: support for option -source " + option_source + " is experimental");
-            }
-            else if (!"1.2".equals(option_source)
+            if (!"1.2".equals(option_source)
                 && !"1.3".equals(option_source)
                 && !"1.4".equals(option_source)) {
 
-              throw new RuntimeException("Only the following values are currently"
-                                         + " supported for option -source: 1.2, 1.3, 1.4; experimental: 1.5, 1.6, 1.7.");
+              throw new RuntimeException("Only he following values are currently"
+                                         + " supported for option -source: 1.2, 1.3, 1.4.");
             }
           }
         });
@@ -1388,6 +1412,7 @@ public final class Main
 
         void process(String[] args)
         {
+          option_verbose = true;
           System.err.println("WARNING: Unsupported option -verbose ignored");
         }
       });

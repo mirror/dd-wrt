@@ -1,5 +1,5 @@
 /* Password.java -- opaque wrapper around a password.
-   Copyright (C) 2004, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -257,16 +257,18 @@ public final class Password extends ExpirableObject
    * method, {@link ExpirableObject#doDestroy()}.  See also,
    * {@link ExpirableObject#destroy()}.
    */
-  @Override
   protected synchronized void doDestroy()
   {
     if (isDestroyed())
       return;
-    for (int i = 0; i < password.length; i++)
-      password[i] = 0;
-    for (int i = 0; i < bPassword.length; i++)
-      bPassword[i] = 0;
-    mIsDestroyed = true;
+    else
+      {
+        for (int i = 0; i < password.length; i++)
+          password[i] = 0;
+        for (int i = 0; i < bPassword.length; i++)
+          bPassword[i] = 0;
+        mIsDestroyed = true;
+      }
   }
 
   /**
@@ -274,7 +276,6 @@ public final class Password extends ExpirableObject
    * {@link doDestroy()} method has been called.  See also,
    * {@ExpirableObject#destroy()}.
    */
-  @Override
   public synchronized boolean isDestroyed()
   {
     return (mIsDestroyed);

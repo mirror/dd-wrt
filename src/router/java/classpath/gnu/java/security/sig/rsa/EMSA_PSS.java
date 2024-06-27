@@ -1,6 +1,5 @@
 /* EMSA_PSS.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2010, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2010 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -110,7 +109,6 @@ public class EMSA_PSS
     return new EMSA_PSS(hash);
   }
 
-  @Override
   public Object clone()
   {
     return getInstance(hash.name());

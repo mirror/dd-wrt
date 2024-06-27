@@ -1,5 +1,5 @@
 /* Engine -- generic getInstance method.
-   Copyright (C) 2003, 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -147,7 +147,7 @@ public final class Engine
     if (initArgs == null)
       throw new IllegalArgumentException("Constructor's parameters MUST NOT be null");
 
-    Enumeration<?> enumer = provider.propertyNames();
+    Enumeration enumer = provider.propertyNames();
     String key = null;
     String alias;
     int count = 0;
@@ -192,9 +192,9 @@ public final class Engine
       }
 
     // Find and instantiate the implementation
-    Class<?> clazz = null;
+    Class clazz = null;
     ClassLoader loader = provider.getClass().getClassLoader();
-    Constructor<?> constructor = null;
+    Constructor constructor = null;
     String className = provider.getProperty(key);
     sb.append("Class [").append(className).append("] for algorithm [")
         .append(algorithm).append("] of type [").append(service)
@@ -255,14 +255,14 @@ public final class Engine
    * @throws NoSuchMethodException If no constructor of the given class
    *         can take the specified argument array.
    */
-  private static Constructor<?> getCompatibleConstructor(Class<?> clazz,
-							 Object[] initArgs)
+  private static Constructor getCompatibleConstructor(Class clazz,
+                                                      Object[] initArgs)
     throws NoSuchMethodException
   {
-    Constructor<?>[] c = clazz.getConstructors();
+    Constructor[] c = clazz.getConstructors();
     outer:for (int i = 0; i < c.length; i++)
       {
-        Class<?>[] argTypes = c[i].getParameterTypes();
+        Class[] argTypes = c[i].getParameterTypes();
         if (argTypes.length != initArgs.length)
           continue;
         for (int j = 0; j < argTypes.length; j++)

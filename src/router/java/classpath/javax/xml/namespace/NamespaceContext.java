@@ -61,7 +61,7 @@ public interface NamespaceContext
   /**
    * Returns all the prefixes currently bound to the given namespace URI.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   public Iterator getPrefixes(String namespaceURI);
 
 }

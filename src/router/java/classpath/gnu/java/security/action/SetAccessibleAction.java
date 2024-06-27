@@ -1,5 +1,5 @@
 /* SetAccessibleAction.java
-   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -50,7 +50,7 @@ import java.security.PrivilegedAction;
  * AccessController.doPrivileged(new SetAccessibleAction(dataField));
  * </code>
  */
-public class SetAccessibleAction implements PrivilegedAction<AccessibleObject>
+public class SetAccessibleAction implements PrivilegedAction
 {
   AccessibleObject member;
 
@@ -63,8 +63,7 @@ public class SetAccessibleAction implements PrivilegedAction<AccessibleObject>
     this.member = member;
   }
 
-  @Override
-  public AccessibleObject run()
+  public Object run()
   {
     member.setAccessible(true);
     return null;

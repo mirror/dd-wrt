@@ -1,5 +1,5 @@
 /* Util.java -- various utility routines.
-   Copyright (C) 2001, 2002, 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -467,7 +467,6 @@ public class Util
         b1 = buffer[0];
         b2 = buffer[1];
         break;
-      default: // do nothing
       }
     CPStringBuilder sb = new CPStringBuilder();
     int c;
@@ -500,16 +499,19 @@ public class Util
           }
         if (pos >= len)
           break;
-	try
-	  {
-	    b0 = buffer[pos++];
-	    b1 = buffer[pos++];
-	    b2 = buffer[pos++];
-	  }
-	catch (ArrayIndexOutOfBoundsException x)
-	  {
-	    break;
-	  }
+        else
+          {
+            try
+              {
+                b0 = buffer[pos++];
+                b1 = buffer[pos++];
+                b2 = buffer[pos++];
+              }
+            catch (ArrayIndexOutOfBoundsException x)
+              {
+                break;
+              }
+          }
       }
     while (true);
 

@@ -7,29 +7,20 @@ sinclude $(JAVA_DEPEND)
 
 compile_classpath = $(vm_classes):$(top_srcdir):$(top_srcdir)/external/w3c_dom:$(top_srcdir)/external/sax:$(top_srcdir)/external/relaxngDatatype:$(top_srcdir)/external/jsr166:.:$(PATH_TO_GLIBJ_ZIP):$(PATH_TO_ESCHER)
 
-# source,target and classpath options
-GCJ_OPTS=-fsource=1.6 -ftarget=1.6 --bootclasspath='' --classpath=$(compile_classpath)
-ECJ_OPTS=-source 1.6 -target 1.6 -bootclasspath '' -classpath $(compile_classpath)
-JAVAC_OPTS=$(ECJ_OPTS)
-
 # handling source to bytecode compiler programs like gcj, jikes  and kjc
 if GCJ_JAVAC
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(GCJ_OPTS) -d . @classes
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) -fsource=1.5 -ftarget=1.5 --bootclasspath='' --classpath=$(compile_classpath) -d . @classes
 else
-if ECJ_JAVAC
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(ECJ_WARNINGS) $(ECJ_OPTS) $(JAVAC_MEM_OPT) -d . @classes
-else
-JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(JAVAC_WARNINGS) $(JAVAC_OPTS) $(JAVAC_MEM_OPT) -d . @classes
-endif
+JCOMPILER = $(JAVAC) $(JAVACFLAGS) $(JAVAC_MEM_OPT) -source 1.6 -target 1.6 -bootclasspath '' -classpath $(compile_classpath) -d . @classes
 endif
 
 if CREATE_COLLECTIONS
 COLLECTIONS = collections.jar
 
 if WITH_JAR
-CREATE_COLLECTIONS_JAR=$(JAR) cf $@ $(COLLECTIONS_PREFIX)
+CREATE_COLLECTIONS_JAR=$(JAR) cf0 $@ $(COLLECTIONS_PREFIX)
 else
-CREATE_COLLECTIONS_JAR=$(ZIP) -r -D $@ $(COLLECTIONS_PREFIX) > /dev/null
+CREATE_COLLECTIONS_JAR=$(ZIP) -0 -r -D $@ $(COLLECTIONS_PREFIX) > /dev/null
 endif
 
 collections.jar: mkcollections.pl
@@ -70,6 +61,8 @@ uninstall-local:
 
 endif # INSTALL_CLASS_FILES
 
+.PHONY: genclasses
+
 if USE_PREBUILT_GLIBJ_ZIP
 
 glibj.zip:
@@ -106,19 +99,19 @@ resources: copy-vmresources.sh
 	done
 	touch resources
 
+classes: genclasses
+
 $(top_builddir)/gnu/java/locale/LocaleData.java: $(top_srcdir)/scripts/generate-locale-list.sh 
 	@mkdir_p@ $(top_builddir)/gnu/java/locale
 	$(top_srcdir)/scripts/generate-locale-list.sh > $(top_builddir)/gnu/java/locale/LocaleData.java
 
 genclasses: gen-classlist.sh standard.omit $(top_builddir)/gnu/java/locale/LocaleData.java gen-xpath-parser
 	top_builddir=$(top_builddir) top_srcdir=$(top_srcdir) $(SHELL) ./gen-classlist.sh standard
-	touch genclasses
 
 # Only rebuild parsers when explicitly asked to.
 if REGEN_PARSERS
 
 gen-xpath-parser: $(top_srcdir)/gnu/xml/xpath/XPathParser.java
-	touch gen-xpath-parser
 
 $(top_srcdir)/gnu/xml/xpath/XPathParser.java: $(top_srcdir)/gnu/xml/xpath/XPathParser.y
 	( cd $(top_srcdir)/gnu/xml/xpath; \
@@ -126,7 +119,7 @@ $(top_srcdir)/gnu/xml/xpath/XPathParser.java: $(top_srcdir)/gnu/xml/xpath/XPathP
 else
 
 gen-xpath-parser:
-	touch gen-xpath-parser
+	true
 
 endif # REGEN_PARSER
 
@@ -144,13 +137,13 @@ $(JAVA_DEPEND): genclasses
 #	  top_srcdir=$(top_srcdir)
 #   	  touch compile-classes
 #else
-compile-classes: genclasses $(JAVA_SRCS) Makefile
+compile-classes: classes $(JAVA_SRCS) Makefile
 	$(JCOMPILER)
 	touch compile-classes
 #endif
 
 EXTRA_DIST = standard.omit.in mkcollections.pl.in Makefile.gcj split-for-gcj.sh glibj.zip
-CLEANFILES = compile-classes resources classes genclasses gen-xpath-parser \
+CLEANFILES = compile-classes resources classes \
 	glibj.zip classes.1 classes.2 Makefile.deps \
 	$(top_builddir)/gnu/java/locale/LocaleData.java \
 	$(JAVA_DEPEND)

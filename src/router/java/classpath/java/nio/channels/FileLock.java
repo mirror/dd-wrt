@@ -45,7 +45,6 @@ import java.io.IOException;
  * @since 1.4
  */
 public abstract class FileLock
-  implements AutoCloseable
 {
   private final FileChannel channel;
   private final long position;

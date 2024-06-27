@@ -1,5 +1,5 @@
 /* gnu.classpath.tools.gjdoc.ClassDocImpl
-   Copyright (C) 2001, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -103,9 +103,9 @@ public class ClassDocImpl
       return filter ? filteredFields : unfilteredFields;
    }
 
-   private static Set<String> primitiveNames;
+   private static Set primitiveNames;
    static {
-      primitiveNames = new HashSet<String>();
+      primitiveNames = new HashSet();
       primitiveNames.add("int");
       primitiveNames.add("long");
       primitiveNames.add("char");
@@ -116,11 +116,11 @@ public class ClassDocImpl
       primitiveNames.add("boolean");
    }
 
-  private Map<String,ClassDoc> findClassCache = new HashMap<String,ClassDoc>();
+   private Map findClassCache = new HashMap();
 
    public ClassDoc findClass(String className, String dimension)
    {
-      ClassDoc cached = findClassCache.get(className + dimension);
+      ClassDoc cached = (ClassDoc)findClassCache.get(className + dimension);
       if (null != cached) {
          return cached;
       }
@@ -324,7 +324,7 @@ public class ClassDocImpl
                                              ClassDoc[] importedClasses,
                                              PackageDoc[] importedPackages,
                                              char[] source, int startIndex, int endIndex,
-                                             List<String> importStatementList) throws ParseException, IOException {
+                                             List importStatementList) throws ParseException, IOException {
 
       String superclassName = "java.lang.Object";
 
@@ -334,7 +334,7 @@ public class ClassDocImpl
                                        importedPackages,
                                        null);
       rc.setImportStatementList(importStatementList);
-      List<String> implementedInterfaces = new ArrayList<String>();
+      List implementedInterfaces = new ArrayList();
 
       String word="";
       int item=0;
@@ -511,7 +511,7 @@ public class ClassDocImpl
 
       ClassDoc[] interfaces=new ClassDoc[implementedInterfaces.size()];
       for (int i=0; i<interfaces.length; ++i) {
-         interfaces[i]=new ClassDocProxy(implementedInterfaces.get(i), rc);
+         interfaces[i]=new ClassDocProxy((String)implementedInterfaces.get(i), rc);
       }
       rc.setInterfaces(interfaces);
 
@@ -643,10 +643,10 @@ public class ClassDocImpl
             }
          }
 
-         List<MethodDoc> isSerMethodList = new ArrayList<MethodDoc>();
+         List isSerMethodList=new ArrayList();
 
          if (null != maybeSerMethodList) {
-            for (Iterator<MethodDoc> it = maybeSerMethodList.iterator(); it.hasNext(); ) {
+            for (Iterator it=maybeSerMethodList.iterator(); it.hasNext(); ) {
                MethodDocImpl method=(MethodDocImpl)it.next();
                method.resolve();
 
@@ -664,7 +664,7 @@ public class ClassDocImpl
                   isSerMethodList.add(method);
                }
             }
-            this.serializationMethods = isSerMethodList.toArray(new MethodDoc[isSerMethodList.size()]);
+            this.serializationMethods=(MethodDoc[])isSerMethodList.toArray(new MethodDoc[0]);
             maybeSerMethodList=null;
          }
       }
@@ -795,10 +795,10 @@ public class ClassDocImpl
       this.importedClasses=importedClasses;
    }
 
-   private static Map<String,Type> typeMap = new HashMap<String,Type>();
+   private static Map typeMap = new HashMap();
 
    Type typeForString(String typeName) throws ParseException {
-     //String orgTypename=typeName;
+      String orgTypename=typeName;
       int ndx=typeName.indexOf('[');
       String dim="";
       if (ndx>=0) {
@@ -815,7 +815,7 @@ public class ClassDocImpl
          return classDoc;
       }
 
-      Type type = typeMap.get(typeName+dim);
+      Type type = (Type)typeMap.get(typeName+dim);
       if (null!=type) {
          try {
             if (type.dimension().equals(dim)) {
@@ -995,9 +995,9 @@ public class ClassDocImpl
       return (o!=null) && (o instanceof ClassDoc) && ((ClassDoc)o).qualifiedName().equals(qualifiedName());
    }
 
-   private List<MethodDoc> maybeSerMethodList;
+   private List maybeSerMethodList;
 
-   void setMaybeSerMethodList(List<MethodDoc> maybeSerMethodList) {
+   void setMaybeSerMethodList(List maybeSerMethodList) {
       this.maybeSerMethodList=maybeSerMethodList;
    }
 
@@ -1061,7 +1061,7 @@ public class ClassDocImpl
    private Object findFieldValue(String identifier,
                                  ClassDoc classDoc,
                                  String fieldName,
-                                 Set<FieldDoc> visitedFields)
+                                 Set visitedFields)
       throws UnknownIdentifierException, IllegalExpressionException
    {
       while (classDoc != null) {
@@ -1097,7 +1097,7 @@ public class ClassDocImpl
       throw new UnknownIdentifierException(identifier);
    }
 
-   public Object getValue(String identifier, Set<FieldDoc> visitedFields)
+   public Object getValue(String identifier, Set visitedFields)
       throws UnknownIdentifierException, IllegalExpressionException
    {
       int ndx = identifier.lastIndexOf('.');
@@ -1124,13 +1124,13 @@ public class ClassDocImpl
    }
 
    // Compares this Object with the specified Object for order.
-   public int compareTo(Doc d) {
+   public int compareTo(java.lang.Object o) {
       int rc;
 
-      if (d instanceof ClassDocImpl) {
+      if (o instanceof ClassDocImpl) {
 
          ClassDocImpl c1 = this;
-         ClassDocImpl c2 = (ClassDocImpl)d;
+         ClassDocImpl c2 = (ClassDocImpl)o;
 
          if (null != c1.containingClass() && null == c2.containingClass()) {
             rc = c1.containingClass().compareTo(c2);
@@ -1153,10 +1153,10 @@ public class ClassDocImpl
             }
          }
 
-         rc = super.compareTo(d);
+         rc = super.compareTo(o);
          if (0 == rc) {
             return Main.getInstance().getCollator().compare(containingPackage().name(),
-                                                            c2.containingPackage().name());
+                                                            ((ClassDocImpl)o).containingPackage().name());
          }
          else {
             return rc;
@@ -1167,11 +1167,11 @@ public class ClassDocImpl
       }
    }
 
-   private List<String> importStatementList;
+   private List importStatementList;
 
-   public void setImportStatementList(List<String> importStatementList)
+   public void setImportStatementList(List importStatementList)
    {
-      this.importStatementList = new LinkedList<String>();
+      this.importStatementList = new LinkedList();
       this.importStatementList.addAll(importStatementList);
    }
 

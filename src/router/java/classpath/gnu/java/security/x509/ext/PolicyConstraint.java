@@ -1,5 +1,5 @@
 /* PolicyConstraint.java -- policyConstraint extension
-   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -98,7 +98,6 @@ public class PolicyConstraint extends Extension.Value
     return inhibitPolicyMapping;
   }
 
-  @Override
   public String toString()
   {
     return PolicyConstraint.class.getName() + " [ requireExplicitPolicy=" +

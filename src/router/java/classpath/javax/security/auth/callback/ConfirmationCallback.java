@@ -1,5 +1,5 @@
 /* ConfirmationCallback.java -- callback for confirmations.
-   Copyright (C) 2003, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -53,8 +53,6 @@ public class ConfirmationCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
-
-  private static final long serialVersionUID = -9095656433782481624L;
 
   /**
    * <p>Unspecified option type.</p>
@@ -477,13 +475,13 @@ public class ConfirmationCallback implements Callback, Serializable
   private void setOptions(String[] options, int selectedOption)
     throws IllegalArgumentException
   {
-    if ((options == null) || (options.length == 0))
-      {
-        throw new IllegalArgumentException("options is null or empty");
-      }
     if ((selectedOption < 0) || (selectedOption > options.length - 1))
       {
         throw new IllegalArgumentException("invalid selection");
+      }
+    if ((options == null) || (options.length == 0))
+      {
+        throw new IllegalArgumentException("options is null or empty");
       }
     for (int i = 0; i < options.length; i++)
       {

@@ -1,5 +1,5 @@
 /* LanguageCallback.java -- callback for language choices.
-   Copyright (C) 2003, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2003, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -53,8 +53,6 @@ public class LanguageCallback implements Callback, Serializable
 
   // Constants and variables
   // -------------------------------------------------------------------------
-
-  private static final long serialVersionUID = 2019050433478903213L;
 
   /**
    * @serial

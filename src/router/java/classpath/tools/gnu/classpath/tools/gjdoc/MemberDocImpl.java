@@ -1,5 +1,5 @@
 /* gnu.classpath.tools.gjdoc.MemberDocImpl
-   Copyright (C) 2001, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -170,15 +170,15 @@ public abstract class MemberDocImpl extends ProgramElementDocImpl implements Mem
       return Main.getInstance().includeAccessLevel(accessLevel);
    }
 
-   public int compareTo(Doc d) {
-      if (d instanceof MemberDocImpl) {
-         int rc=name().compareTo(((MemberDocImpl)d).name());
+   public int compareTo(Object o) {
+      if (o instanceof MemberDocImpl) {
+         int rc=name().compareTo(((MemberDocImpl)o).name());
          if (rc==0)
-            rc=containingClass().qualifiedName().compareTo(((MemberDocImpl)d).containingClass().qualifiedName());
+            rc=containingClass().qualifiedName().compareTo(((MemberDocImpl)o).containingClass().qualifiedName());
          return rc;
       }
       else {
-         return super.compareTo(d);
+         return super.compareTo(o);
       }
    }
 

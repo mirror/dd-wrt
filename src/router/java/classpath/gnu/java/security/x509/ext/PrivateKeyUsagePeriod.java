@@ -1,5 +1,5 @@
 /* PrivateKeyUsagePeriod.java -- private key usage period extension.
-   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -97,7 +97,6 @@ public class PrivateKeyUsagePeriod extends Extension.Value
     return notAfter != null ? (Date) notAfter.clone() : null;
   }
 
-  @Override
   public String toString()
   {
     return PrivateKeyUsagePeriod.class.getName() + " [ notBefore=" + notBefore

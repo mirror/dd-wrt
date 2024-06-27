@@ -1,5 +1,5 @@
 /* Sequence.java -- a sequence of integers.
-   Copyright (C) 2004, 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -45,7 +45,7 @@ import java.util.LinkedList;
  * A monotonic sequence of integers in the finite field 2<sup>32</sup>.
  */
 public final class Sequence
-    extends AbstractList<Integer>
+    extends AbstractList
 {
   private final Integer[] sequence;
 
@@ -105,32 +105,29 @@ public final class Sequence
       }
     else
       {
-        LinkedList<Integer> l = new LinkedList<Integer>();
+        LinkedList l = new LinkedList();
         for (int i = start; i != end; i += span)
           l.add(Integer.valueOf(i));
 
         l.add(Integer.valueOf(end));
-        sequence = l.toArray(new Integer[l.size()]);
+        sequence = (Integer[]) l.toArray(new Integer[l.size()]);
       }
   }
 
-  @Override
-  public Integer get(int index)
+  public Object get(int index)
   {
     if (index < 0 || index >= size())
       throw new IndexOutOfBoundsException("index=" + index + ", size=" + size());
     return sequence[index];
   }
 
-  @Override
   public int size()
   {
     return sequence.length;
   }
 
-  @Override
   public Object[] toArray()
   {
-    return sequence.clone();
+    return (Object[]) sequence.clone();
   }
 }

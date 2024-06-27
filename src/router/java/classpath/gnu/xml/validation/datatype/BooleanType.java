@@ -59,8 +59,8 @@ final class BooleanType
     Facet.WHITESPACE
   };
 
-  static final Set<String> VALUE_SPACE =
-    new TreeSet<String>(Arrays.asList(new String[] {"true", "false", "1", "0"}));
+  static final Set VALUE_SPACE =
+    new TreeSet(Arrays.asList(new String[] {"true", "false", "1", "0"}));
 
   BooleanType()
   {

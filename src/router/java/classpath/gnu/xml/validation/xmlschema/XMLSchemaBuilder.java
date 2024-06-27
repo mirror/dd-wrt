@@ -48,7 +48,6 @@ import org.relaxng.datatype.helpers.DatatypeLibraryLoader;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import gnu.xml.validation.datatype.Annotation;
-import gnu.xml.validation.datatype.Facet;
 import gnu.xml.validation.datatype.SimpleType;
 import gnu.xml.validation.datatype.Type;
 
@@ -526,14 +525,10 @@ class XMLSchemaBuilder
     throws DatatypeException
   {
     SimpleType type = (SimpleType) schema.types.get(typeName);
-    if (type != null)
-      return type;
     if (!XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(typeName.getNamespaceURI()))
       return null;
     String localName = typeName.getLocalPart();
-    type = (SimpleType) typeLibrary.createDatatype(localName);
-    schema.types.put(typeName, type);
-    return type;
+    return (SimpleType) typeLibrary.createDatatype(localName);
   }
 
   SimpleType parseSimpleType(Node simpleType)
@@ -554,10 +549,10 @@ class XMLSchemaBuilder
             typeFinal = getAttribute(schemaAttrs, "finalDefault");
           }
       }
-    parseSimpleTypeDerivationSet(typeFinal); // TODO: Make use of typeFinality
+    int typeFinality = parseSimpleTypeDerivationSet(typeFinal);
     QName typeName = asQName(getAttribute(attrs, "name"), simpleType);
     int variety = 0;
-    Set<Facet> facets = new LinkedHashSet<Facet>();
+    Set facets = new LinkedHashSet();
     int fundamentalFacets = 0; // TODO
     SimpleType baseType = null; // TODO
     Annotation annotation = null;
@@ -666,7 +661,8 @@ class XMLSchemaBuilder
   {
     NamedNodeMap attrs = restriction.getAttributes();
     String base = getAttribute(attrs, "base");
-    asQName(base, restriction); // TODO: make use of basetype
+    QName baseType = asQName(base, restriction);
+    SimpleType simpleType = null;
     for (Node child = restriction.getFirstChild(); child != null;
          child = child.getNextSibling())
       {
@@ -682,7 +678,7 @@ class XMLSchemaBuilder
             else if ("simpleType".equals(name))
               {
                 type.contentType = XMLSchema.CONTENT_SIMPLE;
-                parseSimpleType(child); // TODO: make use of SimpleType
+                simpleType = parseSimpleType(child);
               }
             else if ("minExclusive".equals(name))
               {
@@ -748,7 +744,7 @@ class XMLSchemaBuilder
   {
     NamedNodeMap attrs = extension.getAttributes();
     String base = getAttribute(attrs, "base");
-    asQName(base, extension); // TODO: make use of basetype
+    QName baseType = asQName(base, extension);
     for (Node child = extension.getFirstChild(); child != null;
          child = child.getNextSibling())
       {

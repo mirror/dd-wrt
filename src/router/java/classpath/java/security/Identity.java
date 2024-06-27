@@ -1,5 +1,5 @@
 /* Identity.java --- Identity Class
-   Copyright (C) 1999, 2003, 2014, 2015, Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -49,7 +49,7 @@ import java.util.Vector;
  * identity. The names cannot be changed and the identities can be scoped. Each
  * identity (name and public key) within a scope are unique to that scope.</p>
  *
- * <p>Each identity has a set of certificates which all specify the same
+ * <p>Each identity has a set of ceritificates which all specify the same
  * public key, but not necessarily the same name.</p>
  *
  * <p>The <code>Identity</code> class can be subclassed to allow additional
@@ -63,7 +63,6 @@ import java.util.Vector;
  * <code>java.security.cert</code> package, and
  * <code>java.security.Principal</code>.
  */
-@Deprecated
 public abstract class Identity implements Principal, Serializable
 {
   private static final long serialVersionUID = 3609922007826600659L;
@@ -72,7 +71,7 @@ public abstract class Identity implements Principal, Serializable
   private IdentityScope scope;
   private PublicKey publicKey;
   private String info;
-  private Vector<Certificate> certificates;
+  private Vector certificates;
 
   /** Constructor for serialization only. */
   protected Identity()
@@ -111,7 +110,6 @@ public abstract class Identity implements Principal, Serializable
   }
 
   /** @return the name of this identity. */
-  @Override
   public final String getName()
   {
     return name;
@@ -204,7 +202,7 @@ public abstract class Identity implements Principal, Serializable
     // Check public key of this certificate against the first one in the vector
     if (certificates.size() > 0)
       {
-        if (certificates.firstElement().getPublicKey() != publicKey)
+        if (((Certificate) certificates.firstElement()).getPublicKey() != publicKey)
           throw new KeyManagementException("Public key does not match");
       }
     certificates.addElement(certificate);
@@ -240,7 +238,7 @@ public abstract class Identity implements Principal, Serializable
     Certificate[] certs = new Certificate[certificates.size()];
     int max = certificates.size();
     for (int i = 0; i < max; i++)
-      certs[i] = certificates.elementAt(i);
+      certs[i] = (Certificate) certificates.elementAt(i);
 
     return certs;
   }
@@ -254,7 +252,6 @@ public abstract class Identity implements Principal, Serializable
    * @return <code>true</code> if they are equal, <code>false</code>
    *         otherwise.
    */
-  @Override
   public final boolean equals(Object identity)
   {
     if (identity instanceof Identity)
@@ -293,7 +290,6 @@ public abstract class Identity implements Principal, Serializable
    *           if a {@link SecurityManager} is installed which disallows this
    *           operation.
    */
-  @Override
   public String toString()
   {
     SecurityManager sm = System.getSecurityManager();
@@ -325,12 +321,14 @@ public abstract class Identity implements Principal, Serializable
         /* TODO: Insert proper detailed format here */
         return (name + ":@" + scope + " Public Key: " + publicKey);
       }
-    /* TODO: Insert proper format here */
-    return (name + ":@" + scope + " Public Key: " + publicKey);
+    else
+      {
+        /* TODO: Insert proper format here */
+        return (name + ":@" + scope + " Public Key: " + publicKey);
+      }
   }
 
   /** @return a hashcode of this identity. */
-  @Override
   public int hashCode()
   {
     int ret = name.hashCode();

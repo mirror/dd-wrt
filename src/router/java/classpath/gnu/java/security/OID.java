@@ -1,5 +1,5 @@
 /* OID.java -- numeric representation of an object identifier
-   Copyright (C) 2003, 2004, 2005, 2006, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004, 2005, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -67,7 +67,7 @@ import java.util.StringTokenizer;
  *
  * @author Casey Marshall (csm@gnu.org)
  */
-public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
+public class OID implements Cloneable, Comparable, java.io.Serializable
 {
 
   // Fields.
@@ -125,7 +125,7 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
   {
     if (components == null || components.length == 0)
       throw new IllegalArgumentException();
-    this.components = components.clone();
+    this.components = (int[]) components.clone();
     this.relative = relative;
   }
 
@@ -221,7 +221,7 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    */
   public OID(byte[] encoded, boolean relative) throws IOException
   {
-    der = encoded.clone();
+    der = (byte[]) encoded.clone();
     this.relative = relative;
     try
       {
@@ -245,7 +245,7 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    */
   public int[] getIDs()
   {
-    return components.clone();
+    return (int[]) components.clone();
   }
 
   /**
@@ -269,7 +269,7 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
           encodeSubID(bout, components[i]);
         der = bout.toByteArray();
       }
-    return der.clone();
+    return (byte[]) der.clone();
   }
 
   /**
@@ -321,7 +321,6 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    *
    * @return The copy.
    */
-  @Override
   public Object clone()
   {
     try
@@ -356,19 +355,21 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    *
    * @return The string representation.
    */
-  @Override
   public String toString()
   {
     if (strRep != null)
       return strRep;
-    CPStringBuilder buf = new CPStringBuilder();
-    for (int i = 0; i < components.length; i++)
+    else
       {
-	buf.append(components[i] & 0xFFFFFFFFL);
-	if (i < components.length - 1)
-	  buf.append('.');
+        CPStringBuilder buf = new CPStringBuilder();
+        for (int i = 0; i < components.length; i++)
+          {
+            buf.append((long) components[i] & 0xFFFFFFFFL);
+            if (i < components.length - 1)
+              buf.append('.');
+          }
+        return (strRep = buf.toString());
       }
-    return (strRep = buf.toString());
   }
 
   /**
@@ -376,7 +377,6 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    *
    * @return The hash code.
    */
-  @Override
   public int hashCode()
   {
     int ret = 0;
@@ -390,7 +390,6 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    *
    * @return Whether or not this OID equals the other.
    */
-  @Override
   public boolean equals(Object o)
   {
     if (!(o instanceof OID))
@@ -411,12 +410,11 @@ public class OID implements Cloneable, Comparable<OID>, java.io.Serializable
    *         argument.
    * @throws ClassCastException If <i>o</i> is not an OID.
    */
-  @Override
-  public int compareTo(OID o)
+  public int compareTo(Object o)
   {
     if (equals(o))
       return 0;
-    int[] components2 = o.components;
+    int[] components2 = ((OID) o).components;
     int len = Math.min(components.length, components2.length);
     for (int i = 0; i < len; i++)
       {

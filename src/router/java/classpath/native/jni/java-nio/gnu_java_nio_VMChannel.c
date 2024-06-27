@@ -1705,8 +1705,7 @@ Java_gnu_java_nio_VMChannel_open (JNIEnv *env,
            | ((mode & CPNIO_APPEND) ? O_APPEND :
               ((nmode == O_WRONLY) ? O_TRUNC : 0))
            | ((mode & CPNIO_EXCL) ? O_EXCL : 0)
-           | ((mode & CPNIO_SYNC) ? O_SYNC : 0)
-           | ((mode & CPNIO_DSYNC) ? O_DSYNC : 0));
+           | ((mode & CPNIO_SYNC) ? O_SYNC : 0));
 
   npath = JCL_jstring_to_cstring (env, path);
 

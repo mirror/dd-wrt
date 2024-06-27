@@ -1,5 +1,5 @@
 /* Whirlpool.java --
-   Copyright (C) 2001, 2002, 2006, 2010, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006, 2010 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -136,6 +136,7 @@ public final class Whirlpool
       int i, r, j;
       long s1, s2, s4, s5, s8, s9, t;
       char c;
+      final byte[] S = new byte[256];
       for (i = 0; i < 256; i++)
         {
           c = S_box.charAt(i >>> 1);
@@ -284,16 +285,14 @@ public final class Whirlpool
     this.H6 = md.H6;
     this.H7 = md.H7;
     this.count = md.count;
-    this.buffer = md.buffer.clone();
+    this.buffer = (byte[]) md.buffer.clone();
   }
 
-  @Override
   public Object clone()
   {
     return (new Whirlpool(this));
   }
 
-  @Override
   protected void transform(byte[] in, int offset)
   {
     // apply mu to the input
@@ -541,7 +540,6 @@ public final class Whirlpool
     H7 ^= w7 ^ n7;
   }
 
-  @Override
   protected byte[] padBuffer()
   {
     // [WHIRLPOOL] p. 6:
@@ -572,7 +570,6 @@ public final class Whirlpool
     return result;
   }
 
-  @Override
   protected byte[] getResult()
   {
     // apply inverse mu to the context
@@ -596,13 +593,11 @@ public final class Whirlpool
 
   }
 
-  @Override
   protected void resetContext()
   {
     H0 = H1 = H2 = H3 = H4 = H5 = H6 = H7 = 0L;
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)

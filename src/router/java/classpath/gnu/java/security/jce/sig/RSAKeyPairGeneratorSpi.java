@@ -1,5 +1,5 @@
 /* RSAKeyPairGeneratorSpi.java -- JCE RSA KeyPairGenerator Adapter
-   Copyright (C) 2001, 2002, 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -63,10 +63,9 @@ public class RSAKeyPairGeneratorSpi
     super(Registry.RSA_KPG);
   }
 
-  @Override
   public void initialize(int keysize, SecureRandom random)
   {
-    HashMap<String,Object> attributes = new HashMap<String,Object>();
+    HashMap attributes = new HashMap();
     attributes.put(RSAKeyPairGenerator.MODULUS_LENGTH, Integer.valueOf(keysize));
     if (random != null)
       attributes.put(RSAKeyPairGenerator.SOURCE_OF_RANDOMNESS, random);
@@ -76,11 +75,10 @@ public class RSAKeyPairGeneratorSpi
     adaptee.setup(attributes);
   }
 
-  @Override
   public void initialize(AlgorithmParameterSpec params, SecureRandom random)
       throws InvalidAlgorithmParameterException
   {
-    HashMap<String,Object> attributes = new HashMap<String,Object>();
+    HashMap attributes = new HashMap();
     if (params != null)
       {
         if (! (params instanceof RSAKeyGenParameterSpec))

@@ -1,5 +1,5 @@
 /* CopyNode.java --
-   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,6 +39,7 @@ package gnu.xml.transform;
 
 import gnu.java.lang.CPStringBuilder;
 
+import java.util.Iterator;
 import java.util.StringTokenizer;
 import javax.xml.namespace.QName;
 import javax.xml.transform.TransformerException;
@@ -132,8 +133,9 @@ final class CopyNode
                        Node parent, Node nextSibling, String attributeSet)
     throws TransformerException
   {
-    for (AttributeSet as : stylesheet.attributeSets)
+    for (Iterator i = stylesheet.attributeSets.iterator(); i.hasNext(); )
       {
+        AttributeSet as = (AttributeSet) i.next();
         if (!as.name.equals(attributeSet))
           continue;
         if (as.uas != null)

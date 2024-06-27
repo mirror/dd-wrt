@@ -1,5 +1,5 @@
 /* ValueFactory.java -- factory to create JDWP Values
-   Copyright (C) 2007, 2013 Free Software Foundation
+   Copyright (C) 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -80,7 +80,7 @@ public class ValueFactory
    * @throws JdwpInternalErrorException
    * @throws InvalidObjectException
    */
-  public static Value createFromUntagged(ByteBuffer bb, Class<?> type)
+  public static Value createFromUntagged(ByteBuffer bb, Class type)
   throws JdwpInternalErrorException, InvalidObjectException, InvalidClassException
   {
     byte tag = getTagForClass(type);
@@ -164,7 +164,7 @@ public class ValueFactory
    * @throws JdwpInternalErrorException
    * @throws InvalidObjectException
    */
-  private static byte getTagForClass(Class<?> klass)
+  private static byte getTagForClass(Class klass)
     throws JdwpInternalErrorException
   {
     byte tag;
@@ -209,7 +209,7 @@ public class ValueFactory
    * @param type the Class type of the object
    * @return a new Value representing this object
    */
-  public static Value createFromObject(Object value, Class<?> type)
+  public static Value createFromObject(Object value, Class type)
   {
     Value val = null;
 

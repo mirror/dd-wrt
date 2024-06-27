@@ -1,5 +1,5 @@
 /* BasicAttribute.java --
-   Copyright (C) 2000, 2001, 2004, 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2000, 2001, 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -94,7 +94,6 @@ public class BasicAttribute implements Attribute
     values.add (value);
   }
 
-  @Override
   public void add (int index, Object val)
   {
     if (! ordered && contains (val))
@@ -102,7 +101,6 @@ public class BasicAttribute implements Attribute
     values.add (index, val);
   }
 
-  @Override
   public boolean add (Object val)
   {
     if (! ordered && contains (val))
@@ -110,13 +108,11 @@ public class BasicAttribute implements Attribute
     return values.add (val);
   }
 
-  @Override
   public void clear ()
   {
     values.clear ();
   }
 
-  @Override
   public Object clone ()
   {
     BasicAttribute c = new BasicAttribute ();
@@ -126,7 +122,6 @@ public class BasicAttribute implements Attribute
     return c;
   }
 
-  @Override
   public boolean contains (Object val)
   {
     for (int i = 0; i < values.size (); ++i)
@@ -138,7 +133,6 @@ public class BasicAttribute implements Attribute
     return false;
   }
 
-  @Override
   public boolean equals (Object obj)
   {
     if (! (obj instanceof BasicAttribute))
@@ -173,8 +167,7 @@ public class BasicAttribute implements Attribute
 
     return true;
   }
-  
-  @Override
+
   public Object get ()
     throws NamingException
   {
@@ -183,41 +176,35 @@ public class BasicAttribute implements Attribute
     return get (0);
   }
 
-  @Override
   public Object get (int index)
     throws NamingException
   {
     return values.get (index);
   }
 
-  @Override
   public NamingEnumeration<?> getAll ()
     throws NamingException
   {
     return new BasicAttributeEnumeration ();
   }
 
-  @Override
   public DirContext getAttributeDefinition ()
     throws OperationNotSupportedException, NamingException
   {
     throw new OperationNotSupportedException ();
   }
 
-  @Override
   public DirContext getAttributeSyntaxDefinition ()
     throws OperationNotSupportedException, NamingException
   {
     throw new OperationNotSupportedException ();
   }
 
-  @Override
   public String getID ()
   {
     return attrID;
   }
 
-  @Override
   public int hashCode ()
   {
     int val = attrID.hashCode ();
@@ -241,19 +228,16 @@ public class BasicAttribute implements Attribute
     return val;
   }
 
-  @Override
   public boolean isOrdered ()
   {
     return ordered;
   }
 
-  @Override
   public Object remove (int index)
   {
     return values.remove (index);
   }
 
-  @Override
   public boolean remove (Object val)
   {
     for (int i = 0; i < values.size (); ++i)
@@ -268,7 +252,6 @@ public class BasicAttribute implements Attribute
     return false;
   }
 
-  @Override
   public Object set (int index, Object val)
   {
     if (! ordered && contains (val))
@@ -276,13 +259,11 @@ public class BasicAttribute implements Attribute
     return values.set (index, val);
   }
 
-  @Override
   public int size ()
   {
     return values.size ();
   }
 
-  @Override
   public String toString ()
   {
     String r = attrID;
@@ -340,7 +321,7 @@ public class BasicAttribute implements Attribute
   }
 
   // Used when enumerating this attribute.
-  private class BasicAttributeEnumeration implements NamingEnumeration<Object>
+  private class BasicAttributeEnumeration implements NamingEnumeration
   {
     int where = 0;
 
@@ -348,30 +329,25 @@ public class BasicAttribute implements Attribute
     {
     }
 
-    @Override
     public void close () throws NamingException
     {
     }
 
-    @Override
     public boolean hasMore () throws NamingException
     {
       return hasMoreElements ();
     }
 
-    @Override
     public Object next () throws NamingException
     {
       return nextElement ();
     }
 
-    @Override
     public boolean hasMoreElements ()
     {
       return where < values.size ();
     }
 
-    @Override
     public Object nextElement () throws NoSuchElementException
     {
       if (where == values.size ())

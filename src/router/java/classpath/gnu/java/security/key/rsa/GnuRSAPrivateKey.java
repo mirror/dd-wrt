@@ -1,6 +1,5 @@
 /* GnuRSAPrivateKey.java --
-   Copyright 2001, 2002, 2003, 2006, 2014, 2015
-   Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -48,9 +47,9 @@ import gnu.java.security.key.IKeyPairCodec;
 
 import java.math.BigInteger;
 import java.security.AccessController;
+import java.security.PrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.Objects;
 
 /**
  * An object that embodies an RSA private key.
@@ -66,10 +65,8 @@ import java.util.Objects;
  */
 public class GnuRSAPrivateKey
     extends GnuRSAKey
-    implements RSAPrivateCrtKey
+    implements PrivateKey, RSAPrivateCrtKey
 {
-  private static final long serialVersionUID = -2208207842306185913L;
-
   /** The first prime divisor of the modulus. */
   private final BigInteger p;
 
@@ -199,37 +196,31 @@ public class GnuRSAPrivateKey
     return (GnuRSAPrivateKey) new RSAKeyPairPKCS8Codec().decodePrivateKey(k);
   }
 
-  @Override
   public BigInteger getPrimeP()
   {
     return p;
   }
 
-  @Override
   public BigInteger getPrimeQ()
   {
     return q;
   }
 
-  @Override
   public BigInteger getPrimeExponentP()
   {
     return dP;
   }
 
-  @Override
   public BigInteger getPrimeExponentQ()
   {
     return dQ;
   }
 
-  @Override
   public BigInteger getCrtCoefficient()
   {
     return qInv;
   }
 
-  @Override
   public BigInteger getPrivateExponent()
   {
     return d;
@@ -246,7 +237,6 @@ public class GnuRSAPrivateKey
    * @see RSAKeyPairRawCodec
    * @see RSAKeyPairPKCS8Codec
    */
-  @Override
   public byte[] getEncoded(int format)
   {
     final byte[] result;
@@ -273,7 +263,6 @@ public class GnuRSAPrivateKey
    * @return <code>true</code> if the designated object is of the same type
    *         and value as this one.
    */
-  @Override
   public boolean equals(final Object obj)
   {
     if (obj == null)
@@ -296,24 +285,11 @@ public class GnuRSAPrivateKey
     return false;
   }
 
-  /**
-   * Provides a hash code for this object using the RSA
-   * parameter values.
-   *
-   * @return the hash code of this object.
-   */
-  @Override
-  public int hashCode()
-  {
-    return Objects.hash(p, q, dP, dQ, qInv);
-  }
-
-  @Override
   public String toString()
   {
     if (str == null)
       {
-        String ls = AccessController.doPrivileged
+        String ls = (String) AccessController.doPrivileged
             (new GetPropertyAction("line.separator"));
         str = new CPStringBuilder(this.getClass().getName()).append("(")
             .append(super.toString()).append(",").append(ls)

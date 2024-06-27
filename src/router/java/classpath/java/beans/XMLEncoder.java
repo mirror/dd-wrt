@@ -50,9 +50,7 @@ import java.io.OutputStream;
  * @author Robert Schuster (robertschuster@fsfe.org)
  * @since 1.4
  */
-public class XMLEncoder
-  extends Encoder
-  implements AutoCloseable
+public class XMLEncoder extends Encoder
 {
   Object owner;
 

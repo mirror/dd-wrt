@@ -1,5 +1,5 @@
 /* DERReader.java -- parses ASN.1 DER sequences
-   Copyright (C) 2003, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -346,7 +346,7 @@ public class DERReader implements DER
     return str.toString();
   }
 
-  private static Date makeTime(int tag, byte[] value) throws IOException
+  private Date makeTime(int tag, byte[] value) throws IOException
   {
     Calendar calendar = Calendar.getInstance();
     String str = makeString(PRINTABLE_STRING, value);
@@ -415,23 +415,18 @@ public class DERReader implements DER
               Integer.parseInt(date.substring(8, 10)), 0); // hour, min
             switch (date.length())
               {
-	        case 19:
+                case 19:
                 case 18:
                 case 17:
                 case 16:
                   calendar.set(Calendar.MILLISECOND,
                     Integer.parseInt(date.substring(15)));
-		  //$FALL-THROUGH$
                 case 14:
                   calendar.set(Calendar.SECOND,
                     Integer.parseInt(date.substring(12, 14)));
-		  //$FALL-THROUGH$
                 case 12:
                   calendar.set(Calendar.MINUTE,
                     Integer.parseInt(date.substring(10, 12)));
-		  break;
-	        default: // length of 15, 13 or 11
-		  throw new DEREncodingException("cannot parse date"); 
               }
           }
         catch (NumberFormatException nfe)

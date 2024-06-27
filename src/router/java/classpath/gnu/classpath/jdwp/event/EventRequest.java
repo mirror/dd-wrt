@@ -1,5 +1,5 @@
 /* EventRequest.java -- an event request from the debugger
-   Copyright (C) 2005, 2006, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -185,7 +185,7 @@ public class EventRequest
   private static Object _idLock = new Object ();
 
   // A list of filters
-  private LinkedList<IEventFilter> _filters;
+  private LinkedList _filters;
 
   // The ID of this request
   private int _id;
@@ -204,7 +204,7 @@ public class EventRequest
    */
   public EventRequest (byte kind, byte suspendPolicy)
   {
-    _filters = new LinkedList<IEventFilter>();
+    _filters = new LinkedList ();
     synchronized (_idLock)
       {
         _id = ++_last_id;
@@ -222,7 +222,7 @@ public class EventRequest
    */
   public EventRequest (int id, byte kind, byte suspendPolicy)
   {
-    _filters = new LinkedList<IEventFilter>();
+    _filters = new LinkedList ();
     _kind = kind;
     _suspendPolicy = suspendPolicy;
   }
@@ -240,7 +240,7 @@ public class EventRequest
     // Check validity of filter for this request
     boolean valid = true;
 
-    Class<?> clazz = filter.getClass ();
+    Class clazz = filter.getClass ();
     if (clazz == ClassExcludeFilter.class)
       {
         if (_kind == EVENT_THREAD_START
@@ -321,7 +321,7 @@ public class EventRequest
   /**
    * Returns the filters attached to this request
    */
-  public Collection<IEventFilter> getFilters ()
+  public Collection getFilters ()
   {
     return _filters;
   }
@@ -370,10 +370,10 @@ public class EventRequest
     // Loop through filters; all must match
     // Note that we must allow EVERY filter to evaluate. This way
     // things like CountFilter will work.
-    Iterator<IEventFilter> iter = _filters.iterator ();
+    Iterator iter = _filters.iterator ();
     while (iter.hasNext ())
       {
-        IEventFilter filter = iter.next ();
+        IEventFilter filter = (IEventFilter) iter.next ();
         if (!filter.matches (theEvent))
           matches = false;
       }

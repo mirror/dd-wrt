@@ -1,5 +1,5 @@
 /* JdwpConnection.java -- A JDWP-speaking connection
-   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -74,7 +74,7 @@ public class JdwpConnection
   private ITransport _transport;
 
   // Command queue
-  private ArrayList<JdwpPacket> _commandQueue;
+  private ArrayList _commandQueue;
 
   // Shutdown flag
   private boolean _shutdown;
@@ -100,7 +100,7 @@ public class JdwpConnection
   {
     super (group, "JDWP connection thread");
     _transport = transport;
-    _commandQueue = new ArrayList<JdwpPacket>();
+    _commandQueue = new ArrayList ();
     _shutdown = false;
     _bytes = new ByteArrayOutputStream ();
     _doStream = new DataOutputStream (_bytes);
@@ -250,7 +250,7 @@ public class JdwpConnection
               }
           }
 
-        return _commandQueue.remove (0);
+        return (JdwpPacket) _commandQueue.remove (0);
       }
   }
 

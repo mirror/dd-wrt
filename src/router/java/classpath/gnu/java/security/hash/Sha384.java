@@ -1,5 +1,5 @@
 /* Sha384.java --
-   Copyright (C) 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -121,7 +121,7 @@ public class Sha384
     this.h6 = md.h6;
     this.h7 = md.h7;
     this.count = md.count;
-    this.buffer = md.buffer.clone();
+    this.buffer = (byte[]) md.buffer.clone();
   }
 
   public static final long[] G(long hh0, long hh1, long hh2, long hh3,
@@ -131,13 +131,11 @@ public class Sha384
     return sha(hh0, hh1, hh2, hh3, hh4, hh5, hh6, hh7, in, offset);
   }
 
-  @Override
   public Object clone()
   {
     return new Sha384(this);
   }
 
-  @Override
   protected void transform(byte[] in, int offset)
   {
     long[] result = sha(h0, h1, h2, h3, h4, h5, h6, h7, in, offset);
@@ -151,7 +149,6 @@ public class Sha384
     h7 = result[7];
   }
 
-  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -174,7 +171,6 @@ public class Sha384
     return result;
   }
 
-  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -192,7 +188,6 @@ public class Sha384
         (byte)(h5 >>> 24), (byte)(h5 >>> 16), (byte)(h5 >>>  8), (byte) h5 };
   }
 
-  @Override
   protected void resetContext()
   {
     // magic SHA-384 initialisation constants
@@ -206,7 +201,6 @@ public class Sha384
     h7 = 0x47b5481dbefa4fa4L;
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)

@@ -1,5 +1,5 @@
 /* GnuCallbacks.java -- Provider for callback implementations.
-   Copyright (C) 2004, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -44,17 +44,13 @@ import java.security.Provider;
 
 public final class GnuCallbacks extends Provider
 {
-
-  private static final long serialVersionUID = -5978562213558760614L;
-
   public GnuCallbacks()
   {
     super("GNU-CALLBACKS", 2.1, "Implementations of various callback handlers.");
 
-    AccessController.doPrivileged(new PrivilegedAction<Void>()
+    AccessController.doPrivileged(new PrivilegedAction()
       {
-	@Override
-        public Void run()
+        public Object run()
         {
           put("CallbackHandler.Default", DefaultCallbackHandler.class.getName());
           put("CallbackHandler.Console", ConsoleCallbackHandler.class.getName());

@@ -1,5 +1,5 @@
 /* HashFactory.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -114,9 +114,9 @@ public class HashFactory
    *
    * @return a {@link Set} of hash names (Strings).
    */
-  public static final Set<String> getNames()
+  public static final Set getNames()
   {
-    HashSet<String> hs = new HashSet<String>();
+    HashSet hs = new HashSet();
     hs.add(Registry.WHIRLPOOL_HASH);
     hs.add(Registry.RIPEMD128_HASH);
     hs.add(Registry.RIPEMD160_HASH);

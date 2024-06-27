@@ -1,6 +1,6 @@
 /* PacketProcessor.java -- a thread which processes command packets
    from the debugger
-   Copyright (C) 2005, 2006, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -63,7 +63,7 @@ import java.security.PrivilegedAction;
  * @author Keith Seitz (keiths@redhat.com)
  */
 public class PacketProcessor
-  implements PrivilegedAction<Void>
+  implements PrivilegedAction
 {
   // The connection to the debugger
   private JdwpConnection _connection;
@@ -135,7 +135,7 @@ public class PacketProcessor
    * Main run routine for this thread. Will loop getting packets
    * from the connection and processing them.
    */
-  public Void run ()
+  public Object run ()
   {
     // Notify initialization thread (gnu.classpath.jdwp.Jdwp) that
     // the PacketProcessor thread is ready.

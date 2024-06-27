@@ -1,5 +1,5 @@
 /* IntersectingDomainCombiner.java --
-   Copyright (C) 2004, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -62,11 +62,10 @@ final class IntersectingDomainCombiner implements DomainCombiner
   // Methods.
   // -------------------------------------------------------------------------
 
-  @Override
   public ProtectionDomain[] combine (ProtectionDomain[] currentDomains,
                                      ProtectionDomain[] assignedDomains)
   {
-    HashSet<ProtectionDomain> newDomains = new HashSet<ProtectionDomain>();
+    HashSet newDomains = new HashSet ();
     for (int i = 0; i < currentDomains.length; i++)
       {
         if (currentDomains[i] == null)
@@ -77,6 +76,7 @@ final class IntersectingDomainCombiner implements DomainCombiner
               newDomains.add (currentDomains[i]);
           }
       }
-    return newDomains.toArray(new ProtectionDomain[newDomains.size()]);
+    return (ProtectionDomain[])
+      newDomains.toArray(new ProtectionDomain[newDomains.size()]);
   }
 }

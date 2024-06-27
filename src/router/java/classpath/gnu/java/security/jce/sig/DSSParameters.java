@@ -1,5 +1,5 @@
 /* DSSParameters.java -- DSS parameters DAO
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -85,7 +85,6 @@ public class DSSParameters
 
   // default 0-arguments constructor
 
-  @Override
   protected void engineInit(AlgorithmParameterSpec spec)
       throws InvalidParameterSpecException
   {
@@ -110,7 +109,6 @@ public class DSSParameters
    *   }
    * </pre>
    */
-  @Override
   protected void engineInit(byte[] params) throws IOException
   {
     DERReader der = new DERReader(params);
@@ -129,7 +127,6 @@ public class DSSParameters
     g = (BigInteger) val.getValue();
   }
 
-  @Override
   protected void engineInit(byte[] params, String format) throws IOException
   {
     if (format != null)
@@ -144,14 +141,13 @@ public class DSSParameters
     engineInit(params);
   }
 
-  @Override
-  protected <T extends AlgorithmParameterSpec> T engineGetParameterSpec(Class<T> paramSpec)
+  protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
       throws InvalidParameterSpecException
   {
     if (! paramSpec.isAssignableFrom(DSAParameterSpec.class))
       throw new InvalidParameterSpecException("Wrong AlgorithmParameterSpec type: "
                                               + paramSpec.getName());
-    return paramSpec.cast(new DSAParameterSpec(p, q, g));
+    return new DSAParameterSpec(p, q, g);
   }
 
   /**
@@ -166,14 +162,13 @@ public class DSSParameters
    *   }
    * </pre>
    */
-  @Override
   protected byte[] engineGetEncoded() throws IOException
   {
     DERValue derP = new DERValue(DER.INTEGER, p);
     DERValue derQ = new DERValue(DER.INTEGER, q);
     DERValue derG = new DERValue(DER.INTEGER, g);
 
-    ArrayList<DERValue> params = new ArrayList<DERValue>(3);
+    ArrayList params = new ArrayList(3);
     params.add(derP);
     params.add(derQ);
     params.add(derG);
@@ -186,7 +181,6 @@ public class DSSParameters
     return result;
   }
 
-  @Override
   protected byte[] engineGetEncoded(String format) throws IOException
   {
     if (format != null)
@@ -201,7 +195,6 @@ public class DSSParameters
     return engineGetEncoded();
   }
 
-  @Override
   protected String engineToString()
   {
     CPStringBuilder sb = new CPStringBuilder("p=");

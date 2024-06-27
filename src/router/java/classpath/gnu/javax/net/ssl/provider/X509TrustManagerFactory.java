@@ -1,5 +1,5 @@
 /* X509TrustManagerFactory.java -- X.509 trust manager factory.
-   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -183,10 +183,10 @@ public class X509TrustManagerFactory extends TrustManagerFactorySpi
       }
 
     LinkedList<X509Certificate> l = new LinkedList<X509Certificate>();
-    Enumeration<String> aliases = store.aliases();
+    Enumeration aliases = store.aliases();
     while (aliases.hasMoreElements())
       {
-        String alias = aliases.nextElement();
+        String alias = (String) aliases.nextElement();
         if (!store.isCertificateEntry(alias))
           continue;
         Certificate c = store.getCertificate(alias);

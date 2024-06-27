@@ -1,5 +1,5 @@
 /* AlgorithmParameters.java --- Algorithm Parameters Implementation Class
-   Copyright (C) 1999, 2003, 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -310,7 +310,6 @@ public class AlgorithmParameters
    *
    * @return a string representation of the encoded form.
    */
-  @Override
   public final String toString()
   {
     return paramSpi.engineToString();

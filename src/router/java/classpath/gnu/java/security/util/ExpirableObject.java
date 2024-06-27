@@ -1,5 +1,5 @@
 /* ExpirableObject.java -- an object that is automatically destroyed.
-   Copyright (C) 2004, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -107,7 +107,6 @@ public abstract class ExpirableObject
    *
    * @throws DestroyFailedException If this operation fails.
    */
-  @Override
   public final void destroy() throws DestroyFailedException
   {
     doDestroy();
@@ -136,7 +135,6 @@ public abstract class ExpirableObject
       this.target = target;
     }
 
-    @Override
     public void run()
     {
       try

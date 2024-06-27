@@ -1,5 +1,5 @@
 /* DHKeyPairPKCS8Codec.java -- PKCS#8 encoder/decoder for DH keys
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -128,13 +128,13 @@ public class DHKeyPairPKCS8Codec
       q = BigInteger.ZERO;
     BigInteger x = pk.getX();
 
-    ArrayList<DERValue> params = new ArrayList<DERValue>(3);
+    ArrayList params = new ArrayList(3);
     params.add(new DERValue(DER.INTEGER, p));
     params.add(new DERValue(DER.INTEGER, g));
     params.add(new DERValue(DER.INTEGER, q));
     DERValue derParams = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, params);
 
-    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
+    ArrayList algorithmID = new ArrayList(2);
     algorithmID.add(derOID);
     algorithmID.add(derParams);
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -142,7 +142,7 @@ public class DHKeyPairPKCS8Codec
 
     DERValue derPrivateKey = new DERValue(DER.OCTET_STRING, Util.trim(x));
 
-    ArrayList<DERValue> pki = new ArrayList<DERValue>(3);
+    ArrayList pki = new ArrayList(3);
     pki.add(derVersion);
     pki.add(derAlgorithmID);
     pki.add(derPrivateKey);

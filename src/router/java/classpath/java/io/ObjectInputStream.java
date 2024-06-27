@@ -518,13 +518,12 @@ public class ObjectInputStream extends InputStream
            if (dump)
              dumpElementln("ENUM=");
            ObjectStreamClass osc = (ObjectStreamClass) readObject();
-	   int enumHandle = assignNewHandle(null, shared);
            String constantName = (String) readObject();
            if (dump)
              dumpElementln("CONSTANT NAME = " + constantName);
            Class clazz = osc.forClass();
            Enum instance = Enum.valueOf(clazz, constantName);
-	   rememberHandle(instance, shared, enumHandle);
+           assignNewHandle(instance,shared);
            ret_val = instance;
            break;
          }

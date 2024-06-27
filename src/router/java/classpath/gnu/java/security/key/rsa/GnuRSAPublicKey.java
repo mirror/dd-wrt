@@ -1,6 +1,5 @@
 /* GnuRSAPublicKey.java --
-   Copyright 2001, 2002, 2003, 2006, 2014, 2015
-   Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,6 +46,7 @@ import gnu.java.security.key.IKeyPairCodec;
 
 import java.math.BigInteger;
 import java.security.AccessController;
+import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**
@@ -63,10 +63,8 @@ import java.security.interfaces.RSAPublicKey;
  */
 public class GnuRSAPublicKey
     extends GnuRSAKey
-    implements RSAPublicKey
+    implements PublicKey, RSAPublicKey
 {
-  private static final long serialVersionUID = -1206860366945100193L;
-
   /** String representation of this key. Cached for speed. */
   private transient String str;
 
@@ -137,7 +135,6 @@ public class GnuRSAPublicKey
    * @throws IllegalArgumentException if the format is not supported.
    * @see RSAKeyPairRawCodec
    */
-  @Override
   public byte[] getEncoded(final int format)
   {
     final byte[] result;
@@ -164,7 +161,6 @@ public class GnuRSAPublicKey
    * @return <code>true</code> if the designated object is of the same type
    *         and value as this one.
    */
-  @Override
   public boolean equals(final Object obj)
   {
     if (obj == null)
@@ -178,27 +174,11 @@ public class GnuRSAPublicKey
            && getPublicExponent().equals(that.getPublicExponent());
   }
 
-  /**
-   * Provides a hash code for this object using the RSA
-   * modulus and public exponent, matching the comparisons
-   * used for the {@link #equals(Object)} implementation.
-   *
-   * @return the hash code of this object.
-   * @see #equals(Object)
-   */
-
-  @Override
-  public int hashCode()
-  {
-    return 31 * super.hashCode() + getPublicExponent().hashCode();
-  }
-
-  @Override
   public String toString()
   {
     if (str == null)
       {
-        String ls = AccessController.doPrivileged
+        String ls = (String) AccessController.doPrivileged
             (new GetPropertyAction("line.separator"));
         str = new CPStringBuilder(this.getClass().getName()).append("(")
             .append(super.toString()).append(",").append(ls)

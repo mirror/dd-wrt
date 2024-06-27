@@ -1,5 +1,5 @@
 /* KeyPairGeneratorAdapter.java --
-   Copyright 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -38,7 +38,6 @@ exception statement from your version.  */
 
 package gnu.java.security.jce.sig;
 
-import gnu.java.security.Registry;
 import gnu.java.security.key.IKeyPairGenerator;
 import gnu.java.security.key.KeyPairGeneratorFactory;
 
@@ -80,71 +79,17 @@ public abstract class KeyPairGeneratorAdapter
   {
     super(kpgName);
 
-    this.adaptee = KeyPairGeneratorFactory.getInstance(localiseName(kpgName));
+    this.adaptee = KeyPairGeneratorFactory.getInstance(kpgName);
   }
 
-  @Override
   public abstract void initialize(int keysize, SecureRandom random);
 
-  @Override
   public abstract void initialize(AlgorithmParameterSpec params,
                                   SecureRandom random)
       throws InvalidAlgorithmParameterException;
 
-  @Override
   public KeyPair generateKeyPair()
   {
-    if (!adaptee.isInitialized())
-      initialize(adaptee.getDefaultKeySize());
-
     return adaptee.generate();
   }
-
-  /**
-   * The {@code java.security.*} methods are expected to return
-   * standard algorithm names, as listed in
-   * <a href="http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#KeyPairGenerator">
-   * the on-line Oracle documentation</a>.
-   *
-   * @return the name specified by the Oracle documentation.
-   */
-  @Override
-  public String getAlgorithm()
-  {
-    String alg = super.getAlgorithm();
-
-    if ("dh".equals(alg))
-      return "DH";
-    if ("dsa".equals(alg))
-      return "DSA";
-    if ("dss".equals(alg))
-      return "DSA";
-    if ("rsa".equals(alg))
-      return "RSA";
-    return alg;
-  }
-
-  /**
-   * The user may specify an algorithm using the names specified in
-   * <a href="http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#KeyPairGenerator">
-   * the on-line Oracle documentation</a>. We should translate them
-   * to names recognised by the GNU registry.
-   *
-   * @param kpgName the generator name, which may be its standardised
-   *                name.
-   * @return the name specified by the GNU registry.
-   */
-  private static String localiseName(String kpgName)
-  {
-    if ("DiffieHellman".equals(kpgName))
-      return Registry.DH_KPG;
-    if ("DH".equals(kpgName))
-      return Registry.DH_KPG;
-    if ("DSA".equals(kpgName))
-      return Registry.DSA_KPG;
-    if ("RSA".equals(kpgName))
-      return Registry.RSA_KPG;
-    return kpgName;
-  }
-
 }

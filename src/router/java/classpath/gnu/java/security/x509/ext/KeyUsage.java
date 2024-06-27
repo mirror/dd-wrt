@@ -1,5 +1,5 @@
 /* KeyUsage.java -- the key usage extension.
-   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -85,7 +85,6 @@ public class KeyUsage extends Extension.Value
     return keyUsage;
   }
 
-  @Override
   public String toString()
   {
     return KeyUsage.class.getName() + " [ " + keyUsage + " ]";

@@ -1,5 +1,5 @@
 /* ExceptionEvent.java -- an event specifying an exception has been thrown
- Copyright (C) 2006, 2013 Free Software Foundation, Inc.
+ Copyright (C) 2006 Free Software Foundation, Inc.
 
  This file is part of GNU Classpath.
 
@@ -72,7 +72,7 @@ public class ExceptionEvent
   private Location _catchLocation;
 
   //the class where the exeption was thrown
-  private Class<?> _klass;
+  private Class _klass;
 
   /**
    * Constructs a new <code>ExceptionEvent</code> where the exception was
@@ -85,7 +85,7 @@ public class ExceptionEvent
    * @param instance the instance that threw the exception
    */
   public ExceptionEvent(Throwable exception, Thread thread, Location location,
-                        Location catchLocation, Class<?> clazz, Object instance)
+                        Location catchLocation, Class clazz, Object instance)
   {
     super(JdwpConstants.EventKind.EXCEPTION);
     _exception = exception;

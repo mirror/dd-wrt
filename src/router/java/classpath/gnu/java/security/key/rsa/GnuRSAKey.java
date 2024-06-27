@@ -1,5 +1,5 @@
 /* GnuRSAKey.java --
-   Copyright 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -48,7 +48,6 @@ import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.Key;
 import java.security.interfaces.RSAKey;
-import java.util.Objects;
 
 /**
  * A base asbtract class for both public and private RSA keys.
@@ -56,8 +55,6 @@ import java.util.Objects;
 public abstract class GnuRSAKey
     implements Key, RSAKey
 {
-  private static final long serialVersionUID = -7321530024326974635L;
-
   /** The public modulus of an RSA key pair. */
   private final BigInteger n;
 
@@ -91,26 +88,22 @@ public abstract class GnuRSAKey
     this.e = e;
   }
 
-  @Override
   public BigInteger getModulus()
   {
     return getN();
   }
 
-  @Override
   public String getAlgorithm()
   {
-    return "RSA";
+    return Registry.RSA_KPG;
   }
 
   /** @deprecated see getEncoded(int). */
-  @Override @Deprecated
   public byte[] getEncoded()
   {
     return getEncoded(defaultFormat);
   }
 
-  @Override
   public String getFormat()
   {
     return FormatUtil.getEncodingShortName(defaultFormat);
@@ -154,7 +147,6 @@ public abstract class GnuRSAKey
    * @return <code>true</code> if the designated object is of the same type
    *         and value as this one.
    */
-  @Override
   public boolean equals(final Object obj)
   {
     if (obj == null)
@@ -167,24 +159,11 @@ public abstract class GnuRSAKey
     return n.equals(that.getModulus());
   }
 
-  /**
-   * Provides a hash code for this object using the RSA
-   * modulus.
-   *
-   * @return the hash code of this object.
-   */
-  @Override
-  public int hashCode()
-  {
-    return Objects.hash(n);
-  }
-
-  @Override
   public String toString()
   {
     if (str == null)
       {
-        String ls = AccessController.doPrivileged
+        String ls = (String) AccessController.doPrivileged
             (new GetPropertyAction("line.separator"));
         str = new CPStringBuilder(ls)
             .append("defaultFormat=").append(defaultFormat).append(",").append(ls)

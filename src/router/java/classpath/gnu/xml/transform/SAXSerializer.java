@@ -1,5 +1,5 @@
 /* SAXSerializer.java --
-   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,9 +38,8 @@ exception statement from your version. */
 package gnu.xml.transform;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.NamedNodeMap;
@@ -60,13 +59,13 @@ class SAXSerializer
 {
 
   transient NamedNodeMap attrs;
-  transient LinkedList<Map<String,String>> namespaces =
-    new LinkedList<Map<String,String>>();
+  transient LinkedList namespaces = new LinkedList();
 
   boolean isDefined(String prefix, String uri)
   {
-    for (Map<String,String> ctx : namespaces)
+    for (Iterator i = namespaces.iterator(); i.hasNext(); )
       {
+        HashMap ctx = (HashMap) i.next();
         if (uri.equals(ctx.get(prefix)))
           {
             return true;
@@ -77,33 +76,35 @@ class SAXSerializer
 
   void define(String prefix, String uri)
   {
-    for (Map<String,String> ctx : namespaces)
+    for (Iterator i = namespaces.iterator(); i.hasNext(); )
       {
+        HashMap ctx = (HashMap) i.next();
         if (ctx.containsKey(prefix))
           {
-            Map<String,String> newCtx = new HashMap<String,String>();
+            HashMap newCtx = new HashMap();
             newCtx.put(prefix, uri);
             namespaces.addFirst(newCtx);
             return;
           }
       }
-    Map<String,String> ctx;
+    HashMap ctx;
     if (namespaces.isEmpty())
       {
-        ctx = new HashMap<String,String>();
+        ctx = new HashMap();
         namespaces.add(ctx);
       }
     else
       {
-        ctx = namespaces.getFirst();
+        ctx = (HashMap) namespaces.getFirst();
       }
     ctx.put(prefix, uri);
   }
 
   void undefine(String prefix, String uri)
   {
-    for (Map<String,String> ctx : namespaces)
+    for (Iterator i = namespaces.iterator(); i.hasNext(); )
       {
+        HashMap ctx = (HashMap) i.next();
         if (uri.equals(ctx.get(prefix)))
           {
             ctx.remove(prefix);
@@ -199,8 +200,7 @@ class SAXSerializer
 
   public String getValue(String qName)
   {
-    Attr attr = (Attr) attrs.getNamedItem(qName);
-    return (attr == null) ? null :  attr.getNodeValue();
+    return attrs.getNamedItem(qName).getNodeValue();
   }
 
   void serialize(Node node, ContentHandler ch, LexicalHandler lh)

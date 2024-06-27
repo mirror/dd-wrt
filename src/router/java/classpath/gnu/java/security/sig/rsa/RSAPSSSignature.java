@@ -1,6 +1,5 @@
 /* RSAPSSSignature.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2010, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006, 2010 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -137,32 +136,28 @@ public class RSAPSSSignature
     this.pss = (EMSA_PSS) that.pss.clone();
   }
 
-  @Override
   public Object clone()
   {
     return new RSAPSSSignature(this);
   }
 
-  @Override
   protected void setupForVerification(PublicKey k)
       throws IllegalArgumentException
   {
     if (! (k instanceof RSAPublicKey))
       throw new IllegalArgumentException();
 
-    publicKey = k;
+    publicKey = (RSAPublicKey) k;
   }
 
-  @Override
   protected void setupForSigning(PrivateKey k) throws IllegalArgumentException
   {
     if (! (k instanceof RSAPrivateKey))
       throw new IllegalArgumentException();
 
-    privateKey = k;
+    privateKey = (RSAPrivateKey) k;
   }
 
-  @Override
   protected Object generateSignature() throws IllegalStateException
   {
     // 1. Apply the EMSA-PSS encoding operation to the message M to produce an
@@ -194,7 +189,6 @@ public class RSAPSSSignature
     return RSA.I2OSP(s, k);
   }
 
-  @Override
   protected boolean verifySignature(Object sig) throws IllegalStateException
   {
     if (publicKey == null)

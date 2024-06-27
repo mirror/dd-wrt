@@ -1,5 +1,5 @@
 /* Sha256RandomSpi.java --
-   Copyright (C) 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,8 +47,6 @@ import gnu.java.security.Registry;
 public class Sha256RandomSpi
     extends SecureRandomAdapter
 {
-  private static final long serialVersionUID = -8748894083942397288L;
-
   public Sha256RandomSpi()
   {
     super(Registry.SHA256_HASH);

@@ -1,5 +1,5 @@
 /* RSAKeyFactory.java -- RSA key-factory JCE Adapter
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -66,7 +66,6 @@ public class RSAKeyFactory
 {
   // implicit 0-arguments constructor
 
-  @Override
   protected PublicKey engineGeneratePublic(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -81,6 +80,7 @@ public class RSAKeyFactory
       {
         X509EncodedKeySpec spec = (X509EncodedKeySpec) keySpec;
         byte[] encoded = spec.getEncoded();
+        PublicKey result;
         try
           {
             return new RSAKeyPairX509Codec().decodePublicKey(encoded);
@@ -93,7 +93,6 @@ public class RSAKeyFactory
     throw new InvalidKeySpecException("Unsupported (public) key specification");
   }
 
-  @Override
   protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -115,6 +114,7 @@ public class RSAKeyFactory
       {
         PKCS8EncodedKeySpec spec = (PKCS8EncodedKeySpec) keySpec;
         byte[] encoded = spec.getEncoded();
+        PrivateKey result;
         try
           {
             return new RSAKeyPairPKCS8Codec().decodePrivateKey(encoded);
@@ -127,8 +127,7 @@ public class RSAKeyFactory
     throw new InvalidKeySpecException("Unsupported (private) key specification");
   }
 
-  @Override
-  protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)
+  protected KeySpec engineGetKeySpec(Key key, Class keySpec)
       throws InvalidKeySpecException
   {
     if (key instanceof RSAPublicKey)
@@ -138,7 +137,7 @@ public class RSAKeyFactory
           RSAPublicKey rsaKey = (RSAPublicKey) key;
           BigInteger n = rsaKey.getModulus();
           BigInteger e = rsaKey.getPublicExponent();
-          return keySpec.cast(new RSAPublicKeySpec(n, e));
+          return new RSAPublicKeySpec(n, e);
         }
         if (keySpec.isAssignableFrom(X509EncodedKeySpec.class))
           {
@@ -146,13 +145,13 @@ public class RSAKeyFactory
               {
                 GnuRSAPublicKey rsaKey = (GnuRSAPublicKey) key;
                 byte[] encoded = rsaKey.getEncoded(Registry.X509_ENCODING_ID);
-                return keySpec.cast(new X509EncodedKeySpec(encoded));
+                return new X509EncodedKeySpec(encoded);
               }
 
             if (Registry.X509_ENCODING_SORT_NAME.equalsIgnoreCase(key.getFormat()))
               {
                 byte[] encoded = key.getEncoded();
-                return keySpec.cast(new X509EncodedKeySpec(encoded));
+                return new X509EncodedKeySpec(encoded);
               }
             throw new InvalidKeySpecException(
                 "Wrong key type or unsupported (public) key specification");
@@ -171,7 +170,7 @@ public class RSAKeyFactory
         BigInteger dP = rsaKey.getPrimeExponentP();
         BigInteger dQ = rsaKey.getPrimeExponentQ();
         BigInteger qInv = rsaKey.getCrtCoefficient();
-        return keySpec.cast(new RSAPrivateCrtKeySpec(n, e, d, p, q, dP, dQ, qInv));
+        return new RSAPrivateCrtKeySpec(n, e, d, p, q, dP, dQ, qInv);
       }
     if ((key instanceof RSAPrivateKey)
         && keySpec.isAssignableFrom(RSAPrivateKeySpec.class))
@@ -179,7 +178,7 @@ public class RSAKeyFactory
         RSAPrivateKey rsaKey = (RSAPrivateKey) key;
         BigInteger n = rsaKey.getModulus();
         BigInteger d = rsaKey.getPrivateExponent();
-        return keySpec.cast(new RSAPrivateKeySpec(n, d));
+        return new RSAPrivateKeySpec(n, d);
       }
     if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class))
       {
@@ -187,12 +186,12 @@ public class RSAKeyFactory
           {
             GnuRSAPrivateKey rsaKey = (GnuRSAPrivateKey) key;
             byte[] encoded = rsaKey.getEncoded(Registry.PKCS8_ENCODING_ID);
-            return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+            return new PKCS8EncodedKeySpec(encoded);
           }
         if (Registry.PKCS8_ENCODING_SHORT_NAME.equalsIgnoreCase(key.getFormat()))
           {
             byte[] encoded = key.getEncoded();
-            return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+            return new PKCS8EncodedKeySpec(encoded);
           }
         throw new InvalidKeySpecException(
             "Wrong key type or unsupported (private) key specification");
@@ -201,7 +200,6 @@ public class RSAKeyFactory
         "Wrong key type or unsupported key specification");
   }
 
-  @Override
   protected Key engineTranslateKey(Key key) throws InvalidKeyException
   {
     if ((key instanceof GnuRSAPublicKey) || (key instanceof GnuRSAPrivateKey))

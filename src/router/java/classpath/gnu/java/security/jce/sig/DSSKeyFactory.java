@@ -1,5 +1,5 @@
 /* DSSKeyFactory.java -- JCE DSA key factory Adapter
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -69,7 +69,6 @@ public class DSSKeyFactory
 {
   // implicit 0-arguments constructor
 
-  @Override
   protected PublicKey engineGeneratePublic(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -100,7 +99,6 @@ public class DSSKeyFactory
     throw new InvalidKeySpecException("Unsupported (public) key specification");
   }
 
-  @Override
   protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
       throws InvalidKeySpecException
   {
@@ -131,8 +129,7 @@ public class DSSKeyFactory
     throw new InvalidKeySpecException("Unsupported (private) key specification");
   }
 
-  @Override
-  protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)
+  protected KeySpec engineGetKeySpec(Key key, Class keySpec)
       throws InvalidKeySpecException
   {
     if (key instanceof DSAPublicKey)
@@ -144,7 +141,7 @@ public class DSSKeyFactory
             BigInteger q = dsaKey.getParams().getQ();
             BigInteger g = dsaKey.getParams().getG();
             BigInteger y = dsaKey.getY();
-            return keySpec.cast(new DSAPublicKeySpec(y, p, q, g));
+            return new DSAPublicKeySpec(y, p, q, g);
           }
         if (keySpec.isAssignableFrom(X509EncodedKeySpec.class))
           {
@@ -152,12 +149,12 @@ public class DSSKeyFactory
               {
                 DSSPublicKey dssKey = (DSSPublicKey) key;
                 byte[] encoded = dssKey.getEncoded(Registry.X509_ENCODING_ID);
-                return keySpec.cast(new X509EncodedKeySpec(encoded));
+                return new X509EncodedKeySpec(encoded);
               }
             if (Registry.X509_ENCODING_SORT_NAME.equalsIgnoreCase(key.getFormat()))
               {
                 byte[] encoded = key.getEncoded();
-                return keySpec.cast(new X509EncodedKeySpec(encoded));
+                return new X509EncodedKeySpec(encoded);
               }
             throw new InvalidKeySpecException(
                 "Wrong key type or unsupported (public) key specification");
@@ -173,7 +170,7 @@ public class DSSKeyFactory
             BigInteger q = dsaKey.getParams().getQ();
             BigInteger g = dsaKey.getParams().getG();
             BigInteger x = dsaKey.getX();
-            return keySpec.cast(new DSAPrivateKeySpec(x, p, q, g));
+            return new DSAPrivateKeySpec(x, p, q, g);
           }
         if (keySpec.isAssignableFrom(PKCS8EncodedKeySpec.class))
           {
@@ -181,12 +178,12 @@ public class DSSKeyFactory
               {
                 DSSPrivateKey dssKey = (DSSPrivateKey) key;
                 byte[] encoded = dssKey.getEncoded(Registry.PKCS8_ENCODING_ID);
-                return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                return new PKCS8EncodedKeySpec(encoded);
               }
             if (Registry.PKCS8_ENCODING_SHORT_NAME.equalsIgnoreCase(key.getFormat()))
               {
                 byte[] encoded = key.getEncoded();
-                return keySpec.cast(new PKCS8EncodedKeySpec(encoded));
+                return new PKCS8EncodedKeySpec(encoded);
               }
             throw new InvalidKeySpecException(
                 "Wrong key type or unsupported (private) key specification");
@@ -196,7 +193,6 @@ public class DSSKeyFactory
     throw new InvalidKeySpecException("Wrong key type or unsupported key specification");
   }
 
-  @Override
   protected Key engineTranslateKey(Key key) throws InvalidKeyException
   {
     if ((key instanceof DSSPublicKey) || (key instanceof DSSPrivateKey))

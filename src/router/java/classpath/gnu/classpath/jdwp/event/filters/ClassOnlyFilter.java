@@ -1,5 +1,5 @@
 /* ClassOnlyFilter.java -- filter on specific class
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -92,8 +92,8 @@ public class ClassOnlyFilter
       {
         try
           {
-            Class<?> clazz = _id.getType ();
-            Class<?> eventClass = (Class<?>) type;
+            Class clazz = _id.getType ();
+            Class eventClass = (Class) type;
             if (clazz.isAssignableFrom (eventClass))
               return true;
           }

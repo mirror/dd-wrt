@@ -56,7 +56,7 @@ static void close_all_fds(int *fds, int numFds)
 int cpproc_forkAndExec (char * const *commandLine, char * const * newEnviron,
 			int *fds, int pipe_count, pid_t *out_pid, const char *wd)
 {
-  int local_fds[6];
+  int local_fds[6] = {0,0,0,0,0,0};
   int i;
   pid_t pid;
 

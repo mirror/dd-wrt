@@ -1,5 +1,5 @@
 /* SecureClassLoader.java --- A Secure Class Loader
-   Copyright (C) 1999, 2004, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -140,9 +140,9 @@ public class SecureClassLoader extends ClassLoader
    * argument to build a proper ProtectionDomain for the class
    * being defined.
    */
-  @SuppressWarnings("static-method")
   protected PermissionCollection getPermissions(CodeSource cs)
   {
-    return Policy.getCurrentPolicy().getPermissions(cs);
+    Policy policy = Policy.getCurrentPolicy();
+    return policy.getPermissions(cs);
   }
 }

@@ -1,5 +1,5 @@
 /* ApplyTemplatesNode.java --
-   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -62,14 +62,12 @@ final class ApplyTemplatesNode
 
   final Expr select;
   final QName mode;
-  final List<SortKey> sortKeys;
-  final List<WithParam> withParams;
+  final List sortKeys;
+  final List withParams;
   final boolean isDefault;
 
   ApplyTemplatesNode(Expr select, QName mode,
-                     List<SortKey> sortKeys,
-		     List<WithParam> withParams,
-		     boolean isDefault)
+                     List sortKeys, List withParams, boolean isDefault)
   {
     this.select = select;
     this.mode = mode;
@@ -81,13 +79,13 @@ final class ApplyTemplatesNode
   TemplateNode clone(Stylesheet stylesheet)
   {
     int len = sortKeys != null ? sortKeys.size() : 0;
-    List<SortKey> sortKeys2 = new ArrayList<SortKey>(len);
+    List sortKeys2 = new ArrayList(len);
     for (int i = 0; i < len; i++)
-      sortKeys2.add(sortKeys.get(i).clone(stylesheet));
+      sortKeys2.add(((Key) sortKeys.get(i)).clone(stylesheet));
     len = withParams != null ? withParams.size() : 0;
-    List<WithParam> withParams2 = new ArrayList<WithParam>(len);
+    List withParams2 = new ArrayList(len);
     for (int i = 0; i < len; i++)
-      withParams2.add(withParams.get(i).clone(stylesheet));
+      withParams2.add(((WithParam) withParams.get(i)).clone(stylesheet));
     TemplateNode ret = new ApplyTemplatesNode(select.clone(stylesheet),
                                               mode, sortKeys2, withParams2,
                                               isDefault);
@@ -109,9 +107,10 @@ final class ApplyTemplatesNode
         if (withParams != null)
           {
             // compute the parameter values
-            List<Object[]> values = new LinkedList<Object[]>();
-	    for (WithParam p : withParams)
+            LinkedList values = new LinkedList();
+            for (Iterator i = withParams.iterator(); i.hasNext(); )
               {
+                WithParam p = (WithParam) i.next();
                 Object value = p.getValue(stylesheet, mode, context, pos, len);
                 Object[] pair = new Object[2];
                 pair[0] = p.name;
@@ -121,24 +120,21 @@ final class ApplyTemplatesNode
             // push the parameter context
             stylesheet.bindings.push(Bindings.WITH_PARAM);
             // set the parameters
-	    for (Object[] pair : values)
+            for (Iterator i = values.iterator(); i.hasNext(); )
               {
+                Object[] pair = (Object[]) i.next();
                 QName name = (QName) pair[0];
                 Object value = pair[1];
                 stylesheet.bindings.set(name, value, Bindings.WITH_PARAM);
               }
           }
-        Collection<?> ns = (Collection<?>) ret;
-        List<Node> nodes = new ArrayList<Node>();
-	for (Object o : ns)
-	  {
-	    if (o instanceof Node)
-	      nodes.add((Node) o);
-	  }
+        Collection ns = (Collection) ret;
+        List nodes = new ArrayList(ns);
         if (sortKeys != null)
           {
-	    for (SortKey sortKey : sortKeys)
+            for (Iterator i = sortKeys.iterator(); i.hasNext(); )
               {
+                SortKey sortKey = (SortKey) i.next();
                 sortKey.init(stylesheet, mode, context, pos, len, parent,
                              nextSibling);
               }
@@ -150,7 +146,7 @@ final class ApplyTemplatesNode
         QName effectiveMode = isDefault ? mode : this.mode;
         for (int i = 0; i < l; i++)
           {
-            Node node = nodes.get(i);
+            Node node = (Node) nodes.get(i);
             TemplateNode t = stylesheet.getTemplate(effectiveMode, node,
                                                     false);
             if (t != null)
@@ -179,17 +175,17 @@ final class ApplyTemplatesNode
       return true;
     if (withParams != null)
       {
-        for (Iterator<WithParam> i = withParams.iterator(); i.hasNext(); )
+        for (Iterator i = withParams.iterator(); i.hasNext(); )
           {
-            if (i.next().references(var))
+            if (((WithParam) i.next()).references(var))
               return true;
           }
       }
     if (sortKeys != null)
       {
-        for (Iterator<SortKey> i = sortKeys.iterator(); i.hasNext(); )
+        for (Iterator i = sortKeys.iterator(); i.hasNext(); )
           {
-            if (i.next().references(var))
+            if (((SortKey) i.next()).references(var))
               return true;
           }
       }

@@ -1,6 +1,6 @@
 /* ClassObjectReferenceCommandSet.java -- class to implement the
    ClassObjectReference Command Set
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -87,7 +87,7 @@ public class ClassObjectReferenceCommandSet
     throws JdwpException, IOException
   {
     ObjectId oid = idMan.readObjectId(bb);
-    Class<?> clazz = (Class<?>) oid.getObject();
+    Class clazz = (Class) oid.getObject();
 
     // The difference between a ClassObjectId and a ReferenceTypeId is one is
     // stored as an ObjectId and the other as a ReferenceTypeId.

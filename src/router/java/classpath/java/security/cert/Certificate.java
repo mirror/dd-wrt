@@ -1,5 +1,5 @@
 /* Certificate.java --- Certificate class
-   Copyright (C) 1999, 2003, 2004, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -107,7 +107,6 @@ public abstract class Certificate implements Serializable
 
      @return true if equal, false otherwise
   */
-  @Override
   public boolean equals(Object other)
   {
     if( other instanceof Certificate ) {
@@ -137,7 +136,6 @@ public abstract class Certificate implements Serializable
 
      @return A hash code of this class
   */
-  @Override
   public int hashCode()
   {
     return super.hashCode();
@@ -200,7 +198,6 @@ public abstract class Certificate implements Serializable
 
      @return a string representing the Certificate.
   */
-  @Override
   public abstract String toString();
 
 

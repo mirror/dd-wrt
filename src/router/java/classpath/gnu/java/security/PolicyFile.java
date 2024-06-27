@@ -1,5 +1,5 @@
 /* PolicyFile.java -- policy file reader
-   Copyright (C) 2004, 2005, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -153,44 +153,44 @@ public final class PolicyFile extends Policy
   protected static final Logger logger = SystemLogger.SYSTEM;
   // Added to cut redundant AccessController.doPrivileged calls
   private static GetPropertyAction prop = new GetPropertyAction("file.separator");
-  private static final String fs = AccessController.doPrivileged(prop);
+  private static final String fs = (String) AccessController.doPrivileged(prop);
 
   private static final String DEFAULT_POLICY =
-    AccessController.doPrivileged(prop.setParameters("java.home"))
+    (String) AccessController.doPrivileged(prop.setParameters("java.home"))
     + fs + "lib" + fs + "security" + fs + "java.policy";
   private static final String DEFAULT_USER_POLICY =
-    AccessController.doPrivileged(prop.setParameters("user.home")) +
+    (String) AccessController.doPrivileged(prop.setParameters("user.home")) +
     fs + ".java.policy";
 
-  private final Map<CodeSource,PermissionCollection> cs2pc;
+  private final Map cs2pc;
 
   // Constructors.
   // -------------------------------------------------------------------------
 
   public PolicyFile()
   {
-    cs2pc = new HashMap<CodeSource,PermissionCollection>();
+    cs2pc = new HashMap();
     refresh();
   }
 
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
   public PermissionCollection getPermissions(CodeSource codeSource)
   {
     Permissions perms = new Permissions();
-    for (Map.Entry<CodeSource,PermissionCollection> e : cs2pc.entrySet())
+    for (Iterator it = cs2pc.entrySet().iterator(); it.hasNext(); )
       {
-        CodeSource cs = e.getKey();
+        Map.Entry e = (Map.Entry) it.next();
+        CodeSource cs = (CodeSource) e.getKey();
         if (cs.implies(codeSource))
           {
             logger.log (Component.POLICY, "{0} -> {1}", new Object[]
               { cs, codeSource });
-            PermissionCollection pc = e.getValue();
-            for (Enumeration<Permission> ee = pc.elements(); ee.hasMoreElements(); )
+            PermissionCollection pc = (PermissionCollection) e.getValue();
+            for (Enumeration ee = pc.elements(); ee.hasMoreElements(); )
               {
-                perms.add(ee.nextElement());
+                perms.add((Permission) ee.nextElement());
               }
           }
         else
@@ -202,21 +202,19 @@ public final class PolicyFile extends Policy
     return perms;
   }
 
-  @Override
   public void refresh()
   {
     cs2pc.clear();
-    final List<URL> policyFiles = new LinkedList<URL>();
+    final List policyFiles = new LinkedList();
     try
       {
         policyFiles.add (new File (DEFAULT_POLICY).toURL());
         policyFiles.add (new File (DEFAULT_USER_POLICY).toURL ());
 
         AccessController.doPrivileged(
-          new PrivilegedExceptionAction<Void>()
+          new PrivilegedExceptionAction()
           {
-	    @Override
-            public Void run() throws Exception
+            public Object run() throws Exception
             {
               String allow = Security.getProperty ("policy.allowSystemProperty");
               if (allow == null || Boolean.getBoolean (allow))
@@ -259,11 +257,11 @@ public final class PolicyFile extends Policy
 
     logger.log (Component.POLICY, "building policy from URLs {0}",
                 policyFiles);
-    for (Iterator<URL> it = policyFiles.iterator(); it.hasNext(); )
+    for (Iterator it = policyFiles.iterator(); it.hasNext(); )
       {
         try
           {
-            URL url = it.next();
+            URL url = (URL) it.next();
             parse(url);
           }
         catch (IOException ioe)
@@ -273,7 +271,6 @@ public final class PolicyFile extends Policy
       }
   }
 
-  @Override
   public String toString()
   {
     return super.toString() + " [ " + cs2pc.toString() + " ]";
@@ -294,7 +291,6 @@ public final class PolicyFile extends Policy
    * @throws IOException if an I/O error occurs, or if the policy file
    * cannot be parsed.
    */
-  @SuppressWarnings("null") // Exception is thrown if p == null
   private void parse(final URL url) throws IOException
   {
     logger.log (Component.POLICY, "reading policy file from {0}", url);
@@ -318,9 +314,9 @@ public final class PolicyFile extends Policy
 
     int tok;
     int state = STATE_BEGIN;
-    List<KeyStore> keystores = new LinkedList<KeyStore>();
+    List keystores = new LinkedList();
     URL currentBase = null;
-    List<Certificate> currentCerts = new LinkedList<Certificate>();
+    List currentCerts = new LinkedList();
     Permissions currentPerms = new Permissions();
     while ((tok = in.nextToken()) != StreamTokenizer.TT_EOF)
       {
@@ -339,7 +335,7 @@ public final class PolicyFile extends Policy
             currentPerms.setReadOnly();
             Certificate[] c = null;
             if (!currentCerts.isEmpty())
-              c = currentCerts.toArray(new Certificate[currentCerts.size()]);
+              c = (Certificate[]) currentCerts.toArray(new Certificate[currentCerts.size()]);
             cs2pc.put(new CodeSource(currentBase, c), currentPerms);
             currentCerts.clear();
             currentPerms = new Permissions();
@@ -348,7 +344,6 @@ public final class PolicyFile extends Policy
             if (tok != ';')
               in.pushBack();
             continue;
-	  default: // do nothing
           }
         if (tok != StreamTokenizer.TT_WORD)
           {
@@ -382,7 +377,7 @@ public final class PolicyFile extends Policy
               }
             catch (Exception x)
               {
-                error(url, in, x);
+                error(url, in, x.toString());
               }
           }
         else if (in.sval.equalsIgnoreCase("grant"))
@@ -404,9 +399,9 @@ public final class PolicyFile extends Policy
             while (st.hasMoreTokens())
               {
                 String alias = st.nextToken();
-                for (Iterator<KeyStore> it = keystores.iterator(); it.hasNext(); )
+                for (Iterator it = keystores.iterator(); it.hasNext(); )
                   {
-                    KeyStore keystore = it.next();
+                    KeyStore keystore = (KeyStore) it.next();
                     try
                       {
                         if (keystore.isCertificateEntry(alias))
@@ -414,7 +409,7 @@ public final class PolicyFile extends Policy
                       }
                     catch (KeyStoreException kse)
                       {
-                        error(url, in, kse);
+                        error(url, in, kse.toString());
                       }
                   }
               }
@@ -442,7 +437,7 @@ public final class PolicyFile extends Policy
               }
             catch (MalformedURLException mue)
               {
-                error(url, in, mue);
+                error(url, in, mue.toString());
               }
             tok = in.nextToken();
             if (tok != ',')
@@ -462,47 +457,46 @@ public final class PolicyFile extends Policy
                 Principal p = null;
                 try
                   {
-                    Class<?> pclass = Class.forName(in.sval);
-                    Constructor<?> c =
+                    Class pclass = Class.forName(in.sval);
+                    Constructor c =
                       pclass.getConstructor(new Class[] { String.class });
                     p = (Principal) c.newInstance(new Object[] { name });
                   }
                 catch (Exception x)
                   {
-                    error(url, in, x);
+                    error(url, in, x.toString());
                   }
-		if (p == null) error(url, in, "Principal object not created");
-                for (Iterator<KeyStore> it = keystores.iterator(); it.hasNext(); )
+                for (Iterator it = keystores.iterator(); it.hasNext(); )
                   {
-                    KeyStore ks = it.next();
+                    KeyStore ks = (KeyStore) it.next();
                     try
                       {
-                        for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); )
+                        for (Enumeration e = ks.aliases(); e.hasMoreElements(); )
                           {
-                            String alias = e.nextElement();
+                            String alias = (String) e.nextElement();
                             if (ks.isCertificateEntry(alias))
                               {
                                 Certificate cert = ks.getCertificate(alias);
                                 if (!(cert instanceof X509Certificate))
                                   continue;
                                 if (p.equals(((X509Certificate) cert).getSubjectDN()) ||
-				    p.equals(((X509Certificate) cert).getSubjectX500Principal()))
+                                    p.equals(((X509Certificate) cert).getSubjectX500Principal()))
                                   currentCerts.add(cert);
                               }
                           }
                       }
                     catch (KeyStoreException kse)
                       {
-                        error(url, in, kse);
+                        error(url, in, kse.toString());
                       }
                   }
               }
             else if (tok == '"' || tok == '\'')
               {
                 String alias = in.sval;
-                for (Iterator<KeyStore> it = keystores.iterator(); it.hasNext(); )
+                for (Iterator it = keystores.iterator(); it.hasNext(); )
                   {
-                    KeyStore ks = it.next();
+                    KeyStore ks = (KeyStore) it.next();
                     try
                       {
                         if (ks.isCertificateEntry(alias))
@@ -510,7 +504,7 @@ public final class PolicyFile extends Policy
                       }
                     catch (KeyStoreException kse)
                       {
-                        error(url, in, kse);
+                        error(url, in, kse.toString());
                       }
                   }
               }
@@ -528,7 +522,7 @@ public final class PolicyFile extends Policy
             if (tok != StreamTokenizer.TT_WORD)
               error(url, in, "expecting permission class name");
             String className = in.sval;
-            Class<?> clazz = null;
+            Class clazz = null;
             try
               {
                 clazz = Class.forName(className);
@@ -542,7 +536,7 @@ public final class PolicyFile extends Policy
                 if (clazz == null)
                   {
                     currentPerms.add(new UnresolvedPermission(className,
-                      null, null, currentCerts.toArray(new Certificate[currentCerts.size()])));
+                      null, null, (Certificate[]) currentCerts.toArray(new Certificate[currentCerts.size()])));
                     continue;
                   }
                 try
@@ -551,7 +545,7 @@ public final class PolicyFile extends Policy
                   }
                 catch (Exception x)
                   {
-                    error(url, in, x);
+                    error(url, in, x.toString());
                   }
                 continue;
               }
@@ -564,19 +558,19 @@ public final class PolicyFile extends Policy
                 if (clazz == null)
                   {
                     currentPerms.add(new UnresolvedPermission(className,
-                      target, null, currentCerts.toArray(new Certificate[currentCerts.size()])));
+                      target, null, (Certificate[]) currentCerts.toArray(new Certificate[currentCerts.size()])));
                     continue;
                   }
                 try
                   {
-                    Constructor<?> c =
+                    Constructor c =
                       clazz.getConstructor(new Class[] { String.class });
                     currentPerms.add((Permission) c.newInstance(
                       new Object[] { target }));
                   }
                 catch (Exception x)
                   {
-                    error(url, in, x);
+                    error(url, in, x.toString());
                   }
                 continue;
               }
@@ -589,14 +583,14 @@ public final class PolicyFile extends Policy
                   error(url, in, "expecting 'signedBy'");
                 try
                   {
-                    Constructor<?> c =
+                    Constructor c =
                       clazz.getConstructor(new Class[] { String.class });
                     currentPerms.add((Permission) c.newInstance(
                       new Object[] { target }));
                   }
                 catch (Exception x)
                   {
-                    error(url, in, x);
+                    error(url, in, x.toString());
                   }
                 in.pushBack();
                 continue;
@@ -607,20 +601,23 @@ public final class PolicyFile extends Policy
             if (clazz == null)
               {
                 currentPerms.add(new UnresolvedPermission(className,
-		  target, action, (currentCerts.toArray(new Certificate[currentCerts.size()]))));
+                  target, action, (Certificate[]) currentCerts.toArray(new Certificate[currentCerts.size()])));
                 continue;
               }
-	    try
-	      {
-		Constructor<?> c = clazz.getConstructor(
-                    new Class[] { String.class, String.class });
-		currentPerms.add((Permission) c.newInstance(
-                    new Object[] { target, action }));
-	      }
-	    catch (Exception x)
-	      {
-		error(url, in, x);
-	      }
+            else
+              {
+                try
+                  {
+                    Constructor c = clazz.getConstructor(
+                      new Class[] { String.class, String.class });
+                    currentPerms.add((Permission) c.newInstance(
+                      new Object[] { target, action }));
+                  }
+                catch (Exception x)
+                  {
+                    error(url, in, x.toString());
+                  }
+              }
             tok = in.nextToken();
             if (tok != ';' && tok != ',')
               error(url, in, "expecting ';' or ','");
@@ -635,7 +632,7 @@ public final class PolicyFile extends Policy
   private static String expand(final String s)
   {
     final CPStringBuilder result = new CPStringBuilder();
-    final CPStringBuilder propBuf = new CPStringBuilder();
+    final CPStringBuilder prop = new CPStringBuilder();
     int state = 0;
     for (int i = 0; i < s.length(); i++)
       {
@@ -659,41 +656,32 @@ public final class PolicyFile extends Policy
           case 2:
             if (s.charAt(i) == '}')
               {
-                String p = propBuf.toString();
+                String p = prop.toString();
                 if (p.equals("/"))
                   p = "file.separator";
                 p = System.getProperty(p);
                 if (p == null)
                   p = "";
                 result.append(p);
-                propBuf.setLength(0);
+                prop.setLength(0);
                 state = 0;
               }
             else
-              propBuf.append(s.charAt(i));
+              prop.append(s.charAt(i));
             break;
-	  default:
-	    // State is never set to anything else
           }
       }
     if (state != 0)
-      result.append('$').append('{').append(propBuf);
+      result.append('$').append('{').append(prop);
     return result.toString();
   }
 
   /**
    * I miss macros.
    */
-  private static void error(URL base, StreamTokenizer in, Throwable cause)
-    throws IOException
-  {
-    throw new IOException(base+":"+in.lineno()+": "+cause.toString(), cause);
-  }
-
   private static void error(URL base, StreamTokenizer in, String msg)
     throws IOException
   {
     throw new IOException(base+":"+in.lineno()+": "+msg);
   }
-
 }

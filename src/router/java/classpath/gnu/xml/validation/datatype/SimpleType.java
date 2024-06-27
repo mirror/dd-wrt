@@ -89,7 +89,7 @@ public class SimpleType
   /**
    * The facets of this simple type.
    */
-  public Set<Facet> facets;
+  public Set facets;
 
   /**
    * The fundamental facets of this simple type.
@@ -107,7 +107,7 @@ public class SimpleType
    */
   public final Annotation annotation;
 
-  public SimpleType(QName name, int variety, Set<Facet> facets,
+  public SimpleType(QName name, int variety, Set facets,
                     int fundamentalFacets, SimpleType baseType,
                     Annotation annotation)
   {
@@ -141,9 +141,9 @@ public class SimpleType
     if (facets != null && !facets.isEmpty())
       {
         Object parsedValue = createValue(value, context);
-        for (Iterator<Facet> i = facets.iterator(); i.hasNext(); )
+        for (Iterator i = facets.iterator(); i.hasNext(); )
           {
-            Facet facet = i.next();
+            Facet facet = (Facet) i.next();
             switch (facet.type)
               {
               case Facet.LENGTH:

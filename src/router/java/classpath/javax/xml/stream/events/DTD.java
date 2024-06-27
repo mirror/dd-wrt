@@ -60,13 +60,13 @@ public interface DTD
   /**
    * Returns the notations declared in the DTD.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   List getNotations();
 
   /**
    * Returns the entities declared in the DTD.
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings("unchecked")
   List getEntities();
 
 }

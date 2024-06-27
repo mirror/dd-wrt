@@ -1,5 +1,5 @@
 /* RSAKeyPairGenerator.java --
-   Copyright 2001, 2002, 2003, 2006, 2010, 2014, 2015 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2006, 2010 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -50,9 +50,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -130,15 +127,8 @@ public class RSAKeyPairGenerator
   /** Preferred encoding format of generated keys. */
   private int preferredFormat;
 
-  /** Flag to indicate whether the generator has been initialized */
-  private AtomicBoolean initialized = new AtomicBoolean(false);
-
-  /** Lock to prevent concurrent initialization */
-  private Lock initLock = new ReentrantLock();
-
   // implicit 0-arguments constructor
 
-  @Override
   public String name()
   {
     return Registry.RSA_KPG;
@@ -151,43 +141,32 @@ public class RSAKeyPairGenerator
    * @exception IllegalArgumentException if the designated MODULUS_LENGTH value
    *              is less than 1024.
    */
-  @Override
-  public void setup(Map<String,Object> attributes)
+  public void setup(Map attributes)
   {
     if (Configuration.DEBUG)
       log.entering(this.getClass().getName(), "setup", attributes);
-    initLock.lock();
-    try
+    // do we have a SecureRandom, or should we use our own?
+    rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
+    // are we given a set of RSA params or we shall use our own?
+    RSAKeyGenParameterSpec params = (RSAKeyGenParameterSpec) attributes.get(RSA_PARAMETERS);
+    // find out the modulus length
+    if (params != null)
       {
-	// do we have a SecureRandom, or should we use our own?
-	rnd = (SecureRandom) attributes.get(SOURCE_OF_RANDOMNESS);
-	// are we given a set of RSA params or we shall use our own?
-	RSAKeyGenParameterSpec params = (RSAKeyGenParameterSpec) attributes.get(RSA_PARAMETERS);
-	// find out the modulus length
-	if (params != null)
-	  {
-	    L = params.getKeysize();
-	    e = params.getPublicExponent();
-	  }
-	else
-	  {
-	    Integer l = (Integer) attributes.get(MODULUS_LENGTH);
-	    L = (l == null ? DEFAULT_MODULUS_LENGTH : l.intValue());
-	  }
-	if (L < 1024)
-	  throw new IllegalArgumentException("Invalid modulus size");
-
-	// what is the preferred encoding format
-	Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
-	preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
-                                           : formatID.intValue();
-
-	initialized.set(true);
+        L = params.getKeysize();
+        e = params.getPublicExponent();
       }
-    finally
+    else
       {
-	initLock.unlock();
+        Integer l = (Integer) attributes.get(MODULUS_LENGTH);
+        L = (l == null ? DEFAULT_MODULUS_LENGTH : l.intValue());
       }
+    if (L < 1024)
+      throw new IllegalArgumentException(MODULUS_LENGTH);
+
+    // what is the preferred encoding format
+    Integer formatID = (Integer) attributes.get(PREFERRED_ENCODING_FORMAT);
+    preferredFormat = formatID == null ? DEFAULT_ENCODING_FORMAT
+                                       : formatID.intValue();
     if (Configuration.DEBUG)
       log.exiting(this.getClass().getName(), "setup");
   }
@@ -200,7 +179,6 @@ public class RSAKeyPairGenerator
    *
    * @return an RSA keypair.
    */
-  @Override
   public KeyPair generate()
   {
     if (Configuration.DEBUG)
@@ -265,28 +243,5 @@ public class RSAKeyPairGenerator
       prng = PRNG.getInstance();
 
     return prng;
-  }
-
-  @Override
-  public boolean isInitialized()
-  {
-    boolean initFlag = false;
-
-    initLock.lock();
-    try
-      {
-	initFlag = initialized.get();
-      }
-    finally
-      {
-	initLock.unlock();
-      }
-    return initFlag;
-  }
-
-  @Override
-  public int getDefaultKeySize()
-  {
-    return DEFAULT_MODULUS_LENGTH;
   }
 }

@@ -1,5 +1,5 @@
 /* java.util.TimeZone
-   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007, 2012
+   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -102,10 +102,10 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
     /* Look up default timezone */
     if (defaultZone0 == null)
       {
-        defaultZone0 = AccessController.doPrivileged
-          (new PrivilegedAction<TimeZone>()
+        defaultZone0 = (TimeZone) AccessController.doPrivileged
+          (new PrivilegedAction()
             {
-              public TimeZone run()
+              public Object run()
               {
                 TimeZone zone = null;
 
@@ -146,21 +146,21 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
   /**
    * JDK 1.1.x compatibility aliases.
    */
-  private static HashMap<String,String> aliases0;
+  private static HashMap aliases0;
 
   /**
    * HashMap for timezones by ID.
    */
-  private static HashMap<String,TimeZone> timezones0;
+  private static HashMap timezones0;
   /* initialize this static field lazily to overhead if
    * it is not needed:
    */
   // Package-private to avoid a trampoline.
-  static HashMap<String,TimeZone> timezones()
+  static HashMap timezones()
   {
     if (timezones0 == null)
       {
-        HashMap<String,TimeZone> timezones = new HashMap<String,TimeZone>();
+        HashMap timezones = new HashMap();
         timezones0 = timezones;
 
         zoneinfo_dir = SystemProperties.getProperty("gnu.java.util.zoneinfo.dir");
@@ -169,7 +169,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
 
         if (zoneinfo_dir != null)
           {
-            aliases0 = new HashMap<String,String>();
+            aliases0 = new HashMap();
 
             // These deprecated aliases for JDK 1.1.x compatibility
             // should take precedence over data files read from
@@ -1151,30 +1151,18 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
         int day;
 
         // Month, week of month, day of week
-
-        // "Mm.w.d".  d is between 0 (Sunday) and 6.  Week w is
-        // between 1 and 5; Week 1 is the first week in which day d
-        // occurs and Week 5 specifies the last d day in the month.
-        // Month m is between 1 and 12.
-
         month = Integer.parseInt(date.substring(1, date.indexOf('.')));
         int week = Integer.parseInt(date.substring(date.indexOf('.') + 1,
                                                    date.lastIndexOf('.')));
         int dayOfWeek = Integer.parseInt(date.substring(date.lastIndexOf('.')
                                                         + 1));
-        dayOfWeek++; // Java day of week is one-based, Sunday is first day.
-
         if (week == 5)
           day = -1; // last day of month is -1 in java, 5 in TZ
         else
-          {
-            // First day of week starting on or after.  For example,
-            // to specify the second Sunday of April, set month to
-            // APRIL, day-of-month to 8, and day-of-week to -SUNDAY.
-            day = (week - 1) * 7 + 1;
-            dayOfWeek = -dayOfWeek;
-          }
+          // first day of week starting on or after.
+          day = (week - 1) * 7 + 1;
 
+        dayOfWeek++; // Java day of week is one-based, Sunday is first day.
         month--; // Java month is zero-based.
         return new int[] { month, day, dayOfWeek };
       }
@@ -1404,7 +1392,14 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
 
   private String getDefaultDisplayName(boolean dst)
   {
-    int offset = getRawOffset() + (dst ? getDSTSavings() : 0);
+    int offset = getRawOffset();
+    if (dst && this instanceof SimpleTimeZone)
+      {
+        // ugly, but this is a design failure of the API:
+        // getDisplayName takes a dst parameter even though
+        // TimeZone knows nothing about daylight saving offsets.
+        offset += ((SimpleTimeZone) this).getDSTSavings();
+      }
 
     CPStringBuilder sb = new CPStringBuilder(9);
     sb.append("GMT");
@@ -1469,7 +1464,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
       {
         synchronized (TimeZone.class)
           {
-            tz = timezones().get(ID);
+            tz = (TimeZone) timezones().get(ID);
             if (tz != null)
               {
                 if (!tz.getID().equals(ID))
@@ -1497,7 +1492,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
 
         // aliases0 is never changing after first timezones(), so should
         // be safe without synchronization.
-        String zonename = aliases0.get(ID);
+        String zonename = (String) aliases0.get(ID);
         if (zonename == null)
           zonename = ID;
 
@@ -1605,17 +1600,17 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
   {
     synchronized (TimeZone.class)
       {
-        HashMap<String,TimeZone> h = timezones();
+        HashMap h = timezones();
         int count = 0;
         if (zoneinfo_dir == null)
           {
-            Iterator<Map.Entry<String,TimeZone>> iter = h.entrySet().iterator();
+            Iterator iter = h.entrySet().iterator();
             while (iter.hasNext())
               {
                 // Don't iterate the values, since we want to count
                 // doubled values (aliases)
-                Map.Entry<String,TimeZone> entry = iter.next();
-                if (entry.getValue().getRawOffset() == rawOffset)
+                Map.Entry entry = (Map.Entry) iter.next();
+                if (((TimeZone) entry.getValue()).getRawOffset() == rawOffset)
                   count++;
               }
 
@@ -1624,8 +1619,8 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
             iter = h.entrySet().iterator();
             while (iter.hasNext())
               {
-                Map.Entry<String,TimeZone> entry = iter.next();
-                if (entry.getValue().getRawOffset() == rawOffset)
+                Map.Entry entry = (Map.Entry) iter.next();
+                if (((TimeZone) entry.getValue()).getRawOffset() == rawOffset)
                   ids[count++] = (String) entry.getKey();
               }
             return ids;
@@ -1651,7 +1646,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
     return ids;
   }
 
-  private static int getAvailableIDs(File d, String prefix, ArrayList<String[]> list)
+  private static int getAvailableIDs(File d, String prefix, ArrayList list)
     {
       String[] files = d.list();
       int count = files.length;
@@ -1691,9 +1686,9 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
   {
     synchronized (TimeZone.class)
       {
-        HashMap<String,TimeZone> h = timezones();
+        HashMap h = timezones();
         if (zoneinfo_dir == null)
-          return h.keySet().toArray(new String[h.size()]);
+          return (String[]) h.keySet().toArray(new String[h.size()]);
 
         if (availableIDs != null)
           {
@@ -1704,7 +1699,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
           }
 
         File d = new File(zoneinfo_dir);
-        ArrayList<String[]> list = new ArrayList<String[]>(30);
+        ArrayList list = new ArrayList(30);
         int count = getAvailableIDs(d, "", list) + aliases0.size();
         availableIDs = new String[count];
         String[] ids = new String[count];
@@ -1712,7 +1707,7 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
         count = 0;
         for (int i = 0; i < list.size(); i++)
           {
-            String[] s = list.get(i);
+            String[] s = (String[]) list.get(i);
             for (int j = 0; j < s.length; j++)
               if (s[j] != null)
                 {
@@ -1721,12 +1716,12 @@ public abstract class TimeZone implements java.io.Serializable, Cloneable
                 }
           }
 
-        Iterator<Map.Entry<String,String>> iter = aliases0.entrySet().iterator();
+        Iterator iter = aliases0.entrySet().iterator();
         while (iter.hasNext())
           {
-            Map.Entry<String,String> entry = iter.next();
-            availableIDs[count] = entry.getKey();
-            ids[count++] = entry.getKey();
+            Map.Entry entry = (Map.Entry) iter.next();
+            availableIDs[count] = (String) entry.getKey();
+            ids[count++] = (String) entry.getKey();
           }
 
         return ids;

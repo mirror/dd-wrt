@@ -1,5 +1,5 @@
 /* SignatureCodecFactory.java -- Factory to instantiate Signature codecs
-   Copyright (C) 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -49,6 +49,7 @@ import gnu.java.security.util.FormatUtil;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -56,7 +57,7 @@ import java.util.Set;
  */
 public class SignatureCodecFactory
 {
-  private static Set<String> names;
+  private static Set names;
 
   /** Trivial constructor to enforce Singleton pattern. */
   private SignatureCodecFactory()
@@ -145,9 +146,9 @@ public class SignatureCodecFactory
         return getRawCodec(name);
       case Registry.X509_ENCODING_ID:
         return getX509Codec(name);
-      default:
-	return null;
       }
+
+    return null;
   }
 
   /**
@@ -155,15 +156,17 @@ public class SignatureCodecFactory
    *
    * @return a {@link Set} of the names of supported signature codec (Strings).
    */
-  public static synchronized final Set<String> getNames()
+  public static synchronized final Set getNames()
   {
     if (names == null)
       {
-        HashSet<String> hs = new HashSet<String>();
+        HashSet hs = new HashSet();
         hs.add(Registry.DSS_SIG + "/" + Registry.RAW_ENCODING_SHORT_NAME);
         hs.add(Registry.DSS_SIG + "/" + Registry.X509_ENCODING_SORT_NAME);
-	for (String mdName : HashFactory.getNames())
+        Set hashNames = HashFactory.getNames();
+        for (Iterator it = hashNames.iterator(); it.hasNext();)
           {
+            String mdName = (String) it.next();
             String name = Registry.RSA_PKCS1_V1_5_SIG + "-" + mdName;
             hs.add(name + "/" + Registry.RAW_ENCODING_SHORT_NAME);
             hs.add(name + "/" + Registry.X509_ENCODING_SORT_NAME);

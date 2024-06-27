@@ -1,5 +1,5 @@
  /* SwingCallbackHandler.java --
-    Copyright (C) 2006, 2014, 2015  Free Software Foundation, Inc.
+    Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -60,7 +60,6 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.TextInputCallback;
 import javax.security.auth.callback.TextOutputCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -72,8 +71,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
-import javax.swing.ScrollPaneConstants;
 
 public class SwingCallbackHandler extends AbstractCallbackHandler
 {
@@ -82,7 +79,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     super ("SWING");
   }
 
-  @Override
   protected void handleChoice (final ChoiceCallback callback)
     throws IOException
   {
@@ -91,7 +87,7 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     Container content = dialog.getContentPane ();
     GridBagLayout layout = new GridBagLayout ();
     content.setLayout (layout);
-    JLabel prompt = new JLabel (callback.getPrompt (), SwingConstants.LEFT);
+    JLabel prompt = new JLabel (callback.getPrompt (), JLabel.LEFT);
     content.add (prompt, new GridBagConstraints (0, 0, 1, 1, 0, 0,
                                                  GridBagConstraints.WEST,
                                                  GridBagConstraints.NONE,
@@ -100,8 +96,8 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     String[] choices = callback.getChoices ();
     final JList choicesList = new JList (choices);
     JScrollPane choicesPane = new JScrollPane (choicesList,
-                                               ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                               ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                               JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                               JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     final int defaultChoice = callback.getDefaultChoice ();
     choicesList.setSelectedIndex (defaultChoice);
     choicesList.setSelectionMode (callback.allowMultipleSelections ()
@@ -127,7 +123,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
 
     cancel.addActionListener (new ActionListener ()
       {
-	@Override
         public void actionPerformed (final ActionEvent ae)
         {
           callback.setSelectedIndex (defaultChoice);
@@ -140,7 +135,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
       });
     ok.addActionListener (new ActionListener ()
       {
-	@Override
         public void actionPerformed (final ActionEvent ae)
         {
           if (callback.allowMultipleSelections ())
@@ -173,9 +167,8 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  @Override
   protected void handleConfirmation (final ConfirmationCallback callback)
-    throws IOException, UnsupportedCallbackException
+    throws IOException
   {
     final JDialog dialog = new JDialog ();
     switch (callback.getMessageType ())
@@ -189,9 +182,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
       case ConfirmationCallback.INFORMATION:
         dialog.setTitle (messages.getString ("callback.information"));
         break;
-      default:
-	throw new UnsupportedCallbackException(callback,
-					       "Invalid message type.");
       }
     Container content = dialog.getContentPane ();
     content.setLayout (new GridBagLayout ());
@@ -209,7 +199,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     final String[] options = callback.getOptions ();
     ActionListener listener = new ActionListener ()
       {
-	@Override
         public void actionPerformed (ActionEvent ae)
         {
           String cmd = ae.getActionCommand ();
@@ -247,13 +236,14 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     buttons.setLayout (new FlowLayout (FlowLayout.RIGHT));
     switch (callback.getOptionType ())
       {
-      case ConfirmationCallback.YES_NO_CANCEL_OPTION: //$FALL-THROUGH$
+      case ConfirmationCallback.YES_NO_CANCEL_OPTION:
         {
           JButton cancel = new JButton (messages.getString ("callback.cancel"));
           buttons.add (cancel);
           cancel.setActionCommand ("cancel");
           cancel.addActionListener (listener);
-        } //$FALL-THROUGH$
+        }
+        /* Fall-through. */
       case ConfirmationCallback.YES_NO_OPTION:
         {
           JButton yes = new JButton (messages.getString ("callback.yes"));
@@ -290,10 +280,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
             if (i == options.length - 1)
               dialog.getRootPane ().setDefaultButton (button);
           }
-	break;
-      default:
-	throw new UnsupportedCallbackException(callback,
-					       "Invalid option type.");
       }
     content.add (buttons,
                  new GridBagConstraints (0, GridBagConstraints.RELATIVE,
@@ -307,19 +293,21 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  @Override
   protected void handleLanguage (final LanguageCallback callback)
     throws IOException
   {
     Locale locale = Locale.getDefault ();
     Locale[] locales = Locale.getAvailableLocales ();
     String[] localeNames = new String[locales.length+1];
+    int defaultIndex = 0;
     for (int i = 0; i < locales.length; i++)
       {
         localeNames[i+1] = locales[i].getDisplayLanguage (locales[i]);
         String country = locales[i].getDisplayCountry (locales[i]);
         if (country.length () > 0)
           localeNames[i+1] += " (" + country + ")";
+        if (locales[i].equals (locale))
+          defaultIndex = i;
       }
     locales[0] = locale;
     localeNames[0] = locale.getDisplayLanguage (locale);
@@ -337,7 +325,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
       callback.setLocale (locale);
   }
 
-  @Override
   protected void handleName (final NameCallback callback)
     throws IOException
   {
@@ -363,7 +350,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
 
     ActionListener listener = new ActionListener ()
       {
-	@Override
         public void actionPerformed (ActionEvent ae)
         {
           String cmd = ae.getActionCommand ();
@@ -399,7 +385,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  @Override
   protected void handlePassword (final PasswordCallback callback)
     throws IOException
   {
@@ -423,7 +408,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
 
     ActionListener listener = new ActionListener ()
       {
-	@Override
         public void actionPerformed (ActionEvent ae)
         {
           String cmd = ae.getActionCommand ();
@@ -459,7 +443,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  @Override
   protected void handleTextInput (final TextInputCallback callback)
     throws IOException
   {
@@ -480,8 +463,8 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
       text.setText (_text);
     text.setFont (new Font ("Monospaced", Font.PLAIN, 12));
     JScrollPane textPane = new JScrollPane (text,
-                                            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     content.add (textPane,
                  new GridBagConstraints (0, 1, 1, 1, 1, 1,
                                          GridBagConstraints.CENTER,
@@ -490,7 +473,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
 
     ActionListener listener = new ActionListener ()
       {
-	@Override
         public void actionPerformed (ActionEvent ae)
         {
           String cmd = ae.getActionCommand ();
@@ -526,9 +508,8 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  @Override
   protected void handleTextOutput (final TextOutputCallback callback)
-    throws IOException, UnsupportedCallbackException
+    throws IOException
   {
     final JDialog dialog = new JDialog ();
     switch (callback.getMessageType ())
@@ -542,9 +523,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
       case TextOutputCallback.INFORMATION:
         dialog.setTitle (messages.getString ("callback.information"));
         break;
-      default:
-	throw new UnsupportedCallbackException(callback,
-					       "Invalid message type.");
       }
     Container content = dialog.getContentPane ();
     content.setLayout (new GridBagLayout ());
@@ -554,8 +532,8 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     text.setText (callback.getMessage ());
     text.setFont (new Font ("Monospaced", Font.PLAIN, 12));
     JScrollPane textPane = new JScrollPane (text,
-                                            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     content.add (textPane,
                  new GridBagConstraints (0, 0, 1, 1, 1, 1,
                                          GridBagConstraints.CENTER,
@@ -564,7 +542,6 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
 
     ActionListener listener = new ActionListener ()
       {
-	@Override
         public void actionPerformed (ActionEvent ae)
         {
           dialog.setVisible (false);
@@ -590,7 +567,7 @@ public class SwingCallbackHandler extends AbstractCallbackHandler
     waitForInput (dialog, callback);
   }
 
-  private static void waitForInput (JDialog dialog, Callback callback)
+  private void waitForInput (JDialog dialog, Callback callback)
   {
     synchronized (callback)
       {

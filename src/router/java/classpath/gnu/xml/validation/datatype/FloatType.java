@@ -64,8 +64,8 @@ final class FloatType
     Facet.MIN_EXCLUSIVE
   };
 
-  static final Set<String> SPECIAL =
-    new TreeSet<String>(Arrays.asList(new String[] {"INF", "-INF", "NaN"}));
+  static final Set SPECIAL =
+    new TreeSet(Arrays.asList(new String[] {"INF", "-INF", "NaN"}));
 
   FloatType()
   {

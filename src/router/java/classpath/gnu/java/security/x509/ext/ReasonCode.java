@@ -1,5 +1,5 @@
 /* ReasonCode.java -- a reason code for a certificate revocation.
-   Copyright (C) 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -78,7 +78,6 @@ public class ReasonCode extends Extension.Value
     return reason;
   }
 
-  @Override
   public String toString()
   {
     return ReasonCode.class.getName() + " [ " + reason + " ]";

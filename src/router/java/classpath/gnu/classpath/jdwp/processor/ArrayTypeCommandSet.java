@@ -1,5 +1,5 @@
 /* ArrayTypeCommandSet.java -- class to implement the ArrayType Command Set
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -90,8 +90,8 @@ public class ArrayTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> arrayType = refId.getType();
-    Class<?> componentType = arrayType.getComponentType();
+    Class arrayType = refId.getType();
+    Class componentType = arrayType.getComponentType();
 
     int length = bb.getInt();
     Object newArray = Array.newInstance(componentType, length);

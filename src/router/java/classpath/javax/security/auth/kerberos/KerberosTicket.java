@@ -1,5 +1,5 @@
 /* KerberosTicket.java -- a kerberos ticket
-   Copyright (C) 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -116,12 +116,13 @@ public class KerberosTicket
                         Date endTime, Date renewTill,
                         InetAddress[] clientAddresses)
   {
-    this.asn1Encoding = asn1Encoding.clone();
+    this.asn1Encoding = (byte[]) asn1Encoding.clone();
     this.sessionKey = new KeyImpl(key, type);
     this.flags = new boolean[NUM_FLAGS];
     if (flags != null)
       System.arraycopy(flags, 0, this.flags, 0,
                        Math.min(flags.length, NUM_FLAGS));
+    this.flags = (boolean[]) flags.clone();
     this.authTime = (Date) authTime.clone();
     this.startTime = (Date) ((startTime == null)
                               ? authTime : startTime).clone();
@@ -138,7 +139,6 @@ public class KerberosTicket
    * Destroy this ticket.  This discards secret information.  After this
    * method is called, other methods will throw IllegalStateException.
    */
-  @Override
   public void destroy() throws DestroyFailedException
   {
     if (sessionKey == null)
@@ -150,7 +150,6 @@ public class KerberosTicket
   /**
    * Return true if this ticket has been destroyed.
    */
-  @Override
   public boolean isDestroyed()
   {
     return sessionKey == null;
@@ -160,7 +159,6 @@ public class KerberosTicket
    * Return true if the ticket is currently valid.  This is true if
    * the system time is between the ticket's start and end times.
    */
-  @Override
   public boolean isCurrent()
   {
     long now = System.currentTimeMillis();
@@ -172,7 +170,6 @@ public class KerberosTicket
    * attempt to renew the ticket.
    * @throws RefreshFailedException if the renewal fails for any reason
    */
-  @Override
   public void refresh() throws RefreshFailedException, NotImplementedException
   {
     if (! isRenewable())
@@ -264,7 +261,7 @@ public class KerberosTicket
    */
   public final boolean[] getFlags()
   {
-    return flags.clone();
+    return (boolean[]) flags.clone();
   }
 
   /**
@@ -317,7 +314,7 @@ public class KerberosTicket
   public final byte[] getEncoded()
   {
     checkDestroyed();
-    return sessionKey.key.clone();
+    return (byte[]) sessionKey.key.clone();
   }
 
   /**
@@ -335,7 +332,6 @@ public class KerberosTicket
       throw new IllegalStateException("key is destroyed");
   }
 
-  @Override
   public String toString()
   {
     return getClass().getName() +

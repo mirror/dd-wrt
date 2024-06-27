@@ -1,5 +1,5 @@
 /* RSAPKCS1V1_5Signature.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -111,13 +111,11 @@ public class RSAPKCS1V1_5Signature
     this.pkcs1 = (EMSA_PKCS1_V1_5) that.pkcs1.clone();
   }
 
-  @Override
   public Object clone()
   {
     return new RSAPKCS1V1_5Signature(this);
   }
 
-  @Override
   protected void setupForVerification(final PublicKey k)
       throws IllegalArgumentException
   {
@@ -127,7 +125,6 @@ public class RSAPKCS1V1_5Signature
     publicKey = k;
   }
 
-  @Override
   protected void setupForSigning(final PrivateKey k)
       throws IllegalArgumentException
   {
@@ -137,7 +134,6 @@ public class RSAPKCS1V1_5Signature
     privateKey = k;
   }
 
-  @Override
   protected Object generateSignature() throws IllegalStateException
   {
     // 1. EMSA-PKCS1-v1_5 encoding: Apply the EMSA-PKCS1-v1_5 encoding
@@ -167,7 +163,6 @@ public class RSAPKCS1V1_5Signature
     return RSA.I2OSP(s, k);
   }
 
-  @Override
   protected boolean verifySignature(final Object sig)
       throws IllegalStateException
   {

@@ -1,6 +1,6 @@
 /* ReferenceTypeCommandSet.java -- class to implement the ReferenceType
    Command Set
-   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -146,7 +146,7 @@ public class ReferenceTypeCommandSet
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
 
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
     ClassLoader loader = clazz.getClassLoader();
     ObjectId oid = idMan.getObjectId(loader);
     oid.write(os);
@@ -157,7 +157,7 @@ public class ReferenceTypeCommandSet
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
 
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
     os.writeInt(clazz.getModifiers());
   }
 
@@ -165,7 +165,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     Field[] fields = clazz.getFields();
     os.writeInt(fields.length);
@@ -183,7 +183,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     VMMethod[] methods = VMVirtualMachine.getAllClassMethods(clazz);
     os.writeInt (methods.length);
@@ -201,7 +201,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     int numFields = bb.getInt();
     os.writeInt(numFields); // Looks pointless but this is the protocol
@@ -209,7 +209,7 @@ public class ReferenceTypeCommandSet
       {
         ObjectId fieldId = idMan.readObjectId(bb);
         Field field = (Field) (fieldId.getObject());
-        Class<?> fieldClazz = field.getDeclaringClass();
+        Class fieldClazz = field.getDeclaringClass();
 
         // We don't actually need the clazz to get the field but we might as
         // well check that the debugger got it right
@@ -243,7 +243,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     // We'll need to go into the jvm for this unless there's an easier way
     String sourceFileName = VMVirtualMachine.getSourceFile(clazz);
@@ -255,12 +255,12 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
-    Class<?>[] declaredClazzes = clazz.getDeclaredClasses();
+    Class clazz = refId.getType();
+    Class[] declaredClazzes = clazz.getDeclaredClasses();
     os.writeInt(declaredClazzes.length);
     for (int i = 0; i < declaredClazzes.length; i++)
       {
-        Class<?> decClazz = declaredClazzes[i];
+        Class decClazz = declaredClazzes[i];
         ReferenceTypeId clazzId = idMan.getReferenceTypeId(decClazz);
         clazzId.writeTagged(os);
       }
@@ -270,7 +270,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
 
     // I don't think there's any other way to get this
     int status = VMVirtualMachine.getClassStatus(clazz);
@@ -281,12 +281,12 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
-    Class<?>[] interfaces = clazz.getInterfaces();
+    Class clazz = refId.getType();
+    Class[] interfaces = clazz.getInterfaces();
     os.writeInt(interfaces.length);
     for (int i = 0; i < interfaces.length; i++)
       {
-        Class<?> interfaceClass = interfaces[i];
+        Class interfaceClass = interfaces[i];
         ReferenceTypeId intId = idMan.getReferenceTypeId(interfaceClass);
         intId.write(os);
       }
@@ -296,7 +296,7 @@ public class ReferenceTypeCommandSet
     throws JdwpException, IOException
   {
     ReferenceTypeId refId = idMan.readReferenceTypeId(bb);
-    Class<?> clazz = refId.getType();
+    Class clazz = refId.getType();
     ObjectId clazzObjectId = idMan.getObjectId(clazz);
     clazzObjectId.write(os);
   }

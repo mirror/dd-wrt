@@ -1,6 +1,6 @@
 /* ArrayReferenceCommandSet.java -- class to implement the Array
    Reference Command Set
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -110,7 +110,7 @@ public class ArrayReferenceCommandSet
     int length = bb.getInt();
 
     // We need to write out the byte signifying the type of array first
-    Class<?> clazz = array.getClass().getComponentType();
+    Class clazz = array.getClass().getComponentType();
 
     // Uugh, this is a little ugly but it's the only time we deal with
     // arrayregions
@@ -166,7 +166,7 @@ public class ArrayReferenceCommandSet
     Object array = oid.getObject();
     int first = bb.getInt();
     int length = bb.getInt();
-    Class<?> type = array.getClass().getComponentType();
+    Class type = array.getClass().getComponentType();
     for (int i = first; i < first + length; i++)
       {
         Object value = Value.getUntaggedObject(bb, type);

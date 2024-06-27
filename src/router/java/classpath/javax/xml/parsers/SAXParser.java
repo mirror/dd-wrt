@@ -1,5 +1,5 @@
 /* SAXParser.java --
-   Copyright (C) 2004, 2005, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -309,11 +309,11 @@ public abstract class SAXParser
   public abstract Object getProperty(String name)
     throws SAXNotRecognizedException, SAXNotSupportedException;
 
-  // -- JAXP 1.3 / Java 1.5 methods --
+  // -- JAXP 1.3 methods --
 
   /**
    * Resets this parser to its original configuration.
-   * @since 1.5
+   * @since 1.3
    */
   public void reset()
   {
@@ -321,9 +321,8 @@ public abstract class SAXParser
 
   /**
    * Returns the schema in use by this parser.
-   * @since 1.5
+   * @since 1.3
    */
-  @SuppressWarnings("static-method")
   public Schema getSchema()
   {
     return null;
@@ -331,9 +330,8 @@ public abstract class SAXParser
 
   /**
    * Indicates whether this parser is XInclude-aware.
-   * @since 1.5
+   * @since 1.3
    */
-  @SuppressWarnings("static-method")
   public boolean isXIncludeAware()
   {
     return false;

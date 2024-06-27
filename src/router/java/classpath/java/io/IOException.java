@@ -71,30 +71,4 @@ public class IOException extends Exception
   {
     super(message);
   }
-
-  /**
-   * Create an exception with a descriptive error message and cause.
-   *
-   * @param message the descriptive error message.
-   * @param cause the cause of the error. This may be {@code null} to
-   *              to indicate that the cause is unknown.
-   * @since 1.6
-   */
-  public IOException(String message, Throwable cause)
-  {
-    super(message, cause);
-  }
-
-  /**
-   * Create an exception with a cause.
-   *
-   * @param cause the cause of the error. This may be {@code null} to
-   *              to indicate that the cause is unknown.
-   * @since 1.6
-   */
-  public IOException(Throwable cause)
-  {
-    super(cause);
-  }
-
 } // class IOException

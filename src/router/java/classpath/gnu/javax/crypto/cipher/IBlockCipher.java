@@ -1,5 +1,5 @@
 /* IBlockCipher.java --
-   Copyright (C) 2001, 2002, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -113,7 +113,7 @@ public interface IBlockCipher
    *
    * @return an {@link Iterator} over the supported block sizes.
    */
-  Iterator<Integer> blockSizes();
+  Iterator blockSizes();
 
   /**
    * Returns an {@link Iterator} over the supported key sizes. Each element
@@ -121,7 +121,7 @@ public interface IBlockCipher
    *
    * @return an {@link Iterator} over the supported key sizes.
    */
-  Iterator<Integer> keySizes();
+  Iterator keySizes();
 
   /**
    * Returns a clone of this instance.
@@ -141,8 +141,7 @@ public interface IBlockCipher
    * @see #KEY_MATERIAL
    * @see #CIPHER_BLOCK_SIZE
    */
-  void init(Map<String,Object> attributes)
-    throws InvalidKeyException, IllegalStateException;
+  void init(Map attributes) throws InvalidKeyException, IllegalStateException;
 
   /**
    * Returns the currently set block size for this instance.

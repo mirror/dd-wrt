@@ -52,19 +52,17 @@ final class GMonthDayType
 {
 
   static class GMonthDay
-    implements Comparable<GMonthDay>
+    implements Comparable
   {
 
     int month;
     int day;
 
-    @Override
     public int hashCode()
     {
       return month * 31 + day;
     }
 
-    @Override
     public boolean equals(Object other)
     {
       if (other instanceof GMonthDay)
@@ -75,16 +73,20 @@ final class GMonthDayType
       return false;
     }
 
-    @Override
-    public int compareTo(GMonthDay gmd)
+    public int compareTo(Object other)
     {
-      if (gmd.month == month)
-	{
-	  if (gmd.day == day)
-	    return 0;
-	  return (day < gmd.day) ? -1 : 1;
-	}
-      return (month < gmd.month) ? -1 : 1;
+      if (other instanceof GMonthDay)
+        {
+          GMonthDay gmd = (GMonthDay) other;
+          if (gmd.month == month)
+            {
+              if (gmd.day == day)
+                return 0;
+              return (day < gmd.day) ? -1 : 1;
+            }
+          return (month < gmd.month) ? -1 : 1;
+        }
+      return 0;
     }
 
   }

@@ -1,5 +1,5 @@
 /* ValueOfNode.java --
-   Copyright (C) 2004,2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004,2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -40,6 +40,7 @@ package gnu.xml.transform;
 import gnu.java.lang.CPStringBuilder;
 
 import java.util.Collection;
+import java.util.Iterator;
 import javax.xml.namespace.QName;
 import javax.xml.transform.TransformerException;
 import org.w3c.dom.Document;
@@ -87,13 +88,9 @@ final class ValueOfNode
     if (ret instanceof Collection)
       {
         CPStringBuilder buf = new CPStringBuilder();
-        for (Object o : ((Collection<?>) ret))
+        for (Node node : ((Collection<Node>) ret))
           {
-	    if (o instanceof Node)
-	      {
-		Node node = (Node) o;
-		buf.append(Expr.stringValue(node));
-	      }
+            buf.append(Expr.stringValue(node));
           }
         value = buf.toString();
       }

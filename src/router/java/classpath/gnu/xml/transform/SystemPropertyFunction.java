@@ -1,5 +1,5 @@
 /* SystemPropertyFunction.java --
-   Copyright (C) 2004, 2015, 2016 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -57,9 +57,8 @@ final class SystemPropertyFunction
   implements XPathFunction, Function
 {
 
-  List<Expr> args;
+  List args;
 
-  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -67,7 +66,7 @@ final class SystemPropertyFunction
     return systemProperty(QName.valueOf(name));
   }
 
-  public void setArguments(List<Expr> args)
+  public void setArguments(List args)
   {
     this.args = args;
   }
@@ -75,10 +74,10 @@ final class SystemPropertyFunction
   public Object evaluate(Node context, int pos, int len)
   {
     int arity = args.size();
-    List<Object> values = new ArrayList<Object>(arity);
+    List values = new ArrayList(arity);
     for (int i = 0; i < arity; i++)
       {
-        Expr arg = args.get(i);
+        Expr arg = (Expr) args.get(i);
         values.add(arg.evaluate(context, pos, len));
       }
     String name = _string(context, values.get(0));
@@ -117,10 +116,10 @@ final class SystemPropertyFunction
   {
     SystemPropertyFunction f = new SystemPropertyFunction();
     int len = args.size();
-    List<Expr> args2 = new ArrayList<Expr>(len);
+    List args2 = new ArrayList(len);
     for (int i = 0; i < len; i++)
       {
-        args2.add(args.get(i).clone(context));
+        args2.add(((Expr) args.get(i)).clone(context));
       }
     f.setArguments(args2);
     return f;
@@ -128,9 +127,9 @@ final class SystemPropertyFunction
 
   public boolean references(QName var)
   {
-    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
+    for (Iterator i = args.iterator(); i.hasNext(); )
       {
-        if (i.next().references(var))
+        if (((Expr) i.next()).references(var))
           {
             return true;
           }

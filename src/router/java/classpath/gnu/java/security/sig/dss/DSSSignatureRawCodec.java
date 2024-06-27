@@ -1,6 +1,5 @@
 /* DSSSignatureRawCodec.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -52,7 +51,6 @@ import java.math.BigInteger;
 public class DSSSignatureRawCodec
     implements ISignatureCodec
 {
-  @Override
   public int getFormatID()
   {
     return RAW_FORMAT;
@@ -88,7 +86,6 @@ public class DSSSignatureRawCodec
    * @exception IllegalArgumentException if the designated signature is not a
    *              DSS (Digital Signature Standard) one.
    */
-  @Override
   public byte[] encodeSignature(Object signature)
   {
     BigInteger r, s;
@@ -129,7 +126,6 @@ public class DSSSignatureRawCodec
     return baos.toByteArray();
   }
 
-  @Override
   public Object decodeSignature(byte[] k)
   {
     // magic

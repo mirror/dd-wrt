@@ -1,5 +1,5 @@
 /* FormatBuffer.java -- General interface to build attributed strings.
-   Copyright (C) 2004, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -37,10 +37,7 @@ exception statement from your version. */
 package gnu.java.text;
 
 import java.text.AttributedCharacterIterator;
-import java.util.List;
-import java.util.Map;
-
-import static java.text.AttributedCharacterIterator.Attribute;
+import java.util.HashMap;
 
 /**
  * This interface describes a modifiable buffer which contains attributed
@@ -70,7 +67,7 @@ public interface FormatBuffer
    * @param s The string to append to the buffer.
    * @param attr Attribute to use for the string in the buffer.
    */
-  public void append(String s, Attribute attr);
+  public void append(String s, AttributedCharacterIterator.Attribute attr);
 
   /**
    * This method appends a simple string to the buffer. This part of
@@ -82,7 +79,7 @@ public interface FormatBuffer
    * to the string.
    * @param attrs The attributes of the string in the buffer.
    */
-  public void append(String s, int[] ranges, List<Map<Attribute,Object>> attrs);
+  public void append(String s, int[] ranges, HashMap[] attrs);
 
   /**
    * This method appends a simple char to the buffer. This part of
@@ -100,7 +97,7 @@ public interface FormatBuffer
    * @param c The character to append to the buffer.
    * @param attr Attribute to use for the character in the buffer.
    */
-  public void append(char c, Attribute attr);
+  public void append(char c, AttributedCharacterIterator.Attribute attr);
 
   /**
    * This method changes the current default attribute for the next string
@@ -108,14 +105,14 @@ public interface FormatBuffer
    *
    * @param attr The attribute which will be used by default.
    */
-  public void setDefaultAttribute(Attribute attr);
+  public void setDefaultAttribute(AttributedCharacterIterator.Attribute attr);
 
   /**
    * This method returns the current default attribute for the buffer.
    *
    * @return The default attribute for the buffer.
    */
-  public Attribute getDefaultAttribute();
+  public AttributedCharacterIterator.Attribute getDefaultAttribute();
 
   /**
    * This method cuts the last characters of the buffer. The number of

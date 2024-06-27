@@ -1,5 +1,5 @@
 /* Pair.java -- A heterogenous pair of objects.
-   Copyright (C) 2006, 2013
+   Copyright (C) 2006
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -101,9 +101,9 @@ public class Pair<A,B>
   {
     if (obj instanceof Pair)
       {
-        Pair<?,?> p = (Pair<?,?>) obj;
-        Object lp = p.getLeft();
-        Object rp = p.getRight();
+        Pair<A,B> p = (Pair<A,B>) obj;
+        A lp = p.getLeft();
+        B rp = p.getRight();
         return (lp == null ? left == null : lp.equals(left)) &&
           (rp == null ? right == null : rp.equals(right));
       }

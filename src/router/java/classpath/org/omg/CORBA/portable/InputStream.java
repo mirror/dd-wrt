@@ -237,7 +237,7 @@ public abstract class InputStream
    * @param klass a CORBA class
    * @throws NO_IMPLEMENT, always.
    */
-  @SuppressWarnings("rawtypes") // Needed for API compatibility
+  @SuppressWarnings("unchecked") // Needed for API compatibility
   public Object read_Object(Class klass)
   {
     throw new NO_IMPLEMENT();

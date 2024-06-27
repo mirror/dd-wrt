@@ -1,5 +1,5 @@
 /* JdwpId.java -- base class for all object ID types
-   Copyright (C) 2005, 2006, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -70,7 +70,7 @@ public abstract class JdwpId
   /**
    * The object/class represented by this Id
    */
-  protected SoftReference<Object> _reference;
+  protected SoftReference _reference;
 
   /**
    * Constructs an empty <code>JdwpId</code>
@@ -101,7 +101,7 @@ public abstract class JdwpId
    *
    * @returns a refernce to the object or class
    */
-  public SoftReference<Object> getReference ()
+  public SoftReference getReference ()
   {
     return _reference;
   }
@@ -111,7 +111,7 @@ public abstract class JdwpId
    *
    * @param ref a refernce to the object or class
    */
-  public void setReference (SoftReference<Object> ref)
+  public void setReference (SoftReference ref)
   {
     _reference = ref;
   }

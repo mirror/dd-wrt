@@ -1,5 +1,5 @@
 /* X500PrivateCredential.java -- certificate and private key pair.
-   Copyright (C) 2003, 2004, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -129,7 +129,6 @@ public final class X500PrivateCredential implements Destroyable
    * Destroy the sensitive data of this credential, setting the certificate,
    * private key, and keystore alias to null.
    */
-  @Override
   public void destroy()
   {
     certificate = null;
@@ -143,7 +142,6 @@ public final class X500PrivateCredential implements Destroyable
    *
    * @return True if this object has been destroyed.
    */
-  @Override
   public boolean isDestroyed()
   {
     return certificate == null && key == null;

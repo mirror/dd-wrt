@@ -1,5 +1,5 @@
 /* SignatureSpi.java --- Signature Service Provider Interface
-   Copyright (C) 1999, 2003, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -250,7 +250,6 @@ public abstract class SignatureSpi
    *           cannot be changed, a security exception occured, etc.
    * @deprecated use the other setParameter.
    */
-  @Deprecated
   protected abstract void engineSetParameter(String param, Object value)
     throws InvalidParameterException;
 
@@ -267,7 +266,6 @@ public abstract class SignatureSpi
    *           if the parameter is invalid, the parameter is already set and
    *           cannot be changed, a security exception occured, etc.
    */
-  @SuppressWarnings({"unused","static-method"})
   protected void engineSetParameter(AlgorithmParameterSpec params)
     throws InvalidAlgorithmParameterException
   {
@@ -286,7 +284,6 @@ public abstract class SignatureSpi
    * @throws UnsupportedOperationException
    *           always.
    */
-  @SuppressWarnings("static-method")
   protected AlgorithmParameters engineGetParameters()
   {
     throw new UnsupportedOperationException();
@@ -302,7 +299,6 @@ public abstract class SignatureSpi
    *           if the parameter is invalid.
    * @deprecated use the other getParameter
    */
-  @Deprecated
   protected abstract Object engineGetParameter(String param)
     throws InvalidParameterException;
 
@@ -313,7 +309,6 @@ public abstract class SignatureSpi
    * @throws CloneNotSupportedException
    *           if the implementation does not support cloning.
    */
-  @Override
   public Object clone() throws CloneNotSupportedException
   {
     return super.clone();

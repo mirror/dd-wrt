@@ -1,6 +1,6 @@
 /* CertPathBuilderException.java -- wraps an exception during certificate
    path building
-   Copyright (C) 2002, 2005, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,6 +39,8 @@ exception statement from your version. */
 
 package java.security.cert;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 
 /**
@@ -82,7 +84,7 @@ public class CertPathBuilderException extends GeneralSecurityException
    */
   public CertPathBuilderException(Throwable cause)
   {
-    super(cause);
+    this(cause == null ? null : cause.toString(), cause);
   }
 
   /**
@@ -93,7 +95,65 @@ public class CertPathBuilderException extends GeneralSecurityException
    */
   public CertPathBuilderException(String msg, Throwable cause)
   {
-    super(msg, cause);
+    super(msg);
+    initCause(cause);
   }
 
+  /**
+   * Get the detail message.
+   *
+   * @return the detail message
+   */
+  public String getMessage()
+  {
+    return super.getMessage();
+  }
+
+  /**
+   * Get the cause, null if unknown.
+   *
+   * @return the cause
+   */
+  public Throwable getCause()
+  {
+    return super.getCause();
+  }
+
+  /**
+   * Convert this to a string, including its cause.
+   *
+   * @return the string conversion
+   */
+  public String toString()
+  {
+    return super.toString();
+  }
+
+  /**
+   * Print the stack trace to <code>System.err</code>.
+   */
+  public void printStackTrace()
+  {
+    super.printStackTrace();
+  }
+
+  /**
+   * Print the stack trace to a stream.
+   *
+   * @param stream the stream
+   */
+  public void printStackTrace(PrintStream stream)
+  {
+    super.printStackTrace(stream);
+  }
+
+  /**
+   * Print the stack trace to a stream.
+   *
+   * @param stream the stream
+   */
+  public void printStackTrace(PrintWriter stream)
+  {
+    super.printStackTrace(stream);
+  }
 }

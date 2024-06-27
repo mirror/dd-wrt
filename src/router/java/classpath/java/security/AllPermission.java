@@ -1,6 +1,5 @@
 /* AllPermission.java -- Permission to do anything
-   Copyright (C) 1998, 2001, 2002, 2004, 2005, 2014, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2002, 2004, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -79,7 +78,6 @@ public final class AllPermission extends Permission
    * @param name ignored
    * @param actions ignored
    */
-  @SuppressWarnings("unused")
   public AllPermission(String name, String actions)
   {
     super("*");
@@ -92,7 +90,6 @@ public final class AllPermission extends Permission
    * @param perm ignored
    * @return true, the permission is implied
    */
-  @Override
   public boolean implies(Permission perm)
   {
     return true;
@@ -103,7 +100,6 @@ public final class AllPermission extends Permission
    *
    * @param obj the <code>Object</code> to test for equality
    */
-  @Override
   public boolean equals(Object obj)
   {
     return obj instanceof AllPermission;
@@ -114,7 +110,6 @@ public final class AllPermission extends Permission
    *
    * @return a hash value for this object
    */
-  @Override
   public int hashCode()
   {
     return 1;
@@ -126,7 +121,6 @@ public final class AllPermission extends Permission
    *
    * @return the action list
    */
-  @Override
   public String getActions()
   {
     return "";
@@ -137,7 +131,6 @@ public final class AllPermission extends Permission
    *
    * @return a permission collection
    */
-  @Override
   public PermissionCollection newPermissionCollection()
   {
     return new AllPermissionCollection();
@@ -164,22 +157,12 @@ public final class AllPermission extends Permission
     private boolean all_allowed;
 
     /**
-     * Public constructor to avoid generation of a
-     * synthetic accessor method.
-     */
-    public AllPermissionCollection()
-    {
-      super();
-    }
-
-    /**
      * Add an AllPermission.
      *
      * @param perm the permission to add
      * @throws IllegalArgumentException if perm is not an AllPermission
      * @throws SecurityException if the collection is read-only
      */
-    @Override
     public void add(Permission perm)
     {
       if (isReadOnly())
@@ -195,7 +178,6 @@ public final class AllPermission extends Permission
      * @param perm the permission to check
      * @return true if this collection contains an AllPermission
      */
-    @Override
     public boolean implies(Permission perm)
     {
       return all_allowed;
@@ -206,12 +188,11 @@ public final class AllPermission extends Permission
      *
      * @return the elements in the collection
      */
-    @Override
-    public Enumeration<Permission> elements()
+    public Enumeration elements()
     {
       return all_allowed
-        ? Collections.enumeration(Collections.singleton((Permission) new AllPermission()))
-        : new EmptyEnumeration<Permission>();
+        ? Collections.enumeration(Collections.singleton(new AllPermission()))
+        : EmptyEnumeration.getInstance();
     }
   } // class AllPermissionCollection
 } // class AllPermission

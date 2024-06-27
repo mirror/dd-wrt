@@ -1,5 +1,5 @@
 /* Gnu.java --- Gnu provider main class
-   Copyright (C) 1999, 2002, 2003, 2005, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2002, 2003, 2005 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -45,9 +45,6 @@ import java.security.Provider;
 public final class Gnu
     extends Provider
 {
-
-  private static final long serialVersionUID = -7055664012204311089L;
-
   public Gnu()
   {
     super("GNU", 1.0,
@@ -55,10 +52,9 @@ public final class Gnu
           + "Certificates and CRLs, PKIX certificate path validators, "
           + "Collection cert stores, Diffie-Hellman key agreement and "
           + "key pair generator");
-    AccessController.doPrivileged (new PrivilegedAction<Void>()
+    AccessController.doPrivileged (new PrivilegedAction()
     {
-      @Override
-      public Void run()
+      public Object run()
       {
         // Note that all implementation class names are referenced by using
         // Class.getName(). That way when we staticly link the Gnu provider

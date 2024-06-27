@@ -1,5 +1,5 @@
 /* GeneralName.java -- a GeneralName.
-   Copyright (C) 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -45,7 +45,6 @@ import gnu.java.security.x509.Util;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * The GeneralName structure from X.509.
@@ -107,16 +106,16 @@ public class GeneralName
         case 6: return uniformResourceIdentifier;
         case 7: return iPAddress;
         case 8: return registeredId;
-        default:
-	  throw new IllegalArgumentException("invalid tag: " + tag);
       }
+
+      throw new IllegalArgumentException("invalid tag: " + tag);
     }
 
     public int tag()
     {
       return tag;
     }
-  }
+  };
 
   private final Kind kind;
   private final byte[] name;
@@ -186,7 +185,7 @@ public class GeneralName
   public GeneralName(Kind kind, byte[] name)
   {
     this.kind = kind;
-    this.name = name.clone();
+    this.name = (byte[]) name.clone();
     this.encoded = null;
   }
 
@@ -197,21 +196,27 @@ public class GeneralName
 
   public byte[] name()
   {
-    return name.clone();
+    return (byte[]) name.clone();
   }
 
   public byte[] encoded()
   {
-    return (encoded == null ? null : encoded.clone());
+    try
+      {
+        return (byte[]) encoded.clone();
+      }
+    catch (NullPointerException npe)
+      {
+        return null;
+      }
   }
 
-  @Override
   public boolean equals(Object o)
   {
     try
       {
         GeneralName that = (GeneralName) o;
-        return (that.kind() == kind && Arrays.equals(name, that.name));
+        return (that.kind() == kind() && Arrays.equals(name, that.name));
       }
     catch (ClassCastException cce)
       {
@@ -219,13 +224,6 @@ public class GeneralName
       }
   }
 
-  @Override
-  public int hashCode()
-  {
-    return Objects.hash(kind, name);
-  }
-
-  @Override
   public String toString()
   {
     return (super.toString() + " [ kind=" + kind + "; name=" +

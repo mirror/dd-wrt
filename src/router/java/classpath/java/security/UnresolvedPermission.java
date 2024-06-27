@@ -1,5 +1,5 @@
 /* UnresolvedPermission.java -- Placeholder for unresolved permissions
-   Copyright (C) 1998, 2001, 2002, 2004, 2005, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2001, 2002, 2004, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -128,7 +128,6 @@ public final class UnresolvedPermission extends Permission
    * @param perm the <code>Permission</code> object to test
    * @return false; until a permission is resolved, it implies nothing
    */
-  @Override
   public boolean implies(Permission perm)
   {
     return false;
@@ -150,7 +149,6 @@ public final class UnresolvedPermission extends Permission
    * @param obj the <code>Object</code> to test for equality
    * @return true if the specified object is equal to this one
    */
-  @Override
   public boolean equals(Object obj)
   {
     if (! (obj instanceof UnresolvedPermission))
@@ -166,7 +164,6 @@ public final class UnresolvedPermission extends Permission
    *
    * @return A hash value
    */
-  @Override
   public int hashCode()
   {
     return name.hashCode();
@@ -178,7 +175,6 @@ public final class UnresolvedPermission extends Permission
    *
    * @return the action list
    */
-  @Override
   public String getActions()
   {
     return actions;
@@ -190,7 +186,6 @@ public final class UnresolvedPermission extends Permission
    *
    * @return  <code>String</code> representation of this object
    */
-  @Override
   public String toString()
   {
     return "(unresolved " + type + ' ' + name + ' ' + actions + ')';
@@ -202,7 +197,6 @@ public final class UnresolvedPermission extends Permission
    *
    * @return a new <code>PermissionCollection</code>
    */
-  @Override
   public PermissionCollection newPermissionCollection()
   {
     return new UnresolvedPermissionCollection();
@@ -246,7 +240,7 @@ public final class UnresolvedPermission extends Permission
   {
     if (certs == null)
       return null;
-    return certs.clone();
+    return (Certificate[]) certs.clone();
   }
 } // class UnresolvedPermission
 
@@ -270,8 +264,7 @@ class UnresolvedPermissionCollection extends PermissionCollection
    * @serial map of typename to a Vector of permissions (you'd think Sun
    *         would document this better!)
    */
-  final Hashtable<String,Vector<Permission>> permissions =
-    new Hashtable<String,Vector<Permission>>();
+  final Hashtable permissions = new Hashtable();
 
   /**
    * Add a permission.
@@ -280,7 +273,6 @@ class UnresolvedPermissionCollection extends PermissionCollection
    * @throws IllegalArgumentException if perm is not an UnresolvedPermission
    * @throws SecurityException if the collection is read-only
    */
-  @Override
   public void add(Permission perm)
   {
     if (isReadOnly())
@@ -288,10 +280,10 @@ class UnresolvedPermissionCollection extends PermissionCollection
     if (! (perm instanceof UnresolvedPermission))
       throw new IllegalArgumentException();
     UnresolvedPermission up = (UnresolvedPermission) perm;
-    Vector<Permission> v = permissions.get(up.type);
+    Vector v = (Vector) permissions.get(up.type);
     if (v == null)
       {
-        v = new Vector<Permission>();
+        v = new Vector();
         permissions.put(up.type, v);
       }
     v.add(up);
@@ -303,7 +295,6 @@ class UnresolvedPermissionCollection extends PermissionCollection
    * @param perm the permission to check
    * @return false; unresolved permissions imply nothing
    */
-  @Override
   public boolean implies(Permission perm)
   {
     return false;
@@ -314,43 +305,40 @@ class UnresolvedPermissionCollection extends PermissionCollection
    *
    * @return the elements
    */
-  @Override
-  public Enumeration<Permission> elements()
+  public Enumeration elements()
   {
-    return new Enumeration<Permission>()
+    return new Enumeration()
     {
-      Enumeration<Vector<Permission>> mainEnum = permissions.elements();
-      Enumeration<Permission> subEnum;
+      Enumeration main_enum = permissions.elements();
+      Enumeration sub_enum;
 
-      @Override
       public boolean hasMoreElements()
       {
-        if (subEnum == null)
+        if (sub_enum == null)
           {
-            if (mainEnum == null)
+            if (main_enum == null)
               return false;
-            if (! mainEnum.hasMoreElements())
+            if (! main_enum.hasMoreElements())
               {
-                mainEnum = null;
+                main_enum = null;
                 return false;
               }
-            Vector<Permission> v = mainEnum.nextElement();
-            subEnum = v.elements();
+            Vector v = (Vector) main_enum.nextElement();
+            sub_enum = v.elements();
           }
-        if (! subEnum.hasMoreElements())
+        if (! sub_enum.hasMoreElements())
           {
-            subEnum = null;
+            sub_enum = null;
             return hasMoreElements();
           }
         return true;
       }
 
-      @Override
-      public Permission nextElement()
+      public Object nextElement()
       {
         if (! hasMoreElements())
           throw new NoSuchElementException();
-        return subEnum.nextElement();
+        return sub_enum.nextElement();
       }
     };
   }

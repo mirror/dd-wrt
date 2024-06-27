@@ -52,18 +52,16 @@ final class GYearType
 {
 
   static class GYear
-    implements Comparable<GYear>
+    implements Comparable
   {
 
     int year;
 
-    @Override
     public int hashCode()
     {
       return year;
     }
 
-    @Override
     public boolean equals(Object other)
     {
       if (other instanceof GYear)
@@ -71,12 +69,16 @@ final class GYearType
       return false;
     }
 
-    @Override
-    public int compareTo(GYear gy)
+    public int compareTo(Object other)
     {
-      if (gy.year == year)
-	return 0;
-      return (year < gy.year) ? -1 : 1;
+      if (other instanceof GYear)
+        {
+          GYear gy = (GYear) other;
+          if (gy.year == year)
+            return 0;
+          return (year < gy.year) ? -1 : 1;
+        }
+      return 0;
     }
 
   }

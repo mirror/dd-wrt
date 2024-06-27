@@ -1,5 +1,5 @@
 /* PKIXCertPathChecker.java -- checks X.509 certificate paths.
-   Copyright (C) 2003, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -76,7 +76,6 @@ public abstract class PKIXCertPathChecker implements Cloneable
   // Cloneable interface.
   // ------------------------------------------------------------------------
 
-  @Override
   public Object clone()
   {
     try

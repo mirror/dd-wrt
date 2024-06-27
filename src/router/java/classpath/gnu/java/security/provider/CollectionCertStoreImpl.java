@@ -1,5 +1,5 @@
 /* CollectionCertStore.java -- Collection-based cert store.
-   Copyright (C) 2004, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -57,7 +57,7 @@ public final class CollectionCertStoreImpl extends CertStoreSpi
   // Fields.
   // -------------------------------------------------------------------------
 
-  private final Collection<?> store;
+  private final Collection store;
 
   // Constructors.
   // -------------------------------------------------------------------------
@@ -74,30 +74,28 @@ public final class CollectionCertStoreImpl extends CertStoreSpi
   // Instance methods.
   // -------------------------------------------------------------------------
 
-  @Override
-  public Collection<? extends Certificate> engineGetCertificates(CertSelector selector)
+  public Collection engineGetCertificates(CertSelector selector)
     throws CertStoreException
   {
-    LinkedList<Certificate> result = new LinkedList<Certificate>();
-    for (Iterator<?> it = store.iterator(); it.hasNext(); )
+    LinkedList result = new LinkedList();
+    for (Iterator it = store.iterator(); it.hasNext(); )
       {
         Object o = it.next();
         if ((o instanceof Certificate) && selector.match((Certificate) o))
-          result.add((Certificate) o);
+          result.add(o);
       }
     return result;
   }
 
-  @Override
-  public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
+  public Collection engineGetCRLs(CRLSelector selector)
     throws CertStoreException
   {
-    LinkedList<CRL> result = new LinkedList<CRL>();
-    for (Iterator<?> it = store.iterator(); it.hasNext(); )
+    LinkedList result = new LinkedList();
+    for (Iterator it = store.iterator(); it.hasNext(); )
       {
         Object o = it.next();
         if ((o instanceof CRL) && selector.match((CRL) o))
-          result.add((CRL) o);
+          result.add(o);
       }
     return result;
   }

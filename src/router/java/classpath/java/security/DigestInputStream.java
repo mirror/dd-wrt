@@ -1,5 +1,5 @@
 /* DigestInputStream.java --- An Input stream tied to a message digest
-   Copyright (C) 1999, 2003, 2004, 2005, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2004, 2005  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -110,7 +110,6 @@ public class DigestInputStream extends FilterInputStream
    * @throws IOException if an IO error occurs in the underlying input stream,
    * this error is thrown
    */
-  @Override
   public int read() throws IOException
   {
     int temp = in.read();
@@ -135,7 +134,6 @@ public class DigestInputStream extends FilterInputStream
    * @throws IOException if an IO error occurs in the underlying input stream,
    * this error is thrown
    */
-  @Override
   public int read(byte[]b, int off, int len) throws IOException
   {
     int temp = in.read(b, off, len);
@@ -162,7 +160,6 @@ public class DigestInputStream extends FilterInputStream
    *
    * @return A string representing the input stream and message digest.
    */
-  @Override
   public String toString()
   {
     return "[Digest Input Stream] " + digest.toString();

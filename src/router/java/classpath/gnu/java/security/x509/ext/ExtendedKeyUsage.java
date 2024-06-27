@@ -1,5 +1,5 @@
 /* ExtendedKeyUsage.java -- the extended key usage extension.
-   Copyright (C) 2004, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -88,7 +88,6 @@ public class ExtendedKeyUsage extends Extension.Value
     return Collections.unmodifiableList(purposeIds);
   }
 
-  @Override
   public String toString()
   {
     return ExtendedKeyUsage.class.getName() + " [ " + purposeIds + " ]";

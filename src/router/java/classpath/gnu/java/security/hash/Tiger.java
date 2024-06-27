@@ -1,5 +1,5 @@
 /* Tiger.java --
-   Copyright (C) 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -456,16 +456,14 @@ public class Tiger
     this.b = that.b;
     this.c = that.c;
     this.count = that.count;
-    this.buffer = (that.buffer != null) ? that.buffer.clone() : null;
+    this.buffer = (that.buffer != null) ? (byte[]) that.buffer.clone() : null;
   }
 
-  @Override
   public Object clone()
   {
     return new Tiger(this);
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)
@@ -476,7 +474,6 @@ public class Tiger
     return valid.booleanValue();
   }
 
-  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -495,7 +492,6 @@ public class Tiger
     return pad;
   }
 
-  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -507,7 +503,6 @@ public class Tiger
         (byte)(c >>> 32), (byte)(c >>> 40), (byte)(c >>> 48), (byte)(c >>> 56) };
   }
 
-  @Override
   protected void resetContext()
   {
     a = A;
@@ -515,7 +510,6 @@ public class Tiger
     c = C;
   }
 
-  @Override
   protected void transform(byte[] in, int offset)
   {
     long x0, x1, x2, x3, x4, x5, x6, x7;

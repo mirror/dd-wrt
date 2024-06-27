@@ -1,5 +1,5 @@
 /* GnuPKIExtension.java -- interface for GNU PKI extensions.
-   Copyright (C) 2004, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -55,5 +55,5 @@ public interface GnuPKIExtension extends X509Extension
    */
   Extension getExtension(OID oid);
 
-  Collection<Extension> getExtensions();
+  Collection getExtensions();
 }

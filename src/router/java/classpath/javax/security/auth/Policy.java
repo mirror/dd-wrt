@@ -1,5 +1,5 @@
 /* Policy.java -- deprecated precursor to java.security.Policy.
-   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -45,7 +45,6 @@ import java.security.PermissionCollection;
  * @deprecated The classes java.security.Policy and
  * java.security.ProtectionDomain provide the functionality of this class.
  */
-@Deprecated
 public abstract class Policy
 {
 

@@ -1,5 +1,5 @@
 /* IdentityScope.java --- IdentityScope Class
-   Copyright (C) 1999, 2003, 2015, Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -59,7 +59,6 @@ import java.util.Enumeration;
  * @deprecated Use java.security.KeyStore, the java.security.cert package, and
  *             java.security.Principal.
  */
-@Deprecated
 public abstract class IdentityScope extends Identity
 {
   private static final long serialVersionUID = -2337346281189773310L;
@@ -210,7 +209,6 @@ public abstract class IdentityScope extends Identity
    *
    * @return a string representation of this instance.
    */
-  @Override
   public String toString()
   {
     return (super.getName() + " " + super.getScope().getName() + " " + size());

@@ -1,5 +1,5 @@
 /* ObjectId.java -- object IDs
-   Copyright (C) 2005, 2006, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -58,7 +58,7 @@ public class ObjectId
   /**
    * The object class that this id represents
    */
-  public static final Class<Object> typeClass = Object.class;
+  public static final Class typeClass = Object.class;
 
   // Handle to disable garbage collection
   private Object _handle;

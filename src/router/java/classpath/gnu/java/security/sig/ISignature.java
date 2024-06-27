@@ -1,5 +1,5 @@
 /* ISignature.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -89,8 +89,7 @@ public interface ISignature
    * @see #SOURCE_OF_RANDOMNESS
    * @see #VERIFIER_KEY
    */
-  void setupVerify(Map<String,Object> attributes)
-    throws IllegalArgumentException;
+  void setupVerify(Map attributes) throws IllegalArgumentException;
 
   /**
    * Initialises this instance for signature generation.
@@ -101,8 +100,7 @@ public interface ISignature
    * @see #SOURCE_OF_RANDOMNESS
    * @see #SIGNER_KEY
    */
-  void setupSign(Map<String,Object> attributes)
-    throws IllegalArgumentException;
+  void setupSign(Map attributes) throws IllegalArgumentException;
 
   /**
    * Digests one byte of a message for signing or verification purposes.

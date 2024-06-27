@@ -1,5 +1,5 @@
 /* Resolver.java --
-   Copyright (C) 1999,2000,2001, 2015 Free Software Foundation, Inc.
+   Copyright (C) 1999,2000,2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -39,7 +39,7 @@ package gnu.xml.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
+import java.util.Dictionary;
 
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -65,7 +65,7 @@ public class Resolver implements EntityResolver, Cloneable
      * @param directory File holding the specified files.
      */
     public static void addDirectoryMapping (
-        Map<String,String>      table,
+        Dictionary      table,
         String          mappings [][],
         File            directory
     ) throws IOException
@@ -164,18 +164,18 @@ public class Resolver implements EntityResolver, Cloneable
 
 
     // note:  cloneable, this is just copied; unguarded against mods
-    private Map<String,String> pubidMapping;
+    private Dictionary          pubidMapping;
 
     /**
      * Constructs a resolver which understands how to map PUBLIC identifiers
      * to other URIs, typically for local copies of standard DTD components.
      *
-     * @param map maps PUBLIC identifiers to URIs.  This is not
+     * @param dict maps PUBLIC identifiers to URIs.  This is not
      *  copied; subsequent modifications will be reported through the
      *  resolution operations.
      */
-    public Resolver (Map<String,String> map)
-        { pubidMapping = map; }
+    public Resolver (Dictionary dict)
+        { pubidMapping = dict; }
 
 
     // FIXME: want notion of a "system default" resolver, presumably
@@ -247,7 +247,7 @@ public class Resolver implements EntityResolver, Cloneable
         String          uri;
 
         if (publicId != null
-                && ((uri = pubidMapping.get (publicId)) != null)) {
+                && ((uri = (String) pubidMapping.get (publicId)) != null)) {
             retval = new InputSource (uri);
             retval.setPublicId (publicId);
         }

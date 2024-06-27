@@ -37,11 +37,8 @@ exception statement from your version. */
 
 package gnu.xml.validation.xmlschema;
 
-import gnu.xml.validation.datatype.Type;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.xml.namespace.QName;
 import javax.xml.validation.Schema;
 import javax.xml.validation.Validator;
 import javax.xml.validation.ValidatorHandler;
@@ -91,17 +88,17 @@ final class XMLSchema
   /**
    * The element declarations in this schema.
    */
-  final Map<QName,ElementDeclaration> elementDeclarations;
+  final Map elementDeclarations;
 
   /**
    * The attribute declarations in this schema.
    */
-  final Map<QName,AttributeDeclaration> attributeDeclarations;
+  final Map attributeDeclarations;
 
   /**
    * The type declarations in this schema.
    */
-  final Map <QName,Type> types;
+  final Map types;
 
   XMLSchema(String targetNamespace, String version,
             int finalDefault, int blockDefault,
@@ -114,9 +111,9 @@ final class XMLSchema
     this.blockDefault = blockDefault;
     this.attributeFormQualified = attributeFormQualified;
     this.elementFormQualified = elementFormQualified;
-    elementDeclarations = new LinkedHashMap<QName,ElementDeclaration>();
-    attributeDeclarations = new LinkedHashMap<QName,AttributeDeclaration>();
-    types = new LinkedHashMap<QName,Type>();
+    elementDeclarations = new LinkedHashMap();
+    attributeDeclarations = new LinkedHashMap();
+    types = new LinkedHashMap();
   }
 
   public Validator newValidator()

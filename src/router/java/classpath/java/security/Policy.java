@@ -1,5 +1,5 @@
 /* Policy.java --- Policy Manager Class
-   Copyright (C) 1999, 2003, 2004, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2003, 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -92,7 +92,7 @@ public abstract class Policy
   private static Policy currentPolicy;
 
   /** Map of ProtectionDomains to PermissionCollections for this instance. */
-  private Map<ProtectionDomain,PermissionCollection> pd2pc = null;
+  private Map pd2pc = null;
 
   /** Constructs a new <code>Policy</code> object. */
   public Policy()
@@ -140,8 +140,7 @@ public abstract class Policy
   private static void setup(final Policy policy)
   {
     if (policy.pd2pc == null)
-      policy.pd2pc =
-	Collections.synchronizedMap(new LinkedHashMap<ProtectionDomain,PermissionCollection>());
+      policy.pd2pc = Collections.synchronizedMap(new LinkedHashMap());
 
     ProtectionDomain pd = policy.getClass().getProtectionDomain();
     if (pd.getCodeSource() != null)
@@ -233,12 +232,12 @@ public abstract class Policy
     if (pd2pc == null)
       setup(this);
 
-    PermissionCollection result = pd2pc.get(domain);
+    PermissionCollection result = (PermissionCollection) pd2pc.get(domain);
     if (result != null)
       {
         Permissions realResult = new Permissions();
-        for (Enumeration<Permission> e = result.elements(); e.hasMoreElements(); )
-          realResult.add(e.nextElement());
+        for (Enumeration e = result.elements(); e.hasMoreElements(); )
+          realResult.add((Permission) e.nextElement());
 
         return realResult;
       }
@@ -249,8 +248,8 @@ public abstract class Policy
 
     PermissionCollection pc = domain.getPermissions();
     if (pc != null)
-      for (Enumeration<Permission> e = pc.elements(); e.hasMoreElements(); )
-        result.add(e.nextElement());
+      for (Enumeration e = pc.elements(); e.hasMoreElements(); )
+        result.add((Permission) e.nextElement());
 
     return result;
   }
@@ -274,7 +273,7 @@ public abstract class Policy
     if (pd2pc == null)
       setup(this);
 
-    PermissionCollection pc = pd2pc.get(domain);
+    PermissionCollection pc = (PermissionCollection) pd2pc.get(domain);
     if (pc != null)
       return pc.implies(permission);
 

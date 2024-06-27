@@ -1,5 +1,5 @@
 /* MD2.java --
-   Copyright (C) 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -132,19 +132,17 @@ public class MD2
 
     // superclass field
     this.count = md2.count;
-    this.buffer = md2.buffer.clone();
+    this.buffer = (byte[]) md2.buffer.clone();
     // private field
-    this.checksum = md2.checksum.clone();
-    this.work = md2.work.clone();
+    this.checksum = (byte[]) md2.checksum.clone();
+    this.work = (byte[]) md2.work.clone();
   }
 
-  @Override
   public Object clone()
   {
     return new MD2(this);
   }
 
-  @Override
   protected byte[] getResult()
   {
     byte[] result = new byte[DIGEST_LENGTH];
@@ -156,14 +154,12 @@ public class MD2
     return result;
   }
 
-  @Override
   protected void resetContext()
   {
     checksum = new byte[BLOCK_LENGTH];
     work = new byte[BLOCK_LENGTH * 3];
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)
@@ -184,7 +180,6 @@ public class MD2
    * @return the bytes to pad the remaining bytes in the buffer before
    * completing a hash operation.
    */
-  @Override
   protected byte[] padBuffer()
   {
     int length = BLOCK_LENGTH - (int) (count % BLOCK_LENGTH);
@@ -204,7 +199,6 @@ public class MD2
    * @param in the byte array to take the <code>BLOCK_LENGTH</code> bytes from.
    * @param off the offset to start from in the given byte array.
    */
-  @Override
   protected void transform(byte[] in, int off)
   {
     updateCheckSumAndEncryptBlock(in, off);

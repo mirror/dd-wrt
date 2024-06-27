@@ -1,5 +1,5 @@
 /* RSAPSSSignatureRawCodec.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -52,7 +52,6 @@ public class RSAPSSSignatureRawCodec
 {
   // implicit 0-arguments constructor
 
-  @Override
   public int getFormatID()
   {
     return RAW_FORMAT;
@@ -81,7 +80,6 @@ public class RSAPSSSignatureRawCodec
    * @exception IllegalArgumentException if the designated signature is not an
    *              RSA-PSS one.
    */
-  @Override
   public byte[] encodeSignature(Object signature)
   {
     byte[] buffer;
@@ -111,7 +109,6 @@ public class RSAPSSSignatureRawCodec
     return baos.toByteArray();
   }
 
-  @Override
   public Object decodeSignature(byte[] k)
   {
     // magic

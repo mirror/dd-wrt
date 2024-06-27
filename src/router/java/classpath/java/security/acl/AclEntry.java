@@ -1,5 +1,5 @@
 /* AclEntry.java -- An entry in an ACL list.
-   Copyright (C) 1998, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1998 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -72,8 +72,7 @@ public interface AclEntry extends Cloneable
    *
    * @param user The <code>Principal</code> for this ACL entry
    *
-   * @return <code>true</code> if the <code>Principal</code> was successfully
-   *         set or <code>false</code> if this entry already has a <code>Principal</code>.
+   * @return <code>true</code> if the <code>Principal</code> was successfully set or <code>false</code> if this entry already has a <code>Principal</code>.
    */
   boolean setPrincipal(Principal user);
 
@@ -97,8 +96,7 @@ public interface AclEntry extends Cloneable
    *
    * @param permission The <code>Permission</code> to add
    *
-   * @return <code>true</code> if the permission was added or
-   *         <code>false</code> if it was already set for this entry
+   * @return <code>true</code> if the permission was added or <code>false</code> if it was already set for this entry
    */
   boolean addPermission(Permission permission);
 
@@ -107,9 +105,7 @@ public interface AclEntry extends Cloneable
    *
    * @param perm The <code>Permission</code> to delete from this ACL entry.
    *
-   * @return <code>true</code> if the permission was successfully deleted
-   *         or <code>false</code> if the permission was not part of this
-   *         ACL to begin with
+   * @return <code>true</code> if the permission was successfully deleted or <code>false</code> if the permission was not part of this ACL to begin with
    */
   boolean removePermission(Permission perm);
 
@@ -119,8 +115,7 @@ public interface AclEntry extends Cloneable
    *
    * @param permission The <code>Permission</code> to test
    *
-   * @return <code>true</code> if this permission is associated
-   *         with this entry or <code>false</code> otherwise
+   * @return <code>true</code> if this permission is associated with this entry or <code>false</code> otherwise
    */
   boolean checkPermission(Permission permission);
 
@@ -137,7 +132,6 @@ public interface AclEntry extends Cloneable
    *
    * @return A <code>String</code> representation of this object
    */
-  @Override
   String toString();
 
   /**

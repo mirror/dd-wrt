@@ -1,5 +1,5 @@
 /* gnu.classpath.tools.gjdoc.ExecutableMemberDocImpl
-   Copyright (C) 2001, 2012 Free Software Foundation, Inc.
+   Copyright (C) 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -402,14 +402,14 @@ public class ExecutableMemberDocImpl extends MemberDocImpl implements Executable
 
    }
 
-   public int compareTo(Doc d) {
+   public int compareTo(Object other) {
       int rc;
-      if (d instanceof MemberDocImpl) {
-         MemberDocImpl otherMember = (MemberDocImpl)d;
+      if (other instanceof MemberDocImpl) {
+         MemberDocImpl otherMember = (MemberDocImpl)other;
          rc = name().compareTo(otherMember.name());
          if (0 == rc) {
-            if (d instanceof ExecutableMemberDocImpl) {
-               rc = signature().compareTo(((ExecutableMemberDocImpl)d).signature());
+            if (other instanceof ExecutableMemberDocImpl) {
+               rc = signature().compareTo(((ExecutableMemberDocImpl)other).signature());
                if (0 == rc) {
                   return containingClass().compareTo(otherMember.containingClass());
                }

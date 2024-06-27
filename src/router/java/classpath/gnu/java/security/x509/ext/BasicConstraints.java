@@ -1,5 +1,5 @@
 /* BasicConstraints.java -- the basic constraints extension.
-   Copyright (C) 2004, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -107,22 +107,20 @@ public class BasicConstraints extends Extension.Value
     return pathLenConstraint;
   }
 
-  @Override
   public byte[] getEncoded()
   {
     if (encoded == null)
       {
-        List<DERValue> bc = new ArrayList<DERValue> (2);
+        List bc = new ArrayList (2);
         bc.add (new DERValue (DER.BOOLEAN, Boolean.valueOf (ca)));
         if (pathLenConstraint >= 0)
           bc.add (new DERValue (DER.INTEGER,
-                                BigInteger.valueOf (pathLenConstraint)));
+                                BigInteger.valueOf ((long) pathLenConstraint)));
         encoded = new DERValue (DER.CONSTRUCTED|DER.SEQUENCE, bc).getEncoded();
       }
-    return encoded.clone();
+    return (byte[]) encoded.clone();
   }
 
-  @Override
   public String toString()
   {
     return BasicConstraints.class.getName() + " [ isCA=" + ca +

@@ -1,5 +1,5 @@
 /* ProtectionDomain.java -- A security domain
-   Copyright (C) 1998, 2003, 2004, 2015  Free Software Foundation, Inc.
+   Copyright (C) 1998, 2003, 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -144,7 +144,7 @@ public class ProtectionDomain
 
     this.classloader = classloader;
     this.principals =
-        (principals != null ? principals.clone() : new Principal[0]);
+        (principals != null ? (Principal[]) principals.clone() : new Principal[0]);
     this.staticBinding = staticBinding;
   }
 
@@ -178,7 +178,7 @@ public class ProtectionDomain
    */
   public final Principal[] getPrincipals()
   {
-    return principals.clone();
+    return (Principal[]) principals.clone();
   }
 
   /**
@@ -217,7 +217,6 @@ public class ProtectionDomain
    *
    * @return A string representation of this object.
    */
-  @Override
   public String toString()
   {
     String linesep = SystemProperties.getProperty("line.separator");

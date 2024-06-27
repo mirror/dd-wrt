@@ -1,5 +1,5 @@
 /* LDAPCertStoreParameters.java -- LDAP CertStore parameters.
-   Copyright (C) 2003, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2003 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -102,7 +102,6 @@ public class LDAPCertStoreParameters implements CertStoreParameters
   // Instance methods.
   // ------------------------------------------------------------------------
 
-  @Override
   public Object clone()
   {
     return new LDAPCertStoreParameters(serverName, port);
@@ -133,7 +132,6 @@ public class LDAPCertStoreParameters implements CertStoreParameters
    *
    * @return The string representation of these parameters.
    */
-  @Override
   public String toString()
   {
     return "LDAPCertStoreParameters: [ serverName: " + serverName

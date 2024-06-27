@@ -1,5 +1,5 @@
 /* Util.java -- Miscellaneous utility methods.
-   Copyright (C) 2006, 2014  Free Software Foundation, Inc.
+   Copyright (C) 2006  Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -419,14 +419,14 @@ public final class Util
    *         each element of <i>array</i> with <i>args</i>. The return type
    *         of the array will be an array of <i>returnType</i>.
    */
-  static <T> T[] transform(Object[] array, Class<T> returnType,
-			   String method, Object[] args)
+  static Object[] transform(Object[] array, Class returnType,
+                            String method, Object[] args)
     throws InvocationTargetException, NoSuchMethodException,
            IllegalAccessException
   {
     if (args == null)
       args = new Object[0];
-    T[] result = (T[]) Array.newInstance(returnType, array.length);
+    Object[] result = (Object[]) Array.newInstance(returnType, array.length);
     Class[] argsClasses = new Class[args.length];
     for (int i = 0; i < args.length; i++)
       {
@@ -444,7 +444,7 @@ public final class Util
         Object o = objMethod.invoke(array[i], args);
         if (!returnType.isAssignableFrom(o.getClass()))
           throw new ClassCastException();
-        result[i] = returnType.cast(o);
+        result[i] = o;
       }
     return result;
   }

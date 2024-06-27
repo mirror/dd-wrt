@@ -1,5 +1,5 @@
 /* ThreadId.java -- thread IDs
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -53,7 +53,7 @@ public class ThreadId
   /**
    * The object class that this id represents
    */
-  public static final Class<Thread> typeClass = Thread.class;
+  public static final Class typeClass = Thread.class;
 
   /**
    * Constructs a new <code>ThreadId</code>

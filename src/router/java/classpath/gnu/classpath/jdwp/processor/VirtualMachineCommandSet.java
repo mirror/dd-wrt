@@ -1,6 +1,6 @@
 /* VirtualMachineCommandSet.java -- class to implement the VirtualMachine
    Command Set
-   Copyright (C) 2005, 2006, 2007, 2013 Free Software Foundation
+   Copyright (C) 2005, 2006, 2007 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -177,17 +177,15 @@ public class VirtualMachineCommandSet
     throws JdwpException, IOException
   {
     String sig = JdwpString.readString(bb);
-    ArrayList<Class<?>> allMatchingClasses = new ArrayList<Class<?>>();
+    ArrayList allMatchingClasses = new ArrayList();
 
     // This will be an Iterator over all loaded Classes
-    // VMWARN: Suppress warning until VM layer is upgraded to generics
-    @SuppressWarnings("unchecked")
-      Collection<Class<?>> classes = VMVirtualMachine.getAllLoadedClasses();
-    Iterator<Class<?>> iter = classes.iterator ();
+    Collection classes = VMVirtualMachine.getAllLoadedClasses();
+    Iterator iter = classes.iterator ();
 
     while (iter.hasNext())
       {
-        Class<?> clazz = iter.next();
+        Class clazz = (Class) iter.next();
         String clazzSig = Signature.computeClassSignature(clazz);
         if (clazzSig.equals(sig))
           allMatchingClasses.add(clazz);
@@ -196,7 +194,7 @@ public class VirtualMachineCommandSet
     os.writeInt(allMatchingClasses.size());
     for (int i = 0; i < allMatchingClasses.size(); i++)
       {
-        Class<?> clazz = allMatchingClasses.get(i);
+        Class clazz = (Class) allMatchingClasses.get(i);
         ReferenceTypeId id = idMan.getReferenceTypeId(clazz);
         id.writeTagged(os);
         int status = VMVirtualMachine.getClassStatus(clazz);
@@ -207,15 +205,13 @@ public class VirtualMachineCommandSet
   private void executeAllClasses(ByteBuffer bb, DataOutputStream os)
     throws JdwpException, IOException
   {
-    // VMWARN: Suppress warning until VM layer is upgraded to generics
-    @SuppressWarnings("unchecked")
-      Collection<Class<?>> classes = VMVirtualMachine.getAllLoadedClasses();
+    Collection classes = VMVirtualMachine.getAllLoadedClasses();
     os.writeInt(classes.size ());
 
-    Iterator<Class<?>> iter = classes.iterator ();
+    Iterator iter = classes.iterator ();
     while (iter.hasNext())
       {
-        Class<?> clazz = iter.next();
+        Class clazz = (Class) iter.next();
         ReferenceTypeId id = idMan.getReferenceTypeId(clazz);
         id.writeTagged(os);
         String sig = Signature.computeClassSignature(clazz);
@@ -423,7 +419,7 @@ public class VirtualMachineCommandSet
       }
 
     int classes = bb.getInt();
-    Class<?>[] types = new Class<?>[classes];
+    Class[] types = new Class[classes];
     byte[][] bytecodes = new byte[classes][];
     for (int i = 0; i < classes; ++i)
       {

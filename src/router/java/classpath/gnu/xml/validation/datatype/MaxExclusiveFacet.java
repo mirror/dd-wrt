@@ -99,9 +99,7 @@ public final class MaxExclusiveFacet
       {
         if (!(test.getClass().equals(value.getClass())))
           return false;
-	@SuppressWarnings("unchecked")
-	  Comparable<Object> comp = (Comparable<Object>) test;
-        return comp.compareTo(value) < 0;
+        return ((Comparable) test).compareTo(value) < 0;
       }
     Number nvalue = (Number) value;
     if (!(test instanceof Number))

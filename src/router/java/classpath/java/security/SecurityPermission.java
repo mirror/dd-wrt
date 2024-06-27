@@ -1,5 +1,5 @@
 /* SecurityPermission.java -- Class for named security permissions
-   Copyright (C) 1998, 2002, 2014 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -171,7 +171,6 @@ public final class SecurityPermission extends BasicPermission
    * @param name the name to assign to this permission
    * @param actions ignored
    */
-  @SuppressWarnings("unused")
   public SecurityPermission(String name, String actions)
   {
     super(name);

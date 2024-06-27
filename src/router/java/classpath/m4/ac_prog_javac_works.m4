@@ -16,7 +16,8 @@ dnl @license GPLWithACException
 dnl
 dnl Modified to test for 1.5 by Andrew John Hughes on 2008-02-11
 
-AC_DEFUN([AC_PROG_JAVAC_WORKS],[
+AC_DEFUN_ONCE([AC_PROG_JAVAC_WORKS],[
+AC_REQUIRE([AC_PROG_JAVAC])
 AC_CACHE_CHECK([if $JAVAC works], ac_cv_prog_javac_works, [
 JAVA_TEST=Object.java
 CLASS_TEST=Object.class
@@ -32,9 +33,9 @@ public class Object
 }
 EOF
 if test x$JAVAC_IS_GCJ = xyes; then
-  CMD="$JAVAC $JAVACFLAGS -fsource=1.6 -ftarget=1.6 $JAVA_TEST"
+  CMD="$JAVAC $JAVACFLAGS -fsource=1.5 -ftarget=1.5 $JAVA_TEST"
 else
-  CMD="$JAVAC $JAVACFLAGS -sourcepath '' -source 1.6 -target 1.6 $JAVA_TEST"
+  CMD="$JAVAC $JAVACFLAGS -source 1.6 -target 1.6 $JAVA_TEST"
 fi
 if AC_TRY_COMMAND($CMD) >/dev/null 2>&1; then
   ac_cv_prog_javac_works=yes

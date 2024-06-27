@@ -1,5 +1,5 @@
 /* X509CertSelectorImpl.java -- implementation of an X509CertSelector.
-   Copyright (C) 2004, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -61,16 +61,16 @@ public class X509CertSelectorImpl implements CertSelector
   // Fields.
   // -------------------------------------------------------------------------
 
-  private Set<X500DistinguishedName> issuerNames;
-  private Set<X500DistinguishedName> subjectNames;
+  private Set issuerNames;
+  private Set subjectNames;
 
   // Constructor.
   // -------------------------------------------------------------------------
 
   public X509CertSelectorImpl()
   {
-    issuerNames = new HashSet<X500DistinguishedName>();
-    subjectNames = new HashSet<X500DistinguishedName>();
+    issuerNames = new HashSet();
+    subjectNames = new HashSet();
   }
 
   // Instance methods.
@@ -81,7 +81,7 @@ public class X509CertSelectorImpl implements CertSelector
     issuerNames.add(new X500DistinguishedName(issuerName));
   }
 
-  public void addIssuerName(String issuerName) throws IOException
+  public void addIssuerName(String issuerName)
   {
     issuerNames.add(new X500DistinguishedName(issuerName));
   }
@@ -89,14 +89,14 @@ public class X509CertSelectorImpl implements CertSelector
   public void addIssuerName(Principal issuerName) throws IOException
   {
     if (issuerName instanceof X500DistinguishedName)
-      issuerNames.add((X500DistinguishedName) issuerName);
+      issuerNames.add(issuerName);
     else if (issuerName instanceof X500Principal)
       issuerNames.add(new X500DistinguishedName(((X500Principal) issuerName).getEncoded()));
     else
       issuerNames.add(new X500DistinguishedName(issuerName.getName()));
   }
 
-  public Collection<X500DistinguishedName> getIssuerNames()
+  public Collection getIssuerNames()
   {
     return Collections.unmodifiableSet(issuerNames);
   }
@@ -114,19 +114,18 @@ public class X509CertSelectorImpl implements CertSelector
   public void addSubjectName(Principal subjectName) throws IOException
   {
     if (subjectName instanceof X500DistinguishedName)
-      subjectNames.add((X500DistinguishedName) subjectName);
+      subjectNames.add(subjectName);
     else if (subjectName instanceof X500Principal)
       subjectNames.add(new X500DistinguishedName(((X500Principal) subjectName).getEncoded()));
     else
       subjectNames.add(new X500DistinguishedName(subjectName.getName()));
   }
 
-  public Collection<X500DistinguishedName> getSubjectNames()
+  public Collection getSubjectNames()
   {
     return Collections.unmodifiableSet(subjectNames);
   }
 
-  @Override
   public Object clone()
   {
     X509CertSelectorImpl copy = new X509CertSelectorImpl();
@@ -135,7 +134,6 @@ public class X509CertSelectorImpl implements CertSelector
     return copy;
   }
 
-  @Override
   public boolean match(Certificate cert)
   {
     if (!(cert instanceof X509Certificate))
@@ -156,9 +154,9 @@ public class X509CertSelectorImpl implements CertSelector
           matchIssuer = true;
         else
           {
-            for (Iterator<X500DistinguishedName> it = issuerNames.iterator(); it.hasNext(); )
+            for (Iterator it = issuerNames.iterator(); it.hasNext(); )
               {
-                X500DistinguishedName name = it.next();
+                X500DistinguishedName name = (X500DistinguishedName) it.next();
                 if (thisName.equals(name))
                   {
                     matchIssuer = true;
@@ -179,9 +177,9 @@ public class X509CertSelectorImpl implements CertSelector
           matchSubject = true;
         else
           {
-            for (Iterator<X500DistinguishedName> it = subjectNames.iterator(); it.hasNext(); )
+            for (Iterator it = subjectNames.iterator(); it.hasNext(); )
               {
-                X500DistinguishedName name = it.next();
+                X500DistinguishedName name = (X500DistinguishedName) it.next();
                 if (thisName.equals(name))
                   {
                     matchSubject = true;

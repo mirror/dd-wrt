@@ -1,5 +1,5 @@
 /* Configuration.java
-   Copyright (C) 2004, 2006, 2014, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -38,11 +38,11 @@ exception statement from your version. */
 
 package javax.security.auth.login;
 
-import gnu.java.security.action.GetSecurityPropertyAction;
-
 import gnu.javax.security.auth.login.GnuConfiguration;
 
 import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
 
 import javax.security.auth.AuthPermission;
 
@@ -96,8 +96,14 @@ public abstract class Configuration
   {
     if (config == null)
       {
-        String conf = AccessController.doPrivileged
-          (new GetSecurityPropertyAction ("login.configuration.provider"));
+        String conf = (String) AccessController.doPrivileged
+          (new PrivilegedAction()
+            {
+              public Object run()
+              {
+                return Security.getProperty ("login.configuration.provider");
+              }
+            });
         try
           {
             if (conf != null)

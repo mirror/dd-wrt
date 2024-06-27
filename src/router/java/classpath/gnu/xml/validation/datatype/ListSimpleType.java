@@ -57,7 +57,7 @@ public class ListSimpleType
    */
   public final SimpleType itemType;
 
-  public ListSimpleType(QName name, Set<Facet> facets,
+  public ListSimpleType(QName name, Set facets,
                         int fundamentalFacets, SimpleType baseType,
                         Annotation annotation, SimpleType itemType)
   {

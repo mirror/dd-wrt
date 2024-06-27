@@ -1,5 +1,5 @@
 /* CertificateNotYetValidException.java -- certificate not yet valid exception.
-   Copyright (C) 2004, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -47,8 +47,6 @@ package javax.security.cert;
  */
 public class CertificateNotYetValidException extends CertificateException
 {
-
-  private static final long serialVersionUID = 4355919900041064702L;
 
   public CertificateNotYetValidException()
   {

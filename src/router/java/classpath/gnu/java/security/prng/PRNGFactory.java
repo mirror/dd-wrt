@@ -1,5 +1,5 @@
 /* PRNGFactory.java --
-   Copyright (C) 2001, 2002, 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -83,9 +83,9 @@ public class PRNGFactory
    * @return a {@link Set} of pseudo-random number generator algorithm names
    *         (Strings).
    */
-  public static final Set<String> getNames()
+  public static final Set getNames()
   {
-    HashSet<String> hs = new HashSet<String>();
+    HashSet hs = new HashSet();
     hs.add(MD_PRNG);
     return Collections.unmodifiableSet(hs);
   }

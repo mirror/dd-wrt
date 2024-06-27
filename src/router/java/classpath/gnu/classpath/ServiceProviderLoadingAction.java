@@ -1,5 +1,5 @@
 /* ServiceProviderLoadingAction.java -- Action for loading plug-in services.
-   Copyright (C) 2004, 2013 Free Software Foundation
+   Copyright (C) 2004  Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -133,10 +133,11 @@ final class ServiceProviderLoadingAction<P>
   public P run()
     throws Exception
   {
-    // This is safe as we check the class is of the correct type
-    @SuppressWarnings("unchecked")
-      Class<P> loadedClass = (Class<P>) loader.loadClass(providerName);
-    P serviceProvider = loadedClass.newInstance();
+    Class<P> loadedClass;
+    P serviceProvider;
+
+    loadedClass = (Class<P>) loader.loadClass(providerName);
+    serviceProvider = loadedClass.newInstance();
 
     // Ensure that the loaded provider is actually implementing
     // the service provider interface.

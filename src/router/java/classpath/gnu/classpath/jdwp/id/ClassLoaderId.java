@@ -1,5 +1,5 @@
 /* ClassLoaderId.java -- class loader IDs
-   Copyright (C) 2005, 2013 Free Software Foundation
+   Copyright (C) 2005 Free Software Foundation
 
 This file is part of GNU Classpath.
 
@@ -53,7 +53,7 @@ public class ClassLoaderId
   /**
    * The object class that this id represents
    */
-  public static final Class<ClassLoader> typeClass = ClassLoader.class;
+  public static final Class typeClass = ClassLoader.class;
 
   /**
    * Constructs a new <code>ClassLoaderId</code>

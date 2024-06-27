@@ -1,5 +1,5 @@
 /* RSAKeyPairPKCS8Codec.java -- PKCS#8 Encoding/Decoding handler
-   Copyright (C) 2006, 2010, 2014, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2006, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -71,7 +71,6 @@ public class RSAKeyPairPKCS8Codec
 
   // implicit 0-arguments constructor
 
-  @Override
   public int getFormatID()
   {
     return PKCS8_FORMAT;
@@ -80,7 +79,6 @@ public class RSAKeyPairPKCS8Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
-  @Override
   public byte[] encodePublicKey(PublicKey key)
   {
     throw new InvalidParameterException("Wrong format for public keys");
@@ -126,7 +124,6 @@ public class RSAKeyPairPKCS8Codec
    * @throw InvalidParameterException if an error occurs during the marshalling
    *        process.
    */
-  @Override
   public byte[] encodePrivateKey(PrivateKey key)
   {
     if (Configuration.DEBUG)
@@ -148,7 +145,7 @@ public class RSAKeyPairPKCS8Codec
 
     DERValue derOID = new DERValue(DER.OBJECT_IDENTIFIER, RSA_ALG_OID);
 
-    ArrayList<DERValue> algorithmID = new ArrayList<DERValue>(2);
+    ArrayList algorithmID = new ArrayList(2);
     algorithmID.add(derOID);
     algorithmID.add(new DERValue(DER.NULL, null));
     DERValue derAlgorithmID = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
@@ -164,7 +161,7 @@ public class RSAKeyPairPKCS8Codec
     DERValue derDQ = new DERValue(DER.INTEGER, dQ);
     DERValue derQInv = new DERValue(DER.INTEGER, qInv);
 
-    ArrayList<DERValue> rsaPrivateKey = new ArrayList<DERValue>();
+    ArrayList rsaPrivateKey = new ArrayList();
     rsaPrivateKey.add(derRSAVersion);
     rsaPrivateKey.add(derN);
     rsaPrivateKey.add(derE);
@@ -179,7 +176,7 @@ public class RSAKeyPairPKCS8Codec
     byte[] pkBytes = derRSAPrivateKey.getEncoded();
     DERValue derPrivateKey = new DERValue(DER.OCTET_STRING, pkBytes);
 
-    ArrayList<DERValue> pki = new ArrayList<DERValue>(3);
+    ArrayList pki = new ArrayList(3);
     pki.add(derVersion);
     pki.add(derAlgorithmID);
     pki.add(derPrivateKey);
@@ -206,7 +203,6 @@ public class RSAKeyPairPKCS8Codec
   /**
    * @throws InvalidParameterException ALWAYS.
    */
-  @Override
   public PublicKey decodePublicKey(byte[] input)
   {
     throw new InvalidParameterException("Wrong format for public keys");
@@ -220,7 +216,6 @@ public class RSAKeyPairPKCS8Codec
    * @throw InvalidParameterException if an exception occurs during the
    *        unmarshalling process.
    */
-  @Override
   public PrivateKey decodePrivateKey(byte[] input)
   {
     if (Configuration.DEBUG)

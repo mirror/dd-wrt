@@ -1,5 +1,5 @@
 /* Fortuna.java -- The Fortuna PRNG.
-   Copyright (C) 2004, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -118,8 +118,7 @@ public class Fortuna
     buffer = new byte[256];
   }
 
-  @Override
-  public void setup(Map<String,Object> attributes)
+  public void setup(Map attributes)
   {
     lastReseed = 0;
     reseedCount = 0;
@@ -228,9 +227,9 @@ public class Fortuna
       counter = new byte[cipher.defaultBlockSize()];
       buffer = new byte[cipher.defaultBlockSize()];
       int keysize = 0;
-      for (Iterator<Integer> it = cipher.keySizes(); it.hasNext();)
+      for (Iterator it = cipher.keySizes(); it.hasNext();)
         {
-          int ks = it.next().intValue();
+          int ks = ((Integer) it.next()).intValue();
           if (ks > keysize)
             keysize = ks;
           if (keysize >= 32)
@@ -239,7 +238,6 @@ public class Fortuna
       key = new byte[keysize];
     }
 
-    @Override
     public byte nextByte()
     {
       byte[] b = new byte[1];
@@ -247,7 +245,6 @@ public class Fortuna
       return b[0];
     }
 
-    @Override
     public void nextBytes(byte[] out, int offset, int length)
     {
       if (! seeded)
@@ -278,13 +275,11 @@ public class Fortuna
       ndx = 0;
     }
 
-    @Override
     public void addRandomByte(byte b)
     {
       addRandomBytes(new byte[] { b });
     }
 
-    @Override
     public void addRandomBytes(byte[] seed, int offset, int length)
     {
       hash.update(key);
@@ -296,7 +291,6 @@ public class Fortuna
       seeded = true;
     }
 
-    @Override
     public void fillBlock()
     {
       if (! seeded)
@@ -305,8 +299,7 @@ public class Fortuna
       incrementCounter();
     }
 
-    @Override
-    public void setup(Map<String,Object> attributes)
+    public void setup(Map attributes)
     {
       seeded = false;
       Arrays.fill(key, (byte) 0);
@@ -326,7 +319,7 @@ public class Fortuna
       try
         {
           cipher.reset();
-          cipher.init(Collections.singletonMap(IBlockCipher.KEY_MATERIAL, (Object) key));
+          cipher.init(Collections.singletonMap(IBlockCipher.KEY_MATERIAL, key));
         }
       // We expect to never get an exception here.
       catch (InvalidKeyException ike)

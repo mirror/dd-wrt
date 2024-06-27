@@ -37,12 +37,10 @@ exception statement from your version. */
 
 package gnu.xml.validation.xmlschema;
 
-import gnu.xml.validation.datatype.Annotation;
-import gnu.xml.validation.datatype.Type;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.xml.namespace.QName;
+import gnu.xml.validation.datatype.Type;
 
 /**
  * A complex type definition.
@@ -70,9 +68,7 @@ class ComplexType
 
   final boolean isAbstract;
 
-  // Currently both AttributeUse and QName objects
-  // are added to this.
-  Set<Object> attributeUses;
+  Set attributeUses;
 
   AnyAttribute attributeWildcard;
 
@@ -88,7 +84,7 @@ class ComplexType
 
   final int prohibitedSubstitutions;
 
-  Set<Annotation> annotations;
+  Set annotations;
 
   ComplexType(QName name,
               boolean isAbstract,
@@ -99,7 +95,7 @@ class ComplexType
     this.isAbstract = isAbstract;
     this.prohibitedSubstitutions = prohibitedSubstitutions;
     this.finality = finality;
-    attributeUses = new LinkedHashSet<Object>();
+    attributeUses = new LinkedHashSet();
   }
 
 }

@@ -1,5 +1,5 @@
 /* SubjectAlternatuveNames.java -- subject alternative names extension.
-   Copyright (C) 2004, 2006, 2015  Free Software Foundation, Inc.
+   Copyright (C) 2004, 2006  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -70,7 +70,6 @@ public class SubjectAlternativeNames extends Extension.Value
     return names.getNames();
   }
 
-  @Override
   public String toString()
   {
     return SubjectAlternativeNames.class.getName() + " [ " + names + " ]";

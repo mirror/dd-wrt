@@ -1,5 +1,5 @@
 /* RSASignatureFactory.java -- A Factory class to instantiate RSA Signatures
-   Copyright (C) 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2006 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -53,7 +53,7 @@ import gnu.java.security.sig.ISignature;
  */
 public class RSASignatureFactory
 {
-  private static Set<String> names;
+  private static Set names;
 
   /**
    * Private constructor to enforce usage through Factory (class) methods.
@@ -105,15 +105,15 @@ public class RSASignatureFactory
    *
    * @return a {@link Set} of RSA Signature algorithm names (Strings).
    */
-  public static synchronized final Set<String> getNames()
+  public static synchronized final Set getNames()
   {
     if (names == null)
       {
-        Set<String> hashNames = HashFactory.getNames();
-        HashSet<String> hs = new HashSet<String>();
-        for (Iterator<String> it = hashNames.iterator(); it.hasNext();)
+        Set hashNames = HashFactory.getNames();
+        HashSet hs = new HashSet();
+        for (Iterator it = hashNames.iterator(); it.hasNext();)
           {
-            String mdName = it.next();
+            String mdName = (String) it.next();
             hs.add(Registry.RSA_PSS_SIG + "-" + mdName);
           }
 

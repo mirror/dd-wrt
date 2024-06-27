@@ -1,6 +1,5 @@
 /* SignerInfo.java -- a SignerInfo object, from PKCS #7
-   Copyright (C) 2004, 2005, 2010. 2014, 2015
-   Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2010  Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -109,7 +108,7 @@ public class SignerInfo
       throw new BEREncodingException("malformed SignerInfo");
 
     val = ber.read();
-    if (val.getTag() != DER.INTEGER)
+    if (val.getTag() != BER.INTEGER)
       throw new BEREncodingException("malformed Version");
 
     version = (BigInteger) val.getValue();
@@ -132,7 +131,7 @@ public class SignerInfo
       log.fine("    Issuer: " + issuer);
 
     val = ber.read();
-    if (val.getTag() != DER.INTEGER)
+    if (val.getTag() != BER.INTEGER)
       throw new BEREncodingException("malformed SerialNumber");
 
     serialNumber = (BigInteger) val.getValue();
@@ -145,8 +144,9 @@ public class SignerInfo
     if (Configuration.DEBUG)
       log.fine("  DigestAlgorithmIdentifier: " + val);
 
+    int count = 0;
     DERValue val2 = ber.read();
-    if (val2.getTag() != DER.OBJECT_IDENTIFIER)
+    if (val2.getTag() != BER.OBJECT_IDENTIFIER)
       throw new BEREncodingException("malformed AlgorithmIdentifier");
 
     digestAlgorithmId = (OID) val2.getValue();
@@ -205,8 +205,9 @@ public class SignerInfo
       throw new BEREncodingException("malformed DigestEncryptionAlgorithmIdentifier");
     if (Configuration.DEBUG)
       log.fine("  DigestEncryptionAlgorithmIdentifier: " + val);
+    count = 0;
     val2 = ber.read();
-    if (val2.getTag() != DER.OBJECT_IDENTIFIER)
+    if (val2.getTag() != BER.OBJECT_IDENTIFIER)
       throw new BEREncodingException("malformed AlgorithmIdentifier");
 
     digestEncryptionAlgorithmId = (OID) val2.getValue();
@@ -243,7 +244,7 @@ public class SignerInfo
                                  "    digestEncryptionAlgorithm params: "));
       }
     val = ber.read();
-    if (val.getTag() != DER.OCTET_STRING)
+    if (val.getTag() != BER.OCTET_STRING)
       throw new BEREncodingException("malformed EncryptedDigest");
 
     encryptedDigest = (byte[]) val.getValue();
@@ -389,7 +390,7 @@ public class SignerInfo
 
     DERValue derDigestAlgorithmOID = new DERValue(DER.OBJECT_IDENTIFIER,
                                                   digestAlgorithmId);
-    ArrayList<DERValue> digestAlgorithmIdentifier = new ArrayList<DERValue>(1);
+    ArrayList digestAlgorithmIdentifier = new ArrayList(1);
     digestAlgorithmIdentifier.add(derDigestAlgorithmOID);
     DERValue derDigestAlgorithmIdentifier =
         new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, digestAlgorithmIdentifier);
@@ -403,7 +404,7 @@ public class SignerInfo
 
     DERValue derDigestEncryptionAlgorithmOID =
         new DERValue(DER.OBJECT_IDENTIFIER, digestEncryptionAlgorithmId);
-    ArrayList<DERValue> digestEncryptionAlgorithmIdentifier = new ArrayList<DERValue>(1);
+    ArrayList digestEncryptionAlgorithmIdentifier = new ArrayList(1);
     digestEncryptionAlgorithmIdentifier.add(derDigestEncryptionAlgorithmOID);
     DERValue derDigestEncryptionAlgorithmIdentifier =
         new DERValue(DER.CONSTRUCTED | DER.SEQUENCE, digestEncryptionAlgorithmIdentifier);
@@ -417,14 +418,12 @@ public class SignerInfo
       derUnauthenticatedAttributes = new DERValue(DER.CONSTRUCTED | DER.SET,
                                                   unauthenticatedAttributes);
 
-    ArrayList<DERValue> signerInfo = new ArrayList<DERValue>(7);
+    ArrayList signerInfo = new ArrayList(5);
     signerInfo.add(derVersion);
     signerInfo.add(derIssuerAndSerialNumber);
     signerInfo.add(derDigestAlgorithmIdentifier);
-    signerInfo.add(derAuthenticatedAttributes);
     signerInfo.add(derDigestEncryptionAlgorithmIdentifier);
     signerInfo.add(derEncryptedDigest);
-    signerInfo.add(derUnauthenticatedAttributes);
     DERValue derSignerInfo = new DERValue(DER.CONSTRUCTED | DER.SEQUENCE,
                                           signerInfo);
     DERWriter.write(out, derSignerInfo);

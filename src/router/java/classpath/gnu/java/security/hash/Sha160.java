@@ -1,5 +1,5 @@
 /* Sha160.java --
-   Copyright (C) 2001, 2002, 2006, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2002, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -102,7 +102,7 @@ public class Sha160
     this.h3 = md.h3;
     this.h4 = md.h4;
     this.count = md.count;
-    this.buffer = md.buffer.clone();
+    this.buffer = (byte[]) md.buffer.clone();
   }
 
   public static final int[] G(int hh0, int hh1, int hh2, int hh3, int hh4,
@@ -111,13 +111,11 @@ public class Sha160
     return sha(hh0, hh1, hh2, hh3, hh4, in, offset);
   }
 
-  @Override
   public Object clone()
   {
     return new Sha160(this);
   }
 
-  @Override
   protected void transform(byte[] in, int offset)
   {
     int[] result = sha(h0, h1, h2, h3, h4, in, offset);
@@ -128,7 +126,6 @@ public class Sha160
     h4 = result[4];
   }
 
-  @Override
   protected byte[] padBuffer()
   {
     int n = (int)(count % BLOCK_SIZE);
@@ -149,7 +146,6 @@ public class Sha160
     return result;
   }
 
-  @Override
   protected byte[] getResult()
   {
     return new byte[] {
@@ -160,7 +156,6 @@ public class Sha160
         (byte)(h4 >>> 24), (byte)(h4 >>> 16), (byte)(h4 >>> 8), (byte) h4 };
   }
 
-  @Override
   protected void resetContext()
   {
     // magic SHA-1/RIPEMD160 initialisation constants
@@ -171,7 +166,6 @@ public class Sha160
     h4 = 0xC3D2E1F0;
   }
 
-  @Override
   public boolean selfTest()
   {
     if (valid == null)

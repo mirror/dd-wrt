@@ -1,5 +1,5 @@
 /* SAXNullTransformerFactory.java --
-   Copyright (C) 2001, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2001 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -517,7 +517,7 @@ public class SAXNullTransformerFactory extends SAXTransformerFactory
 
     private URIResolver         uriResolver;
     private Properties          props = new Properties ();
-    private Hashtable<Object,Object> params = new Hashtable<Object,Object>(7);
+    private Hashtable           params = new Hashtable (7);
 
     ErrorListener                       errListener = null;
     TransformerException                ex = null;

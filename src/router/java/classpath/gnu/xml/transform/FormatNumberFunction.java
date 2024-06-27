@@ -1,5 +1,5 @@
 /* FormatNumberFunction.java --
-   Copyright (C) 2004, 2015 Free Software Foundation, Inc.
+   Copyright (C) 2004 Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
 
@@ -60,14 +60,13 @@ final class FormatNumberFunction
 {
 
   final Stylesheet stylesheet;
-  List<Expr> args;
+  List args;
 
   FormatNumberFunction(Stylesheet stylesheet)
   {
     this.stylesheet = stylesheet;
   }
 
-  @SuppressWarnings("rawtypes")
   public Object evaluate(List args)
     throws XPathFunctionException
   {
@@ -75,7 +74,7 @@ final class FormatNumberFunction
     return Collections.EMPTY_SET;
   }
 
-  public void setArguments(List<Expr> args)
+  public void setArguments(List args)
   {
     this.args = args;
   }
@@ -83,10 +82,10 @@ final class FormatNumberFunction
   public Object evaluate(Node context, int pos, int len)
   {
     int arity = args.size();
-    List<Object> values = new ArrayList<Object>(arity);
+    List values = new ArrayList(arity);
     for (int i = 0; i < arity; i++)
       {
-        Expr arg = args.get(i);
+        Expr arg = (Expr) args.get(i);
         values.add(arg.evaluate(context, pos, len));
       }
     double number = _number(context, values.get(0));
@@ -103,7 +102,7 @@ final class FormatNumberFunction
         dfName = _string(context, values.get(2));
         // otherwise the default decimal-format will be used
       }
-    DecimalFormat df = stylesheet.decimalFormats.get(dfName);
+    DecimalFormat df = (DecimalFormat) stylesheet.decimalFormats.get(dfName);
     if (df == null)
       {
         throw new IllegalArgumentException("No such decimal-format: " +
@@ -122,10 +121,10 @@ final class FormatNumberFunction
       }
     FormatNumberFunction f = new FormatNumberFunction(s);
     int len = args.size();
-    List<Expr> args2 = new ArrayList<Expr>(len);
+    List args2 = new ArrayList(len);
     for (int i = 0; i < len; i++)
       {
-        args2.add(args.get(i).clone(context));
+        args2.add(((Expr) args.get(i)).clone(context));
       }
     f.setArguments(args2);
     return f;
@@ -133,9 +132,9 @@ final class FormatNumberFunction
 
   public boolean references(QName var)
   {
-    for (Iterator<Expr> i = args.iterator(); i.hasNext(); )
+    for (Iterator i = args.iterator(); i.hasNext(); )
       {
-        if (i.next().references(var))
+        if (((Expr) i.next()).references(var))
           {
             return true;
           }

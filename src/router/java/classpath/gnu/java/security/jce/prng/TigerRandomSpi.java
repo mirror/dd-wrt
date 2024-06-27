@@ -1,5 +1,5 @@
 /* TigerRandomSpi.java --
-   Copyright (C) 2003, 2006, 2014 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006 Free Software Foundation, Inc.
 
 This file is a part of GNU Classpath.
 
@@ -47,8 +47,6 @@ import gnu.java.security.Registry;
 public class TigerRandomSpi
     extends SecureRandomAdapter
 {
-  private static final long serialVersionUID = -4562391018186836733L;
-
   public TigerRandomSpi()
   {
     super(Registry.TIGER_HASH);

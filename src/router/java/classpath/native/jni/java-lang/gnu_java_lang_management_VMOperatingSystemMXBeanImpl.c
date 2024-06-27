@@ -1,5 +1,5 @@
 /* VMOperatingSystemMXBeanImpl.c - gnu.java.lang.management native functions
-   Copyright (C) 2006, 2014
+   Copyright (C) 2006
    Free Software Foundation, Inc.
 
 This file is part of GNU Classpath.
@@ -38,7 +38,11 @@ exception statement from your version. */
 
 #include <config.h>
 
+#if defined HAVE_SYS_LOADAVG_H /* Get getloadavg() on Solaris 9 */
+#include <sys/loadavg.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include "gnu_java_lang_management_VMOperatingSystemMXBeanImpl.h"
 
