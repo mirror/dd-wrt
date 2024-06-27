@@ -35,6 +35,7 @@ i[[3456]]86-*-linux*) host_cpu=i386 host_os=linux ;;
 arm*-*-darwin*) host_cpu=arm host_os=darwin libdl_needed=no ;;
 i386-*-openbsd*) host_os=bsd libdl_needed=no ;;
 i386-*-freebsd*) host_os=bsd libdl_needed=no ;;
+mips*-*-linux*) host_cpu=mips host_os=linux ;;
 x86_64-*-linux*) host_os=linux ;;
 x86_64-*-darwin*) host_os=darwin ;;
 x86_64-*-openbsd*) host_os=bsd libdl_needed=no ;;
@@ -42,6 +43,10 @@ x86_64-*-freebsd*) host_os=bsd libdl_needed=no ;;
 arm*-*-linux*) host_cpu=arm host_os=linux interp_cflags=-marm ;;
 arm*-*-openbsd*) host_cpu=arm host_os=bsd libdl_needed=no ;;
 arm*-*-freebsd*) host_cpu=arm host_os=bsd libdl_needed=no ;;
+powerpc*-*-linux*) host_cpu=powerpc host_os=linux ;;
+powerpc*-*-openbsd*) host_cpu=powerpc host_os=bsd libdl_needed=no ;;
+powerpc*-*-freebsd*) host_cpu=powerpc host_os=bsd libdl_needed=no ;;
+powerpc-*-darwin*) host_os=darwin ;;
 aarch64*-*-linux*) host_cpu=aarch64 host_os=linux ;;
 *) AC_MSG_ERROR($host not supported) ;;
 esac
@@ -312,9 +317,11 @@ AC_CONFIG_FILES(
     src/os/linux/Makefile \
     src/os/darwin/Makefile \
     src/os/bsd/Makefile \
+    src/os/linux/powerpc/Makefile \
     src/os/linux/arm/Makefile \
     src/os/linux/i386/Makefile \
     src/os/linux/x86_64/Makefile \
+    src/os/linux/mips/Makefile \
     src/os/linux/aarch64/Makefile \
     src/os/darwin/x86_64/Makefile \
     src/os/darwin/arm/Makefile \
