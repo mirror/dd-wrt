@@ -2878,9 +2878,19 @@ static int qcom_read_id_type_exec(struct nand_chip *chip, const struct nand_subo
 	instr = q_op.data_instr;
 	op_id = q_op.data_instr_idx;
 	len = nand_subop_get_data_len(subop, op_id);
+	if (nandc->props->is_serial_nand) {
+		/* For spi nand read 2-bytes id only
+		 * else if nandc->buf_count == 4; then the id value
+		 * will repeat and the SLC device will be detect as MLC.
+		 * by nand base layer
+		 * so overwrite the nandc->buf_count == 2;
+		 */
+		len = 2;
+	}
 
 	nandc_read_buffer_sync(nandc, true);
 	memcpy(instr->ctx.data.buf.in, nandc->reg_read_buf, len);
+	printk(KERN_INFO "%X\n", nandc->reg_read_buf[0]);
 
 err_out:
 	return ret;
@@ -3017,11 +3027,6 @@ static int qcom_param_page_type_exec(struct nand_chip *chip,  const struct nand_
 
 	nandc->buf_count = len;
 	memset(nandc->data_buffer, 0xff, nandc->buf_count);
-	if (nandc->props->is_serial_nand) {
-		printk(KERN_INFO "buf count is %d\n" , nandc->buf_count);
-		memset(nandc->data_buffer, 0x00, nandc->buf_count);
-		nandc->buf_count = 2;
-	}
 
 	config_nand_single_cw_page_read(chip, false, 0);
 
