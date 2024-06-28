@@ -1183,7 +1183,7 @@ ssdk_mp_tcsr_get(a_uint32_t tcsr_offset, a_uint32_t *tcsr_val)
 {
 	void __iomem *tcsr_base = NULL;
 
-	tcsr_base = ioremap_nocache(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
+	tcsr_base = ioremap(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
 	if (!tcsr_base)
 	{
 		SSDK_ERROR("Failed to map tcsr eth address!\n");
@@ -1200,7 +1200,7 @@ ssdk_mp_tcsr_set(a_uint32_t tcsr_offset, a_uint32_t tcsr_val)
 {
 	void __iomem *tcsr_base = NULL;
 
-	tcsr_base = ioremap_nocache(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
+	tcsr_base = ioremap(TCSR_ETH_ADDR, TCSR_ETH_SIZE);
 	if (!tcsr_base)
 	{
 		SSDK_ERROR("Failed to map tcsr eth address!\n");
@@ -1248,7 +1248,7 @@ ssdk_mp_cmnblk_stable_check(void)
 	a_uint32_t reg_val;
 	int i, loops = 20;
 
-	pll_lock = ioremap_nocache(CMN_PLL_LOCKED_ADDR, CMN_PLL_LOCKED_SIZE);
+	pll_lock = ioremap(CMN_PLL_LOCKED_ADDR, CMN_PLL_LOCKED_SIZE);
 	if (!pll_lock) {
 		SSDK_ERROR("Failed to map CMN PLL LOCK register!\n");
 		return A_FALSE;
@@ -1305,7 +1305,7 @@ static void ssdk_cmnblk_pll_src_set(enum cmnblk_pll_src_type pll_source)
 	void __iomem *cmn_pll_src_base = NULL;
 	a_uint32_t reg_val;
 
-	cmn_pll_src_base = ioremap_nocache(CMN_BLK_PLL_SRC_ADDR, CMN_BLK_SIZE);
+	cmn_pll_src_base = ioremap(CMN_BLK_PLL_SRC_ADDR, CMN_BLK_SIZE);
 	if (!cmn_pll_src_base) {
 		SSDK_ERROR("Failed to map cmn pll source address!\n");
 		return;
@@ -2114,6 +2114,7 @@ void ssdk_gcc_clock_init(void)
 	} else if (of_device_is_compatible(clock_node,
 			"qcom,ess-switch-ipq50xx")) {
 #if defined(MP)
+		printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 		ssdk_gcc_mp_clock_init(cmnblk_clk_mode);
 #endif
 	} else if (of_device_is_compatible(clock_node,
