@@ -634,10 +634,19 @@ static int32_t nss_dp_of_get_pdata(struct device_node *np,
 	}
 
 	dp_priv->phy_node = of_parse_phandle(np, "phy-handle", 0);
-	if (!dp_priv->phy_node) {
-		pr_err("%s: error parsing phy-handle\n", np->name);
-		return -EFAULT;
+	if(!dp_priv->phy_node) {
+		if(of_phy_is_fixed_link(np)) {
+			int ret = of_phy_register_fixed_link(np);
+			if(ret < 0) {
+				pr_err("%s: fail to register fixed-link: %d\n", np->name, ret);
+				return -EFAULT;
+			}
+		}
+		dp_priv->phy_node = of_node_get(np);
 	}
+
+	if(!dp_priv->phy_node)
+		pr_err("%s: no phy-handle or fixed-link found\n", np->name);
 
 	if (of_property_read_u32(np, "qcom,mactype", &hal_pdata->mactype)) {
 		pr_err("%s: error reading mactype\n", np->name);
