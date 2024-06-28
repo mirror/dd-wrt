@@ -7,6 +7,11 @@
 #define QCOM_MDT_TYPE_MASK	(7 << 24)
 #define QCOM_MDT_TYPE_HASH	(2 << 24)
 #define QCOM_MDT_RELOCATABLE	BIT(27)
+#define QCOM_MDT_ASID_MASK      0xfu
+#define QCOM_MDT_PF_ASID_SHIFT  16
+#define QCOM_MDT_PF_ASID_MASK   (QCOM_MDT_ASID_MASK << QCOM_MDT_PF_ASID_SHIFT)
+#define QCOM_MDT_PF_ASID(x)     \
+			(((x) >> QCOM_MDT_PF_ASID_SHIFT) & QCOM_MDT_ASID_MASK)
 
 struct device;
 struct firmware;
@@ -27,6 +32,10 @@ int qcom_mdt_load_no_init(struct device *dev, const struct firmware *fw,
 			  const char *fw_name, int pas_id, void *mem_region,
 			  phys_addr_t mem_phys, size_t mem_size,
 			  phys_addr_t *reloc_base);
+int qcom_mdt_load_pd_seg(struct device *dev, const struct firmware *fw,
+			 const char *fw_name, int pas_id, void *mem_region,
+			 phys_addr_t mem_phys, size_t mem_size,
+			 phys_addr_t *reloc_base);
 void *qcom_mdt_read_metadata(const struct firmware *fw, size_t *data_len,
 			     const char *fw_name, struct device *dev);
 
@@ -58,6 +67,16 @@ static inline int qcom_mdt_load_no_init(struct device *dev,
 					void *mem_region, phys_addr_t mem_phys,
 					size_t mem_size,
 					phys_addr_t *reloc_base)
+{
+	return -ENODEV;
+}
+
+static inline int qcom_mdt_load_pd_seg(struct device *dev,
+				       const struct firmware *fw,
+				       const char *fw_name, int pas_id,
+				       void *mem_region, phys_addr_t mem_phys,
+				       size_t mem_size,
+				       phys_addr_t *reloc_base)
 {
 	return -ENODEV;
 }

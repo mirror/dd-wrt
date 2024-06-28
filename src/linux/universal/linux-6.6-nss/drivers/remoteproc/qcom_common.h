@@ -76,4 +76,13 @@ static inline bool qcom_sysmon_shutdown_acked(struct qcom_sysmon *sysmon)
 }
 #endif
 
+#if IS_ENABLED(CONFIG_QCOM_Q6V5_MPD)
+s8 qcom_get_pd_asid(struct device_node *node);
+#else
+static inline s8 qcom_get_pd_asid(struct device_node *node)
+{
+	return 0;
+}
+#endif
+
 #endif

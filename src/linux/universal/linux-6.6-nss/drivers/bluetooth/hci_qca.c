@@ -70,6 +70,10 @@
 #define QCA_CRASHBYTE_PACKET_LEN	1096
 #define QCA_MEMDUMP_BYTE		0xFB
 
+#ifndef IOCTL_IPC_BOOT
+#define IOCTL_IPC_BOOT                  0xBE
+#endif
+
 enum qca_flags {
 	QCA_IBS_DISABLED,
 	QCA_DROP_VENDOR_EVENT,
@@ -1420,6 +1424,9 @@ static unsigned int qca_get_speed(struct hci_uart *hu,
 {
 	unsigned int speed = 0;
 
+	if (qca_is_maple(qca_soc_type(hu)))
+		return 0;
+
 	if (speed_type == QCA_INIT_SPEED) {
 		if (hu->init_speed)
 			speed = hu->init_speed;
@@ -1449,6 +1456,9 @@ static int qca_check_speeds(struct hci_uart *hu)
 		    !qca_get_speed(hu, QCA_OPER_SPEED))
 			return -EINVAL;
 		break;
+
+	case QCA_MAPLE:
+		return 0;
 
 	default:
 		if (!qca_get_speed(hu, QCA_INIT_SPEED) ||
@@ -1770,6 +1780,21 @@ static int qca_regulator_init(struct hci_uart *hu)
 	return 0;
 }
 
+static int qca_maple_power_control(struct hci_uart *hu, bool on)
+{
+	int ret;
+	int power_arg = on ? 1 : 0;
+
+	ret = serdev_device_ioctl(hu->serdev, IOCTL_IPC_BOOT, power_arg);
+	if (ret)
+		bt_dev_err(hu->hdev, "%s: power %s failure: %d\n", __func__,
+			   on ? "ON" : "OFF", ret);
+	else
+		msleep(MAPLE_POWER_CONTROL_DELAY_MS);
+
+	return ret;
+}
+
 static int qca_power_on(struct hci_dev *hdev)
 {
 	struct hci_uart *hu = hci_get_drvdata(hdev);
@@ -1793,6 +1818,10 @@ static int qca_power_on(struct hci_dev *hdev)
 	case QCA_WCN6855:
 	case QCA_WCN7850:
 		ret = qca_regulator_init(hu);
+		break;
+
+	case QCA_MAPLE:
+		ret = qca_maple_power_control(hu, true);
 		break;
 
 	default:
@@ -1854,6 +1883,10 @@ static int qca_setup(struct hci_uart *hu)
 	case QCA_WCN3991:
 	case QCA_WCN3998:
 		soc_name = "wcn399x";
+		break;
+
+	case QCA_MAPLE:
+		soc_name = "maple";
 		break;
 
 	case QCA_WCN6750:
@@ -1936,7 +1969,10 @@ retry:
 	ret = qca_uart_setup(hdev, qca_baudrate, soc_type, ver,
 			firmware_name);
 	if (!ret) {
-		clear_bit(QCA_IBS_DISABLED, &qca->flags);
+		if (qca_is_maple(soc_type))
+			set_bit(QCA_ROM_FW, &qca->flags);
+		else
+			clear_bit(QCA_IBS_DISABLED, &qca->flags);
 		qca_debugfs_init(hdev);
 		hu->hdev->hw_error = qca_hw_error;
 		hu->hdev->cmd_timeout = qca_cmd_timeout;
@@ -2056,6 +2092,11 @@ static const struct qca_device_data qca_soc_data_qca6390 __maybe_unused = {
 	.capabilities = QCA_CAP_WIDEBAND_SPEECH | QCA_CAP_VALID_LE_STATES,
 };
 
+static const struct qca_device_data qca_soc_data_maple __maybe_unused = {
+	.soc_type = QCA_MAPLE,
+	.num_vregs = 0,
+};
+
 static const struct qca_device_data qca_soc_data_wcn6750 __maybe_unused = {
 	.soc_type = QCA_WCN6750,
 	.vregs = (struct qca_vreg []) {
@@ -2134,6 +2175,10 @@ static void qca_power_shutdown(struct hci_uart *hu)
 		host_set_baudrate(hu, 2400);
 		qca_send_power_pulse(hu, false);
 		qca_regulator_disable(qcadev);
+		break;
+
+	case QCA_MAPLE:
+		qca_maple_power_control(hu, false);
 		break;
 
 	case QCA_WCN6750:
@@ -2339,6 +2384,13 @@ static int qca_serdev_probe(struct serdev_device *serdev)
 		}
 		break;
 
+	case QCA_MAPLE:
+		dev_info(&serdev->dev, "Maple: power ctrl enabled\n");
+		err = hci_uart_register_device(&qcadev->serdev_hu, &qca_proto);
+		if (err)
+			return err;
+		break;
+
 	default:
 		qcadev->bt_en = devm_gpiod_get_optional(&serdev->dev, "enable",
 					       GPIOD_OUT_LOW);
@@ -2411,6 +2463,10 @@ static void qca_serdev_remove(struct serdev_device *serdev)
 			break;
 		}
 		fallthrough;
+
+	case QCA_MAPLE:
+		qca_power_shutdown(&qcadev->serdev_hu);
+		break;
 
 	default:
 		if (qcadev->susclk)
@@ -2592,6 +2648,7 @@ static const struct of_device_id qca_bluetooth_of_match[] = {
 	{ .compatible = "qcom,qca2066-bt", .data = &qca_soc_data_qca2066},
 	{ .compatible = "qcom,qca6174-bt" },
 	{ .compatible = "qcom,qca6390-bt", .data = &qca_soc_data_qca6390},
+	{ .compatible = "qcom,maple-bt", .data = &qca_soc_data_maple},
 	{ .compatible = "qcom,qca9377-bt" },
 	{ .compatible = "qcom,wcn3988-bt", .data = &qca_soc_data_wcn3988},
 	{ .compatible = "qcom,wcn3990-bt", .data = &qca_soc_data_wcn3990},

@@ -81,6 +81,9 @@ extern int qcom_scm_pas_mem_setup(u32 peripheral, phys_addr_t addr,
 extern int qcom_scm_pas_auth_and_reset(u32 peripheral);
 extern int qcom_scm_pas_shutdown(u32 peripheral);
 extern bool qcom_scm_pas_supported(u32 peripheral);
+int qcom_scm_pas_power_up(u32 peripheral);
+int qcom_scm_pas_power_down(u32 peripheral);
+int qcom_scm_pas_load_seg(u32 peripheral, int phno, dma_addr_t dma, int seg_cnt);
 
 extern int qcom_scm_io_readl(phys_addr_t addr, unsigned int *val);
 extern int qcom_scm_io_writel(phys_addr_t addr, unsigned int val);
@@ -121,5 +124,6 @@ extern int qcom_scm_lmh_dcvsh(u32 payload_fn, u32 payload_reg, u32 payload_val,
 			      u64 limit_node, u32 node_id, u64 version);
 extern int qcom_scm_lmh_profile_change(u32 profile_id);
 extern bool qcom_scm_lmh_dcvsh_available(void);
+extern int qcom_scm_load_otp(u32 peripheral);
 
 #endif

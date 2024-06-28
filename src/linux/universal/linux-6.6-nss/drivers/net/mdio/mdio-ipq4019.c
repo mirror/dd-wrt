@@ -12,6 +12,7 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <linux/reset.h>
 
 #define MDIO_MODE_REG				0x40
 #define   MDIO_MODE_MDC_MODE			BIT(12)
@@ -51,6 +52,7 @@
 struct ipq4019_mdio_data {
 	void __iomem	*membase;
 	void __iomem *eth_ldo_rdy;
+	struct reset_control *rst;
 	struct clk *mdio_clk;
 	unsigned int mdc_rate;
 };
@@ -263,6 +265,10 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 		fsleep(IPQ_PHY_SET_DELAY_US);
 	}
 
+	ret = reset_control_reset(priv->rst);
+	if (ret)
+		return ret;
+
 	/* Configure MDIO clock source frequency if clock is specified in the device tree */
 	ret = clk_set_rate(priv->mdio_clk, IPQ_MDIO_CLK_RATE);
 	if (ret)
@@ -339,6 +345,10 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	priv->membase = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(priv->membase))
 		return PTR_ERR(priv->membase);
+
+	priv->rst = devm_reset_control_array_get_optional_exclusive(&pdev->dev);
+	if (IS_ERR(priv->rst))
+		return PTR_ERR(priv->rst);
 
 	priv->mdio_clk = devm_clk_get_optional(&pdev->dev, "gcc_mdio_ahb_clk");
 	if (IS_ERR(priv->mdio_clk))

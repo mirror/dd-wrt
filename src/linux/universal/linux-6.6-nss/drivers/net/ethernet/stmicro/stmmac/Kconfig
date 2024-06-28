@@ -78,6 +78,13 @@ config DWMAC_INGENIC
 	  device driver. This driver is used on for the Ingenic SoCs
 	  MAC ethernet controller.
 
+config DWMAC_IPQ50XX
+	tristate "Qualcomm IPQ50xx DWMAC driver"
+	default ARCH_QCOM
+	depends on OF && (ARCH_QCOM || COMPILE_TEST)
+	help
+	  Support for the Qualcomm IPQ50xx DWMAC.
+
 config DWMAC_IPQ806X
 	tristate "QCA IPQ806x DWMAC support"
 	default ARCH_QCOM

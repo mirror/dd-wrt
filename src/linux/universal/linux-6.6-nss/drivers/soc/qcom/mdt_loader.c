@@ -16,6 +16,56 @@
 #include <linux/sizes.h>
 #include <linux/slab.h>
 #include <linux/soc/qcom/mdt_loader.h>
+#include <linux/dma-mapping.h>
+
+#include "../../remoteproc/qcom_common.h"
+#define PDSEG_PAS_ID    0xD
+
+/**
+ * struct region - structure passed to TrustZone
+ * @addr:	address of dma region, where dma blocks/chunks address resides
+ * @blk_size:	size of each block
+ */
+struct region {
+	u64 addr;
+	unsigned int blk_size;
+};
+
+/**
+ * struct pdseg_dma_mem_info
+ * @tz_addr:			reference to structure passed to trustzone
+ * @blocks:			no of blocks
+ * @tz_dma:			dma handle of tz_addr
+ * @dma_blk_arr_addr_phys:	dma handle of dma_blk_arr_addr
+ * @dma_blk_arr_addr:		VA of dma array, where each index points to
+ *				dma block PA
+ * @pt:				stores VA of each block
+ *
+ *
+	   ----	     ----	----
+ DMA       |  |	     |  |	|  |
+ blocks	   ----      ----	----
+	    |          |   	  |
+	    |-----|    |   |-------
+		  |    |   |
+ Array of 	--------------
+ pointers	|    |	 |   | dma_blk_arr_addr_phys
+		--------------
+			|
+			|
+ Address referred   tz_addr->addr
+ by trustzone
+ to get dma blocks
+ */
+
+struct pdseg_dma_mem_info {
+	struct region *tz_addr;
+	int blocks;
+	dma_addr_t tz_dma;
+	dma_addr_t dma_blk_arr_addr_phys;
+	u64 *dma_blk_arr_addr;
+	void **pt;
+};
 
 static bool mdt_phdr_valid(const struct elf32_phdr *phdr)
 {
@@ -393,6 +443,261 @@ static int __qcom_mdt_load(struct device *dev, const struct firmware *fw,
 	return ret;
 }
 
+static int allocate_dma_mem(struct device *dev,
+			    struct pdseg_dma_mem_info *pd_dma,
+			    int max_size)
+{
+	dma_addr_t dma_tmp = 0;
+	int i;
+
+	pd_dma->blocks = DIV_ROUND_UP(max_size, PAGE_SIZE);
+
+	/* Allocate dma memory for structure passed to trust zone */
+	pd_dma->tz_addr = dma_alloc_coherent(dev, sizeof(struct region),
+					     &pd_dma->tz_dma, GFP_DMA);
+	if (!pd_dma->tz_addr) {
+		pr_err("Error in dma alloc\n");
+		return -ENOMEM;
+	}
+
+	/* Allocate dma memory to store array of blocks PA */
+	pd_dma->dma_blk_arr_addr =
+			dma_alloc_coherent(dev, (pd_dma->blocks * sizeof(u64)),
+					   &pd_dma->dma_blk_arr_addr_phys, GFP_DMA);
+	if (!pd_dma->dma_blk_arr_addr) {
+		pr_err("Error in dma alloc\n");
+		goto free_tz_dma_alloc;
+	}
+
+	/* Assign dma block array PA to trustzone structure addr variable */
+	memcpy(&pd_dma->tz_addr->addr, &pd_dma->dma_blk_arr_addr_phys,
+	       sizeof(dma_addr_t));
+
+	/* Allocate memory to store array of blocks VA */
+	pd_dma->pt = kzalloc(pd_dma->blocks * sizeof(void *), GFP_KERNEL);
+	if (!pd_dma->pt) {
+		pr_err("Error in memory alloc\n");
+		goto free_dma_blk_arr_alloc;
+	}
+
+	for (i = 0; i < pd_dma->blocks; i++) {
+		/* Allocate dma memory for blocks with PAGE_SIZE each */
+		pd_dma->pt[i] = dma_alloc_coherent(dev, PAGE_SIZE,
+						   &dma_tmp, GFP_DMA);
+		if (!pd_dma->pt[i]) {
+			pr_err("Error in dma alloc i:%d - blocks:%d\n", i,
+			       pd_dma->blocks);
+			goto free_mem_alloc;
+		}
+
+		/* Assign dma block PA to dma_blk_arr_addr */
+		memcpy(&pd_dma->dma_blk_arr_addr[i], &dma_tmp,
+		       sizeof(dma_addr_t));
+	}
+	pd_dma->tz_addr->blk_size = PAGE_SIZE;
+	return 0;
+
+free_mem_alloc:
+	i = 0;
+	while (i < pd_dma->blocks && pd_dma->pt[i]) {
+		memcpy(&dma_tmp, &pd_dma->dma_blk_arr_addr[i],
+		       sizeof(dma_addr_t));
+		dma_free_coherent(dev, PAGE_SIZE, pd_dma->pt[i], dma_tmp);
+		i++;
+	}
+	kfree(pd_dma->pt);
+free_dma_blk_arr_alloc:
+	dma_free_coherent(dev, (pd_dma->blocks * sizeof(u64)),
+			  pd_dma->dma_blk_arr_addr,
+			  pd_dma->dma_blk_arr_addr_phys);
+free_tz_dma_alloc:
+	dma_free_coherent(dev, sizeof(struct region), pd_dma->tz_addr,
+			  pd_dma->tz_dma);
+
+	return -ENOMEM;
+}
+
+static void free_dma_mem(struct device *dev, struct pdseg_dma_mem_info *pd_dma)
+{
+	int i;
+	dma_addr_t dma_tmp = 0;
+
+	for (i = 0; i < pd_dma->blocks; i++) {
+		memcpy(&dma_tmp, &pd_dma->dma_blk_arr_addr[i],
+		       sizeof(dma_addr_t));
+		dma_free_coherent(dev, PAGE_SIZE, pd_dma->pt[i],
+				  dma_tmp);
+	}
+
+	dma_free_coherent(dev, (pd_dma->blocks * sizeof(u64)),
+			  pd_dma->dma_blk_arr_addr,
+			  pd_dma->dma_blk_arr_addr_phys);
+
+	dma_free_coherent(dev, sizeof(struct region), pd_dma->tz_addr,
+			  pd_dma->tz_dma);
+	kfree(pd_dma->pt);
+}
+
+static int memcpy_pdseg_to_dma_blk(const char *fw_name, struct device *dev,
+				   int ph_no, struct pdseg_dma_mem_info *pd_dma)
+{
+	const struct firmware *seg_fw;
+	int ret, offset_tmp = 0, tmp = 0;
+	size_t size = 0;
+
+	ret = request_firmware(&seg_fw, fw_name, dev);
+	if (ret) {
+		dev_err(dev, "failed to load %s\n", fw_name);
+		return ret;
+	}
+	size = seg_fw->size < PAGE_SIZE ?
+		seg_fw->size : PAGE_SIZE;
+	while (tmp < pd_dma->blocks && size) {
+		/* Clear last block and copy data */
+		if ((tmp + 1) == pd_dma->blocks)
+			memset_io(pd_dma->pt[tmp], 0, PAGE_SIZE);
+		memcpy_toio(pd_dma->pt[tmp], seg_fw->data + offset_tmp, size);
+		tmp++;
+		offset_tmp += size;
+		if ((seg_fw->size - offset_tmp) < PAGE_SIZE)
+			size = seg_fw->size - offset_tmp;
+	}
+	release_firmware(seg_fw);
+	ret = qcom_scm_pas_load_seg(PDSEG_PAS_ID, ph_no, pd_dma->tz_dma,
+				      tmp);
+	if (ret) {
+		dev_err(dev, "pd seg memcpy scm failed\n");
+		return ret;
+	}
+	return ret;
+}
+
+static int __qcom_mdt_load_pd_seg(struct device *dev, const struct firmware *fw,
+				  const char *fw_name, int pas_id, void *mem_region,
+				  phys_addr_t mem_phys, size_t mem_size,
+				  phys_addr_t *reloc_base, bool pas_init)
+{
+	const struct elf32_phdr *phdrs;
+	const struct elf32_phdr *phdr;
+	const struct elf32_hdr *ehdr;
+	phys_addr_t mem_reloc;
+	phys_addr_t min_addr = PHYS_ADDR_MAX;
+	ssize_t offset;
+	bool relocate = false;
+	int ret = 0;
+	int i;
+	u8 pd_asid;
+	int max_size = 0;
+	struct pdseg_dma_mem_info pd_dma = {0};
+	char *firmware_name;
+	size_t fw_name_len = strlen(fw_name);
+
+	if (!fw || !mem_region || !mem_phys || !mem_size)
+		return -EINVAL;
+
+	firmware_name = kstrdup(fw_name, GFP_KERNEL);
+	if (!firmware_name)
+		return -ENOMEM;
+
+	pd_asid = qcom_get_pd_asid(dev->of_node);
+
+	ehdr = (struct elf32_hdr *)fw->data;
+	phdrs = (struct elf32_phdr *)(ehdr + 1);
+
+	for (i = 0; i < ehdr->e_phnum; i++) {
+		phdr = &phdrs[i];
+
+		if (!mdt_phdr_valid(phdr))
+			continue;
+		/*
+		 * While doing PD specific reloading, load only that PD
+		 * specific writeable entries. Skip others
+		 */
+		if ((QCOM_MDT_PF_ASID(phdr->p_flags) != pd_asid) ||
+		    ((phdr->p_flags & PF_W) == 0))
+			continue;
+
+		if (phdr->p_flags & QCOM_MDT_RELOCATABLE)
+			relocate = true;
+
+		if (phdr->p_paddr < min_addr)
+			min_addr = phdr->p_paddr;
+
+		if (max_size < phdr->p_memsz)
+			max_size = phdr->p_memsz;
+	}
+
+	/**
+	 * During userpd PIL segments reloading, Q6 is live. Due to
+	 * this we can't access memory region of PIL segments. So
+	 * create DMA chunks/blocks to store PIL segments data.
+	 */
+	ret = allocate_dma_mem(dev, &pd_dma, max_size);
+	if (ret)
+		goto out;
+
+	if (relocate) {
+		/*
+		 * The image is relocatable, so offset each segment based on
+		 * the lowest segment address.
+		 */
+		mem_reloc = min_addr;
+	} else {
+		/*
+		 * Image is not relocatable, so offset each segment based on
+		 * the allocated physical chunk of memory.
+		 */
+		mem_reloc = mem_phys;
+	}
+
+	for (i = 0; i < ehdr->e_phnum; i++) {
+		phdr = &phdrs[i];
+
+		if (!mdt_phdr_valid(phdr))
+			continue;
+
+		/*
+		 * While doing PD specific reloading, load only that PD
+		 * specific writeable entries. Skip others
+		 */
+		if ((QCOM_MDT_PF_ASID(phdr->p_flags) != pd_asid) ||
+		    ((phdr->p_flags & PF_W) == 0))
+			continue;
+
+		offset = phdr->p_paddr - mem_reloc;
+		if (offset < 0 || offset + phdr->p_memsz > mem_size) {
+			dev_err(dev, "segment outside memory range\n");
+			ret = -EINVAL;
+			break;
+		}
+
+		if (phdr->p_filesz > phdr->p_memsz) {
+			dev_err(dev,
+				"refusing to load segment %d with p_filesz > p_memsz\n",
+				i);
+			ret = -EINVAL;
+			break;
+		}
+
+		if (phdr->p_filesz) {
+			snprintf(firmware_name + fw_name_len - 3, 4, "b%02d", i);
+
+			/* copy PIL segments data to dma blocks */
+			ret = memcpy_pdseg_to_dma_blk(firmware_name, dev, i, &pd_dma);
+			if (ret)
+				goto free_dma;
+		}
+	}
+free_dma:
+	free_dma_mem(dev, &pd_dma);
+
+out:
+	if (reloc_base)
+		*reloc_base = mem_reloc;
+
+	return ret;
+}
+
 /**
  * qcom_mdt_load() - load the firmware which header is loaded as fw
  * @dev:	device handle to associate resources with
@@ -444,6 +749,33 @@ int qcom_mdt_load_no_init(struct device *dev, const struct firmware *fw,
 			       mem_size, reloc_base, false);
 }
 EXPORT_SYMBOL_GPL(qcom_mdt_load_no_init);
+
+/**
+ * qcom_mdt_load_pd_seg() - load userpd specific PIL segements
+ * @dev:	device handle to associate resources with
+ * @fw:		firmware object for the mdt file
+ * @firmware:	name of the firmware, for construction of segment file names
+ * @pas_id:	PAS identifier
+ * @mem_region:	allocated memory region to load firmware into
+ * @mem_phys:	physical address of allocated memory region
+ * @mem_size:	size of the allocated memory region
+ * @reloc_base:	adjusted physical address after relocation
+ *
+ * Here userpd PIL segements are stitched with rootpd firmware.
+ * This function reloads userpd specific PIL segments during SSR
+ * of userpd.
+ *
+ * Returns 0 on success, negative errno otherwise.
+ */
+int qcom_mdt_load_pd_seg(struct device *dev, const struct firmware *fw,
+			 const char *firmware, int pas_id, void *mem_region,
+			 phys_addr_t mem_phys, size_t mem_size,
+			 phys_addr_t *reloc_base)
+{
+	return __qcom_mdt_load_pd_seg(dev, fw, firmware, pas_id, mem_region, mem_phys,
+				      mem_size, reloc_base, true);
+}
+EXPORT_SYMBOL_GPL(qcom_mdt_load_pd_seg);
 
 MODULE_DESCRIPTION("Firmware parser for Qualcomm MDT format");
 MODULE_LICENSE("GPL v2");

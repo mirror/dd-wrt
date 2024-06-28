@@ -1,0 +1,549 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/phy/qcom-eth-uniphy.h>
+
+/ {
+	model = "Linksys MX5500 Dual-band Mesh WiFi 6 System, AX5400 (Atlas Pro 6)";
+	compatible = "linksys,mx5500", "qcom,ipq5018";
+
+    aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_red;
+		led-running = &led_system_blue;
+		led-upgrade = &led_system_red;
+		serial0 = &blsp1_uart1;
+	};
+
+    chosen {
+        bootargs-append = " coherent_pool=2M root=/dev/ubiblock0_0";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps-button {
+			label = "wps";
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		led_system_red: red {
+			label = "red:system";
+			pwms = <&pwm 3 1250000>;
+			max-brightness = <255>;
+		};
+
+		green {
+			label = "green:system";
+			pwms = <&pwm 0 1250000>;
+			max-brightness = <255>;
+		};
+
+		led_system_blue: blue {
+			label = "blue:system";
+			pwms = <&pwm 1 1250000>;
+			max-brightness = <255>;
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	reserved-memory {
+		q6_mem_regions: q6_mem_regions@4b000000 {
+			no-map;
+			reg = <0x0 0x4b000000 0x0 0x1800000>;
+		};
+
+		/*
+		q6_region: wcnss@4b000000 {
+			no-map;
+			reg = <0x0 0x4b000000 0x0 0x01800000>;
+		};
+
+		q6_m3_region: m3_dump@4c800000 {
+			no-map;
+			reg = <0x0 0x4c800000 0x0 0x100000>;
+		};
+
+		q6_etr_region: q6_etr_dump@4c900000 {
+			no-map;
+			reg = <0x0 0x4c900000 0x0 0x100000>;
+		};
+
+		q6_caldb_region: q6_caldb_region@4cd00000 {
+			no-map;
+			reg = <0x0 0x4cd00000 0x0 0x200000>;
+		};
+
+		qcn9000_pcie0@4cc00000 {
+			no-map;
+			reg = <0x0 0x4cc00000 0x0 0x01e00000>;
+		};
+		*/
+
+		mhi_region1: dma_pool1@4ea00000 {
+			compatible = "shared-dma-pool";
+			no-map;
+			reg = <0x0 0x4ea00000 0x0 0x01000000>;
+		};
+	};
+};
+
+&uniphy0 {
+	mode = <QCOM_ETH_UNIPHY_MODE_SGMII>;
+	clkout-frequency = <QCOM_ETH_UNIPHY_CLKOUT_FREQ_25M>;
+	clkout-drive-strength = <QCOM_ETH_UNIPHY_CLKOUT_DS_1_5V>;
+
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	// QCA8337 Phy0 -> IPQ5018 GE Phy
+	/*qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};*/
+
+	// QCA8337 Phy1 -> WAN
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN1
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 Phy3 -> LAN2
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	// QCA8337 Phy4 -> LAN3
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	// QCA8337 switch
+	switch1: ethernet-switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/*
+			port@1 {
+				reg = <1>;
+				label = "cpu1";
+				phy-handle = <&qca8337_0>;
+			};
+			*/
+
+			port@2 {
+				reg = <2>;
+				label = "wan";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan1";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan2";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan3";
+				phy-handle = <&qca8337_4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&gmac1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&gmac1 {
+	phy-mode = "sgmii";
+	status = "okay";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-frequency = <24000000>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&bt {
+	firmware-name = "qca/bt_fw_patch.mdt";
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+    status = "okay";
+
+    nand@0 {
+        compatible = "qcom,nandcs";
+        reg = <0>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        nand-ecc-strength = <4>;
+        nand-ecc-step-size = <512>;
+        nand-bus-width = <8>;
+
+        partitions {
+            compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x80000>;
+				read-only;
+			};
+
+            partition@80000 {
+				label = "0:MIBIB";
+				reg = <0x00080000 0x20000>;
+				read-only;
+			};
+
+            partition@100000 {
+				label = "0:QSEE";
+				reg = <0x00100000 0x100000>;
+				read-only;
+			};
+
+            partition@200000 {
+				label = "0:DEVCFG";
+				reg = <0x00200000 0x40000>;
+				read-only;
+			};
+
+            partition@240000 {
+				label = "0:CDT";
+				reg = <0x00240000 0x40000>;
+				read-only;
+			};
+
+            partition@280000 {
+				label = "0:APPSBLENV";
+				reg = <0x00280000 0x20000>;
+			};
+
+            partition@300000 {
+				label = "0:APPSBL";
+				reg = <0x00300000 0x140000>;
+				read-only;
+			};
+
+            partition@440000 {
+				compatible = "nvmem-cells";
+				label = "0:ART";
+				reg = <0x00440000 0x100000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				read-only;
+			};
+
+            partition@540000 {
+				label = "0:TRAINING";
+				reg = <0x00540000 0x80000>;
+				read-only;
+			};
+
+            partition@5c0000 {
+				label = "u_env";
+				reg = <0x005c0000 0x80000>;
+			};
+
+            partition@640000 {
+				label = "s_env";
+				reg = <0x00640000 0x40000>;
+			};
+
+            partition@680000 {
+				label = "devinfo";
+				reg = <0x00680000 0x40000>;
+				read-only;
+			};
+
+            partition@6c0000 {
+				label = "kernel";
+				reg = <0x006c0000 0x5200000>;
+			};
+
+            partition@ec0000 {
+				label = "rootfs";
+				reg = <0x0ec0000 0x4a00000>;
+			};
+
+            partition@58c0000 {
+				label = "alt_kernel";
+				reg = <0x058c0000 0x5200000>;
+			};
+
+            partition@60c0000 {
+				label = "alt_rootfs";
+				reg = <0x060c0000 0x4a00000>;
+			};
+
+            partition@aac0000 {
+				label = "sysdiag";
+				reg = <0x0aac0000 0x200000>;
+				read-only;
+			};
+
+            partition@acc0000 {
+				label = "syscfg";
+				reg = <0x0acc0000 0x4400000>;
+				read-only;
+			};
+        };
+    };
+};
+
+&tlmm {
+	button_pins: button-state {
+        pins = "gpio27", "gpio28";
+        function = "gpio";
+        drive-strength = <8>;
+        bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	pwm_pins: pwm-state {
+		mux_1 {
+			pins = "gpio1";
+			function = "_";
+			drive-strength = <8>;
+		};
+
+		mux_2 {
+			pins = "gpio30";
+			function = "pwm3";
+			drive-strength = <8>;
+		};
+
+		mux_3 {
+			pins = "gpio46";
+			function = "pwm0";
+			drive-strength = <8>;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		pins = "gpio9", "gpio8", "gpio7", "gpio6", "gpio5", "gpio4";
+		function = "qpic";
+		drive-strength = <8>;
+		bias-disable;
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		bias-disable;
+	};
+};
+
+&tsens {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usbphy0 {
+	status = "okay";
+};
+
+&usbphy1 {
+	status = "okay";
+};
+
+&pcie_x2phy {
+	status = "okay";
+};
+
+&pcie_x2 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			status = "okay";
+
+			/* QCN9074: ath11k lacks DT compatible for PCI cards */
+			compatible = "pci17cb,1104";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath11k-calibration-variant = "Linksys-MX5500";
+		};
+	};
+};
+
+&q6v5_wcss {
+	status = "okay";
+
+	memory-region = <&q6_mem_regions>;
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+					"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
+	
+	// IPQ5018
+	q6_wcss_pd1: pd-1 {
+		compatible = "qcom,ipq5018-wcss-ahb-mpd";
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 8 0>,
+			<&wcss_smp2p_in 9 0>,
+			<&wcss_smp2p_in 12 0>,
+			<&wcss_smp2p_in 11 0>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 8>,
+			<&wcss_smp2p_out 9>,
+			<&wcss_smp2p_out 10>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+		status = "okay";
+	};
+};
+
+&wifi0 {
+	// IPQ5018
+	qcom,rproc = <&q6_wcss_pd1>;
+
+	qcom,ath11k-calibration-variant = "Linksys-MX5500";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+	qcom,caldb-addr = <0x4d300000>;
+	//qcom,m3-dump-addr = <0x4d400000>;
+
+	status = "disabled";
+};

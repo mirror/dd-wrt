@@ -395,6 +395,9 @@ static int qca_tlv_check_data(struct hci_dev *hdev,
 		if (fw_size < length + (tlv->data - fw_data))
 			return -EINVAL;
 
+		if (qca_is_maple(soc_type))
+			break;
+
 		idx = 0;
 		data = tlv->data;
 		while (idx < length - sizeof(struct tlv_type_nvm)) {
@@ -769,6 +772,9 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 		qca_send_patch_config_cmd(hdev);
 
 	/* Download rampatch file */
+	if (qca_is_maple(soc_type))
+		goto download_nvm;
+
 	config.type = TLV_TYPE_PATCH;
 	switch (soc_type) {
 	case QCA_WCN3990:
@@ -822,6 +828,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 	if (soc_type == QCA_QCA2066)
 		qca_read_fw_board_id(hdev, &boardid);
 
+download_nvm:
 	/* Download NVM configuration */
 	config.type = TLV_TYPE_NVM;
 	if (firmware_name) {
@@ -852,6 +859,9 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 			snprintf(config.fwname, sizeof(config.fwname),
 				 "qca/htnv%02x.bin", rom_ver);
 			break;
+		case QCA_MAPLE:
+			snprintf(config.fwname, sizeof(config.fwname),
+				"qca/mpnv%02x.bin", rom_ver);
 		case QCA_WCN6750:
 			snprintf(config.fwname, sizeof(config.fwname),
 				 "qca/msnv%02x.bin", rom_ver);
@@ -870,12 +880,17 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 				 "qca/nvm_%08x.bin", soc_ver);
 		}
 	}
+	if (qca_is_maple(soc_type))
+		msleep(MAPLE_NVM_READY_DELAY_MS);
 
 	err = qca_download_firmware(hdev, &config, soc_type, rom_ver);
 	if (err < 0) {
 		bt_dev_err(hdev, "QCA Failed to download NVM (%d)", err);
 		return err;
 	}
+
+	if (qca_is_maple(soc_type))
+		msleep(MAPLE_NVM_READY_DELAY_MS);
 
 	switch (soc_type) {
 	case QCA_WCN3991:
@@ -919,6 +934,7 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 	case QCA_WCN6750:
 	case QCA_WCN6855:
 	case QCA_WCN7850:
+	case QCA_MAPLE:
 		/* get fw build info */
 		err = qca_read_fw_build_info(hdev);
 		if (err < 0)

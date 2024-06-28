@@ -55,6 +55,29 @@ static struct clk_alpha_pll ipq_pll_huayra = {
 	},
 };
 
+static struct clk_alpha_pll ipq_pll_stromer = {
+	.offset = 0x0,
+	/*
+	 * Reuse CLK_ALPHA_PLL_TYPE_STROMER_PLUS register offsets.
+	 * Although this is a bit confusing, but the offset values
+	 * are correct nevertheless.
+	 */
+	.regs = ipq_pll_offsets[CLK_ALPHA_PLL_TYPE_STROMER_PLUS],
+	.flags = SUPPORTS_DYNAMIC_UPDATE,
+	.clkr = {
+		.enable_reg = 0x0,
+		.enable_mask = BIT(0),
+		.hw.init = &(const struct clk_init_data) {
+			.name = "a53pll",
+			.parent_data = &(const struct clk_parent_data) {
+				.fw_name = "xo",
+			},
+			.num_parents = 1,
+			.ops = &clk_alpha_pll_stromer_ops,
+		},
+	},
+};
+
 static struct clk_alpha_pll ipq_pll_stromer_plus = {
 	.offset = 0x0,
 	.regs = ipq_pll_offsets[CLK_ALPHA_PLL_TYPE_STROMER_PLUS],
@@ -71,6 +94,20 @@ static struct clk_alpha_pll ipq_pll_stromer_plus = {
 			.ops = &clk_alpha_pll_stromer_plus_ops,
 		},
 	},
+};
+
+static const struct alpha_pll_config ipq5018_pll_config = {
+	.l = 0x2a,
+	.config_ctl_val = 0x4001075b,
+	.config_ctl_hi_val = 0x304,
+	.main_output_mask = BIT(0),
+	.aux_output_mask = BIT(1),
+	.early_output_mask = BIT(3),
+	.alpha_en_mask = BIT(24),
+	.status_val = 0x3,
+	.status_mask = GENMASK(10, 8),
+	.lock_det = BIT(2),
+	.test_ctl_hi_val = 0x00400003,
 };
 
 static const struct alpha_pll_config ipq5332_pll_config = {
@@ -129,6 +166,12 @@ struct apss_pll_data {
 	const struct alpha_pll_config *pll_config;
 };
 
+static const struct apss_pll_data ipq5018_pll_data = {
+	.pll_type = CLK_ALPHA_PLL_TYPE_STROMER,
+	.pll = &ipq_pll_stromer,
+	.pll_config = &ipq5018_pll_config,
+};
+
 static struct apss_pll_data ipq5332_pll_data = {
 	.pll_type = CLK_ALPHA_PLL_TYPE_STROMER_PLUS,
 	.pll = &ipq_pll_stromer_plus,
@@ -183,7 +226,8 @@ static int apss_ipq_pll_probe(struct platform_device *pdev)
 
 	if (data->pll_type == CLK_ALPHA_PLL_TYPE_HUAYRA)
 		clk_alpha_pll_configure(data->pll, regmap, data->pll_config);
-	else if (data->pll_type == CLK_ALPHA_PLL_TYPE_STROMER_PLUS)
+	else if (data->pll_type == CLK_ALPHA_PLL_TYPE_STROMER ||
+		 data->pll_type == CLK_ALPHA_PLL_TYPE_STROMER_PLUS)
 		clk_stromer_pll_configure(data->pll, regmap, data->pll_config);
 
 	ret = devm_clk_register_regmap(dev, &data->pll->clkr);
@@ -195,6 +239,7 @@ static int apss_ipq_pll_probe(struct platform_device *pdev)
 }
 
 static const struct of_device_id apss_ipq_pll_match_table[] = {
+	{ .compatible = "qcom,ipq5018-a53pll", .data = &ipq5018_pll_data },
 	{ .compatible = "qcom,ipq5332-a53pll", .data = &ipq5332_pll_data },
 	{ .compatible = "qcom,ipq6018-a53pll", .data = &ipq6018_pll_data },
 	{ .compatible = "qcom,ipq8074-a53pll", .data = &ipq8074_pll_data },

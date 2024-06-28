@@ -27,6 +27,7 @@ properties:
       - qcom,wcn6750-bt
       - qcom,wcn6855-bt
       - qcom,wcn7850-bt
+      - qcom,maple-bt
 
   enable-gpios:
     maxItems: 1

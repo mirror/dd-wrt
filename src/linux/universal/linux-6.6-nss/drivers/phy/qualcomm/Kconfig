@@ -35,6 +35,18 @@ config PHY_QCOM_IPQ4019_USB
 	help
 	  Support for the USB PHY-s on Qualcomm IPQ40xx SoC-s.
 
+config PHY_QCOM_IPQ5018_UNIPHY_PCIE
+	bool "PCIE IPQ5018 UNIPHY PHY driver"
+	depends on ARCH_QCOM
+	depends on HAS_IOMEM
+	depends on OF
+	select GENERIC_PHY
+	help
+	  Enable this to support the IPQ5018 PCIe UNIPHY phy transceiver that
+	  is used with PCIe controllers on Qualcomm IPQ5018 chips. It
+	  handles PHY initialization, clock management required after
+	  resetting the hardware and power management.
+
 config PHY_QCOM_IPQ806X_SATA
 	tristate "Qualcomm IPQ806x SATA SerDes/PHY driver"
 	depends on ARCH_QCOM
@@ -199,6 +211,17 @@ config PHY_QCOM_USB_SS
 	help
 	  Enable this to support the Super-Speed USB transceiver on various
 	  Qualcomm chipsets.
+
+config PHY_QCOM_USB_SS_22ULL
+	tristate "Qualcomm USB Super-Speed UNIPHY driver"
+	depends on USB && (ARCH_QCOM || COMPILE_TEST)
+	select GENERIC_PHY
+	help
+	  Enable this to support the Qualcomm USB Super-Speed UNIPHY transceiver
+	  with DWC3 USB core. It handles PHY initialization, clock
+	  management required after resetting the hardware and power
+	  management. This driver is required even for peripheral only or
+	  host only mode configurations.
 
 config PHY_QCOM_IPQ806X_USB
 	tristate "Qualcomm IPQ806x DWC3 USB PHY driver"

@@ -258,6 +258,17 @@ static int ttyport_break_ctl(struct serdev_controller *ctrl, unsigned int break_
 	return tty->ops->break_ctl(tty, break_state);
 }
 
+static int ttyport_ioctl(struct serdev_controller *ctrl, unsigned int cmd, unsigned long arg)
+{
+	struct serport *serport = serdev_controller_get_drvdata(ctrl);
+	struct tty_struct *tty = serport->tty;
+
+	if (!tty->ops->ioctl)
+		return -EOPNOTSUPP;
+
+	return tty->ops->ioctl(tty, cmd, arg);
+}
+
 static const struct serdev_controller_ops ctrl_ops = {
 	.write_buf = ttyport_write_buf,
 	.write_flush = ttyport_write_flush,
@@ -271,6 +282,7 @@ static const struct serdev_controller_ops ctrl_ops = {
 	.get_tiocm = ttyport_get_tiocm,
 	.set_tiocm = ttyport_set_tiocm,
 	.break_ctl = ttyport_break_ctl,
+	.ioctrl = ttyport_ioctl,
 };
 
 struct device *serdev_tty_port_register(struct tty_port *port,

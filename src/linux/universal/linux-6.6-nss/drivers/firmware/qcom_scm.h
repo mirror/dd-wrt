@@ -97,6 +97,9 @@ extern int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 #define QCOM_SCM_PIL_PAS_SHUTDOWN	0x06
 #define QCOM_SCM_PIL_PAS_IS_SUPPORTED	0x07
 #define QCOM_SCM_PIL_PAS_MSS_RESET	0x0a
+#define QCOM_SCM_PIL_PAS_POWER_UP	0x17
+#define QCOM_SCM_PIL_PAS_POWER_DOWN	0x18
+#define QCOM_SCM_PIL_PAS_LOAD_SEG	0x19
 
 #define QCOM_SCM_SVC_IO			0x05
 #define QCOM_SCM_IO_READ		0x01
@@ -136,6 +139,9 @@ extern int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 #define QCOM_SCM_SVC_WAITQ			0x24
 #define QCOM_SCM_WAITQ_RESUME			0x02
 #define QCOM_SCM_WAITQ_GET_WQ_CTX		0x03
+
+#define QCOM_SCM_SVC_OTP	0x2
+#define QCOM_SCM_CMD_OTP	0x15
 
 /* common error codes */
 #define QCOM_SCM_V2_EBUSY	-12

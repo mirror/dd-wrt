@@ -394,6 +394,17 @@ int serdev_device_get_tiocm(struct serdev_device *serdev)
 }
 EXPORT_SYMBOL_GPL(serdev_device_get_tiocm);
 
+int serdev_device_ioctl(struct serdev_device *serdev, unsigned int cmd, unsigned long arg)
+{
+	struct serdev_controller * ctrl = serdev->ctrl;
+
+	if (!ctrl || !ctrl->ops->ioctl)
+		return -ENOTTY;
+
+	return ctrl->ops->ioctl(ctrl, cmd, arg);
+}
+EXPORT_SYMBOL_GPL(serdev_device_ioctl);
+
 int serdev_device_set_tiocm(struct serdev_device *serdev, int set, int clear)
 {
 	struct serdev_controller *ctrl = serdev->ctrl;

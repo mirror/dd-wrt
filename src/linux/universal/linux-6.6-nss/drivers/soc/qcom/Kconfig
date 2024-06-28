@@ -16,6 +16,16 @@ config QCOM_AOSS_QMP
 	  subsystems as well as controlling the debug clocks exposed by the Always On
 	  Subsystem (AOSS) using Qualcomm Messaging Protocol (QMP).
 
+config QCOM_BT_IPC
+	tristate
+
+config QCOM_BT_TTY
+	tristate "Qualcomm Bluetooth Interface Driver"
+	select QCOM_BT_IPC
+	help
+	  Qualcomm Bluetooth interface driver to support and control bluetooth
+	  controllers found on SOCs such as IPQ5018
+
 config QCOM_COMMAND_DB
 	tristate "Qualcomm Command DB"
 	depends on ARCH_QCOM || COMPILE_TEST

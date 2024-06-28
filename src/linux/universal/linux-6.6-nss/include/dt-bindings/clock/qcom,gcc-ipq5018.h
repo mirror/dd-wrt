@@ -180,4 +180,9 @@
 #define GMAC0_TX_DIV_CLK_SRC				171
 #define GMAC1_RX_DIV_CLK_SRC				172
 #define GMAC1_TX_DIV_CLK_SRC				173
+#define APSS_AHB_CLK_SRC				174
+#define APSS_AHB_POSTDIV_CLK_SRC			175
+#define APSS_AXI_CLK_SRC				176
+#define GCC_APSS_AHB_CLK				177
+#define GCC_APSS_AXI_CLK				178
 #endif

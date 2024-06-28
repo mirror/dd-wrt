@@ -51,6 +51,9 @@
 #define QCA_HSP_GF_SOC_ID			0x1200
 #define QCA_HSP_GF_SOC_MASK			0x0000ff00
 
+#define MAPLE_NVM_READY_DELAY_MS        1500
+#define MAPLE_POWER_CONTROL_DELAY_MS    50
+
 enum qca_baudrate {
 	QCA_BAUDRATE_115200 	= 0,
 	QCA_BAUDRATE_57600,
@@ -152,6 +155,7 @@ enum qca_btsoc_type {
 	QCA_QCA2066,
 	QCA_QCA6390,
 	QCA_WCN6750,
+	QCA_MAPLE,
 	QCA_WCN6855,
 	QCA_WCN7850,
 };
@@ -165,6 +169,12 @@ int qca_uart_setup(struct hci_dev *hdev, uint8_t baudrate,
 int qca_read_soc_version(struct hci_dev *hdev, struct qca_btsoc_version *ver,
 			 enum qca_btsoc_type);
 int qca_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr);
+
+static inline bool qca_is_maple(enum qca_btsoc_type soc_type)
+{
+	return soc_type == QCA_MAPLE;
+}
+
 int qca_send_pre_shutdown_cmd(struct hci_dev *hdev);
 #else
 
@@ -191,6 +201,11 @@ static inline int qca_read_soc_version(struct hci_dev *hdev,
 static inline int qca_set_bdaddr(struct hci_dev *hdev, const bdaddr_t *bdaddr)
 {
 	return -EOPNOTSUPP;
+}
+
+static inline bool qca_is_maple(enum qca_btsoc_type soc_type)
+{
+	return false;
 }
 
 static inline int qca_send_pre_shutdown_cmd(struct hci_dev *hdev)

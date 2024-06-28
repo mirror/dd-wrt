@@ -9,6 +9,11 @@ config AT803X_PHY
 	help
 	  Currently supports the AR8030, AR8031, AR8033, AR8035 model
 
+config IPQ5018_INTERNAL_PHY
+	tristate "Qualcomm IPQ5018 internal PHY"
+	help
+	  Supports for the Qualcomm IPQ5018 internal PHY.
+
 config QCA83XX_PHY
 	tristate "Qualcomm Atheros QCA833x PHYs"
 	select QCOM_NET_PHYLIB
