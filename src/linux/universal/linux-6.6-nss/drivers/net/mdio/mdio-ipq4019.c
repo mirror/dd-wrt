@@ -44,6 +44,15 @@
 #define IPQ4019_MDIO_TIMEOUT	10000
 #define IPQ4019_MDIO_SLEEP		10
 
+#define IPQ_HIGH_ADDR_PREFIX	0x18
+#define IPQ_LOW_ADDR_PREFIX	0x10
+
+
+#define SWITCH_REG_TYPE_MASK			GENMASK(31, 28)
+#define SWITCH_REG_TYPE_QCA8386			0
+#define SWITCH_REG_TYPE_QCA8337			1
+#define SWITCH_HIGH_ADDR_DFLT			0x200
+
 /* MDIO clock source frequency is fixed to 100M */
 #define IPQ_MDIO_CLK_RATE	100000000
 
@@ -55,6 +64,10 @@ struct ipq4019_mdio_data {
 	struct reset_control *rst;
 	struct clk *mdio_clk;
 	unsigned int mdc_rate;
+	int clk_div;
+	void (*preinit)(struct mii_bus *bus);
+	u32 (*sw_read)(struct mii_bus *bus, u32 reg);
+	void (*sw_write)(struct mii_bus *bus, u32 reg, u32 val);
 };
 
 static int ipq4019_mdio_wait_busy(struct mii_bus *bus)
@@ -104,7 +117,6 @@ static int ipq4019_mdio_read_c45(struct mii_bus *bus, int mii_id, int mmd,
 
 	if (ipq4019_mdio_wait_busy(bus))
 		return -ETIMEDOUT;
-
 	/* Read and return data */
 	return readl(priv->membase + MDIO_DATA_READ_REG);
 }
@@ -215,6 +227,139 @@ static int ipq4019_mdio_write_c22(struct mii_bus *bus, int mii_id, int regnum,
 		return -ETIMEDOUT;
 
 	return 0;
+}
+
+static inline void qca8337_split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
+{
+	regaddr >>= 1;
+	*r1 = regaddr & 0x1e;
+
+	regaddr >>= 5;
+	*r2 = regaddr & 0x7;
+
+	regaddr >>= 3;
+	*page = regaddr & 0x3ff;
+}
+
+u32 qca8337_read(struct mii_bus *mii_bus, u32 reg)
+{
+	u16 r1, r2, page;
+	u16 lo, hi;
+
+	qca8337_split_addr(reg, &r1, &r2, &page);
+	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, page);
+	udelay(100);
+
+	lo = mii_bus->read(mii_bus, IPQ_LOW_ADDR_PREFIX | r2, r1);
+	hi = mii_bus->read(mii_bus, IPQ_LOW_ADDR_PREFIX | r2, r1 + 1);
+
+	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, SWITCH_HIGH_ADDR_DFLT);
+	return (hi << 16) | lo;
+}
+
+void qca8337_write(struct mii_bus *mii_bus, u32 reg, u32 val)
+{
+	u16 r1, r2, page;
+
+	qca8337_split_addr(reg, &r1, &r2, &page);
+	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, page);
+	udelay(100);
+
+	mii_bus->write(mii_bus, IPQ_LOW_ADDR_PREFIX | r2, r1, val & 0xffff);
+	mii_bus->write(mii_bus, IPQ_LOW_ADDR_PREFIX | r2, r1 + 1, (u16)(val >> 16));
+
+	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, SWITCH_HIGH_ADDR_DFLT);
+}
+
+static inline void split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page, u16 *sw_addr)
+{
+	*r1 = regaddr & 0x1c;
+
+	regaddr >>= 5;
+	*r2 = regaddr & 0x7;
+
+	regaddr >>= 3;
+	*page = regaddr & 0xffff;
+
+	regaddr >>= 16;
+	*sw_addr = regaddr & 0xff;
+}
+
+u32 qca8386_read(struct mii_bus *bus, unsigned int reg)
+{
+	u16 r1, r2, page, sw_addr;
+	u16 lo, hi;
+
+	split_addr(reg, &r1, &r2, &page, &sw_addr);
+
+	/* There is no competition, so the lock is not needed.
+	 * since this function is only called before mii_bus registered.
+	 */
+	bus->write(bus, IPQ_HIGH_ADDR_PREFIX | (sw_addr >> 5), sw_addr & 0x1f, page);
+
+	lo = bus->read(bus, IPQ_LOW_ADDR_PREFIX | r2, r1);
+	hi = bus->read(bus, IPQ_LOW_ADDR_PREFIX | r2, r1 | BIT(1));
+
+	return hi << 16 | lo;
+};
+
+int qca8386_write(struct mii_bus *bus, unsigned int reg, unsigned int val)
+{
+	u16 r1, r2, page, sw_addr;
+	u16 lo, hi;
+
+	lo = val & 0xffff;
+	hi = (u16)(val >> 16);
+
+	split_addr(reg, &r1, &r2, &page, &sw_addr);
+
+	/* There is no competition, so the lock is not needed.
+	 * since this function is only called before mii_bus registered.
+	 */
+	bus->write(bus, IPQ_HIGH_ADDR_PREFIX | (sw_addr >> 5), sw_addr & 0x1f, page);
+
+	bus->write(bus, IPQ_LOW_ADDR_PREFIX | r2, r1, lo);
+	bus->write(bus, IPQ_LOW_ADDR_PREFIX | r2, r1 | BIT(1), hi);
+
+	return 0;
+};
+
+u32 ipq_mii_read(struct mii_bus *mii_bus, u32 reg)
+{
+	u32 val = 0xffffffff;
+	switch (FIELD_GET(SWITCH_REG_TYPE_MASK, reg)) {
+		case SWITCH_REG_TYPE_QCA8337:
+			val = qca8337_read(mii_bus, reg);
+			break;
+		case SWITCH_REG_TYPE_QCA8386:
+		default:
+			val = qca8386_read(mii_bus, reg);
+			break;
+	}
+
+	return val;
+}
+
+void ipq_mii_write(struct mii_bus *mii_bus, u32 reg, u32 val)
+{
+	switch (FIELD_GET(SWITCH_REG_TYPE_MASK, reg)) {
+		case SWITCH_REG_TYPE_QCA8337:
+			qca8337_write(mii_bus, reg, val);
+			break;
+		case SWITCH_REG_TYPE_QCA8386:
+		default:
+			qca8386_write(mii_bus, reg, val);
+			break;
+	}
+}
+
+void ipq_mii_preinit(struct mii_bus *bus)
+{
+	struct device_node *np = bus->parent->of_node;
+	if (!np)
+		return;
+
+	return;
 }
 
 static int ipq4019_mdio_set_div(struct ipq4019_mdio_data *priv)
@@ -365,6 +510,10 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	if (res)
 		priv->eth_ldo_rdy = devm_ioremap_resource(&pdev->dev, res);
 
+	priv->clk_div = 0xf;
+	priv->preinit = ipq_mii_preinit;
+	priv->sw_read = ipq_mii_read;
+	priv->sw_write = ipq_mii_write;
 	bus->name = "ipq4019_mdio";
 	bus->read = ipq4019_mdio_read_c22;
 	bus->write = ipq4019_mdio_write_c22;
@@ -397,6 +546,7 @@ static int ipq4019_mdio_remove(struct platform_device *pdev)
 static const struct of_device_id ipq4019_mdio_dt_ids[] = {
 	{ .compatible = "qcom,ipq4019-mdio" },
 	{ .compatible = "qcom,ipq5018-mdio" },
+	{ .compatible = "qcom,qca-mdio" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, ipq4019_mdio_dt_ids);
