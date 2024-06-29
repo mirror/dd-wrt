@@ -2114,7 +2114,6 @@ void ssdk_gcc_clock_init(void)
 	} else if (of_device_is_compatible(clock_node,
 			"qcom,ess-switch-ipq50xx")) {
 #if defined(MP)
-		printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 		ssdk_gcc_mp_clock_init(cmnblk_clk_mode);
 #endif
 	} else if (of_device_is_compatible(clock_node,

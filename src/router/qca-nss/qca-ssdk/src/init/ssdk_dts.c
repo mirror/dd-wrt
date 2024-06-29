@@ -338,12 +338,12 @@ static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
 	a_uint32_t len = 0;
 	const __be32 *reg_cfg;
 	ssdk_dt_cfg *cfg;
-
 	/* read uniphy register base and address space */
 	uniphy_node = of_find_node_by_name(NULL, "ess-uniphy");
 	if (!uniphy_node)
 		SSDK_INFO("ess-uniphy DT doesn't exist!\n");
 	else {
+		SSDK_INFO("ess-uniphy DT exist!\n");
 		cfg = ssdk_dt_global.ssdk_dt_switch_nodes[dev_id];
 		reg_cfg = of_get_property(uniphy_node, "reg", &len);
 		if(!reg_cfg)
@@ -628,6 +628,8 @@ static struct device_node *ssdk_dt_get_mdio_node(a_uint32_t dev_id)
 		mdio_node = of_find_compatible_node(NULL, NULL, "qcom,ipq40xx-mdio");
 		if (!mdio_node)
 			mdio_node = of_find_compatible_node(NULL, NULL, "qcom,qca-mdio");
+		if (!mdio_node)
+			mdio_node = of_find_compatible_node(NULL, NULL, "qcom,ipq5018-mdio");
 	} else
 		mdio_node = of_find_compatible_node(NULL, NULL, "virtual,mdio-gpio");
 

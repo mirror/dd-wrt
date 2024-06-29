@@ -290,7 +290,6 @@ static void qca_mii_reg_convert(a_uint32_t dev_id, a_uint32_t *reg)
 sw_error_t qca_mii_raw_read(struct mii_bus *bus, a_uint32_t reg, a_uint32_t *val)
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
-
 	if (mdio_priv && mdio_priv->sw_read) {
 		*val = mdio_priv->sw_read(bus, reg);
 		return SW_OK;

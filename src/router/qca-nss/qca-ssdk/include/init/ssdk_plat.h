@@ -390,7 +390,7 @@ struct qca_phy_priv {
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
 #define ETH_LDO_RDY_CNT		3
-struct qca_mdio_data{
+/*struct qca_mdio_data{
 	void __iomem	*membase[2];
 	void __iomem *eth_ldo_rdy[ETH_LDO_RDY_CNT];
 	int clk_div;
@@ -401,6 +401,19 @@ struct qca_mdio_data{
 	void (*sw_write)(struct mii_bus *bus, u32 reg, u32 val);
 	struct clk *clk[];
 };
+*/
+struct qca_mdio_data {
+	void __iomem	*membase;
+	void __iomem *eth_ldo_rdy;
+	struct reset_control *rst;
+	struct clk *mdio_clk;
+	unsigned int mdc_rate;
+	int clk_div;
+	void (*preinit)(struct mii_bus *bus);
+	u32 (*sw_read)(struct mii_bus *bus, u32 reg);
+	void (*sw_write)(struct mii_bus *bus, u32 reg, u32 val);
+};
+
 #else
 struct qca_mdio_data {
 	struct mii_bus *mii_bus;

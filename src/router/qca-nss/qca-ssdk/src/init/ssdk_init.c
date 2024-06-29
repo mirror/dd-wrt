@@ -1985,7 +1985,7 @@ void switch_cpuport_setup(a_uint32_t dev_id)
 #endif
 }
 #ifdef IN_AQUANTIA_PHY
-#ifdef CONFIG_MDIO
+#if 1 //def CONFIG_MDIO
 static struct mdio_if_info ssdk_mdio_ctl;
 #endif
 static struct net_device *ssdk_miireg_netdev = NULL;
@@ -2003,7 +2003,7 @@ static int ssdk_miireg_do_ioctl(struct net_device *netdev,
 			struct ifreq *ifr, int32_t cmd)
 {
 	int ret = -EINVAL;
-#ifdef CONFIG_MDIO
+#if 0 //def CONFIG_MDIO
 	struct mii_ioctl_data *mii_data = if_mii(ifr);
 	ret = mdio_mii_ioctl(&ssdk_mdio_ctl, mii_data, cmd);
 #endif
@@ -2016,7 +2016,7 @@ static const struct net_device_ops ssdk_netdev_ops = {
 	.ndo_do_ioctl = &ssdk_miireg_do_ioctl,
 };
 
-#ifdef CONFIG_MDIO
+#if 1 //def CONFIG_MDIO
 static int ssdk_miireg_ioctl_read(struct net_device *netdev, int phy_addr, int mmd, uint16_t addr)
 {
 	a_uint16_t val = 0;
@@ -2053,7 +2053,7 @@ static void ssdk_miireg_ioctrl_register(void)
 {
 	if (ssdk_miireg_netdev)
 		return;
-#ifdef CONFIG_MDIO
+#if 1 //def CONFIG_MDIO
 	ssdk_mdio_ctl.mdio_read = ssdk_miireg_ioctl_read;
 	ssdk_mdio_ctl.mdio_write = ssdk_miireg_ioctl_write;
 	ssdk_mdio_ctl.mode_support = MDIO_SUPPORTS_C45;
@@ -2419,6 +2419,7 @@ static void qca_ar8327_gpio_reset(struct qca_phy_priv *priv)
 		return;
 	}
 	gpio_direction_output(gpio_num, SSDK_GPIO_RESET);
+	gpio_set_value(gpio_num, SSDK_GPIO_RESET);
 	msleep(200);
 	gpio_set_value(gpio_num, SSDK_GPIO_RELEASE);
 	msleep(10);
