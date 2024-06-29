@@ -718,6 +718,7 @@ void hsl_port_phy_gpio_reset(a_uint32_t dev_id, a_uint32_t port_id)
 		SSDK_ERROR("when reset, gpio set failed, ret:%d\n", ret);
 		return;
 	}
+	gpio_set_value(gpio_num, SSDK_GPIO_RESET);
 	msleep(200);
 	gpio_set_value(gpio_num, SSDK_GPIO_RELEASE);
 	msleep(10);
