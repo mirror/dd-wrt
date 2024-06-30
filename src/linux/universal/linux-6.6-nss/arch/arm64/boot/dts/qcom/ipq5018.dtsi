@@ -1092,9 +1092,11 @@
 
 		mdio0: mdio@88000 {
 			compatible = "qcom,ipq5018-mdio";
+/*			reg = <0x00088000 0x64>, <0x19475C4 0x4>;*/
 			reg = <0x00088000 0x64>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
 			clock-names = "gcc_mdio_ahb_clk";
 			resets = <&gcc GCC_GEPHY_MDC_SW_ARES>,

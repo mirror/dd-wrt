@@ -117,36 +117,90 @@
 
 };
 
+&switch {
+	compatible = "qcom,ess-switch-ipq50xx";
+	status = "okay";			
+	device_id = <0>;
+	switch_mac_mode = <0xf>; /* mac mode for uniphy instance*/
+	cmnblk_clk = "internal_96MHz"; /* cmnblk clk*/
+
+				reg = <0x39c00000 0x200000>;
+				switch_access_mode = "local bus";
+				clocks = <&gcc GCC_CMN_BLK_AHB_CLK>,
+					<&gcc GCC_CMN_BLK_SYS_CLK>,
+					<&gcc GCC_UNIPHY_AHB_CLK>,
+					<&gcc GCC_UNIPHY_SYS_CLK>,
+					<&gcc GCC_MDIO0_AHB_CLK>,
+					<&gcc GCC_MDIO1_AHB_CLK>,
+					<&gcc GCC_GMAC0_CFG_CLK>,
+					<&gcc GCC_GMAC0_SYS_CLK>,
+					<&gcc GCC_GMAC1_CFG_CLK>,
+					<&gcc GCC_GMAC1_SYS_CLK>,
+					<&gcc GCC_GEPHY_RX_CLK>,
+					<&gcc GCC_GEPHY_TX_CLK>,
+					<&gcc GCC_UNIPHY_RX_CLK>,
+					<&gcc GCC_UNIPHY_TX_CLK>,
+					<&gcc GCC_GMAC0_RX_CLK>,
+					<&gcc GCC_GMAC0_TX_CLK>,
+					<&gcc GCC_GMAC1_RX_CLK>,
+					<&gcc GCC_GMAC1_TX_CLK>,
+					<&gcc GCC_SNOC_GMAC0_AHB_CLK>,
+					<&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+					<&gcc GCC_GMAC0_PTP_CLK>,
+					<&gcc GCC_GMAC1_PTP_CLK>;
+				clock-names = "cmn_ahb_clk", "cmn_sys_clk",
+						"uniphy_ahb_clk", "uniphy_sys_clk",
+						"gcc_mdio0_ahb_clk",
+						"gcc_mdio1_ahb_clk",
+						"gcc_gmac0_cfg_clk",
+						"gcc_gmac0_sys_clk",
+						"gcc_gmac1_cfg_clk",
+						"gcc_gmac1_sys_clk",
+						"uniphy0_port1_rx_clk",
+						"uniphy0_port1_tx_clk",
+						"uniphy1_port5_rx_clk",
+						"uniphy1_port5_tx_clk",
+						"nss_port1_rx_clk", "nss_port1_tx_clk",
+						"nss_port2_rx_clk", "nss_port2_tx_clk",
+						"gcc_snoc_gmac0_ahb_clk",
+						"gcc_snoc_gmac1_ahb_clk",
+						"gcc_gmac0_ptp_clk",
+						"gcc_gmac1_ptp_clk";
+				resets = <&gcc GCC_GEPHY_BCR>, <&gcc GCC_UNIPHY_BCR>,
+					<&gcc GCC_GMAC0_BCR>, <&gcc GCC_GMAC1_BCR>,
+					<&gcc GCC_UNIPHY_SOFT_RESET>,
+					<&gcc GCC_GEPHY_MISC_ARES>;
+				reset-names = "gephy_bcr_rst", "uniphy_bcr_rst",
+						"gmac0_bcr_rst", "gmac1_bcr_rst",
+						"uniphy1_soft_rst",
+						"gephy_misc_rst";
+
+	qcom,port_phyinfo {
+		port@0 {
+			port_id = <1>;
+			phy_address = <7>;
+		};
+		port@1 {
+			port_id = <2>;
+			forced-speed = <1000>;
+			forced-duplex = <1>;
+		};
+	};
+	led_source@0 {
+		source = <0>;
+		mode = "normal";
+		speed = "all";
+		blink_en = "enable";
+		active = "high";
+	};
+};
 
 
 &ess_instance {
 	num_devices = <0x2>;
 	status = "okay";
 
-	ess-switch@39c00000 {
-		compatible = "qcom,ess-switch-ipq50xx";
-		device_id = <0>;
-		switch_mac_mode = <0xf>; /* mac mode for uniphy instance*/
-		cmnblk_clk = "internal_96MHz"; /* cmnblk clk*/
-		qcom,port_phyinfo {
-			port@0 {
-				port_id = <1>;
-				phy_address = <7>;
-			};
-			port@1 {
-				port_id = <2>;
-				forced-speed = <1000>;
-				forced-duplex = <1>;
-			};
-		};
-		led_source@0 {
-			source = <0>;
-			mode = "normal";
-			speed = "all";
-			blink_en = "enable";
-			active = "high";
-		};
-	};
+
 	ess-switch1@1 {
 		compatible = "qcom,ess-switch-qca83xx";
 		device_id = <1>;
@@ -195,6 +249,7 @@
 		status = "disabled";
 };
 
+
 &dp1 {
 	status = "ok";
 
@@ -212,10 +267,22 @@
 	phy-mode = "sgmii";
 
 
-
 	/delete-property/qcom,link-poll;
 	/delete-property/qcom,phy-mdio_addr;
 	/delete-property/mdio-bus;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&uniphy0 {
+	mode = <QCOM_ETH_UNIPHY_MODE_SGMII>;
+	clkout-frequency = <QCOM_ETH_UNIPHY_CLKOUT_FREQ_25M>;
+	clkout-drive-strength = <QCOM_ETH_UNIPHY_CLKOUT_DS_1_5V>;
+
+	status = "okay";
 };
 
 &mdio0 {
