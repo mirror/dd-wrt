@@ -346,7 +346,7 @@ static void load_nss_ipq60xx(int profile)
 		insmod("qca-nss-drv-ipq60xx");
 		insmod("qca-nss-crypto-ipq60xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
-		insmod("qca-nss-netlink");
+		insmod("qca-nss-netlink-ipq60xx");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
 		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
@@ -369,18 +369,65 @@ static void load_nss_ipq60xx(int profile)
 		}
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe");
-		insmod("qca-nss-vlan");
-		insmod("qca-nss-qdisc");
-		insmod("qca-nss-pptp");
-		insmod("qca-nss-l2tpv2");
-		insmod("qca-nss-vxlanmgr");
-		insmod("qca-nss-tunipip6");
-		insmod("qca-nss-tlsmgr");
+		insmod("qca-nss-pppoe-ipq60xx");
+		insmod("qca-nss-vlan-ipq60xx");
+		insmod("qca-nss-qdisc-ipq60xx");
+		insmod("qca-nss-pptp-ipq60xx");
+		insmod("qca-nss-l2tpv2-ipq60xx");
+		insmod("qca-nss-vxlanmgr-ipq60xx");
+		insmod("qca-nss-tunipip6-ipq60xx");
+		insmod("qca-nss-tlsmgr-ipq60xx");
 		insmod("qca-mcs");
 		insmod("nss-ifb");
-		insmod("qca-nss-netlink");
-		insmod("qca-nss-bridge-mgr");
+		insmod("qca-nss-netlink-ipq60xx");
+		insmod("qca-nss-bridge-mgr-ipq60xx");
+	}
+}
+
+static void load_nss_ipq50xx(int profile)
+{
+	insmod("qca-ssdk-ipq50xx");
+	insmod("qca-nss-dp-ipq50xx");
+
+	nvram_default_get("nss", "0");
+	if (nvram_match("nss", "1")) {
+		insmod("qca-nss-drv-ipq50xx");
+		insmod("qca-nss-crypto-ipq50xx");
+		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
+		insmod("qca-nss-netlink-ipq50xx");
+		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
+		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
+		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
+		sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
+
+		if (profile == 256) {
+			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+			sysprintf("echo 30258 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+			sysprintf("echo 4096 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		}
+		if (profile == 512) {
+			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+			sysprintf("echo 30624 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+			sysprintf("echo 8192 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		}
+		if (profile == 1024) {
+			sysprintf("echo 10000000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+			sysprintf("echo 72512 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+			sysprintf("echo 36864 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		}
+
+		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+		insmod("qca-nss-pppoe-ipq50xx");
+		insmod("qca-nss-vlan-ipq50xx");
+		insmod("qca-nss-qdisc-ipq50xx");
+		insmod("qca-nss-pptp-ipq50xx");
+		insmod("qca-nss-l2tpv2-ipq50xx");
+		insmod("qca-nss-vxlanmgr-ipq50xx");
+		insmod("qca-nss-tunipip6-ipq50xx");
+		insmod("qca-nss-tlsmgr-ipq50xx");
+		insmod("qca-mcs");
+		insmod("nss-ifb");
+		insmod("qca-nss-bridge-mgr-ipq50xx");
 	}
 }
 static void load_nss_ipq807x(int profile)
@@ -399,7 +446,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("qca-nss-drv-ipq807x");
 		insmod("qca-nss-crypto-ipq807x");
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
-		insmod("qca-nss-netlink");
+		insmod("qca-nss-netlink-ipq807x");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
 		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
@@ -422,18 +469,18 @@ static void load_nss_ipq807x(int profile)
 		}
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe");
-		insmod("qca-nss-vlan");
-		insmod("qca-nss-qdisc");
-		insmod("qca-nss-pptp");
-		insmod("qca-nss-l2tpv2");
-		insmod("qca-nss-vxlanmgr");
-		insmod("qca-nss-tunipip6");
-		insmod("qca-nss-tlsmgr");
+		insmod("qca-nss-pppoe-ipq807x");
+		insmod("qca-nss-vlan-ipq807x");
+		insmod("qca-nss-qdisc-ipq807x");
+		insmod("qca-nss-pptp-ipq807x");
+		insmod("qca-nss-l2tpv2-ipq807x");
+		insmod("qca-nss-vxlanmgr-ipq807x");
+		insmod("qca-nss-tunipip6-ipq807x");
+		insmod("qca-nss-tlsmgr-ipq807x");
 		insmod("qca-mcs");
 		insmod("nss-ifb");
-		insmod("qca-nss-netlink");
-		insmod("qca-nss-bridge-mgr");
+		insmod("qca-nss-netlink-ipq807x");
+		insmod("qca-nss-bridge-mgr-ipq807x");
 	}
 }
 
@@ -508,7 +555,7 @@ void start_sysinit(void)
 	} else if (brand == ROUTER_LINKSYS_MR5500) {
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mr5500("hw_mac_addr");
-//		load_nss_ipq807x(1024);
+		load_nss_ipq50xx(512);
 	} else {
 		fwlen = 0x20000;
 		load_nss_ipq807x(512);
@@ -586,9 +633,10 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
 	}
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MR5500) {
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 	}
+
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 	}

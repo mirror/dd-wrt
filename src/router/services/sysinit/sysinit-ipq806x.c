@@ -660,21 +660,21 @@ void start_sysinit(void)
 		insmod("openvswitch");
 		insmod("qca-ovsmgr");
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe");
+		insmod("qca-nss-pppoe-ipq806x");
 		insmod("udp_tunnel");
 		insmod("ip6_udp_tunnel");
 		insmod("l2tp_core");
-		insmod("qca-nss-l2tpv2");
+		insmod("qca-nss-l2tpv2-ipq806x");
 		insmod("pptp");
-		insmod("qca-nss-pptp");
-		insmod("qca-nss-vlan");
+		insmod("qca-nss-pptp-ipq806x");
+		insmod("qca-nss-vlan-ipq806x");
 		insmod("vxlan");
-		insmod("qca-nss-vxlanmgr");
-		insmod("qca-nss-qdisc");
+		insmod("qca-nss-vxlanmgr-ipq806x");
+		insmod("qca-nss-qdisc-ipq806x");
 		insmod("qca-mcs");
 		insmod("nss-ifb");
-		insmod("qca-nss-netlink");
-		insmod("qca-nss-bridge-mgr");
+		insmod("qca-nss-netlink-ipq806x");
+		insmod("qca-nss-bridge-mgr-ipq806x");
 		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	}
 	/*
