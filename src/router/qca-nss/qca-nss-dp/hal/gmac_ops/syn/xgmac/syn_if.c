@@ -2,7 +2,7 @@
  **************************************************************************
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -41,7 +41,7 @@ static const struct syn_ethtool_stats syn_gstrings_stats[] = {
 #if defined(NSS_DP_EDMA_V2)
 	/*
 	 * Per GMAC DMA driver statistics are
-	 * supported only for IPQ95xx and IPQ53xx.
+	 * supported only for IPQ95xx, IPQ53xx.
 	 */
 	{"rx_bytes", SYN_STAT(rx_bytes)},
 	{"rx_packets", SYN_STAT(rx_packets)},

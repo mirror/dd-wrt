@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,6 +22,7 @@
 #include "nss_dp_dev.h"
 #include "edma_cfg_rx.h"
 #include "edma_cfg_tx.h"
+#include <ppe_drv.h>
 
 static char edma_ppeds_txcmpl_irq_name[EDMA_PPEDS_MAX_NODES][EDMA_IRQ_NAME_SIZE];
 static char edma_ppeds_rxdesc_irq_name[EDMA_PPEDS_MAX_NODES][EDMA_IRQ_NAME_SIZE];
@@ -667,7 +668,7 @@ static void edma_ppeds_cfg_rx(struct edma_ppeds *ppeds_node)
 			(uint32_t)(rxfill_ring->dma & EDMA_RING_DMA_MASK));
 
 	ring_sz = rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK;
-	edma_reg_write(EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id), ring_sz);
+	edma_reg_write(EDMA_RXFILL_RING_SIZE(rxfill_ring->ring_id), ring_sz);
 
 	rxfill_ring->prod_idx = edma_reg_read(EDMA_REG_RXFILL_PROD_IDX(rxfill_ring->ring_id));
 
@@ -678,8 +679,15 @@ static void edma_ppeds_cfg_rx(struct edma_ppeds *ppeds_node)
 			(uint32_t)(rxdesc_ring->sdma & EDMA_RXDESC_PREHEADER_BA_MASK));
 
 	data = rxdesc_ring->count & EDMA_RXDESC_RING_SIZE_MASK;
+
+	/*
+	 * For SOC's where Rxdesc ring register do not contain PL offset
+	 * fields, skip writing that data into the Register.
+	 */
+#if !defined(NSS_DP_EDMA_SKIP_PL_OFFSET)
 	data |= (EDMA_RXDESC_PL_DEFAULT_VALUE & EDMA_RXDESC_PL_OFFSET_MASK)
 		 << EDMA_RXDESC_PL_OFFSET_SHIFT;
+#endif
 	edma_reg_write(EDMA_REG_RXDESC_RING_SIZE(rxdesc_ring->ring_id), data);
 
 	/*
@@ -839,10 +847,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
+	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
 			edma_ppeds_txcomp_napi_poll, ppeds_handle->eth_txcomp_budget);
 #else
-	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
+	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
 			edma_ppeds_txcomp_napi_poll, ppeds_handle->eth_txcomp_budget);
 #endif
 
@@ -877,10 +885,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
+	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
 			edma_ppeds_rx_napi_poll, EDMA_PPEDS_RX_WEIGHT);
 #else
-	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
+	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
 		edma_ppeds_rx_napi_poll, EDMA_PPEDS_RX_WEIGHT);
 #endif
 
@@ -902,10 +910,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
+	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
 			edma_ppeds_rxfill_napi_poll, EDMA_PPEDS_RXFILL_WEIGHT);
 #else
-	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
+	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
 			edma_ppeds_rxfill_napi_poll, EDMA_PPEDS_RXFILL_WEIGHT);
 #endif
 
@@ -1504,12 +1512,22 @@ void edma_ppeds_deinit(struct edma_ppeds_drv *drv)
 }
 
 /*
+ * edma_ppeds_get_queue_start_for_node()
+ *	PPEDS get queue_start for a particular node id.
+ */
+static int edma_ppeds_get_queue_start_for_node(struct edma_ppeds_drv *drv, int i)
+{
+	return ((uint8_t) drv->ppeds_node_cfg[i].node_map[EDMA_PPEDS_ENTRY_QID_START_IDX]);
+}
+
+/*
  * edma_ppeds_init()
  *	PPEDS init
  */
 int edma_ppeds_init(struct edma_ppeds_drv *drv)
 {
 	uint32_t i;
+	uint8_t queue_start;
 
 	rwlock_init(&drv->lock);
 
@@ -1521,6 +1539,10 @@ int edma_ppeds_init(struct edma_ppeds_drv *drv)
 				drv->ppeds_node_cfg[i].node_map[j] =
 					 edma_gbl_ctx.ppeds_node_map[i][j];
 			}
+
+			queue_start = edma_ppeds_get_queue_start_for_node(drv, i);
+			ppe_drv_ds_map_node_to_queue(i, queue_start);
+
 			drv->ppeds_node_cfg[i].node_state = EDMA_PPEDS_NODE_STATE_AVAIL;
 			continue;
 		}

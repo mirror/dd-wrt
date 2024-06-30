@@ -30,7 +30,17 @@
 #define NSS_DP_HAL_MHT_SWT_MAX_PORTS	4
 #define NSS_DP_HAL_MAX_TX_PORTS		(NSS_DP_HAL_MAX_PORTS + NSS_DP_HAL_MHT_SWT_MAX_PORTS - 1)
 #define NSS_DP_MHT_MAP_IDX		2
+
+/*
+ * Switch ID for IPQ53xx
+ */
+#define NSS_DP_MHT_SW_ID	1
 #endif
+
+/*
+ * Default device ID for IPQ53xx
+ */
+#define NSS_DP_DEV_ID	0
 
 /*
  * Maximum supported GSO segments
@@ -55,6 +65,13 @@
  */
 #define NSS_DP_HAL_RX_NAPI_BUDGET	128
 #define NSS_DP_HAL_TX_NAPI_BUDGET	256
+
+/*
+ * Timestamp information for the latency measurement
+ */
+#define NSS_DP_GMAC_TS_ADDR_SEC(x)	((x) + 0xD08)
+#define NSS_DP_GMAC_TS_ADDR_NSEC(x)	((x) + 0xD0C)
+#define NSS_DP_EDMA_DEF_TSTAMP_PORT	2
 
 /*
  * EDMA clock's

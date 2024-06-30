@@ -634,8 +634,15 @@ static void edma_cfg_rx_desc_ring_configure(struct edma_rxdesc_ring *rxdesc_ring
 			(uint32_t)(rxdesc_ring->sdma & EDMA_RXDESC_PREHEADER_BA_MASK));
 
 	data = rxdesc_ring->count & EDMA_RXDESC_RING_SIZE_MASK;
+
+	/*
+	 * For SOC's where Rxdesc ring register do not contain PL offset
+	 * fields, skip writing that data into the Register.
+	 */
+#if !defined(NSS_DP_EDMA_SKIP_PL_OFFSET)
 	data |= (EDMA_RXDESC_PL_DEFAULT_VALUE & EDMA_RXDESC_PL_OFFSET_MASK)
 		 << EDMA_RXDESC_PL_OFFSET_SHIFT;
+#endif
 	edma_reg_write(EDMA_REG_RXDESC_RING_SIZE(rxdesc_ring->ring_id), data);
 
 	/*
@@ -697,7 +704,7 @@ static void edma_cfg_rx_fill_ring_configure(struct edma_rxfill_ring *rxfill_ring
 			(uint32_t)(rxfill_ring->dma & EDMA_RING_DMA_MASK));
 
 	ring_sz = rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK;
-	edma_reg_write(EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id), ring_sz);
+	edma_reg_write(EDMA_RXFILL_RING_SIZE(rxfill_ring->ring_id), ring_sz);
 
 	/*
 	 * Alloc Rx buffers
@@ -1495,10 +1502,10 @@ void edma_cfg_rx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev)
 #else
 		if (nss_dp_capwap_vp_rx_core == i) {
 			edma_info("Adding capwap napi for ring_id %d for core3\n", nss_dp_capwap_vp_rx_core);
-			netif_threaded_napi_add_weight(netdev, &rxdesc_ring->napi,
+			netif_napi_add_weight(netdev, &rxdesc_ring->napi,
 				edma_rx_napi_capwap_poll, nss_dp_rx_napi_budget);
 		} else {
-			netif_threaded_napi_add_weight(netdev, &rxdesc_ring->napi,
+			netif_napi_add_weight(netdev, &rxdesc_ring->napi,
 				 edma_rx_napi_poll, nss_dp_rx_napi_budget);
 		}
 #endif

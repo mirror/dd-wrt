@@ -27,6 +27,7 @@
 #include "edma_regs.h"
 #include "edma_debug.h"
 #include "edma.h"
+#include <ppe_drv_sc.h>
 
 /*
  * edma_tx_complete()
@@ -416,8 +417,17 @@ static inline void edma_tx_fill_pp_desc(struct nss_dp_dev *dp_dev, struct edma_p
 	/*
 	 * Set destination information in the descriptor
 	 */
-	EDMA_TXDESC_SERVICE_CODE_SET(txd, EDMA_SC_BYPASS);
+	EDMA_TXDESC_SERVICE_CODE_SET(txd, PPE_DRV_SC_BYPASS_ALL);
 	EDMA_DST_INFO_SET(txd, dp_dev->macid);
+
+	/*
+	 * Set the src info as destination dev in case if
+	 * port mirroring is enabled - to receive the packet back in
+	 * DP with valid source port.
+	 */
+#if defined NSS_DP_PORT_MIRROR_EN
+	EDMA_SRC_INFO_SET(txd, dp_dev->macid);
+#endif
 
 	EDMA_TXDESC_INT_PRI_SET(txd, skb_get_int_pri(skb));
 }

@@ -104,7 +104,9 @@ static inline struct dma_desc_tx *syn_dp_tx_process_nr_frags(struct syn_dp_info_
 		BUG_ON(!length);
 #endif
 
-		dma_addr = dma_map_single(tx_info->dev, frag_addr, length, DMA_TO_DEVICE);
+		dma_addr = (dma_addr_t)virt_to_phys(frag_addr);
+
+		dmac_clean_range_no_dsb(frag_addr, frag_addr + length);
 
 		*total_length += length;
 		tx_desc = syn_dp_tx_set_desc_sg(tx_info, dma_addr, length, DESC_OWN_BY_DMA);
@@ -148,7 +150,8 @@ int syn_dp_tx_nr_frags(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 	/*
 	 * Flush the dma for non-paged skb data
 	 */
-	dma_addr = dma_map_single(tx_info->dev, skb->data, length, DMA_TO_DEVICE);
+	dma_addr = (dma_addr_t)virt_to_phys(skb->data);
+	dmac_clean_range_no_dsb((void *)skb->data, (void *)(skb->data + length));
 
 	total_len = length;
 
@@ -253,7 +256,12 @@ int syn_dp_tx_frag_list(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 		return NETDEV_TX_BUSY;
 	}
 
-	dma_addr = dma_map_single(tx_info->dev, skb->data, length, DMA_TO_DEVICE);
+	dma_addr = (dma_addr_t)virt_to_phys(skb->data);
+
+	/*
+	 * Flush the data area of the head skb
+	 */
+	dmac_clean_range_no_dsb((void *)skb->data, (void *)(skb->data + length));
 
 	total_len = length;
 
@@ -282,7 +290,9 @@ int syn_dp_tx_frag_list(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 		BUG_ON(!length);
 #endif
 
-		dma_addr = dma_map_single(tx_info->dev, iter_skb->data, length, DMA_TO_DEVICE);
+		dma_addr = (dma_addr_t)virt_to_phys(iter_skb->data);
+
+		dmac_clean_range_no_dsb((void *)iter_skb->data, (void *)(iter_skb->data + length));
 
 		total_len += length;
 
@@ -435,7 +445,6 @@ int syn_dp_tx_complete(struct syn_dp_info_tx *tx_info, int budget)
 			break;
 		}
 
-		dma_unmap_single(tx_info->dev, desc->buffer1, desc->length, DMA_TO_DEVICE);
 
 		if (likely(status & DESC_TX_LAST)) {
 			tx_skb_index = syn_dp_tx_comp_index_get(tx_info);
@@ -562,7 +571,9 @@ int syn_dp_tx(struct syn_dp_info_tx *tx_info, struct sk_buff *skb)
 		return NETDEV_TX_BUSY;
 	}
 
-	dma_addr = dma_map_single(tx_info->dev, skb->data, skb->len, DMA_TO_DEVICE);
+	dma_addr = (dma_addr_t)virt_to_phys(skb->data);
+
+	dmac_clean_range_no_dsb((void *)skb->data, (void *)(skb->data + skb->len));
 
 	/*
 	 * Queue packet to the GMAC rings

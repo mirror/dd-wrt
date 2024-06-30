@@ -73,6 +73,16 @@ static inline void syn_dp_rx_refill_one_desc(struct dma_desc_rx *rx_desc,
  */
 static inline void syn_dp_rx_inval_and_flush(struct syn_dp_info_rx *rx_info, uint32_t start, uint32_t end)
 {
+	/*
+	 * Batched flush and invalidation of the rx descriptors
+	 */
+	if (end > start) {
+		dmac_flush_range_no_dsb((void *)&rx_info->rx_desc[start], (void *)&rx_info->rx_desc[end] + sizeof(struct dma_desc_rx));
+	} else {
+		dmac_flush_range_no_dsb((void *)&rx_info->rx_desc[start], (void *)&rx_info->rx_desc[SYN_DP_RX_DESC_MAX_INDEX] + sizeof(struct dma_desc_rx));
+		dmac_flush_range_no_dsb((void *)&rx_info->rx_desc[0], (void *)&rx_info->rx_desc[end] + sizeof(struct dma_desc_rx));
+	}
+
 	dsb(st);
 }
 
@@ -114,19 +124,15 @@ int syn_dp_rx_refill_page_mode(struct syn_dp_info_rx *rx_info)
 			break;
 		}
 
-		skb_fill_page_desc(skb, 0, pg, 0, PAGE_SIZE);
-
 		/*
 		 * Get virtual address of allocated page.
 		 */
 		page_addr = page_address(pg);
-		dma_addr  = dma_map_page(rx_info->dev, pg, 0, PAGE_SIZE, DMA_FROM_DEVICE);
-		if (unlikely(dma_mapping_error(rx_info->dev, dma_addr))) {
-			dev_kfree_skb(skb);
-			netdev_dbg(netdev, "DMA mapping failed for empty buffer\n");
-			break;
-		}
+		dma_addr = (dma_addr_t)virt_to_phys(page_addr);
 
+		skb_fill_page_desc(skb, 0, pg, 0, PAGE_SIZE);
+
+		dmac_inv_range_no_dsb(page_addr, (page_addr + PAGE_SIZE));
 		rx_refill_idx = rx_info->rx_refill_idx;
 		rx_desc = rx_info->rx_desc + rx_refill_idx;
 
@@ -175,15 +181,8 @@ int syn_dp_rx_refill(struct syn_dp_info_rx *rx_info)
 
 		skb_reserve(skb, SYN_DP_SKB_HEADROOM + NET_IP_ALIGN);
 
-		dma_addr = dma_map_single(rx_info->dev, skb->data,
-		                          inval_len,
-		                          DMA_FROM_DEVICE);
-		if (unlikely(dma_mapping_error(rx_info->dev, dma_addr))) {
-			dev_kfree_skb(skb);
-			netdev_dbg(netdev, "DMA mapping failed for empty buffer\n");
-			break;
-		}
-
+		dma_addr = (dma_addr_t)virt_to_phys(skb->data);
+		dmac_inv_range_no_dsb((void *)skb->data, (void *)(skb->data + inval_len));
 		rx_refill_idx = rx_info->rx_refill_idx;
 		rx_desc = rx_info->rx_desc + rx_refill_idx;
 
@@ -408,6 +407,12 @@ int syn_dp_rx(struct syn_dp_info_rx *rx_info, int budget)
 	 * this code is executing.
 	 */
 	end = syn_dp_rx_inc_index(rx_info->rx_idx, busy);
+	if (end > start) {
+		dmac_inv_range_no_dsb((void *)&rx_info->rx_desc[start], (void *)&rx_info->rx_desc[end] + sizeof(struct dma_desc_rx));
+	} else {
+		dmac_inv_range_no_dsb((void *)&rx_info->rx_desc[start], (void *)&rx_info->rx_desc[SYN_DP_RX_DESC_MAX_INDEX] + sizeof(struct dma_desc_rx));
+		dmac_inv_range_no_dsb((void *)&rx_info->rx_desc[0], (void *)&rx_info->rx_desc[end] + sizeof(struct dma_desc_rx));
+	}
 
 	dsb(st);
 
@@ -434,12 +439,8 @@ int syn_dp_rx(struct syn_dp_info_rx *rx_info, int budget)
 		 * speculative prefetch by CPU may have occurred.
 		 */
 		frame_length = syn_dp_gmac_get_rx_desc_frame_length(status);
-		if (likely(!rx_info->page_mode))
-			dma_unmap_single(rx_info->dev, rx_desc->buffer1,
-			                 rx_info->alloc_buf_len, DMA_FROM_DEVICE);
-		else
-			dma_unmap_page(rx_info->dev, rx_desc->buffer1,
-			               PAGE_SIZE, DMA_FROM_DEVICE);
+		dmac_inv_range((void *)rx_buf->map_addr_virt,
+			(void *)(((uint8_t *)rx_buf->map_addr_virt) + frame_length));
 		prefetch((void *)rx_buf->map_addr_virt);
 
 		rx_next_idx = syn_dp_rx_inc_index(rx_idx, 1);

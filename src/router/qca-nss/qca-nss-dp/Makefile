@@ -15,6 +15,10 @@ ifneq ($(CONFIG_NET_SWITCHDEV),)
 qca-nss-dp-$(SoC)-objs += nss_dp_switchdev.o
 endif
 
+ifeq ($(SoC),$(filter $(SoC),ipq53xx))
+qca-nss-dp-$(SoC)-objs += nss_dp_eawtp.o
+endif
+
 NSS_DP_INCLUDE = -I$(obj)/include -I$(obj)/exports -I$(obj)/hal/include \
 		 -I$(obj)/hal/dp_ops/include
 
@@ -38,7 +42,14 @@ endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
 ccflags-y += -DNSS_DP_MHT_SW_PORT_MAP
+ccflags-y += -DNSS_DP_CONFIG_RST
 endif
+
+# Adding flag to enable physical port mirror support
+# in PPE - To be enabled when mirror support is needed.
+#ifeq ($(SoC),$(filter $(SoC),ipq95xx ipq53xx))
+#ccflags-y += -DNSS_DP_PORT_MIRROR_EN
+#endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq50xx))
 qca-nss-dp-$(SoC)-objs += hal/dp_ops/syn_gmac_dp/syn_dp_cfg_rx.o \

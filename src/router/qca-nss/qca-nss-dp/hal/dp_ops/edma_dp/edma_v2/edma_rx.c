@@ -354,6 +354,7 @@ static void edma_rx_handle_wifi_qos_packets(struct edma_gbl_ctx *egc, struct edm
 	uint8_t service_class, wifi_qos;
 	struct edma_rxdesc_sec_desc *rxdesc_sec, *next_rxdesc_sec;
 	ppe_drv_tree_id_type_t tree_id_type;
+	uint32_t mlo_mark;
 
 	desc_index = ((uint8_t *)rxdesc_head - (uint8_t *)rxdesc_ring->pdesc) >> EDMA_RXDESC_SIZE_SHIFT;
 	rxdesc_sec = EDMA_RXDESC_SEC_DESC(rxdesc_ring, desc_index);
@@ -423,6 +424,21 @@ static void edma_rx_handle_wifi_qos_packets(struct edma_gbl_ctx *egc, struct edm
 		edma_debug("%px : HLOS TID OVERRIDE priority configured = 0x%d\n", egc, skb->priority);
 		break;
 
+	case PPE_DRV_TREE_ID_TYPE_MLO_ASSIST:
+		/*
+		 * In case of MLO, fetch the MLO metadata from Tree ID.
+		 */
+		wifi_qos = EDMA_RXDESC_WIFI_QOS_GET(rxdesc_head);
+		mlo_mark = EDMA_RXDESC_MLO_MARK_GET(rxdesc_sec);
+
+		/*
+		 * Configure skb->mark with MLO metadata.
+		 */
+		skb->mark = EDMA_RX_MLO_METADATA_CONSTRUCT(mlo_mark, wifi_qos);
+
+		edma_debug("%px : mlo mark configured = 0x%x\n", egc, skb->mark);
+		break;
+
 	default:
 		edma_debug("%p : Invalid tree-id type = %u\n", egc, tree_id_type);
 		break;
@@ -477,6 +493,7 @@ static inline bool edma_rx_handle_sc_cc_packets(struct edma_gbl_ctx *egc,
 			acl_info.cpu_code = cpu_code;
 			acl_info_valid = true;
 			cc_info.acl_hw_index = acl_info.acl_hw_index;
+			cc_info.acl_index_valid = true;
 		}
 
 		cc_info.cpu_code = cpu_code;
@@ -1064,6 +1081,34 @@ done:
 	return NULL;
 }
 
+#ifdef CONFIG_SKB_TIMESTAMP
+/*
+ * edma_rx_get_tstamp()
+ *	Compute the timestamp received in the secondary descriptor
+ */
+static inline uint64_t edma_rx_get_tstamp(struct edma_rxdesc_sec_desc *rxsec_desc)
+{
+	uint32_t nsecs, secs;
+
+	nsecs = EDMA_RX_SDESC_TSTAMP_LO_GET(rxsec_desc);
+	secs = EDMA_RX_SDESC_TSTAMP_HI_GET(rxsec_desc);
+	return EDMA_TIMESTAMP_TO_USEC(secs, nsecs);
+}
+
+/*
+ * edma_rx_read_gmac_timer()()
+ *	API to read the GMAC timer register
+ */
+static inline uint64_t edma_rx_read_gmac_timer(struct edma_gbl_ctx *egc)
+{
+	uint32_t nsecs, secs;
+
+	nsecs = readl(egc->tstamp_nsec);
+	secs = readl(egc->tstamp_sec) & EDMA_TIMESTAMP_SEC_MASK;
+	return EDMA_TIMESTAMP_TO_USEC(secs, nsecs);
+}
+#endif
+
 /*
  * edma_rx_get_src_capwap_dev()
  *	Get source port and corresponding net device.
@@ -1327,7 +1372,7 @@ static uint32_t edma_rx_reap(struct edma_gbl_ctx *egc, int budget,
 	uint32_t work_to_do, work_done = 0;
 	uint16_t prod_idx, cons_idx, end_idx;
 	uint16_t cons_idx_1, cons_idx_2;
-	struct sk_buff *cur_skb = NULL;
+	struct sk_buff *cur_skb = NULL, *next_skb = NULL;
 	struct list_head rx_list;
 	INIT_LIST_HEAD(&rx_list);
 
@@ -1413,6 +1458,23 @@ static uint32_t edma_rx_reap(struct edma_gbl_ctx *egc, int budget,
 		 */
 		skb = (struct sk_buff *)EDMA_RXDESC_OPAQUE_GET(rxdesc_desc);
 
+#ifdef CONFIG_SKB_TIMESTAMP
+	if (EDMA_RX_SDESC_TSTAMP_VALID_GET(rxdesc_sec)) {
+		uint64_t pkt_time, cur_time;
+
+		pkt_time = edma_rx_get_tstamp(rxdesc_sec);
+		cur_time = edma_rx_read_gmac_timer(egc);
+
+		if (likely(cur_time > pkt_time)) {
+			skb->delta_ts0 = cur_time - pkt_time;
+			skb->delta_ts1 = EDMA_TIMESTAMP_NSEC_TO_USEC(ktime_get_ns());
+			edma_debug("skb: %p, pkt_time: %llu, cur_time: %llu, delta_ts0: %llu, delta_ts1: %llu\n",
+					skb, pkt_time, cur_time,
+					skb->delta_ts0, skb->delta_ts1);
+		}
+	}
+#endif
+
 		/*
 		 * Handle linear packets or initial segments first
 		 */
@@ -1482,33 +1544,31 @@ next_rx_desc:
 		 * Get the next Rx descriptor.
 		 */
 		rxdesc_desc = EDMA_RXDESC_PRI_DESC(rxdesc_ring, cons_idx);
+#ifdef CONFIG_SKB_TIMESTAMP
+		rxdesc_sec = EDMA_RXDESC_SEC_DESC(rxdesc_ring, cons_idx);
+#endif
 	}
 
 	edma_reg_write(EDMA_REG_RXDESC_CONS_IDX(rxdesc_ring->ring_id), cons_idx);
 	rxdesc_ring->cons_idx = cons_idx;
 
-	cur_skb =  list_first_entry(&rx_list, struct sk_buff, list);
-	if (likely(cur_skb)) {
-		struct sk_buff *next_skb = NULL;
-
-		/*
-		 * Prefetch the packet data for the next skbuff, and the skbuff
-		 * structure for next and next-next skbuffs for optimal performance.
-		 */
-		list_for_each_entry_safe(cur_skb, next_skb, &rx_list, list) {
-			if (likely(next_skb)) {
-				prefetch(next_skb);
-				prefetch((uint8_t *)(next_skb) + 64);
-				prefetch((uint8_t *)(next_skb) + 128);
-				prefetch((uint8_t *)(next_skb) + 192);
-				prefetch(next_skb->data);
-				prefetch(skb_shinfo(next_skb));
-			}
-
-			skb_list_del_init(cur_skb);
-			cur_skb->protocol = eth_type_trans(cur_skb, cur_skb->dev);
-			netif_receive_skb(cur_skb);
+	/*
+	 * Prefetch the packet data for the next skbuff, and the skbuff
+	 * structure for next and next-next skbuffs for optimal performance.
+	 */
+	list_for_each_entry_safe(cur_skb, next_skb, &rx_list, list) {
+		if (likely(!list_entry_is_head(next_skb, &rx_list, list))) {
+			prefetch(next_skb);
+			prefetch((uint8_t *)(next_skb) + 64);
+			prefetch((uint8_t *)(next_skb) + 128);
+			prefetch((uint8_t *)(next_skb) + 192);
+			prefetch(next_skb->data);
+			prefetch(skb_shinfo(next_skb));
 		}
+
+		skb_list_del_init(cur_skb);
+		cur_skb->protocol = eth_type_trans(cur_skb, cur_skb->dev);
+		netif_receive_skb(cur_skb);
 	}
 
 	return work_done;
