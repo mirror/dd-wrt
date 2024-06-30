@@ -249,6 +249,13 @@
 		status = "disabled";
 };
 
+&uniphy0 {
+	mode = <QCOM_ETH_UNIPHY_MODE_SGMII>;
+	clkout-frequency = <QCOM_ETH_UNIPHY_CLKOUT_FREQ_25M>;
+	clkout-drive-strength = <QCOM_ETH_UNIPHY_CLKOUT_DS_1_5V>;
+
+	status = "okay";
+};
 
 &dp1 {
 	status = "ok";
