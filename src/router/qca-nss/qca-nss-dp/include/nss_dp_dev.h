@@ -225,6 +225,7 @@ struct nss_dp_dev {
 	unsigned long drv_flags;	/* Driver specific feature flags */
 
 	/* Phy related stuff */
+	struct device_node *phy_node;	/* Phy device OF node */
 	struct phy_device *phydev;	/* Phy device */
 	struct mii_bus *miibus;		/* MII bus */
 	uint32_t phy_mii_type;		/* RGMII/SGMII/QSGMII */

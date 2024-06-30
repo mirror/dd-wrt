@@ -8,7 +8,6 @@ obj-m += qca-nss-dp-$(SoC).o
 
 qca-nss-dp-$(SoC)-objs += nss_dp_attach.o \
 		   nss_dp_ethtools.o \
-		   nss_dp_main.o \
 		   hal/soc_ops/$(SoC)/nss_$(SoC).o
 
 ifneq ($(CONFIG_NET_SWITCHDEV),)
@@ -34,15 +33,18 @@ endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq807x))
 ccflags-y += -DNSS_DP_IPQ807X -DNSS_DP_EDMA_TX_SMALL_PKT_WAR
+qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq60xx))
 ccflags-y += -DNSS_DP_IPQ60XX
+qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
 ccflags-y += -DNSS_DP_MHT_SW_PORT_MAP
 ccflags-y += -DNSS_DP_CONFIG_RST
+qca-nss-dp-$(SoC)-objs += nss_dp_main.o
 endif
 
 # Adding flag to enable physical port mirror support
