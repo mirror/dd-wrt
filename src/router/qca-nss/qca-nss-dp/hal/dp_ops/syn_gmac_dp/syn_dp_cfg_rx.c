@@ -33,13 +33,15 @@ static int syn_dp_cfg_rx_setup_desc_queue(struct syn_dp_info *dev_info)
 	/*
 	 * Allocate cacheable descriptors for Rx
 	 */
-	first_desc = kzalloc(sizeof(struct dma_desc_rx) * SYN_DP_RX_DESC_SIZE, GFP_KERNEL);
+	first_desc = dma_alloc_coherent(rx_info->dev,
+					sizeof(struct dma_desc_rx) * SYN_DP_RX_DESC_SIZE,
+					&dma_addr, GFP_KERNEL);
 	if (!first_desc) {
 		netdev_dbg(netdev, "Error in Rx Descriptor Memory allocation in Ring mode\n");
 		return -ENOMEM;
 	}
 
-	dev_info->rx_desc_dma_addr = (dma_addr_t)virt_to_phys(first_desc);
+	dev_info->rx_desc_dma_addr = dma_addr;
 	rx_info->rx_desc = first_desc;
 	syn_dp_gmac_rx_desc_init_ring(rx_info->rx_desc, SYN_DP_RX_DESC_SIZE);
 
@@ -98,6 +100,10 @@ void syn_dp_cfg_rx_cleanup_rings(struct syn_dp_info *dev_info)
 	for (i = 0; i < rx_info->busy_rx_desc_cnt; i++) {
 		rx_skb_index = (rx_skb_index + i) & SYN_DP_RX_DESC_MAX_INDEX;
 		rxdesc = rx_info->rx_desc;
+
+		dma_unmap_single(rx_info->dev, rxdesc->buffer1,
+				 rxdesc->length, DMA_FROM_DEVICE);
+
 		skb = rx_info->rx_buf_pool[rx_skb_index].skb;
 		if (unlikely(skb != NULL)) {
 			dev_kfree_skb_any(skb);
@@ -105,7 +111,8 @@ void syn_dp_cfg_rx_cleanup_rings(struct syn_dp_info *dev_info)
 		}
 	}
 
-	kfree(rx_info->rx_desc);
+	dma_free_coherent(rx_info->dev, (sizeof(struct dma_desc_rx) * SYN_DP_RX_DESC_SIZE),
+			  rx_info->rx_desc, dev_info->rx_desc_dma_addr);
 	rx_info->rx_desc = NULL;
 	dev_info->rx_desc_dma_addr = (dma_addr_t)0;
 }

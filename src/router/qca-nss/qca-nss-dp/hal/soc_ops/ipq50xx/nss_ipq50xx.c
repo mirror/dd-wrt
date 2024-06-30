@@ -78,13 +78,8 @@ static void nss_dp_hal_tcsr_set(void)
 	 * If TZ is not enabled, we can write to the register directly.
 	 */
 	if (qcom_scm_is_available()) {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-		err = qcom_scm_tcsr_reg_write((tcsr_base + TCSR_GMAC_AXI_CACHE_OVERRIDE_OFFSET),
+		err = qcom_scm_io_writel((tcsr_base + TCSR_GMAC_AXI_CACHE_OVERRIDE_OFFSET),
 						TCSR_GMAC_AXI_CACHE_OVERRIDE_VALUE);
-#else
-		err = qti_scm_tcsr_reg_write((tcsr_base + TCSR_GMAC_AXI_CACHE_OVERRIDE_OFFSET),
-						TCSR_GMAC_AXI_CACHE_OVERRIDE_VALUE);
-#endif
 		if (err) {
 			pr_err("%s: SCM TCSR write error: %d\n", __func__, err);
 		}
