@@ -27,7 +27,7 @@ static int syn_dp_cfg_rx_setup_desc_queue(struct syn_dp_info *dev_info)
 	struct syn_dp_info_rx *rx_info = &dev_info->dp_info_rx;
 	struct dma_desc_rx *first_desc = NULL;
 	struct net_device *netdev = rx_info->netdev;
-
+	dma_addr_t dma_addr;
 	netdev_dbg(netdev, "Total size of memory required for Rx Descriptors in Ring Mode = %u\n", (uint32_t)((sizeof(struct dma_desc_rx) * SYN_DP_RX_DESC_SIZE)));
 
 	/*
