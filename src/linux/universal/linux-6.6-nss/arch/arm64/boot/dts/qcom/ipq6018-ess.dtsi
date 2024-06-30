@@ -458,6 +458,8 @@
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
 		phy-mode = "psgmii";
+		qcom,link-poll = <1>;
+		qcom,phy-mdio-addr = <0>;
 		status = "disabled";
 	};
 
@@ -469,6 +471,8 @@
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
 		phy-mode = "psgmii";
+		qcom,link-poll = <1>;
+		qcom,phy-mdio-addr = <1>;
 		status = "disabled";
 	};
 
@@ -480,6 +484,8 @@
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
 		phy-mode = "psgmii";
+		qcom,link-poll = <1>;
+		qcom,phy-mdio-addr = <2>;
 		status = "disabled";
 	};
 
@@ -491,6 +497,8 @@
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
 		phy-mode = "psgmii";
+		qcom,link-poll = <1>;
+		qcom,phy-mdio-addr = <3>;
 		status = "disabled";
 	};
 
@@ -502,6 +510,8 @@
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
 		phy-mode = "psgmii";
+		qcom,link-poll = <1>;
+		qcom,phy-mdio-addr = <4>;
 		status = "disabled";
 	};
 };
