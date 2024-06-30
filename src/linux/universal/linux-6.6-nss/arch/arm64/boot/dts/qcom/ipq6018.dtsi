@@ -984,6 +984,8 @@
 			      <0x0 0x004ab000 0x0 0x20>;
 			reg-names = "qdsp6",
 				    "rmb";
+			qca,auto-restart;
+			qca,extended-intc;
 			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
 					      <&wcss_smp2p_in 0 0>,
 					      <&wcss_smp2p_in 1 0>,

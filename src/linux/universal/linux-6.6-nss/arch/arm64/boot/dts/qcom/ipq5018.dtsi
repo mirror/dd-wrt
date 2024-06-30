@@ -100,13 +100,19 @@
 		method = "smc";
 	};
 
+	tcsr_mutex: hwlock {
+		compatible = "qcom,tcsr-mutex";
+		syscon = <&tcsr_mutex_regs 0 0x1000>;
+		#hwlock-cells = <1>;
+	};
+
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 
 		bt_mem_region: bt@7000000 {
-			reg = <0x0 0x07000000 0x0 0x58000>;
+			reg = <0x0 0x07000000 0x0 0x00058000>;
 			no-map;
 		};
 
@@ -120,24 +126,21 @@
 			no-map;
 		};
 
-		smem@4ab00000 {
-			compatible = "qcom,smem";
+ 		tz: memory@4ac00000 {
+			reg = <0x0 0x4ac00000 0x0 0x400000>;
+ 			no-map;
+ 		};
+ 
+ 		smem_region: memory@4ab00000 {
 			reg = <0x0 0x4ab00000 0x0 0x100000>;
-			no-map;
+ 			no-map;
+ 		};
+ 	};
 
-			hwlocks = <&tcsr_mutex 3>;
-		};
-
-		tz_region: tz@4ac00000 {
-			reg = <0x0 0x4ac00000 0x0 0x200000>;
-			no-map;
-		};
-	};
-
-	tcsr_mutex: hwlock {
-		compatible = "qcom,tcsr-mutex";
-		syscon = <&tcsr_mutex_regs 0 0x1000>;
-		#hwlock-cells = <1>;
+	smem {
+		compatible = "qcom,smem";
+		memory-region = <&smem_region>;
+		hwlocks = <&tcsr_mutex 3>;
 	};
 
 	soc: soc@0 {
@@ -204,43 +207,6 @@
 			status = "disabled";
 		};
 
-		mdio0: mdio@88000 {
-			compatible = "qcom,ipq5018-mdio";
-			reg = <0x00088000 0x64>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
-			clock-names = "gcc_mdio_ahb_clk";
-			resets = <&gcc GCC_GEPHY_MDC_SW_ARES>,
-					 <&gcc GCC_GEPHY_DSP_HW_ARES>;
-			reset-names = "gephy_mdc_rst",
-						  "gephy_dsp_rst";
-			status = "disabled";
-
-			gephy: ethernet-phy@0 {
-				reg = <7>;
-				#clock-cells = <1>;
-				clocks = <&gcc GCC_GEPHY_RX_CLK>,
-						 <&gcc GCC_GEPHY_TX_CLK>;
-				resets = <&gcc GCC_GEPHY_BCR>,
-						 <&gcc GCC_GEPHY_MISC_ARES>;
-			};
-		};
-
-		mdio1: mdio@90000 {
-			compatible = "qcom,ipq5018-mdio";
-			reg = <0x00090000 0x64>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcc GCC_MDIO1_AHB_CLK>;
-			clock-names = "gcc_mdio_ahb_clk";
-			status = "disabled";
-
-			ge_phy: ethernet-phy@7 {
-				reg = <7>;
-			};
-		};
-
 		uniphy0: ethernet-phy@98000 {
 			compatible = "qcom,ipq5018-eth-uniphy";
 			#clock-cells = <1>;
@@ -258,7 +224,10 @@
 				 	 <&gcc GCC_UNIPHY_RX_CLK>,
 				 	 <&gcc GCC_UNIPHY_TX_CLK>;
 			resets = <&gcc GCC_UNIPHY_BCR>,
-				 	 <&gcc GCC_UNIPHY_SOFT_RESET>;
+				 	 <&gcc GCC_UNIPHY_AHB_ARES>,
+				 	 <&gcc GCC_UNIPHY_SYS_ARES>,
+				 	 <&gcc GCC_UNIPHY_RX_ARES>,
+				 	 <&gcc GCC_UNIPHY_TX_ARES>;
 			status = "disabled";
 		};
 
@@ -751,6 +720,8 @@
 
 			reg = <0x0cd00000 0x4040>;
 
+			qca,auto-restart;
+			qca,extended-intc;
 			interrupts-extended = <&intc GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
 					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
 					      <&wcss_smp2p_in 1 IRQ_TYPE_NONE>,
@@ -924,31 +895,6 @@
 			qrtr_node_id = <0x21>;
 			qca,auto-restart;
 			status = "disabled";
-		};
-
-		wcss: wcss-smp2p {
-			compatible = "qcom,smp2p";
-			qcom,smem = <435>, <428>;
-
-			interrupt-parent = <&intc>;
-			interrupts = <GIC_SPI 177 IRQ_TYPE_EDGE_RISING>;
-
-			mboxes = <&apcs_glb 9>;
-
-			qcom,local-pid = <0>;
-			qcom,remote-pid = <1>;
-
-			wcss_smp2p_out: master-kernel {
-				qcom,entry-name = "master-kernel";
-				qcom,smp2p-feature-ssr-ack;
-				#qcom,smem-state-cells = <1>;
-			};
-
-			wcss_smp2p_in: slave-kernel {
-				qcom,entry-name = "slave-kernel";
-				interrupt-controller;
-				#interrupt-cells = <2>;
-			};
 		};
 
 		gmac0: ethernet@39c00000 {
@@ -1142,6 +1088,104 @@
 			msi-map = <0x0 &v2m0 0x0 0xff8>;
 			status = "disabled";
 		};
+
+
+		mdio0: mdio@88000 {
+			compatible = "qcom,ipq5018-mdio";
+			reg = <0x00088000 0x64>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcc GCC_MDIO0_AHB_CLK>;
+			clock-names = "gcc_mdio_ahb_clk";
+			resets = <&gcc GCC_GEPHY_MDC_SW_ARES>,
+					 <&gcc GCC_GEPHY_DSP_HW_ARES>;
+			reset-names = "gephy_mdc_rst",
+						  "gephy_dsp_rst";
+			status = "disabled";
+
+			gephy: ethernet-phy@0 {
+				reg = <7>;
+				#clock-cells = <1>;
+				clocks = <&gcc GCC_GEPHY_RX_CLK>,
+						 <&gcc GCC_GEPHY_TX_CLK>;
+				resets = <&gcc GCC_GEPHY_BCR>,
+						 <&gcc GCC_GEPHY_MISC_ARES>;
+			};
+		};
+
+		mdio1: mdio@90000 {
+			compatible = "qcom,ipq5018-mdio";
+			reg = <0x00090000 0x64>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcc GCC_MDIO1_AHB_CLK>;
+			clock-names = "gcc_mdio_ahb_clk";
+			status = "disabled";
+		};
+
+		ess-instance {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ess-switch@39c00000 {
+				compatible = "qcom,ess-switch-ipq50xx";
+				reg = <0x39c00000 0x200000>;
+				switch_access_mode = "local bus";
+				clocks = <&gcc GCC_CMN_BLK_AHB_CLK>,
+					<&gcc GCC_CMN_BLK_SYS_CLK>,
+					<&gcc GCC_UNIPHY_AHB_CLK>,
+					<&gcc GCC_UNIPHY_SYS_CLK>,
+					<&gcc GCC_MDIO0_AHB_CLK>,
+					<&gcc GCC_MDIO1_AHB_CLK>,
+					<&gcc GCC_GMAC0_CFG_CLK>,
+					<&gcc GCC_GMAC0_SYS_CLK>,
+					<&gcc GCC_GMAC1_CFG_CLK>,
+					<&gcc GCC_GMAC1_SYS_CLK>,
+					<&gcc GCC_GEPHY_RX_CLK>,
+					<&gcc GCC_GEPHY_TX_CLK>,
+					<&gcc GCC_UNIPHY_RX_CLK>,
+					<&gcc GCC_UNIPHY_TX_CLK>,
+					<&gcc GCC_GMAC0_RX_CLK>,
+					<&gcc GCC_GMAC0_TX_CLK>,
+					<&gcc GCC_GMAC1_RX_CLK>,
+					<&gcc GCC_GMAC1_TX_CLK>,
+					<&gcc GCC_SNOC_GMAC0_AHB_CLK>,
+					<&gcc GCC_SNOC_GMAC1_AHB_CLK>,
+					<&gcc GCC_GMAC0_PTP_CLK>,
+					<&gcc GCC_GMAC1_PTP_CLK>;
+				clock-names = "cmn_ahb_clk", "cmn_sys_clk",
+						"uniphy_ahb_clk", "uniphy_sys_clk",
+						"gcc_mdio0_ahb_clk",
+						"gcc_mdio1_ahb_clk",
+						"gcc_gmac0_cfg_clk",
+						"gcc_gmac0_sys_clk",
+						"gcc_gmac1_cfg_clk",
+						"gcc_gmac1_sys_clk",
+						"uniphy0_port1_rx_clk",
+						"uniphy0_port1_tx_clk",
+						"uniphy1_port5_rx_clk",
+						"uniphy1_port5_tx_clk",
+						"nss_port1_rx_clk", "nss_port1_tx_clk",
+						"nss_port2_rx_clk", "nss_port2_tx_clk",
+						"gcc_snoc_gmac0_ahb_clk",
+						"gcc_snoc_gmac1_ahb_clk",
+						"gcc_gmac0_ptp_clk",
+						"gcc_gmac1_ptp_clk";
+				resets = <&gcc GCC_GEPHY_BCR>, <&gcc GCC_UNIPHY_BCR>,
+					<&gcc GCC_GMAC0_BCR>, <&gcc GCC_GMAC1_BCR>,
+					<&gcc GCC_UNIPHY_SOFT_RESET>,
+					<&gcc GCC_GEPHY_MISC_ARES>;
+				reset-names = "gephy_bcr_rst", "uniphy_bcr_rst",
+						"gmac0_bcr_rst", "gmac1_bcr_rst",
+						"uniphy1_soft_rst",
+						"gephy_misc_rst";
+			};
+		};
+
+		ess-uniphy@98000 {
+			compatible = "qcom,ess-uniphy";
+			reg = <0x98000 0x800>;
+			uniphy_access_mode = "local bus";
+		};
 	};
 
 	thermal-zones {
@@ -1208,5 +1252,30 @@
 			     <GIC_PPI 3 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
 			     <GIC_PPI 4 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
 			     <GIC_PPI 1 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
+	};
+
+	wcss: wcss-smp2p {
+		compatible = "qcom,smp2p";
+		qcom,smem = <435>, <428>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <GIC_SPI 177 IRQ_TYPE_EDGE_RISING>;
+
+		mboxes = <&apcs_glb 9>;
+
+		qcom,local-pid = <0>;
+		qcom,remote-pid = <1>;
+
+		wcss_smp2p_out: master-kernel {
+			qcom,entry-name = "master-kernel";
+			qcom,smp2p-feature-ssr-ack;
+			#qcom,smem-state-cells = <1>;
+		};
+
+		wcss_smp2p_in: slave-kernel {
+			qcom,entry-name = "slave-kernel";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 };
