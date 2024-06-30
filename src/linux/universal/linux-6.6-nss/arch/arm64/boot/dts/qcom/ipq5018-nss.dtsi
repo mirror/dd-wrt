@@ -15,14 +15,14 @@
 
 	nss0: nss@40000000 {
 		compatible = "qcom,nss";
-	interrupts = <GIC_SPI 402 IRQ_TYPE_EDGE_RISING>,
+		interrupts = <GIC_SPI 402 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 401 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 400 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 399 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 398 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 397 IRQ_TYPE_EDGE_RISING>,
 		     	 <GIC_SPI 396 IRQ_TYPE_EDGE_RISING>,
-		     	 <GIC_SPI 395 IRQ_TYPE_EDGE_RISING>,
+		     	 <GIC_SPI 395 IRQ_TYPE_EDGE_RISING>;
 
 		reg = <0x07a00000 0x100>, <0x0b111000 0x1000>;
 		reg-names = "nphys", "qgic-phys";
@@ -70,6 +70,8 @@
 		qcom,mirror-enabled;
 		qcom,crypto-enabled;
 		qcom,ipsec-enabled;
+		mx-supply = <&nss_dummy_reg>;
+		npu-supply = <&nss_dummy_reg>;
 	};
 
 
@@ -112,8 +114,6 @@
 				qcom,ee = <2 3>;
 			};
 		};
-		mx-supply = <&nss_dummy_reg>;
-		npu-supply = <&nss_dummy_reg>;
 	};
 
 };
