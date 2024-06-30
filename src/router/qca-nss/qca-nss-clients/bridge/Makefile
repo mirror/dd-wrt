@@ -2,10 +2,10 @@ ccflags-y := -I$(obj)/../exports -I$(obj)/..  -I$(obj)/nss_hal/include
 ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 ccflags-$(NSS_BRIDGE_MGR_OVS_ENABLE) += -DNSS_BRIDGE_MGR_OVS_ENABLE
 
-obj-m += qca-nss-bridge-mgr.o
-qca-nss-bridge-mgr-objs := nss_bridge_mgr.o
+obj-m += qca-nss-bridge-mgr-$(SoC).o
+qca-nss-bridge-mgr-$(SoC)-objs := nss_bridge_mgr.o
 ifeq ($(NSS_BRIDGE_MGR_OVS_ENABLE), y)
-qca-nss-bridge-mgr-objs += nss_bridge_mgr_ovs.o
+qca-nss-bridge-mgr-$(SoC)-objs += nss_bridge_mgr_ovs.o
 endif
 
 ccflags-y += -DNSS_BRIDGE_MGR_DEBUG_LEVEL=0

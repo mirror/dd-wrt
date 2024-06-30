@@ -9,7 +9,7 @@ ccflags-y += -DNSS_CLIENT_BUILD_ID="$(BUILD_ID)"
 ccflags-y += -DNSS_LAG_MGR_DEBUG_LEVEL=0
 ccflags-y += -Wall -Werror
 
-obj-m += qca-nss-lag-mgr.o
-qca-nss-lag-mgr-objs := nss_lag.o
+obj-m += qca-nss-lag-mgr-$(SoC).o
+qca-nss-lag-mgr-$(SoC)-objs := nss_lag.o
 
 obj ?= .

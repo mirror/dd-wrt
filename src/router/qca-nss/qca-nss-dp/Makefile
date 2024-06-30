@@ -54,6 +54,7 @@ endif
 #endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq50xx))
+qca-nss-dp-$(SoC)-objs += nss_dp_main.o
 qca-nss-dp-$(SoC)-objs += hal/dp_ops/syn_gmac_dp/syn_dp_cfg_rx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp_cfg_tx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp_rx.o \

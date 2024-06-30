@@ -28,45 +28,45 @@ ccflags-y += -DCONFIG_NSS_NLCAPWAP=${CAPWAP_ENABLED}
 ccflags-y += -DCONFIG_NSS_NLIPSEC=${IPSEC_ENABLED}
 ccflags-y += -DCONFIG_NSS_NLDTLS=${DTLS_ENABLED}
 
-qca-nss-netlink-objs := nss_nl.o
-qca-nss-netlink-objs += nss_nlgre_redir_family.o
-qca-nss-netlink-objs += nss_nlgre_redir_cmd.o
-qca-nss-netlink-objs += nss_nlgre_redir_cmn.o
-qca-nss-netlink-objs += nss_nlgre_redir.o
-qca-nss-netlink-objs += nss_nlgre_redir_lag.o
-qca-nss-netlink-objs += nss_nlipv4.o
-qca-nss-netlink-objs += nss_nlipv6.o
-qca-nss-netlink-objs += nss_nloam.o
-qca-nss-netlink-objs += nss_nlethrx.o
-qca-nss-netlink-objs += nss_nldynamic_interface.o
-qca-nss-netlink-objs += nss_nln2h.o
-qca-nss-netlink-objs += nss_nlipv4_reasm.o
-qca-nss-netlink-objs += nss_nlipv6_reasm.o
-qca-nss-netlink-objs += nss_nlwifili.o
-qca-nss-netlink-objs += nss_nllso_rx.o
-qca-nss-netlink-objs += nss_nlmap_t.o
-qca-nss-netlink-objs += nss_nlpppoe.o
-qca-nss-netlink-objs += nss_nll2tpv2.o
-qca-nss-netlink-objs += nss_nlpptp.o
-qca-nss-netlink-objs += nss_nlqrfs.o
+qca-nss-netlink-$(SoC)-objs := nss_nl.o
+qca-nss-netlink-$(SoC)-objs += nss_nlgre_redir_family.o
+qca-nss-netlink-$(SoC)-objs += nss_nlgre_redir_cmd.o
+qca-nss-netlink-$(SoC)-objs += nss_nlgre_redir_cmn.o
+qca-nss-netlink-$(SoC)-objs += nss_nlgre_redir.o
+qca-nss-netlink-$(SoC)-objs += nss_nlgre_redir_lag.o
+qca-nss-netlink-$(SoC)-objs += nss_nlipv4.o
+qca-nss-netlink-$(SoC)-objs += nss_nlipv6.o
+qca-nss-netlink-$(SoC)-objs += nss_nloam.o
+qca-nss-netlink-$(SoC)-objs += nss_nlethrx.o
+qca-nss-netlink-$(SoC)-objs += nss_nldynamic_interface.o
+qca-nss-netlink-$(SoC)-objs += nss_nln2h.o
+qca-nss-netlink-$(SoC)-objs += nss_nlipv4_reasm.o
+qca-nss-netlink-$(SoC)-objs += nss_nlipv6_reasm.o
+qca-nss-netlink-$(SoC)-objs += nss_nlwifili.o
+qca-nss-netlink-$(SoC)-objs += nss_nllso_rx.o
+qca-nss-netlink-$(SoC)-objs += nss_nlmap_t.o
+qca-nss-netlink-$(SoC)-objs += nss_nlpppoe.o
+qca-nss-netlink-$(SoC)-objs += nss_nll2tpv2.o
+qca-nss-netlink-$(SoC)-objs += nss_nlpptp.o
+qca-nss-netlink-$(SoC)-objs += nss_nlqrfs.o
 
 ifneq (,$(filter $(capwapmgr), y))
-qca-nss-netlink-objs += nss_nlcapwap.o
+qca-nss-netlink-$(SoC)-objs += nss_nlcapwap.o
 endif
 
 ifneq (,$(filter $(dtlsmgr), y))
-qca-nss-netlink-objs += nss_nldtls.o
+qca-nss-netlink-$(SoC)-objs += nss_nldtls.o
 endif
 
 ifneq (,$(filter $(ipsecmgr), y))
-qca-nss-netlink-objs += nss_nlipsec.o
+qca-nss-netlink-$(SoC)-objs += nss_nlipsec.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq807x ipq807x_64))
 ccflags-y += -DCONFIG_NSS_NLC2C_TX=1
 ccflags-y += -DCONFIG_NSS_NLC2C_RX=1
-qca-nss-netlink-objs += nss_nlc2c_tx.o
-qca-nss-netlink-objs += nss_nlc2c_rx.o
+qca-nss-netlink-$(SoC)-objs += nss_nlc2c_tx.o
+qca-nss-netlink-$(SoC)-objs += nss_nlc2c_rx.o
 else
 ccflags-y += -DCONFIG_NSS_NLC2C_TX=0
 ccflags-y += -DCONFIG_NSS_NLC2C_RX=0
@@ -74,16 +74,16 @@ endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq60xx ipq60xx_64 ipq807x ipq807x_64))
 ccflags-y += -DCONFIG_NSS_NLEDMA=1
-qca-nss-netlink-objs += nss_nledma.o
+qca-nss-netlink-$(SoC)-objs += nss_nledma.o
 else
 ccflags-y += -DCONFIG_NSS_NLEDMA=0
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq95xx ipq50xx))
 ccflags-y += -DCONFIG_NSS_NLUDP_ST=1
-qca-nss-netlink-objs += nss_nludp_st.o
+qca-nss-netlink-$(SoC)-objs += nss_nludp_st.o
 else
 ccflags-y += -DCONFIG_NSS_NLUDP_ST=0
 endif
 
-obj-m += qca-nss-netlink.o
+obj-m += qca-nss-netlink-$(SoC).o
