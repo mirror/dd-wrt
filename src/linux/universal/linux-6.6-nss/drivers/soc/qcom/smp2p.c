@@ -131,6 +131,7 @@ struct smp2p_entry {
  * @mbox_chan:	apcs ipc mailbox channel handle
  * @inbound:	list of inbound entries
  * @outbound:	list of outbound entries
+ * @need_ssr_ack fw expects ack for irq
  */
 struct qcom_smp2p {
 	struct device *dev;

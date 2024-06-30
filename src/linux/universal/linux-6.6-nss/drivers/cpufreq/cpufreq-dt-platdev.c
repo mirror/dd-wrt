@@ -94,6 +94,7 @@ static const struct of_device_id allowlist[] __initconst = {
 
 	{ .compatible = "xlnx,zynq-7000", },
 	{ .compatible = "xlnx,zynqmp", },
+	{ .compatible = "qcom,ipq5018", },
 
 	{ }
 };

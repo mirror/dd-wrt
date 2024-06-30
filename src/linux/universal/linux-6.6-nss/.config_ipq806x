@@ -1495,7 +1495,7 @@ CONFIG_REGMAP_MMIO=y
 # CONFIG_QCOM_EBI2 is not set
 # CONFIG_QCOM_SSC_BLOCK_BUS is not set
 # CONFIG_VEXPRESS_CONFIG is not set
-# CONFIG_MHI_BUS is not set
+CONFIG_MHI_BUS=y
 # CONFIG_MHI_BUS_EP is not set
 # end of Bus devices
 

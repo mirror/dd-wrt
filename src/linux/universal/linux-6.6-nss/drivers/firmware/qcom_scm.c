@@ -1579,6 +1579,31 @@ int qcom_scm_load_otp(u32 peripheral)
 }
 EXPORT_SYMBOL(qcom_scm_load_otp);
 
+int __qti_scm_tcsr_reg_write(struct device *dev, u32 reg_addr, u32 value)
+{
+	struct qcom_scm_desc desc = {
+		.svc = QCOM_SCM_SVC_IO,
+		.cmd = QCOM_SCM_IO_WRITE,
+		.owner = ARM_SMCCC_OWNER_SIP,
+	};
+	struct qcom_scm_res res;
+	int ret;
+
+	desc.args[0] = reg_addr;
+	desc.args[1] = value;
+	desc.arginfo = QCOM_SCM_ARGS(2);
+
+	ret = qcom_scm_call(dev, &desc, &res);
+
+	return ret ? : res.result[0];
+}
+
+int qti_scm_tcsr_reg_write(u32 reg_addr, u32 value)
+{
+	return __qti_scm_tcsr_reg_write(__scm->dev, reg_addr, value);
+}
+EXPORT_SYMBOL(qti_scm_tcsr_reg_write);
+
 static int qcom_scm_probe(struct platform_device *pdev)
 {
 	struct qcom_scm *scm;
