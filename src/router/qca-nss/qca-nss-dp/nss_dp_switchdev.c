@@ -536,6 +536,9 @@ static struct notifier_block *nss_dp_sw_ev_nb = &nss_dp_switchdev_notifier_nb;
 
 #else
 
+#ifdef NSS_NO_PPE
+static struct notifier_block *nss_dp_sw_ev_nb;
+#else
 /*
  * nss_dp_switchdev_fdb_del_event
  *
@@ -606,7 +609,7 @@ static struct notifier_block nss_dp_switchdev_notifier_nb = {
 };
 
 static struct notifier_block *nss_dp_sw_ev_nb = &nss_dp_switchdev_notifier_nb;
-
+#endif
 /*
  * nss_dp_bridge_attr_set()
  *	Sets bridge attributes

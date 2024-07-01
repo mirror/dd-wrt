@@ -62,7 +62,7 @@ qca-nss-dp-$(SoC)-objs += hal/dp_ops/syn_gmac_dp/syn_dp_cfg_rx.o \
 		   hal/dp_ops/syn_gmac_dp/syn_dp.o \
 		   hal/gmac_ops/syn/gmac/syn_if.o
 NSS_DP_INCLUDE += -I$(obj)/hal/dp_ops/syn_gmac_dp/include
-ccflags-y += -DNSS_DP_IPQ50XX -DNSS_DP_ENABLE_NAPI_GRO
+ccflags-y += -DNSS_DP_IPQ50XX -DNSS_DP_ENABLE_NAPI_GRO -DNSS_NO_PPE
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq95xx ipq53xx))
