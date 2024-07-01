@@ -100,3 +100,39 @@ void arch_invalidate_pmem(void *addr, size_t size)
 }
 EXPORT_SYMBOL_GPL(arch_invalidate_pmem);
 #endif
+
+void dmac_flush_range(const void *start, const void *end)
+{
+	dcache_clean_inval_poc((unsigned long)start, (unsigned long)end);
+}
+EXPORT_SYMBOL(dmac_flush_range);
+
+void dmac_flush_range_no_dsb(const void *start, const void *end)
+{
+	__dma_flush_area_no_dsb(start, (void *)(end) - (void *)(start));
+}
+EXPORT_SYMBOL(dmac_flush_range_no_dsb);
+
+void dmac_inv_range(const void *start, const void *end)
+{
+	dcache_inval_poc((unsigned long)start, (unsigned long)(end));
+}
+EXPORT_SYMBOL(dmac_inv_range);
+
+void dmac_inv_range_no_dsb(const void *start, const void *end)
+{
+	__dma_inv_area_no_dsb(start, (void *)(end) - (void *)(start));
+}
+EXPORT_SYMBOL(dmac_inv_range_no_dsb);
+
+void dmac_clean_range(const void *start, const void *end)
+{
+      dcache_clean_poc((unsigned long)start, (unsigned long)end);
+}
+EXPORT_SYMBOL(dmac_clean_range);
+
+void dmac_clean_range_no_dsb(const void *start, const void *end)
+{
+	__dma_clean_area_no_dsb(start, (void *)(end) - (void *)(start));
+}
+EXPORT_SYMBOL(dmac_clean_range_no_dsb);

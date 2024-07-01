@@ -13,8 +13,8 @@
 	compatible = "linksys,mr5500", "qcom,ipq5018";
 
     aliases {
-		ethernet0 = &gmac0;
-		ethernet1 = &gmac1;
+		ethernet0 = "/soc/dp1";
+		ethernet1 = "/soc/dp2";
 		led-boot = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-running = &led_system_blue;
@@ -74,7 +74,12 @@
 			reg = <0x0 0x40000000 0x0 0x1000000>;
 		};
 
-		q6_region: memory@4b000000 {
+		q6_mem_regions: q6_mem_regions@4b000000 {
+			no-map;
+			reg = <0x0 0x4b000000 0x0 0x1800000>;
+		};
+
+/*		q6_region: memory@4b000000 {
 			no-map;
 			reg = <0x0 0x4b000000 0x0 0x01800000>;
 		};
@@ -92,12 +97,12 @@
 		q6_caldb_region:q6_caldb_region@4c900000 {
 			no-map;
 			reg = <0x0 0x4ca00000 0x0 0x200000>;
-		};
-
 		qcn9000_pcie0: qcn9000_pcie0@4cb00000 {
 			no-map;
 			reg = <0x0 0x4cc00000 0x0 0x1A00000>;
 		};
+		};*/
+
 
 		mhi_region1: dma_pool1@4E500000 {
 			compatible = "shared-dma-pool";
@@ -263,6 +268,7 @@
 						0x0007c 0x4e        /* PORT0_STATUS */
 						0x00094 0x4e        /* PORT6_STATUS */
 				>;
+
 				qcom,port_phyinfo {
 					port@0 {
 						port_id = <1>;
@@ -292,24 +298,26 @@
 			status = "disabled";
 		};
 
-/*
+
 		dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
 			clock-names = "nss-snoc-gmac-axi-clk";
+
 			qcom,id = <1>;
 			reg = <0x39C00000 0x10000>;
 			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+
 			qcom,mactype = <2>;
 			qcom,link-poll = <1>;
 			qcom,phy-mdio-addr = <7>;
 			mdio-bus = <&mdio0>;
 			local-mac-address = [000000000000];
 			phy-mode = "sgmii";
-		};*/
+		};
 
-		dp1 {
+		dp2 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
@@ -372,7 +380,7 @@
 
 
 
-&gmac1 {
+/*&gmac1 {
 	phy-mode = "sgmii";
 	status = "okay";
 
@@ -380,15 +388,7 @@
 		speed = <1000>;
 		full-duplex;
 	};
-};
-
-&sleep_clk {
-	clock-frequency = <32000>;
-};
-
-&xo_board_clk {
-	clock-frequency = <24000000>;
-};
+};*/
 
 &blsp1_uart1 {
 	status = "okay";
@@ -667,8 +667,7 @@
 &q6v5_wcss {
 	status = "okay";
 
-	memory-region = <&q6_region>, <&q6_etr_region>,
-			<&q6_caldb_region>;
+	memory-region = <&q6_mem_regions>;
 	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
 					"ath11k/IPQ5018/hw1.0/m3_fw.mdt";
 	

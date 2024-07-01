@@ -428,6 +428,45 @@ alternative_endif
 
 /*
  * Macro to perform a data cache maintenance for the interval
+ *	[kaddr, kaddr + size)
+ *	This macro does not do "data synchronization barrier". Caller should
+ *	do "dsb" after transaction.
+ *
+ *	op:     operation passed to dc instruction
+ *	kaddr:      starting virtual address of the region
+ *	size:       size of the region
+ *	Corrupts:   kaddr, size, tmp1, tmp2
+ */
+	.macro dcache_by_line_op_no_dsb op, kaddr, size, tmp1, tmp2
+	dcache_line_size \tmp1, \tmp2
+	add \size, \kaddr, \size
+	sub \tmp2, \tmp1, #1
+	bic \kaddr, \kaddr, \tmp2
+9998:
+	.ifc    \op, cvau
+	__dcache_op_workaround_clean_cache \op, \kaddr
+	.else
+	.ifc	\op, cvac
+	__dcache_op_workaround_clean_cache \op, \kaddr
+	.else
+	.ifc	\op, cvap
+	sys	3, c7, c12, 1, \kaddr	// dc cvap
+	.else
+	.ifc	\op, cvadp
+	sys	3, c7, c13, 1, \kaddr	// dc cvadp
+	.else
+	dc	\op, \kaddr
+	.endif
+	.endif
+	.endif
+	.endif
+	add	\kaddr, \kaddr, \tmp1
+	cmp	\kaddr, \size
+	b.lo	9998b
+	.endm
+
+/*
+ * Macro to perform a data cache maintenance for the interval
  * [start, end)
  *
  * 	op:		operation passed to dc instruction

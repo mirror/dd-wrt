@@ -207,11 +207,6 @@
 		#size-cells = <2>;
 		ranges;
 
-		rpm_msg_ram: memory@60000 {
-			reg = <0x0 0x00060000 0x0 0x6000>;
-			no-map;
-		};
-
 		nss_region: nss_region@40000000 {
 			reg = <0x0 0x40000000 0x0 0x01000000>;
 			no-map;
@@ -247,12 +242,12 @@
 			reg = <0x0 0x4E200000 0x0 0x100000>;
 		};
 
-		m3_dump@4e300000 {
+		m3_dump_region: m3_dump@4e300000 {
 			no-map;
 			reg = <0x0 0x4e300000 0x0 0x100000>;
 		};
 
-		rpm_msg_ram: rpm_msg_ram@0x60000 {
+		rpm_msg_ram: rpm_msg_ram@60000 {
 			no-map;
 			reg = <0x0 0x60000 0x0 0x6000>;
 		};

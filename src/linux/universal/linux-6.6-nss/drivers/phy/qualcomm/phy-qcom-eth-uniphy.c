@@ -181,13 +181,13 @@ static int cmn_init(struct platform_device *pdev)
 	void __iomem *tcsr_base;
 	u32 val;
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "cmn");
+/*	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "cmn");
 	if (!res)
 		return 0;
 
 	cmn_base = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR_OR_NULL(cmn_base))
-		return PTR_ERR(cmn_base);
+		return PTR_ERR(cmn_base);*/
 
 	/* For IPQ50xx, tcsr is necessary to enable cmn block */
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "tcsr");
@@ -200,7 +200,7 @@ static int cmn_init(struct platform_device *pdev)
 		     TCSR_ETH_CMN_ENABLE);
 	}
 
-	rmwl((cmn_base + CMN_PLL_REFCLK_SRC),
+/*	rmwl((cmn_base + CMN_PLL_REFCLK_SRC),
 	     CMN_PLL_REFCLK_SRC_FROM_MASK,
 	     CMN_PLL_REFCLK_SRC_FROM_REG);
 	rmwl((cmn_base + CMN_PLL_REFCLK),
@@ -218,6 +218,8 @@ static int cmn_init(struct platform_device *pdev)
 				 (val & CMN_PLL_STATUS_LOCKED),
 				 100, 200000, false,
 				 (cmn_base + CMN_PLL_STATUS));
+	*/
+	return 0;
 }
 
 
@@ -409,7 +411,7 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, ret,
 				     "failed to init cmn block\n");
 
-	uniphy = devm_kzalloc(dev, sizeof(*uniphy), GFP_KERNEL);
+/*	uniphy = devm_kzalloc(dev, sizeof(*uniphy), GFP_KERNEL);
 	if (!uniphy)
 		return dev_err_probe(dev, -ENOMEM,
 				     "failed to allocate priv\n");
@@ -419,8 +421,8 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 	if (IS_ERR(uniphy->base))
 		return dev_err_probe(dev, PTR_ERR(uniphy->base),
 				     "failed to ioremap base\n");
-
-	uniphy->num_clks = devm_clk_bulk_get_all(uniphy->dev, &uniphy->clks);
+*/
+/*	uniphy->num_clks = devm_clk_bulk_get_all(uniphy->dev, &uniphy->clks);
 	if (uniphy->num_clks < 0)
 		return dev_err_probe(uniphy->dev, uniphy->num_clks,
 				     "failed to acquire clocks\n");
@@ -428,9 +430,9 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 	ret = clk_bulk_prepare_enable(uniphy->num_clks, uniphy->clks);
 	if (ret)
 		return dev_err_probe(uniphy->dev, ret,
-				     "failed to enable clocks\n");
+				     "failed to enable clocks\n");*/
 
-	uniphy->rst = devm_reset_control_array_get_exclusive(uniphy->dev);
+/*	uniphy->rst = devm_reset_control_array_get_shared(uniphy->dev);
 	if (IS_ERR_OR_NULL(uniphy->rst))
 		return dev_err_probe(uniphy->dev, PTR_ERR(uniphy->rst),
 				     "failed to acquire reset\n");
@@ -438,19 +440,19 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 	ret = reset_control_reset(uniphy->rst);
 	if (ret)
 		return dev_err_probe(uniphy->dev, ret,
-				     "failed to reset\n");
+				     "failed to reset\n");*/
 
-	ret = uniphy_clkout_init(uniphy);
+/*	ret = uniphy_clkout_init(uniphy);
 	if (ret)
 		return dev_err_probe(dev, ret,
-				     "failed to init clkout\n");
+				     "failed to init clkout\n");*/
 
-	ret = uniphy_mode_set(uniphy);
+/*	ret = uniphy_mode_set(uniphy);
 	if (ret)
 		return dev_err_probe(dev, ret,
-				     "failed to set mode\n");
+				     "failed to set mode\n");*/
 
-	ret = uniphy_calibrate(uniphy);
+/*	ret = uniphy_calibrate(uniphy);
 	if (ret)
 		return dev_err_probe(dev, ret,
 				     "failed to calibrate\n");
@@ -472,6 +474,7 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, PTR_ERR(phy_provider),
 				     "failed to register phy provider\n");
 
+*/
 	return 0;
 }
 

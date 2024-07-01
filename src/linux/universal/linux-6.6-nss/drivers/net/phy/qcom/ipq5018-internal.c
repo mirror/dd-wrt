@@ -42,7 +42,7 @@ static int ipq5018_probe(struct phy_device *phydev)
 		return dev_err_probe(dev, ret,
 				     "failed to enable clocks\n");
 
-	priv->rst = devm_reset_control_array_get_exclusive(dev);
+	priv->rst = devm_reset_control_array_get_shared(dev);
 	if (IS_ERR_OR_NULL(priv->rst))
 		return dev_err_probe(dev, PTR_ERR(priv->rst),
 				     "failed to acquire reset\n");

@@ -28,8 +28,11 @@ EXPORT_SYMBOL(__cpuc_flush_user_range);
 EXPORT_SYMBOL(__cpuc_coherent_kern_range);
 EXPORT_SYMBOL(__cpuc_flush_dcache_area);
 EXPORT_SYMBOL(dmac_inv_range);
+EXPORT_SYMBOL(dmac_inv_range_no_dsb);
 EXPORT_SYMBOL(dmac_clean_range);
+EXPORT_SYMBOL(dmac_clean_range_no_dsb);
 EXPORT_SYMBOL(dmac_flush_range);
+EXPORT_SYMBOL(dmac_flush_range_no_dsb);
 #else
 EXPORT_SYMBOL(cpu_cache);
 #endif

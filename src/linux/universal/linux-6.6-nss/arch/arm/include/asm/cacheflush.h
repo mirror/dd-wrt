@@ -130,6 +130,10 @@ struct cpu_cache_fns {
 	void (*dma_inv_range)(const void *, const void *);
 	void (*dma_clean_range)(const void *, const void *);
 	void (*dma_flush_range)(const void *, const void *);
+
+	void (*dma_inv_range_no_dsb)(const void *, const void *);
+	void (*dma_clean_range_no_dsb)(const void *, const void *);
+	void (*dma_flush_range_no_dsb)(const void *, const void *);
 } __no_randomize_layout;
 
 /*
@@ -158,6 +162,10 @@ extern struct cpu_cache_fns cpu_cache;
 #define dmac_clean_range		cpu_cache.dma_clean_range
 #define dmac_flush_range		cpu_cache.dma_flush_range
 
+#define dmac_inv_range_no_dsb	cpu_cache.dma_inv_range_no_dsb
+#define dmac_clean_range_no_dsb	cpu_cache.dma_clean_range_no_dsb
+#define dmac_flush_range_no_dsb	cpu_cache.dma_flush_range_no_dsb
+
 #else
 
 extern void __cpuc_flush_icache_all(void);
@@ -178,6 +186,9 @@ extern void __cpuc_flush_dcache_area(void *, size_t);
 extern void dmac_inv_range(const void *, const void *);
 extern void dmac_clean_range(const void *, const void *);
 extern void dmac_flush_range(const void *, const void *);
+extern void dmac_inv_range_no_dsb(const void *, const void *);
+extern void dmac_clean_range_no_dsb(const void *, const void *);
+extern void dmac_flush_range_no_dsb(const void *, const void *);
 
 #endif
 

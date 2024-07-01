@@ -32,6 +32,7 @@ enum {
 	DT_UNIPHY_TX_CLK,
 };
 
+
 enum {
 	P_XO,
 	P_CORE_PI_SLEEP_CLK,
@@ -68,6 +69,7 @@ static struct clk_alpha_pll gpll0_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_stromer_ops,
+			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -83,6 +85,7 @@ static struct clk_alpha_pll gpll2_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_stromer_ops,
+			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -98,6 +101,7 @@ static struct clk_alpha_pll gpll4_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_stromer_ops,
+			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -456,6 +460,7 @@ static struct clk_rcg2 apss_ahb_clk_src = {
 	.mnd_width = 0,
 	.hid_width = 5,
 	.freq_tbl = ftbl_apss_ahb_clk_src,
+	.flags = CLK_RCG2_HW_CONTROLLED,
 	.parent_map = gcc_xo_gpll0_gpll0_out_main_div2_map,
 	.clkr.hw.init = &(struct clk_init_data) {
 		.name = "apss_ahb_clk_src",
@@ -1012,6 +1017,7 @@ static struct clk_rcg2 pcnoc_bfdcd_clk_src = {
 	.cmd_rcgr = 0x27000,
 	.freq_tbl = ftbl_pcnoc_bfdcd_clk_src,
 	.hid_width = 5,
+	.flags = CLK_RCG2_HW_CONTROLLED,
 	.parent_map = gcc_xo_gpll0_gpll0_out_main_div2_map,
 	.clkr.hw.init = &(struct clk_init_data) {
 		.name = "pcnoc_bfdcd_clk_src",
@@ -1204,12 +1210,14 @@ static struct clk_rcg2 system_noc_bfdcd_clk_src = {
 	.cmd_rcgr = 0x26004,
 	.freq_tbl = ftbl_system_noc_bfdcd_clk_src,
 	.hid_width = 5,
+	.flags = CLK_RCG2_HW_CONTROLLED,
 	.parent_map = gcc_xo_gpll0_gpll2_gpll0_out_main_div2_map,
 	.clkr.hw.init = &(struct clk_init_data) {
 		.name = "system_noc_bfdcd_clk_src",
 		.parent_data = gcc_xo_gpll0_gpll2_gpll0_out_main_div2,
 		.num_parents = ARRAY_SIZE(gcc_xo_gpll0_gpll2_gpll0_out_main_div2),
 		.ops = &clk_rcg2_ops,
+		.flags = CLK_IS_CRITICAL,
 	},
 };
 
@@ -1251,6 +1259,7 @@ static struct clk_rcg2 ubi0_core_clk_src = {
 	.cmd_rcgr = 0x68100,
 	.freq_tbl = ftbl_ubi0_core_clk_src,
 	.hid_width = 5,
+	.flags = CLK_RCG2_HW_CONTROLLED,
 	.parent_map = gcc_xo_ubi32_gpll0_map,
 	.clkr.hw.init = &(struct clk_init_data) {
 		.name = "ubi0_core_clk_src",
@@ -1389,6 +1398,7 @@ static struct clk_branch gcc_sleep_clk_src = {
 			.parent_data = gcc_sleep_clk_data,
 			.num_parents = ARRAY_SIZE(gcc_sleep_clk_data),
 			.ops = &clk_branch2_ops,
+			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -1402,7 +1412,7 @@ static struct clk_branch gcc_xo_clk_src = {
 			.name = "gcc_xo_clk_src",
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
-			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
+			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1751,7 +1761,7 @@ static struct clk_branch gcc_dcc_clk = {
 
 static struct clk_branch gcc_gephy_rx_clk = {
 	.halt_reg = 0x56010,
-	.halt_check = BRANCH_HALT_DELAY,
+	.halt_check = BRANCH_VOTED,
 	.clkr = {
 		.enable_reg = 0x56010,
 		.enable_mask = BIT(0),
@@ -1769,7 +1779,7 @@ static struct clk_branch gcc_gephy_rx_clk = {
 
 static struct clk_branch gcc_gephy_tx_clk = {
 	.halt_reg = 0x56014,
-	.halt_check = BRANCH_HALT_DELAY,
+	.halt_check = BRANCH_VOTED,
 	.clkr = {
 		.enable_reg = 0x56014,
 		.enable_mask = BIT(0),
@@ -1821,6 +1831,7 @@ static struct clk_branch gcc_gmac0_ptp_clk = {
 
 static struct clk_branch gcc_gmac0_rx_clk = {
 	.halt_reg = 0x68240,
+	.halt_check = BRANCH_VOTED,
 	.clkr = {
 		.enable_reg = 0x68240,
 		.enable_mask = BIT(0),
@@ -1838,10 +1849,9 @@ static struct clk_branch gcc_gmac0_rx_clk = {
 
 static struct clk_branch gcc_gmac0_sys_clk = {
 	.halt_reg = 0x68190,
-	.halt_check = BRANCH_HALT_DELAY,
-	.halt_bit = 31,
+	.halt_check = BRANCH_VOTED,
 	.clkr = {
-		.enable_reg = 0x68190,
+		.enable_reg = 0x683190,
 		.enable_mask = BIT(0),
 		.hw.init = &(struct clk_init_data) {
 			.name = "gcc_gmac0_sys_clk",
@@ -1857,6 +1867,7 @@ static struct clk_branch gcc_gmac0_sys_clk = {
 
 static struct clk_branch gcc_gmac0_tx_clk = {
 	.halt_reg = 0x68244,
+	.halt_check = BRANCH_VOTED,
 	.clkr = {
 		.enable_reg = 0x68244,
 		.enable_mask = BIT(0),
