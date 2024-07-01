@@ -205,7 +205,8 @@ static int syn_dp_if_init(struct nss_dp_data_plane_ctx *dpc)
 		 */
 		netdev->irq = platform_get_irq(gmac_dev->pdev, 0);
 		irq_set_status_flags(netdev->irq, IRQ_DISABLE_UNLAZY);
-		err = request_irq(netdev->irq, syn_dp_handle_irq, 0, "nss-dp-gmac", &gmac_dev->dp_info.syn_info);
+		printk(KERN_INFO "request irq %d\n", netdev->irq);
+		err = request_irq(netdev->irq, syn_dp_handle_irq, IRQF_SHARED, "nss-dp-gmac", &gmac_dev->dp_info.syn_info);
 		if (unlikely(err)) {
 			netif_napi_del(&rx_info->napi_rx);
 			netif_napi_del(&tx_info->napi_tx);
