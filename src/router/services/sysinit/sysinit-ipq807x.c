@@ -372,9 +372,16 @@ static void load_nss_ipq60xx(int profile)
 		insmod("qca-nss-pppoe-ipq60xx");
 		insmod("qca-nss-vlan-ipq60xx");
 		insmod("qca-nss-qdisc-ipq60xx");
+		insmod("pptp");
 		insmod("qca-nss-pptp-ipq60xx");
+		insmod("udp_tunnel");
+		insmod("ip6_udp_tunnel");
+		insmod("l2tp_core");
 		insmod("qca-nss-l2tpv2-ipq60xx");
+		insmod("vxlan");
 		insmod("qca-nss-vxlanmgr-ipq60xx");
+		insmod("tunnel6");
+		insmod("ip6_tunnel");
 		insmod("qca-nss-tunipip6-ipq60xx");
 		insmod("qca-nss-tlsmgr-ipq60xx");
 		insmod("qca-mcs");
@@ -420,9 +427,16 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-nss-pppoe-ipq50xx");
 		insmod("qca-nss-vlan-ipq50xx");
 		insmod("qca-nss-qdisc-ipq50xx");
+		insmod("pptp");
 		insmod("qca-nss-pptp-ipq50xx");
+		insmod("udp_tunnel");
+		insmod("ip6_udp_tunnel");
+		insmod("l2tp_core");
 		insmod("qca-nss-l2tpv2-ipq50xx");
+		insmod("vxlan");
 		insmod("qca-nss-vxlanmgr-ipq50xx");
+		insmod("tunnel6");
+		insmod("ip6_tunnel");
 		insmod("qca-nss-tunipip6-ipq50xx");
 		insmod("qca-nss-tlsmgr-ipq50xx");
 		insmod("qca-mcs");
@@ -472,9 +486,16 @@ static void load_nss_ipq807x(int profile)
 		insmod("qca-nss-pppoe-ipq807x");
 		insmod("qca-nss-vlan-ipq807x");
 		insmod("qca-nss-qdisc-ipq807x");
+		insmod("pptp");
 		insmod("qca-nss-pptp-ipq807x");
+		insmod("udp_tunnel");
+		insmod("ip6_udp_tunnel");
+		insmod("l2tp_core");
 		insmod("qca-nss-l2tpv2-ipq807x");
+		insmod("vxlan");
 		insmod("qca-nss-vxlanmgr-ipq807x");
+		insmod("tunnel6");
+		insmod("ip6_tunnel");
 		insmod("qca-nss-tunipip6-ipq807x");
 		insmod("qca-nss-tlsmgr-ipq807x");
 		insmod("qca-mcs");
@@ -486,38 +507,42 @@ static void load_nss_ipq807x(int profile)
 
 void start_setup_affinity(void)
 {
-	set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
-	set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
-	set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
-	set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+	int brand = getRouterBrand();
+	if (brand == ROUTER_LINKSYS_MR5500) {
+	} else {
+		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+		set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+		set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
 
-	set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
-	set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
-	set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+		set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+		set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
 
-	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-	set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
-	set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
+		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+		set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+		set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
 
-	set_named_smp_affinity("edma_txcmpl", 3, 1);
-	set_named_smp_affinity("edma_rxfill", 3, 1);
-	set_named_smp_affinity("edma_rxdesc", 3, 1);
-	set_named_smp_affinity("edma_misc", 3, 1);
+		set_named_smp_affinity("edma_txcmpl", 3, 1);
+		set_named_smp_affinity("edma_rxfill", 3, 1);
+		set_named_smp_affinity("edma_rxdesc", 3, 1);
+		set_named_smp_affinity("edma_misc", 3, 1);
 
-	set_named_smp_affinity("nss_queue0", 1, 1);
-	set_named_smp_affinity("nss_queue1", 2, 1);
-	set_named_smp_affinity("nss_queue2", 3, 1);
-	set_named_smp_affinity("nss_queue3", 0, 1);
+		set_named_smp_affinity("nss_queue0", 1, 1);
+		set_named_smp_affinity("nss_queue1", 2, 1);
+		set_named_smp_affinity("nss_queue2", 3, 1);
+		set_named_smp_affinity("nss_queue3", 0, 1);
 
-	set_named_smp_affinity("nss_queue0", 2, 2);
-	set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
-	set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
-	set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
+		set_named_smp_affinity("nss_queue0", 2, 2);
+		set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
+		set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
+		set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
 
-	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-	set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
+		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+		set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
 
-	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	}
 }
 
 void start_sysinit(void)
@@ -581,6 +606,13 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
+		if (brand == ROUTER_LINKSYS_MR5500) {
+			fseek(fp, 0x26800, SEEK_SET);
+			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
+		}
 		fclose(fp);
 	} else {
 		fprintf(stderr, "board data failed\n");
@@ -633,7 +665,8 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
 	}
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MR5500) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
+	    brand == ROUTER_LINKSYS_MR5500) {
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 	}
 
@@ -646,7 +679,8 @@ void start_sysinit(void)
 	insmod("mac80211");
 	insmod("qmi_helpers");
 	insmod("ath11k");
-	insmod("ath11k_ahb");
+	insmod("ath11k_pci");
+	//	insmod("ath11k_ahb");
 	//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
@@ -666,32 +700,50 @@ void start_sysinit(void)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 	start_setup_affinity();
+	if (brand == ROUTER_LINKSYS_MR5500) {
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		eval("ssdk_sh", "debug", "phy", "set", "0", "0", "0x1800");
+		eval("ssdk_sh", "debug", "phy", "set", "1", "0", "0x1800");
+		eval("ssdk_sh", "debug", "phy", "set", "2", "0", "0x1800");
+		eval("ssdk_sh", "debug", "phy", "set", "3", "0", "0x1800");
+		sleep(2);
+		eval("ssdk_sh", "debug", "phy", "set", "0", "0", "0x1000");
+		eval("ssdk_sh", "debug", "phy", "set", "1", "0", "0x1000");
+		eval("ssdk_sh", "debug", "phy", "set", "2", "0", "0x1000");
+		eval("ssdk_sh", "debug", "phy", "set", "3", "0", "0x1000");
 
-	sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
-	sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
-	sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
-	sysprintf("ssdk_sh acl list create 56 48");
-	sysprintf(
-		"ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-	sysprintf(
-		"ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-	sysprintf(
-		"ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-	sysprintf("ssdk_sh acl list bind 56 0 2 1");
-	sysprintf("ssdk_sh fdb portLearn set 0 disable");
-	sysprintf("ssdk_sh fdb portLearn set 1 disable");
-	sysprintf("ssdk_sh fdb portLearn set 2 disable");
-	sysprintf("ssdk_sh fdb portLearn set 3 disable");
-	sysprintf("ssdk_sh fdb portLearn set 4 disable");
-	sysprintf("ssdk_sh fdb portLearn set 5 disable");
-	sysprintf("ssdk_sh stp portState set 0 0 forward");
-	sysprintf("ssdk_sh stp portState set 0 1 forward");
-	sysprintf("ssdk_sh stp portState set 0 2 forward");
-	sysprintf("ssdk_sh stp portState set 0 3 forward");
-	sysprintf("ssdk_sh stp portState set 0 4 forward");
-	sysprintf("ssdk_sh stp portState set 0 5 forward");
-	sysprintf("ssdk_sh fdb learnCtrl set disable");
-	sysprintf("ssdk_sh fdb entry flush 1");
+		eval("/etc/vlan_setup.sh");
+	}
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
+	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_DYNALINK_DLWRX36) {
+		sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
+		sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
+		sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
+		sysprintf("ssdk_sh acl list create 56 48");
+		sysprintf(
+			"ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+		sysprintf(
+			"ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+		sysprintf(
+			"ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
+		sysprintf("ssdk_sh acl list bind 56 0 2 1");
+		sysprintf("ssdk_sh fdb portLearn set 0 disable");
+		sysprintf("ssdk_sh fdb portLearn set 1 disable");
+		sysprintf("ssdk_sh fdb portLearn set 2 disable");
+		sysprintf("ssdk_sh fdb portLearn set 3 disable");
+		sysprintf("ssdk_sh fdb portLearn set 4 disable");
+		sysprintf("ssdk_sh fdb portLearn set 5 disable");
+		sysprintf("ssdk_sh stp portState set 0 0 forward");
+		sysprintf("ssdk_sh stp portState set 0 1 forward");
+		sysprintf("ssdk_sh stp portState set 0 2 forward");
+		sysprintf("ssdk_sh stp portState set 0 3 forward");
+		sysprintf("ssdk_sh stp portState set 0 4 forward");
+		sysprintf("ssdk_sh stp portState set 0 5 forward");
+		sysprintf("ssdk_sh fdb learnCtrl set disable");
+		sysprintf("ssdk_sh fdb entry flush 1");
+	}
 	return;
 }
 
@@ -727,7 +779,8 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
+	    brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 	}

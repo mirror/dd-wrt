@@ -1755,6 +1755,17 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
+	} else if (brand == ROUTER_LINKSYS_MR5500) {
+		nvram_setz(lan_ifnames, "vlan2 wlan0 wlan1");
+		if (getSTA() || getWET() || CANBRIDGE()) {
+			PORTSETUPWAN("");
+		} else {
+			PORTSETUPWAN("vlan1");
+		}
+		nvram_set("wan_default", "vlan1");
+		if (nvram_match("et0macaddr", ""))
+			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else {
 		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {

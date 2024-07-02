@@ -1080,9 +1080,18 @@ void start_restore_defaults(void)
 						{ "wan_ifnames", "eth0" },
 						{ "wan_default", "eth0" },
 						{ 0, 0 } };
+	struct nvram_param generic_mr5500[] = { { "lan_ifname", "br0" },
+						{ "lan_ifnames", "vlan2 wlan0 wlan1" },
+						{ "wan_ifname", "vlan1" },
+						{ "wan_ifname2", "vlan1" },
+						{ "wan_ifnames", "vlan1" },
+						{ "wan_default", "vlan1" },
+						{ 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)
 		generic = generic_mr7350;
+	else if (wrt_brand == ROUTER_LINKSYS_MR5500)
+		generic = generic_mr5500;
 	else
 		generic = generic_mx4200;
 #elif HAVE_VENTANA
