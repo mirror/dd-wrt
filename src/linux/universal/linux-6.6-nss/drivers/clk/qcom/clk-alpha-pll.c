@@ -633,7 +633,7 @@ clk_alpha_pll_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 			a >>= alpha_width - ALPHA_BITWIDTH;
 	}
 
-	return alpha_pll_calc_rate(prate, l, a, alpha_width);
+	return ((alpha_pll_calc_rate(prate, l, a, alpha_width) + 1) >> 1) << 1;
 }
 
 
