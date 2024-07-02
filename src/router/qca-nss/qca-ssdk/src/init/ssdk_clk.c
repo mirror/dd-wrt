@@ -401,8 +401,9 @@ static bool ssdk_raw_clock_rate_set_and_enable(a_uint8_t* clock_id,
 	if (rate)
 		ret = ssdk_clock_rate_set(clock_id, rate);
 
-	if (!ret)
+	if (!ret) {
 		return ret;
+	}
 
 	return ssdk_clock_en_set(clock_id, A_TRUE);
 
@@ -441,9 +442,10 @@ void ssdk_clock_rate_set_and_enable(
 	clk = of_clk_get_by_name(node, clock_id);
 	if (!IS_ERR(clk)) {
 		if (rate) {
-			clk_set_rate(clk, rate);
+			int err = clk_set_rate(clk, rate);
 		}
 		clk_prepare_enable(clk);
+	} else {
 	}
 }
 
@@ -625,7 +627,7 @@ void ssdk_uniphy_clock_enable(
 				clk_disable_unprepare(uniphy_clk);
 		}
 	} else {
-		SSDK_DEBUG("clock_type= %d enable=%d not find\n",
+		SSDK_INFO("clock_type= %d enable=%d not find\n",
 				clock_type, enable);
 	}
 #endif
@@ -683,7 +685,7 @@ static const struct clk_ops clk_uniphy_ops = {
 };
 #endif
 
-#if defined(HPPE)
+#if defined(HPPE) || defined(MP)
 
 static struct clk_uniphy uniphy0_gcc_rx_clk = {
                 .hw.init = &(struct clk_init_data){
@@ -768,6 +770,8 @@ static struct clk_hw *uniphy_raw_clks[SSDK_MAX_UNIPHY_INSTANCE * 2] = {
 	&uniphy1_gcc_rx_clk.hw, &uniphy1_gcc_tx_clk.hw,
 	&uniphy2_gcc_rx_clk.hw, &uniphy2_gcc_tx_clk.hw,
 };
+#endif
+#if defined(HPPE)
 
 static char *ppe_clk_ids[UNIPHYT_CLK_MAX] = {
 	NSS_PORT1_RX_CLK,
@@ -835,95 +839,6 @@ static void ssdk_ppe_uniphy_clock_init(adpt_ppe_type_t chip_type)
 
 	return;
 }
-
-#if defined(SSDK_RAW_CLOCK)
-struct clk_data_t *ssdk_clk_to_clk_data(const char *clock_id, unsigned int rate)
-{
-	unsigned int prate = PPE_CLK_UNAWARE_RATE;
-	uint32_t clk_id = 0xff;
-
-	if (strstr(clock_id, "port1_rx"))
-		clk_id = SSDK_UNIPHY_INSTANCE0 * 2 + UNIPHY_RX;
-	else if (strstr(clock_id, "port1_tx"))
-		clk_id = SSDK_UNIPHY_INSTANCE0 * 2 + UNIPHY_TX;
-	else if (strstr(clock_id, "port2_rx"))
-		clk_id = SSDK_UNIPHY_INSTANCE1 * 2 + UNIPHY_RX;
-	else if (strstr(clock_id, "port2_tx"))
-		clk_id = SSDK_UNIPHY_INSTANCE1 * 2 + UNIPHY_TX;
-	else if (strstr(clock_id, "port3_rx"))
-		clk_id = SSDK_UNIPHY_INSTANCE2 * 2 + UNIPHY_RX;
-	else if (strstr(clock_id, "port3_tx"))
-		clk_id = SSDK_UNIPHY_INSTANCE2 * 2 + UNIPHY_TX;
-
-	if (clk_id != 0xff) {
-		prate = clk_get_rate(uniphy_raw_clks[clk_id]->clk);
-		SSDK_DEBUG("UNIPHY CLK %s prate: %d for the clock %s rate %d set\n",
-				__clk_get_name(uniphy_raw_clks[clk_id]->clk), prate,
-				clock_id, rate);
-	}
-
-	return ssdk_clock_find(clock_id, rate, prate);
-}
-
-a_bool_t ssdk_raw_clock_rate_set(struct clk_data_t *clk_inst, unsigned int rate)
-{
-	void __iomem *clk_base = NULL;
-	uint32_t reg_val = 0;
-
-	if (!clk_inst) {
-		SSDK_DEBUG("clk_inst is NULL\n");
-		return A_FALSE;
-	}
-
-	if (clk_inst->is_gcc)
-		clk_base = gcc_clk_base_g;
-	else
-		clk_base = nsscc_clk_base_g;
-
-	if (clk_inst->rcg != 0) {
-		reg_val = readl(clk_base + clk_inst->rcg);
-
-		if (reg_val != clk_inst->rcg_val) {
-			writel(clk_inst->rcg_val, clk_base + clk_inst->rcg);
-			SSDK_DEBUG("CLK %s rate: %d RCG: 0x%x, val: 0x%x\n", clk_inst->clk_id,
-					rate, clk_inst->rcg, clk_inst->rcg_val);
-
-			/* Update cmd register */
-			reg_val = readl(clk_base + clk_inst->rcg - 4);
-			reg_val |= RCGR_CMD_UPDATE;
-			writel(reg_val, clk_base + clk_inst->rcg - 4);
-			usleep_range(1000, 1100);
-			SSDK_DEBUG("CLK %s rate: %d CMD: 0x%x, write val: 0x%x read val: 0x%x\n",
-					clk_inst->clk_id, rate, clk_inst->rcg - 4,
-					reg_val, readl(clk_base + clk_inst->rcg - 4));
-		}
-
-	}
-
-	if (clk_inst->cdiv != 0) {
-		reg_val = readl(clk_base + clk_inst->cdiv);
-
-		if (reg_val != clk_inst->cdiv_val) {
-			writel(clk_inst->cdiv_val, clk_base + clk_inst->cdiv);
-			SSDK_DEBUG("CLK %s rate: %d CDIV: 0x%x, val: 0x%x\n", clk_inst->clk_id,
-					rate, clk_inst->cdiv, clk_inst->cdiv_val);
-		}
-	}
-
-	return A_TRUE;
-}
-
-a_bool_t ssdk_clock_rate_set(const char *clock_id, unsigned int rate)
-{
-	struct clk_data_t *clk_inst = ssdk_clk_to_clk_data(clock_id, rate);
-
-	if (clk_inst != NULL)
-		return ssdk_raw_clock_rate_set(clk_inst, rate);
-
-	return A_FALSE;
-}
-
-#endif
 
 static void ssdk_ppe_fixed_clock_init(adpt_ppe_type_t chip_type)
 {
@@ -1022,6 +937,95 @@ static void ssdk_ppe_fixed_clock_init(adpt_ppe_type_t chip_type)
 					SNOC_NSSNOC_CLK, NSSNOC_SNOC_RATE);
 	}
 }
+#endif
+
+#if defined(SSDK_RAW_CLOCK)
+struct clk_data_t *ssdk_clk_to_clk_data(const char *clock_id, unsigned int rate)
+{
+	unsigned int prate = PPE_CLK_UNAWARE_RATE;
+	uint32_t clk_id = 0xff;
+
+	if (strstr(clock_id, "port1_rx"))
+		clk_id = SSDK_UNIPHY_INSTANCE0 * 2 + UNIPHY_RX;
+	else if (strstr(clock_id, "port1_tx"))
+		clk_id = SSDK_UNIPHY_INSTANCE0 * 2 + UNIPHY_TX;
+	else if (strstr(clock_id, "port2_rx"))
+		clk_id = SSDK_UNIPHY_INSTANCE1 * 2 + UNIPHY_RX;
+	else if (strstr(clock_id, "port2_tx"))
+		clk_id = SSDK_UNIPHY_INSTANCE1 * 2 + UNIPHY_TX;
+	else if (strstr(clock_id, "port3_rx"))
+		clk_id = SSDK_UNIPHY_INSTANCE2 * 2 + UNIPHY_RX;
+	else if (strstr(clock_id, "port3_tx"))
+		clk_id = SSDK_UNIPHY_INSTANCE2 * 2 + UNIPHY_TX;
+
+	if (clk_id != 0xff) {
+		prate = clk_get_rate(uniphy_raw_clks[clk_id]->clk);
+		SSDK_DEBUG("UNIPHY CLK %s prate: %d for the clock %s rate %d set\n",
+				__clk_get_name(uniphy_raw_clks[clk_id]->clk), prate,
+				clock_id, rate);
+	}
+
+	return ssdk_clock_find(clock_id, rate, prate);
+}
+
+a_bool_t ssdk_raw_clock_rate_set(struct clk_data_t *clk_inst, unsigned int rate)
+{
+	void __iomem *clk_base = NULL;
+	uint32_t reg_val = 0;
+
+	if (!clk_inst) {
+		SSDK_DEBUG("clk_inst is NULL\n");
+		return A_FALSE;
+	}
+
+	if (clk_inst->is_gcc)
+		clk_base = gcc_clk_base_g;
+	else
+		clk_base = nsscc_clk_base_g;
+
+	if (clk_inst->rcg != 0) {
+		reg_val = readl(clk_base + clk_inst->rcg);
+
+		if (reg_val != clk_inst->rcg_val) {
+			writel(clk_inst->rcg_val, clk_base + clk_inst->rcg);
+			SSDK_DEBUG("CLK %s rate: %d RCG: 0x%x, val: 0x%x\n", clk_inst->clk_id,
+					rate, clk_inst->rcg, clk_inst->rcg_val);
+
+			/* Update cmd register */
+			reg_val = readl(clk_base + clk_inst->rcg - 4);
+			reg_val |= RCGR_CMD_UPDATE;
+			writel(reg_val, clk_base + clk_inst->rcg - 4);
+			usleep_range(1000, 1100);
+			SSDK_DEBUG("CLK %s rate: %d CMD: 0x%x, write val: 0x%x read val: 0x%x\n",
+					clk_inst->clk_id, rate, clk_inst->rcg - 4,
+					reg_val, readl(clk_base + clk_inst->rcg - 4));
+		}
+
+	}
+
+	if (clk_inst->cdiv != 0) {
+		reg_val = readl(clk_base + clk_inst->cdiv);
+
+		if (reg_val != clk_inst->cdiv_val) {
+			writel(clk_inst->cdiv_val, clk_base + clk_inst->cdiv);
+			SSDK_DEBUG("CLK %s rate: %d CDIV: 0x%x, val: 0x%x\n", clk_inst->clk_id,
+					rate, clk_inst->cdiv, clk_inst->cdiv_val);
+		}
+	}
+
+	return A_TRUE;
+}
+
+a_bool_t ssdk_clock_rate_set(const char *clock_id, unsigned int rate)
+{
+	struct clk_data_t *clk_inst = ssdk_clk_to_clk_data(clock_id, rate);
+
+	if (clk_inst != NULL)
+		return ssdk_raw_clock_rate_set(clk_inst, rate);
+
+	return A_FALSE;
+}
+
 #endif
 
 #if defined(MP)
@@ -1276,10 +1280,12 @@ ssdk_mp_reset_init(void)
 {
 #if defined(CONFIG_OF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
 	struct reset_control *rst;
+	struct device_node *switch_instance = NULL;
 	a_uint32_t i;
 
-	rst_node = of_find_node_by_name(NULL, "ess-switch");
-
+	switch_instance = of_find_node_by_name(NULL, "ess-instance");
+	
+	rst_node = of_find_node_by_name(switch_instance, "ess-switch");
 	for (i = 0; i < MP_BCR_RST_MAX; i++) {
 		rst = of_reset_control_get(rst_node, mp_rst_ids[i]);
 		if (IS_ERR(rst)) {
