@@ -68,7 +68,7 @@ extern "C" {
 #define ADPT_DEV_ID_CHECK(dev_id) \
 do { \
     if (dev_id >= SW_MAX_NR_DEV) \
-        return SW_OUT_OF_RANGE; \
+        return (a_bool_t)SW_OUT_OF_RANGE; \
 } while (0)
 
 #define ADPT_PPE_PORT_ID_CHECK(port_id) \

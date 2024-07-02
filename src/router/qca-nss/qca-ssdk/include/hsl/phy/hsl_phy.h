@@ -971,6 +971,10 @@ hsl_port_phy_eee_cap_get(a_uint32_t dev_id, a_uint32_t port_id, a_uint32_t *cap)
 sw_error_t
 hsl_port_phy_eee_status_get(a_uint32_t dev_id, a_uint32_t port_id,
 	a_uint32_t *status);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+sw_error_t
+hsl_phydev_eee_update(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t adv);
+#endif
 #ifndef IN_PORTCONTROL_MINI
 sw_error_t
 hsl_port_phy_local_loopback_set(a_uint32_t dev_id, fal_port_t port_id, a_bool_t enable);
@@ -1029,10 +1033,6 @@ hsl_port_phy_wol_status_get(a_uint32_t dev_id, fal_port_t port_id, a_bool_t * en
 sw_error_t
 hsl_port_phy_mode_get(a_uint32_t dev_id, a_uint32_t port_id,
 	fal_port_interface_mode_t *mode);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
-sw_error_t
-hsl_phydev_eee_update(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t adv);
-#endif
 #endif
 #ifdef __cplusplus
 }
