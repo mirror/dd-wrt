@@ -19,6 +19,7 @@
 #include "clk-regmap-phy-mux.h"
 #include "reset.h"
 
+
 /* Need to match the order of clocks in DT binding */
 enum {
 	DT_XO,
@@ -51,11 +52,11 @@ enum {
 };
 
 static const struct clk_parent_data gcc_xo_data[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 };
 
 static const struct clk_parent_data gcc_sleep_clk_data[] = {
-	{ .index = DT_SLEEP_CLK },
+	{ .fw_name = "sleep_clk", .name = "sleep_clk" },
 };
 
 static struct clk_alpha_pll gpll0_main = {
@@ -193,7 +194,7 @@ static struct clk_fixed_factor gpll0_out_main_div2 = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll0_out_main_div2[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll0_out_main_div2.hw },
 };
@@ -205,7 +206,7 @@ static const struct parent_map gcc_xo_gpll0_gpll0_out_main_div2_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 };
 
@@ -215,7 +216,7 @@ static const struct parent_map gcc_xo_gpll0_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_out_main_div2_gpll0[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0_out_main_div2.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -227,7 +228,7 @@ static const struct parent_map gcc_xo_gpll0_out_main_div2_gpll0_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_ubi32_gpll0[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -239,7 +240,7 @@ static const struct parent_map gcc_xo_ubi32_gpll0_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll2[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll2.clkr.hw },
 };
@@ -251,7 +252,7 @@ static const struct parent_map gcc_xo_gpll0_gpll2_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll2_gpll4[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll2.clkr.hw },
 	{ .hw = &gpll4.clkr.hw },
@@ -265,7 +266,7 @@ static const struct parent_map gcc_xo_gpll0_gpll2_gpll4_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll4[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll4.clkr.hw },
 };
@@ -277,9 +278,9 @@ static const struct parent_map gcc_xo_gpll0_gpll4_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_core_pi_sleep_clk[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
-	{ .index = DT_SLEEP_CLK },
+	{ .fw_name = "sleep_clk", .name = "sleep_clk" },
 };
 
 static const struct parent_map gcc_xo_gpll0_core_pi_sleep_clk_map[] = {
@@ -289,10 +290,10 @@ static const struct parent_map gcc_xo_gpll0_core_pi_sleep_clk_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll0_out_main_div2_sleep_clk[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll0_out_main_div2.hw },
-	{ .index = DT_SLEEP_CLK },
+	{ .fw_name = "sleep_clk", .name = "sleep_clk" },
 };
 
 static const struct parent_map gcc_xo_gpll0_gpll0_out_main_div2_sleep_clk_map[] = {
@@ -303,7 +304,7 @@ static const struct parent_map gcc_xo_gpll0_gpll0_out_main_div2_sleep_clk_map[] 
 };
 
 static const struct clk_parent_data gcc_xo_gpll0_gpll2_gpll0_out_main_div2[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll2.clkr.hw },
 	{ .hw = &gpll0_out_main_div2.hw },
@@ -317,7 +318,7 @@ static const struct parent_map gcc_xo_gpll0_gpll2_gpll0_out_main_div2_map[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gpll4_gpll0_gpll0_out_main_div2[] = {
-	{ .index = DT_XO },
+	{ .fw_name = "xo", .name = "xo" },
 	{ .hw = &gpll4.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll0_out_main_div2.hw },
@@ -338,9 +339,9 @@ static const struct parent_map gcc_xo_gpll4_gpll0_gpll0_out_main_div2_map2[] = {
 };
 
 static const struct clk_parent_data gcc_xo_gephy_gcc_rx_gephy_gcc_tx_ubi32_pll_gpll0[] = {
-	{ .index = DT_XO },
-	{ .name = "gephy_gcc_rx" },
-	{ .name = "gephy_gcc_tx" },
+	{ .fw_name = "xo", .name = "xo" },
+	{ .fw_name = "gephy_gcc_rx", .name = "gephy_gcc_rx" },
+	{ .fw_name = "gephy_gcc_tx", .name = "gephy_gcc_tx" },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -354,9 +355,9 @@ static const struct parent_map gcc_xo_gephy_gcc_rx_gephy_gcc_tx_ubi32_pll_gpll0_
 };
 
 static const struct clk_parent_data gcc_xo_gephy_gcc_tx_gephy_gcc_rx_ubi32_pll_gpll0[] = {
-	{ .index = DT_XO },
-	{ .name = "gephy_gcc_tx" },
-	{ .name = "gephy_gcc_rx" },
+	{ .fw_name = "xo", .name = "xo" },
+	{ .fw_name = "gephy_gcc_tx", .name = "gephy_gcc_tx" },
+	{ .fw_name = "gephy_gcc_rx", .name = "gephy_gcc_rx" },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -370,9 +371,9 @@ static const struct parent_map gcc_xo_gephy_gcc_tx_gephy_gcc_rx_ubi32_pll_gpll0_
 };
 
 static const struct clk_parent_data gcc_xo_uniphy_gcc_rx_uniphy_gcc_tx_ubi32_pll_gpll0[] = {
-	{ .index = DT_XO },
-	{ .name = "uniphy_gcc_rx" },
-	{ .name = "uniphy_gcc_tx" },
+	{ .fw_name = "xo", .name = "xo" },
+	{ .fw_name = "uniphy_gcc_rx", .name = "uniphy_gcc_rx" },
+	{ .fw_name = "uniphy_gcc_tx", .name = "uniphy_gcc_tx" },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -386,9 +387,9 @@ static const struct parent_map gcc_xo_uniphy_gcc_rx_uniphy_gcc_tx_ubi32_pll_gpll
 };
 
 static const struct clk_parent_data gcc_xo_uniphy_gcc_tx_uniphy_gcc_rx_ubi32_pll_gpll0[] = {
-	{ .index = DT_XO },
-	{ .name = "uniphy_gcc_tx" },
-	{ .name = "uniphy_gcc_rx" },
+	{ .fw_name = "xo", .name = "xo" },
+	{ .fw_name = "uniphy_gcc_tx", .name = "uniphy_gcc_tx" },
+	{ .fw_name = "uniphy_gcc_rx", .name = "uniphy_gcc_rx" },
 	{ .hw = &ubi32_pll.clkr.hw },
 	{ .hw = &gpll0.clkr.hw },
 };
@@ -402,8 +403,8 @@ static const struct parent_map gcc_xo_uniphy_gcc_tx_uniphy_gcc_rx_ubi32_pll_gpll
 };
 
 static const struct clk_parent_data gcc_pcie20_phy0_pipe_clk_xo[] = {
-	{ .index = DT_PCIE20_PHY0_PIPE_CLK },
-	{ .index = DT_XO },
+	{ .fw_name = "pcie0_pipe", .name = "pcie20_phy0_pipe_clk" },
+	{ .fw_name = "xo", .name = "xo" },
 };
 
 static const struct parent_map gcc_pcie20_phy0_pipe_clk_xo_map[] = {
@@ -412,8 +413,8 @@ static const struct parent_map gcc_pcie20_phy0_pipe_clk_xo_map[] = {
 };
 
 static const struct clk_parent_data gcc_pcie20_phy1_pipe_clk_xo[] = {
-	{ .index = DT_PCIE20_PHY1_PIPE_CLK },
-	{ .index = DT_XO },
+	{ .fw_name = "pcie1_pipe", .name = "pcie20_phy1_pipe_clk" },
+	{ .fw_name = "xo", .name = "xo" },
 };
 
 static const struct parent_map gcc_pcie20_phy1_pipe_clk_xo_map[] = {
@@ -422,8 +423,8 @@ static const struct parent_map gcc_pcie20_phy1_pipe_clk_xo_map[] = {
 };
 
 static const struct clk_parent_data gcc_usb3phy_0_cc_pipe_clk_xo[] = {
-	{ .index = DT_USB3_PHY0_CC_PIPE_CLK },
-	{ .index = DT_XO },
+	{ .fw_name = "usb3phy_0_cc_pipe_clk", name = "usb3phy_0_cc_pipe_clk" },
+	{ .fw_name = "xo", .name = "xo" },
 };
 
 static const struct parent_map gcc_usb3phy_0_cc_pipe_clk_xo_map[] = {
