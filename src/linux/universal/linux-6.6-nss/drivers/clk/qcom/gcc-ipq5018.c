@@ -737,8 +737,8 @@ static const struct freq_tbl ftbl_gmac1_rx_clk_src[] = {
 	F(2500000, P_UNIPHY_RX, 12.5, 0, 0),
 	F(24000000, P_XO, 1, 0, 0),
 	F(25000000, P_UNIPHY_RX, 2.5, 0, 0),
-	F(125000000, P_UNIPHY_RX, 2.5, 0, 0),
 	F(125000000, P_UNIPHY_RX, 1, 0, 0),
+	F(125000000, P_UNIPHY_RX, 2.5, 0, 0),
 	F(312500000, P_UNIPHY_RX, 1, 0, 0),
 	{ }
 };
@@ -777,8 +777,8 @@ static const struct freq_tbl ftbl_gmac1_tx_clk_src[] = {
 	F(2500000, P_UNIPHY_TX, 12.5, 0, 0),
 	F(24000000, P_XO, 1, 0, 0),
 	F(25000000, P_UNIPHY_TX, 2.5, 0, 0),
-	F(125000000, P_UNIPHY_TX, 2.5, 0, 0),
 	F(125000000, P_UNIPHY_TX, 1, 0, 0),
+	F(125000000, P_UNIPHY_TX, 2.5, 0, 0),
 	F(312500000, P_UNIPHY_TX, 1, 0, 0),
 	{ }
 };

@@ -405,7 +405,7 @@ static int qcom_eth_uniphy_probe(struct platform_device *pdev)
 	struct phy *phy;
 	struct phy_provider *phy_provider;
 	int ret;
-
+	printk(KERN_INFO "init %s\n", __func__);
 	ret = cmn_init(pdev);
 	if (ret)
 		return dev_err_probe(dev, ret,
