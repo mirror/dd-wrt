@@ -416,15 +416,12 @@
 
 		};
 
-
 		gcc: clock-controller@1800000 {
 			compatible = "qcom,gcc-ipq5018";
 			reg = <0x01800000 0x80000>;
-			clocks = <&xo>,
-				 <&sleep_clk>,
-				 <&pcie_x2phy>,
-				 <&pcie_x1phy>,
-				 <&usbphy1>;
+			clocks = <&xo>, <&sleep_clk>;
+			clock-names = "xo", "sleep_clk";
+
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			#power-domain-cells = <1>;
