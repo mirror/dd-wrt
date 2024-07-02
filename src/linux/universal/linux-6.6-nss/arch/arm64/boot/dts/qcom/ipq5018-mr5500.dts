@@ -299,7 +299,7 @@
 		};
 
 
-		dp1 {
+/*		dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
@@ -315,9 +315,9 @@
 			mdio-bus = <&mdio0>;
 			local-mac-address = [000000000000];
 			phy-mode = "sgmii";
-		};
+		}; */
 
-		dp2 {
+		dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
