@@ -768,11 +768,10 @@ process_next_scatter:
 	/*
 	 * Send packet up the stack
 	 */
-#if defined(NSS_DP_ENABLE_NAPI_GRO)
-	napi_gro_receive(&rxdesc_ring->napi, skb_head);
-#else
-	netif_receive_skb(skb_head);
-#endif
+	if (unlikely(dev->features & NETIF_F_GRO))
+		napi_gro_receive(&rxdesc_ring->napi, skb_head);
+	else
+		netif_receive_skb(skb_head);
 
 	rxdesc_ring->head = NULL;
 	rxdesc_ring->last = NULL;

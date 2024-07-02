@@ -91,8 +91,6 @@ void syn_dp_cfg_tx_cleanup_rings(struct syn_dp_info *dev_info)
 		tx_skb_index = syn_dp_tx_inc_index(tx_skb_index, i);
 		txdesc = tx_info->tx_desc;
 
-		dma_unmap_single(tx_info->dev, txdesc->buffer1, txdesc->length, DMA_TO_DEVICE);
-
 		skb = tx_info->tx_buf_pool[tx_skb_index].skb;
 		if (unlikely(skb != NULL)) {
 			dev_kfree_skb_any(skb);

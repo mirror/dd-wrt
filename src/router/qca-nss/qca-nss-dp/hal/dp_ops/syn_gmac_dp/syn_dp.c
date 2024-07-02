@@ -16,6 +16,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <linux/of.h>
+#include <linux/clk.h>
+#include <linux/reset.h>
 #include <nss_dp_dev.h>
 #include <linux/irq.h>
 #include "syn_dma_reg.h"
@@ -323,6 +326,19 @@ static void syn_dp_if_set_features(struct nss_dp_data_plane_ctx *dpc)
 	netdev->hw_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
 	netdev->vlan_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
 	netdev->wanted_features |= NETIF_F_HW_CSUM | NETIF_F_RXCSUM | NETIF_F_FRAGLIST | NETIF_F_SG;
+
+#if defined(NSS_DP_ENABLE_NAPI_GRO)
+	netdev->features |= NETIF_F_GRO;
+	netdev->hw_features |= NETIF_F_GRO;
+	netdev->vlan_features |= NETIF_F_GRO;
+	netdev->wanted_features |= NETIF_F_GRO;
+#else
+	netdev->features &= ~NETIF_F_GRO;
+	netdev->hw_features &= ~NETIF_F_GRO;
+	netdev->vlan_features &= ~NETIF_F_GRO;
+	netdev->wanted_features &= ~NETIF_F_GRO;
+
+#endif
 }
 
 /*

@@ -411,9 +411,11 @@ static uint32_t edma_clean_rx(struct edma_hw *ehw,
 					NSS_PTP_EVENT_SERVICE_CODE))
 			nss_phy_tstamp_rx_buf(ndev, skb);
 		else {
+#if defined(NSS_DP_ENABLE_NAPI_GRO)
 			if (likely(ndev->features & NETIF_F_GRO))
 				napi_gro_receive(&ehw->napi, skb);
 			else
+#endif
 				netif_receive_skb(skb);
 		}
 
