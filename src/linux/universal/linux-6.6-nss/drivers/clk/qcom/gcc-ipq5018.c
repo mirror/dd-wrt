@@ -36,19 +36,19 @@ enum {
 
 enum {
 	P_XO,
-	P_CORE_PI_SLEEP_CLK,
-	P_PCIE20_PHY0_PIPE,
-	P_PCIE20_PHY1_PIPE,
-	P_USB3PHY_0_PIPE,
-	P_GEPHY_RX,
-	P_GEPHY_TX,
-	P_UNIPHY_RX,
-	P_UNIPHY_TX,
 	P_GPLL0,
 	P_GPLL0_DIV2,
 	P_GPLL2,
 	P_GPLL4,
 	P_UBI32_PLL,
+	P_GEPHY_RX,
+	P_GEPHY_TX,
+	P_UNIPHY_RX,
+	P_UNIPHY_TX,
+	P_CORE_PI_SLEEP_CLK,
+	P_PCIE20_PHY0_PIPE,
+	P_PCIE20_PHY1_PIPE,
+	P_USB3PHY_0_PIPE,
 };
 
 static const struct clk_parent_data gcc_xo_data[] = {
@@ -403,7 +403,7 @@ static const struct parent_map gcc_xo_uniphy_gcc_tx_uniphy_gcc_rx_ubi32_pll_gpll
 };
 
 static const struct clk_parent_data gcc_pcie20_phy0_pipe_clk_xo[] = {
-	{ .fw_name = "pcie0_pipe", .name = "pcie20_phy0_pipe_clk" },
+	{ .fw_name = "pcie20_phy0_pipe_clk", .name = "pcie20_phy0_pipe_clk" },
 	{ .fw_name = "xo", .name = "xo" },
 };
 
@@ -413,7 +413,7 @@ static const struct parent_map gcc_pcie20_phy0_pipe_clk_xo_map[] = {
 };
 
 static const struct clk_parent_data gcc_pcie20_phy1_pipe_clk_xo[] = {
-	{ .fw_name = "pcie1_pipe", .name = "pcie20_phy1_pipe_clk" },
+	{ .fw_name = "pcie20_phy1_pipe_clk", .name = "pcie20_phy1_pipe_clk" },
 	{ .fw_name = "xo", .name = "xo" },
 };
 
@@ -423,7 +423,7 @@ static const struct parent_map gcc_pcie20_phy1_pipe_clk_xo_map[] = {
 };
 
 static const struct clk_parent_data gcc_usb3phy_0_cc_pipe_clk_xo[] = {
-	{ .fw_name = "usb3phy_0_cc_pipe_clk", name = "usb3phy_0_cc_pipe_clk" },
+	{ .fw_name = "usb3phy_0_cc_pipe_clk", .name = "usb3phy_0_cc_pipe_clk" },
 	{ .fw_name = "xo", .name = "xo" },
 };
 
@@ -3796,6 +3796,11 @@ static int gcc_ipq5018_probe(struct platform_device *pdev)
 	regmap = qcom_cc_map(pdev, &ipq5018_desc);
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
+
+	clk_register_fixed_rate(&pdev->dev, "pcie20_phy0_pipe_clk", NULL,
+				0, 125000000);
+	clk_register_fixed_rate(&pdev->dev, "pcie20_phy1_pipe_clk", NULL,
+				0, 125000000);
 
 	clk_alpha_pll_configure(&ubi32_pll_main, regmap, &ubi32_pll_config);
 
