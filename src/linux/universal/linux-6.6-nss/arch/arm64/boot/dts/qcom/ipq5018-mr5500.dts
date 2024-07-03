@@ -773,7 +773,7 @@
 	qcom,bdf-addr = <0x4ba00000>;
 	qcom,caldb-addr = <0x4ca00000>;
 	qcom,caldb-size = <0x200000>;
-	//qcom,m3-dump-addr = <0x4d400000>;
+	qcom,m3-dump-addr = <0x4c800000>;
 
 	status = "okay";
 };
