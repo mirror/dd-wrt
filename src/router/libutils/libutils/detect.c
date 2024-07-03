@@ -1415,7 +1415,10 @@ generic:;
 		setRouter("Linksys MR5500");
 		return ROUTER_LINKSYS_MR5500;
 	}
-
+	if (!strcmp(modelstr, "MX5500")) {
+		setRouter("Linksys MX5500");
+		return ROUTER_LINKSYS_MX5500;
+	}
 	if (!strcmp(modelstr, "DL-WRX36")) {
 		setRouter("Dynalink DL-WRX36");
 		return ROUTER_DYNALINK_DLWRX36;

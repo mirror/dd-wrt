@@ -731,6 +731,10 @@ void *getUEnv(char *name)
 		fp = fopen("/dev/mtdblock/11", "rb");
 	else if (brand == ROUTER_DYNALINK_DLWRX36) 
 		fp = fopen("/dev/mtdblock/14", "rb");
+	else if (brand == ROUTER_LINKSYS_MR5500) 
+		fp = fopen("/dev/mtdblock/9", "rb");
+	else if (brand == ROUTER_LINKSYS_MX5500) 
+		fp = fopen("/dev/mtdblock/9", "rb");
 	else
 		fp = fopen("/dev/mtdblock/18", "rb");
 #elif HAVE_IPQ806X
@@ -1209,6 +1213,8 @@ failover:
 		strcpy(buf, "QCA IPQ4028");
 	else if (strstr(cpu, "ipq6018"))
 		strcpy(buf, "QCA IPQ6018");
+	else if (strstr(cpu, "ipq5018"))
+		strcpy(buf, "QCA IPQ5018");
 	else if (strstr(cpu, "ipq8074"))
 		strcpy(buf, "QCA IPQ8074");
 	else

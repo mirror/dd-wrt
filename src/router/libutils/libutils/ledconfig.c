@@ -1667,6 +1667,7 @@ static void getledconfig(struct ledconfig *cfg)
 #endif
 		break;
 	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 		break;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
