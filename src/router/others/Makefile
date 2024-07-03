@@ -61,6 +61,10 @@ ifdef CONFIG_NORTHSTAR
 	install -d $(INSTALLDIR)/etc/cfe
 	install cfe/cfe_600.bin $(INSTALLDIR)/etc/cfe
 endif
+ifdef CONFIG_IPQ6018
+	install vlan_setup.sh $(INSTALLDIR)/etc/
+	install vlan_setup_mx5500.sh $(INSTALLDIR)/etc/
+endif
 ifdef CONFIG_MT7612
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/SingleSKU.dat $(INSTALLDIR)/etc/wlan
