@@ -724,6 +724,8 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MR5500)
 	snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	else if (brand == ROUTER_LINKSYS_MX5500)
+	snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA

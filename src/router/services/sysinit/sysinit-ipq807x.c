@@ -581,6 +581,10 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mr5500("hw_mac_addr");
 		load_nss_ipq50xx(512);
+	} else if (brand == ROUTER_LINKSYS_MX5500) {
+		fwlen = 0x20000;
+		maddr = get_deviceinfo_mr5500("hw_mac_addr");
+		load_nss_ipq50xx(512);
 	} else {
 		fwlen = 0x20000;
 		load_nss_ipq807x(512);
@@ -606,7 +610,7 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
-		if (brand == ROUTER_LINKSYS_MR5500) {
+		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -666,7 +670,7 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 2);
 	}
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
-	    brand == ROUTER_LINKSYS_MR5500) {
+	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 	}
 
@@ -678,7 +682,7 @@ void start_sysinit(void)
 	insmod("cfg80211");
 	insmod("mac80211");
 	insmod("qmi_helpers");
-	if (brand == ROUTER_LINKSYS_MR5500) {
+	if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
 		eval("insmod", "ath11k", "nss_offload=0");
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
@@ -710,6 +714,13 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		eval("/etc/vlan_setup.sh");
+		eval("ifconfig", "eth0", "up");
+	}
+	if (brand == ROUTER_LINKSYS_MX5500) {
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+		eval("/etc/vlan_setup_mx5500.sh");
 		eval("ifconfig", "eth0", "up");
 	}
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
@@ -775,7 +786,7 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500  || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
 	    brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");

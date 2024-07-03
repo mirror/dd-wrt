@@ -68,6 +68,7 @@ void start_jffs2(void)
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 	case ROUTER_DYNALINK_DLWRX36:
 		ubidev = 1;
 		break;
