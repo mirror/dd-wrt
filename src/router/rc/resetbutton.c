@@ -189,8 +189,8 @@ static int getbuttonstate()
 		return !get_gpio(52);
 	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(34);
-	case ROUTER_DYNALINK_MR5500:
-	case ROUTER_DYNALINK_MX5500:
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 		return !get_gpio(28);
 	default:
 		return 0;
