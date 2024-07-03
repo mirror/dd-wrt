@@ -336,6 +336,20 @@ void patchvht160(char *file, int phynum)
 		setmacflag("/tmp/board.bin");                                                                                \
 	}
 
+#define patch2(ethaddr, offset)                                                                                               \
+	{                                                                                                                    \
+		unsigned char binmac[6];                                                                                     \
+		int i;                                                                                                       \
+		unsigned int newmac[6];                                                                                      \
+		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
+		       &newmac[5]);                                                                                          \
+		for (i = 0; i < 6; i++)                                                                                      \
+			binmac[i] = newmac[i];                                                                               \
+		patchmac("/tmp/cal-pci-0001:01:00.0.bin", offset, binmac);                                                                \
+		patchmac("/tmp/caldata2.bin", offset, binmac);                                                                \
+		patchmac("/tmp/board2.bin", offset, binmac);                                                                  \
+	}
+
 static void load_nss_ipq60xx(int profile)
 {
 	insmod("qca-ssdk-ipq60xx");
@@ -508,7 +522,7 @@ static void load_nss_ipq807x(int profile)
 void start_setup_affinity(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR5500) {
+	if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
 	} else {
 		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
@@ -648,6 +662,16 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", 0);
 		removeregdomain("/tmp/board.bin", 0);
+	}
+	if (brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MR5500) {
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch2(ethaddr, 14);
+//		removeregdomain("/tmp/caldata.bin", 0);
+//		removeregdomain("/tmp/board.bin", 0);
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V2) {
 		MAC_ADD(ethaddr);
