@@ -8,6 +8,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-ifc6640.dtb
 #dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mx2000.dtb
 #dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mx5500.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mr5500.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-mx5500.dtb
 #dtb-$(CONFIG_ARCH_QCOM)	+= ipq5018-rdp432-c2.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5332-rdp441.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq5332-rdp442.dtb
