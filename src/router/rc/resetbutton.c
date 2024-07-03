@@ -189,6 +189,9 @@ static int getbuttonstate()
 		return !get_gpio(52);
 	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(34);
+	case ROUTER_DYNALINK_MR5500:
+	case ROUTER_DYNALINK_MX5500:
+		return !get_gpio(28);
 	default:
 		return 0;
 	}
@@ -1378,6 +1381,11 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_LINKSYS_MX4200V2:
 		sesgpio = 0x105;
 		val |= get_gpio(67) << 5;
+		break;
+	case ROUTER_LINKSYS_MX5500:
+	case ROUTER_LINKSYS_MR5500:
+		sesgpio = 0x105;
+		val |= get_gpio(27) << 5;
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		sesgpio = 0x105;
