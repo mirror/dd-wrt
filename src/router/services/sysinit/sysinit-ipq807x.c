@@ -410,7 +410,7 @@ static void load_nss_ipq50xx(int profile)
 	insmod("qca-ssdk-ipq50xx");
 	insmod("qca-nss-dp-ipq50xx");
 
-	nvram_default_get("nss", "0");
+	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq50xx");
 		insmod("qca-nss-crypto-ipq50xx");
