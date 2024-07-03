@@ -770,8 +770,9 @@
 
 	qcom,ath11k-calibration-variant = "Linksys-MX5500";
 	qcom,ath11k-fw-memory-mode = <1>;
-	qcom,bdf-addr = <0x4c400000>;
-	qcom,caldb-addr = <0x4d300000>;
+	qcom,bdf-addr = <0x4ba00000>;
+	qcom,caldb-addr = <0x4ca00000>;
+	qcom,caldb-size = <0x200000>;
 	//qcom,m3-dump-addr = <0x4d400000>;
 
 	status = "okay";
