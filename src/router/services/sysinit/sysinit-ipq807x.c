@@ -678,9 +678,14 @@ void start_sysinit(void)
 	insmod("cfg80211");
 	insmod("mac80211");
 	insmod("qmi_helpers");
-	insmod("ath11k");
-	insmod("ath11k_pci");
-	//	insmod("ath11k_ahb");
+	if (brand == ROUTER_LINKSYS_MR5500) {
+		eval("insmod", "ath11k", "nss_offload=0");
+		insmod("ath11k_ahb");
+		insmod("ath11k_pci");
+	} else {
+		insmod("ath11k");
+		insmod("ath11k_ahb");
+	}
 	//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
@@ -704,20 +709,11 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
-		eval("ssdk_sh", "debug", "phy", "set", "0", "0", "0x1800");
-		eval("ssdk_sh", "debug", "phy", "set", "1", "0", "0x1800");
-		eval("ssdk_sh", "debug", "phy", "set", "2", "0", "0x1800");
-		eval("ssdk_sh", "debug", "phy", "set", "3", "0", "0x1800");
-		sleep(2);
-		eval("ssdk_sh", "debug", "phy", "set", "0", "0", "0x1000");
-		eval("ssdk_sh", "debug", "phy", "set", "1", "0", "0x1000");
-		eval("ssdk_sh", "debug", "phy", "set", "2", "0", "0x1000");
-		eval("ssdk_sh", "debug", "phy", "set", "3", "0", "0x1000");
-
 		eval("/etc/vlan_setup.sh");
+		eval("ifconfig", "eth0", "up");
 	}
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
-	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_DYNALINK_DLWRX36) {
+	    brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
 		sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
 		sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
