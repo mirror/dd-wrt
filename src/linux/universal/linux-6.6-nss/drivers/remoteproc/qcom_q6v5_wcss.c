@@ -74,7 +74,7 @@
 #define Q6SS_BHS_ON		BIT(24)
 #define Q6SS_CLAMP_WL		BIT(21)
 #define Q6SS_CLAMP_QMC_MEM		BIT(22)
-#define HALT_CHECK_MAX_LOOPS		200
+#define HALT_CHECK_MAX_TIMEOUT         20000000
 #define Q6SS_XO_CBCR		GENMASK(5, 3)
 #define Q6SS_SLEEP_CBCR		GENMASK(5, 2)
 #define Q6SS_TIMEOUT_US		1000
@@ -398,25 +398,27 @@ static void q6v6_wcss_reset(struct q6v5_wcss *wcss)
 	wcss->q6v5.running = val == 1 ? true : false;
 }
 
-static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
+static int q6v5_wcss_reset(struct rproc *rproc)
 {
+	struct q6v5_wcss *wcss = rproc->priv;
 	const struct wcss_data *desc;
 	int ret;
 	u32 val;
 	int i;
 
 	desc = device_get_match_data(wcss->dev);
-	if (desc == &wcss_ipq6018_res_init) {
-		if (desc->aon_reset_required) {
-			/* Deassert wcss aon reset */
-			ret = reset_control_deassert(wcss->wcss_aon_reset);
-			if (ret) {
-				dev_err(wcss->dev, "wcss_aon_reset failed\n");
-				return ret;
-			}
-			mdelay(1);
-		}
 
+	if (desc->aon_reset_required) {
+		/* Deassert wcss aon reset */
+		ret = reset_control_deassert(wcss->wcss_aon_reset);
+		if (ret) {
+			dev_err(wcss->dev, "wcss_aon_reset failed\n");
+			return ret;
+		}
+		mdelay(1);
+	}
+
+	if (desc == &wcss_ipq6018_res_init) {
 		ret = ipq6018_clks_prepare_enable(wcss);
 		if (ret) {
 			dev_err(wcss->dev, "failed to enable clock\n");
@@ -436,6 +438,8 @@ static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
 	writel(val, wcss->rmb_base + SSCAON_CONFIG);
 	mdelay(1);
 
+	writel(rproc->bootaddr >> 4, wcss->reg_base + Q6SS_RST_EVB);
+
 	/* Assert resets, stop core */
 	val = readl(wcss->reg_base + Q6SS_RESET_REG);
 	val |= Q6SS_CORE_ARES | Q6SS_BUS_ARES_ENABLE | Q6SS_STOP_CORE;
@@ -449,7 +453,7 @@ static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
 	/* Read CLKOFF bit to go low indicating CLK is enabled */
 	ret = readl_poll_timeout(wcss->reg_base + Q6SS_XO_CBCR,
 				 val, !(val & BIT(31)), 1,
-				 HALT_CHECK_MAX_LOOPS);
+				 Q6SS_TIMEOUT_US);
 	if (ret) {
 		dev_err(wcss->dev,
 			"xo cbcr enabling timed out (rc:%d)\n", ret);
@@ -461,15 +465,13 @@ static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 	udelay(1);
 
-	if (desc == &wcss_ipq6018_res_init) {
 		/* 10 - Wait till BHS Reset is done */
-		ret = readl_poll_timeout(wcss->reg_base + Q6SS_BHS_STATUS,
-				val, (val & BHS_EN_REST_ACK), 1000,
-				Q6SS_TIMEOUT_US * 50);
-		if (ret) {
-			dev_err(wcss->dev, "BHS_STATUS not ON (rc:%d) val:0x%X\n", ret, val);
-			return ret;
-		}
+	ret = readl_poll_timeout(wcss->reg_base + Q6SS_BHS_STATUS,
+			val, (val & BHS_EN_REST_ACK), 1000,
+			Q6SS_TIMEOUT_US * 50);
+	if (ret) {
+		dev_err(wcss->dev, "BHS_STATUS not ON (rc:%d) val:0x%X\n", ret, val);
+		return ret;
 	}
 
 	/* Put LDO in bypass mode */
@@ -498,10 +500,7 @@ static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
 		 * array to turn on.
 		 */
 		val |= readl(wcss->reg_base + Q6SS_MEM_PWR_CTL);
-		if (desc == &wcss_ipq6018_res_init)
-			mdelay(10);
-		else
-			udelay(1);
+		mdelay(10);
 	}
 	/* Remove word line clamp */
 	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
@@ -597,17 +596,16 @@ static int q6v5_wcss_start(struct rproc *rproc)
 	if (ret)
 		goto wcss_q6_reset;
 
-	/* Write bootaddr to EVB so that Q6WCSS will jump there after reset */
-	writel(rproc->bootaddr >> 4, wcss->reg_base + Q6SS_RST_EVB);
-
+	
 	if (desc == &wcss_ipq5018_res_init) {
 		/* Write bootaddr to EVB so that
 		 * Q6WCSS will jump there after reset
 		 */
+		writel(rproc->bootaddr >> 4, wcss->reg_base + Q6SS_RST_EVB);
 		q6v6_wcss_reset(wcss);
-	}
+	} else 
+		ret = q6v5_wcss_reset(rproc);
 
-	ret = q6v5_wcss_reset(wcss);
 	if (ret)
 		goto wcss_q6_reset;
 
@@ -683,11 +681,12 @@ static int q6v5_wcss_qcs404_power_on(struct q6v5_wcss *wcss)
 	/* Read CLKOFF bit to go low indicating CLK is enabled */
 	ret = readl_poll_timeout(wcss->reg_base + Q6SS_XO_CBCR,
 				 val, !(val & BIT(31)), 1,
-				 Q6SS_TIMEOUT_US);
+				 HALT_CHECK_MAX_TIMEOUT);
+
 	if (ret) {
 		dev_err(wcss->dev,
 			"xo cbcr enabling timed out (rc:%d)\n", ret);
-		goto disable_xo_cbcr_clk;
+		return ret;
 	}
 
 	writel(0, wcss->reg_base + Q6SS_CGC_OVERRIDE);
@@ -753,7 +752,6 @@ disable_sleep_cbcr_clk:
 	val = readl(wcss->reg_base + Q6SS_SLEEP_CBCR);
 	val &= ~Q6SS_CLK_ENABLE;
 	writel(val, wcss->reg_base + Q6SS_SLEEP_CBCR);
-disable_xo_cbcr_clk:
 	val = readl(wcss->reg_base + Q6SS_XO_CBCR);
 	val &= ~Q6SS_CLK_ENABLE;
 	writel(val, wcss->reg_base + Q6SS_XO_CBCR);
