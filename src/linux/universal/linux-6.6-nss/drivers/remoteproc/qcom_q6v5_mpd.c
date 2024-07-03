@@ -264,7 +264,7 @@ static int q6_wcss_load(struct rproc *rproc, const struct firmware *fw)
 	int ret;
 	const struct wcss_data *desc = wcss->desc;
 	int loop;
-
+	
 	ret = qcom_mdt_load(wcss->dev, fw, rproc->firmware,
 			    desc->pasid, wcss->mem_region,
 			    wcss->mem_phys, wcss->mem_size,
@@ -275,7 +275,7 @@ static int q6_wcss_load(struct rproc *rproc, const struct firmware *fw)
 	for (loop = 1; loop < MAX_FIRMWARE; loop++) {
 		if (!wcss->firmware[loop])
 			continue;
-
+		printk(KERN_INFO "load %s\n", wcss->firmware[loop]);
 		ret = request_firmware(&fw_hdl, wcss->firmware[loop],
 				       wcss->dev);
 		if (ret)
@@ -352,7 +352,7 @@ static int q6_alloc_memory_region(struct q6_wcss *wcss)
 	struct device_node *node;
 	struct device *dev = wcss->dev;
 	const struct wcss_data *desc = wcss->desc;
-
+	printk(KERN_INFO "alloc memory region\n");
 	if (desc->version == Q6_IPQ) {
 		node = of_parse_phandle(dev->of_node, "memory-region", 0);
 		if (node)
@@ -364,6 +364,7 @@ static int q6_alloc_memory_region(struct q6_wcss *wcss)
 			dev_err(dev, "unable to acquire memory-region\n");
 			return -EINVAL;
 		}
+		printk(KERN_INFO "got from OF phys %p size %ld\n", rmem->base, rmem->size);
 	} else {
 		struct rproc *rpd_rproc = dev_get_drvdata(dev->parent);
 		struct q6_wcss *rpd_wcss = rpd_rproc->priv;
@@ -372,6 +373,7 @@ static int q6_alloc_memory_region(struct q6_wcss *wcss)
 		wcss->mem_reloc = rpd_wcss->mem_reloc;
 		wcss->mem_size = rpd_wcss->mem_size;
 		wcss->mem_region = rpd_wcss->mem_region;
+		printk(KERN_INFO "got from drvdata phys %p size %ld\n", rmem->base, rmem->size);
 		return 0;
 	}
 

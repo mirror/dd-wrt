@@ -492,7 +492,7 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	if (IS_ERR(priv->membase))
 		return PTR_ERR(priv->membase);
 
-	priv->rst = devm_reset_control_array_get_optional_shared(&pdev->dev);
+	priv->rst = devm_reset_control_array_get_optional_exclusive(&pdev->dev);
 	if (IS_ERR(priv->rst))
 		return PTR_ERR(priv->rst);
 

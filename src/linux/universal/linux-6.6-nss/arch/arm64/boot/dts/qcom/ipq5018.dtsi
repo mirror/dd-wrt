@@ -421,9 +421,15 @@
 			reg = <0x01905000 0x20000>;
 		};
 
+
 		tcsr: syscon@1937000 {
 			compatible = "qcom,tcsr-ipq5018", "syscon", "simple-mfd";
 			reg = <0x01937000 0x21000>;
+		};
+
+		tcsr_q6_block: syscon@1945000 {
+			compatible = "syscon";
+			reg = <0x1945000 0xE000>;
 		};
 
 		pwm: pwm@1941010 {
@@ -717,8 +723,51 @@
 				status = "disabled";
 			};
 		};
+/*		q6v5_wcss: q6v5_wcss@CD00000 {
+			compatible = "qca,q6v5-wcss-rproc-ipq50xx";
+			firmware = "IPQ5018/q6_fw.mdt";
+			reg = <0xCD00000 0x10000>,
+				<0x194f000 0x10>,
+				<0x1952000 0x10>,
+				<0x4ab000 0x20>,
+				<0x1818000 0x10>,
+				<0x1859000 0x10>,
+				<0x1945000 0x10>,
+				<0x193D204 0x4>;
+			reg-names = "wcss-base",
+					"tcsr-q6-base",
+					"tcsr-base",
+					"mpm-base",
+					"gcc-wcss-bcr-base",
+					"gcc-wcss-misc-base",
+					"tcsr-global",
+					"tcsr-q6-boot-trig";
+			qca,auto-restart;
+			qca,extended-intc;
+			qca,dump-q6-reg;
+			qca,emulation;
+			interrupts-extended = <&intc 0 291 1>,
+					<&wcss_smp2p_in 0 0>,
+					<&wcss_smp2p_in 1 0>,
+					<&wcss_smp2p_in 3 0>;
+			interrupt-names = "wdog",
+					"qcom,gpio-err-fatal",
+					"qcom,gpio-err-ready",
+					"qcom,gpio-stop-ack";
+			qcom,smem-states = <&wcss_smp2p_out 0>,
+					<&wcss_smp2p_out 1>;
+			qcom,smem-state-names = "shutdown",
+						"stop";
+		};*/
 
-		q6v5_wcss: remoteproc@cd00000 {
+		q6v5_m3: q6v5_m3 {
+			compatible = "qca,q6v5-m3-rproc";
+			firmware = "IPQ5018/m3_fw.mdt";
+			qca,auto-restart;
+			qcom,restart-group = <&q6v5_m3 &q6v5_wcss>;
+		};
+
+/*		q6v5_wcss: remoteproc@cd00000 {
 			compatible = "qcom,ipq5018-q6-mpd";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -750,6 +799,83 @@
 				mboxes = <&apcs_glb 8>;
 
 				qrtr_requests {
+					qcom,glink-channels = "IPCRTR";
+				};
+			};
+		};
+*/
+		q6v5_wcss: q6v5_wcss@CD00000 {
+			compatible = "qcom,ipq5018-wcss-pil";
+			reg = <0xCD00000 0x4040>,
+				<0x4ab000 0x20>,
+				<0x4a1000 0x10>,
+				<0x1938000 0x8>,
+				<0x193D204 0x4>;
+			reg-names = "qdsp6",
+				"rmb",
+				"mpm",
+				"tcsr-msip",
+				"tcsr-q6-boot-trig";
+			clocks = <&gcc GCC_Q6_AXIS_CLK>,
+					<&gcc GCC_WCSS_AHB_S_CLK>,
+					<&gcc GCC_WCSS_ECAHB_CLK>,
+					<&gcc GCC_WCSS_ACMT_CLK>,
+					<&gcc GCC_WCSS_AXI_M_CLK>,
+					<&gcc GCC_Q6_AXIM_CLK>,
+					<&gcc GCC_Q6_AXIM2_CLK>,
+					<&gcc GCC_Q6_AHB_CLK>,
+					<&gcc GCC_Q6_AHB_S_CLK>,
+					<&gcc GCC_WCSS_AXI_S_CLK>;
+			clock-names = "gcc_q6_axis_clk",
+					"gcc_wcss_ahb_s_clk",
+					"gcc_wcss_ecahb_clk",
+					"gcc_wcss_acmt_clk",
+					"gcc_wcss_axi_m_clk",
+					"gcc_q6_axim_clk",
+					"gcc_q6_axim2_clk",
+					"gcc_q6_ahb_clk",
+					"gcc_q6_ahb_s_clk",
+					"gcc_wcss_axi_s_clk";
+			qca,auto-restart;
+			qca,extended-intc;
+			qca,wcss-aon-reset-seq;
+			interrupts-extended = <&intc 0 291 1>,
+					<&wcss_smp2p_in 0 0>,
+					<&wcss_smp2p_in 1 0>,
+					<&wcss_smp2p_in 2 0>,
+					<&wcss_smp2p_in 3 0>;
+			interrupt-names = "wdog",
+					"fatal",
+					"ready",
+					"handover",
+					"stop-ack";
+
+			resets = <&gcc GCC_WCSSAON_RESET>,
+				<&gcc GCC_WCSS_BCR>,
+				<&gcc GCC_WCSS_Q6_BCR>,
+				<&gcc GCC_CE_BCR>;
+
+			reset-names = "wcss_aon_reset",
+				"wcss_reset",
+				"wcss_q6_reset",
+				"ce_reset";
+
+			qcom,halt-regs = <&tcsr_q6_block 0xA000 0xD000 0x0>;
+
+			qcom,smem-states = <&wcss_smp2p_out 0>,
+					<&wcss_smp2p_out 1>;
+			qcom,smem-state-names = "shutdown",
+						"stop";
+
+			qcom,q6v6;
+			memory-region = <&q6_region>, <&q6_etr_region>;
+
+			glink-edge {
+				interrupts = <GIC_SPI 179 IRQ_TYPE_EDGE_RISING>;
+				qcom,remote-pid = <1>;
+				mboxes = <&apcs_glb 8>;
+
+				rpm_requests {
 					qcom,glink-channels = "IPCRTR";
 				};
 			};

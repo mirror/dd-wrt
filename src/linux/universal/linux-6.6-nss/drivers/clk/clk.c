@@ -2538,6 +2538,8 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
 	if (fail_clk) {
 		pr_debug("%s: failed to set %s rate\n", __func__,
 				fail_clk->name);
+		printk(KERN_INFO "%s: failed to set %s rate %ld\n", __func__,
+				fail_clk->name, req_rate);
 		clk_propagate_rate_change(top, ABORT_RATE_CHANGE);
 		ret = -EBUSY;
 		goto err;

@@ -366,5 +366,6 @@ extern int qti_scm_tls_hardening(uint32_t req_addr, uint32_t req_size,
 extern int qti_scm_aes(uint32_t req_addr, uint32_t req_size, u32 cmd_id);
 extern int qti_scm_aes_clear_key_handle(uint32_t key_handle, u32 cmd_id);
 extern int qti_scm_tcsr_reg_write(u32 reg_addr, u32 value);
+extern int qti_scm_wcss_boot(u32 svc_id, u32 cmd_id, void *cmd_buf);
 
 #endif

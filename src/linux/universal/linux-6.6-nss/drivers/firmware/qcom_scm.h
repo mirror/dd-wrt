@@ -152,6 +152,7 @@ extern int scm_legacy_call(struct device *dev, const struct qcom_scm_desc *desc,
 #define QCOM_SCM_ERROR		-1
 #define QCOM_SCM_INTERRUPTED	1
 #define QCOM_SCM_WAITQ_SLEEP	2
+#define TCSR_Q6SS_BOOT_TRIG_REG			0x193d204ull
 
 static inline int qcom_scm_remap_error(int err)
 {

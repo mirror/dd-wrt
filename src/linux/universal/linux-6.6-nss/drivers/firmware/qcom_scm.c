@@ -602,6 +602,35 @@ disable_clk:
 }
 EXPORT_SYMBOL_GPL(qcom_scm_pas_mem_setup);
 
+int qti_scm_wcss_boot(u32 svc_id, u32 cmd_id,
+			 void *cmd_buf)
+{
+	struct qcom_scm_desc desc = {
+		.svc = QCOM_SCM_SVC_IO,
+		.cmd = QCOM_SCM_IO_WRITE,
+		.arginfo = QCOM_SCM_ARGS(2),
+		.args[0] = TCSR_Q6SS_BOOT_TRIG_REG,
+		.owner = ARM_SMCCC_OWNER_SIP,
+	};
+
+	struct qcom_scm_res res;
+	int ret;
+	unsigned int enable;
+
+	ret = qcom_scm_clk_enable();
+	if (ret)
+		return ret;
+
+	enable = cmd_buf ? *((unsigned int *)cmd_buf) : 0;
+	desc.args[1] = enable;
+
+	ret = qcom_scm_call(__scm->dev, &desc, &res);
+
+	qcom_scm_clk_disable();
+
+	return ret ? : res.result[0];
+}
+
 /**
  * qcom_scm_pas_auth_and_reset() - Authenticate the given peripheral firmware
  *				   and reset the remote processor

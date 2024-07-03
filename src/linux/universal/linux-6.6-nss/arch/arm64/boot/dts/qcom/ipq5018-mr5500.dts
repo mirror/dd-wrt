@@ -69,10 +69,26 @@
 	};
 
 	reserved-memory {
-		q6_mem_regions: q6_mem_regions@4b000000 {
+		q6_region: wcnss@4b000000 {
 			no-map;
-			reg = <0x0 0x4b000000 0x0 0x1800000>;
+			reg = <0x0 0x4b000000 0x0 0x01800000>;
 		};
+
+		m3_dump@4c800000 {
+			no-map;
+			reg = <0x0 0x4c800000 0x0 0x100000>;
+		};
+
+		q6_etr_region:q6_etr_dump@4c900000 {
+			no-map;
+			reg = <0x0 0x4c900000 0x0 0x100000>;
+		};
+
+		q6_caldb_region:q6_caldb_region@4cd00000 {
+			no-map;
+			reg = <0x0 0x4ca00000 0x0 0x200000>;
+		};
+		
 		mhi_region1: dma_pool1@4ea00000 {
 			compatible = "shared-dma-pool";
 			no-map;
@@ -708,7 +724,7 @@
 	};
 };
 
-&q6v5_wcss {
+/*&q6v5_wcss {
 	status = "okay";
 
 	memory-region = <&q6_mem_regions>;
@@ -741,12 +757,16 @@
 			"stop",
 			"spawn";
 		status = "okay";
+		qca,asid = <1>;
+		qca,auto-restart;
+		qca,int_radio;
 	};
 };
-
+*/
 &wifi0 {
 	// IPQ5018
-	qcom,rproc = <&q6_wcss_pd1>;
+/*	qcom,rproc = <&q6_wcss_pd1>; */
+	qcom,rproc = <&q6v5_wcss>;
 
 	qcom,ath11k-calibration-variant = "Linksys-MX5500";
 	qcom,ath11k-fw-memory-mode = <1>;

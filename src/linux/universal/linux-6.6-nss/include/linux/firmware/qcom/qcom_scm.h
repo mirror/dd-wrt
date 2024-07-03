@@ -125,5 +125,6 @@ extern int qcom_scm_lmh_dcvsh(u32 payload_fn, u32 payload_reg, u32 payload_val,
 extern int qcom_scm_lmh_profile_change(u32 profile_id);
 extern bool qcom_scm_lmh_dcvsh_available(void);
 extern int qcom_scm_load_otp(u32 peripheral);
+extern int qti_scm_wcss_boot(u32 svc_id, u32 cmd_id, void *cmd_buf);
 
 #endif

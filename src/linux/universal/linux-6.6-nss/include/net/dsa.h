@@ -278,6 +278,8 @@ struct dsa_port {
 	 */
 	u8			vlan_filtering:1;
 
+	bool tx_hdr_offload;
+
 	/* Managed by DSA on user ports and by drivers on CPU and DSA ports */
 	u8			learning:1;
 

@@ -2720,7 +2720,7 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	int ret;
 
 	/* skip PHYs at unused adresses */
-	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4)
+	if (phydev->mdio.addr != 0 && phydev->mdio.addr != 3 && phydev->mdio.addr != 4 && phydev->mdio.addr != 6)
 		return -ENODEV;
 
 	if (!ar8xxx_is_possible(phydev->mdio.bus))
@@ -2909,6 +2909,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 	if (ret)
 		goto free_priv;
 
+#ifndef CONFIG_ARM64
 	if (priv->chip->phy_read && priv->chip->phy_write) {
 		priv->sw_mii_bus = devm_mdiobus_alloc(&mdiodev->dev);
 		priv->sw_mii_bus->name = "ar8xxx-mdio";
@@ -2923,6 +2924,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 		if (ret)
 			goto free_priv;
 	}
+#endif
 
 	swdev = &priv->dev;
 	swdev->alias = dev_name(&mdiodev->dev);
