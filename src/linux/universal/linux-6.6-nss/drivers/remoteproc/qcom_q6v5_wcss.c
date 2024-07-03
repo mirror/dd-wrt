@@ -215,28 +215,6 @@ static int ipq6018_clks_prepare_enable(struct q6v5_wcss *wcss)
 	return 0;
 }
 
-static void ipq6018_clks_prepare_disable(struct q6v5_wcss *wcss)
-{
-	clk_disable_unprepare(wcss->gcc_sys_noc_wcss_ahb_clk);
-	clk_disable_unprepare(wcss->gcc_q6ss_atbm_clk);
-	clk_disable_unprepare(wcss->gcc_q6ss_pclkdbg_clk);
-	clk_disable_unprepare(wcss->gcc_q6_tsctr_1to2_clk);
-}
-
-static void ipq5018_clks_prepare_disable(struct q6v5_wcss *wcss)
-{
-	clk_disable_unprepare(wcss->gcc_abhs_cbcr);
-	clk_disable_unprepare(wcss->eachb_clk);
-	clk_disable_unprepare(wcss->acmt_clk);
-	clk_disable_unprepare(wcss->gcc_axim_cbcr);
-	clk_disable_unprepare(wcss->qdsp6ss_axim_cbcr);
-	clk_disable_unprepare(wcss->gcc_axim2_clk);
-	clk_disable_unprepare(wcss->qdsp6ss_abhm_cbcr);
-	clk_disable_unprepare(wcss->ahbs_cbcr);
-	clk_disable_unprepare(wcss->axi_s_clk);
-}
-
-
 static int ipq5018_clks_prepare_enable(struct q6v5_wcss *wcss)
 {
 	int ret;
@@ -279,6 +257,29 @@ static int ipq5018_clks_prepare_enable(struct q6v5_wcss *wcss)
 
 	return 0;
 }
+
+static void ipq6018_clks_prepare_disable(struct q6v5_wcss *wcss)
+{
+	clk_disable_unprepare(wcss->gcc_sys_noc_wcss_ahb_clk);
+	clk_disable_unprepare(wcss->gcc_q6ss_atbm_clk);
+	clk_disable_unprepare(wcss->gcc_q6ss_pclkdbg_clk);
+	clk_disable_unprepare(wcss->gcc_q6_tsctr_1to2_clk);
+}
+
+static void ipq5018_clks_prepare_disable(struct q6v5_wcss *wcss)
+{
+	clk_disable_unprepare(wcss->gcc_abhs_cbcr);
+	clk_disable_unprepare(wcss->eachb_clk);
+	clk_disable_unprepare(wcss->acmt_clk);
+	clk_disable_unprepare(wcss->gcc_axim_cbcr);
+	clk_disable_unprepare(wcss->qdsp6ss_axim_cbcr);
+	clk_disable_unprepare(wcss->gcc_axim2_clk);
+	clk_disable_unprepare(wcss->qdsp6ss_abhm_cbcr);
+	clk_disable_unprepare(wcss->ahbs_cbcr);
+	clk_disable_unprepare(wcss->axi_s_clk);
+}
+
+
 
 static void q6v6_wcss_reset(struct q6v5_wcss *wcss)
 {
