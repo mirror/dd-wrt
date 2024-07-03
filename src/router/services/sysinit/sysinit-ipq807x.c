@@ -539,6 +539,7 @@ void start_setup_affinity(void)
 		set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
 		set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
 
+		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	} else {
 		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
