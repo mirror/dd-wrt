@@ -523,6 +523,22 @@ void start_setup_affinity(void)
 {
 	int brand = getRouterBrand();
 	if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
+		set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
+		set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
+		set_named_smp_affinity("DP_EXT_IRQ", 1, 3);
+		set_named_smp_affinity("DP_EXT_IRQ", 1, 4);
+		set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
+		set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
+		set_named_smp_affinity("DP_EXT_IRQ", 0, 7);
+		set_named_smp_affinity("DP_EXT_IRQ", 0, 8);
+
+		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+		set_named_smp_affinity("wbm2host-tx-completions-ring2", 0, 1);
+		set_named_smp_affinity("reo2host-destination-ring1", 1, 1);
+		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+		set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
+		set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
+
 	} else {
 		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
