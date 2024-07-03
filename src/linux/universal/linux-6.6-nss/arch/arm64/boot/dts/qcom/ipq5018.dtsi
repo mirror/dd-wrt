@@ -1113,11 +1113,9 @@
 			
 			status = "disabled";
 
+
 			ethernet-phy@0 {
 				reg = <7>;
-/*				#clock-cells = <1>;
-				clocks = <&gcc GCC_GEPHY_RX_CLK>,
-						 <&gcc GCC_GEPHY_TX_CLK>;*/
 			};
 		};
 

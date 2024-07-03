@@ -121,10 +121,9 @@
 			qcom,low-frequency = <850000000>;
 			qcom,mid-frequency = <850000000>;
 			qcom,max-frequency = <1000000000>;
+			qcom,bridge-enabled;
 			qcom,ipv4-enabled;
-			qcom,ipv4-reasm-enabled;
 			qcom,ipv6-enabled;
-			qcom,ipv6-reasm-enabled;
 			qcom,wlanredirect-enabled;
 			qcom,tun6rd-enabled;
 			qcom,l2tpv2-enabled;
@@ -138,13 +137,16 @@
 			qcom,tunipip6-enabled;
 			qcom,shaping-enabled;
 			qcom,wlan-dataplane-offload-enabled;
+			qcom,vlan-enabled;
+			qcom,capwap-enabled;
+			qcom,crypto-enabled;
+			qcom,ipsec-enabled;
+			qcom,qvpn-enabled;
 			qcom,pvxlan-enabled;
 			qcom,clmap-enabled;
 			qcom,vxlan-enabled;
 			qcom,match-enabled;
 			qcom,mirror-enabled;
-			qcom,crypto-enabled;
-			qcom,ipsec-enabled;
 		};
 
 		nss-dp-common {
@@ -287,7 +289,7 @@
 			phy-mode = "sgmii";
 		}; */
 
-		dp1 {
+		dp1: dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
@@ -298,7 +300,7 @@
 			qcom,mactype = <2>;
 			local-mac-address = [000000000000];
 			phy-mode = "sgmii";
-
+			qcom,rx-page-mode = <0>;
 		};
 
 	};
@@ -326,25 +328,98 @@
 			pinctrl-names = "default";
 			reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 
-			ethernet-phy@0 {
+			qca8337_0: ethernet-phy@0 {
 				reg = <0>;
 			};
 
-			ethernet-phy@1 {
+			qca8337_1: ethernet-phy@1 {
 				reg = <1>;
 			};
 
-			ethernet-phy@2 {
+			qca8337_2: ethernet-phy@2 {
 				reg = <2>;
 			};
 
-			ethernet-phy@3 {
+			qca8337_3: ethernet-phy@3 {
 				reg = <3>;
 			};
 
-			ethernet-phy@4 {
+			qca8337_4: ethernet-phy@4 {
 				reg = <4>;
 			};
+
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		phy-mode = "sgmii";
+		qca,ar8327-initvals = <
+				0x00004 0x7600000   /* PAD0_MODE */
+				0x00008 0x1000000   /* PAD5_MODE */
+				0x0000c 0x80        /* PAD6_MODE */
+				0x00010 0x2613a0    /* PORT6 FORCE MODE*/
+				0x000e4 0xaa545     /* MAC_POWER_SEL */
+				0x000e0 0xc74164de  /* SGMII_CTRL */
+				0x0007c 0x4e        /* PORT0_STATUS */
+				0x00094 0x4e        /* PORT6_STATUS */
+		>;
+	};
+
+	// QCA8337 switch
+	switch1: ethernet-switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-handle = <&qca8337_0>;
+			};
+			
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-handle = <&qca8337_4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp1>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
 
 };
 
