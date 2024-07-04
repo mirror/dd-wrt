@@ -285,6 +285,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cp firmware/crypto/* $(INSTALLDIR)/lib/firmware
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
+	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
 else
 	ln -sf arch/nss_ipq806x.h qca-nss-drv/exports/nss_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-ovsmgr modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" CONFIG_SUPPORT_MLD=y INSTALL_MOD_PATH=$(INSTALLDIR)
@@ -316,6 +317,7 @@ else
 	cp firmware/akronite/* $(INSTALLDIR)/lib/firmware
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
+	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
 endif
 
 clean:
