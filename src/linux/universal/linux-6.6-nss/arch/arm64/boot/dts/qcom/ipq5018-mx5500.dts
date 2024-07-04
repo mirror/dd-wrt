@@ -397,7 +397,7 @@
 				reg = <1>;
 				label = "lan1";
 				phy-handle = <&qca8337_0>;
-			}*/;
+			}; */
 			
 			port@2 {
 				reg = <2>;
