@@ -1693,6 +1693,9 @@ void set_named_smp_affinity(char *name, int core, int entry)
 	return;
 out:;
 	fclose(in);
+	if (nvram_match("console_debug","1"))
+		dd_loginfo(name, "set smp_affinity %d for irq %s\n", 1 << core, irq);
+
 	char s_cpu[32];
 	snprintf(s_cpu, sizeof(s_cpu), "%d", 1 << core);
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", atoi(irq));
