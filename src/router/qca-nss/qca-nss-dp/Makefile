@@ -44,7 +44,7 @@ endif
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
 ccflags-y += -DNSS_DP_MHT_SW_PORT_MAP
 ccflags-y += -DNSS_DP_CONFIG_RST
-qca-nss-dp-$(SoC)-objs += nss_dp_main.o
+qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 # Adding flag to enable physical port mirror support

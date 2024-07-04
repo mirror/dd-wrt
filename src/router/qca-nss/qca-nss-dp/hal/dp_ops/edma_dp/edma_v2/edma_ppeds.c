@@ -847,10 +847,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
+	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
 			edma_ppeds_txcomp_napi_poll, ppeds_handle->eth_txcomp_budget);
 #else
-	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
+	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->txcmpl_ring.napi,
 			edma_ppeds_txcomp_napi_poll, ppeds_handle->eth_txcomp_budget);
 #endif
 
@@ -885,10 +885,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
+	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
 			edma_ppeds_rx_napi_poll, EDMA_PPEDS_RX_WEIGHT);
 #else
-	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
+	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rx_ring.napi,
 		edma_ppeds_rx_napi_poll, EDMA_PPEDS_RX_WEIGHT);
 #endif
 
@@ -910,10 +910,10 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	}
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
+	netif_threaded_napi_add(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
 			edma_ppeds_rxfill_napi_poll, EDMA_PPEDS_RXFILL_WEIGHT);
 #else
-	netif_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
+	netif_threaded_napi_add_weight(&ppeds_node->napi_ndev, &ppeds_node->rxfill_ring.napi,
 			edma_ppeds_rxfill_napi_poll, EDMA_PPEDS_RXFILL_WEIGHT);
 #endif
 
