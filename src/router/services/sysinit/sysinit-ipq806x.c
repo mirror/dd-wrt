@@ -471,7 +471,7 @@ void start_sysinit(void)
 
 		if (maddr) {
 			fprintf(stderr, "sysinit using mac %s\n", maddr);
-			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 			       &newmac[5]);
 		}
 
@@ -503,13 +503,13 @@ void start_sysinit(void)
 
 			getWirelessMac(mac1, 0);
 			getWirelessMac(mac2, 1);
-			sscanf(mac1, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			sscanf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 			       &newmac[5]);
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
 			}
-			sscanf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+			sscanf(mac2, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 			       &newmac[5]);
 			for (i = 0; i < 6; i++) {
 				smem[i + 6 + 0x4000] = newmac[i];
@@ -519,10 +519,10 @@ void start_sysinit(void)
 		}
 		if (board == ROUTER_ASUS_AC58U) {
 			char ethaddr[32];
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
+			sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
 				smem[9] & 0xff, smem[10] & 0xff, smem[11] & 0xff);
 			set_hwaddr("eth1", ethaddr);
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
+			sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
 				smem[0x4000 + 8] & 0xff, smem[0x4000 + 9] & 0xff, smem[0x4000 + 10] & 0xff,
 				smem[0x4000 + 11] & 0xff);
 			set_hwaddr("eth0", ethaddr);
@@ -532,12 +532,12 @@ void start_sysinit(void)
 
 		if (board == ROUTER_LINKSYS_EA8300) {
 			char ethaddr[32];
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
+			sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", smem[6] & 0xff, smem[7] & 0xff, smem[8] & 0xff,
 				smem[9] & 0xff, smem[10] & 0xff, smem[11] & 0xff);
 			nvram_set("et0macaddr", ethaddr);
 			nvram_set("et0macaddr_safe", ethaddr);
 			set_hwaddr("eth1", ethaddr);
-			sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
+			sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", smem[0x4000 + 6] & 0xff, smem[0x4000 + 7] & 0xff,
 				smem[0x4000 + 8] & 0xff, smem[0x4000 + 9] & 0xff, smem[0x4000 + 10] & 0xff,
 				smem[0x4000 + 11] & 0xff);
 			MAC_ADD(ethaddr);

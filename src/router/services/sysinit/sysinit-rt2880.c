@@ -117,7 +117,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			copy[i] = mac[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure mac address to %s\n", mac);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
 			set_hwaddr("eth0", "00:11:22:33:44:55");
@@ -416,7 +416,7 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			copy[i] = mac[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
 			set_hwaddr("eth2", "00:11:22:33:44:55");
 		else

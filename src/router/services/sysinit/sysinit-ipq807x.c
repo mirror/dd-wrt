@@ -331,7 +331,7 @@ void patchvht160(char *file, int phynum)
 		unsigned char binmac[6];                                                                                     \
 		int i;                                                                                                       \
 		unsigned int newmac[6];                                                                                      \
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
+		sscanf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
 		       &newmac[5]);                                                                                          \
 		for (i = 0; i < 6; i++)                                                                                      \
 			binmac[i] = newmac[i];                                                                               \
@@ -346,7 +346,7 @@ void patchvht160(char *file, int phynum)
 		unsigned char binmac[6];                                                                                     \
 		int i;                                                                                                       \
 		unsigned int newmac[6];                                                                                      \
-		sscanf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
+		sscanf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], \
 		       &newmac[5]);                                                                                          \
 		for (i = 0; i < 6; i++)                                                                                      \
 			binmac[i] = newmac[i];                                                                               \
@@ -664,10 +664,10 @@ void start_sysinit(void)
 	char ethaddr[32];
 	if (maddr) {
 		fprintf(stderr, "sysinit using mac %s\n", maddr);
-		sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+		sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4],
 		       &newmac[5]);
 
-		sprintf(ethaddr, "%02x:%02x:%02x:%02x:%02x:%02x", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
+		sprintf(ethaddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac[0] & 0xff, newmac[1] & 0xff, newmac[2] & 0xff,
 			newmac[3] & 0xff, newmac[4] & 0xff, newmac[5] & 0xff);
 		nvram_set("et0macaddr", ethaddr);
 		nvram_set("et0macaddr_safe", ethaddr);

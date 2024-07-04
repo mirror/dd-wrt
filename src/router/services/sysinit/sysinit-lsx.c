@@ -98,7 +98,7 @@ void start_sysinit(void)
 	if (offsetmac1 != -1) {
 		char mac[32];
 
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac1], copy[1 + offsetmac1], copy[2 + offsetmac1],
+		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0 + offsetmac1], copy[1 + offsetmac1], copy[2 + offsetmac1],
 			copy[3 + offsetmac1], copy[4 + offsetmac1], copy[5 + offsetmac1]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
@@ -112,7 +112,7 @@ void start_sysinit(void)
 		 * 
 		 */
 		if (offsetmac2 != -1) {
-			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac2], copy[1 + offsetmac2],
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0 + offsetmac2], copy[1 + offsetmac2],
 				copy[2 + offsetmac2], copy[3 + offsetmac2], copy[4 + offsetmac2], copy[5 + offsetmac2]);
 		} else {
 			MAC_ADD(mac);
