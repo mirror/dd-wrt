@@ -335,6 +335,13 @@ int sfp_phy_device_setup(a_uint32_t dev_id, a_uint32_t port, a_uint32_t phy_id,
 	phy_device_register(phydev);
 
 	phydev->priv = priv;
+	/*
+	 * Set the PHY OF node in order to be able to later connect the
+	 * fake SFP PHY by passing it as a phandle in phy-handle.
+	 */
+	phydev->mdio.dev.of_node = hsl_port_node_get(dev_id, port);
+	if (!phydev->mdio.dev.of_node)
+		return SW_NOT_FOUND;
 #if defined(IN_PHY_I2C_MODE)
 	if (hsl_port_phy_access_type_get(dev_id, port) == PHY_I2C_ACCESS) {
 		if(phydev->drv)

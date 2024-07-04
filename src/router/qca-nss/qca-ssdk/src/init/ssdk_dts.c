@@ -812,6 +812,13 @@ static sw_error_t ssdk_dt_parse_phy_info(struct device_node *switch_node, a_uint
 			}
 		}
 		hsl_port_feature_set(dev_id, port_id, phy_features | PHY_F_INIT);
+
+		/*
+		* Save the port node so it can be passed as the
+		* fake SFP PHY OF node in order to be able to
+		* pass the SFP phy via phy-handle
+		*/
+		hsl_port_node_set(dev_id, port_id, port_node);
 	}
 
 	return rv;

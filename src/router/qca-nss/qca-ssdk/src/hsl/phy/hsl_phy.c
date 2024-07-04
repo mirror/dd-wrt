@@ -3435,3 +3435,17 @@ hsl_phy_modify_debug(a_uint32_t dev_id, a_uint32_t phy_addr,
 	return rv;
 }
 /*qca808x_end*/
+
+struct device_node*
+hsl_port_node_get(a_uint32_t dev_id, a_uint32_t port_id)
+{
+	return phy_info[dev_id]->port_node[port_id];
+}
+
+void
+hsl_port_node_set(a_uint32_t dev_id, a_uint32_t port_id, struct device_node *port_node)
+{
+	phy_info[dev_id]->port_node[port_id] = port_node;
+
+	return;
+}

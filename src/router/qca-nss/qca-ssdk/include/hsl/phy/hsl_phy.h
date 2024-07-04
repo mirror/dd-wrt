@@ -584,6 +584,7 @@ typedef struct {
 	a_bool_t port_link_status[SW_MAX_NR_PORT];
 	a_uint32_t port_mode[SW_MAX_NR_PORT];
 	a_uint32_t combo_phy_type[SW_MAX_NR_PORT];
+	struct device_node *port_node[SW_MAX_NR_PORT];
 } phy_info_t;
 /*qca808x_end*/
 #define MALIBU5PORT_PHY         0x004DD0B1
@@ -1039,3 +1040,8 @@ hsl_port_phy_mode_get(a_uint32_t dev_id, a_uint32_t port_id,
 #endif				/* __cplusplus */
 #endif				/* _HSL_PHY_H_ */
 /*qca808x_end*/
+
+struct device_node*
+hsl_port_node_get(a_uint32_t dev_id, a_uint32_t port_id);
+void
+hsl_port_node_set(a_uint32_t dev_id, a_uint32_t port_id, struct device_node *port_node);
