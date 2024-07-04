@@ -735,10 +735,15 @@ void start_sysinit(void)
 		eval("insmod", "ath11k", "nss_offload=0");
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath11k/extd_rx_stats");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/extd_rx_stats");
 	} else {
 		insmod("ath11k");
 		insmod("ath11k_ahb");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath11k/extd_rx_stats");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/extd_rx_stats");
 	}
+
 	//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
