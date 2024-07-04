@@ -57,8 +57,8 @@ ssdk_sh vlan entry flush
         # ssdk_sh portvlan defaultcVid set 6 2
         # ssdk_sh portvlan ingress set 6 secure
 
-ssdk_sh vlan entry append 1 1 6,4 6 4 default default default;
-ssdk_sh vlan entry append 2 2 6,1,2,3 6 1,2,3 default default default;
+ssdk_sh vlan entry append 1 1 6,5 6 5 default default default;
+ssdk_sh vlan entry append 2 2 6,1,2,3,4 6 1,2,3,4 default default default;
 
 ssdk_sh portVlan ingress set 1 fallback;
 ssdk_sh portVlan ingress set 2 fallback;
@@ -70,7 +70,8 @@ ssdk_sh portVlan ingress set 6 fallback;
 ssdk_sh portVlan defaultSVid set 1 2;
 ssdk_sh portVlan defaultSVid set 2 2;
 ssdk_sh portVlan defaultSVid set 3 2;
-ssdk_sh portVlan defaultSVid set 4 1;
+ssdk_sh portVlan defaultSVid set 4 2;
+ssdk_sh portVlan defaultSVid set 5 1;
 ssdk_sh portVlan defaultSVid set 6 1;
 ssdk_sh portVlan egress set 1 unmodified;
 ssdk_sh portVlan vlanPropagation set 1 disable;
