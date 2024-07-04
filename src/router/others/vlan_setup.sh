@@ -135,11 +135,11 @@ ssdk_sh fdb entry flush 0 > /dev/null 2>&1
 
 # for QCA8337
 # drop invalid tcp
-#ssdk_sh debug reg set 0x200 0x2000 4
+ssdk_sh debug reg set 0x200 0x2000 4
 # drop tcp/udp checksum errors
-#ssdk_sh debug reg set 0x204 0x0842 4
+ssdk_sh debug reg set 0x204 0x0842 4
 # enable pppoe
-#ssdk_sh debug reg set 0x214 0x2000000 4
+ssdk_sh debug reg set 0x214 0x2000000 4
 
 # QCA case #05153007 enable flowctrl to prevent low performance of PPTP connection with Cisco 7301.
 ssdk_sh port flowctrlforcemode set 6 enable

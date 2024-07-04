@@ -30,7 +30,7 @@ ssdk_sh port frameMaxSize set 2 0x800 ;
 ssdk_sh port flowctrlforcemode set 2 enable
 ssdk_sh port flowctrl set 2 enable
 
-## config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2)
+## config port.2 to VLAN(1) and port.3/4/5 to VLAN(2)
 #
 echo 1 > /sys/ssdk/dev_id
 
@@ -57,25 +57,20 @@ ssdk_sh vlan entry flush
         # ssdk_sh portvlan defaultcVid set 6 2
         # ssdk_sh portvlan ingress set 6 secure
 
-ssdk_sh vlan entry append 1 1 6,5 6 5 default default default;
-ssdk_sh vlan entry append 2 2 6,1,2,3,4 6 1,2,3,4 default default default;
+ssdk_sh vlan entry append 1 1 6,2 6 2 default default default;
+ssdk_sh vlan entry append 2 2 6,3,4,5 6 3,4,5 default default default;
 
-ssdk_sh portVlan ingress set 1 fallback;
 ssdk_sh portVlan ingress set 2 fallback;
 ssdk_sh portVlan ingress set 3 fallback;
 ssdk_sh portVlan ingress set 4 fallback;
 ssdk_sh portVlan ingress set 5 fallback;
 ssdk_sh portVlan ingress set 6 fallback;
 
-ssdk_sh portVlan defaultSVid set 1 2;
-ssdk_sh portVlan defaultSVid set 2 2;
+ssdk_sh portVlan defaultSVid set 2 1;
 ssdk_sh portVlan defaultSVid set 3 2;
 ssdk_sh portVlan defaultSVid set 4 2;
-ssdk_sh portVlan defaultSVid set 5 1;
+ssdk_sh portVlan defaultSVid set 5 2;
 ssdk_sh portVlan defaultSVid set 6 1;
-ssdk_sh portVlan egress set 1 unmodified;
-ssdk_sh portVlan vlanPropagation set 1 disable;
-ssdk_sh portVlan tlsMode set 1 enable;
 
 ssdk_sh portVlan egress set 2 unmodified;
 ssdk_sh portVlan vlanPropagation set 2 disable;
@@ -109,22 +104,15 @@ usleep 50000;
 ## config eth0.1 and eth0.2 by vconfig with VLAN ID 1 and 2
 #
 #    ifconfig eth0 up;
-#    ifconfig eth1 up;
     #vconfig set_name_type VLAN_PLUS_VID_NO_PAD;
-#    vconfig add eth1 1; # vlan1(WAN)
-#    vconfig add eth1 2; # vlan2(LAN)
+#    vconfig add eth0 1; # vlan1(WAN)
+#    vconfig add eth0 2; # vlan2(LAN)
 #fi
 
-# Due to ssdk_init.c disable port(5), so it needs to enable port(5) after vlan is ready.
-ssdk_sh port poweron set 5
+# Due to ssdk_init.c disable port(2), so it needs to enable port(2) after vlan is ready.
+ssdk_sh port poweron set 2
 usleep 50000;
 
-
-
-#if [ "$SYSCFG_ipv6_passthrough_enable" = "1" ] && [ "$SYSCFG_ipv6_passthrough_done_in_hw" = 1 ]; then
-#    brctl addif $SYSCFG_lan_ifname $SYSCFG_wan_physical_ifname
-#    echo $SYSCFG_wan_physical_ifname > /proc/sys/nss/bridge_mgr/add_wanif
-#fi
 
 # prevent switch from dropping packets with TTL == 0.
 ssdk_sh sec l3parser set 2 2
@@ -135,37 +123,12 @@ ssdk_sh fdb entry flush 0 > /dev/null 2>&1
 
 # for QCA8337
 # drop invalid tcp
-#ssdk_sh debug reg set 0x200 0x2000 4
+ssdk_sh debug reg set 0x200 0x2000 4
 # drop tcp/udp checksum errors
-#ssdk_sh debug reg set 0x204 0x0842 4
+ssdk_sh debug reg set 0x204 0x0842 4
 # enable pppoe
-#ssdk_sh debug reg set 0x214 0x2000000 4
+ssdk_sh debug reg set 0x214 0x2000000 4
 
 # QCA case #05153007 enable flowctrl to prevent low performance of PPTP connection with Cisco 7301.
 ssdk_sh port flowctrlforcemode set 6 enable
 ssdk_sh port flowctrl set 6 enable
-
-#set igmp snooping configurations
-#ssdk_sh igmp portJoin set 1 enable > /dev/null 2>&1
-#ssdk_sh igmp portJoin set 2 enable > /dev/null 2>&1
-#ssdk_sh igmp portJoin set 3 enable > /dev/null 2>&1
-#ssdk_sh igmp portJoin set 4 enable > /dev/null 2>&1
-#ssdk_sh igmp portLeave set 1 enable > /dev/null 2>&1
-#ssdk_sh igmp portLeave set 2 enable > /dev/null 2>&1
-#ssdk_sh igmp portLeave set 3 enable > /dev/null 2>&1
-#ssdk_sh igmp portLeave set 4 enable > /dev/null 2>&1
-#ssdk_sh igmp createStatus set enable > /dev/null 2>&1
-#ssdk_sh igmp version3 set enable > /dev/null 2>&1
-#if [ "$SYSCFG_bridge_mode" != "0" ]; then
-#    ssdk_sh igmp portJoin set 5 enable > /dev/null 2>&1
-#    ssdk_sh igmp portLeave set 5 enable > /dev/null 2>&1
-#    ssdk_sh igmp portJoin set 6 enable > /dev/null 2>&1
-#    ssdk_sh igmp portLeave set 6 enable > /dev/null 2>&1
-#    ssdk_sh igmp rp set 0x60 > /dev/null 2>&1
-#else
-#    ssdk_sh igmp portJoin set 5 disable > /dev/null 2>&1
-#    ssdk_sh igmp portLeave set 5 disable > /dev/null 2>&1
-#    ssdk_sh igmp portJoin set 6 disable > /dev/null 2>&1
-#    ssdk_sh igmp portLeave set 6 disable > /dev/null 2>&1
-#    ssdk_sh igmp rp set 0x40 > /dev/null 2>&1
-#fi
