@@ -278,6 +278,11 @@ WHAL_OPFLAGS_5G_VHT80         = 0x00000400,
 WHAL_OPFLAGS_5G_VHT80P80  = 0x00000800,
 WHAL_OPFLAGS_5G_VHT160      = 0x00001000
 */
+#define IPQ6018 0
+#define IPQ5018 0
+#define QCN9000 0
+#define IPQ8074 1
+
 void patchvht160(char *file, int phynum)
 {
 	FILE *fp = fopen(file, "rb");
@@ -677,8 +682,8 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch(ethaddr, 20);
-		removeregdomain("/tmp/caldata.bin", 0);
-		removeregdomain("/tmp/board.bin", 0);
+		removeregdomain("/tmp/caldata.bin", IPQ6018);
+		removeregdomain("/tmp/board.bin", IPQ6018);
 	}
 	if (brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MR5500) {
 		MAC_ADD(ethaddr);
@@ -687,8 +692,11 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch2(ethaddr, 14);
-//		removeregdomain("/tmp/caldata.bin", 0);
-//		removeregdomain("/tmp/board.bin", 0);
+		removeregdomain("/tmp/caldata.bin", IPQ5018);
+		removeregdomain("/tmp/board.bin", IPQ5018);
+		removeregdomain("/tmp/caldata2.bin", QCN9000);
+		removeregdomain("/tmp/board2.bin", QCN9000);
+		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V2) {
 		MAC_ADD(ethaddr);
@@ -697,12 +705,12 @@ void start_sysinit(void)
 		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
 		patch(ethaddr, 26);
-		removeregdomain("/tmp/caldata.bin", 1);
-		removeregdomain("/tmp/board.bin", 1);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V1) {
-		removeregdomain("/tmp/caldata.bin", 1);
-		removeregdomain("/tmp/board.bin", 1);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
 	}
 	if (brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		patchvht160("/tmp/caldata.bin", 0);
