@@ -742,6 +742,7 @@ void start_sysinit(void)
 		insmod("ath11k_ahb");
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy0/ath11k/ext_rx_stats");
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy1/ath11k/ext_rx_stats");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath11k/ext_rx_stats");
 	}
 
 	//	eval("modprobe", "ath11k_ahb");
