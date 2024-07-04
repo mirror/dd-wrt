@@ -64,7 +64,6 @@
 			label = "blue:system";
 			pwms = <&pwm 1 1250000>;
 			max-brightness = <255>;
-			linux,default-trigger = "default-on";
 		};
 	};
 
