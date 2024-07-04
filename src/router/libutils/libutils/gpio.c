@@ -421,6 +421,23 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	break;
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
+		switch (gpio) {
+		case 0:
+			writeint("/sys/class/leds/red:system/brightness", value);
+			break;
+		case 1:
+			writeint("/sys/class/leds/green:system/brightness", value);
+			break;
+		case 2:
+			writeint("/sys/class/leds/blue:system/brightness", value);
+			break;
+		default:
+			set_linux_gpio(gpio + 512, value);
+			break;
+		}
+	break;
 	case ROUTER_DYNALINK_DLWRX36:
 		switch (gpio) {
 		case 0:
