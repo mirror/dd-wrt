@@ -341,7 +341,7 @@ void patchvht160(char *file, int phynum)
 		setmacflag("/tmp/board.bin");                                                                                \
 	}
 
-#define patch2(ethaddr, offset)                                                                                               \
+#define patch2(ethaddr, offset)                                                                                              \
 	{                                                                                                                    \
 		unsigned char binmac[6];                                                                                     \
 		int i;                                                                                                       \
@@ -350,9 +350,9 @@ void patchvht160(char *file, int phynum)
 		       &newmac[5]);                                                                                          \
 		for (i = 0; i < 6; i++)                                                                                      \
 			binmac[i] = newmac[i];                                                                               \
-		patchmac("/tmp/cal-pci-0001:01:00.0.bin", offset, binmac);                                                                \
-		patchmac("/tmp/caldata2.bin", offset, binmac);                                                                \
-		patchmac("/tmp/board2.bin", offset, binmac);                                                                  \
+		patchmac("/tmp/cal-pci-0001:01:00.0.bin", offset, binmac);                                                   \
+		patchmac("/tmp/caldata2.bin", offset, binmac);                                                               \
+		patchmac("/tmp/board2.bin", offset, binmac);                                                                 \
 	}
 
 static void load_nss_ipq60xx(int profile)
@@ -527,58 +527,65 @@ static void load_nss_ipq807x(int profile)
 void start_setup_affinity(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
+	switch (brand)
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
+		/* IPQ5018 is dualcore arm64, so we need a different affinity stragedy */
+
+		/* QCN9074 external mpci */
 		set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 3);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 4);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
-		set_named_smp_affinity("DP_EXT_IRQ", 0, 7);
-		set_named_smp_affinity("DP_EXT_IRQ", 0, 8);
+	set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
+	set_named_smp_affinity("DP_EXT_IRQ", 1, 3);
+	set_named_smp_affinity("DP_EXT_IRQ", 1, 4);
+	set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
+	set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
+	set_named_smp_affinity("DP_EXT_IRQ", 0, 7);
+	set_named_smp_affinity("DP_EXT_IRQ", 0, 8);
+	/* IPQ5018 AHB wifi */
+	set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring2", 0, 1);
+	set_named_smp_affinity("reo2host-destination-ring1", 1, 1);
+	set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+	set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
+	set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
 
-		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring2", 0, 1);
-		set_named_smp_affinity("reo2host-destination-ring1", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	break;
+default:
+	set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+	set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+	set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+	set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
 
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-	} else {
-		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
-		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
-		set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+	set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
 
-		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
 
-		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
+	set_named_smp_affinity("edma_txcmpl", 3, 1);
+	set_named_smp_affinity("edma_rxfill", 3, 1);
+	set_named_smp_affinity("edma_rxdesc", 3, 1);
+	set_named_smp_affinity("edma_misc", 3, 1);
 
-		set_named_smp_affinity("edma_txcmpl", 3, 1);
-		set_named_smp_affinity("edma_rxfill", 3, 1);
-		set_named_smp_affinity("edma_rxdesc", 3, 1);
-		set_named_smp_affinity("edma_misc", 3, 1);
+	set_named_smp_affinity("nss_queue0", 1, 1);
+	set_named_smp_affinity("nss_queue1", 2, 1);
+	set_named_smp_affinity("nss_queue2", 3, 1);
+	set_named_smp_affinity("nss_queue3", 0, 1);
 
-		set_named_smp_affinity("nss_queue0", 1, 1);
-		set_named_smp_affinity("nss_queue1", 2, 1);
-		set_named_smp_affinity("nss_queue2", 3, 1);
-		set_named_smp_affinity("nss_queue3", 0, 1);
+	set_named_smp_affinity("nss_queue0", 2, 2);
+	set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
+	set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
+	set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
 
-		set_named_smp_affinity("nss_queue0", 2, 2);
-		set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
-		set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
-		set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
+	set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+	set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
 
-		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
-
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-	}
+	sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+	break;
+}
 }
 
 void start_sysinit(void)
@@ -603,27 +610,26 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 	char *maddr = NULL;
 	int fwlen = 0x10000;
-	if (brand == ROUTER_LINKSYS_MR7350) {
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		load_nss_ipq60xx(512);
-	} else if (brand == ROUTER_DYNALINK_DLWRX36) {
-		fwlen = 0x20000;
+		break;
+		brand == ROUTER_DYNALINK_DLWRX36 : fwlen = 0x20000;
 		load_nss_ipq807x(1024);
-	} else if (brand == ROUTER_LINKSYS_MX4200V2) {
+	case ROUTER_LINKSYS_MX4200V2:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
-	} else if (brand == ROUTER_LINKSYS_MR5500) {
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mr5500("hw_mac_addr");
 		load_nss_ipq50xx(512);
-	} else if (brand == ROUTER_LINKSYS_MX5500) {
-		fwlen = 0x20000;
-		maddr = get_deviceinfo_mr5500("hw_mac_addr");
-		load_nss_ipq50xx(512);
-	} else {
+	default:
 		fwlen = 0x20000;
 		load_nss_ipq807x(512);
+		break;
 	}
 
 	insmod("qca-ssdk");
@@ -674,8 +680,8 @@ void start_sysinit(void)
 		set_hwaddr("eth3", ethaddr);
 		set_hwaddr("eth4", ethaddr);
 	}
-
-	if (brand == ROUTER_LINKSYS_MR7350) {
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 14);
@@ -684,8 +690,10 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
-	}
-	if (brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MR5500) {
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_LINKSYS_MX5500:
+	case ROUTER_LINKSYS_MR5500:
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 14);
@@ -697,8 +705,9 @@ void start_sysinit(void)
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
 		removeregdomain("/tmp/board2.bin", QCN9000);
 		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
-	}
-	if (brand == ROUTER_LINKSYS_MX4200V2) {
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_LINKSYS_MX4200V2:
 		MAC_ADD(ethaddr);
 		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
@@ -707,40 +716,44 @@ void start_sysinit(void)
 		patch(ethaddr, 26);
 		removeregdomain("/tmp/caldata.bin", IPQ8074);
 		removeregdomain("/tmp/board.bin", IPQ8074);
-	}
-	if (brand == ROUTER_LINKSYS_MX4200V1) {
-		removeregdomain("/tmp/caldata.bin", IPQ8074);
-		removeregdomain("/tmp/board.bin", IPQ8074);
-	}
-	if (brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		patchvht160("/tmp/caldata.bin", 0);
 		patchvht160("/tmp/caldata.bin", 2);
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
-	}
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
-	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_LINKSYS_MX4200V1:
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
+		patchvht160("/tmp/caldata.bin", 0);
+		patchvht160("/tmp/caldata.bin", 2);
+		patchvht160("/tmp/board.bin", 0);
+		patchvht160("/tmp/board.bin", 2);
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_DYNALINK_DLWRX36:
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
+		break;
 	}
 
-	if (brand == ROUTER_DYNALINK_DLWRX36) {
-		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
-	}
 	insmod("compat");
 	insmod("compat_firmware_class");
 	insmod("cfg80211");
 	insmod("mac80211");
 	insmod("qmi_helpers");
-	if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
+	switch (brand) {
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 		eval("insmod", "ath11k", "nss_offload=0");
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
-	} else {
+		break;
+	default:
 		insmod("ath11k");
 		insmod("ath11k_ahb");
+		break;
 	}
 
-	//	eval("modprobe", "ath11k_ahb");
 	if (brand == ROUTER_DYNALINK_DLWRX36) {
 		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
@@ -759,22 +772,25 @@ void start_sysinit(void)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 	start_setup_affinity();
-	if (brand == ROUTER_LINKSYS_MR5500) {
+	switch (brand) {
+	case ROUTER_LINKSYS_MR5500:
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		eval("/etc/vlan_setup.sh");
 		eval("ifconfig", "eth0", "up");
-	}
-	if (brand == ROUTER_LINKSYS_MX5500) {
+		break;
+	case ROUTER_LINKSYS_MX5500:
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		eval("/etc/vlan_setup_mx5500.sh");
 		eval("ifconfig", "eth0", "up");
-	}
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
-	    brand == ROUTER_DYNALINK_DLWRX36) {
+		break;
+	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MX4200V1:
+	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_DYNALINK_DLWRX36:
 		sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
 		sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
 		sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
@@ -800,6 +816,7 @@ void start_sysinit(void)
 		sysprintf("ssdk_sh stp portState set 0 5 forward");
 		sysprintf("ssdk_sh fdb learnCtrl set disable");
 		sysprintf("ssdk_sh fdb entry flush 1");
+		break;
 	}
 	return;
 }
@@ -836,8 +853,8 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500  || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
-	    brand == ROUTER_LINKSYS_MX4200V2) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
+	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 	}
