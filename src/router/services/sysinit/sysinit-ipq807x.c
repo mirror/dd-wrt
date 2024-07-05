@@ -355,6 +355,32 @@ void patchvht160(char *file, int phynum)
 		patchmac("/tmp/board2.bin", offset, binmac);                                                                 \
 	}
 
+static void set_memprofile(int cores, int profile)
+{
+	switch (profile) {
+	case 256:
+		sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+		sysprintf("echo 30258 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+		sysprintf("echo 4096 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		break;
+	case 512:
+		sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+		sysprintf("echo 30624 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+		sysprintf("echo 8192 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		break;
+	case 1024:
+		sysprintf("echo 10000000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
+		sysprintf("echo 72512 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
+		sysprintf("echo 36864 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
+		break;
+	}
+
+	if (cores == 2)
+		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
+	sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
+	sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
+}
+
 static void load_nss_ipq60xx(int profile)
 {
 	insmod("qca-ssdk-ipq60xx");
@@ -366,25 +392,8 @@ static void load_nss_ipq60xx(int profile)
 		insmod("qca-nss-crypto-ipq60xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
-		sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
 
-		if (profile == 256) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30258 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 4096 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 512) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30624 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 8192 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 1024) {
-			sysprintf("echo 10000000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 72512 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 36864 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
+		set_memprofile(1, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq60xx");
@@ -420,25 +429,8 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-nss-crypto-ipq50xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
-		sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
 
-		if (profile == 256) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30258 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 4096 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 512) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30624 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 8192 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 1024) {
-			sysprintf("echo 10000000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 72512 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 36864 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
+		set_memprofile(1, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq50xx");
@@ -478,25 +470,8 @@ static void load_nss_ipq807x(int profile)
 		insmod("qca-nss-crypto-ipq807x");
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
-		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
-		sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
 
-		if (profile == 256) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30258 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 4096 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 512) {
-			sysprintf("echo 3100000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 30624 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 8192 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
-		if (profile == 1024) {
-			sysprintf("echo 10000000 > /proc/sys/dev/nss/n2hcfg/extra_pbuf_core0");
-			sysprintf("echo 72512 > /proc/sys/dev/nss/n2hcfg/n2h_high_water_core0");
-			sysprintf("echo 36864 > /proc/sys/dev/nss/n2hcfg/n2h_wifi_pool_buf");
-		}
+		set_memprofile(2, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq807x");
@@ -612,7 +587,7 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		load_nss_ipq60xx(512);
 		break;
-	case ROUTER_DYNALINK_DLWRX36: 
+	case ROUTER_DYNALINK_DLWRX36:
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		break;
