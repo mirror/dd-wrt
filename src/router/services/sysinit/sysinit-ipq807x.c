@@ -612,17 +612,21 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		load_nss_ipq60xx(512);
 		break;
-		brand == ROUTER_DYNALINK_DLWRX36 : fwlen = 0x20000;
+	case ROUTER_DYNALINK_DLWRX36: 
+		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_LINKSYS_MX4200V2:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mr5500("hw_mac_addr");
 		load_nss_ipq50xx(512);
+		break;
 	default:
 		fwlen = 0x20000;
 		load_nss_ipq807x(512);
