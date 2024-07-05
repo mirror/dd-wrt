@@ -676,6 +676,11 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
 		patch2(ethaddr, 14);
+		patch2(ethaddr, 20);
+		patch2(ethaddr, 26);
+		patch2(ethaddr, 32);
+		patch2(ethaddr, 38);
+		patch2(ethaddr, 44);
 		removeregdomain("/tmp/caldata.bin", IPQ5018);
 		removeregdomain("/tmp/board.bin", IPQ5018);
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
@@ -720,7 +725,7 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
-		eval("insmod", "ath11k", "nss_offload=0");
+		eval("insmod", "ath11k", "nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		break;
