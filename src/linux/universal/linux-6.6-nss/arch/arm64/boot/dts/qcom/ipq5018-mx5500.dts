@@ -400,25 +400,25 @@
 			
 			port@2 {
 				reg = <2>;
-				label = "lan1";
+				label = "wan";
 				phy-handle = <&qca8337_1>;
 			};
 
 			port@3 {
 				reg = <3>;
-				label = "lan2";
+				label = "lan1";
 				phy-handle = <&qca8337_2>;
 			};
 
 			port@4 {
 				reg = <4>;
-				label = "lan3";
+				label = "lan2";
 				phy-handle = <&qca8337_3>;
 			};
 
 			port@5 {
 				reg = <5>;
-				label = "wan";
+				label = "lan3";
 				phy-handle = <&qca8337_4>;
 			};
 
