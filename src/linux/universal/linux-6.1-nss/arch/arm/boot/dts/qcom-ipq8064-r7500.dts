@@ -7,6 +7,13 @@
 	model = "Netgear R7500 Nighthawk X4";
 	compatible = "netgear,r7500", "qcom,ipq8064";
 
+
+	/delete-node/ memory;
+	memory {
+		device_type = "memory";
+		linux,useable-memory = <0x40000000 0xe000000>;
+	};
+
 	memory@0 {
 		reg = <0x42000000 0xe000000>;
 		device_type = "memory";
