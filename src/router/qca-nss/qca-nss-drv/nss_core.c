@@ -558,6 +558,7 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	 * 3)	stating_address DDR_size	# 64-bit each; total 4 words
 	 */
 	node = of_find_node_by_name(NULL, name);
+	
 	if (node) {
 		int isize = 0;
 		int n_items;
@@ -567,7 +568,7 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 		}
 
 		n_items /= sizeof(ppp[0]);
-		nss_info("node size %d # items %d\n",
+		nss_info_always("node size %d # items %d\n",
 				of_n_size_cells(node), n_items);
 		if (ppp) {
 			if (n_items & 1) {	/* case 1 */
@@ -594,7 +595,7 @@ case3:
 				n_items = 0;
 			if (n_items) {
 				of_node_put(node);
-				nss_info("%s: %x %u (avl %u) items %d active_cores %d\n",
+				nss_info_always("%s: %x %u (avl %u) items %d active_cores %d\n",
 					name, mmu->start_address, mmu->ddr_size,
 					avail_ddr, n_items, mmu->num_active_cores);
 				/*
@@ -604,6 +605,7 @@ case3:
 				if (avail_ddr > mmu->ddr_size)
 					mmu->ddr_size = (avail_ddr + (63 << 20))
 							& (~63 << 20);
+				nss_info_always("avail_ddr %u, ddr size %u\n", avail_ddr, mmu->ddr_size);
 				return;
 			}
 		}
@@ -638,7 +640,7 @@ static void nss_send_ddr_info(struct nss_ctx_instance *nss_own)
 	struct nss_n2h_msg nnm;
 	struct nss_cmn_msg *ncm = &nnm.cm;
 	uint32_t ret;
-	nss_info("%px: send DDR info\n", nss_own);
+	nss_info_always("%px: send DDR info\n", nss_own);
 
 	nss_cmn_msg_init(ncm, NSS_N2H_INTERFACE, NSS_TX_DDR_INFO_VIA_N2H_CFG,
 			sizeof(struct nss_mmu_ddr_info), NULL, NULL);
