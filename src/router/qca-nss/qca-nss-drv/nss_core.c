@@ -538,6 +538,7 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	long cached;
 	struct sysinfo vals;
 	struct device_node *node;
+	const __be32 *ppp;
 
 	si_meminfo(&vals);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
@@ -560,7 +561,10 @@ static void nss_get_ddr_info(struct nss_mmu_ddr_info *mmu, char *name)
 	if (node) {
 		int isize = 0;
 		int n_items;
-		const __be32 *ppp = (__be32 *)of_get_property(node, "reg", &n_items);
+		ppp = (__be32 *)of_get_property(node, "linux,usable-memory", &n_items);
+		if (ppp == NULL) {
+			ppp = (__be32 *)of_get_property(node, "reg", &n_items);
+		}
 
 		n_items /= sizeof(ppp[0]);
 		nss_info("node size %d # items %d\n",
