@@ -49,9 +49,10 @@ int nss_ramp_voltage(unsigned long rate, bool ramp_up)
 		return -EINVAL;
 	}
 
-	uV = data->nss_core_vdd_nominal;
 	if (rate >= data->nss_core_threshold_freq)
-		return data->nss_core_vdd_high;
+		uV = data->nss_core_vdd_high;
+	else 
+		uV = data->nss_core_vdd_nominal;
 
 	curr_uV = regulator_get_voltage(reg);
 
