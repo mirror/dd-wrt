@@ -964,7 +964,7 @@
 					"host2rxdma-monitor-ring3",
 					"host2rxdma-monitor-ring2",
 					"host2rxdma-monitor-ring1",
-					"reo2ost-exception",
+					"reo2host-exception",
 					"wbm2host-rx-release",
 					"reo2host-status",
 					"reo2host-destination-ring4",
