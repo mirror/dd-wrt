@@ -26,7 +26,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " root=/dev/ubiblock0_0 mitigations=off coherent_pool=2M swiotlb=noforce";
+		bootargs-append = "coherent_pool=2M swiotlb=noforce mitigations=off root=/dev/ubiblock0_0";
 	};
 
 	keys {
