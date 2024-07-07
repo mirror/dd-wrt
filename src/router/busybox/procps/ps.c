@@ -379,7 +379,7 @@ static const ps_out_t out_spec[] ALIGN_PTR = {
 /* Mandated by http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ps.html: */
 	{ 8                  , "user"  ,"USER"   ,func_user  ,PSSCAN_UIDGID  },
 	{ 8                  , "group" ,"GROUP"  ,func_group ,PSSCAN_UIDGID  },
-	{ 16                 , "comm"  ,"COMMAND",func_comm  ,PSSCAN_COMM    },
+	{ 32                 , "comm"  ,"COMMAND",func_comm  ,PSSCAN_COMM    },
 	{ MAX_WIDTH          , "args"  ,"COMMAND",func_args  ,PSSCAN_COMM    },
 	{ 5                  , "pid"   ,"PID"    ,func_pid   ,PSSCAN_PID     },
 	{ 5                  , "ppid"  ,"PPID"   ,func_ppid  ,PSSCAN_PPID    },
