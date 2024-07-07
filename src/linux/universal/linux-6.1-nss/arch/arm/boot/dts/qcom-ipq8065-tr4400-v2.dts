@@ -11,7 +11,7 @@
 	/delete-node/ memory;
 	memory {
 		device_type = "memory";
-		linux,useable-memory = <0x40000000 0x1e000000>;
+		linux,usable-memory = <0x40000000 0x1e000000>;
 	};
 
 	memory@0 {
