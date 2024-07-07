@@ -828,6 +828,8 @@ void edma_cfg_tx_napi_add(struct edma_gbl_ctx *egc, struct net_device *netdev, u
 		nss_dp_tx_napi_budget = NSS_DP_HAL_TX_NAPI_BUDGET;
 	}
 
+	init_dummy_netdev(netdev);
+	snprintf(netdev->name, sizeof(netdev->name), "%s", "nss-dp");
 	/*
 	 * Adding tx napi for a interface with each queue.
 	 */

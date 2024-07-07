@@ -829,6 +829,7 @@ bool edma_ppeds_inst_register(nss_dp_ppeds_handle_t *ppeds_handle)
 	 * Setup dummy netdev for all the NAPIs associated with this node
 	 */
 	init_dummy_netdev(&ppeds_node->napi_ndev);
+	snprintf(ppeds_node->napi_ndev.name, sizeof(ppeds_node->napi_ndev.name), "%s", "nss-ppe");
 
 	/*
 	 * Setup TxComp IRQ and NAPI
