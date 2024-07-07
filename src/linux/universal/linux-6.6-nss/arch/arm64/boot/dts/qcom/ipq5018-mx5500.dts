@@ -161,6 +161,7 @@
 			qcom,wlan-dataplane-offload-enabled;
 			qcom,pvxlan-enabled;
 			qcom,udp-st-enabled;
+			qcom,rmnet_rx-enabled;
 		};
 
 		nss-dp-common {
