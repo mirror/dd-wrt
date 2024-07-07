@@ -355,7 +355,7 @@ void patchvht160(char *file, int phynum)
 		patchmac("/tmp/board2.bin", offset, binmac);                                                                 \
 	}
 
-static void set_memprofile(int cores, int profile)
+static void set_memprofile(int cpus, int cores, int profile)
 {
 	switch (profile) {
 	case 256:
@@ -378,7 +378,7 @@ static void set_memprofile(int cores, int profile)
 	if (cores == 2)
 		sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core1");
 	sysprintf("echo 2048 > /proc/sys/dev/nss/n2hcfg/n2h_queue_limit_core0");
-	sysprintf("echo 15 > /proc/sys/dev/nss/rps/hash_bitmap");
+	sysprintf("echo %d > /proc/sys/dev/nss/rps/hash_bitmap", (1 << cpus) - 1);
 }
 
 static void load_nss_ipq60xx(int profile)
@@ -393,7 +393,7 @@ static void load_nss_ipq60xx(int profile)
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
 
-		set_memprofile(1, profile);
+		set_memprofile(4, 1, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq60xx");
@@ -430,7 +430,7 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
 
-		set_memprofile(1, profile);
+		set_memprofile(2, 1, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq50xx");
@@ -471,7 +471,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
 
-		set_memprofile(2, profile);
+		set_memprofile(4, 2, profile);
 
 		eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 		insmod("qca-nss-pppoe-ipq807x");
@@ -720,16 +720,18 @@ void start_sysinit(void)
 	insmod("compat");
 	insmod("compat_firmware_class");
 	insmod("cfg80211");
-	insmod("mac80211");
-	insmod("qmi_helpers");
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
-		eval("insmod", "ath11k", "nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
+		sysprintf("insmod mac80211 nss_redirect=1");
+		insmod("qmi_helpers");
+		eval("insmod", "ath11k","nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		break;
 	default:
+		insmod("mac80211");
+		insmod("qmi_helpers");
 		insmod("ath11k");
 		insmod("ath11k_ahb");
 		break;
