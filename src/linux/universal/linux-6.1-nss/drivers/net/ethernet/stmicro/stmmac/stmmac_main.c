@@ -6931,6 +6931,9 @@ static void stmmac_napi_add(struct net_device *dev)
 
 	maxq = max(priv->plat->rx_queues_to_use, priv->plat->tx_queues_to_use);
 
+	init_dummy_netdev(dev);
+	snprintf(dev, sizeof(dev->name), "%s", "stmmac");
+
 	for (queue = 0; queue < maxq; queue++) {
 		struct stmmac_channel *ch = &priv->channel[queue];
 
