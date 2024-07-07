@@ -192,8 +192,6 @@ static int syn_dp_if_init(struct nss_dp_data_plane_ctx *dpc)
 	}
 
 	if (!dev_info->napi_added) {
-		init_dummy_netdev(netdev);
-		snprintf(netdev->name, sizeof(netdev->name), "%s", "nss-dp");
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
 		netif_threaded_napi_add(netdev, &rx_info->napi_rx, syn_dp_napi_poll_rx, SYN_DP_NAPI_BUDGET_RX);
 		netif_threaded_napi_add(netdev, &tx_info->napi_tx, syn_dp_napi_poll_tx, SYN_DP_NAPI_BUDGET_TX);
