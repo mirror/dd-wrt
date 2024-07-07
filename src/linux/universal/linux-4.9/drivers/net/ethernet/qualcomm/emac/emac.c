@@ -696,6 +696,8 @@ static int emac_probe(struct platform_device *pdev)
 	/* Initialize queues */
 	emac_mac_rx_tx_ring_init_all(pdev, adpt);
 
+	init_dummy_netdev(&adpt->rx_q);
+	snprintf(adpt->rx_q.name, sizeof(adpt->rx_q.name), "%s", "emac");
 	netif_threaded_napi_add(netdev, &adpt->rx_q.napi, emac_napi_rtx,
 		       NAPI_POLL_WEIGHT);
 
