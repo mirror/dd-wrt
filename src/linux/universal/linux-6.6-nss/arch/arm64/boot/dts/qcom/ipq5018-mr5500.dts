@@ -136,32 +136,31 @@
 			qcom,low-frequency = <850000000>;
 			qcom,mid-frequency = <850000000>;
 			qcom,max-frequency = <1000000000>;
-			qcom,bridge-enabled;
 			qcom,ipv4-enabled;
+			qcom,ipv4-reasm-enabled;
 			qcom,ipv6-enabled;
-			qcom,wlanredirect-enabled;
+			qcom,ipv6-reasm-enabled;
 			qcom,tun6rd-enabled;
 			qcom,l2tpv2-enabled;
 			qcom,gre-enabled;
-			qcom,gre-redir-enabled;
-			qcom,gre-redir-mark-enabled;
 			qcom,map-t-enabled;
-			qcom,portid-enabled;
 			qcom,pppoe-enabled;
 			qcom,pptp-enabled;
 			qcom,tunipip6-enabled;
 			qcom,shaping-enabled;
-			qcom,wlan-dataplane-offload-enabled;
-			qcom,vlan-enabled;
-			qcom,capwap-enabled;
-			qcom,crypto-enabled;
-			qcom,ipsec-enabled;
-			qcom,qvpn-enabled;
-			qcom,pvxlan-enabled;
 			qcom,clmap-enabled;
 			qcom,vxlan-enabled;
 			qcom,match-enabled;
 			qcom,mirror-enabled;
+			qcom,crypto-enabled;
+			qcom,ipsec-enabled;
+			qcom,wlanredirect-enabled;
+			qcom,gre-redir-enabled;
+			qcom,gre-redir-mark-enabled;
+			qcom,portid-enabled;
+			qcom,wlan-dataplane-offload-enabled;
+			qcom,pvxlan-enabled;
+			qcom,udp-st-enabled;
 		};
 
 		nss-dp-common {
@@ -286,7 +285,7 @@
 		};
 
 
-/*		dp1 {
+		dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
@@ -302,9 +301,10 @@
 			mdio-bus = <&mdio0>;
 			local-mac-address = [000000000000];
 			phy-mode = "sgmii";
-		}; */
+			qcom,rx-page-mode = <0>;
+		};
 
-		dp1: dp1 {
+		dp2: dp2 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
@@ -425,7 +425,7 @@
 				reg = <6>;
 				label = "cpu";
 				phy-mode = "sgmii";
-				ethernet = <&dp1>;
+				ethernet = <&dp2>;
 				qca,sgmii-enable-pll;
 
 				fixed-link {
