@@ -1115,9 +1115,6 @@ static int edma_axi_probe(struct platform_device *pdev)
 		goto err_reset;
 	}
 
-	init_dummy_netdev(edma_netdev[0]);
-	snprintf(edma_netdev[0]->name, sizeof(edma_netdev[0]->name), "%s", "emac");
-
 	/* populate per_core_info, do a napi_Add, request 16 TX irqs,
 	 * 8 RX irqs, do a napi enable
 	 */
