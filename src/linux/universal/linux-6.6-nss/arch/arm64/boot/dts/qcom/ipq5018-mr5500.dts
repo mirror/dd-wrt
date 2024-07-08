@@ -295,7 +295,7 @@
 			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
 			clock-names = "nss-snoc-gmac-axi-clk";
 
-			qcom,mactype = <2>; /* GMAC_HAL_TYPE_SYN_GMAC */
+			qcom,mactype = <2>;
 			local-mac-address = [000000000000];
 			phy-mode = "internal";
 			phy-handle = <&ge_phy>;
