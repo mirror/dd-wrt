@@ -87,8 +87,13 @@ static void nss_phys_if_msg_handler(struct nss_ctx_instance *nss_ctx, struct nss
 	}
 
 	if (nss_cmn_get_msg_len(ncm) > sizeof(struct nss_phys_if_msg)) {
-		nss_warning("%px: message length too big: %d", nss_ctx, nss_cmn_get_msg_len(ncm));
+		nss_warning("%px: message length too big: %d vs %s", nss_ctx, nss_cmn_get_msg_len(ncm), sizeof(struct nss_phys_if_msg));
 		return;
+	}
+
+	if (nss_cmn_get_msg_len(ncm) < sizeof(struct nss_phys_if_msg)) {
+		nss_warning("%px: message incorrect: %d vs %d", nss_ctx, nss_cmn_get_msg_len(ncm), sizeof(struct nss_phys_if_msg));
+//		return;
 	}
 
 	/*

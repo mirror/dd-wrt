@@ -36,19 +36,13 @@
 #if (NSS_DEBUG_LEVEL > 0)
 #define NSS_VERIFY_CTX_MAGIC(x) nss_verify_ctx_magic(x)
 #define NSS_VERIFY_INIT_DONE(x) nss_verify_init_done(x)
-
 /*
  * nss_verify_ctx_magic()
  */
-static inline void nss_verify_ctx_magic(struct nss_ctx_instance *nss_ctx)
-{
-	nss_assert(nss_ctx->magic == NSS_CTX_MAGIC);
-}
+#define nss_verify_ctx_magic(nss_ctx) nss_assert(nss_ctx->magic == NSS_CTX_MAGIC)
 
-static inline void nss_verify_init_done(struct nss_ctx_instance *nss_ctx)
-{
-	nss_assert(nss_ctx->state == NSS_CORE_STATE_INITIALIZED);
-}
+
+#define nss_verify_init_done(nss_ctx) nss_assert(nss_ctx->state == NSS_CORE_STATE_INITIALIZED)
 
 #else
 #define NSS_VERIFY_CTX_MAGIC(x)

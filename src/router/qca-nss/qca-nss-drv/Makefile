@@ -617,7 +617,7 @@ endif
 #else ifneq ($(findstring 4.4, $(KERNELVERSION)),)
 #NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=1
 #else
-NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=0
+NSS_CCFLAGS += -DNSS_FABRIC_SCALING_SUPPORT=0 -g
 #endif
 
 # Disable Frequency scaling

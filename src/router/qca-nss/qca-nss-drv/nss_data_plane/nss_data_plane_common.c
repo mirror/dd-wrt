@@ -39,13 +39,13 @@ static void nss_data_plane_work_function(struct work_struct *work)
 	 */
 	ret = nss_n2h_update_queue_config_sync(nss_ctx, pn_mq_en, pn_qlimits);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("%px: Failed to send pnode queue config to core 0\n", nss_ctx);
+		nss_warning("%px: Failed to send pnode queue config to core 0 pn_mq_en = %d pn_qlimits = %d ret %d\n", nss_ctx, pn_mq_en, pn_qlimits, ret);
 		goto data_plane_reg;
 	}
 
 	ret = nss_project_pri_mq_map_configure(nss_ctx);
 	if (ret != NSS_TX_SUCCESS) {
-		nss_warning("%px: Failed to send pnode priority to multi-queue config to core 0\n", nss_ctx);
+		nss_warning("%px: Failed to send pnode priority to multi-queue config to core 0 %d\n", nss_ctx, ret);
 	}
 
 data_plane_reg:

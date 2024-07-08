@@ -242,7 +242,7 @@ static bool nss_data_plane_register_to_nss_dp(struct nss_ctx_instance *nss_ctx, 
 
 	netdev = nss_dp_get_netdev_by_nss_if_num(if_num);
 	if (!netdev) {
-		nss_info("%px: Platform don't have data plane%d enabled, \
+		nss_warning("%px: Platform don't have data plane%d enabled, \
 				don't bring up nss_phys_if and don't register to nss-dp\n",
 				nss_ctx, if_num);
 		return false;
@@ -270,7 +270,7 @@ static bool nss_data_plane_register_to_nss_dp(struct nss_ctx_instance *nss_ctx, 
 	}
 
 	if (nss_dp_override_data_plane(netdev, &dp_ops, (struct nss_dp_data_plane_ctx *)ndpp) != NSS_DP_SUCCESS) {
-		nss_info("%px: Override nss-dp data plane for port %dfailed\n", nss_ctx, if_num);
+		nss_warning("%px: Override nss-dp data plane for port %dfailed\n", nss_ctx, if_num);
 		return false;
 	}
 
@@ -327,7 +327,7 @@ static void __nss_data_plane_register(struct nss_ctx_instance *nss_ctx)
 		if (!nss_data_plane_register_to_nss_dp(nss_ctx, i)) {
 			nss_warning("%px: Register data plane failed for data plane %d\n", nss_ctx, i);
 		} else {
-			nss_info("%px: Register data plan to data plane %d success\n", nss_ctx, i);
+			nss_warning("%px: Register data plan to data plane %d success\n", nss_ctx, i);
 		}
 	}
 

@@ -24,7 +24,7 @@ static void nss_wifi_vdev_handler(struct nss_ctx_instance *nss_ctx, struct nss_c
 {
 	nss_wifi_vdev_msg_callback_t cb;
 
-	nss_info("%px: NSS->HLOS message for wifi vdev on interface:%d", nss_ctx, ncm->interface);
+	nss_trace("%px: NSS->HLOS message for wifi vdev on interface:%d", nss_ctx, ncm->interface);
 
 	BUG_ON(((ncm->interface < NSS_DYNAMIC_IF_START) || (ncm->interface >= (NSS_DYNAMIC_IF_START + NSS_MAX_DYNAMIC_INTERFACES))));
 

@@ -81,7 +81,7 @@ static int max_ipv6_conn = NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv6_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections");
 
-bool pn_mq_en = false;
+bool pn_mq_en = true;
 module_param(pn_mq_en, bool, S_IRUGO);
 MODULE_PARM_DESC(pn_mq_en, "Enable pnode ingress QoS");
 
@@ -160,7 +160,7 @@ int nss_core_get_max_reuse(void)
  */
 uint32_t nss_core_get_min_reuse(struct nss_ctx_instance *nss_ctx)
 {
-	NSS_VERIFY_CTX_MAGIC(nss_ctx);
+//	NSS_VERIFY_CTX_MAGIC(nss_ctx);
 	return nss_ctx->max_buf_size;
 }
 #endif /* NSS_SKB_REUSE_SUPPORT */
@@ -451,9 +451,9 @@ void nss_core_handle_nss_status_pkt(struct nss_ctx_instance *nss_ctx, struct sk_
 
 	cb = nss_ctx->nss_rx_interface_handlers[nss_if].cb;
 	app_data = nss_ctx->nss_rx_interface_handlers[nss_if].app_data;
-
+	
 	if (!cb) {
-		nss_warning("%px: Callback not registered for interface %d", nss_ctx, nss_if);
+		nss_warning("%px: Callback not registered for interface %d %d %d", nss_ctx, nss_if, NSS_EDMA_LITE_INTERFACE, NSS_UDP_ST_INTERFACE);
 		return;
 	}
 

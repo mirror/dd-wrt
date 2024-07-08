@@ -86,7 +86,7 @@ void nss_freq_log_rx_msg(struct nss_corefreq_msg *ncm)
 	}
 
 	if (ncm->cm.response == NSS_CMN_RESPONSE_NOTIFY || (ncm->cm.response == NSS_CMN_RESPONSE_ACK)) {
-		nss_info("%px: type[%d], response[%d]:%s\n", ncm, ncm->cm.type,
+		nss_trace("%px: type[%d], response[%d]:%s\n", ncm, ncm->cm.type,
 			ncm->cm.response, nss_cmn_response_str[ncm->cm.response]);
 		goto verbose;
 	}
