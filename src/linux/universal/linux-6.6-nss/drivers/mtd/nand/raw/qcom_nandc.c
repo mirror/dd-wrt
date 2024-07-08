@@ -2890,7 +2890,6 @@ static int qcom_read_id_type_exec(struct nand_chip *chip, const struct nand_subo
 
 	nandc_read_buffer_sync(nandc, true);
 	memcpy(instr->ctx.data.buf.in, nandc->reg_read_buf, len);
-	printk(KERN_INFO "%X\n", nandc->reg_read_buf[0]);
 
 err_out:
 	return ret;
