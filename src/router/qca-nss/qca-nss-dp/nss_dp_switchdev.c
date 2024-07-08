@@ -586,7 +586,6 @@ static int nss_dp_switchdev_event_nb(struct notifier_block *unused,
 		unsigned long event, void *ptr)
 {
 	struct net_device *dev = switchdev_notifier_info_to_dev(ptr);
-
 	/*
 	 * Handle switchdev event only for physical devices
 	 */
