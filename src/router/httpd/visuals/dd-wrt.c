@@ -1621,20 +1621,23 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
+				char eirp[32]={0};
+				if (chan[i].hw_eirp)
+				    snprintf(eirp,sizeof(eirp), " (%d dBm)");
 				if (freq != -1) {
 					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
 							wp,
-							"document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
+							"document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d\"+wl_basic.mhz+\"%s</option>\");\n",
 							fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull,
 							chan[i].ulu, chan[i].uul, chan[i].uuu,
-							!strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset));
+							!strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset), eirp);
 					} else {
 						websWrite(
 							wp,
-							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
+							"document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"%s</option>\");\n",
 							fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "", cn,
-							(freq + offset));
+							(freq + offset), eirp);
 					}
 				}
 				i++;
