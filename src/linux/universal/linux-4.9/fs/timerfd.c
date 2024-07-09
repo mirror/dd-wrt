@@ -471,10 +471,7 @@ static int do_timerfd_settime(int ufd, int flags,
 				break;
 		}
 		spin_unlock_irq(&ctx->wqh.lock);
-		if (isalarm(ctx))
-			hrtimer_wait_for_timer(&ctx->t.alarm.timer);
-		else
-			hrtimer_wait_for_timer(&ctx->t.tmr);
+		cpu_relax();
 	}
 
 	/*

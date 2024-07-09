@@ -220,14 +220,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
 static inline void rps_lock(struct softnet_data *sd)
 {
 #ifdef CONFIG_RPS
-	raw_spin_lock(&sd->input_pkt_queue.raw_lock);
+	spin_lock(&sd->input_pkt_queue.lock);
 #endif
 }
 
 static inline void rps_unlock(struct softnet_data *sd)
 {
 #ifdef CONFIG_RPS
-	raw_spin_unlock(&sd->input_pkt_queue.raw_lock);
+	spin_unlock(&sd->input_pkt_queue.lock);
 #endif
 }
 
@@ -2325,7 +2325,6 @@ static void __netif_reschedule(struct Qdisc *q)
 	sd->output_queue_tailp = &q->next_sched;
 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 }
 
 void __netif_schedule(struct Qdisc *q)
@@ -2410,7 +2409,6 @@ void __dev_kfree_skb_irq(struct sk_buff *skb, enum skb_free_reason reason)
 	__this_cpu_write(softnet_data.completion_queue, skb);
 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 }
 EXPORT_SYMBOL(__dev_kfree_skb_irq);
 
@@ -3184,11 +3182,7 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
 	 * This permits qdisc->running owner to get the lock more
 	 * often and dequeue packets faster.
 	 */
-#ifdef CONFIG_PREEMPT_RT_FULL
-	contended = true;
-#else
 	contended = qdisc_is_running(q);
-#endif
 	if (unlikely(contended))
 		spin_lock(&q->busylock);
 
@@ -3259,10 +3253,8 @@ static void skb_update_prio(struct sk_buff *skb)
 #define skb_update_prio(skb)
 #endif
 
-#ifndef CONFIG_PREEMPT_RT_FULL
 DEFINE_PER_CPU(int, xmit_recursion);
 EXPORT_SYMBOL(xmit_recursion);
-#endif
 
 /**
  *	dev_loopback_xmit - loop back @skb
@@ -3495,12 +3487,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
 	if (dev->flags & IFF_UP) {
 		int cpu = smp_processor_id(); /* ok because BHs are off */
 
-#ifdef CONFIG_PREEMPT_RT_FULL
-		if (txq->xmit_lock_owner != current) {
-#else
 		if (txq->xmit_lock_owner != cpu) {
-#endif
-			if (unlikely(xmit_rec_read() > XMIT_RECURSION_LIMIT))
+			if (unlikely(__this_cpu_read(xmit_recursion) >
+				     XMIT_RECURSION_LIMIT))
 				goto recursion_alert;
 
 			skb = validate_xmit_skb(skb, dev);
@@ -3510,9 +3499,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
 			HARD_TX_LOCK(dev, txq, cpu);
 
 			if (!netif_xmit_stopped(txq)) {
-				xmit_rec_inc();
+				__this_cpu_inc(xmit_recursion);
 				skb = dev_hard_start_xmit(skb, dev, txq, &rc);
-				xmit_rec_dec();
+				__this_cpu_dec(xmit_recursion);
 				if (dev_xmit_complete(rc)) {
 					HARD_TX_UNLOCK(dev, txq);
 					goto out;
@@ -3887,7 +3876,6 @@ drop:
 	rps_unlock(sd);
 
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 
 	atomic_long_inc(&skb->dev->rx_dropped);
 	kfree_skb(skb);
@@ -3906,7 +3894,7 @@ static int netif_rx_internal(struct sk_buff *skb)
 		struct rps_dev_flow voidflow, *rflow = &voidflow;
 		int cpu;
 
-		migrate_disable();
+		preempt_disable();
 		rcu_read_lock();
 
 		cpu = get_rps_cpu(skb->dev, skb, &rflow);
@@ -3916,13 +3904,13 @@ static int netif_rx_internal(struct sk_buff *skb)
 		ret = enqueue_to_backlog(skb, cpu, &rflow->last_qtail);
 
 		rcu_read_unlock();
-		migrate_enable();
+		preempt_enable();
 	} else
 #endif
 	{
 		unsigned int qtail;
-		ret = enqueue_to_backlog(skb, get_cpu_light(), &qtail);
-		put_cpu_light();
+		ret = enqueue_to_backlog(skb, get_cpu(), &qtail);
+		put_cpu();
 	}
 	return ret;
 }
@@ -3956,9 +3944,11 @@ int netif_rx_ni(struct sk_buff *skb)
 
 	trace_netif_rx_ni_entry(skb);
 
-	local_bh_disable();
+	preempt_disable();
 	err = netif_rx_internal(skb);
-	local_bh_enable();
+	if (local_softirq_pending())
+		do_softirq();
+	preempt_enable();
 
 	return err;
 }
@@ -4479,14 +4469,11 @@ static void flush_backlog(struct work_struct *work)
 	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
 		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
 			__skb_unlink(skb, &sd->process_queue);
-			__skb_queue_tail(&sd->tofree_queue, skb);
+			kfree_skb(skb);
 			input_queue_head_incr(sd);
 		}
 	}
-	if (!skb_queue_empty(&sd->tofree_queue))
-		raise_softirq_irqoff(NET_RX_SOFTIRQ);
 	local_bh_enable();
-
 }
 
 static void flush_all_backlogs(void)
@@ -5016,7 +5003,6 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
 		sd->rps_ipi_list = NULL;
 
 		local_irq_enable();
-		preempt_check_resched_rt();
 
 		/* Send pending IPI's to kick RPS processing on remote cpus. */
 		while (remsd) {
@@ -5030,7 +5016,6 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
 	} else
 #endif
 		local_irq_enable();
-	preempt_check_resched_rt();
 }
 
 static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
@@ -5060,9 +5045,7 @@ static int process_backlog(struct napi_struct *napi, int quota)
 	while (again) {
 		struct sk_buff *skb;
 
-		local_irq_disable();
 		while ((skb = __skb_dequeue(&sd->process_queue))) {
-			local_irq_enable();
 			rcu_read_lock();
 			__netif_receive_skb(skb);
 			rcu_read_unlock();
@@ -5070,9 +5053,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
 			if (++work >= quota)
 				return work;
 
-			local_irq_disable();
 		}
 
+		local_irq_disable();
 		rps_lock(sd);
 		if (skb_queue_empty(&sd->input_pkt_queue)) {
 			/*
@@ -5115,11 +5098,9 @@ void __napi_schedule(struct napi_struct *n)
 	local_irq_save(flags);
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	local_irq_restore(flags);
-	preempt_check_resched_rt();
 }
 EXPORT_SYMBOL(__napi_schedule);
 
-#ifndef CONFIG_PREEMPT_RT_FULL
 /**
  * __napi_schedule_irqoff - schedule for receive
  * @n: entry to schedule
@@ -5139,7 +5120,6 @@ void __napi_schedule_irqoff(struct napi_struct *n)
 		__napi_schedule(n);
 }
 EXPORT_SYMBOL(__napi_schedule_irqoff);
-#endif
 
 void __napi_complete(struct napi_struct *n)
 {
@@ -5497,20 +5477,12 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
 	unsigned long time_limit = jiffies +
 		usecs_to_jiffies(netdev_budget_usecs);
 	int budget = netdev_budget;
-	struct sk_buff_head tofree_q;
-	struct sk_buff *skb;
 	LIST_HEAD(list);
 	LIST_HEAD(repoll);
 
-	__skb_queue_head_init(&tofree_q);
-
 	local_irq_disable();
-	skb_queue_splice_init(&sd->tofree_queue, &tofree_q);
 	list_splice_init(&sd->poll_list, &list);
 	local_irq_enable();
-
-	while ((skb = __skb_dequeue(&tofree_q)))
-		kfree_skb(skb);
 
 	for (;;) {
 		struct napi_struct *n;
@@ -5542,7 +5514,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
 	list_splice_tail(&repoll, &list);
 	list_splice(&list, &sd->poll_list);
 	if (!list_empty(&sd->poll_list))
-		__raise_softirq_irqoff_ksoft(NET_RX_SOFTIRQ);
+		__raise_softirq_irqoff(NET_RX_SOFTIRQ);
 
 	net_rps_action_and_irq_enable(sd);
 }
@@ -7430,7 +7402,7 @@ static void netdev_init_one_queue(struct net_device *dev,
 	/* Initialize queue lock */
 	spin_lock_init(&queue->_xmit_lock);
 	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);
-	netdev_queue_clear_owner(queue);
+	queue->xmit_lock_owner = -1;
 	netdev_queue_numa_node_write(queue, NUMA_NO_NODE);
 	queue->dev = dev;
 #ifdef CONFIG_BQL
@@ -8373,19 +8345,15 @@ static int dev_cpu_callback(struct notifier_block *nfb,
 
 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
 	local_irq_enable();
-	preempt_check_resched_rt();
 
 	/* Process offline CPU's input_pkt_queue */
 	while ((skb = __skb_dequeue(&oldsd->process_queue))) {
 		netif_rx_ni(skb);
 		input_queue_head_incr(oldsd);
 	}
-	while ((skb = __skb_dequeue(&oldsd->input_pkt_queue))) {
+	while ((skb = skb_dequeue(&oldsd->input_pkt_queue))) {
 		netif_rx_ni(skb);
 		input_queue_head_incr(oldsd);
-	}
-	while ((skb = __skb_dequeue(&oldsd->tofree_queue))) {
-		kfree_skb(skb);
 	}
 
 	return NOTIFY_OK;
@@ -8696,9 +8664,8 @@ static int __init net_dev_init(void)
 
 		INIT_WORK(flush, flush_backlog);
 
-		skb_queue_head_init_raw(&sd->input_pkt_queue);
-		skb_queue_head_init_raw(&sd->process_queue);
-		skb_queue_head_init_raw(&sd->tofree_queue);
+		skb_queue_head_init(&sd->input_pkt_queue);
+		skb_queue_head_init(&sd->process_queue);
 		INIT_LIST_HEAD(&sd->poll_list);
 		sd->output_queue_tailp = &sd->output_queue;
 #ifdef CONFIG_RPS

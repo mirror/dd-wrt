@@ -27,7 +27,6 @@ struct rt_mutex_waiter {
 	struct rb_node          pi_tree_entry;
 	struct task_struct	*task;
 	struct rt_mutex		*lock;
-	bool			savestate;
 #ifdef CONFIG_DEBUG_RT_MUTEXES
 	unsigned long		ip;
 	struct pid		*deadlock_task_pid;
@@ -100,14 +99,11 @@ enum rtmutex_chainwalk {
 /*
  * PI-futex support (proxy locking functions, etc.):
  */
-#define PI_WAKEUP_INPROGRESS	((struct rt_mutex_waiter *) 1)
-#define PI_REQUEUE_INPROGRESS	((struct rt_mutex_waiter *) 2)
-
 extern struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock);
 extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
 				       struct task_struct *proxy_owner);
 extern void rt_mutex_proxy_unlock(struct rt_mutex *lock);
-extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter, bool savestate);
+extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter);
 extern int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
 				     struct rt_mutex_waiter *waiter,
 				     struct task_struct *task);
@@ -124,20 +120,9 @@ extern int __rt_mutex_futex_trylock(struct rt_mutex *l);
 
 extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
 extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
-				 struct wake_q_head *wqh,
-				 struct wake_q_head *wq_sleeper);
+				 struct wake_q_head *wqh);
 
-extern void rt_mutex_postunlock(struct wake_q_head *wake_q,
-				struct wake_q_head *wq_sleeper);
-
-/* RW semaphore special interface */
-struct ww_acquire_ctx;
-
-int __sched rt_mutex_slowlock_locked(struct rt_mutex *lock, int state,
-				     struct hrtimer_sleeper *timeout,
-				     enum rtmutex_chainwalk chwalk,
-				     struct ww_acquire_ctx *ww_ctx,
-				     struct rt_mutex_waiter *waiter);
+extern void rt_mutex_adjust_prio(struct task_struct *task);
 
 #ifdef CONFIG_DEBUG_RT_MUTEXES
 # include "rtmutex-debug.h"

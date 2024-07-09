@@ -79,15 +79,13 @@ int tick_is_oneshot_available(void)
 static void tick_periodic(int cpu)
 {
 	if (tick_do_timer_cpu == cpu) {
-		raw_spin_lock(&jiffies_lock);
-		write_seqcount_begin(&jiffies_seq);
+		write_seqlock(&jiffies_lock);
 
 		/* Keep track of the next tick event */
 		tick_next_period = ktime_add(tick_next_period, tick_period);
 
 		do_timer(1);
-		write_seqcount_end(&jiffies_seq);
-		raw_spin_unlock(&jiffies_lock);
+		write_sequnlock(&jiffies_lock);
 		update_wall_time();
 	}
 
@@ -159,9 +157,9 @@ void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
 		ktime_t next;
 
 		do {
-			seq = read_seqcount_begin(&jiffies_seq);
+			seq = read_seqbegin(&jiffies_lock);
 			next = tick_next_period;
-		} while (read_seqcount_retry(&jiffies_seq, seq));
+		} while (read_seqretry(&jiffies_lock, seq));
 
 		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
 

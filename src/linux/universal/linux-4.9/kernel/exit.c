@@ -53,7 +53,6 @@
 #include <linux/writeback.h>
 #include <linux/shm.h>
 #include <linux/kcov.h>
-#include <linux/rcuwait.h>
 
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
@@ -143,7 +142,7 @@ static void __exit_signal(struct task_struct *tsk)
 	 * Do this under ->siglock, we can race with another thread
 	 * doing sigqueue_free() if we have SIGQUEUE_PREALLOC signals.
 	 */
-	flush_task_sigqueue(tsk);
+	flush_sigqueue(&tsk->pending);
 	tsk->sighand = NULL;
 	spin_unlock(&sighand->siglock);
 
@@ -285,35 +284,6 @@ struct task_struct *try_get_task_struct(struct task_struct **ptask)
 
 	return task;
 }
-
-int rcuwait_wake_up(struct rcuwait *w)
-{
-	int ret = 0;
-	struct task_struct *task;
-
-	rcu_read_lock();
-
-	/*
-	 * Order condition vs @task, such that everything prior to the load
-	 * of @task is visible. This is the condition as to why the user called
-	 * rcuwait_wake() in the first place. Pairs with set_current_state()
-	 * barrier (A) in rcuwait_wait_event().
-	 *
-	 *    WAIT                WAKE
-	 *    [S] tsk = current   [S] cond = true
-	 *        MB (A)              MB (B)
-	 *    [L] cond            [L] tsk
-	 */
-	smp_mb(); /* (B) */
-
-	task = rcu_dereference(w->task);
-	if (task)
-		ret = wake_up_process(task);
-	rcu_read_unlock();
-
-	return ret;
-}
-EXPORT_SYMBOL_GPL(rcuwait_wake_up);
 
 /*
  * Determine if a process group is "orphaned", according to the POSIX

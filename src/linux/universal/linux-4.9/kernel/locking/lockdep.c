@@ -658,7 +658,6 @@ look_up_lock_class(struct lockdep_map *lock, unsigned int subclass)
 	struct lockdep_subclass_key *key;
 	struct hlist_head *hash_head;
 	struct lock_class *class;
-	bool is_static = false;
 
 	if (unlikely(subclass >= MAX_LOCKDEP_SUBCLASSES)) {
 		debug_locks_off();
@@ -672,23 +671,10 @@ look_up_lock_class(struct lockdep_map *lock, unsigned int subclass)
 
 	/*
 	 * Static locks do not have their class-keys yet - for them the key
-	 * is the lock object itself. If the lock is in the per cpu area,
-	 * the canonical address of the lock (per cpu offset removed) is
-	 * used.
+	 * is the lock object itself:
 	 */
-	if (unlikely(!lock->key)) {
-		unsigned long can_addr, addr = (unsigned long)lock;
-
-		if (__is_kernel_percpu_address(addr, &can_addr))
-			lock->key = (void *)can_addr;
-		else if (__is_module_percpu_address(addr, &can_addr))
-			lock->key = (void *)can_addr;
-		else if (static_obj(lock))
-			lock->key = (void *)lock;
-		else
-			return ERR_PTR(-EINVAL);
-		is_static = true;
-	}
+	if (unlikely(!lock->key))
+		lock->key = (void *)lock;
 
 	/*
 	 * NOTE: the class-key must be unique. For dynamic locks, a static
@@ -720,7 +706,7 @@ look_up_lock_class(struct lockdep_map *lock, unsigned int subclass)
 		}
 	}
 
-	return is_static || static_obj(lock->key) ? NULL : ERR_PTR(-EINVAL);
+	return NULL;
 }
 
 /*
@@ -738,18 +724,19 @@ register_lock_class(struct lockdep_map *lock, unsigned int subclass, int force)
 	DEBUG_LOCKS_WARN_ON(!irqs_disabled());
 
 	class = look_up_lock_class(lock, subclass);
-	if (likely(!IS_ERR_OR_NULL(class)))
+	if (likely(class))
 		goto out_set_class_cache;
 
 	/*
 	 * Debug-check: all keys must be persistent!
-	 */
-	if (IS_ERR(class)) {
+ 	 */
+	if (!static_obj(lock->key)) {
 		debug_locks_off();
 		printk("INFO: trying to register non-static key.\n");
 		printk("the code is fine but needs lockdep annotation.\n");
 		printk("turning off the locking correctness validator.\n");
 		dump_stack();
+
 		return NULL;
 	}
 
@@ -3434,7 +3421,7 @@ static int match_held_lock(struct held_lock *hlock, struct lockdep_map *lock)
 		 * Clearly if the lock hasn't been acquired _ever_, we're not
 		 * holding it either, so report failure.
 		 */
-		if (IS_ERR_OR_NULL(class))
+		if (!class)
 			return 0;
 
 		/*
@@ -3716,7 +3703,6 @@ static void check_flags(unsigned long flags)
 		}
 	}
 
-#ifndef CONFIG_PREEMPT_RT_FULL
 	/*
 	 * We dont accurately track softirq state in e.g.
 	 * hardirq contexts (such as on 4KSTACKS), so only
@@ -3731,7 +3717,6 @@ static void check_flags(unsigned long flags)
 			DEBUG_LOCKS_WARN_ON(!current->softirqs_enabled);
 		}
 	}
-#endif
 
 	if (!debug_locks)
 		print_irqtrace_events(current);
@@ -4188,7 +4173,7 @@ void lockdep_reset_lock(struct lockdep_map *lock)
 		 * If the class exists we look it up and zap it:
 		 */
 		class = look_up_lock_class(lock, j);
-		if (!IS_ERR_OR_NULL(class))
+		if (class)
 			zap_class(class);
 	}
 	/*

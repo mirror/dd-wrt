@@ -218,7 +218,6 @@ static __always_inline void pagefault_disabled_dec(void)
  */
 static inline void pagefault_disable(void)
 {
-	migrate_disable();
 	pagefault_disabled_inc();
 	/*
 	 * make sure to have issued the store before a pagefault
@@ -235,7 +234,6 @@ static inline void pagefault_enable(void)
 	 */
 	barrier();
 	pagefault_disabled_dec();
-	migrate_enable();
 }
 
 /*

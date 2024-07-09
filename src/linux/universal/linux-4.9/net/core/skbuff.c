@@ -65,7 +65,6 @@
 #include <linux/prefetch.h>
 #include <linux/if.h>
 #include <linux/if_vlan.h>
-#include <linux/locallock.h>
 
 #include <net/protocol.h>
 #include <net/dst.h>
@@ -452,8 +451,6 @@ struct napi_alloc_cache {
 
 static DEFINE_PER_CPU(struct page_frag_cache, netdev_alloc_cache);
 static DEFINE_PER_CPU(struct napi_alloc_cache, napi_alloc_cache);
-static DEFINE_LOCAL_IRQ_LOCK(netdev_alloc_lock);
-static DEFINE_LOCAL_IRQ_LOCK(napi_alloc_cache_lock);
 
 static void *__netdev_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
 {
@@ -463,10 +460,10 @@ static void *__netdev_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
 #endif
-	local_lock_irqsave(netdev_alloc_lock, flags);
+	local_irq_save(flags);
 	nc = this_cpu_ptr(&netdev_alloc_cache);
 	data = __alloc_page_frag(nc, fragsz, gfp_mask);
-	local_unlock_irqrestore(netdev_alloc_lock, flags);
+	local_irq_restore(flags);
 	return data;
 }
 
@@ -487,15 +484,11 @@ EXPORT_SYMBOL(netdev_alloc_frag);
 
 static void *__napi_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
 {
-	struct napi_alloc_cache *nc;
-	void *data;
+	struct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
 #endif
-	nc = &get_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
-	data = __alloc_page_frag(&nc->page, fragsz, gfp_mask);
-	put_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
-	return data;
+	return __alloc_page_frag(&nc->page, fragsz, gfp_mask);
 }
 
 void *napi_alloc_frag(unsigned int fragsz)
@@ -552,13 +545,13 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
 		gfp_mask |= __GFP_MEMALLOC;
 
 
-	local_lock_irqsave(netdev_alloc_lock, flags);
+	local_irq_save(flags);
 
 	nc = this_cpu_ptr(&netdev_alloc_cache);
 	data = __alloc_page_frag(nc, len, gfp_mask);
 	pfmemalloc = nc->pfmemalloc;
 
-	local_unlock_irqrestore(netdev_alloc_lock, flags);
+	local_irq_restore(flags);
 
 	if (unlikely(!data))
 		return NULL;
@@ -602,7 +595,6 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
 	struct napi_alloc_cache *nc;
 	struct sk_buff *skb;
 	void *data;
-	bool pfmemalloc;
 
 #ifdef CONFIG_ARCH_IXP4XX 
 	gfp_mask |= GFP_DMA;
@@ -629,10 +621,7 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
 	if (sk_memalloc_socks())
 		gfp_mask |= __GFP_MEMALLOC;
 
-	nc = &get_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 	data = __alloc_page_frag(&nc->page, len, gfp_mask);
-	pfmemalloc = nc->page.pfmemalloc;
-	put_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 	if (unlikely(!data))
 		return NULL;
 
@@ -643,7 +632,7 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
 	}
 
 	/* use OR instead of assignment to avoid clearing of bits in mask */
-	if (pfmemalloc)
+	if (nc->page.pfmemalloc)
 		skb->pfmemalloc = 1;
 	skb->head_frag = 1;
 
@@ -957,26 +946,23 @@ EXPORT_SYMBOL(consume_skb);
 
 void __kfree_skb_flush(void)
 {
-	struct napi_alloc_cache *nc;
+	struct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);
 
-	nc = &get_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 	/* flush skb_cache if containing objects */
 	if (nc->skb_count) {
 		kmem_cache_free_bulk(skbuff_head_cache, nc->skb_count,
 				     nc->skb_cache);
 		nc->skb_count = 0;
 	}
-	put_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 }
 
 static inline void _kfree_skb_defer(struct sk_buff *skb)
 {
-	struct napi_alloc_cache *nc;
+	struct napi_alloc_cache *nc = this_cpu_ptr(&napi_alloc_cache);
 
 	/* drop skb->head and call any destructors for packet */
 	skb_release_all(skb);
 
-	nc = &get_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 	/* record skb to CPU local list */
 	nc->skb_cache[nc->skb_count++] = skb;
 
@@ -991,7 +977,6 @@ static inline void _kfree_skb_defer(struct sk_buff *skb)
 				     nc->skb_cache);
 		nc->skb_count = 0;
 	}
-	put_locked_var(napi_alloc_cache_lock, napi_alloc_cache);
 }
 void __kfree_skb_defer(struct sk_buff *skb)
 {

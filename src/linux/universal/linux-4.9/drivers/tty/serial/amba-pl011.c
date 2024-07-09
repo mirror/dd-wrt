@@ -2195,19 +2195,13 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
 
 	clk_enable(uap->clk);
 
-	/*
-	 * local_irq_save(flags);
-	 *
-	 * This local_irq_save() is nonsense. If we come in via sysrq
-	 * handling then interrupts are already disabled. Aside of
-	 * that the port.sysrq check is racy on SMP regardless.
-	*/
+	local_irq_save(flags);
 	if (uap->port.sysrq)
 		locked = 0;
 	else if (oops_in_progress)
-		locked = spin_trylock_irqsave(&uap->port.lock, flags);
+		locked = spin_trylock(&uap->port.lock);
 	else
-		spin_lock_irqsave(&uap->port.lock, flags);
+		spin_lock(&uap->port.lock);
 
 	/*
 	 *	First save the CR then disable the interrupts
@@ -2231,7 +2225,8 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
 		pl011_write(old_cr, uap, REG_CR);
 
 	if (locked)
-		spin_unlock_irqrestore(&uap->port.lock, flags);
+		spin_unlock(&uap->port.lock);
+	local_irq_restore(flags);
 
 	clk_disable(uap->clk);
 }

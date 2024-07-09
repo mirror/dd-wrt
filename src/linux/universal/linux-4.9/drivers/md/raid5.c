@@ -428,7 +428,7 @@ void raid5_release_stripe(struct stripe_head *sh)
 		md_wakeup_thread(conf->mddev->thread);
 	return;
 slow_path:
-	local_irq_save_nort(flags);
+	local_irq_save(flags);
 	/* we are ok here if STRIPE_ON_RELEASE_LIST is set or not */
 	if (atomic_dec_and_lock(&sh->count, &conf->device_lock)) {
 		INIT_LIST_HEAD(&list);
@@ -437,7 +437,7 @@ slow_path:
 		spin_unlock(&conf->device_lock);
 		release_inactive_stripe_list(conf, &list, hash);
 	}
-	local_irq_restore_nort(flags);
+	local_irq_restore(flags);
 }
 
 static inline void remove_hash(struct stripe_head *sh)
@@ -1934,9 +1934,8 @@ static void raid_run_ops(struct stripe_head *sh, unsigned long ops_request)
 	struct raid5_percpu *percpu;
 	unsigned long cpu;
 
-	cpu = get_cpu_light();
+	cpu = get_cpu();
 	percpu = per_cpu_ptr(conf->percpu, cpu);
-	spin_lock(&percpu->lock);
 	if (test_bit(STRIPE_OP_BIOFILL, &ops_request)) {
 		ops_run_biofill(sh);
 		overlap_clear++;
@@ -1992,8 +1991,7 @@ static void raid_run_ops(struct stripe_head *sh, unsigned long ops_request)
 			if (test_and_clear_bit(R5_Overlap, &dev->flags))
 				wake_up(&sh->raid_conf->wait_for_overlap);
 		}
-	spin_unlock(&percpu->lock);
-	put_cpu_light();
+	put_cpu();
 }
 
 static struct stripe_head *alloc_stripe(struct kmem_cache *sc, gfp_t gfp,
@@ -6438,7 +6436,6 @@ static int raid456_cpu_up_prepare(unsigned int cpu, struct hlist_node *node)
 		       __func__, cpu);
 		return -ENOMEM;
 	}
-	spin_lock_init(&per_cpu_ptr(conf->percpu, cpu)->lock);
 	return 0;
 }
 
@@ -6449,6 +6446,7 @@ static int raid5_alloc_percpu(struct r5conf *conf)
 	conf->percpu = alloc_percpu(struct raid5_percpu);
 	if (!conf->percpu)
 		return -ENOMEM;
+
 	err = cpuhp_state_add_instance(CPUHP_MD_RAID5_PREPARE, &conf->node);
 	if (!err) {
 		conf->scribble_disks = max(conf->raid_disks,

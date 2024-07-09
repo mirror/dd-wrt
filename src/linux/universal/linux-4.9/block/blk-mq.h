@@ -73,12 +73,12 @@ static inline struct blk_mq_ctx *__blk_mq_get_ctx(struct request_queue *q,
  */
 static inline struct blk_mq_ctx *blk_mq_get_ctx(struct request_queue *q)
 {
-	return __blk_mq_get_ctx(q, get_cpu_light());
+	return __blk_mq_get_ctx(q, get_cpu());
 }
 
 static inline void blk_mq_put_ctx(struct blk_mq_ctx *ctx)
 {
-	put_cpu_light();
+	put_cpu();
 }
 
 struct blk_mq_alloc_data {

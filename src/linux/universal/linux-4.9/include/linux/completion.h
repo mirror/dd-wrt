@@ -7,7 +7,8 @@
  * Atomic wait-for-completion handler data structures.
  * See kernel/sched/completion.c for details.
  */
-#include <linux/swait.h>
+
+#include <linux/wait.h>
 
 /*
  * struct completion - structure used to maintain state for a "completion"
@@ -23,11 +24,11 @@
  */
 struct completion {
 	unsigned int done;
-	struct swait_queue_head wait;
+	wait_queue_head_t wait;
 };
 
 #define COMPLETION_INITIALIZER(work) \
-	{ 0, __SWAIT_QUEUE_HEAD_INITIALIZER((work).wait) }
+	{ 0, __WAIT_QUEUE_HEAD_INITIALIZER((work).wait) }
 
 #define COMPLETION_INITIALIZER_ONSTACK(work) \
 	({ init_completion(&work); work; })
@@ -72,7 +73,7 @@ struct completion {
 static inline void init_completion(struct completion *x)
 {
 	x->done = 0;
-	init_swait_queue_head(&x->wait);
+	init_waitqueue_head(&x->wait);
 }
 
 /**
