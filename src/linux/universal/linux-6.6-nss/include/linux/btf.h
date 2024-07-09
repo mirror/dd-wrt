@@ -81,7 +81,7 @@
  * as to avoid issues such as the compiler inlining or eliding either a static
  * kfunc, or a global kfunc in an LTO build.
  */
-#define __bpf_kfunc __used noinline
+#define __bpf_kfunc __used __retain noinline
 
 /*
  * Return the name of the passed struct, if exists, or halt the build if for
