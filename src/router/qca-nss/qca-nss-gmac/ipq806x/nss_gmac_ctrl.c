@@ -1584,6 +1584,11 @@ static struct platform_driver nss_gmac_drv = {
 		  },
 };
 
+int mem_profile; 
+EXPORT_SYMBOL(mem_profile);
+module_param(mem_profile, int, 0);
+MODULE_PARM_DESC(mem_profile, "memprofile 0=1G,1=512M,2=256M");
+
 
 /**
  * @brief Register Linux platform driver.
