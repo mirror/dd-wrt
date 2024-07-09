@@ -1,0 +1,102 @@
+# tutorial:
+# https://packaging.python.org/tutorials/packaging-projects/
+# https://packaging.python.org/guides/supporting-windows-using-appveyor/
+# https://stackoverflow.com/questions/45630032/valueerror-no-pkg-info-in-archive
+
+environment:
+  APP_VERSION: '2.2'
+  # for pypi/twine
+  USER: '__token__'
+  PASS:
+    secure: W0Gy5WrAKN5vEEgBvcbrQREbSq5zi5l3vIUFXB6ueKq9yj6vTLuKGfyR1crLjv9G0r4qABt6ZkObVQ+tSJ/YRcokdTnV1+GEpTxbB/qe0riXO0LeoHKIxwV+oyCtVpNk9c5YmJ3eu7XHjrCLvS1LLuJuSfwylgCQ5kC60fQu8XuqDNdZbMRo0m4v+oAlMuumC1YeGcYEMQbaioz1N7ebwFmOzHoVskVo15LTHwA7s5ERRIWIP0D2z64+02hAKkKzN5d80/oBZd3uDu9d2FFS9mUeyx82KC20GqO9kO9DGWw=
+  matrix:
+    - PYTHON_VER: C:\Python27
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      SETUP_COMPILER_FLAG: --compiler=mingw32
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python35
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python36
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python36-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+    - PYTHON_VER: C:\Python37
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python37-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+    - PYTHON_VER: C:\Python38
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python38-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+    - PYTHON_VER: C:\Python39
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python39-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+    - PYTHON_VER: C:\Python310
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python310-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+    - PYTHON_VER: C:\Python311
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 32
+    - PYTHON_VER: C:\Python311-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      SETUP_COMPILER_FLAG:
+      ARCH_BITS: 64
+
+
+version: '$(APP_VERSION).{build}'
+
+install:
+  - set PATH=%PYTHON_VER%;%PYTHON_VER%\Scripts;%PATH%;C:\msys64\mingw%ARCH_BITS%\bin
+  # We need wheel installed to build wheels
+  - "%PYTHON_VER%\\python.exe -m pip install wheel"
+  - echo "using twine login %USER% %PASS%"
+  - echo %PATH%
+  - cc -v
+
+build_script:
+  - cd miniupnpc
+  - appveyor AddCompilationMessage "Building miniupnpc"
+  - mingw32-make -f Makefile.mingw
+  - appveyor AddCompilationMessage "Building python module"
+  - mingw32-make -f Makefile.mingw pythonmodule PYTHON=%PYTHON_VER%\python
+
+after_build:
+  - 7z a -x!wingenminiupnpcstrings.exe ..\miniupnpc_%ARCH_BITS%b-%APPVEYOR_BUILD_VERSION%.zip *.exe *.dll *.a *.lib
+
+artifacts:
+  - path: miniupnpc*-$(appveyor_build_version).zip
+    name: miniupnpc binaries
+  - path: miniupnpc/dist/miniupnpc-*.whl
+    name: miniupnpc python wheel (self-contained)
+  - path: miniupnpc/dist/miniupnpc-*.egg
+    name: miniupnpc python egg (self-contained)
+
+deploy_script:
+  - appveyor AddCompilationMessage "Deploying to PyPI"
+  - '%PYTHON_VER%\\python.exe -m pip install twine'
+  - '%PYTHON_VER%\\python.exe -m twine upload -u %USER% -p %PASS% --skip-existing dist/*.whl'
