@@ -652,7 +652,7 @@ void start_sysinit(void)
 		insmod("stmmac-platform"); //for debugging purposes compiled as module
 		insmod("dwmac-ipq806x"); //for debugging purposes compiled as module
 	} else {
-		insmod("qca-nss-gmac");
+		eval("insmod", "qca-nss-gmac", "mem_profile=1");
 		insmod("qca-nss-drv-ipq806x");
 		insmod("qca-nss-crypto-ipq806x");
 		insmod("qca-nss-cfi-cryptoapi-ipq806x");

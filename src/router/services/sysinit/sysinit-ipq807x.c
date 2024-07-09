@@ -384,7 +384,12 @@ static void set_memprofile(int cpus, int cores, int profile)
 static void load_nss_ipq60xx(int profile)
 {
 	insmod("qca-ssdk-ipq60xx");
-	insmod("qca-nss-dp-ipq60xx");
+	if (profile == 256)
+		eval("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
+	else if (profile == 512)
+		eval("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1");
+	else
+		eval("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -421,7 +426,13 @@ static void load_nss_ipq60xx(int profile)
 static void load_nss_ipq50xx(int profile)
 {
 	insmod("qca-ssdk-ipq50xx");
-	insmod("qca-nss-dp-ipq50xx");
+
+	if (profile == 256)
+		eval("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
+	else if (profile == 512)
+		eval("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1");
+	else
+		eval("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -456,7 +467,13 @@ static void load_nss_ipq50xx(int profile)
 static void load_nss_ipq807x(int profile)
 {
 	insmod("qca-ssdk-ipq807x");
-	insmod("qca-nss-dp-ipq807x");
+	if (profile == 256)
+		eval("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
+	else if (profile == 512)
+		eval("insmod", "qca-nss-dp-ipq807x", "mem_profile=1");
+	else
+		eval("insmod", "qca-nss-dp-ipq807x", "mem_profile=0");
+
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("udp_tunnel");
@@ -723,9 +740,10 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
-		sysprintf("insmod mac80211 nss_redirect=1");
+		eval("insmod", "mac80211", "nss_redirect=1");
 		insmod("qmi_helpers");
-		eval("insmod", "ath11k","nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
+		eval("insmod", "ath11k",
+		     "nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		break;
