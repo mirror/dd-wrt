@@ -24,13 +24,8 @@
 /*
  * Maximum number of accelerated IPv4 or IPv6 connections
  */
-#if defined(SFE_MEM_PROFILE_LOW)
-#define SFE_MAX_CONNECTION_NUM 512
-#elif defined(SFE_MEM_PROFILE_MEDIUM)
-#define SFE_MAX_CONNECTION_NUM 2048
-#else
-#define SFE_MAX_CONNECTION_NUM 4096
-#endif
+ 
+extern unsigned int SFE_MAX_CONNECTION_NUM;
 
 /*
  * TSO Maximum segment size. On IPQ53xx and IPQ95xx EDMA, TSO can support max 32 segments.

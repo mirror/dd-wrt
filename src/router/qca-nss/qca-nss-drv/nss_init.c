@@ -599,6 +599,16 @@ static struct ctl_table *nss_clock_table;
 static struct ctl_table *nss_skb_reuse_tabl;
 static struct ctl_table *nss_general_tabl;
 
+unsigned int NSS_DEFAULT_NUM_CONN;
+unsigned int NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6;
+
+
+extern int max_ipv4_conn; // NSS_DEFAULT_NUM_CONN;
+
+extern int max_ipv6_conn; // NSS_DEFAULT_NUM_CONN;
+extern int nss_ipv6_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
+extern int nss_ipv4_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
+
 /*
  * nss_init()
  *	Registers nss driver
@@ -614,6 +624,28 @@ static int __init nss_init(void)
 	struct device_node *cmn = NULL;
 #endif
 
+
+	if (mem_profile==2) {
+	NSS_DEFAULT_NUM_CONN=512;
+#if defined (NSS_DRV_IPV6_ENABLE)
+	NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6=1024;		/* MAX Connection shared between IPv4 and IPv6 for low memory profile */
+#else
+	NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6=512;		/* MAX Connection for IPv4 for low memory profile */
+#endif
+	}else if (mem_profile==1) {
+	NSS_DEFAULT_NUM_CONN=2048;
+	NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6=4096;		/* MAX Connection shared between IPv4 and IPv6 for low memory profile */
+	} else{
+	NSS_DEFAULT_NUM_CONN=4096;
+	NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6=8192;		/* MAX Connection shared between IPv4 and IPv6 for low memory profile */
+	}
+	if (!max_ipv4_conn)
+	    max_ipv4_conn = NSS_DEFAULT_NUM_CONN;
+	if (!max_ipv6_conn)
+	    max_ipv6_conn = NSS_DEFAULT_NUM_CONN;
+
+	nss_ipv6_conn_cfg = NSS_DEFAULT_NUM_CONN;
+	nss_ipv4_conn_cfg = NSS_DEFAULT_NUM_CONN;
 #if defined(NSS_DRV_POINT_OFFLOAD)
 	pof = of_find_node_by_name(NULL, "reg_update");
 	if ((!pof) || (!of_property_read_bool(pof, "ubi_core_enable"))) {
@@ -653,11 +685,11 @@ nss_info("Init NSS driver");
 #ifdef NSS_DATA_PLANE_GENERIC_SUPPORT
 		nss_top_main.data_plane_ops = &nss_data_plane_ops;
 #endif
-#if defined(NSS_MEM_PROFILE_LOW)
+	if (mem_profile==2) {
 		nss_top_main.num_nss = 1;
-#else
+	} else {
 		nss_top_main.num_nss = 2;
-#endif
+	}
 	}
 #endif
 #if defined(NSS_HAL_IPQ60XX_SUPPORT)

@@ -43,13 +43,7 @@
 /*
  * TODO - Make this a tunable parameter using module-param.
  */
-#if defined(NSS_DP_MEM_PROFILE_LOW)
-#define EDMA_RX_RING_SIZE		512
-#elif defined(NSS_DP_MEM_PROFILE_MEDIUM)
-#define EDMA_RX_RING_SIZE		1024
-#else
-#define EDMA_RX_RING_SIZE		4096
-#endif
+extern unsigned int EDMA_RX_RING_SIZE;
 
 #define EDMA_RX_RING_SIZE_MASK		(EDMA_RX_RING_SIZE - 1)
 #define EDMA_RX_RING_ID_MASK		0x1F

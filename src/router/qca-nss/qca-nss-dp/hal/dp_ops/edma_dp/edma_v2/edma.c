@@ -265,12 +265,12 @@ void edma_cleanup(bool is_dp_override)
 	 * Clean the debugfs entries for the EDMA
 	 */
 	edma_debugfs_exit();
-#if !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==0) {
 	/*
 	 * Unregister PTP service code callback function
 	 */
 	ppe_drv_sc_unregister_cb(PPE_DRV_SC_PTP);
-#endif
+	}
 	/*
 	 * Unregister mirror core selection API callback with PPE driver
 	 */
@@ -560,10 +560,10 @@ static int edma_of_get_pdata(struct resource *edma_res)
 	 * Get page_mode of RXFILL rings
 	 * TODO: Move this setting to DP common node
 	 */
-#if !defined(NSS_DP_MEM_PROFILE_LOW) && !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==0) {
 	of_property_read_u32(edma_gbl_ctx.device_node, "qcom,rx-page-mode",
 					&edma_gbl_ctx.rx_page_mode);
-#endif
+	}
 
 	/*
 	 * Get id of first RXDESC ring
@@ -1294,12 +1294,12 @@ int edma_init(void)
 		ret = -EFAULT;
 		goto edma_hw_init_fail;
 	}
-#if !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (!mem_profile)
 	/*
 	 * Register PTP service code callback function
 	 */
 	ppe_drv_sc_register_cb(PPE_DRV_SC_PTP, edma_rx_phy_tstamp_buf, NULL);
-#endif
+	}
 	/*
 	 * Register mirror core selection API callback with PPE driver
 	 */

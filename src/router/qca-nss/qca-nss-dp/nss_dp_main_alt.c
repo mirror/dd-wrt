@@ -52,6 +52,12 @@ struct ipq40xx_mdio_data {
 struct nss_dp_global_ctx dp_global_ctx;
 struct nss_dp_data_plane_ctx dp_global_data_plane_ctx[NSS_DP_MAX_PORTS];
 
+int mem_profile; 
+
+EXPORT_SYMBOL(mem_profile);
+module_param(mem_profile, int, 0);
+MODULE_PARM_DESC(mem_profile, "memprofile 0=1G,1=512M,2=256M");
+
 /* Module params */
 static int page_mode;
 module_param(page_mode, int, 0);
@@ -690,7 +696,7 @@ static int32_t nss_dp_of_get_pdata(struct device_node *np,
 		pr_info("GMAC%d(%px) Invalid MAC@ - using %pM\n", dp_priv->macid,
 						dp_priv, netdev->dev_addr);
 	}
-#if !defined(NSS_DP_MEM_PROFILE_LOW) && !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (!mem_profile) {
 	of_property_read_u32(np, "qcom,rx-page-mode", &dp_priv->rx_page_mode);
 
 	if (overwrite_mode) {
@@ -703,9 +709,9 @@ static int32_t nss_dp_of_get_pdata(struct device_node *np,
 		dp_priv->rx_jumbo_mru = jumbo_mru;
 		pr_info("Jumbo mru is enabled: %d\n", dp_priv->rx_jumbo_mru);
 	}
-#endif
+	}
 
-#if defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==1) {
 	/*
 	 * 512 memory profile supports jumbo mru till 3k.
 	 * For 512 memroy profile, page mode needs to be disabled.
@@ -729,12 +735,12 @@ static int32_t nss_dp_of_get_pdata(struct device_node *np,
 		pr_err("512M profile does not support page mode/jumbo mru\n");
 		return -EFAULT;
 	}
-#elif defined(NSS_DP_MEM_PROFILE_LOW)
+	} else if (mem_profile==2) {
 	if (overwrite_mode || page_mode || jumbo_mru) {
 		pr_err("Low memory profiles does not support page mode/jumbo mru\n");
 		return -EFAULT;
 	}
-#endif
+	}
 
 	dp_priv->ppe_offload_disabled = of_property_read_bool(np, "qcom,ppe-offload-disabled");
 	pr_info("%s: ppe offload disabled: %d for macid %d\n", np->name,
@@ -1094,6 +1100,8 @@ bool nss_dp_nsm_sawf_sc_stats_read(struct nss_dp_hal_nsm_sawf_sc_stats *nsm_stat
 }
 EXPORT_SYMBOL(nss_dp_nsm_sawf_sc_stats_read);
 
+unsigned int EDMA_RX_RING_SIZE;
+unsigned int EDMA_TX_RING_SIZE;
 /*
  * nss_dp_init()
  */
@@ -1102,6 +1110,18 @@ int __init nss_dp_init(void)
 	int ret, i;
 
 	dp_global_ctx.common_init_done = false;
+	if (mem_profile==2)
+		EDMA_RX_RING_SIZE = 512;
+	else if (mem_profile==1)
+		EDMA_RX_RING_SIZE = 1024;
+	else
+		EDMA_RX_RING_SIZE = 4096;
+	
+	if (mem_profile==0)
+		EDMA_TX_RING_SIZE = 4096;
+	else
+		EDMA_TX_RING_SIZE = 1024;
+
 
 #if defined(NSS_DP_MAC_POLL_SUPPORT)
 	dp_global_ctx.enable_polling_task = false;
@@ -1124,20 +1144,20 @@ int __init nss_dp_init(void)
 	 * Get the module params.
 	 * We do not support page_mode or jumbo_mru on low memory profiles.
 	 */
-#if !defined(NSS_DP_MEM_PROFILE_LOW) && !defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	if (mem_profile==0) {
 	dp_global_ctx.overwrite_mode = overwrite_mode;
 	dp_global_ctx.page_mode = page_mode;
 	dp_global_ctx.jumbo_mru = jumbo_mru;
-#elif defined(NSS_DP_MEM_PROFILE_MEDIUM)
+	} if (mem_profile==1) {
 	dp_global_ctx.jumbo_mru = jumbo_mru;
 	if (overwrite_mode && page_mode) {
 		pr_err("512 memory profiles does not support page mode\n");
 	}
-#else
+	} else {
 	if ((overwrite_mode && page_mode) || jumbo_mru) {
 		pr_err("Low memory profiles does not support page mode/jumbo mru\n");
 	}
-#endif
+	}
 
 	/*
 	 * Configure MHT switch ports to tx ring mapping

@@ -210,6 +210,7 @@
  */
 #define NSS_MAX_SERVICE_CODE 256
 
+extern int mem_profile;
 /*
  * Interrupt cause processing weights
  */

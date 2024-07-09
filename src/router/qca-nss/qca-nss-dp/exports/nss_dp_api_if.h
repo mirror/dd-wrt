@@ -62,6 +62,10 @@
 
 #define MAX_MHT_PORTS	4
 
+
+extern int mem_profile; 
+
+
 /**
  * nss_dp_eth_netdev_info
  * 	Structure for retrieving the eth info

@@ -47,7 +47,7 @@ struct nss_ipv6_conn_table_info {
 	unsigned long cme_mem;		/* Start address for connection match entry table */
 } nss_ipv6_ct_info;
 
-int nss_ipv6_conn_cfg = NSS_DEFAULT_NUM_CONN;
+int nss_ipv6_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 int nss_ipv6_accel_mode_cfg __read_mostly = 1;
 
 static struct nss_dscp_map_entry mapping[NSS_DSCP_MAP_ARRAY_SIZE];

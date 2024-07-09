@@ -1752,6 +1752,7 @@ int sfe_ipv4_create_mc_dest(struct sfe_ipv4_connection_match *cm, struct sfe_ipv
 	return 0;
 }
 
+extern int mem_profile;
 /*
  * sfe_ipv4_create_mc_rule()
  *	Create a multicast forwarding rule.
@@ -1815,8 +1816,7 @@ int sfe_ipv4_create_mc_rule(struct sfe_ipv4_mc_rule_create_msg *msg)
 			if_min_mtu = if_rule->if_mtu;
 		}
 	}
-
-#if (defined(SFE_MEM_PROFILE_MEDIUM) || defined(SFE_MEM_PROFILE_LOW))
+	if (mem_profile!=0) {
 	if (si->num_connections  >= sfe_ipv4_max_conn_count()) {
 		this_cpu_inc(si->stats_pcpu->connection_create_requests_overflow64);
 		dev_put(src_dev);
@@ -1825,7 +1825,7 @@ int sfe_ipv4_create_mc_rule(struct sfe_ipv4_mc_rule_create_msg *msg)
 		}
 		return -EPERM;
 	}
-#endif
+	}
 
 	/*
 	 * Allocate the various connection tracking objects.

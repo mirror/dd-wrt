@@ -73,11 +73,11 @@ static atomic_t max_reuse = ATOMIC_INIT(PAGE_SIZE);
 
 #endif /* NSS_SKB_REUSE_SUPPORT */
 
-static int max_ipv4_conn = NSS_DEFAULT_NUM_CONN;
+int max_ipv4_conn = 0; // NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv4_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections");
 
-static int max_ipv6_conn = NSS_DEFAULT_NUM_CONN;
+int max_ipv6_conn = 0; // NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv6_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv6_conn, "Max number of IPv6 connections");
 
@@ -1808,8 +1808,7 @@ static void nss_core_init_nss(struct nss_ctx_instance *nss_ctx, struct nss_if_me
 		nss_ipv6_conn_cfg = max_ipv6_conn;
 		nss_ipv6_update_conn_count(max_ipv6_conn);
 #endif
-
-#ifdef NSS_MEM_PROFILE_LOW
+		if (mem_profile==2) {
 		/*
 		 * For low memory profiles, restrict the number of empty buffer pool
 		 * size to NSS_LOW_MEM_EMPTY_POOL_BUF_SZ. Overwrite the default number
@@ -1819,7 +1818,7 @@ static void nss_core_init_nss(struct nss_ctx_instance *nss_ctx, struct nss_if_me
 		if (ret != NSS_TX_SUCCESS) {
 			nss_warning("%px: Failed to update empty buffer pool config\n", nss_ctx);
 		}
-#endif
+		}
 
 #ifdef NSS_DRV_SHAPER_ENABLE
 		ret = nss_n2h_cfg_qos_mem_size(nss_ctx, qos_mem_size);

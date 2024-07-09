@@ -39,11 +39,7 @@
 #endif
 
 #define EDMA_TX_MAX_PRIORITY_LEVEL	1
-#if defined(NSS_DP_MEM_PROFILE_LOW) || defined(NSS_DP_MEM_PROFILE_MEDIUM)
-#define EDMA_TX_RING_SIZE		1024
-#else
-#define EDMA_TX_RING_SIZE		2048
-#endif
+extern unsigned int EDMA_TX_RING_SIZE;
 
 #define EDMA_TX_RING_SIZE_MASK		(EDMA_TX_RING_SIZE - 1)
 
