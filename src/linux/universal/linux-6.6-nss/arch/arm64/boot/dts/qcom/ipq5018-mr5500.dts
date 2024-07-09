@@ -70,33 +70,36 @@
 	reserved-memory {
 		q6_region: wcnss@4b000000 {
 			no-map;
-			reg = <0x0 0x4b000000 0x0 0x01800000>;
+			reg = <0x0 0x4b000000 0x0 0x01700000>;
 		};
 
-		m3_dump@4c800000 {
+		m3_dump@4c700000 {
+			no-map;
+			reg = <0x0 0x4c700000 0x0 0x100000>;
+		};
+
+		q6_etr_region:q6_etr_dump@4c800000 {
 			no-map;
 			reg = <0x0 0x4c800000 0x0 0x100000>;
 		};
 
-		q6_etr_region:q6_etr_dump@4c900000 {
+		q6_caldb_region:q6_caldb_region@4c900000 {
 			no-map;
-			reg = <0x0 0x4c900000 0x0 0x100000>;
+			reg = <0x0 0x4c900000 0x0 0x200000>;
 		};
 
-		q6_caldb_region:q6_caldb_region@4cd00000 {
+		qcn9000_pcie0: qcn9000_pcie0@4cb00000 {
 			no-map;
-			reg = <0x0 0x4ca00000 0x0 0x200000>;
+			reg = <0x0 0x4Cb00000 0x0 0x01a00000>;
 		};
 		
-		mhi_region1: dma_pool1@4ea00000 {
+		mhi_region1: dma_pool1@4e500000 {
 			compatible = "shared-dma-pool";
 			no-map;
-			reg = <0x0 0x4ea00000 0x0 0x01000000>;
+			reg = <0x0 0x4e500000 0x0 0x00500000>;
 		};
 
 	};
-
-
 };
 
 
@@ -719,6 +722,16 @@
 			/* QCN9074: ath11k lacks DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
+			memory-region = <&mhi_region1>;
+			hremote_node = <&qcn9000_pcie0>;
+
+/*			qcom,m3-dump-addr = <0x4d700000>;*/
+/*			base-addr = <0x4CB00000>;
+			m3-dump-addr = <0x4DF00000>;
+			etr-addr = <0x4E000000>;
+			qcom,caldb-addr = <0x4E100000>;
+			pageable-addr = <0x4E900000>;
+			qcom,tgt-mem-mode = <0x1>; */
 
 			qcom,ath11k-calibration-variant = "Linksys-MX5500";
 		};
@@ -772,9 +785,9 @@
 	qcom,ath11k-calibration-variant = "Linksys-MX5500";
 	qcom,ath11k-fw-memory-mode = <1>;
 	qcom,bdf-addr = <0x4ba00000>;
-	qcom,caldb-addr = <0x4ca00000>;
+	qcom,caldb-addr = <0x4c900000>;
 	qcom,caldb-size = <0x200000>;
-	qcom,m3-dump-addr = <0x4c800000>;
+/*	qcom,m3-dump-addr = <0x4c700000>; */
 
 	status = "okay";
 };

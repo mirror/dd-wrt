@@ -70,33 +70,36 @@
 	reserved-memory {
 		q6_region: wcnss@4b000000 {
 			no-map;
-			reg = <0x0 0x4b000000 0x0 0x01800000>;
+			reg = <0x0 0x4b000000 0x0 0x01700000>;
 		};
 
-		m3_dump@4c800000 {
+		m3_dump@4c700000 {
+			no-map;
+			reg = <0x0 0x4c700000 0x0 0x100000>;
+		};
+
+		q6_etr_region:q6_etr_dump@4c800000 {
 			no-map;
 			reg = <0x0 0x4c800000 0x0 0x100000>;
 		};
 
-		q6_etr_region:q6_etr_dump@4c900000 {
+		q6_caldb_region:q6_caldb_region@4c900000 {
 			no-map;
-			reg = <0x0 0x4c900000 0x0 0x100000>;
+			reg = <0x0 0x4c900000 0x0 0x200000>;
 		};
 
-		q6_caldb_region:q6_caldb_region@4cd00000 {
+		qcn9000_pcie0: qcn9000_pcie0@4cb00000 {
 			no-map;
-			reg = <0x0 0x4ca00000 0x0 0x200000>;
+			reg = <0x0 0x4Cb00000 0x0 0x01a00000>;
 		};
 		
-		mhi_region1: dma_pool1@4ea00000 {
+		mhi_region1: dma_pool1@4e500000 {
 			compatible = "shared-dma-pool";
 			no-map;
-			reg = <0x0 0x4ea00000 0x0 0x01000000>;
+			reg = <0x0 0x4e500000 0x0 0x00500000>;
 		};
 
 	};
-
-
 };
 
 
@@ -273,10 +276,6 @@
 						port_id = <4>;
 						phy_address = <3>;
 					};
-					port@4 {
-						port_id = <5>;
-						phy_address = <3>;
-					};
 				};
 			};
 		};
@@ -285,24 +284,22 @@
 			status = "disabled";
 		};
 
-
-/*		dp1 {
+/*		dp1: dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
+			qcom,id = <1>;
+
+			reg = <0x39C00000 0x10000>;
+			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
 			clock-names = "nss-snoc-gmac-axi-clk";
 
-			qcom,id = <1>;
-			reg = <0x39C00000 0x10000>;
-			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
-
 			qcom,mactype = <2>;
-			qcom,link-poll = <1>;
-			qcom,phy-mdio-addr = <7>;
-			mdio-bus = <&mdio0>;
 			local-mac-address = [000000000000];
-			phy-mode = "sgmii";
-		}; */
+			phy-mode = "internal";
+			phy-handle = <&ge_phy>;
+
+		};*/
 
 		dp1: dp1 {
 			device_type = "network";
@@ -332,9 +329,13 @@
 
 &mdio0 {
 			status = "ok";
-			ethernet-phy@0 {
+			ge_phy: ethernet-phy@0 {
 				reg = <7>;
 			};
+};
+
+&ge_phy {
+	status = "okay";
 };
 
 &mdio1 {
@@ -362,7 +363,6 @@
 			qca8337_4: ethernet-phy@4 {
 				reg = <4>;
 			};
-
 
 	phy6: ethernet-phy@6 {
 		reg = <6>;
@@ -396,7 +396,7 @@
 				reg = <1>;
 				label = "lan1";
 				phy-handle = <&qca8337_0>;
-			}; */
+			};*/
 			
 			port@2 {
 				reg = <2>;
@@ -718,6 +718,16 @@
 			/* QCN9074: ath11k lacks DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
+			memory-region = <&mhi_region1>;
+			hremote_node = <&qcn9000_pcie0>;
+
+/*			qcom,m3-dump-addr = <0x4d700000>;*/
+/*			base-addr = <0x4CB00000>;
+			m3-dump-addr = <0x4DF00000>;
+			etr-addr = <0x4E000000>;
+			qcom,caldb-addr = <0x4E100000>;
+			pageable-addr = <0x4E900000>;
+			qcom,tgt-mem-mode = <0x1>; */
 
 			qcom,ath11k-calibration-variant = "Linksys-MX5500";
 		};
@@ -771,9 +781,9 @@
 	qcom,ath11k-calibration-variant = "Linksys-MX5500";
 	qcom,ath11k-fw-memory-mode = <1>;
 	qcom,bdf-addr = <0x4ba00000>;
-	qcom,caldb-addr = <0x4ca00000>;
+	qcom,caldb-addr = <0x4c900000>;
 	qcom,caldb-size = <0x200000>;
-	qcom,m3-dump-addr = <0x4c800000>;
+/*	qcom,m3-dump-addr = <0x4c700000>; */
 
 	status = "okay";
 };

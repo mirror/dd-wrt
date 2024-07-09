@@ -84,6 +84,12 @@
 			qcom,sdi-enabled;
 			qcom,dload-mode = <&tcsr 0x6100>;
 		};
+
+		qfprom_sec {
+			compatible = "qcom,qfprom-sec";
+			img-addr = <0x4a800000>;
+			img-size = <0x400000>;
+		};
 	};
 
 	memory@40000000 {
@@ -613,10 +619,10 @@
 		intc: interrupt-controller@b000000 {
 			compatible = "qcom,msm-qgic2";
 			reg = <0x0b000000 0x1000>,  /* GICD */
-			      <0x0b002000 0x2000>,  /* GICC */
+			      <0x0b002000 0x1000>,  /* GICC */
 			      <0x0b001000 0x1000>,  /* GICH */
-			      <0x0b004000 0x2000>;  /* GICV */
-			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+			      <0x0b004000 0x1000>;  /* GICV */
+			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
 			#address-cells = <1>;
@@ -625,13 +631,13 @@
 
 			v2m0: v2m@0 {
 				compatible = "arm,gic-v2m-frame";
-				reg = <0x00000000 0xff8>;
+				reg = <0x00000000 0xffd>;
 				msi-controller;
 			};
 
 			v2m1: v2m@1000 {
 				compatible = "arm,gic-v2m-frame";
-				reg = <0x00001000 0xff8>;
+				reg = <0x00001000 0xffd>;
 				msi-controller;
 			};
 		};
