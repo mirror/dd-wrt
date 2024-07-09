@@ -41,7 +41,7 @@
 
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_LINUX
+#ifdef GTEST_OS_LINUX
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -57,12 +57,14 @@
 #include <string.h>
 
 #include <cstdint>
+#include <functional>
 #include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -185,14 +187,6 @@ GTEST_API_ std::string CreateUnifiedDiff(const std::vector<std::string>& left,
 
 }  // namespace edit_distance
 
-// Calculate the diff between 'left' and 'right' and return it in unified diff
-// format.
-// If not null, stores in 'total_line_count' the total number of lines found
-// in left + right.
-GTEST_API_ std::string DiffStrings(const std::string& left,
-                                   const std::string& right,
-                                   size_t* total_line_count);
-
 // Constructs and returns the message for an equality assertion
 // (e.g. ASSERT_EQ, EXPECT_STREQ, etc) failure.
 //
@@ -313,9 +307,6 @@ class FloatingPoint {
   // Returns the floating-point number that represent positive infinity.
   static RawType Infinity() { return ReinterpretBits(kExponentBitMask); }
 
-  // Returns the maximum representable finite floating-point number.
-  static RawType Max();
-
   // Non-static methods
 
   // Returns the bits that represents this number.
@@ -396,17 +387,6 @@ class FloatingPoint {
   FloatingPointUnion u_;
 };
 
-// We cannot use std::numeric_limits<T>::max() as it clashes with the max()
-// macro defined by <windows.h>.
-template <>
-inline float FloatingPoint<float>::Max() {
-  return FLT_MAX;
-}
-template <>
-inline double FloatingPoint<double>::Max() {
-  return DBL_MAX;
-}
-
 // Typedefs the instances of the FloatingPoint template class that we
 // care to use.
 typedef FloatingPoint<float> Float;
@@ -455,7 +435,7 @@ GTEST_API_ TypeId GetTestTypeId();
 // of a Test object.
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   // Creates a test instance to run. The instance is both created and destroyed
   // within TestInfoImpl::Run()
@@ -465,10 +445,11 @@ class TestFactoryBase {
   TestFactoryBase() {}
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestFactoryBase);
+  TestFactoryBase(const TestFactoryBase&) = delete;
+  TestFactoryBase& operator=(const TestFactoryBase&) = delete;
 };
 
-// This class provides implementation of TeastFactoryBase interface.
+// This class provides implementation of TestFactoryBase interface.
 // It is used in TEST and TEST_F macros.
 template <class TestClass>
 class TestFactoryImpl : public TestFactoryBase {
@@ -476,7 +457,7 @@ class TestFactoryImpl : public TestFactoryBase {
   Test* CreateTest() override { return new TestClass; }
 };
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 // Predicate-formatters for implementing the HRESULT checking macros
 // {ASSERT|EXPECT}_HRESULT_{SUCCEEDED|FAILED}
@@ -638,7 +619,7 @@ class GTEST_API_ TypedTestSuitePState {
                                         const char* registered_tests);
 
  private:
-  typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
+  typedef ::std::map<std::string, CodeLocation, std::less<>> RegisteredTestsMap;
 
   bool registered_;
   RegisteredTestsMap registered_tests_;
@@ -836,8 +817,7 @@ class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
 // For example, if Foo() calls Bar(), which in turn calls
 // GetCurrentOsStackTraceExceptTop(..., 1), Foo() will be included in
 // the trace but Bar() and GetCurrentOsStackTraceExceptTop() won't.
-GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(UnitTest* unit_test,
-                                                       int skip_count);
+GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(int skip_count);
 
 // Helpers for suppressing warnings on unreachable code or constant
 // condition.
@@ -886,7 +866,8 @@ class GTEST_API_ Random {
 
  private:
   uint32_t state_;
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(Random);
+  Random(const Random&) = delete;
+  Random& operator=(const Random&) = delete;
 };
 
 // Turns const U&, U&, const U, and U all into U.
@@ -919,8 +900,10 @@ class HasDebugStringAndShortDebugString {
       HasDebugStringType::value && HasShortDebugStringType::value;
 };
 
+#ifdef GTEST_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 template <typename T>
 constexpr bool HasDebugStringAndShortDebugString<T>::value;
+#endif
 
 // When the compiler sees expression IsContainerTest<C>(0), if C is an
 // STL-style container class, the first overload of IsContainerTest
@@ -1514,19 +1497,20 @@ class NeverThrown {
              gtest_ar_, text, #actual, #expected)                     \
              .c_str())
 
-#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)                          \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
-  if (::testing::internal::AlwaysTrue()) {                                     \
-    ::testing::internal::HasNewFatalFailureHelper gtest_fatal_failure_checker; \
-    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
-    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {                 \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__);            \
-    }                                                                          \
-  } else                                                                       \
-    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)                    \
-        : fail("Expected: " #statement                                         \
-               " doesn't generate new fatal "                                  \
-               "failures in the current thread.\n"                             \
+#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)               \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                     \
+  if (::testing::internal::AlwaysTrue()) {                          \
+    const ::testing::internal::HasNewFatalFailureHelper             \
+        gtest_fatal_failure_checker;                                \
+    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);      \
+    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {      \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__); \
+    }                                                               \
+  } else /* NOLINT */                                               \
+    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)         \
+        : fail("Expected: " #statement                              \
+               " doesn't generate new fatal "                       \
+               "failures in the current thread.\n"                  \
                "  Actual: it does.")
 
 // Expands to the name of the class that implements the given test.
@@ -1534,37 +1518,43 @@ class NeverThrown {
   test_suite_name##_##test_name##_Test
 
 // Helper macro for defining tests.
-#define GTEST_TEST_(test_suite_name, test_name, parent_class, parent_id)      \
-  static_assert(sizeof(GTEST_STRINGIFY_(test_suite_name)) > 1,                \
-                "test_suite_name must not be empty");                         \
-  static_assert(sizeof(GTEST_STRINGIFY_(test_name)) > 1,                      \
-                "test_name must not be empty");                               \
-  class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                    \
-      : public parent_class {                                                 \
-   public:                                                                    \
-    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() = default;           \
-    ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default; \
-    GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
-                                                           test_name));       \
-    GTEST_DISALLOW_MOVE_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
-                                                           test_name));       \
-                                                                              \
-   private:                                                                   \
-    void TestBody() override;                                                 \
-    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
-  };                                                                          \
-                                                                              \
-  ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,          \
-                                                    test_name)::test_info_ =  \
-      ::testing::internal::MakeAndRegisterTestInfo(                           \
-          #test_suite_name, #test_name, nullptr, nullptr,                     \
-          ::testing::internal::CodeLocation(__FILE__, __LINE__), (parent_id), \
-          ::testing::internal::SuiteApiResolver<                              \
-              parent_class>::GetSetUpCaseOrSuite(__FILE__, __LINE__),         \
-          ::testing::internal::SuiteApiResolver<                              \
-              parent_class>::GetTearDownCaseOrSuite(__FILE__, __LINE__),      \
-          new ::testing::internal::TestFactoryImpl<GTEST_TEST_CLASS_NAME_(    \
-              test_suite_name, test_name)>);                                  \
+#define GTEST_TEST_(test_suite_name, test_name, parent_class, parent_id)       \
+  static_assert(sizeof(GTEST_STRINGIFY_(test_suite_name)) > 1,                 \
+                "test_suite_name must not be empty");                          \
+  static_assert(sizeof(GTEST_STRINGIFY_(test_name)) > 1,                       \
+                "test_name must not be empty");                                \
+  class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                     \
+      : public parent_class {                                                  \
+   public:                                                                     \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() = default;            \
+    ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default;  \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                         \
+    (const GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) &) = delete;     \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) & operator=(            \
+        const GTEST_TEST_CLASS_NAME_(test_suite_name,                          \
+                                     test_name) &) = delete; /* NOLINT */      \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                         \
+    (GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) &&) noexcept = delete; \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) & operator=(            \
+        GTEST_TEST_CLASS_NAME_(test_suite_name,                                \
+                               test_name) &&) noexcept = delete; /* NOLINT */  \
+                                                                               \
+   private:                                                                    \
+    void TestBody() override;                                                  \
+    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;      \
+  };                                                                           \
+                                                                               \
+  ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,           \
+                                                    test_name)::test_info_ =   \
+      ::testing::internal::MakeAndRegisterTestInfo(                            \
+          #test_suite_name, #test_name, nullptr, nullptr,                      \
+          ::testing::internal::CodeLocation(__FILE__, __LINE__), (parent_id),  \
+          ::testing::internal::SuiteApiResolver<                               \
+              parent_class>::GetSetUpCaseOrSuite(__FILE__, __LINE__),          \
+          ::testing::internal::SuiteApiResolver<                               \
+              parent_class>::GetTearDownCaseOrSuite(__FILE__, __LINE__),       \
+          new ::testing::internal::TestFactoryImpl<GTEST_TEST_CLASS_NAME_(     \
+              test_suite_name, test_name)>);                                   \
   void GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)::TestBody()
 
 #endif  // GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_INTERNAL_H_

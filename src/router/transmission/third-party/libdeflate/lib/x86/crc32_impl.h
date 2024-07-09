@@ -30,67 +30,128 @@
 
 #include "cpu_features.h"
 
-/* PCLMUL implementation */
-#if HAVE_PCLMUL_INTRIN
-#  define crc32_x86_pclmul	crc32_x86_pclmul
-#  define SUFFIX			 _pclmul
-#  if HAVE_PCLMUL_NATIVE
-#    define ATTRIBUTES
-#  else
-#    define ATTRIBUTES		_target_attribute("pclmul")
-#  endif
-#  define FOLD_PARTIAL_VECS	0
+/*
+ * pshufb(x, shift_tab[len..len+15]) left shifts x by 16-len bytes.
+ * pshufb(x, shift_tab[len+16..len+31]) right shifts x by len bytes.
+ */
+static const u8 MAYBE_UNUSED shift_tab[48] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+};
+
+#if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+/* PCLMULQDQ implementation */
+#  define crc32_x86_pclmulqdq	crc32_x86_pclmulqdq
+#  define SUFFIX			 _pclmulqdq
+#  define ATTRIBUTES		_target_attribute("pclmul")
+#  define VL			16
+#  define USE_SSE4_1		0
+#  define USE_AVX512		0
+#  include "crc32_pclmul_template.h"
+
+/*
+ * PCLMULQDQ/AVX implementation.  Compared to the regular PCLMULQDQ
+ * implementation, this still uses 128-bit vectors, but it has two potential
+ * benefits.  First, simply compiling against the AVX target can improve
+ * performance significantly (e.g. 10100 MB/s to 16700 MB/s on Skylake) without
+ * actually using any AVX intrinsics, probably due to the availability of
+ * non-destructive VEX-encoded instructions.  Second, AVX support implies SSSE3
+ * and SSE4.1 support, and we can use SSSE3 and SSE4.1 intrinsics for efficient
+ * handling of partial blocks.  (We *could* compile a variant with
+ * PCLMULQDQ+SSE4.1 without AVX, but for simplicity we currently don't bother.)
+ */
+#  define crc32_x86_pclmulqdq_avx	crc32_x86_pclmulqdq_avx
+#  define SUFFIX				 _pclmulqdq_avx
+#  define ATTRIBUTES		_target_attribute("pclmul,avx")
+#  define VL			16
+#  define USE_SSE4_1		1
+#  define USE_AVX512		0
 #  include "crc32_pclmul_template.h"
 #endif
 
 /*
- * PCLMUL/AVX implementation.  This implementation has two benefits over the
- * regular PCLMUL one.  First, simply compiling against the AVX target can
- * improve performance significantly (e.g. 10100 MB/s to 16700 MB/s on Skylake)
- * without actually using any AVX intrinsics, probably due to the availability
- * of non-destructive VEX-encoded instructions.  Second, AVX support implies
- * SSSE3 and SSE4.1 support, and we can use SSSE3 and SSE4.1 intrinsics for
- * efficient handling of partial blocks.  (We *could* compile a variant with
- * PCLMUL+SSSE3+SSE4.1 w/o AVX, but for simplicity we don't currently bother.)
+ * VPCLMULQDQ/AVX2 implementation.  This is used on CPUs that have AVX2 and
+ * VPCLMULQDQ but don't have AVX-512, for example Intel Alder Lake.
  *
- * FIXME: with MSVC, this isn't actually compiled with AVX code generation
- * enabled yet.  That would require that this be moved to its own .c file.
+ * Currently this can't be enabled with MSVC because MSVC has a bug where it
+ * incorrectly assumes that VPCLMULQDQ implies AVX-512:
+ * https://developercommunity.visualstudio.com/t/Compiler-incorrectly-assumes-VAES-and-VP/10578785
  */
-#if HAVE_PCLMUL_INTRIN && HAVE_AVX_INTRIN
-#  define crc32_x86_pclmul_avx	crc32_x86_pclmul_avx
-#  define SUFFIX			 _pclmul_avx
-#  if HAVE_PCLMUL_NATIVE && HAVE_AVX_NATIVE
-#    define ATTRIBUTES
-#  else
-#    define ATTRIBUTES		_target_attribute("pclmul,avx")
-#  endif
-#  define FOLD_PARTIAL_VECS	1
+#if GCC_PREREQ(8, 1) || CLANG_PREREQ(6, 0, 10000000)
+#  define crc32_x86_vpclmulqdq_avx2	crc32_x86_vpclmulqdq_avx2
+#  define SUFFIX				 _vpclmulqdq_avx2
+#  define ATTRIBUTES		_target_attribute("vpclmulqdq,pclmul,avx2")
+#  define VL			32
+#  define USE_SSE4_1		1
+#  define USE_AVX512		0
 #  include "crc32_pclmul_template.h"
 #endif
 
+#if GCC_PREREQ(8, 1) || CLANG_PREREQ(6, 0, 10000000) || MSVC_PREREQ(1920)
 /*
- * If the best implementation is statically available, use it unconditionally.
- * Otherwise choose the best implementation at runtime.
+ * VPCLMULQDQ/AVX512 implementation using 256-bit vectors.  This is very similar
+ * to the VPCLMULQDQ/AVX2 implementation but takes advantage of the vpternlog
+ * instruction and more registers.  This is used on CPUs that support AVX-512
+ * but where using 512-bit vectors causes downclocking.  This should also be the
+ * optimal implementation on CPUs that support AVX10/256 but not AVX10/512.
  */
-#if defined(crc32_x86_pclmul_avx) && HAVE_PCLMUL_NATIVE && HAVE_AVX_NATIVE
-#define DEFAULT_IMPL	crc32_x86_pclmul_avx
-#else
+#  define crc32_x86_vpclmulqdq_avx512_vl256  crc32_x86_vpclmulqdq_avx512_vl256
+#  define SUFFIX				      _vpclmulqdq_avx512_vl256
+#  define ATTRIBUTES		_target_attribute("vpclmulqdq,pclmul,avx512bw,avx512vl")
+#  define VL			32
+#  define USE_SSE4_1		1
+#  define USE_AVX512		1
+#  include "crc32_pclmul_template.h"
+
+/*
+ * VPCLMULQDQ/AVX512 implementation using 512-bit vectors.  This is used on CPUs
+ * that have a good AVX-512 implementation including VPCLMULQDQ.  This should
+ * also be the optimal implementation on CPUs that support AVX10/512.
+ */
+#  define crc32_x86_vpclmulqdq_avx512_vl512  crc32_x86_vpclmulqdq_avx512_vl512
+#  define SUFFIX				      _vpclmulqdq_avx512_vl512
+#  define ATTRIBUTES		_target_attribute("vpclmulqdq,pclmul,avx512bw,avx512vl")
+#  define VL			64
+#  define USE_SSE4_1		1
+#  define USE_AVX512		1
+#  include "crc32_pclmul_template.h"
+#endif
+
 static inline crc32_func_t
 arch_select_crc32_func(void)
 {
 	const u32 features MAYBE_UNUSED = get_x86_cpu_features();
 
-#ifdef crc32_x86_pclmul_avx
-	if (HAVE_PCLMUL(features) && HAVE_AVX(features))
-		return crc32_x86_pclmul_avx;
+#ifdef crc32_x86_vpclmulqdq_avx512_vl512
+	if ((features & X86_CPU_FEATURE_ZMM) &&
+	    HAVE_VPCLMULQDQ(features) && HAVE_PCLMULQDQ(features) &&
+	    HAVE_AVX512BW(features) && HAVE_AVX512VL(features))
+		return crc32_x86_vpclmulqdq_avx512_vl512;
 #endif
-#ifdef crc32_x86_pclmul
-	if (HAVE_PCLMUL(features))
-		return crc32_x86_pclmul;
+#ifdef crc32_x86_vpclmulqdq_avx512_vl256
+	if (HAVE_VPCLMULQDQ(features) && HAVE_PCLMULQDQ(features) &&
+	    HAVE_AVX512BW(features) && HAVE_AVX512VL(features))
+		return crc32_x86_vpclmulqdq_avx512_vl256;
+#endif
+#ifdef crc32_x86_vpclmulqdq_avx2
+	if (HAVE_VPCLMULQDQ(features) && HAVE_PCLMULQDQ(features) &&
+	    HAVE_AVX2(features))
+		return crc32_x86_vpclmulqdq_avx2;
+#endif
+#ifdef crc32_x86_pclmulqdq_avx
+	if (HAVE_PCLMULQDQ(features) && HAVE_AVX(features))
+		return crc32_x86_pclmulqdq_avx;
+#endif
+#ifdef crc32_x86_pclmulqdq
+	if (HAVE_PCLMULQDQ(features))
+		return crc32_x86_pclmulqdq;
 #endif
 	return NULL;
 }
 #define arch_select_crc32_func	arch_select_crc32_func
-#endif
 
 #endif /* LIB_X86_CRC32_IMPL_H */

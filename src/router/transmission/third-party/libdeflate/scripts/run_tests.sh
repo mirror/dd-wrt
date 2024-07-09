@@ -142,10 +142,11 @@ build_and_run_tests()
 	if ! [[ "$CFLAGS" =~ "-march=native" ]] && ! $quick; then
 		case "$ARCH" in
 		i386|x86_64)
-			features+=(avx2 avx bmi2 pclmul sse2)
+			features+=(zmm avx512_vnni avx512vl avx_vnni vpclmulqdq
+				   avx2 avx bmi2 pclmulqdq sse2)
 			;;
 		arm*|aarch*)
-			features+=(dotprod sha3 crc32 pmull neon)
+			features+=(dotprod sha3 prefer_pmull crc32 pmull neon)
 			;;
 		esac
 	fi

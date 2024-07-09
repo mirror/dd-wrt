@@ -40,12 +40,13 @@
 // clash with ::testing::Mock.
 class Mock {
  public:
-  Mock() {}
+  Mock() = default;
 
   MOCK_METHOD0(DoThis, void());
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(Mock);
+  Mock(const Mock&) = delete;
+  Mock& operator=(const Mock&) = delete;
 };
 
 namespace testing {
@@ -77,7 +78,7 @@ class CallsMockMethodInDestructor {
 
 class Foo {
  public:
-  virtual ~Foo() {}
+  virtual ~Foo() = default;
 
   virtual void DoThis() = 0;
   virtual int DoThat(bool flag) = 0;
@@ -85,7 +86,7 @@ class Foo {
 
 class MockFoo : public Foo {
  public:
-  MockFoo() {}
+  MockFoo() = default;
   void Delete() { delete this; }
 
   MOCK_METHOD0(DoThis, void());
@@ -93,7 +94,8 @@ class MockFoo : public Foo {
   MOCK_METHOD0(ReturnNonDefaultConstructible, NotDefaultConstructible());
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockFoo);
+  MockFoo(const MockFoo&) = delete;
+  MockFoo& operator=(const MockFoo&) = delete;
 };
 
 class MockBar {
@@ -107,7 +109,7 @@ class MockBar {
            (a10 ? 'T' : 'F');
   }
 
-  virtual ~MockBar() {}
+  virtual ~MockBar() = default;
 
   const std::string& str() const { return str_; }
 
@@ -117,7 +119,8 @@ class MockBar {
  private:
   std::string str_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockBar);
+  MockBar(const MockBar&) = delete;
+  MockBar& operator=(const MockBar&) = delete;
 };
 
 class MockBaz {

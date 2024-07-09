@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(libutp VERSION 3.4 LANGUAGES C CXX)
 
 set(LIBUTP_STANDALONE_BUILD OFF)
@@ -18,13 +18,13 @@ endif()
 
 if(LIBUTP_STANDALONE_BUILD)
     if(NOT CMAKE_C_STANDARD)
-        set(CMAKE_C_STANDARD 99)
+        set(CMAKE_C_STANDARD 11)
         set(CMAKE_C_STANDARD_REQUIRED ON)
         set(CMAKE_C_EXTENSIONS OFF)
     endif()
 
     if(NOT CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 98)
+        set(CMAKE_CXX_STANDARD 17)
         set(CMAKE_CXX_STANDARD_REQUIRED ON)
         set(CMAKE_CXX_EXTENSIONS OFF)
     endif()
@@ -54,6 +54,13 @@ if(WIN32)
     list(APPEND LIBUTP_ADD_SOURCES
         libutp_inet_ntop.cpp
         libutp_inet_ntop.h)
+endif()
+
+if(CMAKE_VERSION VERSION_LESS 3.25)
+    set(BSD OFF)
+    if(CMAKE_SYSTEM_NAME MATCHES "BSD")
+        set(BSD ON)
+    endif()
 endif()
 
 add_library(libutp ${LIBUTP_LIBRARY_TYPE}
@@ -118,7 +125,7 @@ if(LIBUTP_BUILD_PROGRAMS AND NOT MSVC)
 
     target_compile_definitions(ucat
         PRIVATE
-            $<$<NOT:$<BOOL:${WIN32}>>:_POSIX_C_SOURCE=200112L>
+            $<$<NOT:$<OR:$<BOOL:${WIN32}>,$<BOOL:${BSD}>>>:_POSIX_C_SOURCE=200112L>
             $<$<BOOL:${APPLE}>:_DARWIN_C_SOURCE>)
 
     target_link_libraries(ucat

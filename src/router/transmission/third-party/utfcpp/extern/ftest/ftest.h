@@ -42,6 +42,7 @@ class Test
 public:
     Test(const char* name, const char* test_case_name) : m_name(name),
             m_status(None), m_test_case_name(test_case_name) {}
+    virtual ~Test() {}
     const std::string& name() const { return m_name; }
     const std::string& case_name() const { return m_test_case_name; }
     TestStatus status() const { return m_status; }
@@ -67,7 +68,7 @@ private:
 class TestCase
 {
 public: 
-    explicit TestCase(const char* name) : m_name(name), m_status(None) {}
+    explicit TestCase(const char* name) : m_name(name) {}
     const std::string& name() const { return m_name; }
     void add_test(Test* test) { m_tests.push_back(test); }
     size_t tests_count() const { return m_tests.size(); }
@@ -95,7 +96,6 @@ public:
 private:
     std::string        m_name;
     std::vector<Test*> m_tests;
-    TestStatus         m_status;
 };
 
 inline TestCase* find_test_case(const std::string& name, const std::vector<TestCase*>& test_cases)
@@ -146,7 +146,7 @@ public:
             std::cout << "\n " << failed_count << " FAILED TESTS\n";
         }
 
-        return failed_count;
+        return static_cast<int>(failed_count);
     }
 
     const std::vector<TestCase*>& test_cases() const { return m_test_cases; }
@@ -223,7 +223,7 @@ bool F_TEST_##f_test_case_name##f_test_name::m_registered = \
 void F_TEST_##f_test_case_name##f_test_name::run_internal(ftest::TestStatus& status)
 
 #ifndef F_TEST_NO_MAIN
-int main (int argc, const char** argv)
+int main (int /*argc*/, const char** /*argv*/)
 {    
     return ftest::testdriver.run_tests();
 }

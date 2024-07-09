@@ -1,0 +1,33 @@
+<!--
+Copyright 2010, 2014, Iowa State University
+Copyright 2020, caseymcc
+SPDX-License-Identifier: BSL-1.0
+-->
+		<Configuration
+			Name="@USERFILE_CONFIGNAME@|@USERFILE_PLATFORM@"
+			>
+			<DebugSettings
+				Command="@USERFILE_COMMAND@"
+				WorkingDirectory="@USERFILE_WORKING_DIRECTORY@"
+				CommandArguments="@USERFILE_COMMAND_ARGUMENTS@"
+				Attach="false"
+				DebuggerType="3"
+				Remote="1"
+				RemoteMachine="@USERFILE_REMOTE_MACHINE@"
+				RemoteCommand=""
+				HttpUrl=""
+				PDBPath=""
+				SQLDebugging=""
+				Environment="@USERFILE_ENVIRONMENT@"
+				EnvironmentMerge="true"
+				DebuggerFlavor=""
+				MPIRunCommand=""
+				MPIRunArguments=""
+				MPIRunWorkingDirectory=""
+				ApplicationCommand=""
+				ApplicationArguments=""
+				ShimCommand=""
+				MPIAcceptMode=""
+				MPIAcceptFilter=""
+			/>
+		</Configuration>

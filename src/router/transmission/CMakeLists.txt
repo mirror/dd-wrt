@@ -82,7 +82,7 @@ set(TR_NAME ${PROJECT_NAME})
 # these should be the only five lines you need to change
 set(TR_VERSION_MAJOR "4")
 set(TR_VERSION_MINOR "0")
-set(TR_VERSION_PATCH "5")
+set(TR_VERSION_PATCH "6")
 set(TR_VERSION_BETA_NUMBER "") # empty string for not beta
 set(TR_VERSION_DEV FALSE)
 
@@ -94,6 +94,19 @@ elseif(NOT "${TR_VERSION_BETA_NUMBER}" STREQUAL "")
 else()
     set(TR_STABLE_RELEASE 1)
 endif()
+
+# derived from above: CFBundleVersion
+# note: CFBundleVersion only honors 3 numbers, so third number has to hold both patch and beta info.
+# 5.0.1-dev     -> 14719.0.100
+# 5.0.1-beta.1  -> 14719.0.101
+# 5.0.1         -> 14719.0.199
+math(EXPR CFBUNDLE_1 "${TR_VERSION_MAJOR} + 14714")
+math(EXPR CFBUNDLE_2 "${TR_VERSION_MINOR}")
+math(EXPR CFBUNDLE_3 "${TR_VERSION_PATCH} * 100 + 0${TR_STABLE_RELEASE} * 99 + 0${TR_VERSION_BETA_NUMBER}")
+set(CFBUNDLE_VERSION "${CFBUNDLE_1}.${CFBUNDLE_2}.${CFBUNDLE_3}")
+unset(CFBUNDLE_1)
+unset(CFBUNDLE_2)
+unset(CFBUNDLE_3)
 
 # derived from above: semver version string. https://semver.org/
 # '4.0.0-beta.1'
@@ -139,6 +152,13 @@ endif()
 string(APPEND TR_PEER_ID_PREFIX "-")
 
 set(TR_VCS_REVISION_FILE "${CMAKE_SOURCE_DIR}/REVISION")
+
+## Compiler standard version
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/.git)
     find_package(Git)
@@ -593,13 +613,6 @@ if(WIN32)
 endif()
 
 unset(CMAKE_FOLDER)
-
-## Compiler standard version
-
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ### Compiler Warnings
 

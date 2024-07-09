@@ -25,14 +25,17 @@
 
 #include <stdarg.h>
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
+
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "utp.h"
 #include "utp_callbacks.h"
 #include "utp_templates.h"
-#include "utp_hash.h"
-#include "utp_hash.h"
 #include "utp_packedsockaddr.h"
 
 /* These originally lived in utp_config.h */
@@ -59,17 +62,21 @@ enum bandwidth_type_t {
 #endif
 
 struct PACKED_ATTRIBUTE RST_Info {
+	RST_Info() = default;
+
+	RST_Info(PackedSockAddr _addr, uint32 _connid, uint16 _ack_nr, uint64 _timestamp)
+		: addr{ _addr }
+		, connid{ _connid }
+		, ack_nr{ _ack_nr }
+		, timestamp{ _timestamp }
+	{
+	}
+
 	PackedSockAddr addr;
 	uint32 connid;
 	uint16 ack_nr;
 	uint64 timestamp;
 };
-
-// It's really important that we don't have duplicate keys in the hash table.
-// If we do, we'll eventually crash. if we try to remove the second instance
-// of the key, we'll accidentally remove the first instead. then later,
-// checkTimeouts will try to access the second one's already freed memory.
-void UTP_FreeAll(struct UTPSocketHT *utp_sockets);
 
 struct UTPSocketKey {
 	PackedSockAddr addr;
@@ -89,25 +96,66 @@ struct UTPSocketKey {
 	}
 };
 
-struct UTPSocketKeyData {
-	UTPSocketKey key;
-	UTPSocket *socket;
-	utp_link_t link;
+template<>
+struct std::hash<UTPSocketKey>
+{
+	// It's really important that we don't have duplicate keys in the hash table.
+	// If we do, we'll eventually crash. if we try to remove the second instance
+	// of the key, we'll accidentally remove the first instead. then later,
+	// checkTimeouts will try to access the second one's already freed memory.
+	std::size_t operator()(const UTPSocketKey& key) const {
+		return key.compute_hash();
+	}
 };
 
-#define UTP_SOCKET_BUCKETS 79
-#define UTP_SOCKET_INIT    15
+extern void utp_socket_delete(UTPSocket*);
 
-struct UTPSocketHT : utpHashTable<UTPSocketKey, UTPSocketKeyData> {
-	UTPSocketHT() {
-		const int buckets = UTP_SOCKET_BUCKETS;
-		const int initial = UTP_SOCKET_INIT;
-		this->Create(buckets, initial);
+// Container that owns a set of UTPSockets.
+// The sockets are destroyed when removed from the container.
+class UTPSocketHT {
+	using Key = UTPSocketKey;
+	using Value = UTPSocket;
+
+	// UTPSocket is an opaque type, so we can't use it for V.
+	// Instead, use a unique_ptr<> which deletes via `utp_socket_delete()`.
+	struct SocketDeleter {
+		void operator()(UTPSocket* conn) const noexcept {
+			utp_socket_delete(conn);
+		}
+	};
+	using V = std::unique_ptr<Value, SocketDeleter>;
+	using Map = std::unordered_map<Key, V>;
+
+public:
+	[[nodiscard]] auto contains(Key const& key) const {
+		return map_.count(key) != 0U;
 	}
-	~UTPSocketHT() {
-		UTP_FreeAll(this);
-		this->Free();
+
+	[[nodiscard]] auto size() const {
+		return map_.size();
 	}
+
+	[[nodiscard]] Value* lookup(Key const& key) const {
+		const auto iter = map_.find(key);
+		return iter != map_.end() ? iter->second.get() : nullptr;
+	}
+
+	void add(Key const& key, Value* value) {
+		map_[key].reset(value);
+	}
+
+	void erase_if(std::function<bool(Map::iterator const&)> pred) {
+		for (auto it = map_.begin(); it != map_.end(); ) {
+			if (pred(it)) {
+				it = map_.erase(it);
+			} else {
+				++it;
+			}
+		}
+	}
+
+private:
+	Map map_;
 };
 
 struct struct_utp_context {
@@ -117,16 +165,15 @@ struct struct_utp_context {
 	uint64 current_ms;
 	utp_context_stats context_stats;
 	UTPSocket *last_utp_socket;
-	Array<UTPSocket*> ack_sockets;
-	Array<RST_Info> rst_info;
-	UTPSocketHT *utp_sockets;
+	std::vector<UTPSocket*> ack_sockets;
+	std::vector<RST_Info> rst_info;
+	UTPSocketHT utp_sockets;
 	size_t target_delay;
 	size_t opt_sndbuf;
 	size_t opt_rcvbuf;
 	uint64 last_check;
 
 	struct_utp_context();
-	~struct_utp_context();
 
 	void log(int level, utp_socket *socket, char const *fmt, ...);
 	void log_unchecked(utp_socket *socket, char const *fmt, ...);

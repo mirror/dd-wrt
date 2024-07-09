@@ -14,5 +14,10 @@ set_target_properties(smoke
                       CXX_STANDARD_REQUIRED YES
                       CXX_EXTENSIONS NO)
 
+target_compile_options(smoke PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>)
+                    
+
 
 add_test(smoke_test smoke)

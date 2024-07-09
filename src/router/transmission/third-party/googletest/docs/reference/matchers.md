@@ -8,9 +8,13 @@ A **matcher** matches a *single* argument. You can use it inside `ON_CALL()` or
 | `EXPECT_THAT(actual_value, matcher)` | Asserts that `actual_value` matches `matcher`. |
 | `ASSERT_THAT(actual_value, matcher)` | The same as `EXPECT_THAT(actual_value, matcher)`, except that it generates a **fatal** failure. |
 
-{: .callout .note}
-**Note:** Although equality matching via `EXPECT_THAT(actual_value,
-expected_value)` is supported, prefer to make the comparison explicit via
+{: .callout .warning}
+**WARNING:** Equality matching via `EXPECT_THAT(actual_value, expected_value)`
+is supported, however note that implicit conversions can cause surprising
+results. For example, `EXPECT_THAT(some_bool, "some string")` will compile and
+may pass unintentionally.
+
+**BEST PRACTICE:** Prefer to make the comparison explicit via
 `EXPECT_THAT(actual_value, Eq(expected_value))` or `EXPECT_EQ(actual_value,
 expected_value)`.
 
@@ -98,7 +102,7 @@ The `argument` can be either a C string or a C++ string object:
 | `StrCaseNe(string)`      | `argument` is not equal to `string`, ignoring case. |
 | `StrEq(string)`          | `argument` is equal to `string`.                  |
 | `StrNe(string)`          | `argument` is not equal to `string`.              |
-| `WhenBase64Unescaped(m)` | `argument` is a base-64 escaped string whose unescaped string matches `m`. |
+| `WhenBase64Unescaped(m)` | `argument` is a base-64 escaped string whose unescaped string matches `m`.  The web-safe format from [RFC 4648](https://www.rfc-editor.org/rfc/rfc4648#section-5) is supported. |
 
 `ContainsRegex()` and `MatchesRegex()` take ownership of the `RE` object. They
 use the regular expression syntax defined
@@ -282,5 +286,17 @@ which must be a permanent callback.
     ```cpp
     MATCHER_P(NestedPropertyMatches, matcher, "") {
       return ExplainMatchResult(matcher, arg.nested().property(), result_listener);
+    }
+    ```
+
+5.  You can use `DescribeMatcher<>` to describe another matcher. For example:
+
+    ```cpp
+    MATCHER_P(XAndYThat, matcher,
+              "X that " + DescribeMatcher<int>(matcher, negation) +
+                  (negation ? " or" : " and") + " Y that " +
+                  DescribeMatcher<double>(matcher, negation)) {
+      return ExplainMatchResult(matcher, arg.x(), result_listener) &&
+             ExplainMatchResult(matcher, arg.y(), result_listener);
     }
     ```

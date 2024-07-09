@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 #define LIBDEFLATE_VERSION_MAJOR	1
-#define LIBDEFLATE_VERSION_MINOR	18
-#define LIBDEFLATE_VERSION_STRING	"1.18"
+#define LIBDEFLATE_VERSION_MINOR	20
+#define LIBDEFLATE_VERSION_STRING	"1.20"
 
 /*
  * Users of libdeflate.dll on Windows can define LIBDEFLATE_DLL to cause
@@ -35,6 +35,7 @@ extern "C" {
 /* ========================================================================== */
 
 struct libdeflate_compressor;
+struct libdeflate_options;
 
 /*
  * libdeflate_alloc_compressor() allocates a new compressor that supports
@@ -58,11 +59,18 @@ LIBDEFLATEAPI struct libdeflate_compressor *
 libdeflate_alloc_compressor(int compression_level);
 
 /*
+ * Like libdeflate_alloc_compressor(), but adds the 'options' argument.
+ */
+LIBDEFLATEAPI struct libdeflate_compressor *
+libdeflate_alloc_compressor_ex(int compression_level,
+			       const struct libdeflate_options *options);
+
+/*
  * libdeflate_deflate_compress() performs raw DEFLATE compression on a buffer of
  * data.  It attempts to compress 'in_nbytes' bytes of data located at 'in' and
  * write the result to 'out', which has space for 'out_nbytes_avail' bytes.  The
  * return value is the compressed size in bytes, or 0 if the data could not be
- * compressed to 'out_nbytes_avail' bytes or fewer (but see note below).
+ * compressed to 'out_nbytes_avail' bytes or fewer.
  *
  * If compression is successful, then the output data is guaranteed to be a
  * valid DEFLATE stream that decompresses to the input data.  No other
@@ -72,22 +80,6 @@ libdeflate_alloc_compressor(int compression_level);
  * writing tests that compare compressed data to a golden output, as this can
  * break when libdeflate is updated.  (This property isn't specific to
  * libdeflate; the same is true for zlib and other compression libraries too.)
- *
- * Note: due to a performance optimization, libdeflate_deflate_compress()
- * currently needs a small amount of slack space at the end of the output
- * buffer.  As a result, it can't actually report compressed sizes very close to
- * 'out_nbytes_avail'.  This doesn't matter in real-world use cases, and
- * libdeflate_deflate_compress_bound() already includes the slack space.
- * However, it does mean that testing code that redundantly compresses data
- * using an exact-sized output buffer won't work as might be expected:
- *
- *	out_nbytes = libdeflate_deflate_compress(c, in, in_nbytes, out,
- *						 libdeflate_deflate_compress_bound(in_nbytes));
- *	// The following assertion will fail.
- *	assert(libdeflate_deflate_compress(c, in, in_nbytes, out, out_nbytes) != 0);
- *
- * To avoid this, either don't write tests like the above, or make sure to
- * include at least 9 bytes of slack space in 'out_nbytes_avail'.
  */
 LIBDEFLATEAPI size_t
 libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
@@ -171,6 +163,7 @@ libdeflate_free_compressor(struct libdeflate_compressor *compressor);
 /* ========================================================================== */
 
 struct libdeflate_decompressor;
+struct libdeflate_options;
 
 /*
  * libdeflate_alloc_decompressor() allocates a new decompressor that can be used
@@ -186,6 +179,12 @@ struct libdeflate_decompressor;
  */
 LIBDEFLATEAPI struct libdeflate_decompressor *
 libdeflate_alloc_decompressor(void);
+
+/*
+ * Like libdeflate_alloc_decompressor(), but adds the 'options' argument.
+ */
+LIBDEFLATEAPI struct libdeflate_decompressor *
+libdeflate_alloc_decompressor_ex(const struct libdeflate_options *options);
 
 /*
  * Result of a call to libdeflate_deflate_decompress(),
@@ -351,15 +350,59 @@ libdeflate_crc32(uint32_t crc, const void *buffer, size_t len);
 
 /*
  * Install a custom memory allocator which libdeflate will use for all memory
- * allocations.  'malloc_func' is a function that must behave like malloc(), and
- * 'free_func' is a function that must behave like free().
+ * allocations by default.  'malloc_func' is a function that must behave like
+ * malloc(), and 'free_func' is a function that must behave like free().
  *
- * There must not be any libdeflate_compressor or libdeflate_decompressor
- * structures in existence when calling this function.
+ * The per-(de)compressor custom memory allocator that can be specified in
+ * 'struct libdeflate_options' takes priority over this.
+ *
+ * This doesn't affect the free() function that will be used to free
+ * (de)compressors that were already in existence when this is called.
  */
 LIBDEFLATEAPI void
 libdeflate_set_memory_allocator(void *(*malloc_func)(size_t),
 				void (*free_func)(void *));
+
+/*
+ * Advanced options.  This is the options structure that
+ * libdeflate_alloc_compressor_ex() and libdeflate_alloc_decompressor_ex()
+ * require.  Most users won't need this and should just use the non-"_ex"
+ * functions instead.  If you do need this, it should be initialized like this:
+ *
+ *	struct libdeflate_options options;
+ *
+ *	memset(&options, 0, sizeof(options));
+ *	options.sizeof_options = sizeof(options);
+ *	// Then set the fields that you need to override the defaults for.
+ */
+struct libdeflate_options {
+
+	/*
+	 * This field must be set to the struct size.  This field exists for
+	 * extensibility, so that fields can be appended to this struct in
+	 * future versions of libdeflate while still supporting old binaries.
+	 */
+	size_t sizeof_options;
+
+	/*
+	 * An optional custom memory allocator to use for this (de)compressor.
+	 * 'malloc_func' must be a function that behaves like malloc(), and
+	 * 'free_func' must be a function that behaves like free().
+	 *
+	 * This is useful in cases where a process might have multiple users of
+	 * libdeflate who want to use different memory allocators.  For example,
+	 * a library might want to use libdeflate with a custom memory allocator
+	 * without interfering with user code that might use libdeflate too.
+	 *
+	 * This takes priority over the "global" memory allocator (which by
+	 * default is malloc() and free(), but can be changed by
+	 * libdeflate_set_memory_allocator()).  Moreover, libdeflate will never
+	 * call the "global" memory allocator if a per-(de)compressor custom
+	 * allocator is always given.
+	 */
+	void *(*malloc_func)(size_t);
+	void (*free_func)(void *);
+};
 
 #ifdef __cplusplus
 }

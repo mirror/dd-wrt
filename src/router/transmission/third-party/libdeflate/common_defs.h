@@ -65,6 +65,7 @@
 #undef ARCH_X86_32
 #undef ARCH_ARM64
 #undef ARCH_ARM32
+#undef ARCH_RISCV
 #ifdef _MSC_VER
 #  if defined(_M_X64)
 #    define ARCH_X86_64
@@ -84,6 +85,8 @@
 #    define ARCH_ARM64
 #  elif defined(__arm__)
 #    define ARCH_ARM32
+#  elif defined(__riscv)
+#    define ARCH_RISCV
 #  endif
 #endif
 
@@ -132,6 +135,9 @@ typedef size_t machine_word_t;
 #  define GCC_PREREQ(major, minor)		\
 	(__GNUC__ > (major) ||			\
 	 (__GNUC__ == (major) && __GNUC_MINOR__ >= (minor)))
+#  if !GCC_PREREQ(4, 9)
+#    error "gcc versions older than 4.9 are no longer supported"
+#  endif
 #else
 #  define GCC_PREREQ(major, minor)	0
 #endif
@@ -144,18 +150,35 @@ typedef size_t machine_word_t;
 	(__clang_major__ > (major) ||			\
 	 (__clang_major__ == (major) && __clang_minor__ >= (minor)))
 #  endif
+#  if !CLANG_PREREQ(3, 9, 8000000)
+#    error "clang versions older than 3.9 are no longer supported"
+#  endif
 #else
 #  define CLANG_PREREQ(major, minor, apple_version)	0
 #endif
+#ifdef _MSC_VER
+#  define MSVC_PREREQ(version)	(_MSC_VER >= (version))
+#  if !MSVC_PREREQ(1900)
+#    error "MSVC versions older than Visual Studio 2015 are no longer supported"
+#  endif
+#else
+#  define MSVC_PREREQ(version)	0
+#endif
 
 /*
- * Macros to check for compiler support for attributes and builtins.  clang
- * implements these macros, but gcc doesn't, so generally any use of one of
- * these macros must also be combined with a gcc version check.
+ * __has_attribute(attribute) - check whether the compiler supports the given
+ * attribute (and also supports doing the check in the first place).  Mostly
+ * useful just for clang, since gcc didn't add this macro until gcc 5.
  */
 #ifndef __has_attribute
 #  define __has_attribute(attribute)	0
 #endif
+
+/*
+ * __has_builtin(builtin) - check whether the compiler supports the given
+ * builtin (and also supports doing the check in the first place).  Mostly
+ * useful just for clang, since gcc didn't add this macro until gcc 10.
+ */
 #ifndef __has_builtin
 #  define __has_builtin(builtin)	0
 #endif
@@ -185,6 +208,13 @@ typedef size_t machine_word_t;
 #  define MAYBE_UNUSED		__attribute__((unused))
 #else
 #  define MAYBE_UNUSED
+#endif
+
+/* NORETURN - mark a function as never returning, e.g. due to calling abort() */
+#if defined(__GNUC__) || __has_attribute(noreturn)
+#  define NORETURN		__attribute__((noreturn))
+#else
+#  define NORETURN
 #endif
 
 /*
@@ -269,12 +299,10 @@ typedef size_t machine_word_t;
  * code as well as the corresponding intrinsics.  On other compilers this macro
  * expands to nothing, though MSVC allows intrinsics to be used anywhere anyway.
  */
-#if GCC_PREREQ(4, 4) || __has_attribute(target)
+#if defined(__GNUC__) || __has_attribute(target)
 #  define _target_attribute(attrs)	__attribute__((target(attrs)))
-#  define COMPILER_SUPPORTS_TARGET_FUNCTION_ATTRIBUTE	1
 #else
 #  define _target_attribute(attrs)
-#  define COMPILER_SUPPORTS_TARGET_FUNCTION_ATTRIBUTE	0
 #endif
 
 /* ========================================================================== */
@@ -319,7 +347,7 @@ static forceinline bool CPU_IS_LITTLE_ENDIAN(void)
 /* bswap16(v) - swap the bytes of a 16-bit integer */
 static forceinline_arm u16 bswap16(u16 v)
 {
-#if GCC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
+#if defined(__GNUC__) || __has_builtin(__builtin_bswap16)
 	return __builtin_bswap16(v);
 #elif defined(_MSC_VER)
 	return _byteswap_ushort(v);
@@ -331,7 +359,7 @@ static forceinline_arm u16 bswap16(u16 v)
 /* bswap32(v) - swap the bytes of a 32-bit integer */
 static forceinline_arm u32 bswap32(u32 v)
 {
-#if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap32)
+#if defined(__GNUC__) || __has_builtin(__builtin_bswap32)
 	return __builtin_bswap32(v);
 #elif defined(_MSC_VER)
 	return _byteswap_ulong(v);
@@ -346,7 +374,7 @@ static forceinline_arm u32 bswap32(u32 v)
 /* bswap64(v) - swap the bytes of a 64-bit integer */
 static forceinline_arm u64 bswap64(u64 v)
 {
-#if GCC_PREREQ(4, 3) || __has_builtin(__builtin_bswap64)
+#if defined(__GNUC__) || __has_builtin(__builtin_bswap64)
 	return __builtin_bswap64(v);
 #elif defined(_MSC_VER)
 	return _byteswap_uint64(v);
@@ -380,6 +408,7 @@ static forceinline_arm u64 bswap64(u64 v)
 #if (defined(__GNUC__) || defined(__clang__)) && \
 	(defined(ARCH_X86_64) || defined(ARCH_X86_32) || \
 	 defined(__ARM_FEATURE_UNALIGNED) || defined(__powerpc64__) || \
+	 defined(__riscv_misaligned_fast) || \
 	 /*
 	  * For all compilation purposes, WebAssembly behaves like any other CPU
 	  * instruction set. Even though WebAssembly engine might be running on

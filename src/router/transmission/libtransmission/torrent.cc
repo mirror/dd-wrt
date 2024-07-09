@@ -422,7 +422,7 @@ namespace script_helpers
     {
         buf << tr_torrentTracker(tor, i).host;
 
-        if (++i < n)
+        if (i < n)
         {
             buf << ',';
         }
@@ -860,8 +860,13 @@ void torrentStop(tr_torrent* const tor)
     TR_ASSERT(tor->session->amInSessionThread());
     auto const lock = tor->unique_lock();
 
+    auto const now = tr_time();
+    tor->seconds_downloading_before_current_start_ = tor->secondsDownloading(now);
+    tor->seconds_seeding_before_current_start_ = tor->secondsSeeding(now);
+
     tor->isRunning = false;
     tor->isStopping = false;
+    tor->markChanged();
 
     if (!tor->session->isClosing())
     {
@@ -2400,6 +2405,7 @@ void tr_torrent::setDownloadDir(std::string_view path, bool is_new_torrent)
 {
     download_dir = path;
     markEdited();
+    markChanged();
     setDirty();
     refreshCurrentDir();
 

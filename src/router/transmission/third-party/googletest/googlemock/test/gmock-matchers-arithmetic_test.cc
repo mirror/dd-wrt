@@ -31,15 +31,16 @@
 //
 // This file tests some commonly used argument matchers.
 
-// Silence warning C4244: 'initializing': conversion from 'int' to 'short',
-// possible loss of data and C4100, unreferenced local parameter
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4100)
-#endif
+#include <cmath>
+#include <limits>
+#include <memory>
+#include <string>
 
 #include "test/gmock-matchers_test.h"
+
+// Silence warning C4244: 'initializing': conversion from 'int' to 'short',
+// possible loss of data and C4100, unreferenced local parameter
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244 4100)
 
 namespace testing {
 namespace gmock_matchers_test {
@@ -429,6 +430,8 @@ void AllOfMatches(int num, const Matcher<int>& m) {
   EXPECT_TRUE(m.Matches(num + 1));
 }
 
+INSTANTIATE_GTEST_MATCHER_TEST_P(AllOfTest);
+
 // Tests that AllOf(m1, ..., mn) matches any value that matches all of
 // the given matchers.
 TEST(AllOfTest, MatchesWhenAllMatch) {
@@ -552,7 +555,7 @@ TEST(AllOfTest, AllOfMatcherSafelyCastsMonomorphicMatchers) {
   Matcher<int&> m5 = AllOf(greater_than_5, less_than_10, less_than_10);
 }
 
-TEST(AllOfTest, ExplainsResult) {
+TEST_P(AllOfTestP, ExplainsResult) {
   Matcher<int> m;
 
   // Successful match.  Both matchers need to explain.  The second
@@ -615,6 +618,8 @@ static void AnyOfStringMatches(int num, const Matcher<std::string>& m) {
   }
   EXPECT_FALSE(m.Matches(std::to_string(num + 1)));
 }
+
+INSTANTIATE_GTEST_MATCHER_TEST_P(AnyOfTest);
 
 // Tests that AnyOf(m1, ..., mn) matches any value that matches at
 // least one of the given matchers.
@@ -766,7 +771,7 @@ TEST(AnyOfTest, AnyOfMatcherSafelyCastsMonomorphicMatchers) {
   Matcher<int&> m5 = AnyOf(greater_than_5, less_than_10, less_than_10);
 }
 
-TEST(AnyOfTest, ExplainsResult) {
+TEST_P(AnyOfTestP, ExplainsResult) {
   Matcher<int> m;
 
   // Failed match.  Both matchers need to explain.  The second
@@ -950,12 +955,13 @@ TEST(AllArgsTest, WorksForNonTuple) {
 
 class AllArgsHelper {
  public:
-  AllArgsHelper() {}
+  AllArgsHelper() = default;
 
   MOCK_METHOD2(Helper, int(char x, int y));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(AllArgsHelper);
+  AllArgsHelper(const AllArgsHelper&) = delete;
+  AllArgsHelper& operator=(const AllArgsHelper&) = delete;
 };
 
 TEST(AllArgsTest, WorksInWithClause) {
@@ -970,7 +976,7 @@ TEST(AllArgsTest, WorksInWithClause) {
 
 class OptionalMatchersHelper {
  public:
-  OptionalMatchersHelper() {}
+  OptionalMatchersHelper() = default;
 
   MOCK_METHOD0(NoArgs, int());
 
@@ -982,7 +988,8 @@ class OptionalMatchersHelper {
   MOCK_METHOD2(Overloaded, int(char x, int y));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OptionalMatchersHelper);
+  OptionalMatchersHelper(const OptionalMatchersHelper&) = delete;
+  OptionalMatchersHelper& operator=(const OptionalMatchersHelper&) = delete;
 };
 
 TEST(AllArgsTest, WorksWithoutMatchers) {
@@ -1031,7 +1038,7 @@ class FloatingPointTest : public testing::Test {
             Floating::ReinterpretBits(infinity_bits_ - max_ulps_)),
         further_from_infinity_(
             Floating::ReinterpretBits(infinity_bits_ - max_ulps_ - 1)),
-        max_(Floating::Max()),
+        max_(std::numeric_limits<RawType>::max()),
         nan1_(Floating::ReinterpretBits(Floating::kExponentBitMask | 1)),
         nan2_(Floating::ReinterpretBits(Floating::kExponentBitMask | 200)) {}
 
@@ -1506,6 +1513,4 @@ TEST(AnyOfTest, WorksOnMoveOnlyType) {
 }  // namespace gmock_matchers_test
 }  // namespace testing
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4244 4100

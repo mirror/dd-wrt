@@ -201,6 +201,7 @@ TEST(gtest_extra_test, expect_write_streaming) {
 // EXPECT_THROW_MSG macro.
 TEST(gtest_extra_test, expect_throw_no_unreachable_code_warning) {
   int n = 0;
+  (void)n;
   using std::runtime_error;
   EXPECT_THROW_MSG(throw runtime_error(""), runtime_error, "");
   EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG(n++, runtime_error, ""), "");
@@ -213,6 +214,7 @@ TEST(gtest_extra_test, expect_throw_no_unreachable_code_warning) {
 // EXPECT_SYSTEM_ERROR macro.
 TEST(gtest_extra_test, expect_system_error_no_unreachable_code_warning) {
   int n = 0;
+  (void)n;
   EXPECT_SYSTEM_ERROR(throw fmt::system_error(EDOM, "test"), EDOM, "test");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(n++, EDOM, ""), "");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(throw 1, EDOM, ""), "");
@@ -352,7 +354,7 @@ TEST(output_redirect_test, dup_error_in_ctor) {
   FMT_POSIX(close(fd));
   std::unique_ptr<output_redirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(
-      redir.reset(new output_redirect(f.get())), EBADF,
+      redir.reset(new output_redirect(f.get(), false)), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
 }

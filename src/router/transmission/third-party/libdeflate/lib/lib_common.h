@@ -39,11 +39,15 @@
 
 #include "../common_defs.h"
 
-void *libdeflate_malloc(size_t size);
-void libdeflate_free(void *ptr);
+typedef void *(*malloc_func_t)(size_t);
+typedef void (*free_func_t)(void *);
 
-void *libdeflate_aligned_malloc(size_t alignment, size_t size);
-void libdeflate_aligned_free(void *ptr);
+extern malloc_func_t libdeflate_default_malloc_func;
+extern free_func_t libdeflate_default_free_func;
+
+void *libdeflate_aligned_malloc(malloc_func_t malloc_func,
+				size_t alignment, size_t size);
+void libdeflate_aligned_free(free_func_t free_func, void *ptr);
 
 #ifdef FREESTANDING
 /*
@@ -72,7 +76,14 @@ int memcmp(const void *s1, const void *s2, size_t n);
 
 #undef LIBDEFLATE_ENABLE_ASSERTIONS
 #else
-#include <string.h>
+#  include <string.h>
+   /*
+    * To prevent false positive static analyzer warnings, ensure that assertions
+    * are visible to the static analyzer.
+    */
+#  ifdef __clang_analyzer__
+#    define LIBDEFLATE_ENABLE_ASSERTIONS
+#  endif
 #endif
 
 /*
@@ -80,7 +91,8 @@ int memcmp(const void *s1, const void *s2, size_t n);
  * hurt performance significantly.
  */
 #ifdef LIBDEFLATE_ENABLE_ASSERTIONS
-void libdeflate_assertion_failed(const char *expr, const char *file, int line);
+NORETURN void
+libdeflate_assertion_failed(const char *expr, const char *file, int line);
 #define ASSERT(expr) { if (unlikely(!(expr))) \
 	libdeflate_assertion_failed(#expr, __FILE__, __LINE__); }
 #else

@@ -285,6 +285,10 @@ If you are concerned about the performance overhead incurred by virtual
 functions, and profiling confirms your concern, you can combine this with the
 recipe for [mocking non-virtual methods](#MockingNonVirtualMethods).
 
+Alternatively, instead of introducing a new interface, you can rewrite your code
+to accept a std::function instead of the free function, and then use
+[MockFunction](#MockFunction) to mock the std::function.
+
 ### Old-Style `MOCK_METHODn` Macros
 
 Before the generic `MOCK_METHOD` macro
@@ -392,8 +396,7 @@ Old macros and their new equivalents:
 If a mock method has no `EXPECT_CALL` spec but is called, we say that it's an
 "uninteresting call", and the default action (which can be specified using
 `ON_CALL()`) of the method will be taken. Currently, an uninteresting call will
-also by default cause gMock to print a warning. (In the future, we might remove
-this warning by default.)
+also by default cause gMock to print a warning.
 
 However, sometimes you may want to ignore these uninteresting calls, and
 sometimes you may want to treat them as errors. gMock lets you make the decision
@@ -694,9 +697,9 @@ TEST(AbcTest, Xyz) {
   EXPECT_CALL(foo, DoThat(_, _));
 
   int n = 0;
-  EXPECT_EQ('+', foo.DoThis(5));  // FakeFoo::DoThis() is invoked.
+  EXPECT_EQ(foo.DoThis(5), '+');  // FakeFoo::DoThis() is invoked.
   foo.DoThat("Hi", &n);  // FakeFoo::DoThat() is invoked.
-  EXPECT_EQ(2, n);
+  EXPECT_EQ(n, 2);
 }
 ```
 
@@ -905,7 +908,7 @@ using ::testing::Contains;
 using ::testing::Property;
 
 inline constexpr auto HasFoo = [](const auto& f) {
-  return Property(&MyClass::foo, Contains(f));
+  return Property("foo", &MyClass::foo, Contains(f));
 };
 ...
   EXPECT_THAT(x, HasFoo("blah"));
@@ -1126,11 +1129,11 @@ using STL's `<functional>` header is just painful). For example, here's a
 predicate that's satisfied by any number that is >= 0, <= 100, and != 50:
 
 ```cpp
-using testing::AllOf;
-using testing::Ge;
-using testing::Le;
-using testing::Matches;
-using testing::Ne;
+using ::testing::AllOf;
+using ::testing::Ge;
+using ::testing::Le;
+using ::testing::Matches;
+using ::testing::Ne;
 ...
 Matches(AllOf(Ge(0), Le(100), Ne(50)))
 ```
@@ -1159,7 +1162,7 @@ int IsEven(int n) { return (n % 2) == 0 ? 1 : 0; }
 ```
 
 Note that the predicate function / functor doesn't have to return `bool`. It
-works as long as the return value can be used as the condition in in statement
+works as long as the return value can be used as the condition in the statement
 `if (condition) ...`.
 
 ### Matching Arguments that Are Not Copyable
@@ -1300,23 +1303,27 @@ What if you have a pointer to pointer? You guessed it - you can use nested
 `Pointee(Pointee(Lt(3)))` matches a pointer that points to a pointer that points
 to a number less than 3 (what a mouthful...).
 
-### Testing a Certain Property of an Object
+### Defining a Custom Matcher Class {#CustomMatcherClass}
 
-Sometimes you want to specify that an object argument has a certain property,
-but there is no existing matcher that does this. If you want good error
-messages, you should [define a matcher](#NewMatchers). If you want to do it
-quick and dirty, you could get away with writing an ordinary function.
+Most matchers can be simply defined using [the MATCHER* macros](#NewMatchers),
+which are terse and flexible, and produce good error messages. However, these
+macros are not very explicit about the interfaces they create and are not always
+suitable, especially for matchers that will be widely reused.
 
-Let's say you have a mock function that takes an object of type `Foo`, which has
-an `int bar()` method and an `int baz()` method, and you want to constrain that
-the argument's `bar()` value plus its `baz()` value is a given number. Here's
-how you can define a matcher to do it:
+For more advanced cases, you may need to define your own matcher class. A custom
+matcher allows you to test a specific invariant property of that object. Let's
+take a look at how to do so.
+
+Imagine you have a mock function that takes an object of type `Foo`, which has
+an `int bar()` method and an `int baz()` method. You want to constrain that the
+argument's `bar()` value plus its `baz()` value is a given number. (This is an
+invariant.) Here's how we can write and use a matcher class to do so:
 
 ```cpp
-using ::testing::Matcher;
-
 class BarPlusBazEqMatcher {
  public:
+  using is_gtest_matcher = void;
+
   explicit BarPlusBazEqMatcher(int expected_sum)
       : expected_sum_(expected_sum) {}
 
@@ -1325,23 +1332,24 @@ class BarPlusBazEqMatcher {
     return (foo.bar() + foo.baz()) == expected_sum_;
   }
 
-  void DescribeTo(std::ostream& os) const {
-    os << "bar() + baz() equals " << expected_sum_;
+  void DescribeTo(std::ostream* os) const {
+    *os << "bar() + baz() equals " << expected_sum_;
   }
 
-  void DescribeNegationTo(std::ostream& os) const {
-    os << "bar() + baz() does not equal " << expected_sum_;
+  void DescribeNegationTo(std::ostream* os) const {
+    *os << "bar() + baz() does not equal " << expected_sum_;
   }
  private:
   const int expected_sum_;
 };
 
-Matcher<const Foo&> BarPlusBazEq(int expected_sum) {
+::testing::Matcher<const Foo&> BarPlusBazEq(int expected_sum) {
   return BarPlusBazEqMatcher(expected_sum);
 }
 
 ...
-  EXPECT_CALL(..., DoThis(BarPlusBazEq(5)))...;
+  Foo foo;
+  EXPECT_THAT(foo, BarPlusBazEq(5))...;
 ```
 
 ### Matching Containers
@@ -1420,11 +1428,12 @@ Use `Pair` when comparing maps or other associative containers.
 {% raw %}
 
 ```cpp
-using testing::ElementsAre;
-using testing::Pair;
+using ::testing::UnorderedElementsAre;
+using ::testing::Pair;
 ...
-  std::map<string, int> m = {{"a", 1}, {"b", 2}, {"c", 3}};
-  EXPECT_THAT(m, ElementsAre(Pair("a", 1), Pair("b", 2), Pair("c", 3)));
+  absl::flat_hash_map<string, int> m = {{"a", 1}, {"b", 2}, {"c", 3}};
+  EXPECT_THAT(m, UnorderedElementsAre(
+      Pair("a", 1), Pair("b", 2), Pair("c", 3)));
 ```
 
 {% endraw %}
@@ -1441,8 +1450,8 @@ using testing::Pair;
 *   If the container is passed by pointer instead of by reference, just write
     `Pointee(ElementsAre*(...))`.
 *   The order of elements *matters* for `ElementsAre*()`. If you are using it
-    with containers whose element order are undefined (e.g. `hash_map`) you
-    should use `WhenSorted` around `ElementsAre`.
+    with containers whose element order are undefined (such as a
+    `std::unordered_map`) you should use `UnorderedElementsAre`.
 
 ### Sharing Matchers
 
@@ -1852,7 +1861,7 @@ error. So, what shall you do?
 Though you may be tempted, DO NOT use `std::ref()`:
 
 ```cpp
-using testing::Return;
+using ::testing::Return;
 
 class MockFoo : public Foo {
  public:
@@ -1864,7 +1873,7 @@ class MockFoo : public Foo {
   EXPECT_CALL(foo, GetValue())
       .WillRepeatedly(Return(std::ref(x)));  // Wrong!
   x = 42;
-  EXPECT_EQ(42, foo.GetValue());
+  EXPECT_EQ(foo.GetValue(), 42);
 ```
 
 Unfortunately, it doesn't work here. The above code will fail with error:
@@ -1886,20 +1895,20 @@ the expectation is set, and `Return(std::ref(x))` will always return 0.
 returns the value pointed to by `pointer` at the time the action is *executed*:
 
 ```cpp
-using testing::ReturnPointee;
+using ::testing::ReturnPointee;
 ...
   int x = 0;
   MockFoo foo;
   EXPECT_CALL(foo, GetValue())
       .WillRepeatedly(ReturnPointee(&x));  // Note the & here.
   x = 42;
-  EXPECT_EQ(42, foo.GetValue());  // This will succeed now.
+  EXPECT_EQ(foo.GetValue(), 42);  // This will succeed now.
 ```
 
 ### Combining Actions
 
 Want to do more than one thing when a function is called? That's fine. `DoAll()`
-allow you to do sequence of actions every time. Only the return value of the
+allows you to do a sequence of actions every time. Only the return value of the
 last action in the sequence will be used.
 
 ```cpp
@@ -2255,7 +2264,7 @@ TEST_F(FooTest, Test) {
 
   EXPECT_CALL(foo, DoThis(2))
       .WillOnce(Invoke(NewPermanentCallback(SignOfSum, 5)));
-  EXPECT_EQ('+', foo.DoThis(2));  // Invokes SignOfSum(5, 2).
+  EXPECT_EQ(foo.DoThis(2), '+');  // Invokes SignOfSum(5, 2).
 }
 ```
 
@@ -2631,8 +2640,8 @@ action will exhibit different behaviors. Example:
       .WillRepeatedly(IncrementCounter(0));
   foo.DoThis();  // Returns 1.
   foo.DoThis();  // Returns 2.
-  foo.DoThat();  // Returns 1 - Blah() uses a different
-                 // counter than Bar()'s.
+  foo.DoThat();  // Returns 1 - DoThat() uses a different
+                 // counter than DoThis()'s.
 ```
 
 versus
@@ -2762,36 +2771,33 @@ returns a null `unique_ptr`, that’s what you’ll get if you don’t specify a
 action:
 
 ```cpp
+using ::testing::IsNull;
+...
   // Use the default action.
   EXPECT_CALL(mock_buzzer_, MakeBuzz("hello"));
 
   // Triggers the previous EXPECT_CALL.
-  EXPECT_EQ(nullptr, mock_buzzer_.MakeBuzz("hello"));
+  EXPECT_THAT(mock_buzzer_.MakeBuzz("hello"), IsNull());
 ```
 
 If you are not happy with the default action, you can tweak it as usual; see
 [Setting Default Actions](#OnCall).
 
-If you just need to return a pre-defined move-only value, you can use the
-`Return(ByMove(...))` action:
+If you just need to return a move-only value, you can use it in combination with
+`WillOnce`. For example:
 
 ```cpp
-  // When this fires, the unique_ptr<> specified by ByMove(...) will
-  // be returned.
-  EXPECT_CALL(mock_buzzer_, MakeBuzz("world"))
-      .WillOnce(Return(ByMove(MakeUnique<Buzz>(AccessLevel::kInternal))));
-
-  EXPECT_NE(nullptr, mock_buzzer_.MakeBuzz("world"));
+  EXPECT_CALL(mock_buzzer_, MakeBuzz("hello"))
+      .WillOnce(Return(std::make_unique<Buzz>(AccessLevel::kInternal)));
+  EXPECT_NE(nullptr, mock_buzzer_.MakeBuzz("hello"));
 ```
 
-Note that `ByMove()` is essential here - if you drop it, the code won’t compile.
-
-Quiz time! What do you think will happen if a `Return(ByMove(...))` action is
-performed more than once (e.g. you write `...
-.WillRepeatedly(Return(ByMove(...)));`)? Come think of it, after the first time
-the action runs, the source value will be consumed (since it’s a move-only
-value), so the next time around, there’s no value to move from -- you’ll get a
-run-time error that `Return(ByMove(...))` can only be run once.
+Quiz time! What do you think will happen if a `Return` action is performed more
+than once (e.g. you write `... .WillRepeatedly(Return(std::move(...)));`)? Come
+think of it, after the first time the action runs, the source value will be
+consumed (since it’s a move-only value), so the next time around, there’s no
+value to move from -- you’ll get a run-time error that `Return(std::move(...))`
+can only be run once.
 
 If you need your mock method to do more than just moving a pre-defined value,
 remember that you can always use a lambda or a callable object, which can do
@@ -2800,7 +2806,7 @@ pretty much anything you want:
 ```cpp
   EXPECT_CALL(mock_buzzer_, MakeBuzz("x"))
       .WillRepeatedly([](StringPiece text) {
-        return MakeUnique<Buzz>(AccessLevel::kInternal);
+        return std::make_unique<Buzz>(AccessLevel::kInternal);
       });
 
   EXPECT_NE(nullptr, mock_buzzer_.MakeBuzz("x"));
@@ -2808,7 +2814,7 @@ pretty much anything you want:
 ```
 
 Every time this `EXPECT_CALL` fires, a new `unique_ptr<Buzz>` will be created
-and returned. You cannot do this with `Return(ByMove(...))`.
+and returned. You cannot do this with `Return(std::make_unique<...>(...))`.
 
 That covers returning move-only values; but how do we work with methods
 accepting move-only arguments? The answer is that they work normally, although
@@ -2819,7 +2825,7 @@ can always use `Return`, or a [lambda or functor](#FunctionsAsActions):
   using ::testing::Unused;
 
   EXPECT_CALL(mock_buzzer_, ShareBuzz(NotNull(), _)).WillOnce(Return(true));
-  EXPECT_TRUE(mock_buzzer_.ShareBuzz(MakeUnique<Buzz>(AccessLevel::kInternal)),
+  EXPECT_TRUE(mock_buzzer_.ShareBuzz(std::make_unique<Buzz>(AccessLevel::kInternal)),
               0);
 
   EXPECT_CALL(mock_buzzer_, ShareBuzz(_, _)).WillOnce(
@@ -2863,7 +2869,7 @@ method:
   // When one calls ShareBuzz() on the MockBuzzer like this, the call is
   // forwarded to DoShareBuzz(), which is mocked.  Therefore this statement
   // will trigger the above EXPECT_CALL.
-  mock_buzzer_.ShareBuzz(MakeUnique<Buzz>(AccessLevel::kInternal), 0);
+  mock_buzzer_.ShareBuzz(std::make_unique<Buzz>(AccessLevel::kInternal), 0);
 ```
 
 ### Making the Compilation Faster
@@ -3188,11 +3194,11 @@ You can unlock this power by running your test with the `--gmock_verbose=info`
 flag. For example, given the test program:
 
 ```cpp
-#include "gmock/gmock.h"
+#include <gmock/gmock.h>
 
-using testing::_;
-using testing::HasSubstr;
-using testing::Return;
+using ::testing::_;
+using ::testing::HasSubstr;
+using ::testing::Return;
 
 class MockFoo {
  public:
@@ -3807,34 +3813,73 @@ Cardinality EvenNumber() {
       .Times(EvenNumber());
 ```
 
-### Writing New Actions Quickly {#QuickNewActions}
+### Writing New Actions {#QuickNewActions}
 
 If the built-in actions don't work for you, you can easily define your own one.
-Just define a functor class with a (possibly templated) call operator, matching
-the signature of your action.
+All you need is a call operator with a signature compatible with the mocked
+function. So you can use a lambda:
 
 ```cpp
-struct Increment {
-  template <typename T>
-  T operator()(T* arg) {
-    return ++(*arg);
-  }
-}
+MockFunction<int(int)> mock;
+EXPECT_CALL(mock, Call).WillOnce([](const int input) { return input * 7; });
+EXPECT_EQ(mock.AsStdFunction()(2), 14);
 ```
 
-The same approach works with stateful functors (or any callable, really):
+Or a struct with a call operator (even a templated one):
 
-```
+```cpp
 struct MultiplyBy {
   template <typename T>
   T operator()(T arg) { return arg * multiplier; }
 
   int multiplier;
-}
+};
 
 // Then use:
 // EXPECT_CALL(...).WillOnce(MultiplyBy{7});
 ```
+
+It's also fine for the callable to take no arguments, ignoring the arguments
+supplied to the mock function:
+
+```cpp
+MockFunction<int(int)> mock;
+EXPECT_CALL(mock, Call).WillOnce([] { return 17; });
+EXPECT_EQ(mock.AsStdFunction()(0), 17);
+```
+
+When used with `WillOnce`, the callable can assume it will be called at most
+once and is allowed to be a move-only type:
+
+```cpp
+// An action that contains move-only types and has an &&-qualified operator,
+// demanding in the type system that it be called at most once. This can be
+// used with WillOnce, but the compiler will reject it if handed to
+// WillRepeatedly.
+struct MoveOnlyAction {
+  std::unique_ptr<int> move_only_state;
+  std::unique_ptr<int> operator()() && { return std::move(move_only_state); }
+};
+
+MockFunction<std::unique_ptr<int>()> mock;
+EXPECT_CALL(mock, Call).WillOnce(MoveOnlyAction{std::make_unique<int>(17)});
+EXPECT_THAT(mock.AsStdFunction()(), Pointee(Eq(17)));
+```
+
+More generally, to use with a mock function whose signature is `R(Args...)` the
+object can be anything convertible to `OnceAction<R(Args...)>` or
+`Action<R(Args...)`>. The difference between the two is that `OnceAction` has
+weaker requirements (`Action` requires a copy-constructible input that can be
+called repeatedly whereas `OnceAction` requires only move-constructible and
+supports `&&`-qualified call operators), but can be used only with `WillOnce`.
+`OnceAction` is typically relevant only when supporting move-only types or
+actions that want a type-system guarantee that they will be called at most once.
+
+Typically the `OnceAction` and `Action` templates need not be referenced
+directly in your actions: a struct or class with a call operator is sufficient,
+as in the examples above. But fancier polymorphic actions that need to know the
+specific return type of the mock function can define templated conversion
+operators to make that possible. See `gmock-actions.h` for examples.
 
 #### Legacy macro-based Actions
 
@@ -4250,7 +4295,7 @@ particular type than to dump the bytes.
 ### Mock std::function {#MockFunction}
 
 `std::function` is a general function type introduced in C++11. It is a
-preferred way of passing callbacks to new interfaces. Functions are copiable,
+preferred way of passing callbacks to new interfaces. Functions are copyable,
 and are not usually passed around by pointer, which makes them tricky to mock.
 But fear not - `MockFunction` can help you with that.
 

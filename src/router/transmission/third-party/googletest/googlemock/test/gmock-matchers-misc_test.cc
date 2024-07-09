@@ -31,13 +31,19 @@
 //
 // This file tests some commonly used argument matchers.
 
+#include <array>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "gtest/gtest.h"
+
 // Silence warning C4244: 'initializing': conversion from 'int' to 'short',
 // possible loss of data and C4100, unreferenced local parameter
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#pragma warning(disable : 4100)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244 4100)
 
 #include "test/gmock-matchers_test.h"
 
@@ -106,7 +112,8 @@ class NotCopyable {
  private:
   int value_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(NotCopyable);
+  NotCopyable(const NotCopyable&) = delete;
+  NotCopyable& operator=(const NotCopyable&) = delete;
 };
 
 TEST(ByRefTest, AllowsNotCopyableConstValueInMatchers) {
@@ -201,7 +208,7 @@ TEST(IsTrueTest, IsTrueIsFalse) {
   EXPECT_THAT(nonnull_unique, Not(IsFalse()));
 }
 
-#if GTEST_HAS_TYPED_TEST
+#ifdef GTEST_HAS_TYPED_TEST
 // Tests ContainerEq with different container types, and
 // different element types.
 
@@ -636,7 +643,9 @@ TEST(FormatMatcherDescriptionTest, WorksForEmptyDescription) {
       FormatMatcherDescription(false, "IsInRange", {"a", "b"}, {"5", "8"}));
 }
 
-TEST(MatcherTupleTest, ExplainsMatchFailure) {
+INSTANTIATE_GTEST_MATCHER_TEST_P(MatcherTupleTest);
+
+TEST_P(MatcherTupleTestP, ExplainsMatchFailure) {
   stringstream ss1;
   ExplainMatchFailureTupleTo(
       std::make_tuple(Matcher<char>(Eq('a')), GreaterThan(5)),
@@ -860,7 +869,7 @@ TEST(ArgsTest, AcceptsOneTemplateArg) {
 }
 
 TEST(ArgsTest, AcceptsTwoTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
 
   EXPECT_THAT(t, (Args<0, 1>(Lt())));
   EXPECT_THAT(t, (Args<1, 2>(Lt())));
@@ -868,13 +877,13 @@ TEST(ArgsTest, AcceptsTwoTemplateArgs) {
 }
 
 TEST(ArgsTest, AcceptsRepeatedTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
   EXPECT_THAT(t, (Args<0, 0>(Eq())));
   EXPECT_THAT(t, Not(Args<1, 1>(Ne())));
 }
 
 TEST(ArgsTest, AcceptsDecreasingTemplateArgs) {
-  const std::tuple<short, int, long> t(4, 5, 6L);  // NOLINT
+  const std::tuple<short, int, long> t(short{4}, 5, 6L);  // NOLINT
   EXPECT_THAT(t, (Args<2, 0>(Gt())));
   EXPECT_THAT(t, Not(Args<2, 1>(Lt())));
 }
@@ -889,7 +898,7 @@ TEST(ArgsTest, AcceptsMoreTemplateArgsThanArityOfOriginalTuple) {
 }
 
 TEST(ArgsTest, CanBeNested) {
-  const std::tuple<short, int, long, int> t(4, 5, 6L, 6);  // NOLINT
+  const std::tuple<short, int, long, int> t(short{4}, 5, 6L, 6);  // NOLINT
   EXPECT_THAT(t, (Args<1, 2, 3>(Args<1, 2>(Eq()))));
   EXPECT_THAT(t, (Args<0, 1, 3>(Args<0, 2>(Lt()))));
 }
@@ -1377,6 +1386,8 @@ TEST(MatcherPnMacroTest, CanUseMatcherTypedParameterInValue) {
 
 // Tests Contains().Times().
 
+INSTANTIATE_GTEST_MATCHER_TEST_P(ContainsTimes);
+
 TEST(ContainsTimes, ListMatchesWhenElementQuantityMatches) {
   list<int> some_list;
   some_list.push_back(3);
@@ -1396,7 +1407,7 @@ TEST(ContainsTimes, ListMatchesWhenElementQuantityMatches) {
   EXPECT_THAT(list<int>{}, Not(Contains(_)));
 }
 
-TEST(ContainsTimes, ExplainsMatchResultCorrectly) {
+TEST_P(ContainsTimesP, ExplainsMatchResultCorrectly) {
   const int a[2] = {1, 2};
   Matcher<const int(&)[2]> m = Contains(2).Times(3);
   EXPECT_EQ(
@@ -1501,6 +1512,8 @@ TEST(AllOfArrayTest, Matchers) {
   EXPECT_THAT(1, AllOfArray({Ge(0), Ge(1)}));
 }
 
+INSTANTIATE_GTEST_MATCHER_TEST_P(AnyOfArrayTest);
+
 TEST(AnyOfArrayTest, BasicForms) {
   // Iterator
   std::vector<int> v0{};
@@ -1553,8 +1566,8 @@ TEST(AnyOfArrayTest, Matchers) {
   EXPECT_THAT(1, Not(AllOfArray({Lt(0), Lt(1)})));
 }
 
-TEST(AnyOfArrayTest, ExplainsMatchResultCorrectly) {
-  // AnyOfArray and AllOfArry use the same underlying template-template,
+TEST_P(AnyOfArrayTestP, ExplainsMatchResultCorrectly) {
+  // AnyOfArray and AllOfArray use the same underlying template-template,
   // thus it is sufficient to test one here.
   const std::vector<int> v0{};
   const std::vector<int> v1{1};
@@ -1606,6 +1619,20 @@ TEST(MatcherPMacroTest, WorksOnMoveOnlyType) {
   std::unique_ptr<int> p(new int(3));
   EXPECT_THAT(p, UniquePointee(3));
   EXPECT_THAT(p, Not(UniquePointee(2)));
+}
+
+MATCHER(EnsureNoUnusedButMarkedUnusedWarning, "") { return (arg % 2) == 0; }
+
+TEST(MockMethodMockFunctionTest, EnsureNoUnusedButMarkedUnusedWarning) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wused-but-marked-unused"
+#endif
+  // https://github.com/google/googletest/issues/4055
+  EXPECT_THAT(0, EnsureNoUnusedButMarkedUnusedWarning());
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -1771,8 +1798,8 @@ TEST(ThrowsPredicateCompilesTest, ExceptionMatcherAcceptsBroadType) {
   {
     Matcher<uint64_t> inner = Eq(10);
     Matcher<std::function<void()>> matcher = Throws<uint32_t>(inner);
-    EXPECT_TRUE(matcher.Matches([]() { throw(uint32_t) 10; }));
-    EXPECT_FALSE(matcher.Matches([]() { throw(uint32_t) 11; }));
+    EXPECT_TRUE(matcher.Matches([]() { throw (uint32_t)10; }));
+    EXPECT_FALSE(matcher.Matches([]() { throw (uint32_t)11; }));
   }
 }
 
@@ -1793,6 +1820,4 @@ TEST(ThrowsPredicateCompilesTest, MessageMatcherAcceptsNonMatcher) {
 }  // namespace gmock_matchers_test
 }  // namespace testing
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4244 4100

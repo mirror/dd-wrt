@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include "utp_internal.h"
 #include "utp_utils.h"
@@ -72,7 +73,6 @@ struct_utp_context::struct_utp_context()
 	memset(&context_stats, 0, sizeof(context_stats));
 	memset(callbacks, 0, sizeof(callbacks));
 	target_delay = CCONTROL_TARGET;
-	utp_sockets = new UTPSocketHT;
 
 	callbacks[UTP_GET_UDP_MTU]      = &utp_default_get_udp_mtu;
 	callbacks[UTP_GET_UDP_OVERHEAD] = &utp_default_get_udp_overhead;
@@ -90,10 +90,6 @@ struct_utp_context::struct_utp_context()
 	// their receive buffer set much lower, to say 60 kiB or so
 	opt_rcvbuf = opt_sndbuf = 1024 * 1024;
 	last_check = 0;
-}
-
-struct_utp_context::~struct_utp_context() {
-	delete this->utp_sockets;
 }
 
 utp_context* utp_init (int version)

@@ -31,6 +31,8 @@
 //
 // This file tests the built-in cardinalities.
 
+#include <ostream>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest-spi.h"
 #include "gtest/gtest.h"
@@ -50,11 +52,12 @@ using testing::MakeCardinality;
 
 class MockFoo {
  public:
-  MockFoo() {}
+  MockFoo() = default;
   MOCK_METHOD0(Bar, int());  // NOLINT
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockFoo);
+  MockFoo(const MockFoo&) = delete;
+  MockFoo& operator=(const MockFoo&) = delete;
 };
 
 // Tests that Cardinality objects can be default constructed.

@@ -30,29 +30,29 @@
 
 #include "../lib_common.h"
 
-#define HAVE_DYNAMIC_X86_CPU_FEATURES	0
-
 #if defined(ARCH_X86_32) || defined(ARCH_X86_64)
 
-#if COMPILER_SUPPORTS_TARGET_FUNCTION_ATTRIBUTE || defined(_MSC_VER)
-#  undef HAVE_DYNAMIC_X86_CPU_FEATURES
-#  define HAVE_DYNAMIC_X86_CPU_FEATURES	1
-#endif
+#define X86_CPU_FEATURE_SSE2		(1 << 0)
+#define X86_CPU_FEATURE_PCLMULQDQ	(1 << 1)
+#define X86_CPU_FEATURE_AVX		(1 << 2)
+#define X86_CPU_FEATURE_AVX2		(1 << 3)
+#define X86_CPU_FEATURE_BMI2		(1 << 4)
+/*
+ * ZMM indicates whether 512-bit vectors (zmm registers) should be used.  On
+ * some CPUs, to avoid downclocking issues we don't set ZMM even if the CPU and
+ * operating system support AVX-512.  On these CPUs, we may still use AVX-512
+ * instructions, but only with xmm and ymm registers.
+ */
+#define X86_CPU_FEATURE_ZMM		(1 << 5)
+#define X86_CPU_FEATURE_AVX512BW	(1 << 6)
+#define X86_CPU_FEATURE_AVX512VL	(1 << 7)
+#define X86_CPU_FEATURE_VPCLMULQDQ	(1 << 8)
+#define X86_CPU_FEATURE_AVX512VNNI	(1 << 9)
+#define X86_CPU_FEATURE_AVXVNNI		(1 << 10)
 
-#define X86_CPU_FEATURE_SSE2		0x00000001
-#define X86_CPU_FEATURE_PCLMUL		0x00000002
-#define X86_CPU_FEATURE_AVX		0x00000004
-#define X86_CPU_FEATURE_AVX2		0x00000008
-#define X86_CPU_FEATURE_BMI2		0x00000010
-
-#define HAVE_SSE2(features)	(HAVE_SSE2_NATIVE     || ((features) & X86_CPU_FEATURE_SSE2))
-#define HAVE_PCLMUL(features)	(HAVE_PCLMUL_NATIVE   || ((features) & X86_CPU_FEATURE_PCLMUL))
-#define HAVE_AVX(features)	(HAVE_AVX_NATIVE      || ((features) & X86_CPU_FEATURE_AVX))
-#define HAVE_AVX2(features)	(HAVE_AVX2_NATIVE     || ((features) & X86_CPU_FEATURE_AVX2))
-#define HAVE_BMI2(features)	(HAVE_BMI2_NATIVE     || ((features) & X86_CPU_FEATURE_BMI2))
-
-#if HAVE_DYNAMIC_X86_CPU_FEATURES
-#define X86_CPU_FEATURES_KNOWN		0x80000000
+#if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+/* Runtime x86 CPU feature detection is supported. */
+#  define X86_CPU_FEATURES_KNOWN	(1U << 31)
 extern volatile u32 libdeflate_x86_cpu_features;
 
 void libdeflate_init_x86_cpu_features(void);
@@ -63,87 +63,105 @@ static inline u32 get_x86_cpu_features(void)
 		libdeflate_init_x86_cpu_features();
 	return libdeflate_x86_cpu_features;
 }
-#else /* HAVE_DYNAMIC_X86_CPU_FEATURES */
-static inline u32 get_x86_cpu_features(void) { return 0; }
-#endif /* !HAVE_DYNAMIC_X86_CPU_FEATURES */
-
 /*
- * Prior to gcc 4.9 (r200349) and clang 3.8 (r239883), x86 intrinsics not
- * available in the main target couldn't be used in 'target' attribute
- * functions.  Unfortunately clang has no feature test macro for this, so we
- * have to check its version.
+ * x86 intrinsics are also supported.  Include the headers needed to use them.
+ * Normally just immintrin.h suffices.  With clang in MSVC compatibility mode,
+ * immintrin.h incorrectly skips including sub-headers, so include those too.
  */
-#if HAVE_DYNAMIC_X86_CPU_FEATURES && \
-	(GCC_PREREQ(4, 9) || CLANG_PREREQ(3, 8, 7030000) || defined(_MSC_VER))
-#  define HAVE_TARGET_INTRINSICS	1
+#  include <immintrin.h>
+#  if defined(_MSC_VER) && defined(__clang__)
+#    include <tmmintrin.h>
+#    include <smmintrin.h>
+#    include <wmmintrin.h>
+#    include <avxintrin.h>
+#    include <avx2intrin.h>
+#    include <avx512fintrin.h>
+#    include <avx512bwintrin.h>
+#    include <avx512vlintrin.h>
+#    if __has_include(<avx512vlbwintrin.h>)
+#      include <avx512vlbwintrin.h>
+#    endif
+#    if __has_include(<vpclmulqdqintrin.h>)
+#      include <vpclmulqdqintrin.h>
+#    endif
+#    if __has_include(<avx512vnniintrin.h>)
+#      include <avx512vnniintrin.h>
+#    endif
+#    if __has_include(<avx512vlvnniintrin.h>)
+#      include <avx512vlvnniintrin.h>
+#    endif
+#    if __has_include(<avxvnniintrin.h>)
+#      include <avxvnniintrin.h>
+#    endif
+#  endif
 #else
-#  define HAVE_TARGET_INTRINSICS	0
+static inline u32 get_x86_cpu_features(void) { return 0; }
 #endif
 
-/* SSE2 */
 #if defined(__SSE2__) || \
 	(defined(_MSC_VER) && \
 	 (defined(ARCH_X86_64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)))
-#  define HAVE_SSE2_NATIVE	1
+#  define HAVE_SSE2(features)		1
+#  define HAVE_SSE2_NATIVE		1
 #else
-#  define HAVE_SSE2_NATIVE	0
+#  define HAVE_SSE2(features)		((features) & X86_CPU_FEATURE_SSE2)
+#  define HAVE_SSE2_NATIVE		0
 #endif
-#define HAVE_SSE2_INTRIN	(HAVE_SSE2_NATIVE || HAVE_TARGET_INTRINSICS)
 
-/* PCLMUL */
 #if defined(__PCLMUL__) || (defined(_MSC_VER) && defined(__AVX2__))
-#  define HAVE_PCLMUL_NATIVE	1
+#  define HAVE_PCLMULQDQ(features)	1
 #else
-#  define HAVE_PCLMUL_NATIVE	0
-#endif
-#if HAVE_PCLMUL_NATIVE || (HAVE_TARGET_INTRINSICS && \
-			   (GCC_PREREQ(4, 4) || CLANG_PREREQ(3, 2, 0) || \
-			    defined(_MSC_VER)))
-#  define HAVE_PCLMUL_INTRIN	1
-#else
-#  define HAVE_PCLMUL_INTRIN	0
+#  define HAVE_PCLMULQDQ(features)	((features) & X86_CPU_FEATURE_PCLMULQDQ)
 #endif
 
-/* AVX */
 #ifdef __AVX__
-#  define HAVE_AVX_NATIVE	1
+#  define HAVE_AVX(features)		1
 #else
-#  define HAVE_AVX_NATIVE	0
-#endif
-#if HAVE_AVX_NATIVE || (HAVE_TARGET_INTRINSICS && \
-			(GCC_PREREQ(4, 6) || CLANG_PREREQ(3, 0, 0) || \
-			 defined(_MSC_VER)))
-#  define HAVE_AVX_INTRIN	1
-#else
-#  define HAVE_AVX_INTRIN	0
+#  define HAVE_AVX(features)		((features) & X86_CPU_FEATURE_AVX)
 #endif
 
-/* AVX2 */
 #ifdef __AVX2__
-#  define HAVE_AVX2_NATIVE	1
+#  define HAVE_AVX2(features)		1
 #else
-#  define HAVE_AVX2_NATIVE	0
-#endif
-#if HAVE_AVX2_NATIVE || (HAVE_TARGET_INTRINSICS && \
-			 (GCC_PREREQ(4, 7) || CLANG_PREREQ(3, 1, 0) || \
-			  defined(_MSC_VER)))
-#  define HAVE_AVX2_INTRIN	1
-#else
-#  define HAVE_AVX2_INTRIN	0
+#  define HAVE_AVX2(features)		((features) & X86_CPU_FEATURE_AVX2)
 #endif
 
-/* BMI2 */
 #if defined(__BMI2__) || (defined(_MSC_VER) && defined(__AVX2__))
-#  define HAVE_BMI2_NATIVE	1
+#  define HAVE_BMI2(features)		1
+#  define HAVE_BMI2_NATIVE		1
 #else
-#  define HAVE_BMI2_NATIVE	0
+#  define HAVE_BMI2(features)		((features) & X86_CPU_FEATURE_BMI2)
+#  define HAVE_BMI2_NATIVE		0
 #endif
-#if HAVE_BMI2_NATIVE || (HAVE_TARGET_INTRINSICS && \
-			 (GCC_PREREQ(4, 7) || CLANG_PREREQ(3, 1, 0) || \
-			  defined(_MSC_VER)))
-#  define HAVE_BMI2_INTRIN	1
+
+#ifdef __AVX512BW__
+#  define HAVE_AVX512BW(features)	1
 #else
-#  define HAVE_BMI2_INTRIN	0
+#  define HAVE_AVX512BW(features)	((features) & X86_CPU_FEATURE_AVX512BW)
+#endif
+
+#ifdef __AVX512VL__
+#  define HAVE_AVX512VL(features)	1
+#else
+#  define HAVE_AVX512VL(features)	((features) & X86_CPU_FEATURE_AVX512VL)
+#endif
+
+#ifdef __VPCLMULQDQ__
+#  define HAVE_VPCLMULQDQ(features)	1
+#else
+#  define HAVE_VPCLMULQDQ(features)	((features) & X86_CPU_FEATURE_VPCLMULQDQ)
+#endif
+
+#ifdef __AVX512VNNI__
+#  define HAVE_AVX512VNNI(features)	1
+#else
+#  define HAVE_AVX512VNNI(features)	((features) & X86_CPU_FEATURE_AVX512VNNI)
+#endif
+
+#ifdef __AVXVNNI__
+#  define HAVE_AVXVNNI(features)	1
+#else
+#  define HAVE_AVXVNNI(features)	((features) & X86_CPU_FEATURE_AVXVNNI)
 #endif
 
 #endif /* ARCH_X86_32 || ARCH_X86_64 */

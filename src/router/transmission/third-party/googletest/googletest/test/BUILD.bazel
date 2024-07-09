@@ -64,6 +64,7 @@ cc_test(
             "googletest-global-environment-unittest_.cc",
             "googletest-break-on-failure-unittest_.cc",
             "googletest-listener-test.cc",
+            "googletest-message-test.cc",
             "googletest-output-test_.cc",
             "googletest-list-tests-unittest_.cc",
             "googletest-shuffle-test_.cc",
@@ -174,6 +175,10 @@ py_test(
     name = "gtest_help_test",
     size = "small",
     srcs = ["gtest_help_test.py"],
+    args = select({
+        "//:has_absl": ["--has_absl_flags"],
+        "//conditions:default": [],
+    }),
     data = [":gtest_help_test_"],
     deps = [":gtest_test_utils"],
 )

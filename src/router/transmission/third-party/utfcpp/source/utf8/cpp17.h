@@ -28,17 +28,10 @@ DEALINGS IN THE SOFTWARE.
 #ifndef UTF8_FOR_CPP_7e906c01_03a3_4daf_b420_ea7ea952b3c9
 #define UTF8_FOR_CPP_7e906c01_03a3_4daf_b420_ea7ea952b3c9
 
-#include "checked.h"
-#include <string>
+#include "cpp11.h"
 
 namespace utf8
 {
-
-    inline void append(char32_t cp, std::string& s)
-    {
-        append(uint32_t(cp), std::back_inserter(s));
-    }
-
     inline std::string utf16to8(std::u16string_view s)
     {
         std::string result;
@@ -70,7 +63,7 @@ namespace utf8
     inline std::size_t find_invalid(std::string_view s)
     {
         std::string_view::const_iterator invalid = find_invalid(s.begin(), s.end());
-        return (invalid == s.end()) ? std::string_view::npos : (invalid - s.begin());
+        return (invalid == s.end()) ? std::string_view::npos : static_cast<std::size_t>(invalid - s.begin());
     }
 
     inline bool is_valid(std::string_view s)

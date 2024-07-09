@@ -1,16 +1,23 @@
+
 ## fast_float number parsing library: 4x faster than strtod
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/fast_float.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:fast_float)
+[![Ubuntu 22.04 CI (GCC 11)](https://github.com/fastfloat/fast_float/actions/workflows/ubuntu22.yml/badge.svg)](https://github.com/fastfloat/fast_float/actions/workflows/ubuntu22.yml)
 
 The fast_float library provides fast header-only implementations for the C++ from_chars
-functions for `float` and `double` types.  These functions convert ASCII strings representing
-decimal values (e.g., `1.3e10`) into binary types. We provide exact rounding (including
+functions for `float` and `double` types as well as integer types.  These functions convert ASCII strings representing decimal values (e.g., `1.3e10`) into binary types. We provide exact rounding (including
 round to even). In our experience, these `fast_float` functions many times faster than comparable number-parsing functions from existing C++ standard libraries.
 
-Specifically, `fast_float` provides the following two functions with a C++17-like syntax (the library itself only requires C++11):
+Specifically, `fast_float` provides the following two functions to parse floating-point numbers with a C++17-like syntax (the library itself only requires C++11):
 
 ```C++
 from_chars_result from_chars(const char* first, const char* last, float& value, ...);
 from_chars_result from_chars(const char* first, const char* last, double& value, ...);
 ```
+
+You can also parse integer types:
+
+
+
 
 The return type (`from_chars_result`) is defined as the struct:
 ```C++
@@ -51,52 +58,6 @@ int main() {
 }
 ```
 
-
-Like the C++17 standard, the `fast_float::from_chars` functions take an optional last argument of
-the type `fast_float::chars_format`. It is a bitset value: we check whether
-`fmt & fast_float::chars_format::fixed` and `fmt & fast_float::chars_format::scientific` are set
-to determine whether we allow the fixed point and scientific notation respectively.
-The default is  `fast_float::chars_format::general` which allows both `fixed` and `scientific`.
-
-The library seeks to follow the C++17 (see [20.19.3](http://eel.is/c++draft/charconv.from.chars).(7.1))  specification.
-* The `from_chars` function does not skip leading white-space characters.
-* [A leading `+` sign](https://en.cppreference.com/w/cpp/utility/from_chars) is forbidden.
-* It is generally impossible to represent a decimal value exactly as binary floating-point number (`float` and `double` types). We seek the nearest value. We round to an even mantissa when we are in-between two binary floating-point numbers.
-
-Furthermore, we have the following restrictions:
-* We only support `float` and `double` types at this time.
-* We only support the decimal format: we do not support hexadecimal strings.
-* For values that are either very large or very small (e.g., `1e9999`), we represent it using the infinity or negative infinity value.
-
-We support Visual Studio, macOS, Linux, freeBSD. We support big and little endian. We support 32-bit and 64-bit systems.
-
-We assume that the rounding mode is set to nearest (`std::fegetround() == FE_TONEAREST`).
-
-## Using commas as decimal separator
-
-
-The C++ standard stipulate that `from_chars` has to be locale-independent. In
-particular, the decimal separator has to be the period (`.`). However,
-some users still want to use the `fast_float` library with in a locale-dependent
-manner. Using a separate function called `from_chars_advanced`, we allow the users
-to pass a `parse_options` instance which contains a custom decimal separator (e.g.,
-the comma). You may use it as follows.
-
-```C++
-#include "fast_float/fast_float.h"
-#include <iostream>
-
-int main() {
-    const std::string input =  "3,1416 xyz ";
-    double result;
-    fast_float::parse_options options{fast_float::chars_format::general, ','};
-    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
-    if((answer.ec != std::errc()) || ((result != 3.1416))) { std::cerr << "parsing failure\n"; return EXIT_FAILURE; }
-    std::cout << "parsed the number " << result << std::endl;
-    return EXIT_SUCCESS;
-}
-```
-
 You can parse delimited numbers:
 ```C++
   const std::string input =   "234532.3426362,7869234.9823,324562.645";
@@ -124,9 +85,226 @@ You can parse delimited numbers:
   // we have result == 324562.645.
 ```
 
-## Reference
+
+
+Like the C++17 standard, the `fast_float::from_chars` functions take an optional last argument of
+the type `fast_float::chars_format`. It is a bitset value: we check whether
+`fmt & fast_float::chars_format::fixed` and `fmt & fast_float::chars_format::scientific` are set
+to determine whether we allow the fixed point and scientific notation respectively.
+The default is  `fast_float::chars_format::general` which allows both `fixed` and `scientific`.
+
+The library seeks to follow the C++17 (see [20.19.3](http://eel.is/c++draft/charconv.from.chars).(7.1))  specification.
+* The `from_chars` function does not skip leading white-space characters.
+* [A leading `+` sign](https://en.cppreference.com/w/cpp/utility/from_chars) is forbidden.
+* It is generally impossible to represent a decimal value exactly as binary floating-point number (`float` and `double` types). We seek the nearest value. We round to an even mantissa when we are in-between two binary floating-point numbers.
+
+Furthermore, we have the following restrictions:
+* We only support `float` and `double` types at this time.
+* We only support the decimal format: we do not support hexadecimal strings.
+* For values that are either very large or very small (e.g., `1e9999`), we represent it using the infinity or negative infinity value and the returned `ec` is set to `std::errc::result_out_of_range`.
+
+We support Visual Studio, macOS, Linux, freeBSD. We support big and little endian. We support 32-bit and 64-bit systems.
+
+We assume that the rounding mode is set to nearest (`std::fegetround() == FE_TONEAREST`).
+
+
+## Integer types
+
+You can also parse integer types using different bases (e.g., 2, 10, 16). The following code will
+print the number 22250738585072012 three times:
+
+
+```C++
+  uint64_t i;
+  const char str[] = "22250738585072012";
+  auto answer = fast_float::from_chars(str, str + strlen(str), i);
+  if (answer.ec != std::errc()) {
+    std::cerr << "parsing failure\n";
+    return EXIT_FAILURE;
+  }
+  std::cout << "parsed the number "<< i << std::endl;
+
+  const char binstr[] = "1001111000011001110110111001001010110100111000110001100";
+
+  answer = fast_float::from_chars(binstr, binstr + strlen(binstr), i, 2);
+  if (answer.ec != std::errc()) {
+    std::cerr << "parsing failure\n";
+    return EXIT_FAILURE;
+  }
+  std::cout << "parsed the number "<< i << std::endl;
+
+
+  const char hexstr[] = "4f0cedc95a718c";
+
+  answer = fast_float::from_chars(hexstr, hexstr + strlen(hexstr), i, 16);
+  if (answer.ec != std::errc()) {
+    std::cerr << "parsing failure\n";
+    return EXIT_FAILURE;
+  }
+  std::cout << "parsed the number "<< i << std::endl;
+```
+
+## C++20: compile-time evaluation (constexpr)
+
+In C++20, you may use `fast_float::from_chars` to parse strings
+at compile-time, as in the following example:
+
+```C++
+// consteval forces compile-time evaluation of the function in C++20.
+consteval double parse(std::string_view input) {
+  double result;
+  auto answer = fast_float::from_chars(input.data(), input.data()+input.size(), result);
+  if(answer.ec != std::errc()) { return -1.0; }
+  return result;
+}
+
+// This function should compile to a function which
+// merely returns 3.1415.
+constexpr double constexptest() {
+  return parse("3.1415 input");
+}
+```
+
+## C++23: Fixed width floating-point types
+
+The library also supports fixed-width floating-point types such as `std::float32_t` and `std::float64_t`. E.g., you can write:
+
+```C++
+std::float32_t result;
+auto answer = fast_float::from_chars(f.data(), f.data() + f.size(), result);
+``````
+
+
+## Non-ASCII Inputs
+
+We also support UTF-16 and UTF-32 inputs, as well as ASCII/UTF-8, as in the following example:
+
+``` C++
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::u16string input =  u"3.1416 xyz ";
+    double result;
+    auto answer = fast_float::from_chars(input.data(), input.data()+input.size(), result);
+    if(answer.ec != std::errc()) { std::cerr << "parsing failure\n"; return EXIT_FAILURE; }
+    std::cout << "parsed the number " << result << std::endl;
+    return EXIT_SUCCESS;
+}
+```
+
+## Advanced options:  using commas as decimal separator, JSON and Fortran
+
+
+The C++ standard stipulate that `from_chars` has to be locale-independent. In
+particular, the decimal separator has to be the period (`.`). However,
+some users still want to use the `fast_float` library with in a locale-dependent
+manner. Using a separate function called `from_chars_advanced`, we allow the users
+to pass a `parse_options` instance which contains a custom decimal separator (e.g.,
+the comma). You may use it as follows.
+
+```C++
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::string input =  "3,1416 xyz ";
+    double result;
+    fast_float::parse_options options{fast_float::chars_format::general, ','};
+    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
+    if((answer.ec != std::errc()) || ((result != 3.1416))) { std::cerr << "parsing failure\n"; return EXIT_FAILURE; }
+    std::cout << "parsed the number " << result << std::endl;
+    return EXIT_SUCCESS;
+}
+```
+
+You can also parse Fortran-like inputs:
+
+```C++
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::string input =  "1d+4";
+    double result;
+    fast_float::parse_options options{ fast_float::chars_format::fortran };
+    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
+    if((answer.ec != std::errc()) || ((result != 10000))) { std::cerr << "parsing failure\n"; return EXIT_FAILURE; }
+    std::cout << "parsed the number " << result << std::endl;
+    return EXIT_SUCCESS;
+}
+```
+
+You may also enforce the JSON format ([RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-6)):
+
+
+```C++
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::string input =  "+.1"; // not valid
+    double result;
+    fast_float::parse_options options{ fast_float::chars_format::json };
+    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
+    if(answer.ec == std::errc()) { std::cerr << "should have failed\n"; return EXIT_FAILURE; }
+    return EXIT_SUCCESS;
+}
+```
+
+By default the JSON format does not allow `inf`:
+
+```C++
+
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::string input =  "inf"; // not valid in JSON
+    double result;
+    fast_float::parse_options options{ fast_float::chars_format::json };
+    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
+    if(answer.ec == std::errc()) { std::cerr << "should have failed\n"; return EXIT_FAILURE; }
+}
+```
+
+
+You can allow it with a non-standard `json_or_infnan` variant:
+
+```C++
+#include "fast_float/fast_float.h"
+#include <iostream>
+
+int main() {
+    const std::string input =  "inf"; // not valid in JSON but we allow it with json_or_infnan
+    double result;
+    fast_float::parse_options options{ fast_float::chars_format::json_or_infnan };
+    auto answer = fast_float::from_chars_advanced(input.data(), input.data()+input.size(), result, options);
+    if(answer.ec != std::errc() || (!std::isinf(result))) { std::cerr << "should have parsed infinity\n"; return EXIT_FAILURE; }
+    return EXIT_SUCCESS;
+}
+``````
+
+## Users and Related Work
+
+The fast_float library is part of:
+
+- GCC (as of version 12): the `from_chars` function in GCC relies on fast_float.
+- [WebKit](https://github.com/WebKit/WebKit), the engine behind Safari (Apple's web browser)
+- [DuckDB](https://duckdb.org)
+- [Apache Arrow](https://github.com/apache/arrow/pull/8494) where it multiplied the number parsing speed by two or three times
+- [Google Jsonnet](https://github.com/google/jsonnet)
+- [ClickHouse](https://github.com/ClickHouse/ClickHouse)
+
+
+The fastfloat algorithm is part of the [LLVM standard libraries](https://github.com/llvm/llvm-project/commit/87c016078ad72c46505461e4ff8bfa04819fe7ba). There is a [derived implementation part of AdaCore](https://github.com/AdaCore/VSS).
+
+The fast_float library provides a performance similar to that of the [fast_double_parser](https://github.com/lemire/fast_double_parser) library but using an updated algorithm reworked from the ground up, and while offering an API more in line with the expectations of C++ programmers. The fast_double_parser library is part of the [Microsoft LightGBM machine-learning framework](https://github.com/microsoft/LightGBM).
+
+## References
 
 - Daniel Lemire, [Number Parsing at a Gigabyte per Second](https://arxiv.org/abs/2101.11408), Software: Practice and Experience 51 (8), 2021.
+- Noble Mushtak, Daniel Lemire, [Fast Number Parsing Without Fallback](https://arxiv.org/abs/2212.06644), Software: Practice and Experience 53 (7), 2023.
 
 ## Other programming languages
 
@@ -136,19 +314,6 @@ You can parse delimited numbers:
 - [There is a C# port of the fast_float library](https://github.com/CarlVerret/csFastFloat) called `csFastFloat`.
 
 
-## Relation With Other Work
-
-The fast_float library is part of GCC (as of version 12): the `from_chars` function in GCC relies on fast_float.
-
-The fastfloat algorithm is part of the [LLVM standard libraries](https://github.com/llvm/llvm-project/commit/87c016078ad72c46505461e4ff8bfa04819fe7ba).
-
-The fast_float library provides a performance similar to that of the [fast_double_parser](https://github.com/lemire/fast_double_parser) library but using an updated algorithm reworked from the ground up, and while offering an API more in line with the expectations of C++ programmers. The fast_double_parser library is part of the [Microsoft LightGBM machine-learning framework](https://github.com/microsoft/LightGBM).
-
-There is a [derived implementation part of AdaCore](https://github.com/AdaCore/VSS).
-
-## Users
-
-The fast_float library is used by [Apache Arrow](https://github.com/apache/arrow/pull/8494) where it multiplied the number parsing speed by two or three times. It is also used by [Yandex ClickHouse](https://github.com/ClickHouse/ClickHouse) and by [Google Jsonnet](https://github.com/google/jsonnet).
 
 
 ## How fast is it?
@@ -161,11 +326,11 @@ It can parse random floating-point numbers at a speed of 1 GB/s on some systems.
 $ ./build/benchmarks/benchmark
 # parsing random integers in the range [0,1)
 volume = 2.09808 MB
-netlib                                  :   271.18 MB/s (+/- 1.2 %)    12.93 Mfloat/s 
-doubleconversion                        :   225.35 MB/s (+/- 1.2 %)    10.74 Mfloat/s 
-strtod                                  :   190.94 MB/s (+/- 1.6 %)     9.10 Mfloat/s 
-abseil                                  :   430.45 MB/s (+/- 2.2 %)    20.52 Mfloat/s 
-fastfloat                               :  1042.38 MB/s (+/- 9.9 %)    49.68 Mfloat/s 
+netlib                                  :   271.18 MB/s (+/- 1.2 %)    12.93 Mfloat/s
+doubleconversion                        :   225.35 MB/s (+/- 1.2 %)    10.74 Mfloat/s
+strtod                                  :   190.94 MB/s (+/- 1.6 %)     9.10 Mfloat/s
+abseil                                  :   430.45 MB/s (+/- 2.2 %)    20.52 Mfloat/s
+fastfloat                               :  1042.38 MB/s (+/- 9.9 %)    49.68 Mfloat/s
 ```
 
 See https://github.com/lemire/simple_fastfloat_benchmark for our benchmarking code.
@@ -214,7 +379,11 @@ the command line help.
 
 You may directly download automatically generated single-header files:
 
-https://github.com/fastfloat/fast_float/releases/download/v3.4.0/fast_float.h
+https://github.com/fastfloat/fast_float/releases/download/v6.1.1/fast_float.h
+
+## RFC 7159
+
+If you need support for RFC 7159 (JSON standard), you may want to consider using the [fast_double_parser](https://github.com/lemire/fast_double_parser/) library instead.
 
 ## Credit
 
@@ -229,7 +398,7 @@ under the Apache 2.0 license.
 
 <sup>
 Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
-2.0</a> or <a href="LICENSE-MIT">MIT license</a> at your option.
+2.0</a> or <a href="LICENSE-MIT">MIT license</a> or <a href="LICENSE-BOOST">BOOST license</a> .
 </sup>
 
 <br>
@@ -237,5 +406,5 @@ Licensed under either of <a href="LICENSE-APACHE">Apache License, Version
 <sub>
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in this repository by you, as defined in the Apache-2.0 license,
-shall be dual licensed as above, without any additional terms or conditions.
+shall be triple licensed as above, without any additional terms or conditions.
 </sub>

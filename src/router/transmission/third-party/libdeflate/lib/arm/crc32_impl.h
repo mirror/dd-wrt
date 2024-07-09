@@ -45,34 +45,11 @@
  * variable chunk length wouldn't help much, so we just support a fixed length.
  */
 #if HAVE_CRC32_INTRIN
-#  if HAVE_CRC32_NATIVE
-#    define ATTRIBUTES
+#  ifdef __clang__
+#    define ATTRIBUTES	_target_attribute("crc")
 #  else
-#    ifdef ARCH_ARM32
-#      ifdef __clang__
-#        define ATTRIBUTES	_target_attribute("armv8-a,crc")
-#      elif defined(__ARM_PCS_VFP)
-	 /*
-	  * +simd is needed to avoid a "selected architecture lacks an FPU"
-	  * error with Debian arm-linux-gnueabihf-gcc when -mfpu is not
-	  * explicitly specified on the command line.
-	  */
-#        define ATTRIBUTES	_target_attribute("arch=armv8-a+crc+simd")
-#      else
-#        define ATTRIBUTES	_target_attribute("arch=armv8-a+crc")
-#      endif
-#    else
-#      ifdef __clang__
-#        define ATTRIBUTES	_target_attribute("crc")
-#      else
-#        define ATTRIBUTES	_target_attribute("+crc")
-#      endif
-#    endif
+#    define ATTRIBUTES	_target_attribute("+crc")
 #  endif
-
-#ifndef _MSC_VER
-#  include <arm_acle.h>
-#endif
 
 /*
  * Combine the CRCs for 4 adjacent chunks of length L = CRC32_FIXED_CHUNK_LEN
@@ -113,7 +90,7 @@ combine_crcs_slow(u32 crc0, u32 crc1, u32 crc2, u32 crc3)
 }
 
 #define crc32_arm_crc	crc32_arm_crc
-static u32 ATTRIBUTES MAYBE_UNUSED
+static ATTRIBUTES u32
 crc32_arm_crc(u32 crc, const u8 *p, size_t len)
 {
 	if (len >= 64) {
@@ -243,24 +220,11 @@ crc32_arm_crc(u32 crc, const u8 *p, size_t len)
  * for implementations that use pmull for folding the data itself.
  */
 #if HAVE_CRC32_INTRIN && HAVE_PMULL_INTRIN
-#  if HAVE_CRC32_NATIVE && HAVE_PMULL_NATIVE && !USE_PMULL_TARGET_EVEN_IF_NATIVE
-#    define ATTRIBUTES
+#  ifdef __clang__
+#    define ATTRIBUTES	_target_attribute("crc,aes")
 #  else
-#    ifdef ARCH_ARM32
-#      define ATTRIBUTES	_target_attribute("arch=armv8-a+crc,fpu=crypto-neon-fp-armv8")
-#    else
-#      ifdef __clang__
-#        define ATTRIBUTES	_target_attribute("crc,aes")
-#      else
-#        define ATTRIBUTES	_target_attribute("+crc,+crypto")
-#      endif
-#    endif
+#    define ATTRIBUTES	_target_attribute("+crc,+crypto")
 #  endif
-
-#ifndef _MSC_VER
-#  include <arm_acle.h>
-#endif
-#include <arm_neon.h>
 
 /* Do carryless multiplication of two 32-bit values. */
 static forceinline ATTRIBUTES u64
@@ -289,7 +253,7 @@ combine_crcs_fast(u32 crc0, u32 crc1, u32 crc2, u32 crc3, size_t i)
 }
 
 #define crc32_arm_crc_pmullcombine	crc32_arm_crc_pmullcombine
-static u32 ATTRIBUTES MAYBE_UNUSED
+static ATTRIBUTES u32
 crc32_arm_crc_pmullcombine(u32 crc, const u8 *p, size_t len)
 {
 	const size_t align = -(uintptr_t)p & 7;
@@ -445,41 +409,33 @@ crc32_arm_crc_pmullcombine(u32 crc, const u8 *p, size_t len)
 #if HAVE_PMULL_INTRIN
 #  define crc32_arm_pmullx4	crc32_arm_pmullx4
 #  define SUFFIX			 _pmullx4
-#  if HAVE_PMULL_NATIVE && !USE_PMULL_TARGET_EVEN_IF_NATIVE
-#    define ATTRIBUTES
+#  ifdef __clang__
+     /*
+      * This used to use "crypto", but that stopped working with clang 16.
+      * Now only "aes" works.  "aes" works with older versions too, so use
+      * that.  No "+" prefix; clang 15 and earlier doesn't accept that.
+      */
+#    define ATTRIBUTES	_target_attribute("aes")
 #  else
-#    ifdef ARCH_ARM32
-#      define ATTRIBUTES    _target_attribute("fpu=crypto-neon-fp-armv8")
-#    else
-#      ifdef __clang__
-	 /*
-	  * This used to use "crypto", but that stopped working with clang 16.
-	  * Now only "aes" works.  "aes" works with older versions too, so use
-	  * that.  No "+" prefix; clang 15 and earlier doesn't accept that.
-	  */
-#        define ATTRIBUTES  _target_attribute("aes")
-#      else
-	 /*
-	  * With gcc, only "+crypto" works.  Both the "+" prefix and the
-	  * "crypto" (not "aes") are essential...
-	  */
-#        define ATTRIBUTES  _target_attribute("+crypto")
-#      endif
-#    endif
+     /*
+      * With gcc, only "+crypto" works.  Both the "+" prefix and the
+      * "crypto" (not "aes") are essential...
+      */
+#    define ATTRIBUTES	_target_attribute("+crypto")
 #  endif
 #  define ENABLE_EOR3		0
 #  include "crc32_pmull_helpers.h"
 
-static u32 ATTRIBUTES MAYBE_UNUSED
+static ATTRIBUTES u32
 crc32_arm_pmullx4(u32 crc, const u8 *p, size_t len)
 {
 	static const u64 _aligned_attribute(16) mults[3][2] = {
-		CRC32_1VECS_MULTS,
-		CRC32_4VECS_MULTS,
-		CRC32_2VECS_MULTS,
+		{ CRC32_X159_MODG, CRC32_X95_MODG },  /* 1 vecs */
+		{ CRC32_X543_MODG, CRC32_X479_MODG }, /* 4 vecs */
+		{ CRC32_X287_MODG, CRC32_X223_MODG }, /* 2 vecs */
 	};
 	static const u64 _aligned_attribute(16) final_mults[3][2] = {
-		{ CRC32_FINAL_MULT, 0 },
+		{ CRC32_X63_MODG, 0 },
 		{ CRC32_BARRETT_CONSTANT_1, 0 },
 		{ CRC32_BARRETT_CONSTANT_2, 0 },
 	};
@@ -571,17 +527,13 @@ crc32_arm_pmullx4(u32 crc, const u8 *p, size_t len)
  *
  * See crc32_pmull_wide.h for explanation.
  */
-#if defined(ARCH_ARM64) && HAVE_PMULL_INTRIN && HAVE_CRC32_INTRIN
+#if HAVE_PMULL_INTRIN && HAVE_CRC32_INTRIN
 #  define crc32_arm_pmullx12_crc	crc32_arm_pmullx12_crc
 #  define SUFFIX				 _pmullx12_crc
-#  if HAVE_PMULL_NATIVE && HAVE_CRC32_NATIVE && !USE_PMULL_TARGET_EVEN_IF_NATIVE
-#    define ATTRIBUTES
+#  ifdef __clang__
+#    define ATTRIBUTES	_target_attribute("aes,crc")
 #  else
-#    ifdef __clang__
-#      define ATTRIBUTES  _target_attribute("aes,crc")
-#    else
-#      define ATTRIBUTES  _target_attribute("+crypto,+crc")
-#    endif
+#    define ATTRIBUTES	_target_attribute("+crypto,+crc")
 #  endif
 #  define ENABLE_EOR3	0
 #  include "crc32_pmull_wide.h"
@@ -592,74 +544,39 @@ crc32_arm_pmullx4(u32 crc, const u8 *p, size_t len)
  *
  * This like crc32_arm_pmullx12_crc(), but it adds the eor3 instruction (from
  * the sha3 extension) for even better performance.
- *
- * Note: we require HAVE_SHA3_TARGET (or HAVE_SHA3_NATIVE) rather than
- * HAVE_SHA3_INTRIN, as we have an inline asm fallback for eor3.
  */
-#if defined(ARCH_ARM64) && HAVE_PMULL_INTRIN && HAVE_CRC32_INTRIN && \
-	(HAVE_SHA3_TARGET || HAVE_SHA3_NATIVE)
+#if HAVE_PMULL_INTRIN && HAVE_CRC32_INTRIN && HAVE_SHA3_INTRIN
 #  define crc32_arm_pmullx12_crc_eor3	crc32_arm_pmullx12_crc_eor3
 #  define SUFFIX				 _pmullx12_crc_eor3
-#  if HAVE_PMULL_NATIVE && HAVE_CRC32_NATIVE && HAVE_SHA3_NATIVE && \
-	!USE_PMULL_TARGET_EVEN_IF_NATIVE
-#    define ATTRIBUTES
+#  ifdef __clang__
+#    define ATTRIBUTES	_target_attribute("aes,crc,sha3")
+   /*
+    * With gcc, arch=armv8.2-a is needed for the sha3 intrinsics, unless the
+    * default target is armv8.3-a or later in which case it must be omitted.
+    * armv8.3-a or later can be detected by checking for __ARM_FEATURE_JCVT.
+    */
+#  elif defined(__ARM_FEATURE_JCVT)
+#    define ATTRIBUTES	_target_attribute("+crypto,+crc,+sha3")
 #  else
-#    ifdef __clang__
-#      define ATTRIBUTES  _target_attribute("aes,crc,sha3")
-     /*
-      * With gcc, arch=armv8.2-a is needed for the sha3 intrinsics, unless the
-      * default target is armv8.3-a or later in which case it must be omitted.
-      * armv8.3-a or later can be detected by checking for __ARM_FEATURE_JCVT.
-      */
-#    elif defined(__ARM_FEATURE_JCVT)
-#      define ATTRIBUTES  _target_attribute("+crypto,+crc,+sha3")
-#    else
-#      define ATTRIBUTES  _target_attribute("arch=armv8.2-a+crypto+crc+sha3")
-#    endif
+#    define ATTRIBUTES	_target_attribute("arch=armv8.2-a+crypto+crc+sha3")
 #  endif
 #  define ENABLE_EOR3	1
 #  include "crc32_pmull_wide.h"
 #endif
 
-/*
- * On the Apple M1 processor, crc32 instructions max out at about 25.5 GB/s in
- * the best case of using a 3-way or greater interleaved chunked implementation,
- * whereas a pmull-based implementation achieves 68 GB/s provided that the
- * stride length is large enough (about 10+ vectors with eor3, or 12+ without).
- *
- * For now we assume that crc32 instructions are preferable in other cases.
- */
-#define PREFER_PMULL_TO_CRC	0
-#ifdef __APPLE__
-#  include <TargetConditionals.h>
-#  if TARGET_OS_OSX
-#    undef PREFER_PMULL_TO_CRC
-#    define PREFER_PMULL_TO_CRC	1
-#  endif
-#endif
-
-/*
- * If the best implementation is statically available, use it unconditionally.
- * Otherwise choose the best implementation at runtime.
- */
-#if PREFER_PMULL_TO_CRC && defined(crc32_arm_pmullx12_crc_eor3) && \
-	HAVE_PMULL_NATIVE && HAVE_CRC32_NATIVE && HAVE_SHA3_NATIVE
-#  define DEFAULT_IMPL	crc32_arm_pmullx12_crc_eor3
-#elif !PREFER_PMULL_TO_CRC && defined(crc32_arm_crc_pmullcombine) && \
-	HAVE_CRC32_NATIVE && HAVE_PMULL_NATIVE
-#  define DEFAULT_IMPL	crc32_arm_crc_pmullcombine
-#else
 static inline crc32_func_t
 arch_select_crc32_func(void)
 {
 	const u32 features MAYBE_UNUSED = get_arm_cpu_features();
 
-#if PREFER_PMULL_TO_CRC && defined(crc32_arm_pmullx12_crc_eor3)
-	if (HAVE_PMULL(features) && HAVE_CRC32(features) && HAVE_SHA3(features))
+#ifdef crc32_arm_pmullx12_crc_eor3
+	if ((features & ARM_CPU_FEATURE_PREFER_PMULL) &&
+	    HAVE_PMULL(features) && HAVE_CRC32(features) && HAVE_SHA3(features))
 		return crc32_arm_pmullx12_crc_eor3;
 #endif
-#if PREFER_PMULL_TO_CRC && defined(crc32_arm_pmullx12_crc)
-	if (HAVE_PMULL(features) && HAVE_CRC32(features))
+#ifdef crc32_arm_pmullx12_crc
+	if ((features & ARM_CPU_FEATURE_PREFER_PMULL) &&
+	    HAVE_PMULL(features) && HAVE_CRC32(features))
 		return crc32_arm_pmullx12_crc;
 #endif
 #ifdef crc32_arm_crc_pmullcombine
@@ -677,6 +594,5 @@ arch_select_crc32_func(void)
 	return NULL;
 }
 #define arch_select_crc32_func	arch_select_crc32_func
-#endif
 
 #endif /* LIB_ARM_CRC32_IMPL_H */

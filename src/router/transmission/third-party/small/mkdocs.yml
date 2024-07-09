@@ -1,0 +1,47 @@
+site_name: Small
+site_url: https://alandefreitas.github.io/small/
+repo_url: https://github.com/alandefreitas/small
+repo_name: alandefreitas/small
+
+site_description: "Small: C++ Small Containers"
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    scheme: preference
+  icon:
+    repo: fontawesome/brands/git-alt
+    logo: fontawesome/solid/code
+
+edit_uri: ""
+
+plugins:
+  - search
+  - awesome-pages
+
+google_analytics:
+  - UA-109858331-6
+  - auto
+
+copyright: Copyright &copy; Alan Freitas
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true
+      linenums_style: pymdownx.inline
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.snippets
+  - pymdownx.arithmatex:
+      generic: true
+  - meta
+
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - https://media.ethicalads.io/media/client/ethicalads.min.js

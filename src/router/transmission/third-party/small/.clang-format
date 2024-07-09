@@ -1,0 +1,189 @@
+# Main style properties
+Language: Cpp
+Standard: Latest
+BasedOnStyle: Microsoft
+
+# Columns and Lines
+ColumnLimit: 80
+ReflowComments: true
+TabWidth: 8
+UseCRLF: false
+UseTab: Never
+DeriveLineEnding: true
+
+# Breaking around braces
+BreakBeforeBraces: Custom
+BraceWrapping:
+  # Control
+  AfterControlStatement: MultiLine
+  AfterCaseLabel: true
+  BeforeCatch: true
+  BeforeElse: false
+  BeforeWhile: true
+  # Definition
+  AfterNamespace: false
+  AfterStruct: true
+  AfterClass: true
+  SplitEmptyRecord: false
+  AfterFunction: false
+  SplitEmptyFunction: false
+  BeforeLambdaBody: false
+  AfterEnum: true
+  SplitEmptyNamespace: true
+  AfterUnion: true
+  AfterExternBlock: true
+  # Extra
+  IndentBraces: false
+
+# Breaking around specifiers
+#     Namespaces
+CompactNamespaces: false
+#     Templates
+AlwaysBreakTemplateDeclarations: Yes
+BreakBeforeConceptDeclarations: true
+#     Classes
+BreakInheritanceList: BeforeComma
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Leave
+#     Functions
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakAfterReturnType: All
+MaxEmptyLinesToKeep: 2
+#     Strings
+AlwaysBreakBeforeMultilineStrings: false
+BreakStringLiterals: true
+#     Expressions
+BreakConstructorInitializers: BeforeColon
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: false
+
+# Breaking single line blocks
+#     Control
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+#     Declarations
+AllowShortEnumsOnASingleLine: false
+#     Function
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Inline
+#     Expressions
+AllowAllArgumentsOnNextLine: false
+
+# Indentation
+#    Parameters
+IndentWidth: 4
+#    Definitions
+NamespaceIndentation: All
+IndentExternBlock: NoIndent
+IndentPPDirectives: AfterHash
+#    Classes
+AccessModifierOffset: -4
+IndentAccessModifiers: false
+#    Templates
+IndentRequires: false
+#    Functions
+IndentWrappedFunctionNames: false
+LambdaBodyIndentation: OuterScope
+#    Control
+ConstructorInitializerIndentWidth: 4
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentGotoLabels: true
+#    Expressions
+ContinuationIndentWidth: 4
+InsertTrailingCommas: None
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Alignment
+#    Macros
+AlignConsecutiveMacros: Consecutive
+AttributeMacros: ['SMALL_CONSTEXPR']
+#    Declaration
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+DerivePointerAlignment: true
+AlignConsecutiveDeclarations: None
+#    Namespace
+ShortNamespaceLines: 0
+#    Brackets
+AlignAfterOpenBracket: AlwaysBreak
+#    Expressions
+AlignArrayOfStructures: Right
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: true
+
+# Spaces
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+SpacesInSquareBrackets: false
+SpaceBeforeSquareBrackets: false
+SpacesBeforeTrailingComments: 1
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInParentheses: false
+Cpp11BracedListStyle: false
+
+# BinPack
+BinPackArguments: false
+BinPackParameters: false
+BitFieldColonSpacing: After
+ExperimentalAutoDetectBinPacking: true
+
+# Penalties
+PenaltyBreakAssignment: 512
+PenaltyBreakBeforeFirstCallParameter: 512
+PenaltyBreakComment: 512
+PenaltyBreakFirstLessLess: 512
+PenaltyBreakString: 512
+PenaltyBreakTemplateDeclaration: 512
+PenaltyExcessCharacter: 256
+PenaltyIndentedWhitespace: 8
+PenaltyReturnTypeOnItsOwnLine: 2
+
+# Sorting
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: true
+IncludeBlocks: Merge
+IncludeCategories:
+  - Regex:           '^["<]small/.*/detail/prologue.hpp'  # config
+    Priority:        1
+  - Regex:           '^["<]small/.*/detail/epilogue.hpp'  # config
+    Priority:        10
+  - Regex:           '^["<]small/config/'                 # config
+    Priority:        2
+  - Regex:           '^["<]small/detail/config.hpp'       # config
+    Priority:        2
+  - Regex:           '^["<]small/.*/detail/'              # details
+    Priority:        4
+  - Regex:           '^["<]small/detail/'                 # details
+    Priority:        4
+  - Regex:           '^["<]small/'                        # internal
+    Priority:        3
+  - Regex:           '^(["<](boost)/)'                    # external
+    Priority:        5
+  - Regex:           '<[[:alnum:].]+>'                    # C++
+    Priority:        6
+  - Regex:           '.*'                                 # any other
+    Priority:        7
+
+# Comments
+FixNamespaceComments: true
+CommentPragmas:  '^ clang-format'

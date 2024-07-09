@@ -7,7 +7,7 @@ while maintaining minimum extra delay. It is implemented on top of UDP to be
 cross-platform and functional today. As a result, uTP is the primary transport
 for uTorrent peer-to-peer connections.
 
-uTP is written in C++, but the external interface is strictly C (ANSI C89).
+uTP is written in C++, but the external interface is strictly C (C11 standard).
 
 ## The Interface
 

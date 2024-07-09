@@ -27,17 +27,6 @@
 #include "tr-utp.h"
 #include "utils.h" // for _()
 
-#ifdef _WIN32
-#undef EAGAIN
-#define EAGAIN WSAEWOULDBLOCK
-#undef EINTR
-#define EINTR WSAEINTR
-#undef EINPROGRESS
-#define EINPROGRESS WSAEINPROGRESS
-#undef EPIPE
-#define EPIPE WSAECONNRESET
-#endif
-
 #define tr_logAddErrorIo(io, msg) tr_logAddError(msg, (io)->display_name())
 #define tr_logAddWarnIo(io, msg) tr_logAddWarn(msg, (io)->display_name())
 #define tr_logAddDebugIo(io, msg) tr_logAddDebug(msg, (io)->display_name())
@@ -49,7 +38,12 @@ namespace
 // since that's what peer-io does by default anyway.
 [[nodiscard]] auto constexpr canRetryFromError(int error_code) noexcept
 {
-    return error_code == 0 || error_code == EAGAIN || error_code == EINTR || error_code == EINPROGRESS;
+#ifdef _WIN32
+    return error_code == 0 || error_code == WSAEWOULDBLOCK || error_code == WSAEINTR || error_code == WSAEINPROGRESS;
+#else
+    return error_code == 0 || error_code == EAGAIN || error_code == EWOULDBLOCK || error_code == EINTR ||
+        error_code == EINPROGRESS;
+#endif
 }
 
 size_t get_desired_output_buffer_size(tr_peerIo const* io, uint64_t now)
@@ -350,7 +344,13 @@ void tr_peerIo::can_read_wrapper()
     auto done = bool{ false };
     auto err = bool{ false };
 
-    while (!done && !err)
+    // In normal conditions, only continue processing if we still have bandwidth
+    // quota for it.
+    //
+    // The read buffer will grow indefinitely if libutp or the TCP stack keeps buffering
+    // data faster than the bandwidth limit allows. To safeguard against that, we keep
+    // processing if the read buffer is more than twice as large as the target size.
+    while (!done && !err && (read_buffer_size() > RcvBuf * 2U || bandwidth().clamp(TR_DOWN, read_buffer_size()) != 0U))
     {
         size_t piece = 0;
         auto const old_len = read_buffer_size();
@@ -358,17 +358,14 @@ void tr_peerIo::can_read_wrapper()
         auto const used = old_len - read_buffer_size();
         auto const overhead = socket_.guess_packet_overhead(used);
 
-        if (piece != 0 || piece != used)
+        if (piece != 0)
         {
-            if (piece != 0)
-            {
-                bandwidth().notifyBandwidthConsumed(TR_DOWN, piece, true, now);
-            }
+            bandwidth().notifyBandwidthConsumed(TR_DOWN, piece, true, now);
+        }
 
-            if (used != piece)
-            {
-                bandwidth().notifyBandwidthConsumed(TR_DOWN, used - piece, false, now);
-            }
+        if (used != piece)
+        {
+            bandwidth().notifyBandwidthConsumed(TR_DOWN, used - piece, false, now);
         }
 
         if (overhead > 0)
@@ -409,7 +406,7 @@ size_t tr_peerIo::try_read(size_t max)
 
     // Do not write more than the bandwidth allows.
     // If there is no bandwidth left available, disable writes.
-    max = bandwidth().clamp(TR_DOWN, max);
+    max = bandwidth().clamp(Dir, max);
     if (max == 0)
     {
         set_enabled(Dir, false);
@@ -719,9 +716,19 @@ void tr_peerIo::utp_init([[maybe_unused]] struct_utp_context* ctx)
         {
             if (auto* const io = static_cast<tr_peerIo*>(utp_get_userdata(args->socket)); io != nullptr)
             {
+                // The peer io object can destruct inside can_read_wrapper(), so keep
+                // it alive for the duration of this code block. This can happen when
+                // a BT handshake did not complete successfully for example.
+                auto const keep_alive = io->shared_from_this();
+
                 io->inbuf_.add(args->buf, args->len);
                 io->set_enabled(TR_DOWN, true);
                 io->can_read_wrapper();
+
+                // utp_read_drained() notifies libutp that we read a packet from them.
+                // It opens up the congestion window by sending an ACK (soonish) if
+                // one was not going to be sent.
+                utp_read_drained(args->socket);
             }
             return {};
         });
@@ -733,16 +740,7 @@ void tr_peerIo::utp_init([[maybe_unused]] struct_utp_context* ctx)
         {
             if (auto const* const io = static_cast<tr_peerIo*>(utp_get_userdata(args->socket)); io != nullptr)
             {
-                // We use this callback to enforce speed limits by telling
-                // libutp to read no more than `target_dl_bytes` bytes.
-                auto const target_dl_bytes = io->bandwidth_.clamp(TR_DOWN, RcvBuf);
-
-                // libutp's private function get_rcv_window() allows libutp
-                // to read up to (UTP_RCVBUF - READ_BUFFER_SIZE) bytes and
-                // UTP_RCVBUF is set to `RcvBuf` by tr_peerIo::utp_init().
-                // So to limit dl to `target_dl_bytes`, we need to return
-                // N where (`target_dl_bytes` == RcvBuf - N).
-                return RcvBuf - target_dl_bytes;
+                return io->read_buffer_size();
             }
             return {};
         });
