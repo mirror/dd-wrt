@@ -70,7 +70,7 @@
 #endif
 /*qca808x_start*/
 static hsl_dev_t dev_table[SW_MAX_NR_DEV];
-static ssdk_init_cfg *dev_ssdk_cfg[SW_MAX_NR_DEV] = { 0 };
+ssdk_init_cfg *dev_ssdk_cfg[SW_MAX_NR_DEV] = { 0 };
 ssdk_chip_type SSDK_CURRENT_CHIP_TYPE[SW_MAX_NR_DEV] = {CHIP_UNSPECIFIED};
 
 ssdk_chip_type hsl_get_current_chip_type(a_uint32_t dev_id)

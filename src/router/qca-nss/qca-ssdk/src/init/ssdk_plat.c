@@ -98,6 +98,14 @@
 #include "qca808x.h"
 #endif
 #include "hsl_port_prop.h"
+
+#ifdef SCOMPHY
+#include "ssdk_scomphy.h"
+#endif
+#if defined(ISIS) ||defined(ISISC) ||defined(GARUDA)
+#include <f1_phy.h>
+#endif
+
 /*qca808x_start*/
 
 extern struct qca_phy_priv **qca_phy_priv_global;
@@ -718,6 +726,50 @@ static ssize_t ssdk_dev_id_get(struct device *dev,
 	return count;
 }
 
+static ssize_t ssdk_reset_get(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	ssize_t count;
+	a_uint32_t num;
+
+	num = 0;
+
+	count = snprintf(buf, (ssize_t)PAGE_SIZE, "%u", num);
+	return count;
+}
+int qca_ar8327_hw_init(struct qca_phy_priv *priv);
+void ssdk_cfg_default_init(ssdk_init_cfg *cfg);
+
+extern  ssdk_init_cfg **dev_ssdk_cfg;
+
+static ssize_t ssdk_reset_set(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf, size_t count)
+{
+#ifdef MP
+
+	char num_buf[12];
+	a_uint32_t num;
+	ssdk_init_cfg *cfg;
+	int dev_id;
+
+	if (count >= sizeof(num_buf)) return 0;
+	memcpy(num_buf, buf, count);
+	num_buf[count] = '\0';
+	sscanf(num_buf, "%u", &num);
+
+	ssdk_dev_id = num;
+	cfg = dev_ssdk_cfg[num];
+	if (dev_id == 0) {
+	qca_scomphy_hw_init(cfg, dev_id);
+	} else {
+	qca_ar8327_hw_init(qca_phy_priv_global[dev_id]);
+	}
+#endif
+	return count;
+}
+
 static ssize_t ssdk_dev_id_set(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t count)
@@ -747,6 +799,7 @@ static ssize_t ssdk_log_level_get(struct device *dev,
 	count = snprintf(buf, (ssize_t)PAGE_SIZE, "%u", num);
 	return count;
 }
+
 
 static ssize_t ssdk_log_level_set(struct device *dev,
 		struct device_attribute *attr,
@@ -1332,6 +1385,8 @@ parse_fail:
 
 static const struct device_attribute ssdk_dev_id_attr =
 	__ATTR(dev_id, 0660, ssdk_dev_id_get, ssdk_dev_id_set);
+static const struct device_attribute ssdk_reset_attr =
+	__ATTR(reset, 0660, ssdk_reset_get, ssdk_reset_set);
 static const struct device_attribute ssdk_log_level_attr =
 	__ATTR(log_level, 0660, ssdk_log_level_get, ssdk_log_level_set);
 static const struct device_attribute ssdk_packet_counter_attr =
@@ -1368,6 +1423,12 @@ int ssdk_sysfs_init (void)
 
 	/* create /sys/ssdk/dev_id file */
 	ret = sysfs_create_file(ssdk_sys, &ssdk_dev_id_attr.attr);
+	if (ret) {
+		printk("Failed to register SSDK dev id SysFS file\n");
+		goto CLEANUP_1;
+	}
+
+	ret = sysfs_create_file(ssdk_sys, &ssdk_reset_attr.attr);
 	if (ret) {
 		printk("Failed to register SSDK dev id SysFS file\n");
 		goto CLEANUP_1;

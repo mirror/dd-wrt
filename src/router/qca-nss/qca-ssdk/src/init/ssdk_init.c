@@ -1930,8 +1930,8 @@ ssdk_init(a_uint32_t dev_id, ssdk_init_cfg * cfg)
 	sw_error_t rv;
 
 	rv = fal_init(dev_id, cfg);
-	if (rv != SW_OK)
-		SSDK_ERROR("ssdk fal init failed: %d. \r\n", rv);
+//	if (rv != SW_OK)
+//		SSDK_ERROR("ssdk fal init failed: %d. \r\n", rv);
 
 /*qca808x_end*/
 	if(!ssdk_is_emulation(dev_id))
@@ -2205,7 +2205,7 @@ static int chip_ver_get(a_uint32_t dev_id, ssdk_init_cfg* cfg)
 /*qca808x_end*/
 
 /*qca808x_start*/
-static void ssdk_cfg_default_init(ssdk_init_cfg *cfg)
+void ssdk_cfg_default_init(ssdk_init_cfg *cfg)
 {
 	memset(cfg, 0, sizeof(ssdk_init_cfg));
 	cfg->cpu_mode = HSL_CPU_1;

@@ -2081,13 +2081,15 @@ void ssdk_gcc_uniphy_sys_set(a_uint32_t dev_id, a_uint32_t uniphy_index,
 	return;
 }
 #endif
-
+static int noclock=0;
 #if defined(HPPE) || defined(MP)
 void ssdk_gcc_clock_init(void)
 {
 	enum cmnblk_clk_type cmnblk_clk_mode = INTERNAL_48MHZ;
 	a_uint8_t *mode = NULL;
-
+	if (noclock)
+	    return;
+	noclock = 1;
 	clock_node = of_find_node_by_name(NULL, "ess-switch");
 	if (of_property_read_string(clock_node, "cmnblk_clk",
 				    (const char **)&mode)) {
