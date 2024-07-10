@@ -70,9 +70,7 @@ static int singlesensor(char *sysfs)
 	int cnt = 0;
 	for (int i = 0; i < 16; i++) {
 		snprintf(p, sizeof(p) - 1, "%stemp%d_input", sysfs, i);
-		FILE *fp = fopen(p, "rb");
-		if (fp) {
-			fclose(fp);
+		if (f_exists(p)) {
 			cnt++;
 		} else
 			return 1;
@@ -506,9 +504,7 @@ static int get_cputemp(webs_t wp, int argc, char_t **argv)
 	present[1] = 1;
 #endif
 #ifdef HAVE_NORTHSTAR
-	fp = my_fopen("/proc/dmu/temperature", "rb");
-	if (fp) {
-		my_fclose(fp);
+	if (f_exists("/proc/dmu/temperature")) {
 		cpufound |= showsensor(wp, "/proc/dmu/temperature", NULL, "CPU", 10, CELSIUS);
 	}
 #endif
