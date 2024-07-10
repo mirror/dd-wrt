@@ -1211,10 +1211,40 @@ failover:
 		strcpy(buf, "QCA IPQ4018");
 	else if (strstr(cpu, "ipq4028"))
 		strcpy(buf, "QCA IPQ4028");
+	else if (strstr(cpu, "ipq6000"))
+		strcpy(buf, "QCA IPQ6000");
+	else if (strstr(cpu, "ipq6010"))
+		strcpy(buf, "QCA IPQ6010");
 	else if (strstr(cpu, "ipq6018"))
 		strcpy(buf, "QCA IPQ6018");
+	else if (strstr(cpu, "ipq6028"))
+		strcpy(buf, "QCA IPQ6028");
+	else if (strstr(cpu, "ipq5000"))
+		strcpy(buf, "QCA IPQ5000");
+	else if (strstr(cpu, "ipq5010"))
+		strcpy(buf, "QCA IPQ5010");
+	else if (strstr(cpu, "ipq5016"))
+		strcpy(buf, "QCA IPQ5016");
+	else if (strstr(cpu, "ipq5028"))
+		strcpy(buf, "QCA IPQ5028");
 	else if (strstr(cpu, "ipq5018"))
 		strcpy(buf, "QCA IPQ5018");
+	else if (strstr(cpu, "ipq8173"))
+		strcpy(buf, "QCA IPQ8173");
+	else if (strstr(cpu, "ipq8174"))
+		strcpy(buf, "QCA IPQ8174");
+	else if (strstr(cpu, "ipq8176"))
+		strcpy(buf, "QCA IPQ8176");
+	else if (strstr(cpu, "ipq8178"))
+		strcpy(buf, "QCA IPQ8178");
+	else if (strstr(cpu, "ipq8070"))
+		strcpy(buf, "QCA IPQ8070");
+	else if (strstr(cpu, "ipq8072"))
+		strcpy(buf, "QCA IPQ8072");
+	else if (strstr(cpu, "ipq8076"))
+		strcpy(buf, "QCA IPQ8076");
+	else if (strstr(cpu, "ipq8078"))
+		strcpy(buf, "QCA IPQ8078");
 	else if (strstr(cpu, "ipq8074"))
 		strcpy(buf, "QCA IPQ8074");
 	else
