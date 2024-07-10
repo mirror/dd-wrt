@@ -93,7 +93,7 @@ static char *gethwmon(char *sysfs)
 static int checkhwmon(char *sysfs)
 {
 	if (!sensors)
-		return NULL;
+		return 0;
 	char *sub = gethwmon(sysfs);
 	int cnt = 0;
 	while (sensors[cnt].path || sensors[cnt].method) {
