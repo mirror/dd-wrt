@@ -547,8 +547,8 @@ printk(KERN_INFO "page nvram\n");
 	/* Find associated MTD device */
 	for (i = 0; i < 32; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);
-		if (nvram_mtd) {
-			if (!strcmp(nvram_mtd->name, "nvram") && nvram_mtd->size >= NVRAM_SPACE) {
+		if (!IS_ERR(nvram_mtd)) {
+			if (nvram_mtd->name && !strcmp(nvram_mtd->name, "nvram") && nvram_mtd->size >= NVRAM_SPACE) {
 				printk(KERN_INFO "nvram size = %llu\n", nvram_mtd->size);
 				break;
 			}
@@ -558,7 +558,7 @@ printk(KERN_INFO "page nvram\n");
 	if (i >= 32) {
 		printk(KERN_EMERG "no nvram partition found\n");
 		nvram_mtd = NULL;
-		return -1;
+		return -EPROBE_DEFER;
 	}
 #endif
 
