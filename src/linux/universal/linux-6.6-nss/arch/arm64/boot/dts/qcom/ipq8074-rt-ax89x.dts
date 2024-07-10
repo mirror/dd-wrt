@@ -32,7 +32,7 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 		/* We have to override root and ubi device passed by bootloader */
-		bootargs-append = " ubi.block=0,jffs2 root=/dev/ubiblock0_4";
+		/*bootargs-append = " ubi.block=0,jffs2 root=/dev/ubiblock0_4";*/
 	};
 
 	keys {
@@ -466,7 +466,11 @@
 			partition@400000 {
 				compatible = "linux,ubi";
 				label = "UBI_DEV";
-				reg = <0x00400000 0xfc00000>;
+				reg = <0x00400000 0xfb00000>;
+			};
+			partition@ff00000 {
+				label = "nvram";
+				reg = <0x0ff00000 0x0100000>;
 			};
 		};
 	};
