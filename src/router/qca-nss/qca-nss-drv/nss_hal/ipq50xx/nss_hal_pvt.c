@@ -536,7 +536,6 @@ static int __nss_hal_request_irq(struct nss_ctx_instance *nss_ctx, struct nss_pl
 	const char *irq_name;
 
 	irq_set_status_flags(irq, IRQ_DISABLE_UNLAZY);
-	printk(KERN_INFO "request irq %d\n", irq);
 	switch (irq_num) {
 	case NSS_HAL_N2H_INTR_PURPOSE_EMPTY_BUFFER_SOS:
 		napi_poll_cb = nss_core_handle_napi_non_queue;
