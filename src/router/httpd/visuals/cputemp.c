@@ -27,6 +27,7 @@
 
 struct SENSORS {
 	char *path;
+	char *syspath;
 	int scale;
 	int (*method)(void);
 	int shown;
@@ -55,35 +56,44 @@ static void sensorreset(void)
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].path)
 				free(sensors[cnt].path);
+			if (sensors[cnt].syspath)
+				free(sensors[cnt].syspath);
 			cnt++;
 		}
 		free(sensors);
 		sensors = NULL;
 	}
 }
-static char *gethwmon(char *sysfs)
+static char *gethwmon_base(char *sysfs)
 {
 	char *sub = strstr(sysfs, "hwmon");
-	if (!sensors)
-		return 0;
 	if (!sub)
-		return 0;
-	sub = strdup(sub);
+		return NULL;
+	return strdup(sub);
+}
+
+static char *gethwmon(char *sysfs)
+{
+	char *sub = gethwmon_base(sysfs);;
 	char *idx = strchr(sub, '/');
 	if (!idx) {
 		free(sub);
-		return 0;
+		return NULL;
 	}
 	idx = strchr(idx + 1, '/');
 	if (!idx) {
 		free(sub);
-		return 0;
+		return NULL;
 	}
 	*idx = 0;
 	return sub;
 }
+
+
 static int checkhwmon(char *sysfs)
 {
+	if (!sensors)
+		return NULL;
 	char *sub = gethwmon(sysfs);
 	int cnt = 0;
 	while (sensors[cnt].path || sensors[cnt].method) {
@@ -100,8 +110,9 @@ static int alreadyshowed(char *path)
 {
 	if (!path)
 		return 0;
-	char *sub = gethwmon(path);
-
+	char *sub = gethwmon_base(path);
+	if (!sub)
+	    return 0;
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
@@ -119,7 +130,7 @@ static int alreadyshowed(char *path)
 static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
-	char *sub = gethwmon(path);
+	char *sub = gethwmon_base(path);
 
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
@@ -128,11 +139,11 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 				free(sub);
 				return cnt; // already added
 			}
-			if (path && sensors[cnt].method) {
+			if (sub && sensors[cnt].method) {
 				cnt++;
 				continue;
 			}
-			if (path && !strcmp(sensors[cnt].path, sub)) {
+			if (sub && !strcmp(sensors[cnt].path, sub)) {
 				sensors[cnt].shown = 1;
 				free(sub);
 				return cnt; // already added
@@ -141,9 +152,10 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 		}
 	}
 	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
-	if (path)
+	if (sub) {
 		sensors[cnt].path = sub;
-	else
+		asprintf(&sensors[cnt].syspath, "/sys/class/%s", sub);
+	} else
 		sensors[cnt].path = NULL;
 	sensors[cnt].scale = scale;
 	sensors[cnt].method = method;
@@ -157,7 +169,9 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 static int getscale(char *path)
 {
 	int cnt = 0;
-	char *sub = gethwmon(path);
+	char *sub = gethwmon_base(path);
+	if (!sub)
+	    return 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].method) {
@@ -183,7 +197,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 			int scale = sensors[cnt].scale;
 			int sensor = -1;
 			if (sensors[cnt].path) {
-				FILE *fp = my_fopen(sensors[cnt].path, "rb");
+				FILE *fp = my_fopen(sensors[cnt].syspath, "rb");
 				if (fp) {
 					fscanf(fp, "%d", &sensor);
 					my_fclose(fp);
