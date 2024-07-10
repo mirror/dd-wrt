@@ -64,11 +64,30 @@ static void sensorreset(void)
 		sensors = NULL;
 	}
 }
+static int singlesensor(char *sysfs)
+{
+	char p[64];
+	int cnt = 0;
+	for (int i = 0; i < 16; i++) {
+		snprintf(p, sizeof(p) - 1, "%stemp%d_input", sysfs, i);
+		FILE *fp = fopen(p, "rb");
+		if (fp) {
+			fclose(fp);
+			cnt++;
+		} else
+			return 1;
+		if (cnt == 2)
+			;
+		return 0;
+	}
+	return 0;
+}
+
 static char *gethwmon_base(char *sysfs)
 {
 	if (!sysfs)
 		return NULL;
-	char *sub = strstr(sysfs, "ieee80211"); 
+	char *sub = strstr(sysfs, "ieee80211");
 	if (!sub)
 		sub = strstr(sysfs, "hwmon");
 	if (!sub)
@@ -77,7 +96,7 @@ static char *gethwmon_base(char *sysfs)
 	if (!idx) {
 		return NULL;
 	}
-	return strdup(idx+1);
+	return strdup(idx + 1);
 }
 
 static char *gethwmon(char *sysfs)
@@ -95,7 +114,6 @@ static char *gethwmon(char *sysfs)
 	*idx = 0;
 	return sub;
 }
-
 
 static int checkhwmon(char *sysfs)
 {
@@ -121,7 +139,7 @@ static int alreadyshowed(char *path)
 		return 0;
 	char *sub = gethwmon_base(path);
 	if (!sub)
-	    return 0;
+		return 0;
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
@@ -180,7 +198,7 @@ static int getscale(char *path)
 	int cnt = 0;
 	char *sub = gethwmon_base(path);
 	if (!sub)
-	    return 0;
+		return 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].method) {
@@ -682,7 +700,9 @@ exit_error:;
 					cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 
 				} else {
-					sprintf(sname, "%s temp%d", sname, b);
+					int single = singlesensor(sysfs);
+					if (!single)
+						sprintf(sname, "%s temp%d", sname, b);
 					if (!checkhwmon(sname))
 						cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				}
@@ -712,7 +732,11 @@ exit_error:;
 				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
 			} else {
 				char sname[64];
-				sprintf(sname, "%s in%d", driver, b);
+				int single = singlesensor(sysfs);
+				if (!single)
+					sprintf(sname, "%s in%d", driver, b);
+				else
+					sprintf(sname, "%s", driver);
 				cpufound |= showsensor(wp, p, NULL, sname, 1000, VOLT); // volt
 			}
 		}
@@ -739,7 +763,11 @@ exit_error:;
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			} else {
 				char sname[64];
-				sprintf(sname, "%s fan%d", driver, b);
+				int single = singlesensor(sysfs);
+				if (!single)
+					sprintf(sname, "%s fan%d", driver, b);
+				else
+					sprintf(sname, "%s", driver);
 				cpufound |= showsensor(wp, p, NULL, sname, 1, RPM); // rpm
 			}
 		}
