@@ -1383,12 +1383,15 @@ static __init int getbootdevice(void)
 static void __init ubi_auto_attach(void)
 {
 	int err;
+	struct device_node *np;
 	struct mtd_info *mtd;
 	loff_t offset = 0;
 	size_t len;
 	char magic[4];
 
 	/* try attaching mtd device named "ubi" or "data" */
+	if (!of_machine_is_compatible("asus,rt-ax89x")) {
+
 	int bootdevice = getbootdevice();
 	if (bootdevice == 1)
 	    mtd = open_mtd_device("linux2");
@@ -1402,12 +1405,23 @@ static void __init ubi_auto_attach(void)
 		mtd = open_mtd_device("linux");
 
 	}
+	} else {
+	    mtd = open_mtd_device("ubi");
+	    if (IS_ERR(mtd))
+		mtd = open_mtd_device("data");
+	}
+
 	/* Hack for the Asus RT-AC58U */
 	if (IS_ERR(mtd))
 		mtd = open_mtd_device("UBI_DEV");
 
 	if (IS_ERR(mtd))
 		return;
+
+	np = mtd_get_of_node(mtd);
+	if (of_device_is_compatible(np, "linux,ubi"))
+		goto cleanup;
+	
 
 	/* get the first not bad block */
 	if (mtd_can_have_bb(mtd))

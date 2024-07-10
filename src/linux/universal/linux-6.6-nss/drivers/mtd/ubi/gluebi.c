@@ -25,6 +25,7 @@
 #include <linux/mutex.h>
 #include <linux/mtd/ubi.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
 #include "ubi-media.h"
 
 #define err_msg(fmt, ...)                                   \
@@ -280,6 +281,7 @@ static int gluebi_create(struct ubi_device_info *di,
 {
 	struct gluebi_device *gluebi, *g;
 	struct mtd_info *mtd;
+	struct mtd_partition *part;
 
 	gluebi = kzalloc(sizeof(struct gluebi_device), GFP_KERNEL);
 	if (!gluebi)
@@ -316,6 +318,7 @@ static int gluebi_create(struct ubi_device_info *di,
 	else
 		mtd->size = vi->used_bytes;
 
+
 	/* Just a sanity check - make sure this gluebi device does not exist */
 	mutex_lock(&devices_mutex);
 	g = find_gluebi_nolock(vi->ubi_num, vi->vol_id);
@@ -323,8 +326,15 @@ static int gluebi_create(struct ubi_device_info *di,
 		err_msg("gluebi MTD device %d form UBI device %d volume %d already exists",
 			g->mtd.index, vi->ubi_num, vi->vol_id);
 	mutex_unlock(&devices_mutex);
+	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
+	part->name = kstrdup(mtd->name, GFP_KERNEL);
+	part->offset = 0;
+	part->size = mtd->size;
+	kfree(mtd->name);
+	mtd->name = kmalloc(vi->name_len + 5, GFP_KERNEL);
+	sprintf((char*)mtd->name, "%s_ubi",part->name); 
 
-	if (mtd_device_register(mtd, NULL, 0)) {
+	if (mtd_device_register(mtd, part, 1)) {
 		err_msg("cannot add MTD device");
 		kfree(mtd->name);
 		kfree(gluebi);
