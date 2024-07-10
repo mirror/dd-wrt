@@ -61,7 +61,7 @@ static void sensorreset(void)
 		sensors = NULL;
 	}
 }
-static int checkhwmon(char *sysfs)
+static char *gethwmon(char *sysfs)
 {
 	char *sub = strstr(sysfs, "hwmon");
 	if (!sensors)
@@ -80,6 +80,11 @@ static int checkhwmon(char *sysfs)
 		return 0;
 	}
 	*idx = 0;
+	return sub;
+}
+static int checkhwmon(char *sysfs)
+{
+	char *sub = gethwmon(sysfs);
 	int cnt = 0;
 	while (sensors[cnt].path || sensors[cnt].method) {
 		if (sensors[cnt].path && strstr(sensors[cnt].path, sub)) {
@@ -95,32 +100,41 @@ static int alreadyshowed(char *path)
 {
 	if (!path)
 		return 0;
+	char *sub = gethwmon(path);
+
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
-			if (sensors[cnt].path && sensors[cnt].shown && !strcmp(sensors[cnt].path, path))
+			if (sensors[cnt].path && sensors[cnt].shown && !strcmp(sensors[cnt].path, sub)) {
+				free(sub);
 				return 1;
+			}
 			cnt++;
 		}
 	}
+	free(sub);
 	return 0;
 }
 
 static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
+	char *sub = gethwmon(path);
+
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (method && sensors[cnt].method == method) {
 				sensors[cnt].shown = 1;
+				free(sub);
 				return cnt; // already added
 			}
 			if (path && sensors[cnt].method) {
 				cnt++;
 				continue;
 			}
-			if (path && !strcmp(sensors[cnt].path, path)) {
+			if (path && !strcmp(sensors[cnt].path, sub)) {
 				sensors[cnt].shown = 1;
+				free(sub);
 				return cnt; // already added
 			}
 			cnt++;
@@ -128,7 +142,7 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 	}
 	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
 	if (path)
-		sensors[cnt].path = strdup(path);
+		sensors[cnt].path = sub;
 	else
 		sensors[cnt].path = NULL;
 	sensors[cnt].scale = scale;
@@ -143,17 +157,21 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 static int getscale(char *path)
 {
 	int cnt = 0;
+	char *sub = gethwmon(path);
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].method) {
 				cnt++;
 				continue;
 			}
-			if (!strcmp(sensors[cnt].path, path))
+			if (!strcmp(sensors[cnt].path, sub)) {
+				free(sub);
 				return sensors[cnt - 1].scale;
+			}
 			cnt++;
 		}
 	}
+	free(sub);
 	return 0;
 }
 
@@ -606,7 +624,7 @@ exit_error:;
 		cpufound |= showsensor(wp, path, NULL, "SYS", SYSTEMP_MUL, CELSIUS);
 	}
 	int a, b;
-	for (a = 0; a < 16; a++) {
+	for (a = 0; a < 32; a++) {
 		char sysfs[64];
 		sprintf(sysfs, "/sys/class/hwmon/hwmon%d/", a);
 		if (checkhwmon(sysfs))
@@ -645,18 +663,21 @@ exit_error:;
 					if (!checkhwmon(sname))
 						cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS);
 				}
-			}
+			} else
+				break;
 		}
 		for (b = 0; b < 16; b++) {
 			char n[64] = { 0 };
 			char p[64] = { 0 };
 			char driver[64] = { 0 };
+			int f = 0;
 			sprintf(n, "%sname", sysfs);
 			fp = my_fopen(n, "rb");
 			if (fp) {
 				fscanf(fp, "%s", driver);
 				my_fclose(fp);
-			}
+			} else
+				break;
 			sprintf(p, "%sin%d_input", sysfs, b);
 			sprintf(n, "%sin%d_label", sysfs, b);
 			fp = my_fopen(n, "rb");
@@ -682,7 +703,8 @@ exit_error:;
 			if (fp) {
 				fscanf(fp, "%s", driver);
 				my_fclose(fp);
-			}
+			} else
+				break;
 			sprintf(p, "%sfan%d_input", sysfs, b);
 			sprintf(n, "%sfan%d_label", sysfs, b);
 			fp = my_fopen(n, "rb");
@@ -701,7 +723,7 @@ exit_error:;
 	}
 #endif
 #endif
-//	fprintf(stderr, "open %d\n", opencount);
+	//	fprintf(stderr, "open %d\n", opencount);
 	if (!cpufound) {
 		return 1;
 	}
