@@ -71,7 +71,9 @@
 /*
  * debug message for module init and exit
  */
-#define nss_nl_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#define nss_nl_info_always nss_nl_info
+
+//#define nss_nl_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
 
 
 #define NSS_NETLINK_INIT_FAMILY(family, pre_fn, post_fn) {	\
