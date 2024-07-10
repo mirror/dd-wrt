@@ -1623,7 +1623,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int freq = chan[i].freq;
 				char eirp[32]={0};
 				if (chan[i].hw_eirp)
-				    snprintf(eirp,sizeof(eirp), " (%d dBm)");
+				    snprintf(eirp,sizeof(eirp), " (%d dBm)", chan[i].hw_eirp);
 				if (freq != -1) {
 					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
