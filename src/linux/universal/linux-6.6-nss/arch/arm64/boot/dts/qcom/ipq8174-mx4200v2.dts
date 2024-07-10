@@ -7,7 +7,7 @@
 
 / {
 	model = "Linksys MX4200v2";
-	compatible = "linksys,mx4200v2", "qcom,ipq8074";
+	compatible = "linksys,mx4200v2", "qcom,ipq8074", "qcom,ipq8174";
 };
 
 &wifi {
