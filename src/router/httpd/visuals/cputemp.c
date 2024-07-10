@@ -66,21 +66,28 @@ static void sensorreset(void)
 }
 static char *gethwmon_base(char *sysfs)
 {
-	char *sub = strstr(sysfs, "hwmon");
+	if (!sysfs)
+		return NULL;
+	char *sub = strstr(sysfs, "ieee80211"); 
+	if (!sub)
+		sub = strstr(sysfs, "hwmon");
 	if (!sub)
 		return NULL;
-	return strdup(sub);
+	char *idx = strchr(sub, '/');
+	if (!idx) {
+		return NULL;
+	}
+	return strdup(idx+1);
 }
 
 static char *gethwmon(char *sysfs)
 {
-	char *sub = gethwmon_base(sysfs);;
-	char *idx = strchr(sub, '/');
-	if (!idx) {
-		free(sub);
+	if (!sysfs)
 		return NULL;
-	}
-	idx = strchr(idx + 1, '/');
+	char *sub = gethwmon_base(sysfs);
+	if (!sub)
+		return NULL;
+	char *idx = strchr(sub, '/');
 	if (!idx) {
 		free(sub);
 		return NULL;
@@ -95,6 +102,8 @@ static int checkhwmon(char *sysfs)
 	if (!sensors)
 		return 0;
 	char *sub = gethwmon(sysfs);
+	if (!sub)
+		return 0;
 	int cnt = 0;
 	while (sensors[cnt].path || sensors[cnt].method) {
 		if (sensors[cnt].path && strstr(sensors[cnt].path, sub)) {
@@ -154,7 +163,7 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
 	if (sub) {
 		sensors[cnt].path = sub;
-		asprintf(&sensors[cnt].syspath, "/sys/class/%s", sub);
+		asprintf(&sensors[cnt].syspath, "/sys/class/hwmon/%s", sub);
 	} else
 		sensors[cnt].path = NULL;
 	sensors[cnt].scale = scale;
@@ -737,7 +746,6 @@ exit_error:;
 	}
 #endif
 #endif
-	//	fprintf(stderr, "open %d\n", opencount);
 	if (!cpufound) {
 		return 1;
 	}
