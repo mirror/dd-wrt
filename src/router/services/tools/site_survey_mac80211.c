@@ -1635,7 +1635,7 @@ void mac80211_site_survey(char *interface)
 	for (i = 0; i < SITE_SURVEY_NUM; i++) {
 		site_survey_lists[i].numsta = -1;
 	}
-	eval("iw", "dev", interface, "scan");
+	eval_silence("iw", "dev", interface, "scan");
 	mac80211_scan(&unl, interface);
 	write_site_survey();
 	local_open_site_survey();
