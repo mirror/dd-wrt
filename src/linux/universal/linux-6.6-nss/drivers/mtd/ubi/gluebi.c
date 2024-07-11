@@ -90,7 +90,7 @@ static int gluebi_get_device(struct mtd_info *mtd)
 	if (mtd->flags & MTD_WRITEABLE)
 		ubi_mode = UBI_READWRITE;
 
-	gluebi = (struct gluebi_device *)mtd->priv;
+	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	mutex_lock(&devices_mutex);
 	if (gluebi->refcnt > 0) {
 		/*
@@ -132,7 +132,7 @@ static void gluebi_put_device(struct mtd_info *mtd)
 {
 	struct gluebi_device *gluebi;
 
-	gluebi = (struct gluebi_device *)mtd->priv;
+	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	mutex_lock(&devices_mutex);
 	gluebi->refcnt -= 1;
 	if (gluebi->refcnt == 0)
@@ -157,7 +157,7 @@ static int gluebi_read(struct mtd_info *mtd, loff_t from, size_t len,
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
 
-	gluebi = (struct gluebi_device *)mtd->priv;
+	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(from, mtd->erasesize, &offs);
 	bytes_left = len;
 	while (bytes_left) {
@@ -197,7 +197,7 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
 
-	gluebi = (struct gluebi_device *)mtd->priv;
+	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(to, mtd->erasesize, &offs);
 
 	if (len % mtd->writesize || offs % mtd->writesize)
@@ -242,7 +242,7 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	lnum = mtd_div_by_eb(instr->addr, mtd);
 	count = mtd_div_by_eb(instr->len, mtd);
-	gluebi = (struct gluebi_device *)mtd->priv;
+	gluebi = container_of(mtd, struct gluebi_device, mtd);
 
 	for (i = 0; i < count - 1; i++) {
 		err = ubi_leb_unmap(gluebi->desc, lnum + i);
@@ -288,7 +288,6 @@ static int gluebi_create(struct ubi_device_info *di,
 		return -ENOMEM;
 
 	mtd = &gluebi->mtd;
-	mtd->priv = gluebi;
 	mtd->name = kmemdup(vi->name, vi->name_len + 1, GFP_KERNEL);
 	if (!mtd->name) {
 		kfree(gluebi);
@@ -308,6 +307,8 @@ static int gluebi_create(struct ubi_device_info *di,
 	mtd->_erase      = gluebi_erase;
 	mtd->_get_device = gluebi_get_device;
 	mtd->_put_device = gluebi_put_device;
+	mtd->type = MTD_NANDFLASH;
+	mtd->flags |= MTD_CAP_NANDFLASH;
 
 	/*
 	 * In case of dynamic a volume, MTD device size is just volume size. In
@@ -343,16 +344,18 @@ static int gluebi_create(struct ubi_device_info *di,
 		kfree(gluebi);
 		return -ENFILE;
 	}
-	} else {
+	}else {
+	
 	if (mtd_device_register(mtd, NULL, 0)) {
 		err_msg("cannot add MTD device");
+		gluebi_put_device(mtd);
 		kfree(mtd->name);
 		kfree(gluebi);
 		return -ENFILE;
 	}
 	
-	
 	}
+
 	mutex_lock(&devices_mutex);
 	list_add_tail(&gluebi->list, &gluebi_devices);
 	mutex_unlock(&devices_mutex);
