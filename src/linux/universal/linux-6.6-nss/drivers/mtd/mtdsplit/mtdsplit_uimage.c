@@ -266,7 +266,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 			}
 		}
 		if (ret < 0) {
-			pr_debig("no valid uImage found in \"%s\" at offset %llx\n", master->name, (unsigned long long)offset);
+			pr_debug("no valid uImage found in \"%s\" at offset %llx\n", master->name, (unsigned long long)offset);
 			continue;
 		}
 
@@ -275,7 +275,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 		uimage_size = sizeof(*header) + be32_to_cpu(header->ih_size) + header_offset + extralen;
 
 		if ((offset + uimage_size) > master->size) {
-			pr_debig("uImage exceeds MTD device \"%s\"\n", master->name);
+			pr_debug("uImage exceeds MTD device \"%s\"\n", master->name);
 			continue;
 		}
 		break;
@@ -296,7 +296,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 		/* find the roots after the uImage */
 		ret = mtd_find_rootfs_from(master, uimage_offset + uimage_size, master->size, &rootfs_offset, &type);
 		if (ret) {
-			pr_debig("no rootfs after uImage in \"%s\"\n", master->name);
+			pr_debug("no rootfs after uImage in \"%s\"\n", master->name);
 			goto err_free_buf;
 		}
 
@@ -309,7 +309,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 		/* check rootfs presence at offset 0 */
 		ret = mtd_check_rootfs_magic(master, 0, &type);
 		if (ret) {
-			pr_debig("no rootfs before uImage in \"%s\"\n", master->name);
+			pr_debug("no rootfs before uImage in \"%s\"\n", master->name);
 			goto err_free_buf;
 		}
 
@@ -318,7 +318,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 	}
 
 	if (rootfs_size == 0) {
-		pr_debig("no rootfs found in \"%s\"\n", master->name);
+		pr_debug("no rootfs found in \"%s\"\n", master->name);
 		ret = -ENODEV;
 		goto err_free_buf;
 	}
