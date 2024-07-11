@@ -611,6 +611,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AX89X:
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
+		insmod("qca8k");
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
 		fwlen = 0x20000;
@@ -634,10 +635,17 @@ void start_sysinit(void)
 	int mtd = getMTD("art");
 	if (mtd == -1)
 		mtd = getMTD("ART");
-	if (mtd == -1)
-		mtd = getMTD("Factory");
 	int uenv = getMTD("u_env");
-	sprintf(mtdpath, "/dev/mtd%d", mtd);
+
+	switch (brand) {
+	case ROUTER_ASUS_AX89X:
+		sprintf(mtdpath, "/dev/ubi0_1");
+		break;
+	default:
+		sprintf(mtdpath, "/dev/mtd%d", mtd);
+		break;
+	}
+
 	FILE *fp = fopen(mtdpath, "rb");
 	if (fp) {
 		fseek(fp, 0x1000, SEEK_SET);
@@ -760,7 +768,7 @@ void start_sysinit(void)
 		insmod("mac80211");
 		insmod("qmi_helpers");
 		insmod("ath11k");
-		insmod("ath11k_ahb");
+		//		insmod("ath11k_ahb");
 		break;
 	}
 

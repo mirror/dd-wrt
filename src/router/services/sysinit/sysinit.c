@@ -1087,11 +1087,20 @@ void start_restore_defaults(void)
 						{ "wan_ifnames", "vlan1" },
 						{ "wan_default", "vlan1" },
 						{ 0, 0 } };
+	struct nvram_param generic_ax89[] = { { "lan_ifname", "br0" },
+						{ "lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11 wlan0 wlan1" },
+						{ "wan_ifname", "eth3" },
+						{ "wan_ifname2", "eth3" },
+						{ "wan_ifnames", "eth3" },
+						{ "wan_default", "eth3" },
+						{ 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)
 		generic = generic_mr7350;
 	else if (wrt_brand == ROUTER_LINKSYS_MR5500 || wrt_brand == ROUTER_LINKSYS_MX5500)
 		generic = generic_mr5500;
+	else if (wrt_brand == ROUTER_ASUS_AX89X)
+		generic = generic_ax89;
 	else
 		generic = generic_mx4200;
 #elif HAVE_VENTANA
@@ -3427,6 +3436,7 @@ void start_nvram(void)
 		free(newip);
 	}
 #endif
+	int doreboot = *nvram_safe_get("nvram_ver");
 	if (nvram_geti("nvram_ver") < 5) {
 		nvram_seti("nvram_ver", 5);
 		nvram_seti("block_multicast", 1);
@@ -3685,7 +3695,6 @@ void start_nvram(void)
 #endif
 	}
 
-	int doreboot = *nvram_safe_get("nvram_ver");
 	if (nvram_geti("nvram_ver") < 10) {
 		nvram_seti("nvram_ver", 10);
 		nvram_unset("port0vlans");
@@ -3697,8 +3706,8 @@ void start_nvram(void)
 		nvram_unset("port6vlans");
 		nvram_seti("vlans", 0);
 		nvram_commit();
-		if (doreboot)
-			eval("reboot");
+//		if (doreboot)
+//			eval("reboot");
 	}
 
 	return;
