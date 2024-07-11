@@ -305,6 +305,7 @@
 			<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="3" <% nvc("openvpncl_tls_btn", "3"); %> onchange="showidpki(this, this.value)" /><% tran("share.none"); %>&nbsp;&nbsp;&nbsp;&nbsp;
 			<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="0" <% nvc("openvpncl_tls_btn", "0"); %> onchange="showidpki(this, this.value)" /><% tran("service.vpn_tls_auth"); %>&nbsp;&nbsp;&nbsp;
 			<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="1" <% nvc("openvpncl_tls_btn", "1"); %> onchange="showidpki(this, this.value)" /><% tran("service.vpn_tls_crypt"); %>&nbsp;&nbsp;&nbsp;&nbsp;
+			<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="4" <% nvc("openvpncl_tls_btn", "4"); %> onchange="showidpki(this, this.value)" /><% tran("service.vpn_tls_crypt_v2"); %>&nbsp;&nbsp;&nbsp;&nbsp;
 			<input class="spaceradio" type="radio" name="openvpncl_tls_btn" value="2" <% nvc("openvpncl_tls_btn", "2"); %> onchange="showidpki(this, this.value)" /><% tran("service.vpnd_static"); %>
 		</div>
 		<div id="idstatic">

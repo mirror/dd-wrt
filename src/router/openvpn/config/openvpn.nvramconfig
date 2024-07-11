@@ -47,7 +47,7 @@
  "openvpn_ccddef"  "OpenVPN ccd dir DEFAULT file"  "NULL"   "FALSE" "0"
  "openvpn_dhcpbl"	"Block DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_blockmulticast"	"Block multicast" "CHOICE" "2" "0" "1" "FALSE" "0"
- "openvpn_tls_btn" "TLS key choice" "CHOICE" "4" "3" "0" "1" "2" "FALSE" "0"
+ "openvpn_tls_btn" "TLS key choice" "CHOICE" "5" "3" "0" "1" "4" "2" "FALSE" "0"
  "openvpn_mit" "CVE Mitigation" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_dh_btn" "Use ECDH" "CHOICE" "2" "0" "1" "FALSE" "0"
  "openvpn_enuserpass" "user password handler "  "CHOICE" "2" "0" "1"  "FALSE" "0"

@@ -2017,6 +2017,7 @@ service.vpnd_lzoadaptive="Adaptive";
 service.vpnd_lzocompress="Compress";
 service.vpn_tls_btn="TLS / Static Key Choice";
 service.vpn_tls_crypt="TLS Crypt";
+service.vpn_tls_crypt_v2="TLS Crypt v2";
 service.vpn_tls_auth="TLS Auth";
 service.vpn_dc1="First Data Cipher";
 service.vpn_dc2="Second Data Cipher";

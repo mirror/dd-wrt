@@ -657,7 +657,10 @@ void start_openvpnserver(void)
 		if (*(nvram_safe_get("openvpn_tlsauth"))) {
 			if (nvram_matchi("openvpn_tls_btn", 1))
 				fprintf(fp,
-					"tls-crypt /tmp/openvpn/ta.key\n"); //egc: tls_btn 1 is tls-crypt
+					"tls-crypt /tmp/openvpn/ta.key\n"); //egc: tls_btn 1 is tls-crypt, 0 is tls-auth, 2 is static key, 4 is tls-crypt-v2
+			else if (nvram_matchi("openvpn_tls_btn", 4))
+				fprintf(fp,
+					"tls-crypt-v2 /tmp/openvpn/ta.key\n");
 			else if (nvram_matchi("openvpn_tls_btn", 0))
 				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		}
@@ -1103,7 +1106,10 @@ void start_openvpn(void)
 	if (*(nvram_safe_get("openvpncl_tlsauth"))) {
 		if (nvram_matchi("openvpncl_tls_btn", 1))
 			fprintf(fp,
-				"tls-crypt /tmp/openvpncl/ta.key\n"); //egc: tls_btn 1 is tls-crypt, 0 is tls-auth, 2 is static key
+				"tls-crypt /tmp/openvpncl/ta.key\n"); //egc: tls_btn 1 is tls-crypt, 0 is tls-auth, 2 is static key, 4 is tls-crypt-v2
+		else if (nvram_matchi("openvpncl_tls_btn", 4))
+			fprintf(fp,
+				"tls-crypt-v2 /tmp/openvpncl/ta.key\n");
 		else if (nvram_matchi("openvpncl_tls_btn", 0))
 			fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	}
