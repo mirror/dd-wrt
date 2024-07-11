@@ -23,6 +23,12 @@
 
 #include "mtdsplit.h"
 
+
+typedef struct {
+	uint8_t     major;
+	uint8_t     minor;
+} __attribute__ ((packed)) version_t;
+
 /*
  * Legacy format image header,
  * all data in network byte order (aka natural aka bigendian).
@@ -39,7 +45,17 @@ struct uimage_header {
 	uint8_t		ih_arch;	/* CPU architecture		*/
 	uint8_t		ih_type;	/* Image Type			*/
 	uint8_t		ih_comp;	/* Compression Type		*/
-	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+	version_t	kernel_ver;  // usualy: 3.0
+	version_t	fs_ver;      // usualy: 0.4
+	char		prod_name[12];
+	uint16_t	sn;          // fw build no (example: 388)
+	uint16_t	en;          // fw extended build no (example: 51234)
+	uint8_t		dummy;       // likely random byte
+	uint8_t		key;         // hash value from kernel and fs
+	uint8_t		unk[6];      // likely random bytes
+	uint32_t	fs_offset;   // 24 bit BE (first byte = 0xA9)
+
+//	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
 };
 
 static int
@@ -61,6 +77,64 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 	}
 
 	return 0;
+}
+
+static inline unsigned long uimage_get_data(struct uimage_header *hdr)
+{
+	return (unsigned long)hdr + sizeof(struct uimage_header);
+}
+
+static int uimage_multi_count(struct uimage_header *hdr)
+{
+	int i, count = 0;
+	uint32_t *size;
+
+	/* get start of the image payload, which in case of multi
+	 * component images that points to a table of component sizes */
+	size = (uint32_t *)uimage_get_data(hdr);
+
+	/* count non empty slots */
+	for (i = 0; size[i]; ++i)
+		count++;
+
+	return count;
+}
+
+void uimage_multi_getimg(struct uimage_header *hdr, int idx,
+			size_t *data, size_t *len)
+{
+	int i;
+	uint32_t *size;
+	unsigned long offset, count, img_data;
+
+	/* get number of component */
+	count = uimage_multi_count(hdr);
+
+	/* get start of the image payload, which in case of multi
+	 * component images that points to a table of component sizes */
+	size = (uint32_t *)uimage_get_data(hdr);
+
+	/* get address of the proper component data start, which means
+	 * skipping sizes table (add 1 for last, null entry) */
+	img_data = uimage_get_data(hdr) + (count + 1) * sizeof(uint32_t);
+
+	if (idx < count) {
+		printk(KERN_INFO "size = %d\n", be32_to_cpu(size[idx]));
+		*len = be32_to_cpu(size[idx]);
+		offset = 0;
+
+		/* go over all indices preceding requested component idx */
+		for (i = 0; i < idx; i++) {
+			/* add up i-th component size, rounding up to 4 bytes */
+			offset += (be32_to_cpu(size[i]) + 3) & ~3 ;
+		}
+
+		/* calculate idx-th component data address */
+		*data = img_data + offset - (unsigned long)hdr;
+	} else {
+		*len = 0;
+		*data = 0;
+	}
 }
 
 static void uimage_parse_dt(struct mtd_info *master, int *extralen,
@@ -137,14 +211,15 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	u32 header_offset = 0;
 	u32 part_magic = 0;
 	enum mtdsplit_part_type type;
-
+	int multi = 0;
+	int i;
 	nr_parts = 2;
 	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
 	if (!parts)
 		return -ENOMEM;
 
 	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type, &header_offset, &part_magic);
-	buflen = sizeof(struct uimage_header) + header_offset;
+	buflen = sizeof(struct uimage_header) + header_offset + 128;
 	buf = vmalloc(buflen);
 	if (!buf) {
 		ret = -ENOMEM;
@@ -156,7 +231,6 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		struct uimage_header *header;
 
 		uimage_size = 0;
-
 		ret = read_uimage_header(master, offset, buf, buflen);
 		if (ret)
 			continue;
@@ -167,7 +241,47 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		ret = uimage_verify_default(buf + header_offset, ih_magic, ih_type);
 		if (ret < 0) {
-			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
+			ret = uimage_verify_default(buf + header_offset, ih_magic, IH_TYPE_MULTI);
+			if (!ret) {
+				
+				int count = uimage_multi_count((struct uimage_header*)buf + header_offset);
+				for (i=0;i<count;i++) {
+					size_t data;
+					size_t len;
+					int ret2;
+					uimage_multi_getimg((struct uimage_header*)buf + header_offset, i, &data, &len);
+					printk(KERN_INFO "Image %d: len %ld, offset %ld\n",i, len, data);
+					ret2 = mtd_find_rootfs_from(master, data, master->size, &rootfs_offset, &type);
+					if (!ret2) {
+						rootfs_size = master->size - rootfs_offset;
+						uimage_offset = offset;
+						uimage_size = rootfs_offset - uimage_offset;
+						rf_part = 1;
+						uimage_part = 0;
+						parts[uimage_part].name = KERNEL_PART_NAME;
+						parts[uimage_part].offset = uimage_offset;
+						parts[uimage_part].size = uimage_size;
+						if (type == MTDSPLIT_PART_TYPE_UBI)
+							parts[rf_part].name = UBI_PART_NAME;
+						else
+							parts[rf_part].name = ROOTFS_PART_NAME;
+						parts[rf_part].offset = rootfs_offset;
+						parts[rf_part].size = rootfs_size;
+
+						vfree(buf);
+
+						*pparts = parts;
+						return nr_parts;
+					
+					}
+				
+				}
+			
+			
+			}
+		}
+		if (ret < 0) {
+			pr_info("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
 			continue;
 		}
@@ -178,7 +292,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 				be32_to_cpu(header->ih_size) + header_offset + extralen;
 
 		if ((offset + uimage_size) > master->size) {
-			pr_debug("uImage exceeds MTD device \"%s\"\n",
+			pr_info("uImage exceeds MTD device \"%s\"\n",
 				 master->name);
 			continue;
 		}
@@ -201,7 +315,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		ret = mtd_find_rootfs_from(master, uimage_offset + uimage_size,
 					   master->size, &rootfs_offset, &type);
 		if (ret) {
-			pr_debug("no rootfs after uImage in \"%s\"\n",
+			pr_info("no rootfs after uImage in \"%s\"\n",
 				 master->name);
 			goto err_free_buf;
 		}
@@ -215,7 +329,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		/* check rootfs presence at offset 0 */
 		ret = mtd_check_rootfs_magic(master, 0, &type);
 		if (ret) {
-			pr_debug("no rootfs before uImage in \"%s\"\n",
+			pr_info("no rootfs before uImage in \"%s\"\n",
 				 master->name);
 			goto err_free_buf;
 		}
@@ -225,7 +339,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	}
 
 	if (rootfs_size == 0) {
-		pr_debug("no rootfs found in \"%s\"\n", master->name);
+		pr_info("no rootfs found in \"%s\"\n", master->name);
 		ret = -ENODEV;
 		goto err_free_buf;
 	}
