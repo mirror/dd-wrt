@@ -177,7 +177,7 @@
 &cpu0_thermal {
 	trips {
 		cpu0_active: cpu-active {
-			temperature = <70000>;
+			temperature = <60000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -194,7 +194,7 @@
 &cpu1_thermal {
 	trips {
 		cpu1_active: cpu-active {
-			temperature = <70000>;
+			temperature = <60000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -211,7 +211,7 @@
 &cpu2_thermal {
 	trips {
 		cpu2_active: cpu-active {
-			temperature = <70000>;
+			temperature = <60000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -228,7 +228,7 @@
 &cpu3_thermal {
 	trips {
 		cpu3_active: cpu-active {
-			temperature = <70000>;
+			temperature = <60000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -245,7 +245,7 @@
 &cluster_thermal {
 	trips {
 		cluster_active: cluster-active {
-			temperature = <70000>;
+			temperature = <60000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -573,36 +573,36 @@
 			port@1 {
 				reg = <1>;
 				phy-handle = <&qca8337_0>;
-				label = "eth10";
+				label = "eth9";
 			};
 
 			port@2 {
 				reg = <2>;
 				phy-handle = <&qca8337_1>;
-				label = "eth9";
+				label = "eth8";
 			};
 
 			port@3 {
 				reg = <3>;
 				phy-handle = <&qca8337_2>;
-				label = "eth8";
+				label = "eth7";
 			};
 
 			port@4 {
 				reg = <4>;
 				phy-handle = <&qca8337_3>;
-				label = "eth7";
+				label = "eth6";
 			};
 
 			port@5 {
 				reg = <5>;
 				phy-handle = <&qca8337_4>;
-				label = "eth6";
+				label = "eth5";
 			};
 
 			port@6 {
 				reg = <6>;
-				label = "eth11";
+				label = "eth10";
 				phy-mode = "sgmii";
 				phy-handle = <&qca8033>;
 				managed = "in-band-status";
@@ -708,33 +708,33 @@
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_9>;
-	label = "eth5";
+	label = "eth4";
 };
 
 &dp3 {
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_a>;
-	label = "eth4";
+	label = "eth3";
 };
 
 &dp4 {
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_b>;
-	label = "eth3";
+	label = "eth2";
 };
 
 &dp5_syn {
 	status = "okay";
 	phy-handle = <&sfp>;
-	label = "eth2";
+	label = "eth1";
 };
 
 &dp6_syn {
 	status = "okay";
 	phy-handle = <&aqr113c>;
-	label = "eth1";
+	label = "eth0";
 };
 
 &wifi {
