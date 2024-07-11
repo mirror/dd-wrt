@@ -451,6 +451,22 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 	break;
+	case ROUTER_ASUS_AX89X:
+		switch (gpio) {
+		case 0:
+			writeint("/sys/class/leds/white:pwr/brightness", value);
+			break;
+		case 1:
+			writeint("/sys/class/leds/red:wan/brightness", value);
+			break;
+		case 2:
+			writeint("/sys/class/leds/white:wan/brightness", value);
+			break;
+		default:
+			set_linux_gpio(gpio + 512, value);
+			break;
+		}
+	break;
 	default:
 		set_linux_gpio(gpio + 512, value);
 	break;

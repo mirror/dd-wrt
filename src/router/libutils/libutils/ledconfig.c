@@ -1666,6 +1666,13 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->beeper_gpio = 0xD7; //gpio 215 on i2c slave antaira-gpio
 #endif
 		break;
+	case ROUTER_ASUS_AX89X:
+		cfg->power_gpio = 0x0;
+		cfg->diag_gpio = GPIO_LOW | 0x0;
+		cfg->diag_gpio_disabled = 0; 
+		cfg->connected_gpio = 0x2;
+		cfg->disconnected_gpio = 0x1;
+		break;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
