@@ -873,19 +873,30 @@ static int32_t nss_dp_probe(struct platform_device *pdev)
 	struct nss_dp_dev *dp_priv;
 	struct device_node *np = pdev->dev.of_node;
 	struct nss_gmac_hal_platform_data gmac_hal_pdata;
+	const char *name = of_get_property(np, "label", NULL);
 	int32_t ret = 0;
+	int assign_type;
 	uint8_t phy_id[MII_BUS_ID_SIZE + 3];
 #if defined(NSS_DP_PPE_SUPPORT)
 	uint32_t vsi_id;
 	fal_port_t port_id;
 #endif
 
+	if (name) {
+		assign_type = NET_NAME_PREDICTABLE;
+	} else {
+		name = "eth%d";
+		assign_type = NET_NAME_ENUM;
+	}
+
 	/* TODO: See if we need to do some SoC level common init */
 
-	netdev = alloc_etherdev_mqs(sizeof(struct nss_dp_dev),
-			NSS_DP_NETDEV_TX_QUEUE_NUM, NSS_DP_NETDEV_RX_QUEUE_NUM);
+	netdev = alloc_netdev_mqs(sizeof(struct nss_dp_dev),
+				  name, assign_type,
+				  ether_setup,
+				  NSS_DP_NETDEV_TX_QUEUE_NUM, NSS_DP_NETDEV_RX_QUEUE_NUM);
 	if (!netdev) {
-		pr_info("alloc_etherdev() failed\n");
+		dev_err(&pdev->dev, "alloc_netdev_mqs() failed\n");
 		return -ENOMEM;
 	}
 
