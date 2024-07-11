@@ -608,6 +608,10 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		break;
+	case ROUTER_ASUS_AX89X:
+		fwlen = 0x20000;
+		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_LINKSYS_MX4200V2:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
@@ -630,6 +634,8 @@ void start_sysinit(void)
 	int mtd = getMTD("art");
 	if (mtd == -1)
 		mtd = getMTD("ART");
+	if (mtd == -1)
+		mtd = getMTD("Factory");
 	int uenv = getMTD("u_env");
 	sprintf(mtdpath, "/dev/mtd%d", mtd);
 	FILE *fp = fopen(mtdpath, "rb");
@@ -731,6 +737,9 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_ASUS_AX89X:
+		set_envtools(getMTD("appsblenv"), "0x0", "0x20000", "0x20000", 2);
 		break;
 	}
 
@@ -954,6 +963,12 @@ void start_sysinit(void)
 		sysprintf("ssdk_sh stp portState set 0 5 forward");
 		sysprintf("ssdk_sh fdb learnCtrl set disable");
 		sysprintf("ssdk_sh fdb entry flush 1");
+		break;
+	case ROUTER_ASUS_AX89X:
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
+		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		break;
 	}
 	return;

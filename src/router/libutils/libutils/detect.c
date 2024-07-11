@@ -1400,7 +1400,10 @@ generic:;
 		setRouter("Linksys MR7350");
 		return ROUTER_LINKSYS_MR7350;
 	}
-
+	if (!strcmp(modelstr, "RT-AX89X")) {
+		setRouter("Asus RT-AX89X");
+		return ROUTER_ASUS_AX89X;
+	}
 	if (!strcmp(modelstr, "MX4200v1")) {
 		setRouter("Linksys MX4200 v1");
 		return ROUTER_LINKSYS_MX4200V1;
