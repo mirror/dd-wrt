@@ -49,6 +49,8 @@ void start_jffs2(void)
 	int mtd = getMTD("plex");
 #else
 	int mtd = getMTD("ddwrt");
+	if (mtd==-1)
+		mtd = getMTD("jffs2");
 #endif
 	if (mtd == -1)
 		return;
@@ -58,6 +60,9 @@ void start_jffs2(void)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
+		classic = 1;
+		break;
+	case ROUTER_ASUS_AX89X:
 		classic = 1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
