@@ -616,11 +616,11 @@ void start_sysinit(void)
 		sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
 		sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
 		sysprintf("echo netdev > /sys/class/leds/white:aqr10g/trigger");
-		sysprintf("echo eth2 > /sys/class/leds/white:aqr10g/device_name");
+		sysprintf("echo eth0 > /sys/class/leds/white:aqr10g/device_name");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
 		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
-		nvram_default_get("eth0_label","sfp");
-		nvram_default_get("eth1_label","10gbit");
+		nvram_default_get("eth0_label","10gbit");
+		nvram_default_get("eth1_label","sfp");
 		nvram_default_get("eth2_label","wan");
 		nvram_default_get("eth3_label","lan1");
 		nvram_default_get("eth4_label","lan2");
