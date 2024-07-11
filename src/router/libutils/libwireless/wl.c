@@ -1328,9 +1328,15 @@ long long wifi_getrate(char *ifname)
 		case 40:
 		case 80:
 		case 160:
+			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) && !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+			rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
+			else
 			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
 			break;
 		case 8080:
+			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) && !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+			rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
+			else
 			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
 			break;
 		default:
@@ -3786,22 +3792,231 @@ static int HTtoVHTindex(int mcs)
 		return mcs + 2;
 	if (mcs < 24)
 		return mcs + 4;
-	return mcs + 6;
+	if (mcs < 32)
+		return mcs + 6;
+	if (mcs < 40)
+		return mcs + 8;
+	if (mcs < 48)
+		return mcs + 10;
+	if (mcs < 56)
+		return mcs + 12;
+	if (mcs < 64)
+		return mcs + 16;
+	return 0;
+}
+
+int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
+{
+	if (vhtmcs == -1) {
+		vhtmcs = HTtoVHTindex(mcs);
+	}
+	mcs = vhtmcs;
+
+#define SCALE 6144
+	unsigned long long mcs_divisors[14] = {
+		102399, /* 16.666666... */
+		 51201, /*  8.333333... */
+		 34134, /*  5.555555... */
+		 25599, /*  4.166666... */
+		 17067, /*  2.777777... */
+		 12801, /*  2.083333... */
+		 11377, /*  1.851725... */
+		 10239, /*  1.666666... */
+		  8532, /*  1.388888... */
+		  7680, /*  1.250000... */
+		  6828, /*  1.111111... */
+		  6144, /*  1.000000... */
+		  5690, /*  0.926106... */
+		  5120, /*  0.833333... */
+	};
+	unsigned int rates_160M[3] = { 960777777, 907400000, 816666666 };
+	unsigned int rates_969[3] =  { 480388888, 453700000, 408333333 };
+	unsigned int rates_484[3] =  { 229411111, 216666666, 195000000 };
+	unsigned int rates_242[3] =  { 114711111, 108333333,  97500000 };
+	unsigned int rates_106[3] =  {  40000000,  37777777,  34000000 };
+	unsigned int rates_52[3]  =  {  18820000,  17777777,  16000000 };
+	unsigned int rates_26[3]  =  {   9411111,   8888888,   8000000 };
+	unsigned long long tmp;
+	unsigned int result;
+
+	if (bw == 160)
+		result = rates_160M[sgi];
+	else if (bw == 80)
+		result = rates_969[sgi];
+	else if (bw == 40)
+		result = rates_484[sgi];
+	else
+		result = rates_242[sgi];
+	fprintf(stderr, "result %d\n", result);
+
+	int nss = 8;
+	if (mcs < 70) {
+	    nss = 7;
+	}
+	if (mcs < 60) {
+	    nss = 6;
+	}
+	if (mcs < 50) {
+	    nss = 5;
+	}
+	if (mcs < 40) {
+	    nss = 4;
+	}
+	if (mcs < 30) {
+	    nss = 3;
+	}
+	if (mcs < 20) {
+	    nss = 2;
+	}
+	if (mcs < 10) {
+	    nss = 1;
+	}
+	mcs +=2;
+	mcs /= nss;
+
+	/* now scale to the appropriate MCS */
+	tmp = result;
+	tmp *= SCALE;
+	tmp /= mcs_divisors[mcs];
+	result = tmp;
+
+	/* and take NSS, DCM into account */
+	result = (result * nss) / 8;
+	return result / 100;
 }
 
 int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
 {
-	static int vHTTxRate20_800[40] = {
+	if (vhtmcs == -1) {
+		vhtmcs = HTtoVHTindex(mcs);
+	}
+	mcs = vhtmcs;
+
+	static const unsigned int base[4][12] = {
+		{   6500000,
+		   13000000,
+		   19500000,
+		   26000000,
+		   39000000,
+		   52000000,
+		   58500000,
+		   65000000,
+		   78000000,
+		/* not in the spec, but some devices use this: */
+		   86700000,
+		   97500000,
+		  108300000,
+		},
+		{  13500000,
+		   27000000,
+		   40500000,
+		   54000000,
+		   81000000,
+		  108000000,
+		  121500000,
+		  135000000,
+		  162000000,
+		  180000000,
+		  202500000,
+		  225000000,
+		},
+		{  29300000,
+		   58500000,
+		   87800000,
+		  117000000,
+		  175500000,
+		  234000000,
+		  263300000,
+		  292500000,
+		  351000000,
+		  390000000,
+		  438800000,
+		  487500000,
+		},
+		{  58500000,
+		  117000000,
+		  175500000,
+		  234000000,
+		  351000000,
+		  468000000,
+		  526500000,
+		  585000000,
+		  702000000,
+		  780000000,
+		  877500000,
+		  975000000,
+		},
+	};
+	
+	int nss = 8;
+	if (mcs < 70) {
+	    nss = 7;
+	}
+	if (mcs < 60) {
+	    nss = 6;
+	}
+	if (mcs < 50) {
+	    nss = 5;
+	}
+	if (mcs < 40) {
+	    nss = 4;
+	}
+	if (mcs < 30) {
+	    nss = 3;
+	}
+	if (mcs < 20) {
+	    nss = 2;
+	}
+	if (mcs < 10) {
+	    nss = 1;
+	}
+
+    	int newmcs = mcs / nss;
+	unsigned int bitrate;
+	int idx = 0;
+	switch (bw) {
+	case 160:
+		idx = 3;
+		break;
+	case 80:
+		idx = 2;
+		break;
+	case 40:
+		idx = 1;
+		break;
+	}
+
+	bitrate = base[idx][newmcs];
+	bitrate *= nss;
+
+	if (sgi)
+		bitrate = (bitrate / 9) * 10;
+
+	/* do NOT round down here */
+	return (bitrate + 500) / 1000;
+}
+/*
+int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
+{
+	static int vHTTxRate20_800[80] = {
 		6500,  13000, 19500, 26000,  39000,  52000,  58500,  65000,  78000,  78000, // MCS 0 -8
 		13000, 26000, 39000, 52000,  78000,  104000, 117000, 130000, 156000, 156000, // MCS 8 - 15
 		19500, 39000, 58500, 78000,  117000, 156000, 175500, 195000, 234000, 260000, // MCS 16 - 23
-		26000, 52000, 78000, 104000, 156000, 208000, 234000, 260000, 312000, 312000 // MCS 24 - 31
+		26000, 52000, 78000, 104000, 156000, 208000, 234000, 260000, 312000, 312000, // MCS 24 - 31
+		32500, 65000, 97500, 130000, 195000, 260000, 292500, 325000, 390000, 390000, // MCS 32 - 39
+		39000, 78000, 117000, 156000, 234000, 312000, 351000, 390000, 468000, 520000, // MCS 40 - 47
+		45500, 91000, 136500, 182000, 273000, 364000, 409400, 455000, 546000, 546000, // MCS 48 - 55
+		52000, 104000, 156000, 208000, 312000, 416000, 468000, 520000, 624000, 624000, // MCS 56 - 63
 	};
-	static int vHTTxRate20_400[40] = {
+	static int vHTTxRate20_400[80] = {
 		7200,  14400, 21700, 28900,  43300,  57800,  65000,  72200,  86700,  86700, //
 		14444, 28889, 43333, 57778,  86667,  115556, 130000, 144444, 173300, 173300, //
 		21700, 43300, 65000, 86700,  130000, 173300, 195000, 216700, 260000, 288900, //
-		28900, 57800, 86700, 115600, 173300, 231100, 260000, 288900, 346700, 0 //
+		28900, 57800, 86700, 115600, 173300, 231100, 260000, 288900, 346700, 0, //
+		36100, 72200, 108300, 144400, 216700, 288900, 325000, 361100, 433300, 433300, //
+		43300, 86700, 130000, 173300, 260000, 346700, 390000, 433300, 520000, 577800, //
+		50600, 101100, 151700, 202200, 303300, 404400, 455000, 505600, 606700, 606700, //
+		57800, 115600, 173300, 231100, 346700, 462200, 520000, 577800, 693300, 693300, //
 	};
 	static int vHTTxRate40_800[40] = {
 		13500, 27000,  40500,  54000,  81000,  108000, 121500, 135000, 162000, 180000, //
@@ -3876,6 +4091,7 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 
 	return table[vhtmcs];
 }
+*/
 
 #ifndef HAVE_MADWIFI
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
