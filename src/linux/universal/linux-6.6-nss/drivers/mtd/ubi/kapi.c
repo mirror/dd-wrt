@@ -164,7 +164,7 @@ struct ubi_volume_desc *ubi_open_volume(int ubi_num, int vol_id, int mode)
 		break;
 
 	case UBI_READWRITE:
-		if (vol->exclusive || vol->writers > 0)
+		if (vol->exclusive)
 			goto out_unlock;
 		vol->writers += 1;
 		break;
