@@ -809,7 +809,7 @@
 
 #define ROUTER_LINKSYS_MX5500 0x11811c
 
-#define ROUTER_ASUS_AX89X 0x1190ff
+#define ROUTER_ASUS_AX89X 0x11913d
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
