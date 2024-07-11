@@ -1088,11 +1088,11 @@ void start_restore_defaults(void)
 						{ "wan_default", "vlan1" },
 						{ 0, 0 } };
 	struct nvram_param generic_ax89[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11 wlan0 wlan1" },
-						{ "wan_ifname", "eth3" },
-						{ "wan_ifname2", "eth3" },
-						{ "wan_ifnames", "eth3" },
-						{ "wan_default", "eth3" },
+						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1" },
+						{ "wan_ifname", "eth2" },
+						{ "wan_ifname2", "eth2" },
+						{ "wan_ifnames", "eth2" },
+						{ "wan_default", "eth2" },
 						{ 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)

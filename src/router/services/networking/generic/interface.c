@@ -727,7 +727,7 @@ int flush_interfaces(void)
 	else if (brand == ROUTER_LINKSYS_MX5500)
 	snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_ASUS_AX89X)
-	snprintf(all_ifnames, 255, "%s %s %s", "eth3", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+	snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA

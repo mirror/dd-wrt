@@ -205,7 +205,7 @@ int site_survey_main(int argc, char *argv[])
 		return -1;
 	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	bzero(buf, 24 * 1024);
-	eval_silence("iwlist", sta, "scan");
+	sysprintf("iwlist %s scan>/dev/null 2>&1", sta);
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 	if (len == -1) {
 		fprintf(stderr, "unable to get scan results");
