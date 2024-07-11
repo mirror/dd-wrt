@@ -37,8 +37,6 @@ void MFREE(void *ptr)
 
 static size_t part_size(struct mtd_info *p)
 {
-if (p->size % 65536)
-	return ((p->size>>16) << 16);
 return p->size;
 }
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
@@ -69,7 +67,7 @@ int _nvram_read(char *buf)
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
 			nvram_off = part_size(nvram_mtd) - NVRAM_SPACE;
-			for (i = 0; i < part_size(nvram_mtd); i += NVRAM_SPACE) {
+			for (i = 0; i < part_size(nvram_mtd); i += 0x1000) {
 				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
 				if (header->magic == NVRAM_MAGIC) {
 					printk(KERN_INFO "found nvram at %lX\n", i);
