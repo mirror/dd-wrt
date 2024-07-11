@@ -3847,7 +3847,6 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned i
 		result = rates_484[sgi];
 	else
 		result = rates_242[sgi];
-	fprintf(stderr, "result %d\n", result);
 
 	int nss = 8;
 	if (mcs < 70) {
