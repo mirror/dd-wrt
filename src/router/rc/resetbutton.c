@@ -192,6 +192,8 @@ static int getbuttonstate()
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		return !get_gpio(28);
+	case ROUTER_ASUS_AX89X:
+		return !get_gpio(61);
 	default:
 		return 0;
 	}
@@ -1384,8 +1386,14 @@ static void resetbtn_period_check(int sig)
 		break;
 	case ROUTER_LINKSYS_MX5500:
 	case ROUTER_LINKSYS_MR5500:
+		wifi24gpio = 0x106;
+		val |= get_gpio(27) << 6;
 		sesgpio = 0x105;
-		val |= get_gpio(27) << 5;
+		val |= get_gpio(24) << 5;
+		break;
+	case ROUTER_ASUS_AX89X:
+		sesgpio = 0x105;
+		val |= get_gpio(26) << 5;
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		sesgpio = 0x105;
