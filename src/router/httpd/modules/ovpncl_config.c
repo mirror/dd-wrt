@@ -66,7 +66,7 @@ static int make_ovpncl_config(char *ovnpcl_fname)
 		dd_loginfo("openvpncl_config", "Could not open %s\n", ovnpcl_fname);
 		return -1;
 	} else {
-		fprintf(f1, "#This is beta build 0.91, use it with care\n");
+		fprintf(f1, "#This is beta build 0.92, use it with care\n");
 		fprintf(f1, "#OpenVPN client config generated, check if settings are correct see: %s, made by %s\n",
 			"https://forum.dd-wrt.com/phpBB2/viewtopic.php?t=327398", "egc");
 		fprintf(f1,
@@ -117,6 +117,9 @@ static int make_ovpncl_config(char *ovnpcl_fname)
 			break;
 		case 2:
 			fprintf(f1, "<secret>\n%s\n</secret>\n", nvram_safe_get("openvpn_static"));
+			break;
+		case 4:
+			fprintf(f1, "<tls-crypt-v2>\n%s\n</tls-crypt-v2>\n", "PLACE-CLIENT-TLS-CRYPT-v2-KEY-HERE");
 			break;
 		}
 		if (nvram_invmatch("openvpn_ca", "")) {
