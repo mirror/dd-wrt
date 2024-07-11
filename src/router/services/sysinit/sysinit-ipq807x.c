@@ -768,7 +768,7 @@ void start_sysinit(void)
 		insmod("mac80211");
 		insmod("qmi_helpers");
 		insmod("ath11k");
-		//		insmod("ath11k_ahb");
+		insmod("ath11k_ahb");
 		break;
 	}
 
