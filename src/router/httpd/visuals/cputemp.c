@@ -67,10 +67,12 @@ static void sensorreset(void)
 static int singlesensor(char *sysfs)
 {
 	char p[64];
+	char p2[64];
 	int cnt = 0;
 	for (int i = 0; i < 16; i++) {
 		snprintf(p, sizeof(p) - 1, "%stemp%d_input", sysfs, i);
-		if (f_exists(p)) {
+		snprintf(p2, sizeof(p) - 1, "%sfan%d_input", sysfs, i);
+		if (f_exists(p) || f_exists(p2)) {
 			cnt++;
 		} else
 			return 1;
@@ -109,6 +111,7 @@ static char *gethwmon(char *sysfs)
 		free(sub);
 		return NULL;
 	}
+	idx++;
 	*idx = 0;
 	return sub;
 }
@@ -254,11 +257,12 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 
 static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale, int type)
 {
-	if (alreadyshowed(path))
+	if (alreadyshowed(path)) {
 		return 1;
+	}
 	FILE *fp = my_fopen(path, "rb");
 	if (fp || method) {
-		int sensor;
+		int sensor = 0;
 		if (fp) {
 			fscanf(fp, "%d", &sensor);
 			my_fclose(fp);
@@ -664,8 +668,9 @@ exit_error:;
 	for (a = 0; a < 32; a++) {
 		char sysfs[64];
 		sprintf(sysfs, "/sys/class/hwmon/hwmon%d/", a);
-		if (checkhwmon(sysfs))
+		if (checkhwmon(sysfs)) {
 			continue; // already handled in specific way
+		}
 
 		for (b = 0; b < 16; b++) {
 			char n[64];
