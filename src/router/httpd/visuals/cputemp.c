@@ -292,6 +292,8 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			if (type == RPM)
 				unit = "rpm";
 			websWrite(wp, "<div class=\"setting\">\n");
+			if (!strcmp(name, "gpio008"))
+			    name = "sfp";
 			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
 			websWrite(wp, "<span id=\"cpu_temp%d\">", count);
 			if (scale > 1) {
