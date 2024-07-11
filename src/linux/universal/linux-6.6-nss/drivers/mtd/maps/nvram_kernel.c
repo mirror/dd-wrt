@@ -35,6 +35,12 @@ void MFREE(void *ptr)
 		kfree(ptr);
 }
 
+static size_t part_size(struct mtd_info *p)
+{
+if (p->size % 65536)
+	return ((p->size>>16) << 16);
+return p->size;
+}
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char *nvram_buf;
 
@@ -62,11 +68,11 @@ int _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *)buf;
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
-			nvram_off = nvram_mtd->size - NVRAM_SPACE;
-			for (i = 0; i < nvram_mtd->size; i += NVRAM_SPACE) {
+			nvram_off = part_size(nvram_mtd) - NVRAM_SPACE;
+			for (i = 0; i < part_size(nvram_mtd); i += NVRAM_SPACE) {
 				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
 				if (header->magic == NVRAM_MAGIC) {
-					printk(KERN_INFO "found nvram at %X\n", i);
+					printk(KERN_INFO "found nvram at %lX\n", i);
 					nvram_off = i;
 					break;
 				}
@@ -74,7 +80,7 @@ int _nvram_read(char *buf)
 		}
 		mtd_read(nvram_mtd, nvram_off, NVRAM_SPACE, &len, buf);
 		if (header->magic != NVRAM_MAGIC) {
-			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2), (NVRAM_SPACE / 2), &len, buf);
+			mtd_read(nvram_mtd, part_size(nvram_mtd) - (NVRAM_SPACE / 2), (NVRAM_SPACE / 2), &len, buf);
 			if (header->magic == NVRAM_MAGIC)
 				printk(KERN_INFO "convert old nvram to new one\n");
 			else
@@ -227,12 +233,12 @@ int nvram_commit(void)
 		return -ENOMEM;
 	}
 
-	if (nvram_off != -1 && nvram_off != (nvram_mtd->size - NVRAM_SPACE)) {	
+	if (nvram_off != -1 && nvram_off != (part_size(nvram_mtd) - NVRAM_SPACE)) {	
 		offset = nvram_off;
 		header = (struct nvram_header *)buf;
 	} else if ((i = erasesize - NVRAM_SPACE) > 0) {
-		offset = nvram_mtd->size - erasesize;
-		nvram_off = nvram_mtd->size - erasesize;
+		offset = part_size(nvram_mtd) - erasesize;
+		nvram_off = part_size(nvram_mtd) - erasesize;
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
@@ -242,8 +248,8 @@ int nvram_commit(void)
 		}
 		header = (struct nvram_header *)(buf + i);
 	} else {
-		nvram_off = nvram_mtd->size - erasesize;
-		offset = nvram_mtd->size - NVRAM_SPACE;
+		nvram_off = part_size(nvram_mtd) - erasesize;
+		offset = part_size(nvram_mtd) - NVRAM_SPACE;
 		header = (struct nvram_header *)buf;
 	}
 	
@@ -261,7 +267,7 @@ int nvram_commit(void)
 	if (!counts)
 		counts = 1;
 	fullerase:;
-	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
+	for (; offset < part_size(nvram_mtd) - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
 		erase.addr = offset;
 		erase.len = nvram_mtd->erasesize;
 
@@ -321,7 +327,7 @@ int nvram_commit(void)
 		goto done;
 	}
 
-	offset = nvram_mtd->size - erasesize;
+	offset = part_size(nvram_mtd) - erasesize;
 	ret = mtd_read(nvram_mtd, offset, 4, &len, buf);
 
 done:
@@ -548,8 +554,8 @@ printk(KERN_INFO "page nvram\n");
 	for (i = 0; i < 32; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (!IS_ERR(nvram_mtd)) {
-			if (nvram_mtd->name && !strcmp(nvram_mtd->name, "nvram") && nvram_mtd->size >= NVRAM_SPACE) {
-				printk(KERN_INFO "nvram size = %llu\n", nvram_mtd->size);
+			if (nvram_mtd->name && !strcmp(nvram_mtd->name, "nvram") && part_size(nvram_mtd) >= NVRAM_SPACE) {
+				printk(KERN_INFO "nvram size = %zu\n", part_size(nvram_mtd));
 				break;
 			}
 			put_mtd_device(nvram_mtd);
