@@ -619,6 +619,17 @@ void start_sysinit(void)
 		sysprintf("echo eth2 > /sys/class/leds/white:aqr10g/device_name");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
 		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
+		nvram_default_get("eth1_label","sfp");
+		nvram_default_get("eth2_label","10gbit");
+		nvram_default_get("eth3_label","wan");
+		nvram_default_get("eth4_label","lan1");
+		nvram_default_get("eth5_label","lan2");
+		nvram_default_get("eth6_label","lan3");
+		nvram_default_get("eth7_label","lan4");
+		nvram_default_get("eth8_label","lan5");
+		nvram_default_get("eth9_label","lan6");
+		nvram_default_get("eth10_label","lan7");
+		nvram_default_get("eth11_label","lan8");
 
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
