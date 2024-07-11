@@ -612,6 +612,14 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		insmod("qca8k");
+		insmod("leds-gpio");
+		sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
+		sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
+		sysprintf("echo netdev > /sys/class/leds/white:aqr10g/trigger");
+		sysprintf("echo eth2 > /sys/class/leds/white:aqr10g/device_name");
+		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
+		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
+
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
 		fwlen = 0x20000;
@@ -977,6 +985,7 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+
 		break;
 	}
 	return;
