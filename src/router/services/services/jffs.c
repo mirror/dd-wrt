@@ -94,7 +94,7 @@ void start_jffs2(void)
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
-	sprintf(upath, "ubi%d:%s", ubidev, rwpath);
+	sprintf(upath, "ubi%d:%s", ubidev, rwpart);
 	if (nvram_matchi("enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_matchi("clean_jffs2", 1)) {
