@@ -165,6 +165,12 @@ kernel:
 	# Also build kernel
 	cp $(LINUXDIR)/.config_ipq6018 $(LINUXDIR)/.config
 
+ifeq ($(CONFIG_AX89),y)
+	sed -i 's/\# CONFIG_MTD_UBI_GLUEBI is not set/CONFIG_MTD_UBI_GLUEBI=y/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_MTD_SPLIT_FIRMWARE is not set/CONFIG_MTD_SPLIT_FIRMWARE=y/g' $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_MTD_SPLIT_UIMAGE_FW is not set/CONFIG_MTD_SPLIT_UIMAGE_FW=y/g' $(LINUXDIR)/.config
+	echo "CONFIG_MTD_SPLIT_FIRMWARE_NAME=\"linux\"" >> $(LINUXDIR)/.config
+endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
@@ -360,7 +366,13 @@ endif
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx5500.bin
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx5500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
-	
+#ax89
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mkimage -A arm64 -O linux -T multi -C gzip -a 0x41000000 -n 'ARM64 DD-WRT Linux' -d $(ARCH)-uclibc/Image.itb.new:$(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-rt-ax89x.dtb:$(TOP)/$(ARCH)-uclibc/root.fs $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin
+	./tools/asus/asusuimage -v 2 -n RT-AX89U -b 388 -e 4900 -i $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
 
 include rules/all.mk
 
