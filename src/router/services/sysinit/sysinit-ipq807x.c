@@ -816,73 +816,73 @@ void start_sysinit(void)
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		sysprintf("ssdk_sh port frameMaxSize set 2 0x800");
+		eval("ssdk_sh","port","frameMaxSize","set","2","0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		sysprintf("ssdk_sh port flowctrlforcemode set 2 enable");
-		sysprintf("ssdk_sh port flowctrl set 2 enable");
+		eval("ssdk_sh","port","flowctrlforcemode","set","2","enable");
+		eval("ssdk_sh","port","flowctrl","set","2","enable");
 
 		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
-		sysprintf("ssdk_sh vlan entry flush");
+		eval("ssdk_sh","vlan","entry","flush");
 
-		sysprintf("ssdk_sh vlan entry append 1 1 6,5 6 5 default default default");
-		sysprintf("ssdk_sh vlan entry append 2 2 6,1,2,3,4 6 1,2,3,4 default default default");
+		eval("ssdk_sh","vlan","entry","append","1","1","6,5","6","5","default","default","default");
+		eval("ssdk_sh","vlan","entry","append","2","2","6,1,2,3,4","6","1,2,3,4","default","default","default");
 
-		sysprintf("ssdk_sh portVlan ingress set 1 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 2 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 3 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 4 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 5 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 6 fallback");
+		eval("ssdk_sh","portVlan","ingress","set","1","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","2","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","3","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","4","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","5","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","6","fallback");
 
-		sysprintf("ssdk_sh portVlan defaultSVid set 1 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 2 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 3 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 4 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 5 1");
-		sysprintf("ssdk_sh portVlan defaultSVid set 6 1");
-		sysprintf("ssdk_sh portVlan egress set 1 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 1 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 1 enable");
+		eval("ssdk_sh","portVlan","defaultSVid","set","1","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","2","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","3","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","4","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","5","1");
+		eval("ssdk_sh","portVlan","defaultSVid","set","6","1");
+		eval("ssdk_sh","portVlan","egress","set","1","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","1","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","1","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 2 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 2 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 2 enable");
+		eval("ssdk_sh","portVlan","egress","set","2","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","2","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","2","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 3 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 3 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 3 enable");
+		eval("ssdk_sh","portVlan","egress","set","3","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","3","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","3","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 4 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 4 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 4 enable");
+		eval("ssdk_sh","portVlan","egress","set","4","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","4","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","4","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 5 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 5 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 5 enable");
+		eval("ssdk_sh","portVlan","egress","set","5","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","5","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","5","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 6 tagged");
-		sysprintf("ssdk_sh portVlan qinqrole set 6 core");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 6 replace");
-		sysprintf("ssdk_sh portVlan tlsMode set 6 disable");
+		eval("ssdk_sh","portVlan","egress","set","6","tagged");
+		eval("ssdk_sh","portVlan","qinqrole","set","6","core");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","6","replace");
+		eval("ssdk_sh","portVlan","tlsMode","set","6","disable");
 
-		sysprintf("ssdk_sh portVlan qinqmode set stag");
-		sysprintf("ssdk_sh portVlan svlanTPID set 0x8100");
+		eval("ssdk_sh","portVlan","qinqmode","set","stag");
+		eval("ssdk_sh","portVlan","svlanTPID","set","0x8100");
 
-		sysprintf("ssdk_sh port poweron set 5");
-		sysprintf("ssdk_sh fdb entry flush 0 > /dev/null 2>&1");
+		eval("ssdk_sh","port","poweron","set","5");
+		eval("ssdk_sh","fdb","entry","flush","0");
 
 		/*drop invalid tcp*/
-		sysprintf("ssdk_sh debug reg set 0x200 0x2000 4");
+		eval("ssdk_sh","debug","reg","set","0x200","0x2000","4");
 		/* drop tcp/udp checksum errors */
-		sysprintf("ssdk_sh debug reg set 0x204 0x0842 4");
+		eval("ssdk_sh","debug","reg","set","0x204","0x0842","4");
 		/* enable pppoe */
-		sysprintf("ssdk_sh debug reg set 0x214 0x2000000 4");
+		eval("ssdk_sh","debug","reg","set","0x214","0x2000000","4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		sysprintf("ssdk_sh port flowctrlforcemode set 6 enable");
-		sysprintf("ssdk_sh port flowctrl set 6 enable");
+		eval("ssdk_sh","port","flowctrlforcemode","set","6","enable");
+		eval("ssdk_sh","port","flowctrl","set","6","enable");
 
 		eval("ifconfig", "eth0", "up");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
@@ -894,67 +894,67 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "2");
 		/* setup vlan config */
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		sysprintf("ssdk_sh port frameMaxSize set 2 0x800");
+		eval("ssdk_sh","port","frameMaxSize","set","2","0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		sysprintf("ssdk_sh port flowctrlforcemode set 2 enable");
-		sysprintf("ssdk_sh port flowctrl set 2 enable");
+		eval("ssdk_sh","port","flowctrlforcemode","set","2","enable");
+		eval("ssdk_sh","port","flowctrl","set","2","enable");
 
 		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
-		sysprintf("ssdk_sh vlan entry flush");
+		eval("ssdk_sh","vlan","entry","flush");
 
-		sysprintf("ssdk_sh vlan entry append 1 1 6,2 6 2 default default default");
-		sysprintf("ssdk_sh vlan entry append 2 2 6,3,4,5 6 3,4,5 default default default");
+		eval("ssdk_sh","vlan","entry","append","1","1","6,2","6","2","default","default","default");
+		eval("ssdk_sh","vlan","entry","append","2","2","6,3,4,5","6","3,4,5","default","default","default");
 
-		sysprintf("ssdk_sh portVlan ingress set 2 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 3 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 4 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 5 fallback");
-		sysprintf("ssdk_sh portVlan ingress set 6 fallback");
+		eval("ssdk_sh","portVlan","ingress","set","2","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","3","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","4","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","5","fallback");
+		eval("ssdk_sh","portVlan","ingress","set","6","fallback");
 
-		sysprintf("ssdk_sh portVlan defaultSVid set 2 1");
-		sysprintf("ssdk_sh portVlan defaultSVid set 3 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 4 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 5 2");
-		sysprintf("ssdk_sh portVlan defaultSVid set 6 1");
+		eval("ssdk_sh","portVlan","defaultSVid","set","2","1");
+		eval("ssdk_sh","portVlan","defaultSVid","set","3","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","4","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","5","2");
+		eval("ssdk_sh","portVlan","defaultSVid","set","6","1");
 
-		sysprintf("ssdk_sh portVlan egress set 2 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 2 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 2 enable");
+		eval("ssdk_sh","portVlan","egress","set","2","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","2","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","2","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 3 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 3 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 3 enable");
+		eval("ssdk_sh","portVlan","egress","set","3","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","3","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","3","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 4 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 4 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 4 enable");
+		eval("ssdk_sh","portVlan","egress","set","4","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","4","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","4","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 5 unmodified");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 5 disable");
-		sysprintf("ssdk_sh portVlan tlsMode set 5 enable");
+		eval("ssdk_sh","portVlan","egress","set","5","unmodified");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","5","disable");
+		eval("ssdk_sh","portVlan","tlsMode","set","5","enable");
 
-		sysprintf("ssdk_sh portVlan egress set 6 tagged");
-		sysprintf("ssdk_sh portVlan qinqrole set 6 core");
-		sysprintf("ssdk_sh portVlan vlanPropagation set 6 replace");
-		sysprintf("ssdk_sh portVlan tlsMode set 6 disable");
+		eval("ssdk_sh","portVlan","egress","set","6","tagged");
+		eval("ssdk_sh","portVlan","qinqrole","set","6","core");
+		eval("ssdk_sh","portVlan","vlanPropagation","set","6","replace");
+		eval("ssdk_sh","portVlan","tlsMode","set","6","disable");
 
-		sysprintf("ssdk_sh portVlan qinqmode set stag");
-		sysprintf("ssdk_sh portVlan svlanTPID set 0x8100");
-		sysprintf("ssdk_sh port poweron set 2");
-		sysprintf("ssdk_sh fdb entry flush 0 > /dev/null 2>&1");
+		eval("ssdk_sh","portVlan","qinqmode","set","stag");
+		eval("ssdk_sh","portVlan","svlanTPID","set","0x8100");
+		eval("ssdk_sh","port","poweron","set","2");
+		eval("ssdk_sh","fdb","entry","flush","0");
 		/*drop invalid tcp*/
-		sysprintf("ssdk_sh debug reg set 0x200 0x2000 4");
+		eval("ssdk_sh","debug","reg","set","0x200","0x2000","4");
 		/* drop tcp/udp checksum errors */
-		sysprintf("ssdk_sh debug reg set 0x204 0x0842 4");
+		eval("ssdk_sh","debug","reg","set","0x204","0x0842","4");
 		/* enable pppoe */
-		sysprintf("ssdk_sh debug reg set 0x214 0x2000000 4");
+		eval("ssdk_sh","debug","reg","set","0x214","0x2000000","4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		sysprintf("ssdk_sh port flowctrlforcemode set 6 enable");
-		sysprintf("ssdk_sh port flowctrl set 6 enable");
+		eval("ssdk_sh","port","flowctrlforcemode","set","6","enable");
+		eval("ssdk_sh","port","flowctrl","set","6","enable");
 
 		eval("ifconfig", "eth0", "up");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
