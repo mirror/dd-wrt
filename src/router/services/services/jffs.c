@@ -110,7 +110,7 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-			if (ax79) {
+			if (ax89) {
 				itworked = eval("mtd", "erase", rwpart);
 			}
 			else if (classic) {
