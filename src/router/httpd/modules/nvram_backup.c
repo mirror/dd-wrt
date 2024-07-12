@@ -192,6 +192,8 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 #endif /*HAVE_ANTAIRA */
 	char lanip[64];
 	strncpy(lanip, nvram_safe_get("lan_ipaddr"), sizeof(lanip));
+	char langw[64];
+	strncpy(langw, nvram_safe_get("lan_gateway"), sizeof(langw));
 	int ret = nvram_restore("/tmp/restore.bin", force);
 	if (ret < 0)
 		wp->restore_ret = 99;
@@ -199,6 +201,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		wp->restore_ret = 0;
 	if (keepip) {
 		nvram_set("lan_ipaddr", lanip);
+		nvram_set("lan_gateway", langw);
 		nvram_commit();
 	}
 	unlink("/tmp/restore.bin");
