@@ -379,6 +379,7 @@ void start_setup_vlans(void)
 				eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 				char *lanphy = "eth0";
 				char *wanphy = "eth0";
+				    
 				if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth0")) {
 					lanphy = "eth1";
 					wanphy = "eth0";
@@ -386,6 +387,9 @@ void start_setup_vlans(void)
 				if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth1")) {
 					lanphy = "eth0";
 					wanphy = "eth1";
+				}
+				if (*nvram_safe_get("switchphy")) {
+					lanphy = nvram_safe_get("switchphy");
 				}
 
 				/*
