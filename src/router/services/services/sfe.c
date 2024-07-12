@@ -64,7 +64,9 @@ void start_sfe(void)
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
 		eval("insmod", "ecm", "front_end_selection=1");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+#endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "4")) { // ecm sfe
 		rmmod("fast-classifier");
@@ -82,7 +84,9 @@ void start_sfe(void)
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
 		eval("insmod", "ecm", "front_end_selection=4");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
+#endif
 		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started\n");
 	} else {
 		rmmod("fast-classifier");
@@ -93,6 +97,7 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+
 		rmmod("ecm");
 		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "0");
