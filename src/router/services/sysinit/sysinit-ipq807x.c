@@ -999,6 +999,9 @@ void start_sysinit(void)
 
 		break;
 	}
+	nvram_unset("sw_cpuport");
+	nvram_unset("sw_wancpuport");
+
 	return;
 }
 
