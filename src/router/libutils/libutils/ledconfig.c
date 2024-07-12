@@ -1672,6 +1672,8 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio_disabled = 0; 
 		cfg->connected_gpio = 0x2;
 		cfg->disconnected_gpio = 0x1;
+		cfg->usb_power = 0x1e; // usb enable
+		cfg->usb_power1 = 0x1f;
 		break;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
@@ -1682,6 +1684,14 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x0; // diag led / red 
 		cfg->diag_gpio_disabled = 0x1; 
 		cfg->connected_gpio = 0x2; // blue wan led
+		break;
+	case ROUTER_LINKSYS_MR7350:
+		cfg->power_gpio = 0x1; // power led / green
+		cfg->diag_gpio = 0x0; // diag led / red 
+		cfg->diag_gpio_disabled = 0x1; 
+		cfg->connected_gpio = 0x2; // blue wan led
+		cfg->usb_gpio = 0x3c; //usb1
+		cfg->usb_power = GPIO_LOW | 0x3d; //usb2
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		cfg->power_gpio = 0x1a; // power led / green
