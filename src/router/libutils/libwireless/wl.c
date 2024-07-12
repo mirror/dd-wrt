@@ -3870,8 +3870,8 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned i
 	if (mcs < 10) {
 	    nss = 1;
 	}
-	mcs +=2;
 	mcs /= nss;
+	mcs +=2;
 
 	/* now scale to the appropriate MCS */
 	tmp = result;
