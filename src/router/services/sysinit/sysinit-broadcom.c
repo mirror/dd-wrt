@@ -2571,7 +2571,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_WRT54G1X:
-		if (check_vlan_support()) {
+		if (check_switch_support()) {
 			nvram_set("lan_ifnames", "vlan0 eth2");
 			nvram_set("wan_ifname", "vlan1");
 		}
@@ -2898,10 +2898,10 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_WRTSL54GS:
-		if (nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x0018")) {
+		if (nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x0018")) {
 			nvram_set("boardflags", "0x0118"); //enable lan vlans
 			need_reboot = 1;
-		} else if (!nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x0118")) {
+		} else if (!nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x0118")) {
 			nvram_set("boardflags", "0x0018"); //disable vlans
 			need_reboot = 1;
 		}
@@ -2909,10 +2909,10 @@ void start_sysinit(void)
 
 	case ROUTER_WRT150N:
 	case ROUTER_WRT160N:
-		if (nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x0010")) {
+		if (nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x0010")) {
 			nvram_set("boardflags", "0x0110"); //enable lan vlans
 			need_reboot = 1;
-		} else if (!nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x0110")) {
+		} else if (!nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x0110")) {
 			nvram_set("boardflags", "0x0010"); //disable vlans
 			need_reboot = 1;
 		}
@@ -2920,10 +2920,10 @@ void start_sysinit(void)
 
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
-		if (nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x10")) {
+		if (nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x10")) {
 			nvram_set("boardflags", "0x110"); //enable lan vlans
 			need_reboot = 1;
-		} else if (!nvram_match("force_vlan_supp", "enabled") && nvram_match("boardflags", "0x110")) {
+		} else if (!nvram_match("force_switch_supp", "enabled") && nvram_match("boardflags", "0x110")) {
 			nvram_set("boardflags", "0x10"); //disable vlans
 			need_reboot = 1;
 		}
@@ -2990,7 +2990,7 @@ void start_sysinit(void)
 		if (brand == ROUTER_WRT600N)
 			insmod("wl");
 
-		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
+		if (check_switch_support() && check_hw_type() != BCM5325E_CHIP) {
 			switch (brand) {
 				//#ifdef HAVE_BCMMODERN
 				//                              modules = "bcm57xx";
@@ -3146,7 +3146,7 @@ void start_sysinit(void)
 				modules = "";
 				break;
 			case ROUTER_WRT54G3G:
-				if (check_vlan_support())
+				if (check_switch_support())
 					modules = "switch-core switch-robo pcmcia_core yenta_socket ds";
 				else {
 					nvram_seti("portprio_support", 0);
@@ -3176,7 +3176,7 @@ void start_sysinit(void)
 
 			default:
 #ifndef HAVE_BCMMODERN
-				if (check_vlan_support())
+				if (check_switch_support())
 					modules = "switch-core switch-robo";
 				else
 #endif
@@ -3317,7 +3317,7 @@ void start_sysinit(void)
 		start_config_vlan();
 		break;
 	default:
-		if (check_vlan_support()) {
+		if (check_switch_support()) {
 			start_config_vlan();
 		}
 		break;

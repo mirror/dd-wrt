@@ -357,7 +357,7 @@ char *getTXQ(char *ifname)
 	return txq;
 }
 
-int check_vlan_support(void)
+int check_switch_support(void)
 {
 #ifdef HAVE_SWCONFIG
 	if (nvram_exists("sw_cpuport"))

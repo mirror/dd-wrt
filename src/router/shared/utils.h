@@ -839,7 +839,7 @@ extern int contains(const char *string, char value);
 extern int getcpurev(void);
 extern int nvram_used(int *space);
 extern int cpu_plltype(void);
-extern int check_vlan_support(void);
+extern int check_switch_support(void);
 
 extern int remove_from_list(const char *name, char *list, int listsize);
 extern int add_to_list(const char *name, char *list, int listsize);

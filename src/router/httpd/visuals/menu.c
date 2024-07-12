@@ -265,11 +265,11 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 	mainmenu = argv[0];
 	submenu = argv[1];
 
-	int vlan_supp = check_vlan_support();
+	int switch_supp = check_switch_support();
 	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
-		vlan_supp = 1;
+		switch_supp = 1;
 	if (getRouterBrand() == ROUTER_UBNT_NANOAC)
-		vlan_supp = 1;
+		switch_supp = 1;
 
 #ifdef HAVE_SPUTNIK_APD
 	int sputnik = nvram_matchi("apd_enable", 1);
@@ -449,7 +449,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					// build
 					goto skip;
 #endif
-				if ((!vlan_supp) && !strcmp_pnt(m->menu[i][j],
+				if ((!switch_supp) && !strcmp_pnt(m->menu[i][j],
 								"Vlan.asp")) // jump
 					// over
 					// VLANs

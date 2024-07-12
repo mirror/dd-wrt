@@ -2140,7 +2140,7 @@ void start_restore_defaults(void)
 	case ROUTER_BRCM4702_GENERIC:
 		// fall through
 	default:
-		if (check_vlan_support())
+		if (check_switch_support())
 			linux_overrides = vlan;
 		else
 			linux_overrides = generic;
