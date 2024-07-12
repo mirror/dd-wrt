@@ -1081,6 +1081,11 @@ radius_server_encapsulate_eap(struct radius_server_data *data,
 		return NULL;
 	}
 
+	if (!radius_msg_add_msg_auth(msg)) {
+		radius_msg_free(msg);
+		return NULL;
+	}
+
 	sess_id = htonl(sess->sess_id);
 	if (code == RADIUS_CODE_ACCESS_CHALLENGE &&
 	    !radius_msg_add_attr(msg, RADIUS_ATTR_STATE,
@@ -1358,6 +1363,11 @@ radius_server_macacl(struct radius_server_data *data,
 		return NULL;
 	}
 
+	if (!radius_msg_add_msg_auth(msg)) {
+		radius_msg_free(msg);
+		return NULL;
+	}
+
 	if (radius_msg_copy_attr(msg, request, RADIUS_ATTR_PROXY_STATE) < 0) {
 		RADIUS_DEBUG("Failed to copy Proxy-State attribute(s)");
 		radius_msg_free(msg);
@@ -1404,6 +1414,11 @@ static int radius_server_reject(struct radius_server_data *data,
 
 	msg = radius_msg_new(RADIUS_CODE_ACCESS_REJECT, hdr->identifier);
 	if (msg == NULL) {
+		return -1;
+	}
+
+	if (!radius_msg_add_msg_auth(msg)) {
+		radius_msg_free(msg);
 		return -1;
 	}
 
