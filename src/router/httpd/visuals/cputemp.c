@@ -53,7 +53,7 @@ static SENSORMAPS maps[] = {
 	{ "gephy_thermal", "gbit eth phy" },
 };
 
-static char getmappedname(char *name)
+static char *getmappedname(char *name)
 {
 	int i;
 	for (i = 0; i < sizeof(maps) / sizeof(maps[0]); i++) {
