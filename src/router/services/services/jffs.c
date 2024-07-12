@@ -55,8 +55,7 @@ void start_jffs2(void)
 	if (mtd == -1)
 		return;
 	int ubidev = 1;
-
-#ifdef defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+#if defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_ASUS_AC58U:
