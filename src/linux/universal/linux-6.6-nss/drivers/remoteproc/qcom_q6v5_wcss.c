@@ -465,6 +465,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 	udelay(1);
 
+#if 0
 		/* 10 - Wait till BHS Reset is done */
 	ret = readl_poll_timeout(wcss->reg_base + Q6SS_BHS_STATUS,
 			val, (val & BHS_EN_REST_ACK), 1000,
@@ -473,9 +474,9 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 		dev_err(wcss->dev, "BHS_STATUS not ON (rc:%d) val:0x%X\n", ret, val);
 		return ret;
 	}
-
+#endif
 	/* Put LDO in bypass mode */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= Q6SS_LDO_BYP;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -485,7 +486,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* Deassert memory peripheral sleep and L2 memory standby */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= Q6SS_L2DATA_STBY_N | Q6SS_SLP_RET_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -508,7 +509,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* Remove IO clamp */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_CLAMP_IO;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -528,6 +529,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_RESET_REG);
 
 	/* Wait for SSCAON_STATUS */
+#if 0
 	val = readl(wcss->rmb_base + SSCAON_STATUS);
 	ret = readl_poll_timeout(wcss->rmb_base + SSCAON_STATUS,
 				 val, (val & 0xffff) == 0x10, 1000,
@@ -536,7 +538,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 		dev_err(wcss->dev, " Boot Error, SSCAON=0x%08X\n", val);
 		return ret;
 	}
-
+#endif
 	return 0;
 }
 
@@ -1061,10 +1063,12 @@ static int q6v5_q6_powerdown(struct q6v5_wcss *wcss)
 	int i;
 	const struct wcss_data *desc = device_get_match_data(wcss->dev);
 
+#if 0
 	if (desc == &wcss_ipq6018_res_init) {
 		/* To retain power domain after q6 powerdown */
 		writel(0x1, wcss->reg_base + Q6SS_DBG_CFG);
 	}
+#endif
 
 	/* 1 - Halt Q6 bus interface */
 
@@ -1090,17 +1094,17 @@ static int q6v5_q6_powerdown(struct q6v5_wcss *wcss)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 4 - Clamp WL */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= QDSS_BHS_ON;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 5 - Clear Erase standby */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_L2DATA_STBY_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 6 - Clear Sleep RTN */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_SLP_RET_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -1118,7 +1122,7 @@ static int q6v5_q6_powerdown(struct q6v5_wcss *wcss)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 9 - Turn off BHS */
-	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_BHS_ON;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 	udelay(1);
@@ -1135,11 +1139,12 @@ reset:
 
 	/* 11 -  Assert WCSS reset */
 	reset_control_assert(wcss->wcss_reset);
-	if (desc == &wcss_ipq6018_res_init)
-		mdelay(1);
+//	if (desc == &wcss_ipq6018_res_init)
+//		mdelay(1);
 
 	/* 12 - Assert Q6 reset */
 	reset_control_assert(wcss->wcss_q6_reset);
+#if 0
 	if (desc == &wcss_ipq6018_res_init) {
 		mdelay(2);
 
@@ -1152,7 +1157,7 @@ reset:
 		/* Disable clocks*/
 		ipq6018_clks_prepare_disable(wcss);
 	}
-
+#endif
 	return 0;
 }
 
@@ -1768,7 +1773,7 @@ static const struct wcss_data wcss_ipq8074_res_init = {
 };
 
 static const struct wcss_data wcss_ipq6018_res_init = {
-	.init_clock = ipq6018_init_clock,
+	.init_clock = ipq_init_clock,
 	.q6_firmware_name = "ath11k/IPQ6018/hw1.0/q6_fw.mdt",
 	.m3_firmware_name = "ath11k/IPQ6018/hw1.0/m3_fw.mdt",
 	.crash_reason_smem = WCSS_CRASH_REASON,
