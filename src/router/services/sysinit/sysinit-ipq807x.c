@@ -613,26 +613,26 @@ void start_sysinit(void)
 		load_nss_ipq807x(1024);
 		insmod("qca8k");
 		insmod("leds-gpio");
-//		sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
-//		sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
-//		sysprintf("echo link > /sys/class/leds/white:wan/link");
+		//		sysprintf("echo netdev > /sys/class/leds/white:wan/trigger");
+		//		sysprintf("echo eth3 > /sys/class/leds/white:wan/device_name");
+		//		sysprintf("echo link > /sys/class/leds/white:wan/link");
 		sysprintf("echo netdev > /sys/class/leds/white:sfp/trigger");
 		sysprintf("echo eth1 > /sys/class/leds/white:sfp/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:sfp/link");
 		sysprintf("echo netdev > /sys/class/leds/white:aqr10g/trigger");
 		sysprintf("echo eth0 > /sys/class/leds/white:aqr10g/device_name");
 		sysprintf("echo 1 > /sys/class/leds/white:aqr10g/link");
-		nvram_default_get("eth0_label","10gbit");
-		nvram_default_get("eth1_label","sfp");
-		nvram_default_get("eth2_label","wan");
-		nvram_default_get("eth3_label","lan1");
-		nvram_default_get("eth4_label","lan2");
-		nvram_default_get("eth5_label","lan3");
-		nvram_default_get("eth6_label","lan4");
-		nvram_default_get("eth7_label","lan5");
-		nvram_default_get("eth8_label","lan6");
-		nvram_default_get("eth9_label","lan7");
-		nvram_default_get("eth10_label","lan8");
+		nvram_default_get("eth0_label", "10gbit");
+		nvram_default_get("eth1_label", "sfp");
+		nvram_default_get("eth2_label", "wan");
+		nvram_default_get("eth3_label", "lan1");
+		nvram_default_get("eth4_label", "lan2");
+		nvram_default_get("eth5_label", "lan3");
+		nvram_default_get("eth6_label", "lan4");
+		nvram_default_get("eth7_label", "lan5");
+		nvram_default_get("eth8_label", "lan6");
+		nvram_default_get("eth9_label", "lan7");
+		nvram_default_get("eth10_label", "lan8");
 
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
@@ -782,7 +782,7 @@ void start_sysinit(void)
 		eval("insmod", "mac80211", "nss_redirect=1");
 		insmod("qmi_helpers");
 		eval("insmod", "ath11k",
-		     "nss_offload=0"); // the only working nss firmware for qca5018 does not work with nss offload for ath11k
+		     "nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		break;
@@ -816,73 +816,73 @@ void start_sysinit(void)
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh","port","frameMaxSize","set","2","0x800");
+		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh","port","flowctrlforcemode","set","2","enable");
-		eval("ssdk_sh","port","flowctrl","set","2","enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
 
 		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
-		eval("ssdk_sh","vlan","entry","flush");
+		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh","vlan","entry","append","1","1","6,5","6","5","default","default","default");
-		eval("ssdk_sh","vlan","entry","append","2","2","6,1,2,3,4","6","1,2,3,4","default","default","default");
+		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,5", "6", "5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,1,2,3,4", "6", "1,2,3,4", "default", "default", "default");
 
-		eval("ssdk_sh","portVlan","ingress","set","1","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","2","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","3","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","4","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","5","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","6","fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
 
-		eval("ssdk_sh","portVlan","defaultSVid","set","1","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","2","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","3","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","4","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","5","1");
-		eval("ssdk_sh","portVlan","defaultSVid","set","6","1");
-		eval("ssdk_sh","portVlan","egress","set","1","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","1","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","1","enable");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "1");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "1");
+		eval("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","2","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","2","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","2","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","3","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","3","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","3","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","4","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","4","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","4","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","5","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","5","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","5","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","6","tagged");
-		eval("ssdk_sh","portVlan","qinqrole","set","6","core");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","6","replace");
-		eval("ssdk_sh","portVlan","tlsMode","set","6","disable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
+		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "replace");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
 
-		eval("ssdk_sh","portVlan","qinqmode","set","stag");
-		eval("ssdk_sh","portVlan","svlanTPID","set","0x8100");
+		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
 
-		eval("ssdk_sh","port","poweron","set","5");
-		eval("ssdk_sh","fdb","entry","flush","0");
+		eval("ssdk_sh", "port", "poweron", "set", "5");
+		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 
 		/*drop invalid tcp*/
-		eval("ssdk_sh","debug","reg","set","0x200","0x2000","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		eval("ssdk_sh","debug","reg","set","0x204","0x0842","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		eval("ssdk_sh","debug","reg","set","0x214","0x2000000","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh","port","flowctrlforcemode","set","6","enable");
-		eval("ssdk_sh","port","flowctrl","set","6","enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
@@ -894,67 +894,67 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth0", "2");
 		/* setup vlan config */
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh","port","frameMaxSize","set","2","0x800");
+		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh","port","flowctrlforcemode","set","2","enable");
-		eval("ssdk_sh","port","flowctrl","set","2","enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
 
 		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
-		eval("ssdk_sh","vlan","entry","flush");
+		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh","vlan","entry","append","1","1","6,2","6","2","default","default","default");
-		eval("ssdk_sh","vlan","entry","append","2","2","6,3,4,5","6","3,4,5","default","default","default");
+		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,2", "6", "2", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,3,4,5", "6", "3,4,5", "default", "default", "default");
 
-		eval("ssdk_sh","portVlan","ingress","set","2","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","3","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","4","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","5","fallback");
-		eval("ssdk_sh","portVlan","ingress","set","6","fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
 
-		eval("ssdk_sh","portVlan","defaultSVid","set","2","1");
-		eval("ssdk_sh","portVlan","defaultSVid","set","3","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","4","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","5","2");
-		eval("ssdk_sh","portVlan","defaultSVid","set","6","1");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "1");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "2");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "1");
 
-		eval("ssdk_sh","portVlan","egress","set","2","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","2","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","2","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","3","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","3","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","3","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","4","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","4","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","4","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","5","unmodified");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","5","disable");
-		eval("ssdk_sh","portVlan","tlsMode","set","5","enable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
 
-		eval("ssdk_sh","portVlan","egress","set","6","tagged");
-		eval("ssdk_sh","portVlan","qinqrole","set","6","core");
-		eval("ssdk_sh","portVlan","vlanPropagation","set","6","replace");
-		eval("ssdk_sh","portVlan","tlsMode","set","6","disable");
+		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
+		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "replace");
+		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
 
-		eval("ssdk_sh","portVlan","qinqmode","set","stag");
-		eval("ssdk_sh","portVlan","svlanTPID","set","0x8100");
-		eval("ssdk_sh","port","poweron","set","2");
-		eval("ssdk_sh","fdb","entry","flush","0");
+		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
+		eval("ssdk_sh", "port", "poweron", "set", "2");
+		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 		/*drop invalid tcp*/
-		eval("ssdk_sh","debug","reg","set","0x200","0x2000","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		eval("ssdk_sh","debug","reg","set","0x204","0x0842","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		eval("ssdk_sh","debug","reg","set","0x214","0x2000000","4");
+		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh","port","flowctrlforcemode","set","6","enable");
-		eval("ssdk_sh","port","flowctrl","set","6","enable");
+		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
@@ -968,31 +968,20 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-		sysprintf("ssdk_sh debug module_func set servcode 0xf 0x0 0x0");
-		sysprintf("ssdk_sh servcode config set 1 n 0 0xfffefc7f 0xffbdff 0 0 0 0 0 0");
-		sysprintf("ssdk_sh debug module_func set servcode 0x0 0x0 0x0");
-		sysprintf("ssdk_sh acl list create 56 48");
-		sysprintf(
-			"ssdk_sh acl rule add 56 0 1 n 0 0 mac n n n n n y 01-80-c2-00-00-00 ff-ff-ff-ff-ff-ff n n n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-		sysprintf(
-			"ssdk_sh acl rule add 56 1 1 n 0 0 mac n n n n n n n yes 0x8809 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-		sysprintf(
-			"ssdk_sh acl rule add 56 2 1 n 0 0 mac n n n n n n n yes 0x888e 0xffff n n n n n n n n n n n n n n n n n n n n n y n n n n n n n n n n 0 0 n n n n n n n n n n n n n y n n n n n n n n n n n n y n n n n n n n n n n n n 0");
-		sysprintf("ssdk_sh acl list bind 56 0 2 1");
-		sysprintf("ssdk_sh fdb portLearn set 0 disable");
-		sysprintf("ssdk_sh fdb portLearn set 1 disable");
-		sysprintf("ssdk_sh fdb portLearn set 2 disable");
-		sysprintf("ssdk_sh fdb portLearn set 3 disable");
-		sysprintf("ssdk_sh fdb portLearn set 4 disable");
-		sysprintf("ssdk_sh fdb portLearn set 5 disable");
-		sysprintf("ssdk_sh stp portState set 0 0 forward");
-		sysprintf("ssdk_sh stp portState set 0 1 forward");
-		sysprintf("ssdk_sh stp portState set 0 2 forward");
-		sysprintf("ssdk_sh stp portState set 0 3 forward");
-		sysprintf("ssdk_sh stp portState set 0 4 forward");
-		sysprintf("ssdk_sh stp portState set 0 5 forward");
-		sysprintf("ssdk_sh fdb learnCtrl set disable");
-		sysprintf("ssdk_sh fdb entry flush 1");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+		eval("ssdk_sh", "fdb", "entry", "flush", "1");
 		break;
 	case ROUTER_ASUS_AX89X:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
