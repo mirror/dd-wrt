@@ -47,6 +47,7 @@ void start_jffs2(void)
 	int itworked = 0;
 	char dev[64];
 	int classic = 0;
+	int ax89 = 0;
 #if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
 #else
@@ -66,7 +67,7 @@ void start_jffs2(void)
 		break;
 	case ROUTER_ASUS_AX89X:
 		rwpart ="jffs2";
-		classic = 1;
+		ax89=1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
@@ -93,7 +94,7 @@ void start_jffs2(void)
 	char udev[32];
 	sprintf(udev, "/dev/ubi%d", ubidev);
 	char upath[32];
-	sprintf(upath, "ubi%d:ddwrt", ubidev);
+	sprintf(upath, "ubi%d:%s", ubidev, rwpath);
 	if (nvram_matchi("enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_matchi("clean_jffs2", 1)) {
@@ -109,7 +110,10 @@ void start_jffs2(void)
 			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-			if (classic) {
+			if (ax79) {
+				itworked = eval("mtd", "erase", rwpart);
+			}
+			else if (classic) {
 				itworked = eval("mtd", "erase", rwpart);
 				itworked = eval("flash_erase", dev, "0", "0");
 			} else {
@@ -125,7 +129,10 @@ void start_jffs2(void)
 #endif
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-			if (classic) {
+			if (ax89) {
+				itworked += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+			}
+			else if (classic) {
 				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			} else {
@@ -143,7 +150,10 @@ void start_jffs2(void)
 
 		} else {
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
-			if (classic) {
+			if (ax89) {
+				itworked += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
+			}
+			else if (classic) {
 				itworked = eval("mtd", "unlock", rwpart);
 				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
