@@ -1,7 +1,7 @@
 /*
  * radius.h  Constants of the radius protocol.
  *
- * Version:  $Id: 473528d65dbe552dee8f42315d30dc2c13e6ab14 $
+ * Version:  $Id: 147d674eed9373897664a3c37aa23828648655e0 $
  *
  */
 
@@ -61,6 +61,7 @@ typedef enum {
 	PW_CODE_COA_REQUEST		= 43,	//!< RFC3575/RFC5176 - CoA-Request
 	PW_CODE_COA_ACK			= 44,	//!< RFC3575/RFC5176 - CoA-Ack (positive)
 	PW_CODE_COA_NAK			= 45,	//!< RFC3575/RFC5176 - CoA-Nak (not willing to perform)
+	PW_CODE_PROTOCOL_ERROR 		= 52,	//!< RFC7930 - Protocol layer issue
 	PW_CODE_MAX			= 255,	//!< Maximum possible code
 } PW_CODE;
 

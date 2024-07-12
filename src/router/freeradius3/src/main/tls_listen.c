@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 351cbf1297879b2abca45f789300ef57011fced8 $
+ * Version:     $Id: 3dc786bb55116986cfa682facdcc785ee5013102 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 351cbf1297879b2abca45f789300ef57011fced8 $")
+RCSID("$Id: 3dc786bb55116986cfa682facdcc785ee5013102 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -377,7 +377,6 @@ static int tls_socket_recv(rad_listen_t *listener)
 	REQUEST *request;
 	listen_socket_t *sock = listener->data;
 	fr_tls_status_t status;
-	RADCLIENT *client = sock->client;
 
 	if (!sock->packet) {
 		sock->packet = rad_alloc(sock, false);
@@ -674,6 +673,7 @@ read_application_data:
 #ifdef WITH_RADIUSV11
 	packet->radiusv11 = sock->radiusv11;
 #endif
+	packet->tls = true;
 
 	if (!rad_packet_ok(packet, 0, NULL)) {
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -708,8 +708,6 @@ read_application_data:
 			       packet->id, (int) packet->data_len);
 		}
 	}
-
-	FR_STATS_INC(auth, total_requests);
 
 	return 1;
 }
@@ -1289,6 +1287,7 @@ int proxy_tls_recv(rad_listen_t *listener)
 	}
 
 #endif
+	packet->tls = true;
 
 	/*
 	 *	FIXME: Client MIB updates?
@@ -1376,6 +1375,7 @@ int proxy_tls_send(rad_listen_t *listener, REQUEST *request)
 	 *	if there's no packet, encode it here.
 	 */
 	if (!request->proxy->data) {
+		request->reply->tls = true;
 		request->proxy_listener->proxy_encode(request->proxy_listener,
 						      request);
 	}
@@ -1512,6 +1512,8 @@ int proxy_tls_send_reply(rad_listen_t *listener, REQUEST *request)
 
 	if ((listener->status != RAD_LISTEN_STATUS_INIT &&
 	    (listener->status != RAD_LISTEN_STATUS_KNOWN))) return 0;
+
+	request->reply->tls = true;
 
 	/*
 	 *	Pack the VPs

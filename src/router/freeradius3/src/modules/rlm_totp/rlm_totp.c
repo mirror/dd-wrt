@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 52325c01c81cf38c46c909677966c205b2c2bbcc $
+ * $Id: d58e1ee56ffe08c6ec42d09e5210ea475877deb4 $
  * @file rlm_totp.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2021  The FreeRADIUS server project
  * @copyright 2021  Network RADIUS SARL (legal@networkradius.com)
  */
-RCSID("$Id: 52325c01c81cf38c46c909677966c205b2c2bbcc $")
+RCSID("$Id: d58e1ee56ffe08c6ec42d09e5210ea475877deb4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -506,6 +506,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 
 		key = buffer;
 		keylen = len;
+	}
+
+	vp = fr_pair_find_by_num(request->config, PW_TOTP_TIME_OFFSET, 0, TAG_ANY);
+	if (vp && (vp->vp_signed > -600) && (vp->vp_signed < 600)) {
+		RDEBUG("Using TOTP-Time-Offset = %d", vp->vp_signed);
+		now += vp->vp_signed;
 	}
 
 	if (totp_cmp(request, now, key, keylen, password->vp_strvalue, instance) == 0) {

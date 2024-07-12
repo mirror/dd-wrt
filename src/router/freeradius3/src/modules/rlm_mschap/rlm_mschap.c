@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 00ab90d994fddd9475ababb03069ba65507e5627 $
+ * $Id: 4742f9f9630936193c838790056c125fe681cf6d $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: 00ab90d994fddd9475ababb03069ba65507e5627 $")
+RCSID("$Id: 4742f9f9630936193c838790056c125fe681cf6d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -1013,14 +1013,14 @@ ntlm_auth_err:
 				return -1;
 			}
 
-			if (!EVP_CIPHER_CTX_set_key_length(ctx, nt_password->vp_length)) {
-				REDEBUG("Failed setting key length");
-				goto error;
-			}
-
 			if (!EVP_EncryptInit_ex(ctx, EVP_rc4(), NULL, nt_password->vp_octets, NULL)) {
 				REDEBUG("Failed setting key value");
 				goto error;;
+			}
+
+			if (!EVP_CIPHER_CTX_set_key_length(ctx, nt_password->vp_length)) {
+				REDEBUG("Failed setting key length");
+				goto error;
 			}
 
 			if (!EVP_EncryptUpdate(ctx, nt_pass_decrypted, &ntlen, new_nt_password, ntlen)) {

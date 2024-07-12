@@ -2,7 +2,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 424c4b5c0135ff2f36affd8fa56e75269441df9e $
+ * Version:     $Id: 3a915bc624d69b99a180bc4a86bfb2d85704754c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  *
  */
 
-RCSID("$Id: 424c4b5c0135ff2f36affd8fa56e75269441df9e $")
+RCSID("$Id: 3a915bc624d69b99a180bc4a86bfb2d85704754c $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -103,6 +103,28 @@ tls_session_t *eaptls_session(eap_handler_t *handler, fr_tls_server_conf_t *tls_
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_TALLOC, handler);
 
 	return talloc_steal(handler, ssn); /* ssn */
+}
+
+/*
+   The S flag is set only within the EAP-TLS start message
+   sent from the EAP server to the peer.
+*/
+int eaptls_start(EAP_DS *eap_ds, int peap_flag)
+{
+       EAPTLS_PACKET   reply;
+
+       reply.code = FR_TLS_START;
+       reply.length = TLS_HEADER_LEN + 1/*flags*/;
+
+       reply.flags = peap_flag;
+       reply.flags = SET_START(reply.flags);
+
+       reply.data = NULL;
+       reply.dlen = 0;
+
+       eaptls_compose(eap_ds, &reply);
+
+       return 1;
 }
 
 /** Send an EAP-TLS success

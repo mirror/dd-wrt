@@ -4,7 +4,7 @@
 #
 #	Non Protocol Attributes used by FreeRADIUS
 #
-#	$Id: 7871fe11effb3415e66d97e63eee2557e9f86866 $
+#	$Id: 52b9bb8750aa04ef30c32ef335a5d7c9c6d0d92f $
 #
 
 #	The attributes number ranges are allocates as follows:
@@ -302,6 +302,8 @@ ATTRIBUTE	Proxy-Tunneled-Request-As-EAP		1197	integer
 VALUE	Proxy-Tunneled-Request-As-EAP	No			0
 VALUE	Proxy-Tunneled-Request-As-EAP	Yes			1
 ATTRIBUTE	Temp-Home-Server-String			1198	string
+
+ATTRIBUTE	TOTP-Time-Offset			1199	signed
 
 #
 #	Range:	1200-1279

@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 982f2124c62f8309bddfbebb2c5f57f6734fd5f0 $
+ * $Id: c7c03cdbbebc5ba7aa3f5b0f6860ecd7c90eca6a $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 982f2124c62f8309bddfbebb2c5f57f6734fd5f0 $")
+RCSIDH(radiusd_h, "$Id: c7c03cdbbebc5ba7aa3f5b0f6860ecd7c90eca6a $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -176,6 +176,9 @@ typedef struct main_config {
 
 	bool		exiting;			//!< are we exiting?
 
+	fr_bool_auto_t 	require_ma;			//!< global configuration for all clients and home servers
+
+	fr_bool_auto_t 	limit_proxy_state;     		//!< global configuration for all clients
 
 #ifdef ENABLE_OPENSSL_VERSION_CHECK
 	char const	*allow_vulnerable_openssl;	//!< The CVE number of the last security issue acknowledged.
@@ -196,9 +199,8 @@ typedef struct main_config {
 typedef enum {
 	REQUEST_ACTIVE = 1,
 	REQUEST_STOP_PROCESSING,
-	REQUEST_COUNTED
 } rad_master_state_t;
-#define REQUEST_MASTER_NUM_STATES (REQUEST_COUNTED + 1)
+#define REQUEST_MASTER_NUM_STATES (REQUEST_STOP_PROCESSING + 1)
 
 typedef enum {
 	REQUEST_QUEUED = 1,
@@ -322,6 +324,7 @@ struct rad_request {
 #define RAD_REQUEST_OPTION_COA		(1 << 0)
 #define RAD_REQUEST_OPTION_CTX 		(1 << 1)
 #define RAD_REQUEST_OPTION_CANCELLED	(1 << 2)
+#define RAD_REQUEST_OPTION_STATS	(1 << 3)
 
 #define SECONDS_PER_DAY		86400
 #define MAX_REQUEST_TIME	30
@@ -566,6 +569,8 @@ int main_config_init(void);
 int main_config_free(void);
 void main_config_hup(void);
 void hup_logfile(void);
+
+int	fr_bool_auto_parse(CONF_PAIR *cp, fr_bool_auto_t *out, char const *str);
 
 /* listen.c */
 void listen_free(rad_listen_t **head);

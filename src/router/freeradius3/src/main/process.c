@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: fb2abfb82a56d1e5bfad731ae4ffa2aa7a157235 $
+ * $Id: 9880e34752839290626aff8d6401a8253819ebca $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: fb2abfb82a56d1e5bfad731ae4ffa2aa7a157235 $")
+RCSID("$Id: 9880e34752839290626aff8d6401a8253819ebca $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -1006,6 +1006,12 @@ static void request_cleanup_delay_init(REQUEST *request)
 #ifdef HAVE_PTHREAD_H
 		rad_assert(request->child_pid == NO_SUCH_CHILD_PID);
 #endif
+
+		/*
+		 *	Set the statistics immediately if we can.
+		 */
+		request_stats_final(request);
+
 		STATE_MACHINE_TIMER(FR_ACTION_TIMER);
 		return;
 	}
@@ -1258,6 +1264,9 @@ static void request_cleanup_delay(REQUEST *request, int action)
 #ifdef DEBUG_STATE_MACHINE
 			if (rad_debug_lvl) printf("(%u) ********\tNEXT-STATE %s -> %s\n", request->number, __FUNCTION__, "request_cleanup_delay");
 #endif
+
+			request_stats_final(request);
+
 			STATE_MACHINE_TIMER(FR_ACTION_TIMER);
 			return;
 		} /* else it's time to clean up */
@@ -2789,8 +2798,23 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 	 *	server core, but I guess we can fix that later.
 	 */
 	if (!request->proxy_reply) {
+		decode_fail_t reason;
+
+		/*
+		 *	If the home server configuration requires a Message-Authenticator, then set the flag,
+		 *	but only if the proxied packet is Access-Request or Status-Sercer.
+		 *
+		 *	The realms.c file already clears require_ma for TLS connections.
+		 */
+		bool require_ma = (request->home_server->require_ma == FR_BOOL_TRUE) && (request->proxy->code == PW_CODE_ACCESS_REQUEST);
+
 		if (!request->home_server) {
 			proxy_reply_too_late(request);
+			return 0;
+		}
+
+		if (!rad_packet_ok(packet, require_ma, &reason)) {
+			DEBUG("Ignoring invalid packet - %s", fr_strerror());
 			return 0;
 		}
 
@@ -2798,6 +2822,53 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 			       request->home_server->secret) != 0) {
 			DEBUG("Ignoring spoofed proxy reply.  Signature is invalid");
 			return 0;
+		}
+
+		/*
+		 *	BlastRADIUS checks.  We're running in the main
+		 *	listener thread, so there's no conflict
+		 *	checking or setting these fields.
+		 */
+		if ((request->proxy->code == PW_CODE_ACCESS_REQUEST) && 
+#ifdef WITH_TLS
+		    !request->home_server->tls &&
+#endif
+		    !packet->eap_message) {
+			if (request->home_server->require_ma == FR_BOOL_AUTO) {
+				if (!packet->message_authenticator) {
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					RERROR("BlastRADIUS check: Received response to Access-Request without Message-Authenticator.");
+					RERROR("Setting \"require_message_authenticator = false\" for home_server %s", request->home_server->name);
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					RERROR("UPGRADE THE HOME SERVER AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.");
+					RERROR("Once the home_server is upgraded, set \"require_message_authenticator = true\" for home_server %s.", request->home_server->name);
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+					request->home_server->require_ma = FR_BOOL_FALSE;
+				} else {
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					RERROR("BlastRADIUS check: Received response to Access-Request with Message-Authenticator.");
+					RERROR("Setting \"require_message_authenticator = true\" for home_server %s", request->home_server->name);
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					RERROR("It looks like the home server has been updated to protect from the BlastRADIUS attack.");
+					RERROR("Please set \"require_message_authenticator = true\" for home_server %s", request->home_server->name);
+					RERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+					request->home_server->require_ma = FR_BOOL_TRUE;
+				}
+
+			} else if (fr_debug_lvl && (request->home_server->require_ma == FR_BOOL_FALSE) && !packet->message_authenticator) {
+				/*
+				 *	If it's "no" AND we don't have a Message-Authenticator, then complain on every packet.
+				 */
+				RDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				RDEBUG("BlastRADIUS check: Received packet without Message-Authenticator from home_server %s", request->home_server->name);
+				RDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				RDEBUG("The packet does not contain Message-Authenticator, which is a security issue");
+				RDEBUG("UPGRADE THE HOME SERVER AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.");
+				RDEBUG("Once the home server is upgraded, set \"require_message_authenticator = true\" for home_server %s", request->home_server->name);
+				RDEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			}
 		}
 	}
 
@@ -3204,6 +3275,14 @@ static int request_will_proxy(REQUEST *request)
 		pool = home_pool_byname(vp->vp_strvalue, pool_type);
 
 		/*
+		 *	If we didn't find an auth only or acct only pool
+		 *	fall-back to those which do both.
+		 */
+		if (!pool && ((pool_type == HOME_TYPE_AUTH) || (pool_type == HOME_TYPE_ACCT))) {
+			pool = home_pool_byname(vp->vp_strvalue, HOME_TYPE_AUTH_ACCT);
+		}
+
+		/*
 		 *	Send it directly to a home server (i.e. NAS)
 		 */
 	} else if (((vp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
@@ -3303,6 +3382,15 @@ static int request_will_proxy(REQUEST *request)
 		 *	Find the home server by name.
 		 */
 		home = home_server_byname(vp->vp_strvalue, type);
+
+		/*
+		 *	If we didn't find an auth only or acct only home server
+		 *	fall-back to those which do both.
+		 */
+		if (!home && ((type == HOME_TYPE_AUTH) || (type == HOME_TYPE_ACCT))) {
+			home = home_server_byname(vp->vp_strvalue, HOME_TYPE_AUTH_ACCT);
+		}
+
 		if (!home) {
 			RWDEBUG("No such home server %s", vp->vp_strvalue);
 			return 0;

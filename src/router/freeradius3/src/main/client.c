@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 12f7824aba2b3105fb7de84be14c38b8083d3429 $
+ * $Id: 58f9faa0389d12b47dc6157e202fbb3300e14d9d $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 12f7824aba2b3105fb7de84be14c38b8083d3429 $")
+RCSID("$Id: 58f9faa0389d12b47dc6157e202fbb3300e14d9d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -328,7 +328,8 @@ check_list:
 		    (old->coa_home_server == client->coa_home_server) &&
 		    (old->coa_home_pool == client->coa_home_pool) &&
 #endif
-		    (old->message_authenticator == client->message_authenticator)) {
+		    (old->require_ma == client->require_ma) &&
+		    (old->limit_proxy_state == client->limit_proxy_state)) {
 			WARN("Ignoring duplicate client %s", client->longname);
 			client_free(client);
 			return true;
@@ -490,6 +491,8 @@ static fr_ipaddr_t cl_ipaddr;
 static uint32_t cl_netmask;
 static char const *cl_srcipaddr = NULL;
 static char const *hs_proto = NULL;
+static char const *require_message_authenticator = NULL;
+static char const *limit_proxy_state = NULL;
 
 #ifdef WITH_TCP
 static CONF_PARSER limit_config[] = {
@@ -512,7 +515,8 @@ static const CONF_PARSER client_config[] = {
 
 	{ "src_ipaddr", FR_CONF_POINTER(PW_TYPE_STRING, &cl_srcipaddr), NULL },
 
-	{ "require_message_authenticator",  FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, message_authenticator), "no" },
+	{ "require_message_authenticator", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &require_message_authenticator), NULL },
+	{ "limit_proxy_state", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &limit_proxy_state), NULL },
 
 	{ "secret", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_SECRET, RADCLIENT, secret), NULL },
 	{ "shortname", FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, shortname), NULL },
@@ -724,7 +728,7 @@ static const CONF_PARSER dynamic_config[] = {
 	{ "FreeRADIUS-Client-Src-IP-Address", FR_CONF_OFFSET(PW_TYPE_IPV4_ADDR, RADCLIENT, src_ipaddr), NULL },
 	{ "FreeRADIUS-Client-Src-IPv6-Address", FR_CONF_OFFSET(PW_TYPE_IPV6_ADDR, RADCLIENT, src_ipaddr), NULL },
 
-	{ "FreeRADIUS-Client-Require-MA", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, message_authenticator), NULL },
+	{ "FreeRADIUS-Client-Require-MA", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, dynamic_require_ma), NULL },
 
 	{ "FreeRADIUS-Client-Secret",  FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, secret), "" },
 	{ "FreeRADIUS-Client-Shortname",  FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, shortname), "" },
@@ -906,8 +910,19 @@ RADCLIENT *client_afrom_cs(TALLOC_CTX *ctx, CONF_SECTION *cs, bool in_server, bo
 	c = talloc_zero(ctx, RADCLIENT);
 	c->cs = cs;
 
+	/*
+	 *	Set the "require message authenticator" and "limit
+	 *	proxy state" flags from the global default.  If the
+	 *	configuration item exists, AND is set, it will
+	 *	over-ride the flag.
+	 */
+	c->require_ma = main_config.require_ma;
+	c->limit_proxy_state = main_config.limit_proxy_state;
+
 	memset(&cl_ipaddr, 0, sizeof(cl_ipaddr));
 	cl_netmask = 255;
+	require_message_authenticator = NULL;
+	limit_proxy_state = NULL;
 
 	if (cf_section_parse(cs, c, client_config) < 0) {
 		cf_log_err_cs(cs, "Error parsing client section");
@@ -917,6 +932,8 @@ RADCLIENT *client_afrom_cs(TALLOC_CTX *ctx, CONF_SECTION *cs, bool in_server, bo
 		hs_proto = NULL;
 		cl_srcipaddr = NULL;
 #endif
+		require_message_authenticator = NULL;
+		limit_proxy_state = NULL;
 
 		return NULL;
 	}
@@ -1189,6 +1206,16 @@ done_coa:
 	}
 #endif
 
+	if (fr_bool_auto_parse(cf_pair_find(cs, "require_message_authenticator"), &c->require_ma, require_message_authenticator) < 0) {
+		goto error;
+	}
+
+	if (c->require_ma != FR_BOOL_TRUE) {
+		if (fr_bool_auto_parse(cf_pair_find(cs, "limit_proxy_state"), &c->limit_proxy_state, limit_proxy_state) < 0) {
+			goto error;
+		}
+	}
+
 	return c;
 }
 
@@ -1233,7 +1260,7 @@ RADCLIENT *client_afrom_query(TALLOC_CTX *ctx, char const *identifier, char cons
 	if (shortname) c->shortname = talloc_typed_strdup(c, shortname);
 	if (type) c->nas_type = talloc_typed_strdup(c, type);
 	if (server) c->server = talloc_typed_strdup(c, server);
-	c->message_authenticator = require_ma;
+	c->require_ma = require_ma;
 
 	return c;
 }
@@ -1419,10 +1446,10 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 			*pi = vp->vp_integer;
 
 			/*
-			 *	Same nastiness as above.
+			 *	Same nastiness as above, but hard-coded for require Message-Authenticator.
 			 */
 			for (parse = client_config; parse->name; parse++) {
-				if (parse->offset == dynamic_config[i].offset) break;
+				if (parse->type == PW_TYPE_BOOLEAN) break;
 			}
 			if (!parse) break;
 
@@ -1512,6 +1539,11 @@ validate:
 		       ip_ntoh(&request->packet->src_ipaddr, buffer, sizeof(buffer)));
 		goto error;
 	}
+
+	/*
+	 *	It can't be set to "auto".  Too bad.
+	 */
+	c->require_ma = (fr_bool_auto_t) c->dynamic_require_ma;
 
 	if (!client_add_dynamic(clients, request->client, c)) {
 		return NULL;

@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: ad66e0d759cfd083f933e20a5f2df5f768612831 $
+ * Version:     $Id: 65e484fb54e7cb91d34bad66bf52c4727fb31d3b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: ad66e0d759cfd083f933e20a5f2df5f768612831 $")
+RCSID("$Id: 65e484fb54e7cb91d34bad66bf52c4727fb31d3b $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -115,6 +115,10 @@ void cbtls_info(SSL const *s, int where, int ret)
 		if (ret < 0) {
 			if (SSL_want_read(s)) {
 				RDEBUG2("(TLS) %s - %s: Need to read more data: %s", conf->name, role, state);
+				return;
+			}
+			if (SSL_want_write(s)) {
+				RDEBUG2("(TLS) %s - %s: Need to write more data: %s", conf->name, role, state);
 				return;
 			}
 			RERROR("(TLS) %s - %s: Error in %s", conf->name, role, state);

@@ -6,7 +6,7 @@
 #
 #	Eleven Software
 #
-#	$Id: 93dabcb5a94417c9243a8aef28719bf5a23abcf4 $
+#	$Id: de3921eee87336394f2fd791017c3191dca0f722 $
 #
 ##############################################################################
 
@@ -50,3 +50,4 @@ ATTRIBUTE	Eleven-EAPOL-APMAC			4	octets
 #
 ATTRIBUTE	Eleven-EAPOL-STMAC			5	octets
 
+END-VENDOR Eleven

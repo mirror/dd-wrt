@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 777927edb325aded5696ddfcb7fe732c91017c46 $
+ * $Id: 5cb5b06f66d6a4e01b271ae25194e579b5378551 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 777927edb325aded5696ddfcb7fe732c91017c46 $")
+RCSIDH(libradius_h, "$Id: 5cb5b06f66d6a4e01b271ae25194e579b5378551 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -410,6 +410,11 @@ typedef struct radius_packet {
 #ifdef WITH_RADIUSV11
 	bool			radiusv11;
 #endif
+	bool			tls;		//!< uses secure transport
+
+	bool			message_authenticator;
+	bool			proxy_state;
+	bool			eap_message;
 } RADIUS_PACKET;
 
 typedef enum {
@@ -527,6 +532,13 @@ DICT_VENDOR	*dict_vendorbyvalue(int vendor);
 /* radius.c */
 int		rad_send(RADIUS_PACKET *, RADIUS_PACKET const *, char const *secret);
 bool		rad_packet_ok(RADIUS_PACKET *packet, int flags, decode_fail_t *reason);
+
+/*
+ *	1 == require_ma
+ *	2 == msg_peek
+ *	4 == limit_proxy_state
+ *	8 == require_ma for Access-* replies and Protocol-Error
+ */
 RADIUS_PACKET	*rad_recv(TALLOC_CTX *ctx, int fd, int flags);
 ssize_t rad_recv_header(int sockfd, fr_ipaddr_t *src_ipaddr, uint16_t *src_port, int *code);
 void		rad_recv_discard(int sockfd);
@@ -720,7 +732,7 @@ extern bool	fr_dns_lookups;	/* do IP -> hostname lookups? */
 extern bool	fr_hostname_lookups; /* do hostname -> IP lookups? */
 extern int	fr_debug_lvl;	/* 0 = no debugging information */
 extern uint32_t	fr_max_attributes; /* per incoming packet */
-#define	FR_MAX_PACKET_CODE (52)
+#define	FR_MAX_PACKET_CODE (53)
 extern char const *fr_packet_codes[FR_MAX_PACKET_CODE];
 #define is_radius_code(_x) ((_x > 0) && (_x < FR_MAX_PACKET_CODE))
 extern FILE	*fr_log_fp;
@@ -957,6 +969,12 @@ int		fr_socket_wait_for_connect(int sockfd, struct timeval *timeout);
 #ifdef __cplusplus
 }
 #endif
+
+typedef enum {
+	FR_BOOL_FALSE = 0,
+	FR_BOOL_TRUE,
+	FR_BOOL_AUTO,
+} fr_bool_auto_t;
 
 #include <freeradius-devel/packet.h>
 

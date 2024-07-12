@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 3ebcb66fb9d2f0d954d21a6ddf592120b97c9c75 $
+ * Version:     $Id: fa428138b8f0e48862604f3be020b1e93c508567 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 3ebcb66fb9d2f0d954d21a6ddf592120b97c9c75 $")
+RCSID("$Id: fa428138b8f0e48862604f3be020b1e93c508567 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -481,8 +481,11 @@ static CONF_PARSER home_server_recv_coa[] = {
 
 #endif
 
+static const char *require_message_authenticator = NULL;
+
 static CONF_PARSER home_server_config[] = {
 	{ "nonblock", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, home_server_t, nonblock), "no" },
+	{ "require_message_authenticator", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &require_message_authenticator), NULL },
 	{ "ipaddr", FR_CONF_OFFSET(PW_TYPE_COMBO_IP_ADDR, home_server_t, ipaddr), NULL },
 	{ "ipv4addr", FR_CONF_OFFSET(PW_TYPE_IPV4_ADDR, home_server_t, ipaddr), NULL },
 	{ "ipv6addr", FR_CONF_OFFSET(PW_TYPE_IPV6_ADDR, home_server_t, ipaddr), NULL },
@@ -786,12 +789,19 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 	home->cs = cs;
 	home->state = HOME_STATE_UNKNOWN;
 	home->proto = IPPROTO_UDP;
+	home->require_ma = main_config.require_ma;
+
+	require_message_authenticator = false;
 
 	/*
 	 *	Parse the configuration into the home server
 	 *	struct.
 	 */
 	if (cf_section_parse(cs, home, home_server_config) < 0) goto error;
+
+	if (fr_bool_auto_parse(cf_pair_find(cs, "require_message_authenticator"), &home->require_ma, require_message_authenticator) < 0) {
+		goto error;
+	}
 
 	/*
 	 *	It has an IP address, it must be a remote server.
@@ -1121,6 +1131,11 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 		 */
 		if (tls) {
 			int rcode;
+
+			/*
+			 *	We don't require this for TLS connections.
+			 */
+			home->require_ma = false;
 
 			home->tls = tls_client_conf_parse(tls);
 			if (!home->tls) {

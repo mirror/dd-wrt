@@ -1,3 +1,30 @@
+FreeRADIUS 3.2.5 Tue 09 Jul 2024 12:00:00 UTC urgency=high
+	Configuration changes
+	* BlastRADIUS mitigations have been added to the "security"
+	  section.  See "require_message_authenticator" and also
+	  "limit_proxy_state".
+	* BlastRADIUS mitigations have been added to radclient.
+	  See "man radclient", and the "-b" option.
+
+	Feature improvements
+	* TOTP now supports TOTP-Time-Offset for tokens with times that
+	  are out of sync.  See mods-available/totp
+	* radclient now supports forcing the Request Authenticator and ID
+	  for Access-Request packets.
+	* Update dictionary.3gpp.
+	* Update advice on shared secrets, including suggesting a secure
+	  method for generating useful secrets.
+
+	Bug fixes
+	* Allow proxying by pool / home server name to work with auth+acct servers
+	* Fix OpenSSL API usage which sometimes caused crash in MS-CHAP
+	  Previously it would either always crash immediately, or never crash.
+	* Fix packet statistics.  Stop double counting some packets,
+	  and track packet statistics even if a socket is closed.
+	* Reverted patch in TTLS which broke compatibility with some systems.
+	* Don't crash in debug mode when multiple intermediate certs are used
+	  Patch from Alexander Chernikov.
+
 FreeRADIUS 3.2.4 Wed 29 May 2024 12:00:00 EDT urgency=low
 	Configuration changes
 	* Better handle backslashes in strings in the configuration files.

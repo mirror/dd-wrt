@@ -1,7 +1,7 @@
 /*
  * eap_tls.h
  *
- * Version:     $Id: 616265b6f6f02e62ffd447b3ab07e016a39cb1ca $
+ * Version:     $Id: 1112bcbef39b0193bfca986004ef01df99d18621 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_TLS_H
 #define _EAP_TLS_H
 
-RCSIDH(eap_tls_h, "$Id: 616265b6f6f02e62ffd447b3ab07e016a39cb1ca $")
+RCSIDH(eap_tls_h, "$Id: 1112bcbef39b0193bfca986004ef01df99d18621 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <stdio.h>
@@ -105,6 +105,7 @@ typedef struct tls_packet {
 EAPTLS_PACKET	*eaptls_alloc(void);
 void		eaptls_free(EAPTLS_PACKET **eaptls_packet_ptr);
 tls_session_t	*eaptls_session(eap_handler_t *handler, fr_tls_server_conf_t *tls_conf, bool client_cert, bool allow_tls13);
+int		eaptls_start(EAP_DS *eap_ds, int peap);
 int		eaptls_compose(EAP_DS *eap_ds, EAPTLS_PACKET *reply);
 
 fr_tls_server_conf_t *eaptls_conf_parse(CONF_SECTION *cs, char const *key);

@@ -9,7 +9,7 @@
 #	http://www.3gpp2.org/Public_html/specs/X.S0011-005-C_v2.0_050708.pdf
 #	http://www.3gpp2.org/public_html/specs/X.S0011-005-C_v3.0_061030.pdf
 #
-#	$Id: 8fe3d6f1510697b3f08d6e6b1b7266e854342da8 $
+#	$Id: 8085b957f0f78b2d386d1fea5d422f7d0e4e9e35 $
 #
 VENDOR		3GPP2				5535
 
@@ -85,7 +85,13 @@ ATTRIBUTE	3GPP2-Remote-IP-Address-Value		59.1	ipaddr
 ATTRIBUTE	3GPP2-Remote-IP-Address-Mask		59.2	integer
 ATTRIBUTE	3GPP2-Remote-IP-Qualifier		59.3	short
 
-# 60 - 69 are marked "reserved"
+ATTRIBUTE	3GPP2-HRPD-Access-Authorization		60	integer
+
+ATTRIBUTE	3GPP2-AT-Hardware-Identifier		61	tlv
+ATTRIBUTE	3GPP2-AT-Hardware-Identifier-Type	61.1	integer
+ATTRIBUTE	3GPP2-AT-Hardware-Identifier-Value	61.2	octets
+
+# 62 - 69 are marked "reserved"
 
 ATTRIBUTE	3GPP2-Remote-IPv6-Address		70	tlv
 ATTRIBUTE	3GPP2-Remote-IPv6-Address-Value		70.1	ipv6addr

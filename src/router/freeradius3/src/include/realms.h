@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: c7a1add52d3fe64eb767913d179d01dff2aec73e $
+ * Version:	$Id: cc5d4c147b6dbb2db2aa618fe0ff89ae991c93ef $
  *
  */
 
-RCSIDH(realms_h, "$Id: c7a1add52d3fe64eb767913d179d01dff2aec73e $")
+RCSIDH(realms_h, "$Id: cc5d4c147b6dbb2db2aa618fe0ff89ae991c93ef $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +71,8 @@ typedef struct home_server {
 	bool			dual;			//!< One of a pair of homeservers on consecutive ports.
 	bool			dynamic;		//!< is this a dynamically added home server?
 	bool			nonblock;		//!< Enable a socket non-blocking to the home server.
+	fr_bool_auto_t	       	require_ma;		//!< for all replies to Access-Request and Status-Server
+
 #ifdef WITH_COA_TUNNEL
 	bool			recv_coa;		//!< receive CoA packets, too
 #endif

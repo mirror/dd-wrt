@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 96f8913c798478e9f150a2bd11d80a7c58d10660 $
+#  $Id: a68a3177fc93903b9ae85c033c88d3b3dacbbd94 $
 
 #
 #  Time-based One-Time Passwords (TOTP)
@@ -39,6 +39,16 @@
 #
 #  and then run that locally to get an image.
 #
+#
+#  Some tokens get severely out of sync with local time.  It is
+#  possible to offset the definition of "now" for one token by setting:
+#
+#	&control:TOTP-Time-Offset := 120
+#
+#  This is a signed integer, with allowed values between -600 to +600.
+#  The offset is added to to the current time, to get the tokens idea
+#  of "now".
+#
 totp {
 	#
 	#  Default time step between time changes
@@ -50,7 +60,7 @@ totp {
 	#
 	#  Must be 6 or 8
 	#
-	otp_length = 8
+	otp_length = 6
 
 	#
 	#  How many steps backward in time we look for a matching OTP

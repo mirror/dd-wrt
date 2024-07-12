@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 923d3bb10d2aa1ca6959d0122ec23c7043da70a6 $
+ * Version:	$Id: ad5a5fef85aa195cc8fe08ddb786e0563e23ff7c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 923d3bb10d2aa1ca6959d0122ec23c7043da70a6 $")
+RCSID("$Id: ad5a5fef85aa195cc8fe08ddb786e0563e23ff7c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1424,6 +1424,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 {
 	int rcode;
 	bool deprecated, required, attribute, secret, file_input, cant_be_empty, tmpl, multi, file_exists;
+	bool ignore_dflt;
 	char **q;
 	char const *value;
 	CONF_PAIR *cp = NULL;
@@ -1447,6 +1448,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 	cant_be_empty = (type & PW_TYPE_NOT_EMPTY);
 	tmpl = (type & PW_TYPE_TMPL);
 	multi = (type & PW_TYPE_MULTI);
+	ignore_dflt = (type & PW_TYPE_IGNORE_DEFAULT);
 
 	if (attribute) required = true;
 	if (required) cant_be_empty = true;	/* May want to review this in the future... */
@@ -1470,7 +1472,7 @@ int cf_item_parse(CONF_SECTION *cs, char const *name, unsigned int type, void *d
 	 *	section, use the default value.
 	 */
 	if (!cp) {
-		if (deprecated) return 0;	/* Don't set the default value */
+		if (deprecated || ignore_dflt) return 0;	/* Don't set the default value */
 
 		rcode = 1;
 		value = dflt;

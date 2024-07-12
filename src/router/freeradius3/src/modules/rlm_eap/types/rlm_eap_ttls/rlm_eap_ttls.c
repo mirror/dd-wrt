@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 035a1f6044ad121939682c237862515c0c794b05 $
+ * Version:     $Id: 6fd3abf7d46669efddba2f2ef22411144e92e2ec $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006 The FreeRADIUS server project
  */
 
-RCSID("$Id: 035a1f6044ad121939682c237862515c0c794b05 $")
+RCSID("$Id: 6fd3abf7d46669efddba2f2ef22411144e92e2ec $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_ttls.h"
@@ -155,12 +155,10 @@ static ttls_tunnel_t *ttls_alloc(TALLOC_CTX *ctx, rlm_eap_ttls_t *inst)
  */
 static int mod_session_init(void *type_arg, eap_handler_t *handler)
 {
-	int		status;
 	tls_session_t	*ssn;
 	rlm_eap_ttls_t	*inst;
 	VALUE_PAIR	*vp;
 	bool		client_cert;
-	REQUEST		*request = handler->request;
 
 	inst = type_arg;
 
@@ -204,13 +202,7 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 	 *	TLS session initialization is over.  Now handle TLS
 	 *	related handshaking or application data.
 	 */
-	status = eaptls_request(handler->eap_ds, ssn, true);
-	if ((status == FR_TLS_INVALID) || (status == FR_TLS_FAIL)) {
-		REDEBUG("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
-	} else {
-		RDEBUG3("[eaptls start] = %s", fr_int2str(fr_tls_status_table, status, "<INVALID>"));
-	}
-	if (status == 0) return 0;
+	eaptls_start(handler->eap_ds, ssn->peap_flag);
 
 	/*
 	 *	The next stage to process the packet.

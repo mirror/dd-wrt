@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 8bbc7aac33e18e8ac074967146fbb440200392ac $
+ * Version:     $Id: 736ee4182e786621d03c4ba46400529e45cdc279 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 8bbc7aac33e18e8ac074967146fbb440200392ac $")
+RCSID("$Id: 736ee4182e786621d03c4ba46400529e45cdc279 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -635,9 +635,11 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 
 		case SSL_ERROR_WANT_READ:
 			ssn->connected = false;
+			RDEBUG("(TLS) %s - tls_new_client_session WANT_READ", conf->name);
 			return ssn;
 
 		case SSL_ERROR_WANT_WRITE:
+			RDEBUG("(TLS) %s - tls_new_client_session WANT_WRITE", conf->name);
 			ssn->connected = false;
 			return ssn;
 		}
@@ -2947,10 +2949,6 @@ static char const *cert_attr_names[9][2] = {
 #define FR_TLS_SAN_UPN          (7)
 #define FR_TLS_VALID_SINCE	(8)
 
-static const char *cert_names[2] = {
-	"client", "server",
-};
-
 /*
  *	Before trusting a certificate, you must make sure that the
  *	certificate is 'valid'. There are several steps that your
@@ -3064,7 +3062,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 	buf[0] = '\0';
 	sn = X509_get_serialNumber(client_cert);
 
-	RDEBUG2("(TLS) %s - Creating attributes from %s certificate", conf->name, cert_names[lookup ]);
+	RDEBUG2("(TLS) %s - Creating attributes from %d certificate in chain", conf->name, lookup + 1);
  	RINDENT();
 
 	/*

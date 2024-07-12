@@ -4,11 +4,11 @@
 /*
  * conffile.h	Defines for the conffile parsing routines.
  *
- * Version:	$Id: b99688196bbb8acb01f9b222016302527e7e59c2 $
+ * Version:	$Id: 237469c880603666a5975d8c4699af35ca81a7d8 $
  *
  */
 
-RCSIDH(conffile_h, "$Id: b99688196bbb8acb01f9b222016302527e7e59c2 $")
+RCSIDH(conffile_h, "$Id: 237469c880603666a5975d8c4699af35ca81a7d8 $")
 
 #include <stddef.h>
 #include <freeradius-devel/token.h>
@@ -140,6 +140,7 @@ typedef struct timeval _timeval_t;
 #define PW_TYPE_MULTI		(1 << 18) //!< CONF_PAIR can have multiple copies.
 #define PW_TYPE_NOT_EMPTY	(1 << 19) //!< CONF_PAIR is required to have a non zero length value.
 #define PW_TYPE_FILE_EXISTS	((1 << 20) | PW_TYPE_STRING) //!< File matching value must exist
+#define PW_TYPE_IGNORE_DEFAULT	(1 << 21) //!< don't set from .dflt if the CONF_PAIR is missing
 /* @} **/
 
 #define FR_INTEGER_COND_CHECK(_name, _var, _cond, _new)\
