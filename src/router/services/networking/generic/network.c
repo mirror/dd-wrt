@@ -858,7 +858,7 @@ void start_lan(void)
 			nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1");
 			PORTSETUPWAN("eth0");
 		}
-		nvram_set("wan_default", "eth1");
+		nvram_set("wan_default", "eth0");
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
 	}
