@@ -47,7 +47,7 @@ STATIC int INIT lzma_alloc_workspace(CLzmaEncProps *props)
 }
 
 STATIC int jffs2_lzma_compress(unsigned char *data_in, unsigned char *cpage_out,
-			      uint32_t *sourcelen, uint32_t *dstlen, void *model)
+			      uint32_t *sourcelen, uint32_t *dstlen)
 {
 	SizeT compress_size = (SizeT)(*dstlen);
 	int ret;
@@ -72,7 +72,7 @@ STATIC int jffs2_lzma_compress(unsigned char *data_in, unsigned char *cpage_out,
 }
 
 STATIC int jffs2_lzma_decompress(unsigned char *data_in, unsigned char *cpage_out,
-				 uint32_t srclen, uint32_t destlen, void *model)
+				 uint32_t srclen, uint32_t destlen)
 {
 	int ret;
 	SizeT dl = (SizeT)destlen;
