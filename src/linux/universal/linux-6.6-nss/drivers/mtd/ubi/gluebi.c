@@ -328,7 +328,7 @@ static int gluebi_create(struct ubi_device_info *di,
 		err_msg("gluebi MTD device %d form UBI device %d volume %d already exists",
 			g->mtd.index, vi->ubi_num, vi->vol_id);
 	mutex_unlock(&devices_mutex);
-	if (strcmp(mtd->name, "nvram")) {
+	if (strcmp(mtd->name, "nvram") && strcmp(mtd->name, "jffs2")) {
 	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
 	part->name = kstrdup(mtd->name, GFP_KERNEL);
 	part->offset = 0;
