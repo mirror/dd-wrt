@@ -452,6 +452,7 @@ void start_openvpnserver(void)
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
 	insmod("tun");
+	eval("modprobe", "geniv");
 	eval("modprobe", "seqiv");
 	eval("modprobe", "ctr");
 	eval("modprobe", "chacha20_generic");
@@ -906,6 +907,7 @@ void start_openvpn(void)
 	char wan_if_buffer[33];
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
+	eval("modprobe", "geniv");
 	eval("modprobe", "seqiv");
 	eval("modprobe", "ghash_generic");
 	eval("modprobe", "ctr");
