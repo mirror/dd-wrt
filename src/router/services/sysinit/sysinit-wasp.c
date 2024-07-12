@@ -354,6 +354,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "igmp_v3", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
+	nvram_set("switchphy","eth1");
 	nvram_seti("sw_lancpuport", 0);
 	nvram_seti("sw_wancpuport", 6);
 	nvram_seti("sw_wan", 1);
