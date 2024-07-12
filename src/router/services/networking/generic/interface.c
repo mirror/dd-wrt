@@ -379,7 +379,7 @@ void start_setup_vlans(void)
 				eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 				char *lanphy = "eth0";
 				char *wanphy = "eth0";
-				    
+
 				if (nvram_exists("sw_wancpuport") && nvram_match("wan_default", "eth0")) {
 					lanphy = "eth1";
 					wanphy = "eth0";
@@ -725,15 +725,15 @@ int flush_interfaces(void)
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36)
-	snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MR5500)
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MX5500)
-	snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_ASUS_AX89X)
-	snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else
-	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_VENTANA
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_NEWPORT
