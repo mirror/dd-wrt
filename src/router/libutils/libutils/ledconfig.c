@@ -1675,7 +1675,6 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_power = 0x1e; // usb enable
 		cfg->usb_power1 = 0x1f;
 		break;
-	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MR5500:
