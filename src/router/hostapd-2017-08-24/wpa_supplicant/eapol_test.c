@@ -198,6 +198,9 @@ static void ieee802_1x_encapsulate_radius(struct eapol_test_data *e,
 		return;
 	}
 
+	if (!radius_msg_add_msg_auth(msg))
+		goto fail;
+
 	radius_msg_make_authenticator(msg);
 
 	hdr = (const struct eap_hdr *) eap;

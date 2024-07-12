@@ -172,6 +172,11 @@ fail:
 	if (reply == NULL)
 		return NULL;
 
+	if (!radius_msg_add_msg_auth(reply)) {
+		radius_msg_free(reply);
+		return NULL;
+	}
+
 	if (error) {
 		if (!radius_msg_add_attr_int32(reply, RADIUS_ATTR_ERROR_CAUSE,
 					       error)) {
@@ -275,6 +280,11 @@ static void radius_das_receive(int sock, void *eloop_ctx, void *sock_ctx)
 				       hdr->identifier);
 		if (reply == NULL)
 			break;
+
+		if (!radius_msg_add_msg_auth(reply)) {
+			radius_msg_free(reply);
+			return NULL;
+		}
 
 		/* Unsupported Service */
 		if (!radius_msg_add_attr_int32(reply, RADIUS_ATTR_ERROR_CAUSE,
