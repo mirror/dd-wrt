@@ -25,6 +25,44 @@
 #define VOLT 1
 #define RPM 2
 
+typedef struct sensormaps {
+	char *name;
+	char *map;
+} SENSORMAPS;
+
+static SENSORMAPS maps[] = {
+	{ "gpio008", "sfp" },
+	{ "gpio_fan", "fan" },
+	{ "cpu0_thermal", "cpu0" },
+	{ "cpu1_thermal", "cpu1" },
+	{ "cpu2_thermal", "cpu2" },
+	{ "cpu3_thermal", "cpu3" },
+	{ "cluster_thermal", "cpu global" },
+	{ "lpass_thermal", "audio subsystem" },
+	{ "ddrss_thermal", "ddr subsystem" },
+	{ "cpu_thermal", "cpu" },
+	{ "ubi32_thermal", "nsscore" },
+	{ "nss0_thermal", "nsscore0" },
+	{ "nss1_thermal", "nsscore1" },
+	{ "wcss_phya0_thermal", "wireless subsystem phya0" },
+	{ "wcss_phya1_thermal", "wireless subsystem phya1" },
+	{ "wcss_phyb0_thermal", "wireless subsystem phyb0" },
+	{ "wcss_phyb1_thermal", "wireless subsystem phyb1" },
+	{ "nss_top_thermal", "nss system" },
+	{ "top_glue_thermal", "system" },
+	{ "gephy_thermal", "gbit eth phy" },
+};
+
+static char getmappedname(char *name)
+{
+	int i;
+	for (i = 0; i < sizeof(maps) / sizeof(maps[0]); i++) {
+		if (!strcmp(maps[i].name, name))
+			return maps[i].map;
+	}
+	return name;
+}
+
 struct SENSORS {
 	char *path;
 	char *syspath;
@@ -292,8 +330,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			if (type == RPM)
 				unit = "rpm";
 			websWrite(wp, "<div class=\"setting\">\n");
-			if (!strcmp(name, "gpio008"))
-			    name = "sfp";
+			name = getmappedname(name);
 			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
 			websWrite(wp, "<span id=\"cpu_temp%d\">", count);
 			if (scale > 1) {
