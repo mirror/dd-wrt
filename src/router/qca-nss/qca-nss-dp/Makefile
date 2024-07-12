@@ -28,7 +28,7 @@ qca-nss-dp-$(SoC)-objs += hal/dp_ops/edma_dp/edma_v1/edma_cfg.o \
 		   hal/gmac_ops/qcom/qcom_if.o \
 		   hal/gmac_ops/syn/xgmac/syn_if.o
 NSS_DP_INCLUDE += -I$(obj)/hal/dp_ops/edma_dp/edma_v1/include
-ccflags-y += -DNSS_DP_PPE_SUPPORT -DNSS_DP_MAC_POLL_SUPPORT
+ccflags-y += -DNSS_DP_PPE_SUPPORT -DNSS_DP_MAC_POLL_SUPPORT -DNSS_DP_ENABLE_NAPI_GRO
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq807x))
