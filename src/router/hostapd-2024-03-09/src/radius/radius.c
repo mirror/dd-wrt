@@ -423,25 +423,54 @@ void radius_msg_dump(struct radius_msg *msg)
 }
 
 
+u8 * radius_msg_add_msg_auth(struct radius_msg *msg)
+{
+	u8 auth[MD5_MAC_LEN];
+	struct radius_attr_hdr *attr;
+
+	os_memset(auth, 0, MD5_MAC_LEN);
+	attr = radius_msg_add_attr(msg, RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
+				   auth, MD5_MAC_LEN);
+	if (!attr) {
+		wpa_printf(MSG_ERROR,
+			   "WARNING: Could not add Message-Authenticator");
+		return NULL;
+	}
+
+	return (u8 *) (attr + 1);
+}
+
+
+static u8 * radius_msg_auth_pos(struct radius_msg *msg)
+{
+	u8 *pos;
+	size_t alen;
+
+	if (radius_msg_get_attr_ptr(msg, RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
+				    &pos, &alen, NULL) == 0 &&
+	    alen == MD5_MAC_LEN) {
+		/* Use already added Message-Authenticator attribute */
+		return pos;
+	}
+
+	/* Add a Message-Authenticator attribute */
+	return radius_msg_add_msg_auth(msg);
+}
+
+
 int radius_msg_finish(struct radius_msg *msg, const u8 *secret,
 		      size_t secret_len)
 {
 	if (secret) {
-		u8 auth[MD5_MAC_LEN];
-		struct radius_attr_hdr *attr;
+		u8 *pos;
 
-		os_memset(auth, 0, MD5_MAC_LEN);
-		attr = radius_msg_add_attr(msg,
-					   RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
-					   auth, MD5_MAC_LEN);
-		if (attr == NULL) {
-			wpa_printf(MSG_WARNING, "RADIUS: Could not add "
-				   "Message-Authenticator");
+		pos = radius_msg_auth_pos(msg);
+		if (!pos)
 			return -1;
-		}
 		msg->hdr->length = host_to_be16(wpabuf_len(msg->buf));
-		hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
-			 wpabuf_len(msg->buf), (u8 *) (attr + 1));
+		if (hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
+			     wpabuf_len(msg->buf), pos) < 0)
+			return -1;
 	} else
 		msg->hdr->length = host_to_be16(wpabuf_len(msg->buf));
 
@@ -457,23 +486,19 @@ int radius_msg_finish(struct radius_msg *msg, const u8 *secret,
 int radius_msg_finish_srv(struct radius_msg *msg, const u8 *secret,
 			  size_t secret_len, const u8 *req_authenticator)
 {
-	u8 auth[MD5_MAC_LEN];
-	struct radius_attr_hdr *attr;
 	const u8 *addr[4];
 	size_t len[4];
+	u8 *pos;
 
-	os_memset(auth, 0, MD5_MAC_LEN);
-	attr = radius_msg_add_attr(msg, RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
-				   auth, MD5_MAC_LEN);
-	if (attr == NULL) {
-		wpa_printf(MSG_ERROR, "WARNING: Could not add Message-Authenticator");
+	pos = radius_msg_auth_pos(msg);
+	if (!pos)
 		return -1;
-	}
 	msg->hdr->length = host_to_be16(wpabuf_len(msg->buf));
 	os_memcpy(msg->hdr->authenticator, req_authenticator,
 		  sizeof(msg->hdr->authenticator));
-	hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
-		 wpabuf_len(msg->buf), (u8 *) (attr + 1));
+	if (hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
+		     wpabuf_len(msg->buf), pos) < 0)
+		return -1;
 
 	/* ResponseAuth = MD5(Code+ID+Length+RequestAuth+Attributes+Secret) */
 	addr[0] = (u8 *) msg->hdr;
@@ -501,21 +526,17 @@ int radius_msg_finish_das_resp(struct radius_msg *msg, const u8 *secret,
 {
 	const u8 *addr[2];
 	size_t len[2];
-	u8 auth[MD5_MAC_LEN];
-	struct radius_attr_hdr *attr;
+	u8 *pos;
 
-	os_memset(auth, 0, MD5_MAC_LEN);
-	attr = radius_msg_add_attr(msg, RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
-				   auth, MD5_MAC_LEN);
-	if (attr == NULL) {
-		wpa_printf(MSG_WARNING, "Could not add Message-Authenticator");
+	pos = radius_msg_auth_pos(msg);
+	if (!pos)
 		return -1;
-	}
 
 	msg->hdr->length = host_to_be16(wpabuf_len(msg->buf));
 	os_memcpy(msg->hdr->authenticator, req_hdr->authenticator, 16);
-	hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
-		 wpabuf_len(msg->buf), (u8 *) (attr + 1));
+	if (hmac_md5(secret, secret_len, wpabuf_head(msg->buf),
+		     wpabuf_len(msg->buf), pos) < 0)
+		return -1;
 
 	/* ResponseAuth = MD5(Code+ID+Length+RequestAuth+Attributes+Secret) */
 	addr[0] = wpabuf_head_u8(msg->buf);
@@ -978,6 +999,20 @@ int radius_msg_verify(struct radius_msg *msg, const u8 *secret,
 	if (sent_msg == NULL) {
 		wpa_printf(MSG_INFO, "No matching Access-Request message found");
 		return 1;
+	}
+
+	if (!auth) {
+		u8 *pos;
+		size_t alen;
+
+		if (radius_msg_get_attr_ptr(msg,
+					    RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
+					    &pos, &alen, NULL) == 0) {
+			/* Check the Message-Authenticator attribute since it
+			 * was included even if we are configured to not
+			 * require it. */
+			auth = 1;
+		}
 	}
 
 	if (auth &&

@@ -313,6 +313,7 @@ struct hostapd_bss_config {
 	int dynamic_own_ip_addr;
 	char *nas_identifier;
 	struct hostapd_radius_servers *radius;
+	int radius_require_message_authenticator;
 	int acct_interim_interval;
 	int radius_request_cui;
 	struct hostapd_radius_attr *radius_auth_req_attr;

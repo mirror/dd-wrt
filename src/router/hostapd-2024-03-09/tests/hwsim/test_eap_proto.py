@@ -82,6 +82,22 @@ def add_message_authenticator_attr(reply, digest):
         digest = b"0x" + binascii.hexlify(digest)
     reply.AddAttribute("Message-Authenticator", digest)
 
+def build_message_auth(pkt, reply):
+    hmac_obj = hmac.new(reply.secret, digestmod=hashlib.md5)
+    hmac_obj.update(struct.pack("B", reply.code))
+    hmac_obj.update(struct.pack("B", reply.id))
+
+    reply.AddAttribute("Message-Authenticator", 16*b'\x00')
+    attrs = reply._PktEncodeAttributes()
+
+    # Length
+    flen = 4 + 16 + len(attrs)
+    hmac_obj.update(struct.pack(">H", flen))
+    hmac_obj.update(pkt.authenticator)
+    hmac_obj.update(attrs)
+    del reply[80]
+    add_message_authenticator_attr(reply, hmac_obj.digest())
+
 def run_pyrad_server(srv, t_stop, eap_handler):
     srv.RunWithStop(t_stop, eap_handler)
 
@@ -113,21 +129,8 @@ def start_radius_server(eap_handler):
                 logger.info("No EAP request available")
             reply.code = pyrad.packet.AccessChallenge
 
-            hmac_obj = hmac.new(reply.secret, digestmod=hashlib.md5)
-            hmac_obj.update(struct.pack("B", reply.code))
-            hmac_obj.update(struct.pack("B", reply.id))
-
             # reply attributes
-            reply.AddAttribute("Message-Authenticator", 16*b'\x00')
-            attrs = reply._PktEncodeAttributes()
-
-            # Length
-            flen = 4 + 16 + len(attrs)
-            hmac_obj.update(struct.pack(">H", flen))
-            hmac_obj.update(pkt.authenticator)
-            hmac_obj.update(attrs)
-            del reply[80]
-            add_message_authenticator_attr(reply, hmac_obj.digest())
+            build_message_auth(pkt, reply)
 
             self.SendReplyPacket(pkt.fd, reply)
 

@@ -277,6 +277,7 @@ struct wpabuf * radius_msg_get_buf(struct radius_msg *msg);
 struct radius_msg * radius_msg_new(u8 code, u8 identifier);
 void radius_msg_free(struct radius_msg *msg);
 void radius_msg_dump(struct radius_msg *msg);
+u8 * radius_msg_add_msg_auth(struct radius_msg *msg);
 int radius_msg_finish(struct radius_msg *msg, const u8 *secret,
 		      size_t secret_len);
 int radius_msg_finish_srv(struct radius_msg *msg, const u8 *secret,

@@ -22,7 +22,7 @@ import hostapd
 from utils import *
 from test_ap_hs20 import build_dhcp_ack
 from test_ap_ft import ft_params1
-from test_eap_proto import add_message_authenticator_attr
+from test_eap_proto import add_message_authenticator_attr, build_message_auth
 
 def connect(dev, ssid, wait_connect=True):
     dev.connect(ssid, key_mgmt="WPA-EAP", scan_freq="2412",
@@ -1221,6 +1221,8 @@ def start_radius_psk_server(psk, invalid_code=False, acct_interim_interval=0,
             if self.t_events['session_timeout']:
                 reply.AddAttribute("Session-Timeout",
                                    self.t_events['session_timeout'])
+            build_message_auth(pkt, reply)
+
             self.SendReplyPacket(pkt.fd, reply)
 
         def RunWithStop(self, t_events):
@@ -1567,6 +1569,7 @@ def test_ap_vlan_wpa2_psk_radius_required(dev, apdev):
                 reply.AddAttribute("Tunnel-Type", 13)
                 reply.AddAttribute("Tunnel-Medium-Type", 6)
                 reply.AddAttribute("Tunnel-Private-Group-ID", "1")
+            build_message_auth(pkt, reply)
             self.SendReplyPacket(pkt.fd, reply)
 
         def RunWithStop(self, t_events):
