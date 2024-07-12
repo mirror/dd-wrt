@@ -31,6 +31,8 @@ void stop_jffs2(void)
 	int mtd = getMTD("plex");
 #else
 	int mtd = getMTD("ddwrt");
+	if (mtd==-1)
+		mtd = getMTD("jffs2");
 #endif
 	if (mtd == -1)
 		return;
@@ -49,8 +51,9 @@ void start_jffs2(void)
 	int mtd = getMTD("plex");
 #else
 	int mtd = getMTD("ddwrt");
-	if (mtd==-1)
+	if (mtd==-1) {
 		mtd = getMTD("jffs2");
+	}
 #endif
 	if (mtd == -1)
 		return;
@@ -62,6 +65,7 @@ void start_jffs2(void)
 		classic = 1;
 		break;
 	case ROUTER_ASUS_AX89X:
+		rwpart ="jffs2";
 		classic = 1;
 		break;
 	case ROUTER_TRENDNET_TEW827:
@@ -122,13 +126,13 @@ void start_jffs2(void)
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (classic) {
-				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			} else {
 				itworked += mount(upath, "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 			}
 #else
-			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
@@ -141,7 +145,7 @@ void start_jffs2(void)
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (classic) {
 				itworked = eval("mtd", "unlock", rwpart);
-				sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 				itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 			} else {
 				sprintf(dev, "/dev/mtd%d", mtd);
@@ -150,7 +154,7 @@ void start_jffs2(void)
 			}
 #else
 			itworked = eval("mtd", "unlock", rwpart);
-			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
+			sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
 			if (itworked) {
