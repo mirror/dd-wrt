@@ -51,6 +51,17 @@ static SENSORMAPS maps[] = {
 	{ "nss_top_thermal", "nss system" },
 	{ "top_glue_thermal", "system" },
 	{ "gephy_thermal", "gbit eth phy" },
+	{ "Thermal Zone0", "main" },
+	{ "Thermal Zone1", NULL },
+	{ "Thermal Zone2", NULL },
+	{ "Thermal Zone3", NULL },
+	{ "Thermal Zone4", NULL },
+	{ "Thermal Zone5", NULL },
+	{ "Thermal Zone6", NULL },
+	{ "Thermal Zone7", "cpu0" },
+	{ "Thermal Zone8", "cpu1" },
+	{ "Thermal Zone9", "nss0" },
+	{ "Thermal Zone10", "nss1" },
 };
 
 static char *getmappedname(char *name)
@@ -329,20 +340,22 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 				unit = "Volt";
 			if (type == RPM)
 				unit = "rpm";
-			websWrite(wp, "<div class=\"setting\">\n");
 			name = getmappedname(name);
-			websWrite(wp, "<div class=\"label\">%s</div>\n", name);
-			websWrite(wp, "<span id=\"cpu_temp%d\">", count);
-			if (scale > 1) {
-				websWrite(wp, "%d.%d %s\n", sensor / scale, (sensor % scale) / (scale / 10), unit);
-			} else {
-				if (type == RPM)
-					websWrite(wp, "%d %s\n", sensor, unit);
-				else
-					websWrite(wp, "%d.0 %s\n", sensor, unit);
+			if (name) {
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\">%s</div>\n", name);
+				websWrite(wp, "<span id=\"cpu_temp%d\">", count);
+				if (scale > 1) {
+					websWrite(wp, "%d.%d %s\n", sensor / scale, (sensor % scale) / (scale / 10), unit);
+				} else {
+					if (type == RPM)
+						websWrite(wp, "%d %s\n", sensor, unit);
+					else
+						websWrite(wp, "%d.0 %s\n", sensor, unit);
+				}
+				websWrite(wp, "</span>&nbsp;\n");
+				websWrite(wp, "</div>\n");
 			}
-			websWrite(wp, "</span>&nbsp;\n");
-			websWrite(wp, "</div>\n");
 		}
 		if (sensor == -1)
 			return 0;
