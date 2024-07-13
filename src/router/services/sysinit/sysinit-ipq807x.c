@@ -787,6 +787,7 @@ void start_sysinit(void)
 		     "nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 		break;
 	default:
 		insmod("mac80211");
