@@ -24,6 +24,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     insmod cifs_md4
     insmod cifs_arc4
     insmod netfs
+    insmod asn1_decoder
     insmod cifs
     insmod md4
     insmod md5
