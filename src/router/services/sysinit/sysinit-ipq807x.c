@@ -789,6 +789,11 @@ void start_sysinit(void)
 	default:
 		insmod("mac80211");
 		insmod("qmi_helpers");
+		if (!nvram_match("ath11k_nss","0"))
+			insmod("ath11k");
+		else
+			eval("insmod", "ath11k",
+		    		"nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k");
 		insmod("ath11k_ahb");
 		break;
