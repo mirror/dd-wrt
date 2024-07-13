@@ -43,7 +43,9 @@ void start_sfe(void)
 		rmmod("ecm");
 		rmmod("qca-nss-sfe");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+#endif
 		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "2")) {
 		rmmod("fast-classifier");
@@ -55,7 +57,9 @@ void start_sfe(void)
 		rmmod("ecm");
 		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "1");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+#endif
 		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started\n");
 	} else if (nvram_match("sfe", "3")) { // ecm nss
 		rmmod("fast-classifier");
@@ -75,7 +79,9 @@ void start_sfe(void)
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
 		eval("insmod", "ecm", "front_end_selection=2");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+#endif
 		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started\n");
 	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
 		rmmod("fast-classifier");
@@ -96,7 +102,9 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+#if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+#endif
 
 		rmmod("ecm");
 		rmmod("qca-nss-sfe");
@@ -114,7 +122,9 @@ void stop_sfe(void)
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
+#if !defined(HAVE_IPQ6018)
 	sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
+#emdif
 	rmmod("ecm");
 	rmmod("qca-nss-sfe");
 	writeproc("/proc/ctf", "0");
