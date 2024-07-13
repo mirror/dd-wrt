@@ -1328,16 +1328,18 @@ long long wifi_getrate(char *ifname)
 		case 40:
 		case 80:
 		case 160:
-			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) && !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
-			rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
+			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
+			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+				rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
 			else
-			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
+				rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
 			break;
 		case 8080:
-			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) && !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
-			rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
+			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
+			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
+				rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
 			else
-			rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
+				rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
 			break;
 		default:
 			rate = 54000;
@@ -3815,27 +3817,27 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned i
 #define SCALE 6144
 	unsigned long long mcs_divisors[14] = {
 		102399, /* 16.666666... */
-		 51201, /*  8.333333... */
-		 34134, /*  5.555555... */
-		 25599, /*  4.166666... */
-		 17067, /*  2.777777... */
-		 12801, /*  2.083333... */
-		 11377, /*  1.851725... */
-		 10239, /*  1.666666... */
-		  8532, /*  1.388888... */
-		  7680, /*  1.250000... */
-		  6828, /*  1.111111... */
-		  6144, /*  1.000000... */
-		  5690, /*  0.926106... */
-		  5120, /*  0.833333... */
+		51201, /*  8.333333... */
+		34134, /*  5.555555... */
+		25599, /*  4.166666... */
+		17067, /*  2.777777... */
+		12801, /*  2.083333... */
+		11377, /*  1.851725... */
+		10239, /*  1.666666... */
+		8532, /*  1.388888... */
+		7680, /*  1.250000... */
+		6828, /*  1.111111... */
+		6144, /*  1.000000... */
+		5690, /*  0.926106... */
+		5120, /*  0.833333... */
 	};
 	unsigned int rates_160M[3] = { 960777777, 907400000, 816666666 };
-	unsigned int rates_969[3] =  { 480388888, 453700000, 408333333 };
-	unsigned int rates_484[3] =  { 229411111, 216666666, 195000000 };
-	unsigned int rates_242[3] =  { 114711111, 108333333,  97500000 };
-	unsigned int rates_106[3] =  {  40000000,  37777777,  34000000 };
-	unsigned int rates_52[3]  =  {  18820000,  17777777,  16000000 };
-	unsigned int rates_26[3]  =  {   9411111,   8888888,   8000000 };
+	unsigned int rates_969[3] = { 480388888, 453700000, 408333333 };
+	unsigned int rates_484[3] = { 229411111, 216666666, 195000000 };
+	unsigned int rates_242[3] = { 114711111, 108333333, 97500000 };
+	unsigned int rates_106[3] = { 40000000, 37777777, 34000000 };
+	unsigned int rates_52[3] = { 18820000, 17777777, 16000000 };
+	unsigned int rates_26[3] = { 9411111, 8888888, 8000000 };
 	unsigned long long tmp;
 	unsigned int result;
 
@@ -3850,28 +3852,28 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned i
 
 	int nss = 8;
 	if (mcs < 70) {
-	    nss = 7;
+		nss = 7;
 	}
 	if (mcs < 60) {
-	    nss = 6;
+		nss = 6;
 	}
 	if (mcs < 50) {
-	    nss = 5;
+		nss = 5;
 	}
 	if (mcs < 40) {
-	    nss = 4;
+		nss = 4;
 	}
 	if (mcs < 30) {
-	    nss = 3;
+		nss = 3;
 	}
 	if (mcs < 20) {
-	    nss = 2;
+		nss = 2;
 	}
 	if (mcs < 10) {
-	    nss = 1;
+		nss = 1;
 	}
 	mcs /= nss;
-	mcs +=2;
+	mcs += 2;
 
 	/* now scale to the appropriate MCS */
 	tmp = result;
@@ -3892,85 +3894,89 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	mcs = vhtmcs;
 
 	static const unsigned int base[4][12] = {
-		{   6500000,
-		   13000000,
-		   19500000,
-		   26000000,
-		   39000000,
-		   52000000,
-		   58500000,
-		   65000000,
-		   78000000,
-		/* not in the spec, but some devices use this: */
-		   86700000,
-		   97500000,
-		  108300000,
+		{
+			6500000,
+			13000000,
+			19500000,
+			26000000,
+			39000000,
+			52000000,
+			58500000,
+			65000000,
+			78000000,
+			/* not in the spec, but some devices use this: */
+			86700000,
+			97500000,
+			108300000,
 		},
-		{  13500000,
-		   27000000,
-		   40500000,
-		   54000000,
-		   81000000,
-		  108000000,
-		  121500000,
-		  135000000,
-		  162000000,
-		  180000000,
-		  202500000,
-		  225000000,
+		{
+			13500000,
+			27000000,
+			40500000,
+			54000000,
+			81000000,
+			108000000,
+			121500000,
+			135000000,
+			162000000,
+			180000000,
+			202500000,
+			225000000,
 		},
-		{  29300000,
-		   58500000,
-		   87800000,
-		  117000000,
-		  175500000,
-		  234000000,
-		  263300000,
-		  292500000,
-		  351000000,
-		  390000000,
-		  438800000,
-		  487500000,
+		{
+			29300000,
+			58500000,
+			87800000,
+			117000000,
+			175500000,
+			234000000,
+			263300000,
+			292500000,
+			351000000,
+			390000000,
+			438800000,
+			487500000,
 		},
-		{  58500000,
-		  117000000,
-		  175500000,
-		  234000000,
-		  351000000,
-		  468000000,
-		  526500000,
-		  585000000,
-		  702000000,
-		  780000000,
-		  877500000,
-		  975000000,
+		{
+			58500000,
+			117000000,
+			175500000,
+			234000000,
+			351000000,
+			468000000,
+			526500000,
+			585000000,
+			702000000,
+			780000000,
+			877500000,
+			975000000,
 		},
 	};
-	
+
 	int nss = 8;
 	if (mcs < 70) {
-	    nss = 7;
+		nss = 7;
 	}
 	if (mcs < 60) {
-	    nss = 6;
+		nss = 6;
 	}
 	if (mcs < 50) {
-	    nss = 5;
+		nss = 5;
 	}
 	if (mcs < 40) {
-	    nss = 4;
+		nss = 4;
 	}
 	if (mcs < 30) {
-	    nss = 3;
+		nss = 3;
 	}
 	if (mcs < 20) {
-	    nss = 2;
+		nss = 2;
 	}
 	if (mcs < 10) {
-	    nss = 1;
+		nss = 1;
 	}
 
-    	int newmcs = mcs / nss;
+	int newmcs = mcs / nss;
 	unsigned int bitrate;
 	int idx = 0;
 	switch (bw) {
