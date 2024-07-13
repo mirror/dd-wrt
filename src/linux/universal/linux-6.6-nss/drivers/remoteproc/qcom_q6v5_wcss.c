@@ -465,7 +465,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 	udelay(1);
 
-#if 0
+#if 1
 		/* 10 - Wait till BHS Reset is done */
 	ret = readl_poll_timeout(wcss->reg_base + Q6SS_BHS_STATUS,
 			val, (val & BHS_EN_REST_ACK), 1000,
@@ -476,7 +476,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	}
 #endif
 	/* Put LDO in bypass mode */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= Q6SS_LDO_BYP;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -486,7 +486,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* Deassert memory peripheral sleep and L2 memory standby */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= Q6SS_L2DATA_STBY_N | Q6SS_SLP_RET_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -509,7 +509,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* Remove IO clamp */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_CLAMP_IO;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -529,7 +529,7 @@ static int q6v5_wcss_reset(struct rproc *rproc)
 	writel(val, wcss->reg_base + Q6SS_RESET_REG);
 
 	/* Wait for SSCAON_STATUS */
-#if 0
+#if 1
 	val = readl(wcss->rmb_base + SSCAON_STATUS);
 	ret = readl_poll_timeout(wcss->rmb_base + SSCAON_STATUS,
 				 val, (val & 0xffff) == 0x10, 1000,
@@ -1094,17 +1094,17 @@ static int q6v5_q6_powerdown(struct q6v5_wcss *wcss)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 4 - Clamp WL */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val |= QDSS_BHS_ON;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 5 - Clear Erase standby */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_L2DATA_STBY_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 6 - Clear Sleep RTN */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_SLP_RET_N;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
@@ -1122,7 +1122,7 @@ static int q6v5_q6_powerdown(struct q6v5_wcss *wcss)
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 
 	/* 9 - Turn off BHS */
-//	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
+	val = readl(wcss->reg_base + Q6SS_PWR_CTL_REG);
 	val &= ~Q6SS_BHS_ON;
 	writel(val, wcss->reg_base + Q6SS_PWR_CTL_REG);
 	udelay(1);
