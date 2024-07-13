@@ -452,7 +452,6 @@ void configure_single_ath9k(int count)
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
-
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed", "4addr", "on", "mtikwds", "off");
@@ -520,6 +519,9 @@ void configure_single_ath9k(int count)
 			cprintf("handle ibss join");
 		}
 	}
+#ifdef HAVE_IPQ6018
+	eval("tc", "qdisc", "replace", "dev", dev, "root", "noqueue");
+#endif
 
 	MAC80211DEBUG();
 	char macaddr[32];
@@ -615,6 +617,9 @@ void configure_single_ath9k(int count)
 					     nvram_nget("%s_ssid", var));
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
+#ifdef HAVE_IPQ6018
+			eval("tc", "qdisc", "replace", "dev", var, "root", "noqueue");
+#endif
 			sprintf(compr, "%s_fc_th", var);
 			char *threshold = nvram_default_get(compr,
 							    "512"); // minimum framesize frequired for compression
@@ -2587,6 +2592,9 @@ skip:;
 			hwaddr = nvram_safe_get(wdsmacname);
 			if (*hwaddr) {
 				eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
+#ifdef HAVE_IPQ6018
+				eval("tc", "qdisc", "replace", "dev", wdsdev, "root", "noqueue");
+#endif
 				eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");
 			}
