@@ -516,6 +516,7 @@ static void load_nss_ipq807x(int profile)
 void start_setup_affinity(void)
 {
 	int brand = getRouterBrand();
+	#if 0
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
@@ -575,6 +576,7 @@ void start_setup_affinity(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 		break;
 	}
+	#endif
 }
 
 void start_sysinit(void)
