@@ -516,67 +516,67 @@ static void load_nss_ipq807x(int profile)
 void start_setup_affinity(void)
 {
 	int brand = getRouterBrand();
-	#if 0
-	switch (brand) {
-	case ROUTER_LINKSYS_MR5500:
-	case ROUTER_LINKSYS_MX5500:
-		/* IPQ5018 is dualcore arm64, so we need a different affinity stragedy */
+	if (!nvram_match("ath11k_affinity", "0")) {
+		switch (brand) {
+		case ROUTER_LINKSYS_MR5500:
+		case ROUTER_LINKSYS_MX5500:
+			/* IPQ5018 is dualcore arm64, so we need a different affinity stragedy */
 
-		/* QCN9074 external mpci */
-		set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 3);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 4);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
-		set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
-		set_named_smp_affinity("DP_EXT_IRQ", 0, 7);
-		set_named_smp_affinity("DP_EXT_IRQ", 0, 8);
-		/* IPQ5018 AHB wifi */
-		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring2", 0, 1);
-		set_named_smp_affinity("reo2host-destination-ring1", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
+			/* QCN9074 external mpci */
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 3);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 4);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 7);
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 8);
+			/* IPQ5018 AHB wifi */
+			set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring2", 0, 1);
+			set_named_smp_affinity("reo2host-destination-ring1", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring3", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring4", 1, 1);
 
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-		break;
-	default:
-		set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
-		set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
-		set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
-		set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+			sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+			break;
+		default:
+			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+			set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
 
-		set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
-		set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
 
-		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
 
-		set_named_smp_affinity("edma_txcmpl", 3, 1);
-		set_named_smp_affinity("edma_rxfill", 3, 1);
-		set_named_smp_affinity("edma_rxdesc", 3, 1);
-		set_named_smp_affinity("edma_misc", 3, 1);
+			set_named_smp_affinity("edma_txcmpl", 3, 1);
+			set_named_smp_affinity("edma_rxfill", 3, 1);
+			set_named_smp_affinity("edma_rxdesc", 3, 1);
+			set_named_smp_affinity("edma_misc", 3, 1);
 
-		set_named_smp_affinity("nss_queue0", 1, 1);
-		set_named_smp_affinity("nss_queue1", 2, 1);
-		set_named_smp_affinity("nss_queue2", 3, 1);
-		set_named_smp_affinity("nss_queue3", 0, 1);
+			set_named_smp_affinity("nss_queue0", 1, 1);
+			set_named_smp_affinity("nss_queue1", 2, 1);
+			set_named_smp_affinity("nss_queue2", 3, 1);
+			set_named_smp_affinity("nss_queue3", 0, 1);
 
-		set_named_smp_affinity("nss_queue0", 2, 2);
-		set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
-		set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
-		set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
+			set_named_smp_affinity("nss_queue0", 2, 2);
+			set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
+			set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
+			set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
 
-		set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
-		set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
 
-		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-		break;
+			sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+			break;
+		}
 	}
-	#endif
 }
 
 void start_sysinit(void)
@@ -791,11 +791,11 @@ void start_sysinit(void)
 	default:
 		insmod("mac80211");
 		insmod("qmi_helpers");
-		if (!nvram_match("ath11k_nss","0"))
+		if (!nvram_match("ath11k_nss", "0"))
 			insmod("ath11k");
 		else
 			eval("insmod", "ath11k",
-		    		"nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+			     "nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k");
 		insmod("ath11k_ahb");
 		break;
