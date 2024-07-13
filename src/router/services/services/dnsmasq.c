@@ -729,6 +729,17 @@ void start_dnsmasq(void)
 	if (nvram_match("tor_enable", "1") && !nvram_matchi("smartdns", 1))
 		fprintf(fp, "server=%s#5353\n", nvram_safe_get("lan_ipaddr"));
 #endif
+#ifdef HAVE_IPV6
+	if (nvram_matchi("ipv6_enable", 1)) {
+		if (nvram_matchi("dns_ipv6_enable", 1)) {
+			fprintf(fp, "dhcp-range=%s,%s\n", "::,constructor:br0,ra-names,ra-stateless","12h");
+			fprintf(fp, "ra-param=%s\n", "br0,10,300");
+			fprintf(fp, "enable-ra\n");
+			// Suppress logging of the routine operation:
+			fprintf(fp, "quiet-dhcp6\nquiet-ra\n");
+		}
+	}
+#endif
 
 	/*
 	 * Domain 

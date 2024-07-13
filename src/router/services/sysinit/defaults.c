@@ -2266,6 +2266,9 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnsmasq_enable", "1" },
 #endif
 	{ "dnsmasq_options", "" },
+#ifdef HAVE_IPV6
+	{ "dns_ipv6_enable", "0" },
+#endif
 	// #ifdef HAVE_DDLAN
 	// {"ntp_enable", "0"},
 	// #else

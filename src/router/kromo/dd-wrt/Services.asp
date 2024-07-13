@@ -134,6 +134,9 @@ addEvent(window, "load", function() {
 	if (document.setup.smartdns) {
 		show_layer_ext(document.setup.dnsmasq_enable, 'idsmartdns', <% nvem("smartdns", "1", "1", "0"); %> == 1);
 	}
+	if (document.setup.dnsmasq_enable) {
+		show_layer_ext(document.setup.dnsmasq_enable, 'idipv6dns', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
+	}
 	if (document.setup.lighttpd_enable) {
 		show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
 	}
