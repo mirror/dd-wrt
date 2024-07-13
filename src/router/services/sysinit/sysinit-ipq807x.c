@@ -811,6 +811,7 @@ void start_sysinit(void)
 	start_setup_affinity();
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
@@ -886,10 +887,10 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
@@ -958,14 +959,13 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_DYNALINK_DLWRX36:
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
@@ -983,12 +983,28 @@ void start_sysinit(void)
 		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
 		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 		eval("ssdk_sh", "fdb", "entry", "flush", "1");
+		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_ASUS_AX89X:
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+		eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+		eval("ssdk_sh", "fdb", "entry", "flush", "1");
+		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
 	}
