@@ -1155,8 +1155,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 						if (c > 0) {
 							fprintf(fp, "he_bss_color=%d\n", c);
 						}
-						fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial",prefix) ? 1 : 0);
-						fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required",prefix) ? 1 : 0);
+						fprintf(fp, "he_bss_color_partial=%d\n",
+							nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
+						fprintf(fp, "he_twt_required=%d\n",
+							nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 					}
 				}
 				fprintf(fp, "no_country_ie=1\n");
@@ -1270,8 +1272,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 				if (c > 0) {
 					fprintf(fp, "he_bss_color=%d\n", c);
 				}
-				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial",prefix) ? 1 : 0);
-				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required",prefix) ? 1 : 0);
+				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
+				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 			}
 			fprintf(fp, "hw_mode=g\n");
 			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
@@ -1653,8 +1655,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384 ||
-		   ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || isowe || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
+		   iswpa2sha384 || ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {
 		fprintf(fp, "ieee8021x=1\n");

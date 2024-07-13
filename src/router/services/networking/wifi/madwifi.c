@@ -297,7 +297,7 @@ void eap_sta_key_mgmt(FILE *fp, char *prefix)
 	char pwstring[128] = { 0 };
 	char grpstring[128] = { 0 };
 	get_pairwise(prefix, pwstring, grpstring, 0, 0);
-	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256|| iswpa2sha384)) {
+	if (*pwstring && (iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384)) {
 		fprintf(fp, "\tpairwise=%s\n", pwstring);
 		fprintf(fp, "\tgroup=%s\n", grpstring);
 	}
@@ -324,10 +324,10 @@ void eap_sta_key_mgmt(FILE *fp, char *prefix)
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
 	if ((iswpa2 || iswpa || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384)) {
-		if (nvram_default_matchi(mfp, 1, 0) ||
-		    ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256 || iswpa2sha384) && (!iswpa && !iswpa2 && !ispsk && !ispsk2)))
+		if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3_128 || iswpa3_192 || iswpa3 || iswpa2sha256 || iswpa2sha384) &&
+							(!iswpa && !iswpa2 && !ispsk && !ispsk2)))
 			fprintf(fp, "\tieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256  || iswpa2sha384)
+		else if (nvram_default_matchi(mfp, -1, 0) || iswpa3_192 || iswpa3_128 || iswpa3 || iswpa2sha256 || iswpa2sha384)
 			fprintf(fp, "\tieee80211w=1\n");
 		else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
@@ -407,10 +407,10 @@ void addvhtcaps(char *prefix, FILE *fp)
 					mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
 				}
 			}
-//			if (mask) {
-//				fprintf(fp, "\tvht_capa=0\n");
-//				fprintf(fp, "\tvht_capa_mask=%d\n", mask);
-//			}
+			//			if (mask) {
+			//				fprintf(fp, "\tvht_capa=0\n");
+			//				fprintf(fp, "\tvht_capa_mask=%d\n", mask);
+			//			}
 		}
 	}
 #ifdef HAVE_ATH9K
@@ -1326,8 +1326,8 @@ void start_ses_led_control(void)
 			sprintf(akm, "%s_akm", ath);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
 			    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
-			    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "wpa2-sha384") ||
-			    nvram_match(akm, "wep")) {
+			    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") ||
+			    nvhas(akm, "wpa2-sha384") || nvram_match(akm, "wep")) {
 				if (!strncmp(ath, "wlan0", 4))
 					led_control(LED_SEC0, LED_ON);
 				if (!strncmp(ath, "wlan1", 4))
@@ -1342,8 +1342,8 @@ void start_ses_led_control(void)
 				sprintf(akm, "%s_akm", var);
 				if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
 				    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||
-				    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "wpa2-sha384") ||
-				    nvram_match(akm, "wep")) {
+				    nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") ||
+				    nvhas(akm, "wpa2-sha384") || nvram_match(akm, "wep")) {
 					if (!strncmp(var, "wlan0", 4))
 						led_control(LED_SEC0, LED_ON);
 					if (!strncmp(var, "wlan1", 4))
@@ -1420,7 +1420,8 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	int wpamask = 0;
 	if (ispsk || iswpa)
 		wpamask |= 1;
-	if (ispsk2 || ispsk3 || isowe || iswpa2 || iswpa3 || iswpa3_192 || iswpa3_128 || iswpa2sha256 || iswpa2sha384 || ispsk2sha256)
+	if (ispsk2 || ispsk3 || isowe || iswpa2 || iswpa3 || iswpa3_192 || iswpa3_128 || iswpa2sha256 || iswpa2sha384 ||
+	    ispsk2sha256)
 		wpamask |= 2;
 	fprintf(fp, "wpa=%d\n", wpamask);
 	if (ispsk)
@@ -1448,7 +1449,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	if (iswpa3_192)
 		nvram_nseti(1, "%s_wpa3-192", prefix);
 #ifdef HAVE_80211W
-	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256  || iswpa2sha384 || ispsk2sha256 || isowe || ispsk3) &&
+	if ((iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384 || ispsk2sha256 || isowe || ispsk3) &&
 	    (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
@@ -1517,8 +1518,8 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	if (_has_wpa3 && ispsk3)
 		fprintf(fp, "sae_groups=19 20 21\n");
 #ifdef HAVE_80211R
-	if (nvram_matchi(ft, 1) &&
-	    (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256  || iswpa2sha384 || iswpa3_128 || iswpa3_192)) {
+	if (nvram_matchi(ft, 1) && (ispsk3 || ispsk || ispsk2 || ispsk2sha256 || iswpa || iswpa2 || iswpa3 || iswpa2sha256 ||
+				    iswpa2sha384 || iswpa3_128 || iswpa3_192)) {
 		char dl[32];
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
@@ -1707,8 +1708,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
-	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384 ||
-		   ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
+		   iswpa2sha384 || ispsk2sha256) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
