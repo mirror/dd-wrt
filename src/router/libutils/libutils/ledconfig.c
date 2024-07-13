@@ -1653,7 +1653,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x2f; // power led off
 		cfg->connected_gpio = 0x31; // wan led
 		cfg->sec0_gpio = 0x2e; // wps led
-		cfg->sec1_gpio = 0x16; // 
+		cfg->sec1_gpio = 0x16; //
 		cfg->power_gpio = 0x2d; // power led
 		break;
 	case ROUTER_ASUS_AC58U:
@@ -1669,7 +1669,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_ASUS_AX89X:
 		cfg->power_gpio = 0x0;
 		cfg->diag_gpio = GPIO_LOW | 0x0;
-		cfg->diag_gpio_disabled = 0; 
+		cfg->diag_gpio_disabled = 0;
 		cfg->connected_gpio = 0x2;
 		cfg->disconnected_gpio = 0x1;
 		cfg->usb_power = 0x1e; // usb enable
@@ -1680,22 +1680,22 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		cfg->power_gpio = 0x1; // power led / green
-		cfg->diag_gpio = 0x0; // diag led / red 
-		cfg->diag_gpio_disabled = 0x1; 
+		cfg->diag_gpio = 0x0; // diag led / red
+		cfg->diag_gpio_disabled = 0x1;
 		cfg->connected_gpio = 0x2; // blue wan led
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		cfg->power_gpio = 0x1; // power led / green
-		cfg->diag_gpio = 0x0; // diag led / red 
-		cfg->diag_gpio_disabled = 0x1; 
+		cfg->diag_gpio = 0x0; // diag led / red
+		cfg->diag_gpio_disabled = 0x1;
 		cfg->connected_gpio = 0x2; // blue wan led
 		cfg->usb_gpio = 0x3c; //usb1
 		cfg->usb_power = GPIO_LOW | 0x3d; //usb2
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		cfg->power_gpio = 0x1a; // power led / green
-		cfg->diag_gpio = 0x19; // diag led / red 
-		cfg->diag_gpio_disabled = 0x1a; 
+		cfg->diag_gpio = 0x19; // diag led / red
+		cfg->diag_gpio_disabled = 0x1a;
 		break;
 	case ROUTER_NETGEAR_R7800:
 		cfg->power_gpio = 0x0; // power led

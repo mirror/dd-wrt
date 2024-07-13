@@ -682,8 +682,8 @@ static char *getUEnvExt(char *name)
 #endif
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) ||           \
-	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || defined(HAVE_IPQ6018) || \
-	defined(HAVE_PERU)
+	defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE) || defined(HAVE_VENTANA) || \
+	defined(HAVE_IPQ6018) || defined(HAVE_PERU)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
@@ -727,16 +727,22 @@ void *getUEnv(char *name)
 #elif HAVE_IPQ6018
 	int brand = getRouterBrand();
 	FILE *fp;
-	if (brand == ROUTER_LINKSYS_MR7350) 
+	switch (brand) {
+	case ROUTER_LINKSYS_MR7350:
 		fp = fopen("/dev/mtdblock/11", "rb");
-	else if (brand == ROUTER_DYNALINK_DLWRX36) 
+		break;
+	case ROUTER_DYNALINK_DLWRX36:
 		fp = fopen("/dev/mtdblock/14", "rb");
-	else if (brand == ROUTER_LINKSYS_MR5500) 
+		break;
+	case ROUTER_ASUS_AX89X:
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
 		fp = fopen("/dev/mtdblock/9", "rb");
-	else if (brand == ROUTER_LINKSYS_MX5500) 
-		fp = fopen("/dev/mtdblock/9", "rb");
-	else
+		break;
+	default:
 		fp = fopen("/dev/mtdblock/18", "rb");
+		break;
+	}
 #elif HAVE_IPQ806X
 	int brand = getRouterBrand();
 	FILE *fp;
@@ -1045,7 +1051,8 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	FILE *in = fopen("/proc/net/dev", "rb");
 	if (!in)
 		return 0;
-	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo", "teql", "gre", "ppp", "aux", "ctf", "tap", "sit", "ip6tnl", "miireg" };
+	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",  "teql",	 "gre",
+			       "ppp",  "aux", "ctf", "tap",	"sit", "ip6tnl", "miireg" };
 	char ifname[32];
 
 	// skip the first 2 lines
@@ -1703,8 +1710,8 @@ void set_named_smp_affinity(char *name, int core, int entry)
 		int offset = strlen(line) - 2;
 		int start = 0;
 		i = offset;
-		while(i--) {
-			if (line[i]!=0x20)
+		while (i--) {
+			if (line[i] != 0x20)
 				start = i;
 			else
 				break;
@@ -1712,7 +1719,7 @@ void set_named_smp_affinity(char *name, int core, int entry)
 		if (!start)
 			continue;
 		strcpy(match, &line[start]);
-		match[strlen(match)-1]=0;
+		match[strlen(match) - 1] = 0;
 		if (!strcmp(match, name))
 			e++;
 		if (e == entry) {
@@ -1723,7 +1730,7 @@ void set_named_smp_affinity(char *name, int core, int entry)
 	return;
 out:;
 	fclose(in);
-	if (nvram_match("console_debug","1"))
+	if (nvram_match("console_debug", "1"))
 		dd_loginfo(name, "set smp_affinity %d for irq %s\n", 1 << core, irq);
 
 	char s_cpu[32];

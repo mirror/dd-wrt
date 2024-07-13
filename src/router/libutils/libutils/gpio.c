@@ -402,7 +402,7 @@ void set_gpio(int gpio, int value)
 	if (value == 1)
 		value = 255;
 	int brand = getRouterBrand();
-	switch(brand) {
+	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
@@ -420,7 +420,7 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	break;
+		break;
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		switch (gpio) {
@@ -437,7 +437,7 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	break;
+		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		switch (gpio) {
 		case 0:
@@ -450,7 +450,7 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	break;
+		break;
 	case ROUTER_ASUS_AX89X:
 		switch (gpio) {
 		case 0:
@@ -466,10 +466,10 @@ void set_gpio(int gpio, int value)
 			set_linux_gpio(gpio + 512, value);
 			break;
 		}
-	break;
+		break;
 	default:
 		set_linux_gpio(gpio + 512, value);
-	break;
+		break;
 	}
 }
 
