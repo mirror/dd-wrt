@@ -105,30 +105,31 @@
 #endif
 
 /*
- * DMA Offset helper
- */
-#define n2h_desc_index_offset(_index) sizeof(struct n2h_descriptor) * (_index)
-#define h2n_desc_index_offset(_index) sizeof(struct h2n_descriptor) * (_index)
-
-#define n2h_desc_index_to_dma(_if_map_addr, _qid, _index) (_if_map_addr)->n2h_desc_if[(_qid)].desc_addr + n2h_desc_index_offset(_index)
-#define h2n_desc_index_to_dma(_if_map_addr, _qid, _index) (_if_map_addr)->h2n_desc_if[(_qid)].desc_addr + h2n_desc_index_offset(_index)
-
-#define h2n_nss_index_offset offsetof(struct nss_if_mem_map, h2n_nss_index)
-#define n2h_nss_index_offset offsetof(struct nss_if_mem_map, n2h_nss_index)
-#define h2n_hlos_index_offset offsetof(struct nss_if_mem_map, h2n_hlos_index)
-#define n2h_hlos_index_offset offsetof(struct nss_if_mem_map, n2h_hlos_index)
-
-#define h2n_nss_index_to_dma(_if_map_addr, _index) (_if_map_addr) + h2n_nss_index_offset + (sizeof(uint32_t) * (_index))
-#define n2h_nss_index_to_dma(_if_map_addr, _index) (_if_map_addr) + n2h_nss_index_offset + (sizeof(uint32_t) * (_index))
-#define h2n_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + h2n_hlos_index_offset + (sizeof(uint32_t) * (_index))
-#define n2h_hlos_index_to_dma(_if_map_addr, _index) (_if_map_addr) + n2h_hlos_index_offset + (sizeof(uint32_t) * (_index))
-
-/*
  * Cache operation
  */
 #define NSS_CORE_DSB() dsb(sy)
-#define NSS_CORE_DMA_CACHE_MAINT(dev, start, size, dir) BUILD_BUG_ON_MSG(1, \
-	"NSS_CORE_DMA_CACHE_MAINT is deprecated. Fix the code to use correct dma_sync_* API")
+#define NSS_CORE_DMA_CACHE_MAINT(start, size, dir) nss_core_dma_cache_maint(start, size, dir)
+
+/*
+ * nss_core_dma_cache_maint()
+ *	Perform the appropriate cache op based on direction
+ */
+static inline void nss_core_dma_cache_maint(void *start, uint32_t size, int direction)
+{
+	switch (direction) {
+	case DMA_FROM_DEVICE:/* invalidate only */
+		dmac_inv_range(start, start + size);
+		break;
+	case DMA_TO_DEVICE:/* writeback only */
+		dmac_clean_range(start, start + size);
+		break;
+	case DMA_BIDIRECTIONAL:/* writeback and invalidate */
+		dmac_flush_range(start, start + size);
+		break;
+	default:
+		BUG();
+	}
+}
 
 #define NSS_DEVICE_IF_START NSS_PHYSICAL_IF_START
 
