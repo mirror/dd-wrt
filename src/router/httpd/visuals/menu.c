@@ -450,7 +450,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 					goto skip;
 #endif
 				if ((!switch_supp) && !strcmp_pnt(m->menu[i][j],
-								"Vlan.asp")) // jump
+								  "Vlan.asp")) // jump
 					// over
 					// VLANs
 					// if

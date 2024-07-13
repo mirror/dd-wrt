@@ -573,7 +573,7 @@ static int rule_nss(char *name)
 	return 1;
 #else
 	return 0;
-#endif	
+#endif
 }
 
 static int rule_afterburner(char *name)
@@ -1733,8 +1733,7 @@ EJ_VISIBLE void ej_show_wanipinfo(webs_t wp, int argc, char_t **argv) // Eko
 		   || !strcmp(wan_proto, "3g")
 #endif
 #ifdef HAVE_IPETH
-		   || !strcmp(wan_proto, "iphone")
-		   || !strcmp(wan_proto, "android")
+		   || !strcmp(wan_proto, "iphone") || !strcmp(wan_proto, "android")
 #endif
 	) {
 		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";

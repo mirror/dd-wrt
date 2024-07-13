@@ -108,8 +108,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		   || !strcmp(wan_proto, "3g")
 #endif
 #ifdef HAVE_IPETH
-		   || !strcmp(wan_proto, "iphone")
-		   || !strcmp(wan_proto, "android")
+		   || !strcmp(wan_proto, "iphone") || !strcmp(wan_proto, "android")
 #endif
 	) {
 		wan_ipaddr = wan_link ? nvram_safe_get("wan_ipaddr") : "0.0.0.0";
@@ -137,8 +136,7 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	    || !strcmp(wan_proto, "3g")
 #endif
 #ifdef HAVE_IPETH
-	    || !strcmp(wan_proto, "iphone")
-	    || !strcmp(wan_proto, "android")
+	    || !strcmp(wan_proto, "iphone") || !strcmp(wan_proto, "android")
 #endif
 #ifdef HAVE_PPPOATM
 	    || !strcmp(wan_proto, "pppoa")
@@ -349,8 +347,7 @@ EJ_VISIBLE void ej_show_status(webs_t wp, int argc, char_t **argv)
 	    || !strcmp(wan_proto, "3g")
 #endif
 #ifdef HAVE_IPETH
-	    || !strcmp(wan_proto, "iphone")
-	    || !strcmp(wan_proto, "android")
+	    || !strcmp(wan_proto, "iphone") || !strcmp(wan_proto, "android")
 #endif
 #ifdef HAVE_PPPOATM
 	    || !strcmp(wan_proto, "pppoa")

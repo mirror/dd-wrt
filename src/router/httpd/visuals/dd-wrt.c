@@ -1621,9 +1621,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
-				char eirp[32]={0};
+				char eirp[32] = { 0 };
 				if (chan[i].hw_eirp)
-				    snprintf(eirp,sizeof(eirp), " (%d dBm)", chan[i].hw_eirp);
+					snprintf(eirp, sizeof(eirp), " (%d dBm)", chan[i].hw_eirp);
 				if (freq != -1) {
 					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
@@ -1631,7 +1631,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 							"document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d\"+wl_basic.mhz+\"%s</option>\");\n",
 							fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull,
 							chan[i].ulu, chan[i].uul, chan[i].uuu,
-							!strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset), eirp);
+							!strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq + offset),
+							eirp);
 					} else {
 						websWrite(
 							wp,
@@ -3543,7 +3544,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (has_ax(prefix)) {
 		nvram_default_get(wl_twt, "0");
-		showRadio(wp, "wl_basic.twt_required", wl_twt);	
+		showRadio(wp, "wl_basic.twt_required", wl_twt);
 	}
 	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix) || has_ax(prefix)) {
@@ -5241,7 +5242,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 	if (has_ax(prefix)) {
 		nvram_default_get(wl_twt, "0");
-		showRadio(wp, "wl_basic.twt_required", wl_twt);	
+		showRadio(wp, "wl_basic.twt_required", wl_twt);
 	}
 	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix) || has_ax(prefix)) {

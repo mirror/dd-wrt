@@ -724,8 +724,8 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 	if ((strstr(akm, "owe")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") ||
 				      strstr(security_mode, "8021X") || strstr(security_mode, "disabled")))
 		v_show_owe = 1;
-	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa2-sha384") || strstr(akm, "wpa3") ||
-	     strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa2-sha384") ||
+	     strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
 	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") ||
 	      strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		v_show_wparadius = 1;
@@ -742,8 +742,8 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 #endif
 
 	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") ||
-	     strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256")  || strstr(akm, "wpa2-sha384") ||
-	     strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
+	     strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") ||
+	     strstr(akm, "wpa2-sha384") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128")) &&
 	    !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") ||
 	      strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix, 0);
@@ -817,8 +817,9 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 			"<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />",
 			prefix, nvram_default_get(var, "3600"));
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.seconds)</script></div>\n");
-	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa2-sha256") || strstr(security_mode, "wpa2-sha384") ||
-		   strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192") || strstr(security_mode, "wpa3-128")) {
+	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa2-sha256") ||
+		   strstr(security_mode, "wpa2-sha384") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192") ||
+		   strstr(security_mode, "wpa3-128")) {
 		show_wparadius(wp, prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.rekey", NULL);
