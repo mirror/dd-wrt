@@ -947,14 +947,13 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 static void del_rawtable(void)
 {
 #ifndef HAVE_NEW_NOTRACK
-		eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j",
-		     "NOTRACK"); //this speeds up networking alot on slow systems
+	eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j",
+	     "NOTRACK"); //this speeds up networking alot on slow systems
 #else
-		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
-		eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j", "CT",
-		     "--notrack"); //this speeds up networking alot on slow systems
+	/* the following code must be used in future kernel versions, not yet used. we still need to test it */
+	eval("iptables", "-t", "raw", "-D", "PREROUTING", "-j", "CT",
+	     "--notrack"); //this speeds up networking alot on slow systems
 #endif
-
 }
 static void add_rawtable(void)
 {
@@ -3632,8 +3631,8 @@ void start_firewall(void)
 	writeprocsysnet("core/netdev_max_backlog", nvram_default_get("net.core.netdev_max_backlog", "2048"));
 #endif
 #endif
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || defined(HAVE_IPQ6018) || \
-	defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_IPQ806X) || defined(HAVE_LAGUNA) || defined(HAVE_CAMBRIA) || \
+	defined(HAVE_IPQ6018) || defined(HAVE_NEWPORT) || defined(HAVE_NORTHSTAR) || defined(HAVE_OCTEON) || defined(HAVE_80211AC)
 	writeprocsysnet("core/somaxconn", nvram_default_get("net.core.somaxconn", "1024"));
 	writeprocsysnet("ipv4/tcp_max_syn_backlog", nvram_default_get("net.ipv4.tcp_max_syn_backlog", "1024"));
 	writeprocsysnet("core/rmem_default", nvram_default_get("net.core.rmem_default", "262144"));
