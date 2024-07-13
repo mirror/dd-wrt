@@ -196,6 +196,19 @@
 				<div class="label"><% tran("service.dnsmasq_forward_max"); %></div>
 				<input class="num" maxlength="8" size="6" name="dnsmasq_forward_max" value="<% nvg("dnsmasq_forward_max"); %>" />
 			</div>
+			<!-- definitions in httpd/visuals/ejs.c -->
+			<% ifndef("HAVE_IPV6", "<!--"); %>
+			<div id="idipv6dns">
+				<fieldset>
+					<legend><% tran("service.dnsmasq_ipv6"); %></legend>
+					<div class="setting">
+						<div class="label"><% tran("service.dnsmasq_ipv6_enabled"); %></div>
+						<input class="spaceradio" type="radio" name="dns_ipv6_enable" value="1" <% nvc("dns_ipv6_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" name="dns_ipv6_enable" value="0" <% nvc("dns_ipv6_enable", "0"); %> /><% tran("share.disable"); %>
+					</div>
+				</fieldset><br/>
+			</div>
+			<% ifndef("HAVE_IPV6", "-->"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
 					<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
