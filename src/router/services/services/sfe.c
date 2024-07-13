@@ -124,7 +124,7 @@ void stop_sfe(void)
 	sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 #if !defined(HAVE_IPQ6018)
 	sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
-#emdif
+#endif
 	rmmod("ecm");
 	rmmod("qca-nss-sfe");
 	writeproc("/proc/ctf", "0");
