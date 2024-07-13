@@ -20,6 +20,7 @@
 #include "common/hw_features_common.h"
 #include "crypto/random.h"
 #include "p2p/p2p.h"
+#include "wpa_debug.h"
 #include "wps/wps.h"
 #include "fst/fst.h"
 #include "wnm_ap.h"
@@ -2273,6 +2274,47 @@ static void hostapd_event_wds_sta_interface_status(struct hostapd_data *hapd,
 		ifname, MAC2STR(addr));
 }
 
+static void hostapd_event_update_muedca_params(struct hostapd_data *hapd,
+					       struct update_muedca *params)
+{
+	int i;
+	u8 updated_count;
+
+	/* Update current MU-EDCA parameters */
+	for (i = 0; i < 3; i++) {
+		hapd->iface->conf->he_mu_edca.he_mu_ac_be_param[i] =
+						params->he_mu_ac_be_param[i];
+		hapd->iface->conf->he_mu_edca.he_mu_ac_bk_param[i] =
+						params->he_mu_ac_bk_param[i];
+		hapd->iface->conf->he_mu_edca.he_mu_ac_vo_param[i] =
+						params->he_mu_ac_vo_param[i];
+		hapd->iface->conf->he_mu_edca.he_mu_ac_vi_param[i] =
+						params->he_mu_ac_vi_param[i];
+		hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
+		             HOSTAPD_LEVEL_DEBUG,
+			   "MU-EDCA: Updated MU-EDCA parameters for AC %d: "
+			   "BE: %d, BK: %d, VI: %d, VO: %d",
+			   i, params->he_mu_ac_be_param[i],
+			   params->he_mu_ac_bk_param[i],
+			   params->he_mu_ac_vi_param[i],
+			   params->he_mu_ac_vo_param[i]);
+	}
+
+	/* Increment Parameter Set Update Count for MU-EDCA and WME EDCA only
+	 * if any STA is connected
+	 */
+	if (hapd->num_sta) {
+		updated_count = (hapd->iface->conf->he_mu_edca.he_qos_info + 1) & 0xf;
+		hapd->iface->conf->he_mu_edca.he_qos_info &= 0xf0;
+		hapd->iface->conf->he_mu_edca.he_qos_info |= updated_count;
+		hapd->parameter_set_count++;
+	}
+
+	/* Update beacon with updated MU-EDCA parameters */
+	if (ieee802_11_update_beacons(hapd->iface))
+		wpa_printf(MSG_WARNING,
+			   "Failed to update beacons with MU-EDCA parameters");
+}
 
 #ifdef CONFIG_OWE
 static int hostapd_notif_update_dh_ie(struct hostapd_data *hapd,
@@ -2683,6 +2725,9 @@ void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
 		hostapd_cleanup_cca_params(hapd);
 		break;
 #endif /* CONFIG_IEEE80211AX */
+	case EVENT_UPDATE_MUEDCA_PARAMS:
+		 hostapd_event_update_muedca_params(hapd, &data->update_muedca);
+		 break;
 	default:
 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
 		break;

@@ -61,8 +61,8 @@ wmm_set_regulatory_limit(const struct hostapd_wmm_ac_params *wmm_conf,
 /*
  * Calculate WMM regulatory limit if any.
  */
-static void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
-				      struct hostapd_wmm_ac_params *acp)
+void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
+			       struct hostapd_wmm_ac_params *acp)
 {
 	struct hostapd_hw_modes *mode = hapd->iface->current_mode;
 	int c;
@@ -91,6 +91,10 @@ static void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
 		os_memcpy(hapd->iface->prev_wmm, acp,
 			  sizeof(hapd->iconf->wmm_ac_params));
 		hapd->parameter_set_count++;
+		 /* Incrementing MU-EDCA Parameter Set Update Count*/
+		  hapd->iface->conf->he_mu_edca.he_qos_info =
+		  (hapd->iface->conf->he_mu_edca.he_qos_info & 0xf0) |
+		  ((hapd->iface->conf->he_mu_edca.he_qos_info + 1) & 0xf);
 	}
 }
 

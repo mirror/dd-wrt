@@ -1413,6 +1413,11 @@ static int hostapd_ctrl_iface_set(struct hostapd_data *hapd, char *cmd)
 		} else if (os_strncmp(cmd, "wme_ac_", 7) == 0 ||
 			   os_strncmp(cmd, "wmm_ac_", 7) == 0) {
 			hapd->parameter_set_count++;
+			 /* Incrementing MU-EDCA Parameter Set Update Count*/
+			 hapd->iface->conf->he_mu_edca.he_qos_info =
+			  (hapd->iface->conf->he_mu_edca.he_qos_info & 0xf0) |
+			  ((hapd->iface->conf->he_mu_edca.he_qos_info + 1) &
+			   0xf);
 			if (ieee802_11_update_beacons(hapd->iface))
 				wpa_printf(MSG_DEBUG,
 					   "Failed to update beacons with WMM parameters");

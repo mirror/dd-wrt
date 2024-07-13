@@ -13,6 +13,8 @@
 struct ieee80211_mgmt;
 struct wmm_tspec_element;
 
+void wmm_calc_regulatory_limit(struct hostapd_data *hapd,
+				struct hostapd_wmm_ac_params *acp);
 u8 * hostapd_eid_wmm(struct hostapd_data *hapd, u8 *eid);
 int hostapd_eid_wmm_valid(struct hostapd_data *hapd, const u8 *eid,
 			  size_t len);

@@ -5770,6 +5770,16 @@ enum wpa_event_type {
 	EVENT_LINK_CH_SWITCH_STARTED,
 
 	/**
+	 * EVENT_UPDATE_MUEDCA_PARAMS - Updated MU-EDCA parameters received
+	 *
+	 * this event is emitted when updated MU-EDCA parameters from driver
+	 * are received. updated MU-EDCA parameters need to be updated in
+	 * beacon.
+	 */
+	EVENT_UPDATE_MUEDCA_PARAMS,
+
+
+	/**
 	 * EVENT_TID_LINK_MAP - MLD event to set TID-to-link mapping
 	 *
 	 * This event is used by the driver to indicate the received TID-to-link
@@ -6732,6 +6742,16 @@ union wpa_event_data {
 	 * struct pasn_auth - Data for EVENT_PASN_AUTH
 	 */
 	struct pasn_auth pasn_auth;
+
+	/**
+	 * struct update_muedca - Data for EVENT_UPDATE_MU_EDCA_PARAMS
+	 */
+	struct update_muedca {
+		u8 he_mu_ac_be_param[3];
+		u8 he_mu_ac_bk_param[3];
+		u8 he_mu_ac_vi_param[3];
+		u8 he_mu_ac_vo_param[3];
+	} update_muedca;
 
 	/**
 	 * struct port_authorized - Data for EVENT_PORT_AUTHORIZED
