@@ -347,22 +347,21 @@ static int write_main(int argc, char *argv[])
 		if (!nvram_match("ignore_flashpart", "1"))
 			mtd = "rootfs";
 		eval("startservice", "finishupgrade", "-f");
-		FILE *fp = fopen("/sys/class/mtd/mtd18/offset","rb");
+		FILE *fp = fopen("/sys/class/mtd/mtd18/offset", "rb");
 		if (fp) {
 			int part;
 			fscanf(fp, "%d", &part);
 			fclose(fp);
 			fprintf(stderr, "partition offset is %d\n", part);
 			if (part = 0x16777216) {
-			    fprintf(stderr, "set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
-			    eval("fw_setenv","mtdparts","mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
-			} else  {
-			    fprintf(stderr, "set fw env to mtdparts=mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)\n");
-			    eval("fw_setenv","mtdparts","mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)");
-			
+				fprintf(stderr,
+					"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
+				eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
+			} else {
+				fprintf(stderr,
+					"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)\n");
+				eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)");
 			}
-			
-		
 		}
 		break;
 	}
