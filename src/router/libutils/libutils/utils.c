@@ -1682,7 +1682,7 @@ void set_smp_affinity(int irq, int cpu)
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", irq);
 }
 
-void set_named_smp_affinity(char *name, int core, int entry)
+void set_named_smp_affinity_mask(char *name, int mask, int entry)
 {
 	FILE *in = fopen("/proc/interrupts", "rb");
 	if (!in)
@@ -1734,8 +1734,25 @@ out:;
 		dd_loginfo(name, "set smp_affinity %d for irq %s\n", 1 << core, irq);
 
 	char s_cpu[32];
-	snprintf(s_cpu, sizeof(s_cpu), "%d", 1 << core);
+	snprintf(s_cpu, sizeof(s_cpu), "%d", mask);
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", atoi(irq));
+}
+
+void set_named_smp_affinity(char *name, int core, int entry)
+{
+	set_named_smp_affinity(name, 1 << core, entry);
+}
+
+void set_named_smp_affinity_list(char *name, char *cpulist, int entry)
+{
+	char var[32];
+	char *next;
+	int mask = 0;
+	foreach(var, cpulist, next)
+	{
+		mask |= 1 << atoi(var);
+	}
+	set_named_smp_affinity_mask(name, mask, entry);
 }
 
 void getPortMapping(int *vlanmap)
