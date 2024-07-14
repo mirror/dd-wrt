@@ -1764,7 +1764,6 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 	sta = sm->sta;
 
 	if (radius_msg_verify(msg, shared_secret, shared_secret_len, req, 1)) {
-				     req, 1)) {
 		wpa_printf(MSG_INFO, "Incoming RADIUS packet did not have correct Message-Authenticator - dropped");
 		return RADIUS_RX_INVALID_AUTHENTICATOR;
 	}
