@@ -62,7 +62,7 @@ clean:
 
 install:
 ifdef TARGET
-	cp $(TARGET) $(INSTALL_ROOT)
+	cp $(TARGET) $(INSTALLDIR)/qca-nss/usr/sbin
 endif	
 
 .PHONY: all clean install

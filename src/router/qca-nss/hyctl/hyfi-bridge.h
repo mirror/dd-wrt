@@ -1,10 +1,4 @@
 /*
- * Copyright (c) 2012, 2014-2016, 2018 Qualcomm Technologies, Inc.
- * All Rights Reserved.
- * Confidential and Proprietary - Qualcomm Technologies, Inc.
- */
-
-/*
  *  Copyright (c) 2010 Atheros Communications Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
