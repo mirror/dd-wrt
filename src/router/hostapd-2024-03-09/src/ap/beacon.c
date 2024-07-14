@@ -2522,6 +2522,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	}
 #endif /* CONFIG_IEEE80211BE */
 
+	params->beacon_tx_mode = hapd->conf->beacon_tx_mode;
+
 	return 0;
 }
 
@@ -2710,8 +2712,6 @@ int ieee802_11_set_beacon(struct hostapd_data *hapd)
 				__ieee802_11_set_beacon(other->bss[i]);
 		}
 	}
-
-	params->beacon_tx_mode = hapd->conf->beacon_tx_mode;
 
 	return 0;
 }
