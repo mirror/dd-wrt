@@ -993,7 +993,7 @@ void start_sysinit(void)
 		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
 		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 		eval("ssdk_sh", "fdb", "entry", "flush", "1");
-		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_ASUS_AX89X:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
@@ -1014,7 +1014,7 @@ void start_sysinit(void)
 		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
 		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 		eval("ssdk_sh", "fdb", "entry", "flush", "1");
-		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
 	}
