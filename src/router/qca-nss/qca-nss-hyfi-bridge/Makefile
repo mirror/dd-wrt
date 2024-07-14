@@ -14,7 +14,7 @@ TARGET := hyfi-bridging
 # Kernel directory - This works only for the host.
 # The target kernel is different, and it can't be detected.
 ifndef KERNELPATH
-KERNELPATH := /lib/modules/$(shell uname -r)/build
+KERNELPATH := $(LINUXDIR)
 endif
 
 HYFI_NF := ./hyfi-netfilter
