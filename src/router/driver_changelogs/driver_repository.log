@@ -1,4 +1,24 @@
 ------------------------------------------------------------------------
+r7953 | brainslayer | 2024-07-14 12:36:42 +0700 (Sun, 14 Jul 2024) | 1 line
+
+change default txmode
+------------------------------------------------------------------------
+r7952 | brainslayer | 2024-07-14 12:36:03 +0700 (Sun, 14 Jul 2024) | 1 line
+
+change default txmode
+------------------------------------------------------------------------
+r7951 | brainslayer | 2024-07-14 11:52:26 +0700 (Sun, 14 Jul 2024) | 1 line
+
+add beacon burst mode
+------------------------------------------------------------------------
+r7950 | brainslayer | 2024-07-14 11:49:01 +0700 (Sun, 14 Jul 2024) | 1 line
+
+new attribute
+------------------------------------------------------------------------
+r7949 | brainslayer | 2024-07-14 09:59:41 +0700 (Sun, 14 Jul 2024) | 1 line
+
+disable ethernetmode for wds frames. nss core doesnt seem to support it correct
+------------------------------------------------------------------------
 r7948 | brainslayer | 2024-07-14 04:19:24 +0700 (Sun, 14 Jul 2024) | 1 line
 
 use most recent firmware for qca6018. everything older crashes
