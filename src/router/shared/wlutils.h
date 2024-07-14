@@ -62,7 +62,7 @@ void security_allow(char *iface);
 
 void kick_mac(char *iface, char *mac);
 
-extern int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw);
+extern int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw);
 extern int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw);
 
 /*

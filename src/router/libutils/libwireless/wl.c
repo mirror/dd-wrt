@@ -1330,14 +1330,14 @@ long long wifi_getrate(char *ifname)
 		case 160:
 			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
 			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
-				rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
+				rate = HETxRate(mcs, novht ? -1 : vhtmcs, interface->width);
 			else
 				rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, interface->width);
 			break;
 		case 8080:
 			if (has_ax(physical) && !nvram_nmatch("ac-only", "%s_net_mode", physical) &&
 			    !nvram_nmatch("acn-mixed", "%s_net_mode", physical))
-				rate = HETxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
+				rate = HETxRate(mcs, novht ? -1 : vhtmcs, 160);
 			else
 				rate = VHTTxRate(mcs, novht ? -1 : vhtmcs, sgi, 160);
 			break;
@@ -3807,13 +3807,14 @@ static int HTtoVHTindex(int mcs)
 	return 0;
 }
 
-int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
+int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw)
 {
 	if (vhtmcs == -1) {
 		vhtmcs = HTtoVHTindex(mcs);
 	}
+	int sgi = 0;
 	mcs = vhtmcs;
-
+	
 #define SCALE 6144
 	unsigned long long mcs_divisors[14] = {
 		102399, /* 16.666666... */
