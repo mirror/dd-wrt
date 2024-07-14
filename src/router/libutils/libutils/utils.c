@@ -1740,7 +1740,7 @@ out:;
 
 void set_named_smp_affinity(char *name, int core, int entry)
 {
-	set_named_smp_affinity(name, 1 << core, entry);
+	set_named_smp_affinity_mask(name, 1 << core, entry);
 }
 
 void set_named_smp_affinity_list(char *name, char *cpulist, int entry)
