@@ -1623,6 +1623,8 @@ int writeprocsys(char *path, char *value);
 
 void set_smp_affinity(int irq, int cpu);
 void set_named_smp_affinity(char *name, int core, int entry);
+void set_named_smp_affinity_mask(char *name, int mask, int entry);
+void set_named_smp_affinity_list(char *name, char *cpulist, int entry);
 
 int writevaproc(char *value, char *fmt, ...);
 
