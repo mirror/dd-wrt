@@ -24,7 +24,7 @@
 #include "hyfi_netlink.h"
 #include "hyfi_bridge.h"
 #include "hyfi_hatbl.h"
-#include "mc_snooping.h"
+#include "mc_snooping2.h"
 /* ref_port_ctrl.h and ref_fdb.h header file is  platform dependent code and this
    is not required for 3rd party platform. So avoided this header file inclusion
    by the flag HYFI_DISABLE_SSDK_SUPPORT

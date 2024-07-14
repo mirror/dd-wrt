@@ -21,8 +21,8 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/etherdevice.h>
-#include "mc_private.h"
-#include "mc_snooping.h"
+#include "mc_private2.h"
+#include "mc_snooping2.h"
 #include "hyfi_netfilter.h"
 #include "hyfi_filters.h"
 #include "hyfi_hatbl.h"

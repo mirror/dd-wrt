@@ -11,10 +11,10 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include "mc_netfilter.h"
-#include "mc_netlink.h"
-#include "mc_snooping.h"
-#include "mc_forward.h"
+#include "mc_netfilter2.h"
+#include "mc_netlink2.h"
+#include "mc_snooping2.h"
+#include "mc_forward2.h"
 
 int __init mc_init(void)
 {

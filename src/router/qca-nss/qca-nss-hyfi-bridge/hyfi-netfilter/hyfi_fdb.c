@@ -24,7 +24,7 @@
 #include <linux/rculist.h>
 #include <linux/spinlock.h>
 #include <linux/etherdevice.h>
-#include <mc_private.h>
+#include <mc_private2.h>
 #include "hyfi_netfilter.h"
 #include "hyfi_netlink.h"
 #include "hyfi_bridge.h"

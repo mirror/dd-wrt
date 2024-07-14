@@ -16,9 +16,9 @@
 #include <net/inet_ecn.h>
 #include <linux/netfilter_bridge.h>
 
-#include "mc_snooping.h"
-#include "mc_private.h"
-#include "mc_api.h"
+#include "mc_snooping2.h"
+#include "mc_private2.h"
+#include "mc_api2.h"
 #include "hyfi_osdep.h"
 
 /*TODO: cleanup for multicast hook */

@@ -27,7 +27,7 @@
 #include "hyfi_bridge.h"
 #include "hyfi_fdb.h"
 #ifndef HYFI_MC_STANDALONE_NF
-#include "mc_netfilter.h"
+#include "mc_netfilter2.h"
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))

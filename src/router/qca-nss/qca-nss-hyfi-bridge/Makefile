@@ -25,11 +25,8 @@ INCLUDES := -I$(CURDIR) \
     -I$(KERNELPATH)/include/linux \
     -I$(KERNELPATH)/include/asm \
     -I$(KERNELPATH)/net/bridge \
-    -I$(KBUILDPATH)/include/linux \
-    -I$(KBUILDPATH)/include/asm \
-    -I$(KBUILDPATH)/net/bridge \
-    -I$(MDIR)/$(HYFI_NF) \
-    -I$(MDIR)/$(HYFI_MC) \
+    -I$(TOP)/qca-nss/qca-nss-hyfi-bridge/$(HYFI_NF) \
+    -I$(TOP)/qca-nss/qca-nss-hyfi-bridge/$(HYFI_MC) \
     -I$(STAGING_DIR)/usr/include/qca-ssdk
 
 ifeq ($(strip ${HYFI_BRIDGE_EMESH_ENABLE}),1)
@@ -39,7 +36,7 @@ INCLUDES+= -I$(STAGING_DIR)/usr/include/emesh-sp
 endif
 endif
 
-export EXTRA_CFLAGS += $(INCLUDES)
+EXTRA_CFLAGS += $(INCLUDES)
 
 ifeq ($(CONFIG_BUILD_YOCTO),y)
 EXTRA_CFLAGS += $(HYFI_CFLAGS)
@@ -47,6 +44,7 @@ endif
 
 # Module extra compilation flags
 EXTRA_CFLAGS += -Werror -Wall -Wno-error=implicit-fallthrough -g $(QCACFLAGS)
+ccflags-y+= $(INCLUDES)
 
 ifeq ($(strip ${HYBRID_MC_MLD}),1)
 ccflags-y+=-DHYBRID_MC_MLD

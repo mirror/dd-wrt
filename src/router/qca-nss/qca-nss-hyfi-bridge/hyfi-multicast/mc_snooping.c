@@ -30,9 +30,9 @@
 #include <linux/if_bridge.h>
 #include <net/inet_ecn.h>
 
-#include "mc_private.h"
+#include "mc_private2.h"
 #include "mc_netlink.h"
-#include "mc_forward.h"
+#include "mc_forward2.h"
 #include "hyfi_bridge.h"
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))

@@ -22,10 +22,10 @@
 #include <linux/etherdevice.h>
 #include "hyfi_api.h"
 #include "hyfi_bridge.h"
-#include "mc_api.h"
-#include "mc_private.h"
-#include "mc_snooping.h"
-#include "mc_ecm.h"
+#include "mc_api2.h"
+#include "mc_private2.h"
+#include "mc_snooping2.h"
+#include "mc_ecm2.h"
 
 static hyfi_bridge_ipv4_mc_update_callback_t __rcu hyfi_ipv4_mc_event_cb = NULL;
 static hyfi_bridge_ipv6_mc_update_callback_t __rcu hyfi_ipv6_mc_event_cb = NULL;

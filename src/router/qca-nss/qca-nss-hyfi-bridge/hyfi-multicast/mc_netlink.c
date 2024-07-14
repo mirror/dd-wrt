@@ -15,8 +15,8 @@
 
 #include "hyfi_api.h"
 #include "hyfi_bridge.h"
-#include "mc_api.h"
-#include "mc_snooping.h"
+#include "mc_api2.h"
+#include "mc_snooping2.h"
 #include "mc_netlink.h"
 
 static struct sock *mc_nl_sk = NULL;

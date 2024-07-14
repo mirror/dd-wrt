@@ -20,8 +20,8 @@
 #include <linux/timer.h>
 #include <net/inet_ecn.h>
 
-#include "mc_private.h"
-#include "mc_snooping.h"
+#include "mc_private2.h"
+#include "mc_snooping2.h"
 #include "hyfi_osdep.h"
 #include "hyfi_bridge.h"
 #include "hyfi_hatbl.h"
