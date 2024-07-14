@@ -810,10 +810,6 @@ void start_sysinit(void)
 
 		break;
 	}
-	set_named_smp_affinity("eth0", 0, 1);
-	set_named_smp_affinity("eth1", 1, 1);
-	set_named_smp_affinity("ath10k_pci", 0, 1);
-	set_named_smp_affinity("ath10k_pci", 1, 2);
 
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
@@ -823,6 +819,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 1);
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 2, 1);
+		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 	case ROUTER_LINKSYS_EA8300:
 		nvram_seti("sw_cpuport", 0);
@@ -831,6 +831,10 @@ void start_sysinit(void)
 		nvram_seti("sw_lan2", 3);
 		nvram_seti("sw_lan3", 2);
 		nvram_seti("sw_lan4", 1);
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 2, 1);
+		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
@@ -854,6 +858,10 @@ void start_sysinit(void)
 		}
 */
 #endif /*HAVE_ANTAIRA */
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 2, 1);
+		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 		/* routers with reverse port order */
 	case ROUTER_NETGEAR_R7800:
@@ -873,6 +881,10 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 0, 1);
+		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	case ROUTER_ASROCK_G10:
 		nvram_seti("sw_wancpuport", 0);
@@ -889,6 +901,10 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 0, 1);
+		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	case ROUTER_LINKSYS_EA8500:
 	default:
@@ -906,6 +922,10 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "600000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+		set_named_smp_affinity("eth0", 0, 1);
+		set_named_smp_affinity("eth1", 1, 1);
+		set_named_smp_affinity("ath10k_pci", 0, 1);
+		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	}
 
