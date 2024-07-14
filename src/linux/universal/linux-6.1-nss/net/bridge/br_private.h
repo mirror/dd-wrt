@@ -20,6 +20,7 @@
 #include <linux/rhashtable.h>
 #include <linux/refcount.h>
 #include <net/netns/generic.h>
+#include <linux/export.h>
 
 #define BR_HASH_BITS 8
 #define BR_HASH_SIZE (1 << BR_HASH_BITS)
@@ -1749,6 +1750,17 @@ static inline bool br_vlan_can_enter_range(const struct net_bridge_vlan *v_curr,
 static inline u16 br_vlan_flags(const struct net_bridge_vlan *v, u16 pvid)
 {
 	return 0;
+}
+
+#define __br_get( __hook, __default, __args ... ) \
+		(__hook ? (__hook( __args )) : (__default))
+
+static inline void __br_notify(int group, int type, const void *data)
+{
+	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
+
+	if (notify_hook)
+		notify_hook(group, type, data);
 }
 
 #endif

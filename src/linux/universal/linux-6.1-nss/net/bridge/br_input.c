@@ -36,6 +36,10 @@ EXPORT_SYMBOL_GPL(br_pass_frame_up);
 br_multicast_handle_hook_t __rcu *br_multicast_handle_hook __read_mostly;
 EXPORT_SYMBOL_GPL(br_multicast_handle_hook);
 
+/* Hook for external forwarding logic */
+br_get_dst_hook_t __rcu *br_get_dst_hook __read_mostly;
+EXPORT_SYMBOL_GPL(br_get_dst_hook);
+
 int br_pass_frame_up(struct sk_buff *skb, bool promisc)
 {
 	struct net_device *indev, *brdev = BR_INPUT_SKB_CB(skb)->brdev;
@@ -94,6 +98,8 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 	br_multicast_handle_hook_t *multicast_handle_hook;
 	u16 vid = 0;
 	u8 state;
+	struct net_bridge_port *pdst = NULL;
+	br_get_dst_hook_t *get_dst_hook = rcu_dereference(br_get_dst_hook);
 
 	if (!p)
 		goto drop;
@@ -193,8 +199,16 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 		}
 		break;
 	case BR_PKT_UNICAST:
-		dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
-		break;
+		/* QCA qca-mcs support - Start */
+		pdst = __br_get(get_dst_hook, NULL, p, &skb);
+		if (pdst) {
+			if (!skb)
+				goto out;
+		} else {
+		/* QCA qca-mcs support - End */
+			dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
+		}
+
 	default:
 		break;
 	}
@@ -210,6 +224,12 @@ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb
 		br_forward(dst->dst, skb, local_rcv, false);
 	} else {
 		br_offload_skb_disable(skb);
+	  /* QCA qca-mcs support - Start */
+		if (pdst) {
+			br_forward(pdst, skb, local_rcv, false);
+			goto out;
+		}
+		/* QCA qca-mcs support - End */
 		if (!mcast_hit)
 			br_flood(br, skb, pkt_type, local_rcv, false);
 		else

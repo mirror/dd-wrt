@@ -267,6 +267,8 @@ static void fdb_notify(struct net_bridge *br,
 		kfree_skb(skb);
 		goto errout;
 	}
+
+	__br_notify(RTNLGRP_NEIGH, type, fdb); /* QCA qca-mcs support */
 	rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
 	return;
 errout:
@@ -333,6 +335,7 @@ struct net_bridge_fdb_entry *br_fdb_find_rcu(struct net_bridge *br,
 {
 	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
 }
+EXPORT_SYMBOL_GPL(br_fdb_find_rcu); /* QCA qca-mcs support */
 
 EXPORT_SYMBOL(br_fdb_find_rcu);
 
