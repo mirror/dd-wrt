@@ -105,6 +105,7 @@ all:
 ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
 	$(MAKE) -C nssinfo KERNEL_FLAGS="$(KERNEL_FLAGS)"
+	$(MAKE) -C hyctl hyctl
 
 	cp qca-nss-dp/hal/soc_ops/ipq60xx/nss_ipq60xx.h qca-nss-dp/exports/nss_dp_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"

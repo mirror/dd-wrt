@@ -1,0 +1,24 @@
+GWTOP = $(TOPDIR)/apps/gateway
+
+
+HYFIDIR ?= $(TOP)/qca-nss/qca-nss-hyfi-bridge/hyfi-netfilter
+HYFIMCDIR ?= $(TOP)/qca-nss/qca-nss-hyfi-bridge/hyfi-multicast
+
+# gateway: Where to install include files
+GW_INSTALL_ROOT := $(GWTOP)/install
+GWINCLUDE ?= $(GW_INSTALL_ROOT)/include
+GWLIB ?= $(INSTALL_ROOT)/lib
+
+HYFIBRLIBDIR ?= $(GWINCLUDE)
+
+CFLAGS += -I. -I $(GWINCLUDE) \
+          -I $(KERNELPATH)/include -I $(HYFIDIR) -I $(HYFIMCDIR)\
+          -I $(HYTOP)/src -I .
+
+LDFLAGS += -L $(GWLIB)
+
+#LIBS += -lhyfi-bridge 
+
+# Generate dependencies and symbols
+CFLAGS += -MMD -g
+-include $(wildcard *.d)
