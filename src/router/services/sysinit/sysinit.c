@@ -3106,6 +3106,11 @@ void load_drivers(int boot)
 		}
 	}
 #endif
+#ifdef HAVE_IPQ6018
+	if (nvram_matchi("usb_enable", 1)) {
+		set_named_smp_affinity_list("xhci-hcd:usb1", "1 3", 1);
+	}
+#endif
 }
 
 void start_drivers_net(void)
