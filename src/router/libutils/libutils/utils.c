@@ -1731,7 +1731,7 @@ void set_named_smp_affinity_mask(char *name, int mask, int entry)
 out:;
 	fclose(in);
 	if (nvram_match("console_debug", "1"))
-		dd_loginfo(name, "set smp_affinity %d for irq %s\n", 1 << core, irq);
+		dd_loginfo(name, "set smp_affinity mask %d for irq %s\n", mask, irq);
 
 	char s_cpu[32];
 	snprintf(s_cpu, sizeof(s_cpu), "%d", mask);
