@@ -105,8 +105,6 @@ all:
 ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C lib KERNEL_FLAGS="$(KERNEL_FLAGS)"
 	$(MAKE) -C nssinfo KERNEL_FLAGS="$(KERNEL_FLAGS)"
-	$(MAKE) -C hyctl hyctl
-	$(MAKE) -C hyctl install
 
 	cp qca-nss-dp/hal/soc_ops/ipq60xx/nss_ipq60xx.h qca-nss-dp/exports/nss_dp_arch.h
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-dp modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
@@ -320,6 +318,8 @@ else
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
+	$(MAKE) -C hyctl hyctl
+	$(MAKE) -C hyctl install
 endif
 
 clean:
