@@ -188,6 +188,13 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 
 int getassoclist(char *name, unsigned char *list);
 
+#ifdef HAVE_IPQ6018
+#define DEFAULT_BF 1
+#else
+#define DEFAULT_BF 0
+#endif
+
+
 #define INFO_UPTIME 0
 #define INFO_RSSI 1
 #define INFO_NOISE 2
