@@ -2273,6 +2273,7 @@ static void hostapd_event_wds_sta_interface_status(struct hostapd_data *hapd,
 		WDS_STA_INTERFACE_ADDED : WDS_STA_INTERFACE_REMOVED,
 		ifname, MAC2STR(addr));
 }
+#ifdef CONFIG_IEEE80211AX
 
 static void hostapd_event_update_muedca_params(struct hostapd_data *hapd,
 					       struct update_muedca *params)
@@ -2315,7 +2316,7 @@ static void hostapd_event_update_muedca_params(struct hostapd_data *hapd,
 		wpa_printf(MSG_WARNING,
 			   "Failed to update beacons with MU-EDCA parameters");
 }
-
+#endif
 #ifdef CONFIG_OWE
 static int hostapd_notif_update_dh_ie(struct hostapd_data *hapd,
 				      const u8 *peer, const u8 *ie,
@@ -2724,10 +2725,10 @@ void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
 			hapd->iface->conf->he_op.he_bss_color = hapd->cca_color;
 		hostapd_cleanup_cca_params(hapd);
 		break;
-#endif /* CONFIG_IEEE80211AX */
 	case EVENT_UPDATE_MUEDCA_PARAMS:
 		 hostapd_event_update_muedca_params(hapd, &data->update_muedca);
 		 break;
+#endif /* CONFIG_IEEE80211AX */
 	default:
 		wpa_printf(MSG_DEBUG, "Unknown event %d", event);
 		break;

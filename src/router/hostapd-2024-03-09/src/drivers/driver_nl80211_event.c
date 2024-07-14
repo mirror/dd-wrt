@@ -3641,6 +3641,7 @@ static void nl80211_sta_opmode_change_event(struct wpa_driver_nl80211_data *drv,
 
 	wpa_supplicant_event(drv->ctx, EVENT_STATION_OPMODE_CHANGED, &ed);
 }
+#ifdef CONFIG_IEEE80211AX
 
 static void nl80211_update_muedca_params_event(struct wpa_driver_nl80211_data *drv,
 					    struct nlattr **tb)
@@ -3671,6 +3672,7 @@ static void nl80211_update_muedca_params_event(struct wpa_driver_nl80211_data *d
 
 	wpa_supplicant_event(drv->ctx, EVENT_UPDATE_MUEDCA_PARAMS, &ed);
 }
+#endif
 
 static void nl80211_control_port_frame(struct wpa_driver_nl80211_data *drv,
 				       struct nlattr **tb)
@@ -4111,12 +4113,12 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
 	case NL80211_CMD_COLOR_CHANGE_COMPLETED:
 		nl80211_color_change_announcement_completed(bss);
 		break;
+	case NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS:
+		nl80211_update_muedca_params_event(drv, tb);
+		break;
 #endif /* CONFIG_IEEE80211AX */
 	case NL80211_CMD_LINKS_REMOVED:
 		wpa_supplicant_event(drv->ctx, EVENT_LINK_RECONFIG, NULL);
-		break;
-	case NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS:
-		nl80211_update_muedca_params_event(drv, tb);
 		break;
 	default:
 		wpa_dbg(drv->ctx, MSG_DEBUG, "nl80211: Ignored unknown event "

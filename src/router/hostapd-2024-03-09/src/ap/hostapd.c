@@ -4205,10 +4205,11 @@ static int hostapd_fill_csa_settings(struct hostapd_data *hapd,
 	hapd->cs_count = settings->cs_count;
 	hapd->cs_block_tx = settings->block_tx;
 
+#ifdef CONFIG_IEEE80211AX
 	 /* reset MU-EDCA and WME EDCA parameter set count */
 	 hapd->iface->conf->he_mu_edca.he_qos_info &= 0xfff0;
 	 hapd->parameter_set_count = 0;
-
+#endif
 	ret = hostapd_build_beacon_data(hapd, &settings->beacon_csa);
 	if (ret) {
 		free_beacon_data(&settings->beacon_after);
