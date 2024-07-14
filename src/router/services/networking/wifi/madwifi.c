@@ -381,13 +381,13 @@ void addvhtcaps(char *prefix, FILE *fp)
 			char cbw[32];
 			sprintf(cbw, "%s_channelbw", prefix);
 			mask = 0;
-			if (nvram_default_matchi(subf, 0, 0)) {
+			if (nvram_default_matchi(subf, 0, DEFAULT_BF)) {
 				mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
 				mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
 				mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
 				mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
 			}
-			if (nvram_default_matchi(mubf, 0, 0)) {
+			if (nvram_default_matchi(mubf, 0, DEFAULT_BF)) {
 				mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
 				mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
 			}

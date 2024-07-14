@@ -1071,7 +1071,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
 
 	caps = mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
 				    (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0,
-				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
+				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF), nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
@@ -2341,8 +2341,8 @@ int vhtcaps_main(int argc, char *argv[])
 	sprintf(subf, "%s_subf", maininterface);
 	char *caps = mac80211_get_vhtcaps(maininterface, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
 					  (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0,
-					  usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, 0),
-					  nvram_default_matchi(mubf, 1, 0));
+					  usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
+					  nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
 }
 
