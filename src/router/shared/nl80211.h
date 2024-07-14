@@ -3366,6 +3366,8 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_HE_MUEDCA_PARAMS,
 
+	NL80211_ATTR_BEACON_TX_MODE,
+
 	/* add attributes here, update the policy in nl80211.c */
 
 	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
