@@ -1752,9 +1752,6 @@ static inline u16 br_vlan_flags(const struct net_bridge_vlan *v, u16 pvid)
 	return 0;
 }
 
-#define __br_get( __hook, __default, __args ... ) \
-		(__hook ? (__hook( __args )) : (__default))
-
 static inline void __br_notify(int group, int type, const void *data)
 {
 	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);

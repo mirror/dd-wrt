@@ -335,8 +335,6 @@ struct net_bridge_fdb_entry *br_fdb_find_rcu(struct net_bridge *br,
 {
 	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
 }
-EXPORT_SYMBOL_GPL(br_fdb_find_rcu); /* QCA qca-mcs support */
-
 EXPORT_SYMBOL(br_fdb_find_rcu);
 
 /* When a static FDB entry is added, the mac address from the entry is
