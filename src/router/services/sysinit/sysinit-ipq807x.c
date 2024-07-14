@@ -975,7 +975,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_DYNALINK_DLWRX36:
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
@@ -996,7 +996,7 @@ void start_sysinit(void)
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_ASUS_AX89X:
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
