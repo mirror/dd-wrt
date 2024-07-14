@@ -54,7 +54,7 @@ ifeq ($(strip ${PLC_SUPPORT_NETFILTER}),1)
 ccflags-y+=-DPLC_NF_ENABLE
 endif
 
-ifeq ($(strip ${DISABLE_SSDK_SUPPORT}),1)
+ifneq ($(CONFIG_ARM64),y)
 ccflags-y+=-DHYFI_DISABLE_SSDK_SUPPORT
 endif
 

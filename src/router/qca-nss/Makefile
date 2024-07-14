@@ -24,7 +24,7 @@ else
 CFI_CRYPTOAPI_DIR:=cryptoapi/v1.1
 CFI_OCF_DIR:=ocf/v1.0
 CFI_IPSEC_DIR:=ipsec/v1.0
-KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK -DWEAK=__weak
+KERNEL_FLAGS=-I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-ssdk/include -I$(TOP)/qca-nss/qca-ssdk/include/common -I$(TOP)/qca-nss/qca-ssdk/include/sal/os  -I$(TOP)/qca-nss/qca-ssdk/include/sal/os/linux -I$(TOP)/qca-nss/qca-nss-gmac/ipq806x/exports -I$(TOP)/qca-nss/qca-nss-crypto/v1.0/include -I$(TOP)/qca-nss/shortcut-fe/exports -I$(TOP)/qca-nss/qca-nss-mcs -I$(TOP)/qca-nss/qca-ovsmgr/exports -I$(LINUXDIR)/net/openvswitch -I$(TOP)/qca-nss/qca-nss-hyfi-bridge/hyfi-netfilter -DNSS_DEBUG_LEVEL=0 -DNDEBUG=1 -UCONFIG_NOPRINTK -DWEAK=__weak
 NSS_CRYPTO_DIR:=v1.0
 # DTLS Manager v1.0 for Akronite.
 DTLSMGR_DIR:=v1.0
@@ -154,6 +154,7 @@ else
 		NSS_CRYPTO_DIR=$(NSS_CRYPTO_DIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x"
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard modules MODPROBE=true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_HYFI_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x"
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge modules MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
 endif
 
 install:
@@ -265,8 +266,8 @@ ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" tunipip6=y tlsmgr=y  pppoe=y vxlanmgr=y pptp=y l2tpv2=y  qdisc=y vlan-mgr=y netlink=y bridge-mgr=y lag-mgr=y ovsmgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb clean modules install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra 
