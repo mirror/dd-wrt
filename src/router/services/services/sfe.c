@@ -41,6 +41,8 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		rmmod("ecm");
+
+		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
 		sysprintf("echo 1 > /sys/fast_classifier/skip_to_bridge_ingress");
 #if !defined(HAVE_IPQ6018)
@@ -55,6 +57,7 @@ void start_sfe(void)
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop");
 		sysprintf("echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all");
 		rmmod("ecm");
+		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "1");
 #if !defined(HAVE_IPQ6018)
@@ -67,6 +70,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
+		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=1");
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
@@ -78,6 +82,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
+		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=2");
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
@@ -89,6 +94,7 @@ void start_sfe(void)
 		rmmod("shortcut-fe");
 		writeproc("/proc/ctf", "0");
 		eval("insmod", "qca-nss-sfe");
+		insmod("hyfi-bridging");
 		eval("insmod", "ecm", "front_end_selection=4");
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
@@ -107,6 +113,7 @@ void start_sfe(void)
 #endif
 
 		rmmod("ecm");
+		rmmod("hyfi-bridging");
 		rmmod("qca-nss-sfe");
 		writeproc("/proc/ctf", "0");
 	}
@@ -126,6 +133,7 @@ void stop_sfe(void)
 	sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
 	rmmod("ecm");
+	rmmod("hyfi-bridging");
 	rmmod("qca-nss-sfe");
 	writeproc("/proc/ctf", "0");
 	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
