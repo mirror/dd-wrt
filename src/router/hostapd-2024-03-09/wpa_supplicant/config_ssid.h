@@ -47,6 +47,7 @@
 #define DEFAULT_AMPDU_DENSITY -1 /* no change */
 #define DEFAULT_USER_SELECTED_SIM 1
 #define DEFAULT_MAX_OPER_CHWIDTH -1
+#define DEFAULT_BEACON_TX_MODE 0
 
 /* Consider global sae_pwe for SAE mechanism for PWE derivation */
 #define DEFAULT_SAE_PWE SAE_PWE_NOT_SET
@@ -1274,6 +1275,13 @@ struct wpa_ssid {
 	 * to use the interface in a bridge.
 	 */
 	int enable_4addr_mode;
+
+	/**
+	 * beacon_tx_mode - Beacon Tx mode
+	 * 1 = STAGGERED MODE
+	 * 2 = BURST MODE
+	 */
+	int beacon_tx_mode;
 };
 
 #endif /* CONFIG_SSID_H */

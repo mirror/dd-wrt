@@ -2711,6 +2711,8 @@ int ieee802_11_set_beacon(struct hostapd_data *hapd)
 		}
 	}
 
+	params->beacon_tx_mode = hapd->conf->beacon_tx_mode;
+
 	return 0;
 }
 

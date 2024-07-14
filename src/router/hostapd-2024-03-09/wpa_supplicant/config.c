@@ -2912,6 +2912,7 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(sae_pk, 0, 2) },
 	{ INT_RANGE(disable_eht, 0, 1)},
 	{ INT_RANGE(enable_4addr_mode, 0, 1)},
+	{ INT_RANGE(beacon_tx_mode, 1, 2)},
 };
 
 #undef OFFSET
@@ -3436,6 +3437,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 #endif /* CONFIG_MACSEC */
 	ssid->mac_addr = WPAS_MAC_ADDR_STYLE_NOT_SET;
 	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
+	ssid->beacon_tx_mode = DEFAULT_BEACON_TX_MODE;
 }
 
 

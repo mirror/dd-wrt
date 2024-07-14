@@ -978,6 +978,7 @@ struct hostapd_bss_config {
 	bool mld_indicate_disabled;
 #endif /* CONFIG_TESTING_OPTIONS */
 #endif /* CONFIG_IEEE80211BE */
+	int beacon_tx_mode;
 };
 
 /**
