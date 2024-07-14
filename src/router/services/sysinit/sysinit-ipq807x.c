@@ -561,15 +561,16 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("edma_rxdesc", 3, 1);
 			set_named_smp_affinity("edma_misc", 3, 1);
 
-			set_named_smp_affinity("nss_queue0", 1, 1);
-			set_named_smp_affinity("nss_queue1", 2, 1);
-			set_named_smp_affinity("nss_queue2", 3, 1);
-			set_named_smp_affinity("nss_queue3", 0, 1);
+			set_named_smp_affinity_list("nss_queue0", "0 1 2 3", 1);
+			set_named_smp_affinity("nss_queue1", 1, 1);
+			set_named_smp_affinity("nss_queue2", 2, 1);
+			set_named_smp_affinity("nss_queue3", 3, 1);
 
-			set_named_smp_affinity("nss_queue0", 2, 2);
-			set_named_smp_affinity("nss_empty_buf_sos", 3, 1);
-			set_named_smp_affinity("nss_empty_buf_queue", 3, 1);
-			set_named_smp_affinity("nss_empty_buf_sos", 2, 2);
+			set_named_smp_affinity("nss_queue0", 3, 2);
+
+			set_named_smp_affinity_list("nss_empty_buf_sos", "1 2 3", 1);
+			set_named_smp_affinity_list("nss_empty_buf_queue", "2 3", 1);
+			set_named_smp_affinity("nss_empty_buf_sos", 3, 2);
 
 			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
 			set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
