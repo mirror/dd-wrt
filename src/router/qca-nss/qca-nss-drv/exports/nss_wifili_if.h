@@ -1444,8 +1444,6 @@ struct nss_wifili_rx_ctrl_stats {
 	uint32_t bcast_rcv_bytes;		/**< Total number of broadcast bytes received. */
 	uint32_t defrag_mcast_drop;		/**< Total number of defrag multicast dropped packets. */
 	uint32_t mcast_3addr_drop;		/**< Total number of 3 address multicast dropped packets. */
-	uint32_t ucast_rcv_cnt;			/**< Total number of unicast packets received. */
-	uint32_t ucast_rcv_bytes;		/**< Total number of unicast bytes received. */
 };
 
 /**
@@ -1457,8 +1455,6 @@ struct nss_wifili_retry_ctrl_stats {
 	uint32_t tx_retry_count;		/**< Transmit retry count. */
 	uint32_t tx_multiple_retry_count;	/**< Transmit multiple retry count. */
 	uint32_t rx_retry_count;		/**< Receive retry count. */
-	uint32_t tx_mpdu_retry_count;		/**< Per mpdu retry count. */
-	uint32_t tx_mpdu_total_retry_count;	/**< Total mpdu retry count. */
 };
 
 /**

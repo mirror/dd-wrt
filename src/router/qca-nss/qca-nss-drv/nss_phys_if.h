@@ -284,7 +284,7 @@ nss_tx_status_t nss_phys_if_link_state(struct nss_ctx_instance *nss_ctx, uint32_
  *
  * @return nss_tx_status_t Tx status
  */
-nss_tx_status_t nss_phys_if_mac_addr(struct nss_ctx_instance *nss_ctx, uint8_t *addr, uint32_t if_num);
+nss_tx_status_t nss_phys_if_mac_addr(struct nss_ctx_instance *nss_ctx, const uint8_t *addr, uint32_t if_num);
 
 /**
  * @brief Send MTU change notification to NSS

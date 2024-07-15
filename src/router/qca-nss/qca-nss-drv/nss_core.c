@@ -2239,7 +2239,7 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 		nss_core_init_nss(nss_ctx, if_map);
 		nss_send_ddr_info(nss_ctx);
 
-		nss_info_always("%px: nss core %d booted successfully\n", nss_ctx, nss_ctx->id);
+		dev_info(nss_ctx->dev, "NSS core %d booted successfully\n", nss_ctx->id);
 		nss_top = nss_ctx->nss_top;
 
 #ifdef NSS_DRV_C2C_ENABLE

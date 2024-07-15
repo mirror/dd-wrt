@@ -1300,11 +1300,11 @@ static int nss_n2h_mitigationcfg_core0_handler(struct ctl_table *ctl, int write,
 	}
 
 	if (!nss_n2h_core0_mitigation_cfg) {
-		printk(KERN_INFO "Disabling NSS MITIGATION\n");
+		dev_info(nss_ctx->dev, "Disabling NSS MITIGATION\n");
 		nss_n2h_mitigation_cfg(nss_ctx, 0, NSS_CORE_0);
 		return 0;
 	}
-	printk(KERN_INFO "Invalid input value.Valid value is 0, Runtime re-enabling not supported\n");
+	dev_info(nss_ctx->dev, "Invalid input value.Valid value is 0, Runtime re-enabling not supported\n");
 	return -EINVAL;
 }
 
@@ -1331,11 +1331,11 @@ static int nss_n2h_mitigationcfg_core1_handler(struct ctl_table *ctl, int write,
 	}
 
 	if (!nss_n2h_core1_mitigation_cfg) {
-		printk(KERN_INFO "Disabling NSS MITIGATION\n");
+		dev_info(nss_ctx->dev, "Disabling NSS MITIGATION\n");
 		nss_n2h_mitigation_cfg(nss_ctx, 0, NSS_CORE_1);
 		return 0;
 	}
-	printk(KERN_INFO "Invalid input value.Valid value is 0, Runtime re-enabling not supported\n");
+	dev_info(nss_ctx->dev, "Invalid input value.Valid value is 0, Runtime re-enabling not supported\n");
 	return -EINVAL;
 }
 
@@ -1367,14 +1367,14 @@ static int nss_n2h_buf_cfg_core0_handler(struct ctl_table *ctl, int write, void 
 	}
 
 	if ((nss_n2h_core0_add_buf_pool_size >= 1) && (nss_n2h_core0_add_buf_pool_size <= NSS_N2H_MAX_BUF_POOL_SIZE)) {
-		printk(KERN_INFO "configuring additional NSS pbufs\n");
+		dev_info(nss_ctx->dev, "Configuring additional NSS pbufs\n");
 		ret = nss_n2h_buf_pool_cfg(nss_ctx, nss_n2h_core0_add_buf_pool_size, NSS_CORE_0);
 		nss_n2h_core0_add_buf_pool_size = nss_ctx->buf_sz_allocated;
-		printk(KERN_INFO "additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
+		dev_info(nss_ctx->dev, "Additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
 		return ret;
 	}
 
-	printk(KERN_INFO "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
+	dev_info(nss_ctx->dev, "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
 	return -EINVAL;
 }
 
@@ -1406,14 +1406,14 @@ static int nss_n2h_buf_cfg_core1_handler(struct ctl_table *ctl, int write, void 
 	}
 
 	if ((nss_n2h_core1_add_buf_pool_size >= 1) && (nss_n2h_core1_add_buf_pool_size <= NSS_N2H_MAX_BUF_POOL_SIZE)) {
-		printk(KERN_INFO "configuring additional NSS pbufs\n");
+		dev_info(nss_ctx->dev, "Configuring additional NSS pbufs\n");
 		ret = nss_n2h_buf_pool_cfg(nss_ctx, nss_n2h_core1_add_buf_pool_size, NSS_CORE_1);
 		nss_n2h_core1_add_buf_pool_size = nss_ctx->buf_sz_allocated;
-		printk(KERN_INFO "additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
+		dev_info(nss_ctx->dev, "Additional pbufs of size %d got added to NSS\n", nss_ctx->buf_sz_allocated);
 		return ret;
 	}
 
-	printk(KERN_INFO "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
+	dev_info(nss_ctx->dev, "Invalid input value. should be greater than 1 and less than %d\n", NSS_N2H_MAX_BUF_POOL_SIZE);
 	return -EINVAL;
 }
 

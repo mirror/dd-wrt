@@ -166,7 +166,7 @@ static void nss_capwap_flow_rule_msg(struct nss_capwap_flow_rule_msg *ncfrm)
 		"CAPWAP Destination Port: %d\n"
 		"CAPWAP Source IP: %x %x %x %x\n"
 		"CAPWAP Destination IP: %x %x %x %x"
-		"CAPWAP Flow type:%d Flow ID: %d SCS_SDWF ID: %d",
+		"CAPWAP Flow ID: %d",
 		ncfrm,
 		ncfrm->ip_version, ncfrm->protocol,
 		ncfrm->src_port, ncfrm->dst_port,
@@ -174,9 +174,7 @@ static void nss_capwap_flow_rule_msg(struct nss_capwap_flow_rule_msg *ncfrm)
 		ncfrm->src_ip[2], ncfrm->src_ip[3],
 		ncfrm->dst_ip[0], ncfrm->dst_ip[1],
 		ncfrm->dst_ip[2], ncfrm->dst_ip[3],
-		ncfrm->flow_attr.type,
-		ncfrm->flow_attr.flow_id,
-		ncfrm->flow_attr.scs_sdwf_id);
+		ncfrm->flow_id);
 }
 
 /*

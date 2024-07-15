@@ -407,7 +407,7 @@ nss_tx_status_t nss_phys_if_link_state(struct nss_ctx_instance *nss_ctx, uint32_
  * nss_phys_if_mac_addr()
  *	Send a MAC address to physical interface
  */
-nss_tx_status_t nss_phys_if_mac_addr(struct nss_ctx_instance *nss_ctx, uint8_t *addr, uint32_t if_num)
+nss_tx_status_t nss_phys_if_mac_addr(struct nss_ctx_instance *nss_ctx, const uint8_t *addr, uint32_t if_num)
 {
 	struct nss_phys_if_msg nim;
 	struct nss_if_mac_address_set *nmas;

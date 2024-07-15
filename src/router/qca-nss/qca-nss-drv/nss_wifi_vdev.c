@@ -274,7 +274,7 @@ EXPORT_SYMBOL(nss_wifi_vdev_base_set_next_hop);
 /*
  * nss_wifi_vdev_set_peer_next_hop()
  */
-nss_tx_status_t nss_wifi_vdev_set_peer_next_hop(struct nss_ctx_instance *ctx, uint32_t nss_if, uint8_t *addr, uint32_t next_hop_if)
+nss_tx_status_t nss_wifi_vdev_set_peer_next_hop(struct nss_ctx_instance *ctx, uint32_t nss_if, const uint8_t *addr, uint32_t next_hop_if)
 {
 	nss_tx_status_t status;
 	struct nss_wifi_vdev_msg *wifivdevmsg = kzalloc(sizeof(struct nss_wifi_vdev_msg), GFP_KERNEL);

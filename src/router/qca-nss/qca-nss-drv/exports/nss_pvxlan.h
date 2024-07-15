@@ -63,8 +63,6 @@ typedef enum nss_pvxlan_msg_type {
 	NSS_PVXLAN_MSG_TYPE_TUNNEL_DISABLE,	/**< Disable the tunnel. */
 	NSS_PVXLAN_MSG_TYPE_MAC_ADD,		/**< Add MAC rule to the database. */
 	NSS_PVXLAN_MSG_TYPE_MAC_DEL,		/**< Remove MAC rule from the database. */
-	NSS_PVXLAN_MSG_TYPE_CONFIG_VP,		/**< VP configuration. */
-	NSS_PVXLAN_MSG_TYPE_UNCONFIG_VP,	/**< VP unconfiguration. */
 	NSS_PVXLAN_MSG_TYPE_MAX,		/**< Maximum message type. */
 } nss_pvxlan_msg_type_t;
 
@@ -97,10 +95,6 @@ typedef enum nss_pvxlan_error_response_types {
 						/**< MAC entry allocation failed. */
 	PVXLAN_ERROR_MSG_MAC_ENTRY_DELETE_FAILED,
 						/**< MAC entry deletion failed. */
-	PVXLAN_ERROR_MSG_CONFIG_VP_FAILED,
-						/**< VP configuration failed. */
-	PVXLAN_ERROR_MSG_UNCONFIG_VP_FAILED,
-						/**< VP unconfiguration failed. */
 	NSS_PVXLAN_ERROR_MAX,			/**< Maximum error type. */
 } nss_pvxlan_error_response_t;
 
@@ -182,18 +176,6 @@ struct nss_pvxlan_mac_msg {
 };
 
 /**
- * nss_pvxlan_vp_msg
- *	VP configuration message.
- *
- * This updates the VP number and "PPE to host" mode associated with
- * the PVxLAN tunnel.
- */
-struct nss_pvxlan_vp_msg {
-	int16_t vp_num;		/**< VP number. */
-	bool ppe_to_host;	/**< Enable/disable PPE to host mode. */
-};
-
-/**
  * nss_pvxlan_msg
  *	Data for sending and receiving proxy VxLAN messages.
  */
@@ -216,8 +198,6 @@ struct nss_pvxlan_msg {
 				/**< MAC rule add message. */
 		struct nss_pvxlan_mac_msg mac_del;
 				/**< MAC rule delete message. */
-		struct nss_pvxlan_vp_msg vp_config;
-				/**< VP configuration message. */
 	} msg;			/**< Message payload. */
 };
 
