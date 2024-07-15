@@ -1677,6 +1677,8 @@ int has_gateway(void)
 
 void set_smp_affinity(int irq, int mask)
 {
+	if (nvram_match("console_debug", "1"))
+		dd_loginfo(name, "set smp_affinity mask %x for irq %d\n", mask, irq);
 	char s_cpu[32];
 	snprintf(s_cpu, sizeof(s_cpu), "%x", mask);
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", irq);
@@ -1730,10 +1732,8 @@ void set_named_smp_affinity_mask(char *name, int mask, int entry)
 	return;
 out:;
 	fclose(in);
-	if (nvram_match("console_debug", "1"))
-		dd_loginfo(name, "set smp_affinity mask %x for irq %s\n", mask, irq);
 
-	set_smp_affinity(irq, mask);
+	set_smp_affinity(atoi(irq), mask);
 }
 
 void set_named_smp_affinity(char *name, int core, int entry)
