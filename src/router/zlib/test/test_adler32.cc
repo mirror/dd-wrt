@@ -365,6 +365,10 @@ INSTANTIATE_TEST_SUITE_P(adler32, adler32_variant, testing::ValuesIn(tests));
 
 TEST_ADLER32(c, adler32_c, 1)
 
+#ifdef DISABLE_RUNTIME_CPU_DETECTION
+TEST_ADLER32(native, native_adler32, 1)
+#else
+
 #ifdef ARM_NEON
 TEST_ADLER32(neon, adler32_neon, test_cpu_features.arm.has_neon)
 #elif defined(POWER8_VSX)
@@ -382,8 +386,10 @@ TEST_ADLER32(ssse3, adler32_ssse3, test_cpu_features.x86.has_ssse3)
 TEST_ADLER32(avx2, adler32_avx2, test_cpu_features.x86.has_avx2)
 #endif
 #ifdef X86_AVX512
-TEST_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512)
+TEST_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512_common)
 #endif
 #ifdef X86_AVX512VNNI
 TEST_ADLER32(avx512_vnni, adler32_avx512_vnni, test_cpu_features.x86.has_avx512vnni)
+#endif
+
 #endif

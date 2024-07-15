@@ -300,7 +300,9 @@ show $cc -c $test.c
 if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
   echo "$cc" | tee -a configure.log
   CC="$cc"
-  CFLAGS="${CFLAGS} -std=c11"
+  if test "${CFLAGS#*"-std="}" = "$CFLAGS" ; then
+    CFLAGS="${CFLAGS} -std=c11"
+  fi
 
   # Re-check ARCH if the compiler is a cross-compiler.
   if $CC -print-multiarch 1> /dev/null 2>&1 && test -n "$($CC -print-multiarch)" 1> /dev/null 2>&1; then
@@ -363,10 +365,10 @@ if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
   case "$uname" in
   Linux* | linux* | GNU | GNU/* | solaris*)
         LDSHARED=${LDSHARED-"$cc"}
-        LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1},--version-script,${SRCDIR}/${MAPNAME}" ;;
+        LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1}" ;;
   *BSD | *bsd* | DragonFly)
         LDSHARED=${LDSHARED-"$cc"}
-        LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1},--version-script,${SRCDIR}/${MAPNAME}"
+        LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1}"
         LDCONFIG="ldconfig -m" ;;
   CYGWIN* | Cygwin* | cygwin*)
         visibility=0
@@ -384,7 +386,7 @@ if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
         SHAREDTARGET=$SHAREDLIB
         IMPORTLIB="${LIBNAME}.dll.a"
         LDSHARED=${LDSHARED-"$cc"}
-        LDSHAREDFLAGS="-shared -Wl,--out-implib,${IMPORTLIB},--version-script,${SRCDIR}/${MAPNAME}"
+        LDSHAREDFLAGS="-shared -Wl,--out-implib,${IMPORTLIB}"
         LDSHAREDLIBC=""
         if test $gzfileops -eq 0; then
           DEFFILE='win32/${LIBNAME2}.def'
@@ -433,7 +435,7 @@ if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
         SHAREDTARGET=$SHAREDLIB
         IMPORTLIB="${LIBNAME}.dll.a"
         LDSHARED=${LDSHARED-"$cc"}
-        LDSHAREDFLAGS="-shared -Wl,--out-implib=${IMPORTLIB} -Wl,--version-script=${SRCDIR}/${MAPNAME}"
+        LDSHAREDFLAGS="-shared -Wl,--out-implib=${IMPORTLIB}"
         LDSHAREDLIBC=""
         if test $gzfileops -eq 0; then
           DEFFILE='win32/${LIBNAME2}.def'
@@ -471,7 +473,9 @@ if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
              SHAREDTARGET=$SHAREDLIBV
              LDSHARED=${LDSHARED-"$cc"}
              LDSHAREDFLAGS="-dynamiclib -install_name @rpath/${SHAREDLIBM} -compatibility_version ${VER1} -current_version ${VER3}"
-             if libtool -V 2>&1 | grep Apple > /dev/null; then
+             if "${CROSS_PREFIX}libtool" -V 2>&1 | grep Apple > /dev/null; then
+                 AR="${CROSS_PREFIX}libtool"
+             elif libtool -V 2>&1 | grep Apple > /dev/null; then
                  AR="libtool"
              else
                  AR="/usr/bin/libtool"
@@ -479,7 +483,7 @@ if test "$gcc" -eq 1 && ($cc $CFLAGS -c $test.c) >> configure.log 2>&1; then
              ARFLAGS="-o" ;;
   aarch64)
              LDSHARED=${LDSHARED-"$cc"}
-             LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1} -Wl,--version-script,${SRCDIR}/${MAPNAME}"
+             LDSHAREDFLAGS="-shared -Wl,-soname,${LIBNAME}.so.${VER1}"
              LDSHAREDLIBC="-Wl,--start-group -lc -lrdimon -Wl,--end-group" ;;
   *)
              LDSHARED=${LDSHARED-"$cc"}
@@ -624,6 +628,29 @@ else
   TEST="${TEST} testshared"
 fi
 
+echo >> configure.log
+
+# check for version script support
+cat > $test.c <<EOF
+int foo(void) { return 0; }
+EOF
+cat > $test.map <<EOF
+{
+  global:
+    foo;
+  local:
+    *;
+};
+EOF
+if test $shared -eq 1; then
+  LDVERSIONSCRIPT="-Wl,--version-script,$SRCDIR/$MAPNAME"
+  if try $CC -c $SFLAGS $test.c && try $LDSHARED $LDVERSIONSCRIPT $LDSHAREDFLAGS $LDFLAGS -o $test$shared_ext $test.o $LDSHAREDLIBC; then
+    echo "Checking for version script support... $LDVERSIONSCRIPT." | tee -a configure.log
+  else
+    echo "Checking for version script support... No." | tee -a configure.log
+    LDVERSIONSCRIPT=""
+  fi
+fi
 echo >> configure.log
 
 # check for large file support, and if none, check for fseeko()
@@ -973,6 +1000,24 @@ else
     echo "Checking for attribute(aligned) ... No." | tee -a configure.log
 fi
 
+# Check for __builtin_assume_aligned(x,n) support in compiler
+cat > $test.c << EOF
+char *test(char *buffer) {
+    char *abuffer = __builtin_assume_aligned(buffer,64);
+    return abuffer;
+}
+int main() {
+    return 0;
+}
+EOF
+if try ${CC} ${CFLAGS} $test.c $LDSHAREDLIBC; then
+    echo "Checking for __builtin_assume_aligned() ... Yes." | tee -a configure.log
+    CFLAGS="$CFLAGS -DHAVE_BUILTIN_ASSUME_ALIGNED"
+    SFLAGS="$SFLAGS -DHAVE_BUILTIN_ASSUME_ALIGNED"
+else
+    echo "Checking for __builtin_assume_aligned() ... No." | tee -a configure.log
+fi
+
 # Check for __builtin_ctz() support in compiler
 cat > $test.c << EOF
 long f(unsigned int x) { return __builtin_ctz(x); }
@@ -1091,19 +1136,32 @@ check_acle_compiler_flag() {
 int main() { return 0; }
 EOF
     if try $CC -c $CFLAGS -march=armv8-a+crc $test.c; then
-        ACLE_AVAILABLE=1
         echo "Check whether -march=armv8-a+crc works ... Yes." | tee -a configure.log
         acleflag="-march=armv8-a+crc"
     else
         echo "Check whether -march=armv8-a+crc works ... No." | tee -a configure.log
         if try $CC -c $CFLAGS -march=armv8-a+crc+simd $test.c; then
-            ACLE_AVAILABLE=1
             echo "Check whether -march=armv8-a+crc+simd works ... Yes." | tee -a configure.log
             acleflag="-march=armv8-a+crc+simd"
         else
-            ACLE_AVAILABLE=0
             echo "Check whether -march=armv8-a+crc+simd works ... No." | tee -a configure.log
         fi
+    fi
+
+    # Check whether compiler supports ARMv8 CRC intrinsics
+    cat > $test.c << EOF
+#include <arm_acle.h>
+unsigned int f(unsigned int a, unsigned int b) {
+    return __crc32w(a, b);
+}
+int main(void) { return 0; }
+EOF
+    if try ${CC} ${CFLAGS} ${acleflag} $test.c; then
+        echo "Checking for ARMv8 CRC intrinsics ... Yes." | tee -a configure.log
+        ACLE_AVAILABLE=1
+    else
+        echo "Checking for ARMv8 CRC intrinsics ... No." | tee -a configure.log
+        ACLE_AVAILABLE=0
     fi
 }
 
@@ -1810,11 +1868,6 @@ EOF
                 ARCH_SHARED_OBJS="${ARCH_SHARED_OBJS} s390_features.lo"
             fi
 
-            if test $builddfltccdeflate -eq 1 -o $builddfltccinflate -eq 1; then
-                ARCH_STATIC_OBJS="${ARCH_STATIC_OBJS} dfltcc_common.o"
-                ARCH_SHARED_OBJS="${ARCH_SHARED_OBJS} dfltcc_common.lo"
-            fi
-
             if test $builddfltccdeflate -eq 1; then
                 CFLAGS="${CFLAGS} -DS390_DFLTCC_DEFLATE"
                 SFLAGS="${SFLAGS} -DS390_DFLTCC_DEFLATE"
@@ -1933,6 +1986,7 @@ sed < $SRCDIR/Makefile.in "
 /^LDFLAGS *=/s#=.*#=$LDFLAGS#
 /^LDSHARED *=/s#=.*#=$LDSHARED#
 /^LDSHAREDFLAGS *=/s#=.*#=$LDSHAREDFLAGS#
+/^LDVERSIONSCRIPT *=/s#=.*#=$LDVERSIONSCRIPT#
 /^LIBNAME1 *=/s#=.*#=$LIBNAME#
 /^LIBNAME2 *=/s#=.*#=$LIBNAME2#
 /^SUFFIX *=/s#=.*#=$SUFFIX#

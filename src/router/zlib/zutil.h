@@ -103,7 +103,7 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 #  define OS_CODE  6
 #endif
 
-#if defined(MACOS) || defined(TARGET_OS_MAC)
+#if defined(MACOS)
 #  define OS_CODE  7
 #endif
 
@@ -136,13 +136,5 @@ void Z_INTERNAL  PREFIX(zcfree)(void *opaque, void *ptr);
 
 typedef void *zng_calloc_func(void *opaque, unsigned items, unsigned size);
 typedef void  zng_cfree_func(void *opaque, void *ptr);
-
-void Z_INTERNAL *PREFIX3(alloc_aligned)(zng_calloc_func zalloc, void *opaque, unsigned items, unsigned size, unsigned align);
-void Z_INTERNAL  PREFIX3(free_aligned)(zng_cfree_func zfree, void *opaque, void *ptr);
-
-#define ZALLOC(strm, items, size) PREFIX3(alloc_aligned)((strm)->zalloc, (strm)->opaque, (items), (size), 64)
-#define ZFREE(strm, addr)         PREFIX3(free_aligned)((strm)->zfree, (strm)->opaque, (void *)(addr))
-
-#define TRY_FREE(s, p)            {if (p) ZFREE(s, p);}
 
 #endif /* ZUTIL_H_ */

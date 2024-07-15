@@ -175,6 +175,7 @@ if(WITH_GTEST)
             test_deflate_tune.cc
             test_dict.cc
             test_inflate_adler32.cc
+            test_inflate_copy.cc
             test_large_buffers.cc
             test_raw.cc
             test_small_buffers.cc
@@ -188,8 +189,8 @@ if(WITH_GTEST)
         if(ZLIBNG_ENABLE_TESTS)
             list(APPEND TEST_SRCS
                 test_adler32.cc             # adler32_neon(), etc
-                test_aligned_alloc.cc       # zng_alloc_aligned()
                 test_compare256.cc          # compare256_neon(), etc
+                test_compare256_rle.cc      # compare256_rle(), etc
                 test_crc32.cc               # crc32_acle(), etc
                 test_inflate_sync.cc        # expects a certain compressed block layout
                 test_main.cc                # cpu_check_features()
