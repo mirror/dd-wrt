@@ -240,7 +240,6 @@ source "net/ipv4/netfilter/Kconfig"
 source "net/ipv6/netfilter/Kconfig"
 source "net/bridge/netfilter/Kconfig"
 source "net/shortcut-fe/Kconfig"
-#source "net/shortcut-fe_v2/Kconfig"
 
 endif
 
@@ -384,6 +383,31 @@ config SKB_RECYCLER_MULTI_CPU
 	bool "Cross-CPU recycling for CPU-locked workloads"
 	depends on SMP && SKB_RECYCLER
 	default n
+
+config SKB_RECYCLER_PREALLOC
+	bool "Enable preallocation of SKBs"
+	depends on SKB_RECYCLER
+	default n
+	help
+	 Preallocates SKBs in recycling lists and the number of
+	 SKBs are configured through CONFIG_SKB_RECYCLE_MAX_PREALLOC_SKBS.
+	 This needs SKB_RECYCLER to be enabled.
+	 The number of preallocated SKBs can be passed using
+	 SKB_RECYCLE_MAX_PREALLOC_SKBS.
+
+config SKB_RECYCLE_MAX_PREALLOC_SKBS
+	int "Number of SKBs to be preallocated"
+	depends on SKB_RECYCLER_PREALLOC
+	default 16384
+	help
+	 Number of SKBs each of 4K size to be preallocated for recycling
+
+config SKB_RECYCLE_SIZE
+	int "Minimum size for a recycled buffer"
+	depends on SKB_RECYCLER
+	default 2304
+	help
+	Minimum size for a recycled buffer
 
 config ALLOC_SKB_PAGE_FRAG_DISABLE
 	bool "Disable page fragment based skbuff payload allocations"
