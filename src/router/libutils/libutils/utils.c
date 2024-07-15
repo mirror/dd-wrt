@@ -1678,7 +1678,7 @@ int has_gateway(void)
 void set_smp_affinity(int irq, int mask)
 {
 	if (nvram_match("console_debug", "1"))
-		dd_loginfo(name, "set smp_affinity mask %x for irq %d\n", mask, irq);
+		dd_loginfo(__func__, "set smp_affinity mask %x for irq %d\n", mask, irq);
 	char s_cpu[32];
 	snprintf(s_cpu, sizeof(s_cpu), "%x", mask);
 	writevaproc(s_cpu, "/proc/irq/%d/smp_affinity", irq);
