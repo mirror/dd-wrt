@@ -5021,9 +5021,6 @@ static const u8 skb_ext_type_len[] = {
 #if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
 #endif
-#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
-	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
-#endif
 };
 
 static __always_inline unsigned int skb_ext_total_length(void)
