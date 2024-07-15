@@ -364,6 +364,7 @@ endif
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX5500" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx5500.bin
+	    
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx5500-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
 #ax89
@@ -372,7 +373,10 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mkimage -A arm64 -O linux -T multi -C gzip -a 0x41000000 -n 'ARM64 DD-WRT Linux' -d $(ARCH)-uclibc/Image.itb.new:$(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-rt-ax89x.dtb:$(TOP)/$(ARCH)-uclibc/root.fs $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin
 	./tools/asus/asusuimage -v 2 -n RT-AX89U -b 388 -e 4900 -i $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
-	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
+	cp $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
+	dd if=/dev/zero bs=131072 count=1 >> $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
+	dd if=$(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx bs=126976 of=$(ARCH)-uclibc/asus-rt-ax89x-upgrade3.trx conv=sync
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin $(ARCH)-uclibc/asus-rt-ax89x-upgrade3.trx
 
 include rules/all.mk
 
