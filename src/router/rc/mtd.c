@@ -695,7 +695,7 @@ rewrite:;
 			printf("\n");
 		}
 		if (!writeubi) {
-#ifdef HAVE_QCA4019
+#if defined(HAVE_QCA4019) || defined(HAVE_IPQ6018)
 			if (!first) {
 				mtd_erase(mtd);
 				first = 1;
@@ -733,7 +733,7 @@ again:;
 					goto fail;
 				}
 			} else {
-#ifndef HAVE_QCA4019
+#if !defined(HAVE_QCA4019) && !defined(HAVE_IPQ6018)
 				if (mtdtype != MTD_NANDFLASH) {
 					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 						dd_logerror("flash", "\nerase/write failed\n");
@@ -743,9 +743,10 @@ again:;
 #endif
 			}
 			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
-				dd_loginfo("flash", "\ntry again %d\n", redo++);
-				if (redo < 10)
-					goto again;
+				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
+				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
+				length += mtd_info.erasesize;
+				badblocks += mtd_info.erasesize;
 				goto fail;
 			}
 			//			} else {
