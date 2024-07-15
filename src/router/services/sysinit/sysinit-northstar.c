@@ -6702,7 +6702,7 @@ next:;
 	 */
 	stime(&tm);
 	//      nvram_set("wl0_ifname", "wlan0");
-	if (check_vlan_support()) {
+	if (check_switch_support()) {
 		start_config_vlan();
 	}
 	return;
