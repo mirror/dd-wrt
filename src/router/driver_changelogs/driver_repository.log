@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r7971 | brainslayer | 2024-07-17 01:00:10 +0700 (Wed, 17 Jul 2024) | 1 line
+
+add ext rssi stats
+------------------------------------------------------------------------
+r7970 | brainslayer | 2024-07-16 22:26:46 +0700 (Tue, 16 Jul 2024) | 1 line
+
+use only lower 8 bits
+------------------------------------------------------------------------
 r7969 | brainslayer | 2024-07-16 20:06:08 +0700 (Tue, 16 Jul 2024) | 1 line
 
 fix antenna chain field which has a wrong datatype memcpy from u32 array to a u8 array isnt a good idea
