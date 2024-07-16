@@ -1450,6 +1450,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fp = fopen(fstr, "ab");
 		fprintf(fp, "bss=%s\n", ifname);
 	}
+	if (nvram_nmatchi(1, "%s_multicast_to_unicast", ifname);
+		fprintf(fp, "multicast_to_unicast=1\n");
+	else
+		fprintf(fp, "multicast_to_unicast=0\n");
+		
 	char bw[32];
 	sprintf(bw, "%s_channelbw", maininterface);
 	int usebw = 20;
