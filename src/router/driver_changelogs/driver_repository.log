@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7969 | brainslayer | 2024-07-16 20:06:08 +0700 (Tue, 16 Jul 2024) | 1 line
+
+fix antenna chain field which has a wrong datatype memcpy from u32 array to a u8 array isnt a good idea
+------------------------------------------------------------------------
 r7968 | brainslayer | 2024-07-16 15:44:15 +0700 (Tue, 16 Jul 2024) | 1 line
 
 support 8 chains signal reporting
