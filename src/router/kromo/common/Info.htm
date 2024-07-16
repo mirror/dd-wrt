@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 17) {
+	for(var i = 0; i < val.length; i = i + 21) {
 		var row = table.insertRow(-1);
 
 		var mac = val[i];
@@ -34,6 +34,18 @@ function setWirelessTable() {
 				if (val[i + 14] != 0) {
 					cellmac.title = cellmac.title + "," + val[i + 14];
 				}
+				if (val[i + 15] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 15];
+				}
+				if (val[i + 16] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 16];
+				}
+				if (val[i + 17] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 17];
+				}
+				if (val[i + 18] != 0) {
+					cellmac.title = cellmac.title + "," + val[i + 18];
+				}
 				cellmac.title = cellmac.title + "]";
 			}
 			cellmac.classList.add("link");
@@ -46,13 +58,13 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 
 		var ifn = val[i + 2];
-		var label = val[i + 15];
+		var label = val[i + 19];
 		var iface = row.insertCell(-1);
 		iface.classList.add("link");
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
 		iface.style.textDecoration = "none";
-		eval("addEvent(iface, 'click', function() { openBW('" + val[i + 16] + "') })");
+		eval("addEvent(iface, 'click', function() { openBW('" + val[i + 20] + "') })");
 		if (label.length == 0) {
 			iface.innerHTML = ifn;
 		} else {

@@ -159,10 +159,10 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			}
 #define TXRATE(wc) (wc->txrate * mul / div)
 #define RXRATE(wc) (wc->rxrate * mul / div)
-		websWrite(wp, "'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac,
+		websWrite(wp, "'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'", mac,
 			  radioname, wc->ifname, UPTIME(wc->uptime, str, sizeof(str)), TXRATE(wc) / 10, TXRATE(wc) % 10,
 			  RXRATE(wc) / 10, RXRATE(wc) % 10, info, wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual,
-			  wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],
+			  wc->chaininfo_avg[0], wc->chaininfo_avg[1], wc->chaininfo_avg[2], wc->chaininfo_avg[3],wc->chaininfo_avg[4], wc->chaininfo_avg[5], wc->chaininfo_avg[6], wc->chaininfo_avg[7],
 			  nvram_nget("%s_label", wc->ifname), wc->ifname);
 		*cnt = (*cnt) + 1;
 		globalcnt++;

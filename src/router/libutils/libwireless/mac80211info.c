@@ -534,6 +534,10 @@ static void get_chain_signal(struct nlattr *attr_list, char *signals)
 	signals[1] = 0;
 	signals[2] = 0;
 	signals[3] = 0;
+	signals[4] = 0;
+	signals[5] = 0;
+	signals[6] = 0;
+	signals[7] = 0;
 	if (!attr_list)
 		return;
 	int cnt = 0;
