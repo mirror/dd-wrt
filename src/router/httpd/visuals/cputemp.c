@@ -118,7 +118,8 @@ static int singlesensor(char *sysfs)
 	char p[64];
 	char p2[64];
 	int cnt = 0;
-	for (int i = 0; i < 16; i++) {
+	int i;
+	for (i = 0; i < 16; i++) {
 		snprintf(p, sizeof(p) - 1, "%stemp%d_input", sysfs, i);
 		snprintf(p2, sizeof(p) - 1, "%sfan%d_input", sysfs, i);
 		if (f_exists(p) || f_exists(p2)) {
