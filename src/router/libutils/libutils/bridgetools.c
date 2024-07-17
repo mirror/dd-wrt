@@ -334,11 +334,16 @@ int br_add_interface(const char *br, const char *dev)
 			  dev);
 		if (nvram_nmatch("1", "%s_usteer", mainif))
 			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/bpdu_filter", nvram_ngeti("%s_bpdu_filter", mainif),
+			  dev);
+			
 	} else {
 		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", dev),
 			  dev);
 		if (nvram_nmatch("1", "%s_usteer", dev))
 			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/bpdu_filter", nvram_ngeti("%s_bpdu_filter", dev),
+			  dev);
 	}
 	return ret;
 }
