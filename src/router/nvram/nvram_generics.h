@@ -167,7 +167,7 @@ int nvram_ngeti(const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
-	return atoi(nvram_safe_get(varbuf));
+	return nvram_default_geti(varbuf, 0);
 }
 
 int nvram_nset(const char *value, const char *fmt, ...)
