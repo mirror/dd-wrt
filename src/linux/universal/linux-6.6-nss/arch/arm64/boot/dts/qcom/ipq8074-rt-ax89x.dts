@@ -177,7 +177,7 @@
 &cpu0_thermal {
 	trips {
 		cpu0_active: cpu-active {
-			temperature = <60000>;
+			temperature = <65000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -194,7 +194,7 @@
 &cpu1_thermal {
 	trips {
 		cpu1_active: cpu-active {
-			temperature = <60000>;
+			temperature = <65000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -211,7 +211,7 @@
 &cpu2_thermal {
 	trips {
 		cpu2_active: cpu-active {
-			temperature = <60000>;
+			temperature = <65000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -228,7 +228,7 @@
 &cpu3_thermal {
 	trips {
 		cpu3_active: cpu-active {
-			temperature = <60000>;
+			temperature = <65000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
@@ -245,7 +245,7 @@
 &cluster_thermal {
 	trips {
 		cluster_active: cluster-active {
-			temperature = <60000>;
+			temperature = <65000>;
 			hysteresis = <2000>;
 			type = "active";
 		};
