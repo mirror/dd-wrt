@@ -1426,7 +1426,6 @@ networking.hairpin="Hairpin Modus";
 networking.bridge="Bridge";
 networking.snooping="IGMP Snooping";
 networking.unicast="Multicast nach Unicast";
-networking.bpdu_filter="BPDU Filter";
 networking.assign="Zuweisung";
 networking.bridgeassign="Bridge Zuweisung";
 networking.bonding="Bonding";

@@ -127,12 +127,6 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 				nvram_default_get(unicast, "0");
 				showRadio(wp, "networking.unicast", unicast);
 			}
-			if (!iswds && has_bpdu_filter(var) && !nvram_nmatch("0", "%s_bridged", var)) {
-				char unicast[32];
-				sprintf(unicast, "%s_bpdu_filter", var);
-				nvram_default_get(unicast, "0");
-				showRadio(wp, "networking.bpdu_filter", unicast);
-			}
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "networking.bridgeassign", NULL);
 			websWrite(

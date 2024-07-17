@@ -1280,7 +1280,6 @@ networking.forward_delay="转发延迟";
 networking.max_age="最大寿命";
 networking.snooping="IGMP Snooping";
 networking.unicast="组播到单播";
-networking.bpdu_filter="BPDU Filter";
 networking.assign="分配";
 networking.bridgeassign="桥分配";
 networking.bonding="Bonding";

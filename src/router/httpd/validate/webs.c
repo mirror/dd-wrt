@@ -3793,7 +3793,6 @@ static char *vapsettings[] = {
 	"mubf",
 	"multicast",
 	"multicast_to_unicast",
-	"bpdu_filter",
 	"nas",
 	"nat",
 	"bloop",
@@ -5675,7 +5674,6 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	copytonv_prefix(wp, "multicast", ifname);
 	copytonv_prefix(wp, "multicast_to_unicast", ifname);
-	copytonv_prefix(wp, "bpdu_filter", ifname);
 	copytonv_prefix(wp, "bridged", ifname);
 	copytonv_prefix(wp, "nat", ifname);
 	copytonv_prefix(wp, "bloop", ifname);
@@ -5699,7 +5697,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "web_filter", prefix);
 	copytonv_prefix(wp, "multicast", prefix);
 	copytonv_prefix(wp, "multicast_to_unicast", prefix);
-	copytonv_prefix(wp, "bpdu_filter", prefix);
 	copytonv_prefix(wp, "bridged", prefix);
 	copytonv_prefix(wp, "nat", prefix);
 	copytonv_prefix(wp, "bloop", prefix);

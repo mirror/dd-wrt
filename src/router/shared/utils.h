@@ -1184,7 +1184,6 @@ void get_network(char *ipaddr, char *netmask);
 int isbridge(char *name);
 int isbridged(char *name);
 int has_multicast_to_unicast(char *name);
-int has_bpdu_filter(char *name);
 int isvlan(char *name);
 void get_broadcast(char *ipaddr, size_t len, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);

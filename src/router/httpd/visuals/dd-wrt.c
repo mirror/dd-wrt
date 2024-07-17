@@ -2317,12 +2317,6 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(unicast, "0");
 		showRadio(wp, "networking.unicast", unicast);
 	}
-	if (!iswds && has_bpdu_filter(var) && !nvram_nmatch("0", "%s_bridged", var)) {
-		char unicast[32];
-		sprintf(unicast, "%s_bpdu_filter", var);
-		nvram_default_get(unicast, "0");
-		showRadio(wp, "networking.bpdu_filter", unicast);
-	}
 	websWrite(
 		wp,
 		"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");

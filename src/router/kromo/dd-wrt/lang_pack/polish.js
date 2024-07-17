@@ -1457,7 +1457,6 @@ networking.forward_delay="Forward Delay";
 networking.max_age="Max Age";
 networking.snooping="IGMP Snooping";
 networking.unicast="Multicast To Unicast";
-networking.bpdu_filter="BPDU Filter";
 networking.assign="Assignment";
 networking.bridgeassign="Bridge Assignment";
 networking.bonding="Bonding";

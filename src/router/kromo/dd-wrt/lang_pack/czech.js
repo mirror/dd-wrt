@@ -1428,7 +1428,6 @@ networking.forward_delay="Prodleva odeslání";
 networking.max_age="Maximální stáří";
 networking.snooping="Slídění IGMP";
 networking.unicast="Multicast To Unicast";
-networking.bpdu_filter="BPDU Filter";
 networking.assign="Přiřazení";
 networking.bridgeassign="Přiřazení mostu";
 networking.bonding="Svázování";
