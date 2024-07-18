@@ -262,6 +262,7 @@ static int Dtls13GetRnMask(WOLFSSL* ssl, const byte* ciphertext, byte* mask,
         return wc_AesEncryptDirect(c->aes, mask, ciphertext);
 #else
         wc_AesEncryptDirect(c->aes, mask, ciphertext);
+        return 0;
 #endif
     }
 #endif /* HAVE_AESGCM || HAVE_AESCCM */
@@ -395,7 +396,8 @@ int Dtls13ProcessBufferedMessages(WOLFSSL* ssl)
          * WANT_WRITE means that we are done with processing the msg and we are
          * waiting to flush the output buffer. */
         if ((ret == 0 || ret == WANT_WRITE) || (msg->type == certificate_request &&
-                         ssl->options.handShakeDone && ret == WC_PENDING_E)) {
+                         ssl->options.handShakeDone &&
+                         ret == WC_NO_ERR_TRACE(WC_PENDING_E))) {
             if (IsAtLeastTLSv1_3(ssl->version))
                 Dtls13MsgWasProcessed(ssl, (enum HandShakeType)msg->type);
             else if (downgraded)

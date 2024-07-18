@@ -30,8 +30,7 @@
 
 #ifndef NO_HMAC
 
-#if defined(HAVE_FIPS) && \
-        defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+#if FIPS_VERSION3_GE(2,0,0)
     #include <wolfssl/wolfcrypt/fips.h>
 #endif
 
@@ -39,9 +38,17 @@
     extern "C" {
 #endif
 
+#if FIPS_VERSION3_GE(6,0,0)
+    extern const unsigned int wolfCrypt_FIPS_hmac_ro_sanity[2];
+    WOLFSSL_LOCAL int wolfCrypt_FIPS_HMAC_sanity(void);
+#endif
+
+#if FIPS_VERSION3_GE(6,0,0)
+    #define FIPS_ALLOW_SHORT 1
+#endif
+
 /* avoid redefinition of structs */
-#if !defined(HAVE_FIPS) || \
-    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(2,0,0)
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
@@ -184,7 +191,10 @@ struct Hmac {
 #endif /* HAVE_FIPS */
 
 /* does init */
-WOLFSSL_API int wc_HmacSetKey(Hmac* hmac, int type, const byte* key, word32 keySz);
+WOLFSSL_API int wc_HmacSetKey(Hmac* hmac, int type, const byte* key,
+                              word32 keySz);
+WOLFSSL_API int wc_HmacSetKey_ex(Hmac* hmac, int type, const byte* key,
+                                 word32 length, int allowFlag);
 WOLFSSL_API int wc_HmacUpdate(Hmac* hmac, const byte* in, word32 sz);
 WOLFSSL_API int wc_HmacFinal(Hmac* hmac, byte* out);
 #ifdef WOLFSSL_KCAPI_HMAC
@@ -210,8 +220,16 @@ WOLFSSL_LOCAL int _InitHmac(Hmac* hmac, int type, void* heap);
 
 #ifdef HAVE_HKDF
 
+WOLFSSL_API int wc_HKDF_Extract_ex(int type, const byte* salt, word32 saltSz,
+                                const byte* inKey, word32 inKeySz, byte* out,
+                                void* heap, int devId);
+
 WOLFSSL_API int wc_HKDF_Extract(int type, const byte* salt, word32 saltSz,
                                 const byte* inKey, word32 inKeySz, byte* out);
+
+WOLFSSL_API int wc_HKDF_Expand_ex(int type, const byte* inKey, word32 inKeySz,
+                               const byte* info, word32 infoSz,
+                               byte* out, word32 outSz, void* heap, int devId);
 WOLFSSL_API int wc_HKDF_Expand(int type, const byte* inKey, word32 inKeySz,
                                const byte* info, word32 infoSz,
                                byte* out, word32 outSz);

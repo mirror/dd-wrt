@@ -35,8 +35,8 @@
     #define FIPS_NO_WRAPPERS
 
     #ifdef USE_WINDOWS_API
-        #pragma code_seg(".fipsA$m")
-        #pragma const_seg(".fipsB$m")
+        #pragma code_seg(".fipsA$e")
+        #pragma const_seg(".fipsB$e")
     #endif
 #endif
 
@@ -55,6 +55,22 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+#if FIPS_VERSION3_GE(6,0,0)
+    const unsigned int wolfCrypt_FIPS_dh_ro_sanity[2] =
+                                                     { 0x1a2b3c4d, 0x00000004 };
+    int wolfCrypt_FIPS_DH_sanity(void)
+    {
+        return 0;
+    }
+#endif
+
+#if defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_SP_ASM)
+    /* force off unneeded vector register save/restore. */
+    #undef SAVE_VECTOR_REGISTERS
+    #define SAVE_VECTOR_REGISTERS(...) WC_DO_NOTHING
+    #undef RESTORE_VECTOR_REGISTERS
+    #define RESTORE_VECTOR_REGISTERS() WC_DO_NOTHING
+#endif
 
 /*
 Possible DH enable options:
@@ -2924,6 +2940,14 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
     if (ret == 0) {
         /* modulus size in bytes */
         modSz /= WOLFSSL_BIT_SIZE;
+
+        if ((word32)modSz < groupSz) {
+            WOLFSSL_MSG("DH modSz was too small");
+            ret = BAD_FUNC_ARG;
+        }
+    }
+
+    if (ret == 0) {
         bufSz = (word32)modSz - groupSz;
 
         /* allocate ram */
@@ -3003,7 +3027,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
 
     /* loop until p is prime */
     if (ret == 0) {
-        do {
+        for (;;) {
             if (mp_prime_is_prime_ex(&dh->p, 8, &primeCheck, rng) != MP_OKAY)
                 ret = PRIME_GEN_E;
 
@@ -3014,7 +3038,14 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
                 else
                     primeCheckCount++;
             }
-        } while (ret == 0 && primeCheck == MP_NO);
+
+            if (ret != 0 || primeCheck == MP_YES)
+                break;
+
+            /* linuxkm: release the kernel for a moment before iterating. */
+            RESTORE_VECTOR_REGISTERS();
+            SAVE_VECTOR_REGISTERS(ret = _svr_ret; break;);
+        };
     }
 
     /* tmp2 += (2*loop_check_prime)

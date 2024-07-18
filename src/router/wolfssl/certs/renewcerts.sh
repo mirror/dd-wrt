@@ -838,6 +838,7 @@ run_renewcerts(){
     cd ./crl || { echo "Failed to switch to dir ./crl"; exit 1; }
     echo "changed directory: cd/crl"
     echo ""
+    # has dependency on rsapss generation (rsapss should be ran first)
     ./gencrls.sh
     check_result $? "gencrls.sh"
     echo "ran ./gencrls.sh"
@@ -853,6 +854,10 @@ run_renewcerts(){
     echo ""
     openssl crl2pkcs7 -nocrl -certfile ./client-cert.pem -out test-degenerate.p7b -outform DER
     check_result $? ""
+
+    openssl smime -sign -in ./ca-cert.pem -out test-stream-sign.p7b -signer ./ca-cert.pem -nodetach -nocerts -binary -outform DER -stream -inkey ./ca-key.pem
+    check_result $? ""
+
     echo "End of section"
     echo "---------------------------------------------------------------------"
 

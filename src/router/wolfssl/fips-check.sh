@@ -16,6 +16,7 @@ GIT="${GIT:-git -c advice.detachedHead=false}"
 TEST_DIR="${TEST_DIR:-XXX-fips-test}"
 FLAVOR="${FLAVOR:-linux}"
 KEEP="${KEEP:-no}"
+MAKECHECK=${MAKECHECK:-yes}
 FIPS_REPO="${FIPS_REPO:-git@github.com:wolfssl/fips.git}"
 
 Usage() {
@@ -31,6 +32,7 @@ Flavor is one of:
     fips-ready (ready FIPS 140-3)
     fips-dev (dev FIPS 140-3)
     wolfrand
+    wolfentropy
 Keep (default off) retains the temp dir $TEST_DIR for inspection.
 
 Example:
@@ -39,7 +41,9 @@ usageText
 }
 
 while [ "$1" ]; do
-  if [ "$1" = 'keep' ]; then KEEP='yes'; else FLAVOR="$1"; fi
+  if [ "$1" = 'keep' ]; then KEEP='yes';
+  elif [ "$1" = 'nomakecheck' ]; then MAKECHECK='no';
+  else FLAVOR="$1"; fi
   shift
 done
 
@@ -140,7 +144,7 @@ marvell-linux-selftest)
 linuxv5)
   FIPS_OPTION='v5'
   FIPS_FILES=(
-    'wolfcrypt/src/fips.c:WCv5.0-RC12'
+    'wolfcrypt/src/fips.c:WCv5.2.0.1-RC01'
     'wolfcrypt/src/fips_test.c:WCv5.0-RC12'
     'wolfcrypt/src/wolfcrypt_first.c:WCv5.0-RC12'
     'wolfcrypt/src/wolfcrypt_last.c:WCv5.0-RC12'
@@ -251,6 +255,41 @@ wolfrand)
     'wolfssl/wolfcrypt/sha256.h:WCv4-stable'
   )
   ;;
+wolfentropy)
+  FIPS_OPTION='v6'
+  FIPS_FILES=(
+    'wolfcrypt/src/fips.c:wolfEntropy1'
+    'wolfcrypt/src/fips_test.c:wolfEntropy1'
+    'wolfcrypt/src/wolfcrypt_first.c:wolfEntropy1'
+    'wolfcrypt/src/wolfcrypt_last.c:wolfEntropy1'
+    'wolfssl/wolfcrypt/fips.h:wolfEntropy1'
+  )
+  WOLFCRYPT_FILES=(
+    'wolfcrypt/src/aes.c:wolfEntropy1'
+    'wolfcrypt/src/aes_asm.asm:wolfEntropy1'
+    'wolfcrypt/src/aes_asm.S:wolfEntropy1'
+    'wolfcrypt/src/aes_gcm_asm.S:wolfEntropy1'
+    'wolfcrypt/src/ecc.c:wolfEntropy1'
+    'wolfcrypt/src/hmac.c:wolfEntropy1'
+    'wolfcrypt/src/kdf.c:wolfEntropy1'
+    'wolfcrypt/src/random.c:wolfEntropy1'
+    'wolfcrypt/src/sha256.c:wolfEntropy1'
+    'wolfcrypt/src/sha256_asm.S:wolfEntropy1'
+    'wolfcrypt/src/sha3.c:wolfEntropy1'
+    'wolfcrypt/src/sha512.c:wolfEntropy1'
+    'wolfcrypt/src/sha512_asm.S:wolfEntropy1'
+    'wolfssl/wolfcrypt/aes.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/ecc.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/fips_test.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/hmac.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/kdf.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/random.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/sha256.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/sha3.h:wolfEntropy1'
+    'wolfssl/wolfcrypt/sha512.h:wolfEntropy1'
+  )
+  ;;
+
 *)
   Usage
   exit 1
@@ -262,8 +301,7 @@ esac
 function checkout_files() {
     local name
     local tag
-    for file_entry in "$@"
-    do
+    for file_entry in "$@"; do
         name=${file_entry%%:*}
         tag=${file_entry#*:}
         if ! $GIT rev-parse -q --verify "my$tag" >/dev/null
@@ -283,14 +321,12 @@ function copy_fips_files() {
     local bname
     local dname
     local tag
-    for file_entry in "$@"
-    do
+    for file_entry in "$@"; do
         name=${file_entry%%:*}
         tag=${file_entry#*:}
         bname=$(basename "$name")
         dname=$(dirname "$name")
-        if ! $GIT rev-parse -q --verify "my$tag" >/dev/null
-        then
+        if ! $GIT rev-parse -q --verify "my$tag" >/dev/null; then
             $GIT branch --no-track "my$tag" "$tag" || exit $?
         fi
         $GIT checkout "my$tag" -- "$bname" || exit $?
@@ -305,8 +341,7 @@ fi
 
 pushd "$TEST_DIR" || exit 2
 
-if ! $GIT clone "$FIPS_REPO" fips
-then
+if ! $GIT clone "$FIPS_REPO" fips; then
     echo "fips-check: Couldn't check out FIPS repository."
     exit 1
 fi
@@ -322,8 +357,7 @@ popd || exit 2
 # Since OE additions can still be processed for cert3389 we will call 140-2
 # ready "fipsv2-OE-ready" indicating it is ready to use for an OE addition but
 # would not be good for a new certification effort with the latest files.
-if [ "$FLAVOR" = 'fipsv2-OE-ready' ] && [ -s wolfcrypt/src/fips.c ]
-then
+if [ "$FLAVOR" = 'fipsv2-OE-ready' ] && [ -s wolfcrypt/src/fips.c ]; then
     cp wolfcrypt/src/fips.c wolfcrypt/src/fips.c.bak
     sed "s/v4.0.0-alpha/fipsv2-OE-ready/" wolfcrypt/src/fips.c.bak >wolfcrypt/src/fips.c
 fi
@@ -343,14 +377,12 @@ cavp-selftest-v2)
     ;;
 esac
 
-if ! $MAKE
-then
+if ! $MAKE; then
     echo 'fips-check: Make failed. Debris left for analysis.'
     exit 3
 fi
 
-if [ -s wolfcrypt/src/fips_test.c ]
-then
+if [ -s wolfcrypt/src/fips_test.c ]; then
     NEWHASH=$(./wolfcrypt/test/testwolfcrypt | sed -n 's/hash = \(.*\)/\1/p')
     if [ -n "$NEWHASH" ]; then
         cp wolfcrypt/src/fips_test.c wolfcrypt/src/fips_test.c.bak
@@ -359,15 +391,15 @@ then
     fi
 fi
 
-if ! $MAKE check
-then
-    echo 'fips-check: Test failed. Debris left for analysis.'
-    exit 3
+if [ "$MAKECHECK" = "yes" ]; then
+    if ! $MAKE check; then
+        echo 'fips-check: Test failed. Debris left for analysis.'
+        exit 3
+    fi
 fi
 
 # Clean up
 popd || exit 2
-if [ "$KEEP" = 'no' ];
-then
+if [ "$KEEP" = 'no' ]; then
     rm -rf "$TEST_DIR"
 fi

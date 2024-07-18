@@ -39,6 +39,8 @@
 
 #if defined (HAVE_LIBOQS)
 
+#include <wolfssl/wolfcrypt/port/liboqs/liboqs.h>
+
 static const char* OQS_ID2name(int id) {
     switch (id) {
         case KYBER_LEVEL1: return OQS_KEM_alg_kyber_512;
@@ -99,10 +101,15 @@ int wc_KyberKey_Init(int type, KyberKey* key, void* heap, int devId)
 
         /* Keep type for parameters. */
         key->type = type;
+
+#ifdef WOLF_CRYPTO_CB
+        key->devCtx = NULL;
+        key->devId = devId;
+#endif
     }
 
-    (void)devId;
     (void)heap;
+    (void)devId;
 
     return ret;
 }
@@ -310,12 +317,24 @@ int wc_KyberKey_MakeKey(KyberKey* key, WC_RNG* rng)
     OQS_KEM *kem = NULL;
 #endif
 
-    (void)rng;
-
     /* Validate parameter. */
     if (key == NULL) {
         return BAD_FUNC_ARG;
     }
+
+#ifdef WOLF_CRYPTO_CB
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (key->devId != INVALID_DEVID)
+    #endif
+    {
+        ret = wc_CryptoCb_MakePqcKemKey(rng, WC_PQC_KEM_TYPE_KYBER,
+                                        key->type, key);
+        if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+            return ret;
+        /* fall-through when unavailable */
+        ret = 0;
+    }
+#endif
 
 #ifdef HAVE_LIBOQS
     if (ret == 0) {
@@ -326,16 +345,13 @@ int wc_KyberKey_MakeKey(KyberKey* key, WC_RNG* rng)
     }
 
     if (ret == 0) {
-        algName = OQS_ID2name(key->type);
-        if (algName == NULL) {
-            ret = BAD_FUNC_ARG;
-        }
-    }
-    if (ret == 0) {
         kem = OQS_KEM_new(algName);
         if (kem == NULL) {
             ret = BAD_FUNC_ARG;
         }
+    }
+    if (ret == 0) {
+        ret = wolfSSL_liboqsRngMutexLock(rng);
     }
     if (ret == 0) {
         if (OQS_KEM_keypair(kem, key->pub, key->priv) !=
@@ -343,6 +359,7 @@ int wc_KyberKey_MakeKey(KyberKey* key, WC_RNG* rng)
             ret = BAD_FUNC_ARG;
         }
     }
+    wolfSSL_liboqsRngMutexUnlock();
     OQS_KEM_free(kem);
 #endif /* HAVE_LIBOQS */
 #ifdef HAVE_PQM4
@@ -397,6 +414,9 @@ int wc_KyberKey_Encapsulate(KyberKey* key, unsigned char* ct, unsigned char* ss,
     WC_RNG* rng)
 {
     int ret = 0;
+#ifdef WOLF_CRYPTO_CB
+    word32 ctlen = 0;
+#endif
 #ifdef HAVE_LIBOQS
     const char * algName = NULL;
     OQS_KEM *kem = NULL;
@@ -408,6 +428,24 @@ int wc_KyberKey_Encapsulate(KyberKey* key, unsigned char* ct, unsigned char* ss,
     if ((key == NULL) || (ct == NULL) || (ss == NULL)) {
         ret = BAD_FUNC_ARG;
     }
+
+#ifdef WOLF_CRYPTO_CB
+    if (ret == 0) {
+        ret = wc_KyberKey_CipherTextSize(key, &ctlen);
+    }
+    if ((ret == 0)
+    #ifndef WOLF_CRYPTO_CB_FIND
+        && (key->devId != INVALID_DEVID)
+    #endif
+    ) {
+        ret = wc_CryptoCb_PqcEncapsulate(ct, ctlen, ss, KYBER_SS_SZ, rng,
+                                         WC_PQC_KEM_TYPE_KYBER, key);
+        if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+            return ret;
+        /* fall-through when unavailable */
+        ret = 0;
+    }
+#endif
 
 #ifdef HAVE_LIBOQS
     if (ret == 0) {
@@ -423,11 +461,14 @@ int wc_KyberKey_Encapsulate(KyberKey* key, unsigned char* ct, unsigned char* ss,
         }
     }
     if (ret == 0) {
+        ret = wolfSSL_liboqsRngMutexLock(rng);
+    }
+    if (ret == 0) {
         if (OQS_KEM_encaps(kem, ct, ss, key->pub) != OQS_SUCCESS) {
             ret = BAD_FUNC_ARG;
         }
     }
-
+    wolfSSL_liboqsRngMutexUnlock();
     OQS_KEM_free(kem);
 #endif /* HAVE_LIBOQS */
 #ifdef HAVE_PQM4
@@ -500,6 +541,21 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
         ret = BUFFER_E;
     }
 
+#ifdef WOLF_CRYPTO_CB
+    if ((ret == 0)
+    #ifndef WOLF_CRYPTO_CB_FIND
+        && (key->devId != INVALID_DEVID)
+    #endif
+    ) {
+        ret = wc_CryptoCb_PqcDecapsulate(ct, ctlen, ss, KYBER_SS_SZ,
+                                         WC_PQC_KEM_TYPE_KYBER, key);
+        if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+            return ret;
+        /* fall-through when unavailable */
+        ret = 0;
+    }
+#endif
+
 #ifdef HAVE_LIBOQS
     if (ret == 0) {
         algName = OQS_ID2name(key->type);
@@ -552,7 +608,8 @@ int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
  * @return  NOT_COMPILED_IN when key type is not supported.
  * @return  BUFFER_E when len is not the correct size.
  */
-int wc_KyberKey_DecodePrivateKey(KyberKey* key, unsigned char* in, word32 len)
+int wc_KyberKey_DecodePrivateKey(KyberKey* key, const unsigned char* in,
+    word32 len)
 {
     int ret = 0;
     word32 privLen = 0;
@@ -591,7 +648,8 @@ int wc_KyberKey_DecodePrivateKey(KyberKey* key, unsigned char* in, word32 len)
  * @return  NOT_COMPILED_IN when key type is not supported.
  * @return  BUFFER_E when len is not the correct size.
  */
-int wc_KyberKey_DecodePublicKey(KyberKey* key, unsigned char* in, word32 len)
+int wc_KyberKey_DecodePublicKey(KyberKey* key, const unsigned char* in,
+    word32 len)
 {
     int ret = 0;
     word32 pubLen = 0;

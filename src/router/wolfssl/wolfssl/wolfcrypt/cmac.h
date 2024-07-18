@@ -38,8 +38,7 @@
 #endif
 
 /* avoid redefinition of structs */
-#if !defined(HAVE_FIPS) || \
-    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(2,0,0)
 
 #ifndef WC_CMAC_TYPE_DEFINED
     typedef struct Cmac Cmac;
@@ -82,6 +81,11 @@ typedef enum CmacType {
 #define WC_CMAC_TAG_MAX_SZ AES_BLOCK_SIZE
 #define WC_CMAC_TAG_MIN_SZ (AES_BLOCK_SIZE/4)
 
+#if FIPS_VERSION3_GE(6,0,0)
+    extern const unsigned int wolfCrypt_FIPS_cmac_ro_sanity[2];
+    WOLFSSL_LOCAL int wolfCrypt_FIPS_CMAC_sanity(void);
+#endif
+
 #endif /* HAVE_FIPS */
 
 WOLFSSL_API
@@ -111,11 +115,25 @@ WOLFSSL_API
 int wc_AesCmacGenerate(byte* out, word32* outSz,
                        const byte* in, word32 inSz,
                        const byte* key, word32 keySz);
+WOLFSSL_API
+int wc_AesCmacGenerate_ex(Cmac *cmac,
+                          byte* out, word32* outSz,
+                          const byte* in, word32 inSz,
+                          const byte* key, word32 keySz,
+                          void* heap,
+                          int devId);
 
 WOLFSSL_API
 int wc_AesCmacVerify(const byte* check, word32 checkSz,
                      const byte* in, word32 inSz,
                      const byte* key, word32 keySz);
+WOLFSSL_API
+int wc_AesCmacVerify_ex(Cmac* cmac,
+                        const byte* check, word32 checkSz,
+                        const byte* in, word32 inSz,
+                        const byte* key, word32 keySz,
+                        void* heap,
+                        int devId);
 
 WOLFSSL_LOCAL
 void ShiftAndXorRb(byte* out, byte* in);

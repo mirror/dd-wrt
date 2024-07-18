@@ -1,7 +1,16 @@
 name: nginx Tests
 
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   build_wolfssl:
@@ -25,11 +34,11 @@ jobs:
           install: true
 
       - name: Upload built lib
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wolf-install-nginx
           path: build-dir
-          retention-days: 1
+          retention-days: 5
 
   nginx_check:
     strategy:
@@ -99,7 +108,7 @@ jobs:
     needs: build_wolfssl
     steps:
       - name: Download lib
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wolf-install-nginx
           path: build-dir
@@ -109,13 +118,13 @@ jobs:
           sudo cpan -iT Proc::Find Net::SSLeay IO::Socket::SSL
 
       - name: Checkout wolfssl-nginx
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: wolfssl/wolfssl-nginx
           path: wolfssl-nginx
 
       - name: Checkout nginx
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: nginx/nginx
           path: nginx
@@ -131,7 +140,7 @@ jobs:
         run: patch -p1 < ../wolfssl-nginx/nginx-${{ matrix.ref }}-wolfssl-debug.patch
 
       - name: Checkout nginx-tests
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: nginx/nginx-tests
           path: nginx-tests
@@ -173,6 +182,10 @@ jobs:
         name: Enable wolfSSL debug logging
         run: |
           echo "nginx_c_flags=-O0" >> $GITHUB_ENV
+
+      - name: workaround high-entropy ASLR
+        # not needed after either an update to llvm or runner is done
+        run: sudo sysctl vm.mmap_rnd_bits=28
 
       - name: Build nginx with sanitizer
         working-directory: nginx

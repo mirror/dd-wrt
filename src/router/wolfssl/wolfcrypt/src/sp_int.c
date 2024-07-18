@@ -115,6 +115,14 @@ This library provides single precision (SP) integer math functions.
 
 #include <wolfssl/wolfcrypt/sp_int.h>
 
+#if defined(WOLFSSL_LINUXKM) && !defined(WOLFSSL_SP_ASM)
+    /* force off unneeded vector register save/restore. */
+    #undef SAVE_VECTOR_REGISTERS
+    #define SAVE_VECTOR_REGISTERS(...) WC_DO_NOTHING
+    #undef RESTORE_VECTOR_REGISTERS
+    #define RESTORE_VECTOR_REGISTERS() WC_DO_NOTHING
+#endif
+
 /* DECL_SP_INT: Declare one variable of type 'sp_int'. */
 #if (defined(WOLFSSL_SMALL_STACK) || defined(SP_ALLOC)) && \
     !defined(WOLFSSL_SP_NO_MALLOC)
@@ -854,7 +862,7 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
         "bsr	%[a], %[i]	\n\t"                    \
         : [i] "=r" (vi)                                  \
         : [a] "r" (va)                                   \
-        : "cC"                                           \
+        : "cc"                                           \
     )
 
 #ifndef WOLFSSL_SP_DIV_WORD_HALF
@@ -4851,7 +4859,7 @@ static void _sp_init_size(sp_int* a, unsigned int size)
 #endif
     _sp_zero((sp_int*)am);
 
-    am->size = size;
+    a->size = size;
 }
 
 /* Initialize the multi-precision number to be zero with a given max size.
@@ -5408,7 +5416,8 @@ int sp_cmp_mag(const sp_int* a, const sp_int* b)
 
 #if defined(WOLFSSL_SP_MATH_ALL) || defined(HAVE_ECC) || !defined(NO_DSA) || \
     defined(OPENSSL_EXTRA) || !defined(NO_DH) || \
-    (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY))
+    (!defined(NO_RSA) && (!defined(WOLFSSL_RSA_VERIFY_ONLY) || \
+     defined(WOLFSSL_KEY_GEN)))
 /* Compare two multi-precision numbers.
  *
  * Assumes a and b are not NULL.
@@ -7031,7 +7040,7 @@ int sp_mod_d(const sp_int* a, sp_int_digit d, sp_int_digit* r)
 
 #if defined(HAVE_ECC) || !defined(NO_DSA) || defined(OPENSSL_EXTRA) || \
     (!defined(NO_RSA) && !defined(WOLFSSL_RSA_VERIFY_ONLY) && \
-     !defined(WOLFSSL_RSA_PUBLIC_ONLY))
+     !defined(WOLFSSL_RSA_PUBLIC_ONLY)) || defined(WOLFSSL_SP_INVMOD)
 /* Divides a by 2 and stores in r: r = a >> 1
  *
  * @param  [in]   a  SP integer to divide.
@@ -8087,6 +8096,27 @@ int sp_submod_ct(const sp_int* a, const sp_int* b, const sp_int* m, sp_int* r)
     return err;
 }
 #endif /* WOLFSSL_SP_MATH_ALL && HAVE_ECC */
+
+#if defined(WOLFSSL_SP_MATH_ALL) && defined(HAVE_ECC) && \
+    defined(WOLFSSL_ECC_BLIND_K)
+void sp_xor_ct(const sp_int* a, const sp_int* b, int len, sp_int* r)
+{
+    if ((a != NULL) && (b != NULL) && (r != NULL)) {
+        unsigned int i;
+
+        r->used = (len * 8 + SP_WORD_SIZE - 1) / SP_WORD_SIZE;
+        for (i = 0; i < r->used; i++) {
+            r->dp[i] = a->dp[i] ^ b->dp[i];
+        }
+        i = (len * 8) % SP_WORD_SIZE;
+        if (i > 0) {
+            r->dp[r->used - 1] &= ((sp_int_digit)1 << i) - 1;
+        }
+        /* Remove leading zeros. */
+        sp_clamp_ct(r);
+    }
+}
+#endif
 
 /********************
  * Shifting functoins
@@ -17135,16 +17165,19 @@ static int _sp_mont_red(sp_int* a, const sp_int* m, sp_int_digit mp, int ct)
     bits = sp_count_bits(m);
 
     /* Adding numbers into m->used * 2 digits - zero out unused digits. */
-    if (!ct) {
-        for (i = a->used; i < m->used * 2; i++) {
-            a->dp[i] = 0;
-        }
-    }
-    else {
+#ifndef WOLFSSL_NO_CT_OPS
+    if (ct) {
         for (i = 0; i < m->used * 2; i++) {
             a->dp[i] &=
                 (sp_int_digit)
                 (sp_int_sdigit)ctMaskIntGTE((int)(a->used-1), (int)i);
+        }
+    }
+    else
+#endif /* !WOLFSSL_NO_CT_OPS */
+    {
+        for (i = a->used; i < m->used * 2; i++) {
+            a->dp[i] = 0;
         }
     }
 
@@ -17260,16 +17293,19 @@ static int _sp_mont_red(sp_int* a, const sp_int* m, sp_int_digit mp, int ct)
     bits = sp_count_bits(m);
     mask = ((sp_int_digit)1 << (bits & (SP_WORD_SIZE - 1))) - 1;
 
-    if (!ct) {
-        for (i = a->used; i < m->used * 2; i++) {
-            a->dp[i] = 0;
-        }
-    }
-    else {
+#ifndef WOLFSSL_NO_CT_OPS
+    if (ct) {
         for (i = 0; i < m->used * 2; i++) {
             a->dp[i] &=
                 (sp_int_digit)
                 (sp_int_sdigit)ctMaskIntGTE((int)(a->used-1), (int)i);
+        }
+    }
+    else
+#endif
+    {
+        for (i = a->used; i < m->used * 2; i++) {
+            a->dp[i] = 0;
         }
     }
 
@@ -18061,6 +18097,8 @@ static int _sp_read_radix_16(sp_int* a, const char* in)
     unsigned int s = 0;
     unsigned int j = 0;
     sp_int_digit d;
+    /* Skip whitespace at end of line */
+    int eol_done = 0;
 
     /* Make all nibbles in digit 0. */
     d = 0;
@@ -18071,9 +18109,12 @@ static int _sp_read_radix_16(sp_int* a, const char* in)
         int ch = (int)HexCharToByte(in[i]);
         /* Check for invalid character. */
         if (ch < 0) {
+            if (!eol_done && CharIsWhiteSpace(in[i]))
+                continue;
             err = MP_VAL;
             break;
         }
+        eol_done = 1;
 
         /* Check whether we have filled the digit. */
         if (s == SP_WORD_SIZE) {
@@ -18143,6 +18184,8 @@ static int _sp_read_radix_10(sp_int* a, const char* in)
             ch -= '0';
         }
         else {
+            if (CharIsWhiteSpace(ch))
+                continue;
             /* Return error on invalid character. */
             err = MP_VAL;
             break;
@@ -19422,7 +19465,7 @@ int sp_gcd(const sp_int* a, const sp_int* b, sp_int* r)
     return err;
 }
 
-#endif /* WOLFSSL_SP_MATH_ALL && !NO_RSA && WOLFSSL_KEY_GEN */
+#endif /* !NO_RSA && WOLFSSL_KEY_GEN */
 
 #if !defined(NO_RSA) && defined(WOLFSSL_KEY_GEN) && \
     (!defined(WC_RSA_BLINDING) || defined(HAVE_FIPS) || defined(HAVE_SELFTEST))
@@ -19548,7 +19591,8 @@ int sp_lcm(const sp_int* a, const sp_int* b, sp_int* r)
     return err;
 }
 
-#endif /* WOLFSSL_SP_MATH_ALL && !NO_RSA && WOLFSSL_KEY_GEN */
+#endif /* !NO_RSA && WOLFSSL_KEY_GEN && (!WC_RSA_BLINDING || HAVE_FIPS ||
+        * HAVE_SELFTEST) */
 
 /* Returns the run time settings.
  *

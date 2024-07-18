@@ -35,14 +35,29 @@
 
 #if !defined(NO_AES) && defined(WOLFSSL_ARMASM)
 
-#if defined(HAVE_FIPS) && !defined(FIPS_NO_WRAPPERS)
-#define FIPS_NO_WRAPPERS
+#if FIPS_VERSION3_LT(6,0,0) && defined(HAVE_FIPS)
+    #undef HAVE_FIPS
+#else
+    #if defined(HAVE_FIPS) && FIPS_VERSION3_GE(6,0,0)
+    /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
+        #define FIPS_NO_WRAPPERS
+    #endif
+#endif
+
+#include <wolfssl/wolfcrypt/aes.h>
+#include <wolfssl/wolfcrypt/logging.h>
+
+#if FIPS_VERSION3_GE(6,0,0)
+    const unsigned int wolfCrypt_FIPS_aes_ro_sanity[2] =
+                                             { 0x1a2b3c4d, 0x00000002 };
+    int wolfCrypt_FIPS_AES_sanity(void)
+    {
+        return 0;
+    }
 #endif
 
 #ifndef WOLFSSL_ARMASM_NO_HW_CRYPTO
 
-#include <wolfssl/wolfcrypt/aes.h>
-#include <wolfssl/wolfcrypt/logging.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -1517,6 +1532,7 @@ void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c,
         "USHR v7.2d, v7.2d, #56 \n"
 
         "# AAD \n"
+        "CBZ %[a], 20f \n"
         "CBZ %w[aSz], 20f \n"
         "MOV w12, %w[aSz] \n"
 
@@ -1687,6 +1703,7 @@ void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c,
 
         "20: \n"
         "# Cipher Text \n"
+        "CBZ %[c], 120f \n"
         "CBZ %w[cSz], 120f \n"
         "MOV w12, %w[cSz] \n"
 
@@ -16471,8 +16488,6 @@ int wc_AesXtsDecrypt(XtsAes* xaes, byte* out, const byte* in, word32 sz,
 
 #else /* !WOLFSSL_ARMASM_NO_HW_CRYPTO */
 
-#include <wolfssl/wolfcrypt/logging.h>
-#include <wolfssl/wolfcrypt/aes.h>
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -16493,9 +16508,11 @@ extern void AES_CBC_decrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr, unsigned char* iv);
 extern void AES_CTR_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
+#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
 /* in pre-C2x C, constness conflicts for dimensioned arrays can't be resolved. */
 extern void GCM_gmult_len(byte* x, /* const */ byte m[32][AES_BLOCK_SIZE],
     const unsigned char* data, unsigned long len);
+#endif
 extern void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
 
@@ -16992,6 +17009,7 @@ static WC_INLINE void RIGHTSHIFTX(byte* x)
     x[0] ^= borrow;
 }
 
+#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
 void GenerateM0(Gcm* gcm)
 {
     int i;
@@ -17047,6 +17065,7 @@ void GenerateM0(Gcm* gcm)
         m32[3] = ByteReverseWord32(m32[3]);
     }
 }
+#endif /* GCM_TABLE */
 
 int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
 {
@@ -17067,7 +17086,9 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
     if (ret == 0) {
         AES_ECB_encrypt(iv, aes->gcm.H, AES_BLOCK_SIZE,
             (const unsigned char*)aes->key, aes->rounds);
-        GenerateM0(&aes->gcm);
+        #if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
+            GenerateM0(&aes->gcm);
+        #endif /* GCM_TABLE */
     }
 
     return ret;
@@ -17101,6 +17122,44 @@ static WC_INLINE void FlattenSzInBits(byte* buf, word32 sz)
     buf[7] = sz & 0xff;
 }
 
+#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
+    /* GCM_gmult_len implementation in armv8-32-aes-asm or thumb2-aes-asm */
+    #define GCM_GMULT_LEN(aes, x, a, len) GCM_gmult_len(x, aes->gcm.M0, a, len)
+#elif defined(GCM_SMALL)
+    static void GCM_gmult_len(byte* x, const byte* h,
+        const unsigned char* a, unsigned long len)
+    {
+        byte Z[AES_BLOCK_SIZE];
+        byte V[AES_BLOCK_SIZE];
+        int i, j;
+
+        while (len >= AES_BLOCK_SIZE) {
+            xorbuf(x, a, AES_BLOCK_SIZE);
+
+            XMEMSET(Z, 0, AES_BLOCK_SIZE);
+            XMEMCPY(V, x, AES_BLOCK_SIZE);
+            for (i = 0; i < AES_BLOCK_SIZE; i++) {
+                byte y = h[i];
+                for (j = 0; j < 8; j++) {
+                    if (y & 0x80) {
+                        xorbuf(Z, V, AES_BLOCK_SIZE);
+                    }
+
+                    RIGHTSHIFTX(V);
+                    y = y << 1;
+                }
+            }
+            XMEMCPY(x, Z, AES_BLOCK_SIZE);
+
+            len -= AES_BLOCK_SIZE;
+            a += AES_BLOCK_SIZE;
+        }
+    }
+    #define GCM_GMULT_LEN(aes, x, a, len) GCM_gmult_len(x, aes->gcm.H, a, len)
+#else
+    #error ARMv8 AES only supports GCM_TABLE or GCM_TABLE_4BIT or GCM_SMALL
+#endif /* GCM_TABLE */
+
 static void gcm_ghash_arm32(Aes* aes, const byte* a, word32 aSz, const byte* c,
     word32 cSz, byte* s, word32 sSz)
 {
@@ -17119,13 +17178,13 @@ static void gcm_ghash_arm32(Aes* aes, const byte* a, word32 aSz, const byte* c,
         blocks = aSz / AES_BLOCK_SIZE;
         partial = aSz % AES_BLOCK_SIZE;
         if (blocks > 0) {
-            GCM_gmult_len(x, aes->gcm.M0, a, blocks * AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, a, blocks * AES_BLOCK_SIZE);
             a += blocks * AES_BLOCK_SIZE;
         }
         if (partial != 0) {
             XMEMSET(scratch, 0, AES_BLOCK_SIZE);
             XMEMCPY(scratch, a, partial);
-            GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
         }
     }
 
@@ -17134,20 +17193,20 @@ static void gcm_ghash_arm32(Aes* aes, const byte* a, word32 aSz, const byte* c,
         blocks = cSz / AES_BLOCK_SIZE;
         partial = cSz % AES_BLOCK_SIZE;
         if (blocks > 0) {
-            GCM_gmult_len(x, aes->gcm.M0, c, blocks * AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, c, blocks * AES_BLOCK_SIZE);
             c += blocks * AES_BLOCK_SIZE;
         }
         if (partial != 0) {
             XMEMSET(scratch, 0, AES_BLOCK_SIZE);
             XMEMCPY(scratch, c, partial);
-            GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
         }
     }
 
     /* Hash in the lengths of A and C in bits */
     FlattenSzInBits(&scratch[0], aSz);
     FlattenSzInBits(&scratch[8], cSz);
-    GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+    GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
 
     /* Copy the result into s. */
     XMEMCPY(s, x, sSz);
@@ -17198,13 +17257,13 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         blocks = authInSz / AES_BLOCK_SIZE;
         partial = authInSz % AES_BLOCK_SIZE;
         if (blocks > 0) {
-            GCM_gmult_len(x, aes->gcm.M0, authIn, blocks * AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, authIn, blocks * AES_BLOCK_SIZE);
             authIn += blocks * AES_BLOCK_SIZE;
         }
         if (partial != 0) {
             XMEMSET(scratch, 0, AES_BLOCK_SIZE);
             XMEMCPY(scratch, authIn, partial);
-            GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
         }
     }
 
@@ -17214,7 +17273,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     if (blocks > 0) {
         AES_GCM_encrypt(in, out, blocks * AES_BLOCK_SIZE,
             (const unsigned char*)aes->key, aes->rounds, counter);
-        GCM_gmult_len(x, aes->gcm.M0, out, blocks * AES_BLOCK_SIZE);
+        GCM_GMULT_LEN(aes, x, out, blocks * AES_BLOCK_SIZE);
         in += blocks * AES_BLOCK_SIZE;
         out += blocks * AES_BLOCK_SIZE;
     }
@@ -17227,14 +17286,14 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
         XMEMSET(scratch, 0, AES_BLOCK_SIZE);
         XMEMCPY(scratch, out, partial);
-        GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+        GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
     }
 
     /* Hash in the lengths of A and C in bits */
     XMEMSET(scratch, 0, AES_BLOCK_SIZE);
     FlattenSzInBits(&scratch[0], authInSz);
     FlattenSzInBits(&scratch[8], sz);
-    GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+    GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
     if (authTagSz > AES_BLOCK_SIZE) {
         XMEMCPY(authTag, x, AES_BLOCK_SIZE);
     }
@@ -17286,13 +17345,13 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         blocks = authInSz / AES_BLOCK_SIZE;
         partial = authInSz % AES_BLOCK_SIZE;
         if (blocks > 0) {
-            GCM_gmult_len(x, aes->gcm.M0, authIn, blocks * AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, authIn, blocks * AES_BLOCK_SIZE);
             authIn += blocks * AES_BLOCK_SIZE;
         }
         if (partial != 0) {
             XMEMSET(scratch, 0, AES_BLOCK_SIZE);
             XMEMCPY(scratch, authIn, partial);
-            GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+            GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
         }
     }
 
@@ -17300,7 +17359,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     partial = sz % AES_BLOCK_SIZE;
     /* do as many blocks as possible */
     if (blocks > 0) {
-        GCM_gmult_len(x, aes->gcm.M0, in, blocks * AES_BLOCK_SIZE);
+        GCM_GMULT_LEN(aes, x, in, blocks * AES_BLOCK_SIZE);
 
         AES_GCM_encrypt(in, out, blocks * AES_BLOCK_SIZE,
             (const unsigned char*)aes->key, aes->rounds, counter);
@@ -17310,7 +17369,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     if (partial != 0) {
         XMEMSET(scratch, 0, AES_BLOCK_SIZE);
         XMEMCPY(scratch, in, partial);
-        GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+        GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
 
         AES_GCM_encrypt(in, scratch, AES_BLOCK_SIZE,
             (const unsigned char*)aes->key, aes->rounds, counter);
@@ -17320,7 +17379,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     XMEMSET(scratch, 0, AES_BLOCK_SIZE);
     FlattenSzInBits(&scratch[0], authInSz);
     FlattenSzInBits(&scratch[8], sz);
-    GCM_gmult_len(x, aes->gcm.M0, scratch, AES_BLOCK_SIZE);
+    GCM_GMULT_LEN(aes, x, scratch, AES_BLOCK_SIZE);
     AES_ECB_encrypt(initialCounter, scratch, AES_BLOCK_SIZE,
         (const unsigned char*)aes->key, aes->rounds);
     xorbuf(x, scratch, authTagSz);

@@ -66,6 +66,8 @@
             #include <errno.h>
             #define LWIP_PROVIDE_ERRNO 1
         #endif
+    #elif defined(ARDUINO)
+        /* TODO Add specific boards */
     #elif defined(FREESCALE_MQX)
         #include <posix.h>
         #include <rtcs.h>
@@ -118,8 +120,6 @@
         #include <errno.h>
         #include <unistd.h>
         #include <fcntl.h>
-        #include <netdb.h>
-        #include <sys/ioctl.h>
     #elif defined(WOLFSSL_SGX)
         #include <errno.h>
     #elif defined(WOLFSSL_APACHE_MYNEWT) && !defined(WOLFSSL_LWIP)
@@ -129,7 +129,18 @@
         #include <lwip-socket.h>
         #include <errno.h>
     #elif defined(WOLFSSL_ZEPHYR)
-        #include <zephyr/net/socket.h>
+        #include <version.h>
+        #if KERNEL_VERSION_NUMBER >= 0x30100
+            #include <zephyr/net/socket.h>
+            #ifdef CONFIG_POSIX_API
+                #include <zephyr/posix/sys/socket.h>
+            #endif
+        #else
+            #include <net/socket.h>
+            #ifdef CONFIG_POSIX_API
+                #include <posix/sys/socket.h>
+            #endif
+        #endif
     #elif defined(MICROCHIP_PIC32)
         #include <sys/errno.h>
     #elif defined(HAVE_NETX)
@@ -139,6 +150,8 @@
         #include <sys/fcltypes.h>
         #include <fclerrno.h>
         #include <fclfcntl.h>
+    #elif defined(WOLFSSL_EMNET)
+        #include <IP/IP.h>
     #elif !defined(WOLFSSL_NO_SOCK)
         #include <sys/types.h>
         #include <errno.h>
@@ -161,11 +174,9 @@
             #include <sys/socket.h>
             #include <arpa/inet.h>
             #include <netinet/in.h>
-            #include <netdb.h>
             #ifdef __PPU
                 #include <netex/errno.h>
             #else
-                #include <sys/ioctl.h>
             #endif
         #endif
     #endif
@@ -208,7 +219,8 @@
     #define SOCKET_ECONNREFUSED SYS_NET_ECONNREFUSED
     #define SOCKET_ECONNABORTED SYS_NET_ECONNABORTED
 #elif defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
-    #if MQX_USE_IO_OLD
+    #if (defined(MQX_USE_IO_OLD) && MQX_USE_IO_OLD) || \
+        defined(FREESCALE_MQX_5_0)
         /* RTCS old I/O doesn't have an EWOULDBLOCK */
         #define SOCKET_EWOULDBLOCK  EAGAIN
         #define SOCKET_EAGAIN       EAGAIN
@@ -295,7 +307,7 @@
     #define SOCKET_ECONNREFUSED ERR_CONN
     #define SOCKET_ECONNABORTED ERR_ABRT
 #elif defined(WOLFSSL_EMNET)
-    #include <IP/IP.h>
+    #define XSOCKLENT           int
     #define SOCKET_EWOULDBLOCK  IP_ERR_WOULD_BLOCK
     #define SOCKET_EAGAIN       IP_ERR_WOULD_BLOCK
     #define SOCKET_ECONNRESET   IP_ERR_CONN_RESET
@@ -318,6 +330,12 @@
     #include <network.h>
     #define SEND_FUNCTION net_send
     #define RECV_FUNCTION net_recv
+#elif defined(WOLFSSL_ESPIDF)
+    #define SEND_FUNCTION send
+    #define RECV_FUNCTION recv
+    #if !defined(HAVE_SOCKADDR) && !defined(WOLFSSL_NO_SOCK)
+        #define HAVE_SOCKADDR
+    #endif
 #elif defined(WOLFSSL_LWIP) && !defined(WOLFSSL_APACHE_MYNEWT)
     #define SEND_FUNCTION lwip_send
     #define RECV_FUNCTION lwip_recv

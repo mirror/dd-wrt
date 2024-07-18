@@ -114,6 +114,7 @@ word32 btoi(byte b);
 WOLFSSL_LOCAL signed char HexCharToByte(char ch);
 WOLFSSL_LOCAL char ByteToHex(byte in);
 WOLFSSL_LOCAL int  ByteToHexStr(byte in, char* out);
+WOLFSSL_LOCAL int CharIsWhiteSpace(char ch);
 
 WOLFSSL_LOCAL byte ctMaskGT(int a, int b);
 WOLFSSL_LOCAL byte ctMaskGTE(int a, int b);
@@ -134,6 +135,8 @@ WOLFSSL_LOCAL byte ctSetLTE(int a, int b);
 WOLFSSL_LOCAL void ctMaskCopy(byte mask, byte* dst, byte* src, word16 size);
 WOLFSSL_LOCAL word32 MakeWordFromHash(const byte* hashID);
 WOLFSSL_LOCAL word32 HashObject(const byte* o, word32 len, int* error);
+WOLFSSL_LOCAL char* CopyString(const char* src, int srcLen, void* heap,
+        int type);
 
 WOLFSSL_LOCAL void w64Increment(w64wrapper *n);
 WOLFSSL_LOCAL void w64Decrement(w64wrapper *n);
@@ -152,6 +155,8 @@ WOLFSSL_LOCAL byte w64GTE(w64wrapper a, w64wrapper b);
 WOLFSSL_LOCAL byte w64LT(w64wrapper a, w64wrapper b);
 WOLFSSL_LOCAL w64wrapper w64Sub(w64wrapper a, w64wrapper b);
 WOLFSSL_LOCAL void w64Zero(w64wrapper *a);
+WOLFSSL_LOCAL w64wrapper w64ShiftRight(w64wrapper a, int shift);
+WOLFSSL_LOCAL w64wrapper w64ShiftLeft(w64wrapper a, int shift);
 
 #else /* !NO_INLINE */
 

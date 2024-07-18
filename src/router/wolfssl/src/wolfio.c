@@ -41,6 +41,60 @@
 #include <wolfssl/error-ssl.h>
 #include <wolfssl/wolfio.h>
 
+#if defined(USE_WOLFSSL_IO) || defined(HAVE_HTTP_CLIENT)
+    #ifndef USE_WINDOWS_API
+        #if defined(WOLFSSL_LWIP) && !defined(WOLFSSL_APACHE_MYNEWT)
+        #elif defined(ARDUINO)
+        #elif defined(FREESCALE_MQX)
+        #elif defined(FREESCALE_KSDK_MQX)
+        #elif (defined(WOLFSSL_MDK_ARM) || defined(WOLFSSL_KEIL_TCP_NET))
+        #elif defined(WOLFSSL_CMSIS_RTOS)
+        #elif defined(WOLFSSL_CMSIS_RTOSv2)
+        #elif defined(WOLFSSL_TIRTOS)
+        #elif defined(FREERTOS_TCP)
+        #elif defined(WOLFSSL_IAR_ARM)
+        #elif defined(HAVE_NETX_BSD)
+        #elif defined(WOLFSSL_VXWORKS)
+        #elif defined(WOLFSSL_NUCLEUS_1_2)
+        #elif defined(WOLFSSL_LINUXKM)
+            /* the requisite linux/net.h is included in wc_port.h, with incompatible warnings masked out. */
+        #elif defined(WOLFSSL_ATMEL)
+        #elif defined(INTIME_RTOS)
+            #include <netdb.h>
+        #elif defined(WOLFSSL_PRCONNECT_PRO)
+            #include <netdb.h>
+            #include <sys/ioctl.h>
+        #elif defined(WOLFSSL_SGX)
+        #elif defined(WOLFSSL_APACHE_MYNEWT) && !defined(WOLFSSL_LWIP)
+        #elif defined(WOLFSSL_DEOS)
+        #elif defined(WOLFSSL_ZEPHYR)
+        #elif defined(MICROCHIP_PIC32)
+        #elif defined(HAVE_NETX)
+        #elif defined(FUSION_RTOS)
+        #elif !defined(WOLFSSL_NO_SOCK)
+            #if defined(HAVE_RTP_SYS)
+            #elif defined(EBSNET)
+            #elif defined(NETOS)
+            #elif !defined(DEVKITPRO) && !defined(WOLFSSL_PICOTCP) \
+                    && !defined(WOLFSSL_CONTIKI) && !defined(WOLFSSL_WICED) \
+                    && !defined(WOLFSSL_GNRC) && !defined(WOLFSSL_RIOT_OS)
+                #ifdef HAVE_NETDB_H
+                    #include <netdb.h>
+                #endif
+                #ifdef __PPU
+                    #include <netex/errno.h>
+                #else
+                    #ifdef HAVE_SYS_IOCTL_H
+                        #include <sys/ioctl.h>
+                    #endif
+                #endif
+            #endif
+        #endif
+
+    #endif /* USE_WINDOWS_API */
+#endif /* defined(USE_WOLFSSL_IO) || defined(HAVE_HTTP_CLIENT) */
+
+
 #if defined(HAVE_HTTP_CLIENT)
     #include <stdlib.h>   /* strtol() */
 #endif
@@ -99,6 +153,11 @@ static WC_INLINE int TranslateReturnCode(int old, int sd)
         if (errno == RTCSERR_TCP_TIMED_OUT)
             errno = SOCKET_EAGAIN;
     }
+#elif defined(WOLFSSL_EMNET)
+    if (old < 0) { /* SOCKET_ERROR */
+        /* Get the real socket error */
+        IP_SOCK_getsockopt(sd, SOL_SOCKET, SO_ERROR, &old, (int)sizeof(old));
+    }
 #endif
 
     return old;
@@ -112,7 +171,7 @@ static WC_INLINE int wolfSSL_LastError(int err)
     return WSAGetLastError();
 #elif defined(EBSNET)
     return xn_getlasterror();
-#elif defined(WOLFSSL_LINUXKM)
+#elif defined(WOLFSSL_LINUXKM) || defined(WOLFSSL_EMNET)
     return err; /* Return provided error value */
 #elif defined(FUSION_RTOS)
     #include <fclerrno.h>
@@ -504,7 +563,7 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
                 start = LowResTimer();
             }
             else {
-                dtls_timeout -= LowResTimer() - start;
+                dtls_timeout -= (int) (LowResTimer() - start);
                 start = LowResTimer();
                 if (dtls_timeout < 0 || dtls_timeout > DTLS_TIMEOUT_MAX)
                     return WOLFSSL_CBIO_ERR_TIMEOUT;
@@ -554,7 +613,7 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
         }
 #endif /* !NO_ASN_TIME */
 
-        recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, sz, ssl->rflags,
+        recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, (size_t)sz, ssl->rflags,
             (SOCKADDR*)peer, peer != NULL ? &peerSz : NULL);
 
         /* From the RECV(2) man page
@@ -662,7 +721,7 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 #endif
     }
 
-    sent = (int)DTLS_SENDTO_FUNCTION(sd, buf, sz, ssl->wflags,
+    sent = (int)DTLS_SENDTO_FUNCTION(sd, buf, (size_t)sz, ssl->wflags,
             (const SOCKADDR*)peer, peerSz);
 
     sent = TranslateReturnCode(sent, sd);
@@ -689,7 +748,7 @@ int EmbedReceiveFromMcast(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 
     WOLFSSL_ENTER("EmbedReceiveFromMcast");
 
-    recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, sz, ssl->rflags, NULL, NULL);
+    recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, (size_t)sz, ssl->rflags, NULL, NULL);
 
     recvd = TranslateReturnCode(recvd, sd);
 
@@ -733,7 +792,7 @@ int EmbedGenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *ctx)
 
     if (sz > WC_SHA256_DIGEST_SIZE)
         sz = WC_SHA256_DIGEST_SIZE;
-    XMEMCPY(buf, digest, sz);
+    XMEMCPY(buf, digest, (size_t)sz);
 
     return sz;
 }
@@ -927,7 +986,7 @@ int wolfIO_Recv(SOCKET_T sd, char *buf, int sz, int rdFlags)
 {
     int recvd;
 
-    recvd = (int)RECV_FUNCTION(sd, buf, sz, rdFlags);
+    recvd = (int)RECV_FUNCTION(sd, buf, (size_t)sz, rdFlags);
     recvd = TranslateReturnCode(recvd, (int)sd);
 
     return recvd;
@@ -937,7 +996,7 @@ int wolfIO_Send(SOCKET_T sd, char *buf, int sz, int wrFlags)
 {
     int sent;
 
-    sent = (int)SEND_FUNCTION(sd, buf, sz, wrFlags);
+    sent = (int)SEND_FUNCTION(sd, buf, (size_t)sz, wrFlags);
     sent = TranslateReturnCode(sent, (int)sd);
 
     return sent;
@@ -1029,9 +1088,9 @@ int wolfIO_Send(SOCKET_T sd, char *buf, int sz, int wrFlags)
     }
 #endif /* HAVE_IO_TIMEOUT */
 
-static int wolfIO_Word16ToString(char* d, word16 number)
+static word32 wolfIO_Word16ToString(char* d, word16 number)
 {
-    int i = 0;
+    word32 i = 0;
     word16 order = 10000;
     word16 digit;
 
@@ -1046,7 +1105,7 @@ static int wolfIO_Word16ToString(char* d, word16 number)
             if (i > 0 || digit != 0)
                 d[i++] = (char)digit + '0';
             if (digit != 0)
-                number %= digit * order;
+                number = (word16) (number % (digit * order));
 
             order = (order > 1) ? order / 10 : 0;
         }
@@ -1061,7 +1120,7 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
 #ifdef HAVE_SOCKADDR
     int ret = 0;
     SOCKADDR_S addr;
-    int sockaddr_len;
+    socklen_t sockaddr_len;
 #if defined(HAVE_GETADDRINFO)
     /* use getaddrinfo */
     ADDRINFO hints;
@@ -1125,7 +1184,7 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     }
 
     sockaddr_len = answer->ai_addrlen;
-    XMEMCPY(&addr, answer->ai_addr, sockaddr_len);
+    XMEMCPY(&addr, answer->ai_addr, (size_t)sockaddr_len);
     freeaddrinfo(answer);
 #elif defined(WOLFSSL_USE_POPEN_HOST) && !defined(WOLFSSL_IPV6)
     {
@@ -1288,7 +1347,7 @@ int wolfIO_TcpBind(SOCKET_T* sockfd, word16 port)
 #ifdef HAVE_SOCKADDR
     int ret = 0;
     SOCKADDR_S addr;
-    int sockaddr_len = sizeof(SOCKADDR_IN);
+    socklen_t sockaddr_len = sizeof(SOCKADDR_IN);
     SOCKADDR_IN *sin = (SOCKADDR_IN *)&addr;
 
     if (sockfd == NULL || port < 1) {
@@ -1409,6 +1468,9 @@ int wolfIO_DecodeUrl(const char* url, int urlSz, char* outName, char* outPath,
             word32 bigPort = 0;
             i = 0;
             cur++;
+
+            XMEMSET(port, 0, sizeof(port));
+
             while (i < 6 && cur < urlSz && url[cur] != 0 && url[cur] != '/') {
                 port[i] = url[cur];
                 i++; cur++;
@@ -1416,7 +1478,7 @@ int wolfIO_DecodeUrl(const char* url, int urlSz, char* outName, char* outPath,
 
             for (j = 0; j < i; j++) {
                 if (port[j] < '0' || port[j] > '9') return -1;
-                bigPort = (bigPort * 10) + (port[j] - '0');
+                bigPort = (bigPort * 10) + (word32)(port[j] - '0');
             }
             if (outPort)
                 *outPort = (word16)bigPort;
@@ -1471,7 +1533,7 @@ static int wolfIO_HttpProcessResponseBuf(int sfd, byte **recvBuf,
         return MEMORY_E;
     }
 
-    newRecvBuf = (byte*)XMALLOC(newRecvSz, heap, dynType);
+    newRecvBuf = (byte*)XMALLOC((size_t)newRecvSz, heap, dynType);
     if (newRecvBuf == NULL) {
         WOLFSSL_MSG("wolfIO_HttpProcessResponseBuf malloc failed");
         return MEMORY_E;
@@ -1479,7 +1541,7 @@ static int wolfIO_HttpProcessResponseBuf(int sfd, byte **recvBuf,
 
     /* if buffer already exists, then we are growing it */
     if (*recvBuf) {
-        XMEMCPY(&newRecvBuf[pos], *recvBuf, *recvBufSz);
+        XMEMCPY(&newRecvBuf[pos], *recvBuf, (size_t) *recvBufSz);
         XFREE(*recvBuf, heap, dynType);
         pos += *recvBufSz;
         *recvBuf = NULL;
@@ -1488,7 +1550,7 @@ static int wolfIO_HttpProcessResponseBuf(int sfd, byte **recvBuf,
     /* copy the remainder of the httpBuf into the respBuf */
     if (len != 0) {
         if (pos + len <= newRecvSz) {
-            XMEMCPY(&newRecvBuf[pos], start, len);
+            XMEMCPY(&newRecvBuf[pos], start, (size_t)len);
             pos += len;
         }
         else {
@@ -1550,6 +1612,11 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
 
         /* read data if no \r\n or first time */
         if ((start == NULL) || (end == NULL)) {
+            if (httpBufSz < len + 1) {
+                return BUFFER_ERROR; /* can't happen, but Coverity thinks it
+                                      * can.
+                                      */
+            }
             result = wolfIO_Recv(sfd, (char*)httpBuf+len, httpBufSz-len-1, 0);
             if (result > 0) {
                 len += result;
@@ -1572,7 +1639,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
         /* handle incomplete rx */
         if (end == NULL) {
             if (len != 0)
-                XMEMMOVE(httpBuf, start, len);
+                XMEMMOVE(httpBuf, start, (size_t)len);
             start = end = NULL;
         }
         /* when start is "\r\n" */
@@ -1698,7 +1765,7 @@ int wolfIO_HttpBuildRequest(const char *reqType, const char *domainName,
     return wolfIO_HttpBuildRequest_ex(reqType, domainName, path, pathLen, reqSz, contentType, "", buf, bufSize);
 }
 
-    int wolfIO_HttpBuildRequest_ex(const char *reqType, const char *domainName,
+int wolfIO_HttpBuildRequest_ex(const char *reqType, const char *domainName,
                                 const char *path, int pathLen, int reqSz, const char *contentType,
                                 const char *exHdrs, byte *buf, int bufSize)
     {
@@ -1740,7 +1807,7 @@ int wolfIO_HttpBuildRequest(const char *reqType, const char *domainName,
     maxLen =
         reqTypeLen +
         blankStrLen +
-        pathLen +
+        (word32)pathLen +
         http11StrLen +
         hostStrLen +
         domainNameLen +
@@ -1751,46 +1818,46 @@ int wolfIO_HttpBuildRequest(const char *reqType, const char *domainName,
         singleCrLfStrLen +
         exHdrsLen +
         doubleCrLfStrLen +
-        1 /* null term */;
+        (word32)1 /* null term */;
     if (maxLen > (word32)bufSize)
         return 0;
 
-    XSTRNCPY((char*)buf, reqType, bufSize);
-    buf += reqTypeLen; bufSize -= reqTypeLen;
-    XSTRNCPY((char*)buf, blankStr, bufSize);
-    buf += blankStrLen; bufSize -= blankStrLen;
-    XSTRNCPY((char*)buf, path, bufSize);
-    buf += pathLen; bufSize -= pathLen;
-    XSTRNCPY((char*)buf, http11Str, bufSize);
-    buf += http11StrLen; bufSize -= http11StrLen;
+    XSTRNCPY((char*)buf, reqType, (size_t)bufSize);
+    buf += reqTypeLen; bufSize -= (int)reqTypeLen;
+    XSTRNCPY((char*)buf, blankStr, (size_t)bufSize);
+    buf += blankStrLen; bufSize -= (int)blankStrLen;
+    XSTRNCPY((char*)buf, path, (size_t)bufSize);
+    buf += pathLen; bufSize -= (int)pathLen;
+    XSTRNCPY((char*)buf, http11Str, (size_t)bufSize);
+    buf += http11StrLen; bufSize -= (int)http11StrLen;
     if (domainNameLen > 0) {
-        XSTRNCPY((char*)buf, hostStr, bufSize);
-        buf += hostStrLen; bufSize -= hostStrLen;
-        XSTRNCPY((char*)buf, domainName, bufSize);
-        buf += domainNameLen; bufSize -= domainNameLen;
+        XSTRNCPY((char*)buf, hostStr, (size_t)bufSize);
+        buf += hostStrLen; bufSize -= (int)hostStrLen;
+        XSTRNCPY((char*)buf, domainName, (size_t)bufSize);
+        buf += domainNameLen; bufSize -= (int)domainNameLen;
     }
     if (reqSz > 0 && reqSzStrLen > 0) {
-        XSTRNCPY((char*)buf, contentLenStr, bufSize);
-        buf += contentLenStrLen; bufSize -= contentLenStrLen;
-        XSTRNCPY((char*)buf, reqSzStr, bufSize);
-        buf += reqSzStrLen; bufSize -= reqSzStrLen;
+        XSTRNCPY((char*)buf, contentLenStr, (size_t)bufSize);
+        buf += contentLenStrLen; bufSize -= (int)contentLenStrLen;
+        XSTRNCPY((char*)buf, reqSzStr, (size_t)bufSize);
+        buf += reqSzStrLen; bufSize -= (int)reqSzStrLen;
     }
     if (contentTypeLen > 0) {
-        XSTRNCPY((char*)buf, contentTypeStr, bufSize);
-        buf += contentTypeStrLen; bufSize -= contentTypeStrLen;
-        XSTRNCPY((char*)buf, contentType, bufSize);
-        buf += contentTypeLen; bufSize -= contentTypeLen;
+        XSTRNCPY((char*)buf, contentTypeStr, (size_t)bufSize);
+        buf += contentTypeStrLen; bufSize -= (int)contentTypeStrLen;
+        XSTRNCPY((char*)buf, contentType, (size_t)bufSize);
+        buf += contentTypeLen; bufSize -= (int)contentTypeLen;
     }
     if (exHdrsLen > 0)
     {
-        XSTRNCPY((char *)buf, singleCrLfStr, bufSize);
+        XSTRNCPY((char *)buf, singleCrLfStr, (size_t)bufSize);
         buf += singleCrLfStrLen;
-        bufSize -= singleCrLfStrLen;
-        XSTRNCPY((char *)buf, exHdrs, bufSize);
+        bufSize -= (int)singleCrLfStrLen;
+        XSTRNCPY((char *)buf, exHdrs, (size_t)bufSize);
         buf += exHdrsLen;
-        bufSize -= exHdrsLen;
+        bufSize -= (int)exHdrsLen;
     }
-    XSTRNCPY((char*)buf, doubleCrLfStr, bufSize);
+    XSTRNCPY((char*)buf, doubleCrLfStr, (size_t)bufSize);
     buf += doubleCrLfStrLen;
 
 #ifdef WOLFIO_DEBUG
@@ -1867,7 +1934,7 @@ int EmbedOcspLookup(void* ctx, const char* url, int urlSz,
         /* Note, the library uses the EmbedOcspRespFree() callback to
          * free this buffer. */
         int   httpBufSz = HTTP_SCRATCH_BUFFER_SIZE;
-        byte* httpBuf   = (byte*)XMALLOC(httpBufSz, ctx, DYNAMIC_TYPE_OCSP);
+        byte* httpBuf   = (byte*)XMALLOC((size_t)httpBufSz, ctx, DYNAMIC_TYPE_OCSP);
 
         if (httpBuf == NULL) {
             WOLFSSL_MSG("Unable to create OCSP response buffer");
@@ -1974,7 +2041,7 @@ int EmbedCrlLookup(WOLFSSL_CRL* crl, const char* url, int urlSz)
     }
     else {
         int   httpBufSz = HTTP_SCRATCH_BUFFER_SIZE;
-        byte* httpBuf   = (byte*)XMALLOC(httpBufSz, crl->heap,
+        byte* httpBuf   = (byte*)XMALLOC((size_t)httpBufSz, crl->heap,
                                                               DYNAMIC_TYPE_CRL);
         if (httpBuf == NULL) {
             WOLFSSL_MSG("Unable to create CRL response buffer");

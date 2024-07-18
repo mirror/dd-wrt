@@ -1,7 +1,16 @@
 name: Kerberos 5 Tests
 
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   build_wolfssl:
@@ -11,19 +20,23 @@ jobs:
     # This should be a safe limit for the tests to run.
     timeout-minutes: 5
     steps:
+      - name: workaround high-entropy ASLR
+        # not needed after either an update to llvm or runner is done
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
       - name: Build wolfSSL
         uses: wolfSSL/actions-build-autotools-project@v1
         with:
           path: wolfssl
-          configure: --enable-krb CFLAGS='-fsanitize=address'
+          configure: --enable-krb CC='gcc -fsanitize=address'
           install: true
 
       - name: Upload built lib
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wolf-install-krb5
           path: build-dir
-          retention-days: 1
+          retention-days: 5
 
   krb5_check:
     strategy:
@@ -38,19 +51,19 @@ jobs:
     needs: build_wolfssl
     steps:
       - name: Download lib
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wolf-install-krb5
           path: build-dir
 
       - name: Checkout OSP
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: wolfssl/osp
           path: osp
 
       - name: Checkout krb5
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: krb5/krb5
           ref: krb5-${{ matrix.ref }}-final
@@ -60,6 +73,10 @@ jobs:
         working-directory: ./krb5
         run: |
           patch -p1 < $GITHUB_WORKSPACE/osp/krb5/Patch-for-Kerberos-5-${{ matrix.ref }}.patch
+
+      - name: workaround high-entropy ASLR
+        # not needed after either an update to llvm or runner is done
+        run: sudo sysctl vm.mmap_rnd_bits=28
 
       - name: Build krb5
         working-directory: ./krb5/src

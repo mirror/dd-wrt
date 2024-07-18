@@ -27,7 +27,6 @@
     }
     \endcode
 
-    \sa wc_RsaInitCavium
     \sa wc_FreeRsaKey
     \sa wc_RsaSetRNG
 */
@@ -56,7 +55,7 @@ int  wc_InitRsaKey(RsaKey* key, void* heap);
     \param heap pointer to a heap identifier, for use with memory overrides,
     allowing custom handling of memory allocation. This heap will be the
     default used when allocating memory for use with this RSA object
-    \param devId ID to use with hardware device
+    \param devId ID to use with crypto callbacks or async hardware. Set to INVALID_DEVID (-2) if not used
 
     _Example_
     \code
@@ -77,7 +76,6 @@ int  wc_InitRsaKey(RsaKey* key, void* heap);
     \endcode
 
     \sa wc_InitRsaKey
-    \sa wc_RsaInitCavium
     \sa wc_FreeRsaKey
     \sa wc_RsaSetRNG
 */
@@ -132,6 +130,51 @@ int wc_RsaSetRNG(RsaKey* key, WC_RNG* rng);
     \sa wc_InitRsaKey
 */
 int  wc_FreeRsaKey(RsaKey* key);
+
+/*!
+    \ingroup RSA
+
+    \brief Function that does the RSA operation directly with no padding. The input
+        size must match key size. Typically this is
+        used when padding is already done on the RSA input.
+
+    \return size On successfully encryption the size of the encrypted buffer
+    is returned
+    \return RSA_BUFFER_E RSA buffer error, output too small or input too large
+
+    \param in buffer to do operation on
+    \param inLen length of input buffer
+    \param out buffer to hold results
+    \param outSz gets set to size of result buffer. Should be passed in as length
+        of out buffer. If the pointer "out" is null then outSz gets set to the
+        expected buffer size needed and LENGTH_ONLY_E gets returned.
+    \param key initialized RSA key to use for encrypt/decrypt
+    \param type if using private or public key (RSA_PUBLIC_ENCRYPT,
+        RSA_PUBLIC_DECRYPT, RSA_PRIVATE_ENCRYPT, RSA_PRIVATE_DECRYPT)
+    \param rng initialized WC_RNG struct
+
+    _Example_
+    \code
+    int ret;
+    WC_RNG rng;
+    RsaKey key;
+    byte  in[256];
+    byte out[256];
+    word32 outSz = (word32)sizeof(out);
+    …
+
+    ret = wc_RsaDirect(in, (word32)sizeof(in), out, &outSz, &key,
+        RSA_PRIVATE_ENCRYPT, &rng);
+    if (ret < 0) {
+	    //handle error
+    }
+    \endcode
+
+    \sa wc_RsaPublicEncrypt
+    \sa wc_RsaPrivateDecrypt
+*/
+int wc_RsaDirect(byte* in, word32 inLen, byte* out, word32* outSz,
+        RsaKey* key, int type, WC_RNG* rng);
 
 /*!
     \ingroup RSA
@@ -1377,7 +1420,7 @@ int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 inLen);
     \ingroup RSA
 
     \brief Convert RSA Public key to DER format. Writes to output, and
-    returns count of bytes written. If with_header is 0 then only the 
+    returns count of bytes written. If with_header is 0 then only the
     ( seq + n + e) is returned in ASN.1 DER format and will exclude the header.
 
     \return >0 Success, number of bytes written.

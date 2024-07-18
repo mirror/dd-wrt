@@ -28,11 +28,25 @@
 #ifdef WOLFSSL_ARMASM
 #if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
 
-#ifdef HAVE_FIPS
-#undef HAVE_FIPS
+#if FIPS_VERSION3_LT(6,0,0) && defined(HAVE_FIPS)
+    #undef HAVE_FIPS
+#else
+    #if defined(HAVE_FIPS) && FIPS_VERSION3_GE(6,0,0)
+    /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
+        #define FIPS_NO_WRAPPERS
+    #endif
 #endif
 
+
 #include <wolfssl/wolfcrypt/sha512.h>
+#if FIPS_VERSION3_GE(6,0,0)
+    const unsigned int wolfCrypt_FIPS_sha512_ro_sanity[2] =
+                                                     { 0x1a2b3c4d, 0x00000015 };
+    int wolfCrypt_FIPS_SHA512_sanity(void)
+    {
+        return 0;
+    }
+#endif
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/hash.h>
 
@@ -614,7 +628,7 @@ static int Sha512_Family_Final(wc_Sha512* sha512, byte* hash,
 #ifdef WOLF_CRYPTO_CB
     if (sha512->devId != INVALID_DEVID) {
         ret = wc_CryptoCb_Sha512Hash(sha512, NULL, 0, hash);
-        if (ret != CRYPTOCB_UNAVAILABLE)
+        if (ret != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
             return ret;
         /* fall-through when unavailable */
     }

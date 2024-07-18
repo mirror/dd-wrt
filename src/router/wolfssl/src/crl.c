@@ -69,9 +69,9 @@ int InitCRL(WOLFSSL_CRL* crl, WOLFSSL_CERT_MANAGER* cm)
     crl->cm = cm;
     crl->crlList  = NULL;
     crl->currentEntry = NULL;
+#ifdef HAVE_CRL_MONITOR
     crl->monitors[0].path = NULL;
     crl->monitors[1].path = NULL;
-#ifdef HAVE_CRL_MONITOR
     crl->tid = INVALID_THREAD_VAL;
     crl->mfd = WOLFSSL_CRL_MFD_INIT_VAL;
     crl->setup = 0; /* thread setup done predicate */
@@ -110,18 +110,18 @@ static int InitCRL_Entry(CRL_Entry* crle, DecodedCRL* dcrl, const byte* buff,
 #if defined(OPENSSL_EXTRA)
     crle->lastDateAsn1.length = MAX_DATE_SIZE;
     XMEMCPY (crle->lastDateAsn1.data, crle->lastDate,
-             crle->lastDateAsn1.length);
+             (size_t)crle->lastDateAsn1.length);
     crle->lastDateAsn1.type = crle->lastDateFormat;
     crle->nextDateAsn1.length = MAX_DATE_SIZE;
     XMEMCPY (crle->nextDateAsn1.data, crle->nextDate,
-             crle->nextDateAsn1.length);
+             (size_t)crle->nextDateAsn1.length);
     crle->nextDateAsn1.type = crle->nextDateFormat;
 
     crle->issuer = NULL;
     wolfSSL_d2i_X509_NAME(&crle->issuer, (unsigned char**)&dcrl->issuer,
                           dcrl->issuerSz);
     if (crle->issuer == NULL) {
-        return WOLFSSL_FAILURE;
+        return -1;
     }
 #endif
 #ifdef CRL_STATIC_REVOKED_LIST
@@ -149,6 +149,23 @@ static int InitCRL_Entry(CRL_Entry* crle, DecodedCRL* dcrl, const byte* buff,
             crle->toBeSigned = NULL;
             return -1;
         }
+
+    #ifdef WC_RSA_PSS
+        crle->sigParamsSz = dcrl->sigParamsLength;
+        if (dcrl->sigParamsLength > 0) {
+            crle->sigParams = (byte*)XMALLOC(crle->sigParamsSz, heap,
+                                             DYNAMIC_TYPE_CRL_ENTRY);
+            if (crle->sigParams== NULL) {
+                XFREE(crle->toBeSigned, heap, DYNAMIC_TYPE_CRL_ENTRY);
+                crle->toBeSigned = NULL;
+                XFREE(crle->signature, heap, DYNAMIC_TYPE_CRL_ENTRY);
+                crle->signature = NULL;
+                return -1;
+            }
+            XMEMCPY(crle->sigParams, buff + dcrl->sigParamsIndex,
+                crle->sigParamsSz);
+        }
+    #endif
         XMEMCPY(crle->toBeSigned, buff + dcrl->certBegin, crle->tbsSz);
         XMEMCPY(crle->signature, dcrl->signature, crle->signatureSz);
     #ifndef NO_SKID
@@ -206,6 +223,10 @@ static void CRL_Entry_free(CRL_Entry* crle, void* heap)
         XFREE(crle->signature, heap, DYNAMIC_TYPE_CRL_ENTRY);
     if (crle->toBeSigned != NULL)
         XFREE(crle->toBeSigned, heap, DYNAMIC_TYPE_CRL_ENTRY);
+#ifdef WC_RSA_PSS
+    if (crle->sigParams != NULL)
+        XFREE(crle->sigParams, heap, DYNAMIC_TYPE_CRL_ENTRY);
+#endif
 #if defined(OPENSSL_EXTRA)
     if (crle->issuer != NULL) {
         FreeX509Name(crle->issuer);
@@ -228,11 +249,13 @@ void FreeCRL(WOLFSSL_CRL* crl, int dynamic)
 
     tmp = crl->crlList;
     WOLFSSL_ENTER("FreeCRL");
+#ifdef HAVE_CRL_MONITOR
     if (crl->monitors[0].path)
         XFREE(crl->monitors[0].path, crl->heap, DYNAMIC_TYPE_CRL_MONITOR);
 
     if (crl->monitors[1].path)
         XFREE(crl->monitors[1].path, crl->heap, DYNAMIC_TYPE_CRL_MONITOR);
+#endif
 
     XFREE(crl->currentEntry, crl->heap, DYNAMIC_TYPE_CRL_ENTRY);
     crl->currentEntry = NULL;
@@ -295,14 +318,14 @@ static int FindRevokedSerial(RevokedCert* rc, byte* serial, int serialSz,
     while (rc) {
         if (serialHash == NULL) {
             if (rc->serialSz == serialSz &&
-                   XMEMCMP(rc->serialNumber, serial, rc->serialSz) == 0) {
+                   XMEMCMP(rc->serialNumber, serial, (size_t)rc->serialSz) == 0) {
                 WOLFSSL_MSG("Cert revoked");
                 ret = CRL_CERT_REVOKED;
                 break;
             }
         }
         else {
-            ret = CalcHashId(rc->serialNumber, rc->serialSz, hash);
+            ret = CalcHashId(rc->serialNumber, (word32)rc->serialSz, hash);
             if (ret != 0)
                 break;
             if (XMEMCMP(hash, serialHash, SIGNER_DIGEST_SIZE) == 0) {
@@ -337,13 +360,20 @@ static int VerifyCRLE(const WOLFSSL_CRL* crl, CRL_Entry* crle)
     }
 
     ret = VerifyCRL_Signature(&sigCtx, crle->toBeSigned, crle->tbsSz,
-            crle->signature, crle->signatureSz, crle->signatureOID, ca,
-            crl->heap);
+            crle->signature, crle->signatureSz, crle->signatureOID,
+        #ifdef WC_RSA_PSS
+            crle->sigParams, (int)crle->sigParamsSz,
+        #else
+            NULL, 0,
+        #endif
+            ca, crl->heap);
 
-    if (ret == 0)
+    if (ret == 0) {
         crle->verified = 1;
-    else
+    }
+    else {
         crle->verified = ret;
+    }
 
     return ret;
 }
@@ -362,6 +392,8 @@ static int CheckCertCRLList(WOLFSSL_CRL* crl, byte* issuerHash, byte* serial,
 
     for (crle = crl->crlList; crle != NULL; crle = crle->next) {
         if (XMEMCMP(crle->issuerHash, issuerHash, CRL_DIGEST_SIZE) == 0) {
+            int nextDateValid = 1;
+
             WOLFSSL_MSG("Found CRL Entry on list");
 
             if (crle->verified == 0) {
@@ -396,16 +428,19 @@ static int CheckCertCRLList(WOLFSSL_CRL* crl, byte* issuerHash, byte* serial,
             #if !defined(NO_ASN_TIME) && !defined(WOLFSSL_NO_CRL_DATE_CHECK)
                 if (!XVALIDATE_DATE(crle->nextDate,crle->nextDateFormat, AFTER)) {
                     WOLFSSL_MSG("CRL next date is no longer valid");
-                    ret = ASN_AFTER_DATE_E;
+                    nextDateValid = 0;
                 }
             #endif
             }
-            if (ret == 0) {
+            if (nextDateValid) {
                 foundEntry = 1;
                 ret = FindRevokedSerial(crle->certs, serial, serialSz,
                         serialHash, crle->totalCerts);
                 if (ret != 0)
                     break;
+            }
+            else if (foundEntry == 0) {
+                ret = ASN_AFTER_DATE_E;
             }
         }
     }
@@ -461,14 +496,15 @@ int CheckCertCRL_ex(WOLFSSL_CRL* crl, byte* issuerHash, byte* serial,
 
 #if defined(OPENSSL_ALL) && defined(WOLFSSL_CERT_GEN) && \
     (defined(WOLFSSL_CERT_REQ) || defined(WOLFSSL_CERT_EXT)) && \
-    !defined(NO_FILESYSTEM) && !defined(NO_WOLFSSL_DIR)
+    !defined(NO_FILESYSTEM) && !defined(NO_WOLFSSL_DIR) && \
+    !defined(NO_STDIO_FILESYSTEM)
     /* if not find entry in the CRL list, it looks at the folder that sets  */
     /* by LOOKUP_ctrl because user would want to use hash_dir.              */
     /* Loading <issuer-hash>.rN form CRL file if find at the folder,        */
     /* and try again checking Cert in the CRL list.                         */
     /* When not set the folder or not use hash_dir, do nothing.             */
-    if ((foundEntry == 0) && (ret != OCSP_WANT_READ)) {
-        if (crl->cm->x509_store_p != NULL) {
+    if ((foundEntry == 0) && (ret != WC_NO_ERR_TRACE(OCSP_WANT_READ))) {
+        if (crl->cm != NULL && crl->cm->x509_store_p != NULL) {
             ret = LoadCertByIssuer(crl->cm->x509_store_p,
                           (WOLFSSL_X509_NAME*)issuerName, X509_LU_CRL);
             if (ret == WOLFSSL_SUCCESS) {
@@ -481,18 +517,18 @@ int CheckCertCRL_ex(WOLFSSL_CRL* crl, byte* issuerHash, byte* serial,
 #endif
     if (foundEntry == 0) {
         WOLFSSL_MSG("Couldn't find CRL for status check");
-        if (ret != CRL_CERT_DATE_ERR) {
+        if (ret != WC_NO_ERR_TRACE(CRL_CERT_DATE_ERR)) {
             ret = CRL_MISSING;
         }
 
-        if (crl->cm->cbMissingCRL) {
+        if (crl->cm != NULL && crl->cm->cbMissingCRL) {
             char url[256];
 
             WOLFSSL_MSG("Issuing missing CRL callback");
             url[0] = '\0';
             if (extCrlInfo) {
                 if (extCrlInfoSz < (int)sizeof(url) -1 ) {
-                    XMEMCPY(url, extCrlInfo, extCrlInfoSz);
+                    XMEMCPY(url, extCrlInfo, (size_t)extCrlInfoSz);
                     url[extCrlInfoSz] = '\0';
                 }
                 else  {
@@ -619,13 +655,15 @@ int BufferLoadCRL(WOLFSSL_CRL* crl, const byte* buff, long sz, int type,
     InitDecodedCRL(dcrl, crl->heap);
     ret = ParseCRL(crl->currentEntry->certs, dcrl, myBuffer, (word32)sz,
                    verify, crl->cm);
-    if (ret != 0 && !(ret == ASN_CRL_NO_SIGNER_E && verify == NO_VERIFY)) {
+    if (ret != 0 && !(ret == WC_NO_ERR_TRACE(ASN_CRL_NO_SIGNER_E)
+                      && verify == NO_VERIFY)) {
         WOLFSSL_MSG("ParseCRL error");
         CRL_Entry_free(crl->currentEntry, crl->heap);
         crl->currentEntry = NULL;
     }
     else {
-        ret = AddCRL(crl, dcrl, myBuffer, ret != ASN_CRL_NO_SIGNER_E);
+        ret = AddCRL(crl, dcrl, myBuffer,
+                     ret != WC_NO_ERR_TRACE(ASN_CRL_NO_SIGNER_E));
         if (ret != 0) {
             WOLFSSL_MSG("AddCRL error");
             crl->currentEntry = NULL;
@@ -649,8 +687,8 @@ static WOLFSSL_X509_CRL* wolfSSL_X509_crl_new(WOLFSSL_CERT_MANAGER* cm)
 {
     WOLFSSL_X509_CRL* ret;
 
-    ret = (WOLFSSL_X509_CRL*)XMALLOC(sizeof(WOLFSSL_X509_CRL), cm->heap,
-                DYNAMIC_TYPE_CRL);
+    ret = (WOLFSSL_X509_CRL*)XMALLOC(sizeof(WOLFSSL_X509_CRL),
+            cm != NULL ? cm->heap : NULL, DYNAMIC_TYPE_CRL);
     if (ret != NULL) {
         if (InitCRL(ret, cm) < 0) {
             WOLFSSL_MSG("Unable to initialize new CRL structure");
@@ -735,18 +773,35 @@ static CRL_Entry* DupCRL_Entry(const CRL_Entry* ent, void* heap)
                                           DYNAMIC_TYPE_CRL_ENTRY);
         dupl->signature = (byte*)XMALLOC(dupl->signatureSz, heap,
                                          DYNAMIC_TYPE_CRL_ENTRY);
-        if (dupl->toBeSigned == NULL || dupl->signature == NULL) {
+    #ifdef WC_RSA_PSS
+        dupl->sigParams = (byte*)XMALLOC(dupl->sigParamsSz, heap,
+                                         DYNAMIC_TYPE_CRL_ENTRY);
+    #endif
+        if (dupl->toBeSigned == NULL || dupl->signature == NULL
+        #ifdef WC_RSA_PSS
+            || dupl->sigParams == NULL
+        #endif
+        ) {
             CRL_Entry_free(dupl, heap);
             return NULL;
         }
         XMEMCPY(dupl->toBeSigned, ent->toBeSigned, dupl->tbsSz);
         XMEMCPY(dupl->signature, ent->signature, dupl->signatureSz);
+    #ifdef WC_RSA_PSS
+        if (dupl->sigParamsSz > 0) {
+            XMEMCPY(dupl->sigParams, ent->sigParams, dupl->sigParamsSz);
+        }
+    #endif
     }
     else {
         dupl->toBeSigned = NULL;
         dupl->tbsSz = 0;
         dupl->signature = NULL;
         dupl->signatureSz = 0;
+#ifdef WC_RSA_PSS
+        dupl->sigParams = NULL;
+        dupl->sigParamsSz = 0;
+#endif
 #if !defined(NO_SKID) && !defined(NO_ASN)
         dupl->extAuthKeyIdSet = 0;
 #endif
@@ -794,8 +849,9 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
         return BAD_FUNC_ARG;
     }
 
+#ifdef HAVE_CRL_MONITOR
     if (crl->monitors[0].path) {
-        int pathSz = (int)XSTRLEN(crl->monitors[0].path) + 1;
+        size_t pathSz = XSTRLEN(crl->monitors[0].path) + 1;
         dupl->monitors[0].path = (char*)XMALLOC(pathSz, dupl->heap,
                 DYNAMIC_TYPE_CRL_MONITOR);
         if (dupl->monitors[0].path != NULL) {
@@ -807,7 +863,7 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
     }
 
     if (crl->monitors[1].path) {
-        int pathSz = (int)XSTRLEN(crl->monitors[1].path) + 1;
+        size_t pathSz = XSTRLEN(crl->monitors[1].path) + 1;
         dupl->monitors[1].path = (char*)XMALLOC(pathSz, dupl->heap,
                 DYNAMIC_TYPE_CRL_MONITOR);
         if (dupl->monitors[1].path != NULL) {
@@ -821,6 +877,7 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
             return MEMORY_E;
         }
     }
+#endif
 
     dupl->crlList = DupCRL_list(crl->crlList, dupl->heap);
 #ifdef HAVE_CRL_IO
@@ -828,6 +885,20 @@ static int DupX509_CRL(WOLFSSL_X509_CRL *dupl, const WOLFSSL_X509_CRL* crl)
 #endif
 
     return 0;
+}
+
+WOLFSSL_X509_CRL* wolfSSL_X509_CRL_dup(const WOLFSSL_X509_CRL* crl)
+{
+    WOLFSSL_X509_CRL* ret;
+
+    WOLFSSL_ENTER("wolfSSL_X509_CRL_dup");
+
+    ret = wolfSSL_X509_crl_new(crl->cm);
+    if (ret != NULL && DupX509_CRL(ret, crl) != 0) {
+        FreeCRL(ret, 1);
+        ret = NULL;
+    }
+    return ret;
 }
 
 /* returns WOLFSSL_SUCCESS on success. Does not take ownership of newcrl */

@@ -47,6 +47,10 @@ else
     WOLFSSL_CFLAGS+=-DNO_CRYPT_TEST
 endif
 
+ifeq "$(ENABLED_LINUXKM_BENCHMARKS)" "yes"
+    WOLFSSL_OBJ_FILES+=wolfcrypt/benchmark/benchmark.o
+endif
+
 ifeq "$(ENABLED_LINUXKM_PIE)" "yes"
     WOLFCRYPT_PIE_FILES := linuxkm/pie_first.o $(filter wolfcrypt/src/%,$(WOLFSSL_OBJ_FILES)) linuxkm/pie_redirect_table.o linuxkm/pie_last.o
     WOLFSSL_OBJ_FILES := $(WOLFCRYPT_PIE_FILES) $(filter-out $(WOLFCRYPT_PIE_FILES),$(WOLFSSL_OBJ_FILES))
@@ -58,12 +62,16 @@ libwolfssl.ko:
 	@if test -z "$(KERNEL_ROOT)"; then echo '$$KERNEL_ROOT is unset' >&2; exit 1; fi
 	@if test -z "$(AM_CFLAGS)$(CFLAGS)"; then echo '$$AM_CFLAGS and $$CFLAGS are both unset.' >&2; exit 1; fi
 	@if test -z "$(src_libwolfssl_la_OBJECTS)"; then echo '$$src_libwolfssl_la_OBJECTS is unset.' >&2; exit 1; fi
-	@mkdir -p linuxkm src wolfcrypt/src wolfcrypt/test
 	@if test ! -h $(SRC_TOP)/Kbuild; then ln -s $(MODULE_TOP)/Kbuild $(SRC_TOP)/Kbuild; fi
+        # after commit 9a0ebe5011 (6.10), sources must be in $(obj).  work around this by making links to all needed sources:
+	@mkdir -p linuxkm
+	@cp --no-dereference --symbolic-link --no-clobber '$(MODULE_TOP)'/*.[ch] '$(MODULE_TOP)'/linuxkm/
+	@cp --no-dereference --symbolic-link --no-clobber --recursive '$(SRC_TOP)'/wolfcrypt '$(MODULE_TOP)'/
+	@cp --no-dereference --symbolic-link --no-clobber --recursive '$(SRC_TOP)'/src '$(MODULE_TOP)'/
 ifeq "$(ENABLED_LINUXKM_PIE)" "yes"
-	+$(MAKE) -C $(KERNEL_ROOT) M=$(MODULE_TOP) src=$(SRC_TOP) $(KBUILD_EXTRA_FLAGS) CC_FLAGS_FTRACE=
+	+$(MAKE) -C $(KERNEL_ROOT) M=$(MODULE_TOP) $(KBUILD_EXTRA_FLAGS) CC_FLAGS_FTRACE=
 else
-	+$(MAKE) -C $(KERNEL_ROOT) M=$(MODULE_TOP) src=$(SRC_TOP) $(KBUILD_EXTRA_FLAGS)
+	+$(MAKE) -C $(KERNEL_ROOT) M=$(MODULE_TOP) $(KBUILD_EXTRA_FLAGS)
 endif
 
 libwolfssl.ko.signed: libwolfssl.ko

@@ -294,8 +294,8 @@ static int FindPem(char* data, word32 offset, word32 len, word32* start,
     word32* end, int* type)
 {
     int ret = 0;
-    word32 i;
-    word32 type_off;
+    word32 i = 0;
+    word32 type_off = 0;
     char str[PEM_TYPE_MAX_LEN];
 
     /* Find header. */
@@ -776,6 +776,10 @@ int main(int argc, char* argv[])
             argv++;
             if (argc == 0) {
                 fprintf(stderr, "No filename provided\n");
+                return 1;
+            }
+            if (in_file != stdin) {
+                fprintf(stderr, "At most one input file can be supplied.\n");
                 return 1;
             }
             in_file = fopen(argv[0], "r");

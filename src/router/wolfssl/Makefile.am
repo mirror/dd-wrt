@@ -136,8 +136,7 @@ dist_example_DATA=
 
 ACLOCAL_AMFLAGS= -I m4
 
-EXTRA_DIST+= lib/dummy
-
+EXTRA_DIST+= .cyignore
 EXTRA_DIST+= wolfssl.vcproj
 EXTRA_DIST+= wolfssl.vcxproj
 EXTRA_DIST+= wolfssl64.sln
@@ -150,7 +149,6 @@ EXTRA_DIST+= README
 EXTRA_DIST+= ChangeLog.md
 EXTRA_DIST+= LICENSING
 EXTRA_DIST+= INSTALL
-EXTRA_DIST+= IPP
 EXTRA_DIST+= LPCExpresso.cproject
 EXTRA_DIST+= LPCExpresso.project
 EXTRA_DIST+= resource.h wolfssl.rc
@@ -166,7 +164,6 @@ include Docker/include.am
 
 include src/include.am
 include support/include.am
-include wolfcrypt/user-crypto/include.am
 include wolfcrypt/benchmark/include.am
 include wolfcrypt/src/include.am
 include wolfcrypt/test/include.am
@@ -311,3 +308,8 @@ merge-clean:
 	@find ./ | $(GREP) \.BASE | xargs rm -f
 	@find ./ | $(GREP) \~$$ | xargs rm -f
 
+%.o: %.cu
+	$(NVCC) -dc $(CUDAFLAGS) -o $@ $<
+
+.cu.lo:
+	$(LIBTOOL) --tag=CC --mode=compile $(COMPILE) --compile -o $@ $< -static

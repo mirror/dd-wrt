@@ -1,7 +1,16 @@
 name: Ubuntu-Macos-Windows Tests
 
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   make_check:
@@ -67,6 +76,8 @@ jobs:
           'examples/configs/user_settings_min_ecc.h',
           'examples/configs/user_settings_wolfboot_keytools.h',
           'examples/configs/user_settings_wolftpm.h',
+          'examples/configs/user_settings_wolfssh.h',
+          'examples/configs/user_settings_tls12.h',
         ]
     name: make user_setting.h (testwolfcrypt only)
     runs-on: ${{ matrix.os }}
@@ -94,7 +105,7 @@ jobs:
     # This should be a safe limit for the tests to run.
     timeout-minutes: 14
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - if: ${{ matrix.os == 'macos-latest' }}
       run: brew install automake libtool
     - run: ./autogen.sh
@@ -121,10 +132,10 @@ jobs:
       BUILD_CONFIGURATION: Release
       BUILD_PLATFORM: x64
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}

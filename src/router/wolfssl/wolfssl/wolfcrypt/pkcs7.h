@@ -112,6 +112,7 @@ enum PKCS7_STATE {
     WC_PKCS7_VERIFY_STAGE4,
     WC_PKCS7_VERIFY_STAGE5,
     WC_PKCS7_VERIFY_STAGE6,
+    WC_PKCS7_VERIFY_STAGE7,
 
     /* parse info set */
     WC_PKCS7_INFOSET_START,
@@ -224,6 +225,11 @@ typedef int (*CallbackWrapCEK)(PKCS7* pkcs7, byte* cek, word32 cekSz,
                                   byte* out, word32 outSz,
                                   int keyWrapAlgo, int type, int dir);
 
+/* Callbacks for supporting different stream cases */
+typedef int (*CallbackGetContent)(PKCS7* pkcs7, byte** content, void* ctx);
+typedef int (*CallbackStreamOut)(PKCS7* pkcs7, const byte* output,
+        word32 outputSz, void* ctx);
+
 #if defined(HAVE_PKCS7_RSA_RAW_SIGN_CALLBACK) && !defined(NO_RSA)
 /* RSA sign raw digest callback, user builds DigestInfo */
 typedef int (*CallbackRsaSignRawDigest)(PKCS7* pkcs7, byte* digest,
@@ -247,7 +253,13 @@ struct PKCS7 {
 #ifdef ASN_BER_TO_DER
     byte*  der;                   /* DER encoded version of message       */
     word32 derSz;
+    CallbackGetContent getContentCb;
+    CallbackStreamOut  streamOutCb;
+    void*  streamCtx; /* passed to getcontentCb and streamOutCb */
 #endif
+    byte   encodeStream:1;        /* use BER when encoding */
+    byte   noCerts:1;             /* if certificates should be added into bundle
+                                     during creation */
     byte*  cert[MAX_PKCS7_CERTS]; /* array of certs parsed from bundle */
     byte*  verifyCert;            /* cert from array used for verify */
     word32 verifyCertSz;
@@ -494,6 +506,15 @@ WOLFSSL_API int  wc_PKCS7_SetDecodeEncryptedCb(PKCS7* pkcs7,
         CallbackDecryptContent decryptionCb);
 WOLFSSL_API int  wc_PKCS7_SetDecodeEncryptedCtx(PKCS7* pkcs7, void* ctx);
 #endif /* NO_PKCS7_ENCRYPTED_DATA */
+
+/* stream and certs */
+WOLFSSL_LOCAL int wc_PKCS7_WriteOut(PKCS7* pkcs7, byte* output,
+    const byte* input, word32 inputSz);
+WOLFSSL_API int wc_PKCS7_SetStreamMode(PKCS7* pkcs7, byte flag,
+    CallbackGetContent getContentCb, CallbackStreamOut streamOutCb, void* ctx);
+WOLFSSL_API int wc_PKCS7_GetStreamMode(PKCS7* pkcs7);
+WOLFSSL_API int wc_PKCS7_SetNoCerts(PKCS7* pkcs7, byte flag);
+WOLFSSL_API int wc_PKCS7_GetNoCerts(PKCS7* pkcs7);
 
 /* CMS/PKCS#7 CompressedData */
 #if defined(HAVE_LIBZ) && !defined(NO_PKCS7_COMPRESSED_DATA)

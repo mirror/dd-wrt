@@ -1,7 +1,16 @@
 name: curl Test
 
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   build_wolfssl:
@@ -18,11 +27,11 @@ jobs:
           install: true
 
       - name: Upload built lib
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wolf-install-curl
           path: build-dir
-          retention-days: 1
+          retention-days: 5
 
   test_curl:
     name: ${{ matrix.curl_ref }}
@@ -38,11 +47,11 @@ jobs:
     - name: Install test dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install nghttp2
+        sudo apt-get install nghttp2 libpsl5 libpsl-dev
         sudo pip install impacket
 
     - name: Download lib
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: wolf-install-curl
         path: build-dir

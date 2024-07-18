@@ -56,7 +56,7 @@ void dbg_dumphex(const char *identifier, const uint8_t* pdata, uint32_t plen);
 #endif /* MAXQ_DEBUG */
 
 #if defined(USE_WINDOWS_API)
-# define maxq_CryptHwMutexTryLock()	(0)
+# define maxq_CryptHwMutexTryLock() 0
 #endif
 
 #define AES_KEY_ID_START      (0x2000)
@@ -1450,7 +1450,7 @@ int wolfSSL_MAXQ10XX_CryptoDevCb(int devId, wc_CryptoInfo* info, void* ctx)
     }
 #endif /* WOLFSSL_MAXQ108X */
 
-    if (rc != 0 && rc != CRYPTOCB_UNAVAILABLE) {
+    if (rc != 0 && rc != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
         rc = WC_HW_E;
     }
 

@@ -1,6 +1,15 @@
 name: Espressif examples tests
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   espressif_latest:
@@ -11,7 +20,7 @@ jobs:
     container:
       image: espressif/idf:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Initialize Espressif IDE and build examples
         run: . /opt/esp/idf/export.sh; IDE/Espressif/ESP-IDF/compileAllExamples.sh
   espressif_v4_4:
@@ -20,7 +29,7 @@ jobs:
     container:
       image: espressif/idf:release-v4.4
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Initialize Espressif IDE and build examples
         run: . /opt/esp/idf/export.sh; IDE/Espressif/ESP-IDF/compileAllExamples.sh
   espressif_v5_0:
@@ -29,6 +38,6 @@ jobs:
     container:
       image: espressif/idf:release-v5.0
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Initialize Espressif IDE and build examples
         run: . /opt/esp/idf/export.sh; IDE/Espressif/ESP-IDF/compileAllExamples.sh

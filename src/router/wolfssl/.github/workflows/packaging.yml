@@ -1,7 +1,16 @@
 name: Packaging Tests
 
+# START OF COMMON SECTION
 on:
-  workflow_call:
+  push:
+    branches: [ 'master', 'main', 'release/**' ]
+  pull_request:
+    branches: [ '*' ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# END OF COMMON SECTION
 
 jobs:
   build_wolfssl:
@@ -11,7 +20,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout wolfSSL
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure wolfSSL
         run: |

@@ -454,6 +454,7 @@ int wc_Md5Final(wc_Md5* md5, byte* hash)
 
     /* ensure we have a valid buffer length; (-1 to append a byte to length) */
     if (md5->buffLen > WC_MD5_BLOCK_SIZE - 1) {
+        /* some places consider this BAD_STATE_E */
         return BUFFER_E;
     }
 
@@ -461,7 +462,9 @@ int wc_Md5Final(wc_Md5* md5, byte* hash)
 
     /* pad with zeros */
     if (md5->buffLen > WC_MD5_PAD_SIZE) {
-        XMEMSET(&local[md5->buffLen], 0, WC_MD5_BLOCK_SIZE - md5->buffLen);
+        if (md5->buffLen < WC_MD5_BLOCK_SIZE) {
+            XMEMSET(&local[md5->buffLen], 0, WC_MD5_BLOCK_SIZE - md5->buffLen);
+        }
         md5->buffLen += WC_MD5_BLOCK_SIZE - md5->buffLen;
 
 #if defined(BIG_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)

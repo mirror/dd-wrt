@@ -59,7 +59,7 @@ static int gdevId = 7890;           /* initial dev Id for Crypt Callback */
     defined(WOLFSSL_RENESAS_FSPSM_CRYPTONLY)
 FSPSM_ST    *gCbCtx[MAX_FSPSM_CBINDEX];
 #elif defined(WOLFSSL_RENESAS_TSIP_TLS) || \
-	    defined(WOLFSSL_RENESAS_TSIP_CRYPTONLY)
+            defined(WOLFSSL_RENESAS_TSIP_CRYPTONLY)
 #define FSPSM_ST       TsipUserCtx;
 #define MAX_FSPSM_CBINDEX 5
 TsipUserCtx *gCbCtx[MAX_FSPSM_CBINDEX];
@@ -89,7 +89,7 @@ WOLFSSL_LOCAL int Renesas_cmn_RsaSignCb(WOLFSSL* ssl,
                                 const unsigned char* keyDer, unsigned int keySz,
                                 void* ctx)
 {
-    int ret = CRYPTOCB_UNAVAILABLE;
+    int ret = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
     WOLFSSL_ENTER("Renesas_cmn_RsaSignCb");
 
     /* This is just a stub function that provides no logic */
@@ -108,7 +108,7 @@ WOLFSSL_LOCAL int Renesas_cmn_RsaSignCheckCb(WOLFSSL* ssl,
                                 const unsigned char* keyDer, unsigned int keySz,
                                 void* ctx)
 {
-    int ret = CRYPTOCB_UNAVAILABLE;
+    int ret = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
     WOLFSSL_ENTER("Renesas_cmn_RsaSignCheckCb");
 
     #if defined(WOLFSSL_RENESAS_TSIP)
@@ -127,7 +127,7 @@ WOLFSSL_LOCAL int Renesas_cmn_EccSignCb(WOLFSSL* ssl,
                                 const unsigned char* keyDer, unsigned int keySz,
                                 void* ctx)
 {
-    int ret = CRYPTOCB_UNAVAILABLE;
+    int ret = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
     WOLFSSL_ENTER("Renesas_cmn_EccSignCb");
 
     /* This is just a stub function that provides no logic */
@@ -147,7 +147,7 @@ WOLFSSL_LOCAL int Renesas_cmn_EccSignCb(WOLFSSL* ssl,
  */
 static int Renesas_cmn_CryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 {
-    int ret = NOT_COMPILED_IN; /* return this to bypass HW and use SW */
+    int ret = WC_NO_ERR_TRACE(NOT_COMPILED_IN); /* return this to bypass HW and use SW */
 
     WOLFSSL_ENTER("Renesas_cmn_CryptoDevCb");
 
@@ -361,8 +361,14 @@ static int Renesas_cmn_CryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
              * in advance. SCE supports 1024 or 2048 bits key size.
              * otherwise, falls-through happens.
              */
-            if (info->pk.rsa.key->ctx.keySz == 1024 ||
-                info->pk.rsa.key->ctx.keySz == 2048) {
+            if (cbInfo->keyflgs_crypt.bits.rsapri2048_installedkey_set ||
+                cbInfo->keyflgs_crypt.bits.rsapub2048_installedkey_set ||
+                cbInfo->keyflgs_crypt.bits.rsapri1024_installedkey_set ||
+                cbInfo->keyflgs_crypt.bits.rsapub1024_installedkey_set ) {
+
+                ret = wc_fspsm_MakeRsaKey(info->pk.rsa.key, 0, cbInfo);
+                if (ret == WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
+                    return ret;
 
                 if (info->pk.rsa.type == RSA_PRIVATE_DECRYPT ||
                     info->pk.rsa.type == RSA_PUBLIC_ENCRYPT  )
@@ -370,7 +376,7 @@ static int Renesas_cmn_CryptoDevCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
                         ret = wc_fspsm_RsaFunction(info->pk.rsa.in,
                                         info->pk.rsa.inLen,
                                         info->pk.rsa.out,
-                                        &info->pk.rsa.outLen,
+                                        info->pk.rsa.outLen,
                                         info->pk.rsa.type,
                                         info->pk.rsa.key,
                                         info->pk.rsa.rng);
@@ -876,7 +882,7 @@ WOLFSSL_LOCAL int Renesas_cmn_generatePremasterSecret(WOLFSSL* ssl,
  */
 WOLFSSL_LOCAL int Renesas_cmn_genMasterSecret(struct WOLFSSL* ssl, void* ctx)
 {
-    int ret = WOLFSSL_NOT_IMPLEMENTED;
+    int ret = WC_NO_ERR_TRACE(WOLFSSL_NOT_IMPLEMENTED);
 
     (void) ret;
     (void) ctx;

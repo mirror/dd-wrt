@@ -49,12 +49,12 @@
 
 
 /* Size of a polynomial vector based on dimensions. */
-#define KYBER_POLY_VEC_SZ(k) (k * KYBER_POLY_SIZE)
+#define KYBER_POLY_VEC_SZ(k) ((k) * KYBER_POLY_SIZE)
 /* Size of a compressed polynomial based on bits per coefficient. */
-#define KYBER_POLY_COMPRESSED_SZ(b) (b * (KYBER_N / 8))
+#define KYBER_POLY_COMPRESSED_SZ(b) ((b) * (KYBER_N / 8))
 /* Size of a compressed vector polynomial based on dimensions and bits per
  * coefficient. */
-#define KYBER_POLY_VEC_COMPRESSED_SZ(k, b) (k * (b * (KYBER_N / 8)))
+#define KYBER_POLY_VEC_COMPRESSED_SZ(k, b) ((k) * ((b) * (KYBER_N / 8)))
 
 
 /* Kyber-512 parameters */
@@ -201,10 +201,10 @@ WOLFSSL_API int wc_KyberKey_EncapsulateWithRandom(KyberKey* key,
 WOLFSSL_API int wc_KyberKey_Decapsulate(KyberKey* key, unsigned char* ss,
     const unsigned char* ct, word32 len);
 
-WOLFSSL_API int wc_KyberKey_DecodePrivateKey(KyberKey* key, unsigned char* in,
-    word32 len);
-WOLFSSL_API int wc_KyberKey_DecodePublicKey(KyberKey* key, unsigned char* in,
-    word32 len);
+WOLFSSL_API int wc_KyberKey_DecodePrivateKey(KyberKey* key,
+    const unsigned char* in, word32 len);
+WOLFSSL_API int wc_KyberKey_DecodePublicKey(KyberKey* key,
+    const unsigned char* in, word32 len);
 
 WOLFSSL_API int wc_KyberKey_PrivateKeySize(KyberKey* key, word32* len);
 WOLFSSL_API int wc_KyberKey_PublicKeySize(KyberKey* key, word32* len);
