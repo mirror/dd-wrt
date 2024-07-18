@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7978 | brainslayer | 2024-07-18 22:16:32 +0700 (Thu, 18 Jul 2024) | 1 line
+
+not sure if this is a solution for our calibration problem. but we should give some delay between power down and power up for testing
+------------------------------------------------------------------------
 r7977 | brainslayer | 2024-07-18 14:01:42 +0700 (Thu, 18 Jul 2024) | 1 line
 
 use 2.12 fw for 5018 too, since coldboot calibration works now in it
