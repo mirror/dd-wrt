@@ -747,10 +747,13 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
 		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
 		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
 		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
+		nvram_set("wlan2_hwaddr", ethaddr);
 		patch(ethaddr, 26);
 		removeregdomain("/tmp/caldata.bin", IPQ8074);
 		removeregdomain("/tmp/board.bin", IPQ8074);
@@ -761,6 +764,15 @@ void start_sysinit(void)
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan2_hwaddr", ethaddr);
+		patch(ethaddr, 26);
 		removeregdomain("/tmp/caldata.bin", IPQ8074);
 		removeregdomain("/tmp/board.bin", IPQ8074);
 		patchvht160("/tmp/caldata.bin", 0);
