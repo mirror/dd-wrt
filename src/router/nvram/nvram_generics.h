@@ -180,6 +180,26 @@ char *nvram_nget(const char *fmt, ...)
 	return nvram_safe_get(varbuf);
 }
 
+char *nvram_default_nget(const char *def, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return nvram_default_get(varbuf, def);
+}
+
+int nvram_default_ngeti(const int def, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return nvram_default_geti(varbuf, def);
+}
+
 int nvram_ngeti(const char *fmt, ...)
 {
 	char varbuf[64];
