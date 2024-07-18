@@ -127,8 +127,6 @@ double send_ping(int ping_sockfd, struct sockaddr_in *ping_addr, char *ping_ip)
 		pckt.hdr.un.echo.sequence = msg_count++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
 
-		usleep(PING_SLEEP_RATE);
-
 		//send packet
 		clock_gettime(CLOCK_MONOTONIC, &time_start);
 		if (sendto(ping_sockfd, &pckt, sizeof(pckt), 0, (struct sockaddr *)ping_addr, sizeof(*ping_addr)) <= 0) {
