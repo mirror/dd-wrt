@@ -285,6 +285,16 @@ struct nss_capwap_dtls_msg {
 };
 
 /**
+ * nss_capwap_flow_attr
+ *	Inner Flow attributes.
+ */
+struct nss_capwap_flow_attr {
+	uint8_t type;			/**< Type to indicate if SCS is valid or SAWF is valid. */
+	uint32_t flow_id;		/**< Flow Identification. */
+	uint32_t scs_sdwf_id;		/**< SCS or SDWF Identification. */
+};
+
+/**
  * nss_capwap_flow_rule_msg
  *	CAPWAP flow rule message structure.
  */
@@ -302,7 +312,7 @@ struct nss_capwap_flow_rule_msg {
 	/*
 	 * Flow attributes.
 	 */
-	uint32_t flow_id;		/**< Flow identification. */
+	struct nss_capwap_flow_attr flow_attr;
 };
 
 /**
