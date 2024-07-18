@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r7977 | brainslayer | 2024-07-18 14:01:42 +0700 (Thu, 18 Jul 2024) | 1 line
+
+use 2.12 fw for 5018 too, since coldboot calibration works now in it
+------------------------------------------------------------------------
+r7976 | brainslayer | 2024-07-18 13:54:32 +0700 (Thu, 18 Jul 2024) | 1 line
+
+enable coldboot calibration for qcn9074. consider that this will take about 20 seconds at boot time from what i measured
+------------------------------------------------------------------------
+r7975 | brainslayer | 2024-07-18 13:40:30 +0700 (Thu, 18 Jul 2024) | 1 line
+
+reenavle coldboot calibration for 6018 and wait at probe for fishished calibration to avoid races later
+------------------------------------------------------------------------
 r7974 | brainslayer | 2024-07-18 12:19:16 +0700 (Thu, 18 Jul 2024) | 1 line
 
 update tools
