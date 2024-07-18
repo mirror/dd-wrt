@@ -890,6 +890,9 @@
 		wifi0: wifi@c000000 {
 			compatible = "qcom,ipq5018-wifi";
 			reg = <0xc000000 0x1000000>;
+			qcom,bdf-addr = <0x4ba00000>;
+			qcom,caldb-addr = <0x4c900000>;
+			qcom,caldb-size = <0x200000>;
 
 			qcom,rproc = <&q6v5_wcss>;
 			interrupts = <GIC_SPI 288 IRQ_TYPE_EDGE_RISING>, /* o_wcss_apps_intr[0] =  */

@@ -893,6 +893,11 @@
 			compatible = "qcom,ipq6018-wifi";
 			reg = <0x0 0xc000000 0x0 0x1000000>;
 			qcom,rproc = <&q6v5_wcss>;
+
+			qcom,bdf-addr = <0x4ABC0000>;
+			qcom,caldb-addr = <0x4B500000>;
+			qcom,caldb-size = <0x480000>;
+
 			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
 				     <GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
 				     <GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
