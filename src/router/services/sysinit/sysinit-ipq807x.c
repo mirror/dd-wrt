@@ -798,7 +798,7 @@ void start_sysinit(void)
 		eval("insmod", "mac80211", "nss_redirect=1");
 		insmod("qmi_helpers");
 		eval("insmod", "ath11k",
-		     "nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+		     "nss_offload=0", "frame_mode=1"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
