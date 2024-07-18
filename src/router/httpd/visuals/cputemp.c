@@ -186,11 +186,13 @@ static int checkhwmon(char *sysfs)
 }
 static int alreadyshowed(char *path)
 {
+	char *sub;
 	if (!path)
 		return 0;
 	if (strstr(path, "/proc/"))
-		return 0;
-	char *sub = gethwmon_base(path);
+		sub = strdup(path);
+	else
+		sub = gethwmon_base(path);
 	if (!sub)
 		return 0;
 	int cnt = 0;
@@ -210,9 +212,11 @@ static int alreadyshowed(char *path)
 static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
-	if (strstr(path,"/proc/"))
-		return 0;
-	char *sub = gethwmon_base(path);
+	char *sub;
+	if (strstr(path, "/proc/"))
+		sub = strdup(path);
+	else
+		sub = gethwmon_base(path);
 
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
@@ -236,7 +240,10 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 	sensors = realloc(sensors, sizeof(struct SENSORS) * (cnt + 2));
 	if (sub) {
 		sensors[cnt].path = sub;
-		asprintf(&sensors[cnt].syspath, "/sys/class/hwmon/%s", sub);
+		if (strstr(sub, "/proc/"))
+			sensors[cnt].syspath = strdup(path);
+		else
+			asprintf(&sensors[cnt].syspath, "/sys/class/hwmon/%s", sub);
 	} else
 		sensors[cnt].path = NULL;
 	sensors[cnt].scale = scale;
