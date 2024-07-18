@@ -188,6 +188,8 @@ static int alreadyshowed(char *path)
 {
 	if (!path)
 		return 0;
+	if (strstr(path, "/proc/"))
+		return 0;
 	char *sub = gethwmon_base(path);
 	if (!sub)
 		return 0;
@@ -208,6 +210,8 @@ static int alreadyshowed(char *path)
 static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
+	if (strstr(path,"/proc/"))
+		return 0;
 	char *sub = gethwmon_base(path);
 
 	if (sensors) {
