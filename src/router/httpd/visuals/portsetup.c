@@ -123,8 +123,8 @@ EJ_VISIBLE void ej_portsetup(webs_t wp, int argc, char_t **argv)
 				iswds = 1;
 			if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 				char unicast[32];
-				sprintf(unicast, "%s_multicast_to_unicast", var);
-				nvram_default_get(unicast, "0");
+				sprintf(unicast, "%s_m2u", var);
+				nvram_default_get(unicast, "1");
 				showRadio(wp, "networking.unicast", unicast);
 			}
 			websWrite(wp, "<div class=\"setting\">\n");

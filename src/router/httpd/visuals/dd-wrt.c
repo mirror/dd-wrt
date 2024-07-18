@@ -2313,8 +2313,8 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		iswds = 1;
 	if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 		char unicast[32];
-		sprintf(unicast, "%s_multicast_to_unicast", var);
-		nvram_default_get(unicast, "0");
+		sprintf(unicast, "%s_m2u", var);
+		nvram_default_get(unicast, "1");
 		showRadio(wp, "networking.unicast", unicast);
 	}
 	websWrite(

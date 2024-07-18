@@ -826,7 +826,7 @@ EJ_VISIBLE void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv_prefix(wp, "hwaddr", var);
 		char *bridged = copytonv_prefix(wp, "bridged", var);
 		copytonv_prefix(wp, "multicast", var);
-		copytonv_prefix(wp, "multicast_to_unicast", var);
+		copytonv_prefix(wp, "m2u", var);
 		copytonv_prefix(wp, "nat", var);
 		copytonv_prefix(wp, "bloop", var);
 		copytonv_prefix(wp, "isolation", var);
