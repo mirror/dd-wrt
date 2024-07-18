@@ -1,3 +1,4 @@
+/*
  * NVRAM variable manipulation
  *
  * Copyright 2004, Broadcom Corporation
