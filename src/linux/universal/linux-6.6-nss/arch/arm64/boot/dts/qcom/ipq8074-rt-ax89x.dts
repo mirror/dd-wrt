@@ -14,7 +14,7 @@
 
 / {
 	model = "Asus RT-AX89X";
-	compatible = "asus,rt-ax89x", "qcom,ipq8074";
+	compatible = "asus,rt-ax89x", "qcom,ipq8074" , "qcom,ipq8078";
 
 	aliases {
 		serial0 = &blsp1_uart5;
