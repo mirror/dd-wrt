@@ -644,6 +644,11 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
 		break;
+	case ROUTER_LINKSYS_MX4200V1:
+		fwlen = 0x20000;
+		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		load_nss_ipq807x(512);
+		break;
 	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
