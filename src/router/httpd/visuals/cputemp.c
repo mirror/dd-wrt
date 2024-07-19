@@ -269,7 +269,7 @@ static int getscale(char *path)
 	int cnt = 0;
 	char *sub = NULL;
 	if (path) {
-		char *sub = gethwmon_base(path);
+		sub = gethwmon_base(path);
 		if (!sub)
 			return 0;
 	}
