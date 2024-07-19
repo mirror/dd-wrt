@@ -3619,14 +3619,14 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
-	if (unlikely(!skb->fast_forwarded)) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	if (dev_nit_active(dev) && !(skb->imq_flags & IMQ_F_ENQUEUE))
+	if (unlikely(!skb->fast_forwarded) && !(skb->imq_flags & IMQ_F_ENQUEUE) && dev_nit_active(dev)) {
 #else
-	if (dev_nit_active(dev))
+	if (unlikely(!skb->fast_forwarded) && dev_nit_active(dev)) {
 #endif
 			dev_queue_xmit_nit(skb, dev);
 	}
+
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	if (dev->eth_mangle_tx && !(skb = dev->eth_mangle_tx(dev, skb)))
 		return NETDEV_TX_OK;
