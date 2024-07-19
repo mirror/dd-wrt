@@ -213,6 +213,8 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
 	char *sub;
+	if (!path)
+		return 0;
 	if (strstr(path, "/proc/"))
 		sub = strdup(path);
 	else
@@ -281,6 +283,7 @@ static int getscale(char *path)
 EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 {
 	int cnt = 0;
+	int mycount;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			int scale = sensors[cnt].scale;
@@ -293,7 +296,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 				}
 			}
 			if (sensors[cnt].method)
-				sensor = sensors[cnt].method();
+				sensor = sensors[cnt].method(&mycount);
 			if (wp && scale != -1 && sensor != -1) {
 				char *unit = "&#176;C";
 				if (sensors[cnt].type == VOLT)
@@ -316,8 +319,9 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 	}
 }
 
-static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale, int type)
+static int showsensor(webs_t wp, const char *path, int (*method)(int *count), const char *name, int scale, int type)
 {
+	int mycount;
 	if (alreadyshowed(path)) {
 		return 1;
 	}
@@ -329,7 +333,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 			my_fclose(fp);
 		}
 		if (method)
-			sensor = method();
+			sensor = method(&mycount);
 		else {
 			if (!scale)
 				scale = getscale(path);
@@ -346,7 +350,11 @@ static int showsensor(webs_t wp, const char *path, int (*method)(void), const ch
 				scale = 1;
 		}
 		if (wp && sensor != -1) {
-			int count = addsensor(path, method, scale, type);
+			int count;
+			if (!path && method)
+			    count = mycount;
+			else
+			    count = addsensor(path, method, scale, type);
 			char *unit = "&#176;C";
 			if (type == VOLT)
 				unit = "Volt";
@@ -490,13 +498,15 @@ static int getwifi(int idx)
 	return (tempavg[i] / 2) + 200;
 }
 
-static int getwifi0(void)
+static int getwifi0(int *mycount)
 {
+	*mycount = 1;
 	return getwifi(0);
 }
 
-static int getwifi1(void)
+static int getwifi1(int *mycount)
 {
+	*mycount = 2;
 #ifdef HAVE_QTN
 	return rpc_get_temperature() / 100000;
 #else
@@ -504,8 +514,9 @@ static int getwifi1(void)
 #endif
 }
 
-static int getwifi2(void)
+static int getwifi2(int *mycount)
 {
+	*mycount = 3;
 	return getwifi(2);
 }
 #endif
