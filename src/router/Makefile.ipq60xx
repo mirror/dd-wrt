@@ -20,7 +20,7 @@ endif
 #
 # Paths
 
-CONFIG_NOOPT=y
+#CONFIG_NOOPT=y
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
@@ -317,6 +317,27 @@ endif
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4200v2.bin
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4200v2-webflash.bin $(ARCH)-uclibc/Image-factory.bin
 
+
+#mx4300
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh  -D linksys_mx4300 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4300.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
+	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin of=$(TOP)/$(ARCH)-uclibc/Image-factory.bin.new bs=8192k conv=sync
+	mv $(TOP)/$(ARCH)-uclibc/Image-factory.bin.new $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cat $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4300" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4300.bin
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/linksys_mx4300-webflash.bin $(ARCH)-uclibc/Image-factory.bin
+
+#dynalink wrx36
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
@@ -325,8 +346,9 @@ endif
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
-	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
-	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/dynalink_dlwrx36-webflash.bin $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin bs=131072 conv=sync of=$(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
+	dd if=/dev/zero bs=131072 count=1 >> $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/dynalink_dlwrx36-webflash.bin $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
 
 #mr5500
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
