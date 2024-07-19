@@ -1198,10 +1198,14 @@ failover:
 	char compatible[128];
 	fread(compatible, 1, sizeof(compatible), fp);
 	fclose(fp);
-	int idx = strlen(compatible);
-	if (idx > 126)
-		goto failover;
-	char *cpu = &compatible[idx + 1];
+	int idx = 0;
+	while (idx < 128) {
+		if (compatible[idx] == 0)
+			compatible[idx] = 0x20;
+		idx++;
+	}
+	compatible[127] = 0;
+	char *cpu = &compatible[0];
 	if (strstr(cpu, "ipq8065"))
 		strcpy(buf, "QCA IPQ8065");
 	else if (strstr(cpu, "ipq8064"))
