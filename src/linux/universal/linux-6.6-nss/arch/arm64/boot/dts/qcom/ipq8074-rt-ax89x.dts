@@ -178,7 +178,7 @@
 	trips {
 		cpu0_active: cpu-active {
 			temperature = <65000>;
-			hysteresis = <2000>;
+			hysteresis = <4000>;
 			type = "active";
 		};
 	};
@@ -195,7 +195,7 @@
 	trips {
 		cpu1_active: cpu-active {
 			temperature = <65000>;
-			hysteresis = <2000>;
+			hysteresis = <4000>;
 			type = "active";
 		};
 	};
@@ -212,7 +212,7 @@
 	trips {
 		cpu2_active: cpu-active {
 			temperature = <65000>;
-			hysteresis = <2000>;
+			hysteresis = <4000>;
 			type = "active";
 		};
 	};
@@ -229,7 +229,7 @@
 	trips {
 		cpu3_active: cpu-active {
 			temperature = <65000>;
-			hysteresis = <2000>;
+			hysteresis = <4000>;
 			type = "active";
 		};
 	};
@@ -246,7 +246,7 @@
 	trips {
 		cluster_active: cluster-active {
 			temperature = <65000>;
-			hysteresis = <2000>;
+			hysteresis = <4000>;
 			type = "active";
 		};
 	};
