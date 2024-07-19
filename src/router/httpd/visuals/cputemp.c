@@ -170,13 +170,17 @@ static int checkhwmon(char *sysfs)
 {
 	if (!sensors)
 		return 0;
-	char *sub = gethwmon(sysfs);
-	if (!sub)
-		return 0;
+	char *sub = NULL;
+	if (sysfs) {
+		sub = gethwmon(sysfs);
+		if (!sub)
+			return 0;
+	}
 	int cnt = 0;
 	while (sensors[cnt].path || sensors[cnt].method) {
 		if (sensors[cnt].path && strstr(sensors[cnt].path, sub)) {
-			free(sub);
+			if (sub)
+				free(sub);
 			return 1;
 		}
 		cnt++;
@@ -186,45 +190,47 @@ static int checkhwmon(char *sysfs)
 }
 static int alreadyshowed(char *path)
 {
-	char *sub;
-	if (!path)
-		return 0;
-	if (strstr(path, "/proc/"))
-		sub = strdup(path);
-	else
-		sub = gethwmon_base(path);
-	if (!sub)
-		return 0;
+	char *sub = NULL;
+	if (path) {
+		if (strstr(path, "/proc/"))
+			sub = strdup(path);
+		else
+			sub = gethwmon_base(path);
+		if (!sub)
+			return 0;
+	}
 	int cnt = 0;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].path && sensors[cnt].shown && !strcmp(sensors[cnt].path, sub)) {
-				free(sub);
+				if (sub)
+					free(sub);
 				return 1;
 			}
 			cnt++;
 		}
 	}
-	free(sub);
+	if (sub)
+		free(sub);
 	return 0;
 }
 
 static int addsensor(char *path, int (*method)(void), int scale, int type)
 {
 	int cnt = 0;
-	char *sub;
-	if (!path)
-		return 0;
-	if (strstr(path, "/proc/"))
-		sub = strdup(path);
-	else
-		sub = gethwmon_base(path);
-
+	char *sub = NULL;
+	if (path) {
+		if (strstr(path, "/proc/"))
+			sub = strdup(path);
+		else
+			sub = gethwmon_base(path);
+	}
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (method && sensors[cnt].method == method) {
 				sensors[cnt].shown = 1;
-				free(sub);
+				if (sub)
+					free(sub);
 				return cnt; // already added
 			}
 			if (sub && sensors[cnt].method) {
@@ -233,7 +239,8 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 			}
 			if (sub && !strcmp(sensors[cnt].path, sub)) {
 				sensors[cnt].shown = 1;
-				free(sub);
+				if (sub)
+					free(sub);
 				return cnt; // already added
 			}
 			cnt++;
@@ -260,9 +267,12 @@ static int addsensor(char *path, int (*method)(void), int scale, int type)
 static int getscale(char *path)
 {
 	int cnt = 0;
-	char *sub = gethwmon_base(path);
-	if (!sub)
-		return 0;
+	char *sub = NULL;
+	if (path) {
+		char *sub = gethwmon_base(path);
+		if (!sub)
+			return 0;
+	}
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			if (sensors[cnt].method) {
@@ -270,20 +280,21 @@ static int getscale(char *path)
 				continue;
 			}
 			if (!strcmp(sensors[cnt].path, sub)) {
-				free(sub);
+				if (sub)
+					free(sub);
 				return sensors[cnt - 1].scale;
 			}
 			cnt++;
 		}
 	}
-	free(sub);
+	if (sub)
+		free(sub);
 	return 0;
 }
 
 EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 {
 	int cnt = 0;
-	int mycount;
 	if (sensors) {
 		while (sensors[cnt].path || sensors[cnt].method) {
 			int scale = sensors[cnt].scale;
@@ -296,7 +307,7 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 				}
 			}
 			if (sensors[cnt].method)
-				sensor = sensors[cnt].method(&mycount);
+				sensor = sensors[cnt].method();
 			if (wp && scale != -1 && sensor != -1) {
 				char *unit = "&#176;C";
 				if (sensors[cnt].type == VOLT)
@@ -319,9 +330,8 @@ EJ_VISIBLE void ej_read_sensors(webs_t wp, int argc, char_t **argv)
 	}
 }
 
-static int showsensor(webs_t wp, const char *path, int (*method)(int *count), const char *name, int scale, int type)
+static int showsensor(webs_t wp, const char *path, int (*method)(void), const char *name, int scale, int type)
 {
-	int mycount;
 	if (alreadyshowed(path)) {
 		return 1;
 	}
@@ -333,7 +343,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(int *count), co
 			my_fclose(fp);
 		}
 		if (method)
-			sensor = method(&mycount);
+			sensor = method();
 		else {
 			if (!scale)
 				scale = getscale(path);
@@ -350,11 +360,7 @@ static int showsensor(webs_t wp, const char *path, int (*method)(int *count), co
 				scale = 1;
 		}
 		if (wp && sensor != -1) {
-			int count;
-			if (!path && method)
-			    count = mycount;
-			else
-			    count = addsensor(path, method, scale, type);
+			int count = addsensor(path, method, scale, type);
 			char *unit = "&#176;C";
 			if (type == VOLT)
 				unit = "Volt";
@@ -498,15 +504,13 @@ static int getwifi(int idx)
 	return (tempavg[i] / 2) + 200;
 }
 
-static int getwifi0(int *mycount)
+static int getwifi0(void)
 {
-	*mycount = 1;
 	return getwifi(0);
 }
 
-static int getwifi1(int *mycount)
+static int getwifi1(void)
 {
-	*mycount = 2;
 #ifdef HAVE_QTN
 	return rpc_get_temperature() / 100000;
 #else
@@ -514,9 +518,8 @@ static int getwifi1(int *mycount)
 #endif
 }
 
-static int getwifi2(int *mycount)
+static int getwifi2(void)
 {
-	*mycount = 3;
 	return getwifi(2);
 }
 #endif
