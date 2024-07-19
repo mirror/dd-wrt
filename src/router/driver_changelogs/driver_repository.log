@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r7979 | brainslayer | 2024-07-19 23:46:07 +0700 (Fri, 19 Jul 2024) | 1 line
+
+avoid using of board-2. this data cannot be trusted. use only extracted data
+------------------------------------------------------------------------
 r7978 | brainslayer | 2024-07-18 22:16:32 +0700 (Thu, 18 Jul 2024) | 1 line
 
 not sure if this is a solution for our calibration problem. but we should give some delay between power down and power up for testing
