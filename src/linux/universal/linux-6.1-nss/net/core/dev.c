@@ -3625,9 +3625,10 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 
 	if (unlikely(!skb->fast_forwarded)) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	if (!(skb->imq_flags & IMQ_F_ENQUEUE))
+	if (dev_nit_active(dev) && !(skb->imq_flags & IMQ_F_ENQUEUE))
+#else
+	if (dev_nit_active(dev))
 #endif
-		if (dev_nit_active(dev))
 			dev_queue_xmit_nit(skb, dev);
 	}
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
