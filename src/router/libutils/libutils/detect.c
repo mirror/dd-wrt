@@ -1409,6 +1409,11 @@ generic:;
 		return ROUTER_LINKSYS_MX4200V1;
 	}
 
+	if (!strcmp(modelstr, "MX4300")) {
+		setRouter("Linksys MX4300");
+		return ROUTER_LINKSYS_MX4200V1;
+	}
+
 	if (!strcmp(modelstr, "MX4200v2")) {
 		setRouter("Linksys MX4200 v2");
 		return ROUTER_LINKSYS_MX4200V2;
