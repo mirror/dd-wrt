@@ -175,6 +175,7 @@
 };
 
 &cpu0_thermal {
+        polling-delay = <5000>;
 	trips {
 		cpu0_active: cpu-active {
 			temperature = <65000>;
@@ -192,6 +193,7 @@
 };
 
 &cpu1_thermal {
+        polling-delay = <5000>;
 	trips {
 		cpu1_active: cpu-active {
 			temperature = <65000>;
@@ -209,6 +211,7 @@
 };
 
 &cpu2_thermal {
+        polling-delay = <5000>;
 	trips {
 		cpu2_active: cpu-active {
 			temperature = <65000>;
@@ -226,6 +229,7 @@
 };
 
 &cpu3_thermal {
+        polling-delay = <5000>;
 	trips {
 		cpu3_active: cpu-active {
 			temperature = <65000>;
@@ -243,6 +247,7 @@
 };
 
 &cluster_thermal {
+        polling-delay = <5000>;
 	trips {
 		cluster_active: cluster-active {
 			temperature = <65000>;
