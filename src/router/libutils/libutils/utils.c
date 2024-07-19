@@ -1189,7 +1189,7 @@ char *cpustring(void)
 		char *match;
 		char *name;
 	};
-	const static struct cpunames[] = {
+	const static struct cpumatches cpunames[] = {
 		{ "ipq8065", "QCA IPQ8065" }, //
 		{ "ipq8064", "QCA IPQ8064" }, //
 		{ "ipq8062", "QCA IPQ8062" }, //
