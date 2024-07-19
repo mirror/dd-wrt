@@ -1176,24 +1176,50 @@ int sv_valid_hwaddr(char *value)
 
 char *cpustring(void)
 {
-	static char buf[256];
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		strcpy(buf, "Marvell Armada 370/XP");
+		return "Marvell Armada 370/XP";
 	} else {
-		strcpy(buf, "Marvell Armada 385");
+		return "Marvell Armada 385";
 	}
-	return buf;
 #elif HAVE_ALPINE
-	strcpy(buf, "Annapurna Labs Alpine");
-	return buf;
-
+	return "Annapurna Labs Alpine";
 #elif defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+	struct cpumatches {
+		char *match;
+		char *name;
+	};
+	const static struct cpunames[] = {
+		{ "ipq8065", "QCA IPQ8065" }, //
+		{ "ipq8064", "QCA IPQ8064" }, //
+		{ "ipq8062", "QCA IPQ8062" }, //
+		{ "ipq8068", "QCA IPQ8068" }, //
+		{ "ipq4019", "QCA IPQ4019" }, //
+		{ "ipq4029", "QCA IPQ4029" }, //
+		{ "ipq4018", "QCA IPQ4018" }, //
+		{ "ipq4028", "QCA IPQ4028" }, //
+		{ "ipq6000", "QCA IPQ6000" }, //
+		{ "ipq6010", "QCA IPQ6010" }, //
+		{ "ipq6018", "QCA IPQ6018" }, //
+		{ "ipq6028", "QCA IPQ6028" }, //
+		{ "ipq5000", "QCA IPQ5000" }, //
+		{ "ipq5010", "QCA IPQ5010" }, //
+		{ "ipq5016", "QCA IPQ5016" }, //
+		{ "ipq5028", "QCA IPQ5028" }, //
+		{ "ipq5018", "QCA IPQ5018" }, //
+		{ "ipq8173", "QCA IPQ8173" }, //
+		{ "ipq8174", "QCA IPQ8174" }, //
+		{ "ipq8176", "QCA IPQ8176" }, //
+		{ "ipq8178", "QCA IPQ8178" }, //
+		{ "ipq8070", "QCA IPQ8070" }, //
+		{ "ipq8072", "QCA IPQ8072" }, //
+		{ "ipq8076", "QCA IPQ8076" }, //
+		{ "ipq8078", "QCA IPQ8078" }, //
+		{ "ipq8074", "QCA IPQ8074" }, //
+	};
 	FILE *fp = fopen("/sys/firmware/devicetree/base/compatible", "rb");
 	if (!fp) {
-failover:
-		strcpy(buf, "QCA IPQXXXX");
-		return buf;
+		return "QCA IPQXXXX";
 	}
 	char compatible[128];
 	fread(compatible, 1, sizeof(compatible), fp);
@@ -1206,80 +1232,27 @@ failover:
 	}
 	compatible[127] = 0;
 	char *cpu = &compatible[0];
-	if (strstr(cpu, "ipq8065"))
-		strcpy(buf, "QCA IPQ8065");
-	else if (strstr(cpu, "ipq8064"))
-		strcpy(buf, "QCA IPQ8064");
-	else if (strstr(cpu, "ipq8062"))
-		strcpy(buf, "QCA IPQ8062");
-	else if (strstr(cpu, "ipq8068"))
-		strcpy(buf, "QCA IPQ8068");
-	else if (strstr(cpu, "ipq4019"))
-		strcpy(buf, "QCA IPQ4019");
-	else if (strstr(cpu, "ipq4029"))
-		strcpy(buf, "QCA IPQ4029");
-	else if (strstr(cpu, "ipq4018"))
-		strcpy(buf, "QCA IPQ4018");
-	else if (strstr(cpu, "ipq4028"))
-		strcpy(buf, "QCA IPQ4028");
-	else if (strstr(cpu, "ipq6000"))
-		strcpy(buf, "QCA IPQ6000");
-	else if (strstr(cpu, "ipq6010"))
-		strcpy(buf, "QCA IPQ6010");
-	else if (strstr(cpu, "ipq6018"))
-		strcpy(buf, "QCA IPQ6018");
-	else if (strstr(cpu, "ipq6028"))
-		strcpy(buf, "QCA IPQ6028");
-	else if (strstr(cpu, "ipq5000"))
-		strcpy(buf, "QCA IPQ5000");
-	else if (strstr(cpu, "ipq5010"))
-		strcpy(buf, "QCA IPQ5010");
-	else if (strstr(cpu, "ipq5016"))
-		strcpy(buf, "QCA IPQ5016");
-	else if (strstr(cpu, "ipq5028"))
-		strcpy(buf, "QCA IPQ5028");
-	else if (strstr(cpu, "ipq5018"))
-		strcpy(buf, "QCA IPQ5018");
-	else if (strstr(cpu, "ipq8173"))
-		strcpy(buf, "QCA IPQ8173");
-	else if (strstr(cpu, "ipq8174"))
-		strcpy(buf, "QCA IPQ8174");
-	else if (strstr(cpu, "ipq8176"))
-		strcpy(buf, "QCA IPQ8176");
-	else if (strstr(cpu, "ipq8178"))
-		strcpy(buf, "QCA IPQ8178");
-	else if (strstr(cpu, "ipq8070"))
-		strcpy(buf, "QCA IPQ8070");
-	else if (strstr(cpu, "ipq8072"))
-		strcpy(buf, "QCA IPQ8072");
-	else if (strstr(cpu, "ipq8076"))
-		strcpy(buf, "QCA IPQ8076");
-	else if (strstr(cpu, "ipq8078"))
-		strcpy(buf, "QCA IPQ8078");
-	else if (strstr(cpu, "ipq8074"))
-		strcpy(buf, "QCA IPQ8074");
-	else
-		goto failover;
-	return buf;
+	int i;
+	for (i = 0; i < sizeof(cpunames) / sizeof(cpunames[0]); i++) {
+		if (strstr(cpu, cpunames[i].match)) {
+			return cpunames[i].name;
+		}
+	}
+	return "QCA IPQXXXX";
 #elif HAVE_UNIWIP
-	strcpy(buf, "FreeScale MPC8314");
-	return buf;
+	return "FreeScale MPC8314";
 #elif HAVE_WDR4900
-	strcpy(buf, "FreeScale P1014");
-	return buf;
+	return "FreeScale P1014";
 #elif HAVE_RB600
-	strcpy(buf, "FreeScale MPC8343");
-	return buf;
+	return "FreeScale MPC8343";
 #elif HAVE_NEWPORT
-	strcpy(buf, "Cavium ThunderX CN81XX");
-	return buf;
+	return "Cavium ThunderX CN81XX";
 #elif HAVE_VENTANA
-	strcpy(buf, "FreeScale i.MX6 Quad/DualLite");
-	return buf;
+	return "FreeScale i.MX6 Quad/DualLite";
 #elif HAVE_NORTHSTAR
 	FILE *fp = fopen("/proc/bcm_chipinfo", "rb");
 	if (!fp) {
-		strcpy(buf, "Broadcom BCM470X");
+		return "Broadcom BCM470X";
 		return buf;
 	}
 	int chipid;
@@ -1292,18 +1265,17 @@ failover:
 	if (chipid == 53030 || chipid == 53010 || chipid == 53011 || chipid == 53012 || chipid == 53018 ||
 	    chipid == 53019) { // 53030
 		if (packageoption == 0)
-			strcpy(buf, "Broadcom BCM4709");
+			return "Broadcom BCM4709";
 		if (packageoption == 1)
-			strcpy(buf, "Broadcom BCM4707");
+			return "Broadcom BCM4707";
 		if (packageoption == 2)
-			strcpy(buf, "Broadcom BCM4708");
+			return "Broadcom BCM4708";
 	} else if (chipid == 53573) {
-		strcpy(buf, "Broadcom BCM47189");
+		return "Broadcom BCM47189";
 	} else
-		strcpy(buf, "Broadcom BCM470X");
-
-	return buf;
+		return "Broadcom BCM470X";
 #else
+	static char buf[256];
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
 
 	if (fcpu == NULL) {
