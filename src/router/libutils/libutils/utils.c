@@ -1253,7 +1253,6 @@ char *cpustring(void)
 	FILE *fp = fopen("/proc/bcm_chipinfo", "rb");
 	if (!fp) {
 		return "Broadcom BCM470X";
-		return buf;
 	}
 	int chipid;
 	int chiprevision;
