@@ -281,9 +281,7 @@ void shutdown_system(void)
 		signal(sig, SIG_DFL);
 	if (!nvram_match("shutdown", "fast")) {
 		start_service("run_rc_shutdown");
-#ifdef HAVE_LAGUNA
-		start_service("deconfigurewifi");
-#endif
+
 		dd_loginfo("init", "send dhcp lease release signal\n");
 		killall("udhcpc", SIGUSR2);
 		sleep(1);
@@ -298,8 +296,6 @@ void shutdown_system(void)
 		kill(-1, SIGKILL);
 		sync();
 		unmount_fs(); // try it a second time, but consider that kill already could have reached init process
-		nvram_seti("end_time", time(NULL));
-		nvram_commit();
 		deadcount = 0;
 		while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
 		{
@@ -313,6 +309,9 @@ void shutdown_system(void)
 		eval("umount", "-r", "-f", "/usr/local");
 		eval("umount", "-r", "-f", "/");
 #endif
+		start_service("sysshutdown");
+		nvram_seti("end_time", time(NULL));
+		nvram_commit();
 	}
 }
 
