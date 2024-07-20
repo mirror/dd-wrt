@@ -266,6 +266,28 @@ void setmacflag(char *file)
 	}
 }
 
+void set6g(char *file) // testing
+{
+	FILE *fp = fopen(file, "rb");
+	if (fp) {
+		fseek(fp, 0, SEEK_END);
+		size_t len = ftell(fp);
+		rewind(fp);
+		int i;
+		unsigned char *mem = malloc(len);
+		fread(mem, len, 1, fp);
+		fclose(fp);
+		mem[605]=1;
+		mem[606]=1;
+		mem[607]=7;
+		calcchecksum(mem, 0, len);
+		FILE *fp = fopen(file, "wb");
+		fwrite(mem, len, 1, fp);
+		fclose(fp);
+		free(mem);
+	}
+}
+
 /*WHAL_OPFLAGS_11G                     = 0x00000002,
 WHAL_OPFLAGS_5G_HT40            = 0x00000004,
 WHAL_OPFLAGS_2G_HT40            = 0x00000008,
@@ -697,6 +719,10 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
+			out = fopen("/tmp/board2.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
 		}
 		fclose(fp);
 	} else {
@@ -749,6 +775,10 @@ void start_sysinit(void)
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
 		removeregdomain("/tmp/board2.bin", QCN9000);
 		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
+
+/*		set6g("/tmp/caldata2.bin");
+		set6g("/tmp/board2.bin");
+		set6g("/tmp/cal-pci-0001:01:00.0.bin");*/
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
