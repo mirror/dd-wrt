@@ -52,6 +52,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <ctype.h>
+#include <services.h>
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
@@ -1082,7 +1083,7 @@ void start_resetbc(void)
 
 void start_sysshutdown(void)
 {
-	deconfigurewifi();
-	rmmod("ath11k_shb");
+	start_deconfigurewifi();
+	rmmod("ath11k_ahb");
 	rmmod("ath11k_pci");
 }

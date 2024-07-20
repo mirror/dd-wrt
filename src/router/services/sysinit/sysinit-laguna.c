@@ -51,6 +51,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <services.h>
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
@@ -149,7 +150,7 @@ void start_sysinit(void)
 
 void start_sysshutdown(void)
 {
-	deconfigurewifi();
+	start_deconfigurewifi();
 }
 
 int check_cfe_nv(void)
