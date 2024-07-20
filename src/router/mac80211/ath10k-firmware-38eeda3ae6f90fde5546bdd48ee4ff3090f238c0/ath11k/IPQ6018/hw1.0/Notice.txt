@@ -73,6 +73,13 @@ File: mywpa_common.c
 File: aes_wrap.h
 
 /*
+ * Copyright (c) 2011 Qualcomm Technologies, Inc.
+ * 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -104,6 +111,13 @@ File: aes_wrap.h
 File: aes_wrap.c
 
 /*
+ * Copyright (c) 2011 Qualcomm Technologies, Inc.
+ * 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -134,6 +148,13 @@ File: aes_wrap.c
 File: sha1.h
 
 /*
+ * Copyright (c) 2011 Qualcomm Technologies, Inc.
+ * 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -157,6 +178,13 @@ File: sha1.h
 File: sha1.c
 
 /*
+ * Copyright (c) 2011 Qualcomm Technologies, Inc.
+ * 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -179,6 +207,13 @@ File: sha1.c
 
 File: crypto.h
 
+/*
+ * Copyright (c) 2011 Qualcomm Technologies, Inc.
+ * 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
 /*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
@@ -263,6 +298,8 @@ File: ieee80211_defines.h
 /*
  * Copyright (c) 2011 Qualcomm Technologies, Inc.
  * 2008-2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
  * Qualcomm Atheros, Inc. has chosen to take madwifi subject to the BSD license and terms.
  *
  */
@@ -598,6 +635,14 @@ File: sha2.h
 File: if_llc.h
 
 /*
+ * Copyright (c) 2018 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * 
+ * 2012 - 2016 Qualcomm Atheros, Inc.
+ */
+
+/*
  * For this file, which was received with alternative licensing options for   
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -809,6 +854,11 @@ File: phyUtilsStrlcpy.c
 
 File: platform_cmnos_printf.c
 
+/* 
+ * Copyright (c) 2018 - 2019 Qualcomm Technologies, Inc. 
+ * All Rights Reserved. 
+ * Confidential and Proprietary - Qualcomm Technologies, Inc. 
+ */
 /*
  * we got this file from ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/10.1-RELEASE/src.txz,
  * and we revise the code. we take BSD license. Please keep the original BSD license here.
@@ -852,7 +902,164 @@ File: platform_cmnos_printf.c
 
 ================================================================================
 
+File: strlcat.c
+
+/* $OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $ */
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
+File: strlcpy.c
+
+/* $OpenBSD: strlcpy.c,v 1.11 2006/05/05 15:27:38 millert Exp $ */
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
+File: strnlen.c
+
+/* $OpenBSD: strnlen.c,v 1.3 2010/06/02 12:58:12 millert Exp $ */
+
+/*
+ * Copyright (c) 2010 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+/* OPENBSD ORIGINAL: lib/libc/string/strnlen.c */
+
+================================================================================
+
+File: wcslcat.c
+
+/* $OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $ */
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
+File: wcslcpy.c
+
+/* $OpenBSD: strlcpy.c,v 1.11 2006/05/05 15:27:38 millert Exp $ */
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
+File: wstrlcat.c
+
+/* $OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $ */
+
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
+File: wstrlcpy.c
+
+/* $OpenBSD: strlcpy.c,v 1.11 2006/05/05 15:27:38 millert Exp $ */
+
+/*
+ * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+================================================================================
+
 File: if_ethersubr.h
+
+/*
+ * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
+ */
 
 /*
  * For this file, which was received with alternative licensing options for
@@ -901,6 +1108,12 @@ File: if_ethersubr.h
 File: aes-siv.c
 
 /*
+ * Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -910,12 +1123,26 @@ File: aes-siv.c
  * Copyright (c) 2013 Cozybit, Inc.
  *
  * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
+/*
+ * AES SIV (RFC 5297)
+ * Copyright (c) 2013 Cozybit, Inc.
+ *
+ * This software may be distributed under the terms of the BSD license.
+ */
+   
 ================================================================================
 
 File: aes_siv.h
 
+/*
+ * Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only
+ */
 /*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
@@ -1169,6 +1396,12 @@ END OF TERMS AND CONDITIONS
 File: sha256.c
 
 /*
+ * Copyright (c) 2016 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ * Notifications and licenses are retained for attribution purposes only
+ */
+/*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
  */
@@ -1230,6 +1463,12 @@ File: sha512-internal.c
 
 File: sha256.h
 
+/*
+ * Copyright (c) 2014 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
 /*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
@@ -1327,6 +1566,8 @@ File: md5.c
 
 /*
  * Copyright (c) 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
  * $ATH_LICENSE_TARGET_C$
  */
 
@@ -1362,6 +1603,11 @@ File: md5.c
 File: aes_gcm.h
 
 /*
+ * Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+ */
+/*
  * Galois/Counter Mode (GCM) and GMAC with AES
  *
  * Copyright (c) 2012, Jouni Malinen <j@w1.fi>
@@ -1374,6 +1620,12 @@ File: aes_gcm.h
 
 File: md5_api.h
 
+/*
+ * Copyright (c) 2011 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
+ * Notifications and licenses are retained for attribution purposes only.
+ */
 /*
  * For this file, which was received with alternative licensing options for
  * distribution, Qualcomm Atheros, Inc. has selected the BSD license.
@@ -1416,27 +1668,7 @@ File: wlan_p2p_listen_offload_int.c
 
 ================================================================================
 
-File: wlan_p2p_listen_offload_int.h
-
-/*
- * For this file, which was received with alternative licensing options for
- * distribution, Qualcomm Technologies, Inc. has selected the BSD license.
- */
-/*
- * 2016-2017 Qualcomm Atheros, Inc.
- * All Rights Reserved.
- */
-/*
- * Wi-Fi Protected Setup - message definitions
- * Copyright (c) 2008, Jouni Malinen <j@w1.fi>
- *
- * This software may be distributed under the terms of the BSD license.
- * See README for more details.
- */
-
-================================================================================
-
-File: wlan_p2p_listen_offload.c
+File: wlan_p2p_listen_offload_internal.h
 
 /*
  * For this file, which was received with alternative licensing options for
@@ -1643,37 +1875,6 @@ File: htt_deps.h
 
 /*
  * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
- */
-
-================================================================================
-
-File: htt_isoc.h
-
-/*
- * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -2185,68 +2386,6 @@ File: wmix.h
 
 ================================================================================
 
-File: bin_seg.h
-
-/*
- * Copyright (c) 2012 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
- */
-
-================================================================================
-
-File: bmi_seg.h
-
-/*
- * Copyright (c) 2012, 2018 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
- */
-
-================================================================================
-
 File: athdefs.h
 
 /*
@@ -2561,37 +2700,6 @@ File: ipv6.h
 
 /*
  * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
- */
-
-================================================================================
-
-File: wal_rx_desc.h
-
-/*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -3056,7 +3164,7 @@ File: wmi_tlv_helper.c
 
 ================================================================================
 
-File: hca_HwComponentBbBase_dfs_phyerr_tlv.cpp
+File: hca_HwComponentBbLithium_dfs_phyerr_tlv.cpp
 
 /*
  * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
@@ -3087,7 +3195,7 @@ File: hca_HwComponentBbBase_dfs_phyerr_tlv.cpp
 
 ================================================================================
 
-File: hca_HwComponentBbBase_dfs_process_phyerr.cpp
+File: hca_HwComponentBbLithium_dfs_process_phyerr.cpp
 
 /*
  * Copyright (c) 2002-2016 The Linux Foundation. All rights reserved.
@@ -3116,8 +3224,7 @@ File: hca_HwComponentBbBase_dfs_process_phyerr.cpp
  * to the Linux Foundation.
  */
 ================================================================================
-
-File: hca_HwComponentBbBase_dfs_process_radarevent.cpp
+File: hca_HwComponentBbLithium_dfs_process_radarevent.cpp
 
 /*
  * Copyright (c) 2002-2016 The Linux Foundation. All rights reserved.
@@ -3148,7 +3255,7 @@ File: hca_HwComponentBbBase_dfs_process_radarevent.cpp
 
 ================================================================================
 
-File: hca_dfs_radar_report.h
+File: hca_HwComponentBbLithium_dfs_radar_report.h
 /*
  * Copyright (c) 2018  The Linux Foundation. All rights reserved.
  *
@@ -3478,38 +3585,7 @@ File: types.h
 
 ================================================================================
 
-File: cds_ieee80211_defines.h
-
-/*
- * Copyright (c) 2011, 2014-2015 The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-
-/*
- * This file was originally distributed by Qualcomm Atheros, Inc.
- * under proprietary terms before Copyright ownership was assigned
- * to the Linux Foundation.
- */
-
-================================================================================
-
-File: cds_reg_services.h
+File: cds_reg_service.h
 
 /*
  * Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
@@ -3577,6 +3653,37 @@ File: wma_dfs_interface.h
  * Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for
+ * any purpose with or without fee is hereby granted, provided that the
+ * above copyright notice and this permission notice appear in all
+ * copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+ * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+ * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
+
+================================================================================
+
+File: cds_reg_service.c
+
+/*
+ * Copyright (c) 2014-2016 The Linux Foundation. All rights reserved.
+ *
+ * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ *
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
