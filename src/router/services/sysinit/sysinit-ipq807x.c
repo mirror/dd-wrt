@@ -1115,5 +1115,4 @@ void start_sysshutdown(void)
 {
 	start_deconfigurewifi();
 	rmmod("ath11k_ahb");
-	rmmod("ath11k_pci");
 }
