@@ -9,11 +9,11 @@ wolfssl-configure:
 	cd wolfssl && ./autogen.sh
 	mkdir -p wolfssl/minimal
 	mkdir -p wolfssl/standard
-	cd wolfssl/standard && ../configure $(NO_TLS)  --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-examples --enable-opensslextra --enable-opensslall --enable-shared --enable-fastmath --disable-static -disable-errorstrings --enable-lowresource --disable-oldtls --enable-aesgcm --enable-poly1305 --enable-chacha --enable-ecc --disable-sslv3 --enable-des3 --enable-md4 --enable-stunnel --enable-tls13 --enable-session-ticket --enable-wpas --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd wolfssl/standard && ../configure $(NO_TLS)  --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-crypttests --disable-examples --disable-benchmark --disable-examples --enable-opensslextra --enable-opensslall --enable-shared --enable-fastmath --disable-static -disable-errorstrings --enable-lowresource --disable-oldtls --enable-aesgcm --enable-poly1305 --enable-chacha --enable-ecc --disable-sslv3 --enable-des3 --enable-md4 --enable-stunnel --enable-tls13 --enable-session-ticket --enable-wpas --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-	cd wolfssl/minimal && ../configure $(NO_TLS) --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --enable-opensslextra --disable-shared --enable-fastmath --enable-static -disable-errorstrings --disable-oldtls --disable-sha --enable-lowresource --disable-md5 --disable-arc4 --disable-poly1305 --disable-chacha --enable-ecc --disable-sslv3 --disable-tls13 --disable-des3 --enable-md4 --enable-stunnel --enable-session-ticket --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	cd wolfssl/minimal && ../configure $(NO_TLS) --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-crypttests --disable-examples --disable-benchmark --enable-opensslextra --disable-shared --enable-fastmath --enable-static -disable-errorstrings --disable-oldtls --disable-sha --enable-lowresource --disable-md5 --disable-arc4 --disable-poly1305 --disable-chacha --enable-ecc --disable-sslv3 --disable-tls13 --disable-des3 --enable-md4 --enable-stunnel --enable-session-ticket --enable-cmac CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	    AR_FLAGS="cru $(LTOPLUGIN)" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 	$(MAKE) -C wolfssl/minimal
