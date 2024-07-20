@@ -147,6 +147,11 @@ void start_sysinit(void)
 	return;
 }
 
+void start_sysshutdown(void)
+{
+	deconfigurewifi();
+}
+
 int check_cfe_nv(void)
 {
 	nvram_seti("portprio_support", 0);

@@ -1079,3 +1079,10 @@ void start_resetbc(void)
 			eval("mtd", "resetbc", "s_env");
 	}
 }
+
+void start_sysshutdown(void)
+{
+	deconfigurewifi();
+	rmmod("ath11k_shb");
+	rmmod("ath11k_pci");
+}
