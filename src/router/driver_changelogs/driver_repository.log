@@ -1,4 +1,24 @@
 ------------------------------------------------------------------------
+r7988 | brainslayer | 2024-07-21 00:04:04 +0700 (Sun, 21 Jul 2024) | 1 line
+
+update fw images to 2.12: add new files
+------------------------------------------------------------------------
+r7987 | brainslayer | 2024-07-20 19:29:22 +0700 (Sat, 20 Jul 2024) | 1 line
+
+update bdf: add new files
+------------------------------------------------------------------------
+r7986 | brainslayer | 2024-07-20 19:29:08 +0700 (Sat, 20 Jul 2024) | 1 line
+
+update bdf
+------------------------------------------------------------------------
+r7985 | brainslayer | 2024-07-20 16:02:45 +0700 (Sat, 20 Jul 2024) | 1 line
+
+add some debug
+------------------------------------------------------------------------
+r7984 | brainslayer | 2024-07-20 12:58:06 +0700 (Sat, 20 Jul 2024) | 1 line
+
+power down core on soc create before bringing up. might might still run from last warm reboot which may be the cause for coldboot calibration fails
+------------------------------------------------------------------------
 r7983 | brainslayer | 2024-07-20 05:16:31 +0700 (Sat, 20 Jul 2024) | 1 line
 
 still pointless: remove old files
