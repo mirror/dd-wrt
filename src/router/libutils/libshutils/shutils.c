@@ -1659,7 +1659,7 @@ int check_blocklist(const char *service, char *ip)
 				// each try from a block client extends by another 5 minutes;
 				entry->attempts++;
 				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
-				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
+				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes\n",
 					   ip, (BLOCKTIME * entry->attempts));
 				ret = -1;
 				change = 1;
