@@ -583,9 +583,14 @@ rewrite:;
 	 */
 	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
-
+	#ifdef HAVE_IPQ6018
+	#define MINEXTRA 64
+	#else
+	#define MINEXTRA 8
+	#endif
+	
 	// found a a solution
-	if (info.freeram >= (trx.len + 8 * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
+	if (info.freeram >= (trx.len + MINEXTRA * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
 		dd_loginfo("flash", "The free memory is enough, writing image once.\n");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
