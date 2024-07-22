@@ -1612,7 +1612,7 @@ void add_blocklist(const char *service, char *ip)
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				entry->attempts = 1;
-				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
+				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes\n", ip,
 					   BLOCKTIME);
 			}
 			goto end;
