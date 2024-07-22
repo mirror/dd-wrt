@@ -1044,6 +1044,8 @@ int __init hyfi_bridge_init(void)
 #endif
 	for (i = 0; i < HYFI_BRIDGE_MAX; i++) {
 		spin_lock_init(&hyfi_bridges[i].lock);
+		spin_lock_init(&hyfi_bridges[i].hash_ha_lock);
+		spin_lock_init(&hyfi_bridges[i].hash_hd_lock);
 
 		hyfi_bridges[i].event_pid = NLEVENT_INVALID_PID;
 		INIT_LIST_HEAD(&hyfi_bridges[i].port_list);
