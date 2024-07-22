@@ -67,7 +67,7 @@
 						<input size="15" maxlength="15" name="openvpn_gateway" value="<% nvg("openvpn_gateway"); %>" />
 					</div>
 					<div class="setting">
-						<div class="label"><% tran("service.vpnd_mask"); %></div>
+						<div class="label"><% tran("share.subnet"); %></div>
 						<input size="15" maxlength="15" name="openvpn_mask" value="<% nvg("openvpn_mask"); %>" />
 					</div>
 					<div class="setting">
