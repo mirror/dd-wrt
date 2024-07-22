@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r7997 | brainslayer | 2024-07-22 22:08:47 +0700 (Mon, 22 Jul 2024) | 1 line
+
+do not use factory bdf. they are not compatible with current firmwares
+------------------------------------------------------------------------
+r7996 | brainslayer | 2024-07-22 21:52:54 +0700 (Mon, 22 Jul 2024) | 1 line
+
+use generic board data
+------------------------------------------------------------------------
+r7995 | brainslayer | 2024-07-22 21:26:12 +0700 (Mon, 22 Jul 2024) | 1 line
+
+we need to use a way older firmware
+------------------------------------------------------------------------
 r7994 | brainslayer | 2024-07-22 17:42:18 +0700 (Mon, 22 Jul 2024) | 1 line
 
 fix lock error
