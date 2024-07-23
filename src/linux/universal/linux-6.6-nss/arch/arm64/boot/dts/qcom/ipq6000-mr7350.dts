@@ -111,7 +111,7 @@
 		usb {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
-			gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
+			gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb3_port1>, <&usb3_port2>;
 			linux,default-trigger = "usbport";
 		};
@@ -122,7 +122,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&tlmm 61 GPIO_ACTIVE_LOW>;
+		gpio = <&tlmm 61 GPIO_ACTIVE_HIGH>;
 		regulator-always-on;
 	};
 };
