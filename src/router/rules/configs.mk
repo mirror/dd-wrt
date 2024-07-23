@@ -551,6 +551,7 @@ obj-$(CONFIG_X86) += cpupower
 obj-$(CONFIG_CPUPOWER) += cpupower
 obj-$(CONFIG_BTOP) += btop
 obj-$(CONFIG_QCA_NSS) += qca-nss
+obj-$(CONFIG_GETCONF) += getconf
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
