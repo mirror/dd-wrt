@@ -1689,8 +1689,8 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x0; // diag led / red
 		cfg->diag_gpio_disabled = 0x1;
 		cfg->connected_gpio = 0x2; // blue wan led
-		cfg->usb_gpio = 0x3c; //usb1
-		cfg->usb_power = GPIO_LOW | 0x3d; //usb2
+		cfg->usb_gpio = GPIO_LOW | 0x3c; //usb1
+		cfg->usb_power = 0x3d; //usb2
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		cfg->power_gpio = 0x1a; // power led / green
