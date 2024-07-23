@@ -266,7 +266,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-clients clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" tunipip6=y tlsmgr=y  pppoe=y vxlanmgr=y pptp=y l2tpv2=y  qdisc=y vlan-mgr=y netlink=y bridge-mgr=y lag-mgr=y ovsmgr=y \
 		DTLSMGR_DIR="$(DTLSMGR_DIR)" \
 		IPSECMGR_DIR="$(IPSECMGR_DIR)" INSTALL_MOD_PATH=$(INSTALLDIR)
-	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/nss-ifb clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
@@ -307,6 +307,7 @@ else
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
 
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y ECM_INTERFACE_OVS_BRIDGE_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y  ECM_CLASSIFIER_HYFI_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
+	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-hyfi-bridge clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	$(MAKE) -C $(KDIR) M=$(PWD)/qca-nss-gmac clean modules modules_install MODPROBE=true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS) -DCONFIG_NSS_DEBUG_LEVEL=0 -I$(PKG_BUILD_DIR)/nss_hal/include -I$(PKG_BUILD_DIR)/nss_hal/$(BOARD)" SoC="ipq806x" INSTALL_MOD_PATH=$(INSTALLDIR)
 
 	-find $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(INSTALLDIR)/lib/modules/$(KERNELRELEASE) \;
