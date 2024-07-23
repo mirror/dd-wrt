@@ -1052,7 +1052,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort, 
 	if (!in)
 		return 0;
 	char *ignorelist[] = { "wifi", "ifb", "imq", "etherip", "lo",  "teql",	 "gre",
-			       "ppp",  "aux", "ctf", "tap",	"sit", "ip6tnl", "miireg" };
+			       "ppp",  "aux", "ctf", "tap",	"sit", "ip6tnl", "miireg", "nssifb" };
 	char ifname[32];
 
 	// skip the first 2 lines
