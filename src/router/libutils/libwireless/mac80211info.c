@@ -543,7 +543,7 @@ static void get_chain_signal(struct nlattr *attr_list, char *signals)
 	int cnt = 0;
 	nla_for_each_nested(attr, attr_list, rem) {
 		signals[cnt++] = nla_get_u8(attr);
-		if (cnt == 4)
+		if (cnt == 8)
 			break;
 	}
 }
