@@ -577,13 +577,14 @@
 				clocks = <&gcc GCC_USB0_MOCK_UTMI_CLK>;
 				clock-names = "ref";
 				interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
-				phy-names = "usb2-phy", "usb3-phy";
 				phys = <&usbphy0>, <&usbphy1>;
+				phy-names = "usb2-phy", "usb3-phy";
 				tx-fifo-resize;
 				snps,is-utmi-l1-suspend;
 				snps,hird-threshold = /bits/ 8 <0x0>;
 				snps,dis_u2_susphy_quirk;
 				snps,dis_u3_susphy_quirk;
+				dr_mode = "host";
 			};
 		};
 

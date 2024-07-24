@@ -45,7 +45,7 @@
 		};
 	};*/
 
-	leds {
+	leds_pwm {
 		compatible = "pwm-leds";
 
 		led_system_red: red {
@@ -65,6 +65,24 @@
 			pwms = <&pwm 1 1250000>;
 			max-brightness = <255>;
 		};
+
+	};
+	led_pinmux {
+		compatible = "gpio-leds";
+		
+		usb {
+			label = "usb";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 61 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
 	};
 
 	reserved-memory {
