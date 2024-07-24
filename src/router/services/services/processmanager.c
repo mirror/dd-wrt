@@ -83,7 +83,7 @@ void network_delay(char *service)
 {
 	FILE *first = fopen("/tmp/firstrun", "rb");
 	if (!first) {
-		dd_loginfo(service, "wait for network init");
+		dd_loginfo(service, "wait for network init\n");
 		sleep(10); // first run. wait for network init (need a better solution for this)
 		first = fopen("/tmp/firstrun", "wb");
 		putc('r', first);
