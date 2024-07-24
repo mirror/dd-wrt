@@ -239,9 +239,9 @@ void dd_logerror(const char *servicename, const char *fmt, ...)
 void dd_logstart(const char *servicename, int retcode)
 {
 	if (retcode)
-		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
+		dd_loginfo(servicename, "Error on startup, returncode %d\n", retcode);
 	else
-		dd_loginfo(servicename, "successfully started");
+		dd_loginfo(servicename, "successfully started\n");
 }
 #endif
 
