@@ -37,7 +37,7 @@ void start_atm(void)
 	else if (!nvram_match("wan_proto", "pppoa"))
 		sysprintf("br2684ctl -b -c 0 -e %s -p %s -a 0.%s.%s", nvram_safe_get("atm_encaps"), nvram_safe_get("atm_payld"),
 			  nvram_safe_get("vpi"), nvram_safe_get("vci"));
-	dd_loginfo("atm", "DSL Modem interface created\n");
+	dd_loginfo("atm", "DSL Modem interface created");
 	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
 	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
 	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");

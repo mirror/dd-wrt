@@ -111,7 +111,7 @@ void start_splashd(void)
 	insmod("ifb ipt_mark ipt_mac xt_mark xt_mac");
 	mk_nodog_conf();
 	eval("nodogsplash", "-c", getdefaultconfig("nodogsplash", path, sizeof(path), NODOG_CONF));
-	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started\n");
+	dd_loginfo("nodogsplash", "nocatsplash daemon successfully started");
 	return;
 }
 

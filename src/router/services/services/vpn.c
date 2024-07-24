@@ -66,19 +66,19 @@ void start_vpn_modules(void)
 	stop_vpn_modules();
 	if (nvram_matchi("pptp_pass", 1)) {
 		insmod("nf_conntrack_proto_gre ip_conntrack_proto_gre");
-		dd_loginfo("vpn modules", "nf_conntrack_proto_gre successfully loaded\n");
+		dd_loginfo("vpn modules", "nf_conntrack_proto_gre successfully loaded");
 		insmod("nf_nat_proto_gre ip_nat_proto_gre");
-		dd_loginfo("vpn modules", "nf_nat_proto_gre successfully loaded\n");
+		dd_loginfo("vpn modules", "nf_nat_proto_gre successfully loaded");
 		insmod("nf_conntrack_pptp ip_conntrack_pptp");
-		dd_loginfo("vpn modules", "nf_conntrack_pptp successfully loaded\n");
+		dd_loginfo("vpn modules", "nf_conntrack_pptp successfully loaded");
 		insmod("nf_nat_pptp ip_nat_pptp");
-		dd_loginfo("vpn modules", "nf_nat_pptp successfully loaded\n");
+		dd_loginfo("vpn modules", "nf_nat_pptp successfully loaded");
 	}
 }
 
 void stop_vpn_modules(void)
 {
 	rmmod("nf_nat_pptp nf_conntrack_pptp nf_nat_proto_gre nf_conntrack_proto_gre ip_nat_pptp ip_nat_proto_gre ip_conntrack_pptp ip_conntrack_proto_gre");
-	dd_loginfo("vpn modules", "vpn modules successfully unloaded\n");
+	dd_loginfo("vpn modules", "vpn modules successfully unloaded");
 	nvram_delstates(vpn_modules_deps());
 }

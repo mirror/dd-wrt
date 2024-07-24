@@ -75,7 +75,7 @@ void start_vncrepeater(void)
 	fclose(fp);
 
 	system("repeater /tmp/vncrepeater.ini&");
-	dd_loginfo("vncrepeater", "daemon successfully started\n");
+	dd_loginfo("vncrepeater", "daemon successfully started");
 
 	return;
 }

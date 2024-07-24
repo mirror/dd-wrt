@@ -828,7 +828,7 @@ static void service_restart(void)
 static void handle_reset(void)
 {
 	if ((brand & 0x000f) != 0x000f) {
-		dd_loginfo("resetbutton", "factory default.\n");
+		dd_loginfo("resetbutton", "factory default.");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) &&                   \
 	!defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && \
 	!defined(HAVE_LSX) && !defined(HAVE_SOLO51)
@@ -924,11 +924,11 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 	case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON");
 		set_gpio(1, 1);
 #endif
 #endif
-		dd_syslog(LOG_DEBUG, "%s: turning radio(s) on\n", title);
+		dd_syslog(LOG_DEBUG, "%s: turning radio(s) on", title);
 		char on[32];
 		sprintf(on, "radio_on%s", post);
 		eval("restart", on);
@@ -938,12 +938,12 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 	case 0:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF");
 		set_gpio(1, 0);
 #endif
 #endif
 		// (AOSS) led
-		dd_syslog(LOG_DEBUG, "%s: turning radio(s) off\n", title);
+		dd_syslog(LOG_DEBUG, "%s: turning radio(s) off", title);
 		char off[32];
 		sprintf(off, "radio_off%s", post);
 		eval("restart", off);
@@ -1022,7 +1022,7 @@ static void handle_ses(void)
 		case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON");
 			set_gpio(0, 1);
 			set_gpio(1, 1);
 #endif
@@ -1032,7 +1032,7 @@ static void handle_ses(void)
 		case 0:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF");
 			set_gpio(0, 0);
 			set_gpio(1, 0);
 #endif
@@ -1741,7 +1741,7 @@ static void resetbtn_period_check(int sig)
 		}
 		if (++_count > RESET_WAIT_COUNT) {
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
@@ -1751,7 +1751,7 @@ static void resetbtn_period_check(int sig)
 		   (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
 		if (!ses_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
@@ -1763,7 +1763,7 @@ static void resetbtn_period_check(int sig)
 		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
@@ -1776,7 +1776,7 @@ static void resetbtn_period_check(int sig)
 		   (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
@@ -1788,7 +1788,7 @@ static void resetbtn_period_check(int sig)
 		   (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
 		if (!wifi5_pushed && (++_count > SES_WAIT)) {
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}
@@ -1813,21 +1813,21 @@ static void resetbtn_period_check(int sig)
 			if (_count > UPGRADE_WAIT_COUNT) {
 				char *upgrade_script = "firmware_upgrade.sh";
 				char call[32];
-				dd_loginfo("resetbutton", "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), _count);
+				dd_loginfo("resetbutton", "[RESETBUTTON] check:%d count:%d", pidof(upgrade_script), _count);
 				if (pidof(upgrade_script) < 0) {
 					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
 					if (f_exists(call)) {
-						dd_loginfo("resetbutton", "[RESETBUTTON] trigger update script: %s\n", call);
+						dd_loginfo("resetbutton", "[RESETBUTTON] trigger update script: %s", call);
 						system(call);
 					} else {
-						dd_loginfo("resetbutton", "[RESETBUTTON] upgrade script not found\n");
+						dd_loginfo("resetbutton", "[RESETBUTTON] upgrade script not found");
 						led_control(LED_DIAG, LED_OFF);
 					}
 				}
 			}
 #else
 			if (action != ACT_IDLE) { // Don't execute during upgrading
-				dd_loginfo("resetbutton", "nothing to do...\n");
+				dd_loginfo("resetbutton", "nothing to do...");
 				resetbtn_alarmtimer(0, 0); /* Stop the timer alarm */
 				return;
 			}

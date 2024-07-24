@@ -180,15 +180,15 @@ static int stop_running_main(int argc, char **argv)
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
 		if (debug_ready() && nvram_matchi("service_debugrunnings", 1))
-			dd_loginfo("servicemanager", "%s: dead: %d running %d\n", __func__, dead, *stops_running);
+			dd_loginfo("servicemanager", "%s: dead: %d running %d", __func__, dead, *stops_running);
 
 		if (dead == 0)
-			dd_loginfo("servicemanager", "waiting for services to finish (%d)...\n", *stops_running);
+			dd_loginfo("servicemanager", "waiting for services to finish (%d)...", *stops_running);
 		usleep(100 * 1000);
 		dead++;
 	}
 	if (dead == 50) {
-		dd_logerror("servicemanager", "stopping processes taking too long!!!\n");
+		dd_logerror("servicemanager", "stopping processes taking too long!!!");
 	} else if (stops_running != NULL && *stops_running == 0) {
 		int *run = stops_running;
 		stops_running = NULL;

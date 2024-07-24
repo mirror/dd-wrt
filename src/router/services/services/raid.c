@@ -41,11 +41,11 @@ void fscheck_main(int argc, char *argv[])
 		char *type = nvram_nget("raidtype%d", i);
 		char *poolname = nvram_nget("raidname%d", i);
 		if (!strcmp(type, "zfs")) {
-			dd_loginfo("raid", "start ZFS Scrubbing\n");
+			dd_loginfo("raid", "start ZFS Scrubbing");
 			eval("zpool", "scrub", poolname);
 		}
 		if (!strcmp(type, "md")) {
-			dd_loginfo("raid", "start checking MD Raid\n");
+			dd_loginfo("raid", "start checking MD Raid");
 			sysprintf("echo check > /sys/block/md%d/md/sync_action", i);
 		}
 		i++;
@@ -154,56 +154,56 @@ void start_raid(void)
 		insmod("raid0");
 		insmod("raid1");
 		insmod("raid10");
-		dd_loginfo("raid", "MD raid modules successfully loaded\n");
+		dd_loginfo("raid", "MD raid modules successfully loaded");
 	}
 	if (zfs) {
 		insmod("spl");
 		char zfs_threads[32];
 		sprintf(zfs_threads, "zvol_threads=%d", cpucount);
 		eval("insmod", "zfs", zfs_threads);
-		dd_loginfo("raid", "ZFS modules successfully loaded (%d threads)\n", cpucount);
+		dd_loginfo("raid", "ZFS modules successfully loaded (%d threads)", cpucount);
 	}
 	if (btrfs) {
 		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_common zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
-		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
+		dd_loginfo("raid", "BTRFS modules successfully loaded");
 	}
 	if (ntfs) {
 #ifdef HAVE_LEGACY_KERNEL
 		insmod("fuse");
-		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded\n");
+		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded");
 #else
 		insmod("antfs");
 		insmod("ntfs3");
-		dd_loginfo("raid", "NTFS modules successfully loaded\n");
+		dd_loginfo("raid", "NTFS modules successfully loaded");
 #endif
 	}
 	if (xfs) {
 		insmod("xfs");
-		dd_loginfo("raid", "XFS modules successfully loaded\n");
+		dd_loginfo("raid", "XFS modules successfully loaded");
 	}
 	if (apfs) {
 		insmod("libcrc32c apfs");
-		dd_loginfo("raid", "APFS modules successfully loaded\n");
+		dd_loginfo("raid", "APFS modules successfully loaded");
 	}
 	if (ext4 || ext2) {
 		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
-		dd_loginfo("raid", "EXT4 modules successfully loaded\n");
+		dd_loginfo("raid", "EXT4 modules successfully loaded");
 	}
 	if (ext2) {
 		insmod("mbcache ext2");
-		dd_loginfo("raid", "EXT2 modules successfully loaded\n");
+		dd_loginfo("raid", "EXT2 modules successfully loaded");
 	}
 	if (exfat) {
 		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
 		insmod("exfat");
-		dd_loginfo("raid", "EXFAT modules successfully loaded\n");
+		dd_loginfo("raid", "EXFAT modules successfully loaded");
 	}
 	if (fat32) {
 		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
 		insmod("fat");
 		insmod("vfat");
 		insmod("msdos");
-		dd_loginfo("raid", "FAT32 modules successfully loaded\n");
+		dd_loginfo("raid", "FAT32 modules successfully loaded");
 	}
 
 	i = 0;

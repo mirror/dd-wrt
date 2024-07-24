@@ -75,9 +75,9 @@ static int download_ssh_key(unsigned char method, struct mime_handler *handler, 
 
 	FILE *f1 = fopen(location, "r");
 	if (!f1) {
-		dd_loginfo("ssh_key_export", "ERROR: No generated private key is found at %s \n", location);
+		dd_loginfo("ssh_key_export", "ERROR: No generated private key is found at %s", location);
 	} else {
-		dd_loginfo("ssh_key_export", "SSHD private key downloaded from %s \n", location);
+		dd_loginfo("ssh_key_export", "SSHD private key downloaded from %s", location);
 		nvram_unset("sshd_keyready");
 		return do_file_attach(handler, location, wp, fname);
 	}

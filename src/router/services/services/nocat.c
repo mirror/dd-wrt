@@ -235,7 +235,7 @@ void start_splashd(void)
 	fclose(fp);
 	chmod("/tmp/start_splashd.sh", 0700);
 	system("/tmp/start_splashd.sh&");
-	dd_loginfo("splashd", "nocatsplash daemon successfully started\n");
+	dd_loginfo("splashd", "nocatsplash daemon successfully started");
 
 	cprintf("done\n");
 	return;

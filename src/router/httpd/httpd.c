@@ -798,7 +798,7 @@ static int do_file_2(unsigned char method, struct mime_handler *handler, char *p
 		while (len && !feof(web)) {
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			if (ferror(web)) {
-				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)\n", __func__, strerror(errno));
+				dd_loginfo("httpd", "%s: cannot read from local file stream (%s)", __func__, strerror(errno));
 				break; // deadlock prevention
 			}
 			if (ret > 0) {
@@ -908,7 +908,7 @@ static void *handle_request(void *arg)
 	if (!conn_fp->p->filter_id)
 		conn_fp->p->filter_id = 1;
 
-	dd_logdebug("httpd", "thread start\n");
+	dd_logdebug("httpd", "thread start");
 	PTHREAD_MUTEX_LOCK(&input_mutex); // barrier. block until input is done. otherwise global members get async
 	PTHREAD_MUTEX_UNLOCK(&input_mutex);
 
@@ -935,7 +935,7 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	int eof = 0;
-	dd_logdebug("httpd", "parse line\n");
+	dd_logdebug("httpd", "parse line");
 	wfgets(line, LINE_LEN, conn_fp, &eof);
 	if (eof) {
 		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL,
@@ -1621,16 +1621,16 @@ int main(int argc, char **argv)
 		}
 	openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 	if (!do_ssl && !no_ssl) {
-		dd_loginfo("httpd", "httpd cannot start. SSL and/or HTTP must be selected\n");
+		dd_loginfo("httpd", "httpd cannot start. SSL and/or HTTP must be selected");
 		exit(0);
 	}
 	if (SSL_ENABLED()) {
 		if (no_ssl)
-			dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
+			dd_loginfo("httpd", "httpd server started at port %d", server_port);
 		if (do_ssl)
-			dd_loginfo("httpd", "httpd SSL server started at port %d\n", ssl_server_port);
+			dd_loginfo("httpd", "httpd SSL server started at port %d", ssl_server_port);
 	} else
-		dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
+		dd_loginfo("httpd", "httpd server started at port %d", server_port);
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int); // kill
@@ -1829,7 +1829,7 @@ int main(int argc, char **argv)
 			}
 #endif
 		}
-		dd_logdebug("httpd", "select() %d\n", maxfd + 1);
+		dd_logdebug("httpd", "select() %d", maxfd + 1);
 		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				SEM_POST(&semaphore);
@@ -1843,24 +1843,24 @@ int main(int argc, char **argv)
 		sz = sizeof(usa);
 #ifdef USE_IPV6
 		if (no_ssl && listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept6() %d\n", listen6_fd);
+			dd_logdebug("httpd", "accept6() %d", listen6_fd);
 			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen6_fd != -1 && FD_ISSET(ssl_listen6_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept6_ssl() %d\n", ssl_listen6_fd);
+			dd_logdebug("httpd", "accept6_ssl() %d", ssl_listen6_fd);
 			conn_fp->conn_fd = accept(ssl_listen6_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		} else
 #endif
 			if (no_ssl && listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept4() %d\n", listen4_fd);
+			dd_logdebug("httpd", "accept4() %d", listen4_fd);
 			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
 		} else if (SSL_ENABLED() && do_ssl && ssl_listen4_fd != -1 && FD_ISSET(ssl_listen4_fd, &lfdset)) {
-			dd_logdebug("httpd", "accept4_ssl() %d\n", ssl_listen4_fd);
+			dd_logdebug("httpd", "accept4_ssl() %d", ssl_listen4_fd);
 			conn_fp->conn_fd = accept(ssl_listen4_fd, &usa.sa, &sz);
 			conn_fp->ssl_enabled = 1;
 		}
 		if (conn_fp->conn_fd < 0) {
-			dd_logdebug("httpd", "error on accept errno %d\n", errno);
+			dd_logdebug("httpd", "error on accept errno %d", errno);
 			perror("accept");
 			SEM_POST(&semaphore);
 			continue;
@@ -1974,15 +1974,15 @@ int main(int argc, char **argv)
 				continue;
 			}
 			conn_fp->conn_fd_out = dup(conn_fp->conn_fd);
-			dd_logdebug("httpd", "fdopen()\n");
+			dd_logdebug("httpd", "fdopen()");
 			if (!(conn_fp->fp_in = fdopen(conn_fp->conn_fd, "r"))) {
-				dd_logdebug("httpd", "fd error error %d\n", errno);
+				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
 			}
 			if (!(conn_fp->fp_out = fdopen(conn_fp->conn_fd_out, "w"))) {
-				dd_logdebug("httpd", "fd error error %d\n", errno);
+				dd_logdebug("httpd", "fd error error %d", errno);
 				close(conn_fp->conn_fd);
 				SEM_POST(&semaphore);
 				continue;
@@ -1999,7 +1999,7 @@ int main(int argc, char **argv)
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		//              pthread_attr_setstacksize(&attr, 4096);
 		pthread_t thread;
-		dd_logdebug("httpd", "createthread()\n");
+		dd_logdebug("httpd", "createthread()");
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0) {
 			SEM_POST(&semaphore);
 			fprintf(stderr, "Failed to create thread\n");

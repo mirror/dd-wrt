@@ -2359,7 +2359,7 @@ EJ_VISIBLE void validate_openvpnuserpass(webs_t wp, char *value, struct variable
 	char openvpn_usrname[32] = "openvpnxxx_usrname";
 	char openvpn_passwd[32] = "openvpnxxx_passwd";
 	char *sln = nvram_safe_get("openvpn_userpassnum");
-	//dd_loginfo("OpenVPN", "OpenVPN userpassnum: %s\n", sln );
+	//dd_loginfo("OpenVPN", "OpenVPN userpassnum: %s", sln );
 
 	if (*(sln) == 0) //string is empty
 		return;

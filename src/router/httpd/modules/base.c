@@ -1442,11 +1442,11 @@ static int gozila_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 								 * renew,
 								 * release
 								 * ..... */
-	dd_logdebug("httpd", "submit_button=[%s] submit_type=[%s]\n", submit_button, submit_type);
+	dd_logdebug("httpd", "submit_button=[%s] submit_type=[%s]", submit_button, submit_type);
 	act = handle_gozila_action(submit_button, submit_type);
 
 	if (act) {
-		dd_logdebug("httpd", "name=[%s] type=[%s] service=[%s] action=[%d]\n", act->name, act->type, act->service,
+		dd_logdebug("httpd", "name=[%s] type=[%s] service=[%s] action=[%d]", act->name, act->type, act->service,
 			    act->action);
 		action = act->action;
 		if (act->goname) {
@@ -1700,7 +1700,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL),
+		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s", websGetVar(wp, "submit_button", NULL),
 			    websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", "no call defined"));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, handler);
 		return;
@@ -1739,7 +1739,7 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 		nvram_seti("is_default", 0);
 		nvram_seti("is_modified", 1);
 		if (act) {
-			dd_logdebug("httpd", "%s:submit_button=[%s] service=[%s] action=[%d]\n", value, act->name, act->service,
+			dd_logdebug("httpd", "%s:submit_button=[%s] service=[%s] action=[%d]", value, act->name, act->service,
 				    act->action);
 
 			if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART)) {
@@ -1998,13 +1998,13 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 	int count;
 	if (stream->post == 1) {
 		if (!(len + 1)) {
-			dd_logerror("httpd", "The POST data content length is bullshit\n");
+			dd_logerror("httpd", "The POST data content length is bullshit");
 			return -1;
 		}
 		stream->post_buf = (char *)malloc(len + 1);
 
 		if (!stream->post_buf) {
-			dd_logerror("httpd", "The POST data exceed length limit! (allocation of %ld bytes failed)\n", len + 1);
+			dd_logerror("httpd", "The POST data exceed length limit! (allocation of %ld bytes failed)", len + 1);
 			return -1;
 		}
 		/*
@@ -2022,7 +2022,7 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 			char *buf = malloc(len);
 			if (!buf) {
 				dd_logerror("httpd",
-					    "The POST data exceed length limit! (remaining request of length %ld failed)\n", len);
+					    "The POST data exceed length limit! (remaining request of length %ld failed)", len);
 				return -1;
 			}
 			wfgets(buf, len, stream, NULL);
@@ -2225,7 +2225,7 @@ static int do_mypage(unsigned char method, struct mime_handler *handler, char *u
 	{
 		if (qnum == i) {
 			FILE *fp;
-			dd_logdebug("httpd", "exec %s\n", sname);
+			dd_logdebug("httpd", "exec %s", sname);
 			if ((fp = popen(sname, "rb")) != NULL) {
 				while (fgets(buf, sizeof(buf) - 1, fp) != NULL) {
 					wfwrite(buf, strlen(buf), 1, stream);
@@ -2477,7 +2477,7 @@ char *live_translate(webs_t wp,
 {
 	static char *cur_language = NULL;
 	if (!tran || *(tran) == 0) {
-		dd_logdebug("httpd", "translation string is empty\n");
+		dd_logdebug("httpd", "translation string is empty");
 		return "Error";
 	}
 	if (!cur_language) {
@@ -2531,7 +2531,7 @@ char *live_translate(webs_t wp,
 	if (ret)
 		entry->translation = ret;
 	else {
-		dd_logdebug("httpd", "no translation found for %s\n", tran);
+		dd_logdebug("httpd", "no translation found for %s", tran);
 		entry->translation = strdup("Error");
 	}
 	return entry->translation;

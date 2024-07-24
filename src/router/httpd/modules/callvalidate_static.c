@@ -495,11 +495,11 @@ static void start_gozila(char *name, webs_t wp)
 			break;
 		}
 	}
-	dd_logdebug("httpd", "start gozila %s\n", name);
+	dd_logdebug("httpd", "start gozila %s", name);
 	if (fptr)
 		(*fptr)(wp);
 	else
-		dd_logdebug("httpd", "function %s not found \n", name);
+		dd_logdebug("httpd", "function %s not found ", name);
 }
 
 static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
@@ -515,11 +515,11 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 		}
 	}
 
-	dd_logdebug("httpd", "start validator %s\n", name);
+	dd_logdebug("httpd", "start validator %s", name);
 	if (fptr)
 		ret = (*fptr)(wp, value, v);
 	else
-		dd_logdebug("httpd", "function %s not found \n", name);
+		dd_logdebug("httpd", "function %s not found", name);
 
 	cprintf("start_sevice done()\n");
 	return ret;
@@ -558,10 +558,10 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **arg
 			(*fptr)(wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			dd_logdebug("httpd", " %s duration %ld.%06ld\n", name, (long int)r.tv_sec, (long int)r.tv_usec);
+			dd_logdebug("httpd", " %s duration %ld.%06ld", name, (long int)r.tv_sec, (long int)r.tv_usec);
 
 		} else {
-			dd_logdebug("httpd", " function %s not found (%s)\n", name, "unknown");
+			dd_logdebug("httpd", " function %s not found (%s)", name, "unknown");
 		}
 	}
 	return handle;

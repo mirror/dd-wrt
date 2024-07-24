@@ -32,7 +32,7 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 	if (!desc)
 		desc = name;
 	if (debug_ready() && nvram_matchi("console_debug", 1))
-		dd_loginfo(name, "%s trying to stop\n", desc);
+		dd_loginfo(name, "%s trying to stop", desc);
 
 	if (pidof(name) > 0) {
 		if (hard)
@@ -44,10 +44,10 @@ static int _stop_process(char *name, char *desc, int hard, int maxtime)
 			usleep(100 * 1000);
 		}
 		if (pidof(name) > 0) {
-			dd_loginfo(name, "%s hanging, send SIGKILL\n", desc);
+			dd_loginfo(name, "%s hanging, send SIGKILL", desc);
 			killall(name, SIGKILL);
 		}
-		dd_loginfo(name, "%s successfully stopped\n", desc);
+		dd_loginfo(name, "%s successfully stopped", desc);
 		return 1;
 	}
 	return 0;
@@ -58,7 +58,7 @@ int reload_process(char *name)
 	int pid = pidof(name);
 	if (pid > 0) {
 		kill(pid, SIGHUP);
-		dd_loginfo(name, "config reloaded\n");
+		dd_loginfo(name, "config reloaded");
 		return 0;
 	}
 	return -1;

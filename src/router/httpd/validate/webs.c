@@ -941,7 +941,7 @@ static char *_copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s", varbuf, wl ? wl : "(null)");
 	nvram_set(varbuf, wl);
 	return wl;
 }
@@ -956,7 +956,7 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
 	return wl;
@@ -972,7 +972,7 @@ char *copytonv_checkbox(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
 	else
@@ -1000,7 +1000,7 @@ static int copytonv_check(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_logdebug("httpd", "save %s with value %s\n", varbuf, wl ? wl : "(null)");
+	dd_logdebug("httpd", "save %s with value %s", varbuf, wl ? wl : "(null)");
 	char *oldval = nvram_safe_get(varbuf);
 	int ret = strcmp(wl ? wl : "", oldval);
 	if (wl)
@@ -1670,7 +1670,7 @@ void diag_ping_start(webs_t wp)
 	snprintf(cmd, sizeof(cmd) - 1, "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
 	//FORK(system(cmd));
 
-	dd_logdebug("httpd", "exec %s\n", cmd);
+	dd_logdebug("httpd", "exec %s", cmd);
 	FILE *fp = popen(cmd, "rb");
 	if (!fp)
 		return;
@@ -1996,9 +1996,9 @@ void ssh_downloadkey(webs_t wp)
 	int i = 0;
 
 	sprintf(cmd, "/usr/sbin/dropbearkey -t ed25519 -f /tmp/id_ed25519");
-	dd_loginfo("ssh_key_export", "Starting key generation and replace:%d\n", replace);
+	dd_loginfo("ssh_key_export", "Starting key generation and replace:%d", replace);
 	if ((fp = popen(cmd, "r")) == NULL) {
-		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s\n", cmd);
+		dd_loginfo("ssh_key_export", "ERROR: Could not execute command %s", cmd);
 		return;
 	}
 	while (fgets(pubkey, sizeof(pubkey) - 1, fp) != NULL) {
@@ -2011,7 +2011,7 @@ void ssh_downloadkey(webs_t wp)
 	pclose(fp);
 
 	// make openssh key
-	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH\n");
+	dd_loginfo("ssh_key_export", "Key is generated, now converting to OpenSSH");
 	eval("/usr/sbin/dropbearconvert", "dropbear", "openssh", "/tmp/id_ed25519", "/tmp/id_ed25519_ssh");
 
 	char *key = nvram_safe_get("sshd_authorized_keys");
@@ -2019,7 +2019,7 @@ void ssh_downloadkey(webs_t wp)
 	if (replace == 0 && *key) {
 		//add keys
 		char buf[4096] = { 0 };
-		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s \n", replace, key, pubkey);
+		//dd_loginfo("ssh_key_export", "Adding key, replace %d\n key:%s \npubkey: %s ", replace, key, pubkey);
 		//snprintf(buf, sizeof(buf), "%s%s", key, pubkey);  //make sure key starts on new line
 		if (key[strlen(key) - 1] != '\n') {
 			snprintf(buf, sizeof(buf), "%s\n%s", key, pubkey);
@@ -2029,7 +2029,7 @@ void ssh_downloadkey(webs_t wp)
 		nvram_set("sshd_authorized_keys", buf);
 	} else {
 		//replace key
-		//dd_loginfo("ssh_key_export", "Replace key, replace %d \n", replace);
+		//dd_loginfo("ssh_key_export", "Replace key, replace %d ", replace);
 		nvram_set("sshd_authorized_keys", pubkey);
 	}
 
@@ -2055,15 +2055,15 @@ Need parsing to get the file data out of the POST data
 	char vpnupload_file[64] = "/tmp/vpnupload.conf";
 	char jffs_vpnconfig_script[64] = "/jffs/etc/config/importvpncl.sh";
 	char vpnconfig_script[64] = "/usr/bin/importvpncl.sh";
-	//dd_loginfo("OpenVPN", "OpenVPN import tunnel * config file: %s\n", vpn_conf_file);
-	//dd_loginfo("OpenVPN", "OpenVPN import tunnel config file\n");
+	//dd_loginfo("OpenVPN", "OpenVPN import tunnel * config file: %s", vpn_conf_file);
+	//dd_loginfo("OpenVPN", "OpenVPN import tunnel config file");
 	fp = fopen(vpnupload_file, "w");
 	if (fp == NULL) {
-		dd_loginfo("OpenVPN", "Cannot open %s\n", vpnupload_file);
+		dd_loginfo("OpenVPN", "Cannot open %s", vpnupload_file);
 		return;
 	} else {
 		fprintf(fp, "%s\n", vpn_conf_file);
-		//dd_loginfo("OpenVPN", "import config saved to %s\n", vpnupload_file);
+		//dd_loginfo("OpenVPN", "import config saved to %s", vpnupload_file);
 		fclose(fp);
 	}
 	// now parsing vpnupload_file
@@ -2072,10 +2072,10 @@ Need parsing to get the file data out of the POST data
 	int fexist = stat(jffs_vpnconfig_script, &statbuffer);
 	if (fexist == 0) {
 		eval(jffs_vpnconfig_script);
-		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, jffs_vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s", vpnupload_file, jffs_vpnconfig_script);
 	} else {
 		eval(vpnconfig_script);
-		dd_loginfo("OpenVPN", "converting %s with %s\n", vpnupload_file, vpnconfig_script);
+		dd_loginfo("OpenVPN", "converting %s with %s", vpnupload_file, vpnconfig_script);
 	}
 }
 
@@ -2473,11 +2473,11 @@ Need parsing to get the file data out of the POST data
 	char *endp;
 	char *wg_conf_file = websGetVar(wp, "wg_conf_file", "");
 
-	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s\n", wg_conf_file);
+	dd_loginfo("WireGuard", "WireGuard import tunnel * config file: %s", wg_conf_file);
 
 	fp = fopen("/tmp/wgupload.conf", "w");
 	if (fp == NULL) {
-		dd_loginfo("WireGuard", "Cannot open /tmp/wgupload.conf\n");
+		dd_loginfo("WireGuard", "Cannot open /tmp/wgupload.conf");
 	} else {
 		fprintf(fp, "%s\n", wg_conf_file);
 		fclose(fp);
@@ -2486,7 +2486,7 @@ Need parsing to get the file data out of the POST data
 	fp = fopen("/tmp/wgupload.conf", "r");
 
 	if (fp == NULL) {
-		dd_loginfo("WireGuard", "WireGuard import tunnel config file does not exist\n");
+		dd_loginfo("WireGuard", "WireGuard import tunnel config file does not exist");
 	} else {
 		add_tunnel(wp);
 
@@ -2636,7 +2636,7 @@ void del_tunnel(webs_t wp)
 		int peers = nvram_geti(idx);
 		for (peer = 0; peer < peers; peer++) {
 			copytunpeer(peer, i, i - 1);
-			//dd_loginfo("egc", "copytunvalue: peer=[%d; i=[%d]\n", peer, i);
+			//dd_loginfo("egc", "copytunvalue: peer=[%d; i=[%d]", peer, i);
 		}
 #endif
 	}
@@ -2646,7 +2646,7 @@ void del_tunnel(webs_t wp)
 	int peers = nvram_geti(idx);
 	for (peer = 0; peer < peers; peer++) {
 		delpeer(tunnels, peer);
-		//dd_loginfo("egc", "delpeer: peer=[%d; tunnels=[%d]\n", peer, tunnnels);
+		//dd_loginfo("egc", "delpeer: peer=[%d; tunnels=[%d]", peer, tunnnels);
 	}
 #endif
 	deltunvalue("en", tunnels);

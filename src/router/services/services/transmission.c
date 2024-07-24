@@ -295,7 +295,7 @@ void start_transmission(void)
 	char *web = nvram_default_get("transmission_style", "default");
 	sysprintf("export TRANSMISSION_WEB_HOME=\"/usr/share/transmission/%s\" && transmissiond --config-dir \"%s\"", web,
 		  nvram_safe_get("transmission_dir"));
-	dd_loginfo("transmission", "daemon successfully started\n");
+	dd_loginfo("transmission", "daemon successfully started");
 
 	return;
 }

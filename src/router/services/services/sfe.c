@@ -48,7 +48,7 @@ void start_sfe(void)
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
-		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started\n");
+		dd_loginfo("sfe", "shortcut (SFE) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "2")) {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -63,7 +63,7 @@ void start_sfe(void)
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
-		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started\n");
+		dd_loginfo("ctf", "fast path (CTF) forwarding successfully started");
 	} else if (nvram_match("sfe", "3")) { // ecm nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -75,7 +75,7 @@ void start_sfe(void)
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
-		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started\n");
+		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "4")) { // ecm sfe
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -87,7 +87,7 @@ void start_sfe(void)
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 #endif
-		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started\n");
+		dd_loginfo("ecm-nss", "shortcut (NSS-SFE) forwarding engine successfully started");
 	} else if (nvram_match("sfe", "5")) { // ecm sfe & nss
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -99,7 +99,7 @@ void start_sfe(void)
 #if !defined(HAVE_IPQ6018)
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect");
 #endif
-		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started\n");
+		dd_loginfo("ecm-nss", "Enhanced Connection Manager (ECM+NSS-SFE) forwarding engine successfully started");
 	} else {
 		rmmod("fast-classifier");
 		rmmod("shortcut-fe-ipv6");
@@ -136,7 +136,7 @@ void stop_sfe(void)
 	rmmod("hyfi-bridging");
 	rmmod("qca-nss-sfe");
 	writeproc("/proc/ctf", "0");
-	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped\n");
+	dd_loginfo("sfe", "shortcut forwarding engine successfully stopped");
 	return;
 }
 #endif

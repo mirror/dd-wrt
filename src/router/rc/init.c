@@ -244,7 +244,7 @@ static void unmount_fs(void)
 			continue;
 		}
 #endif
-		dd_loginfo("init", "unmounting %s\n", mpoint);
+		dd_loginfo("init", "unmounting %s", mpoint);
 		eval("mount", "-o", "remount,sync,ro",
 		     mpoint); // set to readonly first since unmounting may fail.
 		eval("umount", "-r", "-f", mpoint);
@@ -270,7 +270,7 @@ void shutdown_system(void)
 	int deadcount = 0;
 	while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
 	{
-		dd_loginfo("init", "wait for nvram write to finish\n");
+		dd_loginfo("init", "wait for nvram write to finish");
 		sleep(1);
 	}
 
@@ -282,24 +282,24 @@ void shutdown_system(void)
 	if (!nvram_match("shutdown", "fast")) {
 		start_service("run_rc_shutdown");
 
-		dd_loginfo("init", "send dhcp lease release signal\n");
+		dd_loginfo("init", "send dhcp lease release signal");
 		killall("udhcpc", SIGUSR2);
 		sleep(1);
-		dd_loginfo("init", "Sending SIGTERM to all processes\n");
+		dd_loginfo("init", "Sending SIGTERM to all processes");
 		kill(-1, SIGTERM);
 #ifdef HAVE_TRANSMISSION
-		dd_loginfo("init", "Waiting some seconds to give programs time to flush\n");
+		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
 		sleep(10);
 #endif
 		sync();
-		dd_loginfo("init", "Sending SIGKILL to all processes\n");
+		dd_loginfo("init", "Sending SIGKILL to all processes");
 		kill(-1, SIGKILL);
 		sync();
 		unmount_fs(); // try it a second time, but consider that kill already could have reached init process
 		deadcount = 0;
 		while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
 		{
-			dd_loginfo("init", "wait for nvram write to finish\n");
+			dd_loginfo("init", "wait for nvram write to finish");
 			sleep(1);
 		}
 		unmount_fs(); // try to unmount a first time
@@ -371,9 +371,9 @@ void fatal_signal(int sig)
 	}
 
 	if (message)
-		dd_loginfo("init", "%s....................................\n", message);
+		dd_loginfo("init", "%s....................................", message);
 	else
-		dd_loginfo("init", "Caught signal %d.......................................\n", sig);
+		dd_loginfo("init", "Caught signal %d.......................................", sig);
 
 	shutdown_system();
 
@@ -484,17 +484,17 @@ static void check_bootfails(void)
 	if (nvram_match("no_bootfails", "1")) {
 		failcnt = 0;
 	} else if (!failcnt) {
-		dd_loginfo("init", "no previous bootfails detected! (all ok)\n");
+		dd_loginfo("init", "no previous bootfails detected! (all ok)");
 		failcnt++;
 		nvram_seti("boot_fails", failcnt);
 		nvram_async_commit();
 	} else {
 		if (failcnt < 5)
-			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts\n", failcnt++);
+			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts", failcnt++);
 		if (failcnt > 5)
-			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore\n");
+			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore");
 		if (failcnt == 5) {
-			dd_loginfo("init", "boot failed %d times, do reset and reboot\n", failcnt++);
+			dd_loginfo("init", "boot failed %d times, do reset and reboot", failcnt++);
 			char *s_ip = nvram_safe_get("lan_ipaddr");
 			char *s_nm = nvram_safe_get("lan_netmask");
 			char *s_gw = nvram_safe_get("lan_gateway");
@@ -570,7 +570,7 @@ int main(int argc, char **argv)
 	signal(SIGALRM, rc_signal);
 	sigemptyset(&sigset);
 
-	dd_loginfo("init", "starting devinit\n");
+	dd_loginfo("init", "starting devinit");
 	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
 	check_bootfails();
@@ -579,7 +579,7 @@ int main(int argc, char **argv)
 	putc(1, out);
 	fclose(out);
 #endif
-	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
+	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "");
 	start_service("sysinit");
 #ifndef HAVE_MICRO
 	start_service("watchdog");

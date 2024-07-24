@@ -164,7 +164,7 @@ void start_mdns(void)
 	fclose(fp);
 
 	if (pidof("dbus-daemon") > 0) {
-		dd_loginfo("dbus-daemon", "dbus-daemon already running\n");
+		dd_loginfo("dbus-daemon", "dbus-daemon already running");
 	} else {
 		snprintf(conffile, sizeof(conffile), "--config-file=%s",
 			 getdefaultconfig("mdns", path, sizeof(path), "avahi-dbus.conf"));

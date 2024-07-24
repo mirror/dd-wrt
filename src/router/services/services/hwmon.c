@@ -93,7 +93,7 @@ void start_hwmon(void)
 	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP2_PATH, TEMP2_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP2_PATH, TEMP2_PREFIX);
 #endif
-	dd_loginfo("hwmon", "successfully started\n");
+	dd_loginfo("hwmon", "successfully started");
 }
 #endif
 #endif

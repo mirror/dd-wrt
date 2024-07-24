@@ -3193,7 +3193,7 @@ void run_wan(int status)
 #endif
 			{
 				if (pidof("mbim-connect.sh") < 0) {
-					dd_loginfo("mbim", "STARTING mbim-status.sh\n");
+					dd_loginfo("mbim", "STARTING mbim-status.sh");
 					sysprintf("mbim-connect.sh");
 				}
 				if (status != REDIAL) {
@@ -4586,7 +4586,7 @@ void wan_done(char *wan_ifname)
 	led_control(LED_CONNECTED, LED_OFF);
 	if (!nvram_match("wan_proto", "disabled")) {
 		led_control(LED_CONNECTED, LED_ON);
-		dd_loginfo("wan", "WAN is up. IP: %s\n", get_wan_ipaddr());
+		dd_loginfo("wan", "WAN is up. IP: %s", get_wan_ipaddr());
 		if (nvram_match("wan_proto", "3g")) {
 			stop_redial();
 			start_redial();

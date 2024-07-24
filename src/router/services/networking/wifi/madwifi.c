@@ -1036,10 +1036,10 @@ static void checkhostapd(char *ifname, int force)
 					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force == 1) {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd",
-						   "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
+						   "daemon on %s with pid %d is forced to be restarted....", ifname, pid);
 				} else {
 					dd_loginfo(sup ? "wpa_supplicant" : "hostapd",
-						   "daemon on %s with pid %d died, restarting....\n", ifname, pid);
+						   "daemon on %s with pid %d died, restarting....", ifname, pid);
 				}
 				if (sup) {
 					start_deconfigurewifi();
@@ -3111,7 +3111,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #endif
 	{
 		eval("/usr/sbin/nldstart.sh");
-		dd_loginfo("nld:", "startup\n");
+		dd_loginfo("nld:", "startup");
 	}
 #endif
 #if defined(HAVE_TMK) || defined(HAVE_BKM)

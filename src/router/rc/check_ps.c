@@ -324,7 +324,7 @@ static void checkupgrade(void)
 		// prevent double call of
 		// this
 		eval("ledtool", "500");
-		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
+		dd_loginfo("upgrade", "found firmware upgrade, flashing now, but we will wait for another 30 seconds");
 again:;
 		sleep(30);
 		in = fopen("/tmp/firmware.bin", "rb");
@@ -338,7 +338,7 @@ again:;
 		unlink("/tmp/cron.d/check_ps"); // deleting cron file to
 		if (newlen != len) {
 			len = newlen;
-			dd_loginfo("upgrade", "size has changed, wait 30 seconds and try again\n");
+			dd_loginfo("upgrade", "size has changed, wait 30 seconds and try again");
 			goto again;
 		}
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
@@ -373,7 +373,7 @@ again:;
 		eval("fischecksum");
 		eval("write", "/tmp/firmware.bin", "linux");
 #endif
-		dd_loginfo("upgrade", "done. rebooting now\n");
+		dd_loginfo("upgrade", "done. rebooting now");
 		sleep(5);
 		killall("init", SIGQUIT);
 	}

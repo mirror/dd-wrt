@@ -200,7 +200,7 @@ static void call_script(int val)
 		if (debug)
 			fprintf(stderr, "CALL SCRIPT: %s\n", call_script);
 		if (use_syslog)
-			dd_loginfo("gpio_watcher", "%s CALL SCRIPT: %s\n", syslog_text, call_script);
+			dd_loginfo("gpio_watcher", "%s CALL SCRIPT: %s", syslog_text, call_script);
 		free(call_script);
 	}
 }
@@ -214,10 +214,10 @@ static void check_exit(int val)
 			fprintf(stderr, "Gpio %d changed from %d to  %d\n", gpio, oldstate, val);
 		if (use_syslog) {
 			if (use_wait) {
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d for %d seconds\n", syslog_text, gpio,
+				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d for %d seconds", syslog_text, gpio,
 					   oldstate, val, count / 10);
 			} else {
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d\n", syslog_text, gpio, oldstate, val);
+				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d", syslog_text, gpio, oldstate, val);
 			}
 		}
 		fprintf(stdout, "%d", val);
@@ -240,7 +240,7 @@ static void check_exit(int val)
 			if (debug)
 				fprintf(stderr, "Gpio %d changed from %d to %d (exit_only)\n", gpio, oldstate, val);
 			if (use_syslog)
-				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d\n", syslog_text, gpio, oldstate, val);
+				dd_loginfo("gpio_watcher", "%s gpio %d changed from %d to %d", syslog_text, gpio, oldstate, val);
 			fprintf(stdout, "%d", val);
 			if (!no_exit)
 				exit(val);

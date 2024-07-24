@@ -1533,7 +1533,7 @@ static int single_service_helper(void)
 	if (sr) {
 		sr++;
 		nvram_seti("service_running", sr);
-		dd_loginfo("services", "increase delay to %d seconds\n", sr * 5);
+		dd_loginfo("services", "increase delay to %d seconds", sr * 5);
 		return 0;
 	}
 	nvram_seti("service_running", 1);

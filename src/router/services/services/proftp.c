@@ -211,7 +211,7 @@ nextshare:;
 		if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
 			eval("proftpd");
-		dd_loginfo("proftpd", "server successfully started\n");
+		dd_loginfo("proftpd", "server successfully started");
 	}
 	nvram_set("usb_reason", "proftp_start");
 	eval("service", "run_rc_usb", "start");

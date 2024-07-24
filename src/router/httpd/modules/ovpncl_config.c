@@ -63,7 +63,7 @@ static int make_ovpncl_config(char *ovnpcl_fname)
 
 	FILE *f1 = fopen(ovnpcl_fname, "w+");
 	if (!f1) {
-		dd_loginfo("openvpncl_config", "Could not open %s\n", ovnpcl_fname);
+		dd_loginfo("openvpncl_config", "Could not open %s", ovnpcl_fname);
 		return -1;
 	} else {
 		fprintf(f1, "#This is beta build 0.92, use it with care\n");
@@ -134,7 +134,7 @@ static int make_ovpncl_config(char *ovnpcl_fname)
 			fprintf(f1,
 				"#For OpenVPN 2.6 and higher, inline username and password\n<auth-user-pass>\nPLACE-USERNAME-HERE\nPLACE-PASSWORD-HERE\n</auth-user-pass>\nauth-retry interact\n");
 		}
-		//dd_loginfo("openvpncl_config", "Success file open: %s\n", ovnpcl_fname);
+		//dd_loginfo("openvpncl_config", "Success file open: %s", ovnpcl_fname);
 		fclose(f1);
 	}
 	return 0;
@@ -159,13 +159,13 @@ static int download_ovpncl_config(unsigned char method, struct mime_handler *han
 	char location[128];
 	snprintf(location, sizeof(location), "/tmp/openvpn/%s", dname);
 
-	dd_loginfo("openvpncl_config", "location: %s\n", location);
-	dd_loginfo("openvpncl_config", "fname: %s\n", fname);
+	dd_loginfo("openvpncl_config", "location: %s", location);
+	dd_loginfo("openvpncl_config", "fname: %s", fname);
 
 	if (!make_ovpncl_config(location)) {
 		return do_file_attach(handler, location, wp, fname);
 	} else {
-		dd_loginfo("openvpncl_config", "could not open: %s\n", location);
+		dd_loginfo("openvpncl_config", "could not open: %s", location);
 	}
 	return 0;
 }

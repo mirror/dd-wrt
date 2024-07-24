@@ -193,7 +193,7 @@ void start_check_mbim(void)
 	if (registered_has_cap(27))
 #endif
 	{
-		dd_loginfo("mbim", "STARTING mbim-status.sh\n");
+		dd_loginfo("mbim", "STARTING mbim-status.sh");
 		eval("/usr/sbin/mbim-status.sh");
 	}
 }
@@ -218,7 +218,7 @@ void stop_dhcpc(void)
 		int pid;
 		fscanf(fp, "%d", &pid);
 		fclose(fp);
-		dd_loginfo("udhcpc", "udhcp client process successfully stopped\n");
+		dd_loginfo("udhcpc", "udhcp client process successfully stopped");
 		kill(pid, SIGTERM);
 	}
 #ifdef HAVE_3G

@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 		 */
 
 		if (nvram_geti("ntp_success") != 1 && do_ntp() != 0) {
-			dd_syslog(LOG_ERR, "Last update failed, we need to re-update after %d seconds\n", NTP_N_TIMER);
+			dd_syslog(LOG_ERR, "Last update failed, we need to re-update after %d seconds", NTP_N_TIMER);
 			time = NTP_N_TIMER;
 
 			memset(&t4, 0, sizeof(t4));
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		}
 		nvram_seti("ntp_success", 0);
 
-		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
+		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
 

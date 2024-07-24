@@ -116,7 +116,7 @@ static int mtd_block_is_bad(int fd, int offset)
 	if (mtdtype == MTD_NANDFLASH) {
 		r = ioctl(fd, MEMGETBADBLOCK, &o);
 		if (r < 0) {
-			dd_logerror("flash", "Failed to get erase block status\n");
+			dd_logerror("flash", "Failed to get erase block status");
 			exit(1);
 		}
 	}
@@ -188,12 +188,12 @@ int mtd_erase(const char *mtd)
 	erase_info.length = mtd_info.erasesize;
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
-		dd_loginfo("flash", "Flash is NAND\n");
+		dd_loginfo("flash", "Flash is NAND");
 	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
-		dd_loginfo("flash", "erase[%d]\n", erase_info.start);
+		dd_loginfo("flash", "erase[%d]", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-			dd_logerror("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
+			dd_logerror("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 			continue;
 		}
 		if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
@@ -204,7 +204,7 @@ int mtd_erase(const char *mtd)
 	}
 
 	close(mtd_fd);
-	dd_loginfo("flash", "erase[%d]\n", erase_info.start);
+	dd_loginfo("flash", "erase[%d]", erase_info.start);
 	/* 
 	 * nvram_set("et0macaddr",et0); nvram_set("et1macaddr",et1);
 	 * nvram_commit(); free(et0); free(et1); 
@@ -332,15 +332,15 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s\n", part);
+			dd_loginfo("flash", "boot partiton is %s", part);
 			if (!strcmp(part, "2")) {
 				mtd = "linux";
 			} else {
 				mtd = "linux2";
 			}
-			dd_loginfo("flash", "flash to partition %s\n", mtd);
+			dd_loginfo("flash", "flash to partition %s", mtd);
 		} else {
-			dd_logerror("flash", "no boot partition info found\n", mtd);
+			dd_logerror("flash", "no boot partition info found", mtd);
 		}
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
@@ -431,7 +431,7 @@ rewrite:;
 	 * Examine TRX/CHK header 
 	 */
 #ifdef HAVE_WRT160NL
-	dd_loginfo("flash", "size of ETRX header = %d\n", sizeof(struct etrx_header));
+	dd_loginfo("flash", "size of ETRX header = %d", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r"))) {
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	} else
@@ -448,7 +448,7 @@ rewrite:;
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 
 		if (trx.magic == NETGEAR_CHK_MAGIC) {
-			dd_loginfo("flash", "Netgear chk format detected\n");
+			dd_loginfo("flash", "Netgear chk format detected");
 			char board_id[18];
 			char board_id2[19];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
@@ -475,11 +475,11 @@ rewrite:;
 				}
 			}
 			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
-				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id2);
+				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet", board_id2);
 				return -1;
 			}
 			if (fail) {
-				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id2,
+				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s", board_id2,
 					    c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
 					    c > 2 ? " or " : "", c > 2 ? netgear_ids[i].name3 : "");
 				return -1;
@@ -498,7 +498,7 @@ rewrite:;
 #endif
 	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
 	if (count < sizeof(struct trx_header)) {
-		dd_logerror("%s: File is too small (%d bytes)\n", path, count);
+		dd_logerror("%s: File is too small (%d bytes)", path, count);
 		goto fail;
 	}
 	sysinfo(&info);
@@ -553,7 +553,7 @@ rewrite:;
 	}
 #endif
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
-		dd_logerror("flash", "%s: Bad trx header\n", path);
+		dd_logerror("flash", "%s: Bad trx header", path);
 		goto fail;
 	}
 	/* 
@@ -569,19 +569,19 @@ rewrite:;
 
 	// #ifndef HAVE_WRK54G
 	if (mtd_info.size < trx.len) {
-		dd_logerror("flash", "Image too big for partition: %s\n", mtd);
+		dd_logerror("flash", "Image too big for partition: %s", mtd);
 		perror(mtd);
 		goto fail;
 	}
 	// #endif
 	mtdtype = mtd_info.type;
 	if (mtdtype == MTD_NANDFLASH)
-		dd_loginfo("flash", "Flash is NAND\n");
+		dd_loginfo("flash", "Flash is NAND");
 
 	/* 
 	 * See if we have enough memory to store the whole file 
 	 */
-	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]\n", info.freeram, info.bufferram);
+	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
 	#ifdef HAVE_IPQ6018
 	#define MINEXTRA 64
@@ -591,7 +591,7 @@ rewrite:;
 	
 	// found a a solution
 	if (info.freeram >= (trx.len + MINEXTRA * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
-		dd_loginfo("flash", "The free memory is enough, writing image once.\n");
+		dd_loginfo("flash", "The free memory is enough, writing image once.");
 		/* 
 		 * Begin to write image after all image be downloaded by web upgrade.
 		 * In order to avoid upgrade fail if user unplug the ethernet cable
@@ -602,7 +602,7 @@ rewrite:;
 		erase_info.length = ROUNDUP(trx.len, mtd_info.erasesize);
 	} else {
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
+		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 	}
 	/*	if (writeubi) {
 		char cmdline[64];
@@ -616,9 +616,9 @@ rewrite:;
 	if (!(buf = malloc(erase_info.length))) {
 		mul = 1;
 		erase_info.length = mtd_info.erasesize * mul;
-		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.\n", erase_info.length);
+		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 		if (!(buf = malloc(erase_info.length))) {
-			dd_logerror("flash", "memory allocation of %d bytes failed\n", erase_info.length);
+			dd_logerror("flash", "memory allocation of %d bytes failed", erase_info.length);
 			perror("malloc");
 			goto fail;
 		}
@@ -662,7 +662,7 @@ rewrite:;
 		sum = sum + count;
 
 		if (((count < len) && (len - off) > (mtd_info.erasesize * mul)) || (count == 0 && feof(fp))) {
-			dd_logerror("flash", "%s: Truncated file (actual %d expect %d)\n", path, count - off, len - off);
+			dd_logerror("flash", "%s: Truncated file (actual %d expect %d)", path, count - off, len - off);
 			goto fail;
 		}
 		/* 
@@ -690,12 +690,12 @@ rewrite:;
 		 */
 		if (sum == trx.len) {
 			if (crc != trx.crc32) {
-				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)\n", path, trx.crc32,
+				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32,
 					    crc);
 				goto fail;
 			} else {
-				dd_loginfo("flash", "%s: CRC OK (0x%08X)\n", mtd, crc);
-				dd_loginfo("flash", "Writing image to flash, waiting a moment...\n");
+				dd_loginfo("flash", "%s: CRC OK (0x%08X)", mtd, crc);
+				dd_loginfo("flash", "Writing image to flash, waiting a moment...");
 			}
 			printf("\n");
 		}
@@ -720,13 +720,13 @@ rewrite:;
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 again:;
-			dd_loginfo("flash", "write block [%d] at [0x%08X]\n", (base + (i * mtd_info.erasesize)) - badblocks,
+			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)) - badblocks,
 				   base + (i * mtd_info.erasesize));
 			//			if (!writeubi) {
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
-				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
+				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
@@ -734,21 +734,21 @@ again:;
 			}
 			if (writeubi) {
 				if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-					dd_logerror("flash", "\nerase/write failed\n");
+					dd_logerror("flash", "\nerase/write failed");
 					goto fail;
 				}
 			} else {
 #if !defined(HAVE_QCA4019) && !defined(HAVE_IPQ6018)
 				if (mtdtype != MTD_NANDFLASH) {
 					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
-						dd_logerror("flash", "\nerase/write failed\n");
+						dd_logerror("flash", "\nerase/write failed");
 						goto fail;
 					}
 				}
 #endif
 			}
 			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
-				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
+				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
@@ -761,7 +761,7 @@ again:;
 	}
 	//	if (writeubi)
 	//		pclose(p);
-	dd_loginfo("flash", "\ndone [%d]\n", i * mtd_info.erasesize);
+	dd_loginfo("flash", "\ndone [%d]", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */
@@ -837,9 +837,9 @@ again:;
 		}
 		//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
 #ifndef NETGEAR_CRC_FAKE
-		dd_loginfo("flash", "Write len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
+		dd_loginfo("flash", "Write len/chksum @ 0x%X ...done.", flash_len_chk_addr);
 #else
-		dd_loginfo("flash", "Write fake len/chksum @ 0x%X ...done.\n", flash_len_chk_addr);
+		dd_loginfo("flash", "Write fake len/chksum @ 0x%X ...done.", flash_len_chk_addr);
 #endif
 	}
 
@@ -892,7 +892,7 @@ again:;
 			goto fail;
 		}
 
-		dd_loginfo("flash", "Write lzma loader...done.\n");
+		dd_loginfo("flash", "Write lzma loader...done.");
 	} // end
 
 #ifdef HAVE_BCMMODERN
@@ -939,7 +939,7 @@ again:;
 			goto fail;
 		}
 
-		dd_loginfo("flash", "Write Belkin magic...done.\n");
+		dd_loginfo("flash", "Write Belkin magic...done.");
 	} // end
 #endif
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
@@ -952,7 +952,7 @@ again:;
 	case ROUTER_LINKSYS_MX5500:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s\n", part);
+			dd_loginfo("flash", "boot partiton is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("fw_setenv", "boot_part", "1");
 			} else {
@@ -970,7 +970,7 @@ again:;
 	case ROUTER_LINKSYS_EA8300:
 		part = getUEnv("boot_part");
 		if (part) {
-			dd_loginfo("flash", "boot partiton is %s\n", part);
+			dd_loginfo("flash", "boot partiton is %s", part);
 			if (!strcmp(part, "2")) {
 				eval("ubootenv", "set", "boot_part", "1");
 			} else {
@@ -1010,7 +1010,7 @@ fail:
 	in = fopen("/tmp/bdata", "wb");
 	fwrite(buf, 65536, 1, in);
 	fclose(in);
-	dd_loginfo("flash", "fixup CRC %X and LEN %X\n", crc_data, data_len);
+	dd_loginfo("flash", "fixup CRC %X and LEN %X", crc_data, data_len);
 	eval("mtd", "-f", "write", "/tmp/bdata", "bdata");
 #endif
 #endif
@@ -1066,7 +1066,7 @@ static int mtd_unlock(const char *mtd)
 	lock_info.start = 0;
 	lock_info.length = mtd_info.size;
 	if (ioctl(mtd_fd, MEMUNLOCK, &lock_info)) {
-		dd_logerror("flash", "Could not unlock MTD device: %s\n", mtd);
+		dd_logerror("flash", "Could not unlock MTD device: %s", mtd);
 		perror(mtd);
 		close(mtd_fd);
 		return errno;

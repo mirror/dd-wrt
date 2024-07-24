@@ -208,7 +208,7 @@ void setroute_pbr(char *tablenr)
 			}
 			free(tempstr);
 		} else {
-			dd_loginfo("openvpn", "malloc() failed in creating PBR!?\n");
+			dd_loginfo("openvpn", "malloc() failed in creating PBR!?");
 		}
 		curline = nextLine ? (nextLine + 1) : NULL;
 	}
@@ -470,7 +470,7 @@ void start_openvpnserver(void)
 	update_timezone();
 	if (jffs_mounted())
 		jffs = 1;
-	dd_loginfo("openvpn", "OpenVPN daemon (Server) starting/restarting...\n");
+	dd_loginfo("openvpn", "OpenVPN daemon (Server) starting/restarting...");
 	mkdir("/tmp/openvpn", 0700);
 	mkdir("/tmp/openvpn/ccd", 0700);
 	write_nvram("/tmp/openvpn/dh.pem", "openvpn_dh");
@@ -693,7 +693,7 @@ void start_openvpnserver(void)
 	if (nvram_matchi("openvpn_enuserpass", 1) && nvram_invmatchi("openvpn_userpassnum", 0)) {
 		fp = fopen("/tmp/openvpn/openvpn-auth", "wb");
 		if (!fp) {
-			dd_loginfo("openvpn", "ERROR: Could not open %s to store usernames and passwords\n",
+			dd_loginfo("openvpn", "ERROR: Could not open %s to store usernames and passwords",
 				   "/tmp/openvpn/openvpn-auth");
 		} else {
 			int i;
@@ -713,7 +713,7 @@ void start_openvpnserver(void)
 		// make script to execute
 		fp = fopen("/tmp/openvpn/quickAuth.sh", "wb");
 		if (!fp) {
-			dd_loginfo("openvpn", "ERROR: Could not open username/password authentication script %s \n",
+			dd_loginfo("openvpn", "ERROR: Could not open username/password authentication script %s ",
 				   "/tmp/openvpn/quickAuth.sh");
 		} else {
 			fprintf(fp, "#!/bin/sh\n");
@@ -922,7 +922,7 @@ void start_openvpn(void)
 	eval("modprobe", "ccm");
 	eval("modprobe", "ovpn-dco-v2");
 	insmod("tun");
-	dd_loginfo("openvpn", "OpenVPN daemon (Client) starting/restarting...\n");
+	dd_loginfo("openvpn", "OpenVPN daemon (Client) starting/restarting...");
 	mkdir("/tmp/openvpncl", 0700);
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");
@@ -934,7 +934,7 @@ void start_openvpn(void)
 
 	//Start PBR routing and general killswitch if appropriate
 	if (*(nvram_safe_get("openvpncl_route")) && nvram_invmatch("openvpncl_spbr", "0")) {
-		dd_loginfo("openvpn", "PBR via tunnel now using setroute_pbr(): %s\n", nvram_safe_get("openvpncl_route"));
+		dd_loginfo("openvpn", "PBR via tunnel now using setroute_pbr(): %s", nvram_safe_get("openvpncl_route"));
 		setroute_pbr("10");
 	}
 	//In interface
@@ -947,7 +947,7 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_killswitch", 1) &&
 	    nvram_invmatch("openvpncl_spbr",
 			   "1")) { //if no VPN PBR and killswitch active, activate general killswitch
-		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN ");
+		dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled from OpenVPN");
 		//eval("restart" , "firewall");
 		//eval("iptables", "-D", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");
 		//eval("iptables", "-I", "FORWARD", "-i", "br+", "-o", safe_get_wan_face(wan_if_buffer), "-j", "DROP");

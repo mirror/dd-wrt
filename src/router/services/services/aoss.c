@@ -230,7 +230,7 @@ void start_aoss(void)
 		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 		log_eval("aoss", "-i", "aoss", "-m", "ap");
 	} else
-		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)\n");
+		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)");
 
 #endif
 	cprintf("done\n");

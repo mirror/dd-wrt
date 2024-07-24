@@ -102,7 +102,7 @@ static int zebra_init(void)
 #endif
 
 	if (services) {
-		dd_loginfo("zebra", "(%s) successfully initiated\n", daemons);
+		dd_loginfo("zebra", "(%s) successfully initiated", daemons);
 		system(daemons);
 	}
 	return 0;

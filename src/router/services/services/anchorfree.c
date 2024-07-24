@@ -113,7 +113,7 @@ void start_anchorfree(void)
 
 	if (nvram_matchi("af_enable", 1) && !nvram_matchi("af_registered", 1)) {
 		nvram_seti("af_registered", 1);
-		dd_loginfo("anchorfree", "starting redirection\n");
+		dd_loginfo("anchorfree", "starting redirection");
 		char devid[256];
 
 		if (!nvram_exists("af_hash")) {
@@ -403,7 +403,7 @@ void stop_anchorfree(void)
 		char dest[32];
 		char source[32];
 
-		dd_loginfo("anchorfree", "stopping redirection\n");
+		dd_loginfo("anchorfree", "stopping redirection");
 		char host[128];
 
 		getIPFromName(nvram_safe_get("af_dnathost"), host, sizeof(host));

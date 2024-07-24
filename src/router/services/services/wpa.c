@@ -277,7 +277,7 @@ static void start_nas_lan(int c)
 
 	sprintf(wlname, "wl%d", c);
 	start_radius(wlname); // quick fix, should be vif capable in future
-	dd_loginfo("nas", "start nas for %s\n", wlname);
+	dd_loginfo("nas", "start nas for %s", wlname);
 	start_nas_single("lan", wlname);
 
 	sprintf(vifname, "wl%d_vifs", c);
@@ -285,7 +285,7 @@ static void start_nas_lan(int c)
 
 	foreach(var, vifs, next)
 	{
-		dd_loginfo("nas", "start nas for %s\n", var);
+		dd_loginfo("nas", "start nas for %s", var);
 		start_nas_single("lan", var);
 	}
 }
@@ -409,7 +409,7 @@ void start_nas(void)
 				start_nas_wan(c);
 
 		} else {
-			dd_loginfo("nas", "start nas lan\n");
+			dd_loginfo("nas", "start nas lan");
 			start_nas_lan(c);
 
 			int s;
@@ -465,7 +465,7 @@ static void start_nas_single(char *type, char *prefix)
 
 	sprintf(apmode, "%s_mode", prefix);
 	if (!strcmp(type, "wan") && nvram_match(apmode, "ap")) {
-		dd_loginfo("nas", "type is wan but if is ap, ignore nas\n");
+		dd_loginfo("nas", "type is wan but if is ap, ignore nas");
 		return;
 	}
 	// if (!strcmp (type, "lan"))
@@ -504,13 +504,13 @@ static void start_nas_single(char *type, char *prefix)
 	if (strcmp(nvram_safe_get(apmode), "sta") && strcmp(nvram_safe_get(apmode), "wet") &&
 	    strcmp(nvram_safe_get(apmode), "apstawet") && strcmp(nvram_safe_get(apmode), "apsta")) {
 		mode = "-A";
-		dd_loginfo("nas", "NAS lan (%s interface) successfully started\n", prefix);
+		dd_loginfo("nas", "NAS lan (%s interface) successfully started", prefix);
 		fnas = fopen("/tmp/.nas", "a");
 		fputc('L', fnas); // L as LAN
 		fclose(fnas);
 	} else {
 		mode = "-S";
-		dd_loginfo("nas", "NAS wan (%s interface) successfully started\n", prefix);
+		dd_loginfo("nas", "NAS wan (%s interface) successfully started", prefix);
 		fnas = fopen("/tmp/.nas", "a");
 		fputc('W', fnas); // W as WAN
 		fclose(fnas);

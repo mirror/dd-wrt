@@ -65,7 +65,7 @@ void stop_ipv6(void)
 		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 	}
 	sysprintf("echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6");
-	dd_loginfo("ipv6", "successfully stopped\n");
+	dd_loginfo("ipv6", "successfully stopped");
 }
 
 void start_ipv6(void)
@@ -87,7 +87,7 @@ void start_ipv6(void)
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 	}
 	sysprintf("echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6");
-	dd_loginfo("ipv6", "successfully started\n");
+	dd_loginfo("ipv6", "successfully started");
 
 	cprintf("done\n");
 	return;

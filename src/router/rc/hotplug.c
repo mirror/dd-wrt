@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 		char *action = getenv("ACTION");
 		char *devpath = getenv("BUTTON");
 		char *button = getenv("DEVPATH");
-		dd_logdebug("hotplug", "event %s, ACTION %s BUTTON %s DEVPATH %s\n", argv[1], action ? action : "none",
+		dd_logdebug("hotplug", "event %s, ACTION %s BUTTON %s DEVPATH %s", argv[1], action ? action : "none",
 			    button ? button : "none", devpath ? devpath : "none");
 		if (!strcmp(argv[1], "net")) {
 			start_service_force_f("hotplug_net");

@@ -73,7 +73,7 @@ void start_speedchecker(void)
 			nvram_safe_get("os_version"), //
 			safe_get_wan_face(wan_if_buffer), //
 			nvram_safe_get("DD_BOARD"));
-		dd_loginfo("speedchecker", "client started\n");
+		dd_loginfo("speedchecker", "client started");
 	}
 
 	return;
