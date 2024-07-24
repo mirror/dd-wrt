@@ -201,7 +201,7 @@ void setroute_pbr(char *tablenr)
 					if (test_ipv4(iprule)) {
 						sysprintf("ip rule add %s table %s", iprule, tablenr);
 					} else {
-						dd_loginfo("openvpn", "ip rule %s has NO valid IP address, not added to table %s",
+						dd_loginfo("openvpn", "ip rule %s has NO valid IP address, not added to table %s\n",
 							   iprule, tablenr);
 					}
 				}
