@@ -2694,7 +2694,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			//save2file_A_forward("-i br+ -o %s -j %s", wanface, log_drop);
 			//save2file_A_forward("-i br+ -o %s -m state --state NEW -j %s", wanface, log_drop);
 			save2file_A_forward("-o %s -j %s", wanface, log_drop);
-			dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled via Firewall");
+			dd_loginfo("openvpn", "General Killswitch for OpenVPN enabled via Firewall\n");
 		}
 	}
 #endif
