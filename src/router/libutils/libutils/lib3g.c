@@ -127,19 +127,19 @@ static void checkreset(unsigned char tty)
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode offline");
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode reset");
 		while (ifexists("wwan0")) {
-			dd_loginfo("3g", "looking for wwan0 to disapear");
+			dd_loginfo("3g", "looking for wwan0 to disapear\n");
 			sleep(1);
 			if (count++ > 10) {
-				dd_loginfo("3g", "reset of wwan0 failed");
+				dd_loginfo("3g", "reset of wwan0 failed\n");
 				break;
 			}
 		}
 		count = 0;
 		while (!ifexists("wwan0")) {
-			dd_loginfo("3g", "looking for wwan0 after reset");
+			dd_loginfo("3g", "looking for wwan0 after reset\n");
 			sleep(1);
 			if (count++ > 20) {
-				dd_loginfo("3g", "reset of wwan0 failed");
+				dd_loginfo("3g", "reset of wwan0 failed\n");
 				break;
 			}
 		}
@@ -1716,11 +1716,11 @@ void get3GControlDevice(void)
 	}
 	sprintf(checkforce, "wan_dial%s", wsel);
 	if (nvram_matchi(checkforce, 97))
-		dd_loginfo("3g", "lib3g force MBIM");
+		dd_loginfo("3g", "lib3g force MBIM\n");
 	if (nvram_matchi(checkforce, 98))
-		dd_loginfo("3g", "lib3g force QMI");
+		dd_loginfo("3g", "lib3g force QMI\n");
 	if (nvram_matchi(checkforce, 99))
-		dd_loginfo("3g", "lib3g force DIRECTIP");
+		dd_loginfo("3g", "lib3g force DIRECTIP\n");
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
@@ -1733,10 +1733,10 @@ void get3GControlDevice(void)
 				insmod("sierra_net");
 				int count = 0;
 				while (!ifexists("wwan0")) {
-					dd_loginfo("3g", "looking for wwan0");
+					dd_loginfo("3g", "looking for wwan0\n");
 					sleep(1);
 					if (count++ > 6) {
-						dd_loginfo("3g", "no wwan0 after 6 seconds");
+						dd_loginfo("3g", "no wwan0 after 6 seconds\n");
 						break;
 					}
 				}
@@ -1753,7 +1753,7 @@ void get3GControlDevice(void)
 					nvram_set("3gnmvariant", "1");
 					return;
 				} else {
-					dd_loginfo("3g", "wwan0 not found, fall back to ppp mode");
+					dd_loginfo("3g", "wwan0 not found, fall back to ppp mode\n");
 				}
 			}
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
