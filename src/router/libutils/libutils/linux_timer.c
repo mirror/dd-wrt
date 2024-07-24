@@ -216,13 +216,13 @@ int dd_timer_create(clockid_t clock_id, /* clock ID (always CLOCK_REALTIME) */
 {
 	struct event *event;
 	if (clock_id != CLOCK_REALTIME) {
-		dd_loginfo("timer", "timer_create can only support clock id CLOCK_REALTIME");
+		dd_loginfo("timer", "timer_create can only support clock id CLOCK_REALTIME\n");
 		return -1;
 	}
 
 	if (evp != NULL) {
 		if (evp->sigev_notify != SIGEV_SIGNAL || evp->sigev_signo != SIGALRM) {
-			dd_loginfo("timer", "timer_create can only support signalled alarms using SIGALRM");
+			dd_loginfo("timer", "timer_create can only support signalled alarms using SIGALRM\n");
 			return -1;
 		}
 	}
@@ -258,7 +258,7 @@ int dd_timer_delete(timer_t timerid /* timer ID */
 		return 2;
 
 	if (event->flags & TFLAG_DELETED) {
-		dd_loginfo("timer", "Cannot delete a deleted event");
+		dd_loginfo("timer", "Cannot delete a deleted event\n");
 		return 1;
 	}
 
@@ -330,7 +330,7 @@ int dd_timer_settime(timer_t timerid, /* timer ID */
 	event->start = uclock();
 #endif
 	if (event->next) {
-		dd_loginfo("timer", "calling timer_settime with a timer that is already on the queue.");
+		dd_loginfo("timer", "calling timer_settime with a timer that is already on the queue.\n");
 	}
 
 	/* We always want to make sure that the event at the head of the
@@ -353,7 +353,7 @@ int dd_timer_settime(timer_t timerid, /* timer ID */
 				/* it is an error if the amount of time remaining is more than the
 				 * amount of time requested by the top event.
 				 */
-				dd_loginfo("timer", "timer_settime: TIMER ERROR!");
+				dd_loginfo("timer", "timer_settime: TIMER ERROR!\n");
 
 			} else {
 				/* some portion of the top event has already expired.
@@ -427,11 +427,11 @@ static void check_timer()
 
 	getitimer(ITIMER_REAL, &itimer);
 	if (timerisset(&itimer.it_interval)) {
-		dd_loginfo("timer", "ERROR timer interval is set.");
+		dd_loginfo("timer", "ERROR timer interval is set.\n");
 	}
 	/* CSTYLED */
 	if (timercmp(&(itimer.it_value), &(event_queue->it_value), >)) {
-		dd_loginfo("timer", "ERROR timer expires later than top event.");
+		dd_loginfo("timer", "ERROR timer expires later than top event.\n");
 	}
 }
 
@@ -452,7 +452,7 @@ static void check_event_queue()
 	timerclear(&sum);
 	for (event = event_queue; event; event = event->next) {
 		if (i > g_maxevents) {
-			dd_loginfo("timer", "timer queue looks like it loops back on itself!");
+			dd_loginfo("timer", "timer queue looks like it loops back on itself!\n");
 			print_event_queue();
 			exit(1);
 		}
@@ -601,7 +601,7 @@ static void alarm_handler(int i)
 		setitimer(ITIMER_REAL, &itimer, NULL);
 		check_timer();
 	} else {
-		dd_loginfo("timer", "There are no events in the queue - timer not reset.");
+		dd_loginfo("timer", "There are no events in the queue - timer not reset.\n");
 	}
 
 	dd_unblock_timer();
@@ -658,7 +658,7 @@ void dd_timer_cancel(timer_t timerid)
 	struct event **ppevent;
 
 	if (event->flags & TFLAG_CANCELLED) {
-		dd_loginfo("timer", "Cannot cancel a cancelled event");
+		dd_loginfo("timer", "Cannot cancel a cancelled event\n");
 		return;
 	}
 	lock();
