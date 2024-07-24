@@ -526,24 +526,17 @@ struct statdata {
 	int iftype;
 };
 
-static void get_chain_signal(struct nlattr *attr_list, char *signals)
+static void get_chain_signal(struct nlattr *attr_list, char *signals, size_t size)
 {
 	struct nlattr *attr;
 	int rem;
-	signals[0] = 0;
-	signals[1] = 0;
-	signals[2] = 0;
-	signals[3] = 0;
-	signals[4] = 0;
-	signals[5] = 0;
-	signals[6] = 0;
-	signals[7] = 0;
+	memset(signals, 0, size);
 	if (!attr_list)
 		return;
 	int cnt = 0;
 	nla_for_each_nested(attr, attr_list, rem) {
 		signals[cnt++] = nla_get_u8(attr);
-		if (cnt == 8)
+		if (cnt == size)
 			break;
 	}
 }
@@ -663,11 +656,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED]) {
 		mac80211_info->wci->tx_compressed = nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]);
 	}
-	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo);
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo, sizeof(mac80211_info->wci->chaininfo));
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
 	}
-	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg);
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg, sizeof(mac80211_info->wci->chaininfo_avg));
 
 	if (sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]) {
 		mac80211_info->wci->signal_avg = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]);
