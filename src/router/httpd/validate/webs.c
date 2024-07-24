@@ -2501,7 +2501,7 @@ Need parsing to get the file data out of the POST data
 		char ka[3] = "26";
 
 		/*debug
-		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d", key, peer);
+		   dd_loginfo("WireGuard", "import_tunnel tun:%d; peer:%d\n", key, peer);
 		   char val[32];
 		   sprintf(val, "key: %d; peer: %d", key, peer);
 		   nvram_nset(val, "oet%d_upload%d", key, peer);
