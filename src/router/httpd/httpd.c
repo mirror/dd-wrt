@@ -503,7 +503,7 @@ static int auth_check(webs_t conn_fp)
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
-		dd_loginfo("httpd", "Authentication fail");
+		dd_loginfo("httpd", "Authentication fail\n");
 
 		goto out;
 	}
@@ -525,7 +525,7 @@ static int auth_check(webs_t conn_fp)
 	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
 	char dummy[128];
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
-		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
+		dd_loginfo("httpd", "httpd login failure for %s\n", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
 		//              while (wfgets(dummy, 64, conn_fp, NULL)) {
 		//              }
@@ -534,7 +534,7 @@ static int auth_check(webs_t conn_fp)
 	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
 
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
-		dd_loginfo("httpd", "httpd login failure for %s", conn_fp->http_client_ip);
+		dd_loginfo("httpd", "httpd login failure for %s\n", conn_fp->http_client_ip);
 		add_blocklist("httpd", conn_fp->http_client_ip);
 		//              while (wfgets(dummy, 64, conn_fp, NULL)) {
 		//              }
@@ -1417,7 +1417,7 @@ get_client_ip_mac(webs_t conn_fp)
 
 static void handle_server_sig_int(int sig)
 {
-	dd_loginfo("httpd", "httpd server shutdown");
+	dd_loginfo("httpd", "httpd server shutdown\n");
 	free_defaults(srouter_defaults);
 	exit(0);
 }
