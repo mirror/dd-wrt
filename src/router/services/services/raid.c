@@ -234,7 +234,7 @@ void start_raid(void)
 			sysprintf("mdadm --stop /dev/md%d", i);
 			sysprintf("zpool destroy %s", poolname);
 			if (!strcmp(type, "md")) {
-				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
+				dd_loginfo("raid", "creating MD Raid /dev/md%d\n", i);
 				sysprintf("mdadm --create --assume-clean /dev/md%d --level=%s --raid-devices=%d --run %s", i, level,
 					  drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
@@ -281,7 +281,7 @@ void start_raid(void)
 					sysprintf("mkfs.btrfs -f -d raid10 %s", raid);
 			}
 			if (!strcmp(type, "zfs")) {
-				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
+				dd_loginfo("raid", "creating ZFS Pool %s\n", poolname);
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 				if (!strcmp(level, "1"))
 					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" mirror %s", poolname, poolname, raid);
