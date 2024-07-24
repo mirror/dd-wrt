@@ -1612,7 +1612,7 @@ void add_blocklist(const char *service, char *ip)
 			if (entry->count > 4) {
 				entry->end = time(NULL) + BLOCKTIME * 60;
 				entry->attempts = 1;
-				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes\n", ip,
+				dd_loginfo(service, "5 failed login attempts reached. block client %s for %d minutes", ip,
 					   BLOCKTIME);
 			}
 			goto end;
@@ -1659,7 +1659,7 @@ int check_blocklist(const char *service, char *ip)
 				// each try from a block client extends by another 5 minutes;
 				entry->attempts++;
 				entry->end = time(NULL) + (BLOCKTIME * entry->attempts) * 60;
-				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes\n",
+				dd_loginfo(service, "client %s is blocked, terminate connection, set new blocktime to %d minutes",
 					   ip, (BLOCKTIME * entry->attempts));
 				ret = -1;
 				change = 1;
@@ -1667,7 +1667,7 @@ int check_blocklist(const char *service, char *ip)
 			}
 			//time over, free entry
 			if (entry->count > 4) {
-				dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
+				dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 				last->next = entry->next;
 				free(entry);
 				change = 1;
@@ -1676,7 +1676,7 @@ int check_blocklist(const char *service, char *ip)
 		}
 		//time over, free entry
 		if (entry->end && entry->end < cur) {
-			dd_loginfo(service, "time is over for client %s, so free it\n", &entry->ip[0]);
+			dd_loginfo(service, "time is over for client %s, so free it", &entry->ip[0]);
 			last->next = entry->next;
 			free(entry);
 			entry = last->next;
