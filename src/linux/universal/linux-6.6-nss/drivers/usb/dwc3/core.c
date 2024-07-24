@@ -1194,7 +1194,6 @@ static int dwc3_core_init(struct dwc3 *dwc)
 	int			ret;
 
 	hw_mode = DWC3_GHWPARAMS0_MODE(dwc->hwparams.hwparams0);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	/*
 	 * Write Linux Version Code to our GUID register so it's easy to figure
@@ -1202,13 +1201,10 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	 */
 	dwc3_writel(dwc->regs, DWC3_GUID, LINUX_VERSION_CODE);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_phy_setup(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret)
 		return ret;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (!dwc->ulpi_ready) {
 		ret = dwc3_core_ulpi_init(dwc);
 		if (ret) {
@@ -1220,7 +1216,6 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		}
 		dwc->ulpi_ready = true;
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	if (!dwc->phys_ready) {
 		ret = dwc3_core_get_phy(dwc);
@@ -1228,49 +1223,38 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 			goto err_exit_ulpi;
 		dwc->phys_ready = true;
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	ret = dwc3_phy_init(dwc);
 	if (ret)
 		goto err_exit_ulpi;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_core_soft_reset(dwc);
 	if (ret)
 		goto err_exit_phy;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc3_core_setup_global_control(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc3_core_num_eps(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	/* Set power down scale of suspend_clk */
 	dwc3_set_power_down_clk_scale(dwc);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Adjust Frame Length */
 	dwc3_frame_length_adjustment(dwc);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Adjust Reference Clock Period */
 	dwc3_ref_clk_period(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	dwc3_set_incr_burst_type(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	ret = dwc3_phy_power_on(dwc);
 	if (ret)
 		goto err_exit_phy;
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	ret = dwc3_event_buffers_setup(dwc);
 	if (ret) {
 		dev_err(dwc->dev, "failed to setup event buffers\n");
 		goto err_power_off_phy;
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	/*
 	 * ENDXFER polling is available on version 3.10a and later of
@@ -1282,7 +1266,6 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		reg |= DWC3_GUCTL2_RST_ACTBITLATER;
 		dwc3_writel(dwc->regs, DWC3_GUCTL2, reg);
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	/*
 	 * When configured in HOST mode, after issuing U3/L2 exit controller
@@ -1298,7 +1281,6 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		reg |= DWC3_GUCTL1_RESUME_OPMODE_HS_HOST;
 		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	if (!DWC3_VER_IS_PRIOR(DWC3, 250A)) {
 		reg = dwc3_readl(dwc->regs, DWC3_GUCTL1);
@@ -1335,10 +1317,8 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	dwc3_config_threshold(dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	return 0;
 
@@ -1878,14 +1858,13 @@ static int dwc3_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	dwc->dev = dev;
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
+
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		dev_err(dev, "missing memory resource\n");
 		return -ENODEV;
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc->xhci_resources[0].start = res->start;
 	dwc->xhci_resources[0].end = dwc->xhci_resources[0].start +
 					DWC3_XHCI_REGS_END;
@@ -1899,7 +1878,6 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc_res = *res;
 	dwc_res.start += DWC3_GLOBALS_REGS_START;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (dev->of_node) {
 		struct device_node *parent = of_get_parent(dev->of_node);
 
@@ -1911,52 +1889,42 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		of_node_put(parent);
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	regs = devm_ioremap_resource(dev, &dwc_res);
 	if (IS_ERR(regs))
 		return PTR_ERR(regs);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc->regs	= regs;
 	dwc->regs_size	= resource_size(&dwc_res);
 
 	dwc3_get_properties(dwc);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc->reset = devm_reset_control_array_get_optional_shared(dev);
 	if (IS_ERR(dwc->reset)) {
 		ret = PTR_ERR(dwc->reset);
 		goto err_put_psy;
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_get_clocks(dwc);
 	if (ret)
 		goto err_put_psy;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = reset_control_deassert(dwc->reset);
 	if (ret)
 		goto err_put_psy;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_clk_enable(dwc);
 	if (ret)
 		goto err_assert_reset;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (!dwc3_core_is_valid(dwc)) {
 		dev_err(dwc->dev, "this is not a DesignWare USB3 DRD Core\n");
 		ret = -ENODEV;
 		goto err_disable_clks;
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	platform_set_drvdata(pdev, dwc);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc3_cache_hwparams(dwc);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (!dwc->sysdev_is_parent &&
 	    DWC3_GHWPARAMS0_AWIDTH(dwc->hwparams.hwparams0) == 64) {
 		ret = dma_set_mask_and_coherent(dwc->sysdev, DMA_BIT_MASK(64));
@@ -1964,7 +1932,6 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 			goto err_disable_clks;
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	spin_lock_init(&dwc->lock);
 	mutex_init(&dwc->mutex);
 
@@ -1976,48 +1943,39 @@ printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	pm_runtime_forbid(dev);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_alloc_event_buffers(dwc, DWC3_EVENT_BUFFERS_SIZE);
 	if (ret) {
 		dev_err(dwc->dev, "failed to allocate event buffers\n");
 		ret = -ENOMEM;
 		goto err_allow_rpm;
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	dwc->edev = dwc3_get_extcon(dwc);
 	if (IS_ERR(dwc->edev)) {
 		ret = dev_err_probe(dwc->dev, PTR_ERR(dwc->edev), "failed to get extcon\n");
 		goto err_free_event_buffers;
 	}
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	ret = dwc3_get_dr_mode(dwc);
 	if (ret)
 		goto err_free_event_buffers;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_core_init(dwc);
 	if (ret) {
 		dev_err_probe(dev, ret, "failed to initialize core\n");
 		goto err_free_event_buffers;
 	}
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dwc3_check_params(dwc);
 	dwc3_debugfs_init(dwc);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = dwc3_core_init_mode(dwc);
 	if (ret)
 		goto err_exit_debugfs;
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	pm_runtime_put(dev);
 
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	dma_set_max_seg_size(dev, UINT_MAX);
-printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	return 0;
 
