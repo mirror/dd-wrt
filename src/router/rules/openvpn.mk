@@ -78,7 +78,7 @@ CONFIGURE_ARGS_OVPN += \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -L$(TOP)/libucontext -lucontext $(OVPN_LIBNL_LIBS)" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
-	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
 	ac_cv_path_ROUTE=/sbin/route \
@@ -108,7 +108,7 @@ CONFIGURE_ARGS_WOLFSSL += \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) $(OVPN_LIBNL_LIBS) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
-	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	AR_FLAGS="\"cru $(LTOPLUGIN)\"" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
 	ac_cv_path_ROUTE=/sbin/route \
