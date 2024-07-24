@@ -1677,12 +1677,19 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
-	case ROUTER_LINKSYS_MR5500:
 	case ROUTER_LINKSYS_MX5500:
 		cfg->power_gpio = 0x1; // power led / green
 		cfg->diag_gpio = 0x0; // diag led / red
 		cfg->diag_gpio_disabled = 0x1;
 		cfg->connected_gpio = 0x2; // blue wan led
+		break;
+	case ROUTER_LINKSYS_MR5500:
+		cfg->power_gpio = 0x1; // power led / green
+		cfg->diag_gpio = 0x0; // diag led / red
+		cfg->diag_gpio_disabled = 0x1;
+		cfg->connected_gpio = 0x2; // blue wan led
+		cfg->usb_gpio = GPIO_LOW | 18; //usb led
+		cfg->usb_power = GPIO_LOW | 17; //usb power
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		cfg->power_gpio = 0x1; // power led / green
