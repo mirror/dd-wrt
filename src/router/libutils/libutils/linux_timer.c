@@ -231,7 +231,7 @@ int dd_timer_create(clockid_t clock_id, /* clock ID (always CLOCK_REALTIME) */
 	event = event_freelist;
 	if (event == NULL) {
 		print_event_queue();
-		dd_loginfo("timer", "eventlist is full\n");
+		dd_loginfo("timer", "eventlist is full");
 		unlock();
 		return -1;
 	}
@@ -482,10 +482,10 @@ static void print_event_queue()
 	int i = 0;
 
 	for (event = event_queue; event; event = event->next) {
-		dd_loginfo("timer", "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event,
+		dd_loginfo("timer", "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p", i++, (unsigned long)event,
 			   (unsigned long)event->next, (int)event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
 		if (i > g_maxevents) {
-			dd_loginfo("timer", "...(giving up)\n");
+			dd_loginfo("timer", "...(giving up)");
 			break;
 		}
 	}

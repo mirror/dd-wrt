@@ -139,7 +139,7 @@ int br_add_bridge(const char *brname)
 	int ret;
 	char tmp[256];
 
-	dd_loginfo("bridge", "bridge added successfully\n");
+	dd_loginfo("bridge", "bridge added successfully");
 	char ipaddr[32];
 
 	sprintf(ipaddr, "%s_ipaddr", brname);
@@ -184,7 +184,7 @@ int br_del_bridge(const char *brname)
 		strncpy(_br, brname, IFNAMSIZ);
 		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
 	}
-	dd_loginfo("bridge", "bridge deleted successfully\n");
+	dd_loginfo("bridge", "bridge deleted successfully");
 	return ret < 0 ? errno : 0;
 }
 
@@ -212,7 +212,7 @@ int br_add_interface(const char *bridge, const char *dev)
 		eval("ifconfig", dev, "up");
 	}
 
-	dd_loginfo("bridge", "interface added successfully\n");
+	dd_loginfo("bridge", "interface added successfully");
 
 	struct ifreq ifr;
 	int err;
@@ -240,7 +240,7 @@ int br_del_interface(const char *bridge, const char *dev)
 {
 	if (!ifexists(dev))
 		return -1;
-	dd_loginfo("bridge", "interface deleted successfully\n");
+	dd_loginfo("bridge", "interface deleted successfully");
 	struct ifreq ifr;
 	int err;
 	int ifindex = if_nametoindex(dev);
