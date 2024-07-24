@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 		t5.it_interval.tv_sec = time;
 		t5.it_value.tv_sec = time;
 
-		dd_loginfo("process_monitor", "set timer: %d seconds, callback: ntp_main()", time);
+		dd_loginfo("process_monitor", "set timer: %d seconds, callback: ntp_main()\n", time);
 
 		dd_timer_create(CLOCK_REALTIME, NULL, (timer_t *)&ntp2_id);
 		dd_timer_connect(ntp2_id, ntp_main, SECOND);
