@@ -322,7 +322,8 @@ static void mtdoops_do_dump(struct kmsg_dumper *dumper,
 		mtdoops_write(cxt, 1);
 	} else {
 		/* For other cases, schedule work to write it "nicely" */
-		schedule_work(&cxt->work_write);
+//		schedule_work(&cxt->work_write);
+		mtdoops_write(cxt, 0);
 	}
 }
 
