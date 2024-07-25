@@ -329,7 +329,7 @@ static void mtdoops_do_dump(struct kmsg_dumper *dumper,
 static void mtdoops_notify_add(struct mtd_info *mtd)
 {
 	struct mtdoops_context *cxt = &oops_cxt;
-	u64 mtdoops_pages = div_u64(mtd->size, record_size);
+	u64 mtdoops_pages = div_u64(mtd->size > MTDOOPS_MAX_MTD_SIZE ? MTDOOPS_MAX_MTD_SIZE : mtd->size , record_size);
 	int err;
 
 	if (!strcmp(mtd->name, mtddev))
@@ -348,11 +348,11 @@ static void mtdoops_notify_add(struct mtd_info *mtd)
 		       mtd->index);
 		return;
 	}
-	if (mtd->size > MTDOOPS_MAX_MTD_SIZE) {
-		pr_err("mtd%d is too large (limit is %d MiB)\n",
-		       mtd->index, MTDOOPS_MAX_MTD_SIZE / 1024 / 1024);
-		return;
-	}
+//	if (mtd->size > MTDOOPS_MAX_MTD_SIZE) {
+//		pr_err("mtd%d is too large (limit is %d MiB)\n",
+//		       mtd->index, MTDOOPS_MAX_MTD_SIZE / 1024 / 1024);
+//		return;
+//	}
 
 	/* oops_page_used is a bit field */
 	cxt->oops_page_used =
@@ -375,7 +375,7 @@ static void mtdoops_notify_add(struct mtd_info *mtd)
 	}
 
 	cxt->mtd = mtd;
-	cxt->oops_pages = (int)mtd->size / record_size;
+	cxt->oops_pages = (int)(mtd->size > MTDOOPS_MAX_MTD_SIZE ? MTDOOPS_MAX_MTD_SIZE : mtd->size) / record_size;
 	find_next_position(cxt);
 	pr_info("Attached to MTD device %d\n", mtd->index);
 }
