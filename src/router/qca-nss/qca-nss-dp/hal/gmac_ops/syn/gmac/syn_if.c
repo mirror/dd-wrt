@@ -155,6 +155,7 @@ static const struct syn_ethtool_stats syn_gstrings_mib_stats[] = {
  */
 static void syn_enable_mac_cst(struct nss_gmac_hal_dev *nghd)
 {
+	printk(KERN_INFO "enable stripping of mac padding/fcs");
 	hal_set_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE);
 }
 
@@ -164,6 +165,7 @@ static void syn_enable_mac_cst(struct nss_gmac_hal_dev *nghd)
  */
 static void syn_disable_mac_cst(struct nss_gmac_hal_dev *nghd)
 {
+	printk(KERN_INFO "disable stripping of mac padding/fcs");
 	hal_clear_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_DISABLE);
 }
 
