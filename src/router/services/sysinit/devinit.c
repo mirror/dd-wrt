@@ -384,5 +384,13 @@ void start_devinit(void)
 	install_sdcard();
 #endif
 	start_devinit_arch();
+	int oops = getMTD("oops");
+	if (oops > 0) {
+		sysprintf("insmod mtdoops mtddev=%d", oops);
+	} else {
+		if (nvram_match("mtdoops", "1"))
+			sysprintf("insmod mtdoops mtddev=%s", nvram_safe_get("mtdoops_dev"));
+	}
+
 	fprintf(stderr, "done\n");
 }
