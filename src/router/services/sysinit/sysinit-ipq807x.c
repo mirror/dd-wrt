@@ -1068,8 +1068,6 @@ void start_sysinit(void)
 	}
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
-	if (nvram_match("mtdoops","1"))
-	    sysprintf("insmod mtdoops mtddev=%s\n", nvram_safe_get("mtdoops_dev"));
 
 	return;
 }

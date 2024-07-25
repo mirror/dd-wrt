@@ -581,6 +581,8 @@ int main(int argc, char **argv)
 #endif
 	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "");
 	start_service("sysinit");
+	if (nvram_match("mtdoops","1"))
+	    sysprintf("insmod mtdoops mtddev=%s\n", nvram_safe_get("mtdoops_dev"));
 #ifndef HAVE_MICRO
 	start_service("watchdog");
 	if (console_init())
