@@ -1766,7 +1766,6 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
-		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	} else if (brand == ROUTER_LINKSYS_MX5500) {
 		nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
@@ -1778,7 +1777,6 @@ void start_lan(void)
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
-		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	} else if (brand == ROUTER_ASUS_AX89X) {
 		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {

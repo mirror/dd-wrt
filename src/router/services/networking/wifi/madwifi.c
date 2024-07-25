@@ -2941,6 +2941,7 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void) // madwifi implementation for atheros based
 	// cards
 {
+#if !defined(HAVE_IPQ6018)
 	if (nvram_match("sfe", "1")) {
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 	} else if (nvram_match("sfe", "2")) {
@@ -2954,6 +2955,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	} else {
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");
 	}
+#endif
 
 	invalidate_channelcache();
 #ifdef HAVE_NLD
