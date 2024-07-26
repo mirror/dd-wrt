@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#ifndef __PPE_DRV_PUB_IP_H
+#define __PPE_DRV_PUB_IP_H
+
+/*
+ * struct ppe_drv_pub_ip
+ *	Public IP Address information
+ */
+struct ppe_drv_pub_ip {
+	struct kref ref;	/* Reference count for pub ip entry */
+	uint32_t ip_addr;		/* Public IP address */
+	uint16_t index;		/* Entry pointed to in PPE PUB_IP table */
+};
+
+bool ppe_drv_pub_ip_deref(struct ppe_drv_pub_ip *pub_ip);
+struct ppe_drv_pub_ip *ppe_drv_pub_ip_ref(struct ppe_drv_pub_ip *pub_ip);
+struct ppe_drv_pub_ip *ppe_drv_pub_ip_get_and_ref(uint32_t ip_addr);
+void ppe_drv_pub_ip_entries_free(struct ppe_drv_pub_ip *pub_ip);
+struct ppe_drv_pub_ip *ppe_drv_pub_ip_entries_alloc(void);
+#endif
