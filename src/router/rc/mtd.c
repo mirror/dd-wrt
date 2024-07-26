@@ -161,6 +161,7 @@ int mtd_erase(const char *mtd)
 	int mtd_fd;
 	struct mtd_info_user mtd_info;
 	struct erase_info_user erase_info;
+	struct erase_info_user tmp_erase_info;
 
 	/* 
 	 * char *et0; char *et1;
@@ -637,6 +638,7 @@ rewrite:;
 	/* 
 	 * Write file or URL to MTD device 
 	 */
+	badblocks = 0;
 	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
 		len = MIN(erase_info.length, trx.len - erase_info.start);
 		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
@@ -716,41 +718,40 @@ rewrite:;
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
 		int base = erase_info.start;
-		badblocks = 0;
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 again:;
-			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)) - badblocks,
-				   base + (i * mtd_info.erasesize));
+			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
+				   base + (i * mtd_info.erasesize) + badblocks);
 			//			if (!writeubi) {
 			erase_info.start = base + (i * mtd_info.erasesize);
+			memcpy(&tmp_erase_info, erase_info, sizeof(erase_info));
+			tmp_erase_info.start += bad_blocks;
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
-			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
+			if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
 				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
-				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
-				continue;
+				goto again;
 			}
 			if (writeubi) {
-				if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+				if (ioctl(mtd_fd, MEMERASE, &tmp_erase_info) != 0) {
 					dd_logerror("flash", "\nerase/write failed");
 					goto fail;
 				}
 			} else {
 #if !defined(HAVE_QCA4019) && !defined(HAVE_IPQ6018)
 				if (mtdtype != MTD_NANDFLASH) {
-					if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
+					if (ioctl(mtd_fd, MEMERASE, &tmp_erase_info) != 0) {
 						dd_logerror("flash", "\nerase/write failed");
 						goto fail;
 					}
 				}
 #endif
 			}
-			if (write(mtd_fd, buf + (i * mtd_info.erasesize) - badblocks, mtd_info.erasesize) != mtd_info.erasesize) {
+			if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
 				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
-				length += mtd_info.erasesize;
 				badblocks += mtd_info.erasesize;
 				goto fail;
 			}
