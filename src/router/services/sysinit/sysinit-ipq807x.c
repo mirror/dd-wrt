@@ -443,7 +443,7 @@ static void load_nss_ipq60xx(int profile)
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink-ipq60xx");
 		insmod("qca-nss-bridge-mgr-ipq60xx");
-
+		insmod("qca-nss-wifi-meshmgr");
 	}
 }
 
@@ -486,6 +486,7 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-mcs");
 		insmod("nss-ifb");
 		insmod("qca-nss-bridge-mgr-ipq50xx");
+		insmod("qca-nss-wifi-meshmgr");	
 	}
 }
 static void load_nss_ipq807x(int profile)
@@ -534,6 +535,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink-ipq807x");
 		insmod("qca-nss-bridge-mgr-ipq807x");
+		insmod("qca-nss-wifi-meshmgr");	
 	}
 }
 
