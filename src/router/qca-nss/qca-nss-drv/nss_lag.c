@@ -237,7 +237,7 @@ nss_tx_status_t nss_lag_tx_slave_state(uint16_t lagid, int32_t slave_ifnum,
 	struct nss_lag_pvt lag_msg_state;
 
 	init_completion(&lag_msg_state.complete);
-	lag_msg_state.response = false;
+	lag_msg_state.response = NSS_CMN_RESPONSE_ACK;
 
 	/*
 	 * Construct a message to the NSS to update it

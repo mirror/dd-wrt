@@ -226,7 +226,7 @@ int nss_dynamic_interface_alloc_node(enum nss_dynamic_interface_type type)
 	core_id = nss_top_main.dynamic_interface_table[type];
 	nss_ctx = (struct nss_ctx_instance *)&nss_top_main.nss[core_id];
 	di_data.if_num = -1;
-	di_data.response = -1;
+	di_data.response = NSS_CMN_RESPONSE_ACK;
 	init_completion(&di_data.complete);
 
 	nss_dynamic_interface_msg_init(&ndim, NSS_DYNAMIC_INTERFACE, NSS_DYNAMIC_INTERFACE_ALLOC_NODE,
@@ -285,7 +285,7 @@ nss_tx_status_t nss_dynamic_interface_dealloc_node(int if_num, enum nss_dynamic_
 
 	core_id = nss_top_main.dynamic_interface_table[type];
 	nss_ctx = (struct nss_ctx_instance *)&nss_top_main.nss[core_id];
-	di_data.response = -1;
+	di_data.response = NSS_CMN_RESPONSE_ACK;
 	init_completion(&di_data.complete);
 
 	if (nss_is_dynamic_interface(if_num) == false) {
