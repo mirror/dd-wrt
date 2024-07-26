@@ -127,11 +127,15 @@ ifeq ($(CONFIG_IPQ6018),y)
   CPTCFG_ATH11K_DEBUGFS=y
   CPTCFG_ATH11K_THERMAL=y
   CPTCFG_ATH11K_SPECTRAL=y
-  CPTCFG_ATH11K_PCI=n
+  CPTCFG_ATH11K_NSS_MESH_SUPPORT=y
+  CPTCFG_ATH11K_PCI=y
   CPTCFG_ATH11K_AHB=y
   CPTCFG_MHI_BUS=y
   CPTCFG_MHI_QRTR=y
   CPTCFG_QRTR_MHI=y
+  CPTCFG_ATH11K_NSS_SUPPORT=y
+  CPTCFG_MAC80211_NSS_SUPPORT=y
+  CPTCFG_MAC80211_MESH_NSS_SUPPORT=y
 endif
 ifeq ($(CONFIG_MCPHERSON),y)
   BUILDFLAGS += -DHAVE_MCPHERSON
@@ -166,7 +170,7 @@ KERNEL_ARCH=$(strip $(subst aarch64,arm64,$(subst i386,x86,$(subst armeb,arm,$(s
 MAKE_OPTS += \
 	CROSS_COMPILE="ccache $(ARCH)-linux-" \
 	ARCH="$(KERNEL_ARCH)" \
-	EXTRA_CFLAGS="$(BUILDFLAGS) -I$(TOP)/qca-nss/qca-nss-drv/exports" \
+	EXTRA_CFLAGS="$(BUILDFLAGS) -I$(TOP)/qca-nss/qca-nss-drv/exports -I$(TOP)/qca-nss/qca-nss-clients/exports" \
 	MADWIFI= \
 	OLD_IWL= \
 	KLIB_BUILD="$(LINUXDIR)" \
@@ -241,12 +245,20 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
-	echo "CPTCFG_ATH11K_PCI=n" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_AHB=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
-
+	echo "CPTCFG_ATH11K_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_MAC80211_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_MEM_PROFILE_512M=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_DEBUGFS_HTT_STATS=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
@@ -325,14 +337,19 @@ ifeq ($(CONFIG_ATH10KUSB),y)
 	echo "CPTCFG_ATH10K_SDIO=m" >> $(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH10K_USB=m" >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_IPQ806X),y)
+	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
 ifeq ($(CONFIG_QCA_NSS),y)
 	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >> $(MAC80211_PATH)/.config_temp
 else
 	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
-ifeq ($(CONFIG_IPQ806X),y)
-	echo "CPTCFG_ATH10K_AHB=y" >> $(MAC80211_PATH)/.config_temp
 else
+#ifeq ($(CONFIG_QCA_NSS),y)
+#	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >> $(MAC80211_PATH)/.config_temp
+#else
+#	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
+#endif
 	echo "# CPTCFG_MAC80211_NSS_SUPPORT is not set" >> $(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
@@ -450,6 +467,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ6018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ8074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ5018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/QCN9074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
@@ -457,6 +478,14 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/hw2.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
+
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/hw1.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/hw1.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
+
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f cal-pci-0001:01:00.0.bin && ln -s /tmp/cal-pci-0001:01:00.0.bin cal-pci-0001:01:00.0.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f caldata2.bin && ln -s /tmp/caldata2.bin caldata.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f board2.bin && ln -s /tmp/board2.bin board.bin 
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
