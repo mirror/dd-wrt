@@ -109,6 +109,7 @@ extern int nf_ct_tcp_no_window_check;
 extern int nf_ct_tcp_be_liberal;
 #endif
 
+extern int nf_ct_tcp_no_window_check;
 /*
  * ecm_nss_ported_ipv4_connection_callback()
  *	Callback for handling create ack/nack calls.
@@ -1213,7 +1214,8 @@ static void ecm_nss_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 #else
 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+//			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
 #endif
 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);

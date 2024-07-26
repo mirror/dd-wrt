@@ -101,6 +101,7 @@ extern int nf_ct_tcp_no_window_check;
 #endif
 extern int nf_ct_tcp_be_liberal;
 #endif
+extern int nf_ct_tcp_no_window_check;
 
 /*
  * ecm_sfe_ported_ipv4_connection_callback()
@@ -1398,11 +1399,11 @@ static void ecm_sfe_ported_ipv4_connection_accelerate(struct ecm_front_end_conne
 			int return_dir;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 			uint32_t tcp_be_liberal = nf_ct_tcp_be_liberal;
-			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
 #else
 			struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
 			uint32_t tcp_be_liberal = tn->tcp_be_liberal;
-			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+//			uint32_t tcp_no_window_check = tn->tcp_no_window_check;
+			uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
 #endif
 			ecm_db_connection_address_get(feci->ci, ECM_DB_OBJ_DIR_FROM, addr);
 			ecm_front_end_flow_and_return_directions_get(ct, addr, 4, &flow_dir, &return_dir);

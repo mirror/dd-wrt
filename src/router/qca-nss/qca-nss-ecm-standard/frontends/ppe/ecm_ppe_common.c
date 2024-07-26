@@ -195,7 +195,7 @@ bool ecm_ppe_feature_check(struct sk_buff *skb, struct ecm_tracker_ip_header *ip
 
 #ifdef ECM_OPENWRT_SUPPORT
 	if (ip_hdr->protocol == IPPROTO_TCP) {
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
+#if 1 //(LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0))
 		uint32_t tcp_no_window_check = nf_ct_tcp_no_window_check;
 #else
 		struct nf_conn *ct;
