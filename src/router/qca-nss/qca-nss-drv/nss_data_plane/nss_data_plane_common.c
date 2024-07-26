@@ -63,7 +63,7 @@ bool nss_data_plane_schedule_registration(void)
 		return false;
 	}
 
-	nss_info("Register data plane workqueue on core 1\n");
+	nss_info_always("Register data plane workqueue on core 1\n");
 	return true;
 }
 

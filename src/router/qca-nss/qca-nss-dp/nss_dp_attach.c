@@ -128,6 +128,10 @@ int nss_dp_override_data_plane(struct net_device *netdev,
 		return -EFAULT;
 	}
 	dp_dev->drv_flags |= NSS_DP_PRIV_FLAG(INIT_DONE);
+//#ifdef NSS_DP_IPQ50XX	
+//	void disable_mac_cst(void);
+//	disable_mac_cst();
+//#endif
 
 	return NSS_DP_SUCCESS;
 }

@@ -155,18 +155,26 @@ static const struct syn_ethtool_stats syn_gstrings_mib_stats[] = {
  */
 static void syn_enable_mac_cst(struct nss_gmac_hal_dev *nghd)
 {
-	printk(KERN_INFO "enable stripping of mac padding/fcs");
+	printk(KERN_INFO "enable stripping of mac padding/fcs start %d", hal_check_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE));
 	hal_set_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE);
+	printk(KERN_INFO "enable stripping of mac padding/fcs end %d", hal_check_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE));
 }
 
 /*
  * syn_disable_mac_cst()
  *	Disable stripping of MAC padding/FCS
  */
+static struct nss_gmac_hal_dev *s_nghd;
 static void syn_disable_mac_cst(struct nss_gmac_hal_dev *nghd)
 {
-	printk(KERN_INFO "disable stripping of mac padding/fcs");
+	printk(KERN_INFO "disable stripping of mac padding/fcs start %d", hal_check_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE));
 	hal_clear_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_DISABLE);
+	printk(KERN_INFO "disable stripping of mac padding/fcs end %d", hal_check_reg_bits(nghd->mac_base, SYN_MAC_CONFIGURATION, SYN_MAC_CST_ENABLE));
+}
+
+void disable_mac_cst(void)
+{
+	syn_enable_mac_cst(s_nghd);
 }
 
 /*
@@ -286,10 +294,10 @@ static void syn_ipc_offload_init(struct nss_gmac_hal_dev *nghd)
 		 * Enable the offload engine in the receive path
 		 */
 		syn_enable_rx_chksum_offload(nghd);
-		netdev_dbg(nghd->netdev, "%s: enable Rx checksum\n", __func__);
+		printk(KERN_INFO "%s: enable Rx checksum\n", __func__);
 	} else {
 		syn_disable_rx_chksum_offload(nghd);
-		netdev_dbg(nghd->netdev, "%s: disable Rx checksum\n", __func__);
+		printk(KERN_INFO "%s: disable Rx checksum\n", __func__);
 	}
 }
 
@@ -837,6 +845,8 @@ static void *syn_init(struct nss_gmac_hal_platform_data *gmacpdata)
 	syn_promisc_enable(&shd->nghd);
 	syn_broadcast_enable(&shd->nghd);
 	syn_multicast_enable(&shd->nghd);
+	s_nghd = &shd->nghd;
+//	syn_disable_mac_cst(&shd->nghd);
 
 	/*
 	 * Reset MIB Stats
