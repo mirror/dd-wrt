@@ -585,12 +585,12 @@ rewrite:;
 	 */
 	dd_loginfo("flash", "freeram=[%ld] bufferram=[%ld]", info.freeram, info.bufferram);
 	int mul = 1; // temporarily use 1 instead of 4 until we
-	#ifdef HAVE_IPQ6018
-	#define MINEXTRA 64
-	#else
-	#define MINEXTRA 8
-	#endif
-	
+#ifdef HAVE_IPQ6018
+#define MINEXTRA 64
+#else
+#define MINEXTRA 8
+#endif
+
 	// found a a solution
 	if (info.freeram >= (trx.len + MINEXTRA * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
 		dd_loginfo("flash", "The free memory is enough, writing image once.");
@@ -693,8 +693,7 @@ rewrite:;
 		 */
 		if (sum == trx.len) {
 			if (crc != trx.crc32) {
-				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32,
-					    crc);
+				dd_logerror("flash", "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)", path, trx.crc32, crc);
 				goto fail;
 			} else {
 				dd_loginfo("flash", "%s: CRC OK (0x%08X)", mtd, crc);
@@ -728,11 +727,10 @@ again:;
 			erase_info.start = base + (i * mtd_info.erasesize);
 			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
 			tmp_erase_info.start += badblocks;
-			if (tmp_erase_info.start >= mtd_info.size)
-			{
-			    dd_logerror("flash", "Image too big for partition due too many bad flash blocks: %s", mtd);
-			    ret = -1;
-			    goto fail;
+			if (tmp_erase_info.start >= mtd_info.size) {
+				dd_logerror("flash", "Image too big for partition due too many bad flash blocks: %s", mtd);
+				ret = -1;
+				goto fail;
 			}
 			(void)ioctl(mtd_fd, MEMUNLOCK, &tmp_erase_info);
 			if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
