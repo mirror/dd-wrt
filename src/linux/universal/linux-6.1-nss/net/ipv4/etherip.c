@@ -259,7 +259,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
 	nf_reset_ct(skb);
 //	tstats = this_cpu_ptr(dev->tstats);
-	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk);
+	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, dev);
 	netif_trans_update(tunnel->dev);
 	tunnel->recursion--;
 

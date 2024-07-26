@@ -537,7 +537,7 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
 #else
-	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk);
+	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, dev);
 #endif
 	//ip_tunnel_xmit(skb, dev, tiph, tiph->protocol);
 	return NETDEV_TX_OK;

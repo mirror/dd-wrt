@@ -475,7 +475,7 @@ static inline u8 ip_tunnel_ecn_encap(u8 tos, const struct iphdr *iph,
 int __iptunnel_pull_header(struct sk_buff *skb, int hdr_len,
 			   __be16 inner_proto, bool raw_proto, bool xnet);
 
-#define __IPTUNNEL_XMIT_COMPAT(net, sk) do {				\
+#define __IPTUNNEL_XMIT_COMPAT(net, sk, dev) do {			\
 	int err;							\
 	int pkt_len = skb->len - skb_transport_offset(skb);		\
 									\
@@ -483,10 +483,12 @@ int __iptunnel_pull_header(struct sk_buff *skb, int hdr_len,
 	__ip_select_ident(net, iph, skb_shinfo(skb)->gso_segs ?: 1);	\
 									\
 	err = ip_local_out(net, sk, skb);				\
-	if (likely(net_xmit_eval(err) == 0)) {				\
-		err = pkt_len;						\
-	} 								\
-	iptunnel_xmit_stats(skb->dev, err);					\
+	if (dev) { 							\
+		if (unlikely(net_xmit_eval(err))) {			\
+			pkt_len = -1;					\
+		}							\
+		iptunnel_xmit_stats(dev, pkt_len);			\
+	}								\
 } while (0)
 
 
