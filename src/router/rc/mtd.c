@@ -161,7 +161,6 @@ int mtd_erase(const char *mtd)
 	int mtd_fd;
 	struct mtd_info_user mtd_info;
 	struct erase_info_user erase_info;
-	struct erase_info_user tmp_erase_info;
 
 	/* 
 	 * char *et0; char *et1;
@@ -279,6 +278,7 @@ static int write_main(int argc, char *argv[])
 	int mtd_fd = -1;
 	struct mtd_info_user mtd_info;
 	struct erase_info_user erase_info;
+	struct erase_info_user tmp_erase_info;
 
 	struct sysinfo info;
 #ifdef HAVE_WRT160NL
@@ -725,8 +725,8 @@ again:;
 				   base + (i * mtd_info.erasesize) + badblocks);
 			//			if (!writeubi) {
 			erase_info.start = base + (i * mtd_info.erasesize);
-			memcpy(&tmp_erase_info, erase_info, sizeof(erase_info));
-			tmp_erase_info.start += bad_blocks;
+			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
+			tmp_erase_info.start += badblocks;
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
 				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
