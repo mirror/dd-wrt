@@ -376,6 +376,8 @@ void fatal_signal(int sig)
 		dd_loginfo("init", "Caught signal %d.......................................", sig);
 
 	shutdown_system();
+	eval("sync");
+	sysprintf("echo 3 > /proc/sys/vm/drop_caches");
 
 	/* 
 	 * Halt on SIGUSR1 
@@ -386,7 +388,7 @@ void fatal_signal(int sig)
 #endif
 	reboot(RB_AUTOBOOT);
 #ifndef HAVE_VENTANA
-	sleep(5);
+	sleep(10);
 	writeproc("/proc/sysrq-trigger", "b");
 #endif
 	loop_forever();
