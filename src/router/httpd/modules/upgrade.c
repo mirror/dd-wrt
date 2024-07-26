@@ -710,7 +710,7 @@ err:
 	if (fifo2)
 		fclose(fifo2);
 	unlink(upload_fifo);
-	if (brand == ROUTER_ASROCK_G10) {
+	if (brand == ROUTER_ASROCK_G10 && !ret) {
 		FILE *check = fopen("/tmp/parttemp", "rb");
 		if (check) {
 			fclose(check);
