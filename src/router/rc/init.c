@@ -219,6 +219,7 @@ static void unmount_fs(void)
 	char fstype[32];
 	char flags[128];
 	int a, b;
+	eval("sync");
 	writeprocsys("vm/drop_caches", "3"); // flush fs cache
 	FILE *fp = fopen("/proc/mounts", "rb");
 	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
