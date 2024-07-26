@@ -1,3 +1,5 @@
+EXTRA_CFLAGS += -g
+
 # SPDX-License-Identifier: GPL-2.0
 netfilter-objs := core.o nf_log.o nf_queue.o nf_sockopt.o utils.o
 

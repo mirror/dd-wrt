@@ -31,6 +31,10 @@
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
 
+/* Do not check the TCP window for incoming packets  */
+int nf_ct_tcp_no_window_check __read_mostly = 1;
+EXPORT_SYMBOL(nf_ct_tcp_no_window_check);
+
 
   /* FIXME: Examine ipfilter's timeouts and conntrack transitions more
      closely.  They're more complex. --RR */
@@ -522,7 +526,7 @@ tcp_in_window(struct nf_conn *ct, enum ip_conntrack_dir dir,
 	s32 receiver_offset;
 	u16 win_raw;
 
-	if (tn->tcp_no_window_check)
+	if (nf_ct_tcp_no_window_check)
 		return NFCT_TCP_ACCEPT;
 
 	/*
@@ -1299,7 +1303,7 @@ int nf_conntrack_tcp_packet(struct nf_conn *ct,
 		 IP_CT_TCP_FLAG_DATA_UNACKNOWLEDGED &&
 		 timeouts[new_state] > timeouts[TCP_CONNTRACK_UNACK])
 		timeout = timeouts[TCP_CONNTRACK_UNACK];
-	else if (!tn->tcp_no_window_check && ct->proto.tcp.last_win == 0 &&
+	else if (!nf_ct_tcp_no_window_check && ct->proto.tcp.last_win == 0 &&
 		 timeouts[new_state] > timeouts[TCP_CONNTRACK_RETRANS])
 		timeout = timeouts[TCP_CONNTRACK_RETRANS];
 	else
@@ -1614,9 +1618,6 @@ void nf_conntrack_tcp_init_net(struct net *net)
 	 * If it's non-zero, we mark only out of window RST segments as INVALID.
 	 */
 	tn->tcp_be_liberal = 0;
-
-	/* Skip Windows Check */
-	tn->tcp_no_window_check = 1;
 
 	/* If it's non-zero, we turn off RST sequence number check */
 	tn->tcp_ignore_invalid_rst = 0;
