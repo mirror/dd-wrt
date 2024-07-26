@@ -264,7 +264,12 @@
 
 			partition@e500000 {
 				label = "ubifs";
-				reg = <0xe500000 0x1600000>;
+				reg = <0xe500000 0x1100000>;
+			};
+
+			partition@f600000 {
+				label = "oops";
+				reg = <0xf600000 0x400000>;
 			};
 
 			partition@fa00000 {
