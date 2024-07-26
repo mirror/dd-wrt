@@ -572,6 +572,7 @@ rewrite:;
 	if (mtd_info.size < trx.len) {
 		dd_logerror("flash", "Image too big for partition: %s", mtd);
 		perror(mtd);
+		ret = -1;
 		goto fail;
 	}
 	// #endif
@@ -727,7 +728,13 @@ again:;
 			erase_info.start = base + (i * mtd_info.erasesize);
 			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
 			tmp_erase_info.start += badblocks;
-			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
+			if (tmp_erase_info.start >= mtd_info.size)
+			{
+			    dd_logerror("flash", "Image too big for partition due too many bad flash blocks: %s", mtd);
+			    ret = -1;
+			    goto fail;
+			}
+			(void)ioctl(mtd_fd, MEMUNLOCK, &tmp_erase_info);
 			if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
 				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
