@@ -1850,6 +1850,7 @@ nss_wifi_mesh_handle_t nss_wifi_meshmgr_if_create_sync(struct net_device *dev, s
 		goto decap_reg_fail;
 	}
 
+
 	wmesh_ctx->encap_ifnum = encap_ifnum;
 	wmesh_ctx->decap_ifnum = decap_ifnum;
 
