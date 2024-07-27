@@ -546,8 +546,8 @@ rewrite:;
 	int mtddev = getMTD("plex");
 #else
 	int mtddev = getMTD("ddwrt");
-	if (mtd == -1) {
-		mtd = getMTD("jffs2");
+	if (mtddev == -1) {
+		mtddev = getMTD("jffs2");
 	}
 #endif
 	if (mtddev > 0) {
