@@ -354,8 +354,12 @@
 				read-only;
 			};
 			partition@ba80000 {
+				label = "oops";
+				reg = <0xba80000 0x400000>;
+			};
+			partition@be80000 {
 				label = "ddwrt";
-				reg = <0xba80000 0x4400000>;
+				reg = <0xbe80000 0x4000000>;
 			};
 		};
 	};
