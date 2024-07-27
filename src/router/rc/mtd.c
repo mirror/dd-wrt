@@ -541,11 +541,14 @@ rewrite:;
 	eval("umount", "-r", "-f", "/jffs");
 	eval("service", "syslog", "start");
 
-#if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800)
+#if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 #if defined(HAVE_R9000)
 	int mtddev = getMTD("plex");
 #else
 	int mtddev = getMTD("ddwrt");
+	if (mtd == -1) {
+		mtd = getMTD("jffs2");
+	}
 #endif
 	if (mtddev > 0) {
 		char devdev[32];
