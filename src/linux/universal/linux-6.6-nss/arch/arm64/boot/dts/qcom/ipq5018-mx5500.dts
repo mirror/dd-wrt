@@ -616,8 +616,12 @@
 			};
 
             partition@acc0000 {
+				label = "oops";
+				reg = <0x0acc0000 0x400000>;
+			};
+            partition@b0c0000 {
 				label = "ddwrt";
-				reg = <0x0acc0000 0x4400000>;
+				reg = <0x0b0c0000 0x4000000>;
 			};
         };
     };
