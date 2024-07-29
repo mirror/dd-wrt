@@ -40,6 +40,7 @@ struct args {
 	int mtdn;
 	const char *node;
 	const char *dev;
+	int force;
 };
 
 static struct args args = {
@@ -47,6 +48,7 @@ static struct args args = {
 	.mtdn = -1,
 	.node = NULL,
 	.dev = NULL,
+	.force = 0,
 };
 
 static const char doc[] = PROGRAM_NAME " version " VERSION
@@ -56,13 +58,14 @@ static const char optionsstr[] =
 "-d, --devn=<UBI device number>  UBI device number to delete\n"
 "-p, --dev-path=<path to device> or alternatively, MTD device node path to detach\n"
 "-m, --mtdn=<MTD device number>  or alternatively, MTD device number to detach\n"
+"-f, --force			 Force UBI detach even if it is still busy\n"
 "-h, --help                      print help message\n"
 "-V, --version                   print program version";
 
 static const char usage[] =
 "Usage: " PROGRAM_NAME " [<UBI control device node file name>]\n"
 "\t[-d <UBI device number>] [-m <MTD device number>] [-p <path to device>]\n"
-"\t[--devn=<UBI device number>] [--mtdn=<MTD device number>]\n"
+"\t[--devn=<UBI device number>] [--mtdn=<MTD device number>] [-f]\n"
 "\t[--dev-path=<path to device>]\n"
 "UBI control device defaults to " DEFAULT_CTRL_DEV " if not supplied.\n"
 "Example 1: " PROGRAM_NAME " -p /dev/mtd0 - detach MTD device /dev/mtd0\n"
@@ -83,7 +86,7 @@ static int parse_opt(int argc, char * const argv[])
 	while (1) {
 		int key, error = 0;
 
-		key = getopt_long(argc, argv, "p:m:d:hV", long_options, NULL);
+		key = getopt_long(argc, argv, "p:m:d:fhV", long_options, NULL);
 		if (key == -1)
 			break;
 
@@ -103,6 +106,9 @@ static int parse_opt(int argc, char * const argv[])
 			if (error || args.mtdn < 0)
 				return errmsg("bad MTD device number: \"%s\"", optarg);
 
+			break;
+		case 'f':
+			args.force = 1;
 			break;
 
 		case 'h':
@@ -176,20 +182,22 @@ int main(int argc, char * const argv[])
 	}
 
 	if (args.devn != -1) {
-		err = ubi_remove_dev(libubi, args.node, args.devn);
+		err = ubi_remove_dev(libubi, args.node, args.devn, args.force);
 		if (err) {
 			sys_errmsg("cannot remove ubi%d", args.devn);
 			goto out_libubi;
 		}
 	} else {
 		if (args.dev != NULL) {
-			err = ubi_detach(libubi, args.node, args.dev);
+			err = ubi_detach(libubi, args.node, args.dev,
+					args.force);
 			if (err) {
 				sys_errmsg("cannot detach \"%s\"", args.dev);
 				goto out_libubi;
 			}
 		} else {
-			err = ubi_detach_mtd(libubi, args.node, args.mtdn);
+			err = ubi_detach_mtd(libubi, args.node, args.mtdn,
+					     args.force);
 			if (err) {
 				sys_errmsg("cannot detach mtd%d", args.mtdn);
 				goto out_libubi;

@@ -807,7 +807,7 @@ int ubi_attach(libubi_t desc, const char *node, struct ubi_attach_request *req)
 	return ret;
 }
 
-int ubi_detach_mtd(libubi_t desc, const char *node, int mtd_num)
+int ubi_detach_mtd(libubi_t desc, const char *node, int mtd_num, int force)
 {
 	int ret, ubi_dev;
 
@@ -817,10 +817,11 @@ int ubi_detach_mtd(libubi_t desc, const char *node, int mtd_num)
 		return ret;
 	}
 
-	return ubi_remove_dev(desc, node, ubi_dev);
+	return ubi_remove_dev(desc, node, ubi_dev, force);
 }
 
-int ubi_detach(libubi_t desc, const char *node, const char *mtd_dev_node)
+int ubi_detach(libubi_t desc, const char *node, const char *mtd_dev_node,
+	int force)
 {
 	int mtd_num;
 
@@ -833,10 +834,10 @@ int ubi_detach(libubi_t desc, const char *node, const char *mtd_dev_node)
 	if (mtd_num == -1)
 		return -1;
 
-	return ubi_detach_mtd(desc, node, mtd_num);
+	return ubi_detach_mtd(desc, node, mtd_num, force);
 }
 
-int ubi_remove_dev(libubi_t desc, const char *node, int ubi_dev)
+int ubi_remove_dev(libubi_t desc, const char *node, int ubi_dev, int force)
 {
 	int fd, ret;
 	(void)desc;
@@ -845,6 +846,10 @@ int ubi_remove_dev(libubi_t desc, const char *node, int ubi_dev)
 	if (fd == -1)
 		return sys_errmsg("cannot open \"%s\"", node);
 	ret = ioctl(fd, UBI_IOCDET, &ubi_dev);
+	if (force)
+		ret = ioctl(fd, UBI_IOCFDET, &ubi_dev);
+	else
+		ret = ioctl(fd, UBI_IOCDET, &ubi_dev);
 	if (ret == -1)
 		goto out_close;
 

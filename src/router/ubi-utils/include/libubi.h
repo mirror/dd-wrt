@@ -51,6 +51,7 @@ typedef void * libubi_t;
  *           number)
  * @mtd_num: MTD device number to attach (used if @mtd_dev_node is %NULL)
  * @mtd_dev_node: path to MTD device node to attach
+ * @force: set if the device should be removed even if it's busy
  * @vid_hdr_offset: VID header offset (%0 means default offset and this is what
  *                  most of the users want)
  * @max_beb_per1024: Maximum expected bad eraseblocks per 1024 eraseblocks
@@ -249,29 +250,33 @@ int ubi_attach(libubi_t desc, const char *node, struct ubi_attach_request *req);
  * corresponding UBI device is removed. Returns zero in case of success and %-1
  * in case of failure.
  */
-int ubi_detach_mtd(libubi_t desc, const char *node, int mtd_num);
+int ubi_detach_mtd(libubi_t desc, const char *node, int mtd_num, int force);
 
 /**
  * ubi_detach - detach an MTD device by its node path.
  * @desc: UBI library descriptor
  * @node: name of the UBI control character device node
  * @mtd_dev_node: path to an MTD device node
+ * @force: set if the device should be removed even if it's busy
  *
  * This function detaches an MTD device @mtd_dev_node from UBI. Returns zero in
  * case of success and %-1 in case of failure.
  */
-int ubi_detach(libubi_t desc, const char *node, const char *mtd_dev_node);
+int ubi_detach(libubi_t desc, const char *node, const char *mtd_dev_node,
+	int force);
 
 /**
  * ubi_remove_dev - remove an UBI device.
  * @desc: UBI library descriptor
  * @node: name of the UBI control character device node
  * @ubi_dev: UBI device number to remove
+ * @force: set if the device should be removed even if it's busy
  *
  * This function removes UBI device number @ubi_dev and returns zero in case of
  * success and %-1 in case of failure.
  */
-int ubi_remove_dev(libubi_t desc, const char *node, int ubi_dev);
+int ubi_remove_dev(libubi_t desc, const char *node, int ubi_dev,
+	int force);
 
 /**
  * ubi_mkvol - create an UBI volume.
