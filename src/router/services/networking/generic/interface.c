@@ -727,9 +727,9 @@ int flush_interfaces(void)
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_DYNALINK_DLWRX36)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MR5500)
-		snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth5", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MX5500)
-		snprintf(all_ifnames, 255, "%s %s %s", "vlan1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
+		snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_ASUS_AX89X)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else

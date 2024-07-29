@@ -1756,24 +1756,24 @@ void start_lan(void)
 			nvram_set("et0macaddr", get_hwaddr("eth4", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_LINKSYS_MR5500) {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "eth1 eth2 eth3 eth4 eth5 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("vlan1");
+			PORTSETUPWAN("eth5");
 		}
-		nvram_set("wan_default", "vlan1");
+		nvram_set("wan_default", "eth5");
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 	} else if (brand == ROUTER_LINKSYS_MX5500) {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 wlan0 wlan1");
+		nvram_setz(lan_ifnames, "eth1 eth2 eth3 eth4 eth5 wlan0 wlan1");
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			PORTSETUPWAN("");
 		} else {
-			PORTSETUPWAN("vlan1");
+			PORTSETUPWAN("eth1");
 		}
-		nvram_set("wan_default", "vlan1");
+		nvram_set("wan_default", "eth1");
 		if (nvram_match("et0macaddr", ""))
 			nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 		strcpy(mac, nvram_safe_get("et0macaddr"));
