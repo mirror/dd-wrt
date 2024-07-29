@@ -47,8 +47,8 @@ flash_erase_SOURCES = misc-utils/flash_erase.c
 flash_erase_LDADD = libmtd.a
 
 sbin_PROGRAMS += \
-	ftl_format doc_loadbios ftl_check mtd_debug docfdisk \
-	serve_image recv_image fectest flash_erase flash_lock \
+	ftl_format ftl_check \
+	flash_erase flash_lock \
 	flash_unlock flash_otp_info flash_otp_dump flash_otp_lock \
 	flash_otp_erase flash_otp_write flashcp mtdpart
 
