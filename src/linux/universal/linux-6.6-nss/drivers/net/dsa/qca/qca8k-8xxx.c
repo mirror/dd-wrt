@@ -1394,11 +1394,12 @@ static void qca8k_phylink_get_caps(struct dsa_switch *ds, int port,
 {
 	switch (port) {
 	case 0: /* 1st CPU port */
+		if (dsa_is_cpu_port(ds, port)) {
 		phy_interface_set_rgmii(config->supported_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_SGMII,
 			  config->supported_interfaces);
 		break;
-
+		}
 	case 1:
 	case 2:
 	case 3:
@@ -2169,6 +2170,7 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
 		return PTR_ERR(priv->reset_gpio);
 
 	if (priv->reset_gpio) {
+		gpiod_set_value_cansleep(priv->reset_gpio, 1);
 		/* The active low duration must be greater than 10 ms
 		 * and checkpatch.pl wants 20 ms.
 		 */

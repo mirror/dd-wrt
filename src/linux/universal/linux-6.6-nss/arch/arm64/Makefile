@@ -102,9 +102,9 @@ ifdef asm-arch
 KBUILD_CFLAGS	+= -Wa,-march=$(asm-arch) \
 		   -DARM64_ASM_ARCH='"$(asm-arch)"'
 
-#ifeq ($(CONFIG_ARCH_QCOM), y)
-#KBUILD_CFLAGS	+= -march=armv8-a+crypto -mcpu=cortex-a53+crypto -mtune=cortex-a53
-#endif
+ifeq ($(CONFIG_ARCH_QCOM), y)
+KBUILD_CFLAGS	+= -march=armv8-a+crypto -mcpu=cortex-a53+crypto -mtune=cortex-a53
+endif
 endif
 
 ifeq ($(CONFIG_SHADOW_CALL_STACK), y)
