@@ -1,6 +1,6 @@
 ubi-utils-configure: zlib
 	cd ubi-utils && ./autogen.sh
-	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux \
+	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux --without-tests \
 		CC="$(CC)" \
 		CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/lzo/include -L$(TOP)/lzo/src/.libs -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LZO_CFLAGS="$(LTO) -I$(TOP)/lzo/include" \
@@ -43,6 +43,13 @@ endif
 endif
 endif
 	$(MAKE) -C ubi-utils
+
+ubi-utils-clean:
+	$(MAKE) -C ubi-utils clean
+
+ubi-utils-install:
+	$(MAKE) -C ubi-utils install DESTDIR=$(INSTALLDIR)/ubi-utils
+	rm -rf $(INSTALLDIR)/ubi-utils/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -76,10 +83,3 @@ endif
 endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
-
-ubi-utils-clean:
-	$(MAKE) -C ubi-utils clean
-
-ubi-utils-install:
-	$(MAKE) -C ubi-utils install DESTDIR=$(INSTALLDIR)/ubi-utils
-	rm -rf $(INSTALLDIR)/ubi-utils/usr/share
