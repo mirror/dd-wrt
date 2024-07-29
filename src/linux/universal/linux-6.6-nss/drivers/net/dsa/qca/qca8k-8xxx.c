@@ -1546,10 +1546,10 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	/* Enable/disable SerDes auto-negotiation as necessary */
-//	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
-//		0 : QCA8K_PWS_SERDES_AEN_DIS;
+	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
+		0 : QCA8K_PWS_SERDES_AEN_DIS;
 
-	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, 0);
+	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
 	if (ret)
 		return ret;
 
