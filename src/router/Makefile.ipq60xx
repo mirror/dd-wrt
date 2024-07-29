@@ -20,7 +20,7 @@ endif
 #
 # Paths
 
-#CONFIG_NOOPT=y
+CONFIG_NOOPT=y
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
@@ -102,7 +102,7 @@ export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloa
 endif
 ifeq ($(ARCH),aarch64)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
-export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec
+export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -z max-page-size=4096 -Wl,-z,max-page-size=4096
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -163,8 +163,11 @@ include common.mk
 
 kernel:
 	# Also build kernel
+ifeq ($(CONFIG_KERNELDEBUG),y)
+	cp $(LINUXDIR)/.config_ipq6018.debug $(LINUXDIR)/.config
+else
 	cp $(LINUXDIR)/.config_ipq6018 $(LINUXDIR)/.config
-
+endif
 ifeq ($(CONFIG_AX89),y)
 	sed -i 's/\# CONFIG_MTD_UBI_GLUEBI is not set/CONFIG_MTD_UBI_GLUEBI=y/g' $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_MTD_SPLIT_FIRMWARE is not set/CONFIG_MTD_SPLIT_FIRMWARE=y/g' $(LINUXDIR)/.config
@@ -250,7 +253,15 @@ endif
 	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
 	export STRIP="sstrip" && \
 	export NO_RENAME=1 && \
+	export KEEP_SYMBOLS=1 && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
+
+#	export STRIP_KMOD="touch" && \
+#	export STRIP="sstrip" && \
+#	export NO_RENAME=1 && \
+#	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 
