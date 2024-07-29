@@ -44,23 +44,23 @@
 				<% tran("hstatus_hots.page18"); %>
 				<dt><% tran("hotspot.option"); %></dt>
 				<% tran("hstatus_hots.page19"); %>
-				<dt><% tran("hotspot.nocat_legend"); %></dt>
+				<dt><% tran("hotspot.nodog_legend"); %></dt>
 				<% tran("hstatus_hots.page20"); %>
-				<dt><% tran("hotspot.nocat_gateway"); %></dt>
+				<dt><% tran("hotspot.nodog_gateway"); %></dt>
 				<% tran("hstatus_hots.page21"); %>
-				<dt><% tran("hotspot.nocat_home"); %></dt>
+				<dt><% tran("hotspot.nodog_home"); %></dt>
 				<% tran("hstatus_hots.page22"); %>
-				<dt><% tran("hotspot.nocat_redirect"); %></dt>
+				<dt><% tran("hotspot.nodog_redirect"); %></dt>
 				<% tran("hstatus_hots.page23"); %>
 				<dt><% tran("hotspot.nocat_allowweb"); %></dt>
 				<% tran("hstatus_hots.page24"); %>
-				<dt><% tran("hotspot.nocat_docroot"); %></dt>
+				<dt><% tran("hotspot.nodog_docroot"); %></dt>
 				<% tran("hstatus_hots.page25"); %>
 				<dt><% tran("hotspot.nocat_splash"); %></dt>
 				<% tran("hstatus_hots.page26"); %>
-				<dt><% tran("hotspot.nocat_port"); %></dt>
+				<dt><% tran("hotspot.nodog_port"); %></dt>
 				<% tran("hstatus_hots.page27"); %>
-				<dt><% tran("hotspot.nocat_timeout"); %></dt>
+				<dt><% tran("hotspot.nodog_timeout"); %></dt>
 				<% tran("hstatus_hots.page28"); %>
 				<dt><% tran("hotspot.nocat_verbose"); %></dt>
 				<% tran("hstatus_hots.page29"); %>
