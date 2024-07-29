@@ -553,7 +553,7 @@ rewrite:;
 	if (mtddev > 0) {
 		char devdev[32];
 		sprintf(devdev, "/dev/mtd%d", mtddev);
-		eval("ubidetach", "-p", devdev);
+		eval("ubidetach", "-p", devdev, "-f");
 	}
 #endif
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
