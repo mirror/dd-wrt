@@ -872,10 +872,6 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-#if 0
-		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", "eth0", "1");
-		eval("vconfig", "add", "eth0", "2");
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
@@ -889,8 +885,7 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,5", "6", "5", "default", "default", "default");
-		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,1,2,3,4", "6", "1,2,3,4", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default", "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -899,12 +894,12 @@ void start_sysinit(void)
 		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
 
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "1");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "1");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
 		eval("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
 		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
@@ -925,9 +920,9 @@ void start_sysinit(void)
 		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
 
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
+		eval("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
 		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "replace");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
 
 		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
@@ -948,16 +943,13 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-#endif
+		insmod("qca8k");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-#if 0
-		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", "eth0", "1");
-		eval("vconfig", "add", "eth0", "2");
 		/* setup vlan config */
+
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
@@ -970,8 +962,7 @@ void start_sysinit(void)
 
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,2", "6", "2", "default", "default", "default");
-		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,3,4,5", "6", "3,4,5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
@@ -979,11 +970,11 @@ void start_sysinit(void)
 		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
 
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "1");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "2");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "1");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
 
 		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
 		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
@@ -1003,7 +994,7 @@ void start_sysinit(void)
 
 		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
 		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "replace");
+		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
 
 		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
@@ -1022,7 +1013,8 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-#endif
+		insmod("qca8k");
+
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
