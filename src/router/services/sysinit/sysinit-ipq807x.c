@@ -873,6 +873,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		/* setup vlan config */
+		insmod("qca8k");
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
@@ -885,7 +886,7 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "1", "1", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default", "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -932,23 +933,23 @@ void start_sysinit(void)
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 
 		/*drop invalid tcp*/
-		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-		insmod("qca8k");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		/* setup vlan config */
+		insmod("qca8k");
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
@@ -962,7 +963,7 @@ void start_sysinit(void)
 
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "2", "2", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
@@ -1002,18 +1003,17 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "poweron", "set", "2");
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 		/*drop invalid tcp*/
-		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
-		insmod("qca8k");
 
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
