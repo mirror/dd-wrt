@@ -81,8 +81,7 @@ int main(int argc, char **argv)
 			printf("Receive to MTD device %s with erasesize %d\n",
 			       argv[3], meminfo.erasesize);
 		}
-	}
-	if (flfd == -1) {
+	} else {
 		/* Try again, as if it's a file */
 		flfd = open(argv[3], O_CREAT|O_TRUNC|O_RDWR, 0644);
 		if (flfd < 0) {

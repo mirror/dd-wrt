@@ -25,8 +25,8 @@
 
 #include <ctype.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <mtd/ubi-user.h>
-#include <mtd/ubi-media.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +37,9 @@ extern "C" {
 
 /* Maximum physical eraseblock size in bytes */
 #define UBI_MAX_PEB_SZ (2*1024*1024)
+
+/* The maximum volume name length (from Linux's ubi-media.h) */
+#define UBI_VOL_NAME_MAX 127
 
 /* UBI library descriptor */
 typedef void * libubi_t;
@@ -51,6 +54,8 @@ typedef void * libubi_t;
  * @vid_hdr_offset: VID header offset (%0 means default offset and this is what
  *                  most of the users want)
  * @max_beb_per1024: Maximum expected bad eraseblocks per 1024 eraseblocks
+ * @disable_fm: whether disable fastmap
+ * @need_resv_pool: whether reserve free pebs for filling pool/wl_pool
  */
 struct ubi_attach_request
 {
@@ -59,6 +64,8 @@ struct ubi_attach_request
 	const char *mtd_dev_node;
 	int vid_hdr_offset;
 	int max_beb_per1024;
+	bool disable_fm;
+	bool need_resv_pool;
 };
 
 /**

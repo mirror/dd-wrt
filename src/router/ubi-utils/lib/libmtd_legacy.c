@@ -221,17 +221,20 @@ int legacy_get_mtd_oobavail(const char *node)
 	struct nand_ecclayout_user usrlay;
 	int fd, ret;
 
-	if (stat(node, &st))
-		return sys_errmsg("cannot open \"%s\"", node);
-
-	if (!S_ISCHR(st.st_mode)) {
-		errno = EINVAL;
-		return errmsg("\"%s\" is not a character device", node);
-	}
-
 	fd = open(node, O_RDONLY);
 	if (fd == -1)
 		return sys_errmsg("cannot open \"%s\"", node);
+
+	if (fstat(fd, &st)) {
+		ret = sys_errmsg("cannot open \"%s\"", node);
+		goto out_close;
+	}
+
+	if (!S_ISCHR(st.st_mode)) {
+		errno = EINVAL;
+		ret = errmsg("\"%s\" is not a character device", node);
+		goto out_close;
+	}
 
 	ret = ioctl(fd, ECCGETLAYOUT, &usrlay);
 	if (ret < 0) {
@@ -273,15 +276,24 @@ int legacy_get_dev_info(const char *node, struct mtd_dev_info *mtd)
 	loff_t offs = 0;
 	struct proc_parse_info pi;
 
-	if (stat(node, &st)) {
+	fd = open(node, O_RDONLY);
+	if (fd == -1) {
 		sys_errmsg("cannot open \"%s\"", node);
 		if (errno == ENOENT)
 			normsg("MTD subsystem is old and does not support "
 			       "sysfs, so MTD character device nodes have "
 			       "to exist");
+		return -1;
+	}
+
+	if (fstat(fd, &st)) {
+		sys_errmsg("cannot stat \"%s\"", node);
+		close(fd);
+		return -1;
 	}
 
 	if (!S_ISCHR(st.st_mode)) {
+		close(fd);
 		errno = EINVAL;
 		return errmsg("\"%s\" is not a character device", node);
 	}
@@ -291,16 +303,13 @@ int legacy_get_dev_info(const char *node, struct mtd_dev_info *mtd)
 	mtd->minor = minor(st.st_rdev);
 
 	if (mtd->major != MTD_DEV_MAJOR) {
+		close(fd);
 		errno = EINVAL;
 		return errmsg("\"%s\" has major number %d, MTD devices have "
 			      "major %d", node, mtd->major, MTD_DEV_MAJOR);
 	}
 
 	mtd->mtd_num = mtd->minor / 2;
-
-	fd = open(node, O_RDONLY);
-	if (fd == -1)
-		return sys_errmsg("cannot open \"%s\"", node);
 
 	if (ioctl(fd, MEMGETINFO, &ui)) {
 		sys_errmsg("MEMGETINFO ioctl request failed");
@@ -418,4 +427,42 @@ int legacy_get_dev_info1(int mtd_num, struct mtd_dev_info *mtd)
 
 	sprintf(node, MTD_DEV_PATT, mtd_num);
 	return legacy_get_dev_info(node, mtd);
+}
+
+/**
+ * legacy_get_dev_info2 - legacy version of `mtd_get_dev_info2()`
+ * @name: name of the MTD device
+ * @mtd: the MTD device information is returned here
+ *
+ * This function is similar to 'mtd_get_dev_info2()' and has the same
+ * conventions.
+ */
+int legacy_get_dev_info2(const char *name, struct mtd_dev_info *mtd)
+{
+	struct proc_parse_info pi;
+	int ret, mtd_num = -1;
+
+	ret = proc_parse_start(&pi);
+	if (ret)
+		return -1;
+
+	while (proc_parse_next(&pi)) {
+		if (!strcmp(name, pi.name)) {
+			// Device name collision
+			if (mtd_num >= 0) {
+				errmsg("Multiple MTD's found matching name %s", name);
+				errno = ENODEV;
+				return -1;
+			}
+
+			mtd_num = pi.mtd_num;
+		}
+	}
+
+	if (mtd_num < 0) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	return legacy_get_dev_info1(mtd_num, mtd);
 }

@@ -376,7 +376,7 @@ static int read_section(const struct ubigen_info *ui, const char *sname,
 	if (vi->alignment == -1)
 		vi->alignment = 1;
 	else if (vi->id < 0)
-		return errmsg("negative volume alignement %d in section \"%s\"",
+		return errmsg("negative volume alignment %d in section \"%s\"",
 			      vi->alignment, sname);
 
 	verbose(args.verbose, "volume alignment: %d", vi->alignment);

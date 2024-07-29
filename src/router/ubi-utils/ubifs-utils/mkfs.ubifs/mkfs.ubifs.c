@@ -26,7 +26,7 @@
 #include <crc32.h>
 #include "common.h"
 #include <sys/types.h>
-#ifndef WITHOUT_XATTR
+#ifdef WITH_XATTR
 #include <sys/xattr.h>
 #endif
 
@@ -35,7 +35,7 @@
 #include <selinux/label.h>
 #endif
 
-#ifndef WITHOUT_ZSTD
+#ifdef WITH_ZSTD
 #include <zstd.h>
 #endif
 
@@ -56,7 +56,6 @@
 #ifdef WITH_SELINUX
 #define XATTR_NAME_SELINUX "security.selinux"
 static struct selabel_handle *sehnd;
-static char *secontext;
 #endif
 
 /**
@@ -210,9 +209,9 @@ static const char *helptext =
 "Usage: mkfs.ubifs [OPTIONS] target\n"
 "Make a UBIFS file system image from an existing directory tree\n\n"
 "Examples:\n"
-"Build file system from directory /opt/img, writting the result in the ubifs.img file\n"
+"Build file system from directory /opt/img, writing the result in the ubifs.img file\n"
 "\tmkfs.ubifs -m 512 -e 128KiB -c 100 -r /opt/img ubifs.img\n"
-"The same, but writting directly to an UBI volume\n"
+"The same, but writing directly to an UBI volume\n"
 "\tmkfs.ubifs -r /opt/img /dev/ubi0_0\n"
 "Creating an empty UBIFS filesystem on an UBI volume\n"
 "\tmkfs.ubifs /dev/ubi0_0\n\n"
@@ -540,10 +539,12 @@ static void select_default_compr(void)
 		return;
 	}
 
-#ifdef WITHOUT_LZO
+#ifdef WITH_LZO
+	c->default_compr = UBIFS_COMPR_LZO;
+#elif defined(WITH_ZLIB)
 	c->default_compr = UBIFS_COMPR_ZLIB;
 #else
-	c->default_compr = UBIFS_COMPR_LZO;
+	c->default_compr = UBIFS_COMPR_NONE;
 #endif
 }
 
@@ -580,6 +581,7 @@ static int get_options(int argc, char**argv)
 		switch (opt) {
 		case 'r':
 		case 'd':
+			free(root);
 			root_len = strlen(optarg);
 			root = xmalloc(root_len + 2);
 
@@ -681,26 +683,30 @@ static int get_options(int argc, char**argv)
 		case 'x':
 			if (strcmp(optarg, "none") == 0)
 				c->default_compr = UBIFS_COMPR_NONE;
+#ifdef WITH_ZLIB
 			else if (strcmp(optarg, "zlib") == 0)
 				c->default_compr = UBIFS_COMPR_ZLIB;
-#ifndef WITHOUT_ZSTD
+#endif
+#ifdef WITH_ZSTD
 			else if (strcmp(optarg, "zstd") == 0)
 				c->default_compr = UBIFS_COMPR_ZSTD;
 #endif
-#ifndef WITHOUT_LZO
+#ifdef WITH_LZO
+			else if (strcmp(optarg, "lzo") == 0)
+				c->default_compr = UBIFS_COMPR_LZO;
+#endif
+#if defined(WITH_LZO) && defined(WITH_ZLIB)
 			else if (strcmp(optarg, "favor_lzo") == 0) {
 				c->default_compr = UBIFS_COMPR_LZO;
 				c->favor_lzo = 1;
-			} else if (strcmp(optarg, "lzo") == 0) {
-				c->default_compr = UBIFS_COMPR_LZO;
 			}
 #endif
 			else
 				return err_msg("bad compressor name");
 			break;
 		case 'X':
-#ifdef WITHOUT_LZO
-			return err_msg("built without LZO support");
+#if !defined(WITH_LZO) && !defined(WITH_ZLIB)
+			return err_msg("built without LZO or ZLIB support");
 #else
 			c->favor_percent = strtol(optarg, &endp, 0);
 			if (*endp != '\0' || endp == optarg ||
@@ -726,11 +732,13 @@ static int get_options(int argc, char**argv)
 			do_create_inum_attr = 1;
 			break;
 		case 's':
+			free(context);
 			context_len = strlen(optarg);
 			context = (char *) xmalloc(context_len + 1);
 			if (!context)
 				return err_msg("xmalloc failed\n");
 			memcpy(context, optarg, context_len);
+			context[context_len] = '\0';
 
 			/* Make sure root directory exists */
 			if (stat(context, &context_st))
@@ -791,15 +799,14 @@ static int get_options(int argc, char**argv)
 		case AUTH_CERT_OPTION:
 			c->auth_cert_filename = xstrdup(optarg);
 			break;
-		}
 #else
 		case 'C':
 		case HASH_ALGO_OPTION:
 		case AUTH_KEY_OPTION:
-//		case X509_OPTION:
+		case AUTH_CERT_OPTION:
 			return err_msg("mkfs.ubifs was built without crypto support.");
-		}
 #endif
+		}
 	}
 
 	if (optind != argc && !output)
@@ -1287,7 +1294,7 @@ out:
 	return ret;
 }
 
-#ifdef WITHOUT_XATTR
+#ifndef WITH_XATTR
 static inline int create_inum_attr(ino_t inum, const char *name)
 {
 	(void)inum;
@@ -1387,6 +1394,15 @@ static int inode_add_xattr(struct ubifs_ino_node *host_ino,
 			continue;
 		}
 
+#ifdef WITH_SELINUX
+		/*
+		  Ignore selinux attributes if we have a label file, they are
+		  instead provided by inode_add_selinux_xattr.
+		 */
+		if (!strcmp(name, XATTR_NAME_SELINUX) && context && sehnd)
+			continue;
+#endif
+
 		ret = add_xattr(host_ino, st, inum, name, attrbuf, attrsize);
 		if (ret < 0)
 			goto out_free;
@@ -1410,14 +1426,11 @@ static int inode_add_selinux_xattr(struct ubifs_ino_node *host_ino,
 	int ret;
 	char *sepath = NULL;
 	char *name;
-	struct qstr nm;
 	unsigned int con_size;
+	char *secontext;
 
-	if (!context || !sehnd) {
-		secontext = NULL;
-		con_size = 0;
+	if (!context || !sehnd)
 		return 0;
-	}
 
 	if (path_name[strlen(root)] == '/')
 		sepath = strdup(&path_name[strlen(root)]);
@@ -1441,14 +1454,7 @@ static int inode_add_selinux_xattr(struct ubifs_ino_node *host_ino,
 	con_size = strlen(secontext) + 1;
 	name = strdup(XATTR_NAME_SELINUX);
 
-	nm.name = name;
-	nm.len = strlen(name);
-	host_ino->xattr_cnt++;
-	host_ino->xattr_size += CALC_DENT_SIZE(nm.len);
-	host_ino->xattr_size += CALC_XATTR_BYTES(con_size);
-	host_ino->xattr_names += nm.len;
-
-	ret = add_xattr(st, inum, secontext, con_size, &nm);
+	ret = add_xattr(host_ino, st, inum, name, secontext, con_size);
 	if (ret < 0)
 		dbg_msg(2, "add_xattr failed %d\n", ret);
 	return ret;
@@ -1601,11 +1607,11 @@ static int add_inode(struct stat *st, ino_t inum, void *data,
 	len = UBIFS_INO_NODE_SZ + data_len;
 
 	if (xattr_path) {
-#ifdef WITH_SELINUX
 		ret = inode_add_selinux_xattr(ino, xattr_path, st, inum);
-#else
+		if (ret < 0)
+			return ret;
+
 		ret = inode_add_xattr(ino, xattr_path, st, inum);
-#endif
 		if (ret < 0)
 			return ret;
 	}
@@ -1858,10 +1864,12 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
 		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
 		if (c->default_compr == UBIFS_COMPR_NONE &&
 		    !c->encrypted && (flags & FS_COMPR_FL))
-#ifdef WITHOUT_LZO
+#ifdef WITH_LZO
+			use_compr = UBIFS_COMPR_LZO;
+#elif defined(WITH_ZLIB)
 			use_compr = UBIFS_COMPR_ZLIB;
 #else
-			use_compr = UBIFS_COMPR_LZO;
+			use_compr = UBIFS_COMPR_NONE;
 #endif
 		else
 			use_compr = c->default_compr;
@@ -1874,8 +1882,10 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
 			dn->compr_size = 0;
 		} else {
 			ret = encrypt_data_node(fctx, block_no, dn, out_len);
-			if (ret < 0)
+			if (ret < 0) {
+				close(fd);
 				return ret;
+			}
 			out_len = ret;
 		}
 
@@ -2010,7 +2020,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 	unsigned int nlink = 2;
 	struct path_htbl_element *ph_elt;
 	struct name_htbl_element *nh_elt = NULL;
-	struct hashtable_itr *itr;
+	struct hashtable_itr *itr = NULL;
 	ino_t inum;
 	unsigned char type;
 	unsigned long long dir_creat_sqnum = ++c->max_sqnum;
@@ -2044,8 +2054,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 			if (errno == 0)
 				break;
 			sys_err_msg("error reading directory '%s'", dir_name);
-			err = -1;
-			break;
+			goto out_free;
 		}
 
 		if (strcmp(".", entry->d_name) == 0)
@@ -2097,24 +2106,32 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 
 		if (S_ISDIR(dent_st.st_mode)) {
 			err = add_directory(name, inum, &dent_st, 1, new_fctx);
-			if (err)
+			if (err) {
+				free_fscrypt_context(new_fctx);
 				goto out_free;
+			}
 			nlink += 1;
 			type = UBIFS_ITYPE_DIR;
 		} else {
 			err = add_non_dir(name, &inum, 0, &type,
 					  &dent_st, new_fctx);
-			if (err)
+			if (err) {
+				free_fscrypt_context(new_fctx);
 				goto out_free;
+			}
 		}
 
 		err = create_inum_attr(inum, name);
-		if (err)
+		if (err) {
+			free_fscrypt_context(new_fctx);
 			goto out_free;
+		}
 
 		err = add_dent_node(dir_inum, entry->d_name, inum, type, fctx);
-		if (err)
+		if (err) {
+			free_fscrypt_context(new_fctx);
 			goto out_free;
+		}
 		size += ALIGN(UBIFS_DENT_NODE_SZ + strlen(entry->d_name) + 1,
 			      8);
 
@@ -2160,24 +2177,33 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 
 		if (S_ISDIR(nh_elt->mode)) {
 			err = add_directory(name, inum, &fake_st, 0, new_fctx);
-			if (err)
+			if (err) {
+				free_fscrypt_context(new_fctx);
 				goto out_free;
+			}
 			nlink += 1;
 			type = UBIFS_ITYPE_DIR;
 		} else {
 			err = add_non_dir(name, &inum, 0, &type,
 					  &fake_st, new_fctx);
-			if (err)
+			if (err) {
+				free_fscrypt_context(new_fctx);
 				goto out_free;
+			}
 		}
 
 		err = create_inum_attr(inum, name);
-		if (err)
+		if (err) {
+			free_fscrypt_context(new_fctx);
 			goto out_free;
+		}
 
 		err = add_dent_node(dir_inum, nh_elt->name, inum, type, fctx);
-		if (err)
+		if (err) {
+			free_fscrypt_context(new_fctx);
 			goto out_free;
+		}
+
 		size += ALIGN(UBIFS_DENT_NODE_SZ + strlen(nh_elt->name) + 1, 8);
 
 		nh_elt = next_name_htbl_element(ph_elt, &itr);
@@ -2199,6 +2225,7 @@ static int add_directory(const char *dir_name, ino_t dir_inum, struct stat *st,
 	return 0;
 
 out_free:
+	free(itr);
 	free(name);
 	if (existing)
 		closedir(dir);

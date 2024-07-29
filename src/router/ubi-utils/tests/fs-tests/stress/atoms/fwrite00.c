@@ -138,7 +138,9 @@ static void filestress00(void)
 			deleted = 1;
 		}
 	}
-	CHECK(close(fd) != -1);
+	if (fd > 0) {
+		CHECK(close(fd) != -1);
+	}
 	/* Sleep */
 	if (tests_sleep_parameter > 0) {
 		unsigned us = tests_sleep_parameter * 1000;

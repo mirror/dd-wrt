@@ -233,7 +233,7 @@ static int test_read2(const struct ubi_vol_info *vol_info, int len)
 			continue;
 
 		if (test_read3(vol_info, len, offsets[i])) {
-			errorm("offset = %d", offsets[i]);
+			errorm("offset = %ld", offsets[i]);
 			return -1;
 		}
 	}

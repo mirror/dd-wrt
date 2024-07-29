@@ -144,10 +144,14 @@ static void process_options(int argc, char **argv)
 		}
 	}
 
-	if (optind < argc)
-		mtddev = argv[optind++];
-	else
+	if (optind < argc) {
+		mtddev = mtd_find_dev_node(argv[optind]);
+		if (!mtddev)
+			errmsg_die("Can't find MTD device %s", argv[optind]);
+		optind++;
+	} else {
 		errmsg_die("No device specified!\n");
+	}
 
 	if (optind < argc)
 		usage(EXIT_FAILURE);

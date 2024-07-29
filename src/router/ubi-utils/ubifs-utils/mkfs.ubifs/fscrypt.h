@@ -131,7 +131,7 @@ static inline void free_fscrypt_context(struct fscrypt_context *fctx)
 {
 	(void)fctx;
 
-	assert(0);
+	assert(!fctx);
 }
 
 static inline int encrypt_path(void **outbuf, void *data, unsigned int data_len,
@@ -163,7 +163,7 @@ static inline struct fscrypt_context *inherit_fscrypt_context(struct fscrypt_con
 {
 	(void)fctx;
 
-	assert(0);
+	assert(!fctx);
 	return NULL;
 }
 #endif /* WITH_CRYPTO */

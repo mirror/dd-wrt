@@ -256,11 +256,9 @@ int main(int argc, char *argv[])
 	if (!rfd.sector_map) {
 		perror(PROGRAM_NAME);
 		close(fd);
-		free(rfd.sector_map);
+		free(rfd.header);
 		return 2;
 	}
-
-	rfd.mtd_filename = rfd.mtd_filename;
 
 	for (i=0; i<rfd.sector_count; i++)
 		rfd.sector_map[i] = -1;
@@ -324,7 +322,7 @@ int main(int argc, char *argv[])
 	return 0;
 
 err:
-	if (out_fd)
+	if (out_fd > 0)
 		close(out_fd);
 
 	close(fd);

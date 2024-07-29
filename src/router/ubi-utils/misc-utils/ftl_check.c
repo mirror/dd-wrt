@@ -75,7 +75,7 @@ static void check_partition(int fd)
 	erase_unit_header_t hdr, hdr2;
 	off_t i;
 	u_int j, nbam, *bam;
-	int control, data, free, deleted;
+	int control, data, blk_free, deleted;
 
 	/* Get partition size, block size */
 	if (ioctl(fd, MEMGETINFO, &mtd) != 0) {
@@ -150,10 +150,10 @@ static void check_partition(int fd)
 				perror("read failed");
 				break;
 			}
-			free = deleted = control = data = 0;
+			blk_free = deleted = control = data = 0;
 			for (j = 0; j < nbam; j++) {
 				if (BLOCK_FREE(le32_to_cpu(bam[j])))
-					free++;
+					blk_free++;
 				else if (BLOCK_DELETED(le32_to_cpu(bam[j])))
 					deleted++;
 				else switch (BLOCK_TYPE(le32_to_cpu(bam[j]))) {
@@ -163,9 +163,11 @@ static void check_partition(int fd)
 				}
 			}
 			printf("  Block allocation: %d control, %d data, %d free,"
-					" %d deleted\n", control, data, free, deleted);
+					" %d deleted\n", control, data, blk_free, deleted);
 		}
 	}
+
+	free(bam);
 } /* format_partition */
 
 /* Show usage information */
@@ -204,18 +206,20 @@ int main(int argc, char *argv[])
 		exit(errflg > 0 ? 0 : EXIT_FAILURE);
 	}
 
-	if (stat(argv[optind], &buf) != 0) {
+	fd = open(argv[optind], O_RDONLY);
+	if (fd == -1) {
+		perror("open failed");
+		exit(EXIT_FAILURE);
+	}
+	if (fstat(fd, &buf) != 0) {
 		perror("status check failed");
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	if (!(buf.st_mode & S_IFCHR)) {
 		fprintf(stderr, "%s is not a character special device\n",
 				argv[optind]);
-		exit(EXIT_FAILURE);
-	}
-	fd = open(argv[optind], O_RDONLY);
-	if (fd == -1) {
-		perror("open failed");
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 

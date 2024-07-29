@@ -30,6 +30,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <mtd/mtd-user.h>
+#include <mtd/ubi-media.h>
 
 #include <libubigen.h>
 #include <libmtd.h>
@@ -54,7 +55,7 @@ static void display_help(void)
 	printf(
 		"%1$s version %2$s - a tool to print MTD information.\n"
 		"\n"
-		"Usage: %1$s <MTD node file path> [--map | -M] [--ubi-info | -u]\n"
+		"Usage: %1$s <mtd device> [--map | -M] [--ubi-info | -u]\n"
 		"       %1$s --all [--ubi-info | -u]\n"
 		"       %1$s [--help | --version]\n"
 		"\n"
@@ -67,6 +68,8 @@ static void display_help(void)
 		"                                than, e.g., `mtdinfo /dev/mtdX'\n"
 		"-h, --help                      print help message\n"
 		"-V, --version                   print program version\n"
+		"\n"
+		"<mtd device>  MTD device node or 'mtd:<name>'\n"
 		"\n"
 		"Examples:\n"
 		"  %1$s /dev/mtd0             print information MTD device /dev/mtd0\n"
@@ -124,10 +127,13 @@ static int parse_opt(int argc, char * const argv[])
 		}
 	}
 
-	if (optind == argc - 1)
-		args.node = argv[optind];
-	else if (optind < argc)
+	if (optind == argc - 1) {
+		args.node = mtd_find_dev_node(argv[optind]);
+		if (!args.node)
+			return errmsg("Failed to find MTD device %s", argv[optind]);
+	} else if (optind < argc) {
 		return errmsg("more then one MTD device specified (use -h for help)");
+	}
 
 	if (args.all && args.node)
 		args.node = NULL;
@@ -161,7 +167,7 @@ static void print_ubi_info(const struct mtd_info *mtd_info,
 	struct ubigen_info ui;
 
 	if (!mtd_info->sysfs_supported) {
-		errmsg("cannot provide UBI info, becasue sub-page size is "
+		errmsg("cannot provide UBI info, because sub-page size is "
 		       "not known");
 		return;
 	}

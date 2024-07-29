@@ -126,6 +126,13 @@ int main(int argc, char * const argv[])
 
 		rnvol.ents[count].vol_id = err;
 		rnvol.ents[count].name_len = strlen(argv[i + 1]);
+
+		if (rnvol.ents[count].name_len >=
+		    sizeof(rnvol.ents[count].name)) {
+			errmsg("\"%s\" volume name too long", argv[i + 1]);
+			goto out_libubi;
+		}
+
 		strcpy(rnvol.ents[count++].name, argv[i + 1]);
 	}
 

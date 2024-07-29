@@ -162,7 +162,7 @@ int scan_ubi(libubi_t lib_ubi)
 		}
 
 		if (j == num_mtd_devices) {
-			fprintf(stderr, "Cannot find mtd device %d refered to "
+			fprintf(stderr, "Cannot find mtd device %d referred to "
 				"by ubi device %d\n", dev_info.mtd_num,
 				dev_info.dev_num);
 			return -1;

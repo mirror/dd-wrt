@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -144,6 +145,26 @@ static int erase_and_write(loff_t ofs, unsigned char *data, unsigned char *rbuf,
 	return 0;
 }
 
+static uint64_t get_mem_size(const char* device)
+{
+	const char* p = strrchr(device, '/');
+	char path[PATH_MAX];
+	int fd;
+
+	snprintf(path, sizeof(path), "/sys/class/mtd/%s/size", p);
+	fd = open(path, O_RDONLY);
+	if (fd >= 0) {
+		char buffer[32];
+		ssize_t n = read(fd, buffer, sizeof(buffer));
+		close(fd);
+		if (n > 0) {
+			return strtoull(buffer, NULL, 0);
+		}
+	}
+
+	fprintf(stderr, "Can't read size from %s\n", path);
+	exit(1);
+}
 
 /*
  * Main program
@@ -156,8 +177,9 @@ int main(int argc, char **argv)
 	int nr_passes = 1;
 	int nr_reads = 4;
 	int keep_contents = 0;
-	uint32_t offset = 0;
-	uint32_t length = -1;
+	uint64_t offset = 0;
+	uint64_t length = -1;
+	uint64_t mem_size = 0;
 	int error = 0;
 
 	seed = time(NULL);
@@ -212,11 +234,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'o':
-			offset = simple_strtoul(optarg, &error);
+			offset = simple_strtoull(optarg, &error);
 			break;
 
 		case 'l':
-			length = simple_strtoul(optarg, &error);
+			length = simple_strtoull(optarg, &error);
 			break;
 
 		}
@@ -238,29 +260,34 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	mem_size = get_mem_size(argv[optind]);
+
 	if (length == -1)
-		length = meminfo.size;
+		length = mem_size;
 
 	if (offset % meminfo.erasesize) {
-		fprintf(stderr, "Offset %x not multiple of erase size %x\n",
+		fprintf(stderr, "Offset %" PRIx64
+			" not multiple of erase size %x\n",
 			offset, meminfo.erasesize);
 		exit(1);
 	}
 	if (length % meminfo.erasesize) {
-		fprintf(stderr, "Length %x not multiple of erase size %x\n",
+		fprintf(stderr, "Length %" PRIx64
+			" not multiple of erase size %x\n",
 			length, meminfo.erasesize);
 		exit(1);
 	}
-	if (length + offset > meminfo.size) {
-		fprintf(stderr, "Length %x + offset %x exceeds device size %x\n",
-			length, offset, meminfo.size);
+	if (length + offset > mem_size) {
+		fprintf(stderr, "Length %" PRIx64 " + offset %" PRIx64
+			" exceeds device size %" PRIx64 "\n",
+			length, offset, mem_size);
 		exit(1);
 	}
 
 	wbuf = malloc(meminfo.erasesize * 3);
 	if (!wbuf) {
 		fprintf(stderr, "Could not allocate %d bytes for buffer\n",
-			meminfo.erasesize * 2);
+			meminfo.erasesize * 3);
 		exit(1);
 	}
 	rbuf = wbuf + meminfo.erasesize;

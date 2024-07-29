@@ -112,12 +112,12 @@ static int flash_to_file(int fd, off_t offset, size_t len, const char *filename)
 
 	if (offset != lseek(fd, offset, SEEK_SET)) {
 		perror("lseek()");
-		goto err0;
+		return 1;
 	}
 	outfd = creat(filename, 0666);
 	if (outfd < 0) {
 		perror("creat()");
-		goto err1;
+		return 1;
 	}
 
 retry:
@@ -130,7 +130,7 @@ retry:
 			goto retry;
 		}
 		perror("malloc()");
-		goto err0;
+		goto fail;
 	}
 	do {
 		if (n <= size)
@@ -139,7 +139,7 @@ retry:
 		if (err < 0) {
 			fprintf(stderr, "%s: read, size %#x, n %#x\n", __func__, size, n);
 			perror("read()");
-			goto err2;
+			goto fail;
 		}
 		if (err < size) {
 			fprintf(stderr, "%s: short read, requested %#x, read %#x\n", __func__, size, err);
@@ -148,11 +148,11 @@ retry:
 		if (err < 0) {
 			fprintf(stderr, "%s: write, size %#x, n %#x\n", __func__, size, n);
 			perror("write()");
-			goto err2;
+			goto fail;
 		}
 		if (err != size) {
 			fprintf(stderr, "Couldn't copy entire buffer to %s. (%d/%d bytes copied)\n", filename, err, size);
-			goto err2;
+			goto fail;
 		}
 		n -= size;
 	} while (n > 0);
@@ -162,13 +162,9 @@ retry:
 	close(outfd);
 	printf("Copied %zu bytes from address 0x%.8llx in flash to %s\n", len, (unsigned long long)offset, filename);
 	return 0;
-
-err2:
+fail:
 	close(outfd);
-err1:
-	if (buf != NULL)
-		free(buf);
-err0:
+	free(buf);
 	return 1;
 }
 
@@ -352,6 +348,7 @@ int main(int argc, char *argv[])
 {
 	int err = 0, fd;
 	int open_flag;
+	char *dev;
 
 	enum {
 		OPT_INFO,
@@ -373,8 +370,12 @@ int main(int argc, char *argv[])
 		showusage();
 
 	/* open device */
+	dev = mtd_find_dev_node(argv[2]);
+	if (!dev)
+		errmsg_die("Failed to find MTD device %s", argv[2]);
+
 	open_flag = (option == OPT_INFO || option == OPT_READ) ? O_RDONLY : O_RDWR;
-	if ((fd = open(argv[2], O_SYNC | open_flag)) < 0)
+	if ((fd = open(dev, O_SYNC | open_flag)) < 0)
 		errmsg_die("open()");
 
 	switch (option) {

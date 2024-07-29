@@ -7,8 +7,11 @@ flash_stress_LDADD = libmtd.a
 flash_stress_CPPFLAGS = $(AM_CPPFLAGS)
 
 flash_speed_SOURCES = tests/mtd-tests/flash_speed.c
-flash_speed_LDADD = libmtd.a
+flash_speed_LDADD = libmtd.a $(PTHREAD_LIBS)
 flash_speed_CPPFLAGS = $(AM_CPPFLAGS)
+
+flash_speed_LDADD += $(PTHREAD_CFLAGS)
+flash_speed_CPPFLAGS += $(PTHREAD_CFLAGS)
 
 nandbiterrs_SOURCES = tests/mtd-tests/nandbiterrs.c
 nandbiterrs_LDADD = libmtd.a
@@ -26,12 +29,6 @@ nandsubpagetest_SOURCES = tests/mtd-tests/nandsubpagetest.c
 nandsubpagetest_LDADD = libmtd.a
 nandsubpagetest_CPPFLAGS = $(AM_CPPFLAGS)
 
-MTDTEST_BINS = \
+test_PROGRAMS += \
 	flash_torture flash_stress flash_speed nandbiterrs flash_readtest \
 	nandpagetest nandsubpagetest
-
-if INSTALL_TESTS
-pkglibexec_PROGRAMS += $(MTDTEST_BINS)
-else
-noinst_PROGRAMS += $(MTDTEST_BINS)
-endif

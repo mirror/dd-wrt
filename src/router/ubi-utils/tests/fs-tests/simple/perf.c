@@ -151,6 +151,7 @@ static void perf(void)
 	printf("Write speed (KiB/s): %u\n", speed(actual_size, write_time));
 	printf("Read speed (KiB/s): %u\n", speed(actual_size, read_time));
 	printf("Test completed\n");
+	free(buf);
 }
 
 /* Title of this test */

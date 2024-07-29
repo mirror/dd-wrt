@@ -388,7 +388,8 @@ int init_authentication(void)
 	if (!c->hash_algo_name)
 		return err_msg("Hash algorithm not given (--hash-algo)");
 
-	OPENSSL_no_config();
+	OPENSSL_config(NULL);
+
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
 

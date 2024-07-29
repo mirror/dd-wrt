@@ -21,7 +21,7 @@ int main(void)
 	unsigned char buf[NR_PKTS * PKT_SIZE];
 	unsigned char pktbuf[(NR_PKTS + DROPS) * PKT_SIZE];
 	struct fec_parms *fec;
-	unsigned char *srcs[NR_PKTS];
+	unsigned char *srcs[NR_PKTS + DROPS];
 	unsigned char *pkt[NR_PKTS + DROPS];
 	int pktnr[NR_PKTS + DROPS];
 	struct timeval then, now;

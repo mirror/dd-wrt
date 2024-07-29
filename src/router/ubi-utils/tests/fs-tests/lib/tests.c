@@ -35,7 +35,6 @@
 #include <sys/vfs.h>
 #include <sys/mount.h>
 #include <sys/statvfs.h>
-#include <linux/fs.h>
 #include <linux/jffs2.h>
 
 #include "tests.h"

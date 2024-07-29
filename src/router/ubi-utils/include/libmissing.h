@@ -1,8 +1,6 @@
 #ifndef LIBMISSING_H
 #define LIBMISSING_H
 
-#include "config.h"
-
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
 #endif

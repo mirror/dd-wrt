@@ -38,6 +38,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 
+#include <mtd/ubi-media.h>
 #include <libubi.h>
 #include <libmtd.h>
 #include <libscan.h>
@@ -426,8 +427,8 @@ static int flash_image(libmtd_t libmtd, const struct mtd_dev_info *mtd,
 	}
 
 	if (st_size % mtd->eb_size) {
-		return sys_errmsg("file \"%s\" (size %lld bytes) is not multiple of ""eraseblock size (%d bytes)",
-				  args.image, (long long)st_size, mtd->eb_size);
+		sys_errmsg("file \"%s\" (size %lld bytes) is not multiple of ""eraseblock size (%d bytes)",
+			  args.image, (long long)st_size, mtd->eb_size);
 		goto out_close;
 	}
 
@@ -550,6 +551,7 @@ static int format(libmtd_t libmtd, const struct mtd_dev_info *mtd,
 	struct ubi_vtbl_record *vtbl;
 	int eb1 = -1, eb2 = -1;
 	long long ec1 = -1, ec2 = -1;
+	int ret = -1;
 
 	write_size = UBI_EC_HDR_SIZE + mtd->subpage_size - 1;
 	write_size /= mtd->subpage_size;
@@ -643,8 +645,10 @@ static int format(libmtd_t libmtd, const struct mtd_dev_info *mtd,
 	if (!args.quiet && !args.verbose)
 		printf("\n");
 
-	if (novtbl)
+	if (novtbl) {
+		ret = 0;
 		goto out_free;
+	}
 
 	if (eb1 == -1 || eb2 == -1) {
 		errmsg("no eraseblocks for volume table");
@@ -669,7 +673,7 @@ static int format(libmtd_t libmtd, const struct mtd_dev_info *mtd,
 
 out_free:
 	free(hdr);
-	return -1;
+	return ret;
 }
 
 int main(int argc, char * const argv[])

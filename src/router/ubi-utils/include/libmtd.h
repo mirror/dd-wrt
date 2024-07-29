@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008, 2009 Nokia Corporation
+ * Copyright 2021 NXP
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,7 +130,7 @@ int mtd_get_info(libmtd_t desc, struct mtd_info *info);
 /**
  * mtd_get_dev_info - get information about an MTD device.
  * @desc: MTD library descriptor
- * @node: name of the MTD device node
+ * @node: path of the MTD device node
  * @mtd: the MTD device information is returned here
  *
  * This function gets information about MTD device defined by the @node device
@@ -149,6 +150,17 @@ int mtd_get_dev_info(libmtd_t desc, const char *node, struct mtd_dev_info *mtd);
  * MTD device number, not MTD character device.
  */
 int mtd_get_dev_info1(libmtd_t desc, int mtd_num, struct mtd_dev_info *mtd);
+
+/**
+ * mtd_get_dev_info2 - get information about an MTD device.
+ * @desc: MTD library descriptor
+ * @name: name of the MTD device
+ * @mtd: the MTD device information is returned here
+ *
+ * This function is identical to 'mtd_get_dev_info()' except that it accepts
+ * MTD device's name, not MTD character device.
+ */
+int mtd_get_dev_info2(libmtd_t desc, const char *name, struct mtd_dev_info *mtd);
 
 /**
  * mtd_lock - lock eraseblocks.
@@ -173,6 +185,20 @@ int mtd_lock(const struct mtd_dev_info *mtd, int fd, int eb);
  * in case of failure.
  */
 int mtd_unlock(const struct mtd_dev_info *mtd, int fd, int eb);
+
+/**
+ * mtd_unlock_multi - unlock eraseblocks.
+ * @desc: MTD library descriptor
+ * @mtd: MTD device description object
+ * @fd: MTD device node file descriptor
+ * @eb: index of first eraseblock to unlock
+ * @blocks: the number of eraseblocks to unlock
+ *
+ * This function unlocks @blocks starting at eraseblock @eb.
+ * Returns %0 in case of success and %-1 in case of failure.
+ */
+int mtd_unlock_multi(const struct mtd_dev_info *mtd, int fd, int eb,
+		     int blocks);
 
 /**
  * mtd_erase - erase multiple eraseblocks.

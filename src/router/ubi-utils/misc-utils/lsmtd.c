@@ -72,11 +72,11 @@ static struct column cols[] = {
 	{ "SUB-SIZE", "subpage size", COL_SUBSIZE, COL_DT_SIZE, 0 },
 	{ "OOB-SIZE", "out of band data size", COL_OOBSIZE, COL_DT_SIZE, 0 },
 	{ "RO", "read-only device", COL_RO, COL_DT_BOOL, 0 },
-	{ "CORRUPTED", "wheather an UBI volume is corrupted",
+	{ "CORRUPTED", "whether an UBI volume is corrupted",
 		COL_CORRUPTED, COL_DT_BOOL, 0 },
 	{ "REGIONS", "number of additional erase regions",
 		COL_REGION, COL_DT_NUMBER, 0 },
-	{ "BB", "wheather the MTD device may have bad eraseblocks",
+	{ "BB", "whether the MTD device may have bad eraseblocks",
 		COL_BB, COL_DT_BOOL, 0 },
 	{ "MAX-EC", "current highest erase counter value on UBI devices",
 		COL_MAXEC, COL_DT_NUMBER, 0 },
@@ -107,7 +107,7 @@ static NORETURN void usage(int status)
 "  -r, --raw            Use raw output format\n"
 "  -P, --pairs          Use key=\"value\" output format\n"
 "  -J, --json           Use JSON output format\n"
-"  -o, --output <list>  Comma seperated list of columns to print\n"
+"  -o, --output <list>  Comma separated list of columns to print\n"
 "  -O, --output-all     Print all columns\n"
 "  -x, --sort <column>  Sort output by <column>\n"
 "  -m, --no-ubi         Do not display information about UBI devices/volumes\n"

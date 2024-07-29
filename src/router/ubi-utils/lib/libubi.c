@@ -94,6 +94,7 @@ static int read_positive_ll(const char *file, long long *value)
 	}
 	buf[rd] = '\0';
 
+	*value = 0;
 	if (sscanf(buf, "%lld\n", value) != 1) {
 		errmsg("cannot read integer from \"%s\"\n", file);
 		errno = EINVAL;
@@ -155,7 +156,8 @@ static int read_positive_int(const char *file, int *value)
  */
 static int read_data(const char *file, void *buf, int buf_len)
 {
-	int fd, rd, tmp, tmp1;
+	int fd, rd, tmp1;
+	char tmp;
 
 	fd = open(file, O_RDONLY);
 	if (fd == -1)
@@ -177,11 +179,11 @@ static int read_data(const char *file, void *buf, int buf_len)
 
 	/* Make sure all data is read */
 	tmp1 = read(fd, &tmp, 1);
-	if (tmp1 == 1) {
+	if (tmp1 < 0) {
 		sys_errmsg("cannot read \"%s\"", file);
 		goto out_error;
 	}
-	if (tmp1) {
+	if (tmp1 > 0) {
 		errmsg("file \"%s\" contains too much data (> %d bytes)",
 		       file, buf_len);
 		errno = EINVAL;
@@ -765,6 +767,8 @@ int ubi_attach(libubi_t desc, const char *node, struct ubi_attach_request *req)
 	r.ubi_num = req->dev_num;
 	r.mtd_num = req->mtd_num;
 	r.vid_hdr_offset = req->vid_hdr_offset;
+	r.disable_fm = req->disable_fm ? 1 : 0;
+	r.need_resv_pool = req->need_resv_pool ? 1 : 0;
 
 	if (req->max_beb_per1024) {
 		/*
@@ -1006,7 +1010,8 @@ int ubi_mkvol(libubi_t desc, const char *node, struct ubi_mkvol_request *req)
 	if (n > UBI_MAX_VOLUME_NAME)
 		return -1;
 
-	strncpy(r.name, req->name, UBI_MAX_VOLUME_NAME + 1);
+	strncpy(r.name, req->name, UBI_MAX_VOLUME_NAME);
+	r.name[UBI_MAX_VOLUME_NAME] = '\0';
 	r.name_len = n;
 
 	fd = open(node, O_RDONLY);

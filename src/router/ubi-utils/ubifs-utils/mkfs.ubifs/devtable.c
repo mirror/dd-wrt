@@ -219,8 +219,10 @@ static int interpret_table_entry(const char *line)
 		}
 	}
 
-	if (increment != 0 && count == 0)
-		return err_msg("count cannot be zero if increment is non-zero");
+	if (increment != 0 && count == 0) {
+		err_msg("count cannot be zero if increment is non-zero");
+		goto out_free;
+	}
 
 	/*
 	 * Add the file/directory/device node (last component of the path) to
@@ -245,8 +247,10 @@ static int interpret_table_entry(const char *line)
 		dbg_msg(3, "inserting '%s' into name hash table (major %d, minor %d)",
 			name, major(nh_elt->dev), minor(nh_elt->dev));
 
-		if (hashtable_search(ph_elt->name_htbl, name))
-			return err_msg("'%s' is referred twice", buf);
+		if (hashtable_search(ph_elt->name_htbl, name)) {
+			err_msg("'%s' is referred twice", buf);
+			goto out_free;
+		}
 
 		nh_elt->name = name;
 		if (!hashtable_insert(ph_elt->name_htbl, name, nh_elt)) {
@@ -525,6 +529,7 @@ void free_devtable_info(void)
 			 */
 			hashtable_destroy(ph_elt->name_htbl, 1);
 		} while (hashtable_iterator_advance(ph_itr));
+		free(ph_itr);
 	}
 	hashtable_destroy(path_htbl, 1);
 }

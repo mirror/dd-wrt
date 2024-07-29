@@ -106,13 +106,19 @@ int encrypt_path(void **outbuf, void *data, unsigned int data_len,
 	memcpy(inbuf, data, data_len);
 
 	crypt_key = calc_fscrypt_subkey(fctx);
-	if (!crypt_key)
+	if (!crypt_key) {
+		free(inbuf);
+		free(*outbuf);
 		return err_msg("could not compute subkey");
+	}
 
 	ret = fscrypt_cipher->encrypt_fname(inbuf, cryptlen,
 					    crypt_key, *outbuf);
-	if (ret < 0)
+	if (ret < 0) {
+		free(inbuf);
+		free(*outbuf);
 		return err_msg("could not encrypt filename");
+	}
 
 	free(crypt_key);
 	free(inbuf);
@@ -133,13 +139,19 @@ int encrypt_data_node(struct fscrypt_context *fctx, unsigned int block_no,
 	memcpy(inbuf, &dn->data, length);
 
 	crypt_key = calc_fscrypt_subkey(fctx);
-	if (!crypt_key)
+	if (!crypt_key) {
+		free(inbuf);
+		free(outbuf);
 		return err_msg("could not compute subkey");
+	}
 
 	ret = fscrypt_cipher->encrypt_block(inbuf, pad_len,
 					    crypt_key, block_no,
 					    outbuf);
 	if (ret != pad_len) {
+		free(inbuf);
+		free(outbuf);
+		free(crypt_key);
 		return err_msg("encrypt_block returned %zi "
 				"instead of %zi", ret, pad_len);
 	}

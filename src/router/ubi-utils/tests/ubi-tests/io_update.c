@@ -189,11 +189,11 @@ static int test_update1(struct ubi_vol_info *vol_info, int leb_change)
 			ret = read(fd, buf1, test_len);
 		if (ret < 0) {
 			failed("read");
-			errorm("failed to read %d bytes", test_len);
+			errorm("failed to read %lld bytes", test_len);
 			goto close;
 		}
 		if (ret != test_len) {
-			errorm("failed to read %d bytes, read %d", test_len, ret);
+			errorm("failed to read %lld bytes, read %d", test_len, ret);
 			goto close;
 		}
 		if (memcmp(buf, buf1, test_len)) {

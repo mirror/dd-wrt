@@ -280,6 +280,7 @@ int main(int argc, char * const argv[])
 	libmtd_t mtd_desc;
 	int ebsize_aligned;
 	uint8_t write_mode;
+	size_t all_ffs_cnt = 0;
 
 	process_options(argc, argv);
 
@@ -417,6 +418,8 @@ int main(int argc, char * const argv[])
 	 */
 	while ((imglen > 0 || writebuf < filebuf + filebuf_len)
 		&& mtdoffset < mtd.size) {
+		bool allffs;
+
 		/*
 		 * New eraseblock, check for bad block(s)
 		 * Stay in the loop to be sure that, if mtdoffset changes because
@@ -555,7 +558,8 @@ int main(int argc, char * const argv[])
 		}
 
 		ret = 0;
-		if (!skipallffs || !buffer_check_pattern(writebuf, mtd.min_io_size, 0xff)) {
+		allffs = buffer_check_pattern(writebuf, mtd.min_io_size, 0xff);
+		if (!allffs || !skipallffs) {
 			/* Write out data */
 			ret = mtd_write(mtd_desc, &mtd, fd, mtdoffset / mtd.eb_size,
 					mtdoffset % mtd.eb_size,
@@ -564,6 +568,8 @@ int main(int argc, char * const argv[])
 					writeoob ? oobbuf : NULL,
 					writeoob ? mtd.oob_size : 0,
 					write_mode);
+			if (!ret && allffs)
+				all_ffs_cnt++;
 		}
 
 		if (ret) {
@@ -605,7 +611,8 @@ int main(int argc, char * const argv[])
 	failed = false;
 
 closeall:
-	close(ifd);
+	if (ifd > 0 && ifd != STDIN_FILENO)
+		close(ifd);
 	libmtd_close(mtd_desc);
 	free(filebuf);
 	close(fd);
@@ -613,6 +620,11 @@ closeall:
 	if (failed || (ifd != STDIN_FILENO && imglen > 0)
 		   || (writebuf < filebuf + filebuf_len))
 		sys_errmsg_die("Data was only partially written due to error");
+
+	if (all_ffs_cnt) {
+		fprintf(stderr, "Written %zu blocks containing only 0xff bytes\n", all_ffs_cnt);
+		fprintf(stderr, "Those block may be incorrectly treated as empty!\n");
+	}
 
 	/* Return happy */
 	return EXIT_SUCCESS;

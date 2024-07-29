@@ -207,7 +207,7 @@ static void *write_thread(void *ptr)
 		ret = pwrite(fd, wbuf, dev_info.leb_size, offs);
 		if (ret != dev_info.leb_size) {
 			failed("pwrite");
-			errorm("cannot write %d bytes to offs %lld, wrote %d",
+			errorm("cannot write %d bytes to offs %ld, wrote %d",
 				dev_info.leb_size, offs, ret);
 			break;
 		}
@@ -216,7 +216,7 @@ static void *write_thread(void *ptr)
 		ret = pread(fd, rbuf, dev_info.leb_size, offs);
 		if (ret != dev_info.leb_size) {
 			failed("read");
-			errorm("failed to read %d bytes at offset %d "
+			errorm("failed to read %d bytes at offset %ld "
 			       "of volume %d", dev_info.leb_size, offs,
 			       vol_id);
 			break;

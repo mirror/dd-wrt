@@ -4,21 +4,8 @@ JitterTest_CPPFLAGS = $(AM_CPPFLAGS)
 plotJittervsFill_SOURCES = tests/jittertest/plotJittervsFill.c
 plotJittervsFill_CPPFLAGS = $(AM_CPPFLAGS)
 
-JITTEREST_BINS = \
-	JitterTest plotJittervsFill
+test_PROGRAMS += JitterTest plotJittervsFill
 
-JITTERTEST_SH = \
-	tests/jittertest/filljffs2.sh
+test_SCRIPTS += tests/jittertest/filljffs2.sh
 
-JITTERTEST_EXTRA = \
-	tests/jittertest/README
-
-EXTRA_DIST += $(JITTERTEST_EXTRA) $(JITTERTEST_SH)
-
-if INSTALL_TESTS
-pkglibexec_SCRIPTS += $(JITTERTEST_SH)
-pkglibexec_PROGRAMS += $(JITTEREST_BINS)
-else
-noinst_SCRIPTS += $(JITTERTEST_SH)
-noinst_PROGRAMS += $(JITTEREST_BINS)
-endif
+EXTRA_DIST += tests/jittertest/README tests/jittertest/filljffs2.sh

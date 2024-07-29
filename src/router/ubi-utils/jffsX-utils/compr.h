@@ -16,9 +16,7 @@
 #include <stdint.h>
 #include "linux/jffs2.h"
 
-#define CONFIG_JFFS2_ZLIB
 #define CONFIG_JFFS2_RTIME
-#define CONFIG_JFFS2_LZO
 
 #define JFFS2_RUBINMIPS_PRIORITY 10
 #define JFFS2_DYNRUBIN_PRIORITY  20
@@ -103,7 +101,7 @@ char *jffs2_stats(void);
 /* Compressor modules */
 
 /* These functions will be called by jffs2_compressors_init/exit */
-#ifdef CONFIG_JFFS2_ZLIB
+#ifdef WITH_ZLIB
 int jffs2_zlib_init(void);
 void jffs2_zlib_exit(void);
 #endif
@@ -111,7 +109,7 @@ void jffs2_zlib_exit(void);
 int jffs2_rtime_init(void);
 void jffs2_rtime_exit(void);
 #endif
-#ifdef CONFIG_JFFS2_LZO
+#ifdef WITH_LZO
 int jffs2_lzo_init(void);
 void jffs2_lzo_exit(void);
 #endif

@@ -149,7 +149,8 @@ static void process_options (int argc, char *argv[])
 				break;
 			case 'e':
 				convertendian = 1;
-				strcpy (cnvfile, optarg);
+				strncpy (cnvfile, optarg, sizeof(cnvfile) - 1);
+				cnvfile[sizeof(cnvfile) - 1] = '\0';
 				break;
 			case 'r':
 				recalccrc = 1;
@@ -756,6 +757,12 @@ int main(int argc, char **argv)
 
 	// get image length
 	imglen = lseek(fd, 0, SEEK_END);
+	if (imglen < 0) {
+		perror(img);
+		close(fd);
+		exit(EXIT_FAILURE);
+	}
+
 	lseek (fd, 0, SEEK_SET);
 
 	data = malloc (imglen);

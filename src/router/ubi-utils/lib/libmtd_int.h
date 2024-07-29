@@ -106,6 +106,7 @@ int legacy_dev_present(int mtd_num);
 int legacy_mtd_get_info(struct mtd_info *info);
 int legacy_get_dev_info(const char *node, struct mtd_dev_info *mtd);
 int legacy_get_dev_info1(int dev_num, struct mtd_dev_info *mtd);
+int legacy_get_dev_info2(const char *name, struct mtd_dev_info *mtd);
 int legacy_get_mtd_oobavail(const char *node);
 int legacy_get_mtd_oobavail1(int mtd_num);
 

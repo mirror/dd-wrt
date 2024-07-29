@@ -1,27 +1,45 @@
 libmtd_a_SOURCES = \
 	lib/libmtd.c \
+	include/libmtd.h \
 	lib/libfec.c \
+	include/libfec.h \
 	lib/common.c \
+	include/common.h \
 	lib/libcrc32.c \
+	include/crc32.h \
 	lib/libmtd_legacy.c \
-	lib/libmtd_int.h
+	lib/libmtd_int.h \
+	include/xalloc.h \
+	include/mtd/mtd-user.h \
+	include/mtd/mtd-abi.h
 
 libmissing_a_SOURCES = \
-	lib/execinfo.c
+	lib/execinfo.c \
+	include/libmissing.h
 
 libubi_a_SOURCES = \
 	lib/libubi.c \
-	lib/libubi_int.h
+	lib/libubi_int.h \
+	include/libubi.h \
+	include/mtd/ubi-user.h
 
 libubigen_a_SOURCES = \
-	lib/libubigen.c
+	lib/libubigen.c \
+	include/libubigen.h \
+	include/mtd_swab.h \
+	include/mtd/ubi-media.h
 
 libscan_a_SOURCES = \
-	lib/libscan.c
+	lib/libscan.c \
+	include/libscan.h \
+	include/mtd_swab.h \
+	include/mtd/ubi-media.h
 
 libiniparser_a_SOURCES = \
 	lib/libiniparser.c \
-	lib/dictionary.c
+	include/libiniparser.h \
+	lib/dictionary.c \
+	include/dictionary.h
 
 EXTRA_DIST += lib/LICENSE.libiniparser
 

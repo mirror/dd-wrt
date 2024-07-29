@@ -33,6 +33,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "common.h"
+#include "libmtd.h"
+
+#define MTD_DEV_PATT  "/dev/mtd%d"
 
 /**
  * get_multiplier - convert size specifier to an integer multiplier.
@@ -161,4 +164,47 @@ int util_srand(void)
 	seed %= RAND_MAX;
 	srand(seed);
 	return 0;
+}
+
+/**
+ * mtd_find_dev_node - Find the device node for an MTD
+ * @id:  Identifier for the MTD. this can be the device node itself, or
+ *       "mtd:<name>" to look up MTD by name
+ *
+ * This is a helper function to convert MTD device identifiers into their
+ * device node.
+ *
+ * Returns a pointer to a string containing the device node that must be
+ * free'd, or NULL on failure.
+ */
+char *mtd_find_dev_node(const char *id)
+{
+	struct mtd_dev_info info;
+	struct libmtd_t *lib_mtd;
+	char *node;
+	int ret;
+
+	if (strncmp(id, "mtd:", 4)) {
+		/* Assume @id is the device node */
+		return strdup(id);
+	}
+
+	/* Search for MTD matching name */
+	id += 4;
+
+	lib_mtd = libmtd_open();
+	if (!lib_mtd)
+		return NULL;
+
+	ret = mtd_get_dev_info2(lib_mtd, id, &info);
+	libmtd_close(lib_mtd);
+	if (ret < 0)
+		return NULL;
+
+	node = malloc(strlen(MTD_DEV_PATT) + 20);
+	if (!node)
+		return NULL;
+
+	sprintf(node, MTD_DEV_PATT, info.mtd_num);
+	return node;
 }

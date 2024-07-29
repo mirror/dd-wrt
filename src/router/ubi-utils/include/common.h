@@ -31,8 +31,6 @@
 #include <unistd.h>
 #include <sys/sysmacros.h>
 
-#include "config.h"
-
 #ifndef PROGRAM_NAME
 # error "You must define PROGRAM_NAME before including this header"
 #endif
@@ -238,6 +236,7 @@ do { \
 long long util_get_bytes(const char *str);
 void util_print_bytes(long long bytes, int bracket);
 int util_srand(void);
+char *mtd_find_dev_node(const char *id);
 
 /*
  * The following helpers are here to avoid compiler complaints about unchecked

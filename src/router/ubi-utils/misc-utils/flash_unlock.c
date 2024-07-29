@@ -51,6 +51,8 @@ static NORETURN void usage(int status)
 		" -l         --lock              Lock a region of flash\n"
 		" -u         --unlock            Unlock a region of flash\n"
 		"\n"
+		" <mtd device>  MTD device node or 'mtd:<name>'\n"
+		"\n"
 		"If offset is not specified, it defaults to 0.\n"
 		"If block count is not specified, it defaults to all blocks.\n"
 		"A block count of -1 means all blocks.\n",
@@ -125,7 +127,12 @@ static void process_args(int argc, char *argv[])
 	}
 
 	/* First non-option argument */
-	dev = argv[arg_idx++];
+	dev = mtd_find_dev_node(argv[arg_idx]);
+	if (!dev) {
+		errmsg("MTD device not found %s", argv[arg_idx]);
+		usage(EXIT_FAILURE);
+	}
+	arg_idx++;
 
 	/* Second non-option argument */
 	if (arg_idx < argc)

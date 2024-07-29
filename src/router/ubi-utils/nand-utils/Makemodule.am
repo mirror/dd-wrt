@@ -7,26 +7,24 @@ nandwrite_LDADD = libmtd.a
 nandtest_SOURCES = nand-utils/nandtest.c
 nandtest_LDADD = libmtd.a
 
-nftldump_SOURCES = nand-utils/nftldump.c
+nftldump_SOURCES = nand-utils/nftldump.c include/mtd_swab.h
+nftldump_SOURCES += include/mtd/nftl-user.h include/mtd/ftl-user.h
 nftldump_LDADD = libmtd.a
 
-nftl_format_SOURCES = nand-utils/nftl_format.c
+nftl_format_SOURCES = nand-utils/nftl_format.c include/mtd_swab.h
+nftl_format_SOURCES += include/mtd/nftl-user.h include/mtd/ftl-user.h
 nftl_format_LDADD = libmtd.a
 
-NAND_BINS = \
-	nanddump nandwrite nandtest nftldump nftl_format
+nandflipbits_SOURCES = nand-utils/nandflipbits.c
+nandflipbits_LDADD = libmtd.a
 
 NAND_SH = \
 	nand-utils/load_nandsim.sh
 
 EXTRA_DIST += $(NAND_SH)
 
-sbin_PROGRAMS += $(NAND_BINS)
+sbin_PROGRAMS += nanddump nandwrite nandtest nftldump nftl_format nandflipbits
 
 if BUILD_TESTS
-if INSTALL_TESTS
-pkglibexec_SCRIPTS += $(NAND_SH)
-else
-noinst_SCRIPTS += $(NAND_SH)
-endif
+test_SCRIPTS += $(NAND_SH)
 endif

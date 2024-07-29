@@ -1,0 +1,101 @@
+#!/bin/sh
+
+# This script should be installed as /sbin/mount.ubifs. The benefit is that an
+# fstab entry like:
+#
+# 	mtd=mtddev:home     /home        ubifs   defaults 0 0
+#
+# results in the ubi contained in the mtd named "mtddev" to be attached (if not
+# already done) and then the volume named "home" being mounted to /home.
+
+# This is called by mount with the following options:
+# /sbin/mount.ubifs spec dir [-sfnv] [-N namespace] [-o options] [-t type.subtype]
+
+spec="$1"
+shift
+
+mtdname2num() {
+	local name
+
+	name="$1"
+
+	for d in $(find /sys/class/mtd/ -regex '.*/mtd[0-9]*'); do
+		case "$d" in
+			*ro)
+				continue
+				;;
+		esac
+
+		if test "$name" = "$(cat "$d/name")"; then
+			local dev mtdnum
+
+			dev="$(basename "$d")"
+			mtdnum="${dev#mtd}"
+			echo "$mtdnum"
+			return
+		fi
+	done
+
+	return 1
+}
+
+mtdnum2ubi() {
+	local mtdnum
+
+	mtdnum="$1"
+
+	for d in $(find /sys/class/ubi/ -regex '.*/ubi[0-9]*'); do
+		case "$d" in
+			*_[0-9]*)
+				continue
+				;;
+		esac
+
+		if test "$mtdnum" = "$(cat "$d/mtd_num")"; then
+			local ubi
+
+			ubi="$(basename "$d")"
+			echo "$ubi"
+			return;
+		fi
+	done
+
+	return 1
+}
+
+mtdnum2ubi_autoattach() {
+	local mtdnum ubi
+
+	mtdnum="$1"
+
+	ubi="$(mtdnum2ubi "$mtdnum")" && { echo "$ubi"; return; }
+
+	# ubiattach might fail with "mtdX is already attached to ubiY" if there
+	# is more than one mount to do in the same mtd partition. So ignore errors.
+	ubiattach -m "$mtdnum" >&2 || true
+
+	mtdnum2ubi "$mtdnum"
+}
+
+case "$spec" in
+	mtd=*:*)
+		spec="${spec#mtd=}"
+		mtd="${spec%:*}"
+		rspec="${spec#*:}"
+
+		mtdnum="$(mtdname2num "$mtd")" || {
+			echo "Failed to find mtdnum for mtd \"$mtd\""
+			exit 1
+		}
+
+		ubi="$(mtdnum2ubi_autoattach "$mtdnum")" || {
+			echo "Failed to find ubi for mtd \"$mtd\""
+			exit 1
+		}
+
+		spec="$ubi:$rspec"
+
+		;;
+esac
+
+/bin/mount -i -t ubifs "$spec" "$@"

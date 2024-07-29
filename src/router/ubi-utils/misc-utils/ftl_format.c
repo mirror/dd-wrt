@@ -191,6 +191,7 @@ static int format_partition(int fd, int quiet, int interrogate,
 				fflush(stdout);
 			}
 			perror("block erase failed");
+			free(bam);
 			return -1;
 		}
 		erase.start += erase.length;
@@ -246,6 +247,9 @@ static int format_partition(int fd, int quiet, int interrogate,
 			break;
 		}
 	}
+
+	free(bam);
+
 	if (i < le16_to_cpu(hdr.NumEraseUnits))
 		return -1;
 	else
@@ -308,18 +312,20 @@ int main(int argc, char *argv[])
 		exit(errflg > 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
-	if (stat(argv[optind], &buf) != 0) {
+	fd = open(argv[optind], O_RDWR);
+	if (fd == -1) {
+		perror("open failed");
+		exit(EXIT_FAILURE);
+	}
+	if (fstat(fd, &buf) != 0) {
 		perror("status check failed");
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 	if (!(buf.st_mode & S_IFCHR)) {
 		fprintf(stderr, "%s is not a character special device\n",
 				argv[optind]);
-		exit(EXIT_FAILURE);
-	}
-	fd = open(argv[optind], O_RDWR);
-	if (fd == -1) {
-		perror("open failed");
+		close(fd);
 		exit(EXIT_FAILURE);
 	}
 

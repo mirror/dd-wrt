@@ -1,37 +1,39 @@
 mkfs_jffs2_SOURCES = \
 	jffsX-utils/mkfs.jffs2.c \
 	jffsX-utils/rbtree.h \
-	jffsX-utils/compr_zlib.c \
 	jffsX-utils/compr.h \
 	jffsX-utils/rbtree.c \
-	jffsX-utils/compr_lzo.c \
 	jffsX-utils/compr.c \
-	jffsX-utils/compr_rtime.c
+	jffsX-utils/compr_rtime.c \
+	jffsX-utils/compr.h \
+	jffsX-utils/rbtree.h \
+	jffsX-utils/summary.h \
+	include/linux/jffs2.h \
+	include/mtd/jffs2-user.h
 mkfs_jffs2_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
 mkfs_jffs2_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
 
-jffs2reader_SOURCES = jffsX-utils/jffs2reader.c
+jffs2reader_SOURCES = jffsX-utils/jffs2reader.c	include/mtd/jffs2-user.h
 jffs2reader_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
+jffs2reader_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
 
-jffs2dump_SOURCES = jffsX-utils/jffs2dump.c
+jffs2dump_SOURCES = jffsX-utils/jffs2dump.c include/mtd/jffs2-user.h
+jffs2dump_SOURCES += jffsX-utils/summary.h
 jffs2dump_LDADD = libmtd.a $(ZLIB_LIBS) $(LZO_LIBS)
+jffs2dump_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS)
 
-sumtool_SOURCES = jffsX-utils/sumtool.c
+sumtool_SOURCES = jffsX-utils/sumtool.c jffsX-utils/summary.h
 sumtool_LDADD = libmtd.a
 
-JFFSX_BINS = \
-	mkfs.jffs2 jffs2dump jffs2reader sumtool
+if WITH_LZO
+mkfs_jffs2_SOURCES += jffsX-utils/compr_lzo.c
+endif
 
-JFFSX_MAN = \
-	jffsX-utils/mkfs.jffs2.1
+if WITH_ZLIB
+mkfs_jffs2_SOURCES += jffsX-utils/compr_zlib.c
+endif
 
-JFFSX_EXTRA = \
-	jffsX-utils/device_table.txt jffsX-utils/mkfs.jffs2.1
+EXTRA_DIST += jffsX-utils/device_table.txt jffsX-utils/mkfs.jffs2.1
 
-JFFSX_HEADER = \
-	jffsX-utils/compr.h jffsX-utils/rbtree.h jffsX-utils/summary.h
-
-EXTRA_DIST += $(JFFSX_HEADER) $(JFFSX_EXTRA)
-
-dist_man1_MANS += $(JFFSX_MAN)
-sbin_PROGRAMS += $(JFFSX_BINS)
+dist_man1_MANS += jffsX-utils/mkfs.jffs2.1
+sbin_PROGRAMS += mkfs.jffs2 jffs2dump jffs2reader sumtool

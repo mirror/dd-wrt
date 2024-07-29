@@ -512,7 +512,8 @@ static void processCmdLine(int argc, char **argv)
     {
         if(strcmp(argv[cnt], CMDLINE_PORT) == 0)
         {
-            strncpy(SerialDevice, argv[++cnt], sizeof(SerialDevice));
+            strncpy(SerialDevice, argv[++cnt], sizeof(SerialDevice) - 1);
+	    SerialDevice[sizeof(SerialDevice) - 1] = '\0';
             continue;
         }else
             if(strcmp(argv[cnt], CMDLINE_MAXFILEBYTES) == 0)

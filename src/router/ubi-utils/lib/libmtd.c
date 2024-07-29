@@ -1,6 +1,7 @@
 /*
  * Copyright (c) International Business Machines Corp., 2006
  * Copyright (C) 2009 Nokia Corporation
+ * Copyright 2021 NXP
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -217,6 +218,7 @@ static int read_hex_ll(const char *file, long long *value)
 	}
 	buf[rd] = '\0';
 
+	*value = 0;
 	if (sscanf(buf, "%llx\n", value) != 1) {
 		errmsg("cannot read integer from \"%s\"\n", file);
 		errno = EINVAL;
@@ -269,6 +271,7 @@ static int read_pos_ll(const char *file, long long *value)
 		goto out_error;
 	}
 
+	*value = 0;
 	if (sscanf(buf, "%lld\n", value) != 1) {
 		errmsg("cannot read integer from \"%s\"\n", file);
 		errno = EINVAL;
@@ -424,7 +427,7 @@ static int type_str2int(const char *str)
 /**
  * dev_node2num - find MTD device number by its character device node.
  * @lib: MTD library descriptor
- * @node: name of the MTD device node
+ * @node: path of the MTD device node
  * @mtd_num: MTD device number is returned here
  *
  * This function returns %0 in case of success and %-1 in case of failure.
@@ -471,6 +474,58 @@ static int dev_node2num(struct libmtd *lib, const char *node, int *mtd_num)
 
 	errno = ENODEV;
 	return -1;
+}
+
+/**
+ * dev_name2num - find MTD device number by its MTD name
+ * @lib: MTD library descriptor
+ * @name: name of the MTD device
+ * @mtd_num: MTD device number is returned here
+ *
+ * This function returns %0 in case of success and %-1 in case of failure.
+ */
+static int dev_name2num(struct libmtd *lib, const char *name, int *mtd_num)
+{
+	struct mtd_info info;
+	char name2[MTD_NAME_MAX + 1];
+	int i, mtd_num_tmp = -1;
+
+	if (mtd_get_info((libmtd_t *)lib, &info))
+		return -1;
+
+	for (i = info.lowest_mtd_num; i <= info.highest_mtd_num; i++) {
+		int ret;
+
+		ret = dev_read_data(lib->mtd_name, i, name2,
+				    MTD_NAME_MAX + 1);
+		if (ret < 0) {
+			if (errno == ENOENT)
+				continue;
+			if (!errno)
+				break;
+			return -1;
+		}
+		name2[ret - 1] = '\0';
+
+		if (!strcmp(name, name2)) {
+			// Device name collision
+			if (mtd_num_tmp >= 0) {
+				errmsg("Multiple MTD's found matching name %s", name);
+				errno = ENODEV;
+				return -1;
+			}
+
+			mtd_num_tmp = i;
+		}
+	}
+
+	if (mtd_num_tmp < 0) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	*mtd_num = mtd_num_tmp;
+	return 0;
 }
 
 /**
@@ -789,7 +844,10 @@ int mtd_get_dev_info1(libmtd_t desc, int mtd_num, struct mtd_dev_info *mtd)
 		return -1;
 	mtd->writable = !!(ret & MTD_WRITEABLE);
 
-	mtd->eb_cnt = mtd->size / mtd->eb_size;
+	if ((ret & MTD_NO_ERASE) && (mtd->eb_size == 0))
+		mtd->eb_cnt = 1;
+	else
+		mtd->eb_cnt = mtd->size / mtd->eb_size;
 	mtd->type = type_str2int(mtd->type_str);
 	mtd->bb_allowed = !!(mtd->type == MTD_NANDFLASH ||
 				mtd->type == MTD_MLCNANDFLASH);
@@ -806,6 +864,20 @@ int mtd_get_dev_info(libmtd_t desc, const char *node, struct mtd_dev_info *mtd)
 		return legacy_get_dev_info(node, mtd);
 
 	if (dev_node2num(lib, node, &mtd_num))
+		return -1;
+
+	return mtd_get_dev_info1(desc, mtd_num, mtd);
+}
+
+int mtd_get_dev_info2(libmtd_t desc, const char *name, struct mtd_dev_info *mtd)
+{
+	int mtd_num;
+	struct libmtd *lib = (struct libmtd *)desc;
+
+	if (!lib->sysfs_supported)
+		return legacy_get_dev_info2(name, mtd);
+
+	if (dev_name2num(lib, name, &mtd_num))
 		return -1;
 
 	return mtd_get_dev_info1(desc, mtd_num, mtd);
@@ -829,8 +901,8 @@ static int mtd_valid_erase_block(const struct mtd_dev_info *mtd, int eb)
 	return 0;
 }
 
-static int mtd_xlock(const struct mtd_dev_info *mtd, int fd, int eb, int req,
-		     const char *sreq)
+static int mtd_xlock(const struct mtd_dev_info *mtd, int fd, int eb,
+		     int blocks, int req, const char *sreq)
 {
 	int ret;
 	struct erase_info_user ei;
@@ -839,8 +911,14 @@ static int mtd_xlock(const struct mtd_dev_info *mtd, int fd, int eb, int req,
 	if (ret)
 		return ret;
 
+	if (blocks > 1) {
+		ret = mtd_valid_erase_block(mtd, eb + blocks - 1);
+		if (ret)
+			return ret;
+	}
+
 	ei.start = eb * mtd->eb_size;
-	ei.length = mtd->eb_size;
+	ei.length = mtd->eb_size * blocks;
 
 	ret = ioctl(fd, req, &ei);
 	if (ret < 0)
@@ -848,16 +926,23 @@ static int mtd_xlock(const struct mtd_dev_info *mtd, int fd, int eb, int req,
 
 	return 0;
 }
-#define mtd_xlock(mtd, fd, eb, req) mtd_xlock(mtd, fd, eb, req, #req)
+#define mtd_xlock(mtd, fd, eb, blocks, req) \
+	mtd_xlock(mtd, fd, eb, blocks, req, #req)
 
 int mtd_lock(const struct mtd_dev_info *mtd, int fd, int eb)
 {
-	return mtd_xlock(mtd, fd, eb, MEMLOCK);
+	return mtd_xlock(mtd, fd, eb, 1, MEMLOCK);
 }
 
 int mtd_unlock(const struct mtd_dev_info *mtd, int fd, int eb)
 {
-	return mtd_xlock(mtd, fd, eb, MEMUNLOCK);
+	return mtd_xlock(mtd, fd, eb, 1, MEMUNLOCK);
+}
+
+int mtd_unlock_multi(const struct mtd_dev_info *mtd, int fd, int eb,
+		     int blocks)
+{
+	return mtd_xlock(mtd, fd, eb, blocks, MEMUNLOCK);
 }
 
 int mtd_erase_multi(libmtd_t desc, const struct mtd_dev_info *mtd,
@@ -1140,6 +1225,7 @@ static int legacy_auto_oob_layout(const struct mtd_dev_info *mtd, int fd,
 		memcpy(oob + start, tmp_buf + start, len);
 	}
 
+	free(tmp_buf);
 	return 0;
 }
 
