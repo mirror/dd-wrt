@@ -52,19 +52,19 @@
 					</div>
 				</dd>
 				
-				<dt><% tran("hotspot.nocat_legend"); %></dt>
-				<dd>NoCatSplashは有線・無線LAN上のクライアントが接続された時に、特定のページにRedirectさせるためのサービスです。</dd>
+				<dt><% tran("hotspot.nodog_legend"); %></dt>
+				<dd>NoDogSplashは有線・無線LAN上のクライアントが接続された時に、特定のページにRedirectさせるためのサービスです。</dd>
 				
-				<dt><% tran("hotspot.nocat_gateway"); %></dt>
+				<dt><% tran("hotspot.nodog_gateway"); %></dt>
 				<dd>ゲートウェイに対し、任意の名称をつけます。ここで指定された文字列は、Redirect先のHTML(splash.html)内の$GatewayNameという文字列と置換されます。例：「ジョーのインターネットピザ屋」</dd>
 				
-				<dt><% tran("hotspot.nocat_home"); %></dt>
+				<dt><% tran("hotspot.nodog_home"); %></dt>
 				<dd>「有効」にすることによって、NoCatSplashの機能が有効になります。</dd>
 				
 				<dt><% tran("hotspot.nocat_allowweb"); %></dt>
 				<dd>スペースで区切られたホスト名の集合を入力します。ここで列挙されたリストは「Login」していないクライアントがアクセス可能なホストの一覧を表示します。これらのホストはTCP/80(HTTP)もしくはTCP/443(HTTPS)のいずれかを使用している必要があります。</dd>
 				
-				<dt><% tran("hotspot.nocat_docroot"); %></dt>
+				<dt><% tran("hotspot.nodog_docroot"); %></dt>
 				<dd>SplashFormを含む、Application Templateがおかれている場所を設定します(splash.htmlについては、userからはCaptureを行うことによって見ることができます</dd>
 				
 				<dt><% tran("hotspot.nocat_splash"); %></dt>
@@ -75,7 +75,7 @@
 					</div>
 				</dd>
 				
-				<dt><% tran("hotspot.nocat_port"); %></dt>
+				<dt><% tran("hotspot.nodog_port"); %></dt>
 				<dd>スペースで区切ったポート番号を指定します。LoginしたPublic classのユーザに対し、パケットを拒否するTCPポートを指定します。ここで指定されないポートは、原則通信許可されます(指定しない場合は、全てのPortを許可します)。<br/><br/>
 					<div class="note">
 						<h4>メモ</h4>
@@ -83,7 +83,7 @@
 					</div>
 				</dd>
 				
-				<dt><% tran("hotspot.nocat_timeout"); %></dt>
+				<dt><% tran("hotspot.nodog_timeout"); %></dt>
 				<dd>クライアントがLoginしてからの有効時間を指定します(秒)。有効時間が経過するとSplash画面が表示され、ユーザは再びEURAに対する同意を求められます。</dd>
 				
 				<dt><% tran("hotspot.nocat_verbose"); %></dt>
