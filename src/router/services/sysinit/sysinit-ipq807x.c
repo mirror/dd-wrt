@@ -872,6 +872,7 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+#if 0
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
@@ -947,10 +948,12 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
+#endif
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+#if 0
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
@@ -1019,6 +1022,7 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
 		eval("ifconfig", "eth0", "up");
+#endif
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
