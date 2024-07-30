@@ -48,6 +48,31 @@ ubi-utils-clean:
 	$(MAKE) -C ubi-utils clean
 
 ubi-utils-install:
+	$(MAKE) -C util-linux
+	$(MAKE) -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_ZFS),y)
+ifneq ($(CONFIG_WEBSERVER),y)
+ifneq ($(CONFIG_E2FSPROGS),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 	$(MAKE) -C ubi-utils install DESTDIR=$(INSTALLDIR)/ubi-utils
 	rm -rf $(INSTALLDIR)/ubi-utils/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
