@@ -108,10 +108,10 @@ lint		:
 			|grep -v "constant argument to NOT" 2>&1
 
 cron		:	$(CRON_OBJ)
-			$(CC) $(LDFLAGS) -o cron $(CRON_OBJ) $(LIBS)
+			$(CC) $(LDFLAGS) $(COPTS) -o cron $(CRON_OBJ) $(LIBS)
 
 crontab		:	$(CRONTAB_OBJ)
-			$(CC) $(LDFLAGS) -o crontab $(CRONTAB_OBJ) $(LIBS)
+			$(CC) $(LDFLAGS) $(COPTS) -o crontab $(CRONTAB_OBJ) $(LIBS)
 
 install		:	all
 			$(INSTALL) -c -m 755 cron    $(DESTSBIN)/crond
