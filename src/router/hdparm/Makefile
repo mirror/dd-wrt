@@ -28,7 +28,7 @@ all:
 	$(MAKE) -j4 hdparm
 
 hdparm: hdparm.h sgio.h $(OBJS)
-	$(CC) $(LDFLAGS) -o hdparm $(OBJS)
+	$(CC) $(LDFLAGS) $(COPTS) -o hdparm $(OBJS)
 	$(STRIP) hdparm
 
 hdparm.o:	hdparm.h sgio.h
