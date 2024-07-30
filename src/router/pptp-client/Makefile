@@ -16,7 +16,7 @@ PPPDIR=$(DESTDIR)/etc/ppp
 
 #CC	= gcc
 RM	= rm -f
-OPTIMIZE= $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE
+OPTIMIZE= $(COPTS) $(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE
 include ../.config
 
 #OPTIMIZE= -O0
@@ -39,7 +39,7 @@ PPTP_DEPS = pptp_callmgr.h pptp_gre.h ppp_fcs.h util.h test-redirections.h \
 all: config.h $(PPTP_BIN)
 
 $(PPTP_BIN): $(PPTP_OBJS) $(PPTP_DEPS)
-	$(CC) -o $(PPTP_BIN) $(PPTP_OBJS) $(LDFLAGS) $(LIBS)
+	$(CC) $(COPTS) -o $(PPTP_BIN) $(PPTP_OBJS) $(LDFLAGS) $(LIBS)
 
 config.h:
 	( \
