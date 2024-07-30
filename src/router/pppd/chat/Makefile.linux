@@ -18,7 +18,7 @@ INSTALL= install
 all:	chat
 
 chat:	chat.o
-	$(CC) $(LDFLAGS) -o chat chat.o
+	$(CC) $(LDFLAGS) $(COPTS) -o chat chat.o
 
 chat.o:	chat.c
 	$(CC) -c $(CFLAGS) -o chat.o chat.c
