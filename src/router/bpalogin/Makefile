@@ -8,7 +8,7 @@ CFLAGS = $(COPTS) $(MIPS16_OPT) $(LTO) -Wall -I$(SRCBASE)/include.v23 -I. -I$(TO
 endif
 CFLAGS += -fPIC
 LIBS = -lcrypt -lnvram
-LFLAGS = $(LDLTO) -L$(TOP)/nvram
+LFLAGS = $(LDLTO) $(COPTS) -L$(TOP)/nvram
 
 OBJS = bpalogin.o protocol.o transaction.o gen_md5.o unixmain.o libddns3.a
 
