@@ -1,10 +1,9 @@
 # vim:set sw=8 nosta:
 
-COPTS=-Os -Wall -g
-LDFLAGS=-g
+LDFLAGS=-g $(COPTS)
 
-CFLAGS=$(COPTS)
-FPIC=-fPIC
+CFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO)
+FPIC=-fPIC 
 
 INSTALL=install -c -m 644
 INSTALL_BIN=install -c -m 755

@@ -37,9 +37,9 @@ coldplug2: coldplug2.o
 include common.mak
 
 ifdef STATIC_WORKER
-  CFLAGS += -DSTATIC_WORKER=1
+  CFLAGS += $(COPTS) $(LTO) -DSTATIC_WORKER=1
 else
-  CFLAGS += $(FPIC)
-  LDFLAGS += -ldl
+  CFLAGS += $(FPIC) $(COPTS) $(LTO)
+  LDFLAGS +=  $(COPTS) -ldl
 endif
 
