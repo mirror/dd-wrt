@@ -7,7 +7,7 @@ util-linux-configure: ncurses
 	cd util-linux && autoconf
 	cd util-linux && autoheader
 	cd util-linux && autoreconf -vfi
-	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -Wno-incompatible-pointer-types -fPIC -DNEED_PRINTF -I$(TOP)/ncurses/include" PKG_CONFIG="/tmp" \
+	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -Wno-incompatible-pointer-types -fPIC -DNEED_PRINTF -I$(TOP)/ncurses/include  -ffunction-sections -fdata-sections -Wl,--gc-sections" PKG_CONFIG="/tmp" \
 	--disable-rpath \
 	--enable-new-mount	\
 	--disable-tls		\
