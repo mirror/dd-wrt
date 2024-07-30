@@ -1777,7 +1777,7 @@ bgp_connect_fail(struct peer_connection *connection)
 {
 	struct peer *peer = connection->peer;
 
-	if (peer_dynamic_neighbor(peer)) {
+	if (peer_dynamic_neighbor_no_nsf(peer)) {
 		if (bgp_debug_neighbor_events(peer))
 			zlog_debug("%s (dynamic neighbor) deleted (%s)",
 				   peer->host, __func__);
@@ -2895,19 +2895,22 @@ int bgp_neighbor_graceful_restart(struct peer *peer,
 
 	peer_old_state = bgp_peer_gr_mode_get(peer);
 
-	if (peer_old_state == PEER_INVALID) {
-		zlog_debug("[BGP_GR] peer_old_state == Invalid state !");
+	if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
+		zlog_debug("%s [BGP_GR] peer_old_state: %d", __func__,
+			   peer_old_state);
+
+	if (peer_old_state == PEER_INVALID)
 		return BGP_ERR_GR_OPERATION_FAILED;
-	}
 
 	peer_state = peer->PEER_GR_FSM[peer_old_state][peer_gr_cmd];
 	peer_new_state = peer_state.next_state;
 
-	if (peer_new_state == PEER_INVALID) {
-		zlog_debug(
-			"[BGP_GR] Invalid bgp graceful restart command used !");
+	if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
+		zlog_debug("%s [BGP_GR] peer_new_state: %d", __func__,
+			   peer_new_state);
+
+	if (peer_new_state == PEER_INVALID)
 		return BGP_ERR_GR_INVALID_CMD;
-	}
 
 	if (peer_new_state != peer_old_state) {
 		result = peer_state.action_fun(peer, peer_old_state,

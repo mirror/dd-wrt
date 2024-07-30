@@ -3423,7 +3423,7 @@ static void show_route_map_send(const char *route_map, bool json)
 	bool first = true;
 	char command_line[128];
 
-	snprintf(command_line, sizeof(command_line), "show route-map ");
+	snprintf(command_line, sizeof(command_line), "do show route-map ");
 	if (route_map)
 		strlcat(command_line, route_map, sizeof(command_line));
 	if (json)
@@ -5065,11 +5065,13 @@ void vtysh_init_vty(void)
 	install_element(VRF_NODE, &vtysh_exit_vrf_cmd);
 	install_element(VRF_NODE, &vtysh_quit_vrf_cmd);
 
+#ifdef HAVE_BGPD
 	install_node(&rpki_vrf_node);
 	install_element(VRF_NODE, &rpki_cmd);
 	install_element(RPKI_VRF_NODE, &rpki_exit_cmd);
 	install_element(RPKI_VRF_NODE, &rpki_quit_cmd);
 	install_element(RPKI_VRF_NODE, &vtysh_end_all_cmd);
+#endif
 
 	install_element(CONFIG_NODE, &vtysh_affinity_map_cmd);
 	install_element(CONFIG_NODE, &vtysh_no_affinity_map_cmd);

@@ -5219,27 +5219,23 @@ DEFPY_YANG (match_peer,
 
 	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
 
-	if (addrv4_str) {
-		snprintf(
-			xpath_value, sizeof(xpath_value),
-			"%s/rmap-match-condition/frr-bgp-route-map:peer-ipv4-address",
-			xpath);
-		nb_cli_enqueue_change(vty, xpath_value, NB_OP_MODIFY,
-				      addrv4_str);
-	} else if (addrv6_str) {
-		snprintf(
-			xpath_value, sizeof(xpath_value),
-			"%s/rmap-match-condition/frr-bgp-route-map:peer-ipv6-address",
-			xpath);
-		nb_cli_enqueue_change(vty, xpath_value, NB_OP_MODIFY,
-				      addrv6_str);
-	} else {
-		snprintf(
-			xpath_value, sizeof(xpath_value),
-			"%s/rmap-match-condition/frr-bgp-route-map:peer-interface",
-			xpath);
-		nb_cli_enqueue_change(vty, xpath_value, NB_OP_MODIFY, intf);
-	}
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:peer-ipv4-address",
+		 xpath);
+	nb_cli_enqueue_change(vty, xpath_value,
+			      addrv4_str ? NB_OP_MODIFY : NB_OP_DESTROY,
+			      addrv4_str);
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:peer-ipv6-address",
+		 xpath);
+	nb_cli_enqueue_change(vty, xpath_value,
+			      addrv6_str ? NB_OP_MODIFY : NB_OP_DESTROY,
+			      addrv6_str);
+	snprintf(xpath_value, sizeof(xpath_value),
+		 "%s/rmap-match-condition/frr-bgp-route-map:peer-interface",
+		 xpath);
+	nb_cli_enqueue_change(vty, xpath_value,
+			      intf ? NB_OP_MODIFY : NB_OP_DESTROY, intf);
 
 	return nb_cli_apply_changes(vty, NULL);
 }
@@ -5882,10 +5878,11 @@ DEFUN_YANG (set_table_id,
 
 DEFUN_YANG (no_set_table_id,
 	    no_set_table_id_cmd,
-	    "no set table",
+	    "no set table [(1-4294967295)]",
 	    NO_STR
 	    SET_STR
-	    "export route to non-main kernel table\n")
+	    "export route to non-main kernel table\n"
+	    "Kernel routing table id\n")
 {
 	const char *xpath = "./set-action[action='frr-bgp-route-map:table']";
 	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
@@ -6273,13 +6270,12 @@ DEFPY_YANG(
 }
 
 DEFUN_YANG (no_set_aspath_prepend,
-	    no_set_aspath_prepend_cmd,
-	    "no set as-path prepend [ASNUM] [last-as [(1-10)]]",
+	    no_set_aspath_prepend_last_as_cmd,
+	    "no set as-path prepend [last-as [(1-10)]]",
 	    NO_STR
 	    SET_STR
 	    "Transform BGP AS_PATH attribute\n"
 	    "Prepend to the as-path\n"
-	    AS_STR
 	    "Use the peers AS-number\n"
 	    "Number of times to insert\n")
 {
@@ -6289,6 +6285,15 @@ DEFUN_YANG (no_set_aspath_prepend,
 	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
 	return nb_cli_apply_changes(vty, NULL);
 }
+
+ALIAS_YANG (no_set_aspath_prepend,
+            no_set_aspath_prepend_as_cmd,
+            "no set as-path prepend ASNUM...",
+            NO_STR
+            SET_STR
+            "Transform BGP AS_PATH attribute\n"
+            "Prepend to the as-path\n"
+            AS_STR)
 
 DEFUN_YANG (set_aspath_exclude,
 	    set_aspath_exclude_cmd,
@@ -7966,7 +7971,8 @@ void bgp_route_map_init(void)
 	install_element(RMAP_NODE, &set_aspath_exclude_access_list_cmd);
 	install_element(RMAP_NODE, &set_aspath_replace_asn_cmd);
 	install_element(RMAP_NODE, &set_aspath_replace_access_list_cmd);
-	install_element(RMAP_NODE, &no_set_aspath_prepend_cmd);
+	install_element(RMAP_NODE, &no_set_aspath_prepend_last_as_cmd);
+	install_element(RMAP_NODE, &no_set_aspath_prepend_as_cmd);
 	install_element(RMAP_NODE, &no_set_aspath_exclude_cmd);
 	install_element(RMAP_NODE, &no_set_aspath_exclude_all_cmd);
 	install_element(RMAP_NODE, &no_set_aspath_exclude_access_list_cmd);
