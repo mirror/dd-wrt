@@ -1600,7 +1600,7 @@ static inline void setup_vmalloc_vm(struct vm_struct *vm,
 static struct vmap_area *alloc_vmap_area(unsigned long size,
 				unsigned long align,
 				unsigned long vstart, unsigned long vend,
-				int node, gfp_t gfp_mask)
+				int node, gfp_t gfp_mask,
 				struct vm_struct *vm,
 				unsigned long flags, const void *caller)
 {
