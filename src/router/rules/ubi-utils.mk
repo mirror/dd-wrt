@@ -9,10 +9,8 @@ ubi-utils-configure: zlib
 		ZLIB_LIBS=" $(LDLTO) -L$(TOP)/zlib -lz" \
 		ZSTD_CFLAGS="$(LTO) -I$(TOP)/zstd/lib" \
 		ZSTD_LIBS="$(LDLTO) -L$(TOP)/zstd/lib -lzstd" \
-		OPENSSL_CFLAGS="$(LTO) -I$(TOP)/openssl/include" \
-		OPENSSL_LIBS="$(LDLTO) -L$(TOP)/openssl -lssl -lcrypto" \
 		UUID_CFLAGS="-I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include/uuid" \
-		UUID_LIBS="-L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -luuid" \
+		UUID_LIBS="$(TOP)/util-linux/.libs/libuuid.a" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
