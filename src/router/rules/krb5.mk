@@ -2,7 +2,7 @@ krb5-configure:
 #	cd krb5 && ./autogen.sh
 	cd krb5/src && ./configure --libdir=/usr/lib --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/openssl/include" \
-		LDFLAGS="-L$(TOP)/openssl" \
+		LDFLAGS="$(COPTS) -L$(TOP)/openssl" \
 		--prefix=/usr \
 		--without-system-verto \
 		krb5_cv_attr_constructor_destructor=yes \
