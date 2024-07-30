@@ -8,7 +8,7 @@ default:	all
 all:	$(BIN)
 
 $(BIN): $(OBJ)
-	$(CC) $(LDLTO) -o $@ $(OBJ) -lm
+	$(CC) $(LDLTO) $(COPTS) -o $@ $(OBJ) -lm
 
 clean:
 	rm -rf $(BIN) $(OBJ)
