@@ -2,7 +2,7 @@
 CFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 CFLAGS += $(COPTS) $(MIPS16_OPT) $(LTO) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE
 CPPFLAGS = $(CFLAGS) -I. -I$(LINUXDIR)/include
-LDFLAGS =
+LDFLAGS = $(COPTS)
 
 all: relayd 
 
