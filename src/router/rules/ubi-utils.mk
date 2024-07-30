@@ -1,6 +1,6 @@
 ubi-utils-configure: zlib
 	cd ubi-utils && ./autogen.sh
-	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux --without-tests \
+	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux --without-tests --without-crypto \
 		CC="$(CC)" \
 		CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/lzo/include -L$(TOP)/lzo/src/.libs -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LZO_CFLAGS="$(LTO) -I$(TOP)/lzo/include" \
