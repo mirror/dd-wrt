@@ -16,7 +16,7 @@ GENL_OBJ=genl.o genl_family.o genl_ctrl.o genl_mngt.o unl.o
 
 $(LIBNAME): $(LIBNL_OBJ) $(GENL_OBJ)
 	#$(AR) rcu $@ $^
-	$(CC) -shared -o $@ $^
+	$(CC) $(CFLAGS) -shared -o $@ $^
 
 clean:
 	-rm -f $(LIBNAME) *.o *.a
