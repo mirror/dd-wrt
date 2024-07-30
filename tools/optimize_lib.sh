@@ -60,10 +60,10 @@ fi
 if ls $SYM ; then
 	if [ ! -z $7 ] ; then
 		echo "link with arguments"
-		xargs -t $CC -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
+		xargs -t $CC -Wl,-z,max-page-size=4096 -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" `cat $7`< $SYM ;
 	else
 		echo "link with no arguments"
-		xargs -t $LD -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" < $SYM ;
+		xargs -t $LD -z max-page-size=4096 -shared -o "${DIR}/${LIB_SO_M}" "${DIR}/${LIB_A}" < $SYM ;
 	fi
 fi
 
