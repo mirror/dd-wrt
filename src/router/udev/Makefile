@@ -117,9 +117,9 @@ CFLAGS		= -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
 		  -Wchar-subscripts -Wmissing-declarations -Wnested-externs \
 		  -Wpointer-arith -Wcast-align -Wsign-compare -Wmissing-prototypes
-CFLAGS		+= $(WARNINGS) $(COPTS)
+CFLAGS		+= $(WARNINGS) $(COPTS) $(MIPS16_OPT) $(LTO)
 
-LDFLAGS = -Wl,-warn-common
+LDFLAGS = -Wl,-warn-common $(COPTS)
 
 
 ifeq ($(strip $(USE_LOG)),true)
