@@ -257,66 +257,63 @@
 
 			partition@1000000 {
 				label = "u_env";
-				reg = <0x1000000 0x40000>;
+				reg = <0x1000000 0x100000>;
 			};
 
-			partition@1040000 {
+			partition@1100000 {
 				label = "s_env";
-				reg = <0x1040000 0x20000>;
+				reg = <0x1100000 0x100000>;
 			};
 
-			partition@1060000 {
+			partition@1200000 {
 				label = "devinfo";
-				reg = <0x1060000 0x20000>;
+				reg = <0x1200000 0x40000>;
 				read-only;
 			};
 
-			partition@1080000 {
+			partition@1240000 {
 				label = "linux";
-				reg = <0x1080000 0x9600000>;
+				reg = <0x1240000 0xAF40000>;
 			};
 
-			partition@1880000 {
+			partition@1a40000 {
 				label = "rootfs";
-				reg = <0x1880000 0x8e00000>;
+				reg = <0x1a40000 0xa740000>;
 			};
 
-			partition@a680000 {
+			partition@c180000 {
 				label = "linux2";
-				reg = <0xa680000 0x9500000>;
+				reg = <0xc180000 0xAe40000>;
 			};
 
-			partition@ae80000 {
+			partition@c980000 {
 				label = "alt_rootfs";
-				reg = <0xae80000 0x8d00000>;
-			};
-			partition@13b80000 {
-				label = "nvram";
-				reg = <0x12b80000 0x100000>;
+				reg = <0xc980000 0xa640000>;
 			};
 
-			partition@13c80000 {
-				label = "sysdiag";
-				reg = <0x13c80000 0x200000>;
-				read-only;
+			partition@16fc0000 {
+				label = "nvram";
+				reg = <0x16fc0000 0x100000>;
 			};
-			partition@13e80000 {
-				label = "ethphyfw";
-				reg = <0x13e80000 0x80000>;
-				read-only;
-			};
-			partition@13f00000 {
-				label = "ddwrt";
-				reg = <0x13f00000 0xb100000>;
-			};
-			partition@1f000000 {
+
+			partition@170c0000 {
 				label = "oops";
-				reg = <0x1f000000 0x700000>;
+				reg = <0x170c0000 0x400000>;
 			};
-			partition@1f700000 {
-				label = "wififw";
-				reg = <0x1f700000 0x900000>;
+			
+			partition@174c0000 {
+				label = "ethphyfw";
+				reg = <0x174c0000 0x80000>;
 				read-only;
+			};
+			partition@1f300000 {
+				label = "wififw";
+				reg = <0x1f300000 0x1900000>;
+				read-only;
+			};
+			partition@20c00000 {
+				label = "ddwrt";
+				reg = <0x20c00000 0x1f400000>;
 			};
 		};
 	};
