@@ -5,12 +5,12 @@ endif
 include $(TOP)/.config
 
 OBJS := ifenslave.o
-CFLAGS := $(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include 
+CFLAGS := $(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include 
   
 all: ifenslave
 
 ifenslave: $(OBJS)
-	$(CC) -s -o $@ $^ $(LDFLAGS)
+	$(CC) $(COPTS) -s -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f *.o ifenslave *~ $(UTILS)
