@@ -10,7 +10,7 @@ endif
 all:			brctl
 
 brctl:			brctl.o brctl_cmd.o brctl_disp.o ../libbridge/libbridge.a
-			$(CC) $(LDFLAGS) $(LDLTO) -o brctl brctl.o brctl_cmd.o brctl_disp.o ../libbridge/libbridge.a
+			$(CC) $(LDFLAGS) $(LDLTO) $(COPTS) -o brctl brctl.o brctl_cmd.o brctl_disp.o ../libbridge/libbridge.a
 
 clean:
 			rm -f *~
