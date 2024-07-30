@@ -106,7 +106,7 @@ ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),powerpc)
-export COPTS:=$(BASEOPT) -pipe -Os -pipe -fno-caller-saves -mcpu=8548
+export COPTS:=$(BASEOPT) -pipe -Os -pipe -fno-caller-saves -mcpu=8548 -Wl,-z,max-page-size=4096
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),i386)
