@@ -111,6 +111,14 @@ if [[ "$?" -eq "0" ]]; then
 	IS_MIRROR=0
 fi
 
+if [[ "$TYPE" == "stable" ]]; then
+	# mirror alpha repo
+	aptly -config=$CONF_FILE -keyring=$KEYRING mirror create boinc-alpha-mirror $BASEREPO/alpha/$DISTRO $DISTRO
+	exit_on_fail "Could not mirror alpha repository"
+	# update the packages from remote
+	aptly -config=$CONF_FILE -keyring=$KEYRING mirror update boinc-alpha-mirror
+fi
+
 echo
 echo "Is mirror: $IS_MIRROR"
 echo "Can create: $ALLOW_CREATE"
@@ -126,7 +134,7 @@ if [[ ! "$IS_MIRROR" -eq "0" ]]; then
 fi
 
 if [[ "$IS_MIRROR" -eq "0" ]]; then
-	# updates the the packages from remote
+	# updates the packages from remote
 	aptly -config=$CONF_FILE -keyring=$KEYRING mirror update boinc-$TYPE-mirror
 	exit_on_fail "Failed to update the local mirror"
 
@@ -181,9 +189,37 @@ if [[ "$IS_MIRROR" -eq "0" ]]; then
 	aptly -config=$CONF_FILE snapshot show old-boinc-$TYPE-snap
 fi
 
-# imports into the repo the new packages
-aptly -config=$CONF_FILE repo add boinc-$TYPE $SRC/*.deb
-exit_on_fail "Failed to add new packages"
+if [[ "$TYPE" == "stable" ]]; then
+	# get only one latest packages of each type from the alpha repo
+	alpha_packets=$(aptly -config=$CONF_FILE mirror search boinc-alpha-mirror | grep -o '[^[:space:]]*_\([[:digit:]]*\.\)\{2\}[[:digit:]]*-\([[:digit:]]*_\)[^[:space:]]*' | sort -t '_' -k 2 -V -r | uniq)
+	declare -A alpha_split_lists
+	alpha_packets_list=()
+	while IFS= read -r line; do
+		alpha_packets_list+=("$line")
+	done <<< "$alpha_packets"
+	for item in "${alpha_packets_list[@]}"; do
+		prefix="${item%%_*}"     # Extract the prefix (text before the first underscore)
+		alpha_split_lists["$prefix"]+="$item"$'\n'  # Append the item to the corresponding prefix's list
+	done
+	for prefix in "${!alpha_split_lists[@]}"; do
+		echo "List for prefix: $prefix"
+		echo "${alpha_split_lists[$prefix]}"
+		alpha_values_list=()
+		while IFS= read -r line; do
+			alpha_values_list+=("$line")
+		done <<< "${alpha_split_lists[$prefix]}"
+		for value in "${alpha_values_list[@]}"; do
+			# copy the latest package to the local repo
+			echo "Adding: $value"
+			aptly -config=$CONF_FILE repo import boinc-alpha-mirror boinc-$TYPE $value
+			break
+		done
+	done
+else
+	# imports into the repo the new packages
+	aptly -config=$CONF_FILE repo add boinc-$TYPE $SRC/*.deb
+	exit_on_fail "Failed to add new packages"
+fi
 
 if [[ "$IS_MIRROR" -eq "0" ]]; then
 	# create new snapshot of the repo for deployment (with mirror)

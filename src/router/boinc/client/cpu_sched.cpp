@@ -1309,26 +1309,41 @@ bool CLIENT_STATE::enforce_run_list(vector<RESULT*>& run_list) {
         //      until it reaches deadline pressure.
         // So we'll go with 1).
 
-        // skip jobs whose working set is too large to fit in available RAM
+        // skip jobs whose 'expected working set size' (EWSS)
+        // is too large to fit in available RAM.
+        // To compute EWSS, we start with
+        // - if the job has already run, its recent average WSS
+        // - else if other jobs of this app version have run recently,
+        //      the max of their WSSs
+        // - else the WU's rsc_memory_bound
+        // If project->strict_memory_bound is set,
+        // we max the above with wu.rsc_memory_bound.
+        // This is to handle apps (like CPDN) whose WSS is small for a while
+        // and then gets big.
         //
-        double wss = 0;
+        double ewss = 0;
         if (atp) {
             atp->too_large = false;
-            wss = atp->procinfo.working_set_size_smoothed;
+            ewss = atp->procinfo.working_set_size_smoothed;
         } else {
-            wss = rp->avp->max_working_set_size;
+            ewss = rp->avp->max_working_set_size;
         }
-        if (wss == 0) {
-            wss = rp->wup->rsc_memory_bound;
+        if (rp->project->strict_memory_bound) {
+            ewss = std::max(ewss, rp->wup->rsc_memory_bound);
+        } else {
+            if (ewss == 0) {
+                ewss = rp->wup->rsc_memory_bound;
+            }
         }
-        if (wss > ram_left) {
+
+        if (ewss > ram_left) {
             if (atp) {
                 atp->too_large = true;
             }
             if (log_flags.cpu_sched_debug || log_flags.mem_usage_debug) {
                 msg_printf(rp->project, MSG_INFO,
-                    "[cpu_sched_debug] can't run %s: WS too big %.2fMB > %.2fMB",
-                    rp->name,  wss/MEGA, ram_left/MEGA
+                    "[cpu_sched_debug] skipping %s: estimated WSS (%.2fMB) exceeds RAM left (%.2fMB)",
+                    rp->name,  ewss/MEGA, ram_left/MEGA
                 );
             }
             continue;
@@ -1357,7 +1372,7 @@ bool CLIENT_STATE::enforce_run_list(vector<RESULT*>& run_list) {
 
         ncpus_used += rp->avp->avg_ncpus;
         atp->next_scheduler_state = CPU_SCHED_SCHEDULED;
-        ram_left -= wss;
+        ram_left -= ewss;
         if (have_max_concurrent) {
             max_concurrent_inc(rp);
         }
