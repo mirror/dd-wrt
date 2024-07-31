@@ -1201,7 +1201,7 @@ void start_sysinit(void)
 
 		break;
 	}
-	sysprintf("echo warm > /sys/kernel/reboot/mode");
+//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
 
