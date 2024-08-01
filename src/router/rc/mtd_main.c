@@ -291,7 +291,7 @@ struct bootcounter {
 	uint32_t checksum;
 };
 
-static char page[2048];
+static char page[4096];
 
 int mtd_resetbc(const char *mtd)
 {
