@@ -398,22 +398,6 @@
 				reg = <4>;
 			};
 
-
-	phy6: ethernet-phy@6 {
-		reg = <6>;
-		phy-mode = "sgmii";
-		qca,ar8327-initvals = <
-				0x00004 0x7600000   /* PAD0_MODE */
-				0x00008 0x1000000   /* PAD5_MODE */
-				0x0000c 0x80        /* PAD6_MODE */
-				0x00010 0x2613a0    /* PORT6 FORCE MODE*/
-				0x000e4 0xaa545     /* MAC_POWER_SEL */
-				0x000e0 0xc74164de  /* SGMII_CTRL */
-				0x0007c 0x4e        /* PORT0_STATUS */
-				0x00094 0x4e        /* PORT6_STATUS */
-		>;
-	};
-
 	// QCA8337 switch
 	switch1: ethernet-switch@10 {
 		compatible = "qca,qca8337";
