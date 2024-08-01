@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8021 | brainslayer | 2024-08-02 00:52:21 +0700 (Fri, 02 Aug 2024) | 1 line
+
+make sure to clean up the old peer on bss transition
+------------------------------------------------------------------------
+r8020 | brainslayer | 2024-08-02 00:07:20 +0700 (Fri, 02 Aug 2024) | 1 line
+
+mac80211: WAR for association failure issue with WDS
+------------------------------------------------------------------------
 r8019 | brainslayer | 2024-08-01 05:32:48 +0700 (Thu, 01 Aug 2024) | 1 line
 
 cleanup internal duplications to save space
