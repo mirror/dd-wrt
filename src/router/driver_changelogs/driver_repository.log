@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8024 | brainslayer | 2024-08-02 14:02:32 +0700 (Fri, 02 Aug 2024) | 1 line
+
+fixup target_mem_mode
+------------------------------------------------------------------------
+r8023 | brainslayer | 2024-08-02 13:50:36 +0700 (Fri, 02 Aug 2024) | 1 line
+
+number of peers in ipq5018 is limited to 128, no matter which memory model is selected
+------------------------------------------------------------------------
+r8022 | brainslayer | 2024-08-02 13:23:22 +0700 (Fri, 02 Aug 2024) | 1 line
+
+refine
+------------------------------------------------------------------------
 r8021 | brainslayer | 2024-08-02 00:52:21 +0700 (Fri, 02 Aug 2024) | 1 line
 
 make sure to clean up the old peer on bss transition
