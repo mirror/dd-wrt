@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8025 | brainslayer | 2024-08-02 14:18:36 +0700 (Fri, 02 Aug 2024) | 1 line
+
+delete peer only if found on the same mac but with different vif
+------------------------------------------------------------------------
 r8024 | brainslayer | 2024-08-02 14:02:32 +0700 (Fri, 02 Aug 2024) | 1 line
 
 fixup target_mem_mode
