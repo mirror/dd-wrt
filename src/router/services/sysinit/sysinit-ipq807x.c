@@ -277,9 +277,9 @@ void set6g(char *file) // testing
 		unsigned char *mem = malloc(len);
 		fread(mem, len, 1, fp);
 		fclose(fp);
-		mem[605]=1;
-		mem[606]=1;
-		mem[607]=7;
+		mem[605] = 1;
+		mem[606] = 1;
+		mem[607] = 7;
 		calcchecksum(mem, 0, len);
 		FILE *fp = fopen(file, "wb");
 		fwrite(mem, len, 1, fp);
@@ -486,7 +486,7 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-mcs");
 		insmod("nss-ifb");
 		insmod("qca-nss-bridge-mgr-ipq50xx");
-		insmod("qca-nss-wifi-meshmgr");	
+		insmod("qca-nss-wifi-meshmgr");
 	}
 }
 static void load_nss_ipq807x(int profile)
@@ -535,7 +535,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink-ipq807x");
 		insmod("qca-nss-bridge-mgr-ipq807x");
-		insmod("qca-nss-wifi-meshmgr");	
+		insmod("qca-nss-wifi-meshmgr");
 	}
 }
 
@@ -628,16 +628,19 @@ void start_sysinit(void)
 	int brand = getRouterBrand();
 	char *maddr = NULL;
 	int fwlen = 0x10000;
+	int profile = 512;
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		load_nss_ipq60xx(512);
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
+		profile = 1024;
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		break;
 	case ROUTER_ASUS_AX89X:
+		profile = 1024;
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		insmod("qca8k");
@@ -665,6 +668,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_LINKSYS_MX4200V2:
+		profile = 1024;
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
@@ -778,7 +782,7 @@ void start_sysinit(void)
 		removeregdomain("/tmp/board2.bin", QCN9000);
 		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
 
-/*		set6g("/tmp/caldata2.bin");
+		/*		set6g("/tmp/caldata2.bin");
 		set6g("/tmp/board2.bin");
 		set6g("/tmp/cal-pci-0001:01:00.0.bin");*/
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
@@ -835,8 +839,8 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MX5500:
 		eval("insmod", "mac80211", "nss_redirect=1");
 		insmod("qmi_helpers");
-		eval("insmod", "ath11k",
-		     "nss_offload=0", "frame_mode=1"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+		eval("insmod", "ath11k-512", "nss_offload=0",
+		     "frame_mode=1"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		insmod("ath11k_ahb");
 		insmod("ath11k_pci");
 		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
@@ -849,7 +853,10 @@ void start_sysinit(void)
 		else
 			eval("insmod", "ath11k",
 			     "nss_offload=0"); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-		insmod("ath11k");
+		if (profile == 512)
+			insmod("ath11k-512");
+		else
+			insmod("ath11k");
 		insmod("ath11k_ahb");
 		break;
 	}
@@ -885,7 +892,8 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
+		     "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -932,11 +940,11 @@ void start_sysinit(void)
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 
 		/*drop invalid tcp*/
-//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -955,7 +963,8 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/ssdk/dev_id");
 		eval("ssdk_sh", "vlan", "entry", "flush");
 
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default", "default");
+		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
+		     "default");
 
 		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -1002,11 +1011,11 @@ void start_sysinit(void)
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 
 		/*drop invalid tcp*/
-//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -1071,11 +1080,11 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "poweron", "set", "2");
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 		/*drop invalid tcp*/
-//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -1139,11 +1148,11 @@ void start_sysinit(void)
 		eval("ssdk_sh", "port", "poweron", "set", "2");
 		eval("ssdk_sh", "fdb", "entry", "flush", "0");
 		/*drop invalid tcp*/
-//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
 		/* drop tcp/udp checksum errors */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
 		/* enable pppoe */
-//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
 
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
@@ -1201,7 +1210,7 @@ void start_sysinit(void)
 
 		break;
 	}
-//	sysprintf("echo warm > /sys/kernel/reboot/mode");
+	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
 
