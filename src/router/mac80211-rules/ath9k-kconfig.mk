@@ -254,11 +254,14 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_MAC80211_NSS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
-	echo "CPTCFG_ATH11K_MEM_PROFILE_512M=y" >>$(MAC80211_PATH)/.config_temp
+#	echo "CPTCFG_ATH11K_MEM_PROFILE_512M=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_HTT_STATS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
+	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
