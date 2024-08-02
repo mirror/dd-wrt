@@ -473,13 +473,13 @@
 			partition@400000 {
 				label = "UBI_DEV";
 				compatible = "linux,ubi";
-				reg = <0x00400000 0xfbc0000>;
+				reg = <0x00400000 0xfc00000>;
 			};
 
-			partition@ffc0000 {
+/*			partition@ffc0000 {
 				label = "oops";
 				reg = <0x0ffc0000 0x400000>;
-			};
+			};*/
 		};
 	};
 };
