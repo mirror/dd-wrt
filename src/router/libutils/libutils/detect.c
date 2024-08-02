@@ -1411,7 +1411,7 @@ generic:;
 
 	if (!strcmp(modelstr, "MX4300")) {
 		setRouter("Linksys MX4300");
-		return ROUTER_LINKSYS_MX4200V1;
+		return ROUTER_LINKSYS_MX4200V2;
 	}
 
 	if (!strcmp(modelstr, "MX4200v2")) {
