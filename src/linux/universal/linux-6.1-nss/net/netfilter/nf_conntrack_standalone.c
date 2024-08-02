@@ -625,6 +625,7 @@ static struct ctl_table_header *nf_ct_netfilter_header;
 
 enum nf_ct_sysctl_index {
 	NF_SYSCTL_CT_FLUSH,
+	NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK,
 	NF_SYSCTL_CT_MAX,
 	NF_SYSCTL_CT_COUNT,
 	NF_SYSCTL_CT_BUCKETS,
@@ -655,7 +656,6 @@ enum nf_ct_sysctl_index {
 #endif
 	NF_SYSCTL_CT_PROTO_TCP_LOOSE,
 	NF_SYSCTL_CT_PROTO_TCP_LIBERAL,
-	NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK,
 	NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST,
 	NF_SYSCTL_CT_PROTO_TCP_MAX_RETRANS,
 	NF_SYSCTL_CT_PROTO_TIMEOUT_UDP,
@@ -708,6 +708,13 @@ static struct ctl_table nf_ct_sysctl_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= nf_conntrack_flush_sysctl,
+	},
+	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
+		.procname       = "nf_conntrack_tcp_no_window_check",
+		.data		= &nf_ct_tcp_no_window_check,
+		.maxlen		= sizeof(int),
+		.mode           = 0644,
+		.proc_handler   = proc_dointvec,
 	},
 	[NF_SYSCTL_CT_MAX] = {
 		.procname	= "nf_conntrack_max",
@@ -880,13 +887,6 @@ static struct ctl_table nf_ct_sysctl_table[] = {
 		.proc_handler	= proc_dou8vec_minmax,
 		.extra1 	= SYSCTL_ZERO,
 		.extra2 	= SYSCTL_ONE,
-	},
-	[NF_SYSCTL_CT_PROTO_TCP_NO_WINDOW_CHECK] = {
-		.procname       = "nf_conntrack_tcp_no_window_check",
-		.data		= &nf_ct_tcp_no_window_check,
-		.maxlen		= sizeof(int),
-		.mode           = 0644,
-		.proc_handler   = proc_dointvec,
 	},
 	[NF_SYSCTL_CT_PROTO_TCP_IGNORE_INVALID_RST] = {
 		.procname	= "nf_conntrack_tcp_ignore_invalid_rst",
