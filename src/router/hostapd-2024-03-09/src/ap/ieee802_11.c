@@ -1228,7 +1228,7 @@ static int check_sae_rejected_groups(struct hostapd_data *hapd,
 				     struct sae_data *sae)
 {
 	const struct wpabuf *groups;
-	size_t i, count;
+	size_t i, count, len;
 	const u8 *pos;
 
 	if (!sae->tmp)
@@ -1238,7 +1238,15 @@ static int check_sae_rejected_groups(struct hostapd_data *hapd,
 		return 0;
 
 	pos = wpabuf_head(groups);
-	count = wpabuf_len(groups) / 2;
+	len = wpabuf_len(groups);
+	if (len & 1) {
+		wpa_printf(MSG_DEBUG,
+			   "SAE: Invalid length of the Rejected Groups element payload: %zu",
+			   len);
+		return 1;
+	}
+
+	count = len / 2;
 	for (i = 0; i < count; i++) {
 		int enabled;
 		u16 group;

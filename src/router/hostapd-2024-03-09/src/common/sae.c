@@ -2120,6 +2120,12 @@ static int sae_parse_rejected_groups(struct sae_data *sae,
 		return WLAN_STATUS_UNSPECIFIED_FAILURE;
 	epos++; /* skip ext ID */
 	len--;
+	if (len & 1) {
+		wpa_printf(MSG_DEBUG,
+			   "SAE: Invalid length of the Rejected Groups element payload: %u",
+			   len);
+		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+	}
 
 	wpabuf_free(sae->tmp->peer_rejected_groups);
 	sae->tmp->peer_rejected_groups = wpabuf_alloc(len);
