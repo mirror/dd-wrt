@@ -102,7 +102,7 @@ export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloa
 endif
 ifeq ($(ARCH),aarch64)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
-export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -ftree-vectorizer-verbose=2 -fopt-info-vec -Wl,-z,max-page-size=4096
+export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -Wl,-z,max-page-size=4096
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -337,12 +337,12 @@ endif
 	tools/qcom/mkits.sh  -D linksys_mx4300 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4300.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
-	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
+	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 256KiB  -m 4096
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin of=$(TOP)/$(ARCH)-uclibc/Image-factory.bin.new bs=8192k conv=sync
 	mv $(TOP)/$(ARCH)-uclibc/Image-factory.bin.new $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cat $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
-	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="2048" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
+	let size="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/Image-factory.bin)" pad="4096" offset="256" pad="(pad - ((size + offset) % pad)) % pad"; dd if=/dev/zero bs=$$pad count=1 | tr '\000' '\377' >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	printf ".LINKSYS.01000409%-15s%08X%-8s%-16s" "MX4300" "$$(cksum $(TOP)/$(ARCH)-uclibc/Image-factory.bin | cut -d ' ' -f1)" "0" "K0000000F0246434" >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	dd if=/dev/zero bs=192 count=1 >> $(TOP)/$(ARCH)-uclibc/Image-factory.bin
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin  $(TOP)/$(ARCH)-uclibc/Image-factory-mx4300.bin
