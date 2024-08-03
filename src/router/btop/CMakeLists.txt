@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.20)
 # Disable in-source builds since they would override the Makefile
 
 project("btop"
-  VERSION 1.2.13
+  VERSION 1.3.0
   DESCRIPTION "A monitor of resources"
   HOMEPAGE_URL "https://github.com/aristocratos/btop"
   LANGUAGES CXX
@@ -38,6 +38,7 @@ option(BTOP_LTO "Enable LTO" ON)
 option(BTOP_USE_MOLD "Use mold to link btop" OFF)
 option(BTOP_PEDANTIC "Enable a bunch of additional warnings" OFF)
 option(BTOP_WERROR "Compile with warnings as errors" OFF)
+option(BTOP_FORTIFY "Detect buffer overflows with _FORTIFY_SOURCE=3" ON)
 option(BTOP_GPU "Enable GPU support" ON)
 cmake_dependent_option(BTOP_RSMI_STATIC "Link statically to ROCm SMI" OFF "BTOP_GPU" OFF)
 
@@ -86,10 +87,11 @@ if(BTOP_WERROR)
 endif()
 
 target_compile_definitions(btop PRIVATE
+  FMT_HEADER_ONLY
   _FILE_OFFSET_BITS=64
   $<$<CONFIG:Debug>:_GLIBCXX_ASSERTIONS _LIBCPP_ENABLE_ASSERTIONS=1>
   # Only has an effect with optimizations enabled
-  $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>
+  $<$<AND:$<NOT:$<CONFIG:Debug>>,$<BOOL:${BTOP_FORTIFY}>>:_FORTIFY_SOURCE=3>
 )
 
 target_include_directories(btop SYSTEM PRIVATE include)
@@ -155,12 +157,18 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
   endif()
 
   find_package(devstat REQUIRED)
-  target_link_libraries(btop devstat::devstat)
+  find_package(kvm REQUIRED)
+  target_link_libraries(btop devstat::devstat kvm::kvm)
   if(BTOP_STATIC)
     find_package(elf REQUIRED)
-    find_package(kvm REQUIRED)
-    target_link_libraries(btop elf::elf kvm::kvm)
+    target_link_libraries(btop elf::elf)
   endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(btop PRIVATE -static-libstdc++)
+  endif()
+  find_package(kvm REQUIRED)
+  target_link_libraries(btop kvm::kvm)
 endif()
 
 install(TARGETS btop RUNTIME)

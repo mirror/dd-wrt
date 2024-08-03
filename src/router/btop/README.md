@@ -47,8 +47,8 @@
 
 Btop release v1.3.0
 
-Big release with GPU support added for Linux and platform support for OpenBSD. Big thanks to @romner-set (GPU support) and @joske (OpenBSD support) for contributions.
-And a multitude of bugfixes and small changes, see [CHANGES.md](CHANGES.md) and latest [release](https://github.com/aristocratos/btop/releases/latest) for detailed list and attributions.
+Big release with GPU support added for Linux and platform support for OpenBSD. Big thanks to [@romner-set](https://github.com/romner-set) (GPU support) and [@joske](https://github.com/joske) (OpenBSD support) for contributions.
+And a multitude of bugfixes and small changes, see [CHANGELOG.md](CHANGELOG.md) and latest [release](https://github.com/aristocratos/btop/releases/latest) for detailed list and attributions.
 
 See news entry below for more information regarding GPU support.
 
@@ -222,6 +222,22 @@ Also needs a UTF8 locale and a font that covers:
 * Unicode Block “Geometric Shapes” U+25A0 - U+25FF
 * Unicode Block "Box Drawing" and "Block Elements" U+2500 - U+259F
 
+### **Optional Dependencies (Needed for GPU monitoring)**
+
+GPU monitoring also requires a btop binary built with GPU support (`GPU_SUPPORT=true` flag).
+
+See [GPU compatibility](#gpu-compatibility) section for more about compiling with GPU support.
+
+ * **NVIDIA**
+
+If you have an NVIDIA GPU you must use an official NVIDIA driver, both the closed-source and open-source ones have been verified to work.
+
+In addition to that you must also have the nvidia-ml dynamic library installed, which should be included with the driver package of your distribution.
+
+ * **AMD**
+
+If you have an AMD GPU `rocm_smi_lib` is required, which may or may not be packaged for your distribution.
+
 ### **Notice (Text rendering issues)**
 
 * If you are having problems with the characters in the graphs not looking like they do in the screenshots, it's likely a problem with your systems configured fallback font not having support for braille characters.
@@ -362,12 +378,12 @@ Also needs a UTF8 locale and a font that covers:
 
  * **AMD**
 
-    AMDGPU data is queried using the [ROCm SMI](https://github.com/RadeonOpenCompute/rocm_smi_lib) library, which may or may not be packaged for your distribution. If your distribution doesn't provide a package, btop++ is statically linked to ROCm SMI with the `RSMI_STATIC=true` make flag.
+    AMDGPU data is queried using the [ROCm SMI](https://github.com/rocm/rocm_smi_lib) library, which may or may not be packaged for your distribution. If your distribution doesn't provide a package, btop++ is statically linked to ROCm SMI with the `RSMI_STATIC=true` make flag.
 
     This flag expects the ROCm SMI source code in `lib/rocm_smi_lib`, and compilation will fail if it's not there. The latest tested version is 5.6.x, which can be obtained with the following command:
 
    ```bash
-   git clone https://github.com/RadeonOpenCompute/rocm_smi_lib.git --depth 1 -b rocm-5.6.x lib/rocm_smi_lib
+   git clone https://github.com/rocm/rocm_smi_lib.git --depth 1 -b rocm-5.6.x lib/rocm_smi_lib
    ```
 
 <details>
@@ -405,6 +421,7 @@ Also needs a UTF8 locale and a font that covers:
    | `STRIP=true`                    | To force stripping of debug symbols (adds `-s` linker flag)             |
    | `DEBUG=true`                    | Sets OPTFLAGS to `-O0 -g` and enables more verbose debug logging        |
    | `ARCH=<architecture>`           | To manually set the target architecture                                 |
+   | `FORTIFY_SOURCE=false`          | Disable fortification with `_FORTIFY_SOURCE=3`                          |
    | `GPU_SUPPORT=<true\|false>`     | Enable/disable GPU support (Enabled by default on X86_64 Linux)         |
    | `RSMI_STATIC=true`              | To statically link the ROCm SMI library used for querying AMDGPU        |
    | `ADDFLAGS=<flags>`              | For appending flags to both compiler and linker                         |
@@ -503,6 +520,7 @@ Also needs a UTF8 locale and a font that covers:
    | `-DBTOP_USE_MOLD=<ON\|OFF>`     | Use mold to link btop (OFF by default)                                  |
    | `-DBTOP_PEDANTIC=<ON\|OFF>`     | Compile with additional warnings (OFF by default)                       |
    | `-DBTOP_WERROR=<ON\|OFF>`       | Compile with warnings as errors (OFF by default)                        |
+   | `-DBTOP_FORTIFY=<ON\|OFF>`      | Detect buffer overflows with `_FORTIFY_SOURCE=3` (ON by default)        |
    | `-DBTOP_GPU=<ON\|OFF>`          | Enable GPU support (ON by default)                                      |
    | `-DBTOP_RSMI_STATIC=<ON\|OFF>`  | Build and link the ROCm SMI library statically (OFF by default)         |
    | `-DCMAKE_INSTALL_PREFIX=<path>` | The installation prefix ('/usr/local' by default)                       |
@@ -576,6 +594,7 @@ Also needs a UTF8 locale and a font that covers:
    | `STRIP=true`                    | To force stripping of debug symbols (adds `-s` linker flag)             |
    | `DEBUG=true`                    | Sets OPTFLAGS to `-O0 -g` and enables more verbose debug logging        |
    | `ARCH=<architecture>`           | To manually set the target architecture                                 |
+   | `FORTIFY_SOURCE=false`          | Disable fortification with `_FORTIFY_SOURCE=3`                          |
    | `ADDFLAGS=<flags>`              | For appending flags to both compiler and linker                         |
    | `CXX=<compiler>`                | Manualy set which compiler to use                                       |
 
@@ -674,6 +693,7 @@ Also needs a UTF8 locale and a font that covers:
    | `-DBTOP_USE_MOLD=<ON\|OFF>`     | Use mold to link btop (OFF by default)                                  |
    | `-DBTOP_PEDANTIC=<ON\|OFF>`     | Compile with additional warnings (OFF by default)                       |
    | `-DBTOP_WERROR=<ON\|OFF>`       | Compile with warnings as errors (OFF by default)                        |
+   | `-DBTOP_FORTIFY=<ON\|OFF>`      | Detect buffer overflows with `_FORTIFY_SOURCE=3` (ON by default)        |
    | `-DCMAKE_INSTALL_PREFIX=<path>` | The installation prefix ('/usr/local' by default)                       |
 
    To force any specific compiler, run `CXX=<compiler> cmake -B build -G Ninja`
@@ -742,6 +762,7 @@ Also needs a UTF8 locale and a font that covers:
    | `STRIP=true`                    | To force stripping of debug symbols (adds `-s` linker flag)             |
    | `DEBUG=true`                    | Sets OPTFLAGS to `-O0 -g` and enables more verbose debug logging        |
    | `ARCH=<architecture>`           | To manually set the target architecture                                 |
+   | `FORTIFY_SOURCE=false`          | Disable fortification with `_FORTIFY_SOURCE=3`                          |
    | `ADDFLAGS=<flags>`              | For appending flags to both compiler and linker                         |
    | `CXX=<compiler>`                | Manualy set which compiler to use                                       |
 
@@ -851,6 +872,7 @@ Also needs a UTF8 locale and a font that covers:
    | `-DBTOP_USE_MOLD=<ON\|OFF>`     | Use mold to link btop (OFF by default)                                  |
    | `-DBTOP_PEDANTIC=<ON\|OFF>`     | Compile with additional warnings (OFF by default)                       |
    | `-DBTOP_WERROR=<ON\|OFF>`       | Compile with warnings as errors (OFF by default)                        |
+   | `-DBTOP_FORTIFY=<ON\|OFF>`      | Detect buffer overflows with `_FORTIFY_SOURCE=3` (ON by default)        |
    | `-DCMAKE_INSTALL_PREFIX=<path>` | The installation prefix ('/usr/local' by default)                       |
 
    _**Note:** Static linking does not work with GCC._
@@ -921,6 +943,7 @@ Also needs a UTF8 locale and a font that covers:
    | `STRIP=true`                    | To force stripping of debug symbols (adds `-s` linker flag)             |
    | `DEBUG=true`                    | Sets OPTFLAGS to `-O0 -g` and enables more verbose debug logging        |
    | `ARCH=<architecture>`           | To manually set the target architecture                                 |
+   | `FORTIFY_SOURCE=false`          | Disable fortification with `_FORTIFY_SOURCE=3`                          |
    | `ADDFLAGS=<flags>`              | For appending flags to both compiler and linker                         |
    | `CXX=<compiler>`                | Manualy set which compiler to use                                       |
 
@@ -970,6 +993,74 @@ Also needs a UTF8 locale and a font that covers:
 
    ```bash
    gmake help
+   ```
+
+</details>
+<details>
+<summary>
+
+### With CMake (Community maintained)
+</summary>
+
+1. **Install build dependencies**
+
+   Requires GCC, CMake, Ninja and Git
+
+   _**Note:** LLVM's libc++ shipped with OpenBSD 7.4 is too old and cannot compile btop._
+
+   ```bash
+   pkg_add cmake g++%11 git ninja
+   ```
+
+2. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/aristocratos/btop.git && cd btop
+   ```
+
+3. **Compile**
+
+   ```bash
+   # Configure
+   CXX=eg++ cmake -B build -G Ninja
+   # Build
+   cmake --build build
+   ```
+
+   This will automatically build a release version of btop.
+
+   Some useful options to pass to the configure step:
+
+   | Configure flag                  | Description                                                             |
+   |---------------------------------|-------------------------------------------------------------------------|
+   | `-DBTOP_LTO=<ON\|OFF>`          | Enables link time optimization (ON by default)                          |
+   | `-DBTOP_USE_MOLD=<ON\|OFF>`     | Use mold to link btop (OFF by default)                                  |
+   | `-DBTOP_PEDANTIC=<ON\|OFF>`     | Compile with additional warnings (OFF by default)                       |
+   | `-DBTOP_WERROR=<ON\|OFF>`       | Compile with warnings as errors (OFF by default)                        |
+   | `-DBTOP_FORTIFY=<ON\|OFF>`      | Detect buffer overflows with `_FORTIFY_SOURCE=3` (ON by default)        |
+   | `-DCMAKE_INSTALL_PREFIX=<path>` | The installation prefix ('/usr/local' by default)                       |
+
+   To force any other compiler, run `CXX=<compiler> cmake -B build -G Ninja`
+
+4. **Install**
+
+   ```bash
+   cmake --install build
+   ```
+
+   May require root privileges
+
+5. **Uninstall**
+
+   CMake doesn't generate an uninstall target by default. To remove installed files, run
+   ```
+   cat build/install_manifest.txt | xargs rm -irv
+   ```
+
+6. **Cleanup build directory**
+
+   ```bash
+   cmake --build build -t clean
    ```
 
 </details>
