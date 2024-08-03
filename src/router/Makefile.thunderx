@@ -168,8 +168,8 @@ kernel:
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
-	$(MAKE) -f Makefile.thunderx kernel-relink-prep MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
-	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=arm64
+	$(MAKE) -f Makefile.thunderx kernel-relink-prep MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=aarch64
+	$(MAKE) -f Makefile.thunderx kernel-relink MAKEEXT=thunderx KBUILD_TARGETS="Image dtbs" ARCH=aarch64
 
 	
 testimage:
@@ -307,7 +307,7 @@ ifeq ($(KERNELVERSION),6.1)
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/linux/* /
 endif
 	# copy openwrt rootfs to image
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm -b 262144
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm64,delta,delta-2,delta-4,delta-8,delta-16 -b 262144
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
 	# compress it
 	dd if=$(ARCH)-uclibc/newport.img of=$(ARCH)-uclibc/newport.align bs=1048576 conv=sync
