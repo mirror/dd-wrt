@@ -811,6 +811,8 @@
 
 #define ROUTER_ASUS_AX89X 0x11913d
 
+#define ROUTER_LINKSYS_MX4300 0x11a134
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

@@ -673,6 +673,12 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
 		break;
+	case ROUTER_LINKSYS_MX4300:
+		profile = 1024;
+		fwlen = 0x20000;
+		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_LINKSYS_MX4200V1:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
@@ -804,6 +810,24 @@ void start_sysinit(void)
 		patchvht160("/tmp/board.bin", 0);
 		patchvht160("/tmp/board.bin", 2);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_LINKSYS_MX4300:
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan2_hwaddr", ethaddr);
+		patch(ethaddr, 26);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
+		patchvht160("/tmp/caldata.bin", 0);
+		patchvht160("/tmp/caldata.bin", 2);
+		patchvht160("/tmp/board.bin", 0);
+		patchvht160("/tmp/board.bin", 2);
+		set_envtools(uenv, "0x0", "0x40000", "0x40000", 2);
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 		MAC_ADD(ethaddr);
@@ -1165,6 +1189,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MR7350:
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
+	case ROUTER_LINKSYS_MX4300:
 	case ROUTER_DYNALINK_DLWRX36:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
@@ -1250,7 +1275,7 @@ void start_resetbc(void)
 {
 	int brand = getRouterBrand();
 	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
-	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2) {
+	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 	}
