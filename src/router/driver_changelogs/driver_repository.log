@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8039 | brainslayer | 2024-08-03 17:52:20 +0700 (Sat, 03 Aug 2024) | 1 line
+
+due differences in structures we need separate ahb/pci modules too
+------------------------------------------------------------------------
 r8038 | brainslayer | 2024-08-03 15:44:19 +0700 (Sat, 03 Aug 2024) | 1 line
 
 revert
