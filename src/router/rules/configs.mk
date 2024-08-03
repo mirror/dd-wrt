@@ -454,7 +454,7 @@ obj-$(CONFIG_JAVA) += java
 obj-$(CONFIG_SOFTETHER) += libsodium readline softether
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
 obj-$(CONFIG_ETHTOOL) += ethtool
-obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
+#obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
 obj-$(CONFIG_F2FS) += util-linux f2fs-tools
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_LSOF) += libtirpc lsof
@@ -601,6 +601,7 @@ configs-update:
 #	rm -f $(LINUXDIR)/../linux-4.14/scripts/squashfs/matrix.db
 #	rm -f $(LINUXDIR)/../linux-6.1/scripts/squashfs/matrix.db
 #	rm -f $(LINUXDIR)/../linux-6.1-nss/scripts/squashfs/matrix.db
+#	rm -f $(LINUXDIR)/../linux-6.6/scripts/squashfs/matrix.db
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 

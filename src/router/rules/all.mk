@@ -305,7 +305,7 @@ include rules/lzo.mk
 include rules/java.mk
 include rules/softether.mk
 include rules/f2fs-tools.mk
--include rules/anchorfree.mk
+#-include rules/anchorfree.mk
 include rules/speedchecker.mk
 include rules/shownf.mk
 include rules/lsof.mk
@@ -363,6 +363,7 @@ include rules/nodogsplash.mk
 include rules/opennds.mk
 include rules/btop.mk
 include rules/envtools.mk
+include rules/apfree-wifidog.mk
 
 #
 # Generic rules
