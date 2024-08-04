@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8049 | brainslayer | 2024-08-05 01:16:54 +0700 (Mon, 05 Aug 2024) | 1 line
+
+add bdf data auto patcher to hopefully solve version incompatibilties
+------------------------------------------------------------------------
+r8048 | brainslayer | 2024-08-05 00:15:49 +0700 (Mon, 05 Aug 2024) | 1 line
+
+show bdf template version to check for incompatiblities
+------------------------------------------------------------------------
+r8047 | brainslayer | 2024-08-04 15:25:21 +0700 (Sun, 04 Aug 2024) | 1 line
+
+disable coredump
+------------------------------------------------------------------------
 r8046 | brainslayer | 2024-08-04 05:19:10 +0700 (Sun, 04 Aug 2024) | 1 line
 
 update symlinks
