@@ -747,6 +747,41 @@ out:
 	return err;
 }
 
+int vfs_write2(struct file *file, const char __user *buf, size_t count, loff_t *pos)
+{
+	int ret;
+
+	if (!(file->f_mode & FMODE_WRITE))
+		return -EBADF;
+	if (!(file->f_mode & FMODE_CAN_WRITE))
+		return -EINVAL;
+	if (unlikely(!access_ok(buf, count)))
+		return -EFAULT;
+
+	ret = rw_verify_area(WRITE, file, pos, count);
+	if (ret) {
+		ksmbd_debug(VFS, "rw_verify_area failed, err = %d\n", ret);
+		return ret;
+	}
+	if (count > MAX_RW_COUNT)
+		count =  MAX_RW_COUNT;
+	if (file->f_op->write) {
+		file_start_write(file);
+		ret = file->f_op->write(file, buf, count, pos);
+		if (ret > 0) {
+			fsnotify_modify(file);
+			add_wchar(current, ret);
+		}
+		inc_syscw(current);
+		file_end_write(file);
+		if (ret)
+			ksmbd_debug(VFS, "f_op->write failed, err = %d\n", ret);
+	} else
+		ret = kernel_write(file, buf, count, pos);
+
+	return ret;
+}
+
 /**
  * ksmbd_vfs_write() - vfs helper for smb file write
  * @work:	work
@@ -799,7 +834,7 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 	/* Do we need to break any of a levelII oplock? */
 	smb_break_all_levII_oplock(work, fp, 1);
 
-	err = kernel_write(filp, buf, count, pos);
+	err = vfs_write2(filp, buf, count, pos);
 	if (err < 0) {
 		ksmbd_debug(VFS, "smb write failed, err = %d\n", err);
 		goto out;
