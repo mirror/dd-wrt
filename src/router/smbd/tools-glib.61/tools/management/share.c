@@ -550,10 +550,13 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 	if (shm_share_config(k, KSMBD_SHARE_CONF_WRITE_OK) ||
 	    shm_share_config(k, KSMBD_SHARE_CONF_WRITEABLE) ||
 	    shm_share_config(k, KSMBD_SHARE_CONF_WRITABLE)) {
-		if (cp_get_group_kv_bool(v))
+		if (cp_get_group_kv_bool(v)) {
 			set_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
-		else
+			clear_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
+		} else {
 			clear_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
+			set_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
+		}
 		return;
 	}
 

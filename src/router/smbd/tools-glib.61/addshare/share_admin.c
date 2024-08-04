@@ -122,6 +122,7 @@ static void __load_conf(enum KSMBD_SHARE_CONF conf,
 	}
 
 	printf("\r" "\e[2K" "%s%s" "\e[6n", option, buf);
+	fflush(stdout);
 
 	if (option != options[conf])
 		g_free(option);

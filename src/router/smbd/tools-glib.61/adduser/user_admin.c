@@ -42,9 +42,11 @@ static void __prompt_password_stdin(char *password, size_t *sz)
 	     buflen = 0, password[buflen] = buf[buflen] = 0x00;;) {
 		int c;
 
-		if (!buflen)
+		if (!buflen) {
 			printf("\r" "\e[2K" "%s password: ",
 			       *password == 0x00 ? "New" : "Retype");
+			fflush(stdout);
+		}
 
 		c = getchar();
 		if (c == EOF || c == 0x04)
