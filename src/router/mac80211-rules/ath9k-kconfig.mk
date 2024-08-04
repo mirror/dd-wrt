@@ -261,7 +261,9 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
 	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
+	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
