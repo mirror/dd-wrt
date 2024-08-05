@@ -28,7 +28,7 @@ DESTDIR_SQ = '$(subst ','\'',$(DESTDIR))'
 
 LIBFILE = $(OUTPUT)libsubcmd.a
 
-CFLAGS := -ggdb3 -Wall -Wextra -std=gnu99 -fPIC -DNEED_PRINTF
+CFLAGS := -ggdb3 -Wall -Wextra -std=gnu99 -fPIC
 
 ifeq ($(DEBUG),0)
   ifeq ($(feature-fortify-source), 1)

@@ -17,7 +17,6 @@
 #include "evsel.h"
 #include "parse-events.h"
 #include "parse-events-bison.h"
-#include "parse-events-flex.h"
 
 void parse_events_error(YYLTYPE *loc, void *parse_state, void *scanner, char const *msg);
 

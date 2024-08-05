@@ -53,8 +53,6 @@
 %destructor { ids__free($$.ids); } <ids>
 
 %{
-#include "expr-flex.h"
-
 static void expr_error(double *final_val __maybe_unused,
 		       struct expr_parse_ctx *ctx __maybe_unused,
 		       bool compute_ids __maybe_unused,
