@@ -219,9 +219,10 @@ static void mtdoops_write(struct mtdoops_context *cxt, int panic)
 			pr_err("Cannot write from panic without panic_write\n");
 			goto out;
 		}
-	} else
+	} else {
 		ret = mtd_write(mtd, cxt->nextpage * record_size,
 				record_size, &retlen, cxt->oops_buf);
+	}
 
 	if (retlen != record_size || ret < 0)
 		pr_err("write failure at %ld (%td of %ld written), error %d\n",
