@@ -309,6 +309,7 @@ static int write_main(int argc, char *argv[])
 	const char *path = argv[1];
 	const char *mtd = argv[2];
 	int writeubi = 0;
+	int writeubifs = 0;
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -371,6 +372,9 @@ static int write_main(int argc, char *argv[])
 rewrite:;
 	count = off = 0;
 	switch (brand) {
+	case ROUTER_ASUS_AX89X:
+		writeubifs = 1;
+		break;
 	case ROUTER_ASUS_AC58U:
 		writeubi = 1;
 		break;
@@ -610,11 +614,13 @@ rewrite:;
 		erase_info.length = mtd_info.erasesize * mul;
 		dd_loginfo("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
 	}
-	/*	if (writeubi) {
+	if (writeubifs) {
+		close(mtd_fd);
+		mtd_fd = -1;
 		char cmdline[64];
 		sprintf(cmdline, "ubiupdatevol /dev/ubi0_3 - --size=%d", ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
-	}*/
+	}
 
 	/* 
 	 * Allocate temporary buffer 
@@ -727,50 +733,50 @@ rewrite:;
 again:;
 			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
 				   base + (i * mtd_info.erasesize) + badblocks);
-			//			if (!writeubi) {
-			erase_info.start = base + (i * mtd_info.erasesize);
-			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
-			tmp_erase_info.start += badblocks;
-			if (tmp_erase_info.start >= mtd_info.size) {
-				dd_logerror("flash", "Image too big for partition due too many bad flash blocks: %s", mtd);
-				ret = -1;
-				goto fail;
-			}
-			(void)ioctl(mtd_fd, MEMUNLOCK, &tmp_erase_info);
-			if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
-				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
-				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
-				badblocks += mtd_info.erasesize;
-				goto again;
-			}
-			if (writeubi) {
-				if (ioctl(mtd_fd, MEMERASE, &tmp_erase_info) != 0) {
-					dd_logerror("flash", "\nerase/write failed");
+			if (!writeubifs) {
+				erase_info.start = base + (i * mtd_info.erasesize);
+				memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
+				tmp_erase_info.start += badblocks;
+				if (tmp_erase_info.start >= mtd_info.size) {
+					dd_logerror("flash", "Image too big for partition due too many bad flash blocks: %s", mtd);
+					ret = -1;
 					goto fail;
 				}
-			} else {
-#if !defined(HAVE_QCA4019) && !defined(HAVE_IPQ6018)
-				if (mtdtype != MTD_NANDFLASH) {
+				(void)ioctl(mtd_fd, MEMUNLOCK, &tmp_erase_info);
+				if (mtd_block_is_bad(mtd_fd, tmp_erase_info.start)) {
+					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
+					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
+					badblocks += mtd_info.erasesize;
+					goto again;
+				}
+				if (writeubi) {
 					if (ioctl(mtd_fd, MEMERASE, &tmp_erase_info) != 0) {
 						dd_logerror("flash", "\nerase/write failed");
 						goto fail;
 					}
-				}
+				} else {
+#if !defined(HAVE_QCA4019) && !defined(HAVE_IPQ6018)
+					if (mtdtype != MTD_NANDFLASH) {
+						if (ioctl(mtd_fd, MEMERASE, &tmp_erase_info) != 0) {
+							dd_logerror("flash", "\nerase/write failed");
+							goto fail;
+						}
+					}
 #endif
+				}
+				if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
+					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
+					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
+					badblocks += mtd_info.erasesize;
+					goto fail;
+				}
+			} else {
+				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
 			}
-			if (write(mtd_fd, buf + (i * mtd_info.erasesize), mtd_info.erasesize) != mtd_info.erasesize) {
-				dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
-				lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
-				badblocks += mtd_info.erasesize;
-				goto fail;
-			}
-			//			} else {
-			//				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
-			//			}
 		}
 	}
-	//	if (writeubi)
-	//		pclose(p);
+	if (writeubifs)
+		pclose(p);
 	dd_loginfo("flash", "\ndone [%d]", i * mtd_info.erasesize);
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
@@ -999,7 +1005,8 @@ fail:
 		/* 
 		 * Dummy read to ensure chip(s) are out of lock/suspend state 
 		 */
-		(void)read(mtd_fd, buf, 2);
+		if (mtd_fd >= 0)
+			(void)read(mtd_fd, buf, 2);
 		free(buf);
 	}
 
