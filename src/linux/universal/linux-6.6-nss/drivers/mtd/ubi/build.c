@@ -1724,8 +1724,11 @@ static int ubi_mtd_param_parse(const char *val, const struct kernel_param *kp)
 	strcpy(&p->name[0], tokens[0]);
 
 	token = tokens[1];
-	if (token) {
+	if (of_machine_is_compatible("linksys,mx4300")) {
+			p->vid_hdr_offs = 4096;
+	} else if (token) {
 		p->vid_hdr_offs = bytes_str_to_int(token);
+
 
 		if (p->vid_hdr_offs < 0)
 			return p->vid_hdr_offs;
