@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8052 | brainslayer | 2024-08-05 20:20:54 +0700 (Mon, 05 Aug 2024) | 1 line
+
+temporarily disable coldboot calibration here for testing
+------------------------------------------------------------------------
 r8051 | brainslayer | 2024-08-05 17:08:53 +0700 (Mon, 05 Aug 2024) | 1 line
 
 fix mutex handling for table lock
