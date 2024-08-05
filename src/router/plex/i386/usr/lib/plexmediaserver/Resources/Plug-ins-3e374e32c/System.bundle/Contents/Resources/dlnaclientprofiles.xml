@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+DLNA client profiles for Plex Media Server, version 0.9.6.3
+
+...
+
+Names of containers and codecs observed in the wild:
+
+container = { asf, avi, mov, mp4, mkv, mpegts, wtv, mpeg, m4v }
+video = { cinepak, h263, h264, mjpeg, mpeg1video, mpeg2video, mpeg4, msmpeg4, vc1, wmv2, wmv3 }
+audio = { aac, ac3, truehd, eac3, dca, mp3, mp2, pcm_u8, pcm_s16be, wmapro, wmav2, wmavoice }
+
+NB on m4v:
+  Files with .m4v extensions are usually inside an mp4 container, and show up in Plex as mp4.
+  Devices that claim to support m4v usually just mean mp4 containers with an .m4v extension.
+  When Plex says a container is m4v, it really means "raw mpeg4 video". (It can also mean "corrupt file that looks like raw mpeg4".)
+  So when authoring profiles, it's best to just use mp4 and ignore m4v, unless you know your device supports raw m4v.
+  See http://forum.doom9.org/showthread.php?s=&threadid=62723 for details and discussion on this.
+
+-->
+
+<Clients>
+
+  <Client name="Generic" />
+
+  <Client name="Xbox 360">
+    <!-- Author: Plex Inc. -->
+    <!-- http://support.xbox.com/en-US/xbox-360/settings-and-initial-setup/watch-dvds-movies -->
+    <Identification>
+      <Header name="User-Agent" substring="Xbox" />
+      <Header name="User-Agent" substring="Xenon" />
+    </Identification>
+    <DeviceDescription>
+      <ModelName>Windows Media Player Sharing</ModelName>
+      <ModelNumber>12.0</ModelNumber>
+      <ModelUrl>http://www.microsoft.com/</ModelUrl>
+      <Manufacturer>Microsoft Corporation</Manufacturer>
+      <ManufacturerUrl>http://www.microsoft.com/</ManufacturerUrl>
+      <X-DlnaDoc>DMS-1.50</X-DlnaDoc>
+      <X-DlnaCap />
+    </DeviceDescription>
+    <Settings>
+      <Setting name="OnlyPlainVideoItems" value="true" />
+      <Setting name="OnlyStorageFolders" value="true" />
+      <Setting name="TimelineBufferOffset" value="40" />
+    </Settings>
+    <TranscodeTargets>
+      <VideoProfile container="asf" codec="wmv2" audioCodec="wmav2" />
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <DirectPlayProfiles>
+      <VideoProfile container="avi" codec="mpeg4" audioCodec="ac3,mp3" />
+      <VideoProfile container="avi" codec="h264" audioCodec="aac" />
+      <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="aac" />
+      <VideoProfile container="asf" codec="wmv2,wmv3,vc1" audioCodec="wmav2,wmapro" />
+      <PhotoProfile codec="jpeg" />
+    </DirectPlayProfiles>
+    <CodecProfiles>
+      <VideoCodec name="mpeg4">
+        <Setting name="MaxResolution" value="1280x720" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="5120" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1280" />
+          <UpperBound name="video.height" value="720" />
+          <UpperBound name="video.frameRate" value="30" />
+          <UpperBound name="video.bitrate" value="5120" />
+        </Limitations>
+      </VideoCodec>
+      <VideoCodec name="h264">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="10240" /><!--Deprecated-->
+        <Setting name="MaxH264Profile" value="4.1" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <UpperBound name="video.bitrate" value="10240" />
+          <UpperBound name="video.level" value="41" />
+        </Limitations>
+      </VideoCodec>
+      <VideoCodec name="wmv2,wmv3,vc1">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="15360" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <!-- FPS upper bound takes care of requirement that advanced profile level be <= 3 -->
+          <UpperBound name="video.frameRate" value="30" />
+          <UpperBound name="video.bitrate" value="15360" />
+        </Limitations>
+      </VideoCodec>
+      <VideoAudioCodec name="ac3,wmav2,wmapro">
+        <Setting name="MaxAudioChannels" value="6" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="audio.channels" value="6" />
+        </Limitations>
+      </VideoAudioCodec>
+      <VideoAudioCodec name="aac">
+        <Setting name="MaxAudioChannels" value="2" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="audio.channels" value="2" />
+          <Match name="audio.profile" value="lc" isRequired="false" />
+        </Limitations>
+      </VideoAudioCodec>
+    </CodecProfiles>
+    <ContainerProfiles>
+      <VideoContainer name="avi" mimeType="video/avi" />
+      <VideoContainer name="mp4,mov">
+        <Limitations>
+          <!-- Microsoft doesn't document this, but it appears to be true -->
+          <Match name="part.has64bitOffsets" value="0" isRequired="false" />
+        </Limitations>
+      </VideoContainer>
+    </ContainerProfiles>
+  </Client>
+
+  <Client name="PlayStation 3">
+    <!-- Author: Plex Inc. -->
+    <!-- http://manuals.playstation.net/document/en/ps3/current/video/filetypes.html -->
+    <!-- That list doesn't seem complete or accurate though... -->
+    <Identification>
+      <Header name="X-AV-Client-Info" substring="PLAYSTATION 3" />
+    </Identification>
+    <DeviceDescription>
+      <X-DlnaDoc>DMS-1.50</X-DlnaDoc>
+      <X-DlnaCap />
+      <Sony-AggregationFlags>10</Sony-AggregationFlags>
+    </DeviceDescription>
+    <TranscodeTargets>
+      <VideoProfile container="mpegts" codec="h264" audioCodec="ac3" />
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <Settings>
+      <Setting name="LocalQualityCap" value="11" />
+      <Setting name="AlbumArtPN" value="JPEG_TN" />
+    </Settings>
+    <DirectPlayProfiles>
+      <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+      <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264" audioCodec="ac3,mp2,mp3,aac" />
+      <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="mp2" />
+      <VideoProfile container="mp4" codec="h264,mpeg4" audioCodec="aac,ac3" />
+      <PhotoProfile codec="jpeg,png,gif,bmp,tiff" />
+    </DirectPlayProfiles>
+    <CodecProfiles>
+      <!-- TODO - These limitations don't seem to be documented, might need to find through experimentation -->
+      <VideoCodec name="h264">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="15360" /><!--Deprecated-->
+        <Setting name="MaxH264Profile" value="5.1" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <UpperBound name="video.frameRate" value="30" />
+          <UpperBound name="video.bitrate" value="15360" />
+          <UpperBound name="video.level" value="51" />
+        </Limitations>
+      </VideoCodec>
+      <VideoAudioCodec name="ac3">
+        <Setting name="MaxAudioChannels" value="6" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="640" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="audio.channels" value="6" />
+          <UpperBound name="audio.bitrate" value="640" />
+        </Limitations>
+      </VideoAudioCodec>
+    </CodecProfiles>
+    <ContainerProfiles>
+      <!-- PS3 will play AVI, but likes to see this mime type -->
+      <VideoContainer name="avi" mimeType="video/divx" />
+      <VideoContainer name="mov" mimeType="video/mp4" />
+    </ContainerProfiles>
+  </Client>
+
+  <Client name="WD TV Live HD Media Player">
+    <!-- Author: Plex Inc. -->
+    <!-- http://www.wdc.com/wdproducts/library/UM/ENG/4779-705035.pdf -->
+    <!-- Model number tested: WDBAAN0000NBK -->
+    <!-- TODO - a few more limitations around codec profiles, which are high enough that they're probably not worth listing at present -->
+    <Identification>
+      <Header name="User-Agent" substring="alphanetworks" />
+      <Header name="User-Agent" substring="ALPHA Networks" />
+    </Identification>
+    <Settings>
+      <Setting name="IgnoreTranscodeByteRangeRequests" value="true" />
+      <Setting name="TimelineBufferOffset" value="5" />
+    </Settings>
+    <TranscodeTargets>
+      <VideoProfile container="avi" codec="h264" audioCodec="ac3" />
+      <!-- VideoProfile container="mpeg" codec="mpeg2video" audioCodec="mp3" - Works -->
+      <!-- VideoProfile container="mpegts" codec="h264" audioCodec="ac3" - Doesn't work, unfortunately -->
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <DirectPlayProfiles>
+      <VideoProfile container="avi" codec="mpeg1video,mpeg2video,mpeg4,h264,vc1" audioCodec="ac3,dca,mp2,mp3,pcm_u8" />
+      <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="ac3,dca,mp2,mp3,pcm_u8" />
+      <VideoProfile container="mkv" codec="mpeg1video,mpeg2video,mpeg4,h264,vc1" audioCodec="ac3,dca,aac,mp2,mp3,pcm_u8" />
+      <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264,vc1" audioCodec="ac3,dca,mp2,mp3" />
+      <VideoProfile container="mp4,mov" codec="h264,mpeg4" audioCodec="ac3,aac,mp2,mp3" />
+      <VideoProfile container="asf" codec="vc1,mpeg2video" audioCodec="ac3,wmav2,wmapro" />
+      <PhotoProfile codec="jpeg,png,gif,bmp,tiff" />
+    </DirectPlayProfiles>
+    <CodecProfiles>
+      <VideoCodec name="h264">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <UpperBound name="video.level" value="41" />
+        </Limitations>
+      </VideoCodec>
+      <PhotoCodec name="jpeg">
+        <Setting name="MaxResolution" value="4096x4096" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="photo.width" value="4096" />
+          <UpperBound name="photo.height" value="4096" />
+        </Limitations>
+      </PhotoCodec>
+      <PhotoCodec name="png,gif,bmp,tiff">
+        <Setting name="MaxResolution" value="2048x2048" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="photo.width" value="2048" />
+          <UpperBound name="photo.height" value="2048" />
+        </Limitations>
+      </PhotoCodec>
+    </CodecProfiles>
+  </Client>
+
+  <Client name="Asus Transformer Prime TF201">
+    <!-- Author: XeboZone -->
+    <!-- http://dlcdnet.asus.com/pub/ASUS/EeePAD/TF201/TF201_MANUAL_en_20111206.pdf -->
+    <!-- http://www.nvidia.com/object/tegra-3-processor.html -->
+    <!-- Supported Video (User Manual): H.263, H.264, MPEG-4,VC-1/WMV,VP8 -->
+    <!-- Supported Audio (User Manual): AAC LC/LTP, HE-AACv1(AAC+), HE-AACv2(enhanced AAC+), AMR-NB, AMR-WB, MP3, FLAC, MIDI, PCM/WAVE, Vorbis, WAV alaw-mu-law, WAV linear PCM, WMA10, WMA Lossless, WMA Pro LBR -->
+    <!-- Additional Supported Video (NVidia Tegra 3): MPEG2, DivX4/5, XviD HT, Theora, VP8, WMV, Sorenson Spark, Read Video, VP6 -->
+    <!-- Additional Supported Audio (NVidia Tegra 3): BSAC (Mpeg-4 audio), Mpeg-2 Audio, WMA 9 -->
+    <!-- TODO - mkv with h264:aac lags? mpegts with h264 video is supported; I couldn't test which audio codecs are supported in this container. -->
+    <Identification>
+      <Header name="User-Agent" substring="Transformer Prime TF201" />
+    </Identification>
+    <TranscodeTargets>
+      <VideoProfile container="mpegts" codec="h264" audioCodec="aac" />
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <DirectPlayProfiles>
+      <!-- There should be more supported formats. The TEGRA3 can play a lot, but these are the ones I've tested... and the most common -->
+      <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+      <VideoProfile container="mp4" codec="mpeg4,h264" audioCodec="aac" />
+      <VideoProfile container="mov" codec="h264" audioCodec="aac" />
+      <VideoProfile container="mkv" codec="h264" audioCodec="aac" />
+      <PhotoProfile codec="jpeg" />
+    </DirectPlayProfiles>
+  </Client>
+
+  <Client name="Sony Bluray">
+    <!-- Author: fkick -->
+    <!-- Based on PS3 Media Server, SonyBluRay.conf and Serviio Profile -->
+    <Identification>
+      <Header name="X-AV-Client-Info" regex="(Blu-ray Disc Player|Home Theater System|Home Theatre System|Media Player)" />
+      <Header name="X-AV-Physical-Unit-Info" regex="(Blu-ray Disc Player|Home Theater System|Home Theatre System|Media Player)" />
+    </Identification>
+    <DeviceDescription>
+      <!-- Act as WMP so that devices doesn't show root categories, needed for older Sony Blu-Ray devices -->
+      <Manufacturer>Microsoft Corporation</Manufacturer>
+      <ModelName>Windows Media Player Sharing</ModelName>
+      <ModelNumber>3.0</ModelNumber>
+    </DeviceDescription>
+    <TranscodeTargets>
+      <VideoProfile container="mpegts" codec="mpeg2video" audioCodec="ac3" />
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <DirectPlayProfiles>
+      <VideoProfile container="mpegts" codec="mpeg1video,mpeg2video,h264" audioCodec="ac3,aac,mp3,pcm_u8" />
+      <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="ac3,mp3,pcm_u8,mpa" />
+      <VideoProfile container="mp4,h264" codec="mpeg4,h264" audioCodec="ac3,aac,pcm_u8,mp3" />
+      <VideoProfile container="avi" codec="mpeg4,h264" audioCodec="ac3,aac,mp3,pcm_u8" />
+      <!-- Sony BDP requests all formats except mpeg-ps and mpeg-ts in 32KB chunks which works badly over wifi,
+           hence mkv files are remuxed to mpeg-ts by default in this profile. If you have a European or Canadian player (not US),
+           you stream over a wired connection and want mkv subtitles, dts support, and multiple audio tracks -
+           but don't care that you can't seek - then uncomment the line below to have the player decode mkv natively. -->
+      <!-- <VideoProfile container="mkv" codec="h264,mpeg4" audioCodec="ac3,aac,mp3,pcm_u8" /> -->
+      <PhotoProfile codec="jpeg" />
+    </DirectPlayProfiles>
+    <CodecProfiles>
+      <VideoCodec name="h264">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="15360" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <UpperBound name="video.frameRate" value="30" />
+          <UpperBound name="video.bitrate" value="15360" />
+          <UpperBound name="video.level" value="41" />
+        </Limitations>
+      </VideoCodec>
+      <VideoAudioCodec name="ac3">
+        <Setting name="MaxAudioChannels" value="6" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="320" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="audio.channels" value="6" />
+          <UpperBound name="audio.bitrate" value="320" />
+        </Limitations>
+      </VideoAudioCodec>
+    </CodecProfiles>
+    <ContainerProfiles>
+      <!-- US Players require avi be set to the video/mpeg mime type. If you have a European or Canadian player, you can delete the line below
+           (may help speed up avi load times on non-US players -->
+      <VideoContainer name="avi" mimeType="video/mpeg" />
+      <!-- For European and Canadian players, you can set the mkv mime type to video/divx to allow subtitle and multitrack audio  -->
+      <VideoContainer name="mkv" mimeType="video/vnd.dlna.mpeg-tts" />
+      <VideoContainer name="mpegts" mimeType="video/vnd.dlna.mpeg-tts" />
+      <VideoContainer name="mov" mimeType="video/mpeg" />
+      <VideoContainer name="mp4" mimeType="video/mpeg" />
+      <!-- PMS already sets the following mime types, so they're commented out and left as documentation -->
+      <!--VideoContainer name="mpeg" mimeType="video/mpeg" />
+      <AudioContainer name="mp3" mimeType="audio/mpeg" /-->
+    </ContainerProfiles>
+    <MediaProfiles>
+      <!-- WMA should be supported, but only appears to be when disguised as mpeg -->
+      <PN name="WMA_BASE" remap="MP3" mimeType="audio/mpeg" />
+      <PN name="WMA_FULL" remap="MP3" mimeType="audio/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_MP_SD_AAC_MULT5" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_MP_SD_MPEG1_L3" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_MP_SD_AC3" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_MP_HD_720p_AAC" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_MP_HD_1080i_AAC" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_HP_HD_AAC" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="AVC_MP4_LPCM" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="MPEG4_P2_MP4_ASP_AAC" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="MPEG4_P2_MP4_SP_L6_AAC" mimeType="video/mpeg" />
+      <PN name="MPEG_PS_PAL,MPEG_PS_NTSC" remap="MPEG4_P2_MP4_NDSD" mimeType="video/mpeg" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AAC_MULT5_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_MPEG1_L3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AC3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AC3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_SD_AC3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AAC_MULT5" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AAC_MULT5_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AAC_MULT5_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_MPEG1_L3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_MPEG1_L3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_MPEG1_L3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AC3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AC3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_MP_HD_AC3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HD_DTS_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HD_DTS_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HD_50_LPCM_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HP_SD_MPEG1_L2_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HP_SD_MPEG1_L2_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HP_HD_MPEG1_L2_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="AVC_TS_HP_HD_MPEG1_L2_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AAC" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AAC_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AAC_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AC3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AC3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_AC3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_MPEG1_L3" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_MPEG1_L3_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="MPEG4_P2_TS_ASP_MPEG1_L3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="VC1_TS_AP_L1_AC3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="VC1_TS_AP_L2_AC3_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="VC1_TS_HD_DTS_T" mimeType="video/vnd.dlna.mpeg-tts" />
+      <PN name="MPEG_TS_SD_EU,MPEG_TS_SD_NA,MPEG_TS_SD_KO" remap="VC1_TS_HD_DTS_ISO" mimeType="video/vnd.dlna.mpeg-tts" />
+    </MediaProfiles>
+  </Client>
+
+  <Client name="Sony Streaming Player">
+    <!-- Author: Plex Inc. -->
+    <Identification>
+      <Header name="X-AV-Client-Info" regex="cn=&quot;Sony Corporation&quot;;.*mn=&quot;Media Player" />
+    </Identification>
+    <TranscodeTargets>
+      <VideoProfile container="mpegts" codec="h264" audioCodec="aac" />
+      <PhotoProfile codec="jpeg" />
+    </TranscodeTargets>
+    <Settings>
+      <Setting name="LocalQualityCap" value="11" />
+    </Settings>
+    <DirectPlayProfiles>
+      <VideoProfile container="avi" codec="mpeg4" audioCodec="mp2,mp3" />
+      <VideoProfile container="mkv" codec="h264,mpeg4" audioCodec="aac,ac3,mp2,mp3,pcm_u8" />
+      <VideoProfile container="mp4" codec="h264,mpeg2video,mpeg4" audioCodec="aac,ac3,mp2,mp3" />
+      <VideoProfile container="mpeg" codec="mpeg1video,mpeg2video" audioCodec="mp2" />
+      <PhotoProfile codec="jpeg,png,gif,bmp,tiff" />
+    </DirectPlayProfiles>
+    <CodecProfiles>
+      <VideoCodec name="h264">
+        <Setting name="MaxResolution" value="1920x1080" /><!--Deprecated-->
+        <Setting name="MaxFps" value="30" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="15360" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="video.width" value="1920" />
+          <UpperBound name="video.height" value="1080" />
+          <UpperBound name="video.frameRate" value="30" />
+          <UpperBound name="video.bitrate" value="15360" />
+          <UpperBound name="video.level" value="41" />
+        </Limitations>
+      </VideoCodec>
+      <VideoAudioCodec name="ac3">
+        <Setting name="MaxAudioChannels" value="6" /><!--Deprecated-->
+        <Setting name="MaxBitRate" value="640" /><!--Deprecated-->
+        <Limitations>
+          <UpperBound name="audio.channels" value="6" />
+          <UpperBound name="audio.bitrate" value="640" />
+        </Limitations>
+      </VideoAudioCodec>
+    </CodecProfiles>
+  </Client>
+
+</Clients>
