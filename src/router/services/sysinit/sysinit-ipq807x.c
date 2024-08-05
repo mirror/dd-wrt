@@ -1099,7 +1099,7 @@ void start_sysinit(void)
 		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
 
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
+		eval("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
 		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
 		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
 		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
