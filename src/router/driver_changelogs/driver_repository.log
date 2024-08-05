@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8055 | brainslayer | 2024-08-05 21:20:38 +0700 (Mon, 05 Aug 2024) | 1 line
+
+remove regdomain from bd data
+------------------------------------------------------------------------
+r8054 | brainslayer | 2024-08-05 21:19:04 +0700 (Mon, 05 Aug 2024) | 1 line
+
+remove regdomain from bd data
+------------------------------------------------------------------------
+r8053 | brainslayer | 2024-08-05 21:14:50 +0700 (Mon, 05 Aug 2024) | 1 line
+
+remove regdomain from bd data
+------------------------------------------------------------------------
 r8052 | brainslayer | 2024-08-05 20:20:54 +0700 (Mon, 05 Aug 2024) | 1 line
 
 temporarily disable coldboot calibration here for testing
