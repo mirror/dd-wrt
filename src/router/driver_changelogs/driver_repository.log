@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8050 | brainslayer | 2024-08-05 15:22:25 +0700 (Mon, 05 Aug 2024) | 1 line
+
+Fix bitrate
+------------------------------------------------------------------------
 r8049 | brainslayer | 2024-08-05 01:16:54 +0700 (Mon, 05 Aug 2024) | 1 line
 
 add bdf data auto patcher to hopefully solve version incompatibilties
