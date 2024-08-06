@@ -1,3 +1,35 @@
+exfatprogs 1.2.4 - released 2024-06-17
+======================================
+
+BUG FIXES :
+ * tune.exfat: Fix "invalid serial number" error when
+   setting an serial number.
+ * fsck.exfat: Fix memory leak in an error path
+
+exfatprogs 1.2.3 - released 2024-05-23
+======================================
+
+CHANGES :
+ * dump.exfat: Report sector size in bytes and cluster size in
+   terms of sectors.
+ * fsck.exfat: Show checksum value if the SetChecksum of File
+   directory entry is invalid.
+ * mkfs.exfat: Improve FAT length calculation to reduce
+   the FAT size.
+
+NEW FEATURES :
+ * mkfs.exfat: Add the option "--sector-size".
+ * fsck.exfat: Support checking and repairing VendorAllcation and
+   VendorExtension directory entries.
+
+BUG FIXES :
+ * exfatprogs: Remove unnecessary memory allocations.
+ * fsck.exfat: Fix corruption that can occur if the cluster size
+   is 512-byte.
+ * fsck.exfat: Fix the SecondaryCount of File directory entry
+   when the count of Name directory entries is 17 or higher.
+ * tune.exfat: Fix an error that accepts invalid serial numbers.
+
 exfatprogs 1.2.2 - released 2023-10-26
 ======================================
 

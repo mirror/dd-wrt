@@ -7,6 +7,9 @@ mkfs.exfat \- create an exFAT filesystem
 .B \-b
 .I boundary_alignment
 ] [
+.B \-s
+.I sector_size
+] [
 .B \-c
 .I cluster_size
 ] [
@@ -71,6 +74,14 @@ _
 >512 GiB	\[<=]2 TiB	512 KiB	64 MiB
 .TE
 The default is always 1 MiB.
+.TP
+.BR \-s ", " \-\-sector\-size =\fIsize\fR
+Specifies the sector size of the exFAT file system.
+The \fIsize\fR argument is specified in bytes or may be specified with
+\fBk\fR/\fBK\fR suffix for kibibytes and must either 512, 1024, 2048 or 4096
+bytes.
+The default value is the sector size reported by the device, or 512 bytes if the
+device sector size cannot be determined.
 .TP
 .BR \-c ", " \-\-cluster\-size =\fIsize\fR
 Specifies the cluster size of the exFAT file system.

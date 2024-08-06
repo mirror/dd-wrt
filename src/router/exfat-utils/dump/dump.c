@@ -131,8 +131,8 @@ static int exfat_show_ondisk_all_info(struct exfat_blk_dev *bd)
 	exfat_info("Cluster Count: \t\t\t\t%u\n", total_clus);
 	exfat_info("Root Cluster (cluster offset): \t\t%u\n", root_clu);
 	exfat_info("Volume Serial: \t\t\t\t0x%x\n", le32_to_cpu(pbsx->vol_serial));
-	exfat_info("Sector Size Bits: \t\t\t%u\n", pbsx->sect_size_bits);
-	exfat_info("Sector per Cluster bits: \t\t%u\n\n", pbsx->sect_per_clus_bits);
+	exfat_info("Bytes per Sector: \t\t\t%u\n", 1 << pbsx->sect_size_bits);
+	exfat_info("Sectors per Cluster: \t\t\t%u\n\n", 1 << pbsx->sect_per_clus_bits);
 
 	bd->cluster_size =
 		1 << (pbsx->sect_per_clus_bits + pbsx->sect_size_bits);

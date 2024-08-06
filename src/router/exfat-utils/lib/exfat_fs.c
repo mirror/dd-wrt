@@ -22,7 +22,7 @@ struct exfat_inode *exfat_alloc_inode(__u16 attr)
 	int size;
 
 	size = offsetof(struct exfat_inode, name) + NAME_BUFFER_SIZE;
-	node = (struct exfat_inode *)calloc(1, size);
+	node = calloc(1, size);
 	if (!node) {
 		exfat_err("failed to allocate exfat_node\n");
 		return NULL;
@@ -117,8 +117,8 @@ void exfat_free_exfat(struct exfat *exfat)
 			free(exfat->upcase_table);
 		if (exfat->root)
 			exfat_free_inode(exfat->root);
-		if (exfat->zero_cluster)
-			free(exfat->zero_cluster);
+		if (exfat->lookup_buffer)
+			free(exfat->lookup_buffer);
 		free(exfat);
 	}
 }
@@ -127,9 +127,11 @@ struct exfat *exfat_alloc_exfat(struct exfat_blk_dev *blk_dev, struct pbr *bs)
 {
 	struct exfat *exfat;
 
-	exfat = (struct exfat *)calloc(1, sizeof(*exfat));
-	if (!exfat)
+	exfat = calloc(1, sizeof(*exfat));
+	if (!exfat) {
+		free(bs);
 		return NULL;
+	}
 
 	INIT_LIST_HEAD(&exfat->dir_list);
 	exfat->blk_dev = blk_dev;
@@ -139,32 +141,26 @@ struct exfat *exfat_alloc_exfat(struct exfat_blk_dev *blk_dev, struct pbr *bs)
 	exfat->sect_size = EXFAT_SECTOR_SIZE(bs);
 
 	/* TODO: bitmap could be very large. */
-	exfat->alloc_bitmap = (char *)calloc(1,
-			EXFAT_BITMAP_SIZE(exfat->clus_count));
+	exfat->alloc_bitmap = calloc(1, EXFAT_BITMAP_SIZE(exfat->clus_count));
 	if (!exfat->alloc_bitmap) {
 		exfat_err("failed to allocate bitmap\n");
 		goto err;
 	}
 
-	exfat->ohead_bitmap =
-		calloc(1, EXFAT_BITMAP_SIZE(exfat->clus_count));
+	exfat->ohead_bitmap = calloc(1, EXFAT_BITMAP_SIZE(exfat->clus_count));
 	if (!exfat->ohead_bitmap) {
 		exfat_err("failed to allocate bitmap\n");
 		goto err;
 	}
 
-	exfat->disk_bitmap =
-		calloc(1, EXFAT_BITMAP_SIZE(exfat->clus_count));
+	exfat->disk_bitmap = calloc(1, EXFAT_BITMAP_SIZE(exfat->clus_count));
 	if (!exfat->disk_bitmap) {
 		exfat_err("failed to allocate bitmap\n");
 		goto err;
 	}
 
-	exfat->zero_cluster = calloc(1, exfat->clus_size);
-	if (!exfat->zero_cluster) {
-		exfat_err("failed to allocate a zero-filled cluster buffer\n");
-		goto err;
-	}
+	exfat->buffer_count = ((MAX_EXT_DENTRIES + 1) * DENTRY_SIZE) /
+		exfat_get_read_size(exfat) + 1;
 
 	exfat->start_clu = EXFAT_FIRST_CLUSTER;
 	return exfat;
@@ -173,39 +169,36 @@ err:
 	return NULL;
 }
 
-struct buffer_desc *exfat_alloc_buffer(int count,
-				       unsigned int clu_size, unsigned int sect_size)
+struct buffer_desc *exfat_alloc_buffer(struct exfat *exfat)
 {
 	struct buffer_desc *bd;
-	int i;
+	unsigned int i;
+	unsigned int read_size = exfat_get_read_size(exfat);
 
-	bd = (struct buffer_desc *)calloc(sizeof(*bd), count);
+	bd = calloc(exfat->buffer_count, sizeof(*bd));
 	if (!bd)
 		return NULL;
 
-	for (i = 0; i < count; i++) {
-		bd[i].buffer = (char *)malloc(clu_size);
+	for (i = 0; i < exfat->buffer_count; i++) {
+		bd[i].buffer = malloc(read_size);
 		if (!bd[i].buffer)
 			goto err;
-		bd[i].dirty = (char *)calloc(clu_size / sect_size, 1);
-		if (!bd[i].dirty)
-			goto err;
+
+		memset(&bd[i].dirty, 0, sizeof(bd[i].dirty));
 	}
 	return bd;
 err:
-	exfat_free_buffer(bd, count);
+	exfat_free_buffer(exfat, bd);
 	return NULL;
 }
 
-void exfat_free_buffer(struct buffer_desc *bd, int count)
+void exfat_free_buffer(const struct exfat *exfat, struct buffer_desc *bd)
 {
-	int i;
+	unsigned int i;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < exfat->buffer_count; i++) {
 		if (bd[i].buffer)
 			free(bd[i].buffer);
-		if (bd[i].dirty)
-			free(bd[i].dirty);
 	}
 	free(bd);
 }

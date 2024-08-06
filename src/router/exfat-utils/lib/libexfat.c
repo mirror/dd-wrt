@@ -187,7 +187,9 @@ int exfat_get_blk_dev_info(struct exfat_user_input *ui,
 	if (!ui->boundary_align)
 		ui->boundary_align = DEFAULT_BOUNDARY_ALIGNMENT;
 
-	if (ioctl(fd, BLKSSZGET, &bd->sector_size) < 0)
+	if (ui->sector_size)
+		bd->sector_size = ui->sector_size;
+	else if (ioctl(fd, BLKSSZGET, &bd->sector_size) < 0)
 		bd->sector_size = DEFAULT_SECTOR_SIZE;
 	bd->sector_size_bits = sector_size_bits(bd->sector_size);
 	bd->num_sectors = blk_dev_size / bd->sector_size;
@@ -216,6 +218,24 @@ ssize_t exfat_read(int fd, void *buf, size_t size, off_t offset)
 ssize_t exfat_write(int fd, void *buf, size_t size, off_t offset)
 {
 	return pwrite(fd, buf, size, offset);
+}
+
+ssize_t exfat_write_zero(int fd, size_t size, off_t offset)
+{
+	const char zero_buf[4 * KB] = {0};
+
+	lseek(fd, offset, SEEK_SET);
+
+	while (size > 0) {
+		int iter_size = MIN(size, sizeof(zero_buf));
+
+		if (iter_size != write(fd, zero_buf, iter_size))
+			return -EIO;
+
+		size -= iter_size;
+	}
+
+	return 0;
 }
 
 size_t exfat_utf16_len(const __le16 *str, size_t max_size)
@@ -355,7 +375,7 @@ off_t exfat_get_root_entry_offset(struct exfat_blk_dev *bd)
 	unsigned int cluster_size, sector_size;
 	off_t root_clu_off;
 
-	bs = (struct pbr *)malloc(EXFAT_MAX_SECTOR_SIZE);
+	bs = malloc(EXFAT_MAX_SECTOR_SIZE);
 	if (!bs) {
 		exfat_err("failed to allocate memory\n");
 		return -ENOMEM;
@@ -464,7 +484,7 @@ int exfat_set_volume_label(struct exfat *exfat, char *label_input)
 		dcount = filter.out.dentry_count;
 		memset(pvol->vol_label, 0, sizeof(pvol->vol_label));
 	} else {
-		pvol = calloc(sizeof(struct exfat_dentry), 1);
+		pvol = calloc(1, sizeof(struct exfat_dentry));
 		if (!pvol)
 			return -ENOMEM;
 
@@ -509,7 +529,7 @@ static int set_guid(__u8 *guid, const char *input)
 	int i, j, zero_len = 0;
 	int len = strlen(input);
 
-	if (len != VOLUME_GUID_LEN * 2 && len != VOLUME_GUID_LEN * 2 + 4) {
+	if (len != EXFAT_GUID_LEN * 2 && len != EXFAT_GUID_LEN * 2 + 4) {
 		exfat_err("invalid format for volume guid\n");
 		return -EINVAL;
 	}
@@ -523,7 +543,7 @@ static int set_guid(__u8 *guid, const char *input)
 			ch -= 'a' - 0xA;
 		else if (ch >= 'A' && ch <= 'F')
 			ch -= 'A' - 0xA;
-		else if (ch == '-' && len == VOLUME_GUID_LEN * 2 + 4 &&
+		else if (ch == '-' && len == EXFAT_GUID_LEN * 2 + 4 &&
 			 (i == 8 || i == 13 || i == 18 || i == 23))
 			continue;
 		else {
@@ -542,7 +562,7 @@ static int set_guid(__u8 *guid, const char *input)
 			zero_len++;
 	}
 
-	if (zero_len == VOLUME_GUID_LEN * 2) {
+	if (zero_len == EXFAT_GUID_LEN * 2) {
 		exfat_err("%s is invalid for volume GUID\n", input);
 		return -EINVAL;
 	}
@@ -814,7 +834,7 @@ int exfat_set_volume_serial(struct exfat_blk_dev *bd,
 	}
 
 	bd->sector_size = 1 << ppbr->bsx.sect_size_bits;
-	ppbr->bsx.vol_serial = ui->volume_serial;
+	ppbr->bsx.vol_serial = cpu_to_le32(ui->volume_serial);
 
 	/* update main boot sector */
 	ret = exfat_write_sector(bd, (char *)ppbr, BOOT_SEC_IDX);
@@ -981,6 +1001,10 @@ int read_boot_sect(struct exfat_blk_dev *bdev, struct pbr **bs)
 	unsigned int sect_size, clu_size;
 
 	pbr = malloc(sizeof(struct pbr));
+	if (!pbr) {
+		exfat_err("failed to allocate memory\n");
+		return -ENOMEM;
+	}
 
 	if (exfat_read(bdev->dev_fd, pbr, sizeof(*pbr), 0) !=
 	    (ssize_t)sizeof(*pbr)) {
@@ -1016,4 +1040,21 @@ int read_boot_sect(struct exfat_blk_dev *bdev, struct pbr **bs)
 err:
 	free(pbr);
 	return err;
+}
+
+int exfat_parse_ulong(const char *s, unsigned long *out)
+{
+	char *endptr;
+
+	errno = 0;
+
+	*out = strtoul(s, &endptr, 0);
+
+	if (errno)
+		return -errno;
+
+	if (s == endptr || *endptr != '\0')
+		return -EINVAL;
+
+	return 0;
 }

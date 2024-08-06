@@ -80,6 +80,7 @@ struct exfat_blk_dev {
 struct exfat_user_input {
 	char dev_name[255];
 	bool writeable;
+	unsigned int sector_size;
 	unsigned int cluster_size;
 	unsigned int sec_per_clu;
 	unsigned int boundary_align;
@@ -112,6 +113,9 @@ typedef __u32	bitmap_t;
 
 #define BITMAP_SET(bmap, bit)	\
 	(((bitmap_t *)(bmap))[BIT_ENTRY(bit)] |= BIT_MASK(bit))
+
+#define BITMAP_CLEAR(bmap, bit)	\
+	(((bitmap_t *)(bmap))[BIT_ENTRY(bit)] &= ~BIT_MASK(bit))
 
 static inline bool exfat_bitmap_get(char *bmap, clus_t c)
 {
@@ -150,6 +154,7 @@ int exfat_get_blk_dev_info(struct exfat_user_input *ui,
 		struct exfat_blk_dev *bd);
 ssize_t exfat_read(int fd, void *buf, size_t size, off_t offset);
 ssize_t exfat_write(int fd, void *buf, size_t size, off_t offset);
+ssize_t exfat_write_zero(int fd, size_t size, off_t offset);
 
 size_t exfat_utf16_len(const __le16 *str, size_t max_size);
 ssize_t exfat_utf16_enc(const char *in_str, __u16 *out_str, size_t out_size);
@@ -184,6 +189,7 @@ int exfat_o2c(struct exfat *exfat, off_t device_offset,
 bool exfat_heap_clus(struct exfat *exfat, clus_t clus);
 int exfat_root_clus_count(struct exfat *exfat);
 int read_boot_sect(struct exfat_blk_dev *bdev, struct pbr **bs);
+int exfat_parse_ulong(const char *s, unsigned long *out);
 
 /*
  * Exfat Print

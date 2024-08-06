@@ -16,7 +16,7 @@ struct buffer_desc;
 struct exfat_de_iter {
 	struct exfat		*exfat;
 	struct exfat_inode	*parent;
-	struct buffer_desc	*buffer_desc;		/* cluster * 2 */
+	struct buffer_desc	*buffer_desc;
 	__u32			ra_next_clus;
 	unsigned int		ra_begin_offset;
 	unsigned int		ra_partial_size;

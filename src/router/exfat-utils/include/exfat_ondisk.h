@@ -41,6 +41,7 @@
 #define MAX_EXFAT_DENTRIES	8388608
 #define MIN_FILE_DENTRIES	3
 #define MAX_NAME_DENTRIES	17
+#define MAX_EXT_DENTRIES	0xFF
 
 /* dentry types */
 #define MSDOS_DELETED		0xE5	/* deleted mark */
@@ -60,6 +61,8 @@
 #define EXFAT_STREAM		0xC0	/* stream entry */
 #define EXFAT_NAME		0xC1	/* file name entry */
 #define EXFAT_ACL		0xC2	/* stream entry */
+#define EXFAT_VENDOR_EXT	0xE0
+#define EXFAT_VENDOR_ALLOC	0xE1
 
 /* checksum types */
 #define CS_DIR_ENTRY		0
@@ -134,7 +137,7 @@ struct pbr {
 };
 
 #define VOLUME_LABEL_MAX_LEN	11
-#define VOLUME_GUID_LEN		16
+#define EXFAT_GUID_LEN		16
 #define ENTRY_NAME_MAX		15
 
 struct exfat_dentry {
@@ -196,9 +199,22 @@ struct exfat_dentry {
 			__u8 num_ext;
 			__le16 checksum;
 			__u16 flags;
-			__u8 guid[VOLUME_GUID_LEN];
+			__u8 guid[EXFAT_GUID_LEN];
 			__u8 reserved[10];
 		} __attribute__((packed)) guid; /* volume GUID directory entry */
+		struct {
+			__u8 flags;
+			__u8 guid[EXFAT_GUID_LEN];
+			__u8 vendor_defined[14];
+		} __attribute__((packed)) vendor_ext ; /* vendor extension entry */
+		struct {
+			__u8 flags;
+			__u8 guid[EXFAT_GUID_LEN];
+			__u8 vendor_defined[2];
+			__le32 start_clu;
+			__le64 size;
+		} __attribute__((packed)) vendor_alloc; /* vendor allocation entry */
+
 	} __attribute__((packed)) dentry;
 } __attribute__((packed));
 

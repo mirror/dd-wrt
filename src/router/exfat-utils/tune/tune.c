@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 {
 	int c;
 	int ret = EXIT_FAILURE;
+	unsigned long volume_serial;
 	struct exfat_blk_dev bd;
 	struct exfat_user_input ui;
 	bool version_only = false;
@@ -85,7 +86,17 @@ int main(int argc, char *argv[])
 			flags = EXFAT_GET_VOLUME_SERIAL;
 			break;
 		case 'I':
-			ui.volume_serial = strtoul(optarg, NULL, 0);
+			ret = exfat_parse_ulong(optarg, &volume_serial);
+			if (volume_serial > UINT_MAX)
+				ret = -ERANGE;
+
+
+			if (ret < 0) {
+				exfat_err("invalid serial number(%s)\n", optarg);
+				goto out;
+			}
+
+			ui.volume_serial = volume_serial;
 			flags = EXFAT_SET_VOLUME_SERIAL;
 			break;
 		case 'V':
@@ -129,7 +140,6 @@ int main(int argc, char *argv[])
 
 	exfat = exfat_alloc_exfat(&bd, bs);
 	if (!exfat) {
-		free(bs);
 		ret = -ENOMEM;
 		goto close_fd_out;
 	}

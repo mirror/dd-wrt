@@ -48,7 +48,7 @@ static struct exfat_repair_problem problems[] = {
 	{ER_DE_CHECKSUM, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
 	{ER_DE_UNKNOWN, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
 	{ER_DE_FILE, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
-	{ER_DE_SECONDARY_COUNT, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
+	{ER_DE_SECONDARY_COUNT, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
 	{ER_DE_STREAM, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
 	{ER_DE_NAME, ERF_PREEN_YES, ERP_DELETE, 0, 0, 0},
 	{ER_DE_NAME_HASH, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
@@ -62,6 +62,7 @@ static struct exfat_repair_problem problems[] = {
 	{ER_FILE_LARGER_SIZE, ERF_PREEN_YES, ERP_TRUNCATE, 0, 0, 0},
 	{ER_FILE_DUPLICATED_CLUS, ERF_PREEN_YES, ERP_TRUNCATE, 0, 0, 0},
 	{ER_FILE_ZERO_NOFAT, ERF_PREEN_YES, ERP_FIX, 0, 0, 0},
+	{ER_VENDOR_GUID, ERF_DEFAULT_NO, ERP_FIX, 0, 0, 0},
 };
 
 static struct exfat_repair_problem *find_problem(er_problem_code_t prcode)
@@ -245,7 +246,7 @@ ask_again:
 		char *rename = NULL;
 		__u16 hash;
 		struct exfat_dentry *dentry;
-		int ret, i;
+		int ret;
 
 		switch (num) {
 		case 1:
@@ -280,15 +281,8 @@ ask_again:
 		exfat_de_iter_get_dirty(iter, 1, &dentry);
 		dentry->stream_name_len = (__u8)ret;
 		dentry->stream_name_hash = cpu_to_le16(hash);
+		return 1;
 
-		exfat_de_iter_get_dirty(iter, 0, &dentry);
-		i = dentry->file_num_ext;
-		dentry->file_num_ext = 2;
-
-		for (; i > 2; i--) {
-			exfat_de_iter_get_dirty(iter, i, &dentry);
-			dentry->type &= EXFAT_DELETE;
-		}
 	}
 
 	return 0;
