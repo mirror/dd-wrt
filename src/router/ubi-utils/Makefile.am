@@ -45,26 +45,26 @@ EXTRA_DIST = COPYING CHANGELOG.md README.txt
 
 include lib/Makemodule.am
 include ubi-utils/Makemodule.am
-include misc-utils/Makemodule.am
-include nand-utils/Makemodule.am
-include nor-utils/Makemodule.am
+#include misc-utils/Makemodule.am
+#include nand-utils/Makemodule.am
+#include nor-utils/Makemodule.am
 
 if BUILD_UBIFS
 include ubifs-utils/Makemodule.am
 endif
 
 if BUILD_JFFSX
-include jffsX-utils/Makemodule.am
+#include jffsX-utils/Makemodule.am
 endif
 
 if BUILD_TESTS
-include tests/ubi-tests/Makemodule.am
-include tests/jittertest/Makemodule.am
-include tests/checkfs/Makemodule.am
-include tests/fs-tests/Makemodule.am
-include tests/mtd-tests/Makemodule.am
+#include tests/ubi-tests/Makemodule.am
+#include tests/jittertest/Makemodule.am
+#include tests/checkfs/Makemodule.am
+#include tests/fs-tests/Makemodule.am
+#include tests/mtd-tests/Makemodule.am
 endif
 
 if UNIT_TESTS
-include tests/unittests/Makemodule.am
+#include tests/unittests/Makemodule.am
 endif
