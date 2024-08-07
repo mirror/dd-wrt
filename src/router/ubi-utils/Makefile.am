@@ -44,13 +44,13 @@ TESTS =
 EXTRA_DIST = COPYING CHANGELOG.md README.txt
 
 include lib/Makemodule.am
-#include ubi-utils/Makemodule.am
+include ubi-utils/Makemodule.am
 #include misc-utils/Makemodule.am
 #include nand-utils/Makemodule.am
 #include nor-utils/Makemodule.am
 
 if BUILD_UBIFS
-include ubifs-utils/Makemodule.am
+#include ubifs-utils/Makemodule.am
 endif
 
 if BUILD_JFFSX
