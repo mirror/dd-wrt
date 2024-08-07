@@ -160,12 +160,13 @@ Do all of the following:
 	on that CPU.  If a thread that expects to run on the de-jittered
 	CPU awakens, the scheduler will send an IPI that can result in
 	a subsequent SCHED_SOFTIRQ.
-2.	CONFIG_NO_HZ_FULL=y and ensure that the CPU to be de-jittered
-	is marked as an adaptive-ticks CPU using the "nohz_full="
-	boot parameter.  This reduces the number of scheduler-clock
-	interrupts that the de-jittered CPU receives, minimizing its
-	chances of being selected to do the load balancing work that
-	runs in SCHED_SOFTIRQ context.
+2.	Build with CONFIG_RCU_NOCB_CPU=y, CONFIG_RCU_NOCB_CPU_ALL=y,
+	CONFIG_NO_HZ_FULL=y, and, in addition, ensure that the CPU
+	to be de-jittered is marked as an adaptive-ticks CPU using the
+	"nohz_full=" boot parameter.  This reduces the number of
+	scheduler-clock interrupts that the de-jittered CPU receives,
+	minimizing its chances of being selected to do the load balancing
+	work that runs in SCHED_SOFTIRQ context.
 3.	To the extent possible, keep the CPU out of the kernel when it
 	is non-idle, for example, by avoiding system calls and by
 	forcing both kernel threads and interrupts to execute elsewhere.
@@ -310,10 +311,11 @@ To reduce its OS jitter, do at least one of the following:
 	is feasible only if your workload never requires RCU priority
 	boosting, for example, if you ensure frequent idle time on all
 	CPUs that might execute within the kernel.
-3.	Build with CONFIG_RCU_NOCB_CPU=y and boot with the rcu_nocbs=
-	boot parameter offloading RCU callbacks from all CPUs susceptible
-	to OS jitter.  This approach prevents the rcuc/%u kthreads from
-	having any work to do, so that they are never awakened.
+3.	Build with CONFIG_RCU_NOCB_CPU=y and CONFIG_RCU_NOCB_CPU_ALL=y,
+	which offloads all RCU callbacks to kthreads that can be moved
+	off of CPUs susceptible to OS jitter.  This approach prevents the
+	rcuc/%u kthreads from having any work to do, so that they are
+	never awakened.
 4.	Ensure that the CPU never enters the kernel, and, in particular,
 	avoid initiating any CPU hotplug operations on this CPU.  This is
 	another way of preventing any callbacks from being queued on the

@@ -484,7 +484,9 @@ unsigned long rcu_batches_completed_bh(void);
 
 #endif /* #else #ifdef CONFIG_TINY_RCU */
 
-#ifdef CONFIG_RCU_NOCB_CPU
+#if defined(CONFIG_RCU_NOCB_CPU_ALL)
+static inline bool rcu_is_nocb_cpu(int cpu) { return true; }
+#elif defined(CONFIG_RCU_NOCB_CPU)
 bool rcu_is_nocb_cpu(int cpu);
 #else
 static inline bool rcu_is_nocb_cpu(int cpu) { return false; }

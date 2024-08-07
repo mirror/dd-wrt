@@ -2053,10 +2053,13 @@ static void __exit null_exit(void)
 		blk_mq_free_tag_set(&tag_set);
 
 	kmem_cache_destroy(ppa_cache);
+
+	mutex_destroy(&lock);
 }
 
 module_init(null_init);
 module_exit(null_exit);
 
 MODULE_AUTHOR("Jens Axboe <axboe@kernel.dk>");
+MODULE_DESCRIPTION("multi queue aware block test driver");
 MODULE_LICENSE("GPL");

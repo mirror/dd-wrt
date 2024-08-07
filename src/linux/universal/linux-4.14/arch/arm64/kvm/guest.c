@@ -175,6 +175,7 @@ static int set_core_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
 		case COMPAT_PSR_MODE_SVC:
 		case COMPAT_PSR_MODE_ABT:
 		case COMPAT_PSR_MODE_UND:
+		case COMPAT_PSR_MODE_SYS:
 			if (!vcpu_el1_is_32bit(vcpu))
 				return -EINVAL;
 			break;

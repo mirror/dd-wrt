@@ -243,6 +243,8 @@ static struct p9_fcall *p9_fcall_alloc(int alloc_msize)
 	if (!fc)
 		return NULL;
 	fc->capacity = alloc_msize;
+	fc->id = 0;
+	fc->tag = P9_NOTAG;
 	fc->sdata = (char *) fc + sizeof(struct p9_fcall);
 	return fc;
 }

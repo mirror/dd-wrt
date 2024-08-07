@@ -167,22 +167,6 @@ static const struct kernel_param_ops param_ops_console_min_delay = {
 module_param(libcfs_console_min_delay, console_min_delay, 0644);
 MODULE_PARM_DESC(libcfs_console_min_delay, "Lustre kernel debug console min delay (jiffies)");
 
-static int param_set_uint_minmax(const char *val,
-				 const struct kernel_param *kp,
-				 unsigned int min, unsigned int max)
-{
-	unsigned int num;
-	int ret;
-
-	if (!val)
-		return -EINVAL;
-	ret = kstrtouint(val, 0, &num);
-	if (ret < 0 || num < min || num > max)
-		return -EINVAL;
-	*((unsigned int *)kp->arg) = num;
-	return 0;
-}
-
 static int param_set_uintpos(const char *val, const struct kernel_param *kp)
 {
 	return param_set_uint_minmax(val, kp, 1, -1);
