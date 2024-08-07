@@ -174,6 +174,7 @@ out:;
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 
+		nvram_set("switchphy", "eth1");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", -1);
 		nvram_seti("sw_lan1", 1);
@@ -195,6 +196,7 @@ out:;
 		eval("swconfig", "dev", "eth1", "set", "enable_vlan", "0");
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
+		nvram_set("switchphy", "eth1");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", -1);
 		nvram_seti("sw_lan1", 1);
@@ -225,6 +227,7 @@ out:;
 		eval("swconfig", "dev", "eth1", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "eth1", "set", "apply");
 
+		nvram_set("switchphy", "eth1");
 		nvram_seti("sw_cpuport", 0);
 		nvram_seti("sw_wan", -1);
 		nvram_seti("sw_lan1", 1);
