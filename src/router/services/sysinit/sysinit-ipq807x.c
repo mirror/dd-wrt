@@ -1267,6 +1267,7 @@ void load_wifi_drivers(void)
 		}
 		break;
 	}
+	sleep(5);
 	start_setup_affinity();
 }
 
