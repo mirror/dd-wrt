@@ -117,7 +117,11 @@ static void __attribute__((constructor)) mac80211_init(void)
 {
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
-		bunl = 1;
+		if (!ret) {
+			bunl = 1;
+		} else {
+			dd_syslog(LOG_INFO, "mac80211info.c : cannot connect to nl80211 (yet)");
+		}
 	}
 }
 
