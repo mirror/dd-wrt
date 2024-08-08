@@ -817,6 +817,7 @@ out:;
 	setSwitchLED(123, 0x02); // lan4
 
 #endif
+#endif
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
 	nvram_default_geti("port2vlans", 1);

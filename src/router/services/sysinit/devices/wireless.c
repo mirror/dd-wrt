@@ -146,7 +146,7 @@ int load_mac80211(void)
 #define RADIO_IWLWIFI 0x80
 #define RADIO_ATH11K 0x100
 
-static void detect_wireless_devices(int mask)
+static int detect_wireless_devices(int mask)
 {
 	int loadath9k = 1;
 	int loadlegacy = 1;
