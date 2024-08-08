@@ -736,8 +736,16 @@ void start_sysinit(void)
 	default:
 		break;
 	}
-
-	detect_wireless_devices(RADIO_ALL);
+	insmod("xxhash");
+	insmod("zstd_common");
+	insmod("zstd_compress");
+	insmod("zstd_decompress");
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("lz4_compress");
+	insmod("lz4_decompress");
+	insmod("lzma_compress");
+	insmod("lzma_decompress");
 
 	switch (board) {
 	case ROUTER_ASUS_AC58U:
@@ -1031,4 +1039,56 @@ void start_resetbc(void)
 }
 void load_wifi_drivers(void)
 {
+	int notloaded = 0;
+	notloaded = insmod("compat");
+	if (!notloaded) {
+		dd_loginfo("load ATH/QCA 802.11ac Driver");
+		insmod("compat_firmware_class");
+		insmod("cfg80211");
+		insmod("mac80211");
+		insmod("thermal_sys");
+		insmod("hwmon");
+		nvram_default_get("ath10k_encap", "0");
+		if (!nvram_match("noath10k", "1")) {
+			insmod("ath");
+			nvram_set("wlan0_fwtype_use", "ddwrt");
+			nvram_set("wlan1_fwtype_use", "ddwrt");
+			nvram_set("wlan2_fwtype_use", "ddwrt");
+			nvram_set("wlan3_fwtype_use", "ddwrt");
+			nvram_set("wlan4_fwtype_use", "ddwrt");
+			nvram_set("wlan5_fwtype_use", "ddwrt");
+			nvram_set("wlan6_fwtype_use", "ddwrt");
+			nvram_set("wlan7_fwtype_use", "ddwrt");
+			nvram_set("wlan0_dualband_use", nvram_default_get("wlan0_dualband", "0"));
+			nvram_set("wlan1_dualband_use", nvram_default_get("wlan1_dualband", "0"));
+			nvram_set("wlan2_dualband_use", nvram_default_get("wlan2_dualband", "0"));
+			nvram_set("wlan3_dualband_use", nvram_default_get("wlan3_dualband", "0"));
+			unsigned int dual = 0;
+			int v = nvram_geti("wlan0_dualband");
+			if (v == 2 || v == 5)
+				dual |= v;
+			v = nvram_geti("wlan1_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 8;
+			v = nvram_geti("wlan2_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 16;
+			v = nvram_geti("wlan3_dualband");
+			if (v == 2 || v == 5)
+				dual |= v << 24;
+			if (!dual)
+				dual = 0x05050505;
+			char dualband[32];
+			sprintf(dualband, "dual_band=0x%08x", dual);
+			//			sprintf(dualband, "dual_band=0x02020202");
+			if (nvram_match("ath10k_encap", "1"))
+				eval("insmod", "ath10k", "ethernetmode=1", dualband);
+			else
+				eval("insmod", "ath10k", dualband);
+			if (!detectchange(NULL)) {
+				rmmod("ath10k");
+				rmmod("ath");
+			}
+		}
+	}
 }

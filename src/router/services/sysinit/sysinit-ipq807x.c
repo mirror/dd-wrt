@@ -696,7 +696,6 @@ void start_sysinit(void)
 		load_nss_ipq807x(512);
 		break;
 	}
-
 	insmod("qca-ssdk");
 	insmod("qca-nss-dp");
 	int mtd = getMTD("art");
@@ -1214,62 +1213,63 @@ void start_sysinit(void)
 
 void load_wifi_drivers(void)
 {
-	int brand = getRouterBrand();
-	int profile = 512;
 	int notloaded = 0;
-	switch (brand) {
-	case ROUTER_DYNALINK_DLWRX36:
-		profile = 1024;
-		break;
-	case ROUTER_ASUS_AX89X:
-		profile = 1024;
-		break;
-	case ROUTER_LINKSYS_MX4200V2:
-		profile = 1024;
-		break;
-	case ROUTER_LINKSYS_MX4300:
-		profile = 1024;
-		break;
-	}
 
 	notloaded = insmod("compat");
-	insmod("compat_firmware_class");
-	insmod("cfg80211");
-	int od = nvram_default_geti("power_overdrive", 0);
-	char overdrive[32];
-	sprintf(overdrive, "poweroffset=%d", od);
-	switch (brand) {
-	case ROUTER_LINKSYS_MR5500:
-	case ROUTER_LINKSYS_MX5500:
-		eval("insmod", "mac80211", "nss_redirect=1");
-		insmod("qmi_helpers");
-		eval("insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
-		     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-		insmod("ath11k_ahb-512");
-		insmod("ath11k_pci-512");
-		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
-		break;
-	default:
-		insmod("mac80211");
-		insmod("qmi_helpers");
-		if (profile == 512) {
-			if (!nvram_match("ath11k_nss", "0"))
-				eval("insmod", "ath11k-512", overdrive);
-			else
-				eval("insmod", "ath11k-512", "nss_offload=0",
-				     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-			insmod("ath11k_ahb-512");
-		} else {
-			if (!nvram_match("ath11k_nss", "0"))
-				eval("insmod", "ath11k", overdrive);
-			else
-				eval("insmod", "ath11k", "nss_offload=0",
-				     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-			insmod("ath11k_ahb");
-		}
-		break;
-	}
 	if (!notloaded) {
+		dd_loginfo("load ATH/QCA 802.11ax Driver");
+		int brand = getRouterBrand();
+		int profile = 512;
+		switch (brand) {
+		case ROUTER_DYNALINK_DLWRX36:
+			profile = 1024;
+			break;
+		case ROUTER_ASUS_AX89X:
+			profile = 1024;
+			break;
+		case ROUTER_LINKSYS_MX4200V2:
+			profile = 1024;
+			break;
+		case ROUTER_LINKSYS_MX4300:
+			profile = 1024;
+			break;
+		}
+		insmod("compat_firmware_class");
+		insmod("cfg80211");
+		int od = nvram_default_geti("power_overdrive", 0);
+		char overdrive[32];
+		sprintf(overdrive, "poweroffset=%d", od);
+		switch (brand) {
+		case ROUTER_LINKSYS_MR5500:
+		case ROUTER_LINKSYS_MX5500:
+			eval("insmod", "mac80211", "nss_redirect=1");
+			insmod("qmi_helpers");
+			eval("insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
+			     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+			insmod("ath11k_ahb-512");
+			insmod("ath11k_pci-512");
+			sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
+			break;
+		default:
+			insmod("mac80211");
+			insmod("qmi_helpers");
+			if (profile == 512) {
+				if (!nvram_match("ath11k_nss", "0"))
+					eval("insmod", "ath11k-512", overdrive);
+				else
+					eval("insmod", "ath11k-512", "nss_offload=0",
+					     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+				insmod("ath11k_ahb-512");
+			} else {
+				if (!nvram_match("ath11k_nss", "0"))
+					eval("insmod", "ath11k", overdrive);
+				else
+					eval("insmod", "ath11k", "nss_offload=0",
+					     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+				insmod("ath11k_ahb");
+			}
+			break;
+		}
 		int cnt = 0;
 		while ((cnt++) < 6 && !getdevicecount()) {
 			sleep(1);
