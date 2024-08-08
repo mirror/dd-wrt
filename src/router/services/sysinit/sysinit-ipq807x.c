@@ -1214,6 +1214,21 @@ void start_sysinit(void)
 void load_wifi_drivers(void)
 {
 	int brand = getRouterBrand();
+	int profile = 512;
+	switch (brand) {
+	case ROUTER_DYNALINK_DLWRX36:
+		profile = 1024;
+		break;
+	case ROUTER_ASUS_AX89X:
+		profile = 1024;
+		break;
+	case ROUTER_LINKSYS_MX4200V2:
+		profile = 1024;
+		break;
+	case ROUTER_LINKSYS_MX4300:
+		profile = 1024;
+		break;
+	}
 
 	insmod("compat");
 	insmod("compat_firmware_class");
