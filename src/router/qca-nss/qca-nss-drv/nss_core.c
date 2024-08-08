@@ -2212,7 +2212,7 @@ static int nss_bootstate = 0;
 
 void nss_bootwait(void)
 {
-	int dead = 10*100;
+	int dead = 10*10;
 	while(!nss_bootstate && dead-- > 0)
 	{
 		msleep(100);
