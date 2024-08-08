@@ -373,7 +373,7 @@ rewrite:;
 	count = off = 0;
 	switch (brand) {
 	case ROUTER_ASUS_AX89X:
-		writeubifs = 1;
+		//writeubifs = 1;
 		break;
 	case ROUTER_ASUS_AC58U:
 		writeubi = 1;
