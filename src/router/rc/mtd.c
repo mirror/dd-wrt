@@ -768,7 +768,7 @@ again:;
 					dd_loginfo("flash", "\nSkipping bad block at 0x%08zx", erase_info.start);
 					lseek(mtd_fd, mtd_info.erasesize, SEEK_CUR);
 					badblocks += mtd_info.erasesize;
-					goto fail;
+					goto again;
 				}
 			} else {
 				fwrite(buf + (i * mtd_info.erasesize), 1, mtd_info.erasesize, p);
