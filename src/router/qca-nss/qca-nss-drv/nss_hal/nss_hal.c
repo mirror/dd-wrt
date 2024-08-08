@@ -868,6 +868,7 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	}
 
 	nss_info("%px: All resources initialized and nss core%d has been brought out of reset", nss_ctx, nss_dev->id);
+	nss_bootwait();
 	goto out;
 
 err_register_irq:

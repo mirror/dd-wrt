@@ -2208,7 +2208,16 @@ static inline void nss_core_handle_tx_unblocked(struct nss_ctx_instance *nss_ctx
 	 */
 	nss_hal_disable_interrupt(nss_ctx, nss_ctx->int_ctx[0].shift_factor, NSS_N2H_INTR_TX_UNBLOCKED);
 }
+static int nss_bootstate = 0;
 
+void nss_bootwait(void)
+{
+	int dead = 10*100;
+	while(!nss_bootstate && dead-- > 0)
+	{
+		msleep(100);
+	}
+}
 /*
  * nss_core_handle_cause_nonqueue()
  *	Handle non-queue interrupt causes (e.g. empty buffer SOS, Tx unblocked)
@@ -2297,6 +2306,7 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 	} else if (cause == NSS_N2H_INTR_TX_UNBLOCKED) {
 		nss_core_handle_tx_unblocked(nss_ctx);
 	}
+	nss_bootstate = 1;
 }
 
 /*

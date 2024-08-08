@@ -988,6 +988,8 @@ void nss_core_update_max_ipv4_conn(int conn);
 void nss_core_update_max_ipv6_conn(int conn);
 void nss_core_update_qos_mem_size(int size);
 int nss_core_get_qos_mem_size(void);
+void nss_bootwait(void);
+
 extern void nss_core_register_subsys_dp(struct nss_ctx_instance *nss_ctx, uint32_t if_num,
 					nss_phys_if_rx_callback_t cb,
 					nss_phys_if_rx_ext_data_callback_t ext_cb,
