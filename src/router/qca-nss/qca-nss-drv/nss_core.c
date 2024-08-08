@@ -2284,6 +2284,7 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 			}
 		}
 #endif
+#endif
 		nss_bootstate = 1;    
 	}
 
