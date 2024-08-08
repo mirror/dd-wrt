@@ -378,4 +378,5 @@ void start_duallink(void);
 void start_deconfigurewifi(void);
 void start_configurewifi(void);
 
+void load_wifi_drivers(void);
 #endif

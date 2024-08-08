@@ -233,3 +233,6 @@ void start_resetbc(void)
 	if (!nvram_match("nobcreset", "1"))
 		eval("mtd", "resetbc", "s_env");
 }
+void load_wifi_drivers(void)
+{
+}

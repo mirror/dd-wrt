@@ -1029,3 +1029,6 @@ void start_resetbc(void)
 		break;
 	}
 }
+void load_wifi_drivers(void)
+{
+}

@@ -331,3 +331,6 @@ char *set_wan_state(int state)
 void start_devinit_arch(void)
 {
 }
+void load_wifi_drivers(void)
+{
+}
