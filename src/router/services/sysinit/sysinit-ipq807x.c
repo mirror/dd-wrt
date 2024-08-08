@@ -53,6 +53,7 @@
 #include <utils.h>
 #include <ctype.h>
 #include <services.h>
+#include <wlutils.h>
 
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
@@ -1215,7 +1216,7 @@ void load_wifi_drivers(void)
 {
 	int brand = getRouterBrand();
 	int profile = 512;
-	int notloaded=0;
+	int notloaded = 0;
 	switch (brand) {
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
@@ -1269,8 +1270,11 @@ void load_wifi_drivers(void)
 		break;
 	}
 	if (!notloaded) {
-	    sleep(5);
-	    start_setup_affinity();
+		int cnt = 0;
+		while ((cnt++) < 6 && !getdevicecount()) {
+			sleep(1);
+		}
+		start_setup_affinity();
 	}
 }
 
