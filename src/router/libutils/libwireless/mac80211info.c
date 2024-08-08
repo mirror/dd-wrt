@@ -119,6 +119,7 @@ static void __attribute__((constructor)) mac80211_init(void)
 		int ret = unl_genl_init(&unl, "nl80211");
 		if (!ret) {
 			bunl = 1;
+			dd_syslog(LOG_INFO, "mac80211info.c : connected to nl80211");
 		} else {
 			dd_syslog(LOG_INFO, "mac80211info.c : cannot connect to nl80211 (yet)");
 		}
@@ -131,8 +132,10 @@ void special_mac80211_init(void)
 		unl_free(&unl);
 		memset(&unl, 0, sizeof(unl));
 	}
-	if (!unl.family)
-		unl_genl_init(&unl, "nl80211");
+	if (!unl.family) {
+		if (!unl_genl_init(&unl, "nl80211"))
+		    bunl = 1;
+	}
 }
 
 static int phy_lookup_by_number(int idx)
