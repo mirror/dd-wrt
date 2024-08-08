@@ -2284,7 +2284,7 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 			}
 		}
 #endif
-#endif
+		nss_bootstate = 1;    
 	}
 
 #if defined(NSS_DRV_EDMA_LITE_ENABLE)
@@ -2306,7 +2306,6 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 	} else if (cause == NSS_N2H_INTR_TX_UNBLOCKED) {
 		nss_core_handle_tx_unblocked(nss_ctx);
 	}
-	nss_bootstate = 1;
 }
 
 /*
