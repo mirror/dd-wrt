@@ -1215,6 +1215,7 @@ void load_wifi_drivers(void)
 {
 	int brand = getRouterBrand();
 	int profile = 512;
+	int notloaded=0;
 	switch (brand) {
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
@@ -1232,7 +1233,7 @@ void load_wifi_drivers(void)
 
 	insmod("compat");
 	insmod("compat_firmware_class");
-	insmod("cfg80211");
+	notloaded = insmod("cfg80211");
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
 	sprintf(overdrive, "poweroffset=%d", od);
@@ -1267,8 +1268,10 @@ void load_wifi_drivers(void)
 		}
 		break;
 	}
-	sleep(5);
-	start_setup_affinity();
+	if (!notloaded) {
+	    sleep(5);
+	    start_setup_affinity();
+	}
 }
 
 int check_cfe_nv(void)
