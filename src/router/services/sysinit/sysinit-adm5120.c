@@ -298,15 +298,7 @@ void start_sysinit(void)
 			}
 		}
 	}
-	/*
-	 * network drivers 
-	 */
-	detect_wireless_devices(RADIO_ALL);
 
-#ifdef HAVE_WP54G
-	writeprocsys("dev/wifi0/ledpin", "6");
-	writeprocsys("dev/wifi0/softled", "1");
-#endif
 	/*
 	 * Set a sane date 
 	 */
@@ -347,4 +339,9 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	detect_wireless_devices(RADIO_ALL);
+#ifdef HAVE_WP54G
+	writeprocsys("dev/wifi0/ledpin", "6");
+	writeprocsys("dev/wifi0/softled", "1");
+#endif
 }

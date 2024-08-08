@@ -767,7 +767,7 @@ out:;
 	}
 	fclose(out);
 #endif
-	detect_wireless_devices(RADIO_ALL);
+
 #ifdef HAVE_RAMBUTAN
 	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, NULL);
 #endif
@@ -789,29 +789,12 @@ out:;
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
-	setWirelessLed(0, 11);
-	setWirelessLed(1, 14);
 #elif HAVE_XD9531
 	insmod("ledtrig-netdev");
 	setEthLED(16, "eth1");
-	setWirelessLed(0, 12);
 #elif HAVE_CPE880
 	insmod("ledtrig-netdev");
 	setEthLED(19, "vlan2");
-	setWirelessLed(0, 12);
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "0");
-	writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "0");
-
-	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l",
-		     "generic_22:-65");
-#elif HAVE_CPE890
-	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L",
-		     "generic_14:-65");
 #elif HAVE_ARCHERC25
 	/*
 #define ARCHER_C25_74HC_GPIO_BASE		120
@@ -832,61 +815,7 @@ out:;
 	setSwitchLED(121, 0x08); // lan2
 	setSwitchLED(122, 0x04); // lan3
 	setSwitchLED(123, 0x02); // lan4
-	setWirelessLed(0, 126 + 32);
-	setWirelessLed(1, 127 + 32);
 
-#elif HAVE_JWAP606
-	//      setWirelessLed(0, 14);
-	setWirelessLed(1, 14);
-#elif HAVE_WR1043V2
-#ifndef HAVE_ONNET
-	setWirelessLed(0, 12);
-#endif
-#ifdef HAVE_WDR4900V2
-	setWirelessLed(1, 17);
-#endif
-#ifdef HAVE_WR1043V4
-	setWirelessLed(0, 19);
-#elif defined(HAVE_ARCHERC7V5)
-	setWirelessLed(0, 14);
-	setWirelessLed(1, 9);
-#elif defined(HAVE_ARCHERC7V4)
-	setWirelessLed(0, 24);
-	setWirelessLed(1, 9);
-#elif defined(HAVE_ARCHERC7)
-	setWirelessLed(1, 17);
-#endif
-#elif HAVE_WZR450HP2
-	setWirelessLed(0, 18);
-#elif HAVE_WR615N
-	setWirelessLed(0, 12);
-#elif HAVE_E325N
-	setWirelessLed(0, 0);
-#elif HAVE_AP120C
-	setWirelessLed(0, 0);
-#elif HAVE_SR3200
-	setWirelessLed(0, 19);
-	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
-#elif HAVE_E380AC
-	setWirelessLed(0, 0);
-	setWirelessLed(1, 2);
-#elif HAVE_E355AC
-	setWirelessLed(0, 0);
-	setWirelessLed(1, 3);
-#elif HAVE_WR650AC
-	setWirelessLed(0, 13);
-	setWirelessLed(1, 2);
-#elif HAVE_DIR869
-	setdlinkcountry();
-#elif HAVE_DIR859
-	setWirelessLed(0, 19);
-//      setWirelessLed(1, 32);
-#elif HAVE_DIR825C1
-	setWirelessLed(0, 13);
-	setWirelessLed(1, 32);
-#else
-	setWirelessLed(0, 0);
-#endif
 #endif
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
@@ -1046,4 +975,89 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	if (!detect_wireless_devices(RADIO_ALL)) {
+#ifdef HAVE_PERU
+#elif HAVE_DW02_412H
+//      don't use setWirelessLed since we only have one LED for two distinct radio's
+#elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
+
+#ifdef HAVE_WNDR3700V4
+		setWirelessLed(0, 11);
+		setWirelessLed(1, 14);
+#elif HAVE_XD9531
+		setWirelessLed(0, 12);
+#elif HAVE_CPE880
+		setWirelessLed(0, 12);
+		writestr("/sys/devices/platform/leds-gpio/leds/generic_17/brightness", "0");
+		writestr("/sys/devices/platform/leds-gpio/leds/generic_20/brightness", "0");
+		writestr("/sys/devices/platform/leds-gpio/leds/generic_21/brightness", "0");
+		writestr("/sys/devices/platform/leds-gpio/leds/generic_22/brightness", "0");
+
+		if (!nvram_matchi("wlanled", 0))
+			eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l",
+			     "generic_22:-65");
+#elif HAVE_CPE890
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		if (!nvram_matchi("wlanled", 0))
+			eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L",
+			     "generic_14:-65");
+#elif HAVE_ARCHERC25
+
+		setWirelessLed(0, 126 + 32);
+		setWirelessLed(1, 127 + 32);
+
+#elif HAVE_JWAP606
+		//      setWirelessLed(0, 14);
+		setWirelessLed(1, 14);
+#elif HAVE_WR1043V2
+#ifndef HAVE_ONNET
+		setWirelessLed(0, 12);
+#endif
+#ifdef HAVE_WDR4900V2
+		setWirelessLed(1, 17);
+#endif
+#ifdef HAVE_WR1043V4
+		setWirelessLed(0, 19);
+#elif defined(HAVE_ARCHERC7V5)
+		setWirelessLed(0, 14);
+		setWirelessLed(1, 9);
+#elif defined(HAVE_ARCHERC7V4)
+		setWirelessLed(0, 24);
+		setWirelessLed(1, 9);
+#elif defined(HAVE_ARCHERC7)
+		setWirelessLed(1, 17);
+#endif
+#elif HAVE_WZR450HP2
+		setWirelessLed(0, 18);
+#elif HAVE_WR615N
+		setWirelessLed(0, 12);
+#elif HAVE_E325N
+		setWirelessLed(0, 0);
+#elif HAVE_AP120C
+		setWirelessLed(0, 0);
+#elif HAVE_SR3200
+		setWirelessLed(0, 19);
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+#elif HAVE_E380AC
+		setWirelessLed(0, 0);
+		setWirelessLed(1, 2);
+#elif HAVE_E355AC
+		setWirelessLed(0, 0);
+		setWirelessLed(1, 3);
+#elif HAVE_WR650AC
+		setWirelessLed(0, 13);
+		setWirelessLed(1, 2);
+#elif HAVE_DIR869
+		setdlinkcountry();
+#elif HAVE_DIR859
+		setWirelessLed(0, 19);
+//      setWirelessLed(1, 32);
+#elif HAVE_DIR825C1
+		setWirelessLed(0, 13);
+		setWirelessLed(1, 32);
+#else
+		setWirelessLed(0, 0);
+#endif
+#endif
+	}
 }

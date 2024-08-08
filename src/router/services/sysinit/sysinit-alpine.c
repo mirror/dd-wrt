@@ -88,8 +88,6 @@ void start_sysinit(void)
 		free(smem);
 	}
 
-	detect_wireless_devices(RADIO_ALL);
-
 	char macaddr[32];
 	if (get_hwaddr("eth1", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
@@ -280,24 +278,14 @@ void start_sysinit(void)
 	set_named_smp_affinity("eth1", 0, 1);
 	set_named_smp_affinity("eth2", 1, 1);
 	set_named_smp_affinity("eth0", 2, 1);
-	set_named_smp_affinity("ath10k_pci", 2, 1);
-	set_named_smp_affinity("ath10k_pci", 3, 2);
 
-	//      set_smp_affinity(230, 4);
-	//      set_smp_affinity(231, 8);
 	int i;
-	/*	for (i = 242; i < 251; i++)
-		set_smp_affinity(i, 1);
-	for (i = 233; i < 242; i++)
-		set_smp_affinity(i, 2);*/
 	writeprocsysnet("core/message_cost", "0");
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:
 		set_gpio(29, 1); //WIFI button led
 		set_gpio(30, 1); //10G led
 		set_gpio(434, 1);
-		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
-		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	default:
 		break;
@@ -365,4 +353,10 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	if (!detect_wireless_devices(RADIO_ALL)) {
+		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+		writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
+		set_named_smp_affinity("ath10k_pci", 2, 1);
+		set_named_smp_affinity("ath10k_pci", 3, 2);
+	}
 }

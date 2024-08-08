@@ -283,7 +283,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	detect_wireless_devices(RADIO_ALL);
 #ifdef HAVE_WRT160NL
 	MAC_ADD(buf2);
 	fprintf(stderr, "configure wifi0 to %s\n", buf2);
@@ -318,27 +317,11 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_RS
-	setWirelessLed(0, 2);
-	setWirelessLed(1, 2);
-	setWirelessLed(2, 2);
 #elif HAVE_WRT160NL
-	setWirelessLed(0, 6);
-	writeprocsys("dev/wifi0/ledpin", "6");
-	writeprocsys("dev/wifi0/softled", "1");
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#elif HAVE_WZRG300NH
-	setWirelessLed(0, 6);
-#elif HAVE_TEW632BRP
-	setWirelessLed(0, 6);
-#elif HAVE_WR941
-	setWirelessLed(0, 9);
-#elif HAVE_WR1043
-	setWirelessLed(0, 9);
-#else
-	setWirelessLed(0, 2);
 #endif
 
 	/*
@@ -381,4 +364,25 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	if (!detect_wireless_devices(RADIO_ALL)) {
+#ifdef HAVE_RS
+		setWirelessLed(0, 2);
+		setWirelessLed(1, 2);
+		setWirelessLed(2, 2);
+#elif HAVE_WRT160NL
+		setWirelessLed(0, 6);
+		writeprocsys("dev/wifi0/ledpin", "6");
+		writeprocsys("dev/wifi0/softled", "1");
+#elif HAVE_WZRG300NH
+		setWirelessLed(0, 6);
+#elif HAVE_TEW632BRP
+		setWirelessLed(0, 6);
+#elif HAVE_WR941
+		setWirelessLed(0, 9);
+#elif HAVE_WR1043
+		setWirelessLed(0, 9);
+#else
+		setWirelessLed(0, 2);
+#endif
+	}
 }

@@ -160,8 +160,6 @@ void start_sysinit(void)
 	if (detect_ethernet_devices())
 		nvram_seti("intel_eth", 1);
 
-	detect_wireless_devices(RADIO_ALL);
-
 #if 1
 	fprintf(stderr, "load IXP helper\n");
 	insmod("ixp400th");
@@ -548,4 +546,5 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	detect_wireless_devices(RADIO_ALL);
 }

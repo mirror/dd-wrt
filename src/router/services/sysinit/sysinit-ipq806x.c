@@ -829,8 +829,6 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 1);
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 2, 1);
-		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 	case ROUTER_LINKSYS_EA8300:
 		nvram_seti("sw_cpuport", 0);
@@ -841,8 +839,6 @@ void start_sysinit(void)
 		nvram_seti("sw_lan4", 1);
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 2, 1);
-		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
@@ -854,22 +850,9 @@ void start_sysinit(void)
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
 
-/*
-		if (!nvram_safe_get("sw_cpuport")) {
-			nvram_seti("sw_cpuport", 0);
-			nvram_seti("sw_wan", 5);
-			nvram_seti("sw_lan1", 4);
-			nvram_seti("sw_lan2", 3);
-			nvram_seti("sw_lan3", 2);
-			nvram_seti("sw_lan4", 1);
-			nvram_commit();
-		}
-*/
 #endif /*HAVE_ANTAIRA */
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 2, 1);
-		set_named_smp_affinity("ath10k_pci", 3, 2);
 		break;
 		/* routers with reverse port order */
 	case ROUTER_NETGEAR_R7800:
@@ -891,8 +874,6 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 0, 1);
-		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	case ROUTER_ASROCK_G10:
 		nvram_seti("sw_wancpuport", 0);
@@ -911,8 +892,6 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 0, 1);
-		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	case ROUTER_LINKSYS_EA8500:
 	default:
@@ -932,8 +911,6 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 		set_named_smp_affinity("eth0", 0, 1);
 		set_named_smp_affinity("eth1", 1, 1);
-		set_named_smp_affinity("ath10k_pci", 0, 1);
-		set_named_smp_affinity("ath10k_pci", 1, 2);
 		break;
 	}
 
@@ -1042,6 +1019,7 @@ void load_wifi_drivers(void)
 	int notloaded = 0;
 	notloaded = insmod("compat");
 	if (!notloaded) {
+		int brand = getRouterBrand();
 		dd_loginfo("load ATH/QCA 802.11ac Driver");
 		insmod("compat_firmware_class");
 		insmod("cfg80211");
@@ -1089,6 +1067,22 @@ void load_wifi_drivers(void)
 				rmmod("ath10k");
 				rmmod("ath");
 			}
+		}
+		int cnt = 0;
+		while ((cnt++) < 6 && !getdevicecount()) {
+			sleep(1);
+		}
+		switch (board) {
+		case ROUTER_ASUS_AC58U:
+		case ROUTER_LINKSYS_EA8300:
+		case ROUTER_HABANERO:
+			set_named_smp_affinity("ath10k_pci", 2, 1);
+			set_named_smp_affinity("ath10k_pci", 3, 2);
+			break;
+		default:
+			set_named_smp_affinity("ath10k_pci", 0, 1);
+			set_named_smp_affinity("ath10k_pci", 1, 2);
+			break;
 		}
 	}
 }

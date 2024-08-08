@@ -103,10 +103,6 @@ void start_sysinit(void)
 	insmod("libahci");
 	insmod("ahci");
 	insmod("cns3xxx_ahci");
-	/*
-	 * network drivers 
-	 */
-	detect_wireless_devices(RADIO_ALL);
 
 	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
@@ -183,4 +179,5 @@ void start_devinit_arch(void)
 }
 void load_wifi_drivers(void)
 {
+	detect_wireless_devices(RADIO_ALL);
 }

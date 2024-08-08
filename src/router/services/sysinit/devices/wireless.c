@@ -113,8 +113,9 @@ int detectchange(char *mod)
 
 #define AR5416_AR9100_DEVID 0x000b
 
-static void load_mac80211(void)
+int load_mac80211(void)
 {
+	int notloaded = 0;
 	insmod("xxhash");
 	insmod("zstd_common");
 	insmod("zstd_compress");
@@ -125,10 +126,13 @@ static void load_mac80211(void)
 	insmod("lz4_decompress");
 	insmod("lzma_compress");
 	insmod("lzma_decompress");
-	insmod("compat");
+	notloaded = insmod("compat");
+	if (notloaded)
+		return 1;
 	insmod("compat_firmware_class");
 	insmod("cfg80211");
 	insmod("mac80211");
+	return 0;
 }
 
 #define RADIO_ALL 0xffff
@@ -273,7 +277,8 @@ static void detect_wireless_devices(int mask)
 	{
 		if (loadath9k || loadath5k) {
 			dd_loginfo("load ATH9K 802.11n Driver");
-			load_mac80211();
+			if (load_mac80211())
+				return 1;
 			// some are just for future use and not (yet) there
 			insmod("ath");
 #ifdef HAVE_ATH5K
@@ -513,4 +518,9 @@ static void detect_wireless_devices(int mask)
 	}*/
 #endif
 #endif
+	int cnt = 0;
+	while ((cnt++) < 6 && !getdevicecount()) {
+		sleep(1);
+	}
+	return 0;
 }
