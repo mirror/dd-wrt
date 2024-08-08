@@ -2213,7 +2213,11 @@ static int nss_bootstate = 0;
 void nss_bootwait(void)
 {
 	int dead = 10*10;
+#if (NSS_MAX_CORES > 1)
+	while(nss_bootstate<2 && dead-- > 0)
+#else
 	while(!nss_bootstate && dead-- > 0)
+#endif
 	{
 		msleep(100);
 	}
@@ -2285,7 +2289,9 @@ static void nss_core_handle_cause_nonqueue(struct int_ctx_instance *int_ctx, uin
 		}
 #endif
 #endif
-		nss_bootstate = 1;    
+	}
+	if (unlikely(nss_ctx->state == NSS_CORE_STATE_INITIALIZED)) {
+		nss_bootstate++;
 	}
 
 #if defined(NSS_DRV_EDMA_LITE_ENABLE)
