@@ -1217,7 +1217,7 @@ void load_wifi_drivers(void)
 
 	notloaded = insmod("compat");
 	if (!notloaded) {
-		dd_loginfo("load ATH/QCA 802.11ax Driver");
+		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
 		int brand = getRouterBrand();
 		int profile = 512;
 		switch (brand) {

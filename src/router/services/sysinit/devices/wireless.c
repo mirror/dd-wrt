@@ -260,7 +260,7 @@ static void detect_wireless_devices(int mask)
 	nvram_default_get("rate_control", "minstrel");
 #ifdef HAVE_MADWIFI
 	if (loadlegacy && (mask & RADIO_LEGACY)) {
-		dd_loginfo("load ATH 802.11 a/b/g Driver");
+		dd_loginfo("sysinit","load ATH 802.11 a/b/g Driver");
 		insmod("ath_hal");
 		if (nvram_exists("rate_control")) {
 			char rate[64];
@@ -276,14 +276,14 @@ static void detect_wireless_devices(int mask)
 #ifdef HAVE_ATH9K
 	{
 		if (loadath9k || loadath5k) {
-			dd_loginfo("load ATH9K 802.11n Driver");
+			dd_loginfo("sysinit","load ATH9K 802.11n Driver");
 			if (load_mac80211())
 				return 1;
 			// some are just for future use and not (yet) there
 			insmod("ath");
 #ifdef HAVE_ATH5K
 			if (loadath5k && (mask & RADIO_LEGACY)) {
-				dd_loginfo("load ATH5K 802.11 Driver");
+				dd_loginfo("sysinit","load ATH5K 802.11 Driver");
 				insmod("ath5k");
 				if (!detectchange(NULL))
 					rmmod("ath5k");
@@ -321,7 +321,7 @@ static void detect_wireless_devices(int mask)
 #endif
 
 #ifdef HAVE_ATH10K
-	dd_loginfo("load ATH/QCA 802.11ac Driver");
+	dd_loginfo("sysinit","load ATH/QCA 802.11ac Driver");
 	if ((mask & RADIO_ATH10K)) {
 		insmod("thermal_sys");
 		insmod("hwmon");
@@ -378,7 +378,7 @@ static void detect_wireless_devices(int mask)
 #endif
 #ifdef HAVE_BRCMFMAC
 	if ((mask & RADIO_BRCMFMAC)) {
-		dd_loginfo("load Broadcom FMAC Driver");
+		dd_loginfo("sysinit","load Broadcom FMAC Driver");
 		insmod("brcmutil");
 		insmod("brcmfmac");
 		if (!detectchange("brcmfmac")) {
@@ -388,7 +388,7 @@ static void detect_wireless_devices(int mask)
 #endif
 #ifdef HAVE_RTLWIFI
 	if ((mask & RADIO_RTLWIFI)) {
-		dd_loginfo("load Realtek RTLWIFI Driver");
+		dd_loginfo("sysinit","load Realtek RTLWIFI Driver");
 		int total = 0;
 		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb");
 		insmod("rtlwifi");
@@ -460,7 +460,7 @@ static void detect_wireless_devices(int mask)
 	if ((mask & RADIO_MT76) && !nvram_match("nomt76", "1")) {
 		insmod("thermal_sys");
 		insmod("hwmon");
-		dd_loginfo("load Medatek MT76 Driver");
+		dd_loginfo("sysinit","load Medatek MT76 Driver");
 		insmod("nls_base usb-common usbcore ehci-hcd ehci-platform ehci-fsl ehci-pci usb-uhci uhci-hcd usb-ohci ohci-hcd ohci-pci xhci-hcd xhci-pci xhci-plat-hcd xhci-mtk dwc_otg usb-libusual fsl-mph-dr-of phy-mxs-usb extcon-core extcon ci_hdrc ci13xxx_imx usbmisc_imx ci_hdrc_imx phy-qcom-dwc3 dwc3-of-simple dwc3 dwc3-qcom phy-qcom-hsusb phy-qcom-ssusb phy-qcom-ipq806x-usb phy-qcom-ipq806x-sata phy-qcom-ipq4019-usb");
 		insmod("mt76");
 		insmod("mt76-usb");

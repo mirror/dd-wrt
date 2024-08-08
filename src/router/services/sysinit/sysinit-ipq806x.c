@@ -1020,7 +1020,7 @@ void load_wifi_drivers(void)
 	notloaded = insmod("compat");
 	if (!notloaded) {
 		int brand = getRouterBrand();
-		dd_loginfo("load ATH/QCA 802.11ac Driver");
+		dd_loginfo("sysinit", "load ATH/QCA 802.11ac Driver");
 		insmod("compat_firmware_class");
 		insmod("cfg80211");
 		insmod("mac80211");
