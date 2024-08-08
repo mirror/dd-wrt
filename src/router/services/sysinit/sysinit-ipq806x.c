@@ -1019,7 +1019,7 @@ void load_wifi_drivers(void)
 	int notloaded = 0;
 	notloaded = insmod("compat");
 	if (!notloaded) {
-		int brand = getRouterBrand();
+		int board = getRouterBrand();
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ac Driver");
 		insmod("compat_firmware_class");
 		insmod("cfg80211");
