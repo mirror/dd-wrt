@@ -1231,9 +1231,9 @@ void load_wifi_drivers(void)
 		break;
 	}
 
-	insmod("compat");
+	notloaded = insmod("compat");
 	insmod("compat_firmware_class");
-	notloaded = insmod("cfg80211");
+	insmod("cfg80211");
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
 	sprintf(overdrive, "poweroffset=%d", od);
