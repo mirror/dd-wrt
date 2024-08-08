@@ -120,7 +120,7 @@ static void __attribute__((constructor)) mac80211_init(void)
 		if (!ret) {
 			bunl = 1;
 		} else {
-			dd_loginfo("mac80211info.c: cannot connect to nl80211 (yet)");
+			dd_loginfo("mac80211info.c", "cannot connect to nl80211 (yet)");
 		}
 	}
 }
