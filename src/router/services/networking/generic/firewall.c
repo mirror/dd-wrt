@@ -1682,7 +1682,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
 	nvram_seti("dnsmasq_ms_telemetry", 0);
-	nvram_seti("dnsmasq_ad_telemetry", 0);
 	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
 	services = get_filter_services();
