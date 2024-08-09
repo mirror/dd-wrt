@@ -173,10 +173,10 @@ static char *pcidrivers[] = { "hv_netvsc",
 			      "yellowfin",
 			      NULL };
 
-static char *usbdrivers[] = { "asix",	 "ax88179_178a", "catc",   "ch9200",  "cx82310_eth", "dm9601",	 "gl620a",
-			      "int51x1", "kalmia",	 "kaweth", "lan78xx", "lg-vl600",    "mcs7830",	 "net1080",
-			      "pegasus", "plusb",	 "r8152",  "rtl8150", "sierra_net",  "smsc75xx", "smsc95xx",
-			      "sr9700",	 "sr9800",	 "usbnet", "zaurus",  NULL };
+static char *usbdrivers[] = { "aqc111",	  "asix",     "ax88179_178a", "catc",	"ch9200",    "cx82310_eth", "dm9601",
+			      "gl620a",	  "int51x1",  "kalmia",	      "kaweth", "lan78xx",   "lg-vl600",    "mcs7830",
+			      "net1080",  "pegasus",  "plusb",	      "r8152",	"r8153_ecm", "rtl8150",	    "sierra_net",
+			      "smsc75xx", "smsc95xx", "sr9700",	      "sr9800", "usbnet",    "zaurus",	    NULL };
 
 static int detect_driver(char **drivers, char *list, int delay, int insmod)
 {
