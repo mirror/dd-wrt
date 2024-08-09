@@ -170,21 +170,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 
-	detect_wireless_devices(RADIO_ALL);
-
-#ifdef HAVE_RS
-	setWirelessLed(0, 2);
-	setWirelessLed(1, 2);
-	setWirelessLed(2, 2);
-#elif HAVE_WP546
-	setWirelessLed(0, 5);
-	setWirelessLed(1, 4);
-#elif HAVE_WP543
-	setWirelessLed(0, 5);
-#else
-	setWirelessLed(0, 2);
-#endif
-
 #ifdef HAVE_WP546
 	led_control(BEEPER, LED_ON);
 	usleep(1000);
@@ -228,4 +213,21 @@ char *set_wan_state(int state)
 
 void start_devinit_arch(void)
 {
+}
+void load_wifi_drivers(void)
+{
+	detect_wireless_devices(RADIO_ALL);
+
+#ifdef HAVE_RS
+	setWirelessLed(0, 2);
+	setWirelessLed(1, 2);
+	setWirelessLed(2, 2);
+#elif HAVE_WP546
+	setWirelessLed(0, 5);
+	setWirelessLed(1, 4);
+#elif HAVE_WP543
+	setWirelessLed(0, 5);
+#else
+	setWirelessLed(0, 2);
+#endif
 }
