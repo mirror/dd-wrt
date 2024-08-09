@@ -1490,6 +1490,13 @@ static struct TELEMETRY ubnt_telemetry[] = {
 	{ 54, 187, 15, 73, 32 },   { 54, 201, 77, 117, 32 },  { 54, 202, 181, 132, 32 },
 };
 
+static struct TELEMETRY ad_telemetry[] = { // CRITEO
+	{ 185, 235, 84, 0, 22 },
+	{ 178, 250, 0, 0, 21 },
+	{ 91, 199, 242, 0, 24 },
+	{ 91, 212, 98, 0, 24 },
+};
+
 static struct TELEMETRY ms_telemetry[] = {
 	{ 13, 64, 90, 137, 32 }, //13,64,90,137
 	{ 13, 66, 56, 243, 32 }, //13,66,56,243
@@ -1675,6 +1682,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
 	nvram_seti("dnsmasq_ms_telemetry", 0);
+	nvram_seti("dnsmasq_ad_telemetry", 0);
 	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
 	services = get_filter_services();
@@ -1740,6 +1748,12 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d/%d -j %s", seq, ms_telemetry[i].ip1,
 						    ms_telemetry[i].ip2, ms_telemetry[i].ip3, ms_telemetry[i].ip4,
 						    ms_telemetry[i].mask, log_drop);
+			} else if (!strcmp(realname, "ad-telemetry")) {
+				int i;
+				for (i = 0; i < sizeof(ad_telemetry) / sizeof(ad_telemetry[0]); i++)
+					save2file_A("advgrp_%d -d %d.%d.%d.%d/%d -j %s", seq, ad_telemetry[i].ip1,
+						    ad_telemetry[i].ip2, ad_telemetry[i].ip3, ad_telemetry[i].ip4,
+						    ad_telemetry[i].mask, log_drop);
 			} else if (!strcmp(realname, "ubnt-telemetry")) {
 				nvram_seti("dnsmasq_ubnt_telemetry", 1);
 				int i;
