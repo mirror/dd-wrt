@@ -7,12 +7,6 @@
 <body>
   <h2>NAME</h2>
   <pre>
-<!-- Manpage converted by man2html 3.0.1 -->
-
-</pre>
-  <h2>SYNOPSIS</h2>
-  <pre>
-       <b>privoxy</b> [<b>--chroot</b> ] [<b>--config-test</b> ] [<b>--help</b> ] [<b>--no-daemon</b> ]
        [<b>--pidfile</b> <i>pidfile</i> ] [<b>--pre-chroot-nslookup</b> <i>hostname</i> ] [<b>--user</b>
        <i>user[.group]</i> ] [<b>--version</b> ] [<i>configfile</i> ]
 
@@ -66,9 +60,8 @@
               After (optionally) writing the PID file, assume the user ID of
               <i>user</i> and the GID of <i>group</i>, or, if the optional <i>group</i> was not
               given, the default group of <i>user</i>. Exit if the privileges are not
+              sufficient to do so.
 
-       individual needs and tastes.  It has application for both stand-alone
-       systems and multi-user networks.
 
        Privoxy is Free Software and licensed under the GNU GPLv2 or later.
 
@@ -125,8 +118,8 @@
 
        The actions list (ad blocks, etc) can also be configured with your web
        browser at http://config.privoxy.org/ (assuming the configuration
-        <i>/etc/privoxy/user.filter</i>
-        <i>/etc/privoxy/trust</i>
+       allows it).  <b>Privoxy's</b> configuration parameters  can also  be viewed at
+       the same page. In addition, <b>Privoxy</b> can be toggled on/off.  This is an
         <i>/etc/privoxy/templates/*</i>
         <i>/var/log/privoxy/logfile</i>
 
@@ -190,19 +183,20 @@
 </pre>
   <h2>COPYRIGHT AND LICENSE</h2>
   <pre>
-   <b>COPYRIGHT</b>
-       Copyright (C) 2001-2021 by Privoxy Developers &lt;privoxy-
-       terms of the <i>GNU</i> <i>General</i> <i>Public</i> <i>License</i> as published by the Free
-       Software Foundation, either version 3 of the license, or (at your
-       option) any later version.
+
+</pre>
+  <h3>COPYRIGHT</h3>
+  <pre>
+       Copyright (C) 2001-2023 by Privoxy Developers &lt;privoxy-
+       devel@lists.privoxy.org&gt;
+
+       (at your option) any later version.
 
        <b>Privoxy</b> is distributed in the hope that it will be useful, but WITHOUT
        ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
        FITNESS FOR A PARTICULAR PURPOSE.  See the  <i>license</i> for details.
 
-
-
-Privoxy 3.0.33                 07 December 2021                     <b>PRIVOXY(8)</b>
+Privoxy 3.0.34                 05 February 2023                     <b>PRIVOXY(8)</b>
 </pre>
 </body>
 </html>

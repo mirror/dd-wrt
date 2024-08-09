@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2020 the Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2022 the Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -34,7 +34,8 @@
 <para>
  The same is true for <application>Privoxy</application> binaries
  unless they are linked with a
- <ulink url="https://tls.mbed.org/">mbed TLS</ulink> version
+ <ulink url="https://www.trustedfirmware.org/projects/mbed-tls/">mbed TLS</ulink> or
+ <ulink url="https://www.openssl.org/">OpenSSL</ulink> version
  that is licensed under the Apache 2.0 license in which
  case you can redistribute and/or modify the <application>Privoxy</application>
  binaries under the terms of the <citetitle>GNU General Public License</citetitle>

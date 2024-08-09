@@ -81,7 +81,7 @@
 #  force-support:
 #    Privoxy has been compiled with support for forced loading
 #    of blocked content. In that case, the symbol "force-prefix" is
-#    avaiable, which translates to the FORCE_PREFIX
+#    available, which translates to the FORCE_PREFIX
 #
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>

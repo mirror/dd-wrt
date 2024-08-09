@@ -4,7 +4,7 @@
 <head>
   <title>Filter Files</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Actions Files" href="actions-file.html">
   <link rel="NEXT" title="Privoxy's Template Files" href="templates.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="actions-file.html" accesskey="P">Prev</a></td>
@@ -36,8 +36,9 @@
     "actions-file.html#SERVER-HEADER-FILTER">server-header-filter</a></tt> to rewrite headers that are send by the
     server, and <tt class="LITERAL"><a href="actions-file.html#CLIENT-BODY-FILTER">client-body-filter</a></tt> to
     rewrite client request body.</p>
-    <p><span class="APPLICATION">Privoxy</span> also supports two tagger actions: <tt class="LITERAL"><a href=
-    "actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a></tt> and <tt class="LITERAL"><a href=
+    <p><span class="APPLICATION">Privoxy</span> also supports three tagger actions: <tt class="LITERAL"><a href=
+    "actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a></tt>, <tt class="LITERAL"><a href=
+    "actions-file.html#CLIENT-BODY-TAGGER">client-body-tagger</a></tt> and <tt class="LITERAL"><a href=
     "actions-file.html#SERVER-HEADER-TAGGER">server-header-tagger</a></tt>. Taggers and filters use the same syntax in
     the filter files, the difference is that taggers don't modify the text they are filtering, but use a rewritten
     version of the filtered text as tag. The tags can then be used to change the applying actions through sections with
@@ -373,8 +374,8 @@
           </dd>
           <dt><span class="emphasis"><i class="EMPHASIS">banners-by-link</i></span></dt>
           <dd>
-            <p>This is an experimental filter that attempts to kill any banners if their URLs seem to point to known or
-            suspected click trackers. It is currently not of much value and is not recommended for use by default.</p>
+            <p>This filter attempts to kill any banners if their URLs seem to point to known or suspected click
+            trackers. It is currently not of much value and is not recommended for use by default.</p>
           </dd>
           <dt><span class="emphasis"><i class="EMPHASIS">webbugs</i></span></dt>
           <dd>

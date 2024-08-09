@@ -18,12 +18,12 @@
   user-manual
   faq
   newfeatures
-  announce
 
 -->
 <para>
  At present, <application>Privoxy</application> is known to run on
- Windows 95 and later versions (98, ME, 2000, XP, Vista, Windows 7, Windows 10 etc.),
+ Windows 95 and later versions (98, ME, 2000, XP, Vista, Windows 7, Windows 10,
+ Windows 11 etc.),
  GNU/Linux (RedHat, SuSE, Debian, Fedora, Gentoo, Slackware and others),
  Mac OS X (10.4 and upwards on PPC and Intel processors),
  Haiku,
@@ -32,9 +32,61 @@
  and various other flavors of Unix.
 </para>
 
+<para>
+ The binaries provided by members of the Privoxy team have the following
+ testing platforms, earliest supported OS versions and processor architectures.
+ Be aware that down-level versions of Privoxy contain known security issues.
+ <emphasis>It is preferable to build the latest code to target earlier OS releases
+ than use an earlier Privoxy release</emphasis>:
+
+ <table frame='all'><title>Operating system support for binaries provided by Privoxy team members</title>
+ <tgroup cols='5' align='left' colsep='1' rowsep='1'>
+ <thead>
+ <row>
+  <entry>Operating System</entry>
+  <entry>Privoxy Release</entry>
+  <entry>Testing Platforms</entry>
+  <entry>Earliest OS Version Supported</entry>
+  <entry>Processor Architectures</entry>
+ </row>
+ </thead>
+ <tbody>
+ <row>
+  <entry>Windows</entry>
+  <entry>3.0.33</entry>
+  <entry>Windows 10</entry>
+  <entry>Windows Vista</entry>
+  <entry>Intel 32 and 64 bit</entry>
+ </row>
+ <row>
+  <entry> </entry>
+  <entry>3.0.32</entry>
+  <entry>Windows 10</entry>
+  <entry>Windows XP</entry>
+  <entry>Intel 32 and 64 bit</entry>
+ </row>
+ <row>
+  <entry>macOS</entry>
+  <entry>3.0.33</entry>
+  <entry>El Capitan (10.11.6)</entry>
+  <entry>Snow Leopard (10.6.1)</entry>
+  <entry>Intel 64 bit</entry>
+ </row>
+ <row>
+  <entry> </entry>
+  <entry>3.0.26</entry>
+  <entry>El Capitan (10.11.6), Tiger (10.4.1) PPC</entry>
+  <entry>Tiger (10.4.1)</entry>
+  <entry>Intel 32 & 64 bit, PowerPC</entry>
+ </row>
+ </tbody>
+ </tgroup>
+ </table>
+</para>
+
 <![%p-supp-userman;[
 <para>
- But any operating system that runs TCP/IP, can conceivably take advantage of
+ Any operating system that runs TCP/IP, can conceivably take advantage of
  <application>Privoxy</application> in a networked situation where
  <application>Privoxy</application> would run as a server on a LAN gateway.
  Then only the <quote>gateway</quote> needs to be running one of the above
@@ -43,6 +95,7 @@
 
 <para>
  Source code is freely available, so porting to other operating systems
- is always a possibility.
+ is always a possibility, as is compiling for older versions of supported
+ operating systems.
 </para>
 ]]>

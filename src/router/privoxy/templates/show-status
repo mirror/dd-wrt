@@ -200,10 +200,7 @@
           which equals a block rate of @percent-blocked@%.
         </p>
         <p>
-          <strong>Note that the statistics currently don't work properly for
-          reused connections where only the last request gets counted.
-          You may want to look into Privoxy-Log-Parser's --statistics option,
-          which doesn't have this limitation.</strong>
+         For additional statistics you may want to look into Privoxy-Log-Parser's --statistics option.
 <!-- if-have-stats-end@ -->
 <!-- @if-have-no-stats-start -->
           There haven't been any requests so far.

@@ -23,7 +23,7 @@
 #         hash key as input.
 #       - Add --compress and --decompress options.
 #
-# Copyright (c) 2007-2021 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2022 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -43,7 +43,7 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.9.4',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9.5',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
@@ -186,6 +186,8 @@ sub prepare_our_stuff() {
         'configuration-line' => 'red',
         'content-type'       => 'yellow',
         'HOST'               => HEADER_DEFAULT_COLOUR,
+        'tls-version'        => 'pink',
+        'cipher-suite'       => 'light_cyan',
     );
 
     %h_colours = %h;
@@ -1458,7 +1460,8 @@ sub handle_loglevel_crunch($) {
 
     # Highlight crunch reason
     foreach my $reason (keys %reason_colours) {
-        $content =~ s@($reason)@$reason_colours{$reason}$1$h{'Standard'}@g;
+        # Crunch: Blocked: https://capture.condenastdigital.com/track?_o=cne&[...]&dim2=%7B%22adBlocked%[...]
+        $content =~ s@($reason)@$reason_colours{$reason}$1$h{'Standard'}@;
     }
 
     if ($content =~ m/\[too long, truncated\]$/) {
@@ -1645,7 +1648,7 @@ sub handle_loglevel_connect($) {
         $c =~ s@(?<=Assumed latency: )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^Stopped waiting for the request line/ or
-             $c =~ m/^No request line on socket \d received in time/ or
+             $c =~ m/^No request line on socket \d+ received in time/ or
              $c =~ m/^The client side of the connection on socket \d/) {
 
         # Stopped waiting for the request line. Timeout: 121.
@@ -1802,8 +1805,13 @@ sub handle_loglevel_connect($) {
     } elsif ($c =~ m/^Optimistically sending /) {
 
         # Optimistically sending 318 bytes of client headers intended for www.privoxy.org
+        # Optimistically sending 318 bytes of client headers intended for www.privoxy.org.
         $c =~ s@(?<=sending )(\d+)@$h{'Number'}$1$h{'Standard'}@;
-        $c = highlight_matched_host($c, '(?<=for )[^\s]+');
+        if ($c =~ /\.$/) {
+            $c = highlight_matched_host($c, '[^\s]+(?=\.)');
+        } else {
+            $c = highlight_matched_host($c, '(?<=for )[^\s]+');
+        }
 
     } elsif ($c =~ m/^Stopping to watch the client socket/) {
 
@@ -1909,6 +1917,47 @@ sub handle_loglevel_connect($) {
         # Socket timeout 3 reached: http://127.0.0.1:20000/no-filter/chunked-content/36
         $c =~ s@(?<=timeout )(\d+)@$h{'Number'}$1$h{'Standard'}@;
         $c = highlight_matched_url($c, "(?<=reached: ).*")
+
+    } elsif ($c =~ m/^Prepared to read up to /) {
+
+        # Prepared to read up to 157 bytes of encrypted request body from the client.
+        $c =~ s@(?<=up to )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Forwarding \d+ bytes /) {
+
+        # Forwarding 157 bytes of encrypted request body.
+        $c =~ s@(?<=Forwarding )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Buffering encrypted client body/) {
+
+        # Buffering encrypted client body. Prepared to read up to 2236 bytes.
+        $c =~ s@(?<=up to )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^The last \d+ bytes of the encrypted request body have been read/) {
+
+        # The last 6945 bytes of the encrypted request body have been read.
+        $c =~ s@(?<=The last )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Reducing the chunk offset from/) {
+
+        # Reducing the chunk offset from 1096654 to 32704 after discarding 1063950 bytes to make room in the buffer.
+        # Reducing the chunk offset from 16219 to 128 after flushing 16091 bytes.
+        $c =~ s@(?<=\d to )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=offset from )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=after discarding )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=after flushing )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Client socket \d+ is no longer usable/) {
+
+        # Client socket 21 is no longer usable. The server socket has been closed.
+        $c =~ s@(?<=Client socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^(Client|Server) successfully connected over/) {
+
+        # Server successfully connected over TLSv1.3 (TLS_AES_256_GCM_SHA384).
+        # Client successfully connected over TLSv1.3 (TLS_AES_128_GCM_SHA256).
+        $c =~ s@(?<=connected over )(TLSv\d\.\d)@$h{'tls-version'}$1$h{'Standard'}@;
+        $c =~ s@(?<=\()([^)]+)@$h{'cipher-suite'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^Looks like we / or
              $c =~ m/^Unsetting keep-alive flag/ or
@@ -2156,6 +2205,10 @@ sub handle_loglevel_error($) {
         $c =~ s@(?<=digested )(\d+)@$h{'Number'}$1$h{'Standard'}@;
         $c =~ s@(?<=of )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
+    } elsif ($c =~ m/^The socks connection timed out after/) {
+
+        # The socks connection timed out after 60 seconds.
+        $c =~ s@(?<=after )(\d+)@$h{'Number'}$1$h{'Standard'}@;
     }
 
     # XXX: There are probably more messages that deserve highlighting.
@@ -2163,6 +2216,41 @@ sub handle_loglevel_error($) {
     return $c;
 }
 
+sub handle_loglevel_received($) {
+
+    my $c = shift;
+
+    if ($c =~ m/^TLS from socket/) {
+        # TLS from socket 3: \x16\xda\xe2\xa2;\x0d\x0a
+
+        $c =~ s@(?<=TLS from socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^from socket/) {
+        # from socket 3: HEAD http://p.p/ HTTP/1.1\x0d\x0aHost: p.p\x0d\x0aUser-Agent: curl/7.85.0\x0d\x0aAccept: */*\x0d\x0aProxy-Connection: Keep-Alive\x0d\x0a\x0d\x0a
+
+        $c =~ s@(?<=from socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+    }
+
+    return $c;
+}
+
+sub handle_loglevel_writing($) {
+
+    my $c = shift;
+
+    if ($c =~ m/^to socket/) {
+        # to socket 11: HTTP/1.1 200 Connection established\x0d\x0a\x0d\x0a
+
+        $c =~ s@(?<=to socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^TLS on socket /) {
+        # TLS on socket 9: o~\xfcS[\xfa\x8f\xd6\x96\xe6_\xc7$\x1b[...]
+
+        $c =~ s@(?<=TLS on socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+    }
+
+    return $c;
+}
 
 sub handle_loglevel_ignore($) {
     return shift;
@@ -2621,8 +2709,8 @@ sub parse_loop() {
         'Force'             => \&handle_loglevel_force,
         'Error'             => \&handle_loglevel_error,
         'Fatal error'       => \&handle_loglevel_ignore,
-        'Writing'           => \&handle_loglevel_ignore,
-        'Received'          => \&handle_loglevel_ignore,
+        'Writing'           => \&handle_loglevel_writing,
+        'Received'          => \&handle_loglevel_received,
         'Tagging'           => \&handle_loglevel_tagging,
         'Actions'           => \&handle_loglevel_ignore,
         'Unknown log level' => \&handle_loglevel_ignore,

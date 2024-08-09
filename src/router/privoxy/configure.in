@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl Written by and Copyright (C) 2001-2021 the
+dnl Written by and Copyright (C) 2001-2023 the
 dnl Privoxy team. https://www.privoxy.org/
 dnl
 dnl Based on the Internet Junkbuster originally written
@@ -80,12 +80,12 @@ dnl release and no new release is near.
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=33
+VERSION_POINT=34
 CODE_STATUS="stable"
 
 dnl Timestamp (date +%s) used by the mtree-spec target.
 dnl Should be updated before releases but forgetting it isn't critical.
-SOURCE_DATE_EPOCH=1636218132
+SOURCE_DATE_EPOCH=1672586827
 
 dnl =================================================================
 dnl Substitute the version numbers
@@ -168,7 +168,7 @@ if test "x$with_asan" = "xyes"; then
     LDFLAGS="$LDFLAGS -fsanitize=address"
 fi
 
-AC_ARG_WITH(asan, [  --with-msan       Enable MemorySanitizer. Requires compiler support.])
+AC_ARG_WITH(msan, [  --with-msan       Enable MemorySanitizer. Requires compiler support.])
 if test "x$with_msan" = "xyes"; then
     CFLAGS="$CFLAGS -fsanitize=memory"
     LDFLAGS="$LDFLAGS -fsanitize=memory"
@@ -216,7 +216,7 @@ else
         ],
         [
           if test $ID = no ; then
-            AC_MSG_ERROR(There is no 'id' programm on this system)
+            AC_MSG_ERROR(There is no 'id' program on this system)
           else
             AC_MSG_RESULT(none specified)
             USER=$with_user
@@ -255,7 +255,7 @@ else
         ],
         [
           if test $BGROUPS = no ; then
-            AC_MSG_ERROR(There is no 'groups' programm on this system)
+            AC_MSG_ERROR(There is no 'groups' program on this system)
           else
             AC_MSG_RESULT(none specified)
             GROUP=$with_group;

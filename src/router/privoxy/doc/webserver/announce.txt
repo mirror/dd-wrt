@@ -1,117 +1,149 @@
-               Announcing Privoxy 3.0.32 stable
+               Announcing Privoxy 3.0.34 stable
 --------------------------------------------------------------------
 
-Privoxy 3.0.32 fixes multiple DoS issues and a couple of other bugs.
-The issues also affect earlier Privoxy releases.
+Privoxy 3.0.34 fixes a few minor bugs and comes with a couple of
+general improvements and new features.
+
+Please note that Google started to bounce messages from the Privoxy
+mailing lists a couple of months ago. As a result gmail users have
+been unsubscribed by Mailman. If you are affected by this, please
+resubscribe with a different mail address. The Privoxy project has
+limited resources and limited time to investigate an issue that
+only affects gmail addresses.
 
 --------------------------------------------------------------------
-ChangeLog for Privoxy 3.0.32
+ChangeLog for Privoxy 3.0.34
 --------------------------------------------------------------------
-- Security/Reliability:
-  - ssplit(): Remove an assertion that could be triggered with a
-    crafted CGI request.
-    Commit 2256d7b4d67. OVE-20210203-0001.
-    Reported by: Joshua Rogers (Opera)
-  - cgi_send_banner(): Overrule invalid image types. Prevents a
-    crash with a crafted CGI request if Privoxy is toggled off.
-    Commit e711c505c48. OVE-20210206-0001.
-    Reported by: Joshua Rogers (Opera)
-  - socks5_connect(): Don't try to send credentials when none are
-    configured. Fixes a crash due to a NULL-pointer dereference
-    when the socks server misbehaves.
-    Commit 85817cc55b9. OVE-20210207-0001.
-    Reported by: Joshua Rogers (Opera)
-  - chunked_body_is_complete(): Prevent an invalid read of size two.
-    Commit a912ba7bc9c. OVE-20210205-0001.
-    Reported by: Joshua Rogers (Opera)
-  - Obsolete pcre: Prevent invalid memory accesses with an invalid
-    pattern passed to pcre_compile(). Note that the obsolete pcre code
-    is scheduled to be removed before the 3.0.33 release. There has been
-    a warning since 2008 already.
-    Commit 28512e5b624. OVE-20210222-0001.
-    Reported by: Joshua Rogers (Opera)
-
 - Bug fixes:
-  - Properly parse the client-tag-lifetime directive. Previously it was
-    not accepted as an obsolete hash value was being used.
-    Reported by: Joshua Rogers (Opera)
-  - decompress_iob(): Prevent reading of uninitialized data.
-    Reported by: Joshua Rogers (Opera).
-  - decompress_iob(): Don't advance cur past eod when looking
-    for the end of the file name and comment.
-  - decompress_iob(): Cast value to unsigned char before shifting.
-    Prevents a left-shift of a negative value which is undefined behaviour.
-    Reported by: Joshua Rogers (Opera)
-  - gif_deanimate(): Confirm that that we have enough data before doing
-    any work. Fixes a crash when fuzzing with an empty document.
-    Reported by: Joshua Rogers (Opera).
-  - buf_copy(): Fail if there's no data to write or nothing to do.
-    Prevents undefined behaviour "applying zero offset to null pointer".
-    Reported by: Joshua Rogers (Opera)
-  - log_error(): Treat LOG_LEVEL_FATAL as fatal even when --stfu is
-    being used while fuzzing.
-    Reported by: Joshua Rogers (Opera).
-  - Respect DESTDIR when considering whether or not to install
-    config files with ".new" extension.
-  - OpenSSL ssl_store_cert(): Fix two error messages.
-  - Fix a couple of format specifiers.
-  - Silence compiler warnings when compiling with NDEBUG.
-  - fuzz_server_header(): Fix compiler warning.
-  - fuzz_client_header(): Fix compiler warning.
-  - cgi_send_user_manual(): Also reject requests if the user-manual
-    directive specifies a https:// URL. Previously Privoxy would try and
-    fail to open a local file.
+  - Improve the handling of chunk-encoded responses by buffering the data
+    even if filters are disabled and properly keeping track of where the
+    various chunks are supposed to start and end. Previously Privoxy would
+    merely check the last bytes received to see if they looked like the
+    last-chunk. This failed to work if the last-chunk wasn't received in one
+    read and could also result in actual data being misdetected
+    as last-chunk.
+    Should fix: SF support request #1739.
+    Reported by: withoutname.
+  - remove_chunked_transfer_coding(): Refuse to de-chunk invalid data
+    Previously the data could get corrupted even further.
+    Now we simply pass the unmodified data to the client.
+  - gif_deanimate(): Tolerate multiple image extensions in a row.
+    This allows to deanimate all the gifs on:
+    https://commons.wikimedia.org/wiki/Category:Animated_smilies
+    Fixes SF bug #795 reported by Celejar.
+  - OpenSSL generate_host_certificate(): Use X509_get_subject_name()
+    instead of X509_get_issuer_name() to get the issuer for generated
+    website certificates so there are no warnings in the browser when using
+    an intermediate CA certificate instead of a self-signed root certificate.
+    Problem reported and patch submitted by Chakib Benziane.
+  - can_filter_request_body(): Fix a log message that contained a spurious u.
+  - handle_established_connection(): Check for pending TLS data from the client
+    before checking if data is available on the connection.
+    The TLS library may have already consumed all the data from the client
+    response in which case poll() and select() will not detect that data is
+    available to be read.
+    Sponsored by: Robert Klemme.
+  - ssl_send_certificate_error(): Don't crash if there's no certificate
+    information available. This is only relevant when Privoxy is built with
+    wolfSSL 5.0.0 or later (code not yet published). Earlier wolfSSL versions
+    or the other TLS backends don't seem to trigger the crash.
+  - socks5_connect(): Add support for target hosts specified as IPv4 address
+    Previously the IP address was sent as domain.
 
 - General improvements:
-  - Log the TLS version and the the cipher when debug 2 is enabled.
-  - ssl_send_certificate_error(): Respect HEAD requests by not sending a body.
-  - ssl_send_certificate_error(): End the body with a single new line.
-  - serve(): Increase the chances that the host is logged when closing
-    a server socket.
-  - handle_established_connection(): Add parentheses to clarify an expression
-    Suggested by: David Binderman
-  - continue_https_chat(): Explicitly unset CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE
-    if process_encrypted_request() fails. This makes it more obvious that the
-    connection will not be reused. Previously serve() relied on
-    CSP_FLAG_SERVER_CONTENT_LENGTH_SET and CSP_FLAG_CHUNKED being unset.
-    Inspired by a patch from Joshua Rogers (Opera).
-  - decompress_iob(): Add periods to a couple of log messages
-  - Terminate the body of the HTTP snipplets with a single new line
-    instead of "\r\n".
-  - configure: Add --with-assertions option and only enable assertions
-    when it is used
-  - windows build: Use --with-brotli and --with-mbedtls by default and
-    enable dynamic error checking.
-  - gif_deanimate(): Confirm we've got an image before trying to write it
-    Saves a pointless buf_copy() call.
-  - OpenSSL ssl_store_cert(): Remove a superfluous space before the serial number.
+  - Add a client-body-tagger action which creates tags based on
+    the content of the request body.
+    Sponsored by: Robert Klemme.
+  - When client-body filters are enabled, buffer the whole request
+    before opening a connection to the server.
+    Makes it less likely that the server connection times out
+    and we don't open a connection if the buffering fails anyway.
+    Sponsored by: Robert Klemme.
+  - Add periods to a couple of log messages.
+  - accept_connection(): Add missing space to a log message.
+  - Initialize ca-related defaults with strdup_or_die() so errors
+    aren't silently ignored.
+  - make_path: Use malloc_or_die() in cases where allocation errors
+    were already fatal anyway.
+  - handle_established_connection(): Improve an error message slightly.
+  - receive_client_request(): Reject https URLs without CONNECT request.
+  - Include all requests in the statistics if mutexes are available.
+    Previously in case of reused connections only the last request got
+    counted. The statistics still aren't perfect but it's an improvement.
+  - Add read_socks_reply() and start using it in socks5_connect()
+    to apply the socket timeout more consistently.
+  - socks5_connect(): Deal with domain names in the socks reply
+  - Add a filter for bundeswehr.de that hides the cookie and
+    privacy info banner.
 
 - Action file improvements:
-  - Disable fast-redirects for .golem.de/
-  - Unblock requests to adri*.
-  - Block requests for trc*.taboola.com/
-  - Disable fast-redirects for .linkedin.com/
-
-- Filter file improvements:
-  - Make the second pcrs job of the img-reorder filter greedy again.
-    The ungreedy version broke the img tags on:
-    https://bulk.fefe.de/scalability/.
+  - Disable filter{banners-by-size} for .freiheitsfoo.de/.
+  - Disable filter{banners-by-size} for freebsdfoundation.org/.
+  - Disable fast-redirects for consent.youtube.com/.
+  - Block requests to ups.xplosion.de/.
+  - Block requests for elsa.memoinsights.com/t.
+  - Fix a typo in a test.
+  - Disable fast-redirects for launchpad.net/.
+  - Unblock .eff.org/.
+  - Stop unblocking .org/.*(image|banner) which appears to be too generous
+    It let requests like:
+    https://stats.noblogs.org/piwik.php?action_name=anti%20gentrifizierungs%20fest&idsite=10175&rec=1&r=220192&h=17&m=7&s=44&url=https%3A%2F%2Fmuellemcalling.noblogs.org%2F&urlref=https%3A%2F%2Fmuellemcalling.noblogs.org%2Finfostande%2F&_id=&_idn=1&_refts=0&send_image=0&cookie=1&res=1366x768&pv_id=eqr7jX&pf_net=7&pf_srv=3&pf_tfr=2281&pf_dm1=156
+    pass.
+    The example URL http://www.gnu.org/graphics/gnu-head-banner.png is
+    already unblocked due to .gnu.org being unblocked.
+  - Unblock adfd.org/.
+  - Disable filter{banners-by-link} for .eff.org/.
+  - Block requests to odb.outbrain.com/.
+  - Disable fast-redirects for .gandi.net/.
+  - Disable fast-redirects{} for .onion/.*/status/.
+  - Disable fast-redirects{} for twitter.com/.*/status/.
+  - Unblock pinkstinks.de/.
+  - Disable fast-redirects for .hagalil.com/.
 
 - Privoxy-Log-Parser:
-  - Highlight a few more messages.
-  - Clarify the --statistics output. The shown "Reused connections"
-    are server connections so name them appropriately.
-  - Bump version to 0.9.3.
+  - Bump version to 0.9.5.
+  - Highlight more log messages.
+  - Highlight the Crunch reason only once. Previously the "crunch reason"
+    could also be highlighted when the URL contained a matching string.
+    The real crunch reason only occurs once per line, so there's no need
+    to continue looking for it after it has been found once.
+    While at it, add a comment with an example log line.
 
-- Privoxy-Regression-Test:
-  - Add the --check-bad-ssl option to the --help output.
-  - Bump version to 0.7.3.
+- uagen:
+  - Bump version to 1.2.4.
+  - Update BROWSER_VERSION and BROWSER_REVISION to 102.0
+    to match the User-Agent of the current Firefox ESR.
+  - Explicitly document that changing the 'Gecko token' is suspicious.
+  - Consistently use a lower-case 'c' as copyright symbol.
+  - Bump copyright.
+  - Add 'aarch64' as Linux architecture.
+  - Add OpenBSD architecture 'arm64'.
+  - Stop using sparc64 as FreeBSD architecture.
+    It hasn't been supported for a while now.
+
+- Build system:
+  - Makefile: Add a 'dok' target that depends on the 'error' target
+    to show the "You are not using GNU make or did nor run configure"
+    message.
+  - configure: Fix --with-msan option.
+    Also (probably) reported by Andrew Savchenko.
+
+- macOS build system:
+  - Enable HTTPS inspection when building the macOS binary
+    (using OpenSSL as TLS library).
 
 - Documentation:
-  - Add pushing the created tag to the release steps in the developer manual.
-  - Clarify that 'debug 32768' should be used in addition to the other debug
-    directives when reporting problems.
-  - Add a 'Third-party licenses and copyrights' section to the user manual.
+  - Add OpenSSL to the list of libraries that may be licensed under the
+    Apache 2.0 license in which case the linked Privoxy binary has to be
+    distributed under the GPLv3 or later.
+  - config: Fix the documented ca-directory default value.
+    Reported by avoidr.
+  - Rebuild developer-manual and tidy with 'HTML Tidy for FreeBSD version 5.8.0'.
+  - Update developer manual with new macOS packaging instructions.
+  - Note that the FreeBSD installation instructions work for
+    ElectroBSD as well.
+  - Note that FreeBSD/ElectroBSD users can try to install Privoxy
+    as binary package using 'pkg'.
 
 -----------------------------------------------------------------
 About Privoxy:
@@ -124,7 +156,7 @@ flexible configuration and can be customized to suit individual needs and
 tastes. It has application for both stand-alone systems and multi-user
 networks.
 
-Privoxy is Free Software and licensed under the GNU GPLv2.
+Privoxy is Free Software and licensed under the GNU GPLv2 or later.
 
 Our TODO list is rather long. Helping hands and donations are welcome:
 

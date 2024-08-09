@@ -7,7 +7,7 @@
  *                to deserve their own file but don't really fit in
  *                any other file.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020 the
+ * Copyright   :  Written by and Copyright (C) 2001-2022 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -700,8 +700,7 @@ char * make_path(const char * dir, const char * file)
           * Relative path, so start with the base directory.
           */
          path_size += strlen(basedir) + 1; /* +1 for the slash */
-         path = malloc(path_size);
-         if (!path) log_error(LOG_LEVEL_FATAL, "malloc failed!");
+         path = malloc_or_die(path_size);
          strlcpy(path, basedir, path_size);
          strlcat(path, "/", path_size);
          strlcat(path, dir, path_size);
@@ -709,8 +708,7 @@ char * make_path(const char * dir, const char * file)
       else
 #endif /* defined unix */
       {
-         path = malloc(path_size);
-         if (!path) log_error(LOG_LEVEL_FATAL, "malloc failed!");
+         path = malloc_or_die(path_size);
          strlcpy(path, dir, path_size);
       }
 
@@ -1000,6 +998,49 @@ time_t timegm(struct tm *tm)
    return answer;
 }
 #endif /* !defined(HAVE_TIMEGM) && defined(HAVE_TZSET) && defined(HAVE_PUTENV) */
+
+
+/*********************************************************************
+ *
+ * Function    :  host_is_ip_address
+ *
+ * Description :  Checks whether or not a host is specified by
+ *                IP address. Does not actually validate the
+ *                address.
+ *
+ * Parameters  :
+ *          1  :  host = The host name to check
+ *
+ * Returns     :   1 => Yes
+ *                 0 => No
+ *
+ *********************************************************************/
+extern int host_is_ip_address(const char *host)
+{
+   const char *p;
+
+   if (NULL != strstr(host, ":"))
+   {
+      /* Assume an IPv6 address. */
+      return 1;
+   }
+
+   for (p = host; *p; p++)
+   {
+      if ((*p != '.') && !privoxy_isdigit(*p))
+      {
+         /* Not a dot or digit so it can't be an IPv4 address. */
+         return 0;
+      }
+   }
+
+   /*
+    * Host only consists of dots and digits so
+    * assume that is an IPv4 address.
+    */
+   return 1;
+
+}
 
 
 /*

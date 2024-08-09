@@ -7,7 +7,7 @@
  *                OS-independent.  Contains #ifdefs to make this work
  *                on many platforms.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2017 the
+ * Copyright   :  Written by and Copyright (C) 2001-2022 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -850,7 +850,7 @@ void drain_and_close_socket(jb_socket fd)
             bytes_drained_total += bytes_drained;
             if (bytes_drained_total > ARBITRARY_DRAIN_LIMIT)
             {
-               log_error(LOG_LEVEL_CONNECT, "Giving up draining socket %d", fd);
+               log_error(LOG_LEVEL_CONNECT, "Giving up draining socket %d.", fd);
                break;
             }
          }
@@ -858,7 +858,7 @@ void drain_and_close_socket(jb_socket fd)
       if (bytes_drained_total != 0)
       {
          log_error(LOG_LEVEL_CONNECT,
-            "Drained %d bytes before closing socket %d", bytes_drained_total, fd);
+            "Drained %d bytes before closing socket %d.", bytes_drained_total, fd);
       }
    }
 
@@ -912,7 +912,7 @@ int bind_port(const char *hostnam, int portnum, int backlog, jb_socket *pfd)
    if ((-1 == retval) || (sizeof(servnam) <= retval))
    {
       log_error(LOG_LEVEL_ERROR,
-         "Port number (%d) ASCII decimal representation doesn't fit into 6 bytes",
+         "Port number (%d) ASCII decimal representation doesn't fit into 6 bytes.",
          portnum);
       return -1;
    }
@@ -1439,7 +1439,7 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
    if ((-1 == retval) || listen_addr_size <= retval)
    {
       log_error(LOG_LEVEL_ERROR,
-         "Server name (%s) and port number (%d) ASCII decimal representation"
+         "Server name (%s) and port number (%d) ASCII decimal representation "
          "don't fit into %lu bytes",
          host_addr, csp->config->hport[i], listen_addr_size);
       return 0;

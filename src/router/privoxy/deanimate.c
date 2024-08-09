@@ -6,7 +6,7 @@
  *                fly.  High-level functions include:
  *                  - Deanimation of GIF images
  *
- * Copyright   :  Written by and Copyright (C) 2001 - 2004, 2006 by the
+ * Copyright   :  Written by and Copyright (C) 2001-2021 by the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the GIF file format specification (see
@@ -328,6 +328,7 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
 {
    unsigned char c;
    struct binbuffer *image;
+   int image_buffered = 0;
 
    if (NULL == src || NULL == dst)
    {
@@ -382,9 +383,9 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
     * Parse the GIF block by block and copy the relevant
     * parts to dst
     */
-   while(src->offset < src->size)
+   while (src->offset < src->size)
    {
-      switch(buf_getbyte(src, 0))
+      switch (buf_getbyte(src, 0))
       {
          /*
           * End-of-GIF Marker: Append current image if we got
@@ -398,8 +399,14 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
           * Image block: Extract to current image buffer.
           */
       case 0x2c:
-         image->offset = 0;
+         if (image_buffered == 1)
+         {
+            /* Discard previous image. */
+            image->offset = 0;
+            image_buffered = 0;
+         }
          if (gif_extract_image(src, image)) goto failed;
+         image_buffered = 1;
          if (get_first_image) goto write;
          continue;
 
@@ -410,14 +417,16 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
          switch (buf_getbyte(src, 1))
          {
             /*
-             * Image extension: Copy extension  header and image
-             *                  to the current image buffer
+             * Image extension: Copy extension header
+             * and continue looking for new blocks.
              */
          case 0xf9:
-            image->offset = 0;
-            if (buf_copy(src, image, 8) || buf_getbyte(src, 0) != 0x2c) goto failed;
-            if (gif_extract_image(src, image)) goto failed;
-            if (get_first_image) goto write;
+            if (image_buffered == 1)
+            {
+               image->offset = 0;
+               image_buffered = 0;
+            }
+            if (buf_copy(src, image, 8)) goto failed;
             continue;
 
             /*

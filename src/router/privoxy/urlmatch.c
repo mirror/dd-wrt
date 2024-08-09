@@ -105,7 +105,7 @@ void free_http_request(struct http_request *http)
  * Description :  Splits the domain name so we can compare it
  *                against wildcards. It used to be part of
  *                parse_http_url, but was separated because the
- *                same code is required in chat in case of
+ *                same code is required in chat() in case of
  *                intercepted requests.
  *
  * Parameters  :
@@ -245,7 +245,7 @@ jb_err parse_http_url(const char *url, struct http_request *http, int require_pr
 
 
    /*
-    * Split URL into protocol,hostport,path.
+    * Split URL into protocol, hostport, path.
     */
    {
       char *buf;

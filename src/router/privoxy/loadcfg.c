@@ -7,7 +7,7 @@
  *                routine to load the configuration and the global
  *                variables it writes to.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2017 the
+ * Copyright   :  Written by and Copyright (C) 2001-2022 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -634,12 +634,12 @@ struct configuration_spec * load_config(void)
    config->proxy_args                = strdup_or_die("");
    config->forwarded_connect_retries = 0;
 #ifdef FEATURE_HTTPS_INSPECTION
-   config->ca_password               = strdup("");
-   ca_cert_file                      = strdup("cacert.crt");
-   ca_key_file                       = strdup("cakey.pem");
-   ca_directory                      = strdup("./CA");
-   trusted_cas_file                  = strdup("trustedCAs.pem");
-   certificate_directory             = strdup("./certs");
+   config->ca_password               = strdup_or_die("");
+   ca_cert_file                      = strdup_or_die("cacert.crt");
+   ca_key_file                       = strdup_or_die("cakey.pem");
+   ca_directory                      = strdup_or_die("./CA");
+   trusted_cas_file                  = strdup_or_die("trustedCAs.pem");
+   certificate_directory             = strdup_or_die("./certs");
 #endif
 
 #ifdef FEATURE_CLIENT_TAGS

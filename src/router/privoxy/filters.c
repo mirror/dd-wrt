@@ -2115,6 +2115,172 @@ static filter_function_ptr get_filter_function(const struct client_state *csp)
 
 /*********************************************************************
  *
+ * Function    :  get_bytes_to_next_chunk_start
+ *
+ * Description :  Returns the number of bytes to the start of the
+ *                next chunk in the buffer.
+ *
+ * Parameters  :
+ *          1  :  buffer = Pointer to the text buffer
+ *          2  :  size = Number of bytes in the buffer.
+ *          3  :  offset = Where to expect the beginning of the next chunk.
+ *
+ * Returns     :  -1 if the size can't be determined or data is missing,
+ *                otherwise the number of bytes to the start of the next chunk
+ *                or 0 if the last chunk has been fully buffered.
+ *
+ *********************************************************************/
+static int get_bytes_to_next_chunk_start(char *buffer, size_t size, size_t offset)
+{
+   char *chunk_start;
+   char *p;
+   unsigned int chunk_size = 0;
+   int bytes_to_skip;
+
+   if (size <= offset || size < 5)
+   {
+      /*
+       * Not enough bytes bufferd to figure
+       * out the size of the next chunk.
+       */
+      return -1;
+   }
+
+   chunk_start = buffer + offset;
+
+   p = strstr(chunk_start, "\r\n");
+   if (NULL == p)
+   {
+      /*
+       * The line with the chunk-size hasn't been completely received
+       * yet (or is invalid).
+       */
+      log_error(LOG_LEVEL_RE_FILTER,
+         "Not enough or invalid data in buffer in chunk size line.");
+      return -1;
+   }
+
+   if (sscanf(chunk_start, "%x", &chunk_size) != 1)
+   {
+      /* XXX: Write test case to trigger this. */
+      log_error(LOG_LEVEL_ERROR, "Failed to parse chunk size. "
+         "Size: %lu, offset: %lu. Chunk size start: %N", size, offset,
+         (size - offset), chunk_start);
+      return -1;
+   }
+
+   /*
+    * To get to the start of the next chunk size we have to skip
+    * the line with the current chunk size followed by "\r\n" followd
+    * by the actual data and another "\r\n" following the data.
+    */
+   bytes_to_skip = (int)(p - chunk_start) + 2 + (int)chunk_size + 2;
+
+   if (bytes_to_skip <= 0)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to figure out chunk offset. %u and %d seem dubious.",
+         chunk_size, bytes_to_skip);
+      return -1;
+   }
+   if (chunk_size == 0)
+   {
+      if (bytes_to_skip <= (size - offset))
+      {
+         return 0;
+      }
+      else
+      {
+         log_error(LOG_LEVEL_INFO,
+            "Last chunk detected but we're still missing data.");
+         return -1;
+      }
+   }
+
+   return bytes_to_skip;
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  get_bytes_missing_from_chunked_data
+ *
+ * Description :  Figures out how many bytes of data we need to get
+ *                to the start of the next chunk of data (XXX: terminology).
+ *                Due to the nature of chunk-encoded data we can only see
+ *                how many data is missing according to the last chunk size
+ *                buffered.
+ *
+ * Parameters  :
+ *          1  :  buffer = Pointer to the text buffer
+ *          2  :  size = Number of bytes in the buffer.
+ *          3  :  offset = Where to expect the beginning of the next chunk.
+ *
+ * Returns     :  -1 if the data can't be parsed (yet),
+ *                 0 if the buffer is complete or a
+ *                 number of bytes that is missing.
+ *
+ *********************************************************************/
+int get_bytes_missing_from_chunked_data(char *buffer, size_t size, size_t offset)
+{
+   int ret = -1;
+   int last_valid_offset = -1;
+
+   if (size < offset || size < 5)
+   {
+      /* Not enough data buffered yet */
+      return -1;
+   }
+
+   do
+   {
+      ret = get_bytes_to_next_chunk_start(buffer, size, offset);
+      if (ret == -1)
+      {
+         return last_valid_offset;
+      }
+      if (ret == 0)
+      {
+         return 0;
+      }
+      if (offset != 0)
+      {
+         last_valid_offset = (int)offset;
+      }
+      offset += (size_t)ret;
+   } while (offset < size);
+
+   return (int)offset;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  chunked_data_is_complete
+ *
+ * Description :  Detects if a buffer with chunk-encoded data looks
+ *                complete.
+ *
+ * Parameters  :
+ *          1  :  buffer = Pointer to the text buffer
+ *          2  :  size = Number of bytes in the buffer.
+ *          3  :  offset = Where to expect the beginning of the
+ *                         first complete chunk.
+ *
+ * Returns     :  TRUE if it looks like the data is complete,
+ *                FALSE otherwise.
+ *
+ *********************************************************************/
+int chunked_data_is_complete(char *buffer, size_t size, size_t offset)
+{
+   return (0 == get_bytes_missing_from_chunked_data(buffer, size, offset));
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  remove_chunked_transfer_coding
  *
  * Description :  In-situ remove the "chunked" transfer coding as defined
@@ -2151,6 +2317,18 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
    assert(buffer);
    from_p = to_p = buffer;
 
+#ifndef FUZZ
+   /*
+    * Refuse to de-chunk invalid or incomplete data unless we're fuzzing.
+    */
+   if (!chunked_data_is_complete(buffer, *size, 0))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Chunk-encoding appears to be invalid. Content can't be filtered.");
+      return JB_ERR_PARSE;
+   }
+#endif
+
    if (sscanf(buffer, "%x", &chunksize) != 1)
    {
       log_error(LOG_LEVEL_ERROR, "Invalid first chunksize while stripping \"chunked\" transfer coding");
@@ -2180,7 +2358,9 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
        */
       if (NULL == (from_p = strstr(from_p, "\r\n")))
       {
-         log_error(LOG_LEVEL_ERROR, "Parse error while stripping \"chunked\" transfer coding");
+         log_error(LOG_LEVEL_ERROR,
+            "Failed to strip \"chunked\" transfer coding. "
+            "Line with chunk size doesn't seem to end properly.");
          return JB_ERR_PARSE;
       }
       from_p += 2;
@@ -2195,7 +2375,8 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
       if (from_p + chunksize >= end_of_buffer)
       {
          log_error(LOG_LEVEL_ERROR,
-            "End of chunk is beyond the end of the buffer.");
+            "Failed to decode content for filtering. "
+            "One chunk end is beyond the end of the buffer.");
          return JB_ERR_PARSE;
       }
 
@@ -2347,8 +2528,10 @@ char *execute_content_filters(struct client_state *csp)
    if (JB_ERR_OK != prepare_for_filtering(csp))
    {
       /*
-       * failed to de-chunk or decompress.
+       * We failed to de-chunk or decompress, don't accept
+       * another request on the client connection.
        */
+      csp->flags &= ~CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
       return NULL;
    }
 
@@ -2404,21 +2587,20 @@ char *execute_content_filters(struct client_state *csp)
  * Function    :  execute_client_body_filters
  *
  * Description :  Executes client body filters for the request that is buffered
- *                in the client_iob. Upon success moves client_iob cur pointer
- *                to the end of the processed data.
+ *                in the client_iob. The client_iob is updated with the filtered
+ *                content.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
  *          2  :  content_length = content length. Upon successful filtering
  *                the passed value is updated with the new content length.
  *
- * Returns     :  Pointer to the modified buffer, or
- *                NULL if filtering failed or wasn't necessary.
+ * Returns     :  1 if the content has been filterd. 0 if it hasn't.
  *
  *********************************************************************/
-char *execute_client_body_filters(struct client_state *csp, size_t *content_length)
+int execute_client_body_filters(struct client_state *csp, size_t *content_length)
 {
-   char *ret;
+   char *filtered_content;
 
    assert(client_body_filters_enabled(csp->action));
 
@@ -2427,15 +2609,193 @@ char *execute_client_body_filters(struct client_state *csp, size_t *content_leng
       /*
        * No content, no filtering necessary.
        */
-      return NULL;
+      return 0;
    }
 
-   ret = pcrs_filter_request_body(csp, csp->client_iob->cur, content_length);
-   if (ret != NULL)
+   filtered_content = pcrs_filter_request_body(csp, csp->client_iob->cur, content_length);
+   if (filtered_content != NULL)
    {
-      csp->client_iob->cur = csp->client_iob->eod;
+      freez(csp->client_iob->buf);
+      csp->client_iob->buf  = filtered_content;
+      csp->client_iob->cur  = csp->client_iob->buf;
+      csp->client_iob->eod  = csp->client_iob->cur + *content_length;
+      csp->client_iob->size = *content_length;
+
+      return 1;
    }
-   return ret;
+   
+   return 0;
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  execute_client_body_taggers
+ *
+ * Description :  Executes client body taggers for the request that is
+ *                buffered in the client_iob.
+ *                XXX: Lots of code shared with header_tagger
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  content_length = content length.
+ *
+ * Returns     :  XXX
+ *
+ *********************************************************************/
+jb_err execute_client_body_taggers(struct client_state *csp, size_t content_length)
+{
+   enum filter_type wanted_filter_type = FT_CLIENT_BODY_TAGGER;
+   int multi_action_index = ACTION_MULTI_CLIENT_BODY_TAGGER;
+   pcrs_job *job;
+
+   struct re_filterfile_spec *b;
+   struct list_entry *tag_name;
+
+   assert(client_body_taggers_enabled(csp->action));
+
+   if (content_length == 0)
+   {
+      /*
+       * No content, no tagging necessary.
+       */
+      return JB_ERR_OK;
+   }
+
+   log_error(LOG_LEVEL_INFO, "Got to execute tagger on %N",
+      content_length, csp->client_iob->cur);
+
+   if (list_is_empty(csp->action->multi[multi_action_index])
+      || filters_available(csp) == FALSE)
+   {
+      /* Return early if no taggers apply or if none are available. */
+      return JB_ERR_OK;
+   }
+
+   /* Execute all applying taggers */
+   for (tag_name = csp->action->multi[multi_action_index]->first;
+        NULL != tag_name; tag_name = tag_name->next)
+   {
+      char *modified_tag = NULL;
+      char *tag = csp->client_iob->cur;
+      size_t size = content_length;
+      pcrs_job *joblist;
+
+      b = get_filter(csp, tag_name->str, wanted_filter_type);
+      if (b == NULL)
+      {
+         continue;
+      }
+
+      joblist = b->joblist;
+
+      if (b->dynamic) joblist = compile_dynamic_pcrs_job_list(csp, b);
+
+      if (NULL == joblist)
+      {
+         log_error(LOG_LEVEL_TAGGING,
+            "Tagger %s has empty joblist. Nothing to do.", b->name);
+         continue;
+      }
+
+      /* execute their pcrs_joblist on the body. */
+      for (job = joblist; NULL != job; job = job->next)
+      {
+         const int hits = pcrs_execute(job, tag, size, &modified_tag, &size);
+
+         if (0 < hits)
+         {
+            /* Success, continue with the modified version. */
+            if (tag != csp->client_iob->cur)
+            {
+               freez(tag);
+            }
+            tag = modified_tag;
+         }
+         else
+         {
+            /* Tagger doesn't match */
+            if (0 > hits)
+            {
+               /* Regex failure, log it but continue anyway. */
+               log_error(LOG_LEVEL_ERROR,
+                  "Problems with tagger \'%s\': %s",
+                  b->name, pcrs_strerror(hits));
+            }
+            freez(modified_tag);
+         }
+      }
+
+      if (b->dynamic) pcrs_free_joblist(joblist);
+
+      /* If this tagger matched */
+      if (tag != csp->client_iob->cur)
+      {
+         if (0 == size)
+         {
+            /*
+             * There is no technical limitation which makes
+             * it impossible to use empty tags, but I assume
+             * no one would do it intentionally.
+             */
+            freez(tag);
+            log_error(LOG_LEVEL_TAGGING,
+               "Tagger \'%s\' created an empty tag. Ignored.", b->name);
+            continue;
+         }
+
+         if (list_contains_item(csp->action->multi[ACTION_MULTI_SUPPRESS_TAG], tag))
+         {
+            log_error(LOG_LEVEL_TAGGING,
+               "Tagger \'%s\' didn't add tag \'%s\': suppressed",
+               b->name, tag);
+            freez(tag);
+            continue;
+         }
+
+         if (!list_contains_item(csp->tags, tag))
+         {
+            if (JB_ERR_OK != enlist(csp->tags, tag))
+            {
+               log_error(LOG_LEVEL_ERROR,
+                  "Insufficient memory to add tag \'%s\', "
+                  "based on tagger \'%s\'",
+                  tag, b->name);
+            }
+            else
+            {
+               char *action_message;
+               /*
+                * update the action bits right away, to make
+                * tagging based on tags set by earlier taggers
+                * of the same kind possible.
+                */
+               if (update_action_bits_for_tag(csp, tag))
+               {
+                  action_message = "Action bits updated accordingly.";
+               }
+               else
+               {
+                  action_message = "No action bits update necessary.";
+               }
+
+               log_error(LOG_LEVEL_TAGGING,
+                  "Tagger \'%s\' added tag \'%s\'. %s",
+                  b->name, tag, action_message);
+            }
+         }
+         else
+         {
+            /* XXX: Is this log-worthy? */
+            log_error(LOG_LEVEL_TAGGING,
+               "Tagger \'%s\' didn't add tag \'%s\'. Tag already present",
+               b->name, tag);
+         }
+         freez(tag);
+      }
+   }
+
+   return JB_ERR_OK;
 }
 
 
@@ -2883,6 +3243,24 @@ int client_body_filters_enabled(const struct current_action_spec *action)
 
 /*********************************************************************
  *
+ * Function    :  client_body_taggers_enabled
+ *
+ * Description :  Checks whether there are any client body taggers
+ *                enabled for the current request.
+ *
+ * Parameters  :
+ *          1  :  action = Action spec to check.
+ *
+ * Returns     :  TRUE for yes, FALSE otherwise
+ *
+ *********************************************************************/
+int client_body_taggers_enabled(const struct current_action_spec *action)
+{
+   return !list_is_empty(action->multi[ACTION_MULTI_CLIENT_BODY_TAGGER]);
+}
+
+/*********************************************************************
+ *
  * Function    :  filters_available
  *
  * Description :  Checks whether there are any filters available.
@@ -3082,14 +3460,14 @@ void register_block_reason_for_statistics(const char *block_reason)
 {
    struct block_statistics_entry *entry;
 
-   privoxy_mutex_lock(&block_statistics_mutex);
+   privoxy_mutex_lock(&block_reason_statistics_mutex);
 
    if (block_statistics == NULL)
    {
       block_statistics = zalloc_or_die(sizeof(struct block_statistics_entry));
       entry = block_statistics;
       entry->block_reason = strdup_or_die(block_reason);
-      privoxy_mutex_unlock(&block_statistics_mutex);
+      privoxy_mutex_unlock(&block_reason_statistics_mutex);
       return;
    }
    entry = block_statistics;
@@ -3109,7 +3487,7 @@ void register_block_reason_for_statistics(const char *block_reason)
       entry = entry->next;
    }
 
-   privoxy_mutex_unlock(&block_statistics_mutex);
+   privoxy_mutex_unlock(&block_reason_statistics_mutex);
 
 }
 
@@ -3130,7 +3508,7 @@ static void increment_block_reason_counter(const char *block_reason)
 {
    struct block_statistics_entry *entry;
 
-   privoxy_mutex_lock(&block_statistics_mutex);
+   privoxy_mutex_lock(&block_reason_statistics_mutex);
 
    entry = block_statistics;
    while (entry != NULL)
@@ -3143,7 +3521,7 @@ static void increment_block_reason_counter(const char *block_reason)
       entry = entry->next;
    }
 
-   privoxy_mutex_unlock(&block_statistics_mutex);
+   privoxy_mutex_unlock(&block_reason_statistics_mutex);
 
 }
 
@@ -3166,7 +3544,7 @@ void get_block_reason_count(const char *block_reason, unsigned long long *count)
 {
    struct block_statistics_entry *entry;
 
-   privoxy_mutex_lock(&block_statistics_mutex);
+   privoxy_mutex_lock(&block_reason_statistics_mutex);
 
    entry = block_statistics;
    while (entry != NULL)
@@ -3179,7 +3557,7 @@ void get_block_reason_count(const char *block_reason, unsigned long long *count)
       entry = entry->next;
    }
 
-   privoxy_mutex_unlock(&block_statistics_mutex);
+   privoxy_mutex_unlock(&block_reason_statistics_mutex);
 
 }
 

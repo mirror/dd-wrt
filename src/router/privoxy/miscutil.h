@@ -91,6 +91,8 @@ size_t privoxy_strlcat(char *destination, const char *source, size_t size);
 extern int privoxy_millisleep(unsigned milliseconds);
 extern struct tm *privoxy_gmtime_r(const time_t *time_spec, struct tm *result);
 
+extern int host_is_ip_address(const char *host);
+
 #if defined(__cplusplus)
 }
 #endif

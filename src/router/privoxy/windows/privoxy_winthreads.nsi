@@ -111,7 +111,7 @@ SetDatablockOptimize on
 CRCCheck on
 AutoCloseWindow true ; (can be true for the window go away automatically at end)
 ShowInstDetails nevershow ; (can be show to have them shown, or nevershow to disable)
-SetDateSave on ; (can be on to have files restored to their orginal date)
+SetDateSave on ; (can be on to have files restored to their original date)
 ; SetOverwrite ifnewer ; (files are only overwritten if the existing file is older than the new file)
 SetOverwrite on  ; install package files over-write existing files regardless of date
 

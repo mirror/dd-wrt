@@ -52,7 +52,7 @@ LDFLAGS="${LDFLAGS} -fstack-protector-strong"
 # -D_FORTIFY_SOURCE:  detect some buffer overflow errors
 #     ***>> requires compiler optimization level 1 or above <<***
 # see : https://gcc.gnu.org/legacy-ml/gcc-patches/2004-09/msg02055.html
-#   The diffence between -D_FORTIFY_SOURCE=1 and -D_FORTIFY_SOURCE=2 is e.g. for
+#   The difference between -D_FORTIFY_SOURCE=1 and -D_FORTIFY_SOURCE=2 is e.g. for
 #     struct S { struct T { char buf[5]; int x; } t; char buf[20]; } var;
 #   With -D_FORTIFY_SOURCE=1,
 #     strcpy (&var.t.buf[1], "abcdefg");
@@ -92,8 +92,6 @@ CFLAGS="${CFLAGS} -Wall"
 # see: http://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html
 # -Wall   doesn't actually turn on all warnings, so add  -Wextra
 #    but then plenty too many complaints by
-#      -Wimplicit-fallthrough=3
-#         too many warnings in pcre/study.c & pcre.c
 #      -Wmissing-field-initializers
 #      -Wsign-compare
 #      -Wtype-limits
@@ -129,16 +127,23 @@ CFLAGS="${CFLAGS} -Wshadow"
 
 # why does the mingw library _not_ include .a files for libpcre?
 # *sigh* build my own pcre so I can do static linking
-# Get the 8.x PCRE library from  https://ftp.pcre.org/pub/pcre/
+# Get the 8.x PCRE library from
+#   https://sourceforge.net/projects/pcre/files/pcre/
 inc="/source/pcre-8.45/"
 lib="/source/pcre-8.45/.libs"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
 
 # mbedtls
-# Get the 2.16.x mbedtls library from  https://github.com/ARMmbed/mbedtls/tags
-inc="/source/mbedtls-2.16.11/include"
-lib="/source/mbedtls-2.16.11/library"
+## https://github.com/Mbed-TLS/mbedtls/releases/tag/v2.16.12
+##   This is the last release of the 2.16 long-time support branch.
+##   Users who want a long-time branch should move to mbedtls-2.28,
+##   which is backward-compatible and will be supported for at least
+##   3 years.
+# Get the 2.28.x mbedtls library from  https://github.com/Mbed-TLS/mbedtls/tags
+inc="/source/mbedtls-2.28.2/include"
+lib="/source/mbedtls-2.28.2/library"
+
 MITMOPT="--with-mbedtls"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"

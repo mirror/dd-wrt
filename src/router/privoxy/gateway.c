@@ -6,7 +6,7 @@
  *                using a "forwarder" (i.e. HTTP proxy and/or a SOCKS4
  *                or SOCKS5 proxy).
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020 the
+ * Copyright   :  Written by and Copyright (C) 2001-2021 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -1031,6 +1031,101 @@ static const char *translate_socks5_error(int socks_error)
 
 /*********************************************************************
  *
+ * Function    :  convert_ipv4_address_to_bytes
+ *
+ * Description :  Converts an IPv4 address from string to bytes.
+ *
+ * Parameters  :
+ *          1  :  address = The IPv4 address string to convert.
+ *          2  :  buf = The buffer to write the bytes to.
+ *                      Must be at least four bytes long.
+ *
+ * Returns     :  JB_ERR_OK on success, JB_ERR_PARSE otherwise.
+ *
+ *********************************************************************/
+static jb_err convert_ipv4_address_to_bytes(const char *address, char *buf)
+{
+   int i;
+   const char *p = address;
+
+   for (i = 0; i < 4; i++)
+   {
+      unsigned byte;
+      if (1 != sscanf(p, "%u", &byte))
+      {
+         return JB_ERR_PARSE;
+      }
+      if (byte > 255)
+      {
+         return JB_ERR_PARSE;
+      }
+      buf[i] = (char)byte;
+      if (i < 3)
+      {
+         p = strstr(p, ".");
+         if (p == NULL)
+         {
+            return JB_ERR_PARSE;
+         }
+         p++;
+      }
+   }
+
+   return JB_ERR_OK;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  read_socks_reply
+ *
+ * Description :  Read from a socket connected to a socks server.
+ *
+ * Parameters  :
+ *          1  :  sfd = file descriptor of the socket to read
+ *          2  :  buf = pointer to buffer where data will be written
+ *                Must be >= len bytes long.
+ *          3  :  len = maximum number of bytes to read
+ *          4  :  timeout = Number of seconds to wait.
+ *
+ * Returns     :  On success, the number of bytes read is returned (zero
+ *                indicates end of file), and the file position is advanced
+ *                by this number.  It is not an error if this number is
+ *                smaller than the number of bytes requested; this may hap-
+ *                pen for example because fewer bytes are actually available
+ *                right now (maybe because we were close to end-of-file, or
+ *                because we are reading from a pipe, or from a terminal,
+ *                or because read() was interrupted by a signal).  On error,
+ *                -1 is returned, and errno is set appropriately.  In this
+ *                case it is left unspecified whether the file position (if
+ *                any) changes.
+ *
+ *********************************************************************/
+static int read_socks_reply(jb_socket sfd, char *buf, int len, int timeout)
+{
+   if (!data_is_available(sfd, timeout))
+   {
+      if (socket_is_still_alive(sfd))
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "The socks connection timed out after %d seconds.", timeout);
+      }
+      else
+      {
+         log_error(LOG_LEVEL_ERROR, "The socks server hung "
+            "up the connection without sending a response.");
+      }
+      return -1;
+   }
+
+   return read_socket(sfd, buf, len);
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  socks5_connect
  *
  * Description :  Connect to the SOCKS server, and connect through
@@ -1055,10 +1150,11 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
 {
 #define SIZE_SOCKS5_REPLY_IPV4 10
 #define SIZE_SOCKS5_REPLY_IPV6 22
+#define SIZE_SOCKS5_REPLY_DOMAIN 300
 #define SOCKS5_REPLY_DIFFERENCE (SIZE_SOCKS5_REPLY_IPV6 - SIZE_SOCKS5_REPLY_IPV4)
    int err = 0;
    char cbuf[300];
-   char sbuf[SIZE_SOCKS5_REPLY_IPV6];
+   char sbuf[SIZE_SOCKS5_REPLY_DOMAIN];
    size_t client_pos = 0;
    int server_size = 0;
    size_t hostlen = 0;
@@ -1146,20 +1242,8 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
       close_socket(sfd);
       return(JB_INVALID_SOCKET);
    }
-   if (!data_is_available(sfd, csp->config->socket_timeout))
-   {
-      if (socket_is_still_alive(sfd))
-      {
-         errstr = "SOCKS5 negotiation timed out";
-      }
-      else
-      {
-         errstr = "SOCKS5 negotiation got aborted by the server";
-      }
-      err = 1;
-   }
-
-   if (!err && read_socket(sfd, sbuf, sizeof(sbuf)) != 2)
+   if (read_socks_reply(sfd, sbuf, sizeof(sbuf),
+         csp->config->socket_timeout) != 2)
 #endif
    {
       errstr = "SOCKS5 negotiation read failed";
@@ -1218,7 +1302,8 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
             return(JB_INVALID_SOCKET);
          }
 
-         if (read_socket(sfd, sbuf, sizeof(sbuf)) != 2)
+         if (read_socks_reply(sfd, sbuf, sizeof(sbuf),
+               csp->config->socket_timeout) != 2)
          {
             errstr = "SOCKS5 negotiation auth read failed";
             err = 1;
@@ -1251,12 +1336,32 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
    cbuf[client_pos++] = '\x05'; /* Version */
    cbuf[client_pos++] = '\x01'; /* TCP connect */
    cbuf[client_pos++] = '\x00'; /* Reserved, must be 0x00 */
-   cbuf[client_pos++] = '\x03'; /* Address is domain name */
-   cbuf[client_pos++] = (char)(hostlen & 0xffu);
-   assert(sizeof(cbuf) - client_pos > (size_t)255);
-   /* Using strncpy because we really want the nul byte padding. */
-   strncpy(cbuf + client_pos, target_host, sizeof(cbuf) - client_pos - 1);
-   client_pos += (hostlen & 0xffu);
+   if (host_is_ip_address(target_host) && NULL == strstr(target_host, ":"))
+   {
+      cbuf[client_pos++] = '\x01'; /* Address is IPv4 address. */
+      if (JB_ERR_OK != convert_ipv4_address_to_bytes(target_host, &cbuf[client_pos]))
+      {
+         errstr = "SOCKS5 error. Failed to convert target address to IP address";
+         csp->error_message = strdup(errstr);
+         log_error(LOG_LEVEL_CONNECT, "%s", errstr);
+         close_socket(sfd);
+         errno = EINVAL;
+         return(JB_INVALID_SOCKET);
+      }
+      client_pos += 4;
+   }
+   else
+   {
+      /*
+       * XXX: This branch is currently also used for IPv6 addresses
+       */
+      cbuf[client_pos++] = '\x03'; /* Address is domain name. */
+      cbuf[client_pos++] = (char)(hostlen & 0xffu);
+      assert(sizeof(cbuf) - client_pos > (size_t)255);
+      /* Using strncpy because we really want the nul byte padding. */
+      strncpy(cbuf + client_pos, target_host, sizeof(cbuf) - client_pos - 1);
+      client_pos += (hostlen & 0xffu);
+   }
    cbuf[client_pos++] = (char)((target_port >> 8) & 0xff);
    cbuf[client_pos++] = (char)((target_port     ) & 0xff);
 
@@ -1286,13 +1391,13 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
 
       if (client_headers == NULL)
       {
-         log_error(LOG_LEVEL_FATAL, "Out of memory rebuilding client headers");
+         log_error(LOG_LEVEL_FATAL, "Out of memory rebuilding client headers.");
       }
       list_remove_all(csp->headers);
       header_length= strlen(client_headers);
 
       log_error(LOG_LEVEL_CONNECT,
-         "Optimistically sending %lu bytes of client headers intended for %s",
+         "Optimistically sending %lu bytes of client headers intended for %s.",
          header_length, csp->http->hostport);
 
       if (write_socket(sfd, client_headers, header_length))
@@ -1308,7 +1413,7 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
          unsigned long long buffered_request_bytes =
             (unsigned long long)(csp->client_iob->eod - csp->client_iob->cur);
          log_error(LOG_LEVEL_CONNECT,
-            "Optimistically sending %llu bytes of client body. Expected %llu",
+            "Optimistically sending %llu bytes of client body. Expected %llu.",
             csp->expected_client_content_length, buffered_request_bytes);
          assert(csp->expected_client_content_length == buffered_request_bytes);
          if (write_socket(sfd, csp->client_iob->cur, buffered_request_bytes))
@@ -1323,7 +1428,8 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
    }
 #endif
 
-   server_size = read_socket(sfd, sbuf, SIZE_SOCKS5_REPLY_IPV4);
+   server_size = read_socks_reply(sfd, sbuf, SIZE_SOCKS5_REPLY_IPV4,
+      csp->config->socket_timeout);
    if (server_size != SIZE_SOCKS5_REPLY_IPV4)
    {
       errstr = "SOCKS5 negotiation read failed";
@@ -1352,10 +1458,35 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
              * yet. Read and discard the rest of it to make
              * sure it isn't treated as HTTP data later on.
              */
-            server_size = read_socket(sfd, sbuf, SOCKS5_REPLY_DIFFERENCE);
+            server_size = read_socks_reply(sfd, sbuf, SOCKS5_REPLY_DIFFERENCE,
+               csp->config->socket_timeout);
             if (server_size != SOCKS5_REPLY_DIFFERENCE)
             {
                errstr = "SOCKS5 negotiation read failed (IPv6 address)";
+            }
+         }
+         else if (sbuf[3] == '\x03')
+         {
+            /*
+             * The address field contains a domain name
+             * which means we didn't get the whole reply
+             * yet. Read and discard the rest of it to make
+             * sure it isn't treated as HTTP data later on.
+             */
+            unsigned domain_length = (unsigned)sbuf[4];
+            int bytes_left_to_read = 5 + (int)domain_length + 2 - SIZE_SOCKS5_REPLY_IPV4;
+            if (bytes_left_to_read <= 0 || sizeof(sbuf) < bytes_left_to_read)
+            {
+               errstr = "SOCKS5 negotiation read failed (Invalid domain length)";
+            }
+            else
+            {
+               server_size = read_socks_reply(sfd, sbuf, bytes_left_to_read,
+                  csp->config->socket_timeout);
+               if (server_size != bytes_left_to_read)
+               {
+                  errstr = "SOCKS5 negotiation read failed (Domain name)";
+               }
             }
          }
          else if (sbuf[3] != '\x01')

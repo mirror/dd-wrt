@@ -14,7 +14,7 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.33">
+<!entity p-version "3.0.34">
 <!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 <!entity % p-not-stable "IGNORE">
@@ -35,7 +35,7 @@
 
  Purpose     :  user manual
 
- Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -54,7 +54,7 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2021 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2023 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
@@ -302,11 +302,15 @@ How to install the binary packages depends on your operating system:
 </sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3 id="installation-freebsd"><title>FreeBSD</title>
+<sect3 id="installation-freebsd"><title>FreeBSD and ElectroBSD</title>
 
 <para>
  Privoxy is part of FreeBSD's Ports Collection, you can build and install
  it with <literal>cd /usr/ports/www/privoxy; make install clean</literal>.
+</para>
+<para>
+ If your system is configured to install binary packages you can
+ try to install &my-app; with <literal>pkg install privoxy</literal>.
 </para>
 </sect3>
 
@@ -409,8 +413,8 @@ MAKENSIS = /&lt;root-dir>/nsis/makensis.exe
 
       <para>
         Get the latest 8.x PCRE code from
-        <ulink url="https://ftp.pcre.org/pub/pcre/">PCRE
-                    https://ftp.pcre.org/pub/pcre/</ulink>
+        <ulink url="https://sourceforge.net/projects/pcre/files/pcre/">PCRE
+                    https://sourceforge.net/projects/pcre/files/pcre/</ulink>
         and build the static PCRE libraries with
 
         <screen>
@@ -437,9 +441,9 @@ export CPPFLAGS="-DPCRE_STATIC"
 
       <para>
         If you want to be able to have Privoxy do TLS Inspection, get the latest
-        2.16.x MBED-TLS library source code from
-        <ulink url="https://github.com/ARMmbed/mbedtls/tags">
-                    https://github.com/ARMmbed/mbedtls/tags</ulink>,
+        2.28.x MBED-TLS library source code from
+        <ulink url="https://github.com/Mbed-TLS/mbedtls/tags">
+                    https://github.com/Mbed-TLS/mbedtls/tags</ulink>,
         extract the tar file into <literal>&lt;root-dir&gt;</literal>
         and build the static libraries with
         <programlisting>
@@ -2536,12 +2540,6 @@ media.example.com/.*banners
 <!-- XXX: This section contains duplicates content from the
           client-specific-tag documentation. -->
 
-<warning>
-<para>
- This is an experimental feature. The syntax is likely to change in future versions.
-</para>
-</warning>
-
 <para>
  Client tag patterns are not set based on HTTP headers but based on
  the client's IP address. Users can enable them themselves, but the
@@ -3127,6 +3125,85 @@ adserver.example.net/.*\.js$
 # Remove "test" everywhere in the request body
 {+client-body-filter{remove-test}}
 /
+</screen>
+  </listitem>
+ </varlistentry>
+
+</variablelist>
+</sect3>
+
+
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="client-body-tagger">
+<title>client-body-tagger</title>
+
+<variablelist>
+ <varlistentry>
+  <term>Typical use:</term>
+  <listitem>
+   <para>
+    Block requests based on the content of the body data.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Effect:</term>
+  <listitem>
+   <para>
+    Client request bodies to which this action applies are filtered on-the-fly through
+    the specified regular expression based substitutions, the result is used as tag.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Type:</term>
+  <!-- boolean, parameterized, Multi-value -->
+  <listitem>
+   <para>Multi-value.</para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Parameter:</term>
+  <listitem>
+   <para>
+    The name of a client-body tagger, as defined in one of the
+    <link linkend="filter-file">filter files</link>.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Please refer to the <link linkend="filter-file">filter file chapter</link>
+    to learn how to create your own client-body tagger.
+   </para>
+   <para>
+    Client-body taggers are applied to each request body on its own,
+    and as the body isn't modified, each tagger "sees" the original.
+   </para>
+   <para>
+    Chunk-encoded request bodies currently can't be tagged.
+    Request bodies larger than the buffer-limit can't be tagged either.
+   </para>
+  </listitem>
+ </varlistentry>
+
+ <varlistentry>
+  <term>Example usage (section):</term>
+  <listitem>
+     <screen>
+# Apply blafasel tagger.
+{+client-body-tagger{blafasel}}
+/
+
+# Block request based on the tag created by the blafasel tagger.
+{+block{Request body contains blafasel}}
+TAG:^content contains blafasel$
 </screen>
   </listitem>
  </varlistentry>
@@ -4387,6 +4464,10 @@ another.example.com/testing
    </para>
     <screen>+filter{no-ping}             # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</screen>
    <para>
+    <anchor id="filter-bundeswehr.de">
+   </para>
+    <screen>+filter{bundeswehr.de}      # Hide the cookie and privacy info banner on bundeswehr.de.</screen>
+   <para>
     <anchor id="filter-github">
    </para>
     <screen>+filter{github}              # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</screen>
@@ -5370,9 +5451,6 @@ new action
     request which doesn't contain a path. Enabling it based on
     a pattern with path doesn't work as the path is only seen
     by &my-app; if the action is already enabled.
-   </para>
-   <para>
-    This is an experimental feature.
    </para>
   </listitem>
  </varlistentry>
@@ -7107,8 +7185,9 @@ webmail.example.com
 </para>
 
 <para>
- &my-app; also supports two tagger actions:
- <literal><link linkend="client-header-tagger">client-header-tagger</link></literal>
+ &my-app; also supports three tagger actions:
+ <literal><link linkend="client-header-tagger">client-header-tagger</link></literal>,
+ <literal><link linkend="client-body-tagger">client-body-tagger</link></literal>
  and
  <literal><link linkend="server-header-tagger">server-header-tagger</link></literal>.
  Taggers and filters use the same syntax in the filter files, the difference
@@ -7642,9 +7721,9 @@ pre-defined filters for your convenience:
   <term><emphasis>banners-by-link</emphasis></term>
   <listitem>
    <para>
-    This is an experimental filter that attempts to kill any banners if
-    their URLs seem to point to known or suspected click trackers. It is currently
-    not of much value and is not recommended for use by default.
+    This filter attempts to kill any banners if their URLs seem to point
+    to known or suspected click trackers. It is currently not of much value
+    and is not recommended for use by default.
    </para>
   </listitem>
  </varlistentry>
@@ -8126,7 +8205,7 @@ Requests</title>
 <para>
  The same is true for <application>Privoxy</application> binaries
  unless they are linked with a
- <ulink url="https://tls.mbed.org/">mbed TLS</ulink> version
+ <ulink url="https://www.trustedfirmware.org/projects/mbed-tls/">mbed TLS</ulink> version
  that is licensed under the Apache 2.0 license in which
  case you can redistribute and/or modify the <application>Privoxy</application>
  binaries under the terms of the <citetitle>GNU General Public License</citetitle>
@@ -8166,7 +8245,7 @@ Requests</title>
  When compiled with FEATURE_HTTPS_INSPECTION (optional),
  Privoxy depends on a TLS library. The supported libraries are
  <ulink url="https://www.openssl.org/">LibreSSL</ulink>,
- <ulink url="https://tls.mbed.org/">mbed TLS</ulink> and
+ <ulink url="https://github.com/Mbed-TLS/mbedtls/tags">mbed TLS 2.28.x</ulink> and
  <ulink url="https://www.openssl.org/">OpenSSL</ulink>.
 </para>
 <para>

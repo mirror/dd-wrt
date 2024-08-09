@@ -4,7 +4,7 @@
 <head>
   <title>Installation</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Introduction" href="introduction.html">
   <link rel="NEXT" title="What's New in this Release" href="whatsnew.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="introduction.html" accesskey="P">Prev</a></td>
@@ -109,9 +109,12 @@
         <p>To uninstall, run the macsetup module's uninstall.sh as sudo from an administrator account.</p>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="INSTALLATION-FREEBSD" id="INSTALLATION-FREEBSD">2.1.6. FreeBSD</a></h3>
+        <h3 class="SECT3"><a name="INSTALLATION-FREEBSD" id="INSTALLATION-FREEBSD">2.1.6. FreeBSD and
+        ElectroBSD</a></h3>
         <p>Privoxy is part of FreeBSD's Ports Collection, you can build and install it with <tt class="LITERAL">cd
         /usr/ports/www/privoxy; make install clean</tt>.</p>
+        <p>If your system is configured to install binary packages you can try to install <span class=
+        "APPLICATION">Privoxy</span> with <tt class="LITERAL">pkg install privoxy</tt>.</p>
       </div>
     </div>
     <div class="SECT2">
@@ -128,8 +131,8 @@
       <table border="0" bgcolor="#E0E0E0" width="100%">
         <tr>
           <td>
-            <pre class="SCREEN">  tar xzvf privoxy-3.0.33-stable-src.tar.gz
-  cd privoxy-3.0.33-stable</pre>
+            <pre class="SCREEN">  tar xzvf privoxy-3.0.34-stable-src.tar.gz
+  cd privoxy-3.0.34-stable</pre>
           </td>
         </tr>
       </table>
@@ -336,8 +339,9 @@
               </td>
             </tr>
           </table>
-          <p>Get the latest 8.x PCRE code from <a href="https://ftp.pcre.org/pub/pcre/" target="_top">PCRE
-          https://ftp.pcre.org/pub/pcre/</a> and build the static PCRE libraries with</p>
+          <p>Get the latest 8.x PCRE code from <a href="https://sourceforge.net/projects/pcre/files/pcre/" target=
+          "_top">PCRE https://sourceforge.net/projects/pcre/files/pcre/</a> and build the static PCRE libraries
+          with</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>
               <td>
@@ -361,9 +365,9 @@
               </td>
             </tr>
           </table>
-          <p>If you want to be able to have Privoxy do TLS Inspection, get the latest 2.16.x MBED-TLS library source
-          code from <a href="https://github.com/ARMmbed/mbedtls/tags" target=
-          "_top">https://github.com/ARMmbed/mbedtls/tags</a>, extract the tar file into <tt class=
+          <p>If you want to be able to have Privoxy do TLS Inspection, get the latest 2.28.x MBED-TLS library source
+          code from <a href="https://github.com/Mbed-TLS/mbedtls/tags" target=
+          "_top">https://github.com/Mbed-TLS/mbedtls/tags</a>, extract the tar file into <tt class=
           "LITERAL">&lt;root-dir&gt;</tt> and build the static libraries with</p>
           <table border="0" bgcolor="#E0E0E0" width="100%">
             <tr>

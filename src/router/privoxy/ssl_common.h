@@ -72,7 +72,6 @@ extern char *make_certs_path(const char *conf_dir, const char *file_name,
 extern unsigned long get_certificate_serial(struct client_state *csp);
 extern int get_certificate_valid_from_date(char *buffer, size_t buffer_size, const char *fmt);
 extern int get_certificate_valid_to_date(char *buffer, size_t buffer_size, const char *fmt);
-extern int host_is_ip_address(const char *host);
 extern int enforce_sane_certificate_state(const char *certificate, const char *key);
 
 #endif /* ndef SSL_COMMON_H_INCLUDED */

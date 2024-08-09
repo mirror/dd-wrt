@@ -222,13 +222,13 @@ unsigned int sweep(void)
       {
          last_active->next = client_list->next;
 
-#ifdef FEATURE_STATISTICS
+#if defined(FEATURE_STATISTICS) && !defined(MUTEX_LOCKS_AVAILABLE)
          urls_read++;
          if (csp->flags & CSP_FLAG_REJECTED)
          {
             urls_rejected++;
          }
-#endif /* def FEATURE_STATISTICS */
+#endif /* defined(FEATURE_STATISTICS) && !defined(MUTEX_LOCKS_AVAILABLE) */
 
          freez(client_list);
 
@@ -1168,6 +1168,10 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
       {
          new_filter = FT_CLIENT_BODY_FILTER;
       }
+      else if (strncmp(buf, "CLIENT-BODY-TAGGER:", 19) == 0)
+      {
+         new_filter = FT_CLIENT_BODY_TAGGER;
+      }
 
       /*
        * If this is the head of a new filter block, make it a
@@ -1187,6 +1191,10 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          }
 #endif
          else if (new_filter == FT_CLIENT_BODY_FILTER)
+         {
+            new_bl->name = chomp(buf + 19);
+         }
+         else if (new_filter == FT_CLIENT_BODY_TAGGER)
          {
             new_bl->name = chomp(buf + 19);
          }

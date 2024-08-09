@@ -17,7 +17,7 @@
 # Mozilla/5.0 (X11; ElectroBSD amd64; rv:78.0) Gecko/20100101 Firefox/78.0
 # Mozilla/5.0 (X11; FreeBSD i386; rv:78.0) Gecko/20100101 Firefox/78.0
 #
-# Copyright (c) 2006-2021 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2006-2022 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -39,7 +39,7 @@ use Getopt::Long;
 
 use constant {
 
-   UAGEN_VERSION       => 'uagen 1.2.3',
+   UAGEN_VERSION       => 'uagen 1.2.4',
 
    UAGEN_LOGFILE       => '/var/log/uagen.log',
    ACTION_FILE         => '/etc/privoxy/user-agent.action',
@@ -59,8 +59,8 @@ use constant {
    # are too lazy to check, but want to change them anyway, take the values you
    # see in the "Help/About Mozilla Firefox" menu.
 
-   BROWSER_VERSION                   => "91.0",
-   BROWSER_REVISION                  => '91.0',
+   BROWSER_VERSION                   => "102.0",
+   BROWSER_REVISION                  => '102.0',
    BROWSER_RELEASE_DATE              => '20100101',
 };
 
@@ -138,13 +138,13 @@ sub generate_platform_and_os() {
         FreeBSD => {
             karma             => 1,
             platform          => 'X11',
-            architectures     => [ 'i386', 'amd64', 'sparc64' ],
+            architectures     => [ 'i386', 'amd64' ],
             order_is_inversed => 0,
         },
         OpenBSD => {
             karma             => 1,
             platform          => 'X11',
-            architectures     => [ 'i386', 'amd64', 'sparc64', 'alpha' ],
+            architectures     => [ 'arm64', 'i386', 'amd64', 'sparc64', 'alpha' ],
             order_is_inversed => 0,
         },
         NetBSD => {
@@ -156,7 +156,7 @@ sub generate_platform_and_os() {
         Linux => {
             karma             => 1,
             platform          => 'X11',
-            architectures     => [ 'i586', 'i686', 'x86_64' ],
+            architectures     => [ 'aarch64', 'i586', 'i686', 'x86_64' ],
             order_is_inversed => 0,
         },
         SunOS => {
@@ -324,7 +324,7 @@ sub write_prefs_file() {
 }
 
 sub VersionMessage() {
-    printf UAGEN_VERSION . "\n" . 'Copyright (C) 2006-2020 Fabian Keil <fk@fabiankeil.de> ' .
+    printf UAGEN_VERSION . "\n" . 'Copyright (c) 2006-2022 Fabian Keil <fk@fabiankeil.de> ' .
         "\nhttps://www.fabiankeil.de/sourcecode/uagen/\n";
 }
 
@@ -487,7 +487,9 @@ nor cares if all actions are present. Garbage in, garbage out.
 
 B<--browser-release-date> I<browser_release_date> Date to use.
 The format is YYYYMMDD. Some sanity checks are done, but you
-shouldn't rely on them.
+shouldn't rely on them. Note that the Mozilla project has frozen
+the "Gecko token" starting with Firefox 4 so using a different
+one than the default is somewhat suspicious.
 
 B<--browser-revision> I<browser_revision> Use a custom revision.
 B<uagen> will use it without any sanity checks.

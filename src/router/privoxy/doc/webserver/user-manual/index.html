@@ -2,7 +2,7 @@
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-  <title>Privoxy 3.0.33 User Manual</title>
+  <title>Privoxy 3.0.34 User Manual</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
   <link rel="NEXT" title="Introduction" href="introduction.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -12,8 +12,8 @@
 <body class="ARTICLE" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink="#840084" alink="#0000FF">
   <div class="ARTICLE">
     <div class="TITLEPAGE">
-      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 3.0.33 User Manual</a></h1>
-      <p class="PUBDATE"><sub><a href="copyright.html">Copyright</a> &copy; 2001-2021 by <a href=
+      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 3.0.34 User Manual</a></h1>
+      <p class="PUBDATE"><sub><a href="copyright.html">Copyright</a> &copy; 2001-2023 by <a href=
       "https://www.privoxy.org/" target="_top">Privoxy Developers</a></sub><br></p>
       <div>
         <div class="ABSTRACT">
@@ -64,7 +64,7 @@
                 <dt>2.1.4. <a href="installation.html#OS-X-INSTALL-FROM-PACKAGE">Installation from ready-built
                 package</a></dt>
                 <dt>2.1.5. <a href="installation.html#OS-X-INSTALL-FROM-SOURCE">Installation from source</a></dt>
-                <dt>2.1.6. <a href="installation.html#INSTALLATION-FREEBSD">FreeBSD</a></dt>
+                <dt>2.1.6. <a href="installation.html#INSTALLATION-FREEBSD">FreeBSD and ElectroBSD</a></dt>
               </dl>
             </dd>
             <dt>2.2. <a href="installation.html#INSTALLATION-SOURCE">Building from Source</a></dt>
@@ -193,7 +193,7 @@
                 <dt>7.6.19. <a href="config.html#RECEIVE-BUFFER-SIZE">receive-buffer-size</a></dt>
               </dl>
             </dd>
-            <dt>7.7. <a href="config.html#HTTPS-INSPECTION-DIRECTIVES">HTTPS Inspection (Experimental)</a></dt>
+            <dt>7.7. <a href="config.html#HTTPS-INSPECTION-DIRECTIVES">HTTPS Inspection</a></dt>
             <dd>
               <dl>
                 <dt>7.7.1. <a href="config.html#CA-DIRECTORY">ca-directory</a></dt>
@@ -232,42 +232,43 @@
                 <dt>8.5.3. <a href="actions-file.html#CHANGE-X-FORWARDED-FOR">change-x-forwarded-for</a></dt>
                 <dt>8.5.4. <a href="actions-file.html#CLIENT-HEADER-FILTER">client-header-filter</a></dt>
                 <dt>8.5.5. <a href="actions-file.html#CLIENT-BODY-FILTER">client-body-filter</a></dt>
-                <dt>8.5.6. <a href="actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a></dt>
-                <dt>8.5.7. <a href="actions-file.html#CONTENT-TYPE-OVERWRITE">content-type-overwrite</a></dt>
-                <dt>8.5.8. <a href="actions-file.html#CRUNCH-CLIENT-HEADER">crunch-client-header</a></dt>
-                <dt>8.5.9. <a href="actions-file.html#CRUNCH-IF-NONE-MATCH">crunch-if-none-match</a></dt>
-                <dt>8.5.10. <a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a></dt>
-                <dt>8.5.11. <a href="actions-file.html#CRUNCH-SERVER-HEADER">crunch-server-header</a></dt>
-                <dt>8.5.12. <a href="actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a></dt>
-                <dt>8.5.13. <a href="actions-file.html#DEANIMATE-GIFS">deanimate-gifs</a></dt>
-                <dt>8.5.14. <a href="actions-file.html#DELAY-RESPONSE">delay-response</a></dt>
-                <dt>8.5.15. <a href="actions-file.html#DOWNGRADE-HTTP-VERSION">downgrade-http-version</a></dt>
-                <dt>8.5.16. <a href="actions-file.html#EXTERNAL-FILTER">external-filter</a></dt>
-                <dt>8.5.17. <a href="actions-file.html#FAST-REDIRECTS">fast-redirects</a></dt>
-                <dt>8.5.18. <a href="actions-file.html#FILTER">filter</a></dt>
-                <dt>8.5.19. <a href="actions-file.html#FORCE-TEXT-MODE">force-text-mode</a></dt>
-                <dt>8.5.20. <a href="actions-file.html#FORWARD-OVERRIDE">forward-override</a></dt>
-                <dt>8.5.21. <a href="actions-file.html#HANDLE-AS-EMPTY-DOCUMENT">handle-as-empty-document</a></dt>
-                <dt>8.5.22. <a href="actions-file.html#HANDLE-AS-IMAGE">handle-as-image</a></dt>
-                <dt>8.5.23. <a href="actions-file.html#HIDE-ACCEPT-LANGUAGE">hide-accept-language</a></dt>
-                <dt>8.5.24. <a href="actions-file.html#HIDE-CONTENT-DISPOSITION">hide-content-disposition</a></dt>
-                <dt>8.5.25. <a href="actions-file.html#HIDE-IF-MODIFIED-SINCE">hide-if-modified-since</a></dt>
-                <dt>8.5.26. <a href="actions-file.html#HIDE-FROM-HEADER">hide-from-header</a></dt>
-                <dt>8.5.27. <a href="actions-file.html#HIDE-REFERRER">hide-referrer</a></dt>
-                <dt>8.5.28. <a href="actions-file.html#HIDE-USER-AGENT">hide-user-agent</a></dt>
-                <dt>8.5.29. <a href="actions-file.html#HTTPS-INSPECTION">https-inspection</a></dt>
-                <dt>8.5.30. <a href="actions-file.html#IGNORE-CERTIFICATE-ERRORS">ignore-certificate-errors</a></dt>
-                <dt>8.5.31. <a href="actions-file.html#LIMIT-CONNECT">limit-connect</a></dt>
-                <dt>8.5.32. <a href="actions-file.html#LIMIT-COOKIE-LIFETIME">limit-cookie-lifetime</a></dt>
-                <dt>8.5.33. <a href="actions-file.html#PREVENT-COMPRESSION">prevent-compression</a></dt>
-                <dt>8.5.34. <a href="actions-file.html#OVERWRITE-LAST-MODIFIED">overwrite-last-modified</a></dt>
-                <dt>8.5.35. <a href="actions-file.html#REDIRECT">redirect</a></dt>
-                <dt>8.5.36. <a href="actions-file.html#SERVER-HEADER-FILTER">server-header-filter</a></dt>
-                <dt>8.5.37. <a href="actions-file.html#SERVER-HEADER-TAGGER">server-header-tagger</a></dt>
-                <dt>8.5.38. <a href="actions-file.html#SUPPRESS-TAG">suppress-tag</a></dt>
-                <dt>8.5.39. <a href="actions-file.html#SESSION-COOKIES-ONLY">session-cookies-only</a></dt>
-                <dt>8.5.40. <a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker</a></dt>
-                <dt>8.5.41. <a href="actions-file.html#SUMMARY">Summary</a></dt>
+                <dt>8.5.6. <a href="actions-file.html#CLIENT-BODY-TAGGER">client-body-tagger</a></dt>
+                <dt>8.5.7. <a href="actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a></dt>
+                <dt>8.5.8. <a href="actions-file.html#CONTENT-TYPE-OVERWRITE">content-type-overwrite</a></dt>
+                <dt>8.5.9. <a href="actions-file.html#CRUNCH-CLIENT-HEADER">crunch-client-header</a></dt>
+                <dt>8.5.10. <a href="actions-file.html#CRUNCH-IF-NONE-MATCH">crunch-if-none-match</a></dt>
+                <dt>8.5.11. <a href="actions-file.html#CRUNCH-INCOMING-COOKIES">crunch-incoming-cookies</a></dt>
+                <dt>8.5.12. <a href="actions-file.html#CRUNCH-SERVER-HEADER">crunch-server-header</a></dt>
+                <dt>8.5.13. <a href="actions-file.html#CRUNCH-OUTGOING-COOKIES">crunch-outgoing-cookies</a></dt>
+                <dt>8.5.14. <a href="actions-file.html#DEANIMATE-GIFS">deanimate-gifs</a></dt>
+                <dt>8.5.15. <a href="actions-file.html#DELAY-RESPONSE">delay-response</a></dt>
+                <dt>8.5.16. <a href="actions-file.html#DOWNGRADE-HTTP-VERSION">downgrade-http-version</a></dt>
+                <dt>8.5.17. <a href="actions-file.html#EXTERNAL-FILTER">external-filter</a></dt>
+                <dt>8.5.18. <a href="actions-file.html#FAST-REDIRECTS">fast-redirects</a></dt>
+                <dt>8.5.19. <a href="actions-file.html#FILTER">filter</a></dt>
+                <dt>8.5.20. <a href="actions-file.html#FORCE-TEXT-MODE">force-text-mode</a></dt>
+                <dt>8.5.21. <a href="actions-file.html#FORWARD-OVERRIDE">forward-override</a></dt>
+                <dt>8.5.22. <a href="actions-file.html#HANDLE-AS-EMPTY-DOCUMENT">handle-as-empty-document</a></dt>
+                <dt>8.5.23. <a href="actions-file.html#HANDLE-AS-IMAGE">handle-as-image</a></dt>
+                <dt>8.5.24. <a href="actions-file.html#HIDE-ACCEPT-LANGUAGE">hide-accept-language</a></dt>
+                <dt>8.5.25. <a href="actions-file.html#HIDE-CONTENT-DISPOSITION">hide-content-disposition</a></dt>
+                <dt>8.5.26. <a href="actions-file.html#HIDE-IF-MODIFIED-SINCE">hide-if-modified-since</a></dt>
+                <dt>8.5.27. <a href="actions-file.html#HIDE-FROM-HEADER">hide-from-header</a></dt>
+                <dt>8.5.28. <a href="actions-file.html#HIDE-REFERRER">hide-referrer</a></dt>
+                <dt>8.5.29. <a href="actions-file.html#HIDE-USER-AGENT">hide-user-agent</a></dt>
+                <dt>8.5.30. <a href="actions-file.html#HTTPS-INSPECTION">https-inspection</a></dt>
+                <dt>8.5.31. <a href="actions-file.html#IGNORE-CERTIFICATE-ERRORS">ignore-certificate-errors</a></dt>
+                <dt>8.5.32. <a href="actions-file.html#LIMIT-CONNECT">limit-connect</a></dt>
+                <dt>8.5.33. <a href="actions-file.html#LIMIT-COOKIE-LIFETIME">limit-cookie-lifetime</a></dt>
+                <dt>8.5.34. <a href="actions-file.html#PREVENT-COMPRESSION">prevent-compression</a></dt>
+                <dt>8.5.35. <a href="actions-file.html#OVERWRITE-LAST-MODIFIED">overwrite-last-modified</a></dt>
+                <dt>8.5.36. <a href="actions-file.html#REDIRECT">redirect</a></dt>
+                <dt>8.5.37. <a href="actions-file.html#SERVER-HEADER-FILTER">server-header-filter</a></dt>
+                <dt>8.5.38. <a href="actions-file.html#SERVER-HEADER-TAGGER">server-header-tagger</a></dt>
+                <dt>8.5.39. <a href="actions-file.html#SUPPRESS-TAG">suppress-tag</a></dt>
+                <dt>8.5.40. <a href="actions-file.html#SESSION-COOKIES-ONLY">session-cookies-only</a></dt>
+                <dt>8.5.41. <a href="actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker</a></dt>
+                <dt>8.5.42. <a href="actions-file.html#SUMMARY">Summary</a></dt>
               </dl>
             </dd>
             <dt>8.6. <a href="actions-file.html#ALIASES">Aliases</a></dt>

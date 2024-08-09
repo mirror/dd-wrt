@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.33">
+<!entity p-version "3.0.34">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -2602,8 +2602,8 @@ make tarball-dist
         Check that you have the current versions of the
         <ulink url="https://sourceforge.net/projects/nsis/files/NSIS%203/">
                     NSIS installer</ulink>,
-        <ulink url="https://ftp.pcre.org/pub/pcre/">PCRE library</ulink>,
-        <ulink url="https://tls.mbed.org/download">MBED TLS library</ulink>,
+        <ulink url="https://sourceforge.net/projects/pcre/files/pcre/">PCRE library</ulink>,
+        <ulink url="https://github.com/Mbed-TLS/mbedtls/tags">MBED TLS library</ulink>,
         <ulink url="https://github.com/google/brotli/releases">
                     Brotli library</ulink>,
         and that the <emphasis>MAKENSIS</emphasis> evar in
@@ -2813,107 +2813,32 @@ git clean -fd
     </sect4>
     </sect3>
 
-    <sect3 id="newrelease-macosx"><title>Mac OS X</title>
+    <sect3 id="newrelease-macosx"><title>macOS / OS X</title>
       <para>
         First, <emphasis>make sure that you have freshly exported the right
         version into an empty directory</emphasis>. (See "Building and releasing
         packages" above).
       </para>
       <para>
-        There are three modules available in the CVS repository backups for use on Mac
-        OS X, though technically only two of them generate a release (the other
-        can be used to install from source).
+        The OSXPackageBuilder module can generate OS X installer packages
+        supporting all Macs running OS X 10.4 and above. Obtain it from Git as
+        follows into a folder parallel to the exported privoxy source:
       </para>
-      <sect4 id="OS-X-OSXPackageBuilder-module">
-      <title>OSXPackageBuilder module (Documentation out of date)</title>
-        <para>
-          The OSXPackageBuilder module generates OS X installer packages
-          supporting all Macs running OS X 10.4 and above. Obtain it from CVS as
-          follows into a folder parallel to the exported privoxy source:
-        </para>
-          <programlisting>
-cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co OSXPackageBuilder
+        <programlisting>
+git clone ssh://git@git.privoxy.org:23/git/OSXPackageBuilder.git
 </programlisting>
-<!-- FIXME  cvs is no more!!! -->
-        <para>
-          The module contains complete instructions on its usage in the file
-          <filename>OS X Package Builder HOWTO.txt</filename>.
-        </para>
-        <para>
-          Once the package(s) have been generated, you can then upload them
-          directly to the Files section of the Sourceforge project in the
-          Macintosh (OS X) folder. Each new version release of Privoxy should
-          have a new subfolder created in which to store its files. Please
-          ensure that the folder contains a readme file that makes it clear
-          which package is for whichversion of OS X.
-        </para>
-      </sect4>
-      <sect4 id="OS-X-osxsetup-module">
-      <title>osxsetup module (DEPRECATED) (Documentation out of date)</title>
-        <para>
-          <emphasis>This module is deprecated since the installer it generates
-          places all Privoxy files in one folder in a non-standard location, and
-          supports only Intel Macs running OS X 10.6 or higher.</emphasis>
-        </para>
-        <para>
-          Check out the module from CVS as follows into a folder parallel to the
-          exported privoxy source:
-        </para>
-          <programlisting>
-cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co osxsetup
-</programlisting>
-<!--  FIXME  cvs is no more -->
-        <para>
-          Then run:
-        </para>
-          <programlisting>
-cd osxsetup
-build
-</programlisting>
-        <para>
-          This will run <filename>autoheader</filename>, <filename>autoconf</filename>
-          and <filename>configure</filename> as well as <filename>make</filename>.
-          Finally, it will copy over the necessary files to the ./osxsetup/files
-          directory for further processing by <filename>PackageMaker</filename>.
-        </para>
-        <para>
-        Bring up PackageMaker with the PrivoxyPackage.pmsp definition file,
-        modify the package name to match the release, and hit the "Create
-        package" button. If you specify ./Privoxy.pkg as the output package
-        name, you can then create the distributable zip file with the command:
-        </para>
-          <programlisting>
-zip -r privoxyosx_setup_x.y.z.zip Privoxy.pkg
-</programlisting>
-        <para>
-          You can then upload this file directly to the Files section of the
-          Sourceforge project in the Macintosh (OS X) folder. Each new version
-          release of Privoxy should have a new subfolder created in which to
-          store its files.
-          Please ensure that the folder contains a readme file that makes it
-          clear which version(s) of OS X the package supports.
-        </para>
-      </sect4>
-      <sect4 id="OS-X-macsetup-module">
-      <title>macsetup module (Documentation out of date)</title>
-        <para>
-          The macsetup module is ideal if you wish to build and install Privoxy
-          from source on a single machine.
-        </para>
-        <para>
-          Check out the module from CVS as follows into a folder parallel to the
-          exported privoxy source:
-        </para>
-          <programlisting>
-cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co macsetup
-</programlisting>
-<!-- FIXME  cvs is no more -->
-        <para>
-          The module contains complete instructions on its usage in its
-          <filename>README</filename> file. The end result will be the
-          exported version of Privoxy installed on the build machine.
-        </para>
-      </sect4>
+      <para>
+        The module contains complete instructions on its usage in the file
+        <filename>OS X Package Builder HOWTO.txt</filename>.
+      </para>
+      <para>
+        Once the package(s) have been generated, you can then upload them
+        directly to the Files section of the Sourceforge project in the
+        Macintosh (OS X) folder. Each new version release of Privoxy should
+        have a new subfolder created in which to store its files. Please
+        ensure that the folder contains a readme file that makes it clear
+        which package is for which version of OS X.
+      </para>
     </sect3>
 
     <sect3 id="newrelease-freebsd"><title>FreeBSD</title>

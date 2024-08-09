@@ -1,10 +1,143 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 3.0.34 stable ***
+
+- Bug fixes:
+  - Improve the handling of chunk-encoded responses by buffering the data
+    even if filters are disabled and properly keeping track of where the
+    various chunks are supposed to start and end. Previously Privoxy would
+    merely check the last bytes received to see if they looked like the
+    last-chunk. This failed to work if the last-chunk wasn't received in one
+    read and could also result in actual data being misdetected
+    as last-chunk.
+    Should fix: SF support request #1739.
+    Reported by: withoutname.
+  - remove_chunked_transfer_coding(): Refuse to de-chunk invalid data
+    Previously the data could get corrupted even further.
+    Now we simply pass the unmodified data to the client.
+  - gif_deanimate(): Tolerate multiple image extensions in a row.
+    This allows to deanimate all the gifs on:
+    https://commons.wikimedia.org/wiki/Category:Animated_smilies
+    Fixes SF bug #795 reported by Celejar.
+  - OpenSSL generate_host_certificate(): Use X509_get_subject_name()
+    instead of X509_get_issuer_name() to get the issuer for generated
+    website certificates so there are no warnings in the browser when using
+    an intermediate CA certificate instead of a self-signed root certificate.
+    Problem reported and patch submitted by Chakib Benziane.
+  - can_filter_request_body(): Fix a log message that contained a spurious u.
+  - handle_established_connection(): Check for pending TLS data from the client
+    before checking if data is available on the connection.
+    The TLS library may have already consumed all the data from the client
+    response in which case poll() and select() will not detect that data is
+    available to be read.
+    Sponsored by: Robert Klemme.
+  - ssl_send_certificate_error(): Don't crash if there's no certificate
+    information available. This is only relevant when Privoxy is built with
+    wolfSSL 5.0.0 or later (code not yet published). Earlier wolfSSL versions
+    or the other TLS backends don't seem to trigger the crash.
+  - socks5_connect(): Add support for target hosts specified as IPv4 address
+    Previously the IP address was sent as domain.
+
+- General improvements:
+  - Add a client-body-tagger action which creates tags based on
+    the content of the request body.
+    Sponsored by: Robert Klemme.
+  - When client-body filters are enabled, buffer the whole request
+    before opening a connection to the server.
+    Makes it less likely that the server connection times out
+    and we don't open a connection if the buffering fails anyway.
+    Sponsored by: Robert Klemme.
+  - Add periods to a couple of log messages.
+  - accept_connection(): Add missing space to a log message.
+  - Initialize ca-related defaults with strdup_or_die() so errors
+    aren't silently ignored.
+  - make_path: Use malloc_or_die() in cases where allocation errors
+    were already fatal anyway.
+  - handle_established_connection(): Improve an error message slightly.
+  - receive_client_request(): Reject https URLs without CONNECT request.
+  - Include all requests in the statistics if mutexes are available.
+    Previously in case of reused connections only the last request got
+    counted. The statistics still aren't perfect but it's an improvement.
+  - Add read_socks_reply() and start using it in socks5_connect()
+    to apply the socket timeout more consistently.
+  - socks5_connect(): Deal with domain names in the socks reply
+  - Add a filter for bundeswehr.de that hides the cookie and
+    privacy info banner.
+
+- Action file improvements:
+  - Disable filter{banners-by-size} for .freiheitsfoo.de/.
+  - Disable filter{banners-by-size} for freebsdfoundation.org/.
+  - Disable fast-redirects for consent.youtube.com/.
+  - Block requests to ups.xplosion.de/.
+  - Block requests for elsa.memoinsights.com/t.
+  - Fix a typo in a test.
+  - Disable fast-redirects for launchpad.net/.
+  - Unblock .eff.org/.
+  - Stop unblocking .org/.*(image|banner) which appears to be too generous
+    It let requests like:
+    https://stats.noblogs.org/piwik.php?action_name=anti%20gentrifizierungs%20fest&idsite=10175&rec=1&r=220192&h=17&m=7&s=44&url=https%3A%2F%2Fmuellemcalling.noblogs.org%2F&urlref=https%3A%2F%2Fmuellemcalling.noblogs.org%2Finfostande%2F&_id=&_idn=1&_refts=0&send_image=0&cookie=1&res=1366x768&pv_id=eqr7jX&pf_net=7&pf_srv=3&pf_tfr=2281&pf_dm1=156
+    pass.
+    The example URL http://www.gnu.org/graphics/gnu-head-banner.png is
+    already unblocked due to .gnu.org being unblocked.
+  - Unblock adfd.org/.
+  - Disable filter{banners-by-link} for .eff.org/.
+  - Block requests to odb.outbrain.com/.
+  - Disable fast-redirects for .gandi.net/.
+  - Disable fast-redirects{} for .onion/.*/status/.
+  - Disable fast-redirects{} for twitter.com/.*/status/.
+  - Unblock pinkstinks.de/.
+  - Disable fast-redirects for .hagalil.com/.
+
+- Privoxy-Log-Parser:
+  - Bump version to 0.9.5.
+  - Highlight more log messages.
+  - Highlight the Crunch reason only once. Previously the "crunch reason"
+    could also be highlighted when the URL contained a matching string.
+    The real crunch reason only occurs once per line, so there's no need
+    to continue looking for it after it has been found once.
+    While at it, add a comment with an example log line.
+
+- uagen:
+  - Bump version to 1.2.4.
+  - Update BROWSER_VERSION and BROWSER_REVISION to 102.0
+    to match the User-Agent of the current Firefox ESR.
+  - Explicitly document that changing the 'Gecko token' is suspicious.
+  - Consistently use a lower-case 'c' as copyright symbol.
+  - Bump copyright.
+  - Add 'aarch64' as Linux architecture.
+  - Add OpenBSD architecture 'arm64'.
+  - Stop using sparc64 as FreeBSD architecture.
+    It hasn't been supported for a while now.
+
+- Build system:
+  - Makefile: Add a 'dok' target that depends on the 'error' target
+    to show the "You are not using GNU make or did nor run configure"
+    message.
+  - configure: Fix --with-msan option.
+    Also (probably) reported by Andrew Savchenko.
+
+- macOS build system:
+  - Enable HTTPS inspection when building the macOS binary
+    (using OpenSSL as TLS library).
+
+- Documentation:
+  - Add OpenSSL to the list of libraries that may be licensed under the
+    Apache 2.0 license in which case the linked Privoxy binary has to be
+    distributed under the GPLv3 or later.
+  - config: Fix the documented ca-directory default value.
+    Reported by avoidr.
+  - Rebuild developer-manual and tidy with 'HTML Tidy for FreeBSD version 5.8.0'.
+  - Update developer manual with new macOS packaging instructions.
+  - Note that the FreeBSD installation instructions work for
+    ElectroBSD as well.
+  - Note that FreeBSD/ElectroBSD users can try to install Privoxy
+    as binary package using 'pkg'.
+
 *** Version 3.0.33 stable ***
 - Security/Reliability:
   - cgi_error_no_template(): Encode the template name to prevent
-    XSS (cross-side scripting) when Privoxy is configured to servce
+    XSS (cross-site scripting) when Privoxy is configured to servce
     the user-manual itself.
     Commit 0e668e9409c. OVE-20211102-0001. CVE-2021-44543.
     Reported by: Artem Ivanov
@@ -3396,7 +3529,7 @@ being a mix of "U.S. English", "U.K. English" and "Irish English".
 
 
 ----------------------------------------------------------------------
-Copyright   :  Written by and Copyright (C) 2001-2021 the
+Copyright   :  Written by and Copyright (C) 2001-2023 the
                Privoxy team. https://www.privoxy.org/
 
                Based on the Internet Junkbuster originally written

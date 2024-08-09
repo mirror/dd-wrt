@@ -4,7 +4,7 @@
 <head>
   <title>Actions Files</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
   <link rel="PREVIOUS" title="The Main Configuration File" href="config.html">
   <link rel="NEXT" title="Filter Files" href="filter-file.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="config.html" accesskey="P">Prev</a></td>
@@ -499,18 +499,6 @@
       </div>
       <div class="SECT3">
         <h3 class="SECT3"><a name="CLIENT-TAG-PATTERN" id="CLIENT-TAG-PATTERN">8.4.5. The Client Tag Pattern</a></h3>
-        <div class="WARNING">
-          <table class="WARNING" border="1" width="100%">
-            <tr>
-              <td align="center"><b>Warning</b></td>
-            </tr>
-            <tr>
-              <td align="left">
-                <p>This is an experimental feature. The syntax is likely to change in future versions.</p>
-              </td>
-            </tr>
-          </table>
-        </div>
         <p>Client tag patterns are not set based on HTTP headers but based on the client's IP address. Users can enable
         them themselves, but the Privoxy admin controls which tags are available and what their effect is.</p>
         <p>After a client-specific tag has been defined with the <a href=
@@ -899,7 +887,57 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CLIENT-HEADER-TAGGER" id="CLIENT-HEADER-TAGGER">8.5.6. client-header-tagger</a></h4>
+        <h4 class="SECT3"><a name="CLIENT-BODY-TAGGER" id="CLIENT-BODY-TAGGER">8.5.6. client-body-tagger</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Typical use:</dt>
+            <dd>
+              <p>Block requests based on the content of the body data.</p>
+            </dd>
+            <dt>Effect:</dt>
+            <dd>
+              <p>Client request bodies to which this action applies are filtered on-the-fly through the specified
+              regular expression based substitutions, the result is used as tag.</p>
+            </dd>
+            <dt>Type:</dt>
+            <dd>
+              <p>Multi-value.</p>
+            </dd>
+            <dt>Parameter:</dt>
+            <dd>
+              <p>The name of a client-body tagger, as defined in one of the <a href="filter-file.html">filter
+              files</a>.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>Please refer to the <a href="filter-file.html">filter file chapter</a> to learn how to create your own
+              client-body tagger.</p>
+              <p>Client-body taggers are applied to each request body on its own, and as the body isn't modified, each
+              tagger "sees" the original.</p>
+              <p>Chunk-encoded request bodies currently can't be tagged. Request bodies larger than the buffer-limit
+              can't be tagged either.</p>
+            </dd>
+            <dt>Example usage (section):</dt>
+            <dd>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class="SCREEN">  # Apply blafasel tagger.
+  {+client-body-tagger{blafasel}}
+  /
+
+  # Block request based on the tag created by the blafasel tagger.
+  {+block{Request body contains blafasel}}
+  TAG:^content contains blafasel$</pre>
+                  </td>
+                </tr>
+              </table>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CLIENT-HEADER-TAGGER" id="CLIENT-HEADER-TAGGER">8.5.7. client-header-tagger</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -997,7 +1035,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CONTENT-TYPE-OVERWRITE" id="CONTENT-TYPE-OVERWRITE">8.5.7.
+        <h4 class="SECT3"><a name="CONTENT-TYPE-OVERWRITE" id="CONTENT-TYPE-OVERWRITE">8.5.8.
         content-type-overwrite</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -1066,7 +1104,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CRUNCH-CLIENT-HEADER" id="CRUNCH-CLIENT-HEADER">8.5.8. crunch-client-header</a></h4>
+        <h4 class="SECT3"><a name="CRUNCH-CLIENT-HEADER" id="CRUNCH-CLIENT-HEADER">8.5.9. crunch-client-header</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1125,7 +1163,8 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CRUNCH-IF-NONE-MATCH" id="CRUNCH-IF-NONE-MATCH">8.5.9. crunch-if-none-match</a></h4>
+        <h4 class="SECT3"><a name="CRUNCH-IF-NONE-MATCH" id="CRUNCH-IF-NONE-MATCH">8.5.10.
+        crunch-if-none-match</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1177,7 +1216,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CRUNCH-INCOMING-COOKIES" id="CRUNCH-INCOMING-COOKIES">8.5.10.
+        <h4 class="SECT3"><a name="CRUNCH-INCOMING-COOKIES" id="CRUNCH-INCOMING-COOKIES">8.5.11.
         crunch-incoming-cookies</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -1223,7 +1262,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CRUNCH-SERVER-HEADER" id="CRUNCH-SERVER-HEADER">8.5.11.
+        <h4 class="SECT3"><a name="CRUNCH-SERVER-HEADER" id="CRUNCH-SERVER-HEADER">8.5.12.
         crunch-server-header</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -1283,7 +1322,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CRUNCH-OUTGOING-COOKIES" id="CRUNCH-OUTGOING-COOKIES">8.5.12.
+        <h4 class="SECT3"><a name="CRUNCH-OUTGOING-COOKIES" id="CRUNCH-OUTGOING-COOKIES">8.5.13.
         crunch-outgoing-cookies</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -1328,7 +1367,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="DEANIMATE-GIFS" id="DEANIMATE-GIFS">8.5.13. deanimate-gifs</a></h4>
+        <h4 class="SECT3"><a name="DEANIMATE-GIFS" id="DEANIMATE-GIFS">8.5.14. deanimate-gifs</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1371,7 +1410,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="DELAY-RESPONSE" id="DELAY-RESPONSE">8.5.14. delay-response</a></h4>
+        <h4 class="SECT3"><a name="DELAY-RESPONSE" id="DELAY-RESPONSE">8.5.15. delay-response</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1414,7 +1453,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="DOWNGRADE-HTTP-VERSION" id="DOWNGRADE-HTTP-VERSION">8.5.15.
+        <h4 class="SECT3"><a name="DOWNGRADE-HTTP-VERSION" id="DOWNGRADE-HTTP-VERSION">8.5.16.
         downgrade-http-version</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -1461,7 +1500,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="EXTERNAL-FILTER" id="EXTERNAL-FILTER">8.5.16. external-filter</a></h4>
+        <h4 class="SECT3"><a name="EXTERNAL-FILTER" id="EXTERNAL-FILTER">8.5.17. external-filter</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1523,7 +1562,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FAST-REDIRECTS" id="FAST-REDIRECTS">8.5.17. fast-redirects</a></h4>
+        <h4 class="SECT3"><a name="FAST-REDIRECTS" id="FAST-REDIRECTS">8.5.18. fast-redirects</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1604,7 +1643,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FILTER" id="FILTER">8.5.18. filter</a></h4>
+        <h4 class="SECT3"><a name="FILTER" id="FILTER">8.5.19. filter</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -1878,6 +1917,15 @@
                   </td>
                 </tr>
               </table>
+              <p><a name="FILTER-BUNDESWEHR.DE" id="FILTER-BUNDESWEHR.DE"></a></p>
+              <table border="0" bgcolor="#E0E0E0" width="90%">
+                <tr>
+                  <td>
+                    <pre class=
+                    "SCREEN">  +filter{bundeswehr.de}      # Hide the cookie and privacy info banner on bundeswehr.de.</pre>
+                  </td>
+                </tr>
+              </table>
               <p><a name="FILTER-GITHUB" id="FILTER-GITHUB"></a></p>
               <table border="0" bgcolor="#E0E0E0" width="90%">
                 <tr>
@@ -1945,7 +1993,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FORCE-TEXT-MODE" id="FORCE-TEXT-MODE">8.5.19. force-text-mode</a></h4>
+        <h4 class="SECT3"><a name="FORCE-TEXT-MODE" id="FORCE-TEXT-MODE">8.5.20. force-text-mode</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2002,7 +2050,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="FORWARD-OVERRIDE" id="FORWARD-OVERRIDE">8.5.20. forward-override</a></h4>
+        <h4 class="SECT3"><a name="FORWARD-OVERRIDE" id="FORWARD-OVERRIDE">8.5.21. forward-override</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2109,7 +2157,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HANDLE-AS-EMPTY-DOCUMENT" id="HANDLE-AS-EMPTY-DOCUMENT">8.5.21.
+        <h4 class="SECT3"><a name="HANDLE-AS-EMPTY-DOCUMENT" id="HANDLE-AS-EMPTY-DOCUMENT">8.5.22.
         handle-as-empty-document</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2162,7 +2210,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HANDLE-AS-IMAGE" id="HANDLE-AS-IMAGE">8.5.22. handle-as-image</a></h4>
+        <h4 class="SECT3"><a name="HANDLE-AS-IMAGE" id="HANDLE-AS-IMAGE">8.5.23. handle-as-image</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2222,7 +2270,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-ACCEPT-LANGUAGE" id="HIDE-ACCEPT-LANGUAGE">8.5.23.
+        <h4 class="SECT3"><a name="HIDE-ACCEPT-LANGUAGE" id="HIDE-ACCEPT-LANGUAGE">8.5.24.
         hide-accept-language</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2275,7 +2323,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-CONTENT-DISPOSITION" id="HIDE-CONTENT-DISPOSITION">8.5.24.
+        <h4 class="SECT3"><a name="HIDE-CONTENT-DISPOSITION" id="HIDE-CONTENT-DISPOSITION">8.5.25.
         hide-content-disposition</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2332,7 +2380,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-IF-MODIFIED-SINCE" id="HIDE-IF-MODIFIED-SINCE">8.5.25.
+        <h4 class="SECT3"><a name="HIDE-IF-MODIFIED-SINCE" id="HIDE-IF-MODIFIED-SINCE">8.5.26.
         hide-if-modified-since</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2391,7 +2439,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-FROM-HEADER" id="HIDE-FROM-HEADER">8.5.26. hide-from-header</a></h4>
+        <h4 class="SECT3"><a name="HIDE-FROM-HEADER" id="HIDE-FROM-HEADER">8.5.27. hide-from-header</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2442,7 +2490,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-REFERRER" id="HIDE-REFERRER">8.5.27. hide-referrer</a></h4><a name=
+        <h4 class="SECT3"><a name="HIDE-REFERRER" id="HIDE-REFERRER">8.5.28. hide-referrer</a></h4><a name=
         "HIDE-REFERER" id="HIDE-REFERER"></a>
         <div class="VARIABLELIST">
           <dl>
@@ -2523,7 +2571,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HIDE-USER-AGENT" id="HIDE-USER-AGENT">8.5.28. hide-user-agent</a></h4>
+        <h4 class="SECT3"><a name="HIDE-USER-AGENT" id="HIDE-USER-AGENT">8.5.29. hide-user-agent</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2585,7 +2633,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="HTTPS-INSPECTION" id="HTTPS-INSPECTION">8.5.29. https-inspection</a></h4>
+        <h4 class="SECT3"><a name="HTTPS-INSPECTION" id="HTTPS-INSPECTION">8.5.30. https-inspection</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2615,7 +2663,6 @@
               <p>Note that the action has to be enabled based on the CONNECT request which doesn't contain a path.
               Enabling it based on a pattern with path doesn't work as the path is only seen by <span class=
               "APPLICATION">Privoxy</span> if the action is already enabled.</p>
-              <p>This is an experimental feature.</p>
             </dd>
             <dt>Example usage (section):</dt>
             <dd>
@@ -2632,7 +2679,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="IGNORE-CERTIFICATE-ERRORS" id="IGNORE-CERTIFICATE-ERRORS">8.5.30.
+        <h4 class="SECT3"><a name="IGNORE-CERTIFICATE-ERRORS" id="IGNORE-CERTIFICATE-ERRORS">8.5.31.
         ignore-certificate-errors</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2678,7 +2725,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="LIMIT-CONNECT" id="LIMIT-CONNECT">8.5.31. limit-connect</a></h4>
+        <h4 class="SECT3"><a name="LIMIT-CONNECT" id="LIMIT-CONNECT">8.5.32. limit-connect</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2730,7 +2777,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="LIMIT-COOKIE-LIFETIME" id="LIMIT-COOKIE-LIFETIME">8.5.32.
+        <h4 class="SECT3"><a name="LIMIT-COOKIE-LIFETIME" id="LIMIT-COOKIE-LIFETIME">8.5.33.
         limit-cookie-lifetime</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2782,7 +2829,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="PREVENT-COMPRESSION" id="PREVENT-COMPRESSION">8.5.33. prevent-compression</a></h4>
+        <h4 class="SECT3"><a name="PREVENT-COMPRESSION" id="PREVENT-COMPRESSION">8.5.34. prevent-compression</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -2854,7 +2901,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="OVERWRITE-LAST-MODIFIED" id="OVERWRITE-LAST-MODIFIED">8.5.34.
+        <h4 class="SECT3"><a name="OVERWRITE-LAST-MODIFIED" id="OVERWRITE-LAST-MODIFIED">8.5.35.
         overwrite-last-modified</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -2917,7 +2964,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="REDIRECT" id="REDIRECT">8.5.35. redirect</a></h4>
+        <h4 class="SECT3"><a name="REDIRECT" id="REDIRECT">8.5.36. redirect</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -3013,7 +3060,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="SERVER-HEADER-FILTER" id="SERVER-HEADER-FILTER">8.5.36.
+        <h4 class="SECT3"><a name="SERVER-HEADER-FILTER" id="SERVER-HEADER-FILTER">8.5.37.
         server-header-filter</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -3063,7 +3110,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="SERVER-HEADER-TAGGER" id="SERVER-HEADER-TAGGER">8.5.37.
+        <h4 class="SECT3"><a name="SERVER-HEADER-TAGGER" id="SERVER-HEADER-TAGGER">8.5.38.
         server-header-tagger</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -3120,7 +3167,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="SUPPRESS-TAG" id="SUPPRESS-TAG">8.5.38. suppress-tag</a></h4>
+        <h4 class="SECT3"><a name="SUPPRESS-TAG" id="SUPPRESS-TAG">8.5.39. suppress-tag</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -3158,7 +3205,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="SESSION-COOKIES-ONLY" id="SESSION-COOKIES-ONLY">8.5.39.
+        <h4 class="SECT3"><a name="SESSION-COOKIES-ONLY" id="SESSION-COOKIES-ONLY">8.5.40.
         session-cookies-only</a></h4>
         <div class="VARIABLELIST">
           <dl>
@@ -3220,7 +3267,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="SET-IMAGE-BLOCKER" id="SET-IMAGE-BLOCKER">8.5.40. set-image-blocker</a></h4>
+        <h4 class="SECT3"><a name="SET-IMAGE-BLOCKER" id="SET-IMAGE-BLOCKER">8.5.41. set-image-blocker</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Typical use:</dt>
@@ -3309,7 +3356,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="SUMMARY" id="SUMMARY">8.5.41. Summary</a></h3>
+        <h3 class="SECT3"><a name="SUMMARY" id="SUMMARY">8.5.42. Summary</a></h3>
         <p>Note that many of these actions have the potential to cause a page to misbehave, possibly even not to
         display at all. There are many ways a site designer may choose to design his site, and what HTTP header
         content, and other criteria, he may depend on. There is no way to have hard and fast rules for all sites. See

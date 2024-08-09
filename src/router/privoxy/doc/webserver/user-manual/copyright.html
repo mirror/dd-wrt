@@ -4,7 +4,7 @@
 <head>
   <title>Privoxy Copyright, License and History</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.33 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.34 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Contacting the Developers, Bug Reporting and Feature Requests" href="contact.html">
   <link rel="NEXT" title="See Also" href="seealso.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.33 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.34 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="contact.html" accesskey="P">Prev</a></td>
@@ -27,17 +27,17 @@
   </div>
   <div class="SECT1">
     <h1 class="SECT1"><a name="COPYRIGHT">12. Privoxy Copyright, License and History</a></h1>
-    <p>Copyright &copy; 2001-2021 by Privoxy Developers <code class="EMAIL">&#60;<a href=
+    <p>Copyright &copy; 2001-2023 by Privoxy Developers <code class="EMAIL">&#60;<a href=
     "mailto:privoxy-devel@lists.privoxy.org">privoxy-devel@lists.privoxy.org</a>&#62;</code></p>
     <p>Some source code is based on code Copyright &copy; 1997 by Anonymous Coders and Junkbusters, Inc.</p>
     <p><span class="APPLICATION">Privoxy</span> is free software; you can redistribute and/or modify its source code
     under the terms of the <i class="CITETITLE">GNU General Public License</i> as published by the Free Software
     Foundation, either version 2 of the license, or (at your option) any later version.</p>
     <p>The same is true for <span class="APPLICATION">Privoxy</span> binaries unless they are linked with a <a href=
-    "https://tls.mbed.org/" target="_top">mbed TLS</a> version that is licensed under the Apache 2.0 license in which
-    case you can redistribute and/or modify the <span class="APPLICATION">Privoxy</span> binaries under the terms of
-    the <i class="CITETITLE">GNU General Public License</i> as published by the Free Software Foundation, either
-    version 3 of the license, or (at your option) any later version.</p>
+    "https://www.trustedfirmware.org/projects/mbed-tls/" target="_top">mbed TLS</a> version that is licensed under the
+    Apache 2.0 license in which case you can redistribute and/or modify the <span class="APPLICATION">Privoxy</span>
+    binaries under the terms of the <i class="CITETITLE">GNU General Public License</i> as published by the Free
+    Software Foundation, either version 3 of the license, or (at your option) any later version.</p>
     <p>Both licenses are included in the next section.</p>
     <div class="SECT2">
       <h2 class="SECT2"><a name="LICENSE">12.1. License</a></h2>
@@ -1082,8 +1082,9 @@ Public License instead of this License.  But first, please read
         <p>When compiled with FEATURE_BROTLI (optional), Privoxy depends on <a href="https://www.brotli.org/" target=
         "_top">brotli</a>.</p>
         <p>When compiled with FEATURE_HTTPS_INSPECTION (optional), Privoxy depends on a TLS library. The supported
-        libraries are <a href="https://www.openssl.org/" target="_top">LibreSSL</a>, <a href="https://tls.mbed.org/"
-        target="_top">mbed TLS</a> and <a href="https://www.openssl.org/" target="_top">OpenSSL</a>.</p>
+        libraries are <a href="https://www.openssl.org/" target="_top">LibreSSL</a>, <a href=
+        "https://github.com/Mbed-TLS/mbedtls/tags" target="_top">mbed TLS 2.28.x</a> and <a href=
+        "https://www.openssl.org/" target="_top">OpenSSL</a>.</p>
         <p>When compiled with FEATURE_ZLIB (optional), Privoxy depends on <a href="https://zlib.net/" target=
         "_top">zlib</a>.</p>
       </div>
@@ -1158,6 +1159,7 @@ Public License instead of this License.  But first, please read
       &nbsp;Anatoly&nbsp;Arzhnikov<br>
       &nbsp;Ken&nbsp;Arromdee<br>
       &nbsp;Natxo&nbsp;Asenjo<br>
+      &nbsp;avoidr<br>
       &nbsp;Devin&nbsp;Bayer<br>
       &nbsp;Havard&nbsp;Berland<br>
       &nbsp;David&nbsp;Binderman<br>
@@ -1170,6 +1172,8 @@ Public License instead of this License.  But first, please read
       &nbsp;Andrew&nbsp;J.&nbsp;Caines<br>
       &nbsp;Clifford&nbsp;Caoile<br>
       &nbsp;Edward&nbsp;Carrel<br>
+      &nbsp;Celejar<br>
+      &nbsp;Chakib&nbsp;Benziane<br>
       &nbsp;Pak&nbsp;Chan<br>
       &nbsp;Wan-Teh&nbsp;Chang<br>
       &nbsp;Sam&nbsp;Chen<br>
@@ -1274,6 +1278,7 @@ Public License instead of this License.  But first, please read
       &nbsp;Andreas&nbsp;Rutkauskas<br>
       &nbsp;Sam<br>
       &nbsp;Saperski<br>
+      &nbsp;Andrew&nbsp;Savchenko<br>
       &nbsp;Bart&nbsp;Schelstraete<br>
       &nbsp;Richard&nbsp;Schneidt<br>
       &nbsp;Gregory&nbsp;Seidman<br>

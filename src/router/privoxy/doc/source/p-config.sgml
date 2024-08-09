@@ -3,7 +3,7 @@
 
  Purpose     :  Used with other docs and files only.
 
- Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -90,7 +90,7 @@
  Sample Configuration File for Privoxy &p-version;
 </title>
 <para>
-Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
+Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
 </para>
 
 <literallayout>
@@ -107,7 +107,7 @@ Copyright (C) 2001-2021 Privoxy Developers https://www.privoxy.org/
       4. ACCESS CONTROL AND SECURITY                             #
       5. FORWARDING                                              #
       6. MISCELLANEOUS                                           #
-      7. HTTPS INSPECTION (EXPERIMENTAL)                         #
+      7. HTTPS INSPECTION                                        #
       8. WINDOWS GUI OPTIONS                                     #
                                                                  #
 ##################################################################
@@ -336,7 +336,7 @@ II. FORMAT OF THE CONFIGURATION FILE
   <term>Notes:</term>
   <listitem>
    <para>
-    The value of this option only matters if the experimental trust mechanism has been
+    The value of this option only matters if the trust mechanism has been
     activated. (See <link linkend="trustfile"><emphasis>trustfile</emphasis></link> below.)
    </para>
    <para>
@@ -3913,7 +3913,7 @@ compression-level 0
 
 
 <sect2 id="https-inspection-directives">
-<title>HTTPS Inspection (Experimental)</title>
+<title>HTTPS Inspection</title>
 
 <para>
   HTTPS inspection allows to filter encrypted requests and responses.
@@ -3946,7 +3946,7 @@ compression-level 0
  <varlistentry>
   <term>Default value:</term>
   <listitem>
-   <para><emphasis>Empty string</emphasis></para>
+   <para><emphasis>./CA</emphasis></para>
   </listitem>
  </varlistentry>
  <varlistentry>

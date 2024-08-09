@@ -1115,6 +1115,8 @@ static const char *filter_type_to_string(enum filter_type filter_type)
       return "suppress tag filter";
    case FT_CLIENT_BODY_FILTER:
       return "client body filter";
+   case FT_CLIENT_BODY_TAGGER:
+      return "client body tagger";
    case FT_ADD_HEADER:
       return "add-header action";
 #ifdef FEATURE_EXTERNAL_FILTERS

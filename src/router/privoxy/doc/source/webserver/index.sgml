@@ -5,7 +5,7 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.33">
+<!entity p-version "3.0.34">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -18,7 +18,7 @@
 
  Purpose     :  Index file of the project's homepage and also documentation index
                 
- Copyright (C) 2001-2020 Privoxy developers <privoxy-devel@lists.privoxy.org>
+ Copyright (C) 2001-2023 Privoxy developers <privoxy-devel@lists.privoxy.org>
  See LICENSE.
 
  ========================================================================
@@ -172,7 +172,7 @@
 <!-- GNUMakefile is inserting this now -->
 <para>
  <subscript>
-  Copyright __copy 2001-2021 by Privoxy Developers
+  Copyright __copy 2001-2023 by Privoxy Developers
  </subscript>
 </para>
 

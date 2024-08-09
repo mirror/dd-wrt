@@ -38,14 +38,69 @@
     <div class="SECT2">
       <h3 class="SECT2"><a name="WHICHOS" id="WHICHOS">2.2. Which operating systems are supported?</a></h3>
       <p>At present, <span class="APPLICATION">Privoxy</span> is known to run on Windows 95 and later versions (98, ME,
-      2000, XP, Vista, Windows 7, Windows 10 etc.), GNU/Linux (RedHat, SuSE, Debian, Fedora, Gentoo, Slackware and
-      others), Mac OS X (10.4 and upwards on PPC and Intel processors), Haiku, DragonFly, ElectroBSD, FreeBSD, NetBSD,
-      OpenBSD, Solaris, and various other flavors of Unix.</p>
-      <p>But any operating system that runs TCP/IP, can conceivably take advantage of <span class=
+      2000, XP, Vista, Windows 7, Windows 10, Windows 11 etc.), GNU/Linux (RedHat, SuSE, Debian, Fedora, Gentoo,
+      Slackware and others), Mac OS X (10.4 and upwards on PPC and Intel processors), Haiku, DragonFly, ElectroBSD,
+      FreeBSD, NetBSD, OpenBSD, Solaris, and various other flavors of Unix.</p>
+      <p>The binaries provided by members of the Privoxy team have the following testing platforms, earliest supported
+      OS versions and processor architectures. Be aware that down-level versions of Privoxy contain known security
+      issues. <span class="emphasis"><i class="EMPHASIS">It is preferable to build the latest code to target earlier OS
+      releases than use an earlier Privoxy release</i></span>:</p>
+      <div class="TABLE">
+        <a name="AEN296" id="AEN296"></a>
+        <p><b>Table 1. Operating system support for binaries provided by Privoxy team members</b></p>
+        <table border="1" frame="border" rules="all" class="CALSTABLE">
+          <col>
+          <col>
+          <col>
+          <col>
+          <col>
+          <thead>
+            <tr>
+              <th>Operating System</th>
+              <th>Privoxy Release</th>
+              <th>Testing Platforms</th>
+              <th>Earliest OS Version Supported</th>
+              <th>Processor Architectures</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Windows</td>
+              <td>3.0.33</td>
+              <td>Windows 10</td>
+              <td>Windows Vista</td>
+              <td>Intel 32 and 64 bit</td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td>3.0.32</td>
+              <td>Windows 10</td>
+              <td>Windows XP</td>
+              <td>Intel 32 and 64 bit</td>
+            </tr>
+            <tr>
+              <td>macOS</td>
+              <td>3.0.33</td>
+              <td>El Capitan (10.11.6)</td>
+              <td>Snow Leopard (10.6.1)</td>
+              <td>Intel 64 bit</td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td>3.0.26</td>
+              <td>El Capitan (10.11.6), Tiger (10.4.1) PPC</td>
+              <td>Tiger (10.4.1)</td>
+              <td>Intel 32 &#38; 64 bit, PowerPC</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Any operating system that runs TCP/IP, can conceivably take advantage of <span class=
       "APPLICATION">Privoxy</span> in a networked situation where <span class="APPLICATION">Privoxy</span> would run as
       a server on a LAN gateway. Then only the <span class="QUOTE">"gateway"</span> needs to be running one of the
       above operating systems.</p>
-      <p>Source code is freely available, so porting to other operating systems is always a possibility.</p>
+      <p>Source code is freely available, so porting to other operating systems is always a possibility, as is
+      compiling for older versions of supported operating systems.</p>
     </div>
     <div class="SECT2">
       <h3 class="SECT2"><a name="EMAIL-CLIENT" id="EMAIL-CLIENT">2.3. Can I use Privoxy with my email client?</a></h3>

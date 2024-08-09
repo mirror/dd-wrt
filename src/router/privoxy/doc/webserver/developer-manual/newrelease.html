@@ -383,12 +383,13 @@
         into an empty directory</i></span>. (See "Building and releasing packages" above).</p>
         <p>Check that you have the current versions of the <a href=
         "https://sourceforge.net/projects/nsis/files/NSIS%203/" target="_top">NSIS installer</a>, <a href=
-        "https://ftp.pcre.org/pub/pcre/" target="_top">PCRE library</a>, <a href="https://tls.mbed.org/download"
-        target="_top">MBED TLS library</a>, <a href="https://github.com/google/brotli/releases" target="_top">Brotli
-        library</a>, and that the <span class="emphasis"><i class="EMPHASIS">MAKENSIS</i></span> evar in <tt class=
-        "FILENAME">windows/GNUMakefile</tt> points to the NSIS installer program. (See the <a href=
-        "../user-manual/installation.html#WINBUILD-CYGWIN" target="_top"><span class="emphasis"><i class=
-        "EMPHASIS">Building from Source / Windows</i></span></a> section of the User Manual for details.)</p>
+        "https://sourceforge.net/projects/pcre/files/pcre/" target="_top">PCRE library</a>, <a href=
+        "https://github.com/Mbed-TLS/mbedtls/tags" target="_top">MBED TLS library</a>, <a href=
+        "https://github.com/google/brotli/releases" target="_top">Brotli library</a>, and that the <span class=
+        "emphasis"><i class="EMPHASIS">MAKENSIS</i></span> evar in <tt class="FILENAME">windows/GNUMakefile</tt> points
+        to the NSIS installer program. (See the <a href="../user-manual/installation.html#WINBUILD-CYGWIN" target=
+        "_top"><span class="emphasis"><i class="EMPHASIS">Building from Source / Windows</i></span></a> section of the
+        User Manual for details.)</p>
         <p>Then you can build the package. This is fully automated, and is controlled by <tt class=
         "FILENAME">windows/GNUmakefile</tt>. All you need to do is:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
@@ -491,7 +492,7 @@
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  dch -v 3.0.33-1</pre>
+              <pre class="PROGRAMLISTING">  dch -v 3.0.34-1</pre>
             </td>
           </tr>
         </table>
@@ -508,7 +509,7 @@
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.33-1_amd64.changes</pre>
+              <pre class="PROGRAMLISTING">  lintian -iI ../build-area/privoxy_3.0.34-1_amd64.changes</pre>
             </td>
           </tr>
         </table>
@@ -517,7 +518,7 @@
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.33-1.dsc</pre>
+              "PROGRAMLISTING">  sudo cowbuilder --build --basepath /var/cache/pbuilder/base.cow ../build-area/privoxy_3.0.34-1.dsc</pre>
             </td>
           </tr>
         </table>
@@ -526,19 +527,19 @@
           <tr>
             <td>
               <pre class=
-              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.33-1_amd64.changes -s -- schroot sid</pre>
+              "PROGRAMLISTING">  autopkgtest /var/cache/pbuilder/result/privoxy_3.0.34-1_amd64.changes -s -- schroot sid</pre>
             </td>
           </tr>
         </table>
         <p>Or just push the changes to salsa.debian.org, where a CI pipeline is defined for the package, that builds
         and tests it.</p>
         <p>If everything is okay, run cowbuilder with i386 and amd64 environments for current Debian stable release and
-        build privoxy_3.0.33-1_i386.deb and privoxy_3.0.33-1_amd64.deb. Then sign both files:</p>
+        build privoxy_3.0.34-1_i386.deb and privoxy_3.0.34-1_amd64.deb. Then sign both files:</p>
         <table border="0" bgcolor="#E0E0E0" width="100%">
           <tr>
             <td>
-              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.33-1_i386.deb
-  gpg --detach-sign --armor privoxy_3.0.33-1_amd64.deb</pre>
+              <pre class="PROGRAMLISTING">  gpg --detach-sign --armor privoxy_3.0.34-1_i386.deb
+  gpg --detach-sign --armor privoxy_3.0.34-1_amd64.deb</pre>
             </td>
           </tr>
         </table>
@@ -610,89 +611,24 @@
         </div>
       </div>
       <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-MACOSX" id="NEWRELEASE-MACOSX">6.3.5. Mac OS X</a></h3>
+        <h3 class="SECT3"><a name="NEWRELEASE-MACOSX" id="NEWRELEASE-MACOSX">6.3.5. macOS / OS X</a></h3>
         <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that you have freshly exported the right version
         into an empty directory</i></span>. (See "Building and releasing packages" above).</p>
-        <p>There are three modules available in the CVS repository backups for use on Mac OS X, though technically only
-        two of them generate a release (the other can be used to install from source).</p>
-        <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-OSXPACKAGEBUILDER-MODULE" id="OS-X-OSXPACKAGEBUILDER-MODULE">6.3.5.1.
-          OSXPackageBuilder module (Documentation out of date)</a></h4>
-          <p>The OSXPackageBuilder module generates OS X installer packages supporting all Macs running OS X 10.4 and
-          above. Obtain it from CVS as follows into a folder parallel to the exported privoxy source:</p>
-          <table border="0" bgcolor="#E0E0E0" width="100%">
-            <tr>
-              <td>
-                <pre class=
-                "PROGRAMLISTING">  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co OSXPackageBuilder</pre>
-              </td>
-            </tr>
-          </table>
-          <p>The module contains complete instructions on its usage in the file <tt class="FILENAME">OS X Package
-          Builder HOWTO.txt</tt>.</p>
-          <p>Once the package(s) have been generated, you can then upload them directly to the Files section of the
-          Sourceforge project in the Macintosh (OS X) folder. Each new version release of Privoxy should have a new
-          subfolder created in which to store its files. Please ensure that the folder contains a readme file that
-          makes it clear which package is for whichversion of OS X.</p>
-        </div>
-        <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-OSXSETUP-MODULE" id="OS-X-OSXSETUP-MODULE">6.3.5.2. osxsetup module
-          (DEPRECATED) (Documentation out of date)</a></h4>
-          <p><span class="emphasis"><i class="EMPHASIS">This module is deprecated since the installer it generates
-          places all Privoxy files in one folder in a non-standard location, and supports only Intel Macs running OS X
-          10.6 or higher.</i></span></p>
-          <p>Check out the module from CVS as follows into a folder parallel to the exported privoxy source:</p>
-          <table border="0" bgcolor="#E0E0E0" width="100%">
-            <tr>
-              <td>
-                <pre class=
-                "PROGRAMLISTING">  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co osxsetup</pre>
-              </td>
-            </tr>
-          </table>
-          <p>Then run:</p>
-          <table border="0" bgcolor="#E0E0E0" width="100%">
-            <tr>
-              <td>
-                <pre class="PROGRAMLISTING">  cd osxsetup
-  build</pre>
-              </td>
-            </tr>
-          </table>
-          <p>This will run <tt class="FILENAME">autoheader</tt>, <tt class="FILENAME">autoconf</tt> and <tt class=
-          "FILENAME">configure</tt> as well as <tt class="FILENAME">make</tt>. Finally, it will copy over the necessary
-          files to the ./osxsetup/files directory for further processing by <tt class="FILENAME">PackageMaker</tt>.</p>
-          <p>Bring up PackageMaker with the PrivoxyPackage.pmsp definition file, modify the package name to match the
-          release, and hit the "Create package" button. If you specify ./Privoxy.pkg as the output package name, you
-          can then create the distributable zip file with the command:</p>
-          <table border="0" bgcolor="#E0E0E0" width="100%">
-            <tr>
-              <td>
-                <pre class="PROGRAMLISTING">  zip -r privoxyosx_setup_x.y.z.zip Privoxy.pkg</pre>
-              </td>
-            </tr>
-          </table>
-          <p>You can then upload this file directly to the Files section of the Sourceforge project in the Macintosh
-          (OS X) folder. Each new version release of Privoxy should have a new subfolder created in which to store its
-          files. Please ensure that the folder contains a readme file that makes it clear which version(s) of OS X the
-          package supports.</p>
-        </div>
-        <div class="SECT4">
-          <h4 class="SECT4"><a name="OS-X-MACSETUP-MODULE" id="OS-X-MACSETUP-MODULE">6.3.5.3. macsetup module
-          (Documentation out of date)</a></h4>
-          <p>The macsetup module is ideal if you wish to build and install Privoxy from source on a single machine.</p>
-          <p>Check out the module from CVS as follows into a folder parallel to the exported privoxy source:</p>
-          <table border="0" bgcolor="#E0E0E0" width="100%">
-            <tr>
-              <td>
-                <pre class=
-                "PROGRAMLISTING">  cvs -z3 -d:pserver:anonymous@ijbswa.cvs.sourceforge.net:/cvsroot/ijbswa co macsetup</pre>
-              </td>
-            </tr>
-          </table>
-          <p>The module contains complete instructions on its usage in its <tt class="FILENAME">README</tt> file. The
-          end result will be the exported version of Privoxy installed on the build machine.</p>
-        </div>
+        <p>The OSXPackageBuilder module can generate OS X installer packages supporting all Macs running OS X 10.4 and
+        above. Obtain it from Git as follows into a folder parallel to the exported privoxy source:</p>
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="PROGRAMLISTING">  git clone ssh://git@git.privoxy.org:23/git/OSXPackageBuilder.git</pre>
+            </td>
+          </tr>
+        </table>
+        <p>The module contains complete instructions on its usage in the file <tt class="FILENAME">OS X Package Builder
+        HOWTO.txt</tt>.</p>
+        <p>Once the package(s) have been generated, you can then upload them directly to the Files section of the
+        Sourceforge project in the Macintosh (OS X) folder. Each new version release of Privoxy should have a new
+        subfolder created in which to store its files. Please ensure that the folder contains a readme file that makes
+        it clear which package is for which version of OS X.</p>
       </div>
       <div class="SECT3">
         <h3 class="SECT3"><a name="NEWRELEASE-FREEBSD" id="NEWRELEASE-FREEBSD">6.3.6. FreeBSD</a></h3>

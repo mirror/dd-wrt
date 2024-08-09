@@ -532,6 +532,13 @@ https://www.privoxy.org/donate
 200) Add a config directive that causes Privoxy to remove all
      host certificates before exiting.
 
+201) Add an action to change the trusted-cas-file for a section.
+     This should be useful in countries where a person-in-the-middle
+     attack is known to happen on some domains but should not be tolerated
+     on others. It would also allow to limit the accepted CA certificates
+     for given domains instead of accepting all that are specified with
+     the trusted-cas-file directive.
+
 ##########################################################################
 
 Hosting wish list (relevant for #53)

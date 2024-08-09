@@ -39,8 +39,8 @@ compiler like gcc are required.
 
 When building from a source tarball, first unpack the source:
 
-  tar xzvf privoxy-3.0.33-stable-src.tar.gz
-  cd privoxy-3.0.33-stable
+  tar xzvf privoxy-3.0.34-stable-src.tar.gz
+  cd privoxy-3.0.34-stable
 
 To build the development version, you can get the source code by doing:
 
