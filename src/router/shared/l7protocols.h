@@ -32,6 +32,9 @@ l7filters filters_list[] = {
 	{ "1kxun", NDPI_ONLY, 0, NULL },
 	{ "accuweather", NDPI_ONLY, 0, NULL },
 	{ "activision", NDPI_ONLY, 0, NULL },
+#endif
+	{ "ad-telemetry", L7_ONLY },
+#ifdef HAVE_OPENDPI
 	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
 	{ "adult_content", NDPI_ONLY, 0, NULL },
 	{ "afp", NDPI_ONLY, 0, NULL },
