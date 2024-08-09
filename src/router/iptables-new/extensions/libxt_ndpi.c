@@ -1098,7 +1098,7 @@ static struct xtables_match
 ndpi_mt4_reg = {
 	.version = XTABLES_VERSION,
 	.name = "ndpi",
-	.revision = 0,
+	.revision = 1,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
 	.family = AF_INET,
 #else
@@ -1311,7 +1311,7 @@ static struct xtables_target ndpi_tg_reg[] = {
                 .family        = NFPROTO_UNSPEC,
                 .name          = "NDPI",
                 .version       = XTABLES_VERSION,
-                .revision      = 0,
+                .revision      = 1,
                 .size          = XT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
                 .userspacesize = XT_ALIGN(sizeof(struct xt_ndpi_tginfo)),
 //                .help          = NDPI_help,
