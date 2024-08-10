@@ -53,7 +53,7 @@ static const unsigned char charmaps[] =
 "shiftjis\0sjis\0cp932\0\0\321"
 "iso2022jp\0\0\322"
 "gb18030\0\0\330"
-"gbk\0\0\331"
+"gbk\0cp936\0windows936\0\0\331"
 "gb2312\0\0\332"
 "big5\0bigfive\0cp950\0big5hkscs\0\0\340"
 "euckr\0ksc5601\0ksx1001\0cp949\0\0\350"
@@ -347,6 +347,7 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 				c++;
 				d -= 159;
 			}
+			if (c>=84) goto ilseq;
 			c = jis0208[c][d];
 			if (!c) goto ilseq;
 			break;
@@ -410,6 +411,10 @@ size_t iconv(iconv_t cd, char **restrict in, size_t *restrict inb, char **restri
 			if (c < 128) break;
 			if (c < 0xa1) goto ilseq;
 		case GBK:
+			if (c == 128) {
+				c = 0x20ac;
+				break;
+			}
 		case GB18030:
 			if (c < 128) break;
 			c -= 0x81;
