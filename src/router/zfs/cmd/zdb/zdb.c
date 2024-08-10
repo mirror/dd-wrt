@@ -1985,8 +1985,8 @@ dump_ddt(ddt_t *ddt, ddt_type_t type, ddt_class_t class)
 	(void) printf("%s: %llu entries, size %llu on disk, %llu in core\n",
 	    name,
 	    (u_longlong_t)count,
-	    (u_longlong_t)(dspace / count),
-	    (u_longlong_t)(mspace / count));
+	    (u_longlong_t)dspace,
+	    (u_longlong_t)mspace);
 
 	if (dump_opt['D'] < 3)
 		return;
@@ -8363,7 +8363,7 @@ zdb_dump_block(char *label, void *buf, uint64_t size, int flags)
 
 	(void) printf("\n%s\n%6s   %s  0123456789abcdef\n", label, "", hdr);
 
-#ifdef _LITTLE_ENDIAN
+#ifdef _ZFS_LITTLE_ENDIAN
 	/* correct the endianness */
 	do_bswap = !do_bswap;
 #endif
@@ -8932,6 +8932,19 @@ zdb_numeric(char *str)
 	return (B_TRUE);
 }
 
+static int
+dummy_get_file_info(dmu_object_type_t bonustype, const void *data,
+    zfs_file_info_t *zoi)
+{
+	(void) data, (void) zoi;
+
+	if (bonustype != DMU_OT_ZNODE && bonustype != DMU_OT_SA)
+		return (ENOENT);
+
+	(void) fprintf(stderr, "dummy_get_file_info: not implemented");
+	abort();
+}
+
 int
 main(int argc, char **argv)
 {
@@ -9248,6 +9261,7 @@ main(int argc, char **argv)
 		libzfs_core_fini();
 	}
 
+	dmu_objset_register_type(DMU_OST_ZFS, dummy_get_file_info);
 	kernel_init(SPA_MODE_READ);
 	kernel_init_done = B_TRUE;
 
