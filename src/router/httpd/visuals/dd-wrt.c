@@ -962,7 +962,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefi
 			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "radius"));
 		}
-		if (!nvram_match(sta, "mesh"))
+		if (!nvram_match(sta, "mesh") && cantkip(prefix))
 			websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""),
 				  wpa_enc_label(buf, sizeof(buf), "wep"));
 	}
