@@ -375,7 +375,7 @@ _get_entity(void *user, const xmlChar *name)
 		if (ret == NULL)
 			ret = xmlGetDocEntity(parser->parser->myDoc, name);
 
-		if (ret == NULL || (parser->parser->instate != XML_PARSER_ENTITY_VALUE && parser->parser->instate != XML_PARSER_ATTRIBUTE_VALUE)) {
+		if (ret == NULL || parser->parser->instate == XML_PARSER_CONTENT) {
 			if (ret == NULL || ret->etype == XML_INTERNAL_GENERAL_ENTITY || ret->etype == XML_INTERNAL_PARAMETER_ENTITY || ret->etype == XML_INTERNAL_PREDEFINED_ENTITY) {
 				/* Predefined entities will expand unless no cdata handler is present */
 				if (parser->h_default && ! (ret && ret->etype == XML_INTERNAL_PREDEFINED_ENTITY && parser->h_cdata)) {
@@ -471,13 +471,13 @@ XML_ParserCreate_MM(const XML_Char *encoding, const XML_Memory_Handling_Suite *m
 	}
 
 	php_libxml_sanitize_parse_ctxt_options(parser->parser);
-	xmlCtxtUseOptions(parser->parser, XML_PARSE_OLDSAX);
+	xmlCtxtUseOptions(parser->parser, XML_PARSE_OLDSAX | XML_PARSE_NOENT);
 
-	parser->parser->replaceEntities = 1;
 	parser->parser->wellFormed = 0;
 	if (sep != NULL) {
+		/* Note: sax2 flag will be set due to the magic number in `initialized` in php_xml_compat_handlers */
+		ZEND_ASSERT(parser->parser->sax->initialized == XML_SAX2_MAGIC);
 		parser->use_namespace = 1;
-		parser->parser->sax2 = 1;
 		parser->_ns_separator = xmlStrdup(sep);
 	} else {
 		/* Reset flag as XML_SAX2_MAGIC is needed for xmlCreatePushParserCtxt
@@ -563,10 +563,14 @@ XML_SetEndNamespaceDeclHandler(XML_Parser parser, XML_EndNamespaceDeclHandler en
 PHP_XML_API int
 XML_Parse(XML_Parser parser, const XML_Char *data, int data_len, int is_final)
 {
-	int error;
+	int error = xmlParseChunk(parser->parser, (char *) data, data_len, is_final);
 
-	error = xmlParseChunk(parser->parser, (char *) data, data_len, is_final);
-	return !error && parser->parser->lastError.level <= XML_ERR_WARNING;
+	if (!error) {
+		const xmlError *error_data = xmlCtxtGetLastError(parser->parser);
+		return !error_data || error_data->level <= XML_ERR_WARNING;
+	}
+
+	return 0;
 }
 
 PHP_XML_API int
@@ -705,8 +709,21 @@ XML_GetCurrentColumnNumber(XML_Parser parser)
 PHP_XML_API int
 XML_GetCurrentByteIndex(XML_Parser parser)
 {
-	return parser->parser->input->consumed +
-			(parser->parser->input->cur - parser->parser->input->base);
+	/* We have to temporarily disable the encoder to satisfy the note from the manual:
+	 * "This function returns byte index according to UTF-8 encoded text disregarding if input is in another encoding."
+	 * Although that should probably be corrected at one point? (TODO) */
+	xmlCharEncodingHandlerPtr encoder = NULL;
+	xmlParserInputPtr input = parser->parser->input;
+	if (input->buf) {
+		encoder = input->buf->encoder;
+		input->buf->encoder = NULL;
+	}
+	long result = xmlByteConsumed(parser->parser);
+	if (encoder) {
+		input->buf->encoder = encoder;
+	}
+	/* TODO: at one point this should return long probably to make sure that files greater than 2 GiB are handled correctly. */
+	return (int) result;
 }
 
 PHP_XML_API int
@@ -714,8 +731,7 @@ XML_GetCurrentByteCount(XML_Parser parser)
 {
 	/* WARNING: this is identical to ByteIndex; it should probably
 	 * be different */
-	return parser->parser->input->consumed +
-			(parser->parser->input->cur - parser->parser->input->base);
+	return XML_GetCurrentByteIndex(parser);
 }
 
 PHP_XML_API const XML_Char *XML_ExpatVersion(void)

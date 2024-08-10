@@ -833,6 +833,7 @@ try_again:
 			zval *data;
 			zend_string *key;
 			has_cookies = 1;
+			bool first_cookie = true;
 			smart_str_append_const(&soap_headers, "Cookie: ");
 			ZEND_HASH_MAP_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(cookies), key, data) {
 				if (key && Z_TYPE_P(data) == IS_ARRAY) {
@@ -848,10 +849,13 @@ try_again:
 						   Z_TYPE_P(tmp) != IS_STRING ||
 						   in_domain(ZSTR_VAL(phpurl->host),Z_STRVAL_P(tmp))) &&
 						  (use_ssl || (tmp = zend_hash_index_find(Z_ARRVAL_P(data), 3)) == NULL)) {
+							if (!first_cookie) {
+								smart_str_appends(&soap_headers, "; ");
+							}
+							first_cookie = false;
 							smart_str_append(&soap_headers, key);
 							smart_str_appendc(&soap_headers, '=');
 							smart_str_append(&soap_headers, Z_STR_P(value));
-							smart_str_appendc(&soap_headers, ';');
 						}
 					}
 				}
@@ -1256,11 +1260,13 @@ try_again:
 		zval retval;
 		zval params[1];
 
+		/* Warning: the zlib function names are chosen in an unfortunate manner.
+		 * Check zlib.c to see how a function corresponds with a particular format. */
 		if ((strcmp(content_encoding,"gzip") == 0 ||
 		     strcmp(content_encoding,"x-gzip") == 0) &&
-		     zend_hash_str_exists(EG(function_table), "gzinflate", sizeof("gzinflate")-1)) {
-			ZVAL_STRING(&func, "gzinflate");
-			ZVAL_STRINGL(&params[0], http_body->val+10, http_body->len-10);
+		     zend_hash_str_exists(EG(function_table), "gzdecode", sizeof("gzdecode")-1)) {
+			ZVAL_STRING(&func, "gzdecode");
+			ZVAL_STR_COPY(&params[0], http_body);
 		} else if (strcmp(content_encoding,"deflate") == 0 &&
 		           zend_hash_str_exists(EG(function_table), "gzuncompress", sizeof("gzuncompress")-1)) {
 			ZVAL_STRING(&func, "gzuncompress");

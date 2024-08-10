@@ -846,7 +846,7 @@ ZEND_API zval *zend_std_write_property(zend_object *zobj, zend_string *name, zva
 					goto exit;
 				}
 				if (UNEXPECTED(!type_matched)) {
-					Z_TRY_DELREF_P(value);
+					zval_ptr_dtor(&tmp);
 					variable_ptr = &EG(error_zval);
 					goto exit;
 				}
@@ -949,7 +949,7 @@ write_std_property:
 					goto exit;
 				}
 				if (UNEXPECTED(!type_matched)) {
-					zval_ptr_dtor(value);
+					zval_ptr_dtor(&tmp);
 					goto exit;
 				}
 				value = &tmp;
@@ -1686,6 +1686,7 @@ ZEND_API zend_function *zend_std_get_constructor(zend_object *zobj) /* {{{ */
 				if (UNEXPECTED(constructor->op_array.fn_flags & ZEND_ACC_PRIVATE)
 				 || UNEXPECTED(!zend_check_protected(zend_get_function_root_class(constructor), scope))) {
 					zend_bad_constructor_call(constructor, scope);
+					zend_object_store_ctor_failed(zobj);
 					constructor = NULL;
 				}
 			}

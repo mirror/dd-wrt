@@ -253,8 +253,10 @@ static void zend_ini_get_var(zval *result, zval *name, zval *fallback)
 	if ((curval = zend_get_configuration_directive(Z_STR_P(name))) != NULL) {
 		ZVAL_NEW_STR(result, zend_string_init(Z_STRVAL_P(curval), Z_STRLEN_P(curval), ZEND_SYSTEM_INI));
 	/* ..or if not found, try ENV */
-	} else if ((envvar = zend_getenv(Z_STRVAL_P(name), Z_STRLEN_P(name))) != NULL ||
-			   (envvar = getenv(Z_STRVAL_P(name))) != NULL) {
+	} else if ((envvar = zend_getenv(Z_STRVAL_P(name), Z_STRLEN_P(name))) != NULL) {
+		ZVAL_NEW_STR(result, zend_string_init(envvar, strlen(envvar), ZEND_SYSTEM_INI));
+		efree(envvar);
+	} else if ((envvar = getenv(Z_STRVAL_P(name))) != NULL) {
 		ZVAL_NEW_STR(result, zend_string_init(envvar, strlen(envvar), ZEND_SYSTEM_INI));
 	/* ..or if not defined, try fallback value */
 	} else if (fallback) {
@@ -870,12 +872,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   359,   359,   360,   364,   371,   382,   391,   392,   396,
-     397,   401,   402,   403,   404,   405,   409,   410,   414,   415,
-     416,   420,   421,   422,   423,   424,   425,   429,   430,   431,
-     432,   433,   434,   438,   439,   440,   441,   442,   443,   444,
-     448,   449,   454,   455,   459,   460,   461,   462,   463,   467,
-     468,   469,   474,   475
+       0,   361,   361,   362,   366,   373,   384,   393,   394,   398,
+     399,   403,   404,   405,   406,   407,   411,   412,   416,   417,
+     418,   422,   423,   424,   425,   426,   427,   431,   432,   433,
+     434,   435,   436,   440,   441,   442,   443,   444,   445,   446,
+     450,   451,   456,   457,   461,   462,   463,   464,   465,   469,
+     470,   471,   476,   477
 };
 #endif
 

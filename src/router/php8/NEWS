@@ -1,12 +1,166 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+01 Aug 2024, PHP 8.3.10
+
+- Core:
+  . Fixed bug GH-13922 (Fixed support for systems with
+    sysconf(_SC_GETPW_R_SIZE_MAX) == -1). (Arnaud)
+  . Fixed bug GH-14626 (Fix is_zend_ptr() for huge blocks). (Arnaud)
+  . Fixed bug GH-14590 (Memory leak in FPM test gh13563-conf-bool-env.phpt.
+    (nielsdos)
+  . Fixed OSS-Fuzz #69765. (nielsdos)
+  . Fixed bug GH-14741 (Segmentation fault in Zend/zend_types.h). (nielsdos)
+  . Fixed bug GH-14969 (Use-after-free in property coercion with __toString()).
+    (ilutov)
+
+- Dom:
+  . Fixed bug GH-14702 (DOMDocument::xinclude() crash). (nielsdos)
+
+- Fileinfo:
+  . Fixed bug GH-14888 (README.REDIST.BINS refers to non-existing LICENSE).
+    (cmb)
+
+- Gd:
+  . ext/gd/tests/gh10614.phpt: skip if no PNG support. (orlitzky)
+  . restored warning instead of fata error. (dryabov)
+
+- LibXML:
+  . Fixed bug GH-14563 (Build failure with libxml2 v2.13.0). (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-14550 (No warning message when Zend DTrace is enabled that
+    opcache.jit is implictly disabled). (nielsdos)
+
+- Output:
+  . Fixed bug GH-14808 (Unexpected null pointer in Zend/zend_string.h with
+    empty output buffer). (nielsdos)
+
+- PDO:
+  . Fixed bug GH-14712 (Crash with PDORow access to null property).
+    (David Carlier)
+
+- Phar:
+  . Fixed bug GH-14603 (null string from zip entry).
+    (David Carlier)
+
+- PHPDBG:
+  . Fixed bug GH-14596 (crashes with ASAN and ZEND_RC_DEBUG=1).
+    (David Carlier)
+  . Fixed bug GH-14553 (echo output trimmed at NULL byte). (nielsdos)
+
+- Shmop:
+  . Fixed bug GH-14537 (shmop Windows 11 crashes the process). (nielsdos)
+
+- SPL:
+  . Fixed bug GH-14639 (Member access within null pointer in
+    ext/spl/spl_observer.c). (nielsdos)
+
+- Standard:
+  . Fixed bug GH-14775 (range function overflow with negative step argument).
+    (David Carlier)
+  . Fix 32-bit wordwrap test failures. (orlitzky)
+  . Fixed bug GH-14774 (time_sleep_until overflow). (David Carlier)
+
+- Streams:
+  . Fixed bug GH-14930 (Custom stream wrapper dir_readdir output truncated to
+    255 characters in PHP 8.3). (Joe Cai)
+
+- Tidy:
+  . Fix memory leak in tidy_repair_file(). (nielsdos)
+
+- Treewide:
+  . Fix compatibility with libxml2 2.13.2. (nielsdos)
+
+- XML:
+  . Move away from to-be-deprecated libxml fields. (nielsdos)
+  . Fixed bug GH-14834 (Error installing PHP when --with-pear is used).
+    (nielsdos)
+
+20 Jun 2024, PHP 8.3.9
+
+- Core:
+  . Fixed bug GH-14315 (Incompatible pointer type warnings). (Peter Kokot)
+  . Fixed bug GH-12814 (max_execution_time reached too early on MacOS 14
+    when running on Apple Silicon). (Manuel Kress)
+  . Fixed bug GH-14387 (Crash when stack walking in destructor of yielded from
+    values during Generator->throw()). (Bob)
+  . Fixed bug GH-14456 (Attempting to initialize class with private constructor
+    calls destructor). (Girgias)
+  . Fixed bug GH-14510 (memleak due to missing pthread_attr_destroy()-call).
+    (Florian Engelhardt)
+  . Fixed bug GH-14549 (Incompatible function pointer type for fclose).
+    (Ryan Carsten Schmidt)
+
+- BCMath:
+  . Fixed bug (bcpowmod() with mod = -1 returns 1 when it must be 0). (Girgias)
+
+- Curl:
+  . Fixed bug GH-14307 (Test curl_basic_024 fails with curl 8.8.0). (nielsdos)
+
+- DOM:
+  . Fixed bug GH-14343 (Memory leak in xml and dom). (nielsdos)
+
+- FPM:
+  . Fixed bug GH-14037 (PHP-FPM ping.path and ping.response config vars are
+    ignored in status pool). (Wilhansen Li, Pierrick Charron)
+
+- GD:
+  . Fix parameter numbers for imagecolorset(). (Giovanni Giacobbi)
+
+- Intl:
+  . Fix reference handling in SpoofChecker. (nielsdos)
+
+- MySQLnd:
+  . Partially fix bug GH-10599 (Apache crash on Windows when using a
+    self-referencing anonymous function inside a class with an active
+    mysqli connection). (nielsdos)
+
+- Opcache:
+  . Fixed bug GH-14267 (opcache.jit=off does not allow enabling JIT at runtime).
+    (ilutov)
+  . Fixed TLS access in JIT on FreeBSD/amd64. (Arnaud)
+  . Fixed bug GH-11188 (Error when building TSRM in ARM64). (nielsdos)
+
+- PDO ODBC:
+  . Fixed bug GH-14367 (incompatible SDWORD type with iODBC). (Calvin Buckley)
+
+- PHPDBG:
+  . Fixed bug GH-13681 (segfault on watchpoint addition failure). (David Carlier)
+
+- Soap:
+  . Fixed bug #47925 (PHPClient can't decompress response). (nielsdos)
+  . Fix missing error restore code. (nielsdos)
+  . Fix memory leak if calling SoapServer::setObject() twice. (nielsdos)
+  . Fix memory leak if calling SoapServer::setClass() twice. (nielsdos)
+  . Fix reading zlib ini settings in ext-soap. (nielsdos)
+  . Fix memory leaks with string function name lookups. (nielsdos)
+  . Fixed bug #69280 (SoapClient classmap doesn't support fully qualified class
+    name). (nielsdos)
+  . Fixed bug #76232 (SoapClient Cookie Header Semicolon). (nielsdos)
+  . Fixed memory leaks when calling SoapFault::__construct() twice. (Girgias)
+
+- Sodium:
+  . Fix memory leaks in ext/sodium on failure of some functions. (nielsdos)
+
+- SPL:
+  . Fixed bug GH-14290 (Member access within null pointer in extension spl).
+    (nielsdos)
+
+- Standard:
+  . Fixed bug GH-14483 (Fixed off-by-one error in checking length of abstract
+    namespace Unix sockets). (Derick)
+
+- Streams:
+  . Fixed bug GH-11078 (PHP Fatal error triggers pointer being freed was not
+    allocated and malloc: double free for ptr errors). (nielsdos)
+
 06 Jun 2024, PHP 8.3.8
 
 - CGI:
   . Fixed buffer limit on Windows, replacing read call usage by _read.
     (David Carlier)
   . Fixed bug GHSA-3qgc-jrrr-25jv (Bypass of CVE-2012-1823, Argument Injection
-    in PHP-CGI). (CVE-2024-4577) (nielsdos)    
+    in PHP-CGI). (CVE-2024-4577) (nielsdos)
 
 - CLI:
   . Fixed bug GH-14189 (PHP Interactive shell input state incorrectly handles
@@ -61,7 +215,7 @@ PHP                                                                        NEWS
 
 - Standard:
   . Fixed bug GHSA-9fcc-425m-g385 (Bypass of CVE-2024-1874).
-    (CVE-2024-5585) (nielsdos)        
+    (CVE-2024-5585) (nielsdos)
 
 - XML:
   . Fixed bug GH-14124 (Segmentation fault with XML extension under certain

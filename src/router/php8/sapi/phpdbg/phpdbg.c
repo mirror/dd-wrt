@@ -229,13 +229,13 @@ static PHP_RINIT_FUNCTION(phpdbg) /* {{{ */
 
 	if (zend_vm_kind() != ZEND_VM_KIND_HYBRID) {
 		/* phpdbg cannot work JIT-ed code */
-		zend_string *key = zend_string_init(ZEND_STRL("opcache.jit"), 1);
-		zend_string *value = zend_string_init(ZEND_STRL("off"), 1);
+		zend_string *key = zend_string_init(ZEND_STRL("opcache.jit"), false);
+		zend_string *value = zend_string_init(ZEND_STRL("off"), false);
 
-		zend_alter_ini_entry(key, value, ZEND_INI_SYSTEM, ZEND_INI_STAGE_STARTUP);
+		zend_alter_ini_entry_ex(key, value, ZEND_INI_SYSTEM, ZEND_INI_STAGE_STARTUP, false);
 
-		zend_string_release(key);
-		zend_string_release(value);
+		zend_string_release_ex(key, false);
+		zend_string_release_ex(value, false);
 	}
 
 	return SUCCESS;
@@ -845,7 +845,7 @@ static void php_sapi_phpdbg_register_vars(zval *track_vars_array) /* {{{ */
 
 static inline size_t php_sapi_phpdbg_ub_write(const char *message, size_t length) /* {{{ */
 {
-	return phpdbg_script(P_STDOUT, "%.*s", (int) length, message);
+	return phpdbg_process_print(PHPDBG_G(io)[PHPDBG_STDOUT].fd, P_STDOUT, message, (int) length);
 } /* }}} */
 
 /* beginning of struct, see main/streams/plain_wrapper.c line 111 */

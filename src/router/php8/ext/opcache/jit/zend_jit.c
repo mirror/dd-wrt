@@ -4803,12 +4803,12 @@ ZEND_EXT_API int zend_jit_config(zend_string *jit, int stage)
 		return FAILURE;
 	}
 
-	if (ZSTR_LEN(jit) == 0
-	 || zend_string_equals_literal_ci(jit, "disable")) {
+	if (zend_string_equals_literal_ci(jit, "disable")) {
 		JIT_G(enabled) = 0;
 		JIT_G(on) = 0;
 		return SUCCESS;
-	} else if (zend_string_equals_literal_ci(jit, "0")
+	} else if (ZSTR_LEN(jit) == 0
+			|| zend_string_equals_literal_ci(jit, "0")
 			|| zend_string_equals_literal_ci(jit, "off")
 			|| zend_string_equals_literal_ci(jit, "no")
 			|| zend_string_equals_literal_ci(jit, "false")) {
@@ -4895,7 +4895,9 @@ ZEND_EXT_API int zend_jit_check_support(void)
 	}
 
 	if (zend_execute_ex != execute_ex) {
-		if (strcmp(sapi_module.name, "phpdbg") != 0) {
+		if (zend_dtrace_enabled) {
+			zend_error(E_WARNING, "JIT is incompatible with DTrace. JIT disabled.");
+		} else if (strcmp(sapi_module.name, "phpdbg") != 0) {
 			zend_error(E_WARNING, "JIT is incompatible with third party extensions that override zend_execute_ex(). JIT disabled.");
 		}
 		JIT_G(enabled) = 0;
