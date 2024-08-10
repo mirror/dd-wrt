@@ -47,7 +47,7 @@ struct stream {
 };
 
 struct ksmbd_inode {
-	struct rw_semaphore		m_lock;
+	rwlock_t			m_lock;
 	atomic_t			m_count;
 	atomic_t			op_count;
 	/* opinfo count for streams */
@@ -101,7 +101,6 @@ struct ksmbd_file {
 	struct list_head		lock_list;
 
 	int				durable_timeout;
-	int				durable_scavenger_timeout;
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	/* for SMB1 */
@@ -170,8 +169,6 @@ struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work, char *filen
 struct ksmbd_file *ksmbd_lookup_fd_inode(struct dentry *dentry);
 unsigned int ksmbd_open_durable_fd(struct ksmbd_file *fp);
 struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp);
-void ksmbd_launch_ksmbd_durable_scavenger(void);
-void ksmbd_stop_durable_scavenger(void);
 void ksmbd_close_tree_conn_fds(struct ksmbd_work *work);
 void ksmbd_close_session_fds(struct ksmbd_work *work);
 int ksmbd_close_inode_fds(struct ksmbd_work *work, struct inode *inode);

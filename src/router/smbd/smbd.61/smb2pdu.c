@@ -636,12 +636,6 @@ smb2_get_name(const char *src, const int maxlen, struct nls_table *local_nls)
 		return name;
 	}
 
-	if (*name == '\\') {
-		pr_err("not allow directory name included leading slash\n");
-		kfree(name);
-		return ERR_PTR(-EINVAL);
-	}
-
 	ksmbd_conv_path_to_unix(name);
 	ksmbd_strip_last_slash(name);
 	return name;
@@ -2069,21 +2063,14 @@ out_err1:
  * @access:		file access flags
  * @disposition:	file disposition flags
  * @may_flags:		set with MAY_ flags
- * @is_dir:		is creating open flags for directory
  *
  * Return:      file open flags
  */
 static int smb2_create_open_flags(bool file_present, __le32 access,
 				  __le32 disposition,
-				  int *may_flags,
-				  bool is_dir)
+				  int *may_flags)
 {
 	int oflags = O_NONBLOCK | O_LARGEFILE;
-
-	if (is_dir) {
-		access &= ~FILE_WRITE_DESIRE_ACCESS_LE;
-		ksmbd_debug(SMB, "Discard write access to a directory\n");
-	}
 
 	if (access & FILE_READ_DESIRED_ACCESS_LE &&
 	    access & FILE_WRITE_DESIRE_ACCESS_LE) {
@@ -2404,8 +2391,7 @@ static int smb2_set_ea(struct smb2_ea_info *eabuf, unsigned int buf_len,
 				rc = ksmbd_vfs_remove_xattr(user_ns,
 #endif
 							    path,
-							    attr_name,
-							    get_write);
+							    attr_name);
 
 				if (rc < 0) {
 					ksmbd_debug(SMB,
@@ -2425,7 +2411,7 @@ static int smb2_set_ea(struct smb2_ea_info *eabuf, unsigned int buf_len,
 #endif
 						path, attr_name, value,
 						le16_to_cpu(eabuf->EaValueLength),
-						0, get_write);
+						0, true);
 			if (rc < 0) {
 				ksmbd_debug(SMB,
 					    "ksmbd_vfs_setxattr is failed(%d)\n",
@@ -2534,9 +2520,9 @@ static int smb2_remove_smb_xattrs(const struct path *path)
 		    !strncmp(&name[XATTR_USER_PREFIX_LEN], STREAM_PREFIX,
 			     STREAM_PREFIX_LEN)) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			err = ksmbd_vfs_remove_xattr(idmap, path, name, true);
+			err = ksmbd_vfs_remove_xattr(idmap, path, name);
 #else
-			err = ksmbd_vfs_remove_xattr(user_ns, path, name, true);
+			err = ksmbd_vfs_remove_xattr(user_ns, path, name);
 #endif
 			if (err)
 				ksmbd_debug(SMB, "remove xattr failed : %s\n",
@@ -2953,11 +2939,20 @@ int smb2_open(struct ksmbd_work *work)
 	}
 
 	if (req->NameLength) {
+		if ((req->CreateOptions & FILE_DIRECTORY_FILE_LE) &&
+		    *(char *)req->Buffer == '\\') {
+			pr_err("not allow directory name included leading slash\n");
+			rc = -EINVAL;
+			goto err_out2;
+		}
+
 		name = smb2_get_name((char *)req + le16_to_cpu(req->NameOffset),
 				     le16_to_cpu(req->NameLength),
 				     work->conn->local_nls);
 		if (IS_ERR(name)) {
 			rc = PTR_ERR(name);
+			if (rc != -ENOMEM)
+				rc = -ENOENT;
 			name = NULL;
 			goto err_out2;
 		}
@@ -3302,9 +3297,7 @@ int smb2_open(struct ksmbd_work *work)
 
 	open_flags = smb2_create_open_flags(file_present, daccess,
 					    req->CreateDisposition,
-					    &may_flags,
-		req->CreateOptions & FILE_DIRECTORY_FILE_LE ||
-		(file_present && S_ISDIR(d_inode(path.dentry)->i_mode)));
+					    &may_flags);
 
 	if (!test_tree_conn_flag(tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
 		if (open_flags & (O_CREAT | O_TRUNC)) {
@@ -3559,9 +3552,9 @@ int smb2_open(struct ksmbd_work *work)
 	 * after daccess, saccess, attrib_only, and stream are
 	 * initialized.
 	 */
-	down_write(&fp->f_ci->m_lock);
+	write_lock(&fp->f_ci->m_lock);
 	list_add(&fp->node, &fp->f_ci->m_fp_list);
-	up_write(&fp->f_ci->m_lock);
+	write_unlock(&fp->f_ci->m_lock);
 
 	/* Check delete pending among previous fp before oplock break */
 	if (ksmbd_inode_pending_delete(fp)) {
@@ -3707,7 +3700,7 @@ int smb2_open(struct ksmbd_work *work)
 					SMB2_CREATE_GUID_SIZE);
 			if (dh_info.timeout)
 				fp->durable_timeout = min(dh_info.timeout,
-						DURABLE_HANDLE_MAX_TIMEOUT);
+						300000);
 			else
 				fp->durable_timeout = 60;
 		}
@@ -5603,13 +5596,8 @@ static int smb2_get_info_filesystem(struct ksmbd_work *work,
 
 		info = (struct filesystem_device_info *)rsp->Buffer;
 
-		info->DeviceType = cpu_to_le32(FILE_DEVICE_DISK);
-		info->DeviceCharacteristics =
-			cpu_to_le32(FILE_DEVICE_IS_MOUNTED);
-		if (!test_tree_conn_flag(work->tcon,
-					 KSMBD_TREE_CONN_FLAG_WRITABLE))
-			info->DeviceCharacteristics |=
-				cpu_to_le32(FILE_READ_ONLY_DEVICE);
+		info->DeviceType = cpu_to_le32(stfs.f_type);
+		info->DeviceCharacteristics = cpu_to_le32(0x00000020);
 		rsp->OutputBufferLength = cpu_to_le32(8);
 		break;
 	}
