@@ -1068,10 +1068,7 @@ void load_wifi_drivers(void)
 				rmmod("ath");
 			}
 		}
-		int cnt = 0;
-		while ((cnt++) < 6 && !getdevicecount()) {
-			sleep(1);
-		}
+		wait_for_wifi();
 		switch (board) {
 		case ROUTER_ASUS_AC58U:
 		case ROUTER_LINKSYS_EA8300:

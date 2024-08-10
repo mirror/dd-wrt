@@ -1270,10 +1270,7 @@ void load_wifi_drivers(void)
 			}
 			break;
 		}
-		int cnt = 0;
-		while ((cnt++) < 6 && !getdevicecount()) {
-			sleep(1);
-		}
+		wait_for_wifi();
 		start_setup_affinity();
 	}
 }

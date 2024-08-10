@@ -104,10 +104,6 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	load_mac80211();
-	insmod("mwlwifi");
-	insmod("mwifiex");
-
 	insmod("mmc_core");
 	insmod("mmc_block");
 	insmod("sdhci");
@@ -235,4 +231,9 @@ void start_resetbc(void)
 }
 void load_wifi_drivers(void)
 {
+	if (load_mac80211())
+		insmod("mwlwifi");
+		insmod("mwifiex");
+		wait_for_wifi();
+	}
 }
