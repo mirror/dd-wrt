@@ -870,6 +870,16 @@ static char *wpa_enc_label(char *buf, size_t len, char *value)
 #endif
 }
 
+static int cantkip(const char *prefix)
+{
+	char *netmode = nvram_safe_get(prefix);
+	int ncapable = is_mac80211(prefix) && !is_ath5k(prefix);
+	return (strcmp(netmode, "ng-only") && strcmp(netmode, "na-only") && strcmp(netmode, "n2-only") &&
+		strcmp(netmode, "n5-only") && strcmp(netmode, "axg-only") && strcmp(netmode, "ac-only") &&
+		strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") &&
+		(strcmp(netmode, "mixed") || !ncapable));
+}
+
 static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefix, int primary)
 {
 	char var[80];
@@ -5825,15 +5835,6 @@ static int nomesh(const char *prefix)
 	return (!nvram_nmatch("mesh", "%s_mode", prefix));
 }
 
-static int cantkip(const char *prefix)
-{
-	char *netmode = nvram_safe_get(prefix);
-	int ncapable = is_mac80211(prefix) && !is_ath5k(prefix);
-	return (strcmp(netmode, "ng-only") && strcmp(netmode, "na-only") && strcmp(netmode, "n2-only") &&
-		strcmp(netmode, "n5-only") && strcmp(netmode, "axg-only") && strcmp(netmode, "ac-only") &&
-		strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") && strcmp(netmode, "xacn-mixed") &&
-		(strcmp(netmode, "mixed") || !ncapable));
-}
 
 static int aponly_wpa3(const char *prefix)
 {
