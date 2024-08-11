@@ -550,6 +550,9 @@ struct hostapd_iface {
 	const struct wpabuf *fst_ies;
 #endif /* CONFIG_FST */
 
+	/* SMPS modes supported by the driver (WPA_DRIVER_SMPS_MODE_*) */
+	unsigned int smps_modes;
+
 	/*
 	 * When set, indicates that the driver will handle the AP
 	 * teardown: delete global keys, station keys, and stations.

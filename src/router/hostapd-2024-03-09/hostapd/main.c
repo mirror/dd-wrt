@@ -319,6 +319,7 @@ setup_mld:
 
 		iface->drv_flags = capa.flags;
 		iface->drv_flags2 = capa.flags2;
+		iface->smps_modes = capa.smps_modes;
 		iface->probe_resp_offloads = capa.probe_resp_offloads;
 		/*
 		 * Use default extended capa values from per-radio information
