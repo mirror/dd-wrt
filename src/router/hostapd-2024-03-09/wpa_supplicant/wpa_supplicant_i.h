@@ -930,7 +930,6 @@ struct wpa_supplicant {
 	u64 drv_flags;
 	u64 drv_flags2;
 	unsigned int drv_enc;
-	unsigned int drv_smps_modes;
 	unsigned int drv_rrm_flags;
 	unsigned int drv_max_acl_mac_addrs;
 
