@@ -415,3 +415,16 @@ Index: lib/libspl/include/sys/backtrace.h
  void libspl_backtrace(int fd);
  
  #endif
+Index: module/os/linux/zfs/zfs_vfsops.c
+===================================================================
+--- module/os/linux/zfs/zfs_vfsops.c	(revision 57859)
++++ module/os/linux/zfs/zfs_vfsops.c	(working copy)
+@@ -1262,7 +1262,7 @@ zfs_prune(struct super_block *sb, unsigned long nr
+ 
+ #if defined(HAVE_SPLIT_SHRINKER_CALLBACK) && \
+ 	defined(SHRINK_CONTROL_HAS_NID) && \
+-	defined(SHRINKER_NUMA_AWARE)
++	defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
+ 	if (shrinker->flags & SHRINKER_NUMA_AWARE) {
+ 		long tc = 1;
+ 		for_each_online_node(sc.nid) {
