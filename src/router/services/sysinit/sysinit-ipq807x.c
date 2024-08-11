@@ -1013,6 +1013,32 @@ void start_sysinit(void)
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+		int i;
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
+		}
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
+		}
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
 
 		eval("ifconfig", "eth0", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
@@ -1150,6 +1176,32 @@ void start_sysinit(void)
 		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
 		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+		int i;
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
+		}
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
+			eval("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
+		}
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
 
 		eval("ifconfig", "eth0", "up");
 
@@ -1208,6 +1260,8 @@ void start_sysinit(void)
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
 
+	detect_usbdrivers();
+
 	return;
 }
 
@@ -1246,6 +1300,9 @@ void load_wifi_drivers(void)
 			insmod("qmi_helpers");
 			eval("insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
 			     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+			eval("insmod", "mac80211");
+			//			insmod("qmi_helpers");
+			//			eval("insmod", "ath11k-512", overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 			insmod("ath11k_ahb-512");
 			insmod("ath11k_pci-512");
 			sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
