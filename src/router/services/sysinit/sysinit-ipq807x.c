@@ -606,7 +606,338 @@ void start_setup_affinity(void)
 		}
 	}
 }
+static void initvlans(void) {
 
+	int brand = getRouterBrand();
+	int i;
+	switch (brand) {
+	case ROUTER_LINKSYS_MR5500:
+		/* setup vlan config */
+
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+
+		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "vlan", "entry", "flush");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
+		     "default");
+
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
+
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval_va_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
+
+		eval_va_silence("ssdk_sh", "port", "poweron", "set", "5");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "0");
+
+		/*drop invalid tcp*/
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/* drop tcp/udp checksum errors */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		/* enable pppoe */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+
+
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+
+		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "vlan", "entry", "flush");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
+		     "default");
+
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
+
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval_va_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
+
+		eval_va_silence("ssdk_sh", "port", "poweron", "set", "5");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "0");
+
+		/*drop invalid tcp*/
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/* drop tcp/udp checksum errors */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		/* enable pppoe */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
+		}
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
+		}
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+
+		break;
+	case ROUTER_LINKSYS_MX5500:
+		/* setup vlan config */
+
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+
+		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "flush");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
+
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
+
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval_va_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
+		eval_va_silence("ssdk_sh", "port", "poweron", "set", "2");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "0");
+		/*drop invalid tcp*/
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/* drop tcp/udp checksum errors */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		/* enable pppoe */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+
+
+		/* setup vlan config */
+
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
+		eval_va_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+
+		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "flush");
+
+		eval_va_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
+
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
+		eval_va_silence("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
+
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
+		eval_va_silence("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
+		eval_va_silence("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
+		eval_va_silence("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
+		eval_va_silence("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
+
+		eval_va_silence("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
+		eval_va_silence("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
+		eval_va_silence("ssdk_sh", "port", "poweron", "set", "2");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "0");
+		/*drop invalid tcp*/
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
+		/* drop tcp/udp checksum errors */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
+		/* enable pppoe */
+		//		eval_va_silence("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
+
+		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
+		eval_va_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
+		eval_va_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
+		}
+		for (i = 1; i < 5; i++) {
+			char id[32];
+			sprintf(id, "%d", i);
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
+			eval_va_silence("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
+		}
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
+		eval_va_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+
+		break;
+}
+
+}
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -868,343 +1199,21 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
 		eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 	}
+	int i;
 
 	switch (brand) {
 	case ROUTER_LINKSYS_MR5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-		/* setup vlan config */
-
-		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
-
-		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
-		sysprintf("echo 1 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "vlan", "entry", "flush");
-
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
-		     "default");
-
-		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
-
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
-		eval("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
-		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
-
-		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
-		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
-
-		eval("ssdk_sh", "port", "poweron", "set", "5");
-		eval("ssdk_sh", "fdb", "entry", "flush", "0");
-
-		/*drop invalid tcp*/
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
-		/* drop tcp/udp checksum errors */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
-		/* enable pppoe */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
-
 		insmod("qca8k");
-
-		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
-
-		/*config port.5 to VLAN(1) and port.1/2/3/4 to VLAN(2) */
-		sysprintf("echo 1 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "vlan", "entry", "flush");
-
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
-		     "default");
-
-		eval("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
-
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "1", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
-		eval("ssdk_sh", "portVlan", "egress", "set", "1", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "1", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "1", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
-		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
-
-		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
-		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
-
-		eval("ssdk_sh", "port", "poweron", "set", "5");
-		eval("ssdk_sh", "fdb", "entry", "flush", "0");
-
-		/*drop invalid tcp*/
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
-		/* drop tcp/udp checksum errors */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
-		/* enable pppoe */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
-		int i;
-		for (i = 1; i < 5; i++) {
-			char id[32];
-			sprintf(id, "%d", i);
-			eval("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
-		}
-		for (i = 1; i < 5; i++) {
-			char id[32];
-			sprintf(id, "%d", i);
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
-		}
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
-
+		initvlans();
 		eval("ifconfig", "eth0", "up");
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-		/* setup vlan config */
-
-		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
-
-		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
-		sysprintf("echo 1 > /sys/ssdk/dev_id");
-
-		eval("ssdk_sh", "vlan", "entry", "flush");
-
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
-
-		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
-
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "unmodified");
-		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
-
-		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
-		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
-		eval("ssdk_sh", "port", "poweron", "set", "2");
-		eval("ssdk_sh", "fdb", "entry", "flush", "0");
-		/*drop invalid tcp*/
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
-		/* drop tcp/udp checksum errors */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
-		/* enable pppoe */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
-
-		eval("ifconfig", "eth0", "up");
-
 		insmod("qca8k");
-
-		/* setup vlan config */
-
-		sysprintf("echo 0 > /sys/ssdk/dev_id");
-		eval("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "2", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
-
-		/* config port.2 to VLAN(1) and port.3/4/5 to VLAN(2) */
-		sysprintf("echo 1 > /sys/ssdk/dev_id");
-
-		eval("ssdk_sh", "vlan", "entry", "flush");
-
-		eval("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
-
-		eval("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "4", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "5", "fallback");
-		eval("ssdk_sh", "portVlan", "ingress", "set", "6", "fallback");
-
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "2", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "3", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "4", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "5", "0");
-		eval("ssdk_sh", "portVlan", "defaultSVid", "set", "6", "0");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "2", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "2", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "2", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "3", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "3", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "3", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "4", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "4", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "4", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "5", "unmodified");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "5", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "5", "enable");
-
-		eval("ssdk_sh", "portVlan", "egress", "set", "6", "tagged");
-		eval("ssdk_sh", "portVlan", "qinqrole", "set", "6", "core");
-		eval("ssdk_sh", "portVlan", "vlanPropagation", "set", "6", "disable");
-		eval("ssdk_sh", "portVlan", "tlsMode", "set", "6", "disable");
-
-		eval("ssdk_sh", "portVlan", "qinqmode", "set", "stag");
-		eval("ssdk_sh", "portVlan", "svlanTPID", "set", "0x8100");
-		eval("ssdk_sh", "port", "poweron", "set", "2");
-		eval("ssdk_sh", "fdb", "entry", "flush", "0");
-		/*drop invalid tcp*/
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x200", "0x2000", "4");
-		/* drop tcp/udp checksum errors */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x204", "0x0842", "4");
-		/* enable pppoe */
-		//		eval("ssdk_sh", "debug", "reg", "set", "0x214", "0x2000000", "4");
-
-		/* enable flowctrl to prevent low performance of PPTP connection with Cisco 7301. */
-		eval("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
-		eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
-		int i;
-		for (i = 1; i < 5; i++) {
-			char id[32];
-			sprintf(id, "%d", i);
-			eval("ssdk_sh", "debug", "phy", "set", id, "0", "0x9000");
-		}
-		for (i = 1; i < 5; i++) {
-			char id[32];
-			sprintf(id, "%d", i);
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0xb");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x3c40");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1d", "0x29");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x1e", "0x36dd");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x801a");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x382a");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x7");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x3c");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xd", "0x4007");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
-			eval("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
-		}
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
-		eval("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
-
+		initvlans();
 		eval("ifconfig", "eth0", "up");
-
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
@@ -1216,20 +1225,20 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-		eval("ssdk_sh", "fdb", "entry", "flush", "1");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+		eval_va_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "1");
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_ASUS_AX89X:
@@ -1238,20 +1247,20 @@ void start_sysinit(void)
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-		eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-		eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-		eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-		eval("ssdk_sh", "fdb", "entry", "flush", "1");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+		eval_va_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+		eval_va_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+		eval_va_silence("ssdk_sh", "fdb", "entry", "flush", "1");
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
@@ -1329,6 +1338,7 @@ void load_wifi_drivers(void)
 		}
 		wait_for_wifi();
 		start_setup_affinity();
+		initvlans();
 	}
 }
 
