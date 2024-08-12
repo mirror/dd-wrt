@@ -112,8 +112,8 @@ struct nss_cryptoapi_stats {
 struct nss_cryptoapi_ctx {
 	struct nss_cryptoapi_stats stats;	/* Statistics */
 	struct nss_cryptoapi_algo_info *info;	/* Algorithm info */
-	struct nss_crypto_user *user;		/* Crypto user */
 	struct dentry *dentry;			/* Debugfs entry */
+	struct nss_crypto_user *user;		/* Crypto user */
 	struct crypto_tfm *sw_tfm;		/* SW fallback context */
 
 	struct completion complete;		/* Completion object for outstanding packets */
