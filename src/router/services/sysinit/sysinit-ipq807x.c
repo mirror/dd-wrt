@@ -418,8 +418,8 @@ static void load_nss_ipq60xx(int profile)
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq60xx");
-		insmod("qca-nss-crypto-ipq60xx");
-		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
+//		insmod("qca-nss-crypto-ipq60xx");
+//		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
 
 		set_memprofile(4, 1, profile);
@@ -462,8 +462,8 @@ static void load_nss_ipq50xx(int profile)
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq50xx");
-		insmod("qca-nss-crypto-ipq50xx");
-		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
+//		insmod("qca-nss-crypto-ipq50xx");
+//		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
 
 		set_memprofile(2, 1, profile);
@@ -510,8 +510,8 @@ static void load_nss_ipq807x(int profile)
 		insmod("pptp");
 		insmod("vxlan");
 		insmod("qca-nss-drv-ipq807x");
-		insmod("qca-nss-crypto-ipq807x");
-		insmod("qca-nss-cfi-cryptoapi-ipq807x");
+//		insmod("qca-nss-crypto-ipq807x");
+//		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
 
 		set_memprofile(4, 2, profile);
