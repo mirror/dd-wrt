@@ -256,7 +256,7 @@ void nss_cryptoapi_skcipher_done(void *app_data, struct nss_crypto_hdr *ch, uint
 	 * Decrement cryptoapi reference
 	 */
 	nss_cryptoapi_ref_dec(ctx);
-	req->base.complete(&req->base, error);
+	skcipher_request_complete(req, error);
 }
 
 /*

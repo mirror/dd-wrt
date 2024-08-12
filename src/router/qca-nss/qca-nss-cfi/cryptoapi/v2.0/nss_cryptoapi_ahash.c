@@ -231,8 +231,10 @@ int nss_cryptoapi_ahash_setkey(struct crypto_ahash *ahash, const u8 *key, unsign
 void nss_cryptoapi_ahash_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
 {
 	struct ahash_request *req = app_data;
-	struct nss_cryptoapi_ctx *ctx = crypto_tfm_ctx(req->base.tfm);
+	struct crypto_ahash *ahash = crypto_ahash_reqtfm(req);
+	struct nss_cryptoapi_ctx *ctx = crypto_ahash_ctx(ahash);
 	struct nss_cryptoapi_req_ctx *rctx = ahash_request_ctx(req);
+
 	uint8_t *hw_hmac;
 	int error;
 
@@ -268,7 +270,7 @@ void nss_cryptoapi_ahash_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t
 	 * Decrement cryptoapi reference
 	 */
 	nss_cryptoapi_ref_dec(ctx);
-	req->base.complete(&req->base, error);
+	ahash_request_complete(req, error);
 }
 
 /*
