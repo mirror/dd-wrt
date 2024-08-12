@@ -158,7 +158,7 @@ static int gluebi_read(struct mtd_info *mtd, loff_t from, size_t len,
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
 	gluebi = (struct gluebi_device *)mtd->priv;
-	if (!gluebi || gluebi->desc) {
+	if (!gluebi || !gluebi->desc) {
 		printk(KERN_EMERG "gluebi is null\n");
 		return -EIO;
 	}
@@ -203,7 +203,7 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
 	gluebi = (struct gluebi_device *)mtd->priv;
-	if (!gluebi || gluebi->desc) {
+	if (!gluebi || !gluebi->desc) {
 		printk(KERN_EMERG "gluebi is null\n");
 		return -EIO;
 	}
@@ -363,6 +363,7 @@ static int gluebi_create(struct ubi_device_info *di,
 			kfree(gluebi);
 			return -ENFILE;
 		}
+		gluebi_put_device(mtd);
 	} else {
 		if (mtd_device_register(mtd, NULL, 0)) {
 			err_msg("cannot add MTD device");
