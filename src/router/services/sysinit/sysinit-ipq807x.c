@@ -606,8 +606,8 @@ void start_setup_affinity(void)
 		}
 	}
 }
-void start_initvlans(void) {
-
+void start_initvlans(void)
+{
 	int brand = getRouterBrand();
 	int i;
 	switch (brand) {
@@ -626,7 +626,7 @@ void start_initvlans(void) {
 		eval_silence("ssdk_sh", "vlan", "entry", "flush");
 
 		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
-		     "default");
+			     "default");
 
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -683,7 +683,6 @@ void start_initvlans(void) {
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
-
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval_silence("ssdk_sh", "port", "frameMaxSize", "set", "2", "0x800");
 
@@ -696,7 +695,7 @@ void start_initvlans(void) {
 		eval_silence("ssdk_sh", "vlan", "entry", "flush");
 
 		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,5,4,3,2,1", "6", "1,2,3,4,5", "default", "default",
-		     "default");
+			     "default");
 
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "1", "fallback");
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
@@ -794,7 +793,8 @@ void start_initvlans(void) {
 
 		eval_silence("ssdk_sh", "vlan", "entry", "flush");
 
-		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
+		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default",
+			     "default");
 
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
@@ -844,7 +844,6 @@ void start_initvlans(void) {
 		eval_silence("ssdk_sh", "port", "flowctrlforcemode", "set", "6", "enable");
 		eval_silence("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
 
-
 		/* setup vlan config */
 
 		sysprintf("echo 0 > /sys/ssdk/dev_id");
@@ -859,7 +858,8 @@ void start_initvlans(void) {
 
 		eval_silence("ssdk_sh", "vlan", "entry", "flush");
 
-		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default", "default");
+		eval_silence("ssdk_sh", "vlan", "entry", "append", "0", "0", "6,2,3,4,5", "6", "2,3,4,5", "default", "default",
+			     "default");
 
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "2", "fallback");
 		eval_silence("ssdk_sh", "portVlan", "ingress", "set", "3", "fallback");
@@ -935,8 +935,7 @@ void start_initvlans(void) {
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
 
 		break;
-}
-
+	}
 }
 void start_sysinit(void)
 {
@@ -1307,8 +1306,9 @@ void load_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX5500:
 			eval_silence("insmod", "mac80211", "nss_redirect=1");
 			insmod("qmi_helpers");
-			eval_silence("insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
-			     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+			eval_silence(
+				"insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
+				overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 			eval_silence("insmod", "mac80211");
 			//			insmod("qmi_helpers");
 			//			eval_silence("insmod", "ath11k-512", overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
@@ -1323,15 +1323,17 @@ void load_wifi_drivers(void)
 				if (!nvram_match("ath11k_nss", "0"))
 					eval_silence("insmod", "ath11k-512", overdrive);
 				else
-					eval_silence("insmod", "ath11k-512", "nss_offload=0",
-					     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+					eval_silence(
+						"insmod", "ath11k-512", "nss_offload=0",
+						overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 				insmod("ath11k_ahb-512");
 			} else {
 				if (!nvram_match("ath11k_nss", "0"))
 					eval_silence("insmod", "ath11k", overdrive);
 				else
-					eval_silence("insmod", "ath11k", "nss_offload=0",
-					     overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+					eval_silence(
+						"insmod", "ath11k", "nss_offload=0",
+						overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 				insmod("ath11k_ahb");
 			}
 			break;
