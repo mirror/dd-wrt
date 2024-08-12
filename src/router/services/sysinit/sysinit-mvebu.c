@@ -231,7 +231,7 @@ void start_resetbc(void)
 }
 void load_wifi_drivers(void)
 {
-	if (!load_mac80211())
+	if (!load_mac80211()) {
 		insmod("mwlwifi");
 		insmod("mwifiex");
 		wait_for_wifi();
