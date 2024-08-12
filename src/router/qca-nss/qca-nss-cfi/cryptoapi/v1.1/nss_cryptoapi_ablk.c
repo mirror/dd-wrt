@@ -330,7 +330,7 @@ void nss_cryptoapi_skcipher_done(struct nss_crypto_buf *buf)
 	 * Passing always pass in case of encrypt.
 	 * Perhaps whenever core crypto invloke callback routine, it is always pass.
 	 */
-	req->base.complete(&req->base, err);
+	ablk_request_complete(req, err);
 
 	nss_cfi_assert(atomic_read(&ctx->refcnt));
 	atomic_dec(&ctx->refcnt);

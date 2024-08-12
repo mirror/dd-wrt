@@ -279,7 +279,7 @@ void nss_cryptoapi_ablkcipher_done(void *app_data, struct nss_crypto_hdr *ch, ui
 	 * Decrement cryptoapi reference
 	 */
 	nss_cryptoapi_ref_dec(ctx);
-	req->base.complete(&req->base, error);
+	ablk_request_complete(req, error);
 }
 
 /*
