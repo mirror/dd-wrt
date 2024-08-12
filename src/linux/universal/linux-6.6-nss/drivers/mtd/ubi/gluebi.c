@@ -363,7 +363,6 @@ static int gluebi_create(struct ubi_device_info *di,
 			kfree(gluebi);
 			return -ENFILE;
 		}
-		gluebi_put_device(mtd);
 	} else {
 		if (mtd_device_register(mtd, NULL, 0)) {
 			err_msg("cannot add MTD device");
