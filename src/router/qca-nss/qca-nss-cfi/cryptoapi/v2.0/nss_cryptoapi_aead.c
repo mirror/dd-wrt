@@ -97,9 +97,9 @@ int nss_cryptoapi_aead_init(struct crypto_aead *aead)
 	bool need_fallback;
 
 	BUG_ON(!ctx);
-	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 
 	memset(ctx, 0, sizeof(struct nss_cryptoapi_ctx));
+	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 
 	ctx->user = g_cryptoapi.user;
 	ctx->stats.init++;

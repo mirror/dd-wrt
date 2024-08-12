@@ -113,9 +113,9 @@ int nss_cryptoapi_ablkcipher_init(struct crypto_tfm *tfm)
 	struct nss_cryptoapi_ctx *ctx = crypto_tfm_ctx(tfm);
 
 	BUG_ON(!ctx);
-	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 
 	memset(ctx, 0, sizeof(struct nss_cryptoapi_ctx));
+	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 
 	ctx->user = g_cryptoapi.user;
 	ctx->stats.init++;

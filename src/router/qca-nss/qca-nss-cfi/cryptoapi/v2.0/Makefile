@@ -16,7 +16,7 @@ obj ?= .
 ccflags-y += -I$(obj)/../../include
 ccflags-y += -I$(obj)/../exports
 ccflags-y += -I$(obj)/
-ccflags-y += -DNSS_CFI_DEBUG_LEVEL=3
+ccflags-y += -DNSS_CFI_DEBUG_LEVEL=3 -DNSS_CFI_DEBUG
 ccflags-y += -Wall -Werror
 #ccflags-y += -DCONFIG_NSS_CFI_DBG
 ccflags-y += -DNSS_CFI_BUILD_ID=\"'Build_ID - $(shell date +'%m/%d/%y) SoC=$(SoC)'\"

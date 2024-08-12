@@ -92,10 +92,10 @@ int nss_cryptoapi_skcipher_init(struct crypto_skcipher *tfm)
 	struct nss_cryptoapi_ctx *ctx = crypto_skcipher_ctx(tfm);
 
 	BUG_ON(!ctx);
-	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 
 	memset(ctx, 0, sizeof(struct nss_cryptoapi_ctx));
 
+	NSS_CRYPTOAPI_SET_MAGIC(ctx);
 	ctx->user = g_cryptoapi.user;
 	ctx->stats.init++;
 	ctx->sid = NSS_CRYPTO_SESSION_MAX;
@@ -220,11 +220,11 @@ int nss_cryptoapi_skcipher_setkey(struct crypto_skcipher *cipher, const u8 *key,
 void nss_cryptoapi_skcipher_done(void *app_data, struct nss_crypto_hdr *ch, uint8_t status)
 {
 	struct skcipher_request *req = app_data;
-	struct nss_cryptoapi_ctx *ctx = skcipher_request_ctx(req);
+	struct crypto_skcipher *cipher = crypto_skcipher_reqtfm(req);
+	struct nss_cryptoapi_ctx *ctx = crypto_skcipher_ctx(cipher);
 	int error;
 
 	BUG_ON(!ch);
-
 	/*
 	 * Check cryptoapi context magic number.
 	 */
