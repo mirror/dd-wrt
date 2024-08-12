@@ -773,9 +773,11 @@ void start_initvlans(void)
 			eval_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
 			eval_silence("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
 		}
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
 		break;
 	case ROUTER_LINKSYS_MX5500:
@@ -930,9 +932,11 @@ void start_initvlans(void)
 			eval_silence("ssdk_sh", "debug", "phy", "set", id, "0xe", "0x00");
 			eval_silence("ssdk_sh", "debug", "phy", "set", id, "0x00", "0x1200");
 		}
+		sysprintf("echo 0 > /sys/ssdk/dev_id");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x24", "0x54", "4");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x21c", "0x288a", "4");
 		eval_silence("ssdk_sh", "debug", "uniphy", "set", "0", "0x19c", "0xbea0", "4");
+		sysprintf("echo 1 > /sys/ssdk/dev_id");
 
 		break;
 	}
