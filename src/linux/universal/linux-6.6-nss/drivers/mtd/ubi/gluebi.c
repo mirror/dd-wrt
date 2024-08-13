@@ -135,8 +135,10 @@ static void gluebi_put_device(struct mtd_info *mtd)
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	mutex_lock(&devices_mutex);
 	gluebi->refcnt -= 1;
-	if (gluebi->refcnt == 0)
-		ubi_close_volume(gluebi->desc);
+	if (gluebi->refcnt == 0) {
+		printk(KERN_EMERG "bug. %s should not be closed\n", mtd->name);
+	//	ubi_close_volume(gluebi->desc);
+	}
 	mutex_unlock(&devices_mutex);
 }
 
