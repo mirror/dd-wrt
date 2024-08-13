@@ -1244,6 +1244,7 @@ extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
 extern int has_no_apmode(const char *prefix);
 extern int has_wdsap(const char *prefix);
+extern int has_apup(const char *prefix);
 extern int has_qboost_tdma(const char *prefix);
 extern int has_beacon_limit(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
@@ -1326,7 +1327,17 @@ static inline int has_wdsap(char *prefix)
 	return 0;
 }
 #endif
-
+#ifdef HAVE_IPQ6018
+static inline int has_apup(char *prefix)
+{
+	return 1;
+}
+#else
+static inline int has_apup(char *prefix)
+{
+	return 0;
+}
+#endif
 static inline int has_nolivesurvey(char *prefix)
 {
 	return 0;
