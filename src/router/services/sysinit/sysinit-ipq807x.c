@@ -462,8 +462,8 @@ static void load_nss_ipq50xx(int profile)
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq50xx");
-//		insmod("qca-nss-crypto-ipq50xx");
-//		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
+		insmod("qca-nss-crypto-ipq50xx");
+		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
 
 		set_memprofile(2, 1, profile);
