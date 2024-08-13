@@ -181,7 +181,7 @@ void setupKey(char *prefix)
 
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(mode, "%s_mode", prefix);
-	if (nvram_match(akm, "wep") && (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "adhoc"))) {
+	if (nvram_match(akm, "wep") && (nvram_match(mode, "ap") || nvram_match(mode, "wdsap") || nvram_match(mode, "apup") || nvram_match(mode, "adhoc"))) {
 		char key[16];
 		int cnt = 1;
 		int i;
@@ -1322,7 +1322,7 @@ void start_ses_led_control(void)
 		sprintf(net, "%s_net_mode", ath);
 		if (nvram_match(net, "disabled"))
 			continue;
-		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath)) {
+		if (nvram_nmatch("ap", "%s_mode", ath) || nvram_nmatch("wdsap", "%s_mode", ath) || nvram_nmatch("apup", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
 			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "owe") ||
 			    nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") ||

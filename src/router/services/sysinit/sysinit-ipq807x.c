@@ -510,8 +510,8 @@ static void load_nss_ipq807x(int profile)
 		insmod("pptp");
 		insmod("vxlan");
 		insmod("qca-nss-drv-ipq807x");
-		insmod("qca-nss-crypto-ipq807x");
-		insmod("qca-nss-cfi-cryptoapi-ipq807x");
+//		insmod("qca-nss-crypto-ipq807x");
+//		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
 
 		set_memprofile(4, 2, profile);

@@ -450,7 +450,7 @@ void configure_single_ath9k(int count)
 	sprintf(wl, "wlan%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
 
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup") || !strcmp(apm, "sta") || !strcmp(apm, "wet")) {
 		eval("iw", wif, "interface", "add", dev, "type", "managed");
 		strcpy(primary, dev);
 	} else if (!strcmp(apm, "wdssta")) {
@@ -1518,8 +1518,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "disassoc_low_ack=%s\n", nvram_default_get(lowack, "1"));
 #endif
 	char *mode = nvram_nget("%s_mode", ifname);
-	if (!strcmp(mode, "wdsap"))
+	if (!strcmp(mode, "wdsap") || !strcmp(mode, "apup"))
 		fprintf(fp, "wds_sta=1\n");
+	if (!strcmp(mode, "apup"))
+		fprintf(fp, "apup=1\n");
 	char wmm[32];
 	sprintf(wmm, "%s_wmm", ifname);
 	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
@@ -2578,7 +2580,7 @@ skip:;
 			}
 		}
 	}
-	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
+	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap") || !strcmp(apm, "apup")) {
 		int s;
 		for (s = 1; s <= 10; s++) {
 			char wdsvarname[32] = { 0 };
