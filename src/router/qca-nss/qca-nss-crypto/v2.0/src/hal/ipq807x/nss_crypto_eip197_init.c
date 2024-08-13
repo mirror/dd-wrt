@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -587,7 +588,6 @@ static void nss_crypto_eip197_hw_boot_ofpp(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
-	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -639,7 +639,6 @@ static void nss_crypto_eip197_hw_boot_opue(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
-	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -691,7 +690,6 @@ static void nss_crypto_eip197_hw_boot_ifpp(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
-	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -743,7 +741,6 @@ static void nss_crypto_eip197_hw_boot_ipue(struct device *dev, void __iomem *bas
 	/*
 	 * load the firmware to the engine
 	 */
-	printk(KERN_INFO "load %s\n", fw_name);
 	if (request_firmware(&fw, fw_name, dev)) {
 		nss_crypto_warn("%px: FW(%s) load failed\n", dev, fw_name);
 		return;
@@ -774,6 +771,14 @@ static void nss_crypto_eip197_hw_boot_ipue(struct device *dev, void __iomem *bas
 	nss_crypto_info("%px: %s version(0x%x)\n", dev, fw_name,
 		ioread32(base_addr + NSS_CRYPTO_EIP197_ICE_IPUE_VERSION_REG));
 #endif
+}
+
+/*
+ * nss_crypto_eip197_hw_disable_ecn_check()
+ */
+static void nss_crypto_eip197_hw_disable_ecn_check(void __iomem *base_addr)
+{
+	iowrite32(NSS_CRYPTO_EIP197_OCE_OPUE_ECN_DISABLE, base_addr + NSS_CRYPTO_EIP197_OCE_OPUE_ECN_CFG_REG);
 }
 
 /*
@@ -832,6 +837,8 @@ void nss_crypto_eip197_hw_init(struct platform_device *pdev, struct device_node 
 
 	if (of_property_read_bool(np, "qcom,opue-enabled"))
 		nss_crypto_eip197_hw_boot_opue(&pdev->dev, base_addr, "opue.bin");
+
+	nss_crypto_eip197_hw_disable_ecn_check(base_addr);
 
 	/*
 	 * Allow passing 16 bytes of metadata information from

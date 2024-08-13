@@ -1,4 +1,5 @@
-/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -102,6 +103,11 @@
  * is used to enable this feature
  */
 #define NSS_CRYPTO_EIP197_ENB_MDATA 0x1
+
+/*
+ * disable ECN check.
+ */
+#define NSS_CRYPTO_EIP197_OCE_OPUE_ECN_DISABLE 0x0F
 
 /*
  * Configure Processing engine token control register
@@ -455,6 +461,7 @@
 #define NSS_CRYPTO_EIP197_OCE_OFPP_VERSION_REG (NSS_CRYPTO_EIP197_PE_OCE_SCRATCH_RAM + 0x8)
 #define NSS_CRYPTO_EIP197_OCE_OPUE_CTRL_REG (NSS_CRYPTO_EIP197_PE_OCE_SCRATCH_RAM + 0x14)
 #define NSS_CRYPTO_EIP197_OCE_OPUE_VERSION_REG (NSS_CRYPTO_EIP197_PE_OCE_SCRATCH_RAM)
+#define NSS_CRYPTO_EIP197_OCE_OPUE_ECN_CFG_REG (NSS_CRYPTO_EIP197_PE_OCE_SCRATCH_RAM + 0x24)
 
 #define NSS_CRYPTO_EIP197_PE_OCE_ADAPT_CTRL (NSS_CRYPTO_EIP197_PE_EIP96_BASE + 0x800)
 #define NSS_CRYPTO_EIP197_PE_OCE_PUE_CTRL (NSS_CRYPTO_EIP197_PE_EIP96_BASE + 0x880)
