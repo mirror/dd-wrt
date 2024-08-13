@@ -197,12 +197,20 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 {
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
+	struct ubi_volume *vol;
 
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(to, mtd->erasesize, &offs);
 
 	if (len % mtd->writesize || offs % mtd->writesize) {
 		return -EINVAL;
+	}
+
+	vol = gluebi->desc->vol;
+	if (vol->upd_marker) {
+		printk(KERN_WARNING "%s: reset upd_marker of volume [%s]!\n",
+			__func__, vol->name);
+		vol->upd_marker = 0;
 	}
 
 	bytes_left = len;
@@ -238,6 +246,7 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int err, i, lnum, count;
 	struct gluebi_device *gluebi;
+	struct ubi_volume *vol;
 
 	if (mtd_mod_by_ws(instr->addr, mtd) || mtd_mod_by_ws(instr->len, mtd)) {
 		return -EINVAL;
@@ -246,6 +255,13 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 	lnum = mtd_div_by_eb(instr->addr, mtd);
 	count = mtd_div_by_eb(instr->len, mtd);
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
+
+	vol = gluebi->desc->vol;
+	if (vol->upd_marker) {
+		printk(KERN_WARNING "%s: reset upd_marker of volume [%s]!\n",
+			__func__, vol->name);
+		vol->upd_marker = 0;
+	}
 
 	for (i = 0; i < count - 1; i++) {
 		err = ubi_leb_unmap(gluebi->desc, lnum + i);

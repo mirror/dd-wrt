@@ -50,8 +50,12 @@ static int get_exclusive(struct ubi_volume_desc *desc)
 	users = vol->readers + vol->writers + vol->exclusive + vol->metaonly;
 	ubi_assert(users > 0);
 	if (users > 1) {
-		ubi_err(vol->ubi, "%d users for volume %d", users, vol->vol_id);
-		err = -EBUSY;
+		ubi_err(vol->ubi, "%d users for volume %d. force anyway", users, vol->vol_id);
+//		err = -EBUSY;
+		vol->readers = vol->writers = vol->metaonly = 0;
+		vol->exclusive = 1;
+		err = desc->mode;
+		desc->mode = UBI_EXCLUSIVE;
 	} else {
 		vol->readers = vol->writers = vol->metaonly = 0;
 		vol->exclusive = 1;
