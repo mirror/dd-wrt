@@ -3975,7 +3975,7 @@ struct wpa_driver_ops {
 	 * Returns: 0 on success, -1 on failure
 	 */
 	int (*set_wds_sta)(void *priv, const u8 *addr, int aid, int val,
-			   const char *bridge_ifname, char *ifname_wds);
+			   const char *bridge_ifname, const char *ifname_wds);
 
 	/**
 	 * send_action - Transmit an Action frame

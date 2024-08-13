@@ -59,6 +59,9 @@
 #include "nan_usd_ap.h"
 #include "pasn/pasn_common.h"
 
+#ifdef CONFIG_APUP
+#	include "apup.h"
+#endif // def CONFIG_APUP
 
 #ifdef CONFIG_FILS
 static struct wpabuf *
@@ -3485,8 +3488,8 @@ static u16 check_multi_ap(struct hostapd_data *hapd, struct sta_info *sta,
 }
 
 
-static u16 copy_supp_rates(struct hostapd_data *hapd, struct sta_info *sta,
-			   struct ieee802_11_elems *elems)
+u16 hostapd_copy_supp_rates(struct hostapd_data *hapd, struct sta_info *sta,
+			   const struct ieee802_11_elems *elems)
 {
 	/* Supported rates not used in IEEE 802.11ad/DMG */
 	if (hapd->iface->current_mode &&
@@ -3871,7 +3874,7 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 			       elems->ext_capab_len);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
-	resp = copy_supp_rates(hapd, sta, elems);
+	resp = hostapd_copy_supp_rates(hapd, sta, elems);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
 
@@ -5951,6 +5954,11 @@ static void handle_beacon(struct hostapd_data *hapd,
 				      0);
 
 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
+
+#ifdef CONFIG_APUP
+	if (hapd->conf->apup)
+		apup_process_beacon(hapd, mgmt, len, &elems);
+#endif // def CONFIG_APUP
 }
 
 

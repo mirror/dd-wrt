@@ -8409,23 +8409,13 @@ static int have_ifidx(struct wpa_driver_nl80211_data *drv, int ifidx,
 
 
 static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
-			    const char *bridge_ifname, char *ifname_wds)
+			    const char *bridge_ifname, const char *ifname_wds)
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
-	char name[IFNAMSIZ + 1];
+	const char *name = ifname_wds; // Kept to reduce changes to the minimum
 	union wpa_event_data event;
 	int ret;
-
-	ret = os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
-	if (ret >= (int) sizeof(name))
-		wpa_printf(MSG_WARNING,
-			   "nl80211: WDS interface name was truncated");
-	else if (ret < 0)
-		return ret;
-
-	if (ifname_wds)
-		os_strlcpy(ifname_wds, name, IFNAMSIZ + 1);
 
 	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
 		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
