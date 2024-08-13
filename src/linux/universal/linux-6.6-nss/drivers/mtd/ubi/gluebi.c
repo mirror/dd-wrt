@@ -331,32 +331,33 @@ static int gluebi_create(struct ubi_device_info *di,
 		err_msg("gluebi MTD device %d form UBI device %d volume %d already exists",
 			g->mtd.index, vi->ubi_num, vi->vol_id);
 	mutex_unlock(&devices_mutex);
+
 	if (strcmp(mtd->name, "nvram") && strcmp(mtd->name, "jffs2")) {
-	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
-	part->name = kstrdup(mtd->name, GFP_KERNEL);
-	part->offset = 0;
-	part->size = mtd->size;
-	kfree(mtd->name);
-	mtd->name = kmalloc(vi->name_len + 5, GFP_KERNEL);
-	sprintf((char*)mtd->name, "%s_ubi",part->name); 
-	gluebi_get_device(mtd);	
-	if (mtd_device_register(mtd, part, 1)) {
-		err_msg("cannot add MTD device");
-		gluebi_put_device(mtd);
+		part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
+		part->name = kstrdup(mtd->name, GFP_KERNEL);
+		part->offset = 0;
+		part->size = mtd->size;
 		kfree(mtd->name);
-		kfree(gluebi);
-		return -ENFILE;
-	}
-	}else {
-	
-	if (mtd_device_register(mtd, NULL, 0)) {
-		err_msg("cannot add MTD device");
-		gluebi_put_device(mtd);
-		kfree(mtd->name);
-		kfree(gluebi);
-		return -ENFILE;
-	}
-	
+		mtd->name = kmalloc(vi->name_len + 5, GFP_KERNEL);
+		sprintf((char *)mtd->name, "%s_ubi", part->name);
+		gluebi_get_device(mtd);
+		if (mtd_device_register(mtd, part, 1)) {
+			err_msg("cannot add MTD device");
+			gluebi_put_device(mtd);
+			kfree(mtd->name);
+			kfree(gluebi);
+			mutex_lock(&devices_mutex);
+			return -ENFILE;
+		}
+	} else {
+		if (mtd_device_register(mtd, NULL, 0)) {
+			err_msg("cannot add MTD device");
+			gluebi_put_device(mtd);
+			kfree(mtd->name);
+			kfree(gluebi);
+			mutex_lock(&devices_mutex);
+			return -ENFILE;
+		}
 	}
 
 	mutex_lock(&devices_mutex);
