@@ -250,12 +250,15 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master, const struct mtd_par
 						parts[uimage_part].name = KERNEL_PART_NAME;
 						parts[uimage_part].offset = uimage_offset;
 						parts[uimage_part].size = uimage_size;
+						parts[uimage_part].mask_flags |= MTD_WRITEABLE;
+
 						if (type == MTDSPLIT_PART_TYPE_UBI)
 							parts[rf_part].name = UBI_PART_NAME;
 						else
 							parts[rf_part].name = ROOTFS_PART_NAME;
 						parts[rf_part].offset = rootfs_offset;
 						parts[rf_part].size = rootfs_size;
+						parts[rf_part].mask_flags |= MTD_WRITEABLE;
 
 						vfree(buf);
 

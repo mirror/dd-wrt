@@ -250,7 +250,7 @@ nandc_set_reg(chip, reg,			\
 #define QPIC_PER_CW_CMD_SGL		32
 #define QPIC_PER_CW_DATA_SGL		8
 
-#define QPIC_NAND_COMPLETION_TIMEOUT	msecs_to_jiffies(2000)
+#define QPIC_NAND_COMPLETION_TIMEOUT	msecs_to_jiffies(6000)
 
 /*
  * Flags used in DMA descriptor preparation helper functions
