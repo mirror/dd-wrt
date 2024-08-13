@@ -26,6 +26,7 @@
 #include <linux/mtd/ubi.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include "ubi.h"
 #include "ubi-media.h"
 
 #define err_msg(fmt, ...)                                   \
