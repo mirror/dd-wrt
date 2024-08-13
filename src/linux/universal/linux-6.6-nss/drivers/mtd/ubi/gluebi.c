@@ -32,7 +32,6 @@
 	pr_err("gluebi (pid %d): %s: " fmt "\n",            \
 	       current->pid, __func__, ##__VA_ARGS__)
 
-static spinlock_t lock;
 /**
  * struct gluebi_device - a gluebi device description data structure.
  * @mtd: emulated MTD device description object
@@ -157,7 +156,6 @@ static int gluebi_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
-	spin_lock(&lock);
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(from, mtd->erasesize, &offs);
 	bytes_left = len;
@@ -178,7 +176,6 @@ static int gluebi_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 
 	*retlen = len - bytes_left;
-	spin_unlock(&lock);
 	return err;
 }
 
@@ -198,13 +195,11 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 {
 	int err = 0, lnum, offs, bytes_left;
 	struct gluebi_device *gluebi;
-	spin_lock(&lock);
 
 	gluebi = container_of(mtd, struct gluebi_device, mtd);
 	lnum = div_u64_rem(to, mtd->erasesize, &offs);
 
 	if (len % mtd->writesize || offs % mtd->writesize) {
-		spin_unlock(&lock);
 		return -EINVAL;
 	}
 
@@ -226,7 +221,6 @@ static int gluebi_write(struct mtd_info *mtd, loff_t to, size_t len,
 	}
 
 	*retlen = len - bytes_left;
-	spin_unlock(&lock);
 	return err;
 }
 
@@ -242,10 +236,8 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int err, i, lnum, count;
 	struct gluebi_device *gluebi;
-	spin_lock(&lock);
 
 	if (mtd_mod_by_ws(instr->addr, mtd) || mtd_mod_by_ws(instr->len, mtd)) {
-		spin_unlock(&lock);
 		return -EINVAL;
 	}
 
@@ -269,12 +261,10 @@ static int gluebi_erase(struct mtd_info *mtd, struct erase_info *instr)
 	if (err)
 		goto out_err;
 
-	spin_unlock(&lock);
 	return 0;
 
 out_err:
 	instr->fail_addr = (long long)lnum * mtd->erasesize;
-	spin_unlock(&lock);
 	return err;
 }
 
@@ -507,7 +497,6 @@ static struct notifier_block gluebi_notifier = {
 
 static int __init ubi_gluebi_init(void)
 {
-	spin_lock_init(&lock);
 	return ubi_register_volume_notifier(&gluebi_notifier, 0);
 }
 
