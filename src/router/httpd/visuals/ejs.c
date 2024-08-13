@@ -2125,6 +2125,8 @@ EJ_VISIBLE void ej_getwirelessmode(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "Capture(wl_basic.wdssta_mtik)");
 	if (nvram_match(mode, "wdsap"))
 		websWrite(wp, "Capture(wl_basic.wdsap)");
+	if (nvram_match(mode, "apup"))
+		websWrite(wp, "Capture(wl_basic.apup)");
 	if (nvram_match(mode, "mesh"))
 		websWrite(wp, "Capture(wl_basic.mesh)");
 	if (nvram_match(mode, "tdma"))

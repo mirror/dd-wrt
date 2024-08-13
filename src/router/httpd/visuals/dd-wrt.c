@@ -136,7 +136,7 @@ int is_ap(char *prefix)
 {
 	char ap[16];
 	sprintf(ap, "%s_mode", prefix);
-	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap");
+	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup");
 }
 
 int is_station(char *prefix)
@@ -3369,6 +3369,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
 				}
+				if (has_apup(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"apup\\\" %s >\" + wl_basic.apup + \"</option>\");\n",
+						nvram_match(wl_mode, "apup") ? "selected=\\\"selected\\\"" : "");
+				
+				
+				}
 			}
 #endif
 #if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
@@ -4384,6 +4392,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 						nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+				}
+				if (has_apup(prefix)) {
+					websWrite(
+						wp,
+						"document.write(\"<option value=\\\"apup\\\" %s >\" + wl_basic.apup + \"</option>\");\n",
+						nvram_match(wl_mode, "apup") ? "selected=\\\"selected\\\"" : "");
+				
+				
 				}
 			}
 #endif
