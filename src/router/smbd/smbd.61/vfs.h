@@ -236,7 +236,8 @@ int ksmbd_vfs_remove_xattr(struct mnt_idmap *idmap,
 #else
 int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 #endif
-			   const struct path *path, char *attr_name);
+			   const struct path *path, char *attr_name,
+			   bool get_write);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
 int ksmbd_vfs_kern_path_locked(struct ksmbd_work *work, char *name,
 			       unsigned int flags, struct path *parent_path,

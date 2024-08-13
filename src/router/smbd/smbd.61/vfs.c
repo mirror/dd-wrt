@@ -747,6 +747,41 @@ out:
 	return err;
 }
 
+int vfs_write2(struct file *file, const char __user *buf, size_t count, loff_t *pos)
+{
+	int ret;
+
+	if (!(file->f_mode & FMODE_WRITE))
+		return -EBADF;
+	if (!(file->f_mode & FMODE_CAN_WRITE))
+		return -EINVAL;
+	if (unlikely(!access_ok(buf, count)))
+		return -EFAULT;
+
+	ret = rw_verify_area(WRITE, file, pos, count);
+	if (ret) {
+		ksmbd_debug(VFS, "rw_verify_area failed, err = %d\n", ret);
+		return ret;
+	}
+	if (count > MAX_RW_COUNT)
+		count =  MAX_RW_COUNT;
+	if (file->f_op->write) {
+		file_start_write(file);
+		ret = file->f_op->write(file, buf, count, pos);
+		if (ret > 0) {
+			fsnotify_modify(file);
+			add_wchar(current, ret);
+		}
+		inc_syscw(current);
+		file_end_write(file);
+		if (ret)
+			ksmbd_debug(VFS, "f_op->write failed, err = %d\n", ret);
+	} else
+		ret = kernel_write(file, buf, count, pos);
+
+	return ret;
+}
+
 /**
  * ksmbd_vfs_write() - vfs helper for smb file write
  * @work:	work
@@ -799,7 +834,7 @@ int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 	/* Do we need to break any of a levelII oplock? */
 	smb_break_all_levII_oplock(work, fp, 1);
 
-	err = kernel_write(filp, buf, count, pos);
+	err = vfs_write2(filp, buf, count, pos);
 	if (err < 0) {
 		ksmbd_debug(VFS, "smb write failed, err = %d\n", err);
 		goto out;
@@ -2015,7 +2050,7 @@ int ksmbd_vfs_remove_acl_xattrs(struct user_namespace *user_ns,
 			err = vfs_remove_acl(user_ns, path->dentry, name);
 #endif
 #else
-			err = ksmbd_vfs_remove_xattr(user_ns, path, name);
+			err = ksmbd_vfs_remove_xattr(user_ns, path, name, false);
 #endif
 			if (err)
 				ksmbd_debug(SMB,
@@ -2053,9 +2088,9 @@ int ksmbd_vfs_remove_sd_xattrs(struct user_namespace *user_ns,
 
 		if (!strncmp(name, XATTR_NAME_SD, XATTR_NAME_SD_LEN)) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
-			err = ksmbd_vfs_remove_xattr(idmap, path, name);
+			err = ksmbd_vfs_remove_xattr(idmap, path, name, true);
 #else
-			err = ksmbd_vfs_remove_xattr(user_ns, path, name);
+			err = ksmbd_vfs_remove_xattr(user_ns, path, name, true);
 #endif
 			if (err)
 				ksmbd_debug(SMB, "remove xattr failed : %s\n", name);
@@ -2500,13 +2535,16 @@ int ksmbd_vfs_remove_xattr(struct mnt_idmap *idmap,
 #else
 int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 #endif
-			   const struct path *path, char *attr_name)
+			   const struct path *path, char *attr_name,
+			   bool get_write)
 {
 	int err;
 
-	err = mnt_want_write(path->mnt);
-	if (err)
-		return err;
+	if (get_write == true) {
+		err = mnt_want_write(path->mnt);
+		if (err)
+			return err;
+	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
@@ -2517,7 +2555,8 @@ int ksmbd_vfs_remove_xattr(struct user_namespace *user_ns,
 #else
 	err = vfs_removexattr(path->dentry, attr_name);
 #endif
-	mnt_drop_write(path->mnt);
+	if (get_write == true)
+		mnt_drop_write(path->mnt);
 
 	return err;
 }
