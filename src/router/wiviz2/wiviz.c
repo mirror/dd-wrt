@@ -1099,6 +1099,8 @@ void readWL(wiviz_cfg * cfg)
 		ap = 1;
 	if (nvram_nmatch("wdsap", "%s_mode", wl_dev))
 		ap = 1;
+	if (nvram_nmatch("apup", "%s_mode", wl_dev))
+		ap = 1;
 #else
 	if (nvram_match("wifi_display", "wl0")) {
 		if (nvram_match("ap", "wl0_oldmode"))
