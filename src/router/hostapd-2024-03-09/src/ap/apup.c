@@ -23,6 +23,14 @@
 #include "ap_drv_ops.h"
 #include "sta_info.h"
 
+#ifdef UBUS_SUPPORT
+#	include "ubus.h"
+#endif
+
+#ifdef UCODE_SUPPORT
+#	include "ucode.h"
+#endif
+
 void apup_process_beacon(struct hostapd_data *hapd,
               const struct ieee80211_mgmt *mgmt, size_t len,
               const struct ieee802_11_elems *elems )
@@ -149,4 +157,12 @@ void apup_process_beacon(struct hostapd_data *hapd,
 	           "apup_process_beacon(...) Added APuP peer at %s with flags: %d,"
 	           " capabilities %d",
 	           mIfname, sta_ret->flags, sta_ret->capability);
+
+#ifdef UBUS_SUPPORT
+	hostapd_ubus_notify_apup_newpeer(hapd, mgmt->bssid, mIfname);
+#endif
+
+#ifdef UCODE_SUPPORT
+	hostapd_ucode_apup_newpeer(hapd, mIfname);
+#endif
 }
