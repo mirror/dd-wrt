@@ -135,7 +135,7 @@
 		 * It seems that Delta AFB0712VHB fan has its tacho
 		 * output connected to GPIO 65.
 		 */
-		//rpm-gpios = <&tlmm 65 GPIO_ACTIVE_HIGH>;
+		rpm-gpios = <&tlmm 65 GPIO_ACTIVE_HIGH>;
 		gpio-fan,speed-map = <    0 0
 				          1600 1
 				          1850 2

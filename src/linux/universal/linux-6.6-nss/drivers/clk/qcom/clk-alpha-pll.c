@@ -784,6 +784,7 @@ alpha_huayra_pll_round_rate(unsigned long rate, unsigned long prate,
 	quotient = rate;
 	remainder = do_div(quotient, prate);
 	*l = quotient;
+	wmb();
 
 	if (!remainder) {
 		*a = 0;
@@ -801,10 +802,14 @@ alpha_huayra_pll_round_rate(unsigned long rate, unsigned long prate,
 	 * of [-0.5, 0.5) so if quotient >= 0.5 then increment the l value
 	 * since alpha value will be subtracted in this case.
 	 */
-	if (quotient >= BIT(PLL_HUAYRA_ALPHA_WIDTH - 1))
+	if (quotient >= BIT(PLL_HUAYRA_ALPHA_WIDTH - 1)) {
 		*l += 1;
+		wmb();
+		quotient = BIT(PLL_HUAYRA_ALPHA_WIDTH) - quotient;
+	}
 
 	*a = quotient;
+	wmb();
 	return alpha_huayra_pll_calc_rate(prate, *l, *a);
 }
 
