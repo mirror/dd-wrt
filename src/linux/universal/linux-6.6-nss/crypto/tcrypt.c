@@ -41,7 +41,7 @@
 /*
  * Need slab memory for testing (size in number of pages).
  */
-#define TVMEMSIZE	4
+#define TVMEMSIZE	6
 
 /*
 * Used by test_cipher_speed()
