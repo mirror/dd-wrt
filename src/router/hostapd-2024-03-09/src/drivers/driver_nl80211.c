@@ -3102,9 +3102,11 @@ static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss,
 static void wpa_driver_nl80211_del_beacon_all(struct i802_bss *bss)
 {
 	int link_id;
-
-	for_each_link_default(bss->valid_links, link_id, NL80211_DRV_LINK_ID_NA)
+	for_each_link_default(bss->valid_links, link_id, NL80211_DRV_LINK_ID_NA) {
+		if (link_id == NL80211_DRV_LINK_ID_NA)
+			break;
 		wpa_driver_nl80211_del_beacon(bss, link_id);
+	}
 }
 
 
