@@ -41,7 +41,7 @@ void addbssid(FILE *fp, char *prefix)
 		fprintf(fp, "\tbssid=%s\n", c_bssid);
 }
 
-void setupSupplicant(char *prefix)
+void setupSupplicant(const char *prefix)
 {
 	char akm[16];
 

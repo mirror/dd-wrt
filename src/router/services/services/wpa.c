@@ -117,7 +117,7 @@ void run_nas_notify(char *ifname)
 	_log_evalpid(argv, ">/dev/console", 0, &pid);
 }
 
-static void start_radius(char *prefix)
+static void start_radius(const char *prefix)
 {
 	// wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
 
@@ -186,7 +186,7 @@ static void convert_wds(int instance)
 	}
 }
 
-static char *getSecMode(char *prefix)
+static char *getSecMode(const char *prefix)
 {
 	char wep[32];
 	char crypto[32];
@@ -208,7 +208,7 @@ static char *getSecMode(char *prefix)
 		return "0";
 }
 
-static char *getAuthMode(char *prefix)
+static char *getAuthMode(const char *prefix)
 {
 	char akm[32];
 
@@ -233,7 +233,7 @@ static char *getAuthMode(char *prefix)
 		return "255";
 }
 
-static char *getKey(char *prefix)
+static char *getKey(const char *prefix)
 {
 	char akm[32];
 
@@ -247,7 +247,7 @@ static char *getKey(char *prefix)
 }
 
 /*
- * static void start_nas_ap(char *prefix,char *type) { char sec[32];
+ * static void start_nas_ap(const char *prefix,char *type) { char sec[32];
  * sprintf(sec,"%s_security_mode",prefix); int i; for (i=0;i<strlen(sec);i++)
  * if (sec[i]=='.')sec[i]='X';
  * 
@@ -355,7 +355,7 @@ static void stop_nas_process(void)
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
-extern void setupSupplicant(char *prefix);
+extern void setupSupplicant(const char *prefix);
 #endif
 void start_nas(void)
 {

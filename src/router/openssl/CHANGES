@@ -9,7 +9,8 @@
 
  Changes between 1.1.1v and 1.1.1w [11 Sep 2023]
 
-*) Fix POLY1305 MAC implementation corrupting XMM registers on Windows.
+
+ *) Fix POLY1305 MAC implementation corrupting XMM registers on Windows.
 
     The POLY1305 MAC (message authentication code) implementation in OpenSSL
     does not save the contents of non-volatile XMM registers on Windows 64

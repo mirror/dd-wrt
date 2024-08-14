@@ -419,8 +419,8 @@ static void load_nss_ipq60xx(int profile)
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq60xx");
 		insmod("qca-nss-crypto-ipq60xx");
-//		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
-//		insmod("qca-nss-netlink-ipq60xx");
+		//		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
+		//		insmod("qca-nss-netlink-ipq60xx");
 
 		set_memprofile(4, 1, profile);
 
@@ -463,8 +463,8 @@ static void load_nss_ipq50xx(int profile)
 	if (nvram_match("nss", "1")) {
 		insmod("qca-nss-drv-ipq50xx");
 		insmod("qca-nss-crypto-ipq50xx");
-//		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
-//		insmod("qca-nss-netlink-ipq50xx");
+		//		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
+		//		insmod("qca-nss-netlink-ipq50xx");
 
 		set_memprofile(2, 1, profile);
 
@@ -510,8 +510,8 @@ static void load_nss_ipq807x(int profile)
 		insmod("pptp");
 		insmod("vxlan");
 		insmod("qca-nss-drv-ipq807x");
-//		insmod("qca-nss-crypto-ipq807x");
-//		insmod("qca-nss-cfi-cryptoapi-ipq807x");
+		//		insmod("qca-nss-crypto-ipq807x");
+		//		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
 
 		set_memprofile(4, 2, profile);
@@ -1276,7 +1276,38 @@ void start_sysinit(void)
 
 	return;
 }
+static void load_ath11k(int profile, int pci, int nss)
+{
+	char postfix[32] = { 0 };
+	char driver_ath11k[32];
+	char driver_ath11k_ahb[32];
+	char driver_ath11k_pci[32];
 
+	int od = nvram_default_geti("power_overdrive", 0);
+	char overdrive[32];
+	sprintf(overdrive, "poweroffset=%d", od);
+
+	if (profile == 512)
+		strcpy(postfix, "-512");
+	sprintf(driver_ath11k, "ath11k%s", postfix);
+	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
+	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
+
+	insmod("qmi_helpers");
+	if (nss) {
+		insmod("mac80211");
+		eval_silence("insmod", driver_ath11k, overdrive);
+	} else {
+		eval_silence("insmod", "mac80211", "nss_redirect=1");
+		eval_silence(
+			"insmod", driver_ath11k, "nss_offload=0", "frame_mode=1",
+			overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
+	}
+	insmod(driver_ath11k_ahb);
+	if (pci)
+		insmod(driver_ath11k_pci);
+}
 void load_wifi_drivers(void)
 {
 	int notloaded = 0;
@@ -1302,44 +1333,13 @@ void load_wifi_drivers(void)
 		}
 		insmod("compat_firmware_class");
 		insmod("cfg80211");
-		int od = nvram_default_geti("power_overdrive", 0);
-		char overdrive[32];
-		sprintf(overdrive, "poweroffset=%d", od);
 		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
-			eval_silence("insmod", "mac80211", "nss_redirect=1");
-			insmod("qmi_helpers");
-			eval_silence(
-				"insmod", "ath11k-512", "nss_offload=0", "frame_mode=1",
-				overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-			eval_silence("insmod", "mac80211");
-			//			insmod("qmi_helpers");
-			//			eval_silence("insmod", "ath11k-512", overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-			insmod("ath11k_ahb-512");
-			insmod("ath11k_pci-512");
-			sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
+			load_ath11k(profile, 1, 0);
 			break;
 		default:
-			insmod("mac80211");
-			insmod("qmi_helpers");
-			if (profile == 512) {
-				if (!nvram_match("ath11k_nss", "0"))
-					eval_silence("insmod", "ath11k-512", overdrive);
-				else
-					eval_silence(
-						"insmod", "ath11k-512", "nss_offload=0",
-						overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-				insmod("ath11k_ahb-512");
-			} else {
-				if (!nvram_match("ath11k_nss", "0"))
-					eval_silence("insmod", "ath11k", overdrive);
-				else
-					eval_silence(
-						"insmod", "ath11k", "nss_offload=0",
-						overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-				insmod("ath11k_ahb");
-			}
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0"));
 			break;
 		}
 		wait_for_wifi();

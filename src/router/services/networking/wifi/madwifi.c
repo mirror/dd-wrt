@@ -174,7 +174,7 @@ static int getMaxPower(char *ifname)
 	return max;
 }
 
-void setupKey(char *prefix)
+void setupKey(const char *prefix)
 {
 	char akm[16];
 	char mode[16];
@@ -204,7 +204,7 @@ void setupKey(char *prefix)
 	}
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh)
+void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh)
 {
 	char temp_grpstring[256] = { 0, 0 };
 	char akm[16];
@@ -344,12 +344,12 @@ int inline issuperchannel(void)
 int issuperchannel(void);
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(const char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
-void addvhtcaps(char *prefix, FILE *fp)
+void addvhtcaps(const char *prefix, FILE *fp)
 {
 /* must use integer mask */
 #define IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_160MHZ 0x00000004
@@ -617,7 +617,7 @@ void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
 	}
 }
 
-void check_cryptomod(char *prefix)
+void check_cryptomod(const char *prefix)
 {
 	insmod("crypto_hash crypto_null aead ctr ccm cmac");
 	if (has_wpa3(prefix)) {
@@ -638,7 +638,7 @@ void check_cryptomod(char *prefix)
  */
 int isregistered(void);
 
-void setupSupplicant(char *prefix, char *ssidoverride)
+void setupSupplicant(const char *prefix, char *ssidoverride)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1639,7 +1639,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 
 #ifdef HAVE_MADWIFI
 
-void setupHostAP(char *prefix, char *driver, int iswan)
+void setupHostAP(const char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())

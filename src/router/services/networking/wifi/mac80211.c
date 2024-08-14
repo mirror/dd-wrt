@@ -65,11 +65,11 @@ static int cur_freq2;
 static int cur_channeloffset;
 static int cur_iht;
 static char *cur_caps;
-void check_cryptomod(char *prefix);
+void check_cryptomod(const char *prefix);
 
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
-static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
-void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss);
+static void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc);
+void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss);
 
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
@@ -80,12 +80,12 @@ int inline issuperchannel(void)
 int issuperchannel(void);
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(const char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
-static const char *gethtmode(char *prefix)
+static const char *gethtmode(const char *prefix)
 {
 	ENTER;
 	char *netmode = nvram_nget("%s_net_mode", prefix);
@@ -665,9 +665,9 @@ void configure_single_ath9k(int count)
 	}
 }
 
-void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
+void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
-void setupHostAP_generic_ath9k(char *prefix, FILE *fp, int isrepeater, int aoss)
+void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss)
 {
 	MAC80211DEBUG();
 	int freq = 0;
@@ -1831,9 +1831,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fclose(fp);
 }
 
-void addvhtcaps(char *prefix, FILE *fp);
+void addvhtcaps(const char *prefix, FILE *fp);
 
-static char *makescanlist(char *prefix, char *value)
+static char *makescanlist(const char *prefix, char *value)
 {
 	MAC80211DEBUG();
 	char *clone = strdup(value);
@@ -1988,7 +1988,7 @@ void addbssid(FILE *fp, char *prefix);
 void eap_sta_key_mgmt(FILE *fp, char *prefix);
 void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht);
 
-void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
+void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())

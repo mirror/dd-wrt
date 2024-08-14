@@ -148,7 +148,7 @@ static int web_lanport = HTTP_PORT;
 
 static unsigned int now_wday, now_hrmin;
 
-static void va_save2file(char *prefix, const char *fmt, va_list args)
+static void va_save2file(const char *prefix, const char *fmt, va_list args)
 {
 	FILE *fp;
 	if ((fp = fopen(IPTABLES_SAVE_FILE, "a")) == NULL) {

@@ -488,7 +488,7 @@ static void set_regulation(int card, char *code, char *rev)
 	}
 }
 
-static void restore_set(char *prefix, struct nvram_param *set)
+static void restore_set(const char *prefix, struct nvram_param *set)
 {
 	struct nvram_param *t;
 	for (t = set; t->name; t++) {

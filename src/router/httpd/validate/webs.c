@@ -2361,7 +2361,7 @@ static void delpeer(int tun, int peer)
 	delpeervalue("obfkey", tun, peer);
 }
 #endif
-static void copytunvalue_prefix(char *prefix, char *valuename, int from, int to)
+static void copytunvalue_prefix(const char *prefix, char *valuename, int from, int to)
 {
 	char name[32];
 	sprintf(name, "%s%d_%s", prefix, from, valuename);
@@ -2375,7 +2375,7 @@ static void copytunvalue(char *valuename, int from, int to)
 	copytunvalue_prefix("oet", valuename, from, to);
 }
 
-static void deltunvalue_prefix(char *prefix, char *valuename, int tun)
+static void deltunvalue_prefix(const char *prefix, char *valuename, int tun)
 {
 	char name[32];
 	sprintf(name, "%s%d_%s", prefix, tun, valuename);
@@ -3303,7 +3303,7 @@ void trigger_del(webs_t wp)
 	delfrom("port_trigger", "trigger_entries", todel);
 }
 
-int get_vifcount(char *prefix)
+int get_vifcount(const char *prefix)
 {
 	char *next;
 	char var[80];
@@ -3432,7 +3432,7 @@ char *getFreeLocalIpNet()
 	return "192.168.12.1";
 }
 #endif
-void add_vifs_single(char *prefix, int device)
+void add_vifs_single(const char *prefix, int device)
 {
 	int count = get_vifcount(prefix);
 
@@ -3624,7 +3624,7 @@ void add_vifs(webs_t wp)
 }
 
 #ifdef HAVE_GUESTPORT
-void move_vif(char *prefix, char *svif, char *tvif)
+void move_vif(const char *prefix, char *svif, char *tvif)
 {
 	char command[64];
 
@@ -4078,7 +4078,7 @@ static char *vapsettings[] = {
 	"twt_required",
 };
 
-static void movevap(char *prefix, int source, int target, int bonly)
+static void movevap(const char *prefix, int source, int target, int bonly)
 {
 	char sname[32];
 	char ssname[32];
@@ -4220,7 +4220,7 @@ static void movevap(char *prefix, int source, int target, int bonly)
 	}
 }
 
-void remove_vifs_single(char *prefix, int vap)
+void remove_vifs_single(const char *prefix, int vap)
 {
 	char wif[16];
 
@@ -4349,7 +4349,7 @@ void remove_vifs(webs_t wp)
 	remove_vifs_single(prefix, vap);
 }
 
-static void copyval(char *prefix, char *val)
+static void copyval(const char *prefix, char *val)
 {
 	char name[128];
 	char nv[128];
@@ -4368,7 +4368,7 @@ static void copyval(char *prefix, char *val)
 	}
 }
 
-static void pasteval(char *prefix, char *val)
+static void pasteval(const char *prefix, char *val)
 {
 	char name[128];
 	char nv[128];

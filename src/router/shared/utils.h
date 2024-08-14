@@ -991,7 +991,7 @@ extern unsigned int get_register_value(unsigned short id, unsigned short num);
 int ct_openlog(const char *ident, int option, int facility, char *log_name);
 void ct_syslog(int level, int enable, const char *fmt, ...);
 void ct_logger(int level, const char *fmt, ...);
-struct wl_assoc_mac *get_wl_assoc_mac(char *prefix, int *c);
+struct wl_assoc_mac *get_wl_assoc_mac(const char *prefix, int *c);
 
 extern struct detect_wans *detect_protocol(char *wan_face, char *lan_face, char *type);
 
@@ -1238,7 +1238,7 @@ static inline int is_wil6210(const char *prefix)
 
 #ifdef HAVE_ATH9K
 extern int is_mac80211(const char *prefix);
-extern int is_ap8x(char *prefix);
+extern int is_ap8x(const char *prefix);
 extern int has_channelsurvey(const char *prefix);
 extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
@@ -1266,114 +1266,114 @@ static inline int is_mac80211(const char *prefix)
 	return 0;
 }
 
-static inline int is_ap8x(char *prefix)
+static inline int is_ap8x(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_spectralscanning(char *prefix)
+static inline int has_spectralscanning(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_qboost(char *prefix)
+static inline int has_qboost(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_qam256(char *prefix)
+static inline int has_qam256(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_wave2(char *prefix)
+static inline int has_wave2(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_vht160_2by2(char *prefix)
+static inline int has_vht160_2by2(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_ar900b(char *prefix)
+static inline int has_ar900b(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_ax(char *prefix)
+static inline int has_ax(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_dualband(char *prefix)
+static inline int has_dualband(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_no_apmode(char *prefix)
+static inline int has_no_apmode(const char *prefix)
 {
 	return 0;
 }
 
 #ifdef HAVE_MADWIFI
-static inline int has_wdsap(char *prefix)
+static inline int has_wdsap(const char *prefix)
 {
 	return 1;
 }
 #else
-static inline int has_wdsap(char *prefix)
+static inline int has_wdsap(const char *prefix)
 {
 	return 0;
 }
 #endif
 #ifdef HAVE_IPQ6018
-static inline int has_apup(char *prefix)
+static inline int has_apup(const char *prefix)
 {
 	return 1;
 }
 #else
-static inline int has_apup(char *prefix)
+static inline int has_apup(const char *prefix)
 {
 	return 0;
 }
 #endif
-static inline int has_nolivesurvey(char *prefix)
+static inline int has_nolivesurvey(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_qboost_tdma(char *prefix)
+static inline int has_qboost_tdma(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_beacon_limit(char *prefix)
+static inline int has_beacon_limit(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_channelsurvey(char *prefix)
+static inline int has_channelsurvey(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_half(char *prefix)
+static inline int has_half(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_quarter(char *prefix)
+static inline int has_quarter(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_subquarter(char *prefix)
+static inline int has_subquarter(const char *prefix)
 {
 	return 0;
 }
 
-static inline int has_fwswitch(char *prefix)
+static inline int has_fwswitch(const char *prefix)
 {
 	return 0;
 }
@@ -1570,7 +1570,7 @@ u_int64_t freediskSpace(char *path);
 const char *getIsoName(char *country);
 int has_gateway(void); // return 1 if nat/gateway mode is enabled for wan
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
-char *getRADev(char *prefix);
+char *getRADev(const char *prefix);
 #endif
 
 #ifndef HAVE_SYSLOG

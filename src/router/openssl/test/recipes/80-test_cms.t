@@ -288,7 +288,8 @@ my @smime_cms_tests = (
 	"-secretkey", "000102030405060708090A0B0C0D0E0F", "-out", "smtst.txt" ]
     ],
 
-[ "encrypted content test streaming PEM format -noout, 128 bit AES key",
+
+    [ "encrypted content test streaming PEM format -noout, 128 bit AES key",
       [ "-EncryptedData_encrypt", "-in", $smcont, "-outform", "PEM",
 	"-aes128", "-secretkey", "000102030405060708090A0B0C0D0E0F",
 	"-stream", "-noout" ],

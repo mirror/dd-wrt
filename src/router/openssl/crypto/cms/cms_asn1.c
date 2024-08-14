@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2016 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -104,7 +104,8 @@ ASN1_NDEF_SEQUENCE_cb(CMS_EncryptedContentInfo, cms_ec_cb) = {
         ASN1_SIMPLE(CMS_EncryptedContentInfo, contentType, ASN1_OBJECT),
         ASN1_SIMPLE(CMS_EncryptedContentInfo, contentEncryptionAlgorithm, X509_ALGOR),
         ASN1_IMP_OPT(CMS_EncryptedContentInfo, encryptedContent, ASN1_OCTET_STRING_NDEF, 0)
-}  ASN1_NDEF_SEQUENCE_END_cb(CMS_EncryptedContentInfo, CMS_EncryptedContentInfo)
+} ASN1_NDEF_SEQUENCE_END_cb(CMS_EncryptedContentInfo, CMS_EncryptedContentInfo)
+
 
 ASN1_SEQUENCE(CMS_KeyTransRecipientInfo) = {
         ASN1_EMBED(CMS_KeyTransRecipientInfo, version, INT32),

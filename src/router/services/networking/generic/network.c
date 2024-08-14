@@ -5152,7 +5152,7 @@ static void writenet(char *path, int cpumask, char *ifname)
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_MAC80211_COMPRESS
 
-static void set_frame_compression(char *prefix, char *interface)
+static void set_frame_compression(const char *prefix, char *interface)
 {
 	char compr[32];
 	sprintf(compr, "%s_fc_th", prefix);
@@ -5171,7 +5171,7 @@ static void set_frame_compression(char *prefix, char *interface)
 	}
 }
 #else
-static void set_frame_compression(char *prefix, char *interface)
+static void set_frame_compression(const char *prefix, char *interface)
 {
 }
 #endif
