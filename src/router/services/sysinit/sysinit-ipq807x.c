@@ -1281,6 +1281,7 @@ static void load_ath11k(int profile, int pci, int nss)
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
 	char driver_ath11k_ahb[32];
+	char driver_ath11k_pci[32];
 
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
@@ -1288,9 +1289,9 @@ static void load_ath11k(int profile, int pci, int nss)
 
 	if (profile == 512)
 		strcpy(postfix, "-512");
-	sprintf(driver_ath11k, "ath11k-%s", postfix);
-	sprintf(driver_ath11k_ahb, "ath11k_ahb-%s", postfix);
-	sprintf(driver_ath11k_pci, "ath11k_pci-%s", postfix);
+	sprintf(driver_ath11k, "ath11k%s", postfix);
+	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
+	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
 
 	if (nss) {
 		insmod("mac80211");
