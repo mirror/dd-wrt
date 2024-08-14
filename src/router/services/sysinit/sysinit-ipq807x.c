@@ -1293,6 +1293,7 @@ static void load_ath11k(int profile, int pci, int nss)
 	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
 
+	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
 		eval_silence("insmod", driver_ath11k, overdrive);
