@@ -402,7 +402,7 @@ static inline int has_he160(const char *prefix)
 #endif
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-const char *get_channeloffset(char *prefix, int *iht, int *channeloffset);
+const char *get_channeloffset(const char *prefix, int *iht, int *channeloffset);
 extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
@@ -536,13 +536,13 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 #define AUTO_ALL 0
 
 extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags);
-extern void mac80211_set_antennas(char *prefix, uint32_t tx_ant, uint32_t rx_ant);
-extern int mac80211_get_avail_tx_antenna(char *prefix);
-extern int mac80211_get_avail_rx_antenna(char *prefix);
+extern void mac80211_set_antennas(const char *prefix, uint32_t tx_ant, uint32_t rx_ant);
+extern int mac80211_get_avail_tx_antenna(const char *prefix);
+extern int mac80211_get_avail_rx_antenna(const char *prefix);
 
 extern struct wifi_interface *mac80211_get_interface(char *dev);
-extern int mac80211_get_configured_tx_antenna(char *prefix);
-extern int mac80211_get_configured_rx_antenna(char *prefix);
+extern int mac80211_get_configured_tx_antenna(const char *prefix);
+extern int mac80211_get_configured_rx_antenna(const char *prefix);
 extern int mac80211_check_valid_frequency(const char *interface, char *country, int freq);
 extern int getFrequency_mac80211(const char *interface);
 extern int mac80211_get_phyidx_by_vifname(const char *vif);

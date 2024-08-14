@@ -915,7 +915,7 @@ int issuperchannel(void);
 
 #endif
 
-static int cansuperchannel(char *prefix)
+static int cansuperchannel(const char *prefix)
 {
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
@@ -2292,9 +2292,9 @@ nla_put_failure:
 	return 0;
 }
 
-static int mac80211_get_antennas(char *prefix, int which, int direction);
+static int mac80211_get_antennas(const char *prefix, int which, int direction);
 
-void mac80211_set_antennas(char *prefix, uint32_t tx_ant, uint32_t rx_ant)
+void mac80211_set_antennas(const char *prefix, uint32_t tx_ant, uint32_t rx_ant)
 {
 	int maxrxchain = mac80211_get_antennas(prefix, 0, 1);
 	int maxtxchain = mac80211_get_antennas(prefix, 0, 0);
@@ -2415,7 +2415,7 @@ int has_tdma(const char *prefix)
 }
 #endif
 
-static int mac80211_get_antennas(char *prefix, int which, int direction)
+static int mac80211_get_antennas(const char *prefix, int which, int direction)
 {
 	int phy = get_ath9k_phy_ifname(prefix);
 	mac80211_init();
@@ -2578,7 +2578,7 @@ int has_cmic(const char *prefix)
 	return ret;
 }
 
-int mac80211_get_avail_tx_antenna(char *prefix)
+int mac80211_get_avail_tx_antenna(const char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 0, 0);
 	if (ret > 15 && (ret & 0x0f) == 0)
@@ -2588,7 +2588,7 @@ int mac80211_get_avail_tx_antenna(char *prefix)
 	return (ret);
 }
 
-int mac80211_get_avail_rx_antenna(char *prefix)
+int mac80211_get_avail_rx_antenna(const char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 0, 1);
 	if (ret > 15 && (ret & 0x0f) == 0)
@@ -2596,7 +2596,7 @@ int mac80211_get_avail_rx_antenna(char *prefix)
 	return ret;
 }
 
-int mac80211_get_configured_tx_antenna(char *prefix)
+int mac80211_get_configured_tx_antenna(const char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 1, 0);
 	int avail = mac80211_get_antennas(prefix, 0, 0);
@@ -2613,7 +2613,7 @@ int mac80211_get_configured_tx_antenna(char *prefix)
 	return (ret);
 }
 
-int mac80211_get_configured_rx_antenna(char *prefix)
+int mac80211_get_configured_rx_antenna(const char *prefix)
 {
 	int ret = mac80211_get_antennas(prefix, 1, 1);
 	if (ret > 15 && (ret & 0x0f) == 0)

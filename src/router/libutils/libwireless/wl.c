@@ -212,7 +212,7 @@ unsigned int ieee80211_ieee2mhz(unsigned int chan)
 }
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
-char *getRADev(char *prefix)
+char *getRADev(const char *prefix)
 {
 	char *ifname = NULL;
 
@@ -3674,7 +3674,7 @@ int is_ath5k(const char *prefix)
 #endif
 #ifdef HAVE_ATH9K
 IS_DRIVER(ath9k, "pci:ath9k");
-int is_ap8x(char *prefix)
+int is_ap8x(const char *prefix)
 {
 	INITVALUECACHE();
 	char *dev = getWifiDeviceName(prefix, NULL);

@@ -32,7 +32,7 @@ int get_wl_instance(char *name)
 }
 
 #elif HAVE_MADWIFI
-const char *get_channeloffset(char *prefix, int *iht, int *channeloffset)
+const char *get_channeloffset(const char *prefix, int *iht, int *channeloffset)
 {
 	char *ht = NULL;
 	char bw[32];
