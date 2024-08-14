@@ -132,21 +132,21 @@ static void s_END(char *service, int line)
 #define END() s_END(__func__, __LINE__);
 #endif
 
-int is_ap(char *prefix)
+int is_ap(const char *prefix)
 {
 	char ap[16];
 	sprintf(ap, "%s_mode", prefix);
 	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup");
 }
 
-int is_station(char *prefix)
+int is_station(const char *prefix)
 {
 	char sta[16];
 	sprintf(sta, "%s_mode", prefix);
 	return nvram_match(sta, "sta") || nvram_match(sta, "wdssta") || nvram_match(sta, "wdssta_mtik");
 }
 
-int is_supplicant(char *prefix)
+int is_supplicant(const char *prefix)
 {
 	char sta[16];
 	sprintf(sta, "%s_mode", prefix);

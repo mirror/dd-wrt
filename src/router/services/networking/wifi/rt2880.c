@@ -81,7 +81,7 @@ void addbssid(FILE *fp, char *prefix)
 		fprintf(fp, "\tbssid=%s\n", c_bssid);
 }
 
-void setupSupplicant(char *prefix)
+void setupSupplicant(const char *prefix)
 {
 	char akm[16];
 
@@ -253,7 +253,7 @@ void supplicant_main(int argc, char *argv[])
 	setupSupplicant(argv[1]);
 }
 
-void setupHostAP(char *prefix, int iswan)
+void setupHostAP(const char *prefix, int iswan)
 {
 }
 

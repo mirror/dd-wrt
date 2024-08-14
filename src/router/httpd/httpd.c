@@ -827,7 +827,7 @@ static int do_file_attach(struct mime_handler *handler, char *path, webs_t strea
 	return do_file_2(METHOD_GET, handler, path, stream, attachment);
 }
 
-static int check_connect_type_vap(char *prefix, webs_t wp, char *nvprefix)
+static int check_connect_type_vap(const char *prefix, webs_t wp, char *nvprefix)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count_wl = 0;
