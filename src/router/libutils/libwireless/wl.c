@@ -4946,7 +4946,7 @@ char *getWET()
 
 #endif
 
-struct wl_assoc_mac *get_wl_assoc_mac(char *ifname, int *c)
+struct wl_assoc_mac *get_wl_assoc_mac(const char *ifname, int *c)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count;
