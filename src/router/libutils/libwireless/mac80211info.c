@@ -2381,6 +2381,18 @@ int has_wdsap(const char *prefix)
 	return ret;
 }
 
+#ifdef HAVE_IPQ6018
+int has_apup(const char *prefix)
+{
+	return has_wdsap(prefix);
+}
+#else
+int has_apup(const char *prefix)
+{
+	return 0;
+}
+#endif
+
 #ifdef HAVE_MAC80211_MESH
 int has_mesh(const char *prefix)
 {
