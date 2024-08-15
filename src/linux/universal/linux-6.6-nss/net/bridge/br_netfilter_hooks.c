@@ -506,7 +506,7 @@ static unsigned int br_nf_pre_routing(void *priv,
 		if (!brnet->call_ip6tables &&
 		    !br_opt_get(br, BROPT_NF_CALL_IP6TABLES))
 			return NF_ACCEPT;
-		if (!ipv6_mod_enabled || !ipv6_mod_enabled()) {
+		if (!ipv6_mod_enabled()) {
 			pr_warn_once("Module ipv6 is disabled, so call_ip6tables is not supported.");
 			return NF_DROP;
 		}
