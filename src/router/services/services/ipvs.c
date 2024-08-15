@@ -55,6 +55,7 @@ void start_ipvs(void)
 			break;
 		if (!first) {
 			first = 1;
+			modprobe("ipv6");
 			insmod("libcrc32c ipv6 ip_vs ip_ftp ip_pe_sip");
 		}
 		char modname[32];
