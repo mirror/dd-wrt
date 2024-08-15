@@ -571,7 +571,7 @@ static int vlan_dev_init(struct net_device *dev)
 		dev->state |= (1 << __LINK_STATE_NOCARRIER);
 
 	dev->hw_features = NETIF_F_HW_CSUM | NETIF_F_SG |
-			   NETIF_F_FRAGLIST | NETIF_F_GSO_SOFTWARE |
+			   NETIF_F_FRAGLIST | NETIF_F_GSO_SOFTWARE_ALL |
 			   NETIF_F_GSO_ENCAP_ALL |
 			   NETIF_F_HIGHDMA | NETIF_F_SCTP_CRC |
 			   NETIF_F_ALL_FCOE;
@@ -665,7 +665,7 @@ static netdev_features_t vlan_dev_fix_features(struct net_device *dev,
 	if (lower_features & (NETIF_F_IP_CSUM|NETIF_F_IPV6_CSUM))
 		lower_features |= NETIF_F_HW_CSUM;
 	features = netdev_intersect_features(features, lower_features);
-	features |= old_features & (NETIF_F_SOFT_FEATURES | NETIF_F_GSO_SOFTWARE);
+	features |= old_features & (NETIF_F_SOFT_FEATURES | NETIF_F_GSO_SOFTWARE_ALL);
 	features |= NETIF_F_LLTX;
 
 	return features;

@@ -869,7 +869,7 @@ static int macvlan_eth_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 static struct lock_class_key macvlan_netdev_addr_lock_key;
 
 #define ALWAYS_ON_OFFLOADS \
-	(NETIF_F_SG | NETIF_F_HW_CSUM | NETIF_F_GSO_SOFTWARE | \
+	(NETIF_F_SG | NETIF_F_HW_CSUM | NETIF_F_GSO_SOFTWARE_ALL | \
 	 NETIF_F_GSO_ROBUST | NETIF_F_GSO_ENCAP_ALL)
 
 #define ALWAYS_ON_FEATURES (ALWAYS_ON_OFFLOADS | NETIF_F_LLTX)

@@ -2405,7 +2405,7 @@ void sk_setup_caps(struct sock *sk, struct dst_entry *dst)
 	if (sk_is_tcp(sk))
 		sk->sk_route_caps |= NETIF_F_GSO;
 	if (sk->sk_route_caps & NETIF_F_GSO)
-		sk->sk_route_caps |= NETIF_F_GSO_SOFTWARE;
+		sk->sk_route_caps |= NETIF_F_GSO_SOFTWARE_ALL;
 	if (unlikely(sk->sk_gso_disabled))
 		sk->sk_route_caps &= ~NETIF_F_GSO_MASK;
 	if (sk_can_gso(sk)) {
