@@ -332,7 +332,7 @@ struct tcp6_timewait_sock {
 };
 
 #if IS_ENABLED(CONFIG_IPV6)
-bool __weak ipv6_mod_enabled(void);
+bool ipv6_mod_enabled(void);
 
 static inline struct ipv6_pinfo *inet6_sk(const struct sock *__sk)
 {
