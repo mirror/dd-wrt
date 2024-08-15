@@ -93,9 +93,9 @@ openssl-clean:
 
 
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib no-aria no-devcryptoeng no-siphash no-sm2 no-sm3 no-sm4 no-tests no-external-tests
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib no-aria no-siphash no-sm2 no-sm3 no-sm4 no-tests no-external-tests
 
-OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd no-devcryptoeng
+OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd
 
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV 
@@ -114,6 +114,9 @@ OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
 endif
 ifeq ($(CONFIG_ALPINE),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
+endif
+ifeq ($(CONFIG_IPQ6018),y)
+OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST enable-devcryptoeng
 endif
 ifneq ($(ARCH),mips64)
 ifneq ($(ARCH),x86_64)
