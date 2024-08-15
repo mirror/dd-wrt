@@ -242,10 +242,10 @@ static inline int find_next_netdev_feature(u64 feature, unsigned long start)
 #define NETIF_F_UPPER_DISABLES	NETIF_F_LRO
 
 /* changeable features with no special hardware requirements */
-#define NETIF_F_SOFT_FEATURES	(NETIF_F_GSO | NETIF_F_GRO)
+#define NETIF_F_SOFT_FEATURES	(NETIF_F_GSO | NETIF_F_GRO | NETIF_F_GRO_FRAGLIST)
 
 /* Changeable features with no special hardware requirements that defaults to off. */
-#define NETIF_F_SOFT_FEATURES_OFF	(NETIF_F_GRO_FRAGLIST | NETIF_F_GRO_UDP_FWD)
+#define NETIF_F_SOFT_FEATURES_OFF	(NETIF_F_GRO_UDP_FWD)
 
 #define NETIF_F_VLAN_FEATURES	(NETIF_F_HW_VLAN_CTAG_FILTER | \
 				 NETIF_F_HW_VLAN_CTAG_RX | \
