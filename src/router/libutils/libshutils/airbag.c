@@ -181,6 +181,11 @@ static const char *sigNames[MAX_SIGNALS] = {
 #endif
 };
 
+#ifdef __LP64__
+#define FMTBIT "016"
+#else
+#define FMTBIT "08"
+#endif
 /*
  * Do not use strsignal; it is not async signal safe.
  */
@@ -199,7 +204,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "R8",  "R9",  "R10",    "R11", "R
 					       "RIP", "EFL", "CSGSFS", "ERR", "TRAPNO", "OLDMASK", "CR2" };
 
 #define FMTLEN "07"
-#define FMTBIT "016"
 #elif defined(__i386__)
 #include "sysdeps/x86_backtrace.c"
 #define NMCTXREGS NGREG
@@ -209,7 +213,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "GS",  "FS",  "ES",     "DS",  "E
 					       "ECX", "EAX", "TRAPNO", "ERR", "EIP", "CS",  "EFL", "UESP", "SS" };
 
 #define FMTLEN "06"
-#define FMTBIT "08"
 #elif defined(__aarch64__)
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 31
@@ -220,7 +223,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "X0",  "X1",  "X2",  "X3",  "X4",
 					       "X22", "X23", "X24", "X25", "X26", "X27", "X28", "X29", "X30" };
 
 #define FMTLEN "03"
-#define FMTBIT "016"
 #elif defined(__arm__)
 #include "sysdeps/arm_backtrace.c"
 #define NMCTXREGS 21
@@ -231,7 +233,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "TRAPNO", "ERRCODE", "OLDMASK", "
 					       "FP",	 "IP",	    "SP",      "LR", "PC", "CPSR", "FAULTADDR" };
 
 #define FMTLEN "09"
-#define FMTBIT "08"
 static const int gregOffset = 3;
 #elif defined(__mips__)
 #include "sysdeps/generic_backtrace.c"
@@ -253,11 +254,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "ZERO", "AT", "V0", "V1", "A0", "
 					       "S6",   "S7", "T8", "T9", "K0", "K1", "GP", "SP", "FP", "RA" };
 
 #define FMTLEN "04"
-#if _MIPS_SIM == _ABI64
-#define FMTBIT "016"
-#else
-#define FMTBIT "08"
-#endif
 #elif defined(__powerpc__)
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 45
@@ -282,7 +278,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "GPR0",	"GPR1",	 "GPR2",    "GPR3
 					       "TRAP",	"DAR",	 "DSISR",   "RESULT", "DSCR" };
 
 #define FMTLEN "07"
-#define FMTBIT "08"
 #endif
 
 #if 0
