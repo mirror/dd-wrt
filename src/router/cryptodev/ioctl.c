@@ -841,6 +841,8 @@ static unsigned int is_known_accelerated(struct crypto_tfm *tfm)
 		return 1;
 	if (!strncmp(name, "qcrypto", 7))
 		return 1;
+	if (!strncmp(name, "mv-", 3))
+		return 1;
 	if (strstr(name, "eip93"))
 		return 1;
 	if (strstr(name, "mtk"))
