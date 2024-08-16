@@ -97,29 +97,17 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-s
 
 OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd
 
-ifeq ($(CONFIG_XSCALE),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV 
-endif
-ifeq ($(CONFIG_NEWPORT),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV 
-endif
-ifeq ($(CONFIG_STORM),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV 
-endif
-ifeq ($(CONFIG_VENTANA),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV 
-endif
-ifeq ($(CONFIG_MVEBU),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST 
-endif
-ifeq ($(CONFIG_ALPINE),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
-endif
 ifeq ($(CONFIG_IPQ806X),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST enable-devcryptoeng
+OPENSSL_OPTIONS += enable-devcryptoeng
 endif
 ifeq ($(CONFIG_IPQ6018),y)
-OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST enable-devcryptoeng
+OPENSSL_OPTIONS += enable-devcryptoeng
+endif
+#ifeq ($(CONFIG_ALPINE),y)
+#OPENSSL_OPTIONS += enable-devcryptoeng
+#endif
+ifeq ($(CONFIG_MVEBU),y)
+OPENSSL_OPTIONS += enable-devcryptoeng
 endif
 ifneq ($(ARCH),mips64)
 ifneq ($(ARCH),x86_64)
