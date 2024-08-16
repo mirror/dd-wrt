@@ -554,6 +554,7 @@ obj-$(CONFIG_QCA_NSS) += qca-nss
 obj-$(CONFIG_GETCONF) += getconf
 obj-$(CONFIG_IPQ6018) += cryptodev
 obj-$(CONFIG_IPQ806X) += cryptodev
+obj-$(CONFIG_MVEBU) += cryptodev
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
