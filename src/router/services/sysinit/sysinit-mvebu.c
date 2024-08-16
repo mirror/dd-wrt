@@ -101,6 +101,8 @@ void start_sysinit(void)
 	insmod("libdes");
 	insmod("des_generic");
 	insmod("marvell-cesa"); // tested on WRT1900AC v1 so far
+	insmod("cryptodev");
+
 	/*
 	 * network drivers 
 	 */
