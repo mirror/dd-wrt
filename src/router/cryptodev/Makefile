@@ -4,7 +4,7 @@ KDIR := $(LINUXDIR)
 PWD := $(shell pwd)
 
 all:
-	@$(MAKE) -C $(KDIR) M=$(PWD) modules $(if $(VERSION),LDFLAGS_MODULE="--build-id=0x666" CFLAGS_MODULE="-DCAKE_VERSION=\\\"$(VERSION)\\\"")
+	@$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 install:
 	install -v -m 644 -D cryptodev.ko $(IDIR)/sch_cake.ko
