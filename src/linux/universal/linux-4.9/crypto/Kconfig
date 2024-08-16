@@ -1774,11 +1774,6 @@ source "drivers/crypto/Kconfig"
 source crypto/asymmetric_keys/Kconfig
 source certs/Kconfig
 
-config CRYPTODEV
-	tristate "Userspace Cryptodev implementation"
-	help
-	  Userspace Cryptodev implementation
-
 endif	# if CRYPTO
 
 
