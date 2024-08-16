@@ -38,6 +38,8 @@
 #define usecrypto 1
 #elif defined(HAVE_IPQ6018)
 #define usecrypto 1
+#elif defined(HAVE_MVEBU)
+#define usecrypto 1
 #else
 #define usecrypto nvram_matchi("use_crypto", 1)
 #endif
