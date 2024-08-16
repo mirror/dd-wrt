@@ -464,7 +464,7 @@ void udpv6_encap_enable(void);
 static inline struct sk_buff *udp_rcv_segment(struct sock *sk,
 					      struct sk_buff *skb, bool ipv4)
 {
-	netdev_features_t features = NETIF_F_SG | NETIF_F_GSO_UDP_L4 | NETIF_F_GSO_FRAGLIST;
+	netdev_features_t features = NETIF_F_SG;
 	struct sk_buff *segs;
 
 	/* Avoid csum recalculation by skb_segment unless userspace explicitly
