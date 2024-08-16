@@ -50,7 +50,7 @@ static void run_openvpn(char *prg, char *path)
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
 	if (usecrypto) {
 		insmod("cryptodev");
-		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev"));
+		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon", "--engine", "devcrypto"));
 	} else {
 		rmmod("cryptodev");
 		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon"));
