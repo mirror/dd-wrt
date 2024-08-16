@@ -155,9 +155,8 @@ static int cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
         get_cipher_data(EVP_CIPHER_CTX_nid(ctx));
 
     /* cleanup a previous session */
-    if (cipher_ctx->sess.ses != 0 &&
-        clean_devcrypto_session(&cipher_ctx->sess) == 0)
-        return 0;
+    if (cipher_ctx->sess.ses != 0)
+        clean_devcrypto_session(&cipher_ctx->sess);
 
     cipher_ctx->sess.cipher = cipher_d->devcryptoid;
     cipher_ctx->sess.keylen = cipher_d->keylen;
@@ -743,7 +742,7 @@ static int devcrypto_digests(ENGINE *e, const EVP_MD **digest,
 static int devcrypto_unload(ENGINE *e)
 {
     destroy_all_cipher_methods();
-#ifdef IMPLEMENT_DIGEST
+#if0 //def IMPLEMENT_DIGEST
     destroy_all_digest_methods();
 #endif
 
@@ -793,7 +792,7 @@ void engine_load_devcrypto_int()
     }
 
     prepare_cipher_methods();
-#ifdef IMPLEMENT_DIGEST
+#if 0 //def IMPLEMENT_DIGEST
     prepare_digest_methods();
 #endif
 
@@ -835,7 +834,7 @@ void engine_load_devcrypto_int()
 # endif
 #endif
         || !ENGINE_set_ciphers(e, devcrypto_ciphers)
-#ifdef IMPLEMENT_DIGEST
+#if 0 //def IMPLEMENT_DIGEST
         || !ENGINE_set_digests(e, devcrypto_digests)
 #endif
         ) {
