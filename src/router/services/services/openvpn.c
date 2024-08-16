@@ -33,6 +33,14 @@
 #include <utils.h>
 #ifdef HAVE_OPENVPN
 
+
+#if defined(HAVE_IPQ806X)
+#define usecrypto 1
+#elif defined(HAVE_IPQ6018)
+#define usecrypto 1
+#else
+#define usecrypto nvram_matchi("use_crypto", 1)
+#endif
 //use in interfrace when WAP is detected
 char IN_IF[8] = { 0 };
 
@@ -40,7 +48,7 @@ static void run_openvpn(char *prg, char *path)
 {
 	char *conf;
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
-	if (nvram_matchi("use_crypto", 1)) {
+	if (usecrypto) {
 		insmod("cryptodev");
 		dd_logstart("openvpn", eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev"));
 	} else {
