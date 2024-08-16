@@ -742,7 +742,7 @@ static int devcrypto_digests(ENGINE *e, const EVP_MD **digest,
 static int devcrypto_unload(ENGINE *e)
 {
     destroy_all_cipher_methods();
-#if0 //def IMPLEMENT_DIGEST
+#if 0 //def IMPLEMENT_DIGEST
     destroy_all_digest_methods();
 #endif
 
