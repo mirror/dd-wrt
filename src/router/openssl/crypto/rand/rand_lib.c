@@ -854,7 +854,7 @@ const RAND_METHOD *RAND_get_rand_method(void)
 
     CRYPTO_THREAD_write_lock(rand_meth_lock);
     if (default_RAND_meth == NULL) {
-#ifndef OPENSSL_NO_ENGINE
+#if 0 //ndef OPENSSL_NO_ENGINE
         ENGINE *e;
 
         /* If we have an engine that can do RAND, use it. */
