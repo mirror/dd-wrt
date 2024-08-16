@@ -656,6 +656,7 @@ void start_sysinit(void)
 		insmod("qca-nss-drv-ipq806x");
 		insmod("qca-nss-crypto-ipq806x");
 		insmod("qca-nss-cfi-cryptoapi-ipq806x");
+		insmod("cryptodev");
 		insmod("nsh");
 		insmod("openvswitch");
 		insmod("qca-ovsmgr");

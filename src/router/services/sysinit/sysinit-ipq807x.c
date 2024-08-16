@@ -421,6 +421,7 @@ static void load_nss_ipq60xx(int profile)
 		insmod("qca-nss-crypto-ipq60xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
+		insmod("cryptodev");
 
 		set_memprofile(4, 1, profile);
 
@@ -465,7 +466,7 @@ static void load_nss_ipq50xx(int profile)
 		insmod("qca-nss-crypto-ipq50xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
-
+		insmod("cryptodev");
 		set_memprofile(2, 1, profile);
 
 		eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
@@ -513,6 +514,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("qca-nss-crypto-ipq807x");
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
+		insmod("cryptodev");
 
 		set_memprofile(4, 2, profile);
 
