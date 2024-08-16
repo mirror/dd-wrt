@@ -155,8 +155,9 @@ static int cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
         get_cipher_data(EVP_CIPHER_CTX_nid(ctx));
 
     /* cleanup a previous session */
-    if (cipher_ctx->sess.ses != 0)
-        clean_devcrypto_session(&cipher_ctx->sess);
+    if (cipher_ctx->sess.ses != 0 &&
+        clean_devcrypto_session(&cipher_ctx->sess) == 0)
+        return 0;
 
     cipher_ctx->sess.cipher = cipher_d->devcryptoid;
     cipher_ctx->sess.keylen = cipher_d->keylen;
@@ -443,7 +444,7 @@ static int devcrypto_ciphers(ENGINE *e, const EVP_CIPHER **cipher,
  * a cache, which is perilous if there's a lot of data coming in (if someone
  * wants to checksum an OpenSSL tarball, for example).
  */
-#if defined(CIOCCPHASH) && defined(COP_FLAG_UPDATE) && defined(COP_FLAG_FINAL)
+#if 0 //defined(CIOCCPHASH) && defined(COP_FLAG_UPDATE) && defined(COP_FLAG_FINAL)
 #define IMPLEMENT_DIGEST
 
 /******************************************************************************
@@ -742,7 +743,7 @@ static int devcrypto_digests(ENGINE *e, const EVP_MD **digest,
 static int devcrypto_unload(ENGINE *e)
 {
     destroy_all_cipher_methods();
-#if 0 //def IMPLEMENT_DIGEST
+#ifdef IMPLEMENT_DIGEST
     destroy_all_digest_methods();
 #endif
 
@@ -792,7 +793,7 @@ void engine_load_devcrypto_int()
     }
 
     prepare_cipher_methods();
-#if 0 //def IMPLEMENT_DIGEST
+#ifdef IMPLEMENT_DIGEST
     prepare_digest_methods();
 #endif
 
@@ -834,7 +835,7 @@ void engine_load_devcrypto_int()
 # endif
 #endif
         || !ENGINE_set_ciphers(e, devcrypto_ciphers)
-#if 0 //def IMPLEMENT_DIGEST
+#ifdef IMPLEMENT_DIGEST
         || !ENGINE_set_digests(e, devcrypto_digests)
 #endif
         ) {
