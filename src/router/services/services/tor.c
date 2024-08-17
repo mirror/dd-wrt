@@ -96,8 +96,10 @@ void start_tor(void)
 		fprintf(fp, "SocksPort %s:9050\n", nvram_safe_get("lan_ipaddr"));
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
-	if (usecrypto)
+	if (usecrypto) {
 	    fprintf(fp, "HardwareAccel 1\n");
+	    fprintf(fp, "AccelName devcrypto\n");
+	}
 	fprintf(fp, "Address %s\n", nvram_invmatch("tor_address", "") ? nvram_safe_get("tor_address") : get_wan_ipaddr());
 	if (nvram_invmatch("tor_id", ""))
 		fprintf(fp, "Nickname %s\n", nvram_safe_get("tor_id"));
