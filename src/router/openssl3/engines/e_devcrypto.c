@@ -211,9 +211,8 @@ static int cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     int ret;
 
     /* cleanup a previous session */
-    if (cipher_ctx->sess.ses != 0 &&
-        clean_devcrypto_session(&cipher_ctx->sess) == 0)
-        return 0;
+    if (cipher_ctx->sess.ses != 0)
+        clean_devcrypto_session(&cipher_ctx->sess);
 
     cipher_ctx->sess.cipher = cipher_d->devcryptoid;
     cipher_ctx->sess.keylen = cipher_d->keylen;
@@ -905,7 +904,7 @@ static void prepare_digest_methods(void)
     for (i = 0, known_digest_nids_amount = 0; i < OSSL_NELEM(digest_data);
          i++) {
 
-        selected_digests[i] = 1;
+        selected_digests[i] = 0;
 
         /*
          * Check that the digest is usable
@@ -1119,7 +1118,7 @@ static const ENGINE_CMD_DEFN devcrypto_cmds[] = {
 #ifdef IMPLEMENT_DIGEST
    {DEVCRYPTO_CMD_DIGESTS,
     "DIGESTS",
-    "either ALL, NONE, or a comma-separated list of digests to enable [default=ALL]",
+    "either ALL, NONE, or a comma-separated list of digests to enable [default=NONE]",
     ENGINE_CMD_FLAG_STRING},
 #endif
 
