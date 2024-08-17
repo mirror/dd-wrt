@@ -84,11 +84,7 @@ INSTALL_BIN:=install -m0755
 INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
 INSTALL_CONF:=install -m0600
-ifeq ($(CONFIG_IPQ6018),y)
-export SSLPATH=$(TOP)/openssl3
-else
 export SSLPATH=$(TOP)/openssl
-endif
 
 include rules/_cmake.mk
 include rules/matrixssl.mk
@@ -102,21 +98,27 @@ include rules/libmcrypt.mk
 include rules/php8.mk
 include rules/openssl.mk
 ifeq ($(CONFIG_IPQ6018),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_X86),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_IPQ806X),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_OCTEON),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_NEWPORT),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_ALPINE),y)
+export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 include rules/rp-l2tp.mk
