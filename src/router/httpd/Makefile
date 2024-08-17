@@ -1,4 +1,10 @@
 -include $(LINUXDIR)/.config
+ifeq ($(CONFIG_IPQ6018),y)
+SSLPATH=$(TOP)/openssl3
+else
+SSLPATH=$(TOP)/openssl
+endif
+
 CONFIG_WR941=
 CONFIG_SWCONFIG=
 CONFIG_WILLY=
@@ -1519,8 +1525,8 @@ CFLAGS += -DOPENSSL_EXTRA
 
 else
 ifeq ($(CONFIG_OPENSSL),y)
-CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
-SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -L$(TOP)/zlib -lssl -lcrypto -L$(TOP)/libucontext -lucontext
+CFLAGS += -I$(SSLPATH)/include  -I$(SSLPATH)/include/openssl
+SSLLDFLAGS += -L$(SSLPATH) -L$(SSLPATH) -L$(TOP)/zlib -lssl -lcrypto -L$(TOP)/libucontext -lucontext
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
