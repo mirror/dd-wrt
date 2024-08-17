@@ -49,7 +49,7 @@ RELEASE_VERSION := $(shell cat VERSION)
 #OPENSSL_GPL_VIOLATION = -DOPENSSL_GPL_VIOLATION
 #OPENSSLLIBS = -lcrypto
 
-CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(TOP)/openssl/include 
+CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include 
 CPPFLAGS = -DVERSION=\"$(VERSION)\" $(OPENSSL_GPL_VIOLATION)
 LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib -pthread
 CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib 
@@ -71,12 +71,12 @@ gnupg :
 	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr  --libdir=/usr/lib --disable-nls; fi
 	make -C libgpg-error
 	make -C libgpg-error install DESTDIR=$(INSTALLDIR)/vpnc
-	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && CFLAGS="$(COPTS) -std=gnu89 -I$(INSTALLDIR)/vpnc/usr/include -I$(TOP)/openssl/include" && ./configure --host=$(ARCH)-linux --enable-static --disable-shared --prefix=/usr --libdir=/usr/lib --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr; fi
+	if test ! -e "libgcrypt/Makefile"; then cd libgcrypt && CFLAGS="$(COPTS) -std=gnu89 -I$(INSTALLDIR)/vpnc/usr/include -I$(SSLPATH)/include" && ./configure --host=$(ARCH)-linux --enable-static --disable-shared --prefix=/usr --libdir=/usr/lib --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr; fi
 	make -C libgcrypt install DESTDIR=$(INSTALLDIR)/vpnc
 
 
 vpnc : $(OBJS) vpnc.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a -L$(TOP)/openssl -lcrypto
+	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a -L$(SSLPATH) -lcrypto
 
 vpnc.8 : vpnc.8.template makeman.pl vpnc
 	./makeman.pl
