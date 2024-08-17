@@ -98,10 +98,9 @@ openssl-clean:
 	$(MAKE) -C openssl3 clean MAKE=make
 
 
-
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib no-aria no-siphash no-sm2 no-sm3 no-sm4 no-tests no-external-tests no-cms no-mdc2 no-aria no-sm2 no-sm3 no-sm4 no-err
 
-OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd no-nextprotoneg no-brotli no-argon2 no-winstore no-docs no-ecx no-http no-quic no-unstable-qlog no-sm2-precomp no-zstd
+OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd no-nextprotoneg
 
 ifeq ($(CONFIG_IPQ806X),y)
 OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
