@@ -100,10 +100,24 @@ include rules/libpng.mk
 include rules/libgd.mk
 include rules/libmcrypt.mk
 include rules/php8.mk
+include rules/openssl.mk
 ifeq ($(CONFIG_IPQ6018),y)
 include rules/openssl3.mk
-else
-include rules/openssl.mk
+endif
+ifeq ($(CONFIG_X86),y)
+include rules/openssl3.mk
+endif
+ifeq ($(CONFIG_IPQ806X),y)
+include rules/openssl3.mk
+endif
+ifeq ($(CONFIG_OCTEON),y)
+include rules/openssl3.mk
+endif
+ifeq ($(CONFIG_NEWPORT),y)
+include rules/openssl3.mk
+endif
+ifeq ($(CONFIG_ALPINE),y)
+include rules/openssl3.mk
 endif
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
