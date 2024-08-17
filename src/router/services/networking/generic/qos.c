@@ -999,6 +999,7 @@ static int svqos_iptables(void)
 		}
 		if (name && (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry") || !strcmp(name, "ad-telemetry")))
 			continue;
+#ifndef HAVE_OPENDPI
 		if (strstr(type, "l7")) {
 			insmod("ipt_layer7");
 			insmod("xt_layer7");
@@ -1007,7 +1008,7 @@ static int svqos_iptables(void)
 			evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK",
 				"--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 		}
-#ifdef HAVE_OPENDPI
+#else
 		if (strstr(type, "dpi")) {
 			insmod("xt_ndpi");
 			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", "--proto", name, "-j", "MARK",
@@ -1068,6 +1069,7 @@ static int svqos_iptables(void)
 				evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j",
 					"MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 
+#ifndef HAVE_OPENDPI
 				if (!strcmp(proto, "bit")) {
 					// bittorrent detection enhanced
 #ifdef HAVE_MICRO
@@ -1087,6 +1089,7 @@ static int svqos_iptables(void)
 					evalip6("ip6tables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2",
 						"-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), level));
 				}
+#endif
 			}
 		}
 	} while ((qos_svcs = strpbrk(++qos_svcs, "|")) && qos_svcs++);
