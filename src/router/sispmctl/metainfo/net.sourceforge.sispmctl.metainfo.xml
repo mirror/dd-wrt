@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+  <id>net.sourceforge.sispmctl</id>
+  <metadata_license>MIT</metadata_license>
+  <name>SIS-PM Control for Linux</name>
+  <summary>Manage USB controlled powerstrips</summary>
+  <description>
+    <p>SIS-PM Control for Linux (sispmctl) is an application for managing USB
+    controlled powerstrips produced by Gembird Software Ltd. Newer devices are
+    sold under the Energenie brand. The following devices are supported:</p>
+    <ul>
+      <li>Gembird MSIS-PM</li>
+      <li>Gembird Silver Shield SIS-PM (aka Revolt Intelliplug)</li>
+      <li>Gembird Silver Shield SIS-PMS</li>
+      <li>Energenie EG-PM</li>
+      <li>Energenie EG-PMS</li>
+      <li>Energenie EG-PM2</li>
+      <li>Energenie EG-PMS2</li>
+    </ul>
+  </description>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://sispmctl.sourceforge.net/</url>
+  <provides>
+    <modalias>usb:v04B4pFD10d*</modalias>
+    <modalias>usb:v04B4pFD11d*</modalias>
+    <modalias>usb:v04B4pFD12d*</modalias>
+    <modalias>usb:v04B4pFD13d*</modalias>
+    <modalias>usb:v04B4pFD15d*</modalias>
+  </provides>
+  <supports>
+    <control>console</control>
+  </supports>
+  <project_license>GPL-2.0-or-later</project_license>
+  <developer id="net.sourceforge.sispmctl">
+    <name>SIS-PM Control project</name>
+    <url type="contact">https://sourceforge.net/p/sispmctl/_list/tickets</url>
+  </developer>
+  <update_contact>https://sourceforge.net/p/sispmctl/_list/tickets</update_contact>
+</component>
