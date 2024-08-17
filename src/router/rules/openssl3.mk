@@ -90,7 +90,7 @@ endif
 
 	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3
 	cp openssl3/apps/openssl.cnf $(INSTALLDIR)/openssl/etc/ssl/
-	cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
+	-cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
 #	sed 's!engines = engines_sect!#&!' $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 	cp openssl3/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
 
