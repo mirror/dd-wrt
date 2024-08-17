@@ -174,7 +174,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK",
 			"--set-mark", qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
-
+#ifdef HAVE_OPENDPI
 	if (strstr(type, "l7")) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
@@ -183,7 +183,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 		evalip6("ip6tables", "-t", "mangle", "-A", chain, "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark",
 			qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
-#ifdef HAVE_OPENDPI
+#else
 	if (strstr(type, "dpi")) {
 		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", "--proto", name, "-j", "MARK", "--set-mark",
@@ -283,6 +283,7 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 			"--mac-source", client, "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
 
+#ifndef HAVE_OPENDPI
 	if (strstr(type, "l7")) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
@@ -291,7 +292,7 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int
 		evalip6("ip6tables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "layer7",
 			"--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
-#ifdef HAVE_OPENDPI
+#else
 	if (strstr(type, "dpi")) {
 		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mac", "--mac-source", client, "-m", "ndpi", "--proto",
@@ -415,6 +416,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 		     "MARK", "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
 
+#ifndef HAVE_OPENDPI
 	if (strstr(type, "l7")) {
 		insmod("ipt_layer7");
 		insmod("xt_layer7");
@@ -427,7 +429,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int 
 		eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-d", client, "-m", "layer7", "--l7proto", name, "-j", "MARK",
 		     "--set-mark", qos_nfmark(buffer, sizeof(buffer), base + idx));
 	}
-#ifdef HAVE_OPENDPI
+#else
 	if (strstr(type, "dpi")) {
 		insmod("xt_ndpi");
 
