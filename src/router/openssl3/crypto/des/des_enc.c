@@ -1,17 +1,11 @@
 /*
- * Copyright 1995-2020 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
- * Licensed under the Apache License 2.0 (the "License").  You may not use
+ * Licensed under the OpenSSL license (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
-/*
- * DES low level APIs are deprecated for public use, but still ok for internal
- * use.
- */
-#include "internal/deprecated.h"
 
 #include <openssl/crypto.h>
 #include "des_local.h"
@@ -21,6 +15,7 @@
 #include "cvmx-address.h"
 #include "cvmx-asm.h"
 #include "cvmx-key.h"
+#include "cvmx-swap.h"
 
 #endif
 
@@ -33,14 +28,19 @@ DES_ede3_encrypt (const unsigned char *input, unsigned char *output,
   DES_key_schedule * ks2, DES_key_schedule * ks3, int enc)
 {
   uint64_t in64 = 0;
-  CVMX_MT_3DES_KEY (ks1->cvmkey, 0);
-  CVMX_MT_3DES_KEY (ks2->cvmkey, 1);
-  CVMX_MT_3DES_KEY (ks3->cvmkey, 2);
+  uint64_t *rdkey1 = &ks1->ks->cblock[0];
+  uint64_t *rdkey2 = &ks2->ks->cblock[0];
+  uint64_t *rdkey3 = &ks3->ks->cblock[0];
+
+  CVMX_MT_3DES_KEY (*rdkey1, 0);
+  CVMX_MT_3DES_KEY (*rdkey2, 1);
+  CVMX_MT_3DES_KEY (*rdkey3, 2);
 
   if (enc) {
     while (length >= 8) {
       CVMX_MT_3DES_ENC (*(uint64_t *) input);
       CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      *(uint64_t *) output = cvmx_be64_to_cpu(*(uint64_t *) output);
       input += 8;
       output += 8;
       length -= 8;
@@ -50,11 +50,13 @@ DES_ede3_encrypt (const unsigned char *input, unsigned char *output,
       memcpy ((void *) &in64, (void *) input, 8);
       CVMX_MT_3DES_DEC (in64);
       CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      *(uint64_t *) output = cvmx_be64_to_cpu(*(uint64_t *) output);
     }
   } else {
     while (length >= 8) {
       CVMX_MT_3DES_DEC (*(uint64_t *) (input));
       CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      *(uint64_t *) output = cvmx_be64_to_cpu(*(uint64_t *) output);
       input += 8;
       output += 8;
       length -= 8;
@@ -64,6 +66,7 @@ DES_ede3_encrypt (const unsigned char *input, unsigned char *output,
       memcpy ((void *) &in64, (void *) input, 8);
       CVMX_MT_3DES_DEC (in64);
       CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      *(uint64_t *) output = cvmx_be64_to_cpu(*(uint64_t *) output);
     }
   }
 }
@@ -362,9 +365,14 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
   outp = (uint64_t *) output;
   i0 = inp[0];
   /* Initialise the keys */
-  CVMX_MT_3DES_KEY (ks1->cvmkey, 0);
-  CVMX_MT_3DES_KEY (ks2->cvmkey, 1);
-  CVMX_MT_3DES_KEY (ks3->cvmkey, 2);
+  uint64_t *rdkey1 = &ks1->ks->cblock[0];
+  uint64_t *rdkey2 = &ks2->ks->cblock[0];
+  uint64_t *rdkey3 = &ks3->ks->cblock[0];
+
+  CVMX_MT_3DES_KEY (*rdkey1, 0);
+  CVMX_MT_3DES_KEY (*rdkey2, 1);
+  CVMX_MT_3DES_KEY (*rdkey3, 2);
+
   if (enc) {
     /* Encrypt */
     /* Initialise IV */
@@ -377,6 +385,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
       if (length >= 8) {
         i0 = inp[0];
         CVMX_MF_3DES_RESULT (r0);
+	r0 = cvmx_be64_to_cpu(r0);
         CVMX_MT_3DES_ENC_CBC (i0);
         while (1) {
           outp[-1] = r0;
@@ -387,6 +396,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
             break;
           i0 = inp[0];
           CVMX_MF_3DES_RESULT (r0);
+	  r0 = cvmx_be64_to_cpu(r0);
           CVMX_MT_3DES_ENC_CBC (i0);
         }
       }
@@ -398,6 +408,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
       if(length > 8) {
         CVMX_MT_3DES_ENC_CBC (i0);
         CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+	*(uint64_t *) outp = cvmx_be64_to_cpu(*(uint64_t *) outp);
         outp++;
         inp++;
         length-=8;
@@ -407,6 +418,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
       }
       CVMX_MT_3DES_ENC_CBC (in64);
       CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+	*(uint64_t *) outp = cvmx_be64_to_cpu(*(uint64_t *) outp);
       *iv = *(uint64_t *) outp;
     } else {
       *iv = *(uint64_t *) (outp - 1);
@@ -423,6 +435,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
       if (length >= 8) {
         i0 = inp[0];
         CVMX_MF_3DES_RESULT (r0);
+	r0 = cvmx_be64_to_cpu(r0);
         CVMX_MT_3DES_DEC_CBC (i0);
         while (1) {
           outp[-1] = r0;
@@ -433,6 +446,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
             break;
           i0 = inp[0];
           CVMX_MF_3DES_RESULT (r0);
+	r0 = cvmx_be64_to_cpu(r0);
           CVMX_MT_3DES_DEC_CBC (i0);
         }
         CVMX_MF_3DES_RESULT (r0);
@@ -446,6 +460,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
       memcpy ((void *) &in64, (void *) inp, 8);
       CVMX_MT_3DES_DEC_CBC (in64);
       CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+	*(uint64_t *) outp = cvmx_be64_to_cpu(*(uint64_t *) outp);
     }
   }
 #endif

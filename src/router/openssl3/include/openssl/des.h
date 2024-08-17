@@ -19,9 +19,10 @@
 # include <openssl/opensslconf.h>
 
 #ifdef OCTEON_OPENSSL
-#include "cvmx-address.h"
-#include "cvmx-asm.h"
-#include "cvmx-key.h"
+#include "../../include/executive/cvmx-address.h"
+#include "../../include/executive/cvmx-asm.h"
+#include "../../include/executive/cvmx-key.h"
+#include "../../include/executive/cvmx-swap.h"
 #endif
 
 # ifndef OPENSSL_NO_DES

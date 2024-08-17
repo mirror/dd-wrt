@@ -124,10 +124,10 @@
 #include "aes_local.h"
 
 #ifdef OCTEON_OPENSSL
-#include "cvmx-address.h"
-#include "cvmx-asm.h"
-#include "cvmx-key.h"
-#include "cvmx-swap.h"
+#include <cvmx-address.h>
+#include <cvmx-asm.h>
+#include <cvmx-key.h>
+#include <cvmx-swap.h>
 #endif
 
 void
