@@ -1,0 +1,57 @@
+name: sispmctl
+icon: artwork/sispmctl.svg
+license: GPL-2.0-or-later
+version: '4.12'
+grade: stable
+summary: Silver Shield PM Control for Linux (sispmctl)
+source-code: https://sourceforge.net/p/sispmctl/git/
+website: https://sispmctl.sourceforge.net
+issues: https://sourceforge.net/p/sispmctl/_list/tickets
+description: |
+  SiS-PM Control for Linux provides a management software
+  for the following USB controlled powerstrips::
+
+  * Gembird SIS-PMS SilverShield
+  * Gembird MSIS-PM
+  * EnerGenie EG-PM
+  * EnerGenie EG-PMS
+  * EnerGenie EG-PM2
+  * EnerGenie EG-PMS2
+
+  The snap requires the raw-usb interface. It should be connected automatically.
+  To add it manually use
+
+      snap connect sispmctl:raw-usb
+
+  If you want to use sispmctl as an unpriviledged user,
+  you will have to execute the following manual steps
+
+      sudo groupadd -r sispmctl
+      sudo usermod -a -G sispmctl $USER
+      sudo cp \
+        /snap/sispmctl/current/share/doc/sispmctl/examples/60-sispmctl.rules \
+        /lib/udev/rules.d/
+
+base: core22
+
+confinement: strict
+
+apps:
+  sispmctl:
+    command: bin/sispmctl
+    plugs:
+      - raw-usb
+
+parts:
+  sispmctl:
+    source: .
+    plugin: autotools
+    autotools-configure-parameters:
+      - --prefix=/
+      - --enable-webless
+    build-packages:
+      - autotools-dev
+      - libusb-dev
+      - pkg-config
+    stage-packages:
+      - libusb-0.1-4
