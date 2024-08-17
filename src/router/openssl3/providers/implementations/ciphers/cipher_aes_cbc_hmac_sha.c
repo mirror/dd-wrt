@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -26,7 +26,7 @@
 #ifndef AES_CBC_HMAC_SHA_CAPABLE
 # define IMPLEMENT_CIPHER(nm, sub, kbits, blkbits, ivbits, flags)              \
 const OSSL_DISPATCH ossl_##nm##kbits##sub##_functions[] = {                    \
-    { 0, NULL }                                                                \
+    OSSL_DISPATCH_END                                                              \
 };
 #else
 
@@ -421,7 +421,7 @@ const OSSL_DISPATCH ossl_##nm##kbits##sub##_functions[] = {                    \
         (void (*)(void))nm##_set_ctx_params },                                 \
     { OSSL_FUNC_CIPHER_SETTABLE_CTX_PARAMS,                                    \
         (void (*)(void))nm##_settable_ctx_params },                            \
-    { 0, NULL }                                                                \
+    OSSL_DISPATCH_END                                                          \
 };
 
 #endif /* AES_CBC_HMAC_SHA_CAPABLE */

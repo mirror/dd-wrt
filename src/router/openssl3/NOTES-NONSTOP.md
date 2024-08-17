@@ -19,22 +19,24 @@ About c99 compiler
 
 The c99 compiler is required for building OpenSSL from source. While c11
 may work, it has not been broadly tested. c99 is the only compiler
-prerequisite needed to build OpenSSL 3.0 on this platform. You should also
-have the FLOSS package installed on your system. The ITUGLIB FLOSS package
-is the only FLOSS variant that has been broadly tested.
+prerequisite needed to build OpenSSL 3.0 on this platform.
 
 Threading Models
 ----------------
 
-OpenSSL can be built using unthreaded, POSIX User Threads (PUT), or Standard
-POSIX Threads (SPT). Select the following build configuration for each on
-the TNS/X (L-Series) platform:
+OpenSSL can be built either using the POSIX User Threads (PUT) threading model,
+or with threading support disabled. Select the following build configuration
+for each on the TNS/X (L-Series) platform:
 
- * `nonstop-nsx` or default will select an unthreaded build.
+ * `nonstop-nsx` or default will select an unthreaded 32-bit build.
+ * `nonstop-nsx_64` selects an unthreaded 64-bit memory and file length build.
  * `nonstop-nsx_put` selects the PUT build.
- * `nonstop-nsx_64_put` selects the 64 bit file length PUT build.
- * `nonstop-nsx_spt_floss` selects the SPT build with FLOSS. FLOSS is
-   required for SPT builds because of a known hang when using SPT on its own.
+ * `nonstop-nsx_64_put` selects the 64-bit memory and file length PUT build.
+
+The SPT threading model is no longer supported as of OpenSSL 3.2.
+
+The PUT model is incompatible with the QUIC capability. This capability should
+be disabled when building with PUT.
 
 ### TNS/E Considerations
 
@@ -56,10 +58,13 @@ relating to `atexit()` processing when a shared library is unloaded and when
 the program terminates. This limitation applies to all OpenSSL shared library
 components.
 
-It is possible to configure the build with `no-atexit` to avoid the SIGSEGV.
-Preferably, you can explicitly call `OPENSSL_cleanup()` from your application.
-It is not mandatory as it just deallocates various global data structures
-OpenSSL allocated.
+A control has been added as of 3.3.x to disable calls to `atexit()` within the
+`libcrypto` builds (specifically in `crypto/init.c`). This switch can be
+controlled using `disable-atexit` or `enable-atexit`, and is disabled by default
+for NonStop builds. If you need to have `atexit()` functionality, set
+`enabled-atexit` when configuring OpenSSL to enable the `atexit()` call to
+register `OPENSSL_cleanup()` automatically. Preferably, you can explicitly call
+`OPENSSL_cleanup()` from your application.
 
 About Prefix and OpenSSLDir
 ---------------------------
@@ -148,9 +153,7 @@ update this list:
 - nonstop-nsx_64_put
 
 **Note:** Cross-compile builds for TNS/E have not been attempted, but should
-follow the same considerations as for TNS/X above. SPT builds generally require
-FLOSS, which is not available for workstation builds. As a result, SPT builds
-of OpenSSL cannot be cross-compiled.
+follow the same considerations as for TNS/X above.
 
 Also see the NSDEE discussion below for more historical information.
 
@@ -226,9 +229,6 @@ assumes that your PWD is set according to your installation standards.
     ./Configure nonstop-nsx_put       --prefix=${PWD} \
         --openssldir=${PWD}/ssl threads "-D_REENTRANT" \
         --with-rand-seed=rdcpu ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
-    ./Configure nonstop-nsx_spt_floss --prefix=${PWD} \
-        --openssldir=${PWD}/ssl threads "-D_REENTRANT" \
-        --with-rand-seed=rdcpu ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
     ./Configure nonstop-nsx_64        --prefix=${PWD} \
         --openssldir=${PWD}/ssl no-threads \
         --with-rand-seed=rdcpu ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
@@ -246,9 +246,6 @@ assumes that your PWD is set according to your installation standards.
         --openssldir=${PWD}/ssl no-threads \
         --with-rand-seed=egd ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
     ./Configure nonstop-nse_put       --prefix=${PWD} \
-        --openssldir=${PWD}/ssl threads "-D_REENTRANT" \
-        --with-rand-seed=egd ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
-    ./Configure nonstop-nse_spt_floss --prefix=${PWD} \
         --openssldir=${PWD}/ssl threads "-D_REENTRANT" \
         --with-rand-seed=egd ${CIPHENABLES} ${DBGFLAG} ${SYSTEMLIBS}
     ./Configure nonstop-nse_64        --prefix=${PWD} \

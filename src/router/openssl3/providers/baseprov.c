@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -19,7 +19,7 @@
 #include "prov/providercommon.h"
 #include "prov/implementations.h"
 #include "prov/provider_util.h"
-#include "internal/nelem.h"
+#include "prov/names.h"
 
 /*
  * Forward declarations to ensure that interface functions are correctly
@@ -91,6 +91,11 @@ static const OSSL_ALGORITHM base_store[] = {
 #undef STORE
 };
 
+static const OSSL_ALGORITHM base_rands[] = {
+    { PROV_NAMES_SEED_SRC, "provider=base", ossl_seed_src_functions },
+    { NULL, NULL, NULL }
+};
+
 static const OSSL_ALGORITHM *base_query(void *provctx, int operation_id,
                                          int *no_cache)
 {
@@ -102,6 +107,8 @@ static const OSSL_ALGORITHM *base_query(void *provctx, int operation_id,
         return base_decoder;
     case OSSL_OP_STORE:
         return base_store;
+    case OSSL_OP_RAND:
+        return base_rands;
     }
     return NULL;
 }
@@ -119,7 +126,7 @@ static const OSSL_DISPATCH base_dispatch_table[] = {
       (void (*)(void))base_gettable_params },
     { OSSL_FUNC_PROVIDER_GET_PARAMS, (void (*)(void))base_get_params },
     { OSSL_FUNC_PROVIDER_QUERY_OPERATION, (void (*)(void))base_query },
-    { 0, NULL }
+    OSSL_DISPATCH_END
 };
 
 OSSL_provider_init_fn ossl_base_provider_init;

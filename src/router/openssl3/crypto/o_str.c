@@ -7,7 +7,7 @@
  * https://www.openssl.org/source/license.html
  */
 
-#include "e_os.h"
+#include "internal/e_os.h"
 #include <string.h>
 #include <limits.h>
 #include <openssl/crypto.h>
@@ -56,10 +56,8 @@ void *CRYPTO_memdup(const void *data, size_t siz, const char* file, int line)
         return NULL;
 
     ret = CRYPTO_malloc(siz, file, line);
-    if (ret == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    if (ret == NULL)
         return NULL;
-    }
     return memcpy(ret, data, siz);
 }
 
@@ -196,10 +194,8 @@ unsigned char *ossl_hexstr2buf_sep(const char *str, long *buflen,
         return NULL;
     }
     buf_n /= 2;
-    if ((buf = OPENSSL_malloc(buf_n)) == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    if ((buf = OPENSSL_malloc(buf_n)) == NULL)
         return NULL;
-    }
 
     if (buflen != NULL)
         *buflen = 0;
@@ -272,10 +268,8 @@ char *ossl_buf2hexstr_sep(const unsigned char *buf, long buflen, char sep)
         return OPENSSL_zalloc(1);
 
     tmp_n = (sep != CH_ZERO) ? buflen * 3 : 1 + buflen * 2;
-    if ((tmp = OPENSSL_malloc(tmp_n)) == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    if ((tmp = OPENSSL_malloc(tmp_n)) == NULL)
         return NULL;
-    }
 
     if (buf2hexstr_sep(tmp, tmp_n, NULL, buf, buflen, sep))
         return tmp;
@@ -285,13 +279,13 @@ char *ossl_buf2hexstr_sep(const unsigned char *buf, long buflen, char sep)
 
 
 /*
- * Given a buffer of length 'len' return a OPENSSL_malloc'ed string with its
- * hex representation @@@ (Contents of buffer are always kept in ASCII, also
- * on EBCDIC machines)
+ * Given a buffer of length 'buflen' return a OPENSSL_malloc'ed string with
+ * its hex representation @@@ (Contents of buffer are always kept in ASCII,
+ * also on EBCDIC machines)
  */
 char *OPENSSL_buf2hexstr(const unsigned char *buf, long buflen)
 {
-    return ossl_buf2hexstr_sep(buf, buflen, ':');
+    return ossl_buf2hexstr_sep(buf, buflen, DEFAULT_SEPARATOR);
 }
 
 int openssl_strerror_r(int errnum, char *buf, size_t buflen)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -30,6 +30,8 @@ extern "C" {
 # define OSSL_SELF_TEST_TYPE_INSTALL_INTEGRITY  "Install_Integrity"
 # define OSSL_SELF_TEST_TYPE_CRNG               "Continuous_RNG_Test"
 # define OSSL_SELF_TEST_TYPE_PCT                "Conditional_PCT"
+# define OSSL_SELF_TEST_TYPE_PCT_KAT            "Conditional_KAT"
+# define OSSL_SELF_TEST_TYPE_KAT_INTEGRITY      "KAT_Integrity"
 # define OSSL_SELF_TEST_TYPE_KAT_CIPHER         "KAT_Cipher"
 # define OSSL_SELF_TEST_TYPE_KAT_ASYM_CIPHER    "KAT_AsymmetricCipher"
 # define OSSL_SELF_TEST_TYPE_KAT_DIGEST         "KAT_Digest"
@@ -44,6 +46,7 @@ extern "C" {
 # define OSSL_SELF_TEST_DESC_INTEGRITY_HMAC "HMAC"
 # define OSSL_SELF_TEST_DESC_PCT_RSA_PKCS1  "RSA"
 # define OSSL_SELF_TEST_DESC_PCT_ECDSA      "ECDSA"
+# define OSSL_SELF_TEST_DESC_PCT_EDDSA      "EDDSA"
 # define OSSL_SELF_TEST_DESC_PCT_DSA        "DSA"
 # define OSSL_SELF_TEST_DESC_CIPHER_AES_GCM "AES_GCM"
 # define OSSL_SELF_TEST_DESC_CIPHER_AES_ECB "AES_ECB_Decrypt"
@@ -69,6 +72,7 @@ extern "C" {
 # define OSSL_SELF_TEST_DESC_KDF_SSHKDF     "SSHKDF"
 # define OSSL_SELF_TEST_DESC_KDF_TLS12_PRF  "TLS12_PRF"
 # define OSSL_SELF_TEST_DESC_KDF_KBKDF      "KBKDF"
+# define OSSL_SELF_TEST_DESC_KDF_KBKDF_KMAC "KBKDF_KMAC"
 # define OSSL_SELF_TEST_DESC_KDF_TLS13_EXTRACT  "TLS13_KDF_EXTRACT"
 # define OSSL_SELF_TEST_DESC_KDF_TLS13_EXPAND   "TLS13_KDF_EXPAND"
 # define OSSL_SELF_TEST_DESC_RNG            "RNG"

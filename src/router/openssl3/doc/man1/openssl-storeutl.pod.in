@@ -77,7 +77,6 @@ However, if this URI would return a set of names (URIs), those are always
 returned.
 
 Note that all options must be given before the I<uri> argument.
-Otherwise they are ignored.
 
 Note I<-keys> selects exclusively private keys, there is no selector for public
 keys only.

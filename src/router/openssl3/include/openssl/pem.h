@@ -22,6 +22,9 @@
 # include <openssl/evp.h>
 # include <openssl/x509.h>
 # include <openssl/pemerr.h>
+# ifndef OPENSSL_NO_STDIO
+#  include <stdio.h>
+# endif
 
 #ifdef  __cplusplus
 extern "C" {
@@ -54,6 +57,7 @@ extern "C" {
 # define PEM_STRING_ECPRIVATEKEY "EC PRIVATE KEY"
 # define PEM_STRING_PARAMETERS   "PARAMETERS"
 # define PEM_STRING_CMS          "CMS"
+# define PEM_STRING_SM2PARAMETERS "SM2 PARAMETERS"
 
 # define PEM_TYPE_ENCRYPTED      10
 # define PEM_TYPE_MIC_ONLY       20

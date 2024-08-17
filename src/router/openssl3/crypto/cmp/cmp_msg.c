@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2024 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright Nokia 2007-2019
  * Copyright Siemens AG 2015-2019
  *
@@ -59,7 +59,6 @@ int ossl_cmp_msg_set0_libctx(OSSL_CMP_MSG *msg, OSSL_LIB_CTX *libctx,
     return 1;
 }
 
-
 OSSL_CMP_PKIHEADER *OSSL_CMP_MSG_get0_header(const OSSL_CMP_MSG *msg)
 {
     if (msg == NULL) {
@@ -99,6 +98,34 @@ int OSSL_CMP_MSG_get_bodytype(const OSSL_CMP_MSG *msg)
         return -1;
 
     return msg->body->type;
+}
+
+X509_PUBKEY *OSSL_CMP_MSG_get0_certreq_publickey(const OSSL_CMP_MSG *msg)
+{
+    const OSSL_CRMF_MSGS *reqs;
+    const OSSL_CRMF_MSG *crm;
+    const OSSL_CRMF_CERTTEMPLATE *tmpl;
+    X509_PUBKEY *pubkey;
+
+    switch (OSSL_CMP_MSG_get_bodytype(msg)) {
+    case OSSL_CMP_PKIBODY_IR:
+    case OSSL_CMP_PKIBODY_CR:
+    case OSSL_CMP_PKIBODY_KUR:
+        reqs = msg->body->value.ir; /* value.ir is same for cr and kur */
+        if ((crm = sk_OSSL_CRMF_MSG_value(reqs, 0)) == NULL) {
+            ERR_raise(ERR_LIB_CMP, CMP_R_CERTREQMSG_NOT_FOUND);
+            return NULL;
+        }
+        if ((tmpl = OSSL_CRMF_MSG_get0_tmpl(crm)) == NULL
+            || (pubkey = OSSL_CRMF_CERTTEMPLATE_get0_publicKey(tmpl)) == NULL) {
+            ERR_raise(ERR_LIB_CMP, CRMF_R_POPO_MISSING_PUBLIC_KEY);
+            return NULL;
+        }
+        return pubkey;
+    default:
+        ERR_raise(ERR_LIB_CMP, CMP_R_UNEXPECTED_PKIBODY);
+        return NULL;
+    }
 }
 
 /* Add an extension to the referenced extension stack, which may be NULL */
@@ -326,9 +353,9 @@ OSSL_CRMF_MSG *OSSL_CMP_CTX_setup_CRM(OSSL_CMP_CTX *ctx, int for_KUR, int rid)
             && (exts = X509_REQ_get_extensions(ctx->p10CSR)) == NULL)
         goto err;
     if (!ctx->SubjectAltName_nodefault && !HAS_SAN(ctx) && refcert != NULL
-            && (default_sans = X509V3_get_d2i(X509_get0_extensions(refcert),
-                                              NID_subject_alt_name, NULL, NULL))
-            != NULL
+        && (default_sans = X509V3_get_d2i(X509_get0_extensions(refcert),
+                                          NID_subject_alt_name, NULL, NULL))
+        != NULL
             && !add1_extension(&exts, NID_subject_alt_name, crit, default_sans))
         goto err;
     if (ctx->reqExtensions != NULL /* augment/override existing ones */
@@ -519,27 +546,37 @@ OSSL_CMP_MSG *ossl_cmp_certrep_new(OSSL_CMP_CTX *ctx, int bodytype,
 OSSL_CMP_MSG *ossl_cmp_rr_new(OSSL_CMP_CTX *ctx)
 {
     OSSL_CMP_MSG *msg = NULL;
+    const X509_NAME *issuer = NULL;
+    const X509_NAME *subject = NULL;
+    const ASN1_INTEGER *serialNumber = NULL;
+    EVP_PKEY *pubkey = NULL;
     OSSL_CMP_REVDETAILS *rd;
     int ret;
 
-    if (!ossl_assert(ctx != NULL && (ctx->oldCert != NULL
-                                     || ctx->p10CSR != NULL)))
+    if (!ossl_assert(ctx != NULL
+                     && (ctx->oldCert != NULL || ctx->p10CSR != NULL
+                         || (ctx->serialNumber != NULL && ctx->issuer != NULL))))
         return NULL;
 
     if ((rd = OSSL_CMP_REVDETAILS_new()) == NULL)
         goto err;
 
+    if (ctx->serialNumber != NULL && ctx->issuer != NULL) {
+        issuer = ctx->issuer;
+        serialNumber = ctx->serialNumber;
+    } else if (ctx->oldCert != NULL) {
+        issuer = X509_get_issuer_name(ctx->oldCert);
+        serialNumber = X509_get0_serialNumber(ctx->oldCert);
+    } else if (ctx->p10CSR != NULL) {
+        pubkey = X509_REQ_get0_pubkey(ctx->p10CSR);
+        subject = X509_REQ_get_subject_name(ctx->p10CSR);
+    } else {
+        goto err;
+    }
+
     /* Fill the template from the contents of the certificate to be revoked */
-    ret = ctx->oldCert != NULL
-    ? OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  NULL /* pubkey would be redundant */,
-                                  NULL /* subject would be redundant */,
-                                  X509_get_issuer_name(ctx->oldCert),
-                                  X509_get0_serialNumber(ctx->oldCert))
-    : OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails,
-                                  X509_REQ_get0_pubkey(ctx->p10CSR),
-                                  X509_REQ_get_subject_name(ctx->p10CSR),
-                                  NULL, NULL);
+    ret = OSSL_CRMF_CERTTEMPLATE_fill(rd->certDetails, pubkey, subject,
+                                      issuer, serialNumber);
     if (!ret)
         goto err;
 
@@ -673,7 +710,7 @@ int ossl_cmp_msg_gen_push1_ITAVs(OSSL_CMP_MSG *msg,
 }
 
 /*
- * Creates a new General Message/Response with an empty itav stack
+ * Creates a new General Message/Response with a copy of the given itav stack
  * returns a pointer to the PKIMessage on success, NULL on error
  */
 static OSSL_CMP_MSG *gen_new(OSSL_CMP_CTX *ctx,
@@ -787,6 +824,8 @@ OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int certReqId,
 {
     OSSL_CMP_MSG *msg = NULL;
     OSSL_CMP_CERTSTATUS *certStatus = NULL;
+    EVP_MD *md;
+    int is_fallback;
     ASN1_OCTET_STRING *certHash = NULL;
     OSSL_CMP_PKISI *sinfo;
 
@@ -814,13 +853,23 @@ OSSL_CMP_MSG *ossl_cmp_certConf_new(OSSL_CMP_CTX *ctx, int certReqId,
     /* set the ID of the certReq */
     if (!ASN1_INTEGER_set(certStatus->certReqId, certReqId))
         goto err;
+
+    certStatus->hashAlg = NULL;
     /*
      * The hash of the certificate, using the same hash algorithm
      * as is used to create and verify the certificate signature.
-     * If not available, a default hash algorithm is used.
+     * If not available, a fallback hash algorithm is used.
      */
-    if ((certHash = X509_digest_sig(ctx->newCert, NULL, NULL)) == NULL)
+    if ((certHash = X509_digest_sig(ctx->newCert, &md, &is_fallback)) == NULL)
         goto err;
+    if (is_fallback) {
+        if (!ossl_cmp_hdr_set_pvno(msg->header, OSSL_CMP_PVNO_3))
+            goto err;
+        if ((certStatus->hashAlg = X509_ALGOR_new()) == NULL)
+            goto err;
+        X509_ALGOR_set_md(certStatus->hashAlg, md);
+    }
+    EVP_MD_free(md);
 
     if (!ossl_cmp_certstatus_set0_certHash(certStatus, certHash))
         goto err;
@@ -962,8 +1011,7 @@ static int suitable_rid(const ASN1_INTEGER *certReqId, int rid)
         return 1;
 
     trid = ossl_cmp_asn1_get_int(certReqId);
-
-    if (trid == OSSL_CMP_CERTREQID_NONE) {
+    if (trid <= OSSL_CMP_CERTREQID_INVALID) {
         ERR_raise(ERR_LIB_CMP, CMP_R_BAD_REQUEST_ID);
         return 0;
     }
@@ -1106,8 +1154,8 @@ OSSL_CMP_MSG *OSSL_CMP_MSG_read(const char *file, OSSL_LIB_CTX *libctx,
     }
 
     msg = OSSL_CMP_MSG_new(libctx, propq);
-    if (msg == NULL){
-        ERR_raise(ERR_LIB_CMP, ERR_R_MALLOC_FAILURE);
+    if (msg == NULL) {
+        ERR_raise(ERR_LIB_CMP, ERR_R_CMP_LIB);
         return NULL;
     }
 
@@ -1177,4 +1225,14 @@ OSSL_CMP_MSG *d2i_OSSL_CMP_MSG_bio(BIO *bio, OSSL_CMP_MSG **msg)
 int i2d_OSSL_CMP_MSG_bio(BIO *bio, const OSSL_CMP_MSG *msg)
 {
     return ASN1_i2d_bio_of(OSSL_CMP_MSG, i2d_OSSL_CMP_MSG, bio, msg);
+}
+
+int ossl_cmp_is_error_with_waiting(const OSSL_CMP_MSG *msg)
+{
+    if (!ossl_assert(msg != NULL))
+        return 0;
+
+    return (OSSL_CMP_MSG_get_bodytype(msg) == OSSL_CMP_PKIBODY_ERROR
+            && ossl_cmp_pkisi_get_status(msg->body->value.error->pKIStatusInfo)
+            == OSSL_CMP_PKISTATUS_waiting);
 }

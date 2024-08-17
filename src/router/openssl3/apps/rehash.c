@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2024 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2013-2014 Timo Teräs <timo.teras@gmail.com>
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -209,11 +209,11 @@ static int handle_symlink(const char *filename, const char *fullpath)
     }
     if (filename[i++] != '.')
         return -1;
-    for (type = OSSL_NELEM(suffixes) - 1; type > 0; type--) {
-        const char *suffix = suffixes[type];
-        if (OPENSSL_strncasecmp(suffix, &filename[i], strlen(suffix)) == 0)
+    for (type = OSSL_NELEM(suffixes) - 1; type > 0; type--)
+        if (OPENSSL_strncasecmp(&filename[i],
+                                suffixes[type], strlen(suffixes[type])) == 0)
             break;
-    }
+
     i += strlen(suffixes[type]);
 
     id = strtoul(&filename[i], &endptr, 10);
@@ -266,7 +266,7 @@ static int do_file(const char *filename, const char *fullpath, enum Hash h)
 
     if (sk_X509_INFO_num(inf) != 1) {
         BIO_printf(bio_err,
-                   "%s: warning: skipping %s,"
+                   "%s: warning: skipping %s, "
                    "it does not contain exactly one certificate or CRL\n",
                    opt_getprog(), filename);
         /* This is not an error. */

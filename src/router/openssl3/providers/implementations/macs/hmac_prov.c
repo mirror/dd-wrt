@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -20,6 +20,8 @@
 #include <openssl/params.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+
+#include "internal/ssl3_cbc.h"
 
 #include "prov/implementations.h"
 #include "prov/provider_ctx.h"
@@ -58,17 +60,6 @@ struct hmac_data_st {
     unsigned char tls_mac_out[EVP_MAX_MD_SIZE];
     size_t tls_mac_out_size;
 };
-
-/* Defined in ssl/s3_cbc.c */
-int ssl3_cbc_digest_record(const EVP_MD *md,
-                           unsigned char *md_out,
-                           size_t *md_out_size,
-                           const unsigned char header[13],
-                           const unsigned char *data,
-                           size_t data_size,
-                           size_t data_plus_mac_plus_padding_size,
-                           const unsigned char *mac_secret,
-                           size_t mac_secret_length, char is_sslv3);
 
 static void *hmac_new(void *provctx)
 {
@@ -283,23 +274,6 @@ static const OSSL_PARAM *hmac_settable_ctx_params(ossl_unused void *ctx,
     return known_settable_ctx_params;
 }
 
-static int set_flag(const OSSL_PARAM params[], const char *key, int mask,
-                    int *flags)
-{
-    const OSSL_PARAM *p = OSSL_PARAM_locate_const(params, key);
-    int flag = 0;
-
-    if (p != NULL) {
-        if (!OSSL_PARAM_get_int(p, &flag))
-            return 0;
-        if (flag == 0)
-            *flags &= ~mask;
-        else
-            *flags |= mask;
-    }
-    return 1;
-}
-
 /*
  * ALL parameters should be set before init().
  */
@@ -308,22 +282,12 @@ static int hmac_set_ctx_params(void *vmacctx, const OSSL_PARAM params[])
     struct hmac_data_st *macctx = vmacctx;
     OSSL_LIB_CTX *ctx = PROV_LIBCTX_OF(macctx->provctx);
     const OSSL_PARAM *p;
-    int flags = 0;
 
     if (params == NULL)
         return 1;
 
     if (!ossl_prov_digest_load_from_params(&macctx->digest, params, ctx))
         return 0;
-
-    if (!set_flag(params, OSSL_MAC_PARAM_DIGEST_NOINIT, EVP_MD_CTX_FLAG_NO_INIT,
-                  &flags))
-        return 0;
-    if (!set_flag(params, OSSL_MAC_PARAM_DIGEST_ONESHOT, EVP_MD_CTX_FLAG_ONESHOT,
-                  &flags))
-        return 0;
-    if (flags)
-        HMAC_CTX_set_flags(macctx->ctx, flags);
 
     if ((p = OSSL_PARAM_locate_const(params, OSSL_MAC_PARAM_KEY)) != NULL) {
         if (p->data_type != OSSL_PARAM_OCTET_STRING)
@@ -353,5 +317,5 @@ const OSSL_DISPATCH ossl_hmac_functions[] = {
     { OSSL_FUNC_MAC_SETTABLE_CTX_PARAMS,
       (void (*)(void))hmac_settable_ctx_params },
     { OSSL_FUNC_MAC_SET_CTX_PARAMS, (void (*)(void))hmac_set_ctx_params },
-    { 0, NULL }
+    OSSL_DISPATCH_END
 };
