@@ -1,49 +1,49 @@
-export OPENSSL_TARGET := linux-generic32
+export OPENSSL_TARGET := linux-generic32-openwrt
 ifeq ($(ARCH),armeb)
-export OPENSSL_TARGET := linux-armv4
+export OPENSSL_TARGET := linux-armv4-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 
 
 ifeq ($(ARCHITECTURE),ventana)
 ifeq ($(ARCH),arm)
-export OPENSSL_TARGET := linux-armv4
+export OPENSSL_TARGET := linux-armv4-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 else
 ifeq ($(ARCH),arm)
 ifeq ($(CONFIG_STORM),y)
-export OPENSSL_TARGET := linux-armv4
+export OPENSSL_TARGET := linux-armv4-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
 else
-export OPENSSL_TARGET := linux-armv4
+export OPENSSL_TARGET := linux-armv4-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 endif
 endif
 ifeq ($(ARCH),mips)
-export OPENSSL_TARGET := linux-mips32
+export OPENSSL_TARGET := linux-mips32-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),mips64)
-export OPENSSL_TARGET := linux64-mips64
+export OPENSSL_TARGET := linux64-mips64-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive 
 endif
 ifeq ($(ARCH),mipsel)
-export OPENSSL_TARGET := linux-mips32
+export OPENSSL_TARGET := linux-mips32-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),powerpc)
-export OPENSSL_TARGET := linux-generic32
+export OPENSSL_TARGET := linux-generic32-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_TARGET := linux-x86
+export OPENSSL_TARGET := linux-x86-openwrt
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),x86_64)
-export OPENSSL_TARGET := linux-x86_64
+export OPENSSL_TARGET := linux-x86_64-openwrt
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),aarch64)
@@ -101,7 +101,7 @@ openssl-clean:
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib no-aria no-siphash no-sm2 no-sm3 no-sm4 no-tests no-external-tests no-cms no-mdc2 no-aria no-sm2 no-sm3 no-sm4 no-err
 
-OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd no-nextprotoneg
+OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd no-nextprotoneg no-brotli no-argon2 no-winstore no-docs no-ecx no-http no-quic no-unstable-qlog no-sm2-precomp no-zstd
 
 ifeq ($(CONFIG_IPQ806X),y)
 OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
