@@ -23,7 +23,7 @@
 #include <sys/types.h>
 
 #ifndef MSG_NOSIGNAL
-#define	MSG_NOSIGNAL 0
+#define MSG_NOSIGNAL 0
 #endif
 
 /*

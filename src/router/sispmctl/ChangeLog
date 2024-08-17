@@ -1,6 +1,25 @@
+04 May 2024 - 4.12
+	snapcraft: use local source for building
+	Mention /etc/sispmctl/password in man-page
+	Add favicon.ico
+	Always use original control data for libusb calls
+
+06 Jul 2023 - 4.11
+	Create /etc/sispmctl/ in passwordsetup.sh
+	Avoid incorrect web output if not in quiet mode
+	Use core22 for snap
+	Include artwork in distribution file
+
+21 Dec 2022 - 4.10
+	Provide snapcraft.yaml to build as snap
+	Provide script to create password file
+	Disable ProtectClock in sispmctl.service
+	Add folder with artwork
+
 09 Apr 2021 - 4.9
 	Correct display of serial number.
 	Fix build error with GCC 4.8.
+
 12 Aug 2020 - 4.8
 	Sleep two seconds upon wrong webserver password.
 	Improve parameter checks.

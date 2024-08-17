@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
-AC_INIT([sispmctl], [4.9], [xypron.glpk@gmx.de])
+AC_PREREQ([2.59])
+AC_INIT([sispmctl], [4.12], [xypron.glpk@gmx.de])
 AC_CONFIG_AUX_DIR(admin)
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
@@ -21,23 +21,28 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # check configure options
 AC_ARG_ENABLE(webless,
-AC_HELP_STRING([--enable-webless],
+AS_HELP_STRING([--enable-webless],
    [compile version of sispmctl without internal webserver]),
 [WEBLESS=true])
 AC_SUBST(WEBLESS)
 AM_CONDITIONAL(WEBLESSCOND, test x$WEBLESS = xtrue)
 
-AM_CONFIG_HEADER(config.h)
+AC_ARG_ENABLE(all-static,
+AS_HELP_STRING([--enable-all-static], [link statically]), [ALLSTATIC=true])
+AC_SUBST(ALLSTATIC)
+AM_CONDITIONAL(ALLSTATICCOND, test x$ALLSTATIC = xtrue)
+
+AC_CONFIG_HEADERS(config.h)
 
 AC_ARG_WITH([webdir],
-  AC_HELP_STRING([--with-skin],
+  AS_HELP_STRING([--with-skin],
     [directory with skin files for the web-interface]),
   [WEBDIR="$withval"],
   [WEBDIR="$docdir/skin"])
 AC_SUBST(WEBDIR)
 
 AC_ARG_WITH(bindaddr,
-AC_HELP_STRING([--with-bindaddr=IP], [bind listening socket to IP]),
+AS_HELP_STRING([--with-bindaddr=IP], [bind listening socket to IP]),
 [BINDADDR="$withval"])
 AC_SUBST(BINDADDR)
 
@@ -47,7 +52,6 @@ CFLAGS="$CFLAGS $LIBUSB_CFLAGS"
 LIBS="$LIBS $LIBUSB_LIBS"
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h net/ethernet.h sys/ethernet.h])
 
 # Checks for typedefs, structures, and compiler characteristics.

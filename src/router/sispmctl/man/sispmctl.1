@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH sispmctl 1 "Apr 2020" Linux "User Manuals"
+.TH sispmctl 1 "May 2024" Linux "User Manuals"
 
 .SH NAME
 sispmctl \- manage EnerGenie and Gembird USB controlled power strips
@@ -50,8 +50,8 @@ daemonize and start listening as a simple http webserver (default port: 2638)
 .IP \-L
 start listening as a simple http webserver without daemonizing
 .IP \-p
-IP network port (default: 2638) for listener. There is no authentication
-implemented yet.
+IP network port (default: 2638) for listener. A web-user and password can be
+defined in /etc/sispmctl/password.
 .IP \-u
 give the directory path where pages lie, that are served (default:
 /usr/local/share/doc/sispmctl/skin.

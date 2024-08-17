@@ -25,6 +25,7 @@ do
   echo The password inputs did not match.
 done
 SECRET=$(echo -n "$UNAME:$PASSWD" | base64)
+mkdir -p /etc/sispmctl
 rm -f $FILE
 echo $SECRET > $FILE
 chmod 400 $FILE

@@ -51,14 +51,14 @@ void l_listen(int *sock, struct usb_device *dev, int devnum)
 	char *buffer;
 	struct timespec waittime;
 	waittime.tv_sec = 0;
-	waittime.tv_nsec = 250000000;	/* a quarter second */
+	waittime.tv_nsec = 250000000; /* a quarter second */
 
 	oob = (char *)malloc(32);
 	buffer = (char *)malloc(BUFFERSIZE + 4);
 
 	if (debug)
 		fprintf(stderr, "Listening for local provider on port %d...\n", listenport);
-	listen(*sock, 1);	/* We only get one connection on this port.
+	listen(*sock, 1); /* We only get one connection on this port.
 				   Everything else is refused. */
 	while (1) {
 		while ((s = accept(*sock, NULL, NULL)) == -1) {
@@ -160,7 +160,7 @@ int *socket_init(char *bind_arg)
 	} else {
 		bind_addr = INADDR_ANY;
 	}
-	addr.sin_addr.s_addr = (uint32_t) bind_addr;
+	addr.sin_addr.s_addr = (uint32_t)bind_addr;
 
 	/* bind socket now */
 	if (bind(*s, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) == -1) {
@@ -174,4 +174,4 @@ socket_error:
 	close(*s);
 	return NULL;
 }
-#endif				// !WEBLESS
+#endif // !WEBLESS

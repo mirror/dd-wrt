@@ -1,11 +1,15 @@
 libsispmctl_la_LDFLAGS = \
-	-version-info 2:1:2
+	-version-info 2:3:2
 
 bin_PROGRAMS = sispmctl 
 
 lib_LTLIBRARIES = libsispmctl.la
 
 sispmctl_LDADD = libsispmctl.la
+
+if ALLSTATICCOND
+sispmctl_LDFLAGS = -all-static
+endif
 
 EXTRA_DIST =  \
 	web1/index.html web1/logo.png web1/off1.html web1/off2.html \

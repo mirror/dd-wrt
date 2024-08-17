@@ -1,7 +1,7 @@
 SiS-PM Control for Linux
 ========================
 
-(c) 2015-2020, Heinrich Schuchardt &lt;xypron.glpk@gmx.de&gt;
+(c) 2015-2023, Heinrich Schuchardt &lt;xypron.glpk@gmx.de&gt;
 (c) 2011-2016, Pete Hildebrandt &lt;send2ph@gmail.de&gt;
 (c) 2005-2011, Mondrian Nuessle et al.
 
@@ -13,7 +13,9 @@ powerstrips:
 
 * Gembird SIS-PMS SilverShield
 * Gembird MSIS-PM
-* EnerGenie EG-PMS2
+* EnerGenie EG-PM
+* EnerGenie EG-PMS
+* EnerGenie EG-PM2
 * EnerGenie EG-PMS2
 
 Installation

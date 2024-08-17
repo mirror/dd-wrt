@@ -138,7 +138,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libsispmctl_la_LIBADD =
 am_libsispmctl_la_OBJECTS = process.lo sispm_ctl.lo nethelp.lo \
-	socket.lo
+	schedule.lo socket.lo
 libsispmctl_la_OBJECTS = $(am_libsispmctl_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -343,7 +343,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 libsispmctl_la_LDFLAGS = \
-	-version-info 2:0:2
+	-version-info 2:1:2
 
 lib_LTLIBRARIES = libsispmctl.la
 sispmctl_LDADD = libsispmctl.la
@@ -380,7 +380,8 @@ EXTRA_DIST = \
 @WEBLESSCOND_FALSE@	web3/on3.html web3/on4.html web3/style.css
 
 libsispmctl_la_SOURCES = \
-	process.c sispm_ctl.c nethelp.c socket.c sispm_ctl.h nethelp.h socket.h
+	process.c sispm_ctl.c nethelp.c schedule.c socket.c \
+	sispm_ctl.h nethelp.h socket.h
 
 sispmctl_SOURCES = main.c
 AM_CPPFLAGS = $(all_includes)
@@ -519,6 +520,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nethelp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/schedule.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sispm_ctl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket.Plo@am__quote@
 

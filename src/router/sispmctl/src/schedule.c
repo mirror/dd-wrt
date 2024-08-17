@@ -12,14 +12,13 @@
 
 #define PMS2_BUFFER_SIZE 0x28
 
-static unsigned char
-*pms2_write_block(uint8_t action, uint32_t time, unsigned char *ptr)
+static unsigned char *pms2_write_block(uint8_t action, uint32_t time, unsigned char *ptr)
 {
 	int i;
 
 	*ptr++ = action;
 	for (i = 0; i < 4; ++i) {
-		*ptr++ = (uint8_t) time;
+		*ptr++ = (uint8_t)time;
 		time >>= 8;
 	}
 	return ptr;
@@ -33,8 +32,7 @@ static unsigned char
  * @ptr:	pointer to current action
  * Return:	pointer to next action
  */
-static const unsigned char
-*pms2_read_block(uint8_t * action, uint32_t * time, const unsigned char *ptr)
+static const unsigned char *pms2_read_block(uint8_t *action, uint32_t *time, const unsigned char *ptr)
 {
 	int i;
 
@@ -42,7 +40,7 @@ static const unsigned char
 	*time = 0;
 	for (i = 0; i < 4; ++i) {
 		*time >>= 8;
-		*time += (uint32_t) * ptr++ << 24;
+		*time += (uint32_t)*ptr++ << 24;
 	}
 	return ptr;
 }
@@ -58,7 +56,7 @@ static const unsigned char
 int pms2_schedule_to_buffer(const struct plannif *schedule, unsigned char *buffer)
 {
 	unsigned char *ptr = buffer;
-	uint32_t loop_ref, start = (uint32_t) schedule->timeStamp;
+	uint32_t loop_ref, start = (uint32_t)schedule->timeStamp;
 	unsigned char action;
 	int i;
 
@@ -119,9 +117,9 @@ void pms2_buffer_to_schedule(const unsigned char *buffer, struct plannif *schedu
 		if (action > 3)
 			break;
 		schedule->actions[i + 1].switchOn = action & 1;
-		schedule->actions[i].timeForNext = ((int32_t) time - (int32_t) last) / 60;
+		schedule->actions[i].timeForNext = ((int32_t)time - (int32_t)last) / 60;
 		last = time;
 	}
 	if (time)
-		schedule->actions[i].timeForNext = ((int32_t) loop_ref + time - (int32_t) last) / 60;
+		schedule->actions[i].timeForNext = ((int32_t)loop_ref + time - (int32_t)last) / 60;
 }

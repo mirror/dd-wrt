@@ -6,4 +6,4 @@ extern int listenport;
 int *socket_init(char *bindaddr);
 void l_listen(int *sock, struct usb_device *, int devnum);
 
-#endif				/* ! LOCAL_H */
+#endif /* ! LOCAL_H */

@@ -123,19 +123,22 @@ static void daemonize()
 static void print_disclaimer(void)
 {
 	fprintf(stderr, "\nSiS PM Control for Linux " PACKAGE_VERSION "\n\n"
-		"(C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>\n"
-		"(C) 2011-2016, Pete Hildebrandt <send2ph@gmail.com>\n"
-		"(C) 2004-2011, Mondrian Nuessle\n"
-		"(C) 2005-2006, Andreas Neuper\n"
-		"(C) 2010, Olivier Matheret for the scheduling part\n\n"
-		"This program comes with ABSOLUTELY NO WARRANTY.\n\n" "You may re-distribute it under the terms of the\n" "GNU General Public License version 2 or later.\n");
+			"(C) 2015-2020, Heinrich Schuchardt <xypron.glpk@gmx.de>\n"
+			"(C) 2011-2016, Pete Hildebrandt <send2ph@gmail.com>\n"
+			"(C) 2004-2011, Mondrian Nuessle\n"
+			"(C) 2005-2006, Andreas Neuper\n"
+			"(C) 2010, Olivier Matheret for the scheduling part\n\n"
+			"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
+			"You may re-distribute it under the terms of the\n"
+			"GNU General Public License version 2 or later.\n");
 	return;
 }
 
 static void print_usage(char *name)
 {
 	print_disclaimer();
-	fprintf(stderr, "\n"
+	fprintf(stderr,
+		"\n"
 		"sispmctl -s\n"
 		"sispmctl [-q] [-n] [-d 0...] [-D ...] -b <on|off>\n"
 		"sispmctl [-q] [-n] [-d 0...] [-D ...] -[o|f|t|g|m] 1..4|all\n"
@@ -161,19 +164,26 @@ static void print_usage(char *name)
 		"           '--Aat \"date\"'   - sets an event time as a date "
 		"'%%Y-%%m-%%d %%H:%%M' in the current time zone\n"
 		"           '--Aafter N'     - sets an event time as N minutes "
-		"after the previous one\n" "           '--Ado <on|off>' - sets the current event's action\n" "           '--Aloop N'      - loops to 1st event's action after " "N minutes\n\n"
+		"after the previous one\n"
+		"           '--Ado <on|off>' - sets the current event's action\n"
+		"           '--Aloop N'      - loops to 1st event's action after "
+		"N minutes\n\n"
 #ifndef WEBLESS
 		"Web interface features:\n"
 		"sispmctl [-q] [-i <ip>] [-p <#port>] [-u <path>] -l|L\n"
 		"   'l'   - start port listener\n"
 		"   'L'   - same as 'l', but stay in foreground\n"
 		"   'i'   - bind socket on interface with given IP (dotted decimal, "
-		"e.g. 192.168.1.1)\n" "   'p'   - port number for listener (%d)\n" "   'u'   - repository for web pages (default=%s)\n\n", listenport, homedir
+		"e.g. 192.168.1.1)\n"
+		"   'p'   - port number for listener (%d)\n"
+		"   'u'   - repository for web pages (default=%s)\n\n",
+		listenport, homedir
 #endif
-	    );
+	);
 
 #ifdef WEBLESS
-	fprintf(stderr, "Note: This build was compiled without " "web-interface features.\n\n");
+	fprintf(stderr, "Note: This build was compiled without "
+			"web-interface features.\n\n");
 #endif
 }
 
@@ -187,8 +197,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 	int status;
 	int devnum = 0;
 	usb_dev_handle *udev = NULL;
-	usb_dev_handle *sudev = NULL;	//scan device
-	unsigned int id = 0;	//product id of current device
+	usb_dev_handle *sudev = NULL; //scan device
+	unsigned int id = 0; //product id of current device
 	char *onoff[] = { "off", "on", "0", "1" };
 #ifndef WEBLESS
 	char *bindaddr = 0;
@@ -228,14 +238,17 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				from = upto = atoi(optarg);
 			}
 			if (from < 1 || upto > 4) {
-				fprintf(stderr, "Invalid outlet number given: %s\n" "Expected: 1, 2, 3, 4, or all.\nTerminating.\n", optarg);
+				fprintf(stderr,
+					"Invalid outlet number given: %s\n"
+					"Expected: 1, 2, 3, 4, or all.\nTerminating.\n",
+					optarg);
 				print_disclaimer();
 				exit(-6);
 			}
 		} else {
 			from = upto = 0;
 		}
-		if (strchr("ofgbtaAm", c)) {	//we need a device handle for these commands
+		if (strchr("ofgbtaAm", c)) { //we need a device handle for these commands
 			/* get device-handle/-id if it wasn't done already */
 			if (udev == NULL) {
 				udev = get_handle(dev[devnum]);
@@ -250,7 +263,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 		}
 #ifdef WEBLESS
 		if (strchr("lLipu", c)) {
-			fprintf(stderr, "Application was compiled without web-interface. " "Feature not available.\n");
+			fprintf(stderr, "Application was compiled without web-interface. "
+					"Feature not available.\n");
 			exit(-100);
 		}
 #endif
@@ -263,8 +277,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 			break;
 		default:
 			id = get_id(dev[devnum]);
-			if (((id == PRODUCT_ID_MSISPM_OLD) || (id == PRODUCT_ID_MSISPM_FLASH))
-			    && (from != upto))
+			if (((id == PRODUCT_ID_MSISPM_OLD) || (id == PRODUCT_ID_MSISPM_FLASH)) && (from != upto))
 				from = upto = 1;
 		}
 		for (i = from; i <= upto; ++i) {
@@ -272,11 +285,13 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 			case 's':
 				for (status = 0; status < count; ++status) {
 					if (numeric == 0)
-						printf("Gembird #%d\nUSB information:  bus %s, device %s\n", status, dev[status]->bus->dirname, dev[status]->filename);
+						printf("Gembird #%d\nUSB information:  bus %s, device %s\n", status,
+						       dev[status]->bus->dirname, dev[status]->filename);
 					else
 						printf("%d %s %s\n", status, dev[status]->bus->dirname, dev[status]->filename);
 					id = get_id(dev[status]);
-					if ((id == PRODUCT_ID_SISPM) || (id == PRODUCT_ID_SISPM_FLASH_NEW) || (id == PRODUCT_ID_SISPM_EG_PMS2))
+					if ((id == PRODUCT_ID_SISPM) || (id == PRODUCT_ID_SISPM_FLASH_NEW) ||
+					    (id == PRODUCT_ID_SISPM_EG_PMS2))
 						if (numeric == 0)
 							printf("device type:      4-socket SiS-PM\n");
 						else
@@ -288,7 +303,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					sudev = get_handle(dev[status]);
 					id = get_id(dev[status]);
 					if (sudev == NULL) {
-						fprintf(stderr, "No access to Gembird #%d USB device %s\n", status, dev[status]->filename);
+						fprintf(stderr, "No access to Gembird #%d USB device %s\n", status,
+							dev[status]->filename);
 						exit(1);
 					}
 					if (numeric == 0)
@@ -302,14 +318,15 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				break;
 				// select device...
 				// replace previous (first is default) device by selected one
-			case 'd':	// by id
+			case 'd': // by id
 				if (udev != NULL) {
 					usb_close(udev);
 					udev = NULL;
 				}
 				devnum = atoi(optarg);
 				if ((devnum < 0) || (devnum >= count)) {
-					fprintf(stderr, "Invalid number or given device not found.\n" "Terminating\n");
+					fprintf(stderr, "Invalid number or given device not found.\n"
+							"Terminating\n");
 					if (udev != NULL) {
 						usb_close(udev);
 						udev = NULL;
@@ -317,7 +334,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					exit(-8);
 				}
 				break;
-			case 'D':	// by serial number
+			case 'D': // by serial number
 				for (j = 0; j < count; ++j) {
 					if (debug)
 						fprintf(stderr, "now comparing %s and %s\n", usbdevsn[j], optarg);
@@ -331,7 +348,10 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					}
 				}
 				if (devnum != j) {
-					fprintf(stderr, "No device with serial number %s found.\n" "Terminating\n", optarg);
+					fprintf(stderr,
+						"No device with serial number %s found.\n"
+						"Terminating\n",
+						optarg);
 					if (udev != NULL) {
 						usb_close(udev);
 						udev = NULL;
@@ -339,7 +359,7 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					exit(-8);
 				}
 				break;
-			case 'U':	// by USB Bus:Device
+			case 'U': // by USB Bus:Device
 				for (j = 0; j < count; ++j) {
 					char tmp[8194];
 					sprintf(tmp, "%s:%s", dev[j]->bus->dirname, dev[j]->filename);
@@ -356,7 +376,10 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					}
 				}
 				if (devnum != j) {
-					fprintf(stderr, "No device at USB Bus:Device %s found.\n" "Terminating\n", optarg);
+					fprintf(stderr,
+						"No device at USB Bus:Device %s found.\n"
+						"Terminating\n",
+						optarg);
 					if (udev != NULL) {
 						usb_close(udev);
 						udev = NULL;
@@ -382,108 +405,106 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				if (verbose)
 					printf("Toggled outlet %d %s\n", i, onoff[result]);
 				break;
-			case 'A':{
-					time_t date, lastEventTime;
-					struct tm *timeStamp_tm;
-					struct plannif plan;
-					int opt, lastAction = 0;
-					ulong loop = 0;
-					int optindsave = optind;
-					int actionNo = 0;
+			case 'A': {
+				time_t date, lastEventTime;
+				struct tm *timeStamp_tm;
+				struct plannif plan;
+				int opt, lastAction = 0;
+				ulong loop = 0;
+				int optindsave = optind;
+				int actionNo = 0;
 
-					outlet = check_outlet_number(id, i);
+				outlet = check_outlet_number(id, i);
 
-					time(&date);
-					timeStamp_tm = localtime(&date);
-					lastEventTime = ((ulong) (date / 60)) * 60;	// round to previous minute
-					plannif_reset(&plan);
-					plan.socket = outlet;
-					plan.timeStamp = date;
-					plan.actions[0].switchOn = 0;
+				time(&date);
+				timeStamp_tm = localtime(&date);
+				lastEventTime = ((ulong)(date / 60)) * 60; // round to previous minute
+				plannif_reset(&plan);
+				plan.socket = outlet;
+				plan.timeStamp = date;
+				plan.actions[0].switchOn = 0;
 
-					const struct option opts[] = {
-						{ "Ado", 1, NULL, 'd' },
-						{ "Aafter", 1, NULL, 'a' },
-						{ "Aat", 1, NULL, '@' },
-						{ "Aloop", 1, NULL, 'l' },
-						{ NULL, 0, 0, 0 }
-					};
+				const struct option opts[] = { { "Ado", 1, NULL, 'd' },
+							       { "Aafter", 1, NULL, 'a' },
+							       { "Aat", 1, NULL, '@' },
+							       { "Aloop", 1, NULL, 'l' },
+							       { NULL, 0, 0, 0 } };
 
-					// scan long options and store in plan+loop variables
-					while ((opt = getopt_long(argc, argv, "", opts, NULL)) != EOF) {
-						if (opt == 'l') {
-							loop = atol(optarg);
-							continue;
-						}
-						if (actionNo + 1 >= sizeof(plan.actions) / sizeof(struct plannifAction)) {
-							// last event is reserved for loop or stop
-							fprintf(stderr, "Too many scheduled events\nTerminating\n");
-							exit(-7);
-						}
-						switch (opt) {
-						case 'd':
-							plan.actions[actionNo + 1].switchOn = !strcmp(optarg, "on");
-							break;
-						case 'a':
-							plan.actions[actionNo].timeForNext = atol(optarg);
-							break;
-						case '@':{
-								struct tm tm;
-								time_t time4next;
-								bzero(&tm, sizeof(tm));
-								tm.tm_isdst = timeStamp_tm->tm_isdst;
-								strptime(optarg, "%Y-%m-%d %H:%M", &tm);
-								time4next = mktime(&tm);
-								if (time4next > lastEventTime)
-									plan.actions[actionNo].timeForNext = (time4next - lastEventTime) / 60;
-								else
-									plan.actions[actionNo].timeForNext = 0;
-								break;
-							}
-						default:
-							fprintf(stderr, "Unknown Option: %s\nTerminating\n", argv[optind - 1]);
-							exit(-7);
-							break;
-						}
-						if (plan.actions[actionNo].timeForNext == 0) {
-							fprintf(stderr, "Incorrect Date: %s\nTerminating\n", optarg);
-							exit(-7);
-						}
-
-						if (plan.actions[actionNo].timeForNext != -1 && plan.actions[actionNo + 1].switchOn != -1) {
-							lastEventTime += 60 * plan.actions[actionNo].timeForNext;
-							++actionNo;
-						}
+				// scan long options and store in plan+loop variables
+				while ((opt = getopt_long(argc, argv, "", opts, NULL)) != EOF) {
+					if (opt == 'l') {
+						loop = atol(optarg);
+						continue;
+					}
+					if (actionNo + 1 >= sizeof(plan.actions) / sizeof(struct plannifAction)) {
+						// last event is reserved for loop or stop
+						fprintf(stderr, "Too many scheduled events\nTerminating\n");
+						exit(-7);
+					}
+					switch (opt) {
+					case 'd':
+						plan.actions[actionNo + 1].switchOn = !strcmp(optarg, "on");
+						break;
+					case 'a':
+						plan.actions[actionNo].timeForNext = atol(optarg);
+						break;
+					case '@': {
+						struct tm tm;
+						time_t time4next;
+						bzero(&tm, sizeof(tm));
+						tm.tm_isdst = timeStamp_tm->tm_isdst;
+						strptime(optarg, "%Y-%m-%d %H:%M", &tm);
+						time4next = mktime(&tm);
+						if (time4next > lastEventTime)
+							plan.actions[actionNo].timeForNext = (time4next - lastEventTime) / 60;
+						else
+							plan.actions[actionNo].timeForNext = 0;
+						break;
+					}
+					default:
+						fprintf(stderr, "Unknown Option: %s\nTerminating\n", argv[optind - 1]);
+						exit(-7);
+						break;
+					}
+					if (plan.actions[actionNo].timeForNext == 0) {
+						fprintf(stderr, "Incorrect Date: %s\nTerminating\n", optarg);
+						exit(-7);
 					}
 
-					// compute the value to set in the last row, according to loop
-					while (plan.actions[lastAction].timeForNext != -1) {
-						if (loop && (lastAction > 0)) {
-							// we ignore the first time for the loop calculation
-							if (loop <= plan.actions[lastAction].timeForNext) {
-								printf("error : the loop period is too short\n");
-								exit(1);
-							}
-							loop -= plan.actions[lastAction].timeForNext;
-						}
-						++lastAction;
+					if (plan.actions[actionNo].timeForNext != -1 && plan.actions[actionNo + 1].switchOn != -1) {
+						lastEventTime += 60 * plan.actions[actionNo].timeForNext;
+						++actionNo;
 					}
-					if (lastAction >= 1)
-						plan.actions[lastAction].timeForNext = loop;
-
-					// let's go, and check
-					usb_command_setplannif(udev, &plan);
-					if (verbose) {
-						plannif_reset(&plan);
-						usb_command_getplannif(udev, outlet, &plan);
-						plannif_display(&plan, 0, NULL);
-					}
-
-					if (i < upto)
-						optind = optindsave;	// reset for next device if needed
-
-					break;
 				}
+
+				// compute the value to set in the last row, according to loop
+				while (plan.actions[lastAction].timeForNext != -1) {
+					if (loop && (lastAction > 0)) {
+						// we ignore the first time for the loop calculation
+						if (loop <= plan.actions[lastAction].timeForNext) {
+							printf("error : the loop period is too short\n");
+							exit(1);
+						}
+						loop -= plan.actions[lastAction].timeForNext;
+					}
+					++lastAction;
+				}
+				if (lastAction >= 1)
+					plan.actions[lastAction].timeForNext = loop;
+
+				// let's go, and check
+				usb_command_setplannif(udev, &plan);
+				if (verbose) {
+					plannif_reset(&plan);
+					usb_command_getplannif(udev, outlet, &plan);
+					plannif_display(&plan, 0, NULL);
+				}
+
+				if (i < upto)
+					optind = optindsave; // reset for next device if needed
+
+				break;
+			}
 			case 'a':
 				outlet = check_outlet_number(id, i);
 				struct plannif plan;
@@ -527,22 +548,22 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 					printf("Web server will bind on interface with IP %s\n", bindaddr);
 				break;
 			case 'l':
-			case 'L':{
-					int *s;
+			case 'L': {
+				int *s;
 
-					openlog("sispmctl", LOG_PID, LOG_INFO);
-					read_password();
-					if (verbose)
-						printf("Server goes to listen mode now.\n");
-					if ((s = socket_init(bindaddr)) != NULL) {
-						if (c == 'l')
-							daemonize();
-						while (1)
-							l_listen(s, dev[devnum], devnum);
-					} else
-						exit(EXIT_FAILURE);
-					break;
-				}
+				openlog("sispmctl", LOG_PID, LOG_INFO);
+				read_password();
+				if (verbose)
+					printf("Server goes to listen mode now.\n");
+				if ((s = socket_init(bindaddr)) != NULL) {
+					if (c == 'l')
+						daemonize();
+					while (1)
+						l_listen(s, dev[devnum], devnum);
+				} else
+					exit(EXIT_FAILURE);
+				break;
+			}
 #endif
 			case 'q':
 				verbose = 1 - verbose;
@@ -575,8 +596,8 @@ static void parse_command_line(int argc, char *argv[], int count, struct usb_dev
 				fprintf(stderr, "Unknown option: %c(%x)\nTerminating\n", c, c);
 				exit(-7);
 			}
-		}		// loop through devices
-	}			// loop through options
+		} // loop through devices
+	} // loop through options
 
 	if (udev) {
 		usb_close(udev);
@@ -610,15 +631,19 @@ int main(int argc, char *argv[])
 	//first search for GEMBIRD (m)SiS-PM devices
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
-			if ((dev->descriptor.idVendor == VENDOR_ID)
-			    && ((dev->descriptor.idProduct == PRODUCT_ID_SISPM) ||
-				(dev->descriptor.idProduct == PRODUCT_ID_MSISPM_OLD) ||
-				(dev->descriptor.idProduct == PRODUCT_ID_MSISPM_FLASH) || (dev->descriptor.idProduct == PRODUCT_ID_SISPM_FLASH_NEW) || (dev->descriptor.idProduct == PRODUCT_ID_SISPM_EG_PMS2))) {
+			if ((dev->descriptor.idVendor == VENDOR_ID) && ((dev->descriptor.idProduct == PRODUCT_ID_SISPM) ||
+									(dev->descriptor.idProduct == PRODUCT_ID_MSISPM_OLD) ||
+									(dev->descriptor.idProduct == PRODUCT_ID_MSISPM_FLASH) ||
+									(dev->descriptor.idProduct == PRODUCT_ID_SISPM_FLASH_NEW) ||
+									(dev->descriptor.idProduct == PRODUCT_ID_SISPM_EG_PMS2))) {
 				usbdev[count] = dev;
 				++count;
 			}
 			if (count == MAXGEMBIRD) {
-				fprintf(stderr, "%d devices found. Please recompile if you need to " "support more devices!\n", count);
+				fprintf(stderr,
+					"%d devices found. Please recompile if you need to "
+					"support more devices!\n",
+					count);
 				break;
 			}
 		}

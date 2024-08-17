@@ -35,7 +35,7 @@
 #include "config.h"
 #include "sispm_ctl.h"
 
-#define BSIZE   65536
+#define BSIZE 65536
 int debug = 0;
 int verbose = 1;
 #ifdef DATADIR
@@ -52,11 +52,14 @@ static void service_not_available(int out)
 	char xbuffer[BSIZE + 2];
 
 	sprintf(xbuffer, "HTTP/1.1 503 Service not available\n"
-		"Server: SisPM\nContent-Type: "
-		"text/html\n\n"
-		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
-		"\"http://www.w3.org/TR/html4/loose.dtd\">\n"
-		"<html><head>\n<title>503 Service not available</title>\n" "<meta http-equiv=\"refresh\" content=\"2;url=/\">\n" "</head><body>\n" "<h1>503 Service not available</h1></body></html>\n\n");
+			 "Server: SisPM\nContent-Type: "
+			 "text/html\n\n"
+			 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+			 "\"http://www.w3.org/TR/html4/loose.dtd\">\n"
+			 "<html><head>\n<title>503 Service not available</title>\n"
+			 "<meta http-equiv=\"refresh\" content=\"2;url=/\">\n"
+			 "</head><body>\n"
+			 "<h1>503 Service not available</h1></body></html>\n\n");
 	send(out, xbuffer, strlen(xbuffer), 0);
 }
 
@@ -66,11 +69,14 @@ static void unauthorized(int out)
 
 	/* Sleep here to make password guessing more expensive */
 	usleep(2000000);
-	sprintf(xbuffer,
-		"HTTP/1.1 401 Unauthorized\nServer: SisPM\n"
-		"WWW-Authenticate: Basic realm=\"SisPM\n\""
-		"Content-Type: text/html\n\n"
-		"<!DOCTYPE HTML>\n" "<html><head>\n<title>401 Unauthorized</title>\n" "<meta http-equiv=\"refresh\" content=\"10;url=/\">\n" "</head><body>\n" "<h1>401 Unauthorized</h1></body></html>\n\n");
+	sprintf(xbuffer, "HTTP/1.1 401 Unauthorized\nServer: SisPM\n"
+			 "WWW-Authenticate: Basic realm=\"SisPM\n\""
+			 "Content-Type: text/html\n\n"
+			 "<!DOCTYPE HTML>\n"
+			 "<html><head>\n<title>401 Unauthorized</title>\n"
+			 "<meta http-equiv=\"refresh\" content=\"10;url=/\">\n"
+			 "</head><body>\n"
+			 "<h1>401 Unauthorized</h1></body></html>\n\n");
 	send(out, xbuffer, strlen(xbuffer), 0);
 }
 
@@ -79,10 +85,13 @@ static void bad_request(int out)
 	char xbuffer[BSIZE + 2];
 
 	sprintf(xbuffer, "HTTP/1.1 404 Not found\nServer: SisPM\nContent-Type: "
-		"text/html\n\n"
-		"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
-		"\"http://www.w3.org/TR/html4/loose.dtd\">\n"
-		"<html><head>\n<title>404 Not found</title>\n" "<meta http-equiv=\"refresh\" content=\"2;url=/\">\n" "</head><body>\n" "<h1>404 Not found</h1></body></html>\n\n");
+			 "text/html\n\n"
+			 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+			 "\"http://www.w3.org/TR/html4/loose.dtd\">\n"
+			 "<html><head>\n<title>404 Not found</title>\n"
+			 "<meta http-equiv=\"refresh\" content=\"2;url=/\">\n"
+			 "</head><body>\n"
+			 "<h1>404 Not found</h1></body></html>\n\n");
 	send(out, xbuffer, strlen(xbuffer), 0);
 }
 
@@ -117,7 +126,7 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 	long lastpos = 0;
 	long remlen = 0;
 	usb_dev_handle *udev;
-	unsigned int id;	//product id of current device
+	unsigned int id; //product id of current device
 	char *retvalue = NULL;
 
 	/* Make sure the string is terminated */
@@ -153,7 +162,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 			if (!password) {
 				break;
 			}
-			for (ptr = password; *ptr > ' '; ++ptr) ;
+			for (ptr = password; *ptr > ' '; ++ptr)
+				;
 			*ptr = '\0';
 			break;
 		}
@@ -204,7 +214,8 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 		fclose(in);
 		return;
 	} else if (verbose)
-		printf("Accessing Gembird #%d USB device %s\n", devnum, dev->filename);
+		fprintf(stderr, "Accessing Gembird #%d USB device %s\n", devnum, dev->filename);
+
 	id = get_id(dev);
 
 	lastpos = ftell(in);
@@ -246,8 +257,10 @@ void process(int out, char *request, struct usb_device *dev, int devnum)
 
 				if (trm != NULL) {
 					if (num == NULL) {
-						fprintf(stderr, "Command-Format: $$exec(#)?positive:negative$$ - " "ERROR at #\n");
-						syslog(LOG_ERR, "Command-Format: $$exec(#)?positive:negative$$ - " "ERROR at #\n");
+						fprintf(stderr, "Command-Format: $$exec(#)?positive:negative$$ - "
+								"ERROR at #\n");
+						syslog(LOG_ERR, "Command-Format: $$exec(#)?positive:negative$$ - "
+								"ERROR at #\n");
 						service_not_available(out);
 						fclose(in);
 						return;
