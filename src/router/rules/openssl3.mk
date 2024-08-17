@@ -48,9 +48,10 @@ export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sect
 endif
 ifeq ($(ARCH),aarch64)
 export OPENSSL_TARGET := linux-aarch64-openwrt
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
+OPENSSL_CMAKEFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 
 openssl:
 	$(MAKE) -C openssl3 MAKE=make CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
@@ -103,10 +104,10 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-s
 OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd
 
 ifeq ($(CONFIG_IPQ806X),y)
-OPENSSL_OPTIONS += enable-devcryptoeng
+OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
 endif
 ifeq ($(CONFIG_IPQ6018),y)
-OPENSSL_OPTIONS += enable-devcryptoeng
+OPENSSL_OPTIONS += enable-devcryptoeng enable-afalgeng
 endif
 #ifeq ($(CONFIG_ALPINE),y)
 #OPENSSL_OPTIONS += enable-devcryptoeng
