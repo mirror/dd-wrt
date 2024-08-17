@@ -87,8 +87,9 @@ endif
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
 	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 
-	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d
+	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3
 	cp openssl3/apps/openssl.cnf $(INSTALLDIR)/openssl/etc/ssl/
+	cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
 #	sed 's!engines = engines_sect!#&!' $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 	cp openssl3/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
 
@@ -102,16 +103,16 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-s
 OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-egd
 
 ifeq ($(CONFIG_IPQ806X),y)
-OPENSSL_OPTIONS += enable-devcryptoeng disable-dynamic-engine
+OPENSSL_OPTIONS += enable-devcryptoeng
 endif
 ifeq ($(CONFIG_IPQ6018),y)
-OPENSSL_OPTIONS += enable-devcryptoeng disable-dynamic-engine
+OPENSSL_OPTIONS += enable-devcryptoeng
 endif
 #ifeq ($(CONFIG_ALPINE),y)
 #OPENSSL_OPTIONS += enable-devcryptoeng
 #endif
 ifeq ($(CONFIG_MVEBU),y)
-OPENSSL_OPTIONS += enable-devcryptoeng disable-dynamic-engine
+OPENSSL_OPTIONS += enable-devcryptoeng
 endif
 ifneq ($(ARCH),mips64)
 ifneq ($(ARCH),x86_64)
