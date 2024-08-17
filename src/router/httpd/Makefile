@@ -1,9 +1,4 @@
 -include $(LINUXDIR)/.config
-ifeq ($(CONFIG_IPQ6018),y)
-SSLPATH=$(TOP)/openssl3
-else
-SSLPATH=$(TOP)/openssl
-endif
 
 CONFIG_WR941=
 CONFIG_SWCONFIG=
@@ -1557,7 +1552,7 @@ vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visua
 
 %.o : %.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 all: generate httpd_static cert
 
@@ -1615,7 +1610,7 @@ httpd: httpd.c $(ADDOBJ) $(OBJS)
 	@echo "[LD] $@"
 #	gcc -o write_web write_web.c
 #	./write_web www 
-	@$(CC) -fvisibility=hidden -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
+	$(CC) -fvisibility=hidden -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
@@ -1629,7 +1624,7 @@ ifeq ($(CONFIG_REGISTER),y)
 	cp $(REGOBJS2) .
 endif
 ifeq ($(CONFIG_ATH9K),y)
-	@$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	$(CC) -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
 	gcc -o makeej makeej.c
 	gcc-nm *.o | grep ej_| awk '{print $$3}' > ejsyms
@@ -1639,20 +1634,20 @@ endif
 #	gcc -o write_web write_web.c
 #	./write_web www 
 #	@$(CC) -c $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
-	@$(CC) -o $@ $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
+	$(CC) -o $@ $^ -DSTATIC_BUILD $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(ATH9KVISOBJS) $(LDFLAGS)  $(WEBSLDFLAGS) $(LTO) $(LDLTO)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
 validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
 	@echo "[LD] $@"
-	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
+	$(CC) -fvisibility=hidden --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
 visuals.so: dd-wrt.o packets.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o status_gpio.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
-	@$(CC) -fvisibility=hidden -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	$(CC) -fvisibility=hidden -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	@$(CC) -fvisibility=hidden --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS) $(LDLTO)
+	$(CC) -fvisibility=hidden --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS) $(LDLTO)
 	
 	
 build_date.o: build_date.c
