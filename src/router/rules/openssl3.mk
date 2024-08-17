@@ -1,4 +1,4 @@
-export OPENSSL_TARGET := linux-generic32-openwrt
+export OPENSSL_TARGET := linux-generic32
 ifeq ($(ARCH),armeb)
 export OPENSSL_TARGET := linux-arm-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections 
@@ -23,15 +23,15 @@ endif
 endif
 endif
 ifeq ($(ARCH),mips)
-export OPENSSL_TARGET := linux-mips32-openwrt
+export OPENSSL_TARGET := linux-mips-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),mips64)
-export OPENSSL_TARGET := linux64-mips64-openwrt
+export OPENSSL_TARGET := linux-mips64-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive 
 endif
 ifeq ($(ARCH),mipsel)
-export OPENSSL_TARGET := linux-mips32-openwrt
+export OPENSSL_TARGET := linux-mips-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),powerpc)
@@ -39,7 +39,7 @@ export OPENSSL_TARGET := linux-generic32-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_TARGET := linux-x86-openwrt
+export OPENSSL_TARGET := linux-i386-openwrt
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 ifeq ($(ARCH),x86_64)
