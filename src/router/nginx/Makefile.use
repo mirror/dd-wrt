@@ -1,6 +1,6 @@
-CFLAGS += $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/pcre -I$(TOP)/openssl/include
+CFLAGS += $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/pcre -I$(SSLPATH)/include
 CPP =	
-LINK =	$(CC) $(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/pcre/.libs $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections
+LINK =	$(CC) $(COPTS) $(MIPS16_OPT) -L$(SSLPATH) -L$(TOP)/zlib -L$(TOP)/pcre/.libs $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 ALL_INCS = -I src/core \
