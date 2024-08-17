@@ -12,7 +12,7 @@ PATHS= -DSSHDIR=\"$(sysconfdir)\" \
 
 LDFLAGS=$(LDLTO) -L. -Lopenbsd-compat/ $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(SSLPATH)/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CPPFLAGS=$(COPTS) $(LTO) -I. -I$(srcdir)  $(PATHS) -DHAVE_CONFIG_H
 #LIBS=-lresolv

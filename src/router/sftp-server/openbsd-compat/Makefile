@@ -8,7 +8,7 @@ top_srcdir=..
 
 #CC=$gcc
 #LD=gcc
-CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99 -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS=$(COPTS) $(LTO) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99 -I$(SSLPATH)/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 CPPFLAGS=-I. -I.. -I$(srcdir) -I$(srcdir)/..  -DHAVE_CONFIG_H
 LIBS=-lcrypto -lutil -lz -lnsl  -lcrypt -lresolv -lresolv
 AR=/usr/bin/ar
