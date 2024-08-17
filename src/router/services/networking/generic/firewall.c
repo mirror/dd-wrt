@@ -1759,7 +1759,9 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ubnt_telemetry[i].ip1,
 						    ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4, log_drop);
-			} else if (!strcmp(protocol, "l7")) {
+			} 
+#ifndef HAVE_OPENDPI
+			else if (!strcmp(protocol, "l7")) {
 				int i;
 
 				for (i = 0; i < strlen(realname); i++)
@@ -1768,7 +1770,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 
 				save2file_A("advgrp_%d -m layer7 --l7proto %s -j %s", seq, realname, log_drop);
 			}
-#ifdef HAVE_OPENDPI
+#else
 			else if (!strcmp(protocol, "dpi")) {
 				int first = dpi_collect ? 0 : 1;
 				dpi_collect = realloc(dpi_collect, dpi_collect ? strlen(dpi_collect) + strlen(realname) + 2 :
@@ -1894,8 +1896,8 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 #endif
 		/* commonly used protocols, decending */
 		/*		save2file_A("advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop); */
-		save2file_A("advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_drop);
 #ifndef HAVE_OPENDPI
+		save2file_A("advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto bt4 -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto bittorrent -j %s", seq, log_drop);
@@ -1907,7 +1909,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto openft -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto fasttrack -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto imesh -j %s", seq, log_drop);
-#endif
 		save2file_A("advgrp_%d -m layer7 --l7proto audiogalaxy -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s", seq, log_drop);
 		/* atm rarly used protocols */
@@ -1921,6 +1922,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto napster -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto tesla -j %s", seq, log_drop);
+#endif
 		/*		save2file_A("advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s", seq, log_drop);
 		save2file_A("advgrp_%d -m layer7 --l7proto xunlei -j %s", seq, log_drop); */
 	}
