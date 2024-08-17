@@ -1,23 +1,23 @@
 export OPENSSL_TARGET := linux-generic32-openwrt
 ifeq ($(ARCH),armeb)
-export OPENSSL_TARGET := linux-armv4-openwrt
+export OPENSSL_TARGET := linux-arm-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 
 
 ifeq ($(ARCHITECTURE),ventana)
 ifeq ($(ARCH),arm)
-export OPENSSL_TARGET := linux-armv4-openwrt
+export OPENSSL_TARGET := linux-arm-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 else
 ifeq ($(ARCH),arm)
 ifeq ($(CONFIG_STORM),y)
-export OPENSSL_TARGET := linux-armv4-openwrt
+export OPENSSL_TARGET := linux-arm-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
 else
-export OPENSSL_TARGET := linux-armv4-openwrt
+export OPENSSL_TARGET := linux-arm-openwrt
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
 endif
