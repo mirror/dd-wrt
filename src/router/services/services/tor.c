@@ -38,6 +38,8 @@
 #include <netinet/in.h>
 #include <sys/stat.h>
 
+#define usecrypto 0
+#if 0
 #if defined(HAVE_IPQ806X)
 #define usecrypto 1
 #elif defined(HAVE_IPQ6018)
@@ -46,6 +48,7 @@
 #define usecrypto 1
 #else
 #define usecrypto nvram_matchi("use_crypto", 1)
+#endif
 #endif
 
 char *tor_deps(void)
