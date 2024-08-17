@@ -85,9 +85,9 @@ INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
 INSTALL_CONF:=install -m0600
 ifeq ($(CONFIG_IPQ6018),y)
-SSLPATH=$(TOP)/openssl3
+export SSLPATH=$(TOP)/openssl3
 else
-SSLPATH=$(TOP)/openssl
+export SSLPATH=$(TOP)/openssl
 endif
 
 include rules/_cmake.mk
@@ -108,6 +108,7 @@ endif
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
 include rules/eou.mk
+include rules/sftp-server.mk
 include rules/ses.mk
 include rules/libnet.mk
 include rules/httpd.mk
