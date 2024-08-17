@@ -49,6 +49,11 @@
 #include <openssl/crypto.h>
 #include <openssl/aes.h>
 #include "aes_local.h"
+#ifdef OCTEON_OPENSSL
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
+#include "cvmx-key.h"
+#endif
 
 #if defined(OPENSSL_AES_CONST_TIME) && !defined(AES_ASM)
 
@@ -1288,6 +1293,14 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
     if (bits != 128 && bits != 192 && bits != 256)
         return -2;
 
+#ifdef OCTEON_OPENSSL
+  int keylen;
+  keylen = bits / 64;
+  memset (&(key->cvmkey[0]), 0, sizeof (uint64_t) * 4);
+  memcpy (&(key->cvmkey[0]), userKey, sizeof (uint64_t) * keylen);
+  key->cvm_keylen = bits;
+#endif
+
     rk = key->rd_key;
 
     if (bits == 128)
@@ -1432,6 +1445,20 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
  */
 void AES_encrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key) {
+#ifdef OCTEON_OPENSSL
+  uint64_t *in64,*out64;
+  CVMX_MT_AES_KEY (key->cvmkey[0], 0);
+  CVMX_MT_AES_KEY (key->cvmkey[1], 1);
+  CVMX_MT_AES_KEY (key->cvmkey[2], 2);
+  CVMX_MT_AES_KEY (key->cvmkey[3], 3);
+  CVMX_MT_AES_KEYLENGTH (key->cvm_keylen/64 - 1);
+  in64 = (uint64_t*)in;
+  out64 = (uint64_t*)out;	
+  CVMX_MT_AES_ENC0(in64[0]);
+  CVMX_MT_AES_ENC1(in64[1]);
+  CVMX_MF_AES_RESULT(out64[0],0);
+  CVMX_MF_AES_RESULT(out64[1],1);
+#else
 
     const u32 *rk;
     u32 s0, s1, s2, s3, t0, t1, t2, t3;
@@ -1615,6 +1642,7 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
         (Te1[(t2      ) & 0xff] & 0x000000ff) ^
         rk[3];
     PUTU32(out + 12, s3);
+#endif
 }
 
 /*
@@ -1624,6 +1652,20 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
 void AES_decrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key)
 {
+#ifdef OCTEON_OPENSSL
+  uint64_t *in64,*out64;
+  CVMX_MT_AES_KEY (key->cvmkey[0], 0);
+  CVMX_MT_AES_KEY (key->cvmkey[1], 1);
+  CVMX_MT_AES_KEY (key->cvmkey[2], 2);
+  CVMX_MT_AES_KEY (key->cvmkey[3], 3);
+  CVMX_MT_AES_KEYLENGTH (key->cvm_keylen/64 - 1);
+  in64 = (uint64_t*)in;
+  out64 = (uint64_t*)out;
+  CVMX_MT_AES_DEC0(in64[0]);
+  CVMX_MT_AES_DEC1(in64[1]);
+  CVMX_MF_AES_RESULT(out64[0],0);
+  CVMX_MF_AES_RESULT(out64[1],1);
+#else
 
     const u32 *rk;
     u32 s0, s1, s2, s3, t0, t1, t2, t3;
@@ -1807,6 +1849,7 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
         ((u32)Td4[(t0      ) & 0xff])       ^
         rk[3];
     PUTU32(out + 12, s3);
+#endif
 }
 
 #else /* AES_ASM */

@@ -17,6 +17,58 @@
 #include "des_local.h"
 #include "spr.h"
 
+#ifdef OCTEON_OPENSSL
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
+#include "cvmx-key.h"
+
+#endif
+
+
+#ifdef OCTEON_OPENSSL
+/* 3des enc/dec without CBC */
+void
+DES_ede3_encrypt (const unsigned char *input, unsigned char *output,
+  long length, DES_key_schedule * ks1,
+  DES_key_schedule * ks2, DES_key_schedule * ks3, int enc)
+{
+  uint64_t in64 = 0;
+  CVMX_MT_3DES_KEY (ks1->cvmkey, 0);
+  CVMX_MT_3DES_KEY (ks2->cvmkey, 1);
+  CVMX_MT_3DES_KEY (ks3->cvmkey, 2);
+
+  if (enc) {
+    while (length >= 8) {
+      CVMX_MT_3DES_ENC (*(uint64_t *) input);
+      CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      input += 8;
+      output += 8;
+      length -= 8;
+    }
+    if (length) {
+      in64 = 0;
+      memcpy ((void *) &in64, (void *) input, 8);
+      CVMX_MT_3DES_DEC (in64);
+      CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+    }
+  } else {
+    while (length >= 8) {
+      CVMX_MT_3DES_DEC (*(uint64_t *) (input));
+      CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+      input += 8;
+      output += 8;
+      length -= 8;
+    }
+    if (length) {
+      in64 = 0;
+      memcpy ((void *) &in64, (void *) input, 8);
+      CVMX_MT_3DES_DEC (in64);
+      CVMX_MF_3DES_RESULT (*(uint64_t *) output);
+    }
+  }
+}
+#endif
+
 void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
     register DES_LONG l, r, t, u;
@@ -202,6 +254,7 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
                           DES_key_schedule *ks2, DES_key_schedule *ks3,
                           DES_cblock *ivec, int enc)
 {
+#ifndef OCTEON_OPENSSL
     register DES_LONG tin0, tin1;
     register DES_LONG tout0, tout1, xor0, xor1;
     register const unsigned char *in;
@@ -300,6 +353,102 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
     }
     tin0 = tin1 = tout0 = tout1 = xor0 = xor1 = 0;
     tin[0] = tin[1] = 0;
+#else
+  uint64_t *iv;
+  uint64_t *inp, *outp;
+  uint64_t in64 = 0, i0, r0;
+  iv = (uint64_t *) & (*ivec)[0];
+  inp = (uint64_t *) input;
+  outp = (uint64_t *) output;
+  i0 = inp[0];
+  /* Initialise the keys */
+  CVMX_MT_3DES_KEY (ks1->cvmkey, 0);
+  CVMX_MT_3DES_KEY (ks2->cvmkey, 1);
+  CVMX_MT_3DES_KEY (ks3->cvmkey, 2);
+  if (enc) {
+    /* Encrypt */
+    /* Initialise IV */
+    CVMX_MT_3DES_IV (*iv);
+    if (length >= 16) {
+      CVMX_MT_3DES_ENC_CBC (i0);
+      length -= 8;
+      inp++;
+      outp++;
+      if (length >= 8) {
+        i0 = inp[0];
+        CVMX_MF_3DES_RESULT (r0);
+        CVMX_MT_3DES_ENC_CBC (i0);
+        while (1) {
+          outp[-1] = r0;
+          length -= 8;
+          inp++;
+          outp++;
+          if (length < 8)
+            break;
+          i0 = inp[0];
+          CVMX_MF_3DES_RESULT (r0);
+          CVMX_MT_3DES_ENC_CBC (i0);
+        }
+      }
+      CVMX_MF_3DES_RESULT (r0);
+      outp[-1] = r0;
+    }
+    if (length) {
+      in64 = 0;
+      if(length > 8) {
+        CVMX_MT_3DES_ENC_CBC (i0);
+        CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+        outp++;
+        inp++;
+        length-=8;
+        memcpy ((void *) &in64, (void *) inp, length);
+      } else {
+        memcpy ((void *) &in64, (void *) inp, length);
+      }
+      CVMX_MT_3DES_ENC_CBC (in64);
+      CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+      *iv = *(uint64_t *) outp;
+    } else {
+      *iv = *(uint64_t *) (outp - 1);
+    }
+  } else {
+    /* Decrypt */
+    /* Initialise IV */
+    CVMX_MT_3DES_IV (*iv);
+    if (length >= 16) {
+      CVMX_MT_3DES_DEC_CBC (i0);
+      length -= 8;
+      inp++;
+      outp++;
+      if (length >= 8) {
+        i0 = inp[0];
+        CVMX_MF_3DES_RESULT (r0);
+        CVMX_MT_3DES_DEC_CBC (i0);
+        while (1) {
+          outp[-1] = r0;
+          length -= 8;
+          inp++;
+          outp++;
+          if (length < 8)
+            break;
+          i0 = inp[0];
+          CVMX_MF_3DES_RESULT (r0);
+          CVMX_MT_3DES_DEC_CBC (i0);
+        }
+        CVMX_MF_3DES_RESULT (r0);
+        *iv = *(uint64_t *) (inp - 1);
+        outp[-1] = r0;
+      }
+    }
+    if (length) {
+      in64 = 0;
+      *iv = *(uint64_t *) inp;
+      memcpy ((void *) &in64, (void *) inp, 8);
+      CVMX_MT_3DES_DEC_CBC (in64);
+      CVMX_MF_3DES_RESULT (*(uint64_t *) outp);
+    }
+  }
+#endif
 }
 
 #endif                          /* DES_DEFAULT_OPTIONS */

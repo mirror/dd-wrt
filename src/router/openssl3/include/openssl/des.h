@@ -18,6 +18,12 @@
 
 # include <openssl/opensslconf.h>
 
+#ifdef OCTEON_OPENSSL
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
+#include "cvmx-key.h"
+#endif
+
 # ifndef OPENSSL_NO_DES
 #  ifdef  __cplusplus
 extern "C" {
@@ -47,6 +53,9 @@ typedef struct DES_ks {
          */
         DES_LONG deslong[2];
     } ks[16];
+#ifdef OCTEON_OPENSSL
+    uint64_t cvmkey;
+#endif
 } DES_key_schedule;
 
 #   define DES_KEY_SZ      (sizeof(DES_cblock))
