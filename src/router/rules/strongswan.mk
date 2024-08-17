@@ -94,13 +94,13 @@ CONFIGURE_ARGS=\
 #	--with-linux-headers=$(LINUXDIR)/include 
 
 strongswan-configure: gmp sqlite
-	export CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
-	export CPPFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(TOP)/openssl/include -I$(TOP)/sqlite" ;\
-	export LDFLAGS="-L$(TOP)/gmp/.libs -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" ; \
+	export CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(SSLPATH)/include -I$(TOP)/sqlite" \
+	export CPPFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/gmp -I$(SSLPATH)/include -I$(TOP)/sqlite" ;\
+	export LDFLAGS="-L$(TOP)/gmp/.libs -L$(SSLPATH) -L$(TOP)/sqlite/.libs" ; \
 	cd strongswan && ./configure --host=$(ARCH)-linux $(CONFIGURE_ARGS)
 
 strongswan: gmp sqlite
-	#$(MAKE) -C strongswan CFLAGS="$(COPTS) -DNEED_PRINTF -include `pwd`/strongswan/config.h -I$(TOP)/gmp -I$(TOP)/openssl/include" LDFLAGS="-L$(TOP)/gmp/.libs -L$(TOP)/openssl"
+	#$(MAKE) -C strongswan CFLAGS="$(COPTS) -DNEED_PRINTF -include `pwd`/strongswan/config.h -I$(TOP)/gmp -I$(SSLPATH)/include" LDFLAGS="-L$(TOP)/gmp/.libs -L$(SSLPATH)"
 	$(MAKE) -C strongswan CFLAGS="-DNEED_PRINTF -include `pwd`/strongswan/config.h"
 
 #-I$(LINUXDIR)/include

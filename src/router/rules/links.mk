@@ -1,7 +1,7 @@
 links-configure:
-	export CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; \
-	export CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; \
-	cd links && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --with-ssl=$(TOP)/openssl
+	export CFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" ; \
+	export CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" ; \
+	cd links && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --with-ssl=$(SSLPATH)
 
 links:
 	make -C links

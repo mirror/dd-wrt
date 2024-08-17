@@ -3,7 +3,7 @@ ipsec-tools-configure:
 	make -C libselinux
 	cd ipsec-tools/flex && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS)"
 	make -C ipsec-tools/flex libfl.a
-	cd ipsec-tools && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr --with-kernel-headers=$(LINUXDIR)/include --with-openssl=$(TOP)/openssl --with-flex=$(TOP)/ipsec-tools/flex --with-flexlib=$(TOP)/ipsec-tools/flex/libfl.a
+	cd ipsec-tools && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr --with-kernel-headers=$(LINUXDIR)/include --with-openssl=$(SSLPATH) --with-flex=$(TOP)/ipsec-tools/flex --with-flexlib=$(TOP)/ipsec-tools/flex/libfl.a
 
 
 ipsec-tools-install:

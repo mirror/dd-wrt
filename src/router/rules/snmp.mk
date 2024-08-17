@@ -117,8 +117,8 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
-				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" \
 				--enable-mini-agent \
 				--disable-debugging \
 				--enable-privacy \
@@ -163,8 +163,8 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
-				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(SSLPATH)" \
 				--enable-mini-agent \
 				--disable-debugging \
 				--enable-privacy \
@@ -205,9 +205,9 @@ snmp:
 	install -D snmp/config/snmp.webservices httpd/ej_temp/snmp.webservices
 ifeq ($(CONFIG_SNMP),y)
 ifeq ($(CONFIG_ATH9K),y)
-	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
+	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
 else
-	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram"
+	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram"
 endif
 else
 	@true
@@ -220,10 +220,11 @@ snmp-clean:
 
 snmp-install:
 ifeq ($(CONFIG_SNMP),y)
+
 ifeq ($(CONFIG_ATH9K),y)
-	$(MAKE) -C snmp/build_mac80211 install DESTDIR=$(INSTALLDIR)/snmp
+	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" install DESTDIR=$(INSTALLDIR)/snmp
 else
-	$(MAKE) -C snmp/build_standard install DESTDIR=$(INSTALLDIR)/snmp
+	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram" install DESTDIR=$(INSTALLDIR)/snmp
 endif
 	rm -rf $(INSTALLDIR)/snmp/etc
 	rm -rf $(INSTALLDIR)/snmp/usr/include

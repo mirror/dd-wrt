@@ -28,7 +28,7 @@ export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl
 endif
 ifeq ($(ARCH),mips64)
 export OPENSSL_TARGET := linux64-mips64
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(TOP)/openssl/include/executive 
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DOCTEON_OPENSSL -I$(SSLPATH)/include/executive 
 endif
 ifeq ($(ARCH),mipsel)
 export OPENSSL_TARGET := linux-mips32
@@ -53,7 +53,7 @@ endif
 
 
 openssl:
-	$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C openssl CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	$(MAKE)  -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	rm -f openssl/apps/openssl
@@ -159,7 +159,7 @@ endif
 #endif
 
 	$(MAKE) -C openssl clean
-	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-$(MAKE) -C openssl CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-$(MAKE) -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-rm -f openssl/apps/openssl

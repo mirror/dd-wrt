@@ -1,7 +1,7 @@
 DNSCRYPT_CONFIGURE_ARGS+= \
 	--disable-documentation \
-	--with-include-path="$(TOP)/openssl/include $(TOP)/libsodium/src/libsodium/include" \
-	--with-lib-path="$(TOP)/openssl , $(TOP)/gmp, $(TOP)/libsodium/src/libsodium/.libs"
+	--with-include-path="$(SSLPATH)/include $(TOP)/libsodium/src/libsodium/include" \
+	--with-lib-path="$(SSLPATH) , $(TOP)/gmp, $(TOP)/libsodium/src/libsodium/.libs"
 
 dnscrypt-configure: libsodium-configure zlib
 	cd dnscrypt && ./autogen.sh && \

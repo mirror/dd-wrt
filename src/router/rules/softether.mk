@@ -5,17 +5,17 @@ MAKE_FLAGS+=VERBOSE=0
 SOFTETHER_PKG_BUILD_DIR=$(TOP)/softether
 SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCURSES_INCLUDE_PATH=$(TOP)/ncurses/include \
-		    -DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so \
-		    -DOPENSSL_SSL_LIBRARY=$(TOP)/openssl/libssl.so \
-		    -DOPENSSL_INCLUDE_DIR=$(TOP)/openssl/include \
+		    -DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
+		    -DOPENSSL_SSL_LIBRARY=$(SSLPATH)/libssl.so \
+		    -DOPENSSL_INCLUDE_DIR=$(SSLPATH)/include \
 		    -DZLIB_LIBRARY=$(TOP)/zlib/libz.so \
 		    -DZLIB_INCLUDE_DIR=$(TOP)/zlib/include \
 		    -DLIB_READLINE=$(TOP)/readline/shlib \
 		    -DCMAKE_BUILD_TYPE=release
 
 SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
-SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(TOP)/openssl/include -I$(TOP)/libsodium/src/libsodium/include -lcrypto -Wno-incompatible-pointer-types
-SOFTETHER_EXTRA_LDFLAGS=-L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -L$(TOP)/libsodium/src/libsodium/.libs -lreadline -lhistory -lncurses -lz
+SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(SSLPATH)/include -I$(TOP)/libsodium/src/libsodium/include -lcrypto -Wno-incompatible-pointer-types
+SOFTETHER_EXTRA_LDFLAGS=-L$(SSLPATH) -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -L$(TOP)/libsodium/src/libsodium/.libs -lreadline -lhistory -lncurses -lz
 
 
 softether-configure: zlib readline ncurses

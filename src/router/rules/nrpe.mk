@@ -1,6 +1,6 @@
 nrpe-configure:
-	cd nrpe && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" \
-	--with-ssl=$(TOP)/openssl \
+	cd nrpe && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" \
+	--with-ssl=$(SSLPATH) \
 	--with-nrpe-user=root \
 	--with-nrpe-group=root \
 	--with-nagios-user=root \

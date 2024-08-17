@@ -1,7 +1,7 @@
 rsync-configure: zstd openssl libucontext
 	cd rsync && autoconf
 	cd rsync && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-locate --disable-md2man --disable-roll-simd --disable-simd --disable-iconv --disable-xxhash --disable-lz4 \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -L$(TOP)/openssl -L$(TOP)/zstd/lib -I$(TOP)/zstd/lib"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc -L$(SSLPATH) -L$(TOP)/zstd/lib -I$(TOP)/zstd/lib"
 
 	$(MAKE) -C rsync reconfigure
 rsync: zstd openssl libucontext

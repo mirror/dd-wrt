@@ -30,9 +30,9 @@ CONFIGURE_ARGS+= \
         --without-lua \
         --without-memcache \
         --without-mysql \
-        --with-openssl="$(TOP)/openssl" \
-	--with-openssl-includes="$(TOP)/openssl/include" \
-	--with-openssl-libs="$(TOP)/openssl" \
+        --with-openssl="$(SSLPATH)" \
+	--with-openssl-includes="$(SSLPATH)/include" \
+	--with-openssl-libs="$(SSLPATH)" \
         --with-pcre \
         --without-valgrind 
 

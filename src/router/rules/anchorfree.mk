@@ -1,8 +1,8 @@
 libevent-af:
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(SSLPATH)" \
 	$(MAKE) -C libevent2-anchorfree
 
 libevent-af-install:
@@ -16,12 +16,12 @@ libevent-af-clean:
 libevent-af-configure:
 	cd libevent2-anchorfree && ./autogen.sh
 	cd libevent2-anchorfree && ./configure  --enable-static --disable-debug-mode --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" 
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(SSLPATH)" 
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(SSLPATH)" \
 	$(MAKE) -C libevent2-anchorfree
 
 
@@ -35,14 +35,14 @@ HYDRA_OPTS:= \
 	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fno-strict-aliasing" \
 	EXTRA_CFLAGS+="-I$(TOP)/jansson/src" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/include" \
-	EXTRA_CFLAGS+="-I$(TOP)/openssl/include" \
+	EXTRA_CFLAGS+="-I$(SSLPATH)/include" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/compat" \
 	EXTRA_CFLAGS+="-I$(TOP)/zlib/include" \
 	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent.a" \
 	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent_pthreads.a" \
 	EXTRA_LDFLAGS+="$(TOP)/jansson/src/.libs/libjansson.a" \
 	EXTRA_LDFLAGS+="-L$(TOP)/zlib -lz" \
-	EXTRA_LDFLAGS+="-L$(TOP)/openssl -lssl -lcrypto -lpthread" \
+	EXTRA_LDFLAGS+="-L$(SSLPATH) -lssl -lcrypto -lpthread" \
 	EXTRA_LDFLAGS+="-Wl,--gc-sections" \
 	OPENWRT=yes \
 	PLATFORM=openwrt
@@ -53,14 +53,14 @@ HYDRA_OPTS:= \
 	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fno-strict-aliasing" \
 	EXTRA_CFLAGS+="-I$(TOP)/jansson/src" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/include" \
-	EXTRA_CFLAGS+="-I$(TOP)/openssl/include" \
+	EXTRA_CFLAGS+="-I$(SSLPATH)/include" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/compat" \
 	EXTRA_CFLAGS+="-I$(TOP)/zlib/include" \
 	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent.a" \
 	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent_pthreads.a" \
 	EXTRA_LDFLAGS+="$(TOP)/jansson/src/.libs/libjansson.a" \
 	EXTRA_LDFLAGS+="-L$(TOP)/zlib -lz" \
-	EXTRA_LDFLAGS+="-L$(TOP)/openssl -lssl -lcrypto" \
+	EXTRA_LDFLAGS+="-L$(SSLPATH) -lssl -lcrypto" \
 	EXTRA_LDFLAGS+="-Wl,--gc-sections" \
 	OPENWRT=yes \
 	PLATFORM=openwrt

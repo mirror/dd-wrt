@@ -38,7 +38,7 @@ asterisk-configure: util-linux-configure jansson editline zlib sqlite
 	--without-misdn \
 	--without-nbs \
 	--with-ncurses="$(TOP)/ncurses" \
-	--with-crypto="$(TOP)/openssl" \
+	--with-crypto="$(SSLPATH)" \
 	--without-netsnmp \
 	--without-newt \
 	--without-odbc \
@@ -73,20 +73,20 @@ asterisk-configure: util-linux-configure jansson editline zlib sqlite
 	SYSTEMD_INCLUDE=" " \
 	SYSTEMD_LIB=' ' \
 	SYSTEMD_LIBS=' ' \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(SSLPATH)/include -L$(SSLPATH) -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -I$(SSLPATH)/include -L$(SSLPATH) -L$(TOP)/sqlite/.libs -I$(INSTALLDIR)/util-linux/usr/include -L$(TOP)/util-linux/.libs -DLOW_MEMORY -DNEED_PRINTF" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -Wno-int-conversion -L$(TOP)/sqlite/.libs -DLOW_MEMORY -DNEED_PRINTF -L$(TOP)/util-linux/.libs" \
 	LDFLAGS="-L$(TOP)/util-linux/.libs" \
 	SQLITE3_LIB="-L$(TOP)/sqlite/.libs -lsqlite3" \
-	SQLITE3_INCLUDE="-I$(TOP)/sqlite -I$(TOP)/openssl/include -L$(TOP)/openssl" \
+	SQLITE3_INCLUDE="-I$(TOP)/sqlite -I$(SSLPATH)/include -L$(SSLPATH)" \
 	LIBUUID_LIB="-L$(TOP)/util-linux/.libs -luuid" \
 	LIBUUID_INCLUDE="-I $(INSTALLDIR)/util-linux/usr/include" \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIB="-L$(TOP)/ncurses/lib -lncurses" \
-	OPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
-	OPENSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
+	OPENSSL_CFLAGS="-I$(SSLPATH)/include" \
+	OPENSSL_LIBS="-L$(SSLPATH) -lssl -lcrypto" \
 	JANSSON_CFLAGS="-I$(TOP)/jansson/src" \
-	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/sqlite/.libs -lsqlite3 -L$(TOP)/openssl" \
+	JANSSON_LIBS="-L$(TOP)/jansson/src/.libs -ljansson -L$(TOP)/sqlite/.libs -lsqlite3 -L$(SSLPATH)" \
 	LIBEDIT_CFLAGS="-I$(TOP)/editline/src" \
 	LIBEDIT_LIBS="-L$(TOP)/editline/src/.libs -ledit -L$(TOP)/ncurses/lib -lncurses"
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
@@ -126,8 +126,8 @@ endif
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(SSLPATH)/include -I$(TOP)/sqlite" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(SSLPATH) -L$(TOP)/sqlite/.libs" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -140,8 +140,8 @@ endif
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(SSLPATH)/include -I$(TOP)/sqlite" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(SSLPATH) -L$(TOP)/sqlite/.libs" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -188,8 +188,8 @@ endif
 
 asterisk-install:
 	chmod 700 asterisk/build_tools/install_subst
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(SSLPATH)/include -I$(TOP)/sqlite" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(SSLPATH) -L$(TOP)/sqlite/.libs" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
@@ -197,8 +197,8 @@ asterisk-install:
 		OPTIMIZE="" \
 		DESTDIR=$(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk \
 		install samples
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/sqlite" \
-	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/sqlite/.libs" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(SSLPATH)/include -I$(TOP)/sqlite" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(SSLPATH) -L$(TOP)/sqlite/.libs" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \

@@ -16,7 +16,7 @@ aircrack-ng-configure: pcre zlib
 	cd aircrack-ng && autoheader
 	cd aircrack-ng && automake --gnu --add-missing --force --copy -Wno-portability -Wno-portability
 	cd aircrack-ng && ./configure --host=$(ARCH)-linux \
-	--with-openssl="$(TOP)/openssl" \
+	--with-openssl="$(SSLPATH)" \
         --prefix=/usr \
         --disable-libnl \
         --libdir=/usr/lib \
@@ -24,11 +24,11 @@ aircrack-ng-configure: pcre zlib
 	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
 	PCRE_CFLAGS="-I$(TOP)/pcre" \
 	PCRE_LIBS="-L$(TOP)/pcre/.libs -lpcre" \
-        OPENSSL_LDFLAGS="-L$(TOP)/openssl" \
+        OPENSSL_LDFLAGS="-L$(SSLPATH)" \
         OPENSSL_LIBS="-lssl -lcrypto" \
         CXXFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
         CFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
-        LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl -ffunction-sections -fdata-sections -Wl,--gc-sections"
+        LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(SSLPATH) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 aircrack-ng-clean:
 	$(MAKE) -C aircrack-ng clean

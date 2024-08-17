@@ -50,7 +50,7 @@ ifeq ($(KERNELVERSION),6.6)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 ifeq ($(CONFIG_OPENSSL),y)
-ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
@@ -59,7 +59,7 @@ ifeq ($(KERNELVERSION),6.1)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 ifeq ($(CONFIG_OPENSSL),y)
-ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
@@ -68,7 +68,7 @@ ifeq ($(KERNELVERSION),4.9)
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 ifeq ($(CONFIG_OPENSSL),y)
-ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
@@ -88,7 +88,7 @@ endif
 endif
 ifeq ($(CONFIG_WPA3),y)
 ifeq ($(CONFIG_OPENSSL),y)
-ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/libucontext -lucontext
+ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
 else
 ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif

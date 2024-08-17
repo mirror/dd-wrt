@@ -40,8 +40,8 @@ inadyn-configure: wolfssl openssl
 		--localstatedir=/tmp \
 		--host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		OpenSSL_CFLAGS="-I$(TOP)/openssl/include" \
-		OpenSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
+		OpenSSL_CFLAGS="-I$(SSLPATH)/include" \
+		OpenSSL_LIBS="-L$(SSLPATH) -lssl -lcrypto" \
 		confuse_CFLAGS="-I$(TOP)/inadynv2/libconfuse/src" \
 		confuse_LIBS="-L$(TOP)/inadynv2/libconfuse/src/.libs -lconfuse" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \

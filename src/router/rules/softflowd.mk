@@ -1,6 +1,6 @@
 softflowd-configure:
-	#export CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; \
-	#export CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" ; 
+	#export CFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" ; \
+	#export CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(SSLPATH)" ; 
 	cd softflowd && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CPPFLAGS="-I../libpcap $(COPTS) -DNEED_PRINTF" CFLAGS="-I../libpcap $(COPTS) -DNEED_PRINTF" LDFLAGS="-L../libpcap" PCAP_ROOT="$(TOP)/libpcap"
 
 softflowd:

@@ -1,10 +1,10 @@
 sstp-client-configure:
-	cd sstp-client && ./configure --prefix=/usr CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/openssl/include -I$(TOP)/pppd/include -DNEED_PRINTF" LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/openssl/include -I$(TOP)/pppd/include -L$(TOP)/libevent/.libs -L$(TOP)/openssl -DNEED_PRINTF" CPPFLAGS="$(COPTS) -I$(TOP)/pppd  -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/pppd/include" --prefix=/usr --host=$(ARCH)-linux
+	cd sstp-client && ./configure --prefix=/usr CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(SSLPATH)/include -I$(TOP)/pppd/include -DNEED_PRINTF" LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(SSLPATH)/include -I$(TOP)/pppd/include -L$(TOP)/libevent/.libs -L$(SSLPATH) -DNEED_PRINTF" CPPFLAGS="$(COPTS) -I$(TOP)/pppd  -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/pppd/include" --prefix=/usr --host=$(ARCH)-linux
 	@true
 
 sstp-client:
-	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -D_GNU_SOURCE -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/openssl/include -I$(TOP)/pppd/include -DNEED_PRINTF" \
-	LDCFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/openssl/include -I$(TOP)/pppd/include -L$(TOP)/openssl -L$(TOP)/libevent/.libs -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB)  -D_GNU_SOURCE -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(SSLPATH)/include -I$(TOP)/pppd/include -DNEED_PRINTF" \
+	LDCFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/pppd -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(SSLPATH)/include -I$(TOP)/pppd/include -L$(SSLPATH) -L$(TOP)/libevent/.libs -DNEED_PRINTF" \
 	CPPFLAGS="$(COPTS) -I$(TOP)/pppd -I$(TOP)/pppd/include" \
 	$(MAKE) -C sstp-client
 

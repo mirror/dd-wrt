@@ -8,13 +8,13 @@ LIBZIP_CMAKE_OPTIONS=-DZLIB_LIBRARY=$(TOP)/zlib/libz.so \
 		    -DENABLE_GNUTLS=OFF \
 		    -DENABLE_OPENSSL=ON \
 		    -DENABLE_COMMONCRYPTO=OFF \
-		    -DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so \
-		    -DOPENSSL_SSL_LIBRARY=$(TOP)/openssl/libssl.so \
-		    -DOPENSSL_INCLUDE_DIR=$(TOP)/openssl/include
+		    -DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
+		    -DOPENSSL_SSL_LIBRARY=$(SSLPATH)/libssl.so \
+		    -DOPENSSL_INCLUDE_DIR=$(SSLPATH)/include
 
 LIBZIP_STAGING_DIR=$(TOP)/_staging/usr
-LIBZIP_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include -I$(TOP)/openssl/include
-LIBZIP_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib -L$(TOP)/zlib -L$(TOP)/openssl -lz -lssl -lcrypto
+LIBZIP_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include -I$(SSLPATH)/include
+LIBZIP_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib -L$(TOP)/zlib -L$(SSLPATH) -lz -lssl -lcrypto
 
 
 libzip-configure: zlib openssl

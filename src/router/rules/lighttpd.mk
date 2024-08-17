@@ -15,9 +15,9 @@ CONFIGURE_ARGS+= \
         --without-mysql \
 	--with-libpcre-includes="$(TOP)/pcre" \
 	--with-libpcre_libraries="$(TOP)/pcre/.libs" \
-        --with-openssl="$(TOP)/openssl" \
-	--with-openssl-includes="$(TOP)/openssl/include" \
-	--with-openssl-libs="$(TOP)/openssl" \
+        --with-openssl="$(SSLPATH)" \
+	--with-openssl-includes="$(SSLPATH)/include" \
+	--with-openssl-libs="$(SSLPATH)" \
         --with-pcre \
         --without-valgrind \
         --with-zlib

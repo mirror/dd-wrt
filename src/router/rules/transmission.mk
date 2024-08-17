@@ -1,7 +1,7 @@
 TRANSMISSION_PKG_BUILD_DIR=$(TOP)/transmission
-TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so \
-		    -DOPENSSL_SSL_LIBRARY=$(TOP)/openssl/libssl.so \
-		    -DOPENSSL_INCLUDE_DIR=$(TOP)/openssl/include \
+TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(SSLPATH)/libcrypto.so \
+		    -DOPENSSL_SSL_LIBRARY=$(SSLPATH)/libssl.so \
+		    -DOPENSSL_INCLUDE_DIR=$(SSLPATH)/include \
 		    -DCURL_INCLUDE_DIR=$(TOP)/curl/include \
 		    -DCURL_LIBRARY=$(TOP)/curl/build/lib/.libs/libcurl.so \
 		    -DCMAKE_BUILD_TYPE=release \
@@ -9,8 +9,8 @@ TRANSMISSION_CMAKE_OPTIONS=-DOPENSSL_CRYPTO_LIBRARY=$(TOP)/openssl/libcrypto.so 
 		    -DCMAKE_RANLIB=${shell which $(ARCH)-linux-gcc-ranlib}
 
 TRANSMISSION_STAGING_DIR=$(TOP)/_staging/usr
-TRANSMISSION_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -I$(TOP) -I $(TOP)/openssl/include -L $(TOP)/openssl -lcrypto -DNEED_PRINTF -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -Wl,--gc-sections 
-TRANSMISSION_EXTRA_LDFLAGS=$(LDLTO) -L$(TOP)/openssl -lcrypto -lssl -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lz -latomic -ffunction-sections -fdata-sections -Wl,--gc-sections
+TRANSMISSION_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) $(THUMB) $(LTO) -I$(TOP) -I $(SSLPATH)/include -L $(SSLPATH) -lcrypto -DNEED_PRINTF -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -Wl,--gc-sections 
+TRANSMISSION_EXTRA_LDFLAGS=$(LDLTO) -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/ncurses/lib -L$(TOP)/zlib -lz -latomic -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 transmission: curl zlib

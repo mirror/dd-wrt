@@ -46,8 +46,8 @@ curl-configure: openssl zlib
 	--without-libpsl \
 	--without-zstd \
 	--with-ca-bundle=/etc/ssl/ca-bundle.crt --with-openssl --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --libdir=/usr/lib --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib  -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl" \
+	CFLAGS="-DNEED_PRINTF $(LTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -I$(TOP)/zlib  -I$(SSLPATH)/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(LDLTO) $(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/zlib -L$(SSLPATH) -lcrypto -lssl -ldl" \
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	NM="$(ARCH)-linux-nm $(LTOPLUGIN)" \

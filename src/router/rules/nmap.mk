@@ -10,17 +10,17 @@ nmap-configure: openssl libpcap zlib
 		--with-libpcap="../libpcap" \
 		--with-liblua=included \
 		--with-libssh2=included \
-		--with-openssl=$(TOP)/openssl \
+		--with-openssl=$(SSLPATH) \
 		--with-libz=$(TOP)/zlib \
 		--without-zenmap \
 		--without-ncat \
 		--without-nmap-update \
 		--without-ndiff \
 		--without-nping \
-		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/zlib -L$(TOP)/openssl $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(SSLPATH)/include -L$(SSLPATH) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(SSLPATH)/include -L$(SSLPATH) $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(SSLPATH)/include $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/zlib -L$(SSLPATH) $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 nmap: openssl libpcap zlib
 	cd nmap && find . -name makefile.dep -delete	

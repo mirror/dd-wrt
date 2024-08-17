@@ -23,7 +23,7 @@ freeradius3-configure: libtalloc openssl libpcap
 	ac_cv_lib_collectdclient_lcc_connect=no \
 	ac_cv_lib_execinfo_backtrace_symbols=no \
 	ac_cv_host=$(ARCH)-uclibc-linux \
-	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -I$(TOP)/openssl/include -D_GNU_SOURCE" CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(TOP)/openssl -L$(TOP)/libpcap -lpcap -lm" --enable-shared \
+	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -fPIC -I$(SSLPATH)/include -D_GNU_SOURCE" CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -D_GNU_SOURCE -fPIC -I$(SSLPATH)/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -L$(SSLPATH) -L$(TOP)/libpcap -lpcap -lm" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
@@ -52,8 +52,8 @@ freeradius3-configure: libtalloc openssl libpcap
 	--with-threads \
 	--with-ltdl-include="$(TOP)/freeradius3/libltdl/.libs" \
 	--with-ltdl-lib="$(TOP)/freeradius3/libltdl" \
-	--with-openssl-includes="$(TOP)/openssl/include" \
-	--with-openssl-libraries="$(TOP)/openssl" \
+	--with-openssl-includes="$(SSLPATH)/include" \
+	--with-openssl-libraries="$(SSLPATH)" \
 	--enable-strict-dependencies \
 	--with-raddbdir=/etc/freeradius \
 	--without-edir \

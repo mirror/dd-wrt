@@ -84,6 +84,11 @@ INSTALL_BIN:=install -m0755
 INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
 INSTALL_CONF:=install -m0600
+ifeq ($(CONFIG_IPQ6018),y)
+SSLPATH=$(TOP)/openssl3
+else
+SSLPATH=$(TOP)/openssl
+endif
 
 include rules/_cmake.mk
 include rules/matrixssl.mk
@@ -95,7 +100,11 @@ include rules/libpng.mk
 include rules/libgd.mk
 include rules/libmcrypt.mk
 include rules/php8.mk
+ifeq ($(CONFIG_IPQ6018),y)
+include rules/openssl3.mk
+else
 include rules/openssl.mk
+endif
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
 include rules/eou.mk

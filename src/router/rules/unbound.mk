@@ -22,15 +22,15 @@ unbound-configure:
 		--enable-tfo-server \
 		--enable-subnet \
 		--with-chroot-dir=/tmp \
-		--with-ssl="$(TOP)/openssl" \
+		--with-ssl="$(SSLPATH)" \
 		--with-pthreads \
 		--prefix=/usr \
 		--libdir=/usr/lib \
 		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
-		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH)" \
+		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH)"
 
 unbound: 
 	$(MAKE) -C unbound

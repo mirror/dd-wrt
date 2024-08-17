@@ -47,7 +47,7 @@ nginx-clean:
 nginx: openssl
 	cp nginx/Makefile.use nginx/objs/Makefile
 	cp nginx/$(NGINX_CONF) nginx/objs/ngx_auto_config.h
-	$(MAKE) -C nginx CFLAGS="$(NGINX_FLAGS) -DNEED_PRINTF $(LTO) -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/zlib  -I$(TOP)/pcre -I$(TOP)/openssl/include"
+	$(MAKE) -C nginx CFLAGS="$(NGINX_FLAGS) -DNEED_PRINTF $(LTO) -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/zlib  -I$(TOP)/pcre -I$(SSLPATH)/include"
 
 nginx-install:
 	$(MAKE) -C nginx install DESTDIR=$(INSTALLDIR)/nginx
