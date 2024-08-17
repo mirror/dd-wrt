@@ -34,8 +34,8 @@
 int demonstrate_digest(BIO *input)
 {
     OSSL_LIB_CTX *library_context = NULL;
-    int ret = 0;
-    const char *option_properties = NULL;
+    int result = 0;
+    const char * option_properties = NULL;
     EVP_MD *message_digest = NULL;
     EVP_MD_CTX *digest_context = NULL;
     int digest_length;
@@ -103,14 +103,14 @@ int demonstrate_digest(BIO *input)
         fprintf(stderr, "EVP_DigestFinal() failed.\n");
         goto cleanup;
     }
-    ret = 1;
+    result = 1;
     for (ii=0; ii<digest_length; ii++) {
         fprintf(stdout, "%02x", digest_value[ii]);
     }
     fprintf(stdout, "\n");
 
 cleanup:
-    if (ret != 1)
+    if (result != 1)
         ERR_print_errors_fp(stderr);
     /* OpenSSL free functions will ignore NULL arguments */
     EVP_MD_CTX_free(digest_context);
@@ -118,19 +118,17 @@ cleanup:
     EVP_MD_free(message_digest);
 
     OSSL_LIB_CTX_free(library_context);
-    return ret;
+    return result;
 }
 
 int main(void)
 {
-    int ret = EXIT_FAILURE;
-    BIO *input = BIO_new_fd(fileno(stdin), 1);
+    int result = 1;
+    BIO *input = BIO_new_fd( fileno(stdin), 1 );
 
     if (input != NULL) {
-        ret = (demonstrate_digest(input) ? EXIT_SUCCESS : EXIT_FAILURE);
+        result = demonstrate_digest(input);
         BIO_free(input);
     }
-    if (ret != EXIT_SUCCESS)
-        ERR_print_errors_fp(stderr);
-    return ret;
+    return result;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2008-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     X509 *scert = NULL;
     EVP_PKEY *skey = NULL;
     CMS_ContentInfo *cms = NULL;
-    int ret = EXIT_FAILURE;
+    int ret = 1;
 
     /*
      * For simple S/MIME signing use CMS_DETACHED. On OpenSSL 1.0.0 only: for
@@ -38,8 +38,7 @@ int main(int argc, char **argv)
 
     scert = PEM_read_bio_X509(tbio, NULL, 0, NULL);
 
-    if (BIO_reset(tbio) < 0)
-        goto err;
+    BIO_reset(tbio);
 
     skey = PEM_read_bio_PrivateKey(tbio, NULL, 0, NULL);
 
@@ -63,18 +62,18 @@ int main(int argc, char **argv)
     if (!out)
         goto err;
 
-    if (!(flags & CMS_STREAM)) {
-        if (BIO_reset(in) < 0)
-            goto err;
-    }
+    if (!(flags & CMS_STREAM))
+        BIO_reset(in);
 
     /* Write out S/MIME message */
     if (!SMIME_write_CMS(out, cms, in, flags))
         goto err;
 
-    ret = EXIT_SUCCESS;
+    ret = 0;
+
  err:
-    if (ret != EXIT_SUCCESS) {
+
+    if (ret) {
         fprintf(stderr, "Error Signing Data\n");
         ERR_print_errors_fp(stderr);
     }

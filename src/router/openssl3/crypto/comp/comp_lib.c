@@ -19,11 +19,10 @@ COMP_CTX *COMP_CTX_new(COMP_METHOD *meth)
 {
     COMP_CTX *ret;
 
-    if (meth == NULL)
+    if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL) {
+        ERR_raise(ERR_LIB_COMP, ERR_R_MALLOC_FAILURE);
         return NULL;
-
-    if ((ret = OPENSSL_zalloc(sizeof(*ret))) == NULL)
-        return NULL;
+    }
     ret->meth = meth;
     if ((ret->meth->init != NULL) && !ret->meth->init(ret)) {
         OPENSSL_free(ret);
@@ -39,15 +38,11 @@ const COMP_METHOD *COMP_CTX_get_method(const COMP_CTX *ctx)
 
 int COMP_get_type(const COMP_METHOD *meth)
 {
-    if (meth == NULL)
-        return NID_undef;
     return meth->type;
 }
 
 const char *COMP_get_name(const COMP_METHOD *meth)
 {
-    if (meth == NULL)
-        return NULL;
     return meth->name;
 }
 

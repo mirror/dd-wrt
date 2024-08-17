@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -21,7 +21,7 @@ static int evp_mac_up_ref(void *vmac)
     EVP_MAC *mac = vmac;
     int ref = 0;
 
-    CRYPTO_UP_REF(&mac->refcnt, &ref);
+    CRYPTO_UP_REF(&mac->refcnt, &ref, mac->lock);
     return 1;
 }
 
@@ -33,12 +33,12 @@ static void evp_mac_free(void *vmac)
     if (mac == NULL)
         return;
 
-    CRYPTO_DOWN_REF(&mac->refcnt, &ref);
+    CRYPTO_DOWN_REF(&mac->refcnt, &ref, mac->lock);
     if (ref > 0)
         return;
     OPENSSL_free(mac->type_name);
     ossl_provider_free(mac->prov);
-    CRYPTO_FREE_REF(&mac->refcnt);
+    CRYPTO_THREAD_lock_free(mac->lock);
     OPENSSL_free(mac);
 }
 
@@ -47,10 +47,13 @@ static void *evp_mac_new(void)
     EVP_MAC *mac = NULL;
 
     if ((mac = OPENSSL_zalloc(sizeof(*mac))) == NULL
-        || !CRYPTO_NEW_REF(&mac->refcnt, 1)) {
+        || (mac->lock = CRYPTO_THREAD_lock_new()) == NULL) {
         evp_mac_free(mac);
         return NULL;
     }
+
+    mac->refcnt = 1;
+
     return mac;
 }
 
@@ -63,7 +66,7 @@ static void *evp_mac_from_algorithm(int name_id,
     int fnmaccnt = 0, fnctxcnt = 0;
 
     if ((mac = evp_mac_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     mac->name_id = name_id;

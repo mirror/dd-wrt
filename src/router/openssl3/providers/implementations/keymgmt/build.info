@@ -30,10 +30,8 @@ IF[{- !$disabled{asm} -}]
 ENDIF
 
 IF[{- !$disabled{ec} -}]
-  IF[{- !$disabled{ecx} -}]
-    SOURCE[$ECX_GOAL]=ecx_kmgmt.c
-    DEFINE[$ECX_GOAL]=$ECDEF
-  ENDIF
+  SOURCE[$ECX_GOAL]=ecx_kmgmt.c
+  DEFINE[$ECX_GOAL]=$ECDEF
 ENDIF
 
 SOURCE[$RSA_GOAL]=rsa_kmgmt.c

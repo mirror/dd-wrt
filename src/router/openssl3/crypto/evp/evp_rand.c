@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -27,6 +27,7 @@ struct evp_rand_st {
     char *type_name;
     const char *description;
     CRYPTO_REF_COUNT refcnt;
+    CRYPTO_RWLOCK *refcnt_lock;
 
     const OSSL_DISPATCH *dispatch;
     OSSL_FUNC_rand_newctx_fn *newctx;
@@ -46,8 +47,6 @@ struct evp_rand_st {
     OSSL_FUNC_rand_get_ctx_params_fn *get_ctx_params;
     OSSL_FUNC_rand_set_ctx_params_fn *set_ctx_params;
     OSSL_FUNC_rand_verify_zeroization_fn *verify_zeroization;
-    OSSL_FUNC_rand_get_seed_fn *get_seed;
-    OSSL_FUNC_rand_clear_seed_fn *clear_seed;
 } /* EVP_RAND */ ;
 
 static int evp_rand_up_ref(void *vrand)
@@ -56,7 +55,7 @@ static int evp_rand_up_ref(void *vrand)
     int ref = 0;
 
     if (rand != NULL)
-        return CRYPTO_UP_REF(&rand->refcnt, &ref);
+        return CRYPTO_UP_REF(&rand->refcnt, &ref, rand->refcnt_lock);
     return 1;
 }
 
@@ -67,12 +66,12 @@ static void evp_rand_free(void *vrand)
 
     if (rand == NULL)
         return;
-    CRYPTO_DOWN_REF(&rand->refcnt, &ref);
+    CRYPTO_DOWN_REF(&rand->refcnt, &ref, rand->refcnt_lock);
     if (ref > 0)
         return;
     OPENSSL_free(rand->type_name);
     ossl_provider_free(rand->prov);
-    CRYPTO_FREE_REF(&rand->refcnt);
+    CRYPTO_THREAD_lock_free(rand->refcnt_lock);
     OPENSSL_free(rand);
 }
 
@@ -80,13 +79,12 @@ static void *evp_rand_new(void)
 {
     EVP_RAND *rand = OPENSSL_zalloc(sizeof(*rand));
 
-    if (rand == NULL)
-        return NULL;
-
-    if (!CRYPTO_NEW_REF(&rand->refcnt, 1)) {
+    if (rand == NULL
+            || (rand->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL) {
         OPENSSL_free(rand);
         return NULL;
     }
+    rand->refcnt = 1;
     return rand;
 }
 
@@ -126,7 +124,7 @@ static void *evp_rand_from_algorithm(int name_id,
 #endif
 
     if ((rand = evp_rand_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     rand->name_id = name_id;
@@ -238,16 +236,6 @@ static void *evp_rand_from_algorithm(int name_id,
             fnzeroizecnt++;
 #endif
             break;
-        case OSSL_FUNC_RAND_GET_SEED:
-            if (rand->get_seed != NULL)
-                break;
-            rand->get_seed = OSSL_FUNC_rand_get_seed(fns);
-            break;
-        case OSSL_FUNC_RAND_CLEAR_SEED:
-            if (rand->clear_seed != NULL)
-                break;
-            rand->clear_seed = OSSL_FUNC_rand_clear_seed(fns);
-            break;
         }
     }
     /*
@@ -332,11 +320,11 @@ int EVP_RAND_get_params(EVP_RAND *rand, OSSL_PARAM params[])
     return 1;
 }
 
-int EVP_RAND_CTX_up_ref(EVP_RAND_CTX *ctx)
+static int evp_rand_ctx_up_ref(EVP_RAND_CTX *ctx)
 {
     int ref = 0;
 
-    return CRYPTO_UP_REF(&ctx->refcnt, &ref);
+    return CRYPTO_UP_REF(&ctx->refcnt, &ref, ctx->refcnt_lock);
 }
 
 EVP_RAND_CTX *EVP_RAND_CTX_new(EVP_RAND *rand, EVP_RAND_CTX *parent)
@@ -351,16 +339,15 @@ EVP_RAND_CTX *EVP_RAND_CTX_new(EVP_RAND *rand, EVP_RAND_CTX *parent)
     }
 
     ctx = OPENSSL_zalloc(sizeof(*ctx));
-    if (ctx == NULL)
-        return NULL;
-    if (!CRYPTO_NEW_REF(&ctx->refcnt, 1)) {
+    if (ctx == NULL || (ctx->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL) {
         OPENSSL_free(ctx);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     if (parent != NULL) {
-        if (!EVP_RAND_CTX_up_ref(parent)) {
+        if (!evp_rand_ctx_up_ref(parent)) {
             ERR_raise(ERR_LIB_EVP, ERR_R_INTERNAL_ERROR);
-            CRYPTO_FREE_REF(&ctx->refcnt);
+            CRYPTO_THREAD_lock_free(ctx->refcnt_lock);
             OPENSSL_free(ctx);
             return NULL;
         }
@@ -370,15 +357,16 @@ EVP_RAND_CTX *EVP_RAND_CTX_new(EVP_RAND *rand, EVP_RAND_CTX *parent)
     if ((ctx->algctx = rand->newctx(ossl_provider_ctx(rand->prov), parent_ctx,
                                     parent_dispatch)) == NULL
             || !EVP_RAND_up_ref(rand)) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         rand->freectx(ctx->algctx);
-        CRYPTO_FREE_REF(&ctx->refcnt);
+        CRYPTO_THREAD_lock_free(ctx->refcnt_lock);
         OPENSSL_free(ctx);
         EVP_RAND_CTX_free(parent);
         return NULL;
     }
     ctx->meth = rand;
     ctx->parent = parent;
+    ctx->refcnt = 1;
     return ctx;
 }
 
@@ -390,14 +378,14 @@ void EVP_RAND_CTX_free(EVP_RAND_CTX *ctx)
     if (ctx == NULL)
         return;
 
-    CRYPTO_DOWN_REF(&ctx->refcnt, &ref);
+    CRYPTO_DOWN_REF(&ctx->refcnt, &ref, ctx->refcnt_lock);
     if (ref > 0)
         return;
     parent = ctx->parent;
     ctx->meth->freectx(ctx->algctx);
     ctx->algctx = NULL;
     EVP_RAND_free(ctx->meth);
-    CRYPTO_FREE_REF(&ctx->refcnt);
+    CRYPTO_THREAD_lock_free(ctx->refcnt_lock);
     OPENSSL_free(ctx);
     EVP_RAND_CTX_free(parent);
 }
@@ -691,60 +679,4 @@ int EVP_RAND_verify_zeroization(EVP_RAND_CTX *ctx)
     res = evp_rand_verify_zeroization_locked(ctx);
     evp_rand_unlock(ctx);
     return res;
-}
-
-int evp_rand_can_seed(EVP_RAND_CTX *ctx)
-{
-    return ctx->meth->get_seed != NULL;
-}
-
-static size_t evp_rand_get_seed_locked(EVP_RAND_CTX *ctx,
-                                       unsigned char **buffer,
-                                       int entropy,
-                                       size_t min_len, size_t max_len,
-                                       int prediction_resistance,
-                                       const unsigned char *adin,
-                                       size_t adin_len)
-{
-    if (ctx->meth->get_seed != NULL)
-        return ctx->meth->get_seed(ctx->algctx, buffer,
-                                   entropy, min_len, max_len,
-                                   prediction_resistance,
-                                   adin, adin_len);
-    return 0;
-}
-
-size_t evp_rand_get_seed(EVP_RAND_CTX *ctx,
-                         unsigned char **buffer,
-                         int entropy, size_t min_len, size_t max_len,
-                         int prediction_resistance,
-                         const unsigned char *adin, size_t adin_len)
-{
-    int res;
-
-    if (!evp_rand_lock(ctx))
-        return 0;
-    res = evp_rand_get_seed_locked(ctx,
-                                   buffer,
-                                   entropy, min_len, max_len,
-                                   prediction_resistance,
-                                   adin, adin_len);
-    evp_rand_unlock(ctx);
-    return res;
-}
-
-static void evp_rand_clear_seed_locked(EVP_RAND_CTX *ctx,
-                                       unsigned char *buffer, size_t b_len)
-{
-    if (ctx->meth->clear_seed != NULL)
-        ctx->meth->clear_seed(ctx->algctx, buffer, b_len);
-}
-
-void evp_rand_clear_seed(EVP_RAND_CTX *ctx,
-                         unsigned char *buffer, size_t b_len)
-{
-    if (!evp_rand_lock(ctx))
-        return;
-    evp_rand_clear_seed_locked(ctx, buffer, b_len);
-    evp_rand_unlock(ctx);
 }

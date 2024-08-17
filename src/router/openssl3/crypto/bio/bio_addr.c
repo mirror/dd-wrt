@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -53,8 +53,10 @@ BIO_ADDR *BIO_ADDR_new(void)
 {
     BIO_ADDR *ret = OPENSSL_zalloc(sizeof(*ret));
 
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     ret->sa.sa_family = AF_UNSPEC;
     return ret;
@@ -63,33 +65,6 @@ BIO_ADDR *BIO_ADDR_new(void)
 void BIO_ADDR_free(BIO_ADDR *ap)
 {
     OPENSSL_free(ap);
-}
-
-int BIO_ADDR_copy(BIO_ADDR *dst, const BIO_ADDR *src)
-{
-    if (dst == NULL || src == NULL)
-        return 0;
-
-    if (src->sa.sa_family == AF_UNSPEC) {
-        BIO_ADDR_clear(dst);
-        return 1;
-    }
-
-    return BIO_ADDR_make(dst, &src->sa);
-}
-
-BIO_ADDR *BIO_ADDR_dup(const BIO_ADDR *ap)
-{
-    BIO_ADDR *ret = NULL;
-
-    if (ap != NULL) {
-        ret = BIO_ADDR_new();
-        if (ret != NULL && !BIO_ADDR_copy(ret, ap)) {
-            BIO_ADDR_free(ret);
-            ret = NULL;
-        }
-    }
-    return ret;
 }
 
 void BIO_ADDR_clear(BIO_ADDR *ap)
@@ -108,13 +83,13 @@ int BIO_ADDR_make(BIO_ADDR *ap, const struct sockaddr *sa)
         memcpy(&(ap->s_in), sa, sizeof(struct sockaddr_in));
         return 1;
     }
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     if (sa->sa_family == AF_INET6) {
         memcpy(&(ap->s_in6), sa, sizeof(struct sockaddr_in6));
         return 1;
     }
 #endif
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (sa->sa_family == AF_UNIX) {
         memcpy(&(ap->s_un), sa, sizeof(struct sockaddr_un));
         return 1;
@@ -128,7 +103,7 @@ int BIO_ADDR_rawmake(BIO_ADDR *ap, int family,
                      const void *where, size_t wherelen,
                      unsigned short port)
 {
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (family == AF_UNIX) {
         if (wherelen + 1 > sizeof(ap->s_un.sun_path))
             return 0;
@@ -147,7 +122,7 @@ int BIO_ADDR_rawmake(BIO_ADDR *ap, int family,
         ap->s_in.sin_addr = *(struct in_addr *)where;
         return 1;
     }
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     if (family == AF_INET6) {
         if (wherelen != sizeof(struct in6_addr))
             return 0;
@@ -176,13 +151,13 @@ int BIO_ADDR_rawaddress(const BIO_ADDR *ap, void *p, size_t *l)
         len = sizeof(ap->s_in.sin_addr);
         addrptr = &ap->s_in.sin_addr;
     }
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     else if (ap->sa.sa_family == AF_INET6) {
         len = sizeof(ap->s_in6.sin6_addr);
         addrptr = &ap->s_in6.sin6_addr;
     }
 #endif
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     else if (ap->sa.sa_family == AF_UNIX) {
         len = strlen(ap->s_un.sun_path);
         addrptr = &ap->s_un.sun_path;
@@ -205,7 +180,7 @@ unsigned short BIO_ADDR_rawport(const BIO_ADDR *ap)
 {
     if (ap->sa.sa_family == AF_INET)
         return ap->s_in.sin_port;
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     if (ap->sa.sa_family == AF_INET6)
         return ap->s_in6.sin6_port;
 #endif
@@ -218,7 +193,7 @@ unsigned short BIO_ADDR_rawport(const BIO_ADDR *ap)
  * @numeric: 0 if actual names should be returned, 1 if the numeric
  * representation should be returned.
  * @hostname: a pointer to a pointer to a memory area to store the
- * hostname or numeric representation.  Unused if NULL.
+ * host name or numeric representation.  Unused if NULL.
  * @service: a pointer to a pointer to a memory area to store the
  * service name or numeric representation.  Unused if NULL.
  *
@@ -292,6 +267,7 @@ static int addr_strings(const BIO_ADDR *ap, int numeric,
             OPENSSL_free(*service);
             *service = NULL;
         }
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -320,7 +296,7 @@ char *BIO_ADDR_service_string(const BIO_ADDR *ap, int numeric)
 
 char *BIO_ADDR_path_string(const BIO_ADDR *ap)
 {
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (ap->sa.sa_family == AF_UNIX)
         return OPENSSL_strdup(ap->s_un.sun_path);
 #endif
@@ -358,11 +334,11 @@ socklen_t BIO_ADDR_sockaddr_size(const BIO_ADDR *ap)
 {
     if (ap->sa.sa_family == AF_INET)
         return sizeof(ap->s_in);
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     if (ap->sa.sa_family == AF_INET6)
         return sizeof(ap->s_in6);
 #endif
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (ap->sa.sa_family == AF_UNIX)
         return sizeof(ap->s_un);
 #endif
@@ -402,7 +378,7 @@ int BIO_ADDRINFO_protocol(const BIO_ADDRINFO *bai)
         if (bai->bai_protocol != 0)
             return bai->bai_protocol;
 
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
         if (bai->bai_family == AF_UNIX)
             return 0;
 #endif
@@ -454,7 +430,7 @@ void BIO_ADDRINFO_free(BIO_ADDRINFO *bai)
         return;
 
 #ifdef AI_PASSIVE
-# ifndef OPENSSL_NO_UNIX_SOCK
+# ifdef AF_UNIX
 #  define _cond bai->bai_family != AF_UNIX
 # else
 #  define _cond 1
@@ -562,7 +538,7 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
         } else {
             *host = OPENSSL_strndup(h, hl);
             if (*host == NULL)
-                return 0;
+                goto memerr;
         }
     }
     if (p != NULL && service != NULL) {
@@ -572,7 +548,7 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
         } else {
             *service = OPENSSL_strndup(p, pl);
             if (*service == NULL)
-                return 0;
+                goto memerr;
         }
     }
 
@@ -582,6 +558,9 @@ int BIO_parse_hostserv(const char *hostserv, char **host, char **service,
     return 0;
  spec_err:
     ERR_raise(ERR_LIB_BIO, BIO_R_MALFORMED_HOST_OR_SERVICE);
+    return 0;
+ memerr:
+    ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -599,8 +578,10 @@ static int addrinfo_wrap(int family, int socktype,
                          unsigned short port,
                          BIO_ADDRINFO **bai)
 {
-    if ((*bai = OPENSSL_zalloc(sizeof(**bai))) == NULL)
+    if ((*bai = OPENSSL_zalloc(sizeof(**bai))) == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     (*bai)->bai_family = family;
     (*bai)->bai_socktype = socktype;
@@ -608,7 +589,7 @@ static int addrinfo_wrap(int family, int socktype,
         (*bai)->bai_protocol = IPPROTO_TCP;
     if (socktype == SOCK_DGRAM)
         (*bai)->bai_protocol = IPPROTO_UDP;
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (family == AF_UNIX)
         (*bai)->bai_protocol = 0;
 #endif
@@ -673,12 +654,12 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 {
     int ret = 0;                 /* Assume failure */
 
-    switch (family) {
+    switch(family) {
     case AF_INET:
-#if OPENSSL_USE_IPV6
+#ifdef AF_INET6
     case AF_INET6:
 #endif
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     case AF_UNIX:
 #endif
 #ifdef AF_UNSPEC
@@ -690,12 +671,12 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
         return 0;
     }
 
-#ifndef OPENSSL_NO_UNIX_SOCK
+#ifdef AF_UNIX
     if (family == AF_UNIX) {
         if (addrinfo_wrap(family, socktype, host, strlen(host), 0, res))
             return 1;
         else
-            ERR_raise(ERR_LIB_BIO, ERR_R_BIO_LIB);
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 #endif
@@ -739,8 +720,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 # endif
 # ifdef EAI_MEMORY
         case EAI_MEMORY:
-            ERR_raise_data(ERR_LIB_BIO, ERR_R_SYS_LIB,
-                           gai_strerror(old_ret ? old_ret : gai_ret));
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
             break;
 # endif
         case 0:
@@ -797,8 +777,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 #endif
 
         if (!RUN_ONCE(&bio_lookup_init, do_bio_lookup_init)) {
-            /* Should this be raised inside do_bio_lookup_init()? */
-            ERR_raise(ERR_LIB_BIO, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
             ret = 0;
             goto err;
         }
@@ -810,7 +789,7 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
         he_fallback_address = INADDR_ANY;
         if (host == NULL) {
             he = &he_fallback;
-            switch (lookup_type) {
+            switch(lookup_type) {
             case BIO_LOOKUP_CLIENT:
                 he_fallback_address = INADDR_LOOPBACK;
                 break;
@@ -927,23 +906,23 @@ int BIO_lookup_ex(const char *host, const char *service, int lookup_type,
 
             /* The easiest way to create a linked list from an
                array is to start from the back */
-            for (addrlistp = he->h_addr_list; *addrlistp != NULL;
-                 addrlistp++)
+            for(addrlistp = he->h_addr_list; *addrlistp != NULL;
+                addrlistp++)
                 ;
 
-            for (addresses = addrlistp - he->h_addr_list;
-                 addrlistp--, addresses-- > 0; ) {
+            for(addresses = addrlistp - he->h_addr_list;
+                addrlistp--, addresses-- > 0; ) {
                 if (!addrinfo_wrap(he->h_addrtype, socktype,
                                    *addrlistp, he->h_length,
                                    se->s_port, &tmp_bai))
-                    goto addrinfo_wrap_err;
+                    goto addrinfo_malloc_err;
                 tmp_bai->bai_next = *res;
                 *res = tmp_bai;
                 continue;
-             addrinfo_wrap_err:
+             addrinfo_malloc_err:
                 BIO_ADDRINFO_free(*res);
                 *res = NULL;
-                ERR_raise(ERR_LIB_BIO, ERR_R_BIO_LIB);
+                ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
                 ret = 0;
                 goto err;
             }

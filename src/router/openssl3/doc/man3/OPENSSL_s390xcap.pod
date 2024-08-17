@@ -25,7 +25,7 @@ processed from left to right (whitespace is ignored):
 
  OPENSSL_s390xcap="<tok1>;<tok2>;..."
 
-There are four types of tokens:
+There are three types of tokens:
 
 =over 4
 
@@ -34,8 +34,8 @@ There are four types of tokens:
 The name of a processor generation. A bit in the environment variable's
 mask is set to one if and only if the specified processor generation
 implements the corresponding instruction set extension. Possible values
-are B<z900>, B<z990>, B<z9>, B<z10>, B<z196>, B<zEC12>, B<z13>, B<z14>,
-B<z15>, and B<z16>.
+are B<z900>, B<z990>, B<z9>, B<z10>, B<z196>, B<zEC12>, B<z13>, B<z14>
+and B<z15>.
 
 =item <string>:<mask>:<mask>
 
@@ -50,11 +50,6 @@ and B<kdsa>.
 Store-facility-list-extended (stfle) followed by three 64-bit masks. The
 part of the environment variable's mask corresponding to the stfle
 instruction is set to the specified 192-bit mask.
-
-=item nocex
-
-Deactivate modular exponentiation and CRT operation offloading to
-Crypto Express Adapters.
 
 =back
 
@@ -194,7 +189,7 @@ Disables the KM-XTS-AES and the KIMD-SHAKE function codes:
 
 =head1 COPYRIGHT
 
-Copyright 2018-2023 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2018-2020 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

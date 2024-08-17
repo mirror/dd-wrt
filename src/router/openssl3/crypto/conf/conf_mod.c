@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -11,7 +11,6 @@
 #define OPENSSL_SUPPRESS_DEPRECATED
 
 #include "internal/cryptlib.h"
-#include "internal/rcu.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <openssl/crypto.h>
@@ -64,7 +63,7 @@ struct conf_imodule_st {
 };
 
 static CRYPTO_ONCE init_module_list_lock = CRYPTO_ONCE_STATIC_INIT;
-static CRYPTO_RCU_LOCK *module_list_lock = NULL;
+static CRYPTO_RWLOCK *module_list_lock = NULL;
 static STACK_OF(CONF_MODULE) *supported_modules = NULL; /* protected by lock */
 static STACK_OF(CONF_IMODULE) *initialized_modules = NULL; /* protected by lock */
 
@@ -87,7 +86,7 @@ static int conf_modules_finish_int(void);
 
 static void module_lists_free(void)
 {
-    ossl_rcu_lock_free(module_list_lock);
+    CRYPTO_THREAD_lock_free(module_list_lock);
     module_list_lock = NULL;
 
     sk_CONF_MODULE_free(supported_modules);
@@ -99,9 +98,9 @@ static void module_lists_free(void)
 
 DEFINE_RUN_ONCE_STATIC(do_init_module_list_lock)
 {
-    module_list_lock = ossl_rcu_lock_new(1);
+    module_list_lock = CRYPTO_THREAD_lock_new();
     if (module_list_lock == NULL) {
-        ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -328,26 +327,21 @@ static CONF_MODULE *module_add(DSO *dso, const char *name,
                                conf_init_func *ifunc, conf_finish_func *ffunc)
 {
     CONF_MODULE *tmod = NULL;
-    STACK_OF(CONF_MODULE) *old_modules;
-    STACK_OF(CONF_MODULE) *new_modules;
 
     if (!RUN_ONCE(&init_module_list_lock, do_init_module_list_lock))
         return NULL;
 
-    ossl_rcu_write_lock(module_list_lock);
+    if (!CRYPTO_THREAD_write_lock(module_list_lock))
+        return NULL;
 
-    old_modules = ossl_rcu_deref(&supported_modules);
-
-    if (old_modules == NULL)
-        new_modules = sk_CONF_MODULE_new_null();
-    else
-        new_modules = sk_CONF_MODULE_dup(old_modules);
-
-    if (new_modules == NULL)
+    if (supported_modules == NULL)
+        supported_modules = sk_CONF_MODULE_new_null();
+    if (supported_modules == NULL)
         goto err;
-
-    if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL)
+    if ((tmod = OPENSSL_zalloc(sizeof(*tmod))) == NULL) {
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     tmod->dso = dso;
     tmod->name = OPENSSL_strdup(name);
@@ -356,24 +350,18 @@ static CONF_MODULE *module_add(DSO *dso, const char *name,
     if (tmod->name == NULL)
         goto err;
 
-    if (!sk_CONF_MODULE_push(new_modules, tmod))
+    if (!sk_CONF_MODULE_push(supported_modules, tmod))
         goto err;
 
-    ossl_rcu_assign_ptr(&supported_modules, &new_modules);
-    ossl_rcu_write_unlock(module_list_lock);
-    ossl_synchronize_rcu(module_list_lock);
-
-    sk_CONF_MODULE_free(old_modules);
+    CRYPTO_THREAD_unlock(module_list_lock);
     return tmod;
 
  err:
-    ossl_rcu_write_unlock(module_list_lock);
-    sk_CONF_MODULE_free(new_modules);
+    CRYPTO_THREAD_unlock(module_list_lock);
     if (tmod != NULL) {
         OPENSSL_free(tmod->name);
         OPENSSL_free(tmod);
     }
-    sk_CONF_MODULE_free(new_modules);
     return NULL;
 }
 
@@ -388,8 +376,6 @@ static CONF_MODULE *module_find(const char *name)
     CONF_MODULE *tmod;
     int i, nchar;
     char *p;
-    STACK_OF(CONF_MODULE) *mods;
-
     p = strrchr(name, '.');
 
     if (p)
@@ -400,18 +386,18 @@ static CONF_MODULE *module_find(const char *name)
     if (!RUN_ONCE(&init_module_list_lock, do_init_module_list_lock))
         return NULL;
 
-    ossl_rcu_read_lock(module_list_lock);
-    mods = ossl_rcu_deref(&supported_modules);
+    if (!CRYPTO_THREAD_read_lock(module_list_lock))
+        return NULL;
 
-    for (i = 0; i < sk_CONF_MODULE_num(mods); i++) {
-        tmod = sk_CONF_MODULE_value(mods, i);
+    for (i = 0; i < sk_CONF_MODULE_num(supported_modules); i++) {
+        tmod = sk_CONF_MODULE_value(supported_modules, i);
         if (strncmp(tmod->name, name, nchar) == 0) {
-            ossl_rcu_read_unlock(module_list_lock);
+            CRYPTO_THREAD_unlock(module_list_lock);
             return tmod;
         }
     }
 
-    ossl_rcu_read_unlock(module_list_lock);
+    CRYPTO_THREAD_unlock(module_list_lock);
     return NULL;
 }
 
@@ -422,8 +408,6 @@ static int module_init(CONF_MODULE *pmod, const char *name, const char *value,
     int ret = 1;
     int init_called = 0;
     CONF_IMODULE *imod = NULL;
-    STACK_OF(CONF_IMODULE) *old_modules;
-    STACK_OF(CONF_IMODULE) *new_modules;
 
     /* Otherwise add initialized module to list */
     imod = OPENSSL_malloc(sizeof(*imod));
@@ -450,34 +434,27 @@ static int module_init(CONF_MODULE *pmod, const char *name, const char *value,
     if (!RUN_ONCE(&init_module_list_lock, do_init_module_list_lock))
         goto err;
 
-    ossl_rcu_write_lock(module_list_lock);
-
-    old_modules = ossl_rcu_deref(&initialized_modules);
-
-    if (old_modules == NULL)
-        new_modules = sk_CONF_IMODULE_new_null();
-    else
-        new_modules = sk_CONF_IMODULE_dup(old_modules);
-
-    if (new_modules == NULL) {
-        ossl_rcu_write_unlock(module_list_lock);
-        ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+    if (!CRYPTO_THREAD_write_lock(module_list_lock))
         goto err;
+
+    if (initialized_modules == NULL) {
+        initialized_modules = sk_CONF_IMODULE_new_null();
+        if (initialized_modules == NULL) {
+            CRYPTO_THREAD_unlock(module_list_lock);
+            ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
+            goto err;
+        }
     }
 
-    if (!sk_CONF_IMODULE_push(new_modules, imod)) {
-        ossl_rcu_write_unlock(module_list_lock);
-        sk_CONF_IMODULE_free(new_modules);
-        ERR_raise(ERR_LIB_CONF, ERR_R_CRYPTO_LIB);
+    if (!sk_CONF_IMODULE_push(initialized_modules, imod)) {
+        CRYPTO_THREAD_unlock(module_list_lock);
+        ERR_raise(ERR_LIB_CONF, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
     pmod->links++;
 
-    ossl_rcu_assign_ptr(&initialized_modules, &new_modules);
-    ossl_rcu_write_unlock(module_list_lock);
-    ossl_synchronize_rcu(module_list_lock);
-    sk_CONF_IMODULE_free(old_modules);
+    CRYPTO_THREAD_unlock(module_list_lock);
     return ret;
 
  err:
@@ -507,46 +484,30 @@ void CONF_modules_unload(int all)
 {
     int i;
     CONF_MODULE *md;
-    STACK_OF(CONF_MODULE) *old_modules;
-    STACK_OF(CONF_MODULE) *new_modules;
-    STACK_OF(CONF_MODULE) *to_delete;
 
     if (!conf_modules_finish_int()) /* also inits module list lock */
         return;
 
-    ossl_rcu_write_lock(module_list_lock);
-
-    old_modules = ossl_rcu_deref(&supported_modules);
-    new_modules = sk_CONF_MODULE_dup(old_modules);
-    to_delete = sk_CONF_MODULE_new_null();
-
-    if (new_modules == NULL) {
-        ossl_rcu_write_unlock(module_list_lock);
+    if (!CRYPTO_THREAD_write_lock(module_list_lock))
         return;
-    }
 
     /* unload modules in reverse order */
-    for (i = sk_CONF_MODULE_num(new_modules) - 1; i >= 0; i--) {
-        md = sk_CONF_MODULE_value(new_modules, i);
+    for (i = sk_CONF_MODULE_num(supported_modules) - 1; i >= 0; i--) {
+        md = sk_CONF_MODULE_value(supported_modules, i);
         /* If static or in use and 'all' not set ignore it */
         if (((md->links > 0) || !md->dso) && !all)
             continue;
         /* Since we're working in reverse this is OK */
-        (void)sk_CONF_MODULE_delete(new_modules, i);
-        sk_CONF_MODULE_push(to_delete, md);
+        (void)sk_CONF_MODULE_delete(supported_modules, i);
+        module_free(md);
     }
 
-    if (sk_CONF_MODULE_num(new_modules) == 0) {
-        sk_CONF_MODULE_free(new_modules);
-        new_modules = NULL;
+    if (sk_CONF_MODULE_num(supported_modules) == 0) {
+        sk_CONF_MODULE_free(supported_modules);
+        supported_modules = NULL;
     }
 
-    ossl_rcu_assign_ptr(&supported_modules, &new_modules);
-    ossl_rcu_write_unlock(module_list_lock);
-    ossl_synchronize_rcu(module_list_lock);
-    sk_CONF_MODULE_free(old_modules);
-    sk_CONF_MODULE_pop_free(to_delete, module_free);
-
+    CRYPTO_THREAD_unlock(module_list_lock);
 }
 
 /* unload a single module */
@@ -562,27 +523,23 @@ static void module_free(CONF_MODULE *md)
 static int conf_modules_finish_int(void)
 {
     CONF_IMODULE *imod;
-    STACK_OF(CONF_IMODULE) *old_modules;
-    STACK_OF(CONF_IMODULE) *new_modules = NULL;
 
     if (!RUN_ONCE(&init_module_list_lock, do_init_module_list_lock))
         return 0;
 
     /* If module_list_lock is NULL here it means we were already unloaded */
-    if (module_list_lock == NULL)
+    if (module_list_lock == NULL
+        || !CRYPTO_THREAD_write_lock(module_list_lock))
         return 0;
 
-    ossl_rcu_write_lock(module_list_lock);
-    old_modules = ossl_rcu_deref(&initialized_modules);
-    ossl_rcu_assign_ptr(&initialized_modules, &new_modules);
-    ossl_rcu_write_unlock(module_list_lock);
-    ossl_synchronize_rcu(module_list_lock);
-
-    while (sk_CONF_IMODULE_num(old_modules) > 0) {
-        imod = sk_CONF_IMODULE_pop(old_modules);
+    while (sk_CONF_IMODULE_num(initialized_modules) > 0) {
+        imod = sk_CONF_IMODULE_pop(initialized_modules);
         module_finish(imod);
     }
-    sk_CONF_IMODULE_free(old_modules);
+    sk_CONF_IMODULE_free(initialized_modules);
+    initialized_modules = NULL;
+
+    CRYPTO_THREAD_unlock(module_list_lock);
 
     return 1;
 }

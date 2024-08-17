@@ -141,10 +141,9 @@ int BIO_hex_string(BIO *out, int indent, int width, const void *data,
 
         BIO_printf(out, "%02X:", d[i]);
 
-        if (++j >= width) {
-            j = 0;
+        j = (j + 1) % width;
+        if (!j)
             BIO_printf(out, "\n");
-        }
     }
 
     if (i && !j)

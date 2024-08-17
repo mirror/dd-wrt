@@ -8,10 +8,6 @@ providers = provider_sect
 
 [provider_sect]
 default = default_sect
-legacy  = legacy_sect
 
 [default_sect]
-activate = true
-
-[legacy_sect]
-activate = false
+activate = 1

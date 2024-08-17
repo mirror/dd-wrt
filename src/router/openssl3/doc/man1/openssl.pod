@@ -13,12 +13,10 @@ I<command>
 
 B<openssl> B<no->I<XXX> [ I<options> ]
 
-B<openssl> B<-help> | B<-version>
-
 =head1 DESCRIPTION
 
-OpenSSL is a cryptography toolkit implementing the Secure Sockets Layer (SSL)
-and Transport Layer Security (TLS) network protocols and related
+OpenSSL is a cryptography toolkit implementing the Secure Sockets Layer (SSL
+v2/v3) and Transport Layer Security (TLS v1) network protocols and related
 cryptography standards required by them.
 
 The B<openssl> program is a command line program for using the various
@@ -366,22 +364,6 @@ SHA-3 384 Digest
 
 SHA-3 512 Digest
 
-=item B<keccak-224>
-
-KECCAK 224 Digest
-
-=item B<keccak-256>
-
-KECCAK 256 Digest
-
-=item B<keccak-384>
-
-KECCAK 384 Digest
-
-=item B<keccak-512>
-
-KECCAK 512 Digest
-
 =item B<shake128>
 
 SHA-3 SHAKE128 Digest
@@ -501,33 +483,13 @@ SM4 Cipher
 Details of which options are available depend on the specific command.
 This section describes some common options with common behavior.
 
-=head2 Program Options
-
-These options can be specified without a command specified to get help
-or version information.
-
-=over 4
-
-=item B<-help>
-
-Provides a terse summary of all options.
-For more detailed information, each command supports a B<-help> option.
-Accepts B<--help> as well.
-
-=item B<-version>
-
-Provides a terse summary of the B<openssl> program version.
-For more detailed information see L<openssl-version(1)>.
-Accepts B<--version> as well.
-
-=back
-
 =head2 Common Options
 
 =over 4
 
 =item B<-help>
 
+Provides a terse summary of all options.
 If an option takes an argument, the "type" of argument is also given.
 
 =item B<-->
@@ -711,8 +673,8 @@ see L<openssl-env(7)>.
 
 Enable tracing output of OpenSSL library, by name.
 This output will only make sense if you know OpenSSL internals well.
-Also, it might not give you any output at all
-if OpenSSL was built without tracing support.
+Also, it might not give you any output at all, depending on how
+OpenSSL was built.
 
 The value is a comma separated list of names, with the following
 available:
@@ -790,10 +752,6 @@ Traces encoder operations.
 =item B<REF_COUNT>
 
 Traces decrementing certain ASN.1 structure references.
-
-=item B<HTTP>
-
-Traces the HTTP client and server, such as messages being sent and received.
 
 =back
 

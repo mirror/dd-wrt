@@ -258,8 +258,10 @@ static int encode_pkcs1(unsigned char **out, size_t *out_len, int type,
     }
     dig_info_len = di_prefix_len + m_len;
     dig_info = OPENSSL_malloc(dig_info_len);
-    if (dig_info == NULL)
+    if (dig_info == NULL) {
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     memcpy(dig_info, di_prefix, di_prefix_len);
     memcpy(dig_info + di_prefix_len, m, m_len);
 
@@ -341,8 +343,10 @@ int ossl_rsa_verify(int type, const unsigned char *m, unsigned int m_len,
 
     /* Recover the encoded digest. */
     decrypt_buf = OPENSSL_malloc(siglen);
-    if (decrypt_buf == NULL)
+    if (decrypt_buf == NULL) {
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     len = RSA_public_decrypt((int)siglen, sigbuf, decrypt_buf, rsa,
                              RSA_PKCS1_PADDING);

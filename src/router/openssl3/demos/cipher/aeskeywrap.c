@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -171,10 +171,11 @@ err:
 int main(int argc, char **argv)
 {
     if (!aes_wrap_encrypt())
-       return EXIT_FAILURE;
+       return 1;
 
     if (!aes_wrap_decrypt())
-        return EXIT_FAILURE;
+        return 1;
 
-    return EXIT_SUCCESS;
+    return 0;
 }
+

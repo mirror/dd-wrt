@@ -31,8 +31,10 @@ int i2d_ASN1_OBJECT(const ASN1_OBJECT *a, unsigned char **pp)
         return objsize;
 
     if (*pp == NULL) {
-        if ((p = allocated = OPENSSL_malloc(objsize)) == NULL)
+        if ((p = allocated = OPENSSL_malloc(objsize)) == NULL) {
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
     } else {
         p = *pp;
     }
@@ -133,8 +135,10 @@ int a2d_ASN1_OBJECT(unsigned char *out, int olen, const char *buf, int num)
                     OPENSSL_free(tmp);
                 tmpsize = blsize + 32;
                 tmp = OPENSSL_malloc(tmpsize);
-                if (tmp == NULL)
+                if (tmp == NULL) {
+                    ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
                     goto err;
+                }
             }
             while (blsize--) {
                 BN_ULONG t = BN_div_word(bl, 0x80L);
@@ -192,8 +196,10 @@ int i2a_ASN1_OBJECT(BIO *bp, const ASN1_OBJECT *a)
             ERR_raise(ERR_LIB_ASN1, ASN1_R_LENGTH_TOO_LONG);
             return -1;
         }
-        if ((p = OPENSSL_malloc(i + 1)) == NULL)
+        if ((p = OPENSSL_malloc(i + 1)) == NULL) {
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             return -1;
+        }
         i2t_ASN1_OBJECT(p, i + 1, a);
     }
     if (i <= 0) {
@@ -302,8 +308,10 @@ ASN1_OBJECT *ossl_c2i_ASN1_OBJECT(ASN1_OBJECT **a, const unsigned char **pp,
         ret->length = 0;
         OPENSSL_free(data);
         data = OPENSSL_malloc(length);
-        if (data == NULL)
+        if (data == NULL) {
+            i = ERR_R_MALLOC_FAILURE;
             goto err;
+        }
         ret->flags |= ASN1_OBJECT_FLAG_DYNAMIC_DATA;
     }
     memcpy(data, p, length);
@@ -337,8 +345,10 @@ ASN1_OBJECT *ASN1_OBJECT_new(void)
     ASN1_OBJECT *ret;
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     ret->flags = ASN1_OBJECT_FLAG_DYNAMIC;
     return ret;
 }

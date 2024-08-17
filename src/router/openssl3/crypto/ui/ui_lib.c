@@ -24,12 +24,14 @@ UI *UI_new_method(const UI_METHOD *method)
 {
     UI *ret = OPENSSL_zalloc(sizeof(*ret));
 
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     ret->lock = CRYPTO_THREAD_lock_new();
     if (ret->lock == NULL) {
-        ERR_raise(ERR_LIB_UI, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(ret);
         return NULL;
     }
@@ -208,8 +210,10 @@ int UI_dup_input_string(UI *ui, const char *prompt, int flags,
 
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
-        if (prompt_copy == NULL)
+        if (prompt_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
     }
 
     return general_allocate_string(ui, prompt_copy, 1,
@@ -234,8 +238,10 @@ int UI_dup_verify_string(UI *ui, const char *prompt, int flags,
 
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
-        if (prompt_copy == NULL)
+        if (prompt_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             return -1;
+        }
     }
 
     return general_allocate_string(ui, prompt_copy, 1,
@@ -263,26 +269,34 @@ int UI_dup_input_boolean(UI *ui, const char *prompt, const char *action_desc,
 
     if (prompt != NULL) {
         prompt_copy = OPENSSL_strdup(prompt);
-        if (prompt_copy == NULL)
+        if (prompt_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
     }
 
     if (action_desc != NULL) {
         action_desc_copy = OPENSSL_strdup(action_desc);
-        if (action_desc_copy == NULL)
+        if (action_desc_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
     }
 
     if (ok_chars != NULL) {
         ok_chars_copy = OPENSSL_strdup(ok_chars);
-        if (ok_chars_copy == NULL)
+        if (ok_chars_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
     }
 
     if (cancel_chars != NULL) {
         cancel_chars_copy = OPENSSL_strdup(cancel_chars);
-        if (cancel_chars_copy == NULL)
+        if (cancel_chars_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
     }
 
     return general_allocate_boolean(ui, prompt_copy, action_desc_copy,
@@ -308,8 +322,10 @@ int UI_dup_info_string(UI *ui, const char *text)
 
     if (text != NULL) {
         text_copy = OPENSSL_strdup(text);
-        if (text_copy == NULL)
+        if (text_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             return -1;
+        }
     }
 
     return general_allocate_string(ui, text_copy, 1, UIT_INFO, 0, NULL,
@@ -328,8 +344,10 @@ int UI_dup_error_string(UI *ui, const char *text)
 
     if (text != NULL) {
         text_copy = OPENSSL_strdup(text);
-        if (text_copy == NULL)
+        if (text_copy == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             return -1;
+        }
     }
     return general_allocate_string(ui, text_copy, 1, UIT_ERROR, 0, NULL,
                                    0, 0, NULL);
@@ -355,8 +373,10 @@ char *UI_construct_prompt(UI *ui, const char *phrase_desc,
             len += sizeof(prompt2) - 1 + strlen(object_name);
         len += sizeof(prompt3) - 1;
 
-        if ((prompt = OPENSSL_malloc(len + 1)) == NULL)
+        if ((prompt = OPENSSL_malloc(len + 1)) == NULL) {
+            ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
             return NULL;
+        }
         OPENSSL_strlcpy(prompt, prompt1, len + 1);
         OPENSSL_strlcat(prompt, phrase_desc, len + 1);
         if (object_name != NULL) {
@@ -393,7 +413,7 @@ int UI_dup_user_data(UI *ui, void *user_data)
 
     duplicate = ui->meth->ui_duplicate_data(ui, user_data);
     if (duplicate == NULL) {
-        ERR_raise(ERR_LIB_UI, ERR_R_UI_LIB);
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
         return -1;
     }
 
@@ -583,17 +603,10 @@ UI_METHOD *UI_create_method(const char *name)
         || (ui_method->name = OPENSSL_strdup(name)) == NULL
         || !CRYPTO_new_ex_data(CRYPTO_EX_INDEX_UI_METHOD, ui_method,
                                &ui_method->ex_data)) {
-
-        if (ui_method != NULL) {
-            if (ui_method->name != NULL)
-                /*
-                 * These conditions indicate that the CRYPTO_new_ex_data()
-                 * call failed.
-                 */
-                ERR_raise(ERR_LIB_UI, ERR_R_CRYPTO_LIB);
+        if (ui_method)
             OPENSSL_free(ui_method->name);
-        }
         OPENSSL_free(ui_method);
+        ERR_raise(ERR_LIB_UI, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     return ui_method;

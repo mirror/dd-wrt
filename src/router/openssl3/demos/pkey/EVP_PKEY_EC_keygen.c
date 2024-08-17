@@ -1,5 +1,5 @@
 /*-
- * Copyright 2021-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2021-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -84,7 +84,7 @@ cleanup:
  */
 static int get_key_values(EVP_PKEY *pkey)
 {
-    int ret = 0;
+    int result = 0;
     char out_curvename[80];
     unsigned char out_pubkey[80];
     unsigned char out_privkey[80];
@@ -122,16 +122,16 @@ static int get_key_values(EVP_PKEY *pkey)
     fprintf(stdout, "Private Key:\n");
     BIO_dump_indent_fp(stdout, out_privkey, out_privkey_len, 2);
 
-    ret = 1;
+    result = 1;
 cleanup:
     /* Zeroize the private key data when we free it */
     BN_clear_free(out_priv);
-    return ret;
+    return result;
 }
 
 int main(void)
 {
-    int ret = EXIT_FAILURE;
+    int result = 0;
     EVP_PKEY *pkey;
 
     pkey = do_ec_keygen();
@@ -145,11 +145,11 @@ int main(void)
      * At this point we can write out the generated key using
      * i2d_PrivateKey() and i2d_PublicKey() if required.
      */
-    ret = EXIT_SUCCESS;
+    result = 1;
 cleanup:
-    if (ret != EXIT_SUCCESS)
+    if (result != 1)
         ERR_print_errors_fp(stderr);
 
     EVP_PKEY_free(pkey);
-    return ret;
+    return result == 0;
 }

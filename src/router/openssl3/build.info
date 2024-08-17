@@ -8,7 +8,6 @@ ENDIF
 IF[{- !$disabled{'deprecated-3.0'} -}]
   SUBDIRS=engines
 ENDIF
-SUBDIRS=exporters
 
 LIBS=libcrypto libssl
 INCLUDE[libcrypto]=. include
@@ -23,7 +22,6 @@ DEPEND[]=include/openssl/asn1.h \
          include/openssl/cmp.h \
          include/openssl/cms.h \
          include/openssl/conf.h \
-         include/openssl/core_names.h \
          include/openssl/crmf.h \
          include/openssl/crypto.h \
          include/openssl/ct.h \
@@ -42,8 +40,7 @@ DEPEND[]=include/openssl/asn1.h \
          include/openssl/x509.h \
          include/openssl/x509v3.h \
          include/openssl/x509_vfy.h \
-         include/crypto/bn_conf.h include/crypto/dso_conf.h \
-         include/internal/param_names.h crypto/params_idx.c
+         include/crypto/bn_conf.h include/crypto/dso_conf.h
 
 GENERATE[include/openssl/asn1.h]=include/openssl/asn1.h.in
 GENERATE[include/openssl/asn1t.h]=include/openssl/asn1t.h.in
@@ -76,13 +73,6 @@ GENERATE[include/openssl/x509_vfy.h]=include/openssl/x509_vfy.h.in
 GENERATE[include/crypto/bn_conf.h]=include/crypto/bn_conf.h.in
 GENERATE[include/crypto/dso_conf.h]=include/crypto/dso_conf.h.in
 
-DEPEND[crypto/params_idx.c \
-       include/internal/param_names.h \
-       include/openssl/core_names.h]=util/perl|OpenSSL/paramnames.pm
-GENERATE[crypto/params_idx.c]=crypto/params_idx.c.in
-GENERATE[include/internal/param_names.h]=include/internal/param_names.h.in
-GENERATE[include/openssl/core_names.h]=include/openssl/core_names.h.in
-
 IF[{- defined $target{shared_defflag} -}]
   SHARED_SOURCE[libcrypto]=libcrypto.ld
   SHARED_SOURCE[libssl]=libssl.ld
@@ -100,27 +90,3 @@ IF[{- $config{target} =~ /^(?:Cygwin|mingw|VC-|BC-)/ -}]
   SHARED_SOURCE[libcrypto]=libcrypto.rc
   SHARED_SOURCE[libssl]=libssl.rc
 ENDIF
-
-# This file sets the build directory up for CMake inclusion
-GENERATE[OpenSSLConfig.cmake]=exporters/cmake/OpenSSLConfig.cmake.in
-DEPEND[OpenSSLConfig.cmake]=builddata.pm
-GENERATE[OpenSSLConfigVersion.cmake]=exporters/cmake/OpenSSLConfigVersion.cmake.in
-DEPEND[OpenSSLConfigVersion.cmake]=builddata.pm
-DEPEND[OpenSSLConfigVersion.cmake]=OpenSSLConfig.cmake
-DEPEND[""]=OpenSSLConfigVersion.cmake
-
-# This file sets the build directory up for pkg-config
-GENERATE[libcrypto.pc]=exporters/pkg-config/libcrypto.pc.in
-DEPEND[libcrypto.pc]=builddata.pm
-GENERATE[libssl.pc]=exporters/pkg-config/libssl.pc.in
-DEPEND[libssl.pc]=builddata.pm
-GENERATE[openssl.pc]=exporters/pkg-config/openssl.pc.in
-DEPEND[openssl.pc]=builddata.pm
-DEPEND[openssl.pc]=libcrypto.pc libssl.pc
-
-GENERATE[builddata.pm]=util/mkinstallvars.pl \
-    PREFIX=. BINDIR=apps LIBDIR= INCLUDEDIR=include APPLINKDIR=ms \
-    ENGINESDIR=engines MODULESDIR=providers \
-    "VERSION=$(VERSION)" "LDLIBS=$(LIB_EX_LIBS)"
-
-DEPEND[""]=openssl.pc

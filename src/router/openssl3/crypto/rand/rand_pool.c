@@ -25,8 +25,10 @@ RAND_POOL *ossl_rand_pool_new(int entropy_requested, int secure,
     RAND_POOL *pool = OPENSSL_zalloc(sizeof(*pool));
     size_t min_alloc_size = RAND_POOL_MIN_ALLOCATION(secure);
 
-    if (pool == NULL)
+    if (pool == NULL) {
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     pool->min_len = min_len;
     pool->max_len = (max_len > RAND_POOL_MAX_LENGTH) ?
@@ -40,8 +42,10 @@ RAND_POOL *ossl_rand_pool_new(int entropy_requested, int secure,
     else
         pool->buffer = OPENSSL_zalloc(pool->alloc_len);
 
-    if (pool->buffer == NULL)
+    if (pool->buffer == NULL) {
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     pool->entropy_requested = entropy_requested;
     pool->secure = secure;
@@ -63,8 +67,10 @@ RAND_POOL *ossl_rand_pool_attach(const unsigned char *buffer, size_t len,
 {
     RAND_POOL *pool = OPENSSL_zalloc(sizeof(*pool));
 
-    if (pool == NULL)
+    if (pool == NULL) {
+        ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     /*
      * The const needs to be cast away, but attached buffers will not be
@@ -216,8 +222,10 @@ static int rand_pool_grow(RAND_POOL *pool, size_t len)
             p = OPENSSL_secure_zalloc(newlen);
         else
             p = OPENSSL_zalloc(newlen);
-        if (p == NULL)
+        if (p == NULL) {
+            ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         memcpy(p, pool->buffer, pool->len);
         if (pool->secure)
             OPENSSL_secure_clear_free(pool->buffer, pool->alloc_len);
@@ -249,11 +257,7 @@ size_t ossl_rand_pool_bytes_needed(RAND_POOL *pool, unsigned int entropy_factor)
 
     if (bytes_needed > pool->max_len - pool->len) {
         /* not enough space left */
-        ERR_raise_data(ERR_LIB_RAND, RAND_R_RANDOM_POOL_OVERFLOW,
-                       "entropy_factor=%u, entropy_needed=%zu, bytes_needed=%zu,"
-                       "pool->max_len=%zu, pool->len=%zu",
-                       entropy_factor, entropy_needed, bytes_needed,
-                       pool->max_len, pool->len);
+        ERR_raise(ERR_LIB_RAND, RAND_R_RANDOM_POOL_OVERFLOW);
         return 0;
     }
 

@@ -75,7 +75,7 @@ static int set_dist_point_name(DIST_POINT_NAME **pdp, X509V3_CTX *ctx,
         goto err;
     }
 
-    if (HAS_PREFIX(cnf->name, "fullname")) {
+    if (strncmp(cnf->name, "fullname", 9) == 0) {
         fnm = gnames_from_sectname(ctx, cnf->value);
         if (!fnm)
             goto err;
@@ -249,10 +249,8 @@ static void *v2i_crld(const X509V3_EXT_METHOD *method,
     int i;
 
     crld = sk_DIST_POINT_new_reserve(NULL, num);
-    if (crld == NULL) {
-        ERR_raise(ERR_LIB_X509V3, ERR_R_CRYPTO_LIB);
-        goto err;
-    }
+    if (crld == NULL)
+        goto merr;
     for (i = 0; i < num; i++) {
         DIST_POINT *point;
 
@@ -270,24 +268,16 @@ static void *v2i_crld(const X509V3_EXT_METHOD *method,
         } else {
             if ((gen = v2i_GENERAL_NAME(method, ctx, cnf)) == NULL)
                 goto err;
-            if ((gens = GENERAL_NAMES_new()) == NULL) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
-                goto err;
-            }
-            if (!sk_GENERAL_NAME_push(gens, gen)) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_CRYPTO_LIB);
-                goto err;
-            }
+            if ((gens = GENERAL_NAMES_new()) == NULL)
+                goto merr;
+            if (!sk_GENERAL_NAME_push(gens, gen))
+                goto merr;
             gen = NULL;
-            if ((point = DIST_POINT_new()) == NULL) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
-                goto err;
-            }
+            if ((point = DIST_POINT_new()) == NULL)
+                goto merr;
             sk_DIST_POINT_push(crld, point); /* no failure as it was reserved */
-            if ((point->distpoint = DIST_POINT_NAME_new()) == NULL) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
-                goto err;
-            }
+            if ((point->distpoint = DIST_POINT_NAME_new()) == NULL)
+                goto merr;
             point->distpoint->name.fullname = gens;
             point->distpoint->type = 0;
             gens = NULL;
@@ -295,6 +285,8 @@ static void *v2i_crld(const X509V3_EXT_METHOD *method,
     }
     return crld;
 
+ merr:
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
  err:
     GENERAL_NAME_free(gen);
     GENERAL_NAMES_free(gens);
@@ -377,10 +369,8 @@ static void *v2i_idp(const X509V3_EXT_METHOD *method, X509V3_CTX *ctx,
     char *name, *val;
     int i, ret;
     idp = ISSUING_DIST_POINT_new();
-    if (idp == NULL) {
-        ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (idp == NULL)
+        goto merr;
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
         cnf = sk_CONF_VALUE_value(nval, i);
         name = cnf->name;
@@ -413,6 +403,8 @@ static void *v2i_idp(const X509V3_EXT_METHOD *method, X509V3_CTX *ctx,
     }
     return idp;
 
+ merr:
+    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
  err:
     ISSUING_DIST_POINT_free(idp);
     return NULL;

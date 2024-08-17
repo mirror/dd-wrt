@@ -22,16 +22,20 @@ static EVP_SIGNATURE *evp_signature_new(OSSL_PROVIDER *prov)
 {
     EVP_SIGNATURE *signature = OPENSSL_zalloc(sizeof(EVP_SIGNATURE));
 
-    if (signature == NULL)
-        return NULL;
-
-    if (!CRYPTO_NEW_REF(&signature->refcnt, 1)) {
-        OPENSSL_free(signature);
+    if (signature == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
+    signature->lock = CRYPTO_THREAD_lock_new();
+    if (signature->lock == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
+        OPENSSL_free(signature);
+        return NULL;
+    }
     signature->prov = prov;
     ossl_provider_up_ref(prov);
+    signature->refcnt = 1;
 
     return signature;
 }
@@ -47,7 +51,7 @@ static void *evp_signature_from_algorithm(int name_id,
     int gparamfncnt = 0, sparamfncnt = 0, gmdparamfncnt = 0, smdparamfncnt = 0;
 
     if ((signature = evp_signature_new(prov)) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -279,12 +283,12 @@ void EVP_SIGNATURE_free(EVP_SIGNATURE *signature)
 
     if (signature == NULL)
         return;
-    CRYPTO_DOWN_REF(&signature->refcnt, &i);
+    CRYPTO_DOWN_REF(&signature->refcnt, &i, signature->lock);
     if (i > 0)
         return;
     OPENSSL_free(signature->type_name);
     ossl_provider_free(signature->prov);
-    CRYPTO_FREE_REF(&signature->refcnt);
+    CRYPTO_THREAD_lock_free(signature->lock);
     OPENSSL_free(signature);
 }
 
@@ -292,7 +296,7 @@ int EVP_SIGNATURE_up_ref(EVP_SIGNATURE *signature)
 {
     int ref = 0;
 
-    CRYPTO_UP_REF(&signature->refcnt, &ref);
+    CRYPTO_UP_REF(&signature->refcnt, &ref, signature->lock);
     return 1;
 }
 

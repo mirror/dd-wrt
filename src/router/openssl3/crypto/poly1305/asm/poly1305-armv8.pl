@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -72,7 +72,6 @@ $code.=<<___;
 .type	poly1305_init,%function
 .align	5
 poly1305_init:
-	AARCH64_VALID_CALL_TARGET
 	cmp	$inp,xzr
 	stp	xzr,xzr,[$ctx]		// zero hash value
 	stp	xzr,xzr,[$ctx,#16]	// [along with is_base2_26]
@@ -120,9 +119,6 @@ poly1305_init:
 .align	5
 poly1305_blocks:
 .Lpoly1305_blocks:
-	// The symbol .Lpoly1305_blocks is not a .globl symbol
-	// but a pointer to it is returned by poly1305_init
-	AARCH64_VALID_CALL_TARGET
 	ands	$len,$len,#-16
 	b.eq	.Lno_data
 
@@ -188,9 +184,6 @@ poly1305_blocks:
 .align	5
 poly1305_emit:
 .Lpoly1305_emit:
-	// The symbol .poly1305_emit is not a .globl symbol
-	// but a pointer to it is returned by poly1305_init
-	AARCH64_VALID_CALL_TARGET
 	ldp	$h0,$h1,[$ctx]		// load hash base 2^64
 	ldr	$h2,[$ctx,#16]
 	ldp	$t0,$t1,[$nonce]	// load nonce
@@ -298,16 +291,13 @@ poly1305_splat:
 .align	5
 poly1305_blocks_neon:
 .Lpoly1305_blocks_neon:
-	// The symbol .Lpoly1305_blocks_neon is not a .globl symbol
-	// but a pointer to it is returned by poly1305_init
-	AARCH64_VALID_CALL_TARGET
 	ldr	$is_base2_26,[$ctx,#24]
 	cmp	$len,#128
 	b.hs	.Lblocks_neon
 	cbz	$is_base2_26,.Lpoly1305_blocks
 
 .Lblocks_neon:
-	AARCH64_SIGN_LINK_REGISTER
+	.inst	0xd503233f		// paciasp
 	stp	x29,x30,[sp,#-80]!
 	add	x29,sp,#0
 
@@ -877,7 +867,7 @@ poly1305_blocks_neon:
 
 .Lno_data_neon:
 	ldr	x29,[sp],#80
-	AARCH64_VALIDATE_LINK_REGISTER
+	.inst	0xd50323bf		// autiasp
 	ret
 .size	poly1305_blocks_neon,.-poly1305_blocks_neon
 
@@ -885,9 +875,6 @@ poly1305_blocks_neon:
 .align	5
 poly1305_emit_neon:
 .Lpoly1305_emit_neon:
-	// The symbol .Lpoly1305_emit_neon is not a .globl symbol
-	// but a pointer to it is returned by poly1305_init
-	AARCH64_VALID_CALL_TARGET
 	ldr	$is_base2_26,[$ctx,#24]
 	cbz	$is_base2_26,poly1305_emit
 

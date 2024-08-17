@@ -67,8 +67,8 @@ $n0="x4";	# const BN_ULONG *n0,
 $num="x5";	# int num);
 
 $code.=<<___;
-#include "arm_arch.h"
 #ifndef	__KERNEL__
+# include "arm_arch.h"
 .extern OPENSSL_armv8_rsa_neonized
 .hidden OPENSSL_armv8_rsa_neonized
 #endif
@@ -78,7 +78,6 @@ $code.=<<___;
 .type	bn_mul_mont,%function
 .align	5
 bn_mul_mont:
-	AARCH64_SIGN_LINK_REGISTER
 .Lbn_mul_mont:
 	tst	$num,#3
 	b.ne	.Lmul_mont
@@ -289,7 +288,6 @@ bn_mul_mont:
 	mov	x0,#1
 	ldp	x23,x24,[x29,#48]
 	ldr	x29,[sp],#64
-	AARCH64_VALIDATE_LINK_REGISTER
 	ret
 .size	bn_mul_mont,.-bn_mul_mont
 ___
@@ -311,8 +309,6 @@ $code.=<<___;
 .type	bn_mul8x_mont_neon,%function
 .align	5
 bn_mul8x_mont_neon:
-	// Not adding AARCH64_SIGN_LINK_REGISTER here because bn_mul8x_mont_neon is jumped to
-	// only from bn_mul_mont which has already signed the return address.
 	stp	x29,x30,[sp,#-80]!
 	mov	x16,sp
 	stp	d8,d9,[sp,#16]
@@ -653,7 +649,6 @@ $code.=<<___;
 	ldp	d10,d11,[sp,#32]
 	ldp	d8,d9,[sp,#16]
 	ldr	x29,[sp],#80
-	AARCH64_VALIDATE_LINK_REGISTER
 	ret			// bx lr
 
 .size	bn_mul8x_mont_neon,.-bn_mul8x_mont_neon
@@ -676,8 +671,7 @@ __bn_sqr8x_mont:
 	cmp	$ap,$bp
 	b.ne	__bn_mul4x_mont
 .Lsqr8x_mont:
-	// Not adding AARCH64_SIGN_LINK_REGISTER here because __bn_sqr8x_mont is jumped to
-	// only from bn_mul_mont which has already signed the return address.
+	.inst	0xd503233f		// paciasp
 	stp	x29,x30,[sp,#-128]!
 	add	x29,sp,#0
 	stp	x19,x20,[sp,#16]
@@ -1431,8 +1425,7 @@ $code.=<<___;
 	ldp	x25,x26,[x29,#64]
 	ldp	x27,x28,[x29,#80]
 	ldr	x29,[sp],#128
-	// x30 is loaded earlier
-	AARCH64_VALIDATE_LINK_REGISTER
+	.inst	0xd50323bf		// autiasp
 	ret
 .size	__bn_sqr8x_mont,.-__bn_sqr8x_mont
 ___
@@ -1456,8 +1449,7 @@ $code.=<<___;
 .type	__bn_mul4x_mont,%function
 .align	5
 __bn_mul4x_mont:
-	// Not adding AARCH64_SIGN_LINK_REGISTER here because __bn_mul4x_mont is jumped to
-	// only from bn_mul_mont (or __bn_sqr8x_mont from bn_mul_mont) which has already signed the return address.
+	.inst	0xd503233f		// paciasp
 	stp	x29,x30,[sp,#-128]!
 	add	x29,sp,#0
 	stp	x19,x20,[sp,#16]
@@ -1891,8 +1883,7 @@ __bn_mul4x_mont:
 	ldp	x25,x26,[x29,#64]
 	ldp	x27,x28,[x29,#80]
 	ldr	x29,[sp],#128
-	// x30 loaded earlier
-	AARCH64_VALIDATE_LINK_REGISTER
+	.inst	0xd50323bf		// autiasp
 	ret
 .size	__bn_mul4x_mont,.-__bn_mul4x_mont
 ___

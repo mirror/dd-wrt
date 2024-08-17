@@ -43,8 +43,10 @@ int ossl_pw_set_passphrase(struct ossl_passphrase_data_st *data,
     data->_.expl_passphrase.passphrase_copy =
         passphrase_len != 0 ? OPENSSL_memdup(passphrase, passphrase_len)
                             : OPENSSL_malloc(1);
-    if (data->_.expl_passphrase.passphrase_copy == NULL)
+    if (data->_.expl_passphrase.passphrase_copy == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     data->_.expl_passphrase.passphrase_len = passphrase_len;
     return 1;
 }
@@ -128,7 +130,7 @@ static int do_ui_passphrase(char *pass, size_t pass_size, size_t *pass_len,
     }
 
     if ((ui = UI_new()) == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_UI_LIB);
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -141,14 +143,16 @@ static int do_ui_passphrase(char *pass, size_t pass_size, size_t *pass_len,
     /* Get an application constructed prompt */
     prompt = UI_construct_prompt(ui, "pass phrase", prompt_info);
     if (prompt == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_UI_LIB);
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         goto end;
     }
 
     /* Get a buffer for verification prompt */
     ipass = OPENSSL_zalloc(pass_size + 1);
-    if (ipass == NULL)
+    if (ipass == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
 
     prompt_idx = UI_add_input_string(ui, prompt,
                                      UI_INPUT_FLAG_DEFAULT_PWD,
@@ -161,8 +165,10 @@ static int do_ui_passphrase(char *pass, size_t pass_size, size_t *pass_len,
     if (verify) {
         /* Get a buffer for verification prompt */
         vpass = OPENSSL_zalloc(pass_size + 1);
-        if (vpass == NULL)
+        if (vpass == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             goto end;
+        }
         verify_idx = UI_add_verify_string(ui, prompt,
                                           UI_INPUT_FLAG_DEFAULT_PWD,
                                           vpass, 0, pass_size,
@@ -263,7 +269,7 @@ int ossl_pw_get_passphrase(char *pass, size_t pass_size, size_t *pass_len,
         ui_data = data->_.pem_password.password_cbarg;
 
         if (ui_method == NULL) {
-            ERR_raise(ERR_LIB_CRYPTO, ERR_R_UI_LIB);
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             return 0;
         }
     } else if (data->type == is_ui_method) {
@@ -293,6 +299,7 @@ int ossl_pw_get_passphrase(char *pass, size_t pass_size, size_t *pass_len,
 
             if (new_cache == NULL) {
                 OPENSSL_cleanse(pass, *pass_len);
+                ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
                 return 0;
             }
             data->cached_passphrase = new_cache;

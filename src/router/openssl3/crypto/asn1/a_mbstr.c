@@ -139,13 +139,15 @@ int ASN1_mbstring_ncopy(ASN1_STRING **out, const unsigned char *in, int len,
     if (*out) {
         free_out = 0;
         dest = *out;
-        ASN1_STRING_set0(dest, NULL, 0);
+        OPENSSL_free(dest->data);
+        dest->data = NULL;
+        dest->length = 0;
         dest->type = str_type;
     } else {
         free_out = 1;
         dest = ASN1_STRING_type_new(str_type);
         if (dest == NULL) {
-            ERR_raise(ERR_LIB_ASN1, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             return -1;
         }
         *out = dest;
@@ -153,11 +155,7 @@ int ASN1_mbstring_ncopy(ASN1_STRING **out, const unsigned char *in, int len,
     /* If both the same type just copy across */
     if (inform == outform) {
         if (!ASN1_STRING_set(dest, in, len)) {
-            if (free_out) {
-                ASN1_STRING_free(dest);
-                *out = NULL;
-            }
-            ERR_raise(ERR_LIB_ASN1, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             return -1;
         }
         return str_type;
@@ -187,10 +185,9 @@ int ASN1_mbstring_ncopy(ASN1_STRING **out, const unsigned char *in, int len,
         break;
     }
     if ((p = OPENSSL_malloc(outlen + 1)) == NULL) {
-        if (free_out) {
+        if (free_out)
             ASN1_STRING_free(dest);
-            *out = NULL;
-        }
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return -1;
     }
     dest->length = outlen;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -7,7 +7,6 @@
  * https://www.openssl.org/source/license.html
  */
 
-#include <string.h>
 #include <openssl/err.h>
 #include <openssl/e_os2.h>
 
@@ -57,18 +56,14 @@ static ossl_inline void err_set_debug(ERR_STATE *es, size_t i,
     OPENSSL_free(es->err_file[i]);
     if (file == NULL || file[0] == '\0')
         es->err_file[i] = NULL;
-    else if ((es->err_file[i] = CRYPTO_malloc(strlen(file) + 1,
-                                              NULL, 0)) != NULL)
-        /* We cannot use OPENSSL_strdup due to possible recursion */
-        strcpy(es->err_file[i], file);
-
+    else
+        es->err_file[i] = OPENSSL_strdup(file);
     es->err_line[i] = line;
     OPENSSL_free(es->err_func[i]);
     if (fn == NULL || fn[0] == '\0')
         es->err_func[i] = NULL;
-    else if ((es->err_func[i] = CRYPTO_malloc(strlen(fn) + 1,
-                                              NULL, 0)) != NULL)
-        strcpy(es->err_func[i], fn);
+    else
+        es->err_func[i] = OPENSSL_strdup(fn);
 }
 
 static ossl_inline void err_set_data(ERR_STATE *es, size_t i,

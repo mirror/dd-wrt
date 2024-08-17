@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -18,7 +18,8 @@ int main(int argc, char **argv)
     X509_STORE *st = NULL;
     X509 *cacert = NULL;
     PKCS7 *p7 = NULL;
-    int ret = EXIT_FAILURE;
+
+    int ret = 1;
 
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
@@ -66,11 +67,12 @@ int main(int argc, char **argv)
         goto err;
     }
 
-    printf("Verification Successful\n");
+    fprintf(stderr, "Verification Successful\n");
 
-    ret = EXIT_SUCCESS;
+    ret = 0;
+
  err:
-    if (ret != EXIT_SUCCESS) {
+    if (ret) {
         fprintf(stderr, "Error Verifying Data\n");
         ERR_print_errors_fp(stderr);
     }

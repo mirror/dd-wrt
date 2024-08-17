@@ -4,15 +4,14 @@
 
 EVP_MD_fetch, EVP_MD_up_ref, EVP_MD_free,
 EVP_MD_get_params, EVP_MD_gettable_params,
-EVP_MD_CTX_new, EVP_MD_CTX_reset, EVP_MD_CTX_free, EVP_MD_CTX_dup,
-EVP_MD_CTX_copy, EVP_MD_CTX_copy_ex, EVP_MD_CTX_ctrl,
+EVP_MD_CTX_new, EVP_MD_CTX_reset, EVP_MD_CTX_free, EVP_MD_CTX_copy,
+EVP_MD_CTX_copy_ex, EVP_MD_CTX_ctrl,
 EVP_MD_CTX_set_params, EVP_MD_CTX_get_params,
 EVP_MD_settable_ctx_params, EVP_MD_gettable_ctx_params,
 EVP_MD_CTX_settable_params, EVP_MD_CTX_gettable_params,
 EVP_MD_CTX_set_flags, EVP_MD_CTX_clear_flags, EVP_MD_CTX_test_flags,
 EVP_Q_digest, EVP_Digest, EVP_DigestInit_ex2, EVP_DigestInit_ex, EVP_DigestInit,
 EVP_DigestUpdate, EVP_DigestFinal_ex, EVP_DigestFinalXOF, EVP_DigestFinal,
-EVP_DigestSqueeze,
 EVP_MD_is_a, EVP_MD_get0_name, EVP_MD_get0_description,
 EVP_MD_names_do_all, EVP_MD_get0_provider, EVP_MD_get_type,
 EVP_MD_get_pkey_type, EVP_MD_get_size, EVP_MD_get_block_size, EVP_MD_get_flags,
@@ -62,10 +61,8 @@ EVP_MD_CTX_type, EVP_MD_CTX_pkey_ctx, EVP_MD_CTX_md_data
  int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl);
  int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d, size_t cnt);
  int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s);
- int EVP_DigestFinalXOF(EVP_MD_CTX *ctx, unsigned char *out, size_t outlen);
- int EVP_DigestSqueeze(EVP_MD_CTX *ctx, unsigned char *out, size_t outlen);
+ int EVP_DigestFinalXOF(EVP_MD_CTX *ctx, unsigned char *md, size_t len);
 
- EVP_MD_CTX *EVP_MD_CTX_dup(const EVP_MD_CTX *in);
  int EVP_MD_CTX_copy_ex(EVP_MD_CTX *out, const EVP_MD_CTX *in);
 
  int EVP_DigestInit(EVP_MD_CTX *ctx, const EVP_MD *type);
@@ -284,31 +281,16 @@ data.
 Retrieves the digest value from I<ctx> and places it in I<md>. If the I<s>
 parameter is not NULL then the number of bytes of data written (i.e. the
 length of the digest) will be written to the integer at I<s>, at most
-B<EVP_MAX_MD_SIZE> bytes will be written unless the digest implementation
-allows changing the digest size and it is set to a larger value by the
-application. After calling EVP_DigestFinal_ex() no additional calls to
-EVP_DigestUpdate() can be made, but EVP_DigestInit_ex2() can be called to
-initialize a new digest operation.
+B<EVP_MAX_MD_SIZE> bytes will be written.  After calling EVP_DigestFinal_ex()
+no additional calls to EVP_DigestUpdate() can be made, but
+EVP_DigestInit_ex2() can be called to initialize a new digest operation.
 
 =item EVP_DigestFinalXOF()
 
 Interfaces to extendable-output functions, XOFs, such as SHAKE128 and SHAKE256.
-It retrieves the digest value from I<ctx> and places it in I<outlen>-sized I<out>.
+It retrieves the digest value from I<ctx> and places it in I<len>-sized I<md>.
 After calling this function no additional calls to EVP_DigestUpdate() can be
 made, but EVP_DigestInit_ex2() can be called to initialize a new operation.
-EVP_DigestFinalXOF() may only be called once
-
-=item EVP_DigestSqueeze()
-
-Similar to EVP_DigestFinalXOF() but allows multiple calls to be made to
-squeeze variable length output data.
-EVP_DigestFinalXOF() should not be called after this.
-
-=item EVP_MD_CTX_dup()
-
-Can be used to duplicate the message digest state from I<in>.  This is useful
-to avoid multiple EVP_MD_fetch() calls or if large amounts of data are to be
-hashed which only differ in the last few bytes.
 
 =item EVP_MD_CTX_copy_ex()
 
@@ -487,9 +469,8 @@ EVP_MD_CTX_set_params() can be used with the following OSSL_PARAM keys:
 =item "xoflen" (B<OSSL_DIGEST_PARAM_XOFLEN>) <unsigned integer>
 
 Sets the digest length for extendable output functions.
-The value should not exceed what can be given using a B<size_t>.
-It may be used by BLAKE2B-512, SHAKE-128 and SHAKE-256 to set the
-output length used by EVP_DigestFinal_ex() and EVP_DigestFinal().
+It is used by the SHAKE algorithm and should not exceed what can be given
+using a B<size_t>.
 
 =item "pad-type" (B<OSSL_DIGEST_PARAM_PAD_TYPE>) <unsigned integer>
 
@@ -608,10 +589,6 @@ EVP_MD_CTX_gettable_params()
 
 Return an array of constant L<OSSL_PARAM(3)>s, or NULL if there is none
 to get.
-
-=item EVP_MD_CTX_dup()
-
-Returns a new EVP_MD_CTX if successful or NULL on failure.
 
 =item EVP_MD_CTX_copy_ex()
 
@@ -804,10 +781,6 @@ The EVP_MD_CTX_md() function was deprecated in OpenSSL 3.0; use
 EVP_MD_CTX_get0_md() instead.
 EVP_MD_CTX_update_fn() and EVP_MD_CTX_set_update_fn() were deprecated
 in OpenSSL 3.0.
-
-The EVP_MD_CTX_dup() function was added in OpenSSL 3.1.
-
-The EVP_DigestSqueeze() function was added in OpenSSL 3.3.
 
 =head1 COPYRIGHT
 

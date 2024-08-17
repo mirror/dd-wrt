@@ -21,10 +21,8 @@ IF[{- !$disabled{asm} -}]
 ENDIF
 
 IF[{- !$disabled{ec} -}]
-  IF[{- !$disabled{ecx} -}]
-    SOURCE[$ECX_GOAL]=ecx_exch.c
-    DEFINE[$ECX_GOAL]=$ECDEF
-  ENDIF
+  SOURCE[$ECX_GOAL]=ecx_exch.c
+  DEFINE[$ECX_GOAL]=$ECDEF
   SOURCE[$ECDH_GOAL]=ecdh_exch.c
 ENDIF
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2018-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -27,7 +27,7 @@ static int cache_objects(X509_LOOKUP *lctx, const char *uri,
 
     /*
      * We try to set the criterion, but don't care if it was valid or not.
-     * For an OSSL_STORE, it merely serves as an optimization, the expectation
+     * For a OSSL_STORE, it merely serves as an optimization, the expectation
      * being that if the criterion couldn't be used, we will get *everything*
      * from the container that the URI represents rather than the subset that
      * the criterion indicates, so the biggest harm is that we cache more
@@ -114,7 +114,6 @@ static int by_store_ctrl_ex(X509_LOOKUP *ctx, int cmd, const char *argp,
         /* If no URI is given, use the default cert dir as default URI */
         if (argp == NULL)
             argp = ossl_safe_getenv(X509_get_default_cert_dir_env());
-
         if (argp == NULL)
             argp = X509_get_default_cert_dir();
 

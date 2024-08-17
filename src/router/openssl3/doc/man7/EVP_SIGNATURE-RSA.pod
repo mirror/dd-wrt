@@ -68,11 +68,6 @@ Use the maximum salt length.
 
 Auto detect the salt length.
 
-=item "auto-digestmax" (B<OSSL_PKEY_RSA_PSS_SALT_LEN_AUTO_DIGEST_MAX>)
-
-Auto detect the salt length when verifying.  Maximize the salt length up to the
-digest size when signing to comply with FIPS 186-4 section 5.5.
-
 =back
 
 =back
@@ -107,7 +102,7 @@ L<provider-signature(7)>,
 
 =head1 COPYRIGHT
 
-Copyright 2020-2021 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2020-2022 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

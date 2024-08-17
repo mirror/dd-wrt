@@ -33,8 +33,10 @@ BUF_MEM *BUF_MEM_new(void)
     BUF_MEM *ret;
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_BUF, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     return ret;
 }
 
@@ -85,7 +87,7 @@ size_t BUF_MEM_grow(BUF_MEM *str, size_t len)
     }
     /* This limit is sufficient to ensure (len+3)/3*4 < 2**31 */
     if (len > LIMIT_BEFORE_EXPANSION) {
-        ERR_raise(ERR_LIB_BUF, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_BUF, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     n = (len + 3) / 3 * 4;
@@ -94,6 +96,7 @@ size_t BUF_MEM_grow(BUF_MEM *str, size_t len)
     else
         ret = OPENSSL_realloc(str->data, n);
     if (ret == NULL) {
+        ERR_raise(ERR_LIB_BUF, ERR_R_MALLOC_FAILURE);
         len = 0;
     } else {
         str->data = ret;
@@ -122,7 +125,7 @@ size_t BUF_MEM_grow_clean(BUF_MEM *str, size_t len)
     }
     /* This limit is sufficient to ensure (len+3)/3*4 < 2**31 */
     if (len > LIMIT_BEFORE_EXPANSION) {
-        ERR_raise(ERR_LIB_BUF, ERR_R_PASSED_INVALID_ARGUMENT);
+        ERR_raise(ERR_LIB_BUF, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     n = (len + 3) / 3 * 4;
@@ -131,6 +134,7 @@ size_t BUF_MEM_grow_clean(BUF_MEM *str, size_t len)
     else
         ret = OPENSSL_clear_realloc(str->data, str->max, n);
     if (ret == NULL) {
+        ERR_raise(ERR_LIB_BUF, ERR_R_MALLOC_FAILURE);
         len = 0;
     } else {
         str->data = ret;

@@ -43,8 +43,10 @@ OSSL_STORE_LOADER *OSSL_STORE_LOADER_new(ENGINE *e, const char *scheme)
         return NULL;
     }
 
-    if ((res = OPENSSL_zalloc(sizeof(*res))) == NULL)
+    if ((res = OPENSSL_zalloc(sizeof(*res))) == NULL) {
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     res->engine = e;
     res->scheme = scheme;
@@ -189,8 +191,7 @@ int ossl_store_register_loader_int(OSSL_STORE_LOADER *loader)
     }
 
     if (!RUN_ONCE(&registry_init, do_registry_init)) {
-        /* Should this error be raised in do_registry_init()? */
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     if (!CRYPTO_THREAD_write_lock(registry_lock))
@@ -223,8 +224,7 @@ const OSSL_STORE_LOADER *ossl_store_get0_loader_int(const char *scheme)
     template.open_ex = NULL;
 
     if (!RUN_ONCE(&registry_init, do_registry_init)) {
-        /* Should this error be raised in do_registry_init()? */
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     if (!CRYPTO_THREAD_write_lock(registry_lock))
@@ -254,8 +254,7 @@ OSSL_STORE_LOADER *ossl_store_unregister_loader_int(const char *scheme)
     template.closefn = NULL;
 
     if (!RUN_ONCE(&registry_init, do_registry_init)) {
-        /* Should this error be raised in do_registry_init()? */
-        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_STORE, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
     if (!CRYPTO_THREAD_write_lock(registry_lock))

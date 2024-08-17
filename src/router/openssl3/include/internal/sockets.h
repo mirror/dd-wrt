@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -61,25 +61,7 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #   define accept(s,f,l)   ((int)accept(s,f,l))
 #  endif
 
-/* Windows have other names for shutdown() reasons */
-#  ifndef SHUT_RD
-#   define SHUT_RD SD_RECEIVE
-#  endif
-#  ifndef SHUT_WR
-#   define SHUT_WR SD_SEND
-#  endif
-#  ifndef SHUT_RDWR
-#   define SHUT_RDWR SD_BOTH
-#  endif
-
 # else
-#  if defined(__APPLE__)
-    /*
-     * This must be defined before including <netinet/in6.h> to get
-     * IPV6_RECVPKTINFO
-     */
-#   define __APPLE_USE_RFC_3542
-#  endif
 
 #  ifndef NO_SYS_PARAM_H
 #   include <sys/param.h>
@@ -89,16 +71,13 @@ struct servent *PASCAL getservbyname(const char *, const char *);
 #  endif
 
 #  include <netdb.h>
-#  if defined(OPENSSL_SYS_VMS)
-typedef size_t socklen_t;        /* Currently appears to be missing on VMS */
-#  endif
 #  if defined(OPENSSL_SYS_VMS_NODECC)
 #   include <socket.h>
 #   include <in.h>
 #   include <inet.h>
 #  else
 #   include <sys/socket.h>
-#   if !defined(NO_SYS_UN_H) && defined(AF_UNIX) && !defined(OPENSSL_NO_UNIX_SOCK)
+#   ifndef NO_SYS_UN_H
 #    include <sys/un.h>
 #    ifndef UNIX_PATH_MAX
 #     define UNIX_PATH_MAX sizeof(((struct sockaddr_un *)NULL)->sun_path)
@@ -114,13 +93,6 @@ typedef size_t socklen_t;        /* Currently appears to be missing on VMS */
 
 #  ifdef OPENSSL_SYS_AIX
 #   include <sys/select.h>
-#  endif
-
-#  ifdef OPENSSL_SYS_UNIX
-#    ifndef OPENSSL_SYS_TANDEM
-#     include <poll.h>
-#    endif
-#    include <errno.h>
 #  endif
 
 #  ifndef VMS
@@ -153,26 +125,14 @@ typedef size_t socklen_t;        /* Currently appears to be missing on VMS */
 #  endif
 # endif
 
-/*
- * Some platforms define AF_UNIX, but don't support it
- */
-# if !defined(OPENSSL_NO_UNIX_SOCK)
-#  if !defined(AF_UNIX) || defined(NO_SYS_UN_H)
-#   define OPENSSL_NO_UNIX_SOCK
-#  endif
-# endif
-
 # define get_last_socket_error() errno
 # define clear_socket_error()    errno=0
-# define get_last_socket_error_is_eintr() (get_last_socket_error() == EINTR)
 
 # if defined(OPENSSL_SYS_WINDOWS)
 #  undef get_last_socket_error
 #  undef clear_socket_error
-#  undef get_last_socket_error_is_eintr
 #  define get_last_socket_error() WSAGetLastError()
 #  define clear_socket_error()    WSASetLastError(0)
-#  define get_last_socket_error_is_eintr() (get_last_socket_error() == WSAEINTR)
 #  define readsocket(s,b,n)       recv((s),(b),(n),0)
 #  define writesocket(s,b,n)      send((s),(b),(n),0)
 # elif defined(__DJGPP__)
@@ -190,8 +150,14 @@ typedef size_t socklen_t;        /* Currently appears to be missing on VMS */
 #  define readsocket(s,b,n)           read((s),(b),(n))
 #  define writesocket(s,b,n)          write((s),(char *)(b),(n))
 # elif defined(OPENSSL_SYS_TANDEM)
-#  define readsocket(s,b,n)       read((s),(b),(n))
-#  define writesocket(s,b,n)      write((s),(b),(n))
+#  if defined(OPENSSL_TANDEM_FLOSS)
+#   include <floss.h(floss_read, floss_write)>
+#   define readsocket(s,b,n)       floss_read((s),(b),(n))
+#   define writesocket(s,b,n)      floss_write((s),(b),(n))
+#  else
+#   define readsocket(s,b,n)       read((s),(b),(n))
+#   define writesocket(s,b,n)      write((s),(b),(n))
+#  endif
 #  define ioctlsocket(a,b,c)      ioctl(a,b,c)
 #  define closesocket(s)          close(s)
 # else

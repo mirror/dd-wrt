@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1999-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -15,7 +15,6 @@
 #include <openssl/encoder.h>
 #include <openssl/decoder.h>
 #include "internal/provider.h"
-#include "internal/sizes.h"
 #include "crypto/asn1.h"
 #include "crypto/evp.h"
 #include "crypto/x509.h"
@@ -33,7 +32,7 @@ EVP_PKEY *evp_pkcs82pkey_legacy(const PKCS8_PRIV_KEY_INFO *p8, OSSL_LIB_CTX *lib
         return NULL;
 
     if ((pkey = EVP_PKEY_new()) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -74,13 +73,6 @@ EVP_PKEY *EVP_PKCS82PKEY_ex(const PKCS8_PRIV_KEY_INFO *p8, OSSL_LIB_CTX *libctx,
     int selection;
     size_t len;
     OSSL_DECODER_CTX *dctx = NULL;
-    const ASN1_OBJECT *algoid = NULL;
-    char keytype[OSSL_MAX_NAME_SIZE];
-
-    if (p8 == NULL
-            || !PKCS8_pkey_get0(&algoid, NULL, NULL, NULL, p8)
-            || !OBJ_obj2txt(keytype, sizeof(keytype), algoid, 0))
-        return NULL;
 
     if ((encoded_len = i2d_PKCS8_PRIV_KEY_INFO(p8, &encoded_data)) <= 0
             || encoded_data == NULL)
@@ -90,20 +82,7 @@ EVP_PKEY *EVP_PKCS82PKEY_ex(const PKCS8_PRIV_KEY_INFO *p8, OSSL_LIB_CTX *libctx,
     len = encoded_len;
     selection = EVP_PKEY_KEYPAIR | EVP_PKEY_KEY_PARAMETERS;
     dctx = OSSL_DECODER_CTX_new_for_pkey(&pkey, "DER", "PrivateKeyInfo",
-                                         keytype, selection, libctx, propq);
-
-    if (dctx != NULL && OSSL_DECODER_CTX_get_num_decoders(dctx) == 0) {
-        OSSL_DECODER_CTX_free(dctx);
-
-        /*
-         * This could happen if OBJ_obj2txt() returned a text OID and the
-         * decoder has not got that OID as an alias. We fall back to a NULL
-         * keytype
-         */
-        dctx = OSSL_DECODER_CTX_new_for_pkey(&pkey, "DER", "PrivateKeyInfo",
-                                             NULL, selection, libctx, propq);
-    }
-
+                                         NULL, selection, libctx, propq);
     if (dctx == NULL
         || !OSSL_DECODER_from_data(dctx, &p8_data, &len))
         /* try legacy */
@@ -151,7 +130,7 @@ PKCS8_PRIV_KEY_INFO *EVP_PKEY2PKCS8(const EVP_PKEY *pkey)
     } else {
         p8 = PKCS8_PRIV_KEY_INFO_new();
         if (p8  == NULL) {
-            ERR_raise(ERR_LIB_EVP, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
             return NULL;
         }
 

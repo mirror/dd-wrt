@@ -12,7 +12,7 @@
 #include "crypto/dso_conf.h"
 #include "internal/thread_once.h"
 #include "internal/cryptlib.h"
-#include "internal/e_os.h"
+#include "e_os.h"
 #include "buildinf.h"
 
 #if defined(__arm__) || defined(__arm) || defined(__aarch64__)
@@ -135,11 +135,7 @@ DEFINE_RUN_ONCE_STATIC(init_info_strings)
         add_seeds_string("rdtsc");
 #endif
 #ifdef OPENSSL_RAND_SEED_RDCPU
-# ifdef __aarch64__
-        add_seeds_string("rndr ( rndrrs rndr )");
-# else
         add_seeds_string("rdrand ( rdseed rdrand )");
-# endif
 #endif
 #ifdef OPENSSL_RAND_SEED_LIBRANDOM
         add_seeds_string("C-library-random");

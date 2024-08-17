@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2009-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -82,12 +82,11 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
     /* Setup algorithm identifier for cipher */
     encalg = X509_ALGOR_new();
     if (encalg == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
+        goto merr;
     }
     ctx = EVP_CIPHER_CTX_new();
     if (ctx == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -111,7 +110,7 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
         }
         encalg->parameter = ASN1_TYPE_new();
         if (!encalg->parameter) {
-            ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
             goto err;
         }
         if (EVP_CIPHER_param_to_asn1(ctx, encalg->parameter) <= 0) {
@@ -127,16 +126,12 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
 
     /* Initialize recipient info */
     ri = M_ASN1_new_of(CMS_RecipientInfo);
-    if (ri == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (ri == NULL)
+        goto merr;
 
     ri->d.pwri = M_ASN1_new_of(CMS_PasswordRecipientInfo);
-    if (ri->d.pwri == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (ri->d.pwri == NULL)
+        goto merr;
     ri->type = CMS_RECIPINFO_PASS;
 
     pwri = ri->d.pwri;
@@ -144,23 +139,17 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
     /* Since this is overwritten, free up empty structure already there */
     X509_ALGOR_free(pwri->keyEncryptionAlgorithm);
     pwri->keyEncryptionAlgorithm = X509_ALGOR_new();
-    if (pwri->keyEncryptionAlgorithm == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (pwri->keyEncryptionAlgorithm == NULL)
+        goto merr;
     pwri->keyEncryptionAlgorithm->algorithm = OBJ_nid2obj(wrap_nid);
     pwri->keyEncryptionAlgorithm->parameter = ASN1_TYPE_new();
-    if (pwri->keyEncryptionAlgorithm->parameter == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
-    }
+    if (pwri->keyEncryptionAlgorithm->parameter == NULL)
+        goto merr;
 
     if (!ASN1_item_pack(encalg, ASN1_ITEM_rptr(X509_ALGOR),
                         &pwri->keyEncryptionAlgorithm->parameter->
-                        value.sequence)) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-        goto err;
-    }
+                        value.sequence))
+         goto merr;
     pwri->keyEncryptionAlgorithm->parameter->type = V_ASN1_SEQUENCE;
 
     X509_ALGOR_free(encalg);
@@ -176,13 +165,13 @@ CMS_RecipientInfo *CMS_add0_recipient_password(CMS_ContentInfo *cms,
     CMS_RecipientInfo_set0_password(ri, pass, passlen);
     pwri->version = 0;
 
-    if (!sk_CMS_RecipientInfo_push(ris, ri)) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_CRYPTO_LIB);
-        goto err;
-    }
+    if (!sk_CMS_RecipientInfo_push(ris, ri))
+        goto merr;
 
     return ri;
 
+ merr:
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
  err:
     EVP_CIPHER_CTX_free(ctx);
     if (ri)
@@ -204,10 +193,6 @@ static int kek_unwrap_key(unsigned char *out, size_t *outlen,
     size_t blocklen = EVP_CIPHER_CTX_get_block_size(ctx);
     unsigned char *tmp;
     int outl, rv = 0;
-
-    if (blocklen == 0)
-        return 0;
-
     if (inlen < 2 * blocklen) {
         /* too small */
         return 0;
@@ -216,8 +201,10 @@ static int kek_unwrap_key(unsigned char *out, size_t *outlen,
         /* Invalid size */
         return 0;
     }
-    if ((tmp = OPENSSL_malloc(inlen)) == NULL)
+    if ((tmp = OPENSSL_malloc(inlen)) == NULL) {
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     /* setup IV by decrypting last two blocks */
     if (!EVP_DecryptUpdate(ctx, tmp + inlen - 2 * blocklen, &outl,
                            in + inlen - 2 * blocklen, blocklen * 2)
@@ -261,10 +248,6 @@ static int kek_wrap_key(unsigned char *out, size_t *outlen,
     size_t blocklen = EVP_CIPHER_CTX_get_block_size(ctx);
     size_t olen;
     int dummy;
-
-    if (blocklen == 0)
-        return 0;
-
     /*
      * First decide length of output buffer: need header and round up to
      * multiple of block length.
@@ -352,7 +335,7 @@ int ossl_cms_RecipientInfo_pwri_crypt(const CMS_ContentInfo *cms,
 
     kekctx = EVP_CIPHER_CTX_new();
     if (kekctx == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
         goto err;
     }
     /* Fixup cipher based on AlgorithmIdentifier to set IV etc */
@@ -393,8 +376,11 @@ int ossl_cms_RecipientInfo_pwri_crypt(const CMS_ContentInfo *cms,
         pwri->encryptedKey->length = keylen;
     } else {
         key = OPENSSL_malloc(pwri->encryptedKey->length);
-        if (key == NULL)
+
+        if (key == NULL) {
+            ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
         if (!kek_unwrap_key(key, &keylen,
                             pwri->encryptedKey->data,
                             pwri->encryptedKey->length, kekctx)) {

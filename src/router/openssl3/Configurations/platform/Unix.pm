@@ -73,9 +73,7 @@ sub sharedlib_simple {
     my $name = $_[0]->sharedname($_[1]);
     my $simplename = $_[0]->sharedname_simple($_[1]);
     my $ext = $_[0]->shlibext();
-    # Allow override of the extension passed in as parameter
-    my $simpleext = $_[2];
-    $simpleext = $_[0]->shlibextsimple() unless defined $simpleext;
+    my $simpleext = $_[0]->shlibextsimple();
 
     return undef unless defined $simplename && defined $name;
     return undef if ($name eq $simplename && $ext eq $simpleext);

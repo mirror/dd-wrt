@@ -121,17 +121,13 @@ CMS_ReceiptRequest *CMS_ReceiptRequest_create0_ex(
     CMS_ReceiptRequest *rr;
 
     rr = CMS_ReceiptRequest_new();
-    if (rr == NULL) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_CMS_LIB);
-        goto err;
-    }
+    if (rr == NULL)
+        goto merr;
     if (id)
         ASN1_STRING_set0(rr->signedContentIdentifier, id, idlen);
     else {
-        if (!ASN1_STRING_set(rr->signedContentIdentifier, NULL, 32)) {
-            ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
-            goto err;
-        }
+        if (!ASN1_STRING_set(rr->signedContentIdentifier, NULL, 32))
+            goto merr;
         if (RAND_bytes_ex(libctx, rr->signedContentIdentifier->data, 32,
                           0) <= 0)
             goto err;
@@ -149,6 +145,9 @@ CMS_ReceiptRequest *CMS_ReceiptRequest_create0_ex(
     }
 
     return rr;
+
+ merr:
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
 
  err:
     CMS_ReceiptRequest_free(rr);
@@ -170,20 +169,19 @@ int CMS_add1_ReceiptRequest(CMS_SignerInfo *si, CMS_ReceiptRequest *rr)
     int rrderlen, r = 0;
 
     rrderlen = i2d_CMS_ReceiptRequest(rr, &rrder);
-    if (rrderlen < 0) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_CMS_LIB);
-        goto err;
-    }
+    if (rrderlen < 0)
+        goto merr;
 
     if (!CMS_signed_add1_attr_by_NID(si, NID_id_smime_aa_receiptRequest,
-                                     V_ASN1_SEQUENCE, rrder, rrderlen)) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_CMS_LIB);
-        goto err;
-    }
+                                     V_ASN1_SEQUENCE, rrder, rrderlen))
+        goto merr;
 
     r = 1;
 
- err:
+ merr:
+    if (!r)
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
+
     OPENSSL_free(rrder);
 
     return r;
@@ -243,7 +241,7 @@ int ossl_cms_msgSigDigest_add1(CMS_SignerInfo *dest, CMS_SignerInfo *src)
     }
     if (!CMS_signed_add1_attr_by_NID(dest, NID_id_smime_aa_msgSigDigest,
                                      V_ASN1_OCTET_STRING, dig, diglen)) {
-        ERR_raise(ERR_LIB_CMS, ERR_R_CMS_LIB);
+        ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     return 1;

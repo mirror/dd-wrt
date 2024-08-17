@@ -1,5 +1,5 @@
 /*-
- * Copyright 2022-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -83,7 +83,7 @@ static EVP_PKEY *generate_rsa_key_long(OSSL_LIB_CTX *libctx, unsigned int bits)
      * you can set a progress callback using EVP_PKEY_set_cb; see the example in
      * EVP_PKEY_generate(3).
      */
-    fprintf(stdout, "Generating RSA key, this may take some time...\n");
+    fprintf(stderr, "Generating RSA key, this may take some time...\n");
     if (EVP_PKEY_generate(genctx, &pkey) <= 0) {
         fprintf(stderr, "EVP_PKEY_generate() failed\n");
         goto cleanup;
@@ -109,7 +109,7 @@ static EVP_PKEY *generate_rsa_key_short(OSSL_LIB_CTX *libctx, unsigned int bits)
 {
     EVP_PKEY *pkey = NULL;
 
-    fprintf(stdout, "Generating RSA key, this may take some time...\n");
+    fprintf(stderr, "Generating RSA key, this may take some time...\n");
     pkey = EVP_PKEY_Q_keygen(libctx, propq, "RSA", (size_t)bits);
 
     if (pkey == NULL)
@@ -123,7 +123,7 @@ static EVP_PKEY *generate_rsa_key_short(OSSL_LIB_CTX *libctx, unsigned int bits)
  */
 static int dump_key(const EVP_PKEY *pkey)
 {
-    int ret = 0;
+    int rv = 0;
     int bits = 0;
     BIGNUM *n = NULL, *e = NULL, *d = NULL, *p = NULL, *q = NULL;
 
@@ -189,7 +189,7 @@ static int dump_key(const EVP_PKEY *pkey)
 
     /* Output hexadecimal representations of the BIGNUM objects. */
     fprintf(stdout, "\nNumber of bits: %d\n\n", bits);
-    fprintf(stdout, "Public values:\n");
+    fprintf(stderr, "Public values:\n");
     fprintf(stdout, "  n = 0x");
     BN_print_fp(stdout, n);
     fprintf(stdout, "\n");
@@ -227,19 +227,19 @@ static int dump_key(const EVP_PKEY *pkey)
         goto cleanup;
     }
 
-    ret = 1;
+    rv = 1;
 cleanup:
     BN_free(n); /* not secret */
     BN_free(e); /* not secret */
     BN_clear_free(d); /* secret - scrub before freeing */
     BN_clear_free(p); /* secret - scrub before freeing */
     BN_clear_free(q); /* secret - scrub before freeing */
-    return ret;
+    return rv;
 }
 
 int main(int argc, char **argv)
 {
-    int ret = EXIT_FAILURE;
+    int rv = 1;
     OSSL_LIB_CTX *libctx = NULL;
     EVP_PKEY *pkey = NULL;
     unsigned int bits = 4096;
@@ -256,7 +256,7 @@ int main(int argc, char **argv)
         bits_i = atoi(argv[1]);
         if (bits < 512) {
             fprintf(stderr, "Invalid RSA key size\n");
-            return EXIT_FAILURE;
+            return 1;
         }
 
         bits = (unsigned int)bits_i;
@@ -281,9 +281,9 @@ int main(int argc, char **argv)
         goto cleanup;
     }
 
-    ret = EXIT_SUCCESS;
+    rv = 0;
 cleanup:
     EVP_PKEY_free(pkey);
     OSSL_LIB_CTX_free(libctx);
-    return ret;
+    return rv;
 }

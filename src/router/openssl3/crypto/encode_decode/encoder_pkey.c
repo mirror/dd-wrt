@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -17,7 +17,6 @@
 #include <openssl/trace.h>
 #include "internal/provider.h"
 #include "internal/property.h"
-#include "internal/namemap.h"
 #include "crypto/evp.h"
 #include "encoder_local.h"
 
@@ -73,7 +72,6 @@ int OSSL_ENCODER_CTX_set_passphrase_cb(OSSL_ENCODER_CTX *ctx,
 
 struct collected_encoder_st {
     STACK_OF(OPENSSL_CSTRING) *names;
-    int *id_names;
     const char *output_structure;
     const char *output_type;
 
@@ -87,42 +85,41 @@ struct collected_encoder_st {
 static void collect_encoder(OSSL_ENCODER *encoder, void *arg)
 {
     struct collected_encoder_st *data = arg;
-    const OSSL_PROVIDER *prov;
+    size_t i, end_i;
 
     if (data->error_occurred)
         return;
 
     data->error_occurred = 1;     /* Assume the worst */
 
-    prov = OSSL_ENCODER_get0_provider(encoder);
-    /*
-     * collect_encoder() is called in two passes, one where the encoders
-     * from the same provider as the keymgmt are looked up, and one where
-     * the other encoders are looked up.  |data->flag_find_same_provider|
-     * tells us which pass we're in.
-     */
-    if ((data->keymgmt_prov == prov) == data->flag_find_same_provider) {
+    if (data->names == NULL)
+        return;
+
+    end_i = sk_OPENSSL_CSTRING_num(data->names);
+    for (i = 0; i < end_i; i++) {
+        const char *name = sk_OPENSSL_CSTRING_value(data->names, i);
+        const OSSL_PROVIDER *prov = OSSL_ENCODER_get0_provider(encoder);
         void *provctx = OSSL_PROVIDER_get0_provider_ctx(prov);
-        int i, end_i = sk_OPENSSL_CSTRING_num(data->names);
-        int match;
 
-        for (i = 0; i < end_i; i++) {
-            if (data->flag_find_same_provider)
-                match = (data->id_names[i] == encoder->base.id);
-            else
-                match = OSSL_ENCODER_is_a(encoder,
-                                          sk_OPENSSL_CSTRING_value(data->names, i));
-            if (!match
-                || (encoder->does_selection != NULL
-                    && !encoder->does_selection(provctx, data->ctx->selection))
-                || (data->keymgmt_prov != prov
-                    && encoder->import_object == NULL))
-                continue;
+        /*
+         * collect_encoder() is called in two passes, one where the encoders
+         * from the same provider as the keymgmt are looked up, and one where
+         * the other encoders are looked up.  |data->flag_find_same_provider|
+         * tells us which pass we're in.
+         */
+        if ((data->keymgmt_prov == prov) != data->flag_find_same_provider)
+            continue;
 
-            /* Only add each encoder implementation once */
-            if (OSSL_ENCODER_CTX_add_encoder(data->ctx, encoder))
-                break;
-        }
+        if (!OSSL_ENCODER_is_a(encoder, name)
+            || (encoder->does_selection != NULL
+                && !encoder->does_selection(provctx, data->ctx->selection))
+            || (data->keymgmt_prov != prov
+                && encoder->import_object == NULL))
+            continue;
+
+        /* Only add each encoder implementation once */
+        if (OSSL_ENCODER_CTX_add_encoder(data->ctx, encoder))
+            break;
     }
 
     data->error_occurred = 0;         /* All is good now */
@@ -230,8 +227,7 @@ static int ossl_encoder_ctx_setup_for_pkey(OSSL_ENCODER_CTX *ctx,
     struct construct_data_st *data = NULL;
     const OSSL_PROVIDER *prov = NULL;
     OSSL_LIB_CTX *libctx = NULL;
-    int ok = 0, i, end;
-    OSSL_NAMEMAP *namemap;
+    int ok = 0;
 
     if (!ossl_assert(ctx != NULL) || !ossl_assert(pkey != NULL)) {
         ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_PASSED_NULL_PARAMETER);
@@ -247,8 +243,10 @@ static int ossl_encoder_ctx_setup_for_pkey(OSSL_ENCODER_CTX *ctx,
         struct collected_encoder_st encoder_data;
         struct collected_names_st keymgmt_data;
 
-        if ((data = OPENSSL_zalloc(sizeof(*data))) == NULL)
+        if ((data = OPENSSL_zalloc(sizeof(*data))) == NULL) {
+            ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
 
         /*
          * Select the first encoder implementations in two steps.
@@ -256,7 +254,7 @@ static int ossl_encoder_ctx_setup_for_pkey(OSSL_ENCODER_CTX *ctx,
          */
         keymgmt_data.names = sk_OPENSSL_CSTRING_new_null();
         if (keymgmt_data.names == NULL) {
-            ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
             goto err;
         }
 
@@ -273,27 +271,7 @@ static int ossl_encoder_ctx_setup_for_pkey(OSSL_ENCODER_CTX *ctx,
         encoder_data.error_occurred = 0;
         encoder_data.keymgmt_prov = prov;
         encoder_data.ctx = ctx;
-        encoder_data.id_names = NULL;
 
-        /*
-         * collect_encoder() is called many times, and for every call it converts all encoder_data.names
-         * into namemap ids if it calls OSSL_ENCODER_is_a(). We cache the ids here instead,
-         * and can use them for encoders with the same provider as the keymgmt.
-         */
-        namemap = ossl_namemap_stored(libctx);
-        end = sk_OPENSSL_CSTRING_num(encoder_data.names);
-        if (end > 0) {
-            encoder_data.id_names = OPENSSL_malloc(end * sizeof(int));
-            if (encoder_data.id_names == NULL) {
-                sk_OPENSSL_CSTRING_free(keymgmt_data.names);
-                goto err;
-            }
-            for (i = 0; i < end; ++i) {
-                const char *name = sk_OPENSSL_CSTRING_value(keymgmt_data.names, i);
-
-                encoder_data.id_names[i] = ossl_namemap_name2num(namemap, name);
-            }
-        }
         /*
          * Place the encoders with the a different provider as the keymgmt
          * last (the chain is processed in reverse order)
@@ -308,10 +286,9 @@ static int ossl_encoder_ctx_setup_for_pkey(OSSL_ENCODER_CTX *ctx,
         encoder_data.flag_find_same_provider = 1;
         OSSL_ENCODER_do_all_provided(libctx, collect_encoder, &encoder_data);
 
-        OPENSSL_free(encoder_data.id_names);
         sk_OPENSSL_CSTRING_free(keymgmt_data.names);
         if (encoder_data.error_occurred) {
-            ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
             goto err;
         }
     }
@@ -358,7 +335,7 @@ OSSL_ENCODER_CTX *OSSL_ENCODER_CTX_new_for_pkey(const EVP_PKEY *pkey,
     }
 
     if ((ctx = OSSL_ENCODER_CTX_new()) == NULL) {
-        ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_OSSL_ENCODER_LIB);
+        ERR_raise(ERR_LIB_OSSL_ENCODER, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 

@@ -28,7 +28,7 @@ X509_REQ *X509_to_X509_REQ(X509 *x, EVP_PKEY *pkey, const EVP_MD *md)
 
     ret = X509_REQ_new_ex(x->libctx, x->propq);
     if (ret == NULL) {
-        ERR_raise(ERR_LIB_X509, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_X509, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -67,7 +67,7 @@ EVP_PKEY *X509_REQ_get_pubkey(X509_REQ *req)
     return X509_PUBKEY_get(req->req_info.pubkey);
 }
 
-EVP_PKEY *X509_REQ_get0_pubkey(const X509_REQ *req)
+EVP_PKEY *X509_REQ_get0_pubkey(X509_REQ *req)
 {
     if (req == NULL)
         return NULL;
@@ -79,9 +79,28 @@ X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req)
     return req->req_info.pubkey;
 }
 
-int X509_REQ_check_private_key(const X509_REQ *req, EVP_PKEY *pkey)
+int X509_REQ_check_private_key(X509_REQ *x, EVP_PKEY *k)
 {
-    return ossl_x509_check_private_key(X509_REQ_get0_pubkey(req), pkey);
+    EVP_PKEY *xk = NULL;
+    int ok = 0;
+
+    xk = X509_REQ_get_pubkey(x);
+    switch (EVP_PKEY_eq(xk, k)) {
+    case 1:
+        ok = 1;
+        break;
+    case 0:
+        ERR_raise(ERR_LIB_X509, X509_R_KEY_VALUES_MISMATCH);
+        break;
+    case -1:
+        ERR_raise(ERR_LIB_X509, X509_R_KEY_TYPE_MISMATCH);
+        break;
+    case -2:
+        ERR_raise(ERR_LIB_X509, X509_R_UNKNOWN_KEY_TYPE);
+    }
+
+    EVP_PKEY_free(xk);
+    return ok;
 }
 
 /*
@@ -128,7 +147,7 @@ STACK_OF(X509_EXTENSION) *X509_REQ_get_extensions(X509_REQ *req)
         return NULL;
     for (pnid = ext_nids; *pnid != NID_undef; pnid++) {
         idx = X509_REQ_get_attr_by_NID(req, *pnid, -1);
-        if (idx < 0)
+        if (idx == -1)
             continue;
         attr = X509_REQ_get_attr(req, idx);
         ext = X509_ATTRIBUTE_get0_type(attr, 0);
@@ -136,10 +155,8 @@ STACK_OF(X509_EXTENSION) *X509_REQ_get_extensions(X509_REQ *req)
     }
     if (ext == NULL) /* no extensions is not an error */
         return sk_X509_EXTENSION_new_null();
-    if (ext->type != V_ASN1_SEQUENCE) {
-        ERR_raise(ERR_LIB_X509, X509_R_WRONG_TYPE);
+    if (ext->type != V_ASN1_SEQUENCE)
         return NULL;
-    }
     p = ext->value.sequence->data;
     return (STACK_OF(X509_EXTENSION) *)
         ASN1_item_d2i(NULL, &p, ext->value.sequence->length,

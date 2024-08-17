@@ -503,12 +503,12 @@ SHA3_absorb:
 .size	SHA3_absorb,.-SHA3_absorb
 ___
 }
-{ my ($A_flat,$out,$len,$bsz,$next) = ("%rdi","%rsi","%rdx","%rcx","%r8");
+{ my ($A_flat,$out,$len,$bsz) = ("%rdi","%rsi","%rdx","%rcx");
      ($out,$len,$bsz) = ("%r12","%r13","%r14");
 
 $code.=<<___;
 .globl	SHA3_squeeze
-.type	SHA3_squeeze,\@function,5
+.type	SHA3_squeeze,\@function,4
 .align	32
 SHA3_squeeze:
 .cfi_startproc
@@ -520,12 +520,10 @@ SHA3_squeeze:
 .cfi_push	%r14
 
 	shr	\$3,%rcx
-	mov	$A_flat,%r9
+	mov	$A_flat,%r8
 	mov	%rsi,$out
 	mov	%rdx,$len
 	mov	%rcx,$bsz
-	bt	\$0,${next}d
-	jc	.Lnext_block
 	jmp	.Loop_squeeze
 
 .align	32
@@ -533,8 +531,8 @@ SHA3_squeeze:
 	cmp	\$8,$len
 	jb	.Ltail_squeeze
 
-	mov	(%r9),%rax
-	lea	8(%r9),%r9
+	mov	(%r8),%rax
+	lea	8(%r8),%r8
 	mov	%rax,($out)
 	lea	8($out),$out
 	sub	\$8,$len		# len -= 8
@@ -542,14 +540,14 @@ SHA3_squeeze:
 
 	sub	\$1,%rcx		# bsz--
 	jnz	.Loop_squeeze
-.Lnext_block:
+
 	call	KeccakF1600
-	mov	$A_flat,%r9
+	mov	$A_flat,%r8
 	mov	$bsz,%rcx
 	jmp	.Loop_squeeze
 
 .Ltail_squeeze:
-	mov	%r9, %rsi
+	mov	%r8, %rsi
 	mov	$out,%rdi
 	mov	$len,%rcx
 	.byte	0xf3,0xa4		# rep	movsb

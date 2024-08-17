@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2010-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -20,7 +20,6 @@
 #include <openssl/cmac.h>
 #include <openssl/err.h>
 
-#define LOCAL_BUF_SIZE 2048
 struct CMAC_CTX_st {
     /* Cipher context to use */
     EVP_CIPHER_CTX *cctx;
@@ -54,8 +53,10 @@ CMAC_CTX *CMAC_CTX_new(void)
 {
     CMAC_CTX *ctx;
 
-    if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL)
+    if ((ctx = OPENSSL_malloc(sizeof(*ctx))) == NULL) {
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     ctx->cctx = EVP_CIPHER_CTX_new();
     if (ctx->cctx == NULL) {
         OPENSSL_free(ctx);
@@ -95,7 +96,7 @@ int CMAC_CTX_copy(CMAC_CTX *out, const CMAC_CTX *in)
 
     if (in->nlast_block == -1)
         return 0;
-    if ((bl = EVP_CIPHER_CTX_get_block_size(in->cctx)) == 0)
+    if ((bl = EVP_CIPHER_CTX_get_block_size(in->cctx)) < 0)
         return 0;
     if (!EVP_CIPHER_CTX_copy(out->cctx, in->cctx))
         return 0;
@@ -111,7 +112,6 @@ int CMAC_Init(CMAC_CTX *ctx, const void *key, size_t keylen,
               const EVP_CIPHER *cipher, ENGINE *impl)
 {
     static const unsigned char zero_iv[EVP_MAX_BLOCK_LENGTH] = { 0 };
-    int block_len;
 
     /* All zeros means restart */
     if (!key && !cipher && !impl && keylen == 0) {
@@ -120,10 +120,7 @@ int CMAC_Init(CMAC_CTX *ctx, const void *key, size_t keylen,
             return 0;
         if (!EVP_EncryptInit_ex(ctx->cctx, NULL, NULL, NULL, zero_iv))
             return 0;
-        block_len = EVP_CIPHER_CTX_get_block_size(ctx->cctx);
-        if (block_len == 0)
-            return 0;
-        memset(ctx->tbl, 0, block_len);
+        memset(ctx->tbl, 0, EVP_CIPHER_CTX_get_block_size(ctx->cctx));
         ctx->nlast_block = 0;
         return 1;
     }
@@ -167,14 +164,12 @@ int CMAC_Update(CMAC_CTX *ctx, const void *in, size_t dlen)
 {
     const unsigned char *data = in;
     int bl;
-    size_t max_burst_blocks, cipher_blocks;
-    unsigned char buf[LOCAL_BUF_SIZE];
 
     if (ctx->nlast_block == -1)
         return 0;
     if (dlen == 0)
         return 1;
-    if ((bl = EVP_CIPHER_CTX_get_block_size(ctx->cctx)) == 0)
+    if ((bl = EVP_CIPHER_CTX_get_block_size(ctx->cctx)) < 0)
         return 0;
     /* Copy into partial block if we need to */
     if (ctx->nlast_block > 0) {
@@ -195,35 +190,11 @@ int CMAC_Update(CMAC_CTX *ctx, const void *in, size_t dlen)
             return 0;
     }
     /* Encrypt all but one of the complete blocks left */
-
-    max_burst_blocks = LOCAL_BUF_SIZE / bl;
-    cipher_blocks = (dlen - 1) / bl;
-    if (max_burst_blocks == 0) {
-        /*
-         * When block length is greater than local buffer size,
-         * use ctx->tbl as cipher output.
-         */
-        while (dlen > (size_t)bl) {
-            if (EVP_Cipher(ctx->cctx, ctx->tbl, data, bl) <= 0)
-                return 0;
-            dlen -= bl;
-            data += bl;
-        }
-    } else {
-        while (cipher_blocks > max_burst_blocks) {
-            if (EVP_Cipher(ctx->cctx, buf, data, max_burst_blocks * bl) <= 0)
-                return 0;
-            dlen -= max_burst_blocks * bl;
-            data += max_burst_blocks * bl;
-            cipher_blocks -= max_burst_blocks;
-        }
-        if (cipher_blocks > 0) {
-            if (EVP_Cipher(ctx->cctx, buf, data, cipher_blocks * bl) <= 0)
-                return 0;
-            dlen -= cipher_blocks * bl;
-            data += cipher_blocks * bl;
-            memcpy(ctx->tbl, &buf[(cipher_blocks - 1) * bl], bl);
-        }
+    while (dlen > (size_t)bl) {
+        if (EVP_Cipher(ctx->cctx, ctx->tbl, data, bl) <= 0)
+            return 0;
+        dlen -= bl;
+        data += bl;
     }
     /* Copy any data left to last block buffer */
     memcpy(ctx->last_block, data, dlen);
@@ -238,7 +209,7 @@ int CMAC_Final(CMAC_CTX *ctx, unsigned char *out, size_t *poutlen)
 
     if (ctx->nlast_block == -1)
         return 0;
-    if ((bl = EVP_CIPHER_CTX_get_block_size(ctx->cctx)) == 0)
+    if ((bl = EVP_CIPHER_CTX_get_block_size(ctx->cctx)) < 0)
         return 0;
     if (poutlen != NULL)
         *poutlen = (size_t)bl;

@@ -15,6 +15,7 @@
 #include <openssl/evp.h>
 #include <openssl/objects.h>
 #include <openssl/x509.h>
+#include <openssl/evp.h>
 
 int EVP_SealInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
                  unsigned char **ek, int *ekl, unsigned char *iv,
@@ -58,7 +59,7 @@ int EVP_SealInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
 
         pctx = EVP_PKEY_CTX_new_from_pkey(libctx, pubk[i], NULL);
         if (pctx == NULL) {
-            ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+            ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
             goto err;
         }
 

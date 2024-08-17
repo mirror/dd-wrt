@@ -18,7 +18,6 @@
 int CMS_stream(unsigned char ***boundary, CMS_ContentInfo *cms)
 {
     ASN1_OCTET_STRING **pos;
-
     pos = CMS_get0_content(cms);
     if (pos == NULL)
         return 0;
@@ -30,7 +29,7 @@ int CMS_stream(unsigned char ***boundary, CMS_ContentInfo *cms)
         *boundary = &(*pos)->data;
         return 1;
     }
-    ERR_raise(ERR_LIB_CMS, ERR_R_CMS_LIB);
+    ERR_raise(ERR_LIB_CMS, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 

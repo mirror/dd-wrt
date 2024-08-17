@@ -238,14 +238,12 @@ geneealt() {
 genee() {
     local OPTIND=1
     local purpose=serverAuth
-    local ku=
 
-    while getopts p:k: o
+    while getopts p: o
     do
         case $o in
         p) purpose="$OPTARG";;
-        k) ku="keyUsage = $OPTARG";;
-        *) echo "Usage: $0 genee [-k KU] [-p EKU] cn keyname certname cakeyname cacertname" >&2
+        *) echo "Usage: $0 genee [-p EKU] cn keyname certname cakeyname cacertname" >&2
            return 1;;
         esac
     done
@@ -261,7 +259,6 @@ genee() {
 	    "subjectKeyIdentifier = hash" \
 	    "authorityKeyIdentifier = keyid, issuer" \
 	    "basicConstraints = CA:false" \
-            "$ku" \
 	    "extendedKeyUsage = $purpose" \
 	    "subjectAltName = @alts" "DNS=${cn}")
     csr=$(req "$key" "CN = $cn") || return 1

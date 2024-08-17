@@ -310,14 +310,14 @@ static int ASIdentifierChoice_is_canonical(ASIdentifierChoice *choice)
         if ((bn == NULL && (bn = BN_new()) == NULL) ||
             ASN1_INTEGER_to_BN(a_max, bn) == NULL ||
             !BN_add_word(bn, 1)) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_BN_LIB);
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
             goto done;
         }
 
         if ((a_max_plus_one =
                 BN_to_ASN1_INTEGER(bn, orig = a_max_plus_one)) == NULL) {
             a_max_plus_one = orig;
-            ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
             goto done;
         }
 
@@ -431,14 +431,14 @@ static int ASIdentifierChoice_canonize(ASIdentifierChoice *choice)
         if ((bn == NULL && (bn = BN_new()) == NULL) ||
             ASN1_INTEGER_to_BN(a_max, bn) == NULL ||
             !BN_add_word(bn, 1)) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_BN_LIB);
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
             goto done;
         }
 
         if ((a_max_plus_one =
                  BN_to_ASN1_INTEGER(bn, orig = a_max_plus_one)) == NULL) {
             a_max_plus_one = orig;
-            ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
             goto done;
         }
 
@@ -449,8 +449,10 @@ static int ASIdentifierChoice_canonize(ASIdentifierChoice *choice)
             ASRange *r;
             switch (a->type) {
             case ASIdOrRange_id:
-                if ((r = OPENSSL_malloc(sizeof(*r))) == NULL)
+                if ((r = OPENSSL_malloc(sizeof(*r))) == NULL) {
+                    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
                     goto done;
+                }
                 r->min = a_min;
                 r->max = b_max;
                 a->type = ASIdOrRange_range;
@@ -524,7 +526,7 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
     int i;
 
     if ((asid = ASIdentifiers_new()) == NULL) {
-        ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
+        ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -590,19 +592,21 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
          */
         if (!is_range) {
             if (!X509V3_get_value_int(val, &min)) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
                 goto err;
             }
         } else {
             char *s = OPENSSL_strdup(val->value);
-            if (s == NULL)
+            if (s == NULL) {
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
                 goto err;
+            }
             s[i1] = '\0';
             min = s2i_ASN1_INTEGER(NULL, s);
             max = s2i_ASN1_INTEGER(NULL, s + i2);
             OPENSSL_free(s);
             if (min == NULL || max == NULL) {
-                ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
+                ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
                 goto err;
             }
             if (ASN1_INTEGER_cmp(min, max) > 0) {
@@ -611,7 +615,7 @@ static void *v2i_ASIdentifiers(const struct v3_ext_method *method,
             }
         }
         if (!X509v3_asid_add_id_or_range(asid, which, min, max)) {
-            ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
+            ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
             goto err;
         }
         min = max = NULL;

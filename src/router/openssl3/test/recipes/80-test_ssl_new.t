@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2023 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -31,22 +31,14 @@ my $no_fips = disabled('fips') || ($ENV{NO_FIPS} // 0);
 
 $ENV{TEST_CERTS_DIR} = srctop_dir("test", "certs");
 
-my @conf_srcs = ();
-if (defined $ENV{SSL_TESTS}) {
-    my @conf_list = split(' ', $ENV{SSL_TESTS});
-    foreach my $conf_file (@conf_list) {
-        push (@conf_srcs, glob(srctop_file("test", "ssl-tests", $conf_file)));
-    }
-    plan tests => scalar @conf_srcs;
-} else {
-    @conf_srcs = glob(srctop_file("test", "ssl-tests", "*.cnf.in"));
-    # We hard-code the number of tests to double-check that the globbing above
-    # finds all files as expected.
-    plan tests => 31;
-}
+my @conf_srcs =  glob(srctop_file("test", "ssl-tests", "*.cnf.in"));
 map { s/;.*// } @conf_srcs if $^O eq "VMS";
 my @conf_files = map { basename($_, ".in") } @conf_srcs;
 map { s/\^// } @conf_files if $^O eq "VMS";
+
+# We hard-code the number of tests to double-check that the globbing above
+# finds all files as expected.
+plan tests => 30;
 
 # Some test results depend on the configuration of enabled protocols. We only
 # verify generated sources in the default configuration.
@@ -67,7 +59,6 @@ my $no_dtls = alldisabled(available_protocols("dtls"));
 my $no_npn = disabled("nextprotoneg");
 my $no_ct = disabled("ct");
 my $no_ec = disabled("ec");
-my $no_ecx = disabled("ecx");
 my $no_dh = disabled("dh");
 my $no_dsa = disabled("dsa");
 my $no_ec2m = disabled("ec2m");
@@ -91,9 +82,8 @@ my %conf_dependent_tests = (
   "22-compression.cnf" => !$is_default_tls,
   "25-cipher.cnf" => disabled("poly1305") || disabled("chacha"),
   "27-ticket-appdata.cnf" => !$is_default_tls,
-  "28-seclevel.cnf" => disabled("tls1_2") || $no_ecx,
+  "28-seclevel.cnf" => disabled("tls1_2") || $no_ec,
   "30-extended-master-secret.cnf" => disabled("tls1_2"),
-  "32-compressed-certificate.cnf" => disabled("comp") || disabled("tls1_3"),
 );
 
 # Add your test here if it should be skipped for some compile-time
@@ -113,13 +103,13 @@ my %skip = (
   # TODO(TLS 1.3): We should review this once we have TLS 1.3.
   "13-fragmentation.cnf" => disabled("tls1_2"),
   "14-curves.cnf" => disabled("tls1_2") || disabled("tls1_3")
-                     || $no_ec2m || $no_ecx || $no_dh,
+                     || $no_ec || $no_ec2m,
   "15-certstatus.cnf" => $no_tls || $no_ocsp,
   "16-dtls-certstatus.cnf" => $no_dtls || $no_ocsp,
   "17-renegotiate.cnf" => $no_tls_below1_3,
   "18-dtls-renegotiate.cnf" => $no_dtls,
   "19-mac-then-encrypt.cnf" => $no_pre_tls1_3,
-  "20-cert-select.cnf" => disabled("tls1_2") || $no_ecx,
+  "20-cert-select.cnf" => disabled("tls1_2") || $no_ec,
   "21-key-update.cnf" => disabled("tls1_3") || ($no_ec && $no_dh),
   "22-compression.cnf" => disabled("zlib") || $no_tls,
   "23-srp.cnf" => (disabled("tls1") && disabled ("tls1_1")
@@ -128,7 +118,6 @@ my %skip = (
   "25-cipher.cnf" => disabled("ec") || disabled("tls1_2"),
   "26-tls13_client_auth.cnf" => disabled("tls1_3") || ($no_ec && $no_dh),
   "29-dtls-sctp-label-bug.cnf" => disabled("sctp") || disabled("sock"),
-  "32-compressed-certificate.cnf" => disabled("comp") || disabled("tls1_3"),
 );
 
 foreach my $conf (@conf_files) {

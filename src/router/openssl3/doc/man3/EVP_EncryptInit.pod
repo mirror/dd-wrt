@@ -8,8 +8,6 @@ EVP_CIPHER_free,
 EVP_CIPHER_CTX_new,
 EVP_CIPHER_CTX_reset,
 EVP_CIPHER_CTX_free,
-EVP_CIPHER_CTX_dup,
-EVP_CIPHER_CTX_copy,
 EVP_EncryptInit_ex,
 EVP_EncryptInit_ex2,
 EVP_EncryptUpdate,
@@ -111,8 +109,6 @@ EVP_CIPHER_CTX_mode
  EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
  int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx);
  void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *ctx);
- EVP_CIPHER_CTX *EVP_CIPHER_CTX_dup(const EVP_CIPHER_CTX *in);
- int EVP_CIPHER_CTX_copy(EVP_CIPHER_CTX *out, const EVP_CIPHER_CTX *in);
 
  int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
                         ENGINE *impl, const unsigned char *key, const unsigned char *iv);
@@ -283,16 +279,6 @@ Clears all information from a cipher context and frees any allocated memory
 associated with it, including I<ctx> itself. This function should be called after
 all operations using a cipher are complete so sensitive information does not
 remain in memory.
-
-=item EVP_CIPHER_CTX_dup()
-
-Can be used to duplicate the cipher state from I<in>.  This is useful
-to avoid multiple EVP_CIPHER_fetch() calls or if large amounts of data are to be
-fed which only differ in the last few bytes.
-
-=item EVP_CIPHER_CTX_copy()
-
-Can be used to copy the cipher state from I<in> to I<out>.
 
 =item EVP_CIPHER_CTX_ctrl()
 
@@ -488,9 +474,7 @@ EVP_CIPHER_free().
 
 Return the NID of a cipher when passed an B<EVP_CIPHER> or B<EVP_CIPHER_CTX>
 structure.  The actual NID value is an internal value which may not have a
-corresponding OBJECT IDENTIFIER.  NID_undef is returned in the event that the
-nid is unknown or if the cipher has not been properly initialized via a call to
-B<EVP_CipherInit>.
+corresponding OBJECT IDENTIFIER.
 
 =item EVP_CIPHER_CTX_set_flags(), EVP_CIPHER_CTX_clear_flags() and EVP_CIPHER_CTX_test_flags()
 
@@ -527,10 +511,8 @@ length to any value other than the fixed value is an error.
 =item EVP_CIPHER_get_iv_length() and EVP_CIPHER_CTX_get_iv_length()
 
 Return the IV length of a cipher when passed an B<EVP_CIPHER> or
-B<EVP_CIPHER_CTX>. It will return zero if the cipher does not use an IV, if
-the cipher has not yet been initialized within the B<EVP_CIPHER_CTX>, or if the
-passed cipher is NULL.  The constant B<EVP_MAX_IV_LENGTH> is the maximum IV
-length for all ciphers.
+B<EVP_CIPHER_CTX>. It will return zero if the cipher does not use an IV.
+The constant B<EVP_MAX_IV_LENGTH> is the maximum IV length for all ciphers.
 
 =item EVP_CIPHER_CTX_get_tag_length()
 
@@ -542,8 +524,7 @@ the tag length has not been set.
 
 Return the block size of a cipher when passed an B<EVP_CIPHER> or
 B<EVP_CIPHER_CTX> structure. The constant B<EVP_MAX_BLOCK_LENGTH> is also the
-maximum block length for all ciphers. A value of 0 is returned if the cipher
-has not been properly initialized with a call to B<EVP_CipherInit>.
+maximum block length for all ciphers.
 
 =item EVP_CIPHER_get_type() and EVP_CIPHER_CTX_get_type()
 
@@ -585,7 +566,7 @@ B<EVP_CIPHER>.
 
 Returns the B<EVP_CIPHER> structure when passed an B<EVP_CIPHER_CTX> structure.
 EVP_CIPHER_CTX_get1_cipher() is the same except the ownership is passed to
-the caller. Both functions return NULL on error.
+the caller.
 
 =item EVP_CIPHER_get_mode() and EVP_CIPHER_CTX_get_mode()
 
@@ -621,8 +602,7 @@ Sets the AlgorithmIdentifier "parameter" based on the passed cipher. This will
 typically include any parameters and an IV. The cipher IV (if any) must be set
 when this call is made. This call should be made before the cipher is actually
 "used" (before any EVP_EncryptUpdate(), EVP_DecryptUpdate() calls for example).
-This function may fail if the cipher does not have any ASN1 support, or if an
-uninitialized cipher is passed to it.
+This function may fail if the cipher does not have any ASN1 support.
 
 =item EVP_CIPHER_asn1_to_param()
 
@@ -1000,40 +980,6 @@ Byte 11-12: Input length (Always 0)
 
 "tls1multi_interleave" must also be set for this operation.
 
-=item "xts_standard" (B<OSSL_CIPHER_PARAM_XTS_STANDARD>) <UTF8 string>
-
-Sets the XTS standard to use with SM4-XTS algorithm. XTS mode has two
-implementations, one is standardized in IEEE Std. 1619-2007 and has
-been widely used (e.g., XTS AES), the other is proposed recently
-(GB/T 17964-2021 implemented in May 2022) and is currently only used
-in SM4.
-
-The main difference between them is the multiplication by the
-primitive element E<alpha> to calculate the tweak values. The IEEE
-Std 1619-2007 noted that the multiplication "is a left shift of each
-byte by one bit with carry propagating from one byte to the next
-one", which means that in each byte, the leftmost bit is the most
-significant bit. But in GB/T 17964-2021, the rightmost bit is the
-most significant bit, thus the multiplication becomes a right shift
-of each byte by one bit with carry propagating from one byte to the
-next one.
-
-Valid values for the mode are:
-
-=over 4
-
-=item "GB"
-
-The GB/T 17964-2021 variant of SM4-XTS algorithm.
-
-=item "IEEE"
-
-The IEEE Std. 1619-2007 variant of SM4-XTS algorithm.
-
-=back
-
-The default value is "GB".
-
 =back
 
 =head1 CONTROLS
@@ -1241,10 +1187,6 @@ EVP_CIPHER_up_ref() returns 1 for success or 0 otherwise.
 EVP_CIPHER_CTX_new() returns a pointer to a newly created
 B<EVP_CIPHER_CTX> for success and B<NULL> for failure.
 
-EVP_CIPHER_CTX_dup() returns a new EVP_CIPHER_CTX if successful or NULL on failure.
-
-EVP_CIPHER_CTX_copy() returns 1 if successful or 0 for failure.
-
 EVP_EncryptInit_ex2(), EVP_EncryptUpdate() and EVP_EncryptFinal_ex()
 return 1 for success and 0 for failure.
 
@@ -1254,9 +1196,8 @@ EVP_DecryptFinal_ex() returns 0 if the decrypt failed or 1 for success.
 EVP_CipherInit_ex2() and EVP_CipherUpdate() return 1 for success and 0 for failure.
 EVP_CipherFinal_ex() returns 0 for a decryption failure or 1 for success.
 
-EVP_Cipher() returns 1 on success and <= 0 on failure, if the flag
-B<EVP_CIPH_FLAG_CUSTOM_CIPHER> is not set for the cipher, or if the cipher has
-not been initialized via a call to B<EVP_CipherInit_ex2>.
+EVP_Cipher() returns 1 on success or 0 on failure, if the flag
+B<EVP_CIPH_FLAG_CUSTOM_CIPHER> is not set for the cipher.
 EVP_Cipher() returns the number of bytes written to I<out> for encryption / decryption, or
 the number of bytes authenticated in a call specifying AAD for an AEAD cipher, if the flag
 B<EVP_CIPH_FLAG_CUSTOM_CIPHER> is set for the cipher.
@@ -1269,7 +1210,7 @@ return an B<EVP_CIPHER> structure or NULL on error.
 EVP_CIPHER_get_nid() and EVP_CIPHER_CTX_get_nid() return a NID.
 
 EVP_CIPHER_get_block_size() and EVP_CIPHER_CTX_get_block_size() return the
-block size, or 0 on error.
+block size.
 
 EVP_CIPHER_get_key_length() and EVP_CIPHER_CTX_get_key_length() return the key
 length.
@@ -1277,7 +1218,7 @@ length.
 EVP_CIPHER_CTX_set_padding() always returns 1.
 
 EVP_CIPHER_get_iv_length() and EVP_CIPHER_CTX_get_iv_length() return the IV
-length, zero if the cipher does not use an IV and a negative value on error.
+length or zero if the cipher does not use an IV.
 
 EVP_CIPHER_CTX_get_tag_length() return the tag length or zero if the cipher
 does not use a tag.
@@ -1419,8 +1360,6 @@ AES.
 =back
 
 =head2 SIV Mode
-
-Both the AES-SIV and AES-GCM-SIV ciphers fall under this mode.
 
 For SIV mode ciphers the behaviour of the EVP interface is subtly
 altered and several additional ctrl operations are supported.
@@ -1792,11 +1731,9 @@ non-deprecated alias macro.
 
 The EVP_CIPHER_CTX_flags() macro was deprecated in OpenSSL 1.1.0.
 
-EVP_CIPHER_CTX_dup() was added in OpenSSL 3.2.
-
 =head1 COPYRIGHT
 
-Copyright 2000-2024 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2000-2023 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

@@ -145,7 +145,7 @@ In each table entry, the following keys are significant:
                            would then be 'OPENSSL_ABC_<version>' rather than
                            the default 'OPENSSL_<version>'. The string inserted
                            into symbol versions is obtained by mapping all
-                           letters in the "variant" identifier to uppercase
+                           letters in the "variant" identifier to upper case
                            and all non-alphanumeric characters to '_'.
 
         thread_scheme   => The type of threads is used on the
@@ -202,13 +202,6 @@ In each table entry, the following keys are significant:
                            32-bit and a 64-bit variant), this is used
                            to have the different variants in different
                            directories.
-
-        multibin        => On systems that support having multiple
-                           implementations of a library and binaries
-                           (typically a 32-bit and a 64-bit variant),
-                           this is used to have the different variants
-                           in different binary directories. This setting
-                           works in conjunction with multilib.
 
         bn_ops          => Building options (was just bignum options in
                            the earlier history of this option, hence the
@@ -568,7 +561,7 @@ They are all expected to return a string with the lines they produce.
                         obj2lib(lib => "PATH/TO/libfile",
                                 objs => [ "PATH/TO/objectfile", ... ]);
 
-                  'lib' has the intended library filename *without*
+                  'lib' has the intended library file name *without*
                   extension, obj2lib is expected to add that.  'objs'
                   has the list of object files to build this library.
 
@@ -591,7 +584,7 @@ They are all expected to return a string with the lines they produce.
                                   objs => [ "PATH/TO/objectfile", ... ],
                                   deps => [ "PATH/TO/otherlibfile", ... ]);
 
-                  'lib' has the base (static) library filename
+                  'lib' has the base (static) library ffile name
                   *without* extension.  This is useful in case
                   supporting files are needed (such as import
                   libraries on Windows).
@@ -624,7 +617,7 @@ They are all expected to return a string with the lines they produce.
                                 objs => [ "PATH/TO/objectfile", ... ],
                                 deps => [ "PATH/TO/libfile", ... ]);
 
-                  'bin' has the intended executable filename
+                  'bin' has the intended executable file name
                   *without* extension, obj2bin is expected to add
                   that.  'objs' has the list of object files to build
                   this library.  'deps' has the list of library files
@@ -639,7 +632,7 @@ They are all expected to return a string with the lines they produce.
                         in2script(script => "PATH/TO/scriptfile",
                                   sources => [ "PATH/TO/infile", ... ]);
 
-                  'script' has the intended script filename.
+                  'script' has the intended script file name.
                   'sources' has the list of source files to build the
                   resulting script from.
 

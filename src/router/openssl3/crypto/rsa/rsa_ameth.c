@@ -154,14 +154,14 @@ static int rsa_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     rklen = i2d_RSAPrivateKey(pkey->pkey.rsa, &rk);
 
     if (rklen <= 0) {
-        ERR_raise(ERR_LIB_RSA, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
         ASN1_STRING_free(str);
         return 0;
     }
 
     if (!PKCS8_pkey_set0(p8, OBJ_nid2obj(pkey->ameth->pkey_id), 0,
                          strtype, str, rk, rklen)) {
-        ERR_raise(ERR_LIB_RSA, ERR_R_ASN1_LIB);
+        ERR_raise(ERR_LIB_RSA, ERR_R_MALLOC_FAILURE);
         ASN1_STRING_free(str);
         OPENSSL_clear_free(rk, rklen);
         return 0;
@@ -220,7 +220,7 @@ static int rsa_pss_param_print(BIO *bp, int pss_key, RSA_PSS_PARAMS *pss,
                 return 0;
         }
     } else if (pss == NULL) {
-        if (BIO_puts(bp, "(INVALID PSS PARAMETERS)\n") <= 0)
+        if (BIO_puts(bp,"(INVALID PSS PARAMETERS)\n") <= 0)
             return 0;
         return 1;
     }
@@ -453,7 +453,6 @@ static RSA_PSS_PARAMS *rsa_ctx_to_pss(EVP_PKEY_CTX *pkctx)
     const EVP_MD *sigmd, *mgf1md;
     EVP_PKEY *pk = EVP_PKEY_CTX_get0_pkey(pkctx);
     int saltlen;
-    int saltlenMax = -1;
 
     if (EVP_PKEY_CTX_get_signature_md(pkctx, &sigmd) <= 0)
         return NULL;
@@ -461,27 +460,14 @@ static RSA_PSS_PARAMS *rsa_ctx_to_pss(EVP_PKEY_CTX *pkctx)
         return NULL;
     if (EVP_PKEY_CTX_get_rsa_pss_saltlen(pkctx, &saltlen) <= 0)
         return NULL;
-    if (saltlen == RSA_PSS_SALTLEN_DIGEST) {
+    if (saltlen == -1) {
         saltlen = EVP_MD_get_size(sigmd);
-    } else if (saltlen == RSA_PSS_SALTLEN_AUTO_DIGEST_MAX) {
-        /* FIPS 186-4 section 5 "The RSA Digital Signature Algorithm",
-         * subsection 5.5 "PKCS #1" says: "For RSASSA-PSS […] the length (in
-         * bytes) of the salt (sLen) shall satisfy 0 <= sLen <= hLen, where
-         * hLen is the length of the hash function output block (in bytes)."
-         *
-         * Provide a way to use at most the digest length, so that the default
-         * does not violate FIPS 186-4. */
-        saltlen = RSA_PSS_SALTLEN_MAX;
-        saltlenMax = EVP_MD_get_size(sigmd);
-    }
-    if (saltlen == RSA_PSS_SALTLEN_MAX || saltlen == RSA_PSS_SALTLEN_AUTO) {
+    } else if (saltlen == -2 || saltlen == -3) {
         saltlen = EVP_PKEY_get_size(pk) - EVP_MD_get_size(sigmd) - 2;
         if ((EVP_PKEY_get_bits(pk) & 0x7) == 1)
             saltlen--;
         if (saltlen < 0)
             return NULL;
-        if (saltlenMax >= 0 && saltlen > saltlenMax)
-            saltlen = saltlenMax;
     }
 
     return ossl_rsa_pss_params_create(sigmd, mgf1md, saltlen);
@@ -850,7 +836,7 @@ static int rsa_int_import_from(const OSSL_PARAM params[], void *vpctx,
     int ok = 0;
 
     if (rsa == NULL) {
-        ERR_raise(ERR_LIB_DH, ERR_R_RSA_LIB);
+        ERR_raise(ERR_LIB_DH, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 

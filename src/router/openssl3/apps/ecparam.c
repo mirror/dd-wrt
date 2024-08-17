@@ -186,7 +186,8 @@ int ecparam_main(int argc, char **argv)
     }
 
     /* No extra args. */
-    if (!opt_check_rest_arg(NULL))
+    argc = opt_num_rest();
+    if (argc != 0)
         goto opthelp;
 
     if (!app_RAND_load())
@@ -242,17 +243,9 @@ int ecparam_main(int argc, char **argv)
             goto end;
         }
     } else {
-        params_key = load_keyparams_suppress(infile, informat, 1, "EC",
-                                             "EC parameters", 1);
-        if (params_key == NULL)
-            params_key = load_keyparams_suppress(infile, informat, 1, "SM2",
-                                                 "SM2 parameters", 1);
-
-        if (params_key == NULL) {
-            BIO_printf(bio_err, "Unable to load parameters from %s\n", infile);
+        params_key = load_keyparams(infile, informat, 1, "EC", "EC parameters");
+        if (params_key == NULL || !EVP_PKEY_is_a(params_key, "EC"))
             goto end;
-        }
-
         if (point_format
             && !EVP_PKEY_set_utf8_string_param(
                     params_key, OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT,

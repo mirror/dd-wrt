@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -98,7 +98,6 @@ int crl_main(int argc, char **argv)
     int hash_old = 0;
 #endif
 
-    opt_set_unknown_name("digest");
     prog = opt_init(argc, argv, crl_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
@@ -210,11 +209,14 @@ int crl_main(int argc, char **argv)
     }
 
     /* No remaining args. */
-    if (!opt_check_rest_arg(NULL))
+    argc = opt_num_rest();
+    if (argc != 0)
         goto opthelp;
 
-    if (!opt_md(digestname, &digest))
-        goto opthelp;
+    if (digestname != NULL) {
+        if (!opt_md(digestname, &digest))
+            goto opthelp;
+    }
     x = load_crl(infile, informat, 1, "CRL");
     if (x == NULL)
         goto end;
@@ -248,10 +250,9 @@ int crl_main(int argc, char **argv)
         EVP_PKEY_free(pkey);
         if (i < 0)
             goto end;
-        if (i == 0) {
+        if (i == 0)
             BIO_printf(bio_err, "verify failure\n");
-	    goto end;
-        } else
+        else
             BIO_printf(bio_err, "verify OK\n");
     }
 

@@ -57,7 +57,7 @@ IF[{- !$disabled{ec} -}]
 ENDIF
 
 #----- ECX
-IF[{- !$disabled{ecx} -}]
+IF[{- !$disabled{ec} -}]
   $DER_ECX_H=$INCDIR/der_ecx.h
   $DER_ECX_GEN=der_ecx_gen.c
   $DER_ECX_AUX=der_ecx_key.c
@@ -107,9 +107,7 @@ ENDIF
 
 IF[{- !$disabled{ec} -}]
   $COMMON = $COMMON $DER_EC_GEN $DER_EC_AUX
-  IF[{- !$disabled{ecx} -}]
-    $COMMON = $COMMON $DER_ECX_GEN $DER_ECX_AUX
-  ENDIF
+  $COMMON = $COMMON $DER_ECX_GEN $DER_ECX_AUX
 ENDIF
 
 IF[{- !$disabled{sm2} -}]

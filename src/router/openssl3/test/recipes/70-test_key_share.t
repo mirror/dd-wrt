@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2015-2023 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -64,6 +64,8 @@ plan skip_all => "$test_name needs TLS1.3 enabled"
 plan skip_all => "$test_name needs EC or DH enabled"
     if disabled("ec") && disabled("dh");
 
+$ENV{OPENSSL_ia32cap} = '~0x200000200000000';
+
 my $proxy = TLSProxy::Proxy->new(
     undef,
     cmdstr(app(["openssl"]), display => 1),
@@ -81,7 +83,7 @@ $proxy->filter(\&modify_key_shares_filter);
 if (disabled("ec")) {
     $proxy->serverflags("-groups ffdhe3072");
 } else {
-    $proxy->serverflags("-groups P-384");
+    $proxy->serverflags("-groups P-256");
 }
 $proxy->start() or plan skip_all => "Unable to start up Proxy for tests";
 plan tests => 23;
@@ -189,7 +191,7 @@ $selectedgroupid = 0;
 if (disabled("ec")) {
     $proxy->clientflags("-groups ffdhe3072:ffdhe2048");
 } else {
-    $proxy->clientflags("-groups P-256:P-384");
+    $proxy->clientflags("-groups P-256:X25519");
 }
 $proxy->start();
 if (disabled("ec")) {
@@ -202,13 +204,13 @@ if (disabled("ec")) {
 
 #Test 14: Multiple acceptable key_shares - we choose the first one (part 2)
 $proxy->clear();
-if (disabled("ecx")) {
+if (disabled("ec")) {
     $proxy->clientflags("-curves ffdhe2048:ffdhe3072");
 } else {
     $proxy->clientflags("-curves X25519:P-256");
 }
 $proxy->start();
-if (disabled("ecx")) {
+if (disabled("ec")) {
     ok(TLSProxy::Message->success() && ($selectedgroupid == FFDHE2048),
        "Multiple acceptable key_shares (part 2)");
 } else {
@@ -219,7 +221,7 @@ if (disabled("ecx")) {
 #Test 15: Server sends key_share that wasn't offered should fail
 $proxy->clear();
 $testtype = SELECT_X25519;
-if (disabled("ecx")) {
+if (disabled("ec")) {
     $proxy->clientflags("-groups ffdhe3072");
 } else {
     $proxy->clientflags("-groups P-256");
@@ -281,7 +283,7 @@ SKIP: {
 $proxy->clear();
 $direction = SERVER_TO_CLIENT;
 $testtype = NO_KEY_SHARES_IN_HRR;
-if (disabled("ecx")) {
+if (disabled("ec")) {
     $proxy->serverflags("-groups ffdhe2048");
 } else {
     $proxy->serverflags("-groups X25519");
@@ -294,11 +296,7 @@ SKIP: {
     #Test 23: Trailing data on key_share in ServerHello should fail
     $proxy->clear();
     $direction = CLIENT_TO_SERVER;
-    if (disabled("ecx")) {
-        $proxy->clientflags("-groups secp192r1:P-256:P-384");
-    } else {
-        $proxy->clientflags("-groups secp192r1:P-256:X25519");
-    }
+    $proxy->clientflags("-groups secp192r1:P-256:X25519");
     $proxy->ciphers("AES128-SHA:\@SECLEVEL=0");
     $testtype = NON_TLS1_3_KEY_SHARE;
     $proxy->start();
@@ -328,31 +326,16 @@ sub modify_key_shares_filter
 
             if ($testtype != NON_TLS1_3_KEY_SHARE) {
                 #Setup supported groups to include some unrecognised groups
-                if (disabled("ecx")) {
-                    $suppgroups = pack "C8",
-                        0x00, 0x06, #List Length
-                        0xff, 0xfe, #Non existing group 1
-                        0xff, 0xff, #Non existing group 2
-                        0x00, 0x17; #P-256
-                } else {
-                    $suppgroups = pack "C8",
-                        0x00, 0x06, #List Length
-                        0xff, 0xfe, #Non existing group 1
-                        0xff, 0xff, #Non existing group 2
-                        0x00, 0x1d; #X25519
-                }
+                $suppgroups = pack "C8",
+                    0x00, 0x06, #List Length
+                    0xff, 0xfe, #Non existing group 1
+                    0xff, 0xff, #Non existing group 2
+                    0x00, 0x1d; #x25519
             } else {
-                if (disabled("ecx")) {
-                    $suppgroups = pack "C6",
-                        0x00, 0x04, #List Length
-                        0x00, 0x13,
-                        0x00, 0x18; #P-384
-                } else {
-                    $suppgroups = pack "C6",
-                        0x00, 0x04, #List Length
-                        0x00, 0x13,
-                        0x00, 0x1d; #X25519
-                }
+                $suppgroups = pack "C6",
+                    0x00, 0x04, #List Length
+                    0x00, 0x13,
+                    0x00, 0x1d; #x25519
             }
 
             if ($testtype == EMPTY_EXTENSION) {
@@ -366,25 +349,14 @@ sub modify_key_shares_filter
                     0xff, 0xff, #Non existing group 2
                     0x00, 0x01, 0xff; #key_exchange data
             } elsif ($testtype == ACCEPTABLE_AT_END) {
-                if (disabled("ecx")) {
-                    $ext = pack "C11H130",
-                        0x00, 0x4A, #List Length
-                        0xff, 0xfe, #Non existing group 1
-                        0x00, 0x01, 0xff, #key_exchange data
-                        0x00, 0x17, #P-256
-                        0x00, 0x41, #key_exchange data length
-                        "04A798ACF80B2991A0A53D084F4F649A46BE49D061EB5B8CFF9C8EC6AE792507B6".
-                        "F77FE6E446AF3645FD86BB7CFFD2644E45CC00183343C5CEAD67BB017B082007";  #key_exchange data
-                } else {
-                    $ext = pack "C11H64",
-                        0x00, 0x29, #List Length
-                        0xff, 0xfe, #Non existing group 1
-                        0x00, 0x01, 0xff, #key_exchange data
-                        0x00, 0x1d, #x25519
-                        0x00, 0x20, #key_exchange data length
-                        "155155B95269ED5C87EAA99C2EF5A593".
-                        "EDF83495E80380089F831B94D14B1421";  #key_exchange data
-                }
+                $ext = pack "C11H64",
+                    0x00, 0x29, #List Length
+                    0xff, 0xfe, #Non existing group 1
+                    0x00, 0x01, 0xff, #key_exchange data
+                    0x00, 0x1d, #x25519
+                    0x00, 0x20, #key_exchange data length
+                    "155155B95269ED5C87EAA99C2EF5A593".
+                    "EDF83495E80380089F831B94D14B1421";  #key_exchange data
             } elsif ($testtype == NOT_IN_SUPPORTED_GROUPS) {
                 $suppgroups = pack "C4",
                     0x00, 0x02, #List Length

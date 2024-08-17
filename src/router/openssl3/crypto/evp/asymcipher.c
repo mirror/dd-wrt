@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2006-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -189,7 +189,7 @@ static int evp_pkey_asym_cipher_init(EVP_PKEY_CTX *ctx, int operation,
         ERR_raise(ERR_LIB_EVP, EVP_R_OPERATION_NOT_SUPPORTED_FOR_THIS_KEYTYPE);
         return -2;
     }
-    switch (ctx->operation) {
+    switch(ctx->operation) {
     case EVP_PKEY_OP_ENCRYPT:
         if (ctx->pmeth->encrypt_init == NULL)
             return 1;
@@ -298,38 +298,25 @@ int EVP_PKEY_decrypt(EVP_PKEY_CTX *ctx,
         return ctx->pmeth->decrypt(ctx, out, outlen, in, inlen);
 }
 
-/* decrypt to new buffer of dynamic size, checking any pre-determined size */
-int evp_pkey_decrypt_alloc(EVP_PKEY_CTX *ctx, unsigned char **outp,
-                           size_t *outlenp, size_t expected_outlen,
-                           const unsigned char *in, size_t inlen)
-{
-    if (EVP_PKEY_decrypt(ctx, NULL, outlenp, in, inlen) <= 0
-            || (*outp = OPENSSL_malloc(*outlenp)) == NULL)
-        return -1;
-    if (EVP_PKEY_decrypt(ctx, *outp, outlenp, in, inlen) <= 0
-            || *outlenp == 0
-            || (expected_outlen != 0 && *outlenp != expected_outlen)) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
-        OPENSSL_clear_free(*outp, *outlenp);
-        *outp = NULL;
-        return 0;
-    }
-    return 1;
-}
 
 static EVP_ASYM_CIPHER *evp_asym_cipher_new(OSSL_PROVIDER *prov)
 {
     EVP_ASYM_CIPHER *cipher = OPENSSL_zalloc(sizeof(EVP_ASYM_CIPHER));
 
-    if (cipher == NULL)
+    if (cipher == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
-    if (!CRYPTO_NEW_REF(&cipher->refcnt, 1)) {
+    cipher->lock = CRYPTO_THREAD_lock_new();
+    if (cipher->lock == NULL) {
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(cipher);
         return NULL;
     }
     cipher->prov = prov;
     ossl_provider_up_ref(prov);
+    cipher->refcnt = 1;
 
     return cipher;
 }
@@ -344,7 +331,7 @@ static void *evp_asym_cipher_from_algorithm(int name_id,
     int gparamfncnt = 0, sparamfncnt = 0;
 
     if ((cipher = evp_asym_cipher_new(prov)) == NULL) {
-        ERR_raise(ERR_LIB_EVP, ERR_R_EVP_LIB);
+        ERR_raise(ERR_LIB_EVP, ERR_R_MALLOC_FAILURE);
         goto err;
     }
 
@@ -457,12 +444,12 @@ void EVP_ASYM_CIPHER_free(EVP_ASYM_CIPHER *cipher)
 
     if (cipher == NULL)
         return;
-    CRYPTO_DOWN_REF(&cipher->refcnt, &i);
+    CRYPTO_DOWN_REF(&cipher->refcnt, &i, cipher->lock);
     if (i > 0)
         return;
     OPENSSL_free(cipher->type_name);
     ossl_provider_free(cipher->prov);
-    CRYPTO_FREE_REF(&cipher->refcnt);
+    CRYPTO_THREAD_lock_free(cipher->lock);
     OPENSSL_free(cipher);
 }
 
@@ -470,7 +457,7 @@ int EVP_ASYM_CIPHER_up_ref(EVP_ASYM_CIPHER *cipher)
 {
     int ref = 0;
 
-    CRYPTO_UP_REF(&cipher->refcnt, &ref);
+    CRYPTO_UP_REF(&cipher->refcnt, &ref, cipher->lock);
     return 1;
 }
 

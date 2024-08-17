@@ -132,8 +132,10 @@ static int msblob2key_decode(void *vctx, OSSL_CORE_BIO *cin, int selection,
         goto next;
     }
     buf = OPENSSL_malloc(length);
-    if (buf == NULL)
+    if (buf == NULL) {
+        ERR_raise(ERR_LIB_PEM, ERR_R_MALLOC_FAILURE);
         goto end;
+    }
     p = buf;
     if (BIO_read(in, buf, length) != (int)length) {
         ERR_raise(ERR_LIB_PEM, PEM_R_KEYBLOB_TOO_SHORT);
@@ -280,7 +282,7 @@ static void rsa_adjust(void *key, struct msblob2key_ctx_st *ctx)
           (void (*)(void))msblob2key_decode },                          \
         { OSSL_FUNC_DECODER_EXPORT_OBJECT,                              \
           (void (*)(void))msblob2key_export_object },                   \
-        OSSL_DISPATCH_END                                               \
+        { 0, NULL }                                                     \
     }
 
 #ifndef OPENSSL_NO_DSA

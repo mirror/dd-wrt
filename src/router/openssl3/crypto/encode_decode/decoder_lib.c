@@ -18,10 +18,9 @@
 #include <openssl/trace.h>
 #include "internal/bio.h"
 #include "internal/provider.h"
-#include "internal/namemap.h"
 #include "crypto/decoder.h"
 #include "encoder_local.h"
-#include "internal/e_os.h"
+#include "e_os.h"
 
 struct decoder_process_data_st {
     OSSL_DECODER_CTX *ctx;
@@ -224,8 +223,10 @@ OSSL_DECODER_INSTANCE *ossl_decoder_instance_new(OSSL_DECODER *decoder,
         return 0;
     }
 
-    if ((decoder_inst = OPENSSL_zalloc(sizeof(*decoder_inst))) == NULL)
+    if ((decoder_inst = OPENSSL_zalloc(sizeof(*decoder_inst))) == NULL) {
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     prov = OSSL_DECODER_get0_provider(decoder);
     libctx = ossl_provider_libctx(prov);
@@ -240,7 +241,6 @@ OSSL_DECODER_INSTANCE *ossl_decoder_instance_new(OSSL_DECODER *decoder,
     /* The "input" property is mandatory */
     prop = ossl_property_find_property(props, libctx, "input");
     decoder_inst->input_type = ossl_property_get_string_value(libctx, prop);
-    decoder_inst->input_type_id = 0;
     if (decoder_inst->input_type == NULL) {
         ERR_raise_data(ERR_LIB_OSSL_DECODER, ERR_R_INVALID_PROPERTY_DEFINITION,
                        "the mandatory 'input' property is missing "
@@ -281,37 +281,6 @@ void ossl_decoder_instance_free(OSSL_DECODER_INSTANCE *decoder_inst)
     }
 }
 
-OSSL_DECODER_INSTANCE *ossl_decoder_instance_dup(const OSSL_DECODER_INSTANCE *src)
-{
-    OSSL_DECODER_INSTANCE *dest;
-    const OSSL_PROVIDER *prov;
-    void *provctx;
-
-    if ((dest = OPENSSL_zalloc(sizeof(*dest))) == NULL)
-        return NULL;
-
-    *dest = *src;
-    if (!OSSL_DECODER_up_ref(dest->decoder)) {
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_INTERNAL_ERROR);
-        goto err;
-    }
-    prov = OSSL_DECODER_get0_provider(dest->decoder);
-    provctx = OSSL_PROVIDER_get0_provider_ctx(prov);
-
-    dest->decoderctx = dest->decoder->newctx(provctx);
-    if (dest->decoderctx == NULL) {
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_INTERNAL_ERROR);
-        OSSL_DECODER_free(dest->decoder);
-        goto err;
-    }
-
-    return dest;
-
- err:
-    OPENSSL_free(dest);
-    return NULL;
-}
-
 int ossl_decoder_ctx_add_decoder_inst(OSSL_DECODER_CTX *ctx,
                                       OSSL_DECODER_INSTANCE *di)
 {
@@ -320,7 +289,7 @@ int ossl_decoder_ctx_add_decoder_inst(OSSL_DECODER_CTX *ctx,
     if (ctx->decoder_insts == NULL
         && (ctx->decoder_insts =
             sk_OSSL_DECODER_INSTANCE_new_null()) == NULL) {
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
         return 0;
     }
 
@@ -374,8 +343,6 @@ int OSSL_DECODER_CTX_add_decoder(OSSL_DECODER_CTX *ctx, OSSL_DECODER *decoder)
 struct collect_extra_decoder_data_st {
     OSSL_DECODER_CTX *ctx;
     const char *output_type;
-    int output_type_id;
-
     /*
      * 0 to check that the decoder's input type is the same as the decoder name
      * 1 to check that the decoder's input type differs from the decoder name
@@ -403,7 +370,7 @@ static void collect_extra_decoder(OSSL_DECODER *decoder, void *arg)
     const OSSL_PROVIDER *prov = OSSL_DECODER_get0_provider(decoder);
     void *provctx = OSSL_PROVIDER_get0_provider_ctx(prov);
 
-    if (ossl_decoder_fast_is_a(decoder, data->output_type, &data->output_type_id)) {
+    if (OSSL_DECODER_is_a(decoder, data->output_type)) {
         void *decoderctx = NULL;
         OSSL_DECODER_INSTANCE *di = NULL;
 
@@ -446,9 +413,8 @@ static void collect_extra_decoder(OSSL_DECODER *decoder, void *arg)
         switch (data->type_check) {
         case IS_SAME:
             /* If it differs, this is not a decoder to add for now. */
-            if (!ossl_decoder_fast_is_a(decoder,
-                                        OSSL_DECODER_INSTANCE_get_input_type(di),
-                                        &di->input_type_id)) {
+            if (!OSSL_DECODER_is_a(decoder,
+                                   OSSL_DECODER_INSTANCE_get_input_type(di))) {
                 ossl_decoder_instance_free(di);
                 OSSL_TRACE_BEGIN(DECODER) {
                     BIO_printf(trc_out,
@@ -459,9 +425,8 @@ static void collect_extra_decoder(OSSL_DECODER *decoder, void *arg)
             break;
         case IS_DIFFERENT:
             /* If it's the same, this is not a decoder to add for now. */
-            if (ossl_decoder_fast_is_a(decoder,
-                                       OSSL_DECODER_INSTANCE_get_input_type(di),
-                                       &di->input_type_id)) {
+            if (OSSL_DECODER_is_a(decoder,
+                                  OSSL_DECODER_INSTANCE_get_input_type(di))) {
                 ossl_decoder_instance_free(di);
                 OSSL_TRACE_BEGIN(DECODER) {
                     BIO_printf(trc_out,
@@ -537,7 +502,7 @@ int OSSL_DECODER_CTX_add_extra(OSSL_DECODER_CTX *ctx,
 
     skdecoders = sk_OSSL_DECODER_new_null();
     if (skdecoders == NULL) {
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
         return 0;
     }
     OSSL_DECODER_do_all_provided(libctx, collect_all_decoders, skdecoders);
@@ -569,7 +534,6 @@ int OSSL_DECODER_CTX_add_extra(OSSL_DECODER_CTX *ctx,
                 data.output_type
                     = OSSL_DECODER_INSTANCE_get_input_type(decoder_inst);
 
-                data.output_type_id = 0;
 
                 for (j = 0; j < numdecoders; j++)
                     collect_extra_decoder(sk_OSSL_DECODER_value(skdecoders, j),
@@ -854,7 +818,7 @@ static int decoder_process(const OSSL_PARAM params[], void *arg)
     }
 
     if ((cbio = ossl_core_bio_new_from_bio(bio)) == NULL) {
-        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_BIO_LIB);
+        ERR_raise(ERR_LIB_OSSL_DECODER, ERR_R_MALLOC_FAILURE);
         goto end;
     }
 
@@ -904,8 +868,7 @@ static int decoder_process(const OSSL_PARAM params[], void *arg)
          * |new_input_type| holds the value of the "input-type" parameter
          * for the decoder we're currently considering.
          */
-        if (decoder != NULL && !ossl_decoder_fast_is_a(decoder, new_input_type,
-                                                       &new_decoder_inst->input_type_id)) {
+        if (decoder != NULL && !OSSL_DECODER_is_a(decoder, new_input_type)) {
             OSSL_TRACE_BEGIN(DECODER) {
                 BIO_printf(trc_out,
                            "(ctx %p) %s [%u] the input type doesn't match the name of the previous decoder (%p), skipping...\n",

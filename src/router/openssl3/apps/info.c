@@ -86,7 +86,7 @@ opthelp:
             break;
         }
     }
-    if (!opt_check_rest_arg(NULL))
+    if (opt_num_rest() != 0)
         goto opthelp;
     if (dirty > 1) {
         BIO_printf(bio_err, "%s: Only one item allowed\n", prog);

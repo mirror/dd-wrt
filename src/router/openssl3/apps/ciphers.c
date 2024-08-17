@@ -174,9 +174,10 @@ int ciphers_main(int argc, char **argv)
 
     /* Optional arg is cipher name. */
     argv = opt_rest();
-    if (opt_num_rest() == 1)
+    argc = opt_num_rest();
+    if (argc == 1)
         ciphers = argv[0];
-    else if (!opt_check_rest_arg(NULL))
+    else if (argc != 0)
         goto opthelp;
 
     if (convert != NULL) {

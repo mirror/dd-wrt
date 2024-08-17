@@ -73,7 +73,8 @@ int nseq_main(int argc, char **argv)
     }
 
     /* No extra arguments. */
-    if (!opt_check_rest_arg(NULL))
+    argc = opt_num_rest();
+    if (argc != 0)
         goto opthelp;
 
     in = bio_open_default(infile, 'r', FORMAT_PEM);

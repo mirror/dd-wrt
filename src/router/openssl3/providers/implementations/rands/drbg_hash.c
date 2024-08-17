@@ -35,8 +35,6 @@ static OSSL_FUNC_rand_gettable_ctx_params_fn drbg_hash_gettable_ctx_params;
 static OSSL_FUNC_rand_get_ctx_params_fn drbg_hash_get_ctx_params;
 static OSSL_FUNC_rand_verify_zeroization_fn drbg_hash_verify_zeroization;
 
-static int drbg_hash_set_ctx_params_locked(void *vctx, const OSSL_PARAM params[]);
-
 /* 888 bits from SP800-90Ar1 10.1 table 2 */
 #define HASH_PRNG_MAX_SEEDLEN    (888/8)
 
@@ -115,7 +113,7 @@ static int hash_df(PROV_DRBG *drbg, unsigned char *out,
             memcpy(out, vtmp, outlen);
             OPENSSL_cleanse(vtmp, hash->blocklen);
             break;
-        } else if (!EVP_DigestFinal(ctx, out, NULL)) {
+        } else if(!EVP_DigestFinal(ctx, out, NULL)) {
             return 0;
         }
 
@@ -166,7 +164,7 @@ static int add_bytes(PROV_DRBG *drbg, unsigned char *dst,
         /* Add the carry to the top of the dst if inlen is not the same size */
         for (i = drbg->seedlen - inlen; i > 0; --i, d--) {
             *d += 1;     /* Carry can only be 1 */
-            if (*d != 0) /* exit if carry doesn't propagate to the next byte */
+            if (*d != 0) /* exit if carry doesnt propagate to the next byte */
                 break;
         }
     }
@@ -214,7 +212,7 @@ static int hash_gen(PROV_DRBG *drbg, unsigned char *out, size_t outlen)
     if (outlen == 0)
         return 1;
     memcpy(hash->vtmp, hash->V, drbg->seedlen);
-    for (;;) {
+    for(;;) {
         if (!EVP_DigestInit_ex(hash->ctx, ossl_prov_digest_md(&hash->digest),
                                NULL)
                 || !EVP_DigestUpdate(hash->ctx, hash->vtmp, drbg->seedlen))
@@ -272,20 +270,11 @@ static int drbg_hash_instantiate_wrapper(void *vdrbg, unsigned int strength,
                                          const OSSL_PARAM params[])
 {
     PROV_DRBG *drbg = (PROV_DRBG *)vdrbg;
-    int ret = 0;
 
-    if (drbg->lock != NULL && !CRYPTO_THREAD_write_lock(drbg->lock))
+    if (!ossl_prov_is_running() || !drbg_hash_set_ctx_params(drbg, params))
         return 0;
-
-    if (!ossl_prov_is_running()
-            || !drbg_hash_set_ctx_params_locked(drbg, params))
-        goto err;
-    ret = ossl_prov_drbg_instantiate(drbg, strength, prediction_resistance,
-                                     pstr, pstr_len);
- err:
-    if (drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
-    return ret;
+    return ossl_prov_drbg_instantiate(drbg, strength, prediction_resistance,
+                                      pstr, pstr_len);
 }
 
 /*
@@ -382,38 +371,18 @@ static int drbg_hash_uninstantiate(PROV_DRBG *drbg)
 
 static int drbg_hash_uninstantiate_wrapper(void *vdrbg)
 {
-    PROV_DRBG *drbg = (PROV_DRBG *)vdrbg;
-    int ret;
-
-    if (drbg->lock != NULL && !CRYPTO_THREAD_write_lock(drbg->lock))
-        return 0;
-
-    ret = drbg_hash_uninstantiate(drbg);
-
-    if (drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
-
-    return ret;
+    return drbg_hash_uninstantiate((PROV_DRBG *)vdrbg);
 }
 
 static int drbg_hash_verify_zeroization(void *vdrbg)
 {
     PROV_DRBG *drbg = (PROV_DRBG *)vdrbg;
     PROV_DRBG_HASH *hash = (PROV_DRBG_HASH *)drbg->data;
-    int ret = 0;
 
-    if (drbg->lock != NULL && !CRYPTO_THREAD_read_lock(drbg->lock))
-        return 0;
-
-    PROV_DRBG_VERIFY_ZEROIZATION(hash->V);
-    PROV_DRBG_VERIFY_ZEROIZATION(hash->C);
-    PROV_DRBG_VERIFY_ZEROIZATION(hash->vtmp);
-
-    ret = 1;
- err:
-    if (drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
-    return ret;
+    PROV_DRBG_VERYIFY_ZEROIZATION(hash->V);
+    PROV_DRBG_VERYIFY_ZEROIZATION(hash->C);
+    PROV_DRBG_VERYIFY_ZEROIZATION(hash->vtmp);
+    return 1;
 }
 
 static int drbg_hash_new(PROV_DRBG *ctx)
@@ -421,8 +390,10 @@ static int drbg_hash_new(PROV_DRBG *ctx)
     PROV_DRBG_HASH *hash;
 
     hash = OPENSSL_secure_zalloc(sizeof(*hash));
-    if (hash == NULL)
+    if (hash == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     ctx->data = hash;
     ctx->seedlen = HASH_PRNG_MAX_SEEDLEN;
@@ -464,30 +435,15 @@ static int drbg_hash_get_ctx_params(void *vdrbg, OSSL_PARAM params[])
     PROV_DRBG_HASH *hash = (PROV_DRBG_HASH *)drbg->data;
     const EVP_MD *md;
     OSSL_PARAM *p;
-    int ret = 0, complete = 0;
-
-    if (!ossl_drbg_get_ctx_params_no_lock(drbg, params, &complete))
-        return 0;
-
-    if (complete)
-        return 1;
-
-    if (drbg->lock != NULL && !CRYPTO_THREAD_read_lock(drbg->lock))
-        return 0;
 
     p = OSSL_PARAM_locate(params, OSSL_DRBG_PARAM_DIGEST);
     if (p != NULL) {
         md = ossl_prov_digest_md(&hash->digest);
         if (md == NULL || !OSSL_PARAM_set_utf8_string(p, EVP_MD_get0_name(md)))
-            goto err;
+            return 0;
     }
 
-    ret = ossl_drbg_get_ctx_params(drbg, params);
- err:
-    if (drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
-
-    return ret;
+    return ossl_drbg_get_ctx_params(drbg, params);
 }
 
 static const OSSL_PARAM *drbg_hash_gettable_ctx_params(ossl_unused void *vctx,
@@ -501,7 +457,7 @@ static const OSSL_PARAM *drbg_hash_gettable_ctx_params(ossl_unused void *vctx,
     return known_gettable_ctx_params;
 }
 
-static int drbg_hash_set_ctx_params_locked(void *vctx, const OSSL_PARAM params[])
+static int drbg_hash_set_ctx_params(void *vctx, const OSSL_PARAM params[])
 {
     PROV_DRBG *ctx = (PROV_DRBG *)vctx;
     PROV_DRBG_HASH *hash = (PROV_DRBG_HASH *)ctx->data;
@@ -513,8 +469,10 @@ static int drbg_hash_set_ctx_params_locked(void *vctx, const OSSL_PARAM params[]
 
     md = ossl_prov_digest_md(&hash->digest);
     if (md != NULL) {
-        if (!ossl_drbg_verify_digest(libctx, md))
-            return 0;   /* Error already raised for us */
+        if ((EVP_MD_get_flags(md) & EVP_MD_FLAG_XOF) != 0) {
+            ERR_raise(ERR_LIB_PROV, PROV_R_XOF_DIGESTS_NOT_ALLOWED);
+            return 0;
+        }
 
         /* These are taken from SP 800-90 10.1 Table 2 */
         hash->blocklen = EVP_MD_get_size(md);
@@ -532,22 +490,6 @@ static int drbg_hash_set_ctx_params_locked(void *vctx, const OSSL_PARAM params[]
     }
 
     return ossl_drbg_set_ctx_params(ctx, params);
-}
-
-static int drbg_hash_set_ctx_params(void *vctx, const OSSL_PARAM params[])
-{
-    PROV_DRBG *drbg = (PROV_DRBG *)vctx;
-    int ret;
-
-    if (drbg->lock != NULL && !CRYPTO_THREAD_write_lock(drbg->lock))
-        return 0;
-
-    ret = drbg_hash_set_ctx_params_locked(vctx, params);
-
-    if (drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
-
-    return ret;
 }
 
 static const OSSL_PARAM *drbg_hash_settable_ctx_params(ossl_unused void *vctx,
@@ -584,5 +526,5 @@ const OSSL_DISPATCH ossl_drbg_hash_functions[] = {
       (void(*)(void))drbg_hash_verify_zeroization },
     { OSSL_FUNC_RAND_GET_SEED, (void(*)(void))ossl_drbg_get_seed },
     { OSSL_FUNC_RAND_CLEAR_SEED, (void(*)(void))ossl_drbg_clear_seed },
-    OSSL_DISPATCH_END
+    { 0, NULL }
 };

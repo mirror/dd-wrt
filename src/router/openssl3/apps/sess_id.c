@@ -98,7 +98,8 @@ int sess_id_main(int argc, char **argv)
     }
 
     /* No extra arguments. */
-    if (!opt_check_rest_arg(NULL))
+    argc = opt_num_rest();
+    if (argc != 0)
         goto opthelp;
 
     x = load_sess_id(infile, informat);

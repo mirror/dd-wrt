@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -43,7 +43,7 @@ static unsigned char hkdf_okm[] = {
 
 int main(int argc, char **argv)
 {
-    int ret = EXIT_FAILURE;
+    int rv = 1;
     EVP_KDF *kdf = NULL;
     EVP_KDF_CTX *kctx = NULL;
     unsigned char out[42];
@@ -95,12 +95,10 @@ int main(int argc, char **argv)
         goto end;
     }
 
-    printf("Success\n");
-
-    ret = EXIT_SUCCESS;
+    rv = 0;
 end:
     EVP_KDF_CTX_free(kctx);
     EVP_KDF_free(kdf);
     OSSL_LIB_CTX_free(library_context);
-    return ret;
+    return rv;
 }

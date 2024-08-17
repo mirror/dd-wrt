@@ -248,12 +248,6 @@ int ASN1_object_size(int constructed, int length, int tag)
     return ret + length;
 }
 
-void ossl_asn1_string_set_bits_left(ASN1_STRING *str, unsigned int num)
-{
-    str->flags &= ~0x07;
-    str->flags |= ASN1_STRING_FLAG_BITS_LEFT | (num & 0x07);
-}
-
 int ASN1_STRING_copy(ASN1_STRING *dst, const ASN1_STRING *str)
 {
     if (str == NULL)
@@ -314,6 +308,7 @@ int ASN1_STRING_set(ASN1_STRING *str, const void *_data, int len_in)
         str->data = OPENSSL_realloc(c, len + 1);
 #endif
         if (str->data == NULL) {
+            ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
             str->data = c;
             return 0;
         }
@@ -353,8 +348,10 @@ ASN1_STRING *ASN1_STRING_type_new(int type)
     ASN1_STRING *ret;
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     ret->type = type;
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2002-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -80,7 +80,6 @@ int ec_main(int argc, char **argv)
     char *point_format = NULL;
     int no_public = 0;
 
-    opt_set_unknown_name("cipher");
     prog = opt_init(argc, argv, ec_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
@@ -158,12 +157,17 @@ int ec_main(int argc, char **argv)
     }
 
     /* No extra arguments. */
-    if (!opt_check_rest_arg(NULL))
+    argc = opt_num_rest();
+    if (argc != 0)
         goto opthelp;
 
-    if (!opt_cipher(ciphername, &enc))
-        goto opthelp;
-    private = !pubin && (text || (!param_out && !pubout));
+    if (ciphername != NULL) {
+        if (!opt_cipher(ciphername, &enc))
+            goto opthelp;
+    }
+    private = param_out || pubin || pubout ? 0 : 1;
+    if (text && !pubin)
+        private = 1;
 
     if (!app_passwd(passinarg, passoutarg, &passin, &passout)) {
         BIO_printf(bio_err, "Error getting passwords\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2011-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -97,7 +97,7 @@ static const felem_bytearray nistp256_curve_params[5] = {
  * values, or four 64-bit values. The field element represented is:
  *   v[0]*2^0 + v[1]*2^64 + v[2]*2^128 + v[3]*2^192  (mod p)
  * or:
- *   v[0]*2^0 + v[1]*2^64 + v[2]*2^128 + ... + v[7]*2^448  (mod p)
+ *   v[0]*2^0 + v[1]*2^64 + v[2]*2^128 + ... + v[8]*2^512  (mod p)
  *
  * 128-bit values are called 'limbs'. Since the limbs are spaced only 64 bits
  * apart, but are 128-bits wide, the most significant bits of each limb overlap
@@ -1773,6 +1773,7 @@ static void batch_mul(felem x_out, felem y_out, felem z_out,
 struct nistp256_pre_comp_st {
     smallfelem g_pre_comp[2][16][3];
     CRYPTO_REF_COUNT references;
+    CRYPTO_RWLOCK *lock;
 };
 
 const EC_METHOD *EC_GFp_nistp256_method(void)
@@ -1848,10 +1849,16 @@ static NISTP256_PRE_COMP *nistp256_pre_comp_new(void)
 {
     NISTP256_PRE_COMP *ret = OPENSSL_zalloc(sizeof(*ret));
 
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         return ret;
+    }
 
-    if (!CRYPTO_NEW_REF(&ret->references, 1)) {
+    ret->references = 1;
+
+    ret->lock = CRYPTO_THREAD_lock_new();
+    if (ret->lock == NULL) {
+        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(ret);
         return NULL;
     }
@@ -1862,7 +1869,7 @@ NISTP256_PRE_COMP *EC_nistp256_pre_comp_dup(NISTP256_PRE_COMP *p)
 {
     int i;
     if (p != NULL)
-        CRYPTO_UP_REF(&p->references, &i);
+        CRYPTO_UP_REF(&p->references, &i, p->lock);
     return p;
 }
 
@@ -1873,13 +1880,13 @@ void EC_nistp256_pre_comp_free(NISTP256_PRE_COMP *pre)
     if (pre == NULL)
         return;
 
-    CRYPTO_DOWN_REF(&pre->references, &i);
+    CRYPTO_DOWN_REF(&pre->references, &i, pre->lock);
     REF_PRINT_COUNT("EC_nistp256", pre);
     if (i > 0)
         return;
     REF_ASSERT_ISNT(i < 0);
 
-    CRYPTO_FREE_REF(&pre->references);
+    CRYPTO_THREAD_lock_free(pre->lock);
     OPENSSL_free(pre);
 }
 
@@ -2092,8 +2099,10 @@ int ossl_ec_GFp_nistp256_points_mul(const EC_GROUP *group, EC_POINT *r,
             tmp_smallfelems =
               OPENSSL_malloc(sizeof(*tmp_smallfelems) * (num_points * 17 + 1));
         if ((secrets == NULL) || (pre_comp == NULL)
-            || (mixed && (tmp_smallfelems == NULL)))
+            || (mixed && (tmp_smallfelems == NULL))) {
+            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
 
         /*
          * we treat NULL scalars as 0, and NULL points as points at infinity,

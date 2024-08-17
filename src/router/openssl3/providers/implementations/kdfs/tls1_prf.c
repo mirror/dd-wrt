@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -45,13 +45,6 @@
  *     A(0) = seed
  *     A(i) = HMAC_<hash>(secret, A(i-1))
  */
-
-/*
- * Low level APIs (such as DH) are deprecated for public use, but still ok for
- * internal use.
- */
-#include "internal/deprecated.h"
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -67,14 +60,9 @@
 #include "prov/providercommon.h"
 #include "prov/implementations.h"
 #include "prov/provider_util.h"
-#include "prov/securitycheck.h"
-#include "internal/e_os.h"
-#include "internal/safe_math.h"
-
-OSSL_SAFE_MATH_UNSIGNED(size_t, size_t)
+#include "e_os.h"
 
 static OSSL_FUNC_kdf_newctx_fn kdf_tls1_prf_new;
-static OSSL_FUNC_kdf_dupctx_fn kdf_tls1_prf_dup;
 static OSSL_FUNC_kdf_freectx_fn kdf_tls1_prf_free;
 static OSSL_FUNC_kdf_reset_fn kdf_tls1_prf_reset;
 static OSSL_FUNC_kdf_derive_fn kdf_tls1_prf_derive;
@@ -88,8 +76,7 @@ static int tls1_prf_alg(EVP_MAC_CTX *mdctx, EVP_MAC_CTX *sha1ctx,
                         const unsigned char *seed, size_t seed_len,
                         unsigned char *out, size_t olen);
 
-#define TLS_MD_MASTER_SECRET_CONST        "\x6d\x61\x73\x74\x65\x72\x20\x73\x65\x63\x72\x65\x74"
-#define TLS_MD_MASTER_SECRET_CONST_SIZE   13
+#define TLS1_PRF_MAXBUF 1024
 
 /* TLS KDF kdf context structure */
 typedef struct {
@@ -103,8 +90,8 @@ typedef struct {
     /* Secret value to use for PRF */
     unsigned char *sec;
     size_t seclen;
-    /* Concatenated seed data */
-    unsigned char *seed;
+    /* Buffer of concatenated seed data */
+    unsigned char seed[TLS1_PRF_MAXBUF];
     size_t seedlen;
 } TLS1_PRF;
 
@@ -115,8 +102,11 @@ static void *kdf_tls1_prf_new(void *provctx)
     if (!ossl_prov_is_running())
         return NULL;
 
-    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) != NULL)
-        ctx->provctx = provctx;
+    if ((ctx = OPENSSL_zalloc(sizeof(*ctx))) == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+        return NULL;
+    }
+    ctx->provctx = provctx;
     return ctx;
 }
 
@@ -138,42 +128,15 @@ static void kdf_tls1_prf_reset(void *vctx)
     EVP_MAC_CTX_free(ctx->P_hash);
     EVP_MAC_CTX_free(ctx->P_sha1);
     OPENSSL_clear_free(ctx->sec, ctx->seclen);
-    OPENSSL_clear_free(ctx->seed, ctx->seedlen);
+    OPENSSL_cleanse(ctx->seed, ctx->seedlen);
     memset(ctx, 0, sizeof(*ctx));
     ctx->provctx = provctx;
-}
-
-static void *kdf_tls1_prf_dup(void *vctx)
-{
-    const TLS1_PRF *src = (const TLS1_PRF *)vctx;
-    TLS1_PRF *dest;
-
-    dest = kdf_tls1_prf_new(src->provctx);
-    if (dest != NULL) {
-        if (src->P_hash != NULL
-                    && (dest->P_hash = EVP_MAC_CTX_dup(src->P_hash)) == NULL)
-            goto err;
-        if (src->P_sha1 != NULL
-                    && (dest->P_sha1 = EVP_MAC_CTX_dup(src->P_sha1)) == NULL)
-            goto err;
-        if (!ossl_prov_memdup(src->sec, src->seclen, &dest->sec, &dest->seclen))
-            goto err;
-        if (!ossl_prov_memdup(src->seed, src->seedlen, &dest->seed,
-                              &dest->seedlen))
-            goto err;
-    }
-    return dest;
-
- err:
-    kdf_tls1_prf_free(dest);
-    return NULL;
 }
 
 static int kdf_tls1_prf_derive(void *vctx, unsigned char *key, size_t keylen,
                                const OSSL_PARAM params[])
 {
     TLS1_PRF *ctx = (TLS1_PRF *)vctx;
-    OSSL_LIB_CTX *libctx = PROV_LIBCTX_OF(ctx->provctx);
 
     if (!ossl_prov_is_running() || !kdf_tls1_prf_set_ctx_params(ctx, params))
         return 0;
@@ -193,21 +156,6 @@ static int kdf_tls1_prf_derive(void *vctx, unsigned char *key, size_t keylen,
     if (keylen == 0) {
         ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_KEY_LENGTH);
         return 0;
-    }
-
-    /*
-     * The seed buffer is prepended with a label.
-     * If EMS mode is enforced then the label "master secret" is not allowed,
-     * We do the check this way since the PRF is used for other purposes, as well
-     * as "extended master secret".
-     */
-    if (ossl_tls1_prf_ems_check_enabled(libctx)) {
-        if (ctx->seedlen >= TLS_MD_MASTER_SECRET_CONST_SIZE
-                && memcmp(ctx->seed, TLS_MD_MASTER_SECRET_CONST,
-                          TLS_MD_MASTER_SECRET_CONST_SIZE) == 0) {
-            ERR_raise(ERR_LIB_PROV, PROV_R_EMS_NOT_ENABLED);
-            return 0;
-        }
     }
 
     return tls1_prf_alg(ctx->P_hash, ctx->P_sha1,
@@ -253,29 +201,16 @@ static int kdf_tls1_prf_set_ctx_params(void *vctx, const OSSL_PARAM params[])
     if ((p = OSSL_PARAM_locate_const(params, OSSL_KDF_PARAM_SEED)) != NULL) {
         for (; p != NULL; p = OSSL_PARAM_locate_const(p + 1,
                                                       OSSL_KDF_PARAM_SEED)) {
-            if (p->data_size != 0 && p->data != NULL) {
-                const void *val = NULL;
-                size_t sz = 0;
-                unsigned char *seed;
-                size_t seedlen;
-                int err = 0;
+            const void *q = ctx->seed + ctx->seedlen;
+            size_t sz = 0;
 
-                if (!OSSL_PARAM_get_octet_string_ptr(p, &val, &sz))
-                    return 0;
-
-                seedlen = safe_add_size_t(ctx->seedlen, sz, &err);
-                if (err)
-                    return 0;
-
-                seed = OPENSSL_clear_realloc(ctx->seed, ctx->seedlen, seedlen);
-                if (!seed)
-                    return 0;
-
-                ctx->seed = seed;
-                if (ossl_assert(sz != 0))
-                    memcpy(ctx->seed + ctx->seedlen, val, sz);
-                ctx->seedlen = seedlen;
-            }
+            if (p->data_size != 0
+                && p->data != NULL
+                && !OSSL_PARAM_get_octet_string(p, (void **)&q,
+                                                TLS1_PRF_MAXBUF - ctx->seedlen,
+                                                &sz))
+                return 0;
+            ctx->seedlen += sz;
         }
     }
     return 1;
@@ -315,7 +250,6 @@ static const OSSL_PARAM *kdf_tls1_prf_gettable_ctx_params(
 
 const OSSL_DISPATCH ossl_kdf_tls1_prf_functions[] = {
     { OSSL_FUNC_KDF_NEWCTX, (void(*)(void))kdf_tls1_prf_new },
-    { OSSL_FUNC_KDF_DUPCTX, (void(*)(void))kdf_tls1_prf_dup },
     { OSSL_FUNC_KDF_FREECTX, (void(*)(void))kdf_tls1_prf_free },
     { OSSL_FUNC_KDF_RESET, (void(*)(void))kdf_tls1_prf_reset },
     { OSSL_FUNC_KDF_DERIVE, (void(*)(void))kdf_tls1_prf_derive },
@@ -327,7 +261,7 @@ const OSSL_DISPATCH ossl_kdf_tls1_prf_functions[] = {
       (void(*)(void))kdf_tls1_prf_gettable_ctx_params },
     { OSSL_FUNC_KDF_GET_CTX_PARAMS,
       (void(*)(void))kdf_tls1_prf_get_ctx_params },
-    OSSL_DISPATCH_END
+    { 0, NULL }
 };
 
 /*
@@ -453,8 +387,10 @@ static int tls1_prf_alg(EVP_MAC_CTX *mdctx, EVP_MAC_CTX *sha1ctx,
                              seed, seed_len, out, olen))
             return 0;
 
-        if ((tmp = OPENSSL_malloc(olen)) == NULL)
+        if ((tmp = OPENSSL_malloc(olen)) == NULL) {
+            ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
 
         if (!tls1_prf_P_hash(sha1ctx, sec + slen - L_S2, L_S2,
                              seed, seed_len, tmp, olen)) {

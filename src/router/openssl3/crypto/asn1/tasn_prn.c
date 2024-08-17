@@ -37,8 +37,10 @@ ASN1_PCTX *ASN1_PCTX_new(void)
     ASN1_PCTX *ret;
 
     ret = OPENSSL_zalloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_ASN1, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     return ret;
 }
 

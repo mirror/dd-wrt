@@ -1,5 +1,5 @@
-Acknowledgements
-================
+Acknowlegements
+===============
 
 Please see our [Thanks!][] page for the current acknowledgements.
 

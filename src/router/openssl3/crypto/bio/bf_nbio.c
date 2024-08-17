@@ -55,8 +55,10 @@ static int nbiof_new(BIO *bi)
 {
     NBIO_TEST *nt;
 
-    if ((nt = OPENSSL_zalloc(sizeof(*nt))) == NULL)
+    if ((nt = OPENSSL_zalloc(sizeof(*nt))) == NULL) {
+        ERR_raise(ERR_LIB_BIO, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
     nt->lrn = -1;
     nt->lwn = -1;
     bi->ptr = (char *)nt;

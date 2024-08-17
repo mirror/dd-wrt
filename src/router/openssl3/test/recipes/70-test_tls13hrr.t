@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2017-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2017-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -10,7 +10,6 @@ use strict;
 use OpenSSL::Test qw/:DEFAULT cmdstr srctop_file bldtop_dir/;
 use OpenSSL::Test::Utils;
 use TLSProxy::Proxy;
-use TLSProxy::Message;
 
 my $test_name = "test_tls13hrr";
 setup($test_name);
@@ -26,6 +25,8 @@ plan skip_all => "$test_name needs the sock feature enabled"
 
 plan skip_all => "$test_name needs TLS1.3 enabled"
     if disabled("tls1_3") || (disabled("ec") && disabled("dh"));
+
+$ENV{OPENSSL_ia32cap} = '~0x200000200000000';
 
 my $proxy = TLSProxy::Proxy->new(
     undef,
@@ -60,7 +61,7 @@ $proxy->clear();
 if (disabled("ec")) {
     $proxy->serverflags("-curves ffdhe3072");
 } else {
-    $proxy->serverflags("-curves P-384");
+    $proxy->serverflags("-curves P-256");
 }
 $proxy->ciphersuitess("TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384");
 $testtype = CHANGE_CH1_CIPHERSUITE;
@@ -74,7 +75,7 @@ $proxy->clear();
 if (disabled("ec")) {
     $proxy->serverflags("-curves ffdhe3072");
 } else {
-    $proxy->serverflags("-curves P-384");
+    $proxy->serverflags("-curves P-256");
 }
 $testtype = DUPLICATE_HRR;
 $proxy->start();
@@ -84,15 +85,15 @@ ok($fatal_alert, "Server duplicated HRR");
 #        otherwise not valid (e.g. not suitable for TLSv1.3) we should reject it
 #        and not consider it when sending the HRR. We send brainpoolP512r1 in
 #        the ClientHello, which is acceptable to the server but is not valid in
-#        TLSv1.3. We expect the server to select P-521 in the HRR and the
+#        TLSv1.3. We expect the server to select X25519 in the HRR and the
 #        handshake to complete successfully
 SKIP: {
     skip "EC/TLSv1.2 is disabled in this build", 1
         if disabled("ec") || disabled("tls1_2");
 
     $proxy->clear();
-    $proxy->clientflags("-groups P-256:brainpoolP512r1:P-521");
-    $proxy->serverflags("-groups brainpoolP512r1:P-521");
+    $proxy->clientflags("-groups P-256:brainpoolP512r1:X25519");
+    $proxy->serverflags("-groups brainpoolP512r1:X25519");
     $testtype = INVALID_GROUP;
     $proxy->start();
     ok(TLSProxy::Message->success(), "Invalid group with HRR");
@@ -123,7 +124,7 @@ sub hrr_filter
         # and the unexpected_message alert from client
         if ($proxy->flight == 4) {
             $fatal_alert = 1
-                if @{$proxy->record_list}[-1]->is_fatal_alert(0) == TLSProxy::Message::AL_DESC_UNEXPECTED_MESSAGE;
+                if @{$proxy->record_list}[-1]->is_fatal_alert(0) == 10;
             return;
         }
         if ($proxy->flight != 3) {

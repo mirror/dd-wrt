@@ -33,8 +33,10 @@ static void *sm4_dupctx(void *ctx)
         return NULL;
 
     ret = OPENSSL_malloc(sizeof(*ret));
-    if (ret == NULL)
+    if (ret == NULL) {
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
     in->base.hw->copyctx(&ret->base, &in->base);
 
     return ret;

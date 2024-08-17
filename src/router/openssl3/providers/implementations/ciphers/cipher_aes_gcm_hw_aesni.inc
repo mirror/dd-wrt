@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2001-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -31,17 +31,8 @@ static const PROV_GCM_HW aesni_gcm = {
     ossl_gcm_one_shot
 };
 
-#include "cipher_aes_gcm_hw_vaes_avx512.inc"
-
 const PROV_GCM_HW *ossl_prov_aes_hw_gcm(size_t keybits)
 {
-#ifdef VAES_GCM_ENABLED
-    if (ossl_vaes_vpclmulqdq_capable())
-        return &vaes_gcm;
-    else
-#endif
-    if (AESNI_CAPABLE)
-        return &aesni_gcm;
-    else
-        return &aes_gcm;
+    return AESNI_CAPABLE ? &aesni_gcm : &aes_gcm;
 }
+

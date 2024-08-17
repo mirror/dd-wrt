@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2022 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -32,7 +32,7 @@ static const char *propq = NULL;
  */
 static int sign(OSSL_LIB_CTX *libctx, unsigned char **sig, size_t *sig_len)
 {
-    int ret = 0;
+    int rv = 0;
     EVP_PKEY *pkey = NULL;
     EVP_MD_CTX *mctx = NULL;
     OSSL_PARAM params[2], *p = params;
@@ -95,15 +95,15 @@ static int sign(OSSL_LIB_CTX *libctx, unsigned char **sig, size_t *sig_len)
         goto end;
     }
 
-    ret = 1;
+    rv = 1;
 end:
     EVP_MD_CTX_free(mctx);
     EVP_PKEY_free(pkey);
 
-    if (ret == 0)
+    if (rv == 0)
         OPENSSL_free(*sig);
 
-    return ret;
+    return rv;
 }
 
 /*
@@ -113,7 +113,7 @@ end:
  */
 static int verify(OSSL_LIB_CTX *libctx, const unsigned char *sig, size_t sig_len)
 {
-    int ret = 0;
+    int rv = 0;
     EVP_PKEY *pkey = NULL;
     EVP_MD_CTX *mctx = NULL;
     OSSL_PARAM params[2], *p = params;
@@ -161,16 +161,16 @@ static int verify(OSSL_LIB_CTX *libctx, const unsigned char *sig, size_t sig_len
         goto end;
     }
 
-    ret = 1;
+    rv = 1;
 end:
     EVP_MD_CTX_free(mctx);
     EVP_PKEY_free(pkey);
-    return ret;
+    return rv;
 }
 
 int main(int argc, char **argv)
 {
-    int ret = EXIT_FAILURE;
+    int rv = 1;
     OSSL_LIB_CTX *libctx = NULL;
     unsigned char *sig = NULL;
     size_t sig_len = 0;
@@ -181,11 +181,9 @@ int main(int argc, char **argv)
     if (verify(libctx, sig, sig_len) == 0)
         goto end;
 
-    printf("Success\n");
-
-    ret = EXIT_SUCCESS;
+    rv = 0;
 end:
     OPENSSL_free(sig);
     OSSL_LIB_CTX_free(libctx);
-    return ret;
+    return rv;
 }

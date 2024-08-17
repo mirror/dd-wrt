@@ -23,8 +23,10 @@ SCT *SCT_new(void)
 {
     SCT *sct = OPENSSL_zalloc(sizeof(*sct));
 
-    if (sct == NULL)
+    if (sct == NULL) {
+        ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     sct->entry_type = CT_LOG_ENTRY_TYPE_NOT_SET;
     sct->version = SCT_VERSION_NOT_SET;
@@ -103,8 +105,10 @@ int SCT_set1_log_id(SCT *sct, const unsigned char *log_id, size_t log_id_len)
 
     if (log_id != NULL && log_id_len > 0) {
         sct->log_id = OPENSSL_memdup(log_id, log_id_len);
-        if (sct->log_id == NULL)
+        if (sct->log_id == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         sct->log_id_len = log_id_len;
     }
     return 1;
@@ -153,8 +157,10 @@ int SCT_set1_extensions(SCT *sct, const unsigned char *ext, size_t ext_len)
 
     if (ext != NULL && ext_len > 0) {
         sct->ext = OPENSSL_memdup(ext, ext_len);
-        if (sct->ext == NULL)
+        if (sct->ext == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         sct->ext_len = ext_len;
     }
     return 1;
@@ -177,8 +183,10 @@ int SCT_set1_signature(SCT *sct, const unsigned char *sig, size_t sig_len)
 
     if (sig != NULL && sig_len > 0) {
         sct->sig = OPENSSL_memdup(sig, sig_len);
-        if (sct->sig == NULL)
+        if (sct->sig == NULL) {
+            ERR_raise(ERR_LIB_CT, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
         sct->sig_len = sig_len;
     }
     return 1;

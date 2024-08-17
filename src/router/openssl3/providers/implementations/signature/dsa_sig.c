@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -22,6 +22,7 @@
 #include <openssl/dsa.h>
 #include <openssl/params.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 #include <openssl/proverr.h>
 #include "internal/nelem.h"
 #include "internal/sizes.h"
@@ -74,9 +75,6 @@ typedef struct {
      */
     unsigned int flag_allow_md : 1;
 
-    /* If this is set to 1 then the generated k is not random */
-    unsigned int nonce_type;
-
     char mdname[OSSL_MAX_NAME_SIZE];
 
     /* The Algorithm Identifier of the combined signature algorithm */
@@ -114,6 +112,7 @@ static void *dsa_newctx(void *provctx, const char *propq)
     if (propq != NULL && (pdsactx->propq = OPENSSL_strdup(propq)) == NULL) {
         OPENSSL_free(pdsactx);
         pdsactx = NULL;
+        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
     }
     return pdsactx;
 }
@@ -252,9 +251,7 @@ static int dsa_sign(void *vpdsactx, unsigned char *sig, size_t *siglen,
     if (mdsize != 0 && tbslen != mdsize)
         return 0;
 
-    ret = ossl_dsa_sign_int(0, tbs, tbslen, sig, &sltmp, pdsactx->dsa,
-                            pdsactx->nonce_type, pdsactx->mdname,
-                            pdsactx->libctx, pdsactx->propq);
+    ret = ossl_dsa_sign_int(0, tbs, tbslen, sig, &sltmp, pdsactx->dsa);
     if (ret <= 0)
         return 0;
 
@@ -461,17 +458,12 @@ static int dsa_get_ctx_params(void *vpdsactx, OSSL_PARAM *params)
     if (p != NULL && !OSSL_PARAM_set_utf8_string(p, pdsactx->mdname))
         return 0;
 
-    p = OSSL_PARAM_locate(params, OSSL_SIGNATURE_PARAM_NONCE_TYPE);
-    if (p != NULL && !OSSL_PARAM_set_uint(p, pdsactx->nonce_type))
-        return 0;
-
     return 1;
 }
 
 static const OSSL_PARAM known_gettable_ctx_params[] = {
     OSSL_PARAM_octet_string(OSSL_SIGNATURE_PARAM_ALGORITHM_ID, NULL, 0),
     OSSL_PARAM_utf8_string(OSSL_SIGNATURE_PARAM_DIGEST, NULL, 0),
-    OSSL_PARAM_uint(OSSL_SIGNATURE_PARAM_NONCE_TYPE, NULL),
     OSSL_PARAM_END
 };
 
@@ -507,10 +499,6 @@ static int dsa_set_ctx_params(void *vpdsactx, const OSSL_PARAM params[])
         if (!dsa_setup_md(pdsactx, mdname, mdprops))
             return 0;
     }
-    p = OSSL_PARAM_locate_const(params, OSSL_SIGNATURE_PARAM_NONCE_TYPE);
-    if (p != NULL
-        && !OSSL_PARAM_get_uint(p, &pdsactx->nonce_type))
-        return 0;
 
     return 1;
 }
@@ -518,7 +506,6 @@ static int dsa_set_ctx_params(void *vpdsactx, const OSSL_PARAM params[])
 static const OSSL_PARAM settable_ctx_params[] = {
     OSSL_PARAM_utf8_string(OSSL_SIGNATURE_PARAM_DIGEST, NULL, 0),
     OSSL_PARAM_utf8_string(OSSL_SIGNATURE_PARAM_PROPERTIES, NULL, 0),
-    OSSL_PARAM_uint(OSSL_SIGNATURE_PARAM_NONCE_TYPE, NULL),
     OSSL_PARAM_END
 };
 
@@ -610,5 +597,5 @@ const OSSL_DISPATCH ossl_dsa_signature_functions[] = {
       (void (*)(void))dsa_set_ctx_md_params },
     { OSSL_FUNC_SIGNATURE_SETTABLE_CTX_MD_PARAMS,
       (void (*)(void))dsa_settable_ctx_md_params },
-    OSSL_DISPATCH_END
+    { 0, NULL }
 };

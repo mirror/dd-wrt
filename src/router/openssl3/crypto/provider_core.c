@@ -29,7 +29,6 @@
 #include "internal/bio.h"
 #include "internal/core.h"
 #include "provider_local.h"
-#include "crypto/context.h"
 #ifndef FIPS_MODULE
 # include <openssl/self_test.h>
 #endif
@@ -73,10 +72,11 @@
  * The locks available are:
  *
  * The provider flag_lock: Used to control updates to the various provider
- * "flags" (flag_initialized and flag_activated).
+ * "flags" (flag_initialized, flag_activated, flag_fallback) and associated
+ * "counts" (activatecnt).
  *
- * The provider activatecnt_lock: Used to control updates to the provider
- * activatecnt value.
+ * The provider refcnt_lock: Only ever used to control updates to the provider
+ * refcnt value.
  *
  * The provider optbits_lock: Used to control access to the provider's
  * operation_bits and operation_bits_sz fields.
@@ -99,12 +99,12 @@
  * introducing the possibility of deadlock. The following rules MUST be adhered
  * to in order to avoid that:
  *  - Holding multiple locks at the same time is only allowed for the
- *    provider store lock, the provider activatecnt_lock and the provider flag_lock.
+ *    provider store lock, the provider flag_lock and the provider refcnt_lock.
  *  - When holding multiple locks they must be acquired in the following order of
  *    precedence:
  *        1) provider store lock
  *        2) provider flag_lock
- *        3) provider activatecnt_lock
+ *        3) provider refcnt_lock
  *  - When releasing locks they must be released in the reverse order to which
  *    they were acquired
  *  - No locks may be held when making an upcall. NOTE: Some common functions
@@ -142,13 +142,14 @@ struct ossl_provider_st {
     /* Flag bits */
     unsigned int flag_initialized:1;
     unsigned int flag_activated:1;
+    unsigned int flag_fallback:1; /* Can be used as fallback */
 
     /* Getting and setting the flags require synchronization */
     CRYPTO_RWLOCK *flag_lock;
 
     /* OpenSSL library side data */
     CRYPTO_REF_COUNT refcnt;
-    CRYPTO_RWLOCK *activatecnt_lock; /* For the activatecnt counter */
+    CRYPTO_RWLOCK *refcnt_lock;  /* For the ref counter */
     int activatecnt;
     char *name;
     char *path;
@@ -282,7 +283,7 @@ void ossl_provider_info_clear(OSSL_PROVIDER_INFO *info)
     sk_INFOPAIR_pop_free(info->parameters, infopair_free);
 }
 
-void ossl_provider_store_free(void *vstore)
+static void provider_store_free(void *vstore)
 {
     struct provider_store_st *store = vstore;
     size_t i;
@@ -304,7 +305,7 @@ void ossl_provider_store_free(void *vstore)
     OPENSSL_free(store);
 }
 
-void *ossl_provider_store_new(OSSL_LIB_CTX *ctx)
+static void *provider_store_new(OSSL_LIB_CTX *ctx)
 {
     struct provider_store_st *store = OPENSSL_zalloc(sizeof(*store));
 
@@ -315,7 +316,7 @@ void *ossl_provider_store_new(OSSL_LIB_CTX *ctx)
         || (store->child_cbs = sk_OSSL_PROVIDER_CHILD_CB_new_null()) == NULL
 #endif
         || (store->lock = CRYPTO_THREAD_lock_new()) == NULL) {
-        ossl_provider_store_free(store);
+        provider_store_free(store);
         return NULL;
     }
     store->libctx = ctx;
@@ -324,11 +325,19 @@ void *ossl_provider_store_new(OSSL_LIB_CTX *ctx)
     return store;
 }
 
+static const OSSL_LIB_CTX_METHOD provider_store_method = {
+    /* Needs to be freed before the child provider data is freed */
+    OSSL_LIB_CTX_METHOD_PRIORITY_1,
+    provider_store_new,
+    provider_store_free,
+};
+
 static struct provider_store_st *get_provider_store(OSSL_LIB_CTX *libctx)
 {
     struct provider_store_st *store = NULL;
 
-    store = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_PROVIDER_STORE_INDEX);
+    store = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_PROVIDER_STORE_INDEX,
+                                  &provider_store_method);
     if (store == NULL)
         ERR_raise(ERR_LIB_CRYPTO, ERR_R_INTERNAL_ERROR);
     return store;
@@ -371,8 +380,10 @@ int ossl_provider_info_add_to_store(OSSL_LIB_CTX *libctx,
     if (store->provinfosz == 0) {
         store->provinfo = OPENSSL_zalloc(sizeof(*store->provinfo)
                                          * BUILTINS_BLOCK_SIZE);
-        if (store->provinfo == NULL)
+        if (store->provinfo == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
         store->provinfosz = BUILTINS_BLOCK_SIZE;
     } else if (store->numprovinfo == store->provinfosz) {
         OSSL_PROVIDER_INFO *tmpbuiltins;
@@ -380,8 +391,10 @@ int ossl_provider_info_add_to_store(OSSL_LIB_CTX *libctx,
 
         tmpbuiltins = OPENSSL_realloc(store->provinfo,
                                       sizeof(*store->provinfo) * newsz);
-        if (tmpbuiltins == NULL)
+        if (tmpbuiltins == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             goto err;
+        }
         store->provinfo = tmpbuiltins;
         store->provinfosz = newsz;
     }
@@ -416,9 +429,12 @@ OSSL_PROVIDER *ossl_provider_find(OSSL_LIB_CTX *libctx, const char *name,
 #endif
 
         tmpl.name = (char *)name;
+        /*
+         * A "find" operation can sort the stack, and therefore a write lock is
+         * required.
+         */
         if (!CRYPTO_THREAD_write_lock(store->lock))
             return NULL;
-        sk_OSSL_PROVIDER_sort(store->providers);
         if ((i = sk_OSSL_PROVIDER_find(store->providers, &tmpl)) != -1)
             prov = sk_OSSL_PROVIDER_value(store->providers, i);
         CRYPTO_THREAD_unlock(store->lock);
@@ -440,29 +456,26 @@ static OSSL_PROVIDER *provider_new(const char *name,
 {
     OSSL_PROVIDER *prov = NULL;
 
-    if ((prov = OPENSSL_zalloc(sizeof(*prov))) == NULL)
-        return NULL;
-    if (!CRYPTO_NEW_REF(&prov->refcnt, 1)) {
+    if ((prov = OPENSSL_zalloc(sizeof(*prov))) == NULL
+#ifndef HAVE_ATOMICS
+        || (prov->refcnt_lock = CRYPTO_THREAD_lock_new()) == NULL
+#endif
+       ) {
         OPENSSL_free(prov);
-        return NULL;
-    }
-    if ((prov->activatecnt_lock = CRYPTO_THREAD_lock_new()) == NULL) {
-        ossl_provider_free(prov);
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
+    prov->refcnt = 1; /* 1 One reference to be returned */
+
     if ((prov->opbits_lock = CRYPTO_THREAD_lock_new()) == NULL
         || (prov->flag_lock = CRYPTO_THREAD_lock_new()) == NULL
+        || (prov->name = OPENSSL_strdup(name)) == NULL
         || (prov->parameters = sk_INFOPAIR_deep_copy(parameters,
                                                      infopair_copy,
                                                      infopair_free)) == NULL) {
         ossl_provider_free(prov);
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_CRYPTO_LIB);
-        return NULL;
-    }
-    if ((prov->name = OPENSSL_strdup(name)) == NULL) {
-        ossl_provider_free(prov);
+        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
 
@@ -475,7 +488,7 @@ int ossl_provider_up_ref(OSSL_PROVIDER *prov)
 {
     int ref = 0;
 
-    if (CRYPTO_UP_REF(&prov->refcnt, &ref) <= 0)
+    if (CRYPTO_UP_REF(&prov->refcnt, &ref, prov->refcnt_lock) <= 0)
         return 0;
 
 #ifndef FIPS_MODULE
@@ -516,7 +529,7 @@ static int provider_free_intern(OSSL_PROVIDER *prov, int deactivate)
  */
 OSSL_PROVIDER *ossl_provider_new(OSSL_LIB_CTX *libctx, const char *name,
                                  OSSL_provider_init_fn *init_function,
-                                 OSSL_PARAM *params, int noconfig)
+                                 int noconfig)
 {
     struct provider_store_st *store = NULL;
     OSSL_PROVIDER_INFO template;
@@ -538,7 +551,7 @@ OSSL_PROVIDER *ossl_provider_new(OSSL_LIB_CTX *libctx, const char *name,
             }
         }
         if (p->name == NULL) {
-            /* Check if this is a user added provider */
+            /* Check if this is a user added builtin provider */
             if (!CRYPTO_THREAD_read_lock(store->lock))
                 return NULL;
             for (i = 0, p = store->provinfo; i < store->numprovinfo; p++, i++) {
@@ -553,29 +566,8 @@ OSSL_PROVIDER *ossl_provider_new(OSSL_LIB_CTX *libctx, const char *name,
         template.init = init_function;
     }
 
-    if (params != NULL) {
-        int i;
-
-        template.parameters = sk_INFOPAIR_new_null();
-        if (template.parameters == NULL)
-            return NULL;
-
-        for (i = 0; params[i].key != NULL; i++) {
-            if (params[i].data_type != OSSL_PARAM_UTF8_STRING)
-                continue;
-            if (ossl_provider_info_add_parameter(&template, params[i].key,
-                                                 (char *)params[i].data) <= 0) {
-                sk_INFOPAIR_pop_free(template.parameters, infopair_free);
-                return NULL;
-            }
-        }
-    }
-
     /* provider_new() generates an error, so no need here */
     prov = provider_new(name, template.init, template.parameters);
-
-    if (params != NULL) /* We copied the parameters, let's free them */
-        sk_INFOPAIR_pop_free(template.parameters, infopair_free);
 
     if (prov == NULL)
         return NULL;
@@ -662,7 +654,7 @@ int ossl_provider_add_to_store(OSSL_PROVIDER *prov, OSSL_PROVIDER **actualprov,
 
     if (actualprov != NULL) {
         if (!ossl_provider_up_ref(actualtmp)) {
-            ERR_raise(ERR_LIB_CRYPTO, ERR_R_CRYPTO_LIB);
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             actualtmp = NULL;
             return 0;
         }
@@ -683,15 +675,6 @@ int ossl_provider_add_to_store(OSSL_PROVIDER *prov, OSSL_PROVIDER **actualprov,
         ossl_provider_deactivate(prov, 0);
         ossl_provider_free(prov);
     }
-#ifndef FIPS_MODULE
-    else {
-        /*
-         * This can be done outside the lock. We tolerate other threads getting
-         * the wrong result briefly when creating OSSL_DECODER_CTXs.
-         */
-        ossl_decoder_cache_flush(prov->libctx);
-    }
-#endif
 
     return 1;
 
@@ -705,7 +688,7 @@ void ossl_provider_free(OSSL_PROVIDER *prov)
     if (prov != NULL) {
         int ref = 0;
 
-        CRYPTO_DOWN_REF(&prov->refcnt, &ref);
+        CRYPTO_DOWN_REF(&prov->refcnt, &ref, prov->refcnt_lock);
 
         /*
          * When the refcount drops to zero, we clean up the provider.
@@ -747,8 +730,9 @@ void ossl_provider_free(OSSL_PROVIDER *prov)
             sk_INFOPAIR_pop_free(prov->parameters, infopair_free);
             CRYPTO_THREAD_lock_free(prov->opbits_lock);
             CRYPTO_THREAD_lock_free(prov->flag_lock);
-            CRYPTO_THREAD_lock_free(prov->activatecnt_lock);
-            CRYPTO_FREE_REF(&prov->refcnt);
+#ifndef HAVE_ATOMICS
+            CRYPTO_THREAD_lock_free(prov->refcnt_lock);
+#endif
             OPENSSL_free(prov);
         }
 #ifndef FIPS_MODULE
@@ -768,6 +752,7 @@ int ossl_provider_set_module_path(OSSL_PROVIDER *prov, const char *module_path)
         return 1;
     if ((prov->path = OPENSSL_strdup(module_path)) != NULL)
         return 1;
+    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -776,26 +761,20 @@ static int infopair_add(STACK_OF(INFOPAIR) **infopairsk, const char *name,
 {
     INFOPAIR *pair = NULL;
 
-    if ((pair = OPENSSL_zalloc(sizeof(*pair))) == NULL
-        || (pair->name = OPENSSL_strdup(name)) == NULL
-        || (pair->value = OPENSSL_strdup(value)) == NULL)
-        goto err;
+    if ((pair = OPENSSL_zalloc(sizeof(*pair))) != NULL
+        && (*infopairsk != NULL
+            || (*infopairsk = sk_INFOPAIR_new_null()) != NULL)
+        && (pair->name = OPENSSL_strdup(name)) != NULL
+        && (pair->value = OPENSSL_strdup(value)) != NULL
+        && sk_INFOPAIR_push(*infopairsk, pair) > 0)
+        return 1;
 
-    if ((*infopairsk == NULL
-         && (*infopairsk = sk_INFOPAIR_new_null()) == NULL)
-        || sk_INFOPAIR_push(*infopairsk, pair) <= 0) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_CRYPTO_LIB);
-        goto err;
-    }
-
-    return 1;
-
- err:
     if (pair != NULL) {
         OPENSSL_free(pair->name);
         OPENSSL_free(pair->value);
         OPENSSL_free(pair);
     }
+    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
     return 0;
 }
 
@@ -834,8 +813,10 @@ int OSSL_PROVIDER_set_default_search_path(OSSL_LIB_CTX *libctx,
 
     if (path != NULL) {
         p = OPENSSL_strdup(path);
-        if (p == NULL)
+        if (p == NULL) {
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             return 0;
+        }
     }
     if ((store = get_provider_store(libctx)) != NULL
             && CRYPTO_THREAD_write_lock(store->default_path_lock)) {
@@ -846,19 +827,6 @@ int OSSL_PROVIDER_set_default_search_path(OSSL_LIB_CTX *libctx,
     }
     OPENSSL_free(p);
     return 0;
-}
-
-const char *OSSL_PROVIDER_get0_default_search_path(OSSL_LIB_CTX *libctx)
-{
-    struct provider_store_st *store;
-    char *path = NULL;
-
-    if ((store = get_provider_store(libctx)) != NULL
-            && CRYPTO_THREAD_read_lock(store->default_path_lock)) {
-        path = store->default_path;
-        CRYPTO_THREAD_unlock(store->default_path_lock);
-    }
-    return path;
 }
 
 /*
@@ -910,8 +878,10 @@ static int provider_init(OSSL_PROVIDER *prov)
             if (store->default_path != NULL) {
                 allocated_load_dir = OPENSSL_strdup(store->default_path);
                 CRYPTO_THREAD_unlock(store->default_path_lock);
-                if (allocated_load_dir == NULL)
+                if (allocated_load_dir == NULL) {
+                    ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
                     goto end;
+                }
                 load_dir = allocated_load_dir;
             } else {
                 CRYPTO_THREAD_unlock(store->default_path_lock);
@@ -1104,9 +1074,8 @@ static int provider_deactivate(OSSL_PROVIDER *prov, int upcalls,
         return -1;
     }
 
-    CRYPTO_atomic_add(&prov->activatecnt, -1, &count, prov->activatecnt_lock);
 #ifndef FIPS_MODULE
-    if (count >= 1 && prov->ischild && upcalls) {
+    if (prov->activatecnt >= 2 && prov->ischild && upcalls) {
         /*
          * We have had a direct activation in this child libctx so we need to
          * now down the ref count in the parent provider. We do the actual down
@@ -1117,7 +1086,7 @@ static int provider_deactivate(OSSL_PROVIDER *prov, int upcalls,
     }
 #endif
 
-    if (count < 1)
+    if ((count = --prov->activatecnt) < 1)
         prov->flag_activated = 0;
 #ifndef FIPS_MODULE
     else
@@ -1138,14 +1107,6 @@ static int provider_deactivate(OSSL_PROVIDER *prov, int upcalls,
     if (lock) {
         CRYPTO_THREAD_unlock(prov->flag_lock);
         CRYPTO_THREAD_unlock(store->lock);
-        /*
-         * This can be done outside the lock. We tolerate other threads getting
-         * the wrong result briefly when creating OSSL_DECODER_CTXs.
-         */
-#ifndef FIPS_MODULE
-        if (count < 1)
-            ossl_decoder_cache_flush(prov->libctx);
-#endif
     }
 #ifndef FIPS_MODULE
     if (freeparent)
@@ -1198,24 +1159,16 @@ static int provider_activate(OSSL_PROVIDER *prov, int lock, int upcalls)
 #endif
         return -1;
     }
-    if (CRYPTO_atomic_add(&prov->activatecnt, 1, &count, prov->activatecnt_lock)) {
-        prov->flag_activated = 1;
 
-        if (count == 1 && store != NULL) {
-            ret = create_provider_children(prov);
-        }
+    count = ++prov->activatecnt;
+    prov->flag_activated = 1;
+
+    if (prov->activatecnt == 1 && store != NULL) {
+        ret = create_provider_children(prov);
     }
     if (lock) {
         CRYPTO_THREAD_unlock(prov->flag_lock);
         CRYPTO_THREAD_unlock(store->lock);
-        /*
-         * This can be done outside the lock. We tolerate other threads getting
-         * the wrong result briefly when creating OSSL_DECODER_CTXs.
-         */
-#ifndef FIPS_MODULE
-        if (count == 1)
-            ossl_decoder_cache_flush(prov->libctx);
-#endif
     }
 
     if (!ret)
@@ -1445,7 +1398,7 @@ int ossl_provider_doall_activated(OSSL_LIB_CTX *ctx,
     for (curr = max - 1; curr >= 0; curr--) {
         OSSL_PROVIDER *prov = sk_OSSL_PROVIDER_value(provs, curr);
 
-        if (!CRYPTO_THREAD_read_lock(prov->flag_lock))
+        if (!CRYPTO_THREAD_write_lock(prov->flag_lock))
             goto err_unlock;
         if (prov->flag_activated) {
             /*
@@ -1453,19 +1406,20 @@ int ossl_provider_doall_activated(OSSL_LIB_CTX *ctx,
              * to avoid upping the ref count on the parent provider, which we
              * must not do while holding locks.
              */
-            if (CRYPTO_UP_REF(&prov->refcnt, &ref) <= 0) {
+            if (CRYPTO_UP_REF(&prov->refcnt, &ref, prov->refcnt_lock) <= 0) {
                 CRYPTO_THREAD_unlock(prov->flag_lock);
                 goto err_unlock;
             }
             /*
              * It's already activated, but we up the activated count to ensure
              * it remains activated until after we've called the user callback.
-             * In theory this could mean the parent provider goes inactive,
-             * whilst still activated in the child for a short period. That's ok.
+             * We do this with no locking (because we already hold the locks)
+             * and no upcalls (which must not be called when locks are held). In
+             * theory this could mean the parent provider goes inactive, whilst
+             * still activated in the child for a short period. That's ok.
              */
-            if (!CRYPTO_atomic_add(&prov->activatecnt, 1, &ref,
-                                   prov->activatecnt_lock)) {
-                CRYPTO_DOWN_REF(&prov->refcnt, &ref);
+            if (provider_activate(prov, 0, 0) < 0) {
+                CRYPTO_DOWN_REF(&prov->refcnt, &ref, prov->refcnt_lock);
                 CRYPTO_THREAD_unlock(prov->flag_lock);
                 goto err_unlock;
             }
@@ -1504,32 +1458,13 @@ int ossl_provider_doall_activated(OSSL_LIB_CTX *ctx,
     for (curr++; curr < max; curr++) {
         OSSL_PROVIDER *prov = sk_OSSL_PROVIDER_value(provs, curr);
 
-        if (!CRYPTO_atomic_add(&prov->activatecnt, -1, &ref,
-                               prov->activatecnt_lock)) {
-            ret = 0;
-            continue;
-        }
-        if (ref < 1) {
-            /*
-             * Looks like we need to deactivate properly. We could just have
-             * done this originally, but it involves taking a write lock so
-             * we avoid it. We up the count again and do a full deactivation
-             */
-            if (CRYPTO_atomic_add(&prov->activatecnt, 1, &ref,
-                                  prov->activatecnt_lock))
-                provider_deactivate(prov, 0, 1);
-            else
-                ret = 0;
-        }
+        provider_deactivate(prov, 0, 1);
         /*
          * As above where we did the up-ref, we don't call ossl_provider_free
          * to avoid making upcalls. There should always be at least one ref
          * to the provider in the store, so this should never drop to 0.
          */
-        if (!CRYPTO_DOWN_REF(&prov->refcnt, &ref)) {
-            ret = 0;
-            continue;
-        }
+        CRYPTO_DOWN_REF(&prov->refcnt, &ref, prov->refcnt_lock);
         /*
          * Not much we can do if this assert ever fails. So we don't use
          * ossl_assert here.
@@ -1558,6 +1493,16 @@ int OSSL_PROVIDER_available(OSSL_LIB_CTX *libctx, const char *name)
         ossl_provider_free(prov);
     }
     return available;
+}
+
+/* Setters of Provider Object data */
+int ossl_provider_set_fallback(OSSL_PROVIDER *prov)
+{
+    if (prov == NULL)
+        return 0;
+
+    prov->flag_fallback = 1;
+    return 1;
 }
 
 /* Getters of Provider Object data */
@@ -1693,6 +1638,7 @@ int ossl_provider_set_operation_bit(OSSL_PROVIDER *provider, size_t bitnum)
 
         if (tmp == NULL) {
             CRYPTO_THREAD_unlock(provider->opbits_lock);
+            ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
             return 0;
         }
         provider->operation_bits = tmp;
@@ -1935,14 +1881,10 @@ OSSL_FUNC_BIO_free_fn ossl_core_bio_free;
 OSSL_FUNC_BIO_vprintf_fn ossl_core_bio_vprintf;
 OSSL_FUNC_BIO_vsnprintf_fn BIO_vsnprintf;
 static OSSL_FUNC_self_test_cb_fn core_self_test_get_callback;
-static OSSL_FUNC_get_entropy_fn rand_get_entropy;
-static OSSL_FUNC_get_user_entropy_fn rand_get_user_entropy;
-static OSSL_FUNC_cleanup_entropy_fn rand_cleanup_entropy;
-static OSSL_FUNC_cleanup_user_entropy_fn rand_cleanup_user_entropy;
-static OSSL_FUNC_get_nonce_fn rand_get_nonce;
-static OSSL_FUNC_get_user_nonce_fn rand_get_user_nonce;
-static OSSL_FUNC_cleanup_nonce_fn rand_cleanup_nonce;
-static OSSL_FUNC_cleanup_user_nonce_fn rand_cleanup_user_nonce;
+OSSL_FUNC_get_entropy_fn ossl_rand_get_entropy;
+OSSL_FUNC_cleanup_entropy_fn ossl_rand_cleanup_entropy;
+OSSL_FUNC_get_nonce_fn ossl_rand_get_nonce;
+OSSL_FUNC_cleanup_nonce_fn ossl_rand_cleanup_nonce;
 #endif
 OSSL_FUNC_CRYPTO_malloc_fn CRYPTO_malloc;
 OSSL_FUNC_CRYPTO_zalloc_fn CRYPTO_zalloc;
@@ -2103,68 +2045,6 @@ static void core_self_test_get_callback(OPENSSL_CORE_CTX *libctx,
     OSSL_SELF_TEST_get_callback((OSSL_LIB_CTX *)libctx, cb, cbarg);
 }
 
-static size_t rand_get_entropy(const OSSL_CORE_HANDLE *handle,
-                               unsigned char **pout, int entropy,
-                               size_t min_len, size_t max_len)
-{
-    return ossl_rand_get_entropy((OSSL_LIB_CTX *)core_get_libctx(handle),
-                                 pout, entropy, min_len, max_len);
-}
-
-static size_t rand_get_user_entropy(const OSSL_CORE_HANDLE *handle,
-                                    unsigned char **pout, int entropy,
-                                    size_t min_len, size_t max_len)
-{
-    return ossl_rand_get_user_entropy((OSSL_LIB_CTX *)core_get_libctx(handle),
-                                      pout, entropy, min_len, max_len);
-}
-
-static void rand_cleanup_entropy(const OSSL_CORE_HANDLE *handle,
-                                 unsigned char *buf, size_t len)
-{
-    ossl_rand_cleanup_entropy((OSSL_LIB_CTX *)core_get_libctx(handle),
-                              buf, len);
-}
-
-static void rand_cleanup_user_entropy(const OSSL_CORE_HANDLE *handle,
-                                      unsigned char *buf, size_t len)
-{
-    ossl_rand_cleanup_user_entropy((OSSL_LIB_CTX *)core_get_libctx(handle),
-                                   buf, len);
-}
-
-static size_t rand_get_nonce(const OSSL_CORE_HANDLE *handle,
-                             unsigned char **pout,
-                             size_t min_len, size_t max_len,
-                             const void *salt, size_t salt_len)
-{
-    return ossl_rand_get_nonce((OSSL_LIB_CTX *)core_get_libctx(handle),
-                               pout, min_len, max_len, salt, salt_len);
-}
-
-static size_t rand_get_user_nonce(const OSSL_CORE_HANDLE *handle,
-                                  unsigned char **pout,
-                                  size_t min_len, size_t max_len,
-                                  const void *salt, size_t salt_len)
-{
-    return ossl_rand_get_user_nonce((OSSL_LIB_CTX *)core_get_libctx(handle),
-                                    pout, min_len, max_len, salt, salt_len);
-}
-
-static void rand_cleanup_nonce(const OSSL_CORE_HANDLE *handle,
-                               unsigned char *buf, size_t len)
-{
-    ossl_rand_cleanup_nonce((OSSL_LIB_CTX *)core_get_libctx(handle),
-                            buf, len);
-}
-
-static void rand_cleanup_user_nonce(const OSSL_CORE_HANDLE *handle,
-                               unsigned char *buf, size_t len)
-{
-    ossl_rand_cleanup_user_nonce((OSSL_LIB_CTX *)core_get_libctx(handle),
-                                 buf, len);
-}
-
 static const char *core_provider_get0_name(const OSSL_CORE_HANDLE *prov)
 {
     return OSSL_PROVIDER_get0_name((const OSSL_PROVIDER *)prov);
@@ -2258,14 +2138,10 @@ static const OSSL_DISPATCH core_dispatch_[] = {
     { OSSL_FUNC_BIO_VPRINTF, (void (*)(void))ossl_core_bio_vprintf },
     { OSSL_FUNC_BIO_VSNPRINTF, (void (*)(void))BIO_vsnprintf },
     { OSSL_FUNC_SELF_TEST_CB, (void (*)(void))core_self_test_get_callback },
-    { OSSL_FUNC_GET_ENTROPY, (void (*)(void))rand_get_entropy },
-    { OSSL_FUNC_GET_USER_ENTROPY, (void (*)(void))rand_get_user_entropy },
-    { OSSL_FUNC_CLEANUP_ENTROPY, (void (*)(void))rand_cleanup_entropy },
-    { OSSL_FUNC_CLEANUP_USER_ENTROPY, (void (*)(void))rand_cleanup_user_entropy },
-    { OSSL_FUNC_GET_NONCE, (void (*)(void))rand_get_nonce },
-    { OSSL_FUNC_GET_USER_NONCE, (void (*)(void))rand_get_user_nonce },
-    { OSSL_FUNC_CLEANUP_NONCE, (void (*)(void))rand_cleanup_nonce },
-    { OSSL_FUNC_CLEANUP_USER_NONCE, (void (*)(void))rand_cleanup_user_nonce },
+    { OSSL_FUNC_GET_ENTROPY, (void (*)(void))ossl_rand_get_entropy },
+    { OSSL_FUNC_CLEANUP_ENTROPY, (void (*)(void))ossl_rand_cleanup_entropy },
+    { OSSL_FUNC_GET_NONCE, (void (*)(void))ossl_rand_get_nonce },
+    { OSSL_FUNC_CLEANUP_NONCE, (void (*)(void))ossl_rand_cleanup_nonce },
 #endif
     { OSSL_FUNC_CRYPTO_MALLOC, (void (*)(void))CRYPTO_malloc },
     { OSSL_FUNC_CRYPTO_ZALLOC, (void (*)(void))CRYPTO_zalloc },
@@ -2299,6 +2175,6 @@ static const OSSL_DISPATCH core_dispatch_[] = {
     { OSSL_FUNC_CORE_OBJ_ADD_SIGID, (void (*)(void))core_obj_add_sigid },
     { OSSL_FUNC_CORE_OBJ_CREATE, (void (*)(void))core_obj_create },
 #endif
-    OSSL_DISPATCH_END
+    { 0, NULL }
 };
 static const OSSL_DISPATCH *core_dispatch = core_dispatch_;

@@ -1,4 +1,4 @@
-# Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2016-2018 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -15,7 +15,6 @@ my $server_encrypting = 0;
 my $client_encrypting = 0;
 my $etm = 0;
 
-use constant DTLS_RECORD_HEADER_LENGTH => 13;
 use constant TLS_RECORD_HEADER_LENGTH => 5;
 
 #Record types
@@ -36,8 +35,6 @@ my %record_type = (
 );
 
 use constant {
-    VERS_DTLS_1_2 => 0xfefd,
-    VERS_DTLS_1 => 0xfeff,
     VERS_TLS_1_4 => 0x0305,
     VERS_TLS_1_3 => 0x0304,
     VERS_TLS_1_2 => 0x0303,
@@ -47,9 +44,7 @@ use constant {
     VERS_SSL_LT_3_0 => 0x02ff
 };
 
-our %tls_version = (
-    VERS_DTLS_1_2, "DTLS1.2",
-    VERS_DTLS_1, "DTLS1",
+my %tls_version = (
     VERS_TLS_1_3, "TLS1.3",
     VERS_TLS_1_2, "TLS1.2",
     VERS_TLS_1_1, "TLS1.1",
@@ -65,81 +60,41 @@ sub get_records
     my $server = shift;
     my $flight = shift;
     my $packet = shift;
-    my $isdtls = shift;
     my $partial = "";
     my @record_list = ();
     my @message_list = ();
-    my $record_hdr_len = $isdtls ? DTLS_RECORD_HEADER_LENGTH
-                                 : TLS_RECORD_HEADER_LENGTH;
 
     my $recnum = 1;
     while (length ($packet) > 0) {
         print " Record $recnum ", $server ? "(server -> client)\n"
                                           : "(client -> server)\n";
 
-        my $content_type;
-        my $version;
-        my $len;
-        my $epoch;
-        my $seq;
+        #Get the record header (unpack can't fail if $packet is too short)
+        my ($content_type, $version, $len) = unpack('Cnn', $packet);
 
-        if ($isdtls) {
-            my $seqhi;
-            my $seqmi;
-            my $seqlo;
-            #Get the record header (unpack can't fail if $packet is too short)
-            ($content_type, $version, $epoch,
-                $seqhi, $seqmi, $seqlo, $len) = unpack('Cnnnnnn', $packet);
-            $seq = ($seqhi << 32) | ($seqmi << 16) | $seqlo
-        } else {
-            #Get the record header (unpack can't fail if $packet is too short)
-            ($content_type, $version, $len) = unpack('Cnn', $packet);
-        }
-
-        if (length($packet) < $record_hdr_len + ($len // 0)) {
+        if (length($packet) < TLS_RECORD_HEADER_LENGTH + ($len // 0)) {
             print "Partial data : ".length($packet)." bytes\n";
             $partial = $packet;
             last;
         }
 
-        my $data = substr($packet, $record_hdr_len, $len);
+        my $data = substr($packet, TLS_RECORD_HEADER_LENGTH, $len);
 
         print "  Content type: ".$record_type{$content_type}."\n";
         print "  Version: $tls_version{$version}\n";
-        if($isdtls) {
-            print "  Epoch: $epoch\n";
-            print "  Sequence: $seq\n";
-        }
         print "  Length: $len\n";
 
-        my $record;
-        if ($isdtls) {
-            $record = TLSProxy::Record->new_dtls(
-                $flight,
-                $content_type,
-                $version,
-                $epoch,
-                $seq,
-                $len,
-                0,
-                $len,       # len_real
-                $len,       # decrypt_len
-                $data,      # data
-                $data       # decrypt_data
-            );
-        } else {
-            $record = TLSProxy::Record->new(
-                $flight,
-                $content_type,
-                $version,
-                $len,
-                0,
-                $len,  # len_real
-                $len,  # decrypt_len
-                $data, # data
-                $data  # decrypt_data
-            );
-        }
+        my $record = TLSProxy::Record->new(
+            $flight,
+            $content_type,
+            $version,
+            $len,
+            0,
+            $len,       # len_real
+            $len,       # decrypt_len
+            $data,      # data
+            $data       # decrypt_data
+        );
 
         if ($content_type != RT_CCS
                 && (!TLSProxy::Proxy->is_tls13()
@@ -163,10 +118,10 @@ sub get_records
         push @record_list, $record;
 
         #Now figure out what messages are contained within this record
-        my @messages = TLSProxy::Message->get_messages($server, $record, $isdtls);
+        my @messages = TLSProxy::Message->get_messages($server, $record);
         push @message_list, @messages;
 
-        $packet = substr($packet, $record_hdr_len + $len);
+        $packet = substr($packet, TLS_RECORD_HEADER_LENGTH + $len);
         $recnum++;
     }
 
@@ -206,34 +161,6 @@ sub etm
     return $etm;
 }
 
-sub new_dtls
-{
-    my $class = shift;
-    my ($flight,
-        $content_type,
-        $version,
-        $epoch,
-        $seq,
-        $len,
-        $sslv2,
-        $len_real,
-        $decrypt_len,
-        $data,
-        $decrypt_data) = @_;
-    return $class->init(1,
-        $flight,
-        $content_type,
-        $version,
-        $epoch,
-        $seq,
-        $len,
-        $sslv2,
-        $len_real,
-        $decrypt_len,
-        $data,
-        $decrypt_data);
-}
-
 sub new
 {
     my $class = shift;
@@ -246,44 +173,11 @@ sub new
         $decrypt_len,
         $data,
         $decrypt_data) = @_;
-    return $class->init(
-        0,
-        $flight,
-        $content_type,
-        $version,
-        0, #epoch
-        0, #seq
-        $len,
-        $sslv2,
-        $len_real,
-        $decrypt_len,
-        $data,
-        $decrypt_data);
-}
-
-sub init
-{
-    my $class = shift;
-    my ($isdtls,
-        $flight,
-        $content_type,
-        $version,
-        $epoch,
-        $seq,
-        $len,
-        $sslv2,
-        $len_real,
-        $decrypt_len,
-        $data,
-        $decrypt_data) = @_;
 
     my $self = {
-        isdtls => $isdtls,
         flight => $flight,
         content_type => $content_type,
         version => $version,
-        epoch => $epoch,
-        seq => $seq,
         len => $len,
         sslv2 => $sslv2,
         len_real => $len_real,
@@ -391,21 +285,12 @@ sub reconstruct_record
     if ($self->sslv2) {
         $data = pack('n', $self->len | 0x8000);
     } else {
-        if($self->{isdtls}) {
-            my $seqhi = ($self->seq >> 32) & 0xffff;
-            my $seqmi = ($self->seq >> 16) & 0xffff;
-            my $seqlo = ($self->seq >> 0) & 0xffff;
-            $data = pack('Cnnnnnn', $self->content_type, $self->version,
-                         $self->epoch, $seqhi, $seqmi, $seqlo, $self->len);
+        if (TLSProxy::Proxy->is_tls13() && $self->encrypted) {
+            $data = pack('Cnn', $self->outer_content_type, $self->version,
+                         $self->len);
         } else {
-            if (TLSProxy::Proxy->is_tls13() && $self->encrypted) {
-                $data = pack('Cnn', $self->outer_content_type, $self->version,
-                             $self->len);
-            }
-            else {
-                $data = pack('Cnn', $self->content_type, $self->version,
-                             $self->len);
-            }
+            $data = pack('Cnn', $self->content_type, $self->version,
+                         $self->len);
         }
 
     }
@@ -485,22 +370,6 @@ sub content_type
     }
     return $self->{content_type};
 }
-sub epoch
-{
-    my $self = shift;
-    if (@_) {
-        $self->{epoch} = shift;
-    }
-    return $self->{epoch};
-}
-sub seq
-{
-    my $self = shift;
-    if (@_) {
-        $self->{seq} = shift;
-    }
-    return $self->{seq};
-}
 sub encrypted
 {
     my $self = shift;
@@ -522,9 +391,10 @@ sub is_fatal_alert
     my $self = shift;
     my $server = shift;
 
-    if (($self->{flight} & 1) == $server && $self->{content_type} == RT_ALERT) {
-        my ($level, $description) = unpack('CC', $self->decrypt_data);
-        return $description if ($level == 2);
+    if (($self->{flight} & 1) == $server
+        && $self->{content_type} == TLSProxy::Record::RT_ALERT) {
+        my ($level, $alert) = unpack('CC', $self->decrypt_data);
+        return $alert if ($level == 2);
     }
     return 0;
 }

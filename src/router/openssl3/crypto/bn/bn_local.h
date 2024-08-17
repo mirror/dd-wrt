@@ -243,11 +243,8 @@ BN_ULONG bn_sub_words(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
                       int num);
 
 struct bignum_st {
-    BN_ULONG *d;                /*
-                                 * Pointer to an array of 'BN_BITS2' bit
-                                 * chunks. These chunks are organised in
-                                 * a least significant chunk first order.
-                                 */
+    BN_ULONG *d;                /* Pointer to an array of 'BN_BITS2' bit
+                                 * chunks. */
     int top;                    /* Index of last used d +1. */
     /* The next are internal book keeping for bn_expand. */
     int dmax;                   /* Size of the d array. */

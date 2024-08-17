@@ -32,6 +32,7 @@ DSA_METHOD *DSA_meth_new(const char *name, int flags)
         OPENSSL_free(dsam);
     }
 
+    ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
     return NULL;
 }
 
@@ -57,6 +58,7 @@ DSA_METHOD *DSA_meth_dup(const DSA_METHOD *dsam)
         OPENSSL_free(ret);
     }
 
+    ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
     return NULL;
 }
 
@@ -69,8 +71,10 @@ int DSA_meth_set1_name(DSA_METHOD *dsam, const char *name)
 {
     char *tmpname = OPENSSL_strdup(name);
 
-    if (tmpname == NULL)
+    if (tmpname == NULL) {
+        ERR_raise(ERR_LIB_DSA, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     OPENSSL_free(dsam->name);
     dsam->name = tmpname;

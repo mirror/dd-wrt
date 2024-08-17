@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2019, Oracle and/or its affiliates.  All rights reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -23,7 +23,6 @@
 #include "crypto/rand_pool.h"
 #include "drbg_local.h"
 #include "prov/seeding.h"
-#include "crypto/context.h"
 
 typedef struct crng_test_global_st {
     unsigned char crngt_prev[EVP_MAX_MD_SIZE];
@@ -53,7 +52,7 @@ static int crngt_get_entropy(PROV_CTX *provctx, const EVP_MD *digest,
     return 0;
 }
 
-void ossl_rand_crng_ctx_free(void *vcrngt_glob)
+static void rand_crng_ossl_ctx_free(void *vcrngt_glob)
 {
     CRNG_TEST_GLOBAL *crngt_glob = vcrngt_glob;
 
@@ -62,7 +61,7 @@ void ossl_rand_crng_ctx_free(void *vcrngt_glob)
     OPENSSL_free(crngt_glob);
 }
 
-void *ossl_rand_crng_ctx_new(OSSL_LIB_CTX *ctx)
+static void *rand_crng_ossl_ctx_new(OSSL_LIB_CTX *ctx)
 {
     CRNG_TEST_GLOBAL *crngt_glob = OPENSSL_zalloc(sizeof(*crngt_glob));
 
@@ -82,6 +81,12 @@ void *ossl_rand_crng_ctx_new(OSSL_LIB_CTX *ctx)
 
     return crngt_glob;
 }
+
+static const OSSL_LIB_CTX_METHOD rand_crng_ossl_ctx_method = {
+    OSSL_LIB_CTX_METHOD_DEFAULT_PRIORITY,
+    rand_crng_ossl_ctx_new,
+    rand_crng_ossl_ctx_free,
+};
 
 static int prov_crngt_compare_previous(const unsigned char *prev,
                                        const unsigned char *cur,
@@ -108,7 +113,8 @@ size_t ossl_crngt_get_entropy(PROV_DRBG *drbg,
     int crng_test_pass = 1;
     OSSL_LIB_CTX *libctx = ossl_prov_ctx_get0_libctx(drbg->provctx);
     CRNG_TEST_GLOBAL *crngt_glob
-        = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_RAND_CRNGT_INDEX);
+        = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_RAND_CRNGT_INDEX,
+                                &rand_crng_ossl_ctx_method);
     OSSL_CALLBACK *stcb = NULL;
     void *stcbarg = NULL;
     OSSL_SELF_TEST *st = NULL;

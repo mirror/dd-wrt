@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2015-2021 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -40,8 +40,10 @@ static async_ctx *async_ctx_new(void)
         return NULL;
 
     nctx = OPENSSL_malloc(sizeof(*nctx));
-    if (nctx == NULL)
+    if (nctx == NULL) {
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
         goto err;
+    }
 
     async_fibre_init_dispatcher(&nctx->dispatcher);
     nctx->currjob = NULL;
@@ -80,8 +82,10 @@ static ASYNC_JOB *async_job_new(void)
     ASYNC_JOB *job = NULL;
 
     job = OPENSSL_zalloc(sizeof(*job));
-    if (job == NULL)
+    if (job == NULL) {
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
         return NULL;
+    }
 
     job->status = ASYNC_JOB_RUNNING;
 
@@ -252,6 +256,7 @@ int ASYNC_start_job(ASYNC_JOB **job, ASYNC_WAIT_CTX *wctx, int *ret,
         if (args != NULL) {
             ctx->currjob->funcargs = OPENSSL_malloc(size);
             if (ctx->currjob->funcargs == NULL) {
+                ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
                 async_release_job(ctx->currjob);
                 ctx->currjob = NULL;
                 return ASYNC_ERR;
@@ -335,14 +340,13 @@ int async_init(void)
         return 0;
     }
 
-    return async_local_init();
+    return 1;
 }
 
 void async_deinit(void)
 {
     CRYPTO_THREAD_cleanup_local(&ctxkey);
     CRYPTO_THREAD_cleanup_local(&poolkey);
-    async_local_deinit();
 }
 
 int ASYNC_init_thread(size_t max_size, size_t init_size)
@@ -362,12 +366,14 @@ int ASYNC_init_thread(size_t max_size, size_t init_size)
         return 0;
 
     pool = OPENSSL_zalloc(sizeof(*pool));
-    if (pool == NULL)
+    if (pool == NULL) {
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
         return 0;
+    }
 
     pool->jobs = sk_ASYNC_JOB_new_reserve(NULL, init_size);
     if (pool->jobs == NULL) {
-        ERR_raise(ERR_LIB_ASYNC, ERR_R_CRYPTO_LIB);
+        ERR_raise(ERR_LIB_ASYNC, ERR_R_MALLOC_FAILURE);
         OPENSSL_free(pool);
         return 0;
     }
