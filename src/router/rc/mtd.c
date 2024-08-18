@@ -310,6 +310,7 @@ static int write_main(int argc, char *argv[])
 	const char *mtd = argv[2];
 	int writeubi = 0;
 	int writeubifs = 0;
+	int writeubiformat = 0;
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
@@ -347,24 +348,12 @@ static int write_main(int argc, char *argv[])
 		}
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
-		if (!nvram_match("ignore_flashpart", "1"))
-			mtd = "rootfs";
+		writeubiformat = 1;
+		mtd = "rootfs";
 		eval("startservice", "finishupgrade", "-f");
-		FILE *fp = fopen("/sys/class/mtd/mtd18/offset", "rb");
-		if (fp) {
-			int part;
-			fscanf(fp, "%d", &part);
-			fclose(fp);
-			fprintf(stderr, "partition offset is %d\n", part);
-//			if (part = 0x16777216) {
-				fprintf(stderr,
-					"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
-				eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
-//			} else {
-//				fprintf(stderr,
-//					"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)\n");
-//				eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x7a00000(fs),0x6100000@0x1000000(fs_1)");
-//			}
+		fprintf(stderr,
+			"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
+		eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
 		}
 		break;
 	}
@@ -622,6 +611,14 @@ rewrite:;
 		p = popen(cmdline, "wb");
 	}
 
+	if (writeubiformat) {
+		close(mtd_fd);
+		mtd_fd = -1;
+		char cmdline[64];
+		sprintf(cmdline, "ubiformat /dev/mtd18 -y -f - --image-size=%d", ROUNDUP(trx.len, mtd_info.erasesize));
+		p = popen(cmdline, "wb");
+	}
+
 	/* 
 	 * Allocate temporary buffer 
 	 */
@@ -733,7 +730,7 @@ rewrite:;
 again:;
 			dd_loginfo("flash", "write block [%d] at [0x%08X]", (base + (i * mtd_info.erasesize)),
 				   base + (i * mtd_info.erasesize) + badblocks);
-			if (!writeubifs) {
+			if (!writeubifs && !writeubiformat) {
 				erase_info.start = base + (i * mtd_info.erasesize);
 				memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
 				tmp_erase_info.start += badblocks;
@@ -775,7 +772,7 @@ again:;
 			}
 		}
 	}
-	if (writeubifs)
+	if (writeubifs || writeubiformat)
 		pclose(p);
 	dd_loginfo("flash", "\ndone [%d]", i * mtd_info.erasesize);
 	/* 
