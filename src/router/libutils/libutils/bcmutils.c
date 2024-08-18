@@ -1718,7 +1718,7 @@ char *get_filter_services(void)
 {
 	l7filters *filters = filters_list;
 	char temp[128] = "";
-	char *proto[] = { "l7", "p2p", "dpi", "risk" };
+	char *proto[] = { "l7", "p2p", "dpi", "risk", "custom" };
 	char *services = NULL;
 
 	while (filters->name) // add l7 and p2p filters
@@ -1833,6 +1833,8 @@ filters *get_filters_list(void)
 			s_filters[count].proto = 6;
 		if (!strcmp(protocol, "risk"))
 			s_filters[count].proto = 7;
+		if (!strcmp(protocol, "custom"))
+			s_filters[count].proto = 8;
 
 		/*
 		 * $PORT 

@@ -151,7 +151,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int
 	if (idx == 10)
 		idx = 0;
 
-	if (name && (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry")))
+	if (name && (!strcmp(name, "windows-telemetry") || !strcmp(name, "ubnt-telemetry") || !strcmp(name, "ad-telemetry")))
 		return;
 	if (strstr(type, "udp") || strstr(type, "both")) {
 		eval("iptables", "-t", "mangle", "-A", chain, "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark",
