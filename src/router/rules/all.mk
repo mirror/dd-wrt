@@ -121,6 +121,10 @@ ifeq ($(CONFIG_ALPINE),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
+ifeq ($(CONFIG_VENTANA),y)
+export SSLPATH=$(TOP)/openssl3
+include rules/openssl3.mk
+endif
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
 include rules/eou.mk
