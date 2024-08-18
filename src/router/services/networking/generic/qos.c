@@ -541,7 +541,7 @@ static void aqos_tables(void)
 			int count = 0;
 			while (s_filters[count].name != NULL) {
 				if (!strcmp(s_filters[count].name, proto)) {
-					char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk" };
+					char *protos[7] = { "tcp", "udp", "both", "l7", "dpi", "p2p", "risk", "custom" };
 					strcpy(proto2, protos[s_filters[count].proto - 1]);
 					strcpy(proto1, s_filters[count].name);
 					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
