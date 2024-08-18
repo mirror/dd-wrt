@@ -1653,19 +1653,19 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	char *newsfe = websGetVar(wp, "sfe", NULL);
 	if (newsfe) {
 		need_reboot = 0;
-	    if (atoi(newsfe) > 1 && sfe < 2)
-		need_reboot = 1;
-	    if (atoi(newsfe) < 2 && sfe > 1)
-		need_reboot = 1;
-	if (need_reboot)
-		nvram_seti("do_reboot", 1);
+		if (atoi(newsfe) > 1 && sfe < 2)
+			need_reboot = 1;
+		if (atoi(newsfe) < 2 && sfe > 1)
+			need_reboot = 1;
+		if (need_reboot)
+			nvram_seti("do_reboot", 1);
 	}
 #elif defined(HAVE_IPQ6018)
 	char *wproto = nvram_safe_get("wan_proto");
 	char *newwproto = websGetVar(wp, "wan_proto", NULL);
 	if (newwproto && *wproto) {
-		if (strcmp(wproto,newwproto))
-		    need_reboot=1;
+		if (strcmp(wproto, newwproto))
+			need_reboot = 1;
 	}
 #else
 	if (*nvram_safe_get("ctf_disable")) {
@@ -2024,8 +2024,8 @@ do_apply_post(char *url, webs_t stream, size_t len, char *boundary)
 		if (len) {
 			char *buf = malloc(len);
 			if (!buf) {
-				dd_logerror("httpd",
-					    "The POST data exceed length limit! (remaining request of length %ld failed)", len);
+				dd_logerror("httpd", "The POST data exceed length limit! (remaining request of length %ld failed)",
+					    len);
 				return -1;
 			}
 			wfgets(buf, len, stream, NULL);

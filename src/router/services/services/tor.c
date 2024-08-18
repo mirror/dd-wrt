@@ -97,8 +97,8 @@ void start_tor(void)
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
 	if (usecrypto) {
-	    fprintf(fp, "HardwareAccel 1\n");
-	    fprintf(fp, "AccelName devcrypto\n");
+		fprintf(fp, "HardwareAccel 1\n");
+		fprintf(fp, "AccelName devcrypto\n");
 	}
 	fprintf(fp, "Address %s\n", nvram_invmatch("tor_address", "") ? nvram_safe_get("tor_address") : get_wan_ipaddr());
 	if (nvram_invmatch("tor_id", ""))

@@ -404,9 +404,9 @@ int active_wireless_if(webs_t wp, int argc, char_t **argv, char *iface, char *vi
 		else
 			qual = (signal + 100) * 20;
 
-		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d','0','0','0','0','%s','%s'", mac,
-			  displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_rssi[0], chain_rssi[1],
-			  chain_rssi[2], chain_rssi[3], nvram_nget("%s_label", iface), iface);
+		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d','%d','%d','%d','%d','0','0','0','0','%s','%s'",
+			  mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual, chain_rssi[0],
+			  chain_rssi[1], chain_rssi[2], chain_rssi[3], nvram_nget("%s_label", iface), iface);
 	}
 
 	return globalcnt;

@@ -123,7 +123,7 @@ void start_dhcp6c(void)
 			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
 	} else {
 		//sla_len = 64 - ipv6_pf_len ?: 64;    // egc: why this ? This will stop working if prefix is 64 which can work for one subnet
-		sla_len = (64 - ipv6_pf_len < 0 )  ? 0 : (64 - ipv6_pf_len);
+		sla_len = (64 - ipv6_pf_len < 0) ? 0 : (64 - ipv6_pf_len);
 
 		if ((fpc = fopen("/etc/dhcp6c.conf", "w"))) {
 			fprintf(fpc,
@@ -188,13 +188,15 @@ void start_dhcp6c(void)
 			fprintf(fpc,
 				"};\n"
 				"id-assoc pd 0 {\n"
-				"prefix ::/%d infinity;\n", ipv6_pf_len);
+				"prefix ::/%d infinity;\n",
+				ipv6_pf_len);
 			if (nvram_matchi("dhcp6c_custom", 0)) {
 				strlcpy(ipv6_iflist, "br0", sizeof(ipv6_iflist));
 			} else {
 				strlcpy(ipv6_iflist, nvram_safe_get("dnsipv6_interfaces"), sizeof(ipv6_iflist));
 			}
-			foreach(ifname, ipv6_iflist, next) {
+			foreach(ifname, ipv6_iflist, next)
+			{
 				fprintf(fpc,
 					" prefix-interface %s {\n"
 					"  sla-id %d;\n"
@@ -203,9 +205,8 @@ void start_dhcp6c(void)
 					ifname, sla_id, sla_len);
 				sla_id++;
 			}
-			fprintf(fpc,
-				"};\n"
-				"id-assoc na 0 { };\n");
+			fprintf(fpc, "};\n"
+				     "id-assoc na 0 { };\n");
 			fclose(fpc);
 		}
 	}

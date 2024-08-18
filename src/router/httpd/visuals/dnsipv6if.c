@@ -105,4 +105,3 @@ EJ_VISIBLE void ej_show_dnsipv6if(webs_t wp, int argc, char_t **argv)
 	//websWrite(wp, "</div>\n"); //end hide show
 	//websWrite(wp, "</fieldset><br />\n");
 }
-

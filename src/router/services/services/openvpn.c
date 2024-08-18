@@ -33,7 +33,6 @@
 #include <utils.h>
 #ifdef HAVE_OPENVPN
 
-
 #if defined(HAVE_IPQ806X)
 #define usecrypto 1
 #elif defined(HAVE_IPQ6018)

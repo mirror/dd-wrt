@@ -3374,8 +3374,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"apup\\\" %s >\" + wl_basic.apup + \"</option>\");\n",
 						nvram_match(wl_mode, "apup") ? "selected=\\\"selected\\\"" : "");
-				
-				
 				}
 			}
 #endif
@@ -4398,8 +4396,6 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"apup\\\" %s >\" + wl_basic.apup + \"</option>\");\n",
 						nvram_match(wl_mode, "apup") ? "selected=\\\"selected\\\"" : "");
-				
-				
 				}
 			}
 #endif
@@ -5850,7 +5846,6 @@ static int nomesh(const char *prefix)
 {
 	return (!nvram_nmatch("mesh", "%s_mode", prefix));
 }
-
 
 static int aponly_wpa3(const char *prefix)
 {

@@ -1842,7 +1842,8 @@ void qos_add_svc(webs_t wp)
 	if (get_svc(add_svc, protocol, ports))
 		return;
 
-	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0 || strcmp(protocol, "custom") == 0) {
+	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0 ||
+	    strcmp(protocol, "custom") == 0) {
 		int slen = strlen(add_svc);
 
 		for (i = 0; i < slen; i++)

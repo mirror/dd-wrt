@@ -192,7 +192,7 @@ static int alreadyshowed(char *path)
 {
 	char *sub = NULL;
 	if (!path)
-	    return 0;
+		return 0;
 	if (path) {
 		if (strstr(path, "/proc/"))
 			sub = strdup(path);
