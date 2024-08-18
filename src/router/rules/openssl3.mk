@@ -83,17 +83,18 @@ openssl-install:
 #endif
 ifeq ($(CONFIG_FREERADIUS),y)
 	$(MAKE) -C openssl3 build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-install -D openssl3/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+	-install -D openssl3/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl 
 endif
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
 	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 
-	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3
+	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3 $(INSTALLDIR)/openssl/usr/lib/ossl-modules
 	cp openssl3/apps/openssl.cnf $(INSTALLDIR)/openssl/etc/ssl/
 	-cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
 #	sed 's!engines = engines_sect!#&!' $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 	cp openssl3/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
 	cp openssl3/apps/afalg.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
+	cp openssl3/providers/*.so $(INSTALLDIR)/openssl/usr/lib/ossl-modules
 
 openssl-clean:
 	$(MAKE) -C openssl3 clean MAKE=make
