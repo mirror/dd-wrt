@@ -707,7 +707,7 @@ rewrite:;
 			}
 			printf("\n");
 		}
-		if (!writeubi) {
+		if (!writeubi && !writeubifs && !writeubiformat) {
 #if defined(HAVE_QCA4019) || defined(HAVE_IPQ6018)
 			if (!first) {
 				mtd_erase(mtd);
