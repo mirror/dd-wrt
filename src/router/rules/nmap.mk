@@ -2,6 +2,14 @@ ifeq ($(CONFIG_NEXTMEDIA),y)
 NMAP_EXTRAFLAGS="SENTINEL_FLAGS=-DRAISENTINET3"
 endif
 nmap-configure: openssl libpcap zlib
+#	cd nmap && libtoolize
+	cd nmap && aclocal
+#	cd nmap && automake
+#	cd nmap && autoconf
+#	cd nmap && autoheader
+#	cd nmap && autoreconf -vfi
+	cd nmap/libpcre && aclocal
+	cd nmap/libpcre && automake
 	cd nmap && ./configure ac_cv_libz=yes \
 		--host=$(ARCH)-linux \
 		--prefix=/usr \
