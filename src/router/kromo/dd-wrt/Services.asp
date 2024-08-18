@@ -137,6 +137,9 @@ addEvent(window, "load", function() {
 	if (document.setup.dnsmasq_enable) {
 		show_layer_ext(document.setup.dnsmasq_enable, 'idipv6dns', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
 	}
+	if (document.setup.dnsmasq_enable) {
+		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq_ipv6', <% nvem("dnsipv6_enable", "1", "1", "0"); %> == 1);
+	}
 	if (document.setup.lighttpd_enable) {
 		show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
 	}
@@ -196,6 +199,9 @@ addEvent(window, "unload", function() {
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
 							//experimental by egc
+							//<% ifndef("HAVE_IPV6", "<!--"); %>
+							//	<% show_dnsipv6if(); %>
+							//<% ifndef("HAVE_IPV6", "-->"); %>
 							<% show_mdnsif(); %>
 							<div id="footer" class="submitFooter">
 								<script type="text/javascript">

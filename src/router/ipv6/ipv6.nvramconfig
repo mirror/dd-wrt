@@ -6,7 +6,7 @@
  "radvd_custom" "enable custom" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "radvd_conf" "custom config"  "NULL"  "TRUE" "0"
  "dhcp6c_norelease" "dhcp6c no release" "CHOICE" "2" "0" "1"  "FALSE" "0"
- "dhcp6c_custom" "enable custom" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "dhcp6c_custom" "enable custom" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "dhcp6c_conf" "custom cnfig"  "NULL"  "TRUE" "0"
  "dhcp6s_enable" "enable dhcp6s" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "dhcp6s_seq_ips" "dhcp6s sequential ips" "CHOICE" "2" "0" "1"  "FALSE" "0"

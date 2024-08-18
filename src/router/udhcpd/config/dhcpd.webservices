@@ -203,8 +203,26 @@
 					<legend><% tran("service.dnsmasq_ipv6"); %></legend>
 					<div class="setting">
 						<div class="label"><% tran("service.dnsmasq_ipv6_enabled"); %></div>
-						<input class="spaceradio" type="radio" name="dns_ipv6_enable" value="1" <% nvc("dns_ipv6_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-						<input class="spaceradio" type="radio" name="dns_ipv6_enable" value="0" <% nvc("dns_ipv6_enable", "0"); %> /><% tran("share.disable"); %>
+						<input class="spaceradio" type="radio" name="dnsipv6_enable" value="1" <% nvc("dnsipv6_enable", "1"); %> onclick="show_layer_ext(this, 'iddnsmasq_ipv6', true)" /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" name="dnsipv6_enable" value="0" <% nvc("dnsipv6_enable", "0"); %> onclick="show_layer_ext(this, 'iddnsmasq_ipv6', false)" /><% tran("share.disable"); %>
+					</div>
+					<div id="iddnsmasq_ipv6">
+						<div class="setting">
+							<div class="label"><% tran("idx.dhcp_lease"); %></div>
+							<input class="num" maxlength="5" size="4" name="dnsipv6_leasetime" value="<% nvg("dnsipv6_leasetime"); %>" />&nbsp;
+							<script type="text/javascript">Capture(share.minutes)</script>
+							<span class="default"><script type="text/javascript">
+							//<![CDATA[
+								document.write("(" + share.deflt + ": 1440 " + share.minutes + ",  0=infinite)");
+							//]]>
+							</script></span>
+						</div>
+						<div class="setting">
+							<div class="label"><% tran("service.dnsmasq_ipv6_rastate"); %></div>
+							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="1" <% nvc("dnsipv6_rastate", "1"); %> /><% tran("service.dnsmasq_ipv6_rastateful"); %>&nbsp;&nbsp;
+							<input class="spaceradio" type="radio" name="dnsipv6_rastate" value="0" <% nvc("dnsipv6_rastate", "0"); %> /><% tran("service.dnsmasq_ipv6_rastateless"); %>
+						</div>
+						<% show_dnsipv6if(); %>
 					</div>
 				</fieldset><br/>
 			</div>

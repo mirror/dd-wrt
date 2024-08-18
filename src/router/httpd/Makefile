@@ -610,6 +610,7 @@ CFLAGS += -DHAVE_TRIMAX
 endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
+VISOBJS += dnsipv6if.o
 endif
 ifeq ($(CONFIG_DNSSEC),y)
 CFLAGS += -DHAVE_DNSSEC

@@ -1986,6 +1986,37 @@ void validate_avahi(webs_t wp, char *value, struct variable *v)
 }
 #endif
 
+#ifdef HAVE_IPV6
+void validate_dnsipv6(webs_t wp, char *value, struct variable *v)
+{
+	//egc handling/validating interface choice, called in opt/et/config/base.nvramconfig:138 -> base.c:229
+	char bufferif[512] = { 0 };
+	char dnsipv6if[128] = { 0 };
+	char word[32] = { 0 };
+	char *next;
+	int idx = 0;
+	bzero(bufferif, 512);
+	getIfList(bufferif, NULL);
+	//dd_loginfo("validate_dnsipv6", "interface list: %s", bufferif);
+	foreach(word, bufferif, next)
+	{
+		if (!strchr(word, ':')) {
+			char temp[32];
+			snprintf(temp, sizeof(temp), "dnsipv6if_%s", word);
+			char *val = websGetVar(wp, temp, "0");
+			if (!strcmp(val, "1")) {
+				if (idx)
+					strcat(dnsipv6if, " ");
+				strcat(dnsipv6if, word);
+				idx++;
+			}
+		}
+	}
+	nvram_safe_set("dnsipv6_interfaces", dnsipv6if);
+	//dd_loginfo("validate_dnsipv6", "Saving dnsipv6if: %s", dnsipv6if);
+}
+#endif
+
 #ifdef HAVE_SSHD
 void ssh_downloadkey(webs_t wp)
 {

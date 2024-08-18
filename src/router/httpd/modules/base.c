@@ -225,6 +225,9 @@ void Initnvramtab()
 #ifdef HAVE_MDNS
 		{ "AVAHI", "validate_avahi", 0 },
 #endif
+#ifdef HAVE_IPV6
+		{ "DNSIPV6", "validate_dnsipv6", 0 },
+#endif
 #ifdef HAVE_OPENVPN
 		{ "OPENVPNUSERPASS", "validate_openvpnuserpass", 0 },
 #endif
