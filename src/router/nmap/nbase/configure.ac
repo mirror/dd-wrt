@@ -2,7 +2,7 @@ dnl # -*- mode: fundamental; -*-
 dnl # Autoconf configuration file for Nbase
 dnl #
 dnl # Process this file with autoconf to produce a configure script.
-dnl # $Id: configure.ac 37779 2019-12-15 05:05:57Z dmiller $
+dnl # $Id: configure.ac 38732 2023-10-30 19:01:08Z dmiller $
 
 # Because nbase is usually distributed with Nmap, the necessary files
 # config.guess, config.guess, and install-sh are not distributed with
@@ -232,67 +232,6 @@ fi
 
 if test "$have_ipv6" = "1"; then
   AC_DEFINE(HAVE_IPV6, 1, [define if IPv6 is available])
-fi
-
-# First we test whether they specified openssl desires explicitly
-use_openssl="yes"
-specialssldir=""
-
-AC_ARG_WITH(openssl,
-[  --with-openssl=DIR    Use optional openssl libs and includes from [DIR]/lib/ 
-and [DIR]/include/openssl/)],
-[  case "$with_openssl" in
-  yes)
-    ;;
-  no)
-    use_openssl="no"
-    ;;
-  *)
-    specialssldir="$with_openssl"
-    ;;
-  esac]
-)
-
-
-# If they didn't specify it, we try to find it
-if test "$use_openssl" = "yes" -a -z "$specialssldir"; then
-  AC_CHECK_HEADER(openssl/ssl.h,,
-  [ use_openssl="no"
-    AC_MSG_WARN([Failed to find openssl/ssl.h so OpenSSL will not be used. If it
- is installed you can try the --with-openssl=DIR argument]) ])
-
- if test "$use_openssl" = "yes"; then
-   AC_CHECK_HEADER(openssl/err.h,,
-    [ use_openssl="no"
-    AC_MSG_WARN([Failed to find openssl/err.h so OpenSSL will not be used. If it
- is installed you can try the --with-openssl=DIR argument]) ])
- fi
-
- if test "$use_openssl" = "yes"; then
-   AC_CHECK_HEADER(openssl/rand.h,,
-    [ use_openssl="no"
-    AC_MSG_WARN([Failed to find openssl/rand.h so OpenSSL will not be used. If i
-t is installed you can try the --with-openssl=DIR argument]) ])
- fi
-
- if test "$use_openssl" = "yes"; then
-   AC_CHECK_LIB(crypto, BIO_int_ctrl,
-    [],
-    [ use_openssl="no"
-    AC_MSG_WARN([Failed to find libcrypto so OpenSSL will not be used. If it is installed you can try the --with-openssl=DIR argument]) ])
- fi
-
- if test "$use_openssl" = "yes"; then
-   AC_CHECK_LIB(ssl, SSL_new,
-    [],
-    [ use_openssl="no"
-    AC_MSG_WARN([Failed to find libssl so OpenSSL will not be used. If it is ins
-talled you can try the --with-openssl=DIR argument]) ])
- fi
-fi
-
-if test "$use_openssl" = "yes"; then
-  AC_DEFINE(HAVE_OPENSSL, 1, [define if libssl is available])
 fi
 
 CHECK_PROC_SELF_EXE

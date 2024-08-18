@@ -510,7 +510,7 @@ LIBPCREDIR=libpcre
 
 # First we test whether they specified libpcre explicitly
 AC_ARG_WITH(libpcre,
-AC_HELP_STRING([--with-libpcre=DIR], [Use an existing (compiled) pcre lib from DIR/include and DIR/lib.])
+AC_HELP_STRING([--with-libpcre=DIR], [Use an existing (compiled) pcre2 lib from DIR/include and DIR/lib.])
 AC_HELP_STRING([--with-libpcre=included], [Always use the version included with Nmap]),
 [  case "$with_libpcre" in
   yes)
@@ -528,27 +528,28 @@ AC_HELP_STRING([--with-libpcre=included], [Always use the version included with 
 
 # If they didn't specify it, we try to find it
 if test $have_pcre != yes -a $requested_included_pcre != yes ; then
-  AC_CHECK_HEADER(pcre.h,
-    AC_CHECK_LIB(pcre, pcre_version, [have_pcre=yes ]),
-    [AC_CHECK_HEADER(pcre/pcre.h,
-      [AC_CHECK_LIB(pcre, pcre_version, [have_pcre=yes])]
-    )]
+  AC_CHECK_HEADER(pcre2.h,
+    AC_CHECK_LIB(pcre2-8, pcre2_compile_8, [have_pcre=yes ]),
+    [],
+    [
+#define PCRE2_CODE_UNIT_WIDTH 8
+     ]
   )
 fi
 
 # If we still don't have it, we use our own
 if test $have_pcre != yes ; then
   AC_CONFIG_SUBDIRS( libpcre )
-  CPPFLAGS="-I\$(top_srcdir)/$LIBPCREDIR $CPPFLAGS"
-  LIBPCRE_LIBS="$LIBPCREDIR/libpcre.a"
+  CPPFLAGS="-I\$(top_srcdir)/$LIBPCREDIR/src $CPPFLAGS"
+  LIBPCRE_LIBS="$LIBPCREDIR/.libs/libpcre2-8.a"
   PCRE_BUILD="build-pcre"
   PCRE_CLEAN="clean-pcre"
   PCRE_DIST_CLEAN="distclean-pcre"
-  AC_DEFINE(PCRE_INCLUDED, 1, [Using included libpcre])
+  AC_DEFINE(PCRE_INCLUDED, 1, [Using included libpcre2])
 else
 # We only need to check for and use this if we are NOT using included pcre
-  AC_CHECK_HEADERS(pcre/pcre.h)
-  LIBPCRE_LIBS="-lpcre"
+  AC_CHECK_HEADERS(pcre2.h)
+  LIBPCRE_LIBS="-lpcre2-8"
   PCRE_BUILD=""
   PCRE_CLEAN=""
   PCRE_DIST_CLEAN=""
@@ -674,7 +675,7 @@ AC_HELP_STRING([--without-libssh2], [Compile without libssh2]),
     LDFLAGS="-L$with_libssh2/lib $LDFLAGS"
 
     AC_CHECK_HEADER(libssh2.h,[
-      AC_CHECK_LIB(ssh2, libssh2_version,
+      AC_CHECK_LIB(ssh2, libssh2_userauth_banner,
         [have_libssh2=yes
         LIBSSH2_INC=$with_libssh2/include
         LIBSSH2_LIB=$with_libssh2/lib],
@@ -693,7 +694,7 @@ if test $use_libssh2 = yes -a $use_openssl = yes; then
   # If they didn't specify it, we try to find it
   if test $have_libssh2 != yes -a $requested_included_libssh2 != yes; then
     AC_CHECK_HEADER(libssh2.h,[
-      AC_CHECK_LIB(ssh2, libssh2_version,
+      AC_CHECK_LIB(ssh2, libssh2_userauth_banner,
         [have_libssh2="yes"],,[-lm])
       ])
   fi

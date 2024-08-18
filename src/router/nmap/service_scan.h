@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2023 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -41,15 +41,16 @@
  * right to know exactly what a program is going to do before they run it.
  * This also allows you to audit the software for security holes.
  *
- * Source code also allows you to port Nmap to new platforms, fix bugs, and add
- * new features. You are highly encouraged to submit your changes as a Github PR
- * or by email to the dev@nmap.org mailing list for possible incorporation into
- * the main distribution. Unless you specify otherwise, it is understood that
- * you are offering us very broad rights to use your submissions as described in
- * the Nmap Public Source License Contributor Agreement. This is important
- * because we fund the project by selling licenses with various terms, and also
- * because the inability to relicense code has caused devastating problems for
- * other Free Software projects (such as KDE and NASM).
+ * Source code also allows you to port Nmap to new platforms, fix bugs, and
+ * add new features. You are highly encouraged to submit your changes as a
+ * Github PR or by email to the dev@nmap.org mailing list for possible
+ * incorporation into the main distribution. Unless you specify otherwise, it
+ * is understood that you are offering us very broad rights to use your
+ * submissions as described in the Nmap Public Source License Contributor
+ * Agreement. This is important because we fund the project by selling licenses
+ * with various terms, and also because the inability to relicense code has
+ * caused devastating problems for other Free Software projects (such as KDE
+ * and NASM).
  *
  * The free version of Nmap is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -59,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: service_scan.h 38653 2023-04-14 17:11:46Z dmiller $ */
+/* $Id: service_scan.h 38790 2024-02-28 18:46:45Z dmiller $ */
 
 #ifndef SERVICE_SCAN_H
 #define SERVICE_SCAN_H
@@ -69,16 +70,8 @@
 
 #include <vector>
 
-#ifdef HAVE_CONFIG_H
-/* Needed for HAVE_PCRE_PCRE_H below */
-#include "nmap_config.h"
-#endif /* HAVE_CONFIG_H */
-
-#ifdef HAVE_PCRE_PCRE_H
-# include <pcre/pcre.h>
-#else
-# include <pcre.h>
-#endif
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #undef NDEBUG
 #include <assert.h>
@@ -155,8 +148,9 @@ class ServiceProbeMatch {
   bool isInitialized; // Has InitMatch yet been called?
   const char *servicename;
   char *matchstr; // Regular expression text
-  pcre *regex_compiled;
-  pcre_extra *regex_extra;
+  pcre2_code *regex_compiled;
+  pcre2_match_data *match_data;
+  pcre2_match_context *match_context;
   bool matchops_ignorecase;
   bool matchops_dotall;
   bool isSoft; // is this a soft match? ("softmatch" keyword in nmap-service-probes)
@@ -179,14 +173,14 @@ class ServiceProbeMatch {
   // are sufficient).  Returns zero for success.  If no template is available
   // for a string, that string will have zero length after the function
   // call (assuming the corresponding length passed in is at least 1)
-  int getVersionStr(const u8 *subject, int subjectlen, int *ovector,
-                  int nummatches, char *product, int productlen,
-                  char *version, int versionlen, char *info, int infolen,
-                  char *hostname, int hostnamelen, char *ostype, int ostypelen,
-                  char *devicetype, int devicetypelen,
-                  char *cpe_a, int cpe_alen,
-                  char *cpe_h, int cpe_hlen,
-                  char *cpe_o, int cpe_olen) const;
+  int getVersionStr(const u8 *subject, size_t subjectlen,
+                  char *product, size_t productlen,
+                  char *version, size_t versionlen, char *info, size_t infolen,
+                  char *hostname, size_t hostnamelen, char *ostype, size_t ostypelen,
+                  char *devicetype, size_t devicetypelen,
+                  char *cpe_a, size_t cpe_alen,
+                  char *cpe_h, size_t cpe_hlen,
+                  char *cpe_o, size_t cpe_olen) const;
 };
 
 

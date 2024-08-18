@@ -2,7 +2,7 @@
  * ncat_core.c -- Contains option definitions and miscellaneous functions. *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *
- * The Nmap Security Scanner is (C) 1996-2023 Nmap Software LLC ("The Nmap
+ * The Nmap Security Scanner is (C) 1996-2024 Nmap Software LLC ("The Nmap
  * Project"). Nmap is also a registered trademark of the Nmap Project.
  *
  * This program is distributed under the terms of the Nmap Public Source
@@ -37,15 +37,16 @@
  * right to know exactly what a program is going to do before they run it.
  * This also allows you to audit the software for security holes.
  *
- * Source code also allows you to port Nmap to new platforms, fix bugs, and add
- * new features. You are highly encouraged to submit your changes as a Github PR
- * or by email to the dev@nmap.org mailing list for possible incorporation into
- * the main distribution. Unless you specify otherwise, it is understood that
- * you are offering us very broad rights to use your submissions as described in
- * the Nmap Public Source License Contributor Agreement. This is important
- * because we fund the project by selling licenses with various terms, and also
- * because the inability to relicense code has caused devastating problems for
- * other Free Software projects (such as KDE and NASM).
+ * Source code also allows you to port Nmap to new platforms, fix bugs, and
+ * add new features. You are highly encouraged to submit your changes as a
+ * Github PR or by email to the dev@nmap.org mailing list for possible
+ * incorporation into the main distribution. Unless you specify otherwise, it
+ * is understood that you are offering us very broad rights to use your
+ * submissions as described in the Nmap Public Source License Contributor
+ * Agreement. This is important because we fund the project by selling licenses
+ * with various terms, and also because the inability to relicense code has
+ * caused devastating problems for other Free Software projects (such as KDE
+ * and NASM).
  *
  * The free version of Nmap is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat_core.c 38653 2023-04-14 17:11:46Z dmiller $ */
+/* $Id: ncat_core.c 38790 2024-02-28 18:46:45Z dmiller $ */
 
 #include "ncat.h"
 #include "util.h"
@@ -303,14 +304,21 @@ int fdinfo_recv(struct fdinfo *fdn, char *buf, size_t size)
     {
         do {
             n = SSL_read(fdn->ssl, buf, size);
-            /* SSL_read returns <0 in some cases like renegotiation. In these
+            /* SSL_read returns <=0 in some cases like renegotiation. In these
              * cases, SSL_get_error gives SSL_ERROR_WANT_{READ,WRITE}, and we
              * should try the SSL_read again. */
-            err = (n < 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
+            err = (n <= 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
         } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
-        if (err != SSL_ERROR_NONE) {
-            fdn->lasterr = err;
-            logdebug("SSL_read error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
+        switch (err) {
+            case SSL_ERROR_NONE:
+                break;
+            case SSL_ERROR_ZERO_RETURN:
+                fdn->lasterr = EOF;
+                break;
+            default:
+                fdn->lasterr = err;
+                logdebug("SSL_read error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
+                break;
         }
         return n;
     }
@@ -377,10 +385,10 @@ int fdinfo_send(struct fdinfo *fdn, const char *buf, size_t size)
     {
         do {
             n = SSL_write(fdn->ssl, buf, size);
-            /* SSL_write returns <0 in some cases like renegotiation. In these
+            /* SSL_write returns <=0 in some cases like renegotiation. In these
              * cases, SSL_get_error gives SSL_ERROR_WANT_{READ,WRITE}, and we
              * should try the SSL_write again. */
-            err = (n < 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
+            err = (n <= 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
         } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
         if (err != SSL_ERROR_NONE) {
             fdn->lasterr = err;
