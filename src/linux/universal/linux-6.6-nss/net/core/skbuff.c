@@ -2869,6 +2869,15 @@ void *__pskb_pull_tail(struct sk_buff *skb, int delta)
 	 */
 	int i, k, eat = (skb->tail + delta) - skb->end;
 
+	if (skb_is_gso(skb) &&
+	    (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST)) {
+		if (net_ratelimit()) {
+			printk("Invalid pull from fraglist GSO skb\n");
+			dump_stack();
+		}
+		return NULL;
+	}
+
 	if (eat > 0 || skb_cloned(skb)) {
 		if (pskb_expand_head(skb, 0, eat > 0 ? eat + 128 : 0,
 				     GFP_ATOMIC))
