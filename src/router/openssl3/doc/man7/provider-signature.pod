@@ -50,7 +50,7 @@ provider-signature - The signature library E<lt>-E<gt> provider functions
  int OSSL_FUNC_signature_digest_sign_final(void *ctx, unsigned char *sig,
                                            size_t *siglen, size_t sigsize);
  int OSSL_FUNC_signature_digest_sign(void *ctx,
-                              unsigned char *sigret, size_t *siglen,
+                              unsigned char *sig, size_t *siglen,
                               size_t sigsize, const unsigned char *tbs,
                               size_t tbslen);
 
@@ -363,6 +363,18 @@ The length of the "digest-size" parameter should not exceed that of a B<size_t>.
 Gets the DER encoded AlgorithmIdentifier that corresponds to the combination of
 signature algorithm and digest algorithm for the signature operation.
 
+=item "nonce-type" (B<OSSL_SIGNATURE_PARAM_NONCE_TYPE>) <unsigned integer>
+
+Set this to 1 to use deterministic digital signature generation with
+ECDSA or DSA, as defined in RFC 6979 (see Section 3.2 "Generation of
+k").  In this case, the "digest" parameter must be explicitly set
+(otherwise, deterministic nonce generation will fail).  Before using
+deterministic digital signature generation, please read RFC 6979
+Section 4 "Security Considerations".  The default value for
+"nonce-type" is 0 and results in a random value being used for the
+nonce B<k> as defined in FIPS 186-4 Section 6.3 "Secret Number
+Generation".
+
 =item "kat" (B<OSSL_SIGNATURE_PARAM_KAT>) <unsigned integer>
 
 Sets a flag to modify the sign operation to return an error if the initial
@@ -429,7 +441,7 @@ The provider SIGNATURE interface was introduced in OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2019-2024 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy

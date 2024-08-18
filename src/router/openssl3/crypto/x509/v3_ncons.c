@@ -9,6 +9,7 @@
 
 #include "internal/cryptlib.h"
 #include "internal/numbers.h"
+#include "internal/safe_math.h"
 #include <stdio.h>
 #include "crypto/asn1.h"
 #include <openssl/asn1t.h>
@@ -19,6 +20,8 @@
 #include "crypto/x509.h"
 #include "crypto/punycode.h"
 #include "ext_dat.h"
+
+OSSL_SAFE_MATH_SIGNED(int, int)
 
 static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
                                   X509V3_CTX *ctx,
@@ -132,14 +135,16 @@ static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
     GENERAL_SUBTREE *sub = NULL;
 
     ncons = NAME_CONSTRAINTS_new();
-    if (ncons == NULL)
-        goto memerr;
+    if (ncons == NULL) {
+        ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
+        goto err;
+    }
     for (i = 0; i < sk_CONF_VALUE_num(nval); i++) {
         val = sk_CONF_VALUE_value(nval, i);
-        if (strncmp(val->name, "permitted", 9) == 0 && val->name[9]) {
+        if (HAS_PREFIX(val->name, "permitted") && val->name[9]) {
             ptree = &ncons->permittedSubtrees;
             tval.name = val->name + 10;
-        } else if (strncmp(val->name, "excluded", 8) == 0 && val->name[8]) {
+        } else if (HAS_PREFIX(val->name, "excluded") && val->name[8]) {
             ptree = &ncons->excludedSubtrees;
             tval.name = val->name + 9;
         } else {
@@ -148,21 +153,25 @@ static void *v2i_NAME_CONSTRAINTS(const X509V3_EXT_METHOD *method,
         }
         tval.value = val->value;
         sub = GENERAL_SUBTREE_new();
-        if (sub == NULL)
-            goto memerr;
-        if (!v2i_GENERAL_NAME_ex(sub->base, method, ctx, &tval, 1))
+        if (sub == NULL) {
+            ERR_raise(ERR_LIB_X509V3, ERR_R_ASN1_LIB);
             goto err;
+        }
+        if (!v2i_GENERAL_NAME_ex(sub->base, method, ctx, &tval, 1)) {
+            ERR_raise(ERR_LIB_X509V3, ERR_R_X509V3_LIB);
+            goto err;
+        }
         if (*ptree == NULL)
             *ptree = sk_GENERAL_SUBTREE_new_null();
-        if (*ptree == NULL || !sk_GENERAL_SUBTREE_push(*ptree, sub))
-            goto memerr;
+        if (*ptree == NULL || !sk_GENERAL_SUBTREE_push(*ptree, sub)) {
+            ERR_raise(ERR_LIB_X509V3, ERR_R_CRYPTO_LIB);
+            goto err;
+        }
         sub = NULL;
     }
 
     return ncons;
 
- memerr:
-    ERR_raise(ERR_LIB_X509V3, ERR_R_MALLOC_FAILURE);
  err:
     NAME_CONSTRAINTS_free(ncons);
     GENERAL_SUBTREE_free(sub);
@@ -223,16 +232,16 @@ static int print_nc_ipadd(BIO *bp, ASN1_OCTET_STRING *ip)
 
 static int add_lengths(int *out, int a, int b)
 {
+    int err = 0;
+
     /* sk_FOO_num(NULL) returns -1 but is effectively 0 when iterating. */
     if (a < 0)
         a = 0;
     if (b < 0)
         b = 0;
 
-    if (a > INT_MAX - b)
-        return 0;
-    *out = a + b;
-    return 1;
+    *out = safe_add_int(a, b, &err);
+    return !err;
 }
 
 /*-
@@ -432,7 +441,7 @@ int NAME_CONSTRAINTS_check_CN(X509 *x, NAME_CONSTRAINTS *nc)
         ne = X509_NAME_get_entry(nm, i);
         cn = X509_NAME_ENTRY_get_data(ne);
 
-        /* Only process attributes that look like host names */
+        /* Only process attributes that look like hostnames */
         if ((r = cn2dnsid(cn, &idval, &idlen)) != X509_V_OK)
             return r;
         if (idlen == 0)
@@ -640,7 +649,7 @@ static int nc_email_eai(ASN1_TYPE *emltype, ASN1_IA5STRING *base)
     const char *emlptr;
     const char *emlat;
     char ulabel[256];
-    size_t size = sizeof(ulabel) - 1;
+    size_t size = sizeof(ulabel);
     int ret = X509_V_OK;
     size_t emlhostlen;
 
@@ -667,18 +676,16 @@ static int nc_email_eai(ASN1_TYPE *emltype, ASN1_IA5STRING *base)
         goto end;
     }
 
-    memset(ulabel, 0, sizeof(ulabel));
     /* Special case: initial '.' is RHS match */
     if (*baseptr == '.') {
         ulabel[0] = '.';
-        size -= 1;
-        if (ossl_a2ulabel(baseptr, ulabel + 1, &size) <= 0) {
+        if (ossl_a2ulabel(baseptr, ulabel + 1, size - 1) <= 0) {
             ret = X509_V_ERR_UNSPECIFIED;
             goto end;
         }
 
         if ((size_t)eml->length > strlen(ulabel)) {
-            emlptr += eml->length - (strlen(ulabel));
+            emlptr += eml->length - strlen(ulabel);
             /* X509_V_OK */
             if (ia5ncasecmp(ulabel, emlptr, strlen(ulabel)) == 0)
                 goto end;
@@ -687,7 +694,7 @@ static int nc_email_eai(ASN1_TYPE *emltype, ASN1_IA5STRING *base)
         goto end;
     }
 
-    if (ossl_a2ulabel(baseptr, ulabel, &size) <= 0) {
+    if (ossl_a2ulabel(baseptr, ulabel, size) <= 0) {
         ret = X509_V_ERR_UNSPECIFIED;
         goto end;
     }

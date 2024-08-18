@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -12,10 +12,18 @@
 #include <openssl/kdf.h>
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
+#include <openssl/rand.h>
+#include "crypto/rand.h"
 #include "internal/cryptlib.h"
 #include "internal/nelem.h"
 #include "self_test.h"
 #include "self_test_data.inc"
+
+static int set_kat_drbg(OSSL_LIB_CTX *ctx,
+                        const unsigned char *entropy, size_t entropy_len,
+                        const unsigned char *nonce, size_t nonce_len,
+                        const unsigned char *persstr, size_t persstr_len);
+static int reset_main_drbg(OSSL_LIB_CTX *ctx);
 
 static int self_test_digest(const ST_KAT_DIGEST *t, OSSL_SELF_TEST *st,
                             OSSL_LIB_CTX *libctx)
@@ -437,7 +445,7 @@ err:
 #endif /* !defined(OPENSSL_NO_DH) || !defined(OPENSSL_NO_EC) */
 
 static int self_test_sign(const ST_KAT_SIGN *t,
-                         OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
+                          OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 {
     int ret = 0;
     OSSL_PARAM *params = NULL, *params_sig = NULL;
@@ -499,10 +507,6 @@ static int self_test_sign(const ST_KAT_SIGN *t,
         || EVP_PKEY_CTX_set_params(sctx, params_sig) <= 0)
         goto err;
 
-    /*
-     * Used by RSA, for other key types where the signature changes, we
-     * can only use the verify.
-     */
     if (t->sig_expected != NULL
         && (siglen != t->sig_expected_len
             || memcmp(sig, t->sig_expected, t->sig_expected_len) != 0))
@@ -689,12 +693,159 @@ static int self_test_kas(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 static int self_test_signatures(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 {
     int i, ret = 1;
+    const ST_KAT_SIGN *t;
 
-    for (i = 0; i < (int)OSSL_NELEM(st_kat_sign_tests); ++i) {
-        if (!self_test_sign(&st_kat_sign_tests[i], st, libctx))
+    for (i = 0; ret && i < (int)OSSL_NELEM(st_kat_sign_tests); ++i) {
+        t = st_kat_sign_tests + i;
+        if (!set_kat_drbg(libctx, t->entropy, t->entropy_len,
+                          t->nonce, t->nonce_len, t->persstr, t->persstr_len))
+            return 0;
+        if (!self_test_sign(t, st, libctx))
+            ret = 0;
+        if (!reset_main_drbg(libctx))
             ret = 0;
     }
     return ret;
+}
+
+/*
+ * Swap the library context DRBG for KAT testing
+ *
+ * In FIPS 140-3, the asymmetric POST must be a KAT, not a PCT.  For DSA and ECDSA,
+ * the sign operation includes the random value 'k'.  For a KAT to work, we
+ * have to have control of the DRBG to make sure it is in a "test" state, where
+ * its output is truly deterministic.
+ *
+ */
+
+/*
+ * Replacement "random" sources
+ * main_rand is used for most tests and it's set to generate mode.
+ * kat_rand is used for KATs where specific input is mandated.
+ */
+static EVP_RAND_CTX *kat_rand = NULL;
+static EVP_RAND_CTX *main_rand = NULL;
+
+static int set_kat_drbg(OSSL_LIB_CTX *ctx,
+                        const unsigned char *entropy, size_t entropy_len,
+                        const unsigned char *nonce, size_t nonce_len,
+                        const unsigned char *persstr, size_t persstr_len) {
+    EVP_RAND *rand;
+    unsigned int strength = 256;
+    EVP_RAND_CTX *parent_rand = NULL;
+    OSSL_PARAM drbg_params[3] = {
+        OSSL_PARAM_END, OSSL_PARAM_END, OSSL_PARAM_END
+    };
+
+    /* If not NULL, we didn't cleanup from last call: BAD */
+    if (kat_rand != NULL)
+        return 0;
+
+    rand = EVP_RAND_fetch(ctx, "TEST-RAND", NULL);
+    if (rand == NULL)
+        return 0;
+
+    parent_rand = EVP_RAND_CTX_new(rand, NULL);
+    EVP_RAND_free(rand);
+    if (parent_rand == NULL)
+        goto err;
+
+    drbg_params[0] = OSSL_PARAM_construct_uint(OSSL_RAND_PARAM_STRENGTH,
+                                               &strength);
+    if (!EVP_RAND_CTX_set_params(parent_rand, drbg_params))
+        goto err;
+
+    rand = EVP_RAND_fetch(ctx, "HASH-DRBG", NULL);
+    if (rand == NULL)
+        goto err;
+
+    kat_rand = EVP_RAND_CTX_new(rand, parent_rand);
+    EVP_RAND_free(rand);
+    if (kat_rand == NULL)
+        goto err;
+
+    drbg_params[0] = OSSL_PARAM_construct_utf8_string("digest", "SHA256", 0);
+    if (!EVP_RAND_CTX_set_params(kat_rand, drbg_params))
+        goto err;
+
+    /* Instantiate the RNGs */
+    drbg_params[0] =
+        OSSL_PARAM_construct_octet_string(OSSL_RAND_PARAM_TEST_ENTROPY,
+                                          (void *)entropy, entropy_len);
+    drbg_params[1] =
+        OSSL_PARAM_construct_octet_string(OSSL_RAND_PARAM_TEST_NONCE,
+                                          (void *)nonce, nonce_len);
+    if (!EVP_RAND_instantiate(parent_rand, strength, 0, NULL, 0, drbg_params))
+        goto err;
+
+    EVP_RAND_CTX_free(parent_rand);
+    parent_rand = NULL;
+
+    if (!EVP_RAND_instantiate(kat_rand, strength, 0, persstr, persstr_len, NULL))
+        goto err;
+
+    /* When we set the new private generator this one is freed, so upref it */
+    if (!EVP_RAND_CTX_up_ref(main_rand))
+        goto err;
+
+    /* Update the library context DRBG */
+    if (RAND_set0_private(ctx, kat_rand) > 0) {
+        /* Keeping a copy to verify zeroization */
+        if (EVP_RAND_CTX_up_ref(kat_rand))
+            return 1;
+        RAND_set0_private(ctx, main_rand);
+    }
+
+ err:
+    EVP_RAND_CTX_free(parent_rand);
+    EVP_RAND_CTX_free(kat_rand);
+    kat_rand = NULL;
+    return 0;
+}
+
+static int reset_main_drbg(OSSL_LIB_CTX *ctx) {
+    int ret = 1;
+
+    if (!RAND_set0_private(ctx, main_rand))
+        ret = 0;
+    if (kat_rand != NULL) {
+        if (!EVP_RAND_uninstantiate(kat_rand)
+                || !EVP_RAND_verify_zeroization(kat_rand))
+            ret = 0;
+        EVP_RAND_CTX_free(kat_rand);
+        kat_rand = NULL;
+    }
+    return ret;
+}
+
+static int setup_main_random(OSSL_LIB_CTX *libctx)
+{
+    OSSL_PARAM drbg_params[3] = {
+        OSSL_PARAM_END, OSSL_PARAM_END, OSSL_PARAM_END
+    };
+    unsigned int strength = 256, generate = 1;
+    EVP_RAND *rand;
+
+    rand = EVP_RAND_fetch(libctx, "TEST-RAND", NULL);
+    if (rand == NULL)
+        return 0;
+
+    main_rand = EVP_RAND_CTX_new(rand, NULL);
+    EVP_RAND_free(rand);
+    if (main_rand == NULL)
+        goto err;
+
+    drbg_params[0] = OSSL_PARAM_construct_uint(OSSL_RAND_PARAM_GENERATE,
+                                               &generate);
+    drbg_params[1] = OSSL_PARAM_construct_uint(OSSL_RAND_PARAM_STRENGTH,
+                                               &strength);
+
+    if (!EVP_RAND_instantiate(main_rand, strength, 0, NULL, 0, drbg_params))
+        goto err;
+    return 1;
+ err:
+    EVP_RAND_CTX_free(main_rand);
+    return 0;
 }
 
 /*
@@ -704,7 +855,14 @@ static int self_test_signatures(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
  */
 int SELF_TEST_kats(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
 {
+    EVP_RAND_CTX *saved_rand = ossl_rand_get0_private_noncreating(libctx);
     int ret = 1;
+
+    if (!setup_main_random(libctx)
+            || !RAND_set0_private(libctx, main_rand)) {
+        EVP_RAND_CTX_free(main_rand);
+        return 0;
+    }
 
     if (!self_test_digests(st, libctx))
         ret = 0;
@@ -721,5 +879,7 @@ int SELF_TEST_kats(OSSL_SELF_TEST *st, OSSL_LIB_CTX *libctx)
     if (!self_test_asym_ciphers(st, libctx))
         ret = 0;
 
+    RAND_set0_private(libctx, saved_rand);
     return ret;
 }
+

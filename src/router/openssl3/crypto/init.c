@@ -10,7 +10,7 @@
 /* We need to use some engine deprecated APIs */
 #define OPENSSL_SUPPRESS_DEPRECATED
 
-#include "e_os.h"
+#include "internal/e_os.h"
 #include "crypto/cryptlib.h"
 #include <openssl/err.h>
 #include "crypto/rand.h"
@@ -188,8 +188,15 @@ DEFINE_RUN_ONCE_STATIC(ossl_init_load_crypto_strings)
      * pulling in all the error strings during static linking
      */
 #if !defined(OPENSSL_NO_ERR) && !defined(OPENSSL_NO_AUTOERRINIT)
+    void *err;
+
+    if (!err_shelve_state(&err))
+        return 0;
+
     OSSL_TRACE(INIT, "ossl_err_load_crypto_strings()\n");
     ret = ossl_err_load_crypto_strings();
+
+    err_unshelve_state(err);
 #endif
     return ret;
 }
@@ -391,6 +398,10 @@ void OPENSSL_cleanup(void)
 #ifndef OPENSSL_NO_COMP
     OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_zlib_cleanup()\n");
     ossl_comp_zlib_cleanup();
+    OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_brotli_cleanup()\n");
+    ossl_comp_brotli_cleanup();
+    OSSL_TRACE(INIT, "OPENSSL_cleanup: ossl_comp_zstd_cleanup()\n");
+    ossl_comp_zstd_cleanup();
 #endif
 
     if (async_inited) {
@@ -708,10 +719,8 @@ int OPENSSL_atexit(void (*handler)(void))
     }
 #endif
 
-    if ((newhand = OPENSSL_malloc(sizeof(*newhand))) == NULL) {
-        ERR_raise(ERR_LIB_CRYPTO, ERR_R_MALLOC_FAILURE);
+    if ((newhand = OPENSSL_malloc(sizeof(*newhand))) == NULL)
         return 0;
-    }
 
     newhand->handler = handler;
     newhand->next = stop_handlers;

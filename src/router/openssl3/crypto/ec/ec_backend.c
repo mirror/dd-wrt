@@ -24,7 +24,8 @@
 #include "crypto/bn.h"
 #include "crypto/ec.h"
 #include "ec_local.h"
-#include "e_os.h"
+#include "internal/e_os.h"
+#include "internal/nelem.h"
 #include "internal/param_build_set.h"
 
 /* Mapping between a flag and a name */
@@ -190,7 +191,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         BIGNUM *b = BN_CTX_get(bnctx);
 
         if (b == NULL) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_BN_LIB);
             goto err;
         }
 
@@ -201,7 +202,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         if (!ossl_param_build_set_bn(tmpl, params, OSSL_PKEY_PARAM_EC_P, p)
             || !ossl_param_build_set_bn(tmpl, params, OSSL_PKEY_PARAM_EC_A, a)
             || !ossl_param_build_set_bn(tmpl, params, OSSL_PKEY_PARAM_EC_B, b)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -216,7 +217,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         }
         if (!ossl_param_build_set_bn(tmpl, params, OSSL_PKEY_PARAM_EC_ORDER,
                                     order)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -226,7 +227,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         if (!ossl_param_build_set_utf8_string(tmpl, params,
                                               OSSL_PKEY_PARAM_EC_FIELD_TYPE,
                                               field_type)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -249,7 +250,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         if (!ossl_param_build_set_octet_string(tmpl, params,
                                                OSSL_PKEY_PARAM_EC_GENERATOR,
                                                *genbuf, genbuf_len)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -261,7 +262,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
         if (cofactor != NULL
             && !ossl_param_build_set_bn(tmpl, params,
                                         OSSL_PKEY_PARAM_EC_COFACTOR, cofactor)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -276,7 +277,7 @@ static int ec_group_explicit_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
             && !ossl_param_build_set_octet_string(tmpl, params,
                                                   OSSL_PKEY_PARAM_EC_SEED,
                                                   seed, seed_len)) {
-            ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+            ERR_raise(ERR_LIB_EC, ERR_R_CRYPTO_LIB);
             goto err;
         }
     }
@@ -295,7 +296,7 @@ int ossl_ec_group_todata(const EC_GROUP *group, OSSL_PARAM_BLD *tmpl,
     point_conversion_form_t genform;
 
     if (group == NULL) {
-        ERR_raise(ERR_LIB_EC,EC_R_PASSED_NULL_PARAMETER);
+        ERR_raise(ERR_LIB_EC, EC_R_PASSED_NULL_PARAMETER);
         return 0;
     }
 
@@ -523,7 +524,7 @@ static int ec_key_point_format_fromdata(EC_KEY *ec, const OSSL_PARAM params[])
     p = OSSL_PARAM_locate_const(params, OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT);
     if (p != NULL) {
         if (!ossl_ec_pt_format_param2id(p, &format)) {
-            ECerr(0, EC_R_INVALID_FORM);
+            ERR_raise(ERR_LIB_EC, EC_R_INVALID_FORM);
             return 0;
         }
         EC_KEY_set_conv_form(ec, format);
@@ -773,7 +774,7 @@ EC_KEY *ossl_ec_key_param_from_x509_algor(const X509_ALGOR *palg,
 
     X509_ALGOR_get0(NULL, &ptype, &pval, palg);
     if ((eckey = EC_KEY_new_ex(libctx, propq)) == NULL) {
-        ERR_raise(ERR_LIB_EC, ERR_R_MALLOC_FAILURE);
+        ERR_raise(ERR_LIB_EC, ERR_R_EC_LIB);
         goto ecerr;
     }
 

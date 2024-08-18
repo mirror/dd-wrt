@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -24,7 +24,15 @@ use platform;
 
 plan skip_all => "Test only supported in a fips build" if disabled("fips");
 
-plan tests => 29;
+# Compatible options for pedantic FIPS compliance
+my @pedantic_okay =
+    ( 'ems_check', 'no_drbg_truncated_digests', 'self_test_onload' );
+
+# Incompatible options for pedantic FIPS compliance
+my @pedantic_fail =
+    ( 'no_conditional_errors', 'no_security_checks', 'self_test_oninstall' );
+
+plan tests => 35 + (scalar @pedantic_okay) + (scalar @pedantic_fail);
 
 my $infile = bldtop_file('providers', platform->dso('fips'));
 my $fipskey = $ENV{FIPSKEY} // config('FIPSKEY') // '00';
@@ -78,6 +86,22 @@ sub replace_parent_line_file {
     my $rep = "$value";
     return replace_line_file_internal(srctop_file("test", 'fips.cnf'),
                                       $srch, $rep, $outfile);
+}
+
+# Check if the specified pattern occurs in the given file
+# Returns 1 if the pattern is found and 0 if not
+sub find_line_file {
+    my ($key, $file) = @_;
+
+    open(my $in, $file) or return -1;
+    while (my $line = <$in>) {
+        if ($line =~ /$key/) {
+            close($in);
+            return 1;
+        }
+    }
+    close($in);
+    return 0;
 }
 
 # fail if no module name
@@ -227,7 +251,25 @@ SKIP: {
        "fipsinstall fails when the kas result is corrupted");
 }
 
-# corrupt a Signature test
+# corrupt a Signature test - 140-3 requires a known answer test
+SKIP: {
+    skip "Skipping Signature DSA corruption test because of no dsa in this build", 1
+        if disabled("dsa");
+
+    run(test(["fips_version_test", "-config", $provconf, ">=3.1.0"]),
+             capture => 1, statusvar => \my $exit);
+    skip "FIPS provider version is too old for KAT DSA signature test", 1
+        if !$exit;
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect', '-self_test_oninstall',
+                '-corrupt_desc', 'DSA',
+                '-corrupt_type', 'KAT_Signature'])),
+       "fipsinstall fails when the signature result is corrupted");
+}
+
+# corrupt a Signature test - 140-2 allows a pairwise consistency test
 SKIP: {
     skip "Skipping Signature DSA corruption test because of no dsa in this build", 1
         if disabled("dsa");
@@ -236,7 +278,6 @@ SKIP: {
              capture => 1, statusvar => \my $exit);
     skip "FIPS provider version is too new for PCT DSA signature test", 1
         if !$exit;
-
     ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
                 '-provider_name', 'fips', '-mac_name', 'HMAC',
                 '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
@@ -269,24 +310,31 @@ ok(replace_parent_line_file('fips_no_module_mac.cnf',
                 '-config', 'fips_parent_no_module_mac.cnf'])),
    "verify load config fail no module mac");
 
-ok(replace_parent_line_file('fips_no_install_mac.cnf',
-                            'fips_parent_no_install_mac.cnf')
-   && !run(app(['openssl', 'fipsinstall',
-                '-config', 'fips_parent_no_install_mac.cnf'])),
-   "verify load config fail no install mac");
+SKIP: {
+    run(test(["fips_version_test", "-config", $provconf, "<3.1.0"]),
+             capture => 1, statusvar => \my $exit);
+    skip "FIPS provider version doesn't support self test indicator", 3
+        if !$exit;
 
-ok(replace_parent_line_file('fips_bad_indicator.cnf',
-                            'fips_parent_bad_indicator.cnf')
-   && !run(app(['openssl', 'fipsinstall',
-                '-config', 'fips_parent_bad_indicator.cnf'])),
-   "verify load config fail bad indicator");
+    ok(replace_parent_line_file('fips_no_install_mac.cnf',
+                                'fips_parent_no_install_mac.cnf')
+       && !run(app(['openssl', 'fipsinstall',
+                    '-config', 'fips_parent_no_install_mac.cnf'])),
+       "verify load config fail no install mac");
+
+    ok(replace_parent_line_file('fips_bad_indicator.cnf',
+                                'fips_parent_bad_indicator.cnf')
+       && !run(app(['openssl', 'fipsinstall',
+                    '-config', 'fips_parent_bad_indicator.cnf'])),
+       "verify load config fail bad indicator");
 
 
-ok(replace_parent_line_file('fips_bad_install_mac.cnf',
-                            'fips_parent_bad_install_mac.cnf')
-   && !run(app(['openssl', 'fipsinstall',
-                '-config', 'fips_parent_bad_install_mac.cnf'])),
-   "verify load config fail bad install mac");
+    ok(replace_parent_line_file('fips_bad_install_mac.cnf',
+                                'fips_parent_bad_install_mac.cnf')
+       && !run(app(['openssl', 'fipsinstall',
+                    '-config', 'fips_parent_bad_install_mac.cnf'])),
+       "verify load config fail bad install mac");
+}
 
 ok(replace_parent_line_file('fips_bad_module_mac.cnf',
                             'fips_parent_bad_module_mac.cnf')
@@ -294,17 +342,66 @@ ok(replace_parent_line_file('fips_bad_module_mac.cnf',
                 '-config', 'fips_parent_bad_module_mac.cnf'])),
    "verify load config fail bad module mac");
 
+SKIP: {
+    run(test(["fips_version_test", "-config", $provconf, "<3.1.0"]),
+             capture => 1, statusvar => \my $exit);
+    skip "FIPS provider version doesn't support self test indicator", 3
+        if !$exit;
 
-my $stconf = "fipsmodule_selftest.cnf";
+    my $stconf = "fipsmodule_selftest.cnf";
 
-ok(run(app(['openssl', 'fipsinstall', '-out', $stconf,
-            '-module', $infile, '-self_test_onload'])),
-       "fipsinstall config saved without self test indicator");
+    ok(run(app(['openssl', 'fipsinstall', '-out', $stconf,
+                '-module', $infile, '-self_test_onload'])),
+           "fipsinstall config saved without self test indicator");
 
-ok(!run(app(['openssl', 'fipsinstall', '-in', $stconf,
-             '-module', $infile, '-verify'])),
-        "fipsinstall config verify fails without self test indicator");
+    ok(!run(app(['openssl', 'fipsinstall', '-in', $stconf,
+                 '-module', $infile, '-verify'])),
+            "fipsinstall config verify fails without self test indicator");
 
-ok(run(app(['openssl', 'fipsinstall', '-in', $stconf,
-            '-module', $infile, '-self_test_onload', '-verify'])),
-       "fipsinstall config verify passes when self test indicator is not present");
+    ok(run(app(['openssl', 'fipsinstall', '-in', $stconf,
+                '-module', $infile, '-self_test_onload', '-verify'])),
+           "fipsinstall config verify passes when self test indicator is not present");
+}
+
+SKIP: {
+    run(test(["fips_version_test", "-config", $provconf, ">=3.1.0"]),
+             capture => 1, statusvar => \my $exit);
+    skip "FIPS provider version can run self tests on install", 1
+        if !$exit;
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+                '-provider_name', 'fips', '-mac_name', 'HMAC',
+                '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+                '-section_name', 'fips_sect', '-self_test_oninstall',
+                '-ems_check'])),
+       "fipsinstall fails when attempting to run self tests on install");
+}
+
+ok(find_line_file('drbg-no-trunc-md = 0', 'fips.cnf') == 1,
+   'fipsinstall defaults to not banning truncated digests with DRBGs');
+
+ok(run(app(['openssl', 'fipsinstall', '-out', 'fips.cnf', '-module', $infile,
+           '-provider_name', 'fips', '-mac_name', 'HMAC',
+           '-macopt', 'digest:SHA256', '-macopt', "hexkey:$fipskey",
+           '-section_name', 'fips_sect', '-no_drbg_truncated_digests'])),
+   "fipsinstall knows about allowing truncated digests in DRBGs");
+
+ok(find_line_file('drbg-no-trunc-md = 1', 'fips.cnf') == 1,
+   'fipsinstall will allow option for truncated digests with DRBGs');
+
+
+ok(run(app(['openssl', 'fipsinstall', '-out', 'fips-pedantic.cnf',
+            '-module', $infile, '-pedantic'])),
+       "fipsinstall accepts -pedantic option");
+
+foreach my $o (@pedantic_okay) {
+    ok(run(app(['openssl', 'fipsinstall', '-out', "fips-${o}.cnf",
+                '-module', $infile, '-pedantic', "-${o}"])),
+           "fipsinstall accepts -${o} after -pedantic option");
+}
+
+foreach my $o (@pedantic_fail) {
+    ok(!run(app(['openssl', 'fipsinstall', '-out', 'fips_fail.cnf',
+                 '-module', $infile, '-pedantic', "-${o}"])),
+            "fipsinstall disallows -${o} after -pedantic option");
+}
+

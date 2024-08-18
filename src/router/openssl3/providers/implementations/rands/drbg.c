@@ -21,6 +21,8 @@
 #include "crypto/rand_pool.h"
 #include "prov/provider_ctx.h"
 #include "prov/providercommon.h"
+#include "prov/fipscommon.h"
+#include "crypto/context.h"
 
 /*
  * Support framework for NIST SP 800-90A DRBG
@@ -43,21 +45,20 @@ static const OSSL_DISPATCH *find_call(const OSSL_DISPATCH *dispatch,
 
 static int rand_drbg_restart(PROV_DRBG *drbg);
 
+/*
+ * We interpret a call to this function as a hint only and ignore it. This
+ * occurs when the EVP layer thinks we should do some locking. In practice
+ * however we manage for ourselves when we take a lock or not on the basis
+ * of whether drbg->lock is present or not.
+ */
 int ossl_drbg_lock(void *vctx)
 {
-    PROV_DRBG *drbg = vctx;
-
-    if (drbg == NULL || drbg->lock == NULL)
-        return 1;
-    return CRYPTO_THREAD_write_lock(drbg->lock);
+    return 1;
 }
 
+/* Interpreted as a hint only and ignored as for ossl_drbg_lock() */
 void ossl_drbg_unlock(void *vctx)
 {
-    PROV_DRBG *drbg = vctx;
-
-    if (drbg != NULL && drbg->lock != NULL)
-        CRYPTO_THREAD_unlock(drbg->lock);
 }
 
 static int ossl_drbg_lock_parent(PROV_DRBG *drbg)
@@ -159,10 +160,8 @@ size_t ossl_drbg_get_seed(void *vdrbg, unsigned char **pout,
 
     /* Allocate storage */
     buffer = OPENSSL_secure_malloc(bytes_needed);
-    if (buffer == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+    if (buffer == NULL)
         return 0;
-    }
 
     /*
      * Get random data.  Include our DRBG address as
@@ -274,7 +273,7 @@ typedef struct prov_drbg_nonce_global_st {
  * to be in a different global data object. Otherwise we will go into an
  * infinite recursion loop.
  */
-static void *prov_drbg_nonce_ossl_ctx_new(OSSL_LIB_CTX *libctx)
+void *ossl_prov_drbg_nonce_ctx_new(OSSL_LIB_CTX *libctx)
 {
     PROV_DRBG_NONCE_GLOBAL *dngbl = OPENSSL_zalloc(sizeof(*dngbl));
 
@@ -290,7 +289,7 @@ static void *prov_drbg_nonce_ossl_ctx_new(OSSL_LIB_CTX *libctx)
     return dngbl;
 }
 
-static void prov_drbg_nonce_ossl_ctx_free(void *vdngbl)
+void ossl_prov_drbg_nonce_ctx_free(void *vdngbl)
 {
     PROV_DRBG_NONCE_GLOBAL *dngbl = vdngbl;
 
@@ -302,12 +301,6 @@ static void prov_drbg_nonce_ossl_ctx_free(void *vdngbl)
     OPENSSL_free(dngbl);
 }
 
-static const OSSL_LIB_CTX_METHOD drbg_nonce_ossl_ctx_method = {
-    OSSL_LIB_CTX_METHOD_DEFAULT_PRIORITY,
-    prov_drbg_nonce_ossl_ctx_new,
-    prov_drbg_nonce_ossl_ctx_free,
-};
-
 /* Get a nonce from the operating system */
 static size_t prov_drbg_get_nonce(PROV_DRBG *drbg, unsigned char **pout,
                                   size_t min_len, size_t max_len)
@@ -316,8 +309,7 @@ static size_t prov_drbg_get_nonce(PROV_DRBG *drbg, unsigned char **pout,
     unsigned char *buf = NULL;
     OSSL_LIB_CTX *libctx = ossl_prov_ctx_get0_libctx(drbg->provctx);
     PROV_DRBG_NONCE_GLOBAL *dngbl
-        = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_DRBG_NONCE_INDEX,
-                                &drbg_nonce_ossl_ctx_method);
+        = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_DRBG_NONCE_INDEX);
     struct {
         void *drbg;
         int count;
@@ -343,8 +335,9 @@ static size_t prov_drbg_get_nonce(PROV_DRBG *drbg, unsigned char **pout,
     /* Use the built in nonce source plus some of our specifics */
     memset(&data, 0, sizeof(data));
     data.drbg = drbg;
-    CRYPTO_atomic_add(&dngbl->rand_nonce_count, 1, &data.count,
-                      dngbl->rand_nonce_lock);
+    if (!CRYPTO_atomic_add(&dngbl->rand_nonce_count, 1, &data.count,
+                           dngbl->rand_nonce_lock))
+        return 0;
     return ossl_prov_get_nonce(drbg->provctx, pout, min_len, max_len,
                                &data, sizeof(data));
 }
@@ -491,16 +484,12 @@ int ossl_prov_drbg_uninstantiate(PROV_DRBG *drbg)
     return 1;
 }
 
-/*
- * Reseed |drbg|, mixing in the specified data
- *
- * Requires that drbg->lock is already locked for write, if non-null.
- *
- * Returns 1 on success, 0 on failure.
- */
-int ossl_prov_drbg_reseed(PROV_DRBG *drbg, int prediction_resistance,
-                          const unsigned char *ent, size_t ent_len,
-                          const unsigned char *adin, size_t adinlen)
+static int ossl_prov_drbg_reseed_unlocked(PROV_DRBG *drbg,
+                                          int prediction_resistance,
+                                          const unsigned char *ent,
+                                          size_t ent_len,
+                                          const unsigned char *adin,
+                                          size_t adinlen)
 {
     unsigned char *entropy = NULL;
     size_t entropylen = 0;
@@ -603,11 +592,36 @@ int ossl_prov_drbg_reseed(PROV_DRBG *drbg, int prediction_resistance,
 }
 
 /*
+ * Reseed |drbg|, mixing in the specified data
+ *
+ * Acquires the drbg->lock for writing, if non-null.
+ *
+ * Returns 1 on success, 0 on failure.
+ */
+int ossl_prov_drbg_reseed(PROV_DRBG *drbg, int prediction_resistance,
+                          const unsigned char *ent, size_t ent_len,
+                          const unsigned char *adin, size_t adinlen)
+{
+    int ret;
+
+    if (drbg->lock != NULL && !CRYPTO_THREAD_write_lock(drbg->lock))
+        return 0;
+
+    ret = ossl_prov_drbg_reseed_unlocked(drbg, prediction_resistance, ent,
+                                         ent_len, adin, adinlen);
+
+    if (drbg->lock != NULL)
+        CRYPTO_THREAD_unlock(drbg->lock);
+
+    return ret;
+}
+
+/*
  * Generate |outlen| bytes into the buffer at |out|.  Reseed if we need
  * to or if |prediction_resistance| is set.  Additional input can be
  * sent in |adin| and |adinlen|.
  *
- * Requires that drbg->lock is already locked for write, if non-null.
+ * Acquires the drbg->lock for writing if available
  *
  * Returns 1 on success, 0 on failure.
  *
@@ -618,8 +632,12 @@ int ossl_prov_drbg_generate(PROV_DRBG *drbg, unsigned char *out, size_t outlen,
 {
     int fork_id;
     int reseed_required = 0;
+    int ret = 0;
 
     if (!ossl_prov_is_running())
+        return 0;
+
+    if (drbg->lock != NULL && !CRYPTO_THREAD_write_lock(drbg->lock))
         return 0;
 
     if (drbg->state != EVP_RAND_STATE_READY) {
@@ -628,25 +646,25 @@ int ossl_prov_drbg_generate(PROV_DRBG *drbg, unsigned char *out, size_t outlen,
 
         if (drbg->state == EVP_RAND_STATE_ERROR) {
             ERR_raise(ERR_LIB_PROV, PROV_R_IN_ERROR_STATE);
-            return 0;
+            goto err;
         }
         if (drbg->state == EVP_RAND_STATE_UNINITIALISED) {
             ERR_raise(ERR_LIB_PROV, PROV_R_NOT_INSTANTIATED);
-            return 0;
+            goto err;
         }
     }
     if (strength > drbg->strength) {
         ERR_raise(ERR_LIB_PROV, PROV_R_INSUFFICIENT_DRBG_STRENGTH);
-        return 0;
+        goto err;
     }
 
     if (outlen > drbg->max_request) {
         ERR_raise(ERR_LIB_PROV, PROV_R_REQUEST_TOO_LARGE_FOR_DRBG);
-        return 0;
+        goto err;
     }
     if (adinlen > drbg->max_adinlen) {
         ERR_raise(ERR_LIB_PROV, PROV_R_ADDITIONAL_INPUT_TOO_LONG);
-        return 0;
+        goto err;
     }
 
     fork_id = openssl_get_fork_id();
@@ -671,10 +689,10 @@ int ossl_prov_drbg_generate(PROV_DRBG *drbg, unsigned char *out, size_t outlen,
         reseed_required = 1;
 
     if (reseed_required || prediction_resistance) {
-        if (!ossl_prov_drbg_reseed(drbg, prediction_resistance, NULL, 0,
-                                   adin, adinlen)) {
+        if (!ossl_prov_drbg_reseed_unlocked(drbg, prediction_resistance, NULL,
+                                            0, adin, adinlen)) {
             ERR_raise(ERR_LIB_PROV, PROV_R_RESEED_ERROR);
-            return 0;
+            goto err;
         }
         adin = NULL;
         adinlen = 0;
@@ -683,12 +701,17 @@ int ossl_prov_drbg_generate(PROV_DRBG *drbg, unsigned char *out, size_t outlen,
     if (!drbg->generate(drbg, out, outlen, adin, adinlen)) {
         drbg->state = EVP_RAND_STATE_ERROR;
         ERR_raise(ERR_LIB_PROV, PROV_R_GENERATE_ERROR);
-        return 0;
+        goto err;
     }
 
     drbg->generate_counter++;
 
-    return 1;
+    ret = 1;
+ err:
+    if (drbg->lock != NULL)
+        CRYPTO_THREAD_unlock(drbg->lock);
+
+    return ret;
 }
 
 /*
@@ -784,10 +807,8 @@ PROV_DRBG *ossl_rand_drbg_new
         return NULL;
 
     drbg = OPENSSL_zalloc(sizeof(*drbg));
-    if (drbg == NULL) {
-        ERR_raise(ERR_LIB_PROV, ERR_R_MALLOC_FAILURE);
+    if (drbg == NULL)
         return NULL;
-    }
 
     drbg->provctx = provctx;
     drbg->instantiate = instantiate;
@@ -858,6 +879,10 @@ void ossl_rand_drbg_free(PROV_DRBG *drbg)
     OPENSSL_free(drbg);
 }
 
+/*
+ * Helper function called by internal DRBG implementations. Assumes that at
+ * least a read lock has been taken on drbg->lock
+ */
 int ossl_drbg_get_ctx_params(PROV_DRBG *drbg, OSSL_PARAM params[])
 {
     OSSL_PARAM *p;
@@ -868,10 +893,6 @@ int ossl_drbg_get_ctx_params(PROV_DRBG *drbg, OSSL_PARAM params[])
 
     p = OSSL_PARAM_locate(params, OSSL_RAND_PARAM_STRENGTH);
     if (p != NULL && !OSSL_PARAM_set_int(p, drbg->strength))
-        return 0;
-
-    p = OSSL_PARAM_locate(params, OSSL_RAND_PARAM_MAX_REQUEST);
-    if (p != NULL && !OSSL_PARAM_set_size_t(p, drbg->max_request))
         return 0;
 
     p = OSSL_PARAM_locate(params, OSSL_DRBG_PARAM_MIN_ENTROPYLEN);
@@ -910,10 +931,43 @@ int ossl_drbg_get_ctx_params(PROV_DRBG *drbg, OSSL_PARAM params[])
     if (p != NULL && !OSSL_PARAM_set_time_t(p, drbg->reseed_time_interval))
         return 0;
 
+    return 1;
+}
+
+/*
+ * Helper function to get certain params that require no lock to obtain. Sets
+ * *complete to 1 if all the params were processed, or 0 otherwise
+ */
+int ossl_drbg_get_ctx_params_no_lock(PROV_DRBG *drbg, OSSL_PARAM params[],
+                                     int *complete)
+{
+    size_t cnt = 0;
+    OSSL_PARAM *p;
+
+    /* This value never changes once set */
+    p = OSSL_PARAM_locate(params, OSSL_RAND_PARAM_MAX_REQUEST);
+    if (p != NULL) {
+        if (!OSSL_PARAM_set_size_t(p, drbg->max_request))
+            return 0;
+        cnt++;
+    }
+
+    /*
+     * Can be changed by multiple threads, but we tolerate inaccuracies in this
+     * value.
+     */
     p = OSSL_PARAM_locate(params, OSSL_DRBG_PARAM_RESEED_COUNTER);
-    if (p != NULL
-            && !OSSL_PARAM_set_uint(p, tsan_load(&drbg->reseed_counter)))
-        return 0;
+    if (p != NULL) {
+        if (!OSSL_PARAM_set_uint(p, tsan_load(&drbg->reseed_counter)))
+            return 0;
+        cnt++;
+    }
+
+    if (params[cnt].key == NULL)
+        *complete = 1;
+    else
+        *complete = 0;
+
     return 1;
 }
 
@@ -931,5 +985,33 @@ int ossl_drbg_set_ctx_params(PROV_DRBG *drbg, const OSSL_PARAM params[])
     p = OSSL_PARAM_locate_const(params, OSSL_DRBG_PARAM_RESEED_TIME_INTERVAL);
     if (p != NULL && !OSSL_PARAM_get_time_t(p, &drbg->reseed_time_interval))
         return 0;
+    return 1;
+}
+
+/* Confirm digest is allowed to be used with a DRBG */
+int ossl_drbg_verify_digest(ossl_unused OSSL_LIB_CTX *libctx, const EVP_MD *md)
+{
+#ifdef FIPS_MODULE
+    /* FIPS 140-3 IG D.R limited DRBG digests to a specific set */
+    static const char *const allowed_digests[] = {
+        "SHA1",                     /* SHA 1 allowed */
+        "SHA2-256", "SHA2-512",     /* non-truncated SHA2 allowed */
+        "SHA3-256", "SHA3-512",     /* non-truncated SHA3 allowed */
+    };
+    size_t i;
+
+    if (FIPS_restricted_drbg_digests_enabled(libctx)) {
+        for (i = 0; i < OSSL_NELEM(allowed_digests); i++)
+            if (EVP_MD_is_a(md, allowed_digests[i]))
+                return 1;
+        ERR_raise(ERR_LIB_PROV, PROV_R_DIGEST_NOT_ALLOWED);
+        return 0;
+    }
+#endif
+    /* Outside of FIPS, any digests that are not XOF are allowed */
+    if ((EVP_MD_get_flags(md) & EVP_MD_FLAG_XOF) != 0) {
+        ERR_raise(ERR_LIB_PROV, PROV_R_XOF_DIGESTS_NOT_ALLOWED);
+        return 0;
+    }
     return 1;
 }
