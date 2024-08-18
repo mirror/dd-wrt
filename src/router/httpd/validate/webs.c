@@ -427,6 +427,8 @@ char *num_to_protocol(int num)
 	case 102:
 		return "risk";
 #endif
+	case 103:
+		return "custom";
 	default:
 		return "unknown";
 	}
@@ -1840,7 +1842,7 @@ void qos_add_svc(webs_t wp)
 	if (get_svc(add_svc, protocol, ports))
 		return;
 
-	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0) {
+	if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "dpi") == 0 || strcmp(protocol, "risk") == 0 || strcmp(protocol, "custom") == 0) {
 		int slen = strlen(add_svc);
 
 		for (i = 0; i < slen; i++)
@@ -2861,7 +2863,7 @@ void qos_save(webs_t wp)
 		if (get_svc(name, protocol, ports))
 			continue;
 
-		if (strcmp(protocol, "l7") == 0) {
+		if (strcmp(protocol, "l7") == 0 || strcmp(protocol, "custom") == 0) {
 			int slen = strlen(name);
 
 			for (j = 0; j < slen; j++)

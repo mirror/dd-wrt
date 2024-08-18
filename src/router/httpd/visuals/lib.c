@@ -277,6 +277,8 @@ int protocol_to_num(char *proto)
 	else if (!strcmp(proto, "risk"))
 		return 102;
 #endif
+	else if (!strcmp(proto, "custom"))
+		return 103;
 	else
 		return 0;
 }
