@@ -357,8 +357,7 @@ endif
 	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
-	dd if=$(TOP)/$(ARCH)-uclibc/Image-factory.bin bs=131072 conv=sync of=$(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
-	dd if=/dev/zero bs=131072 count=1 >> $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/dynalink_dlwrx36-webflash.bin $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
 
 #mr5500
