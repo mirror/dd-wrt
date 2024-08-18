@@ -778,11 +778,11 @@ int main(int argc, char * const argv[])
 
 		err = mtd_num2ubi_dev(libubi, mtd.mtd_num, &ubi_dev_num);
 		libubi_close(libubi);
-		if (!err) {
-			errmsg("please, first detach mtd%d (%s) from ubi%d",
-			       mtd.mtd_num, args.node, ubi_dev_num);
-			goto out_close;
-		}
+//		if (!err) {
+//			errmsg("please, first detach mtd%d (%s) from ubi%d",
+//			       mtd.mtd_num, args.node, ubi_dev_num);
+//			goto out_close;
+//		}
 	}
 
 	if (!args.quiet) {
