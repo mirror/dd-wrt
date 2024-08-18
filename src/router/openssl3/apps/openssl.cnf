@@ -57,6 +57,8 @@ engines = engines_sect
 # List of providers to load
 [provider_sect]
 default = default_sect
+legacy = legacy_sect
+
 .include /var/etc/ssl/providers.cnf
 
 # The fips section name should match the section name inside the
@@ -72,6 +74,9 @@ default = default_sect
 # OpenSSL may not work correctly which could lead to significant system
 # problems including inability to remotely access the system.
 [default_sect]
+activate = 1
+
+[legacy_sect]
 activate = 1
 
 [engines_sect]
