@@ -93,6 +93,7 @@ endif
 	-cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
 #	sed 's!engines = engines_sect!#&!' $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 	cp openssl3/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
+	cp openssl3/apps/afalg.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
 
 openssl-clean:
 	$(MAKE) -C openssl3 clean MAKE=make
