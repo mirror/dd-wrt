@@ -16,6 +16,7 @@ typedef struct _l7filters {
 #define PDPI_ONLY 1
 #define NDPI_ONLY 2
 #define NDPI_RISK 3
+#define FILTER_CUSTOM 4
 
 #ifdef HAVE_OPENDPI
 #define DPI 2 //open dpi based
@@ -33,7 +34,7 @@ l7filters filters_list[] = {
 	{ "accuweather", NDPI_ONLY, 0, NULL },
 	{ "activision", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ad-telemetry", L7_ONLY },
+	{ "ad-telemetry", FILTER_CUSTOM },
 #ifdef HAVE_OPENDPI
 	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
 	{ "adult_content", NDPI_ONLY, 0, NULL },
@@ -745,7 +746,7 @@ l7filters filters_list[] = {
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ubnt-telemetry", L7_ONLY },
+	{ "ubnt-telemetry", FILTER_CUSTOM },
 #ifdef HAVE_OPENDPI
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
@@ -812,7 +813,7 @@ l7filters filters_list[] = {
 	{ "whois-das", NDPI_ONLY, 0, NULL },
 	{ "wikipedia", NDPI_ONLY, 0, NULL },
 #endif
-	{ "windows-telemetry", L7_ONLY },
+	{ "windows-telemetry", FILTER_CUSTOM },
 #ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY, 0, NULL },
 #endif
