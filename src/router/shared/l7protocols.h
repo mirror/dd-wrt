@@ -8,8 +8,8 @@
 
 typedef struct _l7filters {
 	char *name;
-	unsigned short protocol : 2; // 1=p2p, 0=l7, 2=opendpi
-	unsigned short level : 14;
+	unsigned short protocol : 3; // 1=p2p, 0=l7, 2=opendpi
+	unsigned short level : 13;
 	char *matchdep; // for risk only
 } l7filters;
 #define L7_ONLY 0
