@@ -34,7 +34,7 @@ l7filters filters_list[] = {
 	{ "accuweather", NDPI_ONLY, 0, NULL },
 	{ "activision", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ad-telemetry", FILTER_CUSTOM },
+	{ "ad-telemetry", FILTER_CUSTOM,0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
 	{ "adult_content", NDPI_ONLY, 0, NULL },
@@ -746,7 +746,7 @@ l7filters filters_list[] = {
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
 #endif
-	{ "ubnt-telemetry", FILTER_CUSTOM },
+	{ "ubnt-telemetry", FILTER_CUSTOM,0,NULL },
 #ifdef HAVE_OPENDPI
 	{ "ubntac2", NDPI_ONLY, 0, NULL },
 	{ "ubuntuone", NDPI_ONLY, 0, NULL },
@@ -813,7 +813,7 @@ l7filters filters_list[] = {
 	{ "whois-das", NDPI_ONLY, 0, NULL },
 	{ "wikipedia", NDPI_ONLY, 0, NULL },
 #endif
-	{ "windows-telemetry", FILTER_CUSTOM },
+	{ "windows-telemetry", FILTER_CUSTOM,0,NULL },
 #ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY, 0, NULL },
 #endif
