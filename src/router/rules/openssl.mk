@@ -40,7 +40,7 @@ export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sectio
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-x86
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections  -latomic
 endif
 ifeq ($(ARCH),x86_64)
 export OPENSSL_TARGET := linux-x86_64
