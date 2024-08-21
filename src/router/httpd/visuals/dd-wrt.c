@@ -3477,7 +3477,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 #endif
-	if (!is_supplicant(prefix) && has_smps(prefix)) {
+	if (is_supplicant(prefix) && has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.smps", NULL);
@@ -5186,7 +5186,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 		showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
 #endif
-	if (!is_supplicant(prefix) && has_smps(prefix)) {
+	if (is_supplicant(prefix) && has_smps(prefix)) {
 		sprintf(wl_smps, "%s_smps", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.smps", NULL);
