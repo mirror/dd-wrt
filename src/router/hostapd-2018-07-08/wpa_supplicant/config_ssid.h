@@ -752,6 +752,8 @@ struct wpa_ssid {
 	    vht_tx_mcs_nss_7, vht_tx_mcs_nss_8;
 #endif /* CONFIG_VHT_OVERRIDES */
 
+	int smps; // 0 = disabled, 1 = static, 2 = dynamic
+
 	/**
 	 * ap_max_inactivity - Timeout in seconds to detect STA's inactivity
 	 *
