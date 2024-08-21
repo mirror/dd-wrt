@@ -835,6 +835,8 @@ struct wpa_ssid {
 	int disable_he;
 #endif /* CONFIG_HE_OVERRIDES */
 
+	int smps; // 0 = disabled, 1 = static, 2 = dynamic
+
 	/**
 	 * ap_max_inactivity - Timeout in seconds to detect STA's inactivity
 	 *
