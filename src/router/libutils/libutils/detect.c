@@ -1954,8 +1954,8 @@ generic:;
 		{ -1, "ISO Station 5AC", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 }, //
 		{ -1, "NanoStation 5AC loco", 0xe7fa, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 2 }, //
 		{ -1, "NanoStation 5AC", 0xe7fb, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 }, //
-		{ -1, "Bullet AC", 0xe2c5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
-		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
+		{ -1, "Bullet AC", 0xe2c5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
+		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10 }, //
 		{ -1, "NanoBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 4 }, //
 		{ -1, "NanoBeam M2 XW", 0xe812, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 6 }, //
