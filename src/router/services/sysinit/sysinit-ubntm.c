@@ -296,7 +296,8 @@ out:;
 		break;
 	default:
 		writeprocsys("dev/wifi0/softled", "0");
-		if (!nvram_matchi("wlanled", 0))
+		char *exclude = nvram_safe_get("DD_BOARD");
+		if (!nvram_matchi("wlanled", 0) && strncmp(exclude,"LiteBeam",8) && strcmp(exclude, "NanoStation 5AC loco") && strncmp(exclude, "Bullet", 6))
 			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L",
 			     "generic_14:-65");
 	}
