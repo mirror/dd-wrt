@@ -828,6 +828,8 @@ struct wpa_ssid {
 	 */
 	int no_auto_peer;
 
+	int smps; // 0 = disabled, 1 = static, 2 = dynamic
+
 	/**
 	 * mesh_rssi_threshold - Set mesh parameter mesh_rssi_threshold (dBm)
 	 *
