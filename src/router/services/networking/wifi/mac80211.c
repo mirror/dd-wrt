@@ -2070,6 +2070,9 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		    strcmp(netmode, "n5-only") && strcmp(netmode, "na-only") && strcmp(netmode, "ng-only") &&
 		    strcmp(netmode, "mixed") && strcmp(netmode, "axg-only")) {
 			fprintf(fp, "\tdisable_ht=1\n");
+		} else {
+			if (!is_ath5k(prefix))
+				fprintf(fp, "\tsmps=%d\n", nvram_default_ngeti("%s_smps",0));
 		}
 		if (atoi(channelbw) < 40) {
 			fprintf(fp, "\tdisable_ht40=1\n");
