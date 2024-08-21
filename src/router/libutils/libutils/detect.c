@@ -1935,9 +1935,9 @@ generic:;
 #define UNLOCK_UAPV2 16
 	struct UBNTDEV dev[] = {
 		/* some these AC devices are untested and not yet supported, its just the id definition for detection right now */
-		{ -1, "NanoBeam 2AC 13", 0xe4f2, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 4 }, //
-		{ -1, "NanoBeam 2AC 13", 0xe4f3, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 4 }, //
-		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
+		{ -1, "NanoBeam 2AC 13", 0xe4f2, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
+		{ -1, "NanoBeam 2AC 13", 0xe4f3, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
+		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "NanoBeam 5AC Gen2", 0xe7fc, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
 		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
