@@ -422,6 +422,17 @@ int wpa_supplicant_conf_ap_ht(struct wpa_supplicant *wpa_s,
 				 HT_CAP_INFO_TX_STBC |
 				 HT_CAP_INFO_MAX_AMSDU_SIZE);
 
+			conf->ht_capab &= ~HT_CAP_INFO_SMPS_DISABLED;
+			if (ssid->smps == 0) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_DISABLED;
+			}
+			if (ssid->smps == 1) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_STATIC;
+			}
+			if (ssid->smps == 2) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_DYNAMIC;
+			}
+
 			/* check this before VHT, because setting oper chan
 			 * width and friends is the same call for HE and VHT
 			 * and checks if conf->ieee8021ax == 1 */
