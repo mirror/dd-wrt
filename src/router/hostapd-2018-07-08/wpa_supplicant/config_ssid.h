@@ -829,6 +829,8 @@ struct wpa_ssid {
 	 */
 	int macsec_replay_protect;
 
+	int smps; // 0 = disabled, 1 = static, 2 = dynamic
+
 	/**
 	 * macsec_replay_window - MACsec replay protection window
 	 *
