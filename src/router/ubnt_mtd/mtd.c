@@ -291,7 +291,7 @@ static int mtd_erase(const char *mtd)
 static void indicate_writing(const char *mtd)
 {
 	if (quiet < 2)
-		fprintf(stderr, "\nWriting %s ... ", imagefile, mtd);
+		fprintf(stderr, "\nWriting %s ... ", mtd);
 
 	if (!quiet)
 		fprintf(stderr, " [ ]");
@@ -577,6 +577,11 @@ static void ar7240_spi_poll()
 	} while (rd);
 }
 
+static int get_clock(void)
+{
+	return ar7240_reg_rd(AR7240_SPI_CLOCK);
+}
+
 static void ar7240_spi_flash_unblock(void)	// note gpio 16 is another flash protect mechanism found on the uap v2
 {
 #ifdef SPLIT
@@ -640,7 +645,7 @@ int main(int argc, char **argv)
 	quiet = 0;
 	no_erase = 0;
 // fuck ubnt
-
+	fprintf(stderr, "SPI Clock 0x%08X\n", get_clock());
 	system("echo 5edfacbf > /proc/ubnthal/.uf");
 	device = "kernel";
 	force = 1;
@@ -650,6 +655,12 @@ int main(int argc, char **argv)
 	}
 	mtd_unlock(device);
 #ifdef SPLIT
+	fprintf(stderr, "write kernel with %d size\n", sizeof(kernel));
+	if (sizeof(kernel) > 1024*1024)
+	    {
+	    fprintf(stderr, "image cannot be flashed. kernel part to big!!!\n");
+	    exit(-1);
+	    }
 	mtd_write(kernel, sizeof(kernel), device, fis_layout, part_offset);
 	device = "rootfs";
 	if (!mtd_check(device)) {
@@ -657,6 +668,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	mtd_unlock(device);
+	fprintf(stderr, "write rootfs with %d size\n", sizeof(rootfs));
 	mtd_write(rootfs, sizeof(rootfs), device, fis_layout, part_offset);
 #else
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
