@@ -1344,7 +1344,7 @@ struct aead_alg cryptoapi_aead_algs[] = {
 		 */
 		.base = {
 			.cra_name = "gcm(aes)",
-			.cra_driver_name = "nss-gcm",
+			.cra_driver_name = "nss-gcm-aes",
 			.cra_priority = 10000,
 			.cra_flags = CRYPTO_ALG_ASYNC,
 			.cra_blocksize = AES_BLOCK_SIZE,
