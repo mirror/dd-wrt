@@ -195,7 +195,9 @@ static int _nvram_set(const char *name, const char *value)
 
 int nvram_set(const char *name, const char *value)
 {
+#ifndef HAVE_MADWIFI
 	extern struct nvram_convert nvram_converts[];
+#endif
 	struct nvram_convert *v;
 	int ret;
 	if (!name) {
@@ -215,12 +217,14 @@ int nvram_set(const char *name, const char *value)
 		return 0;	//ignore if already set
 	ret = _nvram_set(name, value);
 
+#ifndef HAVE_MADWIFI
 	for (v = nvram_converts; v->name; v++) {
 		if (!strcmp(v->name, name)) {
 			if (strcmp(v->wl0_name, ""))
 				_nvram_set(v->wl0_name, value);
 		}
 	}
+#endif
 	return ret;
 }
 
