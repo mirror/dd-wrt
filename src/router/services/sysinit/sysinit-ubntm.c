@@ -297,7 +297,7 @@ out:;
 	default:
 		writeprocsys("dev/wifi0/softled", "0");
 		char *exclude = nvram_safe_get("DD_BOARD");
-		if (!nvram_matchi("wlanled", 0) && strncmp(exclude,"Ubiquiti LiteBeam",17) && strcmp(exclude, "Ubiquiti NanoStation 5AC loco") && strncmp(exclude, "Ubiquiti Bullet", 15))
+		if (!nvram_matchi("wlanled", 0) && strncmp(exclude,"Ubiquiti LiteAP",15) && strncmp(exclude,"Ubiquiti LiteBeam",17) && strcmp(exclude, "Ubiquiti NanoStation 5AC loco") && strncmp(exclude, "Ubiquiti Bullet", 15))
 			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L",
 			     "generic_14:-65");
 	}
