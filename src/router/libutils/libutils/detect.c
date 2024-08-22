@@ -1942,7 +1942,7 @@ generic:;
 		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC LR", 0xe7fe, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 2 }, //
-		{ -1, "LiteAP AC", 0xe8e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 1 }, //
+		{ -1, "LiteAP AC", 0xe8e5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteAP GPS", 0xe7fd, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 2 }, //
 		{ -1, "PowerBeam 2AC 400", 0xe3f2, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 4 }, //
 		{ -1, "PowerBeam 2AC 400", 0xe3f3, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 4 }, //
