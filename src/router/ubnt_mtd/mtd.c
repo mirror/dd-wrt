@@ -49,24 +49,24 @@
 #include "mtd.h"
 
 #define MAX_ARGS 8
-#define JFFS2_DEFAULT_DIR	""	/* directory name without /, empty means root dir */
+#define JFFS2_DEFAULT_DIR "" /* directory name without /, empty means root dir */
 
-#define TRX_MAGIC		0x48445230	/* "HDR0" */
-#define SEAMA_MAGIC		0x5ea3a417
-#define WRGG03_MAGIC		0x20080321
+#define TRX_MAGIC 0x48445230 /* "HDR0" */
+#define SEAMA_MAGIC 0x5ea3a417
+#define WRGG03_MAGIC 0x20080321
 
 #if !defined(__BYTE_ORDER)
 #error "Unknown byte order"
 #endif
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define cpu_to_be32(x)	(x)
-#define be32_to_cpu(x)	(x)
-#define le32_to_cpu(x)	bswap_32(x)
+#define cpu_to_be32(x) (x)
+#define be32_to_cpu(x) (x)
+#define le32_to_cpu(x) bswap_32(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define cpu_to_be32(x)	bswap_32(x)
-#define be32_to_cpu(x)	bswap_32(x)
-#define le32_to_cpu(x)  (x)
+#define cpu_to_be32(x) bswap_32(x)
+#define be32_to_cpu(x) bswap_32(x)
+#define le32_to_cpu(x) (x)
 #else
 #error "Unsupported endianness"
 #endif
@@ -285,7 +285,6 @@ static int mtd_erase(const char *mtd)
 
 	close(fd);
 	return 0;
-
 }
 
 static void indicate_writing(const char *mtd)
@@ -421,13 +420,14 @@ resume:
 static void usage(void)
 {
 	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>[:<device>...]\n\n"
-		"The device is in the format of mtdX (eg: mtd4) or its label.\n"
-		"mtd recognizes these commands:\n"
-		"        unlock                  unlock the device\n"
-		"        refresh                 refresh mtd partition\n"
-		"        erase                   erase all data on device\n"
-		"        verify <imagefile>|-    verify <imagefile> (use - for stdin) to device\n"
-		"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n" "        jffs2write <file>       append <file> to the jffs2 partition on the device\n");
+			"The device is in the format of mtdX (eg: mtd4) or its label.\n"
+			"mtd recognizes these commands:\n"
+			"        unlock                  unlock the device\n"
+			"        refresh                 refresh mtd partition\n"
+			"        erase                   erase all data on device\n"
+			"        verify <imagefile>|-    verify <imagefile> (use - for stdin) to device\n"
+			"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
+			"        jffs2write <file>       append <file> to the jffs2 partition on the device\n");
 	if (mtd_resetbc) {
 		fprintf(stderr, "        resetbc <device>        reset the uboot boot counter\n");
 	}
@@ -451,20 +451,25 @@ static void usage(void)
 		"        -d <name>               directory for jffs2write, defaults to \"tmp\"\n"
 		"        -j <name>               integrate <file> into jffs2 data when writing an image\n"
 		"        -s <number>             skip the first n bytes when appending data to the jffs2 partiton, defaults to \"0\"\n"
-		"        -p <number>             write beginning at partition offset\n" "        -l <length>             the length of data that we want to dump\n");
+		"        -p <number>             write beginning at partition offset\n"
+		"        -l <length>             the length of data that we want to dump\n");
 	if (mtd_fixtrx) {
 		fprintf(stderr, "        -o offset               offset of the image header in the partition(for fixtrx)\n");
 	}
 	if (mtd_fixtrx || mtd_fixseama || mtd_fixwrgg) {
-		fprintf(stderr, "        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama / fixwrgg)\n");
+		fprintf(stderr,
+			"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama / fixwrgg)\n");
 	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
 		"        -F <part>[:<size>[:<entrypoint>]][,<part>...]\n"
 		"                                alter the fis partition table to create new partitions replacing\n"
-		"                                the partitions provided as argument to the write command\n" "                                (only valid together with the write command)\n"
+		"                                the partitions provided as argument to the write command\n"
+		"                                (only valid together with the write command)\n"
 #endif
-		"\n" "Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n" "         mtd -r write linux.trx linux\n\n");
+		"\n"
+		"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
+		"         mtd -r write linux.trx linux\n\n");
 	exit(1);
 }
 
@@ -503,59 +508,60 @@ unsigned int ar7240_reg_rd(unsigned int phys)
 	return ret;
 }
 
-#define AR7240_SPI_CMD_WRITE_SR		0x01
+#define AR7240_SPI_CMD_WRITE_SR 0x01
 
-#define MXIC_JEDEC_ID        0xc2
-#define ATMEL_JEDEC_ID        0x1f
-#define SST_JEDEC_ID        0x20
-#define INTEL_JEDEC_ID        0x89
-#define WINB_JEDEC_ID        0xef
-#define AR7240_SPI_CMD_RDID             0x9f
+#define MXIC_JEDEC_ID 0xc2
+#define ATMEL_JEDEC_ID 0x1f
+#define SST_JEDEC_ID 0x20
+#define INTEL_JEDEC_ID 0x89
+#define WINB_JEDEC_ID 0xef
+#define AR7240_SPI_CMD_RDID 0x9f
 
-#define MXIC_ENSO            0xb1
-#define MXIC_EXSO            0xc1
+#define MXIC_ENSO 0xb1
+#define MXIC_EXSO 0xc1
 
-#define AR7240_SPI_FS           0x1f000000
-#define AR7240_SPI_CLOCK        0x1f000004
-#define AR7240_SPI_WRITE        0x1f000008
-#define AR7240_SPI_READ         0x1f000000
-#define AR7240_SPI_RD_STATUS    0x1f00000c
+#define AR7240_SPI_FS 0x1f000000
+#define AR7240_SPI_CLOCK 0x1f000004
+#define AR7240_SPI_WRITE 0x1f000008
+#define AR7240_SPI_READ 0x1f000000
+#define AR7240_SPI_RD_STATUS 0x1f00000c
 
-#define AR7240_SPI_CS_DIS       0x70000
-#define AR7240_SPI_CE_LOW       0x60000
-#define AR7240_SPI_CE_HIGH      0x60100
-#define AR7240_SPI_CMD_WRSR         0x01
-#define AR7240_SPI_CMD_WREN         0x06
-#define AR7240_SPI_CMD_RD_STATUS    0x05
-#define AR7240_SPI_CMD_FAST_READ    0x0b
-#define AR7240_SPI_CMD_PAGE_PROG    0x02
+#define AR7240_SPI_CS_DIS 0x70000
+#define AR7240_SPI_CE_LOW 0x60000
+#define AR7240_SPI_CE_HIGH 0x60100
+#define AR7240_SPI_CMD_WRSR 0x01
+#define AR7240_SPI_CMD_WREN 0x06
+#define AR7240_SPI_CMD_RD_STATUS 0x05
+#define AR7240_SPI_CMD_FAST_READ 0x0b
+#define AR7240_SPI_CMD_PAGE_PROG 0x02
 #define AR7240_SPI_CMD_SECTOR_ERASE 0xd8
 
 #define ar7240_be_msb(_val, __i) (((_val) & (1 << (7 - __i))) >> (7 - __i))
 
-#define ar7240_spi_bit_banger(_byte)  do {        \
-    int _i;                                      \
-    for(_i = 0; _i < 8; _i++) {                    \
-        ar7240_reg_wr_nf(AR7240_SPI_WRITE,      \
-                        AR7240_SPI_CE_LOW | ar7240_be_msb(_byte, _i));  \
-        ar7240_reg_wr_nf(AR7240_SPI_WRITE,      \
-                        AR7240_SPI_CE_HIGH | ar7240_be_msb(_byte, _i)); \
-    }       \
-}while(0);
+#define ar7240_spi_bit_banger(_byte)                                                                       \
+	do {                                                                                               \
+		int _i;                                                                                    \
+		for (_i = 0; _i < 8; _i++) {                                                               \
+			ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CE_LOW | ar7240_be_msb(_byte, _i));  \
+			ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CE_HIGH | ar7240_be_msb(_byte, _i)); \
+		}                                                                                          \
+	} while (0);
 
-#define ar7240_spi_go() do {        \
-    ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CE_LOW); \
-    ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS); \
-}while(0);
+#define ar7240_spi_go()                                                \
+	do {                                                           \
+		ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CE_LOW); \
+		ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS); \
+	} while (0);
 
-#define ar7240_spi_send_addr(__a) do {				\
-	ar7240_spi_bit_banger(((__a & 0xff0000) >> 16));	\
-	ar7240_spi_bit_banger(((__a & 0x00ff00) >> 8));		\
-	ar7240_spi_bit_banger(__a & 0x0000ff);			\
-}while(0);
+#define ar7240_spi_send_addr(__a)                                \
+	do {                                                     \
+		ar7240_spi_bit_banger(((__a & 0xff0000) >> 16)); \
+		ar7240_spi_bit_banger(((__a & 0x00ff00) >> 8));  \
+		ar7240_spi_bit_banger(__a & 0x0000ff);           \
+	} while (0);
 
-#define ar7240_spi_delay_8()    ar7240_spi_bit_banger(0)
-#define ar7240_spi_done()       ar7240_reg_wr(AR7240_SPI_FS, 0)
+#define ar7240_spi_delay_8() ar7240_spi_bit_banger(0)
+#define ar7240_spi_done() ar7240_reg_wr(AR7240_SPI_FS, 0)
 
 static void ar7240_spi_write_enable()
 {
@@ -582,10 +588,10 @@ static int get_clock(void)
 	return ar7240_reg_rd(AR7240_SPI_CLOCK);
 }
 
-static void ar7240_spi_flash_unblock(void)	// note gpio 16 is another flash protect mechanism found on the uap v2
+static void ar7240_spi_flash_unblock(void) // note gpio 16 is another flash protect mechanism found on the uap v2
 {
 #ifdef SPLIT
-//	fprintf(stderr, "enter %s\n", __func__);
+	//	fprintf(stderr, "enter %s\n", __func__);
 	u_int32_t mfrid = 0;
 	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
 	ar7240_spi_poll();
@@ -644,7 +650,7 @@ int main(int argc, char **argv)
 	buflen = 0;
 	quiet = 0;
 	no_erase = 0;
-// fuck ubnt
+	// fuck ubnt
 	fprintf(stderr, "SPI Clock 0x%08X\n", get_clock());
 	system("echo 5edfacbf > /proc/ubnthal/.uf");
 	device = "kernel";
@@ -656,11 +662,10 @@ int main(int argc, char **argv)
 	mtd_unlock(device);
 #ifdef SPLIT
 	fprintf(stderr, "write kernel with %d size\n", sizeof(kernel));
-	if (sizeof(kernel) > 1024*1024)
-	    {
-	    fprintf(stderr, "image cannot be flashed. kernel part to big!!!\n");
-	    exit(-1);
-	    }
+	if (sizeof(kernel) > 1024 * 1024) {
+		fprintf(stderr, "image cannot be flashed. kernel part to big!!!\n");
+		exit(-1);
+	}
 	mtd_write(kernel, sizeof(kernel), device, fis_layout, part_offset);
 	device = "rootfs";
 	if (!mtd_check(device)) {
@@ -673,7 +678,7 @@ int main(int argc, char **argv)
 #else
 	mtd_write(image, sizeof(image), device, fis_layout, part_offset);
 #endif
-	fprintf(stderr,"\nDone. Please power cycle device now\n");
+	fprintf(stderr, "\nDone. Please power cycle device now\n");
 	sync();
 
 	return 0;
