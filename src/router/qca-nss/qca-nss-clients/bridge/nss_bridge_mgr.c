@@ -1606,8 +1606,8 @@ int __init nss_bridge_mgr_init_module(void)
 	/*
 	 * Monitor bridge activity only on supported platform
 	 */
-//	if (!of_machine_is_compatible("qcom,ipq807x") && !of_machine_is_compatible("qcom,ipq6018") && !of_machine_is_compatible("qcom,ipq8074"))
-//		return 0;
+	if (!of_machine_is_compatible("qcom,ipq807x") && !of_machine_is_compatible("qcom,ipq6018") && !of_machine_is_compatible("qcom,ipq8074"))
+		return 0;
 
 	INIT_LIST_HEAD(&br_mgr_ctx.list);
 	spin_lock_init(&br_mgr_ctx.lock);
