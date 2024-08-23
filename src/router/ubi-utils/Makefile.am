@@ -50,7 +50,7 @@ include ubi-utils/Makemodule.am
 #include nor-utils/Makemodule.am
 
 if BUILD_UBIFS
-#include ubifs-utils/Makemodule.am
+include ubifs-utils/Makemodule.am
 endif
 
 if BUILD_JFFSX
