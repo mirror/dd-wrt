@@ -56,8 +56,6 @@ void start_jffs2(void)
 		mtd = getMTD("jffs2");
 	}
 #endif
-	if (mtd == -1)
-		return;
 	int ubidev = 1;
 #if defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
 	int brand = getRouterBrand();
@@ -68,6 +66,10 @@ void start_jffs2(void)
 	case ROUTER_ASUS_AX89X:
 		rwpart = "jffs2";
 		ax89 = 1;
+		break;
+	case ROUTER_DYNALINK_DLWRX36:
+		ubidev = 1;
+		rwpart = "rootfs_data";
 		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
@@ -117,11 +119,15 @@ void start_jffs2(void)
 				itworked = eval("mtd", "erase", rwpart);
 				itworked = eval("flash_erase", dev, "0", "0");
 			} else {
-				itworked = eval("ubidetach", "-p", dev);
-				itworked = eval("mtd", "erase", dev);
-				itworked = eval("flash_erase", dev, "0", "0");
-				itworked = eval("ubiattach", "-p", dev);
-				itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
+				if (brand == ROUTER_DYNALINK_DLWRX36) {
+					itworked = eval("mkfs.ubifs", "-x", "zstd", "-y", "/dev/ubi0_2");
+				} else {
+					itworked = eval("ubidetach", "-p", dev);
+					itworked = eval("mtd", "erase", dev);
+					itworked = eval("flash_erase", dev, "0", "0");
+					itworked = eval("ubiattach", "-p", dev);
+					itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
+				}
 			}
 #else
 			itworked = eval("mtd", "erase", rwpart);
