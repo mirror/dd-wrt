@@ -106,3 +106,6 @@ endif
 endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+ifneq ($(CONFIG_IPQ6018),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/sbin/mkfs.ubifs
+endif
