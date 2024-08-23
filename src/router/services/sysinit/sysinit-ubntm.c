@@ -259,6 +259,7 @@ out:;
 
 	switch (brand) {
 	case ROUTER_UBNT_NANOAC:
+	case ROUTER_UBNT_ROCKETAC:
 	case ROUTER_UBNT_POWERBEAMAC_GEN2:
 		detect_wireless_devices(
 			RADIO_ATH10K); // do not load ath9k. the device has a wmac radio which is not connected to any antenna
