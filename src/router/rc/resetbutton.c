@@ -236,6 +236,8 @@ static int getbuttonstate()
 #elif defined(HAVE_UBNTM)
 static int getbuttonstate()
 {
+	if (brand == ROUTER_UBNT_ROCKETAC)
+		return !get_gpio(19);
 	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO)
 		return !get_gpio(2);
 	return !get_gpio(12);
