@@ -15,7 +15,7 @@
 
 include $(TOP)/.config
 
-CFLAGS	+= -I. -I$(TOP)/shared $(LTOMIN)
+CFLAGS	+= -I. -I$(TOP)/shared
 
 cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
@@ -189,7 +189,7 @@ else
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
 endif	@echo "[LD] $@"
 	echo $(LDFLAGS) > libnvram_ld
-	@$(CC) $(CFLAGS) -shared -o $@ $^ $(LDLTOAUTO) $(LDFLAGS)
+	@$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 	@$(AR) cr libnvram.a $^
 
 convertnvram: convertnvram.o
