@@ -813,6 +813,8 @@
 
 #define ROUTER_LINKSYS_MX4300 0x11a134
 
+#define ROUTER_UBNT_ROCKETAC 0x11a113
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
