@@ -114,6 +114,7 @@ out:;
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_UBNT_UAPAC:
+	case ROUTER_UBNT_ROCKETAC:
 	case ROUTER_UBNT_UAPACPRO:
 	case ROUTER_UBNT_NANOAC:
 	case ROUTER_UBNT_POWERBEAMAC_GEN2:
