@@ -132,6 +132,9 @@ static void nilfs_check_page(struct page *page)
 			goto Enamelen;
 		if (((offs + rec_len - 1) ^ offs) & ~(chunk_size-1))
 			goto Espan;
+		if (unlikely(p->inode &&
+			     NILFS_PRIVATE_INODE(le64_to_cpu(p->inode))))
+			goto Einumber;
 	}
 	if (offs != limit)
 		goto Eend;
@@ -158,6 +161,9 @@ Enamelen:
 	goto bad_entry;
 Espan:
 	error = "directory entry across blocks";
+	goto bad_entry;
+Einumber:
+	error = "disallowed inode number";
 bad_entry:
 	nilfs_error(sb, "nilfs_check_page", "bad entry in directory #%lu: %s - "
 		    "offset=%lu, inode=%lu, rec_len=%d, name_len=%d",
@@ -621,7 +627,7 @@ int nilfs_empty_dir(struct inode *inode)
 
 		page = nilfs_get_page(inode, i);
 		if (IS_ERR(page))
-			continue;
+			return 0;
 
 		kaddr = page_address(page);
 		de = (struct nilfs_dir_entry *)kaddr;

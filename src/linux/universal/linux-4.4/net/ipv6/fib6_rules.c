@@ -93,8 +93,12 @@ static int fib6_rule_action(struct fib_rule *rule, struct flowi *flp,
 		    r->src.plen && !(flags & RT6_LOOKUP_F_HAS_SADDR)) {
 			struct in6_addr saddr;
 
-			if (ipv6_dev_get_saddr(net,
-					       ip6_dst_idev(&rt->dst)->dev,
+			struct inet6_dev *idev = ip6_dst_idev(&rt->dst);
+
+			if (!idev)
+				goto again;
+
+			if (ipv6_dev_get_saddr(net, idev->dev,
 					       &flp6->daddr,
 					       rt6_flags2srcprefs(flags),
 					       &saddr))

@@ -480,12 +480,12 @@ struct files_struct init_files = {
 
 static unsigned long find_next_fd(struct fdtable *fdt, unsigned long start)
 {
-	unsigned long maxfd = fdt->max_fds;
+	unsigned long maxfd = fdt->max_fds; /* always multiple of BITS_PER_LONG */
 	unsigned long maxbit = maxfd / BITS_PER_LONG;
 	unsigned long bitbit = start / BITS_PER_LONG;
 
 	bitbit = find_next_zero_bit(fdt->full_fds_bits, maxbit, bitbit) * BITS_PER_LONG;
-	if (bitbit > maxfd)
+	if (bitbit >= maxfd)
 		return maxfd;
 	if (bitbit > start)
 		start = bitbit;

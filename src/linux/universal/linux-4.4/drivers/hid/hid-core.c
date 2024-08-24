@@ -1195,7 +1195,6 @@ static void implement(const struct hid_device *hid, __u8 *report,
 	if (value > m)
 		hid_warn(hid, "%s() called with too large value %d! (%s)\n",
 			 __func__, value, current->comm);
-	WARN_ON(value > m);
 	value &= m;
 
 	report += offset >> 3;

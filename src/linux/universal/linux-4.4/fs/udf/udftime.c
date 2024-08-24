@@ -111,8 +111,19 @@ udf_disk_stamp_to_time(struct timespec *dest, struct timestamp src)
 
 	yday = ((__mon_yday[__isleap(year)][src.month - 1]) + src.day - 1);
 	dest->tv_sec += (((yday * 24) + src.hour) * 60 + src.minute) * 60 + src.second;
-	dest->tv_nsec = 1000 * (src.centiseconds * 10000 +
+
+	/*
+	 * Sanitize nanosecond field since reportedly some filesystems are
+	 * recorded with bogus sub-second values.
+	 */
+	if (src.centiseconds < 100 && src.hundredsOfMicroseconds < 100 &&
+	    src.microseconds < 100) {
+		dest->tv_nsec = 1000 * (src.centiseconds * 10000 +
 			src.hundredsOfMicroseconds * 100 + src.microseconds);
+	} else {
+		dest->tv_nsec = 0;
+	}
+
 	return dest;
 }
 

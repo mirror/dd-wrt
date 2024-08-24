@@ -80,7 +80,8 @@ static int nft_lookup_init(const struct nft_ctx *ctx,
 
 		priv->dreg = nft_parse_register(tb[NFTA_LOOKUP_DREG]);
 		err = nft_validate_register_store(ctx, priv->dreg, NULL,
-						  set->dtype, set->dlen);
+						  nft_set_datatype(set),
+						  set->dlen);
 		if (err < 0)
 			return err;
 	} else if (set->flags & NFT_SET_MAP)

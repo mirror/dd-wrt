@@ -279,14 +279,13 @@ int __must_check media_devnode_register(struct media_device *mdev,
 	}
 
 	/* Part 3: Add the media device */
+	set_bit(MEDIA_FLAG_REGISTERED, &devnode->flags);
 	ret = device_add(&devnode->dev);
 	if (ret < 0) {
+		clear_bit(MEDIA_FLAG_REGISTERED, &devnode->flags);
 		pr_err("%s: device_add failed\n", __func__);
 		goto device_add_error;
 	}
-
-	/* Part 4: Activate this minor. The char device can now be used. */
-	set_bit(MEDIA_FLAG_REGISTERED, &devnode->flags);
 
 	return 0;
 

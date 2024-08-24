@@ -779,6 +779,12 @@ static void do_output(struct datapath *dp, struct sk_buff *skb, int out_port,
 	if (likely(vport)) {
 		u16 mru = OVS_CB(skb)->mru;
 
+		/* Need to set the pkt_type to involve the routing layer.  The
+		 * packet movement through the OVS datapath doesn't generally
+		 * use routing, but this is needed for tunnel cases.
+		 */
+		skb->pkt_type = PACKET_OUTGOING;
+
 		if (likely(!mru || (skb->len <= mru + ETH_HLEN))) {
 			ovs_vport_send(vport, skb);
 		} else if (mru <= vport->dev->mtu) {

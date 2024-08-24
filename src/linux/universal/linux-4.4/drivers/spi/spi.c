@@ -786,6 +786,7 @@ static int __spi_map_msg(struct spi_master *master, struct spi_message *msg)
 	else
 		rx_dev = &master->dev;
 
+	ret = -ENOMSG;
 	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
 		if (!master->can_dma(master, msg->spi, xfer))
 			continue;
@@ -809,6 +810,9 @@ static int __spi_map_msg(struct spi_master *master, struct spi_message *msg)
 			}
 		}
 	}
+	/* No transfer has been mapped, bail out with success */
+	if (ret)
+		return 0;
 
 	master->cur_msg_mapped = true;
 

@@ -119,23 +119,6 @@ static int srq_asserted;     /* have to poll for the device that asserted it */
 static int command_byte;         /* the most recent command byte transmitted */
 static int autopoll_devs;      /* bits set are device addresses to be polled */
 
-/* Sanity check for request queue. Doesn't check for cycles. */
-static int request_is_queued(struct adb_request *req) {
-	struct adb_request *cur;
-	unsigned long flags;
-	local_irq_save(flags);
-	cur = current_req;
-	while (cur) {
-		if (cur == req) {
-			local_irq_restore(flags);
-			return 1;
-		}
-		cur = cur->next;
-	}
-	local_irq_restore(flags);
-	return 0;
-}
-
 /* Check for MacII style ADB */
 static int macii_probe(void)
 {
@@ -150,22 +133,19 @@ static int macii_probe(void)
 /* Initialize the driver */
 int macii_init(void)
 {
-	unsigned long flags;
 	int err;
 	
-	local_irq_save(flags);
-	
 	err = macii_init_via();
-	if (err) goto out;
+	if (err)
+		return err;
 
 	err = request_irq(IRQ_MAC_ADB, macii_interrupt, 0, "ADB",
 			  macii_interrupt);
-	if (err) goto out;
+	if (err)
+		return err;
 
 	macii_state = idle;
-out:
-	local_irq_restore(flags);
-	return err;
+	return 0;
 }
 
 /* initialize the hardware */	
@@ -212,8 +192,6 @@ static void macii_queue_poll(void)
 	else
 		next_device = ffs(autopoll_devs) - 1;
 
-	BUG_ON(request_is_queued(&req));
-
 	adb_request(&req, NULL, ADBREQ_NOSEND, 1,
 	            ADB_READREG(next_device, 0));
 
@@ -236,18 +214,13 @@ static int macii_send_request(struct adb_request *req, int sync)
 	int err;
 	unsigned long flags;
 
-	BUG_ON(request_is_queued(req));
-
 	local_irq_save(flags);
 	err = macii_write(req);
 	local_irq_restore(flags);
 
-	if (!err && sync) {
-		while (!req->complete) {
+	if (!err && sync)
+		while (!req->complete)
 			macii_poll();
-		}
-		BUG_ON(request_is_queued(req));
-	}
 
 	return err;
 }
@@ -326,9 +299,6 @@ static int macii_reset_bus(void)
 {
 	static struct adb_request req;
 	
-	if (request_is_queued(&req))
-		return 0;
-
 	/* Command = 0, Address = ignored */
 	adb_request(&req, NULL, 0, 1, ADB_BUSRESET);
 
@@ -344,10 +314,6 @@ static void macii_start(void)
 	struct adb_request *req;
 
 	req = current_req;
-
-	BUG_ON(req == NULL);
-
-	BUG_ON(macii_state != idle);
 
 	/* Now send it. Be careful though, that first byte of the request
 	 * is actually ADB_PACKET; the real data begins at index 1!
@@ -386,7 +352,6 @@ static void macii_start(void)
 static irqreturn_t macii_interrupt(int irq, void *arg)
 {
 	int x;
-	static int entered;
 	struct adb_request *req;
 
 	if (!arg) {
@@ -397,8 +362,6 @@ static irqreturn_t macii_interrupt(int irq, void *arg)
 			return IRQ_NONE;
 	}
 
-	BUG_ON(entered++);
-
 	last_status = status;
 	status = via[B] & (ST_MASK|CTLR_IRQ);
 
@@ -407,7 +370,7 @@ static irqreturn_t macii_interrupt(int irq, void *arg)
 			if (reading_reply) {
 				reply_ptr = current_req->reply;
 			} else {
-				BUG_ON(current_req != NULL);
+				WARN_ON(current_req);
 				reply_ptr = reply_buf;
 			}
 
@@ -472,8 +435,8 @@ static irqreturn_t macii_interrupt(int irq, void *arg)
 
 		case reading:
 			x = via[SR];
-			BUG_ON((status & ST_MASK) == ST_CMD ||
-			       (status & ST_MASK) == ST_IDLE);
+			WARN_ON((status & ST_MASK) == ST_CMD ||
+				(status & ST_MASK) == ST_IDLE);
 
 			/* Bus timeout with SRQ sequence:
 			 *     data is "XX FF"      while CTLR_IRQ is "L L"
@@ -500,8 +463,8 @@ static irqreturn_t macii_interrupt(int irq, void *arg)
 				}
 			}
 
-			if (macii_state == reading) {
-				BUG_ON(reply_len > 15);
+			if (macii_state == reading &&
+			    reply_len < ARRAY_SIZE(reply_buf)) {
 				reply_ptr++;
 				*reply_ptr = x;
 				reply_len++;
@@ -544,6 +507,5 @@ static irqreturn_t macii_interrupt(int irq, void *arg)
 		break;
 	}
 
-	entered--;
 	return IRQ_HANDLED;
 }

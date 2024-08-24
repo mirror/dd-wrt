@@ -524,7 +524,7 @@ int nilfs_sufile_mark_dirty(struct inode *sufile, __u64 segnum)
 		kunmap_atomic(kaddr);
 		brelse(bh);
 		if (nilfs_segment_is_active(nilfs, segnum)) {
-			nilfs_error(sufile->i_sb,
+			nilfs_error(sufile->i_sb, __func__,
 				    "active segment %llu is erroneous",
 				    (unsigned long long)segnum);
 		} else {

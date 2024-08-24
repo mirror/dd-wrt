@@ -161,6 +161,8 @@ static int ad7266_read_raw(struct iio_dev *indio_dev,
 		if (ret)
 			return ret;
 
+		if (ret < 0)
+			return ret;
 		*val = (*val >> 2) & 0xfff;
 		if (chan->scan_type.sign == 's')
 			*val = sign_extend32(*val, 11);
