@@ -137,6 +137,18 @@ static inline int at803x_enable_tx_delay(struct phy_device *phydev)
 					AT803X_DEBUG_TX_CLK_DLY_EN);
 }
 
+static inline int at803x_disable_rx_delay(struct phy_device *phydev)
+{
+	return at803x_debug_reg_mask(phydev, AT803X_DEBUG_REG_0,
+					AT803X_DEBUG_RX_CLK_DLY_EN, 0);
+}
+
+static inline int at803x_disable_tx_delay(struct phy_device *phydev)
+{
+	return at803x_debug_reg_mask(phydev, AT803X_DEBUG_REG_5,
+					AT803X_DEBUG_TX_CLK_DLY_EN, 0);
+}
+
 /* save relevant PHY registers to private copy */
 static void at803x_context_save(struct phy_device *phydev,
 				struct at803x_context *context)
@@ -299,7 +311,6 @@ static void at803x_disable_smarteee(struct phy_device *phydev)
 		1 << AT803X_SMART_EEE_CTRL3_LPI_TX_DELAY_SEL_SHIFT);
 	phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
 }
-
 static int at803x_config_init(struct phy_device *phydev)
 {
 	struct at803x_platform_data *pdata;
@@ -309,6 +320,7 @@ static int at803x_config_init(struct phy_device *phydev)
 	if (phydev->drv->phy_id == ATH8031_PHY_ID &&
 		phydev->interface == PHY_INTERFACE_MODE_SGMII)
 	{
+		printk(KERN_INFO "ag71xx: switch to sgmii config\n");
 		v = phy_read(phydev, AT803X_REG_CHIP_CONFIG);
 		/* select SGMII/fiber page */
 		ret = phy_write(phydev, AT803X_REG_CHIP_CONFIG,
@@ -335,14 +347,17 @@ static int at803x_config_init(struct phy_device *phydev)
 		ret = at803x_enable_rx_delay(phydev);
 		if (ret < 0)
 			return ret;
-	}
+	} else
+		at803x_disable_rx_delay(phydev);
+
 
 	if (phydev->interface == PHY_INTERFACE_MODE_RGMII_TXID ||
 			phydev->interface == PHY_INTERFACE_MODE_RGMII_ID) {
 		ret = at803x_enable_tx_delay(phydev);
 		if (ret < 0)
 			return ret;
-	}
+	} else
+		at803x_disable_tx_delay(phydev);
 
 	pdata = dev_get_platdata(&phydev->dev);
 	if (pdata) {
@@ -441,6 +456,7 @@ static void at803x_link_change_notify(struct phy_device *phydev)
 	}
 	if (pdata && pdata->fixup_rgmii_tx_delay &&
 	    phydev->speed != priv->prev_speed) {
+		printk(KERN_INFO "ag71xx: fix clocks\n");
 		switch (phydev->speed) {
 		case SPEED_10:
 		case SPEED_100:
@@ -481,7 +497,7 @@ static int at803x_aneg_done(struct phy_device *phydev)
 	/* check if the SGMII link is OK. */
 	if (!(phy_read(phydev, AT803X_PSSR) & AT803X_PSSR_MR_AN_COMPLETE)) {
 		pr_warn("803x_aneg_done: SGMII link is not ok\n");
-		aneg_done = 0;
+		aneg_done = 1;
 	}
 	/* switch back to copper page */
 	phy_write(phydev, AT803X_REG_CHIP_CONFIG, ccr | AT803X_BT_BX_REG_SEL);
