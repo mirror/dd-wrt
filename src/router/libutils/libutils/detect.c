@@ -1938,16 +1938,16 @@ generic:;
 		{ -1, "NanoBeam 2AC 13", 0xe4f2, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
 		{ -1, "NanoBeam 2AC 13", 0xe4f3, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
 		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
-		{ -1, "NanoBeam 5AC 19", 0xe4f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
+		{ -1, "NanoBeam 5AC 19", 0xe4f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 3 }, //
 		{ -1, "Rocket 5AC Lite", 0xe1f5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
 		{ -1, "Rocket 5AC PTP", 0xe3f5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
-		{ -1, "Rocket Prism 5AC Gen2", 0xe7e7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
-		{ -1, "Rocket Prism 5AC Gen2", 0xe7e9, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
-		{ -1, "PrismStation 5AC", 0xe7e6, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
-		{ -1, "PrismStation 5AC", 0xe7e8, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
-		{ -1, "Prism AP", 0xdc97, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "Rocket Prism 5AC Gen2", 0xe7e7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 5 }, //
+		{ -1, "Rocket Prism 5AC Gen2", 0xe7e9, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 5 }, //
+		{ -1, "PrismStation 5AC", 0xe7e6, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 5 }, //
+		{ -1, "PrismStation 5AC", 0xe7e8, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 5 }, //
+		{ -1, "Prism AP", 0xdc97, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 5 }, //
 		{ -1, "NanoBeam 5AC Gen2", 0xe7fc, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
-		{ -1, "NanoBeam 5AC Gen2", 0xe3d7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 1 }, //
+		{ -1, "NanoBeam 5AC Gen2", 0xe3d7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 2 }, //
 		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC LR", 0xe7fe, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 2 }, //
