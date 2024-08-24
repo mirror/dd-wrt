@@ -57,7 +57,6 @@ extern uint32_t ath_ref_clk_freq;
 #else
 extern uint32_t ar7240_ahb_freq;
 #endif
-
 /* 
  * OHCI (USB full speed host controller) 
  */
@@ -1899,13 +1898,23 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_data.phy_mask = BIT(4);
-	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
 
 
 	mdiobus_register_board_info(at803_mdio_info,
 			ARRAY_SIZE(at803_mdio_info));
-
 	ar71xx_add_device_eth(0);
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_QCA9563:
+	case AR71XX_SOC_QCN550X:
+		ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+		break;
+	default:
+		ar71xx_eth0_pll_data.pll_1000 = 0x03000000;
+		ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+		ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+		break;
+	}
     #elif CONFIG_UBNTXW
 	#ifdef CONFIG_XWLOCO
 	mdiobus_register_board_info(ubnt_loco_m_xw_mdio_info,

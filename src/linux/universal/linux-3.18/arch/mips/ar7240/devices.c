@@ -474,25 +474,143 @@ static void ar934x_set_speed_ge1(int speed)
 {
 	/* TODO */
 }
+#define QCA955X_GMAC_REG_SGMII_RESET	0x14
+#define QCA955X_GMAC_REG_MR_AN_CONTROL	0x1C
+#define QCA955X_GMAC_REG_SGMII_DEBUG	0x58
+#define SGMII_LINK_WAR_MAX_TRY 20
+
+#define QCA955X_GMAC_REG_MR_AN_CONTROL_AN_ENABLE BIT(12)
+#define QCA955X_GMAC_REG_MR_AN_CONTROL_PHY_RESET BIT(15)
+
+#define QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N BIT(4)
+#define QCA955X_GMAC_REG_SGMII_RESET_TX_125M_N BIT(3)
+#define QCA955X_GMAC_REG_SGMII_RESET_RX_125M_N BIT(2)
+#define QCA955X_GMAC_REG_SGMII_RESET_TX_CLK_N BIT(1)
+#define QCA955X_GMAC_REG_SGMII_RESET_RX_CLK_N BIT(0)
+
+static void qca955x_reset_sgmii(void)
+{
+	void __iomem *base;
+	int count = 0;
+	u32 status;
+	u32 t;
+
+	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
+
+	/* WARNING ugly PoC code ahead */
+	printk("Resetting SGMII link\n");
+
+	t = QCA955X_GMAC_REG_MR_AN_CONTROL_AN_ENABLE |
+	    QCA955X_GMAC_REG_MR_AN_CONTROL_PHY_RESET;
+	__raw_writel(t, base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_MR_AN_CONTROL_AN_ENABLE;
+	__raw_writel(t, base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+
+	t = 0;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_125M_N;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_TX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_125M_N;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_TX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_CLK_N;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	t = QCA955X_GMAC_REG_SGMII_RESET_HW_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_TX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_125M_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_RX_CLK_N |
+	    QCA955X_GMAC_REG_SGMII_RESET_TX_CLK_N;
+	__raw_writel(t, base + QCA955X_GMAC_REG_SGMII_RESET);
+	udelay(10);
+
+	/* TODO this should be an rmw */
+	t = __raw_readl(base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+	t &= ~QCA955X_GMAC_REG_MR_AN_CONTROL_PHY_RESET;
+	__raw_writel(t, base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+	udelay(100);
+
+	status = __raw_readl(base + QCA955X_GMAC_REG_SGMII_DEBUG);
+	status &= 0xff;
+	while (status != 0xf && status != 0x10) {
+		printk("state %#02x\n", status);
+		/* TODO this should be an rmw */
+		t = __raw_readl(base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+		t |= QCA955X_GMAC_REG_MR_AN_CONTROL_PHY_RESET;
+		 __raw_writel(t, base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+
+		udelay(100);
+
+		/* TODO this should be an rmw */
+		t = __raw_readl(base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+		t &= ~QCA955X_GMAC_REG_MR_AN_CONTROL_PHY_RESET;
+		 __raw_writel(t, base + QCA955X_GMAC_REG_MR_AN_CONTROL);
+
+		if (count++ >= SGMII_LINK_WAR_MAX_TRY) {
+			printk("Max resets limit reached exiting...\n");
+			break;
+		}
+
+		mdelay(10);
+
+		status = __raw_readl(base + QCA955X_GMAC_REG_SGMII_DEBUG);
+		status &= 0xff;
+	}
+
+	printk("Reached count %d\n", count);
+
+	iounmap(base);
+}
 
 static void qca955x_set_speed_xmii(int speed)
 {
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
+	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
 	iounmap(base);
 }
 
-static void qca955x_set_speed_sgmii(int speed)
+static void qca955x_set_speed_sgmii_ge0(int speed)
 {
 	void __iomem *base;
-	u32 val = ar71xx_get_eth_pll(1, speed);
-
+	u32 val = ar71xx_get_eth_pll(0, speed);
+	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
+	qca955x_reset_sgmii();
+}
+
+static void qca955x_set_speed_sgmii_ge1(int speed)
+{
+	void __iomem *base;
+	u32 val = ar71xx_get_eth_pll(1, speed);
+	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
+	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
+	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
+	iounmap(base);
+	qca955x_reset_sgmii();
 }
 
 static void qca956x_set_speed_sgmii(int speed)
@@ -500,9 +618,11 @@ static void qca956x_set_speed_sgmii(int speed)
 	void __iomem *base;
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
+	printk(KERN_EMERG "%s: set pll %08X\n", __func__, val);
 	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
+	qca955x_reset_sgmii();
 }
 
 
@@ -1123,16 +1243,21 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (id == 0) {
 			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
 					   QCA955X_RESET_GE0_MDIO;
-			pdata->set_speed = qca955x_set_speed_xmii;
+			if (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
+				pdata->set_speed = qca955x_set_speed_sgmii_ge0;
+			else
+				pdata->set_speed = qca955x_set_speed_xmii;
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
-			pdata->set_speed = qca955x_set_speed_sgmii;
+			pdata->set_speed = qca955x_set_speed_sgmii_ge1;
 		}
 
 		pdata->ddr_flush = ar71xx_ddr_no_flush;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
+		pdata->is_qca955x = 1;
+
 
 
 		/*
