@@ -1934,12 +1934,20 @@ generic:;
 
 #define UNLOCK_UAPV2 16
 	struct UBNTDEV dev[] = {
-		/* some these AC devices are untested and not yet supported, its just the id definition for detection right now */
+		/* some of these AC devices are untested and not yet supported, its just the id definition for detection right now */
 		{ -1, "NanoBeam 2AC 13", 0xe4f2, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
 		{ -1, "NanoBeam 2AC 13", 0xe4f3, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 4 }, //
 		{ -1, "NanoBeam 5AC 16", 0xe9f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
+		{ -1, "NanoBeam 5AC 19", 0xe4f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "Rocket 5AC Lite", 0xe1f5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "Rocket 5AC PTP", 0xe3f5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "Rocket Prism 5AC Gen2", 0xe7e7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "Rocket Prism 5AC Gen2", 0xe7e9, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "PrismStation 5AC", 0xe7e6, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "PrismStation 5AC", 0xe7e8, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
+		{ -1, "Prism AP", 0xdc97, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 4 }, //
 		{ -1, "NanoBeam 5AC Gen2", 0xe7fc, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
+		{ -1, "NanoBeam 5AC Gen2", 0xe3d7, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 1 }, //
 		{ -1, "LiteBeam 5AC 23", 0xe8f5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC Gen2", 0xe7f9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "LiteBeam 5AC LR", 0xe7fe, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 2 }, //
@@ -1949,11 +1957,14 @@ generic:;
 		{ -1, "PowerBeam 2AC 400", 0xe3f3, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 4 }, //
 		{ -1, "PowerBeam 5AC 300", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
 		{ -1, "PowerBeam 5AC 400", 0xe7f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 1 }, //
+		{ -1, "PowerBeam 5AC 500", 0xe3d5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 1 }, //
+		{ -1, "PowerBeam 5AC 620", 0xe5f5, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 1 }, //
 		{ -1, "PowerBeam 5AC Gen2", 0xe3d6, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "PowerBeam 5AC X Gen2", 0xe3d9, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "ISO Station 5AC", 0xe7f7, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 }, //
 		{ -1, "ISO Station 5AC", 0xe6f5, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 }, //
 		{ -1, "NanoStation 5AC loco", 0xe7fa, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 2 }, //
+		{ -1, "NanoStation 5AC loco", 0xe3d8, 3, 3, 0, 0, ROUTER_UBNT_ROCKETAC, 0, 2 }, //
 		{ -1, "NanoStation 5AC", 0xe7fb, 3, 3, 0, 0, ROUTER_UBNT_NANOAC, 0, 2 }, //
 		{ -1, "Bullet AC", 0xe2c5, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
 		{ -1, "Bullet AC IP67", 0xe2c7, 3, 3, 0, 0, ROUTER_UBNT_POWERBEAMAC_GEN2, 0, 1 }, //
