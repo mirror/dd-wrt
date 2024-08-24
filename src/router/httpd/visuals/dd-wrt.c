@@ -1593,6 +1593,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		if (chan) {
 			char *wlc = nvram_safe_get(wl_channel);
 			int offset = get_freqoffset(prefix);
+			int poffset = wifi_gettxpoweroffset(prefix);
 			// int cnt = getchannelcount ();
 			if (!nvram_nmatch("mesh", "%s_mode", prefix) && !nvram_nmatch("infra", "%s_mode", prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
@@ -1633,7 +1634,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int freq = chan[i].freq;
 				char eirp[32] = { 0 };
 				if (chan[i].hw_eirp)
-					snprintf(eirp, sizeof(eirp), " (%d dBm)", chan[i].hw_eirp);
+					snprintf(eirp, sizeof(eirp), " (%d dBm)", chan[i].hw_eirp + poffset);
 				if (freq != -1) {
 					if (is_mac80211(prefix) && !is_ath5k(prefix)) {
 						websWrite(
