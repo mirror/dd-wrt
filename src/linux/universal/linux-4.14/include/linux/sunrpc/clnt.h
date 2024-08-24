@@ -70,6 +70,7 @@ struct rpc_clnt {
 	struct dentry		*cl_debugfs;	/* debugfs directory */
 #endif
 	struct rpc_xprt_iter	cl_xpi;
+	struct super_block *pipefs_sb;
 };
 
 /*

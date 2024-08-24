@@ -3133,6 +3133,7 @@ void tcp_send_fin(struct sock *sk)
 	 * as TCP stack thinks it has already been transmitted.
 	 */
 	if (tskb && (tcp_send_head(sk) || tcp_under_memory_pressure(sk))) {
+coalesce:
 		TCP_SKB_CB(tskb)->tcp_flags |= TCPHDR_FIN;
 		TCP_SKB_CB(tskb)->end_seq++;
 		tp->write_seq++;
@@ -3150,9 +3151,11 @@ void tcp_send_fin(struct sock *sk)
 		skb = alloc_skb_fclone(MAX_TCP_HEADER,
 				       sk_gfp_mask(sk, GFP_ATOMIC |
 						       __GFP_NOWARN));
-		if (unlikely(!skb))
+		if (unlikely(!skb)) {
+			if (tskb)
+				goto coalesce;
 			return;
-
+		}
 		skb_reserve(skb, MAX_TCP_HEADER);
 		sk_forced_mem_schedule(sk, skb->truesize);
 		/* FIN eats a sequence byte, write_seq advanced by tcp_queue_skb(). */

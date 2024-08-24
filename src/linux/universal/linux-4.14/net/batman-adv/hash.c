@@ -18,7 +18,7 @@
 #include "hash.h"
 #include "main.h"
 
-#include <linux/fs.h>
+#include <linux/gfp.h>
 #include <linux/lockdep.h>
 #include <linux/slab.h>
 

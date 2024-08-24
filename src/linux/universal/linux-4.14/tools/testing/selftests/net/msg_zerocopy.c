@@ -81,6 +81,7 @@ static bool cfg_rx;
 static int  cfg_runtime_ms	= 4200;
 static int  cfg_verbose;
 static int  cfg_waittime_ms	= 500;
+static int  cfg_notification_limit = 32;
 static bool cfg_zerocopy;
 
 static socklen_t cfg_alen;
@@ -91,6 +92,7 @@ static char payload[IP_MAXPACKET];
 static long packets, bytes, completions, expected_completions;
 static int  zerocopied = -1;
 static uint32_t next_completion;
+static uint32_t sends_since_notify;
 
 static unsigned long gettimeofday_ms(void)
 {
@@ -182,6 +184,7 @@ static bool do_sendmsg(int fd, struct msghdr *msg, bool do_zerocopy)
 		error(1, errno, "send");
 	if (cfg_verbose && ret != len)
 		fprintf(stderr, "send: ret=%u != %u\n", ret, len);
+	sends_since_notify++;
 
 	if (len) {
 		packets++;
@@ -306,7 +309,53 @@ static int do_setup_tx(int domain, int type, int protocol)
 	return fd;
 }
 
-static bool do_recv_completion(int fd)
+static uint32_t do_process_zerocopy_cookies(struct rds_zcopy_cookies *ck)
+{
+	int i;
+
+	if (ck->num > RDS_MAX_ZCOOKIES)
+		error(1, 0, "Returned %d cookies, max expected %d\n",
+		      ck->num, RDS_MAX_ZCOOKIES);
+	for (i = 0; i < ck->num; i++)
+		if (cfg_verbose >= 2)
+			fprintf(stderr, "%d\n", ck->cookies[i]);
+	return ck->num;
+}
+
+static bool do_recvmsg_completion(int fd)
+{
+	char cmsgbuf[CMSG_SPACE(sizeof(struct rds_zcopy_cookies))];
+	struct rds_zcopy_cookies *ck;
+	struct cmsghdr *cmsg;
+	struct msghdr msg;
+	bool ret = false;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = cmsgbuf;
+	msg.msg_controllen = sizeof(cmsgbuf);
+
+	if (recvmsg(fd, &msg, MSG_DONTWAIT))
+		return ret;
+
+	if (msg.msg_flags & MSG_CTRUNC)
+		error(1, errno, "recvmsg notification: truncated");
+
+	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+		if (cmsg->cmsg_level == SOL_RDS &&
+		    cmsg->cmsg_type == RDS_CMSG_ZCOPY_COMPLETION) {
+
+			ck = (struct rds_zcopy_cookies *)CMSG_DATA(cmsg);
+			completions += do_process_zerocopy_cookies(ck);
+			ret = true;
+			break;
+		}
+		error(0, 0, "ignoring cmsg at level %d type %d\n",
+			    cmsg->cmsg_level, cmsg->cmsg_type);
+	}
+	return ret;
+}
+
+static bool do_recv_completion(int fd, int domain)
 {
 	struct sock_extended_err *serr;
 	struct msghdr msg = {};
@@ -314,6 +363,9 @@ static bool do_recv_completion(int fd)
 	uint32_t hi, lo, range;
 	int ret, zerocopy;
 	char control[100];
+
+	if (domain == PF_RDS)
+		return do_recvmsg_completion(fd);
 
 	msg.msg_control = control;
 	msg.msg_controllen = sizeof(control);
@@ -348,7 +400,7 @@ static bool do_recv_completion(int fd)
 	/* Detect notification gaps. These should not happen often, if at all.
 	 * Gaps can occur due to drops, reordering and retransmissions.
 	 */
-	if (lo != next_completion)
+	if (cfg_verbose && lo != next_completion)
 		fprintf(stderr, "gap: %u..%u does not append to %u\n",
 			lo, hi, next_completion);
 	next_completion = hi + 1;
@@ -370,20 +422,21 @@ static bool do_recv_completion(int fd)
 }
 
 /* Read all outstanding messages on the errqueue */
-static void do_recv_completions(int fd)
+static void do_recv_completions(int fd, int domain)
 {
-	while (do_recv_completion(fd)) {}
+	while (do_recv_completion(fd, domain)) {}
+	sends_since_notify = 0;
 }
 
 /* Wait for all remaining completions on the errqueue */
-static void do_recv_remaining_completions(int fd)
+static void do_recv_remaining_completions(int fd, int domain)
 {
 	int64_t tstop = gettimeofday_ms() + cfg_waittime_ms;
 
 	while (completions < expected_completions &&
 	       gettimeofday_ms() < tstop) {
-		if (do_poll(fd, POLLERR))
-			do_recv_completions(fd);
+		if (do_poll(fd, domain == PF_RDS ? POLLIN : POLLERR))
+			do_recv_completions(fd, domain);
 	}
 
 	if (completions < expected_completions)
@@ -455,15 +508,18 @@ static void do_tx(int domain, int type, int protocol)
 		else
 			do_sendmsg(fd, &msg, cfg_zerocopy);
 
+		if (cfg_zerocopy && sends_since_notify >= cfg_notification_limit)
+			do_recv_completions(fd, domain);
+
 		while (!do_poll(fd, POLLOUT)) {
 			if (cfg_zerocopy)
-				do_recv_completions(fd);
+				do_recv_completions(fd, domain);
 		}
 
 	} while (gettimeofday_ms() < tstop);
 
 	if (cfg_zerocopy)
-		do_recv_remaining_completions(fd);
+		do_recv_remaining_completions(fd, domain);
 
 	if (close(fd))
 		error(1, errno, "close");
@@ -612,7 +668,7 @@ static void parse_opts(int argc, char **argv)
 
 	cfg_payload_len = max_payload_len;
 
-	while ((c = getopt(argc, argv, "46c:C:D:i:mp:rs:S:t:vz")) != -1) {
+	while ((c = getopt(argc, argv, "46c:C:D:i:l:mp:rs:S:t:vz")) != -1) {
 		switch (c) {
 		case '4':
 			if (cfg_family != PF_UNSPEC)
@@ -639,6 +695,9 @@ static void parse_opts(int argc, char **argv)
 			cfg_ifindex = if_nametoindex(optarg);
 			if (cfg_ifindex == 0)
 				error(1, errno, "invalid iface: %s", optarg);
+			break;
+		case 'l':
+			cfg_notification_limit = strtoul(optarg, NULL, 0);
 			break;
 		case 'm':
 			cfg_cork_mixed = true;
