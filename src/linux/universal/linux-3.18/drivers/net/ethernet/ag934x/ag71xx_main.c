@@ -428,11 +428,11 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 			 FIFO_CFG4_VT)
 
 #define FIFO_CFG5_INIT	(FIFO_CFG5_DE | FIFO_CFG5_DV | FIFO_CFG5_FC | \
-			 FIFO_CFG5_CE | FIFO_CFG5_LO | FIFO_CFG5_OK | \
-			 FIFO_CFG5_MC | FIFO_CFG5_BC | FIFO_CFG5_DR | \
-			 FIFO_CFG5_CF | FIFO_CFG5_PF | FIFO_CFG5_VT | \
-			 FIFO_CFG5_LE | FIFO_CFG5_FT | FIFO_CFG5_16 | \
-			 FIFO_CFG5_17 | FIFO_CFG5_SF)
+			 FIFO_CFG5_CE | FIFO_CFG5_LM | FIFO_CFG5_LO | \
+			 FIFO_CFG5_OK | FIFO_CFG5_MC | FIFO_CFG5_BC | \
+			 FIFO_CFG5_DR | FIFO_CFG5_CF | FIFO_CFG5_UO | \
+			 FIFO_CFG5_VT | FIFO_CFG5_LE | FIFO_CFG5_FT | \
+			 FIFO_CFG5_UC | FIFO_CFG5_SF)
 
 static void ag71xx_hw_stop(struct ag71xx *ag)
 {
@@ -447,6 +447,7 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct ag71xx_mdio_platform_data *mpdata;
 	u32 init = MAC_CFG1_INIT;
+	u32 reg_val = 0;
 
 	/* setup MAC configuration registers */
 	if (pdata->use_flow_control)
@@ -472,6 +473,12 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	}
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, FIFO_CFG4_INIT);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, FIFO_CFG5_INIT);
+
+	if (ag->gmac_num == 0 && pdata->is_qca955x) {
+                reg_val = ag71xx_rr_fast(ag->mac_base + AG71XX_REG_IG_ACL);
+                reg_val |= AG71XX_IG_ACL_FRA_DISABLE;
+                ag71xx_wr_fast(ag->mac_base + AG71XX_REG_IG_ACL, reg_val);
+        }
 }
 
 static void ag71xx_hw_init(struct ag71xx *ag)
@@ -557,6 +564,25 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 	netif_wake_queue(ag->dev);
 }
 
+static void ag71xx_bit_set(void __iomem *reg, u32 bit)
+{
+	u32 val;
+
+	val = __raw_readl(reg) | bit;
+	__raw_writel(val, reg);
+	__raw_readl(reg);
+}
+
+static void ag71xx_bit_clear(void __iomem *reg, u32 bit)
+{
+	u32 val;
+
+	val = __raw_readl(reg) & ~bit;
+	__raw_writel(val, reg);
+	__raw_readl(reg);
+}
+
+
 static void
 __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 {
@@ -617,6 +643,11 @@ __ag71xx_link_adjust(struct ag71xx *ag, bool update)
 	}
 
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, fifo3);
+
+	if (ag->gmac_num == 0 && !ag->duplex) {
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, AG71XX_CFG_3_HD_VAL);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_THRESH, AG71XX_FIFO_TH_HD_VAL);
+	}
 
 	if (update && pdata->set_speed)
 		pdata->set_speed(ag->speed);
@@ -917,9 +948,71 @@ static void ag71xx_tx_timeout(struct net_device *dev)
 	schedule_delayed_work(&ag->restart_work, 1);
 }
 
+static void ag71xx_dma_exception_recover(struct ag71xx *ag)
+{
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+	struct net_device *dev = ag->dev;
+	u32 reset_mask = pdata->reset_bit;
+	u32 cfg3, cfg2, cfg5, ifctl;
+	u32 mii_reg;
+	unsigned long flags;
+
+	spin_lock_irqsave(&ag->lock, flags);
+	ag71xx_hw_stop(ag);
+	netif_stop_queue(dev);
+	napi_disable(&ag->napi);
+
+	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
+	cfg3 = ag71xx_rr(ag, AG71XX_REG_FIFO_CFG3);
+	cfg5 = ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5);
+	ifctl = ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL);
+	spin_unlock_irqrestore(&ag->lock, flags);
+
+	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
+	udelay(20);
+
+	ar71xx_device_stop(reset_mask);
+	udelay(20);
+	ar71xx_device_start(reset_mask);
+	udelay(20);
+
+	spin_lock_irqsave(&ag->lock, flags);
+
+	ag71xx_hw_setup(ag);
+	ag71xx_dma_reset(ag);
+//	ag->tx_ring.curr = ag->tx_ring.buf;
+//	ag->tx_ring.dirty = ag->tx_ring.buf;
+//	ag->tx_ring.used = 0;
+	netdev_reset_queue(ag->dev);
+//	ag->rx_ring.curr = ag->rx_ring.buf;
+//	ag->rx_ring.dirty = ag->rx_ring.buf;
+//	ag->rx_ring.used = ag->rx_ring.size;
+
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
+	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, cfg5);
+	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, cfg3);
+
+	napi_enable(&ag->napi);
+	spin_unlock_irqrestore(&ag->lock, flags);
+
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+	netif_start_queue(dev);
+}
+
 static void ag71xx_restart_work_func(struct work_struct *work)
 {
 	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work.work);
+
+	if (ag71xx_get_pdata(ag)->is_qca955x) {
+		ag71xx_dma_exception_recover(ag);
+		return;
+	}
 
 	rtnl_lock();
 	ag71xx_hw_disable(ag);
@@ -973,7 +1066,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 		struct sk_buff *skb = ring->buf[i].skb;
 
 		if (!flush && !ag71xx_desc_empty(desc)) {
-			if (pdata->is_ar724x &&
+			if ((pdata->is_ar724x || (pdata->is_qca955x && ag->gmac_num == 0)) &&
 			    ag71xx_check_dma_stuck(ag)) {
 				schedule_delayed_work(&ag->restart_work, HZ / 2);
 				dma_stuck = true;
@@ -1266,7 +1359,7 @@ static const char *ag71xx_get_phy_if_mode_name(phy_interface_t mode)
 
 	return "unknown";
 }
-
+static int ag71xx_gmac_num=0;
 
 static int ag71xx_probe(struct platform_device *pdev)
 {
@@ -1306,6 +1399,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->dev = dev;
 	ag->msg_enable = netif_msg_init(ag71xx_msg_level,
 					AG71XX_DEFAULT_MSG_ENABLE);
+	ag->gmac_num = ag71xx_gmac_num++;
 	spin_lock_init(&ag->lock);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mac_base");
@@ -1443,7 +1537,7 @@ static struct platform_driver ag71xx_driver = {
 static int __init ag71xx_module_init(void)
 {
 	int ret;
-
+	ag71xx_gmac_num = 0;
 	ret = ag71xx_debugfs_root_init();
 	if (ret)
 		goto err_out;
