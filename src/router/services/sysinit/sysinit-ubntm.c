@@ -296,6 +296,8 @@ out:;
 	case ROUTER_BOARD_UNIFI_V2:
 		setWirelessLed(0, 14);
 		break;
+	case ROUTER_BOARD_ROCKETAC:
+		break;
 	default:
 		writeprocsys("dev/wifi0/softled", "0");
 		char *exclude = nvram_safe_get("DD_BOARD");
