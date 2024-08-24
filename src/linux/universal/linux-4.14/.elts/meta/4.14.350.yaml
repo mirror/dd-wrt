@@ -1,0 +1,506 @@
+037ba8c484cfe176665b4bdb735a62d8cc7b1b9a:
+  title: 'Revert "scsi: target: Fix SELinux error when systemd-modules loads the target module"'
+378cd84450603623545e9b29cac5445b188b6c0c:
+  title: 'Revert "tcp: defer shutdown(SEND_SHUTDOWN) for TCP_SYN_RECV sockets"'
+2e31c6f2136246110bfbd82c25ec9ecbf4169729:
+  title: 'Revert "tcp: remove redundant check on tskb"'
+9dd807b0452a622f5a5547b451eda30befa3d61d:
+  title: 'tcp: defer shutdown(SEND_SHUTDOWN) for TCP_SYN_RECV sockets'
+  mainline: 94062790aedb505bdda209b10bea47b294d6394f
+a57e28b291e0ad50d1c6ceba6a7cb556fdf1faf6:
+  title: 'wifi: mac80211: mesh: Fix leak of mesh_preq_queue objects'
+  mainline: b7d7f11a291830fdf69d3301075dd0fb347ced84
+  upstream: 377dbb220edc8421b7960691876c5b3bef62f89b
+9feb2600c4ba32c9fb136d7b5e16ca06c853ea8c:
+  title: 'wifi: mac80211: Fix deadlock in ieee80211_sta_ps_deliver_wakeup()'
+  mainline: 44c06bbde6443de206b30f513100b5670b23fc5e
+  upstream: e51637e0c66a6f72d134d9f95daa47ea62b43c7e
+79e590b3651e9074489976e737e7fc1255a6cd79:
+  title: 'wifi: iwlwifi: mvm: don''t read past the mfuart notifcation'
+  mainline: 4bb95f4535489ed830cf9b34b0a891e384d1aee4
+  upstream: 15b37c6fab9d5e40ac399fa1c725118588ed649c
+9ba19e227817b86f1032cc551912a049b62ba7e6:
+  title: 'ipv6: sr: block BH in seg6_output_core() and seg6_input_core()'
+  mainline: c0b98ac1cc104f48763cdb27b1e9ac25fd81fc90
+  upstream: 6330fe95e59bc1de5ad3ebd89e379d785c7c6fc0
+7c79a301b097797b8edd46b11a888a287e281f98:
+  title: 'vxlan: Fix regression when dropping packets due to invalid src addresses'
+  mainline: 1cd4bc987abb2823836cbb8f887026011ccddc8a
+  upstream: ddd44dc20554c38450204df47f8422c7fec78f2d
+54f3a87336ada67c8a8da26f7575d12c5ca85bfb:
+  title: 'tcp: count CLOSE-WAIT sockets for TCP_MIB_CURRESTAB'
+  mainline: a46d0ea5c94205f40ecf912d1bb7806a8a64704f
+  upstream: 25dec34bfd770f444409b3228f90f64feb6804f6
+7a5ce9a4d73421a553e354ee6eb5de1a3bffeae5:
+  title: 'ptp: Fix error message on failed pin verification'
+  mainline: 323a359f9b077f382f4483023d096a4d316fd135
+  upstream: e468462fe0efdd233b6fd7b978e9911bb1eb8614
+4d194b485b1878813b072bc174b6443164b96fb1:
+  title: 'af_unix: ensure POLLOUT on remote close() for connected dgram socket'
+003de6abbdca3c2d230bd4ce3adc752b5eb4982c:
+  title: 'af_unix: Fix a data-race in unix_dgram_peer_wake_me().'
+  mainline: 662a80946ce13633ae90a55379f1346c10f0c432
+4379c4db8fa9f7d4adfdf7256277c96ac968a690:
+  title: 'af_unix: Annotate data-race of sk->sk_state in unix_inq_len().'
+  mainline: 3a0f38eb285c8c2eead4b3230c7ac2983707599d
+  upstream: 5c91a2f308cabf7cc0e30997455ac15926199987
+03b7c75271f457de1fc83095624428cd9ef74db4:
+  title: 'af_unix: Fix data races around sk->sk_shutdown.'
+  mainline: e1d09c2c2f5793474556b60f83900e088d0d366d
+089da5e3914abb4806b03eff85aeb895c0ab860b:
+  title: 'af_unix: Annotate data-races around sk->sk_state in unix_write_space() and poll().'
+  mainline: eb0718fb3e97ad0d6f4529b810103451c90adf94
+  upstream: 6b4dffb64e98b9eacc7c214056146d32642f7e8a
+c6f96daa0536f49a7d624196dbc3defc536eacdb:
+  title: 'af_unix: Annotate data-races around sk->sk_state in sendmsg() and recvmsg().'
+  mainline: 8a34d4e8d9742a24f74998f45a6a98edd923319b
+  upstream: 7cd9dd08be2482bd1015642b61d97a187af5a774
+cab04acca50227f3f27fb5616bee123fea171762:
+  title: 'af_unix: Annotate data-races around sk->sk_state in UNIX_DIAG.'
+  mainline: 0aa3be7b3e1f8f997312cc4705f8165e02806f8f
+  upstream: 123d798351c96a15456478558fccac0eb766f26d
+98e2f1cec1532524595d79af5c86ed370debd735:
+  title: 'af_unix: Annotate data-race of net->unx.sysctl_max_dgram_qlen.'
+  mainline: bd9f2d05731f6a112d0c7391a0d537bfc588dbe6
+  upstream: f5cf5e139ec736f1ac18cda8d5e5fc80d7eef787
+15baad6e966a2478052b6e2efd0153a9e9a9e0c2:
+  title: 'af_unix: Use unix_recvq_full_lockless() in unix_stream_connect().'
+  mainline: 45d872f0e65593176d880ec148f41ad7c02e40a7
+  upstream: b56ff0d20a4a60b9e6424d0609acccbbde573ea8
+a8d1038ecf162678372a6f5686eabbf0c070ec91:
+  title: 'af_unix: Use skb_queue_len_lockless() in sk_diag_show_rqlen().'
+  mainline: 5d915e584d8408211d4567c22685aae8820bfc55
+  upstream: 141826272a2cd16436f9b6c241cf88b72feddb3b
+669958a2bdd8b94c6bbe1df7c83feae7b844afb3:
+  title: 'af_unix: Annotate data-race of sk->sk_shutdown in sk_diag_fill().'
+  mainline: efaf24e30ec39ebbea9112227485805a48b0ceb1
+  upstream: 9c2d206ddc697595ceb0e8e356c64f9e845a0c2f
+77067622d8f27240f3e5438767cce7317f8b9c34:
+  title: 'usb: gadget: f_fs: Fix race between aio_cancel() and AIO request complete'
+  mainline: 24729b307eefcd7c476065cd7351c1a018082c19
+  upstream: f71a53148ce34898fef099b75386a3a9f4449311
+6c20d50e094e8b67aab06f29f7e97351bbfef601:
+  title: 'serial: sc16is7xx: replace hardcoded divisor value with BIT() macro'
+  mainline: 2e57cefc4477659527f7adab1f87cdbf60ef1ae6
+  upstream: 9dcb6eb967fe778d1d985a709ac4030895603fc0
+f966c6e6aa0166c853782a705ae5389f8c6b24e7:
+  title: 'serial: sc16is7xx: fix bug in sc16is7xx_set_baud() when using prescaler'
+  mainline: 8492bd91aa055907c67ef04f2b56f6dadd1f44bf
+  upstream: 2b14e818ef3e49741ee60a317554222c6af3a800
+41d740fdbcb6d45f86ec6cd7238ba2ca38df8824:
+  title: 'media: mc: mark the media devnode as registered from the, start'
+  mainline: 4bc60736154bc9e0e39d3b88918f5d3762ebe5e0
+  upstream: d3f6dc1155a09bc2c212b734c3ff01a046490e92
+fe9a3e689a0275a21eae214693dd7ddbdbb63cec:
+  title: 'selftests/mm: compaction_test: fix incorrect write of zero to nr_hugepages'
+  mainline: 9ad665ef55eaad1ead1406a58a34f615a7c18b5e
+  upstream: 62b71327cf1af11ceb4a3f53ebf0c85cb9ad3db8
+75614587972465759b313027993c87e60eeb446f:
+  title: 'selftests/mm: conform test to TAP format output'
+  mainline: 9a21701edc41465de56f97914741bfb7bfc2517d
+  upstream: 4a4f88dcf8b688db0cf527362ebf4db0d272a3f6
+6132af7d247da481d1f4e99c91f5fdc29961bce3:
+  title: 'selftests/mm: compaction_test: fix bogus test success on Aarch64'
+  mainline: d4202e66a4b1fe6968f17f9f09bbc30d08f028a1
+  upstream: 4d5f7ab71a24f17311d361f47c61cc49064e1dd0
+71bf6edd5d5c1384f56efcc445146a367f1e7c38:
+  title: 'nilfs2: Remove check for PageError'
+  mainline: 79ea65563ad8aaab309d61eeb4d5019dd6cf5fa0
+  upstream: c158e493640ce76e76241f0529cebe19770ba5b2
+52c1c33e0dafbe82538c326d4a6144544e9501f4:
+  title: 'nilfs2: return the mapped address from nilfs_get_page()'
+  mainline: 09a46acb3697e50548bb265afa1d79163659dd85
+  upstream: 7ed62ec616a3441aa3859150d50fadf5fd117aa8
+c5682abd08cb2a8960de840d00ce1efc5066286e:
+  title: 'nilfs2: fix nilfs_empty_dir() misjudgment and long loop on I/O errors'
+  mainline: 7373a51e7998b508af7136530f3a997b286ce81c
+  upstream: 2ac8a2fe22bdde9eecce2a42cf5cab79333fb428
+ac2c307a0180583e260719f923ba2edabddea919:
+  title: 'USB: class: cdc-wdm: Fix CPU lockup caused by excessive log messages'
+  mainline: 22f00812862564b314784167a89f27b444f82a46
+  upstream: 217d1f44fff560b3995a685a60aa66e55a7f0f56
+6f5dcde17cd2c15cb9812b4441ab1ba7088ccf0c:
+  title: 'mei: me: release irq in mei_me_pci_resume error path'
+  mainline: 283cb234ef95d94c61f59e1cd070cd9499b51292
+  upstream: 83c2321411d8bb8f832dbb482ea3387ac1322542
+79cb0bb1b0e2cbed9eaec6f1fb7ce81baf278a39:
+  title: 'jfs: xattr: fix buffer overflow for invalid xattr'
+  mainline: 7c55b78818cfb732680c4a72ab270cc2d2ee3d0f
+  upstream: f0dedb5c511ed82cbaff4997a8decf2351ba549f
+b8b14f255f86c39eee93bc4fbc4c8f6c3f9da875:
+  title: 'xhci: Apply reset resume quirk to Etron EJ188 xHCI host'
+  mainline: 17bd54555c2aaecfdb38e2734149f684a73fa584
+  upstream: a2ddc0475c4c6fff5b9eac0e0eb4726640925e1b
+41c568e13eb14e46c634292e403a4652603b2d46:
+  title: 'xhci: Apply broken streams quirk to Etron EJ188 xHCI host'
+  mainline: 91f7a1524a92c70ffe264db8bdfa075f15bbbeb9
+  upstream: 5c08d8bcc6f20965d665a6122a3fe60eba042e74
+abe1fafad8d912b27028e91a0040650149ab4ab8:
+  title: 'Input: try trimming too long modalias strings'
+  mainline: 0774d19038c496f0c3602fb505c43e1b2d8eed85
+  upstream: d9bbbbf1a2cac25fafa44ba09d2ab8f5365c0a06
+c0be0c4967c8b988f9603c7b7cecc01379071c67:
+  title: 'HID: core: remove unnecessary WARN_ON() in implement()'
+  mainline: 4aa2dcfbad538adf7becd0034a3754e1bd01b2b5
+  upstream: 955b3764671f3f157215194972d9c01a3a4bd316
+2cb6663051a21277c7bdf9695ad8a04fc6a5dc7a:
+  title: 'iommu/amd: Fix sysfs leak in iommu init'
+  mainline: a295ec52c8624883885396fde7b4df1a179627c3
+  upstream: 7f66540fcf6f8f66784f739c33f79d2889e95106
+b4722a9d958fe8bd54d0358650bf07b11ab91d4b:
+  title: 'drm/bridge/panel: Fix runtime warning on panel bridge release'
+  mainline: ce62600c4dbee8d43b02277669dd91785a9b81d9
+  upstream: 3e0daaf28639c6fd22e96eb2f8772ad40e922ee7
+291c8c1e9e291262f9179c0ba5cef2e49df4f142:
+  title: 'tcp: fix race in tcp_v6_syn_recv_sock()'
+  mainline: d37fe4255abe8e7b419b90c5847e8ec2b8debb08
+  upstream: 06f208ae0670ef97b0bf253a5523863e113026b6
+9ae3694d9677f29e0d8e5bbb86841f69baae279d:
+  title: 'Bluetooth: L2CAP: Fix rejecting L2CAP_CONN_PARAM_UPDATE_REQ'
+  mainline: 806a5198c05987b748b50f3d0c0cfb3d417381a4
+  upstream: a1f9c8328219b9bb2c29846d6c74ea981e60b5a7
+fab190e5fcd0466de646405bf49ca7017bbdca31:
+  title: 'ipv6/route: Add a missing check on proc_dointvec'
+  mainline: f0fb9b288d0a7e9cc324ae362e2dfd2cc2217ded
+  upstream: f00c343be6f25a6a3736fd6b332c918da57d81d8
+04f57a8a33fef04d61ba56f8b4e830fe0cebc8f2:
+  title: 'net/ipv6: Fix the RT cache flush via sysctl using a previous delay'
+  mainline: 14a20e5b4ad998793c5f43b0330d9e1388446cf3
+  upstream: ebde6e8a52c68dc45b4ae354e279ba74788579e7
+82d942edbd8b21acbacd1d16eb3cb52d47404384:
+  title: 'drivers: core: synchronize really_probe() and dev_uevent()'
+  mainline: c0a40097f0bc81deafc15f9195d1fb54595cd6d0
+  upstream: bb3641a5831789d83a58a39ed4a928bcbece7080
+126c475927adda67084f403fee8ec76a853b70fc:
+  title: 'drm/exynos/vidi: fix memory leak in .get_modes()'
+  mainline: 38e3825631b1f314b21e3ade00b5a4d737eb054e
+  upstream: 540ca99729e28dbe902b01039a3b4bd74520a819
+37026b40b51170c1f9b052ef1b1cd19ec815c566:
+  title: 'vmci: prevent speculation leaks by sanitizing event in event_deliver()'
+  mainline: 8003f00d895310d409b2bf9ef907c56b42a4e0f4
+  upstream: 58730dfbd4ae01c1b022b0d234a8bf8c02cdfb81
+aaea44b590e4a5e853dcc48edbf8ffa6dc611490:
+  title: 'fs/proc: fix softlockup in __read_vmcore'
+  mainline: 5cbcb62dddf5346077feb82b7b0c9254222d3445
+  upstream: 7bdf1d550ddfcd9ab797087421f77b7aceddc8a7
+c02663a1e56ea3793580a51e2ea012e198661ca1:
+  title: 'ocfs2: use coarse time for new created files'
+  mainline: b8cb324277ee16f3eca3055b96fce4735a5a41c6
+  upstream: f882e853ea33c1e4f7107387f85879139682b720
+db16f074c58fb04ccb5efd329bd001b3769662b2:
+  title: 'ocfs2: fix races between hole punching and AIO+DIO'
+  mainline: 952b023f06a24b2ad6ba67304c4c84d45bea2f18
+  upstream: 3c26b5d21b1239e9c7fd31ba7d9b2d7bdbaa68d9
+7932419ef19393d4fc9b05a04583d8c31c2785e3:
+  title: 'dmaengine: axi-dmac: fix possible race in remove()'
+  mainline: 1bc31444209c8efae98cb78818131950d9a6f4d6
+  upstream: 5226e7062723bd5d4f1bd5e98ace7c1e6c015d57
+c2986a4fcfa961be763f68bb7c55ff808dcbbc63:
+  title: 'intel_th: pci: Add Granite Rapids support'
+  mainline: e44937889bdf4ecd1f0c25762b7226406b9b7a69
+  upstream: 96185ee73d5cd28c2b19311c87536ffeeb653562
+fbda6dc2f8c85e96d6ae1f5243146a33e627ee9e:
+  title: 'intel_th: pci: Add Granite Rapids SOC support'
+  mainline: 854afe461b009801a171b3a49c5f75ea43e4c04c
+  upstream: 04d47e1fd4e9a9b9c32e769b9106bbcbddeca756
+97c26585440f81fc3832759721964719ae7a4802:
+  title: 'intel_th: pci: Add Sapphire Rapids SOC support'
+  mainline: 2e1da7efabe05cb0cf0b358883b2bc89080ed0eb
+  upstream: f9159b4706fc1eae09c37081f9a580673a4477ff
+0d4c32589468be6d7b8993e7576690004f50f5cc:
+  title: 'intel_th: pci: Add Meteor Lake-S support'
+  mainline: c4a30def564d75e84718b059d1a62cc79b137cf9
+  upstream: 8af7cedc0edf1b9d3c29e2b72e7d643f64669ee4
+eac9744fef5c714c3201a0ab9c56e61ede318c29:
+  title: 'intel_th: pci: Add Lunar Lake support'
+  mainline: f866b65322bfbc8fcca13c25f49e1a5c5a93ae4d
+  upstream: 4780775da4957702ece226104b17d072e557a962
+948b6135a242e4147ee69d7d47e1df20f5951d7f:
+  title: 'nilfs2: fix potential kernel bug due to lack of writeback flag waiting'
+  mainline: a4ca369ca221bb7e06c725792ac107f0e48e82e7
+  upstream: 95f6f81e50d858a7c9aa7c795ec14a0ac3819118
+22749c2b34a685511b52c8e1c52539519f0a46ec:
+  title: 'hv_utils: drain the timesync packets on onchannelcallback'
+  mainline: b46b4a8a57c377b72a98c7930a9f6969d2d4784e
+  upstream: 1af0a35eba1ee302fc30aea8cb621f6de8728785
+06d15f1e6c6dbb25aa2058c26a02bc3589dd87d7:
+  title: 'mm/hugetlb: add mmap() encodings for 32MB and 512MB page sizes'
+bee6efedbf7b70baa442b7af575c6cc055c2bcef:
+  title: 'hugetlb_encode.h: fix undefined behaviour (34 << 26)'
+  mainline: 710bb68c2e3a24512e2d2bae470960d7488e97b1
+  upstream: a33d99c8b213d16ad61bc68cb17aad1e2f484192
+ba2eacb9af4998743a14271e11fba297a8761497:
+  title: 'usb-storage: alauda: Check whether the media is initialized'
+  mainline: 16637fea001ab3c8df528a8995b3211906165a30
+  upstream: e0aab7b07a9375337847c9d74a5ec044071e01c8
+d3d05ae427ca75738046af172544e4ad75bdf8aa:
+  title: 'rcutorture: Fix rcu_torture_one_read() pipe_count overflow comment'
+  mainline: 8b9b443fa860276822b25057cb3ff3b28734dec0
+  upstream: 6652029853316f4c273219145ef0e71b148bbe01
+5856f70943c52055ea24d8ee791308367cd1039a:
+  title: 'batman-adv: bypass empty buckets in batadv_purge_orig_ref()'
+  mainline: 40dc8ab605894acae1473e434944924a22cfaaa0
+  upstream: 79636f636126775436a11ee9cf00a9253a33ac11
+f98f3237faf35d508d9c1b783385102a7be0abf2:
+  title: 'scsi: qedi: Fix crash while reading debugfs attribute'
+  mainline: 28027ec8e32ecbadcd67623edb290dad61e735b5
+  upstream: 56bec63a7fc87ad50b3373a87517dc9770eef9e0
+476276b356c5d338435b82ecfe217a9422d7235f:
+  title: 'powerpc/pseries: Enforce hcall result buffer validity and size'
+  mainline: ff2e185cf73df480ec69675936c4ee75a445c3e4
+  upstream: acf2b80c31c37acab040baa3cf5f19fbd5140b18
+8824c4818bf4e7a3b2c47f78c6a8ace368ebe2c5:
+  title: 'powerpc/io: Avoid clang null pointer arithmetic warnings'
+  mainline: 03c0f2c2b2220fc9cf8785cd7b61d3e71e24a366
+  upstream: 7e1e8e86b0b62844b2c795549f65494e95b5983e
+43cef40ed1b05181bab0553b15a699a4a3de9dc4:
+  title: 'usb: misc: uss720: check for incompatible versions of the Belkin F5U002'
+  mainline: 3295f1b866bfbcabd625511968e8a5c541f9ab32
+  upstream: 02d13616ca30014ed96302e51a5b0e17664e58bc
+20c569a7cff68ac7d507661d2cbb62dd6fffdc7d:
+  title: 'udf: Sanitize nanoseconds for time stamps'
+04f8c1f355f2e1cdc8bc261bb903c85488dbb649:
+  title: 'udf: Simplify calls to udf_disk_stamp_to_time'
+28e83fb606df2b620ca55001b6b1ec4669fff3fe:
+  title: 'udf: udftime: prevent overflow in udf_disk_stamp_to_time()'
+  mainline: 3b84adf460381169c085e4bc09e7b57e9e16db0a
+  upstream: 2f85b07bd802e86e155fd8496e3d105ec3a2ade9
+7bf7a1b84c85a21b7e9e7dc9136efd5c79d7b4ed:
+  title: 'MIPS: Octeon: Add PCIe link status check'
+  mainline: 29b83a64df3b42c88c0338696feb6fdcd7f1f3b7
+  upstream: 6bff05aaa32c2f7e1f6e68e890876642159db419
+2401229809147c9144c4e7bbbcc43c7154cf1aba:
+  title: 'MIPS: Routerboard 532: Fix vendor retry check code'
+  mainline: ae9daffd9028f2500c9ac1517e46d4f2b57efb80
+  upstream: acabc32a7b27f30a75ef01e873d8b65f5dc7d5d5
+2f46065f2784076d6c121eab1a21a8096fba6b13:
+  title: 'cipso: fix total option length computation'
+  mainline: 9f36169912331fa035d7b73a91252d7c2512eb1a
+  upstream: 5d3b9efa04c0d8967e00cbc4b6b5aab79952f5d1
+f5105aa1e9989b1deb6d87f9d080a7d0d917dc56:
+  title: 'netrom: Fix a memory leak in nr_heartbeat_expiry()'
+  mainline: 0b9130247f3b6a1122478471ff0e014ea96bb735
+  upstream: d616876256b38ecf9a1a1c7d674192c5346bc69c
+b71bbdc8869cbf604b55e27437b9d91d3dd909aa:
+  title: 'xfrm6: check ip6_dst_idev() return value in xfrm6_get_saddr()'
+  mainline: d46401052c2d5614da8efea5788532f0401cb164
+  upstream: c71761292d4d002a8eccb57b86792c4e3b3eb3c7
+e3d1b924da1c094e403381851f287d1cb6d430de:
+  title: 'virtio_net: checksum offloading handling fix'
+  mainline: 604141c036e1b636e2a71cf6e1aa09d1e45f40c2
+  upstream: d0e99ad7721155aaa4e57b8b11bb70743da61491
+8bfba3c52500198a370f799501c232303b52817c:
+  title: 'net: usb: rtl8150 fix unintiatilzed variables in rtl8150_get_link_ksettings'
+  mainline: fba383985354e83474f95f36d7c65feb75dba19d
+  upstream: 88154e3329e1f47490ee98f8d32a0353d8d46550
+cc48980d16d92c2f4e6c9a1976bd2afdf9f30fa6:
+  title: 'regulator: core: Fix modpost error "regulator_get_regmap" undefined'
+  mainline: 3f60497c658d2072714d097a177612d34b34aa3d
+  upstream: bdc0a40accdf77080fed82d72e89d341001dcbf6
+d7e271c7c6269187a0c054ef781b1160398b119a:
+  title: 'dmaengine: ioatdma: Fix missing kmem_cache_destroy()'
+  mainline: 5422145d0b749ad554ada772133b9b20f9fb0ec8
+  upstream: 0b346aa39e76de78be5e105dc338e190e80a5188
+ed44c23c974a4df0899e57a375eeb563a911b575:
+  title: 'ACPICA: Revert "ACPICA: avoid Info: mapping multiple BARs. Your kernel is fine."'
+  mainline: a83e1385b780d41307433ddbc86e3c528db031f0
+  upstream: 435ecc978c3d5d0c4e172ec5b956dc1904061d98
+cc96770672dafa9b46038f64523c42ce3534e8ba:
+  title: 'drm/radeon: fix UBSAN warning in kv_dpm.c'
+  mainline: a498df5421fd737d11bfd152428ba6b1c8538321
+  upstream: 07e8f15fa16695cf4c90e89854e59af4a760055b
+cd513bd7a535592e2c65efc462a42866d507da3a:
+  title: 'gcov: add support for GCC 14'
+  mainline: c1558bc57b8e5b4da5d821537cd30e2e660861d8
+  upstream: 48d5f4d66962fde59c78dd0a7cf6bd03b3f49c61
+5566df875aabd57002b81daf45d37d2f6c874d42:
+  title: 'ARM: dts: samsung: smdkv310: fix keypad no-autorepeat'
+  mainline: 87d8e522d6f5a004f0aa06c0def302df65aff296
+  upstream: 1d1838ca012952f4914af6f6619bbdea6251039c
+9b2697403d29b12ef06ab68f4f2232291dfed184:
+  title: 'ARM: dts: samsung: exynos4412-origen: fix keypad no-autorepeat'
+  mainline: 88208d3cd79821117fd3fb80d9bcab618467d37b
+  upstream: 77951f880a4b9e7f76460364ec0b931d1a59c9fb
+d350b585ee4796a3868be5f4cd8a29877275c819:
+  title: 'ARM: dts: samsung: smdk4412: fix keypad no-autorepeat'
+  mainline: 4ac4c1d794e7ff454d191bbdab7585ed8dbf3758
+  upstream: 4c70a7576ae14f804196ae0089f9deb6cbd77e1f
+dcea2cf5d7cca146641b67b8cbcc153cbfdeb0c3:
+  title: 'PCI: Add PCI_ERROR_RESPONSE and related definitions'
+  mainline: 57bdeef4716689d9b0e3571034d65cf420f6efcd
+  upstream: 4c003aef56d5642aefd4d11ee9d7e6755d4c1a6e
+f66ed725b522bfad043ec2dbcf50eff7ffc8feda:
+  title: 'x86/amd_nb: Check for invalid SMN reads'
+  mainline: c625dabbf1c4a8e77e4734014f2fde7aa9071a1f
+  upstream: d4e52b36c73f44d2b5f41d0cd3f57b3d2efbf180
+e8b7b4167c95a9e6976479edda683c1b13ca0832:
+  title: 'iio: dac: ad5592r-base: Replace indio_dev->mlock with own device lock'
+  mainline: 33c53cbf8f7bc8d62f6146a19da97c8594376ff0
+  upstream: b576d7d08f26d40789313ec6a8acc966a149c37f
+a28ae8f66b95e48a7ad69aa23382bd8486b6c529:
+  title: 'iio: dac: ad5592r: un-indent code-block for scale read'
+  mainline: b004fe33034cc64f72c20923be71cf1e6c9a624c
+  upstream: c101996c9dabd9d809c12f686547b7035c087f10
+d9b6601da0310953862e47ebc5fe28f9bf37033a:
+  title: 'iio: dac: ad5592r: fix temperature channel scaling value'
+  mainline: 279428df888319bf68f2686934897301a250bb84
+  upstream: 9eaaefbae8f5ddbed0fce822042ad969f5f876c5
+675de54c63726a5b6316a7c3854219e10208f4ea:
+  title: 'scsi: mpt3sas: Add ioc_<level> logging macros'
+  mainline: 645a20c6821cd1ab58af8a1f99659e619c216efd
+  upstream: 229e75730c784f7b871ae9bd76f8bd506d20a304
+bd4e577402b93532aacc19b7f44c4963b763fafe:
+  title: 'scsi: mpt3sas: Gracefully handle online firmware update'
+  mainline: ffedeae1fa545a1d07e6827180c3923bf67af59f
+  upstream: 230c290c74b956a4c26926c94a5bf932ca234884
+165419d81604a14fb6d0b111fd2f96288ec9528b:
+  title: 'scsi: mpt3sas: Avoid test/set_bit() operating in non-allocated memory'
+  mainline: 4254dfeda82f20844299dca6c38cbffcfd499f41
+  upstream: e9bce7c751f6d6c7be88c0bc081a66aaf61a23ee
+d9ea1dc07e87131c9ae5e3e1504c2cacbf2df74a:
+  title: 'usb: xhci: Remove ep_trb from xhci_cleanup_halted_endpoint()'
+de371a2bb30d1695a5c07357bd207e5aadefcd51:
+  title: 'xhci: Use soft retry to recover faster from transaction errors'
+  mainline: f8f80be501aa2f10669585c3e328fad079d8cb3a
+  upstream: 8f667ee530a601449fede56370036e1d8d9a62dc
+c73496b00b416467313ec64166d9d8d5d7e3a921:
+  title: 'xhci: Set correct transferred length for cancelled bulk transfers'
+  mainline: f0260589b439e2637ad54a2b25f00a516ef28a57
+  upstream: ca0f0c5b0b991a71f61948bad09eb5f9e8cc4851
+3f74f1a0bd8b876661fb5263fa78048e2586065d:
+  title: 'usb: xhci: do not perform Soft Retry for some xHCI hosts'
+  mainline: a4a251f8c23518899d2078c320cf9ce2fa459c9f
+  upstream: 2a28c0f457c5563cef9fbad803d9445eee0c1e05
+d6636e9d955f53a9da4e40af4ddba67ab3391fbf:
+  title: 'pinctrl: fix deadlock in create_pinctrl() when handling -EPROBE_DEFER'
+  mainline: adec57ff8e66aee632f3dd1f93787c13d112b7a1
+  upstream: e65a0dc2e85efb28e182aca50218e8a056d0ce04
+0b45b7f4f6ee46da3efc4858af96e1a86e536250:
+  title: 'pinctrl: rockchip: fix pinmux bits for RK3328 GPIO2-B pins'
+  mainline: e8448a6c817c2aa6c6af785b1d45678bd5977e8d
+  upstream: 860a562a61a838867c8d3f66d059a0fc7a67d1c9
+0d6d13a0bb379aa59f6475c1bb6df7aaed21857f:
+  title: 'pinctrl: rockchip: fix pinmux bits for RK3328 GPIO3-B pins'
+  mainline: 5ef6914e0bf578357b4c906ffe6b26e7eedb8ccf
+  upstream: f8426b53f59f88c637143ffa31276be73a3c9b27
+a1e6c61656a89e49007fd9847fe123acd15d31b9:
+  title: 'pinctrl: rockchip: fix pinmux reset in rockchip_pmx_set'
+  mainline: 4ea4d4808e342ddf89ba24b93ffa2057005aaced
+  upstream: 61c552e4ee1dbfa85d68997ab6e9d80690b401a7
+90340ac06eb8a83a320c3bf2a31cc67eaf333478:
+  title: 'drm/amdgpu: fix UBSAN warning in kv_dpm.c'
+  mainline: f0d576f840153392d04b2d52cf3adab8f62e8cb6
+  upstream: 4ad7d49059358ceadd352b4e2511425bdb68f400
+f6658c76f5f0670445bebb35a9ccf3d5ae502806:
+  title: 'ASoC: fsl-asoc-card: set priv->pdev before using it'
+  mainline: 90f3feb24172185f1832636264943e8b5e289245
+  upstream: ae81535ce2503aabc4adab3472f4338070cdeb6a
+c01fc5238f6bb561e137d7b6e7df88c5107a263f:
+  title: 'netfilter: nf_tables: fully validate NFT_DATA_VALUE on store to data registers'
+  mainline: 7931d32955e09d0a11b1fe0b6aac1bfa061c005c
+  upstream: 40188a25a9847dbeb7ec67517174a835a677752f
+9578df8a6b21442b2451be92ea5ce59b2cc38505:
+  title: 'net/iucv: Avoid explicit cpumask var allocation on stack'
+  mainline: be4e1304419c99a164b4c0e101c7c2a756b635b9
+  upstream: 2b085521be5292016097b5e7ca81b26be3f7098d
+bf4ffd90f46475894c7d758eb26aa0f8a31dc245:
+  title: 'ALSA: emux: improve patch ioctl data validation'
+  mainline: 89b32ccb12ae67e630c6453d778ec30a592a212f
+  upstream: 40d7def67841343c10f8642a41031fecbb248bab
+728e947a35ba429d96e495c170367211583d760e:
+  title: 'media: dvbdev: Initialize sbuf'
+  mainline: 17d1316de0d7dc1bdc5d6e3ad4efd30a9bf1a381
+  upstream: 1925c902159d686372d897c2fa8ee4ea91b62d14
+cf89c5861a3b88fcef8ce222edd384bb5cb44934:
+  title: 'soc: ti: wkup_m3_ipc: Send NULL dummy message instead of pointer message'
+  mainline: ddbf3204f600a4d1f153498f618369fca352ae00
+  upstream: 671abe2b126e6e39d52eefbf53106650ef2dd904
+43bae0d9a7bd2f0a78a283b1440a74601b4a4f68:
+  title: 'nvme: fixup comment for nvme RDMA Provider Type'
+  mainline: f80a55fa90fa76d01e3fffaa5d0413e522ab9a00
+  upstream: 277ea9f9bf1171f0f02836ded9b65b9b8684322d
+b4951f8134444e1eb7b28ea2234463f8ed077745:
+  title: 'i2c: ocores: stop transfer on timeout'
+  mainline: e7663ef5ae0f02e3b902eb0305dec981333eb3e1
+  upstream: c7999d372e7fe8bdfbc2226af1896e8bd328018a
+4d73d79702f3c0872f20dfd8a05974c7b18ebc7f:
+  title: 'i2c: ocores: set IACK bit after core is enabled'
+  mainline: 5a72477273066b5b357801ab2d315ef14949d402
+  upstream: 1f7e4dd58af1267db2970e5c2e98a4d0ff170047
+00eda93e9c842eecb76a1bc09b337e4f0cb043eb:
+  title: 'x86: stop playing stack games in profile_pc()'
+  mainline: 093d9603b60093a9aaae942db56107f6432a5dca
+  upstream: 65ebdde16e7f5da99dbf8a548fb635837d78384e
+51e44a77a5ca50e7e1f0548960bbb9eea83ff139:
+  title: 'mmc: sdhci-pci: Convert PCIBIOS_* return codes to errnos'
+  mainline: ebc4fc34eae8ddfbef49f2bdaced1bf4167ef80d
+  upstream: bba83bf85fc6fcca1e827fd88bf3998be9ad0d24
+b23dedd4318672a4265f48d90f8760b41b6f7006:
+  title: 'iio: adc: ad7266: Fix variable checking bug'
+  mainline: a2b86132955268b2a1703082fbc2d4832fc001b8
+  upstream: 75a024d3ab0d331fc1d0b640b00e63d31d556b1e
+e4de596e5e18fb924bfe0048049cd04a285272f9:
+  title: 'net: usb: ax88179_178a: improve link status logs'
+  mainline: 058722ee350c0bdd664e467156feb2bf5d9cc271
+  upstream: abb029e078e149d4d1f44a244cf833a6a1541447
+cbc92ffc360a7b6f16408d7092c71d72bb9e0382:
+  title: 'usb: gadget: printer: SS+ support'
+  mainline: fd80731e5e9d1402cb2f85022a6abf9b1982ec5f
+  upstream: a0886d04f1c7439b55c1c9daecd6b21ada2de5dd
+7209de070ba2427bfa29373c649c6311b69580bc:
+  title: 'usb: musb: da8xx: fix a resource leak in probe()'
+  mainline: de644a4a86be04ed8a43ef8267d0f7d021941c5e
+  upstream: a93b97349ba92cdc8b63ad09d28a873a467e1d62
+4ddbe32a34bc9cc18c34282f88488d22c4178071:
+  title: 'usb: atm: cxacru: fix endpoint checking in cxacru_bind()'
+  mainline: 2eabb655a968b862bc0c31629a09f0fbf3c80d51
+  upstream: 5159a81924311c1ec786ad9fdef784ead8676a6a
+c6f828c51833c0dcdd53b79a4eb5c8d5f5ebd56b:
+  title: 'tty: mcf: MCF54418 has 10 UARTS'
+  mainline: 7c92a8bd53f24d50c8cf4aba53bb75505b382fed
+  upstream: 0929fbe8194db19bfeed22f8c7f9b24da9f08bb9
+87cc48eed0c10fc8f13907410db3f1c76c77826b:
+  title: 'hexagon: fix fadvise64_64 calling conventions'
+  mainline: 896842284c6ccba25ec9d78b7b6e62cdd507c083
+  upstream: 72152ab85ae44e13df8b7a653b5f657b48fa3229
+2dc9769a951e305b690994008bcc32ee0d57f3e2:
+  title: 'drm/nouveau/dispnv04: fix null pointer dereference in nv17_tv_get_ld_modes'
+  mainline: 66edf3fb331b6c55439b10f9862987b0916b3726
+  upstream: 9289cd3450d1da3e271ef4b054d4d2932c41243e
+e2f974a4f127e38e7a5ec7a7ab51bb59d4392f17:
+  title: 'drm/nouveau/dispnv04: fix null pointer dereference in nv17_tv_get_hd_modes'
+  mainline: 6d411c8ccc0137a612e0044489030a194ff5c843
+  upstream: ffabad4aa91e33ced3c6ae793fb37771b3e9cb51
+f8741253033be14a8f4297ba6c8ec7cd3ddf4def:
+  title: 'batman-adv: include gfp.h for GFP_* defines'
+e6522330b7414dc7f96f547045bdc5db9de0cc3e:
+  title: 'batman-adv: Don''t accept TT entries for out-of-spec VIDs'
+  mainline: 537a350d14321c8cca5efbf0a33a404fec3a9f9e
+  upstream: 4d5a2d6b7a9a1140342c5229d1a427ec37a12fd4
+5696aad6bf4700041503e715bd2fb5d9dcf1fcc0:
+  title: 'ftruncate: pass a signed offset'
+  mainline: 4b8e88e563b5f666446d002ad0dc1e6e8e7102b0
+  upstream: c329760749b5419769e57cb2be80955d2805f9c9
+7128fc9dcb40ffa3ca16cc92eeb4aa3f65639c87:
+  title: 'pwm: stm32: Refuse too small period requests'
+  mainline: c45fcf46ca2368dafe7e5c513a711a6f0f974308
+  upstream: 19946741ea989605d12d2ffdbb006b9ca000dde8
+81d8db9302d30505f89d672e1a39c60ed71a1dda:
+  title: 'ipv6: annotate some data-races around sk->sk_prot'
+  mainline: 086d49058cd8471046ae9927524708820f5fd1c7
+  upstream: 13bda7ac5801f501bed6e21717dbf3b0df773847
+0904f321c3a052af42b094f786f75fe32f5d8f2d:
+  title: 'ipv6: Fix data races around sk->sk_prot.'
+  mainline: 364f997b5cfe1db0d63a390fe7c801fa2b3115f6
+  upstream: fda6d62642a9c544a293d7ad7cb058f8c7f8f3dd
+1895f4d98247c54d045cd4a9c94c0802f3c270d5:
+  title: 'tcp: Fix data races around icsk->icsk_af_ops.'
+  mainline: f49cd2f4d6170d27a2c61f1fecb03d8a70c91f57
+  upstream: 5bb642cc3355ffd3c8bca0a8bd8e6e65bcc2091c
+6658230562d296ef2484a1156ff322c558d3c26a:
+  title: 'arm64: dts: rockchip: Add sound-dai-cells for RK3368'
+  mainline: 8d7ec44aa5d1eb94a30319074762a1740440cdc8
+  upstream: f7fc312d1d750db0ea867e50e6c436e0679a5a65
+944720b778413cf71b70f8d697b94a357ea40e19:
+  title: 'SUNRPC: Fix RPC client cleaned up the freed pipefs dentries'
+  mainline: bfca5fb4e97c46503ddfc582335917b0cc228264

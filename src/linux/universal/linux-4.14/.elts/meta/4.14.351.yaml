@@ -1,0 +1,222 @@
+a29d61e7e8e578fd6bc893e3fc566de319821ca5:
+  title: 'media: dvb: as102-fe: Fix as10x_register_addr packing'
+  mainline: 309422d280748c74f57f471559980268ac27732a
+  upstream: 86b769452b39428807f287ff5bb5aaf6fbfb7e9c
+763d3cd7f083891a68cf5158c5bab81bb5e8be0f:
+  title: 'media: dvb-usb: dib0700_devices: Add missing release_firmware()'
+  mainline: 4b267c23ee064bd24c6933df0588ad1b6e111145
+  upstream: 213375679632f6ed1e4eb98b78a8f600977b9b34
+f3829e3d794cad5ddb6c88e0ff1b27b6435d224b:
+  title: 'IB/core: Implement a limit on UMAD receive List'
+  mainline: ca0b44e20a6f3032224599f02e7c8fb49525c894
+  upstream: 1288cf1cceb0e6df276e182f5412370fb4169bcb
+8fb8547e74c70ef7ed9af6d75f8b27186d6c1d88:
+  title: 'media: dw2102: Don''t translate i2c read into write'
+  mainline: 0e148a522b8453115038193e19ec7bea71403e4a
+  upstream: 74eb7ec7afe976a499484f56e8af020c3260a559
+fca275dacc79b9d77ec45e208a68284a19515d5f:
+  title: 'sctp: prefer struct_size over open coded arithmetic'
+  mainline: e5c5f3596de224422561d48eba6ece5210d967b3
+  upstream: 03f37e56305156bd25c5c237d1cc7f5c75495ef2
+b0f4f0d200c9bcb8c14b1f09a288dc89d026fdc3:
+  title: 'firmware: dmi: Stop decoding on broken entry'
+  mainline: 0ef11f604503b1862a21597436283f158114d77e
+  upstream: c2a350a3fa622a174e3704691d05989cdfde4d51
+d2b33d0a14125c60fb7fc2fe60e7305ef606bc7f:
+  title: 'Input: ff-core - prefer struct_size over open coded arithmetic'
+  mainline: a08b8f8557ad88ffdff8905e5da972afe52e3307
+  upstream: e52cfcf68df0b52565be68106e9f65ab8077b48a
+9c1cb2b6cbf9a9e1ee2e9702637c71adc476e874:
+  title: 'net: dsa: mv88e6xxx: Correct check for empty list'
+  mainline: 4c7f3950a9fd53a62b156c0fe7c3a2c43b0ba19b
+  upstream: 47d28dde172696031c880c5778633cdca30394ee
+a65c17e8b9fe25ecae58373ddbea9fe06135f193:
+  title: 'media: dvb-frontends: tda18271c2dd: Remove casting during div'
+  mainline: e9a844632630e18ed0671a7e3467431bd719952e
+  upstream: 2401cbc0f5d4bd1e327d247548cc6ee57bc76c53
+909138842fcc6194732efcd7e9d6ab4b9b715600:
+  title: 'media: s2255: Use refcount_t instead of atomic_t for num_channels'
+  mainline: 6cff72f6bcee89228a662435b7c47e21a391c8d0
+  upstream: 32f2f5385eefa73aaebefda419147ac8599ba9e6
+cf654f32bbef8fd9d7d57d91a3378370a975e85f:
+  title: 'media: dvb-frontends: tda10048: Fix integer overflow'
+  mainline: 1aa1329a67cc214c3b7bd2a14d1301a795760b07
+  upstream: 8167e4d7dc086d4f7ca7897dcff3827e4d22c99a
+f5a529216e877313cde4f8a3fc637c816642e861:
+  title: 'i2c: i801: Annotate apanel_addr as __ro_after_init'
+  mainline: 355b1513b1e97b6cef84b786c6480325dfd3753d
+  upstream: 1a1f7053437d0f27534ecc9ec7e5d441c082b81c
+af94a2ea5b6eb5ead8c016a196311449e0e145ac:
+  title: 'powerpc/64: Set _IO_BASE to POISON_POINTER_DELTA not 0 for CONFIG_PCI=n'
+  mainline: be140f1732b523947425aaafbe2e37b41b622d96
+  upstream: 85cc3ecb0b1256d539bb6a58a5f995c802a331c4
+b490b0a094cb6b1e6dc7c79ef9c76213480e03e8:
+  title: 'orangefs: fix out-of-bounds fsid access'
+  mainline: 53e4efa470d5fc6a96662d2d3322cfc925818517
+  upstream: b90176a9553775e23966650e445b1866e62e4924
+48d99fb324e4d263c533ae24712372138c5cb664:
+  title: 'powerpc/xmon: Check cpu id in commands "c#", "dp#" and "dx#"'
+  mainline: 8873aab8646194a4446117bb617cc71bddda2dee
+  upstream: 04b90b8d0b6929d7427551215b71901959c8e098
+7523a69d10eba34a5bf215bbbf73b02932303c2b:
+  title: 'jffs2: Fix potential illegal address access in jffs2_free_inode'
+  mainline: af9a8730ddb6a4b2edd779ccc0aceb994d616830
+  upstream: b6c8b3e31eb88c85094d848a0bd8b4bafe67e4d8
+d232297f0376ff857296774d047ced0731895562:
+  title: 's390/pkey: Wipe sensitive data on failure'
+  mainline: 1d8c270de5eb74245d72325d285894a577a945d9
+  upstream: 6e2e374403bf73140d0efc9541cb1b3bea55ac02
+f1bac5dbfa7aaf5cee717a604ed1c94b363a9883:
+  title: 'UPSTREAM: tcp: fix DSACK undo in fast recovery to call tcp_try_to_open()'
+  mainline: a6458ab7fd4f427d4f6f54380453ad255b7fde83
+  upstream: 8b5fd51b3040ce2596d22a72767c66d7435853b6
+f8f32610dabb5c07608475f3cfe4915aa4cd15e5:
+  title: 'tcp_metrics: validate source addr length'
+  mainline: 66be40e622e177316ae81717aa30057ba9e61dff
+  upstream: 19d997b59fa1fd7a02e770ee0881c0652b9c32c9
+ea462f7627ecabdd4263965f5a8864f0ab86d08b:
+  title: 'bonding: Fix out-of-bounds read in bond_option_arp_ip_targets_set()'
+  mainline: e271ff53807e8f2c628758290f0e499dbe51cb3d
+  upstream: 6a8a4fd082c439e19fede027e80c79bc4c84bb8e
+a8987b87ffb8455fddf7b29734f043256d589a34:
+  title: 'selftests/net: reap zerocopy completions passed up as ancillary data.'
+c75d2712b73df3ce9a145395882cee0d56f8916f:
+  title: 'selftests: fix OOM in msg_zerocopy selftest'
+  mainline: af2b7e5b741aaae9ffbba2c660def434e07aa241
+  upstream: d6ab0198fb470e1a9948d08c610a94601a1fdb2c
+3688bfa238e9ea94bff46c0dc030f412f239a08c:
+  title: 'selftests: make order checking verbose in msg_zerocopy selftest'
+  mainline: 7d6d8f0c8b700c9493f2839abccb6d29028b4219
+  upstream: b1cb48187a6edc2ab72f5b3e6b4af7a232730d64
+600edf70c16cb29b82c9fd1e830398168eea7bca:
+  title: 'inet_diag: Initialize pad field in struct inet_diag_req_v2'
+  mainline: 61cf1c739f08190a4cbf047b9fbb192a94d87e3f
+  upstream: 7094a5fd20ab66028f1da7f06e0f2692d70346f9
+72ae23ea4ee2e943e8d58ad302c6a843dbf80ad0:
+  title: 'nilfs2: fix inode number range checks'
+  mainline: e2fec219a36e0993642844be0f345513507031f4
+  upstream: 57235c3c88bb430043728d0d02f44a4efe386476
+ba6206b639aa6f1d9ade9cb55831ebc1f7268594:
+  title: 'nilfs2: add missing check for inode numbers on directory entries'
+  mainline: bb76c6c274683c8570ad788f79d4b875bde0e458
+  upstream: c33c2b0d92aa1c2262d999b2598ad6fbd53bd479
+34096341954fed86e3b510d1c0617470f21bb41d:
+  title: 'mm: optimize the redundant loop of mm_update_owner_next()'
+  mainline: cf3f9a593dab87a032d2b6a6fb205e7f3de4f0a1
+  upstream: 2890a7faf552dd3e4e40e343610ba3e0ba5b788e
+1cbdc455dc33b76a9efdf4694308b2b1c8ea5a21:
+  title: 'Bluetooth: Fix incorrect pointer arithmatic in ext_adv_report_evt'
+  mainline: cd9151b618da4723877bd94eae952f2e50acbc0e
+  upstream: b162f19e6603571061b19dbb604a9883f0fa4ecc
+73f492747cfcd09e43ef25970d26c8943ab830ec:
+  title: 'fsnotify: Do not generate events for O_PATH file descriptors'
+  mainline: 702eb71fd6501b3566283f8c96d7ccc6ddd662e9
+  upstream: b7421cad1d8725831a98b339d7ecbb284dd1c5de
+6949c5283758b9d0847b1ce1d461e9c7d2730fa1:
+  title: 'Revert "mm/writeback: fix possible divide-by-zero in wb_dirty_limits(), again"'
+  mainline: 30139c702048f1097342a31302cbd3d478f50c63
+  upstream: 253f9ea7e8e53a5176bd80ceb174907b10724c1a
+c300d28e4079a0046e79ff18bdffb48c7dee3861:
+  title: 'drm/nouveau: fix null pointer dereference in nouveau_connector_get_modes'
+  mainline: 80bec6825b19d95ccdfd3393cf8ec15ff2a749b4
+  upstream: 9baf60323efa992b7c915094529f0a1882c34e7e
+27967cf8362a84f47938fe7ff0ff57c991c858cc:
+  title: 'drm/amdgpu/atomfirmware: silence UBSAN warning'
+  mainline: d0417264437a8fa05f894cabba5a26715b32d78e
+  upstream: 385b615c95df14df68ca8322245c13a9389392f6
+a64eeaefb325e45890fca958151be84cfa53b633:
+  title: 'bnx2x: Fix multiple UBSAN array-index-out-of-bounds'
+  mainline: 134061163ee5ca4759de5c24ca3bd71608891ba7
+  upstream: cfb04472ce33bee2579caf4dc9f4242522f6e26e
+9c6553444512bcd2fdaf2b4153835f19f684f2c4:
+  title: 'media: dw2102: fix a potential buffer overflow'
+  mainline: 1c73d0b29d04bf4082e7beb6a508895e118ee30d
+  upstream: 39fb2a0c2e78d9b2de726be119e6d06e38aa4ed4
+900ede664c5f6c4194cc6a86558c291918c285dd:
+  title: 'i2c: pnx: move header into the driver'
+82043a1a1450176d4a5c5664b05ab1e7bfeed0ee:
+  title: 'i2c/busses: Convert timers to use timer_setup()'
+1921a68ba39c00e508c2b6fdd571d6fdeb6268e4:
+  title: 'i2c: pnx: Fix potential deadlock warning from del_timer_sync() call in isr'
+  mainline: f63b94be6942ba82c55343e196bd09b53227618e
+  upstream: a349e5ab4dc9954746e836cd10b407ce48f9b2f6
+75fb795f98517dbdb2973414465cffa685d9cd8a:
+  title: 'nilfs2: fix incorrect inode allocation from reserved inodes'
+  mainline: 93aef9eda1cea9e84ab2453fcceb8addad0e46f1
+  upstream: de9d81daaca2b7b3c853bf2ff729353e84f06b18
+852460760459aec08d18bc7780f254f6f256606d:
+  title: 'tcp: fix incorrect undo caused by DSACK of TLP retransmit'
+  mainline: 0ec986ed7bab6801faed1440e8839dcc710331ff
+  upstream: 83f5eb01c4beb9741bc1600bcd8b6e94a1774abe
+95139b5d59c4b6d6c56f39c2b4b4f26e22330000:
+  title: 'net: lantiq_etop: add blank line after declaration'
+  mainline: 4c46625bb586a741b8d0e6bdbddbcb2549fa1d36
+  upstream: 12d204b835dd85c7fe6501be6ee1aaa1e5315ff9
+ae3b644b836cdcca258294db2569189af4ef7ff3:
+  title: 'net: ethernet: lantiq_etop: fix double free in detach'
+  mainline: e1533b6319ab9c3a97dad314dd88b3783bc41b69
+  upstream: 1a2db00a554cfda57c397cce79b2804bf9633fec
+84f3c0bb96cd91096079828b24b51af408265abe:
+  title: 'ppp: reject claimed-as-LCP but actually malformed packets'
+  mainline: f2aeb7306a898e1cbd03963d376f4b6656ca2b55
+  upstream: 97d1efd8be26615ff680cdde86937d5943138f37
+4e591539244c71973243bd4315024d601991ee3a:
+  title: 'ARM: davinci: Convert comma to semicolon'
+  mainline: acc3815db1a02d654fbc19726ceaadca0d7dd81c
+  upstream: f9ace6a3278a613d22abbd7d69e13d481b800622
+400d7f0eceb6a1993c04f36ee766abff02f975b8:
+  title: 'USB: serial: option: add Telit generic core-dump composition'
+  mainline: 4298e400dbdbf259549d69c349e060652ad53611
+  upstream: a88697c3871ade2c9d03437d170af77ec92d2982
+4094a8160b0626b4fc428b2770adcd99652a9117:
+  title: 'USB: serial: option: add Telit FN912 rmnet compositions'
+  mainline: 9a590ff283421b71560deded2110dbdcbe1f7d1d
+  upstream: 908bc2cb55f8affc7a90bb8d17fd4323088e2a19
+01b762bc1225b0a0ffb18638161627cb185ce408:
+  title: 'USB: serial: option: add Fibocom FM350-GL'
+  mainline: 2604e08ff251dba330e16b65e80074c9c540aad7
+  upstream: de307ab87774c96700fa1831f78f5085255c35f8
+4dd077fc35bd45cb3763b56b29397495aa60e832:
+  title: 'USB: serial: option: add support for Foxconn T99W651'
+  mainline: 3c841d54b63e4446383de3238399a3910e47d8e2
+  upstream: 9fde2ddfed4787728a20aefea6a625c6b2b32fc4
+e8c421c3e622eec18fb2a723b3801e041094e76b:
+  title: 'USB: serial: option: add Netprisma LCUK54 series modules'
+  mainline: dc6dbe3ed28795b01c712ad8f567728f9c14b01d
+  upstream: 038d9a89fac14fd9855383b2ae990ee755e36bd0
+bb8ef9c34dbad9828e35221d9b93887f81fedf61:
+  title: 'USB: serial: option: add Rolling RW350-GL variants'
+  mainline: ae420771551bd9f04347c59744dd062332bdec3e
+  upstream: 5bc1f4bee4d84245a3479f53aef38f82b99a19f0
+af79b0b19953f31e510d5330cb6d3bb246b096a2:
+  title: 'USB: Add USB_QUIRK_NO_SET_INTF quirk for START BP-850k'
+  mainline: 3859e85de30815a20bce7db712ce3d94d40a682d
+  upstream: 1d1f3d602971bbb8de654e7bbe78bf6c2ebd06c1
+4a1cba1a65533b8f9ece63c774c0bd1d265e14bf:
+  title: 'usb: gadget: configfs: Prevent OOB read/write in usb_string_copy()'
+  mainline: 6d3c721e686ea6c59e18289b400cc95c76e927e0
+  upstream: a444c3fc264119801575ab086e03fb4952f23fd0
+d60eb2fd2445dd07125d1e450aa4c310d5baf190:
+  title: 'USB: core: Fix duplicate endpoint bug by clearing reserved bits in the descriptor'
+  mainline: a368ecde8a5055b627749b09c6218ef793043e47
+  upstream: d8418fd083d1b90a6c007cf8dcf81aeae274727b
+a43cf7b341011779151d27dd5bc52387d5f5f835:
+  title: 'hpet: Support 32-bit userspace'
+  mainline: 4e60131d0d36af65ab9c9144f4f163fe97ae36e8
+  upstream: e2cb94465de92f6a840bc7eface420b30cc64aa0
+c618a1f6d3ecaa97aaf0283d9b89824e651bc013:
+  title: 'libceph: fix race between delayed_work() and ceph_monc_stop()'
+  mainline: 69c7b2fe4c9cc1d3b1186d1c5606627ecf0de883
+  upstream: 1177afeca833174ba83504688eec898c6214f4bf
+bd19e77de5e3d3c721c8dc55e0d7f1b6a0117279:
+  title: 'tcp: use signed arithmetic in tcp_rtx_probe0_timed_out()'
+  mainline: 36534d3c54537bf098224a32dc31397793d4594d
+  upstream: 0fe6516462392ffe355a45a1ada8d264a783430f
+2a8372159bc037d3c15b66659a35ca18a0a61d98:
+  title: 'nilfs2: fix kernel bug on rename operation of broken directory'
+  mainline: a9e1ddc09ca55746079cc479aa3eb6411f0d99d4
+  upstream: ff9767ba2cb949701e45e6e4287f8af82986b703
+e0aa415e86deeac3ffde591fc5fd5e4a13e9ff23:
+  title: 'i2c: rcar: bring hardware to known state when probing'
+  mainline: 4e36c0f20cb1c74c7bd7ea31ba432c1c4a989031
+  upstream: a291702b35433e4948476b79c034a21fd2b5ebc8
