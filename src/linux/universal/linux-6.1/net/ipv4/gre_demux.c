@@ -26,11 +26,8 @@
 #include <net/route.h>
 #include <net/xfrm.h>
 
-#define GREPROTO_CNT \
-       (GREPROTO_MAX + GREPROTO_NONSTD_MAX - GREPROTO_NONSTD_BASE)
 
-
-static const struct gre_protocol __rcu *gre_proto[GREPROTO_MAX] __read_mostly;
+static const struct gre_protocol __rcu *gre_proto[GREPROTO_CNT] __read_mostly;
 
 int gre_add_protocol(const struct gre_protocol *proto, u8 version)
 {
