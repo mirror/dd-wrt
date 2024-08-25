@@ -1,7 +1,7 @@
 /*
  * sysinit-ubntm.c
  *
- * Copyright (C) 2009 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2009 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -103,6 +103,7 @@ void start_sysinit(void)
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		MAC_ADD(mac);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
