@@ -1,7 +1,7 @@
 /*
  * mac80211info.c 
  * Copyright (C) 2010 Christian Scheele <chris@dd-wrt.com>
- * Copyright (C) 2010 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2010 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License version 2.1

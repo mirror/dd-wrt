@@ -101,7 +101,7 @@ CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
-OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o  libutils/ipfmt.o
+OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/ddutils.o libutils/linux_osl.o  libutils/ipfmt.o
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o libshutils/list.o libshutils/list_sort.o libshutils/airbag.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
