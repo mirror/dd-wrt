@@ -2,7 +2,7 @@
  * wireless_madwifiath9k.c 
  *
  * Copyright (C) 2010 Christian Scheele <chris@dd-wrt.com>
- * Copyright (C) 2005 - 2018 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2005 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

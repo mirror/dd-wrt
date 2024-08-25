@@ -1,7 +1,7 @@
 /*
  * websraid.c
  *
- * Copyright (C) 2018 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2018 - 2024 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

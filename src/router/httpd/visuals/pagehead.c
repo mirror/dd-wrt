@@ -1,7 +1,7 @@
 /*
  * pagehead.c
  *
- * Copyright (C) 2005 - 2022 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2005 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
