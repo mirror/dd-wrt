@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 9880e34752839290626aff8d6401a8253819ebca $
+ * $Id: 178202bbb36212d84c2cd5106112d3f531f29b00 $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 9880e34752839290626aff8d6401a8253819ebca $")
+RCSID("$Id: 178202bbb36212d84c2cd5106112d3f531f29b00 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -622,12 +622,19 @@ void proxy_listener_freeze(rad_listen_t *listener, fr_event_fd_handler_t write_h
 
 	listener->blocked = true;
 
-	if (fr_event_fd_write_handler(el, 0, listener->fd, write_handler, listener) < 0) {
+	if (listener->status == RAD_LISTEN_STATUS_INIT) {
+		listen_socket_t *sock = listener->data;
+
+		sock->write_handler = write_handler;
+
+	} else if (fr_event_fd_write_handler(el, 0, listener->fd, write_handler, listener) <= 0) {
 		ERROR("Fatal error freezing socket: %s", fr_strerror());
 		fr_exit(1);
 	}
 
 	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
+
+	if (!we_are_master()) radius_signal_self(RADIUS_SIGNAL_SELF_EVENT_UPDATE);
 }
 
 void proxy_listener_thaw(rad_listen_t *listener)
@@ -641,12 +648,14 @@ void proxy_listener_thaw(rad_listen_t *listener)
 
 	listener->blocked = false;
 
-	if (fr_event_fd_write_handler(el, 0, listener->fd, NULL, listener) < 0) {
+	if (fr_event_fd_write_handler(el, 0, listener->fd, NULL, listener) <= 0) {
 		ERROR("Fatal error freezing socket: %s", fr_strerror());
 		fr_exit(1);
 	}
 
 	PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
+
+	if (!we_are_master()) radius_signal_self(RADIUS_SIGNAL_SELF_EVENT_UPDATE);
 }
 #endif	/* WITH_TLS */
 
@@ -1694,7 +1703,7 @@ static void request_running(REQUEST *request, int action)
 					       child_state_names[request->child_state],
 					       child_state_names[REQUEST_DONE]);
 #endif
-			FINAL_STATE(REQUEST_DONE);
+			request_done(request, FR_ACTION_DONE);
 			break;
 		}
 
@@ -2829,7 +2838,7 @@ int request_proxy_reply(RADIUS_PACKET *packet)
 		 *	listener thread, so there's no conflict
 		 *	checking or setting these fields.
 		 */
-		if ((request->proxy->code == PW_CODE_ACCESS_REQUEST) && 
+		if ((request->proxy->code == PW_CODE_ACCESS_REQUEST) &&
 #ifdef WITH_TLS
 		    !request->home_server->tls &&
 #endif
@@ -5697,7 +5706,18 @@ static void event_new_fd(rad_listen_t *this)
 		if (fr_event_fd_insert(el, 0, this->fd,
 				       event_socket_handler, this)) {
 			this->status = RAD_LISTEN_STATUS_KNOWN;
+
+#ifdef WITH_TLS
+			sock = this->data;
+			if (!sock->write_handler) return;
+
+			if (fr_event_fd_write_handler(el, 0, this->fd, sock->write_handler, this)) {
+				sock->write_handler = NULL;
+				return;
+			}
+#else
 			return;
+#endif
 		}
 
 		/*
@@ -5751,7 +5771,6 @@ static void event_new_fd(rad_listen_t *this)
 			return;
 		}
 
-		fr_event_fd_delete(el, 0, this->fd);
 		this->status = RAD_LISTEN_STATUS_REMOVE_NOW;
 	}
 #endif	/* WITH_TCP */
@@ -5827,6 +5846,7 @@ static void event_new_fd(rad_listen_t *this)
 	if (this->status == RAD_LISTEN_STATUS_REMOVE_NOW) {
 		int devnull;
 
+		fr_event_fd_delete(el, 0, this->fd);
 		this->dead = true;
 
 		/*
@@ -5946,6 +5966,7 @@ static void event_new_fd(rad_listen_t *this)
 		 *	Wait until all requests using this socket are done.
 		 */
 	wait_some_more:
+		fr_event_fd_delete(el, 0, this->fd);
 		listener_free_cb(this);
 #endif	/* WITH_TCP */
 	}
@@ -6047,6 +6068,20 @@ static void handle_signal_self(int flag)
 		FD_MUTEX_UNLOCK(&fd_mutex);
 	}
 #endif
+
+	/*
+	 *	Signal the event loop that we had an update from
+	 *	another thread.
+	 *
+	 *	We don't actually do anything here, we just want the
+	 *	main even loop to wake up from select(), and update
+	 *	the list of FDs it needs to read/write.
+	 */
+	if ((flag & RADIUS_SIGNAL_SELF_EVENT_UPDATE) != 0) {
+		/*
+		 *	Do nothing.
+		 */
+	}
 }
 
 #ifndef HAVE_PTHREAD_H

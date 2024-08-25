@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: 65e484fb54e7cb91d34bad66bf52c4727fb31d3b $
+ * Version:     $Id: f9713adb100a525c927f984106cf6535c1f621b0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 65e484fb54e7cb91d34bad66bf52c4727fb31d3b $")
+RCSID("$Id: f9713adb100a525c927f984106cf6535c1f621b0 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -48,10 +48,6 @@ void cbtls_info(SSL const *s, int where, int ret)
 		if (RDEBUG_ENABLED3) {
 			char const *abbrv = SSL_state_string(s);
 			size_t len;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-			STACK_OF(SSL_CIPHER) *client_ciphers;
-			STACK_OF(SSL_CIPHER) *server_ciphers;
-#endif
 
 			/*
 			 *	Trim crappy OpenSSL state strings...
@@ -70,7 +66,10 @@ void cbtls_info(SSL const *s, int where, int ret)
 				int i;
 				int num_ciphers;
 				const SSL_CIPHER *this_cipher;
+				STACK_OF(SSL_CIPHER) *client_ciphers;
+				STACK_OF(SSL_CIPHER) *server_ciphers;
 
+			report_ciphers:
 				server_ciphers = SSL_get_ciphers(s);
 				if (server_ciphers) {
 					RDEBUG3("Server preferred ciphers (by priority)");
@@ -80,7 +79,7 @@ void cbtls_info(SSL const *s, int where, int ret)
 						RDEBUG3("(TLS)    [%i] %s", i, SSL_CIPHER_get_name(this_cipher));
 					}
 				}
-	
+
 				client_ciphers = SSL_get_client_ciphers(s);
 				if (client_ciphers) {
 					RDEBUG3("(TLS) %s - Client preferred ciphers (by priority)", conf->name);
@@ -122,6 +121,9 @@ void cbtls_info(SSL const *s, int where, int ret)
 				return;
 			}
 			RERROR("(TLS) %s - %s: Error in %s", conf->name, role, state);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+			if (RDEBUG_ENABLED3 && (SSL_get_state(s) == TLS_ST_SR_CLNT_HELLO)) goto report_ciphers;
+#endif
 		}
 	}
 }

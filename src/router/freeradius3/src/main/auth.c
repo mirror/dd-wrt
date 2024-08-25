@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id: 2dc3e602322c8dc1e61ac64f350834b37ce6613d $
+ * Version:	$Id: d9dfc9505c27033850e8557ddc316351860837f4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Miquel van Smoorenburg <miquels@cistron.nl>
  * Copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 2dc3e602322c8dc1e61ac64f350834b37ce6613d $")
+RCSID("$Id: d9dfc9505c27033850e8557ddc316351860837f4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -591,8 +591,13 @@ autz_redo:
 			  ((tmp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
 			  ((tmp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IPV6_ADDRESS, 0, TAG_ANY)) != NULL) ||
 			  ((tmp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_NAME, 0, TAG_ANY)) != NULL)) {
-			RDEBUG("Proxying due to %s", tmp->da->name);
-			return RLM_MODULE_OK;
+			if (RDEBUG_ENABLED) {
+				char buffer[512];
+
+				vp_prints(buffer, sizeof(buffer), tmp);
+				RDEBUG("Proxying due to %s", buffer);
+				return RLM_MODULE_OK;
+			}
 		}
 	}
 

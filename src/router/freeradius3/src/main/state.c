@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: ab7a1802c6aec9d359fb5f6034cb284f719179cd $
+ * $Id: ecda4f80f07a376a39576585c0d4fef1ae0cf9f9 $
  *
  * @brief Multi-packet state handling
  * @file main/state.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014 The FreeRADIUS server project
  */
-RCSID("$Id: ab7a1802c6aec9d359fb5f6034cb284f719179cd $")
+RCSID("$Id: ecda4f80f07a376a39576585c0d4fef1ae0cf9f9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/state.h>
@@ -269,6 +269,11 @@ static REQUEST *fr_state_cleanup_request(state_entry_t *entry)
 	request->client = entry->request_client;
 	request->root = entry->request_root;
 	request->handle = rad_postauth;
+
+	/*
+	 *	xlat (and thus rlm_detail) needs something to work with
+	 */
+	gettimeofday(&request->packet->timestamp, NULL);
 
 	/*
 	 *	Move session-state VPS over, after first freeing the

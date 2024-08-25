@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 5cb5b06f66d6a4e01b271ae25194e579b5378551 $
+ * $Id: 4dda31ced645438d4c2de1a5d7f47f860dc220d3 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 5cb5b06f66d6a4e01b271ae25194e579b5378551 $")
+RCSIDH(libradius_h, "$Id: 4dda31ced645438d4c2de1a5d7f47f860dc220d3 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -927,6 +927,7 @@ rbnode_t	*rbtree_find(rbtree_t *tree, void const *data);
 void		*rbtree_finddata(rbtree_t *tree, void const *data);
 uint32_t	rbtree_num_elements(rbtree_t *tree);
 void		*rbtree_node2data(rbtree_t *tree, rbnode_t *node);
+void		*rbtree_first(rbtree_t *tree);
 
 /*
  *	The callback should be declared as:

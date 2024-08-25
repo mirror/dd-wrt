@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: a6ff0803b63d8c45f2346a7bdb5dbcebef3541b1 $
+ * Version:	$Id: 0460e5f9bc9e9466600e1c0fcb1bc9d6950f41e3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: a6ff0803b63d8c45f2346a7bdb5dbcebef3541b1 $")
+RCSID("$Id: 0460e5f9bc9e9466600e1c0fcb1bc9d6950f41e3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -561,7 +561,18 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 			 *	Message-Authenticator
 			 */
 			return;
+
+		} else if (((client->src_ipaddr.af == AF_INET) &&
+			    (client->src_ipaddr.prefix != 32)) ||
+			   ((client->src_ipaddr.af == AF_INET6) &&
+			    (client->src_ipaddr.prefix != 128))) {
+			/*
+			 *	Don't change it from "auto" for wildcard clients.
+			 */
+			return;
+
 		} else {
+
 			ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			ERROR("BlastRADIUS check: Received packet with Message-Authenticator.");
 			ERROR("Setting \"require_message_authenticator = true\" for client %s", client->shortname);
@@ -620,6 +631,15 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 		ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 		client->limit_proxy_state = FR_BOOL_FALSE;
+
+	} else if (((client->src_ipaddr.af == AF_INET) &&
+		    (client->src_ipaddr.prefix != 32)) ||
+		   ((client->src_ipaddr.af == AF_INET6) &&
+		    (client->src_ipaddr.prefix != 128))) {
+		/*
+		 *	Don't change it from "auto" for wildcard clients.
+		 */
+		return;
 
 	} else {
 		client->limit_proxy_state = FR_BOOL_TRUE;
@@ -850,7 +870,7 @@ static int tls_sni_callback(SSL *ssl, UNUSED int *al, void *arg)
 	 *	one.
 	 */
 	if (r) (void) SSL_set_SSL_CTX(ssl, r->ctx);
-		
+
 	/*
 	 *	Set an attribute saying which server has been selected.
 	 */
@@ -2559,7 +2579,7 @@ static int coa_socket_recv(rad_listen_t *listener)
 	 *	Now that we've sanity checked everything, receive the
 	 *	packet.
 	 */
-	packet = rad_recv(ctx, listener->fd, client->require_ma);
+	packet = rad_recv(ctx, listener->fd, (client->require_ma == FR_BOOL_TRUE));
 	if (!packet) {
 		FR_STATS_INC(coa, total_malformed_requests);
 		if (DEBUG_ENABLED) ERROR("Receive - %s", fr_strerror());
@@ -3585,6 +3605,10 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 	if (home->proto == IPPROTO_TCP) {
 		this->recv = proxy_socket_tcp_recv;
 
+#ifdef WITH_TLS
+		this->nonblock |= home->nonblock;
+#endif
+
 		/*
 		 *	FIXME: connect() is blocking!
 		 *	We do this with the proxy mutex locked, which may
@@ -3593,7 +3617,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		this->fd = fr_socket_client_tcp(&home->src_ipaddr,
 						&home->ipaddr, home->port,
 #ifdef WITH_TLS
-						!this->nonblock
+						this->nonblock
 #else
 						false
 #endif
@@ -3638,8 +3662,6 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		this->radiusv11 = home->tls->radiusv11;
 #endif
 
-		this->nonblock |= home->nonblock;
-
 #ifdef TCP_NODELAY
 		/*
 		 *	Also set TCP_NODELAY, to force the data to be written quickly.
@@ -3658,7 +3680,6 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		 *	Set non-blocking if it's configured.
 		 */
 		if (this->nonblock) {
-			fr_assert(0);
 			if (fr_nonblock(this->fd) < 0) {
 				ERROR("(TLS) Failed setting nonblocking for proxy socket '%s' - %s", buffer, fr_strerror());
 				goto error;
@@ -3798,6 +3819,9 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		error:
 			close(this->fd);
 			home->last_failed_open = now;
+#ifdef WITH_TLS
+			if (home->listeners && this->nonblock) rbtree_deletebydata(home->listeners, this);
+#endif
 			listen_free(&this);
 			return NULL;
 		}

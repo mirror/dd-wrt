@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: ad5a5fef85aa195cc8fe08ddb786e0563e23ff7c $
+ * Version:	$Id: 4ed7d055b05ee069095ac0442d62e865b3399ff3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: ad5a5fef85aa195cc8fe08ddb786e0563e23ff7c $")
+RCSID("$Id: 4ed7d055b05ee069095ac0442d62e865b3399ff3 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -2606,6 +2606,7 @@ static int cf_section_read(char const *filename, int *lineno, FILE *fp,
 							value, dp->d_name);
 					if (slen >= (int) sizeof(buf2) || slen < 0) {
 						ERROR("%s: Full file path is too long.", dp->d_name);
+						closedir(dir);
 						return -1;
 					}
 					if ((stat(buf2, &stat_buf) != 0) ||

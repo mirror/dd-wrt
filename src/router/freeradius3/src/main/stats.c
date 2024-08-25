@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 29f2c48f4b9c8b400ca2afbf724615b6a8dac097 $
+ * Version:	$Id: 64cbafea931f9e807cfa50984853e20b0e07173b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 29f2c48f4b9c8b400ca2afbf724615b6a8dac097 $")
+RCSID("$Id: 64cbafea931f9e807cfa50984853e20b0e07173b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -94,6 +94,14 @@ void request_stats_final(REQUEST *request)
 	RADCLIENT *client;
 
 	if ((request->options & RAD_REQUEST_OPTION_STATS) != 0) return;
+
+	/*
+	 *	This packet was originated by the server, and not
+	 *	received from a client.  It's a status-server or home
+	 *	server "ping" packet.  So we ignore it for statistics
+	 *	purposes.
+	 */
+	if (!request->packet) return;
 
 	/* don't count statistic requests */
 	if (request->packet->code == PW_CODE_STATUS_SERVER) {

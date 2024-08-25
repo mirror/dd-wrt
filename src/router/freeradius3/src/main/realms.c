@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: fa428138b8f0e48862604f3be020b1e93c508567 $
+ * Version:     $Id: cf10ccbe1d5ee12209f8026bbe04f88323c699cb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: fa428138b8f0e48862604f3be020b1e93c508567 $")
+RCSID("$Id: cf10ccbe1d5ee12209f8026bbe04f88323c699cb $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -403,6 +403,14 @@ static ssize_t xlat_home_server_dynamic(UNUSED void *instance, REQUEST *request,
 	}
 
 	home = home_server_byname(name, type);
+
+	/*
+	 *	If we're looking for an auth / acct homeserver, allow for auth+acct
+	 */
+	if (!home && ((type == HOME_TYPE_AUTH) || (type == HOME_TYPE_ACCT))) {
+		home = home_server_byname(name, HOME_TYPE_AUTH_ACCT);
+	}
+
 	if (!home) {
 		*out = '\0';
 		return 0;
@@ -2496,6 +2504,11 @@ int realms_init(CONF_SECTION *config)
 	     cs = cf_subsection_find_next(config, cs, "realm")) {
 		if (!realm_add(rc, cs)) {
 		error:
+			/*
+			 *	realm_config is freed by realms_free()
+			 *	so if rc == realm_config set it to NULL here.
+			 */
+			if (rc == realm_config) rc = NULL;
 			realms_free();
 			/*
 			 *	Must be called after realms_free as home_servers
@@ -2553,7 +2566,7 @@ int realms_init(CONF_SECTION *config)
 		dir = opendir(rc->directory);
 		if (!dir) {
 			cf_log_err_cs(config, "Error reading directory %s: %s",
-				      rc->directory, fr_syserror(errno));				      
+				      rc->directory, fr_syserror(errno));
 			goto error;
 		}
 
@@ -2570,7 +2583,7 @@ int realms_init(CONF_SECTION *config)
 			 *	Skip the TLS configuration.
 			 */
 			if (strcmp(dp->d_name, "tls.conf") == 0) continue;
-		
+
 			/*
 			 *	Check for valid characters
 			 */
@@ -3198,7 +3211,11 @@ int home_server_afrom_file(char const *filename)
 		goto error;
 	}
 
-	if (home->dual) {
+	if (home->dual
+#ifdef WITH_TLS
+		&& !home->tls
+#endif
+	) {
 		fr_strerror_printf("Dynamic home_server '%s' is missing 'type', or it is set to 'auth+acct'.  Please specify 'type = auth' or 'type = acct', etc.", p);
 		talloc_free(home);
 		goto error;

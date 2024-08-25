@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id: 05f82776ff52fcb6fda1f41ed56cb4a587e18094 $
+# Version:	$Id: fefb022a268626190ccc781068efaa16f7072131 $
 #
 
 # Location of files.
@@ -57,7 +57,6 @@ CPPFLAGS	= @CPPFLAGS@
 LIBPREFIX	= @LIBPREFIX@
 EXEEXT		= @EXEEXT@
 
-LIBTOOL		= JLIBTOOL
 ACLOCAL		= @ACLOCAL@
 AUTOCONF	= @AUTOCONF@
 AUTOHEADER	= @AUTOHEADER@

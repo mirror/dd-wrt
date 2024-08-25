@@ -13,7 +13,7 @@
 #  See raddb/sites-available/dhcp for instructions on how to configure
 #  the DHCP server.
 #
-#	$Id: 696a395719904125f6b665425b691b5a11ec2d61 $
+#	$Id: 6976853678735551bd38f98f32c8bdfa2e1cfe2e $
 #
 ######################################################################
 
@@ -69,9 +69,10 @@ listen {
 	#  one of the following items which returns a valid IP
 	#  address:
 	#
+	#	reply:Packet-Src-IP-Address
+	#	If the request is unicast, the address it was received on
 	#	src_ipaddr
 	#	ipaddr
-	#	reply:DHCP-Server-IP-Address
 	#	reply:DHCP-DHCP-Server-Identifier
 	#
 	src_ipaddr = 127.0.0.1
@@ -98,7 +99,7 @@ listen {
 	#  On Linux if you're running the server as non-root, you
 	#  will need to do:
 	#
-	#	setcap cap_net_admin,cap_net_bind_service=eip /path/to/radiusd 
+	#	setcap cap_net_admin,cap_net_bind_service=eip /path/to/radiusd
 	#
 	#  This will allow the server to set ARP table entries
 	#  for newly allocated IPs, when run as the "radius" user.

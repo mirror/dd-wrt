@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2f51e0a623a3c0a5ca89161614c31417f349f64f $
+ * $Id: 06f5dc96a918d70d3272f6adaf316f88f3dec54a $
  * @file rlm_sql_mysql.c
  * @brief MySQL driver.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 2f51e0a623a3c0a5ca89161614c31417f349f64f $")
+RCSID("$Id: 06f5dc96a918d70d3272f6adaf316f88f3dec54a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -34,12 +34,10 @@ RCSID("$Id: 2f51e0a623a3c0a5ca89161614c31417f349f64f $")
 #include "config.h"
 
 #ifdef HAVE_MYSQL_MYSQL_H
-#  include <mysql/mysql_version.h>
 #  include <mysql/errmsg.h>
 #  include <mysql/mysql.h>
 #  include <mysql/mysqld_error.h>
 #elif defined(HAVE_MYSQL_H)
-#  include <mysql_version.h>
 #  include <errmsg.h>
 #  include <mysql.h>
 #  include <mysqld_error.h>

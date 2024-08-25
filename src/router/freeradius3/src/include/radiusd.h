@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: c7c03cdbbebc5ba7aa3f5b0f6860ecd7c90eca6a $
+ * $Id: ec69b8d4e096bef619e3541bb500744a6644abbd $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: c7c03cdbbebc5ba7aa3f5b0f6860ecd7c90eca6a $")
+RCSIDH(radiusd_h, "$Id: ec69b8d4e096bef619e3541bb500744a6644abbd $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -373,7 +373,8 @@ typedef enum {
 	RADIUS_SIGNAL_SELF_EXIT		= (1 << 2),
 	RADIUS_SIGNAL_SELF_DETAIL	= (1 << 3),
 	RADIUS_SIGNAL_SELF_NEW_FD	= (1 << 4),
-	RADIUS_SIGNAL_SELF_MAX		= (1 << 5)
+	RADIUS_SIGNAL_SELF_EVENT_UPDATE	= (1 << 5),
+	RADIUS_SIGNAL_SELF_MAX		= (1 << 6)
 } radius_signal_t;
 /*
  *	Function prototypes.

@@ -1,7 +1,7 @@
 /*
  * acct.c	Accounting routines.
  *
- * Version:	$Id: 90a0dd838bb8beaeae758dd0220f8bc4de677e74 $
+ * Version:	$Id: c6112fd15a21de0e43d9f5042f4cfbb224db3462 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: 90a0dd838bb8beaeae758dd0220f8bc4de677e74 $")
+RCSID("$Id: c6112fd15a21de0e43d9f5042f4cfbb224db3462 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -140,6 +140,17 @@ int rad_accounting(REQUEST *request)
 				 *	before that.
 				 */
 				return result;
+			}
+		}  else if (((vp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_POOL, 0, TAG_ANY)) != NULL) ||
+			    ((vp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IP_ADDRESS, 0, TAG_ANY)) != NULL) ||
+			    ((vp = fr_pair_find_by_num(request->config, PW_PACKET_DST_IPV6_ADDRESS, 0, TAG_ANY)) != NULL) ||
+			    ((vp = fr_pair_find_by_num(request->config, PW_HOME_SERVER_NAME, 0, TAG_ANY)) != NULL)) {
+			if (RDEBUG_ENABLED) {
+				char buffer[512];
+
+				vp_prints(buffer, sizeof(buffer), vp);
+				RDEBUG("Proxying due to %s", buffer);
+				return RLM_MODULE_OK;
 			}
 		}
 	}

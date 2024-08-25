@@ -4,7 +4,7 @@
 #
 #       For ZTE.
 #
-#       $Id: d7352c0db0a19ccc0405140316a27ed548fef71d $
+#       $Id: 9ee7472dadba6b2c07ff2ca01f6746a544167bdc $
 #
 # QoS attributes Mostly derived from:
 # http://wwwen.zte.com.cn/en/products/bearer/201308/P020130828522349526032.pdf
@@ -14,7 +14,7 @@ BEGIN-VENDOR	ZTE
 
 ATTRIBUTE	ZTE-Client-DNS-Pri			1	string
 ATTRIBUTE	ZTE-Client-DNS-Sec			2	string
-ATTRIBUTE	ZTE-Context-Name			4	string
+ATTRIBUTE	ZTE-Context-Name			4	integer
 ATTRIBUTE	ZTE-Tunnel-Max-Sessions			21	integer
 ATTRIBUTE	ZTE-Tunnel-Max-Tunnels			22	integer
 ATTRIBUTE	ZTE-Tunnel-Window			24	integer

@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 3b2a01b9cde1248864e0950ac2cf926fcef67063 $
+ * $Id: 87227ca549d582658d8e9d09dc3ada20735d37e0 $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
  * @copyright 2013 Network RADIUS SARL <info@networkradius.com>
  * @copyright 2007 Apple Inc.
  */
-RCSID("$Id: 3b2a01b9cde1248864e0950ac2cf926fcef67063 $")
+RCSID("$Id: 87227ca549d582658d8e9d09dc3ada20735d37e0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -442,7 +442,6 @@ static int mod_instantiate(CONF_SECTION *conf, rlm_sql_config_t *config)
 
 		if (sql_check_error(db, status) != RLM_SQL_OK) {
 			(void) sqlite3_close(db);
-
 			goto unlink;
 		}
 
@@ -456,7 +455,10 @@ static int mod_instantiate(CONF_SECTION *conf, rlm_sql_config_t *config)
 			if (!p) continue;
 
 			ret = sql_loadfile(conf, db, p);
-			if (ret < 0) goto unlink;
+			if (ret < 0) {
+				(void) sqlite3_close(db);
+				goto unlink;
+			}
 		}
 
 		status = sqlite3_close(db);

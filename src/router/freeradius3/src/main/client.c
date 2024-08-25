@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 58f9faa0389d12b47dc6157e202fbb3300e14d9d $
+ * $Id: 6e1a684da6a8ac5d6ef9e3fe65c2768e37e9507d $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 58f9faa0389d12b47dc6157e202fbb3300e14d9d $")
+RCSID("$Id: 6e1a684da6a8ac5d6ef9e3fe65c2768e37e9507d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1216,6 +1216,14 @@ done_coa:
 		}
 	}
 
+	/*
+	 *	Be annoying to people, but it's about security.
+	 */
+	if (strlen(c->secret) < 12) {
+		WARN("Shared secret for client %s is short, and likely can be broken by an attacker.",
+		     c->shortname);
+	}
+
 	return c;
 }
 
@@ -1299,6 +1307,14 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 	talloc_steal(c, c->cs);
 	c->ipaddr.af = AF_UNSPEC;
 	c->src_ipaddr.af = AF_UNSPEC;
+
+	/*
+	 *	Set these defaults from the main 0/0 client.  This
+	 *	allows it to either inherit the global configuration,
+	 *	OR to have the client{...} setting override it.
+	 */
+	c->require_ma = request->client->require_ma;
+	c->limit_proxy_state = request->client->limit_proxy_state;
 
 	fr_cursor_init(&cursor, &request->config);
 
