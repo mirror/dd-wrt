@@ -1,3 +1,24 @@
+/*
+ * ntp.c
+ *
+ * Copyright (C) 2006 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +42,6 @@
 #include <shutils.h>
 #include <rc.h>
 
-#include <ntp.h>
 #include <cy_conf.h>
 #include <utils.h>
 
@@ -118,19 +138,6 @@ static int do_ntp(void) // called from ntp_main and
 
 	return 0;
 }
-
-/* 
- * int mon; int day; int dst = 4; for (mon = 1; mon <= 12; ++mon) {
- * printf("[%02d] ", mon); for (day = 1; day <= 31; ++day) { int yi = 2005 -
- * 2006; // dst table starts at 2006 int mbeg = dstEntry[dst].startMonth; int 
- * mend = dstEntry[dst].endMonth; int dbeg = dstEntry[dst].startDay[yi]; int
- * dend = dstEntry[dst].endDay[yi];
- * 
- * if (((mon == mbeg) && (day >= dbeg)) || ((mon == mend) && (day <= dend))
- * || ((mbeg < mend) && (mon > mbeg) && (mon < mend)) || ((mbeg > mend) &&
- * ((mon > mbeg) || (mon < mend)))) { printf("%d,", day); if ((mon == mend)
- * && (day == dend)) { printf("***"); } } } printf("\n"); } 
- */
 
 static void ntp_main(timer_t t, int arg)
 {
