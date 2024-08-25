@@ -283,9 +283,13 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_MRP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_BRIDGE_MRP is not set/CONFIG_BRIDGE_MRP=y/g' $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_BRIDGE_MRP=y/# CONFIG_BRIDGE_MRP is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_CFM)" = "y" ]; then \
 		sed -i 's/\# CONFIG_BRIDGE_CFM is not set/CONFIG_BRIDGE_CFM=y/g' $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_BRIDGE_CFM=y/# CONFIG_BRIDGE_CFM is not set/g' $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" && [ "$(KERNELVERSION)" = "6.6"]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
