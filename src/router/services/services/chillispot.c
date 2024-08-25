@@ -1,7 +1,7 @@
 /*
  * chillispot.c
  *
- * Copyright (C) 2007 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2007 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *						2013 Sash
  *
  * This program is free software; you can redistribute it and/or

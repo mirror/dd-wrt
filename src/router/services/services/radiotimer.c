@@ -1,7 +1,7 @@
 /*
  * radiotimer.c
  *
- * Copyright (C) 2009 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2009 - 2024 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
