@@ -2270,6 +2270,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "dnsipv6_enable", "0" },
 	{ "dnsipv6_leasetime", "1440" },
 	{ "dnsipv6_rastate", "1" },
+	{ "dnsipv6_ralifetime", "300" },
 	{ "dnsipv6_range_start", "1" },
 	{ "dnsipv6_range_end", "FFFF" },
 	{ "dnsipv6_interfaces", "br0" },

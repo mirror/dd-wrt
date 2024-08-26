@@ -1687,6 +1687,9 @@ service.dnsmasq_ipv6_enabled="IPv6 Router Advertisement (RA)";
 service.dnsmasq_ipv6_rastate="DHCP6 RA mode";
 service.dnsmasq_ipv6_rastateful="Stateful DHCP6";
 service.dnsmasq_ipv6_rastateless="Stateless DHCP6";
+service.dnsmasq_ipv6_ralifetime="DHCP6 RA lifetime";
+service.dnsmasq_ipv6_dhcp6_start_end="DHCP6 Range, Start - End";
+service.dnsmasq_ipv6_dhcp6_leasetime="DHCP6 Lease Expiration";
 
 //pptp.webservices
 service.pptp_h2="PPTP Server / Client";

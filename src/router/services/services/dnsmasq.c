@@ -562,7 +562,8 @@ void start_dnsmasq(void)
 	char path[64];
 	FILE *fp;
 	char wan_if_buffer[33];
-	struct dns_lists *dns_list = NULL;
+	//struct dns_lists *dns_list = NULL;
+	struct dns_lists *dns_list6 = NULL;
 	int i;
 
 	if (nvram_match("lan_proto", "dhcp") && nvram_matchi("dnsmasq_enable", 0)) {
@@ -747,13 +748,13 @@ void start_dnsmasq(void)
 			char ifname[32];
 			char *next;
 			char *wordlist = nvram_safe_get("dnsipv6_interfaces");
-			dd_loginfo("dnsipv6if", "dnsmasq dnsipv6if: %s", wordlist);
+			//dd_loginfo("dnsipv6if", "dnsmasq dnsipv6if: %s", wordlist);
 			foreach(ifname, wordlist, next)
 			{
 				fprintf(fp, "dhcp-range=::%s,::%s,constructor:%s,ra-names,%s,%s\n",
 					nvram_safe_get("dnsipv6_range_start"), nvram_safe_get("dnsipv6_range_end"), ifname,
 					dnsipv6_rastate, ipv6_leasetime);
-				fprintf(fp, "ra-param=%s%s\n", ifname, ",10,300");
+				fprintf(fp, "ra-param=%s%s%s\n", ifname, ",10,", nvram_safe_get("dnsipv6_ralifetime"));
 			}
 
 			fprintf(fp, "enable-ra\n");
@@ -836,16 +837,33 @@ void start_dnsmasq(void)
 			} else
 #endif
 			{
-				dns_list = get_dns_list(0);
+				dns_list6 = get_dns_list(1);
+				char buffdns6[256] = { 0 };
+				char buffdns[256] = { 0 };
 
-				if (dns_list && dns_list->num_servers > 0) {
-					fprintf(fp, "dhcp-option=6");
-					for (i = 0; i < dns_list->num_servers; i++)
-						fprintf(fp, ",%s", dns_list->dns_server[i].ip);
-					fprintf(fp, "\n");
+				if (dns_list6 && dns_list6->num_servers > 0) {
+					for (i = 0; i < dns_list6->num_servers; i++) {
+						//dd_loginfo("dnsipv6", "dns_list6-%d: %s", i, dns_list6->dns_server[i].ip); 
+						if (strchr(dns_list6->dns_server[i].ip, ':')) {
+							strlcat(buffdns6, ",[", sizeof(buffdns6));
+							strlcat(buffdns6, dns_list6->dns_server[i].ip, sizeof(buffdns6));
+							strlcat(buffdns6, "]", sizeof(buffdns6));
+						} else {
+							strlcat(buffdns, ",", sizeof(buffdns));
+							strlcat(buffdns, dns_list6->dns_server[i].ip, sizeof(buffdns));
+						}
+					}
+					//dd_loginfo("dnsipv6", "buffdns6: %s", buffdns6); 
+					//dd_loginfo("dnsipv6", "buffdns: %s", buffdns); 
+					if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("dnsipv6_enable", 1) && buffdns6) {
+						fprintf(fp, "dhcp-option=option6:dns-server%s\n", buffdns6);
+					}
+					if (buffdns) {
+						fprintf(fp, "dhcp-option=option:dns-server%s\n", buffdns);
+					}
 				}
-				if (dns_list)
-					free_dns_list(dns_list);
+				if (dns_list6)
+					free_dns_list(dns_list6);
 			}
 		}
 

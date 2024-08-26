@@ -208,12 +208,26 @@
 					</div>
 					<div id="iddnsmasq_ipv6">
 						<div class="setting">
-							<div class="label"><% tran("idx.dhcp_lease"); %></div>
+							<div class="label"><% tran("service.dnsmasq_ipv6_dhcp6_start_end"); %></div>
+							<input class="num" maxlength="4" size="4" name="dnsipv6_range_start" value="<% nvg("dnsipv6_range_start"); %>" /> - <input class="num" maxlength="4" size="4" name="dnsipv6_range_end" value="<% nvg("dnsipv6_range_end"); %>" />
+						</div>
+						<div class="setting">
+							<div class="label"><% tran("service.dnsmasq_ipv6_dhcp6_leasetime"); %></div>
 							<input class="num" maxlength="5" size="4" name="dnsipv6_leasetime" value="<% nvg("dnsipv6_leasetime"); %>" />&nbsp;
 							<script type="text/javascript">Capture(share.minutes)</script>
 							<span class="default"><script type="text/javascript">
 							//<![CDATA[
 								document.write("(" + share.deflt + ": 1440 " + share.minutes + ",  0=infinite)");
+							//]]>
+							</script></span>
+						</div>
+						<div class="setting">
+							<div class="label"><% tran("service.dnsmasq_ipv6_ralifetime"); %></div>
+							<input class="num" maxlength="5" size="4" name="dnsipv6_ralifetime" value="<% nvg("dnsipv6_ralifetime"); %>" />&nbsp;
+							<script type="text/javascript">Capture(share.seconds)</script>
+							<span class="default"><script type="text/javascript">
+							//<![CDATA[
+								document.write("(" + share.deflt + ": 300 " + share.seconds + ")");
 							//]]>
 							</script></span>
 						</div>
