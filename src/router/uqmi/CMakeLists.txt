@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.5)
 
 PROJECT(uqmi C)
 
@@ -8,12 +8,9 @@ ADD_DEFINITIONS(-Os -Wall --std=gnu99 -Wmissing-declarations -Werror -Wno-enum-c
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
-SET(SOURCES main.c dev.c commands.c qmi-message.c mbim.c)
-
 FIND_PATH(ubox_include_dir libubox/usock.h)
 FIND_PATH(blobmsg_json_include_dir libubox/blobmsg_json.h)
 FIND_PATH(json_include_dir json-c/json.h json/json.h json.h)
-INCLUDE_DIRECTORIES(${ubox_include_dir} ${blobmsg_json_include_dir} ${json_include_dir})
 
 IF(BUILD_STATIC)
   FIND_LIBRARY(json_library NAMES libjson.a libjson-c.a)
@@ -39,33 +36,37 @@ SET(service_headers)
 SET(service_sources)
 FOREACH(service ctl dms nas pds wds wms wda uim)
 	ADD_CUSTOM_COMMAND(
-		OUTPUT  ${CMAKE_SOURCE_DIR}/qmi-message-${service}.h
-		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-header.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > ${CMAKE_SOURCE_DIR}/qmi-message-${service}.h
+		OUTPUT  qmi-message-${service}.h
+		PRE_BUILD
+		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-header.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > qmi-message-${service}.h
 		DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-header.pl ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json ${CMAKE_SOURCE_DIR}/data/gen-common.pm
 	)
+	SET_SOURCE_FILES_PROPERTIES(qmi-message-${service}.h PROPERTIES GENERATED 1)
 	SET(service_headers ${service_headers} qmi-message-${service}.h)
 	ADD_CUSTOM_COMMAND(
-		OUTPUT  ${CMAKE_SOURCE_DIR}/qmi-message-${service}.c
-		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > ${CMAKE_SOURCE_DIR}/qmi-message-${service}.c
-		DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json ${CMAKE_SOURCE_DIR}/data/gen-common.pm
+		OUTPUT  qmi-message-${service}.c
+		PRE_BUILD
+		COMMAND ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${service}_ ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json > qmi-message-${service}.c
+		DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-code.pl ${CMAKE_SOURCE_DIR}/data/qmi-service-${service}.json ${CMAKE_SOURCE_DIR}/data/gen-common.pm qmi-message-${service}.h
 	)
 	SET(service_sources ${service_sources} qmi-message-${service}.c)
+	SET_SOURCE_FILES_PROPERTIES(qmi-message-${service}.c PROPERTIES GENERATED 1)
 	set_property(SOURCE qmi-message-${service}.c PROPERTY COMPILE_FLAGS "-Wno-unused")
 ENDFOREACH()
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT  ${CMAKE_SOURCE_DIR}/qmi-errors.c
-	COMMAND ${CMAKE_SOURCE_DIR}/data/gen-error-list.pl ${CMAKE_SOURCE_DIR}/qmi-errors.h > ${CMAKE_SOURCE_DIR}/qmi-errors.c
+	PRE_BUILD
+	COMMAND ${CMAKE_SOURCE_DIR}/data/gen-error-list.pl ${CMAKE_SOURCE_DIR}/qmi-errors.h > qmi-errors.c
 	DEPENDS ${CMAKE_SOURCE_DIR}/data/gen-error-list.pl ${CMAKE_SOURCE_DIR}/qmi-errors.h
 )
+SET_SOURCE_FILES_PROPERTIES(qmi-errors.c PROPERTIES GENERATED 1)
 ADD_CUSTOM_TARGET(gen-errors DEPENDS qmi-errors.c)
 ADD_CUSTOM_TARGET(gen-headers DEPENDS ${service_headers})
 
-ADD_EXECUTABLE(uqmi ${SOURCES} ${service_sources})
-ADD_DEPENDENCIES(uqmi gen-headers gen-errors)
+INCLUDE_DIRECTORIES(common ${CMAKE_BINARY_DIR})
+ADD_LIBRARY(qmigen ${service_sources})
+ADD_DEPENDENCIES(qmigen gen-headers gen-errors)
 
-TARGET_LINK_LIBRARIES(uqmi ${LIBS})
-
-INSTALL(TARGETS uqmi
-	RUNTIME DESTINATION sbin
-)
+ADD_SUBDIRECTORY(common)
+ADD_SUBDIRECTORY(uqmi)

@@ -251,6 +251,72 @@ EOF
 EOF
 }
 
+sub gen_parse_ind_func($$)
+{
+	my $name = shift;
+	my $data = shift;
+
+	my $type = "svc";
+	$ctl and $type = "ctl";
+
+	print gen_tlv_parse_func($name, $data)."\n";
+	print <<EOF;
+{
+	void *tlv_buf = &msg->$type.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->$type.tlv_len);
+EOF
+
+	if (gen_has_types($data)) {
+		my $n_bits = scalar @$data;
+		my $n_words = int(($n_bits + 31) / 32);
+		my $i = 0;
+
+		print <<EOF;
+	struct tlv *tlv;
+	int i;
+	uint32_t found[$n_words] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+EOF
+		foreach my $field (@$data) {
+			$field = gen_common_ref($field);
+			my $cname = gen_cname($field->{name});
+			gen_tlv_type($cname, $field, $i++);
+		}
+
+		print <<EOF;
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+EOF
+	} else {
+		print <<EOF;
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+EOF
+	}
+
+	print <<EOF;
+}
+
+EOF
+}
+
 my %tlv_set = (
 	guint8 => sub { my $a = shift; my $b = shift; print "*(uint8_t *) $a = $b;\n" },
 	guint16 => sub { my $a = shift; my $b = shift; print "*(uint16_t *) $a = cpu_to_le16($b);\n" },
@@ -454,4 +520,4 @@ print <<EOF;
 
 EOF
 
-gen_foreach_message_type($data, \&gen_set_func, \&gen_parse_func);
+gen_foreach_message_type($data, \&gen_set_func, \&gen_parse_func, \&gen_parse_ind_func);

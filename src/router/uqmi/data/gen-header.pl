@@ -115,5 +115,5 @@ sub gen_parse_func_header($$)
 	$func and print "$func;\n\n";
 }
 
-gen_foreach_message_type($data, \&gen_tlv_struct, \&gen_tlv_struct);
-gen_foreach_message_type($data, \&gen_set_func_header, \&gen_parse_func_header);
+gen_foreach_message_type($data, \&gen_tlv_struct, \&gen_tlv_struct, \&gen_tlv_struct);
+gen_foreach_message_type($data, \&gen_set_func_header, \&gen_parse_func_header, \&gen_parse_func_header);
