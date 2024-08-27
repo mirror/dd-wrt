@@ -1106,7 +1106,7 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 					strikes = ++sta->sig_drop_strikes;
 				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
 					    char *ident = NULL;
-					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0) {
+					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0 && sta->eapol_sm->identity_len < 128) {
 						    ident = malloc(sta->eapol_sm->identity_len+1);
 						    strncpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
 						    ident[sta->eapol_sm->identity_len] = 0;
