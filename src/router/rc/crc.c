@@ -17,5 +17,5 @@ static uint32 crc32(void *vdata, int size, uint32 crc)
 		}
 	}
 
-	return ~crc;
+	return crc;
 }
