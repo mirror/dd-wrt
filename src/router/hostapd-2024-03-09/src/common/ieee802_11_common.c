@@ -2900,7 +2900,6 @@ bool is_6ghz_freq(int freq)
 	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
 		return false;
 
-	return true;
 	return false;
 }
 
