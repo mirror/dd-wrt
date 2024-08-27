@@ -91,34 +91,6 @@ static bool qmi_message_is_indication(struct qmi_msg *msg)
 	return false;
 }
 
-static bool qmi_message_is_response(struct qmi_msg *msg)
-{
-	if (msg->qmux.service == QMI_SERVICE_CTL) {
-		if (msg->flags & QMI_CTL_FLAG_RESPONSE)
-			return true;
-	}
-	else {
-		if (msg->flags & QMI_SERVICE_FLAG_RESPONSE)
-			return true;
-	}
-
-	return false;
-}
-
-static bool qmi_message_is_indication(struct qmi_msg *msg)
-{
-	if (msg->qmux.service == QMI_SERVICE_CTL) {
-		if (msg->flags & QMI_CTL_FLAG_INDICATION)
-			return true;
-	}
-	else {
-		if (msg->flags & QMI_SERVICE_FLAG_INDICATION)
-			return true;
-	}
-
-	return false;
-}
-
 static void __qmi_request_complete(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
 	void *tlv_buf;
