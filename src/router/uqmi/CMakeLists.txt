@@ -4,7 +4,7 @@ PROJECT(uqmi C)
 
 OPTION(BUILD_STATIC OFF)
 
-ADD_DEFINITIONS(-Os -Wall --std=gnu99 -Wmissing-declarations -Werror -Wno-enum-conversion -Wno-dangling-pointer -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(LTO))
+ADD_DEFINITIONS(-Os -Wall --std=gnu99 -Wmissing-declarations -Werror -Wno-enum-conversion -Wno-dangling-pointer -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(MIPS16_OPT) $(LTO))
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
