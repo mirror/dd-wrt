@@ -548,7 +548,7 @@ void hostapd_free_hapd_data(struct hostapd_data *hapd)
 		struct hapd_interfaces *ifaces = hapd->iface->interfaces;
 		size_t i;
 
-		for (i = 0; i < ifaces->count; i++) {
+		for (i = 0; ifaces && i < ifaces->count; i++) {
 			struct hostapd_iface *iface = ifaces->iface[i];
 			size_t j;
 
