@@ -16,6 +16,5 @@ static uint32 crc32(void *vdata, int size, uint32 crc)
 			crc = (crc >> 1) ^ (0xEDB88320 & t);
 		}
 	}
-
 	return crc;
 }
