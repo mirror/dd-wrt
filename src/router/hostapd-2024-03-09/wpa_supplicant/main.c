@@ -189,6 +189,8 @@ int main(int argc, char *argv[])
 	int iface_count, exitcode = -1;
 	struct wpa_params params;
 	struct wpa_global *global;
+	int airbag_init(void);
+	airbag_init();
 
 	if (os_program_init())
 		return -1;

@@ -772,6 +772,8 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_DPP
 	struct dpp_global_config dpp_conf;
 #endif /* CONFIG_DPP */
+	int airbag_init(void);
+	airbag_init();
 
 	if (os_program_init())
 		return -1;
