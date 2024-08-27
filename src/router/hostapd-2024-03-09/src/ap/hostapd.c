@@ -1365,8 +1365,10 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 					    char *ident = NULL;
 					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0) {
 						    ident = malloc(sta->eapol_sm->identity_len+1);
-						    strncpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
-						    ident[sta->eapol_sm->identity_len] = 0;
+						    if (ident) {
+							    strlcpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
+							    ident[sta->eapol_sm->identity_len] = 0;
+						    }
 					    }
     					    hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",ident?"User:":"", ident?ident:"");
     					    if (ident)

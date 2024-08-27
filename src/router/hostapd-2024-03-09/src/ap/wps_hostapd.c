@@ -568,8 +568,8 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	
 
 	char newkey[65];
-	strncpy(newkey,cred->key,cred->key_len);
-	newkey[cred->key_len]=0;
+	strlcpy(newkey,cred->key,sizeof(newkey) - 1);
+	newkey[cred->key_len < sizeof(newkey) ? cred->key_len : sizeof(newkey) - 1]=0;
 	nvram_set(psk,newkey);
 
 	if (cred->encr_type & (WPS_ENCR_AES | WPS_ENCR_TKIP)) {

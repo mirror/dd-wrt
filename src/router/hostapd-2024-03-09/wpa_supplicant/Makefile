@@ -48,8 +48,8 @@ export BINDIR ?= /usr/local/sbin
 PKG_CONFIG ?= pkg-config
 
 CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) $(LTO) -Wall 
-LDFLAGS +=  $(MIPS16_OPT) $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS +=  $(MIPS16_OPT) $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -g3
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections -g3
 CFLAGS+=-I$(TOP)/libnl-tiny/include\
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE

@@ -332,10 +332,12 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 		FILE *out = fopen(fileout, "wb");
 		if (out) {
 			char *ident = malloc(sm->identity_len+1);
-			strncpy(ident, sm->identity, sm->identity_len);
-			ident[sm->identity_len] = 0;
-			fprintf(out, "%s",ident);
-			free(ident);
+			if (ident) {
+				strlcpy(ident, sm->identity, sm->identity_len);
+				ident[sm->identity_len] = 0;
+				fprintf(out, "%s",ident);
+				free(ident);
+			}
 			fclose(out);
 		}
 	}
