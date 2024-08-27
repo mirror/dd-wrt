@@ -337,6 +337,9 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 				ident[sm->identity_len] = 0;
 				fprintf(out, "%s",ident);
 				free(ident);
+			} else {
+			    eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO, "BUG: %s:%d something wrong here", __func__, __LINE__);
+				
 			}
 			fclose(out);
 		}
