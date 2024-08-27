@@ -3071,7 +3071,7 @@ static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss,
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	struct i802_link *link = nl80211_get_link(bss, link_id);
 
-	if (!link->beacon_set)
+	if (!link || !link->beacon_set)
 		return 0;
 
 	wpa_printf(MSG_DEBUG, "nl80211: Remove beacon (ifindex=%d)",
