@@ -18,7 +18,7 @@ uqmi:
 	$(MAKE) -C uqmi
 
 uqmi-install:
-	install -D uqmi/uqmi $(INSTALLDIR)/uqmi/usr/sbin/uqmi
+	install -D uqmi/uqmi/uqmi $(INSTALLDIR)/uqmi/usr/sbin/uqmi
 
 uqmi-clean:
 	if [ -e "$(UQMI_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C uqmi clean ; fi
