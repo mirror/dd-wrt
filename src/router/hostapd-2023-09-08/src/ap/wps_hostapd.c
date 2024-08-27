@@ -542,22 +542,25 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	sprintf(crypto,"%s_crypto",ifname);
 	char ssid[32];
 	sprintf(ssid,"%s_ssid",ifname);
- 
+	int storekey = 0;
 	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) &&
 	    (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)))
 	    {
 	    nvram_set(akm,"psk psk2");
 	    nvram_set(smode,"psk psk2");
+	    storekey = 1;
 	    }
 	else if (cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK))
 	{
 	    nvram_set(akm,"psk2");
 	    nvram_set(smode,"psk2");
+	    storekey = 1;
 	}
 	else if (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK))
 	{
 	    nvram_set(akm,"psk");
 	    nvram_set(smode,"psk");
+	    storekey = 1;
 	}
 	else
 	{
@@ -566,11 +569,15 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	}
 	
 	
-
-	char newkey[65];
-	strncpy(newkey,cred->key,cred->key_len);
-	newkey[cred->key_len]=0;
-	nvram_set(psk,newkey);
+	if (storekey) {
+		char newkey[65];
+		strlcpy(newkey,cred->key,sizeof(newkey) - 1);
+		if (cred->key_len > 64) {
+			wpa_printf(MSG_INFO,  "BUG: %s:%d something wrong here", __func__, __LINE__);
+		}
+		newkey[cred->key_len < sizeof(newkey) ? cred->key_len : sizeof(newkey) - 1]=0;
+		nvram_set(psk,newkey);
+	}
 
 	if (cred->encr_type & (WPS_ENCR_AES | WPS_ENCR_TKIP)) {
 	    nvram_set(crypto,"tkip+aes");
@@ -582,10 +589,11 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	    nvram_set(crypto,"tkip");
 	}
 	char str_ssid[40];
-	memcpy(str_ssid,cred->ssid,cred->ssid_len);
-	str_ssid[cred->ssid_len]=0;
-	nvram_set(ssid,str_ssid);
-	
+	if (cred->ssid_len <= 32) {
+		memcpy(str_ssid,cred->ssid,cred->ssid_len);
+		str_ssid[cred->ssid_len]=0;
+		nvram_set(ssid,str_ssid);
+	}	
 
 
 	nvram_commit();
