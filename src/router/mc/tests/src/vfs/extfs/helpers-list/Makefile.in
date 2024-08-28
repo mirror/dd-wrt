@@ -541,6 +541,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -629,6 +630,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -696,6 +698,10 @@ data_files_to_distribute = \
 	data/hp48+.args \
 	data/hp48+.input \
 	data/hp48+.output \
+	data/iso9660.xorriso.env_vars \
+	data/iso9660.xorriso.input \
+	data/iso9660.xorriso.output \
+	data/iso9660.xorriso.README \
 	data/lslR.1.spaces.args \
 	data/lslR.1.spaces.input \
 	data/lslR.1.spaces.output \

@@ -60,7 +60,7 @@
 
 static char *columns[MAXCOLS];  /* Points to the string in column n */
 static int column_ptr[MAXCOLS]; /* Index from 0 to the starting positions of the columns */
-static size_t vfs_parce_ls_final_num_spaces = 0;
+static size_t vfs_parse_ls_final_num_spaces = 0;
 
 /* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
@@ -205,7 +205,7 @@ is_year (char *str, struct tm *tim)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_filetype (const char *s, size_t * ret_skipped, mode_t * ret_type)
+vfs_parse_filetype (const char *s, size_t *ret_skipped, mode_t *ret_type)
 {
     mode_t type;
 
@@ -272,7 +272,7 @@ vfs_parse_filetype (const char *s, size_t * ret_skipped, mode_t * ret_type)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_fileperms (const char *s, size_t * ret_skipped, mode_t * ret_perms)
+vfs_parse_fileperms (const char *s, size_t *ret_skipped, mode_t *ret_perms)
 {
     const char *p = s;
     mode_t perms = 0;
@@ -411,7 +411,7 @@ vfs_parse_fileperms (const char *s, size_t * ret_skipped, mode_t * ret_perms)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_filemode (const char *s, size_t * ret_skipped, mode_t * ret_mode)
+vfs_parse_filemode (const char *s, size_t *ret_skipped, mode_t *ret_mode)
 {
     const char *p = s;
     mode_t type, perms;
@@ -434,7 +434,7 @@ vfs_parse_filemode (const char *s, size_t * ret_skipped, mode_t * ret_mode)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_raw_filemode (const char *s, size_t * ret_skipped, mode_t * ret_mode)
+vfs_parse_raw_filemode (const char *s, size_t *ret_skipped, mode_t *ret_mode)
 {
     const char *p = s;
     mode_t remote_type = 0, local_type, perms = 0;
@@ -495,7 +495,7 @@ vfs_parse_raw_filemode (const char *s, size_t * ret_skipped, mode_t * ret_mode)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_month (const char *str, struct tm * tim)
+vfs_parse_month (const char *str, struct tm *tim)
 {
     static const char *month = "JanFebMarAprMayJunJulAugSepOctNovDec";
     const char *pos;
@@ -517,7 +517,7 @@ vfs_parse_month (const char *str, struct tm * tim)
 /** This function parses from idx in the columns[] array */
 
 int
-vfs_parse_filedate (int idx, time_t * t)
+vfs_parse_filedate (int idx, time_t *t)
 {
     char *p;
     struct tm tim;
@@ -665,7 +665,7 @@ vfs_split_text (char *p)
 void
 vfs_parse_ls_lga_init (void)
 {
-    vfs_parce_ls_final_num_spaces = 1;
+    vfs_parse_ls_final_num_spaces = 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -673,14 +673,14 @@ vfs_parse_ls_lga_init (void)
 size_t
 vfs_parse_ls_lga_get_final_spaces (void)
 {
-    return vfs_parce_ls_final_num_spaces;
+    return vfs_parse_ls_final_num_spaces;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-vfs_parse_ls_lga (const char *p, struct stat * s, char **filename, char **linkname,
-                  size_t * num_spaces)
+vfs_parse_ls_lga (const char *p, struct stat *s, char **filename, char **linkname,
+                  size_t *num_spaces)
 {
     int idx, idx2, num_cols;
     int i;
@@ -703,7 +703,7 @@ vfs_parse_ls_lga (const char *p, struct stat * s, char **filename, char **linkna
         if (strlen (p) <= 8 || p[8] != ']')
             goto error;
 
-        /* Should parse here the Notwell permissions :) */
+        /* Should parse here the Novell permissions :) */
         if (S_ISDIR (s->st_mode))
             s->st_mode |= (S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR | S_IXUSR | S_IXGRP | S_IXOTH);
         else
@@ -796,15 +796,14 @@ vfs_parse_ls_lga (const char *p, struct stat * s, char **filename, char **linkna
 #endif
     }
 
+    vfs_zero_stat_times (s);
+
     idx = vfs_parse_filedate (idx, &s->st_mtime);
     if (idx == 0)
         goto error;
 
     /* Use resulting time value */
     s->st_atime = s->st_ctime = s->st_mtime;
-#ifdef HAVE_STRUCT_STAT_ST_MTIM
-    s->st_atim.tv_nsec = s->st_mtim.tv_nsec = s->st_ctim.tv_nsec = 0;
-#endif
 
     /* s->st_dev and s->st_ino must be initialized by vfs_s_new_inode () */
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -816,7 +815,7 @@ vfs_parse_ls_lga (const char *p, struct stat * s, char **filename, char **linkna
     {
         *num_spaces = column_ptr[idx] - column_ptr[idx - 1] - strlen (columns[idx - 1]);
         if (DIR_IS_DOTDOT (columns[idx]))
-            vfs_parce_ls_final_num_spaces = *num_spaces;
+            vfs_parse_ls_final_num_spaces = *num_spaces;
     }
 
     for (i = idx + 1, idx2 = 0; i < num_cols; i++)

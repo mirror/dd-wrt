@@ -426,7 +426,7 @@ midnight_get_shortcut (long command)
 /* --------------------------------------------------------------------------------------------- */
 
 static char *
-midnight_get_title (const WDialog * h, size_t len)
+midnight_get_title (const WDialog *h, size_t len)
 {
     char *path;
     char *login;
@@ -460,28 +460,18 @@ toggle_panels_split (void)
 #ifdef ENABLE_VFS
 /* event helper */
 static gboolean
-check_panel_timestamp (const WPanel * panel, panel_view_mode_t mode, struct vfs_class *vclass,
-                       vfsid id)
+check_panel_timestamp (const WPanel *panel, panel_view_mode_t mode, const struct vfs_class *vclass,
+                       const vfsid id)
 {
-    if (mode == view_listing)
-    {
-        const struct vfs_class *me;
-
-        me = vfs_path_get_last_path_vfs (panel->cwd_vpath);
-        if (me != vclass)
-            return FALSE;
-
-        if (vfs_getid (panel->cwd_vpath) != id)
-            return FALSE;
-    }
-    return TRUE;
+    return (mode != view_listing || (vfs_path_get_last_path_vfs (panel->cwd_vpath) == vclass
+                                     && vfs_getid (panel->cwd_vpath) == id));
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 /* event callback */
 static gboolean
-check_current_panel_timestamp (const gchar * event_group_name, const gchar * event_name,
+check_current_panel_timestamp (const gchar *event_group_name, const gchar *event_name,
                                gpointer init_data, gpointer data)
 {
     ev_vfs_stamp_create_t *event_data = (ev_vfs_stamp_create_t *) data;
@@ -500,7 +490,7 @@ check_current_panel_timestamp (const gchar * event_group_name, const gchar * eve
 
 /* event callback */
 static gboolean
-check_other_panel_timestamp (const gchar * event_group_name, const gchar * event_name,
+check_other_panel_timestamp (const gchar *event_group_name, const gchar *event_name,
                              gpointer init_data, gpointer data)
 {
     ev_vfs_stamp_create_t *event_data = (ev_vfs_stamp_create_t *) data;
@@ -519,7 +509,7 @@ check_other_panel_timestamp (const gchar * event_group_name, const gchar * event
 
 /* event callback */
 static gboolean
-print_vfs_message (const gchar * event_group_name, const gchar * event_name,
+print_vfs_message (const gchar *event_group_name, const gchar *event_name,
                    gpointer init_data, gpointer data)
 {
     ev_vfs_print_message_t *event_data = (ev_vfs_print_message_t *) data;
@@ -693,7 +683,7 @@ create_panels (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-midnight_put_panel_path (WPanel * panel)
+midnight_put_panel_path (WPanel *panel)
 {
     vfs_path_t *cwd_vpath;
     const char *cwd_vpath_str;
@@ -720,7 +710,7 @@ midnight_put_panel_path (WPanel * panel)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-put_link (WPanel * panel)
+put_link (WPanel *panel)
 {
     const file_entry_t *fe;
 
@@ -793,12 +783,16 @@ put_current_selected (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-put_tagged (WPanel * panel)
+put_tagged (WPanel *panel)
 {
     if (!command_prompt)
         return;
+
     input_disable_update (cmdline);
-    if (panel->marked)
+
+    if (panel->marked == 0)
+        command_insert (cmdline, panel_current_entry (panel)->fname->str, TRUE);
+    else
     {
         int i;
 
@@ -806,8 +800,6 @@ put_tagged (WPanel * panel)
             if (panel->dir.list[i].f.marked != 0)
                 command_insert (cmdline, panel->dir.list[i].fname->str, TRUE);
     }
-    else
-        command_insert (cmdline, panel_current_entry (panel)->fname->str, TRUE);
 
     input_enable_update (cmdline);
 }
@@ -1120,7 +1112,7 @@ toggle_show_hidden (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-midnight_execute_cmd (Widget * sender, long command)
+midnight_execute_cmd (Widget *sender, long command)
 {
     cb_ret_t res = MSG_HANDLED;
 
@@ -1474,7 +1466,7 @@ handle_cmdline_enter (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
+midnight_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *data)
 {
     long command;
 
@@ -1627,7 +1619,7 @@ update_menu (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-midnight_set_buttonbar (WButtonBar * b)
+midnight_set_buttonbar (WButtonBar *b)
 {
     Widget *w = WIDGET (filemanager);
 

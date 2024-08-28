@@ -95,6 +95,12 @@ typedef struct timespec mc_timesbuf_t[2];
 typedef struct utimbuf mc_timesbuf_t;
 #endif
 
+typedef struct mc_timespec
+{
+    time_t tv_sec;
+    long tv_nsec;
+} mc_timespec_t;
+
 /*** enums ***************************************************************************************/
 
 typedef enum
@@ -214,6 +220,7 @@ struct vfs_dirent
     /* public */
     ino_t d_ino;
     char *d_name;               /* Alias of d_name_str->str */
+    size_t d_len;               /* Alias of d_name_str->len */
 };
 
 /*** global variables defined in .c file *********************************************************/

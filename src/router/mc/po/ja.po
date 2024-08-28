@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Takuro Onoue <kusanaginoturugi@gmail.com>, 2021\n"
 "Language-Team: Japanese (http://app.transifex.com/mc/mc/language/ja/)\n"
@@ -546,28 +546,10 @@ msgid "Changes to file lost"
 msgstr "紛失したファイルに変更します"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s はディレクトリではありません\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "ディレクトリ %s はあなた所有のものではありません\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "ディレクトリ %s のパーミッションを正しく設定できません\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "テンポラリディレクトリ %s を作成できません: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "テンポラリファイルが %s 上に作成されます\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "テンポラリファイルは作成されません\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
 
 msgid "Press any key to continue..."
 msgstr "なにかキーを押せば続行します..."
@@ -772,6 +754,9 @@ msgid "Terminal options"
 msgstr ""
 
 msgid "Arguments parse error!"
+msgstr ""
+
+msgid "MC is built without builtin editor."
 msgstr ""
 
 msgid "No arguments given to the viewer."
@@ -2606,6 +2591,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2693,7 +2690,19 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3746,10 +3755,10 @@ msgstr ""
 msgid "Warning: Cannot change to %s.\n"
 msgstr "警告: %s に変更できません.\n"
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr ""
 
 msgid "With optional subshell support"
@@ -3928,6 +3937,12 @@ msgstr ""
 "%s"
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format

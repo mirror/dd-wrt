@@ -94,7 +94,7 @@ free_codepage_desc (gpointer data)
 /* returns display codepage */
 
 static void
-load_codepages_list_from_file (GPtrArray ** list, const char *fname)
+load_codepages_list_from_file (GPtrArray **list, const char *fname)
 {
     FILE *f;
     char buf[BUF_MEDIUM];
@@ -135,8 +135,7 @@ load_codepages_list_from_file (GPtrArray ** list, const char *fname)
 
             if (*list == NULL)
             {
-                *list = g_ptr_array_sized_new (16);
-                g_ptr_array_set_free_func (*list, free_codepage_desc);
+                *list = g_ptr_array_new_full (16, free_codepage_desc);
                 g_ptr_array_add (*list, new_codepage_desc (id, p));
             }
             else

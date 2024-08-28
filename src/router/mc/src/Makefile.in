@@ -93,15 +93,18 @@ host_triplet = @host@
 @ENABLE_SUBSHELL_TRUE@am__append_3 = subshell
 @CONS_SAVER_TRUE@am__append_4 = consaver
 @CONS_SAVER_TRUE@am__append_5 = -DSAVERDIR=\""$(pkglibexecdir)"\"
+
+# required for textconf.c
+@ENABLE_VFS_SFTP_TRUE@@ENABLE_VFS_TRUE@am__append_6 = $(LIBSSH_CFLAGS)
 bin_PROGRAMS = mc$(EXEEXT)
-@ENABLE_MCLIB_TRUE@am__append_6 = \
+@ENABLE_MCLIB_TRUE@am__append_7 = \
 @ENABLE_MCLIB_TRUE@	$(top_builddir)/lib/libmc.la
 
-@ENABLE_MCLIB_FALSE@am__append_7 = \
+@ENABLE_MCLIB_FALSE@am__append_8 = \
 @ENABLE_MCLIB_FALSE@	$(top_builddir)/lib/libmc.la
 
-@CHARSET_TRUE@am__append_8 = selcodepage.c selcodepage.h
-@ENABLE_BACKGROUND_TRUE@am__append_9 = background.c background.h
+@CHARSET_TRUE@am__append_9 = selcodepage.c selcodepage.h
+@ENABLE_BACKGROUND_TRUE@am__append_10 = background.c background.h
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -169,7 +172,7 @@ PROGRAMS = $(bin_PROGRAMS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libinternal_la_DEPENDENCIES = filemanager/libmcfilemanager.la \
 	vfs/libmc-vfs.la viewer/libmcviewer.la $(DIFFLIB) $(EDITLIB) \
-	$(SUBSHELLLIB) $(am__append_6)
+	$(SUBSHELLLIB) $(am__append_7)
 am__libinternal_la_SOURCES_DIST = cons.handler.c consaver/cons.saver.h \
 	args.c args.h clipboard.c clipboard.h events_init.c \
 	events_init.h execute.c execute.h file_history.c \
@@ -191,7 +194,7 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 am_mc_OBJECTS = main.$(OBJEXT)
 mc_OBJECTS = $(am_mc_OBJECTS)
-mc_DEPENDENCIES = libinternal.la $(am__append_7)
+mc_DEPENDENCIES = libinternal.la $(am__append_8)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -379,6 +382,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -467,6 +471,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -520,14 +525,14 @@ AM_CPPFLAGS = -DSYSCONFDIR=\""$(sysconfdir)/@PACKAGE@/"\" \
 	-DLIBEXECDIR=\""$(libexecdir)/@PACKAGE@/"\" \
 	-DDATADIR=\""$(pkgdatadir)/"\" -DLOCALEDIR=\""$(localedir)"\" \
 	-DEXTHELPERSDIR=\""@EXTHELPERSDIR@/"\" $(am__append_5) \
-	-I$(top_srcdir) $(GLIB_CFLAGS)
+	$(am__append_6) -I$(top_srcdir) $(GLIB_CFLAGS)
 @USE_INTERNAL_EDIT_TRUE@EDITLIB = editor/libedit.la
 @USE_DIFF_TRUE@DIFFLIB = diffviewer/libdiffviewer.la
 @ENABLE_SUBSHELL_TRUE@SUBSHELLLIB = subshell/libsubshell.la
 libinternal_la_LIBADD = filemanager/libmcfilemanager.la \
 	vfs/libmc-vfs.la viewer/libmcviewer.la $(DIFFLIB) $(EDITLIB) \
-	$(SUBSHELLLIB) $(am__append_6)
-mc_LDADD = libinternal.la $(am__append_7) -lintl
+	$(SUBSHELLLIB) $(am__append_7)
+mc_LDADD = libinternal.la $(am__append_8) -lintl
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
@@ -538,8 +543,8 @@ libinternal_la_SOURCES = $(SRC_mc_conssaver) args.c args.h clipboard.c \
 	clipboard.h events_init.c events_init.h execute.c execute.h \
 	file_history.c file_history.h help.c help.h history.h keymap.c \
 	keymap.h learn.c learn.h setup.c setup.h textconf.c textconf.h \
-	usermenu.c usermenu.h util.c util.h $(am__append_8) \
-	$(am__append_9)
+	usermenu.c usermenu.h util.c util.h $(am__append_9) \
+	$(am__append_10)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 

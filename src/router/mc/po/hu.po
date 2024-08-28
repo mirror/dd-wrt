@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: 6bdcf737f9bcb6037ecba892a70fb951_e9eeb40 "
 "<b76b5e2faba6aa74d4498ee4c87ab010_661337>, 2020\n"
@@ -549,28 +549,10 @@ msgid "Changes to file lost"
 msgstr "A fájl módosításai elvesztek"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "\"%s\" nem könyvtár\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "A(z) \"%s\" könyvtár nem az Öné\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Nem sikerült beállítani a jogokat a(z) \"%s\" könyvtárhoz.\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "A(z) \"%s\" ideiglenes könyvtár nem hozható létre: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Az ideiglenes fájlok a(z) \"%s\" könyvtárban jönnek létre\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Ideiglenes fájlok nem jönnek létre\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
 
 msgid "Press any key to continue..."
 msgstr "Nyomjon meg egy billentyűt..."
@@ -791,6 +773,9 @@ msgstr "Terminál opciók"
 
 msgid "Arguments parse error!"
 msgstr "Argumentum feldolgozási hiba!"
+
+msgid "MC is built without builtin editor."
+msgstr ""
 
 msgid "No arguments given to the viewer."
 msgstr "Hiányzó paraméterek a nézethez."
@@ -2693,6 +2678,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2807,12 +2804,24 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
 "%s"
 msgstr ""
 "Nem sikerült lekérdezni a(z) \"%s\" \n"
 "forráskönyvtár adatait. \n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3896,11 +3905,11 @@ msgstr "A háttér-shell még aktív. Mégis kilép?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Nem sikerült belépni a(z) \"%s\" könyvtárba.\n"
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
-msgstr "Beépített szerkesztővel"
+msgid "With builtin editor"
+msgstr ""
 
 msgid "With optional subshell support"
 msgstr ""
@@ -4081,6 +4090,12 @@ msgstr ""
 "%s"
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format

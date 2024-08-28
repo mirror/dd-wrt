@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Arya Hadi <arya.hadi97@gmail.com>, 2017\n"
 "Language-Team: Persian (http://app.transifex.com/mc/mc/language/fa/)\n"
@@ -536,28 +536,10 @@ msgid "Changes to file lost"
 msgstr "تغییرات در فایل، از دست رفت"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s یک پوشه نیست\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "پوشه %s متعلق به شما نیست\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "امکان قرار دادن اجازه‌های درست برای پوشه %s وجود ندارد\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "امکان ساخت پوشه‌ی موقت %s وجود ندارد: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
 msgstr ""
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "فایل‌های موقتی ساخته نخواهند شد\n"
 
 msgid "Press any key to continue..."
 msgstr "برای ادامه کلیدی را فشار دهید..."
@@ -762,6 +744,9 @@ msgid "Terminal options"
 msgstr "تنظیمات پایانه"
 
 msgid "Arguments parse error!"
+msgstr ""
+
+msgid "MC is built without builtin editor."
 msgstr ""
 
 msgid "No arguments given to the viewer."
@@ -2592,6 +2577,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2679,7 +2676,19 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3720,10 +3729,10 @@ msgstr ""
 msgid "Warning: Cannot change to %s.\n"
 msgstr ""
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr ""
 
 msgid "With optional subshell support"
@@ -3891,6 +3900,12 @@ msgid ""
 msgstr ""
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format

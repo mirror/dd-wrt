@@ -44,10 +44,61 @@
 
 /*** file scope variables ************************************************************************/
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+#if ! GLIB_CHECK_VERSION (2, 54, 0)
+/**
+ * g_ptr_array_find_with_equal_func: (skip)
+ * @haystack: pointer array to be searched
+ * @needle: pointer to look for
+ * @equal_func: (nullable): the function to call for each element, which should
+ *    return %TRUE when the desired element is found; or %NULL to use pointer
+ *    equality
+ * @index_: (optional) (out): return location for the index of
+ *    the element, if found
+ *
+ * Checks whether @needle exists in @haystack, using the given @equal_func.
+ * If the element is found, %TRUE is returned and the element^A^A^As index is
+ * returned in @index_ (if non-%NULL). Otherwise, %FALSE is returned and @index_
+ * is undefined. If @needle exists multiple times in @haystack, the index of
+ * the first instance is returned.
+ *
+ * @equal_func is called with the element from the array as its first parameter,
+ * and @needle as its second parameter. If @equal_func is %NULL, pointer
+ * equality is used.
+ *
+ * Returns: %TRUE if @needle is one of the elements of @haystack
+ * Since: 2.54
+ */
+gboolean
+g_ptr_array_find_with_equal_func (GPtrArray *haystack, gconstpointer needle, GEqualFunc equal_func,
+                                  guint *index_)
+{
+    guint i;
+
+    g_return_val_if_fail (haystack != NULL, FALSE);
+
+    if (equal_func == NULL)
+        equal_func = g_direct_equal;
+
+    for (i = 0; i < haystack->len; i++)
+        if (equal_func (g_ptr_array_index (haystack, i), needle))
+        {
+            if (index_ != NULL)
+                *index_ = i;
+            return TRUE;
+        }
+
+    return FALSE;
+}
+#endif /* ! GLIB_CHECK_VERSION (2, 54, 0) */
+
 /* --------------------------------------------------------------------------------------------- */
 
 #if ! GLIB_CHECK_VERSION (2, 63, 3)
@@ -63,7 +114,7 @@
  * Since: 2.64
  */
 void
-g_clear_slist (GSList ** slist_ptr, GDestroyNotify destroy)
+g_clear_slist (GSList **slist_ptr, GDestroyNotify destroy)
 {
     GSList *slist;
 
@@ -94,7 +145,7 @@ g_clear_slist (GSList ** slist_ptr, GDestroyNotify destroy)
  * Since: 2.64
  */
 void
-g_clear_list (GList ** list_ptr, GDestroyNotify destroy)
+g_clear_list (GList **list_ptr, GDestroyNotify destroy)
 {
     GList *list;
 
@@ -127,7 +178,7 @@ g_clear_list (GList ** list_ptr, GDestroyNotify destroy)
  * Since: 2.60
  */
 void
-g_queue_clear_full (GQueue * queue, GDestroyNotify free_func)
+g_queue_clear_full (GQueue *queue, GDestroyNotify free_func)
 {
     g_return_if_fail (queue != NULL);
 
@@ -188,7 +239,7 @@ g_string_new_take (char *init)
  * There is no such API in GLib2.
  */
 GString *
-mc_g_string_copy (GString * dest, const GString * src)
+mc_g_string_copy (GString *dest, const GString *src)
 {
     g_return_val_if_fail (src != NULL, NULL);
     g_return_val_if_fail (dest != NULL, NULL);
@@ -211,7 +262,7 @@ mc_g_string_copy (GString * dest, const GString * src)
  * There is no such API in GLib2.
  */
 GString *
-mc_g_string_dup (const GString * s)
+mc_g_string_dup (const GString *s)
 {
     GString *ret = NULL;
 
@@ -219,6 +270,35 @@ mc_g_string_dup (const GString * s)
         ret = g_string_new_len (s->str, s->len);
 
     return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * mc_g_string_append_c_len:
+ * @s: (not nullable): the destination #GString.
+ * @c: the byte to append onto the end of @s
+ * @len: the number of bytes @c to append onto the end of @s
+ * @return: @s
+ *
+ * Adds @len bytes @c onto the end of @s.
+ *
+ * There is no such API in GLib2.
+ */
+GString *
+mc_g_string_append_c_len (GString *s, gchar c, guint len)
+{
+    g_return_val_if_fail (s != NULL, NULL);
+
+    if (len != 0)
+    {
+        guint s_len = s->len;
+
+        g_string_set_size (s, s->len + len);
+        memset (s->str + s_len, (unsigned char) c, len);
+    }
+
+    return s;
 }
 
 /* --------------------------------------------------------------------------------------------- */

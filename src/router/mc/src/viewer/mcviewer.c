@@ -88,7 +88,7 @@ char *mcview_show_eof = NULL;
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-mcview_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
+mcview_mouse_callback (Widget *w, mouse_msg_t msg, mouse_event_t *event)
 {
     WView *view = (WView *) w;
     const WRect *r = &view->data_area;
@@ -195,16 +195,15 @@ mcview_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 /* --------------------------------------------------------------------------------------------- */
 
 WView *
-mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
+mcview_new (const WRect *r, gboolean is_panel)
 {
-    WRect r = { y, x, lines, cols };
     WView *view;
     Widget *w;
 
     view = g_new0 (WView, 1);
     w = WIDGET (view);
 
-    widget_init (w, &r, mcview_callback, mcview_mouse_callback);
+    widget_init (w, r, mcview_callback, mcview_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
     w->keymap = viewer_map;
 
@@ -235,7 +234,7 @@ mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
 /** Real view only */
 
 gboolean
-mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_line,
+mcview_viewer (const char *command, const vfs_path_t *file_vpath, int start_line,
                off_t search_start, off_t search_end)
 {
     gboolean succeeded;
@@ -243,6 +242,7 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
     WDialog *view_dlg;
     Widget *vw, *b;
     WGroup *g;
+    WRect r;
 
     /* Create dialog and widgets, put them on the dialog */
     view_dlg = dlg_create (FALSE, 0, 0, 1, 1, WPOS_FULLSCREEN, FALSE, NULL, mcview_dialog_callback,
@@ -252,7 +252,9 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
 
     g = GROUP (view_dlg);
 
-    lc_mcview = mcview_new (vw->rect.y, vw->rect.x, vw->rect.lines - 1, vw->rect.cols, FALSE);
+    r = vw->rect;
+    r.lines--;
+    lc_mcview = mcview_new (&r, FALSE);
     group_add_widget_autopos (g, lc_mcview, WPOS_KEEP_ALL, NULL);
 
     b = WIDGET (buttonbar_new ());
@@ -280,7 +282,7 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-mcview_load (WView * view, const char *command, const char *file, int start_line,
+mcview_load (WView *view, const char *command, const char *file, int start_line,
              off_t search_start, off_t search_end)
 {
     gboolean retval = FALSE;

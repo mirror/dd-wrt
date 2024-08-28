@@ -56,7 +56,7 @@ mc_refresh (void)
 /* --------------------------------------------------------------------------------------------- */
 /* @Mock */
 void
-edit_load_syntax (WEdit * _edit, GPtrArray * _pnames, const char *_type)
+edit_load_syntax (WEdit *_edit, GPtrArray *_pnames, const char *_type)
 {
     (void) _edit;
     (void) _pnames;
@@ -67,7 +67,7 @@ edit_load_syntax (WEdit * _edit, GPtrArray * _pnames, const char *_type)
 
 /* @Mock */
 int
-edit_get_syntax_color (WEdit * _edit, off_t _byte_index)
+edit_get_syntax_color (WEdit *_edit, off_t _byte_index)
 {
     (void) _edit;
     (void) _byte_index;
@@ -79,7 +79,7 @@ edit_get_syntax_color (WEdit * _edit, off_t _byte_index)
 
 /* @Mock */
 gboolean
-edit_load_macro_cmd (WEdit * _edit)
+edit_load_macro_cmd (WEdit *_edit)
 {
     (void) _edit;
 
@@ -100,7 +100,7 @@ static char *edit_completion_dialog_show__return_value;
 
 /* @Mock */
 char *
-edit_completion_dialog_show (const WEdit * edit, GQueue * compl, int max_width)
+edit_completion_dialog_show (const WEdit *edit, GQueue *compl, int max_width)
 {
 
     edit_completion_dialog_show__edit = edit;
@@ -152,6 +152,7 @@ static void
 my_setup (void)
 {
     WRect r;
+    edit_arg_t arg;
 
     str_init_strings (NULL);
 
@@ -171,7 +172,9 @@ my_setup (void)
     edit_options.filesize_threshold = (char *) "64M";
 
     rect_init (&r, 0, 0, 24, 80);
-    test_edit = edit_init (NULL, &r, vfs_path_from_str ("test-data.txt"), 1);
+    arg.file_vpath = vfs_path_from_str ("test-data.txt");
+    arg.line_number = 1;
+    test_edit = edit_init (NULL, &r, &arg);
     memset (&owner, 0, sizeof (owner));
     group_add_widget (&owner, WIDGET (test_edit));
     edit_completion_dialog_show__init ();

@@ -60,7 +60,7 @@
 
 #include "lib/global.h"
 #include "lib/tty/tty.h"        /* enable/disable interrupt key */
-#include "lib/strescape.h"
+#include "lib/strutil.h"
 #include "lib/unixcompat.h"
 #include "lib/fileloc.h"
 #include "lib/util.h"           /* my_exit() */
@@ -661,7 +661,7 @@ shell_open_archive_int (struct vfs_class *me, struct vfs_s_super *super)
 
 static int
 shell_open_archive (struct vfs_s_super *super,
-                    const vfs_path_t * vpath, const vfs_path_element_t * vpath_element)
+                    const vfs_path_t *vpath, const vfs_path_element_t *vpath_element)
 {
     shell_super_t *shell_super = SHELL_SUPER (super);
 
@@ -724,8 +724,8 @@ shell_open_archive (struct vfs_s_super *super,
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_archive_same (const vfs_path_element_t * vpath_element, struct vfs_s_super *super,
-                    const vfs_path_t * vpath, void *cookie)
+shell_archive_same (const vfs_path_element_t *vpath_element, struct vfs_s_super *super,
+                    const vfs_path_t *vpath, void *cookie)
 {
     vfs_path_element_t *path_element;
     int result;
@@ -803,12 +803,12 @@ shell_parse_ls (char *buffer, struct vfs_s_entry *ent)
 
                 ent->name = g_strndup (filename, filename_bound - filename);
                 temp = ent->name;
-                ent->name = strutils_shell_unescape (ent->name);
+                ent->name = str_shell_unescape (ent->name);
                 g_free (temp);
 
                 ent->ino->linkname = g_strndup (linkname, linkname_bound - linkname);
                 temp = ent->ino->linkname;
-                ent->ino->linkname = strutils_shell_unescape (ent->ino->linkname);
+                ent->ino->linkname = str_shell_unescape (ent->ino->linkname);
                 g_free (temp);
             }
             else
@@ -828,7 +828,7 @@ shell_parse_ls (char *buffer, struct vfs_s_entry *ent)
 
                 ent->name = g_strndup (filename, filename_bound - filename);
                 temp = ent->name;
-                ent->name = strutils_shell_unescape (ent->name);
+                ent->name = str_shell_unescape (ent->name);
                 g_free (temp);
             }
             break;
@@ -860,12 +860,10 @@ shell_parse_ls (char *buffer, struct vfs_s_entry *ent)
 
     case 'd':
         vfs_split_text (buffer);
+        vfs_zero_stat_times (&ST);
         if (vfs_parse_filedate (0, &ST.st_ctime) == 0)
             break;
         ST.st_atime = ST.st_mtime = ST.st_ctime;
-#ifdef HAVE_STRUCT_STAT_ST_MTIM
-        ST.st_atim.tv_nsec = ST.st_mtim.tv_nsec = ST.st_ctim.tv_nsec = 0;
-#endif
         break;
 
     case 'D':
@@ -877,10 +875,8 @@ shell_parse_ls (char *buffer, struct vfs_s_entry *ent)
             if (sscanf (buffer, "%d %d %d %d %d %d", &tim.tm_year, &tim.tm_mon,
                         &tim.tm_mday, &tim.tm_hour, &tim.tm_min, &tim.tm_sec) != 6)
                 break;
+            vfs_zero_stat_times (&ST);
             ST.st_atime = ST.st_mtime = ST.st_ctime = mktime (&tim);
-#ifdef HAVE_STRUCT_STAT_ST_MTIM
-            ST.st_atim.tv_nsec = ST.st_mtim.tv_nsec = ST.st_ctim.tv_nsec = 0;
-#endif
         }
         break;
 
@@ -927,7 +923,7 @@ shell_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, const char *remot
 
     dir->timestamp = g_get_monotonic_time () + shell_directory_timeout * G_USEC_PER_SEC;
 
-    quoted_path = strutils_shell_escape (remote_path);
+    quoted_path = str_shell_escape (remote_path);
     (void) shell_command_v (me, super, NONE, SHELL_SUPER (super)->scr_ls, "SHELL_FILENAME=%s;\n",
                             quoted_path);
     g_free (quoted_path);
@@ -983,7 +979,7 @@ shell_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, const char *remot
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, char *localname)
+shell_file_store (struct vfs_class *me, vfs_file_handler_t *fh, char *name, char *localname)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
     struct vfs_s_super *super = VFS_FILE_HANDLER_SUPER (fh);
@@ -1033,7 +1029,7 @@ shell_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
      *  algorithm for file appending case, therefore just "dd" is used for it.
      */
 
-    quoted_name = strutils_shell_escape (name);
+    quoted_name = str_shell_escape (name);
     vfs_print_message (_("shell: store %s: sending command..."), quoted_name);
 
     /* FIXME: File size is limited to ULONG_MAX */
@@ -1095,7 +1091,7 @@ shell_file_store (struct vfs_class *me, vfs_file_handler_t * fh, char *name, cha
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_linear_start (struct vfs_class *me, vfs_file_handler_t * fh, off_t offset)
+shell_linear_start (struct vfs_class *me, vfs_file_handler_t *fh, off_t offset)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
     struct vfs_s_super *super = VFS_FILE_HANDLER_SUPER (fh);
@@ -1105,7 +1101,7 @@ shell_linear_start (struct vfs_class *me, vfs_file_handler_t * fh, off_t offset)
     name = vfs_s_fullpath (me, fh->ino);
     if (name == NULL)
         return 0;
-    quoted_name = strutils_shell_escape (name);
+    quoted_name = str_shell_escape (name);
     g_free (name);
     shell->append = FALSE;
 
@@ -1140,7 +1136,7 @@ shell_linear_start (struct vfs_class *me, vfs_file_handler_t * fh, off_t offset)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-shell_linear_abort (struct vfs_class *me, vfs_file_handler_t * fh)
+shell_linear_abort (struct vfs_class *me, vfs_file_handler_t *fh)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
     struct vfs_s_super *super = VFS_FILE_HANDLER_SUPER (fh);
@@ -1171,7 +1167,7 @@ shell_linear_abort (struct vfs_class *me, vfs_file_handler_t * fh)
 /* --------------------------------------------------------------------------------------------- */
 
 static ssize_t
-shell_linear_read (struct vfs_class *me, vfs_file_handler_t * fh, void *buf, size_t len)
+shell_linear_read (struct vfs_class *me, vfs_file_handler_t *fh, void *buf, size_t len)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
     struct vfs_s_super *super = VFS_FILE_HANDLER_SUPER (fh);
@@ -1199,7 +1195,7 @@ shell_linear_read (struct vfs_class *me, vfs_file_handler_t * fh, void *buf, siz
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-shell_linear_close (struct vfs_class *me, vfs_file_handler_t * fh)
+shell_linear_close (struct vfs_class *me, vfs_file_handler_t *fh)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
 
@@ -1244,7 +1240,7 @@ shell_ctl (void *fh, int ctlop, void *arg)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_rename (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
+shell_rename (const vfs_path_t *vpath1, const vfs_path_t *vpath2)
 {
     const char *crpath1, *crpath2;
     char *rpath1, *rpath2;
@@ -1260,8 +1256,8 @@ shell_rename (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     if (crpath2 == NULL)
         return -1;
 
-    rpath1 = strutils_shell_escape (crpath1);
-    rpath2 = strutils_shell_escape (crpath2);
+    rpath1 = str_shell_escape (crpath1);
+    rpath2 = str_shell_escape (crpath2);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath1));
 
@@ -1278,7 +1274,7 @@ shell_rename (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_link (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
+shell_link (const vfs_path_t *vpath1, const vfs_path_t *vpath2)
 {
     const char *crpath1, *crpath2;
     char *rpath1, *rpath2;
@@ -1294,8 +1290,8 @@ shell_link (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     if (crpath2 == NULL)
         return -1;
 
-    rpath1 = strutils_shell_escape (crpath1);
-    rpath2 = strutils_shell_escape (crpath2);
+    rpath1 = str_shell_escape (crpath1);
+    rpath2 = str_shell_escape (crpath2);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath1));
 
@@ -1312,7 +1308,7 @@ shell_link (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_symlink (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
+shell_symlink (const vfs_path_t *vpath1, const vfs_path_t *vpath2)
 {
     char *qsetto;
     const char *crpath;
@@ -1325,8 +1321,8 @@ shell_symlink (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
-    qsetto = strutils_shell_escape (vfs_path_get_last_path_str (vpath1));
+    rpath = str_shell_escape (crpath);
+    qsetto = str_shell_escape (vfs_path_get_last_path_str (vpath1));
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath2));
 
@@ -1343,7 +1339,7 @@ shell_symlink (const vfs_path_t * vpath1, const vfs_path_t * vpath2)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_stat (const vfs_path_t * vpath, struct stat *buf)
+shell_stat (const vfs_path_t *vpath, struct stat *buf)
 {
     int ret;
 
@@ -1355,7 +1351,7 @@ shell_stat (const vfs_path_t * vpath, struct stat *buf)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_lstat (const vfs_path_t * vpath, struct stat *buf)
+shell_lstat (const vfs_path_t *vpath, struct stat *buf)
 {
     int ret;
 
@@ -1379,7 +1375,7 @@ shell_fstat (void *vfs_info, struct stat *buf)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_chmod (const vfs_path_t * vpath, mode_t mode)
+shell_chmod (const vfs_path_t *vpath, mode_t mode)
 {
     const char *crpath;
     char *rpath;
@@ -1391,7 +1387,7 @@ shell_chmod (const vfs_path_t * vpath, mode_t mode)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1408,7 +1404,7 @@ shell_chmod (const vfs_path_t * vpath, mode_t mode)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_chown (const vfs_path_t * vpath, uid_t owner, gid_t group)
+shell_chown (const vfs_path_t *vpath, uid_t owner, gid_t group)
 {
     char *sowner, *sgroup;
     struct passwd *pw;
@@ -1434,7 +1430,7 @@ shell_chown (const vfs_path_t * vpath, uid_t owner, gid_t group)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1451,41 +1447,12 @@ shell_chown (const vfs_path_t * vpath, uid_t owner, gid_t group)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-shell_get_atime (mc_timesbuf_t * times, time_t * sec, long *nsec)
-{
-#ifdef HAVE_UTIMENSAT
-    *sec = (*times)[0].tv_sec;
-    *nsec = (*times)[0].tv_nsec;
-#else
-    *sec = times->actime;
-    *nsec = 0;
-#endif
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static void
-shell_get_mtime (mc_timesbuf_t * times, time_t * sec, long *nsec)
-{
-#ifdef HAVE_UTIMENSAT
-    *sec = (*times)[1].tv_sec;
-    *nsec = (*times)[1].tv_nsec;
-#else
-    *sec = times->modtime;
-    *nsec = 0;
-#endif
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 static int
-shell_utime (const vfs_path_t * vpath, mc_timesbuf_t * times)
+shell_utime (const vfs_path_t *vpath, mc_timesbuf_t *times)
 {
     char utcatime[16], utcmtime[16];
     char utcatime_w_nsec[30], utcmtime_w_nsec[30];
-    time_t atime, mtime;
-    long atime_nsec, mtime_nsec;
+    mc_timespec_t atime, mtime;
     struct tm *gmt;
     const char *crpath;
     char *rpath;
@@ -1497,33 +1464,34 @@ shell_utime (const vfs_path_t * vpath, mc_timesbuf_t * times)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
-    shell_get_atime (times, &atime, &atime_nsec);
-    gmt = gmtime (&atime);
+    vfs_get_timespecs_from_timesbuf (times, &atime, &mtime);
+
+    gmt = gmtime (&atime.tv_sec);
     g_snprintf (utcatime, sizeof (utcatime), "%04d%02d%02d%02d%02d.%02d",
                 gmt->tm_year + 1900, gmt->tm_mon + 1, gmt->tm_mday,
                 gmt->tm_hour, gmt->tm_min, gmt->tm_sec);
     g_snprintf (utcatime_w_nsec, sizeof (utcatime_w_nsec), "%04d-%02d-%02d %02d:%02d:%02d.%09ld",
                 gmt->tm_year + 1900, gmt->tm_mon + 1, gmt->tm_mday,
-                gmt->tm_hour, gmt->tm_min, gmt->tm_sec, atime_nsec);
+                gmt->tm_hour, gmt->tm_min, gmt->tm_sec, atime.tv_nsec);
 
-    shell_get_mtime (times, &mtime, &mtime_nsec);
-    gmt = gmtime (&mtime);
+    gmt = gmtime (&mtime.tv_sec);
     g_snprintf (utcmtime, sizeof (utcmtime), "%04d%02d%02d%02d%02d.%02d",
                 gmt->tm_year + 1900, gmt->tm_mon + 1, gmt->tm_mday,
                 gmt->tm_hour, gmt->tm_min, gmt->tm_sec);
     g_snprintf (utcmtime_w_nsec, sizeof (utcmtime_w_nsec), "%04d-%02d-%02d %02d:%02d:%02d.%09ld",
                 gmt->tm_year + 1900, gmt->tm_mon + 1, gmt->tm_mday,
-                gmt->tm_hour, gmt->tm_min, gmt->tm_sec, mtime_nsec);
+                gmt->tm_hour, gmt->tm_min, gmt->tm_sec, mtime.tv_nsec);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
     ret = shell_send_command (me, super, OPT_FLUSH, SHELL_SUPER (super)->scr_utime,
-                              "SHELL_FILENAME=%s SHELL_FILEATIME=%ld SHELL_FILEMTIME=%ld "
+                              "SHELL_FILENAME=%s SHELL_FILEATIME=%ju SHELL_FILEMTIME=%ju "
                               "SHELL_TOUCHATIME=%s SHELL_TOUCHMTIME=%s SHELL_TOUCHATIME_W_NSEC=\"%s\" "
-                              "SHELL_TOUCHMTIME_W_NSEC=\"%s\";\n", rpath, (long) atime,
-                              (long) mtime, utcatime, utcmtime, utcatime_w_nsec, utcmtime_w_nsec);
+                              "SHELL_TOUCHMTIME_W_NSEC=\"%s\";\n", rpath, (uintmax_t) atime.tv_sec,
+                              (uintmax_t) mtime.tv_sec, utcatime, utcmtime, utcatime_w_nsec,
+                              utcmtime_w_nsec);
 
     g_free (rpath);
 
@@ -1533,7 +1501,7 @@ shell_utime (const vfs_path_t * vpath, mc_timesbuf_t * times)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_unlink (const vfs_path_t * vpath)
+shell_unlink (const vfs_path_t *vpath)
 {
     const char *crpath;
     char *rpath;
@@ -1545,7 +1513,7 @@ shell_unlink (const vfs_path_t * vpath)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1561,7 +1529,7 @@ shell_unlink (const vfs_path_t * vpath)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_exists (const vfs_path_t * vpath)
+shell_exists (const vfs_path_t *vpath)
 {
     const char *crpath;
     char *rpath;
@@ -1573,7 +1541,7 @@ shell_exists (const vfs_path_t * vpath)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1589,7 +1557,7 @@ shell_exists (const vfs_path_t * vpath)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_mkdir (const vfs_path_t * vpath, mode_t mode)
+shell_mkdir (const vfs_path_t *vpath, mode_t mode)
 {
     const char *crpath;
     char *rpath;
@@ -1603,7 +1571,7 @@ shell_mkdir (const vfs_path_t * vpath, mode_t mode)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1626,7 +1594,7 @@ shell_mkdir (const vfs_path_t * vpath, mode_t mode)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_rmdir (const vfs_path_t * vpath)
+shell_rmdir (const vfs_path_t *vpath)
 {
     const char *crpath;
     char *rpath;
@@ -1638,7 +1606,7 @@ shell_rmdir (const vfs_path_t * vpath)
     if (crpath == NULL)
         return -1;
 
-    rpath = strutils_shell_escape (crpath);
+    rpath = str_shell_escape (crpath);
 
     me = VFS_CLASS (vfs_path_get_last_path_vfs (vpath));
 
@@ -1667,7 +1635,7 @@ shell_fh_new (struct vfs_s_inode *ino, gboolean changed)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-shell_fh_open (struct vfs_class *me, vfs_file_handler_t * fh, int flags, mode_t mode)
+shell_fh_open (struct vfs_class *me, vfs_file_handler_t *fh, int flags, mode_t mode)
 {
     shell_file_handler_t *shell = SHELL_FILE_HANDLER (fh);
 
@@ -1747,7 +1715,7 @@ shell_fill_names (struct vfs_class *me, fill_names_f func)
 /* --------------------------------------------------------------------------------------------- */
 
 static void *
-shell_open (const vfs_path_t * vpath, int flags, mode_t mode)
+shell_open (const vfs_path_t *vpath, int flags, mode_t mode)
 {
     /*
        sorry, i've places hack here

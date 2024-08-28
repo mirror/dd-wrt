@@ -10,7 +10,7 @@
    Dugan Porter, 1994, 1995, 1996
    Jakub Jelinek, 1994, 1995, 1996
    Mauricio Plaza, 1994, 1995, 1996
-   Andrew Borodin <aborodin@vmail.ru> 2010-2022
+   Andrew Borodin <aborodin@vmail.ru> 2010-2024
 
    The mc_realpath routine is mostly from uClibc package, written
    by Rick Sladkey <jrs@world.std.com>
@@ -61,7 +61,7 @@
 
 #include "lib/unixcompat.h"
 #include "lib/vfs/vfs.h"        /* VFS_ENCODING_PREFIX */
-#include "lib/strutil.h"        /* str_move() */
+#include "lib/strutil.h"        /* str_move(), str_tokenize() */
 #include "lib/util.h"
 #include "lib/widget.h"         /* message() */
 #include "lib/vfs/xdirentry.h"
@@ -69,8 +69,6 @@
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"
 #endif
-
-#include "utilunix.h"
 
 /*** global variables ****************************************************************************/
 
@@ -115,7 +113,7 @@ static int_cache gid_cache[GID_CACHE_SIZE];
 /* --------------------------------------------------------------------------------------------- */
 
 static char *
-i_cache_match (int id, int_cache * cache, int size)
+i_cache_match (int id, int_cache *cache, int size)
 {
     int i;
 
@@ -128,7 +126,7 @@ i_cache_match (int id, int_cache * cache, int size)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-i_cache_add (int id, int_cache * cache, int size, char *text, int *last)
+i_cache_add (int id, int_cache *cache, int size, char *text, int *last)
 {
     g_free (cache[*last].string);
     cache[*last].string = g_strdup (text);
@@ -169,7 +167,7 @@ my_fork (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-my_system__save_sigaction_handlers (my_system_sigactions_t * sigactions)
+my_system__save_sigaction_handlers (my_system_sigactions_t *sigactions)
 {
     struct sigaction ignore;
 
@@ -188,7 +186,7 @@ my_system__save_sigaction_handlers (my_system_sigactions_t * sigactions)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-my_system__restore_sigaction_handlers (my_system_sigactions_t * sigactions)
+my_system__restore_sigaction_handlers (my_system_sigactions_t *sigactions)
 {
     sigaction (SIGINT, &sigactions->intr, NULL);
     sigaction (SIGQUIT, &sigactions->quit, NULL);
@@ -198,37 +196,31 @@ my_system__restore_sigaction_handlers (my_system_sigactions_t * sigactions)
 /* --------------------------------------------------------------------------------------------- */
 
 static GPtrArray *
-my_system_make_arg_array (int flags, const char *shell, char **execute_name)
+my_system_make_arg_array (int flags, const char *shell)
 {
     GPtrArray *args_array;
 
-    args_array = g_ptr_array_new ();
-
     if ((flags & EXECUTE_AS_SHELL) != 0)
     {
+        args_array = g_ptr_array_new ();
         g_ptr_array_add (args_array, (gpointer) shell);
         g_ptr_array_add (args_array, (gpointer) "-c");
-        *execute_name = g_strdup (shell);
+    }
+    else if (shell == NULL || *shell == '\0')
+    {
+        args_array = g_ptr_array_new ();
+        g_ptr_array_add (args_array, NULL);
     }
     else
-    {
-        char *shell_token;
+        args_array = str_tokenize (shell);
 
-        shell_token = shell != NULL ? strchr (shell, ' ') : NULL;
-        if (shell_token == NULL)
-            *execute_name = g_strdup (shell);
-        else
-            *execute_name = g_strndup (shell, (gsize) (shell_token - shell));
-
-        g_ptr_array_add (args_array, (gpointer) shell);
-    }
     return args_array;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-mc_pread_stream (mc_pipe_stream_t * ps, const fd_set * fds)
+mc_pread_stream (mc_pipe_stream_t *ps, const fd_set *fds)
 {
     size_t buf_len;
     ssize_t read_len;
@@ -472,11 +464,13 @@ my_systemv (const char *command, char *const argv[])
 int
 my_systemv_flags (int flags, const char *command, char *const argv[])
 {
-    char *execute_name = NULL;
+    const char *execute_name;
     GPtrArray *args_array;
     int status = 0;
 
-    args_array = my_system_make_arg_array (flags, command, &execute_name);
+    args_array = my_system_make_arg_array (flags, command);
+
+    execute_name = g_ptr_array_index (args_array, 0);
 
     for (; argv != NULL && *argv != NULL; argv++)
         g_ptr_array_add (args_array, *argv);
@@ -484,7 +478,6 @@ my_systemv_flags (int flags, const char *command, char *const argv[])
     g_ptr_array_add (args_array, NULL);
     status = my_systemv (execute_name, (char *const *) args_array->pdata);
 
-    g_free (execute_name);
     g_ptr_array_free (args_array, TRUE);
 
     return status;
@@ -503,7 +496,7 @@ my_systemv_flags (int flags, const char *command, char *const argv[])
  */
 
 mc_pipe_t *
-mc_popen (const char *command, gboolean read_out, gboolean read_err, GError ** error)
+mc_popen (const char *command, gboolean read_out, gboolean read_err, GError **error)
 {
     mc_pipe_t *p;
     const char *const argv[] = { "/bin/sh", "sh", "-c", command, NULL };
@@ -565,7 +558,7 @@ mc_popen (const char *command, gboolean read_out, gboolean read_err, GError ** e
  */
 
 void
-mc_pread (mc_pipe_t * p, GError ** error)
+mc_pread (mc_pipe_t *p, GError **error)
 {
     gboolean read_out, read_err;
     fd_set fds;
@@ -631,7 +624,7 @@ mc_pread (mc_pipe_t * p, GError ** error)
  */
 
 GString *
-mc_pstream_get_string (mc_pipe_stream_t * ps)
+mc_pstream_get_string (mc_pipe_stream_t *ps)
 {
     char *s;
     size_t size, i;
@@ -673,7 +666,7 @@ mc_pstream_get_string (mc_pipe_stream_t * ps)
  */
 
 void
-mc_pclose (mc_pipe_t * p, GError ** error)
+mc_pclose (mc_pipe_t *p, GError **error)
 {
     int res;
 
@@ -1226,12 +1219,12 @@ mc_build_filenamev (const char *first_element, va_list args)
     GString *path;
     char *ret;
 
-    if (element == NULL)
+    if (first_element == NULL)
         return NULL;
 
-    path = g_string_new ("");
-
     absolute = IS_PATH_SEP (*first_element);
+
+    path = g_string_new (absolute ? PATH_SEP_STR : "");
 
     do
     {
@@ -1240,7 +1233,6 @@ mc_build_filenamev (const char *first_element, va_list args)
         else
         {
             char *tmp_element;
-            size_t len;
             const char *start;
 
             tmp_element = g_strdup (element);
@@ -1248,20 +1240,16 @@ mc_build_filenamev (const char *first_element, va_list args)
             element = va_arg (args, char *);
 
             canonicalize_pathname (tmp_element);
-            len = strlen (tmp_element);
             start = IS_PATH_SEP (tmp_element[0]) ? tmp_element + 1 : tmp_element;
 
             g_string_append (path, start);
-            if (!IS_PATH_SEP (tmp_element[len - 1]) && element != NULL)
+            if (!IS_PATH_SEP (path->str[path->len - 1]) && element != NULL)
                 g_string_append_c (path, PATH_SEP);
 
             g_free (tmp_element);
         }
     }
     while (element != NULL);
-
-    if (absolute)
-        g_string_prepend_c (path, PATH_SEP);
 
     ret = g_string_free (path, FALSE);
     canonicalize_pathname (ret);

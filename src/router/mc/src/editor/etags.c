@@ -303,9 +303,8 @@ editcmd_dialog_select_definition_add (gpointer data, gpointer user_data)
     label_def =
         g_strdup_printf ("%s -> %s:%ld", def_hash->short_define, def_hash->filename,
                          def_hash->line);
-    listbox_add_item (def_list, LISTBOX_APPEND_AT_END, 0, label_def, def_hash, FALSE);
+    listbox_add_item_take (def_list, LISTBOX_APPEND_AT_END, 0, label_def, def_hash, FALSE);
     def_width = str_term_width1 (label_def);
-    g_free (label_def);
     def_max_width = MAX (def_max_width, def_width);
 }
 
@@ -313,7 +312,7 @@ editcmd_dialog_select_definition_add (gpointer data, gpointer user_data)
 /* let the user select where function definition */
 
 static void
-editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, GPtrArray * def_hash)
+editcmd_dialog_select_definition_show (WEdit *edit, char *match_expr, GPtrArray *def_hash)
 {
     const WRect *w = &CONST_WIDGET (edit)->rect;
     int start_x, start_y, offset;
@@ -380,25 +379,21 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, GPtrArray
 
         if (curr != NULL && do_moveto && edit_stack_iterator + 1 < MAX_HISTORY_MOVETO)
         {
-            vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath, TRUE);
+            vfs_path_t *vpath;
 
             /* Is file path absolute? Prepend with dir_vpath if necessary */
             if (edit->filename_vpath != NULL && edit->filename_vpath->relative
                 && edit->dir_vpath != NULL)
-                edit_history_moveto[edit_stack_iterator].filename_vpath =
-                    vfs_path_append_vpath_new (edit->dir_vpath, edit->filename_vpath, NULL);
+                vpath = vfs_path_append_vpath_new (edit->dir_vpath, edit->filename_vpath, NULL);
             else
-                edit_history_moveto[edit_stack_iterator].filename_vpath =
-                    vfs_path_clone (edit->filename_vpath);
+                vpath = vfs_path_clone (edit->filename_vpath);
 
-            edit_history_moveto[edit_stack_iterator].line = edit->start_line + edit->curs_row + 1;
+            edit_arg_assign (&edit_history_moveto[edit_stack_iterator], vpath,
+                             edit->start_line + edit->curs_row + 1);
             edit_stack_iterator++;
-            vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath, TRUE);
-            edit_history_moveto[edit_stack_iterator].filename_vpath =
-                vfs_path_from_str ((char *) curr_def->fullpath);
-            edit_history_moveto[edit_stack_iterator].line = curr_def->line;
-            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
-                              edit_history_moveto[edit_stack_iterator].line);
+            edit_arg_assign (&edit_history_moveto[edit_stack_iterator],
+                             vfs_path_from_str ((char *) curr_def->fullpath), curr_def->line);
+            edit_reload_line (edit, &edit_history_moveto[edit_stack_iterator]);
         }
     }
 
@@ -411,7 +406,7 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, GPtrArray
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_get_match_keyword_cmd (WEdit * edit)
+edit_get_match_keyword_cmd (WEdit *edit)
 {
     gsize word_len = 0;
     gsize i;

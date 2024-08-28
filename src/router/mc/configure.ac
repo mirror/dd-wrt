@@ -36,6 +36,10 @@ dnl ############################################################################
 dnl Check for compiler
 dnl ############################################################################
 
+dnl This should be checked before toolchain macros, otherwise they will remember
+dnl that ar cannot be found and linking via libtool will fail at a later stage
+AC_CHECK_TOOLS([AR], [ar gar])
+
 AC_PROG_CC
 AM_PROG_CC_C_O
 
@@ -211,7 +215,7 @@ dnl ############################################################################
 dnl Check for other tools
 dnl ############################################################################
 
-AC_CHECK_TOOL(AR, ar, ar)
+AC_CHECK_TOOLS([INDENT], [gindent indent])
 mc_UNIT_TESTS
 
 
@@ -260,7 +264,7 @@ AC_CHECK_TYPE([major_t], [], [AC_DEFINE([major_t], [int], [Type of major device 
 AC_CHECK_TYPE([minor_t], [], [AC_DEFINE([minor_t], [int], [Type of minor device numbers.])])
 
 AC_STRUCT_ST_BLOCKS
-AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev, struct stat.st_mtim])
+AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev, struct stat.st_mtim, struct stat.st_mtimespec, struct stat.st_mtimensec])
 gl_STAT_SIZE
 
 AH_TEMPLATE([sig_atomic_t],
@@ -315,19 +319,6 @@ AC_CHECK_FUNCS(grantpt, , [AC_CHECK_LIB(pt, grantpt)])
 dnl replacing lstat with statlstat on sco makes it more portable between
 dnl sco clones
 AC_CHECK_FUNCS(statlstat)
-
-dnl Overriding mmap support.  This has to be before AC_FUNC_MMAP is used.
-dnl We use only part of the functionality of mmap, so on AIX,
-dnl it's possible to use mmap, even if it doesn't pass the autoconf test.
-AC_ARG_WITH([mmap],
-	AS_HELP_STRING([--with-mmap], [Use the mmap call @<:@yes if found@:>@]))
-if test x$with_mmap != xno; then
-    if test x$with_mmap = x; then
-	AC_FUNC_MMAP
-    else
-	AC_DEFINE(HAVE_MMAP, 1)
-    fi
-fi
 
 mc_GET_FS_INFO
 
@@ -386,14 +377,7 @@ AC_EGREP_CPP([yes],
     ])
 
 dnl utimensat is supported since glibc 2.6 and specified in POSIX.1-2008
-dnl utimensat() causes different timespec structures to cause failures on IBM i and AIX
-case $host_os in
-*os400 | aix*)
-    ;;
-*)
-    AC_CHECK_FUNCS([utimensat])
-    ;;
-esac
+AC_CHECK_FUNCS([utimensat])
 
 case $host_os in
 *os400)

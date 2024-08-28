@@ -356,13 +356,13 @@ gboolean str_iscombiningmark (const char *ch);
  * decrase remain by size of returned characters
  * if out is not big enough, do nothing
  */
-gboolean str_toupper (const char *ch, char **out, size_t * remain);
+gboolean str_toupper (const char *ch, char **out, size_t *remain);
 
 /* write upper from of first characters in ch into out
  * decrase remain by size of returned characters
  * if out is not big enough, do nothing
  */
-gboolean str_tolower (const char *ch, char **out, size_t * remain);
+gboolean str_tolower (const char *ch, char **out, size_t *remain);
 
 /* return length of text in characters
  * I
@@ -607,9 +607,26 @@ char *strrstr_skip_count (const char *haystack, const char *needle, size_t skip_
 
 char *str_replace_all (const char *haystack, const char *needle, const char *replacement);
 
+GPtrArray *str_tokenize (const char *string);
+
 strtol_error_t xstrtoumax (const char *s, char **ptr, int base, uintmax_t * val,
                            const char *valid_suffixes);
 uintmax_t parse_integer (const char *str, gboolean * invalid);
+
+char *str_escape (const char *src, gsize src_len, const char *escaped_chars,
+                  gboolean escape_non_printable);
+char *str_unescape (const char *src, gsize src_len, const char *unescaped_chars,
+                    gboolean unescape_non_printable);
+char *str_shell_unescape (const char *text);
+char *str_shell_escape (const char *text);
+
+char *str_glob_escape (const char *text);
+char *str_glob_unescape (const char *text);
+
+char *str_regex_escape (const char *text);
+char *str_regex_unescape (const char *text);
+
+gboolean str_is_char_escaped (const char *start, const char *current);
 
 /* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/

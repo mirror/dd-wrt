@@ -74,12 +74,11 @@ file_op_context_new (FileOperation op)
     ctx->operation = op;
     ctx->eta_secs = 0.0;
     ctx->progress_bytes = 0;
-    ctx->op_preserve = TRUE;
-    ctx->do_reget = 1;
+    ctx->do_reget = -1;
     ctx->stat_func = mc_lstat;
     ctx->preserve = TRUE;
     ctx->preserve_uidgid = (geteuid () == 0);
-    ctx->umask_kill = 0777777;
+    ctx->umask_kill = (mode_t) (~0);
     ctx->erase_at_end = TRUE;
     ctx->skip_all = FALSE;
 
@@ -96,7 +95,7 @@ file_op_context_new (FileOperation op)
  */
 
 void
-file_op_context_destroy (file_op_context_t * ctx)
+file_op_context_destroy (file_op_context_t *ctx)
 {
     if (ctx != NULL)
     {
@@ -120,7 +119,7 @@ file_op_total_context_new (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-file_op_total_context_destroy (file_op_total_context_t * tctx)
+file_op_total_context_destroy (file_op_total_context_t *tctx)
 {
     g_free (tctx);
 }

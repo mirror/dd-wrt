@@ -154,7 +154,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmcstrutil_la_LIBADD =
 am_libmcstrutil_la_OBJECTS = filevercmp.lo replace.lo strescape.lo \
 	strutil8bit.lo strutilascii.lo strutil.lo strutilutf8.lo \
-	strverscmp.lo xstrtol.lo
+	strverscmp.lo tokenize.lo xstrtol.lo
 libmcstrutil_la_OBJECTS = $(am_libmcstrutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -179,7 +179,8 @@ am__depfiles_remade = ./$(DEPDIR)/filevercmp.Plo \
 	./$(DEPDIR)/replace.Plo ./$(DEPDIR)/strescape.Plo \
 	./$(DEPDIR)/strutil.Plo ./$(DEPDIR)/strutil8bit.Plo \
 	./$(DEPDIR)/strutilascii.Plo ./$(DEPDIR)/strutilutf8.Plo \
-	./$(DEPDIR)/strverscmp.Plo ./$(DEPDIR)/xstrtol.Plo
+	./$(DEPDIR)/strverscmp.Plo ./$(DEPDIR)/tokenize.Plo \
+	./$(DEPDIR)/xstrtol.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -300,6 +301,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -388,6 +390,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -444,6 +447,7 @@ libmcstrutil_la_SOURCES = \
 	strutil.c \
 	strutilutf8.c \
 	strverscmp.c \
+	tokenize.c \
 	xstrtol.c
 
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir)
@@ -509,6 +513,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strutilascii.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strutilutf8.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strverscmp.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tokenize.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xstrtol.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -676,6 +681,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/strutilascii.Plo
 	-rm -f ./$(DEPDIR)/strutilutf8.Plo
 	-rm -f ./$(DEPDIR)/strverscmp.Plo
+	-rm -f ./$(DEPDIR)/tokenize.Plo
 	-rm -f ./$(DEPDIR)/xstrtol.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -730,6 +736,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/strutilascii.Plo
 	-rm -f ./$(DEPDIR)/strutilutf8.Plo
 	-rm -f ./$(DEPDIR)/strverscmp.Plo
+	-rm -f ./$(DEPDIR)/tokenize.Plo
 	-rm -f ./$(DEPDIR)/xstrtol.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

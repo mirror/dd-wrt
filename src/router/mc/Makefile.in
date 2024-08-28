@@ -342,6 +342,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -430,6 +431,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -506,7 +508,7 @@ CPPCHECK_SED_FILTER = \
     -e '/ Unmatched suppression: /d' \
     -e "/Skipping configuration '.*' since the value of '.*' is unknown./d"
 
-INDENT_CMD = indent \
+INDENT_CMD = $(INDENT) \
     --gnu-style \
     --format-first-column-comments \
     --indent-level4 \

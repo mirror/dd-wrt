@@ -142,7 +142,7 @@ mc_shell_get_from_env (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-mc_shell_recognize_real_path (mc_shell_t * mc_shell)
+mc_shell_recognize_real_path (mc_shell_t *mc_shell)
 {
         /* If shell is symlinked to busybox, assume it is an ash, even though theoretically
          * it could also be a hush (a mini shell for non-MMU systems deactivated by default).
@@ -158,7 +158,7 @@ mc_shell_recognize_real_path (mc_shell_t * mc_shell)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-mc_shell_recognize_path (mc_shell_t * mc_shell)
+mc_shell_recognize_path (mc_shell_t *mc_shell)
 {
         mc_shell->type = SHELL_ASH_BUSYBOX;
         mc_shell->name = "ash";

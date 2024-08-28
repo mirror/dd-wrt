@@ -87,6 +87,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@USE_INTERNAL_EDIT_TRUE@am__append_1 = mcedit.1
+@USE_DIFF_TRUE@am__append_2 = mcdiff.1
 subdir = doc/man
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
@@ -335,6 +337,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -423,6 +426,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -471,13 +475,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 DIST_SUBDIRS = es hu it pl ru sr
 @USE_NLS_TRUE@SUBDIRS = $(DOC_LINGUAS)
-man_MANS = mc.1 mcedit.1 mcview.1
+man_MANS = mc.1 mcview.1 $(am__append_1) $(am__append_2)
 CLEANFILES = $(man_MANS)
 EXTRA_DIST = \
 	date-of-man-include.am \
 	mc.1.in \
 	mcedit.1.in \
-	mcview.1.in
+	mcview.1.in \
+	mcdiff.1.in
 
 DATE_LANG = en_US.UTF-8
 DATE_FORMAT = %B %Y
@@ -863,13 +868,17 @@ mc.1: $(srcdir)/mc.1.in
 	MAN_FILE='$(srcdir)/mc.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
 	$(SED) $(SED_PARAMETERS) '$(srcdir)/mc.1.in' > '$@'
 
-mcedit.1: $(srcdir)/mcedit.1.in
-	MAN_FILE='$(srcdir)/mcedit.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
-	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcedit.1.in' > '$@'
-
 mcview.1: $(srcdir)/mcview.1.in
 	MAN_FILE='$(srcdir)/mcview.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
 	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcview.1.in' > '$@'
+
+@USE_INTERNAL_EDIT_TRUE@mcedit.1: $(srcdir)/mcedit.1.in
+@USE_INTERNAL_EDIT_TRUE@	MAN_FILE='$(srcdir)/mcedit.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
+@USE_INTERNAL_EDIT_TRUE@	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcedit.1.in' > '$@'
+
+@USE_DIFF_TRUE@mcdiff.1: $(srcdir)/mcdiff.1.in
+@USE_DIFF_TRUE@	MAN_FILE='$(srcdir)/mcdiff.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
+@USE_DIFF_TRUE@	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcdiff.1.in' > '$@'
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

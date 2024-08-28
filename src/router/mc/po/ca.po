@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2024\n"
 "Language-Team: Catalan (http://app.transifex.com/mc/mc/language/ca/)\n"
@@ -575,28 +575,12 @@ msgid "Changes to file lost"
 msgstr "Canvia al fitxer perdut"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s no és un directori\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "El directori %s no és de la vostra propietat\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "No s'han pogut establir els permisos correctes per al directori %s\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "No s'ha pogut crear el directori temporal %s: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Es crearan fitxers temporals a %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "No es crearan fitxers temporals\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
+"No s'ha pogut crear el directori temporal %s: %s.\n"
+"No es podran crear els fitxers temporals\n"
 
 msgid "Press any key to continue..."
 msgstr "Premeu qualsevol tecla per a continuar..."
@@ -840,6 +824,9 @@ msgstr "Opcions de terminal"
 
 msgid "Arguments parse error!"
 msgstr "Error en analitzar els arguments!"
+
+msgid "MC is built without builtin editor."
+msgstr "El MC es construeix sense editor integrat."
 
 msgid "No arguments given to the viewer."
 msgstr "No s'han donat arguments al visor."
@@ -2779,6 +2766,22 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+"No es poden obtenir els atributs del fitxer d'origen «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+"No es poden establir els atributs del fitxer de destinació «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2890,10 +2893,26 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+"No es poden establir els atributs per al fitxer de destinació «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
 "%s"
 msgstr ""
 "No s'ha pogut veure l'estat del directori d'origen «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
+"%s"
+msgstr ""
+"No es poden obtenir els atributs del directori d'origen «%s»\n"
 "%s"
 
 #, c-format
@@ -3988,11 +4007,11 @@ msgstr "L'intèrpret d'ordres encara està actiu. Voleu sortir igualment?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Avís: no s'ha pogut canviar a %s.\n"
 
-msgid "With builtin Editor and Aspell support"
-msgstr "Amb la implementació incorporada de l'Editor i Aspell"
+msgid "With builtin editor and aspell support"
+msgstr "Amb editor integrat i suport aspell"
 
-msgid "With builtin Editor"
-msgstr "Amb l'editor integrat"
+msgid "With builtin editor"
+msgstr "Amb editor integrat"
 
 msgid "With optional subshell support"
 msgstr "Amb la implementació opcional del subintèrpret d'ordres"
@@ -4174,6 +4193,12 @@ msgstr ""
 
 msgid "Inconsistent archive"
 msgstr "Arxiu inconsistent"
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""

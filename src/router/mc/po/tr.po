@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Mehmet Akif 9oglu, 2023\n"
 "Language-Team: Turkish (http://app.transifex.com/mc/mc/language/tr/)\n"
@@ -569,28 +569,10 @@ msgid "Changes to file lost"
 msgstr "Değişiklikler kayıp"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s bir dizin değil\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "Dizin %s sahibi değilsiniz\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Dizin %s için doğru yetkiler ayarlanamıyor\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "Geçici dizin %s oluşturulamıyor: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Geçici dosyalar %s içinde oluşturulacak\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Geçici dosyalar oluşturulmayacak\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
 
 msgid "Press any key to continue..."
 msgstr "Bir tuşa basınız..."
@@ -809,6 +791,9 @@ msgstr "Uçbirim seçenekleri"
 
 msgid "Arguments parse error!"
 msgstr "Arguman ayrıştırma hatası!"
+
+msgid "MC is built without builtin editor."
+msgstr ""
 
 msgid "No arguments given to the viewer."
 msgstr "Görüntüleyiciye hiç bağımsız değişken verilmedi"
@@ -2726,6 +2711,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2837,11 +2834,23 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
 "%s"
 msgstr ""
 "\"%s\" kaynak dizini durumlanamıyor \n"
 " %s"
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3923,10 +3932,10 @@ msgstr "Kabuk hala etkin. Yine de çıkılsın mı?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Uyarı: %s'e geçilemedi.\n"
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr ""
 
 msgid "With optional subshell support"
@@ -4108,6 +4117,12 @@ msgstr ""
 "dosyasının sonu belirsiz"
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format

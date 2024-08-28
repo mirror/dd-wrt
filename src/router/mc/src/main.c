@@ -62,6 +62,11 @@
 #include "filemanager/ext.h"    /* flush_extension_file() */
 #include "filemanager/command.h"        /* cmdline */
 #include "filemanager/panel.h"  /* panalized_panel */
+#include "filemanager/filenot.h"        /* my_rmdir() */
+
+#ifdef USE_INTERNAL_EDIT
+#include "editor/edit.h"        /* edit_arg_free() */
+#endif
 
 #include "vfs/plugins_init.h"
 
@@ -253,6 +258,7 @@ main (int argc, char *argv[])
 {
     GError *mcerror = NULL;
     int exit_code = EXIT_FAILURE;
+    const char *tmpdir = NULL;
 
     mc_global.run_from_parent_mc = !check_sid ();
 
@@ -322,12 +328,17 @@ main (int argc, char *argv[])
     vfs_setup_work_dir ();
 
     /* Set up temporary directory after VFS initialization */
-    mc_tmpdir ();
+    tmpdir = mc_tmpdir ();
 
     /* do this after vfs initialization and vfs working directory setup
        due to mc_setctl() and mcedit_arg_vpath_new() calls in mc_setup_by_args() */
     if (!mc_setup_by_args (argc, argv, &mcerror))
     {
+        /* At exit, do this before vfs_shut():
+           normally, temporary directory should be empty */
+        vfs_expire (TRUE);
+        (void) my_rmdir (tmpdir);
+
         vfs_shut ();
         done_setup ();
         g_free (saved_other_dir);
@@ -466,6 +477,11 @@ main (int argc, char *argv[])
 
     keymap_free ();
 
+    /* At exit, do this before vfs_shut():
+       normally, temporary directory should be empty */
+    vfs_expire (TRUE);
+    (void) my_rmdir (tmpdir);
+
     /* Virtual File System shutdown */
     vfs_shut ();
 
@@ -532,8 +548,10 @@ main (int argc, char *argv[])
 
     if (mc_global.mc_run_mode != MC_RUN_EDITOR)
         g_free (mc_run_param0);
+#ifdef USE_INTERNAL_EDIT
     else
-        g_list_free_full ((GList *) mc_run_param0, (GDestroyNotify) mcedit_arg_free);
+        g_list_free_full ((GList *) mc_run_param0, (GDestroyNotify) edit_arg_free);
+#endif /* USE_INTERNAL_EDIT */
 
     g_free (mc_run_param1);
     g_free (saved_other_dir);

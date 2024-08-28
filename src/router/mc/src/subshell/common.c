@@ -418,13 +418,13 @@ init_subshell_child (const char *pty_name)
     switch (mc_global.shell->type)
     {
     case SHELL_BASH:
-        execl (mc_global.shell->path, "bash", "-rcfile", init_file, (char *) NULL);
+        execl (mc_global.shell->path, mc_global.shell->path, "-rcfile", init_file, (char *) NULL);
         break;
 
     case SHELL_ZSH:
         /* Use -g to exclude cmds beginning with space from history
          * and -Z to use the line editor on non-interactive term */
-        execl (mc_global.shell->path, "zsh", "-Z", "-g", (char *) NULL);
+        execl (mc_global.shell->path, mc_global.shell->path, "-Z", "-g", (char *) NULL);
         break;
 
     case SHELL_ASH_BUSYBOX:
@@ -1176,7 +1176,7 @@ init_subshell_precmd (char *precmd, size_t buff_size)
                     "functions -e fish_right_prompt;"
                     "functions -c fish_prompt fish_prompt_mc; end;"
                     "function fish_prompt;"
-                    "echo \"$PWD\">&%d; fish_prompt_mc; kill -STOP %%self; end\n",
+                    "echo \"$PWD\">&%d; fish_prompt_mc; kill -STOP $fish_pid; end\n",
                     command_buffer_pipe[WRITE], command_buffer_pipe[WRITE], subshell_pipe[WRITE]);
         break;
 
@@ -1444,7 +1444,7 @@ init_subshell (void)
 /* --------------------------------------------------------------------------------------------- */
 
 int
-invoke_subshell (const char *command, int how, vfs_path_t ** new_dir_vpath)
+invoke_subshell (const char *command, int how, vfs_path_t **new_dir_vpath)
 {
     /* Make the MC terminal transparent */
     tcsetattr (STDOUT_FILENO, TCSANOW, &raw_mode);
@@ -1683,7 +1683,7 @@ exit_subshell (void)
 
 /** If it actually changed the directory it returns true */
 void
-do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
+do_subshell_chdir (const vfs_path_t *vpath, gboolean update_prompt)
 {
     char *pcwd;
 
@@ -1714,6 +1714,18 @@ do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
                 return;
             }
     }
+
+    /* A quick and dirty fix for fish shell. For some reason, fish does not
+     * execute all the commands sent to it from Midnight Commander :(
+     * An example of such buggy behavior is presented in ticket #4521.
+     * TODO: Find the real cause and fix it "the right way" */
+    if (mc_global.shell->type == SHELL_FISH)
+    {
+        write_all (mc_global.tty.subshell_pty, "\n", 1);
+        subshell_state = RUNNING_COMMAND;
+        feed_subshell (QUIETLY, TRUE);
+    }
+
     /* The initial space keeps this out of the command history (in bash
        because we set "HISTCONTROL=ignorespace") */
     write_all (mc_global.tty.subshell_pty, " cd ", 4);
@@ -1778,12 +1790,16 @@ do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
         }
     }
 
-    /* Really escape Zsh history */
-    if (mc_global.shell->type == SHELL_ZSH)
+    /* Really escape Zsh/Fish history */
+    if (mc_global.shell->type == SHELL_ZSH || mc_global.shell->type == SHELL_FISH)
     {
         /* Per Zsh documentation last command prefixed with space lingers in the internal history
          * until the next command is entered before it vanishes. To make it vanish right away,
-         * type a space and press return. */
+         * type a space and press return.
+         *
+         * Fish shell now also provides the same behavior:
+         * https://github.com/fish-shell/fish-shell/commit/9fdc4f903b8b421b18389a0f290d72cc88c128bb
+         * */
         write_all (mc_global.tty.subshell_pty, " \n", 2);
         subshell_state = RUNNING_COMMAND;
         feed_subshell (QUIETLY, TRUE);

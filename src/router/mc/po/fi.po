@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Kimmo Kujansuu <mrkujansuu@gmail.com>, 2021\n"
 "Language-Team: Finnish (http://app.transifex.com/mc/mc/language/fi/)\n"
@@ -565,28 +565,10 @@ msgid "Changes to file lost"
 msgstr "Muutokset tiedostoon menetetty"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s ei ole hakemisto\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "Et ole kansion %s omistaja\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Sinulla ei ole oikeuksia kansioon %s\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "Väliaikaishakemiston luonti epäonnistui %s: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Väliaikaistiedostoja ei ole luotu kohteeseen %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Väliaikais tiedosta ei ole luotu\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
 
 msgid "Press any key to continue..."
 msgstr "Paina mitä tahansa näppäintä jatkaaksesi"
@@ -792,6 +774,9 @@ msgstr "Terminaalin asetukset"
 
 msgid "Arguments parse error!"
 msgstr "Argumenttien rakennevirhe!"
+
+msgid "MC is built without builtin editor."
+msgstr ""
 
 msgid "No arguments given to the viewer."
 msgstr "Katseluohjelmalle ei annettu argumentteja."
@@ -2660,6 +2645,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2771,11 +2768,23 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
 "%s"
 msgstr ""
 "Kohdekansiota ei voi lisätä \"%s\"\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
+"%s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3822,10 +3831,10 @@ msgstr ""
 msgid "Warning: Cannot change to %s.\n"
 msgstr ""
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr ""
 
 msgid "With optional subshell support"
@@ -3993,6 +4002,12 @@ msgid ""
 msgstr "Odottaminen päättyminen tiedostossa %s"
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format

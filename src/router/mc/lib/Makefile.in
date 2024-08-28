@@ -193,12 +193,12 @@ libmc_la_DEPENDENCIES = event/libmcevent.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3)
 am__libmc_la_SOURCES_DIST = event.h event-types.h filehighlight.h \
-	mcconfig.h search.h skin.h strescape.h strutil.h widget.h \
-	utilunix.c utilunix.h unixcompat.h util.c util.h file-entry.h \
-	fileloc.h fs.h hook.c hook.h glibcompat.c glibcompat.h \
-	global.c global.h keybind.c keybind.h lock.c lock.h \
-	serialize.c serialize.h shell.c shell.h stat-size.h timefmt.c \
-	timefmt.h logging.c logging.h charsets.c charsets.h
+	mcconfig.h search.h skin.h strutil.h widget.h utilunix.c \
+	unixcompat.h util.c util.h file-entry.h fileloc.h fs.h hook.c \
+	hook.h glibcompat.c glibcompat.h global.c global.h keybind.c \
+	keybind.h lock.c lock.h serialize.c serialize.h shell.c \
+	shell.h stat-size.h timefmt.c timefmt.h logging.c logging.h \
+	charsets.c charsets.h
 am__objects_1 =
 am__objects_2 = utilunix.lo util.lo
 @USE_MAINTAINER_MODE_TRUE@am__objects_3 = logging.lo
@@ -397,6 +397,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -485,6 +486,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -545,12 +547,11 @@ SUBLIB_includes = \
 	mcconfig.h \
 	search.h \
 	skin.h \
-	strescape.h \
 	strutil.h \
 	widget.h
 
 SRC_mc_utils = \
-	utilunix.c utilunix.h \
+	utilunix.c \
 	unixcompat.h \
 	util.c util.h
 

@@ -87,7 +87,7 @@ static gboolean longjmp_allowed = FALSE;
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-x_io_error_handler (Display * dpy)
+x_io_error_handler (Display *dpy)
 {
     (void) dpy;
 
@@ -103,7 +103,7 @@ x_io_error_handler (Display * dpy)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-x_error_handler (Display * dpy, XErrorEvent * ee)
+x_error_handler (Display *dpy, XErrorEvent *ee)
 {
     (void) ee;
     (void) func_XCloseDisplay (dpy);
@@ -129,20 +129,15 @@ static gboolean
 x11_available (void)
 {
 #ifdef HAVE_GMODULE
-    gchar *x11_module_fname;
-
     if (lost_connection)
         return FALSE;
 
     if (x11_module != NULL)
         return TRUE;
 
-    x11_module_fname = g_module_build_path (NULL, "X11");
-    x11_module = g_module_open (x11_module_fname, G_MODULE_BIND_LAZY);
+    x11_module = g_module_open ("X11", G_MODULE_BIND_LAZY);
     if (x11_module == NULL)
         x11_module = g_module_open ("libX11.so.6", G_MODULE_BIND_LAZY);
-
-    g_free (x11_module_fname);
 
     if (x11_module == NULL)
         return FALSE;
@@ -205,7 +200,7 @@ mc_XOpenDisplay (const char *displayname)
 /* --------------------------------------------------------------------------------------------- */
 
 int
-mc_XCloseDisplay (Display * display)
+mc_XCloseDisplay (Display *display)
 {
     if (x11_available ())
     {
@@ -230,8 +225,8 @@ mc_XCloseDisplay (Display * display)
 /* --------------------------------------------------------------------------------------------- */
 
 Bool
-mc_XQueryPointer (Display * display, Window win, Window * root_return,
-                  Window * child_return, int *root_x_return, int *root_y_return,
+mc_XQueryPointer (Display *display, Window win, Window *root_return,
+                  Window *child_return, int *root_x_return, int *root_y_return,
                   int *win_x_return, int *win_y_return, unsigned int *mask_return)
 {
     Bool retval;

@@ -48,7 +48,6 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* XCTRL and ALT macros */
 #include "lib/vfs/vfs.h"
-#include "lib/strescape.h"
 #include "lib/strutil.h"
 #include "lib/util.h"
 #include "lib/widget.h"
@@ -89,14 +88,10 @@ typedef struct
 
 /*** forward declarations (file scope functions) *************************************************/
 
-char **try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags);
+GPtrArray *try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags);
 void complete_engine_fill_completions (WInput * in);
 
 /*** file scope variables ************************************************************************/
-
-static char **hosts = NULL;
-static char **hosts_p = NULL;
-static int hosts_alloclen = 0;
 
 static WInput *input;
 static int min_end;
@@ -151,12 +146,12 @@ filename_completion_function (const char *text, int state, input_complete_t flag
         char *result;
         char *e_result;
 
-        u_text = strutils_shell_unescape (text);
+        u_text = str_shell_unescape (text);
 
         result = filename_completion_function (u_text, state, flags & (~INPUT_COMPLETE_SHELL_ESC));
         g_free (u_text);
 
-        e_result = strutils_shell_escape (result);
+        e_result = str_shell_escape (result);
         g_free (result);
 
         return e_result;
@@ -217,9 +212,8 @@ filename_completion_function (const char *text, int state, input_complete_t flag
         {
             /* Otherwise, if these match up to the length of filename, then
                it may be a match. */
-            if ((entry->d_name[0] != filename[0]) ||
-                ((NLENGTH (entry)) < filename_len) ||
-                strncmp (filename, entry->d_name, filename_len) != 0)
+            if (entry->d_name[0] != filename[0] || entry->d_len < filename_len
+                || strncmp (filename, entry->d_name, filename_len) != 0)
                 continue;
         }
 
@@ -288,7 +282,7 @@ filename_completion_function (const char *text, int state, input_complete_t flag
 
         temp = g_string_sized_new (16);
 
-        if (users_dirname != NULL && (users_dirname[0] != '.' || users_dirname[1] != '\0'))
+        if (users_dirname != NULL && !DIR_IS_DOT (users_dirname))
         {
             g_string_append (temp, users_dirname);
 
@@ -296,7 +290,7 @@ filename_completion_function (const char *text, int state, input_complete_t flag
             if (!IS_PATH_SEP (temp->str[temp->len - 1]))
                 g_string_append_c (temp, PATH_SEP);
         }
-        g_string_append (temp, entry->d_name);
+        g_string_append_len (temp, entry->d_name, entry->d_len);
         if (isdir)
             g_string_append_c (temp, PATH_SEP);
 
@@ -395,13 +389,19 @@ variable_completion_function (const char *text, int state, input_complete_t flag
 
 /* --------------------------------------------------------------------------------------------- */
 
+static gboolean
+host_equal_func (gconstpointer a, gconstpointer b)
+{
+    return (strcmp ((const char *) a, (const char *) b) == 0);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static void
-fetch_hosts (const char *filename)
+fetch_hosts (const char *filename, GPtrArray *hosts)
 {
     FILE *file;
-    char buffer[256];
-    char *name;
-    char *lc_start;
+    char buffer[BUF_MEDIUM];
     char *bi;
 
     file = fopen (filename, "r");
@@ -424,31 +424,34 @@ fetch_hosts (const char *filename)
             char *includefile, *t;
 
             /* Find start of filename. */
-            includefile = bi + 9;
-            while (*includefile != '\0' && whitespace (*includefile))
-                includefile++;
+            for (includefile = bi + 9; includefile[0] != '\0' && whitespace (includefile[0]);
+                 includefile++)
+                ;
             t = includefile;
 
             /* Find end of filename. */
-            while (t[0] != '\0' && !str_isspace (t))
-                str_next_char (&t);
+            for (; t[0] != '\0' && !str_isspace (t); str_next_char (&t))
+                ;
             *t = '\0';
 
-            fetch_hosts (includefile);
+            fetch_hosts (includefile, hosts);
             continue;
         }
 
         /* Skip IP #s. */
-        while (bi[0] != '\0' && !str_isspace (bi))
-            str_next_char (&bi);
+        for (; bi[0] != '\0' && !str_isspace (bi); str_next_char (&bi))
+            ;
 
         /* Get the host names separated by white space. */
         while (bi[0] != '\0' && bi[0] != '#')
         {
-            while (bi[0] != '\0' && str_isspace (bi))
-                str_next_char (&bi);
+            char *lc_start, *name;
+
+            for (; bi[0] != '\0' && str_isspace (bi); str_next_char (&bi))
+                ;
             if (bi[0] == '#')
                 continue;
+
             for (lc_start = bi; bi[0] != '\0' && !str_isspace (bi); str_next_char (&bi))
                 ;
 
@@ -456,32 +459,10 @@ fetch_hosts (const char *filename)
                 continue;
 
             name = g_strndup (lc_start, bi - lc_start);
-
-            {
-                char **host_p;
-                int j;
-
-                j = hosts_p - hosts;
-
-                if (j >= hosts_alloclen)
-                {
-                    hosts_alloclen += 30;
-                    hosts = g_renew (char *, hosts, hosts_alloclen + 1);
-                    hosts_p = hosts + j;
-                }
-
-                for (host_p = hosts; host_p < hosts_p; host_p++)
-                    if (strcmp (name, *host_p) == 0)
-                        break;  /* We do not want any duplicates */
-
-                if (host_p == hosts_p)
-                {
-                    *(hosts_p++) = name;
-                    *hosts_p = NULL;
-                }
-                else
-                    g_free (name);
-            }
+            if (!g_ptr_array_find_with_equal_func (hosts, name, host_equal_func, NULL))
+                g_ptr_array_add (hosts, name);
+            else
+                g_free (name);
         }
     }
 
@@ -493,7 +474,8 @@ fetch_hosts (const char *filename)
 static char *
 hostname_completion_function (const char *text, int state, input_complete_t flags)
 {
-    static char **host_p = NULL;
+    static GPtrArray *hosts = NULL;
+    static unsigned int host_p = 0;
     static size_t textstart = 0;
     static size_t textlen = 0;
 
@@ -504,29 +486,27 @@ hostname_completion_function (const char *text, int state, input_complete_t flag
     {                           /* Initialization stuff */
         const char *p;
 
-        g_strfreev (hosts);
-        hosts_alloclen = 30;
-        hosts = g_new (char *, hosts_alloclen + 1);
-        *hosts = NULL;
-        hosts_p = hosts;
+        if (hosts != NULL)
+            g_ptr_array_free (hosts, TRUE);
+        hosts = g_ptr_array_new_with_free_func (g_free);
         p = getenv ("HOSTFILE");
-        fetch_hosts (p != NULL ? p : "/etc/hosts");
-        host_p = hosts;
+        fetch_hosts (p != NULL ? p : "/etc/hosts", hosts);
+        host_p = 0;
         textstart = (*text == '@') ? 1 : 0;
         textlen = strlen (text + textstart);
     }
 
-    for (; *host_p != NULL; host_p++)
+    for (; host_p < hosts->len; host_p++)
     {
         if (textlen == 0)
             break;              /* Match all of them */
-        if (strncmp (text + textstart, *host_p, textlen) == 0)
+        if (strncmp (text + textstart, g_ptr_array_index (hosts, host_p), textlen) == 0)
             break;
     }
 
-    if (*host_p == NULL)
+    if (host_p == hosts->len)
     {
-        g_strfreev (hosts);
+        g_ptr_array_free (hosts, TRUE);
         hosts = NULL;
         return NULL;
     }
@@ -538,7 +518,7 @@ hostname_completion_function (const char *text, int state, input_complete_t flag
 
         if (textstart != 0)
             g_string_append_c (temp, '@');
-        g_string_append (temp, *host_p);
+        g_string_append (temp, g_ptr_array_index (hosts, host_p));
         host_p++;
 
         return g_string_free (temp, FALSE);
@@ -587,7 +567,7 @@ command_completion_function (const char *text, int state, input_complete_t flags
     if ((flags & INPUT_COMPLETE_COMMANDS) == 0)
         return NULL;
 
-    u_text = strutils_shell_unescape (text);
+    u_text = str_shell_unescape (text);
     flags &= ~INPUT_COMPLETE_SHELL_ESC;
 
     if (state == 0)
@@ -621,7 +601,7 @@ command_completion_function (const char *text, int state, input_complete_t flags
         {
             char *temp_p = p;
 
-            p = strutils_shell_escape (p);
+            p = str_shell_escape (p);
             g_free (temp_p);
         }
 
@@ -688,7 +668,7 @@ command_completion_function (const char *text, int state, input_complete_t flags
         {
             char *tmp = found;
 
-            found = strutils_shell_escape (p + 1);
+            found = str_shell_escape (p + 1);
             g_free (tmp);
         }
     }
@@ -700,7 +680,7 @@ command_completion_function (const char *text, int state, input_complete_t flags
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-match_compare (const void *a, const void *b)
+match_compare (gconstpointer a, gconstpointer b)
 {
     return strcmp (*(char *const *) a, *(char *const *) b);
 }
@@ -714,97 +694,76 @@ match_compare (const void *a, const void *b)
    as the second. 
    In case no matches were found we return NULL. */
 
-static char **
+static GPtrArray *
 completion_matches (const char *text, CompletionFunction entry_function, input_complete_t flags)
 {
-    /* Number of slots in match_list. */
-    size_t match_list_size = 30;
-    /* The list of matches. */
-    char **match_list;
-    /* Number of matches actually found. */
-    size_t matches = 0;
-
-    /* Temporary string binder. */
+    GPtrArray *match_list;
     char *string;
 
-    match_list = g_new (char *, match_list_size + 1);
-    match_list[1] = NULL;
+    match_list = g_ptr_array_new_with_free_func (g_free);
 
-    while ((string = (*entry_function) (text, matches, flags)) != NULL)
-    {
-        if (matches + 1 == match_list_size)
-        {
-            match_list_size += 30;
-            match_list = (char **) g_renew (char *, match_list, match_list_size + 1);
-        }
-        match_list[++matches] = string;
-        match_list[matches + 1] = NULL;
-    }
+    while ((string = entry_function (text, match_list->len, flags)) != NULL)
+        g_ptr_array_add (match_list, string);
 
     /* If there were any matches, then look through them finding out the
        lowest common denominator.  That then becomes match_list[0]. */
-    if (matches == 0)
-        MC_PTR_FREE (match_list);       /* There were no matches. */
-    else
+    if (match_list->len == 0)
     {
-        /* If only one match, just use that. */
-        if (matches == 1)
+        /* There were no matches. */
+        g_ptr_array_free (match_list, TRUE);
+        return NULL;
+    }
+
+    /* If only one match, just use that. */
+
+    if (match_list->len > 1)
+    {
+        size_t i, j;
+        size_t low = 4096;      /* Count of max-matched characters. */
+
+        g_ptr_array_sort (match_list, match_compare);
+
+        /* And compare each member of the list with
+           the next, finding out where they stop matching. 
+           If we find two equal strings, we have to put one away... */
+        for (i = 0, j = 1; j < match_list->len;)
         {
-            match_list[0] = match_list[1];
-            match_list[1] = NULL;
-        }
-        else
-        {
-            size_t i = 1;
-            int low = 4096;     /* Count of max-matched characters. */
-            size_t j;
+            char *si, *sj, *mi;
 
-            qsort (match_list + 1, matches, sizeof (char *), match_compare);
+            si = g_ptr_array_index (match_list, i);
+            sj = g_ptr_array_index (match_list, j);
+            mi = si;
 
-            /* And compare each member of the list with
-               the next, finding out where they stop matching. 
-               If we find two equal strings, we have to put one away... */
-
-            j = i + 1;
-            while (j < matches + 1)
+            while (si[0] != '\0' && sj[0] != '\0')
             {
-                char *si, *sj;
                 char *ni, *nj;
 
-                for (si = match_list[i], sj = match_list[j]; si[0] != '\0' && sj[0] != '\0';)
-                {
+                ni = str_get_next_char (si);
+                nj = str_get_next_char (sj);
 
-                    ni = str_get_next_char (si);
-                    nj = str_get_next_char (sj);
+                if (ni - si != nj - sj || strncmp (si, sj, ni - si) != 0)
+                    break;
 
-                    if (ni - si != nj - sj)
-                        break;
-                    if (strncmp (si, sj, ni - si) != 0)
-                        break;
+                si = ni;
+                sj = nj;
+            }
 
-                    si = ni;
-                    sj = nj;
-                }
+            if (si[0] == '\0' && sj[0] == '\0')
+            {
+                /* Two equal strings */
+                g_ptr_array_remove_index (match_list, j);
+            }
+            else
+            {
+                low = MIN (low, (size_t) (si - mi));
 
-                if (si[0] == '\0' && sj[0] == '\0')
-                {               /* Two equal strings */
-                    g_free (match_list[j]);
-                    j++;
-                    if (j > matches)
-                        break;
-                    continue;   /* Look for a run of equal strings */
-                }
-                else if (low > si - match_list[i])
-                    low = si - match_list[i];
-                if (i + 1 != j) /* So there's some gap */
-                    match_list[i + 1] = match_list[j];
                 i++;
                 j++;
             }
-            matches = i;
-            match_list[matches + 1] = NULL;
-            match_list[0] = g_strndup (match_list[1], low);
         }
+
+        string = g_ptr_array_index (match_list, 0);
+        g_ptr_array_insert (match_list, 0, g_strndup (string, low));
     }
 
     return match_list;
@@ -835,7 +794,7 @@ check_is_cd (const char *text, int lc_start, input_complete_t flags)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-try_complete_commands_prepare (try_complete_automation_state_t * state, char *text, int *lc_start)
+try_complete_commands_prepare (try_complete_automation_state_t *state, char *text, int *lc_start)
 {
     const char *command_separator_chars = ";|&{(`";
     char *ti;
@@ -875,7 +834,7 @@ try_complete_commands_prepare (try_complete_automation_state_t * state, char *te
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-try_complete_find_start_sign (try_complete_automation_state_t * state)
+try_complete_find_start_sign (try_complete_automation_state_t *state)
 {
     if ((state->flags & INPUT_COMPLETE_COMMANDS) != 0)
         state->p = strrchr (state->word, '`');
@@ -884,7 +843,7 @@ try_complete_find_start_sign (try_complete_automation_state_t * state)
         state->q = strrchr (state->word, '$');
 
         /* don't substitute variable in \$ case */
-        if (strutils_is_char_escaped (state->word, state->q))
+        if (str_is_char_escaped (state->word, state->q))
         {
             /* drop '\\' */
             str_move (state->q - 1, state->q);
@@ -905,10 +864,10 @@ try_complete_find_start_sign (try_complete_automation_state_t * state)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static char **
-try_complete_all_possible (try_complete_automation_state_t * state, char *text, int *lc_start)
+static GPtrArray *
+try_complete_all_possible (try_complete_automation_state_t *state, char *text, int *lc_start)
 {
-    char **matches = NULL;
+    GPtrArray *matches = NULL;
 
     if (state->in_command_position != 0)
     {
@@ -977,7 +936,7 @@ try_complete_all_possible (try_complete_automation_state_t * state, char *text, 
 /* --------------------------------------------------------------------------------------------- */
 
 static gboolean
-insert_text (WInput * in, char *text, ssize_t size)
+insert_text (WInput *in, const char *text, ssize_t size)
 {
     size_t text_len;
     int buff_len;
@@ -1027,7 +986,7 @@ insert_text (WInput * in, char *text, ssize_t size)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
+complete_callback (Widget *w, Widget *sender, widget_msg_t msg, int parm, void *data)
 {
     static int bl = 0;
 
@@ -1207,7 +1166,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
 /** Returns TRUE if the user would like to see us again */
 static gboolean
-complete_engine (WInput * in, int what_to_do)
+complete_engine (WInput *in, int what_to_do)
 {
     if (in->completions != NULL && str_offset_to_pos (in->buffer->str, in->point) != end)
         input_complete_free (in);
@@ -1220,32 +1179,37 @@ complete_engine (WInput * in, int what_to_do)
     else
     {
         if ((what_to_do & DO_INSERTION) != 0
-            || ((what_to_do & DO_QUERY) != 0 && in->completions[1] == NULL))
+            || ((what_to_do & DO_QUERY) != 0 && in->completions->len == 1))
         {
-            char *lc_complete = in->completions[0];
+            const char *lc_complete;
 
-            if (!insert_text (in, lc_complete, -1) || in->completions[1] != NULL)
+            lc_complete = g_ptr_array_index (in->completions, 0);
+            if (!insert_text (in, lc_complete, -1) || in->completions->len > 1)
                 tty_beep ();
             else
                 input_complete_free (in);
         }
 
-        if ((what_to_do & DO_QUERY) != 0 && in->completions != NULL && in->completions[1] != NULL)
+        if ((what_to_do & DO_QUERY) != 0 && in->completions != NULL && in->completions->len > 1)
         {
-            int maxlen = 0, count = 0, i;
+            int maxlen = 0;
+            int i;
+            size_t k;
+            int count;
             int x, y, w, h;
             int start_x, start_y;
-            char **p, *q;
+            char *q;
             WDialog *complete_dlg;
             WListbox *complete_list;
 
-            for (p = in->completions + 1; *p != NULL; count++, p++)
+            for (k = 1; k < in->completions->len; k++)
             {
-                i = str_term_width1 (*p);
-                if (i > maxlen)
-                    maxlen = i;
+                q = g_ptr_array_index (in->completions, k);
+                i = str_term_width1 (q);
+                maxlen = MAX (maxlen, i);
             }
 
+            count = in->completions->len - 1;
             start_x = WIDGET (in)->rect.x;
             start_y = WIDGET (in)->rect.y;
             if (start_y - 2 >= count)
@@ -1281,8 +1245,11 @@ complete_engine (WInput * in, int what_to_do)
             complete_list = listbox_new (1, 1, h - 2, w - 2, FALSE, NULL);
             group_add_widget (GROUP (complete_dlg), complete_list);
 
-            for (p = in->completions + 1; *p != NULL; p++)
-                listbox_add_item (complete_list, LISTBOX_APPEND_AT_END, 0, *p, NULL, FALSE);
+            for (k = 1; k < in->completions->len; k++)
+            {
+                q = g_ptr_array_index (in->completions, k);
+                listbox_add_item (complete_list, LISTBOX_APPEND_AT_END, 0, q, NULL, FALSE);
+            }
 
             i = dlg_run (complete_dlg);
             q = NULL;
@@ -1309,11 +1276,11 @@ complete_engine (WInput * in, int what_to_do)
 /* --------------------------------------------------------------------------------------------- */
 
 /** Returns an array of matches, or NULL if none. */
-char **
+GPtrArray *
 try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags)
 {
     try_complete_automation_state_t state;
-    char **matches = NULL;
+    GPtrArray *matches = NULL;
 
     memset (&state, 0, sizeof (state));
     state.flags = flags;
@@ -1386,19 +1353,20 @@ try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags)
 
     g_free (state.word);
 
-    if (matches != NULL &&
-        (flags & (INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_SHELL_ESC)) !=
-        (INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_SHELL_ESC))
+    if (matches != NULL && (flags & INPUT_COMPLETE_FILENAMES) != 0 &&
+        (flags & INPUT_COMPLETE_SHELL_ESC) == 0)
     {
         /* FIXME: HACK? INPUT_COMPLETE_SHELL_ESC is used only in command line. */
-        char **m;
+        size_t i;
 
-        for (m = matches; *m != NULL; m++)
+        for (i = 0; i < matches->len; i++)
         {
             char *p;
 
-            p = *m;
-            *m = strutils_shell_escape (*m);
+            p = g_ptr_array_index (matches, i);
+            /* Escape only '?', '*', and '&' symbols as described in the
+               manual page (see a11995e12b88285e044f644904c306ed6c342ad0). */
+            g_ptr_array_index (matches, i) = str_escape (p, -1, "?*&", TRUE);
             g_free (p);
         }
     }
@@ -1409,7 +1377,7 @@ try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-complete_engine_fill_completions (WInput * in)
+complete_engine_fill_completions (WInput *in)
 {
     char *s;
     const char *word_separators;
@@ -1431,7 +1399,7 @@ complete_engine_fill_completions (WInput * in)
     for (; s >= in->buffer->str; str_prev_char (&s))
     {
         start = s - in->buffer->str;
-        if (strchr (word_separators, *s) != NULL && !strutils_is_char_escaped (in->buffer->str, s))
+        if (strchr (word_separators, *s) != NULL && !str_is_char_escaped (in->buffer->str, s))
             break;
     }
 
@@ -1448,7 +1416,7 @@ complete_engine_fill_completions (WInput * in)
 
 /* declared in lib/widget/input.h */
 void
-input_complete (WInput * in)
+input_complete (WInput *in)
 {
     int engine_flags;
 
@@ -1472,10 +1440,13 @@ input_complete (WInput * in)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-input_complete_free (WInput * in)
+input_complete_free (WInput *in)
 {
-    g_strfreev (in->completions);
-    in->completions = NULL;
+    if (in->completions != NULL)
+    {
+        g_ptr_array_free (in->completions, TRUE);
+        in->completions = NULL;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

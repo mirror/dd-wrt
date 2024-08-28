@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>, 2011-2024\n"
 "Language-Team: Polish (http://app.transifex.com/mc/mc/language/pl/)\n"
@@ -569,28 +569,12 @@ msgid "Changes to file lost"
 msgstr "Utracono zmiany w pliku"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s nie jest katalogiem\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "Katalog %s nie należy do ciebie\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Nie można ustawić odpowiednich uprawnień dla katalogu %s\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "Nie można utworzyć katalogu tymczasowego %s: %s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "Pliki tymczasowe zostaną utworzone w %s\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "Pliki tymczasowe nie zostaną utworzone\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
+"Nie można utworzyć katalogu tymczasowego %s: %s.\n"
+"Pliki tymczasowe nie zostaną utworzone\n"
 
 msgid "Press any key to continue..."
 msgstr "Naciśnięcie dowolnego klawisza kontynuuje…"
@@ -832,6 +816,9 @@ msgstr "Opcje terminala"
 
 msgid "Arguments parse error!"
 msgstr "Błąd podczas przetwarzania parametrów."
+
+msgid "MC is built without builtin editor."
+msgstr "MC został zbudowany bez wbudowanego edytora."
 
 msgid "No arguments given to the viewer."
 msgstr "Nie podano parametrów dla przeglądarki."
@@ -2769,6 +2756,22 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można uzyskać atrybutów pliku źródłowego „%s”\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można ustawić atrybutów pliku docelowego „%s”\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2880,10 +2883,26 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można ustawić atrybutów dla pliku docelowego „%s”\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
 "%s"
 msgstr ""
 "Nie można wykonać polecenia stat na katalogu źródłowym „%s”\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można uzyskać atrybutów katalogu źródłowego „%s”\n"
 "%s"
 
 #, c-format
@@ -3983,10 +4002,10 @@ msgstr "Powłoka jest wciąż aktywna. Zakończyć mimo to?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Ostrzeżenie: nie można zmienić katalogu na %s.\n"
 
-msgid "With builtin Editor and Aspell support"
-msgstr "Z wbudowanym edytorem i obsługą Aspell"
+msgid "With builtin editor and aspell support"
+msgstr "Z wbudowanym edytorem i obsługą aspell"
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr "Z wbudowanym edytorem"
 
 msgid "With optional subshell support"
@@ -4169,6 +4188,14 @@ msgstr ""
 
 msgid "Inconsistent archive"
 msgstr "Niespójne archiwum"
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
+msgstr ""
+"Nie można otworzyć archiwum %s\n"
+"%s"
 
 #, c-format
 msgid ""

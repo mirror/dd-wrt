@@ -278,6 +278,7 @@ GREP = @GREP@
 HAVE_FILECMD = @HAVE_FILECMD@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
+INDENT = @INDENT@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -366,6 +367,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
+ac_ct_INDENT = @ac_ct_INDENT@
 am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
@@ -680,13 +682,17 @@ mc.1: $(srcdir)/mc.1.in
 	MAN_FILE='$(srcdir)/mc.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
 	$(SED) $(SED_PARAMETERS) '$(srcdir)/mc.1.in' > '$@'
 
-mcedit.1: $(srcdir)/mcedit.1.in
-	MAN_FILE='$(srcdir)/mcedit.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
-	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcedit.1.in' > '$@'
-
 mcview.1: $(srcdir)/mcview.1.in
 	MAN_FILE='$(srcdir)/mcview.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
 	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcview.1.in' > '$@'
+
+@USE_INTERNAL_EDIT_TRUE@mcedit.1: $(srcdir)/mcedit.1.in
+@USE_INTERNAL_EDIT_TRUE@	MAN_FILE='$(srcdir)/mcedit.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
+@USE_INTERNAL_EDIT_TRUE@	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcedit.1.in' > '$@'
+
+@USE_DIFF_TRUE@mcdiff.1: $(srcdir)/mcdiff.1.in
+@USE_DIFF_TRUE@	MAN_FILE='$(srcdir)/mcdiff.1.in'; MAN_DATE=$$($(MAN_DATE_CMD)); \
+@USE_DIFF_TRUE@	$(SED) $(SED_PARAMETERS) '$(srcdir)/mcdiff.1.in' > '$@'
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

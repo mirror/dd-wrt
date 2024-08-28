@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: https://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2024-01-27 09:33+0100\n"
+"POT-Creation-Date: 2024-08-23 19:34+0200\n"
 "PO-Revision-Date: 2010-12-29 10:19+0000\n"
 "Last-Translator: Meng Pang Wang, 2023\n"
 "Language-Team: Chinese (Taiwan) (http://app.transifex.com/mc/mc/language/"
@@ -552,28 +552,10 @@ msgid "Changes to file lost"
 msgstr "欲切換到的檔案已遺失"
 
 #, c-format
-msgid "%s is not a directory\n"
-msgstr "%s 不是一個目錄\n"
-
-#, c-format
-msgid "Directory %s is not owned by you\n"
-msgstr "您不是目錄 %s 的擁有者\n"
-
-#, c-format
-msgid "Cannot set correct permissions for directory %s\n"
-msgstr "無法為目錄 %s 設定適當的權限\n"
-
-#, c-format
-msgid "Cannot create temporary directory %s: %s\n"
-msgstr "無法建立暫存目錄 %s：%s\n"
-
-#, c-format
-msgid "Temporary files will be created in %s\n"
-msgstr "將於 %s 建立暫存檔案\n"
-
-#, c-format
-msgid "Temporary files will not be created\n"
-msgstr "將不會建立暫存檔案\n"
+msgid ""
+"Cannot create temporary directory %s: %s.\n"
+"Temporary files will not be created\n"
+msgstr ""
 
 msgid "Press any key to continue..."
 msgstr "按任意鍵繼續..."
@@ -778,6 +760,9 @@ msgid "Terminal options"
 msgstr "終端機選項"
 
 msgid "Arguments parse error!"
+msgstr ""
+
+msgid "MC is built without builtin editor."
 msgstr ""
 
 msgid "No arguments given to the viewer."
@@ -2631,6 +2616,18 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot get attributes of source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot set attributes of target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot create special file \"%s\"\n"
 "%s"
 msgstr ""
@@ -2720,7 +2717,19 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Cannot set attributes for target file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
 "Cannot stat source directory \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get attributes of source directory \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3786,10 +3795,10 @@ msgstr ""
 msgid "Warning: Cannot change to %s.\n"
 msgstr "警告： 無法切換到 %s。\n"
 
-msgid "With builtin Editor and Aspell support"
+msgid "With builtin editor and aspell support"
 msgstr ""
 
-msgid "With builtin Editor"
+msgid "With builtin editor"
 msgstr ""
 
 msgid "With optional subshell support"
@@ -3971,6 +3980,12 @@ msgstr ""
 "%s"
 
 msgid "Inconsistent archive"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot open %s archive\n"
+"%s"
 msgstr ""
 
 #, c-format
