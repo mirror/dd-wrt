@@ -96,7 +96,7 @@ static void wpas_conf_ap_vht(struct wpa_supplicant *wpa_s,
 		hostapd_set_oper_centr_freq_seg1_idx(conf, freq_seg_idx);
 	}
 
-	conf->vht_oper_centr_freq_seg1_idx_freq = ssid->vht_center_freq2;
+	hostapd_set_oper_centr_freq_seg1_idx_freq(conf, ssid->vht_center_freq2);
 
 	if (!ssid->p2p_group) {
 		if (!ssid->vht_center_freq1)
