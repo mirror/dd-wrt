@@ -90,7 +90,7 @@ static int notrace unwind_next(struct unwind_state *state)
 	if (err)
 		return err;
 
-	state->pc = ptrauth_strip_insn_pac(state->pc);
+	state->pc = ptrauth_strip_kernel_insn_pac(state->pc);
 
 #ifdef CONFIG_FUNCTION_GRAPH_TRACER
 	if (tsk->ret_stack &&
