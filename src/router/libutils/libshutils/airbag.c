@@ -182,9 +182,18 @@ static const char *sigNames[MAX_SIGNALS] = {
 };
 
 #ifdef __LP64__
+#if defined(__aarch64__)
+#define INSTLEN unsigned int
+#define INSTLENFMT "08"
+#else
+#define INSTLEN unsigned long
+#define INSTLENFMT "016"
+#endif
 #define FMTBIT "016"
 #else
 #define FMTBIT "08"
+#define INSTLEN unsigned int
+#define INSTLENFMT "08"
 #endif
 /*
  * Do not use strsignal; it is not async signal safe.
@@ -352,20 +361,20 @@ static uint8_t load8(const void *_p, uint8_t *v)
 	return 0;
 }
 
-static uint32_t load32(const void *_p, unsigned long *_v)
+static uint32_t load32(const void *_p, INSTLEN *_v)
 {
 	int i;
-	unsigned long r = 0;
-	unsigned long v = 0;
+	INSTLEN r = 0;
+	INSTLEN v = 0;
 	const uint8_t *p = (const uint8_t *)_p;
-	for (i = 0; i < sizeof(long *); ++i) {
+	for (i = 0; i < sizeof(INSTLEN); ++i) {
 		uint8_t b;
 		r <<= 8;
 		v <<= 8;
 		r |= load8(p + i, &b);
 		v |= b;
 	}
-	if (sizeof(long *) == 8) {
+	if (sizeof(INSTLEN) == 8) {
 		v = __cpu_to_be64(v);
 		r = __cpu_to_be64(r);
 	} else {
@@ -1221,9 +1230,9 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 			airbag_printf("%02x", b);
 		width += 2;
 #else
-		unsigned long w;
-		unsigned long invalid = load32(addr, &w);
-		int bitlen = sizeof(char *) - 1;
+		INSTLEN w;
+		INSTLEN invalid = load32(addr, &w);
+		int bitlen = sizeof(INSTLEN) - 1;
 		for (i = bitlen; i >= 0; --i) {
 			unsigned long shift = i * 8;
 			if ((invalid >> shift) & 0xff) {
