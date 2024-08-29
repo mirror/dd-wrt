@@ -679,6 +679,9 @@ endif
 else
 	echo "# CONFIG_VXLAN is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_MIITOOL),y)
+	sed -i 's/\CONFIG_NETSTAT=y/# CONFIG_NETSTAT is not set/g' busybox/.config
+endif
 	echo "# CONFIG_STATIC_LIBGCC is not set" >> busybox/.config
 	echo "# CONFIG_BASE32 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_VOLUMEID_EROFS is not set" >> busybox/.config
