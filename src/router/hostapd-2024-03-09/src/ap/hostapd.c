@@ -1358,29 +1358,32 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 			strikes = sta->sig_drop_strikes;
 			if (signal_inst > signal_avg) 
 				signal_avg = signal_inst;
-			if (signal_inst > (signal_avg - 5)) {  // ignore unusually low instantaneous signal.
+			if (signal_inst > (signal_avg - 5)) { // ignore unusually low instantaneous signal.
 				if (signal_avg < hapd->conf->signal_stay_min) { // signal bad.
 					strikes = ++sta->sig_drop_strikes;
-				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
-					    char *ident = NULL;
-					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0 && sta->eapol_sm->identity_len < 128) {
-						    ident = malloc(sta->eapol_sm->identity_len+1);
-						    if (ident) {
-							    strlcpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
-							    ident[sta->eapol_sm->identity_len] = 0;
-						    }
-					    }
-    					    hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",ident?"User:":"", ident?ident:"");
-    					    if (ident)
-						free(ident);
-						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason); 
+					if (strikes >= hapd->conf->signal_strikes) { // Struck out--, drop.
+						char *ident = NULL;
+						if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0 &&
+						    sta->eapol_sm->identity_len < 128) {
+							ident = malloc(sta->eapol_sm->identity_len + 1);
+							if (ident) {
+								strlcpy(ident, sta->eapol_sm->identity,
+									sta->eapol_sm->identity_len);
+								ident[sta->eapol_sm->identity_len] = 0;
+							}
+						}
+						hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,
+							       "kick out station due low signal %s%s", ident ? "User:" : "",
+							       ident ? ident : "");
+						if (ident)
+							free(ident);
+						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason);
 						num_drop++;
 					}
-				}
-				else {
-					sta->sig_drop_strikes = 0;  // signal OK, reset the strike counter.
+				} else {
+					sta->sig_drop_strikes = 0; // signal OK, reset the strike counter.
 					strikes = 0;
-					}				
+				}
 			}
 			hostapd_logger(hapd, addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "%i %i (%i)",
 		        data.signal, data.last_ack_rssi, strikes);
