@@ -57,11 +57,11 @@ endif
 
 # Compiler and Linker Options
 #CFLAGS ?= -O2 -g
-CFLAGS += -Wall $(LTO) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF
+CFLAGS += -Wall -DNEED_PRINTF $(LTO) $(MIPS16_OPT) $(THUMB)
 CFLAGS += -fno-strict-aliasing # code needs a lot of work before strict aliasing is safe
 CPPFLAGS += -D_GNU_SOURCE
 # Turn on transparent support for LFS
-CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE
+CPPFLAGS += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE  $(LTO) $(MIPS16_OPT) $(THUMB)
 
 ifeq ($(HAVE_AFDECnet),1)
 DNLIB = -ldnet
@@ -96,7 +96,7 @@ CPPFLAGS += $(SE_PC_CFLAGS)
 endif
 
 CPPFLAGS += -I. -I$(TOPDIR)/include -I$(NET_LIB_PATH)
-LDFLAGS  += -L$(NET_LIB_PATH)
+LDFLAGS  += -L$(NET_LIB_PATH) $(LDLTO)
 
 SUBDIRS	= man/ $(NET_LIB_PATH)/
 
