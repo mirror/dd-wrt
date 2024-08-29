@@ -328,18 +328,18 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 		sm->authenticated++;
 	if (sm->identity && sm->identity_len > 0) {
 		char fileout[64];
-		sprintf(fileout,"/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(sm->addr));
+		sprintf(fileout, "/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(sm->addr));
 		FILE *out = fopen(fileout, "wb");
 		if (out) {
-			char *ident = malloc(sm->identity_len+1);
+			char *ident = malloc(sm->identity_len + 1);
 			if (ident) {
 				strlcpy(ident, sm->identity, sm->identity_len);
 				ident[sm->identity_len] = 0;
-				fprintf(out, "%s",ident);
+				fprintf(out, "%s", ident);
 				free(ident);
 			} else {
-			    eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO, "BUG: %s:%d something wrong here", __func__, __LINE__);
-				
+				eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO, "BUG: %s:%d something wrong here",
+						   __func__, __LINE__);
 			}
 			fclose(out);
 		}
