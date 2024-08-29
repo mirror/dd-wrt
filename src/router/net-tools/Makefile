@@ -56,8 +56,8 @@ PROGS	+= slattach
 endif
 
 # Compiler and Linker Options
-CFLAGS ?= -O2 -g
-CFLAGS += -Wall
+#CFLAGS ?= -O2 -g
+CFLAGS += -Wall $(LTO) $(MIPS16_OPT) $(THUMB) -DNEED_PRINTF
 CFLAGS += -fno-strict-aliasing # code needs a lot of work before strict aliasing is safe
 CPPFLAGS += -D_GNU_SOURCE
 # Turn on transparent support for LFS
@@ -143,10 +143,10 @@ distcheck:	dist
 
 config.h: 	config.in Makefile
 		@echo "Configuring the Linux net-tools (NET-3 Base Utilities)..." ; echo
-		@if [ config.status -nt config.in ]; \
-			then ./configure.sh config.status; \
-		   else ./configure.sh config.in; \
-		 fi
+#		@if [ config.status -nt config.in ]; \
+#			then ./configure.sh config.status; \
+#		   else ./configure.sh config.in; \
+#		 fi
 
 
 version.h:	Makefile
