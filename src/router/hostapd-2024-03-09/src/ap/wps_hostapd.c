@@ -563,11 +563,12 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 	if (storekey) {
 		char newkey[65];
 		strlcpy(newkey, cred->key, sizeof(newkey) - 1);
-		if (cred->key_len > 64) {
+		if (cred->key_len > 2 * PMK_LEN) {
 			wpa_printf(MSG_INFO, "BUG: %s:%d something wrong here", __func__, __LINE__);
+		} else {
+			newkey[cred->key_len < sizeof(newkey) ? cred->key_len : sizeof(newkey) - 1] = 0;
+			nvram_set(psk, newkey);
 		}
-		newkey[cred->key_len < sizeof(newkey) ? cred->key_len : sizeof(newkey) - 1] = 0;
-		nvram_set(psk, newkey);
 	}
 	if (cred->encr_type & (WPS_ENCR_AES | WPS_ENCR_TKIP)) {
 		nvram_set(crypto, "tkip+aes");
