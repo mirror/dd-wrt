@@ -1,10 +1,10 @@
-.TH IFCONFIG 8 "14 August 2000" "net-tools" "Linux Programmer's Manual"
+.TH IFCONFIG 8 "2008\-10\-03" "net\-tools" "Linux System Administrator's Manual"
 .SH NAME
 ifconfig \- configure a network interface
 .SH SYNOPSIS
-.B "ifconfig [interface]"
+.B "ifconfig [-v] [-a] [-s] [interface]"
 .br
-.B "ifconfig interface [aftype] options | address ..."
+.B "ifconfig [-v] interface [aftype] options | address ..."
 .SH DESCRIPTION
 .B Ifconfig
 is used to configure the kernel-resident network interfaces.  It is
@@ -18,7 +18,7 @@ a single
 .B interface
 argument is given, it displays the status of the given interface
 only; if a single
-.B -a
+.B \-a
 argument is given, it displays the status of all interfaces, even
 those that are down.  Otherwise, it configures an interface.
 
@@ -39,17 +39,44 @@ supported address families include
 (Novell IPX) and
 .B netrom
 (AMPR Packet radio).
+All numbers supplied as parts in IPv4 dotted decimal notation may be decimal,
+octal, or hexadecimal, as specified in the ISO C standard (that is, a leading 0x
+or 0X implies hexadecimal; otherwise, a leading '0' implies octal; otherwise,
+the number is interpreted as decimal). Use of hexadecimal and octal numbers
+is not RFC-compliant and therefore its use is discouraged.
 .SH OPTIONS
+.TP
+.B -a
+display all interfaces which are currently available, even if down
+.TP
+.B -s
+display a short list (like netstat -i)
+.TP
+.B -v
+be more verbose for some error conditions
 .TP
 .B interface
 The name of the interface.  This is usually a driver name followed by
 a unit number, for example
 .B eth0
-for the first Ethernet interface.
+for the first Ethernet interface. If your kernel supports alias interfaces,
+you can specify them with syntax like
+.B eth0:0
+for the first alias of eth0. You can use them to assign more addresses. To
+delete an alias interface use
+.BR "ifconfig eth0:0 down" .
+Note: for every scope (i.e. same net with address/netmask combination) all
+aliases are deleted, if you delete the first (primary).
 .TP
 .B up
 This flag causes the interface to be activated.  It is implicitly
-specified if an address is assigned to the interface.
+specified if an address is assigned to the interface; you can suppress this
+behavior when using an alias interface by appending an
+.BR "-"
+to the alias (e.g.
+.BR "eth0:0-" ).
+It is also suppressed when using the IPv4 0.0.0.0 address as the kernel will
+use this to implicitly delete alias interfaces.
 .TP
 .B down
 This flag causes the driver for this interface to be shut down.
@@ -68,9 +95,6 @@ Enable or disable
 .B all-multicast
 mode.  If selected, all multicast packets on the network will be
 received by the interface.
-.TP
-.B "metric N"
-This parameter sets the interface metric.
 .TP
 .B "mtu N"
 This parameter sets the Maximum Transfer Unit (MTU) of an interface.
@@ -92,7 +116,7 @@ Add an IPv6 address to an interface.
 .B "del addr/prefixlen"
 Remove an IPv6 address from an interface.
 .TP
-.B "tunnel aa.bb.cc.dd"
+.B "tunnel ::aa.bb.cc.dd"
 Create a new SIT (IPv6-in-IPv4) device, tunnelling to the given destination.
 .TP
 .B "irq addr"
@@ -122,13 +146,13 @@ are
 can be used to tell the driver to auto-sense the media.  Again, not
 all drivers can do this.
 .TP
-.B "[-]broadcast [addr]"
+.B "[\-]broadcast [addr]"
 If the address argument is given, set the protocol broadcast
 address for this interface.  Otherwise, set (or clear) the
 .B IFF_BROADCAST
 flag for the interface.
 .TP
-.B "[-]pointopoint [addr]"
+.B "[\-]pointopoint [addr]"
 This keyword enables the
 .B point-to-point
 mode of an interface, meaning that it is a direct link between two
@@ -167,29 +191,56 @@ Set the length of the transmit queue of the device. It is useful to set this
 to small values for slower devices with a high latency (modem links, ISDN)
 to prevent fast bulk transfers from disturbing interactive traffic like
 telnet too much. 
+.TP
+.B name \fInewname\fR
+Change the name of this interface to \fInewname\fR. The interface must be shut
+down first.
 .SH NOTES
 Since kernel release 2.2 there are no explicit interface statistics for
 alias interfaces anymore. The statistics printed for the original address
 are shared with all alias addresses on the same device. If you want per-address
 statistics you should add explicit accounting
 rules for the address using the 
-.BR ipchains(8)
+.BR iptables (8)
 command.
 .LP
-Interrupt problems with Ethernet device drivers fail with EAGAIN. See
-.I http://cesdis.gsfc.nasa.gov/linux/misc/irq-conflict.html
+Since net\-tools 1.60\-4 ifconfig is printing byte counters and human readable
+counters with IEC 60027-2 units. So 1 KiB are 2^10 byte. Note, the numbers 
+are truncated to one decimal (which can by quite a large error if you 
+consider 0.1 PiB is 112.589.990.684.262 bytes :)
+.LP
+Interrupt problems with Ethernet device drivers fail with EAGAIN
+.I (SIOCSIIFLAGS: Resource temporarily unavailable)
+it is most likely a interrupt conflict. See
+.I http://www.scyld.com/expert/irq\-conflict.html
 for more information.
 .SH FILES
-.I /proc/net/socket 
-.br
 .I /proc/net/dev
 .br
 .I /proc/net/if_inet6
 .SH BUGS
+Ifconfig uses the ioctl access method to get the full address information,
+which limits hardware addresses to 8 bytes.
+Because Infiniband hardware address has 20 bytes,
+only the first 8 bytes are displayed correctly.
+Please use
+.B ip link
+command from
+.B iproute2
+package to display link layer informations including the hardware address.
+.LP
 While appletalk DDP and IPX addresses will be displayed they cannot be
 altered by this command.
 .SH SEE ALSO
-route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.BR route (8),
+.BR netstat (8),
+.BR arp (8),
+.BR rarp (8),
+.BR iptables (8),
+.BR ifup (8),
+.BR interfaces (5)
+.br
+http://physics.nist.gov/cuu/Units/binary.html - Prefixes for binary multiples
 .SH AUTHORS
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
 .br
@@ -198,3 +249,5 @@ Alan Cox, <Alan.Cox@linux.org>
 Phil Blundell, <Philip.Blundell@pobox.com>
 .br
 Andi Kleen
+.br
+Bernd Eckenfels, <net\-tools@lina.inka.de>

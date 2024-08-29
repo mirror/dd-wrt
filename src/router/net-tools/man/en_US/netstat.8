@@ -6,9 +6,10 @@
 .\" Modified: Bernd.Eckenfels@inka.de
 .\" Modified: Andi Kleen ak@muc.de 
 .\" Modified: Tuan Hoang tqhoang@bigfoot.com 
+.\" Modified: Brian Micek bmicek@gmail.com
 .\"
 .\"
-.TH NETSTAT 8 "19 December 2000" "net-tools" "Linux Programmer's Manual"
+.TH NETSTAT 8 "2014\-10\-07" "net\-tools" "Linux System Administrator's Manual"
 
 .SH NAME
 netstat \- Print network connections, routing tables, interface statistics, masquerade connections, and multicast memberships
@@ -19,17 +20,22 @@ netstat \- Print network connections, routing tables, interface statistics, masq
 .RI [ address_family_options ]
 .RB [ \-\-tcp | \-t ]
 .RB [ \-\-udp | \-u ]
+.RB [ \-\-udplite | \-U ]
+.RB [ \-\-sctp | \-S ]
 .RB [ \-\-raw | \-w ]
+.RB [ \-\-l2cap | \-2 ]
+.RB [ \-\-rfcomm | \-f ]
 .RB [ \-\-listening | \-l ]
 .RB [ \-\-all | \-a ]
 .RB [ \-\-numeric | \-n ]
-.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-numeric\-hosts "] [" \-\-numeric\-ports "] [" \-\-numeric\-users ]
 .RB [ \-\-symbolic | \-N ]
 .RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
 .RB [ \-\-timers | \-o ]
 .RB [ \-\-program | \-p ]
 .RB [ \-\-verbose | \-v ]
 .RB [ \-\-continuous | \-c]
+.RB [ \-\-wide | \-W ]
 .P
 .B netstat 
 .RB { \-\-route | \-r }
@@ -37,37 +43,38 @@ netstat \- Print network connections, routing tables, interface statistics, masq
 .RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
 .RB [ \-\-verbose | \-v ]
 .RB [ \-\-numeric | \-n ]
-.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
-.RB [ \-\-continuous | \-c]
+.RB [ \-\-numeric\-hosts "] [" \-\-numeric\-ports "] [" \-\-numeric\-users ]
+.RB [ \-\-continuous | \-c ]
 .P
 .B netstat
 .RB { \-\-interfaces | \-i }
-.RI [ iface ]
 .RB [ \-\-all | \-a ]
 .RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
 .RB [ \-\-verbose | \-v ]
 .RB [ \-\-program | \-p ]
 .RB [ \-\-numeric | \-n ]
-.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
-.RB [ \-\-continuous | \-c]
+.RB [ \-\-numeric-hosts "] [" \-\-numeric-ports "] [" \-\-numeric-users ]
+.RB [ \-\-continuous | \-c ]
 .P
 .B netstat
 .RB { \-\-groups | \-g }
 .RB [ \-\-numeric | \-n ]
-.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
-.RB [ \-\-continuous | \-c]
+.RB [ \-\-numeric\-hosts "] [" \-\-numeric\-ports "] [" \-\-numeric\-users ]
+.RB [ \-\-continuous | \-c ]
 .P
 .B netstat
 .RB { \-\-masquerade | \-M }
 .RB [ \-\-extend | \-e ]
 .RB [ \-\-numeric | \-n ]
-.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
-.RB [ \-\-continuous | \-c]
+.RB [ \-\-numeric\-hosts "] [" \-\-numeric\-ports "] [" \-\-numeric\-users ]
+.RB [ \-\-continuous | \-c ]
 .P
 .B netstat
 .RB { \-\-statistics | -s }
 .RB [ \-\-tcp | \-t ]
 .RB [ \-\-udp | \-u ]
+.RB [ \-\-udplite | \-U ]
+.RB [ \-\-sctp | \-S ]
 .RB [ \-\-raw | \-w ]
 .P
 .B netstat 
@@ -78,13 +85,27 @@ netstat \- Print network connections, routing tables, interface statistics, masq
 .P
 .IR address_family_options :
 .PP
-.RB [ \-\-protocol= { inet , unix , ipx , ax25 , netrom , ddp }[, ...] ]
+.RB [ -4 | \-\-inet ]
+.RB [ -6 | \-\-inet6 ]
+.RB [ \-\-protocol= { inet , inet6 , unix , ipx , ax25 , netrom , ddp , bluetooth ", ... } ]"
 .RB [ \-\-unix | \-x ] 
-.RB [ \-\-inet | \-\-ip ]
+.RB [ \-\-inet | \-\-ip | \-\-tcpip ]
 .RB [ \-\-ax25 ]
+.RB [ \-\-x25 ]
+.RB [ \-\-rose ]
+.RB [ \-\-ash ]
+.RB [ \-\-bluetooth ]
 .RB [ \-\-ipx ] 
 .RB [ \-\-netrom ]
-.RB [ \-\-ddp ]
+.RB [ \-\-ddp | \-\-appletalk ]
+.RB [ \-\-econet | \-\-ec ]
+
+.SH NOTES
+This program is mostly obsolete.
+Replacement for \fBnetstat\fR is \fBss\fR.
+Replacement for \fBnetstat -r\fR is \fBip route\fR.
+Replacement for \fBnetstat -i\fR is \fBip -s link\fR.
+Replacement for \fBnetstat -g\fR is \fBip maddr\fR.
 
 .SH DESCRIPTION
 .B Netstat
@@ -97,59 +118,76 @@ netstat
 displays a list of open sockets.  If you don't specify any
 address families, then the active sockets of all configured address
 families will be printed.
-.SS "\-\-route , \-r"
-Display the kernel routing tables.
-.SS "\-\-groups , \-g"
+.SS "\-\-route, \-r"
+Display the kernel routing tables. See the description in 
+.BR route (8) 
+for details. 
+.B netstat -r 
+and 
+.B route -e 
+produce the same output.
+.SS "\-\-groups, \-g"
 Display multicast group membership information for IPv4 and IPv6.
-.SS "\-\-interface=\fIiface \fR, \fB\-i"
-Display a table of all network interfaces, or the specified
-.IR iface ) .
-.SS "\-\-masquerade , \-M"
+.SS "\-\-interfaces, \-i"
+Display a table of all network interfaces.
+.SS "\-\-masquerade, \-M"
 Display a list of masqueraded connections.
-.SS "\-\-statistics , \-s"
+.SS "\-\-statistics, \-s"
 Display summary statistics for each protocol.
 .SH OPTIONS
-.SS "\-\-verbose , \-v"
+.SS "\-\-verbose, \-v"
 Tell the user what is going on by being verbose. Especially print some
 useful information about unconfigured address families.
-.SS "\-\-numeric , \-n"
+.SS "\-\-wide, \-W"
+Do not truncate IP addresses by using output as wide as needed. This is
+optional for now to not break existing scripts.
+.SS "\-\-numeric, \-n"
 Show numerical addresses instead of trying to determine symbolic host, port
 or user names.
-.SS "\-\-numeric-hosts"
+.SS "\-\-numeric\-hosts"
 shows numerical host addresses but does not affect the resolution of
 port or user names.
-.SS "\-\-numeric-ports"
+.SS "\-\-numeric\-ports"
 shows numerical port numbers but does not affect the resolution of
 host or user names.
-.SS "\-\-numeric-users"
+.SS "\-\-numeric\-users"
 shows numerical user IDs but does not affect the resolution of host or
 port names.
 
-.SS "\-\-protocol=\fIfamily \fR, \fB\-A"
+.SS "\-\-protocol=\fIfamily\fR, \fB\-A"
 Specifies the address families (perhaps better described as low level
 protocols) for which connections are to be shown.
 .I family 
 is a comma (',') separated list of address family keywords like
 .BR inet , 
+.BR inet6 ,
 .BR unix , 
 .BR ipx , 
 .BR ax25 , 
 .BR netrom ,
+.BR econet ,
+.BR ddp ,
 and
-.BR ddp .
+.BR bluetooth .
 This has the same effect as using the 
-.BR \-\-inet ,
-.BR \-\-unix " (" \-x ),
+.BR \-\-inet | -4 ,
+.BR \-\-inet6 | -6 ,
+.BR \-\-unix | -x ,
 .BR \-\-ipx ,
 .BR \-\-ax25 ,
 .BR \-\-netrom ,
+.BR \-\-ddp ,
 and
-.B \-\-ddp 
+.B \-\-bluetooth
 options.
 .P
 The address family
 .B inet
-includes raw, udp and tcp protocol sockets.
+(Iv4) includes raw, udp, udplite and tcp protocol sockets.
+.P
+The address family
+.B bluetooth
+(Iv4) includes l2cap and rfcomm protocol sockets.
 .SS "\-c, \-\-continuous"
 This will cause
 .B netstat
@@ -160,27 +198,30 @@ Display additional information.  Use this option twice for maximum detail.
 Include information related to networking timers.
 .SS "\-p, \-\-program"
 Show the PID and name of the program to which each socket belongs.
+A hyphen is shown if the socket belongs to the kernel (e.g. a kernel service,
+or the process has exited but the socket hasn't finished closing yet).
 .SS "\-l, \-\-listening"
 Show only listening sockets.  (These are omitted by default.)
 .SS "\-a, \-\-all"
 Show both listening and non-listening sockets.  With the
-.B --interfaces
-option, show interfaces that are not marked 
+.B \-\-interfaces
+option, show interfaces that are not up
 .SS "\-F"
 Print routing information from the FIB.  (This is the default.)
 .SS "\-C"
 Print routing information from the route cache.
-.IR UP .
 .P
 .SH OUTPUT
 .P
-.SS Active Internet connections \fR(TCP, UDP, raw)\fR
+.SS Active Internet connections \fR(TCP, UDP, UDPLite, raw)\fR
 .SS "Proto" 
-The protocol (tcp, udp, raw) used by the socket. 
-.SS "Recv-Q"
-The count of bytes not copied by the user program connected to this socket.
-.SS "Send-Q"
-The count of bytes not acknowledged by the remote host.
+The protocol (tcp, udp, udpl, raw) used by the socket. 
+.SS "Recv\-Q"
+Established: The count of bytes not copied by the user program connected to this socket.
+Listening: Since Kernel 2.6.18 this column contains the current syn backlog.
+.SS "Send\-Q"
+Established: The count of bytes not acknowledged by the remote host.
+Listening: Since Kernel 2.6.18 this column contains the maximum size of the syn backlog.
 .SS "Local Address" 
 Address and port number of the local end of the socket.  Unless the
 .BR \-\-numeric " (" \-n )
@@ -189,10 +230,10 @@ host name (FQDN), and the port number is translated into the
 corresponding service name.
 .SS "Foreign Address"
 Address and port number of the remote end of the socket.
-Analogous to "Local Address."
+Analogous to "Local Address".
 .SS "State"
 The state of the socket. Since there are no states in raw mode and usually no
-states used in UDP, this column may be left blank. Normally this can be one
+states used in UDP and UDPLite, this column may be left blank. Normally this can be one
 of several values:
 .TP
 .I
@@ -221,7 +262,7 @@ TIME_WAIT
 The socket is waiting after close to handle packets still in the network.
 .TP
 .I
-CLOSED
+CLOSE
 The socket is not being used.
 .TP
 .I
@@ -255,13 +296,44 @@ The username or the user id (UID) of the owner of the socket.
 .SS "PID/Program name"
 Slash-separated pair of the process id (PID) and process name of the 
 process that owns the socket.
-.B --program
+.B \-\-program
 causes this column to be included.  You will also need
 .I superuser
 privileges to see this information on sockets you don't own.  This
 identification information is not yet available for IPX sockets.
 .SS "Timer"
-(this needs to be written)
+TCP timer associated with this socket. The format is timer(a/b/c).
+The timer is one of the following values:
+.TP
+.I
+off
+There is no timer set for this socket.
+.TP
+.I
+on
+The retransmission timer is active for the socket.
+.TP
+.I
+keepalive
+The keepalive timer is active for the socket.
+.TP
+.I
+timewait
+The connection is closing and the timewait timer is active for the socket.
+.P
+The values in the brackets:
+.TP
+.I
+a
+Timer value.
+.TP
+.I
+b
+Number of retransmissions sent.
+.TP
+.I
+c
+Number of keepalives sent.
 .P
 .SS Active UNIX domain Sockets
 .SS "Proto" 
@@ -356,13 +428,6 @@ to the socket.
 .SS Active AX.25 sockets
 (this needs to be done by somebody who knows it)
 .PP
-.SH NOTES
-Starting with Linux release 2.2 
-.B netstat -i 
-does not show interface statistics for alias interfaces. To get per
-alias interface counters you need to setup explicit rules using the
-.BR ipchains(8) 
-command.  
 
 .SH FILES
 .ta
@@ -384,6 +449,9 @@ status information via the following files.
 
 .I /proc/net/udp
 -- UDP socket information
+
+.I /proc/net/udplite
+-- UDPLite socket information
 
 .I /proc/net/igmp
 -- IGMP multicast information
@@ -421,16 +489,23 @@ status information via the following files.
 .I /proc/net/ip_masquerade
 -- masqueraded connections
 
+.I /sys/kernel/debug/bluetooth/l2cap
+-- Bluetooth L2CAP information
+
+.I /sys/kernel/debug/bluetooth/rfcomm
+-- Bluetooth serial connections
+
 .I /proc/net/snmp
 -- statistics
 .fi
 .P
 .SH SEE ALSO
-.BR route (8), 
-.BR ifconfig (8), 
-.BR ipchains (8),
+.BR route (8),
+.BR ifconfig (8),
 .BR iptables (8),
-.BR proc (5)
+.BR proc (5),
+.BR ss (8),
+.BR ip (8)
 .P
 .SH BUGS
 Occasionally strange information may appear if a socket changes
@@ -438,12 +513,10 @@ as it is viewed. This is unlikely to occur.
 .P
 .SH AUTHORS
 The netstat user interface was written by Fred Baumgarten
-<dc6iq@insu1.etec.uni-karlsruhe.de> the man page basically
+<dc6iq@insu1.etec.uni\-karlsruhe.de>, the man page basically
 by Matt Welsh <mdw@tc.cornell.edu>. It was updated by
-Alan Cox <Alan.Cox@linux.org> but could do with a bit more
-work.  It was updated again by Tuan Hoang
-<tqhoang@bigfoot.com>.
-.br
-The man page and the command included in the net-tools
-package is totally rewritten by Bernd Eckenfels 
-<ecki@linux.de>.
+Alan Cox <Alan.Cox@linux.org>, updated again by Tuan Hoang
+<tqhoang@bigfoot.com>. The man page and the command included 
+in the net\-tools package is totally rewritten by Bernd Eckenfels 
+<ecki@linux.de>.  UDPLite options were added by Brian Micek
+<bmicek@gmail.com>

@@ -1,3 +1,13 @@
+/*
+ * ipx_sr.c       This files contains IPX related route manipulation methods.
+ *
+ * Part of net-tools, the Linux base networking tools
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
+ */
+
 #include "config.h"
 
 #if HAVE_AFIPX
@@ -31,6 +41,6 @@ int IPX_rinput(int action, int ext, char **args)
 {
 
     fprintf(stderr, _("IPX: this needs to be written\n"));
-    return (0);
+    return (E_NOSUPP);
 }
 #endif				/* HAVE_AFIPX */

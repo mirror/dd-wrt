@@ -1,13 +1,12 @@
 .\" Copyright (C) 2000 David A. Hinds -- dhinds@pcmcia.sourceforge.org
-.\" mii-tool.8 1.5 2000/04/25 22:58:19
 .\"
-.TH MII-TOOL 8 "2000/04/25 22:58:19" "net-tools"
+.TH MII\-TOOL 8 "2013\-02\-15" "net\-tools" "Linux System Administrator's Manual"
 
 .SH NAME
-mii-tool \- view, manipulate media-independent interface status
+mii\-tool \- view, manipulate media-independent interface status
 
 .SH SYNOPSIS
-.B mii-tool
+.B mii\-tool
 [\fB\-v\fR, \fB\-\-verbose\fR]
 [\fB\-V\fR, \fB\-\-version\fR]
 [\fB\-R\fR, \fB\-\-reset\fR]
@@ -16,7 +15,8 @@ mii-tool \- view, manipulate media-independent interface status
 [\fB\-l\fR, \fB\-\-log\fR]
 [\fB\-A\fR, \fB\-\-advertise=\fImedia,...\fR]
 [\fB\-F\fR, \fB\-\-force=\fImedia\fR]
-.RI [ "interface\ ..." ]
+[\fB\-p\fR, \fB\-\-phy=\fIaddr\fR]
+.RI "interface\ ..."
 
 .SH DESCRIPTION
 This utility checks or sets the status of a network interface's Media
@@ -32,18 +32,21 @@ single-speed hubs, are unable to autonegotiate.  To handle such
 devices, the MII protocol also allows for establishing a link by
 simply detecting either a 10baseT or 100baseT link beat.  The \fB\-F\fR
 or \fB\-\-force\fR options can be used to force the MII to operate in
-one mode, instead of autonegotiating.  The \fB\-A\fR and \fB-F\fR
+one mode, instead of autonegotiating.  The \fB\-A\fR and \fB\-F\fR
 options are mutually exclusive.
 .PP
 The default short output reports the negotiated link speed and link
-status for each interface.  If an interface or interfaces are not
-specified on the command line, then \fBmii-tool\fR will check any
-available interfaces from \fBeth0\fR through \fBeth7\fR.
+status for each interface.
 .SH OPTIONS
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
 Display more detailed MII status information.  If used twice, also
 display raw MII register contents.
+.br
+\fBAlert:\fR If used three times, will force reading all MII
+registers, including non standard ones. It's not guaranteed any
+valid answer from PHY while PHY communication can even hang.
+With driver e1000e will fail while reading register 0x07.
 .TP
 \fB\-V\fR, \fB\-\-version\fR
 Display program version information.
@@ -59,7 +62,7 @@ Watch interface(s) and report changes in link status.  The MII
 interfaces are polled at one second intervals.
 .TP
 \fB\-l\fR, \fB\-\-log\fR
-Used with \fB-w\fR, records link status changes in the system log
+Used with \fB\-w\fR, records link status changes in the system log
 instead of printing on standard output.
 .TP
 \fB\-F\fI media\fR, \fB\-\-force=\fImedia\fR
@@ -71,8 +74,31 @@ Enable and restart autonegotiation, and advertise only the specified
 media technologies.  Multiple technologies should be separated by
 commas.  Valid media are \fB100baseT4\fR, \fB100baseTx-FD\fR,
 \fB100baseTx-HD\fR, \fB10baseT-FD\fR, and \fB10baseT-HD\fR.
+.TP
+\fB\-p\fI addr\fR, \fB\-\-phy=\fIaddr\fR
+Override the MII address provided by kernel with value \fBaddr\fR.
+
+.SH DIAGNOSTICS
+.TP
+SIOCGMIIPHY on 'eth?' failed: Invalid argument
+If the interface is not running (up), kernel will refuse to report its link state.
+.TP
+SIOCGMIIPHY on 'eth?' failed: Operation not permitted
+Most kernels restrict access to root.
+.TP
+SIOCGMIIPHY on 'eth?' failed: No such device
+This error is shown, if the kernel does not know about the named device.
+.TP
+SIOCGMIIPHY on 'eth?' failed: Operation not supported 
+The interface in question does not support MII queries. Most likely, it does not have 
+MII transceivers, at all.
 
 .SH AUTHORS
 David Hinds \- dhinds@pcmcia.sourceforge.org
 .br
 Donald Becker \- becker@scyld.com
+.br
+Bernd Eckenfels \- net-tools@lina.inka.de
+
+.SH SEE ALSO
+http://net-tools.sourceforge.net \- Homepage of the net-tools project

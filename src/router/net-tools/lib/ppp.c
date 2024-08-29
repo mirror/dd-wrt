@@ -8,7 +8,7 @@
  *              Copyright 1993 MicroWalt Corporation
  *
  *              Modified by Alan Cox, May 94 to cover NET-3
- *                       
+ *
  * Changes:
  * 980701 {1.12} Arnaldo Carvalho de Melo - GNU gettext instead of catgets
  *

@@ -1,359 +1,394 @@
 # Czech translation of net-tools
 # Copyright (C) 1999 Free Software Foundation, Inc.
-# Jiøí Pavlovskı <pavlovsk@ffcuni.cz>, 1999.
+# JiÅ™Ã­ PavlovskÃ½ <pavlovsk@ffcuni.cz>, 1999.
+# Petr Pisar <petr.pisar@atlas.cz>, 2009.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: net-tools-1.51\n"
-"POT-Creation-Date: 2000-02-14 02:31+0100\n"
-"PO-Revision-Date: 1999-08-29 23:20+0200\n"
-"Last-Translator: Jiøí Pavlovskı <pavlovsk@ff.cuni.cz>\n"
-"Language-Team: Czech <cs@li.org>\n"
+"Project-Id-Version: net-tools cvs-20090825\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-08-25 18:34+0200\n"
+"PO-Revision-Date: 2009-08-26 22:18+0200\n"
+"Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
+"Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-2\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../arp.c:110 ../arp.c:269
+#: ../arp.c:112 ../arp.c:279
+#, c-format
 msgid "arp: need host name\n"
-msgstr "arp: je tøeba jméno poèítaèe\n"
+msgstr "arp: je tÅ™eba jmÃ©no poÄÃ­taÄe\n"
 
-#: ../arp.c:207 ../arp.c:221
+#: ../arp.c:215 ../arp.c:230
 #, c-format
 msgid "No ARP entry for %s\n"
-msgstr "Pro %s neexistuje ARP polo¾ka\n"
+msgstr "Pro %s neexistuje ARP poloÅ¾ka\n"
 
-#: ../arp.c:239
+#: ../arp.c:248
 #, c-format
 msgid "arp: cant get HW-Address for `%s': %s.\n"
 msgstr "arp: HW adresu `%s' nelze zjistit: %s\n"
 
-#: ../arp.c:243
-msgid "arp: protocol type mismatch.\n"
-msgstr "arp: chybnì zadanı typ protokolu\n"
-
 #: ../arp.c:252
 #, c-format
+msgid "arp: protocol type mismatch.\n"
+msgstr "arp: chybnÄ› zadanÃ½ typ protokolu\n"
+
+#: ../arp.c:261
+#, c-format
 msgid "arp: device `%s' has HW address %s `%s'.\n"
-msgstr "arp: zaøízení `%s' má Hw adresu %s `%s'.\n"
+msgstr "arp: zaÅ™Ã­zenÃ­ â€%sâ€œ mÃ¡ HW adresu %s `%s'.\n"
 
-#: ../arp.c:282
+#: ../arp.c:293
+#, c-format
 msgid "arp: need hardware address\n"
-msgstr "arp: je tøeba hardwarová adresa\n"
+msgstr "arp: je tÅ™eba hardwarovÃ¡ adresa\n"
 
-#: ../arp.c:290
+#: ../arp.c:301
+#, c-format
 msgid "arp: invalid hardware address\n"
-msgstr "arp: nesprávná hardwarová adresa\n"
+msgstr "arp: nesprÃ¡vnÃ¡ hardwarovÃ¡ adresa\n"
 
-#: ../arp.c:387
+#: ../arp.c:398
 #, c-format
 msgid "arp: cannot open etherfile %s !\n"
-msgstr "arp: databázi ethernetovıch adres %s nelze otevøít!\n"
+msgstr "arp: databÃ¡zi ethernetovÃ½ch adres %s nelze otevÅ™Ã­t!\n"
 
-#: ../arp.c:403
+#: ../arp.c:414
 #, c-format
 msgid "arp: format error on line %u of etherfile %s !\n"
-msgstr "arp: syntaktická chyba na øádku %u databáze ethernetovıch adres %s!\n"
+msgstr "arp: syntaktickÃ¡ chyba na Å™Ã¡dku %u databÃ¡ze ethernetovÃ½ch adres %s!\n"
 
-#: ../arp.c:416
+#: ../arp.c:427
 #, c-format
 msgid "arp: cannot set entry on line %u of etherfile %s !\n"
 msgstr ""
-"arp: polo¾ku na øádku %u databáze ethernetovıch adres %s nelze nastavit!\n"
+"arp: poloÅ¾ku na Å™Ã¡dku %u databÃ¡ze ethernetovÃ½ch adres %s nelze nastavit!\n"
 
-#: ../arp.c:437
-msgid "Address\t\t\tHWtype\tHWaddress\t    Flags Mask\t\t  Iface\n"
-msgstr "Adresa\t\t\t HWtyp\t HWadresa\t     Pøíz  Maska\t\t   Rozhraní\n"
+#: ../arp.c:448
+#, c-format
+msgid ""
+"Address                  HWtype  HWaddress           Flags Mask            "
+"Iface\n"
+msgstr ""
+"Adresa                   HWtyp   HWadresa            PÅ™Ã­z. Maska           "
+"Rozhr\n"
 
-#: ../arp.c:467
+#: ../arp.c:476
+msgid "<from_interface>"
+msgstr "<z_rozhranÃ­>"
+
+#: ../arp.c:478
 msgid "(incomplete)"
-msgstr "(nekompletní)"
+msgstr "(nekompletnÃ­)"
 
-#: ../arp.c:484
+#: ../arp.c:495
 #, c-format
 msgid "%s (%s) at "
 msgstr "%s (%s) na "
 
-#: ../arp.c:490
+#: ../arp.c:501
+#, c-format
 msgid "<incomplete> "
-msgstr "<nekompletní>"
+msgstr "<nekompletnÃ­>"
 
-#: ../arp.c:496
+#: ../arp.c:507
 #, c-format
 msgid "netmask %s "
-msgstr "sí»ová maska %s "
+msgstr "sÃ­Å¥ovÃ¡ maska %s "
 
-#: ../arp.c:513
+#: ../arp.c:524
 #, c-format
 msgid "on %s\n"
 msgstr "na %s\n"
 
-#: ../arp.c:592
+#: ../arp.c:605
 #, c-format
 msgid "Entries: %d\tSkipped: %d\tFound: %d\n"
-msgstr "Polo¾ky: %d\tVynecháno: %d\tNalezeno: %d\n"
+msgstr "PoloÅ¾ky: %d\tVynechÃ¡no: %d\tNalezeno: %d\n"
 
-#: ../arp.c:596
+#: ../arp.c:609
 #, c-format
 msgid "%s (%s) -- no entry\n"
-msgstr "%s (%s) -- ¾ádná polo¾ka\n"
+msgstr "%s (%s) -- Å¾Ã¡dnÃ¡ poloÅ¾ka\n"
 
-#: ../arp.c:598
+#: ../arp.c:611
 #, c-format
 msgid "arp: in %d entries no match found.\n"
-msgstr "arp: ¾ádná z polo¾ek (%d) nevyhovuje.\n"
+msgstr "arp: Å¾Ã¡dnÃ¡ z poloÅ¾ek (%d) nevyhovuje.\n"
 
-#: ../arp.c:613
+#: ../arp.c:626
+#, c-format
 msgid ""
 "Usage:\n"
 "  arp [-vn]  [<HW>] [-i <if>] [-a] [<hostname>]             <-Display ARP "
 "cache\n"
 msgstr ""
-"Pou¾ití:\n"
-"  arp [-vn]  [<HW>] [-i <if> [-a] [<poèítaè>]             <-Zobrazí ARP "
+"PouÅ¾itÃ­:\n"
+"  arp [-vn]  [<HW>] [-i <rozhranÃ­>] [-a] [<poÄÃ­taÄ>]        <-ZobrazÃ­ ARP "
 "cache\n"
 
-#: ../arp.c:614
+#: ../arp.c:627
+#, c-format
 msgid ""
-"  arp [-v]          [-i <if>] -d  <hostname> [pub][nopub]    <-Delete ARP "
+"  arp [-v]          [-i <if>] -d  <host> [pub]               <-Delete ARP "
 "entry\n"
 msgstr ""
-"  arp [-v]          [-i <if>] -d <poèítaè> [pub][nopub]   <-Sma¾e polo¾ku "
+"  arp [-v]          [-i <rozhranÃ­>] -d <poÄÃ­taÄ> [pub]      <-SmaÅ¾e poloÅ¾ku "
 "ARP\n"
 
-#: ../arp.c:615
-#, fuzzy
+#: ../arp.c:628
+#, c-format
 msgid ""
-"  arp [-vnD] [<HW>] [-i <if>] -f  [<filename>]              <-Add entry from "
+"  arp [-vnD] [<HW>] [-i <if>] -f  [<filename>]            <-Add entry from "
 "file\n"
 msgstr ""
-"  arp [-vnD] [<HW>] [-i <if>] -f <soubor>                 <-Pøidá polo¾ku "
-"ze\n"
-"                                                          souboru\n"
+"  arp [-vnD] [<HW>] [-i <rozhranÃ­>] -f [<soubor>]     <-PÅ™idÃ¡ poloÅ¾ku ze "
+"souboru\n"
 
-#: ../arp.c:616
+#: ../arp.c:629
+#, c-format
 msgid ""
-"  arp [-v]   [<HW>] [-i <if>] -s  <hostname> <hwaddr> [temp][nopub] <-Add "
+"  arp [-v]   [<HW>] [-i <if>] -s  <host> <hwaddr> [temp]            <-Add "
 "entry\n"
 msgstr ""
-"  arp [-v]   [<HW> [-i <if> -s   <poèítaè> <hwadr> [temp][nopub] <-Pøidá "
-"polo¾ku\n"
+"  arp [-v]   [<HW>] [-i <rozhranÃ­>] -s <poÄÃ­taÄ> <hwadr> [temp]  <-PÅ™idÃ¡ "
+"poloÅ¾ku\n"
 
-#: ../arp.c:617
+#: ../arp.c:630
+#, c-format
 msgid ""
-"  arp [-v]   [<HW>] [-i <if>] -s  <hostname> <hwaddr> [netmask <nm>] pub  "
-"<-''-\n"
-msgstr ""
-"  arp [-v]   [<HW>] [-i <if>] -s <soubor> <hwadr> [sí»mask <èís>]  <-''-\n"
-
-#: ../arp.c:618
-msgid ""
-"  arp [-v]   [<HW>] [-i <if>] -Ds <hostname> <if> [netmask <nm>] pub      "
+"  arp [-v]   [<HW>] [-i <if>] -Ds <host> <if> [netmask <nm>] pub          "
 "<-''-\n"
 "\n"
 msgstr ""
-"  arp [-v]   [<HW> [-i <if> -Ds  <poèítaè> <if> [sí»mask <èís>] pub      "
-"<-''-\n"
+"  arp [-v]   [<HW>] [-i <rozhranÃ­>] -Ds <poÄÃ­taÄ> <rozhranÃ­> [netmask <ÄÃ­s>] "
+"pub\n"
+"                                                                 <-TotÃ©Å¾\n"
 
-#: ../arp.c:620
+#: ../arp.c:632
+#, c-format
 msgid ""
 "        -a                       display (all) hosts in alternative (BSD) "
 "style\n"
 msgstr ""
-"        -a                       zobrazí jmna v¹ech poèítaèù alternativním\n"
-"                                 (BSD) zpùsobem\n"
+"        -a                       zobrazÃ­ jmÃ©na vÅ¡ech poÄÃ­taÄÅ¯ alternativnÃ­m\n"
+"                                 (BSD) zpÅ¯sobem\n"
 
-#: ../arp.c:621
+#: ../arp.c:632
+#, c-format
+msgid ""
+"        -e                       display (all) hosts in default (Linux) "
+"style\n"
+msgstr ""
+"        -e                       zobrazÃ­ jmÃ©na vÅ¡ech poÄÃ­taÄÅ¯ implicitnÃ­m\n"
+"                                 (Linux) zpÅ¯sobem\n"
+
+#: ../arp.c:633
+#, c-format
 msgid "        -s, --set                set a new ARP entry\n"
-msgstr "        -s, --set                nastaví novou ARP polo¾ku\n"
+msgstr "        -s, --set                nastavÃ­ novou ARP poloÅ¾ku\n"
 
-#: ../arp.c:622
+#: ../arp.c:634
+#, c-format
 msgid "        -d, --delete             delete a specified entry\n"
-msgstr "        -d, --delete             sma¾e zadanou ARP polo¾ku\n"
+msgstr "        -d, --delete             smaÅ¾e zadanou ARP poloÅ¾ku\n"
 
-#: ../arp.c:623 ../netstat.c:1436 ../route.c:85
+#: ../arp.c:635 ../netstat.c:1520 ../route.c:86
+#, c-format
 msgid "        -v, --verbose            be verbose\n"
 msgstr ""
-"        -v, --verbose            bude vypisovat podrobné zprávy\n"
-"                                 o èinnosti\n"
+"        -v, --verbose            bude vypisovat podrobnÃ© zprÃ¡vy oÂ Äinnosti\n"
 
-#: ../arp.c:624 ../netstat.c:1437 ../route.c:86
-msgid "        -n, --numeric            dont resolve names\n"
-msgstr ""
-"        -n, --numeric            nebude pøevádìt èíselné adresy\n"
-"                                 na kanonická jména\n"
+#: ../arp.c:636 ../netstat.c:1522 ../route.c:87
+#, c-format
+msgid "        -n, --numeric            don't resolve names\n"
+msgstr "        -n, --numeric            nebude pÅ™evÃ¡dÄ›t jmÃ©na\n"
 
-#: ../arp.c:625
+#: ../arp.c:637
+#, c-format
 msgid ""
 "        -i, --device             specify network interface (e.g. eth0)\n"
-msgstr "        -i, --device             zadává sí»ové rozhraní (napø. eth0)\n"
+msgstr "        -i, --device             zadÃ¡vÃ¡ sÃ­Å¥ovÃ© rozhranÃ­ (napÅ™. eth0)\n"
 
-#: ../arp.c:626
+#: ../arp.c:638
+#, c-format
 msgid "        -D, --use-device         read <hwaddr> from given device\n"
-msgstr "        -D, --use-device         ète <hwadr> ze zadaného zaøízení\n"
+msgstr "        -D, --use-device         Äte <hwadr> ze zadanÃ©ho zaÅ™Ã­zenÃ­\n"
 
-#: ../arp.c:627
-#, fuzzy
+#: ../arp.c:639
+#, c-format
 msgid "        -A, -p, --protocol       specify protocol family\n"
-msgstr "         -r, --route              vypí¹e smìrovací tabulku\n"
+msgstr "        -A, -p, --protocol       urÄuje rodinu protokolÅ¯\n"
 
-#: ../arp.c:628
-#, fuzzy
+#: ../arp.c:640
+#, c-format
 msgid ""
-"        -f, --file               read new entries from file or from "
-"/etc/ethers\n"
+"        -f, --file               read new entries from file or from /etc/"
+"ethers\n"
 "\n"
 msgstr ""
-"        -f, --file               ète nové polo¾ky ze souboru\n"
-"\n"
+"        -f, --file               Äte novÃ© poloÅ¾ky ze souboru nebo zÂ /etc/"
+"ethers\n"
 
-#: ../arp.c:630 ../rarp.c:181
+#: ../arp.c:642 ../rarp.c:183
 #, c-format
 msgid "  <HW>=Use '-H <hw>' to specify hardware address type. Default: %s\n"
 msgstr ""
-"  <HW>=Pou¾ijte '-H <hw> pro zadání hardwarového typu adresy.\n"
-"  Implicitnì: %s\n"
+"  <HW>=PouÅ¾ijte '-H <hw> pro zadÃ¡nÃ­ hardwarovÃ©ho typu adresy.\n"
+"  ImplicitnÄ›: %s\n"
 
-#: ../arp.c:631 ../rarp.c:182
+#: ../arp.c:643 ../rarp.c:184
+#, c-format
 msgid "  List of possible hardware types (which support ARP):\n"
-msgstr "  Seznam mo¾nıch hardwarovıch typù (podporujících ARP):\n"
+msgstr "  Seznam moÅ¾nÃ½ch hardwarovÃ½ch typÅ¯ (podporujÃ­cÃ­ch ARP):\n"
 
-#: ../arp.c:664
+#: ../arp.c:677 ../arp.c:762
 #, c-format
 msgid "%s: hardware type not supported!\n"
-msgstr "hardwarovı typ %s není podporován!\n"
+msgstr "hardwarovÃ½ typ %s nenÃ­ podporovÃ¡n!\n"
 
-#: ../arp.c:668
+#: ../arp.c:681
 #, c-format
 msgid "%s: address family not supported!\n"
-msgstr "tøída adres %s není podporována!\n"
+msgstr "tÅ™Ã­da adres %s nenÃ­ podporovÃ¡na!\n"
 
-#: ../arp.c:703
+#: ../arp.c:716
+#, c-format
 msgid "arp: -N not yet supported.\n"
-msgstr "arp: pøepínaè -N není zatím podporován\n"
+msgstr "arp: pÅ™epÃ­naÄ -N nenÃ­ zatÃ­m podporovÃ¡n\n"
 
-#: ../arp.c:713
+#: ../arp.c:726
 #, c-format
 msgid "arp: %s: unknown address family.\n"
-msgstr "arp: neznámá tøída adres %s.\n"
+msgstr "arp: neznÃ¡mÃ¡ tÅ™Ã­da adres %s.\n"
 
-#: ../arp.c:722
+#: ../arp.c:735
 #, c-format
 msgid "arp: %s: unknown hardware type.\n"
-msgstr "arp: neznámı hardwarovı typ %s.\n"
+msgstr "arp: neznÃ¡mÃ½ hardwarovÃ½ typ %s.\n"
 
-#: ../arp.c:741
+#: ../arp.c:754
 #, c-format
 msgid "arp: %s: kernel only supports 'inet'.\n"
-msgstr "arp: %s: jádro podporuje pouze 'inet'.\n"
+msgstr "arp: %s: jÃ¡dro podporuje pouze 'inet'.\n"
 
-#: ../arp.c:746
+#: ../arp.c:767
 #, c-format
 msgid "arp: %s: hardware type without ARP support.\n"
-msgstr "arp: hardwarovı typ %s nepodporuje ARP.\n"
+msgstr "arp: hardwarovÃ½ typ %s nepodporuje ARP.\n"
 
-#: ../hostname.c:69
+#: ../hostname.c:71
 #, c-format
 msgid "Setting nodename to `%s'\n"
-msgstr "Nastavuji jméno uzlu na `%s'\n"
+msgstr "Nastavuji jmÃ©no uzlu na `%s'\n"
 
-#: ../hostname.c:74
+#: ../hostname.c:76
 #, c-format
 msgid "%s: you must be root to change the node name\n"
-msgstr "%s: jméno uzlu mù¾e zmìnit pouze superu¾ivatel\n"
+msgstr "%s: jmÃ©no uzlu mÅ¯Å¾e zmÄ›nit pouze superuÅ¾ivatel\n"
 
-#: ../hostname.c:77 ../hostname.c:97 ../hostname.c:116
+#: ../hostname.c:79 ../hostname.c:100 ../hostname.c:118
 #, c-format
 msgid "%s: name too long\n"
-msgstr "jméno %s je pøíli¹ dlouhé\n"
+msgstr "jmÃ©no %s je pÅ™Ã­liÅ¡ dlouhÃ©\n"
 
-#: ../hostname.c:89
+#: ../hostname.c:92
 #, c-format
 msgid "Setting hostname to `%s'\n"
-msgstr "Nastavuji jméno poèítaèe na `%s'\n"
+msgstr "Nastavuji jmÃ©no poÄÃ­taÄe na `%s'\n"
 
-#: ../hostname.c:94
+#: ../hostname.c:97
 #, c-format
 msgid "%s: you must be root to change the host name\n"
-msgstr "%s: jméno poèítaèe mù¾e zmìnit pouze superu¾ivatel\n"
+msgstr "%s: jmÃ©no poÄÃ­taÄe mÅ¯Å¾e zmÄ›nit pouze superuÅ¾ivatel\n"
 
-#: ../hostname.c:108
+#: ../hostname.c:110
 #, c-format
 msgid "Setting domainname to `%s'\n"
-msgstr "Nastavuji jméno domény na `%s'\n"
+msgstr "Nastavuji jmÃ©no domÃ©ny na `%s'\n"
 
-#: ../hostname.c:113
+#: ../hostname.c:115
 #, c-format
 msgid "%s: you must be root to change the domain name\n"
-msgstr "%s: jméno domény mù¾e zmìnit pouze superu¾ivatel\n"
+msgstr "%s: jmÃ©no domÃ©ny mÅ¯Å¾e zmÄ›nit pouze superuÅ¾ivatel\n"
 
-#: ../hostname.c:131
+#: ../hostname.c:132
 #, c-format
 msgid "Resolving `%s' ...\n"
-msgstr "Vyhledávám `%s' ...\n"
+msgstr "VyhledÃ¡vÃ¡m `%s' ...\n"
 
-#: ../hostname.c:137
+#: ../hostname.c:138
 #, c-format
 msgid "Result: h_name=`%s'\n"
-msgstr "Vısledek: h_name=`%s'\n"
+msgstr "VÃ½sledek: h_name=`%s'\n"
 
-#: ../hostname.c:142
+#: ../hostname.c:143
 #, c-format
 msgid "Result: h_aliases=`%s'\n"
-msgstr "Vısledek: h_aliases=`%s'\n"
+msgstr "VÃ½sledek: h_aliases=`%s'\n"
 
-#: ../hostname.c:147
+#: ../hostname.c:148
 #, c-format
 msgid "Result: h_addr_list=`%s'\n"
-msgstr "Vısledek: h_addr_list=`%s'\n"
+msgstr "VÃ½sledek: h_addr_list=`%s'\n"
 
 #: ../hostname.c:209
 #, c-format
 msgid "%s: can't open `%s'\n"
-msgstr "%s: `%s' nelze otevøít\n"
+msgstr "%s: `%s' nelze otevÅ™Ã­t\n"
 
 #: ../hostname.c:223
+#, c-format
 msgid "Usage: hostname [-v] {hostname|-F file}      set hostname (from file)\n"
 msgstr ""
-"Pou¾ití:\n"
-"    hostname [-v] {jméno|-F soubor}       nastaví jméno poèítaèe (ze "
+"PouÅ¾itÃ­:\n"
+"    hostname [-v] {jmÃ©no|-F soubor}       nastavÃ­ jmÃ©no poÄÃ­taÄe (ze "
 "souboru)\n"
 
 #: ../hostname.c:224
+#, c-format
 msgid ""
 "       domainname [-v] {nisdomain|-F file}   set NIS domainname (from file)\n"
 msgstr ""
-"    domainname [-v] {jméno|-F soubor}     nastaví jméno NIS domény (ze\n"
+"    domainname [-v] {jmÃ©no|-F soubor}     nastavÃ­ jmÃ©no NIS domÃ©ny (ze\n"
 "                                          souboru)\n"
 
 #: ../hostname.c:226
+#, c-format
 msgid ""
 "       nodename [-v] {nodename|-F file}      set DECnet node name (from "
 "file)\n"
 msgstr ""
-"    nodename [-v] {jméno|-F soubor}       nastaví jméno DECnet uzlu (ze\n"
+"    nodename [-v] {jmÃ©no|-F soubor}       nastavÃ­ jmÃ©no DECnet uzlu (ze\n"
 "                                          souboru)\n"
 
 #: ../hostname.c:228
+#, c-format
 msgid "       hostname [-v] [-d|-f|-s|-a|-i|-y|-n]  display formatted name\n"
-msgstr "    hostname [-v] [-d|-f|-s|-a|-i|-y|-n]  vypí¹e formátované jméno\n"
+msgstr "    hostname [-v] [-d|-f|-s|-a|-i|-y|-n]  vypÃ­Å¡e formÃ¡tovanÃ© jmÃ©no\n"
 
 #: ../hostname.c:229
+#, c-format
 msgid ""
 "       hostname [-v]                         display hostname\n"
 "\n"
 msgstr ""
-"    hostname [-v]                         vypí¹e jméno poèítaèe\n"
+"    hostname [-v]                         vypÃ­Å¡e jmÃ©no poÄÃ­taÄe\n"
 "\n"
 
 #: ../hostname.c:230
+#, c-format
 msgid ""
 "       hostname -V|--version|-h|--help       print info and exit\n"
 "\n"
 msgstr ""
-"    hostname -V|--version|-h|--help       vypí¹e informace a skonèí\n"
+"    hostname -V|--version|-h|--help       vypÃ­Å¡e informace a skonÄÃ­\n"
 "\n"
 
 #: ../hostname.c:231
+#, c-format
 msgid ""
 "    dnsdomainname=hostname -d, {yp,nis,}domainname=hostname -y\n"
 "\n"
@@ -362,42 +397,51 @@ msgstr ""
 "\n"
 
 #: ../hostname.c:232
+#, c-format
 msgid "    -s, --short           short host name\n"
-msgstr "    -s, --short           krátké jméno poèítaèe\n"
+msgstr "    -s, --short           krÃ¡tkÃ© jmÃ©no poÄÃ­taÄe\n"
 
 #: ../hostname.c:233
+#, c-format
 msgid "    -a, --alias           alias names\n"
-msgstr "    -a, --alias           pøezdívky\n"
+msgstr "    -a, --alias           pÅ™ezdÃ­vky\n"
 
 #: ../hostname.c:234
+#, c-format
 msgid "    -i, --ip-address      addresses for the hostname\n"
-msgstr "    -i, --ip-address      adresy odpovídající jménu poèítaèe\n"
+msgstr "    -i, --ip-address      adresy odpovÃ­dajÃ­cÃ­ jmÃ©nu poÄÃ­taÄe\n"
 
 #: ../hostname.c:235
+#, c-format
 msgid "    -f, --fqdn, --long    long host name (FQDN)\n"
-msgstr "    -f, --fqdn, --long    dlouhé jméno poèítaèe (kanonické)\n"
+msgstr "    -f, --fqdn, --long    dlouhÃ© jmÃ©no poÄÃ­taÄe (kanonickÃ©)\n"
 
 #: ../hostname.c:236
+#, c-format
 msgid "    -d, --domain          DNS domain name\n"
-msgstr "    -d, --domain          jméno DNS domény\n"
+msgstr "    -d, --domain          jmÃ©no DNS domÃ©ny\n"
 
 #: ../hostname.c:237
+#, c-format
 msgid "    -y, --yp, --nis       NIS/YP domainname\n"
-msgstr "    -y, --yp, --nis       jméno NIS/YP domény\n"
+msgstr "    -y, --yp, --nis       jmÃ©no NIS/YP domÃ©ny\n"
 
 #: ../hostname.c:239
+#, c-format
 msgid "    -n, --node            DECnet node name\n"
-msgstr "    -n, --node            jméno DECnet uzlu\n"
+msgstr "    -n, --node            jmÃ©no DECnet uzlu\n"
 
 #: ../hostname.c:241
+#, c-format
 msgid ""
 "    -F, --file            read hostname or NIS domainname from given file\n"
 "\n"
 msgstr ""
-"    -F, --file            ète jméno poèítaèe èi nis domény ze souboru\n"
+"    -F, --file            Äte jmÃ©no poÄÃ­taÄe Äi nis domÃ©ny ze souboru\n"
 "\n"
 
 #: ../hostname.c:243
+#, c-format
 msgid ""
 "   This command can read or set the hostname or the NIS domainname. You can\n"
 "   also read the DNS domain or the FQDN (fully qualified domain name).\n"
@@ -405,329 +449,140 @@ msgid ""
 "   FQDN (Fully Qualified Domain Name) and the DNS domain name (which is\n"
 "   part of the FQDN) in the /etc/hosts file.\n"
 msgstr ""
+"   Tento pÅ™Ã­kaz mÅ¯Å¾e pÅ™eÄÃ­st nebo nastavit nÃ¡zev stroje nebo domÃ©novÃ© jmÃ©no\n"
+"   NIS. NaÄÃ­st lze rovnÄ›Å¾ DNSâ€¯domÃ©nu nebo FQDN (plnÄ› kvalifikovanÃ© domÃ©novÃ©\n"
+"   jmÃ©no). Pokud pro vyhledÃ¡vÃ¡nÃ­ strojÅ¯ nepouÅ¾Ã­vÃ¡te bind nebo NIS, mÅ¯Å¾ete\n"
+"   zmÄ›nit FQDN (Fully Qualified Domain Name) a domÃ©novÃ© jmÃ©no DNS (coÅ¾ je\n"
+"   ÄÃ¡st FQDN) vÂ souboru /etc/hosts.\n"
 
-#: ../hostname.c:338
+#: ../hostname.c:340
 #, c-format
 msgid "%s: You can't change the DNS domain name with this command\n"
-msgstr "%s: Tímto pøíkazem nelze DNS jméno domény zmìnit\n"
+msgstr "%s: TÃ­mto pÅ™Ã­kazem nelze DNS jmÃ©no domÃ©ny zmÄ›nit\n"
 
-#: ../hostname.c:339
+#: ../hostname.c:341
+#, c-format
 msgid ""
 "\n"
 "Unless you are using bind or NIS for host lookups you can change the DNS\n"
 msgstr ""
 "\n"
-"Pokud nepou¾íváte bind èi NIS pro vyhledávání jmen poèítaèù, pak mù¾ete "
-"zmìnit\n"
+"Pokud nepouÅ¾Ã­vÃ¡te bind Äi NIS pro vyhledÃ¡vÃ¡nÃ­ jmen poÄÃ­taÄÅ¯, pak mÅ¯Å¾ete "
+"zmÄ›nit\n"
 
-#: ../hostname.c:340
+#: ../hostname.c:342
+#, c-format
 msgid "domain name (which is part of the FQDN) in the /etc/hosts file.\n"
 msgstr ""
-"DNS jméno domény (je souèástí kanonického jména poèítaèe) v souboru\n"
+"DNS jmÃ©no domÃ©ny (je souÄÃ¡stÃ­ kanonickÃ©ho jmÃ©na poÄÃ­taÄe) v souboru\n"
 "/etc/hosts\n"
 
-#: ../hostname.c:357
+#: ../hostname.c:359
 #, c-format
 msgid "gethostname()=`%s'\n"
 msgstr "gethostname()=`%s'\n"
 
-#: ../hostname.c:374
+#: ../hostname.c:376
 #, c-format
 msgid "getdomainname()=`%s'\n"
 msgstr "getdomainname()=`%s'\n"
 
-#: ../hostname.c:389
+#: ../hostname.c:391
 #, c-format
 msgid "getnodename()=`%s'\n"
 msgstr "getnodename()=`%s'\n"
 
-#: ../ifconfig.c:159
+#: ../ifconfig.c:107 ../netstat.c:1482
 #, c-format
-msgid "%-9.9s Link encap:%s  "
-msgstr "%-9.9s Zapouzdøení:%s  "
+msgid ""
+"Iface   MTU Met   RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR "
+"Flg\n"
+msgstr ""
+"Rozhr   MTU Met  PÅ˜-OK PÅ˜-CHYB PÅ˜-ZAH PÅ˜-PÅ˜T   OD-OK OD-CHYB OD-ZAH OD-PÅ˜T "
+"PÅ™Ã­zn\n"
 
-#: ../ifconfig.c:164
+#: ../ifconfig.c:132 ../ifconfig.c:164
 #, c-format
-msgid "HWaddr %s  "
-msgstr "HWadr %s  "
+msgid "%s: ERROR while getting interface flags: %s\n"
+msgstr "%s: CHYBA pÅ™i zÃ­skÃ¡vÃ¡nÃ­ pÅ™Ã­znakÅ¯ rozhranÃ­: %s\n"
 
-#: ../ifconfig.c:167
+#: ../ifconfig.c:156 ../ifconfig.c:188 ../ifconfig.c:794 ../ifconfig.c:887
+#: ../ifconfig.c:1000
 #, c-format
-msgid "Media:%s"
-msgstr "Médium:%s"
+msgid "No support for INET on this system.\n"
+msgstr "Tento systÃ©m nepodporuje INET.\n"
 
-#: ../ifconfig.c:169
-msgid "(auto)"
-msgstr "(auto)"
-
-#: ../ifconfig.c:176
+#: ../ifconfig.c:196
 #, c-format
-msgid "          %s addr:%s "
-msgstr "          %s adr:%s "
+msgid "%s: ERROR while testing interface flags: %s\n"
+msgstr "%s: CHYBA pÅ™i zkouÅ¡enÃ­ pÅ™Ã­znakÅ¯ rozhranÃ­: %s\n"
 
-#: ../ifconfig.c:179
+#: ../ifconfig.c:205
 #, c-format
-msgid " P-t-P:%s "
-msgstr " P-t-P:%s "
-
-# V ostatních katalozích se pøekládá Broadcast -> v¹esmìrové vysílání.
-# Tudi¾ bcast -> V¹esmìr :)
-#: ../ifconfig.c:182
-#, c-format
-msgid " Bcast:%s "
-msgstr " V¹esmìr:%s "
-
-#: ../ifconfig.c:184
-#, c-format
-msgid " Mask:%s\n"
-msgstr "Maska:%s\n"
-
-#: ../ifconfig.c:201
-#, c-format
-msgid "          inet6 addr: %s/%d"
-msgstr "          inet6-adr: %s/%d"
-
-#: ../ifconfig.c:203
-msgid " Scope:"
-msgstr " Rozsah:"
-
-#: ../ifconfig.c:206
-msgid "Global"
-msgstr "Globál"
-
-#: ../ifconfig.c:209
-msgid "Link"
-msgstr "Linka"
-
-#: ../ifconfig.c:212
-msgid "Site"
-msgstr "Stanovi¹tì"
-
-#: ../ifconfig.c:215
-msgid "Compat"
-msgstr "Kompatibilita"
-
-#: ../ifconfig.c:218
-msgid "Host"
-msgstr "Poèítaè"
-
-#: ../ifconfig.c:221
-msgid "Unknown"
-msgstr "Neznám."
-
-#: ../ifconfig.c:236
-#, c-format
-msgid "          IPX/Ethernet II addr:%s\n"
-msgstr "          IPX/Ethernet II adr: %s\n"
-
-#: ../ifconfig.c:239
-#, c-format
-msgid "          IPX/Ethernet SNAP addr:%s\n"
-msgstr "          IPX/Ethernet SNAP adr:%s\n"
-
-#: ../ifconfig.c:242
-#, c-format
-msgid "          IPX/Ethernet 802.2 addr:%s\n"
-msgstr "          IPX/Ethernet 802.2 adr:%s\n"
-
-#: ../ifconfig.c:245
-#, c-format
-msgid "          IPX/Ethernet 802.3 addr:%s\n"
-msgstr "          IPX/Ethernet 802.3 adr:%s\n"
-
-#: ../ifconfig.c:255
-#, c-format
-msgid "          EtherTalk Phase 2 addr:%s\n"
-msgstr "          EtherTalk Phase 2 adr:%s\n"
-
-#: ../ifconfig.c:264
-#, c-format
-msgid "          econet addr:%s\n"
-msgstr "          econet adr:%s\n"
-
-# Hic sunt leones ...
-#: ../ifconfig.c:270
-msgid "[NO FLAGS] "
-msgstr "[®ÁDNÉ PØÍZNAKY]"
-
-#: ../ifconfig.c:272
-msgid "UP "
-msgstr "AKTIVOVÁNO "
-
-#: ../ifconfig.c:274
-msgid "BROADCAST "
-msgstr "V©ESMÌROVÉ_VYSÍLÁNÍ "
-
-#: ../ifconfig.c:276
-msgid "DEBUG "
-msgstr "DEBUG "
-
-#: ../ifconfig.c:278
-msgid "LOOPBACK "
-msgstr "SMYÈKA "
-
-#: ../ifconfig.c:280
-msgid "POINTOPOINT "
-msgstr "POINTOPOINT "
-
-# ??
-#: ../ifconfig.c:282
-msgid "NOTRAILERS "
-msgstr "NOTRAILERS "
-
-#: ../ifconfig.c:284
-msgid "RUNNING "
-msgstr "BÌ®Í "
-
-#: ../ifconfig.c:286
-msgid "NOARP "
-msgstr "NEARP "
-
-#: ../ifconfig.c:288
-msgid "PROMISC "
-msgstr "PROMISK "
-
-#: ../ifconfig.c:290
-msgid "ALLMULTI "
-msgstr "ALLMULTI "
-
-#: ../ifconfig.c:292
-msgid "SLAVE "
-msgstr "SLAVE "
-
-#: ../ifconfig.c:294
-msgid "MASTER "
-msgstr "MASTER "
-
-#: ../ifconfig.c:296
-msgid "MULTICAST "
-msgstr "MULTICAST "
-
-#: ../ifconfig.c:299
-msgid "DYNAMIC "
-msgstr "DYNAMIC "
-
-#: ../ifconfig.c:302
-#, c-format
-msgid " MTU:%d  Metric:%d"
-msgstr " MTU:%d  Metrika:%d"
-
-#: ../ifconfig.c:306
-#, c-format
-msgid "  Outfill:%d  Keepalive:%d"
-msgstr "  Outfill:%d  Keepalive:%d"
-
-#: ../ifconfig.c:320
-#, c-format
-msgid "RX packets:%lu errors:%lu dropped:%lu overruns:%lu frame:%lu\n"
-msgstr "pøijmutıch paketù:%lu chyb:%lu zahozeno:%lu pøeteèení:%lu rámcù:%lu\n"
-
-#: ../ifconfig.c:325
-#, c-format
-msgid "             compressed:%lu\n"
-msgstr "             komprimováno:%lu\n"
-
-# carrier?
-#: ../ifconfig.c:329
-#, c-format
-msgid "TX packets:%lu errors:%lu dropped:%lu overruns:%lu carrier:%lu\n"
-msgstr "odeslanıch paketù:%lu chyb:%lu zahozeno:%lu pøeteèení:%lu pøenos:%lu\n"
-
-#: ../ifconfig.c:333
-#, c-format
-msgid "          collisions:%lu "
-msgstr "          kolizí:%lu "
-
-#: ../ifconfig.c:335
-#, c-format
-msgid "compressed:%lu "
-msgstr "komprimováno:%lu "
-
-#: ../ifconfig.c:337
-#, c-format
-msgid "txqueuelen:%d "
-msgstr "délka odchozí fronty:%d "
-
-#: ../ifconfig.c:345
-#, c-format
-msgid "Interrupt:%d "
-msgstr "Pøeru¹ení:%d "
-
-#. Only print devices using it for
-#. I/O maps
-#: ../ifconfig.c:348
-#, c-format
-msgid "Base address:0x%x "
-msgstr "Vstupnì/Vıstupní port:0x%x "
-
-#: ../ifconfig.c:350
-#, c-format
-msgid "Memory:%lx-%lx "
-msgstr "Pamì»:%lx-%lx "
-
-#: ../ifconfig.c:353
-#, c-format
-msgid "DMA chan:%x "
-msgstr "Kanál DMA:%x "
-
-#: ../ifconfig.c:384 ../ifconfig.c:405
-#, c-format
-msgid "%s: unknown interface: %s\n"
-msgstr "%s: rozhraní %s není známo\n"
-
-#: ../ifconfig.c:421
 msgid ""
 "Usage:\n"
-"  ifconfig [-a] [-i] [-v] <interface> [[<AF>] <address>]\n"
+"  ifconfig [-a] [-v] [-s] <interface> [[<AF>] <address>]\n"
 msgstr ""
-"Pou¾ití:\n"
-"  ifconfig [-a] [-i] [-v] <rozhraní> [[<AF>] <adresa>]\n"
+"PouÅ¾itÃ­:\n"
+"  ifconfig [-a] [-v] [-s] <rozhranÃ­> [[<AF>] <adresa>]\n"
 
-#: ../ifconfig.c:425
+#: ../ifconfig.c:207
+#, c-format
 msgid "  [add <address>[/<prefixlen>]]\n"
-msgstr "  [add <adresa>[/<délka prefixu>]]\n"
+msgstr "  [add <adresa>[/<dÃ©lka prefixu>]]\n"
 
-#: ../ifconfig.c:427
+#: ../ifconfig.c:208
+#, c-format
 msgid "  [del <address>[/<prefixlen>]]\n"
-msgstr "  [del <adresa>[/<délka prefixu>]]\n"
+msgstr "  [del <adresa>[/<dÃ©lka prefixu>]]\n"
 
-#: ../ifconfig.c:432
+#: ../ifconfig.c:209
+#, c-format
 msgid "  [[-]broadcast [<address>]]  [[-]pointopoint [<address>]]\n"
 msgstr "  [[-]broadcast [<adresa>]]  [[-]pointopoint [<adresa>]]\n"
 
-#: ../ifconfig.c:433
+#: ../ifconfig.c:210
+#, c-format
 msgid "  [netmask <address>]  [dstaddr <address>]  [tunnel <address>]\n"
 msgstr "  [netmask <adresa>]  [dstaddr <adresa>]  [tunnel <adresa>]\n"
 
-#: ../ifconfig.c:436
+#: ../ifconfig.c:213
+#, c-format
 msgid "  [outfill <NN>] [keepalive <NN>]\n"
 msgstr "  [outfill <NN>] [keepalive <NN>]\n"
 
-#: ../ifconfig.c:438
+#: ../ifconfig.c:215
+#, c-format
 msgid "  [hw <HW> <address>]  [metric <NN>]  [mtu <NN>]\n"
 msgstr "  [hw <HW> <adresa>]  [metric <NN>]  [mtu <NN>]\n"
 
-#: ../ifconfig.c:439
+#: ../ifconfig.c:216
+#, c-format
 msgid "  [[-]trailers]  [[-]arp]  [[-]allmulti]\n"
 msgstr "  [[-]trailers]  [[-]arp]  [[-]allmulti]\n"
 
-#: ../ifconfig.c:440
+#: ../ifconfig.c:217
+#, c-format
 msgid "  [multicast]  [[-]promisc]\n"
 msgstr "  [multicast]  [[-]promisc]\n"
 
-#: ../ifconfig.c:441
+#: ../ifconfig.c:218
+#, c-format
 msgid "  [mem_start <NN>]  [io_addr <NN>]  [irq <NN>]  [media <type>]\n"
 msgstr "  [mem_start <NN>]  [io_addr <NN>]  [irq <NN>]  [media <typ>]\n"
 
-#: ../ifconfig.c:443
+#: ../ifconfig.c:220
+#, c-format
 msgid "  [txqueuelen <NN>]\n"
-msgstr "  [txqueuelen délka]\n"
+msgstr "  [txqueuelen <dÃ©lka>]\n"
 
-#: ../ifconfig.c:446
+#: ../ifconfig.c:223
+#, c-format
 msgid "  [[-]dynamic]\n"
 msgstr "  [[-]dynamic]\n"
 
-#: ../ifconfig.c:448
+#: ../ifconfig.c:225
+#, c-format
 msgid ""
 "  [up|down] ...\n"
 "\n"
@@ -735,601 +590,788 @@ msgstr ""
 "  [up|down] ...\n"
 "\n"
 
-#: ../ifconfig.c:450
+#: ../ifconfig.c:227
+#, c-format
 msgid "  <HW>=Hardware Type.\n"
-msgstr "   <HW>=Hardwarovı Typ.\n"
+msgstr "   <HW> = HardwarovÃ½ Typ.\n"
 
-#: ../ifconfig.c:451
+#: ../ifconfig.c:228
+#, c-format
 msgid "  List of possible hardware types:\n"
-msgstr "  Seznam mo¾nıch hardwarovıch typù:\n"
+msgstr "  Seznam moÅ¾nÃ½ch hardwarovÃ½ch typÅ¯:\n"
 
 #. 1 = ARPable
-#: ../ifconfig.c:453
+#: ../ifconfig.c:230
 #, c-format
 msgid "  <AF>=Address family. Default: %s\n"
-msgstr "   <AF>=tøída adres. Implicitní: %s\n"
+msgstr "  <AF> = TÅ™Ã­da adres. ImplicitnÃ­: %s\n"
 
-#: ../ifconfig.c:454
+#: ../ifconfig.c:231
+#, c-format
 msgid "  List of possible address families:\n"
-msgstr "  Seznam mo¾nıch tøíd adres:\n"
+msgstr "  Seznam moÅ¾nÃ½ch tÅ™Ã­d adres:\n"
 
-#: ../ifconfig.c:593
+#: ../ifconfig.c:307
+#, c-format
+msgid "ifconfig: option `%s' not recognised.\n"
+msgstr "ifconfig: pÅ™epÃ­naÄ â€%sâ€œ nebyl rozpoznÃ¡n.\n"
+
+#: ../ifconfig.c:309 ../ifconfig.c:990
+#, c-format
+msgid "ifconfig: `--help' gives usage information.\n"
+msgstr "ifconfig: nÃ¡vod na pouÅ¾itÃ­ lze zÃ­skat pomocÃ­ â€--helpâ€œ.\n"
+
+#: ../ifconfig.c:384
+#, c-format
 msgid "Unknown media type.\n"
-msgstr "Neznámı typ média.\n"
+msgstr "NeznÃ¡mÃ½ typ mÃ©dia.\n"
 
-#: ../ifconfig.c:881
+#: ../ifconfig.c:421
+#, c-format
+msgid ""
+"Warning: Interface %s still in promisc mode... maybe other application is "
+"running?\n"
+msgstr ""
+"Pozor: RozhranÃ­ %s je stÃ¡le vÂ promiskuitnÃ­m reÅ¾imu. NebÄ›Å¾Ã­ jinÃ¡ aplikace?\n"
+
+#: ../ifconfig.c:433
+#, c-format
+msgid "Warning: Interface %s still in MULTICAST mode.\n"
+msgstr "Pozor: RozhranÃ­ %s je stÃ¡le vÂ reÅ¾imu MULTICAST.\n"
+
+#: ../ifconfig.c:445
+#, c-format
+msgid "Warning: Interface %s still in ALLMULTI mode.\n"
+msgstr "Pozor: RozhranÃ­ %s je stÃ¡le vÂ reÅ¾imu ALLMULTI.\n"
+
+#: ../ifconfig.c:469
+#, c-format
+msgid "Warning: Interface %s still in DYNAMIC mode.\n"
+msgstr "Pozor: RozhranÃ­ %s je stÃ¡le vÂ reÅ¾imu DYNAMIC.\n"
+
+#: ../ifconfig.c:527
+#, c-format
+msgid "Warning: Interface %s still in BROADCAST mode.\n"
+msgstr "Pozor: RozhranÃ­ %s je stÃ¡le vÂ reÅ¾imu VÅ ESMÄšR.\n"
+
+#: ../ifconfig.c:538
+#, c-format
+msgid "ifconfig: Error resolving '%s' for broadcast\n"
+msgstr "ifconfig: Chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ pro vÅ¡esmÄ›r\n"
+
+#: ../ifconfig.c:563
+#, c-format
+msgid "ifconfig: Error resolving '%s' for dstaddr\n"
+msgstr "ifconfig: Chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ pro adresu cÃ­le\n"
+
+#: ../ifconfig.c:586
+#, c-format
+msgid "ifconfig: Error resolving '%s' for netmask\n"
+msgstr "ifconfig: Chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ pro masku sÃ­tÄ›\n"
+
+#: ../ifconfig.c:665
+#, c-format
+msgid "Warning: Interface %s still in POINTOPOINT mode.\n"
+msgstr "Pozor: RozhranÃ­ %s je stÃ¡le vÂ DVOUBODOVÃ‰M reÅ¾imu.\n"
+
+#: ../ifconfig.c:676
+#, c-format
+msgid "ifconfig: Error resolving '%s' for pointopoint\n"
+msgstr "ifconfig: Chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ pro dvoubodovÃ© nastavenÃ­\n"
+
+#: ../ifconfig.c:700
+#, c-format
+msgid "hw address type `%s' has no handler to set address. failed.\n"
+msgstr ""
+"Pro typ hardwarovÃ© adresy â€%sâ€œ neexistuje obsluha na nastavovÃ¡nÃ­ adresy.\n"
+"Operace selhala.\n"
+
+#: ../ifconfig.c:709
 #, c-format
 msgid "%s: invalid %s address.\n"
-msgstr "%s: adresa %s je nesprávná.\n"
+msgstr "%s: adresa %s je nesprÃ¡vnÃ¡.\n"
 
-#: ../ifconfig.c:920 ../ifconfig.c:963 ../ifconfig.c:1011
+#: ../ifconfig.c:749
+#, c-format
+msgid "ifconfig: Error resolving '%s' for add\n"
+msgstr "ifconfig: Chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ pro adresu\n"
+
+#: ../ifconfig.c:760 ../ifconfig.c:850 ../ifconfig.c:938
+#, c-format
 msgid "No support for INET6 on this system.\n"
-msgstr "Tento systém nepodporuje INET6.\n"
+msgstr "Tento systÃ©m nepodporuje INET6.\n"
 
-#: ../ifconfig.c:983
+#: ../ifconfig.c:803 ../ifconfig.c:896
+#, c-format
+msgid "Interface %s not initialized\n"
+msgstr "RozhranÃ­ %s nenÃ­ inicializovÃ¡no\n"
+
+#: ../ifconfig.c:815 ../ifconfig.c:907
+#, c-format
+msgid "Bad address.\n"
+msgstr "ChybnÃ¡ adresa.\n"
+
+#: ../ifconfig.c:910
+#, c-format
 msgid "Address deletion not supported on this system.\n"
-msgstr "Tento systém nepodporuje mazání adres.\n"
+msgstr "Tento systÃ©m nepodporuje mazÃ¡nÃ­ adres.\n"
 
-#: ../ifconfig.c:1066
-msgid "No support for INET on this system.\n"
-msgstr "Tento systém nepodporuje INET.\n"
+#: ../ifconfig.c:982
+#, c-format
+msgid "ifconfig: Cannot set address for this protocol family.\n"
+msgstr "ifconfig: Pro tuto rodinu protokolÅ¯ nelze nastavit adresu.\n"
 
-#: ../ifconfig.c:1076
+#: ../ifconfig.c:989
+#, c-format
+msgid "ifconfig: error resolving '%s' to set address for af=%s\n"
+msgstr "ifconfig: chyba pÅ™i pÅ™eklÃ¡dÃ¡nÃ­ â€%sâ€œ za ÃºÄelem nastavenÃ­ adresy AF=%s\n"
+
+#: ../ifconfig.c:1010
+#, c-format
 msgid "No support for ECONET on this system.\n"
-msgstr "Tento systém nepodporuje ECONET.\n"
+msgstr "Tento systÃ©m nepodporuje ECONET.\n"
 
-#: ../ifconfig.c:1084
+#: ../ifconfig.c:1018
 #, c-format
 msgid "Don't know how to set addresses for family %d.\n"
-msgstr "Nevím, jak nastavit adresu tøídy %d.\n"
+msgstr "NevÃ­m, jak nastavit adresu tÅ™Ã­dy %d.\n"
 
-#: ../netstat.c:383
+#: ../ifconfig.c:1053
+#, c-format
+msgid "WARNING: at least one error occured. (%d)\n"
+msgstr "POZOR: Vyskytla se alespoÅˆ jedna chyba. (%d)\n"
+
+#: ../netstat.c:434
 #, c-format
 msgid ""
 "(No info could be read for \"-p\": geteuid()=%d but you should be root.)\n"
 msgstr ""
-"(Pro \"-p\" nelze získat ¾ádné informace: geteuid()=%d, ale je tøeba, aby "
-"jste\n"
-"byl superu¾ivatelem)\n"
+"(Pro â€-pâ€œ nelze zÃ­skat Å¾Ã¡dnÃ© informace: geteuid()=%d, ale je tÅ™eba, "
+"abyste\n"
+"byl superuÅ¾ivatelem)\n"
 
-#: ../netstat.c:387
+#: ../netstat.c:438
+#, c-format
 msgid ""
 "(Not all processes could be identified, non-owned process info\n"
 " will not be shown, you would have to be root to see it all.)\n"
 msgstr ""
-"(V¹echny procesy nemohly bıt identifikovány. Budou vypsaány informace\n"
-"pouze o procesech, jich¾ jste vlastníkem. Aby jste mohl vidìt v¹e, musel\n"
-"byste bıt superu¾ivatelem.)\n"
+"(VÅ¡echny procesy nemohly bÃ½t identifikovÃ¡ny. Budou vypsÃ¡ny informace\n"
+"pouze o procesech, jichÅ¾ jste vlastnÃ­kem. Abyste mohl vidÄ›t vÅ¡e, musel\n"
+"byste bÃ½t superuÅ¾ivatelem.)\n"
 
-#: ../netstat.c:394 ../netstat.c:1089 ../netstat.c:1166
+#: ../netstat.c:445 ../netstat.c:1186 ../netstat.c:1264
 msgid "LISTENING"
-msgstr "NASLOUCHÁ"
+msgstr "NASLOUCHÃ"
 
-#: ../netstat.c:395
+#: ../netstat.c:446
 msgid "CONN SENT"
-msgstr "CONN ODESLÁN"
+msgstr "CONN ODESLÃN"
 
-#: ../netstat.c:396 ../netstat.c:1168
+#: ../netstat.c:447 ../netstat.c:1266
 msgid "DISC SENT"
-msgstr "DISC ODESLÁN"
+msgstr "DISC ODESLÃN"
 
-#: ../netstat.c:397 ../netstat.c:464 ../netstat.c:809 ../netstat.c:1169
+#: ../netstat.c:448 ../netstat.c:515 ../netstat.c:898 ../netstat.c:1267
 msgid "ESTABLISHED"
 msgstr "SPOJENO"
 
-#: ../netstat.c:419
+#: ../netstat.c:470
+#, c-format
 msgid "Active NET/ROM sockets\n"
-msgstr "Aktivní NET/ROM sokety\n"
+msgstr "AktivnÃ­ NET/ROM sokety\n"
 
-#: ../netstat.c:420
+#: ../netstat.c:471
+#, c-format
 msgid ""
-"User       Dest       Source     Device  State        Vr/Vs    Send-Q  "
-"Recv-Q\n"
+"User       Dest       Source     Device  State        Vr/Vs    Send-Q  Recv-"
+"Q\n"
 msgstr ""
-"U¾ivatel   Cíl        Zdroj      Zaøízení Stav        Vr/Vs    Odch-F "
-"Pøích-F\n"
+"UÅ¾ivatel   CÃ­l        Zdroj      ZaÅ™Ã­zenÃ­ Stav        Vr/Vs    Odch-F PÅ™Ã­ch-"
+"F\n"
 
-#: ../netstat.c:430 ../netstat.c:1208
+#: ../netstat.c:481 ../netstat.c:1306
 #, c-format
 msgid "Problem reading data from %s\n"
-msgstr "Chyba pøi ètení dat z %s\n"
+msgstr "Chyba pÅ™i ÄtenÃ­ dat z %s\n"
 
-# následující radìji ponechat v originále ?!
-#: ../netstat.c:465
+# nÃ¡sledujÃ­cÃ­ radÄ›ji ponechat v originÃ¡le ?!
+#: ../netstat.c:516
 msgid "SYN_SENT"
 msgstr "SYN_SENT"
 
-#: ../netstat.c:466
+#: ../netstat.c:517
 msgid "SYN_RECV"
 msgstr "SYN_RECV"
 
-#: ../netstat.c:467
+#: ../netstat.c:518
 msgid "FIN_WAIT1"
 msgstr "FIN_WAIT1"
 
-#: ../netstat.c:468
+#: ../netstat.c:519
 msgid "FIN_WAIT2"
 msgstr "FIN_WAIT2"
 
-#: ../netstat.c:469
+#: ../netstat.c:520
 msgid "TIME_WAIT"
 msgstr "TIME_WAIT"
 
-#: ../netstat.c:470
+#: ../netstat.c:521
 msgid "CLOSE"
-msgstr "ZAVØEN"
+msgstr "ZAVÅ˜EN"
 
-#: ../netstat.c:471
+#: ../netstat.c:522
 msgid "CLOSE_WAIT"
 msgstr "CLOSE_WAIT"
 
-#: ../netstat.c:472
+#: ../netstat.c:523
 msgid "LAST_ACK"
-msgstr "POSLEDNÍ ACK"
+msgstr "POSLEDNÃ ACK"
 
-#: ../netstat.c:473
+#: ../netstat.c:524
 msgid "LISTEN"
-msgstr "LISTEN"
+msgstr "NASLOUCHÃ"
 
-#: ../netstat.c:474
+#: ../netstat.c:525
 msgid "CLOSING"
-msgstr "ZAVíRÁ"
+msgstr "ZAVÃRÃ"
 
-#: ../netstat.c:544
+#: ../netstat.c:596
 #, c-format
 msgid "warning, got bogus igmp6 line %d.\n"
-msgstr "varování, nesmyslnı igmp6 øádek %d.\n"
+msgstr "varovÃ¡nÃ­, nesmyslnÃ½ igmp6 Å™Ã¡dek %d.\n"
 
-#: ../netstat.c:549 ../netstat.c:587 ../netstat.c:670 ../netstat.c:803
-#: ../netstat.c:935 ../netstat.c:940
+#: ../netstat.c:601 ../netstat.c:639 ../netstat.c:763 ../netstat.c:892
+#: ../netstat.c:1029 ../netstat.c:1034
 #, c-format
 msgid "netstat: unsupported address family %d !\n"
-msgstr "netstat: tøída adres %d není podporována !\n"
+msgstr "netstat: tÅ™Ã­da adres %d nenÃ­ podporovÃ¡na !\n"
 
-#: ../netstat.c:562 ../netstat.c:567 ../netstat.c:575 ../netstat.c:582
+#: ../netstat.c:614 ../netstat.c:619 ../netstat.c:627 ../netstat.c:634
 #, c-format
 msgid "warning, got bogus igmp line %d.\n"
-msgstr "varování, nesmyslnı igmp øádek %d.\n"
+msgstr "varovÃ¡nÃ­, nesmyslnÃ½ igmp Å™Ã¡dek %d.\n"
 
-#: ../netstat.c:666
+#: ../netstat.c:677
+#, c-format
+msgid "Active X.25 sockets\n"
+msgstr "AktivnÃ­ X.25 sokety\n"
+
+#. IMHO, Vr/Vs is not very usefull --SF
+#: ../netstat.c:679
+#, c-format
+msgid ""
+"Dest         Source          Device  LCI  State        Vr/Vs  Send-Q  Recv-"
+"Q\n"
+msgstr ""
+"CÃ­l          Zdroj           ZaÅ™Ã­z   LCI  Stav         Vr/Vs  Odhod-F PÅ™Ã­ch-"
+"F\n"
+
+#: ../netstat.c:759
+#, c-format
 msgid "warning, got bogus tcp line.\n"
-msgstr "varování, nesmyslnı tcp øádek.\n"
+msgstr "varovÃ¡nÃ­, nesmyslnÃ½ tcp Å™Ã¡dek.\n"
 
-#: ../netstat.c:704 ../netstat.c:855 ../netstat.c:975
+#: ../netstat.c:798 ../netstat.c:947 ../netstat.c:1072
 #, c-format
 msgid "off (0.00/%ld/%d)"
 msgstr "vyp (0.00/%ld/%d)"
 
-#: ../netstat.c:708
-#, fuzzy, c-format
+#: ../netstat.c:802
+#, c-format
 msgid "on (%2.2f/%ld/%d)"
-msgstr "zap%d (%2.2f/%ld/%d)"
+msgstr "zapnut (%2.2f/%ld/%d)"
 
-#: ../netstat.c:713
-#, fuzzy, c-format
+#: ../netstat.c:807
+#, c-format
 msgid "keepalive (%2.2f/%ld/%d)"
-msgstr "zap%d (%2.2f/%ld/%d)"
+msgstr "keepalive (%2.2f/%ld/%d)"
 
-#: ../netstat.c:718
-#, fuzzy, c-format
+#: ../netstat.c:812
+#, c-format
 msgid "timewait (%2.2f/%ld/%d)"
-msgstr "zap%d (%2.2f/%ld/%d)"
+msgstr "timewait (%2.2f/%ld/%d)"
 
-#: ../netstat.c:723 ../netstat.c:864 ../netstat.c:985
+#: ../netstat.c:817 ../netstat.c:956 ../netstat.c:1082
 #, c-format
 msgid "unkn-%d (%2.2f/%ld/%d)"
 msgstr "nezn-%d (%2.2f/%ld/%d)"
 
-#: ../netstat.c:799
+#: ../netstat.c:888
+#, c-format
 msgid "warning, got bogus udp line.\n"
-msgstr "varování, nesmyslnı udp øádek.\n"
+msgstr "varovÃ¡nÃ­, nesmyslnÃ½ udp Å™Ã¡dek.\n"
 
-#: ../netstat.c:817 ../netstat.c:1075 ../netstat.c:1108
+#: ../netstat.c:906 ../netstat.c:1172 ../netstat.c:1205
 msgid "UNKNOWN"
-msgstr "NEZNÁM"
+msgstr "NEZNÃM"
 
-#: ../netstat.c:860 ../netstat.c:980
+#: ../netstat.c:952 ../netstat.c:1077
 #, c-format
 msgid "on%d (%2.2f/%ld/%d)"
 msgstr "zap%d (%2.2f/%ld/%d)"
 
-#: ../netstat.c:949
+#: ../netstat.c:1043
+#, c-format
 msgid "warning, got bogus raw line.\n"
-msgstr "varování, nesmyslnı 'raw' øádek.\n"
+msgstr "varovÃ¡nÃ­, nesmyslnÃ½ 'raw' Å™Ã¡dek.\n"
 
-#: ../netstat.c:1028
+#: ../netstat.c:1125
+#, c-format
 msgid "warning, got bogus unix line.\n"
-msgstr "varování, netstat 'unix' øádek.\n"
+msgstr "varovÃ¡nÃ­, netstat 'unix' Å™Ã¡dek.\n"
 
-#: ../netstat.c:1055
+#: ../netstat.c:1152
 msgid "STREAM"
 msgstr "STREAM"
 
-#: ../netstat.c:1059
+#: ../netstat.c:1156
 msgid "DGRAM"
 msgstr "DGRAM"
 
-#: ../netstat.c:1063
+#: ../netstat.c:1160
 msgid "RAW"
 msgstr "RAW"
 
-#: ../netstat.c:1067
+#: ../netstat.c:1164
 msgid "RDM"
 msgstr "RDM"
 
-#: ../netstat.c:1071
+#: ../netstat.c:1168
 msgid "SEQPACKET"
 msgstr "SEQPACKET"
 
-#: ../netstat.c:1080
+#: ../netstat.c:1177
 msgid "FREE"
-msgstr "NEALOKOVÁN"
+msgstr "NEALOKOVÃN"
 
-#: ../netstat.c:1096
+#: ../netstat.c:1193
 msgid "CONNECTING"
 msgstr "SPOJUJE"
 
-#: ../netstat.c:1100
+#: ../netstat.c:1197
 msgid "CONNECTED"
 msgstr "SPOJEN"
 
-#: ../netstat.c:1104
+#: ../netstat.c:1201
 msgid "DISCONNECTING"
 msgstr "ODPOJUJE"
 
-#: ../netstat.c:1135
+#: ../netstat.c:1233
+#, c-format
 msgid "Active UNIX domain sockets "
-msgstr "Aktivní sokety domény UNIX "
+msgstr "AktivnÃ­ sokety domÃ©ny UNIX "
 
-#: ../netstat.c:1137 ../netstat.c:1666
+#: ../netstat.c:1235 ../netstat.c:1801
+#, c-format
 msgid "(servers and established)"
-msgstr "(servery a navázaná spojení)"
+msgstr "(servery a navÃ¡zanÃ¡ spojenÃ­)"
 
-#: ../netstat.c:1140 ../netstat.c:1669
+#: ../netstat.c:1238 ../netstat.c:1804
+#, c-format
 msgid "(only servers)"
 msgstr "(pouze servery)"
 
-#: ../netstat.c:1142 ../netstat.c:1671
+#: ../netstat.c:1240 ../netstat.c:1806
+#, c-format
 msgid "(w/o servers)"
 msgstr "(w/o servery)"
 
-#: ../netstat.c:1145
+#: ../netstat.c:1243
+#, c-format
 msgid ""
 "\n"
-"Proto RefCnt Flags       Type       State         I-Node"
+"Proto RefCnt Flags       Type       State         I-Node  "
 msgstr ""
 "\n"
-"Proto Èítaè  Pøíznaky    Typ        Stav          I-Uzel"
+"Proto ÄŒÃ­taÄ  PÅ™Ã­znaky    Typ        Stav          I-Uzel  "
 
-#: ../netstat.c:1147
+#: ../netstat.c:1245
+#, c-format
 msgid " Path\n"
 msgstr " Cesta\n"
 
-#: ../netstat.c:1167
+#: ../netstat.c:1265
 msgid "SABM SENT"
-msgstr "SABM ODESLÁN"
+msgstr "SABM ODESLÃN"
 
-#: ../netstat.c:1170
+#: ../netstat.c:1268
 msgid "RECOVERY"
 msgstr "OBNOVA"
 
-#: ../netstat.c:1184
+#: ../netstat.c:1282
+#, c-format
 msgid "Active AX.25 sockets\n"
-msgstr "Aktivní AX.25 sokety\n"
+msgstr "AktivnÃ­ AX.25 sokety\n"
 
-#: ../netstat.c:1185
+#: ../netstat.c:1283
+#, c-format
 msgid "Dest       Source     Device  State        Vr/Vs    Send-Q  Recv-Q\n"
-msgstr "Cíl        Zdroj      Zaøíz   Stav         Vr/Vs    Odhod-F Pøích-F\n"
+msgstr "CÃ­l        Zdroj      ZaÅ™Ã­z   Stav         Vr/Vs    Odhod-F PÅ™Ã­ch-F\n"
 
-#: ../netstat.c:1228
+#: ../netstat.c:1326
 #, c-format
 msgid "problem reading data from %s\n"
-msgstr "chyba pøi ètení dat z %s\n"
+msgstr "chyba pÅ™i ÄtenÃ­ dat z %s\n"
 
-#: ../netstat.c:1279
+#: ../netstat.c:1396
+#, c-format
 msgid ""
 "Active IPX sockets\n"
 "Proto Recv-Q Send-Q Local Address              Foreign Address            "
 "State"
 msgstr ""
-"Aktivní IPX sokety\n"
-"Proto Pøích-F Odch-F Lokál adresa              Vzdálená adresa               "
-" Stav"
+"AktivnÃ­ IPX sokety\n"
+"Proto PÅ™Ã­ch-F Odch-F LokÃ¡l adresa              VzdÃ¡lenÃ¡ "
+"adresa                Stav"
 
-#: ../netstat.c:1281
+#: ../netstat.c:1398
+#, c-format
 msgid " User"
-msgstr " U¾ivatel"
+msgstr " UÅ¾ivatel"
 
-#: ../netstat.c:1315
+#: ../netstat.c:1432
 msgid "ESTAB"
 msgstr "SPOJEN"
 
-#: ../netstat.c:1323
+#: ../netstat.c:1440
 msgid "UNK."
 msgstr "NEZ."
 
-#: ../netstat.c:1367
-msgid "     - no statistics available -"
-msgstr "     - statistická data nejsou dostupná -"
-
-#: ../netstat.c:1370
-msgid "[NO FLAGS]"
-msgstr "[®ÁDNÉ PØÍZNAKY]"
-
-#: ../netstat.c:1400
+#: ../netstat.c:1478
+#, c-format
 msgid "Kernel Interface table\n"
-msgstr "Tabulka rozhraní v jádru\n"
+msgstr "Tabulka rozhranÃ­ v jÃ¡dru\n"
 
-#: ../netstat.c:1401
-msgid ""
-"Iface   MTU Met    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR "
-"Flg\n"
-msgstr ""
-"Rozhr   MTU Met    PØ-OK PØ-CHYB PØ-ZAH PØ-PØT   OD-OK OD-CHYB OD-ZAH OD-PØT "
-"PØZ\n"
-
-#: ../netstat.c:1404
+#: ../netstat.c:1486
 msgid "missing interface information"
-msgstr "chybí informace o rozhraní"
+msgstr "chybÃ­ informace o rozhranÃ­"
 
-#: ../netstat.c:1425
+#: ../netstat.c:1509
+#, c-format
 msgid ""
-"usage: netstat [-veenNcCF] [<Af>] -r         netstat "
-"{-V|--version|-h|--help}\n"
+"usage: netstat [-vWeenNcCF] [<Af>] -r         netstat {-V|--version|-h|--"
+"help}\n"
 msgstr ""
-"Pou¾ití: netstat [--veenNcCF] [<TA>] -r       netstat "
-"{-V|--version|-h|--help}\n"
+"PouÅ¾itÃ­: netstat [-vWeenNcCF] [<AF>] -r       netstat {-V|--version|-h|--"
+"help}\n"
 
-#: ../netstat.c:1426
-msgid "       netstat [-vnNcaeol] [<Socket> ...]\n"
-msgstr "         netstat [-vnNcaeol] [<Soket> ...]\n"
+#: ../netstat.c:1510
+#, c-format
+msgid "       netstat [-vWnNcaeol] [<Socket> ...]\n"
+msgstr "        netstat [-vWnNcaeol] [<Socket>â€¦]\n"
 
-#: ../netstat.c:1427
+#: ../netstat.c:1511
+#, c-format
 msgid ""
-"       netstat { [-veenNac] -i | [-cnNe] -M | -s }\n"
+"       netstat { [-vWeenNac] -i | [-cnNe] -M | -s [-6tuw] }\n"
 "\n"
 msgstr ""
-"         netstat { [-veenNac] -i | [-cnNe] -M | -s }\n"
+"       netstat { [-vWeenNac] -i | [-cnNe] -M | -s [-6tuw] }\n"
 "\n"
 
-#: ../netstat.c:1429
+#: ../netstat.c:1513
+#, c-format
 msgid "        -r, --route              display routing table\n"
-msgstr "         -r, --route              vypí¹e smìrovací tabulku\n"
+msgstr "         -r, --route              vypÃ­Å¡e smÄ›rovacÃ­ tabulku\n"
 
-#: ../netstat.c:1430
+#: ../netstat.c:1514
+#, c-format
 msgid "        -i, --interfaces         display interface table\n"
-msgstr "         -i, --interfaces         vypí¹e tabulku rozhraní\n"
+msgstr "         -i, --interfaces         vypÃ­Å¡e tabulku rozhranÃ­\n"
 
-#: ../netstat.c:1431
+#: ../netstat.c:1515
+#, c-format
 msgid "        -g, --groups             display multicast group memberships\n"
 msgstr ""
-"         -g, --groups             vypí¹e èlenství v multicast skupinách\n"
+"         -g, --groups             vypÃ­Å¡e ÄlenstvÃ­ v multicast skupinÃ¡ch\n"
 
-#: ../netstat.c:1432
+#: ../netstat.c:1516
+#, c-format
 msgid ""
 "        -s, --statistics         display networking statistics (like SNMP)\n"
 msgstr ""
-"         -s, --statistics         vypí¹e statistiku sí»ové aktivity (jako "
+"         -s, --statistics         vypÃ­Å¡e statistiku sÃ­Å¥ovÃ© aktivity (jako "
 "SNMP)\n"
 
-#: ../netstat.c:1434
+#: ../netstat.c:1518
+#, c-format
 msgid ""
 "        -M, --masquerade         display masqueraded connections\n"
 "\n"
 msgstr ""
-"         -M, --masquerade         vypí¹e maskovaná spojení\n"
+"         -M, --masquerade         vypÃ­Å¡e maÅ¡karÃ¡dovanÃ¡ spojenÃ­\n"
 "\n"
 
-#: ../netstat.c:1438 ../route.c:87
+#: ../netstat.c:1521
+#, c-format
+msgid "        -W, --wide               don't truncate IP addresses\n"
+msgstr "        -W, --wide               nezkracuje IP adresy\n"
+
+#: ../netstat.c:1523
+#, c-format
+msgid "        --numeric-hosts          don't resolve host names\n"
+msgstr "        --numeric-hosts          nepÅ™eklÃ¡dÃ¡ nÃ¡zvy strojÅ¯\n"
+
+#: ../netstat.c:1524
+#, c-format
+msgid "        --numeric-ports          don't resolve port names\n"
+msgstr "        --numeric-ports          nepÅ™eklÃ¡dÃ¡ nÃ¡zvy portÅ¯\n"
+
+#: ../netstat.c:1525
+#, c-format
+msgid "        --numeric-users          don't resolve user names\n"
+msgstr "        --numeric-users          nepÅ™eklÃ¡dÃ¡ uÅ¾ivatelskÃ© jmÃ©na\n"
+
+#: ../netstat.c:1526
+#, c-format
 msgid "        -N, --symbolic           resolve hardware names\n"
-msgstr "         -N, --symbolic           pøevede hw jména\n"
+msgstr "         -N, --symbolic           pÅ™evede hw jmÃ©na\n"
 
-#: ../netstat.c:1439 ../route.c:88
+#: ../netstat.c:1527 ../route.c:88
+#, c-format
 msgid "        -e, --extend             display other/more information\n"
-msgstr "         -e, --extend             vypí¹e podrobnìj¹í informace\n"
+msgstr "         -e, --extend             vypÃ­Å¡e podrobnÄ›jÅ¡Ã­ informace\n"
 
-#: ../netstat.c:1440
+#: ../netstat.c:1528
+#, c-format
 msgid "        -p, --programs           display PID/Program name for sockets\n"
 msgstr ""
-"         -p, --programs           vypí¹e PID/jméno programu pro sokety\n"
+"         -p, --programs           vypÃ­Å¡e PID/jmÃ©no programu pro sokety\n"
 
-#: ../netstat.c:1441
+#: ../netstat.c:1529
+#, c-format
 msgid ""
 "        -c, --continuous         continuous listing\n"
 "\n"
 msgstr ""
-"         -c, --continuous         nepøeru¹ovanı vıpis\n"
+"         -c, --continuous         nepÅ™eruÅ¡ovanÃ½ vÃ½pis\n"
 "\n"
 
-#: ../netstat.c:1442
+#: ../netstat.c:1530
+#, c-format
 msgid "        -l, --listening          display listening server sockets\n"
 msgstr ""
-"         -l, --listening          vypí¹e sokety, na nich¾ je nasloucháno\n"
+"         -l, --listening          vypÃ­Å¡e sokety, na nichÅ¾ je naslouchÃ¡no\n"
 
-#: ../netstat.c:1443
+#: ../netstat.c:1531
+#, c-format
 msgid ""
 "        -a, --all, --listening   display all sockets (default: connected)\n"
 msgstr ""
-"         -a, --all, --listening   vypí¹e v¹echny sokety (implicitnì: "
-"spojené)\n"
+"         -a, --all, --listening   vypÃ­Å¡e vÅ¡echny sokety (implicitnÄ›: "
+"spojenÃ©)\n"
 
-#: ../netstat.c:1444
+#: ../netstat.c:1532
+#, c-format
 msgid "        -o, --timers             display timers\n"
-msgstr "         -o, --timers             zobrazí èasovaèe\n"
+msgstr "         -o, --timers             zobrazÃ­ ÄasovaÄe\n"
 
-#: ../netstat.c:1445 ../route.c:89
+#: ../netstat.c:1533 ../route.c:89
+#, c-format
 msgid ""
 "        -F, --fib                display Forwarding Information Base "
 "(default)\n"
 msgstr ""
-"         -F, --fib                zobrazí Forwarding Infomation Base\n"
-"                                  (implicitní)\n"
+"         -F, --fib                zobrazÃ­ Forwarding Information Base\n"
+"                                  (implicitnÃ­)\n"
 
-#: ../netstat.c:1446 ../route.c:90
+#: ../netstat.c:1534 ../route.c:90
+#, c-format
 msgid ""
 "        -C, --cache              display routing cache instead of FIB\n"
 "\n"
-msgstr "         -C, --cache              místo FIB zobrazí smìrovací cache\n"
+msgstr "         -C, --cache              mÃ­sto FIB zobrazÃ­ smÄ›rovacÃ­ cache\n"
 
-#: ../netstat.c:1448
-msgid ""
-"  <Socket>={-t|--tcp} {-u|--udp} {-w|--raw} {-x|--unix} --ax25 --ipx "
-"--netrom\n"
-msgstr ""
-"  <Soket>={-t|--tcp} {-u|--udp} {-w|--raw} {-x|--unix} --ax25 --ipx "
-"--netrom\n"
-
-#: ../netstat.c:1449 ../route.c:92
+#: ../netstat.c:1536
 #, c-format
-msgid "  <AF>=Use '-A <af>' or '--<af>' Default: %s\n"
-msgstr "   <AF>=Pou¾ijte '-A <af>' or '--<af>' Implicitní: %s\n"
+msgid ""
+"  <Socket>={-t|--tcp} {-u|--udp} {-U|--udplite} {-w|--raw} {-x|--unix} --"
+"ax25 --ipx --netrom\n"
+msgstr ""
+"  <Socket>={-t|--tcp} {-u|--udp} {-U|--udplite} {-w|--raw} {-x|--unix} --"
+"ax25 --ipx --netrom\n"
 
-#: ../netstat.c:1450 ../route.c:93
+#: ../netstat.c:1537
+#, c-format
+msgid "  <AF>=Use '-6|-4' or '-A <af>' or '--<af>'; default: %s\n"
+msgstr "  <AF>=PouÅ¾ijte â€-6|-4â€œ nebo â€-A <af>â€œ nebo â€--<af>â€œ. ImplicitnÃ­: %s\n"
+
+#: ../netstat.c:1538 ../route.c:93
+#, c-format
 msgid "  List of possible address families (which support routing):\n"
-msgstr "  Seznam mo¾nıch tøíd adres (podporujících smìrování):\n"
+msgstr "  Seznam moÅ¾nÃ½ch tÅ™Ã­d adres (podporujÃ­cÃ­ch smÄ›rovÃ¡nÃ­):\n"
 
-#: ../netstat.c:1663
+#: ../netstat.c:1756
+#, c-format
+msgid "netstat: No statistics support for specified address family: %s\n"
+msgstr "netstat: Pro zadanou rodinu adres nenÃ­ podporovÃ¡na statistika: %s\n"
+
+#: ../netstat.c:1798
+#, c-format
 msgid "Active Internet connections "
-msgstr "Aktivní Internetová spojení "
+msgstr "AktivnÃ­ InternetovÃ¡ spojenÃ­ "
 
-#: ../netstat.c:1673
+#: ../netstat.c:1808
+#, c-format
 msgid ""
 "\n"
-"Proto Recv-Q Send-Q Local Address           Foreign Address         State    "
-"  "
+"Proto Recv-Q Send-Q Local Address           Foreign Address         "
+"State      "
 msgstr ""
 "\n"
-"Proto Pøích-F Odch-F Místní Adresa          Vzdálená Adresa         Stav     "
+"Proto PÅ™Ã­ch-F Odch-F MÃ­stnÃ­ Adresa          VzdÃ¡lenÃ¡ Adresa         Stav     "
 
-#: ../netstat.c:1675
+#: ../netstat.c:1810
+#, c-format
 msgid " User       Inode     "
-msgstr " U¾ivatel   I-uzel    "
+msgstr " UÅ¾ivatel   I-uzel    "
 
-#: ../netstat.c:1678
+#: ../netstat.c:1813
+#, c-format
 msgid " Timer"
-msgstr " Èasovaè"
+msgstr " ÄŒasovaÄ"
 
-#: ../netstat.c:1708
+#: ../netstat.c:1851
+#, c-format
 msgid "IPv4 Group Memberships\n"
-msgstr "Èlenství v IPv4 skupinách\n"
+msgstr "ÄŒlenstvÃ­ v IPv4 skupinÃ¡ch\n"
 
-#: ../netstat.c:1709
+#: ../netstat.c:1852
+#, c-format
 msgid "Interface       RefCnt Group\n"
-msgstr "Rozhraní        Èítaè  Skupina\n"
+msgstr "RozhranÃ­        ÄŒÃ­taÄ  Skupina\n"
 
-#: ../rarp.c:43
+#: ../rarp.c:45
 msgid "This kernel does not support RARP.\n"
-msgstr "Toto jádro nepodporuje RARP.\n"
+msgstr "Toto jÃ¡dro nepodporuje RARP.\n"
 
-#: ../rarp.c:82
+#: ../rarp.c:84
 #, c-format
 msgid "no RARP entry for %s.\n"
-msgstr "pro %s neexistuje RARP polo¾ka.\n"
+msgstr "pro %s neexistuje RARP poloÅ¾ka.\n"
 
-#: ../rarp.c:95
+#: ../rarp.c:97
 #, c-format
 msgid "%s: bad hardware address\n"
-msgstr "hardwarová adresa %s je nesprávná\n"
+msgstr "hardwarovÃ¡ adresa %s je nesprÃ¡vnÃ¡\n"
 
-#: ../rarp.c:127
+#: ../rarp.c:129
 #, c-format
 msgid "rarp: cannot open file %s:%s.\n"
-msgstr "rarp: soubor %s:%s nelze otevøít.\n"
+msgstr "rarp: soubor %s:%s nelze otevÅ™Ã­t.\n"
 
-#: ../rarp.c:139
+#: ../rarp.c:141
 #, c-format
 msgid "rarp: format error at %s:%u\n"
-msgstr "rarp: syntaktická chyba na øádku %2$u souboru %1$s\n"
+msgstr "rarp: syntaktickÃ¡ chyba na Å™Ã¡dku %2$u souboru %1$s\n"
 
-#: ../rarp.c:143 ../rarp.c:287
+#: ../rarp.c:145 ../rarp.c:290
 #, c-format
 msgid "rarp: %s: unknown host\n"
-msgstr "rarp: poèítaè %s není znám\n"
+msgstr "rarp: poÄÃ­taÄ %s nenÃ­ znÃ¡m\n"
 
-#: ../rarp.c:146
+#: ../rarp.c:148
 #, c-format
 msgid "rarp: cannot set entry from %s:%u\n"
-msgstr "rarp: nelze nastavit polo¾ku z øádku %2$u souboru %1$s\n"
-
-#: ../rarp.c:175
-msgid "Usage: rarp -a                               list entries in cache.\n"
-msgstr "Pou¾ití: rarp -a                            vypí¹e polo¾ky z cache.\n"
-
-#: ../rarp.c:176
-msgid "       rarp -d <hostname>                    delete entry from cache.\n"
-msgstr "         rarp -d <jméno>                    sma¾e polo¾ku z cache.\n"
+msgstr "rarp: nelze nastavit poloÅ¾ku z Å™Ã¡dku %2$u souboru %1$s\n"
 
 #: ../rarp.c:177
-msgid "       rarp [<HW>] -s <hostname> <hwaddr>    add entry to cache.\n"
-msgstr ""
-"         rarp [<HW>] -s <jméno> <hwadr>       pøidá polo¾ku do cache.\n"
+#, c-format
+msgid "Usage: rarp -a                               list entries in cache.\n"
+msgstr "PouÅ¾itÃ­: rarp -a                            vypÃ­Å¡e poloÅ¾ky z cache.\n"
 
 #: ../rarp.c:178
+#, c-format
+msgid "       rarp -d <hostname>                    delete entry from cache.\n"
+msgstr "         rarp -d <jmÃ©no>                    smaÅ¾e poloÅ¾ku z cache.\n"
+
+#: ../rarp.c:179
+#, c-format
+msgid "       rarp [<HW>] -s <hostname> <hwaddr>    add entry to cache.\n"
+msgstr ""
+"         rarp [<HW>] -s <jmÃ©no> <hwadr>       pÅ™idÃ¡ poloÅ¾ku do cache.\n"
+
+#: ../rarp.c:180
+#, c-format
 msgid ""
 "       rarp -f                               add entries from /etc/ethers.\n"
 msgstr ""
-"         rarp -f                               pøidá polo¾ky z /etc/ethers.\n"
+"         rarp -f                               pÅ™idÃ¡ poloÅ¾ky z /etc/ethers.\n"
 
-#: ../rarp.c:179
+#: ../rarp.c:181
+#, c-format
 msgid ""
 "       rarp -V                               display program version.\n"
 "\n"
 msgstr ""
-"         rarp -V                               vypí¹e oznaèení verze "
+"         rarp -V                               vypÃ­Å¡e oznaÄenÃ­ verze "
 "programu.\n"
 "\n"
 
-#: ../rarp.c:236
+#: ../rarp.c:239
 #, c-format
 msgid "%s: illegal option mix.\n"
-msgstr "Kombinace pøepínaèù %s je nesprávná.\n"
+msgstr "Kombinace pÅ™epÃ­naÄÅ¯ %s je nesprÃ¡vnÃ¡.\n"
 
-#: ../rarp.c:267
+#: ../rarp.c:270
 #, c-format
 msgid "rarp: %s: unknown hardware type.\n"
-msgstr "rarp: hardwarovı typ %s není znám.\n"
+msgstr "rarp: hardwarovÃ½ typ %s nenÃ­ znÃ¡m.\n"
 
-#: ../route.c:79
+#: ../route.c:80
+#, c-format
 msgid ""
 "Usage: route [-nNvee] [-FC] [<AF>]           List kernel routing tables\n"
 msgstr ""
-"Pou¾ití: route [-nNvee] [-FC] [<AF>]         Zobrazí smìrovací tabulky v "
-"jádru\n"
+"PouÅ¾itÃ­: route [-nNvee] [-FC] [<AF>]         ZobrazÃ­ smÄ›rovacÃ­ tabulky v "
+"jÃ¡dru\n"
 
-#: ../route.c:80
+#: ../route.c:81
+#, c-format
 msgid ""
 "       route [-v] [-FC] {add|del|flush} ...  Modify routing table for AF.\n"
 "\n"
 msgstr ""
-"       route [-v] [-FC] {add|del|flush} ...  Zmìní smìrovací tabulku pro "
+"       route [-v] [-FC] {add|del|flush} ...  ZmÄ›nÃ­ smÄ›rovacÃ­ tabulku pro "
 "AF.\n"
 "\n"
 
-#: ../route.c:82
+#: ../route.c:83
+#, c-format
 msgid ""
 "       route {-h|--help} [<AF>]              Detailed usage syntax for "
 "specified AF.\n"
 msgstr ""
-"       route {-h|--help [<AF>]               Nápovìda pro pou¾ití s AF.\n"
+"       route {-h|--help [<AF>]               NÃ¡povÄ›da pro pouÅ¾itÃ­ s AF.\n"
 
-#: ../route.c:83
+#: ../route.c:84
+#, c-format
 msgid ""
 "       route {-V|--version}                  Display version/author and "
 "exit.\n"
 "\n"
 msgstr ""
-"       route {-V|--version}                  Vypí¹e oznaèení verze a autora\n"
+"       route {-V|--version}                  VypÃ­Å¡e oznaÄenÃ­ verze a autora\n"
 "                                             programu.\n"
 
+#: ../route.c:92
+#, c-format
+msgid "  <AF>=Use '-A <af>' or '--<af>'; default: %s\n"
+msgstr "   <AF>=PouÅ¾ijte â€-A <af>â€œ nebo â€--<af>â€œ. ImplicitnÃ­: %s\n"
+
 #: ../plipconfig.c:66
+#, c-format
 msgid "Usage: plipconfig [-a] [-i] [-v] interface\n"
-msgstr "Pou¾ití: plipconfig [-a] [-i] [-v] rozhraní\n"
+msgstr "PouÅ¾itÃ­: plipconfig [-a] [-i] [-v] rozhranÃ­\n"
 
 #: ../plipconfig.c:67
+#, c-format
 msgid "                  [nibble NN] [trigger NN]\n"
 msgstr "                  [nibble NN] [trigger NN]\n"
 
 #: ../plipconfig.c:68
+#, c-format
 msgid "       plipconfig -V | --version\n"
 msgstr "       plipconfig -V | --version\n"
 
@@ -1338,25 +1380,30 @@ msgstr "       plipconfig -V | --version\n"
 msgid "%s\tnibble %lu  trigger %lu\n"
 msgstr "%s\tnibble %lu  trigger %lu\n"
 
-#: ../iptunnel.c:79
+#: ../iptunnel.c:85
+#, c-format
 msgid "Usage: iptunnel { add | change | del | show } [ NAME ]\n"
-msgstr "Pou¾ití: iptunnel { add | change | del | show } [ JMÉNO ]\n"
+msgstr "PouÅ¾itÃ­: iptunnel { add | change | del | show } [ JMÃ‰NO ]\n"
 
-#: ../iptunnel.c:80
+#: ../iptunnel.c:86
+#, c-format
 msgid ""
 "          [ mode { ipip | gre | sit } ] [ remote ADDR ] [ local ADDR ]\n"
 msgstr ""
-"          [ mode { ipip | gre | sit } ] [ vzdálená ADR ] [ místní ADR ]\n"
+"          [ mode { ipip | gre | sit } ] [ vzdÃ¡lenÃ¡ ADR ] [ mÃ­stnÃ­ ADR ]\n"
 
-#: ../iptunnel.c:81
+#: ../iptunnel.c:87
+#, c-format
 msgid "          [ [i|o]seq ] [ [i|o]key KEY ] [ [i|o]csum ]\n"
-msgstr "          [ [i|o]seq ] [ [i|o]key KLÍÈ ] [ [i|o]csum ]\n"
+msgstr "          [ [i|o]seq ] [ [i|o]key KLÃÄŒ ] [ [i|o]csum ]\n"
 
-#: ../iptunnel.c:82
+#: ../iptunnel.c:88
+#, c-format
 msgid "          [ ttl TTL ] [ tos TOS ] [ nopmtudisc ] [ dev PHYS_DEV ]\n"
-msgstr "          [ ttl TTL ] [ tos TOS ] [ nopmtudisc ] [ dev ZAØÍZENÍ ]\n"
+msgstr "          [ ttl TTL ] [ tos TOS ] [ nopmtudisc ] [ dev ZAÅ˜ÃZENÃ ]\n"
 
-#: ../iptunnel.c:83
+#: ../iptunnel.c:89
+#, c-format
 msgid ""
 "       iptunnel -V | --version\n"
 "\n"
@@ -1364,1068 +1411,1776 @@ msgstr ""
 "       iptunnel -V | --version\n"
 "\n"
 
-#: ../iptunnel.c:84
+#: ../iptunnel.c:90
+#, c-format
 msgid "Where: NAME := STRING\n"
-msgstr "Kde: JMÉNO := ØETÌZEC\n"
+msgstr "Kde: JMÃ‰NO := Å˜ETÄšZEC\n"
 
-#: ../iptunnel.c:85
+#: ../iptunnel.c:91
+#, c-format
 msgid "       ADDR := { IP_ADDRESS | any }\n"
 msgstr "       ADR := { IP-ADRESA | any }\n"
 
-#: ../iptunnel.c:86
+#: ../iptunnel.c:92
+#, c-format
 msgid "       TOS  := { NUMBER | inherit }\n"
-msgstr "       TOS  := { ÈÍSLO | inherit }\n"
+msgstr "       TOS  := { ÄŒÃSLO | inherit }\n"
 
-#: ../iptunnel.c:87
+#: ../iptunnel.c:93
+#, c-format
 msgid "       TTL  := { 1..255 | inherit }\n"
 msgstr "       TTL  := { 1..255 | inherit }\n"
 
-#: ../iptunnel.c:88
+#: ../iptunnel.c:94
+#, c-format
 msgid "       KEY  := { DOTTED_QUAD | NUMBER }\n"
-msgstr "       KLÍÈ  := { DOTTED_QUAD | ÈÍSLO }\n"
+msgstr "       KLÃÄŒ  := { DOTTED_QUAD | ÄŒÃSLO }\n"
 
-#: ../iptunnel.c:326
+#: ../iptunnel.c:332
+#, c-format
 msgid "Keys are not allowed with ipip and sit.\n"
-msgstr "S ipip a sit nejsou klíèe povoleny.\n"
+msgstr "S ipip a sit nejsou klÃ­Äe povoleny.\n"
 
-#: ../iptunnel.c:346
+#: ../iptunnel.c:352
+#, c-format
 msgid "Broadcast tunnel requires a source address.\n"
-msgstr "Tunel se v¹esmìrovım vysíláním vy¾aduje zdrojovou adresu.\n"
+msgstr "Tunel se vÅ¡esmÄ›rovÃ½m vysÃ­lÃ¡nÃ­m vyÅ¾aduje zdrojovou adresu.\n"
 
-#: ../iptunnel.c:361
+#: ../iptunnel.c:367
+#, c-format
 msgid "ttl != 0 and noptmudisc are incompatible\n"
-msgstr "ttl != 0 a noptmudisc se navzájem vyluèují\n"
+msgstr "ttl != 0 a noptmudisc se navzÃ¡jem vyluÄujÃ­\n"
 
-#: ../iptunnel.c:373
+#: ../iptunnel.c:379
+#, c-format
 msgid "cannot determine tunnel mode (ipip, gre or sit)\n"
-msgstr "re¾im tunelu (ipip, gre èi sit) nelze zjistit\n"
+msgstr "reÅ¾im tunelu (ipip, gre Äi sit) nelze zjistit\n"
 
-#: ../iptunnel.c:411
+#: ../iptunnel.c:417
 #, c-format
 msgid "%s: %s/ip  remote %s  local %s "
-msgstr "%s: %s/ip  vzdálenı %s  místní %s "
+msgstr "%s: %s/ip  vzdÃ¡lenÃ½ %s  mÃ­stnÃ­ %s "
 
-#: ../iptunnel.c:415
+#: ../iptunnel.c:421
 msgid "unknown"
-msgstr "Neznám."
-
-#: ../iptunnel.c:447
-msgid "  Drop packets out of sequence.\n"
-msgstr "  Zahazuje pakety mimo poøadí.\n"
-
-#: ../iptunnel.c:449
-msgid "  Checksum in received packet is required.\n"
-msgstr "  Pøijímané pakety musí mít kontrolní souèet.\n"
-
-# ???
-#: ../iptunnel.c:451
-msgid "  Sequence packets on output.\n"
-msgstr "  Øadí odchozí pakety.\n"
+msgstr "NeznÃ¡m."
 
 #: ../iptunnel.c:453
+#, c-format
+msgid "  Drop packets out of sequence.\n"
+msgstr "  Zahazuje pakety mimo poÅ™adÃ­.\n"
+
+#: ../iptunnel.c:455
+#, c-format
+msgid "  Checksum in received packet is required.\n"
+msgstr "  PÅ™ijÃ­manÃ© pakety musÃ­ mÃ­t kontrolnÃ­ souÄet.\n"
+
+# ???
+#: ../iptunnel.c:457
+#, c-format
+msgid "  Sequence packets on output.\n"
+msgstr "  Å˜adÃ­ odchozÃ­ pakety.\n"
+
+#: ../iptunnel.c:459
+#, c-format
 msgid "  Checksum output packets.\n"
-msgstr "  Odchozí pakety budou mít kontrolní souèet.\n"
+msgstr "  OdchozÃ­ pakety budou mÃ­t kontrolnÃ­ souÄet.\n"
 
-#: ../iptunnel.c:481
+#: ../iptunnel.c:487
+#, c-format
 msgid "Wrong format of /proc/net/dev. Sorry.\n"
-msgstr "Lituji, formát /proc/net/dev je chybnı.\n"
+msgstr "Lituji, formÃ¡t /proc/net/dev je chybnÃ½.\n"
 
-#: ../iptunnel.c:494
+#: ../iptunnel.c:500
 #, c-format
 msgid "Failed to get type of [%s]\n"
-msgstr "Typ [%s] se nepodaøilo zjistit.\n"
+msgstr "Typ [%s] se nepodaÅ™ilo zjistit.\n"
 
-#: ../iptunnel.c:510
+#: ../iptunnel.c:516
+#, c-format
 msgid "RX: Packets    Bytes        Errors CsumErrs OutOfSeq Mcasts\n"
-msgstr "RX: Pakety     Bajty        Chyby  CsumChyb MimoPoø  Mcasts\n"
+msgstr "RX: Pakety     Bajty        Chyby  CsumChyb MimoPoÅ™  Mcasts\n"
 
-#: ../iptunnel.c:513
+#: ../iptunnel.c:519
+#, c-format
 msgid "TX: Packets    Bytes        Errors DeadLoop NoRoute  NoBufs\n"
 msgstr "TX: Pakety     Bajty        Chyby  DeadLoop NoRoute  NoBufs\n"
 
-#: ../statistics.c:45
+#: ../statistics.c:48
 msgid "ICMP input histogram:"
-msgstr "histogram ICMP vstupu:"
+msgstr "Histogram ICMP vstupu:"
 
-#: ../statistics.c:46
+#: ../statistics.c:49
 msgid "ICMP output histogram:"
-msgstr "histogram ICMP vıstupu:"
-
-#: ../statistics.c:63
-#, c-format
-msgid "Forwarding is %s"
-msgstr "Pøedávání je %s"
-
-#: ../statistics.c:64
-#, c-format
-msgid "Default TTL is %d"
-msgstr "Implicitní TTL je %d"
-
-#: ../statistics.c:65
-#, c-format
-msgid "%d total packets received"
-msgstr "celkem pøijmutıch paketù: %d"
+msgstr "Histogram ICMP vÃ½stupu:"
 
 #: ../statistics.c:66
 #, c-format
-msgid "%d with invalid headers"
-msgstr "s nesprávnımi hlavièkami: %d"
+msgid "Forwarding is %s"
+msgstr "PÅ™edÃ¡vÃ¡nÃ­ je %s"
 
 #: ../statistics.c:67
 #, c-format
-msgid "%d with invalid addresses"
-msgstr "s nesprávnımi adresami: %d"
+msgid "Default TTL is %u"
+msgstr "ImplicitnÃ­ TTL je %u"
 
-#: ../statistics.c:68
+#: ../statistics.c:68 ../statistics.c:89
 #, c-format
-msgid "%d forwarded"
-msgstr "pøedáno: %d"
+msgid "%u total packets received"
+msgstr "Celkem pÅ™ijatÃ½ch paketÅ¯: %u"
 
-#: ../statistics.c:69
+#: ../statistics.c:69 ../statistics.c:90
 #, c-format
-msgid "%d with unknown protocol"
-msgstr "s neznámım protokolem: %d"
+msgid "%u with invalid headers"
+msgstr "SÂ nesprÃ¡vnÃ½mi hlaviÄkami: %u"
 
-#: ../statistics.c:70
+#: ../statistics.c:70 ../statistics.c:93
 #, c-format
-msgid "%d incoming packets discarded"
-msgstr "poèet zahozenıch pøíchozích paketù: %d"
+msgid "%u with invalid addresses"
+msgstr "SÂ nesprÃ¡vnÃ½mi adresami: %u"
 
-#: ../statistics.c:71
+#: ../statistics.c:71 ../statistics.c:98
 #, c-format
-msgid "%d incoming packets delivered"
-msgstr "poèet doruèenıch pøíchozích paketù: %d"
+msgid "%u forwarded"
+msgstr "PÅ™eposlÃ¡no: %u"
 
-#: ../statistics.c:72
+#: ../statistics.c:72 ../statistics.c:94
 #, c-format
-msgid "%d requests sent out"
-msgstr "poèet odeslanıch po¾adavkù: %d"
+msgid "%u with unknown protocol"
+msgstr "SÂ neznÃ¡mÃ½m protokolem: %u"
+
+#: ../statistics.c:73 ../statistics.c:96
+#, c-format
+msgid "%u incoming packets discarded"
+msgstr "PoÄet zahozenÃ½ch pÅ™Ã­chozÃ­ch paketÅ¯: %u"
+
+#: ../statistics.c:74 ../statistics.c:97
+#, c-format
+msgid "%u incoming packets delivered"
+msgstr "PoÄet doruÄenÃ½ch pÅ™Ã­chozÃ­ch paketÅ¯: %u"
+
+#: ../statistics.c:75 ../statistics.c:99
+#, c-format
+msgid "%u requests sent out"
+msgstr "PoÄet poÅ¾adavkÅ¯ na odeslÃ¡nÃ­: %u"
 
 #. ?
-#: ../statistics.c:73
+#: ../statistics.c:76 ../statistics.c:100
 #, c-format
-msgid "%d outgoing packets dropped"
-msgstr "poèet zahozenıch odchozích paketù: %d"
+msgid "%u outgoing packets dropped"
+msgstr "PoÄet zahozenÃ½ch odchozÃ­ch paketÅ¯: %u"
 
-#: ../statistics.c:74
+#: ../statistics.c:77 ../statistics.c:101
 #, c-format
-msgid "%d dropped because of missing route"
-msgstr "zahozeno kvùli chybìjící cestì: %d"
+msgid "%u dropped because of missing route"
+msgstr "Zahozeno kvÅ¯li chybÄ›jÃ­cÃ­ cestÄ›: %u"
 
-#: ../statistics.c:75
+#: ../statistics.c:78 ../statistics.c:102
 #, c-format
-msgid "%d fragments dropped after timeout"
-msgstr "poèet fragmentù zahozenıch po vypr¹ení èasu: %d"
+msgid "%u fragments dropped after timeout"
+msgstr "PoÄet fragmentÅ¯ zahozenÃ½ch po vyprÅ¡enÃ­ Äasu: %u"
 
-#: ../statistics.c:76
+#: ../statistics.c:79 ../statistics.c:103
 #, c-format
-msgid "%d reassemblies required"
-msgstr "poèet nutnıch znovusestavení: %d"
-
-#. ?
-#: ../statistics.c:77
-#, c-format
-msgid "%d packets reassembled ok"
-msgstr "poèet v poøádku znovu sestavenıch paketù: %d"
-
-#: ../statistics.c:78
-#, c-format
-msgid "%d packet reassembles failed"
-msgstr "poèet paketù, je¾ se nepodaøilo znovu sestavit: %d"
-
-#: ../statistics.c:79
-#, c-format
-msgid "%d fragments received ok"
-msgstr "poèet v poøádku pøijmutıch fragmentù: %d"
-
-#: ../statistics.c:80
-#, c-format
-msgid "%d fragments failed"
-msgstr "poèet chybnıch fragmentù: %d"
-
-#: ../statistics.c:81
-#, c-format
-msgid "%d fragments created"
-msgstr "poèet vytvoøenıch fragmentù: %d"
-
-#: ../statistics.c:86
-#, c-format
-msgid "%d ICMP messages received"
-msgstr "poèet pøijmutıch ICMP zpráv: %d"
-
-#: ../statistics.c:87
-#, c-format
-msgid "%d input ICMP message failed."
-msgstr "poèet chybnıch pøíchozích ICMP zpráv: %d"
-
-#: ../statistics.c:88 ../statistics.c:101
-#, c-format
-msgid "destination unreachable: %d"
-msgstr "adresát nedostupnı: %d"
-
-#: ../statistics.c:89
-#, c-format
-msgid "timeout in transit: %d"
-msgstr "vypr¹el èas pøi pøenosu: %d"
-
-#: ../statistics.c:90 ../statistics.c:103
-#, c-format
-msgid "wrong parameters: %d"
-msgstr "chybné parametry: %d"
+msgid "%u reassemblies required"
+msgstr "PoÄet nutnÃ½ch znovusestavenÃ­: %u"
 
 #. ?
+#: ../statistics.c:80 ../statistics.c:104
+#, c-format
+msgid "%u packets reassembled ok"
+msgstr "PoÄet v poÅ™Ã¡dku znovu sestavenÃ½ch paketÅ¯: %u"
+
+#: ../statistics.c:81 ../statistics.c:105
+#, c-format
+msgid "%u packet reassemblies failed"
+msgstr "PoÄet paketÅ¯, jeÅ¾ se nepodaÅ™ilo znovu sestavit: %u"
+
+#: ../statistics.c:82 ../statistics.c:106
+#, c-format
+msgid "%u fragments received ok"
+msgstr "PoÄet v poÅ™Ã¡dku pÅ™ijatÃ½ch fragmentÅ¯: %u"
+
+#: ../statistics.c:83 ../statistics.c:107
+#, c-format
+msgid "%u fragments failed"
+msgstr "PoÄet chybnÃ½ch fragmentÅ¯: %u"
+
+#: ../statistics.c:84 ../statistics.c:108
+#, c-format
+msgid "%u fragments created"
+msgstr "PoÄet vytvoÅ™enÃ½ch fragmentÅ¯: %u"
+
 #: ../statistics.c:91
 #, c-format
-msgid "source quenchs: %d"
-msgstr "øízení toku dat: %d"
+msgid "%u with packets too big"
+msgstr "PoÄet pÅ™Ã­liÅ¡ velkÃ½ch packetÅ¯: %u"
 
 #: ../statistics.c:92
 #, c-format
-msgid "redirects: %d"
-msgstr "zmìna cesty: %d"
-
-#: ../statistics.c:93
-#, c-format
-msgid "echo requests: %d"
-msgstr "¾ádost o echo: %d"
-
-#: ../statistics.c:94 ../statistics.c:107
-#, c-format
-msgid "echo replies: %d"
-msgstr "odpovìï na ¾ádost o echo: %d"
+msgid "%u incoming packets with no route"
+msgstr "PoÄet pÅ™Ã­chozÃ­ch paketÅ¯ bez odpovÃ­dajÃ­cÃ­ cesty: %u"
 
 #: ../statistics.c:95
 #, c-format
-msgid "timestamp request: %d"
-msgstr "¾ádost o èas: %d"
-
-#: ../statistics.c:96
-#, c-format
-msgid "timestamp reply: %d"
-msgstr "odpovìï na ¾ádost o èas: %d"
-
-#: ../statistics.c:97
-#, c-format
-msgid "address mask request: %d"
-msgstr "¾ádost o masku podsítì: %d"
-
-#. ?
-#: ../statistics.c:98
-msgid "address mask replies"
-msgstr "odpovìdi na ¾ádost o masku podsítì"
-
-#. ?
-#: ../statistics.c:99
-#, c-format
-msgid "%d ICMP messages sent"
-msgstr "poèet odeslanıch ICMP zpráv: %d"
-
-#: ../statistics.c:100
-#, c-format
-msgid "%d ICMP messages failed"
-msgstr "poèet chybnıch ICMP zpráv: %d"
-
-#: ../statistics.c:102
-#, c-format
-msgid "time exceeded: %d"
-msgstr "vypr¹ení ¾ivotnosti: %d"
-
-#. ?
-#: ../statistics.c:104
-#, c-format
-msgid "source quench: %d"
-msgstr "øízení toku dat: %d"
-
-#: ../statistics.c:105
-#, c-format
-msgid "redirect: %d"
-msgstr "zmìna cesty: %d"
-
-#: ../statistics.c:106
-#, c-format
-msgid "echo request: %d"
-msgstr "¾ádost o echo: %d"
-
-#: ../statistics.c:108
-#, c-format
-msgid "timestamp requests: %d"
-msgstr "¾ádost o èas: %d"
+msgid "%u with truncated packets"
+msgstr "PoÄet zkrÃ¡cenÃ½ch packetÅ¯: %u"
 
 #: ../statistics.c:109
 #, c-format
-msgid "timestamp replies: %d"
-msgstr "odpovìï na ¾ádost o èas: %d"
+msgid "%u incoming multicast packets"
+msgstr "PoÄet pÅ™Ã­chozÃ­ch multicastovÃ½ch paketÅ¯: %u"
 
 #: ../statistics.c:110
 #, c-format
-msgid "address mask requests: %d"
-msgstr "¾ádost o masku podsítì: %d"
+msgid "%u outgoing multicast packets"
+msgstr "PoÄet odchozÃ­ch multicastovÃ½ch paketÅ¯: %u"
 
-#: ../statistics.c:111
+#: ../statistics.c:115 ../statistics.c:145
 #, c-format
-msgid "address mask replies: %d"
-msgstr "odpovìï na ¾ádost o masku podsítì: %d"
+msgid "%u ICMP messages received"
+msgstr "PoÄet pÅ™ijatÃ½ch ICMP zprÃ¡v: %u"
 
-#: ../statistics.c:116
+#: ../statistics.c:116 ../statistics.c:146
+#, c-format
+msgid "%u input ICMP message failed"
+msgstr "PoÄet chybnÃ½ch pÅ™Ã­chozÃ­ch ICMP zprÃ¡v: %u"
+
+#: ../statistics.c:117 ../statistics.c:130 ../statistics.c:147
+#: ../statistics.c:162
+#, c-format
+msgid "destination unreachable: %u"
+msgstr "AdresÃ¡t nedostupnÃ½: %u"
+
+#: ../statistics.c:118
+#, c-format
+msgid "timeout in transit: %u"
+msgstr "VyprÅ¡el Äas pÅ™i pÅ™enosu: %u"
+
+#: ../statistics.c:119 ../statistics.c:132
+#, c-format
+msgid "wrong parameters: %u"
+msgstr "ChybnÃ© parametry: %u"
+
+#. ?
+#: ../statistics.c:120
+#, c-format
+msgid "source quenches: %u"
+msgstr "ZahlcenÃ­ zdroje: %u"
+
+#: ../statistics.c:121 ../statistics.c:160 ../statistics.c:175
+#, c-format
+msgid "redirects: %u"
+msgstr "PoÄet pÅ™esmÄ›rovÃ¡nÃ­: %u"
+
+#: ../statistics.c:122 ../statistics.c:151 ../statistics.c:166
+#, c-format
+msgid "echo requests: %u"
+msgstr "Å½Ã¡dost o echo: %u"
+
+#: ../statistics.c:123 ../statistics.c:136 ../statistics.c:152
+#: ../statistics.c:167
+#, c-format
+msgid "echo replies: %u"
+msgstr "OdpovÄ›Ä na Å¾Ã¡dost o echo: %u"
+
+#: ../statistics.c:124
+#, c-format
+msgid "timestamp request: %u"
+msgstr "Å½Ã¡dost o Äas: %u"
+
+#: ../statistics.c:125
+#, c-format
+msgid "timestamp reply: %u"
+msgstr "OdpovÄ›Ä na Å¾Ã¡dost o Äas: %u"
+
+#: ../statistics.c:126
+#, c-format
+msgid "address mask request: %u"
+msgstr "Å½Ã¡dost o masku podsÃ­tÄ›: %u"
+
+#. ?
+#: ../statistics.c:127 ../statistics.c:140
+#, c-format
+msgid "address mask replies: %u"
+msgstr "OdpovÄ›Ä na Å¾Ã¡dost o masku podsÃ­tÄ›: %u"
+
+#. ?
+#: ../statistics.c:128 ../statistics.c:161
+#, c-format
+msgid "%u ICMP messages sent"
+msgstr "PoÄet odeslanÃ½ch ICMP zprÃ¡v: %u"
+
+#: ../statistics.c:129
+#, c-format
+msgid "%u ICMP messages failed"
+msgstr "PoÄet chybnÃ½ch ICMP zprÃ¡v: %u"
+
+#: ../statistics.c:131
+#, c-format
+msgid "time exceeded: %u"
+msgstr "VyprÅ¡enÃ­ Å¾ivotnosti: %u"
+
+#. ?
+#: ../statistics.c:133
+#, c-format
+msgid "source quench: %u"
+msgstr "ZahlcenÃ­ zdroje: %u"
+
+#: ../statistics.c:134
+#, c-format
+msgid "redirect: %u"
+msgstr "PoÄet pÅ™esmÄ›rovÃ¡nÃ­: %u"
+
+#: ../statistics.c:137
+#, c-format
+msgid "timestamp requests: %u"
+msgstr "Å¾Ã¡dost o Äas: %u"
+
+#: ../statistics.c:138
+#, c-format
+msgid "timestamp replies: %u"
+msgstr "OdpovÄ›Ä na Å¾Ã¡dost o Äas: %u"
+
+#: ../statistics.c:139
+#, c-format
+msgid "address mask requests: %u"
+msgstr "Å½Ã¡dost o masku podsÃ­tÄ›: %u"
+
+#: ../statistics.c:148 ../statistics.c:163
+#, c-format
+msgid "packets too big: %u"
+msgstr "PÅ™Ã­liÅ¡ velkÃ½ch packetÅ¯: %u"
+
+#: ../statistics.c:149
+#, c-format
+msgid "received ICMPv6 time exceeded: %u"
+msgstr "PÅ™ijato ICMPv6 vyprÅ¡enÃ­ Å¾ivotnosti: %u"
+
+#: ../statistics.c:150 ../statistics.c:165
+#, c-format
+msgid "parameter problem: %u"
+msgstr "ProblÃ©m sÂ parametrem: %u"
+
+#: ../statistics.c:153 ../statistics.c:168
+#, c-format
+msgid "group member queries: %u"
+msgstr "DotazÅ¯ na ÄlenstvÃ­ ve skupinÄ›: %u"
+
+#: ../statistics.c:154 ../statistics.c:169
+#, c-format
+msgid "group member responses: %u"
+msgstr "OdpovÄ›dÃ­ na ÄlenstvÃ­ ve skupinÄ›: %u"
+
+#: ../statistics.c:155 ../statistics.c:170
+#, c-format
+msgid "group member reductions: %u"
+msgstr "PoÄet snÃ­Å¾enÃ­ ÄlenÅ¯ skupiny: %u"
+
+#: ../statistics.c:156 ../statistics.c:171
+#, c-format
+msgid "router solicits: %u"
+msgstr "PoÄet vÃ½zev smÄ›rovaÄi: %u"
+
+#: ../statistics.c:157 ../statistics.c:172
+#, c-format
+msgid "router advertisement: %u"
+msgstr "PoÄet oznÃ¡menÃ­ smÄ›rovaÄe: %u"
+
+#: ../statistics.c:158
+#, c-format
+msgid "neighbour solicits: %u"
+msgstr "PoÄet vÃ½zev sousedovi: %u"
+
+#: ../statistics.c:159
+#, c-format
+msgid "neighbour advertisement: %u"
+msgstr "PoÄet oznÃ¡menÃ­ souseda: %u"
+
+#: ../statistics.c:164
+#, c-format
+msgid "sent ICMPv6 time exceeded: %u"
+msgstr "PoÄet odeslanÃ½ch ICMPv6 vyprÅ¡enÃ­ Å¾ivotnosti: %u"
+
+#: ../statistics.c:173
+#, c-format
+msgid "neighbor solicits: %u"
+msgstr "PoÄet vÃ½zev sousedovi: %u"
+
+#: ../statistics.c:174
+#, c-format
+msgid "neighbor advertisements: %u"
+msgstr "PoÄet oznÃ¡menÃ­ souseda: %u"
+
+#: ../statistics.c:180
 #, c-format
 msgid "RTO algorithm is %s"
 msgstr "RTO algoritmus je %s"
 
-#: ../statistics.c:120
+#: ../statistics.c:184
 #, c-format
-msgid "%d active connections openings"
-msgstr "poèet aktivnì navázanıch spojení: %d"
+msgid "%u active connection openings"
+msgstr "PoÄet aktivnÄ› navÃ¡zanÃ½ch spojenÃ­: %u"
 
-#: ../statistics.c:121
+#: ../statistics.c:185
 #, c-format
-msgid "%d passive connection openings"
-msgstr "poèet pasivnì navázanıch spojení: %d"
+msgid "%u passive connection openings"
+msgstr "PoÄet pasivnÄ› navÃ¡zanÃ½ch spojenÃ­: %u"
 
-#: ../statistics.c:122
+#: ../statistics.c:186
 #, c-format
-msgid "%d failed connection attempts"
-msgstr "poèet neúspì¹nıch pokusù o spojení: %d"
+msgid "%u failed connection attempts"
+msgstr "PoÄet neÃºspÄ›Å¡nÃ½ch pokusÅ¯ o spojenÃ­: %u"
 
-#: ../statistics.c:123
+#: ../statistics.c:187
 #, c-format
-msgid "%d connection resets received"
-msgstr "poèet pøijmutıch resetù: %d"
+msgid "%u connection resets received"
+msgstr "PoÄet pÅ™ijatÃ½ch resetÅ¯ spojenÃ­: %u"
 
-#: ../statistics.c:124
+#: ../statistics.c:188
 #, c-format
-msgid "%d connections established"
-msgstr "poèet navázanıch spojení: %d"
+msgid "%u connections established"
+msgstr "PoÄet navÃ¡zanÃ½ch spojenÃ­: %u"
 
-#: ../statistics.c:125
+#: ../statistics.c:189
 #, c-format
-msgid "%d segments received"
-msgstr "poèet pøijmutıch segmentù: %d"
+msgid "%u segments received"
+msgstr "PoÄet pÅ™ijatÃ½ch segmentÅ¯: %u"
 
-#: ../statistics.c:126
+#: ../statistics.c:190
 #, c-format
-msgid "%d segments send out"
-msgstr "poèet odeslanıch segmentù: %d"
+msgid "%u segments sent out"
+msgstr "PoÄet odeslanÃ½ch segmentÅ¯: %u"
 
-#: ../statistics.c:127
+#: ../statistics.c:191
 #, c-format
-msgid "%d segments retransmited"
-msgstr "poèet pøenesenıch segmentù: %d"
+msgid "%u segments retransmitted"
+msgstr "PoÄet pÅ™enesenÃ½ch segmentÅ¯: %u"
 
-#: ../statistics.c:128
+#: ../statistics.c:192
 #, c-format
-msgid "%d bad segments received."
-msgstr "poèet chybnıch pøíchozích segmentù: %d."
+msgid "%u bad segments received"
+msgstr "PoÄet chybnÃ½ch pÅ™Ã­chozÃ­ch segmentÅ¯: %u"
 
-#: ../statistics.c:129
+#: ../statistics.c:193
 #, c-format
-msgid "%d resets sent"
-msgstr "poèet odeslanıch resetù: %d"
+msgid "%u resets sent"
+msgstr "PoÄet odeslanÃ½ch resetÅ¯: %u"
 
-#: ../statistics.c:134
+#: ../statistics.c:198 ../statistics.c:206
 #, c-format
-msgid "%d packets received"
-msgstr "poèet pøijmutıch paketù: %d"
+msgid "%u packets received"
+msgstr "PoÄet pÅ™ijatÃ½ch paketÅ¯: %u"
 
-#: ../statistics.c:135
+#: ../statistics.c:199 ../statistics.c:207
 #, c-format
-msgid "%d packets to unknown port received."
-msgstr "poèet paketù pøijmutıch pro neznámı port: %d."
+msgid "%u packets to unknown port received"
+msgstr "PoÄet paketÅ¯ pÅ™ijatÃ½ch pro neznÃ¡mÃ½ port: %u"
 
-#: ../statistics.c:136
+#: ../statistics.c:200 ../statistics.c:208
 #, c-format
-msgid "%d packet receive errors"
-msgstr "poèet chyb pøi pøíjmu paketù: %d"
+msgid "%u packet receive errors"
+msgstr "PoÄet chyb pÅ™i pÅ™Ã­jmu paketÅ¯: %u"
 
-#: ../statistics.c:137
+#: ../statistics.c:201 ../statistics.c:209
 #, c-format
-msgid "%d packets sent"
-msgstr "poèet odeslanıch paketù: %d"
+msgid "%u packets sent"
+msgstr "PoÄet odeslanÃ½ch paketÅ¯: %u"
 
-#: ../statistics.c:142
+#: ../statistics.c:214
 #, c-format
-msgid "%d SYN cookies sent"
-msgstr "poèet odeslanıch SYN cookies: %d"
+msgid "%u SYN cookies sent"
+msgstr "PoÄet odeslanÃ½ch SYN cookies: %u"
 
-#: ../statistics.c:143
+#: ../statistics.c:215
 #, c-format
-msgid "%d SYN cookies received"
-msgstr "poèet pøijmutıch SYN cookies: %d"
+msgid "%u SYN cookies received"
+msgstr "PoÄet pÅ™ijatÃ½ch SYN cookies: %u"
 
-#: ../statistics.c:144
+#: ../statistics.c:216
 #, c-format
-msgid "%d invalid SYN cookies received"
-msgstr "poèet chybnıch pøíchozích SYN cookies: %d"
+msgid "%u invalid SYN cookies received"
+msgstr "PoÄet chybnÃ½ch pÅ™Ã­chozÃ­ch SYN cookies: %u"
 
-#: ../statistics.c:146
+#: ../statistics.c:218
 #, c-format
-msgid "%d resets received for embryonic SYN_RECV sockets"
-msgstr "poèet resetù pøijmutıch pro sokety ve stavu SYN_PØÍCH: %d"
+msgid "%u resets received for embryonic SYN_RECV sockets"
+msgstr "PoÄet resetÅ¯ pÅ™ijatÃ½ch pro sokety vÂ zÃ¡rodeÄnÃ©m stavu SYN_RECV: %u"
 
-#: ../statistics.c:148
+#: ../statistics.c:220
 #, c-format
-msgid "%d packets pruned from receive queue because of socket buffer overrun"
-msgstr "poèet paketù odstranìnıch z fronty kvùli pøeteèení bufferu soketu: %d"
+msgid "%u packets pruned from receive queue because of socket buffer overrun"
+msgstr ""
+"PoÄet packetÅ¯ odstranÄ›nÃ½ch z pÅ™ijÃ­macÃ­ fronty kvÅ¯li pÅ™eteÄenÃ­ bufferu "
+"socketu: %u"
 
 #. obsolete: 2.2.0 doesn't do that anymore
-#: ../statistics.c:151
+#: ../statistics.c:223
 #, c-format
-msgid "%d packets pruned from out-of-order queue"
-msgstr "poèet paketù odstranìnıch z fronty mimo-poøadí: %d"
+msgid "%u packets pruned from receive queue"
+msgstr "PoÄet packetÅ¯ odstranÄ›nÃ½ch zÂ pÅ™ijÃ­macÃ­ fronty: %u"
 
-#: ../statistics.c:152
+#: ../statistics.c:224
 #, c-format
 msgid ""
-"%d packets dropped from out-of-order queue because of socket buffer overrun"
+"%u packets dropped from out-of-order queue because of socket buffer overrun"
 msgstr ""
-"poèet paketù zahozenıch z fronty mimo-poøadí kvùli pøeteèení bufferu soketu: "
-"%d"
+"PoÄet packetÅ¯ zahozenÃ½ch z fronty mimo-poÅ™adÃ­ kvÅ¯li pÅ™eteÄenÃ­ bufferu "
+"socketu: %u"
 
-#: ../statistics.c:154
+#: ../statistics.c:226
 #, c-format
-msgid "%d ICMP packets dropped because they were out-of-window"
-msgstr "poèet ICMP paketù zahozenıch, proto¾e byly mimo-okno: %d"
+msgid "%u ICMP packets dropped because they were out-of-window"
+msgstr "PoÄet ICMP packetÅ¯ zahozenÃ½ch, protoÅ¾e byly mimo okno: %u"
 
-#: ../statistics.c:156
+#: ../statistics.c:228
 #, c-format
-msgid "%d ICMP packets dropped because socket was locked"
-msgstr "poèet ICMP paketù zahozenıch kvùli zamèenému soketu: %d"
+msgid "%u ICMP packets dropped because socket was locked"
+msgstr "PoÄet ICMP packetÅ¯ zahozenÃ½ch kvÅ¯li zamÄenÃ©mu socketu: %u"
 
-#: ../statistics.c:222
-msgid "enabled"
-msgstr "zapnuto"
+#: ../statistics.c:230
+#, c-format
+msgid "%u TCP sockets finished time wait in fast timer"
+msgstr ""
+"PoÄet TCP socketÅ¯, kterÃ© ukonÄily fÃ¡zi time-wait uvnitÅ™ rychlÃ©ho ÄasovaÄe: %u"
 
-#: ../statistics.c:222
-msgid "disabled"
-msgstr "vypnuto"
+#: ../statistics.c:231
+#, c-format
+msgid "%u time wait sockets recycled by time stamp"
+msgstr ""
+"PoÄet socketÅ¯ ve fÃ¡zi time-wait, kterÃ© byly znovu pouÅ¾ity dÃ­ky ÄasovÃ©mu "
+"razÃ­tku: %u"
+
+#: ../statistics.c:232
+#, c-format
+msgid "%u TCP sockets finished time wait in slow timer"
+msgstr ""
+"PoÄet TCPâ€¯socketÅ¯, kterÃ© ukonÄily fÃ¡zi time-wait uvnitÅ™ pomalÃ©ho ÄasovaÄe: %u"
+
+#: ../statistics.c:233
+#, c-format
+msgid "%u passive connections rejected because of time stamp"
+msgstr "PoÄet odmÃ­tnutÃ½ch pasivnÃ­ch spojenÃ­ kvÅ¯li ÄasovÃ©mu razÃ­tku: %u"
+
+#: ../statistics.c:235
+#, c-format
+msgid "%u active connections rejected because of time stamp"
+msgstr "PoÄet odmÃ­tnutÃ½ch aktivnÃ­ch spojenÃ­ kvÅ¯li ÄasovÃ©mu razÃ­tku: %u"
+
+#: ../statistics.c:237
+#, c-format
+msgid "%u packets rejected in established connections because of timestamp"
+msgstr ""
+"PoÄet odmÃ­tnutÃ½ch packetÅ¯ uvnitÅ™ navÃ¡zanÃ©ho spojenÃ­ kvÅ¯li ÄasovÃ©mu razÃ­tku: %"
+"u"
+
+#: ../statistics.c:239
+#, c-format
+msgid "%u delayed acks sent"
+msgstr "PoÄet odeslanÃ½ch zpoÅ¾dÄ›nÃ½ch potvrzenÃ­: %u"
+
+#: ../statistics.c:240
+#, c-format
+msgid "%u delayed acks further delayed because of locked socket"
+msgstr ""
+"PoÄet zpoÅ¾dÄ›nÃ½ch potvrzenÃ­ dÃ¡le pozdrÅ¾enÃ½ch kvÅ¯li zamÄenÃ©mu socketu: %u"
+
+#: ../statistics.c:242
+#, c-format
+msgid "Quick ack mode was activated %u times"
+msgstr "PoÄet aktivovanÃ­ rychlÃ©ho potvrzovacÃ­ho reÅ¾imu: %u"
+
+#: ../statistics.c:243
+#, c-format
+msgid "%u times the listen queue of a socket overflowed"
+msgstr "PoÄet pÅ™eteÄenÃ­ naslouchacÃ­ fronty socketu: %u"
+
+#: ../statistics.c:245
+#, c-format
+msgid "%u SYNs to LISTEN sockets dropped"
+msgstr "PoÄet zahozenÃ½ch SYN packetÅ¯ urÄenÃ½ch naslouchajÃ­cÃ­mu socketu: %u"
+
+#: ../statistics.c:246
+#, c-format
+msgid "%u packets directly queued to recvmsg prequeue"
+msgstr "PoÄet packetÅ¯ pÅ™Ã­mo zaÅ™azenÃ½ch do pÅ™edfronty recvmsg: %u"
+
+#: ../statistics.c:248
+#, c-format
+msgid "%u bytes directly in process context from backlog"
+msgstr "PoÄet bajtÅ¯ pÅ™edanÃ½ch pÅ™Ã­mo zÂ backlogu do kontextu procesu: %u"
+
+#: ../statistics.c:249
+#, c-format
+msgid "%u bytes directly received in process context from prequeue"
+msgstr "PoÄet bajtÅ¯ pÅ™Ã­mo pÅ™ijatÃ½ch do kontextu procesu zÂ pÅ™edfronty: %u"
+
+#: ../statistics.c:251
+#, c-format
+msgid "%u packets dropped from prequeue"
+msgstr "PoÄet paketÅ¯ odstranÄ›nÃ½ch z pÅ™edfronty: %u"
+
+#: ../statistics.c:252
+#, c-format
+msgid "%u packet headers predicted"
+msgstr "PoÄet pÅ™edpovÄ›zenÃ½ch hlaviÄek packetÅ¯: %u"
+
+#: ../statistics.c:253
+#, c-format
+msgid "%u packet headers predicted and directly queued to user"
+msgstr "PoÄet hlaviÄek packetÅ¯ pÅ™edpovÄ›zenÃ½ch a pÅ™Ã­mo pÅ™edanÃ½ch uÅ¾ivateli: %u"
+
+#: ../statistics.c:255
+#, c-format
+msgid "Ran %u times out of system memory during packet sending"
+msgstr "KolikrÃ¡t systÃ©mu doÅ¡la pamÄ›Å¥ pÅ™i odesÃ­lÃ¡nÃ­ packetu: %u"
+
+#: ../statistics.c:257
+#, c-format
+msgid "%u acknowledgments not containing data payload received"
+msgstr "PoÄet pÅ™ijatÃ½ch potvrzenÃ­ neobsahujÃ­cÃ­ data: %u"
+
+#: ../statistics.c:258
+#, c-format
+msgid "%u predicted acknowledgments"
+msgstr "PoÄet pÅ™edpovÄ›zenÃ½ch potvrzenÃ­: %u"
+
+#: ../statistics.c:259
+#, c-format
+msgid "%u times recovered from packet loss due to fast retransmit"
+msgstr "PoÄet zotavenÃ­ ze ztrÃ¡ty packetu kvÅ¯li rychle opakovanÃ©mu odeslÃ¡nÃ­: %u"
+
+#: ../statistics.c:260
+#, c-format
+msgid "%u times recovered from packet loss by selective acknowledgements"
+msgstr "PoÄet zotavenÃ­ ze ztrÃ¡ty packetu pomocÃ­ vybÄ›rovÃ½ch potvrzenÃ­: %u"
+
+#: ../statistics.c:261
+#, c-format
+msgid "%u bad SACK blocks received"
+msgstr "PoÄet pÅ™ijatÃ½ch chybnÃ½ch SACK blokÅ¯: %u"
+
+#: ../statistics.c:262
+#, c-format
+msgid "Detected reordering %u times using FACK"
+msgstr "KolikrÃ¡t byla nalezena zmÄ›na poÅ™adÃ­ pomocÃ­ FACK: %u"
+
+#: ../statistics.c:263
+#, c-format
+msgid "Detected reordering %u times using SACK"
+msgstr "KolikrÃ¡t byla nalezena zmÄ›na poÅ™adÃ­ pomocÃ­ SACK: %u"
+
+#: ../statistics.c:264
+#, c-format
+msgid "Detected reordering %u times using time stamp"
+msgstr "KolikrÃ¡t byla nalezena zmÄ›na poÅ™adÃ­ pomocÃ­ ÄasovÃ©ho razÃ­tka: %u"
+
+#: ../statistics.c:265
+#, c-format
+msgid "Detected reordering %u times using reno fast retransmit"
+msgstr ""
+"KolikrÃ¡t byla nalezena zmÄ›na poÅ™adÃ­ kvÅ¯li rychlÃ©mu znovuodeslÃ¡nÃ­ Reno: %u"
+
+#: ../statistics.c:266
+#, c-format
+msgid "%u congestion windows fully recovered without slow start"
+msgstr "PoÄet plnÃ½ch zotavenÃ­ ze zahlcenÃ­ okna bez pomalÃ©ho startu: %u"
+
+#: ../statistics.c:267
+#, c-format
+msgid "%u congestion windows partially recovered using Hoe heuristic"
+msgstr "PoÄet ÄÃ¡steÄnÃ½ch zotavenÃ­ ze zahlcenÃ­ okna pomocÃ­ heuristiky Hoe: %u"
+
+#: ../statistics.c:268
+#, c-format
+msgid "%u congestion window recovered without slow start using DSACK"
+msgstr "PoÄet zotavenÃ­ ze zahlcenÃ©ho okna bez pomalÃ©ho startu pomocÃ­ DSACK: %u"
+
+#: ../statistics.c:269
+#, c-format
+msgid "%u congestion windows recovered without slow start after partial ack"
+msgstr ""
+"PoÄet zotavenÃ­ ze zahlcenÃ­ okna bez pomalÃ©ho startu po ÄÃ¡steÄnÃ©m potvrzenÃ­: %"
+"u"
+
+#: ../statistics.c:270
+#, c-format
+msgid "%u retransmits lost"
+msgstr "PoÄet ztracenÃ½ch opakovanÃ½ch odeslÃ¡nÃ­: %u"
+
+#: ../statistics.c:271
+#, c-format
+msgid "%u timeouts after reno fast retransmit"
+msgstr "PoÄet vyprÅ¡enÃ­ Äasu po rychlÃ©m opakovanÃ©m odeslÃ¡nÃ­ Reno: %u"
 
 #: ../statistics.c:272
 #, c-format
-msgid "unknown title %s\n"
-msgstr "titulek %s je neznámı\n"
+msgid "%u timeouts after SACK recovery"
+msgstr "PoÄet vyprÅ¡enÃ­ Äasu po zotavenÃ­ pomocÃ­ SACK: %u"
 
-#: ../statistics.c:298
-msgid "error parsing /proc/net/snmp"
-msgstr "chyba pøi zpracování /proc/net/snmp"
+#: ../statistics.c:273
+#, c-format
+msgid "%u timeouts in loss state"
+msgstr "PoÄet vyprÅ¡enÃ­ Äasu ve stavu ztrÃ¡ty: %u"
 
-#: ../statistics.c:311
+#: ../statistics.c:274
+#, c-format
+msgid "%u fast retransmits"
+msgstr "PoÄet rychlÃ½ch opakovÃ¡nÃ­ odeslÃ¡nÃ­: %u"
+
+#: ../statistics.c:275
+#, c-format
+msgid "%u forward retransmits"
+msgstr "PoÄet dopÅ™ednÃ½ch opakovanÃ½ch odeslÃ¡nÃ­: %u"
+
+#: ../statistics.c:276
+#, c-format
+msgid "%u retransmits in slow start"
+msgstr "PoÄet opakovanÃ½ch odeslÃ¡nÃ­ vÂ pomalÃ©m startu: %u"
+
+#: ../statistics.c:277
+#, c-format
+msgid "%u other TCP timeouts"
+msgstr "PoÄet jinÃ½ch vyprÅ¡enÃ­ ÄasovaÄe TCP: %u"
+
+#: ../statistics.c:278
+#, c-format
+msgid "%u reno fast retransmits failed"
+msgstr "PoÄet selhÃ¡nÃ­ rychlÃ½ch opakovanÃ½ch odeslÃ¡nÃ­ Reno: %u"
+
+#: ../statistics.c:279
+#, c-format
+msgid "%u SACK retransmits failed"
+msgstr "PoÄet selhÃ¡nÃ­ opakovanÃ½ch odeslÃ¡nÃ­ SACK: %u"
+
+#: ../statistics.c:280
+#, c-format
+msgid "%u times receiver scheduled too late for direct processing"
+msgstr "KolikrÃ¡t byl pÅ™ijÃ­maÄ naplÃ¡novÃ¡n pÅ™Ã­liÅ¡ pozdÄ› na pÅ™Ã­mÃ© zpracovanÃ­: %u"
+
+#: ../statistics.c:281
+#, c-format
+msgid "%u packets collapsed in receive queue due to low socket buffer"
+msgstr ""
+"PoÄet packetÅ¯ slouÄenÃ½ch vÂ pÅ™ijÃ­macÃ­ frontÄ› kvÅ¯li malÃ©mu bufferu socketu: %u"
+
+#: ../statistics.c:282
+#, c-format
+msgid "%u DSACKs sent for old packets"
+msgstr "PoÄet packetÅ¯ DSACK odeslanÃ½ch kvÅ¯li starÃ½m packetÅ¯m: %u"
+
+#: ../statistics.c:283
+#, c-format
+msgid "%u DSACKs sent for out of order packets"
+msgstr "PoÄet packetÅ¯ DSCACK odeslanÃ½ch kvÅ¯li packetÅ¯m mimo poÅ™adÃ­: %u"
+
+#: ../statistics.c:284
+#, c-format
+msgid "%u DSACKs received"
+msgstr "PoÄet pÅ™ijatÃ½ch paketÅ¯ DSACK: %u"
+
+#: ../statistics.c:285
+#, c-format
+msgid "%u DSACKs for out of order packets received"
+msgstr "PoÄet packetÅ¯ DSACK pÅ™ijatÃ½ch kvÅ¯li packetÅ¯m mimo poÅ™adÃ­: %u"
+
+#: ../statistics.c:286
+#, c-format
+msgid "%u connections reset due to unexpected SYN"
+msgstr "PoÄet resetÅ¯ spojenÃ­ kvÅ¯li neoÄekÃ¡vanÃ©mu SYN: %u"
+
+#: ../statistics.c:287
+#, c-format
+msgid "%u connections reset due to unexpected data"
+msgstr "PoÄet resetÅ¯ spojenÃ­ kvÅ¯li neoÄekÃ¡vanÃ½m datÅ¯m: %u"
+
+#: ../statistics.c:288
+#, c-format
+msgid "%u connections reset due to early user close"
+msgstr "PoÄet resetÅ¯ spojenÃ­ kvÅ¯li ÄasnÃ©mu uzavÅ™enÃ­ uÅ¾ivatelem: %u"
+
+#: ../statistics.c:289
+#, c-format
+msgid "%u connections aborted due to memory pressure"
+msgstr "PoÄet zruÅ¡enÃ½ch spojenÃ­ kvÅ¯li pamÄ›Å¥ovÃ© tÃ­sni: %u"
+
+#: ../statistics.c:290
+#, c-format
+msgid "%u connections aborted due to timeout"
+msgstr "PoÄet zruÅ¡enÃ½ch spojenÃ­ kvÅ¯li vyprÅ¡enÃ­ ÄasovaÄe: %u"
+
+#: ../statistics.c:291
+#, c-format
+msgid "%u connections aborted after user close in linger timeout"
+msgstr ""
+"PoÄet zruÅ¡enÃ½ch spojenÃ­ po tÃ©, co je uÅ¾ivatel uzavÅ™el ve fÃ¡zi doÅ¾itÃ­: %u"
+
+#: ../statistics.c:292
+#, c-format
+msgid "%u times unabled to send RST due to no memory"
+msgstr "KolikrÃ¡t nebylo moÅ¾nÃ© odeslat RST kvÅ¯li nedostatku pamÄ›ti: %u"
+
+#: ../statistics.c:293
+#, c-format
+msgid "TCP ran low on memory %u times"
+msgstr "KolikrÃ¡t TCP zpomalilo kvÅ¯li pamÄ›ti: %u"
+
+#: ../statistics.c:294
+#, c-format
+msgid "%u TCP data loss events"
+msgstr "PoÄet ztrÃ¡t dat TCP: %u"
+
+#: ../statistics.c:295
+#, c-format
+msgid "%u congestion windows recovered without slow start by DSACK"
+msgstr "PoÄet zotavenÃ­ ze zahlcenÃ­ okna bez pomalÃ©ho startu pomocÃ­ DSACK: %u"
+
+#: ../statistics.c:297
+#, c-format
+msgid "%u classic Reno fast retransmits failed"
+msgstr "PoÄet selhÃ¡nÃ­ klasickÃ©ho rychlÃ©ho opakovanÃ©ho odeslÃ¡nÃ­ Reno: %u"
+
+#: ../statistics.c:373
+msgid "enabled"
+msgstr "zapnuto"
+
+#: ../statistics.c:373
+msgid "disabled"
+msgstr "vypnuto"
+
+#: ../statistics.c:511 ../statistics.c:555
 msgid "cannot open /proc/net/snmp"
-msgstr "/proc/net/snmp nelze otevøít"
+msgstr "/proc/net/snmp nelze otevÅ™Ã­t"
+
+#: ../statistics.c:516
+#, c-format
+msgid "Problem while parsing /proc/net/snmp\n"
+msgstr "PotÃ­Å¾e pÅ™i pÅ™i zpracovÃ¡nÃ­ /proc/net/snmp\n"
+
+#: ../statistics.c:527
+#, c-format
+msgid "Problem while parsing /proc/net/netstat\n"
+msgstr "PotÃ­Å¾e pÅ™i pÅ™i zpracovÃ¡nÃ­ /proc/net/netstat\n"
+
+#: ../statistics.c:545
+msgid "cannot open /proc/net/snmp6"
+msgstr "/proc/net/snmp6 nelze otevÅ™Ã­t"
 
 #: ../lib/activate.c:69
 #, c-format
 msgid "Hardware type `%s' not supported.\n"
-msgstr "Hardwarovı typ `%s' není podporován.\n"
+msgstr "HardwarovÃ½ typ â€%sâ€œ nenÃ­ podporovÃ¡n.\n"
 
 #: ../lib/activate.c:73
 #, c-format
 msgid "Cannot change line discipline to `%s'.\n"
-msgstr "Linkovou disciplínu nelze na `%s' zmìnit.\n"
+msgstr "Linkovou disciplÃ­nu nelze na â€%sâ€œ zmÄ›nit.\n"
 
-#: ../lib/af.c:145 ../lib/hw.c:148
+#: ../lib/af.c:157 ../lib/hw.c:166
 msgid "UNSPEC"
-msgstr "NEZNÁM"
+msgstr "NEZNÃM"
 
-#: ../lib/af.c:147
+#: ../lib/af.c:159
 msgid "UNIX Domain"
-msgstr "Doména UNIX"
+msgstr "DomÃ©na UNIX"
 
-#: ../lib/af.c:150
+#: ../lib/af.c:162
 msgid "DARPA Internet"
 msgstr "DARPA Internet"
 
-#: ../lib/af.c:153
+#: ../lib/af.c:165
 msgid "IPv6"
 msgstr "IPv6"
 
-#: ../lib/af.c:156 ../lib/hw.c:169
+#: ../lib/af.c:168 ../lib/hw.c:187
 msgid "AMPR AX.25"
 msgstr "AMPR AX.25"
 
-#: ../lib/af.c:159 ../lib/hw.c:175
+#: ../lib/af.c:171 ../lib/hw.c:193
 msgid "AMPR NET/ROM"
 msgstr "AMPR NET/ROM"
 
-#: ../lib/af.c:162
+#: ../lib/af.c:174
 msgid "Novell IPX"
 msgstr "Novell IPX"
 
-#: ../lib/af.c:165
+#: ../lib/af.c:177
 msgid "Appletalk DDP"
 msgstr "Appletalk DDP"
 
-#: ../lib/af.c:168 ../lib/hw.c:207
+#: ../lib/af.c:180 ../lib/hw.c:228
 msgid "Econet"
 msgstr "Econet"
 
-#: ../lib/af.c:171 ../lib/hw.c:172
+#: ../lib/af.c:183
+msgid "CCITT X.25"
+msgstr "CCITT X.25"
+
+#: ../lib/af.c:186 ../lib/hw.c:190
 msgid "AMPR ROSE"
 msgstr "AMPR ROSE"
 
-#: ../lib/af.c:174 ../lib/hw.c:160
+#: ../lib/af.c:189 ../lib/hw.c:178
 msgid "Ash"
 msgstr "Ash"
 
-#: ../lib/af.c:232
+#: ../lib/af.c:247
+#, c-format
 msgid "Please don't supply more than one address family.\n"
-msgstr "Nezadávejte více ne¾ jednu tøídu adres.\n"
+msgstr "NezadÃ¡vejte vÃ­ce neÅ¾ jednu tÅ™Ã­du adres.\n"
 
-#: ../lib/af.c:293
+#: ../lib/af.c:308
+#, c-format
 msgid "Too much address family arguments.\n"
-msgstr "Bylo zadáno pøíli¹ mnoho tøíd adres.\n"
+msgstr "Bylo zadÃ¡no pÅ™Ã­liÅ¡ mnoho tÅ™Ã­d adres.\n"
 
-#: ../lib/af.c:304
+#: ../lib/af.c:319
 #, c-format
 msgid "Unknown address family `%s'.\n"
-msgstr "Tøída adres `%s' není známa.\n"
+msgstr "TÅ™Ã­da adres â€%sâ€œ nenÃ­ znÃ¡ma.\n"
 
-#: ../lib/arcnet.c:53 ../lib/ax25.c:75 ../lib/ddp.c:50 ../lib/econet.c:52
-#: ../lib/fddi.c:67 ../lib/hippi.c:68 ../lib/inet.c:244 ../lib/inet.c:259
-#: ../lib/inet6.c:129 ../lib/ipx.c:81 ../lib/netrom.c:78 ../lib/rose.c:71
-#: ../lib/rose.c:126 ../lib/unix.c:56 ../lib/unix.c:76
+#: ../lib/arcnet.c:70 ../lib/arcnet.c:85
+#, c-format
+msgid "in_arcnet(%s): invalid arcnet address!\n"
+msgstr "in_arcnet(%s): chybnÃ¡ arcnet adresa!\n"
+
+#: ../lib/arcnet.c:97
+#, c-format
+msgid "in_arcnet(%s): trailing : ignored!\n"
+msgstr "in_arcnet(%s): nadbyteÄnÃ© : ignorovÃ¡no!\n"
+
+#: ../lib/arcnet.c:109
+#, c-format
+msgid "in_arcnet(%s): trailing junk!\n"
+msgstr "in_arcnet(%s): nadbyteÄnÃ© znaky!\n"
+
+#: ../lib/ash.c:81
+#, c-format
+msgid "Malformed Ash address"
+msgstr "ChybnÃ¡ Ash adresa"
+
+#: ../lib/ax25.c:75 ../lib/ddp.c:50 ../lib/econet.c:52 ../lib/inet.c:244
+#: ../lib/inet.c:259 ../lib/inet6.c:145 ../lib/ipx.c:81 ../lib/netrom.c:78
+#: ../lib/rose.c:71 ../lib/unix.c:56 ../lib/unix.c:76
 msgid "[NONE SET]"
 msgstr "[NENASTAVENO]"
 
-#: ../lib/arcnet.c:81 ../lib/arcnet.c:96
-#, c-format
-msgid "in_arcnet(%s): invalid arcnet address!\n"
-msgstr "in_arcnet(%s): chybná arcnet adresa!\n"
-
-#: ../lib/arcnet.c:108
-#, c-format
-msgid "in_arcnet(%s): trailing : ignored!\n"
-msgstr "in_arcnet(%s): nadbyteèné : ignorováno!\n"
-
-#: ../lib/arcnet.c:120
-#, c-format
-msgid "in_arcnet(%s): trailing junk!\n"
-msgstr "in_arcnet(%s): nadbyteèné znaky!\n"
-
-#: ../lib/ash.c:81
-msgid "Malformed Ash address"
-msgstr "Chybná Ash adresa"
-
 #: ../lib/ax25.c:97 ../lib/netrom.c:100
 msgid "Invalid callsign"
-msgstr "Nesprávnı volací znak"
+msgstr "NesprÃ¡vnÃ½ volacÃ­ znak"
 
 #: ../lib/ax25.c:110 ../lib/netrom.c:113
 msgid "Callsign too long"
-msgstr "Volací znak je pøíli¹ dlouhı."
+msgstr "VolacÃ­ znak je pÅ™Ã­liÅ¡ dlouhÃ½."
 
 #: ../lib/ax25_gr.c:47
+#, c-format
 msgid "AX.25 not configured in this system.\n"
-msgstr "AX.25 není na tomto systému nakonfigurováno.\n"
+msgstr "AX.25 nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
 
 #: ../lib/ax25_gr.c:50
+#, c-format
 msgid "Kernel AX.25 routing table\n"
-msgstr "Smìrovací tabulka v jádru pro AX.25\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro AX.25\n"
 
 #. xxx
 #: ../lib/ax25_gr.c:51 ../lib/rose_gr.c:55
+#, c-format
 msgid "Destination  Iface    Use\n"
-msgstr "Adresát      Rozhraní U¾ití\n"
-
-#: ../lib/ddp_gr.c:21
-msgid "Routing table for `ddp' not yet supported.\n"
-msgstr "Smìrovací tabulka pro `ddp' není zatím podporována.\n"
+msgstr "AdresÃ¡t      RozhranÃ­ UÅ¾itÃ­\n"
 
 #: ../lib/ether.c:74 ../lib/ether.c:91
 #, c-format
 msgid "in_ether(%s): invalid ether address!\n"
-msgstr "in_ether(%s): chybná ethernetová adresa!\n"
+msgstr "in_ether(%s): chybnÃ¡ ethernetovÃ¡ adresa!\n"
 
 #: ../lib/ether.c:105
 #, c-format
 msgid "in_ether(%s): trailing : ignored!\n"
-msgstr "in_ether(%s): nadbyteèné : ignorováno!\n"
+msgstr "in_ether(%s): nadbyteÄnÃ© : ignorovÃ¡no!\n"
 
 #: ../lib/ether.c:117
 #, c-format
 msgid "in_ether(%s): trailing junk!\n"
-msgstr "in_ether(%s): nadbyteèné znaky!\n"
+msgstr "in_ether(%s): nadbyteÄnÃ© znaky!\n"
 
-#: ../lib/fddi.c:95 ../lib/fddi.c:110
+#: ../lib/fddi.c:84 ../lib/fddi.c:99
 #, c-format
 msgid "in_fddi(%s): invalid fddi address!\n"
-msgstr "in_fddi(%s): chybná fddi adresa!\n"
+msgstr "in_fddi(%s): chybnÃ¡ fddi adresa!\n"
 
-#: ../lib/fddi.c:122
+#: ../lib/fddi.c:111
 #, c-format
 msgid "in_fddi(%s): trailing : ignored!\n"
-msgstr "in_fddi(%s): nadbyteèné : ignorováno!\n"
+msgstr "in_fddi(%s): nadbyteÄnÃ© : ignorovÃ¡no!\n"
 
-#: ../lib/fddi.c:134
+#: ../lib/fddi.c:123
 #, c-format
 msgid "in_fddi(%s): trailing junk!\n"
-msgstr "in_fddi(%s): nadbyteèné znaky!\n"
+msgstr "in_fddi(%s): nadbyteÄnÃ© znaky!\n"
 
-#: ../lib/getroute.c:97 ../lib/setroute.c:76
+#: ../lib/getroute.c:101 ../lib/setroute.c:80
 #, c-format
 msgid "Address family `%s' not supported.\n"
-msgstr "Tøída adres `%s' není podporována.\n"
+msgstr "TÅ™Ã­da adres â€%sâ€œ nenÃ­ podporovÃ¡na.\n"
 
-#: ../lib/getroute.c:103 ../lib/setroute.c:80
+#: ../lib/getroute.c:107 ../lib/setroute.c:84
 #, c-format
 msgid "No routing for address family `%s'.\n"
-msgstr "Pro tøídu adres `%s' není ¾ádné smìrování.\n"
+msgstr "Pro tÅ™Ã­du adres â€%sâ€œ nenÃ­ Å¾Ã¡dnÃ© smÄ›rovÃ¡nÃ­.\n"
 
-#: ../lib/hippi.c:96 ../lib/hippi.c:111
+#: ../lib/hippi.c:84 ../lib/hippi.c:99
 #, c-format
 msgid "in_hippi(%s): invalid hippi address!\n"
-msgstr "in_hippi(%s): chybná hippi adresa!\n"
+msgstr "in_hippi(%s): chybnÃ¡ hippi adresa!\n"
 
-#: ../lib/hippi.c:123
+#: ../lib/hippi.c:111
 #, c-format
 msgid "in_hippi(%s): trailing : ignored!\n"
-msgstr "in_hippi(%s): nadbyteèné : ignorováno!\n"
+msgstr "in_hippi(%s): nadbyteÄnÃ© : ignorovÃ¡no!\n"
 
-#: ../lib/hippi.c:134
+#: ../lib/hippi.c:122
 #, c-format
 msgid "in_hippi(%s): trailing junk!\n"
-msgstr "in_hippi(%s): nadbyteèné znaky!\n"
+msgstr "in_hippi(%s): nadbyteÄnÃ© znaky!\n"
 
-#: ../lib/hw.c:147
+#: ../lib/hw.c:165
 msgid "Local Loopback"
-msgstr "Místní smyèka"
+msgstr "MÃ­stnÃ­ smyÄka"
 
-#: ../lib/hw.c:150
+#: ../lib/hw.c:168
 msgid "Serial Line IP"
-msgstr "IP po sériové lince"
+msgstr "IP po sÃ©riovÃ© lince"
 
-#: ../lib/hw.c:151
+#: ../lib/hw.c:169
 msgid "VJ Serial Line IP"
-msgstr "Vj IP po sériové lince"
+msgstr "VJ IP po sÃ©riovÃ© lince"
 
-#: ../lib/hw.c:152
+#: ../lib/hw.c:170
 msgid "6-bit Serial Line IP"
-msgstr "6bitovı IP po sériové lince"
+msgstr "6bitovÃ½ IP po sÃ©riovÃ© lince"
 
-#: ../lib/hw.c:153
+#: ../lib/hw.c:171
 msgid "VJ 6-bit Serial Line IP"
-msgstr "6bitovı VJ IP po sériové lince"
+msgstr "6bitovÃ½ VJ IP po sÃ©riovÃ© lince"
 
-#: ../lib/hw.c:154
+#: ../lib/hw.c:172
 msgid "Adaptive Serial Line IP"
-msgstr "Adaptivní IP po sériové lince"
+msgstr "AdaptivnÃ­ IP po sÃ©riovÃ© lince"
 
-#: ../lib/hw.c:157
+#: ../lib/hw.c:175
 msgid "Ethernet"
 msgstr "Ethernet"
 
-#: ../lib/hw.c:163
+#: ../lib/hw.c:181
 msgid "Fiber Distributed Data Interface"
 msgstr "Fiber Distributed Data Interface"
 
-#: ../lib/hw.c:166
+#: ../lib/hw.c:184
 msgid "HIPPI"
 msgstr "HIPPI"
 
-#: ../lib/hw.c:178
+#: ../lib/hw.c:196
+msgid "generic X.25"
+msgstr "obecnÃ© X.25"
+
+#: ../lib/hw.c:199
 msgid "IPIP Tunnel"
 msgstr "IPIP Tunnel"
 
-#: ../lib/hw.c:181
+#: ../lib/hw.c:202
 msgid "Point-to-Point Protocol"
-msgstr "Point-to-Point Protokol"
+msgstr "DvoubodovÃ½ protokol"
 
-#: ../lib/hw.c:184
+#: ../lib/hw.c:205
 msgid "(Cisco)-HDLC"
 msgstr "(Cisco)-HDLC"
 
-#: ../lib/hw.c:185
+#: ../lib/hw.c:206
 msgid "LAPB"
 msgstr "LAPB"
 
-#: ../lib/hw.c:188
+#: ../lib/hw.c:209
 msgid "ARCnet"
 msgstr "ARCnet"
 
-#: ../lib/hw.c:191
+#: ../lib/hw.c:212
 msgid "Frame Relay DLCI"
 msgstr "Frame Relay DLCI"
 
-#: ../lib/hw.c:192
+#: ../lib/hw.c:213
 msgid "Frame Relay Access Device"
-msgstr "Pøístupové zaøízení Frame Relay"
+msgstr "PÅ™Ã­stupovÃ© zaÅ™Ã­zenÃ­ Frame Relay"
 
-#: ../lib/hw.c:195
+#: ../lib/hw.c:216
 msgid "IPv6-in-IPv4"
 msgstr "IPv6-in-IPv4"
 
-#: ../lib/hw.c:198
+#: ../lib/hw.c:219
 msgid "IrLAP"
 msgstr "IrLAP"
 
-#: ../lib/hw.c:201
+#: ../lib/hw.c:222
 msgid "16/4 Mbps Token Ring"
 msgstr "Token Ring 16/4 Mb/s"
 
-#: ../lib/hw.c:203
-#, fuzzy
+#: ../lib/hw.c:224
 msgid "16/4 Mbps Token Ring (New)"
-msgstr "Token Ring 16/4 Mb/s"
+msgstr "Token Ring 16/4 Mb/s (NovÃ½)"
 
-#: ../lib/inet.c:153 ../lib/inet6.c:79
+#: ../lib/hw.c:231
+msgid "InfiniBand"
+msgstr "InfiniBand"
+
+#: ../lib/hw.c:234
+msgid "Generic EUI-64"
+msgstr "ObecnÃ© EUI-64"
+
+#: ../lib/inet.c:153 ../lib/inet6.c:94
 #, c-format
 msgid "rresolve: unsupport address family %d !\n"
-msgstr "rresolve: tøída adres %d není podporována!\n"
+msgstr "rresolve: tÅ™Ã­da adres %d nenÃ­ podporovÃ¡na!\n"
 
-#: ../lib/inet6_gr.c:79
+#: ../lib/inet6.c:147
+msgid "[UNKNOWN]"
+msgstr "[NEZNÃMÃ]"
+
+#: ../lib/inet6_gr.c:71
+#, c-format
 msgid "INET6 (IPv6) not configured in this system.\n"
-msgstr "INET6 (IPv6) není na tomto systému nakonfigurováno.\n"
+msgstr "INET6 (IPv6) nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
 
-#: ../lib/inet6_gr.c:82
+#: ../lib/inet6_gr.c:76
+#, c-format
+msgid "Kernel IPv6 routing cache\n"
+msgstr "SmÄ›rovacÃ­ cache v jÃ¡dru pro IPv6\n"
+
+#: ../lib/inet6_gr.c:78
+#, c-format
 msgid "Kernel IPv6 routing table\n"
-msgstr "Smìrovací tabulka v jádru pro IPv6\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro IPv6\n"
 
-#: ../lib/inet6_gr.c:84
+#: ../lib/inet6_gr.c:80
+#, c-format
 msgid ""
-"Destination                                 Next Hop                         "
-"       Flags Metric Ref    Use Iface\n"
+"Destination                    Next Hop                   Flag Met Ref Use "
+"If\n"
 msgstr ""
-"Adresát                                     Dal¹í Smìrovaè                   "
-"       Pøízn Metrika Odkaz U¾it Rozhraní\n"
+"AdresÃ¡t                        DalÅ¡Ã­ smÄ›rovaÄ             PÅ™Ã­z Met Odk UÅ¾t "
+"Rozhr\n"
 
-#: ../lib/inet6_gr.c:158
+#: ../lib/inet6_gr.c:174
+#, c-format
 msgid "Kernel IPv6 Neighbour Cache\n"
-msgstr "Cache sousedù v jádru pro IPv6\n"
+msgstr "Cache sousedÅ¯ v jÃ¡dru pro IPv6\n"
 
-#: ../lib/inet6_gr.c:161
+#: ../lib/inet6_gr.c:177
+#, c-format
 msgid ""
 "Neighbour                                   HW Address        Iface    Flags "
 "Ref State\n"
 msgstr ""
-"Soused                                      HW Adresa         Rozhraní Pøízn "
+"Soused                                      HW Adresa         RozhranÃ­ PÅ™Ã­zn "
 "Odkazy Stav\n"
 
-#: ../lib/inet6_gr.c:165
+#: ../lib/inet6_gr.c:181
+#, c-format
 msgid ""
 "Neighbour                                   HW Address        Iface    Flags "
 "Ref State            Stale(sec) Delete(sec)\n"
 msgstr ""
-"Soused                                      HW Adresa         Rozhraní "
-"Pøíznaky Odkazy Stav          Pro¹lı(sec) Smazat(sec)\n"
+"Soused                                      HW Adresa         RozhranÃ­ "
+"PÅ™Ã­znaky Odkazy Stav          ProÅ¡lÃ½(sec) Smazat(sec)\n"
 
 #: ../lib/inet6_sr.c:46
+#, c-format
 msgid "Usage: inet6_route [-vF] del Target\n"
-msgstr "Pou¾ití: inet6_route [-vF] del Cíl\n"
+msgstr "PouÅ¾itÃ­: inet6_route [-vF] del CÃ­l\n"
 
 #: ../lib/inet6_sr.c:47
+#, c-format
 msgid "       inet6_route [-vF] add Target [gw Gw] [metric M] [[dev] If]\n"
-msgstr "       inet6_route [-vF] add Cíl [gw Gw] [metrika M] [[dev] If]\n"
+msgstr "       inet6_route [-vF] add CÃ­l [gw Gw] [metrika M] [[dev] If]\n"
 
 #: ../lib/inet6_sr.c:48
+#, c-format
 msgid "       inet6_route [-FC] flush      NOT supported\n"
-msgstr "       inet6_route [-FC] flush      NENÍ podporováno\n"
+msgstr "       inet6_route [-FC] flush      NENÃ podporovÃ¡no\n"
 
-#: ../lib/inet6_sr.c:182
+#: ../lib/inet6_sr.c:188
+#, c-format
 msgid "Flushing `inet6' routing table not supported\n"
-msgstr "Smìrovací tabulku `inet6' nelze vyprazdòovat\n"
+msgstr "SmÄ›rovacÃ­ tabulku `inet6' nelze vyprazdÅˆovat\n"
 
 #: ../lib/inet_gr.c:50 ../lib/inet_gr.c:220
+#, c-format
 msgid "INET (IPv4) not configured in this system.\n"
-msgstr "INET (IPv4) není na tomto systému nakonfigurováno.\n"
+msgstr "INET (IPv4) nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
 
 #: ../lib/inet_gr.c:53
+#, c-format
 msgid "Kernel IP routing table\n"
-msgstr "Smìrovací tabulka v jádru pro IP\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro IP\n"
 
 #: ../lib/inet_gr.c:56
+#, c-format
 msgid ""
 "Destination     Gateway         Genmask         Flags Metric Ref    Use "
 "Iface\n"
 msgstr ""
-"Adresát         Brána           Maska           Pøízn Metrik Odkaz  U¾t "
-"Rozhraní\n"
+"AdresÃ¡t         BrÃ¡na           Maska           PÅ™Ã­zn Metrik OdkazÅ¯ UÅ¾t "
+"RozhranÃ­\n"
 
 #: ../lib/inet_gr.c:59
+#, c-format
 msgid ""
 "Destination     Gateway         Genmask         Flags   MSS Window  irtt "
 "Iface\n"
 msgstr ""
-"Adresát         Brána           Maska           Pøízn   MSS Okno    irtt "
-"Rozhraní\n"
+"AdresÃ¡t         BrÃ¡na           Maska           PÅ™Ã­zn   MSS Okno    irtt "
+"RozhranÃ­\n"
 
 #: ../lib/inet_gr.c:62
+#, c-format
 msgid ""
 "Destination     Gateway         Genmask         Flags Metric Ref    Use "
 "Iface    MSS   Window irtt\n"
 msgstr ""
-"Adresát         Brána           Maska           Pøízn Metrik Odkazy U¾t "
-"Rozhraní MSS   Okno   irtt\n"
+"AdresÃ¡t         BrÃ¡na           Maska           PÅ™Ã­zn Metrik Odkazy UÅ¾t "
+"RozhranÃ­ MSS   Okno   irtt\n"
 
 #: ../lib/inet_gr.c:237
+#, c-format
 msgid "Kernel IP routing cache\n"
-msgstr "Smìrovací cache v jádru pro IP\n"
+msgstr "SmÄ›rovacÃ­ cache v jÃ¡dru pro IP\n"
 
 #: ../lib/inet_gr.c:258
+#, c-format
 msgid ""
 "Source          Destination     Gateway         Flags Metric Ref    Use "
 "Iface\n"
 msgstr ""
-"Odesílatel      Adresát         Maska           Pøízn Metrik Odkazy U¾t "
-"Rozhraní\n"
+"OdesÃ­latel      AdresÃ¡t         Maska           PÅ™Ã­zn Metrik Odkazy UÅ¾t "
+"RozhranÃ­\n"
 
 #: ../lib/inet_gr.c:261
+#, c-format
 msgid ""
 "Source          Destination     Gateway         Flags   MSS Window  irtt "
 "Iface\n"
 msgstr ""
-"Odesílatel      Adresát         Maska           Pøízn   MSS Okno    irtt "
-"Rozhraní\n"
+"OdesÃ­latel      AdresÃ¡t         Maska           PÅ™Ã­zn   MSS Okno    irtt "
+"RozhranÃ­\n"
 
 #: ../lib/inet_gr.c:266
+#, c-format
 msgid ""
 "Source          Destination     Gateway         Flags Metric Ref    Use "
 "Iface    MSS   Window irtt  HH  Arp\n"
 msgstr ""
-"Odesílatel      Adresát         Maska           Pøízn Metrik Odkazy U¾t "
-"Rozhraní MSS   Okno   irtt HH   Arp\n"
+"OdesÃ­latel      AdresÃ¡t         Maska           PÅ™Ã­zn Metrik Odkazy UÅ¾t "
+"RozhranÃ­ MSS   Okno   irtt HH   Arp\n"
 
 #: ../lib/inet_gr.c:290
+#, c-format
 msgid ""
 "Source          Destination     Gateway         Flags Metric Ref    Use "
 "Iface    MSS   Window irtt  TOS HHRef HHUptod     SpecDst\n"
 msgstr ""
-"Odesílatel      Adresát         Maska           Pøízn Metrik Odkazy U¾t "
-"Rozhraní MSS    Okno irtt   TOS HHOdk HHAktuál    Zvlá¹tCíl\n"
+"OdesÃ­latel      AdresÃ¡t         Maska           PÅ™Ã­zn Metrik Odkazy UÅ¾t "
+"RozhranÃ­ MSS    Okno irtt   TOS HHOdk HHAktuÃ¡l    ZvlÃ¡Å¡tCÃ­l\n"
 
-#: ../lib/inet_sr.c:50
+#: ../lib/inet_sr.c:51
+#, c-format
 msgid ""
 "Usage: inet_route [-vF] del {-host|-net} Target[/prefix] [gw Gw] [metric M] "
 "[[dev] If]\n"
 msgstr ""
-"Pou¾ití: inet_route [-vF] del {-host|-net} Cíl[/prefix] [gw Gw] [metrika M] "
+"PouÅ¾itÃ­: inet_route [-vF] del {-host|-net} CÃ­l[/prefix] [gw Gw] [metrika M] "
 "[[dev] If]\n"
 
-#: ../lib/inet_sr.c:51
+#: ../lib/inet_sr.c:52
+#, c-format
 msgid ""
 "       inet_route [-vF] add {-host|-net} Target[/prefix] [gw Gw] [metric M]\n"
 msgstr ""
-"       inet_route [-vF] add {-host|-net} Cíl[/prefix] [gw Gw] [metrika M]\n"
+"       inet_route [-vF] add {-host|-net} CÃ­l[/prefix] [gw Gw] [metrika M]\n"
 
-#: ../lib/inet_sr.c:52
+#: ../lib/inet_sr.c:53
+#, c-format
 msgid ""
 "                              [netmask N] [mss Mss] [window W] [irtt I]\n"
 msgstr ""
 "                              [netmask N] [mss Mss] [window W] [irtt I]\n"
 
-#: ../lib/inet_sr.c:53
+#: ../lib/inet_sr.c:54
+#, c-format
 msgid "                              [mod] [dyn] [reinstate] [[dev] If]\n"
 msgstr "                              [mod] [dyn] [reinstate] [[dev] If]\n"
 
-#: ../lib/inet_sr.c:54
+#: ../lib/inet_sr.c:55
+#, c-format
 msgid ""
 "       inet_route [-vF] add {-host|-net} Target[/prefix] [metric M] reject\n"
 msgstr ""
-"       inet_route [-vF] add {-host|-net} Cíl/[prefix] [metrika M] reject\n"
+"       inet_route [-vF] add {-host|-net} CÃ­l/[prefix] [metrika M] reject\n"
 
-#: ../lib/inet_sr.c:55
+#: ../lib/inet_sr.c:56
+#, c-format
 msgid "       inet_route [-FC] flush      NOT supported\n"
-msgstr "       inet_route [-FC] flush      NENÍ podporováno\n"
+msgstr "       inet_route [-FC] flush      NENÃ podporovÃ¡no\n"
 
 #: ../lib/inet_sr.c:158
 #, c-format
 msgid "route: %s: cannot use a NETWORK as gateway!\n"
-msgstr "route: %s: sí» nelze pou¾ít jako bránu!\n"
+msgstr "route: %s: sÃ­Å¥ nelze pouÅ¾Ã­t jako brÃ¡nu!\n"
 
 #: ../lib/inet_sr.c:174
-#, fuzzy
+#, c-format
 msgid "route: Invalid MSS/MTU.\n"
-msgstr "route: Nesprávné NSS.\n"
+msgstr "route: NeplatnÃ© MSS/MTU.\n"
 
 #: ../lib/inet_sr.c:187
+#, c-format
 msgid "route: Invalid window.\n"
-msgstr "route: Nesprávné okno.\n"
+msgstr "route: NesprÃ¡vnÃ© okno.\n"
 
 #: ../lib/inet_sr.c:203
+#, c-format
 msgid "route: Invalid initial rtt.\n"
-msgstr "route: Nesprávné zahajovací rtt.\n"
+msgstr "route: NesprÃ¡vnÃ© zahajovacÃ­ rtt.\n"
 
 #: ../lib/inet_sr.c:261
 #, c-format
 msgid "route: netmask %.8x doesn't make sense with host route\n"
-msgstr "route: sí»ová maska %.8x nedává smysl, kdy¾ cílem je cesty poèítaè\n"
+msgstr "route: sÃ­Å¥ovÃ¡ maska %.8x nedÃ¡vÃ¡ smysl, kdyÅ¾ cÃ­lem je cesty poÄÃ­taÄ\n"
 
 #: ../lib/inet_sr.c:265
 #, c-format
 msgid "route: bogus netmask %s\n"
-msgstr "route: sí»ová maska %s je nesprávná\n"
+msgstr "route: sÃ­Å¥ovÃ¡ maska %s je nesprÃ¡vnÃ¡\n"
 
 #: ../lib/inet_sr.c:270
+#, c-format
 msgid "route: netmask doesn't match route address\n"
-msgstr "route: sí»ová maska nevyhovuje adrese cesty\n"
+msgstr "route: sÃ­Å¥ovÃ¡ maska nevyhovuje adrese cesty\n"
 
 #: ../lib/inet_sr.c:306
+#, c-format
 msgid "Flushing `inet' routing table not supported\n"
-msgstr "Smìrovací cache `inet' nelze vyprazdòovat\n"
+msgstr "SmÄ›rovacÃ­ cache `inet' nelze vyprazdÅˆovat\n"
 
 #: ../lib/inet_sr.c:310
+#, c-format
 msgid "Modifying `inet' routing cache not supported\n"
-msgstr "Smìrovací cache `inet' nelze mìnit\n"
+msgstr "SmÄ›rovacÃ­ cache `inet' nelze mÄ›nit\n"
 
-#: ../lib/ipx_gr.c:52
-msgid "IPX not configured in this system.\n"
-msgstr "IPX není na tomto systému nakonfigurováno.\n"
+#: ../lib/ipx_gr.c:53
+#, c-format
+msgid "IPX routing not in file %s or %s found.\n"
+msgstr "SmÄ›rovÃ¡nÃ­ IPX nenalezeno vÂ souboru %s nebo %s.\n"
 
-#: ../lib/ipx_gr.c:56
+#: ../lib/ipx_gr.c:62
+#, c-format
 msgid "Kernel IPX routing table\n"
-msgstr "Smìrovací tabulka v jádru pro IPX\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro IPX\n"
 
 #. xxx
-#: ../lib/ipx_gr.c:57
+#: ../lib/ipx_gr.c:63
+#, c-format
 msgid "Destination               Router Net                Router Node\n"
-msgstr "Cíl                       Smìrovaè Sí»              Smìrovaè Uzel\n"
+msgstr "CÃ­l                       SmÄ›rovaÄ SÃ­Å¥              SmÄ›rovaÄ Uzel\n"
 
 #: ../lib/ipx_sr.c:33
+#, c-format
 msgid "IPX: this needs to be written\n"
-msgstr "IPX: toto je tøeba ulo¾it\n"
+msgstr "IPX: toto je tÅ™eba uloÅ¾it\n"
 
-#: ../lib/masq_info.c:197
+#: ../lib/masq_info.c:198
+#, c-format
 msgid "IP masquerading entries\n"
-msgstr "IP maskovací polo¾ky\n"
+msgstr "IP maskovacÃ­ poloÅ¾ky\n"
 
-#: ../lib/masq_info.c:200
+#: ../lib/masq_info.c:201
+#, c-format
 msgid "prot   expire source               destination          ports\n"
-msgstr "prot   ¾ivot  zdroj                cíl                  porty\n"
+msgstr "prot   Å¾ivot  zdroj                cÃ­l                  porty\n"
 
-#: ../lib/masq_info.c:203
+#: ../lib/masq_info.c:204
+#, c-format
 msgid ""
-"prot   expire    initseq delta prevd source               destination        "
-"  ports\n"
+"prot   expire    initseq delta prevd source               "
+"destination          ports\n"
 msgstr ""
-"prot   ¾ivot     zahajsek delta pøedchd zdroj             cíl                "
-"   porty\n"
+"prot   Å¾ivot     zahajsek delta pÅ™edchd zdroj             "
+"cÃ­l                   porty\n"
 
 #: ../lib/netrom_gr.c:48
+#, c-format
 msgid "NET/ROM not configured in this system.\n"
-msgstr "NET/ROM není na tomto systému nakonfigurováno.\n"
+msgstr "NET/ROM nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
 
 #: ../lib/netrom_gr.c:51
+#, c-format
 msgid "Kernel NET/ROM routing table\n"
-msgstr "Smìrovací tabulka v jádru pro NET/ROM\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro NET/ROM\n"
 
 #: ../lib/netrom_gr.c:52
+#, c-format
 msgid "Destination  Mnemonic  Quality  Neighbour  Iface\n"
-msgstr "Cíl          Mnemonika Kvalita  Soused     Rozhraní\n"
+msgstr "CÃ­l          Mnemonika Kvalita  Soused     RozhranÃ­\n"
 
 #: ../lib/netrom_sr.c:34
+#, c-format
 msgid "netrom usage\n"
-msgstr "pou¾ití netrom\n"
+msgstr "pouÅ¾itÃ­ netrom\n"
 
 #: ../lib/netrom_sr.c:44
+#, c-format
 msgid "NET/ROM: this needs to be written\n"
-msgstr "NET/ROM: toto je potøeba ulo¾it\n"
+msgstr "NET/ROM: toto je potÅ™eba uloÅ¾it\n"
 
 #: ../lib/ppp.c:44
+#, c-format
 msgid "You cannot start PPP with this program.\n"
-msgstr "Tímto programem nelze PPP spustit.\n"
+msgstr "TÃ­mto programem nelze PPP spustit.\n"
 
 #: ../lib/ppp_ac.c:38
+#, c-format
 msgid "Sorry, use pppd!\n"
-msgstr "Lituji, pou¾ijte pppd!\n"
+msgstr "Lituji, pouÅ¾ijte pppd!\n"
 
 #: ../lib/rose.c:87
 msgid "Node address must be ten digits"
-msgstr "Adresa uzlu musí mít 10 èíslic"
+msgstr "Adresa uzlu musÃ­ mÃ­t 10 ÄÃ­slic"
 
 #: ../lib/rose_gr.c:51
+#, c-format
 msgid "ROSE not configured in this system.\n"
-msgstr "ROSE není na tomto systému nakonfigurováno.\n"
+msgstr "ROSE nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
 
 #: ../lib/rose_gr.c:54
+#, c-format
 msgid "Kernel ROSE routing table\n"
-msgstr "Smìrovací tabulka v jádru pro ROSE\n"
+msgstr "SmÄ›rovacÃ­ tabulka v jÃ¡dru pro ROSE\n"
 
-#: ../lib/tr.c:70 ../lib/tr.c:85
+#: ../lib/tr.c:86 ../lib/tr.c:101
 #, c-format
 msgid "in_tr(%s): invalid token ring address!\n"
-msgstr "in_tr(%s): nesprávná token ring adresa!\n"
+msgstr "in_tr(%s): nesprÃ¡vnÃ¡ token ring adresa!\n"
 
-#: ../lib/tr.c:97
+#: ../lib/tr.c:113
 #, c-format
 msgid "in_tr(%s): trailing : ignored!\n"
-msgstr "in_tr(%s): nadbyteèné: ignorováno!\n"
+msgstr "in_tr(%s): nadbyteÄnÃ©: ignorovÃ¡no!\n"
 
-#: ../lib/tr.c:109
+#: ../lib/tr.c:125
 #, c-format
 msgid "in_tr(%s): trailing junk!\n"
-msgstr "in_tr(%s): nadbyteèné znaky!\n"
+msgstr "in_tr(%s): nadbyteÄnÃ© znaky!\n"
 
-#: ../lib/interface.c:124
+#: ../lib/interface.c:176
 #, c-format
 msgid "warning: no inet socket available: %s\n"
-msgstr "varování: není dostupnı ¾ádnı inet soket: %s\n"
+msgstr "varovÃ¡nÃ­: nenÃ­ dostupnÃ½ Å¾Ã¡dnÃ½ inet soket: %s\n"
 
-#: ../lib/interface.c:270
+#: ../lib/interface.c:325
 #, c-format
 msgid "Warning: cannot open %s (%s). Limited output.\n"
-msgstr ""
+msgstr "Pozor: %s nelze otevÅ™Ã­t (%s). VÃ½stup omezen.\n"
 
 #. Give better error message for this case.
-#: ../lib/interface.c:504
+#: ../lib/interface.c:571
 msgid "Device not found"
-msgstr "Zaøízení nebylo nalezeno"
+msgstr "ZaÅ™Ã­zenÃ­ nebylo nalezeno"
 
-#: ../lib/interface.c:508
+#: ../lib/interface.c:575
 #, c-format
 msgid "%s: error fetching interface information: %s\n"
-msgstr "%s: chyba pøi získávání informací o rozhraní %s\n"
+msgstr "%s: chyba pÅ™i zÃ­skÃ¡vÃ¡nÃ­ informacÃ­ o rozhranÃ­ %s\n"
 
-#: ../lib/sockets.c:59
+#: ../lib/interface.c:608
+msgid "     - no statistics available -"
+msgstr "     - statistickÃ¡ data nejsou dostupnÃ¡ -"
+
+#: ../lib/interface.c:612
+#, c-format
+msgid "[NO FLAGS]"
+msgstr "[Å½ÃDNÃ‰ PÅ˜ÃZNAKY]"
+
+#: ../lib/interface.c:694
+msgid "UP,"
+msgstr "AKTIVOVÃNO,"
+
+#: ../lib/interface.c:696
+msgid "BROADCAST,"
+msgstr "VÅ ESMÄšR,"
+
+#: ../lib/interface.c:698
+msgid "DEBUG,"
+msgstr "LADÄšNÃ,"
+
+#: ../lib/interface.c:700
+msgid "LOOPBACK,"
+msgstr "SMYÄŒKA,"
+
+#: ../lib/interface.c:702
+msgid "POINTOPOINT,"
+msgstr "DVOUBODOVÃ‰,"
+
+# ??
+#: ../lib/interface.c:704
+msgid "NOTRAILERS,"
+msgstr "Å½ÃDNÃ‰_TRAILERS"
+
+#: ../lib/interface.c:706
+msgid "RUNNING,"
+msgstr "BÄšÅ½Ã,"
+
+#: ../lib/interface.c:708
+msgid "NOARP,"
+msgstr "NEARP,"
+
+#: ../lib/interface.c:710
+msgid "PROMISC,"
+msgstr "PROMISK,"
+
+#: ../lib/interface.c:712
+msgid "ALLMULTI,"
+msgstr "ALLMULTI,"
+
+#: ../lib/interface.c:714
+msgid "SLAVE,"
+msgstr "PODÅ˜ÃZENÃ,"
+
+#: ../lib/interface.c:716
+msgid "MASTER,"
+msgstr "NADÅ˜ÃZENÃ,"
+
+#: ../lib/interface.c:718
+msgid "MULTICAST,"
+msgstr "MULTICAST,"
+
+#: ../lib/interface.c:721
+msgid "DYNAMIC,"
+msgstr "DYNAMIC,"
+
+#: ../lib/interface.c:730
+#, c-format
+msgid "%s: %s  mtu %d  metric %d"
+msgstr "%s: %s  mtu %d  metrika %d"
+
+#: ../lib/interface.c:734
+#, c-format
+msgid "  outfill %d  keepalive %d"
+msgstr "  outfill %d  keepalive %d"
+
+#: ../lib/interface.c:743 ../lib/interface.c:841
+#, c-format
+msgid "        %s %s"
+msgstr "        %s %s"
+
+#: ../lib/interface.c:745
+#, c-format
+msgid "  netmask %s"
+msgstr " sÃ­Å¥ovÃ¡_maska %s"
+
+#: ../lib/interface.c:747
+#, c-format
+msgid "  broadcast %s"
+msgstr "  vÅ¡esmÄ›r %s"
+
+#: ../lib/interface.c:750
+#, c-format
+msgid "  destination %s"
+msgstr "  cÃ­l %s"
+
+#: ../lib/interface.c:769
+#, c-format
+msgid "        %s %s  prefixlen %d"
+msgstr "        %s %s  dÃ©lka_prefixu %d"
+
+#: ../lib/interface.c:773
+#, c-format
+msgid "  scopeid 0x%x"
+msgstr "  scopeid 0x%x"
+
+#: ../lib/interface.c:777
+msgid "compat,"
+msgstr "kompat,"
+
+#: ../lib/interface.c:781
+msgid "global,"
+msgstr "globÃ¡lnÃ­,"
+
+#: ../lib/interface.c:783
+msgid "link,"
+msgstr "linka,"
+
+#: ../lib/interface.c:785
+msgid "site,"
+msgstr "oblast,"
+
+#: ../lib/interface.c:787
+msgid "host,"
+msgstr "stroj,"
+
+#: ../lib/interface.c:805
+#, c-format
+msgid "        %s Ethernet-II   %s\n"
+msgstr "        %s Ethernet-II   %s\n"
+
+#: ../lib/interface.c:808
+#, c-format
+msgid "        %s Ethernet-SNAP %s\n"
+msgstr "        %s Ethernet-SNAP %s\n"
+
+#: ../lib/interface.c:811
+#, c-format
+msgid "        %s Ethernet802.2 %s\n"
+msgstr "        %s Ethernet802.2 %s\n"
+
+#: ../lib/interface.c:814
+#, c-format
+msgid "        %s Ethernet802.3 %s\n"
+msgstr "        %s Ethernet802.3 %s\n"
+
+#: ../lib/interface.c:824 ../lib/interface.c:833
+#, c-format
+msgid "        %s %s\n"
+msgstr "        %s %s\n"
+
+#: ../lib/interface.c:843
+#, c-format
+msgid "        %s"
+msgstr "        %s"
+
+#: ../lib/interface.c:845
+#, c-format
+msgid "  txqueuelen %d"
+msgstr " dÃ©lka_odchozÃ­_fronty %d"
+
+#: ../lib/interface.c:850
+#, c-format
+msgid "        media %s"
+msgstr "        mÃ©dium %s"
+
+#: ../lib/interface.c:852
+#, c-format
+msgid "autoselect"
+msgstr "automatika"
+
+#: ../lib/interface.c:903
+#, c-format
+msgid "RX packets %llu  bytes %llu (%lu.%lu %s)\n"
+msgstr "RX packetÅ¯ %llu  bajtÅ¯ %llu (%lu,%lu %s)\n"
+
+#: ../lib/interface.c:909
+#, c-format
+msgid "RX compressed:%lu\n"
+msgstr "RX komprimovÃ¡no %lu\n"
+
+#: ../lib/interface.c:912
+#, c-format
+msgid "RX errors %lu  dropped %lu  overruns %lu  frame %lu\n"
+msgstr "RX chyb %lu  zahozeno %lu  pÅ™eteÄenÃ­ %lu  rÃ¡mcÅ¯ %lu\n"
+
+#: ../lib/interface.c:918
+#, c-format
+msgid "TX packets %llu  bytes %llu (%lu.%lu %s)\n"
+msgstr "TX packetÅ¯ %llu  bajtÅ¯ %llu (%lu,%lu %s)\n"
+
+#: ../lib/interface.c:924
+#, c-format
+msgid "TX compressed %lu\n"
+msgstr "TX komprimovÃ¡no %lu\n"
+
+# carrier?
+#: ../lib/interface.c:927
+#, c-format
+msgid "TX errors %lu  dropped %lu overruns %lu  carrier %lu  collisions %lu\n"
+msgstr "TX chyb %lu  zahozeno %lu  pÅ™eteÄenÃ­ %lu  pÅ™enos %lu  kolizÃ­ %lu\n"
+
+#: ../lib/interface.c:937
+#, c-format
+msgid "interrupt %d  "
+msgstr "pÅ™eruÅ¡enÃ­ %d  "
+
+#. Only print devices using it for
+#. I/O maps
+#: ../lib/interface.c:940
+#, c-format
+msgid "base 0x%x  "
+msgstr "zÃ¡klad 0x%x  "
+
+#: ../lib/interface.c:942
+#, c-format
+msgid "memory 0x%lx-%lx  "
+msgstr "pamÄ›Å¥ 0x%lxâ€“%lx  "
+
+#: ../lib/interface.c:945
+#, c-format
+msgid "  dma 0x%x"
+msgstr "  DMA 0x%x"
+
+#: ../lib/sockets.c:63
+#, c-format
 msgid "No usable address families found.\n"
-msgstr "Nebyla nalezena ¾ádná pou¾itelná tøída adres.\n"
+msgstr "Nebyla nalezena Å¾Ã¡dnÃ¡ pouÅ¾itelnÃ¡ tÅ™Ã­da adres.\n"
 
 #: ../lib/util-ank.c:229
 #, c-format
 msgid "ip: %s is invalid inet address\n"
-msgstr "ip: %s není platnou inet adresou\n"
+msgstr "ip: %s nenÃ­ platnou inet adresou\n"
 
 #: ../lib/util-ank.c:238
 #, c-format
 msgid "ip: %s is invalid inet prefix\n"
-msgstr "ip: %s není platnım inet prefixem\n"
+msgstr "ip: %s nenÃ­ platnÃ½m inet prefixem\n"
 
 #: ../lib/util-ank.c:248
 #, c-format
 msgid "ip: %s is invalid IPv4 address\n"
-msgstr "ip: %s není platnou IPv4 adresou\n"
+msgstr "ip: %s nenÃ­ platnou IPv4 adresou\n"
 
 #: ../lib/util-ank.c:256
 #, c-format
 msgid "ip: argument is wrong: %s\n"
-msgstr "ip: argument %s je nesprávnı\n"
+msgstr "ip: argument %s je nesprÃ¡vnÃ½\n"
 
-#: ../ipmaddr.c:56
+#: ../ipmaddr.c:61
+#, c-format
 msgid "Usage: ipmaddr [ add | del ] MULTIADDR dev STRING\n"
-msgstr " Usage: ipmaddr [ add | del ] MULTIADR dev ØETÌZEC\n"
+msgstr " Usage: ipmaddr [ add | del ] MULTIADR dev Å˜ETÄšZEC\n"
 
-#: ../ipmaddr.c:57
+#: ../ipmaddr.c:62
+#, c-format
 msgid "       ipmaddr show [ dev STRING ] [ ipv4 | ipv6 | link | all ]\n"
-msgstr "       ipmaddr show [ dev ØETÌZEC ] [ ipv4 | ipv6 | link | all ]\n"
+msgstr "       ipmaddr show [ dev Å˜ETÄšZEC ] [ ipv4 | ipv6 | link | all ]\n"
 
-#: ../ipmaddr.c:58
+#: ../ipmaddr.c:63
+#, c-format
 msgid "       ipmaddr -V | -version\n"
 msgstr "       ipmaddr -V | -version\n"
 
-#: ../ipmaddr.c:258
+#: ../ipmaddr.c:263
 #, c-format
 msgid "family %d "
-msgstr "tøída %d "
+msgstr "tÅ™Ã­da %d "
 
-#: ../ipmaddr.c:267
+#: ../ipmaddr.c:272
 #, c-format
 msgid " users %d"
-msgstr " u¾ivatelé %d"
+msgstr " uÅ¾ivatelÃ© %d"
 
-#: ../ipmaddr.c:353
+#: ../ipmaddr.c:361
 msgid "Cannot create socket"
-msgstr "Soket nelze vytvoøit"
+msgstr "Soket nelze vytvoÅ™it"
 
 #: ../slattach.c:180
 #, c-format
 msgid "slattach: /dev/%s already locked!\n"
-msgstr "slattach: zaøízení /dev/%s je ji¾ zamèeno!\n"
+msgstr "slattach: zaÅ™Ã­zenÃ­ /dev/%s je jiÅ¾ zamÄeno!\n"
 
 #: ../slattach.c:186
 #, c-format
@@ -2433,80 +3188,169 @@ msgid "slattach: tty_lock: (%s): %s\n"
 msgstr "slattach: tty_lock: (%s): %s\n"
 
 #: ../slattach.c:192
+#, c-format
 msgid "slattach: cannot write PID file\n"
 msgstr "slattach: do PID souboru nelze zapisovat\n"
 
 #: ../slattach.c:202
 #, c-format
 msgid "slattach: tty_lock: UUCP user %s unknown!\n"
-msgstr "slattach: tty_lock: u¾ivatel UUCP %s není znám!\n"
+msgstr "slattach: tty_lock: uÅ¾ivatel UUCP %s nenÃ­ znÃ¡m!\n"
 
-#: ../slattach.c:430
+#: ../slattach.c:432
 #, c-format
 msgid "slattach: tty_hangup(DROP): %s\n"
 msgstr "slattach: tty_hangup(DROP): %s\n"
 
-#: ../slattach.c:437
+#: ../slattach.c:439
 #, c-format
 msgid "slattach: tty_hangup(RAISE): %s\n"
 msgstr "slattach: tty_hangup(RAISE): %s\n"
 
-#: ../slattach.c:486
+#: ../slattach.c:470
+#, c-format
+msgid "slattach: tty name too long\n"
+msgstr "slattach: nÃ¡zev TTY je pÅ™Ã­liÅ¡ dlouhÃ½\n"
+
+#: ../slattach.c:500
+#, c-format
 msgid "slattach: tty_open: cannot get current state!\n"
-msgstr "slattach: tty_open: aktuální stav nelze zjistit!\n"
+msgstr "slattach: tty_open: aktuÃ¡lnÃ­ stav nelze zjistit!\n"
 
-#: ../slattach.c:493
+#: ../slattach.c:507
+#, c-format
 msgid "slattach: tty_open: cannot get current line disc!\n"
-msgstr "slattach: tty_open: aktuální linkovou disciplínu nelze zjistit!\n"
+msgstr "slattach: tty_open: aktuÃ¡lnÃ­ linkovou disciplÃ­nu nelze zjistit!\n"
 
-#: ../slattach.c:501
+#: ../slattach.c:515
+#, c-format
 msgid "slattach: tty_open: cannot set RAW mode!\n"
-msgstr "slattach: tty_open: re¾im RAW nelze nastavit!\n"
+msgstr "slattach: tty_open: reÅ¾im RAW nelze nastavit!\n"
 
-#: ../slattach.c:508
+#: ../slattach.c:522
 #, c-format
 msgid "slattach: tty_open: cannot set %s bps!\n"
 msgstr "slattach: tty_open: %s bps nelze nastavit!\n"
 
-#: ../slattach.c:518
+#: ../slattach.c:532
+#, c-format
 msgid "slattach: tty_open: cannot set 8N1 mode!\n"
-msgstr "slattach: tty_open: re¾im 8N1 nelze nastavit!\n"
+msgstr "slattach: tty_open: reÅ¾im 8N1 nelze nastavit!\n"
 
-#: ../slattach.c:686
+#: ../slattach.c:674
+#, c-format
+msgid "slattach: setvbuf(stdout,0,_IOLBF,0) : %s\n"
+msgstr "slattach: setvbuf(stdout, 0, _IOLBF, 0): %s\n"
+
+#: ../slattach.c:706
 #, c-format
 msgid "%s started"
-msgstr "protokol %s spu¹tìn"
+msgstr "protokol %s spuÅ¡tÄ›n"
 
-#: ../slattach.c:687
+#: ../slattach.c:707
 #, c-format
 msgid " on %s"
 msgstr " na %s"
 
-#: ../slattach.c:688
+#: ../slattach.c:708
 #, c-format
 msgid " interface %s\n"
-msgstr " rozhraní %s\n"
+msgstr " rozhranÃ­ %s\n"
 
 #~ msgid ""
-#~ "   This comand can read or set the hostname or the NIS domainname. You can\n"
+#~ "  arp [-v]   [<HW>] [-i <if>] -s  <hostname> <hwaddr> [netmask <nm>] pub  "
+#~ "<-''-\n"
 #~ msgstr ""
-#~ "   Tento program zji¹»uje a nastavuje jméno poèítaèe èi NIS domény. Mù¾e "
-#~ "také\n"
+#~ "  arp [-v]   [<HW>] [-i <if>] -s <soubor> <hwadr> [sÃ­Å¥mask <ÄÃ­s>]  <-''-\n"
+
+#~ msgid "%-9.9s Link encap:%s  "
+#~ msgstr "%-9.9s ZapouzdÅ™enÃ­:%s  "
+
+#~ msgid "HWaddr %s  "
+#~ msgstr "HWadr %s  "
+
+#~ msgid "Media:%s"
+#~ msgstr "MÃ©dium:%s"
+
+#~ msgid "(auto)"
+#~ msgstr "(auto)"
+
+#~ msgid " P-t-P:%s "
+#~ msgstr " P-t-P:%s "
+
+# V ostatnÃ­ch katalozÃ­ch se pÅ™eklÃ¡dÃ¡ Broadcast -> vÅ¡esmÄ›rovÃ© vysÃ­lÃ¡nÃ­.
+# TudiÅ¾ bcast -> VÅ¡esmÄ›r :)
+#~ msgid " Bcast:%s "
+#~ msgstr " VÅ¡esmÄ›r:%s "
+
+#~ msgid " Mask:%s\n"
+#~ msgstr "Maska:%s\n"
+
+#~ msgid " Scope:"
+#~ msgstr " Rozsah:"
+
+#~ msgid "Unknown"
+#~ msgstr "NeznÃ¡m."
+
+#~ msgid "          EtherTalk Phase 2 addr:%s\n"
+#~ msgstr "          EtherTalk Phase 2 adr:%s\n"
+
+#~ msgid "          econet addr:%s\n"
+#~ msgstr "          econet adr:%s\n"
+
+# Hic sunt leones ...
+#~ msgid "[NO FLAGS] "
+#~ msgstr "[Å½ÃDNÃ‰ PÅ˜ÃZNAKY]"
+
+#~ msgid " MTU:%d  Metric:%d"
+#~ msgstr " MTU:%d  Metrika:%d"
+
+#~ msgid "             compressed:%lu\n"
+#~ msgstr "             komprimovÃ¡no:%lu\n"
+
+#~ msgid "          collisions:%lu "
+#~ msgstr "          kolizÃ­:%lu "
+
+#~ msgid "DMA chan:%x "
+#~ msgstr "KanÃ¡l DMA:%x "
+
+#~ msgid "%s: unknown interface: %s\n"
+#~ msgstr "%s: rozhranÃ­ %s nenÃ­ znÃ¡mo\n"
+
+#~ msgid "address mask replies"
+#~ msgstr "odpovÄ›di na Å¾Ã¡dost o masku podsÃ­tÄ›"
+
+#~ msgid "unknown title %s\n"
+#~ msgstr "titulek %s je neznÃ¡mÃ½\n"
+
+#~ msgid "Routing table for `ddp' not yet supported.\n"
+#~ msgstr "SmÄ›rovacÃ­ tabulka pro `ddp' nenÃ­ zatÃ­m podporovÃ¡na.\n"
+
+#~ msgid "IPX not configured in this system.\n"
+#~ msgstr "IPX nenÃ­ na tomto systÃ©mu nakonfigurovÃ¡no.\n"
+
+#~ msgid ""
+#~ "   This comand can read or set the hostname or the NIS domainname. You "
+#~ "can\n"
+#~ msgstr ""
+#~ "   Tento program zjiÅ¡Å¥uje a nastavuje jmÃ©no poÄÃ­taÄe Äi NIS domÃ©ny. MÅ¯Å¾e "
+#~ "takÃ©\n"
 
 #~ msgid ""
 #~ "   also read the DNS domain or the FQDN (fully qualified domain name).\n"
-#~ msgstr "   zjistit DNS doménu èi kanonické jméno poèítaèe.\n"
+#~ msgstr "   zjistit DNS domÃ©nu Äi kanonickÃ© jmÃ©no poÄÃ­taÄe.\n"
 
 #~ msgid ""
 #~ "   Unless you are using bind or NIS for host lookups you can change the\n"
 #~ msgstr ""
-#~ "   Pokud nepou¾íváte bind èi NIS pro vyhledávání jmen poèítaèù, pak mù¾ete\n"
+#~ "   Pokud nepouÅ¾Ã­vÃ¡te bind Äi NIS pro vyhledÃ¡vÃ¡nÃ­ jmen poÄÃ­taÄÅ¯, pak "
+#~ "mÅ¯Å¾ete\n"
 
 #~ msgid ""
 #~ "   FQDN (Fully Qualified Domain Name) and the DNS domain name (which is\n"
 #~ msgstr ""
-#~ "   zmìnit kanonické jméno poèítaèe a jméno DNS domény (je souèástí "
-#~ "kanonického\n"
+#~ "   zmÄ›nit kanonickÃ© jmÃ©no poÄÃ­taÄe a jmÃ©no DNS domÃ©ny (je souÄÃ¡stÃ­ "
+#~ "kanonickÃ©ho\n"
 
 #~ msgid "   part of the FQDN) in the /etc/hosts file.\n"
-#~ msgstr "   jména poèítaèe) v souboru /etc/hosts.\n"
+#~ msgstr "   jmÃ©na poÄÃ­taÄe) v souboru /etc/hosts.\n"

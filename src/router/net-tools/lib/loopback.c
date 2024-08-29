@@ -32,7 +32,7 @@
 #include "util.h"
 
 /* Display an UNSPEC address. */
-static char *pr_unspec(unsigned char *ptr)
+static const char *pr_unspec(const char *ptr)
 {
     static char buff[64];
     char *pos;

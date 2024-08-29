@@ -32,7 +32,7 @@
 
 
 /* Display an UNSPEC address. */
-static char *UNSPEC_print(unsigned char *ptr)
+static const char *UNSPEC_print(const char *ptr)
 {
     static char buff[64];
     char *pos;
@@ -48,8 +48,9 @@ static char *UNSPEC_print(unsigned char *ptr)
 
 
 /* Display an UNSPEC socket address. */
-static char *UNSPEC_sprint(struct sockaddr *sap, int numeric)
+static const char *UNSPEC_sprint(const struct sockaddr_storage *sasp, int numeric)
 {
+    const struct sockaddr *sap = (const struct sockaddr *)sasp;
     static char buf[64];
 
     if (sap->sa_family == 0xFFFF || sap->sa_family == 0)
@@ -61,15 +62,16 @@ static char *UNSPEC_sprint(struct sockaddr *sap, int numeric)
 #if HAVE_AFUNIX
 
 /* Display a UNIX domain address. */
-static char *UNIX_print(unsigned char *ptr)
+static const char *UNIX_print(const char *ptr)
 {
     return (ptr);
 }
 
 
 /* Display a UNIX domain address. */
-static char *UNIX_sprint(struct sockaddr *sap, int numeric)
+static const char *UNIX_sprint(const struct sockaddr_storage *sasp, int numeric)
 {
+    const struct sockaddr *sap = (const struct sockaddr *)sasp;
     static char buf[64];
 
     if (sap->sa_family == 0xFFFF || sap->sa_family == 0)

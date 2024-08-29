@@ -10,7 +10,7 @@
  *
  * Changes:
  * 980701 {0.02} Arnaldo Carvalho de Melo   GNU gettext instead of catgets
- * 
+ *
  *
  *              This program is free software; you can redistribute it
  *              and/or  modify it under  the terms of  the GNU General
@@ -39,9 +39,7 @@ int NETROM_rprint(int options)
     /*int ext = options & FLAG_EXT;
        int numeric = options & FLAG_NUM_HOST; */
 
-    f1 = fopen(_PATH_PROCNET_NR_NODES, "r");
     if (!f1) perror(_PATH_PROCNET_NR_NODES);
-    f2 = fopen(_PATH_PROCNET_NR_NEIGH, "r");
     if (!f2) perror(_PATH_PROCNET_NR_NEIGH);
 
     if (f1 == NULL || f2 == NULL) {
@@ -50,7 +48,8 @@ int NETROM_rprint(int options)
     }
     printf(_("Kernel NET/ROM routing table\n"));
     printf(_("Destination  Mnemonic  Quality  Neighbour  Iface\n"));
-    fgets(buffer, 256, f1);
+    if (fgets(buffer, 256, f1))
+	/* eat line */;
     while (fgets(buffer, 256, f1)) {
 	buffer[9] = 0;
 	buffer[17] = 0;
@@ -60,7 +59,8 @@ int NETROM_rprint(int options)
 	qual = atoi(buffer + 24 + 15 * w);
 	n = atoi(buffer + 32 + 15 * w);
 	rewind(f2);
-	fgets(buffer, 256, f2);
+	if (fgets(buffer, 256, f2))
+	    /* eat line */;
 	while (fgets(buffer, 256, f2)) {
 	    if (atoi(buffer) == n) {
 		buffer[15] = 0;

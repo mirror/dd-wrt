@@ -2,11 +2,11 @@
 # Copyright (C) 2000 Free Software Foundation, Inc.
 # Arnaldo Carvalho de Melo <acme@conectiva.com.br>, 2000.
 #
-# $Id: pt_BR.po,v 1.7 2000/02/13 22:28:11 ralf Exp $
+# $Id: pt_BR.po,v 1.8 2006/12/14 23:36:24 ecki Exp $
 # Brazilian portuguese translation for net-tools 1.54
 # Copyright (C) 1998, 1999 Free Software Foundation, Inc.
 # Arnaldo Carvalho de Melo <acme@conectiva.com.br>, 1998-2000
-# Ralf Baechle <ralf@gnu.org>, 1999
+# Ralf Baechle <ralf@linux-mips.org>, 1999
 msgid ""
 msgstr ""
 "Project-Id-Version: net-tools 1.54\n"
@@ -14,7 +14,7 @@ msgstr ""
 "PO-Revision-Date: 1999-03-01 02:38+0100\n"
 "Last-Translator: Arnaldo Carvalho de Melo <acme@conectiva.com.br>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO8859-9\n"
+"Content-Type: text/plain; charset=iso-8859-9\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../arp.c:110 ../arp.c:269
@@ -64,8 +64,12 @@ msgid "arp: cannot set entry on line %u of etherfile %s !\n"
 msgstr "arp: não foi possível configurar a linha %u do arquivo etherfile %s!\n"
 
 #: ../arp.c:437
-msgid "Address\t\t\tHWtype\tHWaddress\t    Flags Mask\t\t  Iface\n"
-msgstr "Endereço\t\tTipoHW\tEndereçoHW\t Flags Mascara\t\t Iface\n"
+msgid ""
+"Address                  HWtype  HWaddress           Flags Mask            "
+"Iface\n"
+msgstr ""
+"Endereço                 TipoHW  EndereçoHW          Flags Mascara         "
+"Iface\n"
 
 #: ../arp.c:467
 msgid "(incomplete)"
@@ -1526,7 +1530,7 @@ msgstr "%d pacotes remontados sem problemas"
 
 #: ../statistics.c:78
 #, c-format
-msgid "%d packet reassembles failed"
+msgid "%d packet reassemblies failed"
 msgstr "%d remontagens de pacotes falharam"
 
 #: ../statistics.c:79
@@ -1551,8 +1555,8 @@ msgstr "%d mensagens ICMP recebidas"
 
 #: ../statistics.c:87
 #, c-format
-msgid "%d input ICMP message failed."
-msgstr "%d mensagens ICMP entrantes falharam."
+msgid "%d input ICMP message failed"
+msgstr "%d mensagens ICMP entrantes falharam"
 
 #: ../statistics.c:88 ../statistics.c:101
 #, c-format
@@ -1637,11 +1641,6 @@ msgstr "source quench: %d"
 msgid "redirect: %d"
 msgstr "redireções: %d"
 
-#: ../statistics.c:106
-#, c-format
-msgid "echo request: %d"
-msgstr "requisições de eco: %d"
-
 #: ../statistics.c:108
 #, c-format
 msgid "timestamp requests: %d"
@@ -1669,7 +1668,7 @@ msgstr "Algorítmo RTO é %s"
 
 #: ../statistics.c:120
 #, c-format
-msgid "%d active connections openings"
+msgid "%d active connection openings"
 msgstr "%d tentativas de conexão falharam"
 
 #: ../statistics.c:121
@@ -1699,18 +1698,18 @@ msgstr "%d segmentos recebidos"
 
 #: ../statistics.c:126
 #, c-format
-msgid "%d segments send out"
+msgid "%d segments sent out"
 msgstr "%d segmentos enviados"
 
 #: ../statistics.c:127
 #, c-format
-msgid "%d segments retransmited"
+msgid "%d segments retransmitted"
 msgstr "%d segmentos retransmitidos"
 
 #: ../statistics.c:128
 #, c-format
-msgid "%d bad segments received."
-msgstr "%d segmentos ruins recebidos."
+msgid "%d bad segments received"
+msgstr "%d segmentos ruins recebidos"
 
 #: ../statistics.c:129
 #, c-format
@@ -1724,8 +1723,8 @@ msgstr "%d pacotes recebidos"
 
 #: ../statistics.c:135
 #, c-format
-msgid "%d packets to unknown port received."
-msgstr "%d pacotes para portas desconhecidas recebidos."
+msgid "%d packets to unknown port received"
+msgstr "%d pacotes para portas desconhecidas recebidos"
 
 #: ../statistics.c:136
 #, c-format
@@ -2361,17 +2360,15 @@ msgstr "atenção: nenhum socket inet disponível: %s\n"
 msgid "Warning: cannot open %s (%s). Limited output.\n"
 msgstr "Atenção: não foi possível abrir %s (%s). Saída limitada.\n"
 
-#. Give better error message for this case.
+#. better translation?
 #: ../lib/interface.c:504
 msgid "Device not found"
-msgstr "%s: dispositivo não encontrado"
+msgstr "dispositivo não encontrado"
 
 #: ../lib/interface.c:508
 #, c-format
 msgid "%s: error fetching interface information: %s\n"
-msgstr ""
-"%s: erro obtendo informações da interface: %s\n"
-"\n"
+msgstr "%s: erro obtendo informações da interface: %s\n"
 
 #: ../lib/sockets.c:59
 msgid "No usable address families found.\n"

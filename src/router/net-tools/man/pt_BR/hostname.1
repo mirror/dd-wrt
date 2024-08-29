@@ -1,15 +1,15 @@
 .TH HOSTNAME 1 "28 de janeiro de 1996" "net-tools" "Manual do Programador Linux"
 
 .SH NOME
-hostname \- mostra ou configura o nome da m·quina 
+hostname \- mostra ou configura o nome da m√°quina 
 .BR
-domainname \- mostra ou configura o nome do domÌnio NIS/YP
+domainname \- mostra ou configura o nome do dom√≠nio NIS/YP
 .BR
-dnsdomainname \- mostra o nome do domÌnio DNS
+dnsdomainname \- mostra o nome do dom√≠nio DNS
 .BR
-nisdomainname \- mostra ou configura o nome do domÌnio NIS/YP
+nisdomainname \- mostra ou configura o nome do dom√≠nio NIS/YP
 .BR
-ypdomainname \- mostra ou configura o nome do domÌnio NIS/YP
+ypdomainname \- mostra ou configura o nome do dom√≠nio NIS/YP
 
 .SH SINOPSE
 .B hostname
@@ -34,7 +34,7 @@ ypdomainname \- mostra ou configura o nome do domÌnio NIS/YP
 .RB [ \-v ]
 .RB [ \-F\ arquivo ]
 .RB [ \-\-file\ arquivo ]
-.RB [ m·quina ]
+.RB [ m√°quina ]
 
 .PP
 .B domainname
@@ -61,11 +61,11 @@ ypdomainname \- mostra ou configura o nome do domÌnio NIS/YP
 .B ypdomainname
 .RB [ \-v ]
 
-.SH DESCRI«√O
+.SH DESCRI√á√ÉO
 .B hostname
-È o programa usado para configurar ou mostrar o nome corrente da m·quina
-ou o domÌnio do sistema. Este nome È usado por muitos dos programas de
-rede para identificar a m·quina. O nome do domÌnio tambÈm È usado pelo
+√© o programa usado para configurar ou mostrar o nome corrente da m√°quina
+ou o dom√≠nio do sistema. Este nome √© usado por muitos dos programas de
+rede para identificar a m√°quina. O nome do dom√≠nio tamb√©m √© usado pelo
 NIS/YP.
 
 .SS "OBTER NOME"
@@ -73,119 +73,119 @@ Quando chamado sem argumentos o programa mostra os nomes correntes:
 
 .LP
 .B hostname
-mostrar· o nome do sistema conforme retornado pela funÁ„o
+mostrar√° o nome do sistema conforme retornado pela fun√ß√£o
 .BR gethostname (2).
 
 
 .LP
 .B "domainname, nisdomainname, ypdomainname"
-mostrar· o nome do sistema conforme retornado pela funÁ„o
+mostrar√° o nome do sistema conforme retornado pela fun√ß√£o
 .BR getdomainname (2).
-Isto tambÈm È conhecido como o nome de domÌnio YP/NIS do sistema.
+Isto tamb√©m √© conhecido como o nome de dom√≠nio YP/NIS do sistema.
 
 .LP
 .B dnsdomainname
-mostrara a parte do domÌnio do FQDN (Nome de domÌnio completamente qualificado).
-O FQDN do sistema È retornado pelo comando
+mostrara a parte do dom√≠nio do FQDN (Nome de dom√≠nio completamente qualificado).
+O FQDN do sistema √© retornado pelo comando
 .BR "hostname \-\-fqdn" .
 
 .SS "CONFIGURAR NOME"
-Quando chamado com um argumento ou com a opÁ„o
+Quando chamado com um argumento ou com a op√ß√£o
 .B \-\-file
-, o comando configura o nome da m·quina ou do domÌnio NIS/YP.
+, o comando configura o nome da m√°quina ou do dom√≠nio NIS/YP.
 
 .LP
-Note que somente o super usu·rio pode mudar os nomes.
+Note que somente o super usu√°rio pode mudar os nomes.
 
 .LP
-Nao È possÌvel configurar o FQDN ou o nome do domÌnio DNS com o comando
+Nao √© poss√≠vel configurar o FQDN ou o nome do dom√≠nio DNS com o comando
 .B dnsdomainname 
 (veja 
 .B "O FQDN"
 abaixo).
 
 .LP
-O nome da m·quina È normalmente configurado durante a inicializaÁ„o do sistema,
+O nome da m√°quina √© normalmente configurado durante a inicializa√ß√£o do sistema,
 em
 .I /etc/rc.d/rc.inet1
 ou
 .I /etc/init.d/boot
-(normalmente lendo o conte˙do de um arquivo que contÈm o nome da m·quina, ex.:
+(normalmente lendo o conte√∫do de um arquivo que cont√©m o nome da m√°quina, ex.:
 .IR /etc/hostname ).
 
 .SS O FQDN
-VocÍ n„o pode mudar o FQDN (conforme retornado por
+Voc√™ n√£o pode mudar o FQDN (conforme retornado por
 .BR "hostname \-\-fqdn" ) 
-ou o nome do domÌnio DNS (conforme retornado por
+ou o nome do dom√≠nio DNS (conforme retornado por
 .BR "dnsdomainname" ) 
-com este comando. O FQDN do sistema È o nome que o
+com este comando. O FQDN do sistema √© o nome que o
 .BR resolver (3)
-retorna para o nome da m·quina.
+retorna para o nome da m√°quina.
 
 .LP
-Tecnicamente: O FQDN È o nome retornado pelo
+Tecnicamente: O FQDN √© o nome retornado pelo
 .BR gethostbyname (2)
 para o nome retornado pelo
 .BR gethostname (2).
-O nome do domÌnio DNS È a parte apÛs o primeiro ponto.
+O nome do dom√≠nio DNS √© a parte ap√≥s o primeiro ponto.
 .LP
-Portanto isto depende da configuraÁ„o (normalmente em
+Portanto isto depende da configura√ß√£o (normalmente em
 .IR /etc/host.conf )
-para que vocÍ possa mud·-lo. Normalmente (se o arquivo hosts for lido antes 
-do DNS ou NIS) vocÍ pode mud·-lo em
+para que voc√™ possa mud√°-lo. Normalmente (se o arquivo hosts for lido antes 
+do DNS ou NIS) voc√™ pode mud√°-lo em
 .IR /etc/hosts .
 
 
-.SH OP«’ES
+.SH OP√á√ïES
 .TP
 .I "\-a, \-\-alias"
-Mostra o alias da m·quina (se usado).
+Mostra o alias da m√°quina (se usado).
 .TP
 .I "\-d, \-\-domain"
-Mostra o nome do domÌnio DNS. N„o use o comando
+Mostra o nome do dom√≠nio DNS. N√£o use o comando
 .B domainname
-para obter o nome do domÌnio DNS porque ele mostrar· o nome do domÌnio NIS e
-n„o o nome do domÌnio DNS. Use 
+para obter o nome do dom√≠nio DNS porque ele mostrar√° o nome do dom√≠nio NIS e
+n√£o o nome do dom√≠nio DNS. Use 
 .BR dnsdomainname .
 .TP
 .I "\-F, \-\-file arquivo"
-Leia o nome da m·quina a partir do arquivo especificado. Coment·rios (linhas
-comeÁando com um `#') s„o ignorados.
+Leia o nome da m√°quina a partir do arquivo especificado. Coment√°rios (linhas
+come√ßando com um `#') s√£o ignorados.
 .TP
 .I "\-f, \-\-fqdn, \-\-long"
-Mostra o FQDN (Nome de DomÌnio Completamente Qualificado). Um FQDN consiste de
-um nome curto de m·quina e do nome do domÌnio DNS. A menos que vocÍ esteja
-usando bind ou NIS para resoluÁ„o de nomes vocÍ pode mudar o FQDN e o nome
-do domÌnio DNS (que È parte do FQDN) no arquivo \fI/etc/hosts\fR.
+Mostra o FQDN (Nome de Dom√≠nio Completamente Qualificado). Um FQDN consiste de
+um nome curto de m√°quina e do nome do dom√≠nio DNS. A menos que voc√™ esteja
+usando bind ou NIS para resolu√ß√£o de nomes voc√™ pode mudar o FQDN e o nome
+do dom√≠nio DNS (que √© parte do FQDN) no arquivo \fI/etc/hosts\fR.
 .TP
 .I "\-h, \-\-help"
 Mostra uma mensagem sobre como utilizar o comando e termina.
 .TP
 .I "\-i, \-\-ip-address"
-Mostra o(s) endereÁo(s) IP da m·quina.
+Mostra o(s) endere√ßo(s) IP da m√°quina.
 .TP
 .I "\-s, \-\-short"
-Mostra o nome curto da m·quina. … o nome da m·quina atÈ o primeiro ponto.
+Mostra o nome curto da m√°quina. √â o nome da m√°quina at√© o primeiro ponto.
 .TP
 .I "\-V, \-\-version"
-Mostra informaÁ„o de vers„o na saÌda padr„o e termina com sucesso.
+Mostra informa√ß√£o de vers√£o na sa√≠da padr√£o e termina com sucesso.
 .TP
 .I "\-v, \-\-verbose"
-Mostra uma saÌda detalhada do que est· acontecendo.
+Mostra uma sa√≠da detalhada do que est√° acontecendo.
 .TP
 .I "\-y, \-\-yp, \-\-nis"
-Mostra o nome do domÌnio NIS. Se um par‚metro for especificado (ou
+Mostra o nome do dom√≠nio NIS. Se um par√¢metro for especificado (ou
 .B \-\-file arquivo
-) ent„o o root tambÈm pode configurar um novo domÌnio NIS.
+) ent√£o o root tamb√©m pode configurar um novo dom√≠nio NIS.
 .SH ARQUIVOS
 .B /etc/hosts
 .SH AUTOR
 Peter Tobias, <tobias@et-inf.fho-emden.de>
 .BR
-Bernd Eckenfels, <net-tools@lina.inka.de> (NIS e p·gina man).
+Bernd Eckenfels, <net-tools@lina.inka.de> (NIS e p√°gina man).
 .BR
-Arnaldo Carvalho de Melo, <acme@conectiva.com.br> TraduÁ„o para a lÌngua
+Arnaldo Carvalho de Melo, <acme@conectiva.com.br> Tradu√ß√£o para a l√≠ngua
 portuguesa.
 .BR
-Jorge Luiz Godoy Filho, <jorge@bestway.com.br> Revis„o.
+Jorge Luiz Godoy Filho, <jorge@bestway.com.br> Revis√£o.
 .BR

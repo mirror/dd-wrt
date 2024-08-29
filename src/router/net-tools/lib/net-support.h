@@ -34,46 +34,46 @@
 
 /* This structure defines protocol families and their handlers. */
 struct aftype {
-    char *name;
-    char *title;
+    const char *name;
+    const char *title;
     int af;
     int alen;
-    char *(*print) (unsigned char *);
-    char *(*sprint) (struct sockaddr *, int numeric);
-    int (*input) (int type, char *bufp, struct sockaddr *);
-    void (*herror) (char *text);
+    const char *(*print) (const char *);
+    const char *(*sprint) (const struct sockaddr_storage *, int numeric);
+    int (*input) (int type, char *bufp, struct sockaddr_storage *);
+    void (*herror) (const char *text);
     int (*rprint) (int options);
     int (*rinput) (int typ, int ext, char **argv);
 
     /* may modify src */
-    int (*getmask) (char *src, struct sockaddr * mask, char *name);
+    int (*getmask) (char *src, struct sockaddr_storage *mask, char *name);
 
     int fd;
-    char *flag_file;
+    const char *flag_file;
 };
 
-extern struct aftype *aftypes[];
+extern struct aftype * const aftypes[];
 
 /* This structure defines hardware protocols and their handlers. */
 struct hwtype {
-    char *name;
-    char *title;
+    const char *name;
+    const char *title;
     int type;
     int alen;
-    char *(*print) (unsigned char *);
-    int (*input) (char *, struct sockaddr *);
+    const char *(*print) (const char *);
+    int (*input) (char *, struct sockaddr_storage *);
     int (*activate) (int fd);
     int suppress_null_addr;
 };
 
 
-extern struct hwtype *get_hwtype(const char *name);
-extern struct hwtype *get_hwntype(int type);
+extern const struct hwtype *get_hwtype(const char *name);
+extern const struct hwtype *get_hwntype(int type);
 extern void          print_hwlist(int type);
-extern struct aftype *get_aftype(const char *name);
-extern struct aftype *get_afntype(int type);
+extern const struct aftype *get_aftype(const char *name);
+extern const struct aftype *get_afntype(int type);
 extern void          print_aflist(int type);
-extern int           hw_null_address(struct hwtype *hw, void *addr);
+extern int           hw_null_address(const struct hwtype *hw, void *addr);
 
 extern int getargs(char *string, char *arguments[]);
 
@@ -109,6 +109,7 @@ extern int INET6_rprint(int options);
 extern int DDP_rprint(int options);
 extern int IPX_rprint(int options);
 extern int NETROM_rprint(int options);
+extern int ROSE_rprint(int options);
 extern int AX25_rprint(int options);
 extern int X25_rprint(int options);
 
@@ -119,11 +120,12 @@ extern int IPX_rinput(int action, int flags, char **argv);
 extern int NETROM_rinput(int action, int flags, char **argv);
 extern int AX25_rinput(int action, int flags, char **argv);
 extern int X25_rinput(int action, int flags, char **argv);
+extern int ROSE_rinput(int action, int flags, char **argv);
 
 extern int aftrans_opt(const char *arg);
 extern void aftrans_def(char *tool, char *argv0, char *dflt);
 
-extern char *get_sname(int socknumber, char *proto, int numeric);
+extern const char *get_sname(int socknumber, const char *proto, int numeric);
 
 extern int flag_unx;
 extern int flag_ipx;
@@ -131,14 +133,16 @@ extern int flag_ax25;
 extern int flag_ddp;
 extern int flag_netrom;
 extern int flag_x25;
+extern int flag_rose;
 extern int flag_inet;
 extern int flag_inet6;
+extern int flag_bluetooth;
 
-extern char afname[];
+extern char afname[256];
 
 #define AFTRANS_OPTS \
 	{"ax25",	0,	0,	1}, \
-       {"x25",         0,      0,      1}, \
+	{"x25",         0,      0,      1}, \
 	{"ip",		0,	0,	1}, \
 	{"ipx",         0,	0,	1}, \
 	{"appletalk",	0,	0,	1}, \
@@ -146,9 +150,11 @@ extern char afname[];
 	{"inet",	0,	0,	1}, \
 	{"inet6",	0,	0,	1}, \
 	{"ddp",		0,	0,	1}, \
+	{"rose",	0,	0,	1}, \
 	{"unix",	0,	0,	1}, \
+	{"bluetooth",	0,	0,	1}, \
 	{"tcpip",	0,	0,	1}
-#define AFTRANS_CNT 11
+#define AFTRANS_CNT 12
 
 #define EINTERN(file, text) fprintf(stderr, \
 	_("%s: Internal Error `%s'.\n"),file,text);
@@ -163,8 +169,8 @@ extern char afname[];
 #define E_NOTFOUND	8
 #define E_SOCK		7
 #define E_LOOKUP	6
-#define E_VERSION	5
-#define E_USAGE		4
+#define E_VERSION	EXIT_SUCCESS
+#define E_USAGE		EXIT_SUCCESS
 #define E_OPTERR	3
 #define E_INTERN	2
 #define E_NOSUPP	1
@@ -234,7 +240,7 @@ extern char afname[];
 /* this is a 2.0.36 flag from /usr/src/linux/include/linux/route.h */
 #define RTF_NOTCACHED   0x0400          /* this route isn't cached        */
 
-#ifdef HAVE_AFECONET
+#if HAVE_AFECONET
 #ifndef AF_ECONET
 #define AF_ECONET       19      /* Acorn Econet */
 #endif

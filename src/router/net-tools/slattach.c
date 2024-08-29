@@ -40,19 +40,12 @@
 #include <limits.h>
 #include <pwd.h>
 #include <signal.h>
-#include <stdlib.h>          
+#include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <linux/if_slip.h>
-
-#if defined(__GLIBC__)
-#if __GLIBC__ == 2 && __GLIBC_MINOR__ == 0
-# include <termbits.h>
-#else
-# include <termios.h>
-#endif
-#endif
 
 #include "pathnames.h"
 #include "net-support.h"
@@ -62,26 +55,27 @@
 #include "util.h"
 
 #ifndef _PATH_LOCKD
-#define _PATH_LOCKD		"/var/lock"		/* lock files   */
+#define _PATH_LOCKD	"/var/lock"		/* lock files   */
 #endif
 #ifndef _UID_UUCP
-#define _UID_UUCP		"uucp"			/* owns locks   */
+#define _UID_UUCP	"uucp"			/* owns locks   */
+#endif
+#ifndef _PATH_DEVPTMX
+#define _PATH_DEVPTMX	"/dev/ptmx"		/* pseudo-terminal master */
 #endif
 
 
 #define DEF_PROTO	"cslip"
 
 
-const char *Release = RELEASE,
-	   *Version = "@(#) slattach 1.21 (1999-11-21)",
-	   *Signature = "net-tools, Fred N. van Kempen et al.";
+static char *Release = RELEASE, *Signature = "Fred N. van Kempen et al.";
 
 
 struct {
   const char	*speed;
   int	code;
 } tty_speeds[] = {			/* table of usable baud rates	*/
-  { "50",	B50	}, { "75",	B75  	},	
+  { "50",	B50	}, { "75",	B75  	},
   { "110",	B110	}, { "300",	B300	},
   { "600",	B600	}, { "1200",	B1200	},
   { "2400",	B2400	}, { "4800",	B4800	},
@@ -108,6 +102,7 @@ struct termios	tty_saved,		/* saved TTY device state	*/
 int		tty_sdisc,		/* saved TTY line discipline	*/
 		tty_ldisc,		/* current TTY line discipline	*/
 		tty_fd = -1;		/* TTY file descriptor		*/
+char *		path_pts = NULL;	/* slave pseudo-terminal device */
 int		opt_c = 0;		/* "command" to run at exit	*/
 int		opt_e = 0;		/* "activate only" flag		*/
 int		opt_h = 0;		/* "hangup" on carrier loss	*/
@@ -115,7 +110,7 @@ int		opt_h = 0;		/* "hangup" on carrier loss	*/
 int		opt_k = 0;		/* "keepalive" value		*/
 #endif
 int		opt_l = 0;		/* "lock it" flag		*/
-int		opt_L = 0;		/* clocal flag			*/
+int		opt_L = 0;		/* 3-wire mode flag		*/
 int		opt_m = 0;		/* "set RAW mode" flag		*/
 int		opt_n = 0;		/* "set No Mesg" flag		*/
 #ifdef SIOCSOUTFILL
@@ -149,7 +144,7 @@ tty_already_locked(char *nam)
   /* that lock.                                   */
   i = fscanf(fd, "%d", &pid);
   (void) fclose(fd);
- 
+
   if (i != 1) /* Lock file format's wrong! Kill't */
     return(0);
 
@@ -195,15 +190,18 @@ tty_lock(char *path, int mode)
 		return(-1);
 	}
 
-	(void) close(fd);
-
 	/* Make sure UUCP owns the lockfile.  Required by some packages. */
 	if ((pw = getpwnam(_UID_UUCP)) == NULL) {
 		if (opt_q == 0) fprintf(stderr, _("slattach: tty_lock: UUCP user %s unknown!\n"),
 					_UID_UUCP);
+		(void) close(fd);
 		return(0);	/* keep the lock anyway */
 	}
-	(void) chown(saved_path, pw->pw_uid, pw->pw_gid);
+	if (fchown(fd, pw->pw_uid, pw->pw_gid))
+		/* keep the lock anyway */;
+
+	(void) close(fd);
+
 	saved_lock = 1;
   } else {	/* unlock */
 	if (saved_lock != 1) return(0);
@@ -294,7 +292,7 @@ tty_set_parity(struct termios *tty, char *parity)
   switch(toupper(*parity)) {
 	case 'N':
 		tty->c_cflag &= ~(PARENB | PARODD);
-		break;  
+		break;
 
 	case 'O':
 		tty->c_cflag &= ~(PARENB | PARODD);
@@ -342,9 +340,11 @@ tty_set_raw(struct termios *tty)
   tty->c_oflag = (0);				/* output flags		*/
   tty->c_lflag = (0);				/* local flags		*/
   speed = (tty->c_cflag & CBAUD);		/* save current speed	*/
-  tty->c_cflag = (CRTSCTS | HUPCL | CREAD);	/* UART flags		*/
-  if (opt_L) 
+  tty->c_cflag = (HUPCL | CREAD);		/* UART flags		*/
+  if (opt_L)
 	tty->c_cflag |= CLOCAL;
+  else
+	tty->c_cflag |= CRTSCTS;
   tty->c_cflag |= speed;			/* restore speed	*/
   return(0);
 }
@@ -410,7 +410,7 @@ static int
 tty_get_name(char *name)
 {
   if (ioctl(tty_fd, SIOCGIFNAME, name) < 0) {
-	if (opt_q == 0) 
+	if (opt_q == 0)
 	    perror("tty_get_name");
 	return(-errno);
   }
@@ -457,14 +457,14 @@ static int
 tty_open(char *name, const char *speed)
 {
   char pathbuf[PATH_MAX];
-  register char *path_open, *path_lock;
+  char *path_open, *path_lock;
   int fd;
 
   /* Try opening the TTY device. */
   if (name != NULL) {
 	if (name[0] != '/') {
 		if (strlen(name + 6) > sizeof(pathbuf)) {
-			if (opt_q == 0) fprintf(stderr, 
+			if (opt_q == 0) fprintf(stderr,
 				_("slattach: tty name too long\n"));
 			return (-1);
 		}
@@ -488,7 +488,28 @@ tty_open(char *name, const char *speed)
 		return(-errno);
 	}
 	tty_fd = fd;
-	if (opt_d) printf("slattach: tty_open: %s (fd=%d) ", path_open, fd);
+	if (opt_d) printf("slattach: tty_open: %s (fd=%d)\n", path_open, fd);
+	if (!strcmp(path_open, _PATH_DEVPTMX)) {
+		if (opt_d) printf("slattach: tty_open: trying to grantpt and unlockpt\n");
+		if (grantpt(fd) < 0) {
+		    if (opt_q == 0) fprintf(stderr,
+			    "slattach: tty_open: grantpt: %s\n", strerror(errno));
+		    return(-errno);
+		}
+		if (unlockpt(fd) < 0) {
+		    if (opt_q == 0) fprintf(stderr,
+			    "slattach: tty_open: unlockpt: %s\n", strerror(errno));
+		    return(-errno);
+		}
+		path_pts = ptsname(fd);
+		if (path_pts == NULL) {
+		    if (opt_q == 0) fprintf(stderr,
+			    "slattach: tty_open: ptsname: %s\n", strerror(errno));
+		    return(-errno);
+		}
+		if (opt_d) printf("slattach: tty_open: %s: slave pseudo-terminal is %s\n",
+				  path_open, path_pts);
+	}
   } else {
 	tty_fd = 0;
   }
@@ -504,7 +525,7 @@ tty_open(char *name, const char *speed)
   if (tty_get_disc(&tty_sdisc) < 0) {
 	if (opt_q == 0) fprintf(stderr, _("slattach: tty_open: cannot get current line disc!\n"));
 	return(-errno);
-  } 
+  }
   tty_ldisc = tty_sdisc;
 
   /* Put this terminal line in a 8-bit transparent mode. */
@@ -553,8 +574,9 @@ sig_catch(int sig)
 
 
 static void
-usage(void)
+usage(int rc)
 {
+  FILE *fp = rc ? stderr : stdout;
   char *usage_msg = "Usage: slattach [-ehlLmnqv] "
 #ifdef SIOCSKEEPALIVE
 	  "[-k keepalive] "
@@ -565,15 +587,15 @@ usage(void)
 	  "[-c cmd] [-s speed] [-p protocol] tty | -\n"
 	  "       slattach -V | --version\n";
 
-  fprintf(stderr, usage_msg);
-  exit(1);
+  fputs(usage_msg, fp);
+  exit(rc);
 }
 
 
-static void 
+static void
 version(void)
 {
-    printf("%s\n%s\n%s\n", Release, Version, Signature);
+    printf("%s\n%s\n", Release, Signature);
     exit(E_VERSION);
 }
 
@@ -581,7 +603,7 @@ version(void)
 int
 main(int argc, char *argv[])
 {
-  char path_buf[128];
+  char path_buf[128] = "";
   char *path_dev;
   char buff[128];
   const char *speed = NULL;
@@ -593,7 +615,6 @@ main(int argc, char *argv[])
     { NULL, 0, NULL, 0 }
   };
 
-  strcpy(path_buf, "");
   path_dev = path_buf;
 
   /* Scan command line for any arguments. */
@@ -664,10 +685,10 @@ main(int argc, char *argv[])
 		/*NOTREACHED*/
 
 	default:
-		usage();
+		usage(E_OPTERR);
 		/*NOTREACHED*/
   }
-  
+
   if (setvbuf(stdout,0,_IOLBF,0)) {
 	if (opt_q == 0) fprintf(stderr, _("slattach: setvbuf(stdout,0,_IOLBF,0) : %s\n"),
 				strerror(errno));
@@ -680,7 +701,7 @@ main(int argc, char *argv[])
        opt_m++;
 
   /* Is a terminal given? */
-  if (optind != (argc - 1)) usage();
+  if (optind != (argc - 1)) usage(E_OPTERR);
   safe_strncpy(path_buf, argv[optind], sizeof(path_buf));
   if (!strcmp(path_buf, "-")) {
 	opt_e = 1;
@@ -703,6 +724,7 @@ main(int argc, char *argv[])
         if (tty_get_name(buff)) { return(3); }
 	printf(_("%s started"), proto);
 	if (path_dev != NULL) printf(_(" on %s"), path_dev);
+	if (path_pts != NULL) printf(_(" ptsname %s"), path_pts);
 	printf(_(" interface %s\n"), buff);
   }
 
@@ -738,7 +760,7 @@ main(int argc, char *argv[])
 
 	tty_close();
 	if(extcmd)	/* external command on exit */
-		system(extcmd);
+		exit(system(extcmd));
   }
   exit(0);
 }

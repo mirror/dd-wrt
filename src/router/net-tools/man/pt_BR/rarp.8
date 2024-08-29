@@ -2,30 +2,30 @@
 .SH NOME
 rarp \- manipula a tabela RARP do sistema
 .SH SINOPSE
-.B "rarp [-v] [-t tipo] -a [m·quina]"
+.B "rarp [-v] [-t tipo] -a [m√°quina]"
 .br
-.B "rarp [-v] -d m·quina ..."
+.B "rarp [-v] -d m√°quina ..."
 .br
-.B "rarp [-v] [-t tipo] -s m·quina endereÁo_hardware"
-.SH DESCRI«√O
+.B "rarp [-v] [-t tipo] -s m√°quina endere√ßo_hardware"
+.SH DESCRI√á√ÉO
 .B Rarp
-manipula as tabelas RARP do kernel de varias formas. As opÁıes principais
-s„o limpar uma entrada de mapeamento de endereÁos e manualmente configurar uma.
-Para propÛsitos de depuraÁ„o, o programa
+manipula as tabelas RARP do kernel de varias formas. As op√ß√µes principais
+s√£o limpar uma entrada de mapeamento de endere√ßos e manualmente configurar uma.
+Para prop√≥sitos de depura√ß√£o, o programa
 .B rarp
-tambÈm permite um dump completo da tabela RARP.
-.SH OP«’ES
+tamb√©m permite um dump completo da tabela RARP.
+.SH OP√á√ïES
 .TP
 .B \-v
-Informe o usu·rio o que esta acontecendo, sendo detalhado.
+Informe o usu√°rio o que esta acontecendo, sendo detalhado.
 .TP
 .B "\-t tipo"
-quando configurando ou lendo a tabela RARP, este par‚metro opcional informa ao
+quando configurando ou lendo a tabela RARP, este par√¢metro opcional informa ao
 .B rarp
-que classe de entradas devem ser verificadas. O valor default para este par‚metro
-È
+que classe de entradas devem ser verificadas. O valor default para este par√¢metro
+√©
 .B ether
-(i.e. cÛdigo de hardware
+(i.e. c√≥digo de hardware
 .B 0x01
 para
 .B "IEEE 802.3 10Mbps Ethernet".
@@ -34,37 +34,42 @@ Outros valores podem incluir tecnologias de rede como
 e
 .B NET/ROM (netrom).
 .TP
-.B "\-a [m·quina]"
-Mostra as entradas  dos m·quinas especificadas.  Se o
-Mostra as entradas das m·quinas especificadas. Se o par‚metro
-.B m·quina
-n„o for usado 
+.B "\-a [m√°quina]"
+Mostra as entradas  dos m√°quinas especificadas.  Se o
+Mostra as entradas das m√°quinas especificadas. Se o par√¢metro
+.B m√°quina
+n√£o for usado 
 .B todas
-as entradas ser„o mostradas.
+as entradas ser√£o mostradas.
 .TP
-.B "\-d m·quina"
-Remove a(s) entrada(s) para a m·quina especificada. Isto pode ser usado se a
-m·quina indicada for desligada, por exemplo.
+.B "\-d m√°quina"
+Remove a(s) entrada(s) para a m√°quina especificada. Isto pode ser usado se a
+m√°quina indicada for desligada, por exemplo.
 .TP
-.B "\-s m·quina endereÁo_hardware"
-Cria um mapeamento de endereÁos RARP para a m·quina
-.B m·quina
-com endereÁo de hardware configurado para
-.B endereÁo_hardware
-.  O formato do endereÁo de hardware depende da classe do hardware, mas
-para a maioria das classes vocÍ pode assumir que a apresentaÁ„o usual pode
-ser usada.  Para a classe Ethernet, s„o 6 bytes em hexadecimal, separados
+.B "\-s m√°quina endere√ßo_hardware"
+Cria um mapeamento de endere√ßos RARP para a m√°quina
+.B m√°quina
+com endere√ßo de hardware configurado para
+.B endere√ßo_hardware.
+O formato do endere√ßo de hardware depende da classe do hardware, mas
+para a maioria das classes voc√™ pode assumir que a apresenta√ß√£o usual pode
+ser usada.  Para a classe Ethernet, s√£o 6 bytes em hexadecimal, separados
 por dois pontos (:).
-.SH ATEN«√O
-Alguns arquivos (principalmente Suns velhas) assumem que a m·quina respondendo
-ao query ARP tambÈm podem oferecer outros serviÁos de boot remoto. Portanto
-nunca adiciona gratuitamente entradas rarp a menos que deseje encontrar a f˙ria
+.SH ATEN√á√ÉO
+Alguns arquivos (principalmente Suns velhas) assumem que a m√°quina respondendo
+ao query ARP tamb√©m podem oferecer outros servi√ßos de boot remoto. Portanto
+nunca adiciona gratuitamente entradas rarp a menos que deseje encontrar a f√∫ria
 do administrador da rede.
 .SH ARQUIVOS
 .I /proc/net/rarp,
+.SH VEJA TAMB√âM
+.BR arp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .SH AUTORES
 Ross D. Martin, <martin@trcsun3.eas.asu.edu>
 .br
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
-.SH TRADU«√O
+.SH TRADU√á√ÉO
 Arnaldo Carvalho de Melo <acme@conectiva.com.br> - 13/04/1998

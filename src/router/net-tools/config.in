@@ -1,5 +1,5 @@
 #
-# config.in	Configure.sh source for the net-tools.
+# config.in	configure.sh source for the net-tools.
 #		This file contains the definition of what the support
 #		library contains.  Most of all, it defines which types
 #		of address families and hardware we know of.
@@ -46,46 +46,55 @@ bool 'Does your system support GNU gettext?' I18N n
 *
 *
 *             Protocol Families.
-* 
+*
 bool 'UNIX protocol family' HAVE_AFUNIX y
 bool 'INET (TCP/IP) protocol family' HAVE_AFINET y
-bool 'INET6 (IPv6) protocol family' HAVE_AFINET6 n
-bool 'Novell IPX/SPX protocol family' HAVE_AFIPX n
-bool 'Appletalk DDP protocol family' HAVE_AFATALK n
-bool 'AX25 (packet radio) protocol family' HAVE_AFAX25 n
-bool 'NET/ROM (packet radio) protocol family' HAVE_AFNETROM n
-bool 'Rose (packet radio) protocol family' HAVE_AFROSE n
-bool 'X.25 (CCITT) protocol family' HAVE_AFX25 n
+bool 'INET6 (IPv6) protocol family' HAVE_AFINET6 y
+bool 'Novell IPX/SPX protocol family' HAVE_AFIPX y
+bool 'Appletalk DDP protocol family' HAVE_AFATALK y
+bool 'AX25 (packet radio) protocol family' HAVE_AFAX25 y
+bool 'NET/ROM (packet radio) protocol family' HAVE_AFNETROM y
+bool 'Rose (packet radio) protocol family' HAVE_AFROSE y
+bool 'X.25 (CCITT) protocol family' HAVE_AFX25 y
 bool 'Econet protocol family' HAVE_AFECONET n
 bool 'DECnet protocol family' HAVE_AFDECnet n
-bool 'Ash protocol family' HAVE_AFASH n
+bool 'Ash protocol family' HAVE_AFASH y
+bool 'Bluetooth protocol family' HAVE_AFBLUETOOTH n
 *
 *
 *            Device Hardware types.
 *
 bool 'Ethernet (generic) support' HAVE_HWETHER y
-bool 'ARCnet support' HAVE_HWARC n
-bool 'SLIP (serial line) support' HAVE_HWSLIP n
+bool 'ARCnet support' HAVE_HWARC y
+bool 'SLIP (serial line) support' HAVE_HWSLIP y
 bool 'PPP (serial line) support' HAVE_HWPPP y
 bool 'IPIP Tunnel support' HAVE_HWTUNNEL y
 bool 'STRIP (Metricom radio) support' HAVE_HWSTRIP n
 bool 'Token ring (generic) support' HAVE_HWTR n
-bool 'AX25 (packet radio) support' HAVE_HWAX25 n
-bool 'Rose (packet radio) support' HAVE_HWROSE n
-bool 'NET/ROM (packet radio) support' HAVE_HWNETROM n
-bool 'X.25 (generic) support' HAVE_HWX25 n
-bool 'DLCI/FRAD (frame relay) support' HAVE_HWFR n
-bool 'SIT (IPv6-in-IPv4) support' HAVE_HWSIT n
-bool 'FDDI (generic) support' HAVE_HWFDDI n
-bool 'HIPPI (generic) support' HAVE_HWHIPPI n
-bool 'Ash hardware support' HAVE_HWASH n
-bool '(Cisco)-HDLC/LAPB support' HAVE_HWHDLCLAPB n
-bool 'IrDA support' HAVE_HWIRDA n
+bool 'AX25 (packet radio) support' HAVE_HWAX25 y
+bool 'Rose (packet radio) support' HAVE_HWROSE y
+bool 'NET/ROM (packet radio) support' HAVE_HWNETROM y
+bool 'X.25 (generic) support' HAVE_HWX25 y
+bool 'DLCI/FRAD (frame relay) support' HAVE_HWFR y
+bool 'SIT (IPv6-in-IPv4) support' HAVE_HWSIT y
+bool 'FDDI (generic) support' HAVE_HWFDDI y
+bool 'HIPPI (generic) support' HAVE_HWHIPPI y
+bool 'Ash hardware support' HAVE_HWASH y
+bool '(Cisco)-HDLC/LAPB support' HAVE_HWHDLCLAPB y
+bool 'IrDA support' HAVE_HWIRDA y
 bool 'Econet hardware support' HAVE_HWEC n
+bool 'Generic EUI-64 hardware support' HAVE_HWEUI64 y
+bool 'InfiniBand hardware support' HAVE_HWIB y
 *
 *
 *           Other Features.
 *
-bool 'IP Masquerading support' HAVE_FW_MASQUERADE n
-bool 'Build iptunnel and ipmaddr' HAVE_IP_TOOLS n
-bool 'Build mii-tool' HAVE_MII n
+bool 'IP Masquerading support' HAVE_FW_MASQUERADE y
+bool 'Build arp and rarp' HAVE_ARP_TOOLS y
+bool 'Build hostname' HAVE_HOSTNAME_TOOLS y
+bool 'Install hostname NIS/YP symlinks' HAVE_HOSTNAME_SYMLINKS y
+bool 'Build iptunnel and ipmaddr' HAVE_IP_TOOLS y
+bool 'Build mii-tool' HAVE_MII y
+bool 'Build plipconfig' HAVE_PLIP_TOOLS y
+bool 'Build slattach' HAVE_SERIAL_TOOLS y
+bool 'SELinux support' HAVE_SELINUX n

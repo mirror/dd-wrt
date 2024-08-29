@@ -1,16 +1,16 @@
 .TH HOSTNAME 1 "15 Mars 1999" "net-tools" "Linux Programmer's Manual"
 .SH NOM
-hostname \- affiche ou définit le nom d'hôte du système
+hostname \- affiche ou dÃ©finit le nom d'hÃ´te du systÃ¨me
 .br
-domainname \- affiche le nom de domaine NIS/YP du système
+domainname \- affiche le nom de domaine NIS/YP du systÃ¨me
 .br
-dnsdomainname \- affiche le nom de domaine du système
+dnsdomainname \- affiche le nom de domaine du systÃ¨me
 .br
-nisdomainname \- affiche ou définit le nom de domaine NIS/YP du système
+nisdomainname \- affiche ou dÃ©finit le nom de domaine NIS/YP du systÃ¨me
 .br
-ypdomainname \- affiche ou définit le nom de domaine NIS/YP du système
+ypdomainname \- affiche ou dÃ©finit le nom de domaine NIS/YP du systÃ¨me
 .br
-nodename \- affiche ou définit le nom de domaine DECnet du système
+nodename \- affiche ou dÃ©finit le nom de domaine DECnet du systÃ¨me
 
 .SH SYNOPSIS
 .B hostname
@@ -73,45 +73,45 @@ nodename \- affiche ou définit le nom de domaine DECnet du système
 
 .SH DESCRIPTION
 .B Hostname
-est le programme utilisé soit pour définir le nom d'hôte, soit
-pour visualiser le nom d'hôte ou de domaine du système. Ce nom est
-utilisé par différents programmes réseaux pour identifier la machine. Le
-nom de domaine est également utilisé par les NIS/YP.
+est le programme utilisÃ© soit pour dÃ©finir le nom d'hÃ´te, soit
+pour visualiser le nom d'hÃ´te ou de domaine du systÃ¨me. Ce nom est
+utilisÃ© par diffÃ©rents programmes rÃ©seaux pour identifier la machine. Le
+nom de domaine est Ã©galement utilisÃ© par les NIS/YP.
 
 .SS "OBTENTION DU NOM"
-Appelé sans argument, le programme affiche les noms courants:
+AppelÃ© sans argument, le programme affiche les noms courants:
 
 .LP
 .B hostname
-fournit le nom du système tel qu'il est retourné par la fonction
-.BR getdomainname (2)
-. Ceci est connu comme nom de domaine YP/NIS du système.
+fournit le nom du systÃ¨me tel qu'il est retournÃ© par la fonction
+.BR getdomainname (2).
+Ceci est connu comme nom de domaine YP/NIS du systÃ¨me.
 
 
 .LP
 .B nodename
-fournit le nom de noeud DECnet du système tel qu'il est retourné par la
+fournit le nom de noeud DECnet du systÃ¨me tel qu'il est retournÃ© par la
 fonction
 .BR getnodename (2)
 .
 
 .LP
 .B dnsdomainname
-fournit la partie domaine du nom complètement qualifié - FQDN (Fully
-Qualified Domain Name). Le nom FQDN du système est retourné par la commande
+fournit la partie domaine du nom complÃ¨tement qualifiÃ© - FQDN (Fully
+Qualified Domain Name). Le nom FQDN du systÃ¨me est retournÃ© par la commande
 .BR "hostname \-\-fqdn" .
 
 .SS "SET NAME"
-Appelé avec un argument ou avec l'option
+AppelÃ© avec un argument ou avec l'option
 .B \-\-file
-, la commande définit le nom d'hôte, le nom de domaine NIS/YP ou
+, la commande dÃ©finit le nom d'hÃ´te, le nom de domaine NIS/YP ou
 le nom de noeud. 
 
 .LP
 Notez que seul le super-utilisateur peut changer les noms.
 
 .LP
-Il n'est pas possible de définir le nom FQDN ou le nom de domaine DNS avec
+Il n'est pas possible de dÃ©finir le nom FQDN ou le nom de domaine DNS avec
 la commande 
 .B dnsdomainname 
  (voir 
@@ -119,8 +119,8 @@ la commande
 ci-dessous).
 
 .LP
-Le nom d'hôte est générallement définit une seule fois, au
-démarrage du système, par le script de configuration
+Le nom d'hÃ´te est gÃ©nÃ©rallement dÃ©finit une seule fois, au
+dÃ©marrage du systÃ¨me, par le script de configuration
 .I /etc/rc.d/rc.inet1.
 ou
 .I /etc/init.d/boot
@@ -132,45 +132,45 @@ Vous pouvez modifier le FQDN (tel que fourni par la commande
 .BR "hostname \-\-fqdn" ) 
 ou le nom de domaine DNS (tel que fourni par la commande
 .BR "dnsdomainname" ) 
-avec cette commande. Le FQDN du système est le nom que le resolveur (
+avec cette commande. Le FQDN du systÃ¨me est le nom que le resolveur (
 .BR resolver (3)
- ) retourne comme nom d'hôte. 
+ ) retourne comme nom d'hÃ´te. 
 
 .LP
 Techniquement: Le FQDN est le nom fourni par
 .BR gethostbyname (2)
-à partir du nom d'hôte retourné par
+Ã  partir du nom d'hÃ´te retournÃ© par
 .BR gethostname (2).
 Le nom de domaine DNS est la partie suivant le premier point.
 .LP
-La façon dont vous pouvez le changer dépend de la configuration
+La faÃ§on dont vous pouvez le changer dÃ©pend de la configuration
 (habituellement dans 
-.IR /etc/host.conf )
-. Si le fichier 'hosts' est analysé avant d'interroger le DNS ou 
+.IR /etc/host.conf ).
+Si le fichier 'hosts' est analysÃ© avant d'interroger le DNS ou 
 NIS) vous pouvez le changer dans le fichier 
 .IR /etc/hosts .
 
 .SH OPTIONS
 .TP
 .I "\-a, \-\-alias"
-Affiche l'alias de l'hôte (si utilisé).
+Affiche l'alias de l'hÃ´te (si utilisÃ©).
 .TP
 .I "\-d, \-\-domain"
 Affiche le nom du domaine DNS. Ne pas utiliser la commande
 .B domainname
-pour obtenir le nom de domaine DNS car vous obtiendrez en réalité le
-nom de domaine NIS. Utilisez plutôt la commande
+pour obtenir le nom de domaine DNS car vous obtiendrez en rÃ©alitÃ© le
+nom de domaine NIS. Utilisez plutÃ´t la commande
 .B dnsdomainname 
 .
 .TP
 .I "\-F, \-\-file nom_fichier"
-Lit le nom d'hôte à partir du fichier spécifié. Les commentaires (lignes commençant
-par un `#') sont ignorés.
+Lit le nom d'hÃ´te Ã  partir du fichier spÃ©cifiÃ©. Les commentaires (lignes commenÃ§ant
+par un `#') sont ignorÃ©s.
 .TP
 .I "\-f, \-\-fqdn, \-\-long"
-Affiche le nom pleinement qualifié - FQDN (Fully Qualified Domain Name). un
-FQDN consiste en un nom d'hôte court et un nom de domaine. A moins que vous
-utilisiez 'bind' ou les NIS pour la recherche d'hôtes, vous pouvez changer
+Affiche le nom pleinement qualifiÃ© - FQDN (Fully Qualified Domain Name). un
+FQDN consiste en un nom d'hÃ´te court et un nom de domaine. A moins que vous
+utilisiez 'bind' ou les NIS pour la recherche d'hÃ´tes, vous pouvez changer
 le nom FQDN et le nom de domaine (qui fait partie du FQDN) dans le fichier
 \fI/etc/hosts\fR.
 .TP
@@ -178,15 +178,15 @@ le nom FQDN et le nom de domaine (qui fait partie du FQDN) dans le fichier
 Affiche un message d'aide et se termine.
 .TP
 .I "\-i, \-\-ip-address"
-Affiche la (les) adresse(s) IP de l'hôte.
+Affiche la (les) adresse(s) IP de l'hÃ´te.
 .TP
 .I "\-n, \-\-node"
-Affiche le nom de noeud DECnet. Si un paramètre est fourni (ou
+Affiche le nom de noeud DECnet. Si un paramÃ¨tre est fourni (ou
 .B \-\-file nom_fichier
-) le super-utilisateur peut également définir un nouveau nom de neud.
+) le super-utilisateur peut Ã©galement dÃ©finir un nouveau nom de neud.
 .TP
 .I "\-s, \-\-short"
-Affiche le nom d'hôte en format court. Il s'agit du nom d'hôte coupé au
+Affiche le nom d'hÃ´te en format court. Il s'agit du nom d'hÃ´te coupÃ© au
 premier point.
 .TP
 .I "\-V, \-\-version"
@@ -197,9 +197,9 @@ termine correctement.
 Mode verbeux.
 .TP
 .I "\-y, \-\-yp, \-\-nis"
-Affiche le nom de domaine NIS. Si un paramètre est fourni (ou
+Affiche le nom de domaine NIS. Si un paramÃ¨tre est fourni (ou
 .B \-\-file nom_fichier
-) le super-utilisateur peut également définir un nouveau nom de domaine NIS.
+) le super-utilisateur peut Ã©galement dÃ©finir un nouveau nom de domaine NIS.
 .SH FICHIERS
 .B /etc/hosts
 .SH AUTEURS

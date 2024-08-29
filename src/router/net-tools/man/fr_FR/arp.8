@@ -1,32 +1,32 @@
-.TH ARP 8 "5 Jan 1999" "net-tools" "Linux Programmer's Manual"
+.TH ARP 8 "5 Jan 1999" "net-tools" "Linux Administrator's Manual"
 .SH NOM
-arp \- manipule la table ARP du système
+arp \- manipule la table ARP du systÃ¨me
 .SH SYNOPSIS
 .B arp 
 .RB [ \-vn ] 
 .RB [ "\-H type" ] 
 .RB [ "-i if" ] 
 .B -a 
-.RB [ nom_hôte ]
+.RB [ nom_hÃ´te ]
 .PP
 .B arp 
 .RB [ \-v ]
 .RB [ "\-i if" ] 
-.B "\-d nom_hôte"
+.B "\-d nom_hÃ´te"
 .RB [ pub ]
 .PP
 .B arp 
 .RB [ \-v ] 
 .RB [ "\-H type" ] 
 .RB [ "\-i if" ] 
-.B -s nom_hôte hw_addr
+.B -s nom_hÃ´te hw_addr
 .RB [ temp ] 
 .PP
 .B arp 
 .RB [ \-v ] 
 .RB [ "\-H type" ] 
 .RB [ "\-i if" ] 
-.B -s nom_hôte hw_addr
+.B -s nom_hÃ´te hw_addr
 .RB [ "netmask nm" ] 
 .B pub
 .PP
@@ -34,7 +34,7 @@ arp \- manipule la table ARP du système
 .RB [ \-v ] 
 .RB [ "\-H type" ] 
 .RB [ "\-i if" ] 
-.B -Ds nom_hôte ifa
+.B -Ds nom_hÃ´te ifa
 .RB [ "netmask nm" ] 
 .B pub
 .PP
@@ -46,33 +46,33 @@ arp \- manipule la table ARP du système
 
 .SH DESCRIPTION
 .B Arp
-manipule la table ARP du noyau de différentes façons.  Les options principales
-permettent d'effacer une correspondance d'adresses   et d'en définir
+manipule la table ARP du noyau de diffÃ©rentes faÃ§ons.  Les options principales
+permettent d'effacer une correspondance d'adresses   et d'en dÃ©finir
 une manuellement.
-Pour les besoins de débogage, le programme
+Pour les besoins de dÃ©bogage, le programme
 .B arp
 permet aussi d'effectuer un dump complet de la table ARP.
 .SH OPTIONS
 .TP
 .B "\-v, \-\-verbose"
-Dit à l'utilisateur ce qui se passe en étant verbeux.
+Dit Ã  l'utilisateur ce qui se passe en Ã©tant verbeux.
 .TP
 .B "\-n, \-\-numeric"
-Affiche les adresses numériques au lieu d'essayer de déterminer les nom
-d'hôtes symboliques.
+Affiche les adresses numÃ©riques au lieu d'essayer de dÃ©terminer les nom
+d'hÃ´tes symboliques.
 .TP
 .B "\-H type, \-\-hw-type type"
-En positionnant ou lisant les entrées ARP, ce paramètre optionnel indique
-à 
+En positionnant ou lisant les entrÃ©es ARP, ce paramÃ¨tre optionnel indique
+Ã  
 .B arp
-les classes d'entrées qu'il doit contrôler.  La valeur par défaut de
-ce paramètre est
+les classes d'entrÃ©es qu'il doit contrÃ´ler.  La valeur par dÃ©faut de
+ce paramÃ¨tre est
 .B ether
-(i.e. code de matériel
+(i.e. code de matÃ©riel
 .B 0x01
 pour
 .B "IEEE 802.3 10Mbps Ethernet".
-D'autres valeurs doivent correspondre à des technologies réseaux telles que
+D'autres valeurs doivent correspondre Ã  des technologies rÃ©seaux telles que
 .RB "ARCnet (" arcnet ")"
 ,
 .RB "PROnet (" pronet ")"
@@ -81,89 +81,89 @@ D'autres valeurs doivent correspondre à des technologies réseaux telles que
 and
 .RB "NET/ROM (" netrom ")."
 .TP
-.B "\-a [nom_d_hôte], \-\-display [nom_d_hôte]"
-Affiche les entrées concernant l'hôte spécifié.  Si le paramètre
-.B nom_d_hôte
-n'est pas utilisé,
+.B "\-a [nom_d_hÃ´te], \-\-display [nom_d_hÃ´te]"
+Affiche les entrÃ©es concernant l'hÃ´te spÃ©cifiÃ©.  Si le paramÃ¨tre
+.B nom_d_hÃ´te
+n'est pas utilisÃ©,
 .B toutes
-les entrées seront affichées.
+les entrÃ©es seront affichÃ©es.
 .TP
-.B "\-d nom_d_hôte, \-\-delete nom_d_hôte"
-Enlève une entrée pour l'hôte spécifié.  Ceci peut être
-utilisé si l'hôte concerné ne fonctionne plus, par exemple.
+.B "\-d nom_d_hÃ´te, \-\-delete nom_d_hÃ´te"
+EnlÃ¨ve une entrÃ©e pour l'hÃ´te spÃ©cifiÃ©.  Ceci peut Ãªtre
+utilisÃ© si l'hÃ´te concernÃ© ne fonctionne plus, par exemple.
 .TP
 .B "\-D, \-\-use-device"
-Utilise l'adresse matérielle de l'interface
+Utilise l'adresse matÃ©rielle de l'interface
 .BR ifa
 .
 .TP
 .B "\-i If, \-\-device If"
-Sélectionne une interface. Lors du dump du cache ARP, seules les entrées
-correspondant à l'interface spécifiée seront affichées. Lorsque l'on définit
-une entrée permanente ou une entrée
+SÃ©lectionne une interface. Lors du dump du cache ARP, seules les entrÃ©es
+correspondant Ã  l'interface spÃ©cifiÃ©e seront affichÃ©es. Lorsque l'on dÃ©finit
+une entrÃ©e permanente ou une entrÃ©e
 .B temp
-, cette interface lui sera associée; si cette option n'est pas utilisée,
-le noyau fera des tentatives de résolution selon la table de routage. Pour
-les entrées 
+, cette interface lui sera associÃ©e; si cette option n'est pas utilisÃ©e,
+le noyau fera des tentatives de rÃ©solution selon la table de routage. Pour
+les entrÃ©es 
 .B pub
-l'interface spécifiée est celle pour laquelle les requêtes ARP auront trouvé
-une réponse. 
+l'interface spÃ©cifiÃ©e est celle pour laquelle les requÃªtes ARP auront trouvÃ©
+une rÃ©ponse. 
 .br
 .B NOTE:
-Ceci est différent de l'interface vers laquelle les datagrammes IP seront routés.
+Ceci est diffÃ©rent de l'interface vers laquelle les datagrammes IP seront routÃ©s.
 .TP
-.B "\-s nom_d_hôte hw_addr, \-\-set hostname hw_addr"
-Crée manuellement une correspondance d'adresses ARP pour l'hôte
-.B nom_d_hôte
-avec l'adresse matérielle positionnée à
+.B "\-s nom_d_hÃ´te hw_addr, \-\-set hostname hw_addr"
+CrÃ©e manuellement une correspondance d'adresses ARP pour l'hÃ´te
+.B nom_d_hÃ´te
+avec l'adresse matÃ©rielle positionnÃ©e Ã 
 .B hw_addr.
-Le format de l'adresse matérielle est dépendant de la classe du matériel,
-mais pour la plupart on peut considérer que la présentation classique
-peut être utilisée.  Pour la classe Ethernet, c'est 6 octets en hexadécimal,
-séparés par des double-points. Pour ajouter des entrées proxy-arp
+Le format de l'adresse matÃ©rielle est dÃ©pendant de la classe du matÃ©riel,
+mais pour la plupart on peut considÃ©rer que la prÃ©sentation classique
+peut Ãªtre utilisÃ©e.  Pour la classe Ethernet, c'est 6 octets en hexadÃ©cimal,
+sÃ©parÃ©s par des double-points. Pour ajouter des entrÃ©es proxy-arp
 (Ce sont celles avec l'indicateur
 .BR pub lish 
-positionné)
-un masque réseau (
+positionnÃ©)
+un masque rÃ©seau (
 .B netmask 
-) peut être spécifié au proxy-arp pour le
-sous-réseau entier. Ceci n'est pas très recommandé, mais est supporté par
+) peut Ãªtre spÃ©cifiÃ© au proxy-arp pour le
+sous-rÃ©seau entier. Ceci n'est pas trÃ¨s recommandÃ©, mais est supportÃ© par
 les anciens noyaux, car c'est utile dans certains cas. Si l'indicateur
 .B temp
-n'est pas fourni, les entrées ARP seront permanentes.
+n'est pas fourni, les entrÃ©es ARP seront permanentes.
 .br
 .B NOTE:
-A partir du noyau 2.2.0 il n'est plus possible de définir des entrées ARP
-pour un sous réseau entier.
+A partir du noyau 2.2.0 il n'est plus possible de dÃ©finir des entrÃ©es ARP
+pour un sous rÃ©seau entier.
 .TP
 .B "\-f nom_de_fichier, \-\-file nom_de_fichier"
-Similaire à l'option 
+Similaire Ã  l'option 
 .B \-s
 , mais cette fois les informations d'adresses sont prises dans le fichier
-.B nom_de_fichier
-. Ceci peut être utilisé si les entrées ARP à configurer sont
-nombreuses.  Le nom du fichier de données est très souvent nommé
+.BR nom_de_fichier .
+Ceci peut Ãªtre utilisÃ© si les entrÃ©es ARP Ã  configurer sont
+nombreuses.  Le nom du fichier de donnÃ©es est trÃ¨s souvent nommÃ©
 .B /etc/ethers
 , mais ce n'est pas officiel.
 .sp 1
 Le format du fichier est simple; Il contient
-seulement des lignes de texte ASCII avec sur chaque ligne un nom d'hôte et
-une adresse matérielle, séparés par des espaces. Les indicateurs
+seulement des lignes de texte ASCII avec sur chaque ligne un nom d'hÃ´te et
+une adresse matÃ©rielle, sÃ©parÃ©s par des espaces. Les indicateurs
 .BR "pub" , " temp" " et" " netmask"
-peuvent également être utilisés.
+peuvent Ã©galement Ãªtre utilisÃ©s.
 .LP
-A tous les endroits où un
-.B nom d'hôte
+A tous les endroits oÃ¹ un
+.B nom d'hÃ´te
 est attendu, on peut aussi entrer une
 .B "addresse IP"
-en notation décimale pointée.
+en notation dÃ©cimale pointÃ©e.
 .LP
-Chaque entrée complète se trouvant dans le cache ARP est marquée de
+Chaque entrÃ©e complÃ¨te se trouvant dans le cache ARP est marquÃ©e de
 l'indicateur
-.B C
-. Les entrées permanentes sont marquées de l'indicateur
+.BR C .
+Les entrÃ©es permanentes sont marquÃ©es de l'indicateur
 .B M
-et les entrées 'pub' ont l'indicateur
+et les entrÃ©es 'pub' ont l'indicateur
 .B P
 .
 .SH FICHIERS
@@ -175,10 +175,14 @@ et les entrées 'pub' ont l'indicateur
 .br
 .I /etc/ethers
 .SH VOIR AUSSI
-rarp(8), route(8), ifconfig(8), netstat(8)
+.BR ethers (5),
+.BR rarp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .SH AUTEUR
-Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> avec les améliorations
-apportées par le mainteneur des net-tools Bernd Eckenfels
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> avec les amÃ©liorations
+apportÃ©es par le mainteneur des net-tools Bernd Eckenfels
 <net-tools@lina.inka.de>.
 .SH TRADUCTION
 Jean Michel VANSTEENE (vanstee@worldnet.fr)

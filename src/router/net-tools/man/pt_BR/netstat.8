@@ -5,13 +5,13 @@
 .\"
 .\" Modificado por: Bernd.Eckenfels@inka.de
 .\" Modificado por: Andi Kleen ak@muc.de
-.\" Traduzido para portuguÍs por Arnaldo Carvalho de Melo <acme@conectiva.com.br>
+.\" Traduzido para portugu√™s por Arnaldo Carvalho de Melo <acme@conectiva.com.br>
 .\" Revisado por Jorge Luiz Godoy Filho <jorge@bestway.com.br>
 .\"
-.TH NETSTAT 8 "19 de maio de 1997" "net-tools" "Manual do Programador Linux"
+.TH NETSTAT 8 "2007-12-02" "net-tools" "Manual do Programador Linux"
 
 .SH NOME
-netstat \- Mostra conexıes de rede, tabelas de roteamento, estatÌsticas de interface e conexıes
+netstat \- Mostra conex√µes de rede, tabelas de roteamento, estat√≠sticas de interface e conex√µes
 mascaradas.
 .SH SINOPSE
 
@@ -19,6 +19,8 @@ mascaradas.
 .RB [ \-venaoc ]
 .RB [ \-\-tcp | \-t ]
 .RB [ \-\-udp | \-u ]
+.RB [ \-\-udplite | \-U ]
+.RB [ \-\-sctp | \-S ]
 .RB [ \-\-raw | \-w ]
 .RB [ \-\-unix | \-x ] 
 .RB [ \-\-inet | \-\-ip ]
@@ -63,90 +65,90 @@ mascaradas.
 .RB { \-h | \-\-help }
 
 .PP
-.SH DESCRI«√O
+.SH DESCRI√á√ÉO
 .B netstat
-mostra informaÁıes do subsistema de rede do Linux.
+mostra informa√ß√µes do subsistema de rede do Linux.
 
-.SS "(sem opÁıes)"
-VocÍ pode ver o estado das conexıes de rede atravÈs da listagem dos sockets
-abertos. Esta È a operaÁ„o padr„o: se vocÍ n„o especificar nenhuma
-famÌlia de endereÁos, os sockets ativos de todas as famÌlias de endereÁos
-configuradas ser„o mostrados. Com
+.SS "(sem op√ß√µes)"
+Voc√™ pode ver o estado das conex√µes de rede atrav√©s da listagem dos sockets
+abertos. Esta √© a opera√ß√£o padr√£o: se voc√™ n√£o especificar nenhuma
+fam√≠lia de endere√ßos, os sockets ativos de todas as fam√≠lias de endere√ßos
+configuradas ser√£o mostrados. Com
 .B -e
-vocÍ obter· informaÁıes adicionais (userid). Com a chave
+voc√™ obter√° informa√ß√µes adicionais (userid). Com a chave
 .B -v
-vocÍ poder· fazer com que o netstat reclame sobre famÌlias de endereÁos
-conhecidas que n„o sejam suportadas pelo kernel. A opÁ„o
+voc√™ poder√° fazer com que o netstat reclame sobre fam√≠lias de endere√ßos
+conhecidas que n√£o sejam suportadas pelo kernel. A op√ß√£o
 .B -o
-mostra algumas informaÁıes adicionais sobre temporizadores de rede.
+mostra algumas informa√ß√µes adicionais sobre temporizadores de rede.
 .B -a
-mostra todos os sockets, incluindo sockets de servidores. A famÌlia de
-endereÁos
+mostra todos os sockets, incluindo sockets de servidores. A fam√≠lia de
+endere√ßos
 .B inet
-mostrar· sockets raw, udp e tcp.
+mostrar√° sockets raw, udp e tcp.
 
 .SS "\-r, \-\-route"
-Com a opÁ„o
+Com a op√ß√£o
 .BR \-r ", " \-\-route
-vocÍ obter· as tabelas de roteamento do kernel no mesmo formato usado por
+voc√™ obter√° as tabelas de roteamento do kernel no mesmo formato usado por
 .BR "route -e" .
 .B "netstat -er" 
-usar· o formato de apresentaÁ„o do comando
+usar√° o formato de apresenta√ß√£o do comando
 .BR route .
 Por favor veja
 .BR route (8)
 para maiores detalhes.
 
-.SS "\-i, \-\-interface \fIiface\fI"
-Se vocÍ usar a opÁ„o
+.SS "\-i, \-\-interfaces \fIiface\fI"
+Se voc√™ usar a op√ß√£o
 .BR -i ", " --interfaces
 , uma tabela de todas (ou da
 .IR iface
-especificada) as interfaces de rede ser· mostrada. A saÌda usa o formato
+especificada) as interfaces de rede ser√° mostrada. A sa√≠da usa o formato
 .B "ifconfig -e"
-, e È descrita em
+, e √© descrita em
 .BR ifconfig (8).
 .B "netstat -ei" 
-mostrar· uma tabela ou uma entrada de interface como
+mostrar√° uma tabela ou uma entrada de interface como
 .B ifconfig
 mostra. Com a chave
 .B -a
-, vocÍ pode incluir interfaces que n„o estejam configuradas (i.e. n„o tem
+, voc√™ pode incluir interfaces que n√£o estejam configuradas (i.e. n√£o tem
 a flag 
 .BR U = UP
 configurada).
 
 .SS "\-M, \-\-masquerade"
 
-Uma lista de todas as sessıes mascaradas tambÈm pode ser vista. Com a chave
+Uma lista de todas as sess√µes mascaradas tamb√©m pode ser vista. Com a chave
 .B -e 
-vocÍ pode incluir mais algumas informaÁıes sobre numeraÁ„o sequencial e deltas
-, causados por reescritas de dados em sessıes FTP (comando PORT).
-O suporte a mascaramento È usado para esconder m·quinas em endereÁos de
-rede n„o oficiais do resto do mundo, como descrito em
-.BR ipfw (4), ipfwadm "(8) e ipfw (8).
+voc√™ pode incluir mais algumas informa√ß√µes sobre numera√ß√£o sequencial e deltas
+, causados por reescritas de dados em sess√µes FTP (comando PORT).
+O suporte a mascaramento √© usado para esconder m√°quinas em endere√ßos de
+rede n√£o oficiais do resto do mundo, como descrito em
+.BR iptables (8).
 
 .SS "\-s, \-\-statistics"
 
-Mostra estatÌsticas sobre o subsistema de rede do kernel do Linux, que 
-s„o lidas a partir de
+Mostra estat√≠sticas sobre o subsistema de rede do kernel do Linux, que 
+s√£o lidas a partir de
 .IR /proc/net/snmp .
 
 .PP
-.SH OP«’ES
+.SH OP√á√ïES
 .SS "\-v, \-\-verbose"
-Informa ao usu·rio o que est· ocorrendo, sendo detalhado. Especialmente 
-mostra algumas informaÁıes ˙teis sobre famÌlias de endereÁos n„o 
+Informa ao usu√°rio o que est√° ocorrendo, sendo detalhado. Especialmente 
+mostra algumas informa√ß√µes √∫teis sobre fam√≠lias de endere√ßos n√£o 
 configuradas.
 
 .SS "\-n, \-\-numeric"
-Mostra endereÁos numÈricos, sem tentar resolver os nomes da m·quina, porta ou
-usu·rio.
+Mostra endere√ßos num√©ricos, sem tentar resolver os nomes da m√°quina, porta ou
+usu√°rio.
 
-.SS "\-A, \-\-af \fIfamÌlia\fI"
-Usa um mÈtodo diferente para configurar as famÌlias de endereÁos.
-.I famÌlia 
-È uma lista de palavras-chave de famÌlias de endereÁos separadas por vÌrgulas
+.SS "\-A, \-\-af \fIfam√≠lia\fI"
+Usa um m√©todo diferente para configurar as fam√≠lias de endere√ßos.
+.I fam√≠lia 
+√© uma lista de palavras-chave de fam√≠lias de endere√ßos separadas por v√≠rgulas
 (',') como
 .BR inet , 
 .BR unix , 
@@ -155,7 +157,7 @@ Usa um mÈtodo diferente para configurar as famÌlias de endereÁos.
 .B netrom 
 e
 .BR ddp .
-Tem o mesmo efeito de usar as opÁıes longas
+Tem o mesmo efeito de usar as op√ß√µes longas
 .BR \-\-inet ,
 .BR \-\-unix ,
 .BR \-\-ipx ,
@@ -165,99 +167,99 @@ e
 .BR \-\-ddp.
 
 .SS "\-c, \-\-continuous"
-Isto far· com que 
+Isto far√° com que 
 .B netstat
-mostre a tabela selecionada a cada segundo, continuamente na tela atÈ que
-vocÍ o interrompa.
+mostre a tabela selecionada a cada segundo, continuamente na tela at√© que
+voc√™ o interrompa.
 
 .PP
-.SH SAÕDA
+.SH SA√çDA
 
 .PP
-.SS Conexıes Internet Ativas \fR(TCP, UDP, RAW)\fR
+.SS Conex√µes Internet Ativas \fR(TCP, UDP, RAW)\fR
 
 .SS "Proto" 
 O protocolo (tcp, udp, raw) usado pelo socket.
 
 .SS "Recv-Q"
-O contador de bytes n„o copiados pelo programa conectado a este socket.
+O contador de bytes n√£o copiados pelo programa conectado a este socket.
 
 .SS "Send-Q"
-O contador de bytes n„o confirmados pela m·quina remota.
+O contador de bytes n√£o confirmados pela m√°quina remota.
 
-.SS "EndereÁo Local" 
-O endereÁo local (nome da m·quina local) e o numero da porta do socket. A menos
+.SS "Endere√ßo Local" 
+O endere√ßo local (nome da m√°quina local) e o numero da porta do socket. A menos
 que a chave
 .B -n
-seja especificada o endereÁo do socket ser· resolvido para seu nome de m·quina
-canÙnico e o n˙mero da porta ser· traduzido para o serviÁo correspondente.
+seja especificada o endere√ßo do socket ser√° resolvido para seu nome de m√°quina
+can√¥nico e o n√∫mero da porta ser√° traduzido para o servi√ßo correspondente.
 
-.SS "EndereÁo Remoto"
-O endereÁo remoto (nome da m·quina remota) e o n˙mero da porta do socket. Como
-com o endereÁo local, a chave
+.SS "Endere√ßo Remoto"
+O endere√ßo remoto (nome da m√°quina remota) e o n√∫mero da porta do socket. Como
+com o endere√ßo local, a chave
 .B -n
-desliga a resoluÁ„o do nome da m·quina e do serviÁo.
+desliga a resolu√ß√£o do nome da m√°quina e do servi√ßo.
 
 .SS "Estado"
-O estado do socket. Uma vez que n„o existem estados no modo RAW e normalmente
-nenhum estado È usado em UDP, esta linha pode ser deixada em branco. Normalmente
-ele pode assumir um de v·rios valores:
+O estado do socket. Uma vez que n√£o existem estados no modo RAW e normalmente
+nenhum estado √© usado em UDP, esta linha pode ser deixada em branco. Normalmente
+ele pode assumir um de v√°rios valores:
 .TP
 .I
 ESTABELECIDO
-O socket tem uma conex„o estabelecida.
+O socket tem uma conex√£o estabelecida.
 .TP
 .I
 SYN_SENT
-O socket est· ativamente tentando estabelecer uma conex„o.
+O socket est√° ativamente tentando estabelecer uma conex√£o.
 .TP
 .I
 SYN_RECV
-Uma requisiÁ„o de conex„o foi recebida da rede.
+Uma requisi√ß√£o de conex√£o foi recebida da rede.
 .TP
 .I
 FIN_WAIT1
-O socket est· fechado e a conex„o est· terminando.
+O socket est√° fechado e a conex√£o est√° terminando.
 .TP
 .I
 FIN_WAIT2
-A conex„o est· fechada e o socket est· esperando por uma terminaÁ„o pela
-m·quina remota.
+A conex√£o est√° fechada e o socket est√° esperando por uma termina√ß√£o pela
+m√°quina remota.
 .TP
 .I
 TIME_WAIT
-O socket est· esperando apÛs o fechamento para tratar os pacotes ainda na rede.
+O socket est√° esperando ap√≥s o fechamento para tratar os pacotes ainda na rede.
 .TP
 .I
 FECHADO
-O socket n„o est· sendo usado.
+O socket n√£o est√° sendo usado.
 .TP
 .I
 CLOSE_WAIT
 O lado remoto terminou, esperando pelo fechamento do socket.
 .TP
 .I
-⁄LTIMO_ACK
-O lado remoto terminou, e o socket est· fechado. Esperando por uma
-confirmaÁ„o.
+√öLTIMO_ACK
+O lado remoto terminou, e o socket est√° fechado. Esperando por uma
+confirma√ß√£o.
 .TP
 .I
 OUVINDO
-O socket est· ouvindo por conexıes. Estes socket s„o somente mostrados se
+O socket est√° ouvindo por conex√µes. Estes socket s√£o somente mostrados se
 a chave
 .BR -a , --listening
 for especificada.
 .TP
 .I
 FECHANDO
-Ambos os sockets est„o terminados mas nÛs ainda n„o enviamos todos os nossos
+Ambos os sockets est√£o terminados mas n√≥s ainda n√£o enviamos todos os nossos
 dados.
 .TP
 .I
 DESCONHECIDO
-O estado do socket È desconhecido.
+O estado do socket √© desconhecido.
 
-.SS "Usu·rio"
+.SS "Usu√°rio"
 O nome ou UID do dono do socket.
 
 .SS "Temporizador"
@@ -272,198 +274,198 @@ O nome ou UID do dono do socket.
 O protocolo (normalmente unix) usado pelo socket.
 
 .SS "CntRef"
-O contador de referÍncias (i.e. processos conectados via este socket).
+O contador de refer√™ncias (i.e. processos conectados via este socket).
 
 .SS "Flags"
-As flags mostradas s„o SO_ACCEPTON (mostrada como 
+As flags mostradas s√£o SO_ACCEPTON (mostrada como 
 .BR ACC ),
 SO_WAITDATA 
 .RB ( W )
 ou SO_NOSPACE 
 .RB ( N ). 
 SO_ACCECPTON 
-È usada para sockets n„o-conectados se seus processos correspondentes
-estiverem esperando por uma solicitaÁ„o de conex„o. As demais flags n„o
-s„o de interesse comum.
+√© usada para sockets n√£o-conectados se seus processos correspondentes
+estiverem esperando por uma solicita√ß√£o de conex√£o. As demais flags n√£o
+s√£o de interesse comum.
 
 .SS "Tipos"
-H· diversos tipos de acesso a sockets:
+H√° diversos tipos de acesso a sockets:
 .TP
 .I
 SOCK_DGRAM
-O socket È usado no modo de Datagramas (sem conex„o).
+O socket √© usado no modo de Datagramas (sem conex√£o).
 .TP
 .I
 SOCK_STREAM
-… um socket usado quando h· conexıes (stream socket).
+√â um socket usado quando h√° conex√µes (stream socket).
 .TP
 .I
 SOCK_RAW
-… usado como o socket b·sico (raw socket).
+√â usado como o socket b√°sico (raw socket).
 .TP
 .I
 SOCK_RDM
-Este È usado para confirmaÁ„o de entrega de mensagens.
+Este √© usado para confirma√ß√£o de entrega de mensagens.
 .TP
 .I
 SOCK_SEQPACKET
-… um socket para um pacote sequencial.
+√â um socket para um pacote sequencial.
 .TP
 .I
 SOCK_PACKET
-Socket para acesso da interface B¡SICA.
+Socket para acesso da interface B√ÅSICA.
 .TP
 .I
 UNKNOWN
-Quem sabe o que nos trar· o futuro? Preencha aqui :-)
+Quem sabe o que nos trar√° o futuro? Preencha aqui :-)
 
 .PP
 .SS "Estados"
-Este campo conter· uma das seguintes palavras-chave:
+Este campo conter√° uma das seguintes palavras-chave:
 .TP
 .I
 FREE
-Este socket n„o est· alocado.
+Este socket n√£o est√° alocado.
 .TP
 .I
 LISTENING
-O socket est· aguardando por uma solicitaÁ„o de conex„o. S„o mostrados
-apenas se as opÁıes
+O socket est√° aguardando por uma solicita√ß√£o de conex√£o. S√£o mostrados
+apenas se as op√ß√µes
 .BR -a , --listening
 forem selecionadas.
 .TP
 .I
 CONNECTING
-O socket est· por estabelecer uma conex„o.
+O socket est√° por estabelecer uma conex√£o.
 .TP
 .I
 CONNECTED
-O socket est· conectado.
+O socket est√° conectado.
 .TP
 .I
 DISCONNECTING
-O socket est· desconectado.
+O socket est√° desconectado.
 .TP
 .I
 (nada)
-O socket n„o est· conectado a nenhum outro.
+O socket n√£o est√° conectado a nenhum outro.
 .TP
 .I
 UNKNOWN
-Isto n„o deve acontecer nunca.
+Isto n√£o deve acontecer nunca.
 
 .SS "Path"
-Mostra o caminho (path) do processo do qual est· tratando esse socket.
+Mostra o caminho (path) do processo do qual est√° tratando esse socket.
 
 .PP
 .SS Sockets IPX ativos
 
-(Isso precisa ser feito por alguÈm que saiba fazÍ-lo.)
+(Isso precisa ser feito por algu√©m que saiba faz√™-lo.)
 
 .PP
 .SS Sockets NET/ROM ativos
 
-(Isso precisa ser feito por alguÈm que saiba fazÍ-lo.)
+(Isso precisa ser feito por algu√©m que saiba faz√™-lo.)
 
 .PP
 .SS Sockets AX.25 ativos
 
-(Isso precisa ser feito por alguÈm que saiba fazÍ-lo.)
+(Isso precisa ser feito por algu√©m que saiba faz√™-lo.)
 
 .PP
 .SH NOTAS
-Desde o kernel 2.2 o netstat -i n„o mostra estatÌsticas para apelidos (aliases)
-de interfaces. Para obter contadores por apelido de interface vocÍ precisa
-configurar regras explÌcitas usando o comando
-+.BR ipchains(8)
+Desde o kernel 2.2 o netstat -i n√£o mostra estat√≠sticas para apelidos (aliases)
+de interfaces. Para obter contadores por apelido de interface voc√™ precisa
+configurar regras expl√≠citas usando o comando
++.BR iptables(8)
 .
 .SH FILES
 .ta
 .I /etc/services
--- O arquivo de "traduÁ„o" (correspondÍncia) entre socket e serviÁo.
+-- O arquivo de "tradu√ß√£o" (correspond√™ncia) entre socket e servi√ßo.
 
 .I /proc/net/dev
--- InformaÁıes de dispositivos.
+-- Informa√ß√µes de dispositivos.
 
 .I /proc/net/snmp
--- EstatÌsticas da rede.
+-- Estat√≠sticas da rede.
 
 .I /proc/net/raw
--- InformaÁ„o sobre o socket B¡SICO (RAW).
+-- Informa√ß√£o sobre o socket B√ÅSICO (RAW).
 
 .I /proc/net/tcp
--- InformaÁ„o sobre o socket TCP.
+-- Informa√ß√£o sobre o socket TCP.
 
 .I /proc/net/udp
--- InformaÁ„o sobre o socket UDP.
+-- Informa√ß√£o sobre o socket UDP.
 
 .I /proc/net/unix
--- InformaÁ„o sobre o socket de domÌnio Unix.
+-- Informa√ß√£o sobre o socket de dom√≠nio Unix.
 
 .I /proc/net/ipx
--- InformaÁ„o sobre o socket IPX.
+-- Informa√ß√£o sobre o socket IPX.
 
 .I /proc/net/ax25
--- InformaÁ„o sobre o socket AX25.
+-- Informa√ß√£o sobre o socket AX25.
 
 .I /proc/net/appletalk
--- InformaÁ„o sobre o socket DDP (Appletalk).
+-- Informa√ß√£o sobre o socket DDP (Appletalk).
 
 .I /proc/net/nr
--- InformaÁ„o sobre o socket NET/ROM.
+-- Informa√ß√£o sobre o socket NET/ROM.
 
 .I /proc/net/route
--- InformaÁ„o sobre os roteamentos IP realizados pelo kernel
+-- Informa√ß√£o sobre os roteamentos IP realizados pelo kernel
 
 .I /proc/net/ax25_route
--- InformaÁ„o sobre os roteamentos AX25 realizados pelo kernel
+-- Informa√ß√£o sobre os roteamentos AX25 realizados pelo kernel
 
 .I /proc/net/ipx_route
--- InformaÁ„o sobre os roteamentos IPX realizados pelo kernel
+-- Informa√ß√£o sobre os roteamentos IPX realizados pelo kernel
 
 .I /proc/net/nr_nodes
--- Lista de nÛs NET/ROM do kernel
+-- Lista de n√≥s NET/ROM do kernel
 
 .I /proc/net/nr_neigh
 -- "Vizinhos" NET/ROM do kernel
 
 .I /proc/net/ip_masquerade
--- Conexıes mascaradas do kernel
+-- Conex√µes mascaradas do kernel
 
 .fi
 
 .PP
-.SH VEJA TAMB…M
-.BR route (8), 
-.BR ifconfig (8), 
-.BR ipfw (4), 
-.BR ipfw (8), 
-.BR ipfwadm (8)
-.BR ipchains (8)
+.SH VEJA TAMB√âM
+.BR route (8),
+.BR ifconfig (8),
+.BR iptables (8),
+.BR proc (5),
+.BR ss (8),
+.BR ip (8)
 
 .PP
 .SH BUGS
-Ocasionalmente informaÁıes estranhas podem surgir se um socket mudar
-enquanto È visualizado. Isso È incomum.
+Ocasionalmente informa√ß√µes estranhas podem surgir se um socket mudar
+enquanto √© visualizado. Isso √© incomum.
 .br
-As opÁıes descritas para
+As op√ß√µes descritas para
 .B netstat -i
-foram descritas como dever„o funcionar apÛs alguma limpeza da liberaÁ„o
+foram descritas como dever√£o funcionar ap√≥s alguma limpeza da libera√ß√£o
 BETA do pacote net-tools.
 
 .PP
 .SH AUTORES
-A interface com o usu·rio foi escrita por Fred Baumgarten
-<dc6iq@insu1.etec.uni-karlsruhe.de> a p·gina do manual basicamente
+A interface com o usu√°rio foi escrita por Fred Baumgarten
+<dc6iq@insu1.etec.uni-karlsruhe.de> a p√°gina do manual basicamente
 por Matt Welsh <mdw@tc.cornell.edu>. Foi atualizada por
 Alan Cox <Alan.Cox@linux.org> mas poderia ter sido feita com um pouco
 mais de trabalho.
 .BR
 .LP
-A p·gina do manual e os comandos incluÌdos no pacote net-tools
+A p√°gina do manual e os comandos inclu√≠dos no pacote net-tools
 foram totalmente reescritos desde Bernd Eckenfels
 <ecki@linux.de>.
 .BR
-.SH TRADU«√O E REVIS√O PARA PORTUGU S
-Traduzido para o portuguÍs por Arnaldo Carvalho de Melo
+.SH TRADU√á√ÉO E REVIS√ÉO PARA PORTUGU√äS
+Traduzido para o portugu√™s por Arnaldo Carvalho de Melo
 <acme@conectiva.com.br> e Jorge Luiz Godoy Filho <jorge@bestway.com.br>.

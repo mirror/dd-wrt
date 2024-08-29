@@ -24,12 +24,13 @@
 #include <unistd.h>
 #include "net-support.h"
 #include "pathnames.h"
+#include "util.h"
 
 
 /* Split the input string into multiple fields. */
 int getargs(char *string, char *arguments[])
 {
-    int len = strlen(string); 
+    int len = strlen(string);
     char temp[len+1];
     char *sp, *ptr;
     int i, argc;
@@ -41,7 +42,7 @@ int getargs(char *string, char *arguments[])
      */
     sp = string;
     i = 0;
-    strcpy(temp, string);
+    safe_strncpy(temp, string, sizeof(temp));
     ptr = temp;
 
     /*

@@ -55,7 +55,7 @@ Schnittstelle]
 .SH BESCHREIBUNG
 .B Route
 wird zum \(:Andern der IP-Routing-Tabelle der Kernels verwendet.  Seine
-prim\(:are Verwendung ist statische Routen f\*:ur bestimmte Rechner oder
+prim\(:are Verwendung ist statische Routen f\(:ur bestimmte Rechner oder
 Netzwerke \(:uber eine Schnittstelle einzutragen, nachdem diese mit dem
 Programm
 .BR ifconfig (8)
@@ -334,7 +334,12 @@ Nur wenn die Hardwareadresse f\(:ur die gecachte Route aktuell ist.
 .I /proc/net/rt_cache
 .LP
 .SH SIEHE AUCH
-.I ifconfig(8), netstat(8), arp(8), rarp(8)
+.BR ethers (5),
+.BR arp (8),
+.BR rarp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .LP
 .SH GESCHICHTE
 .B Route
@@ -347,4 +352,4 @@ irtt beigesteuert und den Code mit dem von Netstat vereinigt.
 .B Route
 wird zur Zeit von Phil Blundel (Philip.Blundell@pobox.com) gewartet.
 .SH \(:Ubersetzung
-Ralf B\(:achle <ralf@gnu.org>
+Ralf B\(:achle <ralf@linux-mips.org>

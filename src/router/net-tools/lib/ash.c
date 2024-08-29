@@ -31,8 +31,8 @@ static unsigned char hamming[16] =
 };
 
 /* Display an Ash address in readable format. */
-static char *
-pr_ash(unsigned char *ptr)
+static const char *
+pr_ash(const char *ptr)
 {
     static char buff[128];
     char *p = buff;
@@ -57,10 +57,11 @@ pr_ash(unsigned char *ptr)
 
 struct hwtype ash_hwtype;
 
-static int 
-in_ash(char *bufp, struct sockaddr *sap)
+static int
+in_ash(char *bufp, struct sockaddr_storage *sasp)
 {
-    unsigned char *ptr;
+    struct sockaddr *sap = (struct sockaddr *)sasp;
+    char *ptr;
     unsigned int i = 0;
 
     sap->sa_family = ash_hwtype.type;
@@ -102,9 +103,10 @@ struct hwtype ash_hwtype =
 #if HAVE_AFASH
 
 /* Display an Ash socket address. */
-static char *
-pr_sash(struct sockaddr *sap, int numeric)
+static const char *
+pr_sash(const struct sockaddr_storage *sasp, int numeric)
 {
+    const struct sockaddr *sap = (const struct sockaddr *)sasp;
     static char buf[64];
 
     if (sap->sa_family != AF_ASH)

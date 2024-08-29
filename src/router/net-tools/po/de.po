@@ -1,15 +1,15 @@
-# $Id: de.po,v 1.10 2000/08/01 03:19:48 ecki Exp $
+# $Id: de.po,v 1.11 2003/10/25 21:15:09 ecki Exp $
 # German translation for net-tools 1.51
-# Copyright (C) 1999 Ralf Bächle <ralf@gnu.org>
+# Copyright (C) 1999 Ralf Bächle <ralf@linux-mips.org>
 msgid ""
 msgstr ""
 "Project-Id-Version: net-tools 1.51\n"
 "POT-Creation-Date: 2000-02-14 02:31+0100\n"
 "PO-Revision-Date: 1998-03-01 00:02+0100\n"
-"Last-Translator: Ralf Bächle <ralf@gnu.org>\n"
+"Last-Translator: Ralf Bächle <ralf@linux-mips.org>\n"
 "Language-Team:\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso8859-1\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../arp.c:110 ../arp.c:269
@@ -59,12 +59,16 @@ msgid "arp: cannot set entry on line %u of etherfile %s !\n"
 msgstr "arp: Kann Eintrag auf Zeile %u von Etherdatei %s nicht setzen!\n"
 
 #: ../arp.c:437
-msgid "Address\t\t\tHWtype\tHWaddress\t    Flags Mask\t\t  Iface\n"
-msgstr "Adresse\t\t\tHWTyp\tHWAdresse\t    Flags   Maske\t\t  Iface\n"
+msgid ""
+"Address                  HWtype  HWaddress           Flags Mask            "
+"Iface\n"
+msgstr ""
+"Adresse                  HW-Typ  HW-Adresse          Flags Maske           "
+"Iface\n"
 
 #: ../arp.c:467
 msgid "(incomplete)"
-msgstr "(unvollsändig)"
+msgstr "(unvollständig)"
 
 #: ../arp.c:484
 #, c-format
@@ -774,7 +778,7 @@ msgid ""
 " will not be shown, you would have to be root to see it all.)\n"
 msgstr ""
 "(Es konnten nicht alle Prozesse identifiziert werden; Informationen über\n"
-"nicht-eigene Processe werden nicht angezeigt; Root kann sie anzeigen.)\n"
+"nicht-eigene Prozesse werden nicht angezeigt; Root kann sie anzeigen.)\n"
 
 #: ../netstat.c:394 ../netstat.c:1089 ../netstat.c:1166
 msgid "LISTENING"
@@ -1514,7 +1518,7 @@ msgstr "%d Fragmente korrekt empfangen"
 
 #: ../statistics.c:78
 #, c-format
-msgid "%d packet reassembles failed"
+msgid "%d packet reassemblies failed"
 msgstr "%d fehlgeschlagene Paketdefragmentierungen"
 
 #: ../statistics.c:79
@@ -1539,7 +1543,7 @@ msgstr "%d ICMP Nachrichten empfangen"
 
 #: ../statistics.c:87
 #, c-format
-msgid "%d input ICMP message failed."
+msgid "%d input ICMP message failed"
 msgstr "%d eingegangene ICMP Nachrichten fehlgeschlagen"
 
 #: ../statistics.c:88 ../statistics.c:101
@@ -1625,11 +1629,6 @@ msgstr "Source Quench: %d"
 msgid "redirect: %d"
 msgstr "Umleitungen: %d"
 
-#: ../statistics.c:106
-#, c-format
-msgid "echo request: %d"
-msgstr "Echo Anfragen: %d"
-
 #: ../statistics.c:108
 #, c-format
 msgid "timestamp requests: %d"
@@ -1657,7 +1656,7 @@ msgstr "RTO Algorithmus is %s"
 
 #: ../statistics.c:120
 #, c-format
-msgid "%d active connections openings"
+msgid "%d active connection openings"
 msgstr "%d Verbindungen aktiv geöffnet"
 
 #: ../statistics.c:121
@@ -1687,18 +1686,18 @@ msgstr "%d Segmente empfangen"
 
 #: ../statistics.c:126
 #, c-format
-msgid "%d segments send out"
+msgid "%d segments sent out"
 msgstr "%d Segmente abgeschickt"
 
 #: ../statistics.c:127
 #, c-format
-msgid "%d segments retransmited"
+msgid "%d segments retransmitted"
 msgstr "%d Segmente erneut geschickt"
 
 #: ../statistics.c:128
 #, c-format
-msgid "%d bad segments received."
-msgstr "%d fehlerhafte Segmente empfangen."
+msgid "%d bad segments received"
+msgstr "%d fehlerhafte Segmente empfangen"
 
 #: ../statistics.c:129
 #, c-format
@@ -1712,8 +1711,8 @@ msgstr "%d Pakete empfangen"
 
 #: ../statistics.c:135
 #, c-format
-msgid "%d packets to unknown port received."
-msgstr "%d Pakete für unbekannte Ports empfangen."
+msgid "%d packets to unknown port received"
+msgstr "%d Pakete für unbekannte Ports empfangen"
 
 #: ../statistics.c:136
 #, c-format

@@ -38,8 +38,8 @@
 
 extern struct hwtype strip_hwtype;
 
-static char *
-pr_strip(unsigned char *ptr)
+static const char *
+pr_strip(const char *ptr)
 {
   static char buff[64];
   if(ptr[1])
@@ -52,8 +52,9 @@ pr_strip(unsigned char *ptr)
 }
 
 static int
-in_strip(char *bufp, struct sockaddr *sap)
+in_strip(char *bufp, struct sockaddr_storage *sasp)
 {
+  struct sockaddr *sap = (struct sockaddr *)sasp;
   int i,i0;
   MetricomAddress *haddr = (MetricomAddress *) (sap->sa_data);
 

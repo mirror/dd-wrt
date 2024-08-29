@@ -4,7 +4,7 @@
    Copyright (c) 1994 John Paul Morrison (VE7JPM).
 
    version 0.2
-   
+
    Changed by Alan Cox, to reflect the way SIOCDEVPRIVATE is meant to work
    and for the extra parameter added by Niibe.
 
@@ -42,31 +42,28 @@
 #include "intl.h"
 #include "net-support.h"
 #include "version.h"
+#include "util.h"
 
-int opt_a = 0;
-int opt_i = 0;
-int opt_v = 0;
 int skfd = -1;
 
 struct ifreq ifr;
 struct plipconf *plip;
 
-char *Release = RELEASE,
-     *Version = "plipconfig 0.2",
-     *Signature = "John Paul Morrison, Alan Cox et al.";
+static char *Release = RELEASE, *Signature = "John Paul Morrison, Alan Cox et al.";
 
 static void version(void)
 {
-    printf("%s\n%s\n%s\n", Release, Version, Signature);
+    printf("%s\n%s\n", Release, Signature);
     exit(E_VERSION);
 }
 
-void usage(void)
+static void usage(int rc)
 {
-    fprintf(stderr, _("Usage: plipconfig [-a] [-i] [-v] interface\n"));
-    fprintf(stderr, _("                  [nibble NN] [trigger NN]\n"));
-    fprintf(stderr, _("       plipconfig -V | --version\n"));
-    exit(-1);
+    FILE *fp = rc ? stderr : stdout;
+    fprintf(fp, _("Usage: plipconfig interface [nibble NN] [trigger NN]\n"));
+    fprintf(fp, _("       plipconfig -V | --version\n"));
+    fprintf(fp, _("       plipconfig -h | --help\n"));
+    exit(rc);
 }
 
 void print_plip(void)
@@ -93,21 +90,21 @@ int main(int argc, char **argv)
     argc--;
     argv++;
     while (argv[0] && *argv[0] == '-') {
-	if (!strcmp(*argv, "-a"))
-	    opt_a = 1;
-	if (!strcmp(*argv, "-v"))
-	    opt_v = 1;
 	if (!strcmp(*argv, "-V") || !strcmp(*argv, "--version"))
 	    version();
+	else if (!strcmp(*argv, "-h") || !strcmp(*argv, "--help"))
+	    usage(E_USAGE);
+	else
+            usage(E_OPTERR);
 	argv++;
 	argc--;
     }
 
     if (argc == 0)
-	usage();
+	usage(E_OPTERR);
 
     spp = argv;
-    strncpy(ifr.ifr_name, *spp++, IFNAMSIZ);
+    safe_strncpy(ifr.ifr_name, *spp++, IFNAMSIZ);
     plip=(struct plipconf *)&ifr.ifr_data;
 
     plip->pcmd = PLIP_GET_TIMEOUT;	/* get current settings for device */
@@ -123,19 +120,19 @@ int main(int argc, char **argv)
     while (*spp != (char *) NULL) {
 	if (!strcmp(*spp, "nibble")) {
 	    if (*++spp == NULL)
-		usage();
+		usage(E_OPTERR);
 	    plip->nibble = atoi(*spp);
 	    spp++;
 	    continue;
 	}
 	if (!strcmp(*spp, "trigger")) {
 	    if (*++spp == NULL)
-		usage();
+		usage(E_OPTERR);
 	    plip->trigger = atoi(*spp);
 	    spp++;
 	    continue;
 	}
-	usage();
+	usage(E_OPTERR);
     }
 
     plip->pcmd = PLIP_SET_TIMEOUT;

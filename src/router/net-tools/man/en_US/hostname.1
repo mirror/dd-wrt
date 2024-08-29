@@ -1,66 +1,60 @@
-.TH HOSTNAME 1 "28 Jan 1996" "net-tools" "Linux Programmer's Manual"
+.TH HOSTNAME 1 "2013\-08\-29" "net\-tools" "Linux System Administrator's Manual"
 
 .SH NAME
 hostname \- show or set the system's host name
 .br
-domainname \- show or set the system's NIS/YP domain name
-.br
 dnsdomainname \- show the system's DNS domain name
+.br
+domainname \- show or set the system's NIS/YP domain name
 .br
 nisdomainname \- show or set system's NIS/YP domain name
 .br
-ypdomainname \- show or set the system's NIS/YP domain name
-.br
 nodename \- show or set the system's DECnet node name
+.br
+ypdomainname \- show or set the system's NIS/YP domain name
 
 .SH SYNOPSIS
 .B hostname
 .RB [ \-v ]
-.RB [ \-a ]
-.RB [ \-\-alias ]
-.RB [ \-d ]
-.RB [ \-\-domain ]
-.RB [ \-f ]
-.RB [ \-\-fqdn ]
-.RB [ \-i ]
-.RB [ \-\-ip-address ]
-.RB [ \-\-long ]
-.RB [ \-s ]
-.RB [ \-\-short ]
-.RB [ \-y ]
-.RB [ \-\-yp ]
-.RB [ \-\-nis ]
-.RB [ \-n ]
-.RB [ \-\-node ]
-
-.PP
-.B hostname 
-.RB [ \-v ]
-.RB [ \-F\ filename ]
-.RB [ \-\-file\ filename ]
-.RB [ hostname ]
-
-.PP
-.B domainname
-.RB [ \-v ]
-.RB [ \-F\ filename ]
-.RB [ \-\-file\ filename ]
-.RB [ name ]
-
-.PP 
-.B nodename
-.RB [ \-v ]
-.RB [ \-F\ filename ]
-.RB [ \-\-file\ filename ]
-.RB [ name ]
+.RB [ \-s | \-\-short ]
 
 .PP
 .B hostname
 .RB [ \-v ]
-.RB [ \-h ]
-.RB [ \-\-help ]
-.RB [ \-V ]
-.RB [ \-\-version ]
+.RB [ \-a | \-\-alias ]
+.RB [ \-d | \-\-domain ]
+.RB [ \-f | \-\-fqdn | \-\-long ]
+.RB [ \-i | \-\-ip\-address ]
+
+.PP
+.B hostname
+.RB [ \-v ]
+.RB [ \-y | \-\-yp | \-\-nis ]
+.RB [ \-n | \-\-node ]
+
+.PP
+.B hostname 
+.RB [ \-v ]
+.RB [ \-F\ filename | \-\-file\ filename ]
+.RI [ newname ]
+
+.PP
+.B domainname
+.RB [ \-v ]
+.RB [ \-F\ filename | \-\-file\ filename ]
+.RI [ newname ]
+
+.PP 
+.B nodename
+.RB [ \-v ]
+.RB [ \-F\ filename | \-\-file\ filename ]
+.RI [ newname ]
+
+.PP
+.B hostname
+.RB [ \-v | \-\-verbose ]
+.RB [ \-h | \-\-help ]
+.RB [ \-V | \-\-version ]
 
 .PP
 .B dnsdomainname
@@ -124,12 +118,8 @@ command (see
 below).
 
 .LP
-The host name is usually set once at system startup in
-.I /etc/rc.d/rc.inet1
-or
-.I /etc/init.d/boot
-(normally by reading the contents of a file which contains
-the host name, e.g. 
+The host name is usually set once at system startup by reading the 
+contents of a file which contains the host name, e.g. 
 .IR /etc/hostname ).
 
 .SS THE FQDN
@@ -142,16 +132,17 @@ with this command. The FQDN of the system is the name that the
 returns for the host name. 
 
 .LP
-Technically: The FQDN is the name
-.BR gethostbyname (2)
-returns for the host name returned by
-.BR gethostname (2).
-The DNS domain name is the part after the first dot.
+Technically: The FQDN is the canonical name returned by
+.BR gethostbyname2 (2)
+when resolving the result of the 
+.BR gethostname (2)
+name. The DNS domain name is the part after the first dot.
 .LP
 Therefore it depends on the configuration (usually in 
 .IR /etc/host.conf )
-how you can change it. Usually (if the hosts file is parsed before DNS or 
-NIS) you can change it in 
+how you can change it. If
+.B hosts 
+is the first lookup method, you can change the FQDN in 
 .IR /etc/hosts .
 
 
@@ -161,27 +152,23 @@ NIS) you can change it in
 Display the alias name of the host (if used).
 .TP
 .I "\-d, \-\-domain"
-Display the name of the DNS domain. Don't use the command
-.B domainname
-to get the DNS domain name because it will show the NIS domain name and
-not the DNS domain name. Use
+Display the name of the DNS domain (this is the FQDN without the segment up
+to the first dot). This is equivalent to using the 
 .B dnsdomainname 
-instead.
+command.
 .TP
 .I "\-F, \-\-file filename"
-Read the host name from the specified file. Comments (lines starting with
+Read the new host name from the specified file. Comments (lines starting with
 a `#') are ignored.
 .TP
 .I "\-f, \-\-fqdn, \-\-long"
-Display the FQDN (Fully Qualified Domain Name). A FQDN consists of a
-short host name and the DNS domain name. Unless you are using bind or NIS
-for host lookups you can change the FQDN and the DNS domain name (which is
-part of the FQDN) in the \fI/etc/hosts\fR file.
+Display the FQDN (Fully Qualified Domain Name). A FQDN consists of name
+including the DNS domain.
 .TP
 .I "\-h, \-\-help"
 Print a usage message and exit.
 .TP
-.I "\-i, \-\-ip-address"
+.I "\-i, \-\-ip\-address"
 Display the IP address(es) of the host.
 .TP
 .I "\-n, \-\-node"
@@ -203,11 +190,13 @@ Display the NIS domain name. If a parameter is given (or
 .B \-\-file name
 ) then root can also set a new NIS domain.
 .SH FILES
+.B /etc/hostname
 .B /etc/hosts
+.B /etc/host.conf
+
 .SH AUTHOR
-Peter Tobias, <tobias@et-inf.fho-emden.de>
+Peter Tobias, <tobias@et\-inf.fho\-emden.de>
 .br
-Bernd Eckenfels, <net-tools@lina.inka.de> (NIS and manpage).
+Bernd Eckenfels, <net\-tools@lina.inka.de> (NIS and manpage).
 .br
 Steve Whitehouse, <SteveW@ACM.org> (DECnet support and manpage).
-

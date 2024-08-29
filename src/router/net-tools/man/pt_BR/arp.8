@@ -7,12 +7,12 @@ arp \- manipula o cache ARP do sistema
 .RB [ "\-H tipo" ] 
 .RB [ "-i if" ] 
 .B -a 
-.RB [ m·quina ]
+.RB [ m√°quina ]
 .PP
 .B arp 
 .RB [ \-v ]
 .RB [ "\-i if" ] 
-.B "\-d m·quina"
+.B "\-d m√°quina"
 .RB [ pub ]
 .RB [ nopub ]
 .PP
@@ -20,7 +20,7 @@ arp \- manipula o cache ARP do sistema
 .RB [ \-v ] 
 .RB [ "\-H tipo" ] 
 .RB [ "\-i if" ] 
-.B -s m·quina endereÁo_hardware
+.B -s m√°quina endere√ßo_hardware
 .RB [ temp ] 
 .RB [ nopub ]
 .PP
@@ -28,7 +28,7 @@ arp \- manipula o cache ARP do sistema
 .RB [ \-v ] 
 .RB [ "\-H tipo" ] 
 .RB [ "\-i if" ] 
-.B -s m·quina endereÁo_hardware
+.B -s m√°quina endere√ßo_hardware
 .RB [ "netmask nm" ] 
 .B pub
 .PP
@@ -36,7 +36,7 @@ arp \- manipula o cache ARP do sistema
 .RB [ \-v ] 
 .RB [ "\-H tipo" ] 
 .RB [ "\-i if" ] 
-.B -Ds m·quina ifa
+.B -Ds m√°quina ifa
 .RB [ "netmask nm" ] 
 .B pub
 .PP
@@ -46,28 +46,28 @@ arp \- manipula o cache ARP do sistema
 .RB [ "-i if" ]
 .B -f arquivo
 
-.SH DESCRI«√O
+.SH DESCRI√á√ÉO
 .B arp
-manipula o cache ARP do kernel de v·rias maneiras. As principais opÁıes
-s„o remoÁ„o de uma entrada de mapeamento de endereÁo e configuraÁ„o manual
-de um endereÁo. Para propÛsitos de depuraÁ„o, o programa
+manipula o cache ARP do kernel de v√°rias maneiras. As principais op√ß√µes
+s√£o remo√ß√£o de uma entrada de mapeamento de endere√ßo e configura√ß√£o manual
+de um endere√ßo. Para prop√≥sitos de depura√ß√£o, o programa
 .B arp
-tambÈm permite um dump completo do cache ARP.
-.SH OP«’ES
+tamb√©m permite um dump completo do cache ARP.
+.SH OP√á√ïES
 .TP
 .B "\-v, \-\-verbose"
-Mostra ao usu·rio o que est· acontecendo, de modo detalhado.
+Mostra ao usu√°rio o que est√° acontecendo, de modo detalhado.
 .TP
 .B "\-n, \-\-numeric"
-mostra endereÁos numÈricos, ao invÈs de tentar determinar os nomes simbÛlicos da
-m·quina, porta e usu·rio.
+mostra endere√ßos num√©ricos, ao inv√©s de tentar determinar os nomes simb√≥licos da
+m√°quina, porta e usu√°rio.
 .TP
 .B "\-H type, \-\-hw-type type"
-Quando configurando ou lendo o cache ARP, este par‚metro opcional informa ao
+Quando configurando ou lendo o cache ARP, este par√¢metro opcional informa ao
 .B arp
-que classe de entradas devem ser verificadas. O valor padr„o deste par‚metro È
+que classe de entradas devem ser verificadas. O valor padr√£o deste par√¢metro √©
 .B ether
-(i.e. cÛdigo de hardware 0x01 para Ethernet IEEE 802.3 10Mbps).
+(i.e. c√≥digo de hardware 0x01 para Ethernet IEEE 802.3 10Mbps).
 Outros valores podem incluir tecnologias de rede como
 .RB "ARCnet (" arcnet ")"
 ,
@@ -77,86 +77,86 @@ Outros valores podem incluir tecnologias de rede como
 e
 .RB "NET/ROM (" netrom ")."
 .TP
-.B "\-a [m·quina], \-\-display [m·quina]"
-Mostra as entradas das m·quinas especificadas. Se o par‚metro
-.B m·quina
-n„o for usado,
+.B "\-a [m√°quina], \-\-display [m√°quina]"
+Mostra as entradas das m√°quinas especificadas. Se o par√¢metro
+.B m√°quina
+n√£o for usado,
 .B todas
-as entradas ser„o mostradas.
+as entradas ser√£o mostradas.
 .TP
-.B "\-d m·quina, \-\-delete m·quina"
-Remove quaisquer entradas para a m·quina especificada. Isto pode ser
-usado se a m·quina indicada for desligada, por exemplo. Nos kernels
+.B "\-d m√°quina, \-\-delete m√°quina"
+Remove quaisquer entradas para a m√°quina especificada. Isto pode ser
+usado se a m√°quina indicada for desligada, por exemplo. Nos kernels
 mais recentes o
 .BR arp (1)
-suporta a especificaÁ„o de
+suporta a especifica√ß√£o de
 .B pub 
 ou
 .B nopub 
-para decidir se uma entrada p˙blica ou privada deve ser removida. Se vocÍ
-n„o informar uma destas flags as duas entradas ser„o removidas.
+para decidir se uma entrada p√∫blica ou privada deve ser removida. Se voc√™
+n√£o informar uma destas flags as duas entradas ser√£o removidas.
 .TP
 .B "\-D, \-\-use-device"
-Usa o endereÁo de hardware da interface 
+Usa o endere√ßo de hardware da interface 
 .BR ifa
 .TP
 .B "\-i If, \-\-device If"
 Seleciona uma interface. Quando mostrando o cache ARP somente entradas iguais
-‡ interface ser„o mostradas. Configura uma entrada ARP permanente ou
-tempor·ria que ser· usada no dispositivo especificado. Se nenhum dispositivo for 
+√† interface ser√£o mostradas. Configura uma entrada ARP permanente ou
+tempor√°ria que ser√° usada no dispositivo especificado. Se nenhum dispositivo for 
 informado, o kernel descobre o dispositivo a partir da tabela de roteamento. 
 Para entradas
 .B pub
-a interface especificada È a interface na qual as requisiÁıes ARP ser„o 
+a interface especificada √© a interface na qual as requisi√ß√µes ARP ser√£o 
 respondidas.
 .br
 .B NOTA:
-Deve ser diferente da interface para a qual os pacotes IP ser„o roteados.
+Deve ser diferente da interface para a qual os pacotes IP ser√£o roteados.
 .TP
-.B "\-s m·quina endereÁo_hardware, \-\-set m·quina"
-Cria manualmente uma entrada de mapeamento de endereÁo ARP para a m·quina
-.B m·quina
-com endereÁo de hardware configurado para 
-.B endereÁo_hardware.  
-O formato do endereÁo de hardware depende da classe de hardware, mas
-para a maioria das classes pode-se assumir que a apresentaÁ„o usual pode
-ser usada. Para a classe Ethernet, s„o 6 bytes em hexadecimal, separados
-por dois pontos (:). Quando adicionando entradas proxy arp (isto È, aquelas
+.B "\-s m√°quina endere√ßo_hardware, \-\-set m√°quina"
+Cria manualmente uma entrada de mapeamento de endere√ßo ARP para a m√°quina
+.B m√°quina
+com endere√ßo de hardware configurado para 
+.B endere√ßo_hardware.  
+O formato do endere√ßo de hardware depende da classe de hardware, mas
+para a maioria das classes pode-se assumir que a apresenta√ß√£o usual pode
+ser usada. Para a classe Ethernet, s√£o 6 bytes em hexadecimal, separados
+por dois pontos (:). Quando adicionando entradas proxy arp (isto √©, aquelas
 com a flag
-.BR p˙b lico
+.BR p√∫b lico
 setadas) uma
 .B netmask
 pode ser especificada para o proxy arp de uma subrede inteira. 
-Proxy arp para rotear redes inteiras n„o È um bom protocolo, mas algumas
-vezes È ˙til, ent„o È suportado. Se a flag
+Proxy arp para rotear redes inteiras n√£o √© um bom protocolo, mas algumas
+vezes √© √∫til, ent√£o √© suportado. Se a flag
 .B temp
-n„o for fornecida, as entradas ser„o permanentemente armazenadas no cache ARP.
+n√£o for fornecida, as entradas ser√£o permanentemente armazenadas no cache ARP.
 .TP
 .B "\-f arquivo, \-\-file arquivo"
-Similar ‡ opÁ„o
+Similar √† op√ß√£o
 .B \-s
-sÛ que desta vez as informaÁıes de endereÁos s„o obtidas a partir do arquivo
+s√≥ que desta vez as informa√ß√µes de endere√ßos s√£o obtidas a partir do arquivo
 .B arquivo.  
-Isto pode ser usado se entradas ARP para muitas m·quinas tiverem que ser
-configuradas. O nome do arquivo de dados È freq¸entemente
+Isto pode ser usado se entradas ARP para muitas m√°quinas tiverem que ser
+configuradas. O nome do arquivo de dados √© freq√ºentemente
 .IR /etc/ethers , 
-mas isto n„o È oficial.
+mas isto n√£o √© oficial.
 .sp 1
-O formato deste arquivo È simples; ele somente contÈm linhas de texto ASCII com
-um nome de m·quina e um endereÁo de hardware separados por um espaÁo em branco.
+O formato deste arquivo √© simples; ele somente cont√©m linhas de texto ASCII com
+um nome de m√°quina e um endere√ßo de hardware separados por um espa√ßo em branco.
 Adicionalmente as flags 
 .BR "pub" , " nopub" , " temp" " and" " netmask"
 podem ser usadas.
 .LP
 Em todos os lugares onde uma
-.B m·quina
-È esperada, vocÍ tambÈm pode informar um
-.B "endereÁo IP"
-em notaÁ„o decimal separada por pontos.
+.B m√°quina
+√© esperada, voc√™ tamb√©m pode informar um
+.B "endere√ßo IP"
+em nota√ß√£o decimal separada por pontos.
 .LP 
-Cada entrada completa no cache ARP ser· marcada com uma flag
+Cada entrada completa no cache ARP ser√° marcada com uma flag
 .BR C . 
-Entradas permanentes s„o marcadas com um
+Entradas permanentes s√£o marcadas com um
 .B M
 e entradas publicadas tem uma flag 
 .BR P .
@@ -168,10 +168,16 @@ e entradas publicadas tem uma flag
 .I /etc/hosts
 .br
 .I /etc/ethers
+.SH VEJA TAMB√âM
+.BR ethers (5),
+.BR rarp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .SH AUTOR
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> com muitas melhorias
 feitas pelo mantenedor do net-tools, Bernd Eckenfels <net-tools@lina.inka.de>.
-TraduÁ„o para a lÌngua portuguesa feita por
+Tradu√ß√£o para a l√≠ngua portuguesa feita por
 Arnaldo Carvalho de Melo <acme@conectiva.com.br> em 11/abril/1998.
 Revisado por 
 Jorge Luiz Godoy Filho <jorge@bestway.com.br> em 15/abril/1998.

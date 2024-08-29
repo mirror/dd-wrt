@@ -34,7 +34,7 @@ make BASEDIR=$RPM_BUILD_ROOT install
   strip arp ifconfig rarp route slattach plipconfig ipmaddr iptunnel
   cd ../bin
   strip hostname netstat
-) 
+)
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -92,7 +92,7 @@ rm -rf $RPM_BUILD_ROOT
 * Fri Feb 27 1998 Jason Spangler <jasons@usemail.com>
 - changed to net-tools 1.432
 - removed old glibc 2.1 patch
- 
+
 * Wed Oct 22 1997 Erik Troan <ewt@redhat.com>
 - added extra patches for glibc 2.1
 

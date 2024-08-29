@@ -44,6 +44,7 @@ extern struct aftype inet_aftype;
 extern struct aftype inet6_aftype;
 extern struct aftype ax25_aftype;
 extern struct aftype netrom_aftype;
+extern struct aftype rose_aftype;
 extern struct aftype ipx_aftype;
 extern struct aftype ddp_aftype;
 extern struct aftype x25_aftype;
@@ -58,6 +59,9 @@ void getroute_init(void)
 #endif
 #if HAVE_AFNETROM
     netrom_aftype.rprint = NETROM_rprint;
+#endif
+#if HAVE_AFROSE
+    rose_aftype.rprint = ROSE_rprint;
 #endif
 #if HAVE_AFAX25
     ax25_aftype.rprint = AX25_rprint;
@@ -75,7 +79,7 @@ void getroute_init(void)
 
 int route_info(const char *afname, int options)
 {
-    struct aftype *ap;
+    const struct aftype *ap;
     char *tmp1, *tmp2;
     int found = E_NOTFOUND, rc;
     char buf[256];

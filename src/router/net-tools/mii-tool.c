@@ -29,8 +29,6 @@
 	http://www.national.com/pf/DP/DP83840.html
 */
 
-static char version[] =
-"mii-tool.c 1.9 2000/04/28 00:56:08 (David Hinds)\n";
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -46,16 +44,21 @@ static char version[] =
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#ifndef __GLIBC__ 
-//#include <linux/if_arp.h>
-//#include <linux/if_ether.h>
-#endif
-#include "mii.h"
+#include <linux/sockios.h>
+
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include "version.h"
+#include "net-support.h"
+#include "util.h"
+
+static char *Release = RELEASE, *Signature = "David Hinds based on Donald Becker's mii-diag";
 
 #define MAX_ETH		8		/* Maximum # of interfaces */
+#define LPA_ABILITY_MASK	0x07e0
 
 /* Table of known MII's */
-static struct {
+static const struct {
     u_short	id1, id2;
     char	*name;
 } mii_id[] = {
@@ -64,16 +67,25 @@ static struct {
     { 0x0000, 0x6b90, "AMD 79C901A HomePNA" },
     { 0x0000, 0x6b70, "AMD 79C901A 10baseT" },
     { 0x0181, 0xb800, "Davicom DM9101" },
-    { 0x0043, 0x7411, "Enable EL40-331" },
+    { 0x0043, 0x7410, "Enable EL40-331" },
+    { 0x0243, 0x0c50, "ICPlus IP101A" },
     { 0x0015, 0xf410, "ICS 1889" },
     { 0x0015, 0xf420, "ICS 1890" },
     { 0x0015, 0xf430, "ICS 1892" },
     { 0x02a8, 0x0150, "Intel 82555" },
     { 0x7810, 0x0000, "Level One LXT970/971" },
+    { 0x0022, 0x1510, "Micrel KSZ8041" },
+    { 0x0022, 0x1610, "Micrel KSZ9021" },
     { 0x2000, 0x5c00, "National DP83840A" },
+    { 0x2000, 0x5c70, "National DP83865" },
     { 0x0181, 0x4410, "Quality QS6612" },
     { 0x0282, 0x1c50, "SMSC 83C180" },
+    { 0x0203, 0x8460, "STMicroelectronics ST802RT" },
+    { 0x1c04, 0x0010, "STMicroelectronics STE100P" },
     { 0x0300, 0xe540, "TDK 78Q2120" },
+    { 0x0141, 0x0c20, "Yukon 88E1011" },
+    { 0x0141, 0x0cc0, "Yukon-EC 88E1111" },
+    { 0x0141, 0x0c90, "Yukon-2 88E1112" },
 };
 #define NMII (sizeof(mii_id)/sizeof(mii_id[0]))
 
@@ -81,10 +93,10 @@ static struct {
 
 struct option longopts[] = {
  /* { name  has_arg  *flag  val } */
-    {"advertise",	1, 0, 'A'},	/* Change capabilities advertised. */
-    {"force",		1, 0, 'F'},	/* Change capabilities advertised. */
+    {"advertise",	1, 0, 'A'},	/* Advertise only specified media. */
+    {"force",		1, 0, 'F'},	/* Force specified media technology. */
     {"phy",		1, 0, 'p'},	/* Set PHY (MII address) to report. */
-    {"log",		0, 0, 'l'},	/* Set PHY (MII address) to report. */
+    {"log",		0, 0, 'l'},	/* With --watch, write events to syslog. */
     {"restart",		0, 0, 'r'},	/* Restart link negotiation */
     {"reset",		0, 0, 'R'},	/* Reset the transceiver. */
     {"verbose", 	0, 0, 'v'},	/* Report each action taken.  */
@@ -112,7 +124,7 @@ static struct ifreq ifr;
 
 static int mdio_read(int skfd, int location)
 {
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+    struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
     mii->reg_num = location;
     if (ioctl(skfd, SIOCGMIIREG, &ifr) < 0) {
 	fprintf(stderr, "SIOCGMIIREG on %s failed: %s\n", ifr.ifr_name,
@@ -124,7 +136,7 @@ static int mdio_read(int skfd, int location)
 
 static void mdio_write(int skfd, int location, int value)
 {
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+    struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
     mii->reg_num = location;
     mii->val_in = value;
     if (ioctl(skfd, SIOCSMIIREG, &ifr) < 0) {
@@ -137,40 +149,48 @@ static void mdio_write(int skfd, int location, int value)
 
 const struct {
     char	*name;
-    u_short	value;
+    u_short	value[2];
 } media[] = {
     /* The order through 100baseT4 matches bits in the BMSR */
-    { "10baseT-HD",	MII_AN_10BASET_HD },
-    { "10baseT-FD",	MII_AN_10BASET_FD },
-    { "100baseTx-HD",	MII_AN_100BASETX_HD },
-    { "100baseTx-FD",	MII_AN_100BASETX_FD },
-    { "100baseT4",	MII_AN_100BASET4 },
-    { "100baseTx",	MII_AN_100BASETX_FD | MII_AN_100BASETX_HD },
-    { "10baseT",	MII_AN_10BASET_FD | MII_AN_10BASET_HD },
+    { "10baseT-HD",	{LPA_10HALF} },
+    { "10baseT-FD",	{LPA_10FULL} },
+    { "100baseTx-HD",	{LPA_100HALF} },
+    { "100baseTx-FD",	{LPA_100FULL} },
+    { "100baseT4",	{LPA_100BASE4} },
+    { "100baseTx",	{LPA_100FULL | LPA_100HALF} },
+    { "10baseT",	{LPA_10FULL | LPA_10HALF} },
+
+    { "1000baseT-HD",	{0, ADVERTISE_1000HALF} },
+    { "1000baseT-FD",	{0, ADVERTISE_1000FULL} },
+    { "1000baseT",	{0, ADVERTISE_1000HALF|ADVERTISE_1000FULL} },
 };
 #define NMEDIA (sizeof(media)/sizeof(media[0]))
-	
+
 /* Parse an argument list of media types */
-static int parse_media(char *arg)
+static int parse_media(char *arg, unsigned *bmcr2)
 {
     int mask, i;
     char *s;
     mask = strtoul(arg, &s, 16);
     if ((*arg != '\0') && (*s == '\0')) {
-	if ((mask & MII_AN_ABILITY_MASK) &&
-	    !(mask & ~MII_AN_ABILITY_MASK))
-	    return mask;
+	if ((mask & LPA_ABILITY_MASK) &&
+	    !(mask & ~LPA_ABILITY_MASK)) {
+		*bmcr2 = 0;
+		return mask;
+	}
 	goto failed;
-    } else {
-	mask = 0;
-	s = strtok(arg, ", ");
-	do {
-	    for (i = 0; i < NMEDIA; i++)
-		if (strcasecmp(media[i].name, s) == 0) break;
-	    if (i == NMEDIA) goto failed;
-	    mask |= media[i].value;
-	} while ((s = strtok(NULL, ", ")) != NULL);
     }
+    mask = 0;
+    *bmcr2 = 0;
+    s = strtok(arg, ", ");
+    do {
+	    for (i = 0; i < NMEDIA; i++)
+		if (s && strcasecmp(media[i].name, s) == 0) break;
+	    if (i == NMEDIA) goto failed;
+	    mask |= media[i].value[0];
+	    *bmcr2 |= media[i].value[1];
+    } while ((s = strtok(NULL, ", ")) != NULL);
+
     return mask;
 failed:
     fprintf(stderr, "Invalid media specification '%s'.\n", arg);
@@ -179,11 +199,25 @@ failed:
 
 /*--------------------------------------------------------------------*/
 
-static char *media_list(int mask, int best)
+static const char *media_list(unsigned mask, unsigned mask2, int best)
 {
     static char buf[100];
     int i;
     *buf = '\0';
+
+    if (mask & BMCR_SPEED1000) {
+	if (mask2 & ADVERTISE_1000HALF) {
+	    strcat(buf, " ");
+	    strcat(buf, "1000baseT-HD");
+	    if (best) goto out;
+	}
+	if (mask2 & ADVERTISE_1000FULL) {
+	    strcat(buf, " ");
+	    strcat(buf, "1000baseT-FD");
+	    if (best) goto out;
+	}
+    }
+
     mask >>= 5;
     for (i = 4; i >= 0; i--) {
 	if (mask & (1<<i)) {
@@ -192,6 +226,7 @@ static char *media_list(int mask, int best)
 	    if (best) break;
 	}
     }
+ out:
     if (mask & (1<<5))
 	strcat(buf, " flow-control");
     return buf;
@@ -199,49 +234,82 @@ static char *media_list(int mask, int best)
 
 int show_basic_mii(int sock, int phy_id)
 {
-    char buf[100];
+    char buf[200];
     int i, mii_val[32];
-    int bmcr, bmsr, advert, lkpar;
+    unsigned bmcr, bmsr, advert, lkpar, bmcr2, lpa2;
 
     /* Some bits in the BMSR are latched, but we can't rely on being
        the only reader, so only the current values are meaningful */
     mdio_read(sock, MII_BMSR);
-    for (i = 0; i < ((verbose > 1) ? 32 : 8); i++)
-	mii_val[i] = mdio_read(sock, i);
+    for (i = 0; i < ((verbose > 1) ? 32 : (MII_STAT1000+1)); i++)
+	switch (i & 0x1F) {
+	    case MII_BMCR:
+	    case MII_BMSR:
+	    case MII_PHYSID1:
+	    case MII_PHYSID2:
+	    case MII_ADVERTISE:
+	    case MII_LPA:
+	    case MII_EXPANSION:
+	    case MII_CTRL1000:
+	    case MII_STAT1000:
+	    case MII_ESTATUS:
+	    case MII_DCOUNTER:
+	    case MII_FCSCOUNTER:
+	    case MII_NWAYTEST:
+	    case MII_RERRCOUNTER:
+	    case MII_SREVISION:
+	    case MII_RESV1:
+	    case MII_LBRERROR:
+	    case MII_PHYADDR:
+	    case MII_RESV2:
+	    case MII_TPISTATUS:
+	    case MII_NCONFIG:
+		mii_val[i] = mdio_read(sock, i);
+		break;
+	    default:
+		if (verbose > 2)
+		    mii_val[i] = mdio_read(sock, i);
+		else
+		    mii_val[i] = 0;
+		break;
+        }
 
-    if (mii_val[MII_BMCR] == 0xffff) {
+    if (mii_val[MII_BMCR] == 0xffff  || mii_val[MII_BMSR] == 0x0000) {
 	fprintf(stderr, "  No MII transceiver present!.\n");
 	return -1;
     }
 
     /* Descriptive rename. */
     bmcr = mii_val[MII_BMCR]; bmsr = mii_val[MII_BMSR];
-    advert = mii_val[MII_ANAR]; lkpar = mii_val[MII_ANLPAR];
+    advert = mii_val[MII_ADVERTISE]; lkpar = mii_val[MII_LPA];
+    bmcr2 = mii_val[MII_CTRL1000]; lpa2 = mii_val[MII_STAT1000];
 
     sprintf(buf, "%s: ", ifr.ifr_name);
-    if (bmcr & MII_BMCR_AN_ENA) {
-	if (bmsr & MII_BMSR_AN_COMPLETE) {
+    if (bmcr & BMCR_ANENABLE) {
+	if (bmsr & BMSR_ANEGCOMPLETE) {
 	    if (advert & lkpar) {
-		strcat(buf, (lkpar & MII_AN_ACK) ?
+		strcat(buf, (lkpar & LPA_LPACK) ?
 		       "negotiated" : "no autonegotiation,");
-		strcat(buf, media_list(advert & lkpar, 1));
+		strcat(buf, media_list(advert & lkpar, bmcr2 & lpa2>>2, 1));
 		strcat(buf, ", ");
 	    } else {
 		strcat(buf, "autonegotiation failed, ");
 	    }
-	} else if (bmcr & MII_BMCR_RESTART) {
+	} else if (bmcr & BMCR_ANRESTART) {
 	    strcat(buf, "autonegotiation restarted, ");
 	}
     } else {
 	sprintf(buf+strlen(buf), "%s Mbit, %s duplex, ",
-	       (bmcr & MII_BMCR_100MBIT) ? "100" : "10",
-	       (bmcr & MII_BMCR_DUPLEX) ? "full" : "half");
+		((bmcr2 & (ADVERTISE_1000HALF | ADVERTISE_1000FULL)) & lpa2 >> 2)
+		? "1000"
+		: (bmcr & BMCR_SPEED100) ? "100" : "10",
+		(bmcr & BMCR_FULLDPLX) ? "full" : "half");
     }
-    strcat(buf, (bmsr & MII_BMSR_LINK_VALID) ? "link ok" : "no link");
+    strcat(buf, (bmsr & BMSR_LSTATUS) ? "link ok" : "no link");
 
     if (opt_watch) {
 	if (opt_log) {
-	    syslog(LOG_INFO, buf);
+	    syslog(LOG_INFO, "%s", buf);
 	} else {
 	    char s[20];
 	    time_t t = time(NULL);
@@ -273,35 +341,36 @@ int show_basic_mii(int sock, int phy_id)
 		   ((mii_val[2]<<6)|(mii_val[3]>>10))&0xff,
 		   (mii_val[3]>>4)&0x3f, mii_val[3]&0x0f);
 	printf("  basic mode:   ");
-	if (bmcr & MII_BMCR_RESET)
+	if (bmcr & BMCR_RESET)
 	    printf("software reset, ");
-	if (bmcr & MII_BMCR_LOOPBACK)
+	if (bmcr & BMCR_LOOPBACK)
 	    printf("loopback, ");
-	if (bmcr & MII_BMCR_ISOLATE)
+	if (bmcr & BMCR_ISOLATE)
 	    printf("isolate, ");
-	if (bmcr & MII_BMCR_COLTEST)
+	if (bmcr & BMCR_CTST)
 	    printf("collision test, ");
-	if (bmcr & MII_BMCR_AN_ENA) {
+	if (bmcr & BMCR_ANENABLE) {
 	    printf("autonegotiation enabled\n");
 	} else {
 	    printf("%s Mbit, %s duplex\n",
-		   (bmcr & MII_BMCR_100MBIT) ? "100" : "10",
-		   (bmcr & MII_BMCR_DUPLEX) ? "full" : "half");
+		   (bmcr & BMCR_SPEED100) ? "100" : "10",
+		   (bmcr & BMCR_FULLDPLX) ? "full" : "half");
 	}
 	printf("  basic status: ");
-	if (bmsr & MII_BMSR_AN_COMPLETE)
+	if (bmsr & BMSR_ANEGCOMPLETE)
 	    printf("autonegotiation complete, ");
-	else if (bmcr & MII_BMCR_RESTART)
+	else if (bmcr & BMCR_ANRESTART)
 	    printf("autonegotiation restarted, ");
-	if (bmsr & MII_BMSR_REMOTE_FAULT)
+	if (bmsr & BMSR_RFAULT)
 	    printf("remote fault, ");
-	printf((bmsr & MII_BMSR_LINK_VALID) ? "link ok" : "no link");
-	printf("\n  capabilities:%s", media_list(bmsr >> 6, 0));
-	printf("\n  advertising: %s", media_list(advert, 0));
-	if (lkpar & MII_AN_ABILITY_MASK)
-	    printf("\n  link partner:%s", media_list(lkpar, 0));
+	printf((bmsr & BMSR_LSTATUS) ? "link ok" : "no link");
+	printf("\n  capabilities:%s", media_list(bmsr >> 6, bmcr2, 0));
+	printf("\n  advertising: %s", media_list(advert, bmcr2, 0));
+	if (lkpar & LPA_ABILITY_MASK)
+	    printf("\n  link partner:%s", media_list(lkpar, lpa2 >> 2, 0));
 	printf("\n");
     }
+    fflush(stdout);
     return 0;
 }
 
@@ -309,10 +378,10 @@ int show_basic_mii(int sock, int phy_id)
 
 static int do_one_xcvr(int skfd, char *ifname, int maybe)
 {
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+    struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
 
     /* Get the vitals from the interface. */
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    safe_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
 	if (!maybe || (errno != ENODEV))
 	    fprintf(stderr, "SIOCGMIIPHY on '%s' failed: %s\n",
@@ -327,23 +396,23 @@ static int do_one_xcvr(int skfd, char *ifname, int maybe)
 
     if (opt_reset) {
 	printf("resetting the transceiver...\n");
-	mdio_write(skfd, MII_BMCR, MII_BMCR_RESET);
+	mdio_write(skfd, MII_BMCR, BMCR_RESET);
     }
-    if (nway_advertise) {
-	mdio_write(skfd, MII_ANAR, nway_advertise | 1);
+    if (nway_advertise > 0) {
+	mdio_write(skfd, MII_ADVERTISE, nway_advertise | 1);
 	opt_restart = 1;
     }
     if (opt_restart) {
 	printf("restarting autonegotiation...\n");
 	mdio_write(skfd, MII_BMCR, 0x0000);
-	mdio_write(skfd, MII_BMCR, MII_BMCR_AN_ENA|MII_BMCR_RESTART);
+	mdio_write(skfd, MII_BMCR, BMCR_ANENABLE|BMCR_ANRESTART);
     }
     if (fixed_speed) {
 	int bmcr = 0;
-	if (fixed_speed & (MII_AN_100BASETX_FD|MII_AN_100BASETX_HD))
-	    bmcr |= MII_BMCR_100MBIT;
-	if (fixed_speed & (MII_AN_100BASETX_FD|MII_AN_10BASET_FD))
-	    bmcr |= MII_BMCR_DUPLEX;
+	if (fixed_speed & (LPA_100FULL|LPA_100HALF))
+	    bmcr |= BMCR_SPEED100;
+	if (fixed_speed & (LPA_100FULL|LPA_10FULL))
+	    bmcr |= BMCR_FULLDPLX;
 	mdio_write(skfd, MII_BMCR, bmcr);
     }
 
@@ -357,17 +426,20 @@ static int do_one_xcvr(int skfd, char *ifname, int maybe)
 
 static void watch_one_xcvr(int skfd, char *ifname, int index)
 {
-    struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
+    struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&ifr.ifr_data;
     static int status[MAX_ETH] = { 0, /* ... */ };
     int now;
 
     /* Get the vitals from the interface. */
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    safe_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if (ioctl(skfd, SIOCGMIIPHY, &ifr) < 0) {
 	if (errno != ENODEV)
 	    fprintf(stderr, "SIOCGMIIPHY on '%s' failed: %s\n",
 		    ifname, strerror(errno));
 	return;
+    }
+    if (override_phy >= 0) {
+        mii->phy_id = override_phy;
     }
     now = (mdio_read(skfd, MII_BMCR) |
 	   (mdio_read(skfd, MII_BMSR) << 16));
@@ -378,27 +450,39 @@ static void watch_one_xcvr(int skfd, char *ifname, int index)
 
 /*--------------------------------------------------------------------*/
 
-const char *usage = "usage: %s [-VvRrwl] [-A media,... | -F media] [interface ...]\n"
-     "  -V, --version               display version information\n"
-     "  -v, --verbose               more verbose output\n"
-     "  -R, --reset                 reset MII to poweron state\n"
-     "  -r, --restart               restart autonegotiation\n"
-     "  -w, --watch                 monitor for link status changes\n"
-     "  -l, --log                   with -w, write events to syslog\n"
-     "  -A, --advertise=media,...   advertise only specified media\n"
-     "  -F, --force=media           force specified media technology\n"
-     "media: 100baseT4, 100baseTx-FD, 100baseTx-HD, 10baseT-FD, 10baseT-HD,\n"
-     "  (to advertise both HD and FD) 100baseTx, 10baseT\n";
+const char *usage =
+"usage: %s [-VvRrwl] [-A media,... | -F media] [-p addr] <interface ...>\n"
+"       -V, --version               display version information\n"
+"       -v, --verbose               more verbose output\n"
+"       -R, --reset                 reset MII to poweron state\n"
+"       -r, --restart               restart autonegotiation\n"
+"       -w, --watch                 monitor for link status changes\n"
+"       -l, --log                   with -w, write events to syslog\n"
+"       -A, --advertise=media,...   advertise only specified media\n"
+"       -F, --force=media           force specified media technology\n"
+"       -p, --phy=addr              set PHY (MII address) to report\n"
+"media: 1000baseTx-HD, 1000baseTx-FD,\n"
+"       100baseT4, 100baseTx-FD, 100baseTx-HD,\n"
+"       10baseT-FD, 10baseT-HD,\n"
+"       (to advertise both HD and FD) 1000baseTx, 100baseTx, 10baseT\n";
+
+
+static void version(void)
+{
+    printf("%s\n%s\n", Release, Signature);
+    exit(E_VERSION);
+}
+
 
 int main(int argc, char **argv)
 {
     int i, c, ret, errflag = 0;
-    char s[6];
-    
+    unsigned ctrl1000 = 0;
+
     while ((c = getopt_long(argc, argv, "A:F:p:lrRvVw?", longopts, 0)) != EOF)
 	switch (c) {
-	case 'A': nway_advertise = parse_media(optarg); break;
-	case 'F': fixed_speed = parse_media(optarg); break;
+	case 'A': nway_advertise = parse_media(optarg, &ctrl1000); break;
+	case 'F': fixed_speed = parse_media(optarg, &ctrl1000); break;
 	case 'p': override_phy = atoi(optarg); break;
 	case 'r': opt_restart++;	break;
 	case 'R': opt_reset++;		break;
@@ -410,6 +494,10 @@ int main(int argc, char **argv)
 	}
     /* Check for a few inappropriate option combinations */
     if (opt_watch) verbose = 0;
+
+    if ((nway_advertise < 0) || (fixed_speed < 0))
+    	return 2;
+
     if (errflag || (fixed_speed & (fixed_speed-1)) ||
 	(fixed_speed && (opt_restart || nway_advertise))) {
 	fprintf(stderr, usage, argv[0]);
@@ -417,7 +505,7 @@ int main(int argc, char **argv)
     }
 
     if (opt_version)
-	printf(version);
+	version();
 
     /* Open a basic socket. */
     if ((skfd = socket(AF_INET, SOCK_DGRAM,0)) < 0) {
@@ -425,19 +513,15 @@ int main(int argc, char **argv)
 	exit(-1);
     }
 
+    if (verbose > 1)
+    	printf("Using SIOCGMIIPHY=0x%x\n", SIOCGMIIPHY);
+
     /* No remaining args means show all interfaces. */
     if (optind == argc) {
-	ret = 1;
-	for (i = 0; i < MAX_ETH; i++) {
-	    sprintf(s, "eth%d", i);
-	    ret &= do_one_xcvr(skfd, s, 1);
-	}
-	for (i = 0; i < MAX_ETH; i++) {
-	    sprintf(s, "ixp%d", i);
-	    ret &= do_one_xcvr(skfd, s, 1);
-	}
-	if (ret)
-	    fprintf(stderr, "no MII interfaces found\n");
+	fprintf(stderr, "No interface specified\n");
+	fprintf(stderr, usage, argv[0]);
+	close(skfd);
+	return 2;
     } else {
 	ret = 0;
 	for (i = optind; i < argc; i++) {
@@ -448,15 +532,8 @@ int main(int argc, char **argv)
     if (opt_watch && (ret == 0)) {
 	while (1) {
 	    sleep(1);
-	    if (optind == argc) {
-		for (i = 0; i < MAX_ETH; i++) {
-		    sprintf(s, "eth%d", i);
-		    watch_one_xcvr(skfd, s, i);
-		}
-	    } else {
-		for (i = optind; i < argc; i++)
+	    for (i = optind; i < argc; i++)
 		    watch_one_xcvr(skfd, argv[i], i-optind);
-	    }
 	}
     }
 

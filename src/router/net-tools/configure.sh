@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Configure.sh	Generates interactively a config.h from config.in
+# configure.sh	Generates interactively a config.h from config.in
 #
 # net-tools	A collection of programs that form the base set of the
 #		NET-3 Networking Distribution for the LINUX operating
@@ -37,7 +37,15 @@ CONFIG=config.h
 MAKECONFIG=config.make
 
 
-[ -z "$BASH" ] && { echo "Configure requires bash" 1>&2; exit 1; }
+[ -z "$BASH" ] && { echo "configure.sh requires bash" 1>&2; exit 1; }
+
+cat <<EOF
+
+######################################################
+Notice: ifconfig and route are now installed into /bin
+######################################################
+
+EOF
 
 # Disable filename globbing once and for all.
 # Enable function cacheing.
@@ -106,7 +114,7 @@ function int()
 }
 
   #
-  # Make sure we start out with a clean slate.
+  # Make sure we start out with a clean state.
   #
   > config.new
   > ${CONFIG}

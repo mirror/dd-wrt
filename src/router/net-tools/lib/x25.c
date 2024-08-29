@@ -38,6 +38,7 @@
 #include "net-locale.h"
 #endif
 #include "intl.h"
+#include "util.h"
 
 static char X25_errmsg[128];
 
@@ -50,8 +51,8 @@ extern struct aftype x25_aftype;
 #endif
 
 
-static char *
-X25_print(unsigned char *ptr)
+static const char *
+X25_print(const char *ptr)
 {
   static char buff[X25_ADDR_LEN+1];
 
@@ -63,12 +64,13 @@ X25_print(unsigned char *ptr)
 
 
 /* Display an X.25 socket address. */
-static char *
-X25_sprint(struct sockaddr *sap, int numeric)
+static const char *
+X25_sprint(const struct sockaddr_storage *sasp, int numeric)
 {
+  const struct sockaddr *sap = (const struct sockaddr *)sasp;
   if (sap->sa_family == 0xFFFF || sap->sa_family == 0)
     return( _("[NONE SET]"));
-  return(X25_print(((struct sockaddr_x25 *)sap)->sx25_addr.x25_addr));
+  return(X25_print(((struct sockaddr_x25 *)sasp)->sx25_addr.x25_addr));
 }
 
 
@@ -76,9 +78,10 @@ X25_sprint(struct sockaddr *sap, int numeric)
  * return the sigdigits of the address
  */
 static int
-X25_input(int type, char *bufp, struct sockaddr *sap)
+X25_input(int type, char *bufp, struct sockaddr_storage *sasp)
 {
-  unsigned char *ptr;
+  struct sockaddr *sap = (struct sockaddr *)sasp;
+  char *ptr;
   char *p;
   unsigned int sigdigits;
 
@@ -88,9 +91,11 @@ X25_input(int type, char *bufp, struct sockaddr *sap)
 
   /* Address the correct length ? */
   if (strlen(bufp)>18) {
-        strcpy(X25_errmsg, _("Address can't exceed eighteen digits with sigdigits"));
+        safe_strncpy(X25_errmsg,
+                     _("Address can't exceed eighteen digits with sigdigits"),
+                     sizeof(X25_errmsg));
 #ifdef DEBUG
-        fprintf(stderr, "x25_input(%s): %s !\n", X25_errmsg, orig);
+        fprintf(stderr, "x25_input(%s): %s !\n", bufp, X25_errmsg);
 #endif
         errno = EINVAL;
         return(-1);
@@ -105,10 +110,11 @@ X25_input(int type, char *bufp, struct sockaddr *sap)
   }
 
   if (strlen(bufp) < 1 || strlen(bufp) > 15 || sigdigits > strlen(bufp)) {
-	*p = '/';
-        strcpy(X25_errmsg, _("Invalid address"));
+        if (p != NULL)
+                *p = '/';
+        safe_strncpy(X25_errmsg, _("Invalid address"), sizeof(X25_errmsg));
 #ifdef DEBUG
-        fprintf(stderr, "x25_input(%s): %s !\n", X25_errmsg, orig);
+        fprintf(stderr, "x25_input(%s): %s !\n", bufp, X25_errmsg);
 #endif
         errno = EINVAL;
         return(-1);
@@ -118,10 +124,7 @@ X25_input(int type, char *bufp, struct sockaddr *sap)
 
   /* All done. */
 #ifdef DEBUG
-  fprintf(stderr, "x25_input(%s): ", orig);
-  for (i = 0; i < sizeof(x25_address); i++)
-	fprintf(stderr, "%02X ", sap->sa_data[i] & 0377);
-  fprintf(stderr, "\n");
+  fprintf(stderr, "x25_input(%s)\n", bufp);
 #endif
 
   return sigdigits;
@@ -130,7 +133,7 @@ X25_input(int type, char *bufp, struct sockaddr *sap)
 
 /* Display an error message. */
 static void
-X25_herror(char *text)
+X25_herror(const char *text)
 {
   if (text == NULL) fprintf(stderr, "%s\n", X25_errmsg);
     else fprintf(stderr, "%s: %s\n", text, X25_errmsg);
@@ -138,9 +141,10 @@ X25_herror(char *text)
 
 
 static int
-X25_hinput(char *bufp, struct sockaddr *sap)
+X25_hinput(char *bufp, struct sockaddr_storage *sasp)
 {
-  if (X25_input(0, bufp, sap) < 0) return(-1);
+  struct sockaddr *sap = (struct sockaddr *)sasp;
+  if (X25_input(0, bufp, sasp) < 0) return(-1);
   sap->sa_family = ARPHRD_X25;
   return(0);
 }
@@ -152,7 +156,7 @@ struct hwtype x25_hwtype = {
 };
 
 struct aftype x25_aftype =
-{   
+{
     "x25", NULL, /*"CCITT X.25", */ AF_X25, X25_ADDR_LEN,
     X25_print, X25_sprint, X25_input, X25_herror,
     X25_rprint, X25_rinput, NULL /* getmask */,

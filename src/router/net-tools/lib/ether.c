@@ -2,7 +2,7 @@
  * lib/ether.c        This file contains an implementation of the "Ethernet"
  *              support functions.
  *
- * Version:     $Id: ether.c,v 1.7 1999/09/27 11:00:47 philip Exp $
+ * Version:     $Id: ether.c,v 1.8 2002/07/30 05:17:29 ecki Exp $
  *
  * Author:      Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
  *              Copyright 1993 MicroWalt Corporation
@@ -35,22 +35,28 @@ extern struct hwtype ether_hwtype;
 
 
 /* Display an Ethernet address in readable format. */
-static char *pr_ether(unsigned char *ptr)
+static const char *pr_ether(const char *ptr)
 {
     static char buff[64];
 
-    snprintf(buff, sizeof(buff), "%02X:%02X:%02X:%02X:%02X:%02X",
+    snprintf(buff, sizeof(buff), "%02x:%02x:%02x:%02x:%02x:%02x",
 	     (ptr[0] & 0377), (ptr[1] & 0377), (ptr[2] & 0377),
 	     (ptr[3] & 0377), (ptr[4] & 0377), (ptr[5] & 0377)
 	);
     return (buff);
 }
 
+#ifdef DEBUG
+#define _DEBUG 1
+#else
+#define _DEBUG 0
+#endif
 
 /* Input an Ethernet address and convert to binary. */
-static int in_ether(char *bufp, struct sockaddr *sap)
+static int in_ether(char *bufp, struct sockaddr_storage *sasp)
 {
-    unsigned char *ptr;
+    struct sockaddr *sap = (struct sockaddr *)sasp;
+    char *ptr;
     char c, *orig;
     int i;
     unsigned val;
@@ -70,9 +76,8 @@ static int in_ether(char *bufp, struct sockaddr *sap)
 	else if (c >= 'A' && c <= 'F')
 	    val = c - 'A' + 10;
 	else {
-#ifdef DEBUG
-	    fprintf(stderr, _("in_ether(%s): invalid ether address!\n"), orig);
-#endif
+	    if (_DEBUG)
+		fprintf(stderr, _("in_ether(%s): invalid ether address!\n"), orig);
 	    errno = EINVAL;
 	    return (-1);
 	}
@@ -87,9 +92,8 @@ static int in_ether(char *bufp, struct sockaddr *sap)
 	else if (c == ':' || c == 0)
 	    val >>= 4;
 	else {
-#ifdef DEBUG
-	    fprintf(stderr, _("in_ether(%s): invalid ether address!\n"), orig);
-#endif
+	    if (_DEBUG)
+		fprintf(stderr, _("in_ether(%s): invalid ether address!\n"), orig);
 	    errno = EINVAL;
 	    return (-1);
 	}
@@ -100,28 +104,21 @@ static int in_ether(char *bufp, struct sockaddr *sap)
 
 	/* We might get a semicolon here - not required. */
 	if (*bufp == ':') {
-	    if (i == ETH_ALEN) {
-#ifdef DEBUG
+	    if (_DEBUG && i == ETH_ALEN)
 		fprintf(stderr, _("in_ether(%s): trailing : ignored!\n"),
-			orig)
-#endif
-		    ;		/* nothing */
-	    }
+			orig);
 	    bufp++;
 	}
     }
 
     /* That's it.  Any trailing junk? */
-    if ((i == ETH_ALEN) && (*bufp != '\0')) {
-#ifdef DEBUG
+    if (_DEBUG && (i == ETH_ALEN) && (*bufp != '\0')) {
 	fprintf(stderr, _("in_ether(%s): trailing junk!\n"), orig);
 	errno = EINVAL;
 	return (-1);
-#endif
     }
-#ifdef DEBUG
-    fprintf(stderr, "in_ether(%s): %s\n", orig, pr_ether(sap->sa_data));
-#endif
+    if (_DEBUG)
+	fprintf(stderr, "in_ether(%s): %s\n", orig, pr_ether(sap->sa_data));
 
     return (0);
 }

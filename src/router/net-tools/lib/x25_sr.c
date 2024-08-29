@@ -2,8 +2,6 @@
  * lib/x25_sr.c	This file contains an implementation of the "X.25"
  *		route change support functions.
  *
- * Version:	@(#)x25_sr.c	1.00	08/15/98
- *
  * Author:	Stephane Fillod, <sfillod@charybde.gyptis.frmug.org>
  *		based on inet_sr.c
  *
@@ -38,6 +36,7 @@
 #include "net-locale.h"
 #endif
 #include "intl.h"
+#include "util.h"
 
 #include "net-features.h"
 
@@ -46,64 +45,66 @@ extern     struct aftype   x25_aftype;
 static int skfd = -1;
 
 
-static int usage(void)
+static int usage(const int rc)
 {
-  fprintf(stderr,"Usage: x25_route [-v] del Target[/mask] [dev] If\n");
-  fprintf(stderr,"       x25_route [-v] add Target[/mask] [dev] If\n");
-  return(E_USAGE);
+  FILE *fp = rc ? stderr : stdout;
+  fprintf(fp, "Usage: x25_route [-v] del Target[/mask] [dev] If\n");
+  fprintf(fp, "       x25_route [-v] add Target[/mask] [dev] If\n");
+  return(rc);
 }
 
 
 static int X25_setroute(int action, int options, char **args)
 {
   struct x25_route_struct rt;
-  struct sockaddr_x25 sx25;
+  struct sockaddr_storage sas;
+  struct sockaddr_x25 *sx25 = (struct sockaddr_x25 *)&sas;
   char target[128];
   signed int sigdigits;
 
   if (*args == NULL)
-	return(usage());
+	return usage(E_OPTERR);
 
-  strcpy(target, *args++);
+  safe_strncpy(target, *args++, sizeof(target));
 
   /* Clean out the x25_route_struct structure. */
-  memset((char *) &rt, 0, sizeof(struct x25_route_struct));
+  memset((char *) &rt, 0, sizeof(rt));
 
 
-  if ((sigdigits = x25_aftype.input(0, target, (struct sockaddr *)&sx25)) < 0) {
+  if ((sigdigits = x25_aftype.input(0, target, &sas)) < 0) {
 	x25_aftype.herror(target);
-	return (1);
+	return (E_LOOKUP);
   }
   rt.sigdigits=sigdigits;
 
-  /* x25_route_struct.address isn't type struct sockaddr_x25, Why? */
-  memcpy(&rt.address, &sx25.sx25_addr, sizeof(x25_address));
+  /* this works with 2.4 and 2.6 headers struct x25_address vs. typedef */
+  memcpy(&rt.address, &sx25->sx25_addr, sizeof(sx25->sx25_addr));
 
   while (*args) {
 	if (!strcmp(*args,"device") || !strcmp(*args,"dev")) {
 		args++;
 		if (!*args)
-			return(usage());
+			return usage(E_OPTERR);
 	} else
 		if (args[1])
-			return(usage());
+			return usage(E_OPTERR);
 	if (rt.device[0])
-		return(usage());
-	strcpy(rt.device, *args);
+		return usage(E_OPTERR);
+	safe_strncpy(rt.device, *args, sizeof(rt.device));
 	args++;
   }
   if (rt.device[0]=='\0')
-	return(usage());
+	return usage(E_OPTERR);
 
   /* sanity checks.. */
 	if (rt.sigdigits > 15) {
 		fprintf(stderr, _("route: bogus netmask %d\n"), rt.sigdigits);
-		return(E_OPTERR);
+		return usage(E_OPTERR);
 	}
 
 	if (rt.sigdigits > strlen(rt.address.x25_addr)) {
 		fprintf(stderr, _("route: netmask doesn't match route address\n"));
-		return(E_OPTERR);
+		return usage(E_OPTERR);
 	}
 
   /* Create a socket to the X25 kernel. */
@@ -111,7 +112,7 @@ static int X25_setroute(int action, int options, char **args)
 	perror("socket");
 	return(E_SOCK);
   }
-  
+
   /* Tell the kernel to accept this route. */
   if (action==RTACTION_DEL) {
 	if (ioctl(skfd, SIOCDELRT, &rt) < 0) {
@@ -136,15 +137,15 @@ int X25_rinput(int action, int options, char **args)
 {
   if (action == RTACTION_FLUSH) {
   	fprintf(stderr,"Flushing `x25' routing table not supported\n");
-  	return(usage());
-  }	
+  	return usage(E_OPTERR);
+  }
   if (options & FLAG_CACHE) {
   	fprintf(stderr,"Modifying `x25' routing cache not supported\n");
-  	return(usage());
-  }	
-  if ((*args == NULL) || (action == RTACTION_HELP))
-	return(usage());
-  
+  	return usage(E_OPTERR);
+  }
+  if (action == RTACTION_HELP)
+	return usage(E_USAGE);
+
   return(X25_setroute(action, options, args));
 }
 #endif	/* HAVE_AFX25 */

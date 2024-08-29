@@ -10,54 +10,50 @@ This package includes the important tools for controlling the network
 subsystem of the Linux kernel.  This includes arp, hostname, ifconfig,
 netstat, rarp and route.  Additionally, this package contains
 utilities relating to particular network hardware types (plipconfig,
-slattach) and advanced aspects of IP configuration (iptunnel,
+slattach, mii-tool) and advanced aspects of IP configuration (iptunnel,
 ipmaddr).
 
 Please include the output of "program --version" when reporting bugs.
 
 
 Contents:
-  
-   README		This file.
 
-   README.ipv6		Notes for people hacking IPv6.
+   README		This file.
 
    INSTALLING		Installation instructions.
 
-   COPYING		Your free copy of the GNU Public License.
+   COPYING		Your free copy of the GNU General Public License.
 
    TODO			Some things that need to be done.
+
+The Homepage (including Git repository, release downloads, bug tracker and
+mailing list) is hosted by SourceForge.net. Please consider joining the project
+if you want to contribute:
+
+           https://sourceforge.net/projects/net-tools/
 
 
                           Notes
                           -----
 
-This is net-tools 1.60.
+This is net-tools 2.10.
 
-You need kernel 2.0 or later to use these programs.  These programs
-should compile cleanly with both glibc (version 2.0 or 2.1) and libc5,
-though support for libc5 is not well tested.
+These have largely been tested against Linux kernels 2.6+.  They might work
+against older ones if anyone actually still cares about those anymore.
 
-The NLS support was changed from catgets to GNU gettext by Arnaldo
-Carvalho de Melo <acme@conectiva.com.br> in June, 1998, to make the
-source more readable. Translations to brazilian portuguese (pt_BR),
-German (de), Estonian (ee), Czech (cz) and French (fr) are available.
-Others are welcome!
+They have largely been tested against recent glibc versions, but should work
+on any POSIX compliant C library.  If you notice portability issues, please
+flie a bug for us (or even send a patch!).
 
-route/netstat -r do not yet support different address families
-cleanly.  IPX/DDP/AX25 people, please feel free to add the code.
+The NLS support by Arnaldo Carvalho de Melo <acme@conectiva.com.br> uses GNU
+gettext.  Translations to Brazilian Portuguese (pt_BR), German (de), Estonian
+(ee), Czech (cz), and French (fr) are available.  Others are welcome!
 
-ifconfig now supports changing media types for interfaces.  This requires
-a version 2.2 kernel, and many devices do not support it yet.
+route/netstat -r do not yet support different address families cleanly.
+IPX/DDP/AX25 people, please feel free to add the code.
 
-The tools now support the layout of the 2.2 kernel /proc files (Bernd
-Eckenfels).
-
-Some configuration options require kernel version 2.2 and/or
-particular versions of the C library.  The defaults should be safe for
-all common environments but some of the more esoteric hardware and
-protocol families may be more touchy.  Feel free to send patches if
-you have problems.
+Mike Frysinger
+vapier@gentoo.org
 
 Phil Blundell
 philb@gnu.org

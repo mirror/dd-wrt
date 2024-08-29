@@ -2,7 +2,7 @@
  * lib/ec_hw.c  This file contains an implementation of the Econet
  *              hardware support functions.
  *
- * Version:     $Id: ec_hw.c,v 1.2 1999/09/27 11:00:46 philip Exp $
+ * Version:     $Id: ec_hw.c,v 1.3 2009/09/06 22:39:20 ecki Exp $
  *
  * Author:      Philip Blundell <philb@gnu.org>
  *
@@ -16,6 +16,7 @@
 
 #if HAVE_HWEC
 
+#include <stdlib.h>
 #include <net/if_arp.h>
 #include "net-support.h"
 

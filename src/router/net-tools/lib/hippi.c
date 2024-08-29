@@ -46,7 +46,7 @@ extern struct hwtype hippi_hwtype;
 
 
 /* Display an HIPPI address in readable format. */
-static char *pr_hippi(unsigned char *ptr)
+static const char *pr_hippi(const char *ptr)
 {
     static char buff[64];
 
@@ -57,11 +57,17 @@ static char *pr_hippi(unsigned char *ptr)
     return (buff);
 }
 
+#ifdef DEBUG
+#define _DEBUG 1
+#else
+#define _DEBUG 0
+#endif
 
 /* Input an HIPPI address and convert to binary. */
-static int in_hippi(char *bufp, struct sockaddr *sap)
+static int in_hippi(char *bufp, struct sockaddr_storage *sasp)
 {
-    unsigned char *ptr;
+    struct sockaddr *sap = (struct sockaddr *)sasp;
+    char *ptr;
     char c, *orig;
     int i, val;
 
@@ -80,9 +86,8 @@ static int in_hippi(char *bufp, struct sockaddr *sap)
 	else if (c >= 'A' && c <= 'F')
 	    val = c - 'A' + 10;
 	else {
-#ifdef DEBUG
-	    fprintf(stderr, _("in_hippi(%s): invalid hippi address!\n"), orig);
-#endif
+	    if (_DEBUG)
+		fprintf(stderr, _("in_hippi(%s): invalid hippi address!\n"), orig);
 	    errno = EINVAL;
 	    return (-1);
 	}
@@ -95,9 +100,8 @@ static int in_hippi(char *bufp, struct sockaddr *sap)
 	else if (c >= 'A' && c <= 'F')
 	    val |= c - 'A' + 10;
 	else {
-#ifdef DEBUG
-	    fprintf(stderr, _("in_hippi(%s): invalid hippi address!\n"), orig);
-#endif
+	    if (_DEBUG)
+		fprintf(stderr, _("in_hippi(%s): invalid hippi address!\n"), orig);
 	    errno = EINVAL;
 	    return (-1);
 	}
@@ -106,27 +110,20 @@ static int in_hippi(char *bufp, struct sockaddr *sap)
 
 	/* We might get a semicolon here - not required. */
 	if (*bufp == ':') {
-	    if (i == HIPPI_ALEN) {
-#ifdef DEBUG
-		fprintf(stderr, _("in_hippi(%s): trailing : ignored!\n"), orig)
-#endif
-		    ;		/* nothing */
-	    }
+	    if (_DEBUG && i == HIPPI_ALEN)
+		fprintf(stderr, _("in_hippi(%s): trailing : ignored!\n"), orig);
 	    bufp++;
 	}
     }
 
     /* That's it.  Any trailing junk? */
-    if ((i == HIPPI_ALEN) && (*bufp != '\0')) {
-#ifdef DEBUG
+    if (_DEBUG && (i == HIPPI_ALEN) && (*bufp != '\0')) {
 	fprintf(stderr, _("in_hippi(%s): trailing junk!\n"), orig);
 	errno = EINVAL;
 	return (-1);
-#endif
     }
-#ifdef DEBUG
-    fprintf(stderr, "in_hippi(%s): %s\n", orig, pr_hippi(sap->sa_data));
-#endif
+    if (_DEBUG)
+	fprintf(stderr, "in_hippi(%s): %s\n", orig, pr_hippi(sap->sa_data));
 
     return (0);
 }

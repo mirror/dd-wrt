@@ -1,3 +1,13 @@
+/*
+ * netrom_sr.c       This files contains NETROM related route manipulation methods.
+ *
+ * Part of net-tools, the Linux base networking tools
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
+ */
+
 #include "config.h"
 
 #if HAVE_AFNETROM
@@ -27,13 +37,12 @@ extern struct aftype netrom_aftype;
 
 /* static int skfd = -1; */
 
-/* acme: orphaned... */
 #if 0
-static int usage(void)
+static int usage(const int rc)
 {
     fprintf(stderr, _("netrom usage\n"));
 
-    return (E_USAGE);
+    return (rc);
 }
 #endif
 
@@ -42,6 +51,6 @@ int NETROM_rinput(int action, int ext, char **args)
 {
 
     fprintf(stderr, _("NET/ROM: this needs to be written\n"));
-    return (0);
+    return (E_NOSUPP);
 }
 #endif				/* HAVE_AFNETROM */

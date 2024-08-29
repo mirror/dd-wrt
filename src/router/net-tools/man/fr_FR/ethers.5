@@ -4,10 +4,9 @@
 .\" French translation by J.M.Vansteene (vanstee@worldnet.fr)
 .\"
 .TH ETHERS 5 "26 Avril 1996" "" "Formats de fichiers"
-.SH NOM \"{{{roff}}}\"{{{
-ethers \- Base de données adresses Ethernet - adresses IP
-.\"}}}
-.SH DESCRIPTION \"{{{
+.SH NOM
+ethers \- Base de donnÃ©es adresses Ethernet - adresses IP
+.SH DESCRIPTION
 \fB/etc/ethers\fP contient des adresses Ethernet sur 48 bits et leur
 adresse IP correspondante, une ligne par adresses IP:
 .sp
@@ -15,23 +14,20 @@ adresse IP correspondante, une ligne par adresses IP:
 \fIAdresse-Ethernet\fP  \fIAdresse-IP\fP
 .RE
 .sp
-Les deux items sont séparés par un ou plusieurs espaces et/ou tabulations.
-Un \fB#\fP en début de ligne est un commentaire pour tout le reste de la ligne.
-L'\fIadresse-Ethernet\fP est écrite sous la forme
+Les deux items sont sÃ©parÃ©s par un ou plusieurs espaces et/ou tabulations.
+Un \fB#\fP en dÃ©but de ligne est un commentaire pour tout le reste de la ligne.
+L'\fIadresse-Ethernet\fP est Ã©crite sous la forme
 .IR x : x : x : x : x : x ,
-où \fIx\fP est une valeur héxadecimale comprise entre \fB0\fP et \fBff\fP
-représentant un octet de l'adresse, dans l'ordre du réseau (big-endian).
-L'\fIAdresse-IP\fP peut être soit un nom d'hôte résolu par DNS ou une adresse
-en notation décimale pointée.
-.\"}}}
-.SH EXEMPLES \"{{{
+oÃ¹ \fIx\fP est une valeur hÃ©xadecimale comprise entre \fB0\fP et \fBff\fP
+reprÃ©sentant un octet de l'adresse, dans l'ordre du rÃ©seau (big-endian).
+L'\fIAdresse-IP\fP peut Ãªtre soit un nom d'hÃ´te rÃ©solu par DNS ou une adresse
+en notation dÃ©cimale pointÃ©e.
+.SH EXEMPLES
 08:00:20:00:61:CA  pal
-.\"}}}
-.SH FICHIERS \"{{{
+.SH FICHIERS
 /etc/ethers
-.\"}}}
-.SH "VOIR AUSSI" \"{{{
-rarp(8)
-.\"}}}
+.SH "VOIR AUSSI"
+.BR arp (8),
+.BR rarp (8)
 .SH TRADUCTION
 Jean Michel VANSTEENE (vanstee@worldnet.fr)

@@ -1,20 +1,20 @@
-.TH RARP 8 "4 August 1997" "net-tools" "Linux Programmer's Manual"
+.TH RARP 8 "2008\-10\-03" "net\-tools" "Linux System Administrator's Manual"
 .SH NAME
 rarp \- manipulate the system RARP table
 .SH SYNOPSIS
-.B "rarp [-V] [--version] [-h] [--help]"
+.B "rarp [\-V] [\-\-version] [\-h] [\-\-help]"
 .br
-.B "rarp -a"
+.B "rarp \-a"
 .br
-.B "rarp [-v] -d hostname ..."
+.B "rarp [\-v] \-d hostname ..."
 .br
-.B "rarp [-v] [-t type] -s hostname hw_addr"
+.B "rarp [\-v] [\-t type] \-s hostname hw_addr"
 .SH NOTE
 .P
 This program is obsolete.  From version 2.3, the Linux kernel 
 no longer contains RARP support.  For a replacement RARP daemon, see
 .I
-ftp://ftp.dementia.org/pub/net-tools
+ftp://ftp.dementia.org/pub/net\-tools
 .SH DESCRIPTION
 .B Rarp
 manipulates the kernel's RARP table in various ways.  The primary options
@@ -61,8 +61,8 @@ Remove all RARP entries for the specified host.
 Create a RARP address mapping entry for host
 .B hostname
 with hardware address set to
-.B hw_addr
-.  The format of the hardware address is dependent on the hardware
+.BR hw_addr .
+The format of the hardware address is dependent on the hardware
 class, but for most classes one can assume that the usual presentation
 can be used.  For the Ethernet class, this is 6 bytes in hexadecimal,
 separated by colons.
@@ -74,7 +74,10 @@ of the network administrator.
 .SH FILES
 .I /proc/net/rarp,
 .SH SEE ALSO
-arp(8), route(8), ifconfig(8), netstat(8)
+.BR arp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .SH AUTHORS
 Ross D. Martin, <martin@trcsun3.eas.asu.edu>
 .br

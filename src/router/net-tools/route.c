@@ -2,7 +2,7 @@
  * route        This file contains an implementation of the command
  *              that manages the IP routing table in the kernel.
  *
- * Version:     $Id: route.c,v 1.9 2001/04/15 14:41:17 pb Exp $
+ * Version:     $Id: route.c,v 1.10 2002/07/30 05:24:20 ecki Exp $
  *
  * Maintainer:  Bernd 'eckes' Eckenfels, <net-tools@lina.inka.de>
  *
@@ -10,7 +10,7 @@
  *              (derived from FvK's 'route.c     1.70    01/04/94')
  *
  * Modifications:
- *              Johannes Stille:        for Net-2Debugged by 
+ *              Johannes Stille:        for Net-2Debugged by
  *                                      <johannes@titan.os.open.de>
  *              Linus Torvalds:         Misc Changes
  *              Alan Cox:               add the new mtu/window stuff
@@ -19,7 +19,7 @@
  *       {1.80} Bernd Eckenfels:        reject, metric, irtt, 1.2.x support.
  *       {1.81} Bernd Eckenfels:        reject routes need a dummy device
  *960127 {1.82} Bernd Eckenfels:        'mod' and 'dyn' 'reinstate' added
- *960129 {1.83} Bernd Eckenfels:        resolve and getsock now in lib/, 
+ *960129 {1.83} Bernd Eckenfels:        resolve and getsock now in lib/,
  *                                      REJECT displays '-' as gatway.
  *960202 {1.84} Bernd Eckenfels:        net-features support added
  *960203 {1.85} Bernd Eckenfels:        "#ifdef' in '#if' for net-features
@@ -60,45 +60,47 @@
 #include "intl.h"
 #include "pathnames.h"
 #include "version.h"
+#include "util.h"
 
 #define DFLT_AF "inet"
 
 #define FEATURE_ROUTE
 #include "lib/net-features.h"	/* needs some of the system includes above! */
 
-char *Release = RELEASE, *Version = "route 1.98 (2001-04-15)";
+static char *Release = RELEASE;
 
-int opt_n = 0;			/* numerical output flag        */
-int opt_v = 0;			/* debugging output flag        */
-int opt_e = 1;			/* 1,2,3=type of routetable     */
-int opt_fc = 0;			/* routing cache/FIB */
-int opt_h = 0;			/* help selected                */
-struct aftype *ap;		/* current address family       */
+int opt_n = 0;     // numerical output FLAG_NUM | FLAG_SYM
+int opt_v = 0;     // debugging output flag
+int opt_e = 1;     // 1,2,3=type of routetable
+int opt_fc = 0;    // routing cache/FIB
+int opt_h = 0;     // help selected
+struct aftype *ap; // selected address family
 
-static void usage(void)
+static void usage(int rc)
 {
-    fprintf(stderr, _("Usage: route [-nNvee] [-FC] [<AF>]           List kernel routing tables\n"));
-    fprintf(stderr, _("       route [-v] [-FC] {add|del|flush} ...  Modify routing table for AF.\n\n"));
+    FILE *fp = rc ? stderr : stdout;
+    fprintf(fp, _("Usage: route [-nNvee] [-FC] [<AF>]           List kernel routing tables\n"));
+    fprintf(fp, _("       route [-v] [-FC] {add|del|flush} ...  Modify routing table for AF.\n\n"));
 
-    fprintf(stderr, _("       route {-h|--help} [<AF>]              Detailed usage syntax for specified AF.\n"));
-    fprintf(stderr, _("       route {-V|--version}                  Display version/author and exit.\n\n"));
+    fprintf(fp, _("       route {-h|--help} [<AF>]              Detailed usage syntax for specified AF.\n"));
+    fprintf(fp, _("       route {-V|--version}                  Display version/author and exit.\n\n"));
 
-    fprintf(stderr, _("        -v, --verbose            be verbose\n"));
-    fprintf(stderr, _("        -n, --numeric            don't resolve names\n"));
-    fprintf(stderr, _("        -e, --extend             display other/more information\n"));
-    fprintf(stderr, _("        -F, --fib                display Forwarding Information Base (default)\n"));
-    fprintf(stderr, _("        -C, --cache              display routing cache instead of FIB\n\n"));
+    fprintf(fp, _("        -v, --verbose            be verbose\n"));
+    fprintf(fp, _("        -n, --numeric            don't resolve names\n"));
+    fprintf(fp, _("        -e, --extend             display other/more information\n"));
+    fprintf(fp, _("        -F, --fib                display Forwarding Information Base (default)\n"));
+    fprintf(fp, _("        -C, --cache              display routing cache instead of FIB\n\n"));
 
-    fprintf(stderr, _("  <AF>=Use '-A <af>' or '--<af>'; default: %s\n"), DFLT_AF);
-    fprintf(stderr, _("  List of possible address families (which support routing):\n"));
+    fprintf(fp, _("  <AF>=Use -4, -6, '-A <af>' or '--<af>'; default: %s\n"), DFLT_AF);
+    fprintf(fp, _("  List of possible address families (which support routing):\n"));
     print_aflist(1); /* 1 = routeable */
-    exit(E_USAGE);
+    exit(rc);
 }
 
 
 static void version(void)
 {
-    fprintf(stderr, "%s\n%s\n%s\n", Release, Version, Features);
+    printf("%s\n%s\n", Release, Features);
     exit(E_VERSION);
 }
 
@@ -135,14 +137,12 @@ int main(int argc, char **argv)
 
     /* getopts and -net wont work :-/ */
     for (tmp = argv; *tmp; tmp++) {
-	if (!strcmp(*tmp, "-net"))
-	    strcpy(*tmp, "#net");
-	else if (!strcmp(*tmp, "-host"))
-	    strcpy(*tmp, "#host");
+        if (!strcmp(*tmp, "-net") || !strcmp(*tmp, "-host"))
+            (*tmp)[0]='#';
     }
 
     /* Fetch the command-line arguments. */
-    while ((i = getopt_long(argc, argv, "A:eCFhnNVv?", longopts, &lop)) != EOF)
+    while ((i = getopt_long(argc, argv, "A:eCFhnN64Vv?", longopts, &lop)) != EOF)
 	switch (i) {
 	case -1:
 	    break;
@@ -176,6 +176,14 @@ int main(int argc, char **argv)
 	    if ((i = aftrans_opt(optarg)))
 		exit(i);
 	    break;
+	case '6':
+	    if ((i = aftrans_opt("inet6")))
+		exit(i);
+	    break;
+	case '4':
+	    if ((i = aftrans_opt("inet")))
+		exit(i);
+	    break;
 	case 'V':
 	    version();
 	case 'h':
@@ -183,7 +191,7 @@ int main(int argc, char **argv)
 	    opt_h++;
 	    break;
 	default:
-	    usage();
+	    usage(E_OPTERR);
 	}
 
     argv += optind;
@@ -191,7 +199,7 @@ int main(int argc, char **argv)
 
     if (opt_h) {
 	if (!afname[0])
-	    usage();
+	    usage(E_USAGE);
 	else
 	    what = RTACTION_HELP;
     } else {
@@ -210,7 +218,7 @@ int main(int argc, char **argv)
 	    else if (!strcmp(*argv, "flush"))
 		what = RTACTION_FLUSH;
 	    else
-		usage();
+		usage(E_OPTERR);
 	}
     }
 
@@ -222,9 +230,6 @@ int main(int argc, char **argv)
 	i = route_info(afname, options);
     else
 	i = route_edit(what, afname, options, ++argv);
-
-    if (i == E_OPTERR)
-	usage();
 
     return (i);
 }

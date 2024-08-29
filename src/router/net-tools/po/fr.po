@@ -9,7 +9,7 @@ msgstr ""
 "Last-Translator: J.M.Vansteene <vanstee@worldnet.fr>\n"
 "Language-Team:\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso8859-1\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../arp.c:110 ../arp.c:269
@@ -59,8 +59,12 @@ msgid "arp: cannot set entry on line %u of etherfile %s !\n"
 msgstr "arp: ne peut définir l'entrée en ligne %u du fichier ether %s !\n"
 
 #: ../arp.c:437
-msgid "Address\t\t\tHWtype\tHWaddress\t    Flags Mask\t\t  Iface\n"
-msgstr "Adresse\t\t\tTypeMap\tAdresseMat\t   Indicateurs\t\t  Iface\n"
+msgid ""
+"Address                  HWtype  HWaddress           Flags Mask            "
+"Iface\n"
+msgstr ""
+"Adresse                  TypeMap AdresseMat          Indicateurs           "
+"Iface\n"
 
 #: ../arp.c:467
 msgid "(incomplete)"
@@ -1532,7 +1536,7 @@ msgstr "%d paquets réassemblés correctement"
 
 #: ../statistics.c:78
 #, c-format
-msgid "%d packet reassembles failed"
+msgid "%d packet reassemblies failed"
 msgstr "%d paquets mal réassemblés"
 
 #: ../statistics.c:79
@@ -1557,7 +1561,7 @@ msgstr "%d messages ICMP reçus"
 
 #: ../statistics.c:87
 #, c-format
-msgid "%d input ICMP message failed."
+msgid "%d input ICMP message failed"
 msgstr "%d messages d'entrée ICMP en échec"
 
 #: ../statistics.c:88 ../statistics.c:101
@@ -1643,11 +1647,6 @@ msgstr "Source Quench: %d"
 msgid "redirect: %d"
 msgstr "redirection: %d"
 
-#: ../statistics.c:106
-#, c-format
-msgid "echo request: %d"
-msgstr "requête echo: %d"
-
 #: ../statistics.c:108
 #, c-format
 msgid "timestamp requests: %d"
@@ -1675,7 +1674,7 @@ msgstr "algorithme RTO est %s"
 
 #: ../statistics.c:120
 #, c-format
-msgid "%d active connections openings"
+msgid "%d active connection openings"
 msgstr "%d ouvertures de connexions actives"
 
 #: ../statistics.c:121
@@ -1705,18 +1704,18 @@ msgstr "%d segments reçus"
 
 #: ../statistics.c:126
 #, c-format
-msgid "%d segments send out"
+msgid "%d segments sent out"
 msgstr "%d segments envoyés"
 
 #: ../statistics.c:127
 #, c-format
-msgid "%d segments retransmited"
+msgid "%d segments retransmitted"
 msgstr "%d segments retransmis"
 
 #: ../statistics.c:128
 #, c-format
-msgid "%d bad segments received."
-msgstr "%d mauvais segments reçus."
+msgid "%d bad segments received"
+msgstr "%d mauvais segments reçus"
 
 #: ../statistics.c:129
 #, c-format
@@ -1730,7 +1729,7 @@ msgstr "%d paquets reçus"
 
 #: ../statistics.c:135
 #, c-format
-msgid "%d packets to unknown port received."
+msgid "%d packets to unknown port received"
 msgstr "%d paquets reçus pour un port inconnu"
 
 #: ../statistics.c:136

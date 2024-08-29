@@ -72,7 +72,7 @@ void setroute_init(void)
 
 int route_edit(int action, const char *afname, int options, char **argv)
 {
-    struct aftype *ap;
+    const struct aftype *ap;
 
     ap = get_aftype(afname);
 

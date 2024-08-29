@@ -1,57 +1,62 @@
-.TH ROUTE 8 "2 January 2000" "net-tools" "Linux Programmer's Manual"
+.TH ROUTE 8 "2014\-02\-17" "net\-tools" "Linux System Administrator's Manual"
 .SH NAME
 route \- show / manipulate the IP routing table
 .SH SYNOPSIS
 .B route
-.RB [ \-CFvnee ]
+.RB [ \-CFvnNee ]
+.RB [ \-A
+family
+.RB | \-4 | \-6 ] 
 .TP
 .B route 
 .RB [ \-v ]
 .RB [ \-A
-family] 
+family 
+.RB | \-4 | \-6 ] 
 .B add 
 .RB [ \-net | \-host ] 
-target 
+.I target 
 .RB [ netmask 
-Nm] 
+.IR Nm ] 
 .RB [ gw 
-Gw] 
+.IR Gw ] 
 .RB [ metric 
-N] 
+.IR N ] 
 .RB [ mss 
-M] 
+.IR M ] 
 .RB [ window 
-W] 
+.IR W ] 
 .RB [ irtt 
-I]
+.IR I ]
 .RB [ reject ]
 .RB [ mod ]
 .RB [ dyn ] 
 .RB [ reinstate ] 
 .RB [[ dev ] 
-If]
+.IR If ]
 .TP
 .B route 
 .RB [ \-v ] 
 .RB [ \-A
-family]
+.I family
+.RB | \-4 | \-6 ]
 .B del 
 .RB [ \-net | \-host ] 
-target 
+.I target 
 .RB [ gw 
-Gw] 
+.IR Gw ] 
 .RB [ netmask 
-Nm] 
+.IR Nm ] 
 .RB [ metric 
-N] 
+.IR M ] 
 .RB [[ dev ]
-If]
+.IR If ]
 .TP
 .B route 
 .RB [ \-V ] 
 .RB [ \-\-version ]
 .RB [ \-h ]
-.RB [ \--help ]
+.RB [ \-\-help ]
 .SH DESCRIPTION
 .B Route
 manipulates the kernel's IP routing tables.  Its primary use is to set
@@ -72,19 +77,27 @@ displays the current contents of the routing tables.
 
 .SH OPTIONS
 .TP
-.B \-A family
-use the specified address family (eg `inet'; use `route --help' for a full 
-list).
+\fB\-A \fIfamily\fR
+use the specified address family (eg `inet'). Use 
+.B route \-\-help
+for a full list. You can use 
+.B \-6 
+as an alias for 
+.B \-\-inet6 
+and 
+.B \-4 
+as an alias for 
+.B \-A inet
+.
 
 .TP 
-.B -F
+.B \-F
 operate on the kernel's FIB (Forwarding Information Base) routing
 table. 
 This is the default.
 .TP 
-.B -C
+.B \-C
 operate on the kernel's routing cache.
-
 .TP
 .B \-v
 select verbose operation.
@@ -96,11 +109,10 @@ nameserver has vanished.
 .TP
 .B \-e
 use
-.BR netstat (8)-format
+.BR netstat (8)\-format
 for displaying the routing table.
 .B \-ee 
 will generate a very long line with all parameters from the routing table.
-
 .TP
 .B del
 delete a route.
@@ -108,25 +120,27 @@ delete a route.
 .B add 
 add a new route.
 .TP
-.B target
-the destination network or host. You can provide IP addresses in dotted
-decimal or host/network names.
+.I target
+the destination network or host. You can provide an addresses or symbolic 
+network or host name. Optionally you can use \fB/\fIprefixlen\fR notation
+instead of using the \fBnetmask\fR option.
 .TP
 .B \-net
 the
-.B target
+.I target
 is a network.
 .TP
-.B -host
+.B \-host
 the
-.B target 
+.I target 
 is a host.
 .TP
-.B netmask NM
+\fBnetmask \fINM\fR
 when adding a network route, the netmask to be used.
 .TP
-.B gw GW
+\fBgw \fIGW\fR
 route packets via a gateway.
+.br
 .B NOTE:
 The specified gateway must be reachable first. This usually means that
 you have to set up a static route to the gateway beforehand. If you specify
@@ -134,90 +148,99 @@ the address of one of your local interfaces, it will be used to decide about
 the interface to which the packets should be routed to. This is a BSDism
 compatibility hack.
 .TP
-.B metric M
-set the metric field in the routing table (used by routing daemons) to M.
+\fBmetric \fIM\fR
+set the metric field in the routing table (used by routing daemons) to \fIM\fR. If this option is not specified the metric for inet6 (IPv6) address family defaults to '1', for inet (IPv4) it defaults to '0'. You should always specify an explicit metric value to not rely on those defaults - they also differ from iproute2.
 .TP 
-.B mss M
-set the TCP Maximum Segment Size (MSS) for connections over this route
-to M bytes. 
-The default is the device MTU minus headers, or a lower MTU when path mtu 
-discovery occured. This setting can be used to force smaller TCP packets on the
-other end when path mtu discovery does not work (usually because of
-misconfigured firewalls that block ICMP Fragmentation Needed)
+\fBmss \fIM\fR
+sets MTU (Maximum Transmission Unit) of the route to \fIM\fR bytes.
+Note that the current implementation of the route command does not allow
+the option to set the Maximum Segment Size (MSS).
 .TP 
-.B window W 
-set the TCP window size for connections over this route to W
+\fBwindow \fIW\fR
+set the TCP window size for connections over this route to \fIW\fR
 bytes. This is typically only used on AX.25 networks and with drivers
 unable to handle back to back frames.
 .TP
-.B irtt I
+\fBirtt \fII\fR
 set the initial round trip time (irtt) for TCP connections over this
-route to I milliseconds (1-12000). This is typically only used on
+route to \fII\fR milliseconds (1-12000). This is typically only used on
 AX.25 networks. If omitted the RFC 1122 default of 300ms is used.
 .TP
 .B reject
 install a blocking route, which will force a route lookup to fail.
 This is for example used to mask out networks before using the default
-route.  This is NOT for firewalling.
+route. This is NOT for firewalling.
 .TP
 .B mod, dyn, reinstate
 install a dynamic or modified route. These flags are for diagnostic
 purposes, and are generally only set by routing daemons.
 .TP
-.B dev If
+\fBdev \fIIf\fR
 force the route to be associated with the specified device, as the
 kernel will otherwise try to determine the device on its own (by
 checking already existing routes and device specifications, and where
 the route is added to). In most normal networks you won't need this.
 
-If 
-.B dev If
+If \fBdev \fIIf\fR
 is the last option on the command line, the word 
 .B dev
 may be omitted, as it's the default. Otherwise the order of the route
-modifiers (metric - netmask - gw - dev) doesn't matter.
+modifiers (\fBmetric netmask gw dev\fR) doesn't matter.
 
 .SH EXAMPLES
 .TP
-.B route add -net 127.0.0.0
-adds the normal loopback entry, using netmask 255.0.0.0 (class A net,
-determined from the destination address) and associated with the 
-"lo" device (assuming this device was prviously set up correctly with
+.B route add \-net 127.0.0.0 netmask 255.0.0.0 metric 1024 dev lo
+adds the normal loopback entry, using netmask 255.0.0.0 and associated with the 
+"lo" device (assuming this device was previously set up correctly with
 .BR ifconfig (8)). 
 
 .TP 
-.B route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
-adds a route to the network 192.56.76.x via 
-"eth0". The Class C netmask modifier is not really necessary here because
-192.* is a Class C IP address. The word "dev" can be omitted here. 
+.B route add \-net 192.56.76.0 netmask 255.255.255.0 metric 1024 dev eth0
+adds a route to the local network 192.56.76.x via 
+"eth0".  The word "dev" can be omitted here. 
 
 .TP
-.B route add default gw mango-gw
+.B route del default
+deletes the current default route, which is labeled "default" or 0.0.0.0
+in the destination field of the current routing table.
+
+.TP
+.B route del \-net 192.56.76.0 netmask 255.255.255.0
+deletes the route. Since the Linux routing kernel uses classless
+addressing, you pretty much always have to specify the netmask that is
+same as as seen in 'route -n' listing.
+
+.TP
+.B route add default gw mango 
 adds a default route (which will be used if no other route matches).
-All packets using this route will be gatewayed through "mango-gw". The
+All packets using this route will be gatewayed through the address of a node
+named "mango". The
 device which will actually be used for that route depends on how we
-can reach "mango-gw" - the static route to "mango-gw" will have to be
-set up before. 
+can reach "mango" - "mango" must be on directly reachable route.
 
 .TP
-.B route add ipx4 sl0
-Adds the route to the "ipx4" host via the SLIP interface (assuming that
-"ipx4" is the SLIP host).
+.B route add mango sl0
+Adds the route to the host named "mango" via the SLIP interface (assuming that
+"mango" is the SLIP host).
 
 .TP
-.B route add -net 192.57.66.0 netmask 255.255.255.0 gw ipx4
+.B route add \-net 192.57.66.0 netmask 255.255.255.0 gw mango
 This command adds the net "192.57.66.x" to be gatewayed through the former
 route to the SLIP interface.
 
 .TP
-.B route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+.B route add \-net 224.0.0.0 netmask 240.0.0.0 dev eth0
 This is an obscure one documented so people know how to do it. This sets
 all of the class D (multicast) IP routes to go via "eth0". This is the
 correct normal configuration line with a multicasting kernel. 
 
 .TP
-.B route add -net 10.0.0.0 netmask 255.0.0.0 reject
+.B route add \-net 10.0.0.0 netmask 255.0.0.0 metric 1024 reject
 This installs a rejecting route for the private network "10.x.x.x."
+
+.TP
+.B route -6 add 2001:0002::/48 metric 1 dev eth0  
+This adds a IPv6 route with the specified metric to be directly reachable via eth0.
 
 .LP
 .SH OUTPUT
@@ -275,21 +298,20 @@ entry)
 route)
 .TP
 .B Metric 
-The 'distance' to the target (usually counted in hops). It is not used by
-recent kernels, but may be needed by routing daemons.
+The 'distance' to the target (usually counted in hops).
 .TP
 .B Ref    
 Number of references to this route. (Not used in the Linux kernel.)
 .TP
 .B Use
-Count of lookups for the route.  Depending on the use of -F and -C this will
-be either route cache misses (-F) or hits (-C).
+Count of lookups for the route.  Depending on the use of \-F and \-C this will
+be either route cache misses (\-F) or hits (\-C).
 .TP
 .B Iface
 Interface to which packets for this route will be sent.
 .TP
 .B MSS 
-Default maximum segement size for TCP connections over this route.
+Default maximum segment size for TCP connections over this route.
 .TP
 .B Window  
 Default window size for TCP connections over this route.
@@ -313,8 +335,13 @@ Whether or not the hardware address for the cached route is up to date.
 .br
 .I /proc/net/rt_cache
 .LP
-.SH SEE ALSO
-.I ifconfig(8), netstat(8), arp(8), rarp(8)
+.SH "SEE ALSO"
+.BR ethers (5),
+.BR arp (8),
+.BR rarp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .LP
 .SH HISTORY
 .B Route
@@ -323,4 +350,4 @@ for Linux was originally written by Fred N.  van Kempen,
 Linus Torvalds for pl15. Alan Cox added the mss and window options for
 Linux 1.1.22. irtt support and merged with netstat from Bernd Eckenfels.
 .SH AUTHOR
-Currently maintained by Phil Blundell <Philip.Blundell@pobox.com>.
+Currently maintained by Phil Blundell <Philip.Blundell@pobox.com> and Bernd Eckenfels <net-tools@lina.inka.de>.

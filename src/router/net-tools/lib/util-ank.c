@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <limits.h>
 #include <syslog.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -293,7 +294,7 @@ int inet_addr_match(inet_prefix *a, inet_prefix *b, int bits)
 	return 0;
 }
 
-const char *format_host(int af, void *addr, __u8 *abuf, int alen)
+const char *format_host(int af, void *addr, char *abuf, int alen)
 {
 #ifdef RESOLVE_HOSTNAMES
 	if (resolve_hosts) {

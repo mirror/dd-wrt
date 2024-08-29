@@ -1,10 +1,10 @@
-.TH NAMEIF 8 "18 Oct 2000" "net-tools" "Linux's Administrator's Manual"
+.TH NAMEIF 8 "2008\-10\-03" "net\-tools" "Linux System Administrator's Manual"
 .SH NAME
 nameif \- name network interfaces based on MAC addresses
 .SH SYNOPSIS
-.B "nameif [-c configfile] [-s]"
+.B "nameif [\-c configfile] [\-s]"
 .br
-.B "nameif [-c configfile] [-s] {interface macaddress}"
+.B "nameif [\-c configfile] [\-s] {interface macaddress}"
 .SH DESCRIPTION
 .B nameif 
 renames network interfaces based on mac addresses. When no arguments are
@@ -18,11 +18,11 @@ looks for the interface with the given MAC address and renames it to the
 name given.
 
 When the 
-.I -s
+.I \-s
 argument is given all error messages go to the syslog.
 
 When the 
-.I -c 
+.I \-c 
 argument is given with a file name that file is read instead of /etc/mactab.
 
 .SH NOTES

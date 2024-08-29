@@ -27,6 +27,7 @@
 #include "net-support.h"
 #include "pathnames.h"
 #include "intl.h"
+#include "util.h"
 
 /* UGLY */
 
@@ -38,25 +39,32 @@ int IPX_rprint(int options)
     char net[128], router_net[128];
     char router_node[128];
     int num;
-    FILE *fp = fopen(_PATH_PROCNET_IPX_ROUTE, "r");
-    struct aftype *ap;
-    struct sockaddr sa;
+    FILE *fp;
+    const struct aftype *ap;
+    struct sockaddr_storage sas;
+
+    fp = fopen(_PATH_PROCNET_IPX_ROUTE1, "r");
+
+    if (!fp) {
+        fp = fopen(_PATH_PROCNET_IPX_ROUTE2, "r");
+    }
+
+    if (!fp) {
+        perror(NULL);
+        printf(_("IPX routing not in file %s or %s found.\n"), _PATH_PROCNET_IPX_ROUTE1, _PATH_PROCNET_IPX_ROUTE2);
+	return 1;
+    }
 
     if ((ap = get_afntype(AF_IPX)) == NULL) {
 	EINTERN("lib/ipx_rt.c", "AF_IPX missing");
 	return (-1);
     }
 
-    if (!fp) {
-        perror(_PATH_PROCNET_IPX_ROUTE);
-        printf(_("IPX not configured in this system.\n"));
-	return 1;
-    }
-
     printf(_("Kernel IPX routing table\n"));	/* xxx */
     printf(_("Destination               Router Net                Router Node\n"));
 
-    fgets(buff, 1023, fp);
+    if (fgets(buff, 1023, fp))
+	/* eat line */;
 
     while (fgets(buff, 1023, fp)) {
 	num = sscanf(buff, "%s %s %s", net, router_net, router_node);
@@ -64,16 +72,16 @@ int IPX_rprint(int options)
 	    continue;
 
 	/* Fetch and resolve the Destination */
-	(void) ap->input(5, net, &sa);
-	strcpy(net, ap->sprint(&sa, numeric));
+	(void) ap->input(1, net, &sas);
+	safe_strncpy(net, ap->sprint(&sas, numeric), sizeof(net));
 
 	/* Fetch and resolve the Router Net */
-	(void) ap->input(5, router_net, &sa);
-	strcpy(router_net, ap->sprint(&sa, numeric));
+	(void) ap->input(1, router_net, &sas);
+	safe_strncpy(router_net, ap->sprint(&sas, numeric), sizeof(router_net));
 
 	/* Fetch and resolve the Router Node */
-	(void) ap->input(2, router_node, &sa);
-	strcpy(router_node, ap->sprint(&sa, numeric));
+	(void) ap->input(2, router_node, &sas);
+	safe_strncpy(router_node, ap->sprint(&sas, numeric), sizeof(router_node));
 
 	printf("%-25s %-25s %-25s\n", net, router_net, router_node);
     }

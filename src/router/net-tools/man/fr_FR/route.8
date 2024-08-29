@@ -1,4 +1,4 @@
-.TH ROUTE 8 "8 Août 1997" "net-tools" "Linux Programmer's Manual"
+.TH ROUTE 8 "8 AoÃ»t 1997" "net-tools" "Linux Administrator's Manual"
 .SH NAME
 route \- affiche / manipule la table de routage IP
 .SH SYNOPSIS
@@ -54,9 +54,9 @@ If]
 .RB [ \--help ]
 .SH DESCRIPTION
 .B Route
-manipule la table de routage IP du noyau.  Son utilisation première
-consiste à configurer des routes statiques vers des hôtes ou des réseaux
-via une interface, après sa configuration par le programme
+manipule la table de routage IP du noyau.  Son utilisation premiÃ¨re
+consiste Ã  configurer des routes statiques vers des hÃ´tes ou des rÃ©seaux
+via une interface, aprÃ¨s sa configuration par le programme
 .B ifconfig(8).
 
 .SH OPTIONS
@@ -66,12 +66,12 @@ Active le mode verbeux.
 
 .TP
 .B \-A famille
-Utilise la famille d'adresses spécifiée (p.ex. `inet', `inet6').
+Utilise la famille d'adresses spÃ©cifiÃ©e (p.ex. `inet', `inet6').
 
 .TP
 .B \-n
-Affiche les adresses numériques, au lieu
-d'essayer de déterminer les noms d'hôtes. C'est utile si vous essayer de
+Affiche les adresses numÃ©riques, au lieu
+d'essayer de dÃ©terminer les noms d'hÃ´tes. C'est utile si vous essayer de
 savoir pourquoi la route vers votre serveur de nom a disparu.
 
 .TP
@@ -80,24 +80,24 @@ utilise
 .BR netstat (8)-format
 pour l'affichage de la table de routage.
 .B \-ee 
-Génère une très longue ligne avec tous les paramètres à partir de la table
+GÃ©nÃ¨re une trÃ¨s longue ligne avec tous les paramÃ¨tres Ã  partir de la table
 de routage.
 
 .TP
 .B \-net
 la
 .B cible
-est un réseau.
+est un rÃ©seau.
 
 .TP
 .B -host
 la
 .B cible 
-est un hôte.
+est un hÃ´te.
 
 .TP 
 .B -F
-affiche la table de routage FIB du noyau. L'organisation peut être changée avec
+affiche la table de routage FIB du noyau. L'organisation peut Ãªtre changÃ©e avec
 .B \-e
 et
 .B \-ee
@@ -117,131 +117,131 @@ ajoute une route.
 
 .TP
 .B cible
-L'hôte ou le réseau destination. Vous pouvez fournir une adresse IP en
-notation décimale pointée ou un nom d'hôte ou de réseau.
+L'hÃ´te ou le rÃ©seau destination. Vous pouvez fournir une adresse IP en
+notation dÃ©cimale pointÃ©e ou un nom d'hÃ´te ou de rÃ©seau.
 
 .TP
 .B netmask Nm
-spécifie le masque réseau de la route à ajouter.
+spÃ©cifie le masque rÃ©seau de la route Ã  ajouter.
 
 .TP
 .B gw Gw
-signifie que tout paquet IP envoyé à cette adresse  sera routé par
-la passerelle spécifiée.
+signifie que tout paquet IP envoyÃ© Ã  cette adresse  sera routÃ© par
+la passerelle spÃ©cifiÃ©e.
 .B NOTE:
-La passerelle concernée doit pouvoir être atteinte. Ceci signifie
-qu'une route statique vers cette passerelle doit préalablement exister.
-Si vous spécifiez l'adresse de l'une de vos interfaces locales, elle sera
-utilisée pour décider de l'interface vers laquelle les paquets seront
-envoyés. Ceci est une bidouille permettant d'être compatible BSD.
+La passerelle concernÃ©e doit pouvoir Ãªtre atteinte. Ceci signifie
+qu'une route statique vers cette passerelle doit prÃ©alablement exister.
+Si vous spÃ©cifiez l'adresse de l'une de vos interfaces locales, elle sera
+utilisÃ©e pour dÃ©cider de l'interface vers laquelle les paquets seront
+envoyÃ©s. Ceci est une bidouille permettant d'Ãªtre compatible BSD.
 
 .TP
 .B metric M
-Affecte la valeur M au champ métrique de la table de routage (utilisé par
-les démons de routage).
+Affecte la valeur M au champ mÃ©trique de la table de routage (utilisÃ© par
+les dÃ©mons de routage).
 
 .TP 
 .B mss M
-Spécifie le MSS (Maximum Segment Size, Taille maximum de segment) de TCP,
-pour les connexions empreintant cette route. Ce n'est normalement utilisé
+SpÃ©cifie le MSS (Maximum Segment Size, Taille maximum de segment) de TCP,
+pour les connexions empruntant cette route. Ce n'est normalement utilisÃ©
 que pour des optimisations fines des configurations de routage. 
 
 
 .TP 
 .B window W 
-Définit la taille de fenêtre TCP à W octets pour les connexions relatives 
-à cette route. C'est en général uniquement utilisé sur les réseaux AX.25 et
-avec les pilotes incapables de manipuler les trames dos à dos.
+DÃ©finit la taille de fenÃªtre TCP Ã  W octets pour les connexions relatives 
+Ã  cette route. C'est en gÃ©nÃ©ral uniquement utilisÃ© sur les rÃ©seaux AX.25 et
+avec les pilotes incapables de manipuler les trames dos Ã  dos.
 
 .TP
 .B irtt I
-Définit le iRTT initial (round trip time) pour les connexions TCP sur cette
-route à I millisecondes (1-12000). C'est en général uniquement utilisé sur
-les réseaux AX.25. Si omis, la valeur par défaut (300 ms selon le RFC 1122)
-est utilisée.
+DÃ©finit le iRTT initial (round trip time) pour les connexions TCP sur cette
+route Ã  I millisecondes (1-12000). C'est en gÃ©nÃ©ral uniquement utilisÃ© sur
+les rÃ©seaux AX.25. Si omis, la valeur par dÃ©faut (300 ms selon le RFC 1122)
+est utilisÃ©e.
 
 .TP
 .B reject
-Installe une route bloquante, qui forcera l'échec d'une recherche.
-C'est par exemple utilisé pour masquer les réseaux avant d'utiliser la
-route par défaut. Ce n'est pas une fonction de pare-feu.
+Installe une route bloquante, qui forcera l'Ã©chec d'une recherche.
+C'est par exemple utilisÃ© pour masquer les rÃ©seaux avant d'utiliser la
+route par dÃ©faut. Ce n'est pas une fonction de pare-feu.
 
 .TP
 .B mod, dyn, reinstate
-Installe une route dynamique ou modifiée. Les deux indicateurs ne sont en
-général positionnés que par le démon de routage. Cela ne sert que pour des
+Installe une route dynamique ou modifiÃ©e. Les deux indicateurs ne sont en
+gÃ©nÃ©ral positionnÃ©s que par le dÃ©mon de routage. Cela ne sert que pour des
 besoins de diagnostics.
 
 .TP
 .B dev If
-Force la route à être associée au périphérique spécifié, sinon le noyau
-tentera de le déterminer par lui-même (en consultant les routes existantes
-et les spécifications de périphériques). Dans la plupart des réseaux
+Force la route Ã  Ãªtre associÃ©e au pÃ©riphÃ©rique spÃ©cifiÃ©, sinon le noyau
+tentera de le dÃ©terminer par lui-mÃªme (en consultant les routes existantes
+et les spÃ©cifications de pÃ©riphÃ©riques). Dans la plupart des rÃ©seaux
 normaux, vous n'aurez pas besoin de ceci.
 
 If 
 .B dev If
-est la dernière option de la ligne de commande, le mot
+est la derniÃ¨re option de la ligne de commande, le mot
 .B dev
-peut être omis, puisque c'est la valeur par défaut. Autrement l'ordre des
+peut Ãªtre omis, puisque c'est la valeur par dÃ©faut. Autrement l'ordre des
 modificateurs de route (metric - netmask - gw - dev) n'a pas d'importance.
 
 .SH EXEMPLES
 .TP
 .B route add -net 127.0.0.0
-ajoute l'entrée loopback normale, en utilisant le masque 255.0.0.0 (réseau
-de classe A, selon l'adresse de destination) et associée avec l'interface 
-"lo" (en supposant que ce périphérique a été correctement configuré avec
+ajoute l'entrÃ©e loopback normale, en utilisant le masque 255.0.0.0 (rÃ©seau
+de classe A, selon l'adresse de destination) et associÃ©e avec l'interface 
+"lo" (en supposant que ce pÃ©riphÃ©rique a Ã©tÃ© correctement configurÃ© avec
 .BR ifconfig (8)). 
 
 .TP 
 .B route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
-ajoute une route vers le réseau 192.56.76.x via 
-"eth0". Le masque de classe C n'est pas vraiment nécessaire ici car
-192.* est une adresse IP de classe C. Le mot "dev" peut être omis. 
+ajoute une route vers le rÃ©seau 192.56.76.x via 
+"eth0". Le masque de classe C n'est pas vraiment nÃ©cessaire ici car
+192.* est une adresse IP de classe C. Le mot "dev" peut Ãªtre omis. 
 
 .TP
 .B route add default gw mango-gw
-ajoute une route par défaut (qui sera utilisée si aucune autre route ne
+ajoute une route par dÃ©faut (qui sera utilisÃ©e si aucune autre route ne
 convient). Tous les paquets empreintant cette route passeront par
-"mango-gw". Le périphérique qui sera effectivement utilisé pour cette route
-dépend de la façon dont on atteint "mango-gw" - la route statique vers
-"mango-gw" devra être préalablement configurée. 
+"mango-gw". Le pÃ©riphÃ©rique qui sera effectivement utilisÃ© pour cette route
+dÃ©pend de la faÃ§on dont on atteint "mango-gw" - la route statique vers
+"mango-gw" devra Ãªtre prÃ©alablement configurÃ©e. 
 
 .TP
 .B route add ipx4 sl0
-ajoute une route vers l'hôte "ipx4" via l'interface SLIP (en supposant que
-"ipx4" est l'hôte SLIP).
+ajoute une route vers l'hÃ´te "ipx4" via l'interface SLIP (en supposant que
+"ipx4" est l'hÃ´te SLIP).
 
 .TP
 .B route add -net 192.57.66.0 netmask 255.255.255.0 gw ipx4
-Cette commande route le réseau "192.57.66.x" par l'ancienne route vers l'interface SLIP.
+Cette commande route le rÃ©seau "192.57.66.x" par l'ancienne route vers l'interface SLIP.
 
 .TP
 .B route add 224.0.0.0 netmask 240.0.0.0 dev eth0
-Ceci est une commande mal documentée et les gens savent ce qu'il faut
-faire? Ceci force toutes les routes IP des classes D (multicast) à
+Ceci est une commande mal documentÃ©e et les gens savent ce qu'il faut
+faire? Ceci force toutes les routes IP des classes D (multicast) Ã 
 passer par "eth0". C'est la configuration correcte, normale pour un noyau
 supportant le multicast.
 
 .TP
 .B route add 10.0.0.0 netmask 255.0.0.0 reject
-Installe une route 'rejetée' pour le réseau privé "10.x.x.x."
+Installe une route 'rejetÃ©e' pour le rÃ©seau privÃ© "10.x.x.x."
 
 .LP
 .SH RESULTATS
-Le contenu des tables de routage du noyaus est affiché en colonnes comme
+Le contenu des tables de routage du noyaus est affichÃ© en colonnes comme
 suit
 .TP
 .B Destination     
-Le réseau ou hôte destination.
+Le rÃ©seau ou hÃ´te destination.
 .TP
 .B Gateway
-L'adresse de la passerelle ou '*' si indéfini.
+L'adresse de la passerelle ou '*' si indÃ©fini.
 .TP
 .B Genmask         
-Le masque de réseau pour le réseau destinataire; '255.255.255.255' pour un hôte
-et '0.0.0.0' pour la route par défaut (
+Le masque de rÃ©seau pour le rÃ©seau destinataire; '255.255.255.255' pour un hÃ´te
+et '0.0.0.0' pour la route par dÃ©faut (
 .B default
 ).
 .TP
@@ -254,63 +254,63 @@ Les indicateurs possibles sont
 .br
 .B H
 (la cible est un 
-.BR hôte )
+.BR hÃ´te )
 .br
 .B G
 (utilise comme
 .BR passerelle )
 .br
 .B R
-.RB ( rétablit 
+.RB ( rÃ©tablit 
 la route pour le routage dynamique)
 .br
 .B D
 .RB ( dynamiquement
-configurée par le démon ou par redirect)
+configurÃ©e par le dÃ©mon ou par redirect)
 .br
 .B M
-.RB ( modifiée
-par le démon de routage ou par redirect)
+.RB ( modifiÃ©e
+par le dÃ©mon de routage ou par redirect)
 .br
 .B !
-.RB ( rejète
+.RB ( rejÃ¨te
 la route)
 .TP
 .B Metric 
-La 'distance' à la cible (habituellement comptée en hops). Ce n'est pas
-utilisé par les noyaux récents, mais peut-être requis par certains démons
+La 'distance' Ã  la cible (habituellement comptÃ©e en hops). Ce n'est pas
+utilisÃ© par les noyaux rÃ©cents, mais peut-Ãªtre requis par certains dÃ©mons
 de routage.
 .TP
 .B Ref    
-Nombre de références à cette route. (Pas utilisé dans le noyau Linux.)
+Nombre de rÃ©fÃ©rences Ã  cette route. (Pas utilisÃ© dans le noyau Linux.)
 .TP
 .B Use
 Count of lookups for the route.  Depending on the use of -F and -C this will
 be either route cache misses (-F) or hits (-C).
 .TP
 .B Iface
-Interface vers laquelle les paquets empruntant cette route seront envoyés.
+Interface vers laquelle les paquets empruntant cette route seront envoyÃ©s.
 .TP
 .B MSS 
-Taille de segment maximum par défaut pour les connexions TCP sur cette
+Taille de segment maximum par dÃ©faut pour les connexions TCP sur cette
 route.
 .TP
 .B Window  
-Taille de fenêtre par défaut pour les connexions TCP sur cette route.
+Taille de fenÃªtre par dÃ©faut pour les connexions TCP sur cette route.
 .TP
 .B irtt
 RTT Initial (Round Trip Time). Le noyau utilise ceci pour essayer les
-meilleurs paramètres protocolaires TCP sans attendre de réponse
-(éventuellement tardive).
+meilleurs paramÃ¨tres protocolaires TCP sans attendre de rÃ©ponse
+(Ã©ventuellement tardive).
 .TP
-.B HH (seulement caché)
-Le nombre d'entrées ARP et de routes cachées faisant référence au cache
-d'en-tête matériel pour la route en cache. Ce sera la valeur \-1 si aucune adresse
-matérielle n'est nécessaire pour l'interface de la route cachée (p.ex. lo).
+.B HH (seulement cachÃ©)
+Le nombre d'entrÃ©es ARP et de routes cachÃ©es faisant rÃ©fÃ©rence au cache
+d'en-tÃªte matÃ©riel pour la route en cache. Ce sera la valeur \-1 si aucune adresse
+matÃ©rielle n'est nÃ©cessaire pour l'interface de la route cachÃ©e (p.ex. lo).
 .TP
-.B Arp (seulement caché)
-Indique si oui ou non l'adresse matérielle pour la route en cache est encore
-à jour.
+.B Arp (seulement cachÃ©)
+Indique si oui ou non l'adresse matÃ©rielle pour la route en cache est encore
+Ã  jour.
 .LP
 .SH FICHIERS
 .I /proc/net/ipv6_route
@@ -320,15 +320,20 @@ Indique si oui ou non l'adresse matérielle pour la route en cache est encore
 .I /proc/net/rt_cache
 .LP
 .SH VOIR AUSSI
-.I ifconfig(8), netstat(8), arp(8), rarp(8)
+.BR ethers (5),
+.BR arp (8),
+.BR rarp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .LP
 .SH HISTORIQUE
 .B Route 
-pour Linux a été originellement écrit par Fred N. van Kempen,
-<waltje@uwalt.nl.mugnet.org> puis modifié par Johannes Stille et
-Linus Torvalds pour pl15. Alan Cox a ajouté les options concernant 
-la gestion des fenêtres et MSS pour Linux 1.1.22. Le support de irtt 
-et la fusion avec netstat ont été réalisés par Bernd Eckenfels.
+pour Linux a Ã©tÃ© originellement Ã©crit par Fred N. van Kempen,
+<waltje@uwalt.nl.mugnet.org> puis modifiÃ© par Johannes Stille et
+Linus Torvalds pour pl15. Alan Cox a ajoutÃ© les options concernant 
+la gestion des fenÃªtres et MSS pour Linux 1.1.22. Le support de irtt 
+et la fusion avec netstat ont Ã©tÃ© rÃ©alisÃ©s par Bernd Eckenfels.
 .SH AUTEUR
 Maintenu par Phil Blundell <Philip.Blundell@pobox.com>.
 .SH TRADUCTION

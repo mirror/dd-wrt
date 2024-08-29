@@ -20,7 +20,7 @@ int skfd = -1;			/* generic raw socket desc.     */
 
 int sockets_open(int family)
 {
-    struct aftype **aft;
+    struct aftype * const *aft;
     int sfd = -1;
     static int force = -1;
 

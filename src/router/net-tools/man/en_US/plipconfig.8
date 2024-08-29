@@ -1,10 +1,18 @@
-.TH PLIPCONFIG 8 "17 February 1995" "" ""
+.TH PLIPCONFIG 8 "2008\-10\-03" "net\-tools" "Linux System Administrator's Manual"
 .SH NAME
 plipconfig \- fine tune PLIP device parameters 
 .SH SYNOPSIS
-.B "plipconfig interface"
+.B plipconfig interface
+.RB [ nibble
+.IR NN ]
+.RB [ trigger
+.IR NN ]
 .br
-.B "plipconfig interface [nibble NN] [trigger NN] [unit NN]"
+.B plipconfig
+.RB [ \-V ]
+.RB [ \-\-version ]
+.RB [ \-h ]
+.RB [ \-\-help ]
 .SH DESCRIPTION
 .B Plipconfig
 is used to (hopefully) improve PLIP performance by changing the default
@@ -37,7 +45,7 @@ be too fast are those using very long cables. Something you should
 never do as the parallel port is not specified or designed for driving
 long cable runs.
 .SH SEE ALSO
-.I ifconfig(8)
+.BR ifconfig (8)
 .SH BUGS
 Non.
 .SH AUTHOR

@@ -4,13 +4,13 @@ ifconfig \- configura uma interface de rede
 .SH SINOPSE
 .B "ifconfig [interface]"
 .br
-.B "ifconfig interface [aftype] opÁıes | endereÁos ..."
-.SH DESCRI«√O
+.B "ifconfig interface [aftype] op√ß√µes | endere√ßos ..."
+.SH DESCRI√á√ÉO
 .B ifconfig
-È usado para configurar (e posteriormente manter) as interfaces de
-rede. … usado durante o boot para configurar a maioria delas para
-um estado us·vel. Depois disto, È normalmente somente necess·rio
-durante depuraÁıes ou quando for necess·ria uma configuraÁ„o fina
+√© usado para configurar (e posteriormente manter) as interfaces de
+rede. √â usado durante o boot para configurar a maioria delas para
+um estado us√°vel. Depois disto, √© normalmente somente necess√°rio
+durante depura√ß√µes ou quando for necess√°ria uma configura√ß√£o fina
 do sistema.
 .LP
 Se nenhum argumento for informado,
@@ -19,12 +19,12 @@ somente mostra o estado das interfaces correntemente definidas. Se
 um argumento
 .B interface
 for informado, ele mostra somente o estado da interface informada. De
-outra forma ele assume que os par‚metros devem ser configurados.
-.SH FamÌlias de EndereÁamento
-Se o primeiro argumento apÛs o nome da interface for reconhecido
-como um nome de uma famÌlia de endereÁamento suportada, esta famÌlia
-de endereÁamento È usada na decodificaÁ„o e apresentaÁ„o de todos
-os endereÁos de protocolos. Atualmente as famÌlias de endereÁamento
+outra forma ele assume que os par√¢metros devem ser configurados.
+.SH Fam√≠lias de Endere√ßamento
+Se o primeiro argumento ap√≥s o nome da interface for reconhecido
+como um nome de uma fam√≠lia de endere√ßamento suportada, esta fam√≠lia
+de endere√ßamento √© usada na decodifica√ß√£o e apresenta√ß√£o de todos
+os endere√ßos de protocolos. Atualmente as fam√≠lias de endere√ßamento
 suportadas incluem
 .B inet
 (TCP/IP, default) 
@@ -36,95 +36,91 @@ suportadas incluem
 (Novell IPX) and
 .B netrom
 (AMPR Packet radio).
-.SH OP«’ES
+.SH OP√á√ïES
 .TP
 .B interface
-O nome da interface de rede. Usualmente È um nome como
+O nome da interface de rede. Usualmente √© um nome como
 .B eth0
 ,
 .B sl3
 ou algo parecido: um nome de driver de dispositivo seguido por um
-n˙mero.
+n√∫mero.
 .TP
 .B up 
-Esta flag causa a ativaÁ„o da interface. … especificada
-implicitamente se a interface receber um novo endereÁo (veja
+Esta flag causa a ativa√ß√£o da interface. √â especificada
+implicitamente se a interface receber um novo endere√ßo (veja
 abaixo).
 .TP
 .B down 
-Esta flag desativa o driver desta interface, È ˙til quando alguma
-coisa comeÁar a ter problemas.
+Esta flag desativa o driver desta interface, √© √∫til quando alguma
+coisa come√ßar a ter problemas.
 .TP
 .B "[\-]arp" 
 Habilita ou desabilita o uso do protocolo ARP para esta interface. Se
-o sinal de menos (\-) estiver presente a opÁ„o È desligada.
+o sinal de menos (\-) estiver presente a op√ß√£o √© desligada.
 .TP
 .B "[\-]trailers" 
-Habilita ou desabilita o uso de trailer em frames Ethernet. N„o È
-utilizada na implementaÁ„o atual do pacote net-tools.
+Habilita ou desabilita o uso de trailer em frames Ethernet. N√£o √©
+utilizada na implementa√ß√£o atual do pacote net-tools.
 .TP
-.B "[\-]allmulti" 
+.B "[\-]promisc"
 Habilita ou desabilita o modo
 .B promiscuous
-da interface. Isto significa que todos os frames passar„o pela camada
-de rede do kernel, permitindo monitoraÁ„o da rede.
-.TP
-.B "metric N" 
-Este par‚metro configura a mÈtrica da interface. N„o È usado atualmente,
-mas ser· implementado no futuro.
+da interface. Isto significa que todos os frames passar√£o pela camada
+de rede do kernel, permitindo monitora√ß√£o da rede.
 .TP
 .B "mtu N" 
-Este par‚metro configura a Unidade M·xima de TransferÍncia (MTU) de uma
-interface. Para Ethernet È um n˙mero entre 1000-2000 (o padr„o È
-1500). Para SLIP, use algo entre 200 e 4096. Note que a implementaÁ„o
-atual n„o manipula fragmentaÁ„o IP ainda, ent„o È melhor configurar
+Este par√¢metro configura a Unidade M√°xima de Transfer√™ncia (MTU) de uma
+interface. Para Ethernet √© um n√∫mero entre 1000-2000 (o padr√£o √©
+1500). Para SLIP, use algo entre 200 e 4096. Note que a implementa√ß√£o
+atual n√£o manipula fragmenta√ß√£o IP ainda, ent√£o √© melhor configurar
 a MTU com um tamanho adequado!
 .TP
 .B "dstaddr addr"
-Configura o endereÁo IP do "outro lado" no caso de um link Ponto-A-Ponto,
+Configura o endere√ßo IP do "outro lado" no caso de um link Ponto-A-Ponto,
 como PPP. Esta palavra-chave tornou-se obsoleta e deve ser usada a nova 
 palavra-chave
 .BR pointopoint .
 .TP
 .B "netmask addr"
-Configura a m·scara de rede IP para esta interface. Este valor assume o
-padr„o usual das classes A, B ou C (deduzindo-o a partir do endereÁo
+Configura a m√°scara de rede IP para esta interface. Este valor assume o
+padr√£o usual das classes A, B ou C (deduzindo-o a partir do endere√ßo
 IP da interface), mas pode ser configurado para qualquer valor para o
 uso de sub-redes.
 
 .TP
 .B "irq addr"
-Configura a linha de interrupÁ„o (IRQ) usada por este dispositivo. Muitos
-dispositivos n„o suportam configuraÁ„o din‚mica de IRQ.
+Configura a linha de interrup√ß√£o (IRQ) usada por este dispositivo. Muitos
+dispositivos n√£o suportam configura√ß√£o din√¢mica de IRQ.
 .TP
-.B "[-]broadcast [endereÁo]"
-Se o argumento endereÁo for informado, configura o endereÁo de protocolo
+.B "[-]broadcast [endere√ßo]"
+Se o argumento endere√ßo for informado, configura o endere√ßo de protocolo
 broadcast para esta interface. De outra forma ele somente configura a flag
 .B IFF_BROADCAST
 da interface.  Se a palavra-chave for precedida por um sinal de menos
 .B (-)
-, ent„o a flag È removida.
+, ent√£o a flag √© removida.
 .TP
-.B "[-]pointopoint [endereÁo]"
+.B "[-]pointopoint [endere√ßo]"
 Esta palavra-chave habilita o modo
 .B ponto-a-ponto
-da interface, significando que ela È um link direto entre duas m·quinas
-sem ninguÈm ouvindo (ou, pelo menos nÛs esperamos que este seja o caso
+da interface, significando que ela √© um link direto entre duas m√°quinas
+sem ningu√©m ouvindo (ou, pelo menos n√≥s esperamos que este seja o caso
 :-)
 .BR
-Se o argumento endereÁo for informado, configura o endereÁo de protocolo
+Se o argumento endere√ßo for informado, configura o endere√ßo de protocolo
 do outro lado do link, exatamente como a palavra-chave obsoleta
 .B dstaddr
 faz. De outra forma, ela somente configura a flag
 .B IFF_POINTOPOINT
 da interface. Se a palavra-chave for precedida por um sinal de menos
 .B (-)
-, ent„o a flag È removida.
+, ent√£o a flag √© removida.
 .TP
 .B "hw"
-Configura o endereÁo de hardware para esta interface, se o driver do
-dispositivo suportar esta operaÁ„o. A palavra-chave deve ser seguida
-pelo nome da classe do hardware e o equivalente em ASCII do endereÁo
+Configura o endere√ßo de hardware para esta interface, se o driver do
+dispositivo suportar esta opera√ß√£o. A palavra-chave deve ser seguida
+pelo nome da classe do hardware e o equivalente em ASCII do endere√ßo
 de hardware. As classes de hardware atualmente suportadas incluem
 .B ether
 (Ethernet),
@@ -136,45 +132,40 @@ e
 (AMPR NET/ROM).
 .TP
 .B multicast
-Inicializa a flag de multicast para a interface. Normalmente, isto n„o ser·
-necess·rio j· que os drivers ajustam as flags corretas por si sÛ.
+Inicializa a flag de multicast para a interface. Normalmente, isto n√£o ser√°
+necess√°rio j√° que os drivers ajustam as flags corretas por si s√≥.
 .TP
-.B endereÁo
-O nome ou endereÁo IP da m·quina (um nome de m·quina ser· traduzido para
-um  endereÁo IP) da interface. Este par‚metro È necess·rio, apesar
-da sintaxe atualmente n„o requisit·-lo.
+.B endere√ßo
+O nome ou endere√ßo IP da m√°quina (um nome de m√°quina ser√° traduzido para
+um  endere√ßo IP) da interface. Este par√¢metro √© necess√°rio, apesar
+da sintaxe atualmente n√£o requisit√°-lo.
 .SH NOTAS
-
-+Since kernel release 2.2 there are no explicit interface statistics for
-+alias interfaces anymore. The statistics printed for the original address
-+are shared with all alias addresses on the same device. If you want per-address
-+statistics you should add explicit accounting
-+rules for the address using the
-+.BR ipchains(8)
-+command.
-
-Deste o kernel 2.2 n„o existem mais estatÌsticas explÌcitas para os apelidos (aliases)
-de interfaces. As estatÌsticas mostradas para o endereÁo original s„o compartilhadas
-como todos os endereÁos associados ao mesmo dispositivo. Se desejar estatÌsticas
-por endereÁo vocÍ deve explicitamente adicionar regras de contabilizaÁ„o para os
-endereÁos usando o comando
-.BR ipchains(8)
+Deste o kernel 2.2 n√£o existem mais estat√≠sticas expl√≠citas para os apelidos (aliases)
+de interfaces. As estat√≠sticas mostradas para o endere√ßo original s√£o compartilhadas
+como todos os endere√ßos associados ao mesmo dispositivo. Se desejar estat√≠sticas
+por endere√ßo voc√™ deve explicitamente adicionar regras de contabiliza√ß√£o para os
+endere√ßos usando o comando
+.BR iptables(8)
 .
 
 .SH ARQUIVOS
-.I /proc/net/socket 
-.br
 .I /proc/net/dev
 .SH BUGS
-Os endereÁos appletalk DDP e IPX ser„o mostrados, mas n„o podem ser alterados
+Os endere√ßos appletalk DDP e IPX ser√£o mostrados, mas n√£o podem ser alterados
 com este comando.
-.SH VEJA TAMB…M
-route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.SH VEJA TAMB√âM
+.BR route (8),
+.BR netstat (8),
+.BR arp (8),
+.BR rarp (8),
+.BR iptables (8),
+.BR ifup (8),
+.BR interfaces (5)
 .SH AUTORES
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
 Alan Cox, <Alan.Cox@linux.org>
-.SH TRADU«√O E REVIS√O PARA A LÕNGUA PORTUGUESA
-Arnaldo Carvalho de Melo <acme@conectiva.com.br> (traduÁ„o)
+.SH TRADU√á√ÉO E REVIS√ÉO PARA A L√çNGUA PORTUGUESA
+Arnaldo Carvalho de Melo <acme@conectiva.com.br> (tradu√ß√£o)
 .BR
-Jorge Luiz Godoy Filho <jorge@bestway.com.br> (revis„o)
+Jorge Luiz Godoy Filho <jorge@bestway.com.br> (revis√£o)
 

@@ -73,9 +73,6 @@ Modus.  Ist er eingeschaltet, so werden alle Multicastpakete vom Netzwerk
 empfangen unabh\(:angig davon, ob sie an die Schnittstelle adressiert sind
 oder nicht.
 .TP
-.B "metric N"
-Dieses Argument setzt den Metrik-Wert f\(:ur die Schnittstelle auf N.
-.TP
 .B "mtu N"
 Dieses Argument setzt die Maximum Transfer Unit (MTU) der Schnittstelle,
 das ist das gr\(:o\(sste Paket, dass gesendet werden kann.
@@ -98,7 +95,7 @@ F\(:ugt der Schnittstelle eine IPv6-Adresse zu.
 .B "del addr/prefixlen"
 Entfernt eine IPv6-Adresse von der Schnittstelle.
 .TP
-.B "tunnel aa.bb.cc.dd"
+.B "tunnel ::aa.bb.cc.dd"
 Erzeugt ein neues SIT (IPv6-in-IPv4) Ger\(:at, das Pakete zum angegebenen
 Ziel tunnelt.
 .TP
@@ -180,12 +177,10 @@ Seit Kernel Version 2.2 gibt es keine expliziten Statistiken f\(:ur
 Schnittstellenaliase mehr.  Die Statistiken f\(:ur die Originaladresse werden
 mit allen Aliasen auf das gleiche Ger\(:at geteilt.  Um Statistiken per
 Adresse zu erhalten sollte explizite EIntr\(:age f\(:ur die Adresse mit dem
-.BR ipchains(8)
+.BR iptables(8)
 Kommando gemacht werden.
 
 .SH DATEIEN
-.I /proc/net/socket 
-.br
 .I /proc/net/dev
 .br
 .I /proc/net/if_inet6
@@ -193,7 +188,13 @@ Kommando gemacht werden.
 W\(:ahrend AppleTalk DDP und IPX Adressen angezeigt werden, k\(:onnen sie mit
 diesem Kommando nicht ge\(:andert werden.
 .SH SIEHE AUCH
-route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.BR route (8),
+.BR netstat (8),
+.BR arp (8),
+.BR rarp (8),
+.BR iptables (8),
+.BR ifup (8),
+.BR interfaces (5)
 .SH AUTOREN
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
 .br
@@ -203,4 +204,4 @@ Phil Blundell, <Philip.Blundell@pobox.com>
 .br
 Andi Kleen, 
 .SH \(:Ubersetzung
-Ralf B\(:achle <ralf@gnu.org>
+Ralf B\(:achle <ralf@linux-mips.org>

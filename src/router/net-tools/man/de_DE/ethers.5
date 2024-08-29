@@ -1,13 +1,12 @@
 .\"
 .\" Original by ??
 .\"
-.\" German translation by Ralf Baechle (ralf@gnu.org)
+.\" German translation by Ralf Baechle (ralf@linux-mips.org)
 .\"
 .TH ETHERS 5 "6. M\(:arz, 1999" "" "Dateiformate"
-.SH NAME \"{{{roff}}}\"{{{
+.SH NAME
 ethers \- Zuordnung von Ethernetadressen nach IP-Adressen 
-.\"}}}
-.SH BESCHREIBUNG \"{{{
+.SH BESCHREIBUNG
 \fB/etc/ethers\fP enth\(:alt 48 bit Ethernetadressen und die dazu equivalenten
 IP-Nummern, eine Zeile pro IP-Nummer.
 .sp
@@ -23,15 +22,12 @@ ein Kommentar, der sich bis zum Ende der Zeile erstreckt.  Die
 Byte der Adresse repr\(:asentiert, die in Netzwerksbyteorder (big-endian) ist.
 Die \fIIP-Nummer\fP kann ein Hostname, der \(:uber DNS resolviert werden kann
 oder eine IP-Adresse in in Punktnotation sein.
-.\"}}}
-.SH BEISPIEL \"{{{
+.SH BEISPIEL
 08:00:20:00:61:CA  pal
-.\"}}}
-.SH DATEIEN \"{{{
+.SH DATEIEN
 /etc/ethers
-.\"}}}
-.SH "SIEHE AUCH" \"{{{
-rarp(8)
-.\"}}}
+.SH "SIEHE AUCH"
+.BR arp (8),
+.BR rarp (8)
 .SH \(:Ubersetzung
-Ralf B\(:achle <ralf@gnu.org>
+Ralf B\(:achle <ralf@linux-mips.org>

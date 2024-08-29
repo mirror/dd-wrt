@@ -1,11 +1,11 @@
 /*
- * lib/hdlclapb.c 
+ * lib/hdlclapb.c
  *              This file contains the HDLC/LAPB support for the NET-2 base
  *              distribution.
  *
  * Version:    $Id: hdlclapb.c,v 1.5 2000/03/05 11:26:02 philip Exp $
  *
- * Original Author:     
+ * Original Author:
  *              Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
  *              Copyright 1993 MicroWalt Corporation
  *

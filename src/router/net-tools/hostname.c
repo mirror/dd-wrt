@@ -6,23 +6,22 @@
  * Usage:       hostname [-d|-f|-s|-a|-i|-y|-n]
  *              hostname [-h|-V]
  *              hostname {name|-F file}
- *              dnsdmoainname   
+ *              dnsdmoainname
  *              nisdomainname {name|-F file}
  *
- * Version:     hostname 1.96 (1996-02-18)
+ * Version:     hostname 1.101 (2003-10-11)
  *
  * Author:      Peter Tobias <tobias@et-inf.fho-emden.de>
  *
  * Changes:
- *      {1.90}  Peter Tobias :          Added -a and -i options.
- *      {1.91}  Bernd Eckenfels :       -v,-V rewritten, long_opts 
- *                                      (major rewrite), usage.
- *960120 {1.95} Bernd Eckenfels :       -y/nisdomainname - support for get/
- *                                      setdomainname added 
- *960218 {1.96} Bernd Eckenfels :       netinet/in.h added
- *980629 {1.97} Arnaldo Carvalho de Melo : gettext instead of catgets for i18n
- *20000213 {1.99} Arnaldo Carvalho de Melo : fixed some i18n strings
+ *         {1.90}  Peter Tobias : Added -a and -i options.
+ *         {1.91}  Bernd Eckenfels : -v,-V rewritten, long_opts (major rewrite), usage.
+ *19960120 {1.95}  Bernd Eckenfels : -y/nisdomainname - support for get/setdomainname added
+ *19960218 {1.96}  Bernd Eckenfels : netinet/in.h added
+ *19980629 {1.97}  Arnaldo Carvalho de Melo : gettext instead of catgets for i18n
+ *20000213 {1.99}  Arnaldo Carvalho de Melo : fixed some i18n strings
  *20010404 {1.100} Arnaldo Carvalho de Melo: use setlocale
+ *20031011 {1.101} Maik Broemme: gcc 3.x fixes (default: break)
  *
  *              This program is free software; you can redistribute it
  *              and/or  modify it under  the terms of  the GNU General
@@ -31,7 +30,10 @@
  *              your option) any later version.
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
 #include <netdb.h>
@@ -41,30 +43,29 @@
 #include <arpa/inet.h>
 #include "config.h"
 #include "version.h"
+#include "net-support.h"
 #include "../intl.h"
+
+#if HAVE_AFINET6
+#include <sys/socket.h> /* for PF_INET6 */
+#include <sys/types.h>  /* for inet_ntop */
+#endif
 
 #if HAVE_AFDECnet
 #include <netdnet/dn.h>
 #endif
 
-char *Release = RELEASE, *Version = "hostname 1.100 (2001-04-14)";
+static char *Release = RELEASE;
 
 static char *program_name;
 static int opt_v;
-
-static void sethname(char *);
-static void setdname(char *);
-static void showhname(char *, int);
-static void usage(void);
-static void version(void);
-static void setfilename(char *, int);
 
 #define SETHOST		1
 #define SETDOMAIN	2
 #define SETNODE		3
 
 #if HAVE_AFDECnet
-static void setnname(char *nname)
+static void setnname(const char *nname)
 {
     if (opt_v)
         fprintf(stderr, _("Setting nodename to `%s'\n"),
@@ -72,19 +73,21 @@ static void setnname(char *nname)
     if (setnodename(nname, strlen(nname))) {
         switch(errno) {
         case EPERM:
-            fprintf(stderr, _("%s: you must be root to change the node name\n"), program_name);
+            fprintf(stderr, _("%s: you don't have permission to set the node name\n"), program_name);
             break;
         case EINVAL:
             fprintf(stderr, _("%s: name too long\n"), program_name);
             break;
         default:
+	    perror(program_name);
+	    break;
         }
 	exit(1);
     }
 }
 #endif /* HAVE_AFDECnet */
 
-static void sethname(char *hname)
+static void sethname(const char *hname)
 {
     if (opt_v)
 	fprintf(stderr, _("Setting hostname to `%s'\n"),
@@ -92,18 +95,20 @@ static void sethname(char *hname)
     if (sethostname(hname, strlen(hname))) {
 	switch (errno) {
 	case EPERM:
-	    fprintf(stderr, _("%s: you must be root to change the host name\n"), program_name);
+	    fprintf(stderr, _("%s: you don't have permission to set the host name\n"), program_name);
 	    break;
 	case EINVAL:
 	    fprintf(stderr, _("%s: name too long\n"), program_name);
 	    break;
 	default:
+	    perror(program_name);
+	    break;
 	}
 	exit(1);
-    };
+    }
 }
 
-static void setdname(char *dname)
+static void setdname(const char *dname)
 {
     if (opt_v)
 	fprintf(stderr, _("Setting domainname to `%s'\n"),
@@ -111,29 +116,47 @@ static void setdname(char *dname)
     if (setdomainname(dname, strlen(dname))) {
 	switch (errno) {
 	case EPERM:
-	    fprintf(stderr, _("%s: you must be root to change the domain name\n"), program_name);
+	    fprintf(stderr, _("%s: you don't have permission to set the domain name\n"), program_name);
 	    break;
 	case EINVAL:
 	    fprintf(stderr, _("%s: name too long\n"), program_name);
 	    break;
 	default:
+	    perror(program_name);
+	    break;
 	}
 	exit(1);
-    };
+    }
 }
 
-static void showhname(char *hname, int c)
+static void showhname(const char *hname, int c)
 {
     struct hostent *hp;
-    register char *p, **alias;
-    struct in_addr **ip;
+    char *p, **alias;
+#if HAVE_AFINET6
+    char addr[INET6_ADDRSTRLEN + 1];
+#else
+    char addr[INET_ADDRSTRLEN + 1];
+#endif
+    socklen_t len;
+    char **addrp;
+    bool isfirst = true;
+
+    /* We use -1 so we can guarantee the buffer is NUL terminated. */
+    len = sizeof(addr) - 1;
+    addr[len] = '\0';
 
     if (opt_v)
 	fprintf(stderr, _("Resolving `%s' ...\n"), hname);
-    if (!(hp = gethostbyname(hname))) {
+    if (
+#if HAVE_AFINET6
+        !(hp = gethostbyname2(hname, PF_INET6)) &&
+#endif
+        !(hp = gethostbyname(hname))) {
 	herror(program_name);
 	exit(1);
     }
+
     if (opt_v) {
 	fprintf(stderr, _("Result: h_name=`%s'\n"),
 		hp->h_name);
@@ -143,23 +166,45 @@ static void showhname(char *hname, int c)
 	    fprintf(stderr, _("Result: h_aliases=`%s'\n"),
 		    *alias++);
 
-	ip = (struct in_addr **) hp->h_addr_list;
-	while (ip[0])
-	    fprintf(stderr, _("Result: h_addr_list=`%s'\n"),
-		    inet_ntoa(**ip++));
+	for (addrp = hp->h_addr_list; *addrp; ++addrp) {
+	    if (inet_ntop(hp->h_addrtype, *addrp, addr, len))
+		fprintf(stderr, _("Result: h_addr_list=`%s'\n"), addr);
+	    else if (errno == EAFNOSUPPORT)
+		fprintf(stderr, _("%s: protocol family not supported\n"),
+			program_name);
+	    else if (errno == ENOSPC)
+		fprintf(stderr, _("%s: name too long\n"), program_name);
+	}
     }
     if (!(p = strchr(hp->h_name, '.')) && (c == 'd'))
 	return;
 
     switch (c) {
     case 'a':
-	while (hp->h_aliases[0])
-	    printf("%s ", *hp->h_aliases++);
+	while (hp->h_aliases[0]) {
+	    if (isfirst) {
+		printf("%s", *hp->h_aliases++);
+		isfirst = false;
+	    } else
+	        printf(" %s", *hp->h_aliases++);
+	}
 	printf("\n");
 	break;
     case 'i':
-	while (hp->h_addr_list[0])
-	    printf("%s ", inet_ntoa(*(struct in_addr *) *hp->h_addr_list++));
+	for (addrp = hp->h_addr_list; *addrp; ++addrp) {
+	    if (inet_ntop(hp->h_addrtype, *addrp, addr, len)) {
+		if (isfirst) {
+		    printf("%s", addr);
+		    isfirst = false;
+		} else
+		    printf(" %s", addr);
+	    }
+	    else if (errno == EAFNOSUPPORT)
+		fprintf(stderr, _("%s: protocol family not supported\n"),
+			program_name);
+	    else if (errno == ENOSPC)
+		fprintf(stderr, _("%s: name too long\n"), program_name);
+	}
 	printf("\n");
 	break;
     case 'd':
@@ -168,19 +213,13 @@ static void showhname(char *hname, int c)
     case 'f':
 	printf("%s\n", hp->h_name);
 	break;
-    case 's':
-	if (p != NULL)
-	    *p = '\0';
-	printf("%s\n", hp->h_name);
-	break;
-    default:
     }
 }
 
-static void setfilename(char *name, int what)
+static void setfilename(const char *name, int what)
 {
-    register FILE *fd;
-    register char *p;
+    FILE *fd;
+    char *p;
     char fline[MAXHOSTNAMELEN];
 
     if ((fd = fopen(name, "r")) != NULL) {
@@ -215,39 +254,40 @@ static void setfilename(char *name, int what)
 
 static void version(void)
 {
-    fprintf(stderr, "%s\n%s\n", Release, Version);
-    exit(5); /* E_VERSION */
+    printf("%s\n", Release);
+    exit(E_VERSION);
 }
 
-static void usage(void)
+static void usage(int rc)
 {
-    fprintf(stderr, _("Usage: hostname [-v] {hostname|-F file}      set hostname (from file)\n"));
-    fprintf(stderr, _("       domainname [-v] {nisdomain|-F file}   set NIS domainname (from file)\n"));
+    FILE *fp = rc ? stderr : stdout;
+    fprintf(fp, _("Usage: hostname [-v] {hostname|-F file}      set hostname (from file)\n"));
+    fprintf(fp, _("       domainname [-v] {nisdomain|-F file}   set NIS domainname (from file)\n"));
 #if HAVE_AFDECnet
-    fprintf(stderr, _("       nodename [-v] {nodename|-F file}      set DECnet node name (from file)\n"));
+    fprintf(fp, _("       nodename [-v] {nodename|-F file}      set DECnet node name (from file)\n"));
 #endif
-    fprintf(stderr, _("       hostname [-v] [-d|-f|-s|-a|-i|-y|-n]  display formatted name\n"));
-    fprintf(stderr, _("       hostname [-v]                         display hostname\n\n"));
-    fprintf(stderr, _("       hostname -V|--version|-h|--help       print info and exit\n\n"));
-    fprintf(stderr, _("    dnsdomainname=hostname -d, {yp,nis,}domainname=hostname -y\n\n"));
-    fprintf(stderr, _("    -s, --short           short host name\n"));
-    fprintf(stderr, _("    -a, --alias           alias names\n"));
-    fprintf(stderr, _("    -i, --ip-address      addresses for the hostname\n"));
-    fprintf(stderr, _("    -f, --fqdn, --long    long host name (FQDN)\n"));
-    fprintf(stderr, _("    -d, --domain          DNS domain name\n"));
-    fprintf(stderr, _("    -y, --yp, --nis       NIS/YP domainname\n"));
+    fprintf(fp, _("       hostname [-v] [-d|-f|-s|-a|-i|-y|-n]  display formatted name\n"));
+    fprintf(fp, _("       hostname [-v]                         display hostname\n\n"));
+    fprintf(fp, _("       hostname -V|--version|-h|--help       print info and exit\n\n"));
+    fprintf(fp, _("    dnsdomainname=hostname -d, {yp,nis,}domainname=hostname -y\n\n"));
+    fprintf(fp, _("    -s, --short           short host name\n"));
+    fprintf(fp, _("    -a, --alias           alias names\n"));
+    fprintf(fp, _("    -i, --ip-address      addresses for the hostname\n"));
+    fprintf(fp, _("    -f, --fqdn, --long    long host name (FQDN)\n"));
+    fprintf(fp, _("    -d, --domain          DNS domain name\n"));
+    fprintf(fp, _("    -y, --yp, --nis       NIS/YP domainname\n"));
 #if HAVE_AFDECnet
-    fprintf(stderr, _("    -n, --node            DECnet node name\n"));
+    fprintf(fp, _("    -n, --node            DECnet node name\n"));
 #endif /* HAVE_AFDECnet */
-    fprintf(stderr, _("    -F, --file            read hostname or NIS domainname from given file\n\n"));
-    fprintf(stderr, _(
+    fprintf(fp, _("    -F, --file            read hostname or NIS domainname from given file\n\n"));
+    fprintf(fp, _(
 "   This command can read or set the hostname or the NIS domainname. You can\n"
 "   also read the DNS domain or the FQDN (fully qualified domain name).\n"
 "   Unless you are using bind or NIS for host lookups you can change the\n"
 "   FQDN (Fully Qualified Domain Name) and the DNS domain name (which is\n"
 "   part of the FQDN) in the /etc/hosts file.\n"));
 
-    exit(4); /* E_USAGE */
+    exit(rc);
 }
 
 
@@ -326,11 +366,14 @@ int main(int argc, char **argv)
 	    break;
 	case 'V':
 	    version();
-	case '?':
+	    break; // not reached
 	case 'h':
+	    usage(E_USAGE);
+	    break; // not reached
+	case '?':
 	default:
-	    usage();
-
+	    usage(E_OPTERR);
+	    break; // not reached
 	};
 
 
@@ -359,7 +402,12 @@ int main(int argc, char **argv)
 	    fprintf(stderr, _("gethostname()=`%s'\n"), myname);
 	if (!type)
 	    printf("%s\n", myname);
-	else
+	else if (type == 's') {
+	    char *p = strchr(myname, '.');
+	    if (p)
+		*p = '\0';
+	    printf("%s\n", myname);
+	} else
 	    showhname(myname, type);
 	break;
     case 3:
@@ -371,7 +419,10 @@ int main(int argc, char **argv)
 	    setdname(argv[optind]);
 	    break;
 	}
-	getdomainname(myname, sizeof(myname));
+	if (getdomainname(myname, sizeof(myname)) < 0) {
+	    perror("getdomainname()");
+	    exit(1);
+	}
 	if (opt_v)
 	    fprintf(stderr, _("getdomainname()=`%s'\n"), myname);
 	printf("%s\n", myname);

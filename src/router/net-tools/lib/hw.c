@@ -2,7 +2,7 @@
  * lib/hw.c   This file contains the top-level part of the hardware
  *              support functions module.
  *
- * Version:     $Id: hw.c,v 1.17 2000/05/20 13:38:10 pb Exp $
+ * Version:     $Id: hw.c,v 1.19 2008/10/03 01:52:04 ecki Exp $
  *
  * Maintainer:  Bernd 'eckes' Eckenfels, <net-tools@lina.inka.de>
  *
@@ -73,7 +73,11 @@ extern struct hwtype irda_hwtype;
 
 extern struct hwtype ec_hwtype;
 
-static struct hwtype *hwtypes[] =
+extern struct hwtype ib_hwtype;
+
+extern struct hwtype eui64_hwtype;
+
+static const struct hwtype * const hwtypes[] =
 {
 
     &loop_hwtype,
@@ -97,7 +101,7 @@ static struct hwtype *hwtypes[] =
 #if HAVE_HWTR
     &tr_hwtype,
 #ifdef ARPHRD_IEEE802_TR
-    &tr_hwtype1, 
+    &tr_hwtype1,
 #endif
 #endif
 #if HAVE_HWAX25
@@ -144,13 +148,19 @@ static struct hwtype *hwtypes[] =
 #if HAVE_HWX25
     &x25_hwtype,
 #endif
+#if HAVE_HWIB
+    &ib_hwtype,
+#endif
+#if HAVE_HWEUI64
+    &eui64_hwtype,
+#endif
     &unspec_hwtype,
     NULL
 };
 
 static short sVhwinit = 0;
 
-void hwinit()
+static void hwinit(void)
 {
     loop_hwtype.title = _("Local Loopback");
     unspec_hwtype.title = _("UNSPEC");
@@ -211,19 +221,25 @@ void hwinit()
 #if HAVE_HWTR
     tr_hwtype.title = _("16/4 Mbps Token Ring");
 #ifdef ARPHRD_IEEE802_TR
-    tr_hwtype1.title = _("16/4 Mbps Token Ring (New)") ; 
+    tr_hwtype1.title = _("16/4 Mbps Token Ring (New)") ;
 #endif
 #endif
 #if HAVE_HWEC
     ec_hwtype.title = _("Econet");
 #endif
+#if HAVE_HWIB
+    ib_hwtype.title = _("InfiniBand");
+#endif
+#if HAVE_HWEUI64
+    eui64_hwtype.title = _("Generic EUI-64");
+#endif
     sVhwinit = 1;
 }
 
 /* Check our hardware type table for this type. */
-struct hwtype *get_hwtype(const char *name)
+const struct hwtype *get_hwtype(const char *name)
 {
-    struct hwtype **hwp;
+    const struct hwtype * const *hwp;
 
     if (!sVhwinit)
 	hwinit();
@@ -239,9 +255,9 @@ struct hwtype *get_hwtype(const char *name)
 
 
 /* Check our hardware type table for this type. */
-struct hwtype *get_hwntype(int type)
+const struct hwtype *get_hwntype(int type)
 {
-    struct hwtype **hwp;
+    const struct hwtype * const *hwp;
 
     if (!sVhwinit)
 	hwinit();
@@ -258,8 +274,8 @@ struct hwtype *get_hwntype(int type)
 /* type: 0=all, 1=ARPable */
 void print_hwlist(int type) {
     int count = 0;
-    char * txt;
-    struct hwtype **hwp;
+    const char * txt;
+    const struct hwtype * const *hwp;
 
     if (!sVhwinit)
 	hwinit();
@@ -269,7 +285,7 @@ void print_hwlist(int type) {
 	if (((type == 1) && ((*hwp)->alen == 0)) || ((*hwp)->type == -1)) {
 		hwp++; continue;
 	}
-	if ((count % 3) == 0) fprintf(stderr,count?"\n    ":"    "); 
+	if ((count % 3) == 0) fprintf(stderr,count?"\n    ":"    ");
         txt = (*hwp)->name; if (!txt) txt = "..";
 	fprintf(stderr,"%s (%s) ",txt,(*hwp)->title);
 	count++;
@@ -279,7 +295,7 @@ void print_hwlist(int type) {
 }
 
 /* return 1 if address is all zeros */
-int hw_null_address(struct hwtype *hw, void *ap)
+int hw_null_address(const struct hwtype *hw, void *ap)
 {
     unsigned int i;
     unsigned char *address = (unsigned char *)ap;

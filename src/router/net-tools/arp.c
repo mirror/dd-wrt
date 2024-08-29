@@ -8,7 +8,7 @@
  *              NET-3 Networking Distribution for the LINUX operating
  *              system.
  *
- * Version:     $Id: arp.c,v 1.20 2001/04/08 17:05:05 pb Exp $
+ * Version:     $Id: arp.c,v 1.27 2009/09/06 22:50:11 vapier Exp $
  *
  * Maintainer:  Bernd 'eckes' Eckenfels, <net-tools@lina.inka.de>
  *
@@ -20,14 +20,14 @@
  *              Andrew Tridgell :       proxy arp netmasks
  *              Bernd Eckenfels :       -n option
  *              Bernd Eckenfels :       Use only /proc for display
- *       {1.60} Bernd Eckenfels :       new arpcode (-i) for 1.3.42 but works 
+ *       {1.60} Bernd Eckenfels :       new arpcode (-i) for 1.3.42 but works
  *                                      with 1.2.x, too
  *       {1.61} Bernd Eckenfels :       more verbose messages
  *       {1.62} Bernd Eckenfels :       check -t for hw adresses and try to
  *                                      explain EINVAL (jeff)
  *970125 {1.63} Bernd Eckenfels :       -a print hardwarename instead of tiltle
  *970201 {1.64} Bernd Eckenfels :       net-features.h support
- *970203 {1.65} Bernd Eckenfels :       "#define" in "#if", 
+ *970203 {1.65} Bernd Eckenfels :       "#define" in "#if",
  *                                      -H|-A additional to -t|-p
  *970214 {1.66} Bernd Eckenfels :       Fix optarg required for -H and -A
  *970412 {1.67} Bernd Eckenfels :       device=""; is default
@@ -35,7 +35,7 @@
  *970517 {1.69} Bernd Eckenfels :       usage() fixed
  *970622 {1.70} Bernd Eckenfels :       arp -d priv
  *970106 {1.80} Bernd Eckenfels :       new syntax without -D and with "dev <If>",
- *                                      ATF_MAGIC, ATF_DONTPUB support. 
+ *                                      ATF_MAGIC, ATF_DONTPUB support.
  *                                      Typo fix (Debian Bug#5728 Giuliano Procida)
  *970803 {1.81} Bernd Eckenfels :       removed junk comment line 1
  *970925 {1.82} Bernd Eckenfels :       include fix for libc6
@@ -80,7 +80,7 @@
 #define FEATURE_ARP
 #include "lib/net-features.h"
 
-char *Release = RELEASE, *Version = "arp 1.88 (2001-04-04)";
+static char *Release = RELEASE;
 
 int opt_n = 0;			/* do not resolve addresses     */
 int opt_N = 0;			/* use symbolic names           */
@@ -88,21 +88,22 @@ int opt_v = 0;			/* debugging output flag        */
 int opt_D = 0;			/* HW-address is devicename     */
 int opt_e = 0;			/* 0=BSD output, 1=new linux    */
 int opt_a = 0;			/* all entries, substring match */
-struct aftype *ap;		/* current address family       */
-struct hwtype *hw;		/* current hardware type        */
+const struct aftype *ap;/* current address family       */
+const struct hwtype *hw;/* current hardware type        */
 int sockfd = 0;			/* active socket descriptor     */
 int hw_set = 0;			/* flag if hw-type was set (-H) */
 char device[16] = "";		/* current device               */
-static void usage(void);
+static void usage(int);
 
 /* Delete an entry from the ARP cache. */
 static int arp_del(char **args)
 {
     char host[128];
     struct arpreq req;
-    struct sockaddr sa;
+    struct sockaddr_storage ss;
+    struct sockaddr *sa = (struct sockaddr *)&ss;
     int flags = 0;
-    int err;
+    int deleted = 0;
 
     memset((char *) &req, 0, sizeof(req));
 
@@ -112,12 +113,12 @@ static int arp_del(char **args)
 	return (-1);
     }
     safe_strncpy(host, *args, (sizeof host));
-    if (ap->input(0, host, &sa) < 0) {
+    if (ap->input(0, host, &ss) < 0) {
 	ap->herror(host);
 	return (-1);
     }
     /* If a host has more than one address, use the correct one! */
-    memcpy((char *) &req.arp_pa, (char *) &sa, sizeof(struct sockaddr));
+    memcpy((char *) &req.arp_pa, (char *) sa, sizeof(struct sockaddr));
 
     if (hw_set)
 	req.arp_ha.sa_family = hw->type;
@@ -148,7 +149,7 @@ static int arp_del(char **args)
 	    continue;
 	}
 	if (!strcmp(*args, "dontpub")) {
-#ifdef HAVE_ATF_DONTPUB
+#ifdef ATF_DONTPUB
 	    req.arp_flags |= ATF_DONTPUB;
 #else
 	    ENOSUPP("arp", "ATF_DONTPUB");
@@ -157,7 +158,7 @@ static int arp_del(char **args)
 	    continue;
 	}
 	if (!strcmp(*args, "auto")) {
-#ifdef HAVE_ATF_MAGIC
+#ifdef ATF_MAGIC
 	    req.arp_flags |= ATF_MAGIC;
 #else
 	    ENOSUPP("arp", "ATF_MAGIC");
@@ -167,58 +168,64 @@ static int arp_del(char **args)
 	}
 	if (!strcmp(*args, "dev")) {
 	    if (*++args == NULL)
-		usage();
+		usage(E_OPTERR);
 	    safe_strncpy(device, *args, sizeof(device));
 	    args++;
 	    continue;
 	}
 	if (!strcmp(*args, "netmask")) {
 	    if (*++args == NULL)
-		usage();
+		usage(E_OPTERR);
 	    if (strcmp(*args, "255.255.255.255") != 0) {
-		strcpy(host, *args);
-		if (ap->input(0, host, &sa) < 0) {
+		safe_strncpy(host, *args, (sizeof host));
+		if (ap->input(0, host, &ss) < 0) {
 		    ap->herror(host);
 		    return (-1);
 		}
-		memcpy((char *) &req.arp_netmask, (char *) &sa,
+		memcpy((char *) &req.arp_netmask, (char *) sa,
 		       sizeof(struct sockaddr));
 		req.arp_flags |= ATF_NETMASK;
 	    }
 	    args++;
 	    continue;
 	}
-	usage();
+	usage(E_OPTERR);
     }
+
+    // if neighter priv nor pub is given, work on both
     if (flags == 0)
 	flags = 3;
 
-    strcpy(req.arp_dev, device);
+    safe_strncpy(req.arp_dev, device, sizeof(req.arp_dev));
 
-    err = -1;
+    /* unfortuatelly the kernel interface does not allow us to
+       delete private entries anlone, so we need this hack
+       to avoid "not found" errors if we try both. */
+    deleted = 0;
 
     /* Call the kernel. */
     if (flags & 2) {
 	if (opt_v)
-	    fprintf(stderr, "arp: SIOCDARP(nopub)\n");
-	if ((err = ioctl(sockfd, SIOCDARP, &req) < 0)) {
-	    if (errno == ENXIO) {
+	    fprintf(stderr, "arp: SIOCDARP(dontpub)\n");
+	if (ioctl(sockfd, SIOCDARP, &req) < 0) {
+	    if ((errno == ENXIO) || (errno == ENOENT)) {
 		if (flags & 1)
-		    goto nopub;
+		    goto dontpub;
 		printf(_("No ARP entry for %s\n"), host);
 		return (-1);
 	    }
-	    perror("SIOCDARP(priv)");
+	    perror("SIOCDARP(dontpub)");
 	    return (-1);
-	}
+	} else
+	  deleted = 1;
     }
-    if ((flags & 1) && (err)) {
-      nopub:
+    if (!deleted && (flags & 1)) {
+      dontpub:
 	req.arp_flags |= ATF_PUBL;
 	if (opt_v)
 	    fprintf(stderr, "arp: SIOCDARP(pub)\n");
 	if (ioctl(sockfd, SIOCDARP, &req) < 0) {
-	    if (errno == ENXIO) {
+	    if ((errno == ENXIO) || (errno == ENOENT)) {
 		printf(_("No ARP entry for %s\n"), host);
 		return (-1);
 	    }
@@ -230,12 +237,12 @@ static int arp_del(char **args)
 }
 
 /* Get the hardware address to a specified interface name */
-static int arp_getdevhw(char *ifname, struct sockaddr *sa, struct hwtype *hw)
+static int arp_getdevhw(char *ifname, struct sockaddr *sa, const struct hwtype *hw)
 {
     struct ifreq ifr;
-    struct hwtype *xhw;
+    const struct hwtype *xhw;
 
-    strcpy(ifr.ifr_name, ifname);
+    safe_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) < 0) {
 	fprintf(stderr, _("arp: cant get HW-Address for `%s': %s.\n"), ifname, strerror(errno));
 	return (-1);
@@ -260,7 +267,8 @@ static int arp_set(char **args)
 {
     char host[128];
     struct arpreq req;
-    struct sockaddr sa;
+    struct sockaddr_storage ss;
+    struct sockaddr *sa = (struct sockaddr *)&ss;
     int flags;
 
     memset((char *) &req, 0, sizeof(req));
@@ -271,12 +279,12 @@ static int arp_set(char **args)
 	return (-1);
     }
     safe_strncpy(host, *args++, (sizeof host));
-    if (ap->input(0, host, &sa) < 0) {
+    if (ap->input(0, host, &ss) < 0) {
 	ap->herror(host);
 	return (-1);
     }
     /* If a host has more than one address, use the correct one! */
-    memcpy((char *) &req.arp_pa, (char *) &sa, sizeof(struct sockaddr));
+    memcpy((char *) &req.arp_pa, (char *) sa, sizeof(struct sockaddr));
 
     /* Fetch the hardware address. */
     if (*args == NULL) {
@@ -287,10 +295,11 @@ static int arp_set(char **args)
 	if (arp_getdevhw(*args++, &req.arp_ha, hw_set ? hw : NULL) < 0)
 	    return (-1);
     } else {
-	if (hw->input(*args++, &req.arp_ha) < 0) {
+	if (hw->input(*args++, &ss) < 0) {
 	    fprintf(stderr, _("arp: invalid hardware address\n"));
 	    return (-1);
 	}
+	memcpy(&req.arp_ha, sa, sizeof(*sa));
     }
 
     /* Check out any modifiers. */
@@ -317,7 +326,7 @@ static int arp_set(char **args)
 	    continue;
 	}
 	if (!strcmp(*args, "dontpub")) {
-#ifdef HAVE_ATF_DONTPUB
+#ifdef ATF_DONTPUB
 	    flags |= ATF_DONTPUB;
 #else
 	    ENOSUPP("arp", "ATF_DONTPUB");
@@ -326,7 +335,7 @@ static int arp_set(char **args)
 	    continue;
 	}
 	if (!strcmp(*args, "auto")) {
-#ifdef HAVE_ATF_MAGIC
+#ifdef ATF_MAGIC
 	    flags |= ATF_MAGIC;
 #else
 	    ENOSUPP("arp", "ATF_MAGIC");
@@ -336,34 +345,34 @@ static int arp_set(char **args)
 	}
 	if (!strcmp(*args, "dev")) {
 	    if (*++args == NULL)
-		usage();
+		usage(E_OPTERR);
 	    safe_strncpy(device, *args, sizeof(device));
 	    args++;
 	    continue;
 	}
 	if (!strcmp(*args, "netmask")) {
 	    if (*++args == NULL)
-		usage();
+		usage(E_OPTERR);
 	    if (strcmp(*args, "255.255.255.255") != 0) {
-		strcpy(host, *args);
-		if (ap->input(0, host, &sa) < 0) {
+		safe_strncpy(host, *args, (sizeof host));
+		if (ap->input(0, host, &ss) < 0) {
 		    ap->herror(host);
 		    return (-1);
 		}
-		memcpy((char *) &req.arp_netmask, (char *) &sa,
+		memcpy((char *) &req.arp_netmask, (char *) sa,
 		       sizeof(struct sockaddr));
 		flags |= ATF_NETMASK;
 	    }
 	    args++;
 	    continue;
 	}
-	usage();
+	usage(E_OPTERR);
     }
 
     /* Fill in the remainder of the request. */
     req.arp_flags = flags;
 
-    strcpy(req.arp_dev, device);
+    safe_strncpy(req.arp_dev, device, sizeof(req.arp_dev));
 
     /* Call the kernel. */
     if (opt_v)
@@ -424,10 +433,10 @@ static int arp_file(char *name)
 
 
 /* Print the contents of an ARP request block. */
-static void arp_disp_2(char *name, int type, int arp_flags, char *hwa, char *mask, char *dev)
+static void arp_disp_2(const char *name, int type, int arp_flags, const char *hwa, const char *mask, const char *dev)
 {
     static int title = 0;
-    struct hwtype *xhw;
+    const struct hwtype *xhw;
     char flags[10];
 
     xhw = get_hwntype(type);
@@ -445,11 +454,11 @@ static void arp_disp_2(char *name, int type, int arp_flags, char *hwa, char *mas
 	strcat(flags, "M");
     if (arp_flags & ATF_PUBL)
 	strcat(flags, "P");
-#ifdef HAVE_ATF_MAGIC
+#ifdef ATF_MAGIC
     if (arp_flags & ATF_MAGIC)
 	strcat(flags, "A");
 #endif
-#ifdef HAVE_ATF_DONTPUB
+#ifdef ATF_DONTPUB
     if (arp_flags & ATF_DONTPUB)
 	strcat(flags, "!");
 #endif
@@ -463,7 +472,7 @@ static void arp_disp_2(char *name, int type, int arp_flags, char *hwa, char *mas
 
     if (!(arp_flags & ATF_COM)) {
 	if (arp_flags & ATF_PUBL)
-	    printf("%-8.8s%-20.20s", "*", "*");
+	    printf("%-8.8s%-20.20s", "*", _("<from_interface>"));
 	else
 	    printf("%-8.8s%-20.20s", "", _("(incomplete)"));
     } else {
@@ -474,9 +483,9 @@ static void arp_disp_2(char *name, int type, int arp_flags, char *hwa, char *mas
 }
 
 /* Print the contents of an ARP request block. */
-static void arp_disp(char *name, char *ip, int type, int arp_flags, char *hwa, char *mask, char *dev)
+static void arp_disp(const char *name, const char *ip, int type, int arp_flags, const char *hwa, const char *mask, const char *dev)
 {
-    struct hwtype *xhw;
+    const struct hwtype *xhw;
 
     xhw = get_hwntype(type);
     if (xhw == NULL)
@@ -486,7 +495,7 @@ static void arp_disp(char *name, char *ip, int type, int arp_flags, char *hwa, c
 
     if (!(arp_flags & ATF_COM)) {
 	if (arp_flags & ATF_PUBL)
-	    printf("* ");
+	    printf("<from_interface> ");
 	else
 	    printf(_("<incomplete> "));
     } else {
@@ -499,12 +508,12 @@ static void arp_disp(char *name, char *ip, int type, int arp_flags, char *hwa, c
     if (arp_flags & ATF_PERM)
 	printf("PERM ");
     if (arp_flags & ATF_PUBL)
-	printf("PUP ");
-#ifdef HAVE_ATF_MAGIC
+	printf("PUB ");
+#ifdef ATF_MAGIC
     if (arp_flags & ATF_MAGIC)
 	printf("AUTO ");
 #endif
-#ifdef HAVE_ATF_DONTPUB
+#ifdef ATF_DONTPUB
     if (arp_flags & ATF_DONTPUB)
 	printf("DONTPUB ");
 #endif
@@ -519,7 +528,7 @@ static void arp_disp(char *name, char *ip, int type, int arp_flags, char *hwa, c
 static int arp_show(char *name)
 {
     char host[100];
-    struct sockaddr sa;
+    struct sockaddr_storage ss;
     char ip[100];
     char hwa[100];
     char mask[100];
@@ -527,7 +536,7 @@ static int arp_show(char *name)
     char dev[100];
     int type, flags;
     FILE *fp;
-    char *hostname;
+    const char *hostname;
     int num, entries = 0, showed = 0;
 
     host[0] = '\0';
@@ -535,11 +544,11 @@ static int arp_show(char *name)
     if (name != NULL) {
 	/* Resolve the host name. */
 	safe_strncpy(host, name, (sizeof host));
-	if (ap->input(0, host, &sa) < 0) {
+	if (ap->input(0, host, &ss) < 0) {
 	    ap->herror(host);
 	    return (-1);
 	}
-	safe_strncpy(host, ap->sprint(&sa, 1), sizeof(host));
+	safe_strncpy(host, ap->sprint(&ss, 1), sizeof(host));
     }
     /* Open the PROCps kernel table. */
     if ((fp = fopen(_PATH_PROCNET_ARP, "r")) == NULL) {
@@ -548,14 +557,23 @@ static int arp_show(char *name)
     }
     /* Bypass header -- read until newline */
     if (fgets(line, sizeof(line), fp) != (char *) NULL) {
-	strcpy(mask, "-");
-	strcpy(dev, "-");
+	safe_strncpy(mask, "-", sizeof(mask));
+	safe_strncpy(dev, "-", sizeof(dev));
 	/* Read the ARP cache entries. */
 	for (; fgets(line, sizeof(line), fp);) {
-	    num = sscanf(line, "%s 0x%x 0x%x %100s %100s %100s\n",
+	    num = sscanf(line, "%s 0x%x 0x%x %99s %99s %99s\n",
 			 ip, &type, &flags, hwa, mask, dev);
 	    if (num < 4)
 		break;
+	    if (num == 5) {
+		/*
+		 * This happens for incomplete ARP entries for which there is
+		 * no hardware address in the line.
+		 */
+		num = sscanf(line, "%s 0x%x 0x%x %99s %99s\n",
+			     ip, &type, &flags, mask, dev);
+		hwa[0] = 0;
+	    }
 
 	    entries++;
 	    /* if the user specified hw-type differs, skip it */
@@ -575,10 +593,10 @@ static int arp_show(char *name)
 	    if (opt_n)
 		hostname = "?";
 	    else {
-		if (ap->input(0, ip, &sa) < 0)
+		if (ap->input(0, ip, &ss) < 0)
 		    hostname = ip;
 		else
-		    hostname = ap->sprint(&sa, opt_n | 0x8000);
+		    hostname = ap->sprint(&ss, opt_n | 0x8000);
 		if (strcmp(hostname, ip) == 0)
 		    hostname = "?";
 	    }
@@ -605,36 +623,37 @@ static int arp_show(char *name)
 
 static void version(void)
 {
-    fprintf(stderr, "%s\n%s\n%s\n", Release, Version, Features);
+    printf("%s\n%s\n", Release, Features);
     exit(E_VERSION);
 }
 
-static void usage(void)
+static void usage(int rc)
 {
-    fprintf(stderr, _("Usage:\n  arp [-vn]  [<HW>] [-i <if>] [-a] [<hostname>]             <-Display ARP cache\n"));
-    fprintf(stderr, _("  arp [-v]          [-i <if>] -d  <hostname> [pub][nopub]    <-Delete ARP entry\n"));
-    fprintf(stderr, _("  arp [-vnD] [<HW>] [-i <if>] -f  [<filename>]              <-Add entry from file\n"));
-    fprintf(stderr, _("  arp [-v]   [<HW>] [-i <if>] -s  <hostname> <hwaddr> [temp][nopub] <-Add entry\n"));
-    fprintf(stderr, _("  arp [-v]   [<HW>] [-i <if>] -s  <hostname> <hwaddr> [netmask <nm>] pub  <-''-\n"));
-    fprintf(stderr, _("  arp [-v]   [<HW>] [-i <if>] -Ds <hostname> <if> [netmask <nm>] pub      <-''-\n\n"));
-    
-    fprintf(stderr, _("        -a                       display (all) hosts in alternative (BSD) style\n"));
-    fprintf(stderr, _("        -s, --set                set a new ARP entry\n"));
-    fprintf(stderr, _("        -d, --delete             delete a specified entry\n"));
-    fprintf(stderr, _("        -v, --verbose            be verbose\n"));
-    fprintf(stderr, _("        -n, --numeric            don't resolve names\n"));
-    fprintf(stderr, _("        -i, --device             specify network interface (e.g. eth0)\n"));
-    fprintf(stderr, _("        -D, --use-device         read <hwaddr> from given device\n"));
-    fprintf(stderr, _("        -A, -p, --protocol       specify protocol family\n"));
-    fprintf(stderr, _("        -f, --file               read new entries from file or from /etc/ethers\n\n"));
+    FILE *fp = rc ? stderr : stdout;
+    fprintf(fp, _("Usage:\n  arp [-vn]  [<HW>] [-i <if>] [-a] [<hostname>]             <-Display ARP cache\n"));
+    fprintf(fp, _("  arp [-v]          [-i <if>] -d  <host> [pub]               <-Delete ARP entry\n"));
+    fprintf(fp, _("  arp [-vnD] [<HW>] [-i <if>] -f  [<filename>]            <-Add entry from file\n"));
+    fprintf(fp, _("  arp [-v]   [<HW>] [-i <if>] -s  <host> <hwaddr> [temp]            <-Add entry\n"));
+    fprintf(fp, _("  arp [-v]   [<HW>] [-i <if>] -Ds <host> <if> [netmask <nm>] pub          <-''-\n\n"));
 
-    fprintf(stderr, _("  <HW>=Use '-H <hw>' to specify hardware address type. Default: %s\n"), DFLT_HW);
-    fprintf(stderr, _("  List of possible hardware types (which support ARP):\n"));
+    fprintf(fp, _("        -a                       display (all) hosts in alternative (BSD) style\n"));
+    fprintf(fp, _("        -e                       display (all) hosts in default (Linux) style\n"));
+    fprintf(fp, _("        -s, --set                set a new ARP entry\n"));
+    fprintf(fp, _("        -d, --delete             delete a specified entry\n"));
+    fprintf(fp, _("        -v, --verbose            be verbose\n"));
+    fprintf(fp, _("        -n, --numeric            don't resolve names\n"));
+    fprintf(fp, _("        -i, --device             specify network interface (e.g. eth0)\n"));
+    fprintf(fp, _("        -D, --use-device         read <hwaddr> from given device\n"));
+    fprintf(fp, _("        -A, -p, --protocol       specify protocol family\n"));
+    fprintf(fp, _("        -f, --file               read new entries from file or from /etc/ethers\n\n"));
+
+    fprintf(fp, _("  <HW>=Use '-H <hw>' to specify hardware address type. Default: %s\n"), DFLT_HW);
+    fprintf(fp, _("  List of possible hardware types (which support ARP):\n"));
     print_hwlist(1); /* 1 = ARPable */
-    exit(E_USAGE);
+    exit(rc);
 }
 
-int arp_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i, lop, what;
     struct option longopts[] =
@@ -733,10 +752,11 @@ int arp_main(int argc, char **argv)
 
 	case 'V':
 	    version();
-	case '?':
 	case 'h':
+	    usage(E_USAGE);
+	case '?':
 	default:
-	    usage();
+	    usage(E_OPTERR);
 	}
 
     if (ap->af != AF_INET) {
@@ -785,7 +805,7 @@ int arp_main(int argc, char **argv)
 	break;
 
     default:
-	usage();
+	usage(E_OPTERR);
     }
 
     exit(what);

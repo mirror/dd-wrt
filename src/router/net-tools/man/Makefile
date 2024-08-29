@@ -29,21 +29,52 @@ mandir=/usr/share/man
 
 -include ../config.make
 ifeq ($(I18N),1)
-LANGS=`ls -d * | grep -v Makefile`
+ALL_LANGS = $(filter-out Makefile,$(wildcard *))
+ifeq ($(LINGUAS),)
+LANGS = $(ALL_LANGS)
 else
-LANGS=en_US
+LANGS = $(sort $(filter $(LINGUAS),$(ALL_LANGS)) en_US)
+endif
+else
+LANGS = en_US
+endif
+
+IGNORE_CMDS = ""
+ifneq ($(HAVE_ARP_TOOLS),1)
+IGNORE_CMDS += |arp.?|rarp.?
+endif
+ifneq ($(HAVE_HOSTNAME_TOOLS),1)
+IGNORE_CMDS += |dnsdomainname.?|hostname.?
+endif
+ifneq ($(HAVE_HOSTNAME_SYMLINKS),1)
+IGNORE_CMDS += |domainname.?|nisdomainname.?|ypdomainname.?
+endif
+ifneq ($(HAVE_AFDECnet),1)
+IGNORE_CMDS += |nodename.?
+endif
+ifneq ($(HAVE_IP_TOOLS),1)
+IGNORE_CMDS += |ipmaddr.?|iptunnel.?
+endif
+ifneq ($(HAVE_MII),1)
+IGNORE_CMDS += |mii-tool.?
+endif
+ifneq ($(HAVE_PLIP_TOOLS),1)
+IGNORE_CMDS += |plipconfig.?
+endif
+ifneq ($(HAVE_SERIAL_TOOLS),1)
+IGNORE_CMDS += |slattach.?
 endif
 
 all:
 
 clean:
-		rm -f DEADJOE *~ *.orig
-		rm -f */DEADJOE */*~ */*.orig
+		rm -f -- DEADJOE *~ *.orig
+		rm -f -- */DEADJOE */*~ */*.orig
 
 clobber:	clean
 
 install:
-		LANGS=$(LANGS) ; \
+		LANGS='$(LANGS)' ; \
 		for LANG in $$LANGS; do \
 			cd $$LANG; \
 			for SECTION in 1 5 8; do \
@@ -52,11 +83,11 @@ install:
 				else \
 					MAN_DIR=${BASEDIR}${mandir}/$$LANG/man$$SECTION; \
 				fi ; \
-				CMDS=`ls *.$$SECTION`; \
-				[ -z "$$CMDS" ] && continue; \
 				$(INSTALL) -d -m 755 $$MAN_DIR; \
-				for CMD in $$CMDS; do \
-					$(INSTALL) -m 644 $$CMD $$MAN_DIR; \
+				for CMD in *.$$SECTION; do \
+					[ -e $$CMD ] || continue; \
+					case $$CMD in $(IGNORE_CMDS)) continue;; esac; \
+					$(INSTALL) -m 644 $$CMD $$MAN_DIR || exit 1; \
 				done; \
 			done; \
 			cd ..; \

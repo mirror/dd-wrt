@@ -1,15 +1,18 @@
 /* Tolerant /proc file parser. Copyright 1998 Andi Kleen */
-/* $Id: proc.c,v 1.4 1999/01/05 20:54:00 philip Exp $ */ 
-/* Fixme: cannot currently cope with removed fields */ 
+/* $Id: proc.c,v 1.5 2007/12/01 18:44:57 ecki Exp $ */
+/* Fixme: cannot currently cope with removed fields */
 
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
+#include "util.h"
 
 /* Caller must free return string. */
 
-char *proc_gen_fmt(char *name, int more, FILE * fh,...)
+char *proc_gen_fmt(const char *name, int more, FILE * fh,...)
 {
     char buf[512], format[512] = "";
     char *title, *head, *hdr;
@@ -46,14 +49,14 @@ char *proc_gen_fmt(char *name, int more, FILE * fh,...)
 		name, title);
 	return NULL;
     }
-    return strdup(format);
+    return xstrdup(format);
 }
 
-/* 
+/*
  * this will generate a bitmask of present/missing fields in the header of
  * a /proc file.
  */
-int proc_guess_fmt(char *name, FILE *fh, ...)
+int proc_guess_fmt(const char *name, FILE *fh, ...)
 {
     char buf[512];
     char *tmp;
@@ -71,4 +74,23 @@ int proc_guess_fmt(char *name, FILE *fh, ...)
     }
     va_end(ap);
     return flag;
+}
+
+
+FILE *proc_fopen(const char *name)
+{
+    static char *buffer;
+    static size_t pagesz;
+    FILE *fd = fopen(name, "r");
+
+    if (fd == NULL)
+      return NULL;
+
+    if (!buffer) {
+      pagesz = getpagesize();
+      buffer = malloc(pagesz);
+    }
+
+    setvbuf(fd, buffer, _IOFBF, pagesz);
+    return fd;
 }

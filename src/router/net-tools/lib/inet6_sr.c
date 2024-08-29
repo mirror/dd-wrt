@@ -1,6 +1,11 @@
 /*
-   Modifications:
-   1998-07-01 - Arnaldo Carvalho de Melo - GNU gettext instead of catgets
+ * inet6_sr.c       This files contains INET6 related route manipulation methods.
+ *
+ * Part of net-tools, the Linux base networking tools
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  */
 
 #include "config.h"
@@ -23,17 +28,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#ifdef __GLIBC__
 #include <net/route.h>
-#else
-#include <netinet6/ipv6_route.h>	/* glibc does not have this */
-#endif
 #include "version.h"
 #include "net-support.h"
 #include "pathnames.h"
 #include "intl.h"
 #include "net-features.h"
-
+#include "util.h"
 
 
 extern struct aftype inet6_aftype;
@@ -41,12 +42,13 @@ extern struct aftype inet6_aftype;
 static int skfd = -1;
 
 
-static int usage(void)
+static int usage(const int rc)
 {
-    fprintf(stderr, _("Usage: inet6_route [-vF] del Target\n"));
-    fprintf(stderr, _("       inet6_route [-vF] add Target [gw Gw] [metric M] [[dev] If]\n"));
-    fprintf(stderr, _("       inet6_route [-FC] flush      NOT supported\n"));
-    return (E_USAGE);
+    FILE *fp = rc ? stderr : stdout;
+    fprintf(fp, _("Usage: inet6_route [-vF] del Target\n"));
+    fprintf(fp, _("       inet6_route [-vF] add Target [gw Gw] [metric M] [[dev] If]\n"));
+    fprintf(fp, _("       inet6_route [-FC] flush      NOT supported\n"));
+    return (rc);
 }
 
 
@@ -54,30 +56,31 @@ static int INET6_setroute(int action, int options, char **args)
 {
     struct in6_rtmsg rt;
     struct ifreq ifr;
-    struct sockaddr_in6 sa6;
+    struct sockaddr_storage sas;
+    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&sas;
     char target[128], gateway[128] = "NONE";
     int metric, prefix_len;
     char *devname = NULL;
     char *cp;
 
     if (*args == NULL)
-	return (usage());
+	return usage(E_OPTERR);
 
-    strcpy(target, *args++);
+    safe_strncpy(target, *args++, sizeof(target));
     if (!strcmp(target, "default")) {
         prefix_len = 0;
-	memset(&sa6, 0, sizeof(sa6));
+	memset(&sas, 0, sizeof(sas));
     } else {
         if ((cp = strchr(target, '/'))) {
 	    prefix_len = atol(cp + 1);
 	    if ((prefix_len < 0) || (prefix_len > 128))
-		usage();
+		return usage(E_OPTERR);
 	    *cp = 0;
 	} else {
 	    prefix_len = 128;
 	}
-	if (inet6_aftype.input(1, target, (struct sockaddr *) &sa6) < 0
-	    && inet6_aftype.input(0, target, (struct sockaddr *) &sa6) < 0) {
+	if (inet6_aftype.input(1, target, &sas) < 0
+	    && inet6_aftype.input(0, target, &sas) < 0) {
 	    inet6_aftype.herror(target);
 	    return (1);
 	}
@@ -86,7 +89,7 @@ static int INET6_setroute(int action, int options, char **args)
     /* Clean out the RTREQ structure. */
     memset((char *) &rt, 0, sizeof(struct in6_rtmsg));
 
-    memcpy(&rt.rtmsg_dst, sa6.sin6_addr.s6_addr, sizeof(struct in6_addr));
+    memcpy(&rt.rtmsg_dst, sin6->sin6_addr.s6_addr, sizeof(struct in6_addr));
 
     /* Fill in the other fields. */
     rt.rtmsg_flags = RTF_UP;
@@ -100,7 +103,7 @@ static int INET6_setroute(int action, int options, char **args)
 
 	    args++;
 	    if (!*args || !isdigit(**args))
-		return (usage());
+		return usage(E_OPTERR);
 	    metric = atoi(*args);
 	    rt.rtmsg_metric = metric;
 	    args++;
@@ -109,16 +112,15 @@ static int INET6_setroute(int action, int options, char **args)
 	if (!strcmp(*args, "gw") || !strcmp(*args, "gateway")) {
 	    args++;
 	    if (!*args)
-		return (usage());
+		return usage(E_OPTERR);
 	    if (rt.rtmsg_flags & RTF_GATEWAY)
-		return (usage());
-	    strcpy(gateway, *args);
-	    if (inet6_aftype.input(1, gateway,
-				   (struct sockaddr *) &sa6) < 0) {
+		return usage(E_OPTERR);
+	    safe_strncpy(gateway, *args, sizeof(gateway));
+	    if (inet6_aftype.input(1, gateway, &sas) < 0) {
 		inet6_aftype.herror(gateway);
 		return (E_LOOKUP);
 	    }
-	    memcpy(&rt.rtmsg_gateway, sa6.sin6_addr.s6_addr,
+	    memcpy(&rt.rtmsg_gateway, sin6->sin6_addr.s6_addr,
 		   sizeof(struct in6_addr));
 	    rt.rtmsg_flags |= RTF_GATEWAY;
 	    args++;
@@ -137,9 +139,9 @@ static int INET6_setroute(int action, int options, char **args)
 	if (!strcmp(*args, "device") || !strcmp(*args, "dev")) {
 	    args++;
 	    if (!*args)
-		return (usage());
+		return usage(E_OPTERR);
 	} else if (args[1])
-	    return (usage());
+	    return usage(E_OPTERR);
 
 	devname = *args;
 	args++;
@@ -152,7 +154,7 @@ static int INET6_setroute(int action, int options, char **args)
     }
     if (devname) {
 	memset(&ifr, 0, sizeof(ifr));
-	strcpy(ifr.ifr_name, devname);
+	safe_strncpy(ifr.ifr_name, devname, sizeof(ifr.ifr_name));
 
 	if (ioctl(skfd, SIOGIFINDEX, &ifr) < 0) {
 	    perror("SIOGIFINDEX");
@@ -186,10 +188,10 @@ int INET6_rinput(int action, int options, char **args)
 {
     if (action == RTACTION_FLUSH) {
 	fprintf(stderr, _("Flushing `inet6' routing table not supported\n"));
-	return (usage());
+	return usage(E_OPTERR);
     }
-    if ((*args == NULL) || (action == RTACTION_HELP))
-	return (usage());
+    if (action == RTACTION_HELP)
+	return usage(E_USAGE);
 
     return (INET6_setroute(action, options, args));
 }

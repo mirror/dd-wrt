@@ -1,160 +1,178 @@
-.TH IFCONFIG 8 "4 August 1997" "net-tools" "Linux Programmer's Manual"
+.\"
+.\" Traduction : Jean Michel VANSTEENE <vanstee@worldnet.fr>
+.\" zz/08/1997
+.\" MÃ j zz/08/2004 net-tools-1.60 Guillaume Audirac
+.\" MÃ j 17/08/2006 net-tools-1.65 Alain Portal
+.\"
+.TH IFCONFIG 8 "30 juin 2005" "net-tools" "Manuel de l'administrateur Linux"
 .SH NOM
-ifconfig \- configure une interface réseau
+ifconfig \- Configurer une interface rÃ©seau.
 .SH SYNOPSIS
-.B "ifconfig [interface]"
+.B "ifconfig [\-v] [\-a] [\-s] [interface]"
 .br
-.B "ifconfig interface [aftype] options | adresse ..."
+.B "ifconfig [\-v] interface [aftype] options | adresse ..."
 .SH DESCRIPTION
-.B Ifconfig
-est utilisé pour configurer (et maintenir ensuite) les interfaces
-réseau résidentes dans le noyau.  Il est utilisé lors du boot pour
-configurer la plupart d'entre-elles et ainsi rendre le système
-opérationnel.  Après, ce n'est quasiment plus utilisé que pour
-le débogage ou pour des réglages si nécessaire.
-.LP
-Si aucun argument n'est donné,
 .B ifconfig
-affiche simplement l'état des interfaces actuellement définies. Si
-seul le paramètre
+permet de configurer les interfaces rÃ©seau prÃ©sentes dans le noyau.
+On peut les configurer lors du dÃ©marrage quand c'est nÃ©cessaire. Ensuite,
+on l'utilise gÃ©nÃ©ralement pour le dÃ©bogage ou pour d'Ã©ventuels rÃ©glages.
+.LP
+Si aucun argument n'est donnÃ©,
+.B ifconfig
+affiche l'Ã©tat des interfaces actives. Si seul le paramÃ¨tre
 .B interface
-est donné, il affiche seulement l'état de l'interface correspondante;
-si seul le paramètre
-.B -a
-est fourni, il affiche l'état de toutes les interfaces, même celles qui
-ne sont pas actives.
-Autrement, il considère qu'il faut positionner de nouvelles valeurs.
-
-.SH Familles d'adresses
-Si le premier argument après le nom de l'interface est reconnu comme
-étant un nom de famille d'adresses supporté, cette famille d'adresses
-est utilisée pour décoder et afficher toutes les adresses
-protocolaires.  Les familles d'adresses actuellement supportées comprennent
+est donnÃ©, il affiche seulement l'Ã©tat de l'interface correspondante\ ;
+si seul le paramÃ¨tre
+.B \-a
+est fourni, il affiche l'Ã©tat de toutes les interfaces, mÃªme celles
+qui sont inactives. Autrement, il permet de configurer une interface.
+.SH Familles d'Adresses
+Si le premier argument aprÃ¨s le nom d'interface est reconnu comme
+le nom d'une famille d'adresses prise en charge, alors cette famille
+d'adresses est utilisÃ©e pour dÃ©coder et afficher toutes les adresses
+du protocole. Les familles d'adresses actuellement prises en charge
+comprennent
 .B inet
-(TCP/IP, default) 
+(TCP/IP, par dÃ©faut),
+.B inet6
+(IPv6),
 .B ax25
-(AMPR Packet Radio.) 
+(AMPR Packet Radio),
 .B ddp
-(Appletalk Phase 2) and
+(Appletalk Phase 2),
 .B ipx
-(Novell IPX).
+(Novell IPX) et
+.B netrom
+(AMPR Packet Radio).
 .SH OPTIONS
 .TP
+.B \-a
+Afficher toutes les interfaces actuellement disponibles, mÃªme celles
+qui sont inactives.
+.TP
+.B \-s
+Afficher un rÃ©sumÃ© (comme netstat \-i).
+.TP
+.B \-v
+Mode volubile pour certains types d'erreurs.
+.TP
 .B interface
-Le nom de l'interface réseau.  C'est généralement un nom de pilote suivi
-d'un numéro d'ordre comme
+Correspond au nom de l'interface de rÃ©seau. C'est gÃ©nÃ©ralement un nom de
+pilote suivi d'un chiffre, comme
 .B eth0
-pour la première interface Ethernet.
+pour la premiÃ¨re interface Ethernet. Si votre noyau accepte les alias
+d'interfaces, vous pouvez les spÃ©cifier avec
+.B eth0:0
+pour le premier alias de eth0. On peut les utiliser pour les affecter
+Ã  une seconde adresse. Pour supprimer un alias d'interface, utilisez
+.BR "ifconfig eth0:0 down" .
+Note\ : pour chaque groupe (un mÃªme noeud donnÃ© par une combinaison
+adresse/masque de rÃ©seau), si vous supprimez le premier alias (le
+principal), tous les alias sont supprimÃ©s.
 .TP
 .B up
-Cette option active l'interface.  Elle est implicitement spécifiée
-si une nouvelle adresse est affectée à l'interface (voir plus loin).
+Activer l'interface donnÃ©e. Cette option est implicite si une adresse est
+affectÃ©e Ã  l'interface.
 .TP
 .B down
-Cette option arrête le fonctionnement du pilote pour cette interface, et
-est utilisée lorsque les choses commencent à aller mal.
+DÃ©sactiver le pilote pour l'interface donnÃ©e.
 .TP
 .B "[\-]arp"
-Valide ou invalide l'utilisation du protocole ARP sur cette interface. Si
-le signe moins (\-) est présent, l'option est invalidée.
+Activer ou dÃ©sactiver l'utilisation du protocole ARP sur une interface.
 .TP
 .B "[\-]promisc"
-Valide ou invalide le mode
-.B promiscuous
-.  S'il est validé, tous les paquets circulant sur le réseau
-seront reçus sur cette interface.
+Activer ou dÃ©sactiver le mode
+.BR promiscuous .
+S'il est activÃ©, tous les paquets circulant sur le rÃ©seau seront reÃ§us
+par l'interface.
 .TP
 .B "[\-]allmulti"
-Valide ou invalide le fonctionnement de l'interface en mode
-.B all-multicast
-.  S'il est validé, tous les paquets multicast circulant sur le réseau
-seront reçus sur cette interface.
+Activer ou dÃ©sactiver le mode
+.BR all-multicast .
+S'il est activÃ©, l'interface recevra tous les paquets de multidiffusion
+circulant sur le rÃ©seau.
 .TP
 .B "metric N"
-Ce paramètre définit la métrique de l'interface. Il n'est pour
-l'instant pas implémenté, mais le sera prochainement.
+DÃ©finir la mÃ©trique de l'interface.
 .TP
 .B "mtu N"
-Ce     paramètre  définit le  MTU     (Maximum  Transfer Unit)  d'une
-interface.
+DÃ©finir l'unitÃ© de transfert maximum ou MTU (Â«\ Maximum Transfer Unit\ Â»)
+d'une interface.
 .TP
-.B "dstaddr adr"
-Définit l'adresse IP de "l'autre bout" dans le cas d'un lien
-point-à-point, comme PPP. Ce paramètre est obsolète; utilisez plutôt
-le paramètre 
-.B pointopoint.
+.B "dstaddr adresse"
+DÃ©finir l'adresse IP distante dans le cas d'un lien point-Ã -point
+(comme PPP). Cette option est obsolÃ¨te\ ; utilisez Ã  la place l'option
+.BR pointopoint .
 .TP
-.B "netmask adr"
-Définit le masque de réseau IP pour cette interface. La valeur par
-défaut de cette valeur correspond au masque réseau usuel pour les
-classes A, B ou C (déduite de l'adresse IP), mais toute autre valeur peut
-être définie selon les besoins en sous-réseaux.
+.B "netmask adresse"
+DÃ©finir le masque de rÃ©seau IP pour cette interface. La valeur par
+dÃ©faut correspond au masque de rÃ©seau usuel pour les classes A, B ou C
+(dÃ©duite de l'adresse IP), mais une autre valeur peut Ãªtre dÃ©finie.
 .TP
-.B "add adr/lg_prefix"
-Ajoute une adresse IPv6 à une interface. 
+.B "add adresse/long_prÃ©fixe"
+Ajouter une adresse IPv6 Ã  une interface.
 .TP
-.B "del adr/lg_prefix"
-Supprime une adresse IPv6 d'une interface.
+.B "del adresse/long_prÃ©fixe"
+Supprimer une adresse IPv6 d'une interface.
 .TP
 .B "tunnel aa.bb.cc.dd"
-Crée un nouveau périphérique SIT (IPv6-dans-IPv4), en mode
-tunnel jusqu'à la destination.
+CrÃ©er un nouveau pÃ©riphÃ©rique SIT (IPv6-dans-IPv4), fonctionnant en mode
+tunnel jusqu'Ã  la destination donnÃ©e.
 .TP
-.B "irq adr"
-Définit la ligne d'interruption utilisée par ce
-périphérique. Certains périphériques ne supportent pas le
-changement dynamique de l'IRQ.
+.B "irq adresse"
+DÃ©finir la ligne d'interruption utilisÃ©e par un pÃ©riphÃ©rique.
+Certains pÃ©riphÃ©riques ne sont pas capables de changer
+dynamiquement d'IRQ.
 .TP
-.B "io_addr adr"
-Définit pour ce périphérique, l'adresse de début dans l'espace
-d'entrée-sortie I/O.
+.B "io_addr adresse"
+DÃ©finir l'adresse de dÃ©but dans l'espace d'entrÃ©e-sortie pour un
+pÃ©riphÃ©rique.
 .TP
-.B "mem_start adr"
-Définit l'adresse de début de mémoire partagée pour ce périphérique. Seuls
-quelques périphériques ont besoin de ce paramètre.
+.B "mem_start adresse"
+DÃ©finir l'adresse de dÃ©but de la mÃ©moire partagÃ©e utilisÃ©e par un
+pÃ©riphÃ©rique. Peu de pÃ©riphÃ©riques ont besoin de ce paramÃ¨tre.
 .TP
 .B "media type"
-Définit le port physique ou le type de medium utilisé par ce périphérique.
-Tous les périphériques ne peuvent pas changer de configuration et les
-valeurs supportées varient de l'un à l'autre. Les valeur typiques sont
+DÃ©finir le port physique ou le type de mÃ©dium utilisÃ© par le pÃ©riphÃ©rique.
+Tous les pÃ©riphÃ©riques ne peuvent pas changer cette configuration et les
+types acceptÃ©s varient de l'un Ã  l'autre. Les valeurs habituelles du
+.B type
+sont
 .B 10base2
 (Ethernet fin),
 .B 10baseT
-(10Mbps Ethernet paire torsadée),
-.B AUI 
-(transceiver externe) etc.  Le type
+(Ethernet 10Mbps en paire torsadÃ©e),
+.B AUI
+(Ã©metteur-rÃ©cepteur externe), etc. Le mÃ©dium spÃ©cial de type
 .B auto
-permet d'indiquer au pilote de détecter automatiquement le medium
-utilisé. Une fois de plus, tous les périphériques ne supportent pas cette
-option.
+permet d'indiquer au pilote de dÃ©tecter automatiquement le mÃ©dium utilisÃ©.
+Une fois de plus, tous les pilotes n'acceptent pas cette option.
 .TP
-.B "[-]broadcast [adr]"
-Si l'adresse est également donnée, définit l'adresse broadcast
-protocolaire pour cette interface. Autrement, il permet d'armer (ou désarmer)
-l'indicateur
+.B "[\-]broadcast [adresse]"
+Si l'adresse est donnÃ©e, elle dÃ©finit l'adresse de diffusion du
+protocole pour cette interface. Autrement, on arme
+(ou dÃ©sarme) l'indicateur
 .B IFF_BROADCAST
 de l'interface.
 .TP
-.B "[-]pointopoint [adr]"
-Ce mot clé valide le mode
-.B point-à-point
-d'une interface, signifiant qu'il existe un lien direct entre 2 machines,
-sans que personne d'autre ne puisse être à l'écoute.
+.B "[\-]pointopoint [adresse]"
+Valider le mode
+.B point-Ã -point
+d'une interface, signifiant qu'il existe un lien direct entre 2\ machines,
+sans que personne d'autre ne puisse Ãªtre Ã  l'Ã©coute.
 .br
-Si l'argument d'adresse est également donné, il définit l'adresse
-de l'autre machine, de la même manière que le paramètre obsolète
-.B dstaddr
-.
-Autrement il arme (ou désarme) l'indicateur 
+Si l'adresse est Ã©galement donnÃ©e, cela dÃ©finit l'adresse de
+protocole de l'autre machine, de la mÃªme maniÃ¨re que l'option obsolÃ¨te
+.BR dstaddr .
+Autrement, il arme (ou dÃ©sarme) l'indicateur 
 .B IFF_POINTOPOINT
 de l'interface.
 .TP
 .B hw classe adresse
-Définit l'adresse matérielle de l'interface, si le pilote du
-périphérique supporte cette opération. Le mot clé doit être
-suivi du nom de la classe matérielle et de l'adresse matérielle en
-caractères imprimables ASCII. Les classes matérielles actuellement
-supportées comprennent 
+DÃ©finir l'adresse matÃ©rielle de l'interface, si le pilote du pÃ©riphÃ©rique
+accepte cette opÃ©ration. L'option doit Ãªtre suivie du nom de la classe
+matÃ©rielle et de l'adresse matÃ©rielle en caractÃ¨res ASCII affichables.
+Les classes matÃ©rielles actuellement prises en charge comprennent
 .B ether
 (Ethernet),
 .B ax25
@@ -165,45 +183,81 @@ et
 (AMPR NET/ROM).
 .TP
 .B multicast
-Positionne l'indicateur multicast sur l'interface. Elle n'est
-généralement pas nécessaire puisque les pilotes positionnent
-l'option correcte eux même.
+Positionner l'indicateur de multidiffusion sur l'interface. Ce n'est
+gÃ©nÃ©ralement pas nÃ©cessaire puisque les pilotes positionnent correctement
+l'option eux-mÃªmes.
 .TP
 .B adresse
-L'adresse IP de cette interface.
+Correspond Ã  l'adresse IP affectÃ©e Ã  cette interface.
 .TP
-.B txqueuelen length
-Set the length of the transmit queue of the device. It is useful to set this
-to small values for slower devices with a high latency (modem links, ISDN)
-to prevent fast bulk transfers from disturbing interactive traffic like
-telnet too much. 
+.B txqueuelen longueur
+DÃ©finir la longueur de la file d'attente de transmission du pÃ©riphÃ©rique.
+Il est utile de la fixer Ã  des valeurs faibles pour les pÃ©riphÃ©riques
+lents avec un temps d'attente important (modems, ISDN), pour empÃªcher
+d'Ãªtre perturbÃ© par de rapides transferts de masse issus des trafics
+interactifs, comme
+.BR telnet .
 .SH NOTES
-Depuis le noyau 2.2 il n'y a plus de statistiques d'interface explicite
-pour les interfaces en alias. Les statistiques affichées pour la véritable
-adresse sont partagées avec toutes les adresses alias du même périphérique.
-Si vous voulez des adresses par interface, vous devez ajouter des règles de
-comptabilité particulières pour l'adresse en utilisant la commande 
-.BR ipchains(8)
-.
-
+Depuis la version 2.2 du noyau, il n'y a plus de statistiques d'interface
+explicites pour les alias d'interfaces. Les statistiques affichÃ©es pour la
+vÃ©ritable adresse sont partagÃ©es avec toutes les adresses d'alias du mÃªme
+pÃ©riphÃ©rique. Pour avoir des statistiques par adresse, il faut ajouter
+des rÃ¨gles de comptabilitÃ© particuliÃ¨res pour l'adresse en utilisant
+la commande
+.BR iptables (8).
+.LP
+Depuis net-tools 1.61,
+.B ifconfig
+affiche les compteurs d'octets et ceux lisibles par un utilisateur en
+unitÃ©s IEC\ 60027-2. Ainsi, 1\ KiB vaut 2^10 octets. Notez que les nombres
+sont tronquÃ©s Ã  la premiÃ¨re dÃ©cimale (ce qui peut Ãªtre une erreur importante
+si vous considÃ©rez que 0,1\ PiB vaut 112.589.990.684.262\ octets\ :)
+.LP
+Des problÃ¨mes d'interruption avec les pilotes de pÃ©riphÃ©riques Ethernet
+apparaissent avec EAGAIN
+(\fISIOCSIIFLAGS\ : Ressource temporairement indisponible\fR)
+il s'agit sÃ»rement d'un conflit d'interruptions. Voir
+.I http://www.scyld.com/expert/irq-conflict.html
+pour plus d'informations.
 .SH FICHIERS
-.I /proc/net/socket 
+.I /proc/net/socket
 .br
 .I /proc/net/dev
 .br
 .I /proc/net/if_inet6
-.SH BUGS
-Même si les adresses appletalk DDP et IPX peuvent être affichées,
-elles ne peuvent être modifiées avec cette commande.
+.SH BOGUES
+MÃªme si les adresses appletalk DDP et IPX peuvent Ãªtre affichÃ©es,
+elles ne peuvent Ãªtre modifiÃ©es avec cette commande.
 .SH VOIR AUSSI
-route(8), netstat(8), arp(8), rarp(8), ipchains(8)
-.SH AUTHORS
+.BR route (8),
+.BR netstat (8),
+.BR arp (8),
+.BR rarp (8),
+.BR iptables (8),
+.BR ifup (8),
+.BR interfaces (5)
+.br
+http://physics.nist.gov/cuu/Units/binary.html \- PrÃ©fixes
+pour les multiples binaires.
+.SH AUTEURS
 Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
 .br
 Alan Cox, <Alan.Cox@linux.org>
 .br
 Phil Blundell, <Philip.Blundell@pobox.com>
 .br
-Andi Kleen, 
+Andi Kleen,
+.br
+Bernd Eckenfels, <net-tools@lina.inka.de>
 .SH TRADUCTION
-Jean-Michel VANSTEENE (vanstee@worldnet.fr)
+.PP
+Ce document est une traduction rÃ©alisÃ©e par Jean Michel Vansteene
+<vanstee\ AT\ worldnet\ DOT\ fr> en aoÃ»t\ 1997,
+mise Ã  jour par Guillaume Audirac en aoÃ»t 2004
+et rÃ©visÃ©e le 17\ aoÃ»t\ 2006.
+.PP
+L'Ã©quipe de traduction a fait le maximum pour rÃ©aliser une adaptation
+franÃ§aise de qualitÃ©. La version anglaise la plus Ã  jour de ce document est
+toujours consultable via la commande\ : Â«\ \fBLANG=C\ man\ 8\ ifconfig\fR\ Â».
+N'hÃ©sitez pas Ã  signaler Ã  l'auteur ou au traducteur, selon le cas, toute
+erreur dans cette page de manuel.

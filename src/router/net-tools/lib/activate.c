@@ -61,7 +61,7 @@ void activate_init(void)
 
 int activate_ld(const char *hwname, int fd)
 {
-    struct hwtype *hw;
+    const struct hwtype *hw;
 
     hw = get_hwtype(hwname);
 

@@ -23,8 +23,8 @@ TODO for net-tools
 [ ] supply some informations about new features to HOWTOs
 [ ] Config file only works with bash not ash.
 [ ] Token ring is almost totally untested.
-[ ] additional tools for IPX, AX.25 etc be bundled [ipxripd004, ipx_* tools 
-	from caldera, axattach] into existing bins
+[ ] additional tools for IPX, AX.25 etc be bundled [ipxripd004, ipx_* tools
+	from caldera, kissattach] into existing bins
 [ ] "SIOCAX25OPTRT" [Joerg (DL1BKE)]. 1.3.75
 [ ] dummy NOARP?! (2. default route for preveting hostunreachables on linedrop)
 [ ] ppp_dev_stat called for each dev in ifconfig, why? (1.3.17)

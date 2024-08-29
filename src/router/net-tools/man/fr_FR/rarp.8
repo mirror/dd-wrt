@@ -1,6 +1,6 @@
-.TH RARP 8 "4 Août 1997" "net-tools" "Linux Programmer's Manual"
+.TH RARP 8 "4 AoÃ»t 1997" "net-tools" "Linux Administrator's Manual"
 .SH NOM
-rarp \- manipule la table système RARP
+rarp \- manipule la table systÃ¨me RARP
 .SH SYNOPSIS
 .B "rarp [-V] [--version] [-h] [--help]"
 .br
@@ -11,30 +11,30 @@ rarp \- manipule la table système RARP
 .B "rarp [-v] [-t type] -s nom_d_hote adr_materiel"
 .SH DESCRIPTION
 .B Rarp
-manipule la table RARP du noyau de différentes façons.  Les options de base
-permettent d'effacer une entrée de correspondance d'adresses et d'en
-redéfinir une manuellement.  Pour des besoins de débogage, le programme
+manipule la table RARP du noyau de diffÃ©rentes faÃ§ons.  Les options de base
+permettent d'effacer une entrÃ©e de correspondance d'adresses et d'en
+redÃ©finir une manuellement.  Pour des besoins de dÃ©bogage, le programme
 .B rarp
-permet aussi de vider complètement la table RARP.
+permet aussi de vider complÃ¨tement la table RARP.
 .SH OPTIONS
 .TP
 .B \-V
-Affiche la version de RARP utilisé.
+Affiche la version de RARP utilisÃ©.
 .TP
 .B \-v
-Dit à l'utilisateur ce qui se passe, en étant verbeux.
+Dit Ã  l'utilisateur ce qui se passe, en Ã©tant verbeux.
 .TP
 .B "\-t type"
-En définissant ou lisant la table RARP, ce paramètre optionnel dit à
+En dÃ©finissant ou lisant la table RARP, ce paramÃ¨tre optionnel dit Ã 
 .B rarp
-quelles classes d'entrées il doit contrôler.  La valeur par défaut de
-ce paramètre est
+quelles classes d'entrÃ©es il doit contrÃ´ler.  La valeur par dÃ©faut de
+ce paramÃ¨tre est
 .B ether
-(i.e. code matériel
+(i.e. code matÃ©riel
 .B 0x01
 pour
 .B "IEEE 802.3 10Mbps Ethernet".
-D'autres valeurs doivent correspondre à des technologies réseaux telles que
+D'autres valeurs doivent correspondre Ã  des technologies rÃ©seaux telles que
 .B AX.25 (ax25).
 et
 .B NET/ROM (netrom).
@@ -42,35 +42,38 @@ et
 .B "\-a"
 .TP
 .B "\-\-list"
-Liste les entrées de la table RARP.
+Liste les entrÃ©es de la table RARP.
 .TP
 .B "\-d nom_d_hote"
 .TP
 .B "\-\-delete nom_d_hote"
-Supprime toutes les entrées RARP relatives à l'hôte spécifié.
+Supprime toutes les entrÃ©es RARP relatives Ã  l'hÃ´te spÃ©cifiÃ©.
 .TP
 .B "\-s nom_d_hote adr_materielle"
 .TP
 .B "\-\-set nom_d_hote adr_materielle"
-Crée manuellement une correspondance d'adresses RARP pour l'hôte
-.B nom_d_hôte
-avec l'adresse matérielle
-.B adr_materielle
-. Le format de l'adresse matérielle est dépendant du matériel,
-mais pour la plupart on peut considérer que la présentation classique
-peut être utilisée.  Pour la classe Ethernet, c'est 6 octets en hexadécimal,
-séparés par des double-points.
+CrÃ©e manuellement une correspondance d'adresses RARP pour l'hÃ´te
+.B nom_d_hÃ´te
+avec l'adresse matÃ©rielle
+.BR adr_materielle .
+Le format de l'adresse matÃ©rielle est dÃ©pendant du matÃ©riel,
+mais pour la plupart on peut considÃ©rer que la prÃ©sentation classique
+peut Ãªtre utilisÃ©e.  Pour la classe Ethernet, c'est 6 octets en hexadÃ©cimal,
+sÃ©parÃ©s par des double-points.
 
 .SH ATTENTION
-Certains systèmes (notamment des vieux Sun's) supposent que l'hôte
-répondant à une requête RARP peut aussi fournir d'autres services
-de boot à distance. Par conséquent n'ajoutez jamais
-d'entrées RARP à la légère à moins que vous souhaitiez affronter la
-colère de votre administrateur réseau.
+Certains systÃ¨mes (notamment des vieux Sun's) supposent que l'hÃ´te
+rÃ©pondant Ã  une requÃªte RARP peut aussi fournir d'autres services
+de boot Ã  distance. Par consÃ©quent n'ajoutez jamais
+d'entrÃ©es RARP Ã  la lÃ©gÃ¨re Ã  moins que vous souhaitiez affronter la
+colÃ¨re de votre administrateur rÃ©seau.
 .SH FICHIERS
 .I /proc/net/rarp,
 .SH VOIR AUSSI
-arp(8), route(8), ifconfig(8), netstat(8)
+.BR arp (8),
+.BR route (8),
+.BR ifconfig (8),
+.BR netstat (8)
 .SH AUTEURS
 Ross D. Martin, <martin@trcsun3.eas.asu.edu>
 .br
