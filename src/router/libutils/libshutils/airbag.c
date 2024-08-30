@@ -1246,13 +1246,13 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	const uint8_t *addr;
 #else
 	pc = (uint8_t *)(((unsigned long)pc) & ~3);
-	const unsigned INSTLEN *startPc = (unsigned INSTLEN *)pc;
-	if (startPc < (unsigned INSTLEN *)(bytes / 2))
+	const INSTLEN *startPc = (INSTLEN *)pc;
+	if (startPc < (INSTLEN *)(bytes / 2))
 		startPc = 0;
 	else
-		startPc = (unsigned INSTLEN *)(pc - bytes / 2);
-	const unsigned INSTLEN *endPc = (unsigned INSTLEN *)((uint8_t *)startPc + bytes);
-	const unsigned INSTLEN *addr;
+		startPc = (INSTLEN *)(pc - bytes / 2);
+	const INSTLEN *endPc = (INSTLEN *)((uint8_t *)startPc + bytes);
+	const INSTLEN *addr;
 #endif
 	airbag_printf("%sCode:\n", section);
 	for (addr = startPc; addr < endPc; ++addr) {
