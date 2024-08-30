@@ -386,6 +386,31 @@ static uint32_t load32(const void *_p, INSTLEN *_v)
 	return r;
 }
 
+static uint32_t loadlong(const void *_p, unsigned long *_v)
+{
+	int i;
+	INSTLEN r = 0;
+	INSTLEN v = 0;
+	const uint8_t *p = (const uint8_t *)_p;
+	for (i = 0; i < sizeof(INSTLEN); ++i) {
+		uint8_t b;
+		r <<= 8;
+		v <<= 8;
+		r |= load8(p + i, &b);
+		v |= b;
+	}
+	if (sizeof(*_v) == 8) {
+		v = __cpu_to_be64(v);
+		r = __cpu_to_be64(r);
+	} else {
+		v = htonl(v);
+		r = htonl(r);
+	}
+	if (_v)
+		*_v = v;
+	return r;
+}
+
 /* some loaned from musl libc, modified to fix crash problem in signal context */
 static const struct {
 	short sun_family;
@@ -637,8 +662,8 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc
 	}
 out:
 	if (raOffset) {
-		INSTLEN *newRa;
-		if (load32((unsigned long *)((unsigned long)sp + raOffset), (INSTLEN *)&newRa))
+		unsigned long *newRa;
+		if (loadlong((unsigned long *)((unsigned long)sp + raOffset), (unsigned long *)&newRa))
 			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT
 				      "lx] is not mapped; assuming blown stack.\n",
 				      comment, sp, raOffset);
@@ -684,7 +709,7 @@ backward:
 				break;
 			}
 		}
-		if (load32((INSTLEN *)((unsigned long)sp + raOffset), (INSTLEN *)&ra)) {
+		if (loadlong((INSTLEN *)((unsigned long)sp + raOffset), (unsigned long *)&ra)) {
 			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT "lx] is not mapped; %s.\n", comment,
 				      sp, raOffset, termBt);
 			break;
