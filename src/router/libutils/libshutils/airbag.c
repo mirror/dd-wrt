@@ -551,7 +551,7 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	addr &= ~3;
 	/* GCC man page suggests len is at "pc - 12", but prologue can vary, so scan back */
 	for (i = 0; i < 16; ++i) {
-		unsigned long len;
+		unsigned int len;
 		addr -= 4;
 		if (load32((void *)addr, &len) == 0 && (len & 0xffffff00) == 0xff000000) {
 			uint32_t offset;
@@ -729,7 +729,7 @@ backward:
 		airbag_printf("%sSearching frame %u (FP=0x%" FMTBIT "lx, PC=0x%" FMTBIT "lx)\n", comment, depth - 1, fp, pc);
 
 		for (i = 0; i < 8192 && !found; ++i) {
-			unsigned long instr, instr2;
+			unsigned int instr, instr2;
 			if (load32((void *)(pc - i * 4), &instr2)) {
 				airbag_printf("%sInstruction at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, pc - i * 4, termBt);
 				return depth;
@@ -751,7 +751,7 @@ checkStm:
 						      pc - i * 4, instr, pre == 1 ? "f" : "e", dir == 1 ? "a" : "d");
 					for (regNum = 15; regNum >= 0; --regNum) {
 						if (instr & (1 << regNum)) {
-							unsigned long reg;
+							unsigned int reg;
 							if (load32((void *)(fp + pushes * 4 * dir), &reg)) {
 								airbag_printf("%sStack at 0x%" FMTBIT "lx is not mapped; %s.\n",
 									      comment, fp + pushes * 4 * dir, termBt);
