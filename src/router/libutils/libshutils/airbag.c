@@ -556,6 +556,27 @@ typedef _Unwind_Ptr (*Unwind_GetIP_T)(struct _Unwind_Context *);
 typedef _Unwind_Reason_Code (*Unwind_Backtrace_T)(_Unwind_Trace_Fn, void *);
 static Unwind_GetIP_T _unwind_GetIP;
 static _Unwind_Word (*_unwind_GetCFA)(struct _Unwind_Context *);
+static _Unwind_Ptr (*_unwind_GetGR)(struct _Unwind_Context *, int);
+
+#if defined(__i386__)
+
+static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
+{
+	struct trace_arg *arg = a;
+
+	/* We are first called with address in the __backtrace function.
+     Skip it.  */
+	if (arg->cnt != -1)
+		arg->array[arg->cnt] = (void *)_unwind_GetIP(ctx);
+	if (++arg->cnt == arg->size)
+		return _URC_END_OF_STACK;
+
+	/* %ebp is DWARF2 register 5 on IA-32.  */
+	arg->lastebp = (void *)_unwind_GetGR(ctx, 5);
+	arg->lastesp = (void *)_unwind_GetCFA(ctx);
+	return _URC_NO_REASON;
+}
+#else
 static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
@@ -574,6 +595,8 @@ static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, 
 		return _URC_END_OF_STACK;
 	return _URC_NO_REASON;
 }
+#endif
+
 #endif
 
 #ifdef __arm__
@@ -851,7 +874,10 @@ checkStm:
 		if (!_unwind_GetIP)
 			_unwind_GetIP = (Unwind_GetIP_T)dlsym(handle, "_Unwind_GetIP");
 		if (!_unwind_GetCFA)
-	    		_unwind_GetCFA = (dlsym(libgcc_handle, "_Unwind_GetCFA") ?: airbag_dummy_getcfa);
+			_unwind_GetCFA = (dlsym(libgcc_handle, "_Unwind_GetCFA") ?: airbag_dummy_getcfa);
+		if (!_unwind_GetGR)
+			_unwind_GetGR = dlsym(libgcc_handle, "_Unwind_GetGR");
+
 		if (_unwind_Backtrace && _unwind_GetIP) {
 #if defined(__i386__)
 			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
@@ -897,6 +923,20 @@ checkStm:
 				_unwind_Backtrace(airbag_backtrace_helper, &arg);
 				if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
 					--arg.cnt;
+#if defined(__i386__)
+				else if (arg.cnt < size) {
+					struct layout *ebp = (struct layout *)arg.lastebp;
+
+					while (arg.cnt < size) {
+						/* Check for out of range.  */
+						if ((void *)ebp < arg.lastesp || (void *)ebp > __libc_stack_end || ((long)ebp & 3))
+							break;
+
+						arg.array[arg.cnt++] = ebp->ret;
+						ebp = ebp->ebp;
+					}
+				}
+#endif
 			}
 			return arg.cnt != -1 ? arg.cnt : 0;
 		}

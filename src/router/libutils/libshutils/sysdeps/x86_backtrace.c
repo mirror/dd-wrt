@@ -49,10 +49,10 @@ static void init(void)
 	if (libgcc_handle == NULL)
 		return;
 
-	unwind_backtrace = __libc_dlsym(libgcc_handle, "_Unwind_Backtrace");
-	unwind_getip = __libc_dlsym(libgcc_handle, "_Unwind_GetIP");
-	unwind_getcfa = __libc_dlsym(libgcc_handle, "_Unwind_GetCFA");
-	unwind_getgr = __libc_dlsym(libgcc_handle, "_Unwind_GetGR");
+	unwind_backtrace = dlsym(libgcc_handle, "_Unwind_Backtrace");
+	unwind_getip = dlsym(libgcc_handle, "_Unwind_GetIP");
+	unwind_getcfa = dlsym(libgcc_handle, "_Unwind_GetCFA");
+	unwind_getgr = dlsym(libgcc_handle, "_Unwind_GetGR");
 	if (unwind_getip == NULL || unwind_getgr == NULL || unwind_getcfa == NULL) {
 		unwind_backtrace = NULL;
 		dlclose(libgcc_handle);
