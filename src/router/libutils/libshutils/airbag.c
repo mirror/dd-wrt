@@ -182,7 +182,7 @@ static const char *sigNames[MAX_SIGNALS] = {
 };
 
 #ifdef __LP64__
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__mips__)
 #define INSTLEN unsigned int
 #define INSTLENFMT "08"
 #else
@@ -551,7 +551,7 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	addr &= ~3;
 	/* GCC man page suggests len is at "pc - 12", but prologue can vary, so scan back */
 	for (i = 0; i < 16; ++i) {
-		unsigned int len;
+		INSTLEN len;
 		addr -= 4;
 		if (load32((void *)addr, &len) == 0 && (len & 0xffffff00) == 0xff000000) {
 			uint32_t offset;
@@ -602,7 +602,7 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc
 	/* Scanning to find the size of the current stack frame */
 	raOffset = stackSize = 0;
 	for (addr = pc; !raOffset || !stackSize; --addr) {
-		unsigned long v;
+		INSTLEN v;
 		if (load32(addr, &v)) {
 			airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, addr);
 #ifdef CTX_EPC /* Pre-2007 uclibc */
@@ -637,8 +637,8 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc
 	}
 out:
 	if (raOffset) {
-		unsigned long *newRa;
-		if (load32((unsigned long *)((unsigned long)sp + raOffset), (unsigned long *)&newRa))
+		INSTLEN *newRa;
+		if (load32((unsigned long *)((unsigned long)sp + raOffset), (INSTLEN *)&newRa))
 			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT
 				      "lx] is not mapped; assuming blown stack.\n",
 				      comment, sp, raOffset);
@@ -656,7 +656,7 @@ backward:
 			buffer[depth++] = ra;
 		raOffset = stackSize = 0;
 		for (addr = ra; !raOffset || !stackSize; --addr) {
-			unsigned long v;
+			INSTLEN v;
 			if (load32(addr, &v)) {
 				airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, addr, termBt);
 				return depth;
@@ -684,7 +684,7 @@ backward:
 				break;
 			}
 		}
-		if (load32((unsigned long *)((unsigned long)sp + raOffset), (unsigned long *)&ra)) {
+		if (load32((INSTLEN *)((unsigned long)sp + raOffset), (INSTLEN *)&ra)) {
 			airbag_printf("%sText at RA <- SP[raOffset] 0x%" FMTBIT "lx[0x%" FMTBIT "lx] is not mapped; %s.\n", comment,
 				      sp, raOffset, termBt);
 			break;
@@ -729,7 +729,7 @@ backward:
 		airbag_printf("%sSearching frame %u (FP=0x%" FMTBIT "lx, PC=0x%" FMTBIT "lx)\n", comment, depth - 1, fp, pc);
 
 		for (i = 0; i < 8192 && !found; ++i) {
-			unsigned int instr, instr2;
+			INSTLEN instr, instr2;
 			if (load32((void *)(pc - i * 4), &instr2)) {
 				airbag_printf("%sInstruction at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, pc - i * 4, termBt);
 				return depth;
@@ -751,7 +751,7 @@ checkStm:
 						      pc - i * 4, instr, pre == 1 ? "f" : "e", dir == 1 ? "a" : "d");
 					for (regNum = 15; regNum >= 0; --regNum) {
 						if (instr & (1 << regNum)) {
-							unsigned int reg;
+							INSTLEN reg;
 							if (load32((void *)(fp + pushes * 4 * dir), &reg)) {
 								airbag_printf("%sStack at 0x%" FMTBIT "lx is not mapped; %s.\n",
 									      comment, fp + pushes * 4 * dir, termBt);
