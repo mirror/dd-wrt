@@ -957,12 +957,8 @@ static struct fault sigbus_fault[] = {
 	{ BUS_ADRALN, "invalid address alignment" },
 	{ BUS_ADRERR, "nonexistent physical address" },
 	{ BUS_OBJERR, "object-specific hardware error" },
-#ifdef BUS_MCEERR_AR
 	{ BUS_MCEERR_AR, "hardware memory error consumed on a machine check: action required" },
-#endif
-#ifdef BUS_MCEERR_AO
 	{ BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional" },
-#endif
 };
 
 #ifndef __FPE_DECOVF
