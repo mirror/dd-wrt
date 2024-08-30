@@ -182,7 +182,7 @@ static const char *sigNames[MAX_SIGNALS] = {
 };
 
 #ifdef __LP64__
-#if defined(__aarch64__) || defined(__mips__)
+#if defined(__aarch64__) || defined(__mips__) || defined(__powerpc__)
 #define INSTLEN unsigned int
 #define INSTLENFMT "08"
 #else
@@ -546,16 +546,30 @@ static void airbag_symbol(void *pc)
 
 #if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
 
+/* Dummy version in case libgcc_s does not contain the real code.  */
+static _Unwind_Word airbag_dummy_getcfa(struct _Unwind_Context *ctx __attribute__((unused)))
+{
+	return 0;
+}
+
 typedef _Unwind_Ptr (*Unwind_GetIP_T)(struct _Unwind_Context *);
 typedef _Unwind_Reason_Code (*Unwind_Backtrace_T)(_Unwind_Trace_Fn, void *);
 static Unwind_GetIP_T _unwind_GetIP;
+static _Unwind_Word (*_unwind_GetCFA)(struct _Unwind_Context *);
 static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
 
 	/*  We are first called with address in the __backtrace function. Skip it. */
-	if (arg->cnt != -1)
+	if (arg->cnt != -1) {
 		arg->array[arg->cnt] = (void *)_unwind_GetIP(ctx);
+		/* Check whether we make any progress.  */
+		_Unwind_Word cfa = _unwind_GetCFA(ctx);
+
+		if (arg->cnt > 0 && arg->array[arg->cnt - 1] == arg->array[arg->cnt] && cfa == arg->cfa)
+			return _URC_END_OF_STACK;
+		arg->cfa = cfa;
+	}
 	if (++arg->cnt >= arg->size)
 		return _URC_END_OF_STACK;
 	return _URC_NO_REASON;
@@ -836,6 +850,8 @@ checkStm:
 			_unwind_Backtrace = (Unwind_Backtrace_T)dlsym(handle, "_Unwind_Backtrace");
 		if (!_unwind_GetIP)
 			_unwind_GetIP = (Unwind_GetIP_T)dlsym(handle, "_Unwind_GetIP");
+		if (!_unwind_GetCFA)
+	    		_unwind_GetCFA = (dlsym(libgcc_handle, "_Unwind_GetCFA") ?: airbag_dummy_getcfa);
 		if (_unwind_Backtrace && _unwind_GetIP) {
 #if defined(__i386__)
 			struct trace_arg arg = { .array = buffer, .size = size, .cnt = -1 };
@@ -879,6 +895,8 @@ checkStm:
 				/* TODO: setjmp, catch SIGSEGV to longjmp back here, to more gracefully handle
 				 * corrupted stack. */
 				_unwind_Backtrace(airbag_backtrace_helper, &arg);
+				if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
+					--arg.cnt;
 			}
 			return arg.cnt != -1 ? arg.cnt : 0;
 		}
@@ -1228,13 +1246,13 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	const uint8_t *addr;
 #else
 	pc = (uint8_t *)(((unsigned long)pc) & ~3);
-	const unsigned long *startPc = (unsigned long *)pc;
-	if (startPc < (unsigned long *)(bytes / 2))
+	const unsigned INSTLEN *startPc = (unsigned INSTLEN *)pc;
+	if (startPc < (unsigned INSTLEN *)(bytes / 2))
 		startPc = 0;
 	else
-		startPc = (unsigned long *)(pc - bytes / 2);
-	const unsigned long *endPc = (unsigned long *)((uint8_t *)startPc + bytes);
-	const unsigned long *addr;
+		startPc = (unsigned INSTLEN *)(pc - bytes / 2);
+	const unsigned INSTLEN *endPc = (unsigned INSTLEN *)((uint8_t *)startPc + bytes);
+	const unsigned INSTLEN *addr;
 #endif
 	airbag_printf("%sCode:\n", section);
 	for (addr = startPc; addr < endPc; ++addr) {
