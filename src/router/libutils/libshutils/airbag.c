@@ -1371,6 +1371,7 @@ AIRBAG_EXPORT int airbag_init(void)
 int airbag_init_delegate(sighandler_t handler)
 {
 	delegate = handler;
+	return 0;
 }
 
 AIRBAG_EXPORT int airbag_name_thread(const char *name)
