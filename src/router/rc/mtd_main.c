@@ -181,7 +181,7 @@ static int mtd_check(char *mtd)
 	}
 	mtdtype = mtdInfo.type;
 	close(fd);
-	return 0;
+	return 1;
 }
 
 static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
