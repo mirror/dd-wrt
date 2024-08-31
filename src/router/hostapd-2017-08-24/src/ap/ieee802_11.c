@@ -2225,7 +2225,7 @@ static u16 check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 	resp = check_ext_capab(hapd, sta, elems.ext_capab, elems.ext_capab_len);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
-	resp = hostapd_copy_supp_rates(hapd, sta, elems);
+	resp = hostapd_copy_supp_rates(hapd, sta, &elems);
 	if (resp != WLAN_STATUS_SUCCESS)
 		return resp;
 #ifdef CONFIG_IEEE80211N
