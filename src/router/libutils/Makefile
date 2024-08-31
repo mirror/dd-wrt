@@ -228,6 +228,9 @@ ATH9KCFLAGS +=  -DHAVE_MICRO
 ATH9KCFLAGS += -DNEED_NOPRINTF
 endif
 endif
+ifeq ($(HOSTAPDVERSION),20120910)
+ATH9KCFLAGS += -DNO_APUP
+endif
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
@@ -438,6 +441,10 @@ endif
 ifeq ($(CONFIG_E1700),y)
   CFLAGS += -DHAVE_E1700
 endif
+ifeq ($(HOSTAPDVERSION),20120910)
+  CFLAGS += -DNO_APUP
+endif
+
 ifeq ($(CONFIG_WRT1900AC),y)
   CFLAGS += -DHAVE_WRT1900AC
 endif
