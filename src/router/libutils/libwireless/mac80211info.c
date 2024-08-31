@@ -2381,7 +2381,7 @@ int has_wdsap(const char *prefix)
 	return ret;
 }
 
-#ifndef NO_APUP
+#ifdef HAVE_IPQ6018
 int has_apup(const char *prefix)
 {
 	return has_wdsap(prefix);
