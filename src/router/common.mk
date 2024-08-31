@@ -1,5 +1,5 @@
 export MAKE := make -j 4
-export LTO := -flto -fwhole-program -flto-partition=none 
+export LTO := -flto -fwhole-program -flto-partition=none
 export LTOAUTO := -flto=auto -fno-fat-lto-objects
 export LDLTOAUTO := -fuse-ld=bfd -flto=auto -fuse-linker-plugin
 export LTOMIN := -flto
@@ -10,7 +10,7 @@ export GCCRANLIB := ${shell which $(ARCH)-linux-gcc-ranlib}
 
 
 #COPTS+= -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -funsigned-char
-COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -fno-unwind-tables -fno-asynchronous-unwind-tables -DNDEBUG
+COPTS+=  -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -DNDEBUG
 ifeq ($(AGGRESSIVE_SIZE),y)
 COPTS+= -falign-jumps=1 -falign-labels=1 -falign-loops=1 -falign-functions=1 -fno-guess-branch-probability -funsigned-char -finline-limit=0 -fno-builtin-printf
 endif
