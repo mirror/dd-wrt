@@ -86,7 +86,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-O2 -fno-unwind-tables -fno-asynchronous-unwind-tables
+export BASEOPT:=-O2
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
