@@ -33,6 +33,9 @@ int hostapd_set_drv_ieee8021x(struct hostapd_data *hapd, const char *ifname,
 			      int enabled);
 int hostapd_vlan_if_add(struct hostapd_data *hapd, const char *ifname);
 int hostapd_vlan_if_remove(struct hostapd_data *hapd, const char *ifname);
+
+/** @param val as per nl80211 driver implementation, 1 means add 0 means remove
+ */
 int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
 			const u8 *addr, int aid, int val);
 int hostapd_sta_add(struct hostapd_data *hapd,

@@ -332,9 +332,35 @@ int hostapd_set_wds_sta(struct hostapd_data *hapd, char *ifname_wds,
 			const u8 *addr, int aid, int val)
 {
 	const char *bridge = NULL;
+	char ifName[IFNAMSIZ + 1];
+
+	int mRet = 0;
 
 	if (hapd->driver == NULL || hapd->driver->set_wds_sta == NULL)
 		return -1;
+
+#ifdef CONFIG_APUP
+	if (hapd->conf->apup && hapd->conf->apup_peer_ifname_prefix[0]) {
+		mRet = os_snprintf(
+		            ifName, sizeof(ifName), "%s%d",
+		            hapd->conf->apup_peer_ifname_prefix, aid);
+	}
+	else
+#endif // def CONFIG_APUP
+		mRet = os_snprintf(
+		            ifName, sizeof(ifName), "%s.sta%d",
+		            hapd->conf->iface, aid);
+
+	if (mRet >= (int) sizeof(ifName))
+		wpa_printf(MSG_WARNING,
+		           "nl80211: WDS interface name was truncated");
+	else if (mRet < 0)
+		return mRet;
+
+	// Pass back to the caller the resulting interface name
+	if (ifname_wds)
+		os_strlcpy(ifname_wds, ifName, IFNAMSIZ + 1);
+
 	if (hapd->conf->wds_bridge[0])
 		bridge = hapd->conf->wds_bridge;
 	else if (hapd->conf->bridge[0])

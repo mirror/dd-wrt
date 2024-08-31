@@ -1304,6 +1304,11 @@ verify_config:
 		exit 1; \
 	fi
 
+ifdef CONFIG_APUP
+CFLAGS += -DCONFIG_APUP
+OBJS += ../src/ap/apup.o
+endif
+
 $(DESTDIR)$(BINDIR)/%: %
 	install -D $(<) $(@)
 
