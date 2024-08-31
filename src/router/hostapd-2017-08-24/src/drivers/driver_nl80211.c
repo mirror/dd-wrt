@@ -6381,11 +6381,7 @@ static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
 {
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
-	char name[IFNAMSIZ + 1];
-
-	os_snprintf(name, sizeof(name), "%s.sta%d", bss->ifname, aid);
-	if (ifname_wds)
-		os_strlcpy(ifname_wds, name, IFNAMSIZ + 1);
+	const char *name = ifname_wds; // Kept to reduce changes to the minimum
 
 	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
 		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);

@@ -3805,6 +3805,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	} else if (os_strcmp(buf, "dpp_csign_expiry") == 0) {
 		bss->dpp_csign_expiry = strtol(pos, NULL, 0);
 #endif /* CONFIG_DPP */
+#ifdef CONFIG_APUP
+	} else if (os_strcmp(buf, "apup") == 0) {
+		bss->apup = !!atoi(pos);
+		if (bss->apup)
+			bss->wds_sta = 1;
+	} else if (os_strcmp(buf, "apup_peer_ifname_prefix") == 0) {
+		os_strlcpy(bss->apup_peer_ifname_prefix,
+		           pos, sizeof(bss->apup_peer_ifname_prefix));
+#endif // def CONFIG_APUP
 	} else {
 		wpa_printf(MSG_ERROR,
 			   "Line %d: unknown configuration item '%s'",

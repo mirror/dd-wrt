@@ -651,6 +651,34 @@ struct hostapd_bss_config {
 	struct wpabuf *dpp_csign;
 	unsigned int dpp_csign_expiry;
 #endif /* CONFIG_DPP */
+#ifdef CONFIG_APUP
+	/**
+	 * Access Point Micro Peering
+	 * A simpler and more useful successor to Ad Hoc,
+	 * Wireless Distribution System, 802.11s mesh mode, Multi-AP and EasyMesh.
+	 *
+	 * Almost plain APs communicate between them via 4-address mode, like in WDS
+	 * but all of them are AP, so they can eventually communicate also with
+	 * plain stations and more AP nodes in sight.
+	 * Low hardware requirements, just AP mode support + 4-address mode, and no
+	 * more unnecessary complications, like hardcoded bridging or routing
+	 * algorithm in WiFi stack.
+	 * For each AP in sight an interface is created, and then it can be used as
+	 * convenient in each case, bridging, routing etc.
+	 */
+	bool apup;
+
+	/**
+	 * In 4-address mode each peer AP in sight is associated to its own
+	 * interface so we have more flexibility in "user-space".
+	 * Those interfaces could be simply bridged in a trivial topology (which
+	 * happens automatically if wds_bridge is not an empty string), or feeded to
+	 * a routing daemon.
+	 *
+	 * If not defined interface names are generated following the WDS convention.
+	 */
+	char apup_peer_ifname_prefix[IFNAMSIZ + 1];
+#endif /* CONFIG_APUP */
 };
 
 /**
