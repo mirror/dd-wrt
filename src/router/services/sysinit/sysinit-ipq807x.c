@@ -947,32 +947,30 @@ void start_initvlans(void)
 static void setscaling(int maxfreq)
 {
 	char max[32];
-	sprintf(max,"%d",maxfreq);
+	sprintf(max, "%d", maxfreq);
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 	if (maxfreq)
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", max);
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-
 }
-static void disableportlearn(void) {
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-		eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-		eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
-
-
+static void disableportlearn(void)
+{
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+	eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+	eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+	eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+	eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
 }
 void start_sysinit(void)
 {
