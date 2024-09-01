@@ -95,10 +95,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 #elif defined(HAVE_IPQ6018)
 	div = 1000;
 	int brand = getRouterBrand();
+	c = ipq807x_clocks;
 	char *defclock = "2208000";
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 		defclock = "1440000";
+		c = ipq6018_clocks;
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
@@ -110,7 +112,6 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		oclk = defclock;
 		nvram_set("clkfreq", defclock);
 	}
-	c = alpine_clocks;
 #elif defined(HAVE_HABANERO)
 	if (!*oclk) {
 		oclk = "716";
