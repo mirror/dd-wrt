@@ -77,9 +77,8 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #endif
 #endif
 
-
-static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 15120000, 1800000,0};
-static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000,0};
+static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 15120000, 1800000, 0 };
+static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000, 0 };
 
 EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 {
@@ -97,7 +96,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	div = 1000;
 	int brand = getRouterBrand();
 	char *defclock = "2208000";
-
+	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 		defclock = "1440000";
 		break;
@@ -183,7 +182,8 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
-			websWrite(wp, "<option value=\"%d\" %s >%d ", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]/div);
+			websWrite(wp, "<option value=\"%d\" %s >%d ", c[i], c[i] == cclk ? "selected=\"selected\"" : "",
+				  c[i] / div);
 			show_caption(wp, NULL, "wl_basic.mhz", "</option>\n");
 			i++;
 		}
