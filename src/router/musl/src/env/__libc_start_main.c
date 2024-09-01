@@ -68,11 +68,17 @@ weak_alias(libc_start_init, __libc_start_init);
 
 typedef int lsm2_fn(int (*)(int,char **,char **), int, char **);
 static lsm2_fn libc_start_main_stage2;
+#if defined(__i386__)
+void *__libc_stack_end = NULL;
+#endif
 
 int __libc_start_main(int (*main)(int,char **,char **), int argc, char **argv,
 	void (*init_dummy)(), void(*fini_dummy)(), void(*ldso_dummy)())
 {
 	char **envp = argv+argc+1;
+#if defined(__i386__)
+	__libc_stack_end = __builtin_frame_address (0);
+#endif
 
 	/* External linkage, and explicit noinline attribute if available,
 	 * are used to prevent the stack frame used during init from
