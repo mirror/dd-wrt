@@ -105,7 +105,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
-		defclock = "1324000";
+		defclock = "1382400";
 		break;
 	}
 	if (!*oclk) {
