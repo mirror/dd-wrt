@@ -943,6 +943,37 @@ void start_initvlans(void)
 		break;
 	}
 }
+
+static void setscaling(int maxfreq)
+{
+	char max[32];
+	sprintf(max,"%d",maxfreq);
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+	if (maxfreq)
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", max);
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+
+}
+static void disableportlearn(void) {
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
+		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
+		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+		eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
+		eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
+
+
+}
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -1222,50 +1253,26 @@ void start_sysinit(void)
 		sysprintf("echo 0 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_LINKSYS_MR7350:
+		setscaling(1440000);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
+		setscaling(1382400);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
 	case ROUTER_DYNALINK_DLWRX36:
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-		eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-		eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
+		setscaling(0);
+		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_ASUS_AX89X:
 		insmod("qca83xx");
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
-		writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "0", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "1", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "2", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
-		eval_silence("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
-		eval_silence("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
-		eval_silence("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
-		eval_silence("ssdk_sh", "fdb", "entry", "flush", "1");
+		setscaling(0);
+		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
