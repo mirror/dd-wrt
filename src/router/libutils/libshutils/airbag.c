@@ -923,7 +923,7 @@ checkStm:
 				_unwind_Backtrace(airbag_backtrace_helper, &arg);
 				if (arg.cnt > 1 && arg.array[arg.cnt - 1] == NULL)
 					--arg.cnt;
-#if 0 //defined(__i386__)
+#if defined(__i386__)
 				else if (arg.cnt < size) {
 					struct layout *ebp = (struct layout *)arg.lastebp;
 
