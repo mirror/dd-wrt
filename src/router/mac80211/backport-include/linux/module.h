@@ -14,7 +14,7 @@
  * To the call to the initfn we added the symbol dependency on compat
  * to make sure that compat.ko gets loaded for any compat modules.
  */
-extern void backport_dependency_symbol(void);
+extern void backport_dependency_symbol(void); 
 
 #ifdef BACKPORTS_GIT_TRACKED
 #define BACKPORT_MOD_VERSIONS MODULE_VERSION(BACKPORTS_GIT_TRACKED);

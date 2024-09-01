@@ -570,7 +570,7 @@ static void qmi_data_ready(struct sock *sk)
 {
 	struct qmi_handle *qmi = sk->sk_user_data;
 
-	trace_sk_data_ready(sk);
+//	trace_sk_data_ready(sk);
 
 	/*
 	 * This will be NULL if we receive data while being in

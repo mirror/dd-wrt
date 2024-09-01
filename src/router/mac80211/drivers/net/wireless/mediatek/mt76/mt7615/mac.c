@@ -7,7 +7,7 @@
  *         Lorenzo Bianconi <lorenzo@kernel.org>
  */
 
-#include <linux/devcoredump.h>
+//#include <linux/devcoredump.h>
 #include <linux/etherdevice.h>
 #include <linux/timekeeping.h>
 #include "mt7615.h"
@@ -2365,6 +2365,6 @@ void mt7615_coredump_work(struct work_struct *work)
 
 		dev_kfree_skb(skb);
 	}
-	dev_coredumpv(dev->mt76.dev, dump, MT76_CONNAC_COREDUMP_SZ,
-		      GFP_KERNEL);
+//	dev_coredumpv(dev->mt76.dev, dump, MT76_CONNAC_COREDUMP_SZ,
+//		      GFP_KERNEL);
 }
