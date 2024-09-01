@@ -1,0 +1,128 @@
+2d05669ce1f18c1bc51476980a0e8bd107682546:
+  title: 'gcc-plugins: Rename last_stmt() for GCC 14+'
+  mainline: 2e3f65ccfe6b0778b261ad69c9603ae85f210334
+  backport: c133012a813396eefedf1bfa049efe8015b98812
+9656f9540fa3949dfb65e9f18d263bbd96778831:
+  title: 'scsi: qedf: Set qed_slowpath_params to zero before use'
+  mainline: 6c3bb589debd763dc4b94803ddf3c13b4fcca776
+  backport: 2eb33ecdc2e4a03f4b673a04428924293b58cd7e
+52a1125633abf465f59d184020add71616b87efa:
+  title: 'ACPI: EC: Abort address space access upon error'
+  mainline: f6f172dc6a6d7775b2df6adfd1350700e9a847ec
+  backport: 7af36fe3934a05c3df07dac10732c2f2097fa9eb
+286b25bf40251e940756371eae6c7e59fdbd6745:
+  title: 'ACPI: EC: Avoid returning AE_OK on errors in address space handler'
+  mainline: c4bd7f1d78340e63de4d073fd3dbe5391e2996e5
+  backport: af32f802de713de4b0a2b4f6e97c8e1ca9dfc758
+46487275e810d1e7c99f36af9fdfae0909c4e200:
+  title: 'wifi: mac80211: mesh: init nonpeer_pm to active by default in mesh sdata'
+  mainline: 6f6291f09a322c1c1578badac8072d049363f4e6
+  backport: 2fac830d7e5b9250a13d556a1d5125a1a2b351b4
+cd3212a9e0209dff7eda30f01ab8590f5e8d92fb:
+  title: 'wifi: mac80211: fix UBSAN noise in ieee80211_prep_hw_scan()'
+  mainline: 92ecbb3ac6f3fe8ae9edf3226c76aa17b6800699
+  backport: 60882d697cfb5c6868f24649c60b8dd8d2703668
+ce0368a52554d213c5cd447ba786b54390a845e1:
+  title: 'Input: silead - Always support 10 fingers'
+  mainline: 38a38f5a36da9820680d413972cb733349400532
+  backport: 1501ce3d5bfea3a1e8aaec61b878f20d8a93dfcb
+7435bd2f84a25aba607030237261b3795ba782da:
+  title: 'ila: block BH in ila_output()'
+  mainline: cf28ff8e4c02e1ffa850755288ac954b6ff0db8c
+  backport: 6e6d94454bba0055f8d77d3bb42d49c369e80e95
+b6d6a91b584a022424d99264741bdfa6b336c83b:
+  title: 'kconfig: gconf: give a proper initial state to the Save button'
+  mainline: 46edf4372e336ef3a61c3126e49518099d2e2e6d
+  backport: 265ba671aaff09b4531db6875d668dfb4efd716a
+b366d89859fe7b58894b3698844b551fe32f892a:
+  title: 'kconfig: remove wrong expr_trans_bool()'
+  mainline: 77a92660d8fe8d29503fae768d9f5eb529c88b36
+  backport: 692c2ebeacc0c82e6c088e5a6f63ff9395a2082e
+5611e11988535125b3a05305680851ff587702a9:
+  title: 'fs/file: fix the check in find_next_fd()'
+  mainline: ed8c7fbdfe117abbef81f65428ba263118ef298a
+  backport: 8d3da24eb73289dde20e54b84c848e61ae0138b0
+bd2a753fa12cf3d28726a4bf067398514e52d57c:
+  title: 'mei: demote client disconnect warning on suspend to debug'
+  mainline: 1db5322b7e6b58e1b304ce69a50e9dca798ca95b
+  backport: cdb32323efca90437116ce55ba43da736ecad374
+b02ba9a0b55b762bd04743a22f3d9f9645005e79:
+  title: 'wifi: cfg80211: wext: add extra SIOCSIWSCAN data check'
+  mainline: 6ef09cdc5ba0f93826c09d810c141a8d103a80fc
+  backport: 56e8fc1b0ac2a752cba13ccd0e128f7eaadcd8d0
+9b6a1cb833dc8ceab3fbc45a261a8dd37c4f8013:
+  title: 'Input: elantech - fix touchpad state on resume for Lenovo N24'
+  mainline: a69ce592cbe0417664bc5a075205aa75c2ec1273
+  backport: 0eafa6b4fdf53fdc8b8924325f994fe4ed0700a7
+0405060fa24286e361cf784bfb37695e8dadc541:
+  title: 'bytcr_rt5640 : inverse jack detect for Archos 101 cesium'
+  mainline: e3209a1827646daaab744aa6a5767b1f57fb5385
+  skipped: commit did not cherry-pick cleanly
+0aa5858cb091344f149d1169f00d08b585fa70de:
+  title: 'can: kvaser_usb: fix return value for hif_usb_send_regout'
+  mainline: 0d34d8163fd87978a6abd792e2d8ad849f4c3d57
+  skipped: fixes code not in 4.14.y
+a778987afc36d5dc02a1f82d352a81edcaf7eb83:
+  title: 's390/sclp: Fix sclp_init() cleanup on failure'
+  mainline: 6434b33faaa063df500af355ee6c3942e0f8d982
+  backport: 2ba3ceb092c9ac54204c7416bfa884d37f59bd1a
+fe0a6e7eb38f9d5396f6ff548186a6cd62c08b1a:
+  title: 'ALSA: dmaengine_pcm: terminate dmaengine before synchronize'
+  mainline: 6a7db25aad8ce6512b366d2ce1d0e60bac00a09d
+  backport: f78b195536a163671b4aa1b85b88e432919c79f9
+6f5c552bb803ac30a746addc91b3da9b94b48c4d:
+  title: 'net: usb: qmi_wwan: add Telit FN912 compositions'
+  mainline: 77453e2b015b5ced5b3f45364dd5a72dfc3bdecb
+  backport: c16c01ccdd91f3d7764c0e63da5ba2274eb031a8
+77cfeb27b8ded33c3f4023a24a2d1517ad4e4893:
+  title: 'net: mac802154: Fix racy device stats updates by DEV_STATS_INC() and DEV_STATS_ADD()'
+  mainline: b8ec0dc3845f6c9089573cb5c2c4b05f7fc10728
+  backport: eef43c3ccb72817061d1c663129fc04ff09de4a6
+48542881997e17b49dc16b93fe910e0cfcf7a9f9:
+  title: 'Bluetooth: hci_core: cancel all works upon hci_unregister_dev()'
+  mainline: 0d151a103775dd9645c78c97f77d6e2a5298d913
+  backport: 43df6e148cb43ad243a345291d8ddc2cea7786ce
+a5c4645346b0efb5a10ed28ae281a9af29037608:
+  title: 'fs: better handle deep ancestor chains in is_subdir()'
+  mainline: 391b59b045004d5b985d033263ccba3e941a7740
+  backport: fe34d279afd5186910b42c6ccf419f32552f6eab
+4f5e56dddabe947cc840ffb2db60d9df6ca9e8b9:
+  title: 'spi: imx: Don''t expect DMA for i.MX{25,35,50,51,53} cspi devices'
+  mainline: ce1dac560a74220f2e53845ec0723b562288aed4
+  backport: 4e4a79155c2fe74dd5aea4e56b96923d39d50408
+d5e9dddd18fdfe04772bce07d4a34e39e7b1e402:
+  title: 'selftests/vDSO: fix clang build errors and warnings'
+  mainline: 73810cd45b99c6c418e1c6a487b52c1e74edb20d
+  backport: 010cabb684a2904c698713694a24cb0c99d24f41
+72805debec8f7aa342da194fe0ed7bc8febea335:
+  title: 'hfsplus: fix uninit-value in copy_name'
+  mainline: 0570730c16307a72f8241df12363f76600baf57d
+  backport: 7cc7fff373ff4131e0db0e9f099913b524cd0275
+d30ff33040834c3b9eee29740acd92f9c7ba2250:
+  title: 'filelock: Remove locks reliably when fcntl/close race is detected'
+  mainline: 3cad1bc010416c6dd780643476bc59ed742436b9
+  backport: 0092a371ee34e3dc89e46d1267ee614d60026158
+41a5c1717bf4ad1b6084e8682de64b178eabc059:
+  title: 'ARM: 9324/1: fix get_user() broken with veneer'
+  mainline: 24d3ba0a7b44c1617c27f5045eecc4f34752ab03
+  backport: a650c33ed9edba733de822a47397ead4c1ebc2fb
+c9d6e349f7aad4ab9c557047d357df256c15f25e:
+  title: 'ACPI: processor_idle: Fix invalid comparison with insertion sort for latency'
+  mainline: 233323f9b9f828cd7cd5145ad811c1990b692542
+  backport: f70e0950f817b75ed1f01859f15d9c2b6a37dba2
+7de00adc9bd035d861ba4177848ca0bfa5ed1e04:
+  title: 'net: relax socket state check at accept time.'
+  mainline: 26afda78cda3da974fd4c287962c169e9462c495
+  backport: aac14d323840fa0e71308002c051ce8174804c77
+13d38c00df97289e6fba2e54193959293fd910d2:
+  title: 'ocfs2: add bounds checking to ocfs2_check_dir_entry()'
+  mainline: 255547c6bb8940a97eea94ef9d464ea5967763fb
+  backport: 3c99e72be6bf85c5e3e19ddf0e1a38a9eebbd4a6
+7f91bd0f2941fa36449ce1a15faaa64f840d9746:
+  title: 'jfs: don''t walk off the end of ealist'
+  mainline: d0fa70aca54c8643248e89061da23752506ec0d4
+  backport: 7f65c3bae2493c58ef7d6ef1bf9ce717c71fb87d
+a561145f3ae973ebf3e0aee41624e92a6c5cb38d:
+  title: 'filelock: Fix fcntl/close race recovery compat path'
+  mainline: f8138f2ad2f745b9a1c696a05b749eabe44337ea
+  backport: a429e9177821cfc3fc4b316b64e431ae613319c3
