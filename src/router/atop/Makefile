@@ -22,7 +22,8 @@ PMPATHD  = /usr/lib/systemd/system-sleep
 
 PKG_CONFIG ?= pkg-config
 CFLAGS  += $(COPTS) $(LTO) -I. -Wall -Wno-stringop-truncation -Wmissing-prototypes -Wmissing-declarations -Wformat-security # -DNOPERFEVENT   # -DHTTPSTATS
-#LDFLAGS += 
+CFLAGS  += -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib -I$(TOP)/glib20/libglib/build -I$(TOP)/zlib/include -I$(TOP)/ncurses/include
+LDFLAGS += $(LDLTO) -L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib -L$(TOP)/ncurses/lib/ -L$(TOP)/zlib
 OBJMOD0  = version.o
 OBJMOD1  = various.o  deviate.o   procdbase.o
 OBJMOD2  = acctproc.o photoproc.o photosyst.o cgroups.o rawlog.o ifprop.o parseable.o
@@ -35,7 +36,7 @@ VERS     = $(shell ./atop -V 2>/dev/null| sed -e 's/^[^ ]* //' -e 's/ .*//')
 all: 		atop atopsar atopacctd atopconvert atopcat atophide
 
 atop:		atop.o    $(ALLMODS) Makefile
-		$(CC) atop.o $(ALLMODS) -o atop -lncursesw -lz -lm -lrt $(LDFLAGS)
+		$(CC) $(CFLAGS) atop.o $(ALLMODS) -o atop -lncurses -lz -lm -lrt -lglib-2.0 $(LDFLAGS)
 
 atopsar:	atop
 		ln -sf atop atopsar
