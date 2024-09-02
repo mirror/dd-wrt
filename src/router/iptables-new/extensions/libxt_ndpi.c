@@ -481,7 +481,7 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"hls",
 	"clickhouse",
 	"nano",
-	"openwire"
+	"openwire",
 	NULL,
 };
 
