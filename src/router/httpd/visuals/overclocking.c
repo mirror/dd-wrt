@@ -75,7 +75,6 @@ static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
 static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #endif
 #endif
-#endif
 
 static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 15120000, 1800000, 0 };
 static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000, 0 };
@@ -194,3 +193,4 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
 	}
 }
+#endif
