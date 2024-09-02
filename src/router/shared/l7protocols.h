@@ -37,6 +37,7 @@ l7filters filters_list[] = {
 	{ "ad-telemetry", FILTER_CUSTOM,0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ads_analytics_track", NDPI_ONLY, 0, NULL },
+	{ "adobe_connect", NDPI_ONLY, 0, NULL },
 	{ "adult_content", NDPI_ONLY, 0, NULL },
 	{ "afp", NDPI_ONLY, 0, NULL },
 #endif
@@ -82,6 +83,7 @@ l7filters filters_list[] = {
 	{ "bearshare", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "beckhoff_ads", NDPI_ONLY, 0, NULL },
+	{ "bfcp", NDPI_ONLY, 0, NULL },
 	{ "bfd", NDPI_ONLY, 0, NULL },
 #endif
 	{ "bgp", DPI, 0, NULL },
@@ -94,6 +96,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "bjnp", NDPI_ONLY, 0, NULL },
 	{ "bloomberg", NDPI_ONLY, 0, NULL },
+	{ "bluesky", NDPI_ONLY, 0, NULL },
 	{ "c1222", NDPI_ONLY, 0, NULL },
 	{ "cachefly", NDPI_ONLY, 0, NULL },
 	{ "can", NDPI_ONLY, 0, NULL },
@@ -112,6 +115,7 @@ l7filters filters_list[] = {
 	{ "citrix", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "clear-text credentials", NDPI_RISK, 36, "telnet,rsh,imap,smtp,irc,ftp_control,http,pop" },
+	{ "clickhouse", NDPI_ONLY, 0, NULL },
 	{ "cloudflare", NDPI_ONLY, 0, NULL },
 	{ "cloudflarewarp", NDPI_ONLY, 0, NULL },
 #endif
@@ -119,6 +123,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "cnn", NDPI_ONLY, 0, NULL },
 	{ "coap", NDPI_ONLY, 0, NULL },
+	{ "cod_mobile", NDPI_ONLY, 0, NULL },
 #endif
 	{ "code_red", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -181,6 +186,7 @@ l7filters filters_list[] = {
 #endif
 	{ "edonkey", PDPI, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "egd", NDPI_ONLY, 0, NULL },
 	{ "egp", NDPI_ONLY, 0, NULL },
 	{ "elasticsearch", NDPI_ONLY, 0, NULL },
 	{ "electronicarts", NDPI_ONLY, 0, NULL },
@@ -194,6 +200,7 @@ l7filters filters_list[] = {
 	{ "exe", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "facebook", NDPI_ONLY, 0, NULL },
+	{ "facebook_messenger", NDPI_ONLY, 0, NULL },
 	{ "facebook_reel_story", NDPI_ONLY, 0, NULL },
 	{ "facebookvoip", NDPI_ONLY, 0, NULL },
 #endif
@@ -286,6 +293,7 @@ l7filters filters_list[] = {
 	{ "hddtemp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "hl7", NDPI_ONLY, 0, NULL },
+	{ "hls", NDPI_ONLY, 0, NULL },
 #endif
 	{ "hotline", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -357,6 +365,7 @@ l7filters filters_list[] = {
 	{ "ipp", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "ipsec", NDPI_ONLY, 0, NULL },
+	{ "iqiyi", NDPI_ONLY, 0, NULL },
 #endif
 	{ "irc", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -365,7 +374,8 @@ l7filters filters_list[] = {
 	{ "jabber", DPI, 0, NULL },
 	{ "jpeg", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "json_rpc", L7_ONLY, 0, NULL },
+	{ "jrmi", NDPI_ONLY, 0, NULL },
+	{ "json_rpc", NDPI_ONLY, 0, NULL },
 	{ "kakaotalk", NDPI_ONLY, 0, NULL },
 	{ "kakaotalk_voice", NDPI_ONLY, 0, NULL },
 #endif
@@ -375,12 +385,13 @@ l7filters filters_list[] = {
 	{ "kerberos", NDPI_ONLY, 0, NULL },
 	{ "kismet", NDPI_ONLY, 0, NULL },
 	{ "known proto on non std port", NDPI_RISK, 5, "all" },
-	{ "kontiki", NDPI_ONLY, 0, NULL },
+	{ "knxnet_ip", NDPI_ONLY, 0, NULL },
 #endif
 	{ "kugoo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "lastfm", NDPI_ONLY, 0, NULL },
 	{ "ldap", NDPI_ONLY, 0, NULL },
+	{ "ldp", NDPI_ONLY, 0, NULL },
 	{ "likee", NDPI_ONLY, 0, NULL },
 	{ "line", NDPI_ONLY, 0, NULL },
 	{ "line_call", NDPI_ONLY, 0, NULL },
@@ -401,11 +412,11 @@ l7filters filters_list[] = {
 	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
 	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
 	{ "maplestory", NDPI_ONLY, 0, NULL },
+	{ "mastodon", NDPI_ONLY, 0, NULL },
 	{ "mdns", NDPI_ONLY, 0, NULL },
 	{ "megaco", NDPI_ONLY, 0, NULL },
 	{ "memcached", NDPI_ONLY, 0, NULL },
 	{ "meraki_cloud", NDPI_ONLY, 0, NULL },
-	{ "messenger", NDPI_ONLY, 0, NULL },
 	{ "mgcp", NDPI_ONLY, 0, NULL },
 	{ "microsoft", NDPI_ONLY, 0, NULL },
 	{ "microsoft365", NDPI_ONLY, 0, NULL },
@@ -438,6 +449,9 @@ l7filters filters_list[] = {
 	{ "mute", PDPI_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "mysql", NDPI_ONLY, 0, NULL },
+#endif
+#ifdef HAVE_OPENDPI
+	{ "nano", NDPI_ONLY, 0, NULL },
 #endif
 	{ "napster", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -480,6 +494,7 @@ l7filters filters_list[] = {
 	{ "opendns", NDPI_ONLY, 0, NULL },
 	{ "openflow", NDPI_ONLY, 0, NULL },
 	{ "openvpn", NDPI_ONLY, 0, NULL },
+	{ "openwire", NDPI_ONLY, 0, NULL },
 	{ "opera_vpn", NDPI_ONLY, 0, NULL },
 	{ "oracle", NDPI_ONLY, 0, NULL },
 	{ "ospf", NDPI_ONLY, 0, NULL },
@@ -514,7 +529,6 @@ l7filters filters_list[] = {
 	{ "postscript", L7_ONLY, 0, NULL },
 	{ "pplive", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "ppstream", NDPI_ONLY, 0, NULL },
 	{ "pptp", NDPI_ONLY, 0, NULL },
 	{ "ptpv2", NDPI_ONLY, 0, NULL },
 #endif
@@ -568,6 +582,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "resp", NDPI_ONLY, 0, NULL },
 	{ "riotgames", NDPI_ONLY, 0, NULL },
+	{ "ripe_atlas", NDPI_ONLY, 0, NULL },
 	//      { "risky asn", NDPI_RISK, 26, NULL },
 	{ "risky domain name", NDPI_RISK, 27, "dns" },
 #endif
@@ -700,11 +715,13 @@ l7filters filters_list[] = {
 	{ "tesla", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "tesla_services", NDPI_ONLY, 0, NULL },
+	{ "teso", NDPI_ONLY, 0, NULL },
 	{ "text with non-printable chars", NDPI_RISK, 39, "tls,fastcgi,quic,http,dns" },
 #endif
 	{ "tftp", DPI, 0, NULL },
 	{ "thecircle", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "threads", NDPI_ONLY, 0, NULL },
 	{ "threema", NDPI_ONLY, 0, NULL },
 #endif
 	{ "thunder5_see", L7_ONLY, 0, NULL },
@@ -737,12 +754,10 @@ l7filters filters_list[] = {
 #endif
 	{ "tsp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "tuenti", NDPI_ONLY, 0, NULL },
 	{ "tumblr", NDPI_ONLY, 0, NULL },
 	{ "tunein", NDPI_ONLY, 0, NULL },
 	{ "tunnelbear", NDPI_ONLY, 0, NULL },
 	{ "tuya_lp", NDPI_ONLY, 0, NULL },
-	{ "tvuplayer", NDPI_ONLY, 0, NULL },
 	{ "twitch", NDPI_ONLY, 0, NULL },
 	{ "twitter", NDPI_ONLY, 0, NULL },
 #endif
@@ -768,9 +783,9 @@ l7filters filters_list[] = {
 	{ "validcertssl", L7_ONLY, 0, NULL },
 	{ "ventrilo", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
-	{ "vevo", NDPI_ONLY, 0, NULL },
 	{ "vhua", NDPI_ONLY, 0, NULL },
 	{ "viber", NDPI_ONLY, 0, NULL },
+	{ "viber_voip", NDPI_ONLY, 0, NULL },
 	{ "vimeo", NDPI_ONLY, 0, NULL },
 	{ "vk", NDPI_ONLY, 0, NULL },
 	{ "vmware", NDPI_ONLY, 0, NULL },
@@ -866,6 +881,7 @@ l7filters filters_list[] = {
 	{ "zmaap", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "zoom", NDPI_ONLY, 0, NULL },
+	{ "zug", NDPI_ONLY, 0, NULL },
 #endif
 	{ 0, 0, 0, NULL },
 };
