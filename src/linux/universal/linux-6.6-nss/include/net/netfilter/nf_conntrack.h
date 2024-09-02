@@ -397,10 +397,9 @@ int nf_ct_skb_network_trim(struct sk_buff *skb, int family);
 int nf_ct_handle_fragments(struct net *net, struct sk_buff *skb,
 			   u16 zone, u8 family, u8 *proto, u16 *mru);
 
-#ifdef CONFIG_NDPI_HOOK
-void register_ndpi_hook(void (*hook)(struct nf_conn *));
-void unregister_ndpi_hook(void);
-
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+void register_nf_ct_destroy_hook(void (*hook)(struct nf_conn *));
+void unregister_nf_ct_destroy_hook(void);
 #endif
 
 #define NF_CT_STAT_INC(net, count)	  __this_cpu_inc((net)->ct.stat->count)
