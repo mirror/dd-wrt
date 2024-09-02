@@ -33,14 +33,12 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
+#include "pcap/usb.h"
 #include "pcap-int.h"
 #include "pcap-usb-linux.h"
 #include "pcap-usb-linux-common.h"
-#include "pcap/usb.h"
 
 #include "extract.h"
 
@@ -118,10 +116,10 @@ struct mon_bin_mfetch {
 #define MON_IOCX_MFETCH _IOWR(MON_IOC_MAGIC, 7, struct mon_bin_mfetch)
 #define MON_IOCH_MFLUSH _IO(MON_IOC_MAGIC, 8)
 
-#define MON_BIN_SETUP 	0x1 /* setup hdr is present*/
-#define MON_BIN_SETUP_ZERO 	0x2 /* setup buffer is not available */
-#define MON_BIN_DATA_ZERO 	0x4 /* data buffer is not available */
-#define MON_BIN_ERROR 	0x8
+#define MON_BIN_SETUP	0x1 /* setup hdr is present*/
+#define MON_BIN_SETUP_ZERO	0x2 /* setup buffer is not available */
+#define MON_BIN_DATA_ZERO	0x4 /* data buffer is not available */
+#define MON_BIN_ERROR	0x8
 
 /*
  * Private data for capturing on Linux USB.
@@ -158,7 +156,7 @@ usb_dev_add(pcap_if_list_t *devlistp, int n, char *err_str)
 		 * "connected" vs. "disconnected", as that's a property
 		 * that would apply to a particular USB interface.
 		 */
-		if (add_dev(devlistp, dev_name,
+		if (pcapint_add_dev(devlistp, dev_name,
 		    PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE,
 		    "Raw USB traffic, all USB buses", err_str) == NULL)
 			return -1;
@@ -170,7 +168,7 @@ usb_dev_add(pcap_if_list_t *devlistp, int n, char *err_str)
 		 * PCAP_IF_CONNECTION_STATUS_DISCONNECTED?
 		 */
 		snprintf(dev_descr, 30, "Raw USB traffic, bus number %d", n);
-		if (add_dev(devlistp, dev_name, 0, dev_descr, err_str) == NULL)
+		if (pcapint_add_dev(devlistp, dev_name, 0, dev_descr, err_str) == NULL)
 			return -1;
 	}
 
@@ -255,7 +253,7 @@ usb_set_ring_size(pcap_t* handle, int header_size)
 
 	/*
 	 * Will this get an error?
-	 * (There's no wqy to query the minimum or maximum, so we just
+	 * (There's no way to query the minimum or maximum, so we just
 	 * copy the value from the kernel source.  We don't round it
 	 * up to a multiple of the page size.)
 	 */
@@ -278,7 +276,7 @@ usb_set_ring_size(pcap_t* handle, int header_size)
 	}
 
 	if (ioctl(handle->fd, MON_IOCT_RING_SIZE, ring_size) == -1) {
-		pcap_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "Can't set ring size from fd %d", handle->fd);
 		return -1;
 	}
@@ -374,13 +372,13 @@ probe_devices(int bus)
 		ctrl.bRequest = USB_REQ_GET_DESCRIPTOR;
 		ctrl.wValue = USB_DT_DEVICE << 8;
 		ctrl.wIndex = 0;
- 		ctrl.wLength = sizeof(descriptor);
+		ctrl.wLength = sizeof(descriptor);
 #else
 		ctrl.requesttype = USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE;
 		ctrl.request = USB_REQ_GET_DESCRIPTOR;
 		ctrl.value = USB_DT_DEVICE << 8;
 		ctrl.index = 0;
- 		ctrl.length = sizeof(descriptor);
+		ctrl.length = sizeof(descriptor);
 #endif
 		ctrl.data = descriptor;
 		ctrl.timeout = CTRL_TIMEOUT;
@@ -464,7 +462,7 @@ static int
 usb_activate(pcap_t* handle)
 {
 	struct pcap_usb_linux *handlep = handle->priv;
-	char 		full_path[USB_LINE_LEN];
+	char		full_path[USB_LINE_LEN];
 
 	/*
 	 * Turn a negative snapshot value (invalid), a snapshot value of
@@ -483,11 +481,11 @@ usb_activate(pcap_t* handle)
 	handle->linktype = DLT_USB_LINUX;
 
 	handle->inject_op = usb_inject_linux;
-	handle->setfilter_op = install_bpf_program; /* no kernel filtering */
+	handle->setfilter_op = pcapint_install_bpf_program; /* no kernel filtering */
 	handle->setdirection_op = usb_setdirection_linux;
 	handle->set_datalink_op = NULL;	/* can't change data link type */
-	handle->getnonblock_op = pcap_getnonblock_fd;
-	handle->setnonblock_op = pcap_setnonblock_fd;
+	handle->getnonblock_op = pcapint_getnonblock_fd;
+	handle->setnonblock_op = pcapint_setnonblock_fd;
 
 	/*get usb bus index from device name */
 	if (sscanf(handle->opt.device, USB_IFACE"%d", &handlep->bus_index) != 1)
@@ -545,7 +543,7 @@ DIAG_ON_FORMAT_TRUNCATION
 			/*
 			 * Something went wrong.
 			 */
-			pcap_fmt_errmsg_for_errno(handle->errbuf,
+			pcapint_fmt_errmsg_for_errno(handle->errbuf,
 			    PCAP_ERRBUF_SIZE, errno,
 			    "Can't open USB bus file %s", full_path);
 			return PCAP_ERROR;
@@ -610,7 +608,7 @@ DIAG_ON_FORMAT_TRUNCATION
 	 * buffer */
 	handle->buffer = malloc(handle->bufsize);
 	if (!handle->buffer) {
-		pcap_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "malloc");
 		close(handle->fd);
 		return PCAP_ERROR;
@@ -646,7 +644,7 @@ usb_stats_linux_bin(pcap_t *handle, struct pcap_stat *stats)
 	ret = ioctl(handle->fd, MON_IOCG_STATS, &st);
 	if (ret < 0)
 	{
-		pcap_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "Can't read stats from fd %d", handle->fd);
 		return -1;
 	}
@@ -689,7 +687,7 @@ usb_read_linux_bin(pcap_t *handle, int max_packets _U_, pcap_handler callback, u
 		if (errno == EAGAIN)
 			return 0;	/* no data there */
 
-		pcap_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "Can't read from fd %d", handle->fd);
 		return -1;
 	}
@@ -718,14 +716,14 @@ usb_read_linux_bin(pcap_t *handle, int max_packets _U_, pcap_handler callback, u
 	pkth.caplen = sizeof(pcap_usb_header) + clen;
 	if (info.hdr->data_flag) {
 		/*
-		 * No data; just base the on-the-wire length on
+		 * No data; just base the original length on
 		 * info.hdr->data_len (so that it's >= the captured
 		 * length).
 		 */
 		pkth.len = sizeof(pcap_usb_header) + info.hdr->data_len;
 	} else {
 		/*
-		 * We got data; base the on-the-wire length on
+		 * We got data; base the original length on
 		 * info.hdr->urb_len, so that it includes data
 		 * discarded by the USB monitor device due to
 		 * its buffer being too small.
@@ -736,7 +734,7 @@ usb_read_linux_bin(pcap_t *handle, int max_packets _U_, pcap_handler callback, u
 	pkth.ts.tv_usec = info.hdr->ts_usec;
 
 	if (handle->fcode.bf_insns == NULL ||
-	    pcap_filter(handle->fcode.bf_insns, handle->buffer,
+	    pcapint_filter(handle->fcode.bf_insns, handle->buffer,
 	      pkth.len, pkth.caplen)) {
 		handlep->packets_read++;
 		callback(user, &pkth, handle->buffer);
@@ -819,7 +817,7 @@ usb_read_linux_mmap(pcap_t *handle, int max_packets, pcap_handler callback, u_ch
 			if (errno == EAGAIN)
 				return 0;	/* no data there */
 
-			pcap_fmt_errmsg_for_errno(handle->errbuf,
+			pcapint_fmt_errmsg_for_errno(handle->errbuf,
 			    PCAP_ERRBUF_SIZE, errno, "Can't mfetch fd %d",
 			    handle->fd);
 			return -1;
@@ -878,34 +876,53 @@ usb_read_linux_mmap(pcap_t *handle, int max_packets, pcap_handler callback, u_ch
 			pkth.caplen = sizeof(pcap_usb_header_mmapped) + clen;
 			if (hdr->data_flag) {
 				/*
-				 * No data; just base the on-the-wire length
+				 * No data; just base the original length
 				 * on hdr->data_len (so that it's >= the
-				 * captured length).
+				 * captured length).  Clamp the result
+				 * at UINT_MAX, so it fits in an unsigned
+				 * int.
 				 */
-				pkth.len = sizeof(pcap_usb_header_mmapped) +
-				    hdr->data_len;
+				pkth.len = u_int_sum(sizeof(pcap_usb_header_mmapped),
+				    hdr->data_len);
 			} else {
 				/*
-				 * We got data; base the on-the-wire length
-				 * on hdr->urb_len, so that it includes
-				 * data discarded by the USB monitor device
-				 * due to its buffer being too small.
+				 * We got data.
 				 */
-				pkth.len = sizeof(pcap_usb_header_mmapped) +
-				    (hdr->ndesc * sizeof (usb_isodesc)) + hdr->urb_len;
-
-				/*
-				 * Now clean it up if it's a completion
-				 * event for an incoming isochronous
-				 * transfer.
-				 */
-				fix_linux_usb_mmapped_length(&pkth, bp);
+				if (is_isochronous_transfer_completion(hdr)) {
+					/*
+					 * For isochronous transfer completion
+					 * events, hdr->urb_len doesn't take
+					 * into account the way the data is
+					 * put into the buffer, as it doesn't
+					 * count any padding between the
+					 * chunks of isochronous data, so
+					 * we have to calculate the amount
+					 * of data from the isochronous
+					 * descriptors.
+					 */
+					pkth.len = incoming_isochronous_transfer_completed_len(&pkth, bp);
+				} else {
+					/*
+					 * For everything else, the original
+					 * data length is just the length of
+					 * the memory-mapped Linux USB header
+					 * plus hdr->urb_len; we use
+					 * hdr->urb_len so that it includes
+					 * data discarded by the USB monitor
+					 * device due to its buffer being
+					 * too small.  Clamp the result at
+					 * UINT_MAX, so it fits in an
+					 * unsigned int.
+					 */
+					pkth.len = u_int_sum(sizeof(pcap_usb_header_mmapped),
+					    hdr->urb_len);
+				}
 			}
 			pkth.ts.tv_sec = (time_t)hdr->ts_sec;
 			pkth.ts.tv_usec = hdr->ts_usec;
 
 			if (handle->fcode.bf_insns == NULL ||
-			    pcap_filter(handle->fcode.bf_insns, (u_char*) hdr,
+			    pcapint_filter(handle->fcode.bf_insns, (u_char*) hdr,
 			      pkth.len, pkth.caplen)) {
 				handlep->packets_read++;
 				callback(user, &pkth, (u_char*) hdr);
@@ -914,7 +931,7 @@ usb_read_linux_mmap(pcap_t *handle, int max_packets, pcap_handler callback, u_ch
 		}
 
 		/*
-		 * If max_packets specifiesg "unlimited", we stop after
+		 * If max_packets specifies "unlimited", we stop after
 		 * the first chunk.
 		 */
 		if (PACKET_COUNT_IS_UNLIMITED(max_packets) ||
@@ -924,7 +941,7 @@ usb_read_linux_mmap(pcap_t *handle, int max_packets, pcap_handler callback, u_ch
 
 	/* flush pending events*/
 	if (ioctl(handle->fd, MON_IOCH_MFLUSH, nflush) == -1) {
-		pcap_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "Can't mflush fd %d", handle->fd);
 		return -1;
 	}
@@ -941,5 +958,5 @@ usb_cleanup_linux_mmap(pcap_t* handle)
 		munmap(handlep->mmapbuf, handlep->mmapbuflen);
 		handlep->mmapbuf = NULL;
 	}
-	pcap_cleanup_live_common(handle);
+	pcapint_cleanup_live_common(handle);
 }
