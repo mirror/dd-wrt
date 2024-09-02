@@ -21,7 +21,7 @@ PMPATH2  = /usr/lib64/pm-utils/sleep.d
 PMPATHD  = /usr/lib/systemd/system-sleep
 
 PKG_CONFIG ?= pkg-config
-CFLAGS  += $(COPTS) $(LTO) -I. -Wall -Wno-stringop-truncation -Wmissing-prototypes -Wmissing-declarations -Wformat-security # -DNOPERFEVENT   # -DHTTPSTATS
+CFLAGS  += $(COPTS) $(LTO) -I. -Wall -Wno-stringop-truncation -Wmissing-prototypes -Wmissing-declarations -Wformat-security -DNEED_PRINTF # -DNOPERFEVENT   # -DHTTPSTATS
 CFLAGS  += -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/build/glib -I$(TOP)/glib20/libglib/build -I$(TOP)/zlib/include -I$(TOP)/ncurses/include
 LDFLAGS += $(LDLTO) -L$(TOP)/glib20/libglib -L$(TOP)/glib20/libglib/glib -L$(TOP)/glib20/libglib/build/glib -L$(TOP)/ncurses/lib/ -L$(TOP)/zlib
 OBJMOD0  = version.o
@@ -63,34 +63,6 @@ distr:
 # default install is based on systemd
 #
 install:	genericinstall
-		if [ ! -d $(DESTDIR)$(SYSDPATH) ]; 			\
-		then	mkdir -p $(DESTDIR)$(SYSDPATH); fi
-		if [ ! -d $(DESTDIR)$(PMPATHD) ]; 			\
-		then	mkdir -p $(DESTDIR)$(PMPATHD); fi
-		#
-		cp atop.service        $(DESTDIR)$(SYSDPATH)
-		chmod 0644             $(DESTDIR)$(SYSDPATH)/atop.service
-		cp atopgpu.service     $(DESTDIR)$(SYSDPATH)
-		chmod 0644             $(DESTDIR)$(SYSDPATH)/atopgpu.service
-		cp atop-rotate.service $(DESTDIR)$(SYSDPATH)
-		chmod 0644             $(DESTDIR)$(SYSDPATH)/atop-rotate.service
-		cp atop-rotate.timer   $(DESTDIR)$(SYSDPATH)
-		chmod 0644             $(DESTDIR)$(SYSDPATH)/atop-rotate.timer
-		cp atopacct.service    $(DESTDIR)$(SYSDPATH)
-		chmod 0644             $(DESTDIR)$(SYSDPATH)/atopacct.service
-		cp atop-pm.sh          $(DESTDIR)$(PMPATHD)
-		chmod 0711             $(DESTDIR)$(PMPATHD)/atop-pm.sh
-		#
-		# only when making on target system:
-		#
-		if [ -z "$(DESTDIR)" -a -f /bin/systemctl ]; 		\
-		then	/bin/systemctl disable --now atop     2> /dev/null; \
-			/bin/systemctl disable --now atopacct 2> /dev/null; \
-			/bin/systemctl daemon-reload;			\
-			/bin/systemctl enable  --now atopacct;		\
-			/bin/systemctl enable  --now atop;		\
-			/bin/systemctl enable  --now atop-rotate.timer;	\
-		fi
 
 
 # explicitly use sysvinstall for System V init based systems
@@ -151,12 +123,6 @@ genericinstall:	atop atopacctd atopconvert atopcat atophide
 		then	mkdir -p $(DESTDIR)$(BINPATH); fi
 		if [ ! -d $(DESTDIR)$(SBINPATH) ]; 		\
 		then mkdir -p $(DESTDIR)$(SBINPATH); fi
-		if [ ! -d $(DESTDIR)$(MAN1PATH) ]; 		\
-		then	mkdir -p $(DESTDIR)$(MAN1PATH);	fi
-		if [ ! -d $(DESTDIR)$(MAN5PATH) ]; 		\
-		then	mkdir -p $(DESTDIR)$(MAN5PATH);	fi
-		if [ ! -d $(DESTDIR)$(MAN8PATH) ]; 		\
-		then	mkdir -p $(DESTDIR)$(MAN8PATH);	fi
 		#
 		touch       		$(DESTDIR)$(DEFPATH)/atop
 		chmod 644      		$(DESTDIR)$(DEFPATH)/atop
@@ -176,14 +142,6 @@ genericinstall:	atop atopacctd atopconvert atopcat atophide
 		chmod 0711 		$(DESTDIR)$(BINPATH)/atopcat
 		cp atophide 		$(DESTDIR)$(BINPATH)/atophide
 		chmod 0711 		$(DESTDIR)$(BINPATH)/atophide
-		cp man/atop.1    	$(DESTDIR)$(MAN1PATH)
-		cp man/atopsar.1 	$(DESTDIR)$(MAN1PATH)
-		cp man/atopconvert.1 	$(DESTDIR)$(MAN1PATH)
-		cp man/atopcat.1 	$(DESTDIR)$(MAN1PATH)
-		cp man/atophide.1 	$(DESTDIR)$(MAN1PATH)
-		cp man/atoprc.5  	$(DESTDIR)$(MAN5PATH)
-		cp man/atopacctd.8  	$(DESTDIR)$(MAN8PATH)
-		cp man/atopgpud.8  	$(DESTDIR)$(MAN8PATH)
 
 ##########################################################################
 
