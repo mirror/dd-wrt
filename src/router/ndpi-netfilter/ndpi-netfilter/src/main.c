@@ -74,7 +74,10 @@
 
 #include "../lib/third_party/include/ndpi_patricia.h"
 
-extern ndpi_protocol_match host_match[];
+NDPI_STATIC ndpi_protocol_match host_match[];
+NDPI_STATIC ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
+NDPI_STATIC ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
+
 
 /* Only for debug! */
 //#define NDPI_IPPORT_DEBUG
@@ -3070,6 +3073,13 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	}
 }
 
+NDPI_STATIC int ndpi_stun_cache_enable=
+#ifndef __KERNEL__
+	1;
+#else
+	0;
+#endif
+
 static int __net_init ndpi_net_init(struct net *net)
 {
 	struct ndpi_net *n;
@@ -3590,3 +3600,13 @@ module_exit(ndpi_mt_exit);
 #ifdef USE_LIVEPATCH
 MODULE_INFO(livepatch, "Y");
 #endif
+
+#include "ndpi_strcol.c" 
+#include "ndpi_proc_parsers.c" 
+#include "ndpi_proc_generic.c"
+#include "ndpi_proc_info.c"
+#include "ndpi_proc_flow.c" 
+#include "ndpi_proc_hostdef.c"
+#include "ndpi_proc_ipdef.c"
+#include "../libre/regexp.c"
+#include "../../src/lib/ndpi_main.c"

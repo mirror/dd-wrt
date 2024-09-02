@@ -742,7 +742,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
           NDPI_LOG_DBG(ndpi_struct, "Keeping old subclassification %d\n", old_proto_stack[0]);
           ndpi_int_stun_add_connection(ndpi_struct, flow,
                                        old_proto_stack[0] == NDPI_PROTOCOL_RTP ? NDPI_PROTOCOL_SRTP : old_proto_stack[0],
-                                       __get_master(flow));
+                                       __get_master_stun(flow));
         }
 
         /* If this is not a real DTLS packet, we need to restore the old state */
