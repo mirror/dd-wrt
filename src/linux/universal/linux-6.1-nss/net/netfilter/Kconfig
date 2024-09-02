@@ -76,7 +76,7 @@ config NETFILTER_NETLINK_OSF
 	  If this option is enabled, the kernel will include support
 	  for passive OS fingerprint via NFNETLINK.
 
-config NDPI_HOOK
+config NF_CONNTRACK_DESTROY_HOOK
 	bool
 
 config NF_CONNTRACK
@@ -84,7 +84,7 @@ config NF_CONNTRACK
 	default m if NETFILTER_ADVANCED=n
 	select NF_DEFRAG_IPV4
 	select NF_DEFRAG_IPV6 if IPV6 != n
-	select NDPI_HOOK
+	select NF_CONNTRACK_DESTROY_HOOK
 	help
 	  Connection tracking keeps a record of what packets have passed
 	  through your machine, in order to figure out how they are related

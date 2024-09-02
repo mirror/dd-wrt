@@ -587,28 +587,29 @@ static void destroy_gre_conntrack(struct nf_conn *ct)
 		nf_ct_gre_keymap_destroy(master);
 #endif
 }
-#ifdef CONFIG_NDPI_HOOK
 
-static void (*ndpi_hook)(struct nf_conn *) __rcu __read_mostly = NULL;
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
 
-void register_ndpi_hook(void (*hook)(struct nf_conn *))
+static void (*nf_ct_destroy_hook)(struct nf_conn *) __rcu __read_mostly = NULL;
+
+void register_nf_ct_destroy_hook(void (*hook)(struct nf_conn *))
 {
-	rcu_assign_pointer(ndpi_hook, hook);
+	rcu_assign_pointer(nf_ct_destroy_hook, hook);
 }
-EXPORT_SYMBOL(register_ndpi_hook);
+EXPORT_SYMBOL(register_nf_ct_destroy_hook);
 
-void unregister_ndpi_hook(void)
+void unregister_nf_ct_destroy_hook(void)
 {
-	rcu_assign_pointer(ndpi_hook, NULL);
+	rcu_assign_pointer(nf_ct_destroy_hook, NULL);
 }
 
-EXPORT_SYMBOL(unregister_ndpi_hook);
+EXPORT_SYMBOL(unregister_nf_ct_destroy_hook);
 #endif
 
 void nf_ct_destroy(struct nf_conntrack *nfct)
 {
 	struct nf_conn *ct = (struct nf_conn *)nfct;
-#ifdef CONFIG_NDPI_HOOK
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
 	void (*hook)(struct nf_conn *);
 #endif
 
@@ -620,8 +621,8 @@ void nf_ct_destroy(struct nf_conntrack *nfct)
 		return;
 	}
 
-#ifdef CONFIG_NDPI_HOOK
-	hook = rcu_dereference(ndpi_hook);
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+	hook = rcu_dereference(nf_ct_destroy_hook);
 	if (hook)
 		hook(ct);
 #endif

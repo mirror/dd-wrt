@@ -397,10 +397,9 @@ static inline struct nf_conntrack_net *nf_ct_pernet(const struct net *net)
 	return net_generic(net, nf_conntrack_net_id);
 }
 
-#ifdef CONFIG_NDPI_HOOK
-void register_ndpi_hook(void (*hook)(struct nf_conn *));
-void unregister_ndpi_hook(void);
-
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+void register_nf_ct_destroy_hook(void (*hook)(struct nf_conn *));
+void unregister_nf_ct_destroy_hook(void);
 #endif
 
 #define NF_CT_STAT_INC(net, count)	  __this_cpu_inc((net)->ct.stat->count)
