@@ -32,15 +32,9 @@
  * RFC 5905 - NTPv4
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
-
-#ifdef HAVE_STRFTIME
-#include <time.h>
-#endif
 
 #include "netdissect.h"
 #include "addrtoname.h"
@@ -180,7 +174,7 @@ static const struct tok ntp_leapind_values[] = {
 
 static const struct tok ntp_stratum_values[] = {
 	{ UNSPECIFIED,	"unspecified" },
-	{ PRIM_REF, 	"primary reference" },
+	{ PRIM_REF,	"primary reference" },
 	{ 0, NULL }
 };
 
@@ -308,9 +302,9 @@ ntp_time_print(netdissect_options *ndo,
 	p_ntp_delta(ndo, &(bp->org_timestamp), &(bp->xmt_timestamp));
 
 	/* FIXME: this code is not aware of any extension fields */
-	if (length == NTP_TIMEMSG_MINLEN + 4) { 	/* Optional: key-id (crypto-NAK) */
+	if (length == NTP_TIMEMSG_MINLEN + 4) {	/* Optional: key-id (crypto-NAK) */
 		ND_PRINT("\n\tKey id: %u", GET_BE_U_4(bp->key_id));
-	} else if (length == NTP_TIMEMSG_MINLEN + 4 + 16) { 	/* Optional: key-id + 128-bit digest */
+	} else if (length == NTP_TIMEMSG_MINLEN + 4 + 16) {	/* Optional: key-id + 128-bit digest */
 		ND_PRINT("\n\tKey id: %u", GET_BE_U_4(bp->key_id));
 		ND_TCHECK_LEN(bp->message_digest, 16);
 		ND_PRINT("\n\tAuthentication: %08x%08x%08x%08x",
@@ -318,7 +312,7 @@ ntp_time_print(netdissect_options *ndo,
 			 GET_BE_U_4(bp->message_digest + 4),
 			 GET_BE_U_4(bp->message_digest + 8),
 			 GET_BE_U_4(bp->message_digest + 12));
-	} else if (length == NTP_TIMEMSG_MINLEN + 4 + 20) { 	/* Optional: key-id + 160-bit digest */
+	} else if (length == NTP_TIMEMSG_MINLEN + 4 + 20) {	/* Optional: key-id + 160-bit digest */
 		ND_PRINT("\n\tKey id: %u", GET_BE_U_4(bp->key_id));
 		ND_TCHECK_LEN(bp->message_digest, 20);
 		ND_PRINT("\n\tAuthentication: %08x%08x%08x%08x%08x",

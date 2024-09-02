@@ -17,9 +17,7 @@
 
 /* specification: RFC 4379 */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
 
@@ -1006,9 +1004,6 @@ lspping_print(netdissect_options *ndo,
                 (const struct lspping_tlv_downstream_map_info_t *)tlv_tptr;
 
             /* FIXME add hash-key type, depth limit, multipath processing */
-
-            tlv_tptr+=sizeof(struct lspping_tlv_downstream_map_info_t);
-            tlv_tlen-=sizeof(struct lspping_tlv_downstream_map_info_t);
 
             /* FIXME print downstream labels */
 

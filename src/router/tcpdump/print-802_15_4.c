@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2009
- * 	Siemens AG, All rights reserved.
- * 	Dmitry Eremin-Solenikov (dbaryshkov@gmail.com)
+ *	Siemens AG, All rights reserved.
+ *	Dmitry Eremin-Solenikov (dbaryshkov@gmail.com)
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that: (1) source code distributions
@@ -22,9 +22,7 @@
 
 /* \summary: IEEE 802.15.4 printer */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
 
@@ -41,13 +39,13 @@
 /* Frame types from Table 7-1 of 802.15.4-2015 */
 static const char *ftypes[] = {
 	"Beacon",			/* 0 */
-	"Data", 			/* 1 */
+	"Data",				/* 1 */
 	"ACK",				/* 2 */
 	"Command",			/* 3 */
 	"Reserved",			/* 4 */
 	"Multipurpose",			/* 5 */
 	"Fragment",			/* 6 */
-	"Extended" 			/* 7 */
+	"Extended"			/* 7 */
 };
 
 /* Element IDs for Header IEs from Table 7-7 of 802.15.4-2015 */
@@ -87,15 +85,15 @@ static const char *h_ie_names[] = {
 	"Reserved 0x20",				/* 0x20 */
 	"Extended DSME PAN descriptor IE",		/* 0x21 */
 	"Fragment Sequence Context Description IE",	/* 0x22 */
-	"Simplified Superframe Specification IE", 	/* 0x23 */
-	"Simplified GTS Specification IE", 		/* 0x24 */
-	"LECIM Capabilities IE", 			/* 0x25 */
-	"TRLE Descriptor IE", 				/* 0x26 */
-	"RCC Capabilities IE", 				/* 0x27 */
-	"RCCN Descriptor IE", 				/* 0x28 */
-	"Global Time IE", 				/* 0x29 */
-	"Omnibus Header IE", 				/* 0x2a */
-	"DA IE", 					/* 0x2b */
+	"Simplified Superframe Specification IE",	/* 0x23 */
+	"Simplified GTS Specification IE",		/* 0x24 */
+	"LECIM Capabilities IE",			/* 0x25 */
+	"TRLE Descriptor IE",				/* 0x26 */
+	"RCC Capabilities IE",				/* 0x27 */
+	"RCCN Descriptor IE",				/* 0x28 */
+	"Global Time IE",				/* 0x29 */
+	"Omnibus Header IE",				/* 0x2a */
+	"DA IE",					/* 0x2b */
 	"Reserved 0x2c",				/* 0x2c */
 	"Reserved 0x2d",				/* 0x2d */
 	"Reserved 0x2e",				/* 0x2e */
@@ -179,7 +177,7 @@ static const char *h_ie_names[] = {
 	"Reserved 0x7c",				/* 0x7c */
 	"Reserved 0x7d",				/* 0x7d */
 	"Header Termination 1 IE",			/* 0x7e */
-	"Header Termination 2 IE" 			/* 0x7f */
+	"Header Termination 2 IE"			/* 0x7f */
 };
 
 /* Payload IE Group IDs from Table 7-15 of 802.15.4-2015 */
@@ -199,7 +197,7 @@ static const char *p_ie_names[] = {
 	"Reserved 0x0c",		/* 0x0c */
 	"Reserved 0x0d",		/* 0x0d */
 	"Reserved 0x0e",		/* 0x0e */
-	"List termination" 		/* 0x0f */
+	"List termination"		/* 0x0f */
 };
 
 /* Sub-ID for short format from Table 7-16 of 802.15.4-2015 */
@@ -239,18 +237,18 @@ static const char *p_mlme_short_names[] = {
 	"All MAC Metrics IE",				/* 0x20 */
 	"Coexistence Specification IE",			/* 0x21 */
 	"SUN Device Capabilities IE",			/* 0x22 */
-	"SUN FSK Generic PHY IE", 			/* 0x23 */
-	"Mode Switch Parameter IE", 			/* 0x24 */
-	"PHY Parameter Change IE", 			/* 0x25 */
-	"O-QPSK PHY Mode IE", 				/* 0x26 */
-	"PCA Allocation IE", 				/* 0x27 */
-	"LECIM DSSS Operating Mode IE", 		/* 0x28 */
-	"LECIM FSK Operating Mode IE", 			/* 0x29 */
-	"Reserved 0x2a", 				/* 0x2a */
-	"TVWS PHY Operating Mode Description IE", 	/* 0x2b */
+	"SUN FSK Generic PHY IE",			/* 0x23 */
+	"Mode Switch Parameter IE",			/* 0x24 */
+	"PHY Parameter Change IE",			/* 0x25 */
+	"O-QPSK PHY Mode IE",				/* 0x26 */
+	"PCA Allocation IE",				/* 0x27 */
+	"LECIM DSSS Operating Mode IE",			/* 0x28 */
+	"LECIM FSK Operating Mode IE",			/* 0x29 */
+	"Reserved 0x2a",				/* 0x2a */
+	"TVWS PHY Operating Mode Description IE",	/* 0x2b */
 	"TVWS Device Capabilities IE",			/* 0x2c */
 	"TVWS Device Category IE",			/* 0x2d */
-	"TVWS Device Identiication IE",			/* 0x2e */
+	"TVWS Device Identification IE",		/* 0x2e */
 	"TVWS Device Location IE",			/* 0x2f */
 	"TVWS Channel Information Query IE",		/* 0x30 */
 	"TVWS Channel Information Source IE",		/* 0x31 */
@@ -331,7 +329,7 @@ static const char *p_mlme_short_names[] = {
 	"Reserved 0x7c",				/* 0x7c */
 	"Reserved 0x7d",				/* 0x7d */
 	"Reserved 0x7e",				/* 0x7e */
-	"Reserved 0x7f" 				/* 0x7f */
+	"Reserved 0x7f"					/* 0x7f */
 };
 
 /* Sub-ID for long format from Table 7-17 of 802.15.4-2015 */
@@ -351,7 +349,7 @@ static const char *p_mlme_long_names[] = {
 	"Reserved 0x0c",			/* 0x0c */
 	"Reserved 0x0d",			/* 0x0d */
 	"Reserved 0x0e",			/* 0x0e */
-	"Reserved 0x0f" 			/* 0x0f */
+	"Reserved 0x0f"				/* 0x0f */
 };
 
 /* MAC commands from Table 7-49 of 802.15.4-2015 */
@@ -390,20 +388,20 @@ static const char *mac_c_names[] = {
 	"Reserved 0x1f",				/* 0x1f */
 	"RIT Data Request command",			/* 0x20 */
 	"DBS Request command",				/* 0x21 */
-	"DBS Response command",     			/* 0x22 */
-	"RIT Data Response command", 			/* 0x23 */
-	"Vendor Specific command", 			/* 0x24 */
-	"Reserved 0x25", 				/* 0x25 */
-	"Reserved 0x26", 				/* 0x26 */
-	"Reserved 0x27", 				/* 0x27 */
-	"Reserved 0x28", 				/* 0x28 */
-	"Reserved 0x29", 				/* 0x29 */
-	"Reserved 0x2a", 				/* 0x2a */
-	"Reserved 0x2b", 				/* 0x2b */
+	"DBS Response command",				/* 0x22 */
+	"RIT Data Response command",			/* 0x23 */
+	"Vendor Specific command",			/* 0x24 */
+	"Reserved 0x25",				/* 0x25 */
+	"Reserved 0x26",				/* 0x26 */
+	"Reserved 0x27",				/* 0x27 */
+	"Reserved 0x28",				/* 0x28 */
+	"Reserved 0x29",				/* 0x29 */
+	"Reserved 0x2a",				/* 0x2a */
+	"Reserved 0x2b",				/* 0x2b */
 	"Reserved 0x2c",				/* 0x2c */
 	"Reserved 0x2d",				/* 0x2d */
 	"Reserved 0x2e",				/* 0x2e */
-	"Reserved 0x2f"				/* 0x2f */
+	"Reserved 0x2f"					/* 0x2f */
 };
 
 /*
@@ -418,7 +416,7 @@ static const char *mac_c_names[] = {
 #define FC_ADDRESSING_MODE_LONG         0x03
 
 /*
- * IEEE 802.15.4 CRC 16 function. This is using CCITT polynomical of 0x1021,
+ * IEEE 802.15.4 CRC 16 function. This is using the CCITT polynomial of 0x1021,
  * but the initial value is 0, and the bits are reversed for both in and out.
  * See section 7.2.10 of 802.15.4-2015 for more information.
  */
@@ -470,7 +468,7 @@ ieee802_15_4_reverse32(uint32_t x)
 }
 
 /*
- * IEEE 802.15.4 CRC 32 function. This is using ANSI X3.66-1979 polynomical of
+ * IEEE 802.15.4 CRC 32 function. This is using the ANSI X3.66-1979 polynomial of
  * 0x04C11DB7, but the initial value is 0, and the bits are reversed for both
  * in and out. See section 7.2.10 of 802.15.4-2015 for more information.
  */
@@ -1299,11 +1297,11 @@ ieee802_15_4_print_mlme_ie_list(netdissect_options *ndo,
 		ND_PRINT("] ");
 		p += sub_ie_len;
 		ie_len -= 2 + sub_ie_len;
-	} while (ie_len > 0);
+	} while (ie_len != 0);
 }
 
 /*
- * Multiplexd IE (802.15.9) parsing and printing.
+ * Multiplexed IE (802.15.9) parsing and printing.
  *
  * Returns number of bytes consumed from packet or -1 in case of error.
  */
@@ -1502,7 +1500,7 @@ ieee802_15_4_print_payload_ie_list(netdissect_options *ndo,
 		if (group_id == 0xf) {
 			break;
 		}
-	} while (caplen > 0);
+	} while (caplen != 0);
 	return len;
 }
 
@@ -1664,7 +1662,7 @@ ieee802_15_4_print_command_data(netdissect_options *ndo,
 			return caplen;
 		}
 		break;
-	case 0x03: /* Diassociation Notification command */
+	case 0x03: /* Disassociation Notification command */
 		if (caplen != 1) {
 			ND_PRINT("Invalid Disassociation Notification command length");
 			return -1;
@@ -2038,19 +2036,19 @@ ieee802_15_4_std_frames(netdissect_options *ndo,
 	}
 
 	switch (security_level) {
-	case 0: /*FALLTHOUGH */
+	case 0: /*FALLTHROUGH */
 	case 4:
 		miclen = 0;
 		break;
-	case 1: /*FALLTHOUGH */
+	case 1: /*FALLTHROUGH */
 	case 5:
 		miclen = 4;
 		break;
-	case 2: /*FALLTHOUGH */
+	case 2: /*FALLTHROUGH */
 	case 6:
 		miclen = 8;
 		break;
-	case 3: /*FALLTHOUGH */
+	case 3: /*FALLTHROUGH */
 	case 7:
 		miclen = 16;
 		break;
@@ -2360,19 +2358,19 @@ ieee802_15_4_mp_frame(netdissect_options *ndo,
 	}
 
 	switch (security_level) {
-	case 0: /*FALLTHOUGH */
+	case 0: /*FALLTHROUGH */
 	case 4:
 		miclen = 0;
 		break;
-	case 1: /*FALLTHOUGH */
+	case 1: /*FALLTHROUGH */
 	case 5:
 		miclen = 4;
 		break;
-	case 2: /*FALLTHOUGH */
+	case 2: /*FALLTHROUGH */
 	case 6:
 		miclen = 8;
 		break;
-	case 3: /*FALLTHOUGH */
+	case 3: /*FALLTHROUGH */
 	case 7:
 		miclen = 16;
 		break;

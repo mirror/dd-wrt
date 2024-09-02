@@ -21,9 +21,7 @@
 
 /* \summary: Domain Name System (DNS) printer */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
 
@@ -495,51 +493,78 @@ const struct tok ns_type2str[] = {
 	{ T_MX,		"MX" },			/* RFC 1035 */
 	{ T_TXT,	"TXT" },		/* RFC 1035 */
 	{ T_RP,		"RP" },			/* RFC 1183 */
-	{ T_AFSDB,	"AFSDB" },		/* RFC 1183 */
+	{ T_AFSDB,	"AFSDB" },		/* RFC 5864 */
 	{ T_X25,	"X25" },		/* RFC 1183 */
 	{ T_ISDN,	"ISDN" },		/* RFC 1183 */
 	{ T_RT,		"RT" },			/* RFC 1183 */
 	{ T_NSAP,	"NSAP" },		/* RFC 1706 */
-	{ T_NSAP_PTR,	"NSAP_PTR" },
-	{ T_SIG,	"SIG" },		/* RFC 2535 */
-	{ T_KEY,	"KEY" },		/* RFC 2535 */
+	{ T_NSAP_PTR,	"NSAP_PTR" },		/* RFC 1706 */
+	{ T_SIG,	"SIG" },		/* RFC 3008 */
+	{ T_KEY,	"KEY" },		/* RFC 3110 */
 	{ T_PX,		"PX" },			/* RFC 2163 */
 	{ T_GPOS,	"GPOS" },		/* RFC 1712 */
-	{ T_AAAA,	"AAAA" },		/* RFC 1886 */
+	{ T_AAAA,	"AAAA" },		/* RFC 3596 */
 	{ T_LOC,	"LOC" },		/* RFC 1876 */
-	{ T_NXT,	"NXT" },		/* RFC 2535 */
+	{ T_NXT,	"NXT" },		/* RFC 3755 */
 	{ T_EID,	"EID" },		/* Nimrod */
 	{ T_NIMLOC,	"NIMLOC" },		/* Nimrod */
 	{ T_SRV,	"SRV" },		/* RFC 2782 */
 	{ T_ATMA,	"ATMA" },		/* ATM Forum */
-	{ T_NAPTR,	"NAPTR" },		/* RFC 2168, RFC 2915 */
+	{ T_NAPTR,	"NAPTR" },		/* RFC 3403 */
 	{ T_KX,		"KX" },			/* RFC 2230 */
-	{ T_CERT,	"CERT" },		/* RFC 2538 */
-	{ T_A6,		"A6" },			/* RFC 2874 */
-	{ T_DNAME,	"DNAME" },		/* RFC 2672 */
-	{ T_SINK, 	"SINK" },
-	{ T_OPT,	"OPT" },		/* RFC 2671 */
-	{ T_APL, 	"APL" },		/* RFC 3123 */
+	{ T_CERT,	"CERT" },		/* RFC 4398 */
+	{ T_A6,		"A6" },			/* RFC 6563 */
+	{ T_DNAME,	"DNAME" },		/* RFC 6672 */
+	{ T_SINK,	"SINK" },
+	{ T_OPT,	"OPT" },		/* RFC 6891 */
+	{ T_APL,	"APL" },		/* RFC 3123 */
 	{ T_DS,		"DS" },			/* RFC 4034 */
 	{ T_SSHFP,	"SSHFP" },		/* RFC 4255 */
 	{ T_IPSECKEY,	"IPSECKEY" },		/* RFC 4025 */
-	{ T_RRSIG, 	"RRSIG" },		/* RFC 4034 */
+	{ T_RRSIG,	"RRSIG" },		/* RFC 4034 */
 	{ T_NSEC,	"NSEC" },		/* RFC 4034 */
 	{ T_DNSKEY,	"DNSKEY" },		/* RFC 4034 */
-	{ T_SPF,	"SPF" },		/* RFC-schlitt-spf-classic-02.txt */
+	{ T_DHCID,	"DHCID" },		/* RFC 4071 */
+	{ T_NSEC3,	"NSEC3" },		/* RFC 5155 */
+	{ T_NSEC3PARAM,	"NSEC3PARAM" },		/* RFC 5155 */
+	{ T_TLSA,	"TLSA" },		/* RFC 6698 */
+	{ T_SMIMEA,	"SMIMEA" },		/* RFC 8162 */
+	{ T_HIP,	"HIP" },		/* RFC 8005 */
+	{ T_NINFO,	"NINFO" },
+	{ T_RKEY,	"RKEY" },
+	{ T_TALINK,	"TALINK" },
+	{ T_CDS,	"CDS" },		/* RFC 7344 */
+	{ T_CDNSKEY,	"CDNSKEY" },		/* RFC 7344 */
+	{ T_OPENPGPKEY,	"OPENPGPKEY" },		/* RFC 7929 */
+	{ T_CSYNC,	"CSYNC" },		/* RFC 7477 */
+	{ T_ZONEMD,	"ZONEMD" },		/* RFC 8976 */
+	{ T_SVCB,	"SVCB" },
+	{ T_HTTPS,	"HTTPS" },
+	{ T_SPF,	"SPF" },		/* RFC 7208 */
 	{ T_UINFO,	"UINFO" },
 	{ T_UID,	"UID" },
 	{ T_GID,	"GID" },
 	{ T_UNSPEC,	"UNSPEC" },
-	{ T_UNSPECA,	"UNSPECA" },
+	{ T_NID,	"NID" },		/* RFC 6742 */
+	{ T_L32,	"L32" },		/* RFC 6742 */
+	{ T_L64,	"L64" },		/* RFC 6742 */
+	{ T_LP,		"LP" },			/* RFC 6742 */
+	{ T_EUI48,	"EUI48" },		/* RFC 7043 */
+	{ T_EUI64,	"EUI64" },		/* RFC 7043 */
 	{ T_TKEY,	"TKEY" },		/* RFC 2930 */
-	{ T_TSIG,	"TSIG" },		/* RFC 2845 */
+	{ T_TSIG,	"TSIG" },		/* RFC 8945 */
 	{ T_IXFR,	"IXFR" },		/* RFC 1995 */
-	{ T_AXFR,	"AXFR" },		/* RFC 1035 */
+	{ T_AXFR,	"AXFR" },		/* RFC 5936 */
 	{ T_MAILB,	"MAILB" },		/* RFC 1035 */
 	{ T_MAILA,	"MAILA" },		/* RFC 1035 */
-	{ T_ANY,	"ANY" },
+	{ T_ANY,	"ANY" },		/* RFC 8482 */
 	{ T_URI,	"URI" },		/* RFC 7553 */
+	{ T_CAA,	"CAA" },		/* RFC 8659 */
+	{ T_AVC,	"AVC" },
+	{ T_DOA,	"DOA" },
+	{ T_AMTRELAY,	"AMTRELAY" },		/* RFC 8777 */
+	{ T_TA,		"TA" },
+	{ T_DLV,	"DLV" },		/* RFC 8749 */
 	{ 0,		NULL }
 };
 
@@ -812,6 +837,10 @@ ns_rprint(netdissect_options *ndo,
 	case T_URI:
 		if (!ND_TTEST_LEN(cp, len))
 			return(NULL);
+		if (len < 4) {
+			ND_PRINT(" len %u is too short (< 4)", len);
+			break;
+		}
 		ND_PRINT(" %u %u ", GET_BE_U_2(cp), GET_BE_U_2(cp + 2));
 		if (nd_printn(ndo, cp + 4, len - 4, ndo->ndo_snapend))
 			return(NULL);
@@ -832,13 +861,6 @@ ns_rprint(netdissect_options *ndo,
             }
             ND_PRINT("]");
         }
-		break;
-
-	case T_UNSPECA:		/* One long string */
-		if (!ND_TTEST_LEN(cp, len))
-			return(NULL);
-		if (nd_printn(ndo, cp, len, ndo->ndo_snapend))
-			return(NULL);
 		break;
 
 	case T_TSIG:
@@ -1050,8 +1072,7 @@ domain_print(netdissect_options *ndo,
 			if (arcount)
 				goto trunc;
 		}
-	}
-	else {
+	} else {
 		/* this is a request */
 		ND_PRINT("%u%s%s%s", GET_BE_U_2(np->id),
 			  ns_ops[DNS_OPCODE(flags)],
@@ -1068,8 +1089,7 @@ domain_print(netdissect_options *ndo,
 				ND_PRINT(" [%uq]", qdcount);
 			if (ancount != 1)
 				ND_PRINT(" [%ua]", ancount);
-		}
-		else {
+		} else {
 			if (ancount)
 				ND_PRINT(" [%ua]", ancount);
 			if (qdcount != 1)

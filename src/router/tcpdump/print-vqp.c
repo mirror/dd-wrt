@@ -17,9 +17,7 @@
 
 /* \summary: Cisco VLAN Query Protocol (VQP) printer */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
 
@@ -28,7 +26,7 @@
 #include "extract.h"
 #include "addrtoname.h"
 
-#define VQP_VERSION            		1
+#define VQP_VERSION 1
 
 /*
  * VQP common header

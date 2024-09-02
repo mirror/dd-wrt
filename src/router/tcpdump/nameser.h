@@ -87,7 +87,7 @@
 #define UPDATEMA	0xd		/* modify all named resource record */
 
 #define ZONEINIT	0xe		/* initial zone transfer */
-#define ZONEREF		0xf		/* incremental zone referesh */
+#define ZONEREF		0xf		/* incremental zone refresh */
 
 /*
  * Undefine various #defines from various System V-flavored OSes (Solaris,
@@ -112,7 +112,7 @@
 #define NOERROR		0		/* no error */
 #define FORMERR		1		/* format error */
 #define SERVFAIL	2		/* server failure */
-#define NXDOMAIN	3		/* non existent domain */
+#define NXDOMAIN	3		/* nonexistent domain */
 #define NOTIMP		4		/* not implemented */
 #define REFUSED		5		/* query refused */
 	/* non standard */
@@ -125,7 +125,7 @@
 #define T_NS		2		/* authoritative server */
 #define T_MD		3		/* mail destination */
 #define T_MF		4		/* mail forwarder */
-#define T_CNAME		5		/* connonical name */
+#define T_CNAME		5		/* canonical name */
 #define T_SOA		6		/* start of authority zone */
 #define T_MB		7		/* mailbox domain name */
 #define T_MG		8		/* mail group member */
@@ -169,13 +169,35 @@
 #define T_RRSIG		46		/* new security signature */
 #define T_NSEC		47		/* provable insecure information */
 #define T_DNSKEY	48		/* new security key */
+#define T_DHCID		49		/* DHCP IDentifier */
+#define T_NSEC3		50		/* Next SECure record v3 */
+#define T_NSEC3PARAM	51		/* NSEC3 PARAMeter */
+#define T_TLSA		52		/* TLS Authentication */
+#define T_SMIMEA	53		/* S/MIME Authentication */
+/* Unassigned */
+#define T_HIP		55		/* Host Identity Protocol */
+#define T_NINFO		56		/* zone status information */
+#define T_RKEY		57		/* Record encryption KEY */
+#define T_TALINK	58		/* Trust Anchor LINK */
+#define T_CDS		59		/* Child Delegation Signer */
+#define T_CDNSKEY	60		/* Child DNSKEY */
+#define T_OPENPGPKEY	61		/* OpenPGP KEY */
+#define T_CSYNC		62		/* Child to parent SYNChronization */
+#define T_ZONEMD	63		/* ZONE data Message Digest */
+#define T_SVCB		64		/* SerViCe Binding */
+#define T_HTTPS		65		/* HTTPS binding */
 	/* non standard */
 #define T_SPF		99		/* sender policy framework */
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
 #define T_GID		102		/* group ID */
 #define T_UNSPEC	103		/* Unspecified format (binary data) */
-#define T_UNSPECA	104		/* "unspecified ASCII". Ugly MIT hack */
+#define T_NID		104		/* Node IDentifier */
+#define T_L32		105		/* Locator 32-bit */
+#define T_L64		106		/* Locator 64-bit */
+#define T_LP		107		/* Locator Pointer */
+#define T_EUI48		108		/* an EUI-48 address */
+#define T_EUI64		109		/* an EUI-64 address */
 	/* Query type values which do not appear in resource records */
 #define T_TKEY		249		/* Transaction Key [RFC2930] */
 #define T_TSIG		250		/* Transaction Signature [RFC2845] */
@@ -185,6 +207,12 @@
 #define T_MAILA		254		/* transfer mail agent records */
 #define T_ANY		255		/* wildcard match */
 #define T_URI		256		/* uri records [RFC7553] */
+#define T_CAA		257		/* Certification Authority Authorization */
+#define T_AVC		258		/* Application Visibility and Control */
+#define T_DOA		259		/* Digital Object Architecture */
+#define T_AMTRELAY	260		/* Automatic Multicast Tunneling RELAY */
+#define T_TA		32768		/* DNSSEC Trust Authorities */
+#define T_DLV		32769		/* DNSSEC Lookaside Validation */
 
 /*
  * Values for class field

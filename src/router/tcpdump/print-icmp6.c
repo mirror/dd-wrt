@@ -21,9 +21,7 @@
 
 /* \summary: IPv6 Internet Control Message Protocol (ICMPv6) printer */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include "netdissect-stdinc.h"
 
@@ -41,7 +39,7 @@
 #include "udp.h"
 #include "ah.h"
 
-/*	NetBSD: icmp6.h,v 1.13 2000/08/03 16:30:37 itojun Exp 	*/
+/*	NetBSD: icmp6.h,v 1.13 2000/08/03 16:30:37 itojun Exp	*/
 /*	$KAME: icmp6.h,v 1.22 2000/08/03 15:25:16 jinmei Exp $	*/
 
 /*
@@ -103,7 +101,7 @@ struct icmp6_hdr {
 #define ICMP6_ECHO_REQUEST		128	/* echo service */
 #define ICMP6_ECHO_REPLY		129	/* echo reply */
 #define ICMP6_MEMBERSHIP_QUERY		130	/* group membership query */
-#define MLD6_LISTENER_QUERY		130 	/* multicast listener query */
+#define MLD6_LISTENER_QUERY		130	/* multicast listener query */
 #define ICMP6_MEMBERSHIP_REPORT		131	/* group membership report */
 #define MLD6_LISTENER_REPORT		131	/* multicast listener report */
 #define ICMP6_MEMBERSHIP_REDUCTION	132	/* group membership termination */
@@ -145,10 +143,10 @@ struct icmp6_hdr {
 #define ICMP6_DST_UNREACH_ADDR		3	/* address unreachable */
 #define ICMP6_DST_UNREACH_NOPORT	4	/* port unreachable */
 
-#define ICMP6_TIME_EXCEED_TRANSIT 	0	/* ttl==0 in transit */
+#define ICMP6_TIME_EXCEED_TRANSIT	0	/* ttl==0 in transit */
 #define ICMP6_TIME_EXCEED_REASSEMBLY	1	/* ttl==0 in reass */
 
-#define ICMP6_PARAMPROB_HEADER 		0	/* erroneous header field */
+#define ICMP6_PARAMPROB_HEADER		0	/* erroneous header field */
 #define ICMP6_PARAMPROB_NEXTHEADER	1	/* unrecognized next header */
 #define ICMP6_PARAMPROB_OPTION		2	/* unrecognized option */
 #define ICMP6_PARAMPROB_FRAGHDRCHAIN	3	/* incomplete header chain */
@@ -193,7 +191,7 @@ struct mld6_hdr {
  */
 
 struct nd_router_solicit {	/* router solicitation */
-	struct icmp6_hdr 	nd_rs_hdr;
+	struct icmp6_hdr	nd_rs_hdr;
 	/* could be followed by options */
 };
 
@@ -427,7 +425,7 @@ struct icmp6_router_renum {	/* router renumbering header */
 #define rr_type		rr_hdr.icmp6_type
 #define rr_code		rr_hdr.icmp6_code
 #define rr_cksum	rr_hdr.icmp6_cksum
-#define rr_seqnum 	rr_hdr.icmp6_data32[0]
+#define rr_seqnum	rr_hdr.icmp6_data32[0]
 
 struct rr_pco_match {		/* match prefix part */
 	nd_uint8_t		rpm_code;
@@ -526,7 +524,7 @@ struct nd_rpl_security {
 #endif
 };
 
-/* section 6.2.1, DODAG Information Solication (DIS_IS) */
+/* section 6.2.1, DODAG Information Solicitation (DIS_IS) */
 struct nd_rpl_dis_is {
     nd_uint8_t rpl_dis_flags;
     nd_uint8_t rpl_dis_reserved;
@@ -811,15 +809,15 @@ rpl_printopts(netdissect_options *ndo, const uint8_t *opts, u_int length)
                         optlen = 1;
                         ND_PRINT(" opt:pad1");
                 } else {
-                	if (length < RPL_GENOPTION_LEN)
-                		goto trunc;
+			if (length < RPL_GENOPTION_LEN)
+				goto trunc;
 	                optlen = GET_U_1(opt->rpl_dio_len)+RPL_GENOPTION_LEN;
                         ND_PRINT(" opt:%s len:%u ",
                                   tok2str(rpl_subopt_values, "subopt:%u", dio_type),
                                   optlen);
                         ND_TCHECK_LEN(opt, optlen);
                         if (length < optlen)
-                        	goto trunc;
+				goto trunc;
                         if (ndo->ndo_vflag > 2) {
                                 hex_print(ndo,
                                           " ",
@@ -841,7 +839,7 @@ rpl_dio_print(netdissect_options *ndo,
 {
         const struct nd_rpl_dio *dio = (const struct nd_rpl_dio *)bp;
 
-        ND_LCHECK_ZU(length, sizeof(struct nd_rpl_dio));
+        ND_ICHECK_ZU(length, <, sizeof(struct nd_rpl_dio));
         ND_PRINT(" [dagid:%s,seq:%u,instance:%u,rank:%u,%smop:%s,prf:%u]",
                   GET_IP6ADDR_STRING(dio->rpl_dagid),
                   GET_U_1(dio->rpl_dtsn),
@@ -879,13 +877,13 @@ rpl_dao_print(netdissect_options *ndo,
         if(RPL_DAO_D(rpl_flags)) {
                 ND_TCHECK_LEN(dao->rpl_dagid, DAGID_LEN);
                 if (length < DAGID_LEN)
-                	goto tooshort;
+                        goto tooshort;
                 dagid_str = ip6addr_string (ndo, dao->rpl_dagid);
                 bp += DAGID_LEN;
                 length -= DAGID_LEN;
         }
 
-        ND_PRINT(" [dagid:%s,seq:%u,instance:%u%s%s,%02x]",
+        ND_PRINT(" [dagid:%s,seq:%u,instance:%u%s%s,flags:%02x]",
                   dagid_str,
                   GET_U_1(dao->rpl_daoseq),
                   GET_U_1(dao->rpl_instanceid),
@@ -922,7 +920,7 @@ rpl_daoack_print(netdissect_options *ndo,
         if(RPL_DAOACK_D(GET_U_1(daoack->rpl_flags))) {
                 ND_TCHECK_LEN(daoack->rpl_dagid, DAGID_LEN);
                 if (length < DAGID_LEN)
-                	goto tooshort;
+                        goto tooshort;
                 dagid_str = ip6addr_string (ndo, daoack->rpl_dagid);
                 bp += DAGID_LEN;
                 length -= DAGID_LEN;
@@ -1271,7 +1269,8 @@ icmp6_print(netdissect_options *ndo,
 
 			ND_PRINT(", id 0x%04x",
 				 GET_BE_U_2(dp->icmp6_data16[0]));
-			cp = (const u_char *)dp + length;
+			cp = (const u_char *)dp +
+				ND_MIN(length, ND_BYTES_AVAILABLE_AFTER(dp));
 			p = (const u_char *)(dp + 1);
 			while (p < cp) {
 				ND_PRINT(", %s", GET_IP6ADDR_STRING(p));
@@ -1346,8 +1345,7 @@ get_upperlayer(netdissect_options *ndo, const u_char *bp, u_int *prot)
 			if (ND_TTEST_2(uh->uh_dport)) {
 				*prot = nh;
 				return(uh);
-			}
-			else
+			} else
 				return(NULL);
 			/* NOTREACHED */
 
@@ -1475,8 +1473,7 @@ icmp6_opt_print(netdissect_options *ndo, const u_char *bp, int resid)
 			ND_PRINT(" lifetime %us, domain(s):",
                                   GET_BE_U_4(opds->nd_opt_dnssl_lifetime));
 			domp = cp + 8; /* domain names, variable-sized, RFC1035-encoded */
-			while (domp < cp + (opt_len << 3) && GET_U_1(domp) != '\0')
-			{
+			while (domp < cp + (opt_len << 3) && GET_U_1(domp) != '\0') {
 				ND_PRINT(" ");
 				if ((domp = fqdn_print(ndo, domp, bp)) == NULL)
 					goto trunc;
