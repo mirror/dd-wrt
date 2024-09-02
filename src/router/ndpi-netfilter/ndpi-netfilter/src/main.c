@@ -3169,6 +3169,7 @@ static int __net_init ndpi_net_init(struct net *net)
 	ndpi_load_ip_lists(n->ndpi_struct);
 	ndpi_set_config(n->ndpi_struct, "any", "ip_list.load", "0");
 	ndpi_set_config(n->ndpi_struct, NULL, "flow_risk_lists.load", "0");
+	ndpi_set_config(n->ndpi_struct, NULL, "tcp_ack_payload_heuristic.load", "1");
 	ndpi_init_host_ac(n);
 
 	if(bt_hash_size > 512) bt_hash_size = 512;

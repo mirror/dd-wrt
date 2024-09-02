@@ -217,6 +217,18 @@ struct receiver {
 struct receiver *receivers = NULL, *topReceivers = NULL;
 
 #define WIRESHARK_NTOP_MAGIC 0x19680924
+#define WIRESHARK_METADATA_SIZE	256
+
+#define WIRESHARK_METADATA_SERVERNAME	0x01
+#define WIRESHARK_METADATA_JA3C		0x02
+#define WIRESHARK_METADATA_JA3S		0x03
+#define WIRESHARK_METADATA_JA4C		0x04
+
+struct ndpi_packet_tlv {
+  u_int16_t type;
+  u_int16_t length;
+  unsigned char data[];
+};
 
 PACK_ON
 struct ndpi_packet_trailer {
@@ -225,6 +237,9 @@ struct ndpi_packet_trailer {
   ndpi_risk flow_risk;
   u_int16_t flow_score;
   char name[16];
+  /* TLV of attributes. Having a max and fixed size for all the metadata
+     is not efficient but greatly improves detection of the trailer by Wireshark */
+  unsigned char metadata[WIRESHARK_METADATA_SIZE];
 } PACK_OFF;
 
 static pcap_dumper_t *extcap_dumper = NULL;
@@ -575,7 +590,7 @@ flowGetBDMeanandVariance(struct ndpi_flow_info* flow) {
       double entropy = ndpi_flow_get_byte_count_entropy(array, num_bytes);
 
       if(csv_fp) {
-        fprintf(csv_fp, ",%.3f,%.3f,%.3f,%.3f", mean, variance, entropy, entropy * num_bytes);
+        fprintf(csv_fp, "|%.3f|%.3f|%.3f|%.3f", mean, variance, entropy, entropy * num_bytes);
       } else {
         fprintf(out, "[byte_dist_mean: %.3f", mean);
         fprintf(out, "][byte_dist_std: %.3f]", variance);
@@ -584,7 +599,7 @@ flowGetBDMeanandVariance(struct ndpi_flow_info* flow) {
       }
     } else {
       if(csv_fp)
-        fprintf(csv_fp, ",%.3f,%.3f,%.3f,%.3f", 0.0, 0.0, 0.0, 0.0);
+        fprintf(csv_fp, "|%.3f|%.3f|%.3f|%.3f", 0.0, 0.0, 0.0, 0.0);
     }
   }
 }
@@ -710,8 +725,8 @@ static void help(u_int long_help) {
            sizeof(((struct ndpi_flow_struct *)0)->protos));
 
     printf("\n\nnDPI supported protocols:\n");
-    printf("%3s %8s %-22s %-10s %-8s %-12s %s\n",
-	   "Id", "Userd-id", "Protocol", "Layer_4", "Nw_Proto", "Breed", "Category");
+    printf("%3s %8s %-22s %-10s %-8s %-12s %-18s %-31s %-31s \n",
+	   "Id", "Userd-id", "Protocol", "Layer_4", "Nw_Proto", "Breed", "Category","Def UDP Port/s","Def TCP Port/s");
     num_threads = 1;
 
     ndpi_dump_protocols(ndpi_str, stdout);
@@ -796,7 +811,7 @@ void extcap_dlts() {
 
 struct ndpi_proto_sorter {
   int id;
-  char name[16];
+  char name[32];
 };
 
 /* ********************************** */
@@ -834,18 +849,23 @@ int cmpFlows(const void *_a, const void *_b) {
 
 void extcap_config() {
   int argidx = 0;
-#if 0
+
   struct ndpi_proto_sorter *protos;
   u_int ndpi_num_supported_protocols;
   int i;
   ndpi_proto_defaults_t *proto_defaults;
-#endif
+  NDPI_PROTOCOL_BITMASK all;
 
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
-#if 0
+  if(!ndpi_str) exit(0);
+
+  NDPI_BITMASK_SET_ALL(all);
+  ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
+
+  ndpi_finalize_initialization(ndpi_str);
+
   ndpi_num_supported_protocols = ndpi_get_ndpi_num_supported_protocols(ndpi_str);
   proto_defaults = ndpi_get_proto_defaults(ndpi_str);
-#endif
 
   /* -i <interface> */
   printf("arg {number=%d}{call=-i}{display=Capture Interface}{type=string}{group=Live Capture}"
@@ -854,15 +874,14 @@ void extcap_config() {
   printf("arg {number=%d}{call=-i}{display=Pcap File to Analyze}{type=fileselect}{mustexist=true}{group=Pcap}"
          "{tooltip=The pcap file to analyze (if the interface is unspecified)}\n", argidx++);
 
-#if 0
-  /* Removed as it breaks! extcap */
+
   protos = (struct ndpi_proto_sorter*)ndpi_malloc(sizeof(struct ndpi_proto_sorter) * ndpi_num_supported_protocols);
   if(!protos) exit(0);
 
   printf("arg {number=%d}{call=--ndpi-proto-filter}{display=nDPI Protocol Filter}{type=selector}{group=Filter}"
          "{tooltip=nDPI Protocol to be filtered}\n", argidx);
 
-  printf("value {arg=%d}{value=%d}{display=%s}{default=true}\n", argidx, 0, "No nDPI filtering");
+  printf("value {arg=%d}{value=%d}{display=%s}{default=true}\n", argidx, (u_int32_t)-1, "No nDPI filtering");
 
   for(i=0; i<(int) ndpi_num_supported_protocols; i++) {
     protos[i].id = i;
@@ -876,7 +895,6 @@ void extcap_config() {
            protos[i].name, protos[i].id);
 
   ndpi_free(protos);
-#endif
 
   ndpi_exit_detection_module(ndpi_str);
 
@@ -920,41 +938,41 @@ void extcap_capture() {
 void printCSVHeader() {
   if(!csv_fp) return;
 
-  fprintf(csv_fp, "#flow_id,protocol,first_seen,last_seen,duration,src_ip,src_port,dst_ip,dst_port,ndpi_proto_num,ndpi_proto,proto_by_ip,server_name_sni,");
-  fprintf(csv_fp, "c_to_s_pkts,c_to_s_bytes,c_to_s_goodput_bytes,s_to_c_pkts,s_to_c_bytes,s_to_c_goodput_bytes,");
-  fprintf(csv_fp, "data_ratio,str_data_ratio,c_to_s_goodput_ratio,s_to_c_goodput_ratio,");
+  fprintf(csv_fp, "#flow_id|protocol|first_seen|last_seen|duration|src_ip|src_port|dst_ip|dst_port|ndpi_proto_num|ndpi_proto|proto_by_ip|server_name_sni|");
+  fprintf(csv_fp, "c_to_s_pkts|c_to_s_bytes|c_to_s_goodput_bytes|s_to_c_pkts|s_to_c_bytes|s_to_c_goodput_bytes|");
+  fprintf(csv_fp, "data_ratio|str_data_ratio|c_to_s_goodput_ratio|s_to_c_goodput_ratio|");
 
   /* IAT (Inter Arrival Time) */
-  fprintf(csv_fp, "iat_flow_min,iat_flow_avg,iat_flow_max,iat_flow_stddev,");
-  fprintf(csv_fp, "iat_c_to_s_min,iat_c_to_s_avg,iat_c_to_s_max,iat_c_to_s_stddev,");
-  fprintf(csv_fp, "iat_s_to_c_min,iat_s_to_c_avg,iat_s_to_c_max,iat_s_to_c_stddev,");
+  fprintf(csv_fp, "iat_flow_min|iat_flow_avg|iat_flow_max|iat_flow_stddev|");
+  fprintf(csv_fp, "iat_c_to_s_min|iat_c_to_s_avg|iat_c_to_s_max|iat_c_to_s_stddev|");
+  fprintf(csv_fp, "iat_s_to_c_min|iat_s_to_c_avg|iat_s_to_c_max|iat_s_to_c_stddev|");
 
   /* Packet Length */
-  fprintf(csv_fp, "pktlen_c_to_s_min,pktlen_c_to_s_avg,pktlen_c_to_s_max,pktlen_c_to_s_stddev,");
-  fprintf(csv_fp, "pktlen_s_to_c_min,pktlen_s_to_c_avg,pktlen_s_to_c_max,pktlen_s_to_c_stddev,");
+  fprintf(csv_fp, "pktlen_c_to_s_min|pktlen_c_to_s_avg|pktlen_c_to_s_max|pktlen_c_to_s_stddev|");
+  fprintf(csv_fp, "pktlen_s_to_c_min|pktlen_s_to_c_avg|pktlen_s_to_c_max|pktlen_s_to_c_stddev|");
 
   /* TCP flags */
-  fprintf(csv_fp, "cwr,ece,urg,ack,psh,rst,syn,fin,");
+  fprintf(csv_fp, "cwr|ece|urg|ack|psh|rst|syn|fin|");
 
-  fprintf(csv_fp, "c_to_s_cwr,c_to_s_ece,c_to_s_urg,c_to_s_ack,c_to_s_psh,c_to_s_rst,c_to_s_syn,c_to_s_fin,");
+  fprintf(csv_fp, "c_to_s_cwr|c_to_s_ece|c_to_s_urg|c_to_s_ack|c_to_s_psh|c_to_s_rst|c_to_s_syn|c_to_s_fin|");
 
-  fprintf(csv_fp, "s_to_c_cwr,s_to_c_ece,s_to_c_urg,s_to_c_ack,s_to_c_psh,s_to_c_rst,s_to_c_syn,s_to_c_fin,");
+  fprintf(csv_fp, "s_to_c_cwr|s_to_c_ece|s_to_c_urg|s_to_c_ack|s_to_c_psh|s_to_c_rst|s_to_c_syn|s_to_c_fin|");
 
   /* TCP window */
-  fprintf(csv_fp, "c_to_s_init_win,s_to_c_init_win,");
+  fprintf(csv_fp, "c_to_s_init_win|s_to_c_init_win|");
 
   /* Flow info */
-  fprintf(csv_fp, "server_info,");
-  fprintf(csv_fp, "tls_version,quic_version,ja3c,tls_client_unsafe,");
-  fprintf(csv_fp, "ja3s,tls_server_unsafe,");
-  fprintf(csv_fp, "advertised_alpns,negotiated_alpn,tls_supported_versions,");
+  fprintf(csv_fp, "server_info|");
+  fprintf(csv_fp, "tls_version|quic_version|ja3c|tls_client_unsafe|");
+  fprintf(csv_fp, "ja3s|tls_server_unsafe|");
+  fprintf(csv_fp, "advertised_alpns|negotiated_alpn|tls_supported_versions|");
 #if 0
-  fprintf(csv_fp, "tls_issuerDN,tls_subjectDN,");
+  fprintf(csv_fp, "tls_issuerDN|tls_subjectDN|");
 #endif
-  fprintf(csv_fp, "ssh_client_hassh,ssh_server_hassh,flow_info,plen_bins,http_user_agent");
+  fprintf(csv_fp, "ssh_client_hassh|ssh_server_hassh|flow_info|plen_bins|http_user_agent");
 
   if(enable_flow_stats) {
-    fprintf(csv_fp, ",byte_dist_mean,byte_dist_std,entropy,total_entropy");
+    fprintf(csv_fp, "|byte_dist_mean|byte_dist_std|entropy|total_entropy");
   }
 
   fprintf(csv_fp, "\n");
@@ -1555,7 +1573,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
     float data_ratio = ndpi_data_ratio(flow->src2dst_bytes, flow->dst2src_bytes);
     double f = (double)flow->first_seen_ms, l = (double)flow->last_seen_ms;
 
-    fprintf(csv_fp, "%u,%u,%.3f,%.3f,%.3f,%s,%u,%s,%u,",
+    fprintf(csv_fp, "%u|%u|%.3f|%.3f|%.3f|%s|%u|%s|%u|",
             flow->flow_id,
             flow->protocol,
             f/1000.0, l/1000.0,
@@ -1564,58 +1582,58 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             flow->dst_name, ntohs(flow->dst_port)
             );
 
-    fprintf(csv_fp, "%s,",
+    fprintf(csv_fp, "%s|",
             ndpi_protocol2id(flow->detected_protocol, buf, sizeof(buf)));
 
-    fprintf(csv_fp, "%s,%s,%s,",
+    fprintf(csv_fp, "%s|%s|%s|",
             ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                                flow->detected_protocol, buf, sizeof(buf)),
             ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                                 flow->detected_protocol.protocol_by_ip),
             flow->host_server_name);
 
-    fprintf(csv_fp, "%u,%llu,%llu,", flow->src2dst_packets,
+    fprintf(csv_fp, "%u|%llu|%llu|", flow->src2dst_packets,
             (long long unsigned int) flow->src2dst_bytes, (long long unsigned int) flow->src2dst_goodput_bytes);
-    fprintf(csv_fp, "%u,%llu,%llu,", flow->dst2src_packets,
+    fprintf(csv_fp, "%u|%llu|%llu|", flow->dst2src_packets,
             (long long unsigned int) flow->dst2src_bytes, (long long unsigned int) flow->dst2src_goodput_bytes);
-    fprintf(csv_fp, "%.3f,%s,", data_ratio, ndpi_data_ratio2str(data_ratio));
-    fprintf(csv_fp, "%.1f,%.1f,", 100.0*((float)flow->src2dst_goodput_bytes / (float)(flow->src2dst_bytes+1)),
+    fprintf(csv_fp, "%.3f|%s|", data_ratio, ndpi_data_ratio2str(data_ratio));
+    fprintf(csv_fp, "%.1f|%.1f|", 100.0*((float)flow->src2dst_goodput_bytes / (float)(flow->src2dst_bytes+1)),
             100.0*((float)flow->dst2src_goodput_bytes / (float)(flow->dst2src_bytes+1)));
 
     /* IAT (Inter Arrival Time) */
-    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,",
+    fprintf(csv_fp, "%llu|%.1f|%llu|%.1f|",
             (unsigned long long int)ndpi_data_min(flow->iat_flow), ndpi_data_average(flow->iat_flow),
             (unsigned long long int)ndpi_data_max(flow->iat_flow), ndpi_data_stddev(flow->iat_flow));
 
-    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,%llu,%.1f,%llu,%.1f,",
+    fprintf(csv_fp, "%llu|%.1f|%llu|%.1f|%llu|%.1f|%llu|%.1f|",
 	    (unsigned long long int)ndpi_data_min(flow->iat_c_to_s), ndpi_data_average(flow->iat_c_to_s),
         (unsigned long long int)ndpi_data_max(flow->iat_c_to_s), ndpi_data_stddev(flow->iat_c_to_s),
 	    (unsigned long long int)ndpi_data_min(flow->iat_s_to_c), ndpi_data_average(flow->iat_s_to_c),
         (unsigned long long int)ndpi_data_max(flow->iat_s_to_c), ndpi_data_stddev(flow->iat_s_to_c));
 
     /* Packet Length */
-    fprintf(csv_fp, "%llu,%.1f,%llu,%.1f,%llu,%.1f,%llu,%.1f,",
+    fprintf(csv_fp, "%llu|%.1f|%llu|%.1f|%llu|%.1f|%llu|%.1f|",
 	    (unsigned long long int)ndpi_data_min(flow->pktlen_c_to_s), ndpi_data_average(flow->pktlen_c_to_s),
         (unsigned long long int)ndpi_data_max(flow->pktlen_c_to_s), ndpi_data_stddev(flow->pktlen_c_to_s),
 	    (unsigned long long int)ndpi_data_min(flow->pktlen_s_to_c), ndpi_data_average(flow->pktlen_s_to_c),
         (unsigned long long int)ndpi_data_max(flow->pktlen_s_to_c), ndpi_data_stddev(flow->pktlen_s_to_c));
 
     /* TCP flags */
-    fprintf(csv_fp, "%d,%d,%d,%d,%d,%d,%d,%d,", flow->cwr_count, flow->ece_count, flow->urg_count, flow->ack_count, flow->psh_count, flow->rst_count, flow->syn_count, flow->fin_count);
+    fprintf(csv_fp, "%d|%d|%d|%d|%d|%d|%d|%d|", flow->cwr_count, flow->ece_count, flow->urg_count, flow->ack_count, flow->psh_count, flow->rst_count, flow->syn_count, flow->fin_count);
 
-    fprintf(csv_fp, "%d,%d,%d,%d,%d,%d,%d,%d,", flow->src2dst_cwr_count, flow->src2dst_ece_count, flow->src2dst_urg_count, flow->src2dst_ack_count,
+    fprintf(csv_fp, "%d|%d|%d|%d|%d|%d|%d|%d|", flow->src2dst_cwr_count, flow->src2dst_ece_count, flow->src2dst_urg_count, flow->src2dst_ack_count,
 	    flow->src2dst_psh_count, flow->src2dst_rst_count, flow->src2dst_syn_count, flow->src2dst_fin_count);
 
-    fprintf(csv_fp, "%d,%d,%d,%d,%d,%d,%d,%d,", flow->dst2src_cwr_count, flow->dst2src_ece_count, flow->dst2src_urg_count, flow->dst2src_ack_count,
+    fprintf(csv_fp, "%d|%d|%d|%d|%d|%d|%d|%d|", flow->dst2src_cwr_count, flow->dst2src_ece_count, flow->dst2src_urg_count, flow->dst2src_ack_count,
 	    flow->dst2src_psh_count, flow->dst2src_rst_count, flow->dst2src_syn_count, flow->dst2src_fin_count);
 
     /* TCP window */
-    fprintf(csv_fp, "%u,%u,", flow->c_to_s_init_win, flow->s_to_c_init_win);
+    fprintf(csv_fp, "%u|%u|", flow->c_to_s_init_win, flow->s_to_c_init_win);
 
-    fprintf(csv_fp, "%s,",
+    fprintf(csv_fp, "%s|",
             (flow->ssh_tls.server_info[0] != '\0')  ? flow->ssh_tls.server_info : "");
 
-    fprintf(csv_fp, "%s,%s,%s,%s,%s,%s,",
+    fprintf(csv_fp, "%s|%s|%s|%s|%s|%s|",
             (flow->ssh_tls.ssl_version != 0)        ? ndpi_ssl_version2str(buf_ver, sizeof(buf_ver), flow->ssh_tls.ssl_version, &known_tls) : "0",
             (flow->ssh_tls.quic_version != 0)       ? ndpi_quic_version2str(buf2_ver, sizeof(buf2_ver), flow->ssh_tls.quic_version) : "0",
             (flow->ssh_tls.ja3_client[0] != '\0')   ? flow->ssh_tls.ja3_client : "",
@@ -1623,31 +1641,31 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
             (flow->ssh_tls.ja3_server[0] != '\0')   ? flow->ssh_tls.ja3_server : "",
             (flow->ssh_tls.ja3_server[0] != '\0')   ? is_unsafe_cipher(flow->ssh_tls.server_unsafe_cipher) : "0");
 
-    fprintf(csv_fp, "%s,%s,%s,",
+    fprintf(csv_fp, "%s|%s|%s|",
             flow->ssh_tls.advertised_alpns          ? flow->ssh_tls.advertised_alpns : "",
             flow->ssh_tls.negotiated_alpn           ? flow->ssh_tls.negotiated_alpn : "",
             flow->ssh_tls.tls_supported_versions    ? flow->ssh_tls.tls_supported_versions : ""
             );
 
 #if 0
-    fprintf(csv_fp, "%s,%s,",
+    fprintf(csv_fp, "%s|%s|",
             flow->ssh_tls.tls_issuerDN              ? flow->ssh_tls.tls_issuerDN : "",
             flow->ssh_tls.tls_subjectDN             ? flow->ssh_tls.tls_subjectDN : ""
             );
 #endif
 
-    fprintf(csv_fp, "%s,%s",
+    fprintf(csv_fp, "%s|%s",
             (flow->ssh_tls.client_hassh[0] != '\0') ? flow->ssh_tls.client_hassh : "",
             (flow->ssh_tls.server_hassh[0] != '\0') ? flow->ssh_tls.server_hassh : ""
             );
 
-    fprintf(csv_fp, ",%s,", flow->info);
+    fprintf(csv_fp, "|%s|", flow->info);
 
 #ifndef DIRECTION_BINS
     print_bin(csv_fp, NULL, &flow->payload_len_bin);
 #endif
 
-    fprintf(csv_fp, ",%s", flow->http.user_agent);
+    fprintf(csv_fp, "|%s", flow->http.user_agent);
 
     if((verbose != 1) && (verbose != 2)) {
       if(csv_fp && enable_flow_stats) {
@@ -1687,7 +1705,7 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
       fprintf(out, "[score: %.4f]", flow->entropy->score);
     }
 
-    if(csv_fp) fprintf(csv_fp, "\n");
+    //if(csv_fp) fprintf(csv_fp, "\n");
 
     fprintf(out, "[proto: ");
     if(flow->tunnel_type != ndpi_no_tunnel)
@@ -1730,6 +1748,24 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 				    flow->detected_protocol) ? "Encrypted" : "ClearText");
 
     fprintf(out, "[Confidence: %s]", ndpi_confidence_get_name(flow->confidence));
+
+    if(flow->fpc.master_protocol == NDPI_PROTOCOL_UNKNOWN) {
+      fprintf(out, "[FPC: %u/%s, ",
+              flow->fpc.app_protocol,
+              ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+                                flow->fpc.app_protocol));
+    } else {
+      fprintf(out, "[FPC: %u.%u/%s.%s, ",
+              flow->fpc.master_protocol,
+              flow->fpc.app_protocol,
+              ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+                                flow->fpc.master_protocol),
+              ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
+                                flow->fpc.app_protocol));
+    }
+    fprintf(out, "Confidence: %s]",
+	    ndpi_fpc_confidence_get_name(flow->fpc.confidence));
+
     /* If someone wants to have the num_dissector_calls variable per flow, he can print it here.
        Disabled by default to avoid too many diffs in the unit tests...
     */
@@ -4021,10 +4057,10 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_insert,
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_search,
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_found);
-      printf("\tLRU cache stun_zoom:  %llu/%llu/%llu (insert/search/found)\n",
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_insert,
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_search,
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_found);
+      printf("\tLRU cache fpc_dns:    %llu/%llu/%llu (insert/search/found)\n",
+	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_insert,
+	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_search,
+	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_found);
 
       printf("\tAutoma host:          %llu/%llu (search/found)\n",
 	     (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_search,
@@ -4136,10 +4172,10 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_insert,
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_search,
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_MSTEAMS].n_found);
-      fprintf(results_file, "LRU cache stun_zoom:  %llu/%llu/%llu (insert/search/found)\n",
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_insert,
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_search,
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN_ZOOM].n_found);
+      fprintf(results_file, "LRU cache fpc_dns:    %llu/%llu/%llu (insert/search/found)\n",
+	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_insert,
+	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_search,
+	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_FPC_DNS].n_found);
 
       fprintf(results_file, "Automa host:          %llu/%llu (search/found)\n",
 	      (long long unsigned int)cumulative_stats.automa_stats[NDPI_AUTOMA_HOST].n_search,
@@ -4448,6 +4484,7 @@ static void ndpi_process_packet(u_char *args,
 				const u_char *packet) {
   struct ndpi_proto p;
   ndpi_risk flow_risk;
+  struct ndpi_flow_info *flow;
   u_int16_t thread_id = *((u_int16_t*)args);
 
   /* allocate an exact size buffer to check overflows */
@@ -4458,7 +4495,7 @@ static void ndpi_process_packet(u_char *args,
   }
 
   memcpy(packet_checked, packet, header->caplen);
-  p = ndpi_workflow_process_packet(ndpi_thread_info[thread_id].workflow, header, packet_checked, &flow_risk);
+  p = ndpi_workflow_process_packet(ndpi_thread_info[thread_id].workflow, header, packet_checked, &flow_risk, &flow);
 
   if(!pcap_start.tv_sec) pcap_start.tv_sec = header->ts.tv_sec, pcap_start.tv_usec = header->ts.tv_usec;
   pcap_end.tv_sec = header->ts.tv_sec, pcap_end.tv_usec = header->ts.tv_usec;
@@ -4519,6 +4556,57 @@ static void ndpi_process_packet(u_char *args,
     trailer->flow_score = htons(ndpi_risk2score(flow_risk, &cli_score, &srv_score));
     trailer->master_protocol = htons(p.master_protocol), trailer->app_protocol = htons(p.app_protocol);
     ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct, p, trailer->name, sizeof(trailer->name));
+
+    /* Metadata */
+    /* Metadata are (all) available in `flow` only after nDPI completed its work!
+       We export them only once */
+    /* TODO: boundary check. Right now there is always enough room, but we should check it if we are
+       going to extend the list of the metadata exported */
+    struct ndpi_packet_tlv *tlv = (struct ndpi_packet_tlv *)trailer->metadata;
+    int tot_len = 0;
+    if(flow && flow->detection_completed == 1) {
+      if(flow->host_server_name[0] != '\0') {
+        tlv->type = ntohs(WIRESHARK_METADATA_SERVERNAME);
+        tlv->length = ntohs(sizeof(flow->host_server_name));
+        memcpy(tlv->data, flow->host_server_name, sizeof(flow->host_server_name));
+        /* TODO: boundary check */
+        tot_len += 4 + htons(tlv->length);
+        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
+      }
+      if(flow->ssh_tls.ja3_client[0] != '\0') {
+        tlv->type = ntohs(WIRESHARK_METADATA_JA3C);
+        tlv->length = ntohs(sizeof(flow->ssh_tls.ja3_client));
+        memcpy(tlv->data, flow->ssh_tls.ja3_client, sizeof(flow->ssh_tls.ja3_client));
+        /* TODO: boundary check */
+        tot_len += 4 + htons(tlv->length);
+        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
+      }
+      if(flow->ssh_tls.ja3_server[0] != '\0') {
+        tlv->type = ntohs(WIRESHARK_METADATA_JA3S);
+        tlv->length = ntohs(sizeof(flow->ssh_tls.ja3_server));
+        memcpy(tlv->data, flow->ssh_tls.ja3_server, sizeof(flow->ssh_tls.ja3_server));
+        /* TODO: boundary check */
+        tot_len += 4 + htons(tlv->length);
+        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
+      }
+      if(flow->ssh_tls.ja4_client[0] != '\0') {
+        tlv->type = ntohs(WIRESHARK_METADATA_JA4C);
+        tlv->length = ntohs(sizeof(flow->ssh_tls.ja4_client));
+        memcpy(tlv->data, flow->ssh_tls.ja4_client, sizeof(flow->ssh_tls.ja4_client));
+        /* TODO: boundary check */
+        tot_len += 4 + htons(tlv->length);
+        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
+      }
+
+      flow->detection_completed = 2; /* Avoid exporting metadata again.
+                                        If we really want to have the metadata on Wireshark for *all*
+                                        the future packets of this flow, simply remove that assignment */
+    }
+    /* Last: padding */
+    tlv->type = 0;
+    tlv->length = ntohs(WIRESHARK_METADATA_SIZE - tot_len - 4);
+    /* The remaining bytes are already set to 0 */
+
     crc = (uint32_t*)&extcap_buf[h.caplen+sizeof(struct ndpi_packet_trailer)];
     *crc = ndpi_crc32((const void*)extcap_buf, h.caplen+sizeof(struct ndpi_packet_trailer));
     h.caplen += delta, h.len += delta;
@@ -5723,6 +5811,128 @@ void strnstrUnitTest(void) {
 
   /* Test 13 */
   assert(ndpi_strnstr("abcdef", "abc", 2) == NULL);
+
+  /* Test 14: zero length */
+  assert(strcmp(ndpi_strnstr("", "", 0), "") == 0);
+  assert(strcmp(ndpi_strnstr("string", "", 0), "string") == 0);
+  assert(ndpi_strnstr("", "str", 0) == NULL);
+  assert(ndpi_strnstr("string", "str", 0) == NULL);
+  assert(ndpi_strnstr("str", "string", 0) == NULL);
+}
+
+/* *********************************************** */
+
+void strncasestrUnitTest(void) {
+  /* Test 1: null string */
+  assert(ndpi_strncasestr(NULL, "find", 10) == NULL);
+  assert(ndpi_strncasestr("string", NULL, 10) == NULL);
+
+  /* Test 2: empty substring */
+  assert(strcmp(ndpi_strncasestr("string", "", 6), "string") == 0);
+
+  /* Test 3: single character substring */
+  assert(strcmp(ndpi_strncasestr("string", "r", 6), "ring") == 0);
+  assert(strcmp(ndpi_strncasestr("string", "R", 6), "ring") == 0);
+  assert(strcmp(ndpi_strncasestr("stRing", "r", 6), "Ring") == 0);
+  assert(ndpi_strncasestr("string", "x", 6) == NULL);
+  assert(ndpi_strncasestr("string", "X", 6) == NULL);
+
+  /* Test 4: multiple character substring */
+  assert(strcmp(ndpi_strncasestr("string", "ing", 6), "ing") == 0);
+  assert(strcmp(ndpi_strncasestr("striNg", "InG", 6), "iNg") == 0);
+  assert(ndpi_strncasestr("string", "xyz", 6) == NULL);
+  assert(ndpi_strncasestr("striNg", "XyZ", 6) == NULL);
+
+  /* Test 5: substring equal to the beginning of the string */
+  assert(strcmp(ndpi_strncasestr("string", "str", 5), "string") == 0);
+  assert(strcmp(ndpi_strncasestr("string", "sTR", 5), "string") == 0);
+  assert(strcmp(ndpi_strncasestr("String", "STR", 5), "String") == 0);
+  assert(strcmp(ndpi_strncasestr("Long Long String", "long long", 15), "Long Long String") == 0);
+
+  /* Test 6: substring at the end of the string */
+  assert(strcmp(ndpi_strncasestr("string", "ing", 6), "ing") == 0);
+  assert(strcmp(ndpi_strncasestr("some longer STRing", "GEr sTrING", 18), "ger STRing") == 0);
+
+  /* Test 7: substring in the middle of the string */
+  assert(strcmp(ndpi_strncasestr("hello world", "lo wo", 11), "lo world") == 0);
+  assert(strcmp(ndpi_strncasestr("hello BEAUTIFUL world", "beautiful", 20), "BEAUTIFUL world") == 0);
+
+  /* Test 8: repeated characters in the string */
+  assert(strcmp(ndpi_strncasestr("aaaaaa", "aaa", 6), "aaaaaa") == 0);
+  assert(strcmp(ndpi_strncasestr("aaAaAa", "aaa", 6), "aaAaAa") == 0);
+  assert(strcmp(ndpi_strncasestr("AAAaaa", "aaa", 6), "AAAaaa") == 0);
+
+  /* Test 9: empty string and slen 0 */
+  assert(ndpi_strncasestr("", "find", 0) == NULL);
+
+  /* Test 10: substring equal to the string */
+  assert(strcmp(ndpi_strncasestr("string", "string", 6), "string") == 0);
+  assert(strcmp(ndpi_strncasestr("string", "STRING", 6), "string") == 0);
+  assert(strcmp(ndpi_strncasestr("sTrInG", "StRiNg", 6), "sTrInG") == 0);
+
+  /* Test 11a,b: max_length bigger that string length */
+  assert(strcmp(ndpi_strncasestr("string", "string", 66), "string") == 0);
+  assert(ndpi_strncasestr("string", "a", 66) == NULL);
+
+  /* Test 12: substring longer than the string */
+  assert(ndpi_strncasestr("string", "stringA", 6) == NULL);
+
+  /* Test 13 */
+  assert(ndpi_strncasestr("abcdef", "abc", 2) == NULL);
+
+  /* Test 14: zero length */
+  assert(strcmp(ndpi_strncasestr("", "", 0), "") == 0);
+  assert(strcmp(ndpi_strncasestr("string", "", 0), "string") == 0);
+  assert(ndpi_strncasestr("", "str", 0) == NULL);
+  assert(ndpi_strncasestr("string", "str", 0) == NULL);
+  assert(ndpi_strncasestr("str", "string", 0) == NULL);
+}
+
+/* *********************************************** */
+
+void memmemUnitTest(void) {
+  /* Test 1: null string */
+  assert(ndpi_memmem(NULL, 0, NULL, 0) == NULL);
+  assert(ndpi_memmem(NULL, 0, NULL, 10) == NULL);
+  assert(ndpi_memmem(NULL, 0, "find", 10) == NULL);
+  assert(ndpi_memmem(NULL, 10, "find", 10) == NULL);
+  assert(ndpi_memmem("string", 10, NULL, 0) == NULL);
+  assert(ndpi_memmem("string", 10, NULL, 10) == NULL);
+
+  /* Test 2: zero length */
+  assert(strcmp(ndpi_memmem("", 0, "", 0), "") == 0);
+  assert(strcmp(ndpi_memmem("string", 6, "", 0), "string") == 0);
+  assert(strcmp(ndpi_memmem("string", 0, "", 0), "string") == 0);
+  assert(ndpi_memmem("", 0, "string", 6) == NULL);
+
+  /* Test 3: empty substring */
+  assert(strcmp(ndpi_memmem("string", 6, "", 0), "string") == 0);
+
+  /* Test 4: single character substring */
+  assert(strcmp(ndpi_memmem("string", 6, "r", 1), "ring") == 0);
+  assert(ndpi_memmem("string", 6, "x", 1) == NULL);
+
+  /* Test 5: multiple character substring */
+  assert(strcmp(ndpi_memmem("string", 6, "ing", 3), "ing") == 0);
+  assert(ndpi_memmem("string", 6, "xyz", 3) == NULL);
+
+  /* Test 6: substring equal to the beginning of the string */
+  assert(strcmp(ndpi_memmem("string", 6, "str", 3), "string") == 0);
+
+  /* Test 7: substring at the end of the string */
+  assert(strcmp(ndpi_memmem("string", 6, "ing", 3), "ing") == 0);
+
+  /* Test 8: substring in the middle of the string */
+  assert(strcmp(ndpi_memmem("hello world", strlen("hello world"), "lo wo", strlen("lo wo")), "lo world") == 0);
+
+  /* Test 9: repeated characters in the string */
+  assert(strcmp(ndpi_memmem("aaaaaa", 6, "aaa", 3), "aaaaaa") == 0);
+
+  /* Test 10: substring equal to the string */
+  assert(strcmp(ndpi_memmem("string", 6, "string", 6), "string") == 0);
+
+  /* Test 11: substring longer than the string */
+  assert(ndpi_memmem("string", 6, "stringA", 7) == NULL);
 }
 
 /* *********************************************** */
@@ -5915,9 +6125,9 @@ void encodeDomainsUnitTest() {
 
     assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
 
-    ndpi_get_host_domain_suffix(ndpi_str, "lcb.it", &suffix_id); assert(suffix_id == 1117);
-    ndpi_get_host_domain_suffix(ndpi_str, "www.ntop.org", &suffix_id); assert(suffix_id == 4503);
-    ndpi_get_host_domain_suffix(ndpi_str, "www.bbc.co.uk", &suffix_id); assert(suffix_id == 5242);
+    ndpi_get_host_domain_suffix(ndpi_str, "lcb.it", &suffix_id);
+    ndpi_get_host_domain_suffix(ndpi_str, "www.ntop.org", &suffix_id);
+    ndpi_get_host_domain_suffix(ndpi_str, "www.bbc.co.uk", &suffix_id);
 
     str = (char*)"www.ntop.org"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
     str = (char*)"www.bbc.co.uk"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
@@ -5975,6 +6185,7 @@ void domainSearchUnitTest() {
   char *domain = "ntop.org";
   u_int16_t class_id;
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  u_int8_t trace = 0;
 
   assert(ndpi_str);
   assert(sc);
@@ -5982,6 +6193,7 @@ void domainSearchUnitTest() {
   ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, ".ntop.org");
   ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, domain);
   assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, domain));
+  assert(class_id == NDPI_PROTOCOL_NTOP);
 
   ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_CATEGORY_GAMBLING, "123vc.club");
   assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, "123vc.club"));
@@ -5991,16 +6203,9 @@ void domainSearchUnitTest() {
   assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, "blog.ntop.org"));
   assert(class_id == NDPI_PROTOCOL_NTOP);
 
-#ifdef DEBUG_TRACE
-  struct stat st;
-
-  if(stat(fname, &st) == 0) {
-    u_int32_t s = ndpi_domain_classify_size(ndpi_str, sc);
-
-    printf("Size: %u [%.1f %% of the original filename size]\n",
-	   s, (float)(s * 100) / (float)st.st_size);
-  }
-#endif
+  u_int32_t s = ndpi_domain_classify_size(sc);
+  if(trace) printf("ndpi_domain_classify size: %u \n",s);
+  
 
   ndpi_domain_classify_free(sc);
   ndpi_exit_detection_module(ndpi_str);
@@ -6103,6 +6308,8 @@ int main(int argc, char **argv) {
     strtonumUnitTest();
     strlcpyUnitTest();
     strnstrUnitTest();
+    strncasestrUnitTest();
+    memmemUnitTest();
 #endif
   }
 

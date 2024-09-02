@@ -1064,6 +1064,9 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     flow->risk_str = ndpi_strdup(s);  
   
   flow->confidence = flow->ndpi_flow->confidence;
+
+  flow->fpc = flow->ndpi_flow->fpc;
+
   flow->num_dissector_calls = flow->ndpi_flow->num_dissector_calls;
 
   ndpi_snprintf(flow->host_server_name, sizeof(flow->host_server_name), "%s",
@@ -1376,7 +1379,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
                        flow->detected_protocol,
                        &flow->ndpi_flow_serializer) != 0) {
       LOG(NDPI_LOG_ERROR, "flow2json failed\n");
-      exit(-1);
+      return;
     }
     
     ndpi_serialize_string_uint32(&flow->ndpi_flow_serializer, "detection_completed", flow->detection_completed);
@@ -1465,7 +1468,8 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 					   const struct pcap_pkthdr *header,
 					   const u_char *packet,
 					   pkt_timeval when,
-					   ndpi_risk *flow_risk) {
+					   ndpi_risk *flow_risk,
+					   struct ndpi_flow_info **flow_ext) {
   struct ndpi_flow_info *flow = NULL;
   struct ndpi_flow_struct *ndpi_flow = NULL;
   u_int8_t proto;
@@ -1776,6 +1780,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 #endif
 
   *flow_risk = flow->risk;
+  *flow_ext = flow;
 
   return(flow->detected_protocol);
 }
@@ -2002,7 +2007,8 @@ static uint32_t ndpi_is_valid_gre_tunnel(const struct pcap_pkthdr *header,
 struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
 					       const struct pcap_pkthdr *header_o,
 					       const u_char *packet,
-					       ndpi_risk *flow_risk) {
+					       ndpi_risk *flow_risk,
+					       struct ndpi_flow_info **flow) {
   /*
    * Declare pointers to packet headers
    */
@@ -2057,6 +2063,7 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
   u_int8_t vlan_packet = 0;
 
   *flow_risk = 0 /* NDPI_NO_RISK */;
+  *flow = NULL;
 
   /* Increment raw packet counter */
   workflow->stats.raw_packet_count++;
@@ -2541,9 +2548,9 @@ struct ndpi_proto ndpi_workflow_process_packet(struct ndpi_workflow * workflow,
 
   /* process the packet */
   return(packet_processing(workflow, time_ms, vlan_id, nf_mark, tunnel_type, iph, iph6,
-			   header->caplen - ip_offset, header->caplen, 
-			   header, packet, header->ts,
-			   flow_risk));
+			   header->caplen - ip_offset,
+			   header->caplen, header, packet, header->ts,
+			   flow_risk, flow));
 }
 
 /* *********************************************** */

@@ -180,8 +180,9 @@ static void ndpi_mt_init(struct xt_entry_match *match)
 	NDPI_BITMASK_RESET(info->flags);
 }
 static char *_clevel2str[] = {
-	"unknown", "port", "ip", "user",
-	"nbpf",	"dpart",  "dcpart", "dcache", "dpi" };
+	"unknown", "port", "ip", "nbpf",
+	"dpart",  "dcpart", "dcache", "dpi", "dpi_spec", "user"
+ };
 
 #define clevel2num (sizeof(_clevel2str)/sizeof(_clevel2str[0]))
 
@@ -704,7 +705,7 @@ ndpi_mt_help(void)
 		"  --host str             Match server host name\n"
 		"                         Use /str/ for regexp match.\n"
 		"  --clevel L             Match confidence level. -L - level < L, +L - level > L\n"
-		"                         Levels: unknown,port,ip,user,nbpf,dpart,dcpart,dcache,dpi\n"
+		"                         Levels (low-high) : unknown,port,ip,nbpf,dpart,dcpart,dcache,dpi,dpi_spec,user\n"
 		"  --risk risklist        Match if at least one of the listed risks is present.\n"
 		"                         risklist - risk numbers separated by commas.\n"
 		"  --have-master          Match if master protocol detected\n"

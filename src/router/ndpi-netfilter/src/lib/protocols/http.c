@@ -489,6 +489,15 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
     ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OCSP, master_protocol, NDPI_CONFIDENCE_DPI);
   }
 
+  /* HTTP Live Streaming */
+  if (packet->content_line.len > 28 &&
+      (strncmp((const char *)packet->content_line.ptr, "application/vnd.apple.mpegurl", 29) == 0 ||
+      strncmp((const char *)packet->content_line.ptr, "application/x-mpegURL", 21) == 0 ||
+      strncmp((const char *)packet->content_line.ptr, "application/x-mpegurl", 21) == 0)) {
+    NDPI_LOG_DBG2(ndpi_struct, "Found HLS\n");
+    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_HLS, master_protocol, NDPI_CONFIDENCE_DPI);
+  }
+
   if((flow->http.method == NDPI_HTTP_METHOD_RPC_CONNECT) ||
      (flow->http.method == NDPI_HTTP_METHOD_RPC_IN_DATA) ||
      (flow->http.method == NDPI_HTTP_METHOD_RPC_OUT_DATA)) {
@@ -548,6 +557,16 @@ static void ndpi_http_parse_subprotocol(struct ndpi_detection_module_struct *ndp
 				    master_protocol);
       }
     }
+  }
+
+  if(flow->http.url
+     && (
+       ends_with(ndpi_struct, (char*)flow->http.url, "/generate_204")
+       || ends_with(ndpi_struct, (char*)flow->http.url, "/generate204")
+       )
+    ) {
+    flow->category = NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK;
+    return;
   }
 
   if(flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN &&
@@ -1081,12 +1100,18 @@ static struct l_string {
 		    STATIC_STRING_L("DELETE "),
 		    STATIC_STRING_L("CONNECT "),
 		    STATIC_STRING_L("PROPFIND "),
+		    STATIC_STRING_L("PROPPATCH "),
+		    STATIC_STRING_L("MKCOL "),
+		    STATIC_STRING_L("MOVE "),
+		    STATIC_STRING_L("COPY "),
+		    STATIC_STRING_L("LOCK "),
+		    STATIC_STRING_L("UNLOCK "),
 		    STATIC_STRING_L("REPORT "),
 		    STATIC_STRING_L("RPC_CONNECT "),
 		    STATIC_STRING_L("RPC_IN_DATA "),
 		    STATIC_STRING_L("RPC_OUT_DATA ")
 };
-static const char *http_fs = "CDGHOPR";
+static const char *http_fs = "CDGHLMOPRU";
 
 static u_int16_t http_request_url_offset(struct ndpi_detection_module_struct *ndpi_struct)
 {

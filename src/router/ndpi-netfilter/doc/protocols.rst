@@ -838,3 +838,57 @@ References: `Wikipedia <https://en.wikipedia.org/wiki/Viber>`_
 The ZUG protocol is part of the Casper 2.0 consensus model.
 
 References: `Main Site <https://casperlabs.io>`_ and `Blog Post <https://casperlabs.io/blog/beyond-eth-30-theres-casper-20>`_
+
+
+.. _Proto 416:
+
+`NDPI_PROTOCOL_JRMI`
+=========================
+The JRMI protocol is the Java Remote Method Invocation protocol.
+
+References:  `Oracle site <https://docs.oracle.com/en/java/javase/21/docs/specs/rmi/protocol.html>`_
+
+
+.. _Proto 417:
+
+`NDPI_PROTOCOL_RIPE_ATLAS`
+==========================
+The RIPE Atlas probe protocol is used for the world's largest active Internet measurement network.
+
+References: `Main Site <https://atlas.ripe.net/>`_ and `Documentation <https://ripe-atlas-tools.readthedocs.io/en/latest/index.html>`_
+
+
+.. _Proto 418:
+
+`NDPI_PROTOCOL_HLS`
+=====================
+HTTP Live Streaming (HLS) is an adaptive bitrate streaming communications protocol developed by Apple Inc. It allows for the delivery of media content over the internet by breaking the stream into small segments and adjusting the quality of the stream in real time based on the viewer's network conditions.
+
+References: `RFC <https://datatracker.ietf.org/doc/html/rfc8216>`_
+
+
+.. _Proto 419:
+
+`NDPI_PROTOCOL_CLICKHOUSE`
+======================
+ClickHouse is an open-source columnar database management system designed for online analytical processing (OLAP) of queries.
+
+References: `Main site: <https://clickhouse.com/>`_
+
+
+.. _Proto 420:
+
+`NDPI_PROTOCOL_NANO`
+======================
+Nano (XNO) is a decentralized, open-source cryptocurrency that focuses on delivering fast, fee-less, and eco-friendly transactions through its unique block-lattice structure.
+
+References: `Main site: <https://nano.org/>`_
+
+
+.. _Proto 421:
+
+`NDPI_PROTOCOL_OPENWIRE`
+======================
+OpenWire is a wire protocol used by Apache ActiveMQ for communication between clients and brokers, providing an efficient and flexible messaging framework. While it's not the most popular choice compared to other protocols like AMQP or MQTT, it is still utilized in scenarios where ActiveMQ is heavily integrated.
+
+References: `Main site: <https://activemq.apache.org/components/classic/documentation/openwire>`_

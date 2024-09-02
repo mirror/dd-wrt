@@ -62,6 +62,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/cip.c \
 		     protocols/ciscovpn.c \
 		     protocols/citrix.c \
+		     protocols/cloudflare_warp.c \
 		     protocols/cpha.c \
 		     protocols/coap.c \
 		     protocols/cod_mobile.c \
@@ -127,6 +128,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/iso9506-1-mms.c \
 		     protocols/ethersbus.c \
 		     protocols/jabber.c \
+		     protocols/jrmi.c \
 		     protocols/json-rpc.c \
 		     protocols/kafka.c \
 		     protocols/kakaotalk_voice.c \
@@ -159,6 +161,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/mumble.c \
 		     protocols/munin.c \
 		     protocols/mysql.c \
+		     protocols/nano.c \
 		     protocols/natpmp.c \
 		     protocols/nats.c \
 		     protocols/nest_log_sink.c \
@@ -175,6 +178,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/opc-ua.c \
 		     protocols/openflow.c \
 		     protocols/openvpn.c \
+		     protocols/openwire.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
 		     protocols/path_of_exile.c \
@@ -192,6 +196,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/raknet.c \
 		     protocols/rdp.c \
 		     protocols/resp.c \
+		     protocols/ripe_atlas.c \
 		     protocols/rmcp.c \
 		     protocols/roughtime.c \
 		     protocols/rsh.c \

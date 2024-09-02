@@ -224,6 +224,7 @@
     <ClCompile Include="..\src\lib\protocols\ciscovpn.c" />
     <ClCompile Include="..\src\lib\protocols\citrix.c" />
     <ClCompile Include="..\src\lib\protocols\cip.c" />
+    <ClCompile Include="..\src\lib\protocols\cloudflare_warp.c" />
     <ClCompile Include="..\src\lib\protocols\coap.c" />
     <ClCompile Include="..\src\lib\protocols\corba.c" />
     <ClCompile Include="..\src\lib\protocols\crossfire.c" />
@@ -287,6 +288,7 @@
     <ClCompile Include="..\src\lib\protocols\raft.c" />
     <ClCompile Include="..\src\lib\protocols\rdp.c" />
     <ClCompile Include="..\src\lib\protocols\resp.c" />
+    <ClCompile Include="..\src\lib\protocols\ripe_atlas.c" />
     <ClCompile Include="..\src\lib\protocols\rmcp.c" />
     <ClCompile Include="..\src\lib\protocols\roughtime.c" />
     <ClCompile Include="..\src\lib\protocols\rsync.c" />
@@ -378,6 +380,9 @@
     <ClCompile Include="..\src\lib\protocols\egd.c" />
     <ClCompile Include="..\src\lib\protocols\cod_mobile.c" />
     <ClCompile Include="..\src\lib\protocols\zug.c" />
+    <ClCompile Include="..\src\lib\protocols\jrmi.c" />
+    <ClCompile Include="..\src\lib\protocols\nano.c" />
+    <ClCompile Include="..\src\lib\protocols\openwire.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />

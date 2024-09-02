@@ -486,3 +486,13 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/radius_proto.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/cloudflare_warp.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/jrmi.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/nano.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/openwire.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/ripe_atlas.c"
+#undef NDPI_CURRENT_PROTO

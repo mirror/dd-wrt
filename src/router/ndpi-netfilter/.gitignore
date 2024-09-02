@@ -1,4 +1,4 @@
-*.[o]
+*.o
 *.db
 *.db-*
 *.dll
@@ -13,13 +13,19 @@
 *.opendb
 *.pdb
 *.recipe
+*.status
+*.substvars
 *.suo
 *.swp
 *.tlog
+*.trs
 *.user
 *o.cmd
+<<<<<<< HEAD
 *.so
 *.so.*
+=======
+>>>>>>> 2a3f4dc8b400e078b7fd2ec0f802200dfece8c94
 *~
 .autotools
 .cproject
@@ -27,9 +33,14 @@
 .libs
 .project
 .settings
+<<<<<<< HEAD
 .deps
 .Module.symvers.cmd
 .modules.order.cmd
+=======
+/.idea/
+/.vscode/
+>>>>>>> 2a3f4dc8b400e078b7fd2ec0f802200dfece8c94
 /Makefile
 /aclocal.m4
 /autom4te.cache/
@@ -67,6 +78,8 @@
 /fuzz/fuzz_alg_ses_des
 /fuzz/fuzz_alg_bytestream
 /fuzz/fuzz_alg_shoco
+/fuzz/fuzz_alg_memmem
+/fuzz/fuzz_alg_strnstr
 /fuzz/fuzz_config
 /fuzz/fuzz_community_id
 /fuzz/fuzz_serialization
@@ -90,6 +103,11 @@
 /fuzz/fuzz_gcrypt_gcm
 /fuzz/fuzz_gcrypt_cipher
 /fuzz/fuzz_ndpi_reader_payload_analyzer
+/fuzz/fuzz_ndpi_reader_pl7m_simplest
+/fuzz/fuzz_ndpi_reader_pl7m_simplest_internal
+/fuzz/fuzz_ndpi_reader_pl7m
+/fuzz/fuzz_ndpi_reader_pl7m_64k
+/fuzz/fuzz_ndpi_reader_pl7m_internal
 /fuzz/fuzz_filecfg_protocols
 /fuzz/fuzz_filecfg_categories
 /fuzz/fuzz_filecfg_category
@@ -101,6 +119,11 @@
 /fuzz/fuzz_readerutils_parseprotolist
 /fuzz/fuzz_ndpi_reader_alloc_fail_seed_corpus.zip
 /fuzz/fuzz_ndpi_reader_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_pl7m_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_pl7m_64k_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_pl7m_internal_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_pl7m_simplest_seed_corpus.zip
+/fuzz/fuzz_ndpi_reader_pl7m_simplest_internal_seed_corpus.zip
 /fuzz/fuzz_quic_get_crypto_data_seed_corpus.zip
 /fuzz/fuzz_community_id_seed_corpus.zip
 /fuzz/fuzz_is_stun_udp_seed_corpus.zip
@@ -141,6 +164,20 @@
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
 /missing
+/packages/ndpi*.buildinfo
+/packages/ndpi*.changes
+/packages/ndpi*.deb
+/packages/ndpi*.dsc
+/packages/ndpi*.tar.gz
+/packages/ubuntu/Makefile
+/packages/ubuntu/debian/changelog
+/packages/ubuntu/debian/control
+/packages/ubuntu/debian/files
+/packages/ubuntu/debian/.debhelper/
+/packages/ubuntu/debian/ndpi/
+/packages/ubuntu/debian/ndpi-dev/
+/packages/ubuntu/debian/ndpi-dev-tmp/
+/packages/ubuntu/debian/ndpi-tmp/
 /rrdtool/Makefile
 /rrdtool/rrd_anomaly
 /rrdtool/rrd_similarity
@@ -164,6 +201,7 @@
 /src/lib/libndpi.so*
 /src/lib/protocols/.deps/
 /src/lib/third_party/src/.deps/
+/src/lib/third_party/src/fuzz/.deps/
 /tags
 /tests/dga/dga_evaluate
 /tests/dga/dga_evaluate.exe
