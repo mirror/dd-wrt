@@ -1,7 +1,7 @@
 /*
  * ndpiReader.c
  *
- * Copyright (C) 2011-23 - ntop.org
+ * Copyright (C) 2011-24 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -378,21 +378,21 @@ void ndpiCheckHostStringMatch(char *testChar) {
                                            testChar, strlen(testChar), &match);
 
   if(testRes) {
-    memset( &detected_protocol, 0, sizeof(ndpi_protocol) );
+    memset(&detected_protocol, 0, sizeof(ndpi_protocol) );
 
     detected_protocol.app_protocol    = match.protocol_id;
     detected_protocol.master_protocol = 0;
     detected_protocol.category        = match.protocol_category;
 
-    ndpi_protocol2name( ndpi_str, detected_protocol, appBufStr,
-                        sizeof(appBufStr));
+    ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
+		       sizeof(appBufStr));
 
     printf("Match Found for string [%s] -> P(%d) B(%d) C(%d) => %s %s %s\n",
 	   testChar, match.protocol_id, match.protocol_breed,
 	   match.protocol_category,
 	   appBufStr,
-	   ndpi_get_proto_breed_name( match.protocol_breed ),
-	   ndpi_category_get_name( ndpi_str, match.protocol_category));
+	   ndpi_get_proto_breed_name(match.protocol_breed ),
+	   ndpi_category_get_name(ndpi_str, match.protocol_category));
   } else
     printf("Match NOT Found for string: %s\n\n", testChar );
 
@@ -676,17 +676,17 @@ static void help(u_int long_help) {
          max_num_reported_top_payloads, max_num_tcp_dissected_pkts, max_num_udp_dissected_pkts);
 
   NDPI_PROTOCOL_BITMASK all;
-  struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   NDPI_BITMASK_SET_ALL(all);
-  ndpi_set_protocol_detection_bitmask2(ndpi_info_mod, &all);
+  ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
 
   if(_protoFilePath != NULL)
-    ndpi_load_protocols_file(ndpi_info_mod, _protoFilePath);
+    ndpi_load_protocols_file(ndpi_str, _protoFilePath);
 
-  ndpi_finalize_initialization(ndpi_info_mod);
+  ndpi_finalize_initialization(ndpi_str);
 
   printf("\nProtocols configuration parameters:\n");
-  ndpi_dump_config(ndpi_info_mod, stdout);
+  ndpi_dump_config(ndpi_str, stdout);
 
 #ifndef WIN32
   printf("\nExcap (wireshark) options:\n"
@@ -703,8 +703,9 @@ static void help(u_int long_help) {
 #endif
 
   if(long_help) {
-    printf("\n\nSize of nDPI Flow structure: %u\n"
-           "Sizeof of nDPI Flow protocol union: %zu\n",
+    printf("\n\n"
+	   "Size of nDPI Flow structure:      %u\n"
+           "Size of nDPI Flow protocol union: %zu\n",
            ndpi_detection_get_sizeof_ndpi_flow_struct(),
            sizeof(((struct ndpi_flow_struct *)0)->protos));
 
@@ -713,13 +714,13 @@ static void help(u_int long_help) {
 	   "Id", "Userd-id", "Protocol", "Layer_4", "Nw_Proto", "Breed", "Category");
     num_threads = 1;
 
-    ndpi_dump_protocols(ndpi_info_mod, stdout);
+    ndpi_dump_protocols(ndpi_str, stdout);
 
     printf("\n\nnDPI supported risks:\n");
     ndpi_dump_risks_score(stdout);
   }
 
-  ndpi_exit_detection_module(ndpi_info_mod);
+  ndpi_exit_detection_module(ndpi_str);
 
   exit(!long_help);
 }
@@ -840,10 +841,10 @@ void extcap_config() {
   ndpi_proto_defaults_t *proto_defaults;
 #endif
 
-  struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
 #if 0
-  ndpi_num_supported_protocols = ndpi_get_ndpi_num_supported_protocols(ndpi_info_mod);
-  proto_defaults = ndpi_get_proto_defaults(ndpi_info_mod);
+  ndpi_num_supported_protocols = ndpi_get_ndpi_num_supported_protocols(ndpi_str);
+  proto_defaults = ndpi_get_proto_defaults(ndpi_str);
 #endif
 
   /* -i <interface> */
@@ -877,7 +878,7 @@ void extcap_config() {
   ndpi_free(protos);
 #endif
 
-  ndpi_exit_detection_module(ndpi_info_mod);
+  ndpi_exit_detection_module(ndpi_str);
 
   extcap_exit = 1;
 }
@@ -1348,10 +1349,10 @@ static void parseOptions(int argc, char **argv) {
 
     case '9':
     {
-      struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(NULL);
-      extcap_packet_filter = ndpi_get_proto_by_name(ndpi_info_mod, optarg);
+      struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+      extcap_packet_filter = ndpi_get_proto_by_name(ndpi_str, optarg);
       if(extcap_packet_filter == NDPI_PROTOCOL_UNKNOWN) extcap_packet_filter = atoi(optarg);
-      ndpi_exit_detection_module(ndpi_info_mod);
+      ndpi_exit_detection_module(ndpi_str);
       break;
     }
 
@@ -1518,6 +1519,22 @@ void print_bin(FILE *fout, const char *label, struct ndpi_bin *b) {
   }
 
   if(label) fprintf(fout, "]");
+}
+
+/* ********************************** */
+
+static void print_ndpi_address_port(FILE *out, const char *label, ndpi_address_port *ap) {
+  if(ap->port != 0) {
+    char buf[INET6_ADDRSTRLEN];
+
+    if(ap->is_ipv6) {
+      inet_ntop(AF_INET6, &ap->address, buf, sizeof(buf));
+      fprintf(out, "[%s: [%s]:%u]", label, buf, ap->port);
+    } else {
+      inet_ntop(AF_INET, &ap->address, buf, sizeof(buf));
+      fprintf(out, "[%s: %s:%u]", label, buf, ap->port);
+    }
+  }
 }
 
 /* ********************************** */
@@ -1872,18 +1889,11 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
       }
     }
 
-    if(flow->stun.mapped_address.port != 0) {
-      char buf[INET6_ADDRSTRLEN];
-
-      if(flow->stun.mapped_address.is_ipv6) {
-        inet_ntop(AF_INET6, &flow->stun.mapped_address.address, buf, sizeof(buf));
-      } else {
-        inet_ntop(AF_INET, &flow->stun.mapped_address.address, buf, sizeof(buf));
-      }
-      fprintf(out, "[Mapped IP/Port: %s:%u]",
-              buf,
-              flow->stun.mapped_address.port);
-    }
+    print_ndpi_address_port(out, "Mapped IP/Port", &flow->stun.mapped_address);
+    print_ndpi_address_port(out, "Peer IP/Port", &flow->stun.peer_address);
+    print_ndpi_address_port(out, "Relayed IP/Port", &flow->stun.relayed_address);
+    print_ndpi_address_port(out, "Rsp Origin IP/Port", &flow->stun.response_origin);
+    print_ndpi_address_port(out, "Other IP/Port", &flow->stun.other_address);
 
     if(flow->http.url[0] != '\0') {
       ndpi_risk_enum risk = ndpi_validate_url(flow->http.url);
@@ -2667,7 +2677,7 @@ static void node_idle_scan_walker(const void *node, ndpi_VISIT which, int depth,
 
 /* *********************************************** */
 
-#if 1
+#if 0
 /**
  * @brief Print debug
  */
@@ -3879,7 +3889,7 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
   if(!quiet_mode) {
     printf("\nnDPI Memory statistics:\n");
     printf("\tnDPI Memory (once):      %-13s\n", formatBytes(ndpi_get_ndpi_detection_module_size(), buf, sizeof(buf)));
-    printf("\tFlow Memory (per flow):  %-13s\n", formatBytes( ndpi_detection_get_sizeof_ndpi_flow_struct(), buf, sizeof(buf)));
+    printf("\tFlow Memory (per flow):  %-13s\n", formatBytes(ndpi_detection_get_sizeof_ndpi_flow_struct(), buf, sizeof(buf)));
     printf("\tActual Memory:           %-13s\n", formatBytes(current_ndpi_memory, buf, sizeof(buf)));
     printf("\tPeak Memory:             %-13s\n", formatBytes(max_ndpi_memory, buf, sizeof(buf)));
     printf("\tSetup Time:              %lu msec\n", (unsigned long)(setup_time_usec/1000));
@@ -3995,10 +4005,6 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_insert,
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_search,
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_found);
-      printf("\tLRU cache zoom:       %llu/%llu/%llu (insert/search/found)\n",
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_insert,
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_search,
-	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_found);
       printf("\tLRU cache stun:       %llu/%llu/%llu (insert/search/found)\n",
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_insert,
 	     (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_search,
@@ -4114,10 +4120,6 @@ static void printResults(u_int64_t processing_time_usec, u_int64_t setup_time_us
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_insert,
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_search,
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_BITTORRENT].n_found);
-      fprintf(results_file, "LRU cache zoom:       %llu/%llu/%llu (insert/search/found)\n",
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_insert,
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_search,
-	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_ZOOM].n_found);
       fprintf(results_file, "LRU cache stun:       %llu/%llu/%llu (insert/search/found)\n",
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_insert,
 	      (long long unsigned int)cumulative_stats.lru_stats[NDPI_LRUCACHE_STUN].n_search,
@@ -5201,21 +5203,21 @@ void rsiUnitTest() {
 void hashUnitTest() {
   ndpi_str_hash *h;
   char * const dict[] = { "hello", "world", NULL };
-  int i;
+  u_int16_t i;
 
   assert(ndpi_hash_init(&h) == 0);
   assert(h == NULL);
 
   for(i=0; dict[i] != NULL; i++) {
     u_int8_t l = strlen(dict[i]);
-    int * v;
+    u_int16_t v;
 
-    assert(ndpi_hash_add_entry(&h, dict[i], l, &i) == 0);
-    assert(ndpi_hash_find_entry(h, dict[i], l, (void **)&v) == 0);
-    assert(v == (void *)&i && *v == i);
+    assert(ndpi_hash_add_entry(&h, dict[i], l, i) == 0);
+    assert(ndpi_hash_find_entry(h, dict[i], l, &v) == 0);
+    assert(v == i);
   }
 
-  ndpi_hash_free(&h, NULL);
+  ndpi_hash_free(&h);
   assert(h == NULL);
 }
 
@@ -5578,6 +5580,7 @@ void jitterUnitTest() {
 /* *********************************************** */
 
 void compressedBitmapUnitTest() {
+#if 0
   ndpi_bitmap *b = ndpi_bitmap_alloc(), *b1;
   u_int i, trace = 0;
   size_t ser;
@@ -5613,6 +5616,7 @@ void compressedBitmapUnitTest() {
   ndpi_free(buf);
   ndpi_bitmap_free(b);
   ndpi_bitmap_free(b1);
+#endif
 }
 
 /* *********************************************** */
@@ -5640,7 +5644,91 @@ void strtonumUnitTest() {
 
 /* *********************************************** */
 
+void strlcpyUnitTest() {
+  // Test empty string
+  char dst_empty[10] = "";
+  assert(ndpi_strlcpy(dst_empty, "", sizeof(dst_empty), 0) == 0);
+  assert(dst_empty[0] == '\0');
+
+  // Basic copy test
+  char dst1[10] = "";
+  assert(ndpi_strlcpy(dst1, "abc", sizeof(dst1), 3) == 3);
+  assert(strcmp(dst1, "abc") == 0);
+
+  // Test with dst_len smaller than src_len
+  char dst2[4] = "";
+  assert(ndpi_strlcpy(dst2, "abcdef", sizeof(dst2), 6) == 6);
+  assert(strcmp(dst2, "abc") == 0); // Should truncate "abcdef" to "abc"
+
+  // Test with dst_len bigger than src_len
+  char dst3[10] = "";
+  assert(ndpi_strlcpy(dst3, "abc", sizeof(dst3), 3) == 3);
+  assert(strcmp(dst3, "abc") == 0);
+
+  // Test with dst_len equal to 1 (only null terminator should be copied)
+  char dst4[1];
+  assert(ndpi_strlcpy(dst4, "abc", sizeof(dst4), 3) == 3);
+  assert(dst4[0] == '\0'); // Should only contain the null terminator
+
+  // Test with NULL source, expecting return value to be 0
+  char dst5[10];
+  assert(ndpi_strlcpy(dst5, NULL, sizeof(dst5), 0) == 0);
+
+  // Test with NULL destination, should also return 0 without crashing
+  assert(ndpi_strlcpy(NULL, "abc", sizeof(dst5), 3) == 0);
+}
+
+/* *********************************************** */
+
+void strnstrUnitTest(void) {
+  /* Test 1: null string */
+  assert(ndpi_strnstr(NULL, "find", 10) == NULL);
+  assert(ndpi_strnstr("string", NULL, 10) == NULL);
+
+  /* Test 2: empty substring */
+  assert(strcmp(ndpi_strnstr("string", "", 6), "string") == 0);
+
+  /* Test 3: single character substring */
+  assert(strcmp(ndpi_strnstr("string", "r", 6), "ring") == 0);
+  assert(ndpi_strnstr("string", "x", 6) == NULL);
+
+  /* Test 4: multiple character substring */
+  assert(strcmp(ndpi_strnstr("string", "ing", 6), "ing") == 0);
+  assert(ndpi_strnstr("string", "xyz", 6) == NULL);
+
+  /* Test 5: substring equal to the beginning of the string */
+  assert(strcmp(ndpi_strnstr("string", "str", 3), "string") == 0);
+
+  /* Test 6: substring at the end of the string */
+  assert(strcmp(ndpi_strnstr("string", "ing", 6), "ing") == 0);
+
+  /* Test 7: substring in the middle of the string */
+  assert(strcmp(ndpi_strnstr("hello world", "lo wo", 11), "lo world") == 0);
+
+  /* Test 8: repeated characters in the string */
+  assert(strcmp(ndpi_strnstr("aaaaaa", "aaa", 6), "aaaaaa") == 0);
+
+  /* Test 9: empty string and slen 0 */
+  assert(ndpi_strnstr("", "find", 0) == NULL);
+
+  /* Test 10: substring equal to the string */
+  assert(strcmp(ndpi_strnstr("string", "string", 6), "string") == 0);
+
+  /* Test 11a,b: max_length bigger that string length */
+  assert(strcmp(ndpi_strnstr("string", "string", 66), "string") == 0);
+  assert(ndpi_strnstr("string", "a", 66) == NULL);
+
+  /* Test 12: substring longer than the string */
+  assert(ndpi_strnstr("string", "stringA", 6) == NULL);
+
+  /* Test 13 */
+  assert(ndpi_strnstr("abcdef", "abc", 2) == NULL);
+}
+
+/* *********************************************** */
+
 void filterUnitTest() {
+#if 0
   ndpi_filter* f = ndpi_filter_alloc();
   u_int32_t v, i;
 
@@ -5654,6 +5742,7 @@ void filterUnitTest() {
   assert(ndpi_filter_contains(f, v));
 
   ndpi_filter_free(f);
+#endif
 }
 
 /* *********************************************** */
@@ -5737,6 +5826,7 @@ void sketchUnitTest() {
 /* *********************************************** */
 
 void binaryBitmapUnitTest() {
+#if 0
   ndpi_binary_bitmap *b = ndpi_binary_bitmap_alloc();
   u_int64_t hashval = 8149764909040470312;
   u_int8_t category = 33;
@@ -5747,6 +5837,7 @@ void binaryBitmapUnitTest() {
   assert(ndpi_binary_bitmap_isset(b, hashval, &category));
   assert(category == 33);
   ndpi_binary_bitmap_free(b);
+#endif
 }
 
 /* *********************************************** */
@@ -5807,31 +5898,74 @@ void loadStressTest() {
 
 /* *********************************************** */
 
-void domainsUnitTest() {
+void encodeDomainsUnitTest() {
   NDPI_PROTOCOL_BITMASK all;
-  struct ndpi_detection_module_struct *ndpi_info_mod = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   const char *lists_path = "../lists/public_suffix_list.dat";
   struct stat st;
 
   if(stat(lists_path, &st) == 0) {
+    u_int16_t suffix_id;
+    char out[256];
+    char *str;
+    ndpi_protocol_category_t id;
+
     NDPI_BITMASK_SET_ALL(all);
-    ndpi_set_protocol_detection_bitmask2(ndpi_info_mod, &all);
+    ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
 
-    assert(ndpi_load_domain_suffixes(ndpi_info_mod, "../lists/public_suffix_list.dat") == 0);
+    assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
 
-    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_info_mod, "www.chosei.chiba.jp"), "chosei.chiba.jp") == 0);
-    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_info_mod, "www.unipi.it"), "it") == 0);
-    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_info_mod, "mail.apple.com"), "com") == 0);
-    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_info_mod, "www.bbc.co.uk"), "co.uk") == 0);
+    ndpi_get_host_domain_suffix(ndpi_str, "lcb.it", &suffix_id); assert(suffix_id == 1117);
+    ndpi_get_host_domain_suffix(ndpi_str, "www.ntop.org", &suffix_id); assert(suffix_id == 4503);
+    ndpi_get_host_domain_suffix(ndpi_str, "www.bbc.co.uk", &suffix_id); assert(suffix_id == 5242);
 
-    assert(strcmp(ndpi_get_host_domain(ndpi_info_mod, "www.chosei.chiba.jp"), "www.chosei.chiba.jp") == 0);
-    assert(strcmp(ndpi_get_host_domain(ndpi_info_mod, "www.unipi.it"), "unipi.it") == 0);
-    assert(strcmp(ndpi_get_host_domain(ndpi_info_mod, "mail.apple.com"), "apple.com") == 0);
-    assert(strcmp(ndpi_get_host_domain(ndpi_info_mod, "www.bbc.co.uk"), "bbc.co.uk") == 0);
-    assert(strcmp(ndpi_get_host_domain(ndpi_info_mod, "zy1ssnfwwl.execute-api.eu-north-1.amazonaws.com"), "amazonaws.com") == 0);
+    str = (char*)"www.ntop.org"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
+    str = (char*)"www.bbc.co.uk"; assert(ndpi_encode_domain(ndpi_str, str, out, sizeof(out)) == 8);
+
+    assert(ndpi_load_categories_dir(ndpi_str, "../lists"));
+    assert(ndpi_load_categories_file(ndpi_str, "./categories.txt", "categories.txt"));
+
+    str = (char*)"2001:db8:1::1"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 100);
+    str = (char*)"www.internetbadguys.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 100);
+    str = (char*)"0grand-casino.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 107);
+    str = (char*)"222.0grand-casino.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 107);
+    str = (char*)"10bet.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 107);
+    str = (char*)"www.ntop.org"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == -1); assert(id == 0);
+    str = (char*)"www.andrewpope.com"; assert(ndpi_get_custom_category_match(ndpi_str, str, strlen(str), &id) == 0); assert(id == 100);
   }
 
-  ndpi_exit_detection_module(ndpi_info_mod);
+  ndpi_exit_detection_module(ndpi_str);
+}
+
+/* *********************************************** */
+
+void domainsUnitTest() {
+  NDPI_PROTOCOL_BITMASK all;
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  const char *lists_path = "../lists/public_suffix_list.dat";
+  struct stat st;
+
+  if(stat(lists_path, &st) == 0) {
+    u_int16_t suffix_id;
+
+    NDPI_BITMASK_SET_ALL(all);
+    ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
+
+    assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
+
+    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "www.chosei.chiba.jp", &suffix_id), "chosei.chiba.jp") == 0);
+    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "www.unipi.it", &suffix_id), "it") == 0);
+    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "mail.apple.com", &suffix_id), "com") == 0);
+    assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "www.bbc.co.uk", &suffix_id), "co.uk") == 0);
+
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "www.chosei.chiba.jp"), "www.chosei.chiba.jp") == 0);
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "www.unipi.it"), "unipi.it") == 0);
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "mail.apple.com"), "apple.com") == 0);
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "www.bbc.co.uk"), "bbc.co.uk") == 0);
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "zy1ssnfwwl.execute-api.eu-north-1.amazonaws.com"), "amazonaws.com") == 0);
+  }
+
+  ndpi_exit_detection_module(ndpi_str);
 }
 
 /* *********************************************** */
@@ -5839,27 +5973,29 @@ void domainsUnitTest() {
 void domainSearchUnitTest() {
   ndpi_domain_classify *sc = ndpi_domain_classify_alloc();
   char *domain = "ntop.org";
-  u_int8_t class_id;
+  u_int16_t class_id;
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
 
+  assert(ndpi_str);
   assert(sc);
 
-  ndpi_domain_classify_add(sc, NDPI_PROTOCOL_NTOP, ".ntop.org");
-  ndpi_domain_classify_add(sc, NDPI_PROTOCOL_NTOP, domain);
-  assert(ndpi_domain_classify_contains(sc, &class_id, domain));
+  ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, ".ntop.org");
+  ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, domain);
+  assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, domain));
 
-  ndpi_domain_classify_add(sc, NDPI_PROTOCOL_CATEGORY_GAMBLING, "123vc.club");
-  assert(ndpi_domain_classify_contains(sc, &class_id, "123vc.club"));
+  ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_CATEGORY_GAMBLING, "123vc.club");
+  assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, "123vc.club"));
   assert(class_id == NDPI_PROTOCOL_CATEGORY_GAMBLING);
 
   /* Subdomain check */
-  assert(ndpi_domain_classify_contains(sc, &class_id, "blog.ntop.org"));
+  assert(ndpi_domain_classify_hostname(ndpi_str, sc, &class_id, "blog.ntop.org"));
   assert(class_id == NDPI_PROTOCOL_NTOP);
 
 #ifdef DEBUG_TRACE
   struct stat st;
 
   if(stat(fname, &st) == 0) {
-    u_int32_t s = ndpi_domain_classify_size(sc);
+    u_int32_t s = ndpi_domain_classify_size(ndpi_str, sc);
 
     printf("Size: %u [%.1f %% of the original filename size]\n",
 	   s, (float)(s * 100) / (float)st.st_size);
@@ -5867,20 +6003,26 @@ void domainSearchUnitTest() {
 #endif
 
   ndpi_domain_classify_free(sc);
+  ndpi_exit_detection_module(ndpi_str);
 }
 
 /* *********************************************** */
 
 void domainSearchUnitTest2() {
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   ndpi_domain_classify *c = ndpi_domain_classify_alloc();
-  u_int8_t class_id = 9;
+  u_int16_t class_id = 9;
 
-  ndpi_domain_classify_add(c, class_id, "ntop.org");
-  ndpi_domain_classify_add(c, class_id, "apple.com");
+  assert(ndpi_str);
+  assert(c);
 
-  assert(!ndpi_domain_classify_contains(c, &class_id, "ntop.com"));
+  ndpi_domain_classify_add(ndpi_str, c, class_id, "ntop.org");
+  ndpi_domain_classify_add(ndpi_str, c, class_id, "apple.com");
+
+  assert(!ndpi_domain_classify_hostname(ndpi_str, c, &class_id, "ntop.com"));
 
   ndpi_domain_classify_free(c);
+  ndpi_exit_detection_module(ndpi_str);
 }
 
 /* *********************************************** */
@@ -5889,7 +6031,12 @@ void domainSearchUnitTest2() {
    @brief MAIN FUNCTION
 **/
 int main(int argc, char **argv) {
-  int i, skip_unit_tests = 0;
+  int i;
+#ifdef NDPI_EXTENDED_SANITY_CHECKS
+  int skip_unit_tests = 0;
+#else
+  int skip_unit_tests = 1;
+#endif
 
 #ifdef DEBUG_TRACE
   trace = fopen("/tmp/ndpiReader.log", "a");
@@ -5923,6 +6070,7 @@ int main(int argc, char **argv) {
     exit(0);
 #endif
 
+    encodeDomainsUnitTest();
     loadStressTest();
     domainsUnitTest();
     outlierUnitTest();
@@ -5953,6 +6101,8 @@ int main(int argc, char **argv) {
     analysisUnitTest();
     compressedBitmapUnitTest();
     strtonumUnitTest();
+    strlcpyUnitTest();
+    strnstrUnitTest();
 #endif
   }
 

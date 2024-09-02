@@ -129,7 +129,7 @@ extern int is_version_with_var_int_transport_params(uint32_t version);
   159a76.....
 */
 
-#define NDPI_MAX_TLS_REQUEST_SIZE 16384
+#define NDPI_MAX_TLS_REQUEST_SIZE (16384+4096)
 #define TLS_THRESHOLD             34387200 /* Threshold for certificate validity                                */
 #define TLS_LIMIT_DATE            1598918400 /* From 01/09/2020 TLS certificates lifespan is limited to 13 months */
 
@@ -155,7 +155,9 @@ static u_int32_t ndpi_tls_refine_master_protocol(struct ndpi_detection_module_st
     u_int16_t sport = ntohs(packet->tcp->source);
     u_int16_t dport = ntohs(packet->tcp->dest);
 
-    if((sport == 465) || (dport == 465) || (sport == 587) || (dport == 587))
+    if(flow->stun.maybe_dtls)
+      protocol = NDPI_PROTOCOL_DTLS;
+    else if((sport == 465) || (dport == 465) || (sport == 587) || (dport == 587))
       protocol = NDPI_PROTOCOL_MAIL_SMTPS;
     else if((sport == 993) || (dport == 993) || (flow->l4.tcp.mail_imap_starttls))
       protocol = NDPI_PROTOCOL_MAIL_IMAPS;
@@ -691,7 +693,7 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 		      ndpi_set_risk(flow, NDPI_INVALID_CHARACTERS, dNSName);
 
 		      /* This looks like an attack */
-		      ndpi_set_risk(flow, NDPI_POSSIBLE_EXPLOIT, NULL);
+		      ndpi_set_risk(flow, NDPI_POSSIBLE_EXPLOIT, "Invalid dNSName name");
 		    }
 
 		    if(matched_name == 0) {
@@ -743,10 +745,13 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 
 		    i += len;
 		  } else {
+		    char buf[32];
+
+		    snprintf(buf, sizeof(buf), "Unknown extension %02X", general_name_type);
 #ifdef DEBUG_TLS
 		    printf("[TLS] Leftover %u bytes", packet->payload_packet_len - i);
 #endif
-		    ndpi_set_risk(flow, NDPI_TLS_SUSPICIOUS_EXTENSION, NULL);
+		    ndpi_set_risk(flow, NDPI_TLS_SUSPICIOUS_EXTENSION, buf);
 		    break;
 		  }
 		} else {
@@ -809,7 +814,8 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
     if(ndpi_check_issuerdn_risk_exception(ndpi_struct, flow->protos.tls_quic.issuerDN))
       return; /* This is a trusted DN */
 
-    ndpi_set_risk(flow, NDPI_TLS_SELFSIGNED_CERTIFICATE, flow->protos.tls_quic.subjectDN);
+    if(!flow->protos.tls_quic.webrtc)
+      ndpi_set_risk(flow, NDPI_TLS_SELFSIGNED_CERTIFICATE, flow->protos.tls_quic.subjectDN);
   }
   
 #ifdef DEBUG_TLS
@@ -823,7 +829,7 @@ void processCertificateElements(struct ndpi_detection_module_struct *ndpi_struct
 NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  int is_dtls = packet->udp ? 1 : 0;
+  int is_dtls = packet->udp || flow->stun.maybe_dtls; /* No certificate with QUIC */
   u_int32_t certificates_length, length = (packet->payload[1] << 16) + (packet->payload[2] << 8) + packet->payload[3];
   u_int32_t certificates_offset = 7 + (is_dtls ? 8 : 0);
   u_int8_t num_certificates_found = 0;
@@ -838,7 +844,7 @@ NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_str
 
   if((packet->payload_packet_len != (length + 4 + (is_dtls ? 8 : 0))) || (packet->payload[1] != 0x0) ||
      certificates_offset >= packet->payload_packet_len) {
-    ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, NULL);
+    ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, "Unvalid lenght");
     return(-1); /* Invalid length */
   }
 
@@ -847,7 +853,7 @@ NDPI_STATIC int processCertificate(struct ndpi_detection_module_struct *ndpi_str
     packet->payload[certificates_offset - 1];
 
   if((packet->payload[certificates_offset - 3] != 0x0) || ((certificates_length+3) != length)) {
-    ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, NULL);
+    ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, "Invalid certificate offset");
     return(-2); /* Invalid length */
   }
 
@@ -973,6 +979,7 @@ static int processTLSBlock(struct ndpi_detection_module_struct *ndpi_struct,
                     struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int ret;
+  int is_dtls = packet->udp || flow->stun.maybe_dtls;
 
 #ifdef DEBUG_TLS
   printf("[TLS] Processing block %u\n", packet->payload[0]);
@@ -992,10 +999,13 @@ static int processTLSBlock(struct ndpi_detection_module_struct *ndpi_struct,
 	   (packet->payload[0] == 0x01) ? "Client" : "Server");
 #endif
 
-    /* Not support for DTLS 1.3 yet, then certificates are always visible in DTLS */
-    if((packet->tcp && flow->protos.tls_quic.ssl_version >= 0x0304 /* TLS 1.3 */)
+    if((!is_dtls && flow->protos.tls_quic.ssl_version >= 0x0304 /* TLS 1.3 */)
        && (packet->payload[0] == 0x02 /* Server Hello */)) {
       flow->tls_quic.certificate_processed = 1; /* No Certificate with TLS 1.3+ */
+    }
+    if((is_dtls && flow->protos.tls_quic.ssl_version == 0xFEFC /* DTLS 1.3 */)
+       && (packet->payload[0] == 0x02 /* Server Hello */)) {
+      flow->tls_quic.certificate_processed = 1; /* No Certificate with DTLS 1.3+ */
     }
 
     checkTLSSubprotocol(ndpi_struct, flow, packet->payload[0] == 0x01);
@@ -1134,7 +1144,7 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 	u_int8_t alert_level = message->buffer[5];
 
 	if(alert_level == 2 /* Warning (1), Fatal (2) */)
-	  ndpi_set_risk(flow, NDPI_TLS_FATAL_ALERT, NULL);
+	  ndpi_set_risk(flow, NDPI_TLS_FATAL_ALERT, "Found fatal TLS alert");
       }
 
       u_int16_t const alert_len = ntohs(*(u_int16_t const *)&message->buffer[3]);
@@ -1269,9 +1279,10 @@ int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len) {
   if(buf_len <= 13)
     return 0;
 
-  if((buf[0] != 0x16 && buf[0] != 0x14 && buf[0] != 0x17) || /* Handshake, change-cipher-spec, Application-Data */
+  if((buf[0] != 0x16 && buf[0] != 0x14 && buf[0] != 0x17 && buf[0] != 0x15) || /* Handshake, change-cipher-spec, Application-Data, Alert */
      !((buf[1] == 0xfe && buf[2] == 0xff) || /* Versions */
        (buf[1] == 0xfe && buf[2] == 0xfd) ||
+       (buf[1] == 0xfe && buf[2] == 0xfc) ||
        (buf[1] == 0x01 && buf[2] == 0x00))) {
 #ifdef DEBUG_TLS
     printf("[TLS] DTLS invalid block 0x%x or old version 0x%x-0x%x-0x%x\n",
@@ -1409,6 +1420,17 @@ static int ndpi_search_tls_udp(struct ndpi_detection_module_struct *ndpi_struct,
       processed += block_len + 13;
       flow->tls_quic.certificate_processed = 1; /* Fake, to avoid extra dissection */
       break;
+    } else if(block[0] == 0x15 /* Alert */) {
+#ifdef DEBUG_TLS
+      printf("[TLS] TLS Alert\n");
+#endif
+
+      if(block_len == 2) {
+       u_int8_t alert_level = block[13];
+
+       if(alert_level == 2 /* Warning (1), Fatal (2) */)
+         ndpi_set_risk(flow, NDPI_TLS_FATAL_ALERT, "Found fatal TLS alert");
+      }
     } else {
 #ifdef DEBUG_TLS
       printf("[TLS] Appllication Data\n");
@@ -1593,7 +1615,7 @@ static void checkExtensions(struct ndpi_detection_module_struct *ndpi_struct,
       printf("[TLS] extension length exceeds remaining packet length: %u > %u.\n",
 	     extension_len, packet->payload_packet_len - extension_payload_offset);
 #endif
-      ndpi_set_risk(flow, NDPI_TLS_SUSPICIOUS_EXTENSION, NULL);
+      ndpi_set_risk(flow, NDPI_TLS_SUSPICIOUS_EXTENSION, "Invalid extension len");
       return;
     }
 
@@ -1681,6 +1703,32 @@ static void u_int16_t_swpfunc(void * a, void * b, int size) {
 }
 #endif
 
+static bool is_grease_version(u_int16_t version) {
+  switch(version) {
+  case 0x0a0a:
+  case 0x1a1a:
+  case 0x2a2a:
+  case 0x3a3a:
+  case 0x4a4a:
+  case 0x5a5a:
+  case 0x6a6a:
+  case 0x7a7a:
+  case 0x8a8a:
+  case 0x9a9a:
+  case 0xaaaa:
+  case 0xbaba:  
+  case 0xcaca:
+  case 0xdada:
+  case 0xeaea:
+  case 0xfafa:
+    return(true);
+    break;
+    
+  default:
+    return(false);
+  }
+}
+
 /* **************************************** */
 
 static void ndpi_compute_ja4(struct ndpi_flow_struct *flow,
@@ -1694,13 +1742,13 @@ static void ndpi_compute_ja4(struct ndpi_flow_struct *flow,
   u_int16_t tls_handshake_version = ja->client.tls_handshake_version;
   char * const ja_str = &flow->protos.tls_quic.ja4_client[0];
   const u_int16_t ja_max_len = sizeof(flow->protos.tls_quic.ja4_client);
-  
+  bool is_dtls = ((flow->l4_proto == IPPROTO_UDP) && (quic_version == 0)) || flow->stun.maybe_dtls;
   /*
     Compute JA4 TLS/QUIC client
 
     https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md
 
-    (QUIC=”q” or TCP=”t”)
+    (QUIC=”q”, DTLS="d" or TCP=”t”)
     (2 character TLS version)
     (SNI=”d” or no SNI=”i”)
     (2 character count of ciphers)
@@ -1711,10 +1759,10 @@ static void ndpi_compute_ja4(struct ndpi_flow_struct *flow,
     _
     (sha256 hash of (the list of extension hex codes sorted in hex order)_(the list of signature algorithms), truncated to 12 characters)
   */
-  ja_str[0] = (quic_version != 0) ? 'q' : 't';
+  ja_str[0] = is_dtls ? 'd' : ((quic_version != 0) ? 'q' : 't');
 
   for(i=0; i<ja->client.num_supported_versions; i++) {
-    if((ja->client.supported_versions[i] != 0x0A0A /* GREASE */)
+    if((!is_grease_version(ja->client.supported_versions[i]))
        && (tls_handshake_version < ja->client.supported_versions[i]))
       tls_handshake_version = ja->client.supported_versions[i];
   }
@@ -1752,6 +1800,21 @@ static void ndpi_compute_ja4(struct ndpi_flow_struct *flow,
 
   case 0x0100: /* SSL 1.0 = “s1” */
     ja_str[1] = 's';
+    ja_str[2] = '3';
+    break;
+
+  case 0xFEFF: /* DTLS 1.0 = “d1” */
+    ja_str[1] = 'd';
+    ja_str[2] = '1';
+    break;
+
+  case 0xFEFD: /* DTLS 1.2 = “d2” */
+    ja_str[1] = 'd';
+    ja_str[2] = '2';
+    break;
+
+  case 0xFEFC: /* DTLS 1.3 = “d3” */
+    ja_str[1] = 'd';
     ja_str[2] = '3';
     break;
 
@@ -1846,8 +1909,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
   u_int16_t total_len;
   u_int8_t handshake_type;
   bool is_quic = (quic_version != 0);
-  bool is_dtls = packet->udp && (!is_quic);
-  bool use_srtp = 0;
+  bool is_dtls = (packet->udp && !is_quic) || flow->stun.maybe_dtls;
 
 #ifdef DEBUG_TLS
   printf("TLS %s() called\n", __FUNCTION__);
@@ -2355,7 +2417,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		      ndpi_set_risk(flow, NDPI_INVALID_CHARACTERS, sni);
 
 		      /* This looks like an attack */
-		      ndpi_set_risk(flow, NDPI_POSSIBLE_EXPLOIT, NULL);
+		      ndpi_set_risk(flow, NDPI_POSSIBLE_EXPLOIT, "Invalid chars found in SNI: exploit or misconfiguration?");
 		    }
 
 		    if(!is_quic) {
@@ -2469,9 +2531,9 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		s_offset += 2;
 		tot_signature_algorithms_len = ndpi_min((sizeof(ja->client.signature_algorithms_str) / 2) - 1, tot_signature_algorithms_len);
 
+#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
 		size_t sa_size = ndpi_min(tot_signature_algorithms_len / 2, MAX_NUM_TLS_SIGNATURE_ALGORITHMS);
 
-#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
 		if (s_offset + 2 * sa_size <= packet->payload_packet_len) {
 		  flow->protos.tls_quic.num_tls_signature_algorithms = sa_size;
 		  memcpy(flow->protos.tls_quic.client_signature_algorithms,
@@ -2479,10 +2541,10 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		}
 #endif
 
-		ja->client.num_signature_algorithms = ndpi_min(sa_size, MAX_NUM_JA);
 		for(i=0, id=0; i<tot_signature_algorithms_len && s_offset+i+1<total_len; i += 2) {
 		  ja->client.signature_algorithms[id++] = ntohs(*(u_int16_t*)&packet->payload[s_offset+i]);
 		}
+		ja->client.num_signature_algorithms = id;
 		
 		for(i=0, id=0; i<tot_signature_algorithms_len && s_offset+i+1<total_len; i++) {
 		  int rc = ndpi_snprintf(&ja->client.signature_algorithms_str[i*2],
@@ -2591,7 +2653,9 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
 		printf("Client TLS [SIGNATURE_ALGORITHMS: %s]\n", ja->client.signature_algorithms_str);
 #endif
 	      } else if(extension_id == 14 /* use_srtp */) {
-                use_srtp = 1;
+                /* This is likely a werbrtc flow */
+                if(flow->stun.maybe_dtls || flow->detected_protocol_stack[0] == NDPI_PROTOCOL_DTLS)
+	          flow->protos.tls_quic.webrtc = 1;
 #ifdef DEBUG_TLS
                 printf("Client TLS: use_srtp\n");
 #endif
@@ -2933,7 +2997,7 @@ compute_ja3c:
 
 	    /* Before returning to the caller we need to make a final check */
 	    if((flow->protos.tls_quic.ssl_version >= 0x0303) /* >= TLSv1.2 */
-	       && !(flow->stun.maybe_dtls == 1 && is_dtls && use_srtp) /* Webrtc traffic */
+	       && !flow->protos.tls_quic.webrtc
 	       && (flow->protos.tls_quic.advertised_alpns == NULL) /* No ALPN */) {
 	      ndpi_set_risk(flow, NDPI_TLS_NOT_CARRYING_HTTPS, "No ALPN");
 	    }
@@ -2948,11 +3012,11 @@ compute_ja3c:
 	    /* Add check for missing SNI */
 	    if(flow->host_server_name[0] == '\0'
 	       && (flow->protos.tls_quic.ssl_version >= 0x0302) /* TLSv1.1 */
-	       && !(flow->stun.maybe_dtls == 1 && is_dtls && use_srtp) /* Webrtc traffic */
+	       && !flow->protos.tls_quic.webrtc
 	       && (flow->protos.tls_quic.encrypted_sni.esni == NULL) /* No ESNI */
 	       ) {
 	      /* This is a bit suspicious */
-	      ndpi_set_risk(flow, NDPI_TLS_MISSING_SNI, NULL);
+	      ndpi_set_risk(flow, NDPI_TLS_MISSING_SNI, "SNI should always be present");
 
 	      if(flow->protos.tls_quic.advertised_alpns != NULL) {
 		char buf[256], *tmp, *item;
@@ -2964,7 +3028,7 @@ compute_ja3c:
 		while(item != NULL) {
 		  if(item[0] == 'h') {
 		    /* Example 'h2' */
-		    ndpi_set_risk(flow, NDPI_TLS_ALPN_SNI_MISMATCH, NULL);
+		    ndpi_set_risk(flow, NDPI_TLS_ALPN_SNI_MISMATCH, item);
 		    break;
 		  } else
 		    item = strtok_r(NULL, ",", &tmp);
@@ -3019,7 +3083,7 @@ static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_st
 	 flow->protos.tls_quic.ssl_version);
 #endif
 
-  if(packet->udp != NULL)
+  if(packet->udp != NULL || flow->stun.maybe_dtls)
     ndpi_search_tls_udp(ndpi_struct, flow);
   else
     ndpi_search_tls_tcp(ndpi_struct, flow);

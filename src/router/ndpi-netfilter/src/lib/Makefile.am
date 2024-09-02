@@ -19,24 +19,20 @@ libndpi_a_include_HEADERS = ../include/ndpi_api.h \
 			     third_party/include/gcrypt_light.h \
 			     third_party/include/hll.h \
 			     third_party/include/libcache.h \
-			     third_party/include/ndpi_sha256.h
+			     third_party/include/ndpi_sha256.h \
+			     third_party/include/shoco.h
 
 libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     ndpi_main.c \
 		     ndpi_memory.c \
 		     ndpi_utils.c \
-		     ndpi_bitmap.c \
 		     ndpi_analyze.c \
 		     ndpi_classify.c \
 		     ndpi_serializer.c \
 		     ndpi_domains.c \
 		     ndpi_community_id.c \
 		     ndpi_domain_classify.c \
-		     ndpi_filter.c \
 		     ndpi_geoip.c \
-		     ndpi_binary_bitmap.c \
-		     ndpi_bitmap64_fuse.c \
-		     ndpi_bitmap.c \
 		     ndpi_hash.c \
 		     protocols/activision.c \
 		     protocols/afp.c \
@@ -51,6 +47,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/amqp.c \
 		     protocols/bacnet.c \
 		     protocols/beckhoff_ads.c \
+		     protocols/bfcp.c \
 		     protocols/bfd.c \
 		     protocols/bgp.c \
 		     protocols/bitcoin.c \
@@ -67,6 +64,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/citrix.c \
 		     protocols/cpha.c \
 		     protocols/coap.c \
+		     protocols/cod_mobile.c \
 		     protocols/collectd.c \
 		     protocols/corba.c \
 		     protocols/crossfire.c \
@@ -85,6 +83,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/dropbox.c \
 		     protocols/eaq.c \
 		     protocols/edonkey.c \
+		     protocols/egd.c \
 		     protocols/elastic_search.c \
 		     protocols/epicgames.c \
 		     protocols/ethereum.c \
@@ -124,6 +123,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ipsec.c \
 		     protocols/ipp.c \
 		     protocols/irc.c \
+		     protocols/iqiyi.c \
 		     protocols/iso9506-1-mms.c \
 		     protocols/ethersbus.c \
 		     protocols/jabber.c \
@@ -133,8 +133,9 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/kcp.c \
 		     protocols/kerberos.c \
 		     protocols/kismet.c \
-		     protocols/kontiki.c \
+		     protocols/knxnet_ip.c \
 		     protocols/ldap.c \
+		     protocols/ldp.c \
 		     protocols/lol_wild_rift.c \
 		     protocols/lotus_notes.c \
 		     protocols/line.c \
@@ -179,14 +180,13 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/path_of_exile.c \
 		     protocols/pfcp.c \
 		     protocols/postgres.c \
-		     protocols/ppstream.c \
 		     protocols/pptp.c \
 		     protocols/profinet_io.c \
 		     protocols/protobuf.c \
 		     protocols/ptpv2.c \
 		     protocols/qq.c \
 		     protocols/quic.c \
-		     protocols/radius.c \
+		     protocols/radius_proto.c \
 		     protocols/radmin.c \
 		     protocols/raft.c \
 		     protocols/raknet.c \
@@ -196,7 +196,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/roughtime.c \
 		     protocols/rsh.c \
 		     protocols/rsync.c \
-		     protocols/rtcp.c \
 		     protocols/rtmp.c \
 		     protocols/rtp.c \
 		     protocols/rtps.c \
@@ -228,6 +227,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/tcp_udp.c \
 		     protocols/teamspeak.c \
 		     protocols/teamviewer.c \
+		     protocols/teso.c \
 		     protocols/telegram.c \
 		     protocols/telnet.c \
 		     protocols/tencent_games.c \
@@ -240,7 +240,6 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/teredo.c \
 		     protocols/riotgames.c \
 		     protocols/tivoconnect.c \
-		     protocols/tvuplayer.c \
 		     protocols/tocaboca.c \
 		     protocols/ubntac2.c \
 		     protocols/uftp.c \
@@ -271,6 +270,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/wireguard.c \
 		     protocols/z3950.c \
 		     protocols/zabbix.c \
+		     protocols/zug.c \
 		     third_party/include/ahocorasick.h \
 		     third_party/include/ndpi_patricia.h \
 		     third_party/include/libcache.h \
@@ -286,8 +286,8 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     third_party/src/hll/MurmurHash3.c \
 		     third_party/src/hll/hll.c \
 		     third_party/src/gcrypt_light.c \
-		     third_party/src/roaring.c \
-		     third_party/src/ndpi_sha256.c
+		     third_party/src/ndpi_sha256.c \
+		     third_party/src/shoco.c
 
 lib_LIBRARIES = libndpi.a
 

@@ -53,8 +53,6 @@ extern "C" {
   NDPI_STATIC void ndpi_tdestroy(void *vrootp, void (*freefct)(void *));
 
   NDPI_STATIC int NDPI_BITMASK_COMPARE(NDPI_PROTOCOL_BITMASK a, NDPI_PROTOCOL_BITMASK b);
-  NDPI_STATIC int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
-  NDPI_STATIC void NDPI_DUMP_BITMASK(NDPI_PROTOCOL_BITMASK a);
 
 
 
@@ -67,9 +65,6 @@ extern "C" {
 				      u_int16_t * bytes_read);
   NDPI_STATIC u_int64_t ndpi_bytestream_to_number64(const u_int8_t * str, u_int16_t max_chars_to_read,
 					u_int16_t * bytes_read);
-  NDPI_STATIC u_int32_t ndpi_bytestream_dec_or_hex_to_number(const u_int8_t * str,
-						 u_int16_t max_chars_to_read,
-						 u_int16_t * bytes_read);
   NDPI_STATIC u_int64_t ndpi_bytestream_dec_or_hex_to_number64(const u_int8_t * str,
 						   u_int16_t max_chars_to_read,
 						   u_int16_t * bytes_read);
@@ -120,8 +115,14 @@ extern "C" {
   NDPI_STATIC int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len);
   NDPI_STATIC int ndpi_normalize_printable_string(char * const str, size_t len);
   NDPI_STATIC int ndpi_is_valid_hostname(char * const str, size_t len);
-#define NDPI_ENTROPY_ENCRYPTED_OR_RANDOM(entropy) (entropy > 7.0f)
-  float ndpi_entropy(u_int8_t const * const buf, size_t len); 
+#define NDPI_ENTROPY_PLAINTEXT(entropy) (entropy < 4.941f)
+#define NDPI_ENTROPY_EXECUTABLE(entropy) (entropy >= 4.941f)
+#define NDPI_ENTROPY_EXECUTABLE_PACKED(entropy) (entropy >= 6.677f)
+#define NDPI_ENTROPY_EXECUTABLE_ENCRYPTED(entropy) (entropy >= 7.174f)
+#define NDPI_ENTROPY_ENCRYPTED_OR_RANDOM(entropy) (entropy >= 7.312f)
+  NDPI_STATIC float ndpi_entropy(u_int8_t const * const buf, size_t len);
+  NDPI_STATIC char *ndpi_entropy2str(float entropy, char *buf, size_t len);
+  NDPI_STATIC void ndpi_entropy2risk(struct ndpi_flow_struct *flow);
 
 #ifdef __cplusplus
 }

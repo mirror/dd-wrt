@@ -128,7 +128,7 @@ extern "C" {
    *         NULL if the substring is not found
    *
    */
-  NDPI_STATIC char* ndpi_strnstr(const char *s, const char *find, size_t slen);
+  NDPI_STATIC char *ndpi_strnstr(const char *haystack, const char *needle, size_t len);
 
   /**
    * Same as ndpi_strnstr but case insensitive
@@ -1039,9 +1039,9 @@ extern "C" {
 				     u_int32_t saddr,
 				     u_int32_t daddr,
 				     ndpi_protocol *ret);
-  NDPI_STATIC int ndpi_fill_ip6_protocol_category(struct ndpi_detection_module_struct *ndpi_str,
-				      struct ndpi_flow_struct *flow,
-				      struct in6_addr *saddr, struct in6_addr *daddr,
+  NDPI_STATIC int ndpi_fill_ipv6_protocol_category(struct ndpi_detection_module_struct *ndpi_str,
+				       struct ndpi_flow_struct *flow,
+				       struct in6_addr *saddr, struct in6_addr *daddr,
 				      ndpi_protocol *ret);
   NDPI_STATIC int ndpi_match_custom_category(struct ndpi_detection_module_struct *ndpi_struct,
 				 char *name, u_int name_len, ndpi_protocol_category_t *id);
@@ -1160,6 +1160,10 @@ extern "C" {
 		     ndpi_serializer *serializer);
 #endif
 
+#ifdef __KERNEL__
+  int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
+#endif
+
   NDPI_STATIC char *ndpi_get_ip_proto_name(u_int16_t ip_proto, char *name, unsigned int name_len);
 
   NDPI_STATIC const char* ndpi_http_method2str(ndpi_http_method m);
@@ -1200,6 +1204,7 @@ extern "C" {
   NDPI_STATIC ndpi_ptree_t* ndpi_ptree_create(void);
   NDPI_STATIC int ndpi_ptree_insert(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int8_t bits, u_int64_t user_data);
   NDPI_STATIC int ndpi_ptree_match_addr(ndpi_ptree_t *tree, const ndpi_ip_addr_t *addr, u_int64_t *user_data);
+  NDPI_STATIC int ndpi_load_ptree_file(ndpi_ptree_t *tree, const char *path, u_int16_t protocol_id);
   NDPI_STATIC void ndpi_ptree_destroy(ndpi_ptree_t *tree);
 
   /* General purpose utilities */
@@ -1971,7 +1976,7 @@ extern "C" {
    *                        called for each element in the hashmap [in]
    *
    */
-  NDPI_STATIC void ndpi_hash_free(ndpi_str_hash **h, void (*cleanup_func)(ndpi_str_hash *h));
+  NDPI_STATIC void ndpi_hash_free(ndpi_str_hash **h);
 
   /**
    * Search for an entry in the hashmap.
@@ -1985,7 +1990,7 @@ extern "C" {
    * @return 0 if an entry with that key was found, 1 otherwise
    *
    */
-  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, void **value);
+  NDPI_STATIC int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int16_t *value);
 
   /**
    * Add an entry to the hashmap.
@@ -1998,7 +2003,7 @@ extern "C" {
    * @return 0 if the entry was added, 1 otherwise
    *
    */
-  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *value);
+  NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int16_t value);
 
   /* ******************************* */
 
@@ -2114,21 +2119,19 @@ extern "C" {
   */
 
   NDPI_STATIC ndpi_domain_classify* ndpi_domain_classify_alloc(void);
-  NDPI_STATIC void                  ndpi_domain_classify_free(ndpi_domain_classify *s);
-  NDPI_STATIC u_int32_t             ndpi_domain_classify_size(ndpi_domain_classify *s);
-  NDPI_STATIC bool                  ndpi_domain_classify_add(ndpi_domain_classify *s,
-						 u_int8_t class_id, const char *domain);
-  NDPI_STATIC u_int32_t             ndpi_domain_classify_add_domains(ndpi_domain_classify *s,
-							 u_int8_t class_id,
-							 char *file_path);
-  NDPI_STATIC bool                  ndpi_domain_classify_finalize(ndpi_domain_classify *s);
-  NDPI_STATIC const char*           ndpi_domain_classify_longest_prefix(ndpi_domain_classify *s,
-							    u_int8_t *class_id /* out */,
-							    const char *hostnname,
-							    bool return_subprefix);
-  NDPI_STATIC bool                  ndpi_domain_classify_contains(ndpi_domain_classify *s,
-						      u_int8_t *class_id /* out */,
-						      const char *domain);
+  NDPI_STATIC void ndpi_domain_classify_free(ndpi_domain_classify *s);
+  NDPI_STATIC u_int32_t ndpi_domain_classify_size(ndpi_domain_classify *s);
+  NDPI_STATIC bool ndpi_domain_classify_add(struct ndpi_detection_module_struct *ndpi_mod,
+				ndpi_domain_classify *s,
+				u_int16_t class_id, char *domain);
+  NDPI_STATIC u_int32_t ndpi_domain_classify_add_domains(struct ndpi_detection_module_struct *ndpi_mod,
+					     ndpi_domain_classify *s,
+					     u_int16_t class_id,
+					     char *file_path);
+  NDPI_STATIC bool ndpi_domain_classify_hostname(struct ndpi_detection_module_struct *ndpi_mod,
+				     ndpi_domain_classify *s,
+				     u_int16_t *class_id /* out */,
+				     char *hostname);
 
   /* ******************************* */
 
@@ -2258,8 +2261,57 @@ extern "C" {
 
   /* ******************************* */
 
+  NDPI_STATIC size_t ndpi_compress_str(const char * in, size_t len, char * out, size_t bufsize);
+  NDPI_STATIC size_t ndpi_decompress_str(const char * in, size_t len, char * out, size_t bufsize);
+
+  /* ******************************* */
+
+  /* NOTE
+     this function works best if yout have loaded in memory domain
+     suffixes using ndpi_load_domain_suffixes()
+  */
+  NDPI_STATIC u_int ndpi_encode_domain(struct ndpi_detection_module_struct *ndpi_str,
+			   char *domain, char *out, u_int out_len);
+    
+  /* ******************************* */
   NDPI_STATIC const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);
 
+  /**
+   * @brief Finds the first occurrence of the sequence `needle` in the array
+   * `haystack`.
+   *
+   * This function searches for the first occurrence of the sequence `needle` of
+   * length `needle_len` in the array `haystack` of length `haystack_len`. If
+   * `haystack` or `needle` is `NULL`, or `haystack_len` is less than
+   * `needle_len`, or `needle_len` is 0, the function returns `NULL`.
+   *
+   * For optimization, if `needle_len` is 1, the `memchr` function is used.
+   *
+   * @param haystack Pointer to the array in which the search is performed.
+   * @param haystack_len Length of the `haystack` array.
+   * @param needle Pointer to the array to be searched for in `haystack`.
+   * @param needle_len Length of the `needle` array.
+   * @return Pointer to the first occurrence of `needle` in `haystack` or `NULL`
+   * if `needle` is not found.
+   */
+  NDPI_STATIC void* ndpi_memmem(const void* haystack, size_t haystack_len, const void* needle,
+                    size_t needle_len);
+
+  /**
+   * @brief Copies src string to dst buffer with length limit
+   *
+   * Copies the string src into dst buffer, limiting the copy length by dst_len.
+   * Handles both null-terminated and non null-terminated strings based on
+   * src_len. Ensures null-termination in dst if dst_len > 0.
+   *
+   * @param dst Destination buffer
+   * @param src Source string
+   * @param dst_len Size of dst buffer
+   * @param src_len Length of src string
+   *
+   * @return Length of src string
+   */
+  NDPI_STATIC size_t ndpi_strlcpy(char* dst, const char* src, size_t dst_len, size_t src_len);
 
 #ifdef __cplusplus
 }

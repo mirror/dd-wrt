@@ -1,7 +1,7 @@
 /*
  * ndpi_utils.c
  *
- * Copyright (C) 2011-23 - ntop.org and contributors
+ * Copyright (C) 2011-24 - ntop.org and contributors
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -51,6 +51,7 @@
 
 #include "ahocorasick.h"
 #include "libcache.h"
+#include "shoco.h"
 
 
 #include "third_party/include/ndpi_patricia.h"
@@ -81,21 +82,12 @@ struct pcre2_struct {
 #endif
 
 #ifndef __KERNEL__
-/*
- * Please keep this strcture in sync with
- * `struct ndpi_str_hash` in src/include/ndpi_typedefs.h
- */
-
-typedef struct ndpi_str_hash_private {
-  unsigned int hash;
-  void *value;
-  // u_int8_t private_data[1]; /* Avoid error C2466 and do not initiate private data with 0  */
+typedef struct {
+  char *key;
+  u_int16_t value16;
   UT_hash_handle hh;
-} ndpi_str_hash_private;
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(struct ndpi_str_hash) == sizeof(struct ndpi_str_hash_private) - sizeof(UT_hash_handle),
-               "Please keep `struct ndpi_str_hash` and `struct ndpi_str_hash_private` syncd.");
-#endif
+} ndpi_str_hash_priv;
+
 #endif
 /* ****************************************** */
 
@@ -867,6 +859,7 @@ char* ndpi_ssl_version2str(char *buf, int buf_len,
   case 0XFB1A: strncpy(buf, "TLSv1.3 (Fizz)", buf_len); buf[buf_len - 1] = '\0'; return buf; /* https://engineering.fb.com/security/fizz/ */
   case 0XFEFF: strncpy(buf, "DTLSv1.0", buf_len); buf[buf_len - 1] = '\0'; return buf;
   case 0XFEFD: strncpy(buf, "DTLSv1.2", buf_len); buf[buf_len - 1] = '\0'; return buf;
+  case 0XFEFC: strncpy(buf, "DTLSv1.3", buf_len); buf[buf_len - 1] = '\0'; return buf;
   case 0x0A0A:
   case 0x1A1A:
   case 0x2A2A:
@@ -1245,10 +1238,33 @@ static void ndpi_tls2json(ndpi_serializer *serializer, struct ndpi_flow_struct *
         ndpi_serialize_string_string(serializer, "fingerprint", buf);
       }
 
+      ndpi_serialize_string_uint32(serializer, "blocks", flow->l4.tcp.tls.num_tls_blocks);
+#ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
+      ndpi_serialize_string_uint32(serializer, "sig_algs", flow->protos.tls_quic.num_tls_signature_algorithms);
+#endif
+
       ndpi_serialize_end_of_block(serializer);
     }
   }
 }
+
+/* ********************************** */
+
+static char* print_ndpi_address_port(ndpi_address_port *ap, char *buf, u_int buf_len) {
+  char ipbuf[INET6_ADDRSTRLEN];
+
+  if(ap->is_ipv6) {
+    inet_ntop(AF_INET6, &ap->address, ipbuf, sizeof(ipbuf));
+  } else {
+    inet_ntop(AF_INET, &ap->address, ipbuf, sizeof(ipbuf));
+  }
+
+  snprintf(buf, buf_len, "%s:%u", ipbuf, ap->port);
+
+  return(buf);
+}
+
+/* ********************************** */
 
 /* NOTE: serializer must have been already initialized */
 int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
@@ -1504,6 +1520,27 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_string_string(serializer,  "server_signature", flow->protos.ssh.server_signature);
     ndpi_serialize_string_string(serializer,  "hassh_client", flow->protos.ssh.hassh_client);
     ndpi_serialize_string_string(serializer,  "hassh_server", flow->protos.ssh.hassh_server);
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_STUN:
+    ndpi_serialize_start_of_block(serializer, "stun");
+
+    if(flow->stun.mapped_address.port)
+      ndpi_serialize_string_string(serializer,  "mapped_address", print_ndpi_address_port(&flow->stun.mapped_address, buf, sizeof(buf)));
+
+    if(flow->stun.peer_address.port)
+      ndpi_serialize_string_string(serializer,  "peer_address", print_ndpi_address_port(&flow->stun.peer_address, buf, sizeof(buf)));
+
+    if(flow->stun.relayed_address.port)
+      ndpi_serialize_string_string(serializer,  "relayed_address", print_ndpi_address_port(&flow->stun.relayed_address, buf, sizeof(buf)));
+
+    if(flow->stun.response_origin.port)
+      ndpi_serialize_string_string(serializer,  "response_origin", print_ndpi_address_port(&flow->stun.response_origin, buf, sizeof(buf)));
+
+    if(flow->stun.other_address.port)
+      ndpi_serialize_string_string(serializer,  "other_address", print_ndpi_address_port(&flow->stun.other_address, buf, sizeof(buf)));
+
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -2072,9 +2109,12 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_MALWARE_HOST_CONTACTED:
     return("Client contacted a malware host");
 
-  case NDPI_BINARY_TRANSFER_ATTEMPT:
-    return("Binary Data Transfer Attemot");
+  case NDPI_BINARY_DATA_TRANSFER:
+    return("Binary file/data transfer (attempt)");
 
+  case NDPI_PROBING_ATTEMPT:
+    return("Probing attempt");
+    
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -2254,12 +2294,9 @@ ndpi_http_method ndpi_http_str2method(const char* method, u_int16_t method_len) 
 /* ******************************************************************** */
 
 #ifndef __KERNEL__
-int ndpi_hash_init(ndpi_str_hash **h)
-{
+int ndpi_hash_init(ndpi_str_hash **h) {
   if (h == NULL)
-  {
     return 1;
-  }
 
   *h = NULL;
   return 0;
@@ -2267,75 +2304,80 @@ int ndpi_hash_init(ndpi_str_hash **h)
 
 /* ******************************************************************** */
 
-void ndpi_hash_free(ndpi_str_hash **h, void (*cleanup_func)(ndpi_str_hash *h))
-{
-  struct ndpi_str_hash_private *h_priv;
-  struct ndpi_str_hash_private *current, *tmp;
-
-  if (h == NULL)
-  {
-    return;
-  }
-  h_priv = *(struct ndpi_str_hash_private **)h;
-
-  HASH_ITER(hh, h_priv, current, tmp) {
-    HASH_DEL(h_priv, current);
-    if (cleanup_func != NULL)
-    {
-      cleanup_func((ndpi_str_hash *)current);
+void ndpi_hash_free(ndpi_str_hash **h) {
+  if(h != NULL) {
+    ndpi_str_hash_priv *h_priv = *((ndpi_str_hash_priv **)h);
+    ndpi_str_hash_priv *current, *tmp;
+    
+    HASH_ITER(hh, h_priv, current, tmp) {
+      HASH_DEL(h_priv, current);
+      ndpi_free(current->key);
+      ndpi_free(current);
     }
-    ndpi_free(current);
+    
+    *h = NULL;
   }
-
-  *h = NULL;
 }
 
 /* ******************************************************************** */
 
-int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, void **value)
-{
-  struct ndpi_str_hash_private *h_priv = (struct ndpi_str_hash_private *)h;
-  struct ndpi_str_hash_private *found;
-  unsigned int hash_value;
+int ndpi_hash_find_entry(ndpi_str_hash *h, char *key, u_int key_len, u_int16_t *value) {
+  ndpi_str_hash_priv *h_priv = (ndpi_str_hash_priv *)h;
+  ndpi_str_hash_priv *item;
 
-  HASH_VALUE(key, key_len, hash_value);
-  HASH_FIND_INT(h_priv, &hash_value, found);
-  if (found != NULL)
-  {
-    if (value != NULL)
-    {
-      *value = found->value;
-    }
+  if(!key || key_len == 0)
+    return(2);
+
+  HASH_FIND(hh, h_priv, key, key_len, item);
+
+  if (item != NULL) {
+    if(value != NULL)
+      *value = item->value16;
+
     return 0;
-  } else {
+  } else
     return 1;
-  }
 }
 
 /* ******************************************************************** */
 
-int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, void *value)
-{
-  struct ndpi_str_hash_private **h_priv = (struct ndpi_str_hash_private **)h;
-  struct ndpi_str_hash_private *new = ndpi_calloc(1, sizeof(*new));
-  struct ndpi_str_hash_private *found;
-  unsigned int hash_value;
+int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int16_t value) {
+  ndpi_str_hash_priv *h_priv = (ndpi_str_hash_priv *)*h;
+  ndpi_str_hash_priv *item, *ret_found;
 
-  if (new == NULL)
-  {
-    return 1;
+  if(!key || key_len == 0)
+    return(3);
+
+  HASH_FIND(hh, h_priv, key, key_len, item);
+
+  if(item != NULL) {
+    item->value16 = value;
+    return(1); /* Entry already present */
   }
 
-  HASH_VALUE(key, key_len, hash_value);
-  new->hash = hash_value;
-  new->value = value;
-  HASH_ADD_INT(*h_priv, hash, new);
+  item = ndpi_calloc(1, sizeof(ndpi_str_hash_priv));
+  if(item == NULL)
+    return(2);
 
-  HASH_FIND_INT(*h_priv, &hash_value, found);
-  if (found == NULL) /* The insertion failed (because of a memory allocation error) */
-  {
-    ndpi_free(new);
-    return 1;
+  item->key = ndpi_malloc(key_len+1);
+
+  if(item->key == NULL) {
+    ndpi_free(item);
+    return(1);
+  } else {
+    memcpy(item->key, key, key_len);
+    item->key[key_len] = '\0';
+  }
+
+  item->value16 = value;
+
+  HASH_ADD(hh, *((ndpi_str_hash_priv **)h), key[0], key_len, item);
+
+  HASH_FIND(hh, *((ndpi_str_hash_priv **)h), key, key_len, ret_found);
+  if(ret_found == NULL) { /* The insertion failed (because of a memory allocation error) */
+    ndpi_free(item->key);
+    ndpi_free(item);
+    return 4;
   }
 
   return 0;
@@ -2348,12 +2390,13 @@ static u_int64_t ndpi_host_ip_risk_ptree_match(struct ndpi_detection_module_stru
   ndpi_prefix_t prefix;
   ndpi_patricia_node_t *node;
 
-  if(!ndpi_str->ip_risk_mask_ptree)
+  if(!ndpi_str->ip_risk_mask)
     return((u_int64_t)-1);
 
   /* Make sure all in network byte order otherwise compares wont work */
-  ndpi_fill_prefix_v4(&prefix, pin, 32, ((ndpi_patricia_tree_t *) ndpi_str->ip_risk_mask_ptree)->maxbits);
-  node = ndpi_patricia_search_best(ndpi_str->ip_risk_mask_ptree, &prefix);
+  ndpi_fill_prefix_v4(&prefix, pin, 32,
+		      ((ndpi_patricia_tree_t *) ndpi_str->ip_risk_mask->v4)->maxbits);
+  node = ndpi_patricia_search_best(ndpi_str->ip_risk_mask->v4, &prefix);
 
   if(node)
     return(node->value.u.uv64);
@@ -2368,12 +2411,13 @@ static u_int64_t ndpi_host_ip_risk_ptree_match6(struct ndpi_detection_module_str
   ndpi_prefix_t prefix;
   ndpi_patricia_node_t *node;
 
-  if(!ndpi_str->ip_risk_mask_ptree6)
+  if(!ndpi_str->ip_risk_mask)
     return((u_int64_t)-1);
 
   /* Make sure all in network byte order otherwise compares wont work */
-  ndpi_fill_prefix_v6(&prefix, pin6, 128, ((ndpi_patricia_tree_t *) ndpi_str->ip_risk_mask_ptree6)->maxbits);
-  node = ndpi_patricia_search_best(ndpi_str->ip_risk_mask_ptree6, &prefix);
+  ndpi_fill_prefix_v6(&prefix, pin6, 128,
+		      ((ndpi_patricia_tree_t *) ndpi_str->ip_risk_mask->v6)->maxbits);
+  node = ndpi_patricia_search_best(ndpi_str->ip_risk_mask->v6, &prefix);
 
   if(node)
     return(node->value.u.uv64);
@@ -2476,7 +2520,7 @@ void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
     if(host && (host[0] != '\0')) {
       /* Check host exception */
       ndpi_check_hostname_risk_exception(ndpi_str, flow, host);
-      
+
       if(flow->risk_mask == 0) {
 	u_int i;
 
@@ -2620,6 +2664,7 @@ int ndpi_is_printable_buffer(uint8_t const * const buf, size_t len) {
     if(ndpi_isprint(buf[i]) == 0) {
       retval = 0;
     }
+// #endif
   }
 
   return retval;
@@ -2636,6 +2681,7 @@ int ndpi_normalize_printable_string(char * const str, size_t len) {
       str[i] = '?';
       retval = 0;
     }
+// #endif
   }
 
   return retval;
@@ -2689,9 +2735,82 @@ float ndpi_entropy(u_int8_t const * const buf, size_t len) {
 
   return entropy;
 }
+
+/* ******************************************************************** */
+
+/* Losely implemented by: https://redirect.cs.umbc.edu/courses/graduate/CMSC691am/student%20talks/CMSC%20691%20Malware%20-%20Entropy%20Analysis%20Presentation.pdf */
+char *ndpi_entropy2str(float entropy, char *buf, size_t len) {
+  if (buf == NULL) {
+    return NULL;
+  }
+
+  static const char entropy_fmtstr[] = "Entropy: %.3f (%s?)";
+  if (NDPI_ENTROPY_ENCRYPTED_OR_RANDOM(entropy)) {
+    snprintf(buf, len, entropy_fmtstr, entropy, "Encrypted or Random");
+  } else if (NDPI_ENTROPY_EXECUTABLE_ENCRYPTED(entropy)) {
+    snprintf(buf, len, entropy_fmtstr, entropy, "Encrypted Executable");
+  } else if (NDPI_ENTROPY_EXECUTABLE_PACKED(entropy)) {
+    snprintf(buf, len, entropy_fmtstr, entropy, "Compressed Executable");
+  } else if (NDPI_ENTROPY_EXECUTABLE(entropy)) {
+    snprintf(buf, len, entropy_fmtstr, entropy, "Executable");
+  } else {
+    snprintf(buf, len, entropy_fmtstr, entropy, "Unknown");
+  }
+
+  return buf;
+}
+
+/* ******************************************************************** */
+
+void ndpi_entropy2risk(struct ndpi_flow_struct *flow) {
+  char str[64];
+
+  if (NDPI_ENTROPY_PLAINTEXT(flow->entropy))
+    goto reset_risk;
+
+  if (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_TLS ||
+      flow->detected_protocol_stack[1] == NDPI_PROTOCOL_TLS ||
+      flow->detected_protocol_stack[0] == NDPI_PROTOCOL_QUIC ||
+      flow->detected_protocol_stack[1] == NDPI_PROTOCOL_QUIC ||
+      flow->detected_protocol_stack[0] == NDPI_PROTOCOL_DTLS ||
+      flow->detected_protocol_stack[1] == NDPI_PROTOCOL_DTLS) {
+    flow->skip_entropy_check = 1;
+    goto reset_risk;
+  }
+
+  if (flow->confidence != NDPI_CONFIDENCE_DPI &&
+      flow->confidence != NDPI_CONFIDENCE_DPI_CACHE) {
+    ndpi_set_risk(flow, NDPI_SUSPICIOUS_ENTROPY,
+                  ndpi_entropy2str(flow->entropy, str, sizeof(str)));
+    return;
+  }
+
+  if (ndpi_isset_risk(flow, NDPI_MALWARE_HOST_CONTACTED) ||
+      ndpi_isset_risk(flow, NDPI_BINARY_DATA_TRANSFER) ||
+      ndpi_isset_risk(flow, NDPI_BINARY_APPLICATION_TRANSFER) ||
+      ndpi_isset_risk(flow, NDPI_POSSIBLE_EXPLOIT) ||
+      ndpi_isset_risk(flow, NDPI_HTTP_SUSPICIOUS_CONTENT) ||
+      ndpi_isset_risk(flow, NDPI_DNS_SUSPICIOUS_TRAFFIC) ||
+      ndpi_isset_risk(flow, NDPI_MALFORMED_PACKET) ||
+      (flow->category == NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT &&
+       (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP ||
+        flow->detected_protocol_stack[1] == NDPI_PROTOCOL_HTTP)) ||
+      flow->category == NDPI_PROTOCOL_CATEGORY_DATA_TRANSFER ||
+      flow->category == NDPI_PROTOCOL_CATEGORY_UNSPECIFIED ||
+      flow->category == NDPI_PROTOCOL_CATEGORY_WEB)
+  {
+    ndpi_set_risk(flow, NDPI_SUSPICIOUS_ENTROPY,
+                  ndpi_entropy2str(flow->entropy, str, sizeof(str)));
+    return;
+  }
+
+reset_risk:
+  ndpi_unset_risk(flow, NDPI_SUSPICIOUS_ENTROPY);
+}
 #endif
 
 /* ******************************************************************** */
+
 static inline uint16_t get_n16bit(uint8_t const * cbuf) {
   uint16_t r = ((uint16_t)cbuf[0]) | (((uint16_t)cbuf[1]) << 8);
   return r;
@@ -3136,10 +3255,153 @@ int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const 
 
 const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx)
 {
-  const char *names[NDPI_LRUCACHE_MAX] = { "ookla", "bittorrent", "zoom", "stun",
+  const char *names[NDPI_LRUCACHE_MAX] = { "ookla", "bittorrent", "stun",
                                            "tls_cert", "mining", "msteams", "stun_zoom" };
 
   if(idx < 0 || idx >= NDPI_LRUCACHE_MAX)
     return "unknown";
   return names[idx];
 }
+
+#ifndef __KERNEL__
+
+/* ******************************************* */
+
+size_t ndpi_compress_str(const char * in, size_t len, char * out, size_t bufsize) {
+  size_t ret = shoco_compress(in, len, out, bufsize);
+
+  if(ret > bufsize)
+    return(0); /* Better not to compress data (it is longer than the uncompressed data) */
+
+  return(ret);
+}
+
+/* ******************************************* */
+
+size_t ndpi_decompress_str(const char * in, size_t len, char * out, size_t bufsize) {
+  return(shoco_decompress(in, len, out, bufsize));
+
+}
+
+/* ******************************************* */
+
+
+static u_char ndpi_domain_mapper[256];
+static bool ndpi_domain_mapper_initialized = false;
+
+#define IGNORE_CHAR           0xFF
+#define NUM_BITS_NIBBLE       6 /* each 'nibble' is encoded with 6 bits */
+#define NIBBLE_ELEM_OFFSET    24
+
+/* Used fo encoding domain names 8 bits -> 6 bits */
+static void ndpi_domain_mapper_init() {
+  u_int i;
+  u_char idx = 1 /* start from 1 to make sure 0 is no ambiguous */;
+
+  memset(ndpi_domain_mapper, IGNORE_CHAR, 256);
+
+  for(i='a'; i<= 'z'; i++)
+    ndpi_domain_mapper[i] = idx++;
+
+  for(i='0'; i<= '9'; i++)
+    ndpi_domain_mapper[i] = idx++;
+
+  ndpi_domain_mapper['-'] = idx++;
+  ndpi_domain_mapper['_'] = idx++;
+  ndpi_domain_mapper['.'] = idx++;
+}
+
+/* ************************************************ */
+
+u_int ndpi_encode_domain(struct ndpi_detection_module_struct *ndpi_str,
+			 char *domain, char *out, u_int out_len) {
+  u_int out_idx = 0, i, buf_shift = 0, domain_buf_len, compressed_len, suffix_len, domain_len;
+  u_int32_t value = 0;
+  u_char domain_buf[256], compressed[128];
+  u_int16_t domain_id = 0;
+  const char *suffix;
+
+  if(!ndpi_domain_mapper_initialized) {
+    ndpi_domain_mapper_init();
+    ndpi_domain_mapper_initialized = true;
+  }
+
+  domain_len = strlen(domain);
+  
+  if(domain_len >= (out_len-3))
+    return(0);
+
+  if(domain_len <= 4)
+    return((u_int)snprintf(out, out_len, "%s", domain));  /* Too short */
+
+  /* [1] Encode the domain in 6 bits */
+  suffix = ndpi_get_host_domain_suffix(ndpi_str, domain, &domain_id);
+
+  if(suffix == NULL)
+    return((u_int)snprintf(out, out_len, "%s", domain));  /* Unknown suffix */
+  
+  snprintf((char*)domain_buf, sizeof(domain_buf), "%s", domain);
+  domain_buf_len = strlen((char*)domain_buf), suffix_len = strlen(suffix);
+
+  if(domain_buf_len > suffix_len) {
+    snprintf((char*)domain_buf, sizeof(domain_buf), "%s", domain);
+    domain_buf_len = domain_buf_len-suffix_len-1;
+    domain_buf[domain_buf_len] = '\0';
+
+    for(i=0; domain_buf[i] != '\0'; i++) {
+      u_int32_t mapped_idx = ndpi_domain_mapper[domain_buf[i]];
+
+      if(mapped_idx != IGNORE_CHAR) {
+	mapped_idx <<= buf_shift;
+	value |= mapped_idx, buf_shift += NUM_BITS_NIBBLE;
+
+	if(buf_shift == NIBBLE_ELEM_OFFSET) {
+	  memcpy(&out[out_idx], &value, 3);
+	  out_idx += 3;
+	  buf_shift = 0; /* Move to the next buffer */
+	  value = 0;
+	}
+      }
+    }
+
+    if(buf_shift != 0) {
+      u_int bytes = buf_shift / NUM_BITS_NIBBLE;
+
+      memcpy(&out[out_idx], &value, bytes);
+      out_idx += bytes;
+    }
+  }
+
+  /* [2] Check if compressing the string is more efficient */
+  compressed_len = ndpi_compress_str((char*)domain_buf, domain_buf_len,
+				     (char*)compressed, sizeof(compressed));
+
+  if((compressed_len > 0) && ((out_idx == 0) || (compressed_len < out_idx))) {
+    if(compressed_len >= domain_len) {
+      /* Compression creates a longer buffer */
+      return((u_int)snprintf(out, out_len, "%s", domain));
+    } else {
+      compressed_len = ndpi_min(ndpi_min(compressed_len, sizeof(compressed)), out_len-3);
+      memcpy(out, compressed, compressed_len);
+      out_idx = compressed_len;
+    }
+  }
+  
+  /* Add trailer domainId value */
+  out[out_idx++] = (domain_id >> 8) & 0xFF;
+  out[out_idx++] = domain_id & 0xFF;
+
+#ifdef DEBUG
+  {
+    u_int i;
+
+    fprintf(stdout, "%s [len: %u][", domain, out_idx);
+    for(i=0; i<out_idx; i++) fprintf(stdout, "%02X", out[i] & 0xFF);
+    fprintf(stdout, "]\n");
+  }
+#endif
+
+  return(out_idx);
+}
+
+#endif

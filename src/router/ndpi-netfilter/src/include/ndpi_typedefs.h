@@ -177,11 +177,12 @@ typedef enum {
   NDPI_HTTP_OBSOLETE_SERVER,
   NDPI_PERIODIC_FLOW,          /* Set in case a flow repeats at a specific pace [used by apps on top of nDPI] */
   NDPI_MINOR_ISSUES,           /* Generic packet issues (e.g. DNS with 0 TTL) */
-  NDPI_TCP_ISSUES,             /* 50 */ /* TCP issues such as connection failed, probing or scan */
+  NDPI_TCP_ISSUES,             /* 50 */ /* TCP issues such as connection failed or scan */
   NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
   NDPI_TLS_ALPN_SNI_MISMATCH,  /* Invalid ALPN/SNI combination */
   NDPI_MALWARE_HOST_CONTACTED, /* Flow client contacted a malware host */
-  NDPI_BINARY_TRANSFER_ATTEMPT,/* Attempt to transfer something in binary format */
+  NDPI_BINARY_DATA_TRANSFER,   /* Attempt to transfer something in binary format */
+  NDPI_PROBING_ATTEMPT,        /* Probing attempt (e.g. TCP connection with no data exchanged or unidirection traffic for bidirectional flows such as SSH) */
   
   /* Leave this as last member */
   NDPI_MAX_RISK /* must be <= 63 due to (**) */
@@ -821,7 +822,6 @@ struct ndpi_automa_stats {
 typedef enum {
   NDPI_LRUCACHE_OOKLA = 0,
   NDPI_LRUCACHE_BITTORRENT,
-  NDPI_LRUCACHE_ZOOM,
   NDPI_LRUCACHE_STUN,
   NDPI_LRUCACHE_TLS_CERT,
   NDPI_LRUCACHE_MINING,
@@ -902,9 +902,6 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_IRC */
   u_int32_t irc_3a_counter:3;
-  u_int32_t irc_stage2:5;
-  u_int32_t irc_direction:2;
-  u_int32_t irc_0x1000_full:1;
 
   /* NDPI_PROTOCOL_USENET */
   u_int32_t usenet_stage:2;
@@ -918,9 +915,6 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_SSH */
   u_int32_t ssh_stage:3;
-
-  /* NDPI_PROTOCOL_KAFKA */
-  u_int32_t kafka_stage:1;
 
   /* NDPI_PROTOCOL_VNC */
   u_int32_t vnc_stage:2;			// 0 - 3
@@ -975,9 +969,6 @@ struct ndpi_flow_tcp_struct {
 
   /* NDPI_PROTOCOL_RADMIN */
   u_int32_t radmin_stage:1;
-
-  /* NDPI_PROTOCOL_KAFKA */
-  u_int32_t kafka_correlation_id;
 };
 
 /* ************************************************** */
@@ -992,15 +983,15 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_XBOX */
   u_int32_t xbox_stage:1;
 
-  /* NDPI_PROTOCOL_RTP */
-  u_int32_t rtp_stage:2;
-
   /* NDPI_PROTOCOL_QUIC */
   u_int32_t quic_0rtt_found:1;
   u_int32_t quic_vn_pair:1;
 
   /* NDPI_PROTOCOL_LOLWILDRIFT */
   u_int32_t lolwildrift_stage:1;
+
+  /* NDPI_PROTOCOL_ZOOM */
+  u_int32_t zoom_p2p:1;
 
   /* NDPI_PROTOCOL_EPICGAMES */
   u_int32_t epicgames_stage:1;
@@ -1208,11 +1199,7 @@ typedef struct _ndpi_automa {
   struct ndpi_automa_stats stats;
 } ndpi_automa;
 
-typedef struct ndpi_str_hash {
-  unsigned int hash;
-  void *value;
-  // u_int8_t private_data[1]; /* Avoid error C2466 and do not initiate private data with 0  */
-} ndpi_str_hash;
+typedef void ndpi_str_hash;
 
 typedef struct ndpi_proto {
   /*
@@ -1251,10 +1238,7 @@ typedef struct {
 #define MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS          16
 
 typedef struct {
-  struct {
-    u_int16_t class_id;
-    ndpi_bitmap64_fuse *domains;
-  } classes[MAX_NUM_NDPI_DOMAIN_CLASSIFICATIONS];
+  ndpi_str_hash *domains;
 } ndpi_domain_classify;
 
 typedef enum {
@@ -1265,6 +1249,16 @@ typedef enum {
 
 #define MAX_NUM_TLS_SIGNATURE_ALGORITHMS 16
 
+typedef struct {
+  union {
+    u_int32_t v4;
+    u_int8_t v6[16];
+  } address; /* Network-order */
+
+  u_int16_t port;
+  u_int16_t is_ipv6: 1, _pad: 15;
+} ndpi_address_port;
+  
 struct tls_heuristics {
   /*
     TLS heuristics for detecting browsers usage
@@ -1284,7 +1278,7 @@ struct ndpi_flow_struct {
   /* init parameter, internal used to set up timestamp,... */
   u_int16_t guessed_protocol_id, guessed_protocol_id_by_ip, guessed_category, guessed_header_category;
   u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
-    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1;
+    init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1, skip_entropy_check: 1;
 
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
@@ -1375,14 +1369,7 @@ struct ndpi_flow_struct {
 
   struct {
     u_int8_t maybe_dtls : 1, is_turn : 1, pad : 6;
-    struct {
-      union {
-        u_int32_t v4;
-        u_int8_t v6[16];
-      } address; /* Network-order */
-      u_int16_t port;
-      u_int16_t is_ipv6: 1, _pad: 15;
-    } mapped_address;
+    ndpi_address_port mapped_address, peer_address, relayed_address, response_origin, other_address;
   } stun;
 
   struct {
@@ -1426,7 +1413,7 @@ struct ndpi_flow_struct {
       char ja3_client[33], ja3_server[33], ja4_client[37];
       u_int16_t server_cipher;
       u_int8_t sha1_certificate_fingerprint[20];
-      u_int8_t hello_processed:1, ch_direction:1, subprotocol_detected:1, fingerprint_set:1, _pad:4;
+      u_int8_t hello_processed:1, ch_direction:1, subprotocol_detected:1, fingerprint_set:1, webrtc:1, _pad:3;
 
 #ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
       /* Under #ifdef to save memory for those who do not need them */
@@ -1544,13 +1531,11 @@ struct ndpi_flow_struct {
   /* Only packets with L5 data (ie no TCP SYN, pure ACKs, ...) */
   u_int16_t packet_counter;		      // can be 0 - 65000
   u_int16_t packet_direction_counter[2];
+  u_int8_t  packet_direction_with_payload_observed[2]; /* 0 = no packet with payload observed, 1 = at least one packet with payload observed */
 
   /* All packets even those without payload */
   u_int16_t all_packets_counter;
   u_int16_t packet_direction_complete_counter[2];      // can be 0 - 65000
-
-  /* NDPI_PROTOCOL_H323 */
-  u_int8_t h323_valid_packets;
 
   /* NDPI_PROTOCOL_BITTORRENT */
   u_int32_t bittorrent_seq;
@@ -1565,9 +1550,6 @@ struct ndpi_flow_struct {
 
   /* NDPI_PROTOCOL_SOCKS */
   u_int8_t socks5_stage:2, socks4_stage:2;      // 0 - 3
-
-  /* NDPI_PROTOCOL_EDONKEY */
-  u_int8_t edonkey_stage:2;	                // 0 - 3
 
   /* NDPI_PROTOCOL_FTP_CONTROL */
   u_int8_t ftp_control_stage:2;
@@ -1587,11 +1569,23 @@ struct ndpi_flow_struct {
   /* NDPI_PROTOCOL_TEAMVIEWER */
   u_int8_t teamviewer_stage : 3;
 
+  /* NDPI_PROTOCOL_BFCP */
+  u_int8_t bfcp_stage:1;
+  u_int32_t bfcp_conference_id;
+
   /* NDPI_PROTOCOL_OPENVPN */
   u_int8_t ovpn_session_id[2][8];
 
   /* NDPI_PROTOCOL_TINC */
   u_int8_t tinc_state;
+ 
+   /* NDPI_PROTOCOL_RTCP */ 
+   u_int8_t rtcp_stage:2;
+
+   /* NDPI_PROTOCOL_RTP */
+   u_int8_t rtp_stage:2;
+   u_int8_t rtp_seq_set[2];
+   u_int16_t rtp_seq[2];
 
   /* Flow payload */
   u_int16_t flow_payload_len;
@@ -1610,8 +1604,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 256,
                "Size of the struct member protocols increased to more than 256 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1032,
-               "Size of the flow struct increased to more than 1032 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1112,
+               "Size of the flow struct increased to more than 1112 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1779,7 +1773,11 @@ typedef void (*ndpi_void_fn3_t)(ndpi_patricia_node_t *node, void *data, void *us
 
 /* **************************************** */
 
-typedef struct ndpi_ptree ndpi_ptree_t;
+typedef struct ndpi_ptree
+{
+  ndpi_patricia_tree_t *v4;
+  ndpi_patricia_tree_t *v6;
+} ndpi_ptree_t;
 
 /* **************************************** */
 

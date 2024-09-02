@@ -536,7 +536,7 @@ ndpi_port_range_t np = { .start=0, .end=0, .l4_proto = 2, .proto = NDPI_PROTOCOL
 ndpi_patricia_node_t *node;
 
 pt = family == AF_INET ? 
-	n->ndpi_struct->protocols_ptree:n->ndpi_struct->protocols_ptree6;
+	n->ndpi_struct->protocols->v4:n->ndpi_struct->protocols->v6;
 
 if(*arg == '-') {
 	f_op2=1;

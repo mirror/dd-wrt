@@ -182,9 +182,6 @@ struct ndpi_global_context {
   /* NDPI_PROTOCOL_BITTORRENT */
   struct ndpi_lru_cache *bittorrent_global_cache;
 
-  /* NDPI_PROTOCOL_ZOOM */
-  struct ndpi_lru_cache *zoom_global_cache;
-
   /* NDPI_PROTOCOL_STUN and subprotocols */
   struct ndpi_lru_cache *stun_global_cache;
   struct ndpi_lru_cache *stun_zoom_global_cache;
@@ -223,7 +220,8 @@ struct ndpi_detection_module_config_struct {
   int track_payload_enabled;
   int libgcrypt_init;
   int guess_on_giveup;
-
+  int compute_entropy;
+  
   char filename_config[CFG_MAX_LEN];
 
   int log_level;
@@ -236,9 +234,6 @@ struct ndpi_detection_module_config_struct {
   int bittorrent_cache_num_entries;
   int bittorrent_cache_ttl;
   int bittorrent_cache_scope;
-  int zoom_cache_num_entries;
-  int zoom_cache_ttl;
-  int zoom_cache_scope;
   int stun_cache_num_entries;
   int stun_cache_ttl;
   int stun_cache_scope;
@@ -277,6 +272,10 @@ struct ndpi_detection_module_config_struct {
   int stun_opportunistic_tls_enabled;
   int stun_max_packets_extra_dissection;
   int stun_mapped_address_enabled;
+  int stun_response_origin_enabled;
+  int stun_other_address_enabled;
+  int stun_relayed_address_enabled;
+  int stun_peer_address_enabled;
 
   int dns_subclassification_enabled;
   int dns_parse_response_enabled;
@@ -284,6 +283,10 @@ struct ndpi_detection_module_config_struct {
   int http_parse_response_enabled;
 
   int ookla_aggressiveness;
+
+  int zoom_max_packets_extra_dissection;
+
+  int rtp_search_for_stun;
 
   NDPI_PROTOCOL_BITMASK debug_bitmask;
   NDPI_PROTOCOL_BITMASK ip_list_bitmask;
@@ -351,12 +354,7 @@ struct ndpi_detection_module_struct {
   ndpi_list *trusted_issuer_dn;
 
   /* Patricia trees */
-  ndpi_patricia_tree_t *ip_risk_mask_ptree;
-  ndpi_patricia_tree_t *ip_risk_mask_ptree6;
-  ndpi_patricia_tree_t *ip_risk_ptree;
-  ndpi_patricia_tree_t *ip_risk_ptree6;
-  ndpi_patricia_tree_t *protocols_ptree;  /* IP-based protocol detection */
-  ndpi_patricia_tree_t *protocols_ptree6;
+  ndpi_ptree_t *ip_risk_mask, *ip_risk, *protocols /* IP-based protocol detection */;
 
   /* *** If you add a new Patricia tree, please update ptree_type above! *** */
 
@@ -394,9 +392,6 @@ struct ndpi_detection_module_struct {
 
   /* NDPI_PROTOCOL_BITTORRENT */
   struct ndpi_lru_cache *bittorrent_cache;
-
-  /* NDPI_PROTOCOL_ZOOM */
-  struct ndpi_lru_cache *zoom_cache;
 
   /* NDPI_PROTOCOL_STUN and subprotocols */
   struct ndpi_lru_cache *stun_cache;
@@ -443,7 +438,7 @@ struct ndpi_detection_module_struct {
 
   u_int16_t max_payload_track_len;
 
-  ndpi_domain_classify *public_domain_suffixes;
+  ndpi_str_hash *public_domain_suffixes;
 };
 
 #ifndef __KERNEL__
@@ -526,11 +521,16 @@ struct ndpi_detection_module_struct {
 
 #else /* not defined NDPI_ENABLE_DEBUG_MESSAGES */
 # ifdef WIN32
+/* 
+*  Already defined in ndpi_define.h
+*/
+#ifndef NDPI_LOG_DBG
 # define NDPI_LOG(mod, ...) { (void)mod; }
 # define NDPI_LOG_ERR(mod, ...) { (void)mod; }
 # define NDPI_LOG_INFO(mod, ...) { (void)mod; }
 # define NDPI_LOG_DBG(mod, ...) { (void)mod; }
 # define NDPI_LOG_DBG2(mod, ...) { (void)mod; }
+#endif
 # else
 # define NDPI_LOG(proto, mod, log_level, args...) { /* printf(args); */ }
 # endif
@@ -702,7 +702,8 @@ NDPI_STATIC const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *
 
 /* RTP */
 NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
-NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
+                   const u_int8_t *payload, u_int16_t payload_len, u_int16_t *seq);
 NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type);
 
 /* Bittorrent */
@@ -717,6 +718,11 @@ NDPI_STATIC int ndpi_bittorrent_gc(struct hash_ip4p_table *ht,int key,time_t now
 
 /* Stun */
 NDPI_STATIC int stun_search_into_zoom_cache(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+
+NDPI_STATIC int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
+            struct ndpi_flow_struct *flow,
+            u_int16_t *app_proto);
+NDPI_STATIC void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 /* TPKT */
 NDPI_STATIC int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet);
@@ -763,7 +769,6 @@ NDPI_STATIC void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_kakaotalk_voice_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_kerberos_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_kontiki_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_ldap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_lotus_notes_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_mail_imap_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -788,7 +793,6 @@ NDPI_STATIC void init_ntp_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_openvpn_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_oracle_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_postgres_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_ppstream_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_pptp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_qq_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_quake_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -823,7 +827,6 @@ NDPI_STATIC void init_teamviewer_dissector(struct ndpi_detection_module_struct *
 NDPI_STATIC void init_telegram_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_tftp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
-NDPI_STATIC void init_tvuplayer_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_usenet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_wsd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_veohtv_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -965,6 +968,14 @@ NDPI_STATIC void init_pathofexile_dissector(struct ndpi_detection_module_struct 
 NDPI_STATIC void init_pfcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_flute_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_lolwildrift_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_teso_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_ldp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_knxnet_ip_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_bfcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_iqiyi_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_egd_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_cod_mobile_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_zug_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

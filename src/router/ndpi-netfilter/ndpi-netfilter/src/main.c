@@ -35,7 +35,6 @@
 #include <net/netns/generic.h>
 
 #include <linux/skbuff.h>
-#include <linux/slab.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <linux/tcp.h>
@@ -47,7 +46,6 @@
 #include <linux/vmalloc.h>
 #endif
 #include <asm/percpu.h>
-#include <asm/atomic.h>
 
 #ifndef CONFIG_NF_CONNTRACK_CUSTOM
 #define CONFIG_NF_CONNTRACK_CUSTOM 0
@@ -76,9 +74,7 @@
 
 #include "../lib/third_party/include/ndpi_patricia.h"
 
-NDPI_STATIC ndpi_protocol_match host_match[];
-NDPI_STATIC ndpi_debug_function_ptr ndpi_debug_print_init = NULL;
-NDPI_STATIC ndpi_log_level_t ndpi_debug_level_init = NDPI_LOG_ERROR;
+extern ndpi_protocol_match host_match[];
 
 /* Only for debug! */
 //#define NDPI_IPPORT_DEBUG
@@ -110,13 +106,12 @@ static char debug_name[]="debug";
 static char risk_name[]="risks";
 static char cfg_name[]="cfg";
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0) && defined(CONFIG_LIVEPATCH) && !defined(CONFIG_NDPI_HOOK)
+#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
+#define USE_NF_CONNTRACK_DESTROY_HOOK
+#elif LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0)
 #ifndef USE_LIVEPATCH
 #define USE_LIVEPATCH
 #endif
-#endif
-#ifdef CONFIG_NDPI_HOOK
-#define USE_HOOK
 #endif
 
 #ifdef USE_LIVEPATCH
@@ -131,24 +126,7 @@ ndpi_conntrack_destroy_ptr __rcu nf_conntrack_destroy_cb;
 #endif
 #endif
 
-#if 1
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 #define PROC_REMOVE(pde,net) proc_remove(pde)
-#else
-
-#define PROC_REMOVE(pde,net) proc_net_remove(net,dir_name)
-
-/* backport from 3.10 */
-static inline struct inode *file_inode(struct file *f)
-{
-	return f->f_path.dentry->d_inode;
-}
-static inline void *PDE_DATA(const struct inode *inode)
-{
-	return PROC_I(inode)->pde->data;
-}
-#endif
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 static inline struct net *xt_net(const struct xt_action_param *par)
@@ -190,10 +168,10 @@ static inline const struct net_device *xt_out(const struct xt_action_param *par)
 // for testing only!
 // #define USE_CONNLABELS
 
-#if !defined(USE_CONNLABELS) && !defined(CONFIG_LIVEPATCH) && !defined(USE_HOOK) && defined(CONFIG_NF_CONNTRACK_CUSTOM) && CONFIG_NF_CONNTRACK_CUSTOM > 0
+#if !defined(USE_CONNLABELS) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK) && defined(CONFIG_NF_CONNTRACK_CUSTOM) && CONFIG_NF_CONNTRACK_CUSTOM > 0
 #define NF_CT_CUSTOM
 #else
-#ifndef USE_HOOK
+#ifndef USE_NF_CONNTRACK_DESTROY_HOOK
 #undef NF_CT_CUSTOM
 #include <net/netfilter/nf_conntrack_labels.h>
 #ifndef CONFIG_NF_CONNTRACK_LABELS
@@ -288,28 +266,28 @@ static inline int flow_have_info( struct nf_ct_ext_ndpi *c) {
 
 static ndpi_protocol_nf proto_null = {NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN};
 
-static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
-static unsigned long int ndpi_enable_flow=0;
+unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
+unsigned long int ndpi_enable_flow=0;
 
-static char ndpi_flow_opt[NDPI_FLOW_OPT_MAX+1]="";
+char ndpi_flow_opt[NDPI_FLOW_OPT_MAX+1]="";
 
-static unsigned long int ndpi_log_debug=0;
+unsigned long int ndpi_log_debug=0;
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES
 static unsigned long  ndpi_lib_trace=0;
 #endif
 static unsigned long  ndpi_mtu=48000;
 static unsigned long  bt_log_size=128;
-static unsigned long int bt_hash_size=16;
-static unsigned long int bt6_hash_size=16;
-static unsigned long int bt_hash_tmo=1200;
-static unsigned long int tls_buf_size=8;
-static unsigned long int ndpi_stun_cache_opt=0;
+unsigned long int bt_hash_size=0;
+unsigned long int bt6_hash_size=0;
+unsigned long int bt_hash_tmo=1200;
+unsigned long int tls_buf_size=8;
+unsigned long int ndpi_stun_cache_opt=0;
 
 static unsigned long  max_packet_unk_tcp=20;
 static unsigned long  max_packet_unk_udp=20;
 static unsigned long  max_packet_unk_other=20;
 
-static unsigned long  flow_read_debug=0;
+unsigned long  flow_read_debug=0;
 
 static unsigned long  ndpi_size_flow_struct=0;
 static unsigned long  ndpi_size_hash_ip4p_node=0;
@@ -334,8 +312,7 @@ static unsigned long  ndpi_p_non_tcpudp=0;
 static unsigned long  ndpi_p_max_parsed_lines=0;
 static unsigned long  ndpi_p_ipv6=0;
 static unsigned long  ndpi_p_nonip=0;
-static unsigned long  ndpi_p_id_num=0;
-static unsigned long  ndpi_p_noncached=0;
+static unsigned long  ndpi_p_ndpi=0;
 static unsigned long  ndpi_p_err_prot_err=0;
 static unsigned long  ndpi_p_err_noiphdr=0;
 static unsigned long  ndpi_p_err_alloc_flow=0;
@@ -350,7 +327,7 @@ static unsigned long  ndpi_p_l4mis_size=0;
 static unsigned long  ndpi_p_ndpi_match=0;
 static unsigned long  ndpi_p_free_magic=0;
 
-static unsigned long  ndpi_btp_tm[20]={0,};
+unsigned long  ndpi_btp_tm[20]={0,};
 
 module_param_named(xt_debug,   ndpi_log_debug, ulong, 0600);
 MODULE_PARM_DESC(xt_debug,"Debug level for xt_ndpi (bitmap).");
@@ -390,62 +367,67 @@ MODULE_PARM_DESC(ndpi_flow_limit,"Limit netflow records. Default 10000000 (~4.3G
 module_param_named(max_unk_tcp,max_packet_unk_tcp,ulong, 0600);
 module_param_named(max_unk_udp,max_packet_unk_udp,ulong, 0600);
 module_param_named(max_unk_other,max_packet_unk_other,ulong, 0600);
-module_param_named(flow_read_debug,flow_read_debug,ulong, 0600);
+module_param_named(x_flow_read_debug,flow_read_debug,ulong, 0600);
 
 module_param_named(ndpi_size_flow_struct,ndpi_size_flow_struct,ulong, 0400);
+MODULE_PARM_DESC(ndpi_size_flow_struct,"Sizeof ndpi_size_flow_struct. [info]");
 module_param_named(ndpi_size_hash_ip4p_node,ndpi_size_hash_ip4p_node,ulong, 0400);
+MODULE_PARM_DESC(ndpi_size_hash_ip4p_node,"Sizeof ndpi_size_hash_ip4p_node. [info]");
 
-module_param_named(err_oversize, ndpi_jumbo, ulong, 0400);
-MODULE_PARM_DESC(err_oversize,"Counter nonlinear packets bigger than MTU. [info]");
 module_param_named(err_skb_linear, ndpi_falloc, ulong, 0400);
 MODULE_PARM_DESC(err_skb_linear,"Counter of unsuccessful conversions of nonlinear packets. [error]");
 
-module_param_named(skb_seg,	 ndpi_nskb, ulong, 0400);
-MODULE_PARM_DESC(skb_seg,"Counter nonlinear packets. [info]");
-module_param_named(skb_lin,	 ndpi_lskb, ulong, 0400);
-MODULE_PARM_DESC(skb_lin,"Counter linear packets. [info]");
+module_param_named(c_ndpi_skb_seg,	 ndpi_nskb, ulong, 0400);
+MODULE_PARM_DESC(c_ndpi_skb_seg,"Counter nonlinear packets. [info]");
+module_param_named(c_ndpi_skb_lin,	 ndpi_lskb, ulong, 0400);
+MODULE_PARM_DESC(c_ndpi_skb_lin,"Counter linear packets. [info]");
+module_param_named(c_ndpi,	 ndpi_p_ndpi, ulong, 0400);
 
 module_param_named(flow_created, ndpi_flow_c, ulong, 0400);
 MODULE_PARM_DESC(flow_created,"Counter of flows. [info]");
+
 module_param_named(bt_gc_count,  ndpi_bt_gc, ulong, 0400);
 
-module_param_named(p_ipv4,         ndpi_p_ipv4, ulong, 0400);
-module_param_named(p_ipv6,         ndpi_p_ipv6, ulong, 0400);
-module_param_named(p_nonip,        ndpi_p_nonip, ulong, 0400);
-module_param_named(ct_null,      ndpi_p_ct_null, ulong, 0400);
-module_param_named(ct_untrack,   ndpi_p_ct_untrack, ulong, 0400);
-module_param_named(ct_confirm,   ndpi_p_ct_confirm, ulong, 0400);
-module_param_named(ct_nolabel,   ndpi_p_ct_nolabel, ulong, 0400);
-module_param_named(ct_ndpi,      ndpi_p_ct_ndpi, ulong, 0400);
-module_param_named(err_add_ndpi, ndpi_p_err_add_ndpi, ulong, 0400);
-module_param_named(p_non_tcpudp,   ndpi_p_non_tcpudp, ulong, 0400);
+module_param_named(c_p_ipv4,         ndpi_p_ipv4, ulong, 0400);
+module_param_named(c_p_ipv6,         ndpi_p_ipv6, ulong, 0400);
+module_param_named(c_p_nonip,        ndpi_p_nonip, ulong, 0400);
 module_param_named(max_parsed_lines, ndpi_p_max_parsed_lines, ulong, 0400);
-module_param_named(id_num,	 ndpi_p_id_num, ulong, 0400);
+
+module_param_named(c_ct_untrack,     ndpi_p_ct_untrack, ulong, 0400);
+module_param_named(c_non_tcpudp,   ndpi_p_non_tcpudp, ulong, 0400);
 module_param_named(c_match,	 ndpi_p_ndpi_match,  ulong, 0400);
 module_param_named(c_new_pkt,	 ndpi_p_c_new_pkt, ulong, 0400);
 module_param_named(c_cached,	 ndpi_p_cached,  ulong, 0400);
 module_param_named(c_end_maxpkt, ndpi_p_c_end_max,  ulong, 0400);
 module_param_named(c_end_fail,	 ndpi_p_c_end_fail,  ulong, 0400);
-module_param_named(c_dpi,	 ndpi_p_noncached, ulong, 0400);
+
+module_param_named(c_l4mismatch,   ndpi_p_l4mismatch,  ulong, 0400);
+module_param_named(c_l4mis_size,   ndpi_p_l4mis_size, ulong, 0400);
+
+module_param_named(err_oversize, ndpi_jumbo, ulong, 0400);
+MODULE_PARM_DESC(err_oversize,"Counter nonlinear packets bigger than MTU. [info]");
 module_param_named(err_ip_frag_len, ndpi_p_err_ip_frag_len, ulong, 0400);
 module_param_named(err_bad_tcp_udp, ndpi_p_err_bad_tcp_udp, ulong, 0400);
+module_param_named(err_ct_confirm, ndpi_p_ct_confirm, ulong, 0400);
+module_param_named(err_ct_nolabel, ndpi_p_ct_nolabel, ulong, 0400);
+module_param_named(err_ct_ndpi,    ndpi_p_ct_ndpi, ulong, 0400);
+module_param_named(err_add_ndpi,   ndpi_p_err_add_ndpi, ulong, 0400);
+module_param_named(err_ct_null,    ndpi_p_ct_null, ulong, 0400);
 module_param_named(err_last_ct,  ndpi_p_c_last_ct_not, ulong, 0400);
 module_param_named(err_prot_err, ndpi_p_err_prot_err, ulong, 0400);
 module_param_named(err_noiphdr,  ndpi_p_err_noiphdr, ulong, 0400);
 module_param_named(err_alloc_flow, ndpi_p_err_alloc_flow, ulong, 0400);
-module_param_named(err_alloc_id, ndpi_p_err_alloc_id, ulong, 0400);
-module_param_named(l4mismatch,	 ndpi_p_l4mismatch,  ulong, 0400);
-module_param_named(l4mis_size,	 ndpi_p_l4mis_size, ulong, 0400);
-module_param_named(x_ct_free_magic, ndpi_p_free_magic, ulong, 0400);
+module_param_named(err_alloc_id,   ndpi_p_err_alloc_id, ulong, 0400);
+module_param_named(err_ct_free_magic, ndpi_p_free_magic, ulong, 0400);
 
-static unsigned long  ndpi_pto=0,
+unsigned long  ndpi_pto=0,
 	       ndpi_ptss=0, ndpi_ptsd=0,
 	       ndpi_ptds=0, ndpi_ptdd=0,
 	       ndpi_ptussf=0,ndpi_ptusdr=0,
 	       ndpi_ptussr=0,ndpi_ptusdf=0,
 	       ndpi_ptudsf=0,ndpi_ptuddr=0,
 	       ndpi_ptudsr=0,ndpi_ptuddf=0 ;
-static unsigned long 
+unsigned long
 	       ndpi_pusf=0,ndpi_pusr=0,
 	       ndpi_pudf=0,ndpi_pudr=0,
 	       ndpi_puo=0;
@@ -500,10 +482,10 @@ static inline struct ndpi_net *ndpi_pernet(struct net *net)
 
 static	enum nf_ct_ext_id nf_ct_ext_id_ndpi = 0;
 static	struct kmem_cache *osdpi_flow_cache = NULL;
-static struct kmem_cache *ct_info_cache = NULL;
-static struct kmem_cache *bt_port_cache = NULL;
+struct kmem_cache *ct_info_cache = NULL;
+struct kmem_cache *bt_port_cache = NULL;
 
-static struct ndpi_flow_input_info input_info = {
+struct ndpi_flow_input_info input_info = {
 	.in_pkt_dir = NDPI_IN_PKT_DIR_C_TO_S,
 	.seen_flow_beginning = NDPI_FLOW_BEGINNING_UNKNOWN
 };
@@ -619,8 +601,8 @@ static void *malloc_wrapper(size_t size)
 {
 	if(in_atomic() || irqs_disabled() || in_interrupt())
 		return kmalloc(size,GFP_ATOMIC);
-
-	if(size > KMALLOC_MAX_SIZE) {
+	
+	if(size > 32*1024) {
 		/*
 		 * Workarround for 32bit systems
 		 * Large memory areas (more than 128 KB) are requested
@@ -636,17 +618,9 @@ static void *malloc_wrapper(size_t size)
 	return kmalloc(size,GFP_KERNEL);
 }
 
-static void my_kvfree(const void *addr)
-{
-	if (is_vmalloc_addr(addr))
-		vfree(addr);
-	else
-		kfree(addr);
-}
-
 static void free_wrapper(void *freeable)
 {
-	my_kvfree(freeable);
+	kvfree(freeable);
 }
 
 static void fill_prefix_any(ndpi_prefix_t *p, union nf_inet_addr const *ip,int family) {
@@ -708,19 +682,24 @@ static inline struct nf_ct_ext_labels *nf_ct_ext_find_label(const struct nf_conn
 #endif
 }
 
+DEFINE_SPINLOCK(lock_flist);
 
-static void ndpi_ct_list_add(struct ndpi_net *n,
+static inline int ndpi_ct_list_add(struct ndpi_net *n,
 			struct nf_ct_ext_ndpi *ct_ndpi) {
 
 	struct nf_ct_ext_ndpi *h;
-
-	do {
+	int ret = false;
+	if(!test_flow_yes(ct_ndpi)) {
+	    spin_lock_bh(&lock_flist);
 	    h = READ_ONCE(n->flow_h);
 	    WRITE_ONCE(ct_ndpi->next,h);
-	} while(cmpxchg(&n->flow_h,h,ct_ndpi) != h);
-
-	set_flow_yes(ct_ndpi);
-	atomic_inc(&n->acc_work);
+	    WRITE_ONCE(n->flow_h,ct_ndpi);
+	    set_flow_yes(ct_ndpi);
+	    spin_unlock_bh(&lock_flist);
+	    atomic_inc(&n->acc_work);
+	    ret = true;
+	}
+	return ret;
 }
 
 static void ndpi_init_ct_struct(struct ndpi_net *n,
@@ -892,8 +871,7 @@ nf_ndpi_free_flow (struct nf_conn * ct)
 	    n = ndpi_pernet(nf_ct_net(ct));
 
 	    ct_ndpi_free_flow(n,ext_l,ct_ndpi,FLOW_FREE_NORM,ct);
-	} else
-		COUNTER(ndpi_p_ct_null);
+	}
 }
 
 /* must be locked ct_ndpi->lock */
@@ -1090,8 +1068,8 @@ static int check_known_ip_service( struct ndpi_net *n,int family,
 
 	spin_lock_bh (&n->ipq_lock);
 	node = ndpi_patricia_search_best(
-			family == AF_INET ? n->ndpi_struct->protocols_ptree:
-				n->ndpi_struct->protocols_ptree6,
+			family == AF_INET ? n->ndpi_struct->protocols->v4:
+				n->ndpi_struct->protocols->v6,
 			&ipx);
 	if(node) {
 	    if(protocol == IPPROTO_UDP || protocol == IPPROTO_TCP) {
@@ -1626,9 +1604,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	}
 
 	COUNTER(ndpi_p_ndpi_match);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
-	ktime_get_real_ts(&tm);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,18,0)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,18,0)
 	ktime_get_real_ts64(&tm);
 #else
 	ktime_get_coarse_real_ts64(&tm);
@@ -1823,7 +1800,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 			ct_ndpi->flow->extra_packets_func ? ", extra_func":"",
 			ct_ndpi->flow->fail_with_unknown ? ", end_dpi":"");
 
-		COUNTER(ndpi_p_noncached);
+		COUNTER(ndpi_p_ndpi);
 		flow = ct_ndpi->flow;
 
 		if(r_proto == NDPI_PROCESS_ERROR || !flow) {
@@ -2146,7 +2123,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
 
-NDPI_STATIC char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mod_str_t *ndpi_str)
+char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';
@@ -2286,10 +2263,7 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 
 		    spin_lock_bh (&ct_ndpi->lock);
 
-		    if(!test_flow_yes(ct_ndpi)) { // atomic
-			ndpi_ct_list_add(n,ct_ndpi); //
-			flow_add = true;
-		    }
+		    flow_add = ndpi_ct_list_add(n,ct_ndpi);
 
 		    if(!test_nat_done(ct_ndpi) &&  // atomic
 		       !ct_proto_get_flow_nat(c_proto)) { // atomic
@@ -2365,15 +2339,7 @@ ndpi_tg_destroy (const struct xt_tgdtor_param *par)
 	nf_ct_l3proto_module_put (par->family);
 }
 
-
-#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
-NDPI_STATIC unsigned int ndpi_nat_do_chain(unsigned int hooknum,
-                                         struct sk_buff *skb,
-                                         const struct net_device *in,
-                                         const struct net_device *out,
-                                         int (*okfn)(struct sk_buff *))
-{
-#elif  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 static unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *ops,
                                          struct sk_buff *skb,
                                          const struct net_device *in,
@@ -2392,7 +2358,7 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 {
 #endif
     struct nf_conn * ct = NULL;
-    enum ip_conntrack_info ctinfo;
+    enum ip_conntrack_info ctinfo = IP_CT_UNTRACKED;
     struct nf_ct_ext_ndpi *ct_ndpi=NULL;
     struct ndpi_cb *c_proto;
     const char *nat_info = "skip";
@@ -2424,9 +2390,7 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 	spin_lock_bh (&ct_ndpi->lock);
 	if(!test_nat_done(ct_ndpi)) {
 		nat_info = "check";
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
-		if(hooknum != NF_INET_PRE_ROUTING)
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 		if(ops->hooknum != NF_INET_PRE_ROUTING)
 #else
 		if(state->hook != NF_INET_PRE_ROUTING)
@@ -2570,7 +2534,7 @@ return  family == AF_INET6 ?
 	      :	snprintf(lbuf,bufsize-1, "%pI4n:%d",ip,htons(port));
 }
 
-NDPI_STATIC AC_ERROR_t ac_automata_add_exact(AC_AUTOMATA_t *thiz, AC_PATTERN_t *ac_pattern) {
+AC_ERROR_t ac_automata_add_exact(AC_AUTOMATA_t *thiz, AC_PATTERN_t *ac_pattern) {
 
 	if( ac_pattern->astring[0] == '|') {
 		ac_pattern->astring++;
@@ -2604,7 +2568,7 @@ static int ninfo_proc_close(struct inode *inode, struct file *file)
 
 int ndpi_delete_acct(struct ndpi_net *n,int all) {
 	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev;
-	int i2 = 0, del,skip_del;
+	int i2 = 0, del,skip_del, needed_unlock = 1;
 
 	if(!ndpi_enable_flow) return 0;
 
@@ -2619,12 +2583,17 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 
 	next = prev = NULL;
 
+	spin_lock_bh(&lock_flist);
 	ct_ndpi = READ_ONCE(n->flow_h);
 
 	while(ct_ndpi) {
 
 		if(!spin_trylock_bh(&ct_ndpi->lock)) {
 			// skip locked flow
+			if(needed_unlock) {
+				needed_unlock = 0;
+				spin_unlock_bh(&lock_flist);
+			}
 			prev = ct_ndpi;
 			ct_ndpi = READ_ONCE(ct_ndpi->next);
 			continue;
@@ -2642,18 +2611,15 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 			break;
 		case 3: del = 1;
 		}
-
+		if(needed_unlock && !del) {
+			needed_unlock = 0;
+			spin_unlock_bh(&lock_flist);
+		}
 		if(del) {
 			if(!prev) { // first element
-				prev = cmpxchg(&n->flow_h, ct_ndpi, next);
-				if(prev == ct_ndpi) {  // n->flow_h == ct_ndpi
-					prev = NULL;
-				} else { // prev is n->flow_h
-					while(prev && prev->next != ct_ndpi) prev = prev->next;
-					if(!prev) BUG();
-				}
-			}
-			if(prev && cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
+				WRITE_ONCE(n->flow_h,next);
+			} else
+			    if(cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
 		}
 		spin_unlock_bh(&ct_ndpi->lock);
 
@@ -2685,6 +2651,8 @@ int ndpi_delete_acct(struct ndpi_net *n,int all) {
 
 		ct_ndpi=next;
 	}
+	if(needed_unlock)
+		spin_unlock_bh(&lock_flist);
 
 	mutex_unlock(&n->rem_lock);
 	if( (all > 1 || i2) && flow_read_debug)
@@ -2747,7 +2715,7 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
                               size_t count, loff_t *ppos)
 {
 	struct nf_ct_ext_ndpi *ct_ndpi,*next,*prev;
-	int p,del,r;
+	int p,del,r,needed_unlock;
 	ssize_t sl=0;
 	loff_t st_pos;
 
@@ -2800,8 +2768,11 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 	}
 	st_pos = *ppos;
 	prev = NULL;
+	needed_unlock = 0;
 
 	if(!n->flow_l) { // start read list
+		spin_lock_bh(&lock_flist);
+		needed_unlock = 1;
 		ct_ndpi = READ_ONCE(n->flow_h);
 	} else { // continue read list
 		prev = n->flow_l;
@@ -2815,6 +2786,11 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 		next = READ_ONCE(ct_ndpi->next);
 
 		del  = test_for_delete(ct_ndpi);
+
+		if(needed_unlock && !del) {
+			needed_unlock = 0;
+			spin_unlock_bh(&lock_flist);
+		}
 
 		n->str_buf_len = 0; n->str_buf_offs = 0;
 
@@ -2839,15 +2815,9 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 
 		if(del) {
 			if(!prev) { // first element
-				prev = cmpxchg(&n->flow_h, ct_ndpi, next);
-				if(prev == ct_ndpi) { // n->flow_h == ct_ndpi
-					prev = NULL;
-				} else { // prev is n->flow_h
-					while(prev && prev->next != ct_ndpi) prev = prev->next;
-					if(!prev) BUG();
-				}
-			}
-			if(prev && cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
+				WRITE_ONCE(n->flow_h,next);
+			} else
+				if(cmpxchg(&prev->next,ct_ndpi,next) != ct_ndpi) BUG();
 		}
 		spin_unlock_bh(&ct_ndpi->lock);
 
@@ -2878,6 +2848,8 @@ ssize_t nflow_read(struct ndpi_net *n, char __user *buf,
 			n->cnt_out++;
 		}
 	}
+	if(needed_unlock)
+		spin_unlock_bh(&lock_flist);
 
 	if(!ct_ndpi ) {
 		n->acc_end = 1;
@@ -2912,7 +2884,7 @@ const char *acerr2txt(AC_ERROR_t r) {
 	return r >= ACERR_SUCCESS && r <= ACERR_ERROR ? __acerr2txt[r]:"UNKNOWN";
 }
 
-NDPI_STATIC int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
+int str_coll_to_automata(struct ndpi_detection_module_struct *ndpi_str,
 		void *host_ac,hosts_str_t *hosts) {
 str_collect_t *ph;
 int np,nh,err=0;
@@ -3022,16 +2994,16 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	/* wait for the ndpi library code to finish processing packets */
 	write_lock(&n->ndpi_busy);
 
-
-#if defined(CONFIG_NF_CONNTRACK_LABELS)
+#ifndef NF_CT_CUSTOM
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 	net->ct.label_words = n->labels_word;
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
- 	net->ct.labels_used--;
+	net->ct.labels_used--;
 #else
 	atomic_dec(&net->ct.labels_used);
 #endif
 #endif
+
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	struct nf_ct_iter_data iter_data = {
 		.net    = net,
@@ -3064,7 +3036,6 @@ static void __net_exit ndpi_net_exit(struct net *net)
 		kfree(n->g_ctx);
 #endif
 
-// FIXME
 	if(n->risk_names)
 		kfree(n->risk_names);
 
@@ -3098,14 +3069,6 @@ static void __net_exit ndpi_net_exit(struct net *net)
 		PROC_REMOVE(n->pde,net);
 	}
 }
-
-
-NDPI_STATIC int ndpi_stun_cache_enable=
-#ifndef __KERNEL__
-	1;
-#else
-	0;
-#endif
 
 static int __net_init ndpi_net_init(struct net *net)
 {
@@ -3326,7 +3289,6 @@ static int __net_init ndpi_net_init(struct net *net)
 		n->acc_gc = jiffies;
 #ifndef NF_CT_CUSTOM
 		/* hack!!! */
-#if defined(CONFIG_NF_CONNTRACK_LABELS)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 		n->labels_word = ACCESS_ONCE(net->ct.label_words);
 		net->ct.label_words = 2;
@@ -3334,7 +3296,6 @@ static int __net_init ndpi_net_init(struct net *net)
 		net->ct.labels_used++;
 #else
 		atomic_inc(&net->ct.labels_used);
-#endif
 #endif
 #endif
 		if( ndpi_enable_flow &&
@@ -3391,7 +3352,7 @@ static int __net_init ndpi_net_init(struct net *net)
 	return -ENOMEM;
 }
 
-#if !defined(USE_LIVEPATCH) && !defined(USE_HOOK)
+#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
 static struct nf_ct_ext_type ndpi_extend = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
        .seq_print = seq_print_ndpi,
@@ -3401,7 +3362,7 @@ static struct nf_ct_ext_type ndpi_extend = {
        .align  = __alignof__(uint32_t),
        .id     = 0,
 };
-#elif !defined(USE_HOOK)
+#elif !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5,17,0)
 #error "not implemented"
@@ -3463,20 +3424,20 @@ static int __init ndpi_mt_init(void)
 		return -EOPNOTSUPP;
 	}
 #endif
-#if defined(NF_CT_CUSTOM) && !defined(USE_LIVEPATCH)
+#ifdef NF_CT_CUSTOM
 	ret = nf_ct_extend_custom_register(&ndpi_extend,0x4e445049); /* "NDPI" in hex */
 	if(ret < 0) {
 		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
 		return -EBUSY;
 	}
 	nf_ct_ext_id_ndpi = ndpi_extend.id;
-#elif defined(USE_HOOK)
+#elif defined(USE_NF_CONNTRACK_DESTROY_HOOK)
 	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
-	register_ndpi_hook(&nf_ndpi_free_flow);
+	register_nf_ct_destroy_hook(&nf_ndpi_free_flow);
 #else
 #ifdef USE_LIVEPATCH
 	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
-#elif !defined(USE_HOOK)
+#else
 	ndpi_extend.id = nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
 	nf_ct_extend_unregister(&ndpi_extend);
 	ret = nf_ct_extend_register(&ndpi_extend);
@@ -3578,7 +3539,7 @@ static int __init ndpi_mt_init(void)
 		NDPI_NUM_BITS,
 		NDPI_LAST_IMPLEMENTED_PROTOCOL);
 	pr_info("xt_ndpi: flow accounting %s\n",ndpi_enable_flow ? "ON":"OFF");
-#if defined(USE_LIVEPATCH)
+#ifdef USE_LIVEPATCH
 	rcu_assign_pointer(nf_conntrack_destroy_cb,nf_ndpi_free_flow);
 	return klp_enable_patch(&ndpi_patch);
 #else
@@ -3596,11 +3557,11 @@ unreg_match:
 unreg_pernet:
 	unregister_pernet_subsys(&ndpi_net_ops);
 unreg_ext:
-#if !defined(USE_LIVEPATCH) && !defined(USE_HOOK)
+#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
 	nf_ct_extend_unregister(&ndpi_extend);
 #endif
-#if defined(USE_HOOK)
-	unregister_ndpi_hook();
+#if defined(USE_NF_CONNTRACK_DESTROY_HOOK)
+	unregister_nf_ct_destroy_hook();
 #endif
        	return ret;
 }
@@ -3611,10 +3572,10 @@ static void __exit ndpi_mt_exit(void)
 	xt_unregister_target(&ndpi_tg_reg);
 	xt_unregister_match(&ndpi_mt_reg);
 	unregister_pernet_subsys(&ndpi_net_ops);
-#if !defined(USE_LIVEPATCH) && !defined(USE_HOOK)
+#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
 	nf_ct_extend_unregister(&ndpi_extend);
-#elif defined(USE_HOOK)
-	unregister_ndpi_hook();
+#elif defined(USE_NF_CONNTRACK_DESTROY_HOOK)
+	unregister_nf_ct_destroy_hook();
 #else
 	rcu_assign_pointer(nf_conntrack_destroy_cb,NULL);
 #endif
@@ -3629,13 +3590,3 @@ module_exit(ndpi_mt_exit);
 #ifdef USE_LIVEPATCH
 MODULE_INFO(livepatch, "Y");
 #endif
-
-#include "ndpi_strcol.c" 
-#include "ndpi_proc_parsers.c" 
-#include "ndpi_proc_generic.c"
-#include "ndpi_proc_info.c"
-#include "ndpi_proc_flow.c" 
-#include "ndpi_proc_hostdef.c"
-#include "ndpi_proc_ipdef.c"
-#include "../libre/regexp.c"
-#include "../../src/lib/ndpi_main.c"

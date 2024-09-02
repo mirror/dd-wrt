@@ -79,23 +79,20 @@ u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_
   }
 }
 
-static int is_valid_rtcp_payload_type(uint8_t type)
-{
+static int is_valid_rtcp_payload_type(uint8_t type) {
   return (type >= 192 && type <= 213);
 }
 
-int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct)
+int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
+                   const u_int8_t *payload, u_int16_t payload_len, u_int16_t *seq)
 {
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  u_int8_t padding, csrc_count, ext_header;
+  u_int8_t csrc_count, ext_header;
   u_int16_t ext_len;
   u_int32_t min_len;
-  const u_int8_t *payload = packet->payload;
-  const u_int16_t payload_len = packet->payload_packet_len;
 
   if(payload_len < 2)
     return NO_RTP_RTCP;
-
+  
   if((payload[0] & 0xC0) != 0x80) { /* Version 2 */
     NDPI_LOG_DBG(ndpi_struct, "Not version 2\n");
     return NO_RTP_RTCP;
@@ -105,7 +102,6 @@ int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct)
      payload_len >= RTP_MIN_HEADER) {
     /* RTP */
     csrc_count = payload[0] & 0x0F;
-    padding = payload[0] & 0x20;
     ext_header =  !!(payload[0] & 0x10);
     min_len = RTP_MIN_HEADER + 4 * csrc_count + 4 * ext_header;
     if(ext_header) {
@@ -120,13 +116,11 @@ int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct)
       NDPI_LOG_DBG(ndpi_struct, "Too short (b) %d vs %d\n", min_len, payload_len);
       return NO_RTP_RTCP;
     }
-    /* TODO: this check doesn't work if we have multiple RTP packets in the
-       same UDP datagram */
-    if(padding &&
-       min_len + payload[payload_len - 1] > payload_len) {
-      NDPI_LOG_DBG(ndpi_struct, "Invalid padding len %d\n", payload[payload_len - 1]);
-      return NO_RTP_RTCP;
-    }
+    /* Check on padding doesn't work because:
+       * we may have multiple RTP packets in the same TCP/UDP datagram
+       * with SRTP, padding_length field is encrypted */
+    if(seq)
+      *seq = ntohs(*(unsigned short *)&payload[2]);
     return IS_RTP;
   } else if(is_valid_rtcp_payload_type(payload[1]) &&
             payload_len >= RTCP_MIN_HEADER) {
@@ -141,80 +135,176 @@ int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct)
   return NO_RTP_RTCP;
 }
 
-/* *************************************************************** */
 
-static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
-			    struct ndpi_flow_struct *flow) {
-  u_int8_t is_rtp;
-  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
-  u_int16_t d_port = ntohs(packet->udp->dest);
-  const u_int8_t *payload = packet->payload;
-
-  NDPI_LOG_DBG(ndpi_struct, "search RTP\n");
-
-  if(d_port == 5355 || /* LLMNR_PORT */
-     d_port == 5353 || /* MDNS_PORT */
-     d_port == 9600    /* FINS_PORT */) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
-  }
-
-  /* * Let some "unknown" packets at the beginning
-     * search for 3 consecutive RTP/RTCP packets
-   */
-
-  if(flow->packet_counter > 3 &&
-     flow->l4.udp.rtp_stage == 0) {
-    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
-    return;
-  }
-
-  is_rtp = is_rtp_or_rtcp(ndpi_struct);
-  if(is_rtp == IS_RTP) {
-    if(flow->l4.udp.rtp_stage == 2) {
-      if(flow->l4.udp.line_pkts[0] >= 2 && flow->l4.udp.line_pkts[1] >= 2) {
-        /* It seems that it is a LINE stuff; let its dissector to evaluate */
-      } else if(flow->l4.udp.epicgames_stage > 0) {
-        /* It seems that it is a EpicGames stuff; let its dissector to evaluate */
-      } else {
-        rtp_get_stream_type(payload[1] & 0x7F, &flow->flow_multimedia_type);
-
-        NDPI_LOG_INFO(ndpi_struct, "Found RTP\n");
-        ndpi_set_detected_protocol(ndpi_struct, flow,
-                                   NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_RTP,
-                                   NDPI_CONFIDENCE_DPI);
-      }
-      return;
-    }
-    flow->l4.udp.rtp_stage += 1;
-  } else if(is_rtp == IS_RTCP && flow->l4.udp.rtp_stage > 0) {
-    /* RTCP after (some) RTP. Keep looking for RTP */
-  } else {
-    if(flow->l4.udp.rtp_stage) {
-      flow->l4.udp.rtp_stage = 0;
-      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+static void ndpi_int_rtp_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
+                                        struct ndpi_flow_struct *flow,
+                                        u_int16_t proto)
+{
+  ndpi_set_detected_protocol(ndpi_struct, flow,
+                             NDPI_PROTOCOL_UNKNOWN, proto,
+                             NDPI_CONFIDENCE_DPI);
+  if(ndpi_struct->cfg.rtp_search_for_stun) {
+    /* It makes sense to look for STUN only if we didn't capture the entire flow,
+       from the beginning */
+    if(!(flow->l4_proto == IPPROTO_TCP && ndpi_seen_flow_beginning(flow))) {
+      NDPI_LOG_DBG(ndpi_struct, "Enabling (STUN) extra dissection\n");
+      switch_extra_dissection_to_stun(ndpi_struct, flow);
     }
   }
 }
 
 /* *************************************************************** */
 
-static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
+			    struct ndpi_flow_struct *flow) {
+  u_int8_t is_rtp;
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  const u_int8_t *payload = packet->payload;
+  u_int16_t payload_len = packet->payload_packet_len;
+  u_int16_t seq;
+
+  if(packet->tcp != NULL) {
+      payload += 2; /* Skip the length field */
+      payload_len -= 2;
+  }
+  NDPI_LOG_DBG(ndpi_struct, "search RTP (stage %d/%d)\n", flow->rtp_stage, flow->rtcp_stage);
+
+  /* * Let some "unknown" packets at the beginning:
+     * search for 3/4 consecutive RTP/RTCP packets.
+     * Wait a little longer (4 vs 3 pkts) for RTCP to try to tell if there are only
+     * RTCP packets in the flow or if RTP/RTCP are multiplexed together */
+
+  if(flow->packet_counter > 3 &&
+     flow->rtp_stage == 0 &&
+     flow->rtcp_stage == 0) {
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+    return;
+  }
+
+  is_rtp = is_rtp_or_rtcp(ndpi_struct, payload, payload_len, &seq);
+
+  if(is_rtp == IS_RTP) {
+    if(flow->rtp_stage == 2) {
+      if(flow->l4.udp.line_pkts[0] >= 2 && flow->l4.udp.line_pkts[1] >= 2) {
+        /* It seems that it is a LINE stuff; let its dissector to evaluate */
+      } else if(flow->l4.udp.epicgames_stage > 0) {
+        /* It seems that it is a EpicGames stuff; let its dissector to evaluate */
+      } else if(flow->rtp_seq_set[packet->packet_direction] &&
+                flow->rtp_seq[packet->packet_direction] == seq) {
+        /* Simple heuristic to avoid false positives. tradeoff between:
+	   * consecutive RTP packets should have different sequence number
+	   * we should handle duplicated traffic */
+        NDPI_LOG_DBG(ndpi_struct, "Same seq on consecutive pkts\n");
+        flow->rtp_stage = 0;
+        flow->rtcp_stage = 0;
+        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+        NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+      } else {
+        rtp_get_stream_type(payload[1] & 0x7F, &flow->flow_multimedia_type);
+
+        NDPI_LOG_INFO(ndpi_struct, "Found RTP\n");
+        ndpi_int_rtp_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RTP);
+      }
+      return;
+    }
+    if(flow->rtp_stage == 0) {
+      flow->rtp_seq[packet->packet_direction] = seq;
+      flow->rtp_seq_set[packet->packet_direction] = 1;
+    }
+    flow->rtp_stage += 1;
+  } else if(is_rtp == IS_RTCP && flow->rtp_stage > 0) {
+    /* RTCP after (some) RTP. Keep looking for RTP */
+  } else if(is_rtp == IS_RTCP && flow->rtp_stage == 0) {
+    if(flow->rtcp_stage == 3) {
+      NDPI_LOG_INFO(ndpi_struct, "Found RTCP\n");
+      ndpi_int_rtp_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+      return;
+    }
+    flow->rtcp_stage += 1;
+  } else {
+    if(flow->rtp_stage || flow->rtcp_stage) {
+      u_int32_t unused;
+      u_int16_t app_proto = NDPI_PROTOCOL_UNKNOWN;
+
+      /* TODO: we should switch to the demultiplexing-code in stun dissector */
+      if(is_stun(ndpi_struct, flow, &app_proto) != 0 &&
+         !is_dtls(packet->payload, packet->payload_packet_len, &unused)) {
+        flow->rtp_stage = 0;
+        flow->rtcp_stage = 0;
+        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+        NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+      }
+    } else if(flow->packet_counter > 3) {
+        NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+        NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+    }      
+  }
+}
+
+/* *************************************************************** */
+/* https://datatracker.ietf.org/doc/html/rfc4571
+ * message format for RTP/RTCP over TCP:
+ *     0                   1                   2                   3
+ *      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *      ---------------------------------------------------------------
+ *     |             LENGTH            |  RTP or RTCP packet ...       |
+ *      ---------------------------------------------------------------
+ */
+static void ndpi_search_rtp_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+                struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  const u_int8_t *payload = packet->payload;
+  
+  if(packet->payload_packet_len < 4){ /* (2) len field + (2) min rtp/rtcp*/
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+    return;
+  }
+
+  u_int16_t len = ntohs(get_u_int16_t(payload, 0));
+  if(len + sizeof(len) != packet->payload_packet_len) { /*fragmented packets are not handled*/
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+  } else {
+    ndpi_rtp_search(ndpi_struct, flow);
+  }
+
+}
+
+/* *************************************************************** */
+static void ndpi_search_rtp_udp(struct ndpi_detection_module_struct *ndpi_struct,
+                struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t source = ntohs(packet->udp->source);
   u_int16_t dest = ntohs(packet->udp->dest);
-
-  // printf("==> %s()\n", __FUNCTION__);
-
-  /* printf("*** %s(pkt=%d)\n", __FUNCTION__, flow->packet_counter); */
-
-  if((source != 30303) && (dest != 30303 /* Avoid to mix it with Ethereum that looks alike */)
-     && (dest > 1023)
-     )
-    ndpi_rtp_search(ndpi_struct, flow);
-  else
+  /* 
+   * XXX: not sure if rtp/rtcp over tcp will also mix with Ethereum
+   * for now, will not add it unitl we have a false positive.
+   */
+  if((source == 30303) || (dest == 30303 /* Avoid to mix it with Ethereum that looks alike */)
+     || (dest == 5355  /* LLMNR_PORT */)
+     || (dest == 5353  /* MDNS_PORT */)
+     || (dest == 9600  /* FINS_PORT */)
+     || (dest <= 1023)){
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+    NDPI_EXCLUDE_PROTO_EXT(ndpi_struct, flow, NDPI_PROTOCOL_RTCP);
+    return;
+  }
+  ndpi_rtp_search(ndpi_struct, flow);
+}
+
+/* *************************************************************** */
+static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  if(packet->tcp != NULL) {
+    ndpi_search_rtp_tcp(ndpi_struct, flow);
+   } else {
+      ndpi_search_rtp_udp(ndpi_struct, flow);
+   }
 }
 
 /* *************************************************************** */
@@ -222,11 +312,11 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct,
 			u_int32_t *id) {
   ndpi_set_bitmask_protocol_detection("RTP", ndpi_struct, *id,
-				      NDPI_PROTOCOL_RTP,
-				      ndpi_search_rtp,
-				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
-				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
-				      ADD_TO_DETECTION_BITMASK);
+				                      NDPI_PROTOCOL_RTP,
+				                      ndpi_search_rtp,
+                                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, 
+				                      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
+				                      ADD_TO_DETECTION_BITMASK);
 
   *id += 1;
 }

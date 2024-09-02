@@ -1,3 +1,6 @@
+
+#error USE_ROARING
+
 #ifdef USE_ROARING_V2
 #include "roaring_v2.h"
 #else

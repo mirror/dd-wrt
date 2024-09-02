@@ -1,3 +1,5 @@
+
+#error USE_ROARINGV2
 // !!! DO NOT EDIT - THIS IS AN AUTO-GENERATED FILE !!!
 // Created by amalgamation.sh on 2023-02-12T11:34:02Z
 

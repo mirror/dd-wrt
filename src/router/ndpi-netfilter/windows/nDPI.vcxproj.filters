@@ -40,7 +40,6 @@
     <ClCompile Include="..\src\lib\protocols\jabber.c" />
     <ClCompile Include="..\src\lib\protocols\kakaotalk_voice.c" />
     <ClCompile Include="..\src\lib\protocols\kerberos.c" />
-    <ClCompile Include="..\src\lib\protocols\kontiki.c" />
     <ClCompile Include="..\src\lib\protocols\ldap.c" />
     <ClCompile Include="..\src\lib\protocols\lotus_notes.c" />
     <ClCompile Include="..\src\lib\protocols\mail_imap.c" />
@@ -62,15 +61,13 @@
     <ClCompile Include="..\src\lib\protocols\openvpn.c" />
     <ClCompile Include="..\src\lib\protocols\oracle.c" />
     <ClCompile Include="..\src\lib\protocols\postgres.c" />
-    <ClCompile Include="..\src\lib\protocols\ppstream.c" />
     <ClCompile Include="..\src\lib\protocols\pptp.c" />
     <ClCompile Include="..\src\lib\protocols\qq.c" />
     <ClCompile Include="..\src\lib\protocols\quic.c" />
-    <ClCompile Include="..\src\lib\protocols\radius.c" />
+    <ClCompile Include="..\src\lib\protocols\radius_proto.c" />
     <ClCompile Include="..\src\lib\protocols\rdp.c" />
     <ClCompile Include="..\src\lib\protocols\resp.c" />
     <ClCompile Include="..\src\lib\protocols\rsync.c" />
-    <ClCompile Include="..\src\lib\protocols\rtcp.c" />
     <ClCompile Include="..\src\lib\protocols\rtmp.c" />
     <ClCompile Include="..\src\lib\protocols\rtp.c" />
     <ClCompile Include="..\src\lib\protocols\rtsp.c" />
@@ -97,7 +94,6 @@
     <ClCompile Include="..\src\lib\protocols\tftp.c" />
     <ClCompile Include="..\src\lib\protocols\tplink_shp.c" />
     <ClCompile Include="..\src\lib\protocols\tuya_lp.c" />
-    <ClCompile Include="..\src\lib\protocols\tvuplayer.c" />
     <ClCompile Include="..\src\lib\protocols\ubntac2.c" />
     <ClCompile Include="..\src\lib\protocols\usenet.c" />
     <ClCompile Include="..\src\lib\protocols\vhua.c" />
@@ -148,6 +144,13 @@
     <ClCompile Include="..\src\lib\protocols\pfcp.c" />
     <ClCompile Include="..\src\lib\protocols\flute.c" />
     <ClCompile Include="..\src\lib\protocols\lol_wild_rift.c" />
+    <ClCompile Include="..\src\lib\protocols\teso.c" />
+    <ClCompile Include="..\src\lib\protocols\ldp.c" />
+    <ClCompile Include="..\src\lib\protocols\knxnet_ip.c" />
+    <ClCompile Include="..\src\lib\protocols\bfcp.c" />
+    <ClCompile Include="..\src\lib\protocols\iqiyi.c" />
+    <ClCompile Include="..\src\lib\protocols\egd.c" />
+    <ClCompile Include="..\src\lib\protocols\cod_mobile.c" />
     <ClCompile Include="src\getopt.c" />
     <ClCompile Include="src\win-gettimeofday.c" />
     <ClCompile Include="..\src\lib\ndpi_analyze.c" />

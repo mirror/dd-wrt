@@ -5,6 +5,42 @@ This page provides the list of the protocols/applications supported by nDPI. For
 
 Work in progress!
 
+.. _Proto 32:
+
+`NDPI_PROTOCOL_BFCP`
+=======================
+BFCP (Binary Floor Control Protocol) is used for controlling and coordinating real-time data sharing and collaboration during video conferencing sessions.
+
+References: `RFC: <https://datatracker.ietf.org/doc/html/rfc8855>`_
+
+
+.. _Proto 54:
+
+`NDPI_PROTOCOL_IQIYI`
+===========================
+iQIYI is a Chinese online video platform that offers a wide range of original and licensed content including movies, dramas, variety shows, and anime.
+
+References: `Main site: <https://www.iqiyi.com/>`_
+
+
+.. _Proto 59:
+
+`NDPI_PROTOCOL_ADOBE_CONNECT`
+===========================
+Adobe Connect is a web conferencing platform that allows users to conduct online meetings, webinars, and virtual classrooms.
+
+References: `Main site: <https://www.adobe.com/products/adobeconnect.html>`_
+
+
+.. _Proto 65:
+
+`NDPI_PROTOCOL_IRC`
+==================
+IRC (Internet Relay Chat) is a text-based chat system for instant messaging.
+
+References: `Wikipiedia: <https://en.wikipedia.org/wiki/IRC>`_ and `Some statistics: <https://netsplit.de/networks/top10.php>`
+
+
 .. _Proto 72:
 
 `NDPI_PROTOCOL_HART_IP`
@@ -29,7 +65,21 @@ References: `RFC1350 <https://datatracker.ietf.org/doc/html/rfc1350>`_ and `RFC2
 =======================
 A Remote Procedure Call protocol over HTTP from Microsoft.
 
-References: `Protocol Specs: <https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpch/c0f4c9c5-1a61-4d10-b8e2-005378d1d212`_
+References: `Protocol Specs: <https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpch/c0f4c9c5-1a61-4d10-b8e2-005378d1d212>`_
+
+
+.. _Proto 149:
+
+`NDPI_PROTOCOL_EGD`
+=========================
+Ethernet Global Data (EGD) is a communication protocol developed by GE Fanuc Automation for real-time data exchange between automation devices and control systems using standard Ethernet technology. It is widely adopted in industrial environments for its simplicity and reliability in data communication.
+
+References: `Wikipedia <https://en.wikipedia.org/wiki/Ethernet_Global_Data_Protocol>`_
+
+Notes:
+
+- This dissector only works for data packets, not configuration commands.
+- IPv6 is not supported
 
 
 .. _Proto 182:
@@ -38,7 +88,16 @@ References: `Protocol Specs: <https://learn.microsoft.com/en-us/openspecs/window
 =======================
 Redis Serialization Protocol
 
-References: `Protocol Specs: <https://redis.io/docs/reference/protocol-spec/`_
+References: `Protocol Specs: <https://redis.io/docs/reference/protocol-spec/>`_
+
+
+.. _Proto 186:
+
+`NDPI_PROTOCOL_COD_MOBILE`
+=======================
+Call of Duty: Mobile is a free-to-play shooter game for iOS and Android devices. It has amassed over 650 million downloads worldwide, making it one of the most popular mobile games.
+
+References: `Main site: <https://www.callofduty.com/mobile/>`_
 
 
 .. _Proto 201:
@@ -57,6 +116,7 @@ References: `Main site: <https://meet.google.com/>`_
 Steam Datagram Relay (SDR) is Valve's virtual private gaming network. Used in all modern games from Valve, but can also be used by developers via the Steamworks SDK for their games.
 
 References: `Main site: <https://partner.steamgames.com/doc/features/multiplayer/steamdatagramrelay>`_
+
 
 .. _Proto 338:
 
@@ -706,3 +766,75 @@ References: `RFC <https://datatracker.ietf.org/doc/html/rfc6726>`_
 League of Legends: Wild Rift is a mobile MOBA game.
 
 References: `Main site <https://wildrift.leagueoflegends.com/>`_
+
+
+.. _Proto 408:
+
+`NDPI_PROTOCOL_TESO`
+============================
+The Elder Scrolls Online is a MMORPG set in the fantasy world of Tamriel.
+
+References: `Main site <https://www.elderscrollsonline.com/>`_
+
+
+.. _Proto 409:
+
+`NDPI_PROTOCOL_LDP`
+=====================
+The Label Distribution Protocol (LDP) is a routing protocol used to establish and maintain label-switched paths in a Multiprotocol Label Switching (MPLS) network.
+
+References: `RFC <https://datatracker.ietf.org/doc/html/rfc5036>`_
+
+
+.. _Proto 410:
+
+`NDPI_PROTOCOL_KNXNET_IP`
+=====================
+KNXnet/IP is a building automation protocol that enables the exchange of data and control information over IP networks, extending the KNX standard for home and building automation.
+
+References: `Paid Specs: <https://webstore.ansi.org/standards/ds/dsiso225102019>`_
+
+
+.. _Proto 411:
+
+`NDPI_PROTOCOL_BLUESKY`
+======================
+Bluesky, also known as Bluesky Social, is a decentralized microblogging social platform.
+
+References: `Main site: <https://bsky.app/>`_
+
+
+.. _Proto 412:
+
+`NDPI_PROTOCOL_MASTODON`
+=======================
+Mastodon is free and open-source software for running self-hosted social networking services. It has microblogging features similar to Twitter.
+
+References: `Main site: <https://joinmastodon.org/>`_
+
+
+.. _Proto 413:
+
+`NDPI_PROTOCOL_THREADS`
+======================
+Threads is an online social media and social networking service operated by Meta Platforms.
+
+References: `Main site: <https://www.threads.net>`_
+
+
+.. _Proto 414:
+
+`NDPI_PROTOCOL_VIBER_VOIP`
+=========================
+Audio/video calls made using the Viber app.
+
+References: `Wikipedia <https://en.wikipedia.org/wiki/Viber>`_
+
+
+.. _Proto 415:
+
+`NDPI_PROTOCOL_ZUG`
+=========================
+The ZUG protocol is part of the Casper 2.0 consensus model.
+
+References: `Main Site <https://casperlabs.io>`_ and `Blog Post <https://casperlabs.io/blog/beyond-eth-30-theres-casper-20>`_

@@ -66,6 +66,7 @@
 /fuzz/fuzz_alg_crc32_md5
 /fuzz/fuzz_alg_ses_des
 /fuzz/fuzz_alg_bytestream
+/fuzz/fuzz_alg_shoco
 /fuzz/fuzz_config
 /fuzz/fuzz_community_id
 /fuzz/fuzz_serialization
@@ -75,7 +76,7 @@
 /fuzz/fuzz_ds_ptree
 /fuzz/fuzz_ds_hash
 /fuzz/fuzz_ds_ahocorasick
-/fuzz/fuzz_ds_bitmap64
+/fuzz/fuzz_ds_bitmap64_fuse
 /fuzz/fuzz_ds_domain_classify
 /fuzz/fuzz_libinjection
 /fuzz/fuzz_binaryfusefilter
@@ -113,7 +114,7 @@
 /fuzz/fuzz_alg_bytestream_seed_corpus.zip
 /fuzz/fuzz_ds_libcache_seed_corpus.zip
 /fuzz/fuzz_ds_ptree_seed_corpus.zip
-/fuzz/fuzz_ds_bitmap64_seed_corpus.zip
+/fuzz/fuzz_ds_bitmap64_fuse_seed_corpus.zip
 /fuzz/fuzz_ds_domain_classify_seed_corpus.zip
 /fuzz/fuzz_libinjection_seed_corpus.zip
 /fuzz/fuzz_tls_certificate_seed_corpus.zip
@@ -129,6 +130,7 @@
 /fuzz/fuzz_readerutils_workflow_seed_corpus.zip
 /fuzz/fuzz_readerutils_parseprotolist_seed_corpus.zip
 /fuzz/fuzz_*.dict
+/fuzz/testpcaps.zip
 /influxdb/Makefile
 /libndpi.pc
 /libtool

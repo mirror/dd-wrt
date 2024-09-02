@@ -69,7 +69,7 @@ static ssize_t _n_ipdef_proc_read(struct file *file, char __user *buf,
 
 	cpos = 0; bp = 0;
 
-	pt = family == AF_INET ? n->ndpi_struct->protocols_ptree:n->ndpi_struct->protocols_ptree6;
+	pt = family == AF_INET ? n->ndpi_struct->protocols->v4:n->ndpi_struct->protocols->v6;
 
 	Xsp = &Xstack[0];
 	node = pt ? pt->head: NULL;
