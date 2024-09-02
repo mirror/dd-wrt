@@ -1,0 +1,54 @@
+.TH ATOPCONVERT 1 "January 2024" "Linux"
+.SH NAME
+.B atopconvert
+- convert raw log file to newer version
+.SH SYNOPSIS
+.P
+.B atopconvert
+[\-t
+.I version
+] rawinput [rawoutput]
+.P
+.SH DESCRIPTION
+The program
+.I atopconvert
+can be used to convert the layout of a raw log file to a newer version.
+The only mandatory argument is the name of the raw input file. When no
+output file is specified on the command line, 
+.I atopconvert
+only shows the version of the input file.
+When the name of an output file is specified, the input file will
+be converted to the output file, or just copied when the input file
+already has the required version.
+
+The program
+.I atopconvert
+converts the input file (by default) to the format used by the
+newest version of
+.I atop
+and writes to the output file. With the
+.B -t
+option, an alternative target version can be specified for the output file
+(instead of the newest version) in the format
+.I major.minor
+(example: 2.3).
+.br
+After the conversion is finished, the output file can be read by
+the newer version of
+.I atop
+or can even be extended by that
+.I atop
+version.
+.SH NOTES
+The raw input file should be at least of version 2.0!
+
+Files can only be upgraded to higher version, but not downgraded.
+.SH SEE ALSO
+.B atop(1),
+.B atopsar(1),
+.B atopcat(1),
+.B atophide(1)
+.br
+.B https://www.atoptool.nl
+.SH AUTHOR
+Gerlof Langeveld (gerlof.langeveld@atoptool.nl)

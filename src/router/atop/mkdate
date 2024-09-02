@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Make a new versdate.h with the current date filled
+#
+CURDATE=$(date +%Y/%m/%d\ %H:%M:%S)
+
+echo "#ifndef __ATOP_VERSDATA__"	> versdate.h
+echo "#define __ATOP_VERSDATA__"	>> versdate.h
+echo "#define	ATOPDATE	\"$CURDATE\""	>> versdate.h
+echo "#endif"	>> versdate.h

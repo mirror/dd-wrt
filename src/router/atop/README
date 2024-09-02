@@ -1,0 +1,113 @@
+COPYRIGHT NOTICE
+----------------
+For all files that are not marked differently:
+
+Copyright Gerlof Langeveld 2007-2024 and licensed under the GPL v2 (or any later version).
+
+
+DEPENDENCIES
+------------
+
+Install the following packages to be able to build atop (package name
+can be different depending on the Linux distro):
+
+* zlib-devel    or libz-dev or zlib1g-dev
+* ncurses-devel or libncurses5-dev/libncursesw5-dev
+* glib2-devel   or libglib2.0-dev
+
+
+Install the following packages to be able to execute atop (package name
+can be different depending on the Linux distro):
+
+* zlib    or zlib1g
+* ncurses or libncurses5/libncursesw5
+* glib2   or libglib2.0
+
+
+INSTALLING AND USING ATOP FROM TARBALL
+--------------------------------------
+
+For interactive use, it is sufficient to install ATOP with the command
+(as root):
+
+	make install		(systemd based)
+
+		or
+
+	make sysvinstall	(System V init based)
+
+For automatic logging in compressed binary format, see the
+description in the manual-page.
+
+
+NETWORK-RELATED COUNTERS PER PROCESS/THREAD
+-------------------------------------------
+
+The kernel module 'netatop' can be downloaded and installed separately
+from www.atoptool.nl/downloadnetatop.php
+This module is optional and can be used to gather network statistics
+per process/thread as described in www.atoptool.nl/netatop.php
+
+Alternatively, the BPF implementation 'netatop-bpf' can be downloaded
+and installed from https://github.com/bytedance/netatop-bpf
+
+
+PROCESS ACCOUNTING WITH PSACCT/ACCT PACKAGE
+-------------------------------------------
+
+Preferably, process accounting should be handled by the atopacctd daemon
+which is implicitly installed when installing atop. This daemon takes
+care that process accounting is only active when at least one atop
+process is running. Besides, when process accounting is activated,
+atopacctd takes care that the disk utilization is minimal.
+See the man page of atopacctd for further details.
+
+When the psacct or acct package is installed in parallel with the
+atop package and you want to enable/start the (ps)acct service for
+permanent process accounting, the atopacct.service refuses to activate
+the atopacctd daemon to avoid clashes.
+When the (ps)acct service is enabled, atop automatically uses the
+process accounting file that is used by this package.
+See also the section PROCESS ACCOUNTING in the man page of atop.
+
+
+OVERVIEW OF RELATED PROGRAMS
+----------------------------
+
+When installing atop the following programs are provided:
+
+  atop        - System and process monitor (live and from raw log)
+  atopacctd   - Daemon: handles process accounting records to be used by atop
+  atopgpud    - Daemon: gathers metrics from Nvidia GPUs to be used by atop
+  atopsar     - System activity reports (live and from raw log)
+  atopcat     - Concatenate raw log files and provide raw log information
+  atophide    - Make extractions from raw logs and/or anonymize raw logs
+  atopconvert - Convert raw log to newer version
+
+
+SERVICE ACTIVATION AFTER INSTALLATING PACKAGE
+---------------------------------------------
+
+After the package has been installed, be sure that the related services
+are activated.
+To support handling of terminated processes using process accounting,
+enable the atopacct service:
+
+	systemctl enable --now atopacct
+
+Notice that this service should not be enabled when the package
+psacct or acct (depends on the Linux distribution) has been installed
+and enabled. In that case atop uses the daily process accounting file
+created via that package.
+
+To support maintaining daily log files to keep track of long-term analysis
+information, enable the atop service and the related timer:
+
+	systemctl enable --now atop
+	systemctl enable --now atop-rotate.timer
+
+
+
+
+Gerlof Langeveld
+gerlof.langeveld@atoptool.nl

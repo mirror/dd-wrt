@@ -1,0 +1,583 @@
+commit e530cfd606d3e1a91d306187b28d7a18040e52e6
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 27 10:40:27 2024 +0200
+
+    Prepare version 2.11
+
+M	version.h
+
+commit b6da6ce100afee0ba3bd76a2760f0af0db21c46a
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 27 10:31:32 2024 +0200
+
+    Explain time stamp in header line (solves issue #313)
+
+M	man/atop.1
+
+commit 846b3f6b4ee538a1d7c4b061209fa6a504484226
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 13 12:14:48 2024 +0200
+
+    Prepare for version 2.11 (also solves issue #308)
+    
+    Ability to convert log files to version 2.11.
+    Also solves issue that network counters were not properly
+    converted from 2.7 to 2.8 (and further).
+
+M	atopconvert.c
+M	prev/netstats_wrong.h
+M	prev/photosyst_210.h
+M	rawlog.c
+
+commit dc0b95d54341425d7a28c11fa1b3ba6a156d4846
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 13 12:12:40 2024 +0200
+
+    Prepare for version 2.11
+
+A	prev/cgroups_211.h
+A	prev/photoproc_211.h
+A	prev/photosyst_211.h
+
+commit 46e44d3dfdee4c6d4fef296984dfde23f2a52bd2
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 13 10:45:05 2024 +0200
+
+    Allow /usr to be NFS-mounted (solves issue #307)
+
+M	atop.init
+M	atopacct.init
+
+commit 5b7930ce97692b7b68b5478835f13609313de3fc
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 13 09:20:18 2024 +0200
+
+    Improve error messages for incompatible logfile
+
+M	rawlog.c
+
+commit de0b0ad27ddb73ce8f830a941c31d1055a728a85
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jul 13 09:19:18 2024 +0200
+
+    Improve help messages (typo and order)
+
+M	showgeneric.c
+
+commit 75a57b1ac9def1ebc55494f9cba3f9015d77a8b1
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Jun 28 14:42:48 2024 +0200
+
+    Solved: bar invisible when reaching maximum height
+    
+    The maximum number of lines used per graph (like CPU or disk) in bar
+    graph mode (key 'B') is 25 lines. Whenever this number of lines is reached,
+    the bars that reflect a 100% busy percentage suddenly disappeared due to
+    a wrong comparison ('< MAXHEIGHT' instead of '<= MAXHEIGHT').
+    Issue solved.
+
+M	drawbar.c
+M	showgeneric.h
+
+commit e80711ed309418bd1a99dcdac184bb3e751853e2
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Jun 18 08:18:07 2024 +0200
+
+    Remove limit of 8 CPUs for frequency scaling stats
+
+M	man/atop.1
+
+commit b08ed21036ba3f06de1f947b42c7bb0da6889240
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 21:19:13 2024 +0200
+
+    Allow more than 1024 open files (solves #304)
+    
+    When atop runs with superuser privileges, it gathers counters about
+    executed CPU instructions and CPU cycles via perfevents. For this
+    purpose, atop opens two file descriptors per CPU. With the default
+    setting of 1024 open files only about 500 CPUs can be supported.
+    Atop adapts the required number of open files now to the number of
+    CPUs in the system.
+
+M	photosyst.c
+
+commit 58c65a9f28c8302db24bb098c3e19bac734898c4
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 11:11:28 2024 +0200
+
+    Changed printf specifier to lld for time_t (solves issue #306)
+
+M	parseable.c
+
+commit 37c7505731fef4d3eac63a81f7a759925fa4b508
+Merge: 8790b67 1492b59
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 10:30:16 2024 +0200
+
+    Merge pull request #291 from natoscott/atop-typos
+    
+    Remove a man page merge leftover, minor comments typo fixes
+
+commit 8790b67e37dc2ca2f0d23c2f449b414e3a92216b
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 10:22:10 2024 +0200
+
+    Show '-' instead of '?' when frequency is zero
+
+M	showsys.c
+
+commit 06142eed942bba97bd7be510991c0de400bb6025
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 09:44:05 2024 +0200
+
+    Improved gathering of current CPU frequency
+
+M	photosyst.c
+
+commit 43dc6fdacba3795078e64749a0cd995964c92665
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Jun 15 09:43:06 2024 +0200
+
+    Removed free of same buffer twice
+
+M	rawlog.c
+
+commit cd2f08f4378c9010b67e496857c482e4025ae774
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 27 11:52:54 2024 +0200
+
+    Normalize include file names of previous versions
+
+M	atopconvert.c
+R100	prev/photoproc_20.h	prev/photoproc_200.h
+R100	prev/photoproc_21.h	prev/photoproc_201.h
+R100	prev/photoproc_22.h	prev/photoproc_202.h
+R100	prev/photoproc_23.h	prev/photoproc_203.h
+R100	prev/photoproc_24.h	prev/photoproc_204.h
+R100	prev/photoproc_25.h	prev/photoproc_205.h
+R100	prev/photoproc_26.h	prev/photoproc_206.h
+R100	prev/photoproc_27.h	prev/photoproc_207.h
+R100	prev/photoproc_28.h	prev/photoproc_208.h
+R100	prev/photoproc_29.h	prev/photoproc_209.h
+R100	prev/photosyst_20.h	prev/photosyst_200.h
+R100	prev/photosyst_21.h	prev/photosyst_201.h
+R100	prev/photosyst_22.h	prev/photosyst_202.h
+R100	prev/photosyst_23.h	prev/photosyst_203.h
+R100	prev/photosyst_24.h	prev/photosyst_204.h
+R100	prev/photosyst_25.h	prev/photosyst_205.h
+R100	prev/photosyst_26.h	prev/photosyst_206.h
+R100	prev/photosyst_27.h	prev/photosyst_207.h
+R100	prev/photosyst_28.h	prev/photosyst_208.h
+R100	prev/photosyst_29.h	prev/photosyst_209.h
+
+commit 0d02dee444c072fd67c6e09367062bd3f550b0b4
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 27 11:46:36 2024 +0200
+
+    Adapt atophide to cgroup-enhanced raw logs
+
+M	atophide.c
+M	rawlog.c
+M	rawlog.h
+
+commit 9054c7bcf07c7f87f3b75abdc65af772ce2945c2
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 27 10:32:42 2024 +0200
+
+    Adapt atopcat to cgroup-enhanced raw logs
+
+M	atopcat.c
+M	man/atopcat.1
+
+commit 840b8772995e4ef17cad45ff6dcb3b164339b0fc
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 27 10:32:03 2024 +0200
+
+    Add list with atop-related programs
+
+M	README
+
+commit e1d759de286e71dba62ba1a33cab401266614fc0
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Apr 16 13:18:50 2024 +0200
+
+    Accept twin mode and twin directory in rc file
+
+M	atop.c
+M	man/atoprc.5
+M	showgeneric.c
+M	showgeneric.h
+
+commit 575d2c2bbd2cb4b6f190a1ac8423ea518ea60b28
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Apr 16 12:38:16 2024 +0200
+
+    Fix: Avoid that twin file is opened twice
+
+M	rawlog.c
+
+commit 57857a1941019fc32e868b906a99d8d152d05572
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Apr 16 12:22:29 2024 +0200
+
+    Add fields for future expansion
+
+M	cgroups.h
+M	photoproc.h
+M	photosyst.h
+
+commit 6e65c1fc75c1dd8849746aab8370030e567983fd
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Apr 16 12:21:38 2024 +0200
+
+    Cleanup README text
+
+M	README
+
+commit 8b22070c9778011c4a807ee3a2a78756b9a70ede
+Merge: 7988ad3 d654fda
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 13 09:45:04 2024 +0200
+
+    Merge pull request #294 from C0rn3j/master
+    
+    atop[acct|gpu].service: Remove syslog.target
+
+commit 7988ad3cf807c523b257f2fdbb17707219e8b36e
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 13 09:36:26 2024 +0200
+
+    Double backslash in string for JSON output (solves #300)
+
+M	cgroups.c
+M	cgroups.h
+M	json.c
+M	parseable.c
+
+commit 67aaf738da787db4f23a5786af5df154a7a36b03
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Apr 12 19:38:37 2024 +0200
+
+    Renamed process name to cmd and removed ()
+
+M	json.c
+
+commit 97f4fcec47acae5602c833e667c84b379c55f77d
+Merge: e7986f3 b07f563
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Apr 12 19:27:52 2024 +0200
+
+    Merge pull request #299 from N-Storm/master
+    
+    Add process name (ps->gen.name) to JSON output
+
+commit b07f56391ce559d83529cc39556ef70efb1eb411
+Author: N-Storm <nstorm0.0+github@gmail.com>
+Date:   Tue Apr 9 13:04:36 2024 -0400
+
+    Add process name (ps->gen.name) to JSON output of PRC, PRM, PRD, PRN, PRE in accordance with parsable output fields
+
+M	json.c
+
+commit e7986f31724399b82e47e0c0282e2f61db431929
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 21:32:36 2024 +0200
+
+    Adapt documentation for twin mode
+
+M	man/atop.1
+
+commit 5c133ce885ea623a050b422f5396eb5d0ccde2f0
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 21:23:16 2024 +0200
+
+    Adapt messages for twin mode
+
+M	drawbar.c
+M	showgeneric.c
+
+commit 6045c6a928b3e5fe997e23946734e262a2c14254
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 21:22:53 2024 +0200
+
+    Adapt documentation for twin mode
+
+M	man/atop.1
+
+commit 3e4003259d496cd935463623d335b680a15b1328
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 20:25:29 2024 +0200
+
+    Context-specific help text
+
+M	showgeneric.c
+
+commit 146a4baf00913bf395e547473594190da9e8de4f
+Merge: 97cbcbf a3a6a3d
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 17:31:20 2024 +0200
+
+    Merge branch 'twin'
+
+commit a3a6a3d25f547e272b305bdec4336cb05af67b54
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Apr 6 17:18:02 2024 +0200
+
+    Twin mode: live measurement with review option
+    
+    In twin mode atop spawns into two processes:
+    - lower level process that gathers the counters and writes
+      them to a temporary raw file, and
+    - upper level process that reads the counters from the raw file
+      and presents them to the user.
+    
+    The reading of the upper level process keeps in pace with the
+    written samples of the lower level process for live measurements.
+    However, when pressing the 'r' (reset to measurement begin),
+    the 'b' (branch to time stamp), or the 'T' (previous sample),
+    the upper level process implicitly pauses with the possibility
+    to view previous samples. The 'z' (explicit pause) can also be
+    used to pause the live measurement.
+    When pressing the 'z' (continue after pause) the live measurement
+    will be continued.
+
+M	atop.c
+M	atop.h
+M	drawbar.c
+M	rawlog.c
+M	showgeneric.c
+M	various.c
+
+commit 97cbcbfb0f9eb57779ad4a645a0db859c24ab7c2
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Mar 23 12:41:11 2024 +0100
+
+    Apply process selections to threads as well
+    When selections are defined for processes, like particular states,
+    the selection should also be valid for threads in case of thread view
+    (with key 'y').
+    For state selection the side effect is that a process (i.e. the main
+    thread) might have state 'S' while one of the (other) threads of this
+    process has state 'R'. When selecting state 'R' the process with state
+    'S' is shown as well because one of its threads has state 'R'.
+    Solves issues #290 and #296.
+
+M	showgeneric.c
+
+commit 17fa0054b50b8bb8af4fe1d6509559ff82998323
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Mon Mar 4 23:50:05 2024 +0100
+
+    Support 8 exabytes as maximum size for long long (2^63)
+
+M	atop.h
+M	various.c
+
+commit d654fda875d15603cfacd0e31c3fba1ee775e4f3
+Author: Martin Rys <martin@rys.pw>
+Date:   Sun Mar 3 12:52:36 2024 +0100
+
+    atop[acct|gpu].service: Remove syslog.target
+
+M	atopacct.service
+M	atopgpu.service
+
+commit 35c26b66450b950b71b0021349b4e06551e3295e
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Mar 2 13:12:08 2024 +0100
+
+    Modified README for cgroup awareness
+
+M	README.md
+
+commit 21de2a33a59b677774d6b8fe58c08e30fbcd586e
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Mar 2 13:00:19 2024 +0100
+
+    Add cpu, memory and io pressure percentages for cgroups
+
+M	cgroups.c
+M	cgroups.h
+M	json.c
+M	man/atop.1
+M	parseable.c
+M	showlinux.c
+M	showlinux.h
+M	showprocs.c
+
+commit 09d1aa9b464ed3b0e1f11e3dbd684daa2cf0baeb
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Mar 1 13:08:04 2024 +0100
+
+    Improved tree representation for cgroups
+
+M	cgroups.c
+M	cgroups.h
+M	showprocs.c
+
+commit eec97d53d3ed1c2cba036b90e4c7bd2409658080
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Mon Feb 26 19:24:46 2024 +0100
+
+    Allow cross building of atop (solves issue #293)
+
+M	Makefile
+
+commit 3978cc2865abd84590bf90597f8968877dd22a99
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Feb 23 08:31:13 2024 +0100
+
+    Implement cgroups support -- step 4 (issue #292)
+    Add cgroups support to the documentation (man pages).
+
+M	man/atop.1
+
+commit 2803641658c92ca00972c0e6e3b8254334173918
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Fri Feb 23 08:13:01 2024 +0100
+
+    Solved segmentation fault on systems with cgroups v1
+
+M	parseable.c
+
+commit 24fa6848c6c9eca7cb8dfb8a11464a3d5ddf2183
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Feb 20 23:16:37 2024 +0100
+
+    Complete cgroups values on process level (compatibility)
+
+M	cgroups.c
+M	cgroups.h
+M	json.c
+M	parseable.c
+M	photoproc.c
+M	photoproc.h
+
+commit a4a6bff3c4932bd120065e69edcb57058ad52e5a
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Mon Feb 19 12:32:10 2024 +0100
+
+    Solve segmentation fault for parsable/json output
+
+M	cgroups.c
+M	cgroups.h
+M	json.c
+M	parseable.c
+
+commit d2a10ef03cd2a3a0d11f31df1969022b87f2fd23
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Feb 17 13:33:05 2024 +0100
+
+    Implement cgroups support -- step 3 (issue #292)
+    Introduce new label 'CGR' for parsable output and
+    JSON output. When using this label, metrics are printed
+    about each cgroup accompanied by the list of PIDs
+    related to the cgroup. In case of parsable output,
+    the PIDs are passed in an additional output line
+    with marker 'P'.
+
+M	atopsar.c
+M	cgroups.h
+M	json.c
+M	parseable.c
+
+commit 1146a3ebd71721ac910b7a052d704578937545ef
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Feb 17 11:38:46 2024 +0100
+
+    Implement cgroups support -- step 2 (issue #292)
+    Store cgroups metrics and related PID list in a raw file
+    and retrieve/rebuild the cgroups structures from a raw file.
+
+M	atop.c
+M	atop.h
+M	atopsar.c
+M	cgroups.c
+M	cgroups.h
+M	json.c
+M	json.h
+M	parseable.c
+M	parseable.h
+M	photoproc.h
+M	rawlog.c
+M	rawlog.h
+M	showgeneric.c
+M	showprocs.c
+
+commit 4d617da126001d0e00919cd825533dabb611ffea
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Tue Feb 13 11:01:35 2024 +0100
+
+    Added disk I/O metrics per cgroup (step 1 issue #292)
+
+M	atop.c
+M	cgroups.c
+M	cgroups.h
+M	photosyst.c
+M	photosyst.h
+M	showgeneric.c
+M	showlinux.c
+M	showlinux.h
+M	showprocs.c
+
+commit 62d982d9abdd187dea4e5cf5c74ed11ad7ac71ad
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sun Feb 11 22:48:27 2024 +0100
+
+    Improved memory figures for cgroups (step 1)
+
+M	cgroups.c
+M	cgroups.h
+M	showprocs.c
+
+commit 774c24d4ed01639d4b277f94925c741a117970b8
+Author: Gerlof Langeveld <gerlof.langeveld@atoptool.nl>
+Date:   Sat Feb 10 12:51:29 2024 +0100
+
+    Implement cgroups support -- step 1 (issue #292)
+    Reimplement cgroups support by showing the hierarchical structure
+    of cgroups and the related metrics with key/option 'G'.
+    With the keys/options 2 till 7 the level depth can be chosen
+    (7 is default). Key/option 8 also shows related active processes,
+    except the kernel processes (usually in the root cgroup).
+    Key/option 9 shows all active processes.
+    With key/option 'a' all cgroups and processes are shown instead
+    of only the active cgroups and processes.
+    With key/option 'C' the output is ssorted on CPU consumption
+    (default) while with key/option 'M' the output is sorted on
+    memory consumption.
+
+M	Makefile
+M	atop.c
+M	atop.h
+M	atopsar.c
+A	cgroups.c
+A	cgroups.h
+M	deviate.c
+M	drawbar.c
+M	json.c
+M	json.h
+M	man/atop.1
+M	man/atoprc.5
+M	parseable.c
+M	parseable.h
+M	photoproc.c
+M	photoproc.h
+M	photosyst.c
+M	rawlog.c
+M	showgeneric.c
+M	showgeneric.h
+M	showlinux.c
+M	showlinux.h
+M	showprocs.c
+
+commit 1492b594640ad9daa67c6b7c049ede90d074832f
+Author: Nathan Scott <nathans@redhat.com>
+Date:   Thu Feb 1 19:28:12 2024 +1100
+
+    Remove a man page merge leftover, minor comments typo fixes
+
+M	man/atop.1
+M	photoproc.c
+M	utsnames.c

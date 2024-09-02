@@ -1,0 +1,12 @@
+[Unit]
+Description=Atop GPU stats daemon
+Documentation=man:atopgpud(8)
+Before=atop.service
+
+[Service]
+ExecStart=/usr/sbin/atopgpud
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

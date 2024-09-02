@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# atop		Startup script for the Atop process logging in background
+#
+# chkconfig: 2345 96 4
+# description: Advanced system and process activity monitor
+#
+### BEGIN INIT INFO
+# Provides:             atop
+# Required-Start:	$local_fs $remote_fs
+# Required-Stop:	$local_fs $remote_fs
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description: Advanced system and process activity monitor
+# Description: Advanced system and process activity monitor
+### END INIT INFO
+
+# Check existance of binaries 
+[ -f /usr/bin/atop ] || exit 0
+
+PIDFILE=/var/run/atop.pid
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+	# Check if atop runs already
+	#
+	if [ -e $PIDFILE ] && ps -p `cat $PIDFILE` | grep 'atop$' > /dev/null
+	then
+		:
+	else
+		# Start atop
+		/usr/share/atop/atop.daily&
+	fi
+	touch /var/lock/subsys/atop
+	;;
+
+  stop)
+	# Check if atop runs
+	#
+	if [ -e $PIDFILE ] && ps -p `cat $PIDFILE` | grep 'atop$' > /dev/null
+	then
+		kill -USR2 `cat $PIDFILE`	# final sample and terminate
+
+		CNT=0
+
+		while ps -p `cat $PIDFILE` > /dev/null
+		do
+			CNT=$((CNT + 1))
+
+			if [ $CNT -gt 5 ]
+			then
+				break;
+			fi
+
+			sleep 1
+		done
+
+		rm $PIDFILE
+	fi
+	rm -f /var/lock/subsys/atop
+	;;
+
+  status)
+	;;
+
+  reload)
+	/usr/share/atop/atop.daily&
+	;;
+
+  restart)
+	/usr/share/atop/atop.daily&
+	;;
+
+  *)
+	echo "Usage: $0 [start|stop|status|reload|restart]"
+	exit 1
+esac
+
+exit $RETVAL
