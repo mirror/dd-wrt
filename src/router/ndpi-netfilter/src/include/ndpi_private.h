@@ -664,7 +664,7 @@ NDPI_STATIC int load_category_file_fd(struct ndpi_detection_module_struct *ndpi_
 			  FILE *fd, ndpi_protocol_category_t category_id);
 #endif
 
-u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow);
+NDPI_STATIC u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow);
 
 
 /* TLS */

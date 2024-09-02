@@ -7561,7 +7561,6 @@ static u_int64_t make_fpc_dns_cache_key(struct ndpi_flow_struct *flow) {
 }
 
 /* ********************************************************************************* */
-
 u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow) {
   u_int64_t key;
 

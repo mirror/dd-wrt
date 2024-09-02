@@ -488,7 +488,7 @@ static	struct kmem_cache *osdpi_flow_cache = NULL;
 static struct kmem_cache *ct_info_cache = NULL;
 static struct kmem_cache *bt_port_cache = NULL;
 
-struct ndpi_flow_input_info input_info = {
+static struct ndpi_flow_input_info input_info = {
 	.in_pkt_dir = NDPI_IN_PKT_DIR_C_TO_S,
 	.seen_flow_beginning = NDPI_FLOW_BEGINNING_UNKNOWN
 };
@@ -2126,7 +2126,7 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
 
-char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
+static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol *p,ndpi_mod_str_t *ndpi_str)
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';

@@ -644,7 +644,7 @@ extern "C" {
    * @return  the string name of the confidence result
    *
    */
-  const char* ndpi_fpc_confidence_get_name(ndpi_fpc_confidence_t fpc_confidence);
+  NDPI_STATIC const char* ndpi_fpc_confidence_get_name(ndpi_fpc_confidence_t fpc_confidence);
 
 #ifndef __KERNEL__
   /**
@@ -1170,7 +1170,7 @@ extern "C" {
 #endif
 
 #ifdef __KERNEL__
-  int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
+  NDPI_STATIC int NDPI_BITMASK_IS_EMPTY(NDPI_PROTOCOL_BITMASK a);
 #endif
 
   NDPI_STATIC char *ndpi_get_ip_proto_name(u_int16_t ip_proto, char *name, unsigned int name_len);
