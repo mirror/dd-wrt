@@ -623,7 +623,7 @@ static void *malloc_wrapper(size_t size)
 
 static void free_wrapper(void *freeable)
 {
-	if (is_vmalloc_freeable(freeable))
+	if (is_vmalloc_addr(freeable))
 		vfree(freeable);
 	else
 		kfree(freeable);
