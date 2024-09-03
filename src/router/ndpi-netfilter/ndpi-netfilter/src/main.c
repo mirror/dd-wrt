@@ -623,7 +623,10 @@ static void *malloc_wrapper(size_t size)
 
 static void free_wrapper(void *freeable)
 {
-	kvfree(freeable);
+	if (is_vmalloc_freeable(freeable))
+		vfree(freeable);
+	else
+		kfree(freeable);
 }
 
 static void fill_prefix_any(ndpi_prefix_t *p, union nf_inet_addr const *ip,int family) {
