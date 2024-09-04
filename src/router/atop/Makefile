@@ -115,8 +115,8 @@ sysvinstall:	genericinstall
 
 
 genericinstall:	atop atopacctd atopconvert atopcat atophide
-		if [ ! -d $(DESTDIR)$(LOGPATH) ]; 		\
-		then	mkdir -p $(DESTDIR)$(LOGPATH); fi
+#		if [ ! -d $(DESTDIR)$(LOGPATH) ]; 		\
+#		then	mkdir -p $(DESTDIR)$(LOGPATH); fi
 		if [ ! -d $(DESTDIR)$(DEFPATH) ]; 		\
 		then	mkdir -p $(DESTDIR)$(DEFPATH); fi
 		if [ ! -d $(DESTDIR)$(BINPATH) ]; 		\
