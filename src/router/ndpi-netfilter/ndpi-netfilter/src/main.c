@@ -1611,7 +1611,9 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 	COUNTER(ndpi_p_ndpi_match);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,18,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+	ktime_get_real_ts(&tm);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,18,0)
 	ktime_get_real_ts64(&tm);
 #else
 	ktime_get_coarse_real_ts64(&tm);
@@ -2345,7 +2347,14 @@ ndpi_tg_destroy (const struct xt_tgdtor_param *par)
 	nf_ct_l3proto_module_put (par->family);
 }
 
-#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if  LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+NDPI_STATIC unsigned int ndpi_nat_do_chain(unsigned int hooknum,
+                                         struct sk_buff *skb,
+                                         const struct net_device *in,
+                                         const struct net_device *out,
+                                         int (*okfn)(struct sk_buff *))
+{
+#elif  LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 static unsigned int ndpi_nat_do_chain(const struct nf_hook_ops *ops,
                                          struct sk_buff *skb,
                                          const struct net_device *in,
@@ -2396,7 +2405,9 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 	spin_lock_bh (&ct_ndpi->lock);
 	if(!test_nat_done(ct_ndpi)) {
 		nat_info = "check";
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+		if(hooknum != NF_INET_PRE_ROUTING)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 		if(ops->hooknum != NF_INET_PRE_ROUTING)
 #else
 		if(state->hook != NF_INET_PRE_ROUTING)
