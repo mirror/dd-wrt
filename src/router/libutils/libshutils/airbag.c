@@ -79,7 +79,7 @@
 #define AIRBAG_EXPORT
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__aarch64__)
 #include <unwind.h>
 #define USE_GCC_UNWIND
 #endif
@@ -223,7 +223,6 @@ static const char *mctxRegNames[NMCTXREGS] = { "GS",  "FS",  "ES",     "DS",  "E
 
 #define FMTLEN "06"
 #elif defined(__aarch64__)
-#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 31
 #define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.pc)
@@ -580,7 +579,6 @@ static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, 
 static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
-
 	/*  We are first called with address in the __backtrace function. Skip it. */
 	if (arg->cnt != -1) {
 		arg->array[arg->cnt] = (void *)_unwind_GetIP(ctx);
@@ -634,6 +632,39 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	return faddr;
 }
 #endif
+#if defined(__aarch64__)
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+
+void unwind_backtrace(void *ctx)
+{
+	void **fp = __builtin_frame_address(0);
+	for (;;) {
+#if defined(__riscv) || defined(__loongarch__)
+		void **next_fp = fp[-2], *pc = fp[-1];
+#elif defined(__powerpc__)
+		void **next_fp = fp[0];
+		void *pc = next_fp <= fp ? 0 : next_fp[2];
+#else
+		void **next_fp = *fp, *pc = fp[1];
+#endif
+		airbag_symbol(pc);
+		airbag_printf("\n");
+
+		/*    airbag_printf("%p %p", next_fp, pc);
+    Dl_info info = {};
+    if (dladdr((void *)pc, &info))
+     airbag_printf(" %s:%s", info.dli_fname, info.dli_sname ? info.dli_sname : "");
+    airbag_printf("\n");*/
+
+		if (next_fp <= fp)
+			break;
+		fp = next_fp;
+	}
+}
+
+#else
 
 static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t *uc)
 {
@@ -954,7 +985,7 @@ checkStm:
 	return 0;
 #endif
 }
-
+#endif
 static void printWhere(void *pc)
 {
 #if !defined(AIRBAG_NO_DLADDR)
@@ -1125,7 +1156,6 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 	ucontext_t *uc = (ucontext_t *)ucontext;
 	const uint8_t *pc = (uint8_t *)MCTX_PC(uc);
 	int i, a;
-
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 	__sync_fetch_and_add(&pending, 1);
 	if (__sync_val_compare_and_swap(&busy, 0, 1) != 0) {
@@ -1259,6 +1289,9 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		void *buffer[size];
 		int repeat[size];
 		airbag_printf("%sBacktrace:\n", section);
+#if defined(__aarch64__)
+		unwind_backtrace(ucontext);
+#else
 		int nptrs = airbag_walkstack(buffer, repeat, size, uc);
 		for (i = 0; i < nptrs; ++i) {
 			airbag_symbol(buffer[i]);
@@ -1268,6 +1301,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		}
 		/* Reload PC; walkstack may have discovered better state. */
 		pc = (uint8_t *)MCTX_PC(uc);
+#endif
 	}
 
 	width = 0;
