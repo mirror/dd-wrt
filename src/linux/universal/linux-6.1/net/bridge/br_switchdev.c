@@ -566,10 +566,18 @@ static void br_switchdev_host_mdb(struct net_device *dev,
 				  struct net_bridge_mdb_entry *mp, int type)
 {
 	struct net_device *lower_dev;
+	struct net_bridge_port *port;
 	struct list_head *iter;
 
-	netdev_for_each_lower_dev(dev, lower_dev, iter)
+	rcu_read_lock();
+	netdev_for_each_lower_dev(dev, lower_dev, iter) {
+		port = br_port_get_rcu(lower_dev);
+		if (!port || !port->offload_count)
+			continue;
+
 		br_switchdev_host_mdb_one(dev, lower_dev, mp, type);
+	}
+	rcu_read_unlock();
 }
 
 static int
