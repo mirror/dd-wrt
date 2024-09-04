@@ -30,10 +30,15 @@ extern "C" {
 #endif
 
 #include <inttypes.h>
-#include <sys/ucontext.h>
+#include <stdint.h>
+#include <ucontext.h>
 
 #ifdef mips
 # undef mips
+#endif
+
+#ifndef UNW_EMPTY_STRUCT
+#  define UNW_EMPTY_STRUCT uint8_t unused;
 #endif
 
 #define UNW_TARGET      mips
@@ -55,8 +60,10 @@ extern "C" {
    ABIs, and 64-bit wide for N64 ABI. */
 #if _MIPS_SIM == _ABI64
 typedef uint64_t unw_word_t;
+# define UNW_WORD_MAX UINT64_MAX
 #else
 typedef uint32_t unw_word_t;
+# define UNW_WORD_MAX UINT32_MAX
 #endif
 typedef int32_t unw_sword_t;
 
@@ -114,42 +121,6 @@ typedef enum
   }
 mips_regnum_t;
 
-#ifndef __GLIBC__
-#include <sys/reg.h>
-
-/* musl as of 1.1.14 does not export these */
-#define EF_REG0			6
-#define EF_REG1			7
-#define EF_REG2			8
-#define EF_REG3			9
-#define EF_REG4			10
-#define EF_REG5			11
-#define EF_REG6			12
-#define EF_REG7			13
-#define EF_REG8			14
-#define EF_REG9			15
-#define EF_REG10		16
-#define EF_REG11		17
-#define EF_REG12		18
-#define EF_REG13		19
-#define EF_REG14		20
-#define EF_REG15		21
-#define EF_REG16		22
-#define EF_REG17		23
-#define EF_REG18		24
-#define EF_REG19		25
-#define EF_REG20		26
-#define EF_REG21		27
-#define EF_REG22		28
-#define EF_REG23		29
-#define EF_REG24		30
-#define EF_REG25		31
-#define EF_REG28		34
-#define EF_REG29		35
-#define EF_REG30		36
-#define EF_REG31		37
-#endif
-
 typedef enum
   {
     UNW_MIPS_ABI_O32,
@@ -163,6 +134,7 @@ mips_abi_t;
 typedef struct unw_tdep_save_loc
   {
     /* Additional target-dependent info on a save location.  */
+    UNW_EMPTY_STRUCT
   }
 unw_tdep_save_loc_t;
 
@@ -175,6 +147,7 @@ typedef ucontext_t unw_tdep_context_t;
 typedef struct
   {
     /* no mips-specific auxiliary proc-info */
+    UNW_EMPTY_STRUCT
   }
 unw_tdep_proc_info_t;
 

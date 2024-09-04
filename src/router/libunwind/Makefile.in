@@ -91,24 +91,29 @@ host_triplet = @host@
 target_triplet = @target@
 @BUILD_PTRACE_TRUE@am__append_1 = include/libunwind-ptrace.h
 @BUILD_COREDUMP_TRUE@am__append_2 = include/libunwind-coredump.h
-@ARCH_AARCH64_TRUE@am__append_3 = include/libunwind-aarch64.h
-@ARCH_ARM_TRUE@am__append_4 = include/libunwind-arm.h
-@ARCH_IA64_TRUE@am__append_5 = include/libunwind-ia64.h
-@ARCH_HPPA_TRUE@am__append_6 = include/libunwind-hppa.h
-@ARCH_MIPS_TRUE@am__append_7 = include/libunwind-mips.h
-@ARCH_TILEGX_TRUE@am__append_8 = include/libunwind-tilegx.h
+@BUILD_NTO_TRUE@am__append_3 = include/libunwind-nto.h
+@ARCH_AARCH64_TRUE@am__append_4 = include/libunwind-aarch64.h
+@ARCH_ARM_TRUE@am__append_5 = include/libunwind-arm.h
+@ARCH_IA64_TRUE@am__append_6 = include/libunwind-ia64.h
+@ARCH_HPPA_TRUE@am__append_7 = include/libunwind-hppa.h
+@ARCH_MIPS_TRUE@am__append_8 = include/libunwind-mips.h
 @ARCH_X86_TRUE@am__append_9 = include/libunwind-x86.h
 @ARCH_X86_64_TRUE@am__append_10 = include/libunwind-x86_64.h
 @ARCH_PPC32_TRUE@am__append_11 = include/libunwind-ppc32.h
 @ARCH_PPC64_TRUE@am__append_12 = include/libunwind-ppc64.h
 @ARCH_SH_TRUE@am__append_13 = include/libunwind-sh.h
 @ARCH_S390X_TRUE@am__append_14 = include/libunwind-s390x.h
-@REMOTE_ONLY_FALSE@am__append_15 = include/libunwind.h include/unwind.h
-@CONFIG_TESTS_TRUE@am__append_16 = tests
-@CONFIG_DOCS_TRUE@am__append_17 = doc
+@ARCH_RISCV_TRUE@am__append_15 = include/libunwind-riscv.h
+@ARCH_LOONGARCH64_TRUE@am__append_16 = include/libunwind-loongarch64.h
+@REMOTE_ONLY_FALSE@am__append_17 = include/libunwind.h
+@BUILD_UNWIND_HEADER_TRUE@@REMOTE_ONLY_FALSE@am__append_18 = include/unwind.h
+@CONFIG_TESTS_TRUE@am__append_19 = tests
+@CONFIG_DOCS_TRUE@am__append_20 = doc
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -153,12 +158,13 @@ am__can_run_installinfo = \
   esac
 am__include_HEADERS_DIST = include/libunwind-dynamic.h \
 	include/libunwind-ptrace.h include/libunwind-coredump.h \
-	include/libunwind-aarch64.h include/libunwind-arm.h \
-	include/libunwind-ia64.h include/libunwind-hppa.h \
-	include/libunwind-mips.h include/libunwind-tilegx.h \
+	include/libunwind-nto.h include/libunwind-aarch64.h \
+	include/libunwind-arm.h include/libunwind-ia64.h \
+	include/libunwind-hppa.h include/libunwind-mips.h \
 	include/libunwind-x86.h include/libunwind-x86_64.h \
 	include/libunwind-ppc32.h include/libunwind-ppc64.h \
 	include/libunwind-sh.h include/libunwind-s390x.h \
+	include/libunwind-riscv.h include/libunwind-loongarch64.h \
 	include/libunwind.h include/unwind.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -327,6 +333,7 @@ LIBLZMA = @LIBLZMA@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBZ = @LIBZ@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -353,11 +360,13 @@ PKG_EXTRA = @PKG_EXTRA@
 PKG_MAINTAINER = @PKG_MAINTAINER@
 PKG_MAJOR = @PKG_MAJOR@
 PKG_MINOR = @PKG_MINOR@
+PTHREADS_LIB = @PTHREADS_LIB@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+UNW_TESTDRIVER = @UNW_TESTDRIVER@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -421,14 +430,16 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ACLOCAL_AMFLAGS = -I m4
 include_HEADERS = include/libunwind-dynamic.h $(am__append_1) \
 	$(am__append_2) $(am__append_3) $(am__append_4) \
 	$(am__append_5) $(am__append_6) $(am__append_7) \
 	$(am__append_8) $(am__append_9) $(am__append_10) \
 	$(am__append_11) $(am__append_12) $(am__append_13) \
-	$(am__append_14) $(am__append_15)
+	$(am__append_14) $(am__append_15) $(am__append_16) \
+	$(am__append_17) $(am__append_18)
 nodist_include_HEADERS = include/libunwind-common.h
-SUBDIRS = src $(am__append_16) $(am__append_17)
+SUBDIRS = src $(am__append_19) $(am__append_20)
 noinst_HEADERS = include/dwarf.h include/dwarf_i.h include/dwarf-eh.h	\
 	include/compiler.h include/libunwind_i.h include/mempool.h	\
 	include/remote.h						\
@@ -443,8 +454,6 @@ noinst_HEADERS = include/dwarf.h include/dwarf_i.h include/dwarf-eh.h	\
 	include/tdep-hppa/jmpbuf.h include/tdep-hppa/dwarf-config.h	\
 	include/tdep-mips/libunwind_i.h					\
 	include/tdep-mips/jmpbuf.h include/tdep-mips/dwarf-config.h	\
-	include/tdep-tilegx/libunwind_i.h				\
-	include/tdep-tilegx/jmpbuf.h include/tdep-tilegx/dwarf-config.h	\
 	include/tdep-x86/libunwind_i.h					\
 	include/tdep-x86/jmpbuf.h include/tdep-x86/dwarf-config.h	\
 	include/tdep-x86_64/libunwind_i.h				\
@@ -457,6 +466,11 @@ noinst_HEADERS = include/dwarf.h include/dwarf_i.h include/dwarf-eh.h	\
 	include/tdep-sh/jmpbuf.h include/tdep-sh/libunwind_i.h		\
 	include/tdep-s390x/dwarf-config.h				\
 	include/tdep-s390x/jmpbuf.h include/tdep-s390x/libunwind_i.h	\
+	include/tdep-riscv/dwarf-config.h				\
+	include/tdep-riscv/jmpbuf.h include/tdep-riscv/libunwind_i.h	\
+	include/tdep-loongarch64/dwarf-config.h				\
+	include/tdep-loongarch64/jmpbuf.h				\
+	include/tdep-loongarch64/libunwind_i.h				\
 	include/tdep/libunwind_i.h					\
 	include/tdep/jmpbuf.h include/tdep/dwarf-config.h
 

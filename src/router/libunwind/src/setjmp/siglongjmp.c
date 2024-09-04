@@ -31,8 +31,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "jmpbuf.h"
 #include "setjmp_i.h"
 
-#if !defined(_NSIG) && defined(_SIG_MAXSIG)
-# define _NSIG (_SIG_MAXSIG - 1)
+#if !defined(_NSIG)
+# if defined(_SIG_MAXSIG)
+#  define _NSIG (_SIG_MAXSIG - 1)
+# elif defined(NSIG)
+#  define _NSIG NSIG
+# endif
 #endif
 
 #if defined(__GLIBC__)
@@ -53,6 +57,10 @@ static void siglongjmp (sigjmp_buf env, int val) UNUSED;
 #endif
 #endif /* __GLIBC_PREREQ */
 
+#ifndef _JB_STK_SHIFT
+#define	_JB_STK_SHIFT	0
+#endif
+
 void
 siglongjmp (sigjmp_buf env, int val)
 {
@@ -71,11 +79,7 @@ siglongjmp (sigjmp_buf env, int val)
     {
       if (unw_get_reg (&c, UNW_REG_SP, &sp) < 0)
         abort ();
-#ifdef __FreeBSD__
-      if (sp != wp[JB_SP] + sizeof(unw_word_t))
-#else
-      if (sp != wp[JB_SP])
-#endif
+      if (sp != (wp[JB_SP] + _JB_STK_SHIFT))
         continue;
 
       if (!bsp_match (&c, wp))
@@ -89,10 +93,14 @@ siglongjmp (sigjmp_buf env, int val)
       /* Order of evaluation is important here: if unw_resume()
          restores signal mask, we must set it up appropriately, even
          if wp[JB_MASK_SAVED] is FALSE.  */
+#ifdef __FreeBSD__
+      if ((wp[JB_MASK_SAVED] & 0x1) == 0x1)
+#else
       if (!resume_restores_sigmask (&c, wp) && wp[JB_MASK_SAVED])
+#endif
         {
           /* sigmask was saved */
-#if defined(__linux__)
+#if defined(__linux__) || defined(__sun)
           if (UNW_NUM_EH_REGS < 4 || _NSIG > 16 * sizeof (unw_word_t))
             /* signal mask doesn't fit into EH arguments and we can't
                put it on the stack without overwriting something
@@ -104,7 +112,7 @@ siglongjmp (sigjmp_buf env, int val)
                     && unw_set_reg (&c, UNW_REG_EH + 3, wp[JB_MASK + 1]) < 0))
               abort ();
 #elif defined(__FreeBSD__)
-          if (unw_set_reg (&c, UNW_REG_EH + 2, &wp[JB_MASK]) < 0)
+          if (unw_set_reg (&c, UNW_REG_EH + 2, (unw_word_t)&wp[JB_MASK]) < 0)
               abort();
 #else
 #error Port me
