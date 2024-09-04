@@ -476,8 +476,8 @@ static int mtd_main(int argc, char **argv)
 			imagefp = stdin;
 		} else {
 			imagefile = argv[1];
-			if ((imagefp = fopen(argv[1], "rb")) < 0) {
-				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
+			if (!imagefile || !(imagefp = fopen(argv[1], "rb"))) {
+				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile?imagefile:"");
 				exit(1);
 			}
 		}
