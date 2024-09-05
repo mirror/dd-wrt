@@ -360,55 +360,6 @@ static uint8_t load8(const void *_p, uint8_t *v)
 	return 0;
 }
 
-static uint32_t load32(const void *_p, INSTLEN *_v)
-{
-	int i;
-	INSTLEN r = 0;
-	INSTLEN v = 0;
-	const uint8_t *p = (const uint8_t *)_p;
-	for (i = 0; i < sizeof(INSTLEN); ++i) {
-		uint8_t b;
-		r <<= 8;
-		v <<= 8;
-		r |= load8(p + i, &b);
-		v |= b;
-	}
-	if (sizeof(INSTLEN) == 8) {
-		v = __cpu_to_be64(v);
-		r = __cpu_to_be64(r);
-	} else {
-		v = htonl(v);
-		r = htonl(r);
-	}
-	if (_v)
-		*_v = v;
-	return r;
-}
-
-static uint32_t loadlong(const void *_p, unsigned long *_v)
-{
-	int i;
-	INSTLEN r = 0;
-	INSTLEN v = 0;
-	const uint8_t *p = (const uint8_t *)_p;
-	for (i = 0; i < sizeof(INSTLEN); ++i) {
-		uint8_t b;
-		r <<= 8;
-		v <<= 8;
-		r |= load8(p + i, &b);
-		v |= b;
-	}
-	if (sizeof(*_v) == 8) {
-		v = __cpu_to_be64(v);
-		r = __cpu_to_be64(r);
-	} else {
-		v = htonl(v);
-		r = htonl(r);
-	}
-	if (_v)
-		*_v = v;
-	return r;
-}
 
 /* some loaned from musl libc, modified to fix crash problem in signal context */
 static const struct {
@@ -494,6 +445,57 @@ static int airbag_printf(char *fmt, ...)
 		ss_buffer = NULL;
 	}
 	return size;
+}
+
+
+static uint32_t load32(const void *_p, INSTLEN *_v)
+{
+	int i;
+	INSTLEN r = 0;
+	INSTLEN v = 0;
+	const uint8_t *p = (const uint8_t *)_p;
+	for (i = 0; i < sizeof(INSTLEN); ++i) {
+		uint8_t b;
+		r <<= 8;
+		v <<= 8;
+		r |= load8(p + i, &b);
+		v |= b;
+	}
+	if (sizeof(INSTLEN) == 8) {
+		v = __cpu_to_be64(v);
+		r = __cpu_to_be64(r);
+	} else {
+		v = htonl(v);
+		r = htonl(r);
+	}
+	if (_v)
+		*_v = v;
+	return r;
+}
+
+static uint32_t loadlong(const void *_p, unsigned long *_v)
+{
+	int i;
+	INSTLEN r = 0;
+	INSTLEN v = 0;
+	const uint8_t *p = (const uint8_t *)_p;
+	for (i = 0; i < sizeof(INSTLEN); ++i) {
+		uint8_t b;
+		r <<= 8;
+		v <<= 8;
+		r |= load8(p + i, &b);
+		v |= b;
+	}
+	if (sizeof(*_v) == 8) {
+		v = __cpu_to_be64(v);
+		r = __cpu_to_be64(r);
+	} else {
+		v = htonl(v);
+		r = htonl(r);
+	}
+	if (_v)
+		*_v = v;
+	return r;
 }
 
 static const char *demangle(const char *mangled)
@@ -637,7 +639,7 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 #include <string.h>
 #include <malloc.h>
 
-void unwind_backtrace(void *ctx)
+static void fallback_unwind_backtrace(void *ctx)
 {
 	void **fp = __builtin_frame_address(0);
 	for (;;) {
@@ -792,8 +794,8 @@ backward:
 	int depth = 0;
 	char fname[257];
 
-	if (pc & 3 || load32((void *)pc, NULL)) {
-		airbag_printf("%sCalled through bad function pointer; assuming PC <- LR.\n", comment);
+	if (pc & 1 || load32((void *)pc, NULL)) {
+		airbag_printf("%sCalled through bad function pointer %p (LR = %p); assuming PC <- LR.\n", comment, pc,lr);
 		pc = MCTX_PC(uc) = lr;
 	}
 	buffer[depth] = (void *)pc;
@@ -1290,7 +1292,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		int repeat[size];
 		airbag_printf("%sBacktrace:\n", section);
 #if defined(__aarch64__)
-		unwind_backtrace(ucontext);
+		fallback_unwind_backtrace(ucontext);
 #else
 		int nptrs = airbag_walkstack(buffer, repeat, size, uc);
 		for (i = 0; i < nptrs; ++i) {
