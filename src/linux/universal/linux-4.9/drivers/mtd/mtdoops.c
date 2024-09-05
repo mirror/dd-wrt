@@ -226,9 +226,10 @@ static void mtdoops_write(struct mtdoops_context *cxt, int panic)
 			printk(KERN_ERR "mtdoops: Cannot write from panic without panic_write\n");
 			return;
 		}
-	} else
+	} else {
 		ret = mtd_write(mtd, cxt->nextpage * record_size,
 				record_size, &retlen, cxt->oops_buf);
+	}
 
 	if (retlen != record_size || ret < 0)
 		printk(KERN_ERR "mtdoops: write failure at %ld (%td of %ld written), error %d\n",
@@ -318,14 +319,15 @@ static void mtdoops_do_dump(struct kmsg_dumper *dumper,
 		mtdoops_write(cxt, 1);
 	} else {
 		/* For other cases, schedule work to write it "nicely" */
-		schedule_work(&cxt->work_write);
+//		schedule_work(&cxt->work_write);
+		mtdoops_write(cxt, 0);
 	}
 }
 
 static void mtdoops_notify_add(struct mtd_info *mtd)
 {
 	struct mtdoops_context *cxt = &oops_cxt;
-	u64 mtdoops_pages = div_u64(mtd->size, record_size);
+	u64 mtdoops_pages = div_u64(mtd->size > MTDOOPS_MAX_MTD_SIZE ? MTDOOPS_MAX_MTD_SIZE : mtd->size , record_size);
 	int err;
 
 	if (!strcmp(mtd->name, mtddev))
@@ -344,11 +346,11 @@ static void mtdoops_notify_add(struct mtd_info *mtd)
 		       mtd->index);
 		return;
 	}
-	if (mtd->size > MTDOOPS_MAX_MTD_SIZE) {
-		printk(KERN_ERR "mtdoops: mtd%d is too large (limit is %d MiB)\n",
-		       mtd->index, MTDOOPS_MAX_MTD_SIZE / 1024 / 1024);
-		return;
-	}
+//	if (mtd->size > MTDOOPS_MAX_MTD_SIZE) {
+//		printk(KERN_ERR "mtdoops: mtd%d is too large (limit is %d MiB)\n",
+//		       mtd->index, MTDOOPS_MAX_MTD_SIZE / 1024 / 1024);
+//		return;
+//	}
 
 	/* oops_page_used is a bit field */
 	cxt->oops_page_used = vmalloc(DIV_ROUND_UP(mtdoops_pages,
@@ -369,7 +371,7 @@ static void mtdoops_notify_add(struct mtd_info *mtd)
 	}
 
 	cxt->mtd = mtd;
-	cxt->oops_pages = (int)mtd->size / record_size;
+	cxt->oops_pages = (int)(mtd->size > MTDOOPS_MAX_MTD_SIZE ? MTDOOPS_MAX_MTD_SIZE : mtd->size) / record_size;
 	find_next_position(cxt);
 	printk(KERN_INFO "mtdoops: Attached to MTD device %d\n", mtd->index);
 }
