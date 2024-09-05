@@ -129,7 +129,24 @@ ndpi_conntrack_destroy_ptr __rcu nf_conntrack_destroy_cb;
 #endif
 #endif
 
+#if 1
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 #define PROC_REMOVE(pde,net) proc_remove(pde)
+#else
+
+#define PROC_REMOVE(pde,net) proc_net_remove(net,dir_name)
+
+/* backport from 3.10 */
+static inline struct inode *file_inode(struct file *f)
+{
+	return f->f_path.dentry->d_inode;
+}
+static inline void *PDE_DATA(const struct inode *inode)
+{
+	return PROC_I(inode)->pde->data;
+}
+#endif
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 static inline struct net *xt_net(const struct xt_action_param *par)
