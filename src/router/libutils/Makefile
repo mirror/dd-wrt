@@ -1738,6 +1738,6 @@ libwireless.a: $(WOBJS) $(ATH9KOBJS)
 
 crashtest: crashtest.o libshutils/airbag.o
 	@echo "[CC] $@"
-	@$(CC) -DNEED_PRINTF $(CFLAGS) $(MIPS16_OPT) $(THUMB) -c -o $@ $^
+	@$(CC) -DNEED_PRINTF $(CFLAGS) $(MIPS16_OPT) $(THUMB) -o $@ $^
 
 *.o: $(CY_DEPS)
