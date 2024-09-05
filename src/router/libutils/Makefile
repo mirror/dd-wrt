@@ -1660,7 +1660,7 @@ endif
 ifeq ($(CONFIG_RAID),y)
 C_LIBS +=libdisc.so
 endif
-all: $(C_LIBS) $(A_LIBS)
+all: $(C_LIBS) $(A_LIBS) crashtest
 
 install: all
 	install -d $(INSTALLDIR)/libutils/usr/lib
@@ -1735,5 +1735,9 @@ libutils.a: $(OBJS)
 
 libwireless.a: $(WOBJS) $(ATH9KOBJS)
 	$(AR) cr $@ $^
+
+crashtest: crashtest.o libshutils/airbag.o
+	@echo "[CC] $@"
+	@$(CC) -DNEED_PRINTF $(CFLAGS) $(MIPS16_OPT) $(THUMB) -c -o $@ $^
 
 *.o: $(CY_DEPS)
