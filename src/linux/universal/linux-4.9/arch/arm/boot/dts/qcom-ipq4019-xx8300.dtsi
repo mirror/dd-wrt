@@ -238,9 +238,8 @@
 			};
 
 			partition@b780000 {
-				label = "sysdiag";
+				label = "oops";
 				reg = <0xb780000 0x100000>;
-				read-only;
 			};
 
 			partition@b880000 {
