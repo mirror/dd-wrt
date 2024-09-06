@@ -106,7 +106,7 @@ endif
 endif
 #CFLAGS+= -DNEED_PRINTF
 
-CFLAGS+= $(COPTS) $(MIPS16_OPT) $(LTO) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections '-DDESTDIR="@DESTDIR@"'
+CFLAGS+= $(COPTS) $(MIPS16_OPT) $(LTO) $(COMPILE_FLAGS) $(INCLUDE_DIRS) -ffunction-sections -fdata-sections -Wl,--gc-sections,--undefined=set_mppe_enc_types '-DDESTDIR="@DESTDIR@"'
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1

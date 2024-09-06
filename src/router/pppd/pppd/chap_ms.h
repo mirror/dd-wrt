@@ -80,7 +80,7 @@ extern int mppe_keys_set;
 #define MPPE_ENC_TYPES_RC4_128 4
 
 /* used by plugins (using above values) */
-extern void set_mppe_enc_types(int, int);
+extern void PPP_VISIBLE set_mppe_enc_types(int, int);
 #endif
 
 /* Are we the authenticator or authenticatee?  For MS-CHAPv2 key derivation. */
