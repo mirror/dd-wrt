@@ -1660,7 +1660,7 @@ endif
 ifeq ($(CONFIG_RAID),y)
 C_LIBS +=libdisc.so
 endif
-all: $(C_LIBS) $(A_LIBS) crashtest
+all: $(C_LIBS) $(A_LIBS)
 
 install: all
 	install -d $(INSTALLDIR)/libutils/usr/lib
