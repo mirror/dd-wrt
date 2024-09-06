@@ -111,7 +111,7 @@ config QCOM_PMIC_GLINK
 	  platforms.
 
 config QCOM_QMI_HELPERS
-	tristate
+	tristate "qmi helpers"
 	depends on NET
 
 config QCOM_RAMP_CTRL

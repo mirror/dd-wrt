@@ -5144,6 +5144,7 @@ CONFIG_PCC=y
 #
 # Qualcomm SoC drivers
 #
+CONFIG_QCOM_QMI_HELPERS=y
 # end of Qualcomm SoC drivers
 
 # CONFIG_SOC_TI is not set
