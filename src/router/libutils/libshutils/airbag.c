@@ -79,7 +79,7 @@
 #define AIRBAG_EXPORT
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__aarch64__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__aarch64__) && !defined(__x86_64__)
 #include <unwind.h>
 #define USE_GCC_UNWIND
 #endif
@@ -204,7 +204,6 @@ static const char *_strsignal(int sigNum)
 }
 
 #if defined(__x86_64__)
-#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) MCTXREG(uc, 16)
@@ -534,6 +533,7 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 			      (unsigned long)info.dli_fbase, demangle(sname), offset, (unsigned long)pc);
 		printed = 1;
 	}
+
 #endif
 	if (!printed) {
 		airbag_printf("%s(+0)[0x%" FMTBIT "lx]", unknown, (unsigned long)pc);
@@ -634,7 +634,7 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	return faddr;
 }
 #endif
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__x86_64__)
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
@@ -993,7 +993,7 @@ static void printWhere(void *pc)
 #if !defined(AIRBAG_NO_DLADDR)
 	Dl_info info;
 	if (dladdr(pc, &info)) {
-		airbag_printf(" in %s\n", demangle(info.dli_sname));
+		airbag_printf(" in %s (%p)\n", demangle(info.dli_sname), pc);
 		return;
 	}
 #endif
@@ -1291,7 +1291,7 @@ static void sigHandler(int sigNum, siginfo_t *si, void *ucontext)
 		void *buffer[size];
 		int repeat[size];
 		airbag_printf("%sBacktrace:\n", section);
-#if defined(__aarch64__)
+#if defined(__aarch64__) || defined(__x86_64__)
 		fallback_unwind_backtrace(ucontext);
 #else
 		int nptrs = airbag_walkstack(buffer, repeat, size, uc);
