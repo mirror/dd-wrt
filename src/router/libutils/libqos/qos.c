@@ -860,11 +860,11 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	char priorities[5] = { 1, 3, 5, 8, 10 };
 	char priorities6[5] = { 2, 4, 6, 9, 11 };
 	for (i = 0; i < 5; i++) {
-		add_tc_class(wan_dev, priorities[i] + 1, priorities6[i] + 1 base + i, base + 1 + i);
+		add_tc_class(wan_dev, priorities[i] + 1, priorities6[i] + 1, base + i, base + 1 + i);
 		add_tc_class("imq0", priorities[i] + 1, priorities6[i] + 1, base + i, base + 1 + i);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_class("imq1", priorities[i] + 1, base + i, base + 1 + i);
+			add_tc_class("imq1", priorities[i] + 1, priorities6[i] + 1, base + i, base + 1 + i);
 		}
 	}
 #else
