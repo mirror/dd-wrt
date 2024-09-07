@@ -68,6 +68,7 @@ void start_jffs2(void)
 		ax89 = 1;
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
+	case ROUTER_FORTINET_FAP231F:
 		ubidev = 0;
 		rwpart = "rootfs_data";
 		break;

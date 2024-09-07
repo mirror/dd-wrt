@@ -1396,6 +1396,10 @@ generic:;
 	char modelstr[32];
 	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
 	fclose(fp);
+	if (!strcmp(modelstr, "FAP-231F")) {
+		setRouter("Fortinet FAP-231F");
+		return ROUTER_FORTINET_FAP231F;
+	}
 	if (!strcmp(modelstr, "MR7350")) {
 		setRouter("Linksys MR7350");
 		return ROUTER_LINKSYS_MR7350;

@@ -167,6 +167,10 @@ void *get_deviceinfo_mr7350(char *var)
 {
 	return get_deviceinfo("/dev/mtd13", var);
 }
+void *get_deviceinfo_fap(char *var)
+{
+	return get_deviceinfo("/dev/mtd15", var);
+}
 void *get_deviceinfo_mr5500(char *var)
 {
 	return get_deviceinfo("/dev/mtd11", var);
@@ -1000,6 +1004,10 @@ void start_sysinit(void)
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		load_nss_ipq60xx(512);
 		break;
+	case ROUTER_FORTINET_FAP231F:
+		maddr = get_deviceinfo_fap("ethaddr");
+		load_nss_ipq60xx(1024);
+		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
 		fwlen = 0x20000;
@@ -1134,6 +1142,11 @@ void start_sysinit(void)
 		removeregdomain("/tmp/board.bin", IPQ6018);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
+	case ROUTER_FORTINET_FAP231F:
+		removeregdomain("/tmp/caldata.bin", IPQ6018);
+		removeregdomain("/tmp/board.bin", IPQ6018);
+		set_envtools(getMTD("APPSBLENV"), "0x0", "0x10000", "0x10000", 1);
+		break;
 	case ROUTER_LINKSYS_MX5500:
 	case ROUTER_LINKSYS_MR5500:
 		MAC_ADD(ethaddr);
@@ -1252,6 +1265,11 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		setscaling(1440000);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
+	case ROUTER_FORTINET_FAP231F:
+		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;

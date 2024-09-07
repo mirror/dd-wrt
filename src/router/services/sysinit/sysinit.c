@@ -1105,7 +1105,7 @@ void start_restore_defaults(void)
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_LINKSYS_MR7350 || wrt_brand == ROUTER_DYNALINK_DLWRX36)
 		generic = generic_mr7350;
-	else if (wrt_brand == ROUTER_LINKSYS_MR5500)
+	else if (wrt_brand == ROUTER_LINKSYS_MR5500 || wrt_brand == ROUTER_FORTINET_FAP231F)
 		generic = generic_mr5500;
 	else if (wrt_brand == ROUTER_LINKSYS_MX5500)
 		generic = generic_mx5500;

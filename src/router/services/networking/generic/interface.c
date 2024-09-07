@@ -728,7 +728,7 @@ int flush_interfaces(void)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth4", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_LINKSYS_MR5500)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth5", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-	else if (brand == ROUTER_LINKSYS_MX5500)
+	else if (brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_FORTINET_FAP231F)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 	else if (brand == ROUTER_ASUS_AX89X)
 		snprintf(all_ifnames, 255, "%s %s %s", "eth2", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));

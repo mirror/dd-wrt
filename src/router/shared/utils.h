@@ -815,6 +815,9 @@
 
 #define ROUTER_UBNT_ROCKETAC 0x11a113
 
+#define ROUTER_FORTINET_FAP231F 0x11b0ff
+
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

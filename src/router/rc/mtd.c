@@ -376,6 +376,10 @@ static int write_main(int argc, char *argv[])
 			"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
 		eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
 		break;
+	case ROUTER_FORTINET_FAP231F:
+		writeubiformat = 1;
+		mtd = "rootfs";
+		break;
 	}
 #endif
 rewrite:;
