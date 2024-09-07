@@ -1007,6 +1007,7 @@ void start_sysinit(void)
 	case ROUTER_FORTINET_FAP231F:
 		maddr = get_deviceinfo_fap("ethaddr");
 		load_nss_ipq60xx(1024);
+		insmod("leds-gpio");
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
