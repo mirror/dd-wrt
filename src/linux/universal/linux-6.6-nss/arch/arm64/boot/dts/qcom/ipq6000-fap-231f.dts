@@ -117,7 +117,6 @@
 
 &tlmm {
 
-
 	gpio_pins {
 		usb_en {
 			pins = "gpio74";
@@ -142,14 +141,14 @@
 		};
 	};
 
-	button_pins: button-pins {
+/*	button_pins: button-pins {
 		reset_button {
 			pins = "gpio9", "gpio51", "gpio53";
 			function = "gpio";
 			drive-strength = <8>;
 			bias-pull-up;
 		};
-	};
+	};*/
 
 
 	hsuart_pins: hsuart-pins {
