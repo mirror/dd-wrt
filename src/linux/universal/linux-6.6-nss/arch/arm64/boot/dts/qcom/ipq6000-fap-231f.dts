@@ -104,9 +104,26 @@
 
 	};
 
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 74 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+	};
+
 };
 
 &tlmm {
+
+
+	gpio_pins {
+		usb_en {
+			pins = "gpio74";
+			output-high;
+		};
+	};
 
 	led_pins: led-state {
 		power {
