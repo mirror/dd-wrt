@@ -1143,6 +1143,12 @@ void start_sysinit(void)
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_FORTINET_FAP231F:
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
 		set_envtools(getMTD("APPSBLENV"), "0x0", "0x10000", "0x10000", 1);
