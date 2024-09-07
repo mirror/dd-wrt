@@ -336,7 +336,7 @@
 	};
 };
 
-&blsp1_i2c3 {
+&blsp1_i2c2 {
 	pinctrl-0 = <&i2c_pins>;
 	pinctrl-names = "default";
 	status = "okay";
