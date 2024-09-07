@@ -29,13 +29,115 @@
 		compatible = "gpio-keys";
 
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+			power {
+				label = "power";
+				gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
+			};
+
+			statusAmber {
+				label = "statusAmber";
+				gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth1G {
+				label = "eth1G";
+				gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth100 {
+				label = "eth100";
+				gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi0 {
+				label = "wifi0";
+				gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy0radio";
+			};
+
+			wifi1 {
+				label = "wifi1";
+				gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+				linux,default-trigger = "phy1radio";
+			};
+
+			wifi01 {
+				label = "wifi01";
+				gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth1G_lan2 {
+				label = "eth1G_lan2";
+				gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+			};
+
+			eth100_lan2 {
+				label = "eth100_lan2";
+				gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+			};
+
+			bluetooth {
+				label = "bluetooth";
+				gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi2 {
+				label = "wifi2";
+				gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+			};
+
+			zigbee {
+				label = "zigbee";
+				gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+			};
+
+			wifi2ble_zigbee {
+				label = "wifi2blezig";
+				gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+			};
+
+	};
+
 };
 
 &tlmm {
+
+	led_pins: led-state {
+		power {
+			pins = "gpio18";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		default_off {
+			pins = "gpio22", "gpio23", "gpio24", "gpio30", "gpio31",
+			       "gpio32", "gpio25", "gpio29", "gpio33", "gpio34", "gpio35", "gpio37";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	button_pins: button-pins {
+		reset_button {
+			pins = "gpio9", "gpio51", "gpio53";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+
 	hsuart_pins: hsuart-pins {
 		mux {
-			pins = "gpio69", "gpio70",
-				"gpio71", "gpio72";
+			pins = "gpio71", "gpio72";
 			function = "blsp1_uart";
 			drive-strength = <8>;
 			bias-disable;
@@ -44,8 +146,8 @@
 
 	i2c_pins: i2c-pins {
 		mux {
-			pins = "gpio42", "gpio43";
-			function = "blsp2_i2c";
+			pins = "gpio46", "gpio47";
+			function = "blsp5_i2c";
 			drive-strength = <8>;
 			bias-pull-down;
 		};
@@ -57,6 +159,7 @@
 		drive-strength = <8>;
 		bias-pull-down;
 	};
+
 
 	mdio_pins: mdio-state {
 		mdc-pins {
@@ -79,6 +182,27 @@
 			bias-pull-up;
 		};
 	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
 };
 
 &blsp1_spi1 {
@@ -274,49 +398,41 @@
 	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
 
 	ethernet-phy-package@0 {
-		compatible = "qcom,qca8075-package";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
 		reg = <0>;
 
-		qca8075_3: ethernet-phy@3 {
+		qcom,package-mode = "psgmii";
+
+		qca8072_0: ethernet-phy@3 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <3>;
-			gpio-controller;
-			#gpio-cells = <2>;
 		};
 
-		qca8075_4: ethernet-phy@4 {
+		qca8072_1: ethernet-phy@4 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <4>;
-			gpio-controller;
-			#gpio-cells = <2>;
 		};
-
 	};
 };
 
 &switch {
 	status = "okay";
 
-			switch_cpu_bmp = <0x1>;
-			switch_lan_bmp = <0x8>;
-			switch_wan_bmp = <0x10>;
-		    	switch_inner_bmp = <0xc0>;
-			switch_mac_mode = <0x0>;
-			switch_mac_mode1 = <0xff>;
-			switch_mac_mode2 = <0xff>;
-			bm_tick_mode = <0x0>;
-			tm_tick_mode = <0x0>;
+	switch_lan_bmp = <ESS_PORT3>;
+	switch_wan_bmp = <ESS_PORT4>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	port3_pcs_channel = <4>;
 
 	qcom,port_phyinfo {
 		port@3 {
 			port_id = <3>;
-			phy_address = <3>;
+			phy_address = <4>;
 		};
 		port@4 {
-			port_id = <3>;
-			phy_address = <4>;
+			port_id = <4>;
+			phy_address = <3>;
 		};
 	};
 };
@@ -325,16 +441,18 @@
 	status = "okay";
 };
 
-&dp4 {
+&dp3 {
 	status = "okay";
-	phy-handle = <&qca8075_3>;
-	label = "eth3";
+
+	phy-handle = <&qca8072_1>;
+	label = "eth0";
 };
 
-&dp5 {
+&dp4 {
 	status = "okay";
-	phy-handle = <&qca8075_4>;
-	label = "eth4";
+
+	phy-handle = <&qca8072_0>;
+	label = "eth1";
 };
 
 &wifi {
