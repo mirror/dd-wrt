@@ -34,6 +34,19 @@
 #include "../../pci.h"
 #include "pcie-designware.h"
 
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT	0x178
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2	0x1A8
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK	0x1F
+#define BUS_MASTER_EN				0x7
+#define PCIE20_COMMAND_STATUS			0x04
+#define PCIE20_CAP				0x70
+#define PCIE20_CAP_LINK_CAPABILITIES		(PCIE20_CAP + 0xC)
+#define PCIE20_CAP_ACTIVE_STATE_LINK_PM_SUPPORT	(BIT(10) | BIT(11))
+#define PCIE20_CAP_LINK_1			(PCIE20_CAP + 0x14)
+#define PCIE_CAP_LINK1_VAL			0x2FD7F
+#define PCIE_CAP_CPL_TIMEOUT_DISABLE		0x10
+#define PCIE20_DEVICE_CONTROL2_STATUS2		0x98
+
 /* PARF registers */
 #define PARF_SYS_CTRL				0x00
 #define PARF_PM_CTRL				0x20
@@ -133,6 +146,31 @@
 
 /* AXI_MSTR_RESP_COMP_CTRL1 register fields */
 #define CFG_BRIDGE_SB_INIT			BIT(0)
+
+
+#define PCIE_CAP_CURR_DEEMPHASIS		BIT(16)
+#define SPEED_GEN1				0x1
+#define SPEED_GEN2				0x2
+#define SPEED_GEN3				0x3
+
+#define PCIE20_LNK_CONTROL2_LINK_STATUS2	0xA0
+
+#define PCIE_ATU_CR1_OUTBOUND_6_GEN3		0xC00
+#define PCIE_ATU_CR2_OUTBOUND_6_GEN3		0xC04
+#define PCIE_ATU_LOWER_BASE_OUTBOUND_6_GEN3	0xC08
+#define PCIE_ATU_UPPER_BASE_OUTBOUND_6_GEN3	0xC0C
+#define PCIE_ATU_LIMIT_OUTBOUND_6_GEN3		0xC10
+#define PCIE_ATU_LOWER_TARGET_OUTBOUND_6_GEN3	0xC14
+#define PCIE_ATU_UPPER_TARGET_OUTBOUND_6_GEN3	0xC18
+
+#define PCIE_ATU_CR1_OUTBOUND_7_GEN3		0xE00
+#define PCIE_ATU_CR2_OUTBOUND_7_GEN3		0xE04
+#define PCIE_ATU_LOWER_BASE_OUTBOUND_7_GEN3	0xE08
+#define PCIE_ATU_UPPER_BASE_OUTBOUND_7_GEN3	0xE0C
+#define PCIE_ATU_LIMIT_OUTBOUND_7_GEN3		0xE10
+#define PCIE_ATU_LOWER_TARGET_OUTBOUND_7_GEN3	0xE14
+#define PCIE_ATU_UPPER_TARGET_OUTBOUND_7_GEN3 	0xE18
+
 
 /* PCI_EXP_SLTCAP register fields */
 #define PCIE_CAP_SLOT_POWER_LIMIT_VAL		FIELD_PREP(PCI_EXP_SLTCAP_SPLV, 250)
@@ -1111,6 +1149,9 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	u32 val;
 	int i;
+	u32 max_speed = SPEED_GEN2;
+	if (of_device_is_compatible(pci->dev->of_node, "qcom,pcie-ipq6018"))
+		max_speed = SPEED_GEN3;
 
 	writel(SLV_ADDR_SPACE_SZ,
 		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
@@ -1135,21 +1176,47 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 
 	writel(0, pcie->parf + PARF_Q2A_FLUSH);
 
+	val = readl(pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
+	val &= ~PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK;
+	writel(val | 0x1e,
+		pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
+
+	writel(BUS_MASTER_EN, pci->dbi_base + PCIE20_COMMAND_STATUS);
+
 	dw_pcie_dbi_ro_wr_en(pci);
 
-	writel(PCIE_CAP_SLOT_VAL, pci->dbi_base + offset + PCI_EXP_SLTCAP);
+	writel(PCIE_CAP_LINK1_VAL, pci->dbi_base + PCIE20_CAP_LINK_1);
 
-	val = readl(pci->dbi_base + offset + PCI_EXP_LNKCAP);
-	val &= ~PCI_EXP_LNKCAP_ASPMS;
-	writel(val, pci->dbi_base + offset + PCI_EXP_LNKCAP);
+	/* Configure PCIe link capabilities for ASPM */
+	val = readl(pci->dbi_base + PCIE20_CAP_LINK_CAPABILITIES);
+	val &= ~PCIE20_CAP_ACTIVE_STATE_LINK_PM_SUPPORT;
+	writel(val, pci->dbi_base + PCIE20_CAP_LINK_CAPABILITIES);
 
-	writel(PCI_EXP_DEVCTL2_COMP_TMOUT_DIS, pci->dbi_base + offset +
-			PCI_EXP_DEVCTL2);
+	writel(PCIE_CAP_CPL_TIMEOUT_DISABLE, pci->dbi_base +
+		PCIE20_DEVICE_CONTROL2_STATUS2);
 
-	dw_pcie_dbi_ro_wr_dis(pci);
+//	dw_pcie_dbi_ro_wr_dis(pci);
+
+	writel(PCIE_CAP_CURR_DEEMPHASIS | max_speed,
+		pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
 
 	for (i = 0; i < 256; i++)
 		writel(0, pcie->parf + PARF_BDF_TO_SID_TABLE_N + (4 * i));
+
+	writel(0x4, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_6_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_6_GEN3);
+	writel(0x00107FFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x5, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_7_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_7_GEN3);
+	writel(0x200000, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_7_GEN3);
+	writel(0x7FFFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_7_GEN3);
 
 	return 0;
 }

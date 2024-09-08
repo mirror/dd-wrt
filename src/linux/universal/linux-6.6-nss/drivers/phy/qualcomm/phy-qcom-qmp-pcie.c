@@ -3458,10 +3458,13 @@ static int phy_pipe_clk_register(struct qmp_pcie *qmp, struct device_node *np)
 	 * Controllers using QMP PHY-s use 125MHz pipe clock interface
 	 * unless other frequency is specified in the PHY config.
 	 */
-	if (qmp->cfg->pipe_clock_rate)
+	if (of_property_read_bool(np, "gen3")) {
+		fixed->fixed_rate = 250000000;
+	} else if (qmp->cfg->pipe_clock_rate) {
 		fixed->fixed_rate = qmp->cfg->pipe_clock_rate;
-	else
+	} else {
 		fixed->fixed_rate = 125000000;
+	}
 
 	fixed->hw.init = &init;
 
