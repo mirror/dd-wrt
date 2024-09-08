@@ -13,7 +13,7 @@
 
 / {
 	model = "Fortinet FAP-231F";
-	compatible = "fortinet,fap-231f", "qcom,ipq6018";
+	compatible = "fortinet,fap-231f", "qcom,ipq6018", "qcom,ipq6010";
 
 	aliases {
 		serial0 = &blsp1_uart3;
