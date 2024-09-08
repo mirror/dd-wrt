@@ -1110,6 +1110,19 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 		}
+		if (brand == ROUTER_FORTINET_FAP231F) {
+			fseek(fp, 0x33000, SEEK_SET);
+			out = fopen("/tmp/ath10k_board1.bin", "wb");
+			for (i = 0; i < 6; i++)
+				putc(getc(fp), out);
+			unsigned int newmac2[6];
+			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac2[0], &newmac2[1], &newmac2[2], &newmac2[3], &newmac2[4], &newmac2[5]);
+			for (i = 0; i < 6; i++)
+				putc(newmac2[i], out);
+			for (i = 0; i < 2104; i++)
+				putc(getc(fp), out);
+			fclose(out);
+		}
 		fclose(fp);
 	} else {
 		fprintf(stderr, "board data failed\n");

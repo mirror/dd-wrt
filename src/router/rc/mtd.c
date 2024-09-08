@@ -639,7 +639,7 @@ rewrite:;
 		close(mtd_fd);
 		mtd_fd = -1;
 		char cmdline[64];
-		sprintf(cmdline, "ubiformat /dev/mtd%d -y -f - --image-size=%d",getMTD(mtd), ROUNDUP(trx.len, mtd_info.erasesize));
+		sprintf(cmdline, "ubiformat /dev/mtd%d -y -q -f - --image-size=%d",getMTD(mtd), ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
 	}
 
