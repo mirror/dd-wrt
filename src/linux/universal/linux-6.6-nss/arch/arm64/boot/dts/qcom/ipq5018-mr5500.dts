@@ -23,7 +23,7 @@
 	};
 
     chosen {
-        bootargs-append = " coherent_pool=2M swiotlb=noforce mitigations=off root=/dev/ubiblock0_0";
+        bootargs-append = " coherent_pool=2M swiotlb=1 mitigations=off root=/dev/ubiblock0_0";
 		stdout-path = "serial0:115200n8";
 	};
 

@@ -26,7 +26,7 @@
 		 * Netgear's U-Boot adds "ubi.mtd=rootfs root=mtd:ubi_rootfs"
 		 * That fails to create a UBI block device, so add it here.
 		*/
-		bootargs-append = " coherent_pool=2M swiotlb=noforce ubi.block=0,rootfs root=/dev/ubiblock0_1";
+		bootargs-append = " coherent_pool=2M swiotlb=1 ubi.block=0,rootfs root=/dev/ubiblock0_1";
 	};
 
 	keys {
