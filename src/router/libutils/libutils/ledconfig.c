@@ -1708,6 +1708,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_FORTINET_FAP231F:
 		cfg->power_gpio = 0x12; // power led / amber
 		cfg->diag_gpio = 0x16; // diag led / red
+		cfg->usb_power = 74 | GPIO_LOW; //usb2
 		break;
 	case ROUTER_NETGEAR_R7800:
 		cfg->power_gpio = 0x0; // power led
