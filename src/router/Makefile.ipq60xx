@@ -103,6 +103,7 @@ endif
 ifeq ($(ARCH),aarch64)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
 export COPTS:=$(BASEOPT) -pipe -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53 -fno-caller-saves -fno-plt -ffast-math -funsafe-math-optimizations -fcommon -ftree-vectorize -Wl,-z,max-page-size=4096
+
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -409,6 +410,20 @@ endif
 	dd if=/dev/zero bs=131072 count=1 >> $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
 	dd if=$(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx bs=126976 of=$(ARCH)-uclibc/asus-rt-ax89x-upgrade3.trx conv=sync
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin $(ARCH)-uclibc/asus-rt-ax89x-upgrade3.trx
+
+
+#fortinet
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-fap-231f.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/fortinet_fap231f-webflash.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
+
 
 include rules/all.mk
 
