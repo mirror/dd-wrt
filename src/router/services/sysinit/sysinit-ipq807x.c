@@ -1240,19 +1240,6 @@ void start_sysinit(void)
 		break;
 	}
 
-	if (brand == ROUTER_DYNALINK_DLWRX36) {
-		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/tx");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/rx");
-		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:yellow:wan/trigger");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/tx");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/rx");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_10");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
-		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
-		eval_silence("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
-	}
 	int i;
 
 	switch (brand) {
@@ -1276,6 +1263,18 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_FORTINET_FAP231F:
+		sysprintf("echo netdev > /sys/class/leds/eth1G/trigger");
+		sysprintf("echo eth0 > /sys/class/leds/eth1G/device_name");
+		sysprintf("echo 1 > /sys/class/leds/eth1G/link_1000");
+		sysprintf("echo netdev > /sys/class/leds/eth100/trigger");
+		sysprintf("echo eth0 > /sys/class/leds/eth100/device_name");
+		sysprintf("echo 1 > /sys/class/leds/eth100/link_100");
+		sysprintf("echo netdev > /sys/class/leds/eth1G_lan2/trigger");
+		sysprintf("echo eth0 > /sys/class/leds/eth1G_lan2/device_name");
+		sysprintf("echo 1 > /sys/class/leds/eth1G_lan2/link_1000");
+		sysprintf("echo netdev > /sys/class/leds/eth100_lan2/trigger");
+		sysprintf("echo eth0 > /sys/class/leds/eth100_lan2/device_name");
+		sysprintf("echo 1 > /sys/class/leds/eth100_lan2/link_100");
 		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
@@ -1288,6 +1287,17 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
+		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:green:wan/trigger");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/link_2500");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/tx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:green:wan/rx");
+		sysprintf("echo netdev > /sys/class/leds/90000.mdio-1:1c:yellow:wan/trigger");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/tx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/rx");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_10");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_100");
+		sysprintf("echo 1 > /sys/class/leds/90000.mdio-1:1c:yellow:wan/link_1000");
+		eval_silence("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 		setscaling(0);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
