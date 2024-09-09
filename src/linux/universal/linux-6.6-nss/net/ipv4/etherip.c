@@ -165,7 +165,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct etherip_tunnel *tunnel = netdev_priv(dev);
 //	struct pcpu_tstats *tstats;
 	struct iphdr *iph;
-	struct flowi4 fl;
+	struct flowi4 fl4;
 	struct net_device *tdev;
 	struct rtable *rt;
 	int max_headroom;
@@ -183,12 +183,12 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 		goto tx_error;
 	}
 
-	memset(&fl, 0, sizeof(fl));
-	fl.flowi4_oif               = tunnel->parms.link;
-	fl.flowi4_proto             = IPPROTO_ETHERIP;
-	fl.daddr  = tunnel->parms.iph.daddr;
-	fl.saddr  = tunnel->parms.iph.saddr;
-	rt = ip_route_output_key(dev_net(dev), &fl);
+	rt = ip_route_output_ports(dev_net(dev), &fl4, NULL,
+				   tunnel->parms.iph.daddr,
+				   tunnel->parms.iph.saddr,
+				   0, 0, IPPROTO_ETHERIP,
+				   RT_TOS(tunnel->parms.iph.tos),
+				   tunnel->parms.link);
 	if (IS_ERR(rt)) {
 		stats->tx_carrier_errors++;
 		goto tx_error_icmp;
@@ -204,8 +204,8 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	max_headroom = (LL_RESERVED_SPACE(tdev)+sizeof(struct iphdr)
 			+ ETHERIP_HLEN);
 
-	if (skb_headroom(skb) < max_headroom || skb_cloned(skb)
-			|| skb_shared(skb)) {
+	if (skb_headroom(skb) < max_headroom || skb_cloned(skb) || 
+	    (skb_cloned(skb) && !skb_clone_writable(skb, 0))) {
 		struct sk_buff *skn = skb_realloc_headroom(skb, max_headroom);
 		if (!skn) {
 			ip_rt_put(rt);
@@ -255,8 +255,8 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	iph->frag_off = 0;
 	iph->protocol = IPPROTO_ETHERIP;
 	iph->tos = tunnel->parms.iph.tos & INET_ECN_MASK;
-	iph->daddr = fl.daddr;
-	iph->saddr = fl.saddr;
+	iph->daddr = fl4.daddr;
+	iph->saddr = fl4.saddr;
 
 	iph->ttl = tunnel->parms.iph.ttl;
 	if (iph->ttl == 0)
@@ -280,7 +280,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	netif_trans_update(tunnel->dev);
 	tunnel->recursion--;
 
-	return 0;
+	return NETDEV_TX_OK;
 
 tx_error_icmp:
 	dst_link_failure(skb);
@@ -289,7 +289,7 @@ tx_error:
 	stats->tx_errors++;
 	dev_kfree_skb(skb);
 	tunnel->recursion--;
-	return 0;
+	return NETDEV_TX_OK;
 }
 
 
@@ -466,6 +466,7 @@ static void etherip_tunnel_setup(struct net_device *dev)
 	dev->priv_destructor      = etherip_dev_free;
 	dev->features		|= NETIF_F_NETNS_LOCAL;
 	dev->priv_flags		&= ~IFF_XMIT_DST_RELEASE;
+	dev->hard_header_len = LL_MAX_HEADER + sizeof(struct iphdr) + ETHERIP_HLEN;
 
 	ether_setup(dev);
 	dev->tx_queue_len = 0;
@@ -491,11 +492,14 @@ static int etherip_rcv(struct sk_buff *skb)
 
 	dev = tunnel->dev;
 	secpath_reset(skb);
-	skb_pull(skb, ETHERIP_HLEN);
-	skb->dev = dev;
+	skb_pull(skb, (skb_network_header(skb)-skb->data) +
+			sizeof(struct iphdr)+ETHERIP_HLEN);
+
 	skb->pkt_type = PACKET_HOST;
 	skb->protocol = eth_type_trans(skb, tunnel->dev);
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
+
+	__skb_tunnel_rx(skb, dev, dev_net(dev));
 	skb_dst_drop(skb);
 
 	/* do some checks */
