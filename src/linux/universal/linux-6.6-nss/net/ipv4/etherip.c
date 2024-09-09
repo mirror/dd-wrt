@@ -169,10 +169,17 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct net_device *tdev;
 	struct rtable *rt;
 	int max_headroom;
+	int err;
+	int pkt_len;
 	struct net_device_stats *stats = &tunnel->dev->stats;
+
 
 	if (tunnel->recursion++) {
 		stats->collisions++;
+		goto tx_error;
+	}
+
+	if (skb->protocol == htons(ETH_P_IPV6)) {
 		goto tx_error;
 	}
 
@@ -213,11 +220,13 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	skb->transport_header = skb->mac_header;
-	skb_push(skb, sizeof(struct iphdr)+ETHERIP_HLEN);
-	skb_reset_network_header(skb);
+	skb_clear_hash_if_not_l4(skb);
+
 	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));
 	IPCB(skb)->flags &= ~(IPSKB_XFRM_TUNNEL_SIZE | IPSKB_XFRM_TRANSFORMED |
 			IPSKB_REROUTED);
+	skb_push(skb, sizeof(struct iphdr)+ETHERIP_HLEN);
+	skb_reset_network_header(skb);
         /* XXX
 	 * This code leads to kernel panic if the etherip device is used
 	 * in a bridge, the bridge device has no IP, and VLAN packets are
@@ -249,8 +258,6 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	iph->daddr = fl.daddr;
 	iph->saddr = fl.saddr;
 
-//	iph->daddr = rt->rt_dst;
-//	iph->saddr = rt->rt_src;
 	iph->ttl = tunnel->parms.iph.ttl;
 	if (iph->ttl == 0)
 		iph->ttl = ip4_dst_hoplimit(&rt->dst);
@@ -258,8 +265,18 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	/* add the 16bit etherip header after the ip header */
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
 	nf_reset_ct(skb);
-//	tstats = this_cpu_ptr(dev->tstats);
-	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, dev);
+
+	skb->ip_summed = CHECKSUM_NONE;					\
+	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ?: 1);
+
+	err = ip_local_out(dev_net(dev), skb->sk, skb);
+
+	if (dev) {
+		if (unlikely(net_xmit_eval(err)))
+			pkt_len = 0;
+		iptunnel_xmit_stats(dev, pkt_len);
+	}
+
 	netif_trans_update(tunnel->dev);
 	tunnel->recursion--;
 
