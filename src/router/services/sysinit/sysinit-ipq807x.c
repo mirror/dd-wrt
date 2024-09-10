@@ -1283,10 +1283,10 @@ void start_sysinit(void)
 		sysprintf("echo eth0 > /sys/class/leds/eth100/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth100/link_100");
 		sysprintf("echo netdev > /sys/class/leds/eth1G_lan2/trigger");
-		sysprintf("echo eth0 > /sys/class/leds/eth1G_lan2/device_name");
+		sysprintf("echo eth1 > /sys/class/leds/eth1G_lan2/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth1G_lan2/link_1000");
 		sysprintf("echo netdev > /sys/class/leds/eth100_lan2/trigger");
-		sysprintf("echo eth0 > /sys/class/leds/eth100_lan2/device_name");
+		sysprintf("echo eth1 > /sys/class/leds/eth100_lan2/device_name");
 		sysprintf("echo 1 > /sys/class/leds/eth100_lan2/link_100");
 		setscaling(1800000);
 		disableportlearn();
