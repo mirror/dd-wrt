@@ -22,7 +22,7 @@
 typedef void sigret_t;
 
 void ss_list_requests(int argc __SS_ATTR((unused)),
-		      const char * const *argv __SS_ATTR((unused)),
+		      ss_argv_t argv __SS_ATTR((unused)),
 		      int sci_idx, void *infop __SS_ATTR((unused)))
 {
     ss_request_entry *entry;

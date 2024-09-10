@@ -53,7 +53,7 @@ static int icheck_proc(ext2_filsys fs EXT2FS_ATTR((unused)),
 	return 0;
 }
 
-void do_icheck(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_icheck(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 	       void *infop EXT2FS_ATTR((unused)))
 {
 	struct block_walk_struct bw;

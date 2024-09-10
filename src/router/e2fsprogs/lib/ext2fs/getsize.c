@@ -71,12 +71,11 @@
 #define HAVE_GET_FILE_SIZE_EX 1
 #endif
 
-HANDLE windows_get_handle(io_channel channel);
-
 errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 				  blk64_t *retblocks)
 {
-	HANDLE dev;
+	int fd;
+	HANDLE h;
 	PARTITION_INFORMATION pi;
 	DISK_GEOMETRY gi;
 	DWORD retbytes;
@@ -86,25 +85,18 @@ errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 	DWORD filesize;
 #endif /* HAVE_GET_FILE_SIZE_EX */
 
-	io_channel data_io = 0;
-	int retval;
-
-	retval = windows_io_manager->open(file, 0, &data_io);
-	if (retval)
-		return retval;
-
-	dev = windows_get_handle(data_io);
-	if (dev == INVALID_HANDLE_VALUE)
-		return EBADF;
-
-	if (DeviceIoControl(dev, IOCTL_DISK_GET_PARTITION_INFO,
+	fd = ext2fs_open_file(file, O_RDONLY, 0);
+	if (fd < 0)
+		return errno;
+	h = (HANDLE)_get_osfhandle(fd);
+	if (DeviceIoControl(h, IOCTL_DISK_GET_PARTITION_INFO,
 			    &pi, sizeof(PARTITION_INFORMATION),
 			    &pi, sizeof(PARTITION_INFORMATION),
 			    &retbytes, NULL)) {
 
 		*retblocks = pi.PartitionLength.QuadPart / blocksize;
 
-	} else if (DeviceIoControl(dev, IOCTL_DISK_GET_DRIVE_GEOMETRY,
+	} else if (DeviceIoControl(h, IOCTL_DISK_GET_DRIVE_GEOMETRY,
 				&gi, sizeof(DISK_GEOMETRY),
 				&gi, sizeof(DISK_GEOMETRY),
 				&retbytes, NULL)) {
@@ -115,20 +107,19 @@ errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
 			     gi.Cylinders.QuadPart / blocksize;
 
 #ifdef HAVE_GET_FILE_SIZE_EX
-	} else if (GetFileSizeEx(dev, &filesize)) {
+	} else if (GetFileSizeEx(h, &filesize)) {
 		*retblocks = filesize.QuadPart / blocksize;
 	}
 #else
 	} else {
-		filesize = GetFileSize(dev, NULL);
+		filesize = GetFileSize(h, NULL);
 		if (INVALID_FILE_SIZE != filesize) {
 			*retblocks = filesize / blocksize;
 		}
 	}
 #endif /* HAVE_GET_FILE_SIZE_EX */
 
-	windows_io_manager->close(data_io);
-
+	close(fd);
 	return 0;
 }
 

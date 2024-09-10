@@ -9,7 +9,6 @@
  * %End-Header%
  */
 #define _XOPEN_SOURCE		600
-#define _FILE_OFFSET_BITS       64
 #define _LARGEFILE64_SOURCE     1
 #define _GNU_SOURCE		1
 

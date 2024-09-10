@@ -18,6 +18,7 @@ CONFFILES=	e2scrub.conf
 
 ifeq ($(HAVE_UDEV),yes)
 UDEV_RULES	= e2scrub.rules
+UDISKS_RULES	= ext4.rules
 INSTALLDIRS_TGT	+= installdirs-udev
 INSTALL_TGT	+= install-udev
 UNINSTALL_TGT	+= uninstall-udev
@@ -39,7 +40,7 @@ INSTALL_TGT	+= install-systemd install-libprogs
 UNINSTALL_TGT	+= uninstall-systemd uninstall-libprogs
 endif
 
-all:: $(PROGS) $(MANPAGES) $(CONFFILES) $(UDEV_RULES) $(SERVICE_FILES) $(CRONTABS) $(LIBPROGS)
+all:: $(PROGS) $(MANPAGES) $(CONFFILES) $(UDEV_RULES) $(UDISKS_RULES) $(SERVICE_FILES) $(CRONTABS) $(LIBPROGS)
 
 e2scrub: $(DEP_SUBSTITUTE) e2scrub.in
 	$(E) "	SUBST $@"
@@ -94,8 +95,8 @@ installdirs-crond:
 	$(Q) $(MKDIR_P) $(DESTDIR)$(CROND_DIR)
 
 installdirs-libprogs:
-	$(E) "	MKDIR_P $(pkglibdir)"
-	$(Q) $(MKDIR_P) $(DESTDIR)$(pkglibdir)
+	$(E) "	MKDIR_P $(pkglibexecdir)"
+	$(Q) $(MKDIR_P) $(DESTDIR)$(pkglibexecdir)
 
 installdirs-systemd:
 	$(E) "	MKDIR_P $(SYSTEMD_SYSTEM_UNIT_DIR)"
@@ -111,6 +112,10 @@ install-udev: installdirs-udev
 		$(ES) "	INSTALL $(UDEV_RULES_DIR)/$$i"; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(UDEV_RULES_DIR)/96-$$i; \
 	done
+	$(Q) for i in $(UDISKS_RULES); do \
+		$(ES) "	INSTALL $(UDEV_RULES_DIR)/$$i"; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(UDEV_RULES_DIR)/64-$$i; \
+	done
 
 install-crond: installdirs-crond
 	$(Q) if test -n "$(CRONTABS)" ; then \
@@ -120,8 +125,8 @@ install-crond: installdirs-crond
 
 install-libprogs: $(LIBPROGS) installdirs-libprogs
 	$(Q) for i in $(LIBPROGS); do \
-		$(ES) "	INSTALL $(pkglibdir)/$$i"; \
-		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(pkglibdir)/$$i; \
+		$(ES) "	INSTALL $(pkglibexecdir)/$$i"; \
+		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(pkglibexecdir)/$$i; \
 	done
 
 install-systemd: $(SERVICE_FILES) installdirs-systemd
@@ -153,6 +158,9 @@ uninstall-udev:
 	for i in $(UDEV_RULES); do \
 		$(RM) -f $(DESTDIR)$(UDEV_RULES_DIR)/96-$$i; \
 	done
+	for i in $(UDISKS_RULES); do \
+		$(RM) -f $(DESTDIR)$(UDEV_RULES_DIR)/64-$$i; \
+	done
 
 uninstall-crond:
 	if test -n "$(CRONTABS)" ; then \
@@ -161,7 +169,7 @@ uninstall-crond:
 
 uninstall-libprogs:
 	for i in $(LIBPROGS); do \
-		$(RM) -f $(DESTDIR)$(pkglibdir)/$$i; \
+		$(RM) -f $(DESTDIR)$(pkglibexecdir)/$$i; \
 	done
 
 uninstall-systemd:
@@ -181,7 +189,7 @@ uninstall: $(UNINSTALL_TGT)
 	done
 
 clean::
-	$(RM) -f $(PROGS) $(MANPAGES) $(CONFFILES) $(UDEV_RULES) $(SERVICE_FILES) $(CRONTABS) $(LIBPROGS)
+	$(RM) -f $(PROGS) $(MANPAGES) $(CONFFILES) $(UDEV_RULES) $(UDISKS_RULES) $(SERVICE_FILES) $(CRONTABS) $(LIBPROGS)
 
 mostlyclean: clean
 distclean: clean

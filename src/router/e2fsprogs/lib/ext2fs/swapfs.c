@@ -345,21 +345,21 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 		return;		/* Illegal inode extra_isize */
 
 	inode_size = EXT2_GOOD_OLD_INODE_SIZE + extra_isize;
-	if (inode_includes(inode_size, i_checksum_hi))
+	if (ext2fs_inode_includes(inode_size, i_checksum_hi))
 		t->i_checksum_hi = ext2fs_swab16(f->i_checksum_hi);
-	if (inode_includes(inode_size, i_ctime_extra))
+	if (ext2fs_inode_includes(inode_size, i_ctime_extra))
 		t->i_ctime_extra = ext2fs_swab32(f->i_ctime_extra);
-	if (inode_includes(inode_size, i_mtime_extra))
+	if (ext2fs_inode_includes(inode_size, i_mtime_extra))
 		t->i_mtime_extra = ext2fs_swab32(f->i_mtime_extra);
-	if (inode_includes(inode_size, i_atime_extra))
+	if (ext2fs_inode_includes(inode_size, i_atime_extra))
 		t->i_atime_extra = ext2fs_swab32(f->i_atime_extra);
-	if (inode_includes(inode_size, i_crtime))
+	if (ext2fs_inode_includes(inode_size, i_crtime))
 		t->i_crtime = ext2fs_swab32(f->i_crtime);
-	if (inode_includes(inode_size, i_crtime_extra))
+	if (ext2fs_inode_includes(inode_size, i_crtime_extra))
 		t->i_crtime_extra = ext2fs_swab32(f->i_crtime_extra);
-	if (inode_includes(inode_size, i_version_hi))
+	if (ext2fs_inode_includes(inode_size, i_version_hi))
 		t->i_version_hi = ext2fs_swab32(f->i_version_hi);
-	if (inode_includes(inode_size, i_projid))
+	if (ext2fs_inode_includes(inode_size, i_projid))
                 t->i_projid = ext2fs_swab32(f->i_projid);
 	/* catch new static fields added after i_projid */
 	EXT2FS_BUILD_BUG_ON(sizeof(struct ext2_inode_large) != 160);

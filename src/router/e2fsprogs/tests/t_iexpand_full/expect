@@ -28,8 +28,8 @@ Change in FS metadata:
 -Inode blocks per group:   128
 +Inode blocks per group:   256
 @@ -29 +29 @@
--Inode size:	          128
-+Inode size:	          256
+-Inode size:               128
++Inode size:               256
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity

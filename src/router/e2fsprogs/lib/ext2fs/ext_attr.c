@@ -23,7 +23,7 @@
 #include "ext2_ext_attr.h"
 #include "ext4_acl.h"
 
-#include "ext2fs.h"
+#include "ext2fsP.h"
 
 static errcode_t read_ea_inode_hash(ext2_filsys fs, ext2_ino_t ino, __u32 *hash)
 {
@@ -1342,7 +1342,7 @@ static errcode_t xattr_inode_dec_ref(ext2_filsys fs, ext2_ino_t ino)
 		goto write_out;
 
 	inode.i_links_count = 0;
-	inode.i_dtime = fs->now ? fs->now : time(0);
+	ext2fs_set_dtime(fs, EXT2_INODE(&inode));
 
 	ret = ext2fs_free_ext_attr(fs, ino, &inode);
 	if (ret)

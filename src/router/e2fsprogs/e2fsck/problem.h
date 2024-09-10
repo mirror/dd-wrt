@@ -734,6 +734,12 @@ struct problem_context {
 /* Orphan file inode is not in use, but contains data */
 #define PR_1_ORPHAN_FILE_NOT_CLEAR		0x010090
 
+/* Inode has EA_INODE_FL set but is not a regular file */
+#define PR_1_EA_INODE_NONREG			0x010091
+
+/* Inode references EA inode but ea_inode feature is not enabled */
+#define PR_1_EA_INODE_FEATURE			0x010092
+
 /*
  * Pass 1b errors
  */
@@ -1061,6 +1067,9 @@ struct problem_context {
 /* Non-unique filename found, but can't rename */
 #define PR_2_NON_UNIQUE_FILE_NO_RENAME	0x020054
 
+/* EA inode referenced from directory */
+#define PR_2_EA_INODE_DIR_LINK 0x020055
+
 /*
  * Pass 3 errors
  */
@@ -1202,6 +1211,9 @@ struct problem_context {
 
 /* Directory ref count set to overflow but it doesn't have to be */
 #define PR_4_DIR_OVERFLOW_REF_COUNT	0x040007
+
+/* EA_INODE_FL set on normal file linked from directory hierarchy */
+#define PR_4_EA_INODE_SPURIOUS_FLAG	0x040008
 
 /*
  * Pass 5 errors

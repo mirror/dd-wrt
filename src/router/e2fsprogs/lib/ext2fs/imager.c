@@ -299,7 +299,7 @@ errcode_t ext2fs_image_super_read(ext2_filsys fs, int fd,
 	ssize_t		actual, size;
 	errcode_t	retval;
 
-	size = (ssize_t)fs->blocksize * (fs->group_desc_count + 1);
+	size = (ssize_t)fs->blocksize * (fs->desc_blocks + 1);
 	buf = malloc(size);
 	if (!buf)
 		return ENOMEM;
@@ -323,7 +323,7 @@ errcode_t ext2fs_image_super_read(ext2_filsys fs, int fd,
 	memcpy(fs->super, buf, SUPERBLOCK_SIZE);
 
 	memcpy(fs->group_desc, buf + fs->blocksize,
-	       (ssize_t)fs->blocksize * fs->group_desc_count);
+	       (ssize_t)fs->blocksize * fs->desc_blocks);
 
 	retval = 0;
 

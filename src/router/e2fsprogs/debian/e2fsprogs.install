@@ -16,8 +16,8 @@ sbin/resize2fs
 sbin/tune2fs
 usr/bin/chattr
 usr/bin/lsattr
-[linux-any] usr/lib/*/e2fsprogs/e2scrub_all_cron
-[linux-any] usr/lib/*/e2fsprogs/e2scrub_fail
+[linux-any] usr/libexec/e2fsprogs/e2scrub_all_cron
+[linux-any] usr/libexec/e2fsprogs/e2scrub_fail
 usr/sbin/e2freefrag
 [linux-any] usr/sbin/e4crypt
 [linux-any] usr/sbin/e4defrag
@@ -49,5 +49,5 @@ usr/share/man/man8/mklost+found.8
 usr/share/man/man8/resize2fs.8
 usr/share/man/man8/tune2fs.8
 etc
-[linux-any] lib/udev/rules.d
-[linux-any] lib/systemd/system
+[linux-any] ${deb_udevudevdir}/rules.d
+[linux-any] ${deb_systemdsystemunitdir}

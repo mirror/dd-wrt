@@ -126,23 +126,23 @@ errcode_t ext2fs_create_orphan_file(ext2_filsys fs, blk_t num_blocks)
 	char *buf = NULL, *zerobuf = NULL;
 	struct mkorphan_info oi;
 	struct ext4_orphan_block_tail *ob_tail;
+	time_t now;
 
-	if (!ino) {
+	if (ino) {
+		err = ext2fs_read_inode(fs, ino, &inode);
+		if (err)
+			return err;
+		if (EXT2_I_SIZE(&inode)) {
+			err = ext2fs_truncate_orphan_file(fs);
+			if (err)
+				return err;
+		}
+	} else {
 		err = ext2fs_new_inode(fs, EXT2_ROOT_INO, LINUX_S_IFREG | 0600,
 				       0, &ino);
 		if (err)
 			return err;
 		ext2fs_inode_alloc_stats2(fs, ino, +1, 0);
-		ext2fs_mark_ib_dirty(fs);
-	}
-
-	err = ext2fs_read_inode(fs, ino, &inode);
-	if (err)
-		return err;
-	if (EXT2_I_SIZE(&inode)) {
-		err = ext2fs_truncate_orphan_file(fs);
-		if (err)
-			return err;
 	}
 
 	memset(&inode, 0, sizeof(struct ext2_inode));
@@ -185,8 +185,10 @@ errcode_t ext2fs_create_orphan_file(ext2_filsys fs, blk_t num_blocks)
 	if (err)
 		goto out;
 	ext2fs_iblk_set(fs, &inode, 0);
-	inode.i_atime = inode.i_mtime =
-		inode.i_ctime = fs->now ? fs->now : time(0);
+	now = ext2fsP_get_time(fs);
+	ext2fs_inode_xtime_set(&inode, i_atime, now);
+	ext2fs_inode_xtime_set(&inode, i_ctime, now);
+	ext2fs_inode_xtime_set(&inode, i_mtime, now);
 	inode.i_links_count = 1;
 	inode.i_mode = LINUX_S_IFREG | 0600;
 	ext2fs_iblk_add_blocks(fs, &inode, oi.alloc_blocks);

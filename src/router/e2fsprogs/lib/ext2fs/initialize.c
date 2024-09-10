@@ -26,7 +26,7 @@
 #endif
 
 #include "ext2_fs.h"
-#include "ext2fs.h"
+#include "ext2fsP.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -125,9 +125,15 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	fs->flags |= EXT2_FLAG_SWAP_BYTES;
 #endif
 
-	time_env = getenv("E2FSPROGS_FAKE_TIME");
-	if (time_env)
+	time_env = ext2fs_safe_getenv("SOURCE_DATE_EPOCH");
+	if (time_env) {
 		fs->now = strtoul(time_env, NULL, 0);
+		fs->flags2 |= EXT2_FLAG2_USE_FAKE_TIME;
+	} else {
+		time_env = ext2fs_safe_getenv("E2FSPROGS_FAKE_TIME");
+		if (time_env)
+			fs->now = strtoul(time_env, NULL, 0);
+	}
 
 	io_flags = IO_FLAG_RW;
 	if (flags & EXT2_FLAG_EXCLUSIVE)
@@ -218,7 +224,8 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	}
 
 	set_field(s_checkinterval, 0);
-	super->s_mkfs_time = super->s_lastcheck = fs->now ? fs->now : time(NULL);
+	ext2fs_set_tstamp(super, s_mkfs_time, ext2fsP_get_time(fs));
+	ext2fs_set_tstamp(super, s_lastcheck, ext2fsP_get_time(fs));
 
 	super->s_creator_os = CREATOR_OS;
 
@@ -308,13 +315,6 @@ retry:
 		set_field(s_inodes_count, ext2fs_blocks_count(super) / i);
 
 	/*
-	 * Make sure we have at least EXT2_FIRST_INO + 1 inodes, so
-	 * that we have enough inodes for the filesystem(!)
-	 */
-	if (super->s_inodes_count < EXT2_FIRST_INODE(super)+1)
-		super->s_inodes_count = EXT2_FIRST_INODE(super)+1;
-
-	/*
 	 * There should be at least as many inodes as the user
 	 * requested.  Figure out how many inodes per group that
 	 * should be.  But make sure that we don't allocate more than
@@ -375,6 +375,15 @@ ipg_retry:
 	}
 	super->s_inodes_count = super->s_inodes_per_group *
 		fs->group_desc_count;
+	/*
+	 * Make sure we have at least EXT2_FIRST_INO + 1 inodes, so
+	 * that we have enough inodes for the filesystem(!)
+	 */
+	if (super->s_inodes_count < EXT2_FIRST_INODE(super)+1) {
+		ipg += 8;
+		goto ipg_retry;
+	}
+
 	super->s_free_inodes_count = super->s_inodes_count;
 
 	/*
@@ -521,33 +530,43 @@ ipg_retry:
 	csum_flag = ext2fs_has_group_desc_csum(fs);
 	reserved_inos = super->s_first_ino;
 	for (i = 0; i < fs->group_desc_count; i++) {
+		blk_t grp_free_blocks;
+		ext2_ino_t inodes;
+
+		retval = ext2fs_reserve_super_and_bgd2(fs, i,
+						       fs->block_map,
+						       &numblocks);
+		if (retval)
+			goto cleanup;
+
 		/*
 		 * Don't set the BLOCK_UNINIT group for the last group
 		 * because the block bitmap needs to be padded.
 		 */
 		if (csum_flag) {
-			if (i != fs->group_desc_count - 1)
+			if (i != fs->group_desc_count - 1 && numblocks == 0)
 				ext2fs_bg_flags_set(fs, i,
 						    EXT2_BG_BLOCK_UNINIT);
 			ext2fs_bg_flags_set(fs, i, EXT2_BG_INODE_UNINIT);
-			numblocks = super->s_inodes_per_group;
+			inodes = super->s_inodes_per_group;
 			if (reserved_inos) {
-				if (numblocks > reserved_inos) {
-					numblocks -= reserved_inos;
+				if (inodes > reserved_inos) {
+					inodes -= reserved_inos;
 					reserved_inos = 0;
 				} else {
-					reserved_inos -= numblocks;
-					numblocks = 0;
+					reserved_inos -= inodes;
+					inodes = 0;
 				}
 			}
-			ext2fs_bg_itable_unused_set(fs, i, numblocks);
+			ext2fs_bg_itable_unused_set(fs, i, inodes);
 		}
-		numblocks = ext2fs_reserve_super_and_bgd(fs, i, fs->block_map);
-		if (fs->super->s_log_groups_per_flex)
+
+		if (!fs->super->s_log_groups_per_flex)
 			numblocks += 2 + fs->inode_blocks_per_group;
 
-		free_blocks += numblocks;
-		ext2fs_bg_free_blocks_count_set(fs, i, numblocks);
+		grp_free_blocks = ext2fs_group_blocks_count(fs, i) - numblocks;
+		free_blocks += grp_free_blocks;
+		ext2fs_bg_free_blocks_count_set(fs, i, grp_free_blocks);
 		ext2fs_bg_free_inodes_count_set(fs, i, fs->super->s_inodes_per_group);
 		ext2fs_bg_used_dirs_count_set(fs, i, 0);
 		ext2fs_group_desc_csum_set(fs, i);

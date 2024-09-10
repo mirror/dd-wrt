@@ -269,7 +269,7 @@ static inline qid_t get_qid(struct ext2_inode_large *inode, enum quota_type qtyp
 	case PRJQUOTA:
 		inode_size = EXT2_GOOD_OLD_INODE_SIZE +
 			inode->i_extra_isize;
-		if (inode_includes(inode_size, i_projid))
+		if (ext2fs_inode_includes(inode_size, i_projid))
 			return inode_projid(*inode);
 		return 0;
 	default:

@@ -2,9 +2,9 @@ Source: e2fsprogs
 Section: admin
 Priority: required
 Maintainer: Theodore Y. Ts'o <tytso@mit.edu>
-Build-Depends: gettext, texinfo, pkg-config, libfuse-dev [linux-any kfreebsd-any] <!pkg.e2fsprogs.no-fuse2fs>, debhelper-compat (= 12), dh-exec, libblkid-dev, uuid-dev, m4, udev [linux-any], systemd [linux-any], cron [linux-any]
+Build-Depends: dpkg-dev (>= 1.22.5), gettext, texinfo, pkgconf, libarchive-dev, libfuse3-dev [linux-any kfreebsd-any] <!pkg.e2fsprogs.no-fuse2fs>, debhelper-compat (= 12), dh-exec, libblkid-dev, uuid-dev, m4, udev [linux-any], systemd [linux-any], systemd-dev [linux-any], cron [linux-any], dh-sequence-movetousr
 Rules-Requires-Root: no
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Homepage: http://e2fsprogs.sourceforge.net
 Vcs-Browser: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
 Vcs-Git: https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git -b debian/master
@@ -68,9 +68,9 @@ Package: libcom-err2
 Section: libs
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Replaces: libcomerr2 (<< 1.43.9-1~)
-Breaks: libcomerr2 (<< 1.43.9-1~)
-Provides: libcomerr2 (= ${binary:Version})
+Replaces: libcom-err2t64, libcomerr2 (<< 1.43.9-1~)
+Breaks: libcom-err2t64 (<< 1.47.0-2.4~exp1~), libcomerr2 (<< 1.43.9-1~)
+Provides: libcom-err2t64 (= ${binary:Version}), libcomerr2 (= ${binary:Version})
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
@@ -95,10 +95,12 @@ Description: common error description library - headers and static libraries
  This package contains the development environment for the com_err library.
 
 Package: libss2
+Provides: libss2t64 (= ${binary:Version})
+Breaks: libss2t64 (<< 1.47.0-2.4~exp1~)
 Section: libs
 Priority: optional
 Depends: libcom-err2, ${shlibs:Depends}, ${misc:Depends}
-Replaces: e2fsprogs (<< 1.34-1)
+Replaces: libss2t64, e2fsprogs (<< 1.34-1)
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
@@ -138,13 +140,13 @@ Description: stripped-down versions of e2fsprogs, for debian-installer
  Don't attempt to install this package, it has no support for a couple of
  features you surely want.  Anyway it should refuse to install.
 
-Package: libext2fs2
+Package: libext2fs2t64
 Section: libs
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Replaces: e2fslibs (<< 1.43.9-1~)
-Breaks: e2fslibs (<< 1.43.9-1~)
-Provides: e2fslibs (= ${binary:Version})
+Replaces: libext2fs2, e2fslibs (<< 1.43.9-1~)
+Breaks: libext2fs2 (<< ${source:Version}), e2fslibs (<< 1.43.9-1~)
+Provides: ${t64:Provides}, e2fslibs (= ${binary:Version})
 Architecture: any
 Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
@@ -161,7 +163,7 @@ Description: ext2/ext3/ext4 file system libraries
 Package: libext2fs-dev
 Section: libdevel
 Priority: optional
-Depends: libc6-dev | libc-dev, comerr-dev, libext2fs2 (= ${binary:Version}), ${misc:Depends}
+Depends: libc6-dev | libc-dev, comerr-dev, libext2fs2t64 (= ${binary:Version}), ${misc:Depends}
 Replaces: e2fslibs-dev (<< 1.43.9-1~)
 Breaks: e2fslibs-dev (<< 1.43.9-1~)
 Provides: e2fslibs-dev (= ${binary:Version})

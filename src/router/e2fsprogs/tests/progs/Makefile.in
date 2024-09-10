@@ -20,7 +20,8 @@ TEST_REL_OBJS=	test_rel.o test_rel_cmds.o
 
 TEST_ICOUNT_OBJS=	test_icount.o test_icount_cmds.o
 
-SRCS=	$(srcdir)/test_rel.c 
+SRCS=	$(srcdir)/test_icount.c \
+	$(srcdir)/test_rel.c
 
 LIBS= $(LIBEXT2FS) $(LIBSS) $(LIBCOM_ERR) $(SYSLIBS)
 DEPLIBS= $(LIBEXT2FS) $(DEPLIBSS) $(DEPLIBCOM_ERR)
@@ -72,6 +73,15 @@ distclean: clean
 # Makefile dependencies follow.  This must be the last section in
 # the Makefile.in file
 #
+test_icount.o: $(srcdir)/test_icount.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ss/ss.h $(top_builddir)/lib/ss/ss_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2fs.h $(top_srcdir)/lib/ext2fs/ext3_extents.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/irel.h \
+ $(top_srcdir)/lib/ext2fs/brel.h $(srcdir)/test_icount.h
 test_rel.o: $(srcdir)/test_rel.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/et/com_err.h \
  $(top_srcdir)/lib/ss/ss.h $(top_builddir)/lib/ss/ss_err.h \

@@ -84,10 +84,10 @@ Change in FS metadata:
 @@ -1,3 +1,3 @@
 -Filesystem UUID:          6fc3daa4-180d-4f2b-a6f2-f7a5efb79bcf
 -Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit sparse_super large_file huge_file uninit_bg dir_nlink extra_isize
--Inode size:	          256
+-Inode size:               256
 +Filesystem UUID:          f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0
 +Filesystem features:      has_journal ext_attr resize_inode dir_index filetype extent 64bit sparse_super large_file huge_file dir_nlink extra_isize metadata_csum
-+Inode size:	          512
++Inode size:               512
 Pass 1: Checking inodes, blocks, and sizes
 Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity

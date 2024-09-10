@@ -154,6 +154,14 @@ static errcode_t windows_get_stats(io_channel channel, io_stats *stats)
 	return retval;
 }
 
+static LARGE_INTEGER make_large_integer(LONGLONG value)
+{
+	LARGE_INTEGER	li;
+
+	li.QuadPart = value;
+	return li;
+}
+
 /*
  * Here are the raw I/O functions
  */
@@ -174,14 +182,14 @@ static errcode_t raw_read_blk(io_channel channel,
 	location = ((ext2_loff_t) block * channel->block_size) + data->offset;
 
 	if (data->flags & IO_FLAG_FORCE_BOUNCE) {
-		if (SetFilePointer(data->handle, location, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+		if (!SetFilePointerEx(data->handle, make_large_integer(location), NULL, FILE_BEGIN)) {
 			retval = GetLastError();
 			goto error_out;
 		}
 		goto bounce_read;
 	}
 
-	if (SetFilePointer(data->handle, location, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+	if (!SetFilePointerEx(data->handle, make_large_integer(location), NULL, FILE_BEGIN)) {
 		retval = GetLastError();
 		goto error_out;
 	}
@@ -261,14 +269,14 @@ static errcode_t raw_write_blk(io_channel channel,
 	location = ((ext2_loff_t) block * channel->block_size) + data->offset;
 
 	if (data->flags & IO_FLAG_FORCE_BOUNCE) {
-		if (SetFilePointer(data->handle, location, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+		if (!SetFilePointerEx(data->handle, make_large_integer(location), NULL, FILE_BEGIN)) {
 			retval = GetLastError();
 			goto error_out;
 		}
 	goto bounce_write;
 	}
 
-		if (SetFilePointer(data->handle, location, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+		if (!SetFilePointerEx(data->handle, make_large_integer(location), NULL, FILE_BEGIN)) {
 			retval = GetLastError();
 		goto error_out;
 	}
@@ -313,7 +321,7 @@ bounce_write:
 		if (size > channel->block_size)
 			actual = channel->block_size;
 		memcpy(data->bounce, buf, actual);
-		if (SetFilePointer(data->handle, location, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
+		if (!SetFilePointerEx(data->handle, make_large_integer(location), NULL, FILE_BEGIN)) {
 			retval = GetLastError();
 			goto error_out;
 		}
@@ -855,17 +863,6 @@ static errcode_t windows_write_byte(io_channel channel, unsigned long offset,
 				 int size, const void *buf)
 {
 	return EXT2_ET_UNIMPLEMENTED;
-}
-
-HANDLE windows_get_handle(io_channel channel)
-{
-	struct windows_private_data *data;
-
-	EXT2_CHECK_MAGIC_RETURN(channel, EXT2_ET_MAGIC_IO_CHANNEL, INVALID_HANDLE_VALUE);
-	data = (struct windows_private_data *) channel->private_data;
-	EXT2_CHECK_MAGIC_RETURN(data, EXT2_ET_MAGIC_WINDOWS_IO_CHANNEL, INVALID_HANDLE_VALUE);
-
-	return data->handle;
 }
 
 /*

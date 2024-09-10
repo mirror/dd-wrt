@@ -90,7 +90,7 @@ static int ncheck_proc(struct ext2_dir_entry *dirent,
 	return 0;
 }
 
-void do_ncheck(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_ncheck(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 	       void *infop EXT2FS_ATTR((unused)))
 {
 	struct inode_walk_struct iw;

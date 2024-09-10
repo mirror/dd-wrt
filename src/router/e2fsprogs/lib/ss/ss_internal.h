@@ -86,7 +86,7 @@ int ss_execute_line(int sci_idx, char *line_ptr);
 char **ss_parse(int sci_idx, char *line_ptr, int *argc_ptr);
 ss_abbrev_info *ss_abbrev_initialize(char *, int *);
 void ss_page_stdin(void) __SS_ATTR((noreturn));
-void ss_list_requests(int, char const * const *, int, pointer);
+void ss_list_requests(int argc, ss_argv_t argv, int sci_idex, void *infop);
 int ss_execute_command(int sci_idx, char *argv[]);
 int ss_pager_create(void);
 char *ss_safe_getenv(const char *arg);

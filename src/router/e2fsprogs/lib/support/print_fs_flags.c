@@ -14,6 +14,7 @@
 #include "config.h"
 #include <stdio.h>
 
+#include "print_fs_flags.h"
 #include "ext2fs/ext2fs.h"
 
 struct flags_name {

@@ -342,6 +342,7 @@ static int is_on_batt(void)
 static void check_if_skip(e2fsck_t ctx)
 {
 	ext2_filsys fs = ctx->fs;
+	struct ext2_super_block *sb = fs->super;
 	struct problem_context pctx;
 	const char *reason = NULL;
 	unsigned int reason_arg = 0;
@@ -370,7 +371,7 @@ static void check_if_skip(e2fsck_t ctx)
 	if (ctx->options & E2F_OPT_JOURNAL_ONLY)
 		goto skip;
 
-	lastcheck = fs->super->s_lastcheck;
+	lastcheck = ext2fs_get_tstamp(sb, s_lastcheck);
 	if (lastcheck > ctx->now)
 		lastcheck -= ctx->time_fudge;
 	if ((fs->super->s_state & EXT2_ERROR_FS) ||
@@ -397,8 +398,9 @@ static void check_if_skip(e2fsck_t ctx)
 		   ((ctx->now - lastcheck) >=
 		    ((time_t) fs->super->s_checkinterval))) {
 		reason = _(" has gone %u days without being checked");
-		reason_arg = (ctx->now - fs->super->s_lastcheck)/(3600*24);
-		if (batt && ((ctx->now - fs->super->s_lastcheck) <
+		reason_arg = (ctx->now - ext2fs_get_tstamp(sb, s_lastcheck)) /
+			(3600*24);
+		if (batt && ((ctx->now - ext2fs_get_tstamp(sb, s_lastcheck)) <
 			     fs->super->s_checkinterval*2))
 			reason = 0;
 	} else if (broken_system_clock && fs->super->s_checkinterval) {
@@ -457,7 +459,8 @@ static void check_if_skip(e2fsck_t ctx)
 			next_check = 1;
 	}
 	if (!broken_system_clock && fs->super->s_checkinterval &&
-	    ((ctx->now - fs->super->s_lastcheck) >= fs->super->s_checkinterval))
+	    ((ctx->now - ext2fs_get_tstamp(sb, s_lastcheck)) >=
+	     fs->super->s_checkinterval))
 		next_check = 1;
 	if (next_check <= 5) {
 		if (next_check == 1) {
@@ -2080,7 +2083,7 @@ cleanup:
 		} else
 			sb->s_state &= ~EXT2_VALID_FS;
 		if (!(ctx->flags & E2F_FLAG_TIME_INSANE))
-			sb->s_lastcheck = ctx->now;
+			ext2fs_set_tstamp(sb, s_lastcheck, ctx->now);
 		sb->s_mnt_count = 0;
 		memset(((char *) sb) + EXT4_S_ERR_START, 0, EXT4_S_ERR_LEN);
 		pctx.errcode = ext2fs_set_gdt_csum(ctx->fs);

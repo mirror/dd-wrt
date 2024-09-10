@@ -8,17 +8,22 @@ jobs:
     name: Build and test with gcc
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: ./configure CC=gcc CFLAGS="$DEF_CFLAGS"
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 install V=1 DESTDIR=$PWD/installdir
     - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: gcc-test-fail-logs
+        path: tests/*.failed
 
   clang-build-and-test:
     name: Build and test with clang
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -27,12 +32,21 @@ jobs:
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 install V=1 DESTDIR=$PWD/installdir
     - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-config.h
+        path: lib/config.h
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: clang-test-fail-logs
+        path: tests/*.failed
 
   i386-build-and-test:
     name: Build and test with gcc -m32
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -41,12 +55,17 @@ jobs:
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 install V=1 DESTDIR=$PWD/installdir
     - run: make -j8 uninstall V=1 DESTDIR=$PWD/installdir
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: i386-test-fail-logs
+        path: tests/*.failed
 
   asan-build-and-test:
     name: Build and test with ASAN enabled
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -54,12 +73,17 @@ jobs:
     - run: echo "ASAN_CFLAGS=$DEF_CFLAGS -fsanitize=address -fno-sanitize-recover=address" >> $GITHUB_ENV
     - run: ./configure CC=clang CFLAGS="$ASAN_CFLAGS" LDFLAGS="$ASAN_CFLAGS"
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: asan-test-fail-logs
+        path: tests/*.failed
 
   ubsan-build-and-test:
     name: Build and test with UBSAN enabled
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -67,18 +91,32 @@ jobs:
     - run: echo "UBSAN_CFLAGS=$DEF_CFLAGS -fsanitize=undefined -fno-sanitize-recover=undefined" >> $GITHUB_ENV
     - run: ./configure CC=clang CFLAGS="$UBSAN_CFLAGS" LDFLAGS="$UBSAN_CFLAGS"
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror"
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubsan-test-fail-logs
+        path: tests/*.failed
 
   macos-build-and-test:
     name: Build and test on macOS
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: ./configure CFLAGS="$DEF_CFLAGS"
       # -Wno-error=deprecated-declarations is needed to suppress known warnings
       # due to e2fsprogs' use of sbrk(0) and daemon().
     - run: make -j8 check V=1 CFLAGS_WARN="-Werror -Wno-error=deprecated-declarations"
+    - if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-test-fail-logs
+        path: tests/*.failed
     - run: make -j8 install DESTDIR=$PWD/installdir
     - run: make -j8 uninstall DESTDIR=$PWD/installdir
+    - uses: actions/upload-artifact@v4
+      with:
+        name: macOS-config.h
+        path: lib/config.h
 
   windows-msys2-build:
     name: Build mke2fs on Windows with ${{matrix.sys}}
@@ -92,7 +130,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
@@ -112,5 +150,41 @@ jobs:
     - run: make -j8 -C lib/support/ all V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 -C lib/e2p/ all V=1 CFLAGS_WARN="-Werror"
     - run: make -j8 -C misc/ mke2fs V=1 CFLAGS_WARN="-Werror"
-    - run: touch image.ext4
     - run: misc/mke2fs.exe -T ext4 image.ext4 128M
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-${{matrix.env}}-config.h
+        path: lib/config.h
+
+  # Jobs that cross-compile e2fsprogs for Android using the Android NDK.  Note
+  # that these use the autotools-based build system, which makes them a bit
+  # different from the actual Android builds from the Android source tree.
+  cross-compile-for-android:
+    name: Cross-compile for Android (${{matrix.arch}})
+    strategy:
+      matrix:
+        include:
+        - { arch: aarch64, target: aarch64-linux-android }
+        - { arch: armv7a, target: armv7a-linux-androideabi }
+        - { arch: i686, target: i686-linux-android }
+        - { arch: x86_64, target: x86_64-linux-android }
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    # See https://developer.android.com/ndk/guides/other_build_systems#autoconf
+    - name: configure
+      run: |
+        TOOLCHAIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64
+        API_LEVEL=29 # Android 10
+        export AR=$TOOLCHAIN/bin/llvm-ar
+        export CC=$TOOLCHAIN/bin/${{matrix.target}}${API_LEVEL}-clang
+        export AS=$CC
+        export LD=$TOOLCHAIN/bin/ld
+        export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+        export STRIP=$TOOLCHAIN/bin/llvm-strip
+        ./configure --host=${{matrix.target}} CFLAGS="$DEF_CFLAGS"
+    - run: make -j8 V=1 CFLAGS_WARN="-Werror"
+    - uses: actions/upload-artifact@v4
+      with:
+        name: android-${{matrix.arch}}-config.h
+        path: lib/config.h

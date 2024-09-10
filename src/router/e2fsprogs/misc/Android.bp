@@ -18,6 +18,7 @@ cc_library {
     name: "libext2_misc",
     host_supported: true,
     recovery_available: true,
+    vendor_available: true,
     defaults: ["e2fsprogs-defaults"],
 
     target: {
@@ -58,6 +59,7 @@ cc_defaults {
 cc_binary {
     name: "mke2fs",
     host_supported: true,
+    vendor_available: true,
     defaults: ["mke2fs_defaults"],
     target: {
         host: {
@@ -126,7 +128,7 @@ cc_binary {
             symlinks: ["mkfs.ext4.microdroid"],
         },
     },
-    installable: false,
+    no_full_install: true,
     stem: "mke2fs",
     visibility: ["//packages/modules/Virtualization/microdroid"],
 }
@@ -191,9 +193,8 @@ cc_library_static {
 //########################################################################
 // Build badblocks
 
-cc_binary {
+cc_binary_host {
     name: "badblocks",
-    host_supported: true,
     defaults: ["e2fsprogs-defaults"],
 
     srcs: ["badblocks.c"],

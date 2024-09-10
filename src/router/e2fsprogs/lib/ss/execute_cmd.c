@@ -100,7 +100,7 @@ static int check_request_table(register ss_request_table *rqtbl, int argc,
 	for (name = request->command_names; *name; name++)
 	    if (!strcmp(*name, string)) {
 		info->current_request = request->command_names[0];
-		(request->function)(argc, (const char *const *) argv,
+		(request->function)(argc, (ss_argv_t) argv,
 				    sci_idx,info->info_ptr);
 		info->current_request = (char *)NULL;
 		return(0);

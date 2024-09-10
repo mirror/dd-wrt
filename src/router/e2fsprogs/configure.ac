@@ -11,11 +11,9 @@ BINARY_TYPE=bin
 dnl
 dnl This is to figure out the version number and the date....
 dnl
-E2FSPROGS_VERSION=`grep E2FSPROGS_VERSION ${srcdir}/version.h  \
-	| awk '{print $3}' | tr \" " " | awk '{print $1}'`
-E2FSPROGS_DATE=`grep E2FSPROGS_DATE ${srcdir}/version.h | awk '{print $3}' \
-	| tr \" " " | awk '{print $1}'`
-E2FSPROGS_DAY=$(echo $E2FSPROGS_DATE | awk -F- '{print $1}' | sed -e '/^[[1-9]]$/s/^/0/')
+E2FSPROGS_VERSION=`awk -F\" '/E2FSPROGS_VERS/ { print $2 }' ${srcdir}/version.h`
+E2FSPROGS_DATE=`awk -F\" '/E2FSPROGS_DATE/ { print $2 }' ${srcdir}/version.h`
+E2FSPROGS_DAY=$(echo $E2FSPROGS_DATE | awk -F- '{ printf "%02d", $1 }')
 MONTH=`echo $E2FSPROGS_DATE | awk -F- '{print $2}'`
 YEAR=`echo $E2FSPROGS_DATE | awk -F- '{print $3}'`
 
@@ -43,27 +41,31 @@ Dec)	MONTH_NUM=12; E2FSPROGS_MONTH="December" ;;
 *)	AC_MSG_WARN([Unknown month $MONTH??]) ;;
 esac
 
-base_ver=`echo $E2FSPROGS_VERSION | \
-	       sed -e 's/-WIP//' -e 's/pre-//' -e 's/-PLUS//'`
+base_ver=`echo $E2FSPROGS_VERSION | sed -e 's/pre-//' -e 's/-.*//'`
+base_rel=`echo $E2FSPROGS_VERSION | awk -F- '{ print $2 }'`
 
 date_spec=${E2FSPROGS_YEAR}.${MONTH_NUM}.${E2FSPROGS_DAY}
 
 case $E2FSPROGS_VERSION in
 *-WIP|pre-*)
-	E2FSPROGS_PKGVER="$base_ver~WIP.$date_spec"
+	E2FSPROGS_PKGVER="$base_ver"
+	E2FSPROGS_PKGREL="WIP.$date_spec"
 	;;
 *)
 	E2FSPROGS_PKGVER="$base_ver"
+	E2FSPROGS_PKGREL="$base_rel"
 	;;
 esac
 
 unset DATE MONTH YEAR base_ver pre_vers date_spec
 AC_MSG_RESULT([Generating configuration file for e2fsprogs version $E2FSPROGS_VERSION])
+AC_MSG_RESULT([Package version ${E2FSPROGS_PKGVER} release ${E2FSPROGS_PKGREL}])
 AC_MSG_RESULT([Release date is ${E2FSPROGS_MONTH}, ${E2FSPROGS_YEAR}])
 AC_SUBST(E2FSPROGS_YEAR)
 AC_SUBST(E2FSPROGS_MONTH)
 AC_SUBST(E2FSPROGS_DAY)
 AC_SUBST(E2FSPROGS_VERSION)
+AC_SUBST(E2FSPROGS_PKGREL)
 AC_SUBST(E2FSPROGS_PKGVER)
 AC_SUBST(E2FSPROGS_DATE)
 dnl
@@ -363,10 +365,10 @@ CFLAGS_STLIB="${CFLAGS_STLIB:-$CFLAGS}"
 LDFLAGS_SHLIB=${LDFLAGS_SHLIB:-$LDFLAGS}
 LDFLAGS_STATIC=${LDFLAGS_STATIC:-$LDFLAGS}
 AC_ARG_ENABLE([hardening],
-AS_HELP_STRING([--enable-hardening],[build for coverage testing using gcov]),
+AS_HELP_STRING([--enable-hardening],[build with hardening flags such as fortify]),
 if test "$enableval" = "yes"
 then
-	HARDEN_CFLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-strong"
+	HARDEN_CFLAGS="-D_FORTIFY_SOURCE=3 -fstack-protector-strong"
 	HARDEN_LDFLAGS=["-Wl,-z,relro -Wl,-z,now"]
 	CFLAGS="$CFLAGS $HARDEN_CFLAGS -fPIE"
 	CFLAGS_SHLIB="$CFLAGS_SHLIB $HARDEN_CFLAGS"
@@ -1107,9 +1109,16 @@ AC_CHECK_DECL(lseek64,[AC_DEFINE(HAVE_LSEEK64_PROTOTYPE, 1,
 		[#define _LARGEFILE_SOURCE
 		 #define _LARGEFILE64_SOURCE
 		 #include <unistd.h>])
+
+dnl The Android NDK has <linux/fsmap.h>, but it is missing the inline functions
+dnl fsmap_sizeof() and fsmap_advance().  Check whether this is the case.
+AC_CHECK_DECL(fsmap_sizeof,[AC_DEFINE(HAVE_FSMAP_SIZEOF, 1,
+			    [Define to 1 if fsmap_sizeof() is declared in linux/fsmap.h])],,
+		[#include <linux/fsmap.h>])
 dnl
 dnl Word sizes...
 dnl
+AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
@@ -1290,12 +1299,50 @@ if test "$ac_cv_func_dlopen" = yes ; then
 fi
 AC_SUBST(MAGIC_LIB)
 dnl
+dnl libarchive
+dnl
+AC_ARG_WITH([libarchive],
+AS_HELP_STRING([--without-libarchive],[disable use of libarchive]),
+[if test "$withval" = "no"
+then
+	try_libarchive=""
+	AC_MSG_RESULT([Disabling libarchive support])
+elif test "$withval" = "direct"
+then
+	try_libarchive="direct"
+	AC_MSG_RESULT([Testing for libarchive support (forced direct link)])
+else
+	try_libarchive="yes"
+	AC_MSG_RESULT([Testing for libarchive support (with dlopen)])
+fi]
+,
+try_libarchive="yes"
+AC_MSG_RESULT([Try testing for libarchive support (with dlopen) by default])
+)
+ARCHIVE_LIB=
+if test -n "$try_libarchive"
+then
+    AC_CHECK_LIB(archive, archive_read_new, [ARCHIVE_LIB=-larchive
+    AC_CHECK_HEADERS([archive.h])])
+    if test "$ac_cv_func_dlopen" = yes -a "$try_libarchive" != "direct"; then
+        ARCHIVE_LIB=$DLOPEN_LIB
+	AC_DEFINE(CONFIG_DLOPEN_LIBARCHIVE, 1,
+		[Define to 1 if using dlopen to access libarchive])
+
+    fi
+    if test "$ac_cv_header_archive_h" != "yes"
+    then
+        ARCHIVE_LIB=
+    fi
+fi
+AC_SUBST(ARCHIVE_LIB)
+dnl
 dnl Check to see if librt is required for clock_gettime() (glibc < 2.17)
 dnl
 AC_CHECK_LIB(rt, clock_gettime, [CLOCK_GETTIME_LIB=-lrt])
 AC_SUBST(CLOCK_GETTIME_LIB)
 dnl
-dnl Check to see if the FUSE library is -lfuse or -losxfuse
+dnl Check to see if the FUSE library is -lfuse3, -losxfuse, or -lfuse
 dnl
 FUSE_CMT=
 FUSE_LIB=
@@ -1307,27 +1354,35 @@ then
 	FUSE_CMT="#"
 	AC_MSG_RESULT([Disabling fuse2fs])
 else
-	AC_CHECK_HEADERS([pthread.h fuse.h], [],
-[AC_MSG_FAILURE([Cannot find fuse2fs headers.])],
-[#define _FILE_OFFSET_BITS	64
-#define FUSE_USE_VERSION 29])
-
 	AC_PREPROC_IFELSE(
-[AC_LANG_PROGRAM([[#define FUSE_USE_VERSION 29
-#ifdef __linux__
+[AC_LANG_PROGRAM([[#ifdef __linux__
 #include <linux/fs.h>
 #include <linux/falloc.h>
 #include <linux/xattr.h>
 #endif
 ]], [])], [], [AC_MSG_FAILURE([Cannot find fuse2fs Linux headers.])])
 
-	AC_CHECK_LIB(osxfuse, fuse_main, [FUSE_LIB=-losxfuse],
-		[AC_CHECK_LIB(fuse, fuse_main, [FUSE_LIB=-lfuse],
-			      [AC_MSG_FAILURE([Cannot find fuse library.])])])
+	PKG_CHECK_MODULES([fuse3], [fuse3],
+	  [
+		FUSE_LIB=-lfuse3
+	  ], [
+		AC_CHECK_HEADERS([pthread.h fuse.h], [],
+			[AC_MSG_FAILURE([Cannot find fuse2fs headers.])],
+[#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 29])
+
+		AC_CHECK_LIB(osxfuse, fuse_main, [FUSE_LIB=-losxfuse],
+			[AC_CHECK_LIB(fuse, fuse_main, [FUSE_LIB=-lfuse],
+				[AC_MSG_FAILURE([Cannot find fuse library.])])])
+	  ])
 	AC_MSG_RESULT([Enabling fuse2fs])
 fi
 ,
-AC_CHECK_HEADERS([pthread.h fuse.h], [], [FUSE_CMT="#"],
+PKG_CHECK_MODULES([fuse3], [fuse3],
+  [
+	FUSE_LIB=-lfuse3
+  ], [
+	AC_CHECK_HEADERS([pthread.h fuse.h], [], [FUSE_CMT="#"], 
 [#define _FILE_OFFSET_BITS	64
 #define FUSE_USE_VERSION 29
 #ifdef __linux__
@@ -1335,11 +1390,13 @@ AC_CHECK_HEADERS([pthread.h fuse.h], [], [FUSE_CMT="#"],
 # include <linux/falloc.h>
 # include <linux/xattr.h>
 #endif])
-if test -z "$FUSE_CMT"
-then
-	AC_CHECK_LIB(osxfuse, fuse_main, [FUSE_LIB=-losxfuse],
-[AC_CHECK_LIB(fuse, fuse_main, [FUSE_LIB=-lfuse], [FUSE_CMT="#"])])
-fi
+	if test -z "$FUSE_CMT"
+	then
+		AC_CHECK_LIB(osxfuse, fuse_main, [FUSE_LIB=-losxfuse],
+			[AC_CHECK_LIB(fuse, fuse_main, [FUSE_LIB=-lfuse],
+				[FUSE_CMT="#"])])
+	fi
+  ])
 if test -z "$FUSE_CMT"
 then
 	AC_MSG_RESULT([Enabling fuse2fs by default.])
@@ -1347,6 +1404,29 @@ fi
 )
 AC_SUBST(FUSE_LIB)
 AC_SUBST(FUSE_CMT)
+if test "$FUSE_LIB" = "-lfuse3"
+then
+	FUSE_USE_VERSION=35
+	CFLAGS="$CFLAGS $fuse3_CFLAGS"
+	LDFLAGS="$LDFLAGS $fuse3_LDFLAGS"
+	AC_CHECK_HEADERS([pthread.h fuse.h], [],
+		[AC_MSG_FAILURE([Cannot find fuse3 fuse2fs headers.])],
+[#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 35
+#ifdef __linux__
+#include <linux/fs.h>
+#include <linux/falloc.h>
+#include <linux/xattr.h>
+#endif])
+elif test -n "$FUSE_LIB"
+then
+	FUSE_USE_VERSION=29
+fi
+if test -n "$FUSE_USE_VERSION"
+then
+	AC_DEFINE_UNQUOTED(FUSE_USE_VERSION, $FUSE_USE_VERSION,
+		[Define to the version of FUSE to use])
+fi
 dnl
 dnl See if optreset exists
 dnl
@@ -1583,9 +1663,6 @@ if test "$enable_fuzzing" = "yes" || test "$enable_fuzzing" = "probe"; then
 	AC_SUBST(have_fuzzer)
 	AC_SUBST(fuzzer_cflags)
 	AC_SUBST(fuzzer_ldflags)
-fi
-if test "$enable_fuzzer" = "yes" && test "$have_fuzzer" != "yes"; then
-	AC_MSG_ERROR([Fuzzing not supported by compiler.])
 fi
 AC_SUBST(FUZZING_CMT)
 dnl
@@ -1894,8 +1971,6 @@ OS_IO_FILE=""
   ;;
 esac]
 AC_SUBST(OS_IO_FILE)
-
-AC_SYS_LARGEFILE
 
 dnl
 dnl Make our output files, being sure that we create the some miscellaneous 

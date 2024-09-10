@@ -26,6 +26,13 @@ static inline int ext2fsP_is_disk_device(mode_t mode)
 #endif
 }
 
+static inline time_t ext2fsP_get_time(ext2_filsys fs)
+{
+	if (fs->now || (fs->flags2 & EXT2_FLAG2_USE_FAKE_TIME))
+		return fs->now;
+	return time(NULL);
+}
+
 /*
  * Badblocks list
  */

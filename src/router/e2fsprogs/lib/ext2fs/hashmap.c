@@ -34,8 +34,8 @@ struct ext2fs_hashmap *ext2fs_hashmap_create(
 				uint32_t(*hash_fct)(const void*, size_t),
 				void(*free_fct)(void*), size_t size)
 {
-	struct ext2fs_hashmap *h = calloc(sizeof(struct ext2fs_hashmap) +
-				sizeof(struct ext2fs_hashmap_entry) * size, 1);
+	struct ext2fs_hashmap *h = calloc(1, sizeof(struct ext2fs_hashmap) +
+				sizeof(struct ext2fs_hashmap_entry) * size);
 	if (!h)
 		return NULL;
 

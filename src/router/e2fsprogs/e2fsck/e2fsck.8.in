@@ -44,8 +44,9 @@ e2fsck \- check a Linux ext2/ext3/ext4 file system
 is used to check the ext2/ext3/ext4 family of file systems.
 For ext3 and ext4 file systems that use a journal, if the system has been
 shut down uncleanly without any errors, normally, after replaying the
-committed transactions  in the journal, the file system should be
-marked as clean.   Hence, for file systems that use journaling,
+committed transactions in the journal, the file system should be
+marked as clean.
+Hence, for file systems that use journaling,
 .B e2fsck
 will normally replay the journal and exit, unless its superblock
 indicates that further checking is required.
@@ -63,12 +64,14 @@ option is specified, and
 .BR \-c ,
 .BR \-l ,
 or
-.B -L
+.B \-L
 options are
 .I not
-specified.   However, even if it is safe to do so, the results printed by
+specified.
+However, even if it is safe to do so, the results printed by
 .B e2fsck
-are not valid if the file system is mounted.   If
+are not valid if the file system is mounted.
+If
 .B e2fsck
 asks whether or not you should check a file system which is mounted,
 the only correct answer is ``no''.  Only experts who really know what
@@ -80,10 +83,10 @@ is run in interactive mode (meaning that none of
 .BR \-y ,
 .BR \-n ,
 or
-.BR \-p
+.B \-p
 are specified), the program will ask the user to fix each problem found in the
-file system.  A response of 'y' will fix the error; 'n' will leave the error
-unfixed; and 'a' will fix the problem and all subsequent problems; pressing
+file system.  A response of \&'y' will fix the error; \&'n' will leave the error
+unfixed; and \&'a' will fix the problem and all subsequent problems; pressing
 Enter will proceed with the default response, which is printed before the
 question mark.  Pressing Control-C terminates e2fsck immediately.
 .SH OPTIONS
@@ -113,7 +116,7 @@ program using the
 option to print out where the superblocks exist, supposing
 .B mke2fs
 is supplied with arguments that are consistent with the file system's layout
-(e.g. blocksize, blocks per group,
+(e.g.\& blocksize, blocks per group,
 .BR sparse_super ,
 etc.).
 .IP
@@ -170,7 +173,7 @@ Print debugging output (useless unless you are debugging
 .B \-D
 Optimize directories in file system.  This option causes e2fsck to
 try to optimize all directories, either by re-indexing them if the
-file system supports directory indexing,  or by sorting and compressing
+file system supports directory indexing, or by sorting and compressing
 directories for smaller directories, or for file systems using
 traditional linear directories.
 .IP
@@ -204,86 +207,92 @@ Set the version of the extended attribute blocks which
 will require while checking the file system.  The version number may
 be 1 or 2.  The default extended attribute version format is 2.
 .TP
-.BI journal_only
+.B journal_only
 Only replay the journal if required, but do not perform any further checks
 or repairs.
 .TP
-.BI fragcheck
+.B fragcheck
 During pass 1, print a detailed report of any discontiguous blocks for
 files in the file system.
 .TP
-.BI discard
+.B discard
 Attempt to discard free blocks and unused inode blocks after the full
 file system check (discarding blocks is useful on solid state devices and sparse
-/ thin-provisioned storage). Note that discard is done in pass 5 AFTER the
+/ thin-provisioned storage).
+Note that discard is done in pass 5 AFTER the
 file system has been fully checked and only if it does not contain recognizable
-errors. However there might be cases where
+errors.
+However there might be cases where
 .B e2fsck
 does not fully recognize a problem and hence in this case this
 option may prevent you from further manual data recovery.
 .TP
-.BI nodiscard
-Do not attempt to discard free blocks and unused inode blocks. This option is
-exactly the opposite of discard option. This is set as default.
+.B nodiscard
+Do not attempt to discard free blocks and unused inode blocks.
+This option is exactly the opposite of discard option.
+This is set as default.
 .TP
-.BI no_optimize_extents
+.B no_optimize_extents
 Do not offer to optimize the extent tree by eliminating unnecessary
 width or depth.  This can also be enabled in the options section of
 .BR /etc/e2fsck.conf .
 .TP
-.BI optimize_extents
+.B optimize_extents
 Offer to optimize the extent tree by eliminating unnecessary
 width or depth.  This is the default unless otherwise specified in
 .BR /etc/e2fsck.conf .
 .TP
-.BI inode_count_fullmap
+.B inode_count_fullmap
 Trade off using memory for speed when checking a file system with a
 large number of hard-linked files.  The amount of memory required is
 proportional to the number of inodes in the file system.  For large file
-systems, this can be gigabytes of memory.  (For example, a 40TB file system
+systems, this can be gigabytes of memory.  (For example, a 40\ TB file system
 with 2.8 billion inodes will consume an additional 5.7 GB memory if this
 optimization is enabled.)  This optimization can also be enabled in the
 options section of
 .BR /etc/e2fsck.conf .
 .TP
-.BI no_inode_count_fullmap
+.B no_inode_count_fullmap
 Disable the
 .B inode_count_fullmap
 optimization.  This is the default unless otherwise specified in
 .BR /etc/e2fsck.conf .
 .TP
-.BI readahead_kb
+.B readahead_kb
 Use this many KiB of memory to pre-fetch metadata in the hopes of reducing
 e2fsck runtime.  By default, this is set to the size of two block groups' inode
-tables (typically 4MiB on a regular ext4 file system); if this amount is more
+tables (typically 4\ MiB on a regular ext4 file system); if this amount is more
 than 1/50th of total physical memory, readahead is disabled.  Set this to zero
 to disable readahead entirely.
 .TP
-.BI bmap2extent
+.B bmap2extent
 Convert block-mapped files to extent-mapped files.
 .TP
-.BI fixes_only
+.B fixes_only
 Only fix damaged metadata; do not optimize htree directories or compress
-extent trees.  This option is incompatible with the -D and -E bmap2extent
+extent trees.  This option is incompatible with the \-D and \-E bmap2extent
 options.
 .TP
-.BI check_encoding
+.B check_encoding
 Force verification of encoded filenames in case-insensitive directories.
 This is the default mode if the file system has the strict flag enabled.
 .TP
-.BI unshare_blocks
+.B unshare_blocks
 If the file system has shared blocks, with the shared blocks read-only feature
 enabled, then this will unshare all shared blocks and unset the read-only
-feature bit. If there is not enough free space then the operation will fail.
+feature bit.
+If there is not enough free space then the operation will fail.
 If the file system does not have the read-only feature bit, but has shared
-blocks anyway, then this option will have no effect. Note when using this
+blocks anyway, then this option will have no effect.
+Note when using this
 option, if there is no free space to clone blocks, there is no prompt to
 delete files and instead the operation will fail.
 .IP
-Note that unshare_blocks implies the "-f" option to ensure that all passes
-are run. Additionally, if "-n" is also specified, e2fsck will simulate trying
-to allocate enough space to deduplicate. If this fails, the exit code will
-be non-zero.
+Note that unshare_blocks implies the "\-f" option to ensure that all passes
+are run.
+Additionally, if "\-n" is also specified, e2fsck will simulate trying
+to allocate enough space to deduplicate.
+If this fails, the exit code will be non-zero.
 .RE
 .TP
 .B \-f
@@ -299,7 +308,7 @@ time trials.
 @JDEV@Set the pathname where the external-journal for this file system can be
 @JDEV@found.
 .TP
-.BI \-k
+.B \-k
 When combined with the
 .B \-c
 option, any existing bad blocks in the bad blocks list are preserved,
@@ -318,7 +327,7 @@ of the file system.  Hence,
 .BR badblocks (8)
 must be given the blocksize of the file system in order to obtain correct
 results.  As a result, it is much simpler and safer to use the
-.B -c
+.B \-c
 option to
 .BR e2fsck ,
 since it will assure that the correct parameters are passed to the
@@ -391,7 +400,9 @@ options.
 .TP
 .BI \-z " undo_file"
 Before overwriting a file system block, write the old contents of the block to
-an undo file.  This undo file can be used with e2undo(8) to restore the old
+an undo file.  This undo file can be used with
+.BR e2undo (8)
+to restore the old
 contents of the file system should something go wrong.  If the empty string is
 passed as the undo_file argument, the undo file will be written to a file named
 e2fsck-\fIdevice\fR.e2undo in the directory specified via the
@@ -403,24 +414,23 @@ The exit code returned by
 .B e2fsck
 is the sum of the following conditions:
 .br
-\	0\	\-\ No errors
+	0	\-\ No errors
 .br
-\	1\	\-\ File system errors corrected
+	1	\-\ File system errors corrected
 .br
-\	2\	\-\ File system errors corrected, system should
+	2	\-\ File system errors corrected, system should
 .br
-\	\	\ \ be rebooted
+		\ \ be rebooted
 .br
-\	4\	\-\ File system errors left uncorrected
+	4	\-\ File system errors left uncorrected
 .br
-\	8\	\-\ Operational error
+	8	\-\ Operational error
 .br
-\	16\	\-\ Usage or syntax error
+	16	\-\ Usage or syntax error
 .br
-\	32\	\-\ E2fsck canceled by user request
+	32	\-\ E2fsck canceled by user request
 .br
-\	128\	\-\ Shared library error
-.br
+	128	\-\ Shared library error
 .SH SIGNALS
 The following signals have the following effect when sent to
 .BR e2fsck .
@@ -454,7 +464,7 @@ the messages printed by
 are in English; if your system has been
 configured so that
 .BR e2fsck 's
-messages have been translated into another language, please set the the
+messages have been translated into another language, please set the
 .B LC_ALL
 environment variable to
 .B C
@@ -492,7 +502,7 @@ Always include the full version string which
 displays when it is run, so I know which version you are running.
 .SH ENVIRONMENT
 .TP
-.BI E2FSCK_CONFIG
+.B E2FSCK_CONFIG
 Determines the location of the configuration file (see
 .BR e2fsck.conf (5)).
 .SH AUTHOR

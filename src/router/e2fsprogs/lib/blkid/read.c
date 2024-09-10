@@ -382,7 +382,10 @@ void blkid_read_cache(blkid_cache cache)
 {
 	FILE *file;
 	char buf[4096];
-	int fd, lineno = 0;
+	int fd;
+#ifdef CONFIG_BLKID_DEBUG
+	int lineno = 0;
+#endif
 	struct stat st;
 
 	if (!cache)
@@ -414,7 +417,7 @@ void blkid_read_cache(blkid_cache cache)
 		blkid_dev dev;
 		unsigned int end;
 
-		lineno++;
+		INC_LINENO;
 		if (buf[0] == 0)
 			continue;
 		end = strlen(buf) - 1;
@@ -422,7 +425,7 @@ void blkid_read_cache(blkid_cache cache)
 		while (buf[end] == '\\' && end < sizeof(buf) - 2 &&
 		       fgets(buf + end, sizeof(buf) - end, file)) {
 			end = strlen(buf) - 1;
-			lineno++;
+			INC_LINENO;
 		}
 
 		if (blkid_parse_line(cache, &dev, buf) < 0) {

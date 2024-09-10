@@ -441,7 +441,8 @@ void print_resource_track(e2fsck_t ctx, const char *desc,
 	} else
 #elif defined HAVE_MALLINFO
 	/* don't use mallinfo() if over 2GB used, since it returns "int" */
-	if ((char *)sbrk(0) - (char *)track->brk_start < 2LL << 30) {
+	if ((unsigned long)((char *)sbrk(0) - (char *)track->brk_start) <
+	    2UL << 30) {
 		struct mallinfo	malloc_info = mallinfo();
 
 		log_out(ctx, _("Memory used: %lluk/%lluk (%lluk/%lluk), "),
@@ -559,29 +560,20 @@ blk64_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs, const char *name,
 	struct ext2_super_block *sb;
 	io_channel		io = NULL;
 	void			*buf = NULL;
-	int			blocksize;
-	blk64_t			superblock, ret_sb = 8193;
+	unsigned int		blocksize = EXT2_MIN_BLOCK_SIZE;
+	int			blocksize_known = 0;
+	blk_t			bpg = 0;
+	blk64_t			ret_sb = 8193;
 
 	if (fs && fs->super) {
-		ret_sb = (fs->super->s_blocks_per_group +
-			  fs->super->s_first_data_block);
-		if (ctx) {
-			ctx->superblock = ret_sb;
-			ctx->blocksize = fs->blocksize;
-		}
-		return ret_sb;
+		blocksize = fs->blocksize;
+		blocksize_known = 1;
+		bpg = fs->super->s_blocks_per_group;
 	}
 
-	if (ctx) {
-		if (ctx->blocksize) {
-			ret_sb = ctx->blocksize * 8;
-			if (ctx->blocksize == 1024)
-				ret_sb++;
-			ctx->superblock = ret_sb;
-			return ret_sb;
-		}
-		ctx->superblock = ret_sb;
-		ctx->blocksize = 1024;
+	if (ctx && ctx->blocksize) {
+		blocksize = ctx->blocksize;
+		blocksize_known = 1;
 	}
 
 	if (!name || !manager)
@@ -594,28 +586,54 @@ blk64_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs, const char *name,
 		goto cleanup;
 	sb = (struct ext2_super_block *) buf;
 
-	for (blocksize = EXT2_MIN_BLOCK_SIZE;
-	     blocksize <= EXT2_MAX_BLOCK_SIZE ; blocksize *= 2) {
-		superblock = blocksize*8;
-		if (blocksize == 1024)
-			superblock++;
-		io_channel_set_blksize(io, blocksize);
-		if (io_channel_read_blk64(io, superblock,
-					-SUPERBLOCK_SIZE, buf))
-			continue;
-#ifdef WORDS_BIGENDIAN
-		if (sb->s_magic == ext2fs_swab16(EXT2_SUPER_MAGIC))
-			ext2fs_swap_super(sb);
-#endif
-		if ((sb->s_magic == EXT2_SUPER_MAGIC) &&
-		    (EXT2_BLOCK_SIZE(sb) == blocksize)) {
-			ret_sb = superblock;
-			if (ctx) {
-				ctx->superblock = superblock;
-				ctx->blocksize = blocksize;
-			}
-			break;
+	for (; blocksize <= EXT2_MAX_BLOCK_SIZE; blocksize *= 2) {
+		dgrp_t grp, three = 1, five = 5, seven = 7;
+		dgrp_t limit;
+		blk_t this_bpg = bpg ? bpg : blocksize * 8;
+		blk64_t	num_blocks;
+
+		if (fs && fs->super) {
+			limit = ext2fs_blocks_count(fs->super) / this_bpg;
+		} else if (ctx && ext2fs_get_device_size2(ctx->filesystem_name,
+							  blocksize,
+							  &num_blocks) == 0) {
+			limit = num_blocks / this_bpg;
+		} else {
+			/* If we can't figure out the device size,
+			 * arbitrarily set a limit which is enough for
+			 * 8 block groups or so...
+			 */
+			limit = 128;
 		}
+
+		io_channel_set_blksize(io, blocksize);
+
+		while ((grp = ext2fs_list_backups(NULL, &three,
+						  &five, &seven)) <= limit) {
+			blk64_t superblock = (blk64_t)grp * this_bpg;
+
+			if (blocksize == 1024)
+				superblock++;
+			if (io_channel_read_blk64(io, superblock,
+						-SUPERBLOCK_SIZE, buf))
+				continue;
+#ifdef WORDS_BIGENDIAN
+			if (sb->s_magic == ext2fs_swab16(EXT2_SUPER_MAGIC))
+				ext2fs_swap_super(sb);
+#endif
+			if ((sb->s_magic == EXT2_SUPER_MAGIC) &&
+			    ((unsigned) EXT2_BLOCK_SIZE(sb) == blocksize)) {
+				ret_sb = superblock;
+				if (ctx) {
+					ctx->superblock = superblock;
+					ctx->blocksize = blocksize;
+				}
+				goto cleanup;
+			}
+		}
+
+		if (blocksize_known)
+			break;
 	}
 
 cleanup:

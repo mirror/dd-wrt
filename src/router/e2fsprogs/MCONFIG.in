@@ -34,7 +34,7 @@ man8dir = $(mandir)/man8
 infodir = @infodir@
 datadir = @datadir@
 pkgconfigdir = $(libdir)/pkgconfig
-pkglibdir = $(libdir)/e2fsprogs
+pkglibexecdir = @libexecdir@/e2fsprogs
 
 HAVE_UDEV = @have_udev@
 UDEV_RULES_DIR = @pkg_udev_rules_dir@
@@ -141,6 +141,7 @@ LIBFUSE = @FUSE_LIB@
 LIBSUPPORT = $(LIBINTL) $(LIB)/libsupport@STATIC_LIB_EXT@
 LIBBLKID = @LIBBLKID@ @PRIVATE_LIBS_CMT@ $(LIBUUID)
 LIBINTL = @LIBINTL@
+LIBARCHIVE = @ARCHIVE_LIB@
 SYSLIBS = @LIBS@ @PTHREAD_LIBS@
 DEPLIBSS = $(LIB)/libss@LIB_EXT@
 DEPLIBCOM_ERR = $(LIB)/libcom_err@LIB_EXT@

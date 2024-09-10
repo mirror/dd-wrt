@@ -144,7 +144,7 @@ static void validate_paths(int argc, char *argv[], int path_start_index)
 		if (ret < 0)
 			goto invalid;
 		if (!S_ISDIR(st.st_mode)) {
-			fprintf(stderr, "%s is not a directory\n", argv[x]);
+			errno = ENOTDIR;
 			goto invalid;
 		}
 	}

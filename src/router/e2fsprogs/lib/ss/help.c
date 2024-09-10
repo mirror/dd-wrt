@@ -34,7 +34,7 @@
 #endif
 #include "ss_internal.h"
 
-void ss_help(int argc, char const * const *argv, int sci_idx, pointer info_ptr)
+void ss_help(int argc, ss_argv_t argv, int sci_idx, pointer info_ptr)
 {
     char *buffer;
     char const *request_name;

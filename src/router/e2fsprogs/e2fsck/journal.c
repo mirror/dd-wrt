@@ -1683,6 +1683,7 @@ errcode_t e2fsck_run_ext3_journal(e2fsck_t ctx)
 	errcode_t	retval, recover_retval;
 	io_stats	stats = 0;
 	unsigned long long kbytes_written = 0;
+	__u16 s_error_state;
 
 	printf(_("%s: recovering journal\n"), ctx->device_name);
 	if (ctx->options & E2F_OPT_READONLY) {
@@ -1705,6 +1706,7 @@ errcode_t e2fsck_run_ext3_journal(e2fsck_t ctx)
 		ctx->fs->io->manager->get_stats(ctx->fs->io, &stats);
 	if (stats && stats->bytes_written)
 		kbytes_written = stats->bytes_written >> 10;
+	s_error_state = ctx->fs->super->s_state & EXT2_ERROR_FS;
 
 	ext2fs_mmp_stop(ctx->fs);
 	ext2fs_free(ctx->fs);
@@ -1721,6 +1723,7 @@ errcode_t e2fsck_run_ext3_journal(e2fsck_t ctx)
 	ctx->fs->now = ctx->now;
 	ctx->fs->flags |= EXT2_FLAG_MASTER_SB_ONLY;
 	ctx->fs->super->s_kbytes_written += kbytes_written;
+	ctx->fs->super->s_state |= s_error_state;
 
 	/* Set the superblock flags */
 	e2fsck_clear_recover(ctx, recover_retval != 0);
@@ -1841,7 +1844,7 @@ void e2fsck_move_ext3_journal(e2fsck_t ctx)
 	ext2fs_mark_super_dirty(fs);
 	fs->flags &= ~EXT2_FLAG_MASTER_SB_ONLY;
 	inode.i_links_count = 0;
-	inode.i_dtime = ctx->now;
+	ext2fs_set_dtime(fs, &inode);
 	if ((retval = ext2fs_write_inode(fs, ino, &inode)) != 0)
 		goto err_out;
 

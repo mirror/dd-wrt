@@ -196,7 +196,7 @@ static int release_inode_blocks(e2fsck_t ctx, ext2_ino_t ino,
 	__u32				count;
 
 	if (!ext2fs_inode_has_valid_blocks2(fs, EXT2_INODE(inode)))
-		return 0;
+		goto release_acl;
 
 	pb.buf = block_buf + 3 * ctx->fs->blocksize;
 	pb.ctx = ctx;
@@ -235,7 +235,7 @@ static int release_inode_blocks(e2fsck_t ctx, ext2_ino_t ino,
 	if (pb.truncated_blocks)
 		ext2fs_iblk_sub_blocks(fs, EXT2_INODE(inode),
 				pb.truncated_blocks);
-
+release_acl:
 	blk = ext2fs_file_acl_block(fs, EXT2_INODE(inode));
 	if (blk) {
 		retval = ext2fs_adjust_ea_refcount3(fs, blk, block_buf, -1,
@@ -348,7 +348,7 @@ static int release_orphan_inode(e2fsck_t ctx, ext2_ino_t *ino, char *block_buf)
 		ext2fs_inode_alloc_stats2(fs, *ino, -1,
 					  LINUX_S_ISDIR(inode.i_mode));
 		ctx->free_inodes++;
-		inode.i_dtime = ctx->now;
+		ext2fs_set_dtime(fs, EXT2_INODE(&inode));
 	} else {
 		inode.i_dtime = 0;
 	}
@@ -1320,25 +1320,25 @@ void check_super_block(e2fsck_t ctx)
 	 */
 	if (((ctx->options & E2F_OPT_FORCE) || fs->super->s_checkinterval) &&
 	    !broken_system_clock && !(ctx->flags & E2F_FLAG_TIME_INSANE) &&
-	    (fs->super->s_mtime > (__u32) ctx->now)) {
-		pctx.num = fs->super->s_mtime;
+	    (ext2fs_get_tstamp(fs->super, s_mtime) > ctx->now)) {
+		pctx.num = ext2fs_get_tstamp(fs->super, s_mtime);
 		problem = PR_0_FUTURE_SB_LAST_MOUNT;
-		if (fs->super->s_mtime <= (__u32) ctx->now + ctx->time_fudge)
+		if ((time_t) pctx.num <= ctx->now + ctx->time_fudge)
 			problem = PR_0_FUTURE_SB_LAST_MOUNT_FUDGED;
 		if (fix_problem(ctx, problem, &pctx)) {
-			fs->super->s_mtime = ctx->now;
+			ext2fs_set_tstamp(fs->super, s_mtime, ctx->now);
 			fs->flags |= EXT2_FLAG_DIRTY;
 		}
 	}
 	if (((ctx->options & E2F_OPT_FORCE) || fs->super->s_checkinterval) &&
 	    !broken_system_clock && !(ctx->flags & E2F_FLAG_TIME_INSANE) &&
-	    (fs->super->s_wtime > (__u32) ctx->now)) {
-		pctx.num = fs->super->s_wtime;
+	    (ext2fs_get_tstamp(fs->super, s_wtime) > ctx->now)) {
+		pctx.num = ext2fs_get_tstamp(fs->super, s_wtime);
 		problem = PR_0_FUTURE_SB_LAST_WRITE;
-		if (fs->super->s_wtime <= (__u32) ctx->now + ctx->time_fudge)
+		if ((time_t) pctx.num <= ctx->now + ctx->time_fudge)
 			problem = PR_0_FUTURE_SB_LAST_WRITE_FUDGED;
 		if (fix_problem(ctx, problem, &pctx)) {
-			fs->super->s_wtime = ctx->now;
+			ext2fs_set_tstamp(fs->super, s_wtime, ctx->now);
 			fs->flags |= EXT2_FLAG_DIRTY;
 		}
 	}
@@ -1388,7 +1388,8 @@ void check_super_block(e2fsck_t ctx)
  * away.
  */
 #define FEATURE_RO_COMPAT_IGNORE	(EXT2_FEATURE_RO_COMPAT_LARGE_FILE| \
-					 EXT4_FEATURE_RO_COMPAT_DIR_NLINK)
+					 EXT4_FEATURE_RO_COMPAT_DIR_NLINK| \
+					 EXT4_FEATURE_RO_COMPAT_ORPHAN_PRESENT)
 #define FEATURE_INCOMPAT_IGNORE		(EXT3_FEATURE_INCOMPAT_EXTENTS| \
 					 EXT3_FEATURE_INCOMPAT_RECOVER)
 

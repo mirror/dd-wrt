@@ -1,3 +1,169 @@
+e2fsprogs (1.47.1-1) unstable; urgency=medium
+
+  * New upstream version
+  * Clarify the lsattr and mklost+found man pages that they are applicable
+    for ext2, ext3, and ext4 file systems and not just for ext2.  (Closes:
+    #1041115)
+  * Replace the build-depend on pkg-config with pkgconf to fix a Lintian
+    warning.
+  * E2fsck will now perform more consistency checks on EA (extended
+    attribute value) inodes.
+  * Fix a big where e2fsck could potentially leak an acl block when
+    releasing an orphan inode.
+  * Avoid a divide by zero crash in libext2fs if the container
+    infrastructure, such as lxcfs, reports that the system has zero CPU's
+    via sysconf(_SC_NPROCESSORS_CONF).
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 20 May 2024 15:28:06 -0400
+
+e2fsprogs (1.47.1~rc2-1) unstable; urgency=medium
+
+  * New upstream version
+  * Update Chinese, Czech, French, Polish Romainian, Swedish, and
+    Ukrainian translations
+  * Fix libarchive support in mke2fs on mips64el (Closes: #1070042)
+  * Fix e2scrub when the "systemctl" package is installed instead of
+    systemd.  (Closes: #1070107)
+  * Update to standards 4.7.0
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 20 May 2024 15:24:47 -0400
+
+e2fsprogs (1.47.1~rc1-3) unstable; urgency=medium
+
+  * Remove duplicated work in release notes
+  * Fix resize2fs's calculation of free clusters in the last block group
+    for file systems larger than 4TB
+  * Fix FTBFS on Hurd caused by trying to install e2scrub's systemd unit
+    files which aren't built since e2scrub isn't supported on Hurd
+  * Don't build mke2fs with libarchive support on mips64el since a bug in
+    libarchive only on that architecture causes a FTBFS due to the
+    regression test suite failing.  (See Debian Bug 1070042 for more details)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 29 Apr 2024 21:57:42 -0400
+
+e2fsprogs (1.47.1~rc1-1) unstable; urgency=medium
+
+  * Re-enable metadata_csum_seed and orphan_file by default now that
+    Debian Bookworm is released
+  * New upstream version
+  * Add support for post-2038 timestamps on platforms with 64-bit time_t.
+  * Mke2fs -d can now support an input tar file if the libarchive library
+    is available.
+  * Install a udev rule to inihibit ext4 file systesm from being
+    automounted by udisks.
+  * Debugfs's 'hash' command has been enhanced to use the hash seed and
+    algorithm from a superblock if a file system is opened and to display
+    the hash seed and algorithm if the -v flag is given.
+  * Teach mke2fs with a new extended options, root_perms, which overrides
+    the permissions for the root directory for the new file system.
+  * Preserve any error indicator in the superblock when replaying the
+    journal so that a subsequent fsck can repair the file system afterwards.
+  * Fix potential mke2fs failures when creating a file system with an
+    orphan file when the storage device has a previous file system and
+    does not support discard/trim commands.
+  * E2fsck will clear the orphan_present feature silently in preen mode.
+  * Fix potential checksum failures when performing an online resize when
+    the mounted file system is actively modifying the superblock.
+  * Fix a bug where a checksum failure in an htree directory can cause
+    e2fsck's preen mode to abort unnecessarily.
+  * Fix e2fsck's handling of an invalid symlink in an inline_data
+    directory.
+  * Fix e4crypt from issuing a spurious "success" error message when
+    trying to set a policy on a non-directory.
+  * Fix a potential infinite loop in debugfs's logdump command in some
+    edge cases.
+  * Fix e2fsck to correctly update quota usage after optimizing
+    directories or deleting corrupted inodes.
+  * Fix fuse2fs so that directories are created with the correct
+    permissions instead of having the other and group write permissions
+    masked off.
+  * Fix a potential e2fsck divide by zero crash caused by a maliciously
+    fuzzed file system.
+  * Fix dumpe2fs to report free block ranges correctly for bigalloc file
+    systems.
+  * Fix resize2fs where resizing a bigalloc file system can result in the
+    free cluster count in the last block group and the total free clusters
+    count to be incorrect.
+  * Avoid spurious e2scrub failures caused by trying to scrub file
+    syustems that do not have the journal enabled, and by aborting scrub
+    runs while upgrading the e2fsprogs package
+  * Teach tune2fs to detect a file system which is mounted but is not
+    mentioned in the mount namespace where tune2fs is run by treating a
+    block device which is busy as if it is mounted.
+  * If tune2fs can't find the mountpoint for a file system which is
+    apparently mounted (perhaps because it's not present in the current
+    mount namespace) when attempting to set the label or UUID in the
+    superblock, fall back to the old method of modifying block device and
+    silence printing any error messages.
+  * If both the primary superblock and first block group's backup
+    superblock are corrupted, e2fsck will now try additional backup
+    superblocks if they are available.
+  * Avoid mke2fs from creating an invalid file system with an insufficient
+    number of inodes when creating a file system which is very small
+    (100k), a block size of 1k, and an inode size of 256 bytes.
+  * Fix a potential deadlock caused by e2fsck being run in Direct I/O mode
+    with the threading optimization enabled.
+  * Update and clarify various man pages.  (Closes: #1038286)
+  * Add support for SOURCE_DATE_EPOCH environment variable
+  * Improve resize2fs's performance by eliminating extra cache flushes.
+  * Improve mke2fs's performance when zeroing a large number of inode
+    table blocks (when lazy inode table initialization is not enabled) by
+    batching calls to ext2fs_zero_blocks.
+  * Use a safe_getenv function for all calls to fetch the environment
+    variable in libext2fs.
+  * Upgrade fuse2fs to use fuse v3.
+  * Build the binaries using FORTIFY_SOURCE=3 for better hardening
+  * Add Romainian translation.
+  * Update Malay translation.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Fri, 26 Apr 2024 22:23:25 -0400
+
+e2fsprogs (1.47.0-2.4) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Upload to unstable.
+  * Version Provides and Breaks (thanks to Matthias Klose).
+
+ -- Helmut Grohne <helmut@subdivi.de>  Wed, 13 Mar 2024 07:20:06 +0100
+
+e2fsprogs (1.47.0-2.4~exp1) experimental; urgency=medium
+
+  * Non-maintainer upload.
+  * Revert time64 transitions for libss2 and libcom-err2.
+  * Enable dh_movetousr (DEP17). (Closes: #1060000)
+    + Mitigate file loss in libext2fs2 -> libext2fs2t64 upgrade and /usr-move.
+
+ -- Helmut Grohne <helmut@subdivi.de>  Sun, 10 Mar 2024 21:02:48 +0100
+
+e2fsprogs (1.47.0-2.3) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix package names in d/*.shlibs.local. (Closes: #1065087)
+  * Update sonames in d/libext2fs2t64.lintian-overrides.
+  * Fix packages names in code for updating symbols fies in d/rules.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 01 Mar 2024 08:01:06 +1300
+
+e2fsprogs (1.47.0-2.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Helmut Grohne ]
+  * Fix FTBFS when systemd.pc changes systemdsystemunitdir. (Closes: #1053111)
+
+  [ Michael Hudson-Doyle ]
+  * Account for changes in udevudevdir as well.
+  * Rename libraries for 64-bit time_t transition.
+
+ -- Michael Hudson-Doyle <mwhudson@debian.org>  Wed, 28 Feb 2024 23:40:42 +0000
+
+e2fsprogs (1.47.0-2) unstable; urgency=medium
+
+  * Don't enable metadata_csum_seed and orhpan_file by default (Closes:
+    #1031622, #1030939)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sat, 04 Mar 2023 22:16:08 -0500
+
 e2fsprogs (1.47.0-1) unstable; urgency=medium
 
   * New upstream version

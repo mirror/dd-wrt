@@ -37,7 +37,7 @@ Check interval:           0 (<none>)
 Reserved blocks uid:      0
 Reserved blocks gid:      0
 First inode:              11
-Inode size:	          256
+Inode size:               256
 Required extra isize:     28
 Desired extra isize:      28
 Default directory hash:   half_md4

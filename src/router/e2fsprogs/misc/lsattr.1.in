@@ -1,7 +1,7 @@
 .\" -*- nroff -*-
 .TH LSATTR 1 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
 .SH NAME
-lsattr \- list file attributes on a Linux second extended file system
+lsattr \- list ext2/ext3/ext4 file attributes
 .SH SYNOPSIS
 .B lsattr
 [
@@ -12,7 +12,7 @@ lsattr \- list file attributes on a Linux second extended file system
 ]
 .SH DESCRIPTION
 .B lsattr
-lists the file attributes on a second extended file system.  See
+lists the file attributes on an ext2/ext3/ext4 file system.  See
 .BR chattr (1)
 for a description of the attributes and what they mean.
 .SH OPTIONS

@@ -61,7 +61,7 @@ static int parse_inode(const char *request, const char *desc,
 	return 0;
 }
 
-void do_create_icount(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_create_icount(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		      void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -92,7 +92,7 @@ void do_create_icount(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	}
 }
 
-void do_free_icount(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_free_icount(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	if (argc != 1) {
@@ -106,7 +106,7 @@ void do_free_icount(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	test_icount = 0;
 }
 
-void do_fetch(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_fetch(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -129,7 +129,7 @@ void do_fetch(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Count is %u\n", count);
 }
 
-void do_increment(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_increment(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -153,7 +153,7 @@ void do_increment(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Count is now %u\n", count);
 }
 
-void do_decrement(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_decrement(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -177,7 +177,7 @@ void do_decrement(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Count is now %u\n", count);
 }
 
-void do_store(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_store(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -206,7 +206,7 @@ void do_store(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	}
 }
 
-void do_dump(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_dump(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -231,7 +231,7 @@ void do_dump(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	}
 }
 
-void do_validate(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_validate(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	errcode_t	retval;
@@ -250,7 +250,7 @@ void do_validate(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	printf("Icount structure successfully validated\n");
 }
 
-void do_get_size(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_get_size(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t	size;

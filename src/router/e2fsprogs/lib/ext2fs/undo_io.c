@@ -809,7 +809,7 @@ static errcode_t undo_close(io_channel channel)
 	if (--channel->refcount > 0)
 		return 0;
 	/* Before closing write the file system identity */
-	if (!getenv("UNDO_IO_SIMULATE_UNFINISHED"))
+	if (!ext2fs_safe_getenv("UNDO_IO_SIMULATE_UNFINISHED"))
 		data->hdr.state = ext2fs_cpu_to_le32(E2UNDO_STATE_FINISHED);
 	err = write_undo_indexes(data, 1);
 	ext2fs_remove_exit_fn(undo_atexit, data);

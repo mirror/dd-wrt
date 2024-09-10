@@ -413,7 +413,7 @@ int main(int argc, char** argv)
 	struct sigaction	sa;
 	char			*p = 0;
 	int 			i, c;
-	volatile		x=0;
+	volatile int		x = 0;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_sigaction = die_signal_handler;

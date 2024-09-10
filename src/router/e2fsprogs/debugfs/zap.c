@@ -25,7 +25,7 @@ extern char *optarg;
 
 #include "debugfs.h"
 
-void do_zap_block(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+void do_zap_block(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	unsigned long	pattern = 0;
@@ -171,7 +171,7 @@ errout:
 	return;
 }
 
-void do_block_dump(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+void do_block_dump(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	unsigned char	*buf;

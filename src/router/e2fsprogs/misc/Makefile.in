@@ -56,7 +56,7 @@ LPROGS=		@E2INITRD_PROG@
 TUNE2FS_OBJS=	tune2fs.o util.o journal.o recovery.o revoke.o
 MKLPF_OBJS=	mklost+found.o
 MKE2FS_OBJS=	mke2fs.o util.o default_profile.o mk_hugefiles.o \
-			create_inode.o
+			create_inode.o create_inode_libarchive.o
 CHATTR_OBJS=	chattr.o
 LSATTR_OBJS=	lsattr.o
 UUIDGEN_OBJS=	uuidgen.o
@@ -80,7 +80,8 @@ PROFILED_MKLPF_OBJS=	profiled/mklost+found.o
 PROFILED_MKE2FS_OBJS=	profiled/mke2fs.o profiled/util.o \
 				profiled/default_profile.o \
 				profiled/mk_hugefiles.o \
-				profiled/create_inode.o
+				profiled/create_inode.o \
+				profiled/create_inode_libarchive.o
 PROFILED_CHATTR_OBJS=	profiled/chattr.o
 PROFILED_LSATTR_OBJS=	profiled/lsattr.o
 PROFILED_UUIDGEN_OBJS=	profiled/uuidgen.o
@@ -106,6 +107,7 @@ SRCS=	$(srcdir)/tune2fs.c $(srcdir)/mklost+found.c $(srcdir)/mke2fs.c $(srcdir)/
 		$(srcdir)/filefrag.c $(srcdir)/base_device.c \
 		$(srcdir)/ismounted.c $(srcdir)/e2undo.c \
 		$(srcdir)/e2freefrag.c $(srcdir)/create_inode.c \
+		$(srcdir)/create_inode_libarchive.c \
 		$(srcdir)/fuse2fs.c $(srcdir)/e2fuzz.c \
 		$(srcdir)/check_fuzzer.c \
 		$(srcdir)/../debugfs/journal.c $(srcdir)/../e2fsck/revoke.c \
@@ -281,7 +283,7 @@ mke2fs: $(MKE2FS_OBJS) $(DEPLIBS) $(LIBE2P) $(DEPLIBBLKID) $(DEPLIBUUID) \
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o mke2fs $(MKE2FS_OBJS) $(LIBS) $(LIBBLKID) \
 		$(LIBUUID) $(LIBEXT2FS) $(LIBE2P) $(LIBINTL) \
-		$(SYSLIBS) $(LIBMAGIC)
+		$(SYSLIBS) $(LIBMAGIC) $(LIBARCHIVE)
 
 mke2fs.static: $(MKE2FS_OBJS) $(STATIC_DEPLIBS) $(STATIC_LIBE2P) $(DEPSTATIC_LIBUUID) \
 		$(DEPSTATIC_LIBBLKID)
@@ -289,7 +291,7 @@ mke2fs.static: $(MKE2FS_OBJS) $(STATIC_DEPLIBS) $(STATIC_LIBE2P) $(DEPSTATIC_LIB
 	$(Q) $(CC) $(LDFLAGS_STATIC) -o mke2fs.static $(MKE2FS_OBJS) \
 		$(STATIC_LIBS) $(STATIC_LIBE2P) \
 		$(STATIC_LIBBLKID) $(STATIC_LIBUUID) $(LIBINTL) $(SYSLIBS) \
-		$(LIBMAGIC)
+		$(LIBMAGIC) $(LIBARCHIVE)
 
 mke2fs.profiled: $(MKE2FS_OBJS) $(PROFILED_DEPLIBS) \
 	$(PROFILED_LIBE2P) $(PROFILED_DEPLIBBLKID) $(PROFILED_DEPLIBUUID)
@@ -856,6 +858,16 @@ create_inode.o: $(srcdir)/create_inode.c $(top_builddir)/lib/config.h \
  $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
  $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/ext2fs/fiemap.h \
  $(srcdir)/create_inode.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(top_srcdir)/lib/support/nls-enable.h $(srcdir)/create_inode_libarchive.h
+create_inode_libarchive.o: $(srcdir)/create_inode_libarchive.c \
+ $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/create_inode.h \
+ $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext3_extents.h $(top_srcdir)/lib/ext2fs/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_ext_attr.h $(top_srcdir)/lib/ext2fs/hashmap.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h $(srcdir)/create_inode_libarchive.h \
  $(top_srcdir)/lib/support/nls-enable.h
 fuse2fs.o: $(srcdir)/fuse2fs.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/lib/ext2fs/ext2fs.h \

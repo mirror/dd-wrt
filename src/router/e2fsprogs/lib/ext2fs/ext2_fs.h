@@ -512,9 +512,9 @@ struct ext2_inode_large {
 
 #define i_checksum_lo	osd2.linux2.l_i_checksum_lo
 
-#define inode_includes(size, field)			\
-       (size >= (sizeof(((struct ext2_inode_large *)0)->field) + \
-                 offsetof(struct ext2_inode_large, field)))
+#define ext2fs_inode_includes(size, field)				\
+	((size) >= (sizeof(((struct ext2_inode_large *)0)->field) +	\
+		    offsetof(struct ext2_inode_large, field)))
 
 #if defined(__KERNEL__) || defined(__linux__)
 #define i_reserved1	osd1.linux1.l_i_reserved1

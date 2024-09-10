@@ -987,14 +987,18 @@ errcode_t e2fsck_rehash_dir(e2fsck_t ctx, ext2_ino_t ino,
 {
 	ext2_filsys 		fs = ctx->fs;
 	errcode_t		retval;
-	struct ext2_inode 	inode;
+	struct ext2_inode_large	inode;
 	char			*dir_buf = 0;
 	struct fill_dir_struct	fd = { NULL, NULL, 0, 0, 0, NULL,
 				       0, 0, 0, 0, 0, 0 };
 	struct out_dir		outdir = { 0, 0, 0, 0 };
-	struct name_cmp_ctx name_cmp_ctx = {0, NULL};
+	struct name_cmp_ctx	name_cmp_ctx = {0, NULL};
+	__u64			osize;
 
-	e2fsck_read_inode(ctx, ino, &inode, "rehash_dir");
+	e2fsck_read_inode_full(ctx, ino, EXT2_INODE(&inode),
+			       sizeof(inode), "rehash_dir");
+
+	osize = EXT2_I_SIZE(&inode);
 
 	if (ext2fs_has_feature_inline_data(fs->super) &&
 	   (inode.i_flags & EXT4_INLINE_DATA_FL))
@@ -1013,7 +1017,7 @@ errcode_t e2fsck_rehash_dir(e2fsck_t ctx, ext2_ino_t ino,
 	fd.ino = ino;
 	fd.ctx = ctx;
 	fd.buf = dir_buf;
-	fd.inode = &inode;
+	fd.inode = EXT2_INODE(&inode);
 	fd.dir = ino;
 	if (!ext2fs_has_feature_dir_index(fs->super) ||
 	    (inode.i_size / fs->blocksize) < 2)
@@ -1092,14 +1096,25 @@ resort:
 			goto errout;
 	}
 
-	retval = write_directory(ctx, fs, &outdir, ino, &inode, fd.compress);
+	retval = write_directory(ctx, fs, &outdir, ino, EXT2_INODE(&inode),
+				 fd.compress);
 	if (retval)
 		goto errout;
+
+	if ((osize > EXT2_I_SIZE(&inode)) &&
+	    (ino != quota_type2inum(PRJQUOTA, fs->super)) &&
+	    (ino != fs->super->s_orphan_file_inum) &&
+	    (ino == EXT2_ROOT_INO || ino >= EXT2_FIRST_INODE(ctx->fs->super)) &&
+	    !(inode.i_flags & EXT4_EA_INODE_FL)) {
+		quota_data_sub(ctx->qctx, &inode,
+			       ino, osize - EXT2_I_SIZE(&inode));
+	}
 
 	if (ctx->options & E2F_OPT_CONVERT_BMAP)
 		retval = e2fsck_rebuild_extents_later(ctx, ino);
 	else
-		retval = e2fsck_check_rebuild_extents(ctx, ino, &inode, pctx);
+		retval = e2fsck_check_rebuild_extents(ctx, ino,
+						      EXT2_INODE(&inode), pctx);
 errout:
 	ext2fs_free_mem(&dir_buf);
 	ext2fs_free_mem(&fd.harray);

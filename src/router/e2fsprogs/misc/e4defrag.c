@@ -1220,9 +1220,8 @@ static int file_statistic(const char *file, const struct stat64 *buf,
 
 	if (mode_flag & DETAIL) {
 		/* Print statistic info */
-		sprintf(msg_buffer, "[%u/%u]%.*s",
-				defraged_file_count, total_count,
-			PATH_MAX, file);
+		snprintf(msg_buffer, sizeof(msg_buffer), "[%u/%u]%.*s",
+			 defraged_file_count, total_count, PATH_MAX, file);
 		if (current_uid == ROOT_UID) {
 			if (strlen(msg_buffer) > 40)
 				printf("\033[79;0H\033[K%s\n"

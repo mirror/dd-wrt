@@ -38,7 +38,7 @@ extern int optind;
 #include "e2freefrag.h"
 
 #if defined(HAVE_EXT2_IOCTLS) && !defined(DEBUGFS)
-# ifdef HAVE_LINUX_FSMAP_H
+# if defined(HAVE_LINUX_FSMAP_H) && defined(HAVE_FSMAP_SIZEOF)
 #  include <linux/fsmap.h>
 # endif
 # include "fsmap.h"
@@ -377,7 +377,7 @@ static void open_device(char *device_name, ext2_filsys *fs)
 #ifdef DEBUGFS
 #include "debugfs.h"
 
-void do_freefrag(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_freefrag(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		 void *infop EXT2FS_ATTR((unused)))
 #else
 int main(int argc, char *argv[])

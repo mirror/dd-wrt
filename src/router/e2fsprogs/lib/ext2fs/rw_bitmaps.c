@@ -557,7 +557,7 @@ errcode_t ext2fs_rw_bitmaps(ext2_filsys fs, int flags, int num_threads)
 	 * MacOS, FreeBSD, etc.
 	 * ref: https://stackoverflow.com/questions/150355
 	 */
-	if (num_threads < 0)
+	if (num_threads <= 0)
 		num_threads = 4;
 
 	if ((unsigned) num_threads > fs->group_desc_count)

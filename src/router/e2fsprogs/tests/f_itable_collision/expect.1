@@ -27,14 +27,14 @@ Clear inode? yes
 Restarting e2fsck from the beginning...
 Pass 1: Checking inodes, blocks, and sizes
 Inode 12 block 37 conflicts with critical metadata, skipping block checks.
-Illegal block number passed to ext2fs_test_block_bitmap #4294967294 for in-use block map
-Illegal block number passed to ext2fs_mark_block_bitmap #4294967294 for in-use block map
+Illegal block number passed to ext2fs_test_block_bitmap #2147483646 for in-use block map
+Illegal block number passed to ext2fs_mark_block_bitmap #2147483646 for in-use block map
 Illegal block number passed to ext2fs_test_block_bitmap #268435455 for in-use block map
 Illegal block number passed to ext2fs_mark_block_bitmap #268435455 for in-use block map
 
 Running additional passes to resolve blocks claimed by more than one inode...
 Pass 1B: Rescanning for multiply-claimed blocks
-Illegal block number passed to ext2fs_test_block_bitmap #4294967294 for multiply claimed block map
+Illegal block number passed to ext2fs_test_block_bitmap #2147483646 for multiply claimed block map
 Illegal block number passed to ext2fs_test_block_bitmap #268435455 for multiply claimed block map
 Multiply-claimed block(s) in inode 12: 37
 Pass 1C: Scanning directories for inodes with multiply-claimed blocks
@@ -46,7 +46,7 @@ File /a (inode #12, mod time Fri Jun 27 18:34:44 2014)
 	<filesystem metadata>
 Clone multiply-claimed blocks? yes
 
-Illegal block number passed to ext2fs_test_block_bitmap #4294967294 for multiply claimed block map
+Illegal block number passed to ext2fs_test_block_bitmap #2147483646 for multiply claimed block map
 Illegal block number passed to ext2fs_test_block_bitmap #268435455 for multiply claimed block map
 Pass 2: Checking directory structure
 Setting filetype for entry 'bad1' in / (2) to 1.
@@ -54,7 +54,7 @@ Setting filetype for entry 'bad2' in / (2) to 1.
 Restarting e2fsck from the beginning...
 Pass 1: Checking inodes, blocks, and sizes
 Inode 12 has an invalid extent
-	(logical block 0, invalid physical block 4294967294, len 1)
+	(logical block 0, invalid physical block 2147483646, len 1)
 Clear? yes
 
 Inode 12 has an invalid extent

@@ -120,7 +120,7 @@ static struct ea_refcount_el *insert_refcount_el(ext2_refcount_t refcount,
 	if (refcount->count >= refcount->size) {
 		new_size = refcount->size + 100;
 #ifdef DEBUG
-		printf("Reallocating refcount %d entries...\n", new_size);
+		printf("Reallocating refcount %zu entries...\n", new_size);
 #endif
 		retval = ext2fs_resize_mem((size_t) refcount->size *
 					   sizeof(struct ea_refcount_el),
@@ -177,7 +177,7 @@ retry:
 	if (ea_key == refcount->list[refcount->cursor].ea_key)
 		return &refcount->list[refcount->cursor++];
 #ifdef DEBUG
-	printf("Non-cursor get_refcount_el: %u\n", ea_key);
+	printf("Non-cursor get_refcount_el: %llu\n", (unsigned long long) ea_key);
 #endif
 	while (low <= high) {
 		mid = (low+high)/2;

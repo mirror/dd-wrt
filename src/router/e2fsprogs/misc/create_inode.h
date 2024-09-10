@@ -22,6 +22,12 @@ struct hdlinks_s
 	struct hdlink_s *hdl;
 };
 
+struct file_info {
+	char *path;
+	size_t path_len;
+	size_t path_max_len;
+};
+
 #define HDLINK_CNT	(4)
 
 struct fs_ops_callbacks {
@@ -53,5 +59,9 @@ extern errcode_t do_mkdir_internal(ext2_filsys fs, ext2_ino_t cwd,
 extern errcode_t do_write_internal(ext2_filsys fs, ext2_ino_t cwd,
 				   const char *src, const char *dest,
 				   ext2_ino_t root);
+extern errcode_t add_link(ext2_filsys fs, ext2_ino_t parent_ino,
+			  ext2_ino_t ino, const char *name);
+extern errcode_t set_inode_extra(ext2_filsys fs, ext2_ino_t ino,
+				 const struct stat *st);
 
 #endif /* _CREATE_INODE_H */

@@ -30,7 +30,7 @@ Pass 2: Checking directory structure
 Pass 3: Checking directory connectivity
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Block bitmap differences:  +(0--65) +(67--69) +(71--584) +(1097--2126) +(65536--69631) +(98304--98368)
+Block bitmap differences:  +(0--2126) +(32768--32832) +(65536--69631) +(98304--98368)
 Fix? yes
 
 Inode bitmap differences:  +(1--11)

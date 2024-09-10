@@ -1,10 +1,10 @@
 [Unit]
-Description=Online ext4 Metadata Check Failure Reporting for %I
+Description=Online ext4 Metadata Check Failure Reporting for %f
 Documentation=man:e2scrub(8)
 
 [Service]
 Type=oneshot
-ExecStart=@pkglibdir@/e2scrub_fail "%I"
+ExecStart=@pkglibexecdir@/e2scrub_fail "%f"
 User=mail
 Group=mail
 SupplementaryGroups=systemd-journal

@@ -45,7 +45,7 @@ set_inode_field /dir3/foe block[0] 34
 q
 EOF
 
-E2FSCK_TIME=200704102100
+E2FSCK_TIME=1176238800
 export E2FSCK_TIME
 
 . $cmd_dir/run_e2fsck

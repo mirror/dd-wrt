@@ -806,6 +806,7 @@ static void compile_fs_type(char *fs_type, struct fs_type_compile *cmp)
 			if ((negate && !cmp->negate) ||
 			    (!negate && cmp->negate)) {
 				fputs(_(fs_type_syntax_error), stderr);
+				free(list);
 				exit(EXIT_USAGE);
 			}
 		}

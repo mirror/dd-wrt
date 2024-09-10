@@ -26,8 +26,9 @@ struct ext2_image_hdr {
 
 	__u32	image_device;	/* Device number of image file */
 	__u32	image_inode;	/* Inode number of image file */
-	__u32	image_time;	/* Time of image creation */
-	__u32	image_reserved[8];
+	__u32	image_time_lo;	/* Time of image creation */
+	__u32	image_time_hi;	/* High bits of image test creation */
+	__u32	image_reserved[7];
 
 	__u32	offset_super;	/* Byte offset of the sb and descriptors */
 	__u32	offset_inode;	/* Byte offset of the inode table  */

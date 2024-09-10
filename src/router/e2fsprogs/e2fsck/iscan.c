@@ -120,7 +120,8 @@ void print_resource_track(const char *desc,
 	} else
 #elif defined HAVE_MALLINFO
 	/* don't use mallinfo() if over 2GB used, since it returns "int" */
-	if ((char *)sbrk(0) - (char *)track->brk_start < 2LL << 30) {
+	if ((unsigned long)((char *)sbrk(0) - (char *)track->brk_start) <
+	    2UL << 30) {
 		struct mallinfo	malloc_info = mallinfo();
 
 		printf("Memory used: %lluk/%lluk (%lluk/%lluk), ",

@@ -117,7 +117,7 @@ out:
 	err = ext2fs_xattrs_close(&h);
 }
 
-void do_list_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_list_xattr(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		   void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
@@ -138,7 +138,7 @@ void do_list_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	dump_inode_attributes(stdout, ino);
 }
 
-void do_get_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_get_xattr(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		  void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
@@ -236,7 +236,7 @@ out2:
 		fclose(fp);
 }
 
-void do_set_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_set_xattr(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		  void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;
@@ -320,7 +320,7 @@ out2:
 	}
 }
 
-void do_rm_xattr(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_rm_xattr(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		 void *infop EXT2FS_ATTR((unused)))
 {
 	ext2_ino_t ino;

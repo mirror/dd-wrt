@@ -1,6 +1,6 @@
 mke2fs -q -F -o Linux -b 1024 -i 1024 -E stride=8192 -t ext4 test.img 1024000
 resize2fs -p test.img 10240000
-Resizing the filesystem on test.img to 100000000 (1k) blocks.
+Resizing the filesystem on test.img to 99999745 (1k) blocks.
 Begin pass 2 (max = 2062)
 Relocating blocks             ----------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 Begin pass 3 (max = 125)
@@ -45,7 +45,7 @@ Check interval:           15552000 (6 months)
 Reserved blocks uid:      0
 Reserved blocks gid:      0
 First inode:              11
-Inode size:	          256
+Inode size:               256
 Required extra isize:     32
 Desired extra isize:      32
 Journal inode:            8

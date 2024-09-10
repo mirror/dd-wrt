@@ -803,8 +803,8 @@ retry:
 					    fs->inode_map);
 	if (retval) goto errout;
 
-	real_end = EXT2_GROUPS_TO_BLOCKS(fs->super, fs->group_desc_count) - 1 +
-		fs->super->s_first_data_block;
+	real_end = EXT2_GROUPS_TO_CLUSTERS(fs->super, fs->group_desc_count) -
+		1 + EXT2FS_B2C(fs, fs->super->s_first_data_block);
 	retval = ext2fs_resize_block_bitmap2(new_size - 1,
 					     real_end, fs->block_map);
 	if (retval) goto errout;
@@ -1863,7 +1863,6 @@ static errcode_t block_mover(ext2_resize_t rfs)
 			old_blk += c;
 			moved += c;
 			if (rfs->progress) {
-				io_channel_flush(fs->io);
 				retval = (rfs->progress)(rfs,
 						E2_RSZ_BLOCK_RELOC_PASS,
 						moved, to_move);
@@ -1871,8 +1870,9 @@ static errcode_t block_mover(ext2_resize_t rfs)
 					goto errout;
 			}
 		} while (size > 0);
-		io_channel_flush(fs->io);
 	}
+
+	io_channel_flush(fs->io);
 
 errout:
 	if (badblock_list) {
@@ -2595,8 +2595,8 @@ static errcode_t move_itables(ext2_resize_t rfs)
 		retval = io_channel_write_blk64(fs->io, new_blk,
 						num, rfs->itable_buf);
 		if (retval) {
-			io_channel_write_blk64(fs->io, old_blk,
-					       num, rfs->itable_buf);
+			(void) io_channel_write_blk64(fs->io, old_blk,
+						      num, rfs->itable_buf);
 			goto errout;
 		}
 		if (n > diff) {
@@ -2843,9 +2843,9 @@ errout:
 static errcode_t resize2fs_calculate_summary_stats(ext2_filsys fs)
 {
 	errcode_t	retval;
-	blk64_t		blk = fs->super->s_first_data_block;
+	blk64_t		b, blk = fs->super->s_first_data_block;
 	ext2_ino_t	ino;
-	unsigned int	n, group, count;
+	unsigned int	n, max, group, count;
 	blk64_t		total_clusters_free = 0;
 	int		total_inodes_free = 0;
 	int		group_free = 0;
@@ -2858,17 +2858,29 @@ static errcode_t resize2fs_calculate_summary_stats(ext2_filsys fs)
 	bitmap_buf = malloc(fs->blocksize);
 	if (!bitmap_buf)
 		return ENOMEM;
-	for (group = 0; group < fs->group_desc_count;
-	     group++) {
+	for (group = 0; group < fs->group_desc_count; group++) {
 		retval = ext2fs_get_block_bitmap_range2(fs->block_map,
 			B2C(blk), fs->super->s_clusters_per_group, bitmap_buf);
 		if (retval) {
 			free(bitmap_buf);
 			return retval;
 		}
-		n = ext2fs_bitcount(bitmap_buf,
-				    fs->super->s_clusters_per_group / 8);
-		group_free = fs->super->s_clusters_per_group - n;
+		max = ext2fs_group_blocks_count(fs, group) >>
+		       fs->cluster_ratio_bits;
+		if ((group == fs->group_desc_count - 1) && (max & 7)) {
+			n = 0;
+			for (b = (fs->super->s_first_data_block +
+				  ((blk64_t) fs->super->s_blocks_per_group *
+				   group));
+			     b < ext2fs_blocks_count(fs->super);
+			     b += EXT2FS_CLUSTER_RATIO(fs)) {
+				if (ext2fs_test_block_bitmap2(fs->block_map, b))
+					n++;
+			}
+		} else {
+			n = ext2fs_bitcount(bitmap_buf, (max + 7) / 8);
+		}
+		group_free = max - n;
 		total_clusters_free += group_free;
 		ext2fs_bg_free_blocks_count_set(fs, group, group_free);
 		ext2fs_group_desc_csum_set(fs, group);

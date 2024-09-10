@@ -533,6 +533,12 @@ extern struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx,
 typedef __u64 ea_key_t;
 typedef __u64 ea_value_t;
 
+/*
+ * Special refcount value we use for inodes which have EA_INODE flag set but we
+ * do not yet know about any references.
+ */
+#define EA_INODE_NO_REFS (~(ea_value_t)0)
+
 extern errcode_t ea_refcount_create(size_t size, ext2_refcount_t *ret);
 extern void ea_refcount_free(ext2_refcount_t refcount);
 extern errcode_t ea_refcount_fetch(ext2_refcount_t refcount, ea_key_t ea_key,
@@ -663,7 +669,8 @@ extern void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned long size,
 				    const char *description);
 extern int ask(e2fsck_t ctx, const char * string, int def);
 extern int ask_yn(e2fsck_t ctx, const char * string, int def);
-extern void fatal_error(e2fsck_t ctx, const char * fmt_string);
+extern void fatal_error(e2fsck_t ctx, const char * fmt_string)
+	E2FSCK_ATTR((noreturn));
 extern void log_out(e2fsck_t ctx, const char *fmt, ...)
 	E2FSCK_ATTR((format(printf, 2, 3)));
 extern void log_err(e2fsck_t ctx, const char *fmt, ...)

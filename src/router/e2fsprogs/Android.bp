@@ -62,6 +62,10 @@ cc_defaults {
                 "libdl",
             ],
         },
+        darwin: {
+            // This matches what the upstream CI uses
+            cflags: ["-Wno-error=deprecated-declarations"],
+        },
         windows: {
             include_dirs: ["external/e2fsprogs/include/mingw"],
         },

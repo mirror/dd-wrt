@@ -24,6 +24,8 @@
  * %End-Header%
  */
 
+#include <ext2fs/ext2_types.h>
+
 /* Number of l2 tables in memory before writeback */
 #define L2_CACHE_PREALLOC	512
 

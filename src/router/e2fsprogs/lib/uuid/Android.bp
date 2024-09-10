@@ -40,6 +40,9 @@ cc_library {
         "uuid_time.c",
     ],
     target: {
+        darwin: {
+            enabled: true,
+        },
         windows: {
             enabled: true,
         },

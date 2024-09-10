@@ -52,6 +52,7 @@ static int64_t		dump_counts;
 static blk64_t		block_to_dump, bitmap_to_dump, inode_block_to_dump;
 static unsigned int	group_to_dump, inode_offset_to_dump;
 static ext2_ino_t	inode_to_dump;
+static bool		wrapped_flag;
 
 struct journal_source
 {
@@ -80,10 +81,12 @@ static void dump_fc_block(FILE *out_file, char *buf, int blocksize,
 static void do_hexdump (FILE *, char *, int);
 
 #define WRAP(jsb, blocknr, maxlen)					\
-	if (blocknr >= (maxlen))					\
-	    blocknr -= (maxlen - be32_to_cpu((jsb)->s_first));
+	if (blocknr >= (maxlen)) {					\
+		blocknr -= (maxlen - be32_to_cpu((jsb)->s_first));	\
+		wrapped_flag = true;					\
+	}
 
-void do_logdump(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
+void do_logdump(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {
 	int		c;
@@ -115,6 +118,7 @@ void do_logdump(int argc, char **argv, int sci_idx EXT2FS_ATTR((unused)),
 	inode_block_to_dump = ANY_BLOCK;
 	inode_to_dump = -1;
 	dump_counts = -1;
+	wrapped_flag = false;
 
 	reset_getopt();
 	while ((c = getopt (argc, argv, "ab:ci:f:OsSn:")) != EOF) {
@@ -477,8 +481,7 @@ static void dump_journal(char *cmdname, FILE *out_file,
 		if (dump_old && (dump_counts != -1) && (cur_counts >= dump_counts))
 			break;
 
-		if ((blocknr == first_transaction_blocknr) &&
-		    (cur_counts != 0) && dump_old && (dump_counts != -1)) {
+		if ((blocknr == first_transaction_blocknr) && dump_old && wrapped_flag) {
 			fprintf(out_file, "Dump all %lld journal records.\n",
 				(long long) cur_counts);
 			break;

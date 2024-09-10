@@ -18,7 +18,6 @@
 #if !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
 #define _XOPEN_SOURCE 600
 #define _DARWIN_C_SOURCE
-#define _FILE_OFFSET_BITS 64
 #ifndef _LARGEFILE_SOURCE
 #define _LARGEFILE_SOURCE
 #endif
@@ -52,11 +51,6 @@
 #endif
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_PRCTL_H
-#include <sys/prctl.h>
-#else
-#define PR_GET_DUMPABLE 3
 #endif
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -180,29 +174,6 @@ static errcode_t unix_get_stats(io_channel channel, io_stats *stats)
 	}
 
 	return retval;
-}
-
-static char *safe_getenv(const char *arg)
-{
-	if ((getuid() != geteuid()) || (getgid() != getegid()))
-		return NULL;
-#ifdef HAVE_PRCTL
-	if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0)
-		return NULL;
-#else
-#if (defined(linux) && defined(SYS_prctl))
-	if (syscall(SYS_prctl, PR_GET_DUMPABLE, 0, 0, 0, 0) == 0)
-		return NULL;
-#endif
-#endif
-
-#if defined(HAVE_SECURE_GETENV)
-	return secure_getenv(arg);
-#elif defined(HAVE___SECURE_GETENV)
-	return __secure_getenv(arg);
-#else
-	return getenv(arg);
-#endif
 }
 
 /*
@@ -728,7 +699,7 @@ static errcode_t unix_open_channel(const char *name, int fd,
 	struct		utsname ut;
 #endif
 
-	if (safe_getenv("UNIX_IO_FORCE_BOUNCE"))
+	if (ext2fs_safe_getenv("UNIX_IO_FORCE_BOUNCE"))
 		flags |= IO_FLAG_FORCE_BOUNCE;
 
 #ifdef __linux__
@@ -761,6 +732,9 @@ static errcode_t unix_open_channel(const char *name, int fd,
 	io->refcount = 1;
 	io->flags = 0;
 
+	if (ext2fs_safe_getenv("UNIX_IO_NOZEROOUT"))
+		io->flags |= CHANNEL_FLAGS_NOZEROOUT;
+
 	memset(data, 0, sizeof(struct unix_private_data));
 	data->magic = EXT2_ET_MAGIC_UNIX_IO_CHANNEL;
 	data->io_stats.num_fields = 2;
@@ -783,20 +757,19 @@ static errcode_t unix_open_channel(const char *name, int fd,
 	 * zero.
 	 */
 	if (ext2fs_fstat(data->dev, &st) == 0) {
-		if (ext2fsP_is_disk_device(st.st_mode))
-			io->flags |= CHANNEL_FLAGS_BLOCK_DEVICE;
-		else
-			io->flags |= CHANNEL_FLAGS_DISCARD_ZEROES;
-	}
-
+		if (ext2fsP_is_disk_device(st.st_mode)) {
 #ifdef BLKDISCARDZEROES
-	{
-		int zeroes = 0;
-		if (ioctl(data->dev, BLKDISCARDZEROES, &zeroes) == 0 &&
-		    zeroes)
-			io->flags |= CHANNEL_FLAGS_DISCARD_ZEROES;
-	}
+			int zeroes = 0;
+
+			if (ioctl(data->dev, BLKDISCARDZEROES, &zeroes) == 0 &&
+			    zeroes)
+				io->flags |= CHANNEL_FLAGS_DISCARD_ZEROES;
 #endif
+			io->flags |= CHANNEL_FLAGS_BLOCK_DEVICE;
+		} else {
+			io->flags |= CHANNEL_FLAGS_DISCARD_ZEROES;
+		}
+	}
 
 #if defined(__CYGWIN__)
 	/*
@@ -1344,11 +1317,14 @@ static errcode_t unix_discard(io_channel channel, unsigned long long block,
 			      unsigned long long count)
 {
 	struct unix_private_data *data;
-	int		ret;
+	int		ret = EOPNOTSUPP;
 
 	EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 	data = (struct unix_private_data *) channel->private_data;
 	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_UNIX_IO_CHANNEL);
+
+	if (channel->flags & CHANNEL_FLAGS_NODISCARD)
+		goto unimplemented;
 
 	if (channel->flags & CHANNEL_FLAGS_BLOCK_DEVICE) {
 #ifdef BLKDISCARD
@@ -1376,8 +1352,10 @@ static errcode_t unix_discard(io_channel channel, unsigned long long block,
 #endif
 	}
 	if (ret < 0) {
-		if (errno == EOPNOTSUPP)
+		if (errno == EOPNOTSUPP) {
+			channel->flags |= CHANNEL_FLAGS_NODISCARD;
 			goto unimplemented;
+		}
 		return errno;
 	}
 	return 0;
@@ -1425,9 +1403,6 @@ static errcode_t unix_zeroout(io_channel channel, unsigned long long block,
 	data = (struct unix_private_data *) channel->private_data;
 	EXT2_CHECK_MAGIC(data, EXT2_ET_MAGIC_UNIX_IO_CHANNEL);
 
-	if (safe_getenv("UNIX_IO_NOZEROOUT"))
-		goto unimplemented;
-
 	if (!(channel->flags & CHANNEL_FLAGS_BLOCK_DEVICE)) {
 		/* Regular file, try to use truncate/punch/zero. */
 		struct stat statbuf;
@@ -1450,13 +1425,18 @@ static errcode_t unix_zeroout(io_channel channel, unsigned long long block,
 		}
 	}
 
+	if (channel->flags & CHANNEL_FLAGS_NOZEROOUT)
+		goto unimplemented;
+
 	ret = __unix_zeroout(data->dev,
 			(off_t)(block) * channel->block_size + data->offset,
 			(off_t)(count) * channel->block_size);
 err:
 	if (ret < 0) {
-		if (errno == EOPNOTSUPP)
+		if (errno == EOPNOTSUPP) {
+			channel->flags |= CHANNEL_FLAGS_NOZEROOUT;
 			goto unimplemented;
+		}
 		return errno;
 	}
 	return 0;

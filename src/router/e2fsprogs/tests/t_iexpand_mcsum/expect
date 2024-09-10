@@ -44,8 +44,8 @@ Change in FS metadata:
 -Inode blocks per group:   128
 +Inode blocks per group:   256
 @@ -28 +28 @@
--Inode size:	          128
-+Inode size:	          256
+-Inode size:               128
++Inode size:               256
 @@ -31,0 +32 @@
 +Checksum type:            crc32c
 Pass 1: Checking inodes, blocks, and sizes

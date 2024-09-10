@@ -1,5 +1,5 @@
 [Unit]
-Description=Online ext4 Metadata Check for %I
+Description=Online ext4 Metadata Check for %f
 OnFailure=e2scrub_fail@%i.service
 Documentation=man:e2scrub(8)
 
@@ -16,5 +16,5 @@ User=root
 IOSchedulingClass=idle
 CPUSchedulingPolicy=idle
 Environment=SERVICE_MODE=1
-ExecStart=@root_sbindir@/e2scrub -t %I
+ExecStart=@root_sbindir@/e2scrub -t %f
 SyslogIdentifier=%N

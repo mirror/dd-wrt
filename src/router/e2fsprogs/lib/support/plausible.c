@@ -108,18 +108,15 @@ static void print_ext2_info(const char *device)
 		return;
 	sb = fs->super;
 
-	if (sb->s_mtime) {
-		tm = sb->s_mtime;
+	if ((tm = ext2fs_get_tstamp(sb, s_mtime))) {
 		if (sb->s_last_mounted[0])
 			printf(_("\tlast mounted on %.*s on %s"),
 			       EXT2_LEN_STR(sb->s_last_mounted), ctime(&tm));
 		else
 			printf(_("\tlast mounted on %s"), ctime(&tm));
-	} else if (sb->s_mkfs_time) {
-		tm = sb->s_mkfs_time;
+	} else if ((tm = ext2fs_get_tstamp(sb, s_mkfs_time))) {
 		printf(_("\tcreated on %s"), ctime(&tm));
-	} else if (sb->s_wtime) {
-		tm = sb->s_wtime;
+	} else if ((tm = ext2fs_get_tstamp(sb, s_wtime))) {
 		printf(_("\tlast modified on %s"), ctime(&tm));
 	}
 	ext2fs_close_free(&fs);

@@ -8,7 +8,7 @@ Comment:
  written by Theodore Ts'o <tytso@mit.edu> and Remy Card <card@masi.ibp.fr>.
 
 Files: *
-Copyright: 1993-2018 Theodore Ts'o <tytso@mit.edu>
+Copyright: 1993-2022 Theodore Ts'o <tytso@mit.edu>
 License: GPL-2
 Comment: Some files are GPL-2+ licensed or do not carry any license version.
          They are distributable as GPL-2 and listed as such for simplification.
@@ -20,6 +20,47 @@ Copyright: 2003-2007 Theodore Ts'o <tytso@mit.edu>
            1997 Klee Dienes
            1995-1996 Michael Nonweiler <mrn20@cam.ac.uk>
 License: GPL-2
+
+Files: lib/et/*
+       lib/ss/*
+Copyright: 1987-1988 MIT Student Information Processing Board
+           2003 Theodore Ts'o
+License: Expat
+ Permission to use, copy, modify, and distribute this software and
+ its documentation for any purpose is hereby granted, provided that
+ the names of M.I.T. and the M.I.T. S.I.P.B. not be used in
+ advertising or publicity pertaining to distribution of the software
+ without specific, written prior permission.  M.I.T. and the
+ M.I.T. S.I.P.B. make no representations about the suitability of
+ this software for any purpose.  It is provided "as is" without
+ express or implied warranty.
+
+Files: lib/et/vfprintf.c
+Copyright: 1988 Regents of the University of California
+License: BSD-3-Clause-Variant
+ Redistribution and use in source and binary forms are permitted
+ provided that the above copyright notice and this paragraph are
+ duplicated in all such forms and that any documentation,
+ advertising materials, and other materials related to such
+ distribution and use acknowledge that the software was developed
+ by the University of California, Berkeley.  The name of the
+ University may not be used to endorse or promote products derived
+ from this software without specific prior written permission.
+ THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Files: lib/et/com_right.c
+Comment: Taken from lib/com_err/error.c from Kerberos4kth distribution.
+Copyright: (c) 2003 by Theodore Ts'o
+ Copyright (c) 1997, 1998, 2001 Kungliga Tekniska Högskolan
+ (Royal Institute of Technology, Stockholm, Sweden).
+ All rights reserved.
+License: BSD-3-Clause
+
+Files: lib/et/test_cases/imap_err.et
+Copyright: 1994-2008 Carnegie Mellon University.
+License: BSD-4-Clause-CMU
 
 Files: lib/ext2fs/*
        lib/e2p/*
@@ -211,6 +252,12 @@ Copyright: 1995-1999 by Theodore Ts'o
            Linus Torvalds <Linus.Torvalds@cs.helsinki.fi>
 License: GPL-2
 
+Files: po/fr.po
+       po/vi.po
+Copyright: 2008, 2014 Theodore Ts'o
+           1996, 2014 Free Software Foundation, Inc.
+License: GPL-2
+
 Files: resize/*
 Copyright: 1997-2000 by Theodore Ts'o and PowerQuest, Inc.
 License: GPL-2
@@ -369,6 +416,44 @@ License: BSD-3-Clause
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
  USE OF THIS SOFTWARE, EVEN IF NOT ADVISED OF THE POSSIBILITY OF SUCH
  DAMAGE.
+
+License: BSD-4-Clause-CMU
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+ .
+ 3. The name "Carnegie Mellon University" must not be used to
+    endorse or promote products derived from this software without
+    prior written permission. For permission or any legal
+    details, please contact
+      Carnegie Mellon University
+      Center for Technology Transfer and Enterprise Creation
+      4615 Forbes Avenue
+      Suite 302
+      Pittsburgh, PA  15213
+      (412) 268-7393, fax: (412) 268-7395
+      innovation@andrew.cmu.edu
+ .
+ 4. Redistributions of any form whatsoever must retain the following
+    acknowledgment:
+    "This product includes software developed by Computing Services
+     at Carnegie Mellon University (http://www.cmu.edu/computing/)."
+ .
+ CARNEGIE MELLON UNIVERSITY DISCLAIMS ALL WARRANTIES WITH REGARD TO
+ THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+ AND FITNESS, IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY BE LIABLE
+ FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+ AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+ OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 License: GPL-2
  This program is free software; you can redistribute it and/or modify

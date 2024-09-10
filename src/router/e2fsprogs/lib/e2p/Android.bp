@@ -15,6 +15,7 @@ cc_library {
     host_supported: true,
     ramdisk_available: true,
     vendor_ramdisk_available: true,
+    vendor_available: true,
     recovery_available: true,
     unique_host_soname: true,
     defaults: ["e2fsprogs-defaults"],

@@ -5,7 +5,8 @@
 srcdir=@srcdir@
 top_srcdir=@top_srcdir@
 top_dir=`cd $top_srcdir; pwd`
-base_ver=`echo @E2FSPROGS_VERSION@ | sed -e 's/-WIP//' -e 's/pre-//' -e 's/-PLUS//'`
+base_ver=`echo @E2FSPROGS_PKGVER@`
+base_rel=`echo @E2FSPROGS_PKGREL@`
 base_e2fsprogs=`basename $top_dir`
 exclude=/tmp/exclude$$
 GZIP=gzip
@@ -16,12 +17,12 @@ GZIP=gzip
 # using a non-standard directory name for WIP releases.  dpkg-source
 # complains, but life goes on.
 #
-deb_pkgver=`echo @E2FSPROGS_PKGVER@ | sed -e 's/~/-/g'`
+deb_pkgver="$base_ver${base_rel:+-$base_rel}"
     
 case $1 in
     debian|ubuntu)
 	SRCROOT="e2fsprogs-$deb_pkgver"
-	tarout="e2fsprogs_@E2FSPROGS_PKGVER@.orig.tar.gz"
+	tarout="e2fsprogs_$deb_pkgver.orig.tar.gz"
 	;;
    all|*)
 	SRCROOT="e2fsprogs-$base_ver"

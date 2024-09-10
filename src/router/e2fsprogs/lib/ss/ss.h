@@ -26,7 +26,8 @@
 #include <ss/ss_err.h>
 
 #define __SS_CONST const
-#define __SS_PROTO (int, const char * const *, int, void *)
+typedef char * const *ss_argv_t;
+#define __SS_PROTO (int, ss_argv_t, int, void *)
 
 #ifdef __GNUC__
 #define __SS_ATTR(x) __attribute__(x)
@@ -79,14 +80,11 @@ int ss_execute_line(int, char *);
 void ss_add_request_table(int, ss_request_table *, int, int *);
 void ss_delete_request_table(int, ss_request_table *, int *);
 void ss_abort_subsystem(int sci_idx, int code);
-void ss_quit(int argc, const char * const *argv, int sci_idx, void *infop);
-void ss_self_identify(int argc, const char * const *argv, int sci_idx, void *infop);
-void ss_subsystem_name(int argc, const char * const *argv,
-		       int sci_idx, void *infop);
-void ss_subsystem_version(int argc, const char * const *argv,
-			  int sci_idx, void *infop);
-void ss_unimplemented(int argc, const char * const *argv,
-		      int sci_idx, void *infop);
+void ss_quit(int argc, ss_argv_t argv, int sci_idx, void *infop);
+void ss_self_identify(int argc, ss_argv_t argv, int sci_idx, void *infop);
+void ss_subsystem_name(int argc, ss_argv_t argv, int sci_idx, void *infop);
+void ss_subsystem_version(int argc, ss_argv_t argv, int sci_idx, void *infop);
+void ss_unimplemented(int argc, ss_argv_t argv, int sci_idx, void *infop);
 void ss_set_prompt(int sci_idx, char *new_prompt);
 char *ss_get_prompt(int sci_idx);
 void ss_get_readline(int sci_idx);

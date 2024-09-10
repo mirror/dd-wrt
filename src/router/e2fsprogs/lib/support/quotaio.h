@@ -16,8 +16,7 @@
  *		AND/OR
  *		quota_data_add/quota_data_sub/quota_data_inodes();
  *	}
- *	quota_write_inode(qctx, USRQUOTA);
- *	quota_write_inode(qctx, GRPQUOTA);
+ *	quota_write_inode(qctx, (1 << USRQUOTA) | (1 << GRPQUOTA));
  *	quota_release_context(&qctx);
  * }
  *
@@ -102,8 +101,8 @@ struct quotafile_ops;
 
 /* Generic information about quotafile */
 struct util_dqinfo {
-	time_t dqi_bgrace;	/* Block grace time for given quotafile */
-	time_t dqi_igrace;	/* Inode grace time for given quotafile */
+	__u32 dqi_bgrace;	/* Block grace time for given quotafile */
+	__u32 dqi_igrace;	/* Inode grace time for given quotafile */
 	union {
 		struct v2_mem_dqinfo v2_mdqi;
 	} u;			/* Format specific info about quotafile */
@@ -138,8 +137,8 @@ struct util_dqblk {
 	qsize_t dqb_bhardlimit;
 	qsize_t dqb_bsoftlimit;
 	qsize_t dqb_curspace;
-	time_t dqb_btime;
-	time_t dqb_itime;
+	__u64 dqb_btime;
+	__u64 dqb_itime;
 	union {
 		struct v2_mem_dqblk v2_mdqb;
 	} u;			/* Format specific dquot information */
@@ -223,7 +222,7 @@ void quota_data_add(quota_ctx_t qctx, struct ext2_inode_large *inode,
 		    ext2_ino_t ino, qsize_t space);
 void quota_data_sub(quota_ctx_t qctx, struct ext2_inode_large *inode,
 		    ext2_ino_t ino, qsize_t space);
-errcode_t quota_write_inode(quota_ctx_t qctx, enum quota_type qtype);
+errcode_t quota_write_inode(quota_ctx_t qctx, unsigned int qtype_bits);
 /* Flags for quota_read_all_dquots() */
 #define QREAD_USAGE  0x01
 #define QREAD_LIMITS 0x02

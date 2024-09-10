@@ -703,7 +703,10 @@ UNI_DIFF_OPTS
 SEM_INIT_LIB
 FUSE_CMT
 FUSE_LIB
+fuse3_LIBS
+fuse3_CFLAGS
 CLOCK_GETTIME_LIB
+ARCHIVE_LIB
 MAGIC_LIB
 SOCKET_LIB
 SIZEOF_TIME_T
@@ -824,6 +827,7 @@ build_cpu
 build
 E2FSPROGS_DATE
 E2FSPROGS_PKGVER
+E2FSPROGS_PKGREL
 E2FSPROGS_VERSION
 E2FSPROGS_DAY
 E2FSPROGS_MONTH
@@ -925,6 +929,8 @@ with_gnu_ld
 enable_rpath
 with_libiconv_prefix
 with_libintl_prefix
+enable_largefile
+with_libarchive
 enable_fuse2fs
 enable_lto
 enable_ubsan
@@ -935,7 +941,6 @@ with_multiarch
 with_udev_rules_dir
 with_crond_dir
 with_systemd_unit_dir
-enable_largefile
 '
       ac_precious_vars='build_alias
 host_alias
@@ -949,6 +954,8 @@ CPP
 PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
+fuse3_CFLAGS
+fuse3_LIBS
 CXX
 CXXFLAGS
 CCC
@@ -1590,7 +1597,7 @@ Optional Features:
   --enable-bsd-shlibs     select BSD shared libraries
   --enable-profile        build profiling libraries
   --enable-gcov           build for coverage testing using gcov
-  --enable-hardening      build for coverage testing using gcov
+  --enable-hardening      build with hardening flags such as fortify
   --enable-jbd-debug      enable journal debugging
   --enable-blkid-debug    enable blkid debugging
   --disable-testio-debug  disable the use of the test I/O manager for
@@ -1616,13 +1623,13 @@ Optional Features:
   --enable-bmap-stats-ops enable collection of additional bitmap stats
   --disable-nls           do not use Native Language Support
   --disable-rpath         do not hardcode runtime library paths
+  --disable-largefile     omit support for large files
   --disable-fuse2fs       do not build fuse2fs
   --enable-lto            enable link time optimization
   --enable-ubsan          enable undefined behavior sanitizer
   --enable-addrsan        enable address sanitizer
   --enable-threadsan      enable thread sanitizer
   --enable-fuzzing        enable fuzzing sanitizer
-  --disable-largefile     omit support for large files
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1640,6 +1647,7 @@ Optional Packages:
   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
   --with-libintl-prefix[=DIR]  search for libintl in DIR/include and DIR/lib
   --without-libintl-prefix     don't search for libintl in includedir and libdir
+  --without-libarchive    disable use of libarchive
   --with-multiarch=ARCH   specify the multiarch triplet
   --with-udev-rules-dir[=DIR]
                           Install udev rules into DIR.
@@ -4583,11 +4591,9 @@ fi
 MCONFIG=./MCONFIG
 
 BINARY_TYPE=bin
-E2FSPROGS_VERSION=`grep E2FSPROGS_VERSION ${srcdir}/version.h  \
-	| awk '{print $3}' | tr \" " " | awk '{print $1}'`
-E2FSPROGS_DATE=`grep E2FSPROGS_DATE ${srcdir}/version.h | awk '{print $3}' \
-	| tr \" " " | awk '{print $1}'`
-E2FSPROGS_DAY=$(echo $E2FSPROGS_DATE | awk -F- '{print $1}' | sed -e '/^[1-9]$/s/^/0/')
+E2FSPROGS_VERSION=`awk -F\" '/E2FSPROGS_VERS/ { print $2 }' ${srcdir}/version.h`
+E2FSPROGS_DATE=`awk -F\" '/E2FSPROGS_DATE/ { print $2 }' ${srcdir}/version.h`
+E2FSPROGS_DAY=$(echo $E2FSPROGS_DATE | awk -F- '{ printf "%02d", $1 }')
 MONTH=`echo $E2FSPROGS_DATE | awk -F- '{print $2}'`
 YEAR=`echo $E2FSPROGS_DATE | awk -F- '{print $3}'`
 
@@ -4616,25 +4622,30 @@ Dec)	MONTH_NUM=12; E2FSPROGS_MONTH="December" ;;
 printf "%s\n" "$as_me: WARNING: Unknown month $MONTH??" >&2;} ;;
 esac
 
-base_ver=`echo $E2FSPROGS_VERSION | \
-	       sed -e 's/-WIP//' -e 's/pre-//' -e 's/-PLUS//'`
+base_ver=`echo $E2FSPROGS_VERSION | sed -e 's/pre-//' -e 's/-.*//'`
+base_rel=`echo $E2FSPROGS_VERSION | awk -F- '{ print $2 }'`
 
 date_spec=${E2FSPROGS_YEAR}.${MONTH_NUM}.${E2FSPROGS_DAY}
 
 case $E2FSPROGS_VERSION in
 *-WIP|pre-*)
-	E2FSPROGS_PKGVER="$base_ver~WIP.$date_spec"
+	E2FSPROGS_PKGVER="$base_ver"
+	E2FSPROGS_PKGREL="WIP.$date_spec"
 	;;
 *)
 	E2FSPROGS_PKGVER="$base_ver"
+	E2FSPROGS_PKGREL="$base_rel"
 	;;
 esac
 
 unset DATE MONTH YEAR base_ver pre_vers date_spec
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Generating configuration file for e2fsprogs version $E2FSPROGS_VERSION" >&5
 printf "%s\n" "Generating configuration file for e2fsprogs version $E2FSPROGS_VERSION" >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Package version ${E2FSPROGS_PKGVER} release ${E2FSPROGS_PKGREL}" >&5
+printf "%s\n" "Package version ${E2FSPROGS_PKGVER} release ${E2FSPROGS_PKGREL}" >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Release date is ${E2FSPROGS_MONTH}, ${E2FSPROGS_YEAR}" >&5
 printf "%s\n" "Release date is ${E2FSPROGS_MONTH}, ${E2FSPROGS_YEAR}" >&6; }
+
 
 
 
@@ -5952,7 +5963,7 @@ if test ${enable_hardening+y}
 then :
   enableval=$enable_hardening; if test "$enableval" = "yes"
 then
-	HARDEN_CFLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-strong"
+	HARDEN_CFLAGS="-D_FORTIFY_SOURCE=3 -fstack-protector-strong"
 	HARDEN_LDFLAGS="-Wl,-z,relro -Wl,-z,now"
 	CFLAGS="$CFLAGS $HARDEN_CFLAGS -fPIE"
 	CFLAGS_SHLIB="$CFLAGS_SHLIB $HARDEN_CFLAGS"
@@ -12337,6 +12348,219 @@ then :
 printf "%s\n" "#define HAVE_LSEEK64_PROTOTYPE 1" >>confdefs.h
 
 fi
+
+ac_fn_check_decl "$LINENO" "fsmap_sizeof" "ac_cv_have_decl_fsmap_sizeof" "#include <linux/fsmap.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_fsmap_sizeof" = xyes
+then :
+
+printf "%s\n" "#define HAVE_FSMAP_SIZEOF 1" >>confdefs.h
+
+fi
+# Check whether --enable-largefile was given.
+if test ${enable_largefile+y}
+then :
+  enableval=$enable_largefile;
+fi
+
+if test "$enable_largefile" != no; then
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for special C compiler options needed for large files" >&5
+printf %s "checking for special C compiler options needed for large files... " >&6; }
+if test ${ac_cv_sys_largefile_CC+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_cv_sys_largefile_CC=no
+     if test "$GCC" != yes; then
+       ac_save_CC=$CC
+       while :; do
+	 # IRIX 6.2 and later do not support large files by default,
+	 # so use the C compiler's -n32 option if that helps.
+	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+ /* Check that off_t can represent 2**63 - 1 correctly.
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
+    since some C++ compilers masquerading as C compilers
+    incorrectly reject 9223372036854775807.  */
+#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
+  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+		       && LARGE_OFF_T % 2147483647 == 1)
+		      ? 1 : -1];
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+	 if ac_fn_c_try_compile "$LINENO"
+then :
+  break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam
+	 CC="$CC -n32"
+	 if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_sys_largefile_CC=' -n32'; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam
+	 break
+       done
+       CC=$ac_save_CC
+       rm -f conftest.$ac_ext
+    fi
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_largefile_CC" >&5
+printf "%s\n" "$ac_cv_sys_largefile_CC" >&6; }
+  if test "$ac_cv_sys_largefile_CC" != no; then
+    CC=$CC$ac_cv_sys_largefile_CC
+  fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _FILE_OFFSET_BITS value needed for large files" >&5
+printf %s "checking for _FILE_OFFSET_BITS value needed for large files... " >&6; }
+if test ${ac_cv_sys_file_offset_bits+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  while :; do
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+ /* Check that off_t can represent 2**63 - 1 correctly.
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
+    since some C++ compilers masquerading as C compilers
+    incorrectly reject 9223372036854775807.  */
+#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
+  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+		       && LARGE_OFF_T % 2147483647 == 1)
+		      ? 1 : -1];
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_sys_file_offset_bits=no; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _FILE_OFFSET_BITS 64
+#include <sys/types.h>
+ /* Check that off_t can represent 2**63 - 1 correctly.
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
+    since some C++ compilers masquerading as C compilers
+    incorrectly reject 9223372036854775807.  */
+#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
+  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+		       && LARGE_OFF_T % 2147483647 == 1)
+		      ? 1 : -1];
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_sys_file_offset_bits=64; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  ac_cv_sys_file_offset_bits=unknown
+  break
+done
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_file_offset_bits" >&5
+printf "%s\n" "$ac_cv_sys_file_offset_bits" >&6; }
+case $ac_cv_sys_file_offset_bits in #(
+  no | unknown) ;;
+  *)
+printf "%s\n" "#define _FILE_OFFSET_BITS $ac_cv_sys_file_offset_bits" >>confdefs.h
+;;
+esac
+rm -rf conftest*
+  if test $ac_cv_sys_file_offset_bits = unknown; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _LARGE_FILES value needed for large files" >&5
+printf %s "checking for _LARGE_FILES value needed for large files... " >&6; }
+if test ${ac_cv_sys_large_files+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  while :; do
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/types.h>
+ /* Check that off_t can represent 2**63 - 1 correctly.
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
+    since some C++ compilers masquerading as C compilers
+    incorrectly reject 9223372036854775807.  */
+#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
+  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+		       && LARGE_OFF_T % 2147483647 == 1)
+		      ? 1 : -1];
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_sys_large_files=no; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define _LARGE_FILES 1
+#include <sys/types.h>
+ /* Check that off_t can represent 2**63 - 1 correctly.
+    We can't simply define LARGE_OFF_T to be 9223372036854775807,
+    since some C++ compilers masquerading as C compilers
+    incorrectly reject 9223372036854775807.  */
+#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
+  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
+		       && LARGE_OFF_T % 2147483647 == 1)
+		      ? 1 : -1];
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_sys_large_files=1; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  ac_cv_sys_large_files=unknown
+  break
+done
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_large_files" >&5
+printf "%s\n" "$ac_cv_sys_large_files" >&6; }
+case $ac_cv_sys_large_files in #(
+  no | unknown) ;;
+  *)
+printf "%s\n" "#define _LARGE_FILES $ac_cv_sys_large_files" >>confdefs.h
+;;
+esac
+rm -rf conftest*
+  fi
+fi
+
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -13512,6 +13736,96 @@ if test "$ac_cv_func_dlopen" = yes ; then
    MAGIC_LIB=$DLOPEN_LIB
 fi
 
+
+# Check whether --with-libarchive was given.
+if test ${with_libarchive+y}
+then :
+  withval=$with_libarchive; if test "$withval" = "no"
+then
+	try_libarchive=""
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Disabling libarchive support" >&5
+printf "%s\n" "Disabling libarchive support" >&6; }
+elif test "$withval" = "direct"
+then
+	try_libarchive="direct"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Testing for libarchive support (forced direct link)" >&5
+printf "%s\n" "Testing for libarchive support (forced direct link)" >&6; }
+else
+	try_libarchive="yes"
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Testing for libarchive support (with dlopen)" >&5
+printf "%s\n" "Testing for libarchive support (with dlopen)" >&6; }
+fi
+
+else $as_nop
+  try_libarchive="yes"
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Try testing for libarchive support (with dlopen) by default" >&5
+printf "%s\n" "Try testing for libarchive support (with dlopen) by default" >&6; }
+
+fi
+
+ARCHIVE_LIB=
+if test -n "$try_libarchive"
+then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for archive_read_new in -larchive" >&5
+printf %s "checking for archive_read_new in -larchive... " >&6; }
+if test ${ac_cv_lib_archive_archive_read_new+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-larchive  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char archive_read_new ();
+int
+main (void)
+{
+return archive_read_new ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_archive_archive_read_new=yes
+else $as_nop
+  ac_cv_lib_archive_archive_read_new=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_archive_archive_read_new" >&5
+printf "%s\n" "$ac_cv_lib_archive_archive_read_new" >&6; }
+if test "x$ac_cv_lib_archive_archive_read_new" = xyes
+then :
+  ARCHIVE_LIB=-larchive
+    ac_fn_c_check_header_compile "$LINENO" "archive.h" "ac_cv_header_archive_h" "$ac_includes_default"
+if test "x$ac_cv_header_archive_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_ARCHIVE_H 1" >>confdefs.h
+
+fi
+
+fi
+
+    if test "$ac_cv_func_dlopen" = yes -a "$try_libarchive" != "direct"; then
+        ARCHIVE_LIB=$DLOPEN_LIB
+
+printf "%s\n" "#define CONFIG_DLOPEN_LIBARCHIVE 1" >>confdefs.h
+
+
+    fi
+    if test "$ac_cv_header_archive_h" != "yes"
+    then
+        ARCHIVE_LIB=
+    fi
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_gettime in -lrt" >&5
 printf %s "checking for clock_gettime in -lrt... " >&6; }
 if test ${ac_cv_lib_rt_clock_gettime+y}
@@ -13564,30 +13878,8 @@ then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Disabling fuse2fs" >&5
 printf "%s\n" "Disabling fuse2fs" >&6; }
 else
-	       for ac_header in pthread.h fuse.h
-do :
-  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
-#define FUSE_USE_VERSION 29
-"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-
-else $as_nop
-  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Cannot find fuse2fs headers.
-See \`config.log' for more details" "$LINENO" 5; }
-fi
-
-done
-
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#define FUSE_USE_VERSION 29
 #ifdef __linux__
 #include <linux/fs.h>
 #include <linux/falloc.h>
@@ -13613,7 +13905,91 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f conftest.err conftest.i conftest.$ac_ext
 
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
+	  fuse3_CFLAGS
+              C compiler flags for fuse3, overriding pkg-config
+  fuse3_LIBS  linker flags for fuse3, overriding pkg-config
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse3" >&5
+printf %s "checking for fuse3... " >&6; }
+
+if test -n "$fuse3_CFLAGS"; then
+    pkg_cv_fuse3_CFLAGS="$fuse3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fuse3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fuse3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_fuse3_CFLAGS=`$PKG_CONFIG --cflags "fuse3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$fuse3_LIBS"; then
+    pkg_cv_fuse3_LIBS="$fuse3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fuse3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fuse3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_fuse3_LIBS=`$PKG_CONFIG --libs "fuse3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                fuse3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "fuse3" 2>&1`
+        else
+                fuse3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "fuse3" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$fuse3_PKG_ERRORS" >&5
+
+
+		       for ac_header in pthread.h fuse.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 29
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Cannot find fuse2fs headers.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+done
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
 printf %s "checking for fuse_main in -losxfuse... " >&6; }
 if test ${ac_cv_lib_osxfuse_fuse_main+y}
 then :
@@ -13699,12 +14075,194 @@ fi
 
 fi
 
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+		       for ac_header in pthread.h fuse.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 29
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Cannot find fuse2fs headers.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+done
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
+printf %s "checking for fuse_main in -losxfuse... " >&6; }
+if test ${ac_cv_lib_osxfuse_fuse_main+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-losxfuse  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char fuse_main ();
+int
+main (void)
+{
+return fuse_main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_osxfuse_fuse_main=yes
+else $as_nop
+  ac_cv_lib_osxfuse_fuse_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_osxfuse_fuse_main" >&5
+printf "%s\n" "$ac_cv_lib_osxfuse_fuse_main" >&6; }
+if test "x$ac_cv_lib_osxfuse_fuse_main" = xyes
+then :
+  FUSE_LIB=-losxfuse
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -lfuse" >&5
+printf %s "checking for fuse_main in -lfuse... " >&6; }
+if test ${ac_cv_lib_fuse_fuse_main+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfuse  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char fuse_main ();
+int
+main (void)
+{
+return fuse_main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_fuse_fuse_main=yes
+else $as_nop
+  ac_cv_lib_fuse_fuse_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_fuse_fuse_main" >&5
+printf "%s\n" "$ac_cv_lib_fuse_fuse_main" >&6; }
+if test "x$ac_cv_lib_fuse_fuse_main" = xyes
+then :
+  FUSE_LIB=-lfuse
+else $as_nop
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Cannot find fuse library.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+fi
+
+
+else
+        fuse3_CFLAGS=$pkg_cv_fuse3_CFLAGS
+        fuse3_LIBS=$pkg_cv_fuse3_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+		FUSE_LIB=-lfuse3
+
+fi
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Enabling fuse2fs" >&5
 printf "%s\n" "Enabling fuse2fs" >&6; }
 fi
 
 else $as_nop
-         for ac_header in pthread.h fuse.h
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse3" >&5
+printf %s "checking for fuse3... " >&6; }
+
+if test -n "$fuse3_CFLAGS"; then
+    pkg_cv_fuse3_CFLAGS="$fuse3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fuse3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fuse3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_fuse3_CFLAGS=`$PKG_CONFIG --cflags "fuse3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$fuse3_LIBS"; then
+    pkg_cv_fuse3_LIBS="$fuse3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"fuse3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "fuse3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_fuse3_LIBS=`$PKG_CONFIG --libs "fuse3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+                fuse3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "fuse3" 2>&1`
+        else
+                fuse3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "fuse3" 2>&1`
+        fi
+        # Put the nasty error message in config.log where it belongs
+        echo "$fuse3_PKG_ERRORS" >&5
+
+
+	       for ac_header in pthread.h fuse.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
@@ -13726,9 +14284,9 @@ else $as_nop
 fi
 
 done
-if test -z "$FUSE_CMT"
-then
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
+	if test -z "$FUSE_CMT"
+	then
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
 printf %s "checking for fuse_main in -losxfuse... " >&6; }
 if test ${ac_cv_lib_osxfuse_fuse_main+y}
 then :
@@ -13811,6 +14369,129 @@ fi
 
 fi
 
+	fi
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+	       for ac_header in pthread.h fuse.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 29
+#ifdef __linux__
+# include <linux/fs.h>
+# include <linux/falloc.h>
+# include <linux/xattr.h>
+#endif
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  FUSE_CMT="#"
+fi
+
+done
+	if test -z "$FUSE_CMT"
+	then
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -losxfuse" >&5
+printf %s "checking for fuse_main in -losxfuse... " >&6; }
+if test ${ac_cv_lib_osxfuse_fuse_main+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-losxfuse  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char fuse_main ();
+int
+main (void)
+{
+return fuse_main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_osxfuse_fuse_main=yes
+else $as_nop
+  ac_cv_lib_osxfuse_fuse_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_osxfuse_fuse_main" >&5
+printf "%s\n" "$ac_cv_lib_osxfuse_fuse_main" >&6; }
+if test "x$ac_cv_lib_osxfuse_fuse_main" = xyes
+then :
+  FUSE_LIB=-losxfuse
+else $as_nop
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for fuse_main in -lfuse" >&5
+printf %s "checking for fuse_main in -lfuse... " >&6; }
+if test ${ac_cv_lib_fuse_fuse_main+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfuse  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+char fuse_main ();
+int
+main (void)
+{
+return fuse_main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_fuse_fuse_main=yes
+else $as_nop
+  ac_cv_lib_fuse_fuse_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_fuse_fuse_main" >&5
+printf "%s\n" "$ac_cv_lib_fuse_fuse_main" >&6; }
+if test "x$ac_cv_lib_fuse_fuse_main" = xyes
+then :
+  FUSE_LIB=-lfuse
+else $as_nop
+  FUSE_CMT="#"
+fi
+
+fi
+
+	fi
+
+else
+        fuse3_CFLAGS=$pkg_cv_fuse3_CFLAGS
+        fuse3_LIBS=$pkg_cv_fuse3_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+	FUSE_LIB=-lfuse3
+
 fi
 if test -z "$FUSE_CMT"
 then
@@ -13822,6 +14503,46 @@ fi
 
 
 
+if test "$FUSE_LIB" = "-lfuse3"
+then
+	FUSE_USE_VERSION=35
+	CFLAGS="$CFLAGS $fuse3_CFLAGS"
+	LDFLAGS="$LDFLAGS $fuse3_LDFLAGS"
+	       for ac_header in pthread.h fuse.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#define _FILE_OFFSET_BITS	64
+#define FUSE_USE_VERSION 35
+#ifdef __linux__
+#include <linux/fs.h>
+#include <linux/falloc.h>
+#include <linux/xattr.h>
+#endif
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else $as_nop
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Cannot find fuse3 fuse2fs headers.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+done
+elif test -n "$FUSE_LIB"
+then
+	FUSE_USE_VERSION=29
+fi
+if test -n "$FUSE_USE_VERSION"
+then
+
+printf "%s\n" "#define FUSE_USE_VERSION $FUSE_USE_VERSION" >>confdefs.h
+
+fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for optreset" >&5
 printf %s "checking for optreset... " >&6; }
 if test ${ac_cv_have_optreset+y}
@@ -14925,9 +15646,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 fi
-if test "$enable_fuzzer" = "yes" && test "$have_fuzzer" != "yes"; then
-	as_fn_error $? "Fuzzing not supported by compiler." "$LINENO" 5
-fi
 
 LINUX_CMT="#"
 CYGWIN_CMT="#"
@@ -15406,211 +16124,6 @@ case "$host_os" in
     OS_IO_FILE=unix_io
   ;;
 esac
-
-
-# Check whether --enable-largefile was given.
-if test ${enable_largefile+y}
-then :
-  enableval=$enable_largefile;
-fi
-
-if test "$enable_largefile" != no; then
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for special C compiler options needed for large files" >&5
-printf %s "checking for special C compiler options needed for large files... " >&6; }
-if test ${ac_cv_sys_largefile_CC+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  ac_cv_sys_largefile_CC=no
-     if test "$GCC" != yes; then
-       ac_save_CC=$CC
-       while :; do
-	 # IRIX 6.2 and later do not support large files by default,
-	 # so use the C compiler's -n32 option if that helps.
-	 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
- /* Check that off_t can represent 2**63 - 1 correctly.
-    We can't simply define LARGE_OFF_T to be 9223372036854775807,
-    since some C++ compilers masquerading as C compilers
-    incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
-  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-		       && LARGE_OFF_T % 2147483647 == 1)
-		      ? 1 : -1];
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-	 if ac_fn_c_try_compile "$LINENO"
-then :
-  break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam
-	 CC="$CC -n32"
-	 if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_sys_largefile_CC=' -n32'; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam
-	 break
-       done
-       CC=$ac_save_CC
-       rm -f conftest.$ac_ext
-    fi
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_largefile_CC" >&5
-printf "%s\n" "$ac_cv_sys_largefile_CC" >&6; }
-  if test "$ac_cv_sys_largefile_CC" != no; then
-    CC=$CC$ac_cv_sys_largefile_CC
-  fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _FILE_OFFSET_BITS value needed for large files" >&5
-printf %s "checking for _FILE_OFFSET_BITS value needed for large files... " >&6; }
-if test ${ac_cv_sys_file_offset_bits+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  while :; do
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
- /* Check that off_t can represent 2**63 - 1 correctly.
-    We can't simply define LARGE_OFF_T to be 9223372036854775807,
-    since some C++ compilers masquerading as C compilers
-    incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
-  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-		       && LARGE_OFF_T % 2147483647 == 1)
-		      ? 1 : -1];
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_sys_file_offset_bits=no; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define _FILE_OFFSET_BITS 64
-#include <sys/types.h>
- /* Check that off_t can represent 2**63 - 1 correctly.
-    We can't simply define LARGE_OFF_T to be 9223372036854775807,
-    since some C++ compilers masquerading as C compilers
-    incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
-  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-		       && LARGE_OFF_T % 2147483647 == 1)
-		      ? 1 : -1];
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_sys_file_offset_bits=64; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  ac_cv_sys_file_offset_bits=unknown
-  break
-done
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_file_offset_bits" >&5
-printf "%s\n" "$ac_cv_sys_file_offset_bits" >&6; }
-case $ac_cv_sys_file_offset_bits in #(
-  no | unknown) ;;
-  *)
-printf "%s\n" "#define _FILE_OFFSET_BITS $ac_cv_sys_file_offset_bits" >>confdefs.h
-;;
-esac
-rm -rf conftest*
-  if test $ac_cv_sys_file_offset_bits = unknown; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _LARGE_FILES value needed for large files" >&5
-printf %s "checking for _LARGE_FILES value needed for large files... " >&6; }
-if test ${ac_cv_sys_large_files+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-  while :; do
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
- /* Check that off_t can represent 2**63 - 1 correctly.
-    We can't simply define LARGE_OFF_T to be 9223372036854775807,
-    since some C++ compilers masquerading as C compilers
-    incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
-  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-		       && LARGE_OFF_T % 2147483647 == 1)
-		      ? 1 : -1];
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_sys_large_files=no; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#define _LARGE_FILES 1
-#include <sys/types.h>
- /* Check that off_t can represent 2**63 - 1 correctly.
-    We can't simply define LARGE_OFF_T to be 9223372036854775807,
-    since some C++ compilers masquerading as C compilers
-    incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T (((off_t) 1 << 31 << 31) - 1 + ((off_t) 1 << 31 << 31))
-  int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
-		       && LARGE_OFF_T % 2147483647 == 1)
-		      ? 1 : -1];
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  ac_cv_sys_large_files=1; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  ac_cv_sys_large_files=unknown
-  break
-done
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sys_large_files" >&5
-printf "%s\n" "$ac_cv_sys_large_files" >&6; }
-case $ac_cv_sys_large_files in #(
-  no | unknown) ;;
-  *)
-printf "%s\n" "#define _LARGE_FILES $ac_cv_sys_large_files" >>confdefs.h
-;;
-esac
-rm -rf conftest*
-  fi
-fi
 
 
 test -d lib || mkdir lib

@@ -154,9 +154,11 @@ static void print_undo_mismatch(struct ext2_super_block *fs_super,
 	if (memcmp(fs_super->s_uuid, undo_super->s_uuid,
 		   sizeof(fs_super->s_uuid)))
 		printf("%s", _("UUID does not match.\n"));
-	if (fs_super->s_mtime != undo_super->s_mtime)
+	if (ext2fs_get_tstamp(fs_super, s_mtime) !=
+	    ext2fs_get_tstamp(undo_super, s_mtime))
 		printf("%s", _("Last mount time does not match.\n"));
-	if (fs_super->s_wtime != undo_super->s_wtime)
+	if (ext2fs_get_tstamp(fs_super, s_wtime) !=
+	    ext2fs_get_tstamp(undo_super, s_wtime))
 		printf("%s", _("Last write time does not match.\n"));
 	if (fs_super->s_kbytes_written != undo_super->s_kbytes_written)
 		printf("%s", _("Lifetime write counter does not match.\n"));

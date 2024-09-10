@@ -72,7 +72,7 @@ Root inode not allocated.  Allocate? yes
 
 Pass 4: Checking reference counts
 Pass 5: Checking group summary information
-Block bitmap differences:  +(1--259) +273 +275 +289 +(291--418) +(2083--2210) +2341
+Block bitmap differences:  +(1--260) +262 +264 +266 +268 +273 +(275--276) +278 +280 +282 +284 +289 +(291--546) +(675--802) +(931--1058) +(1187--1314) +(1443--1570) +(2083--2210) +2341 +(8193--8450) +(24577--24834) +(40961--41218) +(57345--57602) +(73729--73986)
 Fix? yes
 
 Free blocks count wrong for group #0 (5838, counted=5851).

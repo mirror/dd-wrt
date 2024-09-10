@@ -212,7 +212,9 @@ skip_new_block:
 	memset(&inode, 0, sizeof(inode));
 	inode.i_mode = 040755;
 	inode.i_size = fs->blocksize;
-	inode.i_atime = inode.i_ctime = inode.i_mtime = ctx->now;
+	ext2fs_inode_xtime_set(&inode, i_atime, ctx->now);
+	ext2fs_inode_xtime_set(&inode, i_ctime, ctx->now);
+	ext2fs_inode_xtime_set(&inode, i_mtime, ctx->now);
 	inode.i_links_count = 2;
 	ext2fs_iblk_set(fs, iptr, 1);
 	inode.i_block[0] = blk;
@@ -528,7 +530,9 @@ skip_new_block:
 	memset(&inode, 0, sizeof(inode));
 	inode.i_mode = 040700;
 	inode.i_size = fs->blocksize;
-	inode.i_atime = inode.i_ctime = inode.i_mtime = ctx->now;
+	ext2fs_inode_xtime_set(&inode, i_atime, ctx->now);
+	ext2fs_inode_xtime_set(&inode, i_ctime, ctx->now);
+	ext2fs_inode_xtime_set(&inode, i_mtime, ctx->now);
 	inode.i_links_count = 2;
 	ext2fs_iblk_set(fs, EXT2_INODE(&inode), 1);
 	inode.i_block[0] = blk;

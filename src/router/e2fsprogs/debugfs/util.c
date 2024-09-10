@@ -191,14 +191,6 @@ int check_fs_bitmaps(char *name)
 	return 0;
 }
 
-char *inode_time_to_string(__u32 xtime, __u32 xtime_extra)
-{
-	__s64 t = (__s32) xtime;
-
-	t += (__s64) (xtime_extra & EXT4_EPOCH_MASK) << 32;
-	return time_to_string(t);
-}
-
 /*
  * This function takes a __s64 time value and converts it to a string,
  * using ctime
@@ -355,7 +347,7 @@ int strtoblk(const char *cmd, const char *str, const char *errmsg,
  * This is a common helper function used by the command processing
  * routines
  */
-int common_args_process(int argc, char *argv[], int min_argc, int max_argc,
+int common_args_process(int argc, ss_argv_t argv, int min_argc, int max_argc,
 			const char *cmd, const char *usage, int flags)
 {
 	if (argc < min_argc || argc > max_argc) {
@@ -381,7 +373,7 @@ int common_args_process(int argc, char *argv[], int min_argc, int max_argc,
  * do_testi, etc.  Basically, any command which takes a single
  * argument which is a file/inode number specifier.
  */
-int common_inode_args_process(int argc, char *argv[],
+int common_inode_args_process(int argc, ss_argv_t argv,
 			      ext2_ino_t *inode, int flags)
 {
 	if (common_args_process(argc, argv, 2, 2, argv[0], "<file>", flags))
@@ -396,7 +388,7 @@ int common_inode_args_process(int argc, char *argv[],
 /*
  * This is a helper function used by do_freeb, do_setb, and do_testb
  */
-int common_block_args_process(int argc, char *argv[],
+int common_block_args_process(int argc, ss_argv_t argv,
 			      blk64_t *block, blk64_t *count)
 {
 	int	err;

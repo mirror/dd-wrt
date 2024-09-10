@@ -64,6 +64,7 @@ chmod u-w $TMPFILE
 echo $RESIZE2FS -P $TMPFILE >> $LOG 2>&1
 if ! $RESIZE2FS -P $TMPFILE >> $LOG 2>&1
 then
+	echo "First resize2fs failed" >> $LOG
 	return 1
 fi
 chmod u+w $TMPFILE
@@ -71,12 +72,14 @@ chmod u+w $TMPFILE
 echo $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS $TMPFILE $SIZE_2 >> $LOG 2>&1
 if ! $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS $TMPFILE $SIZE_2 >> $LOG 2>&1
 then
+	echo "Second resize2fs failed" >> $LOG
 	return 1
 fi
 
 echo $FSCK -fy $TMPFILE >> $LOG 2>&1
 if ! $FSCK -fy $TMPFILE >> $LOG 2>&1
 then
+	echo "First fsck failed" >> $LOG
 	$DUMPE2FS $TMPFILE >> $LOG
 	return 1
 fi
@@ -101,12 +104,14 @@ fi
 echo $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 if ! $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 then
+	echo "Third resize2fs failed" >> $LOG
 	return 1
 fi
 
 echo $FSCK -fy $TMPFILE >> $LOG 2>&1
 if ! $FSCK -fy $TMPFILE >> $LOG 2>&1
 then
+	echo "Second fsck failed" >> $LOG
 	$DUMPE2FS $TMPFILE >> $LOG
 	return 1
 fi
@@ -126,12 +131,14 @@ fi
 echo $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 if ! $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 then
+	echo "Fourth resize2fs failed" >> $LOG
 	return 1
 fi
 
 echo $FSCK -fy $TMPFILE >> $LOG 2>&1
 if ! $FSCK -fy $TMPFILE >> $LOG 2>&1
 then
+	echo "Third fsck failed" >> $LOG
 	$DUMPE2FS $TMPFILE >> $LOG
 	return 1
 fi
@@ -151,12 +158,14 @@ fi
 echo $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 if ! $RESIZE2FS $RESIZE2FS_OPTS -d $DBG_FLAGS -M $TMPFILE $SIZE_2 >> $LOG 2>&1
 then
+	echo "Fifth resize2fs failed" >> $LOG
 	return 1
 fi
 
 echo $FSCK -fy $TMPFILE >> $LOG 2>&1
 if ! $FSCK -fy $TMPFILE >> $LOG 2>&1
 then
+	echo "Fourth fsck failed" >> $LOG
 	$DUMPE2FS $TMPFILE >> $LOG
 	return 1
 fi

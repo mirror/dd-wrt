@@ -16,6 +16,7 @@ cc_binary {
     name: "e2fsdroid",
     host_supported: true,
     recovery_available: true,
+    vendor_available: true,
     defaults: ["e2fsprogs-defaults"],
 
     srcs: [

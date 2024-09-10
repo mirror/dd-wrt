@@ -125,6 +125,10 @@ ls_scan_targets() {
 	while read vars ; do
 		eval "${vars}"
 
+		# Skip unjournalled filesystems; they are inconsistent when
+		# mounted
+		dumpe2fs -h "${NAME}" | grep -q 'has_journal' || continue
+
 		if [ "${scrub_all}" -eq 1 ] || [ -n "${MOUNTPOINT}" ]; then
 		    echo ${MOUNTPOINT:-${NAME}}
 		fi
@@ -146,22 +150,10 @@ ls_targets() {
 	fi
 }
 
-# systemd doesn't know to do path escaping on the instance variable we pass
-# to the e2scrub service, which breaks things if there is a dash in the path
-# name.  Therefore, do the path escaping ourselves if needed.
-#
-# systemd path escaping also drops the initial slash so we add that back in so
-# that log messages from the service units preserve the full path and users can
-# look up log messages using full paths.  However, for "/" the escaping rules
-# do /not/ drop the initial slash, so we have to special-case that here.
+# Turn our mount path into a service name that systemd will recognize
 escape_path_for_systemd() {
 	local path="$1"
-
-	if [ "${path}" != "/" ]; then
-		echo "-$(systemd-escape --path "${path}")"
-	else
-		echo "-"
-	fi
+	systemd-escape --template 'e2scrub@.service' --path "${path}"
 }
 
 # Scrub any mounted fs on lvm by creating a snapshot and fscking that.
@@ -169,9 +161,9 @@ mapfile -t targets < <(ls_targets)
 for tgt in "${targets[@]}"; do
 	# If we're not reaping and systemd is present, try invoking the
 	# systemd service.
-	if [ "${reap}" -ne 1 ] && type systemctl > /dev/null 2>&1; then
-		tgt_esc="$(escape_path_for_systemd "${tgt}")"
-		${DBG} systemctl start "e2scrub@${tgt_esc}" 2> /dev/null
+	if [ "${reap}" -ne 1 ] && [ -e /run/systemd/system ]; then
+		svcname="$(escape_path_for_systemd "${tgt}")"
+		${DBG} systemctl start "${svcname}" 2> /dev/null
 		res=$?
 		if [ "${res}" -eq 0 ] || [ "${res}" -eq 1 ]; then
 			continue;

@@ -22,6 +22,11 @@
 #define UID_GID_MAP_MAX_EXTENTS 340
 #endif
 
+// disable leak detection, breaks host asan build
+const char *__asan_default_options() {
+    return "detect_leaks=0";
+}
+
 static char *prog_name = "e2fsdroid";
 static char *in_file;
 static char *block_list;

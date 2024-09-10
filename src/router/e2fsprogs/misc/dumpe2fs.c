@@ -84,8 +84,7 @@ static void print_free(unsigned long group, char * bitmap,
 		       unsigned long num, unsigned long offset, int ratio)
 {
 	int p = 0;
-	unsigned long i;
-	unsigned long j;
+	unsigned long i, j;
 
 	offset /= ratio;
 	offset += group * num;
@@ -95,13 +94,14 @@ static void print_free(unsigned long group, char * bitmap,
 			if (p)
 				printf (", ");
 			print_number((i + offset) * ratio);
-			for (j = i; j < num && !in_use (bitmap, j); j++)
+			for (j = i + 1; j < num && !in_use(bitmap, j); j++)
 				;
-			if (--j != i) {
+			if (j != i + 1 || ratio > 1) {
 				fputc('-', stdout);
-				print_number((j + offset) * ratio);
-				i = j;
+				print_number(((j - 1 + offset) * ratio) +
+					     ratio - 1);
 			}
+			i = j;
 			p = 1;
 		}
 }

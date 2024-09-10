@@ -14,8 +14,18 @@ ifeq ($(DEB_HOST_ARCH_OS), hurd)
 SKIP_FUSE2FS=yes
 endif
 
+ifeq ($(DEB_HOST_ARCH_OS), linux)
+export deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd | sed s,^/,,)
+export deb_udevudevdir = $(shell pkg-config pkg-config --variable=udevdir udev | sed s,^/,,)
+endif
+
 ifneq ($(filter pkg.e2fsprogs.no-fuse2fs,$(DEB_BUILD_PROFILES)),)
 SKIP_FUSE2FS=yes
+endif
+
+ifneq (,$(filter-out parallel=1,$(filter parallel=%,$(DEB_BUILD_OPTIONS))))
+    NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+    JOBS = -j$(NUMJOBS)
 endif
 
 COMERR_VERSION ?= $(shell grep ELF_VERSION lib/et/Makefile.in | cut '-d ' -f3)
@@ -30,7 +40,7 @@ INSTALL ?= install
 INSTALL_PROGRAM ?= $(INSTALL) -p -m 0755
 
 ifneq (,$(findstring update-symbols,$(DEB_BUILD_OPTIONS)))
-SYMBOL_LIBS := libext2fs libcomerr2 libss2
+SYMBOL_LIBS := libext2fst64 libcomerr2 libss2
 endif
 
 CFLAGS_SHLIB = $(CFLAGS)
@@ -56,6 +66,11 @@ CC ?= $(DEB_HOST_GNU_TYPE)-gcc
 COMMON_CONF_FLAGS += --build=$(DEB_BUILD_GNU_TYPE) --host=$(DEB_HOST_GNU_TYPE)
 endif
 
+# work around Debian Bug #1070042
+ifeq ($(DEB_HOST_ARCH),mips64el)
+COMMON_CONF_FLAGS += --without-libarchive
+endif
+
 %:
 	dh $@ -B${stdbuilddir}
 
@@ -67,7 +82,7 @@ override_dh_auto_configure:
 		../../configure ${COMMON_CONF_FLAGS}
 
 override_dh_auto_build:
-	$(MAKE) -C ${stdbuilddir} V=1 all
+	$(MAKE) -C ${stdbuilddir} V=1 $(JOBS) all
 ifeq (,$(filter pkg.e2fsprogs.no-static,$(DEB_BUILD_PROFILES)))
 	$(MAKE) -C ${stdbuilddir}/e2fsck V=1 e2fsck.static
 endif
@@ -148,6 +163,11 @@ override_dh_installinfo:
 	dh_installinfo -pcomerr-dev ${stdbuilddir}/lib/et/com_err.info
 	dh_installinfo -plibext2fs-dev ${stdbuilddir}/doc/libext2fs.info
 
+ifneq ($(DEB_HOST_ARCH_OS), hurd)
+override_dh_installsystemd:
+	dh_installsystemd -p e2fsprogs --no-restart-after-upgrade --no-stop-on-upgrade e2scrub_all.timer e2scrub_reap.service
+endif
+
 override_dh_makeshlibs:
 	for i in $(SYMBOL_LIBS); \
 	do \
@@ -179,7 +199,7 @@ override_dh_gencontrol:
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
-	PRINT_FAILED=yes $(MAKE) -C ${stdbuilddir} V=1 check
+	PRINT_FAILED=yes $(MAKE) -C ${stdbuilddir} V=1 $(JOBS) check
 endif
 
 test_printenv:

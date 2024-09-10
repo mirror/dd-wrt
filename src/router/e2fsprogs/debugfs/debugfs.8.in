@@ -268,9 +268,24 @@ number, otherwise use the
 .B s_mmp_block
 field in the superblock to locate and use the existing MMP block.
 .TP
-.BI dx_hash " [-h hash_alg] [-s hash_seed] filename"
+.BI dx_hash " [-cv] [-h hash_alg] [-s hash_seed] filename"
 Calculate the directory hash of
 .IR filename .
+The
+.I -c
+option will casefold the filename before calculating the hash.  The
+.I -v
+option will make the
+.B dx_hash
+command more verbose and print the hash algorithm and hash seed to
+calculate the hash.
+If a file system is open, use the hash_seed and
+default hash_algorithm used by the file system, although these can be
+overridden by the
+.I -h
+and
+.I -s
+options.
 The hash algorithm specified with
 .I -h
 may be

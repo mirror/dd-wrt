@@ -24,8 +24,8 @@ COMPILE_ET=	_ET_DIR_OVERRIDE=$(srcdir)/../et ../et/compile_et
 DEBUG_OBJS= debug_cmds.o extent_cmds.o tst_cmds.o debugfs.o util.o \
 	ncheck.o icheck.o ls.o lsdel.o dump.o set_fields.o logdump.o \
 	htree.o unused.o e2freefrag.o filefrag.o extent_inode.o zap.o \
-	xattrs.o quota.o tst_libext2fs.o create_inode.o journal.o \
-	revoke.o recovery.o do_journal.o
+	xattrs.o quota.o tst_libext2fs.o create_inode.o \
+	create_inode_libarchive.o journal.o revoke.o recovery.o do_journal.o
 
 DEBUG_SRCS= debug_cmds.c extent_cmds.c tst_cmds.c \
 	$(top_srcdir)/debugfs/debugfs.c \
@@ -46,6 +46,7 @@ DEBUG_SRCS= debug_cmds.c extent_cmds.c tst_cmds.c \
 	$(top_srcdir)/debugfs/xattrs.c \
 	$(top_srcdir)/misc/e2freefrag.c \
 	$(top_srcdir)/misc/create_inode.c \
+	$(top_srcdir)/misc/create_inode_libarchive.c \
 	$(top_srcdir)/debugfs/journal.c \
 	$(top_srcdir)/e2fsck/revoke.c \
 	$(top_srcdir)/e2fsck/recovery.c \
@@ -92,6 +93,7 @@ OBJS= $(DEBUGFS_LIB_OBJS) $(RESIZE_LIB_OBJS) $(E2IMAGE_LIB_OBJS) \
 	gen_bitmap64.o \
 	get_num_dirs.o \
 	get_pathname.o \
+	getenv.o \
 	getsize.o \
 	getsectsize.o \
 	hashmap.o \
@@ -174,6 +176,7 @@ SRCS= ext2_err.c \
 	$(srcdir)/gen_bitmap64.c \
 	$(srcdir)/get_num_dirs.c \
 	$(srcdir)/get_pathname.c \
+	$(srcdir)/getenv.c \
 	$(srcdir)/getsize.c \
 	$(srcdir)/getsectsize.c \
 	$(srcdir)/hashmap.c \
@@ -458,7 +461,13 @@ e2freefrag.o: $(top_srcdir)/misc/e2freefrag.c
 	$(E) "	CC $<"
 	$(Q) $(CC) $(ALL_CFLAGS) -DDEBUGFS -I$(top_srcdir)/debugfs -c $< -o $@
 
-create_inode.o: $(top_srcdir)/misc/create_inode.c
+create_inode.o: $(top_srcdir)/misc/create_inode.c \
+ $(top_srcdir)/misc/create_inode_libarchive.c
+	$(E) "	CC $<"
+	$(Q) $(CC) $(ALL_CFLAGS) -DDEBUGFS -c $< -o $@
+
+create_inode_libarchive.o: $(top_srcdir)/misc/create_inode_libarchive.c \
+ $(top_srcdir)/misc/create_inode_libarchive.c
 	$(E) "	CC $<"
 	$(Q) $(CC) $(ALL_CFLAGS) -DDEBUGFS -c $< -o $@
 
@@ -499,7 +508,7 @@ tst_libext2fs: $(DEBUG_OBJS) \
 	$(Q) $(CC) -o tst_libext2fs $(ALL_LDFLAGS) -DDEBUG $(DEBUG_OBJS) \
 		$(STATIC_LIBSS) $(STATIC_LIBE2P) $(LIBSUPPORT) \
 		$(STATIC_LIBEXT2FS) $(LIBBLKID) $(LIBUUID) $(LIBMAGIC) \
-		$(STATIC_LIBCOM_ERR) $(SYSLIBS) -I $(top_srcdir)/debugfs
+		$(STATIC_LIBCOM_ERR) $(SYSLIBS) $(LIBARCHIVE) -I $(top_srcdir)/debugfs
 
 tst_inline: $(srcdir)/inline.c $(STATIC_LIBEXT2FS) $(DEPSTATIC_LIBCOM_ERR)
 	$(E) "	LD $@"
@@ -699,10 +708,11 @@ bb_compat.o: $(srcdir)/bb_compat.c $(top_builddir)/lib/config.h \
  $(srcdir)/hashmap.h $(srcdir)/bitops.h
 bb_inode.o: $(srcdir)/bb_inode.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
- $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
- $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
+ $(srcdir)/ext2fs.h $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h \
+ $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h
 bitmaps.o: $(srcdir)/bitmaps.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
@@ -831,10 +841,10 @@ expanddir.o: $(srcdir)/expanddir.c $(top_builddir)/lib/config.h \
 ext_attr.o: $(srcdir)/ext_attr.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2_ext_attr.h \
- $(srcdir)/ext4_acl.h $(srcdir)/ext2fs.h $(srcdir)/ext2_fs.h \
- $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
- $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
- $(srcdir)/hashmap.h $(srcdir)/bitops.h
+ $(srcdir)/ext4_acl.h $(srcdir)/ext2fsP.h $(srcdir)/ext2fs.h \
+ $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
+ $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
 extent.o: $(srcdir)/extent.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
@@ -896,6 +906,12 @@ get_pathname.o: $(srcdir)/get_pathname.c $(top_builddir)/lib/config.h \
  $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+getenv.o: $(srcdir)/getenv.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2_fs.h \
+ $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h
 getsize.o: $(srcdir)/getsize.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
@@ -930,10 +946,11 @@ ind_block.o: $(srcdir)/ind_block.c $(top_builddir)/lib/config.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
 initialize.o: $(srcdir)/initialize.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
- $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
- $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
+ $(srcdir)/ext2fs.h $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h \
+ $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h
 inline.o: $(srcdir)/inline.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
@@ -1005,8 +1022,8 @@ mkdir.o: $(srcdir)/mkdir.c $(top_builddir)/lib/config.h \
 mkjournal.o: $(srcdir)/mkjournal.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/e2p/e2p.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext2fs.h $(srcdir)/ext3_extents.h \
- $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(srcdir)/ext2_fs.h $(srcdir)/ext2fsP.h $(srcdir)/ext2fs.h \
+ $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
  $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
  $(srcdir)/hashmap.h $(srcdir)/bitops.h $(srcdir)/kernel-jbd.h \
  $(srcdir)/jfs_compat.h $(srcdir)/kernel-list.h $(srcdir)/compiler.h
@@ -1049,6 +1066,13 @@ openfs.o: $(srcdir)/openfs.c $(top_builddir)/lib/config.h \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
  $(srcdir)/e2image.h
+orphan.o: $(srcdir)/orphan.c $(top_builddir)/lib/config.h \
+ $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
+ $(srcdir)/ext2fs.h $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h \
+ $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h
 progress.o: $(srcdir)/progress.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2_fs.h \
@@ -1082,10 +1106,11 @@ read_bb_file.o: $(srcdir)/read_bb_file.c $(top_builddir)/lib/config.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
 res_gdt.o: $(srcdir)/res_gdt.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
- $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
- $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h $(top_srcdir)/lib/et/com_err.h \
- $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
- $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fsP.h \
+ $(srcdir)/ext2fs.h $(srcdir)/ext2_fs.h $(srcdir)/ext3_extents.h \
+ $(top_srcdir)/lib/et/com_err.h $(srcdir)/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(srcdir)/ext2_ext_attr.h \
+ $(srcdir)/hashmap.h $(srcdir)/bitops.h
 rw_bitmaps.o: $(srcdir)/rw_bitmaps.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(srcdir)/ext2_fs.h \
  $(top_builddir)/lib/ext2fs/ext2_types.h $(srcdir)/ext2fs.h \
@@ -1419,7 +1444,17 @@ create_inode.o: $(top_srcdir)/misc/create_inode.c \
  $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
  $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
  $(srcdir)/fiemap.h $(top_srcdir)/misc/create_inode.h \
- $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/support/nls-enable.h
+ $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/support/nls-enable.h \
+ $(top_srcdir)/misc/create_inode_libarchive.h
+create_inode_libarchive.o: $(top_srcdir)/misc/create_inode_libarchive.c \
+ $(top_builddir)/lib/config.h $(top_builddir)/lib/dirpaths.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/misc/create_inode.h \
+ $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(srcdir)/ext2_fs.h $(srcdir)/ext2fs.h $(srcdir)/ext3_extents.h \
+ $(srcdir)/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(srcdir)/ext2_ext_attr.h $(srcdir)/hashmap.h $(srcdir)/bitops.h \
+ $(top_srcdir)/misc/create_inode_libarchive.h \
+ $(top_srcdir)/lib/support/nls-enable.h
 journal.o: $(top_srcdir)/debugfs/journal.c $(top_builddir)/lib/config.h \
  $(top_builddir)/lib/dirpaths.h $(top_srcdir)/debugfs/journal.h \
  $(srcdir)/../../e2fsck/jfs_user.h $(srcdir)/ext2_fs.h \

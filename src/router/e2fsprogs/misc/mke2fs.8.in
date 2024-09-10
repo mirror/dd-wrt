@@ -23,7 +23,7 @@ mke2fs \- create an ext2/ext3/ext4 file system
 ]
 [
 .B \-d
-.I root-directory
+.I root-directory|tarball
 ]
 [
 .B \-D
@@ -232,16 +232,18 @@ test is used instead of a fast read-only test.
 .TP
 .B \-C " cluster-size"
 Specify the size of cluster in bytes for file systems using the bigalloc
-feature.  Valid cluster-size values are from 2048 to 256M bytes per
-cluster.  This can only be specified if the bigalloc feature is
-enabled.  (See the
+feature.  Valid cluster-size values range from 2 to 32768 times the
+filesystem blocksize and must be a power of 2.  The cluster-size can
+only be specified if the bigalloc feature is enabled.  (See the
 .B ext4 (5)
 man page for more details about bigalloc.)   The default cluster size if
 bigalloc is enabled is 16 times the block size.
 .TP
-.BI \-d " root-directory"
-Copy the contents of the given directory into the root directory of the
-file system.
+.BI \-d " root-directory|tarball"
+Copy the contents of the given directory or tarball into the root directory of the
+file system. Tarball input is only available if mke2fs was compiled with
+libarchive support enabled and if the libarchive shared library is available
+at run-time. The special value "-" will read a tarball from standard input.
 .TP
 .B \-D
 Use direct I/O when writing to the disk.  This avoids mke2fs dirtying a
@@ -406,6 +408,11 @@ The \fBroot_owner=\fR option allows explicitly specifying these values,
 and avoid side-effects for users that do not expect the contents of the
 file system to change based on the user running \fBmke2fs\fR.
 .TP
+.BI root_perms [=permissions]
+Specify the root directory permissions in octal format. If no permissions
+are specified then the root directory permissions would be set in accordance with
+the default filesystem umask.
+.TP
 .B test_fs
 Set a flag in the file system superblock indicating that it may be
 mounted using experimental kernel code, such as the ext4dev file system.
@@ -508,8 +515,8 @@ The default inode size is controlled by the
 file.  In the
 .B mke2fs.conf
 file shipped with e2fsprogs, the default inode size is 256 bytes for
-most file systems, except for small file systems where the inode size
-will be 128 bytes.
+all file systems, except for the GNU Hurd since it only supports
+128-byte inodes.
 .TP
 .B \-j
 Create the file system with an ext3 journal.  If the

@@ -15,23 +15,24 @@
 #include <string.h>
 #include <time.h>
 #include "ext2_fs.h"
-#include "ext2fs.h"
+#include "ext2fsP.h"
 
 /*
  * Iterate through the groups which hold BACKUP superblock/GDT copies in an
  * ext3 filesystem.  The counters should be initialized to 1, 5, and 7 before
- * calling this for the first time.  In a sparse filesystem it will be the
- * sequence of powers of 3, 5, and 7: 1, 3, 5, 7, 9, 25, 27, 49, 81, ...
+ * calling this for the first time.  In a sparse_super filesystem it will be
+ * the sequence of powers of 3, 5, and 7: 1, 3, 5, 7, 9, 25, 27, 49, 81, ...
  * For a non-sparse filesystem it will be every group: 1, 2, 3, 4, ...
+ * For a sparse_super2 filesystem there are two backups in specific groups.
  */
-static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
-				 unsigned int *five, unsigned int *seven)
+dgrp_t ext2fs_list_backups(ext2_filsys fs, dgrp_t *three,
+			   dgrp_t *five, dgrp_t *seven)
 {
-	unsigned int *min = three;
-	int mult = 3;
-	unsigned int ret;
+	dgrp_t *min = three;
+	unsigned long long mult = 3;
+	dgrp_t ret;
 
-	if (ext2fs_has_feature_sparse_super2(fs->super)) {
+	if (fs && ext2fs_has_feature_sparse_super2(fs->super)) {
 		if (*min == 1) {
 			*min += 1;
 			if (fs->super->s_backup_bgs[0])
@@ -42,11 +43,14 @@ static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
 			if (fs->super->s_backup_bgs[1])
 				return fs->super->s_backup_bgs[1];
 		}
+
 		return fs->group_desc_count;
 	}
-	if (!ext2fs_has_feature_sparse_super(fs->super)) {
+
+	if (fs && !ext2fs_has_feature_sparse_super(fs->super)) {
 		ret = *min;
 		*min += 1;
+
 		return ret;
 	}
 
@@ -60,7 +64,11 @@ static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
 	}
 
 	ret = *min;
-	*min *= mult;
+	mult *= *min;
+	if (mult > (dgrp_t)-1)
+		*min = (dgrp_t)-1;
+	else
+		*min = mult;
 
 	return ret;
 }
@@ -135,15 +143,15 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 		retval = ext2fs_inode_size_set(fs, &inode, inode_size);
 		if (retval)
 			goto out_free;
-		inode.i_ctime = fs->now ? fs->now : time(0);
+		inode.i_ctime = ext2fsP_get_time(fs);
 	}
 
 	for (rsv_off = 0, gdt_off = fs->desc_blocks,
 	     gdt_blk = sb_blk + 1 + fs->desc_blocks;
 	     rsv_off < sb->s_reserved_gdt_blocks;
 	     rsv_off++, gdt_off++, gdt_blk++) {
-		unsigned int three = 1, five = 5, seven = 7;
-		unsigned int grp, last = 0;
+		dgrp_t three = 1, five = 5, seven = 7;
+		dgrp_t grp, last = 0;
 		int gdt_dirty = 0;
 
 		gdt_off %= apb;
@@ -183,7 +191,7 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 			goto out_dindir;
 		}
 
-		while ((grp = list_backups(fs, &three, &five, &seven)) <
+		while ((grp = ext2fs_list_backups(fs, &three, &five, &seven)) <
 		       fs->group_desc_count) {
 			blk_t expect = gdt_blk + grp * sb->s_blocks_per_group;
 
@@ -227,7 +235,10 @@ out_inode:
 	       EXT2_I_SIZE(&inode));
 #endif
 	if (inode_dirty) {
-		inode.i_atime = inode.i_mtime = fs->now ? fs->now : time(0);
+		time_t now = ext2fsP_get_time(fs);
+
+		ext2fs_inode_xtime_set(&inode, i_atime, now);
+		ext2fs_inode_xtime_set(&inode, i_mtime, now);
 		retval2 = ext2fs_write_new_inode(fs, EXT2_RESIZE_INO, &inode);
 		if (!retval)
 			retval = retval2;

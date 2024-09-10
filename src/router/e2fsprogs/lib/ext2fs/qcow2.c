@@ -134,7 +134,9 @@ static int qcow2_read_l2_table(struct ext2_qcow2_image *img,
 static int qcow2_copy_data(int fdin, int fdout, __u64 off_in,
 			   __u64 off_out, void *buf, size_t count)
 {
-	size_t size;
+	ssize_t c1, c2, c;
+	void *ptr;
+	int retries = 10;
 
 	assert(buf);
 
@@ -144,14 +146,24 @@ static int qcow2_copy_data(int fdin, int fdout, __u64 off_in,
 	if (ext2fs_llseek(fdin, off_in, SEEK_SET) < 0)
 		return errno;
 
-	size = read(fdin, buf, count);
-	if (size != count)
-		return errno;
+	while (count > 0) {
+		errno = 0;
+		c1 = read(fdin, buf, count);
+		if (c1 < 0 || ((c1 == 0) && errno))
+			return errno;
+		if (c1 == 0)
+			break; 	/* EOF */
 
-	size = write(fdout, buf, count);
-	if (size != count)
-		return errno;
-
+		for (ptr = buf, c = c1; c > 0; ptr += c2, c -= c2) {
+			errno = 0;
+			c2 = write(fdout, ptr, c1);
+			if (c2 < 0 || ((c2 == 0) && errno))
+				return errno;
+			if (c2 == 0 && --retries <= 0)
+				break; /* This should never happen...  */
+		}
+		count -= c1;
+	}
 	return 0;
 }
 

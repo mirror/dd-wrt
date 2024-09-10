@@ -4,7 +4,7 @@ EXP=$test_dir/expect
 CONF=$TMPFILE.conf
 
 os=$(uname -s)
-if [ "$os" = "Darwin" -o "$os" = "GNU" -o "FreeBSD" ]; then
+if [ "$os" = "Darwin" -o "$os" = "GNU" -o "$os" = "FreeBSD" ]; then
 	# creates a 44GB filesystem
 	echo "$test_name: $test_description: skipped for $os"
 	return 0

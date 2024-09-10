@@ -149,9 +149,15 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 	fs->flags |= EXT2_FLAG_MASTER_SB_ONLY;
 	fs->umask = 022;
 
-	time_env = getenv("E2FSPROGS_FAKE_TIME");
-	if (time_env)
+	time_env = ext2fs_safe_getenv("SOURCE_DATE_EPOCH");
+	if (time_env) {
 		fs->now = strtoul(time_env, NULL, 0);
+		fs->flags2 |= EXT2_FLAG2_USE_FAKE_TIME;
+	} else {
+		time_env = ext2fs_safe_getenv("E2FSPROGS_FAKE_TIME");
+		if (time_env)
+			fs->now = strtoul(time_env, NULL, 0);
+	}
 
 	retval = ext2fs_get_mem(strlen(name)+1, &fs->device_name);
 	if (retval)
@@ -330,13 +336,14 @@ retry:
 	}
 
 	/* Enforce the block group descriptor size */
-	if (!(flags & EXT2_FLAG_IGNORE_SB_ERRORS) &&
-	    ext2fs_has_feature_64bit(fs->super)) {
+	if (ext2fs_has_feature_64bit(fs->super)) {
 		unsigned desc_size = fs->super->s_desc_size;
 
-		if ((desc_size < EXT2_MIN_DESC_SIZE_64BIT) ||
-		    (desc_size > EXT2_MAX_DESC_SIZE) ||
-		    (desc_size & (desc_size - 1)) != 0) {
+		if (desc_size == 0 ||
+		    (!(flags & EXT2_FLAG_IGNORE_SB_ERRORS) &&
+		     ((desc_size > EXT2_MAX_DESC_SIZE) ||
+		      (desc_size < EXT2_MIN_DESC_SIZE_64BIT) ||
+		      (desc_size & (desc_size - 1)) != 0))) {
 			retval = EXT2_ET_BAD_DESC_SIZE;
 			goto cleanup;
 		}

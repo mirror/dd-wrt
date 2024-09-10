@@ -71,7 +71,9 @@ static errcode_t parse_string(struct field_set_info *info, char *field, char *ar
 static errcode_t parse_uuid(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_hashalg(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_encoding(struct field_set_info *info, char *field, char *arg);
-static errcode_t parse_time(struct field_set_info *info, char *field, char *arg);
+static errcode_t parse_sb_time(struct field_set_info *info, char *field, char *arg);
+static errcode_t parse_ino_time(struct field_set_info *info, char *field, char *arg);
+
 static errcode_t parse_bmap(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_gd_csum(struct field_set_info *info, char *field, char *arg);
 static errcode_t parse_inode_csum(struct field_set_info *info, char *field,
@@ -99,15 +101,16 @@ static struct field_set_info super_fields[] = {
 	{ "blocks_per_group", &set_sb.s_blocks_per_group, NULL, 4, parse_uint },
 	{ "clusters_per_group", &set_sb.s_clusters_per_group, NULL, 4, parse_uint },
 	{ "inodes_per_group", &set_sb.s_inodes_per_group, NULL, 4, parse_uint },
-	{ "mtime", &set_sb.s_mtime, NULL, 4, parse_time },
-	{ "wtime", &set_sb.s_wtime, NULL, 4, parse_time },
+	{ "mtime", &set_sb.s_mtime, &set_sb.s_mtime_hi, 5, parse_sb_time },
+	{ "wtime", &set_sb.s_wtime, &set_sb.s_wtime_hi, 5, parse_sb_time },
 	{ "mnt_count", &set_sb.s_mnt_count, NULL, 2, parse_uint },
 	{ "max_mnt_count", &set_sb.s_max_mnt_count, NULL, 2, parse_int },
 	/* s_magic */
 	{ "state", &set_sb.s_state, NULL, 2, parse_uint },
 	{ "errors", &set_sb.s_errors, NULL, 2, parse_uint },
 	{ "minor_rev_level", &set_sb.s_minor_rev_level, NULL, 2, parse_uint },
-	{ "lastcheck", &set_sb.s_lastcheck, NULL, 4, parse_time },
+	{ "lastcheck", &set_sb.s_lastcheck, &set_sb.s_lastcheck_hi, 5,
+		parse_sb_time },
 	{ "checkinterval", &set_sb.s_checkinterval, NULL, 4, parse_uint },
 	{ "creator_os", &set_sb.s_creator_os, NULL, 4, parse_uint },
 	{ "rev_level", &set_sb.s_rev_level, NULL, 4, parse_uint },
@@ -139,7 +142,8 @@ static struct field_set_info super_fields[] = {
 	{ "desc_size", &set_sb.s_desc_size, NULL, 2, parse_uint },
 	{ "default_mount_opts", &set_sb.s_default_mount_opts, NULL, 4, parse_uint },
 	{ "first_meta_bg", &set_sb.s_first_meta_bg, NULL, 4, parse_uint },
-	{ "mkfs_time", &set_sb.s_mkfs_time, NULL, 4, parse_time },
+	{ "mkfs_time", &set_sb.s_mkfs_time, &set_sb.s_mkfs_time_hi, 5,
+		parse_sb_time },
 	{ "jnl_blocks", &set_sb.s_jnl_blocks[0], NULL, 4, parse_uint, FLAG_ARRAY,
 	  17 },
 	{ "min_extra_isize", &set_sb.s_min_extra_isize, NULL, 2, parse_uint },
@@ -167,12 +171,14 @@ static struct field_set_info super_fields[] = {
 	{ "checksum_type", &set_sb.s_checksum_type, NULL, 1, parse_uint },
 	{ "encryption_level", &set_sb.s_encryption_level, NULL, 1, parse_uint },
 	{ "error_count", &set_sb.s_error_count, NULL, 4, parse_uint },
-	{ "first_error_time", &set_sb.s_first_error_time, NULL, 4, parse_time },
+	{ "first_error_time", &set_sb.s_first_error_time,
+		&set_sb.s_first_error_time_hi, 5, parse_sb_time },
 	{ "first_error_ino", &set_sb.s_first_error_ino, NULL, 4, parse_uint },
 	{ "first_error_block", &set_sb.s_first_error_block, NULL, 8, parse_uint },
 	{ "first_error_func", &set_sb.s_first_error_func, NULL, 32, parse_string },
 	{ "first_error_line", &set_sb.s_first_error_line, NULL, 4, parse_uint },
-	{ "last_error_time", &set_sb.s_last_error_time, NULL, 4, parse_time },
+	{ "last_error_time", &set_sb.s_last_error_time,
+		&set_sb.s_last_error_time_hi, 5, parse_sb_time },
 	{ "last_error_ino", &set_sb.s_last_error_ino, NULL, 4, parse_uint },
 	{ "last_error_block", &set_sb.s_last_error_block, NULL, 8, parse_uint },
 	{ "last_error_func", &set_sb.s_last_error_func, NULL, 32, parse_string },
@@ -193,13 +199,13 @@ static struct field_set_info inode_fields[] = {
 		2, parse_uint },
 	{ "size", &set_inode.i_size, &set_inode.i_size_high, 4, parse_uint },
 	{ "atime", &set_inode.i_atime, &set_inode.i_atime_extra,
-		4, parse_time },
+		4, parse_ino_time },
 	{ "ctime", &set_inode.i_ctime, &set_inode.i_ctime_extra,
-		4, parse_time },
+		4, parse_ino_time },
 	{ "mtime", &set_inode.i_mtime, &set_inode.i_mtime_extra,
-		4, parse_time },
+		4, parse_ino_time },
 	{ "dtime", &set_inode.i_dtime, NULL,
-		4, parse_time },
+		4, parse_ino_time },
 	{ "gid", &set_inode.i_gid, &set_inode.osd2.linux2.l_i_gid_high,
 		2, parse_uint },
 	{ "links_count", &set_inode.i_links_count, NULL, 2, parse_uint },
@@ -236,7 +242,7 @@ static struct field_set_info inode_fields[] = {
 	{ "atime_extra", &set_inode.i_atime_extra, NULL,
 		4, parse_uint, FLAG_ALIAS },
 	{ "crtime", &set_inode.i_crtime, &set_inode.i_crtime_extra,
-		4, parse_time },
+		4, parse_ino_time },
 	{ "crtime_extra", &set_inode.i_crtime_extra, NULL,
 		4, parse_uint, FLAG_ALIAS },
 	{ "projid", &set_inode.i_projid, NULL, 4, parse_uint },
@@ -441,6 +447,9 @@ static struct field_set_info *find_field(struct field_set_info *fields,
  * Note: info->size == 6 is special; this means a base size 4 bytes,
  * and secondary (high) size of 2 bytes.  This is needed for the
  * special case of i_blocks_high and i_file_acl_high.
+ *
+ * Similarly, info->size == 5 is for superblock timestamps, which have
+ * a 4-byte primary field and a 1-byte _hi field.
  */
 static errcode_t parse_uint(struct field_set_info *info, char *field,
 			    char *arg)
@@ -449,7 +458,8 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 	int suffix = check_suffix(field);
 	char *tmp;
 	void *field1 = info->ptr, *field2 = info->ptr2;
-	int size = (info->size == 6) ? 4 : info->size;
+	unsigned int size = (info->size == 6 || info->size == 5) ? 4 :
+		info->size;
 	union {
 		__u64	*ptr64;
 		__u32	*ptr32;
@@ -477,7 +487,7 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 	}
 	mask = ~0ULL >> ((8 - size) * 8);
 	limit = ~0ULL >> ((8 - info->size) * 8);
-	if (field2 && info->size != 6)
+	if (field2 && (info->size != 6 && info->size != 5))
 		limit = ~0ULL >> ((8 - info->size*2) * 8);
 
 	if (num > limit) {
@@ -504,13 +514,14 @@ static errcode_t parse_uint(struct field_set_info *info, char *field,
 		return 0;
 	n = (size == 8) ? 0 : (num >> (size*8));
 	u.ptr8 = (__u8 *) field2;
-	if (info->size == 6)
-		size = 2;
+	if (info->size > size)
+		size = info->size - size;
 	switch (size) {
 	case 8:
 		/* Should never get here */
-		fprintf(stderr, "64-bit field %s has a second 64-bit field\n"
-			"defined; BUG?!?\n", info->name);
+		fprintf(stderr,
+			"64-bit field %s has a second 64-bit field defined; BUG?!?\n",
+			info->name);
 		*u.ptr64 = 0;
 		break;
 	case 4:
@@ -572,8 +583,37 @@ static errcode_t parse_string(struct field_set_info *info,
 	return 0;
 }
 
-static errcode_t parse_time(struct field_set_info *info,
-			    char *field, char *arg)
+static errcode_t parse_sb_time(struct field_set_info *info,
+			       char *field, char *arg)
+{
+	__s64		t;
+	__u32		t_low, t_high;
+	__u32		*ptr_low;
+	__u8		*ptr_high;
+
+	if (check_suffix(field))
+		return parse_uint(info, field, arg);
+
+	ptr_low  = (__u32 *) info->ptr;
+	ptr_high = (__u8 *) info->ptr2;
+
+	t = string_to_time(arg);
+
+	if (t == -1) {
+		fprintf(stderr, "Couldn't parse '%s' for field %s.\n",
+			arg, info->name);
+		return EINVAL;
+	}
+	t_low = (__u32) t;
+	t_high = ((t - (__s32)t) >> 32) & EXT4_EPOCH_MASK;
+	*ptr_low = t_low;
+	if (ptr_high)
+		*ptr_high = (*ptr_high & ~EXT4_EPOCH_MASK) | t_high;
+	return 0;
+}
+
+static errcode_t parse_ino_time(struct field_set_info *info,
+			       char *field, char *arg)
 {
 	__s64		t;
 	__u32		t_low, t_high;
@@ -593,10 +633,10 @@ static errcode_t parse_time(struct field_set_info *info,
 		return EINVAL;
 	}
 	t_low = (__u32) t;
-	t_high = ((t - (__s32)t) >> 32) & EXT4_EPOCH_MASK;
+	t_high = __encode_extra_time(t, 0);
 	*ptr_low = t_low;
 	if (ptr_high)
-		*ptr_high = (*ptr_high & ~EXT4_EPOCH_MASK) | t_high;
+		*ptr_high = t_high;
 	return 0;
 }
 
@@ -781,7 +821,8 @@ static void print_possible_fields(struct field_set_info *fields)
 			type = "UUID";
 		else if (ss->func == parse_hashalg)
 			type = "hash algorithm";
-		else if (ss->func == parse_time)
+		else if ((ss->func == parse_sb_time) ||
+			 (ss->func == parse_ino_time))
 			type = "date/time";
 		else if (ss->func == parse_bmap)
 			type = "set physical->logical block map";
@@ -803,7 +844,7 @@ static void print_possible_fields(struct field_set_info *fields)
 }
 
 
-void do_set_super(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+void do_set_super(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		  void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<field> <value>\n"
@@ -831,7 +872,7 @@ void do_set_super(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	}
 }
 
-void do_set_inode(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+void do_set_inode(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		  void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<inode> <field> <value>\n"
@@ -873,7 +914,7 @@ void do_set_inode(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 	}
 }
 
-void do_set_block_group_descriptor(int argc, char *argv[],
+void do_set_block_group_descriptor(int argc, ss_argv_t argv,
 				   int sci_idx EXT2FS_ATTR((unused)),
 				   void *infop EXT2FS_ATTR((unused)))
 {
@@ -953,7 +994,7 @@ static errcode_t parse_mmp_clear(struct field_set_info *info,
 }
 
 #ifdef CONFIG_MMP
-void do_set_mmp_value(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
+void do_set_mmp_value(int argc, ss_argv_t argv, int sci_idx EXT2FS_ATTR((unused)),
 		      void *infop EXT2FS_ATTR((unused)))
 {
 	const char *usage = "<field> <value>\n"
@@ -1013,7 +1054,7 @@ void do_set_mmp_value(int argc, char *argv[], int sci_idx EXT2FS_ATTR((unused)),
 }
 #else
 void do_set_mmp_value(int argc EXT2FS_ATTR((unused)),
-		      char *argv[] EXT2FS_ATTR((unused)),
+		      ss_argv_t argv EXT2FS_ATTR((unused)),
 		      int sci_idx EXT2FS_ATTR((unused)),
 		      void *infop EXT2FS_ATTR((unused)))
 {

@@ -25,7 +25,7 @@ extern char *optarg;
 
 #include "debugfs.h"
 
-void do_dump_unused(int argc EXT2FS_ATTR((unused)), char **argv,
+void do_dump_unused(int argc EXT2FS_ATTR((unused)), ss_argv_t argv,
 		    int sci_idx EXT2FS_ATTR((unused)),
 		    void *infop EXT2FS_ATTR((unused)))
 {

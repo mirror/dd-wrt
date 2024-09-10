@@ -12,7 +12,7 @@ E2FSCK=../e2fsck/e2fsck
 RESIZE2FS_OPTS=-f
 
 os=$(uname -s)
-if [ "$os" = "Darwin" -o "$os" = "GNU" -o "FreeBSD" ]; then
+if [ "$os" = "Darwin" -o "$os" = "GNU" -o "$os" = "FreeBSD" ]; then
 	# creates a 2TB filesystem
 	echo "$test_name: $test_description: skipped for $os"
 	return 0

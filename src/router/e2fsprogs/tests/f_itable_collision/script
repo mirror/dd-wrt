@@ -6,7 +6,7 @@
 
 FSCK_OPT=-fy
 IMAGE=$test_dir/image.gz
-E2FSCK_TIME=4294967294
+E2FSCK_TIME=2147483646
 export E2FSCK_TIME
 
 gzip -d < $IMAGE > $TMPFILE

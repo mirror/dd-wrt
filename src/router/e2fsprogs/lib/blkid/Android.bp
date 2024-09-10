@@ -38,6 +38,9 @@ cc_library {
     shared_libs: ["libext2_uuid"],
 
     target: {
+        darwin: {
+            enabled: true,
+        },
         windows: {
             enabled: true,
         },

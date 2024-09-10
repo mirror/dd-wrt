@@ -1,4 +1,4 @@
-mke2fs -F -o Linux -t ext4 -O ^metadata_csum,^uninit_bg -D $LOOP
+mke2fs -F -b 4096 -o Linux -t ext4 -O ^metadata_csum,^uninit_bg -D $LOOP
 Creating filesystem with 32768 4k blocks and 32768 inodes
 
 Allocating group tables:    done                            
@@ -36,7 +36,7 @@ Check interval:           15552000 (6 months)
 Reserved blocks uid:      0
 Reserved blocks gid:      0
 First inode:              11
-Inode size:	          256
+Inode size:               256
 Required extra isize:     32
 Desired extra isize:      32
 Journal inode:            8

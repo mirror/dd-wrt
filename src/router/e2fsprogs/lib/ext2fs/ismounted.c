@@ -108,7 +108,7 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 
 	if ((f = setmntent (mtab_file, "r")) == NULL) {
 		if (errno == ENOENT) {
-			if (getenv("EXT2FS_NO_MTAB_OK"))
+			if (ext2fs_safe_getenv("EXT2FS_NO_MTAB_OK"))
 				return 0;
 			else
 				return EXT2_ET_NO_MTAB_FILE;
@@ -366,15 +366,15 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 	errcode_t	retval = 0;
 	int 		busy = 0;
 
-	if (getenv("EXT2FS_PRETEND_RO_MOUNT")) {
+	if (ext2fs_safe_getenv("EXT2FS_PRETEND_RO_MOUNT")) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_READONLY;
-		if (getenv("EXT2FS_PRETEND_ROOTFS"))
+		if (ext2fs_safe_getenv("EXT2FS_PRETEND_ROOTFS"))
 			*mount_flags = EXT2_MF_ISROOT;
 		return 0;
 	}
-	if (getenv("EXT2FS_PRETEND_RW_MOUNT")) {
+	if (ext2fs_safe_getenv("EXT2FS_PRETEND_RW_MOUNT")) {
 		*mount_flags = EXT2_MF_MOUNTED;
-		if (getenv("EXT2FS_PRETEND_ROOTFS"))
+		if (ext2fs_safe_getenv("EXT2FS_PRETEND_ROOTFS"))
 			*mount_flags = EXT2_MF_ISROOT;
 		return 0;
 	}

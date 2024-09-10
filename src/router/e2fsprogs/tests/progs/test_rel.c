@@ -141,7 +141,7 @@ static void display_irel_entry(ext2_ino_t old,
 /*
  * These are the actual command table procedures
  */
-void do_brel_ma_create(int argc, char **argv)
+void do_brel_ma_create(int argc, ss_argv_t argv)
 {
 	const char *usage = "Usage: %s name max_blocks\n";
 	errcode_t	retval;
@@ -161,7 +161,7 @@ void do_brel_ma_create(int argc, char **argv)
 	return;
 }
 
-void do_brel_free(int argc, char **argv)
+void do_brel_free(int argc, ss_argv_t argv)
 {
 	if (check_brel(argv[0]))
 		return;
@@ -170,7 +170,7 @@ void do_brel_free(int argc, char **argv)
 	return;
 }
 
-void do_brel_put(int argc, char **argv)
+void do_brel_put(int argc, ss_argv_t argv)
 {
 	const char *usage = "usage: %s old_block new_block [owner] [offset]";
 	errcode_t retval;
@@ -211,7 +211,7 @@ void do_brel_put(int argc, char **argv)
 	return;
 }
 
-void do_brel_get(int argc, char **argv)
+void do_brel_get(int argc, ss_argv_t argv)
 {
 	const char *usage = "%s block";
 	errcode_t retval;
@@ -235,7 +235,7 @@ void do_brel_get(int argc, char **argv)
 	return;
 }
 
-void do_brel_start_iter(int argc, char **argv)
+void do_brel_start_iter(int argc, ss_argv_t argv)
 {
 	errcode_t retval;
 
@@ -250,7 +250,7 @@ void do_brel_start_iter(int argc, char **argv)
 	return;
 }
 
-void do_brel_next(int argc, char **argv)
+void do_brel_next(int argc, ss_argv_t argv)
 {
 	errcode_t retval;
 	struct ext2_block_relocate_entry ent;
@@ -272,7 +272,7 @@ void do_brel_next(int argc, char **argv)
 	return;
 }
 
-void do_brel_dump(int argc, char **argv)
+void do_brel_dump(int argc, ss_argv_t argv)
 {
 	errcode_t retval;
 	struct ext2_block_relocate_entry ent;
@@ -301,7 +301,7 @@ void do_brel_dump(int argc, char **argv)
 	return;
 }
 
-void do_brel_move(int argc, char **argv)
+void do_brel_move(int argc, ss_argv_t argv)
 {
 	const char *usage = "%s old_block new_block";
 	errcode_t retval;
@@ -326,7 +326,7 @@ void do_brel_move(int argc, char **argv)
 	return;
 }
 
-void do_brel_delete(int argc, char **argv)
+void do_brel_delete(int argc, ss_argv_t argv)
 {
 	const char *usage = "%s block";
 	errcode_t retval;
@@ -348,7 +348,7 @@ void do_brel_delete(int argc, char **argv)
 	}
 }
 
-void do_irel_ma_create(int argc, char **argv)
+void do_irel_ma_create(int argc, ss_argv_t argv)
 {
 	const char	*usage = "Usage: %s name max_inode\n";
 	errcode_t	retval;
@@ -368,7 +368,7 @@ void do_irel_ma_create(int argc, char **argv)
 	return;
 }
 
-void do_irel_free(int argc, char **argv)
+void do_irel_free(int argc, ss_argv_t argv)
 {
 	if (check_irel(argv[0]))
 		return;
@@ -378,7 +378,7 @@ void do_irel_free(int argc, char **argv)
 	return;
 }
 
-void do_irel_put(int argc, char **argv)
+void do_irel_put(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s old new max_refs";
 	errcode_t	retval;
@@ -414,7 +414,7 @@ void do_irel_put(int argc, char **argv)
 	return;
 }
 
-void do_irel_get(int argc, char **argv)
+void do_irel_get(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s inode";
 	errcode_t	retval;
@@ -440,7 +440,7 @@ void do_irel_get(int argc, char **argv)
 	return;
 }
 
-void do_irel_get_by_orig(int argc, char **argv)
+void do_irel_get_by_orig(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s orig_inode";
 	errcode_t	retval;
@@ -466,7 +466,7 @@ void do_irel_get_by_orig(int argc, char **argv)
 	return;
 }
 
-void do_irel_start_iter(int argc, char **argv)
+void do_irel_start_iter(int argc, ss_argv_t argv)
 {
 	errcode_t retval;
 
@@ -481,7 +481,7 @@ void do_irel_start_iter(int argc, char **argv)
 	return;
 }
 
-void do_irel_next(int argc, char **argv)
+void do_irel_next(int argc, ss_argv_t argv)
 {
 	errcode_t	retval;
 	ext2_ino_t	old;
@@ -503,7 +503,7 @@ void do_irel_next(int argc, char **argv)
 	return;
 }
 
-void do_irel_dump(int argc, char **argv)
+void do_irel_dump(int argc, ss_argv_t argv)
 {
 	errcode_t	retval;
 	ext2_ino_t	ino;
@@ -532,7 +532,7 @@ void do_irel_dump(int argc, char **argv)
 	return;
 }
 
-void do_irel_add_ref(int argc, char **argv)
+void do_irel_add_ref(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s inode block offset";
 	errcode_t	retval;
@@ -569,7 +569,7 @@ void do_irel_add_ref(int argc, char **argv)
 	return;
 }
 
-void do_irel_start_iter_ref(int argc, char **argv)
+void do_irel_start_iter_ref(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s inode";
 	errcode_t	retval;
@@ -593,7 +593,7 @@ void do_irel_start_iter_ref(int argc, char **argv)
 	return;
 }
 
-void do_irel_next_ref(int argc, char **argv)
+void do_irel_next_ref(int argc, ss_argv_t argv)
 {
 	struct ext2_inode_reference ref;
 	errcode_t retval;
@@ -610,7 +610,7 @@ void do_irel_next_ref(int argc, char **argv)
 	return;
 }
 
-void do_irel_move(int argc, char **argv)
+void do_irel_move(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s old new";
 	errcode_t	retval;
@@ -636,7 +636,7 @@ void do_irel_move(int argc, char **argv)
 	return;
 }
 
-void do_irel_delete(int argc, char **argv)
+void do_irel_delete(int argc, ss_argv_t argv)
 {
 	const char	*usage = "%s inode";
 	errcode_t	retval;

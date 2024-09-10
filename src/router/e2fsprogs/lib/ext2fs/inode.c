@@ -1039,17 +1039,17 @@ errcode_t ext2fs_write_new_inode(ext2_filsys fs, ext2_ino_t ino,
 				 struct ext2_inode *inode)
 {
 	struct ext2_inode	*buf;
-	int 			size = EXT2_INODE_SIZE(fs->super);
+	int			size = EXT2_INODE_SIZE(fs->super);
 	struct ext2_inode_large	*large_inode;
 	errcode_t		retval;
-	__u32 			t = fs->now ? fs->now : time(NULL);
+	time_t			t = ext2fsP_get_time(fs);
 
-	if (!inode->i_ctime)
-		inode->i_ctime = t;
-	if (!inode->i_mtime)
-		inode->i_mtime = t;
-	if (!inode->i_atime)
-		inode->i_atime = t;
+	if (!ext2fs_inode_xtime_get(inode, i_atime))
+		ext2fs_inode_xtime_set(inode, i_atime, t);
+	if (!ext2fs_inode_xtime_get(inode, i_ctime))
+		ext2fs_inode_xtime_set(inode, i_ctime, t);
+	if (!ext2fs_inode_xtime_get(inode, i_mtime))
+		ext2fs_inode_xtime_set(inode, i_mtime, t);
 
 	if (size == sizeof(struct ext2_inode))
 		return ext2fs_write_inode_full(fs, ino, inode,
