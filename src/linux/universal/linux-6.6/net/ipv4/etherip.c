@@ -64,39 +64,12 @@ struct etherip_tunnel {
 };
 
 
-/*struct pcpu_tstats {
-	unsigned long	rx_packets;
-	unsigned long	rx_bytes;
-	unsigned long	tx_packets;
-	unsigned long	tx_bytes;
-};*/
-
 static void etherip_dev_free(struct net_device *dev)
 {
-//	free_percpu(dev->tstats);
+	free_percpu(dev->tstats);
 	free_netdev(dev);
 }
-/*
-static struct net_device_stats *etherip_get_stats(struct net_device *dev)
-{
-	struct pcpu_tstats sum = { 0 };
-	int i;
 
-	for_each_possible_cpu(i) {
-		const struct pcpu_tstats *tstats = per_cpu_ptr(dev->tstats, i);
-
-		sum.rx_packets += tstats->rx_packets;
-		sum.rx_bytes   += tstats->rx_bytes;
-		sum.tx_packets += tstats->tx_packets;
-		sum.tx_bytes   += tstats->tx_bytes;
-	}
-	dev->stats.rx_packets = sum.rx_packets;
-	dev->stats.rx_bytes   = sum.rx_bytes;
-	dev->stats.tx_packets = sum.tx_packets;
-	dev->stats.tx_bytes   = sum.tx_bytes;
-	return &dev->stats;
-}
-*/
 static struct net_device *etherip_tunnel_dev;
 static struct list_head tunnels[E_HASH_SIZE];
 
@@ -163,14 +136,12 @@ static int etherip_tunnel_stop(struct net_device *dev)
 static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct etherip_tunnel *tunnel = netdev_priv(dev);
-//	struct pcpu_tstats *tstats;
+	struct pcpu_sw_netstats *tstats;
 	struct iphdr *iph;
 	struct flowi4 fl4;
 	struct net_device *tdev;
 	struct rtable *rt;
 	int max_headroom;
-	int err;
-	int pkt_len;
 	struct net_device_stats *stats = &tunnel->dev->stats;
 
 
@@ -266,15 +237,19 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
 	nf_reset_ct(skb);
 
-	skb->ip_summed = CHECKSUM_NONE;
-	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ? : 1);
+	tstats = this_cpu_ptr(dev->tstats);
+	{
+		int err;
+		int pkt_len = skb->len - skb_transport_offset(skb);
 
-	err = ip_local_out(dev_net(dev), skb->sk, skb);
+		skb->ip_summed = CHECKSUM_NONE;
+		ip_select_ident(dev_net(skb->dev), skb, NULL);
 
-	if (dev) {
-		if (unlikely(net_xmit_eval(err)))
-			pkt_len = 0;
-		iptunnel_xmit_stats(dev, pkt_len);
+		err = ip_local_out(dev_net(skb->dev), NULL, skb);
+		if (likely(net_xmit_eval(err) == 0))
+			iptunnel_xmit_stats(dev, pkt_len);
+		else
+			iptunnel_xmit_stats(dev, -1);
 	}
 
 	netif_trans_update(tunnel->dev);
@@ -375,9 +350,9 @@ static int etherip_tunnel_siocdevprivate(struct net_device *dev, struct ifreq *i
 
 			t = netdev_priv(tmp_dev);
 			t->dev = tmp_dev;
-//			tmp_dev->tstats = alloc_percpu(struct pcpu_tstats);
-//			if (!tmp_dev->tstats)
-//			    goto add_err;
+			tmp_dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+			if (!tmp_dev->tstats)
+			    goto add_err;
 
 			strncpy(p.name, tmp_dev->name, IFNAMSIZ);
 			memcpy(&(t->parms), &p, sizeof(p));
@@ -454,7 +429,7 @@ static const struct net_device_ops etherip_netdev_ops = {
 	.ndo_start_xmit		= etherip_tunnel_xmit,
 	.ndo_siocdevprivate 	= etherip_tunnel_siocdevprivate,
 //	.ndo_do_ioctl		= etherip_tunnel_ioctl,
-//	.ndo_get_stats  	= etherip_get_stats,
+	.ndo_get_stats64 	= dev_get_tstats64,
 };
 
 /* device init function - called via register_netdevice
@@ -518,9 +493,7 @@ drop:
 	return 0;
 
 accept:
-//	tstats = this_cpu_ptr(tunnel->dev->tstats);
-//	tstats->rx_packets++;
-//	tstats->rx_bytes += skb->len;
+	dev_sw_netstats_rx_add(tunnel->dev, skb->len);
 	
 //	tunnel->dev->last_rx = jiffies;
 	tunnel->dev->stats.rx_packets++;
@@ -574,9 +547,9 @@ static int __init etherip_init(void)
 	if ((err = register_netdev(etherip_tunnel_dev)))
 		goto err1;
 
-//	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_tstats);
-//	if (!etherip_tunnel_dev->tstats)
-//		return -ENOMEM;
+	etherip_tunnel_dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+	if (!etherip_tunnel_dev->tstats)
+		return -ENOMEM;
 
 out:
 	return err;

@@ -33,13 +33,11 @@
 #include <linux/netfilter_ipv4.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
-#include <linux/version.h>
 
 #include <net/sock.h>
 #include <net/ip.h>
 #include <net/icmp.h>
 #include <net/protocol.h>
-//#include <net/ipip.h>
 #include <net/arp.h>
 #include <net/checksum.h>
 #include <net/dsfield.h>
@@ -75,15 +73,6 @@ struct eoip_net {
 /*
  * Locking : hash tables are protected by RCU and RTNL
  */
-
-/* often modified stats are per cpu, other are shared (netdev->stats) */
-struct pcpu_tstats {
-	unsigned long rx_packets;
-	unsigned long rx_bytes;
-	unsigned long tx_packets;
-	unsigned long tx_bytes;
-};
-
 
 /* Given src, dst and key, find appropriate for input tunnel. */
 
@@ -206,11 +195,7 @@ static struct ip_tunnel *eoip_tunnel_locate(struct net *net,
 	else
 		strcpy(name, "eoip%d");
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
-	dev = alloc_netdev(sizeof(*t), name, eoip_setup);
-#else
 	dev = alloc_netdev(sizeof(*t), name, NET_NAME_UNKNOWN, eoip_setup);
-#endif
 	if (!dev)
 		return NULL;
 
@@ -354,8 +339,6 @@ static int eoip_rcv(struct sk_buff *skb)
 
 	tunnel = eoip_tunnel_lookup(skb->dev, iph->saddr, iph->daddr, key);
 	if (tunnel) {
-		struct pcpu_sw_netstats *tstats;
-
 		secpath_reset(skb);
 
 		skb->protocol = ARPHRD_ETHER;
@@ -405,26 +388,10 @@ drop_nolock:
 	return 0;
 }
 
-#define __IPTUNNEL_XMIT(stats1, stats2) do {                \
-	int err;                            \
-	int pkt_len = skb->len - skb_transport_offset(skb);     \
-														\
-	skb->ip_summed = CHECKSUM_NONE;                 \
-	ip_select_ident(skb, &rt->dst, NULL);               \
-                                    \
-	err = ip_local_out(skb);                    \
-	if (likely(net_xmit_eval(err) == 0)) {              \
-		(stats1)->tx_bytes += pkt_len;              \
-		(stats1)->tx_packets++;                 \
-	} else {                            \
-		(stats2)->tx_errors++;                  \
-		(stats2)->tx_aborted_errors++;              \
-	}                               \
-} while (0)
-
 static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = netdev_priv(dev);
+	struct pcpu_sw_netstats *tstats;
 	const struct iphdr *old_iph = ip_hdr(skb);
 	const struct iphdr *tiph;
 	struct flowi4 fl4;
@@ -437,12 +404,6 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	__be32 dst;
 	int mtu;
 	uint16_t frame_size;
-	int err;
-	int pkt_len;
-
-	if (skb->protocol == htons(ETH_P_IPV6)) {
-		goto tx_error;
-	}
 
 	IPCB(skb)->flags = 0;
 
@@ -453,8 +414,6 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	tos = tiph->tos;
 
 	frame_size = skb->len;
-
-
 
 	rt = ip_route_output_gre(dev_net(dev), &fl4, dst, tiph->saddr,
 			tunnel->parms.o_key, RT_TOS(tos),
@@ -541,18 +500,20 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	((__le16 *)(iph + 1))[3] = cpu_to_le16(tunnel->parms.i_key);
 
 	nf_reset_ct(skb);
+	tstats = this_cpu_ptr(dev->tstats);
+	{
+		int err;
+		int pkt_len = skb->len - skb_transport_offset(skb);
 
-	skb->ip_summed = CHECKSUM_NONE;
-	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ? : 1);
+		skb->ip_summed = CHECKSUM_NONE;
+		ip_select_ident(dev_net(skb->dev), skb, NULL);
 
-	err = ip_local_out(dev_net(dev), skb->sk, skb);
-
-	if (dev) {
-		if (unlikely(net_xmit_eval(err)))
-			pkt_len = 0;
-		iptunnel_xmit_stats(dev, pkt_len);
+		err = ip_local_out(dev_net(skb->dev), NULL, skb);
+		if (likely(net_xmit_eval(err) == 0))
+			iptunnel_xmit_stats(dev, pkt_len);
+		else
+			iptunnel_xmit_stats(dev, -1);
 	}
-
 	return NETDEV_TX_OK;
 
 tx_error:
@@ -597,9 +558,7 @@ static int eoip_tunnel_bind_dev(struct net_device *dev)
 		hlen = tdev->hard_header_len + tdev->needed_headroom;
 		mtu = tdev->mtu;
 	}
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
-	dev->iflink = tunnel->parms.link;
-#endif
+	dev->ifindex = tunnel->parms.link;
 
 	dev->needed_headroom = addend + hlen;
 	mtu -= dev->hard_header_len + addend;
@@ -677,11 +636,7 @@ static int eoip_tunnel_validate(struct nlattr *tb[], struct nlattr *data[])
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-static int eoip_validate(struct nlattr *tb[], struct nlattr *data[])
-#else
 static int eoip_validate(struct nlattr *tb[], struct nlattr *data[], struct netlink_ext_ack *extack)
-#endif
 {
 	__be32 daddr;
 
@@ -751,16 +706,6 @@ static int eoip_if_init(struct net_device *dev)
 
 	return 0;
 }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
-static int eoip_get_iflink(const struct net_device *dev)
-{
-	struct ip_tunnel *tunnel = netdev_priv(dev);
-
-	return tunnel->parms.link;
-}
-#endif
-
-
 
 static const struct net_device_ops eoip_netdev_ops = {
 	.ndo_init = eoip_if_init,
@@ -769,10 +714,7 @@ static const struct net_device_ops eoip_netdev_ops = {
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_change_mtu = eoip_if_change_mtu,
-	.ndo_get_stats64 =  dev_get_tstats64,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
-	.ndo_get_iflink = eoip_get_iflink,
-#endif
+	.ndo_get_stats64 = dev_get_tstats64, // eoip_if_get_stats,
 };
 
 static void eoip_setup(struct net_device *dev)
@@ -780,24 +722,14 @@ static void eoip_setup(struct net_device *dev)
 	ether_setup(dev);
 
 	dev->netdev_ops = &eoip_netdev_ops;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-	dev->destructor = eoip_dev_free;
-#else
 	dev->priv_destructor = eoip_dev_free;
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
-	dev->iflink = 0;
-#endif
+
+	dev->ifindex = 0;
 	dev->features |= NETIF_F_NETNS_LOCAL;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-static int eoip_newlink(struct net *src_net, struct net_device *dev,
-			struct nlattr *tb[], struct nlattr *data[])
-#else
 static int eoip_newlink(struct net *src_net, struct net_device *dev,
 			struct nlattr *tb[], struct nlattr *data[], struct netlink_ext_ack *extack)
-#endif
 {
 	struct ip_tunnel *nt;
 	struct net *net = dev_net(dev);
@@ -811,8 +743,12 @@ static int eoip_newlink(struct net *src_net, struct net_device *dev,
 	if (eoip_tunnel_find(net, &nt->parms, dev->type))
 		return -EEXIST;
 
-	if (!tb[IFLA_ADDRESS])
-		eth_hw_addr_random(dev);
+	if (!tb[IFLA_ADDRESS]) {
+		uint8_t addr[ETH_ALEN];
+
+		eth_random_addr(addr);
+		dev_addr_set(dev,addr);
+	}
 
 	mtu = eoip_tunnel_bind_dev(dev);
 
@@ -830,14 +766,8 @@ out:
 	return err;
 }
 
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
-static int eoip_changelink(struct net_device *dev, struct nlattr *tb[],
-					struct nlattr *data[])
-#else
 static int eoip_changelink(struct net_device *dev, struct nlattr *tb[],
 					struct nlattr *data[], struct netlink_ext_ack *extack)
-#endif
 {
 	struct ip_tunnel *t, *nt;
 	struct net *net = dev_net(dev);
