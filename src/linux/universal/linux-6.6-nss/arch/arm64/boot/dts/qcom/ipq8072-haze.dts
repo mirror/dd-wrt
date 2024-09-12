@@ -280,7 +280,7 @@
 &pcie0 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 
 	bridge@0,0 {
 		reg = <0x00020000 0 0 0 0>;
@@ -297,7 +297,7 @@
 &pcie1 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 61 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 
 	bridge@1,0 {
 		reg = <0x00010000 0 0 0 0>;

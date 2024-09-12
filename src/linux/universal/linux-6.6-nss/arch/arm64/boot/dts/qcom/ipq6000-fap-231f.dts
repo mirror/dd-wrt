@@ -218,7 +218,22 @@
 
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi0: wifi@1,0 {
+			status = "okay";
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+
+
 };
 
 &blsp1_spi1 {

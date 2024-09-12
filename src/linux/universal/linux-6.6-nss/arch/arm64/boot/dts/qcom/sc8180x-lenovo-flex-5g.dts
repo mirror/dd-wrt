@@ -451,7 +451,7 @@
 };
 
 &pcie3 {
-	perst-gpio = <&tlmm 178 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 178 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 180 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pcie3_default_state>;
 	pinctrl-names = "default";
