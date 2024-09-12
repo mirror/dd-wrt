@@ -266,8 +266,8 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	((u16*)(iph+1))[0]=htons(ETHERIP_HEADER);
 	nf_reset_ct(skb);
 
-	skb->ip_summed = CHECKSUM_NONE;					\
-	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ?: 1);
+	skb->ip_summed = CHECKSUM_NONE;
+	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ? : 1);
 
 	err = ip_local_out(dev_net(dev), skb->sk, skb);
 

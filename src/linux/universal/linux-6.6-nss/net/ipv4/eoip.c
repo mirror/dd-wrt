@@ -437,6 +437,12 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	__be32 dst;
 	int mtu;
 	uint16_t frame_size;
+	int err;
+	int pkt_len;
+
+	if (skb->protocol == htons(ETH_P_IPV6)) {
+		goto tx_error;
+	}
 
 	IPCB(skb)->flags = 0;
 
@@ -447,6 +453,8 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	tos = tiph->tos;
 
 	frame_size = skb->len;
+
+
 
 	rt = ip_route_output_gre(dev_net(dev), &fl4, dst, tiph->saddr,
 			tunnel->parms.o_key, RT_TOS(tos),
@@ -534,12 +542,17 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	nf_reset_ct(skb);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
-	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
-#else
-	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, dev);
-#endif
-	//ip_tunnel_xmit(skb, dev, tiph, tiph->protocol);
+	skb->ip_summed = CHECKSUM_NONE;
+	__ip_select_ident(dev_net(dev), iph, skb_shinfo(skb)->gso_segs ? : 1);
+
+	err = ip_local_out(dev_net(dev), skb->sk, skb);
+
+	if (dev) {
+		if (unlikely(net_xmit_eval(err)))
+			pkt_len = 0;
+		iptunnel_xmit_stats(dev, pkt_len);
+	}
+
 	return NETDEV_TX_OK;
 
 tx_error:
