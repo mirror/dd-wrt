@@ -21,8 +21,10 @@ struct rtnl_handle
 extern int rcvbuf;
 
 extern int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions);
+extern int rtnl_open_byproto(struct rtnl_handle *rth, unsigned subscriptions, int protocol);
 extern void rtnl_close(struct rtnl_handle *rth);
 extern int rtnl_wilddump_request(struct rtnl_handle *rth, int fam, int type);
+extern int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len);
 
 typedef int (*rtnl_filter_t)(const struct sockaddr_nl *,
 			     struct nlmsghdr *n, void *);
@@ -33,8 +35,12 @@ struct rtnl_dump_filter_arg
 	void *arg1;
 };
 
+extern int rtnl_dump_filter_l(struct rtnl_handle *rth,
+			      const struct rtnl_dump_filter_arg *arg);
 extern int rtnl_dump_filter(struct rtnl_handle *rth, rtnl_filter_t filter,
 			    void *arg);
+extern int rtnl_talk(struct rtnl_handle *rtnl, struct nlmsghdr *n, pid_t peer,
+		     unsigned groups, struct nlmsghdr *answer);
 extern int rtnl_send(struct rtnl_handle *rth, const void *buf, int);
 extern int rtnl_send_check(struct rtnl_handle *rth, const void *buf, int);
 
@@ -65,19 +71,19 @@ extern int __parse_rtattr_nested_compat(struct rtattr *tb[], int max, struct rta
 	({ data = RTA_PAYLOAD(rta) >= len ? RTA_DATA(rta) : NULL;	\
 		__parse_rtattr_nested_compat(tb, max, rta, len); })
 
-static inline  __u8 rta_getattr_u8(const struct rtattr *rta)
+static inline __u8 rta_getattr_u8(const struct rtattr *rta)
 {
 	return *(__u8 *)RTA_DATA(rta);
 }
-static inline  __u16 rta_getattr_u16(const struct rtattr *rta)
+static inline __u16 rta_getattr_u16(const struct rtattr *rta)
 {
 	return *(__u16 *)RTA_DATA(rta);
 }
-static inline  __u32 rta_getattr_u32(const struct rtattr *rta)
+static inline __u32 rta_getattr_u32(const struct rtattr *rta)
 {
 	return *(__u32 *)RTA_DATA(rta);
 }
-static inline  __u64 rta_getattr_u64(const struct rtattr *rta)
+static inline __u64 rta_getattr_u64(const struct rtattr *rta)
 {
 	__u64 tmp;
 	memcpy(&tmp, RTA_DATA(rta), sizeof(__u64));
@@ -87,7 +93,6 @@ static inline const char *rta_getattr_str(const struct rtattr *rta)
 {
 	return (const char *)RTA_DATA(rta);
 }
-
 
 extern int rtnl_listen(struct rtnl_handle *, rtnl_filter_t handler,
 		       void *jarg);
