@@ -103,7 +103,7 @@ KBUILD_CFLAGS	+= -Wa,-march=$(asm-arch) \
 		   -DARM64_ASM_ARCH='"$(asm-arch)"'
 
 ifeq ($(CONFIG_ARCH_QCOM), y)
-KBUILD_CFLAGS	+= -march=armv8-a+crypto -mcpu=cortex-a53+crypto -mtune=cortex-a53 -Wl,-z,max-page-size=4096
+KBUILD_CFLAGS	+= -march=armv8-a+crypto -mcpu=cortex-a53+crypto -mtune=cortex-a53 -Wl,-z,max-page-size=16384
 endif
 endif
 
@@ -122,7 +122,7 @@ else
 KBUILD_CPPFLAGS	+= -mlittle-endian
 CHECKFLAGS	+= -D__AARCH64EL__
 # Same as above, prefer ELF but fall back to linux target if needed.
-KBUILD_LDFLAGS	+= -EL $(call ld-option, -maarch64elf, -maarch64linux -z norelro) -z max-page-size=4096
+KBUILD_LDFLAGS	+= -EL $(call ld-option, -maarch64elf, -maarch64linux -z norelro) -z max-page-size=16384
 UTS_MACHINE	:= aarch64
 endif
 
