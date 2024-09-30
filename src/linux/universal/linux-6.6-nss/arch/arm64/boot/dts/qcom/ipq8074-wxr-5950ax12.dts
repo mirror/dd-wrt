@@ -11,7 +11,7 @@
 
 / {
 	model = "Buffalo WXR-5950AX12";
-	compatible = "buffalo,wxr-5950ax12", "qcom,ipq8074";
+	compatible = "buffalo,wxr-5950ax12", "qcom,ipq8074", "qcom,ipq8078";
 
 	aliases {
 		serial0 = &blsp1_uart5;
@@ -131,7 +131,7 @@
 		regulator-name = "vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&tlmm 64 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
 	};
@@ -184,25 +184,147 @@
 		nand-ecc-step-size = <512>;
 		nand-bus-width = <8>;
 
+
 		partitions {
-			compatible = "qcom,smem-part";
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			partition-0-appsblenv {
-				compatible = "fixed-partitions";
-				label = "0:appsblenv";
+			partition@0 {
+				label = "sbl1";
+				reg = <0x0 0x100000>;
 				read-only;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				partition@0 {
-					compatible = "u-boot,env";
-					label = "env-data";
-					reg = <0x0 0x40000>;
-
-					macaddr_appsblenv_ethaddr: ethaddr {
-					};
-				};
 			};
+
+			partition@100000 {
+				label = "mibib";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "bootconfig";
+				reg = <0x200000 0x80000>;
+			};
+
+			partition@280000 {
+				label = "bootconfig1";
+				reg = <0x280000 0x80000>;
+			};
+
+			partition@300000 {
+				label = "qsee";
+				reg = <0x300000 0x300000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "qsee_1";
+				reg = <0x600000 0x300000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "devcfg";
+				reg = <0x900000 0x80000>;
+				read-only;
+			};
+
+			partition@980000 {
+				label = "devcfg_1";
+				reg = <0x980000 0x80000>;
+				read-only;
+			};
+
+			partition@a00000 {
+				label = "apdp";
+				reg = <0xa00000 0x80000>;
+				read-only;
+			};
+
+			partition@a80000 {
+				label = "apdp_1";
+				reg = <0xa80000 0x80000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "rpm";
+				reg = <0xb00000 0x80000>;
+				read-only;
+			};
+
+			partition@b80000 {
+				label = "rpm_1";
+				reg = <0xb80000 0x80000>;
+				read-only;
+			};
+
+			partition@c00000 {
+				label = "cdt";
+				reg = <0xc00000 0x80000>;
+				read-only;
+			};
+
+			partition@c80000 {
+				label = "cdt_1";
+				reg = <0xc80000 0x80000>;
+				read-only;
+			};
+
+			partition@d00000 {
+				label = "appsblenv";
+				reg = <0xd00000 0x80000>;
+			};
+
+			partition@d80000 {
+				label = "appsbl";
+				reg = <0xd80000 0x100000>;
+				read-only;
+			};
+
+			partition@e80000 {
+				label = "appsbl_1";
+				reg = <0xe80000 0x100000>;
+				read-only;
+			};
+
+			partition@f80000 {
+				label = "art";
+				reg = <0xf80000 0x80000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "orgdata";
+				reg = <0x1000000 0x80000>;
+			};
+
+			partition@1100000 {
+				label = "orgdata_1";
+				reg = <0x1100000 0x80000>;
+			};
+
+			partition@1180000 {
+				label = "rootfs";
+				reg = <0x1180000 0x4000000>;
+			};
+
+			partition@5180000 {
+				label = "rootfs_1";
+				reg = <0x5180000 0x4000000>;
+			};
+
+			partition@9180000 {
+				label = "nvram";
+				reg = <0x9180000 0x100000>;
+			};
+
+			partition@9280000 {
+				label = "ddwrt";
+				reg = <0x9280000 0x6d80000>;
+			};
+
 		};
 	};
 };
