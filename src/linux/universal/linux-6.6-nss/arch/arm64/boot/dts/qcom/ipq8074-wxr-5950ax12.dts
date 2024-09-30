@@ -274,8 +274,11 @@
 			};
 
 			partition@d00000 {
+				compatible = "u-boot,env";
 				label = "appsblenv";
 				reg = <0xd00000 0x80000>;
+				macaddr_appsblenv_ethaddr: ethaddr {
+				};
 			};
 
 			partition@d80000 {
@@ -429,7 +432,7 @@
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_1>;
-	label = "lan4";
+	label = "eth4";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 	nvmem-cell-names = "mac-address";
 };
@@ -438,7 +441,7 @@
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_2>;
-	label = "lan3";
+	label = "eth3";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 	nvmem-cell-names = "mac-address";
 };
@@ -447,7 +450,7 @@
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_3>;
-	label = "lan2";
+	label = "eth2";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 	nvmem-cell-names = "mac-address";
 };
@@ -456,7 +459,7 @@
 	status = "okay";
 	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_1>;
-	label = "wan";
+	label = "eth1";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 	nvmem-cell-names = "mac-address";
 };
@@ -465,7 +468,7 @@
 	status = "okay";
 	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_2>;
-	label = "lan1";
+	label = "eth0";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
 	nvmem-cell-names = "mac-address";
 };
