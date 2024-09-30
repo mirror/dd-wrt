@@ -817,6 +817,8 @@
 
 #define ROUTER_FORTINET_FAP231F 0x11b0ff
 
+#define ROUTER_BUFFALO_WXR5950AX12 0x11c136
+
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
