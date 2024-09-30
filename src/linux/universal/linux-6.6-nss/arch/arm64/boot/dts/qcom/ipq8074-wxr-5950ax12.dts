@@ -24,7 +24,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " ubi.mtd=user_property root=/dev/ubiblock1_0";
+		bootargs-append = " coherent_pool=2M swiotlb=1 mitigations=off root=/dev/ubiblock0_1";
 	};
 
 	leds {
@@ -89,7 +89,7 @@
 		 * - AP
 		 * - WB (Wireless Bridge)
 		 */
-		ap {
+/*		ap {
 			label = "mode-ap";
 			gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
@@ -100,14 +100,14 @@
 			gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 		};
-
+*/
 		/*
 		 * op: 2x position switch
 		 *
 		 * - AUTO
 		 * - MANUAL (select Router/AP/WB manually)
 		 */
-		manual {
+/*		manual {
 			label = "op-manual";
 			gpios = <&tlmm 52 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_2>;
@@ -124,6 +124,7 @@
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
+*/
 	};
 
 	reg_usb_vbus: regulator-5v-vbus {
