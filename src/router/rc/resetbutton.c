@@ -216,6 +216,8 @@ static int getbuttonstate()
 		return !get_gpio(28);
 	case ROUTER_ASUS_AX89X:
 		return !get_gpio(61);
+	case ROUTER_BUFFALO_WXR5950AX12:
+		return !get_gpio(54);
 	default:
 		return 0;
 	}
@@ -1423,6 +1425,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_DYNALINK_DLWRX36:
 		sesgpio = 0x105;
 		val |= get_gpio(63) << 5;
+		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		sesgpio = 0x105;
+		val |= get_gpio(51) << 5;
 		break;
 	}
 #elif defined(HAVE_IPQ806X)
