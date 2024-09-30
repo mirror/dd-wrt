@@ -1014,6 +1014,11 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		profile = 1024;
+		fwlen = 0x20000;
+		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_ASUS_AX89X:
 		profile = 1024;
 		fwlen = 0x20000;
@@ -1248,6 +1253,9 @@ void start_sysinit(void)
 	case ROUTER_DYNALINK_DLWRX36:
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
+		break;
 	case ROUTER_ASUS_AX89X:
 		set_envtools(getMTD("appsblenv"), "0x0", "0x20000", "0x20000", 2);
 		break;
@@ -1322,6 +1330,11 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		setscaling(0);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
 	}
 	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
@@ -1374,14 +1387,9 @@ void load_wifi_drivers(void)
 		int profile = 512;
 		switch (brand) {
 		case ROUTER_DYNALINK_DLWRX36:
-			profile = 1024;
-			break;
+		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
-			profile = 1024;
-			break;
 		case ROUTER_LINKSYS_MX4200V2:
-			profile = 1024;
-			break;
 		case ROUTER_LINKSYS_MX4300:
 			profile = 1024;
 			break;

@@ -1081,14 +1081,14 @@ void start_restore_defaults(void)
 						{ "wan_default", "eth0" },
 						{ 0, 0 } };
 	struct nvram_param generic_mr5500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth1 eth2 eth3 eth4 eth5 wlan0 wlan1" },
+						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 wlan0 wlan1" },
 						{ "wan_ifname", "eth5" },
 						{ "wan_ifname2", "eth5" },
 						{ "wan_ifnames", "eth5" },
 						{ "wan_default", "eth5" },
 						{ 0, 0 } };
 	struct nvram_param generic_mx5500[] = { { "lan_ifname", "br0" },
-						{ "lan_ifnames", "eth1 eth2 eth3 eth4 wlan0 wlan1" },
+						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1" },
 						{ "wan_ifname", "eth1" },
 						{ "wan_ifname2", "eth1" },
 						{ "wan_ifnames", "eth1" },
@@ -1107,7 +1107,7 @@ void start_restore_defaults(void)
 		generic = generic_mr7350;
 	else if (wrt_brand == ROUTER_LINKSYS_MR5500 || wrt_brand == ROUTER_FORTINET_FAP231F)
 		generic = generic_mr5500;
-	else if (wrt_brand == ROUTER_LINKSYS_MX5500)
+	else if (wrt_brand == ROUTER_LINKSYS_MX5500 || wrt_brand == ROUTER_BUFFALO_WXR5950AX12)
 		generic = generic_mx5500;
 	else if (wrt_brand == ROUTER_ASUS_AX89X)
 		generic = generic_ax89;
