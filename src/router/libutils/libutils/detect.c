@@ -1437,6 +1437,18 @@ generic:;
 		setRouter("Buffalo WXR-5950AX12");
 		return ROUTER_BUFFALO_WXR5950AX12;
 	}
+	if (!strcmp(modelstr, "WXR-6000AX12S")) {
+		setRouter("Buffalo WXR-6000AX12S");
+		return ROUTER_BUFFALO_WXR5950AX12;
+	}
+	if (!strcmp(modelstr, "WXR-6000AX12B")) {
+		setRouter("Buffalo WXR-6000AX12B");
+		return ROUTER_BUFFALO_WXR5950AX12;
+	}
+	if (!strcmp(modelstr, "WXR-6000AX12P")) {
+		setRouter("Buffalo WXR-6000AX12P");
+		return ROUTER_BUFFALO_WXR5950AX12;
+	}
 	setRouter("Qualcomm IPQ6018");
 	return ROUTER_IPQ6018;
 #elif HAVE_IPQ806X
