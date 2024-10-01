@@ -705,7 +705,7 @@ static inline struct nf_ct_ext_labels *nf_ct_ext_find_label(const struct nf_conn
 #endif
 }
 
-DEFINE_SPINLOCK(lock_flist);
+static DEFINE_SPINLOCK(lock_flist);
 
 static inline int ndpi_ct_list_add(struct ndpi_net *n,
 			struct nf_ct_ext_ndpi *ct_ndpi) {
