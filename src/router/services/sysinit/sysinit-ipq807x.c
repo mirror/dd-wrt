@@ -1261,9 +1261,10 @@ void start_sysinit(void)
 		char *wlan0mac = get_deviceinfo_wxr("wlan0addr");
 		nvram_set("wlan0_hwaddr", wlan0mac);
 		patch(wlan0mac, 14);
-		char *wlan1mac = get_deviceinfo_wxr("wlan0addr");
-		nvram_set("wlan0_hwaddr", wlan1mac);
+		char *wlan1mac = get_deviceinfo_wxr("wlan1addr");
+		nvram_set("wlan1_hwaddr", wlan1mac);
 		patch(wlan1mac, 20);
+		patch(wlan1mac, 26);
 		removeregdomain("/tmp/caldata.bin", IPQ8074);
 		removeregdomain("/tmp/board.bin", IPQ8074);
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
