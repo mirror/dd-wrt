@@ -483,6 +483,51 @@ endif
 	tools/qcom/ubinize-image.sh.buf --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs --part fw_hash=/tmp/dummyhash.txt $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12p-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi
+	
+	filesize="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi)"
+	echo "WXR-6000AX12P_9.99_1.00_JP_jp_qca" > $(TOP)/$(ARCH)-uclibc/bufheader
+	echo "filelen=$filesize" >> $(TOP)/$(ARCH)-uclibc/bufheader
+	cat $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi >> $(TOP)/$(ARCH)-uclibc/bufheader
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/bufheader -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp -p WXR-6000AX12P -v 9.99 -k olaffuB
+	./tools/qcom/buffalo-tag -d 0x1000000 -w 1 -a qca -v 9.99 -m 9.99 -b WXR-6000AX12P -p WXR-6000AX12P -r JP -r JP -l jp -I $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc -p "" -v "" -S 152  -k olaffuB
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp
+	./tools/qcom/mkdhpimg $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc.tmp $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.enc
+
+
+	filesize="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.ubi)"
+	echo "WXR-6000AX12S_9.99_1.00_JP_jp_qca" > $(TOP)/$(ARCH)-uclibc/bufheader
+	echo "filelen=$filesize" >> $(TOP)/$(ARCH)-uclibc/bufheader
+	cat $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.ubi >> $(TOP)/$(ARCH)-uclibc/bufheader
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/bufheader -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp -p WXR-6000AX12S -v 9.99 -k olaffuB
+	./tools/qcom/buffalo-tag -d 0x1000000 -w 1 -a qca -v 9.99 -m 9.99 -b WXR-6000AX12S -p WXR-6000AX12S -r JP -r JP -l jp -I $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc -p "" -v "" -S 152  -k olaffuB
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp
+	./tools/qcom/mkdhpimg $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc.tmp $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.enc
+
+	filesize="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.ubi)"
+	echo "WXR-6000AX12B_9.99_1.00_JP_jp_qca" > $(TOP)/$(ARCH)-uclibc/bufheader
+	echo "filelen=$filesize" >> $(TOP)/$(ARCH)-uclibc/bufheader
+	cat $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.ubi >> $(TOP)/$(ARCH)-uclibc/bufheader
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/bufheader -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp -p WXR-6000AX12B -v 9.99 -k olaffuB
+	./tools/qcom/buffalo-tag -d 0x1000000 -w 1 -a qca -v 9.99 -m 9.99 -b WXR-6000AX12B -p WXR-6000AX12B -r JP -r JP -l jp -I $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc -p "" -v "" -S 152  -k olaffuB
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp
+	./tools/qcom/mkdhpimg $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc.tmp $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.enc
+
+	filesize="$$(stat -c%s $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.ubi)"
+	echo "WXR-5950AX12_9.99_1.00_JP_jp_qca" > $(TOP)/$(ARCH)-uclibc/bufheader
+	echo "filelen=$filesize" >> $(TOP)/$(ARCH)-uclibc/bufheader
+	cat $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.ubi >> $(TOP)/$(ARCH)-uclibc/bufheader
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/bufheader -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp -p WXR-5950AX12 -v 9.99 -k olaffuB
+	./tools/qcom/buffalo-tag -d 0x1000000 -w 0 -a qca -v 9.99 -m 9.99 -b WXR-5950AX12 -p WXR-5950AX12 -r JP -r JP -l jp -I $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp
+	./tools/qcom/buffalo-enc -i $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp -o $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc -p "" -v "" -S 152  -k olaffuB
+	mv $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp
+	./tools/qcom/mkdhpimg $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc.tmp $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.enc
 
 
 include rules/all.mk
