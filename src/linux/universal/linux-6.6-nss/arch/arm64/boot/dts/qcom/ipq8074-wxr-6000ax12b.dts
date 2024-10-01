@@ -5,7 +5,7 @@
 #include "ipq8074-wxr.dtsi"
 
 / {
-	model = "Buffalo WXR-5950AX12";
+	model = "Buffalo WXR-6000AX12B";
 	compatible = "buffalo,wxr-5950ax12", "qcom,ipq8074", "qcom,ipq8078";
 
 };
@@ -13,5 +13,5 @@
 &wifi {
 	status = "okay";
 
-	qcom,ath11k-calibration-variant = "Buffalo-WXR-5950AX12";
+	qcom,ath11k-calibration-variant = "Buffalo-WXR-6000AX12B";
 };
