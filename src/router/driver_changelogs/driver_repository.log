@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8125 | brainslayer | 2024-10-01 11:23:37 +0700 (Tue, 01 Oct 2024) | 1 line
+
+update board datas
+------------------------------------------------------------------------
 r8124 | brainslayer | 2024-09-27 23:03:34 +0700 (Fri, 27 Sep 2024) | 1 line
 
 ignore opmode change if error was detected in new setting
