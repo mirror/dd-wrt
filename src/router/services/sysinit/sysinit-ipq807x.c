@@ -179,6 +179,10 @@ void *get_deviceinfo_mx4200(char *var)
 {
 	return get_deviceinfo("/dev/mtd20", var);
 }
+void *get_deviceinfo_wxr(char *var)
+{
+	return get_deviceinfo("/dev/mtd14", var);
+}
 
 void calcchecksum(void *caldata, int offset, int size)
 {
@@ -1254,6 +1258,14 @@ void start_sysinit(void)
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
+		char *wlan0mac = get_deviceinfo_wxr("wlan0addr");
+		nvram_set("wlan0_hwaddr", wlan0mac);
+		patch(wlan0mac, 14);
+		char *wlan1mac = get_deviceinfo_wxr("wlan0addr");
+		nvram_set("wlan0_hwaddr", wlan1mac);
+		patch(wlan1mac, 20);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_ASUS_AX89X:
