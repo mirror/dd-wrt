@@ -233,9 +233,10 @@ struct ndpi_packet_tlv {
 PACK_ON
 struct ndpi_packet_trailer {
   u_int32_t magic; /* WIRESHARK_NTOP_MAGIC */
-  u_int16_t master_protocol /* e.g. HTTP */, app_protocol /* e.g. FaceBook */;
+  ndpi_master_app_protocol proto;
   ndpi_risk flow_risk;
   u_int16_t flow_score;
+  char flow_risk_info[32];
   char name[16];
   /* TLV of attributes. Having a max and fixed size for all the metadata
      is not efficient but greatly improves detection of the trailer by Wireshark */
@@ -247,6 +248,8 @@ static pcap_t *extcap_fifo_h = NULL;
 static char extcap_buf[16384];
 static char *extcap_capture_fifo    = NULL;
 static u_int16_t extcap_packet_filter = (u_int16_t)-1;
+static int do_extcap_capture = 0;
+static int extcap_add_crc = 0;
 
 // struct associated to a workflow for a thread
 struct reader_thread {
@@ -395,8 +398,8 @@ void ndpiCheckHostStringMatch(char *testChar) {
   if(testRes) {
     memset(&detected_protocol, 0, sizeof(ndpi_protocol) );
 
-    detected_protocol.app_protocol    = match.protocol_id;
-    detected_protocol.master_protocol = 0;
+    detected_protocol.proto.app_protocol    = match.protocol_id;
+    detected_protocol.proto.master_protocol = 0;
     detected_protocol.category        = match.protocol_category;
 
     ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
@@ -485,13 +488,13 @@ static void ndpiCheckIPMatch(char *testChar) {
 
   if(ret != NDPI_PROTOCOL_UNKNOWN) {
     memset(&detected_protocol, 0, sizeof(ndpi_protocol));
-    detected_protocol.app_protocol = ndpi_map_ndpi_id_to_user_proto_id(ndpi_str, ret);
+    detected_protocol.proto.app_protocol = ndpi_map_ndpi_id_to_user_proto_id(ndpi_str, ret);
 
     ndpi_protocol2name(ndpi_str, detected_protocol, appBufStr,
                        sizeof(appBufStr));
 
     printf("Match Found for IP %s, port %d -> %s (%d)\n",
-	   ip_str, port, appBufStr, detected_protocol.app_protocol);
+	   ip_str, port, appBufStr, detected_protocol.proto.app_protocol);
   } else {
     printf("Match NOT Found for IP: %s\n", testChar);
   }
@@ -692,6 +695,7 @@ static void help(u_int long_help) {
 
   NDPI_PROTOCOL_BITMASK all;
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+
   NDPI_BITMASK_SET_ALL(all);
   ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
 
@@ -855,8 +859,8 @@ void extcap_config() {
   int i;
   ndpi_proto_defaults_t *proto_defaults;
   NDPI_PROTOCOL_BITMASK all;
-
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+
   if(!ndpi_str) exit(0);
 
   NDPI_BITMASK_SET_ALL(all);
@@ -903,12 +907,12 @@ void extcap_config() {
 
 /* ********************************** */
 
-void extcap_capture() {
+void extcap_capture(int datalink_type) {
 #ifdef DEBUG_TRACE
   if(trace) fprintf(trace, " #### %s #### \n", __FUNCTION__);
 #endif
 
-  if((extcap_fifo_h = pcap_open_dead(DLT_EN10MB, 16384 /* MTU */)) == NULL) {
+  if((extcap_fifo_h = pcap_open_dead(datalink_type, 16384 /* MTU */)) == NULL) {
     fprintf(stderr, "Error pcap_open_dead");
 
 #ifdef DEBUG_TRACE
@@ -1051,7 +1055,7 @@ static void parseOptions(int argc, char **argv) {
   int opt;
 #ifndef USE_DPDK
   char *__pcap_file = NULL;
-  int thread_id, do_capture = 0;
+  int thread_id;
 #ifdef __linux__
   char *bind_mask = NULL;
   u_int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
@@ -1357,7 +1361,7 @@ static void parseOptions(int argc, char **argv) {
 
 #ifndef USE_DPDK
     case '5':
-      do_capture = 1;
+      do_extcap_capture = 1;
       break;
 #endif
 
@@ -1368,8 +1372,15 @@ static void parseOptions(int argc, char **argv) {
     case '9':
     {
       struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+      NDPI_PROTOCOL_BITMASK all;
+
+      NDPI_BITMASK_SET_ALL(all);
+      ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
+      ndpi_finalize_initialization(ndpi_str);
+
       extcap_packet_filter = ndpi_get_proto_by_name(ndpi_str, optarg);
       if(extcap_packet_filter == NDPI_PROTOCOL_UNKNOWN) extcap_packet_filter = atoi(optarg);
+
       ndpi_exit_detection_module(ndpi_str);
       break;
     }
@@ -1427,9 +1438,8 @@ static void parseOptions(int argc, char **argv) {
     printCSVHeader();
 
 #ifndef USE_DPDK
-  if(do_capture) {
+  if(do_extcap_capture) {
     quiet_mode = 1;
-    extcap_capture();
   }
 
   if(!domain_to_check && !ip_port_to_check) {
@@ -1541,7 +1551,7 @@ void print_bin(FILE *fout, const char *label, struct ndpi_bin *b) {
 
 /* ********************************** */
 
-static void print_ndpi_address_port(FILE *out, const char *label, ndpi_address_port *ap) {
+static void print_ndpi_address_port_file(FILE *out, const char *label, ndpi_address_port *ap) {
   if(ap->port != 0) {
     char buf[INET6_ADDRSTRLEN];
 
@@ -1749,19 +1759,19 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
 
     fprintf(out, "[Confidence: %s]", ndpi_confidence_get_name(flow->confidence));
 
-    if(flow->fpc.master_protocol == NDPI_PROTOCOL_UNKNOWN) {
+    if(flow->fpc.proto.master_protocol == NDPI_PROTOCOL_UNKNOWN) {
       fprintf(out, "[FPC: %u/%s, ",
-              flow->fpc.app_protocol,
+              flow->fpc.proto.app_protocol,
               ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                                flow->fpc.app_protocol));
+                                flow->fpc.proto.app_protocol));
     } else {
       fprintf(out, "[FPC: %u.%u/%s.%s, ",
-              flow->fpc.master_protocol,
-              flow->fpc.app_protocol,
+              flow->fpc.proto.master_protocol,
+              flow->fpc.proto.app_protocol,
               ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                                flow->fpc.master_protocol),
+                                flow->fpc.proto.master_protocol),
               ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                                flow->fpc.app_protocol));
+                                flow->fpc.proto.app_protocol));
     }
     fprintf(out, "Confidence: %s]",
 	    ndpi_fpc_confidence_get_name(flow->fpc.confidence));
@@ -1925,11 +1935,11 @@ static void printFlow(u_int32_t id, struct ndpi_flow_info *flow, u_int16_t threa
       }
     }
 
-    print_ndpi_address_port(out, "Mapped IP/Port", &flow->stun.mapped_address);
-    print_ndpi_address_port(out, "Peer IP/Port", &flow->stun.peer_address);
-    print_ndpi_address_port(out, "Relayed IP/Port", &flow->stun.relayed_address);
-    print_ndpi_address_port(out, "Rsp Origin IP/Port", &flow->stun.response_origin);
-    print_ndpi_address_port(out, "Other IP/Port", &flow->stun.other_address);
+    print_ndpi_address_port_file(out, "Mapped IP/Port", &flow->stun.mapped_address);
+    print_ndpi_address_port_file(out, "Peer IP/Port", &flow->stun.peer_address);
+    print_ndpi_address_port_file(out, "Relayed IP/Port", &flow->stun.relayed_address);
+    print_ndpi_address_port_file(out, "Rsp Origin IP/Port", &flow->stun.response_origin);
+    print_ndpi_address_port_file(out, "Other IP/Port", &flow->stun.other_address);
 
     if(flow->http.url[0] != '\0') {
       ndpi_risk_enum risk = ndpi_validate_url(flow->http.url);
@@ -2213,8 +2223,8 @@ static void node_print_unknown_proto_walker(const void *node,
 
   (void)depth;
 
-  if((flow->detected_protocol.master_protocol != NDPI_PROTOCOL_UNKNOWN)
-     || (flow->detected_protocol.app_protocol != NDPI_PROTOCOL_UNKNOWN))
+  if((flow->detected_protocol.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
+     || (flow->detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN))
     return;
 
   if((which == ndpi_preorder) || (which == ndpi_leaf)) {
@@ -2236,8 +2246,8 @@ static void node_print_known_proto_walker(const void *node,
 
   (void)depth;
 
-  if((flow->detected_protocol.master_protocol == NDPI_PROTOCOL_UNKNOWN)
-     && (flow->detected_protocol.app_protocol == NDPI_PROTOCOL_UNKNOWN))
+  if((flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_UNKNOWN)
+     && (flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN))
     return;
 
   if((which == ndpi_preorder) || (which == ndpi_leaf)) {
@@ -2274,7 +2284,7 @@ static void node_proto_guess_walker(const void *node, ndpi_VISIT which, int dept
 
     process_ndpi_collected_info(ndpi_thread_info[thread_id].workflow, flow);
 
-    proto = flow->detected_protocol.app_protocol ? flow->detected_protocol.app_protocol : flow->detected_protocol.master_protocol;
+    proto = flow->detected_protocol.proto.app_protocol ? flow->detected_protocol.proto.app_protocol : flow->detected_protocol.proto.master_protocol;
 
     proto = ndpi_map_user_proto_id_to_ndpi_id(ndpi_thread_info[thread_id].workflow->ndpi_struct, proto);
 
@@ -2654,12 +2664,12 @@ static void port_stats_walker(const void *node, ndpi_VISIT which, int depth, voi
     sport = ntohs(flow->src_port), dport = ntohs(flow->dst_port);
 
     /* get app level protocol */
-    if(flow->detected_protocol.master_protocol) {
+    if(flow->detected_protocol.proto.master_protocol) {
       ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
                          flow->detected_protocol, proto, sizeof(proto));
     } else {
       strncpy(proto, ndpi_get_proto_name(ndpi_thread_info[thread_id].workflow->ndpi_struct,
-                                         flow->detected_protocol.app_protocol),sizeof(proto) - 1);
+                                         flow->detected_protocol.proto.app_protocol),sizeof(proto) - 1);
       proto[sizeof(proto) - 1] = '\0';
     }
 
@@ -2699,7 +2709,7 @@ static void node_idle_scan_walker(const void *node, ndpi_VISIT which, int depth,
       if(verbose == 3)
         port_stats_walker(node, which, depth, user_data);
 
-      if((flow->detected_protocol.app_protocol == NDPI_PROTOCOL_UNKNOWN) && !undetected_flows_deleted)
+      if((flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) && !undetected_flows_deleted)
         undetected_flows_deleted = 1;
 
       ndpi_flow_info_free_data(flow);
@@ -2770,8 +2780,8 @@ static int is_realtime_protocol(ndpi_protocol proto)
   u_int16_t i;
 
   for (i = 0; i < NDPI_ARRAY_LENGTH(realtime_protos); i++) {
-    if (proto.app_protocol == realtime_protos[i]
-        || proto.master_protocol == realtime_protos[i])
+    if (proto.proto.app_protocol == realtime_protos[i]
+        || proto.proto.master_protocol == realtime_protos[i])
     {
       return 1;
     }
@@ -3634,7 +3644,7 @@ static void printFlowsStats() {
             if((all_flows[i].flow->src2dst_syn_count == 0) || (all_flows[i].flow->dst2src_syn_count == 0))
               goto print_flow;
 
-            if(all_flows[i].flow->detected_protocol.master_protocol == NDPI_PROTOCOL_TLS) {
+            if(all_flows[i].flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_TLS) {
               if((all_flows[i].flow->src2dst_packets+all_flows[i].flow->dst2src_packets) < 40)
                 goto print_flow; /* Too few packets for TLS negotiation etc */
             }
@@ -3718,9 +3728,9 @@ static void printFlowsStats() {
                 fprintf(out, "[%s]", all_flows[i].flow->host_server_name);
 
               if(enable_doh_dot_detection) {
-                if(((all_flows[i].flow->detected_protocol.master_protocol == NDPI_PROTOCOL_TLS)
-                    || (all_flows[i].flow->detected_protocol.app_protocol == NDPI_PROTOCOL_TLS)
-                    || (all_flows[i].flow->detected_protocol.app_protocol == NDPI_PROTOCOL_DOH_DOT)
+                if(((all_flows[i].flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_TLS)
+                    || (all_flows[i].flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_TLS)
+                    || (all_flows[i].flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_DOH_DOT)
                     )
                    && all_flows[i].flow->ssh_tls.advertised_alpns /* ALPN */
                    ) {
@@ -4527,25 +4537,28 @@ static void ndpi_process_packet(u_char *args,
   }
 
 #ifdef DEBUG_TRACE
-  if(trace) fprintf(trace, "Found %u bytes packet %u.%u\n", header->caplen, p.app_protocol, p.master_protocol);
+  if(trace) fprintf(trace, "Found %u bytes packet %u.%u\n", header->caplen, p.proto.app_protocol, p.proto.master_protocol);
 #endif
 
   if(extcap_dumper
      && ((extcap_packet_filter == (u_int16_t)-1)
-	 || (p.app_protocol == extcap_packet_filter)
-	 || (p.master_protocol == extcap_packet_filter)
+	 || (p.proto.app_protocol == extcap_packet_filter)
+	 || (p.proto.master_protocol == extcap_packet_filter)
 	 )
      ) {
     struct pcap_pkthdr h;
-    u_int32_t *crc, delta = sizeof(struct ndpi_packet_trailer) + 4 /* ethernet trailer */;
+    u_int32_t *crc, delta = sizeof(struct ndpi_packet_trailer);
     struct ndpi_packet_trailer *trailer;
     u_int16_t cli_score, srv_score;
 
     memcpy(&h, header, sizeof(h));
 
-    if(h.caplen > (sizeof(extcap_buf)-sizeof(struct ndpi_packet_trailer) - 4)) {
+    if(extcap_add_crc)
+      delta += 4; /* ethernet trailer */
+
+    if(h.caplen > (sizeof(extcap_buf) - delta)) {
       printf("INTERNAL ERROR: caplen=%u\n", h.caplen);
-      h.caplen = sizeof(extcap_buf)-sizeof(struct ndpi_packet_trailer) - 4;
+      h.caplen = sizeof(extcap_buf) - delta;
     }
 
     trailer = (struct ndpi_packet_trailer*)&extcap_buf[h.caplen];
@@ -4554,7 +4567,11 @@ static void ndpi_process_packet(u_char *args,
     trailer->magic = htonl(WIRESHARK_NTOP_MAGIC);
     trailer->flow_risk = htonl64(flow_risk);
     trailer->flow_score = htons(ndpi_risk2score(flow_risk, &cli_score, &srv_score));
-    trailer->master_protocol = htons(p.master_protocol), trailer->app_protocol = htons(p.app_protocol);
+    if(flow->risk_str) {
+      strncpy(trailer->flow_risk_info, flow->risk_str, sizeof(trailer->flow_risk_info));
+      trailer->flow_risk_info[sizeof(trailer->flow_risk_info) - 1] = '\0';
+    }
+    trailer->proto.master_protocol = htons(p.proto.master_protocol), trailer->proto.app_protocol = htons(p.proto.app_protocol);
     ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct, p, trailer->name, sizeof(trailer->name));
 
     /* Metadata */
@@ -4607,8 +4624,10 @@ static void ndpi_process_packet(u_char *args,
     tlv->length = ntohs(WIRESHARK_METADATA_SIZE - tot_len - 4);
     /* The remaining bytes are already set to 0 */
 
-    crc = (uint32_t*)&extcap_buf[h.caplen+sizeof(struct ndpi_packet_trailer)];
-    *crc = ndpi_crc32((const void*)extcap_buf, h.caplen+sizeof(struct ndpi_packet_trailer));
+    if(extcap_add_crc) {
+      crc = (uint32_t*)&extcap_buf[h.caplen+sizeof(struct ndpi_packet_trailer)];
+      *crc = ndpi_crc32((const void*)extcap_buf, h.caplen+sizeof(struct ndpi_packet_trailer), 0);
+    }
     h.caplen += delta, h.len += delta;
 
 #ifdef DEBUG_TRACE
@@ -4665,6 +4684,17 @@ static void ndpi_process_packet(u_char *args,
 static void runPcapLoop(u_int16_t thread_id) {
   if((!shutdown_app) && (ndpi_thread_info[thread_id].workflow->pcap_handle != NULL)) {
     int datalink_type = pcap_datalink(ndpi_thread_info[thread_id].workflow->pcap_handle);
+
+    /* When using as extcap interface, the output/dumper pcap must have the same datalink
+       type of the input traffic [to be able to use, for example, input pcaps with
+       Linux "cooked" capture encapsulation (i.e. captured with "any" interface...) where
+       there isn't an ethernet header] */
+    if(do_extcap_capture) {
+      extcap_capture(datalink_type);
+      if(datalink_type == DLT_EN10MB)
+        extcap_add_crc = 1;
+    }
+
     if(!ndpi_is_datalink_supported(datalink_type)) {
       printf("Unsupported datalink %d. Skip pcap\n", datalink_type);
       return;
@@ -6108,6 +6138,91 @@ void loadStressTest() {
 
 /* *********************************************** */
 
+void kdUnitTest() {
+  ndpi_kd_tree *t = ndpi_kd_create(5);
+  double v[][5] = {
+    { 0, 4, 2, 3, 4 },
+    { 0, 1, 2, 3, 6 },
+    { 1, 2, 3, 4, 5 },
+  };
+  double v1[5] = { 0, 1, 2, 3, 8 };
+  u_int i, sz = 5*sizeof(double), num = sizeof(v) / sz;
+  ndpi_kd_tree_result *res;
+  double *ret, *to_find = v[1];
+
+  assert(t);
+
+  for(i=0; i<num; i++)
+    assert(ndpi_kd_insert(t, v[i], NULL) == true);
+
+  assert((res = ndpi_kd_nearest(t, to_find)) != NULL);
+  assert(ndpi_kd_num_results(res) == 1);
+  assert((ret = ndpi_kd_result_get_item(res, NULL)) != NULL);
+  assert(memcmp(ret, to_find, sz) == 0);
+  ndpi_kd_result_free(res);
+
+  assert((res = ndpi_kd_nearest(t, v1)) != NULL);
+  assert(ndpi_kd_num_results(res) == 1);
+  assert((ret = ndpi_kd_result_get_item(res, NULL)) != NULL);
+  assert(memcmp(ret, v1, sz) != 0);
+  assert(ndpi_kd_distance(ret, v1, 5) == 4.);
+  ndpi_kd_result_free(res);
+
+  ndpi_kd_free(t);
+}
+
+/* *********************************************** */
+
+void ballTreeUnitTest() {
+  ndpi_btree *ball_tree;
+  double v[][5] = {
+    { 0, 4, 2, 3, 4 },
+    { 0, 1, 2, 3, 6 },
+    { 1, 2, 3, 4, 5 },
+  };
+  double v1[] = { 0, 1, 2, 3, 8 };
+  double *rows[] = { v[0], v[1], v[2] };
+  double *q_rows[] = { v1 };
+  u_int32_t num_columns = 5;
+  u_int32_t num_rows = sizeof(v) / (sizeof(double)*num_columns);
+  ndpi_knn result;
+  u_int32_t nun_results = 2;
+  int i, j;
+
+  ball_tree = ndpi_btree_init(rows, num_rows, num_columns);
+  assert(ball_tree != NULL);
+  result = ndpi_btree_query(ball_tree, q_rows,
+			    sizeof(q_rows) / sizeof(double*),
+			    num_columns, nun_results);
+
+  assert(result.n_samples == 2);
+  
+  for (i = 0; i < result.n_samples; i++) {
+    printf("{\"knn_idx\": [");
+    for (j = 0; j < result.n_neighbors; j++)
+      {
+	printf("%d", result.indices[i][j]);
+	if (j != result.n_neighbors - 1)
+	  printf(", ");
+      }
+    printf("],\n \"knn_dist\": [");
+    for (j = 0; j < result.n_neighbors; j++)
+      {
+	printf("%.12lf", result.distances[i][j]);
+	if (j != result.n_neighbors - 1)
+	  printf(", ");
+      }
+    printf("]\n}\n");
+    if (i != result.n_samples - 1)
+      printf(", ");
+  }
+
+  ndpi_free_knn(result);
+  ndpi_free_btree(ball_tree);
+}
+
+/* *********************************************** */
+
 void encodeDomainsUnitTest() {
   NDPI_PROTOCOL_BITMASK all;
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
@@ -6186,9 +6301,14 @@ void domainSearchUnitTest() {
   u_int16_t class_id;
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   u_int8_t trace = 0;
+  NDPI_PROTOCOL_BITMASK all;
 
   assert(ndpi_str);
   assert(sc);
+
+  NDPI_BITMASK_SET_ALL(all);
+  ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
+  ndpi_finalize_initialization(ndpi_str);
 
   ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, ".ntop.org");
   ndpi_domain_classify_add(ndpi_str, sc, NDPI_PROTOCOL_NTOP, domain);
@@ -6205,7 +6325,7 @@ void domainSearchUnitTest() {
 
   u_int32_t s = ndpi_domain_classify_size(sc);
   if(trace) printf("ndpi_domain_classify size: %u \n",s);
-  
+
 
   ndpi_domain_classify_free(sc);
   ndpi_exit_detection_module(ndpi_str);
@@ -6217,9 +6337,14 @@ void domainSearchUnitTest2() {
   struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
   ndpi_domain_classify *c = ndpi_domain_classify_alloc();
   u_int16_t class_id = 9;
+  NDPI_PROTOCOL_BITMASK all;
 
   assert(ndpi_str);
   assert(c);
+
+  NDPI_BITMASK_SET_ALL(all);
+  ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
+  ndpi_finalize_initialization(ndpi_str);
 
   ndpi_domain_classify_add(ndpi_str, c, class_id, "ntop.org");
   ndpi_domain_classify_add(ndpi_str, c, class_id, "apple.com");
@@ -6275,6 +6400,7 @@ int main(int argc, char **argv) {
     exit(0);
 #endif
 
+    kdUnitTest();
     encodeDomainsUnitTest();
     loadStressTest();
     domainsUnitTest();

@@ -450,6 +450,14 @@ typedef enum {
   NDPI_PROTOCOL_CLICKHOUSE            = 419,
   NDPI_PROTOCOL_NANO                  = 420,
   NDPI_PROTOCOL_OPENWIRE              = 421,
+  NDPI_PROTOCOL_CNP_IP                = 422,
+  NDPI_PROTOCOL_ATG                   = 423,
+  NDPI_PROTOCOL_TRDP                  = 424,
+  NDPI_PROTOCOL_LUSTRE                = 425,
+  NDPI_PROTOCOL_NORDVPN               = 426,
+  NDPI_PROTOCOL_SURFSHARK             = 427,
+  NDPI_PROTOCOL_CACTUSVPN             = 428,
+  NDPI_PROTOCOL_WINDSCRIBE            = 429,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

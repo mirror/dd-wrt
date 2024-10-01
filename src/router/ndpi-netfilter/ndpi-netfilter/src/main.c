@@ -1206,13 +1206,13 @@ ndpi_process_packet(struct ndpi_net *n, struct nf_conn * ct, struct nf_ct_ext_nd
 			*proto = ndpi_guess_undetected_protocol (n->ndpi_struct,flow,protocol);
 			if(_DBG_TRACE_GUESSED)
 				packet_trace(skb,ct,ct_ndpi,dir," guess_undet "," [%d,%d]",
-						proto->app_protocol,proto->master_protocol);
+						proto->proto.app_protocol,proto->proto.master_protocol);
 	    }
 	}
 	preempt_enable();
 	ct_ndpi->risk = flow->risk & n->risk_mask;
 
-	return proto->app_protocol != NDPI_PROTOCOL_UNKNOWN ? proto->app_protocol:proto->master_protocol;
+	return proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN ? proto->proto.app_protocol:proto->proto.master_protocol;
 }
 static inline int can_handle(const struct sk_buff *skb,uint8_t *l4_proto)
 {
@@ -1322,12 +1322,12 @@ static void ndpi_host_info(struct nf_ct_ext_ndpi *ct_ndpi) {
 
        	if(_DBG_TRACE_TLS) 
 		pr_info("%s: TLS hello_processed %d, cert_processed %d, extra_packets %d\n",__func__,
-				flow->protos.tls_quic.hello_processed,
+				flow->protos.tls_quic.client_hello_processed,
 				flow->tls_quic.certificate_processed,
 				flow->extra_packets_func ? 1:0
 				);
 
-	if(flow->protos.tls_quic.hello_processed &&
+	if(flow->protos.tls_quic.client_hello_processed &&
 		(flow->tls_quic.certificate_processed || !flow->extra_packets_func))
 		set_tlsdone(ct_ndpi);
 
@@ -1489,7 +1489,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 	if(_DBG_TRACE_GUESSED)
 		pr_info("%s: ct_clevel %d, proto.app %d, flow clevel %d, g_host_id %d, g_id %d %s\n",__func__,
 				ct_ndpi->confidence,
-				proto->app_protocol,
+				proto->proto.app_protocol,
 				flow->confidence,
 				flow->guessed_protocol_id_by_ip,
 				flow->guessed_protocol_id,
@@ -1498,27 +1498,27 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 				);
 	if(ct_ndpi->confidence >= NDPI_CONFIDENCE_DPI_CACHE) return 0;
 
-	if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
+	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
 
 	if(flow->guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
 	   NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask,
 						flow->guessed_protocol_id) == 0) {
-		proto->app_protocol = flow->guessed_protocol_id;
+		proto->proto.app_protocol = flow->guessed_protocol_id;
 		if(_DBG_TRACE_GUESSED)
-			pr_info("%s: guessed app_protocol %d\n",__func__,proto->app_protocol);
+			pr_info("%s: guessed app_protocol %d\n",__func__,proto->proto.app_protocol);
 		ret = 1;
 	}
 	if(flow->guessed_protocol_id_by_ip != NDPI_PROTOCOL_UNKNOWN &&
 	   flow->ipdef_proto_level >= flow->confidence) {
-	   	if(proto->app_protocol == NDPI_PROTOCOL_UNKNOWN) {
-			proto->app_protocol = flow->guessed_protocol_id_by_ip;
+	   	if(proto->proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			proto->proto.app_protocol = flow->guessed_protocol_id_by_ip;
 			if(_DBG_TRACE_GUESSED)
-			    pr_info("%s: host app_protocol %d\n",__func__,proto->app_protocol);
+			    pr_info("%s: host app_protocol %d\n",__func__,proto->proto.app_protocol);
 		} else
-		   	if(proto->master_protocol == NDPI_PROTOCOL_UNKNOWN) {
-			    proto->master_protocol = flow->guessed_protocol_id_by_ip;
+		   	if(proto->proto.master_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			    proto->proto.master_protocol = flow->guessed_protocol_id_by_ip;
 			    if(_DBG_TRACE_GUESSED)
-				pr_info("%s: host master_protocol %d\n",__func__,proto->master_protocol);
+				pr_info("%s: host master_protocol %d\n",__func__,proto->proto.master_protocol);
 			}
 		flow->confidence = flow->ipdef_proto_level;
 		ret = 1;
@@ -1558,7 +1558,7 @@ static void pr_dc(const char *msg,uint8_t dc,ndpi_protocol_bitmask_struct_t *ex_
 }
 
 
-#define pack_proto(proto) ((proto.app_protocol << 16) | proto.master_protocol)
+#define pack_proto(proto) ((proto.proto.app_protocol << 16) | proto.proto.master_protocol)
 
 static bool
 ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
@@ -1605,7 +1605,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 	memset((char *)&excluded_proto,0xff,sizeof(excluded_proto));
 
-	proto.app_protocol = NDPI_PROCESS_ERROR;
+	proto.proto.app_protocol = NDPI_PROCESS_ERROR;
 
 	c_proto = skb_get_cproto(skb);
 
@@ -1618,7 +1618,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		break;
 	}
 	if(!can_handle(skb,&l4_proto)) {
-		proto.app_protocol = NDPI_PROTOCOL_UNKNOWN;
+		proto.proto.app_protocol = NDPI_PROTOCOL_UNKNOWN;
 		break;
 	}
 	if( skb->len > ndpi_mtu && skb_is_nonlinear(skb) ) {
@@ -1701,7 +1701,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	}
 
 	detect_complete = 0;
-	proto.app_protocol = NDPI_PROTOCOL_UNKNOWN;
+	proto.proto.app_protocol = NDPI_PROTOCOL_UNKNOWN;
 	if(_DBG_TRACE_PKT)
 		packet_trace(skb,ct,ct_ndpi,ct_dir,"<START match ",NULL);
 	if(_DBG_TRACE_CT)
@@ -1737,11 +1737,11 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		}
 		risk = ct_ndpi->risk;
 		confidence = ct_ndpi->confidence;
-		proto.app_protocol = ct_ndpi->proto.app_protocol;
-		proto.master_protocol = ct_ndpi->proto.master_protocol;
+		proto.proto.app_protocol = ct_ndpi->proto.app_protocol;
+		proto.proto.master_protocol = ct_ndpi->proto.master_protocol;
 		detect_complete = test_detect_done(ct_ndpi);
-		if((proto.master_protocol != NDPI_PROTOCOL_UNKNOWN ||
-		    proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) &&
+		if((proto.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN ||
+		    proto.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) &&
 		    confidence == NDPI_CONFIDENCE_DPI)
 			detect_complete = 1;
 		if(!detect_complete && ct_ndpi->flow)
@@ -1765,16 +1765,16 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 	/* don't pass icmp for TCP/UDP to ndpi_process_packet()  */
 	if(l4_proto == IPPROTO_ICMP && ct_ndpi->l4_proto != IPPROTO_ICMP) {
-		proto.master_protocol = NDPI_PROTOCOL_IP_ICMP;
-		proto.app_protocol = NDPI_PROTOCOL_IP_ICMP;
+		proto.proto.master_protocol = NDPI_PROTOCOL_IP_ICMP;
+		proto.proto.app_protocol = NDPI_PROTOCOL_IP_ICMP;
 		COUNTER(ndpi_p_l4mismatch);
 		ndpi_p_l4mis_size += skb->len;
 		break;
 	}
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 	if(l4_proto == IPPROTO_ICMPV6 && ct_ndpi->l4_proto != IPPROTO_ICMPV6) {
-		proto.master_protocol = NDPI_PROTOCOL_IP_ICMPV6;
-		proto.app_protocol = NDPI_PROTOCOL_IP_ICMPV6;
+		proto.proto.master_protocol = NDPI_PROTOCOL_IP_ICMPV6;
+		proto.proto.app_protocol = NDPI_PROTOCOL_IP_ICMPV6;
 		COUNTER(ndpi_p_l4mismatch);
 		ndpi_p_l4mis_size += skb->len;
 		break;
@@ -1790,7 +1790,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 			if (linearized_skb == NULL) {
 				COUNTER(ndpi_falloc);
 				detect_complete = 1;
-				proto.app_protocol = NDPI_PROCESS_ERROR;
+				proto.proto.app_protocol = NDPI_PROCESS_ERROR;
 				break;
 			}
 			skb_use = linearized_skb;
@@ -1812,8 +1812,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		   pr_info(" ndpi_process_packet dpi: g_pr:%d g_host_pr:%d m:%d a:%d cl:%s; ct: m:%d a:%d cl:%s r:%llx pcnt %d [%d,%d]%s%s\n",
 			ct_ndpi->flow->guessed_protocol_id,
 			ct_ndpi->flow->guessed_protocol_id_by_ip,
-			proto.master_protocol,
-			proto.app_protocol,
+			proto.proto.master_protocol,
+			proto.proto.app_protocol,
 			ndpi_confidence_get_name(ct_ndpi->flow->confidence),
 			ct_ndpi->proto.master_protocol,
 			ct_ndpi->proto.app_protocol,
@@ -1831,8 +1831,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		if(r_proto == NDPI_PROCESS_ERROR || !flow) {
 		    COUNTER(ndpi_p_err_prot_err);
 		    c_proto->proto = r_proto;
-		    proto.app_protocol = r_proto;
-		    proto.master_protocol = NDPI_PROTOCOL_UNKNOWN;
+		    proto.proto.app_protocol = r_proto;
+		    proto.proto.master_protocol = NDPI_PROTOCOL_UNKNOWN;
 		    detect_complete = 1;
 		    confidence = NDPI_CONFIDENCE_UNKNOWN;
 		    break;
@@ -1841,8 +1841,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		excluded_proto = flow->excluded_protocol_bitmask;
 		check_guessed_protocol(ct_ndpi,&proto);
 		ct_ndpi->confidence = confidence = flow->confidence;
-		ct_ndpi->proto.app_protocol = proto.app_protocol;
-		ct_ndpi->proto.master_protocol = proto.master_protocol;
+		ct_ndpi->proto.app_protocol = proto.proto.app_protocol;
+		ct_ndpi->proto.master_protocol = proto.proto.master_protocol;
 		c_proto->proto = pack_proto(proto);
 		risk = fix_unidir_trafic(ct_ndpi);
 
@@ -1851,11 +1851,11 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		check_tls_done(ct_ndpi,&detect_complete,&tls);
 
 		if(ct_ndpi->confidence != NDPI_CONFIDENCE_UNKNOWN) {
-		    if( proto.app_protocol <= NDPI_NUM_BITS)
-		    	atomic64_inc(&n->protocols_cnt[proto.app_protocol]);
-		    if( proto.master_protocol != proto.app_protocol &&
-		        proto.master_protocol <= NDPI_NUM_BITS)
-				atomic64_inc(&n->protocols_cnt[proto.master_protocol]);
+		    if( proto.proto.app_protocol <= NDPI_NUM_BITS)
+		    	atomic64_inc(&n->protocols_cnt[proto.proto.app_protocol]);
+		    if( proto.proto.master_protocol != proto.proto.app_protocol &&
+		        proto.proto.master_protocol <= NDPI_NUM_BITS)
+				atomic64_inc(&n->protocols_cnt[proto.proto.master_protocol]);
 		}
 
 		if(ct_ndpi->confidence == NDPI_CONFIDENCE_DPI) {
@@ -1885,20 +1885,20 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 			    else
 				COUNTER(ndpi_p_c_end_max);
 		    	detect_complete = 1;
-			if(proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+			if(proto.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
 			    u_int8_t proto_guessed;
 			    ndpi_protocol p_old = proto;
 			    proto = ndpi_detection_giveup(n->ndpi_struct, flow, &proto_guessed);
 			    if(_DBG_TRACE_DPI &&
-			           (p_old.app_protocol != proto.app_protocol ||
-				    p_old.master_protocol != proto.master_protocol ||
+			           (p_old.proto.app_protocol != proto.proto.app_protocol ||
+				    p_old.proto.master_protocol != proto.proto.master_protocol ||
 				    confidence != flow->confidence))
 				packet_trace(skb,ct,ct_ndpi,ct_dir," detection_giveup"," app,master [%u,%u]->[%u,%u] c %u->%u\n",
-						p_old.app_protocol,p_old.master_protocol,
-						proto.app_protocol,proto.master_protocol,
+						p_old.proto.app_protocol,p_old.proto.master_protocol,
+						proto.proto.app_protocol,proto.proto.master_protocol,
 						confidence,flow->confidence);
-			    ct_ndpi->proto.app_protocol = proto.app_protocol;
-			    ct_ndpi->proto.master_protocol = proto.master_protocol;
+			    ct_ndpi->proto.app_protocol = proto.proto.app_protocol;
+			    ct_ndpi->proto.master_protocol = proto.proto.master_protocol;
 			    ct_ndpi->confidence = confidence = flow->confidence;
 			    c_proto->proto = pack_proto(proto);
 			}
@@ -1910,8 +1910,8 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 		    }
 		}
 	} else { // ct_ndpi->flow == NULL
-		proto.app_protocol = ct_ndpi->proto.app_protocol;
-		proto.master_protocol = ct_ndpi->proto.master_protocol;
+		proto.proto.app_protocol = ct_ndpi->proto.app_protocol;
+		proto.proto.master_protocol = ct_ndpi->proto.master_protocol;
 		risk = fix_unidir_trafic(ct_ndpi);
 		confidence = ct_ndpi->confidence;
 		c_proto->proto = pack_proto(proto);
@@ -1924,7 +1924,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
     } while(0);
 
     if(ct_ndpi) {
-	if(proto.app_protocol != NDPI_PROCESS_ERROR)
+	if(proto.proto.app_protocol != NDPI_PROCESS_ERROR)
 		ndpi_check_opt(n->ndpi_struct,info,ct_ndpi, &host_matched, &ja3s_matched,
 				&ja3c_matched, &ja4c_matched, &tlsfp_matched, &tlsv_matched);
 	spin_unlock_bh (&ct_ndpi->lock);
@@ -1935,18 +1935,18 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
     if(_DBG_TRACE_MATCH2 && !info->error && !info->untracked) {
 	    pr_info(" ndpi_match master %d, app %d, host %d, ja3s %d, ja3c %d, ja4c %d, tlsfp %d tlsv %d"
 	    	" excluded %d, master_map %d, app_map %d\n",
-		proto.master_protocol,proto.app_protocol,
+		proto.proto.master_protocol,proto.proto.app_protocol,
 		host_matched,ja3s_matched,ja3c_matched,ja3c_matched,tlsfp_matched,tlsv_matched,
 		check_excluded_proto(info,&excluded_proto,tls) != 0,
-		NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.master_protocol) != 0,
-		NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.app_protocol) != 0);
+		NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.master_protocol) != 0,
+		NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.app_protocol) != 0);
 	    pr_dc(" ndpi_match",detect_complete,&excluded_proto);
     }
 
     result = true;
     do {
 	if(info->error) {
-		result = proto.app_protocol == NDPI_PROCESS_ERROR;
+		result = proto.proto.app_protocol == NDPI_PROCESS_ERROR;
 		if(_DBG_TRACE_MATCH)
 		    pr_info(" ndpi_match error: %s\n",result ? "yes":"no");
 		break;
@@ -1996,36 +1996,36 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	    } else { // protocol
 		if(!info->empty) {
 		    if (info->m_proto && !info->p_proto)
-			result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.master_protocol) != 0;
+			result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.master_protocol) != 0;
 		      else
 			if (!info->m_proto && info->p_proto)
-			    result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.app_protocol) != 0;
+			    result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.app_protocol) != 0;
 			  else {
-			    if(proto.app_protocol != NDPI_PROTOCOL_UNKNOWN && proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
-				result &= (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.app_protocol) != 0 ||
-					   NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.master_protocol) != 0);
+			    if(proto.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN && proto.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
+				result &= (NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.app_protocol) != 0 ||
+					   NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.master_protocol) != 0);
 			      else
-				   if(proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
-					  result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.app_protocol) != 0;
+				   if(proto.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
+					  result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.app_protocol) != 0;
 					else
-					  result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.master_protocol) != 0;
+					  result &= NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.master_protocol) != 0;
 			}
 		    if(_DBG_TRACE_MATCH) {
-			    const char *t_master = ndpi_get_proto_by_id(n->ndpi_struct,proto.master_protocol);
-			    const char *t_app = ndpi_get_proto_by_id(n->ndpi_struct,proto.app_protocol);
+			    const char *t_master = ndpi_get_proto_by_id(n->ndpi_struct,proto.proto.master_protocol);
+			    const char *t_app = ndpi_get_proto_by_id(n->ndpi_struct,proto.proto.app_protocol);
 			    pr_info(" ndpi_match protocol: %s : master %s(%d) app %s(%d)\n",
 					result ? "yes":"no",
 					t_master ? t_master:"???",
-					NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.master_protocol) != 0,
+					NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.master_protocol) != 0,
 					t_app ? t_app : "???",
-					NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.app_protocol) != 0);
+					NDPI_COMPARE_PROTOCOL_TO_BITMASK(info->flags,proto.proto.app_protocol) != 0);
 		    }
 	       }
 	}
 	if(!result) break;
 
 	if (info->have_master) {
-		result &= proto.master_protocol != NDPI_PROTOCOL_UNKNOWN;
+		result &= proto.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN;
 		if(_DBG_TRACE_MATCH)
 		    pr_info(" ndpi_match have_master: %s\n",result ? "yes":"no");
 		if(!result) break;
@@ -2152,11 +2152,11 @@ static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mo
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';
-t_app = ndpi_get_proto_by_id(ndpi_str,p->app_protocol);
-t_mast= ndpi_get_proto_by_id(ndpi_str,p->master_protocol);
-if(p->app_protocol && t_app)
+t_app = ndpi_get_proto_by_id(ndpi_str,p->proto.app_protocol);
+t_mast= ndpi_get_proto_by_id(ndpi_str,p->proto.master_protocol);
+if(p->proto.app_protocol && t_app)
 	strncpy(buf,t_app,size);
-if(p->master_protocol && t_mast) {
+if(p->proto.master_protocol && t_mast) {
 	strncat(buf,",",size);
 	strncat(buf,t_mast,size);
 }
@@ -2189,8 +2189,8 @@ static unsigned int seq_print_ndpi(struct seq_file *s,
 static u_int32_t ndpi_proto_markmask(struct ndpi_net *n, u_int32_t var,
 		const ndpi_protocol *proto, int mode, const struct xt_ndpi_tginfo *info)
 {
-    if(mode && ( proto->master_protocol >= NDPI_NUM_BITS ||
-		 proto->app_protocol >= NDPI_NUM_BITS)) return var;
+    if(mode && ( proto->proto.master_protocol >= NDPI_NUM_BITS ||
+		 proto->proto.app_protocol >= NDPI_NUM_BITS)) return var;
 
     switch (mode) {
      case 0:
@@ -2198,42 +2198,42 @@ static u_int32_t ndpi_proto_markmask(struct ndpi_net *n, u_int32_t var,
 	var |=  info->mark;
 	break;
      case 1:
-	var &= ~n->mark[proto->master_protocol].mask;
-	var |=  n->mark[proto->master_protocol].mark;
+	var &= ~n->mark[proto->proto.master_protocol].mask;
+	var |=  n->mark[proto->proto.master_protocol].mark;
 	break;
      case 2:
-	var &= ~n->mark[proto->app_protocol].mask;
-	var |=  n->mark[proto->app_protocol].mark;
+	var &= ~n->mark[proto->proto.app_protocol].mask;
+	var |=  n->mark[proto->proto.app_protocol].mark;
 	break;
      case 3:
-	if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) {
-	    var &= ~n->mark[proto->app_protocol].mask;
-	    var |=  n->mark[proto->app_protocol].mark;
+	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) {
+	    var &= ~n->mark[proto->proto.app_protocol].mask;
+	    var |=  n->mark[proto->proto.app_protocol].mark;
 	} else
-	  if(proto->master_protocol != NDPI_PROTOCOL_UNKNOWN) {
-		var &= ~n->mark[proto->master_protocol].mask;
-		var |=  n->mark[proto->master_protocol].mark;
+	  if(proto->proto.master_protocol != NDPI_PROTOCOL_UNKNOWN) {
+		var &= ~n->mark[proto->proto.master_protocol].mask;
+		var |=  n->mark[proto->proto.master_protocol].mark;
 	  }
 	break;
      case 4:
-	if(proto->app_protocol != NDPI_PROTOCOL_UNKNOWN) {
-	    var &= ~n->mark[proto->app_protocol].mask;
-	    var |=  n->mark[proto->app_protocol].mark;
-	    if(proto->master_protocol != NDPI_PROTOCOL_UNKNOWN &&
-		proto->master_protocol != proto->app_protocol) {
+	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) {
+	    var &= ~n->mark[proto->proto.app_protocol].mask;
+	    var |=  n->mark[proto->proto.app_protocol].mark;
+	    if(proto->proto.master_protocol != NDPI_PROTOCOL_UNKNOWN &&
+		proto->proto.master_protocol != proto->proto.app_protocol) {
 		var <<= 16;
-		var |=  n->mark[proto->master_protocol].mark & n->mark[proto->master_protocol].mask;
+		var |=  n->mark[proto->proto.master_protocol].mark & n->mark[proto->proto.master_protocol].mask;
 	    }
 	} else
-	  if(proto->master_protocol != NDPI_PROTOCOL_UNKNOWN) {
-		var &= ~n->mark[proto->master_protocol].mask;
-		var |=  n->mark[proto->master_protocol].mark;
+	  if(proto->proto.master_protocol != NDPI_PROTOCOL_UNKNOWN) {
+		var &= ~n->mark[proto->proto.master_protocol].mask;
+		var |=  n->mark[proto->proto.master_protocol].mark;
 	  }
 	break;
     }
     if(_DBG_TRACE_TG3)
 	pr_info("target ret %08x mode %d m:%d a:%d \n",var,mode,
-			proto->master_protocol,proto->app_protocol);
+			proto->proto.master_protocol,proto->proto.app_protocol);
     return var;
 }
 
@@ -2309,11 +2309,11 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	if(c_proto->proto != NDPI_PROCESS_ERROR) {
 		uint32_t tmp_p = READ_ONCE(c_proto->proto);
 		/* see pack_proto() */
-		proto.master_protocol = tmp_p & 0xffff;
-		proto.app_protocol = (tmp_p >> 16) & 0xffff;
+		proto.proto.master_protocol = tmp_p & 0xffff;
+		proto.proto.app_protocol = (tmp_p >> 16) & 0xffff;
 		if(_DBG_TRACE_TG3)
 		    pr_info("target           skb %8p m:%d a:%d\n",
-				(void *)skb, proto.master_protocol,proto.app_protocol);
+				(void *)skb, proto.proto.master_protocol,proto.proto.app_protocol);
 	}
 
 	if(info->t_mark || info->t_clsf) {

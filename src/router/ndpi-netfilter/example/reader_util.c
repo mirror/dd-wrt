@@ -1019,8 +1019,8 @@ static struct ndpi_flow_info *get_ndpi_flow_info6(struct ndpi_workflow * workflo
 /* ****************************************************** */
 
 static u_int8_t is_ndpi_proto(struct ndpi_flow_info *flow, u_int16_t id) {
-  if((flow->detected_protocol.master_protocol == id)
-     || (flow->detected_protocol.app_protocol == id))
+  if((flow->detected_protocol.proto.master_protocol == id)
+     || (flow->detected_protocol.proto.app_protocol == id))
     return(1);
   else
     return(0);
@@ -1581,7 +1581,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
     if(payload_len && ((flow->src2dst_packets+flow->dst2src_packets) < MAX_NUM_BIN_PKTS)) {
 #if 0
       /* Discard packets until the protocol is detected */
-      if(flow->detected_protocol.app_protocol != NDPI_PROTOCOL_UNKNOWN)
+      if(flow->detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)
 #endif
 	ndpi_inc_bin(&flow->payload_len_bin, plen2slot(payload_len), 1);
     }
@@ -1638,9 +1638,9 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
       if((proto == IPPROTO_TCP)
 	 && (
 	     is_ndpi_proto(flow, NDPI_PROTOCOL_TLS)
-	     || (flow->detected_protocol.master_protocol == NDPI_PROTOCOL_TLS)
+	     || (flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_TLS)
 	     || is_ndpi_proto(flow, NDPI_PROTOCOL_SSH)
-	     || (flow->detected_protocol.master_protocol == NDPI_PROTOCOL_SSH))
+	     || (flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_SSH))
 	 ) {
 	if((flow->src2dst_packets+flow->dst2src_packets) < 10 /* MIN_NUM_ENCRYPT_SKIP_PACKETS */)
 	  skip = 1; /* Skip initial negotiation packets */
@@ -1657,9 +1657,9 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
       if((proto == IPPROTO_TCP)
 	 && (
 	     is_ndpi_proto(flow, NDPI_PROTOCOL_TLS)
-	     || (flow->detected_protocol.master_protocol == NDPI_PROTOCOL_TLS)
+	     || (flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_TLS)
 	     || is_ndpi_proto(flow, NDPI_PROTOCOL_SSH)
-	     || (flow->detected_protocol.master_protocol == NDPI_PROTOCOL_SSH))
+	     || (flow->detected_protocol.proto.master_protocol == NDPI_PROTOCOL_SSH))
 	 )
 	flow->has_human_readeable_strings = 0;
     }
@@ -1713,7 +1713,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 							    ipsize, time_ms, &input_info);
 
     enough_packets |= ndpi_flow->fail_with_unknown;
-    if(enough_packets || (flow->detected_protocol.app_protocol != NDPI_PROTOCOL_UNKNOWN)) {
+    if(enough_packets || (flow->detected_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN)) {
       if((!enough_packets)
 	 && ndpi_extra_dissection_possible(workflow->ndpi_struct, ndpi_flow))
 	; /* Wait for further metadata */
@@ -1721,7 +1721,7 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
 	/* New protocol detected or give up */
 	flow->detection_completed = 1;
 
-	if(flow->detected_protocol.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+	if(flow->detected_protocol.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
 	  u_int8_t proto_guessed;
 
 	  flow->detected_protocol = ndpi_detection_giveup(workflow->ndpi_struct, flow->ndpi_flow,
@@ -1736,11 +1736,11 @@ static struct ndpi_proto packet_processing(struct ndpi_workflow * workflow,
   }
   if(iph){
 	 char ip1[20],ip2[20];
-	 u_int32_t xnf_mark = flow->detected_protocol.app_protocol;
-	 if(flow->detected_protocol.master_protocol != NDPI_PROTOCOL_UNKNOWN &&
-	    flow->detected_protocol.master_protocol != xnf_mark) {
+	 u_int32_t xnf_mark = flow->detected_protocol.proto.app_protocol;
+	 if(flow->detected_protocol.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN &&
+	    flow->detected_protocol.proto.master_protocol != xnf_mark) {
 		xnf_mark <<= 16;
-		xnf_mark |= flow->detected_protocol.master_protocol;
+		xnf_mark |= flow->detected_protocol.proto.master_protocol;
 	 }
 	if(!nfmark_info) {
 		nfmark_info = getenv("NFMARK") ? 2:1;
