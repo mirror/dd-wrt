@@ -1663,6 +1663,11 @@ static inline int __bpf_try_make_writable(struct sk_buff *skb,
 	if (write_len > INT_MAX)
 		return -EINVAL;
 #endif
+	if (skb_is_gso(skb) &&
+	    (skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST) &&
+	     write_len > skb_headlen(skb)) {
+		return -ENOMEM;
+	}
 	return skb_ensure_writable(skb, write_len);
 }
 

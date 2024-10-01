@@ -4561,6 +4561,7 @@ struct sk_buff *skb_segment_list(struct sk_buff *skb,
 {
 	struct sk_buff *list_skb = skb_shinfo(skb)->frag_list;
 	unsigned int tnl_hlen = skb_tnl_header_len(skb);
+	unsigned int mss = skb_shinfo(skb)->gso_size;
 	unsigned int delta_truesize = 0;
 	unsigned int delta_len = 0;
 	struct sk_buff *tail = NULL;
@@ -4573,6 +4574,9 @@ struct sk_buff *skb_segment_list(struct sk_buff *skb,
 	err = skb_unclone(skb, GFP_ATOMIC);
 	if (err)
 		goto err_linearize;
+
+	if (mss != GSO_BY_FRAGS && mss != skb_headlen(skb))
+		return ERR_PTR(-EFAULT);
 
 	skb_shinfo(skb)->frag_list = NULL;
 
