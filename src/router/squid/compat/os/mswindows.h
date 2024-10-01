@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -615,32 +615,6 @@ getsockopt(int s, int l, int o, void * v, socklen_t * n)
         return 0;
 }
 #define getsockopt(s,l,o,v,n) Squid::getsockopt(s,l,o,v,n)
-
-#if HAVE_DECL_INETNTOPA || HAVE_DECL_INET_NTOP
-inline char *
-inet_ntop(int af, const void *src, char *dst, size_t size)
-{
-#if HAVE_DECL_INETNTOPA
-    return (char*)InetNtopA(af, const_cast<void*>(src), dst, size);
-#else // HAVE_DECL_INET_NTOP
-    return ::inet_ntop(af, src, dst, size);
-#endif
-}
-#define inet_ntop(a,s,d,l) Squid::inet_ntop(a,s,d,l)
-#endif // let compat/inet_ntop.h deal with it
-
-#if HAVE_DECL_INETPTONA || HAVE_DECL_INET_PTON
-inline char *
-inet_pton(int af, const void *src, char *dst)
-{
-#if HAVE_DECL_INETPTONA
-    return (char*)InetPtonA(af, const_cast<void*>(src), dst);
-#else // HAVE_DECL_INET_PTON
-    return ::inet_pton(af, src, dst);
-#endif
-}
-#define inet_pton(a,s,d) Squid::inet_pton(a,s,d)
-#endif // let compat/inet_pton.h deal with it
 
 /* Simple ioctl() emulation */
 inline int

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -53,11 +53,8 @@ ACL *
 Make(TypeName typeName)
 {
     const auto pos = TheMakers().find(typeName);
-    if (pos == TheMakers().end()) {
-        debugs(28, DBG_CRITICAL, "FATAL: Invalid ACL type '" << typeName << "'");
-        self_destruct();
-        assert(false); // not reached
-    }
+    if (pos == TheMakers().end())
+        throw TextException(ToSBuf("invalid ACL type '", typeName, "'"), Here());
 
     ACL *result = (pos->second)(pos->first);
     debugs(28, 4, typeName << '=' << result);

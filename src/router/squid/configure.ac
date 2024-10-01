@@ -1,11 +1,11 @@
-## Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2024 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[6.9],[https://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[6.11],[https://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -799,19 +799,21 @@ AC_ARG_ENABLE(delay-pools,
 dnl disable generic/common adaptation support by default
 squid_opt_use_adaptation=no
 
-squid_opt_use_esi=auto
-AH_TEMPLATE([USE_SQUID_ESI],[Define to enable the ESI processor])
-AC_ARG_ENABLE(esi,
-  AS_HELP_STRING([--disable-esi],
-                 [Disable ESI for accelerators. ESI requires expat or xml2 library.
+AH_TEMPLATE([USE_SQUID_ESI],[whether to enable ESI processing])
+AC_ARG_ENABLE(esi,[
+  AS_HELP_STRING([--enable-esi],
+                 [Enable ESI for accelerators. ESI requires expat or xml2 library.
                   Enabling ESI will cause squid reverse proxies to be capable
-                  of the Edge Acceleration Specification (www.esi.org).]),
-                 [squid_opt_use_esi=$enableval],[])
+                  of the Edge Acceleration Specification (www.esi.org).])
+],[
+  SQUID_DEFINE_BOOL(USE_SQUID_ESI,$enable_esi)
+])
+AC_MSG_NOTICE([Enable ESI processor: ${enable_esi:=no (auto)}])
 
 # ESI support libraries: expat
 AH_TEMPLATE(HAVE_LIBEXPAT,[Define to 1 if you have the expat library])
 SQUID_AUTO_LIB(expat,[ESI expat library],[LIBEXPAT])
-AS_IF([test "x$squid_opt_use_esi" != "xno" -a "x$with_expat" != "xno"],[
+AS_IF([test "x$enable_esi" = "xyes" -a "x$with_expat" != "xno"],[
   SQUID_STATE_SAVE(squid_expat_state)
   PKG_CHECK_MODULES([LIBEXPAT],[expat],[],[
     AC_CHECK_LIB([expat],[main],[LIBEXPAT_LIBS="-lexpat"])
@@ -820,7 +822,6 @@ AS_IF([test "x$squid_opt_use_esi" != "xno" -a "x$with_expat" != "xno"],[
   AC_CHECK_HEADERS(expat.h)
   SQUID_STATE_ROLLBACK(squid_expat_state)
   AS_IF([test "x$LIBEXPAT_LIBS" != "x"],[
-      squid_opt_use_esi=yes
       LIBEXPAT_LIBS="$LIBEXPAT_PATH $LIBEXPAT_LIBS"
       AC_DEFINE(HAVE_LIBEXPAT,1,[Define to 1 if you have the expat library])
     ],
@@ -834,7 +835,7 @@ AC_SUBST(LIBEXPAT_LIBS)
 # ESI support libraries: xml2
 AH_TEMPLATE(HAVE_LIBXML2,[Define to 1 if you have the xml2 library])
 SQUID_AUTO_LIB(xml2,[ESI xml2 library],[LIBXML2])
-AS_IF([test "x$squid_opt_use_esi" != "xno" -a "x$with_xml2" != "xno"],[
+AS_IF([test "x$enable_esi" = "xyes" -a "x$with_xml2" != "xno"],[
   SQUID_STATE_SAVE([squid_libxml2_save])
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0],[],[
     AC_CHECK_LIB([xml2],[main],[LIBXML2_LIBS="$LIBXML2_PATH -lxml2"])
@@ -844,7 +845,6 @@ AS_IF([test "x$squid_opt_use_esi" != "xno" -a "x$with_xml2" != "xno"],[
   SQUID_STATE_ROLLBACK([squid_libxml2_save])
 
   AS_IF([test "x$LIBXML2_LIBS" != "x"],[
-    squid_opt_use_esi=yes
     CPPFLAGS="$LIBXML2_CFLAGS $CPPFLAGS"
     LIBXML2_LIBS="$LIBXML2_PATH $LIBXML2_LIBS"
     AC_DEFINE(HAVE_LIBXML2,1,[Define to 1 if you have the xml2 library])
@@ -857,20 +857,10 @@ AS_IF([test "x$squid_opt_use_esi" != "xno" -a "x$with_xml2" != "xno"],[
 AM_CONDITIONAL(ENABLE_LIBXML2,[test "x$LIBXML2_LIBS" != "x"])
 AC_SUBST(LIBXML2_LIBS)
 
-AS_IF([test "x$squid_opt_use_esi" = "xyes"],[
-  AS_IF([test "x$LIBXML2_LIBS" = "x" -a "x$LIBEXPAT_LIBS" = "x"],[
-    AC_MSG_ERROR([ESI processor requires libxml2 or libexpat])
-  ])
-  AC_MSG_NOTICE([Enabling ESI processor: $LIBEXPAT_LIBS $LIBXML2_LIBS])
-  AC_DEFINE(USE_SQUID_ESI,1,[Compile the ESI processor])
-],[
-  AS_IF(test "x$squid_opt_use_esi" = "xno",[
-    AC_MSG_NOTICE([Disabling ESI processor.])
-  ],[
-    AC_MSG_NOTICE([Disabling ESI processor. libxml2 and libexpat not found.])
-  ])
+AS_IF([test "x$enable_esi" = "xyes" -a "x$LIBXML2_LIBS" = "x" -a "x$LIBEXPAT_LIBS" = "x"],[
+  AC_MSG_ERROR([ESI processor requires libxml2 or libexpat])
 ])
-AM_CONDITIONAL(ENABLE_ESI, test "x$squid_opt_use_esi" = "xyes")
+AM_CONDITIONAL(ENABLE_ESI,[test "x$enable_esi" = "xyes"])
 
 AC_ARG_ENABLE(icap-client,
   AS_HELP_STRING([--disable-icap-client],[Disable the ICAP client.]),[
@@ -2718,35 +2708,6 @@ AC_REPLACE_FUNCS(\
 	strtoll \
 	tempnam \
 )
-
-AC_CHECK_DECLS([getaddrinfo,getnameinfo,inet_ntop,inet_pton,InetNtopA,InetPtonA],,,[
-/*
- * BSD requires sys/types.h, sys/socket.h, netinet/in.h, netdb.h, arpa/inet.h
- * Linux requires sys/types.h, sys/socket.h, arpa/inet.h
- * Windows requires sys/socket.h, winsock2.h, ws2tcpip.h
- */
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#if HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#if HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#if HAVE_NETDB_H
-#include <netdb.h>
-#endif
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#if HAVE_WINSOCK2_H
-#include <winsock2.h>
-#endif
-#if HAVE_WS2TCPIP_H
-#include <ws2tcpip.h>
-#endif
-])
 
 # Magic which checks whether we are forcing a type of comm loop we
 # are actually going to (ab)use.

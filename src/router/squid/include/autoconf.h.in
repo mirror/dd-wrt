@@ -153,30 +153,6 @@
    you don't. */
 #undef HAVE_DECL_CYGWIN_CONV_PATH
 
-/* Define to 1 if you have the declaration of `getaddrinfo', and to 0 if you
-   don't. */
-#undef HAVE_DECL_GETADDRINFO
-
-/* Define to 1 if you have the declaration of `getnameinfo', and to 0 if you
-   don't. */
-#undef HAVE_DECL_GETNAMEINFO
-
-/* Define to 1 if you have the declaration of `InetNtopA', and to 0 if you
-   don't. */
-#undef HAVE_DECL_INETNTOPA
-
-/* Define to 1 if you have the declaration of `InetPtonA', and to 0 if you
-   don't. */
-#undef HAVE_DECL_INETPTONA
-
-/* Define to 1 if you have the declaration of `inet_ntop', and to 0 if you
-   don't. */
-#undef HAVE_DECL_INET_NTOP
-
-/* Define to 1 if you have the declaration of `inet_pton', and to 0 if you
-   don't. */
-#undef HAVE_DECL_INET_PTON
-
 /* Define to 1 if you have the declaration of `krb5_kt_free_entry', and to 0
    if you don't. */
 #undef HAVE_DECL_KRB5_KT_FREE_ENTRY
@@ -1525,7 +1501,7 @@
 /* Solaris Kerberos support is available */
 #undef USE_SOLARIS_KRB5
 
-/* Compile the ESI processor */
+/* whether to enable ESI processing */
 #undef USE_SQUID_ESI
 
 /* Define this to include code which lets you use ethernet addresses. This
