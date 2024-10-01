@@ -2152,11 +2152,11 @@ static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mo
 {
 const char *t_app,*t_mast;
 buf[0] = '\0';
-t_app = ndpi_get_proto_by_id(ndpi_str,p->proto.app_protocol);
-t_mast= ndpi_get_proto_by_id(ndpi_str,p->proto.master_protocol);
-if(p->proto.app_protocol && t_app)
+t_app = ndpi_get_proto_by_id(ndpi_str,p->app_protocol);
+t_mast= ndpi_get_proto_by_id(ndpi_str,p->master_protocol);
+if(p->app_protocol && t_app)
 	strncpy(buf,t_app,size);
-if(p->proto.master_protocol && t_mast) {
+if(p->master_protocol && t_mast) {
 	strncat(buf,",",size);
 	strncat(buf,t_mast,size);
 }
