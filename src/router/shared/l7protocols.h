@@ -69,6 +69,9 @@ l7filters filters_list[] = {
 #endif
 	{ "ares", PDPI_ONLY, 0, NULL },
 	{ "armagetron", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "atg", NDPI_ONLY, 0, NULL },
+#endif
 	{ "audiogalaxy", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "avast", NDPI_ONLY, 0, NULL },
@@ -99,6 +102,7 @@ l7filters filters_list[] = {
 	{ "bluesky", NDPI_ONLY, 0, NULL },
 	{ "c1222", NDPI_ONLY, 0, NULL },
 	{ "cachefly", NDPI_ONLY, 0, NULL },
+	{ "cactusvpn", NDPI_ONLY, 0, NULL },
 	{ "can", NDPI_ONLY, 0, NULL },
 	{ "capwap", NDPI_ONLY, 0, NULL },
 	{ "cassandra", NDPI_ONLY, 0, NULL },
@@ -122,6 +126,7 @@ l7filters filters_list[] = {
 	{ "clubbox", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "cnn", NDPI_ONLY, 0, NULL },
+	{ "cnp_ip", NDPI_ONLY, 0, NULL },
 	{ "coap", NDPI_ONLY, 0, NULL },
 	{ "cod_mobile", NDPI_ONLY, 0, NULL },
 #endif
@@ -408,6 +413,7 @@ l7filters filters_list[] = {
 #endif
 	{ "lpd", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "lustre", NDPI_ONLY, 0, NULL },
 	{ "malformed packet", NDPI_RISK, 17, "icmp,icmpv6,munin,tivoconnect,collectd,ipsec,tls,natpmp,fastcgi,dns,tftp,http" },
 	{ "malicious ja3 fingerp.", NDPI_RISK, 28, "tls" },
 	{ "malicious ssl cert/sha1 fingerp.", NDPI_RISK, 29, "tls" },
@@ -478,6 +484,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "noe", NDPI_ONLY, 0, NULL },
 	{ "nomachine", NDPI_ONLY, 0, NULL },
+	{ "nordvpn", NDPI_ONLY, 0, NULL },
 	{ "ntop", NDPI_ONLY, 0, NULL },
 #endif
 	{ "ntp", DPI, 0, NULL },
@@ -684,6 +691,7 @@ l7filters filters_list[] = {
 	{ "subspace", L7_ONLY, 0, NULL },
 	{ "subversion", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "surfshark", NDPI_ONLY, 0, NULL },
 	{ "susp entropy", NDPI_RISK, 35, "icmp" },
 	{ "syncthing", NDPI_ONLY, 0, NULL },
 	{ "syslog", NDPI_ONLY, 0, NULL },
@@ -750,6 +758,7 @@ l7filters filters_list[] = {
 	{ "tor", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "tplink_shp", NDPI_ONLY, 0, NULL },
+	{ "trdp", NDPI_ONLY, 0, NULL },
 	{ "truphone", NDPI_ONLY, 0, NULL },
 #endif
 	{ "tsp", L7_ONLY, 0, NULL },
@@ -831,6 +840,7 @@ l7filters filters_list[] = {
 	{ "windows-telemetry", FILTER_CUSTOM,0,NULL },
 #ifdef HAVE_OPENDPI
 	{ "windowsupdate", NDPI_ONLY, 0, NULL },
+	{ "windscribe", NDPI_ONLY, 0, NULL },
 #endif
 	{ "winmx", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
