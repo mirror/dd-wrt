@@ -8,13 +8,13 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config MKDOSFS
-//config:	bool "mkdosfs (7.2 kb)"
+//config:	bool "mkdosfs (7.6 kb)"
 //config:	default y
 //config:	help
 //config:	Utility to create FAT32 filesystems.
 //config:
 //config:config MKFS_VFAT
-//config:	bool "mkfs.vfat (7.2 kb)"
+//config:	bool "mkfs.vfat (7.6 kb)"
 //config:	default y
 //config:	help
 //config:	Alias to "mkdosfs".
@@ -267,8 +267,9 @@ int mkfs_vfat_main(int argc UNUSED_PARAM, char **argv)
 
 	// cache device name
 	device_name = argv[0];
-	// default volume ID = creation time
-	volume_id = time(NULL);
+	// default volume ID: somewhat random (not crypto-strong)
+	// (mix in pid to avoid same IDs when run in rapid succession)
+	volume_id = time(NULL) ^ getpid();
 	// truncate to exactly 11 chars, pad with spaces
 	sprintf(volume_label11, "%-11.11s", arg_volume_label);
 

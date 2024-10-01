@@ -19,7 +19,7 @@
 //config:	trying to be portable, it's better to use "ip CMD" forms.
 //config:
 //config:config IPADDR
-//config:	bool "ipaddr (14 kb)"
+//config:	bool "ipaddr (15 kb)"
 //config:	default y
 //config:	select FEATURE_IP_ADDRESS
 //config:	help
@@ -48,7 +48,7 @@
 //config:	Short form of "ip route"
 //config:
 //config:config IPTUNNEL
-//config:	bool "iptunnel (9.6 kb)"
+//config:	bool "iptunnel (9.8 kb)"
 //config:	default y
 //config:	select FEATURE_IP_TUNNEL
 //config:	help
@@ -62,7 +62,7 @@
 //config:	Short form of "ip rule"
 //config:
 //config:config IPNEIGH
-//config:	bool "ipneigh (8.3 kb)"
+//config:	bool "ipneigh (8.6 kb)"
 //config:	default y
 //config:	select FEATURE_IP_NEIGH
 //config:	help
@@ -81,6 +81,12 @@
 //config:	depends on IP || IPLINK
 //config:	help
 //config:	Configure network devices with "ip".
+//config:
+//config:config FEATURE_IP_LINK_CAN
+//config:	bool "ip link set type can"
+//config:	default y
+//config:	help
+//config:	Configure CAN devices with "ip".
 //config:
 //config:config FEATURE_IP_ROUTE
 //config:	bool "ip route"
@@ -160,16 +166,61 @@
 //usage:#define iplink_trivial_usage
 //usage:       /*Usage:iplink*/"set IFACE [up|down] [arp on|off] [multicast on|off]\n"
 //usage:       "	[promisc on|off] [mtu NUM] [name NAME] [qlen NUM] [address MAC]\n"
-//usage:       "	[master IFACE | nomaster] [netns PID]"
+//usage:       "	[master IFACE | nomaster] [netns PID]"IF_FEATURE_IP_LINK_CAN(" [type TYPE ARGS]")
 // * short help shows only "set" command, long help continues (with just one "\n")
 // * and shows all other commands:
 //usage:#define iplink_full_usage "\n"
 //usage:       "iplink add [link IFACE] IFACE [address MAC] type TYPE [ARGS]\n"
 //usage:       "iplink delete IFACE type TYPE [ARGS]\n"
-//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS\n"
+//usage:       "	TYPE ARGS := vlan VLANARGS | vrf table NUM | vxlan VXLANARGS"IF_FEATURE_IP_LINK_CAN(" | can CANARGS")"\n"
 //usage:       "	VLANARGS := id VLANID [protocol 802.1q|802.1ad] [reorder_hdr on|off]\n"
 //usage:       "		[gvrp on|off] [mvrp on|off] [loose_binding on|off]\n"
+//usage:       IF_FEATURE_IP_LINK_CAN(
+//usage:       "	CANARGS := [bitrate BITRATE [sample-point SAMPLE-POINT]] |\n"
+//usage:       "		[tq TQ prop-seg PROP_SEG phase-seg1 PHASE-SEG1\n"
+//usage:       "		phase-seg2 PHASE-SEG2 [sjw SJW]]\n"
+//usage:       "		[dbitrate BITRATE [dsample-point SAMPLE-POINT]] |\n"
+//usage:       "		[dtq TQ dprop-seg PROP_SEG dphase-seg1 PHASE-SEG1\n"
+//usage:       "		dphase-seg2 PHASE-SEG2 [dsjw SJW]]\n"
+//usage:       "		[loopback on|off] [listen-only on|off] [triple-sampling on|off]\n"
+//usage:       "		[one-shot on|off] [berr-reporting on|off]\n"
+//usage:       "		[fd on|off] [fd-non-iso on|off] [presume-ack on|off]\n"
+//usage:       "		[restart-ms TIME-MS] [restart]\n"
+//usage:       "		[termination 0..65535]\n"
+//usage:       )
 //usage:       "iplink show [IFACE]"
+//upstream man ip-link-can:
+//Usage: ip link set DEVICE type can
+//	[ bitrate BITRATE [ sample-point SAMPLE-POINT] ] |
+//	[ tq TQ prop-seg PROP_SEG phase-seg1 PHASE-SEG1
+//	  phase-seg2 PHASE-SEG2 [ sjw SJW ] ]
+//
+//	[ dbitrate BITRATE [ dsample-point SAMPLE-POINT] ] |
+//	[ dtq TQ dprop-seg PROP_SEG dphase-seg1 PHASE-SEG1
+//	  dphase-seg2 PHASE-SEG2 [ dsjw SJW ] ]
+//
+//	[ loopback { on | off } ]
+//	[ listen-only { on | off } ]
+//	[ triple-sampling { on | off } ]
+//	[ one-shot { on | off } ]
+//	[ berr-reporting { on | off } ]
+//	[ fd { on | off } ]
+//	[ fd-non-iso { on | off } ]
+//	[ presume-ack { on | off } ]
+//
+//	[ restart-ms TIME-MS ]
+//	[ restart ]
+//
+//	[ termination { 0..65535 } ]
+//
+//	Where: BITRATE	:= { 1..1000000 }
+//		  SAMPLE-POINT	:= { 0.000..0.999 }
+//		  TQ		:= { NUMBER }
+//		  PROP-SEG	:= { 1..8 }
+//		  PHASE-SEG1	:= { 1..8 }
+//		  PHASE-SEG2	:= { 1..8 }
+//		  SJW		:= { 1..4 }
+//		  RESTART-MS	:= { 0 | NUMBER }
 //upstream man ip-link:
 //=====================
 //ip link add [link DEV] [ name ] NAME

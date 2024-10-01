@@ -10,7 +10,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config TUNCTL
-//config:	bool "tunctl (6.2 kb)"
+//config:	bool "tunctl (6.4 kb)"
 //config:	default y
 //config:	help
 //config:	tunctl creates or deletes tun devices.
@@ -124,8 +124,7 @@ int tunctl_main(int argc UNUSED_PARAM, char **argv)
 	if (opts & OPT_b) {
 		puts(ifr.ifr_name);
 	} else {
-		printf("Set '%s' %spersistent", ifr.ifr_name, "");
-		printf(" and owned by uid %ld", user);
+		printf("Set '%s' persistent and owned by uid %ld", ifr.ifr_name, user);
 		if (group != -1)
 			printf(" gid %ld", group);
 		bb_putchar('\n');

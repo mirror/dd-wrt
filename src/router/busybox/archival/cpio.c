@@ -62,7 +62,7 @@
 //usage:       " [-ti"IF_FEATURE_CPIO_O("o")"]" IF_FEATURE_CPIO_P(" [-p DIR]")
 //usage:       " [EXTR_FILE]..."
 //usage:#define cpio_full_usage "\n\n"
-//usage:       "Extract (-i) or list (-t) files from a cpio archive"
+//usage:       "Extract (-i) or list (-t) files from a cpio archive on stdin"
 //usage:	IF_FEATURE_CPIO_O(", or"
 //usage:     "\ntake file list from stdin and create an archive (-o)"
 //usage:                IF_FEATURE_CPIO_P(" or copy files (-p)")
@@ -504,7 +504,6 @@ int cpio_main(int argc UNUSED_PARAM, char **argv)
 			goto dump;
 		}
 		/* parent */
-		USE_FOR_NOMMU(argv[-optind][0] &= 0x7f); /* undo fork_or_rexec() damage */
 		xchdir(*argv++);
 		close(pp.wr);
 		xmove_fd(pp.rd, STDIN_FILENO);

@@ -18,7 +18,7 @@
 //	An "ex" line oriented mode- maybe using "cmdedit"
 
 //config:config VI
-//config:	bool "vi (23 kb)"
+//config:	bool "vi (26 kb)"
 //config:	default y
 //config:	help
 //config:	'vi' is a text editor. More specifically, it is the One True
@@ -2315,9 +2315,10 @@ static int init_text_buffer(char *fn)
 
 	update_filename(fn);
 	rc = file_insert(fn, text, 1);
-	if (rc < 0) {
-		// file doesnt exist. Start empty buf with dummy line
-		char_insert(text, '\n', NO_UNDO);
+	if (rc <= 0 || *(end - 1) != '\n') {
+		// file doesn't exist or doesn't end in a newline.
+		// insert a newline to the end
+		char_insert(end, '\n', NO_UNDO);
 	}
 
 	flush_undo_data();

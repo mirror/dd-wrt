@@ -164,18 +164,6 @@ static int sprint_nip(char *dest, const char *pre, const uint8_t *ip)
 	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
 }
 
-/* really simple implementation, just count the bits */
-static int mton(uint32_t mask)
-{
-	int i = 0;
-	mask = ntohl(mask); /* 111110000-like bit pattern */
-	while (mask) {
-		i++;
-		mask <<= 1;
-	}
-	return i;
-}
-
 #if ENABLE_FEATURE_UDHCPC_SANITIZEOPT
 /* Check if a given name represents a valid DNS name */
 /* See RFC1035, 2.3.1 */
@@ -522,7 +510,8 @@ static void fill_envp(struct dhcp_packet *packet)
 				/* Generate extra envvar for DHCP_SUBNET, $mask */
 				uint32_t subnet;
 				move_from_unaligned32(subnet, opt_item->data);
-				putenvp(xasprintf("mask=%u", mton(subnet)));
+//FIXME: we do not check that subnet has bit pattern 11..10..0
+				putenvp(xasprintf("mask=%u", bb_popcnt_32(subnet)));
 			}
 		} else {
 			unsigned ofs;
@@ -975,12 +964,12 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	check = packet.udp.check;
 	packet.udp.check = 0;
 	if (check && check != inet_cksum(&packet, bytes)) {
-		log1s("packet with bad UDP checksum received, ignoring");
+		log1s("packet with bad UDP checksum, ignoring");
 		return -2;
 	}
  skip_udp_sum_check:
 
-	if (packet.data.cookie != htonl(DHCP_MAGIC)) {
+	if (packet.data.cookie != htonl(RFC1048_MAGIC)) {
 		bb_simple_info_msg("packet with bad magic, ignoring");
 		return -2;
 	}
@@ -989,6 +978,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	udhcp_dump_packet(&packet.data);
 
 	bytes -= sizeof(packet.ip) + sizeof(packet.udp);
+	memset(dhcp_pkt, 0, sizeof(*dhcp_pkt));
 	memcpy(dhcp_pkt, &packet.data, bytes);
 	return bytes;
 }

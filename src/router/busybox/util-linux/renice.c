@@ -18,7 +18,7 @@
  *   following IDs (if any).  Multiple switches are allowed.
  */
 //config:config RENICE
-//config:	bool "renice (4.2 kb)"
+//config:	bool "renice (4.4 kb)"
 //config:	default y
 //config:	help
 //config:	Renice alters the scheduling priority of one or more running
@@ -45,7 +45,7 @@ int renice_main(int argc UNUSED_PARAM, char **argv)
 {
 	static const char Xetpriority_msg[] ALIGN1 = "%cetpriority";
 
-	int retval = EXIT_SUCCESS;
+	exitcode_t retval = EXIT_SUCCESS;
 	int which = PRIO_PROCESS;  /* Default 'which' value. */
 	int use_relative = 0;
 	int adjustment, new_priority;

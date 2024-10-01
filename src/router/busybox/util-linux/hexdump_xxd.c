@@ -7,7 +7,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config XXD
-//config:	bool "xxd (8.9 kb)"
+//config:	bool "xxd (11 kb)"
 //config:	default y
 //config:	help
 //config:	The xxd utility is used to display binary data in a readable
@@ -285,7 +285,7 @@ int xxd_main(int argc UNUSED_PARAM, char **argv)
 			// output is "  0xXX, 0xXX, 0xXX...", add leading space
 			bb_dump_add(dumper, "\" \"");
 		} else
-			bb_dump_add(dumper, "\"%08.8_ax: \""); // "address: "
+			bb_dump_add(dumper, "\"%08_ax: \""); // "address: "
 	}
 
 	if (bytes < 1 || bytes >= cols) {

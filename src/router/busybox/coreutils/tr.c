@@ -19,7 +19,7 @@
  * TODO: graph, print
  */
 //config:config TR
-//config:	bool "tr (5.1 kb)"
+//config:	bool "tr (5.3 kb)"
 //config:	default y
 //config:	help
 //config:	tr is used to squeeze, and/or delete characters from standard
@@ -299,7 +299,7 @@ int tr_main(int argc UNUSED_PARAM, char **argv)
 	 */
 
 	/* '+': stop at first non-option */
-	opts = getopt32(argv, "^+" "Ccds" "\0" "-1");
+	opts = getopt32(argv, "^+" "Ccds" "\0" "-1:?2");
 	argv += optind;
 
 	str1_length = expand(*argv++, &str1);

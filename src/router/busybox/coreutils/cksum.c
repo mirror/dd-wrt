@@ -7,11 +7,11 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config CKSUM
-//config:	bool "cksum (4.1 kb)"
+//config:	bool "cksum (4.3 kb)"
 //config:	default y
 //config:
 //config:config CRC32
-//config:	bool "crc32 (4.1 kb)"
+//config:	bool "crc32 (4.2 kb)"
 //config:	default y
 
 //                APPLET_NOEXEC:name   main   location        suid_type     help
@@ -39,7 +39,7 @@ int cksum_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int cksum_main(int argc UNUSED_PARAM, char **argv)
 {
 	uint32_t *crc32_table = crc32_filltable(NULL, IS_CKSUM);
-	int exit_code = EXIT_SUCCESS;
+	exitcode_t exit_code = EXIT_SUCCESS;
 
 #if ENABLE_DESKTOP
 	getopt32(argv, ""); /* cksum coreutils 6.9 compat */

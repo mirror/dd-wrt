@@ -10,6 +10,7 @@ lib-y:=
 
 INSERT
 
+lib-y += alloc_affinity.o
 lib-y += appletlib.o
 lib-y += ask_confirmation.o
 lib-y += bb_askpass.o
@@ -56,11 +57,11 @@ lib-y += login.o
 lib-y += make_directory.o
 lib-y += makedev.o
 lib-y += hash_md5_sha.o
-lib-y += hash_md5_sha_x86-64.o
-lib-y += hash_md5_sha_x86-64_shaNI.o
-lib-y += hash_md5_sha_x86-32_shaNI.o
-lib-y += hash_md5_sha256_x86-64_shaNI.o
-lib-y += hash_md5_sha256_x86-32_shaNI.o
+lib-y += hash_sha1_x86-64.o
+lib-y += hash_sha1_hwaccel_x86-64.o
+lib-y += hash_sha1_hwaccel_x86-32.o
+lib-y += hash_sha256_hwaccel_x86-64.o
+lib-y += hash_sha256_hwaccel_x86-32.o
 # Alternative (disabled) MD5 implementation
 #lib-y += hash_md5prime.o
 lib-y += messages.o
@@ -71,6 +72,7 @@ lib-y += perror_nomsg.o
 lib-y += perror_nomsg_and_die.o
 lib-y += pidfile.o
 lib-y += platform.o
+lib-y += popcnt.o
 lib-y += printable.o
 lib-y += printable_string.o
 lib-y += print_flags.o

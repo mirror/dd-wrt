@@ -7,7 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config DD
-//config:	bool "dd (7.5 kb)"
+//config:	bool "dd (8.3 kb)"
 //config:	default y
 //config:	help
 //config:	dd copies a file (from standard input to standard output,
@@ -375,7 +375,7 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 		OP_oflag_direct,
 #endif
 	};
-	smallint exitcode = EXIT_FAILURE;
+	exitcode_t exitcode = EXIT_FAILURE;
 	int i;
 	size_t ibs = 512;
 	char *ibuf;
