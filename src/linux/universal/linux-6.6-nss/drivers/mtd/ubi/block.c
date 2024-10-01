@@ -431,7 +431,7 @@ int ubiblock_create(struct ubi_volume_info *vi)
 		 dev->ubi_num, dev->vol_id, vi->name);
 	mutex_unlock(&devices_mutex);
 
-	if (!strcmp(vi->name, "rootfs") &&
+	if ((!strcmp(vi->name, "rootfs") || !strcmp(vi->name, "ubi_rootfs")) &&
 	    IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
 	    ROOT_DEV == 0) {
 		pr_notice("ubiblock: device ubiblock%d_%d (%s) set to be root filesystem\n",
@@ -636,7 +636,7 @@ static void __init ubiblock_create_auto_rootfs(struct ubi_volume_info *vi)
 	int ret, is_ubifs;
 	struct ubi_volume_desc *desc;
 
-	if (strcmp(vi->name, "rootfs") &&
+	if (strcmp(vi->name, "rootfs") && strcmp(vi->name, "ubi_rootfs") &&
 	    strcmp(vi->name, "fit"))
 		return;
 
