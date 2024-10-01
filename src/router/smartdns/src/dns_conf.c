@@ -92,7 +92,7 @@ struct dns_servers dns_conf_servers[DNS_MAX_SERVERS];
 char dns_conf_server_name[DNS_MAX_SERVER_NAME_LEN];
 int dns_conf_server_num;
 static int dns_conf_resolv_hostname = 1;
-static char dns_conf_exist_bootstrap_dns;
+char dns_conf_exist_bootstrap_dns;
 
 int dns_conf_has_icmp_check;
 int dns_conf_has_tcp_check;
@@ -911,6 +911,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	unsigned int server_flag = 0;
 	unsigned char *spki = NULL;
 	int drop_packet_latency_ms = 0;
+	int tcp_keepalive = -1;
 	int is_bootstrap_dns = 0;
 	char host_ip[DNS_MAX_IPLEN] = {0};
 	int no_tls_host_name = 0;
@@ -947,6 +948,8 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		{"http-host", required_argument, NULL, 261}, /* http host */
 		{"tls-host-verify", required_argument, NULL, 262 }, /* verify tls hostname */
 #endif
+		{"tcp-keepalive", required_argument, NULL, 263}, /* tcp keepalive */
+		{"subnet-all-query-types", no_argument, NULL, 264}, /* send subnent for all query types.*/
 		{NULL, no_argument, NULL, 0}
 	};
 	/* clang-format on */
@@ -970,6 +973,8 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 	server->proxyname[0] = '\0';
 	server->set_mark = -1;
 	server->drop_packet_latency_ms = drop_packet_latency_ms;
+	server->tcp_keepalive = tcp_keepalive;
+	server->subnet_all_query_types = 0;
 
 	if (parse_uri(ip, scheme, server->server, &port, server->path) != 0) {
 		return -1;
@@ -3197,6 +3202,14 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 			server_flag |= BIND_FLAG_NO_DUALSTACK_SELECTION;
 			server_flag |= BIND_FLAG_NO_PREFETCH;
 			server_flag |= BIND_FLAG_NO_SERVE_EXPIRED;
+			break;
+		}
+		case 263: {
+			server->tcp_keepalive = atoi(optarg);
+			break;
+		}
+		case 264: {
+			server->subnet_all_query_types = 1;
 			break;
 		}
 		default:
