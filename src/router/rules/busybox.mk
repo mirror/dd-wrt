@@ -694,6 +694,9 @@ endif
 	echo "# CONFIG_SEEDRNG is not set" >> busybox/.config
 	echo "# CONFIG_TREE is not set" >> busybox/.config
 	echo "CONFIG_ASH_SLEEP=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_EXEC_OK is not set" >> busybox/.config
+	echo "# CONFIG_GETFATTR is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_IP_LINK_CAN is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
