@@ -424,6 +424,66 @@ endif
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
 	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/fortinet_fap231f-webflash.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
 
+#buffalo wxr
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+
+	tools/qcom/mkits.sh  -D buffalo-wxr-5950ax12 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-5950ax12.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	# need to find out how md5sum is generated here"
+	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
+	tools/qcom/ubinize-image.sh.buf --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs --part fw_hash=/tmp/dummyhash.txt $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-5950ax12-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-5950ax12.ubi
+
+
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+
+	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12s -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12s.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	# need to find out how md5sum is generated here"
+	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
+	tools/qcom/ubinize-image.sh.buf --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs --part fw_hash=/tmp/dummyhash.txt $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12s-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12s.ubi
+
+
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+
+	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12b -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12b.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	# need to find out how md5sum is generated here"
+	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
+	tools/qcom/ubinize-image.sh.buf --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs --part fw_hash=/tmp/dummyhash.txt $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12b-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12b.ubi
+
+
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
+	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
+	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
+	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
+
+	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12p -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12p.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
+	# need to find out how md5sum is generated here"
+	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
+	tools/qcom/ubinize-image.sh.buf --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs --part fw_hash=/tmp/dummyhash.txt $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
+	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi
+	-./tools/trx_n -m 184000000 -o $(ARCH)-uclibc/buffalo-wxr-6000ax12p-webflash.bin $(TOP)/$(ARCH)-uclibc/buffalo-wxr-6000ax12p.ubi
+
 
 include rules/all.mk
 
