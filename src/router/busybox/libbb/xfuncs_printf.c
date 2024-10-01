@@ -278,7 +278,7 @@ off_t FAST_FUNC xlseek(int fd, off_t offset, int whence)
 {
 	off_t off = lseek(fd, offset, whence);
 	if (off == (off_t)-1) {
-		bb_perror_msg_and_die("lseek(%"OFF_FMT"u, %d)", offset, whence);
+		bb_perror_msg_and_die("lseek(%llu, %d)", offset, whence);
 	}
 	return off;
 }
