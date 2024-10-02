@@ -731,6 +731,7 @@ void *getUEnv(char *name)
 	case ROUTER_LINKSYS_MR7350:
 		fp = fopen("/dev/mtdblock/11", "rb");
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
 	case ROUTER_DYNALINK_DLWRX36:
 		fp = fopen("/dev/mtdblock/14", "rb");
 		break;
