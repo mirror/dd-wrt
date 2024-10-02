@@ -1377,7 +1377,10 @@ static void load_ath11k(int profile, int pci, int nss)
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
-		eval_silence("insmod", driver_ath11k, overdrive);
+		if (nvram_match("ath11k_frame_mode", "1")
+			eval_silence("insmod", driver_ath11k, "frame_mode=1", overdrive);
+		else
+			eval_silence("insmod", driver_ath11k, overdrive);
 	} else {
 		eval_silence("insmod", "mac80211", "nss_redirect=0");
 		eval_silence(
