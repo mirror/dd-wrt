@@ -398,6 +398,7 @@ obj-$(CONFIG_AOSS2) += aoss2 json-c libubox ubus
 obj-$(CONFIG_AP_SERV) += ap-serv
 obj-$(CONFIG_TOLAPAI) += tolapai
 obj-$(CONFIG_BUFFALO) += buffalo_flash
+obj-$(CONFIG_BUFFALO_FLASH) += buffalo_flash
 #obj-$(CONFIG_RELAYD) += relayd
 obj-$(CONFIG_ATH9K) += ath9k 
 obj-$(CONFIG_ATH9K) += iw 
