@@ -1120,6 +1120,14 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			break;
 		}
 #endif
+		case 263: {
+			server->tcp_keepalive = atoi(optarg);
+			break;
+		}
+		case 264: {
+			server->subnet_all_query_types = 1;
+			break;
+		}
 		default:
 			if (optind > optind_last) {
 				tlog(TLOG_WARN, "unknown server option: %s at '%s:%d'.", argv[optind - 1], conf_get_conf_file(),
@@ -3202,14 +3210,6 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 			server_flag |= BIND_FLAG_NO_DUALSTACK_SELECTION;
 			server_flag |= BIND_FLAG_NO_PREFETCH;
 			server_flag |= BIND_FLAG_NO_SERVE_EXPIRED;
-			break;
-		}
-		case 263: {
-			server->tcp_keepalive = atoi(optarg);
-			break;
-		}
-		case 264: {
-			server->subnet_all_query_types = 1;
 			break;
 		}
 		default:
