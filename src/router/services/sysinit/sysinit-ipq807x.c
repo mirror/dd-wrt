@@ -1381,7 +1381,7 @@ static void load_ath11k(int profile, int pci, int nss)
 	} else {
 		eval_silence("insmod", "mac80211", "nss_redirect=0");
 		eval_silence(
-			"insmod", driver_ath11k, "nss_offload=0", "frame_mode=1",
+			"insmod", driver_ath11k, "nss_offload=0",
 			overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
