@@ -1415,7 +1415,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(ifname, "%s", maininterface);
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
-		isrepeater = 1;
+		if (!nvram_nmatch("mesh","%s_mode", maininterface))
+			isrepeater = 1;
 	}
 #ifdef HAVE_WZRHPAG300NH
 	if (aoss) {
