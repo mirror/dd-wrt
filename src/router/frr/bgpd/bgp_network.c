@@ -817,9 +817,9 @@ int bgp_connect(struct peer_connection *connection)
 #ifdef IPTOS_PREC_INTERNETCONTROL
 	frr_with_privs(&bgpd_privs) {
 		if (sockunion_family(&connection->su) == AF_INET)
-			setsockopt_ipv4_tos(connection->fd, bm->tcp_dscp);
+			setsockopt_ipv4_tos(connection->fd, bm->ip_tos);
 		else if (sockunion_family(&connection->su) == AF_INET6)
-			setsockopt_ipv6_tclass(connection->fd, bm->tcp_dscp);
+			setsockopt_ipv6_tclass(connection->fd, bm->ip_tos);
 	}
 #endif
 
@@ -875,11 +875,7 @@ int bgp_getsockname(struct peer *peer)
 	}
 
 	peer->su_local = sockunion_getsockname(peer->connection->fd);
-	if (!peer->su_local)
-		return -1;
 	peer->su_remote = sockunion_getpeername(peer->connection->fd);
-	if (!peer->su_remote)
-		return -1;
 
 	if (!bgp_zebra_nexthop_set(peer->su_local, peer->su_remote,
 				   &peer->nexthop, peer)) {
@@ -909,9 +905,9 @@ static int bgp_listener(int sock, struct sockaddr *sa, socklen_t salen,
 
 #ifdef IPTOS_PREC_INTERNETCONTROL
 		if (sa->sa_family == AF_INET)
-			setsockopt_ipv4_tos(sock, bm->tcp_dscp);
+			setsockopt_ipv4_tos(sock, bm->ip_tos);
 		else if (sa->sa_family == AF_INET6)
-			setsockopt_ipv6_tclass(sock, bm->tcp_dscp);
+			setsockopt_ipv6_tclass(sock, bm->ip_tos);
 #endif
 
 		sockopt_v6only(sa->sa_family, sock);

@@ -30,6 +30,7 @@
 #include "lib/network.h"
 #include "lib/ns.h"
 #include "lib/frr_pthread.h"
+#include "lib/termtable.h"
 #include "zebra/debug.h"
 #include "zebra/interface.h"
 #include "zebra/zebra_dplane.h"
@@ -43,6 +44,8 @@
 #include "zebra/rt_netlink.h"
 #include "zebra/debug.h"
 #include "fpm/fpm.h"
+
+#include "zebra/dplane_fpm_nl_clippy.c"
 
 #define SOUTHBOUND_DEFAULT_ADDR INADDR_LOOPBACK
 
@@ -322,6 +325,74 @@ DEFUN(fpm_reset_counters, fpm_reset_counters_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFPY(fpm_show_status,
+      fpm_show_status_cmd,
+      "show fpm status [json]$json",
+      SHOW_STR FPM_STR "FPM status\n" JSON_STR)
+{
+	struct json_object *j;
+	bool connected;
+	uint16_t port;
+	struct sockaddr_in *sin;
+	struct sockaddr_in6 *sin6;
+	char buf[BUFSIZ];
+
+	connected = gfnc->socket > 0 ? true : false;
+
+	switch (gfnc->addr.ss_family) {
+	case AF_INET:
+		sin = (struct sockaddr_in *)&gfnc->addr;
+		snprintfrr(buf, sizeof(buf), "%pI4", &sin->sin_addr);
+		port = ntohs(sin->sin_port);
+		break;
+	case AF_INET6:
+		sin6 = (struct sockaddr_in6 *)&gfnc->addr;
+		snprintfrr(buf, sizeof(buf), "%pI6", &sin6->sin6_addr);
+		port = ntohs(sin6->sin6_port);
+		break;
+	default:
+		strlcpy(buf, "Unknown", sizeof(buf));
+		port = FPM_DEFAULT_PORT;
+		break;
+	}
+
+	if (json) {
+		j = json_object_new_object();
+
+		json_object_boolean_add(j, "connected", connected);
+		json_object_boolean_add(j, "useNHG", gfnc->use_nhg);
+		json_object_boolean_add(j, "useRouteReplace",
+					gfnc->use_route_replace);
+		json_object_boolean_add(j, "disabled", gfnc->disabled);
+		json_object_string_add(j, "address", buf);
+		json_object_int_add(j, "port", port);
+
+		vty_json(vty, j);
+	} else {
+		struct ttable *table = ttable_new(&ttable_styles[TTSTYLE_BLANK]);
+		char *out;
+
+		ttable_rowseps(table, 0, BOTTOM, true, '-');
+		ttable_add_row(table, "Address to connect to|%s", buf);
+		ttable_add_row(table, "Port|%u", port);
+		ttable_add_row(table, "Connected|%s", connected ? "Yes" : "No");
+		ttable_add_row(table, "Use Nexthop Groups|%s",
+			       gfnc->use_nhg ? "Yes" : "No");
+		ttable_add_row(table, "Use Route Replace Semantics|%s",
+			       gfnc->use_route_replace ? "Yes" : "No");
+		ttable_add_row(table, "Disabled|%s",
+			       gfnc->disabled ? "Yes" : "No");
+
+		out = ttable_dump(table, "\n");
+		vty_out(vty, "%s\n", out);
+		XFREE(MTYPE_TMP, out);
+
+		ttable_del(table);
+	}
+
+	return CMD_SUCCESS;
+}
+
 DEFUN(fpm_show_counters, fpm_show_counters_cmd,
       "show fpm counters",
       SHOW_STR
@@ -583,14 +654,6 @@ static void fpm_read(struct event *t)
 		hdr_available_bytes = fpm.msg_len - FPM_MSG_HDR_LEN;
 		available_bytes -= hdr_available_bytes;
 
-		/* Sanity check: must be at least header size. */
-		if (hdr->nlmsg_len < sizeof(*hdr)) {
-			zlog_warn(
-				"%s: [seq=%u] invalid message length %u (< %zu)",
-				__func__, hdr->nlmsg_seq, hdr->nlmsg_len,
-				sizeof(*hdr));
-			continue;
-		}
 		if (hdr->nlmsg_len > fpm.msg_len) {
 			zlog_warn(
 				"%s: Received a inner header length of %u that is greater than the fpm total length of %u",
@@ -620,6 +683,14 @@ static void fpm_read(struct event *t)
 
 		switch (hdr->nlmsg_type) {
 		case RTM_NEWROUTE:
+			/* Sanity check: need at least route msg header size. */
+			if (hdr->nlmsg_len < sizeof(struct rtmsg)) {
+				zlog_warn("%s: [seq=%u] invalid message length %u (< %zu)",
+					  __func__, hdr->nlmsg_seq,
+					  hdr->nlmsg_len, sizeof(struct rtmsg));
+				break;
+			}
+
 			ctx = dplane_ctx_alloc();
 			dplane_ctx_route_init(ctx, DPLANE_OP_ROUTE_NOTIFY, NULL,
 					      NULL);
@@ -1394,8 +1465,14 @@ static void fpm_process_queue(struct event *t)
 	uint64_t processed_contexts = 0;
 
 	while (true) {
+		size_t writeable_amount;
+
+		frr_with_mutex (&fnc->obuf_mutex) {
+			writeable_amount = STREAM_WRITEABLE(fnc->obuf);
+		}
+
 		/* No space available yet. */
-		if (STREAM_WRITEABLE(fnc->obuf) < NL_PKT_BUF_SIZE) {
+		if (writeable_amount < NL_PKT_BUF_SIZE) {
 			no_bufs = true;
 			break;
 		}
@@ -1665,6 +1742,7 @@ static int fpm_nl_new(struct event_loop *tm)
 		zlog_debug("%s register status: %d", prov_name, rv);
 
 	install_node(&fpm_node);
+	install_element(ENABLE_NODE, &fpm_show_status_cmd);
 	install_element(ENABLE_NODE, &fpm_show_counters_cmd);
 	install_element(ENABLE_NODE, &fpm_show_counters_json_cmd);
 	install_element(ENABLE_NODE, &fpm_reset_counters_cmd);

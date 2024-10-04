@@ -53,9 +53,12 @@ lib_libfrr_la_SOURCES = \
 	lib/jhash.c \
 	lib/json.c \
 	lib/keychain.c \
+	lib/keychain_cli.c \
+	lib/keychain_nb.c \
 	lib/ldp_sync.c \
 	lib/lib_errors.c \
 	lib/lib_vty.c \
+	lib/libagentx.c \
 	lib/libfrr.c \
 	lib/libfrr_trace.c \
 	lib/linklist.c \
@@ -129,6 +132,7 @@ lib_libfrr_la_SOURCES = \
 	lib/zlog_5424.c \
 	lib/zlog_5424_cli.c \
 	lib/zlog_live.c \
+	lib/zlog_recirculate.c \
 	lib/zlog_targets.c \
 	lib/printf/printf-pos.c \
 	lib/printf/vfprintf.c \
@@ -148,7 +152,10 @@ nodist_lib_libfrr_la_SOURCES = \
 	yang/frr-vrf.yang.c \
 	yang/frr-routing.yang.c \
 	yang/frr-nexthop.yang.c \
+	yang/ietf/frr-deviations-ietf-key-chain.yang.c \
 	yang/ietf/ietf-routing-types.yang.c \
+	yang/ietf/ietf-netconf-acm.yang.c \
+	yang/ietf/ietf-key-chain.yang.c \
 	yang/ietf/ietf-interfaces.yang.c \
 	yang/ietf/ietf-bgp-types.yang.c \
 	yang/frr-module-translator.yang.c \
@@ -181,6 +188,7 @@ clippy_scan += \
 	lib/if.c \
 	lib/filter_cli.c \
 	lib/if_rmap.c \
+	lib/keychain_cli.c \
 	lib/log_vty.c \
 	lib/mgmt_be_client.c \
 	lib/mgmt_fe_client.c \
@@ -245,6 +253,7 @@ pkginclude_HEADERS += \
 	lib/ldp_sync.h \
 	lib/lib_errors.h \
 	lib/lib_vty.h \
+	lib/libagentx.h \
 	lib/libfrr.h \
 	lib/libfrr_trace.h \
 	lib/libospf.h \
@@ -324,6 +333,7 @@ pkginclude_HEADERS += \
 	lib/zlog.h \
 	lib/zlog_5424.h \
 	lib/zlog_live.h \
+	lib/zlog_recirculate.h \
 	lib/zlog_targets.h \
 	lib/pbr.h \
 	lib/tc.h \
@@ -401,18 +411,6 @@ lib_libfrrzmq_la_LIBADD = $(ZEROMQ_LIBS)
 lib_libfrrzmq_la_SOURCES = \
 	lib/frr_zmq.c \
 	#end
-
-#
-# Tail-f's ConfD support
-#
-if CONFD
-module_LTLIBRARIES += lib/confd.la
-endif
-
-lib_confd_la_CFLAGS = $(AM_CFLAGS) $(CONFD_CFLAGS)
-lib_confd_la_LDFLAGS = $(MODULE_LDFLAGS)
-lib_confd_la_LIBADD = lib/libfrr.la $(CONFD_LIBS)
-lib_confd_la_SOURCES = lib/northbound_confd.c
 
 #
 # Sysrepo support

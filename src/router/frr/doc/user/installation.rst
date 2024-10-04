@@ -274,6 +274,10 @@ options from the list below.
 
    Build with FPM module support.
 
+.. option:: --enable-fpm-listener
+
+   Build a small fpm listener for testing.
+
 .. option:: --with-service-timeout=X
 
    Set timeout value for FRR service. The time of restarting or reloading FRR
@@ -309,13 +313,6 @@ options from the list below.
    make these arrays at build time.  Additionally if this parameter is
    not passed in FRR will default to 16 ECMP.
 
-.. option:: --enable-shell-access
-
-   Turn on the ability of FRR to access some shell options( telnet/ssh/bash/etc. )
-   from vtysh itself.  This option is considered extremely unsecure and should only
-   be considered for usage if you really really know what you are doing.  This
-   option is deprecated and will be removed on Feb 1, 2024.
-
 .. option:: --enable-gcov
 
    Code coverage reports from gcov require adjustments to the C and LD flags.
@@ -328,11 +325,6 @@ options from the list below.
 .. option:: --enable-config-rollbacks
 
    Build with configuration rollback support. Requires SQLite3.
-
-.. option:: --enable-confd=<dir>
-
-   Build the ConfD northbound plugin. Look for the libconfd libs and headers
-   in `dir`.
 
 .. option:: --enable-sysrepo
 
@@ -430,7 +422,12 @@ options to the configuration script.
 Python dependency, documentation and tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FRR's documentation and basic unit tests heavily use code written in Python.
+FRR uses Python for these components:
+
+* configuration reloading (see :ref:`FRR-RELOAD <frr-reload>` for details),
+* documentation,
+* unit tests.
+
 Additionally, FRR ships Python extensions written in C which are used during
 its build process.
 

@@ -553,9 +553,8 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 	lsa_header = (struct ospf6_lsa_header *)buffer;
 
 	if (route->type == OSPF6_DEST_TYPE_ROUTER) {
-		router_lsa = (struct ospf6_inter_router_lsa
-				      *)((caddr_t)lsa_header
-					 + sizeof(struct ospf6_lsa_header));
+		router_lsa = (struct ospf6_inter_router_lsa *)
+			ospf6_lsa_header_end(lsa_header);
 		p = (caddr_t)router_lsa + sizeof(struct ospf6_inter_router_lsa);
 
 		/* Fill Inter-Area-Router-LSA */
@@ -566,9 +565,8 @@ int ospf6_abr_originate_summary_to_area(struct ospf6_route *route,
 		router_lsa->router_id = ADV_ROUTER_IN_PREFIX(&route->prefix);
 		type = htons(OSPF6_LSTYPE_INTER_ROUTER);
 	} else {
-		prefix_lsa = (struct ospf6_inter_prefix_lsa
-				      *)((caddr_t)lsa_header
-					 + sizeof(struct ospf6_lsa_header));
+		prefix_lsa = (struct ospf6_inter_prefix_lsa *)
+			ospf6_lsa_header_end(lsa_header);
 		p = (caddr_t)prefix_lsa + sizeof(struct ospf6_inter_prefix_lsa);
 
 		/* Fill Inter-Area-Prefix-LSA */
@@ -1018,9 +1016,8 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 				   oa->name);
 		}
 
-		prefix_lsa =
-			(struct ospf6_inter_prefix_lsa *)OSPF6_LSA_HEADER_END(
-				lsa->header);
+		prefix_lsa = (struct ospf6_inter_prefix_lsa *)
+			ospf6_lsa_header_end(lsa->header);
 		prefix.family = AF_INET6;
 		prefix.prefixlen = prefix_lsa->prefix.prefix_length;
 		ospf6_prefix_in6_addr(&prefix.u.prefix6, prefix_lsa,
@@ -1039,11 +1036,9 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 				   oa->name);
 		}
 
-		router_lsa =
-			(struct ospf6_inter_router_lsa *)OSPF6_LSA_HEADER_END(
-				lsa->header);
-		ospf6_linkstate_prefix(router_lsa->router_id, htonl(0),
-				       &prefix);
+		router_lsa = (struct ospf6_inter_router_lsa *)
+			ospf6_lsa_header_end(lsa->header);
+		ospf6_linkstate_prefix(router_lsa->router_id, htonl(0), &prefix);
 		if (is_debug)
 			inet_ntop(AF_INET, &router_lsa->router_id, buf,
 				  sizeof(buf));
@@ -1275,8 +1270,6 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 			continue;
 		}
 
-		list_delete_all_node(old_route->nh_list);
-		ospf6_route_copy_nexthops(old_route, route);
 		old_entry_updated = true;
 
 		for (ALL_LIST_ELEMENTS_RO(old_route->paths, anode,
@@ -1328,6 +1321,15 @@ void ospf6_abr_examin_summary(struct ospf6_lsa *lsa, struct ospf6_area *oa)
 				ospf6_route_delete(tmp_route);
 				continue;
 			}
+		}
+
+		/* We added a path or updated a path's nexthops above,
+		 * recompute (old) route nexthops by merging all path nexthops
+		 */
+		list_delete_all_node(old_route->nh_list);
+		for (ALL_LIST_ELEMENTS_RO(old_route->paths, anode, o_path)) {
+			ospf6_merge_nexthops(old_route->nh_list,
+					     o_path->nh_list);
 		}
 
 		if (is_debug)
@@ -1427,9 +1429,8 @@ static char *ospf6_inter_area_prefix_lsa_get_prefix_str(struct ospf6_lsa *lsa,
 	char tbuf[16];
 
 	if (lsa != NULL) {
-		prefix_lsa =
-			(struct ospf6_inter_prefix_lsa *)OSPF6_LSA_HEADER_END(
-				lsa->header);
+		prefix_lsa = (struct ospf6_inter_prefix_lsa *)
+			ospf6_lsa_header_end(lsa->header);
 
 		ospf6_prefix_in6_addr(&in6, prefix_lsa, &prefix_lsa->prefix);
 		if (buf) {
@@ -1451,7 +1452,7 @@ static int ospf6_inter_area_prefix_lsa_show(struct vty *vty,
 	struct ospf6_inter_prefix_lsa *prefix_lsa;
 	char buf[INET6_ADDRSTRLEN];
 
-	prefix_lsa = (struct ospf6_inter_prefix_lsa *)OSPF6_LSA_HEADER_END(
+	prefix_lsa = (struct ospf6_inter_prefix_lsa *)ospf6_lsa_header_end(
 		lsa->header);
 
 	if (use_json) {
@@ -1488,9 +1489,8 @@ static char *ospf6_inter_area_router_lsa_get_prefix_str(struct ospf6_lsa *lsa,
 	struct ospf6_inter_router_lsa *router_lsa;
 
 	if (lsa != NULL) {
-		router_lsa =
-			(struct ospf6_inter_router_lsa *)OSPF6_LSA_HEADER_END(
-				lsa->header);
+		router_lsa = (struct ospf6_inter_router_lsa *)
+			ospf6_lsa_header_end(lsa->header);
 
 
 		if (buf)
@@ -1508,7 +1508,7 @@ static int ospf6_inter_area_router_lsa_show(struct vty *vty,
 	struct ospf6_inter_router_lsa *router_lsa;
 	char buf[64];
 
-	router_lsa = (struct ospf6_inter_router_lsa *)OSPF6_LSA_HEADER_END(
+	router_lsa = (struct ospf6_inter_router_lsa *)ospf6_lsa_header_end(
 		lsa->header);
 
 	ospf6_options_printbuf(router_lsa->options, buf, sizeof(buf));

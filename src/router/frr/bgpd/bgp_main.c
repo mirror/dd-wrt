@@ -26,6 +26,7 @@
 #include "bfd.h"
 #include "libfrr.h"
 #include "ns.h"
+#include "libagentx.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
@@ -207,6 +208,8 @@ static __attribute__((__noreturn__)) void bgp_exit(int status)
 	bgp_evpn_mh_finish();
 	bgp_nhg_finish();
 
+	zebra_announce_fini(&bm->zebra_announce_head);
+
 	/* reverse bgp_dump_init */
 	bgp_dump_finish();
 
@@ -221,6 +224,9 @@ static __attribute__((__noreturn__)) void bgp_exit(int status)
 
 	/* reverse bgp_attr_init */
 	bgp_attr_finish();
+
+	/* reverse bgp_labels_init */
+	bgp_labels_finish();
 
 	/* stop pthreads */
 	bgp_pthreads_finish();
@@ -514,7 +520,9 @@ int main(int argc, char **argv)
 		bgp_option_set(BGP_OPT_NO_ZEBRA);
 	bgp_error_init();
 	/* Initializations. */
+	libagentx_init();
 	bgp_vrf_init();
+
 
 #ifdef HAVE_SCRIPTING
 	bgp_script_init();

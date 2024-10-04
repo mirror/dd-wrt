@@ -4,6 +4,15 @@
  *
  * Copyright (c) 2023, LabN Consulting, L.L.C.
  *
+ * Public APIs:
+ *
+ * The message type codes and corresponding message data definitions for
+ * front-end client messages represent a public API, as such any changes should
+ * only be made according to backward compatible principles (basically never,
+ * just use a new message type). Back-end clients being always compiled with FRR
+ * can be updated (although one should take care in modifying BE messages as it
+ * could impact private back-end client implementations which will then need to
+ * be updated by their owners).
  */
 
 #ifndef _FRR_MGMT_MSG_NATIVE_H_
@@ -21,6 +30,7 @@ extern "C" {
 #include "memory.h"
 #include "mgmt_msg.h"
 #include "mgmt_defines.h"
+#include "northbound.h"
 
 #include <stdalign.h>
 
@@ -149,15 +159,23 @@ DECLARE_MTYPE(MSG_NATIVE_GET_TREE);
 DECLARE_MTYPE(MSG_NATIVE_TREE_DATA);
 DECLARE_MTYPE(MSG_NATIVE_GET_DATA);
 DECLARE_MTYPE(MSG_NATIVE_NOTIFY);
+DECLARE_MTYPE(MSG_NATIVE_EDIT);
+DECLARE_MTYPE(MSG_NATIVE_EDIT_REPLY);
+DECLARE_MTYPE(MSG_NATIVE_RPC);
+DECLARE_MTYPE(MSG_NATIVE_RPC_REPLY);
 
 /*
  * Native message codes
  */
-#define MGMT_MSG_CODE_ERROR	0
-#define MGMT_MSG_CODE_GET_TREE	1
-#define MGMT_MSG_CODE_TREE_DATA 2
-#define MGMT_MSG_CODE_GET_DATA	3
-#define MGMT_MSG_CODE_NOTIFY	4
+#define MGMT_MSG_CODE_ERROR	 0 /* Public API */
+#define MGMT_MSG_CODE_GET_TREE	 1 /* BE only, non-public API */
+#define MGMT_MSG_CODE_TREE_DATA	 2 /* Public API */
+#define MGMT_MSG_CODE_GET_DATA	 3 /* Public API */
+#define MGMT_MSG_CODE_NOTIFY	 4 /* Public API */
+#define MGMT_MSG_CODE_EDIT	 5 /* Public API */
+#define MGMT_MSG_CODE_EDIT_REPLY 6 /* Public API */
+#define MGMT_MSG_CODE_RPC	 7 /* Public API */
+#define MGMT_MSG_CODE_RPC_REPLY	 8 /* Public API */
 
 /*
  * Datastores
@@ -316,6 +334,96 @@ struct mgmt_msg_notify_data {
 };
 _Static_assert(sizeof(struct mgmt_msg_notify_data) ==
 		       offsetof(struct mgmt_msg_notify_data, data),
+	       "Size mismatch");
+
+#define EDIT_FLAG_IMPLICIT_LOCK	  0x01
+#define EDIT_FLAG_IMPLICIT_COMMIT 0x02
+
+#define EDIT_OP_CREATE	0
+#define EDIT_OP_DELETE	4
+#define EDIT_OP_MERGE	2
+#define EDIT_OP_REPLACE 5
+#define EDIT_OP_REMOVE	3
+
+_Static_assert(EDIT_OP_CREATE == NB_OP_CREATE_EXCL, "Operation mismatch");
+_Static_assert(EDIT_OP_DELETE == NB_OP_DELETE, "Operation mismatch");
+_Static_assert(EDIT_OP_MERGE == NB_OP_MODIFY, "Operation mismatch");
+_Static_assert(EDIT_OP_REPLACE == NB_OP_REPLACE, "Operation mismatch");
+_Static_assert(EDIT_OP_REMOVE == NB_OP_DESTROY, "Operation mismatch");
+
+/**
+ * struct mgmt_msg_edit - frontend edit request.
+ *
+ * @request_type: ``LYD_FORMAT`` for the @data.
+ * @flags: combination of ``EDIT_FLAG_*`` flags.
+ * @datastore: the datastore to edit.
+ * @operation: one of ``EDIT_OP_*`` operations.
+ * @data: the xpath followed by the tree data for the operation.
+ *        for CREATE, xpath points to the parent node.
+ */
+struct mgmt_msg_edit {
+	struct mgmt_msg_header;
+	uint8_t request_type;
+	uint8_t flags;
+	uint8_t datastore;
+	uint8_t operation;
+	uint8_t resv2[4];
+
+	alignas(8) char data[];
+};
+_Static_assert(sizeof(struct mgmt_msg_edit) ==
+		       offsetof(struct mgmt_msg_edit, data),
+	       "Size mismatch");
+
+/**
+ * struct mgmt_msg_edit_reply - frontend edit reply.
+ *
+ * @data: the xpath of the data node that was created.
+ */
+struct mgmt_msg_edit_reply {
+	struct mgmt_msg_header;
+	uint8_t resv2[8];
+
+	alignas(8) char data[];
+};
+_Static_assert(sizeof(struct mgmt_msg_edit_reply) ==
+		       offsetof(struct mgmt_msg_edit_reply, data),
+	       "Size mismatch");
+
+/**
+ * struct mgmt_msg_rpc - RPC/action request.
+ *
+ * @request_type: ``LYD_FORMAT`` for the @data.
+ * @data: the xpath followed by the tree data for the operation.
+ */
+struct mgmt_msg_rpc {
+	struct mgmt_msg_header;
+	uint8_t request_type;
+	uint8_t resv2[7];
+
+	alignas(8) char data[];
+};
+
+_Static_assert(sizeof(struct mgmt_msg_rpc) ==
+		       offsetof(struct mgmt_msg_rpc, data),
+	       "Size mismatch");
+
+/**
+ * struct mgmt_msg_rpc_reply - RPC/action reply.
+ *
+ * @result_type: ``LYD_FORMAT`` for the @data.
+ * @data: the tree data for the reply.
+ */
+struct mgmt_msg_rpc_reply {
+	struct mgmt_msg_header;
+	uint8_t result_type;
+	uint8_t resv2[7];
+
+	alignas(8) char data[];
+};
+
+_Static_assert(sizeof(struct mgmt_msg_rpc_reply) ==
+		       offsetof(struct mgmt_msg_rpc_reply, data),
 	       "Size mismatch");
 
 /*
@@ -504,13 +612,16 @@ extern int vmgmt_msg_native_send_error(struct msg_conn *conn,
  *	The xpath string or NULL if there was an error decoding (i.e., the
  *	message is corrupt).
  */
-#define mgmt_msg_native_xpath_data_decode(msg, msglen, data)                   \
+#define mgmt_msg_native_xpath_data_decode(msg, msglen, __data)                 \
 	({                                                                     \
 		size_t __len = (msglen) - sizeof(*msg);                        \
 		const char *__s = NULL;                                        \
 		if (msg->vsplit && msg->vsplit <= __len &&                     \
 		    msg->data[msg->vsplit - 1] == 0) {                         \
-			(data) = msg->data + msg->vsplit;                      \
+			if (msg->vsplit < __len)                               \
+				(__data) = msg->data + msg->vsplit;            \
+			else                                                   \
+				(__data) = NULL;                               \
 			__s = msg->data;                                       \
 		}                                                              \
 		__s;                                                           \

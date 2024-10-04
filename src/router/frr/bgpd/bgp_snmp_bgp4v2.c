@@ -340,7 +340,8 @@ static uint8_t *bgpv2PeerErrorsTable(struct variable *v, oid name[],
 		}
 		return SNMP_STRING("");
 	case BGP4V2_PEER_LAST_ERROR_RECEIVED_DATA:
-		if (peer->last_reset == PEER_DOWN_NOTIFY_RECEIVED)
+		if (peer->last_reset == PEER_DOWN_NOTIFY_RECEIVED &&
+		    peer->notify.data)
 			return SNMP_STRING(peer->notify.data);
 		else
 			return SNMP_STRING("");
@@ -853,7 +854,8 @@ static uint8_t *bgp4v2PathAttrTable(struct variable *v, oid name[],
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL:
 			return SNMP_INTEGER(2);
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL:
-			if (path->attr->mp_nexthop_prefer_global)
+			if (CHECK_FLAG(path->attr->nh_flags,
+				       BGP_ATTR_NH_MP_PREFER_GLOBAL))
 				return SNMP_INTEGER(2);
 			else
 				return SNMP_INTEGER(4);
@@ -867,7 +869,8 @@ static uint8_t *bgp4v2PathAttrTable(struct variable *v, oid name[],
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL:
 			return SNMP_IP6ADDRESS(path->attr->mp_nexthop_global);
 		case BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL:
-			if (path->attr->mp_nexthop_prefer_global)
+			if (CHECK_FLAG(path->attr->nh_flags,
+				       BGP_ATTR_NH_MP_PREFER_GLOBAL))
 				return SNMP_IP6ADDRESS(
 					path->attr->mp_nexthop_global);
 			else

@@ -39,6 +39,13 @@ DEFINE_MTYPE_STATIC(ZEBRA, DP_NS, "DPlane NSes");
 #  define AOK 0
 #endif
 
+/*
+ * Dataplane API version. This must be updated when any incompatible changes
+ * are made. The minor version (at least) should be updated when new APIs
+ * are introduced.
+ */
+static uint32_t zdplane_version = MAKE_FRRVERSION(2, 0, 0);
+
 /* Control for collection of extra interface info with route updates; a plugin
  * can enable the extra info via a dplane api.
  */
@@ -663,6 +670,12 @@ neigh_update_internal(enum dplane_op_e op, const struct interface *ifp,
 /*
  * Public APIs
  */
+
+/* Access the dplane API version */
+uint32_t zebra_dplane_get_version(void)
+{
+	return zdplane_version;
+}
 
 /* Obtain thread_master for dataplane thread */
 struct event_loop *dplane_get_thread_master(void)
@@ -6351,7 +6364,7 @@ dplane_provider_dequeue_out_ctx(struct zebra_dplane_provider *prov)
  */
 bool dplane_provider_is_threaded(const struct zebra_dplane_provider *prov)
 {
-	return (prov->dp_flags & DPLANE_PROV_FLAG_THREADED);
+	return CHECK_FLAG(prov->dp_flags, DPLANE_PROV_FLAG_THREADED);
 }
 
 #ifdef HAVE_NETLINK
@@ -7427,6 +7440,11 @@ static void dplane_thread_loop(struct event *event)
 		if (IS_ZEBRA_DEBUG_DPLANE_DETAIL)
 			zlog_debug("dplane dequeues %d completed work from provider %s",
 				   counter, dplane_provider_get_name(prov));
+
+		if (event_should_yield(event)) {
+			reschedule = true;
+			break;
+		}
 
 		/* Locate next provider */
 		prov = dplane_prov_list_next(&zdplane_info.dg_providers, prov);

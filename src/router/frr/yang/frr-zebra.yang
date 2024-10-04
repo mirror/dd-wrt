@@ -145,16 +145,16 @@ module frr-zebra {
       "Zebra interface type bond.";
   }
 
-  identity zif-bond-slave {
-    base zebra-interface-type;
-    description
-      "Zebra interface type bond slave.";
-  }
-
   identity zif-macvlan {
     base zebra-interface-type;
     description
       "Zebra interface type macvlan.";
+  }
+
+  identity zif-gre {
+    base zebra-interface-type;
+    description
+      "Zebra interface type gre.";
   }
 
   /*
@@ -2732,6 +2732,12 @@ module frr-zebra {
           type rt-types:ipv4-multicast-group-address;
           description
             "The VNI multicast group for BUM traffic.";
+        }
+
+        leaf bond {
+          type frr-interface:interface-ref;
+          description
+            "The bond interface this interface belongs to.";
         }
       }
     }

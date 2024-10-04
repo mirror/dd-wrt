@@ -2406,129 +2406,29 @@ DEFUN (no_ospf_timers_lsa_min_arrival,
 	return CMD_SUCCESS;
 }
 
-DEFUN (ospf_neighbor,
-       ospf_neighbor_cmd,
-       "neighbor A.B.C.D [priority (0-255) [poll-interval (1-65535)]]",
-       NEIGHBOR_STR
-       "Neighbor IP address\n"
-       "Neighbor Priority\n"
-       "Priority\n"
-       "Dead Neighbor Polling interval\n"
-       "Seconds\n")
+DEFPY(ospf_neighbor, ospf_neighbor_cmd,
+      "[no] neighbor A.B.C.D$nbr_address [{priority (0-255)$priority | poll-interval (1-65535)$interval}]",
+      NO_STR
+      NEIGHBOR_STR
+      "Neighbor IP address\n"
+      "Neighbor Priority\n"
+      "Priority\n"
+      "Dead Neighbor Polling interval\n"
+      "Seconds\n")
 {
 	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	int idx_ipv4 = 1;
-	int idx_pri = 3;
-	int idx_poll = 5;
-	struct in_addr nbr_addr;
-	unsigned int priority = OSPF_NEIGHBOR_PRIORITY_DEFAULT;
-	unsigned int interval = OSPF_POLL_INTERVAL_DEFAULT;
 
-	if (!inet_aton(argv[idx_ipv4]->arg, &nbr_addr)) {
-		vty_out(vty, "Please specify Neighbor ID by A.B.C.D\n");
-		return CMD_WARNING_CONFIG_FAILED;
+	if (no)
+		ospf_nbr_nbma_unset(ospf, nbr_address);
+	else {
+		ospf_nbr_nbma_set(ospf, nbr_address);
+		if (priority_str)
+			ospf_nbr_nbma_priority_set(ospf, nbr_address, priority);
+
+		if (interval_str)
+			ospf_nbr_nbma_poll_interval_set(ospf, nbr_address,
+							interval);
 	}
-
-	if (argc > 2)
-		priority = strtoul(argv[idx_pri]->arg, NULL, 10);
-
-	if (argc > 4)
-		interval = strtoul(argv[idx_poll]->arg, NULL, 10);
-
-	ospf_nbr_nbma_set(ospf, nbr_addr);
-
-	if (argc > 2)
-		ospf_nbr_nbma_priority_set(ospf, nbr_addr, priority);
-
-	if (argc > 4)
-		ospf_nbr_nbma_poll_interval_set(ospf, nbr_addr, interval);
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (ospf_neighbor_poll_interval,
-       ospf_neighbor_poll_interval_cmd,
-       "neighbor A.B.C.D poll-interval (1-65535) [priority (0-255)]",
-       NEIGHBOR_STR
-       "Neighbor IP address\n"
-       "Dead Neighbor Polling interval\n"
-       "Seconds\n"
-       "OSPF priority of non-broadcast neighbor\n"
-       "Priority\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	int idx_ipv4 = 1;
-	int idx_poll = 3;
-	int idx_pri = 5;
-	struct in_addr nbr_addr;
-	unsigned int priority;
-	unsigned int interval;
-
-	if (!inet_aton(argv[idx_ipv4]->arg, &nbr_addr)) {
-		vty_out(vty, "Please specify Neighbor ID by A.B.C.D\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	interval = strtoul(argv[idx_poll]->arg, NULL, 10);
-
-	priority = argc > 4 ? strtoul(argv[idx_pri]->arg, NULL, 10)
-			    : OSPF_NEIGHBOR_PRIORITY_DEFAULT;
-
-	ospf_nbr_nbma_set(ospf, nbr_addr);
-	ospf_nbr_nbma_poll_interval_set(ospf, nbr_addr, interval);
-
-	if (argc > 4)
-		ospf_nbr_nbma_priority_set(ospf, nbr_addr, priority);
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_ospf_neighbor,
-       no_ospf_neighbor_cmd,
-       "no neighbor A.B.C.D [priority (0-255) [poll-interval (1-65525)]]",
-       NO_STR
-       NEIGHBOR_STR
-       "Neighbor IP address\n"
-       "Neighbor Priority\n"
-       "Priority\n"
-       "Dead Neighbor Polling interval\n"
-       "Seconds\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	int idx_ipv4 = 2;
-	struct in_addr nbr_addr;
-
-	if (!inet_aton(argv[idx_ipv4]->arg, &nbr_addr)) {
-		vty_out(vty, "Please specify Neighbor ID by A.B.C.D\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	(void)ospf_nbr_nbma_unset(ospf, nbr_addr);
-
-	return CMD_SUCCESS;
-}
-
-DEFUN (no_ospf_neighbor_poll,
-       no_ospf_neighbor_poll_cmd,
-       "no neighbor A.B.C.D poll-interval (1-65535) [priority (0-255)]",
-       NO_STR
-       NEIGHBOR_STR
-       "Neighbor IP address\n"
-       "Dead Neighbor Polling interval\n"
-       "Seconds\n"
-       "Neighbor Priority\n"
-       "Priority\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	int idx_ipv4 = 2;
-	struct in_addr nbr_addr;
-
-	if (!inet_aton(argv[idx_ipv4]->arg, &nbr_addr)) {
-		vty_out(vty, "Please specify Neighbor ID by A.B.C.D\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	(void)ospf_nbr_nbma_unset(ospf, nbr_addr);
 
 	return CMD_SUCCESS;
 }
@@ -2680,7 +2580,7 @@ DEFUN (no_ospf_write_multiplier,
 }
 
 ALIAS(no_ospf_write_multiplier, no_write_multiplier_cmd,
-      "no write-multiplier (1-100)", NO_STR
+      "no write-multiplier [(1-100)]", NO_STR
       "Write multiplier\n"
       "Maximum number of interface serviced per write\n")
 
@@ -2754,9 +2654,10 @@ DEFUN (ospf_max_multipath,
 
 DEFUN (no_ospf_max_multipath,
        no_ospf_max_multipath_cmd,
-       "no maximum-paths",
+       "no maximum-paths [" CMD_RANGE_STR(1, MULTIPATH_NUM)"]",
        NO_STR
-       "Max no of multiple paths for ECMP support\n")
+       "Max no of multiple paths for ECMP support\n"
+       "Number of paths\n")
 {
 	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
 	uint16_t maxpaths = MULTIPATH_NUM;
@@ -4148,6 +4049,8 @@ static void show_ip_ospf_interface_sub(struct vty *vty, struct ospf *ospf,
 		ospf_interface_auth_show(vty, oi, json_interface_sub, use_json);
 
 		ospf_interface_auth_show(vty, oi, json_oi, use_json);
+
+		/* Point-to-Multipoint Interface options. */
 		if (oi->type == OSPF_IFTYPE_POINTOMULTIPOINT) {
 			if (use_json) {
 				json_object_boolean_add(json_interface_sub,
@@ -4162,6 +4065,19 @@ static void show_ip_ospf_interface_sub(struct vty *vty, struct ospf *ospf,
 					"  %sDelay reflooding LSAs received on P2MP interface\n",
 					oi->p2mp_delay_reflood ? "" : "Don't ");
 			}
+			if (use_json) {
+				json_object_boolean_add(json_interface_sub,
+							"p2mpNonBroadcast",
+							oi->p2mp_non_broadcast);
+
+				json_object_boolean_add(json_oi,
+							"p2mpNonBroadcast",
+							oi->p2mp_non_broadcast);
+			} else {
+				vty_out(vty,
+					"  P2MP interface does %ssupport broadcast\n",
+					oi->p2mp_non_broadcast ? "not " : "");
+			}
 		}
 
 		/* Add ospf_interface object to main json blob using SIP as key
@@ -4169,6 +4085,31 @@ static void show_ip_ospf_interface_sub(struct vty *vty, struct ospf *ospf,
 		if (use_json)
 			json_object_object_addf(json_ois, json_oi, "%pI4",
 						&oi->address->u.prefix4);
+
+		if (oi->nbr_filter) {
+			if (use_json) {
+				json_object_string_add(json_interface_sub,
+						       "nbrFilterPrefixList",
+						       prefix_list_name(
+							       oi->nbr_filter));
+				json_object_string_add(json_oi,
+						       "nbrFilterPrefixList",
+						       prefix_list_name(
+							       oi->nbr_filter));
+			} else
+				vty_out(vty,
+					"  Neighbor filter prefix-list: %s\n",
+					prefix_list_name(oi->nbr_filter));
+		} else {
+			if (use_json) {
+				json_object_string_add(json_interface_sub,
+						       "nbrFilterPrefixList",
+						       "N/A");
+				json_object_string_add(json_oi,
+						       "nbrFilterPrefixList",
+						       "N/A");
+			}
+		}
 	}
 }
 
@@ -5970,7 +5911,7 @@ static int show_ip_ospf_neighbor_detail_all_common(struct vty *vty,
 			prev_nbr = nbr;
 		}
 
-		if (oi->type != OSPF_IFTYPE_NBMA)
+		if (!OSPF_IF_NON_BROADCAST(oi))
 			continue;
 
 		struct listnode *nd;
@@ -8550,7 +8491,7 @@ DEFUN_HIDDEN (no_ospf_hello_interval,
 DEFUN(ip_ospf_network, ip_ospf_network_cmd,
       "ip ospf network <broadcast|"
       "non-broadcast|"
-      "point-to-multipoint [delay-reflood]|"
+      "point-to-multipoint [delay-reflood|non-broadcast]|"
       "point-to-point [dmvpn]>",
       "IP Information\n"
       "OSPF interface commands\n"
@@ -8559,6 +8500,7 @@ DEFUN(ip_ospf_network, ip_ospf_network_cmd,
       "Specify OSPF NBMA network\n"
       "Specify OSPF point-to-multipoint network\n"
       "Specify OSPF delayed reflooding of LSAs received on P2MP interface\n"
+      "Specify OSPF point-to-multipoint network doesn't support broadcast\n"
       "Specify OSPF point-to-point network\n"
       "Specify OSPF point-to-point DMVPN network\n")
 {
@@ -8567,6 +8509,7 @@ DEFUN(ip_ospf_network, ip_ospf_network_cmd,
 	int old_type = IF_DEF_PARAMS(ifp)->type;
 	uint8_t old_ptp_dmvpn = IF_DEF_PARAMS(ifp)->ptp_dmvpn;
 	uint8_t old_p2mp_delay_reflood = IF_DEF_PARAMS(ifp)->p2mp_delay_reflood;
+	uint8_t old_p2mp_non_broadcast = IF_DEF_PARAMS(ifp)->p2mp_non_broadcast;
 	struct route_node *rn;
 
 	if (old_type == OSPF_IFTYPE_LOOPBACK) {
@@ -8578,16 +8521,19 @@ DEFUN(ip_ospf_network, ip_ospf_network_cmd,
 	IF_DEF_PARAMS(ifp)->ptp_dmvpn = 0;
 	IF_DEF_PARAMS(ifp)->p2mp_delay_reflood =
 		OSPF_P2MP_DELAY_REFLOOD_DEFAULT;
+	IF_DEF_PARAMS(ifp)->p2mp_non_broadcast = OSPF_P2MP_NON_BROADCAST_DEFAULT;
 
 	if (argv_find(argv, argc, "broadcast", &idx))
 		IF_DEF_PARAMS(ifp)->type = OSPF_IFTYPE_BROADCAST;
-	else if (argv_find(argv, argc, "non-broadcast", &idx))
-		IF_DEF_PARAMS(ifp)->type = OSPF_IFTYPE_NBMA;
 	else if (argv_find(argv, argc, "point-to-multipoint", &idx)) {
 		IF_DEF_PARAMS(ifp)->type = OSPF_IFTYPE_POINTOMULTIPOINT;
 		if (argv_find(argv, argc, "delay-reflood", &idx))
 			IF_DEF_PARAMS(ifp)->p2mp_delay_reflood = true;
-	} else if (argv_find(argv, argc, "point-to-point", &idx)) {
+		if (argv_find(argv, argc, "non-broadcast", &idx))
+			IF_DEF_PARAMS(ifp)->p2mp_non_broadcast = true;
+	} else if (argv_find(argv, argc, "non-broadcast", &idx))
+		IF_DEF_PARAMS(ifp)->type = OSPF_IFTYPE_NBMA;
+	else if (argv_find(argv, argc, "point-to-point", &idx)) {
 		IF_DEF_PARAMS(ifp)->type = OSPF_IFTYPE_POINTOPOINT;
 		if (argv_find(argv, argc, "dmvpn", &idx))
 			IF_DEF_PARAMS(ifp)->ptp_dmvpn = 1;
@@ -8597,7 +8543,8 @@ DEFUN(ip_ospf_network, ip_ospf_network_cmd,
 
 	if (IF_DEF_PARAMS(ifp)->type == old_type &&
 	    IF_DEF_PARAMS(ifp)->ptp_dmvpn == old_ptp_dmvpn &&
-	    IF_DEF_PARAMS(ifp)->p2mp_delay_reflood == old_p2mp_delay_reflood)
+	    IF_DEF_PARAMS(ifp)->p2mp_delay_reflood == old_p2mp_delay_reflood &&
+	    IF_DEF_PARAMS(ifp)->p2mp_non_broadcast == old_p2mp_non_broadcast)
 		return CMD_SUCCESS;
 
 	SET_IF_PARAM(IF_DEF_PARAMS(ifp), type);
@@ -8611,13 +8558,16 @@ DEFUN(ip_ospf_network, ip_ospf_network_cmd,
 		oi->type = IF_DEF_PARAMS(ifp)->type;
 		oi->ptp_dmvpn = IF_DEF_PARAMS(ifp)->ptp_dmvpn;
 		oi->p2mp_delay_reflood = IF_DEF_PARAMS(ifp)->p2mp_delay_reflood;
+		oi->p2mp_non_broadcast = IF_DEF_PARAMS(ifp)->p2mp_non_broadcast;
 
 		/*
 		 * The OSPF interface only needs to be flapped if the network
 		 * type or DMVPN parameter changes.
 		 */
 		if (IF_DEF_PARAMS(ifp)->type != old_type ||
-		    IF_DEF_PARAMS(ifp)->ptp_dmvpn != old_ptp_dmvpn) {
+		    IF_DEF_PARAMS(ifp)->ptp_dmvpn != old_ptp_dmvpn ||
+		    IF_DEF_PARAMS(ifp)->p2mp_non_broadcast !=
+			    old_p2mp_non_broadcast) {
 			if (oi->state > ISM_Down) {
 				OSPF_ISM_EVENT_EXECUTE(oi, ISM_InterfaceDown);
 				OSPF_ISM_EVENT_EXECUTE(oi, ISM_InterfaceUp);
@@ -8662,6 +8612,7 @@ DEFUN (no_ip_ospf_network,
 	IF_DEF_PARAMS(ifp)->ptp_dmvpn = 0;
 	IF_DEF_PARAMS(ifp)->p2mp_delay_reflood =
 		OSPF_P2MP_DELAY_REFLOOD_DEFAULT;
+	IF_DEF_PARAMS(ifp)->p2mp_non_broadcast = OSPF_P2MP_NON_BROADCAST_DEFAULT;
 
 	if (IF_DEF_PARAMS(ifp)->type == old_type)
 		return CMD_SUCCESS;
@@ -10016,6 +9967,58 @@ DEFPY(ip_ospf_prefix_suppression, ip_ospf_prefix_suppression_addr_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFPY(ip_ospf_neighbor_filter, ip_ospf_neighbor_filter_addr_cmd,
+      "[no] ip ospf neighbor-filter ![PREFIXLIST4_NAME]$prefix_list [A.B.C.D]$ip_addr", NO_STR
+      "IP Information\n"
+      "OSPF interface commands\n"
+      "Filter OSPF neighbor packets\n"
+      "Prefix-List used for filtering\n"
+      "Address of interface\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	struct ospf_if_params *params;
+	struct prefix_list *nbr_filter = NULL;
+	struct route_node *rn;
+
+	params = IF_DEF_PARAMS(ifp);
+
+	if (ip_addr.s_addr != INADDR_ANY) {
+		params = ospf_get_if_params(ifp, ip_addr);
+		ospf_if_update_params(ifp, ip_addr);
+	}
+
+	if (params->nbr_filter_name)
+		XFREE(MTYPE_OSPF_IF_PARAMS, params->nbr_filter_name);
+
+	if (no) {
+		UNSET_IF_PARAM(params, nbr_filter_name);
+		params->nbr_filter_name = NULL;
+	} else {
+		SET_IF_PARAM(params, nbr_filter_name);
+		params->nbr_filter_name = XSTRDUP(MTYPE_OSPF_IF_PARAMS,
+						  prefix_list);
+		nbr_filter = prefix_list_lookup(AFI_IP, params->nbr_filter_name);
+	}
+
+	/*
+	 * Determine if there is a change in neighbor filter prefix-list for the
+	 * interface.
+	 */
+	for (rn = route_top(IF_OIFS(ifp)); rn; rn = route_next(rn)) {
+		struct ospf_interface *oi = rn->info;
+
+		if (oi &&
+		    (ip_addr.s_addr == INADDR_ANY ||
+		     IPV4_ADDR_SAME(&oi->address->u.prefix4, &ip_addr)) &&
+		    oi->nbr_filter != nbr_filter) {
+			oi->nbr_filter = nbr_filter;
+			if (oi->nbr_filter)
+				ospf_intf_neighbor_filter_apply(oi);
+		}
+	}
+	return CMD_SUCCESS;
+}
+
 DEFUN (ospf_max_metric_router_lsa_admin,
        ospf_max_metric_router_lsa_admin_cmd,
        "max-metric router-lsa administrative",
@@ -10526,15 +10529,6 @@ static int ospf_show_gr_helper_details(struct vty *vty, struct ospf *ospf,
 		json_object_string_add(json_vrf, "strictLsaCheck",
 				       (ospf->strict_lsa_check) ? "Enabled"
 								: "Disabled");
-#if CONFDATE > 20240401
-		CPP_NOTICE("Remove deprecated json key: restartSupoort")
-#endif
-		json_object_string_add(
-			json_vrf, "restartSupoort",
-			(ospf->only_planned_restart)
-				? "Planned Restart only"
-				: "Planned and Unplanned Restarts");
-
 		json_object_string_add(
 			json_vrf, "restartSupport",
 			(ospf->only_planned_restart)
@@ -10761,10 +10755,11 @@ DEFUN (ospf_route_aggregation_timer,
 
 DEFPY (show_ip_ospf_gr_helper,
        show_ip_ospf_gr_helper_cmd,
-       "show ip ospf [vrf <NAME|all>] graceful-restart helper [detail] [json]",
+       "show ip ospf [{(1-65535)$instance|vrf <NAME|all>}] graceful-restart helper [detail] [json]",
        SHOW_STR
        IP_STR
        "OSPF information\n"
+       "Instance ID\n"
        VRF_CMD_HELP_STR
        "All VRFs\n"
        "OSPF Graceful Restart\n"
@@ -10785,7 +10780,19 @@ DEFPY (show_ip_ospf_gr_helper,
 	int inst = 0;
 	bool detail = false;
 
+	if (instance && instance != ospf_instance)
+		return CMD_NOT_MY_INSTANCE;
+
+	ospf = ospf_lookup_instance(instance);
+	if (!ospf || !ospf->oi_running)
+		return CMD_SUCCESS;
+
 	OSPF_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf);
+
+	if (instance && vrf_name) {
+		vty_out(vty, "%% VRF is not supported in instance mode\n");
+		return CMD_WARNING;
+	}
 
 	if (argv_find(argv, argc, "detail", &idx))
 		detail = true;
@@ -12228,6 +12235,10 @@ static int config_write_interface_one(struct vty *vty, struct vrf *vrf)
 					    OSPF_IFTYPE_POINTOMULTIPOINT &&
 				    params->p2mp_delay_reflood)
 					vty_out(vty, " delay-reflood");
+				if (params->type ==
+					    OSPF_IFTYPE_POINTOMULTIPOINT &&
+				    params->p2mp_non_broadcast)
+					vty_out(vty, " non-broadcast");
 				if (params != IF_DEF_PARAMS(ifp) && rn)
 					vty_out(vty, " %pI4", &rn->p.u.prefix4);
 				vty_out(vty, "\n");
@@ -12435,6 +12446,15 @@ static int config_write_interface_one(struct vty *vty, struct vrf *vrf)
 				else
 					vty_out(vty,
 						" ip ospf prefix-suppression");
+				if (params != IF_DEF_PARAMS(ifp) && rn)
+					vty_out(vty, " %pI4", &rn->p.u.prefix4);
+				vty_out(vty, "\n");
+			}
+
+			/* neighbor-filter print. */
+			if (OSPF_IF_PARAM_CONFIGURED(params, nbr_filter_name)) {
+				vty_out(vty, " ip ospf neighbor-filter %s",
+					params->nbr_filter_name);
 				if (params != IF_DEF_PARAMS(ifp) && rn)
 					vty_out(vty, " %pI4", &rn->p.u.prefix4);
 				vty_out(vty, "\n");
@@ -13256,6 +13276,9 @@ static void ospf_vty_if_init(void)
 	/* "ip ospf prefix-suppression" commands. */
 	install_element(INTERFACE_NODE, &ip_ospf_prefix_suppression_addr_cmd);
 
+	/* "ip ospf neighbor-filter" commands. */
+	install_element(INTERFACE_NODE, &ip_ospf_neighbor_filter_addr_cmd);
+
 	/* These commands are compatibitliy for previous version. */
 	install_element(INTERFACE_NODE, &ospf_authentication_key_cmd);
 	install_element(INTERFACE_NODE, &ospf_message_digest_key_cmd);
@@ -13754,11 +13777,8 @@ void ospf_vty_init(void)
 	install_element(OSPF_NODE, &ospf_auto_cost_reference_bandwidth_cmd);
 	install_element(OSPF_NODE, &no_ospf_auto_cost_reference_bandwidth_cmd);
 
-	/* "neighbor" commands. */
+	/* "neighbor" command. */
 	install_element(OSPF_NODE, &ospf_neighbor_cmd);
-	install_element(OSPF_NODE, &ospf_neighbor_poll_interval_cmd);
-	install_element(OSPF_NODE, &no_ospf_neighbor_cmd);
-	install_element(OSPF_NODE, &no_ospf_neighbor_poll_cmd);
 
 	/* write multiplier commands */
 	install_element(OSPF_NODE, &ospf_write_multiplier_cmd);

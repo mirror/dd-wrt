@@ -442,47 +442,6 @@ void set_overload_on_start_timer(struct event *thread)
 		isis_area_overload_bit_set(area, false);
 }
 
-static void isis_reset_attach_bit(struct isis_adjacency *adj)
-{
-	struct isis_area *area = adj->circuit->area;
-	struct lspdb_head *head;
-	struct isis_lsp *lsp;
-	uint8_t lspid[ISIS_SYS_ID_LEN + 2];
-
-	/*
-	 * If an L2 adjacency changed its state in L-1-2 area, we have to:
-	 * - set the attached bit in L1 LSPs if it's the first L2 adjacency
-	 * - remove the attached bit in L1 LSPs if it's the last L2 adjacency
-	 */
-
-	if (area->is_type != IS_LEVEL_1_AND_2 || adj->level == ISIS_ADJ_LEVEL1)
-		return;
-
-	if (!area->attached_bit_send)
-		return;
-
-	head = &area->lspdb[IS_LEVEL_1 - 1];
-	memset(lspid, 0, ISIS_SYS_ID_LEN + 2);
-	memcpy(lspid, area->isis->sysid, ISIS_SYS_ID_LEN);
-
-	lsp = lsp_search(head, lspid);
-	if (!lsp)
-		return;
-
-	if (adj->adj_state == ISIS_ADJ_UP
-	    && !(lsp->hdr.lsp_bits & LSPBIT_ATT)) {
-		sched_debug("ISIS (%s): adj going up regenerate lsp-bits",
-			    area->area_tag);
-		lsp_regenerate_schedule(area, IS_LEVEL_1, 0);
-	} else if (adj->adj_state == ISIS_ADJ_DOWN
-		   && (lsp->hdr.lsp_bits & LSPBIT_ATT)
-		   && !isis_level2_adj_up(area)) {
-		sched_debug("ISIS (%s): adj going down regenerate lsp-bits",
-			    area->area_tag);
-		lsp_regenerate_schedule(area, IS_LEVEL_1, 0);
-	}
-}
-
 static uint8_t lsp_bits_generate(int level, int overload_bit, int attached_bit,
 				 struct isis_area *area)
 {
@@ -746,6 +705,10 @@ void lsp_print_common(struct isis_lsp *lsp, struct vty *vty, struct json_object 
 	}
 }
 
+#if CONFDATE > 20240916
+CPP_NOTICE("Remove JSON in '-' format")
+#endif
+
 void lsp_print_json(struct isis_lsp *lsp, struct json_object *json,
 	       char dynhost, struct isis *isis)
 {
@@ -759,10 +722,20 @@ void lsp_print_json(struct isis_lsp *lsp, struct json_object *json,
 	own_json = json_object_new_object();
 	json_object_object_add(json, "lsp", own_json);
 	json_object_string_add(own_json, "id", LSPid);
+#if CONFDATE > 20240916
+	CPP_NOTICE("remove own key")
+#endif
 	json_object_string_add(own_json, "own", lsp->own_lsp ? "*" : " ");
+	if (lsp->own_lsp)
+		json_object_boolean_add(own_json, "ownLSP", true);
 	json_object_int_add(json, "pdu-len", lsp->hdr.pdu_len);
+	json_object_int_add(json, "pduLen", lsp->hdr.pdu_len);
 	snprintfrr(buf, sizeof(buf), "0x%08x", lsp->hdr.seqno);
+#if CONFDATE > 20240916
+	CPP_NOTICE("remove seq-number key")
+#endif
 	json_object_string_add(json, "seq-number", buf);
+	json_object_string_add(json, "seqNumber", buf);
 	snprintfrr(buf, sizeof(buf), "0x%04hx", lsp->hdr.checksum);
 	json_object_string_add(json, "chksum", buf);
 	if (lsp->hdr.rem_lifetime == 0) {
@@ -772,8 +745,13 @@ void lsp_print_json(struct isis_lsp *lsp, struct json_object *json,
 	} else {
 		json_object_int_add(json, "holdtime", lsp->hdr.rem_lifetime);
 	}
+#if CONFDATE > 20240916
+	CPP_NOTICE("remove att-p-ol key")
+#endif
 	json_object_string_add(
 		json, "att-p-ol", lsp_bits2string(lsp->hdr.lsp_bits, b, sizeof(b)));
+	json_object_string_add(json, "attPOl",
+			       lsp_bits2string(lsp->hdr.lsp_bits, b, sizeof(b)));
 }
 
 void lsp_print_vty(struct isis_lsp *lsp, struct vty *vty,
@@ -822,15 +800,24 @@ int lsp_print_all(struct vty *vty, struct json_object *json,
 {
 	struct isis_lsp *lsp;
 	int lsp_count = 0;
+	struct json_object *lsp_json = NULL;
 
 	if (detail == ISIS_UI_LEVEL_BRIEF) {
 		frr_each (lspdb, head, lsp) {
-			lsp_print_common(lsp, vty, json, dynhost, isis);
+			if (json) {
+				lsp_json = json_object_new_object();
+				json_object_array_add(json, lsp_json);
+			}
+			lsp_print_common(lsp, vty, lsp_json, dynhost, isis);
 			lsp_count++;
 		}
 	} else if (detail == ISIS_UI_LEVEL_DETAIL) {
 		frr_each (lspdb, head, lsp) {
-			lsp_print_detail(lsp, vty, json, dynhost, isis);
+			if (json) {
+				lsp_json = json_object_new_object();
+				json_object_array_add(json, lsp_json);
+			}
+			lsp_print_detail(lsp, vty, lsp_json, dynhost, isis);
 			lsp_count++;
 		}
 	}
@@ -2344,11 +2331,6 @@ void _lsp_flood(struct isis_lsp *lsp, struct isis_circuit *circuit,
 static int lsp_handle_adj_state_change(struct isis_adjacency *adj)
 {
 	lsp_regenerate_schedule(adj->circuit->area, IS_LEVEL_1 | IS_LEVEL_2, 0);
-
-	/* when an adjacency state changes determine if we need to
-	 * change attach_bits in other area's LSPs
-	 */
-	isis_reset_attach_bit(adj);
 
 	return 0;
 }

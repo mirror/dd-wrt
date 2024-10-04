@@ -260,6 +260,8 @@ static struct peer *peer_xfer_conn(struct peer *from_peer)
 		peer->afc_recv[afi][safi] = from_peer->afc_recv[afi][safi];
 		peer->orf_plist[afi][safi] = from_peer->orf_plist[afi][safi];
 		peer->llgr[afi][safi] = from_peer->llgr[afi][safi];
+		peer->addpath_paths_limit[afi][safi] =
+			from_peer->addpath_paths_limit[afi][safi];
 	}
 
 	if (bgp_getsockname(peer) < 0) {
@@ -1239,7 +1241,7 @@ void bgp_fsm_change_status(struct peer_connection *connection,
 	/* Transition into Clearing or Deleted must /always/ clear all routes..
 	 * (and must do so before actually changing into Deleted..
 	 */
-	if (status >= Clearing) {
+	if (status >= Clearing && (peer->established || peer == bgp->peer_self)) {
 		bgp_clear_route_all(peer);
 
 		/* If no route was queued for the clear-node processing,
@@ -1587,7 +1589,7 @@ bgp_stop_with_error(struct peer_connection *connection)
 
 
 /* something went wrong, send notify and tear down */
-static enum bgp_fsm_state_progress
+enum bgp_fsm_state_progress
 bgp_stop_with_notify(struct peer_connection *connection, uint8_t code,
 		     uint8_t sub_code)
 {
@@ -1794,6 +1796,26 @@ bgp_connect_fail(struct peer_connection *connection)
 	return bgp_stop(connection);
 }
 
+/* after connect is called(), getpeername is able to return
+ * port and address on non established streams
+ */
+static void bgp_connect_in_progress_update_connection(struct peer *peer)
+{
+	if (bgp_getsockname(peer) < 0) {
+		if (!peer->su_remote &&
+		    !BGP_CONNECTION_SU_UNSPEC(peer->connection)) {
+			/* if connect initiated, then dest port and dest addresses are well known */
+			peer->su_remote = sockunion_dup(&peer->connection->su);
+			if (sockunion_family(peer->su_remote) == AF_INET)
+				peer->su_remote->sin.sin_port =
+					htons(peer->port);
+			else if (sockunion_family(peer->su_remote) == AF_INET6)
+				peer->su_remote->sin6.sin6_port =
+					htons(peer->port);
+		}
+	}
+}
+
 /* This function is the first starting point of all BGP connection. It
  * try to connect to remote peer with non-blocking IO.
  */
@@ -1890,6 +1912,8 @@ static enum bgp_fsm_state_progress bgp_start(struct peer_connection *connection)
 				 __func__, peer->connection->fd);
 			return BGP_FSM_FAILURE;
 		}
+		bgp_connect_in_progress_update_connection(peer);
+
 		/*
 		 * - when the socket becomes ready, poll() will signify POLLOUT
 		 * - if it fails to connect, poll() will signify POLLHUP

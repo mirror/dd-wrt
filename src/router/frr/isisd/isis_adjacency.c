@@ -231,11 +231,12 @@ static void isis_adj_route_switchover(struct isis_adjacency *adj)
 	}
 }
 
-void isis_adj_process_threeway(struct isis_adjacency *adj,
+void isis_adj_process_threeway(struct isis_adjacency **padj,
 			       struct isis_threeway_adj *tw_adj,
 			       enum isis_adj_usage adj_usage)
 {
 	enum isis_threeway_state next_tw_state = ISIS_THREEWAY_DOWN;
+	struct isis_adjacency *adj = *padj;
 
 	if (tw_adj && !adj->circuit->disable_threeway_adj) {
 		if (tw_adj->state == ISIS_THREEWAY_DOWN) {
@@ -265,14 +266,13 @@ void isis_adj_process_threeway(struct isis_adjacency *adj,
 		fabricd_initial_sync_hello(adj->circuit);
 
 	if (next_tw_state == ISIS_THREEWAY_DOWN) {
-		isis_adj_state_change(&adj, ISIS_ADJ_DOWN,
-				      "Neighbor restarted");
+		isis_adj_state_change(padj, ISIS_ADJ_DOWN, "Neighbor restarted");
 		return;
 	}
 
 	if (next_tw_state == ISIS_THREEWAY_UP) {
 		if (adj->adj_state != ISIS_ADJ_UP) {
-			isis_adj_state_change(&adj, ISIS_ADJ_UP, NULL);
+			isis_adj_state_change(padj, ISIS_ADJ_UP, NULL);
 			adj->adj_usage = adj_usage;
 		}
 	}
@@ -687,7 +687,7 @@ void isis_adj_print_json(struct isis_adjacency *adj, struct json_object *json,
 			default:
 				continue;
 			}
-			backup = (sra->type == ISIS_SR_LAN_BACKUP) ? " (backup)"
+			backup = (sra->type == ISIS_SR_ADJ_BACKUP) ? " (backup)"
 								   : "";
 
 			json_object_string_add(adj_sid_json, "nexthop",
@@ -726,13 +726,13 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 		now = time(NULL);
 		if (adj->last_upd) {
 			if (adj->last_upd + adj->hold_time < now)
-				vty_out(vty, " Expiring");
+				vty_out(vty, " Expiring ");
 			else
 				vty_out(vty, " %-9llu",
 					(unsigned long long)adj->last_upd
 						+ adj->hold_time - now);
 		} else
-			vty_out(vty, "-        ");
+			vty_out(vty, " -        ");
 		vty_out(vty, "%-10pSY", adj->snpa);
 		vty_out(vty, "\n");
 	}
@@ -862,7 +862,7 @@ void isis_adj_print_vty(struct isis_adjacency *adj, struct vty *vty,
 			default:
 				continue;
 			}
-			backup = (sra->type == ISIS_SR_LAN_BACKUP) ? " (backup)"
+			backup = (sra->type == ISIS_SR_ADJ_BACKUP) ? " (backup)"
 								   : "";
 
 			vty_out(vty, "    %s %s%s: %u\n",
