@@ -5,7 +5,7 @@ DEPS = $(SRCS:.c=.d)
 LIBDIR = ../lib
 LIBRARY = $(LIBDIR)/libapfs.a
 
-DESTDIR ?= ~
+DESTDIR = $(INSTALLDIR)
 BINDIR = /bin
 MANDIR = /share/man/man8
 
@@ -13,7 +13,7 @@ SPARSE_VERSION := $(shell sparse --version 2>/dev/null)
 
 GIT_COMMIT = $(shell git describe --always HEAD | tail -c 9)
 
-override CFLAGS += -Wall -Wno-address-of-packed-member -fno-strict-aliasing -I$(CURDIR)/../include
+override CFLAGS += -Wall -Wno-address-of-packed-member -fno-strict-aliasing -I$(CURDIR)/../include $(COPTS) $(MIPS16_OPT) $(THUMB) -ffunction-sections -fdata-sections $(LTO) -DNEED_PRINTF
 
 apfs-label: $(OBJS) $(LIBRARY)
 	@echo '  Linking...'
@@ -45,5 +45,5 @@ clean:
 install:
 	install -d $(DESTDIR)$(BINDIR)
 	install -t $(DESTDIR)$(BINDIR) apfs-label
-	install -d $(DESTDIR)$(MANDIR)
-	install -m 644 -t $(DESTDIR)$(MANDIR) apfs-label.8
+#	install -d $(DESTDIR)$(MANDIR)
+#	install -m 644 -t $(DESTDIR)$(MANDIR) apfs-label.8
