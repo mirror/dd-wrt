@@ -187,7 +187,7 @@ testimage:
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr7350 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-mr7350.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	./uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	./mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -278,7 +278,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr7350 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-mr7350.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -297,7 +297,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4200v1 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v1.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -316,7 +316,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4200v2 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4200v2.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -336,7 +336,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx4300 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8174-mx4300.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 256KiB  -m 4096
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -355,7 +355,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D dynalink_dl-wrx36 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8072-dl-wrx36.dtb -a 0x41000000 -e 0x41000000 -c config@rt5010w-d350-rev0 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/dynalink_dlwrx36.ubi
@@ -367,7 +367,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mr5500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq5018-mr5500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -386,7 +386,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D linksys_mx5500 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq5018-mx5500.dtb -a 0x41000000 -e 0x41000000 -c config@1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh  --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin.tmp  -p 128KiB  -m 2048
 	dd if=$(TOP)/$(ARCH)-uclibc/Image.itb > $(TOP)/$(ARCH)-uclibc/Image-factory.bin
@@ -404,7 +404,7 @@ endif
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/
 	cp $(ARCH)-uclibc/Image $(ARCH)-uclibc/Image.itb
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
-	uboot/tools/mkimage -A arm64 -O linux -T multi -C gzip -a 0x41000000 -n 'ARM64 DD-WRT Linux' -d $(ARCH)-uclibc/Image.itb.new:$(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-rt-ax89x.dtb:$(TOP)/$(ARCH)-uclibc/root.fs $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin
+	mkimage -A arm64 -O linux -T multi -C gzip -a 0x41000000 -n 'ARM64 DD-WRT Linux' -d $(ARCH)-uclibc/Image.itb.new:$(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-rt-ax89x.dtb:$(TOP)/$(ARCH)-uclibc/root.fs $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin
 	./tools/asus/asusuimage -v 2 -n RT-AX89U -b 388 -e 4900 -i $(ARCH)-uclibc/asus-rt-ax89x-upgrade.bin -o $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx
 	cp $(ARCH)-uclibc/asus-rt-ax89x-upgrade.trx $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
 	dd if=/dev/zero bs=131072 count=1 >> $(ARCH)-uclibc/asus-rt-ax89x-upgrade2.trx
@@ -418,7 +418,7 @@ endif
 	libdeflate-gzip -f -12 -c $(ARCH)-uclibc/Image.itb > $(ARCH)-uclibc/Image.itb.new
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 	tools/qcom/mkits.sh  -D fortinet_fap231f -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq6000-fap-231f.dtb -a 0x41000000 -e 0x41000000 -c config@cp03-c1 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	tools/qcom/ubinize-image.sh --kernel $(TOP)/$(ARCH)-uclibc/Image.itb --rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/Image-factory.bin  -p 128KiB  -m 2048
 	cp $(TOP)/$(ARCH)-uclibc/Image-factory.bin $(TOP)/$(ARCH)-uclibc/fortinet_fap231f.ubi
@@ -431,7 +431,7 @@ endif
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-5950ax12 -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-5950ax12.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	# need to find out how md5sum is generated here"
 	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
@@ -446,7 +446,7 @@ endif
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12s -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12s.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	# need to find out how md5sum is generated here"
 	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
@@ -461,7 +461,7 @@ endif
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12b -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12b.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	# need to find out how md5sum is generated here"
 	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
@@ -476,7 +476,7 @@ endif
 	mv $(ARCH)-uclibc/Image.itb.new $(ARCH)-uclibc/Image.itb
 
 	tools/qcom/mkits.sh  -D buffalo-wxr-6000ax12p -o $(TOP)/$(ARCH)-uclibc/Image.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.itb -C gzip -d $(LINUXDIR)/arch/arm64/boot/dts/qcom/ipq8074-wxr-6000ax12p.dtb -a 0x41000000 -e 0x41000000 -c config@hk01 -A arm64 -v $(KERNELRELEASE)
-	uboot/tools/mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
+	mkimage -f $(TOP)/$(ARCH)-uclibc/Image.itb.its $(TOP)/$(ARCH)-uclibc/Image.itb.new
 	mv $(TOP)/$(ARCH)-uclibc/Image.itb.new $(TOP)/$(ARCH)-uclibc/Image.itb
 	# need to find out how md5sum is generated here"
 	echo -n "00000000000000000000000000000000" > /tmp/dummyhash.txt
