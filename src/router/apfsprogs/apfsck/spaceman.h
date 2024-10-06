@@ -17,6 +17,7 @@ struct spaceman {
 	struct free_queue *sm_ip_fq; /* Free queue for internal pool */
 	struct free_queue *sm_main_fq; /* Free queue for main device */
 	int sm_struct_size; /* Size of the spaceman structure on disk */
+	u32 sm_obj_size; /* Size of the spaceman object */
 
 	/* Spaceman info read from the on-disk structures */
 	u64 sm_xid;
@@ -24,12 +25,14 @@ struct spaceman {
 	u32 sm_chunks_per_cib;
 	u32 sm_cibs_per_cab;
 	u32 sm_cib_count;
+	u32 sm_cab_count;
 	u64 sm_chunk_count;
 	u64 sm_ip_base;
 	u64 sm_ip_block_count;
 
 	/* Spaceman info measured by the fsck */
 	u64 sm_chunks;	/* Number of chunks */
+	u64 sm_cibs;	/* Number of chunk-info blocks */
 	u64 sm_blocks;	/* Number of blocks */
 	u64 sm_free;	/* Number of free blocks */
 	u64 sm_reserve_block_num; /* Blocks that are reserved for volumes */

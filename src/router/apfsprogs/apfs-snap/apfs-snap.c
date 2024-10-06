@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "version.h"
 
 static char *progname;
 
@@ -28,7 +29,10 @@ static void usage(void)
  */
 static void version(void)
 {
-	printf("apfs-snap version 0.1\n");
+	if (*GIT_COMMIT)
+		printf("apfs-snap %s\n", GIT_COMMIT);
+	else
+		printf("apfs-snap - unknown git commit id\n");
 	exit(1);
 }
 

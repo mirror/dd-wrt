@@ -24,6 +24,8 @@ static void check_xattr_flags(u16 flags)
 		report("Xattr record", "invalid flags in use.");
 	if (flags & APFS_XATTR_RESERVED_8)
 		report("Xattr record", "reserved flag in use.");
+	if (flags & APFS_XATTR_UNKNOWN_10)
+		report_unknown("0x10 xattr flag");
 
 	if ((bool)(flags & APFS_XATTR_DATA_STREAM) ==
 	    (bool)(flags & APFS_XATTR_DATA_EMBEDDED))

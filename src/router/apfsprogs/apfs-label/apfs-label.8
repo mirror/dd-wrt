@@ -1,0 +1,28 @@
+.\" apfs-label.8 - manpage for apfs-label
+.\"
+.\" Copyright (C) 2024 Ernesto A. Fernández <ernesto@corellium.com>
+.\"
+.TH apfs-label 8 "September 2024" "apfsprogs 0.1"
+.SH NAME
+apfs-label \- list the labels of all volumes in an APFS filesystem
+.SH SYNOPSIS
+.B apfs-label
+.I device
+.SH DESCRIPTION
+.B apfs-label
+is a simple tool that lists the index and label of all volumes in an
+APFS container, to help the user decide which one to mount with the driver.
+.SH OPTIONS
+.TP
+.B \-v
+Print the version number of
+.B apfs-label
+and exit.
+.SH REPORTING BUGS
+Please report bugs via email or, if preferred, file a github issue at
+\%https://github.com/eafer/apfsprogs/issues.
+.SH AUTHOR
+Written by Ernesto A. Fernández <ernesto@corellium.com>.
+.SH SEE ALSO
+.BR apfsck (8),
+.BR mkapfs (8)

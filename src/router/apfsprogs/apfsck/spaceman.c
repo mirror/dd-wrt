@@ -135,8 +135,12 @@ static void parse_spaceman_chunk_counts(struct apfs_spaceman_phys *raw)
 					  sm->sm_blocks_per_chunk);
 	sm->sm_cib_count = DIV_ROUND_UP(sm->sm_chunk_count,
 					sm->sm_chunks_per_cib);
+	sm->sm_cab_count = DIV_ROUND_UP(sm->sm_cib_count, sm->sm_cibs_per_cab);
+	/* CABs are not used unless at least one can be filled */
+	if (sm->sm_cab_count == 1)
+		sm->sm_cab_count = 0;
 
-	if ((sm->sm_chunk_count + sm->sm_cib_count) * 3 != sm->sm_ip_block_count)
+	if ((sm->sm_chunk_count + sm->sm_cib_count + sm->sm_cab_count) * 3 != sm->sm_ip_block_count)
 		report("Space manager", "wrong size of internal pool.");
 }
 
@@ -248,10 +252,11 @@ static u64 parse_chunk_info(struct apfs_chunk_info *chunk, bool is_last,
  * @bno:	block number of the chunk-info block
  * @index:	index of the chunk-info block
  * @start:	expected first block number for the first chunk
+ * @xid_p:	on return, the transaction id of the cib (ignored if NULL)
  *
  * Returns the first block number for the first chunk of the next cib.
  */
-static u64 parse_chunk_info_block(u64 bno, int index, u64 start)
+static u64 parse_chunk_info_block(u64 bno, u32 index, u64 start, u64 *xid_p)
 {
 	struct spaceman *sm = &sb->s_spaceman;
 	struct object obj;
@@ -297,8 +302,65 @@ static u64 parse_chunk_info_block(u64 bno, int index, u64 start)
 	}
 	if (obj.xid != max_chunk_xid) /* Cib only changes if a chunk changes */
 		report("Chunk-info block", "xid is too recent.");
+	if (xid_p)
+		*xid_p = obj.xid;
 
-	munmap(cib, sb->s_blocksize);
+	munmap(cib, obj.size);
+	return start;
+}
+
+/**
+ * parse_cib_addr_block - Parse and check a chunk-info address block
+ * @bno:	block number of the chunk-info address block
+ * @index:	index of the chunk-info address block
+ * @start:	expected first block number for the first chunk
+ *
+ * Returns the first block number for the first chunk of the next cab.
+ */
+static u64 parse_cib_addr_block(u64 bno, u32 index, u64 start)
+{
+	struct spaceman *sm = &sb->s_spaceman;
+	struct object obj;
+	struct apfs_cib_addr_block *cab = NULL;
+	u32 cib_count;
+	bool last_cab = index == sm->sm_cab_count - 1;
+	u64 max_cib_xid = 0;
+	int i;
+
+	cab = read_object(bno, NULL, &obj);
+	if (obj.type != APFS_OBJECT_TYPE_SPACEMAN_CAB)
+		report("Cib address block", "wrong object type.");
+	if (obj.subtype != APFS_OBJECT_TYPE_INVALID)
+		report("Cib address block", "wrong object subtype.");
+	if (obj.xid > sm->sm_xid) /* Cab address is stored in the spaceman */
+		report("Cib address block", "xid is more recent than spaceman.");
+
+	if (le32_to_cpu(cab->cab_index) != index)
+		report("Cib address block", "wrong index.");
+
+	cib_count = le32_to_cpu(cab->cab_cib_count);
+	if (!cib_count)
+		report("Cib address block", "has no cibs.");
+	if (cib_count > sm->sm_cibs_per_cab)
+		report("Cib address block", "too many cibs.");
+	if (!last_cab && cib_count != sm->sm_cibs_per_cab)
+		report("Cib address block", "too few cibs.");
+	sm->sm_cibs += cib_count;
+
+	for (i = 0; i < cib_count; ++i) {
+		u64 cib_xid;
+
+		start = parse_chunk_info_block(le64_to_cpu(cab->cab_cib_addr[i]), sm->sm_cibs_per_cab * index + i, start, &cib_xid);
+
+		if (cib_xid > obj.xid)
+			report("Chunk-info block", "xid is too recent.");
+		if (cib_xid > max_cib_xid)
+			max_cib_xid = cib_xid;
+	}
+	if (obj.xid != max_cib_xid) /* Cab only changes if a cib changes */
+		report("Cib address block", "xid is too recent.");
+
+	munmap(cab, obj.size);
 	return start;
 }
 
@@ -323,9 +385,32 @@ static u64 spaceman_val_from_off(struct apfs_spaceman_phys *raw, u32 offset)
 		report("Spaceman", "offset is not aligned to 8 bytes.");
 	if (offset < sm->sm_struct_size)
 		report("Spaceman", "offset overlaps with structure.");
-	if (offset >= sb->s_blocksize || offset + sizeof(u64) > sb->s_blocksize)
+	if (offset >= sm->sm_obj_size || offset + sizeof(u64) > sm->sm_obj_size)
 		report("Spaceman", "offset is out of bounds.");
 	return *((u64 *)value_p);
+}
+
+/**
+ * spaceman_16_from_off - Get the 16 bits stored on a given spaceman offset
+ * @raw:	pointer to the raw space manager
+ * @offset:	offset of the value in @raw
+ *
+ * TODO: check that no values found by this function overlap with each other.
+ */
+static u16 spaceman_16_from_off(struct apfs_spaceman_phys *raw, u32 offset)
+{
+	struct spaceman *sm = &sb->s_spaceman;
+	char *value_p = (char *)raw + offset;
+
+	assert(sm->sm_struct_size);
+
+	if (offset & 0x1)
+		report("Spaceman", "offset is not aligned to 2 bytes.");
+	if (offset < sm->sm_struct_size)
+		report("Spaceman", "offset overlaps with structure.");
+	if (offset >= sm->sm_obj_size || offset + sizeof(u16) > sm->sm_obj_size)
+		report("Spaceman", "offset is out of bounds.");
+	return *((u16 *)value_p);
 }
 
 /**
@@ -334,7 +419,7 @@ static u64 spaceman_val_from_off(struct apfs_spaceman_phys *raw, u32 offset)
  * @offset:	offset of the 256-bit value in @raw
  *
  * TODO: check that no values found by this function overlap with each other,
- * and also with spaceman_val_from_off().
+ * and also with spaceman_val_from_off()/spaceman_16_from_off().
  */
 static char *spaceman_256_from_off(struct apfs_spaceman_phys *raw, u32 offset)
 {
@@ -348,7 +433,7 @@ static char *spaceman_256_from_off(struct apfs_spaceman_phys *raw, u32 offset)
 		report("Spaceman", "offset is not aligned to 8 bytes.");
 	if (offset < sm->sm_struct_size)
 		report("Spaceman", "offset overlaps with structure.");
-	if (offset >= sb->s_blocksize || offset + sz_256 > sb->s_blocksize)
+	if (offset >= sm->sm_obj_size || offset + sz_256 > sm->sm_obj_size)
 		report("Spaceman", "offset is out of bounds.");
 	return value_p;
 }
@@ -365,8 +450,8 @@ static void parse_spaceman_main_device(struct apfs_spaceman_phys *raw)
 	u64 start = 0;
 	int i;
 
-	if (dev->sm_cab_count)
-		report_unknown("Chunk-info address block");
+	if (le32_to_cpu(dev->sm_cab_count) != sm->sm_cab_count)
+		report("Spaceman device", "wrong count of chunk-info address blocks.");
 	if (le32_to_cpu(dev->sm_cib_count) != sm->sm_cib_count)
 		report("Spaceman device", "wrong count of chunk-info blocks.");
 	if (le64_to_cpu(dev->sm_chunk_count) != sm->sm_chunk_count)
@@ -375,11 +460,19 @@ static void parse_spaceman_main_device(struct apfs_spaceman_phys *raw)
 		report("Spaceman device", "wrong block count.");
 
 	addr_off = le32_to_cpu(dev->sm_addr_offset);
-	for (i = 0; i < sm->sm_cib_count; ++i) {
-		u64 bno = spaceman_val_from_off(raw,
-						addr_off + i * sizeof(u64));
-
-		start = parse_chunk_info_block(bno, i, start);
+	if (!sm->sm_cab_count) {
+		/* If CABs are not used, the spaceman just lists the CIBs */
+		for (i = 0; i < sm->sm_cib_count; ++i) {
+			u64 bno = spaceman_val_from_off(raw, addr_off + i * sizeof(u64));
+			start = parse_chunk_info_block(bno, i, start, NULL /* xid_p */);
+		}
+	} else {
+		for (i = 0; i < sm->sm_cab_count; ++i) {
+			u64 bno = spaceman_val_from_off(raw, addr_off + i * sizeof(u64));
+			start = parse_cib_addr_block(bno, i, start);
+		}
+		if (sm->sm_cib_count != sm->sm_cibs)
+			report("Spaceman device", "bad total number of cibs.");
 	}
 
 	if (sm->sm_chunk_count != sm->sm_chunks)
@@ -402,11 +495,15 @@ static void check_spaceman_tier2_device(struct apfs_spaceman_phys *raw)
 	struct spaceman *sm = &sb->s_spaceman;
 	struct apfs_spaceman_device *main_dev = &raw->sm_dev[APFS_SD_MAIN];
 	struct apfs_spaceman_device *dev = &raw->sm_dev[APFS_SD_TIER2];
-	u32 addr_off, main_addr_off;
+	u32 addr_off, main_addr_off, main_addr_end;
 
 	addr_off = le32_to_cpu(dev->sm_addr_offset);
 	main_addr_off = le32_to_cpu(main_dev->sm_addr_offset);
-	if (addr_off != main_addr_off + sm->sm_cib_count * sizeof(u64))
+	if (sm->sm_cab_count)
+		main_addr_end = main_addr_off + sm->sm_cab_count * sizeof(u64);
+	else
+		main_addr_end = main_addr_off + sm->sm_cib_count * sizeof(u64);
+	if (addr_off != main_addr_end)
 		report("Spaceman device", "not consecutive address offsets.");
 	if (spaceman_val_from_off(raw, addr_off)) /* Empty device has no cib */
 		report_unknown("Fusion drive");
@@ -617,10 +714,10 @@ static void compare_container_bitmaps(u64 *sm_bmap, u64 *real_bmap, u64 chunks)
  * @free_next:	256-bit field to check
  * @free_head:	first free block in the ip circular buffer
  * @free_len:	number of free blocks in the ip circular buffer
+ * @bmap_count:	total number of ip bitmaps
  */
-static void check_ip_free_next(__le16 *free_next, u16 free_head, u16 free_len)
+static void check_ip_free_next(__le16 *free_next, u16 free_head, u16 free_len, u32 bmap_count)
 {
-	int bmap_count = 16;
 	__le16 *expected;
 	u32 i;
 
@@ -647,36 +744,54 @@ static void check_ip_free_next(__le16 *free_next, u16 free_head, u16 free_len)
 }
 
 /**
- * parse_ip_bitmap_list - Check consistency of the internal pool bitmap list
- * @raw: pointer to the raw space manager
- *
- * Returns the block number for the current bitmap.
+ * read_ip_bitmap_block - Read a single internal pool bitmap block into memory
+ * @bmap_base:	first block of the bitmap ring
+ * @bmap_len:	length of the bitmap ring
+ * @bmap_off:	offset of the block to read in the ring
+ * @bmap:	on return, the whole ip bitmap
  */
-static u64 parse_ip_bitmap_list(struct apfs_spaceman_phys *raw)
+static void read_ip_bitmap_block(u64 bmap_base, u32 bmap_len, u16 bmap_off, char *bmap)
+{
+	char *curr_blk = NULL;
+	u64 bno = bmap_base + bmap_off % bmap_len;
+
+	curr_blk = mmap(NULL, sb->s_blocksize, PROT_READ, MAP_PRIVATE, fd, bno * sb->s_blocksize);
+	if (curr_blk == MAP_FAILED)
+		system_error();
+
+	memcpy(bmap, curr_blk, sb->s_blocksize);
+
+	munmap(curr_blk, sb->s_blocksize);
+	curr_blk = NULL;
+}
+
+/**
+ * parse_ip_bitmap_list - Check consistency of the internal pool bitmap list
+ * @raw:	pointer to the raw space manager
+ * @bmap:	on return, set the whole ip bitmap here
+ */
+static void parse_ip_bitmap_list(struct apfs_spaceman_phys *raw, char *bmap)
 {
 	u64 bmap_base = le64_to_cpu(raw->sm_ip_bm_base);
-	u64 bmap_off;
+	u16 bmap_off;
 	u32 bmap_length = le32_to_cpu(raw->sm_ip_bm_block_count);
+	u32 bm_size_in_blocks = le32_to_cpu(raw->sm_ip_bm_size_in_blocks);
 	u16 free_head, free_tail, free_length;
 	char *free_next;
+	u32 i;
 
 	/*
-	 * So far all internal pool bitmaps encountered had only one block; the
-	 * bitmap area is larger than that because it keeps some old versions.
+	 * The bitmap area is a ring structure that keeps both the currently
+	 * valid ip bitmaps and some older versions. I don't know the reason
+	 * for this.
 	 */
-	bmap_off = spaceman_val_from_off(raw,
-					 le32_to_cpu(raw->sm_ip_bitmap_offset));
-	if (bmap_off >= bmap_length)
-		report("Internal pool", "bitmap block is out-of-bounds.");
-	if (le32_to_cpu(raw->sm_ip_bm_size_in_blocks) != 1)
-		report_unknown("Multiblock bitmap in internal pool");
 
 	/* The head and tail fit in 16-bit fields, so the length also should */
 	if (bmap_length > (u16)(~0U))
 		report("Internal pool", "bitmap list is too long.");
-	/* This may be wrong for huge containers, I haven't tested those yet */
-	if (bmap_length != 16)
-		report("Space manager", "ip doesn't have 16 bitmaps.");
+
+	if (bmap_length != 16 * bm_size_in_blocks)
+		report("Space manager", "ip doesn't have 16 bitmap copies.");
 
 	free_head = le16_to_cpu(raw->sm_ip_bm_free_head);
 	free_tail = le16_to_cpu(raw->sm_ip_bm_free_tail);
@@ -684,16 +799,22 @@ static u64 parse_ip_bitmap_list(struct apfs_spaceman_phys *raw)
 
 	if (free_head >= bmap_length || free_tail >= bmap_length)
 		report("Internal pool", "free bitmaps are out-of-bounds.");
-	if ((bmap_length + bmap_off - free_head) % bmap_length < free_length)
-		report("Internal pool", "current bitmap listed as free.");
-	if (free_length != bmap_length - 2)
-		report_unknown("Internal pool bitmaps in use are not two");
+	if (free_length != bmap_length - (bm_size_in_blocks + 1))
+		report_unknown("Ip bitmaps in use not one above size");
 
 	free_next = spaceman_256_from_off(raw, le32_to_cpu(raw->sm_ip_bm_free_next_offset));
-	check_ip_free_next((__le16 *)free_next, free_head, free_length);
+	check_ip_free_next((__le16 *)free_next, free_head, free_length, bmap_length);
 
 	container_bmap_mark_as_used(bmap_base, bmap_length);
-	return bmap_base + bmap_off;
+
+	for (i = 0; i < bm_size_in_blocks; ++i) {
+		bmap_off = spaceman_16_from_off(raw, le32_to_cpu(raw->sm_ip_bitmap_offset) + i * sizeof(bmap_off));
+		if (bmap_off >= bmap_length)
+			report("Internal pool", "bitmap block is out-of-bounds.");
+		if ((bmap_length + bmap_off - free_head) % bmap_length < free_length)
+			report("Internal pool", "current bitmap listed as free.");
+		read_ip_bitmap_block(bmap_base, bmap_length, bmap_off, bmap + i * sb->s_blocksize);
+	}
 }
 
 /**
@@ -709,6 +830,14 @@ static void check_ip_bitmap_blocks(struct apfs_spaceman_phys *raw)
 	u32 bmap_length = le32_to_cpu(raw->sm_ip_bm_block_count);
 	u64 pool_blocks = le64_to_cpu(raw->sm_ip_block_count);
 	int i;
+
+	/*
+	 * These zeroed-tail checks don't really make sense with multiblock ip
+	 * bitmaps, because we can't know for sure which ones were tails and
+	 * which ones were used in full.
+	 */
+	if (le32_to_cpu(raw->sm_ip_bm_size_in_blocks) != 1)
+		return;
 
 	for (i = 0; i < bmap_length; ++i) {
 		char *bmap;
@@ -745,30 +874,35 @@ static void check_ip_bitmap_blocks(struct apfs_spaceman_phys *raw)
  */
 static void check_internal_pool(struct apfs_spaceman_phys *raw)
 {
-	u64 *pool_bmap;
+	char *pool_bmap;
 	u64 pool_base = le64_to_cpu(raw->sm_ip_base);
 	u64 pool_blocks = le64_to_cpu(raw->sm_ip_block_count);
-	u64 ip_chunk_count = DIV_ROUND_UP(pool_blocks, 8 * sb->s_blocksize);
-	u64 xid;
+	u64 ip_chunk_count = le32_to_cpu(raw->sm_ip_bm_size_in_blocks);
+	u64 i;
 
-	pool_bmap = mmap(NULL, sb->s_blocksize, PROT_READ, MAP_PRIVATE,
-			 fd, parse_ip_bitmap_list(raw) * sb->s_blocksize);
-	if (pool_bmap == MAP_FAILED)
+	pool_bmap = calloc(ip_chunk_count, sb->s_blocksize);
+	if (!pool_bmap)
 		system_error();
+	parse_ip_bitmap_list(raw, pool_bmap);
 
 	if (memcmp(pool_bmap, sb->s_ip_bitmap, ip_chunk_count * sb->s_blocksize))
 		report("Space manager", "bad ip allocation bitmap.");
 	container_bmap_mark_as_used(pool_base, pool_blocks);
 
-	munmap(pool_bmap, sb->s_blocksize);
+	free(pool_bmap);
+	pool_bmap = NULL;
 
 	if (le32_to_cpu(raw->sm_ip_bm_tx_multiplier) !=
 					APFS_SPACEMAN_IP_BM_TX_MULTIPLIER)
 		report("Space manager", "bad tx multiplier for internal pool.");
 
-	xid = spaceman_val_from_off(raw, le32_to_cpu(raw->sm_ip_bm_xid_offset));
-	if (xid > sb->s_xid)
-		report("Internal pool", "bad transaction id.");
+	for (i = 0; i < ip_chunk_count; ++i) {
+		u64 xid;
+
+		xid = spaceman_val_from_off(raw, le32_to_cpu(raw->sm_ip_bm_xid_offset) + i * sizeof(xid));
+		if (xid > sb->s_xid)
+			report("Internal pool", "bad transaction id.");
+	}
 
 	check_ip_bitmap_blocks(raw);
 }
@@ -791,10 +925,13 @@ void check_spaceman(u64 oid)
 	if (obj.subtype != APFS_OBJECT_TYPE_INVALID)
 		report("Space manager", "wrong object subtype.");
 	sm->sm_xid = obj.xid;
+	sm->sm_obj_size = obj.size;
 
 	sm->sm_ip_base = le64_to_cpu(raw->sm_ip_base);
 	sm->sm_ip_block_count = le64_to_cpu(raw->sm_ip_block_count);
 	ip_chunk_count = DIV_ROUND_UP(sm->sm_ip_block_count, 8 * sb->s_blocksize);
+	if (ip_chunk_count != le32_to_cpu(raw->sm_ip_bm_size_in_blocks))
+		report("Space manager", "bad ip bm size.");
 	sb->s_ip_bitmap = calloc(ip_chunk_count, sb->s_blocksize);
 	if (!sb->s_ip_bitmap)
 		system_error();
@@ -838,7 +975,7 @@ void check_spaceman(u64 oid)
 
 	compare_container_bitmaps(sm->sm_bitmap, sb->s_bitmap,
 				  sm->sm_chunk_count);
-	munmap(raw, sb->s_blocksize);
+	munmap(raw, obj.size);
 }
 
 /**

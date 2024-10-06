@@ -16,7 +16,7 @@
 #include "super.h"
 
 /* maximum size of compressed data currently supported */
-#define MAX_FBUF_SIZE        (128 * 1024 * 1024)
+#define MAX_FBUF_SIZE        (1024 * 1024 * 1024)
 
 void read_whole_dstream(u64 oid, void *buf, loff_t size)
 {

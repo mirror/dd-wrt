@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include "apfsck.h"
 #include "super.h"
+#include "version.h"
 
 int fd;
 unsigned int options;
@@ -31,7 +32,10 @@ static void usage(void)
  */
 static void version(void)
 {
-	printf("apfsck version 0.1\n");
+	if (*GIT_COMMIT)
+		printf("apfsck %s\n", GIT_COMMIT);
+	else
+		printf("apfsck - unknown git commit id\n");
 	exit(1);
 }
 

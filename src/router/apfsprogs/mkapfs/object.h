@@ -9,7 +9,6 @@
 
 struct apfs_obj_phys;
 
-extern void set_object_header(struct apfs_obj_phys *obj, u64 oid, u32 type,
-			      u32 subtype);
+extern void set_object_header(struct apfs_obj_phys *obj, u32 size, u64 oid, u32 type, u32 subtype);
 
 #endif	/* _OBJECT_H */

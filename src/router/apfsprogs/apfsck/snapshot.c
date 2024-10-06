@@ -233,7 +233,7 @@ void parse_omap_snap_record(__le64 *key, struct apfs_omap_snapshot *val, int len
 	snap_xid = le64_to_cpu(*key);
 	if (snap_xid == 0)
 		report("Omap snapshot record", "xid is zero.");
-	if (snap_xid >= sb->s_xid)
+	if (snap_xid > sb->s_xid)
 		report("Omap snapshot record", "xid is in the future.");
 	if (snap_xid >= vsb->v_snap_max_xid)
 		vsb->v_snap_max_xid = snap_xid;

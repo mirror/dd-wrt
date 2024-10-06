@@ -87,12 +87,14 @@ static void check_inode_stats(struct inode *inode)
 
 	dstream = inode->i_dstream;
 	if (dstream) {
-		if (dstream->d_sparse_bytes != inode->i_sparse_bytes)
-			report("Inode record", "wrong count of sparse bytes.");
 		if (dstream->d_refcnt > 1 && !(inode->i_flags & (APFS_INODE_WAS_CLONED | APFS_INODE_WAS_EVER_CLONED)))
 			report("Inode record", "wrong flags for cloned inode.");
-		if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM)
+		if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM) {
 			dstream->d_orphan = true;
+		} else if (dstream->d_sparse_bytes != inode->i_sparse_bytes) {
+			/* The official fsck ignores this field for orphans */
+			report("Inode record", "wrong count of sparse bytes.");
+		}
 	} else {
 		if (inode->i_sparse_bytes)
 			report("Inode record", "sparse bytes without dstream.");
@@ -270,6 +272,10 @@ static void collect_dirstats(struct htable_entry *entry)
 	u16 filetype = inode->i_mode & S_IFMT;
 	struct dirstat *stat = inode->i_dirstat;
 	struct dirstat *parent_stat = NULL;
+
+	/* Orphans report a stale parent id, don't take that seriously */
+	if (inode->i_first_parent == APFS_PRIV_DIR_INO_NUM)
+		return;
 
 	if (inode->i_parent_id >= APFS_MIN_USER_INO_NUM) {
 		parent_stat = get_inode(inode->i_parent_id)->i_dirstat;
@@ -715,10 +721,53 @@ static void parse_inode_xfields(struct apfs_xf_blob *xblob, int len,
 }
 
 /**
- * check_inode_internal_flags - Check basic consistency of inode flags
- * @flags: the flags
+ * ino_after_cloneinfo_epoch - Is WAS_EVER_CLONED valid for this inode?
+ * @ino: inode number to check
  */
-static void check_inode_internal_flags(u64 flags)
+static bool ino_after_cloneinfo_epoch(u64 ino)
+{
+	struct apfs_superblock *raw = vsb->v_raw;
+	u64 id_epoch, xid;
+
+	id_epoch = le64_to_cpu(raw->apfs_cloneinfo_id_epoch);
+	xid = le64_to_cpu(raw->apfs_cloneinfo_xid);
+
+	/*
+	 * The epoch hasn't even started for this filesystem, all flags should
+	 * be assumed corrupted.
+	 */
+	if (!xid)
+		return false;
+
+	/*
+	 * This filesystem was last mounted by a buggy implementation, so flags
+	 * for newer inodes may have become corrupted.
+	 */
+	if (xid != vsb->v_last_xid)
+		return false;
+
+	/*
+	 * This filesystem was never even mounted by a buggy implementation:
+	 * all flags should be correct.
+	 */
+	if (!id_epoch)
+		return true;
+
+	/*
+	 * The reference seems to claim that this should be '>', but I have my
+	 * doubts beause I've seen fresh images with epoch == MIN_USER_INO_NUM.
+	 * There is no harm in being more strict here and waiting to see if we
+	 * trip on something.
+	 */
+	return ino >= id_epoch;
+}
+
+/**
+ * check_inode_internal_flags - Check basic consistency of inode flags
+ * @flags:	flags to check
+ * @ino:	inode number
+ */
+static void check_inode_internal_flags(u64 flags, u64 ino)
 {
 	if ((flags & APFS_VALID_INTERNAL_INODE_FLAGS) != flags)
 		report("Inode record", "invalid flags in use.");
@@ -748,8 +797,12 @@ static void check_inode_internal_flags(u64 flags)
 	if (flags & APFS_INODE_IS_APFS_PRIVATE)
 		report_unknown("Private implementation inode");
 
-	if (flags & APFS_INODE_WAS_CLONED && !(flags & APFS_INODE_WAS_EVER_CLONED))
-		report("Inode record", "inconsistent clone flags.");
+	if (flags & APFS_INODE_WAS_CLONED && !(flags & APFS_INODE_WAS_EVER_CLONED)) {
+		if (ino_after_cloneinfo_epoch(ino))
+			report("Inode record", "inconsistent clone flags.");
+		else
+			printf("Warning: bad WAS_EVER_CLONED flag for inode 0x%llx\n", (unsigned long long)ino);
+	}
 }
 
 /**
@@ -868,7 +921,7 @@ void parse_inode_record(struct apfs_inode_key *key,
 		vsb->v_has_priv = true;
 
 	inode->i_flags = le64_to_cpu(val->internal_flags);
-	check_inode_internal_flags(inode->i_flags);
+	check_inode_internal_flags(inode->i_flags, inode->i_ino);
 	if (inode->i_ino != inode->i_private_id && !(inode->i_flags & (APFS_INODE_WAS_CLONED | APFS_INODE_WAS_EVER_CLONED)))
 		report("Inode record", "not a clone but changed private id.");
 
