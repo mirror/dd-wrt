@@ -1392,7 +1392,7 @@ static void load_ath11k(int profile, int pci, int nss)
 	if (pci)
 		insmod(driver_ath11k_pci);
 }
-void load_wifi_drivers(void)
+void start_wifi_drivers(void)
 {
 	int notloaded = 0;
 

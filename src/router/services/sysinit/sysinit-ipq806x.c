@@ -1015,7 +1015,7 @@ void start_resetbc(void)
 		break;
 	}
 }
-void load_wifi_drivers(void)
+void start_wifi_drivers(void)
 {
 	int notloaded = 0;
 	notloaded = insmod("compat");

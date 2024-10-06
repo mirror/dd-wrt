@@ -351,7 +351,7 @@ char *set_wan_state(int state)
 void start_devinit_arch(void)
 {
 }
-void load_wifi_drivers(void)
+void start_wifi_drivers(void)
 {
 	if (!detect_wireless_devices(RADIO_ALL)) {
 		writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
