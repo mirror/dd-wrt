@@ -1,4 +1,3 @@
-#ifndef SERVICES_H
 #define SERVICES_H
 #define DECLARE_SERVICE(name) \
 	extern void start_##name(); \
@@ -7,7 +6,11 @@
 	extern char* name##_deps(); \
 	extern char* name##_proc();
 
+DECLARE_SERVICE(backup);
 DECLARE_SERVICE(bonding);
+DECLARE_SERVICE(bootconfig);
+DECLARE_SERVICE(bootconfig_efi);
+DECLARE_SERVICE(bootconfig_legacy);
 DECLARE_SERVICE(bridgesif);
 DECLARE_SERVICE(bridging);
 DECLARE_SERVICE(check_qmi);
@@ -52,6 +55,7 @@ DECLARE_SERVICE(hotplug_block);
 DECLARE_SERVICE(hotplug_net);
 DECLARE_SERVICE(hotplug_usb);
 DECLARE_SERVICE(httpd);
+DECLARE_SERVICE(hwmon);
 DECLARE_SERVICE(igmprt);
 DECLARE_SERVICE(init_restart);
 DECLARE_SERVICE(init_start);
@@ -71,6 +75,7 @@ DECLARE_SERVICE(loadfwmodules);
 DECLARE_SERVICE(mactelnetd);
 DECLARE_SERVICE(mdns);
 DECLARE_SERVICE(mkfiles);
+DECLARE_SERVICE(mmc);
 DECLARE_SERVICE(modules);
 DECLARE_SERVICE(modules_wait);
 DECLARE_SERVICE(nfs);
@@ -84,6 +89,7 @@ DECLARE_SERVICE(openvpnserver);
 DECLARE_SERVICE(openvpnserversys);
 DECLARE_SERVICE(openvpnserverwan);
 DECLARE_SERVICE(overclocking);
+DECLARE_SERVICE(plex);
 DECLARE_SERVICE(post_sysinit);
 DECLARE_SERVICE(pppmodules);
 DECLARE_SERVICE(pppoerelay);
@@ -108,6 +114,7 @@ DECLARE_SERVICE(radio_on_2);
 DECLARE_SERVICE(radio_timer);
 DECLARE_SERVICE(radvd);
 DECLARE_SERVICE(raid);
+DECLARE_SERVICE(recover);
 DECLARE_SERVICE(redial);
 DECLARE_SERVICE(resetbc);
 DECLARE_SERVICE(resetbutton);
@@ -143,6 +150,7 @@ DECLARE_SERVICE(tor);
 DECLARE_SERVICE(transmission);
 DECLARE_SERVICE(ttraff);
 DECLARE_SERVICE(ubus);
+DECLARE_SERVICE(udpxy);
 DECLARE_SERVICE(upnp);
 DECLARE_SERVICE(usteer);
 DECLARE_SERVICE(vifs);
