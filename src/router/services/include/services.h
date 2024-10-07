@@ -114,6 +114,7 @@ DECLARE_SERVICE(openvpnserversys);
 DECLARE_SERVICE(openvpnserverwan);
 DECLARE_SERVICE(overclocking);
 DECLARE_SERVICE(plex);
+DECLARE_SERVICE(post_network);
 DECLARE_SERVICE(post_sysinit);
 DECLARE_SERVICE(pppmodules);
 DECLARE_SERVICE(pppoerelay);
