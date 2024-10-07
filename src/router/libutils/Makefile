@@ -1663,8 +1663,8 @@ endif
 all: $(C_LIBS) $(A_LIBS) crashtest
 
 install: all
-	install -d $(INSTALLDIR)/libutils/lib
-	cp $(C_LIBS) $(INSTALLDIR)/libutils/lib
+	install -d $(INSTALLDIR)/libutils/usr/lib
+	cp $(C_LIBS) $(INSTALLDIR)/libutils/usr/lib
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
