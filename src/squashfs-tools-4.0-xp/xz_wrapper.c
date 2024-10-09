@@ -39,7 +39,6 @@ static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },
 			    { "powerpc", LZMA_FILTER_POWERPC, 0, 0 },
 			    { "ia64", LZMA_FILTER_IA64, 0, 0 },
 			    { "arm", LZMA_FILTER_ARM, 0, 0 },
-			    { "armbe", LZMA_FILTER_ARMBE, 0, 0 },
 			    { "armthumb", LZMA_FILTER_ARMTHUMB, 0, 0 },
 			    { "sparc", LZMA_FILTER_SPARC, 0, 0 },
 			    { "arm64", LZMA_FILTER_ARM64, 0, 0 },
@@ -51,6 +50,7 @@ static struct bcj bcj[] = { { "x86", LZMA_FILTER_X86, 0, 0 },
 			    { "delta-4", LZMA_FILTER_DELTA, 0, 4 },
 			    { "delta-8", LZMA_FILTER_DELTA, 0, 8 },
 			    { "delta-16", LZMA_FILTER_DELTA, 0, 16 },
+			    { "armbe", LZMA_FILTER_ARMBE, 0, 0 },
 			    { NULL, LZMA_VLI_UNKNOWN, 0 } };
 
 static int filter_count = 1;
