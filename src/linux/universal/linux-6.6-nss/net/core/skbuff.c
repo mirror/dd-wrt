@@ -174,7 +174,7 @@ static struct kmem_cache *skbuff_cb_store_cache __read_mostly;
 
 /* Control buffer save/restore for IMQ devices */
 struct skb_cb_table {
-	char			cb[56] __aligned(8);
+	char			cb[48] __aligned(8);
 	void			*cb_next;
 };
 
