@@ -292,7 +292,7 @@
 			};
 			partition@13b80000 {
 				label = "nvram";
-				reg = <0x12b80000 0x100000>;
+				reg = <0x13b80000 0x100000>;
 			};
 
 			partition@13c80000 {
