@@ -24,7 +24,6 @@ struct mgmt_commit_stats {
 #endif
 	struct timeval prep_cfg_start;
 	struct timeval txn_create_start;
-	struct timeval send_cfg_start;
 	struct timeval apply_cfg_start;
 	struct timeval apply_cfg_end;
 	struct timeval txn_del_start;
@@ -162,6 +161,46 @@ mgmt_fe_adapter_send_tree_data(uint64_t session_id, uint64_t txn_id,
 			       uint64_t req_id, LYD_FORMAT result_type,
 			       uint32_t wd_options, const struct lyd_node *tree,
 			       int partial_error, bool short_circuit_ok);
+
+/**
+ * Send RPC reply back to client.
+ *
+ * This also cleans up and frees the transaction.
+ *
+ * Args:
+ *	session_id: the session.
+ *	txn_id: the txn_id this data pertains to
+ *	req_id: the req id for the rpc message
+ *	result_type: the format of the result data.
+ *	result: the results.
+ *
+ * Return:
+ *	the return value from the underlying send function.
+ */
+extern int mgmt_fe_adapter_send_rpc_reply(uint64_t session_id, uint64_t txn_id,
+					  uint64_t req_id,
+					  LYD_FORMAT result_type,
+					  const struct lyd_node *result);
+
+/**
+ * Send edit reply back to client. If error is not 0, a native error is sent.
+ *
+ * This also cleans up and frees the transaction.
+ *
+ * Args:
+ *     session_id: the session.
+ *     txn_id: the txn_id this data pertains to
+ *     req_id: the req id for the edit message
+ *     unlock: implicit-lock flag was set in the request
+ *     commit: implicit-commit flag was set in the request
+ *     xpath: the xpath of the data node that was created
+ *     error: the error code, zero for successful request
+ *     errstr: the error string, if error is non-zero
+ */
+extern int mgmt_fe_adapter_send_edit_reply(uint64_t session_id, uint64_t txn_id,
+					   uint64_t req_id, bool unlock,
+					   bool commit, const char *xpath,
+					   int16_t error, const char *errstr);
 
 /**
  * Send an error back to the FE client using native messaging.

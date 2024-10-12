@@ -6,7 +6,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config SETFATTR
-//config:	bool "setfattr (3.7 kb)"
+//config:	bool "setfattr (3.9 kb)"
 //config:	default y
 //config:	help
 //config:	Set/delete extended attributes on files
@@ -32,7 +32,7 @@ int setfattr_main(int argc UNUSED_PARAM, char **argv)
 {
 	const char *name;
 	const char *value = "";
-	int status;
+	exitcode_t status;
 	int opt;
 	enum {
 		OPT_h = (1 << 0),

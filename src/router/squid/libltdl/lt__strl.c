@@ -1,6 +1,7 @@
 /* lt__strl.c -- size-bounded string copying and concatenation
 
-   Copyright (C) 2004, 2011-2015 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2011-2019, 2021-2022 Free Software Foundation,
+   Inc.
    Written by Bob Friesenhahn, 2004
 
    NOTE: The canonical source of this file is maintained with the

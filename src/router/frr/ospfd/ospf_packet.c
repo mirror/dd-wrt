@@ -23,6 +23,7 @@
 #endif
 #include "vrf.h"
 #include "lib_errors.h"
+#include "plist.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_network.h"
@@ -1486,12 +1487,8 @@ static void ospf_ls_req(struct ip *iph, struct ospf_header *ospfh,
 
 		/* Packet overflows MTU size, send immediately. */
 		if (length + ntohs(find->data->length) > ospf_packet_max(oi)) {
-			if (oi->type == OSPF_IFTYPE_NBMA)
-				ospf_ls_upd_send(nbr, ls_upd,
-						 OSPF_SEND_PACKET_DIRECT, 0);
-			else
-				ospf_ls_upd_send(nbr, ls_upd,
-						 OSPF_SEND_PACKET_INDIRECT, 0);
+			ospf_ls_upd_send(nbr, ls_upd,
+					 OSPF_SEND_PACKET_DIRECT, 0);
 
 			/* Only remove list contents.  Keep ls_upd. */
 			list_delete_all_node(ls_upd);
@@ -1508,12 +1505,7 @@ static void ospf_ls_req(struct ip *iph, struct ospf_header *ospfh,
 
 	/* Send rest of Link State Update. */
 	if (listcount(ls_upd) > 0) {
-		if (oi->type == OSPF_IFTYPE_NBMA)
-			ospf_ls_upd_send(nbr, ls_upd, OSPF_SEND_PACKET_DIRECT,
-					 0);
-		else
-			ospf_ls_upd_send(nbr, ls_upd, OSPF_SEND_PACKET_INDIRECT,
-					 0);
+		ospf_ls_upd_send(nbr, ls_upd, OSPF_SEND_PACKET_DIRECT, 0);
 
 		list_delete(&ls_upd);
 	} else
@@ -2756,6 +2748,20 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	oi = ospf_if_lookup_recv_if(ospf, iph->ip_src, ifp);
 
 	/*
+	 * If a neighbor filter prefix-list is configured, apply it to the IP
+	 * source address and ignore the packet if it doesn't match.
+	 */
+	if (oi && oi->nbr_filter) {
+		struct prefix ip_src_prefix = { AF_INET, IPV4_MAX_BITLEN, { 0 } };
+
+		ip_src_prefix.u.prefix4 = iph->ip_src;
+		if (prefix_list_apply(oi->nbr_filter,
+				      (struct prefix *)&(ip_src_prefix)) !=
+		    PREFIX_PERMIT)
+			return OSPF_READ_CONTINUE;
+	}
+
+	/*
 	 * ospf_verify_header() relies on a valid "oi" and thus can be called
 	 * only after the passive/backbone/other checks below are passed.
 	 * These checks in turn access the fields of unverified "ospfh"
@@ -3404,17 +3410,19 @@ static void ospf_poll_send(struct ospf_nbr_nbma *nbr_nbma)
 	if (OSPF_IF_PASSIVE_STATUS(oi) == OSPF_IF_PASSIVE)
 		return;
 
-	if (oi->type != OSPF_IFTYPE_NBMA)
-		return;
-
 	if (nbr_nbma->nbr != NULL && nbr_nbma->nbr->state != NSM_Down)
 		return;
 
-	if (PRIORITY(oi) == 0)
-		return;
+	if (oi->type == OSPF_IFTYPE_NBMA) {
+		if (PRIORITY(oi) == 0)
+			return;
 
-	if (nbr_nbma->priority == 0 && oi->state != ISM_DR
-	    && oi->state != ISM_Backup)
+		if (nbr_nbma->priority == 0 && oi->state != ISM_DR &&
+		    oi->state != ISM_Backup)
+			return;
+
+	} else if (oi->type != OSPF_IFTYPE_POINTOMULTIPOINT ||
+		   !oi->p2mp_non_broadcast)
 		return;
 
 	ospf_hello_send_sub(oi, nbr_nbma->addr.s_addr);
@@ -3460,7 +3468,7 @@ void ospf_hello_send(struct ospf_interface *oi)
 	if (OSPF_IF_PASSIVE_STATUS(oi) == OSPF_IF_PASSIVE)
 		return;
 
-	if (oi->type == OSPF_IFTYPE_NBMA) {
+	if (OSPF_IF_NON_BROADCAST(oi)) {
 		struct ospf_neighbor *nbr;
 		struct route_node *rn;
 
@@ -3476,31 +3484,44 @@ void ospf_hello_send(struct ospf_interface *oi)
 				continue;
 
 			/*
-			 * RFC 2328  Section 9.5.1
-			 * If the router is not eligible to become Designated
-			 * Router, it must periodically send Hello Packets to
-			 * both the Designated Router and the Backup
-			 * Designated Router (if they exist).
+			 * Always send to all neighbors on Point-to-Multipoint
+			 * non-braodcast networks.
 			 */
-			if (PRIORITY(oi) == 0 &&
-			    IPV4_ADDR_CMP(&DR(oi), &nbr->address.u.prefix4) &&
-			    IPV4_ADDR_CMP(&BDR(oi), &nbr->address.u.prefix4))
-				continue;
+			if (oi->type == OSPF_IFTYPE_POINTOMULTIPOINT)
+				ospf_hello_send_sub(oi, nbr->address.u.prefix4
+								.s_addr);
+			else {
+				/*
+				 * RFC 2328  Section 9.5.1
+				 * If the router is not eligible to become Designated
+				 * Router, it must periodically send Hello Packets to
+				 * both the Designated Router and the Backup
+				 * Designated Router (if they exist).
+				 */
+				if (PRIORITY(oi) == 0 &&
+				    IPV4_ADDR_CMP(&DR(oi),
+						  &nbr->address.u.prefix4) &&
+				    IPV4_ADDR_CMP(&BDR(oi),
+						  &nbr->address.u.prefix4))
+					continue;
 
-			/*
-			 * If the router is eligible to become Designated
-			 * Router, it must periodically send Hello Packets to
-			 * all neighbors that are also eligible. In addition,
-			 * if the router is itself the Designated Router or
-			 * Backup Designated Router, it must also send periodic
-			 * Hello Packets to all other neighbors.
-			 */
-			if (nbr->priority == 0 && oi->state == ISM_DROther)
-				continue;
+				/*
+				 * If the router is eligible to become Designated
+				 * Router, it must periodically send Hello Packets to
+				 * all neighbors that are also eligible. In addition,
+				 * if the router is itself the Designated Router or
+				 * Backup Designated Router, it must also send periodic
+				 * Hello Packets to all other neighbors.
+				 */
+				if (nbr->priority == 0 &&
+				    oi->state == ISM_DROther)
+					continue;
 
-			/* if oi->state == Waiting, send
-			 * hello to all neighbors */
-			ospf_hello_send_sub(oi, nbr->address.u.prefix4.s_addr);
+				/* if oi->state == Waiting, send
+				 * hello to all neighbors */
+				ospf_hello_send_sub(oi, nbr->address.u.prefix4
+								.s_addr);
+			}
 		}
 	} else {
 		/* Decide destination address. */
@@ -3857,11 +3878,10 @@ void ospf_ls_upd_send(struct ospf_neighbor *nbr, struct list *update, int flag,
 	else
 		p.prefix.s_addr = htonl(OSPF_ALLDROUTERS);
 
-	if (oi->type == OSPF_IFTYPE_NBMA) {
+	if (OSPF_IF_NON_BROADCAST(oi)) {
 		if (flag == OSPF_SEND_PACKET_INDIRECT)
-			flog_warn(
-				EC_OSPF_PACKET,
-				"* LS-Update is directly sent on NBMA network.");
+			flog_warn(EC_OSPF_PACKET,
+				  "* LS-Update is directly sent on non-broadcast network.");
 		if (IPV4_ADDR_SAME(&oi->address->u.prefix4, &p.prefix))
 			flog_warn(EC_OSPF_PACKET,
 				  "* LS-Update is sent to myself.");
@@ -3919,7 +3939,8 @@ static void ospf_ls_ack_send_list(struct ospf_interface *oi, struct list *ack,
 
 	/* Decide destination address. */
 	if (oi->type == OSPF_IFTYPE_POINTOPOINT ||
-	    oi->type == OSPF_IFTYPE_POINTOMULTIPOINT)
+	    (oi->type == OSPF_IFTYPE_POINTOMULTIPOINT &&
+	     !oi->p2mp_non_broadcast))
 		op->dst.s_addr = htonl(OSPF_ALLSPFROUTERS);
 	else
 		op->dst.s_addr = dst.s_addr;
@@ -3971,7 +3992,7 @@ void ospf_ls_ack_send_delayed(struct ospf_interface *oi)
 	      networks, delayed Link State Acknowledgment packets must be
 	      unicast	separately over	each adjacency (i.e., neighbor whose
 	      state is >= Exchange).  */
-	if (oi->type == OSPF_IFTYPE_NBMA) {
+	if (OSPF_IF_NON_BROADCAST(oi)) {
 		struct ospf_neighbor *nbr;
 		struct route_node *rn;
 

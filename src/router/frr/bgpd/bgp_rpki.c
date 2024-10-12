@@ -29,6 +29,7 @@
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_table.h"
 #include "bgp_advertise.h"
+#include "bgp_label.h"
 #include "bgpd/bgp_debug.h"
 #include "bgpd/bgp_attr.h"
 #include "bgpd/bgp_aspath.h"
@@ -438,7 +439,9 @@ static void rpki_delete_all_cache_nodes(struct rpki_vrf *rpki_vrf)
 
 	for (ALL_LIST_ELEMENTS(rpki_vrf->cache_list, cache_node, cache_next,
 			       cache)) {
-		rtr_mgr_remove_group(rpki_vrf->rtr_config, cache->preference);
+		if (is_running(rpki_vrf))
+			rtr_mgr_remove_group(rpki_vrf->rtr_config,
+					     cache->preference);
 		listnode_delete(rpki_vrf->cache_list, cache);
 	}
 }
@@ -656,17 +659,16 @@ static void revalidate_bgp_node(struct bgp_dest *bgp_dest, afi_t afi,
 				safi_t safi)
 {
 	struct bgp_adj_in *ain;
+	mpls_label_t *label;
+	uint8_t num_labels;
 
 	for (ain = bgp_dest->adj_in; ain; ain = ain->next) {
 		struct bgp_path_info *path =
 			bgp_dest_get_bgp_path_info(bgp_dest);
-		mpls_label_t *label = NULL;
-		uint32_t num_labels = 0;
 
-		if (path && path->extra) {
-			label = path->extra->label;
-			num_labels = path->extra->num_labels;
-		}
+		num_labels = BGP_PATH_INFO_NUM_LABELS(path);
+		label = num_labels ? path->extra->labels->label : NULL;
+
 		(void)bgp_update(ain->peer, bgp_dest_get_prefix(bgp_dest),
 				 ain->addpath_rx_id, ain->attr, afi, safi,
 				 ZEBRA_ROUTE_BGP, BGP_ROUTE_NORMAL, NULL, label,
@@ -1082,7 +1084,7 @@ static void print_prefix_table(struct vty *vty, struct rpki_vrf *rpki_vrf,
 
 	unsigned int number_of_ipv4_prefixes = 0;
 	unsigned int number_of_ipv6_prefixes = 0;
-	struct rtr_mgr_group *group = get_connected_group(rpki_vrf);
+	struct rtr_mgr_group *group;
 	json_object *json_records = NULL;
 
 	if (!rpki_vrf)
@@ -1621,7 +1623,7 @@ static int bgp_rpki_write_vrf(struct vty *vty, struct vrf *vrf)
 #endif
 		case TCP:
 			tcp_config = cache->tr_config.tcp_config;
-			vty_out(vty, "%s rpki cache %s %s ", sep,
+			vty_out(vty, "%s rpki cache tcp %s %s ", sep,
 				tcp_config->host, tcp_config->port);
 			if (tcp_config->bindaddr)
 				vty_out(vty, "source %s ",
@@ -1630,7 +1632,7 @@ static int bgp_rpki_write_vrf(struct vty *vty, struct vrf *vrf)
 #if defined(FOUND_SSH)
 		case SSH:
 			ssh_config = cache->tr_config.ssh_config;
-			vty_out(vty, "%s rpki cache %s %u %s %s %s ", sep,
+			vty_out(vty, "%s rpki cache ssh %s %u %s %s %s ", sep,
 				ssh_config->host, ssh_config->port,
 				ssh_config->username,
 				ssh_config->client_privkey_path,
@@ -1918,8 +1920,11 @@ DEFUN (no_rpki_retry_interval,
 	return CMD_SUCCESS;
 }
 
+#if CONFDATE > 20240916
+CPP_NOTICE("Remove rpki_cache_cmd")
+#endif
 DEFPY(rpki_cache, rpki_cache_cmd,
-      "rpki cache <A.B.C.D|WORD> <TCPPORT|(1-65535)$sshport SSH_UNAME SSH_PRIVKEY [SERVER_PUBKEY]> [source <A.B.C.D>$bindaddr] preference (1-255)",
+      "rpki cache <A.B.C.D|WORD> <TCPPORT|(1-65535)$sshport SSH_UNAME SSH_PRIVKEY [KNOWN_HOSTS_PATH]> [source <A.B.C.D>$bindaddr] preference (1-255)",
       RPKI_OUTPUT_STRING
       "Install a cache server to current group\n"
       "IP address of cache server\n"
@@ -1928,7 +1933,7 @@ DEFPY(rpki_cache, rpki_cache_cmd,
       "SSH port number\n"
       "SSH user name\n"
       "Path to own SSH private key\n"
-      "Path to Public key of cache server\n"
+      "Path to the known hosts file\n"
       "Configure source IP address of RPKI connection\n"
       "Define a Source IP Address\n"
       "Preference of the cache server\n"
@@ -1967,7 +1972,7 @@ DEFPY(rpki_cache, rpki_cache_cmd,
 	if (ssh_uname) {
 #if defined(FOUND_SSH)
 		return_value = add_ssh_cache(rpki_vrf, cache, sshport, ssh_uname,
-					     ssh_privkey, server_pubkey,
+					     ssh_privkey, known_hosts_path,
 					     preference, bindaddr_str);
 #else
 		return_value = SUCCESS;
@@ -1990,19 +1995,143 @@ DEFPY(rpki_cache, rpki_cache_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFPY(rpki_cache_tcp, rpki_cache_tcp_cmd,
+      "rpki cache tcp <A.B.C.D|WORD>$cache TCPPORT [source <A.B.C.D>$bindaddr] preference (1-255)",
+      RPKI_OUTPUT_STRING
+      "Install a cache server to current group\n"
+      "Use TCP\n"
+      "IP address of cache server\n"
+      "Hostname of cache server\n"
+      "TCP port number\n"
+      "Configure source IP address of RPKI connection\n"
+      "Define a Source IP Address\n"
+      "Preference of the cache server\n"
+      "Preference value\n")
+{
+	int return_value;
+	struct listnode *cache_node;
+	struct cache *current_cache;
+	struct rpki_vrf *rpki_vrf;
+	bool init;
+
+	if (vty->node == RPKI_VRF_NODE)
+		rpki_vrf = VTY_GET_CONTEXT_SUB(rpki_vrf);
+	else
+		rpki_vrf = VTY_GET_CONTEXT(rpki_vrf);
+
+	if (!rpki_vrf)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (!rpki_vrf || !rpki_vrf->cache_list)
+		return CMD_WARNING;
+
+	init = !!list_isempty(rpki_vrf->cache_list);
+
+	for (ALL_LIST_ELEMENTS_RO(rpki_vrf->cache_list, cache_node,
+				  current_cache)) {
+		if (current_cache->preference == preference) {
+			vty_out(vty,
+				"Cache with preference %ld is already configured\n",
+				preference);
+			return CMD_WARNING;
+		}
+	}
+
+	return_value = add_tcp_cache(rpki_vrf, cache, tcpport, preference,
+				     bindaddr_str);
+
+	if (return_value == ERROR) {
+		vty_out(vty, "Could not create new rpki cache\n");
+		return CMD_WARNING;
+	}
+
+	if (init)
+		start(rpki_vrf);
+
+	return CMD_SUCCESS;
+}
+
+DEFPY(rpki_cache_ssh, rpki_cache_ssh_cmd,
+      "rpki cache ssh <A.B.C.D|WORD>$cache (1-65535)$sshport SSH_UNAME SSH_PRIVKEY [KNOWN_HOSTS_PATH] [source <A.B.C.D>$bindaddr] preference (1-255)",
+      RPKI_OUTPUT_STRING
+      "Install a cache server to current group\n"
+      "Use SSH\n"
+      "IP address of cache server\n"
+      "Hostname of cache server\n"
+      "SSH port number\n"
+      "SSH user name\n"
+      "Path to own SSH private key\n"
+      "Path to the known hosts file\n"
+      "Configure source IP address of RPKI connection\n"
+      "Define a Source IP Address\n"
+      "Preference of the cache server\n"
+      "Preference value\n")
+{
+	int return_value;
+	struct listnode *cache_node;
+	struct cache *current_cache;
+	struct rpki_vrf *rpki_vrf;
+	bool init;
+
+	if (vty->node == RPKI_VRF_NODE)
+		rpki_vrf = VTY_GET_CONTEXT_SUB(rpki_vrf);
+	else
+		rpki_vrf = VTY_GET_CONTEXT(rpki_vrf);
+
+	if (!rpki_vrf)
+		return CMD_WARNING_CONFIG_FAILED;
+
+	if (!rpki_vrf || !rpki_vrf->cache_list)
+		return CMD_WARNING;
+
+	init = !!list_isempty(rpki_vrf->cache_list);
+
+	for (ALL_LIST_ELEMENTS_RO(rpki_vrf->cache_list, cache_node,
+				  current_cache)) {
+		if (current_cache->preference == preference) {
+			vty_out(vty,
+				"Cache with preference %ld is already configured\n",
+				preference);
+			return CMD_WARNING;
+		}
+	}
+
+#if defined(FOUND_SSH)
+	return_value = add_ssh_cache(rpki_vrf, cache, sshport, ssh_uname,
+				     ssh_privkey, known_hosts_path, preference,
+				     bindaddr_str);
+#else
+	return_value = SUCCESS;
+	vty_out(vty,
+		"ssh sockets are not supported. Please recompile rtrlib and frr with ssh support. If you want to use it\n");
+#endif
+
+	if (return_value == ERROR) {
+		vty_out(vty, "Could not create new rpki cache\n");
+		return CMD_WARNING;
+	}
+
+	if (init)
+		start(rpki_vrf);
+
+	return CMD_SUCCESS;
+}
+
 DEFPY (no_rpki_cache,
        no_rpki_cache_cmd,
-       "no rpki cache <A.B.C.D|WORD> <TCPPORT|(1-65535)$sshport SSH_UNAME SSH_PRIVKEY [SERVER_PUBKEY]> [source <A.B.C.D>$bindaddr] preference (1-255)",
+       "no rpki cache <tcp|ssh> <A.B.C.D|WORD> <TCPPORT|(1-65535)$sshport SSH_UNAME SSH_PRIVKEY [KNOWN_HOSTS_PATH]> [source <A.B.C.D>$bindaddr] preference (1-255)",
        NO_STR
        RPKI_OUTPUT_STRING
        "Install a cache server to current group\n"
+       "Use TCP\n"
+       "Use SSH\n"
        "IP address of cache server\n"
        "Hostname of cache server\n"
        "TCP port number\n"
        "SSH port number\n"
        "SSH user name\n"
        "Path to own SSH private key\n"
-       "Path to Public key of cache server\n"
+       "Path to the known hosts file\n"
        "Configure source IP address of RPKI connection\n"
        "Define a Source IP Address\n"
        "Preference of the cache server\n"
@@ -2088,16 +2217,18 @@ DEFPY (show_rpki_prefix_table,
 
 DEFPY (show_rpki_as_number,
        show_rpki_as_number_cmd,
-       "show rpki as-number ASNUM$by_asn [vrf NAME$vrfname] [json$uj]",
+       "show rpki as-number <0$zero|ASNUM$by_asn> [vrf NAME$vrfname] [json$uj]",
        SHOW_STR
        RPKI_OUTPUT_STRING
        "Lookup by ASN in prefix table\n"
+       "AS Number of 0, see RFC-7607\n"
        "AS Number\n"
        VRF_CMD_HELP_STR
        JSON_STR)
 {
 	struct json_object *json = NULL;
 	struct rpki_vrf *rpki_vrf;
+	as_t as;
 
 	if (uj)
 		json = json_object_new_object();
@@ -2118,18 +2249,24 @@ DEFPY (show_rpki_as_number,
 		return CMD_WARNING;
 	}
 
-	print_prefix_table_by_asn(vty, by_asn, rpki_vrf, json);
+	if (zero)
+		as = 0;
+	else
+		as = by_asn;
+
+	print_prefix_table_by_asn(vty, as, rpki_vrf, json);
 	return CMD_SUCCESS;
 }
 
 DEFPY (show_rpki_prefix,
        show_rpki_prefix_cmd,
-       "show rpki prefix <A.B.C.D/M|X:X::X:X/M> [ASNUM$asn] [vrf NAME$vrfname] [json$uj]",
+       "show rpki prefix <A.B.C.D/M|X:X::X:X/M> [0$zero|ASNUM$asn] [vrf NAME$vrfname] [json$uj]",
        SHOW_STR
        RPKI_OUTPUT_STRING
        "Lookup IP prefix and optionally ASN in prefix table\n"
        "IPv4 prefix\n"
        "IPv6 prefix\n"
+       "AS Number of 0, see RFC-7607\n"
        "AS Number\n"
        VRF_CMD_HELP_STR
        JSON_STR)
@@ -2138,6 +2275,7 @@ DEFPY (show_rpki_prefix,
 	json_object *json_records = NULL;
 	enum asnotation_mode asnotation;
 	struct rpki_vrf *rpki_vrf;
+	as_t as;
 
 	if (uj)
 		json = json_object_new_object();
@@ -2152,6 +2290,11 @@ DEFPY (show_rpki_prefix,
 			vty_out(vty, "No Connection to RPKI cache server.\n");
 		return CMD_WARNING;
 	}
+
+	if (zero)
+		as = 0;
+	else
+		as = asn;
 
 	struct lrtr_ip_addr addr;
 	char addr_str[INET6_ADDRSTRLEN];
@@ -2174,7 +2317,7 @@ DEFPY (show_rpki_prefix,
 	enum pfxv_state result;
 
 	if (pfx_table_validate_r(rpki_vrf->rtr_config->pfx_table, &matches,
-				 &match_count, asn, &addr, prefix->prefixlen,
+				 &match_count, as, &addr, prefix->prefixlen,
 				 &result) != PFX_SUCCESS) {
 		if (json) {
 			json_object_string_add(json, "error", "Prefix lookup failed.");
@@ -2198,7 +2341,7 @@ DEFPY (show_rpki_prefix,
 		const struct pfx_record *record = &matches[i];
 
 		if (record->max_len >= prefix->prefixlen &&
-		    ((asn != 0 && (uint32_t)asn == record->asn) || asn == 0)) {
+		    ((as != 0 && (uint32_t)as == record->asn) || asn == 0)) {
 			print_record(&matches[i], vty, json_records,
 				     asnotation);
 		}
@@ -2243,10 +2386,16 @@ DEFPY (show_rpki_cache_server,
 		if (cache->type == TCP) {
 			if (!json) {
 				vty_out(vty,
-					"host: %s port: %s, preference: %hhu\n",
+					"host: %s port: %s, preference: %hhu, protocol: tcp",
 					cache->tr_config.tcp_config->host,
 					cache->tr_config.tcp_config->port,
 					cache->preference);
+				if (cache->tr_config.tcp_config->bindaddr)
+					vty_out(vty, ", source: %s\n",
+						cache->tr_config.tcp_config
+							->bindaddr);
+				else
+					vty_out(vty, "\n");
 			} else {
 				json_server = json_object_new_object();
 				json_object_string_add(json_server, "mode",
@@ -2259,6 +2408,12 @@ DEFPY (show_rpki_cache_server,
 					cache->tr_config.tcp_config->port);
 				json_object_int_add(json_server, "preference",
 						    cache->preference);
+				if (cache->tr_config.tcp_config->bindaddr)
+					json_object_string_add(json_server,
+							       "source",
+							       cache->tr_config
+								       .tcp_config
+								       ->bindaddr);
 				json_object_array_add(json_servers,
 						      json_server);
 			}
@@ -2267,7 +2422,7 @@ DEFPY (show_rpki_cache_server,
 		} else if (cache->type == SSH) {
 			if (!json) {
 				vty_out(vty,
-					"host: %s port: %d username: %s server_hostkey_path: %s client_privkey_path: %s, preference: %hhu\n",
+					"host: %s, port: %d, username: %s, server_hostkey_path: %s, client_privkey_path: %s, preference: %hhu, protocol: ssh",
 					cache->tr_config.ssh_config->host,
 					cache->tr_config.ssh_config->port,
 					cache->tr_config.ssh_config->username,
@@ -2276,6 +2431,12 @@ DEFPY (show_rpki_cache_server,
 					cache->tr_config.ssh_config
 						->client_privkey_path,
 					cache->preference);
+				if (cache->tr_config.ssh_config->bindaddr)
+					vty_out(vty, ", source: %s\n",
+						cache->tr_config.ssh_config
+							->bindaddr);
+				else
+					vty_out(vty, "\n");
 			} else {
 				json_server = json_object_new_object();
 				json_object_string_add(json_server, "mode",
@@ -2299,6 +2460,12 @@ DEFPY (show_rpki_cache_server,
 						->client_privkey_path);
 				json_object_int_add(json_server, "preference",
 						    cache->preference);
+				if (cache->tr_config.ssh_config->bindaddr)
+					json_object_string_add(json_server,
+							       "source",
+							       cache->tr_config
+								       .ssh_config
+								       ->bindaddr);
 				json_object_array_add(json_servers,
 						      json_server);
 			}
@@ -2651,6 +2818,8 @@ static void install_cli_commands(void)
 	install_element(RPKI_NODE, &no_rpki_retry_interval_cmd);
 
 	/* Install rpki cache commands */
+	install_element(RPKI_NODE, &rpki_cache_tcp_cmd);
+	install_element(RPKI_NODE, &rpki_cache_ssh_cmd);
 	install_element(RPKI_NODE, &rpki_cache_cmd);
 	install_element(RPKI_NODE, &no_rpki_cache_cmd);
 
@@ -2673,6 +2842,8 @@ static void install_cli_commands(void)
 	install_element(RPKI_VRF_NODE, &no_rpki_retry_interval_cmd);
 
 	/* Install rpki cache commands */
+	install_element(RPKI_VRF_NODE, &rpki_cache_tcp_cmd);
+	install_element(RPKI_VRF_NODE, &rpki_cache_ssh_cmd);
 	install_element(RPKI_VRF_NODE, &rpki_cache_cmd);
 	install_element(RPKI_VRF_NODE, &no_rpki_cache_cmd);
 

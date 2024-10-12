@@ -9,7 +9,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config CROND
-//config:	bool "crond (14 kb)"
+//config:	bool "crond (15 kb)"
 //config:	default y
 //config:	select FEATURE_SYSLOG
 //config:	help
@@ -190,7 +190,7 @@ static void log5(const char *msg, ...)
 {
 	va_list va;
 	va_start(va, msg);
-	crondlog(4, msg, va);
+	crondlog(5, msg, va);
 	va_end(va);
 }
 

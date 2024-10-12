@@ -380,6 +380,10 @@ static int write_main(int argc, char *argv[])
 		writeubiformat = 1;
 		mtd = "rootfs";
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		writeubiformat = 1;
+		mtd = "rootfs";
+		break;
 	}
 #endif
 rewrite:;

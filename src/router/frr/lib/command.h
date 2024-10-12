@@ -462,6 +462,8 @@ struct cmd_node {
 #define MPLS_LDP_SYNC_HOLDDOWN_STR                                             \
 	"Time to wait for LDP-SYNC to occur before restoring if cost\n"
 #define NO_MPLS_LDP_SYNC_HOLDDOWN_STR "holddown timer disable\n"
+#define BGP_AF_STR "Address Family\n"
+#define BGP_AF_MODIFIER_STR "Address Family modifier\n"
 
 /* Command warnings. */
 #define NO_PASSWD_CMD_WARNING                                                  \
@@ -636,6 +638,7 @@ extern void cmd_banner_motd_line(const char *line);
 
 struct cmd_variable_handler {
 	const char *tokenname, *varname;
+	const char *xpath;	/* fill comps from set of values at xpath */
 	void (*completions)(vector out, struct cmd_token *token);
 };
 

@@ -119,6 +119,7 @@ int inlist(char *name)
 int main(int argc, char *argv[])
 {
 	FILE *out = fopen("main.c", "wb");
+	FILE *s = fopen("services.txt","wb");
 	int i = 0;
 	readsymbols();
 	fprintf(out, "/* generated - do not edit */\n");
@@ -144,6 +145,7 @@ int main(int argc, char *argv[])
 			int deps = sym(name, NULL, "deps");
 			int proc = sym(name, NULL, "proc");
 			fprintf(out, "void start_%s(void);\n", name);
+			fprintf(s,"DECLARE_SERVICE(%s);\n", name);
 			if (deps)
 				fprintf(out, "char *%s_deps(void);\n", name);
 			if (proc)

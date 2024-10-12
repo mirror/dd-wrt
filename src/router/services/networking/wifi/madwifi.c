@@ -1454,7 +1454,7 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 		fprintf(fp, "ieee80211w=2\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
-	} else if (ispsk3 || ispsk2sha256 || isowe && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
+	} else if ((ispsk3 || ispsk2sha256 || isowe) && (!ispsk && !ispsk2 && !iswpa && !iswpa2)) {
 		fprintf(fp, "ieee80211w=1\n");
 		if (ispsk3 || iswpa3 || iswpa3_192 || iswpa3_128 || isowe)
 			fprintf(fp, "sae_require_mfp=1\n");
@@ -2941,7 +2941,7 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void) // madwifi implementation for atheros based
 	// cards
 {
-	load_wifi_drivers();
+	start_wifi_drivers();
 #if !defined(HAVE_IPQ6018)
 	if (nvram_match("sfe", "1")) {
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect");

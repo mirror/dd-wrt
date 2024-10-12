@@ -22,10 +22,18 @@ struct object {
 	u32 type;
 	u32 subtype;
 	u32 flags;
+
+	/*
+	 * Size of the object in bytes. It's usually a single block, the only
+	 * exception I've found so far are the spacemans of containers that are
+	 * too big to have all cib addresses in one block, but too small to fill
+	 * a whole cab with cib addresses.
+	 */
+	u32 size;
 };
 
 extern int obj_verify_csum(struct apfs_obj_phys *obj);
-extern void *read_object_nocheck(u64 bno, struct object *obj);
+extern void *read_object_nocheck(u64 bno, u32 size, struct object *obj);
 extern u32 parse_object_flags(u32 flags, bool encrypted);
 extern void *read_object(u64 oid, struct htable_entry **omap_table, struct object *obj);
 extern void *read_object_noheader(u64 oid, struct htable_entry **omap_table, struct object *obj);

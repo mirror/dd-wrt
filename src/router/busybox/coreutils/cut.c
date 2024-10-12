@@ -9,7 +9,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config CUT
-//config:	bool "cut (5.8 kb)"
+//config:	bool "cut (6.7 kb)"
 //config:	default y
 //config:	help
 //config:	cut is used to print selected parts of lines from
@@ -311,7 +311,7 @@ int cut_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	{
-		int retval = EXIT_SUCCESS;
+		exitcode_t retval = EXIT_SUCCESS;
 
 		if (!*argv)
 			*--argv = (char *)"-";

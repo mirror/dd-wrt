@@ -147,6 +147,13 @@ static inline bool apfs_volume_is_sealed(void)
 	return flags & APFS_INCOMPAT_SEALED_VOLUME;
 }
 
+static inline bool apfs_volume_has_extent_prealloc_flag(void)
+{
+	u64 flags = le64_to_cpu(vsb->v_raw->apfs_incompatible_features);
+
+	return flags & APFS_INCOMPAT_EXTENT_PREALLOC_FLAG;
+}
+
 static inline bool apfs_volume_is_in_group(void)
 {
 	u64 features = le64_to_cpu(vsb->v_raw->apfs_features);

@@ -78,11 +78,6 @@ extern "C" {
   NDPI_STATIC char *ndpi_get_ip_string(const ndpi_ip_addr_t * ip, char *buf, u_int buf_len);
   NDPI_STATIC u_int8_t ndpi_is_ipv6(const ndpi_ip_addr_t *ip);
 
-  NDPI_STATIC char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id);
-  NDPI_STATIC u_int16_t ndpi_get_proto_by_name(struct ndpi_detection_module_struct *ndpi_mod, const char *name);
-
-  NDPI_STATIC u_int8_t ndpi_is_proto(ndpi_protocol proto, u_int16_t p);
-
   NDPI_STATIC void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
   /** Checks when the @p payload starts with the string literal @p str.

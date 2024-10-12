@@ -78,6 +78,8 @@ static inline struct bgp_adj_out *adj_lookup(struct bgp_dest *dest,
 
 static void adj_free(struct bgp_adj_out *adj)
 {
+	bgp_labels_unintern(&adj->labels);
+
 	TAILQ_REMOVE(&(adj->subgroup->adjq), adj, subgrp_adj_train);
 	SUBGRP_DECR_STAT(adj->subgroup, adj_count);
 
@@ -97,13 +99,19 @@ subgrp_announce_addpath_best_selected(struct bgp_dest *dest,
 	enum bgp_path_selection_reason reason;
 	char pfx_buf[PREFIX2STR_BUFFER] = {};
 	int paths_eq = 0;
-	int best_path_count = 0;
 	struct list *list = list_new();
 	struct bgp_path_info *pi = NULL;
+	uint16_t paths_count = 0;
+	uint16_t paths_limit = peer->addpath_paths_limit[afi][safi].receive;
 
 	if (peer->addpath_type[afi][safi] == BGP_ADDPATH_BEST_SELECTED) {
-		while (best_path_count++ <
-		       peer->addpath_best_selected[afi][safi]) {
+		paths_limit =
+			paths_limit
+				? MIN(paths_limit,
+				      peer->addpath_best_selected[afi][safi])
+				: peer->addpath_best_selected[afi][safi];
+
+		while (paths_count++ < paths_limit) {
 			struct bgp_path_info *exist = NULL;
 
 			for (pi = bgp_dest_get_bgp_path_info(dest); pi;
@@ -139,8 +147,26 @@ subgrp_announce_addpath_best_selected(struct bgp_dest *dest,
 				subgroup_process_announce_selected(
 					subgrp, NULL, dest, afi, safi, id);
 		} else {
-			subgroup_process_announce_selected(subgrp, pi, dest,
-							   afi, safi, id);
+			/* No Paths-Limit involved */
+			if (!paths_limit) {
+				subgroup_process_announce_selected(subgrp, pi,
+								   dest, afi,
+								   safi, id);
+				continue;
+			}
+
+			/* If we have Paths-Limit capability, we MUST
+			 * not send more than the number of paths expected
+			 * by the peer.
+			 */
+			if (paths_count++ < paths_limit)
+				subgroup_process_announce_selected(subgrp, pi,
+								   dest, afi,
+								   safi, id);
+			else
+				subgroup_process_announce_selected(subgrp, NULL,
+								   dest, afi,
+								   safi, id);
 		}
 	}
 
@@ -509,7 +535,7 @@ bool bgp_adj_out_set_subgroup(struct bgp_dest *dest,
 	struct peer *adv_peer;
 	struct peer_af *paf;
 	struct bgp *bgp;
-	uint32_t attr_hash = attrhash_key_make(attr);
+	uint32_t attr_hash = 0;
 
 	peer = SUBGRP_PEER(subgrp);
 	afi = SUBGRP_AFI(subgrp);
@@ -544,9 +570,13 @@ bool bgp_adj_out_set_subgroup(struct bgp_dest *dest,
 	 * the route wasn't changed actually.
 	 * Do not suppress BGP UPDATES for route-refresh.
 	 */
-	if (CHECK_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_DUPLICATES)
-	    && !CHECK_FLAG(subgrp->sflags, SUBGRP_STATUS_FORCE_UPDATES)
-	    && adj->attr_hash == attr_hash) {
+	if (likely(CHECK_FLAG(bgp->flags, BGP_FLAG_SUPPRESS_DUPLICATES)))
+		attr_hash = attrhash_key_make(attr);
+
+	if (!CHECK_FLAG(subgrp->sflags, SUBGRP_STATUS_FORCE_UPDATES) &&
+	    attr_hash && adj->attr_hash == attr_hash &&
+	    bgp_labels_cmp(path->extra ? path->extra->labels : NULL,
+			   adj->labels)) {
 		if (BGP_DEBUG(update, UPDATE_OUT)) {
 			char attr_str[BUFSIZ] = {0};
 
@@ -588,6 +618,10 @@ bool bgp_adj_out_set_subgroup(struct bgp_dest *dest,
 	adv->baa = bgp_advertise_attr_intern(subgrp->hash, attr);
 	adv->adj = adj;
 	adj->attr_hash = attr_hash;
+	if (path->extra)
+		adj->labels = bgp_labels_intern(path->extra->labels);
+	else
+		adj->labels = NULL;
 
 	/* Add new advertisement to advertisement attribute list. */
 	bgp_advertise_add(adv->baa, adv);

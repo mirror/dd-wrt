@@ -124,7 +124,7 @@ void make_empty_btree_root(u64 bno, u64 oid, u32 subtype)
 		type |= APFS_OBJ_EPHEMERAL;
 	else
 		type |= APFS_OBJ_PHYSICAL;
-	set_object_header(&root->btn_o, oid, type, subtype);
+	set_object_header(&root->btn_o, param->blocksize, oid, type, subtype);
 
 	munmap(root, param->blocksize);
 }
@@ -205,7 +205,7 @@ static void make_omap_root(u64 bno, bool is_vol)
 	root->btn_val_free_list.len = 0;
 
 	set_omap_info((void *)root + param->blocksize - info_len, 1);
-	set_object_header(&root->btn_o, bno,
+	set_object_header(&root->btn_o, param->blocksize, bno,
 			  APFS_OBJECT_TYPE_BTREE | APFS_OBJ_PHYSICAL,
 			  APFS_OBJECT_TYPE_OMAP);
 	munmap(root, param->blocksize);
@@ -234,7 +234,7 @@ void make_omap_btree(u64 bno, bool is_vol)
 		make_omap_root(MAIN_OMAP_ROOT_BNO, is_vol);
 	}
 
-	set_object_header(&omap->om_o, bno,
+	set_object_header(&omap->om_o, param->blocksize, bno,
 			  APFS_OBJ_PHYSICAL | APFS_OBJECT_TYPE_OMAP,
 			  APFS_OBJECT_TYPE_INVALID);
 	munmap(omap, param->blocksize);
@@ -313,7 +313,7 @@ void make_cat_root(u64 bno, u64 oid)
 	root->btn_val_free_list.len = 0;
 
 	set_cat_info((void *)root + param->blocksize - info_len);
-	set_object_header(&root->btn_o, oid,
+	set_object_header(&root->btn_o, param->blocksize, oid,
 			  APFS_OBJECT_TYPE_BTREE | APFS_OBJ_VIRTUAL,
 			  APFS_OBJECT_TYPE_FSTREE);
 	munmap(root, param->blocksize);

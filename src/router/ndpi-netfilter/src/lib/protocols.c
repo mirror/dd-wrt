@@ -496,3 +496,11 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/ripe_atlas.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/atg.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/cnp-ip.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/lustre.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/trdp.c"
+#undef NDPI_CURRENT_PROTO

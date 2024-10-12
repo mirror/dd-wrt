@@ -10,7 +10,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config BRCTL
-//config:	bool "brctl (4.7 kb)"
+//config:	bool "brctl (9.9 kb)"
 //config:	default y
 //config:	help
 //config:	Manage ethernet bridges.
@@ -538,7 +538,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 		DIR *net;
 		struct dirent *ent;
 		int need_hdr = 1;
-		int exitcode = EXIT_SUCCESS;
+		exitcode_t exitcode = EXIT_SUCCESS;
 
 		if (*argv) {
 			/* "show BR1 BR2 BR3" */

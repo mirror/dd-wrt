@@ -51,7 +51,7 @@
  * diff -u /tmp/std_find /tmp/bb_find && echo Identical
  */
 //config:config FIND
-//config:	bool "find (14 kb)"
+//config:	bool "find (16 kb)"
 //config:	default y
 //config:	help
 //config:	find is used to search your system to find specified files.
@@ -179,6 +179,13 @@
 //config:	for all matched files at once.
 //config:	Without this option, -exec + is a synonym for -exec ;
 //config:	(IOW: it works correctly, but without expected speedup)
+//config:
+//config:config FEATURE_FIND_EXEC_OK
+//config:	bool "Enable -ok: execute confirmed commands"
+//config:	default y
+//config:	depends on FEATURE_FIND_EXEC
+//config:	help
+//config:	Support the 'find -ok' option which prompts before executing.
 //config:
 //config:config FEATURE_FIND_USER
 //config:	bool "Enable -user: username/uid matching"
@@ -397,6 +404,9 @@
 //usage:	IF_FEATURE_FIND_EXEC_PLUS(
 //usage:     "\n	-exec CMD ARG + Run CMD with {} replaced by list of file names"
 //usage:	)
+//usage:	IF_FEATURE_FIND_EXEC_OK(
+//usage:     "\n	-ok CMD ARG ;   Prompt and run CMD with {} replaced"
+//usage:	)
 //usage:	IF_FEATURE_FIND_DELETE(
 //usage:     "\n	-delete		Delete current file/directory. Turns on -depth option"
 //usage:	)
@@ -469,6 +479,9 @@ IF_FEATURE_FIND_EXEC(   ACTS(exec,
 				char **exec_argv; /* -exec ARGS */
 				unsigned *subst_count;
 				int exec_argc; /* count of ARGS */
+				IF_FEATURE_FIND_EXEC_OK(
+				int ok;		/* -ok */
+				)
 				IF_FEATURE_FIND_EXEC_PLUS(
 					/*
 					 * filelist is NULL if "exec ;"
@@ -818,10 +831,24 @@ static int do_exec(action_exec *ap, const char *fileName)
 	}
 # endif
 
+# if ENABLE_FEATURE_FIND_EXEC_OK
+	if (ap->ok) {
+		for (i = 0; argv[i]; i++)
+			fprintf(stderr, "%s ", argv[i]);
+		fprintf(stderr, "?");
+		if (!bb_ask_y_confirmation()) {
+			rc = 1; /* "false" */
+			goto not_ok;
+		}
+	}
+# endif
 	rc = spawn_and_wait(argv);
 	if (rc < 0)
 		bb_simple_perror_msg(argv[0]);
 
+# if ENABLE_FEATURE_FIND_EXEC_OK
+    not_ok:
+# endif
 	i = 0;
 	while (argv[i])
 		free(argv[i++]);
@@ -1171,6 +1198,7 @@ static action*** parse_params(char **argv)
 	IF_FEATURE_FIND_EMPTY(	PARM_empty     ,)
 	IF_FEATURE_FIND_EXEC(   PARM_exec      ,)
 	IF_FEATURE_FIND_EXEC(   PARM_execdir      ,)
+	IF_FEATURE_FIND_EXEC_OK(PARM_ok        ,)
 	IF_FEATURE_FIND_EXECUTABLE(PARM_executable,)
 	IF_FEATURE_FIND_PAREN(  PARM_char_brace,)
 	/* All options/actions starting from here require argument */
@@ -1223,6 +1251,7 @@ static action*** parse_params(char **argv)
 	IF_FEATURE_FIND_EMPTY(	"-empty\0"  )
 	IF_FEATURE_FIND_EXEC(   "-exec\0"   )
 	IF_FEATURE_FIND_EXEC(   "-execdir\0"   )
+	IF_FEATURE_FIND_EXEC_OK("-ok\0"     )
 	IF_FEATURE_FIND_EXECUTABLE("-executable\0")
 	IF_FEATURE_FIND_PAREN(  "(\0"       )
 	/* All options/actions starting from here require argument */
@@ -1403,7 +1432,7 @@ static action*** parse_params(char **argv)
 		}
 #endif
 #if ENABLE_FEATURE_FIND_EXEC
-		else if (parm == PARM_exec || parm == PARM_execdir) {
+		else if (parm == PARM_exec || parm == PARM_execdir IF_FEATURE_FIND_EXEC_OK(|| parm == PARM_ok)) {
 			int i;
 			action_exec *ap;
 			IF_FEATURE_FIND_EXEC_PLUS(int all_subst = 0;)
@@ -1413,16 +1442,20 @@ static action*** parse_params(char **argv)
 				ap = (action_exec *)ALLOC_ACTION(execdir);
 			else
 				ap = ALLOC_ACTION(exec);
+			IF_FEATURE_FIND_EXEC_OK(ap->ok = (parm == PARM_ok);)
 			ap->exec_argv = ++argv; /* first arg after -exec */
 			/*ap->exec_argc = 0; - ALLOC_ACTION did it */
 			while (1) {
 				if (!*argv) /* did not see ';' or '+' until end */
-					bb_error_msg_and_die(bb_msg_requires_arg, parm == PARM_execdir ? "-execdir" : "-exec");
+					bb_error_msg_and_die(bb_msg_requires_arg, arg);
 				// find -exec echo Foo ">{}<" ";"
 				// executes "echo Foo >FILENAME<",
 				// find -exec echo Foo ">{}<" "+"
 				// executes "echo Foo FILENAME1 FILENAME2 FILENAME3...".
-				if ((argv[0][0] == ';' || argv[0][0] == '+')
+				if ((argv[0][0] == ';'
+				     || (argv[0][0] == '+' IF_FEATURE_FIND_EXEC_OK(&& parm != PARM_ok))
+						/* -ok CMD + syntax is not accepted, only with ';' */
+				    )
 				 && argv[0][1] == '\0'
 				) {
 # if ENABLE_FEATURE_FIND_EXEC_PLUS

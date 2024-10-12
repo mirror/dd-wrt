@@ -1,15 +1,18 @@
 # Portability macros for glibc argz.                    -*- Autoconf -*-
 #
-#   Copyright (C) 2004-2007, 2011-2015 Free Software Foundation, Inc.
+#   Copyright (C) 2004-2007, 2011-2019, 2021-2022 Free Software
+#   Foundation, Inc.
 #   Written by Gary V. Vaughan <gary@gnu.org>
 #
 # This file is free software; the Free Software Foundation gives
 # unlimited permission to copy and/or distribute it, with or without
 # modifications, as long as this notice is preserved.
 
-# serial 1 ltargz.m4
+# serial 2 ltargz.m4
 
 AC_DEFUN([LT_FUNC_ARGZ], [
+dnl Required for use of '$SED' in Cygwin configuration.
+AC_REQUIRE([AC_PROG_SED])dnl
 AC_CHECK_HEADERS([argz.h], [], [], [AC_INCLUDES_DEFAULT])
 
 AC_CHECK_TYPES([error_t],
@@ -48,7 +51,7 @@ AS_IF([test -z "$LT_ARGZ_H"],
 	     lt_sed_extract_leading_digits='s/^\([0-9\.]*\).*/\1/'
 	     save_IFS=$IFS
 	     IFS=-.
-	     set x `uname -r | sed -e "$lt_sed_extract_leading_digits"`
+	     set x `uname -r | $SED -e "$lt_sed_extract_leading_digits"`
 	     IFS=$save_IFS
 	     lt_os_major=${2-0}
 	     lt_os_minor=${3-0}

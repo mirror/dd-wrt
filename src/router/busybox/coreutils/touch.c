@@ -13,7 +13,7 @@
  * Also, exiting on a failure was a bug.  All args should be processed.
  */
 //config:config TOUCH
-//config:	bool "touch (5.9 kb)"
+//config:	bool "touch (6.1 kb)"
 //config:	default y
 //config:	help
 //config:	touch is used to create or change the access and/or
@@ -77,7 +77,7 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 {
 	int fd;
 	int opts;
-	smalluint status = EXIT_SUCCESS;
+	exitcode_t status = EXIT_SUCCESS;
 #if ENABLE_FEATURE_TOUCH_SUSV3
 	char *reference_file;
 	char *date_str;

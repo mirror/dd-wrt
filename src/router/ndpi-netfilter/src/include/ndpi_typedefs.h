@@ -113,7 +113,7 @@ typedef enum {
   NOTE
   When the typedef below is modified don't forget to update
   - nDPI/wireshark/ndpi.lua
-  - ndpi_risk2str (in ndpi_utils.c)
+  - ndpi_risk2str, ndpi_risk2code, ndpi_code2risk (in ndpi_utils.c)
   - doc/flow_risks.rst
   - ndpi_known_risks (ndpi_main.c)
 
@@ -153,7 +153,7 @@ typedef enum {
   NDPI_HTTP_SUSPICIOUS_CONTENT,
   NDPI_RISKY_ASN,
   NDPI_RISKY_DOMAIN,
-  NDPI_MALICIOUS_JA3,
+  NDPI_MALICIOUS_FINGERPRINT,
   NDPI_MALICIOUS_SHA1_CERTIFICATE,
   NDPI_DESKTOP_OR_FILE_SHARING_SESSION, /* 30 */
   NDPI_TLS_UNCOMMON_ALPN,
@@ -177,7 +177,7 @@ typedef enum {
   NDPI_HTTP_OBSOLETE_SERVER,
   NDPI_PERIODIC_FLOW,          /* Set in case a flow repeats at a specific pace [used by apps on top of nDPI] */
   NDPI_MINOR_ISSUES,           /* Generic packet issues (e.g. DNS with 0 TTL) */
-  NDPI_TCP_ISSUES,             /* 50 */ /* TCP issues such as connection failed or scan */
+  NDPI_TCP_ISSUES,    /* 50 */ /* TCP issues such as connection failed or scan */
   NDPI_FULLY_ENCRYPTED,        /* This (unknown) session is fully encrypted */
   NDPI_TLS_ALPN_SNI_MISMATCH,  /* Invalid ALPN/SNI combination */
   NDPI_MALWARE_HOST_CONTACTED, /* Flow client contacted a malware host */
@@ -922,6 +922,10 @@ struct ndpi_flow_tcp_struct {
   /* NDPI_PROTOCOL_TELNET */
   u_int32_t telnet_stage:2;			// 0 - 2
 
+  /* NDPI_PROTOCOL_RTMP */
+  u_int32_t rtmp_stage:2;
+  u_int16_t rtmp_client_buffer_len;
+
   struct {
     /* NDPI_PROTOCOL_TLS */
     u_int8_t app_data_seen[2];
@@ -984,6 +988,7 @@ struct ndpi_flow_udp_struct {
   u_int32_t xbox_stage:1;
 
   /* NDPI_PROTOCOL_QUIC */
+  u_int32_t quic_server_cid_stage:2;
   u_int32_t quic_0rtt_found:1;
   u_int32_t quic_vn_pair:1;
 
@@ -1019,6 +1024,9 @@ struct ndpi_flow_udp_struct {
   u_int8_t *quic_reasm_buf;
   u_int8_t *quic_reasm_buf_bitmap;
   u_int32_t quic_reasm_buf_last_pos;
+#define QUIC_SERVER_CID_HEURISTIC_LENGTH	8
+  u_int8_t quic_server_cid[QUIC_SERVER_CID_HEURISTIC_LENGTH];
+  u_int8_t quic_client_last_byte;
   /* DCID of the first Initial sent by the client */
   u_int8_t quic_orig_dest_conn_id[20]; /* Max length is 20 on all QUIC versions */
   u_int8_t quic_orig_dest_conn_id_len;
@@ -1219,19 +1227,23 @@ typedef struct _ndpi_automa {
 
 typedef void ndpi_str_hash;
 
-struct ndpi_fpc_info {
-  u_int16_t master_protocol;
-  u_int16_t app_protocol;
-  ndpi_fpc_confidence_t confidence;
-};
-
-typedef struct ndpi_proto {
+typedef struct {
   /*
     Note
     below we do not use ndpi_protocol_id_t as users can define their own
     custom protocols and thus the typedef could be too short in size.
   */
-  u_int16_t master_protocol /* e.g. HTTP */, app_protocol /* e.g. FaceBook */, protocol_by_ip;
+  u_int16_t master_protocol /* e.g. HTTP */, app_protocol /* e.g. FaceBook */;
+} ndpi_master_app_protocol;
+
+struct ndpi_fpc_info {
+  ndpi_master_app_protocol proto;
+  ndpi_fpc_confidence_t confidence;
+};
+
+typedef struct ndpi_proto {
+  ndpi_master_app_protocol proto;
+  u_int16_t protocol_by_ip;
 #ifndef __KERNEL__
   ndpi_protocol_category_t category;
   void *custom_category_userdata;
@@ -1239,9 +1251,9 @@ typedef struct ndpi_proto {
 } ndpi_protocol;
 
 #ifndef __KERNEL__
-  #define NDPI_PROTOCOL_NULL { NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL }
+  #define NDPI_PROTOCOL_NULL { { NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN }, NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL }
 #else
-  #define NDPI_PROTOCOL_NULL { NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN }
+  #define NDPI_PROTOCOL_NULL { { NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN }, NDPI_PROTOCOL_UNKNOWN }
 #endif
 
 #define NUM_CUSTOM_CATEGORIES      5
@@ -1438,10 +1450,10 @@ struct ndpi_flow_struct {
     struct {
       char *server_names, *advertised_alpns, *negotiated_alpn, *tls_supported_versions, *issuerDN, *subjectDN;
       u_int32_t notBefore, notAfter;
-      char ja3_client[33], ja3_server[33], ja4_client[37];
+      char ja3_client[33], ja3_server[33], ja4_client[37], *ja4_client_raw;
       u_int16_t server_cipher;
       u_int8_t sha1_certificate_fingerprint[20];
-      u_int8_t hello_processed:1, ch_direction:1, subprotocol_detected:1, fingerprint_set:1, webrtc:1, _pad:3;
+      u_int8_t client_hello_processed:1, ch_direction:1, subprotocol_detected:1, server_hello_processed:1, fingerprint_set:1, webrtc:1, _pad:2;
 
 #ifdef TLS_HANDLE_SIGNATURE_ALGORITMS
       /* Under #ifdef to save memory for those who do not need them */
@@ -1582,9 +1594,6 @@ struct ndpi_flow_struct {
   /* NDPI_PROTOCOL_FTP_CONTROL */
   u_int8_t ftp_control_stage:2;
 
-  /* NDPI_PROTOCOL_RTMP */
-  u_int8_t rtmp_stage:2;
-
   /* NDPI_PROTOCOL_STARCRAFT */
   u_int8_t starcraft_udp_stage : 3;	// 0-7
 
@@ -1629,11 +1638,11 @@ struct ndpi_flow_struct {
 
 #if !defined(NDPI_CFFI_PREPROCESSING) && defined(__linux__)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 256,
-               "Size of the struct member protocols increased to more than 256 bytes, "
+_Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
+               "Size of the struct member protocols increased to more than 264 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1120,
-               "Size of the flow struct increased to more than 1120 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1136,
+               "Size of the flow struct increased to more than 1136 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1849,6 +1858,22 @@ struct ndpi_bin {
     u_int64_t *bins64; /* num_bins bins */
   } u;
 };
+
+/* **************************************** */
+
+/* Implemented in third_party/src/kdtree.c */
+typedef void ndpi_kd_tree;
+typedef void ndpi_kd_tree_result;
+
+/* Implemented in third_party/src/ball.c */
+typedef void ndpi_btree;
+
+typedef struct {
+  double **distances;
+  int    **indices;
+  int    n_samples;
+  int    n_neighbors;
+} ndpi_knn;
 
 /* **************************************** */
 

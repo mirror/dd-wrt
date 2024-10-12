@@ -495,8 +495,9 @@ void parse_extent_record(struct apfs_file_extent_key *key,
 			 struct apfs_file_extent_val *val, int len)
 {
 	struct dstream *dstream;
-	u64 length, flags;
+	u64 length, flags, logical_addr;
 	u64 crypid;
+	bool prealloc_flagged;
 
 	if (apfs_volume_is_sealed())
 		report("Extent record", "shouldn't exist in a sealed volume.");
@@ -513,19 +514,32 @@ void parse_extent_record(struct apfs_file_extent_key *key,
 		report("Extent record", "length is zero.");
 	if (length & (sb->s_blocksize - 1))
 		report("Extent record", "length isn't multiple of block size.");
+	logical_addr = le64_to_cpu(key->logical_addr);
 
-	flags = le64_to_cpu(val->len_and_flags) & APFS_FILE_EXTENT_FLAG_MASK;
-	if (flags)
-		report("Extent record", "no flags should be set.");
+	flags = (le64_to_cpu(val->len_and_flags) & APFS_FILE_EXTENT_FLAG_MASK) >> APFS_FILE_EXTENT_FLAG_SHIFT;
+	if ((flags & APFS_VALID_FILE_EXTENT_FLAGS) != flags)
+		report("Extent record", "invalid flag in use.");
+	if (flags & APFS_FILE_EXTENT_CRYPTO_FLAG)
+		report_unknown("Encrypted extent");
+	prealloc_flagged = flags & APFS_FILE_EXTENT_PREALLOCATED;
 
 	dstream = get_dstream(cat_cnid(&key->hdr));
-	if (dstream->d_bytes == 0 && key->logical_addr != 0) {
+	if (dstream->d_bytes == 0 && logical_addr != 0) {
 		/* An orphan may have already lost its leading extents */
-		dstream->d_logic_start = le64_to_cpu(key->logical_addr);
+		dstream->d_logic_start = logical_addr;
 	}
-	if (dstream->d_logic_start + dstream->d_bytes != le64_to_cpu(key->logical_addr))
+	if (dstream->d_logic_start + dstream->d_bytes != logical_addr)
 		report("Data stream", "extents are not consecutive.");
 	dstream->d_bytes += length;
+
+	/* Mostly conjecture, but if I'm wrong this will trip on something */
+	if (apfs_volume_has_extent_prealloc_flag()) {
+		if (prealloc_flagged != (bool)(logical_addr >= dstream->d_size))
+			report("Extent record", "bad preallocation flag.");
+	} else {
+		if (prealloc_flagged)
+			report("Extent record", "uses prealloc flag without that feature.");
+	}
 
 	if (!le64_to_cpu(val->phys_block_num)) { /* This is a hole */
 		dstream->d_sparse_bytes += length;

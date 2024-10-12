@@ -158,6 +158,8 @@ struct attr {
 	uint8_t nh_flags;
 
 #define BGP_ATTR_NH_VALID 0x01
+#define BGP_ATTR_NH_IF_OPERSTATE 0x02
+#define BGP_ATTR_NH_MP_PREFER_GLOBAL 0x04 /* MP Nexthop preference */
 
 	/* Path origin attribute */
 	uint8_t origin;
@@ -254,9 +256,6 @@ struct attr {
 	/* MP Nexthop length */
 	uint8_t mp_nexthop_len;
 
-	/* MP Nexthop preference */
-	uint8_t mp_nexthop_prefer_global;
-
 	/* Static MAC for EVPN */
 	uint8_t sticky;
 
@@ -302,7 +301,7 @@ struct attr {
 	uint32_t rmap_table_id;
 
 	/* Link bandwidth value, if any. */
-	uint32_t link_bw;
+	uint64_t link_bw;
 
 	/* EVPN ES */
 	esi_t esi;
@@ -394,7 +393,7 @@ extern bgp_size_t bgp_packet_attribute(
 	struct bgp *bgp, struct peer *peer, struct stream *s, struct attr *attr,
 	struct bpacket_attr_vec_arr *vecarr, struct prefix *p, afi_t afi,
 	safi_t safi, struct peer *from, struct prefix_rd *prd,
-	mpls_label_t *label, uint32_t num_labels, bool addpath_capable,
+	mpls_label_t *label, uint8_t num_labels, bool addpath_capable,
 	uint32_t addpath_tx_id, struct bgp_path_info *bpi);
 extern void bgp_dump_routes_attr(struct stream *s, struct bgp_path_info *bpi,
 				 const struct prefix *p);
@@ -452,7 +451,7 @@ extern size_t bgp_packet_mpattr_start(struct stream *s, struct peer *peer,
 extern void bgp_packet_mpattr_prefix(struct stream *s, afi_t afi, safi_t safi,
 				     const struct prefix *p,
 				     const struct prefix_rd *prd,
-				     mpls_label_t *label, uint32_t num_labels,
+				     mpls_label_t *label, uint8_t num_labels,
 				     bool addpath_capable,
 				     uint32_t addpath_tx_id, struct attr *);
 extern size_t bgp_packet_mpattr_prefix_size(afi_t afi, safi_t safi,
@@ -463,7 +462,7 @@ extern size_t bgp_packet_mpunreach_start(struct stream *s, afi_t afi,
 					 safi_t safi);
 extern void bgp_packet_mpunreach_prefix(
 	struct stream *s, const struct prefix *p, afi_t afi, safi_t safi,
-	const struct prefix_rd *prd, mpls_label_t *label, uint32_t num_labels,
+	const struct prefix_rd *prd, mpls_label_t *label, uint8_t num_labels,
 	bool addpath_capable, uint32_t addpath_tx_id, struct attr *attr);
 extern void bgp_packet_mpunreach_end(struct stream *s, size_t attrlen_pnt);
 

@@ -14,6 +14,7 @@
 #include <apfs/raw.h>
 #include "mkapfs.h"
 #include "super.h"
+#include "version.h"
 
 int fd;
 struct parameters *param;
@@ -36,7 +37,10 @@ static void usage(void)
  */
 static void version(void)
 {
-	printf("mkapfs version 0.1\n");
+	if (*GIT_COMMIT)
+		printf("mkapfs %s\n", GIT_COMMIT);
+	else
+		printf("mkapfs - unknown git commit id\n");
 	exit(1);
 }
 
@@ -133,8 +137,8 @@ static void complete_parameters(void)
 		fprintf(stderr, "%s: device is not big enough\n", progname);
 		exit(1);
 	}
-	if (param->block_count * param->blocksize < 128 * 1024 * 1024) {
-		fprintf(stderr, "%s: small containers are not supported\n",
+	if (param->block_count * param->blocksize < 512 * 1024) {
+		fprintf(stderr, "%s: such tiny containers are not supported\n",
 			progname);
 		exit(1);
 	}

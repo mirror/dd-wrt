@@ -1511,6 +1511,8 @@ AIRBAG_EXPORT void airbag_deinit()
 
 void airbag_setpostinfo(const char *string)
 {
+	if (!string)
+		return;
 	pthread_mutex_lock(&postinfo_mutex);
 	postindex++;
 	postindex = postindex % 32;

@@ -387,7 +387,7 @@ static void node_free(struct node *node)
 {
 	if (node_is_root(node))
 		return;	/* The root nodes are needed by the sb until the end */
-	munmap(node->raw, sb->s_blocksize);
+	munmap(node->raw, node->object.size);
 	free(node->free_key_bmap);
 	free(node->free_val_bmap);
 	free(node->used_key_bmap);
@@ -677,12 +677,12 @@ static void free_omap_record_list(struct htable_entry *entry)
 				struct apfs_obj_phys *raw = NULL;
 				struct object obj = {0};
 
-				raw = read_object_nocheck(curr_rec->bno, &obj);
+				raw = read_object_nocheck(curr_rec->bno, sb->s_blocksize, &obj);
 				if (obj.type != APFS_OBJECT_TYPE_SNAP_META_EXT || obj.subtype != APFS_OBJECT_TYPE_INVALID)
 					report("Leaked omap record", "unexpected object type.");
 				container_bmap_mark_as_used(curr_rec->bno, 1);
 				++vsb->v_block_count;
-				munmap(raw, sb->s_blocksize);
+				munmap(raw, obj.size);
 			} else {
 				report("Omap record", "oid-xid combination is never used.");
 			}
@@ -1398,7 +1398,7 @@ struct btree *parse_omap_btree(u64 oid)
 	parse_subtree(omap->root, &last_key, NULL /* name_buf */);
 
 	check_btree_footer(omap);
-	munmap(raw, sb->s_blocksize);
+	munmap(raw, obj.size);
 	return omap;
 }
 

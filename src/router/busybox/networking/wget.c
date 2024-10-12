@@ -9,7 +9,7 @@
  * Kuhn's copyrights are licensed GPLv2-or-later.  File as a whole remains GPLv2.
  */
 //config:config WGET
-//config:	bool "wget (38 kb)"
+//config:	bool "wget (41 kb)"
 //config:	default y
 //config:	help
 //config:	wget is a utility for non-interactive download of files from HTTP
@@ -1178,7 +1178,9 @@ static void download_one_url(const char *url)
 	/*G.content_len = 0; - redundant, got_clen = 0 is enough */
 	G.got_clen = 0;
 	G.chunked = 0;
-	if (use_proxy || target.protocol[0] != 'f' /*not ftp[s]*/) {
+	if (!ENABLE_FEATURE_WGET_FTP
+	 || use_proxy || target.protocol[0] != 'f' /*not ftp[s]*/
+	) {
 		/*
 		 *  HTTP session
 		 */
@@ -1447,14 +1449,15 @@ However, in real world it was observed that some web servers
 
 		/* For HTTP, data is pumped over the same connection */
 		dfp = sfp;
-	} else {
+	}
 #if ENABLE_FEATURE_WGET_FTP
+	else {
 		/*
 		 *  FTP session
 		 */
 		sfp = prepare_ftp_session(&dfp, &target, lsa);
-#endif
 	}
+#endif
 
 	free(lsa);
 
@@ -1602,7 +1605,7 @@ IF_DESKTOP(	"no-parent\0"        No_argument       "\xf0")
 			bit = 1;
 			words = wget_user_headers;
 			while (*words) {
-				if (strstr(hdr, words) == hdr) {
+				if (strcasestr(hdr, words) == hdr) {
 					G.user_headers |= bit;
 					break;
 				}

@@ -629,7 +629,7 @@ def test_isis_hello_padding_during_adjacency_formation():
     assert result is True, result
 
 
-@retry(retry_timeout=5)
+@retry(retry_timeout=10)
 def check_last_iih_packet_for_padding(router, expect_padding):
     logfilename = "{}/{}".format(router.gearlogdir, "isisd.log")
     last_hello_packet_line = None
@@ -685,7 +685,7 @@ def _check_lsp_overload_bit(router, overloaded_router_lsp, att_p_ol_expected):
     )
 
     database_json = json.loads(isis_database_output)
-    att_p_ol = database_json["areas"][0]["levels"][1]["att-p-ol"]
+    att_p_ol = database_json["areas"][0]["levels"][1]["lsps"][0]["attPOl"]
     if att_p_ol == att_p_ol_expected:
         return True
     return "{} peer with expected att_p_ol {} got {} ".format(

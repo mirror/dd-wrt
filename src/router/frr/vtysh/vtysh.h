@@ -68,6 +68,14 @@ extern struct event_loop *master;
 	VTYSH_ZEBRA | VTYSH_RIPD | VTYSH_RIPNGD | VTYSH_OSPFD | VTYSH_OSPF6D | \
 		VTYSH_BGPD | VTYSH_ISISD | VTYSH_PIMD | VTYSH_EIGRPD |         \
 		VTYSH_FABRICD
+#define VTYSH_ACCESS_LIST_SHOW                                                 \
+	VTYSH_ZEBRA | VTYSH_RIPD | VTYSH_RIPNGD | VTYSH_OSPFD | VTYSH_OSPF6D | \
+		VTYSH_BGPD | VTYSH_ISISD | VTYSH_PIMD | VTYSH_EIGRPD |         \
+		VTYSH_FABRICD
+#define VTYSH_PREFIX_LIST_SHOW                                                 \
+	VTYSH_ZEBRA | VTYSH_RIPD | VTYSH_RIPNGD | VTYSH_OSPFD | VTYSH_OSPF6D | \
+		VTYSH_BGPD | VTYSH_ISISD | VTYSH_PIMD | VTYSH_EIGRPD |         \
+		VTYSH_FABRICD
 #define VTYSH_INTERFACE_SUBSET                                                 \
 	VTYSH_OSPFD | VTYSH_OSPF6D | \
 		VTYSH_ISISD | VTYSH_PIMD | VTYSH_PIM6D | VTYSH_NHRPD |         \
@@ -75,7 +83,7 @@ extern struct event_loop *master;
 		VTYSH_VRRPD | VTYSH_MGMTD
 #define VTYSH_INTERFACE VTYSH_INTERFACE_SUBSET | VTYSH_BGPD
 #define VTYSH_VRF	VTYSH_INTERFACE_SUBSET | VTYSH_BGPD
-#define VTYSH_KEYS VTYSH_RIPD | VTYSH_EIGRPD | VTYSH_OSPF6D | VTYSH_OSPFD
+#define VTYSH_KEYS VTYSH_MGMTD | VTYSH_EIGRPD | VTYSH_OSPF6D | VTYSH_OSPFD
 /* Daemons who can process nexthop-group configs */
 #define VTYSH_NH_GROUP    VTYSH_PBRD|VTYSH_SHARPD
 #define VTYSH_SR          VTYSH_ZEBRA|VTYSH_PATHD
@@ -90,7 +98,17 @@ enum vtysh_write_integrated {
 	WRITE_INTEGRATED_YES
 };
 
+enum display_type {
+	normal_display,
+	summary_display,
+	detail_display,
+	sequential_display,
+	longer_display,
+	first_match_display
+};
+
 extern enum vtysh_write_integrated vtysh_write_integrated;
+extern enum display_type display_type;
 
 extern char frr_config[];
 extern char vtydir[];

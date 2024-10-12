@@ -20,7 +20,7 @@
 //config:	depends on !NOMMU
 //config:
 //config:config ASH
-//config:	bool "ash (78 kb)"
+//config:	bool "ash (80 kb)"
 //config:	default y
 //config:	depends on !NOMMU
 //config:	select SHELL_ASH
@@ -134,11 +134,23 @@
 //config:	default y
 //config:	depends on SHELL_ASH
 //config:
-//config:config ASH_SLEEP
-//config:	bool "sleep builtin"
-//config:	default y
-//config:	depends on SHELL_ASH
-//config:
+//
+////config:config ASH_SLEEP
+////config:	bool "sleep builtin"
+////config:	default y
+////config:	depends on SHELL_ASH
+////config:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//Disabled for now. Has a few annoying problems:
+// * sleepcmd() -> sleep_main(), the parsing of bad arguments exits the shell.
+// * sleep_for_duration() in sleep_main() has to be interruptible for
+//   ^C traps to work, which may be a problem for other users
+//   of sleep_for_duration().
+// * BUT, if sleep_for_duration() is interruptible, then SIGCHLD interrupts it
+//   as well (try "/bin/sleep 1 & sleep 10").
+// * sleep_main() must not allocate anything as ^C in ash longjmp's.
+//   (currently, allocations are only on error paths, in message printing).
+//
 //config:config ASH_HELP
 //config:	bool "help builtin"
 //config:	default y
@@ -412,7 +424,12 @@ struct globals_misc {
 
 	struct jmploc *exception_handler;
 
-	volatile int suppress_int; /* counter */
+	/*volatile*/ int suppress_int; /* counter */
+	/* ^^^^^^^ removed "volatile" since on x86, gcc turns suppress_int++
+	 * into ridiculous 3-insn sequence otherwise.
+	 * We don't change suppress_int asyncronously (in a signal handler),
+	 * but we do read it async.
+	 */
 	volatile /*sig_atomic_t*/ smallint pending_int; /* 1 = got SIGINT */
 	volatile /*sig_atomic_t*/ smallint got_sigchld; /* 1 = got SIGCHLD */
 	volatile /*sig_atomic_t*/ smallint pending_sig;	/* last pending signal */
@@ -540,10 +557,9 @@ static void trace_vprintf(const char *fmt, va_list va);
 #define is_in_name(c)   ((c) == '_' || isalnum((unsigned char)(c)))
 
 static int
-isdigit_str9(const char *str)
+isdigit_str(const char *str)
 {
-	int maxlen = 9 + 1; /* max 9 digits: 999999999 */
-	while (--maxlen && isdigit(*str))
+	while (isdigit(*str))
 		str++;
 	return (*str == '\0');
 }
@@ -705,7 +721,8 @@ int_on(void)
 {
 	barrier();
 	if (--suppress_int == 0 && pending_int)
-		raise_interrupt();
+		raise_interrupt(); /* does not return */
+	barrier();
 }
 #if DEBUG_INTONOFF
 # define INT_ON do { \
@@ -721,7 +738,8 @@ force_int_on(void)
 	barrier();
 	suppress_int = 0;
 	if (pending_int)
-		raise_interrupt();
+		raise_interrupt(); /* does not return */
+	barrier();
 }
 #define FORCE_INT_ON force_int_on()
 
@@ -731,7 +749,8 @@ force_int_on(void)
 	barrier(); \
 	suppress_int = (v); \
 	if (suppress_int == 0 && pending_int) \
-		raise_interrupt(); \
+		raise_interrupt(); /* does not return */ \
+	barrier(); \
 } while (0)
 
 
@@ -815,13 +834,13 @@ out2str(const char *p)
 #define CTLVAR       ((unsigned char)'\202')    /* variable defn */
 #define CTLENDVAR    ((unsigned char)'\203')
 #define CTLBACKQ     ((unsigned char)'\204')
-#define CTLARI       ((unsigned char)'\206')    /* arithmetic expression */
-#define CTLENDARI    ((unsigned char)'\207')
-#define CTLQUOTEMARK ((unsigned char)'\210')
+#define CTLARI       ((unsigned char)'\205')    /* arithmetic expression */
+#define CTLENDARI    ((unsigned char)'\206')
+#define CTLQUOTEMARK ((unsigned char)'\207')
 #define CTL_LAST CTLQUOTEMARK
 #if BASH_PROCESS_SUBST
-# define CTLTOPROC    ((unsigned char)'\211')
-# define CTLFROMPROC  ((unsigned char)'\212')
+# define CTLTOPROC    ((unsigned char)'\210')
+# define CTLFROMPROC  ((unsigned char)'\211')
 # undef CTL_LAST
 # define CTL_LAST CTLFROMPROC
 #endif
@@ -1852,16 +1871,18 @@ _STPUTC(int c, char *p)
 /*
  * prefix -- see if pfx is a prefix of string.
  */
-static char *
+static ALWAYS_INLINE char *
 prefix(const char *string, const char *pfx)
 {
+	return is_prefixed_with(string, pfx);
+#if 0  /* dash implementation: */
 	while (*pfx) {
 		if (*pfx++ != *string++)
 			return NULL;
 	}
 	return (char *) string;
+#endif
 }
-
 /*
  * Check for a valid number.  This should be elsewhere.
  */
@@ -2087,7 +2108,7 @@ struct localvar {
 #define VNOFUNC         0x40    /* don't call the callback function */
 #define VNOSET          0x80    /* do not set variable - just readonly test */
 #define VNOSAVE         0x100   /* when text is on the heap before setvareq */
-#if ENABLE_ASH_RANDOM_SUPPORT
+#if ENABLE_ASH_RANDOM_SUPPORT || BASH_EPOCH_VARS
 # define VDYNAMIC       0x200   /* dynamic variable */
 #else
 # define VDYNAMIC       0
@@ -2110,10 +2131,7 @@ change_lc_ctype(const char *value)
 }
 #endif
 #if ENABLE_ASH_MAIL
-static void chkmail(void);
 static void changemail(const char *var_value) FAST_FUNC;
-#else
-# define chkmail()  ((void)0)
 #endif
 static void changepath(const char *) FAST_FUNC;
 #if ENABLE_ASH_RANDOM_SUPPORT
@@ -2261,30 +2279,6 @@ getoptsreset(const char *value)
 #endif
 
 /*
- * Compares two strings up to the first = or '\0'.  The first
- * string must be terminated by '='; the second may be terminated by
- * either '=' or '\0'.
- */
-static int
-varcmp(const char *p, const char *q)
-{
-	int c, d;
-
-	while ((c = *p) == (d = *q)) {
-		if (c == '\0' || c == '=')
-			goto out;
-		p++;
-		q++;
-	}
-	if (c == '=')
-		c = '\0';
-	if (d == '=')
-		d = '\0';
- out:
-	return c - d;
-}
-
-/*
  * Find the appropriate entry in the hash table from the name.
  */
 static struct var **
@@ -2333,9 +2327,11 @@ initvar(void)
 }
 
 static struct var **
-findvar(struct var **vpp, const char *name)
+findvar(const char *name)
 {
-	for (; *vpp; vpp = &(*vpp)->next) {
+	struct var **vpp;
+
+	for (vpp = hashvar(name); *vpp; vpp = &(*vpp)->next) {
 		if (varcmp((*vpp)->var_text, name) == 0) {
 			break;
 		}
@@ -2351,7 +2347,7 @@ lookupvar(const char *name)
 {
 	struct var *v;
 
-	v = *findvar(hashvar(name), name);
+	v = *findvar(name);
 	if (v) {
 #if ENABLE_ASH_RANDOM_SUPPORT || BASH_EPOCH_VARS
 	/*
@@ -2418,9 +2414,8 @@ setvareq(char *s, int flags)
 {
 	struct var *vp, **vpp;
 
-	vpp = hashvar(s);
 	flags |= (VEXPORT & (((unsigned) (1 - aflag)) - 1));
-	vpp = findvar(vpp, s);
+	vpp = findvar(s);
 	vp = *vpp;
 	if (vp) {
 		if ((vp->flags & (VREADONLY|VDYNAMIC)) == VREADONLY) {
@@ -2507,7 +2502,7 @@ setvar(const char *name, const char *val, int flags)
 	p = mempcpy(nameeq, name, namelen);
 	if (val) {
 		*p++ = '=';
-		memcpy(p, val, vallen);
+		strcpy(p, val);
 	}
 	vp = setvareq(nameeq, flags | VNOSAVE);
 	INT_ON;
@@ -2959,7 +2954,7 @@ cdcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 	if (!*dest)
 		dest = ".";
 	path = bltinlookup("CDPATH");
-	while (p = path, (len = padvance(&path, dest)) >= 0) {
+	while (p = path, (len = padvance_magic(&path, dest, 0)) >= 0) {
 		c = *p;
 		p = stalloc(len);
 
@@ -3251,17 +3246,17 @@ static const uint8_t syntax_index_table[] ALIGN1 = {
 	/* 130 CTLVAR       */ CCTL_CCTL_CCTL_CCTL,
 	/* 131 CTLENDVAR    */ CCTL_CCTL_CCTL_CCTL,
 	/* 132 CTLBACKQ     */ CCTL_CCTL_CCTL_CCTL,
-	/* 133 CTLQUOTE     */ CCTL_CCTL_CCTL_CCTL,
-	/* 134 CTLARI       */ CCTL_CCTL_CCTL_CCTL,
-	/* 135 CTLENDARI    */ CCTL_CCTL_CCTL_CCTL,
-	/* 136 CTLQUOTEMARK */ CCTL_CCTL_CCTL_CCTL,
+	/* 133 CTLARI       */ CCTL_CCTL_CCTL_CCTL,
+	/* 134 CTLENDARI    */ CCTL_CCTL_CCTL_CCTL,
+	/* 135 CTLQUOTEMARK */ CCTL_CCTL_CCTL_CCTL,
 #if BASH_PROCESS_SUBST
-	/* 137 CTLTOPROC    */ CCTL_CCTL_CCTL_CCTL,
-	/* 138 CTLFROMPROC  */ CCTL_CCTL_CCTL_CCTL,
+	/* 136 CTLTOPROC    */ CCTL_CCTL_CCTL_CCTL,
+	/* 137 CTLFROMPROC  */ CCTL_CCTL_CCTL_CCTL,
 #else
+	/* 136      */ CWORD_CWORD_CWORD_CWORD,
 	/* 137      */ CWORD_CWORD_CWORD_CWORD,
-	/* 138      */ CWORD_CWORD_CWORD_CWORD,
 #endif
+	/* 138      */ CWORD_CWORD_CWORD_CWORD,
 	/* 139      */ CWORD_CWORD_CWORD_CWORD,
 	/* 140      */ CWORD_CWORD_CWORD_CWORD,
 	/* 141      */ CWORD_CWORD_CWORD_CWORD,
@@ -3963,7 +3958,6 @@ getjob(const char *name, int getctl)
 	unsigned num;
 	int c;
 	const char *p;
-	char *(*match)(const char *, const char *);
 
 	jp = curjob;
 	p = name;
@@ -4004,15 +3998,12 @@ getjob(const char *name, int getctl)
 		}
 	}
 
-	match = prefix;
-	if (*p == '?') {
-		match = strstr;
-		p++;
-	}
-
 	found = NULL;
 	while (jp) {
-		if (match(jp->ps[0].ps_cmd, p)) {
+		if (*p == '?'
+		 ? strstr(jp->ps[0].ps_cmd, p + 1)
+		 : prefix(jp->ps[0].ps_cmd, p)
+		) {
 			if (found)
 				goto err;
 			found = jp;
@@ -5190,8 +5181,7 @@ forkchild(struct job *jp, union node *n, int mode)
 
 	closescript();
 
-	if (mode == FORK_NOJOB          /* is it `xxx` ? */
-	 && n && n->type == NCMD        /* is it single cmd? */
+	if (n && n->type == NCMD        /* is it single cmd? */
 	/* && n->ncmd.args->type == NARG - always true? */
 	 && n->ncmd.args && strcmp(n->ncmd.args->narg.text, "trap") == 0
 	 && n->ncmd.args->narg.next == NULL /* "trap" with no arguments */
@@ -5285,10 +5275,12 @@ forkchild(struct job *jp, union node *n, int mode)
 	) {
 		TRACE(("Job hack\n"));
 		/* "jobs": we do not want to clear job list for it,
-		 * instead we remove only _its_ own_ job from job list.
+		 * instead we remove only _its_ own_ job from job list
+		 * (if it has one).
 		 * This makes "jobs .... | cat" more useful.
 		 */
-		freejob(curjob);
+		if (jp)
+			freejob(curjob);
 		return;
 	}
 #endif
@@ -5629,10 +5621,13 @@ dup2_or_raise(int from, int to)
 	newfd = (from != to) ? dup2(from, to) : to;
 	if (newfd < 0) {
 		/* Happens when source fd is not open: try "echo >&99" */
-		ash_msg_and_raise_perror("%d", from);
+		ash_msg_and_raise_perror("dup2(%d,%d)", from, to);
 	}
 	return newfd;
 }
+/* The only possible error return is EBADF (fd wasn't open).
+ * Transient errors retry, other errors raise exception.
+ */
 static int
 dup_CLOEXEC(int fd, int avoid_fd)
 {
@@ -5647,6 +5642,16 @@ dup_CLOEXEC(int fd, int avoid_fd)
 			goto repeat;
 		if (errno == EINTR)
 			goto repeat;
+		if (errno != EBADF) {
+			/* "echo >&9999" gets EINVAL trying to save fd 1 to above 9999.
+			 * We could try saving it _below_ 9999 instead (how?), but
+			 * this probably means that dup2(9999,1) to effectuate >&9999
+			 * would also not work: fd 9999 can't exist. Gracefully bail out.
+			 * (This differs from "echo >&99" where saving works, but
+			 * subsequent dup2(99,1) fails if fd 99 is not open).
+			 */
+			ash_msg_and_raise_perror("fcntl(%d,F_DUPFD,%d)", fd, avoid_fd + 1);
+		}
 	}
 	return newfd;
 }
@@ -5762,7 +5767,7 @@ save_fd_on_redirect(int fd, int avoid_fd, struct redirtab *sq)
 			new_fd = dup_CLOEXEC(fd, avoid_fd);
 			sq->two_fd[i].moved_to = new_fd;
 			TRACE(("redirect_fd %d: already busy, moving to %d\n", fd, new_fd));
-			if (new_fd < 0) /* what? */
+			if (new_fd < 0) /* EBADF? what? */
 				xfunc_die();
 			return 0; /* "we did not close fd" */
 		}
@@ -5777,8 +5782,7 @@ save_fd_on_redirect(int fd, int avoid_fd, struct redirtab *sq)
 	new_fd = dup_CLOEXEC(fd, avoid_fd);
 	TRACE(("redirect_fd %d: previous fd is moved to %d (-1 if it was closed)\n", fd, new_fd));
 	if (new_fd < 0) {
-		if (errno != EBADF)
-			xfunc_die();
+		/* EBADF (fd is not open) */
 		/* new_fd = CLOSED; - already is -1 */
 	}
 	sq->two_fd[i].moved_to = new_fd;
@@ -6607,9 +6611,9 @@ evalbackcmd(union node *n, struct backcmd *result
 
 	if (pipe(pip) < 0)
 		ash_msg_and_raise_perror("can't create pipe");
-	/* process substitution uses NULL job/node, like openhere() */
+	/* process substitution uses NULL job, like openhere() */
 	jp = (ctl == CTLBACKQ) ? makejob(/*n,*/ 1) : NULL;
-	if (forkshell(jp, (ctl == CTLBACKQ) ? n : NULL, FORK_NOJOB) == 0) {
+	if (forkshell(jp, n, FORK_NOJOB) == 0) {
 		/* child */
 		FORCE_INT_ON;
 		close(pip[ip]);
@@ -7081,6 +7085,11 @@ subevalvar(char *start, char *str, int strloc,
 				repl = NULL;
 				break;
 			}
+			/* Skip over quoted 'str'. Example: ${var/'/'} - second / is not a separator */
+			if ((unsigned char)*repl == CTLQUOTEMARK) {
+				while ((unsigned char)*++repl != CTLQUOTEMARK)
+					continue;
+			}
 			if (*repl == '/') {
 				*repl = '\0';
 				break;
@@ -7374,6 +7383,8 @@ subevalvar(char *start, char *str, int strloc,
 				char *restart_detect = stackblock();
 				if (quotes && *loc == '\\') {
 					STPUTC(CTLESC, expdest);
+					if (stackblock() != restart_detect)
+						goto restart;
 					len++;
 				}
 				STPUTC(*loc, expdest);
@@ -8728,8 +8739,6 @@ describe_command(char *command, const char *path, int describe_command_verbose)
 	const struct alias *ap;
 #endif
 
-	path = path ? path : pathval();
-
 	if (describe_command_verbose) {
 		out1str(command);
 	}
@@ -8754,6 +8763,7 @@ describe_command(char *command, const char *path, int describe_command_verbose)
 	}
 #endif
 	/* Brute force */
+	path = path ? path : pathval();
 	find_command(command, &entry, DO_ABS, path);
 
 	switch (entry.cmdtype) {
@@ -9446,7 +9456,7 @@ evaltree(union node *n, int flags)
 	}
 	if (flags & EV_EXIT) {
  exexit:
-		raise_exception(EXEND);
+		raise_exception(EXEND); /* does not return */
 	}
 
 	popstackmark(&smark);
@@ -9651,7 +9661,7 @@ expredir(union node *n)
 				if (fn.list == NULL)
 					ash_msg_and_raise_error("redir error");
 #if BASH_REDIR_OUTPUT
-				if (!isdigit_str9(fn.list->text)) {
+				if (!isdigit_str(fn.list->text)) {
 					/* >&file, not >&fd */
 					if (redir->nfile.fd != 1) /* 123>&file - BAD */
 						ash_msg_and_raise_error("redir error");
@@ -9737,7 +9747,7 @@ evalpipe(union node *n, int flags)
 
 /* setinteractive needs this forward reference */
 #if ENABLE_FEATURE_TAB_COMPLETION
-static const char *get_builtin_name(int i) FAST_FUNC;
+static const char *ash_command_name(int i) FAST_FUNC;
 #endif
 
 /*
@@ -9774,7 +9784,7 @@ setinteractive(int on)
 		if (!line_input_state) {
 			line_input_state = new_line_input_t(FOR_SHELL | WITH_PATH_LOOKUP);
 # if ENABLE_FEATURE_TAB_COMPLETION
-			line_input_state->get_exe_name = get_builtin_name;
+			line_input_state->get_exe_name = ash_command_name;
 # endif
 # if EDITING_HAS_sh_get_var
 			line_input_state->sh_get_var = lookupvar;
@@ -9969,7 +9979,6 @@ static void
 mklocal(char *name, int flags)
 {
 	struct localvar *lvp;
-	struct var **vpp;
 	struct var *vp;
 	char *eq = strchr(name, '=');
 
@@ -9998,8 +10007,7 @@ mklocal(char *name, int flags)
 		lvp->text = memcpy(p, optlist, sizeof(optlist));
 		vp = NULL;
 	} else {
-		vpp = hashvar(name);
-		vp = *findvar(vpp, name);
+		vp = *findvar(name);
 		if (vp == NULL) {
 			/* variable did not exist yet */
 			if (eq)
@@ -10289,9 +10297,33 @@ find_builtin(const char *name)
 
 #if ENABLE_FEATURE_TAB_COMPLETION
 static const char * FAST_FUNC
-get_builtin_name(int i)
+ash_command_name(int i)
 {
-	return /*i >= 0 &&*/ i < ARRAY_SIZE(builtintab) ? builtintab[i].name + 1 : NULL;
+	int n;
+
+	if (/*i >= 0 &&*/ i < ARRAY_SIZE(builtintab))
+		return builtintab[i].name + 1;
+	i -= ARRAY_SIZE(builtintab);
+
+	for (n = 0; n < CMDTABLESIZE; n++) {
+		struct tblentry *cmdp;
+		for (cmdp = cmdtable[n]; cmdp; cmdp = cmdp->next) {
+			if (cmdp->cmdtype == CMDFUNCTION && --i < 0)
+				return cmdp->cmdname;
+		}
+	}
+
+# if ENABLE_ASH_ALIAS
+	for (n = 0; n < ATABSIZE; n++) {
+		struct alias *ap;
+		for (ap = atab[n]; ap; ap = ap->next) {
+			if (--i < 0)
+				return ap->name;
+		}
+	}
+#endif
+
+	return NULL;
 }
 #endif
 
@@ -10450,7 +10482,7 @@ evalcommand(union node *cmd, int flags)
 
 		/* We have a redirection error. */
 		if (spclbltin > 0)
-			raise_exception(EXERROR);
+			raise_exception(EXERROR); /* does not return */
 
 		goto out;
 	}
@@ -10821,7 +10853,8 @@ preadfd(void)
  again:
 		/* For shell, LI_INTERRUPTIBLE is set:
 		 * read_line_input will abort on either
-		 * getting EINTR in poll(), or if it sees bb_got_signal != 0
+		 * getting EINTR in poll() and bb_got_signal became != 0,
+		 * or if it sees bb_got_signal != 0
 		 * (IOW: if signal arrives before poll() is reached).
 		 * Interactive testcases:
 		 * (while kill -INT $$; do sleep 1; done) &
@@ -10910,11 +10943,6 @@ preadbuffer(void)
 {
 	char *q;
 	int more;
-
-	if (unlikely(g_parsefile->strpush)) {
-		popstring();
-		return __pgetc();
-	}
 
 	if (g_parsefile->buf == NULL) {
 		pgetc_debug("preadbuffer PEOF1");
@@ -11030,8 +11058,13 @@ static int __pgetc(void)
 
 	if (--g_parsefile->left_in_line >= 0)
 		c = (unsigned char)*g_parsefile->next_to_pgetc++;
-	else
+	else {
+		if (unlikely(g_parsefile->strpush)) {
+			popstring();
+			return __pgetc();
+		}
 		c = preadbuffer();
+	}
 
 	g_parsefile->lastc[1] = g_parsefile->lastc[0];
 	g_parsefile->lastc[0] = c;
@@ -11257,13 +11290,12 @@ setinputstring(char *string)
 #if ENABLE_ASH_MAIL
 
 /* Hash of mtimes of mailboxes */
+/* Cleared to 0 if MAIL or MAILPATH is changed */
 static unsigned mailtime_hash;
-/* Set if MAIL or MAILPATH is changed. */
-static smallint mail_var_path_changed;
 
 /*
  * Print appropriate message(s) if mail has arrived.
- * If mail_var_path_changed is set,
+ * If mailtime_hash is zero,
  * then the value of MAIL has changed,
  * so we just update the hash value.
  */
@@ -11302,20 +11334,23 @@ chkmail(void)
 		/* Very simplistic "hash": just a sum of all mtimes */
 		new_hash += (unsigned)statb.st_mtime;
 	}
-	if (!mail_var_path_changed && mailtime_hash != new_hash) {
+	if (mailtime_hash != new_hash) {
 		if (mailtime_hash != 0)
 			out2str("you have mail\n");
+		mailtime_hash = new_hash;
 	}
-	mailtime_hash = new_hash;
-	mail_var_path_changed = 0;
 	popstackmark(&smark);
 }
 
 static void FAST_FUNC
 changemail(const char *val UNUSED_PARAM)
 {
-	mail_var_path_changed = 1;
+	mailtime_hash = 0;
 }
+
+#else
+
+# define chkmail()  ((void)0)
 
 #endif /* ASH_MAIL */
 
@@ -11974,12 +12009,19 @@ fixredir(union node *n, const char *text, int err)
 	if (!err)
 		n->ndup.vname = NULL;
 
+	if (LONE_DASH(text)) {
+		n->ndup.dupfd = -1;
+		return;
+	}
+
 	fd = bb_strtou(text, NULL, 10);
 	if (!errno && fd >= 0)
 		n->ndup.dupfd = fd;
-	else if (LONE_DASH(text))
-		n->ndup.dupfd = -1;
 	else {
+		/* This also fails on very large numbers
+		 * which overflow "int" - bb_strtou() does not
+		 * silently truncate results to word width.
+		 */
 		if (err)
 			raise_error_syntax("bad fd number");
 		n->ndup.vname = makename();
@@ -12123,18 +12165,19 @@ simplecmd(void)
 			if (args && app == &args->narg.next
 			 && !vars && !redir
 			) {
-				struct builtincmd *bcmd;
-				const char *name;
+//				struct builtincmd *bcmd;
+//				const char *name;
 
 				/* We have a function */
 				if (IF_BASH_FUNCTION(!function_flag &&) readtoken() != TRP)
 					raise_error_unexpected_syntax(TRP);
-				name = n->narg.text;
-				if (!goodname(name)
-				 || ((bcmd = find_builtin(name)) && IS_BUILTIN_SPECIAL(bcmd))
-				) {
-					raise_error_syntax("bad function name");
-				}
+//bash allows functions named "123", "..", "return"!
+//				name = n->narg.text;
+//				if (!goodname(name)
+//				 || ((bcmd = find_builtin(name)) && IS_BUILTIN_SPECIAL(bcmd))
+//				) {
+//					raise_error_syntax("bad function name");
+//				}
 				n->type = NDEFUN;
 				checkkwd = CHKNL | CHKKWD | CHKALIAS;
 				n->ndefun.text = n->narg.text;
@@ -12664,7 +12707,7 @@ readtoken1(int c, int syntax, char *eofmark, int striptabs)
 		if ((c == '>' || c == '<' IF_BASH_REDIR_OUTPUT( || c == 0x100 + '>'))
 		 && quotef == 0
 		) {
-			if (isdigit_str9(out)) {
+			if (isdigit_str(out)) {
 				PARSEREDIR(); /* passed as params: out, c */
 				lasttoken = TREDIR;
 				return lasttoken;
@@ -13621,7 +13664,7 @@ static char *
 find_dot_file(char *basename)
 {
 	char *fullname;
-	const char *path = pathval();
+	const char *path;
 	struct stat statb;
 	int len;
 
@@ -13629,6 +13672,7 @@ find_dot_file(char *basename)
 	if (strchr(basename, '/'))
 		return basename;
 
+	path = pathval();
 	while ((len = padvance(&path, basename)) >= 0) {
 		fullname = stackblock();
 		if ((!pathopt || *pathopt == 'f')
@@ -14111,7 +14155,7 @@ exportcmd(int argc UNUSED_PARAM, char **argv)
 				if (p != NULL) {
 					p++;
 				} else {
-					vp = *findvar(hashvar(name), name);
+					vp = *findvar(name);
 					if (vp) {
 						vp->flags = ((vp->flags | flag) & flag_off);
 						continue;
@@ -14462,7 +14506,7 @@ static NOINLINE void
 init(void)
 {
 	/* we will never free this */
-	basepf.next_to_pgetc = basepf.buf = ckmalloc(IBUFSIZ);
+	basepf.next_to_pgetc = basepf.buf = ckzalloc(IBUFSIZ);
 	basepf.linno = 1;
 
 	sigmode[SIGCHLD - 1] = S_DFL; /* ensure we install handler even if it is SIG_IGNed */
@@ -14550,7 +14594,7 @@ procargs(char **argv)
 		optlist[i] = 2;
 	if (options(&login_sh)) {
 		/* it already printed err message */
-		raise_exception(EXERROR);
+		raise_exception(EXERROR); /* does not return */
 	}
 	xargv = argptr;
 	xminusc = minusc;

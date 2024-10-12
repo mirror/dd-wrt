@@ -1,7 +1,7 @@
 ## ltdl.mk -- includable Makefile snippet
 ##
-##   Copyright (C) 2003-2005, 2007, 2011-2015 Free Software Foundation,
-##   Inc.
+##   Copyright (C) 2003-2005, 2007, 2011-2019, 2021-2022 Free Software
+##   Foundation, Inc.
 ##   Written by Gary V. Vaughan, 2003
 ##
 ##   NOTE: The canonical source of this file is maintained with the
@@ -48,7 +48,7 @@ AM_CPPFLAGS	       += -DLT_CONFIG_H='<$(LT_CONFIG_H)>' \
 			  -DLTDL -I. -I$(srcdir) -Ilibltdl \
 			  -I$(srcdir)/libltdl
 AM_LDFLAGS	       += -no-undefined
-LTDL_VERSION_INFO	= -version-info 10:1:3
+LTDL_VERSION_INFO	= -version-info 10:2:3
 
 noinst_LTLIBRARIES	+= $(LT_DLLOADERS)
 

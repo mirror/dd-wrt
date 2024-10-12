@@ -200,7 +200,7 @@ extern void frr_config_fork(void);
 
 extern void frr_run(struct event_loop *master);
 extern void frr_detach(void);
-extern void frr_vty_serv_start(void);
+extern void frr_vty_serv_start(bool check_detach);
 extern void frr_vty_serv_stop(void);
 
 extern bool frr_zclient_addr(struct sockaddr_storage *sa, socklen_t *sa_len,
@@ -232,6 +232,17 @@ extern char frr_protonameinst[];
 extern bool frr_is_after_fork;
 
 extern bool debug_memstats_at_exit;
+
+/*
+ * Version numbering: MAJOR (8) | MINOR (16) | SUB (8)
+ */
+#define MAKE_FRRVERSION(maj, min, sub)                                         \
+	((((maj) & 0xff) << 24) | (((min) & 0xffff) << 8) | ((sub) & 0xff))
+#define MAJOR_FRRVERSION(v) (((v) >> 24) & 0xff)
+#define MINOR_FRRVERSION(v) (((v) >> 8) & 0xffff)
+#define SUB_FRRVERSION(v)  ((v) & 0xff)
+
+const char *frr_vers2str(uint32_t version, char *buf, int buflen);
 
 #ifdef __cplusplus
 }

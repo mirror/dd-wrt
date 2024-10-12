@@ -91,7 +91,7 @@
  * in word = GLOB, quoting should be significant on char-by-char basis: a*cd"*"
  */
 //config:config HUSH
-//config:	bool "hush (68 kb)"
+//config:	bool "hush (70 kb)"
 //config:	default y
 //config:	select SHELL_HUSH
 //config:	help
@@ -1061,6 +1061,7 @@ static int builtin_export(char **argv) FAST_FUNC;
 #if ENABLE_HUSH_READONLY
 static int builtin_readonly(char **argv) FAST_FUNC;
 #endif
+static int builtin_false(char **argv) FAST_FUNC;
 #if ENABLE_HUSH_JOB
 static int builtin_fg_bg(char **argv) FAST_FUNC;
 static int builtin_jobs(char **argv) FAST_FUNC;
@@ -1161,6 +1162,7 @@ static const struct built_in_command bltins1[] ALIGN_PTR = {
 #if ENABLE_HUSH_EXPORT
 	BLTIN("export"   , builtin_export  , "Set environment variables"),
 #endif
+	BLTIN("false"    , builtin_false   , NULL),
 #if ENABLE_HUSH_JOB
 	BLTIN("fg"       , builtin_fg_bg   , "Bring job to foreground"),
 #endif
@@ -1429,6 +1431,7 @@ static void syntax_error_unterm_str(unsigned lineno UNUSED_PARAM, const char *s)
 {
 	bb_error_msg("syntax error: unterminated %s", s);
 //? source4.tests fails: in bash, echo ${^} in script does not terminate the script
+// (but bash --posix, or if bash is run as "sh", does terminate in script, so maybe uncomment this?)
 //	die_if_script();
 }
 
@@ -1572,12 +1575,22 @@ static int dup_CLOEXEC(int fd, int avoid_fd)
 	newfd = fcntl(fd, F_DUPFD_CLOEXEC, avoid_fd + 1);
 	if (newfd >= 0) {
 		if (F_DUPFD_CLOEXEC == F_DUPFD) /* if old libc (w/o F_DUPFD_CLOEXEC) */
-			fcntl(newfd, F_SETFD, FD_CLOEXEC);
+			close_on_exec_on(newfd);
 	} else { /* newfd < 0 */
 		if (errno == EBUSY)
 			goto repeat;
 		if (errno == EINTR)
 			goto repeat;
+		if (errno != EBADF) {
+			/* "echo >&9999" gets EINVAL trying to save fd 1 to above 9999.
+			 * We could try saving it _below_ 9999 instead (how?), but
+			 * this probably means that dup2(9999,1) to effectuate >&9999
+			 * would also not work: fd 9999 can't exist.
+			 * (This differs from "echo >&99" where saving works, but
+			 * subsequent dup2(99,1) fails if fd 99 is not open).
+			 */
+			bb_perror_msg("fcntl(%d,F_DUPFD,%d)", fd, avoid_fd + 1);
+		}
 	}
 	return newfd;
 }
@@ -1598,7 +1611,7 @@ static int xdup_CLOEXEC_and_close(int fd, int avoid_fd)
 		xfunc_die();
 	}
 	if (F_DUPFD_CLOEXEC == F_DUPFD) /* if old libc (w/o F_DUPFD_CLOEXEC) */
-		fcntl(newfd, F_SETFD, FD_CLOEXEC);
+		close_on_exec_on(newfd);
 	close(fd);
 	return newfd;
 }
@@ -1829,7 +1842,13 @@ static void restore_G_args(save_arg_t *sv, char **argv)
  * SIGQUIT: ignore
  * SIGTERM (interactive): ignore
  * SIGHUP (interactive):
- *    send SIGCONT to stopped jobs, send SIGHUP to all jobs and exit
+ *    Send SIGCONT to stopped jobs, send SIGHUP to all jobs and exit.
+ *    Kernel would do this for us ("orphaned process group" handling
+ *    according to POSIX) if we are a session leader and thus our death
+ *    frees the controlling tty, but to be bash-compatible, we also do it
+ *    for every interactive shell's death by SIGHUP.
+ *    (Also, we need to restore tty pgrp, otherwise e.g. Midnight Commander
+ *    backgrounds when hush started from it gets killed by SIGHUP).
  * SIGTTIN, SIGTTOU, SIGTSTP (if job control is on): ignore
  *    Note that ^Z is handled not by trapping SIGTSTP, but by seeing
  *    that all pipe members are stopped. Try this in bash:
@@ -1946,7 +1965,12 @@ static void record_pending_signo(int sig)
 {
 	sigaddset(&G.pending_set, sig);
 #if ENABLE_FEATURE_EDITING
-	bb_got_signal = sig; /* for read_line_input: "we got a signal" */
+	if (sig != SIGCHLD
+	 || (G_traps && G_traps[SIGCHLD] && G_traps[SIGCHLD][0])
+	 /* ^^^ if SIGCHLD, interrupt line reading only if it has a trap */
+	) {
+		bb_got_signal = sig; /* for read_line_input: "we got a signal" */
+	}
 #endif
 #if ENABLE_HUSH_FAST
 	if (sig == SIGCHLD) {
@@ -2173,20 +2197,27 @@ static int check_and_run_traps(void)
 			break;
 #if ENABLE_HUSH_JOB
 		case SIGHUP: {
-//TODO: why are we doing this? ash and dash don't do this,
-//they have no handler for SIGHUP at all,
-//they rely on kernel to send SIGHUP+SIGCONT to orphaned process groups
-			struct pipe *job;
-			debug_printf_exec("%s: sig:%d default SIGHUP handler\n", __func__, sig);
-			/* bash is observed to signal whole process groups,
-			 * not individual processes */
-			for (job = G.job_list; job; job = job->next) {
-				if (job->pgrp <= 0)
-					continue;
-				debug_printf_exec("HUPing pgrp %d\n", job->pgrp);
-				if (kill(- job->pgrp, SIGHUP) == 0)
-					kill(- job->pgrp, SIGCONT);
+			/* if (G_interactive_fd) - no need to check, the handler
+			 * is only installed if we *are* interactive */
+			{
+				/* bash compat: "Before exiting, an interactive
+				 * shell resends the SIGHUP to all jobs, running
+				 * or stopped.  Stopped jobs are sent SIGCONT
+				 * to ensure that they receive the SIGHUP."
+				 */
+				struct pipe *job;
+				debug_printf_exec("%s: sig:%d default SIGHUP handler\n", __func__, sig);
+				/* bash is observed to signal whole process groups,
+				 * not individual processes */
+				for (job = G.job_list; job; job = job->next) {
+					if (job->pgrp <= 0)
+						continue;
+					debug_printf_exec("HUPing pgrp %d\n", job->pgrp);
+					if (kill(- job->pgrp, SIGHUP) == 0)
+						kill(- job->pgrp, SIGCONT);
+				}
 			}
+			/* this restores tty pgrp, then kills us with SIGHUP */
 			sigexit(SIGHUP);
 		}
 #endif
@@ -2234,14 +2265,14 @@ static const char *get_cwd(int force)
 /*
  * Shell and environment variable support
  */
-static struct variable **get_ptr_to_local_var(const char *name, unsigned len)
+static struct variable **get_ptr_to_local_var(const char *name)
 {
 	struct variable **pp;
 	struct variable *cur;
 
 	pp = &G.top_var;
 	while ((cur = *pp) != NULL) {
-		if (strncmp(cur->varstr, name, len) == 0 && cur->varstr[len] == '=')
+		if (varcmp(cur->varstr, name) == 0)
 			return pp;
 		pp = &cur->next;
 	}
@@ -2251,21 +2282,20 @@ static struct variable **get_ptr_to_local_var(const char *name, unsigned len)
 static const char* FAST_FUNC get_local_var_value(const char *name)
 {
 	struct variable **vpp;
-	unsigned len = strlen(name);
 
 	if (G.expanded_assignments) {
 		char **cpp = G.expanded_assignments;
 		while (*cpp) {
 			char *cp = *cpp;
-			if (strncmp(cp, name, len) == 0 && cp[len] == '=')
-				return cp + len + 1;
+			if (varcmp(cp, name) == 0)
+				return strchr(cp, '=') + 1;
 			cpp++;
 		}
 	}
 
-	vpp = get_ptr_to_local_var(name, len);
+	vpp = get_ptr_to_local_var(name);
 	if (vpp)
-		return (*vpp)->varstr + len + 1;
+		return strchr((*vpp)->varstr, '=') + 1;
 
 	if (strcmp(name, "PPID") == 0)
 		return utoa(G.root_ppid);
@@ -2298,13 +2328,11 @@ static const char* FAST_FUNC get_local_var_value(const char *name)
 }
 
 #if ENABLE_HUSH_GETOPTS
-static void handle_changed_special_names(const char *name, unsigned name_len)
+static void handle_changed_special_names(const char *name)
 {
-	if (name_len == 6) {
-		if (strncmp(name, "OPTIND", 6) == 0) {
-			G.getopt_count = 0;
-			return;
-		}
+	if (varcmp(name, "OPTIND") == 0) {
+		G.getopt_count = 0;
+		return;
 	}
 }
 #else
@@ -2455,7 +2483,7 @@ static int set_local_var(char *str, unsigned flags)
 	}
 	free(free_me);
 
-	handle_changed_special_names(cur->varstr, name_len - 1);
+	handle_changed_special_names(cur->varstr);
 
 	return retval;
 }
@@ -2478,16 +2506,14 @@ static void set_pwd_var(unsigned flag)
 }
 
 #if ENABLE_HUSH_UNSET || ENABLE_HUSH_GETOPTS
-static int unset_local_var_len(const char *name, int name_len)
+static int unset_local_var(const char *name)
 {
 	struct variable *cur;
 	struct variable **cur_pp;
 
 	cur_pp = &G.top_var;
 	while ((cur = *cur_pp) != NULL) {
-		if (strncmp(cur->varstr, name, name_len) == 0
-		 && cur->varstr[name_len] == '='
-		) {
+		if (varcmp(cur->varstr, name) == 0) {
 			if (cur->flg_read_only) {
 				bb_error_msg("%s: readonly variable", name);
 				return EXIT_FAILURE;
@@ -2506,14 +2532,9 @@ static int unset_local_var_len(const char *name, int name_len)
 	}
 
 	/* Handle "unset LINENO" et al even if did not find the variable to unset */
-	handle_changed_special_names(name, name_len);
+	handle_changed_special_names(name);
 
 	return EXIT_SUCCESS;
-}
-
-static int unset_local_var(const char *name)
-{
-	return unset_local_var_len(name, strlen(name));
 }
 #endif
 
@@ -2560,7 +2581,7 @@ static void set_vars_and_save_old(char **strings)
 		eq = strchr(*s, '=');
 		if (HUSH_DEBUG && !eq)
 			bb_simple_error_msg_and_die("BUG in varexp4");
-		var_pp = get_ptr_to_local_var(*s, eq - *s);
+		var_pp = get_ptr_to_local_var(*s);
 		if (var_pp) {
 			var_p = *var_pp;
 			if (var_p->flg_read_only) {
@@ -2669,7 +2690,8 @@ static int get_user_input(struct in_str *i)
 		} else {
 			/* For shell, LI_INTERRUPTIBLE is set:
 			 * read_line_input will abort on either
-			 * getting EINTR in poll(), or if it sees bb_got_signal != 0
+			 * getting EINTR in poll() and bb_got_signal became != 0,
+			 * or if it sees bb_got_signal != 0
 			 * (IOW: if signal arrives before poll() is reached).
 			 * Interactive testcases:
 			 * (while kill -INT $$; do sleep 1; done) &
@@ -4294,7 +4316,7 @@ static int done_word(struct parse_context *ctx)
 		 || endofname(command->argv[0])[0] != '\0'
 		) {
 			/* bash says just "not a valid identifier" */
-			syntax_error("bad variable name in for");
+			syntax_error("bad for loop variable");
 			return 1;
 		}
 		/* Force FOR to have just one word (variable name) */
@@ -4671,6 +4693,11 @@ static int parse_group(struct parse_context *ctx,
 			syntax_error_unexpected_ch(ch);
 			return -1;
 		}
+//bash allows functions named "123", "..", "return"!
+//		if (endofname(command->argv[0])[0] != '\0') {
+//			syntax_error("bad function name");
+//			return -1;
+//		}
 		nommu_addchr(&ctx->as_string, ch);
 		command->cmd_type = CMD_FUNCDEF;
 		goto skip;
@@ -5480,6 +5507,15 @@ static struct pipe *parse_stream(char **pstring,
 			}
 			o_free_and_set_NULL(&ctx.word);
 			done_pipe(&ctx, PIPE_SEQ);
+
+			/* Do we sit inside of any if's, loops or case's? */
+			if (HAS_KEYWORDS
+			IF_HAS_KEYWORDS(&& (ctx.ctx_res_w != RES_NONE || ctx.old_flag != 0))
+			) {
+				syntax_error_unterm_str("compound statement");
+				goto parse_error_exitcode1;
+			}
+
 			pi = ctx.list_head;
 			/* If we got nothing... */
 			/* (this makes bare "&" cmd a no-op.
@@ -5502,7 +5538,7 @@ static struct pipe *parse_stream(char **pstring,
 			//	*heredoc_cnt_ptr = heredoc_cnt;
 			debug_leave();
 			debug_printf_heredoc("parse_stream return heredoc_cnt:%d\n", heredoc_cnt);
-			debug_printf_parse("parse_stream return %p\n", pi);
+			debug_printf_parse("parse_stream return %p: EOF\n", pi);
 			return pi;
 		}
 
@@ -6376,7 +6412,7 @@ static NOINLINE int encode_then_append_var_plusminus(o_string *output, int n,
 		if (!dest.o_expflags) {
 			if (ch == EOF)
 				break;
-			if (!dquoted && strchr(G.ifs, ch)) {
+			if (!dquoted && !(output->o_expflags & EXP_FLAG_SINGLEWORD) && strchr(G.ifs, ch)) {
 				/* PREFIX${x:d${e}f ...} and we met space: expand "d${e}f" and start new word.
 				 * do not assume we are at the start of the word (PREFIX above).
 				 */
@@ -7449,6 +7485,9 @@ static void re_execute_shell(char ***to_free, const char *s,
 		if (!cur->flg_export || cur->flg_read_only)
 			cnt += 2;
 	}
+# if ENABLE_HUSH_LINENO_VAR
+	cnt += 2;
+# endif
 # if ENABLE_HUSH_FUNCTIONS
 	for (funcp = G.top_func; funcp; funcp = funcp->next)
 		cnt += 3;
@@ -7470,6 +7509,10 @@ static void re_execute_shell(char ***to_free, const char *s,
 			*pp++ = cur->varstr;
 		}
 	}
+# if ENABLE_HUSH_LINENO_VAR
+	*pp++ = (char *) "-L";
+	*pp++ = utoa(G.execute_lineno);
+# endif
 # if ENABLE_HUSH_FUNCTIONS
 	for (funcp = G.top_func; funcp; funcp = funcp->next) {
 		*pp++ = (char *) "-F";
@@ -7563,6 +7606,14 @@ static void parse_and_run_stream(struct in_str *inp, int end_trigger)
 				}
 				/* Force prompt */
 				inp->p = NULL;
+				/* Clear "peeked" EOF. Without this,
+				 *  $ { cmd }<Enter>
+				 *  > ^D
+				 *  hush: syntax error: unterminated {
+				 * exits interactive shell:
+				 */
+				if (inp->peek_buf[0] == EOF)
+					inp->peek_buf[0] = 0;
 				/* This stream isn't empty */
 				empty = 0;
 				continue;
@@ -7852,10 +7903,16 @@ static struct squirrel *add_squirrel(struct squirrel *sq, int fd, int avoid_fd)
 	if (sq) for (; sq[i].orig_fd >= 0; i++) {
 		/* If we collide with an already moved fd... */
 		if (fd == sq[i].moved_to) {
-			sq[i].moved_to = dup_CLOEXEC(sq[i].moved_to, avoid_fd);
-			debug_printf_redir("redirect_fd %d: already busy, moving to %d\n", fd, sq[i].moved_to);
-			if (sq[i].moved_to < 0) /* what? */
-				xfunc_die();
+			moved_to = dup_CLOEXEC(sq[i].moved_to, avoid_fd);
+			debug_printf_redir("redirect_fd %d: already busy, moving to %d\n", fd, moved_to);
+			if (moved_to < 0) {
+				/* "echo 2>/dev/tty 10>&9999" testcase:
+				 * We move fd 2 to 10, then discover we need to move fd 10
+				 * (and not hit 9999) and the latter fails.
+				 */
+				return NULL; /* fcntl failed */
+			}
+			sq[i].moved_to = moved_to;
 			return sq;
 		}
 		if (fd == sq[i].orig_fd) {
@@ -7869,7 +7926,7 @@ static struct squirrel *add_squirrel(struct squirrel *sq, int fd, int avoid_fd)
 	moved_to = dup_CLOEXEC(fd, avoid_fd);
 	debug_printf_redir("redirect_fd %d: previous fd is moved to %d (-1 if it was closed)\n", fd, moved_to);
 	if (moved_to < 0 && errno != EBADF)
-		xfunc_die();
+		return NULL; /* fcntl failed (not because fd is closed) */
 	return append_squirrel(sq, i, fd, moved_to);
 }
 
@@ -7902,6 +7959,8 @@ static struct squirrel *add_squirrel_closed(struct squirrel *sq, int fd)
  */
 static int save_fd_on_redirect(int fd, int avoid_fd, struct squirrel **sqp)
 {
+	struct squirrel *new_squirrel;
+
 	if (avoid_fd < 9) /* the important case here is that it can be -1 */
 		avoid_fd = 9;
 
@@ -7965,7 +8024,10 @@ static int save_fd_on_redirect(int fd, int avoid_fd, struct squirrel **sqp)
 	}
 
 	/* Check whether it collides with any open fds (e.g. stdio), save fds as needed */
-	*sqp = add_squirrel(*sqp, fd, avoid_fd);
+	new_squirrel = add_squirrel(*sqp, fd, avoid_fd);
+	if (!new_squirrel)
+		return -1; /* redirect error */
+	*sqp = new_squirrel;
 	return 0; /* "we did not close fd" */
 }
 
@@ -8036,8 +8098,11 @@ static int internally_opened_fd(int fd, struct squirrel *sq)
 	return 0;
 }
 
-/* squirrel != NULL means we squirrel away copies of stdin, stdout,
- * and stderr if they are redirected. */
+/* sqp != NULL means we squirrel away copies of stdin, stdout,
+ * and stderr if they are redirected.
+ * If redirection fails, return 1. This will make caller
+ * skip command execution and restore already created redirect fds.
+ */
 static int setup_redirects(struct command *prog, struct squirrel **sqp)
 {
 	struct redir_struct *redir;
@@ -8048,7 +8113,8 @@ static int setup_redirects(struct command *prog, struct squirrel **sqp)
 
 		if (redir->rd_type == REDIRECT_HEREDOC2) {
 			/* "rd_fd<<HERE" case */
-			save_fd_on_redirect(redir->rd_fd, /*avoid:*/ 0, sqp);
+			if (save_fd_on_redirect(redir->rd_fd, /*avoid:*/ 0, sqp) < 0)
+				return 1;
 			/* for REDIRECT_HEREDOC2, rd_filename holds _contents_
 			 * of the heredoc */
 			debug_printf_redir("set heredoc '%s'\n",
@@ -8068,7 +8134,7 @@ static int setup_redirects(struct command *prog, struct squirrel **sqp)
 				 * "cmd > <file" (2nd redirect starts too early)
 				 */
 				syntax_error("invalid redirect");
-				continue;
+				return 1;
 			}
 			mode = redir_table[redir->rd_type].mode;
 			p = expand_string_to_string(redir->rd_filename,
@@ -8083,7 +8149,9 @@ static int setup_redirects(struct command *prog, struct squirrel **sqp)
 				 */
 				return 1;
 			}
-			if (newfd == redir->rd_fd && sqp) {
+			if (newfd == redir->rd_fd && sqp
+			 && sqp != ERR_PTR /* not a redirect in "exec" */
+			) {
 				/* open() gave us precisely the fd we wanted.
 				 * This means that this fd was not busy
 				 * (not opened to anywhere).
@@ -8105,6 +8173,8 @@ static int setup_redirects(struct command *prog, struct squirrel **sqp)
 		/* if "N>&-": close redir->rd_fd (newfd is REDIRFD_CLOSE) */
 
 		closed = save_fd_on_redirect(redir->rd_fd, /*avoid:*/ newfd, sqp);
+		if (closed < 0)
+			return 1; /* error */
 		if (newfd == REDIRFD_CLOSE) {
 			/* "N>&-" means "close me" */
 			if (!closed) {
@@ -8118,13 +8188,16 @@ static int setup_redirects(struct command *prog, struct squirrel **sqp)
 			 * and second redirect closes 3! Restore code then closes 3 again.
 			 */
 		} else {
-			/* if newfd is a script fd or saved fd, simulate EBADF */
+			/* if newfd is a script fd or saved fd, do not allow to use it */
 			if (internally_opened_fd(newfd, sqp && sqp != ERR_PTR ? *sqp : NULL)) {
-				//errno = EBADF;
-				//bb_perror_msg_and_die("can't duplicate file descriptor");
-				newfd = -1; /* same effect as code above */
+				bb_error_msg("fd#%d is not open", newfd);
+				return 1;
 			}
-			xdup2(newfd, redir->rd_fd);
+			if (dup2(newfd, redir->rd_fd) < 0) {
+				/* "echo >&99" testcase */
+				bb_perror_msg("dup2(%d,%d)", newfd, redir->rd_fd);
+				return 1;
+			}
 			if (redir->rd_dup == REDIRFD_TO_FILE)
 				/* "rd_fd > FILE" */
 				close(newfd);
@@ -8194,7 +8267,7 @@ static const struct built_in_command *find_builtin(const char *name)
 }
 
 #if ENABLE_HUSH_JOB && ENABLE_FEATURE_TAB_COMPLETION
-static const char * FAST_FUNC get_builtin_name(int i)
+static const char * FAST_FUNC hush_command_name(int i)
 {
 	if (/*i >= 0 && */ i < ARRAY_SIZE(bltins1)) {
 		return bltins1[i].b_cmd;
@@ -8203,6 +8276,16 @@ static const char * FAST_FUNC get_builtin_name(int i)
 	if (i < ARRAY_SIZE(bltins2)) {
 		return bltins2[i].b_cmd;
 	}
+# if ENABLE_HUSH_FUNCTIONS
+	{
+		struct function *funcp;
+		i -= ARRAY_SIZE(bltins2);
+		for (funcp = G.top_func; funcp; funcp = funcp->next) {
+			if (--i < 0)
+				return funcp->name;
+		}
+	}
+# endif
 	return NULL;
 }
 #endif
@@ -9208,6 +9291,37 @@ static int checkjobs_and_fg_shell(struct pipe *fg_pipe)
  * backgrounded: cmd &     { list } &
  * subshell:     ( list ) [&]
  */
+static void set_G_ifs(void)
+{
+	/* Testcase: set -- q w e; (IFS='' echo "$*"; IFS=''; echo "$*"); echo "$*"
+	 * Result should be 3 lines: q w e, qwe, q w e
+	 */
+	if (G.ifs_whitespace != G.ifs)
+		free(G.ifs_whitespace);
+	G.ifs = get_local_var_value("IFS");
+	if (G.ifs) {
+		char *p;
+		G.ifs_whitespace = (char*)G.ifs;
+		p = skip_whitespace(G.ifs);
+		if (*p) {
+			/* Not all $IFS is whitespace */
+			char *d;
+			int len = p - G.ifs;
+			p = skip_non_whitespace(p);
+			G.ifs_whitespace = xmalloc(len + strlen(p) + 1); /* can overestimate */
+			d = mempcpy(G.ifs_whitespace, G.ifs, len);
+			while (*p) {
+				if (isspace(*p))
+					*d++ = *p;
+				p++;
+			}
+			*d = '\0';
+		}
+	} else {
+		G.ifs = defifs;
+		G.ifs_whitespace = (char*)G.ifs;
+	}
+}
 #if !ENABLE_HUSH_MODE_X
 #define redirect_and_varexp_helper(command, sqp, argv_expanded) \
 	redirect_and_varexp_helper(command, sqp)
@@ -9244,34 +9358,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 	debug_printf_exec("run_pipe start: members:%d\n", pi->num_cmds);
 	debug_enter();
 
-	/* Testcase: set -- q w e; (IFS='' echo "$*"; IFS=''; echo "$*"); echo "$*"
-	 * Result should be 3 lines: q w e, qwe, q w e
-	 */
-	if (G.ifs_whitespace != G.ifs)
-		free(G.ifs_whitespace);
-	G.ifs = get_local_var_value("IFS");
-	if (G.ifs) {
-		char *p;
-		G.ifs_whitespace = (char*)G.ifs;
-		p = skip_whitespace(G.ifs);
-		if (*p) {
-			/* Not all $IFS is whitespace */
-			char *d;
-			int len = p - G.ifs;
-			p = skip_non_whitespace(p);
-			G.ifs_whitespace = xmalloc(len + strlen(p) + 1); /* can overestimate */
-			d = mempcpy(G.ifs_whitespace, G.ifs, len);
-			while (*p) {
-				if (isspace(*p))
-					*d++ = *p;
-				p++;
-			}
-			*d = '\0';
-		}
-	} else {
-		G.ifs = defifs;
-		G.ifs_whitespace = (char*)G.ifs;
-	}
+	set_G_ifs();
 
 	IF_HUSH_JOB(pi->pgrp = -1;)
 	pi->stopped_cmds = 0;
@@ -9713,8 +9800,10 @@ static int run_list(struct pipe *pi)
 	smallint last_rword; /* ditto */
 #endif
 
-	debug_printf_exec("run_list start lvl %d\n", G.run_list_level);
+	debug_printf_exec("run_list lvl %d start\n", G.run_list_level);
 	debug_enter();
+
+	set_G_ifs();
 
 #if ENABLE_HUSH_LOOPS
 	/* Check syntax for "for" */
@@ -9772,7 +9861,7 @@ static int run_list(struct pipe *pi)
 			break;
 
 		IF_HAS_KEYWORDS(rword = pi->res_word;)
-		debug_printf_exec(": rword=%d cond_code=%d last_rword=%d\n",
+		debug_printf_exec(": rword:%d cond_code:%d last_rword:%d\n",
 				rword, cond_code, last_rword);
 
 		sv_errexit_depth = G.errexit_depth;
@@ -9806,23 +9895,29 @@ static int run_list(struct pipe *pi)
 			}
 		}
 		last_followup = pi->followup;
-		IF_HAS_KEYWORDS(last_rword = rword;)
 #if ENABLE_HUSH_IF
-		if (cond_code) {
+		if (cond_code != 0) {
 			if (rword == RES_THEN) {
 				/* if false; then ... fi has exitcode 0! */
 				G.last_exitcode = rcode = EXIT_SUCCESS;
 				/* "if <false> THEN cmd": skip cmd */
+				debug_printf_exec("skipped THEN cmd because IF condition was false\n");
+				last_rword = rword;
 				continue;
 			}
 		} else {
-			if (rword == RES_ELSE || rword == RES_ELIF) {
+			if (rword == RES_ELSE
+			 || (rword == RES_ELIF && last_rword != RES_ELIF)
+			) {
 				/* "if <true> then ... ELSE/ELIF cmd":
 				 * skip cmd and all following ones */
+				debug_printf_exec("skipped ELSE/ELIF branch because IF condition was true\n");
 				break;
 			}
+			//if (rword == RES_THEN): "if <true> THEN cmd", run cmd (fall through)
 		}
 #endif
+		IF_HAS_KEYWORDS(last_rword = rword;)
 #if ENABLE_HUSH_LOOPS
 		if (rword == RES_FOR) { /* && pi->num_cmds - always == 1 */
 			if (!for_lcur) {
@@ -9898,7 +9993,7 @@ static int run_list(struct pipe *pi)
 				);
 				/* TODO: which FNM_xxx flags to use? */
 				cond_code = (fnmatch(pattern, case_word, /*flags:*/ 0) != 0);
-				debug_printf_exec("fnmatch(pattern:'%s',str:'%s'):%d\n",
+				debug_printf_exec("cond_code=fnmatch(pattern:'%s',str:'%s'):%d\n",
 						pattern, case_word, cond_code);
 				free(pattern);
 				if (cond_code == 0) {
@@ -10024,8 +10119,10 @@ static int run_list(struct pipe *pi)
 
 		/* Analyze how result affects subsequent commands */
 #if ENABLE_HUSH_IF
-		if (rword == RES_IF || rword == RES_ELIF)
+		if (rword == RES_IF || rword == RES_ELIF) {
+			debug_printf_exec("cond_code=rcode:%d\n", rcode);
 			cond_code = rcode;
+		}
 #endif
  check_jobs_and_continue:
 		checkjobs(NULL, 0 /*(no pid to wait for)*/);
@@ -10066,7 +10163,7 @@ static int run_list(struct pipe *pi)
 	free(case_word);
 #endif
 	debug_leave();
-	debug_printf_exec("run_list lvl %d return %d\n", G.run_list_level + 1, rcode);
+	debug_printf_exec("run_list lvl %d return %d\n", G.run_list_level, rcode);
 	return rcode;
 }
 
@@ -10241,6 +10338,20 @@ int hush_main(int argc, char **argv)
 	INIT_G();
 	if (EXIT_SUCCESS != 0) /* if EXIT_SUCCESS == 0, it is already done */
 		G.last_exitcode = EXIT_SUCCESS;
+#if !BB_MMU
+	/* "Big heredoc" support via "sh -< STRING" invocation.
+	 * Check it first (do not bother to run the usual init code,
+	 * it is not needed for this case).
+	 */
+	if (argv[1]
+	 && argv[1][0] == '-' && argv[1][1] == '<' /*&& !argv[1][2]*/
+	 /*&& argv[2] && !argv[3] - we don't check some conditions */
+	) {
+		full_write1_str(argv[2]);
+		_exit(0);
+	}
+	G.argv0_for_re_execing = argv[0];
+#endif
 #if ENABLE_HUSH_TRAP
 # if ENABLE_HUSH_FUNCTIONS
 	G.return_exitcode = -1;
@@ -10250,9 +10361,6 @@ int hush_main(int argc, char **argv)
 
 #if ENABLE_HUSH_FAST
 	G.count_SIGCHLD++; /* ensure it is != G.handled_SIGCHLD */
-#endif
-#if !BB_MMU
-	G.argv0_for_re_execing = argv[0];
 #endif
 
 	cached_getpid = getpid();   /* for tcsetpgrp() during init */
@@ -10369,7 +10477,10 @@ int hush_main(int argc, char **argv)
 		int opt = getopt(argc, argv, "+" /* stop at 1st non-option */
 				"cexinsl"
 #if !BB_MMU
-				"<:$:R:V:"
+				"$:R:V:"
+# if ENABLE_HUSH_LINENO_VAR
+				"L:"
+# endif
 # if ENABLE_HUSH_FUNCTIONS
 				"F:"
 # endif
@@ -10419,9 +10530,6 @@ int hush_main(int argc, char **argv)
 			flags |= OPT_login;
 			break;
 #if !BB_MMU
-		case '<': /* "big heredoc" support */
-			full_write1_str(optarg);
-			_exit(0);
 		case '$': {
 			unsigned long long empty_trap_mask;
 
@@ -10471,6 +10579,11 @@ int hush_main(int argc, char **argv)
 		case 'V':
 			set_local_var(xstrdup(optarg), opt == 'R' ? SETFLAG_MAKE_RO : 0);
 			break;
+# if ENABLE_HUSH_LINENO_VAR
+		case 'L':
+			G.parse_lineno = xatou(optarg);
+			break;
+# endif
 # if ENABLE_HUSH_FUNCTIONS
 		case 'F': {
 			struct function *funcp = new_function(optarg);
@@ -10629,7 +10742,7 @@ int hush_main(int argc, char **argv)
 		G_interactive_fd = dup_CLOEXEC(STDIN_FILENO, 254);
 		if (G_interactive_fd < 0) {
 			/* try to dup to any fd */
-			G_interactive_fd = dup(STDIN_FILENO);
+			G_interactive_fd = dup_CLOEXEC(STDIN_FILENO, -1);
 			if (G_interactive_fd < 0) {
 				/* give up */
 				G_interactive_fd = 0;
@@ -10639,8 +10752,6 @@ int hush_main(int argc, char **argv)
 	}
 	debug_printf("interactive_fd:%d\n", G_interactive_fd);
 	if (G_interactive_fd) {
-		close_on_exec_on(G_interactive_fd);
-
 		if (G_saved_tty_pgrp) {
 			/* If we were run as 'hush &', sleep until we are
 			 * in the foreground (tty pgrp == our pgrp).
@@ -10674,7 +10785,7 @@ int hush_main(int argc, char **argv)
 # if ENABLE_FEATURE_EDITING
 		G.line_input_state = new_line_input_t(FOR_SHELL);
 #  if ENABLE_FEATURE_TAB_COMPLETION
-		G.line_input_state->get_exe_name = get_builtin_name;
+		G.line_input_state->get_exe_name = hush_command_name;
 #  endif
 #  if EDITING_HAS_sh_get_var
 		G.line_input_state->sh_get_var = get_local_var_value;
@@ -10714,9 +10825,6 @@ int hush_main(int argc, char **argv)
 				/* give up */
 				G_interactive_fd = 0;
 		}
-	}
-	if (G_interactive_fd) {
-		close_on_exec_on(G_interactive_fd);
 	}
 	install_special_sighandlers();
 #else
@@ -10760,6 +10868,11 @@ int hush_main(int argc, char **argv)
 static int FAST_FUNC builtin_true(char **argv UNUSED_PARAM)
 {
 	return 0;
+}
+
+static int FAST_FUNC builtin_false(char **argv UNUSED_PARAM)
+{
+	return 1;
 }
 
 #if ENABLE_HUSH_TEST || ENABLE_HUSH_ECHO || ENABLE_HUSH_PRINTF || ENABLE_HUSH_KILL
@@ -10811,14 +10924,6 @@ static int FAST_FUNC builtin_history(char **argv UNUSED_PARAM)
 	return EXIT_SUCCESS;
 }
 #endif
-
-static char **skip_dash_dash(char **argv)
-{
-	argv++;
-	if (argv[0] && argv[0][0] == '-' && argv[0][1] == '-' && argv[0][2] == '\0')
-		argv++;
-	return argv;
-}
 
 static int FAST_FUNC builtin_cd(char **argv)
 {
@@ -11102,9 +11207,15 @@ static int FAST_FUNC builtin_umask(char **argv)
 }
 #endif
 
-#if ENABLE_HUSH_EXPORT || ENABLE_HUSH_TRAP
+#if ENABLE_HUSH_EXPORT || ENABLE_HUSH_READONLY || ENABLE_HUSH_SET || ENABLE_HUSH_TRAP
 static void print_escaped(const char *s)
 {
+//TODO? bash "set" does not quote variables which contain only alnums and "%+,-./:=@_~",
+// (but "export" quotes all variables, even with only these chars).
+// I think quoting strings with %+,=~ looks better
+// (example: "set" printing var== instead of var='=' looks strange)
+// IOW: do not quote "-./:@_": / is used in pathnames, : in PATH, -._ often in file names, @ in emails
+
 	if (*s == '\'')
 		goto squote;
 	do {
@@ -11133,7 +11244,7 @@ static int helper_export_local(char **argv, unsigned flags)
 		if (*name_end == '\0') {
 			struct variable *var, **vpp;
 
-			vpp = get_ptr_to_local_var(name, name_end - name);
+			vpp = get_ptr_to_local_var(name);
 			var = vpp ? *vpp : NULL;
 
 			if (flags & SETFLAG_UNEXPORT) {
@@ -11235,8 +11346,8 @@ static int FAST_FUNC builtin_export(char **argv)
 
 				if (!p) /* wtf? take next variable */
 					continue;
-				/* export var= */
-				printf("export %.*s", (int)(p - s) + 1, s);
+				/* "export VAR=" */
+				printf("%s %.*s", "export", (int)(p - s) + 1, s);
 				print_escaped(p + 1);
 				putchar('\n');
 # endif
@@ -11257,6 +11368,9 @@ static int FAST_FUNC builtin_local(char **argv)
 		bb_error_msg("%s: not in a function", argv[0]);
 		return EXIT_FAILURE; /* bash compat */
 	}
+//TODO? ash and bash support "local -" special form,
+//which saves/restores $- around function call (including async returns, such as ^C)
+//(IOW: it makes "set +/-..." effects local)
 	argv++;
 	/* Since all builtins run in a nested variable level,
 	 * need to use level - 1 here. Or else the variable will be removed at once
@@ -11277,8 +11391,15 @@ static int FAST_FUNC builtin_readonly(char **argv)
 		struct variable *e;
 		for (e = G.top_var; e; e = e->next) {
 			if (e->flg_read_only) {
-//TODO: quote value: readonly VAR='VAL'
-				printf("readonly %s\n", e->varstr);
+				const char *s = e->varstr;
+				const char *p = strchr(s, '=');
+
+				if (!p) /* wtf? take next variable */
+					continue;
+				/* "readonly VAR=" */
+				printf("%s %.*s", "readonly", (int)(p - s) + 1, s);
+				print_escaped(p + 1);
+				putchar('\n');
 			}
 		}
 		return EXIT_SUCCESS;
@@ -11356,8 +11477,17 @@ static int FAST_FUNC builtin_set(char **argv)
 
 	if (arg == NULL) {
 		struct variable *e;
-		for (e = G.top_var; e; e = e->next)
-			puts(e->varstr);
+		for (e = G.top_var; e; e = e->next) {
+			const char *s = e->varstr;
+			const char *p = strchr(s, '=');
+
+			if (!p) /* wtf? take next variable */
+				continue;
+			/* var= */
+			printf("%.*s", (int)(p - s) + 1, s);
+			print_escaped(p + 1);
+			putchar('\n');
+		}
 		return EXIT_SUCCESS;
 	}
 

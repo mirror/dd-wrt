@@ -18,6 +18,8 @@
 #include "iana_afi.h"
 #include "asn.h"
 
+PREDECL_LIST(zebra_announce);
+
 /* For union sockunion.  */
 #include "queue.h"
 #include "sockunion.h"
@@ -31,6 +33,7 @@
 #include "bgp_addpath_types.h"
 #include "bgp_nexthop.h"
 #include "bgp_io.h"
+#include "bgp_damp.h"
 
 #include "lib/bfd.h"
 
@@ -163,8 +166,8 @@ struct bgp_master {
 
 	bool terminating;	/* global flag that sigint terminate seen */
 
-	/* DSCP value for TCP sessions */
-	uint8_t tcp_dscp;
+	/* TOS value for outgoing packets in BGP connections */
+	uint8_t ip_tos;
 
 #define BM_DEFAULT_Q_LIMIT 10000
 	uint32_t inq_limit;
@@ -173,7 +176,12 @@ struct bgp_master {
 	struct event *t_bgp_sync_label_manager;
 	struct event *t_bgp_start_label_manager;
 
+	struct event *t_bgp_zebra_route;
+
 	bool v6_with_v4_nexthops;
+
+	/* To preserve ordering of installations into zebra across all Vrfs */
+	struct zebra_announce_head zebra_announce_head;
 
 	QOBJ_FIELDS;
 };
@@ -471,7 +479,7 @@ struct bgp {
 	 * factor (e.g., number of multipaths for the prefix)
 	 * Value is in Mbps
 	 */
-	uint32_t lb_ref_bw;
+	uint64_t lb_ref_bw;
 #define BGP_LINK_BW_REF_BW                1
 
 	/* BGP flags. */
@@ -522,6 +530,8 @@ struct bgp {
 #define BGP_FLAG_LU_IPV6_EXPLICIT_NULL (1ULL << 34)
 #define BGP_FLAG_SOFT_VERSION_CAPABILITY (1ULL << 35)
 #define BGP_FLAG_ENFORCE_FIRST_AS (1ULL << 36)
+#define BGP_FLAG_DYNAMIC_CAPABILITY (1ULL << 37)
+#define BGP_FLAG_VNI_DOWN		 (1ULL << 38)
 
 	/* BGP default address-families.
 	 * New peers inherit enabled afi/safis from bgp instance.
@@ -824,6 +834,9 @@ struct bgp {
 	bool allow_martian;
 
 	enum asnotation_mode asnotation;
+
+	/* BGP route flap dampening configuration */
+	struct bgp_damp_config damp[AFI_MAX][SAFI_MAX];
 
 	QOBJ_FIELDS;
 };
@@ -1140,6 +1153,11 @@ struct llgr_info {
 	uint8_t flags;
 };
 
+struct addpath_paths_limit {
+	uint16_t send;
+	uint16_t receive;
+};
+
 struct peer_connection {
 	struct peer *peer;
 
@@ -1333,6 +1351,8 @@ struct peer {
 #define PEER_CAP_ROLE_RCV		    (1ULL << 26) /* role received */
 #define PEER_CAP_SOFT_VERSION_ADV	    (1ULL << 27)
 #define PEER_CAP_SOFT_VERSION_RCV	    (1ULL << 28)
+#define PEER_CAP_PATHS_LIMIT_ADV (1U << 29)
+#define PEER_CAP_PATHS_LIMIT_RCV (1U << 30)
 
 	/* Capability flags (reset in bgp_stop) */
 	uint32_t af_cap[AFI_MAX][SAFI_MAX];
@@ -1351,6 +1371,8 @@ struct peer {
 #define PEER_CAP_ENHE_AF_NEGO               (1U << 14) /* Extended nexthop afi/safi negotiated */
 #define PEER_CAP_LLGR_AF_ADV                (1U << 15)
 #define PEER_CAP_LLGR_AF_RCV                (1U << 16)
+#define PEER_CAP_PATHS_LIMIT_AF_ADV         (1U << 17)
+#define PEER_CAP_PATHS_LIMIT_AF_RCV         (1U << 18)
 
 	/* Global configuration flags. */
 	/*
@@ -1461,6 +1483,8 @@ struct peer {
 #define PEER_FLAG_GRACEFUL_SHUTDOWN (1ULL << 35)
 #define PEER_FLAG_CAPABILITY_SOFT_VERSION (1ULL << 36)
 #define PEER_FLAG_CAPABILITY_FQDN (1ULL << 37)  /* fqdn capability */
+#define PEER_FLAG_AS_LOOP_DETECTION (1ULL << 38) /* as path loop detection */
+#define PEER_FLAG_EXTENDED_LINK_BANDWIDTH (1ULL << 39)
 
 	/*
 	 *GR-Disabled mode means unset PEER_FLAG_GRACEFUL_RESTART
@@ -1487,6 +1511,9 @@ struct peer {
 	time_t eor_stime[AFI_MAX][SAFI_MAX];
 	/* Last update packet sent time */
 	time_t pkt_stime[AFI_MAX][SAFI_MAX];
+
+	/* Peer / peer group route flap dampening configuration */
+	struct bgp_damp_config damp[AFI_MAX][SAFI_MAX];
 
 	/* Peer Per AF flags */
 	/*
@@ -1528,6 +1555,8 @@ struct peer {
 #define PEER_FLAG_DISABLE_ADDPATH_RX (1ULL << 27)
 #define PEER_FLAG_SOO (1ULL << 28)
 #define PEER_FLAG_SEND_EXT_COMMUNITY_RPKI (1ULL << 29)
+#define PEER_FLAG_ADDPATH_RX_PATHS_LIMIT (1ULL << 30)
+#define PEER_FLAG_CONFIG_DAMPENING (1U << 31)
 #define PEER_FLAG_ACCEPT_OWN (1ULL << 63)
 
 	enum bgp_addpath_strat addpath_type[AFI_MAX][SAFI_MAX];
@@ -1647,6 +1676,8 @@ struct peer {
 	uint32_t stat_pfx_nh_invalid;
 	uint32_t stat_pfx_dup_withdraw;
 	uint32_t stat_upd_7606;  /* RFC7606: treat-as-withdraw */
+	uint64_t stat_pfx_loc_rib; /* RFC7854 : Number of routes in Loc-RIB */
+	uint64_t stat_pfx_adj_rib_in; /* RFC7854 : Number of routes in Adj-RIBs-In */
 
 	/* BGP state count */
 	uint32_t established; /* Established */
@@ -1813,9 +1844,6 @@ struct peer {
 	char *hostname;
 	char *domainname;
 
-	/* Sender side AS path loop detection. */
-	bool as_path_loop_detection;
-
 	/* Extended Message Support */
 	uint16_t max_packet_size;
 
@@ -1844,6 +1872,9 @@ struct peer {
 
 	/* Add-Path Best selected paths number to advertise */
 	uint8_t addpath_best_selected[AFI_MAX][SAFI_MAX];
+
+	/* Add-Path Paths-Limit */
+	struct addpath_paths_limit addpath_paths_limit[AFI_MAX][SAFI_MAX];
 
 	QOBJ_FIELDS;
 };
@@ -1951,7 +1982,6 @@ struct bgp_nlri {
 #define BGP_ATTR_LARGE_COMMUNITIES              32
 #define BGP_ATTR_OTC                            35
 #define BGP_ATTR_PREFIX_SID                     40
-#define BGP_ATTR_SRTE_COLOR                     51
 #ifdef ENABLE_BGP_VNC_ATTR
 #define BGP_ATTR_VNC                           255
 #endif
@@ -1970,6 +2000,7 @@ struct bgp_nlri {
 #define BGP_NOTIFY_FSM_ERR                       5
 #define BGP_NOTIFY_CEASE                         6
 #define BGP_NOTIFY_ROUTE_REFRESH_ERR             7
+#define BGP_NOTIFY_SEND_HOLD_ERR                 8
 
 /* Subcodes for BGP Finite State Machine Error */
 #define BGP_NOTIFY_FSM_ERR_SUBCODE_UNSPECIFIC  0

@@ -26,6 +26,7 @@
 #include "routemap.h"
 #include "routing_nb.h"
 #include "mgmt_be_client.h"
+#include "libagentx.h"
 
 #include "zebra/zebra_router.h"
 #include "zebra/zebra_errors.h"
@@ -203,6 +204,7 @@ static void sigint(void)
 	rib_update_finish();
 
 	list_delete(&zrouter.client_list);
+	list_delete(&zrouter.stale_client_list);
 
 	/*
 	 * Besides other clean-ups zebra's vrf_disable() also enqueues installed
@@ -434,6 +436,7 @@ int main(int argc, char **argv)
 	zrouter.master = frr_init();
 
 	/* Zebra related initialize. */
+	libagentx_init();
 	zebra_router_init(asic_offload, notify_on_ack, v6_with_v4_nexthop);
 	zserv_init();
 	zebra_rib_init();

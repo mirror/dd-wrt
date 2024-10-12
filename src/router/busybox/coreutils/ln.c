@@ -7,7 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config LN
-//config:	bool "ln (4.9 kb)"
+//config:	bool "ln (5.1 kb)"
 //config:	default y
 //config:	help
 //config:	ln is used to create hard or soft links between files.
@@ -52,7 +52,7 @@
 int ln_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int ln_main(int argc, char **argv)
 {
-	int status = EXIT_SUCCESS;
+	exitcode_t status = EXIT_SUCCESS;
 	int opts;
 	char *last;
 	char *src_name;

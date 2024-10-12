@@ -6,7 +6,7 @@
  * Contact me: vda.linux@googlemail.com
  */
 //config:config NMETER
-//config:	bool "nmeter (11 kb)"
+//config:	bool "nmeter (12 kb)"
 //config:	default y
 //config:	help
 //config:	Prints selected system stats continuously, one line per update.
@@ -59,9 +59,9 @@
 
 typedef unsigned long long ullong;
 
-enum {  /* Preferably use powers of 2 */
+enum {
 	PROC_MIN_FILE_SIZE = 256,
-	PROC_MAX_FILE_SIZE = 16 * 1024,
+	PROC_MAX_FILE_SIZE = 64 * 1024, /* 16k was a bit too small for a 128-CPU machine */
 };
 
 typedef struct proc_file {
@@ -176,7 +176,10 @@ static void readfile_z(proc_file *pf, const char* fname)
 	close(fd);
 	if (rdsz > 0) {
 		if (rdsz == sz-1 && sz < PROC_MAX_FILE_SIZE) {
-			sz *= 2;
+			if (sz < 4 * 1024)
+				sz *= 2;
+			else
+				sz += 4 * 1024;
 			buf = xrealloc(buf, sz);
 			goto again;
 		}
@@ -982,6 +985,15 @@ int nmeter_main(int argc UNUSED_PARAM, char **argv)
 
 	xgettimeofday(&G.start);
 	G.tv = G.start;
+
+	// Move back start of monotonic time a bit, to syncronize fractionals of %T and %t:
+	// nmeter -d500 '%6T %6t'
+	// 00:00:00.000161 12:32:07.500161
+	// 00:00:00.500282 12:32:08.000282
+	// 00:00:01.000286 12:32:08.500286
+	if (G.delta > 0)
+		G.start.tv_usec -= (G.start.tv_usec % (unsigned)G.delta);
+
 	while (1) {
 		collect_info(first);
 		put_c(G.final_char);
@@ -996,6 +1008,15 @@ int nmeter_main(int argc UNUSED_PARAM, char **argv)
 			int rem;
 			// can be commented out, will sacrifice sleep time precision a bit
 			xgettimeofday(&G.tv);
+
+	// TODO: nmeter -d10000 '%6T %6t'
+	// 00:00:00.770333 12:34:44.770333
+	// 00:00:06.000088 12:34:50.000088
+	// 00:00:16.000094 12:35:00.000094
+	// 00:00:26.000275 12:35:10.000275
+	// we can't syncronize interval to start close to 10 seconds for both
+	// %T and %t (as shown above), but what if there is only %T
+	// in format string? Maybe sync _it_ instead of %t in this case?
 			if (need_seconds)
 				rem = G.delta - ((ullong)G.tv.tv_sec*1000000 + G.tv.tv_usec) % G.deltanz;
 			else

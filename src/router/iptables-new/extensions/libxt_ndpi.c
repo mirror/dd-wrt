@@ -482,6 +482,14 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"clickhouse",
 	"nano",
 	"openwire",
+	"cnp_ip",
+	"atg",
+	"trdp",
+	"lustre",
+	"nordvpn",
+	"surfshark",
+	"cactusvpn",
+	"windscribe",
 	NULL,
 };
 

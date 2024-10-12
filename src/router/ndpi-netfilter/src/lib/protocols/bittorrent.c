@@ -117,7 +117,6 @@ static void ndpi_search_bittorrent_hash(struct ndpi_detection_module_struct *ndp
 
 static int search_bittorrent_again(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow) {
-  ndpi_search_bittorrent(ndpi_struct, flow);
   ndpi_search_bittorrent_hash(ndpi_struct, flow, -1);
   
   /* Possibly more processing */
@@ -162,6 +161,8 @@ static u_int8_t is_utpv1_pkt(const u_int8_t *payload, u_int payload_len) {
   if(h->next_extension > 2)         return(0);
   if(h->h_type == 4 /* SYN */ && (h->tdiff_usec != 0 ||
      payload_len != (u_int)h_length)) return(0);
+  if(h->h_type == 2 /* STATE */ &&
+     payload_len != (u_int)h_length) return(0);
   if(h->h_type == 0 /* DATA */ &&
      payload_len == (u_int)h_length) return(0);
   if(h->connection_id == 0) return(0);

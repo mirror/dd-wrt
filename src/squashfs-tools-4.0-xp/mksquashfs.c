@@ -3635,12 +3635,27 @@ void dir_scan4(struct dir_info *dir)
 	}
 }
 
-
 /*
  * dir_scan5 routines...
  * This sorts every directory and computes the inode numbers
  */
+int mkstrcmp(char *first, char *second)
+{
+char *list[] = {"bin","sbin","lib", "usr"};
+int i;
+for (i=0;i<4;i++) {
+    if (!strcmp(first, list[i])) {
+	return 1;
+    }
+}
+for (i=0;i<4;i++) {
+    if (!strcmp(second, list[i])) {
+	    return -1;
+    }
+}
+return strcmp(first,second);
 
+}
 /*
  * Bottom up linked list merge sort.
  *
@@ -3689,7 +3704,7 @@ void sort_directory(struct dir_info *dir)
 			 * Merge them onto the output list
 			 */
 			while(len1 && l2 && len2) {
-				if(strcmp(l1->name, l2->name) <= 0) {
+				if(mkstrcmp(l1->name, l2->name) <= 0) {
 					next = l1;
 					l1 = l1->next;
 					len1 --;

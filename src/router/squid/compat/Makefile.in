@@ -172,8 +172,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libcompatsquid_la_DEPENDENCIES = $(LTLIBOBJS)
 am_libcompatsquid_la_OBJECTS = assert.lo compat.lo debug.lo \
-	eui64_aton.lo getaddrinfo.lo getnameinfo.lo inet_ntop.lo \
-	inet_pton.lo memrchr.lo mswindows.lo shm.lo statvfs.lo \
+	eui64_aton.lo memrchr.lo mswindows.lo shm.lo statvfs.lo \
 	strnrchr.lo strnstr.lo xalloc.lo xstrerror.lo xstring.lo \
 	xstrto.lo
 libcompatsquid_la_OBJECTS = $(am_libcompatsquid_la_OBJECTS)
@@ -208,9 +207,7 @@ am__depfiles_remade = $(DEPDIR)/initgroups.Plo $(DEPDIR)/psignal.Plo \
 	$(DEPDIR)/strerror.Plo $(DEPDIR)/strtoll.Plo \
 	$(DEPDIR)/tempnam.Plo ./$(DEPDIR)/assert.Plo \
 	./$(DEPDIR)/compat.Plo ./$(DEPDIR)/debug.Plo \
-	./$(DEPDIR)/eui64_aton.Plo ./$(DEPDIR)/getaddrinfo.Plo \
-	./$(DEPDIR)/getnameinfo.Plo ./$(DEPDIR)/inet_ntop.Plo \
-	./$(DEPDIR)/inet_pton.Plo ./$(DEPDIR)/memrchr.Plo \
+	./$(DEPDIR)/eui64_aton.Plo ./$(DEPDIR)/memrchr.Plo \
 	./$(DEPDIR)/mswindows.Plo ./$(DEPDIR)/shm.Plo \
 	./$(DEPDIR)/statvfs.Plo ./$(DEPDIR)/strnrchr.Plo \
 	./$(DEPDIR)/strnstr.Plo ./$(DEPDIR)/testPreCompiler.Po \
@@ -550,6 +547,7 @@ EXT_LIBECAP_CFLAGS = @EXT_LIBECAP_CFLAGS@
 EXT_LIBECAP_LIBS = @EXT_LIBECAP_LIBS@
 FALSE = @FALSE@
 FGREP = @FGREP@
+FILECMD = @FILECMD@
 GREP = @GREP@
 HAVE_CXX17 = @HAVE_CXX17@
 INCLTDL = @INCLTDL@
@@ -777,14 +775,6 @@ libcompatsquid_la_SOURCES = \
 	eui64_aton.c \
 	eui64_aton.h \
 	fdsetsize.h \
-	getaddrinfo.cc \
-	getaddrinfo.h \
-	getnameinfo.cc \
-	getnameinfo.h \
-	inet_ntop.cc \
-	inet_ntop.h \
-	inet_pton.cc \
-	inet_pton.h \
 	initgroups.h \
 	krb5.h \
 	memrchr.cc \
@@ -801,7 +791,6 @@ libcompatsquid_la_SOURCES = \
 	os/mswindows.h \
 	os/netbsd.h \
 	os/openbsd.h \
-	os/opensolaris_10_netdb.h \
 	os/os2.h \
 	os/qnx.h \
 	os/sgi.h \
@@ -916,10 +905,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eui64_aton.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getaddrinfo.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getnameinfo.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inet_ntop.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inet_pton.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memrchr.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mswindows.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shm.Plo@am__quote@ # am--include-marker
@@ -1301,10 +1286,6 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/compat.Plo
 	-rm -f ./$(DEPDIR)/debug.Plo
 	-rm -f ./$(DEPDIR)/eui64_aton.Plo
-	-rm -f ./$(DEPDIR)/getaddrinfo.Plo
-	-rm -f ./$(DEPDIR)/getnameinfo.Plo
-	-rm -f ./$(DEPDIR)/inet_ntop.Plo
-	-rm -f ./$(DEPDIR)/inet_pton.Plo
 	-rm -f ./$(DEPDIR)/memrchr.Plo
 	-rm -f ./$(DEPDIR)/mswindows.Plo
 	-rm -f ./$(DEPDIR)/shm.Plo
@@ -1370,10 +1351,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/compat.Plo
 	-rm -f ./$(DEPDIR)/debug.Plo
 	-rm -f ./$(DEPDIR)/eui64_aton.Plo
-	-rm -f ./$(DEPDIR)/getaddrinfo.Plo
-	-rm -f ./$(DEPDIR)/getnameinfo.Plo
-	-rm -f ./$(DEPDIR)/inet_ntop.Plo
-	-rm -f ./$(DEPDIR)/inet_pton.Plo
 	-rm -f ./$(DEPDIR)/memrchr.Plo
 	-rm -f ./$(DEPDIR)/mswindows.Plo
 	-rm -f ./$(DEPDIR)/shm.Plo

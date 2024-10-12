@@ -112,7 +112,7 @@ static inline unsigned long perf_data_size(struct ring_buffer *rb)
 
 static inline unsigned long perf_aux_size(struct ring_buffer *rb)
 {
-	return rb->aux_nr_pages << PAGE_SHIFT;
+	return (unsigned long)rb->aux_nr_pages << PAGE_SHIFT;
 }
 
 #define DEFINE_OUTPUT_COPY(func_name, memcpy_func)			\

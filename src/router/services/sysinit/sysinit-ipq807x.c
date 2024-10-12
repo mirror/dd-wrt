@@ -179,6 +179,10 @@ void *get_deviceinfo_mx4200(char *var)
 {
 	return get_deviceinfo("/dev/mtd20", var);
 }
+void *get_deviceinfo_wxr(char *var)
+{
+	return get_deviceinfo("/dev/mtd14", var);
+}
 
 void calcchecksum(void *caldata, int offset, int size)
 {
@@ -1014,6 +1018,11 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		profile = 1024;
+		fwlen = 0x20000;
+		load_nss_ipq807x(1024);
+		break;
 	case ROUTER_ASUS_AX89X:
 		profile = 1024;
 		fwlen = 0x20000;
@@ -1248,6 +1257,18 @@ void start_sysinit(void)
 	case ROUTER_DYNALINK_DLWRX36:
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		char *wlan0mac = get_deviceinfo_wxr("wlan0addr");
+		nvram_set("wlan0_hwaddr", wlan0mac);
+		patch(wlan0mac, 14);
+		char *wlan1mac = get_deviceinfo_wxr("wlan1addr");
+		nvram_set("wlan1_hwaddr", wlan1mac);
+		patch(wlan1mac, 20);
+		patch(wlan1mac, 26);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
+		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
+		break;
 	case ROUTER_ASUS_AX89X:
 		set_envtools(getMTD("appsblenv"), "0x0", "0x20000", "0x20000", 2);
 		break;
@@ -1322,6 +1343,11 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		setscaling(0);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
 	}
 	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
@@ -1351,19 +1377,22 @@ static void load_ath11k(int profile, int pci, int nss)
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
-		eval_silence("insmod", driver_ath11k, overdrive);
+		if (nvram_match("ath11k_frame_mode", "1"))
+			eval_silence("insmod", driver_ath11k, "frame_mode=1", overdrive);
+		else
+			eval_silence("insmod", driver_ath11k, overdrive);
 	} else {
-		eval_silence("insmod", "mac80211", "nss_redirect=1");
+		eval_silence("insmod", "mac80211", "nss_redirect=0");
 		eval_silence(
 			"insmod", driver_ath11k, "nss_offload=0", "frame_mode=1",
 			overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
-		sysprintf("echo 1 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
+		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
 	insmod(driver_ath11k_ahb);
 	if (pci)
 		insmod(driver_ath11k_pci);
 }
-void load_wifi_drivers(void)
+void start_wifi_drivers(void)
 {
 	int notloaded = 0;
 
@@ -1374,14 +1403,9 @@ void load_wifi_drivers(void)
 		int profile = 512;
 		switch (brand) {
 		case ROUTER_DYNALINK_DLWRX36:
-			profile = 1024;
-			break;
+		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
-			profile = 1024;
-			break;
 		case ROUTER_LINKSYS_MX4200V2:
-			profile = 1024;
-			break;
 		case ROUTER_LINKSYS_MX4300:
 			profile = 1024;
 			break;

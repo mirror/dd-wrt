@@ -103,19 +103,14 @@ void start_sysinit(void)
 	insmod("marvell-cesa"); // tested on WRT1900AC v1 so far
 	insmod("cryptodev");
 
-	/*
-	 * network drivers 
-	 */
 	insmod("mmc_core");
 	insmod("mmc_block");
 	insmod("sdhci");
 	insmod("sdhci-pltfm");
 	insmod("sdhci-pxav3");
 	insmod("mvsdio");
-	insmod("mwifiex_sdio.ko");
-	insmod("bluetooth");
-	insmod("btmrvl");
-	insmod("btmrvl_sdio");
+
+
 	int s;
 	struct ifreq ifr;
 	char *recovery = getUEnv("auto_recovery");
@@ -231,11 +226,15 @@ void start_resetbc(void)
 	if (!nvram_match("nobcreset", "1"))
 		eval("mtd", "resetbc", "s_env");
 }
-void load_wifi_drivers(void)
+void start_wifi_drivers(void)
 {
 	if (!load_mac80211()) {
 		insmod("mwlwifi");
 		insmod("mwifiex");
+		insmod("mwifiex_sdio.ko");
+		insmod("bluetooth");
+		insmod("btmrvl");
+		insmod("btmrvl_sdio");
 		wait_for_wifi();
 	}
 }

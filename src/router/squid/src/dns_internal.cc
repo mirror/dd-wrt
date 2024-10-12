@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -857,6 +857,7 @@ idnsInitVCConnected(const Comm::ConnectionPointer &conn, Comm::Flag status, int,
         if (vc->ns < nameservers.size())
             nameservers[vc->ns].S.toStr(buf,MAX_IPSTRLEN);
         debugs(78, DBG_IMPORTANT, "ERROR: Failed to connect to nameserver " << buf << " using TCP.");
+        delete vc;
         return;
     }
 
@@ -885,7 +886,9 @@ nsvc::~nsvc()
 {
     delete queue;
     delete msg;
-    if (ns < nameservers.size()) // XXX: idnsShutdownAndFreeState may have freed nameservers[]
+    // we may outlive nameservers version that was pointing to us because
+    // reconfigurations repopulate nameservers
+    if (ns < nameservers.size() && nameservers[ns].vc == this)
         nameservers[ns].vc = nullptr;
 }
 
@@ -930,7 +933,20 @@ idnsSendQueryVC(idns_query * q, size_t nsn)
         return;
     }
 
-    vc->queue->reset();
+    if (vc->queue->isNull())
+        vc->queue->init();
+
+    const auto serialiedQuerySize = 2 + q->sz + 1; // payload_length + payload + terminate()
+    if (vc->queue->potentialSpaceSize() < serialiedQuerySize) {
+        // header + payload + MemBuf terminator exceed maximum space size
+        debugs(78, DBG_IMPORTANT, "ERROR: Dropping DNS query due to insufficient buffer space for DNS over TCP query queue" <<
+               Debug::Extra << "query: " << q->name <<
+               Debug::Extra << "nameserver: " << nameservers[nsn].S <<
+               Debug::Extra << "used space: " << vc->queue->contentSize() <<
+               Debug::Extra << "remaining space: " << vc->queue->potentialSpaceSize() <<
+               Debug::Extra << "required space: " << serialiedQuerySize);
+        return; // the query will timeout and either fail or be retried
+    }
 
     short head = htons(q->sz);
 

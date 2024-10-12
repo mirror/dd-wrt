@@ -50,7 +50,6 @@ unsigned long conf_bgp_debug_keepalive;
 unsigned long conf_bgp_debug_update;
 unsigned long conf_bgp_debug_bestpath;
 unsigned long conf_bgp_debug_zebra;
-unsigned long conf_bgp_debug_allow_martians;
 unsigned long conf_bgp_debug_nht;
 unsigned long conf_bgp_debug_update_groups;
 unsigned long conf_bgp_debug_vpn;
@@ -71,7 +70,6 @@ unsigned long term_bgp_debug_keepalive;
 unsigned long term_bgp_debug_update;
 unsigned long term_bgp_debug_bestpath;
 unsigned long term_bgp_debug_zebra;
-unsigned long term_bgp_debug_allow_martians;
 unsigned long term_bgp_debug_nht;
 unsigned long term_bgp_debug_update_groups;
 unsigned long term_bgp_debug_vpn;
@@ -116,6 +114,7 @@ static const struct message bgp_notify_msg[] = {
 	{BGP_NOTIFY_FSM_ERR, "Neighbor Events Error"},
 	{BGP_NOTIFY_CEASE, "Cease"},
 	{BGP_NOTIFY_ROUTE_REFRESH_ERR, "ROUTE-REFRESH Message Error"},
+	{BGP_NOTIFY_SEND_HOLD_ERR, "Send Hold Timer Expired"},
 	{0}};
 
 static const struct message bgp_notify_head_msg[] = {
@@ -515,6 +514,7 @@ const char *bgp_notify_subcode_str(char code, char subcode)
 		return lookup_msg(bgp_notify_update_msg, subcode,
 				  "Unrecognized Error Subcode");
 	case BGP_NOTIFY_HOLD_ERR:
+	case BGP_NOTIFY_SEND_HOLD_ERR:
 		break;
 	case BGP_NOTIFY_FSM_ERR:
 		return lookup_msg(bgp_notify_fsm_msg, subcode,
@@ -2163,7 +2163,6 @@ DEFUN (no_debug_bgp,
 	TERM_DEBUG_OFF(as4, AS4_SEGMENT);
 	TERM_DEBUG_OFF(neighbor_events, NEIGHBOR_EVENTS);
 	TERM_DEBUG_OFF(zebra, ZEBRA);
-	TERM_DEBUG_OFF(allow_martians, ALLOW_MARTIANS);
 	TERM_DEBUG_OFF(nht, NHT);
 	TERM_DEBUG_OFF(vpn, VPN_LEAK_FROM_VRF);
 	TERM_DEBUG_OFF(vpn, VPN_LEAK_TO_VRF);
@@ -2238,9 +2237,6 @@ DEFUN_NOSH (show_debugging_bgp,
 
 	if (BGP_DEBUG(graceful_restart, GRACEFUL_RESTART))
 		vty_out(vty, "  BGP graceful-restart debugging is on\n");
-
-	if (BGP_DEBUG(allow_martians, ALLOW_MARTIANS))
-		vty_out(vty, "  BGP allow martian next hop debugging is on\n");
 
 	if (BGP_DEBUG(vpn, VPN_LEAK_FROM_VRF))
 		vty_out(vty,
@@ -2352,11 +2348,6 @@ static int bgp_config_write_debug(struct vty *vty)
 				vty, "debug bgp zebra prefix",
 				bgp_debug_zebra_prefixes);
 		}
-	}
-
-	if (CONF_BGP_DEBUG(allow_martians, ALLOW_MARTIANS)) {
-		vty_out(vty, "debug bgp allow-martians\n");
-		write++;
 	}
 
 	if (CONF_BGP_DEBUG(vpn, VPN_LEAK_FROM_VRF)) {
@@ -2722,7 +2713,7 @@ bool bgp_debug_zebra(const struct prefix *p)
 const char *bgp_debug_rdpfxpath2str(afi_t afi, safi_t safi,
 				    const struct prefix_rd *prd,
 				    union prefixconstptr pu,
-				    mpls_label_t *label, uint32_t num_labels,
+				    mpls_label_t *label, uint8_t num_labels,
 				    int addpath_valid, uint32_t addpath_id,
 				    struct bgp_route_evpn *overlay_index,
 				    char *str, int size)

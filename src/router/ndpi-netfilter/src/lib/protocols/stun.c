@@ -969,7 +969,7 @@ static void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *nd
        takes care of setting the category */
 #ifndef __KERNEL__
     if(flow->extra_packets_func) {
-      ndpi_protocol ret = { master_proto, app_proto, NDPI_PROTOCOL_UNKNOWN /* unused */, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL};
+      ndpi_protocol ret = { { master_proto, app_proto }, NDPI_PROTOCOL_UNKNOWN /* unused */, NDPI_PROTOCOL_CATEGORY_UNSPECIFIED, NULL};
       flow->category = ndpi_get_proto_category(ndpi_struct, ret);
     }
 #endif

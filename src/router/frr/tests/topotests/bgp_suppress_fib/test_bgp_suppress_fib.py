@@ -141,7 +141,7 @@ def test_bgp_better_admin_won():
         topotest.router_json_cmp, r3, "show ip route 40.0.0.0 json", expected
     )
 
-    _, result = topotest.run_and_expect(test_func, None, count=10, wait=0.5)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
     assertmsg = '"r3" route to 40.0.0.0 should have been lost'
     assert result is None, assertmsg
 
@@ -156,7 +156,7 @@ def test_bgp_better_admin_won():
         "show ip route 40.0.0.0 json",
         expected,
     )
-    _, result = topotest.run_and_expect(test_func, None, count=10, wait=0.5)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
     assertmsg = '"r3" route to 40.0.0.0 did not come back'
     assert result is None, assertmsg
 
@@ -197,7 +197,7 @@ def test_bgp_allow_as_in():
         expected,
     )
 
-    _, result = topotest.run_and_expect(test_func, None, count=10, wait=0.5)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
     assertmsg = '"r1" 192.168.1.1/32 route should have arrived'
     assert result is None, assertmsg
 
@@ -213,9 +213,10 @@ def test_bgp_allow_as_in():
         expected,
     )
 
-    _, result = topotest.run_and_expect(test_func, None, count=10, wait=0.5)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
     assertmsg = '"r2" 192.168.1.1/32 route should be gone'
     assert result is None, assertmsg
+
 
 def test_local_vs_non_local():
     tgen = get_topogen()
@@ -229,7 +230,7 @@ def test_local_vs_non_local():
     paths = output["paths"]
     for i in range(len(paths)):
         if "fibPending" in paths[i]:
-            assert(False),  "Route 60.0.0.0/24 should not have fibPending"
+            assert False, "Route 60.0.0.0/24 should not have fibPending"
 
 
 if __name__ == "__main__":

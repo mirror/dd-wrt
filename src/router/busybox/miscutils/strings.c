@@ -7,7 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config STRINGS
-//config:	bool "strings (4.6 kb)"
+//config:	bool "strings (4.8 kb)"
 //config:	default y
 //config:	help
 //config:	strings prints the printable character sequences for each file
@@ -40,7 +40,8 @@
 int strings_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int strings_main(int argc UNUSED_PARAM, char **argv)
 {
-	int n, c, status = EXIT_SUCCESS;
+	int n, c;
+	exitcode_t status = EXIT_SUCCESS;
 	unsigned count;
 	off_t offset;
 	FILE *file;

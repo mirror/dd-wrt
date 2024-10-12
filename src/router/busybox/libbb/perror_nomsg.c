@@ -10,15 +10,11 @@
 /* gcc warns about a null format string, therefore we provide
  * modified definition without "attribute (format)"
  * instead of including libbb.h */
-//#include "libbb.h"
-#ifndef HAVE_NOMESSAGE
-#include "platform.h"
-extern void bb_perror_msg(const char *s, ...) FAST_FUNC;
+#include "libbb.h"
 
-/* suppress gcc "no previous prototype" warning */
-void FAST_FUNC bb_perror_nomsg(void);
+#ifndef HAVE_NOMESSAGE
 void FAST_FUNC bb_perror_nomsg(void)
 {
-	bb_perror_msg(0);
+	bb_simple_perror_msg("");
 }
 #endif

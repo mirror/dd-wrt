@@ -28,13 +28,11 @@ extern void bgp_zebra_destroy(void);
 extern int bgp_zebra_get_table_range(struct zclient *zc, uint32_t chunk_size,
 				     uint32_t *start, uint32_t *end);
 extern int bgp_if_update_all(void);
-extern void bgp_zebra_announce(struct bgp_dest *dest, const struct prefix *p,
-			       struct bgp_path_info *path, struct bgp *bgp,
-			       afi_t afi, safi_t safi);
+extern void bgp_zebra_route_install(struct bgp_dest *dest,
+				    struct bgp_path_info *path, struct bgp *bgp,
+				    bool install, struct bgpevpn *vpn,
+				    bool is_sync);
 extern void bgp_zebra_announce_table(struct bgp *bgp, afi_t afi, safi_t safi);
-extern void bgp_zebra_withdraw(const struct prefix *p,
-			       struct bgp_path_info *path, struct bgp *bgp,
-			       afi_t afi, safi_t safi);
 
 /* Announce routes of any bgp subtype of a table to zebra */
 extern void bgp_zebra_announce_table_all_subtypes(struct bgp *bgp, afi_t afi,
@@ -122,9 +120,12 @@ extern int bgp_zebra_srv6_manager_release_locator_chunk(const char *name);
 extern void bgp_zebra_send_nexthop_label(int cmd, mpls_label_t label,
 					 ifindex_t index, vrf_id_t vrfid,
 					 enum lsp_types_t ltype,
-					 struct prefix *p, uint32_t num_labels,
+					 struct prefix *p, uint8_t num_labels,
 					 mpls_label_t out_labels[]);
 extern bool bgp_zebra_request_label_range(uint32_t base, uint32_t chunk_size,
 					  bool label_auto);
 extern void bgp_zebra_release_label_range(uint32_t start, uint32_t end);
+extern enum zclient_send_status
+bgp_zebra_withdraw_actual(struct bgp_dest *dest, struct bgp_path_info *info,
+			  struct bgp *bgp);
 #endif /* _QUAGGA_BGP_ZEBRA_H */

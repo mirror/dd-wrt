@@ -82,6 +82,15 @@ Notes:
 - IPv6 is not supported
 
 
+.. _Proto 174:
+
+`NDPI_PROTOCOL_RTMP`
+====================
+Real-Time Messaging Protocol (RTMP) is a communication protocol for streaming audio, video, and data over the Internet.
+
+References: `Wikipedia <https://en.wikipedia.org/wiki/Real-Time_Messaging_Protocol>`_
+
+
 .. _Proto 182:
 
 `NDPI_PROTOCOL_RESP`
@@ -892,3 +901,76 @@ References: `Main site: <https://nano.org/>`_
 OpenWire is a wire protocol used by Apache ActiveMQ for communication between clients and brokers, providing an efficient and flexible messaging framework. While it's not the most popular choice compared to other protocols like AMQP or MQTT, it is still utilized in scenarios where ActiveMQ is heavily integrated.
 
 References: `Main site: <https://activemq.apache.org/components/classic/documentation/openwire>`_
+
+
+.. _Proto 422:
+
+`NDPI_PROTOCOL_CNP_IP`
+=====================
+ISO/IEC 14908-4 specifies how to tunnel LonWorks control network protocol packets over IP networks. It enables encapsulation of the LonTalk protocol within UDP or TCP packets for transmission across IP-based networks.
+
+References: `Paid Specs: <https://www.iso.org/standard/60206.html>`_
+
+
+.. _Proto 423:
+
+`NDPI_PROTOCOL_ATG`
+===================
+This protocol is used to transfer data between the various components of an ATG (Automatic Tank Gauge) system.
+
+References: `Protocol Specs: <https://github.com/Orange-Cyberdefense/awesome-industrial-protocols/blob/main/protocols/atg.md>`_
+
+
+.. _Proto 424:
+
+`NDPI_PROTOCOL_TRDP`
+===================
+The Train Real Time Data Protocol (TRDP) is a UDP/TCP-based communication protocol designed for IP networks in trains, enabling data exchange between devices such as door controls and air conditioning systems. 
+It is standardized by the IEC under IEC 61375-2-3 and is not related to the Remote Desktop Protocol (RDP).
+
+References: `Protocol Specs: <https://www.typhoon-hil.com/documentation/typhoon-hil-software-manual/References/iec_61375_trdp_protocol.html>`_
+
+
+.. _Proto 425:
+
+`NDPI_PROTOCOL_LUSTRE`
+======================
+Lustre is a high-performance, parallel distributed file system designed for large-scale computing environments. It is widely used in supercomputing and enterprise storage systems due to its ability to handle massive amounts of data and provide high-speed I/O operations across numerous nodes.
+
+References: `Main site: <https://www.lustre.org/>`_
+
+
+.. _Proto 426:
+
+`NDPI_PROTOCOL_NORDVPN`
+======================
+NordVPN is a VPN service.
+
+References: `Main site: <https://nordvpn.com>`_
+
+
+.. _Proto 427:
+
+`NDPI_PROTOCOL_SURFSHARK`
+========================
+Surfshark is a brand of VPN services offered by the Netherlands-based company Surfshark B.V.
+
+References: `Main site: <https://surfshark.com/>`_
+
+
+.. _Proto 428:
+
+`NDPI_PROTOCOL_CACTUSVPN`
+========================
+CactusVPN is a VPN service.
+
+References: `Main site: <https://cactusvpn.com/>`_
+
+
+.. _Proto 429:
+
+`NDPI_PROTOCOL_WINDSCRIBE`
+=========================
+Windscribe is a commercial, cross-platform virtual private network (VPN) service provider based in Canada.
+
+References: `Main site: <https://windscribe.com/>`_

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -84,10 +84,6 @@
 
 #include "compat/assert.h"
 #include "compat/compat_shared.h"
-#include "compat/getaddrinfo.h"
-#include "compat/getnameinfo.h"
-#include "compat/inet_ntop.h"
-#include "compat/inet_pton.h"
 #include "compat/stdvarargs.h"
 
 /* cstdio has a bunch of problems with 64-bit definitions */

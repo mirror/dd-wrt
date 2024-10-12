@@ -6,6 +6,7 @@ are included:
 
   o mkapfs: an experimental filesystem build tool
   o apfs-snap: a tool to take snapshots of a volume mounted with our module
+  o apfs-label: a tool to list the labels of all volumes in a container
   o apfsck: a filesystem integrity checker, for now only useful for testers
 
 Usage

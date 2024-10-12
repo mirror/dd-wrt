@@ -108,17 +108,6 @@ static void zebra_if_node_destroy(route_table_delegate_t *delegate,
 	route_node_destroy(delegate, table, node);
 }
 
-static void zebra_if_nhg_dependents_free(struct zebra_if *zebra_if)
-{
-	nhg_connected_tree_free(&zebra_if->nhg_dependents);
-}
-
-static void zebra_if_nhg_dependents_init(struct zebra_if *zebra_if)
-{
-	nhg_connected_tree_init(&zebra_if->nhg_dependents);
-}
-
-
 route_table_delegate_t zebra_if_table_delegate = {
 	.create_node = route_node_create,
 	.destroy_node = zebra_if_node_destroy};
@@ -137,7 +126,7 @@ static int if_zebra_new_hook(struct interface *ifp)
 
 	zebra_if->link_nsid = NS_UNKNOWN;
 
-	zebra_if_nhg_dependents_init(zebra_if);
+	nhg_connected_tree_init(&zebra_if->nhg_dependents);
 
 	zebra_ptm_if_init(zebra_if);
 
@@ -187,6 +176,10 @@ static void if_nhg_dependents_release(const struct interface *ifp)
 	frr_each(nhg_connected_tree, &zif->nhg_dependents, rb_node_dep) {
 		rb_node_dep->nhe->ifp = NULL; /* Null it out */
 		zebra_nhg_check_valid(rb_node_dep->nhe);
+		if (CHECK_FLAG(rb_node_dep->nhe->flags,
+			       NEXTHOP_GROUP_KEEP_AROUND) &&
+		    rb_node_dep->nhe->refcnt == 1)
+			zebra_nhg_decrement_ref(rb_node_dep->nhe);
 	}
 }
 
@@ -221,7 +214,7 @@ static int if_zebra_delete_hook(struct interface *ifp)
 		zebra_evpn_mac_ifp_del(ifp);
 
 		if_nhg_dependents_release(ifp);
-		zebra_if_nhg_dependents_free(zebra_if);
+		nhg_connected_tree_free(&zebra_if->nhg_dependents);
 
 		XFREE(MTYPE_ZIF_DESC, zebra_if->desc);
 
@@ -954,47 +947,6 @@ static void if_down_del_nbr_connected(struct interface *ifp)
 	}
 }
 
-void if_nhg_dependents_add(struct interface *ifp, struct nhg_hash_entry *nhe)
-{
-	if (ifp->info) {
-		struct zebra_if *zif = (struct zebra_if *)ifp->info;
-
-		nhg_connected_tree_add_nhe(&zif->nhg_dependents, nhe);
-	}
-}
-
-void if_nhg_dependents_del(struct interface *ifp, struct nhg_hash_entry *nhe)
-{
-	if (ifp->info) {
-		struct zebra_if *zif = (struct zebra_if *)ifp->info;
-
-		nhg_connected_tree_del_nhe(&zif->nhg_dependents, nhe);
-	}
-}
-
-unsigned int if_nhg_dependents_count(const struct interface *ifp)
-{
-	if (ifp->info) {
-		struct zebra_if *zif = (struct zebra_if *)ifp->info;
-
-		return nhg_connected_tree_count(&zif->nhg_dependents);
-	}
-
-	return 0;
-}
-
-
-bool if_nhg_dependents_is_empty(const struct interface *ifp)
-{
-	if (ifp->info) {
-		struct zebra_if *zif = (struct zebra_if *)ifp->info;
-
-		return nhg_connected_tree_is_empty(&zif->nhg_dependents);
-	}
-
-	return false;
-}
-
 /* Interface is up. */
 void if_up(struct interface *ifp, bool install_connected)
 {
@@ -1021,6 +973,14 @@ void if_up(struct interface *ifp, bool install_connected)
 	/* Install connected routes to the kernel. */
 	if (install_connected)
 		if_install_connected(ifp);
+
+	/*
+	 * Interface associated NHG's have been deleted on
+	 * interface down events, now that this interface
+	 * is coming back up, let's resync the zebra -> dplane
+	 * nhg's so that they can be continued to be used.
+	 */
+	zebra_interface_nhg_reinstall(ifp);
 
 	/* Handle interface up for specific types for EVPN. Non-VxLAN interfaces
 	 * are checked to see if (remote) neighbor entries need to be installed
@@ -1523,23 +1483,27 @@ static void interface_vrf_change(enum dplane_op_e op, ifindex_t ifindex,
 				"DPLANE_OP_INTF_UPDATE for VRF %s(%u) table %u",
 				name, ifindex, tableid);
 
-		if (!vrf_lookup_by_id((vrf_id_t)ifindex)) {
-			vrf_id_t exist_id;
+		/*
+		 * For a given tableid, if there already exists a vrf and it
+		 * is different from the current vrf to be operated, then there
+		 * is a misconfiguration and zebra will exit.
+		 */
+		vrf_id_t exist_id = zebra_vrf_lookup_by_table(tableid, ns_id);
 
-			exist_id = zebra_vrf_lookup_by_table(tableid, ns_id);
-			if (exist_id != VRF_DEFAULT) {
-				vrf = vrf_lookup_by_id(exist_id);
+		if (exist_id != VRF_DEFAULT) {
+			vrf = vrf_lookup_by_id(exist_id);
 
-				if (vrf)
-					flog_err(EC_ZEBRA_VRF_MISCONFIGURED,
-						 "VRF %s id %u table id overlaps existing vrf %s(%d), misconfiguration exiting",
-						 name, ifindex, vrf->name,
-						 vrf->vrf_id);
-				else
-					flog_err(EC_ZEBRA_VRF_NOT_FOUND,
-						 "VRF %s id %u does not exist",
-						 name, ifindex);
+			if (!vrf_lookup_by_id((vrf_id_t)ifindex) && !vrf) {
+				flog_err(EC_ZEBRA_VRF_NOT_FOUND,
+					 "VRF %s id %u does not exist", name,
+					 ifindex);
+				exit(-1);
+			}
 
+			if (vrf && strcmp(name, vrf->name)) {
+				flog_err(EC_ZEBRA_VRF_MISCONFIGURED,
+					 "VRF %s id %u table id overlaps existing vrf %s(%d), misconfiguration exiting",
+					 name, ifindex, vrf->name, vrf->vrf_id);
 				exit(-1);
 			}
 		}
@@ -1696,8 +1660,10 @@ static void interface_if_protodown(struct interface *ifp, bool protodown,
 				   uint32_t rc_bitfield)
 {
 	struct zebra_if *zif = ifp->info;
-	bool old_protodown;
+	bool old_protodown, reason_extern;
 
+	reason_extern = !!CHECK_FLAG(zif->protodown_rc,
+				     ZEBRA_PROTODOWN_EXTERNAL);
 	/*
 	 * Set our reason code to note it wasn't us.
 	 * If the reason we got from the kernel is ONLY frr though, don't
@@ -1713,8 +1679,8 @@ static void interface_if_protodown(struct interface *ifp, bool protodown,
 		return;
 
 	if (IS_ZEBRA_DEBUG_EVPN_MH_ES || IS_ZEBRA_DEBUG_DPLANE)
-		zlog_debug("interface %s dplane change, protodown %s",
-			   ifp->name, protodown ? "on" : "off");
+		zlog_debug("interface %s dplane change, protodown %s curr reason_extern %u",
+			   ifp->name, protodown ? "on" : "off", reason_extern);
 
 	/* Set protodown, respectively */
 	COND_FLAG(zif->flags, ZIF_FLAG_PROTODOWN, protodown);
@@ -1736,6 +1702,13 @@ static void interface_if_protodown(struct interface *ifp, bool protodown,
 				zlog_debug(
 					"bond mbr %s protodown off recv'd but already sent protodown off to the dplane",
 					ifp->name);
+			return;
+		}
+
+		if (!protodown && reason_extern) {
+			if (IS_ZEBRA_DEBUG_EVPN_MH_ES || IS_ZEBRA_DEBUG_KERNEL)
+				zlog_debug("bond member %s has protodown reason external and clear the reason, skip reinstall.",
+					   ifp->name);
 			return;
 		}
 

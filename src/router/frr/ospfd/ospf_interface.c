@@ -19,6 +19,7 @@
 #include "zclient.h"
 #include "bfd.h"
 #include "ldp_sync.h"
+#include "plist.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_bfd.h"
@@ -65,6 +66,34 @@ int ospf_interface_neighbor_count(struct ospf_interface *oi)
 	}
 
 	return count;
+}
+
+
+void ospf_intf_neighbor_filter_apply(struct ospf_interface *oi)
+{
+	struct route_node *rn;
+	struct ospf_neighbor *nbr = NULL;
+	struct prefix nbr_src_prefix = { AF_INET, IPV4_MAX_BITLEN, { 0 } };
+
+	if (!oi->nbr_filter)
+		return;
+
+	/*
+	 * Kill neighbors that don't match the neighbor filter prefix-list
+	 * excluding the neighbor for the router itself and any neighbors
+	 * that are already down.
+	 */
+	for (rn = route_top(oi->nbrs); rn; rn = route_next(rn)) {
+		nbr = rn->info;
+		if (nbr && nbr != oi->nbr_self && nbr->state != NSM_Down) {
+			nbr_src_prefix.u.prefix4 = nbr->src;
+			if (prefix_list_apply(oi->nbr_filter,
+					      (struct prefix *)&(
+						      nbr_src_prefix)) !=
+			    PREFIX_PERMIT)
+				OSPF_NSM_EVENT_EXECUTE(nbr, NSM_KillNbr);
+		}
+	}
 }
 
 int ospf_if_get_output_cost(struct ospf_interface *oi)
@@ -147,17 +176,11 @@ void ospf_if_reset(struct interface *ifp)
 	}
 }
 
-void ospf_if_reset_variables(struct ospf_interface *oi)
+static void ospf_if_default_variables(struct ospf_interface *oi)
 {
 	/* Set default values. */
-	/* don't clear this flag.  oi->flag = OSPF_IF_DISABLE; */
 
-	if (oi->vl_data)
-		oi->type = OSPF_IFTYPE_VIRTUALLINK;
-	else
-		/* preserve network-type */
-		if (oi->type != OSPF_IFTYPE_NBMA)
-		oi->type = OSPF_IFTYPE_BROADCAST;
+	oi->type = OSPF_IFTYPE_BROADCAST;
 
 	oi->state = ISM_Down;
 
@@ -254,7 +277,7 @@ struct ospf_interface *ospf_if_new(struct ospf *ospf, struct interface *ifp,
 	oi->ls_ack_direct.ls_ack = list_new();
 
 	/* Set default values. */
-	ospf_if_reset_variables(oi);
+	ospf_if_default_variables(oi);
 
 	/* Set pseudo neighbor to Null */
 	oi->nbr_self = NULL;
@@ -532,6 +555,7 @@ static struct ospf_if_params *ospf_new_if_params(void)
 	UNSET_IF_PARAM(oip, if_area);
 	UNSET_IF_PARAM(oip, opaque_capable);
 	UNSET_IF_PARAM(oip, keychain_name);
+	UNSET_IF_PARAM(oip, nbr_filter_name);
 
 	oip->auth_crypt = list_new();
 
@@ -550,6 +574,7 @@ static void ospf_del_if_params(struct interface *ifp,
 {
 	list_delete(&oip->auth_crypt);
 	XFREE(MTYPE_OSPF_IF_PARAMS, oip->keychain_name);
+	XFREE(MTYPE_OSPF_IF_PARAMS, oip->nbr_filter_name);
 	ospf_interface_disable_bfd(ifp, oip);
 	ldp_sync_info_free(&(oip->ldp_sync_info));
 	XFREE(MTYPE_OSPF_IF_PARAMS, oip);
@@ -585,7 +610,8 @@ void ospf_free_if_params(struct interface *ifp, struct in_addr addr)
 	    !OSPF_IF_PARAM_CONFIGURED(oip, if_area) &&
 	    !OSPF_IF_PARAM_CONFIGURED(oip, opaque_capable) &&
 	    !OSPF_IF_PARAM_CONFIGURED(oip, prefix_suppression) &&
-		!OSPF_IF_PARAM_CONFIGURED(oip, keychain_name) &&
+	    !OSPF_IF_PARAM_CONFIGURED(oip, keychain_name) &&
+	    !OSPF_IF_PARAM_CONFIGURED(oip, nbr_filter_name) &&
 	    listcount(oip->auth_crypt) == 0) {
 		ospf_del_if_params(ifp, oip);
 		rn->info = NULL;
@@ -821,13 +847,40 @@ int ospf_if_up(struct ospf_interface *oi)
 	return 1;
 }
 
-int ospf_if_down(struct ospf_interface *oi)
+/* This function will mark routes with next-hops matching the down
+ * OSPF interface as changed. It is used to assure routes that get
+ * removed from the zebra RIB when an interface goes down are
+ * reinstalled if the interface comes back up prior to an intervening
+ * SPF calculation.
+ */
+static void ospf_if_down_mark_routes_changed(struct route_table *table,
+					     struct ospf_interface *oi)
 {
-	struct ospf *ospf;
 	struct route_node *rn;
 	struct ospf_route *or;
 	struct listnode *nh;
 	struct ospf_path *op;
+
+	for (rn = route_top(table); rn; rn = route_next(rn)) {
+		or = rn->info;
+
+		if (or == NULL)
+			continue;
+
+		for (nh = listhead(or->paths); nh;
+		     nh = listnextnode_unchecked(nh)) {
+			op = listgetdata(nh);
+			if (op->ifindex == oi->ifp->ifindex) {
+				or->changed = true;
+				break;
+			}
+		}
+	}
+}
+
+int ospf_if_down(struct ospf_interface *oi)
+{
+	struct ospf *ospf;
 
 	if (oi == NULL)
 		return 0;
@@ -864,23 +917,11 @@ int ospf_if_down(struct ospf_interface *oi)
 	/* Shutdown packet reception and sending */
 	ospf_if_stream_unset(oi);
 
-	if (!ospf->new_table)
-		return 1;
-	for (rn = route_top(ospf->new_table); rn; rn = route_next(rn)) {
-		or = rn->info;
+	if (ospf->new_table)
+		ospf_if_down_mark_routes_changed(ospf->new_table, oi);
 
-		if (!or)
-			continue;
-
-		for (nh = listhead(or->paths); nh;
-		     nh = listnextnode_unchecked(nh)) {
-			op = listgetdata(nh);
-			if (op->ifindex == oi->ifp->ifindex) {
-				or->changed = true;
-				break;
-			}
-		}
-	}
+	if (ospf->new_external_route)
+		ospf_if_down_mark_routes_changed(ospf->new_external_route, oi);
 
 	return 1;
 }

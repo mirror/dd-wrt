@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2023 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2024 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -36,8 +36,6 @@
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-
-const int64_t Rock::SwapDir::HeaderSize = 16*1024;
 
 Rock::SwapDir::SwapDir(): ::SwapDir("rock"),
     slotSize(HeaderSize), filePath(nullptr), map(nullptr), io(nullptr),

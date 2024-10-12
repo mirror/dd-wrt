@@ -1705,6 +1705,16 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x19; // diag led / red
 		cfg->diag_gpio_disabled = 0x1a;
 		break;
+	case ROUTER_BUFFALO_WXR5950AX12:
+		cfg->power_gpio = 34; // power led / green
+		cfg->diag_gpio = 31; // diag led / red
+		cfg->diag_gpio_disabled = 34;
+		cfg->connected_gpio = 43; // internet white
+		cfg->disconnected_gpio = 44; // internet red
+		cfg->wlan0_gpio = 55; // radio 5G
+		cfg->wlan1_gpio = 56; // radio 2G
+		cfg->usb_power = 64; //usb
+		break;
 	case ROUTER_FORTINET_FAP231F:
 		cfg->power_gpio = 0x12; // power led / amber
 		cfg->diag_gpio = 0x16; // diag led / red

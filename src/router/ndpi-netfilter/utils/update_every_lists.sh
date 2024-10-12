@@ -30,6 +30,10 @@ RETVAL=$(( RETVAL + $? ))
 RETVAL=$(( RETVAL + $? ))
 ./crawlers_ip_addresses_download.sh
 RETVAL=$(( RETVAL + $? ))
+./nordvpn_ip_addresses_download.sh
+RETVAL=$(( RETVAL + $? ))
+./surfshark_ip_addresses_download.sh
+RETVAL=$(( RETVAL + $? ))
 
 ./asn_update.sh
 RETVAL=$(( RETVAL + $? ))
