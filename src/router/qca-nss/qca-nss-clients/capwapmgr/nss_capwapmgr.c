@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -3106,7 +3106,7 @@ static inline nss_capwapmgr_status_t nss_capwapmgr_flow_rule_action(struct net_d
 	ncfrm->ip_version = ip_version;
 	memcpy(ncfrm->src_ip, src_ip, sizeof(struct in6_addr));
 	memcpy(ncfrm->dst_ip, dst_ip, sizeof(struct in6_addr));
-	ncfrm->flow_id = flow_id;
+	ncfrm->flow_attr.flow_id = flow_id;
 
 	/*
 	 * Send flow rule message to NSS core

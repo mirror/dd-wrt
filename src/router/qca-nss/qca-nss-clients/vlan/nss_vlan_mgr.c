@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -157,15 +157,6 @@ static struct nss_vlan_pvt *nss_vlan_mgr_instance_find_and_ref(
 	return NULL;
 }
 
-/*
- * nss_vlan_mgr_instance_deref()
- */
-static void nss_vlan_mgr_instance_deref(struct nss_vlan_pvt *v)
-{
-	spin_lock(&vlan_mgr_ctx.lock);
-	BUG_ON(!(--v->refs));
-	spin_unlock(&vlan_mgr_ctx.lock);
-}
 
 #ifdef NSS_VLAN_MGR_PPE_SUPPORT
 /*
@@ -433,6 +424,12 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 	rcu_read_lock();
 	for_each_netdev_in_bond_rcu(bond_dev, slave) {
 		port = nss_cmn_get_interface_number_by_dev(slave);
+		if (!NSS_VLAN_PHY_PORT_CHK(port)) {
+			rcu_read_unlock();
+			nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
+			return -1;
+		}
+
 		ret = ppe_port_vlan_vsi_set(NSS_VLAN_MGR_SWITCH_ID, v->port[port - 1], v->ppe_svid, v->ppe_cvid, vsi);
 		if (ret != SW_OK) {
 			rcu_read_unlock();
@@ -468,6 +465,12 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 	rcu_read_lock();
 	for_each_netdev_in_bond_rcu(bond_dev, slave) {
 		port = nss_cmn_get_interface_number_by_dev(slave);
+		if (!NSS_VLAN_PHY_PORT_CHK(port)) {
+			rcu_read_unlock();
+			nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
+			return -1;
+		}
+
 		v->eg_xlt_rule.port_bitmap |= (1 << v->port[port - 1]);
 		ret = fal_port_vlan_trans_adv_add(NSS_VLAN_MGR_SWITCH_ID, v->port[port - 1],
 				FAL_PORT_VLAN_EGRESS, &v->eg_xlt_rule, &v->eg_xlt_action);
@@ -487,6 +490,11 @@ static int nss_vlan_mgr_bond_configure_ppe(struct nss_vlan_pvt *v, struct net_de
 		for_each_netdev_in_bond_rcu(bond_dev, slave) {
 			fal_port_qinq_role_t mode;
 			port = nss_cmn_get_interface_number_by_dev(slave);
+			if (!NSS_VLAN_PHY_PORT_CHK(port)) {
+				rcu_read_unlock();
+				nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
+				return -1;
+			}
 
 			/*
 			 * If double tag, we should set physical port as core port
@@ -516,6 +524,12 @@ delete_egress_rule:
 	rcu_read_lock();
 	for_each_netdev_in_bond_rcu(bond_dev, slave) {
 		port = nss_cmn_get_interface_number_by_dev(slave);
+		if (!NSS_VLAN_PHY_PORT_CHK(port)) {
+			rcu_read_unlock();
+			nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
+			return -1;
+		}
+
 		ret = fal_port_vlan_trans_adv_del(NSS_VLAN_MGR_SWITCH_ID, v->port[port - 1],
 				FAL_PORT_VLAN_EGRESS,
 				&v->eg_xlt_rule, &v->eg_xlt_action);
@@ -529,6 +543,12 @@ delete_ingress_rule:
 	rcu_read_lock();
 	for_each_netdev_in_bond_rcu(bond_dev, slave) {
 		port = nss_cmn_get_interface_number_by_dev(slave);
+		if (!NSS_VLAN_PHY_PORT_CHK(port)) {
+			rcu_read_unlock();
+			nss_vlan_mgr_warn("%s: %d is not valid physical port\n", slave->name, port);
+			return -1;
+		}
+
 		ret = ppe_port_vlan_vsi_set(NSS_VLAN_MGR_SWITCH_ID, v->port[port - 1], v->ppe_svid, v->ppe_cvid, PPE_VSI_INVALID);
 		if (ret != SW_OK) {
 			nss_vlan_mgr_warn("%px: Failed to delete ingress translation rule for port:%d, error: %d\n", v, v->port[port - 1], ret);
@@ -663,6 +683,112 @@ detach_vsi:
 #endif
 
 /*
+ * nss_vlan_mgr_instance_free()
+ *	Destroy vlan instance
+ */
+static void nss_vlan_mgr_instance_free(struct nss_vlan_pvt *v)
+{
+	int32_t i;
+	int ret = 0;
+
+#ifdef NSS_VLAN_MGR_PPE_SUPPORT
+	if (v->ppe_vsi) {
+		/*
+		 * Detach VSI
+		 */
+		if (nss_vlan_tx_vsi_detach_msg(v->nss_if, v->ppe_vsi)) {
+			nss_vlan_mgr_warn("%px: Failed to detach vsi %d\n", v, v->ppe_vsi);
+		}
+
+		/*
+		 * Delete ingress vlan translation rule
+		 */
+		for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
+			if (!v->port[i])
+				continue;
+			ret = ppe_port_vlan_vsi_set(NSS_VLAN_MGR_SWITCH_ID, v->port[i], v->ppe_svid, v->ppe_cvid, PPE_VSI_INVALID);
+			if (ret != SW_OK)
+				nss_vlan_mgr_warn("%px: Failed to delete old ingress translation rule, error: %d\n", v, ret);
+		}
+
+		/*
+		 * Delete egress vlan translation rule
+		 */
+		v->eg_xlt_rule.port_bitmap = 0;
+		for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
+			if (!v->port[i])
+				continue;
+			v->eg_xlt_rule.port_bitmap |= (1 << v->port[i]);
+			ret = fal_port_vlan_trans_adv_del(NSS_VLAN_MGR_SWITCH_ID, v->port[i],
+						FAL_PORT_VLAN_EGRESS,
+						&v->eg_xlt_rule, &v->eg_xlt_action);
+			if (ret != SW_OK) {
+				nss_vlan_mgr_warn("%px: Failed to delete vlan translation rule, error:%d\n", v, ret);
+			}
+		}
+
+		/*
+		 * We will always have a VSI since this is allocated in beginning
+		 * of the code.
+		 */
+		if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, v->ppe_vsi)) {
+			nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
+		}
+	}
+
+	/*
+	 * Need to change the physical port role. While adding
+	 * eth0.10.20/bond0.10.20, the role of the physical port(s) changed
+	 * from EDGE to CORE. So, while removing eth0.10.20/bond0.10.20, the
+	 * role of the physical port(s) should be changed from CORE to EDGE.
+	 */
+	for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
+		if (v->port[i]) {
+			if (nss_vlan_mgr_calculate_new_port_role(v->port[i], i)) {
+				nss_vlan_mgr_port_role_event(v->port[i], i);
+			}
+		}
+	}
+#endif
+
+	if (v->nss_if) {
+		nss_unregister_vlan_if(v->nss_if);
+		if (nss_dynamic_interface_dealloc_node(v->nss_if, NSS_DYNAMIC_INTERFACE_TYPE_VLAN) != NSS_TX_SUCCESS)
+			nss_vlan_mgr_warn("%px: Failed to dealloc vlan dynamic interface\n", v);
+	}
+
+	kfree(v);
+}
+
+/*
+ * nss_vlan_mgr_instance_deref()
+ */
+static void nss_vlan_mgr_instance_deref(struct nss_vlan_pvt *v)
+{
+	struct nss_vlan_pvt *parent = NULL;
+	spin_lock(&vlan_mgr_ctx.lock);
+	BUG_ON(v->refs == 0);
+	v->refs--;
+
+	if (v->refs) {
+		spin_unlock(&vlan_mgr_ctx.lock);
+		return;
+	}
+
+	if (!list_empty(&v->list)) {
+		list_del(&v->list);
+	}
+
+	spin_unlock(&vlan_mgr_ctx.lock);
+
+	parent = v->parent;
+	nss_vlan_mgr_instance_free(v);
+
+	if (parent)
+		nss_vlan_mgr_instance_deref(parent);
+}
+
+/*
  * nss_vlan_mgr_create_instance()
  *	Create vlan instance
  */
@@ -792,96 +918,6 @@ static struct nss_vlan_pvt *nss_vlan_mgr_create_instance(
 	v->refs = 1;
 
 	return v;
-}
-
-/*
- * nss_vlan_mgr_instance_free()
- *	Destroy vlan instance
- */
-static void nss_vlan_mgr_instance_free(struct nss_vlan_pvt *v)
-{
-#ifdef NSS_VLAN_MGR_PPE_SUPPORT
-	int32_t i;
-	int ret = 0;
-#endif
-
-	spin_lock(&vlan_mgr_ctx.lock);
-	BUG_ON(--v->refs);
-	if (!list_empty(&v->list)) {
-		list_del(&v->list);
-	}
-	spin_unlock(&vlan_mgr_ctx.lock);
-
-#ifdef NSS_VLAN_MGR_PPE_SUPPORT
-	if (v->ppe_vsi) {
-		/*
-		 * Detach VSI
-		 */
-		if (nss_vlan_tx_vsi_detach_msg(v->nss_if, v->ppe_vsi)) {
-			nss_vlan_mgr_warn("%px: Failed to detach vsi %d\n", v, v->ppe_vsi);
-		}
-
-		/*
-		 * Delete ingress vlan translation rule
-		 */
-		for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
-			if (!v->port[i])
-				continue;
-			ret = ppe_port_vlan_vsi_set(NSS_VLAN_MGR_SWITCH_ID, v->port[i], v->ppe_svid, v->ppe_cvid, PPE_VSI_INVALID);
-			if (ret != SW_OK)
-				nss_vlan_mgr_warn("%px: Failed to delete old ingress translation rule, error: %d\n", v, ret);
-		}
-
-		/*
-		 * Delete egress vlan translation rule
-		 */
-		v->eg_xlt_rule.port_bitmap = 0;
-		for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
-			if (!v->port[i])
-				continue;
-			v->eg_xlt_rule.port_bitmap |= (1 << v->port[i]);
-			ret = fal_port_vlan_trans_adv_del(NSS_VLAN_MGR_SWITCH_ID, v->port[i],
-						FAL_PORT_VLAN_EGRESS,
-						&v->eg_xlt_rule, &v->eg_xlt_action);
-			if (ret != SW_OK) {
-				nss_vlan_mgr_warn("%px: Failed to delete vlan translation rule, error:%d\n", v, ret);
-			}
-		}
-
-		/*
-		 * We will always have a VSI since this is allocated in beginning
-		 * of the code.
-		 */
-		if (ppe_vsi_free(NSS_VLAN_MGR_SWITCH_ID, v->ppe_vsi)) {
-			nss_vlan_mgr_warn("%px: Failed to free VLAN VSI\n", v);
-		}
-	}
-
-	/*
-	 * Need to change the physical port role. While adding
-	 * eth0.10.20/bond0.10.20, the role of the physical port(s) changed
-	 * from EDGE to CORE. So, while removing eth0.10.20/bond0.10.20, the
-	 * role of the physical port(s) should be changed from CORE to EDGE.
-	 */
-	for (i = 0; i < NSS_VLAN_PHY_PORT_MAX; i++) {
-		if (v->port[i]) {
-			if (nss_vlan_mgr_calculate_new_port_role(v->port[i], i)) {
-				nss_vlan_mgr_port_role_event(v->port[i], i);
-			}
-		}
-	}
-#endif
-
-	if (v->nss_if) {
-		nss_unregister_vlan_if(v->nss_if);
-		if (nss_dynamic_interface_dealloc_node(v->nss_if, NSS_DYNAMIC_INTERFACE_TYPE_VLAN) != NSS_TX_SUCCESS)
-			nss_vlan_mgr_warn("%px: Failed to dealloc vlan dynamic interface\n", v);
-	}
-
-	if (v->parent)
-		nss_vlan_mgr_instance_deref(v->parent);
-
-	kfree(v);
 }
 
 /*
@@ -1102,9 +1138,9 @@ static int nss_vlan_mgr_unregister_event(struct netdev_notifier_info *info)
 	nss_vlan_mgr_instance_deref(v);
 
 	/*
-	 * Free instance
+	 * Release reference take during register_event
 	 */
-	nss_vlan_mgr_instance_free(v);
+	nss_vlan_mgr_instance_deref(v);
 
 	return NOTIFY_DONE;
 }

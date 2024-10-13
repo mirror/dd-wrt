@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2015-2016,2018-2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022,2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1111,7 +1111,7 @@ static int nss_nlcapwap_ops_ip_flow(struct sk_buff *skb, struct genl_info *info)
 				nl_rule->msg.ip_flow.flow.ip_version, nl_rule->msg.ip_flow.flow.protocol,
 				nl_rule->msg.ip_flow.flow.src_ip, nl_rule->msg.ip_flow.flow.dst_ip,
 				nl_rule->msg.ip_flow.flow.src_port, nl_rule->msg.ip_flow.flow.dst_port,
-				nl_rule->msg.ip_flow.flow.flow_id);
+				nl_rule->msg.ip_flow.flow.flow_attr.flow_id);
 		if (status != NSS_CAPWAPMGR_SUCCESS) {
 			nss_nl_error("Unable to add flow rule\n");
 			return -EAGAIN;

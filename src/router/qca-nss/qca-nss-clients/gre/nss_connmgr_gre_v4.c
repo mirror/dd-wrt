@@ -172,6 +172,14 @@ int nss_connmgr_gre_v4_set_config(struct net_device *dev, struct nss_connmgr_gre
 		}
 	}
 
+	/*
+	 * IP address validate
+	 */
+	if ((cfg->src_ip[0] == 0) || (cfg->dest_ip[0] == 0)) {
+		nss_connmgr_gre_warning("Source ip/Destination IP is invalid");
+		return GRE_ERR_INVALID_IP;
+	}
+
 	memset(t, 0, sizeof(struct ip_tunnel));
 
 	priv->pad_len =  (cfg->add_padding) ? GRE_HDR_PAD_LEN : 0;

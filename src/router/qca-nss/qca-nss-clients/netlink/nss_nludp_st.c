@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -281,7 +281,7 @@ static void nss_nludp_st_process_resp(void *app_data, struct nss_udp_st_msg *num
 
 	nss_nl_ucast_resp(resp);
 
-	if ((global.mode == NSS_UDP_ST_MODE_TIMESTAMP) && (num->cm.response == NSS_CMN_RESPONSE_ACK)) {
+	if (((global.mode == NSS_UDP_ST_MODE_TIMESTAMP) || (global.mode == NSS_UDP_ST_MODE_TIMESTAMP_UNSYNC)) && (num->cm.response == NSS_CMN_RESPONSE_ACK)) {
 		nss_nludp_st_process_resp_timestamp(num);
 	}
 }
@@ -526,10 +526,8 @@ static int nss_nludp_st_ops_rx_mode_set(struct sk_buff *skb, struct genl_info *i
 
 	memcpy(&num.msg.mode, &nl_rule->num.msg.mode, sizeof(struct nss_udp_st_rx_mode));
 
-	if (num.msg.mode.mode == NSS_UDP_ST_MODE_DEFAULT) {
-		global.mode = NSS_UDP_ST_MODE_DEFAULT;
-	} else {
-		global.mode = NSS_UDP_ST_MODE_TIMESTAMP;
+	global.mode = num.msg.mode.mode;
+	if (global.mode != NSS_UDP_ST_MODE_DEFAULT) {
 
 		/*
 		 * Get the linux epoch time.
@@ -721,11 +719,8 @@ static int nss_nludp_st_ops_tx_create(struct sk_buff *skb, struct genl_info *inf
 
 	memcpy(&num.msg.create, &nl_rule->num.msg.create, sizeof(struct nss_udp_st_tx_create));
 
-	if (num.msg.create.mode == NSS_UDP_ST_MODE_DEFAULT) {
-		global.mode = NSS_UDP_ST_MODE_DEFAULT;
-	} else {
-		global.mode = NSS_UDP_ST_MODE_TIMESTAMP;
-
+	global.mode = num.msg.create.mode;
+	if ( global.mode != NSS_UDP_ST_MODE_DEFAULT) {
 		/*
 		 * Get the linux epoch time.
 		 */

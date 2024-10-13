@@ -1,6 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -294,7 +295,7 @@ static void nss_qdisc_stats_sync_many_callback(void *app_data,
 				 * timer accordingly.
 				 */
 				nqsw->stats_get_timer.expires = jiffies + nqsw->next_req_time - current_jiffies;
-				add_timer(&nqsw->stats_get_timer);
+				mod_timer(&nqsw->stats_get_timer, nqsw->stats_get_timer.expires);
 				nqsw->next_req_time += NSS_QDISC_STATS_SYNC_MANY_PERIOD;
 				nss_qdisc_info("qdisc:%p nq:%p,nqsw->next_req_time :%lu\n", nq->qdisc, nq, nqsw->next_req_time);
 				return;
