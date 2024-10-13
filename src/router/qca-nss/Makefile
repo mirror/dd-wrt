@@ -280,10 +280,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cp ssdk-shell/build/bin/ssdk_sh $(INSTALLDIR)/usr/sbin
 
 	mkdir -p $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/hawkeye/* $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/cypress/* $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/maple/* $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/crypto/* $(INSTALLDIR)/lib/firmware
+	cp firmware-12.2/hawkeye/* $(INSTALLDIR)/lib/firmware
+	cp firmware-12.2/cypress/* $(INSTALLDIR)/lib/firmware
+	cp firmware-12.2/maple/* $(INSTALLDIR)/lib/firmware
+	cp firmware-12.2/crypto/* $(INSTALLDIR)/lib/firmware
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
@@ -318,7 +318,7 @@ else
 	-rm -rf $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/update
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules*
 	mkdir -p $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/akronite/* $(INSTALLDIR)/lib/firmware
+	cp firmware-12.2/akronite/* $(INSTALLDIR)/lib/firmware
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp nssinfo/obj/nssinfo $(INSTALLDIR)/usr/sbin
 	cp tools/qca-nss-drv.debug $(INSTALLDIR)/usr/sbin/nss_stats
