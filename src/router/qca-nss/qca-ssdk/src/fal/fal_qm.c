@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
   *
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
@@ -547,7 +547,6 @@ _fal_qm_enqueue_ctrl_set(a_uint32_t dev_id, a_uint32_t queue_id, a_bool_t enable
 	return rv;
 }
 
-#if !defined(IN_QM_MINI)
 sw_error_t
 _fal_qm_enqueue_config_set(a_uint32_t dev_id,
 		fal_enqueue_cfg_t *enqueue_cfg)
@@ -579,7 +578,6 @@ _fal_qm_enqueue_config_get(a_uint32_t dev_id,
 	rv = p_api->adpt_qm_enqueue_config_get(dev_id, enqueue_cfg);
 	return rv;
 }
-#endif
 
 sw_error_t
 _fal_qm_enqueue_ctrl_get(a_uint32_t dev_id, a_uint32_t queue_id, a_bool_t *enable)
@@ -1061,7 +1059,6 @@ fal_qm_port_source_profile_get(a_uint32_t dev_id, fal_port_t port, a_uint32_t *s
 	return rv;
 }
 
-#if !defined(IN_QM_MINI)
 sw_error_t
 fal_qm_enqueue_config_set(a_uint32_t dev_id,
 		fal_enqueue_cfg_t *enqueue_cfg)
@@ -1085,7 +1082,6 @@ fal_qm_enqueue_config_get(a_uint32_t dev_id,
 	FAL_API_UNLOCK;
 	return rv;
 }
-#endif
 
 EXPORT_SYMBOL(fal_ac_ctrl_set);
 
@@ -1150,14 +1146,14 @@ EXPORT_SYMBOL(fal_port_mcast_priority_class_set);
 
 EXPORT_SYMBOL(fal_port_mcast_priority_class_get);
 
-EXPORT_SYMBOL(fal_qm_enqueue_config_set);
-
-EXPORT_SYMBOL(fal_qm_enqueue_config_get);
-
 EXPORT_SYMBOL(fal_ucast_default_hash_set);
 
 EXPORT_SYMBOL(fal_ucast_default_hash_get);
 
 #endif
+
+EXPORT_SYMBOL(fal_qm_enqueue_config_set);
+
+EXPORT_SYMBOL(fal_qm_enqueue_config_get);
 
 /*insert flag for outter fal, don't remove it*/

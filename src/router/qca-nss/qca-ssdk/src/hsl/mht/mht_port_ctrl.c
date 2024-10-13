@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -33,6 +33,7 @@
 #include "mht_interface_ctrl.h"
 #include "ssdk_mht.h"
 #include "ssdk_dts.h"
+#include "ssdk_interrupt.h"
 
 #ifndef IN_PORTCONTROL_MINI
 #define PORT0_MAX_VIRT_RING	8
@@ -1153,6 +1154,9 @@ _mht_port_erp_power_mode_set(a_uint32_t dev_id, fal_port_t port_id,
 			i++;
 		}
 
+		/* pause intr task */
+		qca_intr_work_pause(priv);
+
 		/* manually excute polling task to finish all ports up to down sequence */
 		mutex_lock(&priv->qm_lock);
 		qca_mht_sw_mac_polling_task(priv);
@@ -1202,6 +1206,9 @@ _mht_port_erp_power_mode_set(a_uint32_t dev_id, fal_port_t port_id,
 			SW_RTN_ON_ERROR(ssdk_mht_clk_enable(dev_id, MHT_SWITCH_CORE_CLK));
 			/* resume mib task */
 			qca_phy_mib_work_resume(priv);
+
+			/* resume intr task */
+			qca_intr_work_resume(priv);
 		}
 		/* on phy */
 		hsl_port_phy_pll_on(dev_id, port_id);

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -221,6 +221,26 @@ qca_intr_workqueue_task(struct work_struct *work)
 
 	 return IRQ_HANDLED;
  }
+
+void qca_intr_work_pause(struct qca_phy_priv *priv)
+{
+	if(!priv)
+		return;
+
+	/* Disable irq, the following intr irq will not come up */
+	disable_irq(priv->interrupt_no);
+
+	/* Flush the work which have in the workqueue already */
+	flush_work(&priv->intr_workqueue);
+}
+
+void qca_intr_work_resume(struct qca_phy_priv *priv)
+{
+	if(!priv)
+		return;
+
+	enable_irq(priv->interrupt_no);
+}
 
  int qca_intr_init(struct qca_phy_priv *priv)
 {
