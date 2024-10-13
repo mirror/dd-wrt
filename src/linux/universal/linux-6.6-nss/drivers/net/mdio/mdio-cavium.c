@@ -176,7 +176,7 @@ int cavium_mdiobus_write_c45(struct mii_bus *bus, int phy_id, int devad,
 	smi_cmd.u64 = 0;
 	smi_cmd.s.phy_op = 1; /* MDIO_CLAUSE_45_WRITE */
 	smi_cmd.s.phy_adr = phy_id;
-	smi_cmd.s.reg_adr = devad;
+	smi_cmd.s.reg_adr = regnum;
 	oct_mdio_writeq(smi_cmd.u64, p->register_base + SMI_CMD);
 
 	do {
