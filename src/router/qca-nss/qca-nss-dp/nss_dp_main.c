@@ -141,6 +141,10 @@ module_param_array(nss_dp_pri_map, byte, NULL, S_IRUGO);
 MODULE_PARM_DESC(nss_dp_pri_map, "Priority to multi-queue mapping");
 #endif
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+#define NSS_DP_GRE_CSUM_OFFSET 4
+#endif
+
 /*
  * nss_dp_do_ioctl()
  */
@@ -582,6 +586,26 @@ static netdev_features_t __attribute__((unused)) nss_dp_feature_check(struct sk_
 	 */
 	if (skb_vlan_tagged_multi(skb)) {
 		features &= ~(NETIF_F_HW_CSUM | NETIF_F_TSO | NETIF_F_TSO6);
+	}
+#endif
+
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(6, 6, 0))
+	/*
+	 * EDMA driver does not support custom checksum offload where
+	 * we need to calculate IP style checksum from skb->csum_start
+	 * to the end of the packet and update the offset skb->csum_offset.
+	 *
+	 * GRE CSUM offload feature was added to kernel 6.6 and since we
+	 * advertise that edma can support custom checksum offload (NETIF_F_HW_CSUM)
+	 * instead of just generic IPv4(NETIF_F_IP_CSUM) and IPv6(NETIF_F_IPV6_CSUM)
+	 * GRE module in linux does not calculate the checksum.
+	 * Disalbe checksum offload for GRE tunnels.
+	 *
+	 * TODO: Explore implementing custom tunnel checksum offload support in edma_tx.
+	 * EDMA hardware supports it.
+	 */
+	if (unlikely(skb->csum_offset == NSS_DP_GRE_CSUM_OFFSET)) {
+		features &= (~NETIF_F_HW_CSUM | NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
 	}
 #endif
 	return features;
