@@ -1,0 +1,8 @@
+sbin 1
+usr/sbin 1
+bin 1
+usr/bin 1
+lib 1
+usr/lib 1
+lib/modules 1
+
