@@ -688,10 +688,10 @@ detach_vsi:
  */
 static void nss_vlan_mgr_instance_free(struct nss_vlan_pvt *v)
 {
+#ifdef NSS_VLAN_MGR_PPE_SUPPORT
 	int32_t i;
 	int ret = 0;
 
-#ifdef NSS_VLAN_MGR_PPE_SUPPORT
 	if (v->ppe_vsi) {
 		/*
 		 * Detach VSI
