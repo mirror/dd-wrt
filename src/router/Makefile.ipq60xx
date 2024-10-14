@@ -270,7 +270,7 @@ endif
 	gzip -f $(ARCH)-uclibc/vmlinux
 
 	# copy openwrt rootfs to image
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm64 -b 262144
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -root-owned -noappend -Xbcj arm64 -b 262144
 
 #mr7350
 	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/

@@ -387,7 +387,7 @@ endif
 	$(LINUXDIR)/scripts/dtc/dtc -I dts -O dtb $(LINUXDIR)/arch/powerpc/boot/dts/tl-wdr4900-v1.dts > $(ARCH)-uclibc/tl-wdr4900-v1.fdt
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend -Xbcj powerpc -b 262144
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -nopad  -root-owned -noappend -Xbcj powerpc -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -t -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware-t.bin

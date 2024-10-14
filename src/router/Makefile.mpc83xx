@@ -20,6 +20,7 @@ endif
 #
 # Paths
 #
+CONFIG_MUSL=y
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 
@@ -154,6 +155,7 @@ all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
 
@@ -251,7 +253,7 @@ endif
 #	make -C lzma-loader/rb500 
 #	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
 
-include common-nolto.mk
+include common.mk
 
 dtc:
 	$(LINUXDIR)/scripts/dtc/dtc -q -I dts -O dtb -o tools/uniwip/uniwip.dtb $(LINUXDIR)/arch/powerpc/boot/dts/uniwip.dts
@@ -296,7 +298,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.mpc83xx lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.mpc83xx lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.mpc83xx optimize-lib
 	# Install modules into filesystem
@@ -316,7 +318,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
@@ -435,7 +437,7 @@ endif
 	-$(LINUXDIR)/scripts/dtc/dtc -I dts -O dtb $(LINUXDIR)/arch/powerpc/boot/dts/tl-wdr4900-v1.dts > $(ARCH)-uclibc/tl-wdr4900-v1.fdt
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend -Xbcj powerpc -b 262144
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -nopad  -root-owned -noappend -Xbcj powerpc -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -t -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware-t.bin

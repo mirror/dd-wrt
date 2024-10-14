@@ -806,7 +806,7 @@ endif
 #	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend -b 262144
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -sort tools/sort.txt -nopad  -root-owned -noappend -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=65536 conv=sync
 	dd if=mipsel-uclibc/root-mt7621_dir882-r1.uimage of=mipsel-uclibc/aligned-mt7621_dir882-r1.uimage bs=65536 conv=sync

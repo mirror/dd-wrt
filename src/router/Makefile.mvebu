@@ -269,8 +269,8 @@ endif
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-rango $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-rango;
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-venom $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-venom;
 	
-	#tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm -b 262144
+	#tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -sort tools/sort.txt -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -sort tools/sort.txt -nopad  -root-owned -noappend -Xbcj arm -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	tools/wrt1900ac/padjffs2 $(ARCH)-uclibc/root.squashfs 128
 	
