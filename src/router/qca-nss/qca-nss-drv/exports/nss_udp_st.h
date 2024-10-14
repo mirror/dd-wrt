@@ -1,7 +1,7 @@
 /*
  **************************************************************************
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -71,6 +71,8 @@ enum nss_udp_st_test_types {
  */
 enum nss_udp_st_mode {
 	NSS_UDP_ST_MODE_DEFAULT,		/**< Default test mode. */
+	NSS_UDP_ST_MODE_TIMESTAMP_UNSYNC,	/**< Variable active reliable test mode with
+						  unsynchronized server and client time. */
 	NSS_UDP_ST_MODE_TIMESTAMP,		/**< Variable active reliable test mode. */
 	NSS_UDP_ST_MODE_MAX			/**< Maximum test mode type. */
 };
