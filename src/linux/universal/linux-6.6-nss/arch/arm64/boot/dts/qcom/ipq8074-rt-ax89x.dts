@@ -79,14 +79,14 @@
 		};
 
 		led-2g {
-			label = "white:wlan2g";
+			label = "wifi0";
 			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		led-5g {
-			label = "white:wlan5g";
+			label = "wifi1";
 			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy1tpt";

@@ -61,15 +61,19 @@
 		};
 
 		led-6 {
+			label = "wifi0";
 			gpios = <&tlmm 55 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led-7 {
+			label = "wifi1";
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
