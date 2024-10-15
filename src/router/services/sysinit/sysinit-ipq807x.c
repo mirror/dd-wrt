@@ -1022,6 +1022,7 @@ void start_sysinit(void)
 		profile = 1024;
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
+		insmod("leds-gpio");
 		break;
 	case ROUTER_ASUS_AX89X:
 		profile = 1024;
