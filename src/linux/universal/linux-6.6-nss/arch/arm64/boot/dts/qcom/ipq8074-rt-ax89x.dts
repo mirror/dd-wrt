@@ -82,14 +82,14 @@
 			label = "white:wlan2g";
 			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
-			linux,default-trigger = "phy0radio";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led-5g {
 			label = "white:wlan5g";
 			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
-			linux,default-trigger = "phy1radio";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led-10g-copper {

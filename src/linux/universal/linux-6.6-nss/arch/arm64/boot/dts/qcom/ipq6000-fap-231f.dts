@@ -58,13 +58,13 @@
 			wifi0 {
 				label = "wifi0";
 				gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
-				linux,default-trigger = "phy0radio";
+				linux,default-trigger = "phy0tpt";
 			};
 
 			wifi1 {
 				label = "wifi1";
 				gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
-				linux,default-trigger = "phy1radio";
+				linux,default-trigger = "phy1tpt";
 			};
 
 			wifi01 {

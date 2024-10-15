@@ -42,7 +42,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <0>;
 			gpios = <&tlmm 66 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0radio";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan2g {
@@ -50,7 +50,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <1>;
 			gpios = <&tlmm 67 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1radio";
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
