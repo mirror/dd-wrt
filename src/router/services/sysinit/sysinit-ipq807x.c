@@ -1411,6 +1411,7 @@ void start_wifi_drivers(void)
 		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
 		case ROUTER_LINKSYS_MX4200V2:
+		case ROUTER_FORTINET_FAP231F:
 		case ROUTER_LINKSYS_MX4300:
 			profile = 1024;
 			break;
