@@ -12,7 +12,7 @@ struct in_addr inet_makeaddr(in_addr_t n, in_addr_t h)
 	if (n < 256) h |= n<<24;
 	else if (n < 65536) h |= n<<16;
 	else h |= n<<8;
-	return (struct in_addr){ h };
+	return (struct in_addr){ ntohl(h) };
 }
 
 in_addr_t inet_lnaof(struct in_addr in)
