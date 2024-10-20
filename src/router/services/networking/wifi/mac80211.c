@@ -235,12 +235,12 @@ void set_mesh_params(char *dev)
 	mesh_param(dev, "mesh_retry_timeout", "100");
 	mesh_param(dev, "mesh_confirm_timeout", "100");
 	mesh_param(dev, "mesh_holding_timeout", "100");
-	mesh_param(dev, "mesh_max_peer_links", "255");
+	mesh_param(dev, "mesh_max_peer_links", "3");
 	mesh_param(dev, "mesh_max_retries", "3");
-	mesh_param(dev, "mesh_ttl", "31");
-	mesh_param(dev, "mesh_element_ttl", "31");
+	mesh_param(dev, "mesh_ttl", "5");
+	mesh_param(dev, "mesh_element_ttl", "3");
 	mesh_param(dev, "mesh_auto_open_plinks", "1");
-	mesh_param(dev, "mesh_hwmp_max_preq_retries", "4");
+	mesh_param(dev, "mesh_hwmp_max_preq_retries", "2");
 	mesh_param(dev, "mesh_path_refresh_time", "1000");
 	mesh_param(dev, "mesh_min_discovery_timeout", "100");
 	mesh_param(dev, "mesh_hwmp_active_path_timeout", "5000");
@@ -250,7 +250,7 @@ void set_mesh_params(char *dev)
 	mesh_param(dev, "mesh_hwmp_rann_interval", "5000");
 	mesh_param(dev, "mesh_gate_announcements", "0");
 	mesh_param(dev, "mesh_sync_offset_max_neighor", "10");
-	mesh_param(dev, "mesh_rssi_threshold", "0");
+	mesh_param(dev, "mesh_rssi_threshold", "-80");
 	mesh_param(dev, "mesh_hwmp_active_path_to_root_timeout", "6000");
 	mesh_param(dev, "mesh_hwmp_confirmation_interval", "5000");
 	mesh_param(dev, "mesh_power_mode", "active");

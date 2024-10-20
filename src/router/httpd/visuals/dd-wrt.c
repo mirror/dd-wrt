@@ -4912,7 +4912,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						 nvram_default_get(mparam, "0"));
 			}
 			mesh_num(wp, prefix, "mesh_hwmp_rann_interval", 6, 5000);
-			mesh_num(wp, prefix, "mesh_hwmp_max_preq_retries", 4, 4);
+			mesh_num(wp, prefix, "mesh_hwmp_max_preq_retries", 4, 2);
 			mesh_num(wp, prefix, "mesh_hwmp_active_path_timeout", 6, 5000);
 			mesh_num(wp, prefix, "mesh_hwmp_preq_min_interval", 4, 10);
 			mesh_num(wp, prefix, "mesh_hwmp_net_diameter_traversal_time", 6, 50);
@@ -4921,15 +4921,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num(wp, prefix, "mesh_retry_timeout", 4, 100);
 			mesh_num(wp, prefix, "mesh_confirm_timeout", 4, 100);
 			mesh_num(wp, prefix, "mesh_holding_timeout", 4, 100);
-			mesh_num(wp, prefix, "mesh_max_peer_links", 4, 255);
+			mesh_num(wp, prefix, "mesh_max_peer_links", 4, 3);
 			mesh_num(wp, prefix, "mesh_max_retries", 4, 3);
-			mesh_num(wp, prefix, "mesh_ttl", 4, 31);
-			mesh_num(wp, prefix, "mesh_element_ttl", 4, 31);
+			mesh_num(wp, prefix, "mesh_ttl", 4, 5);
+			mesh_num(wp, prefix, "mesh_element_ttl", 4, 3);
 			mesh_num(wp, prefix, "mesh_path_refresh_time", 6, 1000);
 			mesh_num(wp, prefix, "mesh_min_discovery_timeout", 4, 100);
 			mesh_radio(wp, prefix, "mesh_auto_open_plinks", 1);
 			mesh_num(wp, prefix, "mesh_sync_offset_max_neighor", 4, 10);
-			mesh_num(wp, prefix, "mesh_rssi_threshold", 4, 0);
+			mesh_num(wp, prefix, "mesh_rssi_threshold", 4, -80);
 			{
 				char mparam[64];
 				sprintf(mparam, "%s_mesh_power_mode", prefix);
