@@ -67,7 +67,7 @@ bool nbp_switchdev_allowed_egress(const struct net_bridge_port *p,
 	struct br_input_skb_cb *cb = BR_INPUT_SKB_CB(skb);
 
 	return !test_bit(p->hwdom, &cb->fwd_hwdoms) &&
-		(!skb->offload_fwd_mark || cb->src_hwdom != p->hwdom);
+		(!skb->offload_fwd_mark || !p->hwdom || cb->src_hwdom != p->hwdom);
 }
 
 /* Flags that can be offloaded to hardware */
