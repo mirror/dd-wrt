@@ -5293,6 +5293,10 @@ void start_hotplug_net(void)
 		if (nvram_matchi(bridged, 1))
 			br_del_interface(getBridge(ifname, tmp), interface);
 	}
+	
+	if (is_ath11k(interface)) {
+		eval("ethtool","-K",interface, "tx-checksumming","off");
+	}
 	return;
 #else
 
