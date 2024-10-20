@@ -29,7 +29,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " coherent_pool=2M swiotlb=1 root=/dev/ubiblock0_1";
+		bootargs-append = " root=/dev/ubiblock0_1";
 	};
 
 	keys {

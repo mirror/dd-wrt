@@ -34,7 +34,7 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 		/* We have to override root and ubi device passed by bootloader */
-		bootargs-append = " coherent_pool=2M swiotlb=1 mitigations=off root=/dev/mtdblock15 rootfstype=squashfs";
+		bootargs-append = " mitigations=off root=/dev/mtdblock15 rootfstype=squashfs";
 	};
 
 	keys {

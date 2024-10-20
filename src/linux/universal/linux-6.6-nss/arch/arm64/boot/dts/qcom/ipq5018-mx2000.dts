@@ -23,7 +23,7 @@
 	};
 
     chosen {
-        bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
+        bootargs-append = " root=/dev/ubiblock0_0";
 		stdout-path = "serial0:115200n8";
 	};
 
