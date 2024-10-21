@@ -5255,6 +5255,10 @@ void start_hotplug_net(void)
 	if (strncmp(interface, "wlan", 4))
 		return;
 
+	if (is_ath11k(interface)) {
+		eval("ethtool","-K",interface, "tx-checksumming","off");
+	}
+
 	// try to parse
 	char ifname[32];
 
@@ -5294,9 +5298,6 @@ void start_hotplug_net(void)
 			br_del_interface(getBridge(ifname, tmp), interface);
 	}
 	
-	if (is_ath11k(interface)) {
-		eval("ethtool","-K",interface, "tx-checksumming","off");
-	}
 	return;
 #else
 
