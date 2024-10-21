@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.plexapp.agents.imdb</string>
+	<key>PlexAgentAttributionText</key>
+	<string>
+		Primary metadata provided by &lt;a href=&quot;http://www.imdb.com/&quot;&gt;IMDb&lt;/a&gt;&lt;br/&gt;
+		Additional metadata provided by &lt;a href=&quot;http://www.themoviedb.org&quot;&gt;The Movie Database&lt;/a&gt;, a free and open movie database. &lt;br/&gt;
+		Video previews provided by &lt;a href=&quot;http://internetvideoarchive.com&quot;&gt;Internet Video Archive&lt;/a&gt;&lt;br/&gt;
+		Other content from
+		&lt;a href=&quot;http://en.wikipedia.org/&quot;&gt;Wikipedia&lt;/a&gt;,
+		licensed under the &lt;a href=&quot;http://www.gnu.org/copyleft/fdl.html&quot;&gt;GFDL&lt;/a&gt;
+		&lt;a href=&quot;http://www.chapterdb.org/&quot;&gt;ChapterDB.org&lt;/a&gt;
+	</string>
+	<key>PlexFrameworkVersion</key>
+	<string>2</string>
+	<key>PlexPluginClass</key>
+	<string>Agent</string>
+	<key>PlexPluginCodePolicy</key>
+	<string>Elevated</string>
+</dict>
+</plist>

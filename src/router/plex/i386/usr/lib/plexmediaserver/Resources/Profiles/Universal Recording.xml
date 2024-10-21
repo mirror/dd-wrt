@@ -5,8 +5,8 @@
     <Setting name="DirectPlayStreamSelection" value="true" />
   </Settings>
   <TranscodeTargets>
-    <VideoProfile container="mpegts" videoCodec="h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="http" />
-    <VideoProfile container="mpegts" videoCodec="h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="hls">
+    <VideoProfile container="mpegts" videoCodec="hevc,h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="http" />
+    <VideoProfile container="mpegts" videoCodec="hevc,h264,*" audioCodec="opus,*" subtitleCodec="dvb_subtitle,*" context="static" protocol="hls">
       <Setting name="BreakNonKeyframes" value="true" />
     </VideoProfile>
     <MusicProfile container="mp3" codec="mp3" context="static" />
