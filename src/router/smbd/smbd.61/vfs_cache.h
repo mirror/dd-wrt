@@ -100,8 +100,8 @@ struct ksmbd_file {
 	struct list_head		blocked_works;
 	struct list_head		lock_list;
 
-	int				durable_timeout;
-	int				durable_scavenger_timeout;
+	unsigned int			durable_timeout;
+	unsigned int			durable_scavenger_timeout;
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	/* for SMB1 */

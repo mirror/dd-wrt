@@ -531,7 +531,7 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
  * @shortname:	destination short filename
  *
  * Return:	shortname length or 0 when source long name is '.' or '..'
- * TODO: Though this function comforms the restriction of 8.3 Filename spec,
+ * TODO: Though this function conforms the restriction of 8.3 Filename spec,
  * but the result is different with Windows 7's one. need to check.
  */
 int ksmbd_extract_shortname(struct ksmbd_conn *conn, const char *longname,
@@ -777,17 +777,19 @@ bool is_asterisk(char *p)
 	return p && p[0] == '*';
 }
 
-int ksmbd_override_fsids(struct ksmbd_work *work)
+int __ksmbd_override_fsids(struct ksmbd_work *work,
+		struct ksmbd_share_config *share)
 {
 	struct ksmbd_session *sess = work->sess;
-	struct ksmbd_share_config *share = work->tcon->share_conf;
+	struct ksmbd_user *user = sess->user;
 	struct cred *cred;
 	struct group_info *gi;
 	unsigned int uid;
 	unsigned int gid;
+	int i;
 
-	uid = user_uid(sess->user);
-	gid = user_gid(sess->user);
+	uid = user_uid(user);
+	gid = user_gid(user);
 	if (share->force_uid != KSMBD_SHARE_INVALID_UID)
 		uid = share->force_uid;
 	if (share->force_gid != KSMBD_SHARE_INVALID_GID)
@@ -800,11 +802,18 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 	cred->fsuid = make_kuid(&init_user_ns, uid);
 	cred->fsgid = make_kgid(&init_user_ns, gid);
 
-	gi = groups_alloc(0);
+	gi = groups_alloc(user->ngroups);
 	if (!gi) {
 		abort_creds(cred);
 		return -ENOMEM;
 	}
+
+	for (i = 0; i < user->ngroups; i++)
+		gi->gid[i] = make_kgid(&init_user_ns, user->sgid[i]);
+
+	if (user->ngroups)
+		groups_sort(gi);
+
 	set_groups(cred, gi);
 	put_group_info(gi);
 
@@ -818,6 +827,11 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 		return -EINVAL;
 	}
 	return 0;
+}
+
+int ksmbd_override_fsids(struct ksmbd_work *work)
+{
+	return __ksmbd_override_fsids(work, work->tcon->share_conf);
 }
 
 void ksmbd_revert_fsids(struct ksmbd_work *work)

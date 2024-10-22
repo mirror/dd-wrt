@@ -667,8 +667,10 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
 			    !is_valid_ether_addr(netdev->dev_addr))
 				continue;
-			if (!alloc_iface(kstrdup(netdev->name, GFP_KERNEL)))
+			if (!alloc_iface(kstrdup(netdev->name, GFP_KERNEL))) {
+				rtnl_unlock();
 				return -ENOMEM;
+			}
 		}
 		rtnl_unlock();
 		bind_additional_ifaces = 1;

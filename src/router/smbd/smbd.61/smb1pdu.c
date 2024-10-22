@@ -394,7 +394,7 @@ int smb_session_disconnect(struct ksmbd_work *work)
 	/* setting CifsExiting here may race with start_tcp_sess */
 	ksmbd_conn_set_need_reconnect(conn);
 
-	ksmbd_conn_wait_idle(conn, sess->id);
+	ksmbd_conn_wait_idle(conn);
 
 	ksmbd_tree_conn_session_logoff(sess);
 
@@ -568,7 +568,7 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 		goto out_err;
 	}
 
-	status = ksmbd_tree_conn_connect(conn, sess, name);
+	status = ksmbd_tree_conn_connect(work, name);
 	if (status.ret == KSMBD_TREE_CONN_STATUS_OK)
 		rsp_hdr->Tid = cpu_to_le16(status.tree_conn->id);
 	else
