@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2024 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -426,7 +426,7 @@ static int test_WPACKET_init_der(void)
         if (i == 0) {
             if (!TEST_true(WPACKET_init_null_der(&pkt)))
                 return 0;
-        } else { 
+        } else {
             if (!TEST_true(WPACKET_init_der(&pkt, sbuf, sizeof(sbuf))))
                 return 0;
         }

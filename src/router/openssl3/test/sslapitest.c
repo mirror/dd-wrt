@@ -190,7 +190,7 @@ static int compare_hex_encoded_buffer(const char *hex_encoded,
         return 1;
 
     for (i = j = 0; i < raw_length && j + 1 < hex_length; i++, j += 2) {
-        sprintf(hexed, "%02x", raw[i]);
+        BIO_snprintf(hexed, sizeof(hexed), "%02x", raw[i]);
         if (!TEST_int_eq(hexed[0], hex_encoded[j])
                 || !TEST_int_eq(hexed[1], hex_encoded[j + 1]))
             return 1;
@@ -713,14 +713,14 @@ static int full_client_hello_callback(SSL *s, int *al, void *arg)
     int *ctr = arg;
     const unsigned char *p;
     int *exts;
-    /* We only configure two ciphers, but the SCSV is added automatically. */
 #ifdef OPENSSL_NO_EC
-    const unsigned char expected_ciphers[] = {0x00, 0x9d, 0x00, 0xff};
+    const unsigned char expected_ciphers[] = {0x00, 0x9d};
 #else
     const unsigned char expected_ciphers[] = {0x00, 0x9d, 0xc0,
-                                              0x2c, 0x00, 0xff};
+                                              0x2c};
 #endif
     const int expected_extensions[] = {
+                                       65281,
 #ifndef OPENSSL_NO_EC
                                        11, 10,
 #endif
@@ -1478,8 +1478,7 @@ static struct ktls_test_cipher {
 # endif
 };
 
-#define NUM_KTLS_TEST_CIPHERS \
-    (sizeof(ktls_test_ciphers) / sizeof(ktls_test_ciphers[0]))
+#define NUM_KTLS_TEST_CIPHERS OSSL_NELEM(ktls_test_ciphers)
 
 static int test_ktls(int test)
 {
@@ -1563,7 +1562,7 @@ static int test_large_app_data(int tst)
         prot = TLS1_3_VERSION;
         break;
 #else
-        return 1;
+        return TEST_skip("TLS 1.3 not supported");
 #endif
 
     case 1:
@@ -1571,7 +1570,7 @@ static int test_large_app_data(int tst)
         prot = TLS1_2_VERSION;
         break;
 #else
-        return 1;
+        return TEST_skip("TLS 1.2 not supported");
 #endif
 
     case 2:
@@ -1579,7 +1578,7 @@ static int test_large_app_data(int tst)
         prot = TLS1_1_VERSION;
         break;
 #else
-        return 1;
+        return TEST_skip("TLS 1.1 not supported");
 #endif
 
     case 3:
@@ -1587,7 +1586,7 @@ static int test_large_app_data(int tst)
         prot = TLS1_VERSION;
         break;
 #else
-        return 1;
+        return TEST_skip("TLS 1 not supported");
 #endif
 
     case 4:
@@ -1595,7 +1594,7 @@ static int test_large_app_data(int tst)
         prot = SSL3_VERSION;
         break;
 #else
-        return 1;
+        return TEST_skip("SSL 3 not supported");
 #endif
 
     case 5:
@@ -1605,17 +1604,19 @@ static int test_large_app_data(int tst)
         cmeth = DTLS_client_method();
         break;
 #else
-        return 1;
+        return TEST_skip("DTLS 1.2 not supported");
 #endif
 
     case 6:
 #ifndef OPENSSL_NO_DTLS1
+        if (is_fips)
+            return TEST_skip("DTLS 1 not supported by FIPS provider");
         prot = DTLS1_VERSION;
         smeth = DTLS_server_method();
         cmeth = DTLS_client_method();
         break;
 #else
-        return 1;
+        return TEST_skip("DTLS 1 not supported");
 #endif
 
     default:
@@ -1623,8 +1624,8 @@ static int test_large_app_data(int tst)
         return 0;
     }
 
-    if ((prot < TLS1_2_VERSION || prot == DTLS1_VERSION) && is_fips)
-        return 1;
+    if (is_fips && prot < TLS1_2_VERSION)
+        return TEST_skip("TLS versions < 1.2 not supported by FIPS provider");
 
     /* Maximal sized message of zeros */
     msg = OPENSSL_zalloc(SSL3_RT_MAX_PLAIN_LENGTH);
@@ -1912,6 +1913,8 @@ static int test_tlsext_status_type(void)
     /* First just do various checks getting and setting tlsext_status_type */
 
     clientssl = SSL_new(cctx);
+    if (!TEST_ptr(clientssl))
+        goto end;
     if (!TEST_int_eq(SSL_get_tlsext_status_type(clientssl), -1)
             || !TEST_true(SSL_set_tlsext_status_type(clientssl,
                                                       TLSEXT_STATUSTYPE_ocsp))
@@ -1927,6 +1930,8 @@ static int test_tlsext_status_type(void)
         goto end;
 
     clientssl = SSL_new(cctx);
+    if (!TEST_ptr(clientssl))
+        goto end;
     if (SSL_get_tlsext_status_type(clientssl) != TLSEXT_STATUSTYPE_ocsp)
         goto end;
     SSL_free(clientssl);
@@ -2330,9 +2335,9 @@ static int execute_test_session(int maxprot, int use_int_cache,
      */
 
     /* Make sess1 expire before sess2 */
-    if (!TEST_long_gt(SSL_SESSION_set_time(sess1, 1000), 0)
+    if (!TEST_time_t_gt(SSL_SESSION_set_time_ex(sess1, 1000), 0)
             || !TEST_long_gt(SSL_SESSION_set_timeout(sess1, 1000), 0)
-            || !TEST_long_gt(SSL_SESSION_set_time(sess2, 2000), 0)
+            || !TEST_time_t_gt(SSL_SESSION_set_time_ex(sess2, 2000), 0)
             || !TEST_long_gt(SSL_SESSION_set_timeout(sess2, 2000), 0))
         goto end;
 
@@ -3915,7 +3920,13 @@ static const char *ciphersuites[] = {
     "TLS_AES_256_GCM_SHA384",
     "TLS_AES_128_CCM_SHA256",
 #if !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305)
-    "TLS_CHACHA20_POLY1305_SHA256"
+    "TLS_CHACHA20_POLY1305_SHA256",
+#else
+    NULL,
+#endif
+#if !defined(OPENSSL_NO_INTEGRITY_ONLY_CIPHERS)
+    "TLS_SHA256_SHA256",
+    "TLS_SHA384_SHA384"
 #endif
 };
 
@@ -3936,8 +3947,11 @@ static int early_data_skip_helper(int testtype, int cipher, int idx)
     unsigned char buf[20];
     size_t readbytes, written;
 
-    if (is_fips && cipher == 4)
+    if (is_fips && cipher >= 4)
         return 1;
+
+    if (ciphersuites[cipher] == NULL)
+        return TEST_skip("Cipher not supported");
 
     if (!TEST_true(create_ssl_ctx_pair(libctx, TLS_server_method(),
                                               TLS_client_method(),
@@ -3945,7 +3959,7 @@ static int early_data_skip_helper(int testtype, int cipher, int idx)
                                               &sctx, &cctx, cert, privkey)))
         goto end;
 
-    if (cipher == 0) {
+    if (cipher == 0 || cipher == 5 || cipher == 6) {
         SSL_CTX_set_security_level(sctx, 0);
         SSL_CTX_set_security_level(cctx, 0);
     }
@@ -3956,8 +3970,9 @@ static int early_data_skip_helper(int testtype, int cipher, int idx)
 
     if (!TEST_true(setupearly_data_test(&cctx, &sctx, &clientssl,
                                         &serverssl, &sess, idx,
-                                        cipher == 2 ? SHA384_DIGEST_LENGTH
-                                                    : SHA256_DIGEST_LENGTH)))
+                                        (cipher == 2 || cipher == 6)
+                                            ? SHA384_DIGEST_LENGTH
+                                            : SHA256_DIGEST_LENGTH)))
         goto end;
 
     if (testtype == 1 || testtype == 2) {
@@ -3981,7 +3996,7 @@ static int early_data_skip_helper(int testtype, int cipher, int idx)
          * time. It could be any value as long as it is not within tolerance.
          * This should mean the ticket is rejected.
          */
-        if (!TEST_true(SSL_SESSION_set_time(sess, (long)(time(NULL) - 20))))
+        if (!TEST_true(SSL_SESSION_set_time_ex(sess, time(NULL) - 20)))
             goto end;
     }
 
@@ -4414,12 +4429,14 @@ static int test_early_data_psk(int idx)
 }
 
 /*
- * Test TLSv1.3 PSK can be used to send early_data with all 5 ciphersuites
+ * Test TLSv1.3 PSK can be used to send early_data with all 7 ciphersuites
  * idx == 0: Test with TLS1_3_RFC_AES_128_GCM_SHA256
  * idx == 1: Test with TLS1_3_RFC_AES_256_GCM_SHA384
  * idx == 2: Test with TLS1_3_RFC_CHACHA20_POLY1305_SHA256,
  * idx == 3: Test with TLS1_3_RFC_AES_128_CCM_SHA256
  * idx == 4: Test with TLS1_3_RFC_AES_128_CCM_8_SHA256
+ * idx == 5: Test with TLS1_3_RFC_SHA256_SHA256
+ * idx == 6: Test with TLS1_3_RFC_SHA384_SHA384
  */
 static int test_early_data_psk_with_all_ciphers(int idx)
 {
@@ -4440,7 +4457,14 @@ static int test_early_data_psk_with_all_ciphers(int idx)
         NULL,
 # endif
         TLS1_3_RFC_AES_128_CCM_SHA256,
-        TLS1_3_RFC_AES_128_CCM_8_SHA256
+        TLS1_3_RFC_AES_128_CCM_8_SHA256,
+# if !defined(OPENSSL_NO_INTEGRITY_ONLY_CIPHERS)
+        TLS1_3_RFC_SHA256_SHA256,
+        TLS1_3_RFC_SHA384_SHA384
+#else
+        NULL,
+        NULL
+#endif
     };
     const unsigned char *cipher_bytes[] = {
         TLS13_AES_128_GCM_SHA256_BYTES,
@@ -4451,13 +4475,23 @@ static int test_early_data_psk_with_all_ciphers(int idx)
         NULL,
 # endif
         TLS13_AES_128_CCM_SHA256_BYTES,
-        TLS13_AES_128_CCM_8_SHA256_BYTES
+        TLS13_AES_128_CCM_8_SHA256_BYTES,
+# if !defined(OPENSSL_NO_INTEGRITY_ONLY_CIPHERS)
+        TLS13_SHA256_SHA256_BYTES,
+        TLS13_SHA384_SHA384_BYTES
+#else
+        NULL,
+        NULL
+#endif
     };
 
     if (cipher_str[idx] == NULL)
         return 1;
-    /* Skip ChaCha20Poly1305 as currently FIPS module does not support it */
-    if (idx == 2 && is_fips == 1)
+    /*
+     * Skip ChaCha20Poly1305 and TLS_SHA{256,384}_SHA{256,384} ciphers
+     * as currently FIPS module does not support them.
+     */
+    if ((idx == 2 || idx == 5 || idx == 6) && is_fips == 1)
         return 1;
 
     /* We always set this up with a final parameter of "2" for PSK */
@@ -4466,8 +4500,11 @@ static int test_early_data_psk_with_all_ciphers(int idx)
                                         SHA384_DIGEST_LENGTH)))
         goto end;
 
-    if (idx == 4) {
-        /* CCM8 ciphers are considered low security due to their short tag */
+    if (idx == 4 || idx == 5 || idx == 6) {
+        /*
+         * CCM8 ciphers are considered low security due to their short tag.
+         * Integrity-only cipher do not provide any confidentiality.
+         */
         SSL_set_security_level(clientssl, 0);
         SSL_set_security_level(serverssl, 0);
     }
@@ -5325,7 +5362,12 @@ static int test_tls13_ciphersuite(int idx)
 # endif
         /* CCM8 ciphers are considered low security due to their short tag */
         { TLS1_3_RFC_AES_128_CCM_8_SHA256
-          ":" TLS1_3_RFC_AES_128_CCM_SHA256, 1, 1 }
+          ":" TLS1_3_RFC_AES_128_CCM_SHA256, 1, 1 },
+# if !defined(OPENSSL_NO_INTEGRITY_ONLY_CIPHERS)
+        /* Integrity-only cipher do not provide any confidentiality */
+        { TLS1_3_RFC_SHA256_SHA256, 0, 1 },
+        { TLS1_3_RFC_SHA384_SHA384, 0, 1 }
+# endif
     };
     const char *t13_cipher = NULL;
     const char *t12_cipher = NULL;
@@ -9288,7 +9330,7 @@ static int test_session_timeout(int test)
     SSL_SESSION *late = NULL;
     SSL_CTX *ctx;
     int testresult = 0;
-    long now = (long)time(NULL);
+    time_t now = time(NULL);
 #define TIMEOUT 10
 
     if (!TEST_ptr(ctx = SSL_CTX_new_ex(libctx, NULL, TLS_method()))
@@ -9316,9 +9358,9 @@ static int test_session_timeout(int test)
         || !TEST_ptr(late->prev))
         goto end;
 
-    if (!TEST_int_ne(SSL_SESSION_set_time(early, now - 10), 0)
-        || !TEST_int_ne(SSL_SESSION_set_time(middle, now), 0)
-        || !TEST_int_ne(SSL_SESSION_set_time(late, now + 10), 0))
+    if (!TEST_time_t_ne(SSL_SESSION_set_time_ex(early, now - 10), 0)
+        || !TEST_time_t_ne(SSL_SESSION_set_time_ex(middle, now), 0)
+        || !TEST_time_t_ne(SSL_SESSION_set_time_ex(late, now + 10), 0))
         goto end;
 
     if (!TEST_int_ne(SSL_SESSION_set_timeout(early, TIMEOUT), 0)
@@ -9340,21 +9382,21 @@ static int test_session_timeout(int test)
         goto end;
 
     /* This should remove "early" */
-    SSL_CTX_flush_sessions(ctx, now + TIMEOUT - 1);
+    SSL_CTX_flush_sessions_ex(ctx, now + TIMEOUT - 1);
     if (!TEST_ptr_null(early->prev)
         || !TEST_ptr(middle->prev)
         || !TEST_ptr(late->prev))
         goto end;
 
     /* This should remove "middle" */
-    SSL_CTX_flush_sessions(ctx, now + TIMEOUT + 1);
+    SSL_CTX_flush_sessions_ex(ctx, now + TIMEOUT + 1);
     if (!TEST_ptr_null(early->prev)
         || !TEST_ptr_null(middle->prev)
         || !TEST_ptr(late->prev))
         goto end;
 
     /* This should remove "late" */
-    SSL_CTX_flush_sessions(ctx, now + TIMEOUT + 11);
+    SSL_CTX_flush_sessions_ex(ctx, now + TIMEOUT + 11);
     if (!TEST_ptr_null(early->prev)
         || !TEST_ptr_null(middle->prev)
         || !TEST_ptr_null(late->prev))
@@ -9373,7 +9415,7 @@ static int test_session_timeout(int test)
         goto end;
 
     /* This should remove all of them */
-    SSL_CTX_flush_sessions(ctx, 0);
+    SSL_CTX_flush_sessions_ex(ctx, 0);
     if (!TEST_ptr_null(early->prev)
         || !TEST_ptr_null(middle->prev)
         || !TEST_ptr_null(late->prev))
@@ -9384,9 +9426,9 @@ static int test_session_timeout(int test)
 
     /* make sure |now| is NOT  equal to the current time */
     now -= 10;
-    if (!TEST_int_ne(SSL_SESSION_set_time(early, now), 0)
+    if (!TEST_time_t_ne(SSL_SESSION_set_time_ex(early, now), 0)
         || !TEST_int_eq(SSL_CTX_add_session(ctx, early), 1)
-        || !TEST_long_ne(SSL_SESSION_get_time(early), now))
+        || !TEST_time_t_ne(SSL_SESSION_get_time_ex(early), now))
         goto end;
 
     testresult = 1;
@@ -11067,6 +11109,8 @@ static size_t record_pad_cb(SSL *s, int type, size_t len, void *arg)
  * Test 1: Record padding callback on the SSL
  * Test 2: Record block padding on the SSL_CTX
  * Test 3: Record block padding on the SSL
+ * Test 4: Extended record block padding on the SSL_CTX
+ * Test 5: Extended record block padding on the SSL
  */
 static int test_tls13_record_padding(int idx)
 {
@@ -11096,6 +11140,10 @@ static int test_tls13_record_padding(int idx)
             goto end;
         if (!TEST_true(SSL_CTX_set_block_padding(cctx, 512)))
             goto end;
+    } else if (idx == 4) {
+        /* pad only handshake/alert messages */
+        if (!TEST_true(SSL_CTX_set_block_padding_ex(cctx, 0, 512)))
+            goto end;
     }
 
     if (!TEST_true(create_ssl_objects(sctx, cctx, &serverssl,
@@ -11113,6 +11161,16 @@ static int test_tls13_record_padding(int idx)
                                               SSL3_RT_MAX_PLAIN_LENGTH + 1)))
             goto end;
         if (!TEST_true(SSL_set_block_padding(clientssl, 512)))
+            goto end;
+    } else if (idx == 5) {
+        /* Exceeding the max plain length should fail */
+        if (!TEST_false(SSL_set_block_padding_ex(clientssl, 0,
+                                                 SSL3_RT_MAX_PLAIN_LENGTH + 1)))
+            goto end;
+        /* pad server and client handshake only */
+        if (!TEST_true(SSL_set_block_padding_ex(clientssl, 0, 512)))
+            goto end;
+        if (!TEST_true(SSL_set_block_padding_ex(serverssl, 0, 512)))
             goto end;
     }
 
@@ -12499,7 +12557,7 @@ int setup_tests(void)
     ADD_ALL_TESTS(test_early_data_skip_abort, OSSL_NELEM(ciphersuites) * 3);
     ADD_ALL_TESTS(test_early_data_not_sent, 3);
     ADD_ALL_TESTS(test_early_data_psk, 8);
-    ADD_ALL_TESTS(test_early_data_psk_with_all_ciphers, 5);
+    ADD_ALL_TESTS(test_early_data_psk_with_all_ciphers, 7);
     ADD_ALL_TESTS(test_early_data_not_expected, 3);
 # ifndef OPENSSL_NO_TLS1_2
     ADD_ALL_TESTS(test_early_data_tls1_2, 3);
@@ -12600,7 +12658,7 @@ int setup_tests(void)
     ADD_TEST(test_load_dhfile);
 #ifndef OSSL_NO_USABLE_TLS1_3
     ADD_TEST(test_read_ahead_key_change);
-    ADD_ALL_TESTS(test_tls13_record_padding, 4);
+    ADD_ALL_TESTS(test_tls13_record_padding, 6);
 #endif
 #if !defined(OPENSSL_NO_TLS1_2) && !defined(OSSL_NO_USABLE_TLS1_3)
     ADD_ALL_TESTS(test_serverinfo_custom, 4);

@@ -1,5 +1,6 @@
 abort
 accept
+aligned_alloc
 bcmp
 bind
 calloc
@@ -75,9 +76,11 @@ mlock
 mmap
 mprotect
 munmap
+nanosleep
 opendir
 openlog
 poll
+posix_memalign
 pthread_attr_destroy
 pthread_attr_init
 pthread_attr_setdetachstate

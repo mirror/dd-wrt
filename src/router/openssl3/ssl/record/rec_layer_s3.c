@@ -19,6 +19,7 @@
 #include <openssl/core_names.h>
 #include "record_local.h"
 #include "internal/packet.h"
+#include "internal/comp.h"
 
 void RECORD_LAYER_init(RECORD_LAYER *rl, SSL_CONNECTION *s)
 {
@@ -1287,6 +1288,8 @@ int ssl_set_new_record_layer(SSL_CONNECTION *s, int version,
     } else {
         *opts++ = OSSL_PARAM_construct_size_t(OSSL_LIBSSL_RECORD_LAYER_PARAM_BLOCK_PADDING,
                                               &s->rlayer.block_padding);
+        *opts++ = OSSL_PARAM_construct_size_t(OSSL_LIBSSL_RECORD_LAYER_PARAM_HS_PADDING,
+                                              &s->rlayer.hs_padding);
     }
     *opts = OSSL_PARAM_construct_end();
 

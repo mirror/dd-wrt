@@ -6,21 +6,15 @@
 # You can obtain a copy in the file LICENSE in the source distribution
 # or at https://www.openssl.org/source/license.html
 #
-# This script is a wrapper around check-format.pl.  It accepts a commit sha
-# value as input, and uses it to identify the files and ranges that were
-# changed in that commit, filtering check-format.pl output only to lines that
-# fall into the commits change ranges.
+# This script is a wrapper around check-format.pl.  It accepts the same commit
+# revision range as 'git diff' as arguments, and uses it to identify the files
+# and ranges that were changed in that range, filtering check-format.pl output
+# only to lines that fall into the change ranges of the changed files.
 #
 
-
-# List of Regexes to use when running check-format.pl.
-# Style checks don't apply to any of these
-EXCLUDED_FILE_REGEX=("\.pod" \
-                     "\.pl"  \
-                     "\.pm"  \
-                     "\.t"   \
-                     "\.yml" \
-                     "\.sh")
+# Allowlist of files to scan
+# Currently this is any .c or .h file (with an optional .in suffix
+FILE_ALLOWLIST=("\.[ch]\(.in\)\?")
 
 # Exit code for the script
 EXIT_CODE=0
@@ -45,10 +39,11 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Get the canonical sha256 sum for the commit we are checking
+# Get the canonical sha256 sum for the commits we are checking
 # This lets us pass in symbolic ref names like master/etc and 
 # resolve them to sha256 sums easily
-COMMIT=$(git rev-parse $1)
+COMMIT_RANGE="$@"
+COMMIT_LAST=$(git rev-parse $COMMIT_RANGE)
 
 # Fail gracefully if git rev-parse doesn't produce a valid
 # commit
@@ -58,11 +53,24 @@ then
     exit 1
 fi
 
-# Create a iteratable list of files to check for a
-# given commit. It produces output of the format
-# <commit id> <file name> <change start line>, <change line count>
+# If the commit range was just one single revision, git rev-parse
+# will output jut commit id of that one alone.  In that case, we
+# must manipulate a little to get a desirable result, 'cause git
+# diff has a slightly different interpretation of a single commit
+# id, and takes that to mean all commits up to HEAD.
+if [ $(echo "$COMMIT_LAST" | wc -l) -gt 1 ]; then
+    COMMIT_LAST=$(echo "$COMMIT_LAST" | head -1)
+else
+    # $COMMIT_RANGE is just one commit, make it an actual range
+    COMMIT_RANGE=$COMMIT_RANGE^..$COMMIT_RANGE
+fi
+
+# Create an iterable list of files to check formatting on,
+# including the line ranges that are changed by the commits
+# It produces output of this format:
+# <file name> <change start line>, <change line count>
 touch $TEMPDIR/ranges.txt
-git show $COMMIT | awk -v mycmt=$COMMIT '
+git diff -U0 $COMMIT_RANGE | awk '
     BEGIN {myfile=""} 
     /+{3}/ {
         gsub(/b\//,"",$2);
@@ -70,22 +78,28 @@ git show $COMMIT | awk -v mycmt=$COMMIT '
     }
     /@@/ {
         gsub(/+/,"",$3);
-        printf mycmt " " myfile " " $3 "\n"
+        printf myfile " " $3 "\n"
     }' >> $TEMPDIR/ranges.txt || true
 
-# filter out anything that matches on a filter regex
-for i in ${EXCLUDED_FILE_REGEX[@]}
+# filter in anything that matches on a filter regex
+for i in ${FILE_ALLOWLIST[@]}
 do
     touch $TEMPDIR/ranges.filter
-    grep -v "$i" $TEMPDIR/ranges.txt >> $TEMPDIR/ranges.filter || true
-    REMAINING_FILES=$(wc -l $TEMPDIR/ranges.filter | awk '{print $1}')
-    if [ $REMAINING_FILES -eq 0 ]
-    then
-        echo "This commit has no files that require checking"
-        exit 0
-    fi
-    mv $TEMPDIR/ranges.filter $TEMPDIR/ranges.txt
+    # Note the space after the $i below.  This is done because we want
+    # to match on file suffixes, but the input file is of the form
+    # <commit> <file> <range start>, <range length>
+    # So we can't just match on end of line.  The additional space
+    # here lets us match on suffixes followed by the expected space
+    # in the input file
+    grep "$i " $TEMPDIR/ranges.txt >> $TEMPDIR/ranges.filter || true
 done
+cp $TEMPDIR/ranges.filter $TEMPDIR/ranges.txt
+REMAINING_FILES=$(wc -l <$TEMPDIR/ranges.filter)
+if [ $REMAINING_FILES -eq 0 ]
+then
+    echo "This commit has no files that require checking"
+    exit 0
+fi
 
 # check out the files from the commit level.
 # For each file name in ranges, we show that file at the commit
@@ -93,20 +107,15 @@ done
 # to $TEMPDIR/check-format.  This give us the full file to run
 # check-format.pl on with line numbers matching the ranges in the
 # $TEMPDIR/ranges.txt file
-for j in $(grep $COMMIT $TEMPDIR/ranges.txt | awk '{print $2}')
+for j in $(awk '{print $1}' $TEMPDIR/ranges.txt | sort -u)
 do
     FDIR=$(dirname $j)
     mkdir -p $TEMPDIR/check-format/$FDIR
-    git show $COMMIT:$j > $TEMPDIR/check-format/$j
+    git show $COMMIT_LAST:$j > $TEMPDIR/check-format/$j
 done
 
-# Now for each file in $TEMPDIR/check-format run check-format.pl
-# Note that we use the %P formatter in the find utilty.  This strips
-# off the $TEMPDIR/check-format path prefix, leaving $j with the
-# path to the file relative to the root of the source dir, so that 
-# output from check-format.pl looks correct, relative to the root
-# of the git tree.
-for j in $(find $TEMPDIR/check-format -type f -printf "%P\n")
+# Now for each file in $TEMPDIR/ranges.txt, run check-format.pl
+for j in $(awk '{print $1}' $TEMPDIR/ranges.txt | sort -u)
 do
     range_start=()
     range_end=()
@@ -116,11 +125,13 @@ do
     # contains the corresponding end line (note, since diff output gives us
     # a line count for a change, the range_end[k] entry is actually
     # range_start[k]+line count
-    for k in $(grep $COMMIT $TEMPDIR/ranges.txt | grep $j | awk '{print $3}')
+    for k in $(grep ^$j $TEMPDIR/ranges.txt | awk '{print $2}')
     do
         RANGE=$k
         RSTART=$(echo $RANGE | awk -F',' '{print $1}')
         RLEN=$(echo $RANGE | awk -F',' '{print $2}')
+        # when the hunk is just one line, its length is implied
+        if [ -z "$RLEN" ]; then RLEN=1; fi
         let REND=$RSTART+$RLEN
         range_start+=($RSTART)
         range_end+=($REND)
