@@ -1553,6 +1553,7 @@ CONFIG_PCIE_BUS_DEFAULT=y
 # DesignWare-based PCIe controllers
 #
 CONFIG_PCIE_DW=y
+CONFIG_PCIE_DW_DEBUGFS=y
 CONFIG_PCIE_DW_HOST=y
 # CONFIG_PCIE_AL is not set
 # CONFIG_PCI_MESON is not set
@@ -1560,6 +1561,7 @@ CONFIG_PCIE_DW_HOST=y
 # CONFIG_PCIE_KIRIN is not set
 # CONFIG_PCIE_DW_PLAT_HOST is not set
 CONFIG_PCIE_QCOM=y
+CONFIG_PCIE_ENABLE_ASYNC_PROBE=y
 # end of DesignWare-based PCIe controllers
 
 #
