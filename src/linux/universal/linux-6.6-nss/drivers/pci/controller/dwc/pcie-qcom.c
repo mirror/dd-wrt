@@ -30,10 +30,22 @@
 #include <linux/reset.h>
 #include <linux/slab.h>
 #include <linux/types.h>
-#include <linux/nvmem-consumer.h>
 
 #include "../../pci.h"
 #include "pcie-designware.h"
+
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT	0x178
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2	0x1A8
+#define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK	0x1F
+#define BUS_MASTER_EN				0x7
+#define PCIE20_COMMAND_STATUS			0x04
+#define PCIE20_CAP				0x70
+#define PCIE20_CAP_LINK_CAPABILITIES		(PCIE20_CAP + 0xC)
+#define PCIE20_CAP_ACTIVE_STATE_LINK_PM_SUPPORT	(BIT(10) | BIT(11))
+#define PCIE20_CAP_LINK_1			(PCIE20_CAP + 0x14)
+#define PCIE_CAP_LINK1_VAL			0x2FD7F
+#define PCIE_CAP_CPL_TIMEOUT_DISABLE		0x10
+#define PCIE20_DEVICE_CONTROL2_STATUS2		0x98
 
 /* PARF registers */
 #define PARF_SYS_CTRL				0x00
@@ -47,7 +59,6 @@
 #define PARF_MHI_CLOCK_RESET_CTRL		0x174
 #define PARF_AXI_MSTR_WR_ADDR_HALT		0x178
 #define PARF_AXI_MSTR_WR_ADDR_HALT_V2		0x1a8
-#define PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK	0x3F
 #define PARF_Q2A_FLUSH				0x1ac
 #define PARF_LTSSM				0x1b0
 #define PARF_SID_OFFSET				0x234
@@ -55,6 +66,7 @@
 #define PARF_SLV_ADDR_SPACE_SIZE		0x358
 #define PARF_DEVICE_TYPE			0x1000
 #define PARF_BDF_TO_SID_TABLE_N			0x2000
+#define PARF_BDF_TO_SID_CFG			0x2c00
 
 /* ELBI registers */
 #define ELBI_SYS_CTRL				0x04
@@ -107,57 +119,11 @@
 
 /* PARF_SLV_ADDR_SPACE_SIZE register value */
 #define SLV_ADDR_SPACE_SZ			0x10000000
-#define SLV_ADDR_SPACE_SZ_1_27_0		0x08000000
-
-/* DBI registers */
-#define PCIE20_PORT_LINK_CTRL_OFF		0x710
-#define PCIE20_PORT_LINK_CTRL_OFF_MASK		0x3F0000
-#define LINK_CAPABLE_OFFSET(x)			((x) << 16)
-#define PCIE20_LANE_SKEW_OFF			0x714
-#define PCIE20_LANE_SKEW_OFF_MASK		0xFF000000
-#define PCIE20_MULTI_LANE_CONTROL_OFF		0x8C0
-#define PCIE20_LINK_CONTROL_LINK_STATUS_REG	0x80
-#define PCIE20_PARF_LTSSM_MASK			0x3F
-
-/* RATEADAPT_VAL = 256 / ((NOC frequency / PCIe AXI frequency) - 1) */
-/* RATEADAPT_VAL = 256 / ((342M / 240M) - 1) */
-#define AGGR_NOC_PCIE_1LANE_RATEADAPT_VAL	0x200
-
-#define SYSTEM_NOC_PCIE_RATEADAPT_BYPASS	0x1
 
 /* PARF_MHI_CLOCK_RESET_CTRL register fields */
 #define AHB_CLK_EN				BIT(0)
 #define MSTR_AXI_CLK_EN				BIT(1)
 #define BYPASS					BIT(4)
-
-#define PARF_INT_ALL_STATUS			0x224
-#define PARF_INT_ALL_CLEAR			0x228
-#define PARF_INT_ALL_MASK			0x22c
-
-/* PARF_INT_ALL_{STATUS/CLEAR/MASK} register fields */
-#define PARF_INT_ALL_LINK_DOWN                  BIT(1)
-#define PARF_INT_ALL_LINK_UP                    BIT(13)
-
-/* Virtual Channel registers and fields */
-#define PCIE_TYPE0_VC_CAPABILITIES_REG_1 	0x14c
-#define PCIE_TYPE0_RESOURCE_CON_REG_VC0 	0x15c
-#define PCIE_TYPE0_RESOURCE_CON_REG_VC1 	0x168
-#define PCIE_TYPE0_RESOURCE_STATUS_REG_VC1 	0x16c
-
-#define EP_REG_BASE 				0x1E1DFFF
-#define WINDOW_RANGE_MASK 			0x7FFFE
-
-#define VC_EXT_VC_CNT_MASK 			GENMASK(2, 0)
-#define VC_TC_MAP_VC_BIT1_MASK 			GENMASK(7, 1)
-#define VC_ID_VC1_MASK 				GENMASK(26, 24)
-#define VC_ENABLE_VC1_MASK 			BIT(31)
-#define VC_NEGO_PENDING_VC1_MASK 		BIT(17)
-
-#define VC_EXT_VC_CNT_OFFSET(x) 		((x) << 0)
-#define VC_TC_MAP_VC_BIT1_OFFSET(x) 		((x) << 1)
-#define VC_ID_VC1_OFFSET(x) 			((x) << 24)
-#define VC_ENABLE_VC1_OFFSET(x) 		((x) << 31)
-#define VC_NEGO_PENDING_VC1_OFFSET(x) 		((x) << 17)
 
 /* PARF_AXI_MSTR_WR_ADDR_HALT register fields */
 #define EN					BIT(31)
@@ -168,6 +134,9 @@
 /* PARF_DEVICE_TYPE register fields */
 #define DEVICE_TYPE_RC				0x4
 
+/* PARF_BDF_TO_SID_CFG fields */
+#define BDF_TO_SID_BYPASS			BIT(0)
+
 /* ELBI_SYS_CTRL register fields */
 #define ELBI_SYS_CTRL_LT_ENABLE			BIT(0)
 
@@ -177,6 +146,31 @@
 
 /* AXI_MSTR_RESP_COMP_CTRL1 register fields */
 #define CFG_BRIDGE_SB_INIT			BIT(0)
+
+
+#define PCIE_CAP_CURR_DEEMPHASIS		BIT(16)
+#define SPEED_GEN1				0x1
+#define SPEED_GEN2				0x2
+#define SPEED_GEN3				0x3
+
+#define PCIE20_LNK_CONTROL2_LINK_STATUS2	0xA0
+
+#define PCIE_ATU_CR1_OUTBOUND_6_GEN3		0xC00
+#define PCIE_ATU_CR2_OUTBOUND_6_GEN3		0xC04
+#define PCIE_ATU_LOWER_BASE_OUTBOUND_6_GEN3	0xC08
+#define PCIE_ATU_UPPER_BASE_OUTBOUND_6_GEN3	0xC0C
+#define PCIE_ATU_LIMIT_OUTBOUND_6_GEN3		0xC10
+#define PCIE_ATU_LOWER_TARGET_OUTBOUND_6_GEN3	0xC14
+#define PCIE_ATU_UPPER_TARGET_OUTBOUND_6_GEN3	0xC18
+
+#define PCIE_ATU_CR1_OUTBOUND_7_GEN3		0xE00
+#define PCIE_ATU_CR2_OUTBOUND_7_GEN3		0xE04
+#define PCIE_ATU_LOWER_BASE_OUTBOUND_7_GEN3	0xE08
+#define PCIE_ATU_UPPER_BASE_OUTBOUND_7_GEN3	0xE0C
+#define PCIE_ATU_LIMIT_OUTBOUND_7_GEN3		0xE10
+#define PCIE_ATU_LOWER_TARGET_OUTBOUND_7_GEN3	0xE14
+#define PCIE_ATU_UPPER_TARGET_OUTBOUND_7_GEN3 	0xE18
+
 
 /* PCI_EXP_SLTCAP register fields */
 #define PCIE_CAP_SLOT_POWER_LIMIT_VAL		FIELD_PREP(PCI_EXP_SLTCAP_SPLV, 250)
@@ -194,17 +188,6 @@
 #define PERST_DELAY_US				1000
 
 #define QCOM_PCIE_CRC8_POLYNOMIAL		(BIT(2) | BIT(1) | BIT(0))
-
-#define PCIE_CAP_LINK_SPEED_MASK		GENMASK(19, 16)
-#define PCIE_CAP_NEGO_LINK_WIDTH_MASK		GENMASK(25, 20)
-#define PCIE_CAP_RETRAIN_LINK_MASK		GENMASK(5, 5)
-#define PCIE_CAP_LINK_SPEED_SHIFT(x)		((x) >> 16)
-#define PCIE_CAP_NEGO_LINK_WIDTH_SHIFT(x)	((x) >> 20)
-#define PCIE_CAP_RETRAIN_LINK_OFFSET(x)		((x) << 5)
-#define PCIE_CAP_TARGET_LINK_SPD_MASK		GENMASK(3, 0)
-#define QCOM_IPQ9574_DEVICE_ID			0x1108
-#define QCOM_IPQ5332_DEVICE_ID			0x1005
-#define PCIE20_LNK_CONTROL2_LINK_STATUS2	0xa0
 
 #define QCOM_PCIE_1_0_0_MAX_CLOCKS		4
 struct qcom_pcie_resources_1_0_0 {
@@ -255,6 +238,7 @@ struct qcom_pcie_resources_2_7_0 {
 	struct reset_control *rst;
 };
 
+#define QCOM_PCIE_2_9_0_MAX_CLOCKS		5
 struct qcom_pcie_resources_2_9_0 {
 	struct clk_bulk_data *clks;
 	struct reset_control *rst;
@@ -291,9 +275,6 @@ struct qcom_pcie {
 	void __iomem *parf;			/* DT parf */
 	void __iomem *elbi;			/* DT elbi */
 	void __iomem *mhi;
-	resource_size_t parf_size;
-	void __iomem *aggr_noc;
-	void __iomem *system_noc;
 	union qcom_pcie_resources res;
 	struct phy *phy;
 	struct gpio_desc *reset;
@@ -301,12 +282,6 @@ struct qcom_pcie {
 	const struct qcom_pcie_cfg *cfg;
 	struct dentry *debugfs;
 	bool suspended;
-	uint32_t axi_wr_addr_halt;
-	uint32_t aggr_noc_rate_adap_val;
-	uint32_t domain;
-	uint32_t num_lanes;
-	int global_irq;
-	bool enable_vc;
 };
 
 #define to_qcom_pcie(x)		dev_get_drvdata((x)->dev)
@@ -334,26 +309,6 @@ static int qcom_pcie_start_link(struct dw_pcie *pci)
 		pcie->cfg->ops->ltssm_enable(pcie);
 
 	return 0;
-}
-
-static irqreturn_t qcom_pcie_global_irq_thread_fn(int irq, void *data)
-{
-	struct qcom_pcie *pcie = data;
-	u32 status, mask;
-
-	status = readl_relaxed(pcie->parf + PARF_INT_ALL_STATUS);
-	mask = readl_relaxed(pcie->parf + PARF_INT_ALL_MASK);
-
-	writel_relaxed(status, pcie->parf + PARF_INT_ALL_CLEAR);
-
-	status &= mask;
-
-	if (status & PARF_INT_ALL_LINK_DOWN)
-		dev_info(pcie->pci->dev, "Received Link down event\n");
-	else if (status & PARF_INT_ALL_LINK_UP)
-		dev_info(pcie->pci->dev, "Received Link up event\n");
-
-	return IRQ_HANDLED;
 }
 
 static void qcom_pcie_clear_hpc(struct dw_pcie *pci)
@@ -1073,10 +1028,16 @@ static int qcom_pcie_config_sid_1_9_0(struct qcom_pcie *pcie)
 	u8 qcom_pcie_crc8_table[CRC8_TABLE_SIZE];
 	int i, nr_map, size = 0;
 	u32 smmu_sid_base;
+	u32 val;
 
 	of_get_property(dev->of_node, "iommu-map", &size);
 	if (!size)
 		return 0;
+
+	/* Enable BDF to SID translation by disabling bypass mode (default) */
+	val = readl(pcie->parf + PARF_BDF_TO_SID_CFG);
+	val &= ~BDF_TO_SID_BYPASS;
+	writel(val, pcie->parf + PARF_BDF_TO_SID_CFG);
 
 	map = kzalloc(size, GFP_KERNEL);
 	if (!map)
@@ -1182,17 +1143,18 @@ static int qcom_pcie_init_2_9_0(struct qcom_pcie *pcie)
 	return clk_bulk_prepare_enable(res->num_clks, res->clks);
 }
 
-static int qcom_pcie_post_init(struct qcom_pcie *pcie)
+static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 {
 	struct dw_pcie *pci = pcie->pci;
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
 	u32 val;
 	int i;
+	u32 max_speed = SPEED_GEN2;
+	if (of_device_is_compatible(pci->dev->of_node, "qcom,pcie-ipq6018"))
+		max_speed = SPEED_GEN3;
 
-	val = readl(pci->dbi_base + offset + PCI_EXP_DEVCTL);
-	val &= ~PCI_EXP_DEVCTL_PAYLOAD;
-	val |= PCI_EXP_DEVCTL_PAYLOAD_256B;
-	writel(val, pci->dbi_base + offset + PCI_EXP_DEVCTL);
+	writel(SLV_ADDR_SPACE_SZ,
+		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
 
 	val = readl(pcie->parf + PARF_PHY_CTRL);
 	val &= ~PHY_TEST_PWR_DOWN;
@@ -1214,58 +1176,49 @@ static int qcom_pcie_post_init(struct qcom_pcie *pcie)
 
 	writel(0, pcie->parf + PARF_Q2A_FLUSH);
 
-	if (pcie->axi_wr_addr_halt) {
-		val = readl(pcie->parf + PARF_AXI_MSTR_WR_ADDR_HALT_V2);
-		val &= ~PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK;
-		writel(val | pcie->axi_wr_addr_halt,
-			pcie->parf + PARF_AXI_MSTR_WR_ADDR_HALT_V2);
-	}
+	val = readl(pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
+	val &= ~PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK;
+	writel(val | 0x1e,
+		pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
 
-	if (!IS_ERR_OR_NULL(pcie->aggr_noc)) {
-		if (pcie->aggr_noc_rate_adap_val)
-			writel(pcie->aggr_noc_rate_adap_val, pcie->aggr_noc);
-		else
-			writel(AGGR_NOC_PCIE_1LANE_RATEADAPT_VAL, pcie->aggr_noc);
-	}
-
-	if (!IS_ERR_OR_NULL(pcie->system_noc)) {
-		if (pcie->num_lanes == 2)
-			writel(SYSTEM_NOC_PCIE_RATEADAPT_BYPASS, pcie->system_noc);
-	}
+	writel(BUS_MASTER_EN, pci->dbi_base + PCIE20_COMMAND_STATUS);
 
 	dw_pcie_dbi_ro_wr_en(pci);
 
-	writel(PCIE_CAP_SLOT_VAL, pci->dbi_base + offset + PCI_EXP_SLTCAP);
+	writel(PCIE_CAP_LINK1_VAL, pci->dbi_base + PCIE20_CAP_LINK_1);
 
-	val = readl(pci->dbi_base + offset + PCI_EXP_LNKCAP);
-	val &= ~PCI_EXP_LNKCAP_ASPMS;
-	writel(val, pci->dbi_base + offset + PCI_EXP_LNKCAP);
+	/* Configure PCIe link capabilities for ASPM */
+	val = readl(pci->dbi_base + PCIE20_CAP_LINK_CAPABILITIES);
+	val &= ~PCIE20_CAP_ACTIVE_STATE_LINK_PM_SUPPORT;
+	writel(val, pci->dbi_base + PCIE20_CAP_LINK_CAPABILITIES);
 
-	writel(PCI_EXP_DEVCTL2_COMP_TMOUT_DIS, pci->dbi_base + offset +
-			PCI_EXP_DEVCTL2);
+	writel(PCIE_CAP_CPL_TIMEOUT_DISABLE, pci->dbi_base +
+		PCIE20_DEVICE_CONTROL2_STATUS2);
 
-	dw_pcie_dbi_ro_wr_dis(pci);
+//	dw_pcie_dbi_ro_wr_dis(pci);
+
+	writel(PCIE_CAP_CURR_DEEMPHASIS | max_speed,
+		pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
 
 	for (i = 0; i < 256; i++)
 		writel(0, pcie->parf + PARF_BDF_TO_SID_TABLE_N + (4 * i));
 
+	writel(0x4, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_6_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_6_GEN3);
+	writel(0x00107FFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x5, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_7_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_7_GEN3);
+	writel(0x200000, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_7_GEN3);
+	writel(0x7FFFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_7_GEN3);
+
 	return 0;
-}
-
-static int qcom_pcie_post_init_1_27_0(struct qcom_pcie *pcie)
-{
-	writel(SLV_ADDR_SPACE_SZ_1_27_0,
-	       pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
-
-	return qcom_pcie_post_init(pcie);
-}
-
-static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
-{
-	writel(SLV_ADDR_SPACE_SZ,
-	       pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
-
-	return qcom_pcie_post_init(pcie);
 }
 
 static int qcom_pcie_link_up(struct dw_pcie *pci)
@@ -1322,99 +1275,6 @@ err_deinit:
 	return ret;
 }
 
-int pcie_set_link_speed(struct pci_dev *dev, u16 target_link_speed)
-{
-	struct dw_pcie_rp *pp;
-	struct dw_pcie *pci;
-	u32 val;
-
-	if (dev->device != QCOM_IPQ9574_DEVICE_ID && dev->device != QCOM_IPQ5332_DEVICE_ID)
-		return -EINVAL;
-
-	if (target_link_speed < 1 || target_link_speed > 3)
-		return -EINVAL;
-
-	pp = dev->bus->sysdata;
-	pci = to_dw_pcie_from_pp(pp);
-
-	val = readl(pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
-	val &= ~PCIE_CAP_TARGET_LINK_SPD_MASK;
-	val |= target_link_speed;
-	writel(val, pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
-
-	val = readl(pci->dbi_base + PCIE20_LINK_CONTROL_LINK_STATUS_REG);
-	val &= ~PCIE_CAP_RETRAIN_LINK_MASK;
-	val |= PCIE_CAP_RETRAIN_LINK_OFFSET(0x1);
-	writel(val, pci->dbi_base + PCIE20_LINK_CONTROL_LINK_STATUS_REG);
-
-	msleep(1);
-
-	val = readl(pci->dbi_base + PCIE20_LINK_CONTROL_LINK_STATUS_REG);
-	val &= PCIE_CAP_LINK_SPEED_MASK;
-	if (PCIE_CAP_LINK_SPEED_SHIFT(val) != target_link_speed) {
-		dev_err(pci->dev, "Speed change failed. Current speed 0x%x\n",
-			PCIE_CAP_LINK_SPEED_SHIFT(val));
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(pcie_set_link_speed);
-
-int pcie_set_link_width(struct pci_dev *dev, u16 target_link_width)
-{
-	struct dw_pcie_rp *pp;
-	struct dw_pcie *pci;
-	struct qcom_pcie *pcie;
-	u32 val;
-
-	if (dev->device != QCOM_IPQ9574_DEVICE_ID && dev->device != QCOM_IPQ5332_DEVICE_ID)
-		return -EINVAL;
-
-	if (target_link_width < 1 || target_link_width > 2)
-		return -EINVAL;
-
-	pp = dev->bus->sysdata;
-	pci = to_dw_pcie_from_pp(pp);
-	pcie = to_qcom_pcie(pci);
-
-	dw_pcie_read(pci->dbi_base + PCIE20_PORT_LINK_CTRL_OFF, 4, &val);
-	val &= ~PCIE20_PORT_LINK_CTRL_OFF_MASK;
-	val |= LINK_CAPABLE_OFFSET(target_link_width);
-	dw_pcie_write(pci->dbi_base + PCIE20_PORT_LINK_CTRL_OFF, 4, val);
-
-	dw_pcie_read(pci->dbi_base + PCIE20_LANE_SKEW_OFF, 4, &val);
-	val = (val & PCIE20_LANE_SKEW_OFF_MASK) | 0x20;
-	dw_pcie_write(pci->dbi_base + PCIE20_LANE_SKEW_OFF, 4, val);
-
-	val = 0xc0 | target_link_width;
-	dw_pcie_write(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, 4, val);
-
-	msleep(50);
-
-	dw_pcie_read(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, 4, &val);
-	if((val & 0x40) != 0) {
-		dev_err(pci->dev, "LANE_CONTROL_OFF failed: val 0x%x\n", val);
-		return -EAGAIN;
-	}
-
-	dw_pcie_read(pcie->parf + PARF_LTSSM, 4, &val);
-	if ((val & PCIE20_PARF_LTSSM_MASK) != 0x11) {
-		dev_err(pci->dev, "After lane switch, link is not in L0: val 0x%x\n", val);
-		return -EAGAIN;
-	}
-
-	val = readl(pci->dbi_base + PCIE20_LINK_CONTROL_LINK_STATUS_REG);
-	val &= PCIE_CAP_NEGO_LINK_WIDTH_MASK;
-	if (PCIE_CAP_NEGO_LINK_WIDTH_SHIFT(val) != target_link_width) {
-		dev_err(pci->dev, "Lane switch failed: 0x%x\n", val);
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(pcie_set_link_width);
-
 static void qcom_pcie_host_deinit(struct dw_pcie_rp *pp)
 {
 	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
@@ -1424,33 +1284,6 @@ static void qcom_pcie_host_deinit(struct dw_pcie_rp *pp)
 	phy_power_off(pcie->phy);
 	pcie->cfg->ops->deinit(pcie);
 }
-
-int pcie_parf_read(struct pci_dev *dev, u32 offset, u32 *val)
-{
-	struct dw_pcie_rp *pp;
-	struct dw_pcie *pci;
-	struct qcom_pcie *pcie;
-
-	if(!dev)
-		goto err;
-
-	pp = dev->bus->sysdata;
-	pci = to_dw_pcie_from_pp(pp);
-	pcie = to_qcom_pcie(pci);
-
-	if (offset > pcie->parf_size ||
-			!IS_ALIGNED((uintptr_t)pcie->parf + offset, 4))
-		goto err;
-
-	*val = readl(pcie->parf + offset);
-
-	return 0;
-
-err:
-	*val = 0;
-	return -EINVAL;
-}
-EXPORT_SYMBOL(pcie_parf_read);
 
 static const struct dw_pcie_host_ops qcom_pcie_dw_ops = {
 	.host_init	= qcom_pcie_host_init,
@@ -1530,15 +1363,6 @@ static const struct qcom_pcie_ops ops_2_9_0 = {
 	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
 };
 
-/* Qcom IP rev.: 1.27.0  Synopsys IP rev.: 5.80a */
-static const struct qcom_pcie_ops ops_1_27_0 = {
-	.get_resources = qcom_pcie_get_resources_2_9_0,
-	.init = qcom_pcie_init_2_9_0,
-	.post_init = qcom_pcie_post_init_1_27_0,
-	.deinit = qcom_pcie_deinit_2_9_0,
-	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
-};
-
 static const struct qcom_pcie_cfg cfg_1_0_0 = {
 	.ops = &ops_1_0_0,
 };
@@ -1569,10 +1393,6 @@ static const struct qcom_pcie_cfg cfg_2_7_0 = {
 
 static const struct qcom_pcie_cfg cfg_2_9_0 = {
 	.ops = &ops_2_9_0,
-};
-
-static const struct qcom_pcie_cfg cfg_1_27_0 = {
-	.ops = &ops_1_27_0,
 };
 
 static const struct dw_pcie_ops dw_pcie_ops = {
@@ -1694,27 +1514,6 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	struct resource *res;
 	struct dw_pcie *pci;
 	int ret;
-	uint32_t num_lanes = 0;
-	struct nvmem_cell *pcie_nvmem;
-	u8 *disable_status;
-	size_t len;
-
-	/* If nvmem-cells present on PCIe node in DTSI, then check the QFPROM
-	 * fuses for PCIe is disabled */
-	pcie_nvmem = devm_nvmem_cell_get(dev, NULL);
-	if (IS_ERR(pcie_nvmem)) {
-		if (PTR_ERR(pcie_nvmem) == -EPROBE_DEFER)
-			return -EPROBE_DEFER;
-	} else {
-		disable_status = nvmem_cell_read(pcie_nvmem, &len);
-		devm_nvmem_cell_put(dev, pcie_nvmem);
-		if ( !IS_ERR(disable_status) && ((unsigned int)(*disable_status) == 1) ) {
-			dev_info(dev,"Disabled in qfprom efuse\n");
-			kfree(disable_status);
-			return -ENODEV;
-		}
-		kfree(disable_status);
-	}
 
 	pcie_cfg = of_device_get_match_data(dev);
 	if (!pcie_cfg || !pcie_cfg->ops) {
@@ -1755,49 +1554,11 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 		goto err_pm_runtime_put;
 	}
 
-	/* get the parf size which is needed for pcie_parf_read() */
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "parf");
-	if (res)
-		pcie->parf_size = resource_size(res);
-
 	pcie->elbi = devm_platform_ioremap_resource_byname(pdev, "elbi");
 	if (IS_ERR(pcie->elbi)) {
 		ret = PTR_ERR(pcie->elbi);
 		goto err_pm_runtime_put;
 	}
-
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "aggr_noc");
-	if (res != NULL) {
-		pcie->aggr_noc = devm_ioremap_resource(dev, res);
-		if (IS_ERR(pcie->aggr_noc)) {
-			ret = PTR_ERR(pcie->aggr_noc);
-			goto err_pm_runtime_put;
-		}
-	}
-
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "system_noc");
-	if (res != NULL) {
-		pcie->system_noc = devm_ioremap_resource(dev, res);
-		if (IS_ERR(pcie->system_noc)) {
-			ret = PTR_ERR(pcie->system_noc);
-			goto err_pm_runtime_put;
-		}
-	}
-
-	of_property_read_u32(pdev->dev.of_node, "aggr-noc-val",
-				&pcie->aggr_noc_rate_adap_val);
-
-	of_property_read_u32(pdev->dev.of_node, "axi-halt-val",
-				&pcie->axi_wr_addr_halt);
-
-	of_property_read_u32(pdev->dev.of_node, "linux,pci-domain",&pcie->domain);
-
-	pcie->enable_vc = of_property_read_bool(pdev->dev.of_node,
-					"enable-virtual-channel");
-
-	of_property_read_u32(pdev->dev.of_node, "num-lanes",
-				&num_lanes);
-	pcie->num_lanes = num_lanes;
 
 	/* MHI region is optional */
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mhi");
@@ -1841,20 +1602,6 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 
 	if (pcie->mhi)
 		qcom_pcie_init_debugfs(pcie);
-
-	pcie->global_irq = platform_get_irq_byname(pdev, "global_irq");
-	if (pcie->global_irq >= 0) {
-		ret = devm_request_threaded_irq(&pdev->dev, pcie->global_irq,
-					NULL,
-					qcom_pcie_global_irq_thread_fn,
-					IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-					"pcie-global", pcie);
-		if (ret) {
-			dev_err(&pdev->dev, "Unable to request global irq\n");
-			pm_runtime_disable(&pdev->dev);
-			goto err_phy_exit;
-		}
-	}
 
 	return 0;
 
@@ -1928,14 +1675,11 @@ static const struct of_device_id qcom_pcie_match[] = {
 	{ .compatible = "qcom,pcie-apq8084", .data = &cfg_1_0_0 },
 	{ .compatible = "qcom,pcie-ipq4019", .data = &cfg_2_4_0 },
 	{ .compatible = "qcom,pcie-ipq5018", .data = &cfg_2_9_0 },
-	{ .compatible = "qti,pcie-ipq5332", .data = &cfg_1_27_0 },
-	{ .compatible = "qcom,pcie-ipq5424", .data = &cfg_1_27_0 },
 	{ .compatible = "qcom,pcie-ipq6018", .data = &cfg_2_9_0 },
 	{ .compatible = "qcom,pcie-ipq8064", .data = &cfg_2_1_0 },
 	{ .compatible = "qcom,pcie-ipq8064-v2", .data = &cfg_2_1_0 },
 	{ .compatible = "qcom,pcie-ipq8074", .data = &cfg_2_3_3 },
 	{ .compatible = "qcom,pcie-ipq8074-gen3", .data = &cfg_2_9_0 },
-	{ .compatible = "qti,pcie-ipq9574", .data = &cfg_1_27_0 },
 	{ .compatible = "qcom,pcie-msm8996", .data = &cfg_2_3_2 },
 	{ .compatible = "qcom,pcie-qcs404", .data = &cfg_2_4_0 },
 	{ .compatible = "qcom,pcie-sa8540p", .data = &cfg_1_9_0 },
@@ -1958,144 +1702,6 @@ static void qcom_fixup_class(struct pci_dev *dev)
 {
 	dev->class = PCI_CLASS_BRIDGE_PCI_NORMAL;
 }
-
-static void qcom_ipq_tc_vc_mapping(struct pci_dev *dev)
-{
-	struct dw_pcie_rp *pp;
-	struct dw_pcie *pci;
-	struct qcom_pcie *pcie;
-	int timeout = 50;
-	u32 val;
-
-	pp = dev->bus->sysdata;
-	pci = to_dw_pcie_from_pp(pp);
-	pcie = to_qcom_pcie(pci);
-
-	if (!pcie->enable_vc)
-		return;
-
-	dev_dbg(&dev->dev, "Enabling Virtual channel for 0x%x:0x%x\n",dev->vendor, dev->device);
-
-	/* Read device VC capabilities */
-	pci_read_config_dword(dev, PCIE_TYPE0_VC_CAPABILITIES_REG_1, &val);
-	if((val & VC_EXT_VC_CNT_MASK) != 0x1) {
-		dev_err(&dev->dev,"device 0x%x does not support Virtual Channel\n", dev->device);
-		return;
-	}
-
-	/* Program Q6 VC */
-	pci_read_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC0, &val);
-	val &= ~VC_TC_MAP_VC_BIT1_MASK;
-	val |= VC_TC_MAP_VC_BIT1_OFFSET(0x0);
-	pci_write_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC0, val);
-
-	pci_read_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, &val);
-	val &= ~VC_TC_MAP_VC_BIT1_MASK;
-	val |= VC_TC_MAP_VC_BIT1_OFFSET(0x7F);
-	pci_write_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, val);
-
-	pci_read_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, &val);
-	val &= ~VC_ID_VC1_MASK;
-	val |= VC_ID_VC1_OFFSET(0x1);
-	pci_write_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, val);
-
-	pci_read_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, &val);
-	val &= ~VC_ENABLE_VC1_MASK;
-	val |= VC_ENABLE_VC1_OFFSET(0x1);
-	pci_write_config_dword(dev, PCIE_TYPE0_RESOURCE_CON_REG_VC1, val);
-
-	/* Program Host VC */
-	val = readl(pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC0);
-	val &= ~VC_TC_MAP_VC_BIT1_MASK;
-	val |= VC_TC_MAP_VC_BIT1_OFFSET(0x0);
-	writel(val, pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC0);
-
-	val = readl(pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-	val &= ~VC_TC_MAP_VC_BIT1_MASK;
-	val |= VC_TC_MAP_VC_BIT1_OFFSET(0x7F);
-	writel(val, pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-
-	val = readl(pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-	val &= ~VC_ID_VC1_MASK;
-	val |= VC_ID_VC1_OFFSET(0x1);
-	writel(val, pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-
-	val = readl(pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-	val &= ~VC_ENABLE_VC1_MASK;
-	val |= VC_ENABLE_VC1_OFFSET(0x1);
-	writel(val, pci->dbi_base + PCIE_TYPE0_RESOURCE_CON_REG_VC1);
-
-	do {
-		/* Poll for negotiation */
-		val = readl(pci->dbi_base + PCIE_TYPE0_RESOURCE_STATUS_REG_VC1);
-		if(!(val & VC_NEGO_PENDING_VC1_MASK)) {
-			dev_info(&dev->dev,"Virtual channel is enabled for 0x%x:0x%x\n",
-					dev->vendor, dev->device);
-			break;
-		}
-		timeout--;
-	}while(timeout);
-}
-
-static void qcom_ipq_switch_lane(struct pci_dev *dev)
-{
-	struct dw_pcie_rp *pp;
-	struct dw_pcie *pci;
-	struct qcom_pcie *pcie;
-	struct device *devp;
-	struct device_node *np;
-	u32 val;
-	int size = 4;
-
-	pp = dev->bus->sysdata;
-	pci = to_dw_pcie_from_pp(pp);
-	pcie = to_qcom_pcie(pci);
-	devp = pci->dev;
-	np = devp->of_node;
-
-	/* Switching PCIE Nodes 2/3 to single lane if force_to_single_lane property is defined in dts */
-	if ((of_property_read_bool(np, "force_to_single_lane")) && (pcie->domain == 2 || pcie->domain == 3)) {
-
-		dev_info(devp,"Forcing PCIE to single lane\n");
-
-		/* check if Link is in L0 state */
-		dw_pcie_read(pcie->parf + PARF_LTSSM, size, &val);
-		if ((val & PCIE20_PARF_LTSSM_MASK) != 0x11)
-			dev_info(devp,"Before lane switch: Link is not in L0 state: %u\n",val);
-
-		/* set link width */
-		dw_pcie_read(pci->dbi_base + PCIE20_PORT_LINK_CTRL_OFF, size, &val);
-		val &= ~(PCIE20_PORT_LINK_CTRL_OFF_MASK);
-		val |= 0x10000;
-		dw_pcie_write(pci->dbi_base + PCIE20_PORT_LINK_CTRL_OFF, size, val);
-
-		/* config lane skew */
-		dw_pcie_read(pci->dbi_base + PCIE20_LANE_SKEW_OFF, size, &val);
-		val = (val & PCIE20_LANE_SKEW_OFF_MASK)|0x20;
-		dw_pcie_write(pci->dbi_base + PCIE20_LANE_SKEW_OFF, size, val);
-
-		/* set target lane width & direct link width change */
-		dw_pcie_read(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, size, &val);
-		val |= 0xc1;
-		dw_pcie_write(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, size, val);
-
-		/* wait until the link width change is complete */
-		dw_pcie_read(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, size, &val);
-		mdelay(50);
-		dw_pcie_read(pci->dbi_base + PCIE20_MULTI_LANE_CONTROL_OFF, size, &val);
-
-		/* check if Link is in L0 state */
-		dw_pcie_read(pcie->parf + PARF_LTSSM, size, &val);
-		if ((val & PCIE20_PARF_LTSSM_MASK) != 0x11)
-			dev_info(devp,"After lane switch: Link is not in L0 state: %u\n",val);
-
-		dw_pcie_read(pci->dbi_base + PCIE20_LINK_CONTROL_LINK_STATUS_REG, size, &val);
-
-		dev_info(devp,"Link width is: %u\n",(val&0x3F00000)>>20);
-	}
-
-}
-
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0101, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0104, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0106, qcom_fixup_class);
@@ -2103,8 +1709,6 @@ DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0107, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x0302, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1000, qcom_fixup_class);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_QCOM, 0x1001, qcom_fixup_class);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_QCOM, 0x1109, qcom_ipq_tc_vc_mapping);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_QCOM, 0x1108, qcom_ipq_switch_lane);
 
 static const struct dev_pm_ops qcom_pcie_pm_ops = {
 	NOIRQ_SYSTEM_SLEEP_PM_OPS(qcom_pcie_suspend_noirq, qcom_pcie_resume_noirq)
@@ -2117,9 +1721,7 @@ static struct platform_driver qcom_pcie_driver = {
 		.suppress_bind_attrs = true,
 		.of_match_table = qcom_pcie_match,
 		.pm = &qcom_pcie_pm_ops,
-#ifdef CONFIG_PCIE_ENABLE_ASYNC_PROBE
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
-#endif
 	},
 };
 builtin_platform_driver(qcom_pcie_driver);

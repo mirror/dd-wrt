@@ -6,14 +6,6 @@ menu "DesignWare-based PCIe controllers"
 config PCIE_DW
 	bool
 
-config PCIE_DW_DEBUGFS
-	bool "DWC PCIe debugfs entries"
-	help
-	  Enables debugfs entries for the DWC PCIe Controller.
-	  These entries make use of the RAS DES features in the DW
-	  controller to help in debug, error injection and statistical
-	  counters
-
 config PCIE_DW_HOST
 	bool
 	select PCIE_DW
@@ -422,10 +414,5 @@ config PCIE_VISCONTI_HOST
 	help
 	  Say Y here if you want PCIe controller support on Toshiba Visconti SoC.
 	  This driver supports TMPV7708 SoC.
-
-config PCIE_ENABLE_ASYNC_PROBE
-	bool "Enable PCI Asynchronous probe type"
-	help
-	  Say Y to use Asynchronous probe, else Synchronous probe type.
 
 endmenu
