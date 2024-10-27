@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r8168 | brainslayer | 2024-10-28 00:56:04 +0700 (Mon, 28 Oct 2024) | 1 line
+
+fix rd capa
+------------------------------------------------------------------------
+r8167 | brainslayer | 2024-10-28 00:53:13 +0700 (Mon, 28 Oct 2024) | 1 line
+
+fix rd capa
+------------------------------------------------------------------------
+r8166 | brainslayer | 2024-10-28 00:51:20 +0700 (Mon, 28 Oct 2024) | 1 line
+
+revert
+------------------------------------------------------------------------
+r8165 | brainslayer | 2024-10-28 00:44:27 +0700 (Mon, 28 Oct 2024) | 1 line
+
+fix locking
+------------------------------------------------------------------------
+r8164 | brainslayer | 2024-10-28 00:40:39 +0700 (Mon, 28 Oct 2024) | 1 line
+
+use tx antenna configuration instead of client provided nss since client may change its properties later (powersave?)
+------------------------------------------------------------------------
+r8163 | brainslayer | 2024-10-28 00:26:35 +0700 (Mon, 28 Oct 2024) | 1 line
+
+use tx antenna configuration instead of client provided nss since client may change its properties later (powersave?)
+------------------------------------------------------------------------
 r8162 | brainslayer | 2024-10-24 12:15:31 +0700 (Thu, 24 Oct 2024) | 1 line
 
 fix wrong limits
