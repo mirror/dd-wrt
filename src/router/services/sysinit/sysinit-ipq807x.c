@@ -1122,7 +1122,7 @@ void start_sysinit(void)
 		}
 		if (brand == ROUTER_FORTINET_FAP231F) {
 			fseek(fp, 0x33000, SEEK_SET);
-			out = fopen("/tmp/ath10k_board1.bin", "wb");
+			out = fopen("/tmp/ath10k_precal.bin", "wb");
 			for (i = 0; i < 6; i++)
 				putc(getc(fp), out);
 			unsigned int newmac2[6];
@@ -1132,6 +1132,7 @@ void start_sysinit(void)
 			for (i = 0; i < 2104; i++)
 				putc(getc(fp), out);
 			fclose(out);
+			eval("cp","-f","/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin","/tmp/ath10k_board1.bin");
 		}
 		fclose(fp);
 	} else {
@@ -1407,11 +1408,11 @@ void start_wifi_drivers(void)
 		int brand = getRouterBrand();
 		int profile = 512;
 		switch (brand) {
+		case ROUTER_FORTINET_FAP231F:
 		case ROUTER_DYNALINK_DLWRX36:
 		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_ASUS_AX89X:
 		case ROUTER_LINKSYS_MX4200V2:
-		case ROUTER_FORTINET_FAP231F:
 		case ROUTER_LINKSYS_MX4300:
 			profile = 1024;
 			break;
@@ -1422,6 +1423,12 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			load_ath11k(profile, 1, 0);
+			break;
+		case ROUTER_FORTINET_FAP231F:
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0"));
+//			insmod("ath");
+//			insmod("ath10k_core");
+//			insmod("ath10k_pci");
 			break;
 		default:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0"));

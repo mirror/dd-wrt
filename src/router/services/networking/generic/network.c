@@ -5256,6 +5256,7 @@ void start_hotplug_net(void)
 		return;
 
 	if (is_ath11k(interface)) {
+		dd_loginfo("hotplug","disable tx checksumming for %s\n", interface);
 		eval("ethtool","-K",interface, "tx-checksumming","off");
 	}
 
