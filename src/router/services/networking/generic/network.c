@@ -5255,7 +5255,7 @@ void start_hotplug_net(void)
 	if (strncmp(interface, "wlan", 4))
 		return;
 
-	if (is_ath11k(interface)) {
+	if (is_ath11k(interface) && nvram_nmatch("mesh", "%s_mode", interface)) {
 		dd_loginfo("hotplug","disable tx checksumming for %s\n", interface);
 		eval("ethtool","-K",interface, "tx-checksumming","off");
 	}
