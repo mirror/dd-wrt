@@ -80,8 +80,7 @@ if BUILD_LINUX
 nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/simd/simd_supported.ksh \
 	functional/tmpfile/cleanup.ksh \
-	functional/tmpfile/setup.ksh \
-	functional/luks/luks_sanity.ksh
+	functional/tmpfile/setup.ksh
 endif
 
 nobase_dist_datadir_zfs_tests_tests_DATA += \
@@ -266,8 +265,6 @@ nobase_dist_datadir_zfs_tests_tests_DATA += \
 	functional/delegate/delegate_common.kshlib \
 	functional/devices/devices.cfg \
 	functional/devices/devices_common.kshlib \
-	functional/direct/dio.cfg \
-	functional/direct/dio.kshlib \
 	functional/events/events.cfg \
 	functional/events/events_common.kshlib \
 	functional/fault/fault.cfg \
@@ -1186,10 +1183,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/cli_root/zpool_prefetch/cleanup.ksh \
 	functional/cli_root/zpool_prefetch/setup.ksh \
 	functional/cli_root/zpool_prefetch/zpool_prefetch_001_pos.ksh \
-	functional/cli_root/zpool_reguid/cleanup.ksh \
-	functional/cli_root/zpool_reguid/setup.ksh \
-	functional/cli_root/zpool_reguid/zpool_reguid_001_pos.ksh \
-	functional/cli_root/zpool_reguid/zpool_reguid_002_neg.ksh \
 	functional/cli_root/zpool_remove/cleanup.ksh \
 	functional/cli_root/zpool_remove/setup.ksh \
 	functional/cli_root/zpool_remove/zpool_remove_001_neg.ksh \
@@ -1465,27 +1458,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/devices/devices_002_neg.ksh \
 	functional/devices/devices_003_pos.ksh \
 	functional/devices/setup.ksh \
-	functional/direct/dio_aligned_block.ksh \
-	functional/direct/dio_async_always.ksh \
-	functional/direct/dio_async_fio_ioengines.ksh \
-	functional/direct/dio_compression.ksh \
-	functional/direct/dio_dedup.ksh \
-	functional/direct/dio_encryption.ksh \
-	functional/direct/dio_grow_block.ksh \
-	functional/direct/dio_max_recordsize.ksh \
-	functional/direct/dio_mixed.ksh \
-	functional/direct/dio_mmap.ksh \
-	functional/direct/dio_overwrites.ksh \
-	functional/direct/dio_property.ksh \
-	functional/direct/dio_random.ksh \
-	functional/direct/dio_read_verify.ksh \
-	functional/direct/dio_recordsize.ksh \
-	functional/direct/dio_unaligned_block.ksh \
-	functional/direct/dio_unaligned_filesize.ksh \
-	functional/direct/dio_write_verify.ksh \
-	functional/direct/dio_write_stable_pages.ksh \
-	functional/direct/setup.ksh \
-	functional/direct/cleanup.ksh \
 	functional/dos_attributes/cleanup.ksh \
 	functional/dos_attributes/read_dos_attrs_001.ksh \
 	functional/dos_attributes/setup.ksh \
@@ -1496,7 +1468,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/events/setup.ksh \
 	functional/events/zed_cksum_config.ksh \
 	functional/events/zed_cksum_reported.ksh \
-	functional/events/zed_diagnose_multiple.ksh \
 	functional/events/zed_fd_spill.ksh \
 	functional/events/zed_io_config.ksh \
 	functional/events/zed_rc_filter.ksh \
@@ -1527,7 +1498,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/fault/cleanup.ksh \
 	functional/fault/decompress_fault.ksh \
 	functional/fault/decrypt_fault.ksh \
-	functional/fault/fault_limits.ksh \
 	functional/fault/scrub_after_resilver.ksh \
 	functional/fault/suspend_resume_single.ksh \
 	functional/fault/setup.ksh \
@@ -1607,11 +1577,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/link_count/link_count_001.ksh \
 	functional/link_count/link_count_root_inode.ksh \
 	functional/link_count/setup.ksh \
-	functional/longname/cleanup.ksh \
-	functional/longname/longname_001_pos.ksh \
-	functional/longname/longname_002_pos.ksh \
-	functional/longname/longname_003_pos.ksh \
-	functional/longname/setup.ksh \
 	functional/log_spacemap/log_spacemap_import_logs.ksh \
 	functional/migration/cleanup.ksh \
 	functional/migration/migration_001_pos.ksh \
@@ -1945,7 +1910,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
 	functional/rsend/rsend_031_pos.ksh \
 	functional/rsend/send-c_embedded_blocks.ksh \
 	functional/rsend/send-c_incremental.ksh \
-	functional/rsend/send-c_longname.ksh \
 	functional/rsend/send-c_lz4_disabled.ksh \
 	functional/rsend/send-c_mixed_compression.ksh \
 	functional/rsend/send-c_props.ksh \

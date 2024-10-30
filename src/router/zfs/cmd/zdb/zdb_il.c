@@ -64,8 +64,7 @@ static void
 zil_prt_rec_create(zilog_t *zilog, int txtype, const void *arg)
 {
 	(void) zilog;
-	const lr_create_t *lrc = arg;
-	const _lr_create_t *lr = &lrc->lr_create;
+	const lr_create_t *lr = arg;
 	time_t crtime = lr->lr_crtime[0];
 	char *name, *link;
 	lr_attr_t *lrattr;
@@ -122,8 +121,7 @@ static void
 zil_prt_rec_rename(zilog_t *zilog, int txtype, const void *arg)
 {
 	(void) zilog, (void) txtype;
-	const lr_rename_t *lrr = arg;
-	const _lr_rename_t *lr = &lrr->lr_rename;
+	const lr_rename_t *lr = arg;
 	char *snm = (char *)(lr + 1);
 	char *tnm = snm + strlen(snm) + 1;
 

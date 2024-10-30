@@ -357,7 +357,7 @@ taskq_cancel_id(taskq_t *tq, taskqid_t tid)
 	taskq_ent_t *ent;
 
 	if ((ent = taskq_lookup(tid)) == NULL)
-		return (ENOENT);
+		return (0);
 
 	if (ent->tqent_type == NORMAL_TASK) {
 		rc = taskqueue_cancel(tq->tq_queue, &ent->tqent_task, &pend);
@@ -380,7 +380,7 @@ taskq_cancel_id(taskq_t *tq, taskqid_t tid)
 	}
 	/* Free the extra reference we added with taskq_lookup. */
 	taskq_free(ent);
-	return (pend ? 0 : ENOENT);
+	return (rc);
 }
 
 static void

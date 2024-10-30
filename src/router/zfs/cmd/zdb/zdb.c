@@ -1117,7 +1117,7 @@ dump_zap(objset_t *os, uint64_t object, void *data, size_t size)
 {
 	(void) data, (void) size;
 	zap_cursor_t zc;
-	zap_attribute_t *attrp = zap_attribute_long_alloc();
+	zap_attribute_t attr;
 	void *prop;
 	unsigned i;
 
@@ -1125,54 +1125,53 @@ dump_zap(objset_t *os, uint64_t object, void *data, size_t size)
 	(void) printf("\n");
 
 	for (zap_cursor_init(&zc, os, object);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    zap_cursor_advance(&zc)) {
 		boolean_t key64 =
 		    !!(zap_getflags(zc.zc_zap) & ZAP_FLAG_UINT64_KEY);
 
 		if (key64)
-			(void) printf("\t\t0x%010" PRIu64 "x = ",
-			    *(uint64_t *)attrp->za_name);
+			(void) printf("\t\t0x%010lx = ",
+			    *(uint64_t *)attr.za_name);
 		else
-			(void) printf("\t\t%s = ", attrp->za_name);
+			(void) printf("\t\t%s = ", attr.za_name);
 
-		if (attrp->za_num_integers == 0) {
+		if (attr.za_num_integers == 0) {
 			(void) printf("\n");
 			continue;
 		}
-		prop = umem_zalloc(attrp->za_num_integers *
-		    attrp->za_integer_length, UMEM_NOFAIL);
+		prop = umem_zalloc(attr.za_num_integers *
+		    attr.za_integer_length, UMEM_NOFAIL);
 
 		if (key64)
 			(void) zap_lookup_uint64(os, object,
-			    (const uint64_t *)attrp->za_name, 1,
-			    attrp->za_integer_length, attrp->za_num_integers,
+			    (const uint64_t *)attr.za_name, 1,
+			    attr.za_integer_length, attr.za_num_integers,
 			    prop);
 		else
-			(void) zap_lookup(os, object, attrp->za_name,
-			    attrp->za_integer_length, attrp->za_num_integers,
+			(void) zap_lookup(os, object, attr.za_name,
+			    attr.za_integer_length, attr.za_num_integers,
 			    prop);
 
-		if (attrp->za_integer_length == 1 && !key64) {
-			if (strcmp(attrp->za_name,
+		if (attr.za_integer_length == 1 && !key64) {
+			if (strcmp(attr.za_name,
 			    DSL_CRYPTO_KEY_MASTER_KEY) == 0 ||
-			    strcmp(attrp->za_name,
+			    strcmp(attr.za_name,
 			    DSL_CRYPTO_KEY_HMAC_KEY) == 0 ||
-			    strcmp(attrp->za_name, DSL_CRYPTO_KEY_IV) == 0 ||
-			    strcmp(attrp->za_name, DSL_CRYPTO_KEY_MAC) == 0 ||
-			    strcmp(attrp->za_name,
-			    DMU_POOL_CHECKSUM_SALT) == 0) {
+			    strcmp(attr.za_name, DSL_CRYPTO_KEY_IV) == 0 ||
+			    strcmp(attr.za_name, DSL_CRYPTO_KEY_MAC) == 0 ||
+			    strcmp(attr.za_name, DMU_POOL_CHECKSUM_SALT) == 0) {
 				uint8_t *u8 = prop;
 
-				for (i = 0; i < attrp->za_num_integers; i++) {
+				for (i = 0; i < attr.za_num_integers; i++) {
 					(void) printf("%02x", u8[i]);
 				}
 			} else {
 				(void) printf("%s", (char *)prop);
 			}
 		} else {
-			for (i = 0; i < attrp->za_num_integers; i++) {
-				switch (attrp->za_integer_length) {
+			for (i = 0; i < attr.za_num_integers; i++) {
+				switch (attr.za_integer_length) {
 				case 1:
 					(void) printf("%u ",
 					    ((uint8_t *)prop)[i]);
@@ -1193,11 +1192,9 @@ dump_zap(objset_t *os, uint64_t object, void *data, size_t size)
 			}
 		}
 		(void) printf("\n");
-		umem_free(prop,
-		    attrp->za_num_integers * attrp->za_integer_length);
+		umem_free(prop, attr.za_num_integers * attr.za_integer_length);
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(attrp);
 }
 
 static void
@@ -1298,27 +1295,26 @@ dump_sa_attrs(objset_t *os, uint64_t object, void *data, size_t size)
 {
 	(void) data, (void) size;
 	zap_cursor_t zc;
-	zap_attribute_t *attrp = zap_attribute_alloc();
+	zap_attribute_t attr;
 
 	dump_zap_stats(os, object);
 	(void) printf("\n");
 
 	for (zap_cursor_init(&zc, os, object);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    zap_cursor_advance(&zc)) {
-		(void) printf("\t\t%s = ", attrp->za_name);
-		if (attrp->za_num_integers == 0) {
+		(void) printf("\t\t%s = ", attr.za_name);
+		if (attr.za_num_integers == 0) {
 			(void) printf("\n");
 			continue;
 		}
 		(void) printf(" %llx : [%d:%d:%d]\n",
-		    (u_longlong_t)attrp->za_first_integer,
-		    (int)ATTR_LENGTH(attrp->za_first_integer),
-		    (int)ATTR_BSWAP(attrp->za_first_integer),
-		    (int)ATTR_NUM(attrp->za_first_integer));
+		    (u_longlong_t)attr.za_first_integer,
+		    (int)ATTR_LENGTH(attr.za_first_integer),
+		    (int)ATTR_BSWAP(attr.za_first_integer),
+		    (int)ATTR_NUM(attr.za_first_integer));
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(attrp);
 }
 
 static void
@@ -1326,7 +1322,7 @@ dump_sa_layouts(objset_t *os, uint64_t object, void *data, size_t size)
 {
 	(void) data, (void) size;
 	zap_cursor_t zc;
-	zap_attribute_t *attrp = zap_attribute_alloc();
+	zap_attribute_t attr;
 	uint16_t *layout_attrs;
 	unsigned i;
 
@@ -1334,30 +1330,29 @@ dump_sa_layouts(objset_t *os, uint64_t object, void *data, size_t size)
 	(void) printf("\n");
 
 	for (zap_cursor_init(&zc, os, object);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    zap_cursor_advance(&zc)) {
-		(void) printf("\t\t%s = [", attrp->za_name);
-		if (attrp->za_num_integers == 0) {
+		(void) printf("\t\t%s = [", attr.za_name);
+		if (attr.za_num_integers == 0) {
 			(void) printf("\n");
 			continue;
 		}
 
-		VERIFY(attrp->za_integer_length == 2);
-		layout_attrs = umem_zalloc(attrp->za_num_integers *
-		    attrp->za_integer_length, UMEM_NOFAIL);
+		VERIFY(attr.za_integer_length == 2);
+		layout_attrs = umem_zalloc(attr.za_num_integers *
+		    attr.za_integer_length, UMEM_NOFAIL);
 
-		VERIFY(zap_lookup(os, object, attrp->za_name,
-		    attrp->za_integer_length,
-		    attrp->za_num_integers, layout_attrs) == 0);
+		VERIFY(zap_lookup(os, object, attr.za_name,
+		    attr.za_integer_length,
+		    attr.za_num_integers, layout_attrs) == 0);
 
-		for (i = 0; i != attrp->za_num_integers; i++)
+		for (i = 0; i != attr.za_num_integers; i++)
 			(void) printf(" %d ", (int)layout_attrs[i]);
 		(void) printf("]\n");
 		umem_free(layout_attrs,
-		    attrp->za_num_integers * attrp->za_integer_length);
+		    attr.za_num_integers * attr.za_integer_length);
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(attrp);
 }
 
 static void
@@ -1365,7 +1360,7 @@ dump_zpldir(objset_t *os, uint64_t object, void *data, size_t size)
 {
 	(void) data, (void) size;
 	zap_cursor_t zc;
-	zap_attribute_t *attrp = zap_attribute_long_alloc();
+	zap_attribute_t attr;
 	const char *typenames[] = {
 		/* 0 */ "not specified",
 		/* 1 */ "FIFO",
@@ -1389,14 +1384,13 @@ dump_zpldir(objset_t *os, uint64_t object, void *data, size_t size)
 	(void) printf("\n");
 
 	for (zap_cursor_init(&zc, os, object);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    zap_cursor_advance(&zc)) {
 		(void) printf("\t\t%s = %lld (type: %s)\n",
-		    attrp->za_name, ZFS_DIRENT_OBJ(attrp->za_first_integer),
-		    typenames[ZFS_DIRENT_TYPE(attrp->za_first_integer)]);
+		    attr.za_name, ZFS_DIRENT_OBJ(attr.za_first_integer),
+		    typenames[ZFS_DIRENT_TYPE(attr.za_first_integer)]);
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(attrp);
 }
 
 static int
@@ -2051,7 +2045,7 @@ dump_all_ddts(spa_t *spa)
 
 	for (enum zio_checksum c = 0; c < ZIO_CHECKSUM_FUNCTIONS; c++) {
 		ddt_t *ddt = spa->spa_ddt[c];
-		if (!ddt || ddt->ddt_version == DDT_VERSION_UNCONFIGURED)
+		if (!ddt)
 			continue;
 		for (ddt_type_t type = 0; type < DDT_TYPES; type++) {
 			for (ddt_class_t class = 0; class < DDT_CLASSES;
@@ -2078,32 +2072,6 @@ dump_all_ddts(spa_t *spa)
 	}
 
 	dump_dedup_ratio(&dds_total);
-
-	/*
-	 * Dump a histogram of unique class entry age
-	 */
-	if (dump_opt['D'] == 3 && getenv("ZDB_DDT_UNIQUE_AGE_HIST") != NULL) {
-		ddt_age_histo_t histogram;
-
-		(void) printf("DDT walk unique, building age histogram...\n");
-		ddt_prune_walk(spa, 0, &histogram);
-
-		/*
-		 * print out histogram for unique entry class birth
-		 */
-		if (histogram.dah_entries > 0) {
-			(void) printf("%5s  %9s  %4s\n",
-			    "age", "blocks", "amnt");
-			(void) printf("%5s  %9s  %4s\n",
-			    "-----", "---------", "----");
-			for (int i = 0; i < HIST_BINS; i++) {
-				(void) printf("%5d  %9d %4d%%\n", 1 << i,
-				    (int)histogram.dah_age_histo[i],
-				    (int)((histogram.dah_age_histo[i] * 100) /
-				    histogram.dah_entries));
-			}
-		}
-	}
 }
 
 static void
@@ -2161,25 +2129,23 @@ dump_brt(spa_t *spa)
 			continue;
 
 		zap_cursor_t zc;
-		zap_attribute_t *za = zap_attribute_alloc();
+		zap_attribute_t za;
 		for (zap_cursor_init(&zc, brt->brt_mos, brtvd->bv_mos_entries);
-		    zap_cursor_retrieve(&zc, za) == 0;
+		    zap_cursor_retrieve(&zc, &za) == 0;
 		    zap_cursor_advance(&zc)) {
 			uint64_t refcnt;
 			VERIFY0(zap_lookup_uint64(brt->brt_mos,
 			    brtvd->bv_mos_entries,
-			    (const uint64_t *)za->za_name, 1,
-			    za->za_integer_length, za->za_num_integers,
-			    &refcnt));
+			    (const uint64_t *)za.za_name, 1,
+			    za.za_integer_length, za.za_num_integers, &refcnt));
 
-			uint64_t offset = *(const uint64_t *)za->za_name;
+			uint64_t offset = *(const uint64_t *)za.za_name;
 
 			snprintf(dva, sizeof (dva), "%" PRIu64 ":%llx", vdevid,
 			    (u_longlong_t)offset);
 			printf("%-16s %-10llu\n", dva, (u_longlong_t)refcnt);
 		}
 		zap_cursor_fini(&zc);
-		zap_attribute_free(za);
 	}
 }
 
@@ -2961,30 +2927,28 @@ static void
 dump_bookmarks(objset_t *os, int verbosity)
 {
 	zap_cursor_t zc;
-	zap_attribute_t *attrp;
+	zap_attribute_t attr;
 	dsl_dataset_t *ds = dmu_objset_ds(os);
 	dsl_pool_t *dp = spa_get_dsl(os->os_spa);
 	objset_t *mos = os->os_spa->spa_meta_objset;
 	if (verbosity < 4)
 		return;
-	attrp = zap_attribute_alloc();
 	dsl_pool_config_enter(dp, FTAG);
 
 	for (zap_cursor_init(&zc, mos, ds->ds_bookmarks_obj);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    zap_cursor_advance(&zc)) {
 		char osname[ZFS_MAX_DATASET_NAME_LEN];
 		char buf[ZFS_MAX_DATASET_NAME_LEN];
 		int len;
 		dmu_objset_name(os, osname);
 		len = snprintf(buf, sizeof (buf), "%s#%s", osname,
-		    attrp->za_name);
+		    attr.za_name);
 		VERIFY3S(len, <, ZFS_MAX_DATASET_NAME_LEN);
 		(void) dump_bookmark(dp, buf, verbosity >= 5, verbosity >= 6);
 	}
 	zap_cursor_fini(&zc);
 	dsl_pool_config_exit(dp, FTAG);
-	zap_attribute_free(attrp);
 }
 
 static void
@@ -4265,10 +4229,6 @@ dump_uberblock(uberblock_t *ub, const char *header, const char *footer)
 	(void) printf("\tguid_sum = %llu\n", (u_longlong_t)ub->ub_guid_sum);
 	(void) printf("\ttimestamp = %llu UTC = %s",
 	    (u_longlong_t)ub->ub_timestamp, ctime(&timestamp));
-
-	char blkbuf[BP_SPRINTF_LEN];
-	snprintf_blkptr(blkbuf, sizeof (blkbuf), &ub->ub_rootbp);
-	(void) printf("\tbp = %s\n", blkbuf);
 
 	(void) printf("\tmmp_magic = %016llx\n",
 	    (u_longlong_t)ub->ub_mmp_magic);
@@ -5789,17 +5749,12 @@ zdb_count_block(zdb_cb_t *zcb, zilog_t *zilog, const blkptr_t *bp,
 		ddt_entry_t *dde = ddt_lookup(ddt, bp);
 
 		/*
-		 * ddt_lookup() can return NULL if this block didn't exist
+		 * ddt_lookup() can only return NULL if this block didn't exist
 		 * in the DDT and creating it would take the DDT over its
 		 * quota. Since we got the block from disk, it must exist in
-		 * the DDT, so this can't happen. However, when unique entries
-		 * are pruned, the dedup bit can be set with no corresponding
-		 * entry in the DDT.
+		 * the DDT, so this can't happen.
 		 */
-		if (dde == NULL) {
-			ddt_exit(ddt);
-			goto skipped;
-		}
+		VERIFY3P(dde, !=, NULL);
 
 		/* Get the phys for this variant */
 		ddt_phys_variant_t v = ddt_phys_select(ddt, dde, bp);
@@ -5819,8 +5774,8 @@ zdb_count_block(zdb_cb_t *zcb, zilog_t *zilog, const blkptr_t *bp,
 			    (void *)(((uintptr_t)dde->dde_io) | (1 << v));
 
 		/* Consume a reference for this block. */
-		if (ddt_phys_total_refcnt(ddt, dde->dde_phys) > 0)
-			ddt_phys_decref(dde->dde_phys, v);
+		VERIFY3U(ddt_phys_total_refcnt(ddt, dde->dde_phys), >, 0);
+		ddt_phys_decref(dde->dde_phys, v);
 
 		/*
 		 * If this entry has a single flat phys, it may have been
@@ -5909,7 +5864,6 @@ zdb_count_block(zdb_cb_t *zcb, zilog_t *zilog, const blkptr_t *bp,
 		}
 	}
 
-skipped:
 	for (i = 0; i < 4; i++) {
 		int l = (i < 2) ? BP_GET_LEVEL(bp) : ZB_TOTAL;
 		int t = (i & 1) ? type : ZDB_OT_TOTAL;
@@ -6871,19 +6825,18 @@ iterate_deleted_livelists(spa_t *spa, ll_iter_t func, void *arg)
 	ASSERT0(err);
 
 	zap_cursor_t zc;
-	zap_attribute_t *attrp = zap_attribute_alloc();
+	zap_attribute_t attr;
 	dsl_deadlist_t ll;
 	/* NULL out os prior to dsl_deadlist_open in case it's garbage */
 	ll.dl_os = NULL;
 	for (zap_cursor_init(&zc, mos, zap_obj);
-	    zap_cursor_retrieve(&zc, attrp) == 0;
+	    zap_cursor_retrieve(&zc, &attr) == 0;
 	    (void) zap_cursor_advance(&zc)) {
-		dsl_deadlist_open(&ll, mos, attrp->za_first_integer);
+		dsl_deadlist_open(&ll, mos, attr.za_first_integer);
 		func(&ll, arg);
 		dsl_deadlist_close(&ll);
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(attrp);
 }
 
 static int
@@ -8097,14 +8050,13 @@ static void
 errorlog_count_refd(objset_t *mos, uint64_t errlog)
 {
 	zap_cursor_t zc;
-	zap_attribute_t *za = zap_attribute_alloc();
+	zap_attribute_t za;
 	for (zap_cursor_init(&zc, mos, errlog);
-	    zap_cursor_retrieve(&zc, za) == 0;
+	    zap_cursor_retrieve(&zc, &za) == 0;
 	    zap_cursor_advance(&zc)) {
-		mos_obj_refd(za->za_first_integer);
+		mos_obj_refd(za.za_first_integer);
 	}
 	zap_cursor_fini(&zc);
-	zap_attribute_free(za);
 }
 
 static int
@@ -8186,7 +8138,7 @@ dump_mos_leaks(spa_t *spa)
 
 	for (uint64_t c = 0; c < ZIO_CHECKSUM_FUNCTIONS; c++) {
 		ddt_t *ddt = spa->spa_ddt[c];
-		if (!ddt || ddt->ddt_version == DDT_VERSION_UNCONFIGURED)
+		if (!ddt)
 			continue;
 
 		/* DDT store objects */
@@ -8198,14 +8150,11 @@ dump_mos_leaks(spa_t *spa)
 		}
 
 		/* FDT container */
-		if (ddt->ddt_version == DDT_VERSION_FDT)
-			mos_obj_refd(ddt->ddt_dir_object);
+		mos_obj_refd(ddt->ddt_dir_object);
 
 		/* FDT log objects */
-		if (ddt->ddt_flags & DDT_FLAG_LOG) {
-			mos_obj_refd(ddt->ddt_log[0].ddl_object);
-			mos_obj_refd(ddt->ddt_log[1].ddl_object);
-		}
+		mos_obj_refd(ddt->ddt_log[0].ddl_object);
+		mos_obj_refd(ddt->ddt_log[1].ddl_object);
 	}
 
 	if (spa->spa_brt != NULL) {
@@ -8804,7 +8753,7 @@ zdb_read_block(char *thing, spa_t *spa)
 	void *lbuf, *buf;
 	char *s, *p, *dup, *flagstr, *sizes, *tmp = NULL;
 	const char *vdev, *errmsg = NULL;
-	int i, len, error;
+	int i, error;
 	boolean_t borrowed = B_FALSE, found = B_FALSE;
 
 	dup = strdup(thing);
@@ -8832,8 +8781,7 @@ zdb_read_block(char *thing, spa_t *spa)
 	for (s = strtok_r(flagstr, ":", &tmp);
 	    s != NULL;
 	    s = strtok_r(NULL, ":", &tmp)) {
-		len = strlen(flagstr);
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < strlen(flagstr); i++) {
 			int bit = flagbits[(uchar_t)flagstr[i]];
 
 			if (bit == 0) {
@@ -9103,14 +9051,13 @@ zdb_embedded_block(char *thing)
 static boolean_t
 zdb_numeric(char *str)
 {
-	int i = 0, len;
+	int i = 0;
 
-	len = strlen(str);
-	if (len == 0)
+	if (strlen(str) == 0)
 		return (B_FALSE);
 	if (strncmp(str, "0x", 2) == 0 || strncmp(str, "0X", 2) == 0)
 		i = 2;
-	for (; i < len; i++) {
+	for (; i < strlen(str); i++) {
 		if (!isxdigit(str[i]))
 			return (B_FALSE);
 	}

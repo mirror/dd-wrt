@@ -50,7 +50,4 @@
 #define	kfpu_fini()		do {} while (0)
 #endif
 
-#define	simd_stat_init()	do {} while (0)
-#define	simd_stat_fini()	do {} while (0)
-
 #endif

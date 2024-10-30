@@ -1,5 +1,3 @@
-zstream_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
-
 sbin_PROGRAMS   += zstream
 CPPCHECKTARGETS += zstream
 

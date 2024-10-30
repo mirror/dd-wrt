@@ -25,35 +25,14 @@
 
 #include <sys/zfs_racct.h>
 
-#ifdef _KERNEL
-#include <linux/task_io_accounting_ops.h>
-
 void
-zfs_racct_read(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
+zfs_racct_read(uint64_t size, uint64_t iops)
 {
-	task_io_account_read(size);
-	spa_iostats_read_add(spa, size, iops, flags);
+	(void) size, (void) iops;
 }
 
 void
-zfs_racct_write(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
+zfs_racct_write(uint64_t size, uint64_t iops)
 {
-	task_io_account_write(size);
-	spa_iostats_write_add(spa, size, iops, flags);
+	(void) size, (void) iops;
 }
-
-#else
-
-void
-zfs_racct_read(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
-{
-	(void) spa, (void) size, (void) iops, (void) flags;
-}
-
-void
-zfs_racct_write(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
-{
-	(void) spa, (void) size, (void) iops, (void) flags;
-}
-
-#endif /* _KERNEL */

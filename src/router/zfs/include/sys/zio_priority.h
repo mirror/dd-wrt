@@ -22,10 +22,6 @@
 extern "C" {
 #endif
 
-/*
- * NOTE: PLEASE UPDATE THE ENUM STRINGS IN zfs_valstr.c IF YOU ADD ANOTHER
- * VALUE.
- */
 typedef enum zio_priority {
 	ZIO_PRIORITY_SYNC_READ,
 	ZIO_PRIORITY_SYNC_WRITE,	/* ZIL */

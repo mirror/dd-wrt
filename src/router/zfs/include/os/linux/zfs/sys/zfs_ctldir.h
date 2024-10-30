@@ -45,7 +45,7 @@
 	(ZTOZSB(zdp)->z_ctldir != NULL))
 #define	zfs_show_ctldir(zdp)	\
 	(zfs_has_ctldir(zdp) && \
-	(ZTOZSB(zdp)->z_show_ctldir == ZFS_SNAPDIR_VISIBLE))
+	(ZTOZSB(zdp)->z_show_ctldir))
 
 extern int zfs_expire_snapshot;
 

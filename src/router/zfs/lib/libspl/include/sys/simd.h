@@ -592,7 +592,4 @@ zfs_isa207_available(void)
 
 #endif
 
-extern void simd_stat_init(void);
-extern void simd_stat_fini(void);
-
 #endif /* _LIBSPL_SYS_SIMD_H */

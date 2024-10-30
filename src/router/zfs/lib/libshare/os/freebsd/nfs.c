@@ -93,9 +93,7 @@ translate_opts(char *oldopts, FILE *out)
 		return (EOF);
 	newopts[0] = '\0';
 	s = oldopts;
-	while ((o = strsep(&s, ", ")) != NULL) {
-		if (o[0] == '-')
-			o++;
+	while ((o = strsep(&s, "-, ")) != NULL) {
 		if (o[0] == '\0')
 			continue;
 		for (i = 0; i < ARRAY_SIZE(known_opts); ++i) {

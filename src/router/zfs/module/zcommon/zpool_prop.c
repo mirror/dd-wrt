@@ -494,12 +494,11 @@ vdev_name_to_prop(const char *propname)
 boolean_t
 vdev_prop_user(const char *name)
 {
-	int i, len;
+	int i;
 	char c;
 	boolean_t foundsep = B_FALSE;
 
-	len = strlen(name);
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < strlen(name); i++) {
 		c = name[i];
 		if (!zprop_valid_char(c))
 			return (B_FALSE);

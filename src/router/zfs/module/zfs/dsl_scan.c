@@ -212,9 +212,6 @@ static uint64_t zfs_max_async_dedup_frees = 100000;
 /* set to disable resilver deferring */
 static int zfs_resilver_disable_defer = B_FALSE;
 
-/* Don't defer a resilver if the one in progress only got this far: */
-static uint_t zfs_resilver_defer_percent = 10;
-
 /*
  * We wait a few txgs after importing a pool to begin scanning so that
  * the import / mounting code isn't held up by scrub / resilver IO.
@@ -620,18 +617,17 @@ dsl_scan_init(dsl_pool_t *dp, uint64_t txg)
 	/* reload the queue into the in-core state */
 	if (scn->scn_phys.scn_queue_obj != 0) {
 		zap_cursor_t zc;
-		zap_attribute_t *za = zap_attribute_alloc();
+		zap_attribute_t za;
 
 		for (zap_cursor_init(&zc, dp->dp_meta_objset,
 		    scn->scn_phys.scn_queue_obj);
-		    zap_cursor_retrieve(&zc, za) == 0;
+		    zap_cursor_retrieve(&zc, &za) == 0;
 		    (void) zap_cursor_advance(&zc)) {
 			scan_ds_queue_insert(scn,
-			    zfs_strtonum(za->za_name, NULL),
-			    za->za_first_integer);
+			    zfs_strtonum(za.za_name, NULL),
+			    za.za_first_integer);
 		}
 		zap_cursor_fini(&zc);
-		zap_attribute_free(za);
 	}
 
 	ddt_walk_init(spa, scn->scn_phys.scn_max_txg);
@@ -2874,17 +2870,16 @@ dsl_scan_visitds(dsl_scan_t *scn, uint64_t dsobj, dmu_tx_t *tx)
 
 		if (usenext) {
 			zap_cursor_t zc;
-			zap_attribute_t *za = zap_attribute_alloc();
+			zap_attribute_t za;
 			for (zap_cursor_init(&zc, dp->dp_meta_objset,
 			    dsl_dataset_phys(ds)->ds_next_clones_obj);
-			    zap_cursor_retrieve(&zc, za) == 0;
+			    zap_cursor_retrieve(&zc, &za) == 0;
 			    (void) zap_cursor_advance(&zc)) {
 				scan_ds_queue_insert(scn,
-				    zfs_strtonum(za->za_name, NULL),
+				    zfs_strtonum(za.za_name, NULL),
 				    dsl_dataset_phys(ds)->ds_creation_txg);
 			}
 			zap_cursor_fini(&zc);
-			zap_attribute_free(za);
 		} else {
 			VERIFY0(dmu_objset_find_dp(dp, dp->dp_root_dir_obj,
 			    enqueue_clones_cb, &ds->ds_object,
@@ -4179,7 +4174,7 @@ dsl_errorscrub_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 	zbookmark_phys_t *zb;
 	boolean_t limit_exceeded = B_FALSE;
 
-	za = zap_attribute_alloc();
+	za = kmem_zalloc(sizeof (zap_attribute_t), KM_SLEEP);
 	zb = kmem_zalloc(sizeof (zbookmark_phys_t), KM_SLEEP);
 
 	if (!spa_feature_is_enabled(spa, SPA_FEATURE_HEAD_ERRLOG)) {
@@ -4210,7 +4205,7 @@ dsl_errorscrub_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 			dsl_errorscrub_done(scn, B_TRUE, tx);
 
 		dsl_errorscrub_sync_state(scn, tx);
-		zap_attribute_free(za);
+		kmem_free(za, sizeof (*za));
 		kmem_free(zb, sizeof (*zb));
 		return;
 	}
@@ -4224,7 +4219,7 @@ dsl_errorscrub_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 		zbookmark_err_phys_t head_ds_block;
 
 		head_ds_cursor = kmem_zalloc(sizeof (zap_cursor_t), KM_SLEEP);
-		head_ds_attr = zap_attribute_alloc();
+		head_ds_attr = kmem_zalloc(sizeof (zap_attribute_t), KM_SLEEP);
 
 		uint64_t head_ds_err_obj = za->za_first_integer;
 		uint64_t head_ds;
@@ -4263,13 +4258,13 @@ dsl_errorscrub_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 
 		zap_cursor_fini(head_ds_cursor);
 		kmem_free(head_ds_cursor, sizeof (*head_ds_cursor));
-		zap_attribute_free(head_ds_attr);
+		kmem_free(head_ds_attr, sizeof (*head_ds_attr));
 
 		if (config_held)
 			dsl_pool_config_exit(dp, FTAG);
 	}
 
-	zap_attribute_free(za);
+	kmem_free(za, sizeof (*za));
 	kmem_free(zb, sizeof (*zb));
 	if (!limit_exceeded)
 		dsl_errorscrub_done(scn, B_TRUE, tx);
@@ -4292,26 +4287,27 @@ dsl_scan_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 	dsl_scan_t *scn = dp->dp_scan;
 	spa_t *spa = dp->dp_spa;
 	state_sync_type_t sync_type = SYNC_OPTIONAL;
-	int restart_early = 0;
 
-	if (spa->spa_resilver_deferred) {
-		uint64_t to_issue, issued;
+	if (spa->spa_resilver_deferred &&
+	    !spa_feature_is_active(dp->dp_spa, SPA_FEATURE_RESILVER_DEFER))
+		spa_feature_incr(spa, SPA_FEATURE_RESILVER_DEFER, tx);
 
-		if (!spa_feature_is_active(dp->dp_spa,
-		    SPA_FEATURE_RESILVER_DEFER))
-			spa_feature_incr(spa, SPA_FEATURE_RESILVER_DEFER, tx);
-
-		/*
-		 * See print_scan_scrub_resilver_status() issued/total_i
-		 * @ cmd/zpool/zpool_main.c
-		 */
-		to_issue =
-		    scn->scn_phys.scn_to_examine - scn->scn_phys.scn_skipped;
-		issued =
-		    scn->scn_issued_before_pass + spa->spa_scan_pass_issued;
-		restart_early =
-		    zfs_resilver_disable_defer ||
-		    (issued < (to_issue * zfs_resilver_defer_percent / 100));
+	/*
+	 * Check for scn_restart_txg before checking spa_load_state, so
+	 * that we can restart an old-style scan while the pool is being
+	 * imported (see dsl_scan_init). We also restart scans if there
+	 * is a deferred resilver and the user has manually disabled
+	 * deferred resilvers via the tunable.
+	 */
+	if (dsl_scan_restarting(scn, tx) ||
+	    (spa->spa_resilver_deferred && zfs_resilver_disable_defer)) {
+		pool_scan_func_t func = POOL_SCAN_SCRUB;
+		dsl_scan_done(scn, B_FALSE, tx);
+		if (vdev_resilver_needed(spa->spa_root_vdev, NULL, NULL))
+			func = POOL_SCAN_RESILVER;
+		zfs_dbgmsg("restarting scan func=%u on %s txg=%llu",
+		    func, dp->dp_spa->spa_name, (longlong_t)tx->tx_txg);
+		dsl_scan_setup_sync(&func, tx);
 	}
 
 	/*
@@ -4319,26 +4315,6 @@ dsl_scan_sync(dsl_pool_t *dp, dmu_tx_t *tx)
 	 */
 	if (spa_sync_pass(spa) > 1)
 		return;
-
-
-	/*
-	 * Check for scn_restart_txg before checking spa_load_state, so
-	 * that we can restart an old-style scan while the pool is being
-	 * imported (see dsl_scan_init). We also restart scans if there
-	 * is a deferred resilver and the user has manually disabled
-	 * deferred resilvers via zfs_resilver_disable_defer, or if the
-	 * current scan progress is below zfs_resilver_defer_percent.
-	 */
-	if (dsl_scan_restarting(scn, tx) || restart_early) {
-		pool_scan_func_t func = POOL_SCAN_SCRUB;
-		dsl_scan_done(scn, B_FALSE, tx);
-		if (vdev_resilver_needed(spa->spa_root_vdev, NULL, NULL))
-			func = POOL_SCAN_RESILVER;
-		zfs_dbgmsg("restarting scan func=%u on %s txg=%llu early=%d",
-		    func, dp->dp_spa->spa_name, (longlong_t)tx->tx_txg,
-		    restart_early);
-		dsl_scan_setup_sync(&func, tx);
-	}
 
 	/*
 	 * If the spa is shutting down, then stop scanning. This will
@@ -5308,9 +5284,6 @@ ZFS_MODULE_PARAM(zfs, zfs_, scan_report_txgs, UINT, ZMOD_RW,
 
 ZFS_MODULE_PARAM(zfs, zfs_, resilver_disable_defer, INT, ZMOD_RW,
 	"Process all resilvers immediately");
-
-ZFS_MODULE_PARAM(zfs, zfs_, resilver_defer_percent, UINT, ZMOD_RW,
-	"Issued IO percent complete after which resilvers are deferred");
 
 ZFS_MODULE_PARAM(zfs, zfs_, scrub_error_blocks_per_txg, UINT, ZMOD_RW,
 	"Error blocks to be scrubbed in one txg");

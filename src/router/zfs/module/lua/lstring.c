@@ -103,7 +103,7 @@ static TString *createstrobj (lua_State *L, const char *str, size_t l,
   ts->tsv.len = l;
   ts->tsv.hash = h;
   ts->tsv.extra = 0;
-  sbuf = ts->contents;
+  sbuf = (char *)(TString *)(ts + 1);
   memcpy(sbuf, str, l*sizeof(char));
   sbuf[l] = '\0';  /* ending 0 */
   return ts;

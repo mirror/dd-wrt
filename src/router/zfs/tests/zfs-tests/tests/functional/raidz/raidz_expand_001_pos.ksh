@@ -154,9 +154,7 @@ function test_scrub # <pool> <parity> <dir>
 
 	log_must zpool import -o cachefile=none -d $dir $pool
 
-	is_pool_scrubbing $pool && wait_scrubbed $pool
 	log_must zpool scrub -w $pool
-
 	log_must zpool clear $pool
 	log_must zpool export $pool
 
@@ -168,7 +166,6 @@ function test_scrub # <pool> <parity> <dir>
 
 	log_must zpool import -o cachefile=none -d $dir $pool
 
-	is_pool_scrubbing $pool && wait_scrubbed $pool
 	log_must zpool scrub -w $pool
 
 	log_must check_pool_status $pool "errors" "No known data errors"

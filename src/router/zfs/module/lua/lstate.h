@@ -185,7 +185,7 @@ struct lua_State {
 */
 union GCObject {
   GCheader gch;  /* common header */
-  struct TString ts;
+  union TString ts;
   union Udata u;
   union Closure cl;
   struct Table h;

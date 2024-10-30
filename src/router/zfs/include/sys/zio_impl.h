@@ -120,9 +120,6 @@ extern "C" {
 
 /*
  * zio pipeline stage definitions
- *
- * NOTE: PLEASE UPDATE THE BITFIELD STRINGS IN zfs_valstr.c IF YOU ADD ANOTHER
- * FLAG.
  */
 enum zio_stage {
 	ZIO_STAGE_OPEN			= 1 << 0,	/* RWFCXT */
@@ -160,9 +157,8 @@ enum zio_stage {
 	ZIO_STAGE_VDEV_IO_ASSESS	= 1 << 23,	/* RW--XT */
 
 	ZIO_STAGE_CHECKSUM_VERIFY	= 1 << 24,	/* R----- */
-	ZIO_STAGE_DIO_CHECKSUM_VERIFY	= 1 << 25,	/* -W---- */
 
-	ZIO_STAGE_DONE			= 1 << 26	/* RWFCXT */
+	ZIO_STAGE_DONE			= 1 << 25	/* RWFCXT */
 };
 
 #define	ZIO_ROOT_PIPELINE			\
@@ -227,10 +223,6 @@ enum zio_stage {
 	ZIO_STAGE_ENCRYPT |			\
 	ZIO_STAGE_DVA_THROTTLE |		\
 	ZIO_STAGE_DVA_ALLOCATE)
-
-#define	ZIO_DIRECT_WRITE_PIPELINE		\
-	ZIO_WRITE_PIPELINE &			\
-	(~ZIO_STAGE_ISSUE_ASYNC)
 
 #define	ZIO_DDT_CHILD_WRITE_PIPELINE		\
 	(ZIO_INTERLOCK_STAGES |			\

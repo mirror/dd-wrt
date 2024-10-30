@@ -3455,24 +3455,43 @@ function tunable_exists
 }
 
 #
-# Compute xxh128sum for given file or stdin if no file given.
+# Compute MD5 digest for given file or stdin if no file given.
 # Note: file path must not contain spaces
 #
-function xxh128digest
+function md5digest
 {
-	xxh128sum $1 | awk '{print $1}'
+	typeset file=$1
+
+	case "$UNAME" in
+	FreeBSD)
+		md5 -q $file
+		;;
+	*)
+		typeset sum _
+		read -r sum _ < <(md5sum -b $file)
+		echo $sum
+		;;
+	esac
 }
 
 #
-# Compare the xxhash128 digest of two files.
+# Compute SHA256 digest for given file or stdin if no file given.
+# Note: file path must not contain spaces
 #
-function cmp_xxh128 {
-	typeset file1=$1
-	typeset file2=$2
+function sha256digest
+{
+	typeset file=$1
 
-	typeset sum1=$(xxh128digest $file1)
-	typeset sum2=$(xxh128digest $file2)
-	test "$sum1" = "$sum2"
+	case "$UNAME" in
+	FreeBSD)
+		sha256 -q $file
+		;;
+	*)
+		typeset sum _
+		read -r sum _ < <(sha256sum -b $file)
+		echo $sum
+		;;
+	esac
 }
 
 function new_fs #<args>

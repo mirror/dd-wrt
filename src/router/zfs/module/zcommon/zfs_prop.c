@@ -41,7 +41,6 @@
 #include <sys/zfs_ioctl.h>
 #include <sys/zfs_znode.h>
 #include <sys/dsl_crypt.h>
-#include <sys/simd.h>
 
 #include "zfs_prop.h"
 #include "zfs_deleg.h"
@@ -238,7 +237,6 @@ zfs_prop_init(void)
 	static const zprop_index_t snapdir_table[] = {
 		{ "hidden",	ZFS_SNAPDIR_HIDDEN },
 		{ "visible",	ZFS_SNAPDIR_VISIBLE },
-		{ "disabled",	ZFS_SNAPDIR_DISABLED },
 		{ NULL }
 	};
 
@@ -363,7 +361,7 @@ zfs_prop_init(void)
 
 	static const zprop_index_t xattr_table[] = {
 		{ "off",	ZFS_XATTR_OFF },
-		{ "on",		ZFS_XATTR_SA },
+		{ "on",		ZFS_XATTR_DIR },
 		{ "sa",		ZFS_XATTR_SA },
 		{ "dir",	ZFS_XATTR_DIR },
 		{ NULL }
@@ -394,13 +392,6 @@ zfs_prop_init(void)
 		{ "geom",	ZFS_VOLMODE_GEOM },
 		{ "dev",	ZFS_VOLMODE_DEV },
 		{ "none",	ZFS_VOLMODE_NONE },
-		{ NULL }
-	};
-
-	static const zprop_index_t direct_table[] = {
-		{ "disabled",	ZFS_DIRECT_DISABLED },
-		{ "standard",	ZFS_DIRECT_STANDARD },
-		{ "always",	ZFS_DIRECT_ALWAYS },
 		{ NULL }
 	};
 
@@ -437,7 +428,7 @@ zfs_prop_init(void)
 	    "COMPRESS", compress_table, sfeatures);
 	zprop_register_index(ZFS_PROP_SNAPDIR, "snapdir", ZFS_SNAPDIR_HIDDEN,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
-	    "disabled | hidden | visible", "SNAPDIR", snapdir_table, sfeatures);
+	    "hidden | visible", "SNAPDIR", snapdir_table, sfeatures);
 	zprop_register_index(ZFS_PROP_SNAPDEV, "snapdev", ZFS_SNAPDEV_HIDDEN,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "hidden | visible", "SNAPDEV", snapdev_table, sfeatures);
@@ -476,7 +467,7 @@ zfs_prop_init(void)
 	zprop_register_index(ZFS_PROP_LOGBIAS, "logbias", ZFS_LOGBIAS_LATENCY,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "latency | throughput", "LOGBIAS", logbias_table, sfeatures);
-	zprop_register_index(ZFS_PROP_XATTR, "xattr", ZFS_XATTR_SA,
+	zprop_register_index(ZFS_PROP_XATTR, "xattr", ZFS_XATTR_DIR,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_SNAPSHOT,
 	    "on | off | dir | sa", "XATTR", xattr_table, sfeatures);
 	zprop_register_index(ZFS_PROP_DNODESIZE, "dnodesize",
@@ -487,10 +478,6 @@ zfs_prop_init(void)
 	    ZFS_VOLMODE_DEFAULT, PROP_INHERIT,
 	    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "default | full | geom | dev | none", "VOLMODE", volmode_table,
-	    sfeatures);
-	zprop_register_index(ZFS_PROP_DIRECT, "direct",
-	    ZFS_DIRECT_STANDARD, PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
-	    "disabled | standard | always", "DIRECT", direct_table,
 	    sfeatures);
 
 	/* inherit index (boolean) properties */
@@ -773,10 +760,6 @@ zfs_prop_init(void)
 	    ZFS_TYPE_VOLUME, "<date>", "SNAPSHOTS_CHANGED", B_FALSE, B_TRUE,
 	    B_TRUE, NULL, sfeatures);
 
-	zprop_register_index(ZFS_PROP_LONGNAME, "longname", 0, PROP_INHERIT,
-	    ZFS_TYPE_FILESYSTEM, "on | off", "LONGNAME", boolean_table,
-	    sfeatures);
-
 	zfs_mod_list_supported_free(sfeatures);
 }
 
@@ -809,12 +792,11 @@ zfs_name_to_prop(const char *propname)
 boolean_t
 zfs_prop_user(const char *name)
 {
-	int i, len;
+	int i;
 	char c;
 	boolean_t foundsep = B_FALSE;
 
-	len = strlen(name);
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < strlen(name); i++) {
 		c = name[i];
 		if (!zprop_valid_char(c))
 			return (B_FALSE);
@@ -1089,7 +1071,6 @@ zcommon_init(void)
 		return (error);
 
 	fletcher_4_init();
-	simd_stat_init();
 
 	return (0);
 }
@@ -1097,7 +1078,6 @@ zcommon_init(void)
 void
 zcommon_fini(void)
 {
-	simd_stat_fini();
 	fletcher_4_fini();
 	kfpu_fini();
 }

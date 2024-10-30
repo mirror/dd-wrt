@@ -1618,17 +1618,15 @@ static int
 str2shift(libzfs_handle_t *hdl, const char *buf)
 {
 	const char *ends = "BKMGTPEZ";
-	int i, len;
+	int i;
 
 	if (buf[0] == '\0')
 		return (0);
-
-	len = strlen(ends);
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < strlen(ends); i++) {
 		if (toupper(buf[0]) == ends[i])
 			break;
 	}
-	if (i == len) {
+	if (i == strlen(ends)) {
 		if (hdl)
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 			    "invalid numeric suffix '%s'"), buf);

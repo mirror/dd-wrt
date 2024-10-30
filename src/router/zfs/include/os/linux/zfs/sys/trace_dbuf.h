@@ -45,13 +45,9 @@
  *     dmu_buf_impl_t *, ...,
  *     zio_t *, ...);
  */
-#define	DBUF_TP_STRUCT_ENTRY_OS_SPA \
-	    (db != NULL && \
-		POINTER_IS_VALID(DB_DNODE(db)->dn_objset)) \
-	    ? spa_name(DB_DNODE(db)->dn_objset->os_spa) : "NULL"
 
 #define	DBUF_TP_STRUCT_ENTRY					\
-	__string(os_spa, DBUF_TP_STRUCT_ENTRY_OS_SPA)		\
+	__dynamic_array(char,	os_spa,	TRACE_DBUF_MSG_MAX)	\
 	__field(uint64_t,	ds_object)			\
 	__field(uint64_t,	db_object)			\
 	__field(uint64_t,	db_level)			\
@@ -59,11 +55,18 @@
 	__field(uint64_t,	db_offset)			\
 	__field(uint64_t,	db_size)			\
 	__field(uint64_t,	db_state)			\
-	__field(int64_t,	db_holds)
+	__field(int64_t,	db_holds)			\
+	__dynamic_array(char,	msg,	TRACE_DBUF_MSG_MAX)
 
 #define	DBUF_TP_FAST_ASSIGN						\
 	if (db != NULL) {						\
-		__assign_str_impl(os_spa, DBUF_TP_STRUCT_ENTRY_OS_SPA); \
+		if (POINTER_IS_VALID(DB_DNODE(db)->dn_objset)) {	\
+			__assign_str(os_spa,				\
+			spa_name(DB_DNODE(db)->dn_objset->os_spa));	\
+		} else {						\
+			__assign_str(os_spa, "NULL");			\
+		}							\
+									\
 		__entry->ds_object = db->db_objset->os_dsl_dataset ?	\
 		db->db_objset->os_dsl_dataset->ds_object : 0;		\
 									\
@@ -74,8 +77,10 @@
 		__entry->db_size   = db->db.db_size;			\
 		__entry->db_state  = db->db_state;			\
 		__entry->db_holds  = zfs_refcount_count(&db->db_holds);	\
+		snprintf(__get_str(msg), TRACE_DBUF_MSG_MAX,		\
+		    DBUF_TP_PRINTK_FMT, DBUF_TP_PRINTK_ARGS);		\
 	} else {							\
-		__assign_str_impl(os_spa, DBUF_TP_STRUCT_ENTRY_OS_SPA); \
+		__assign_str(os_spa, "NULL");				\
 		__entry->ds_object = 0;					\
 		__entry->db_object = 0;					\
 		__entry->db_level  = 0;					\
@@ -84,6 +89,8 @@
 		__entry->db_size   = 0;					\
 		__entry->db_state  = 0;					\
 		__entry->db_holds  = 0;					\
+		snprintf(__get_str(msg), TRACE_DBUF_MSG_MAX,		\
+		    "dbuf { NULL }");					\
 	}
 
 #define	DBUF_TP_PRINTK_FMT						\
@@ -102,7 +109,7 @@ DECLARE_EVENT_CLASS(zfs_dbuf_class,
 	TP_ARGS(db, zio),
 	TP_STRUCT__entry(DBUF_TP_STRUCT_ENTRY),
 	TP_fast_assign(DBUF_TP_FAST_ASSIGN),
-	TP_printk(DBUF_TP_PRINTK_FMT, DBUF_TP_PRINTK_ARGS)
+	TP_printk("%s", __get_str(msg))
 );
 
 DECLARE_EVENT_CLASS(zfs_dbuf_state_class,
@@ -110,7 +117,7 @@ DECLARE_EVENT_CLASS(zfs_dbuf_state_class,
 	TP_ARGS(db, why),
 	TP_STRUCT__entry(DBUF_TP_STRUCT_ENTRY),
 	TP_fast_assign(DBUF_TP_FAST_ASSIGN),
-	TP_printk(DBUF_TP_PRINTK_FMT, DBUF_TP_PRINTK_ARGS)
+	TP_printk("%s", __get_str(msg))
 );
 /* END CSTYLED */
 
@@ -132,7 +139,7 @@ DECLARE_EVENT_CLASS(zfs_dbuf_evict_one_class,
 	TP_ARGS(db, mls),
 	TP_STRUCT__entry(DBUF_TP_STRUCT_ENTRY),
 	TP_fast_assign(DBUF_TP_FAST_ASSIGN),
-	TP_printk(DBUF_TP_PRINTK_FMT, DBUF_TP_PRINTK_ARGS)
+	TP_printk("%s", __get_str(msg))
 );
 /* END CSTYLED */
 

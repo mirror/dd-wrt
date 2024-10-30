@@ -134,6 +134,7 @@ EXPORT_SYMBOL(kmem_strfree);
 void *
 spl_kvmalloc(size_t size, gfp_t lflags)
 {
+#ifdef HAVE_KVMALLOC
 	/*
 	 * GFP_KERNEL allocations can safely use kvmalloc which may
 	 * improve performance by avoiding a) high latency caused by
@@ -145,6 +146,7 @@ spl_kvmalloc(size_t size, gfp_t lflags)
 	 */
 	if ((lflags & GFP_KERNEL) == GFP_KERNEL)
 		return (kvmalloc(size, lflags));
+#endif
 
 	gfp_t kmalloc_lflags = lflags;
 
