@@ -480,7 +480,7 @@ static int tls_obfuscated_heur_search_again(struct ndpi_detection_module_struct*
   return 0; /* Stop */
 }
 
-void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
+static void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
                                                     struct ndpi_flow_struct* flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "Switching to TLS Obfuscated heuristic\n");

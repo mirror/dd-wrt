@@ -698,7 +698,7 @@ NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 NDPI_STATIC int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len);
 NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
-void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
+NDPI_STATIC void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
                                                     struct ndpi_flow_struct* flow);
 /* HTTP */
 NDPI_STATIC void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,

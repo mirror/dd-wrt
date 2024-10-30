@@ -3744,7 +3744,7 @@ bool ndpi_serialize_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_s
 
 /* ****************************************************** */
 
-u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_len) {
+NDPI_STATIC u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_len) {
   u_int i, j;
 
   if(((in_len+1) / 2) > out_len)
@@ -3762,7 +3762,7 @@ u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_len) {
 
 /* ****************************************************** */
 
-u_int ndpi_bin2hex(u_char *out, u_int out_len, u_char* in, u_int in_len) {
+NDPI_STATIC u_int ndpi_bin2hex(u_char *out, u_int out_len, u_char* in, u_int in_len) {
   u_int i, j;
 
   if (out_len < (in_len*2)) {
