@@ -490,6 +490,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"surfshark",
 	"cactusvpn",
 	"windscribe",
+	"sonos",
+	"dingtalk",
 	NULL,
 };
 
