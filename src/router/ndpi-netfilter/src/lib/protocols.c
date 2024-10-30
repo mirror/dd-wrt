@@ -505,3 +505,5 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/trdp.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/dingtalk.c"
+#undef NDPI_CURRENT_PROTO

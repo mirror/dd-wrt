@@ -273,6 +273,8 @@
 #define ndpi_min(a,b)   ((a < b) ? a : b)
 #define ndpi_max(a,b)   ((a > b) ? a : b)
 
+#define NDPI_NUM_DEFAULT_ROOT_NODES        512
+
 #define NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct,flow,packet)		\
                         if (packet->packet_lines_parsed_complete != 1) {        \
 			  ndpi_parse_packet_line_info(ndpi_struct,flow);	\
