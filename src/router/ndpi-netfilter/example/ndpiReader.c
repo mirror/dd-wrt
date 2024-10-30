@@ -92,9 +92,12 @@ static ndpi_serialization_format serialization_format = ndpi_serialization_forma
 static char* domain_to_check = NULL;
 static char* ip_port_to_check = NULL;
 static u_int8_t ignore_vlanid = 0;
+FILE *fingerprint_fp         = NULL; /**< for flow fingerprint export */
+
 /** User preferences **/
 u_int8_t enable_realtime_output = 0, enable_protocol_guess = NDPI_GIVEUP_GUESS_BY_PORT | NDPI_GIVEUP_GUESS_BY_IP, enable_payload_analyzer = 0, num_bin_clusters = 0, extcap_exit = 0;
 u_int8_t verbose = 0, enable_flow_stats = 0;
+bool do_load_lists = false;
 
 struct cfg {
   char *proto;
@@ -217,12 +220,11 @@ struct receiver {
 struct receiver *receivers = NULL, *topReceivers = NULL;
 
 #define WIRESHARK_NTOP_MAGIC 0x19680924
-#define WIRESHARK_METADATA_SIZE	256
+#define WIRESHARK_METADATA_SIZE		192
+#define WIRESHARK_FLOW_RISK_INFO_SIZE	128
 
 #define WIRESHARK_METADATA_SERVERNAME	0x01
-#define WIRESHARK_METADATA_JA3C		0x02
-#define WIRESHARK_METADATA_JA3S		0x03
-#define WIRESHARK_METADATA_JA4C		0x04
+#define WIRESHARK_METADATA_JA4C		0x02
 
 struct ndpi_packet_tlv {
   u_int16_t type;
@@ -234,18 +236,21 @@ PACK_ON
 struct ndpi_packet_trailer {
   u_int32_t magic; /* WIRESHARK_NTOP_MAGIC */
   ndpi_master_app_protocol proto;
+  char name[16];
+  u_int8_t flags;
   ndpi_risk flow_risk;
   u_int16_t flow_score;
-  char flow_risk_info[32];
-  char name[16];
+  u_int16_t flow_risk_info_len;
+  char flow_risk_info[WIRESHARK_FLOW_RISK_INFO_SIZE];
   /* TLV of attributes. Having a max and fixed size for all the metadata
      is not efficient but greatly improves detection of the trailer by Wireshark */
+  u_int16_t metadata_len;
   unsigned char metadata[WIRESHARK_METADATA_SIZE];
 } PACK_OFF;
 
 static pcap_dumper_t *extcap_dumper = NULL;
 static pcap_t *extcap_fifo_h = NULL;
-static char extcap_buf[16384];
+static char extcap_buf[65536 + sizeof(struct ndpi_packet_trailer)];
 static char *extcap_capture_fifo    = NULL;
 static u_int16_t extcap_packet_filter = (u_int16_t)-1;
 static int do_extcap_capture = 0;
@@ -618,7 +623,7 @@ static void help(u_int long_help) {
          "-i <file|device> "
 #endif
          "[-f <filter>][-s <duration>][-m <duration>][-b <num bin clusters>]\n"
-         "          [-p <protos>][-l <loops> [-q][-d][-h][-H][-D][-e <len>][-E][-t][-v <level>]\n"
+         "          [-p <protos>][-l <loops> [-q][-d][-h][-H][-D][-e <len>][-E <path>][-t][-v <level>]\n"
          "          [-n <threads>][-w <file>][-c <file>][-C <file>][-j <file>][-x <file>]\n"
          "          [-r <file>][-R][-j <file>][-S <file>][-T <num>][-U <num>] [-x <domain>]\n"
          "          [-a <mode>][-B proto_list]\n\n"
@@ -658,6 +663,7 @@ static void help(u_int long_help) {
          "                            | Default: %u:%u:%u:%u:%u\n"
          "  -c <path>                 | Load custom categories from the specified file\n"
          "  -C <path>                 | Write output in CSV format on the specified file\n"
+	 "  -E <path>                 | Write flow fingerprints on the specified file\n"
          "  -r <path>                 | Load risky domain file\n"
          "  -R                        | Print detected realtime protocols\n"
          "  -j <path>                 | Load malicious JA3 fingeprints\n"
@@ -687,6 +693,10 @@ static void help(u_int long_help) {
          "  -A                        | Dump internal statistics (LRU caches / Patricia trees / Ahocarasick automas / ...\n"
          "  -M                        | Memory allocation stats on data-path (only by the library).\n"
 	 "                            | It works only on single-thread configuration\n"
+         "  --openvp_heuristics       | Enable OpenVPN heuristics.\n"
+         "                            | It is a shortcut to --cfg=openvpn.heuristics,0x01\n"
+         "  --tls_heuristics          | Enable TLS heuristics.\n"
+         "                            | It is a shortcut to --cfg=tls.heuristics,0x07\n"
          "  --cfg=proto,param,value   | Configure the specific attribute of this protocol\n"
          ,
          human_readeable_string_len,
@@ -746,6 +756,8 @@ static void help(u_int long_help) {
 
 
 #define OPTLONG_VALUE_CFG		3000
+#define OPTLONG_VALUE_OPENVPN_HEURISTICS	3001
+#define OPTLONG_VALUE_TLS_HEURISTICS		3002
 
 static struct option longopts[] = {
   /* mandatory extcap options */
@@ -789,6 +801,8 @@ static struct option longopts[] = {
   { "quiet", no_argument, NULL, 'q'},
 
   { "cfg", required_argument, NULL, OPTLONG_VALUE_CFG},
+  { "openvpn_heuristics", no_argument, NULL, OPTLONG_VALUE_OPENVPN_HEURISTICS},
+  { "tls_heuristics", no_argument, NULL, OPTLONG_VALUE_TLS_HEURISTICS},
 
   {0, 0, 0, 0}
 };
@@ -882,7 +896,7 @@ void extcap_config() {
   protos = (struct ndpi_proto_sorter*)ndpi_malloc(sizeof(struct ndpi_proto_sorter) * ndpi_num_supported_protocols);
   if(!protos) exit(0);
 
-  printf("arg {number=%d}{call=--ndpi-proto-filter}{display=nDPI Protocol Filter}{type=selector}{group=Filter}"
+  printf("arg {number=%d}{call=--ndpi-proto-filter}{display=nDPI Protocol Filter}{type=selector}{group=Options}"
          "{tooltip=nDPI Protocol to be filtered}\n", argidx);
 
   printf("value {arg=%d}{value=%d}{display=%s}{default=true}\n", argidx, (u_int32_t)-1, "No nDPI filtering");
@@ -899,6 +913,12 @@ void extcap_config() {
            protos[i].name, protos[i].id);
 
   ndpi_free(protos);
+  argidx++;
+
+  printf("arg {number=%d}{call=--openvp_heuristics}{display=Enable Obfuscated OpenVPN heuristics}"
+	 "{tooltip=Enable Obfuscated OpenVPN heuristics}{type=boolflag}{group=Options}\n", argidx++);
+  printf("arg {number=%d}{call=--tls_heuristics}{display=Enable Obfuscated TLS heuristics}"
+	 "{tooltip=Enable Obfuscated TLS heuristics}{type=boolflag}{group=Options}\n", argidx++);
 
   ndpi_exit_detection_module(ndpi_str);
 
@@ -1075,7 +1095,7 @@ static void parseOptions(int argc, char **argv) {
 #endif
 
   while((opt = getopt_long(argc, argv,
-			   "a:Ab:B:e:c:C:dDFf:g:G:i:Ij:k:K:S:hHp:pP:l:r:Rs:tu:v:V:n:rp:x:X:w:q0123:456:7:89:m:MT:U:",
+			   "a:Ab:B:e:E:c:C:dDFf:g:G:i:Ij:k:K:S:hHp:pP:l:r:Rs:tu:v:V:n:rp:x:X:w:q0123:456:7:89:m:MT:U:",
                            longopts, &option_idx)) != EOF) {
 #ifdef DEBUG_TRACE
     if(trace) fprintf(trace, " #### Handling option -%c [%s] #### \n", opt, optarg ? optarg : "");
@@ -1109,6 +1129,21 @@ static void parseOptions(int argc, char **argv) {
 
     case 'e':
       human_readeable_string_len = atoi(optarg);
+      break;
+
+    case 'E':
+      errno = 0;
+      if((fingerprint_fp = fopen(optarg, "w")) == NULL) {
+        printf("Unable to write on fingerprint file %s: %s\n", optarg, strerror(errno));
+        exit(1);
+      }
+
+      if(reader_add_cfg("tls", "metadata.ja4r_fingerprint", "1", 1) == -1) {
+	printf("Unable to enable JA4r fingerprints\n");
+	exit(1);
+      }
+
+      do_load_lists = true;
       break;
 
     case 'i':
@@ -1342,6 +1377,20 @@ static void parseOptions(int argc, char **argv) {
       reader_log_level = 0;
       break;
 
+    case OPTLONG_VALUE_OPENVPN_HEURISTICS:
+      if(reader_add_cfg("openvpn", "dpi.heuristics", "0x01", 1) == 1) {
+        printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
+        exit(1);
+      }
+      break;
+
+    case OPTLONG_VALUE_TLS_HEURISTICS:
+      if(reader_add_cfg("tls", "dpi.heuristics", "0x07", 1) == 1) {
+        printf("Invalid cfg [num:%d/%d]\n", num_cfgs, MAX_NUM_CFGS);
+        exit(1);
+      }
+      break;
+
       /* Extcap */
     case '0':
       extcap_interfaces();
@@ -1434,8 +1483,7 @@ static void parseOptions(int argc, char **argv) {
   if(extcap_exit)
     exit(0);
 
-  if(csv_fp)
-    printCSVHeader();
+  printCSVHeader();
 
 #ifndef USE_DPDK
   if(do_extcap_capture) {
@@ -2793,7 +2841,7 @@ static int is_realtime_protocol(ndpi_protocol proto)
 static void dump_realtime_protocol(struct ndpi_workflow * workflow, struct ndpi_flow_info *flow)
 {
   FILE *out = results_file ? results_file : stdout;
-  char srcip[64], dstip[64];
+  char srcip[70], dstip[70];
   char ip_proto[64], app_name[64];
   char date[64];
   int ret = is_realtime_protocol(flow->detected_protocol);
@@ -4565,12 +4613,19 @@ static void ndpi_process_packet(u_char *args,
     memcpy(extcap_buf, packet, h.caplen);
     memset(trailer, 0, sizeof(struct ndpi_packet_trailer));
     trailer->magic = htonl(WIRESHARK_NTOP_MAGIC);
+    if(flow) {
+      trailer->flags = flow->current_pkt_from_client_to_server;
+      trailer->flags |= (flow->detection_completed << 2);
+    } else {
+      trailer->flags = 0 | (2 << 2);
+    }
     trailer->flow_risk = htonl64(flow_risk);
     trailer->flow_score = htons(ndpi_risk2score(flow_risk, &cli_score, &srv_score));
-    if(flow->risk_str) {
+    trailer->flow_risk_info_len = ntohs(WIRESHARK_FLOW_RISK_INFO_SIZE);
+    if(flow && flow->risk_str) {
       strncpy(trailer->flow_risk_info, flow->risk_str, sizeof(trailer->flow_risk_info));
-      trailer->flow_risk_info[sizeof(trailer->flow_risk_info) - 1] = '\0';
     }
+    trailer->flow_risk_info[sizeof(trailer->flow_risk_info) - 1] = '\0';
     trailer->proto.master_protocol = htons(p.proto.master_protocol), trailer->proto.app_protocol = htons(p.proto.app_protocol);
     ndpi_protocol2name(ndpi_thread_info[thread_id].workflow->ndpi_struct, p, trailer->name, sizeof(trailer->name));
 
@@ -4579,6 +4634,7 @@ static void ndpi_process_packet(u_char *args,
        We export them only once */
     /* TODO: boundary check. Right now there is always enough room, but we should check it if we are
        going to extend the list of the metadata exported */
+    trailer->metadata_len = ntohs(WIRESHARK_METADATA_SIZE);
     struct ndpi_packet_tlv *tlv = (struct ndpi_packet_tlv *)trailer->metadata;
     int tot_len = 0;
     if(flow && flow->detection_completed == 1) {
@@ -4586,22 +4642,6 @@ static void ndpi_process_packet(u_char *args,
         tlv->type = ntohs(WIRESHARK_METADATA_SERVERNAME);
         tlv->length = ntohs(sizeof(flow->host_server_name));
         memcpy(tlv->data, flow->host_server_name, sizeof(flow->host_server_name));
-        /* TODO: boundary check */
-        tot_len += 4 + htons(tlv->length);
-        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
-      }
-      if(flow->ssh_tls.ja3_client[0] != '\0') {
-        tlv->type = ntohs(WIRESHARK_METADATA_JA3C);
-        tlv->length = ntohs(sizeof(flow->ssh_tls.ja3_client));
-        memcpy(tlv->data, flow->ssh_tls.ja3_client, sizeof(flow->ssh_tls.ja3_client));
-        /* TODO: boundary check */
-        tot_len += 4 + htons(tlv->length);
-        tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
-      }
-      if(flow->ssh_tls.ja3_server[0] != '\0') {
-        tlv->type = ntohs(WIRESHARK_METADATA_JA3S);
-        tlv->length = ntohs(sizeof(flow->ssh_tls.ja3_server));
-        memcpy(tlv->data, flow->ssh_tls.ja3_server, sizeof(flow->ssh_tls.ja3_server));
         /* TODO: boundary check */
         tot_len += 4 + htons(tlv->length);
         tlv = (struct ndpi_packet_tlv *)&trailer->metadata[tot_len];
@@ -5967,6 +6007,25 @@ void memmemUnitTest(void) {
 
 /* *********************************************** */
 
+void mahalanobisUnitTest()
+{
+  /* Example based on: https://supplychenmanagement.com/2019/03/06/calculating-mahalanobis-distance/ */
+
+  const float i_s[3 * 3] = {  0.0482486100061447, -0.00420645518018837, -0.0138921893248235,
+                             -0.00420645518018836, 0.00177288408892603, -0.00649813703331057,
+                             -0.0138921893248235, -0.00649813703331056,  0.066800436339011 }; /* Inverted covar matrix */
+  const float u[3] = { 22.8, 180.0, 9.2 }; /* Means vector */
+  u_int32_t x[3] = { 26, 167, 12 }; /* Point */
+  float md;
+
+  md = ndpi_mahalanobis_distance(x, 3, u, i_s);
+  /* It is a bit tricky to test float equality on different archs -> loose check.
+   * md sholud be 1.3753 */
+  assert(md >= 1.37 && md <= 1.38);
+}
+
+/* *********************************************** */
+
 void filterUnitTest() {
 #if 0
   ndpi_filter* f = ndpi_filter_alloc();
@@ -6196,7 +6255,7 @@ void ballTreeUnitTest() {
 			    num_columns, nun_results);
 
   assert(result.n_samples == 2);
-  
+
   for (i = 0; i < result.n_samples; i++) {
     printf("{\"knn_idx\": [");
     for (j = 0; j < result.n_neighbors; j++)
@@ -6219,6 +6278,26 @@ void ballTreeUnitTest() {
 
   ndpi_free_knn(result);
   ndpi_free_btree(ball_tree);
+}
+
+/* *********************************************** */
+
+void cryptDecryptUnitTest() {
+  u_char enc_dec_key[64] = "9dedb817e5a8805c1de62eb8982665b9a2b4715174c34d23b9a46ffafacfb2a7" /* SHA256("nDPI") */;
+  const char *test_string = "The quick brown fox jumps over the lazy dog";
+  char *enc, *dec;
+  u_int16_t e_len, d_len, t_len = strlen(test_string);
+
+  enc = ndpi_quick_encrypt(test_string, t_len, &e_len, enc_dec_key);
+  assert(enc != NULL);
+  dec = ndpi_quick_decrypt((const char*)enc, e_len, &d_len, enc_dec_key);
+  assert(dec != NULL);
+  assert(t_len == d_len);
+
+  assert(strncmp(dec, test_string, e_len) == 0);
+
+  ndpi_free(enc);
+  ndpi_free(dec);
 }
 
 /* *********************************************** */
@@ -6277,6 +6356,9 @@ void domainsUnitTest() {
     ndpi_set_protocol_detection_bitmask2(ndpi_str, &all);
 
     assert(ndpi_load_domain_suffixes(ndpi_str, (char*)lists_path) == 0);
+
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "extension.femetrics.grammarly.io"), "grammarly.io") == 0);
+    assert(strcmp(ndpi_get_host_domain(ndpi_str, "www.ovh.commander1.com"), "commander1.com") == 0);
 
     assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "www.chosei.chiba.jp", &suffix_id), "chosei.chiba.jp") == 0);
     assert(strcmp(ndpi_get_host_domain_suffix(ndpi_str, "www.unipi.it", &suffix_id), "it") == 0);
@@ -6357,6 +6439,31 @@ void domainSearchUnitTest2() {
 
 /* *********************************************** */
 
+void domainCacheTestUnit() {
+  struct ndpi_address_cache *cache = ndpi_init_address_cache(32000);
+  ndpi_ip_addr_t ip;
+  u_int32_t epoch_now = (u_int32_t)time(NULL);
+  struct ndpi_address_cache_item *ret;
+
+  assert(cache);
+
+  memset(&ip, 0, sizeof(ip));
+  ip.ipv4 = 12345678;
+  assert(ndpi_address_cache_insert(cache, ip, "nodomain.local", epoch_now, 0) == true);
+
+  ip.ipv4 = 87654321;
+  assert(ndpi_address_cache_insert(cache, ip, "hello.local", epoch_now, 0) == true);
+
+  assert((ret = ndpi_address_cache_find(cache, ip, epoch_now)) != NULL);
+  assert(strcmp(ret->hostname, "hello.local") == 0);
+  sleep(1);
+  assert(ndpi_address_cache_find(cache, ip, time(NULL)) == NULL);
+
+  ndpi_term_address_cache(cache);
+}
+
+/* *********************************************** */
+
 /**
    @brief MAIN FUNCTION
 **/
@@ -6367,7 +6474,7 @@ int main(int argc, char **argv) {
 #else
   int skip_unit_tests = 1;
 #endif
-
+  
 #ifdef DEBUG_TRACE
   trace = fopen("/tmp/ndpiReader.log", "a");
 
@@ -6400,6 +6507,8 @@ int main(int argc, char **argv) {
     exit(0);
 #endif
 
+    domainCacheTestUnit();
+    cryptDecryptUnitTest();
     kdUnitTest();
     encodeDomainsUnitTest();
     loadStressTest();
@@ -6436,6 +6545,7 @@ int main(int argc, char **argv) {
     strnstrUnitTest();
     strncasestrUnitTest();
     memmemUnitTest();
+    mahalanobisUnitTest();
 #endif
   }
 
@@ -6488,7 +6598,8 @@ int main(int argc, char **argv) {
   if(extcap_dumper) pcap_dump_close(extcap_dumper);
   if(extcap_fifo_h) pcap_close(extcap_fifo_h);
   if(enable_malloc_bins) ndpi_free_bin(&malloc_bins);
-  if(csv_fp)        fclose(csv_fp);
+  if(csv_fp)         fclose(csv_fp);
+  if(fingerprint_fp) fclose(fingerprint_fp);
 
   ndpi_free(_disabled_protocols);
 

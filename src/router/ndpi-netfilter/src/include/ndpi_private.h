@@ -144,6 +144,7 @@ struct ndpi_packet_struct {
   struct ndpi_int_one_line_struct http_origin;
   struct ndpi_int_one_line_struct server_line;
   struct ndpi_int_one_line_struct http_method;
+  struct ndpi_int_one_line_struct upgrade_line;
   struct ndpi_int_one_line_struct http_response; /* the first "word" in this pointer is the
 						    response code in the packet (200, etc) */
   struct ndpi_int_one_line_struct *hdr_line;
@@ -223,7 +224,11 @@ struct ndpi_detection_module_config_struct {
   int libgcrypt_init;
   int guess_on_giveup;
   int compute_entropy;
+  int address_cache_size;
   int fpc_enabled;
+  int guess_ip_before_port;
+  int use_client_ip_in_guess;
+  int use_client_port_in_guess;
   
   char filename_config[CFG_MAX_LEN];
 
@@ -257,6 +262,8 @@ struct ndpi_detection_module_config_struct {
 
   int tls_certificate_expire_in_x_days;
   int tls_app_blocks_tracking_enabled;
+  int tls_heuristics;
+  int tls_heuristics_max_packets;
   int tls_sha1_fingerprint_enabled;
   /* Limit for tls buffer size */
   int tls_buf_size_limit;
@@ -296,6 +303,8 @@ struct ndpi_detection_module_config_struct {
 
   int rtp_search_for_stun;
 
+  int openvpn_heuristics;
+  int openvpn_heuristics_num_msgs;
   int openvpn_subclassification_by_ip;
 
   int wireguard_subclassification_by_ip;
@@ -443,7 +452,7 @@ struct ndpi_detection_module_struct {
 #else
   struct ndpi_packet_struct packet[NR_CPUS];
 #endif
-  const struct ndpi_flow_input_info *input_info;
+  struct ndpi_flow_input_info *input_info;
 
 #ifdef HAVE_NBPF
   u_int8_t num_nbpf_custom_proto;
@@ -453,6 +462,7 @@ struct ndpi_detection_module_struct {
   u_int16_t max_payload_track_len;
 
   ndpi_str_hash *public_domain_suffixes;
+  struct ndpi_address_cache *address_cache;
 };
 
 #ifndef __KERNEL__
@@ -600,10 +610,6 @@ struct ndpi_detection_module_struct {
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 #define NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION	(NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP | NDPI_SELECTION_BITMASK_PROTOCOL_NO_TCP_RETRANSMISSION | NDPI_SELECTION_BITMASK_PROTOCOL_HAS_PAYLOAD)
 
-
-
-
-
 /* Generic */
 
 NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
@@ -657,6 +663,8 @@ NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct
 
 NDPI_STATIC char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
 
+NDPI_STATIC int is_flow_addr_informative(const struct ndpi_flow_struct *flow);
+
 NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
 
 NDPI_STATIC ndpi_risk_enum ndpi_network_risk_ptree_match(struct ndpi_detection_module_struct *ndpi_str,
@@ -675,6 +683,9 @@ NDPI_STATIC int load_category_file_fd(struct ndpi_detection_module_struct *ndpi_
 
 NDPI_STATIC u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow);
 
+NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_struct,
+			ndpi_ip_addr_t ip_addr, char *hostname,
+			u_int32_t epoch_now, u_int32_t ttl);
 
 /* TLS */
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
@@ -687,7 +698,8 @@ NDPI_STATIC void switch_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 NDPI_STATIC int is_dtls(const u_int8_t *buf, u_int32_t buf_len, u_int32_t *block_len);
 NDPI_STATIC void switch_extra_dissection_to_tls(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
-
+void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_detection_module_struct* ndpi_struct,
+                                                    struct ndpi_flow_struct* flow);
 /* HTTP */
 NDPI_STATIC void http_process_user_agent(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow,
@@ -999,6 +1011,7 @@ NDPI_STATIC void init_cnp_ip_dissector(struct ndpi_detection_module_struct *ndpi
 NDPI_STATIC void init_atg_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_trdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_lustre_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dingtalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

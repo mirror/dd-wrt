@@ -4,6 +4,7 @@
 #include "third_party/src/ndpi_md5.c"
 #include "third_party/src/ndpi_sha1.c"
 #include "third_party/src/ndpi_sha256.c"
+#include "third_party/src/aes.c"
 #include "third_party/src/ahocorasick.c"
 #include "third_party/src/libcache.c"
 #include "third_party/src/ndpi_patricia.c"

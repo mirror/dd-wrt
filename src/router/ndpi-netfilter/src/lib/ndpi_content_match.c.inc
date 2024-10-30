@@ -648,12 +648,13 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "adservice.google.com",         "Google",           NDPI_PROTOCOL_GOOGLE, CUSTOM_CATEGORY_ADVERTISEMENT, NDPI_PROTOCOL_TRACKER_ADS, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gvt1.com",                                 "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "gvt2.com",                                 "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "telephony.goog",                            "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "connectivitycheck.android.com",             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "connectivitycheck.gstatic.com",             "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "telephony.goog",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "connectivitycheck.android.com",            "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "connectivitycheck.gstatic.com",            "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_CONNECTIVITY_CHECK, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "ampproject.org",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "ampproject.net",                           "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
-   { "app-measurement.com",                       "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "app-measurement.com",                      "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "pki.goog",                                 "Google",           NDPI_PROTOCOL_GOOGLE, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    /* Google Meet */
    { "meet.google.com",                           "GoogleMeet", NDPI_PROTOCOL_GOOGLE_MEET, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
@@ -1036,6 +1037,7 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "tupdate.com",                                "Telegram",         NDPI_PROTOCOL_TELEGRAM, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "t.me",                                       "Telegram",         NDPI_PROTOCOL_TELEGRAM, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "telegram.me",                                "Telegram",         NDPI_PROTOCOL_TELEGRAM, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "cdn-telegram.org",                           "Telegram",         NDPI_PROTOCOL_TELEGRAM, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
    { "pastebin.com",                             "Pastebin",         NDPI_PROTOCOL_PASTEBIN, NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
@@ -1688,6 +1690,11 @@ NDPI_STATIC ndpi_protocol_match host_match[] =
    { "windscribe.com",                   "Windscribe", NDPI_PROTOCOL_WINDSCRIBE, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
    { "whiskergalaxy.com",                "Windscribe", NDPI_PROTOCOL_WINDSCRIBE, NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
 
+   { "sonos.com",                        "Sonos", NDPI_PROTOCOL_SONOS, NDPI_PROTOCOL_CATEGORY_MUSIC, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+   { "sonos.radio",                      "Sonos", NDPI_PROTOCOL_SONOS, NDPI_PROTOCOL_CATEGORY_MUSIC, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
+   { "dingtalk.com",                     "DingTalk", NDPI_PROTOCOL_DINGTALK, NDPI_PROTOCOL_CATEGORY_CHAT, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DEFAULT_LEVEL },
+
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_content_match_host_match.c.inc"
 #endif
@@ -1717,7 +1724,7 @@ static ndpi_tls_cert_name_match tls_certificate_match [] = {
   { "O=NoMachine",                     NDPI_PROTOCOL_NOMACHINE },
   { "O=Private Internet Access",       NDPI_PROTOCOL_PIA },
   { "O=Windscribe",                    NDPI_PROTOCOL_WINDSCRIBE },
-
+  { "O=Sonos, Inc",                    NDPI_PROTOCOL_SONOS      },  
   { "CN=Snapchat Inc.",                NDPI_PROTOCOL_SNAPCHAT_CALL },
   { "CN=NVIDIA GameStream",            NDPI_PROTOCOL_GEFORCENOW },
 

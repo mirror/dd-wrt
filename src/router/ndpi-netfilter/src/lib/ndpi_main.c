@@ -141,6 +141,7 @@
 #include "protocols.c"
 #include "ndpi_utils.c"
 #include "ndpi_hash.c"
+#include "ndpi_cache.c"
 #include "ndpi_serializer.c"
 #include "ndpi_memory.c"
 #include "ndpi_analyze.c"
@@ -220,6 +221,7 @@ static ndpi_risk_info ndpi_known_risks[] = {
   { NDPI_MALWARE_HOST_CONTACTED,                NDPI_RISK_SEVERE, CLIENT_HIGH_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
   { NDPI_BINARY_DATA_TRANSFER,                  NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
   { NDPI_PROBING_ATTEMPT,                       NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
+  { NDPI_OBFUSCATED_TRAFFIC,                    NDPI_RISK_HIGH,   CLIENT_HIGH_RISK_PERCENTAGE, NDPI_BOTH_ACCOUNTABLE },
 
   /* Leave this as last member */
   { NDPI_MAX_RISK,                              NDPI_RISK_LOW,    CLIENT_FAIR_RISK_PERCENTAGE, NDPI_NO_ACCOUNTABILITY   }
@@ -463,6 +465,38 @@ void ndpi_set_proto_category(struct ndpi_detection_module_struct *ndpi_str, u_in
     return;
   else if(ndpi_str)
     ndpi_str->proto_defaults[protoId].protoCategory = protoCategory;
+}
+
+/* ********************************************************************************** */
+
+int is_flow_addr_informative(const struct ndpi_flow_struct *flow)
+{
+  /* The ideas is to tell if the address itself carries some useful information or not.
+     Examples:
+      a flow to a Facebook address is quite likely related to some Facebook apps
+      a flow to an AWS address might be potentially anything
+  */
+
+  switch(flow->guessed_protocol_id_by_ip) {
+  case NDPI_PROTOCOL_UNKNOWN:
+  /* This is basically the list of cloud providers supported by nDPI */
+  case NDPI_PROTOCOL_TENCENT:
+  case NDPI_PROTOCOL_EDGECAST:
+  case NDPI_PROTOCOL_ALIBABA:
+  case NDPI_PROTOCOL_YANDEX_CLOUD:
+  case NDPI_PROTOCOL_AMAZON_AWS:
+  case NDPI_PROTOCOL_MICROSOFT_AZURE:
+  case NDPI_PROTOCOL_CACHEFLY:
+  case NDPI_PROTOCOL_CLOUDFLARE:
+  case NDPI_PROTOCOL_GOOGLE_CLOUD:
+    return 0;
+  /* This is basically the list of VPNs (with **entry** addresses) supported by nDPI */
+  case NDPI_PROTOCOL_NORDVPN:
+  case NDPI_PROTOCOL_PROTONVPN:
+    return 0;
+  default:
+    return 1;
+  }
 }
 
 /* ********************************************************************************** */
@@ -2431,6 +2465,10 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			  ndpi_build_default_ports(ports_b, 17224, 17225, 0, 0, 0) /* UDP */);
   ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_LUSTRE,
 			  "Lustre", NDPI_PROTOCOL_CATEGORY_DATA_TRANSFER,
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+  ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DINGTALK,
+			  "DingTalk", NDPI_PROTOCOL_CATEGORY_CHAT,
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
 
@@ -4522,6 +4560,9 @@ void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_str) {
       ndpi_hash_free(&ndpi_str->public_domain_suffixes);
 #endif
 
+    if(ndpi_str->address_cache)
+      ndpi_term_address_cache(ndpi_str->address_cache);
+    
     ndpi_free(ndpi_str);
   }
 
@@ -4535,6 +4576,8 @@ void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_str) {
 static default_ports_tree_node_t *ndpi_get_guessed_protocol_id(struct ndpi_detection_module_struct *ndpi_str,
                                                                u_int8_t proto, u_int16_t sport, u_int16_t dport) {
   default_ports_tree_node_t node;
+  /* Set use_sport to config value if direction detection is enabled */
+  int use_sport = ndpi_str->cfg.direction_detect_enabled ? ndpi_str->cfg.use_client_port_in_guess : 1;
 
   if(sport && dport) {
     const void *ret;
@@ -4543,7 +4586,7 @@ static default_ports_tree_node_t *ndpi_get_guessed_protocol_id(struct ndpi_detec
     ret = ndpi_tfind(&node, (proto == IPPROTO_TCP) ? (void *) &ndpi_str->tcpRoot : (void *) &ndpi_str->udpRoot,
 		     default_ports_tree_node_t_cmp);
 
-    if(ret == NULL) {
+    if(ret == NULL && use_sport) {
       node.default_port = sport;
       ret = ndpi_tfind(&node, (proto == IPPROTO_TCP) ? (void *) &ndpi_str->tcpRoot : (void *) &ndpi_str->udpRoot,
 		       default_ports_tree_node_t_cmp);
@@ -6502,6 +6545,9 @@ static int ndpi_callback_init(struct ndpi_detection_module_struct *ndpi_str) {
   /* Lustre */
   init_lustre_dissector(ndpi_str, &a);
 
+  /* DingTalk */
+  init_dingtalk_dissector(ndpi_str, &a);
+
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_main_init.c"
 #endif
@@ -6919,6 +6965,9 @@ void ndpi_free_flow_data(struct ndpi_flow_struct* flow) {
 
     if(flow->flow_payload != NULL)
       ndpi_free(flow->flow_payload);
+
+    if(flow->tls_quic.obfuscated_heur_state)
+      ndpi_free(flow->tls_quic.obfuscated_heur_state);
   }
 }
 
@@ -6956,7 +7005,7 @@ static int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
 			    const u_int64_t current_time_ms,
 			    const unsigned char *packet_data,
 			    unsigned short packetlen,
-			    const struct ndpi_flow_input_info *input_info) {
+			    struct ndpi_flow_input_info *input_info) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_str);
   const struct ndpi_iphdr *decaps_iph = NULL;
   u_int16_t l3len;
@@ -7295,7 +7344,8 @@ static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_s
 	/* check tcp sequence counters */
 	if(((u_int32_t)(ntohl(tcph->seq) - flow->next_tcp_seq_nr[packet->packet_direction])) >
 	   ndpi_str->tcp_max_retransmission_window_size) {
-	  packet->tcp_retransmission = 1;
+	  if(flow->last_tcp_pkt_payload_len > 0)
+	    packet->tcp_retransmission = 1;
 
 	  /* CHECK IF PARTIAL RETRY IS HAPPENING */
 	  if((flow->next_tcp_seq_nr[packet->packet_direction] - ntohl(tcph->seq) <
@@ -7313,6 +7363,8 @@ static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_s
 	flow->next_tcp_seq_nr[0] = 0;
 	flow->next_tcp_seq_nr[1] = 0;
       }
+
+      flow->last_tcp_pkt_payload_len = packet->payload_packet_len;
     } else if(udph != NULL) {
       if(ndpi_str->cfg.direction_detect_enabled &&
          (udph->source != udph->dest))
@@ -7416,6 +7468,14 @@ static void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_s
       else {
 	ndpi_unset_risk(flow, NDPI_UNIDIRECTIONAL_TRAFFIC); /* Clear bit */
       }
+    }
+
+    if(ndpi_str->input_info &&
+       ndpi_str->input_info->in_pkt_dir == NDPI_IN_PKT_DIR_UNKNOWN) {
+      if(current_pkt_from_client_to_server(ndpi_str, flow))
+        ndpi_str->input_info->in_pkt_dir = NDPI_IN_PKT_DIR_C_TO_S;
+      else
+        ndpi_str->input_info->in_pkt_dir = NDPI_IN_PKT_DIR_S_TO_C;
     }
 }
 
@@ -7587,6 +7647,7 @@ u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_
 #ifndef __KERNEL__
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_str);
   u_int16_t ret = NDPI_PROTOCOL_UNKNOWN;
+  int use_client = ndpi_str->cfg.use_client_ip_in_guess;
 
   if(packet->iph) {
     struct in_addr addr;
@@ -7595,7 +7656,7 @@ u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_
     addr.s_addr = flow->s_address.v4;
     ret = ndpi_network_port_ptree_match(ndpi_str, &addr, flow->s_port);
 
-    if(ret == NDPI_PROTOCOL_UNKNOWN) {
+    if(ret == NDPI_PROTOCOL_UNKNOWN && use_client) {
       addr.s_addr = flow->c_address.v4;
       ret = ndpi_network_port_ptree_match(ndpi_str, &addr, flow->c_port);
     }
@@ -7606,7 +7667,7 @@ u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_
     addr = *(struct in6_addr *)&flow->s_address.v6;
     ret = ndpi_network_port_ptree6_match(ndpi_str, &addr, flow->s_port);
 
-    if(ret == NDPI_PROTOCOL_UNKNOWN) {
+    if(ret == NDPI_PROTOCOL_UNKNOWN && use_client) {
       addr = *(struct in6_addr *)&flow->c_address.v6;
       ret = ndpi_network_port_ptree6_match(ndpi_str, &addr, flow->c_port);
     }
@@ -7636,10 +7697,10 @@ static u_int64_t make_fpc_dns_cache_key(struct ndpi_flow_struct *flow) {
 u_int64_t fpc_dns_cache_key_from_dns_info(struct ndpi_flow_struct *flow) {
   u_int64_t key;
 
-  if(flow->protos.dns.is_rsp_addr_ipv6)
-    key = ndpi_quick_hash64((const char *)&flow->protos.dns.rsp_addr.ipv6, 16);
+  if(flow->protos.dns.is_rsp_addr_ipv6[0])
+    key = ndpi_quick_hash64((const char *)&flow->protos.dns.rsp_addr[0].ipv6, 16);
   else
-    key = (u_int64_t)(flow->protos.dns.rsp_addr.ipv4);
+    key = (u_int64_t)(flow->protos.dns.rsp_addr[0].ipv4);
 
   return key;
 }
@@ -8065,6 +8126,20 @@ ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_st
     ndpi_set_risk(flow, NDPI_FULLY_ENCRYPTED, NULL);
   }
 
+  /* If guess_ip_before_port is enabled, classify by-ip first */
+  if((ndpi_str->cfg.guess_ip_before_port))
+  {
+    if((ndpi_str->cfg.guess_on_giveup & NDPI_GIVEUP_GUESS_BY_IP) &&
+    ret.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN &&
+    flow->guessed_protocol_id_by_ip != NDPI_PROTOCOL_UNKNOWN) {
+
+    ndpi_set_detected_protocol(ndpi_str, flow,
+			       flow->guessed_protocol_id_by_ip,
+			       ret.proto.master_protocol,
+			       NDPI_CONFIDENCE_MATCH_BY_IP);
+    ret.proto.app_protocol = flow->detected_protocol_stack[0];
+    }
+  }
   /* Classification by-port */
   if((ndpi_str->cfg.guess_on_giveup & NDPI_GIVEUP_GUESS_BY_PORT) &&
      ret.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
@@ -8081,9 +8156,9 @@ ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_st
       ret.proto.app_protocol = flow->detected_protocol_stack[0];
     }
   }
-
-  /* Classification by-ip, as last effort */
-  if((ndpi_str->cfg.guess_on_giveup & NDPI_GIVEUP_GUESS_BY_IP) &&
+  /* Classification by-ip, as last effort if guess_ip_before_port is disabled*/
+  if(!(ndpi_str->cfg.guess_ip_before_port) &&
+     (ndpi_str->cfg.guess_on_giveup & NDPI_GIVEUP_GUESS_BY_IP) &&
      ret.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN &&
      flow->guessed_protocol_id_by_ip != NDPI_PROTOCOL_UNKNOWN) {
 
@@ -8110,7 +8185,7 @@ void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_str,
 			       struct ndpi_flow_struct *flow,
 			       const unsigned char *packet_data, const unsigned short packetlen,
 			       const u_int64_t current_time_ms,
-			       const struct ndpi_flow_input_info *input_info) {
+			       struct ndpi_flow_input_info *input_info) {
   if(flow == NULL)
     return;
 
@@ -8489,6 +8564,7 @@ static void ndpi_reset_packet_line_info(struct ndpi_packet_struct *packet) {
     packet->server_line.len = 0, packet->http_method.ptr = NULL, packet->http_method.len = 0,
     packet->http_response.ptr = NULL, packet->http_response.len = 0,
     packet->forwarded_line.ptr = NULL, packet->forwarded_line.len = 0;
+    packet->upgrade_line.ptr = NULL, packet->upgrade_line.len = 0;
 }
 
 /* ********************************************************************************* */
@@ -8695,7 +8771,6 @@ static void fpc_check_eval(struct ndpi_detection_module_struct *ndpi_str,
 {
   u_int16_t fpc_dns_cached_proto;
 
-
   if(!ndpi_str->cfg.fpc_enabled)
     return;
 
@@ -8732,7 +8807,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 							    const unsigned char *packet_data,
 							    const unsigned short packetlen,
 							    const u_int64_t current_time_ms,
-							    const struct ndpi_flow_input_info *input_info) {
+							    struct ndpi_flow_input_info *input_info) {
   struct ndpi_packet_struct *packet;
   NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_packet;
   u_int32_t num_calls = 0;
@@ -8765,6 +8840,10 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
   if(ndpi_str->cfg.max_packets_to_process > 0 && flow->num_processed_pkts >= ndpi_str->cfg.max_packets_to_process) {
     flow->extra_packets_func = NULL; /* To allow ndpi_extra_dissection_possible() to fail */
     flow->fail_with_unknown = 1;
+    /* Let's try to update ndpi_str->input_info->in_pkt_dir even in this case.
+     * It is quite uncommon, so we are not going to spend a lot of resources here... */
+    if(ndpi_init_packet(ndpi_str, flow, current_time_ms, packet_data, packetlen, input_info) == 0)
+      ndpi_connection_tracking(ndpi_str, flow);
     return(ret); /* Avoid spending too much time with this flow */
   }
 
@@ -9078,7 +9157,7 @@ static ndpi_protocol ndpi_internal_detection_process_packet(struct ndpi_detectio
 ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_str,
 					    struct ndpi_flow_struct *flow, const unsigned char *packet_data,
 					    const unsigned short packetlen, const u_int64_t current_time_ms,
-					    const struct ndpi_flow_input_info *input_info) {
+					    struct ndpi_flow_input_info *input_info) {
   ndpi_protocol p  = ndpi_internal_detection_process_packet(ndpi_str, flow, packet_data,
 							    packetlen, current_time_ms,
 							    input_info);
@@ -9219,6 +9298,7 @@ static void parse_single_packet_line(struct ndpi_detection_module_struct *ndpi_s
                                      { "Authorization:", &packet->authorization_line },
                                      { NULL, NULL} };
   struct header_line headers_u[] = { { "User-agent:", &packet->user_agent_line },
+                                     { "Upgrade:", &packet->upgrade_line },
                                      { NULL, NULL} };
   struct header_line headers_c[] = { { "Content-Disposition:", &packet->content_disposition_line },
                                      { "Content-type:", &packet->content_line },
@@ -10594,168 +10674,6 @@ u_int32_t ndpi_get_current_time(struct ndpi_flow_struct *flow)
 
 /* ******************************************************************** */
 
-/* LRU cache */
-struct ndpi_lru_cache *ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl, int shared) {
-  struct ndpi_lru_cache *c = (struct ndpi_lru_cache *) ndpi_calloc(1, sizeof(struct ndpi_lru_cache));
-
-  if(!c)
-    return(NULL);
-
-  c->ttl = ttl & 0x7FFFFFFF;
-  c->shared = !!shared;
-#ifdef USE_GLOBAL_CONTEXT
-#ifndef __KERNEL__
-  if(c->shared) {
-    if(pthread_mutex_init(&c->mutex, NULL) != 0) {
-      ndpi_free(c);
-      return(NULL);
-    }
-  }
-#endif
-#endif
-  c->entries = (struct ndpi_lru_cache_entry *) ndpi_calloc(num_entries, sizeof(struct ndpi_lru_cache_entry));
-
-  if(!c->entries) {
-    ndpi_free(c);
-    return(NULL);
-  } else
-    c->num_entries = num_entries;
-
-  return(c);
-}
-
-void ndpi_lru_free_cache(struct ndpi_lru_cache *c) {
-  ndpi_free(c->entries);
-  ndpi_free(c);
-}
-
-static void __lru_cache_lock(struct ndpi_lru_cache *c)
-{
-#ifdef USE_GLOBAL_CONTEXT
-#ifndef __KERNEL__
-  if(c->shared) {
-    pthread_mutex_lock(&c->mutex);
-  }
-#else
-  (void)c;
-#endif
-#endif
-}
-
-static void __lru_cache_unlock(struct ndpi_lru_cache *c)
-{
-#ifdef USE_GLOBAL_CONTEXT
-#ifndef __KERNEL__
-  if(c->shared) {
-    pthread_mutex_unlock(&c->mutex);
-  }
-#else
-  (void)c;
-#endif
-#endif
-}
-
-u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int64_t key,
-			     u_int16_t *value, u_int8_t clean_key_when_found, u_int32_t now_sec) {
-  u_int32_t slot = ndpi_quick_hash((unsigned char *)&key, sizeof(key)) % c->num_entries;
-  u_int8_t ret;
-
-  __lru_cache_lock(c);
-
-  c->stats.n_search++;
-  if(c->entries[slot].is_full && c->entries[slot].key == key &&
-     now_sec >= c->entries[slot].timestamp &&
-     (c->ttl == 0 || now_sec - c->entries[slot].timestamp <= c->ttl)) {
-    *value = c->entries[slot].value;
-    if(clean_key_when_found)
-      c->entries[slot].is_full = 0;
-    c->stats.n_found++;
-    ret = 1;
-  } else
-    ret = 0;
-
-  __lru_cache_unlock(c);
-
-  return ret;
-}
-
-void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int64_t key, u_int16_t value, u_int32_t now_sec) {
-  u_int32_t slot = ndpi_quick_hash((unsigned char *)&key, sizeof(key)) % c->num_entries;
-
-  __lru_cache_lock(c);
-
-  c->stats.n_insert++;
-  c->entries[slot].is_full = 1, c->entries[slot].key = key, c->entries[slot].value = value, c->entries[slot].timestamp = now_sec;
-
-  __lru_cache_unlock(c);
-}
-
-void ndpi_lru_get_stats(struct ndpi_lru_cache *c, struct ndpi_lru_cache_stats *stats) {
-  if(c) {
-    stats->n_insert = c->stats.n_insert;
-    stats->n_search = c->stats.n_search;
-    stats->n_found = c->stats.n_found;
-  } else {
-    stats->n_insert = 0;
-    stats->n_search = 0;
-    stats->n_found = 0;
-  }
-}
-
-NDPI_STATIC int ndpi_get_lru_cache_stats(struct ndpi_global_context *g_ctx,
-			     struct ndpi_detection_module_struct *ndpi_struct,
-			     lru_cache_type cache_type,
-			     struct ndpi_lru_cache_stats *stats)
-{
-  int scope, is_local = 1;
-  char param[64], buf[8], *rc;
-
-  if(!stats || (!ndpi_struct && !g_ctx))
-    return -1;
-  if(!ndpi_struct) {
-    is_local = 0;
-  } else {
-    snprintf(param, sizeof(param), "lru.%s.scope", ndpi_lru_cache_idx_to_name(cache_type));
-    rc = ndpi_get_config(ndpi_struct, NULL, param, buf, sizeof(buf));
-    if(rc == NULL)
-      return -1;
-    scope = atoi(buf);
-    if(scope == NDPI_LRUCACHE_SCOPE_GLOBAL) {
-      is_local = 0;
-      if(!g_ctx)
-        return -1;
-    }
-  }
-
-  switch(cache_type) {
-  case NDPI_LRUCACHE_OOKLA:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->ookla_cache : g_ctx->ookla_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_BITTORRENT:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->bittorrent_cache : g_ctx->bittorrent_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_STUN:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->stun_cache : g_ctx->stun_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_TLS_CERT:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->tls_cert_cache : g_ctx->tls_cert_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_MINING:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->mining_cache : g_ctx->mining_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_MSTEAMS:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->msteams_cache : g_ctx->msteams_global_cache, stats);
-    return 0;
-  case NDPI_LRUCACHE_FPC_DNS:
-    ndpi_lru_get_stats(is_local ? ndpi_struct->fpc_dns_cache : g_ctx->fpc_dns_global_cache, stats);
-    return 0;
-  default:
-    return -1;
-  }
-}
-
-/* ******************************************************************** */
-
 /*
   This function tells if it's possible to further dissect a given flow
   0 - All possible dissection has been completed
@@ -11761,6 +11679,8 @@ static const struct cfg_param {
   { "tls",           "mem_buf_size_limit",                      "16384", "0", "32768", CFG_PARAM_INT, __OFF(tls_buf_size_limit), NULL, 1 },
   { "tls",           "certificate_expiration_threshold",        "30", "0", "365", CFG_PARAM_INT, __OFF(tls_certificate_expire_in_x_days), NULL, 1 },
   { "tls",           "application_blocks_tracking",             "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_app_blocks_tracking_enabled), NULL, 0 },
+  { "tls",           "dpi.heuristics",                          "0x00", "0", "0x07", CFG_PARAM_INT, __OFF(tls_heuristics), NULL , 1},
+  { "tls",           "dpi.heuristics.max_packets_extra_dissection", "25", "0", "255", CFG_PARAM_INT, __OFF(tls_heuristics_max_packets), NULL, 1 },
   { "tls",           "metadata.sha1_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_sha1_fingerprint_enabled), NULL, 1 },
   { "tls",           "metadata.ja3c_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja3c_fingerprint_enabled), NULL, 1 },
   { "tls",           "metadata.ja3s_fingerprint",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tls_ja3s_fingerprint_enabled), NULL, 1 },
@@ -11798,6 +11718,8 @@ static const struct cfg_param {
 
   { "rtp",           "search_for_stun",                         "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(rtp_search_for_stun), NULL, 1 },
 
+  { "openvpn",       "dpi.heuristics",                          "0x00", "0", "0x01", CFG_PARAM_INT, __OFF(openvpn_heuristics), NULL, 1 },
+  { "openvpn",       "dpi.heuristics.num_messages",             "10", "0", "255", CFG_PARAM_INT, __OFF(openvpn_heuristics_num_msgs), NULL,1 },
   { "openvpn",       "subclassification_by_ip",                 "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(openvpn_subclassification_by_ip), NULL, 1 },
 
   { "wireguard",     "subclassification_by_ip",                 "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(wireguard_subclassification_by_ip), NULL, 1 },
@@ -11810,11 +11732,15 @@ static const struct cfg_param {
   { NULL,            "packets_limit_per_flow",                  "32", "0", "255", CFG_PARAM_INT, __OFF(max_packets_to_process), NULL, 1 },
   { NULL,            "flow.direction_detection",                "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(direction_detect_enabled), NULL, 0 },
   { NULL,            "flow.track_payload",                      "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(track_payload_enabled), NULL, 0 },
+  { NULL,            "flow.use_client_ip_in_guess",             "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(use_client_ip_in_guess), NULL, 1},
+  { NULL,            "flow.use_client_port_in_guess",           "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(use_client_port_in_guess), NULL, 1},
   { NULL,            "tcp_ack_payload_heuristic",               "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(tcp_ack_paylod_heuristic), NULL, 1 },
   { NULL,            "fully_encrypted_heuristic",               "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(fully_encrypted_heuristic), NULL, 1 },
   { NULL,            "libgcrypt.init",                          "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(libgcrypt_init), NULL, 0 },
   { NULL,            "dpi.guess_on_giveup",                     "0x3", "0", "3", CFG_PARAM_INT, __OFF(guess_on_giveup), NULL, 1 },
+  { NULL,            "dpi.guess_ip_before_port",                "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(guess_ip_before_port), NULL, 1},
   { NULL,            "dpi.compute_entropy",                     "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(compute_entropy), NULL, 0 },
+  { NULL,            "dpi.address_cache_size",                  "0", "0", "16777215", CFG_PARAM_INT, __OFF(address_cache_size), NULL, 0 },
   { NULL,            "fpc",                                     "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(fpc_enabled), NULL, 1 },
 
   { NULL,            "flow_risk_lists.load",                    "1", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(flow_risk_lists_enabled), NULL, 0 },

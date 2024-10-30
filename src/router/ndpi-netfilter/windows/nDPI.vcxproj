@@ -129,6 +129,7 @@
     <ClCompile Include="..\src\lib\ndpi_community_id.c" />
     <ClCompile Include="..\src\lib\ndpi_geoip.c" />
     <ClCompile Include="..\src\lib\ndpi_main.c" />
+    <ClCompile Include="..\src\lib\ndpi_cache.c" />
     <ClCompile Include="..\src\lib\ndpi_filter.c" />
     <ClCompile Include="..\src\lib\ndpi_memory.c" />
     <ClCompile Include="..\src\lib\ndpi_serializer.c" />
@@ -221,6 +222,7 @@
     <ClCompile Include="..\src\lib\third_party\src\shoco.c" />
     <ClCompile Include="..\src\lib\third_party\src\kdtree.c" />
     <ClCompile Include="..\src\lib\third_party\src\ball.c" />
+    <ClCompile Include="..\src\lib\third_party\src\aes.c" />
     <ClCompile Include="..\src\lib\protocols\armagetron.c" />
     <ClCompile Include="..\src\lib\protocols\bgp.c" />
     <ClCompile Include="..\src\lib\protocols\bittorrent.c" />
@@ -389,6 +391,7 @@
     <ClCompile Include="..\src\lib\protocols\cnp-ip.c" />
     <ClCompile Include="..\src\lib\protocols\trdp.c" />
     <ClCompile Include="..\src\lib\protocols\lustre.c" />
+    <ClCompile Include="..\src\lib\protocols\dingtalk.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />

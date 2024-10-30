@@ -320,7 +320,8 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 	  x++;
       }
     } else {
-      ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, "Invalid DNS Header");
+      if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN)
+        ndpi_set_risk(flow, NDPI_MALFORMED_PACKET, "Invalid DNS Header");
       return(1 /* invalid */);
     }
   } else {
@@ -444,6 +445,8 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 	  
 	  /* x points to the response "class" field */
 	  if((x+12) <= packet->payload_packet_len) {
+	    u_int32_t ttl = ntohl(*((u_int32_t*)&packet->payload[x+2]));
+	    
 	    x += 6;
 	    data_len = get16(&x, packet->payload);
 
@@ -472,16 +475,29 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 			 || ((rsp_type == 0x1c) && (data_len == 16)) /* AAAA */
 			 )) {
 		if(found == 0) {
-		  memcpy(&flow->protos.dns.rsp_addr, packet->payload + x, data_len);
-		  flow->protos.dns.is_rsp_addr_ipv6 = (data_len == 16) ? 1 : 0;
-		  found = 1;
+		  /* Necessary for IP address comparison */
+		  memset(&flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr], 0, sizeof(ndpi_ip_addr_t));
+		  
+		  memcpy(&flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr], packet->payload + x, data_len);
+		  flow->protos.dns.is_rsp_addr_ipv6[flow->protos.dns.num_rsp_addr] = (data_len == 16) ? 1 : 0;
+		  flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr] = ttl;
+
+		  if(ndpi_struct->cfg.address_cache_size)
+		    ndpi_cache_address(ndpi_struct,
+				       flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
+				       flow->host_server_name,
+				       packet->current_time_ms/1000,
+				       flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);		
+		  
+		  if(++flow->protos.dns.num_rsp_addr == MAX_NUM_DNS_RSP_ADDRESSES)
+		    found = 1;
 		}
 	      }
-
+	      
 	      x += data_len;
 	    }
 	  }
-
+	  
 	  if(found && (dns_header->additional_rrs == 0)) {
 	    /*
 	      In case we have RR we need to iterate

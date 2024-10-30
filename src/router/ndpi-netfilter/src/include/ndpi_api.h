@@ -343,7 +343,7 @@ extern "C" {
 				 const unsigned char *packet,
 				 const unsigned short packetlen,
 				 const u_int64_t packet_time_ms,
-				 const struct ndpi_flow_input_info *input_info);
+				 struct ndpi_flow_input_info *input_info);
 
   /**
    * Processes one packet and returns the ID of the detected protocol.
@@ -363,7 +363,7 @@ extern "C" {
 					      const unsigned char *packet,
 					      const unsigned short packetlen,
 					      const u_int64_t packet_time_ms,
-					      const struct ndpi_flow_input_info *input_info);
+					      struct ndpi_flow_input_info *input_info);
   /**
    * Get the main protocol of the passed flows for the detected module
    *
@@ -1808,6 +1808,8 @@ extern "C" {
   NDPI_STATIC u_int32_t ndpi_murmur_hash(const char *str, u_int str_len);
 
   /* ******************************* */
+  NDPI_STATIC u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_len);
+  NDPI_STATIC u_int ndpi_bin2hex(u_char *out, u_int out_len, u_char* in, u_int in_len);
 
   NDPI_STATIC int ndpi_des_init(struct ndpi_des_struct *des, double alpha, double beta, float significance);
   NDPI_STATIC int ndpi_des_add_value(struct ndpi_des_struct *des, const double _value, double *forecast, double *confidence_band);
@@ -1894,6 +1896,9 @@ extern "C" {
   NDPI_STATIC void ndpi_popcount_count(struct ndpi_popcount *h, const u_int8_t *buf, u_int32_t buf_len);
 
   /* ******************************* */
+  /* Mahalanobis distance (https://en.wikipedia.org/wiki/Mahalanobis_distance) between a point x and a distribution with mean u and inverted covariant matrix i_s */
+  NDPI_STATIC float ndpi_mahalanobis_distance(const u_int32_t *x, u_int32_t size, const float *u, const float *i_s);
+
 
   NDPI_STATIC int  ndpi_init_bin(struct ndpi_bin *b, enum ndpi_bin_family f, u_int16_t num_bins);
   NDPI_STATIC void ndpi_free_bin(struct ndpi_bin *b);
@@ -1954,17 +1959,17 @@ extern "C" {
     - https://varshasaini.in/k-nearest-neighbor-knn-algorithm-in-machine-learning/
 
     NOTE:
-    with ball tree, data is a vector of vector pointers (no array)    
-  */  
+    with ball tree, data is a vector of vector pointers (no array)
+  */
   ndpi_btree* ndpi_btree_init(double **data, u_int32_t n_rows, u_int32_t n_columns);
   ndpi_knn ndpi_btree_query(ndpi_btree *b, double **query_data,
 			    u_int32_t query_data_num_rows, u_int32_t query_data_num_columns,
 			    u_int32_t max_num_results);
   void ndpi_free_knn(ndpi_knn knn);
   void ndpi_free_btree(ndpi_btree *tree);
-  
+
   /* ******************************* */
-  
+
   /*
    * Finds outliers using Z-score
    * Z-Score = (Value - Mean) / StdDev
@@ -2340,8 +2345,8 @@ extern "C" {
   NDPI_STATIC int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const char **errstrp, int base);
   NDPI_STATIC int ndpi_vsnprintf(char * str, size_t size, char const * format, va_list va_args);
   NDPI_STATIC int ndpi_snprintf(char * str, size_t size, char const * format, ...);
-  NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep,
-                           struct tm *result);
+  NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep, struct tm *result);
+  NDPI_STATIC char* ndpi_strrstr(const char *haystack, const char *needle);
 
   /* ******************************* */
 
@@ -2357,6 +2362,34 @@ extern "C" {
   NDPI_STATIC u_int ndpi_encode_domain(struct ndpi_detection_module_struct *ndpi_str,
 			   char *domain, char *out, u_int out_len);
 
+  NDPI_STATIC char* ndpi_quick_encrypt(const char *cleartext_msg,
+			   u_int16_t cleartext_msg_len,
+			   u_int16_t *encrypted_msg_len,
+			   u_char encrypt_key[64]);
+  
+  NDPI_STATIC char* ndpi_quick_decrypt(const char *encrypted_msg,
+			   u_int16_t encrypted_msg_len,
+			   u_int16_t *decrypted_msg_len,
+			   u_char decrypt_key[64]);
+ 
+  /* ******************************* */
+
+  NDPI_STATIC bool ndpi_serialize_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
+				       struct ndpi_flow_struct *flow, ndpi_serializer *serializer);
+
+  /* ******************************* */
+
+  /* Address cache API */
+  NDPI_STATIC struct ndpi_address_cache* ndpi_init_address_cache(u_int32_t max_num_entries);
+  NDPI_STATIC void ndpi_term_address_cache(struct ndpi_address_cache *cache);
+  NDPI_STATIC u_int ndpi_address_cache_flush_expired(struct ndpi_address_cache *cache, u_int32_t epoch_now);
+  NDPI_STATIC struct ndpi_address_cache_item* ndpi_address_cache_find(struct ndpi_address_cache *cache, ndpi_ip_addr_t ip_addr, u_int32_t epoch_now);
+  NDPI_STATIC bool ndpi_address_cache_insert(struct ndpi_address_cache *cache, ndpi_ip_addr_t ip_addr, char *hostname,
+				 u_int32_t epoch_now, u_int32_t ttl);
+
+  NDPI_STATIC struct ndpi_address_cache_item* ndpi_cache_address_find(struct ndpi_detection_module_struct *ndpi_struct,
+							  ndpi_ip_addr_t ip_addr);
+  
   /* ******************************* */
   NDPI_STATIC const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);
 

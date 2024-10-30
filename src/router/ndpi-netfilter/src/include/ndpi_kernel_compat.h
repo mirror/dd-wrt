@@ -43,6 +43,11 @@ NDPI_STATIC long int atol(const char *);
 
 NDPI_STATIC void gettimeofday64(struct timespec64 *tv, void *tz);
 NDPI_STATIC char *strtok_r(char *str, const char *delim, char **saveptr);
+static inline long int strtol(const char *nptr, char **endptr, int base) {
+    long int ret;
+    if(kstrtol(nptr,base,&ret)) ret = 0;
+    return ret;
+}
 
 #define le64toh(v) le64_to_cpu(v)
 #define le32toh(v) le32_to_cpu(v)

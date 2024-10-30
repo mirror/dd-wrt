@@ -2115,6 +2115,9 @@ const char* ndpi_risk2str(ndpi_risk_enum risk) {
   case NDPI_PROBING_ATTEMPT:
     return("Probing Attempt");
 
+  case NDPI_OBFUSCATED_TRAFFIC:
+    return("Obfuscated Traffic");
+
   default:
     ndpi_snprintf(buf, sizeof(buf), "%d", (int)risk);
     return(buf);
@@ -2239,6 +2242,8 @@ const char* ndpi_risk2code(ndpi_risk_enum risk) {
     return STRINGIFY(NDPI_BINARY_DATA_TRANSFER);
   case NDPI_PROBING_ATTEMPT:
     return STRINGIFY(NDPI_PROBING_ATTEMPT);
+  case NDPI_OBFUSCATED_TRAFFIC:
+    return STRINGIFY(NDPI_OBFUSCATED_TRAFFIC);
 
   default:
     return("Unknown risk");
@@ -2360,6 +2365,8 @@ ndpi_risk_enum ndpi_code2risk(const char* risk) {
     return(NDPI_BINARY_DATA_TRANSFER);
   else if(strcmp(STRINGIFY(NDPI_PROBING_ATTEMPT), risk) == 0)
     return(NDPI_PROBING_ATTEMPT);
+  else if(strcmp(STRINGIFY(NDPI_OBFUSCATED_TRAFFIC), risk) == 0)
+    return(NDPI_OBFUSCATED_TRAFFIC);
   else
     return(NDPI_MAX_RISK);
 }
@@ -3446,8 +3453,8 @@ int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet)
 
 /* ******************************************* */
 
-int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const char **errstrp, int base)
-{
+int64_t ndpi_strtonum(const char *numstr, int64_t minval,
+		      int64_t maxval, const char **errstrp, int base) {
   int64_t val = 0;
   char* endptr;
 #ifdef __KERNEL__
@@ -3475,14 +3482,17 @@ int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const 
     *errstrp = "value too small";
     return 0;
   }
+
   if((val == LLONG_MAX && errno == ERANGE) || (val > maxval )) {
     *errstrp = "value too large";
     return 0;
   }
+
   if(errno != 0 && val == 0) {
     *errstrp = "generic error";
     return 0;
   }
+
   if(endptr == numstr) {
     *errstrp = "No digits were found";
     return 0;
@@ -3491,6 +3501,33 @@ int64_t ndpi_strtonum(const char *numstr, int64_t minval, int64_t maxval, const 
 
   *errstrp = NULL;
   return val;
+}
+
+/* ****************************************************** */
+
+char* ndpi_strrstr(const char *haystack, const char *needle) {
+  if (!haystack || !needle) {
+    return NULL;
+  }
+
+  if (*needle == '\0') {
+    return (char*) haystack + strlen(haystack);
+  }
+
+  const char *last_occurrence = NULL;
+
+  while (true) {
+    const char *current_pos = strstr(haystack, needle);
+
+    if (!current_pos) {
+      break;
+    }
+
+    last_occurrence = current_pos;
+    haystack = current_pos + 1;
+  }
+
+  return (char*) last_occurrence;
 }
 
 /* ******************************************* */
@@ -3647,4 +3684,205 @@ u_int ndpi_encode_domain(struct ndpi_detection_module_struct *ndpi_str,
   return(out_idx);
 }
 
+
+/* ****************************************************** */
+
+static u_int8_t is_ndpi_proto(struct ndpi_flow_struct *flow, u_int16_t id) {
+  if((flow->detected_protocol_stack[0] == id)
+     || (flow->detected_protocol_stack[1] == id))
+    return(1);
+  else
+    return(0);
+}
+
+/* ****************************************************** */
+
+bool ndpi_serialize_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
+				     struct ndpi_flow_struct *flow, ndpi_serializer *serializer) {
+  if(is_ndpi_proto(flow, NDPI_PROTOCOL_TLS) || is_ndpi_proto(flow, NDPI_PROTOCOL_QUIC)) {
+    if((flow->protos.tls_quic.ja4_client_raw != NULL)
+       || (flow->protos.tls_quic.ja4_client[0] != '\0')) {
+
+      if(flow->protos.tls_quic.ja4_client_raw != NULL)
+	ndpi_serialize_string_string(serializer, "JA4r", flow->protos.tls_quic.ja4_client_raw);
+
+      ndpi_serialize_string_string(serializer, "JA4", flow->protos.tls_quic.ja4_client);
+
+      if(flow->host_server_name[0] != '\0') {
+	ndpi_serialize_string_string(serializer, "sni", flow->host_server_name);
+
+	ndpi_serialize_string_string(serializer, "sni_domain",
+				     ndpi_get_host_domain(ndpi_str,
+							  flow->host_server_name));
+      }
+
+      return(true);
+    }
+  } else if(is_ndpi_proto(flow, NDPI_PROTOCOL_DHCP)
+	    && (flow->protos.dhcp.fingerprint[0] != '\0')) {
+    ndpi_serialize_string_string(serializer, "options", flow->protos.dhcp.options);
+    ndpi_serialize_string_string(serializer, "fingerprint", flow->protos.dhcp.fingerprint);
+
+    if(flow->protos.dhcp.class_ident[0] != '\0')
+      ndpi_serialize_string_string(serializer, "class_identifier", flow->protos.dhcp.class_ident);
+
+    return(true);
+  } else if(is_ndpi_proto(flow, NDPI_PROTOCOL_SSH)
+	    && (flow->protos.ssh.hassh_client[0] != '\0')) {
+
+    ndpi_serialize_string_string(serializer, "hassh_client", flow->protos.ssh.hassh_client);
+    ndpi_serialize_string_string(serializer, "client_signature", flow->protos.ssh.client_signature);
+    ndpi_serialize_string_string(serializer, "hassh_server", flow->protos.ssh.hassh_server);
+    ndpi_serialize_string_string(serializer, "server_signature", flow->protos.ssh.server_signature);
+
+    return(true);
+  }
+
+  return(false);
+}
 #endif
+
+/* ****************************************************** */
+
+u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_len) {
+  u_int i, j;
+
+  if(((in_len+1) / 2) > out_len)
+    return(0);
+	   
+  for(i=0, j=0; i<in_len; i += 2, j++) {
+    char buf[3];
+
+    buf[0] = in[i], buf[1] = in[i+1], buf[2] = '\0';
+    out[j] = strtol(buf, NULL, 16);
+  }
+
+  return(j);
+}
+
+/* ****************************************************** */
+
+u_int ndpi_bin2hex(u_char *out, u_int out_len, u_char* in, u_int in_len) {
+  u_int i, j;
+
+  if (out_len < (in_len*2)) {
+    out[0] = '\0';
+    return(0);
+  }
+
+  for(i=0, j=0; i<in_len; i++) {
+    snprintf((char*)&out[j], out_len-j, "%02X", in[i]);
+    j += 2;
+  }
+
+  return(j);
+}
+
+/* ****************************************************** */
+/* ****************************************************** */
+
+#include "third_party/include/aes.h"
+
+/*
+  IMPORTANT: the returned string (if not NULL) must be freed
+*/
+char* ndpi_quick_encrypt(const char *cleartext_msg,
+			 u_int16_t cleartext_msg_len,
+			 u_int16_t *encrypted_msg_len,
+			 u_char encrypt_key[64]) {
+  char *encoded = NULL, *encoded_buf;
+  struct AES_ctx ctx;
+  int encoded_len, i, n_padding;
+  u_char nonce[24] = { 0x0 };
+  u_char binary_encrypt_key[32];
+
+  /* AES, as a block cipher, does not change the size. The input size is always the output size.
+   * But AES, being a block cipher, requires the input to be multiple of block size (16 bytes). */
+  encoded_len = cleartext_msg_len + 16 - (cleartext_msg_len % 16);
+
+  *encrypted_msg_len = 0;
+  encoded_buf = (char *)ndpi_calloc(encoded_len, 1);
+
+  if (encoded_buf == NULL) {
+    /* Allocation failure */
+    return(NULL);
+  }
+
+  ndpi_hex2bin(binary_encrypt_key, sizeof(binary_encrypt_key), (u_char*)encrypt_key, 64);
+
+  memcpy(encoded_buf, cleartext_msg, cleartext_msg_len);
+
+  /* PKCS5 Padding (https://www.cryptosys.net/pki/manpki/pki_paddingschemes.html) */
+  n_padding = encoded_len - cleartext_msg_len;
+
+  for(i = encoded_len - n_padding; i < encoded_len; i++)
+    encoded_buf[i] = n_padding;
+
+  AES_init_ctx_iv(&ctx, binary_encrypt_key, nonce);
+  AES_CBC_encrypt_buffer(&ctx, (uint8_t*)encoded_buf, encoded_len);
+
+  encoded = ndpi_base64_encode((const unsigned char *)encoded_buf, encoded_len);
+  ndpi_free(encoded_buf);
+
+  *encrypted_msg_len = strlen(encoded);
+  
+  return(encoded);
+}
+
+/* ************************************************************** */
+
+char* ndpi_quick_decrypt(const char *encrypted_msg,
+			 u_int16_t encrypted_msg_len,
+			 u_int16_t *decrypted_msg_len,
+			 u_char decrypt_key[64]) {
+  u_char nonce[24] = { 0x0 };
+  u_char binary_decrypt_key[32];
+  u_char *content;
+  size_t content_len, allocated_decoded_string = encrypted_msg_len + 8 /* padding */;
+  char *decoded_string = (char*)ndpi_calloc(sizeof(u_char), allocated_decoded_string);
+  u_int n_padding;
+  struct AES_ctx ctx;
+
+  *decrypted_msg_len = 0;
+  
+  if(decoded_string == NULL) {
+    /* Allocation failure */
+    return(NULL);
+  }
+
+  ndpi_hex2bin(binary_decrypt_key, sizeof(binary_decrypt_key), (u_char*)decrypt_key, 64);
+
+  content = ndpi_base64_decode((const u_char*)encrypted_msg, encrypted_msg_len, &content_len);
+
+  if((content == NULL) || (content_len == 0)) {
+    /* Base64 decoding error */
+    ndpi_free(content);
+    return(NULL);
+  }
+
+  if(allocated_decoded_string < (content_len+1)) {
+    /* Buffer size failure */
+    ndpi_free(content);
+    return(NULL);
+  }
+
+  /* AES - https://github.com/kokke/tiny-AES-c */
+  AES_init_ctx_iv(&ctx, binary_decrypt_key, nonce);
+  memcpy(decoded_string, content, content_len);
+  AES_CBC_decrypt_buffer(&ctx, (uint8_t*)decoded_string, content_len);
+
+  /* Remove PKCS5 padding */
+  n_padding = decoded_string[content_len-1];
+
+  if(content_len > n_padding) {
+    content_len = content_len - n_padding;
+    decoded_string[content_len] = 0;
+  }
+
+  *decrypted_msg_len = content_len;
+    
+  ndpi_free(content);
+
+  return(decoded_string);
+}
+
