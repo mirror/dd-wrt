@@ -161,6 +161,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "dhcpv6", NDPI_ONLY, 0, NULL },
 	{ "diameter", NDPI_ONLY, 0, NULL },
+	{ "dingtalk", NDPI_ONLY, 0, NULL },
 	{ "directv", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
@@ -665,6 +666,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "softether", NDPI_ONLY, 0, NULL },
 	{ "someip", NDPI_ONLY, 0, NULL },
+	{ "sonos", NDPI_ONLY, 0, NULL },	
 #endif
 	{ "soribada", L7_ONLY, 0, NULL },
 	{ "soulseek", PDPI_ONLY, 0, NULL },
