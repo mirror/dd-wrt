@@ -28,11 +28,10 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 {
 	extern void __bad_xchg(volatile void *, int);
 	unsigned long ret;
-#ifdef swp_is_buggy
-	unsigned long flags;
-#endif
 #if __LINUX_ARM_ARCH__ >= 6
 	unsigned int tmp;
+#else
+	unsigned long flags;
 #endif
 
 	prefetchw((const void *)ptr);
@@ -82,6 +81,13 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 		raw_local_irq_restore(flags);
 		break;
 
+	case 2:
+		raw_local_irq_save(flags);
+		ret = *(volatile unsigned short *)ptr;
+		*(volatile unsigned short *)ptr = x;
+		raw_local_irq_restore(flags);
+		break;
+
 	case 4:
 		raw_local_irq_save(flags);
 		ret = *(volatile unsigned long *)ptr;
@@ -96,6 +102,13 @@ static inline unsigned long __xchg(unsigned long x, volatile void *ptr, int size
 			: "r" (x), "r" (ptr)
 			: "memory", "cc");
 		break;
+	case 2:
+		raw_local_irq_save(flags);
+		ret = *(volatile unsigned short *)ptr;
+		*(volatile unsigned short *)ptr = x;
+		raw_local_irq_restore(flags);
+		break;
+
 	case 4:
 		asm volatile("@	__xchg4\n"
 		"	swp	%0, %1, [%2]"
