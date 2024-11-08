@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8182 | brainslayer | 2024-11-09 06:25:00 +0700 (Sat, 09 Nov 2024) | 1 line
+
+relocate firmwares to a central folder
+------------------------------------------------------------------------
+r8181 | brainslayer | 2024-11-09 06:24:39 +0700 (Sat, 09 Nov 2024) | 1 line
+
+relocate firmwares to a central folder
+------------------------------------------------------------------------
 r8180 | brainslayer | 2024-11-09 03:14:30 +0700 (Sat, 09 Nov 2024) | 1 line
 
 for fortinet we need special precal data
