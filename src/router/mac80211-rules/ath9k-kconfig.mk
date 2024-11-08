@@ -409,73 +409,73 @@ ifneq ($(CONFIG_NOWIFI),y)
 	cd $(MAC80211_PATH) ; mkdir -p $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE) ; cp `find -name \*.ko` $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/ath10k-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(TOP)/firmwares/wireless/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_RT2800),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/ath10k-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(TOP)/firmwares/wireless/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_ATH9K_HTC),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/ath10k-firmware-*/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(TOP)/firmwares/wireless/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath9k_htc
-	-cp $(MAC80211_PATH)/ath10k-firmware-*/ath9k_htc/* $(INSTALLDIR)/ath9k/lib/firmware/ath9k_htc
+	-cp $(TOP)/firmwares/wireless/ath9k_htc/* $(INSTALLDIR)/ath9k/lib/firmware/ath9k_htc
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
-	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+	-cp -av $(TOP)/firmwares/wireless/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
 endif
 ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
-	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+	-cp -av $(TOP)/firmwares/wireless/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtw88
-	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtw88/* $(INSTALLDIR)/ath9k/lib/firmware/rtw88
+	-cp -av $(TOP)/firmwares/wireless/rtw88/* $(INSTALLDIR)/ath9k/lib/firmware/rtw88
 endif
 ifeq ($(CONFIG_WIL6210),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/wil6210/* $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/wil6210/* $(INSTALLDIR)/ath9k/lib/firmware/
 endif
 ifeq ($(CONFIG_B43),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43/
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
+	-cp -av $(TOP)/firmwares/wireless/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
 endif
 ifeq ($(CONFIG_B43LEGACY),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/b43legacy/
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
+	-cp -av $(TOP)/firmwares/wireless/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
 endif
 ifeq ($(CONFIG_BRCMSMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcm43* $(INSTALLDIR)/ath9k/lib/firmware/brcm
+	-cp -av $(TOP)/firmwares/wireless/brcm/brcm43* $(INSTALLDIR)/ath9k/lib/firmware/brcm
 endif
 ifeq ($(CONFIG_IWLWIFI),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/iwl* $(INSTALLDIR)/ath9k/lib/firmware/
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ipw* $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/iwl* $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/ipw* $(INSTALLDIR)/ath9k/lib/firmware/
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac43602-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366b-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366c-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
+	-cp -av $(TOP)/firmwares/wireless/brcm/brcmfmac43602-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
+	-cp -av $(TOP)/firmwares/wireless/brcm/brcmfmac4366b-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
+	-cp -av $(TOP)/firmwares/wireless/brcm/brcmfmac4366c-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
 ifeq ($(CONFIG_X86),y)
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/* $(INSTALLDIR)/ath9k/lib/firmware/brcm
+	-cp -av $(TOP)/firmwares/wireless/brcm/* $(INSTALLDIR)/ath9k/lib/firmware/brcm
 endif	
-#	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
-#	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
+#	-cp -av $(TOP)/firmwares/wireless/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
+#	-cp -av $(TOP)/firmwares/wireless/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
 endif
 ifeq ($(CONFIG_ATH11K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
+	-cp -av $(TOP)/firmwares/wireless/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ6018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/
+	-cp -av $(TOP)/firmwares/wireless/ath11k/IPQ6018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ8074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/
+	-cp -av $(TOP)/firmwares/wireless/ath11k/IPQ8074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074/
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/IPQ5018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/
+	-cp -av $(TOP)/firmwares/wireless/ath11k/IPQ5018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath11k/QCN9074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/
+	-cp -av $(TOP)/firmwares/wireless/ath11k/QCN9074/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
@@ -496,7 +496,7 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/ath10k
-	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ath10k $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(TOP)/firmwares/wireless/ath10k $(INSTALLDIR)/ath9k/lib/firmware/
 	rm -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
 	rm -f $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/firmware-4.bin
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw1.0
@@ -507,7 +507,7 @@ ifneq ($(CONFIG_QCA9984),y)
 endif
 else
 ifeq ($(CONFIG_G10),y)
-	cp $(MAC80211_PATH)/ath10k-firmware*/g10-boarddata/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0
+	cp $(TOP)/firmwares/wireless/g10-boarddata/* $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0
 endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k/board_9984.bin
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k/board_99X0.bin
