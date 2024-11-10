@@ -623,7 +623,8 @@ int amdgpu_vce_ring_parse_cs(struct amdgpu_cs_parser *p, uint32_t ib_idx)
 	bool created = false;
 	bool allocated = false;
 	uint32_t tmp, handle = 0;
-	uint32_t *size = &tmp;
+	uint32_t dummy = 0xffffffff;
+	uint32_t *size = &dummy;
 	int i, r = 0, idx = 0;
 
 	amdgpu_vce_note_usage(p->adev);

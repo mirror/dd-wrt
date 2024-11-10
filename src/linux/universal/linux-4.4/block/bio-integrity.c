@@ -279,17 +279,28 @@ int bio_integrity_prep(struct bio *bio)
 	unsigned int len, nr_pages;
 	unsigned int bytes, offset, i;
 	unsigned int intervals;
+	gfp_t gfp = GFP_NOIO;
 
 	bi = bdev_get_integrity(bio->bi_bdev);
 	q = bdev_get_queue(bio->bi_bdev);
 	BUG_ON(bi == NULL);
 	BUG_ON(bio_integrity(bio));
 
+	if (bio_data_dir(bio) != READ) {
+		/*
+		 * Zero the memory allocated to not leak uninitialized kernel
+		 * memory to disk.  For PI this only affects the app tag, but
+		 * for non-integrity metadata it affects the entire metadata
+		 * buffer.
+		 */
+		gfp |= __GFP_ZERO;
+	}
+
 	intervals = bio_integrity_intervals(bi, bio_sectors(bio));
 
 	/* Allocate kernel buffer for protection data */
 	len = intervals * bi->tuple_size;
-	buf = kmalloc(len, GFP_NOIO | q->bounce_gfp);
+	buf = kmalloc(len, gfp | q->bounce_gfp);
 	if (unlikely(buf == NULL)) {
 		printk(KERN_ERR "could not allocate integrity buffer\n");
 		return -ENOMEM;

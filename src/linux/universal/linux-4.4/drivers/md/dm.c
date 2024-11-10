@@ -3013,7 +3013,7 @@ static int dm_wait_for_completion(struct mapped_device *md, int interruptible)
 
 		if (interruptible == TASK_INTERRUPTIBLE &&
 		    signal_pending(current)) {
-			r = -EINTR;
+			r = -ERESTARTSYS;
 			break;
 		}
 
