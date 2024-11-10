@@ -1952,8 +1952,6 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
 	if (nr_old_roots == 0 && nr_new_roots == 0)
 		goto out_free;
 
-	BUG_ON(!fs_info->quota_root);
-
 	trace_btrfs_qgroup_account_extent(fs_info, bytenr, num_bytes,
 					  nr_old_roots, nr_new_roots);
 

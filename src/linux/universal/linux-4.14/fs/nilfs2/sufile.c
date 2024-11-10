@@ -554,7 +554,7 @@ out_sem:
  * @modtime: modification time (option)
  */
 int nilfs_sufile_set_segment_usage(struct inode *sufile, __u64 segnum,
-				   unsigned long nblocks, time_t modtime)
+				   unsigned long nblocks, time64_t modtime)
 {
 	struct buffer_head *bh;
 	struct nilfs_segment_usage *su;

@@ -1,0 +1,661 @@
+dd6caa8da1ace4e2e4f02eb5284addebf4c5c2bb:
+  title: 'platform/chrome: cros_ec_debugfs: fix wrong EC message version'
+  mainline: c2a28647bbb4e0894e8824362410f72b06ac57a4
+  upstream: c0e53e36452d1b2a3ec71bf0586251245a5686c0
+78659ded3dbb7237c1582e91776e86a6b3247515:
+  title: 'x86/of: Return consistent error type from x86_of_pci_irq_enable()'
+  mainline: ec0b4c4d45cf7cf9a6c9626a494a89cb1ae7c645
+  upstream: 56d64c36b2aac95c9c24e303fb746591ecfa096a
+5f1342ecebaf8161a43bcc1b8958c280452c8171:
+  title: 'x86/pci/intel_mid_pci: Fix PCIBIOS_* return code handling'
+  mainline: 724852059e97c48557151b3aa4af424614819752
+  upstream: 600a520cc4e661aa712415e4a733924e9d22777d
+125df213ac935a71782e5c091206853ff9cb5556:
+  title: 'x86/pci/xen: Fix PCIBIOS_* return code handling'
+  mainline: e9d7b435dfaec58432f4106aaa632bf39f52ce9f
+  upstream: 5294b91618250c7719e4c85096cafe8f76a1bc20
+21be2282360c7df8b2535f9c2883674234dc7de2:
+  title: 'x86/platform/iosf_mbi: Convert PCIBIOS_* return codes to errnos'
+  mainline: 7821fa101eab529521aa4b724bf708149d70820c
+  upstream: 3f4f08e59ddf359da5bc4226ba865a59177a3a50
+1dd63dd3a8a7617a90bc1a9068fedb6adf5f5aac:
+  title: 'hwmon: (adt7475) Fix default duty on fan is disabled'
+  mainline: 39b24cced70fdc336dbc0070f8b3bde61d8513a8
+  upstream: d9c01877d4ba1e39bbdc43faeeceeef2768be8e7
+25d404099dccdfe51abb9f810a864ced8b9d912b:
+  title: 'pwm: stm32: Always do lazy disabling'
+  mainline: 7346e7a058a2c9aa9ff1cc699c7bf18a402d9f84
+  upstream: 383729f057245972e13fb0708c5ec7dd985fc50d
+42cc04b6ae182a372082afc1c28d67f92fed5c29:
+  title: 'hwmon: (max6697) Fix underflow when writing limit attributes'
+  mainline: cbf7467828cd4ec7ceac7a8b5b5ddb2f69f07b0e
+  upstream: 21998f2c68edd4a7922875f34b39ce2bb78fabc0
+625dffc4eaba4191520fb296a0e55743836bab4b:
+  title: 'hwmon: Introduce SENSOR_DEVICE_ATTR_{RO, RW, WO} and variants'
+  mainline: a5c47c0d388b939dd578fd466aa804b7f2445390
+  upstream: eb04482acd9870b84970fe1549203fedc1bbcc79
+64785dce17bc282c55ed7f21c3fbc4391cdb1ab0:
+  title: 'hwmon: (max6697) Auto-convert to use SENSOR_DEVICE_ATTR_{RO, RW, WO}'
+  mainline: 740c2f2b86a71ad673f329241ac25cfe647aacd4
+  upstream: 7a72d79eef89ce242e08edb18f64106374117295
+cb9e33d36836000d9a79d3b0121beee91c3323b9:
+  title: 'hwmon: (max6697) Fix swapped temp{1,8} critical alarms'
+  mainline: 1ea3fd1eb9869fcdcbc9c68f9728bfc47b9503f1
+  upstream: 6b52603ed8bdcceb9b8c16d2db7abd19e024fbe2
+c731a44f2487b720039473b6255fba3ad26d7753:
+  title: 'arm64: dts: rockchip: Increase VOP clk rate on RK3328'
+  mainline: 0f2ddb128fa20f8441d903285632f2c69e90fae1
+  upstream: 513fff3e8574d3c5b54ef71b6514cda12123879e
+266d74e904f119b2251094862e9f7d56c3fb74fe:
+  title: 'm68k: atari: Fix TT bootup freeze / unexpected (SCU) interrupt messages'
+  mainline: f70065a9fd988983b2c693631b801f25a615fc04
+  upstream: b6c2b179b6908e439b2385c25d7b3477e4be4dce
+0d26a6a5f0bb7e82bfebf44b060294eec5a72b73:
+  title: 'x86/xen: Convert comma to semicolon'
+  mainline: 349d271416c61f82b853336509b1d0dc04c1fcbb
+  upstream: cb9ad82cf270ce5bdcf5e768af48966833cc3caa
+8bc40077dd7c321cc45107a639c176d317892413:
+  title: 'm68k: cmpxchg: Fix return value for default case in __arch_xchg()'
+  mainline: 21b9e722ad28c19c2bc83f18f540b3dbd89bf762
+  upstream: 8c43fbd39500ce7bdc779a772752cc2b436a692c
+5fa524af8685b00160e9e766bbe196804a007844:
+  title: 'wifi: brcmsmac: LCN PHY code is used for BCM4313 2G-only device'
+  mainline: c636fa85feb450ca414a10010ed05361a73c93a6
+  upstream: f33757e8db8f33aba783b88120245ec53e5fa88a
+1a85ab4b601786019135c37ec3f11927ba4a561d:
+  title: 'net: fec: Refactor: #define magic constants'
+  mainline: ff049886671ccd4e624a30ec464cb20e4c39a313
+  upstream: b072c604d58b1cd1079c4e2f0d22b1f469dda347
+c3996b8fae20c268b6c49e70ea078bceb96d0c27:
+  title: 'net: fec: Fix FEC_ECR_EN1588 being cleared on link-down'
+  mainline: c32fe1986f27cac329767d3497986e306cad1d5e
+  upstream: 18074367ad100e129d0dccdaa64af6642363680b
+2a3559125bd5fc024c30b1655b626abc0c2fa3eb:
+  title: 'ipvs: Avoid unnecessary calls to skb_is_gso_sctp'
+  mainline: 53796b03295cf7ab1fc8600016fa6dfbf4a494a0
+  upstream: 9340804ea465de0509a9afaeaaccf3fb74b14f9b
+6f7bc617b3b66436641dba5329718933aea4b889:
+  title: 'perf: Fix perf_aux_size() for greater-than 32-bit size'
+  mainline: 3df94a5b1078dfe2b0c03f027d018800faf44c82
+  upstream: 542abbf58e88f34dfc659b63476a5976acf52c0e
+26864f03cc21aaa1b9f2dbed5c8ad7bf676f2df4:
+  title: 'perf: Prevent passing zero nr_pages to rb_alloc_aux()'
+  mainline: dbc48c8f41c208082cfa95e973560134489e3309
+  upstream: d7b1a76f33e6fc93924725b4410126740c890c44
+be35c98c5aa383407f62428c4169a79d5c243c26:
+  title: 'bna: adjust ''name'' buf size of bna_tcb and bna_ccb structures'
+  mainline: c9741a03dc8e491e57b95fba0058ab46b7e506da
+  upstream: f121740f69eda4da2de9a20a6687a13593e72540
+ce58b8f17bfc9cfad7fafb57ebb626850d4802ba:
+  title: 'media: imon: Fix race getting ictx->lock'
+  mainline: 24147897507cd3a7d63745d1518a638bf4132238
+  upstream: 01b44d9e50a68ac3c645cc98a474455668dc8e70
+e0b07e242c61e819acf0143bb2c23d4859b135db:
+  title: 'saa7134: Unchecked i2c_transfer function result fixed'
+  mainline: 9d8683b3fd93f0e378f24dc3d9604e5d7d3e0a17
+  upstream: 001583ad640c70987efd5af70566a69f146dc99c
+0ae6e736f858e4c42ecf27fd1e8ecae18988ad81:
+  title: 'media: v4l: vsp1: Store pipeline pointer in vsp1_entity'
+f0a224ecf4ca80033edee705bd34405dae4ea20a:
+  title: 'media: renesas: vsp1: Fix _irqsave and _irq mix'
+  mainline: 57edbbcf5258c378a9b9d0c80d33b03a010b22c8
+  upstream: ab1325f1074da2cfa1259417fb6c93a0886e74c8
+49db8c90eba2da9ddc6f9a203a6d20984d1658a7:
+  title: 'media: renesas: vsp1: Store RPF partition configuration per RPF instance'
+  mainline: a213bc09b1025c771ee722ee341af1d84375db8a
+  upstream: ae16866626ecae26a7317e0372224d5480211ff7
+39632d1c383813e9ddb20088f6e9a3b44ee70569:
+  title: 'perf report: Fix condition in sort__sym_cmp()'
+  mainline: cb39d05e67dc24985ff9f5150e71040fa4d60ab8
+  upstream: 2e6abffcb52a36c89c0a70499b86e0a99df15d1e
+fa7e07d7ebb21ec8b937faeb3254a608c4d2eea2:
+  title: 'drm/etnaviv: fix DMA direction handling for cached RW buffers'
+  mainline: 58979ad6330a70450ed78837be3095107d022ea9
+  upstream: c7c74c8256206ffc27212ada1f998f5a05b8c54f
+5e8bf661518b825696c6ee219e62292e6bc8df93:
+  title: 'ext4: avoid writing unitialized memory to disk in EA inodes'
+  mainline: 65121eff3e4c8c90f8126debf3c369228691c591
+  upstream: 282e8d4e9d33182a5ca25fe6333beafdc5282946
+0549d286c615b284448fa4d449c322f3ae2aa55f:
+  title: 'sparc64: Fix incorrect function signature and add prototype for prom_cif_init'
+  mainline: a6c3ea1ec96307dbfbb2f16d96c674c5cc80f445
+  upstream: 6b4f676006a390edffd6a00f2ebc23276dd05031
+02a0104454d95405c65536870fdc426e8663512d:
+  title: 'PCI: Equalize hotplug memory and io for occupied and empty slots'
+  mainline: de3ffa301142bf8802a7b0de17f9985acde5c223
+  upstream: 0012438a122c56d727712169df42fd0e297a42b0
+0a5d6964e9374945dfef1227972e8cc1a2a6d5ef:
+  title: 'PCI: Fix resource double counting on remove & rescan'
+  mainline: 903534fa7d30214d8ba840ab1cd9e917e0c88e41
+  upstream: 2044071c6e42d041e3656bad105be5879f6b70f1
+8e50a9f8175582f34a709024496217f3fca864e5:
+  title: 'RDMA/mlx4: Fix truncated output warning in mad.c'
+  mainline: 0d2e6992fc956e3308cd5376c18567def4cb3967
+  upstream: c4eaaf28068a99d8363bf02a20a32bf207be13e1
+e9d4656f8f0c014de2ffcf8d4903c4630c43c72b:
+  title: 'RDMA/mlx4: Fix truncated output warning in alias_GUID.c'
+  mainline: 5953e0647cec703ef436ead37fed48943507b433
+  upstream: 087abc7e244700f741c0431af59b28e910a82dc1
+117e5c14bbbb75364fabcb7d2e70e19167efc931:
+  title: 'RDMA/rxe: Don''t set BTH_ACK_MASK for UC or UD QPs'
+  mainline: 4adcaf969d77d3d3aa3871bbadc196258a38aec6
+  upstream: 796c0f32fc956b88c345195472e2d74823be0d03
+550d6bbd2dedbc88697932ddbe5f930b20a4d7c1:
+  title: 'mtd: make mtd_test.c a separate module'
+  mainline: a5cf054d325e6f362e82fe6d124a1871a4af8174
+  upstream: 17b016971c27ee1e884da3ce502801cb95f84ff1
+e547f41337badd93753b4fe3ae3817ed8400abd6:
+  title: 'Input: elan_i2c - do not leave interrupt disabled on suspend failure'
+  mainline: 5f82c1e04721e7cd98e604eb4e58f0724d8e5a65
+  upstream: 2ee59e846895b6b061defbc6cde83126f91b7abd
+fd5b433d1390c5586bc367f3e10fbb226ad9e2ac:
+  title: 'MIPS: Octeron: remove source file executable bit'
+  mainline: 89c7f5078935872cf47a713a645affb5037be694
+  upstream: 12bc3aca7d100a8f749c2a6fcdb6be08ad41c105
+971a6101e844da8bcbdd4bd046a826c6cc44d861:
+  title: 'powerpc/xmon: Fix disassembly CPU feature checks'
+  mainline: 14196e47c5ffe32af7ed5a51c9e421c5ea5bccce
+  upstream: 5b84d47a0baee13434fadb3b9506c39f51f9ab98
+20b6b7a306d9487bb507af81df8e926b8141d902:
+  title: 'macintosh/therm_windtunnel: fix module unload.'
+  mainline: fd748e177194ebcbbaf98df75152a30e08230cc6
+  upstream: eeb9a0f79d8e4ea27b4f85a73f3765dc0046ab01
+4f51eb5763820de8cf9bc32b26b20d19f7ccfc5d:
+  title: 'bnxt_re: Fix imm_data endianness'
+  mainline: 95b087f87b780daafad1dbb2c84e81b729d5d33f
+  upstream: dfb40b2535b298b34b37780fe8eced6d38e28c5c
+ccfb620ebf3085fca54472461544c796cbd7db5d:
+  title: 'netfilter: ctnetlink: use helper function to calculate expect ID'
+  mainline: 782161895eb4ac45cf7cfa8db375bd4766cb8299
+  upstream: 66e7650dbbb8e236e781c670b167edc81e771450
+ee8bf45248bc530e2dc9a0a7f833febbe89fd2e1:
+  title: 'pinctrl: core: fix possible memory leak when pinctrl_enable() fails'
+  mainline: ae1cf4759972c5fe665ee4c5e0c29de66fe3cf4a
+  upstream: 636f8fe03a14b0994a3dbdc05c8fa8c8296c1357
+fbd206c9e544f6e8fbb844534d05817ab6ed637a:
+  title: 'pinctrl: single: fix possible memory leak when pinctrl_enable() fails'
+  mainline: 8f773bfbdd428819328a2d185976cfc6ae811cd3
+  upstream: 9dad82c7c7424c240db65f10ad999266f2967479
+9521c0b13c94c6ad389f9a5d7f8213891d8924a7:
+  title: 'pinctrl: ti: ti-iodelay: Drop if block with always false condition'
+  mainline: 88b3f108502bc45e6ebd005702add46759f3f45a
+  upstream: 268b3ff414ae8942af9d6c981b5df8667c2b76b6
+78e3f7ec45416b8b0a25ef8fcbf85b653f49d5bb:
+  title: 'pinctrl: ti: ti-iodelay: fix possible memory leak when pinctrl_enable() fails'
+  mainline: 9b401f4a7170125365160c9af267a41ff6b39001
+  upstream: 7d720f351714dcbeb578af67bb7e66326504826c
+251acaffa0bd813f67f7a92082bdbd101c395f4d:
+  title: 'pinctrl: freescale: mxs: Fix refcount of child'
+  mainline: 7f500f2011c0bbb6e1cacab74b4c99222e60248e
+  upstream: c90d81a6e1f3daab4c06f7f8aba346abc76ae07a
+2891e08c6f20e3c7b4b09dac8e949a195b46ff8c:
+  title: 'fs/nilfs2: remove some unused macros to tame gcc'
+  mainline: e7920b3e9d9f5470d5ff7d883e72a47addc0a137
+  upstream: 175ac70d8af52bc0f5b100901702fdb2bc662885
+440e5d6b0d782ee0786d780761f57a117c904288:
+  title: 'nilfs2: avoid undefined behavior in nilfs_cnt32_ge macro'
+  mainline: 0f3819e8c483771a59cf9d3190cd68a7a990083c
+  upstream: d2b9bc7dfd6b0fa1a37eb91e68bca3175cb5ef50
+3065612975c688a1ea3f759a23856a4b9eefdc12:
+  title: 'tick/broadcast: Make takeover of broadcast hrtimer reliable'
+  mainline: f7d43dd206e7e18c182f200e67a8db8c209907fa
+  upstream: dfe19aa91378972f10530635ad83b2d77f481044
+d5744057122276d5d9c9b33a8e567e963897d502:
+  title: 'net: netconsole: Disable target before netpoll cleanup'
+  mainline: 97d9fba9a812cada5484667a46e14a4c976ca330
+  upstream: 608a07143563a2a0d1edd57b2f4e95b0199fb497
+6d8fa691e6733006d5c061a297fe601d126d748b:
+  title: 'af_packet: Handle outgoing VLAN packets without hardware offloading'
+  mainline: 79eecf631c14e7f4057186570ac20e2cfac3802e
+  upstream: 3dfd84aa72fa7329ed4a257c8f40e0c9aff4dc8f
+f58439a91781f888dce8463243b4d83be380d21c:
+  title: 'ipv6: take care of scope when choosing the src addr'
+  mainline: abb9a68d2c64dd9b128ae1f2e635e4d805e7ce64
+  upstream: b4f67f09287392e0a2f7422199a193e37f2737af
+058c66e9aa0cd80581ff06b9294521e05ea1d0dd:
+  title: 'media: venus: fix use after free in vdec_close'
+  mainline: a0157b5aa34eb43ec4c5510f9c260bbb03be937e
+  upstream: ad8cf035baf29467158e0550c7a42b7bb43d1db6
+26722f11717342d8f7deeb0c23fa6814bc31a48c:
+  title: 'hfs: fix to initialize fields of hfs_inode_info after hfs_alloc_inode()'
+  mainline: 26a2ed107929a855155429b11e1293b83e6b2a8b
+  upstream: f7316b2b2f11cf0c6de917beee8d3de728be24db
+d92238c8b1116bff1babca839d923d345128c202:
+  title: 'drm/gma500: fix null pointer dereference in cdv_intel_lvds_get_modes'
+  mainline: cb520c3f366c77e8d69e4e2e2781a8ce48d98e79
+  upstream: f392c36cebf4c1d6997a4cc2c0f205254acef42a
+2c7d6f35aea17924ebb60002a151c8e4909cb226:
+  title: 'drm/gma500: fix null pointer dereference in psb_intel_lvds_get_modes'
+  mainline: 2df7aac81070987b0f052985856aa325a38debf6
+  upstream: 13b5f3ee94bdbdc4b5f40582aab62977905aedee
+1ac49c559cf87bd78734f326ef6db4c2d876d804:
+  title: 'm68k: amiga: Turn off Warp1260 interrupts during boot'
+  mainline: 1d8491d3e726984343dd8c3cdbe2f2b47cfdd928
+  upstream: 296185ef87e6184e364bd9e7c983089b8e606a55
+4ed99f550b6316ae9cfa1ffdb6c4f053631117e6:
+  title: 'ext4: check dot and dotdot of dx_root before making dir indexed'
+  mainline: 50ea741def587a64e08879ce6c6a30131f7111e7
+  upstream: b80575ffa98b5bb3a5d4d392bfe4c2e03e9557db
+839f30000100e2b3fb252f1755c4434cad12da0c:
+  title: 'ext4: make sure the first directory block is not a hole'
+  mainline: f9ca51596bbfd0f9c386dd1c613c394c78d9e5e6
+  upstream: d81d7e347d1f1f48a5634607d39eb90c161c8afe
+b9bb3e4e90d4b44dc0667e7e5e24a8c4cd9eb9f5:
+  title: 'wifi: mwifiex: Fix interface type change'
+  mainline: a17b9f590f6ec2b9f1b12b1db3bf1d181de6b272
+  upstream: 98cf9959a20dc374b7bba4b9357203e54484be58
+4e71b875b885df71c21f8f1fa380064b59fdd414:
+  title: 'leds: ss4200: Convert PCIBIOS_* return codes to errnos'
+  mainline: ce068e83976140badb19c7f1307926b4b562fac4
+  upstream: db1871789f3018c5b0788318d3b1c685f2decceb
+63576e19060aa3b515c02583870bde5d75260ed8:
+  title: 'hwrng: amd - Convert PCIBIOS_* return codes to errnos'
+  mainline: 14cba6ace79627a57fb9058582b03f0ed3832390
+  upstream: d48e11483e3eb8ade86c57f4145644725cd33eed
+31754844f0fd1fbfd0a6fd857ec7021240b6d3a3:
+  title: 'PCI: hv: Return zero, not garbage, when reading PCI_INTERRUPT_PIN'
+  mainline: fea93a3e5d5e6a09eb153866d2ce60ea3287a70d
+  upstream: e9cafb31aa498558d6ff7b28baed894db7d801f3
+080400d0031e6b30ae84fa1722d55cb6a3376f8c:
+  title: 'binder: fix hang of unregistered readers'
+  mainline: 31643d84b8c3d9c846aa0e20bc033e46c68c7e7d
+  upstream: 229670361c29381b0e1677763590e4dbc209ecbe
+0900cd07eb9119e80a55a97784e8cc1ca6390402:
+  title: 'scsi: qla2xxx: Return ENOBUFS if sg_cnt is more than one for ELS cmds'
+  mainline: ce2065c4cc4f05635413f63f6dc038d7d4842e31
+  upstream: 5c9d1ac649469feaab4240c0c1b5920ea8649b50
+24eb54283c4effe2b0c2d94401d19e0ff004e357:
+  title: 'f2fs: prevent newly created inode from being dirtied incorrectly'
+27f9505abcdef5527ce43c5c21ecf89bc76f2278:
+  title: 'f2fs: fix to don''t dirty inode for readonly filesystem'
+  mainline: 192b8fb8d1c8ca3c87366ebbef599fa80bb626b8
+  upstream: 2d2916516577f2239b3377d9e8d12da5e6ccdfcf
+e38af31723db1861d58b71410895872b72abc272:
+  title: 'ubi: eba: properly rollback inside self_check_eba'
+  mainline: 745d9f4a31defec731119ee8aad8ba9f2536dd9a
+  upstream: 29f2c831822fde87b78c73e5db6ecfb106473cff
+a01900bb7d4f831a50f19c58b1b9e3c9aa9dd9d9:
+  title: 'decompress_bunzip2: fix rare decompression failure'
+  mainline: bf6acd5d16057d7accbbb1bf7dc6d8c56eeb4ecc
+  upstream: 16b92b031b4da174342bd909130731c55f20c7ea
+930865dbd92b29bc57364695d561c289d693f72d:
+  title: 'scsi: qla2xxx: During vport delete send async logout explicitly'
+  mainline: 76f480d7c717368f29a3870f7d64471ce0ff8fb2
+  upstream: 086489256696eb774654a5410e86381c346356fe
+b212bfa809f6d1235bbbb6c491621ce314b073a6:
+  title: 'perf/x86/intel/pt: Fix topa_entry base length'
+  mainline: 5638bd722a44bbe97c1a7b3fae5b9efddb3e70ff
+  upstream: b4030b619066aa1c20e075ce9382f103e0168145
+dbffea43e8b704e5cb23e776be21c12a3e0f0b65:
+  title: 'watchdog/perf: properly initialize the turbo mode timestamp and rearm counter'
+  mainline: f944ffcbc2e1c759764850261670586ddf3bdabb
+  upstream: 6d94ca5d571dfdb34f12dc3f63273ea275e8f40c
+8e28810fed0aaf5624155ae6974d1cc95623edf2:
+  title: 'platform: mips: cpu_hwmon: Disable driver on unsupported hardware'
+  mainline: f4d430db17b4ef4e9c3c352a04b2fe3c93011978
+  upstream: 0818a768c96a10343d08a622906adab54da6e014
+4a7a97d0ef008b684e246ead6e1474949cb0b579:
+  title: 'RDMA/iwcm: Remove a set-but-not-used variable'
+b4099074459a9baa637aba3a5fa6d814f32e5eb2:
+  title: 'RDMA/iwcm: Fix a use-after-free related to destroying CM IDs'
+  mainline: aee2424246f9f1dadc33faa78990c1e2eb7826e4
+  upstream: d91d253c87fd1efece521ff2612078a35af673c6
+0a35556f0aa6435749d819919639e400943a3430:
+  title: 'selftests/sigaltstack: Fix ppc64 GCC build'
+  mainline: 17c743b9da9e0d073ff19fd5313f521744514939
+  upstream: 8010e0748cca059187021d194bb6d883d159e172
+0e318baa084d870466c8cefaab8d2689e56d21e7:
+  title: 'nilfs2: handle inconsistent state in nilfs_btnode_create_block()'
+  mainline: 4811f7af6090e8f5a398fbdd766f903ef6c0d787
+  upstream: 19cce46238ffe3546e44b9c74057103ff8b24c62
+2527458f09eb86ba89b673081c8a408c8a3f7591:
+  title: 'kdb: Fix bound check compiler warning'
+  mainline: ca976bfb3154c7bc67c4651ecd144fdf67ccaee7
+  upstream: b15593e2904d2ff0094b7170f806dba0eeefac75
+fbcf6bbfac542e249d92ce80277a03dde0699305:
+  title: 'kdb: address -Wformat-security warnings'
+  mainline: 70867efacf4370b6c7cdfc7a5b11300e9ef7de64
+  upstream: 22a100556ceab8b906ad180788bd6bdc07390f50
+4925aa995a5cf9f49c04fdd1257b1d8f341dd4f5:
+  title: 'kdb: Use the passed prompt in kdb_position_cursor()'
+  mainline: e2e821095949cde46256034975a90f88626a2a73
+  upstream: 90f2409c1d552f27a2b2bf8dc598d147c4173128
+4c2dc9502e8728f3a9ba9029aeaa08fc01e420d1:
+  title: 'jfs: Fix array-index-out-of-bounds in diFree'
+  mainline: f73f969b2eb39ad8056f6c7f3a295fa2f85e313a
+  upstream: 55b732c8b09b41148eaab2fa8e31b0af47671e00
+5a9dbd8f70793aba9e12d6d5216ce45cd9597a78:
+  title: 'dma: fix call order in dmam_free_coherent'
+  mainline: 28e8b7406d3a1f5329a03aa25a43aa28e087cb20
+  upstream: fe2d246080f035e0af5793cb79067ba125e4fb63
+1184f039bc84987937ac8144df7a5daaffb0795c:
+  title: 'MIPS: SMP-CPS: Fix address for GCR_ACCESS register for CM3 and later'
+  mainline: a263e5f309f32301e1f3ad113293f4e68a82a646
+  upstream: 3213ac4e85945c54350ac06c09902d1c82211100
+5b3e5dc382a0cab89cea2c533a0e5b65ae4d686e:
+  title: 'net: ip_rt_get_source() - use new style struct initializer instead of memset'
+  mainline: e351bb6227fbe2bb5da6f38a4cf5bd18810b0557
+  upstream: 0e8712254b48a7c6ebb76dce414a9539e772d406
+ef5a6f1d6d270c55e210ed3775352ff75e2aa48e:
+  title: 'ipv4: Fix incorrect source address in Record Route option'
+  mainline: cc73bbab4b1fb8a4f53a24645871dafa5f81266a
+  upstream: 5c65e55e41e1300c4ebf4dda22a704b2beed2423
+f204855673caa3a17b49c8b9642edcd269a4fac7:
+  title: 'net: bonding: correctly annotate RCU in bond_should_notify_peers()'
+  mainline: 3ba359c0cd6eb5ea772125a7aededb4a2d516684
+  upstream: 6c9261a2bdf614b376dbefa01e0c6bb32d14e019
+1ae654c0cdf7bfcd142367568d3a1afbed7d54e8:
+  title: 'tipc: Return non-zero value from tipc_udp_addr2str() on error'
+  mainline: fa96c6baef1b5385e2f0c0677b32b3839e716076
+  upstream: 7ec3335dd89c8d169e9650e4bac64fde71fdf15b
+70609fe847bf6600554b6f511b10015f76834d58:
+  title: 'mISDN: Fix a use after free in hfcmulti_tx()'
+  mainline: 61ab751451f5ebd0b98e02276a44e23a10110402
+  upstream: 70db2c84631f50e02e6b32b543700699dd395803
+1967ea8b282b3b05c9da41c1e2426c3bfb04bf54:
+  title: 'mm: avoid overflows in dirty throttling logic'
+  mainline: 385d838df280eba6c8680f9777bfa0d0bfe7e8b2
+  upstream: 2b2d2b8766db028bd827af34075f221ae9e9efff
+aff1d3ed73ce5882235d9f42c4510c642b9e1dac:
+  title: 'PCI: rockchip: Make ''ep-gpios'' DT property optional'
+  mainline: 58adbfb3ebec460e8b58875c682bafd866808e80
+  upstream: 11f71f0c562dbfbc3f3e2c56053bca42f7e8d71c
+5a659bbb75dd76c32388a8b4c8ea8dff2aa79c12:
+  title: 'PCI: rockchip: Use GPIOD_OUT_LOW flag while requesting ep_gpio'
+  mainline: 840b7a5edf88fe678c60dee88a135647c0ea4375
+  upstream: 8de378d17e5b737907c04acc2fab6d966a129f70
+d34a87ca6e4c611b125d238c3a56b712a612acd6:
+  title: 'parport: parport_pc: Mark expected switch fall-through'
+  mainline: aa1f0fa374ed23528b915a693a11b0f275a299c0
+  upstream: f1af18ba5925abb275de8bf387fceb9fbf93a096
+af0192bb58b539ec732125a76fe4d69660147cca:
+  title: 'parport: Convert printk(KERN_<LEVEL> to pr_<level>('
+  mainline: decf26f6ec25dac868782dc1751623a87d147831
+  upstream: cb2a998b88d173ec23423fa13ae2da463449728a
+4582fe6f2d5fddcf7a63b59b666e8837f2cecf9a:
+  title: 'parport: Standardize use of printmode'
+  mainline: a6abfdff4fe5dd19d1f1b37d72ba34cd4492fd4d
+  upstream: 884ab25dbf115938facb91be85ffed9266e26f8b
+598e7acd167941653c0a54d5732bad40db488504:
+  title: 'dev/parport: fix the array out-of-bounds risk'
+  mainline: ab11dac93d2d568d151b1918d7b84c2d02bacbd5
+  upstream: 166a0bddcc27de41fe13f861c8348e8e53e988c8
+bdec7b3d4ccbcbd78fd4b6a2c6fe7a849754af52:
+  title: 'driver core: Cast to (void *) with __force for __percpu pointer'
+  mainline: d7aa44f5a1f86cb40659eef06035d8d92604b9d5
+  upstream: b9c258b2a02ba8d6d004f45a1eafa23fd810746b
+9b6f7f34aae733309a35d9990d4a0cdf2d2eea3b:
+  title: 'devres: Fix memory leakage caused by driver API devm_free_percpu()'
+  mainline: bd50a974097bb82d52a458bd3ee39fb723129a0c
+  upstream: 700e8abd65b10792b2f179ce4e858f2ca2880f85
+9ce7856eccc159df29f62b1e5ff0c6239422bf63:
+  title: 'perf/x86/intel/pt: Export pt_cap_get()'
+  mainline: f6d079ce867d679e4dffef5b3112c7634215fd88
+  upstream: bea2d4588e90f56da62b0dd9099484a42498b08a
+2de7be6b1893e070e92da91bbaa35ce22950b189:
+  title: 'perf/x86/intel/pt: Use helpers to obtain ToPA entry size'
+  mainline: fffec50f541ace292383c0cbe9a2a97d16d201c6
+  upstream: e3fb71f7ecbf87228148c3287eac965927ef49be
+ab03429ae696126f00509dac54b632bfb2282240:
+  title: 'perf/x86/intel/pt: Use pointer arithmetics instead in ToPA entry calculation'
+  mainline: 539f7c26b41d4ed7d88dd9756de3966ae7ca07b4
+  upstream: 67968b8c7603007751f140f3f9f8aa8e64fc26b2
+a87ac310cc99adff1aa8315d829ce984dfc0cda6:
+  title: 'perf/x86/intel/pt: Split ToPA metadata and page layout'
+  mainline: 38bb8d77d0b932a0773b5de2ef42479409314f96
+  upstream: e9d9ec1019a90aafdb54765a3b46f36f402b481a
+d6c356954a61ce5a5f851b9aa858f9d906e4228d:
+  title: 'perf/x86/intel/pt: Fix a topa_entry base address calculation'
+  mainline: ad97196379d0b8cb24ef3d5006978a6554e6467f
+  upstream: 418f7db13405953c2d9223275d365d9828169076
+5d99fd6160cb1a1ecd0163220164b8d1fe2cecf6:
+  title: 'remoteproc: imx_rproc: ignore mapping vdev regions'
+  mainline: 8f2d8961640f0346cbe892273c3260a0d30c1931
+  upstream: 35df377f38fb516111933f132b51a386b4d4892f
+c1239a005bbf4c6b43aec1155ac3d8466b640051:
+  title: 'remoteproc: imx_rproc: Fix ignoring mapping vdev regions'
+  mainline: afe670e23af91d8a74a8d7049f6e0984bbf6ea11
+  upstream: a80423f6566bc5085d6bbdd2acdb80aa20c0e915
+3e1715ba7291483690f92608e08aba0d12c5ef70:
+  title: 'remoteproc: imx_rproc: Skip over memory region when node value is NULL'
+  mainline: 2fa26ca8b786888673689ccc9da6094150939982
+  upstream: 6884fd0283e0831be153fb8d82d9eda8a55acaaa
+4aff76137ef2fa40ec1f424eb8e743673ffe5434:
+  title: 'drm/vmwgfx: Fix overlay when using Screen Targets'
+  mainline: cb372a505a994cb39aa75acfb8b3bcf94787cf94
+  upstream: 6f4bc8b021d3436e5dda88350d8e0ac3c8df400f
+582d87d965d3600b178bbaf8947523e5478da1d1:
+  title: 'net/iucv: fix use after free in iucv_sock_close()'
+  mainline: f558120cd709682b739207b48cf7479fd9568431
+  upstream: 84f40b46787ecb67c7ad08a5bb1376141fa10c01
+c04add3c9adf1402f47ff8f51dd2ee533e863a00:
+  title: 'ipv6: fix ndisc_is_useropt() handling for PIO'
+  mainline: a46c68debf3be3a477a69ccbf0a1d050df841676
+  upstream: 97a4f78feadc431a050cc26355f95ac3d73a4d4c
+f4c005cc381764f082f66825073bb6c43f54fe14:
+  title: protect the fetch of ->fd[fd] in do_dup2() from mispredictions
+  mainline: 8aa37bde1a7b645816cda8b80df4753ecf172bf1
+  upstream: ed42e8ff509d2a61c6642d1825032072dab79f26
+71a0712ba842211e6dc1a4f7e91dd6c7502eebe5:
+  title: 'ALSA: usb-audio: Correct surround channels in UAC1 channel map'
+  mainline: b7b7e1ab7619deb3b299b5e5c619c3e6f183a12d
+  upstream: f4eb853103674698416ba66d41317b1d869d4bdc
+3f465b02b4b919181c45ef14fe5ca3638b87ac5c:
+  title: 'net: usb: sr9700: fix uninitialized variable use in sr_mdio_read'
+  mainline: 08f3a5c38087d1569e982a121aad1e6acbf145ce
+  upstream: 9f04dbd139aa1988fc8b7984ffbce7849be73f21
+6f4e6f1f7e5d27fa977d9900aba67c9cc3c15d4e:
+  title: 'irqchip/mbigen: Fix mbigen node address layout'
+  mainline: 6be6cba9c4371d27f78d900ccfe34bb880d9ee20
+  upstream: 2f61f0c6b7411212acd6490c5629b0049e8eaefa
+193653bb5bb78ddaa2698760912db0248833cccc:
+  title: 'net: usb: qmi_wwan: fix memory leak for not ip packets'
+  mainline: 7ab107544b777c3bd7feb9fe447367d8edd5b202
+  upstream: 3c90a69533b5bba73401ef884d033ea49ee99662
+928a0513e3f0353f456c9734695c47a94f423c54:
+  title: 'net: linkwatch: use system_unbound_wq'
+  mainline: 3e7917c0cdad835a5121520fc5686d954b7a61ab
+  upstream: 3840189e4619af11f558e6faff80813f008246a6
+0c7df8f6eff3aa1044d3f97dd249112dc4301778:
+  title: 'Bluetooth: l2cap: always unlock channel in l2cap_conless_channel()'
+  mainline: c531e63871c0b50c8c4e62c048535a08886fba3e
+  upstream: 64f4938368f4be563b7652d6b18d37b317913b47
+20cb64898909ba7ccad47d1e52e980ba859c29c0:
+  title: 'net: fec: Stop PPS on driver remove'
+  mainline: 8fee6d5ad5fa18c270eedb2a2cdf58dbadefb94b
+  upstream: 7762f5317db83b70099ed1b2c100df54abddaec1
+a10b1779aca24535b14edba941cb59fbd35ce7c9:
+  title: 'md/raid5: avoid BUG_ON() while continue reshape after reassembling'
+  mainline: 305a5170dc5cf3d395bb4c4e9239bca6d0b54b49
+  upstream: 2c92f8c1c456d556f15cbf51667b385026b2e6a0
+f9ec6971715991696e49430547551697f1153be6:
+  title: 'clocksource/drivers/sh_cmt: Address race condition for clock events'
+  mainline: db19d3aa77612983a02bd223b3f273f896b243cf
+  upstream: 026befb502ce41384e5119df12c9f2d4067cb23c
+ca0a3431163788b838bdccff1eac2b84a30bee91:
+  title: 'PCI: Add Edimax Vendor ID to pci_ids.h'
+  mainline: eee5528890d54b22b46f833002355a5ee94c3bb4
+  upstream: a35a163cd56b583ef698eadef9b856b0fe6e2727
+ed09bb9292ca0c02ada12cd5f17ef9e976cb5f8c:
+  title: 'udf: Fix signed/unsigned format specifiers'
+12ce9c96b15650623040f0d999b91b5d12f9936f:
+  title: 'udf: prevent integer overflow in udf_bitmap_free_blocks()'
+  mainline: 56e69e59751d20993f243fb7dd6991c4e522424c
+  upstream: 097420e48e30f51e8f4f650b5c946f5af63ec1a3
+a253db7576fd90aaa15b1dabec335f2f9df7c21e:
+  title: 'wifi: nl80211: don''t give key data to userspace'
+  mainline: a7e5793035792cc46a1a4b0a783655ffa897dfe9
+  upstream: f4d99b55dca90ca703bdd57ee8d557cd8d6c1639
+dd102bb94b5dba7e5376f09504503f3bc2cf16da:
+  title: 'btrfs: fix bitmap leak when loading free space cache on duplicate entry'
+  mainline: 320d8dc612660da84c3b70a28658bb38069e5a9a
+  upstream: fad0bb34cfcea693903409356693988f04715b8e
+feddc92ee4859f5e6c5a69135f94547740b292a9:
+  title: 'media: uvcvideo: Ignore empty TS packets'
+  mainline: 5cd7c25f6f0576073b3d03bc4cfb1e8ca63a1195
+  upstream: 019f538f9fe0b48bb436135edba69aa3a5156cdb
+00a39f4e0adbb1b194e0a1ba2219e26c57042dc7:
+  title: 'media: uvcvideo: Fix the bandwdith quirk on USB 3.x'
+  mainline: 9e3d55fbd160b3ca376599a68b4cddfdc67d4153
+  upstream: eada6212c055089962ca3ee7b8ab11d8f4d0e4f5
+82f1f40db08d606f0538e4a88e06a919b8656645:
+  title: 'jbd2: avoid memleak in jbd2_journal_write_metadata_buffer'
+  mainline: cc102aa24638b90e04364d64e4f58a1fa91a1976
+  upstream: 831db95409cc12589c14a71b9bf6c3e7f70bf5a0
+6062fd1ee48c6cb081cbc525e31fd43fa9632dbc:
+  title: 'SUNRPC: Fix a race to wake a sync task'
+  mainline: ed0172af5d6fc07d1b40ca82f5ca3979300369f7
+  upstream: 06d281f0ad7504e9f250c6a9ef78d9e48cea5717
+fb37e57b6e2f8217b201737f10af809289674469:
+  title: 'ext4: fix wrong unit use in ext4_mb_find_by_goal'
+  mainline: 99c515e3a860576ba90c11acbc1d6488dfca6463
+  upstream: 585b8d86c39882425f737b800e7552fb42a4785f
+7a346f1ce3ab37134f2365ab6a74422747285fdb:
+  title: 'i2c: smbus: Don''t filter out duplicate alerts'
+  mainline: dca0dd28fa5e0a1ec41a623dbaf667601fc62331
+  upstream: 6adca954fc039151ef4f9c1ea1f201e12a24593d
+c364d250ada36665ea06f204449d1162cb5e1432:
+  title: 'i2c: smbus: Improve handling of stuck alerts'
+  mainline: 37c526f00bc1c4f847fc800085f8f009d2e11be6
+  upstream: 9540badee607a99cc07bddbd0a7d4a01fd3b9661
+a0bb631d7d0a1773ebbb427ac8564ae8818b4dfe:
+  title: 'i2c: smbus: Send alert notifications to all devices if source not found'
+  mainline: f6c29f710c1ff2590109f83be3e212b86c01e0f3
+  upstream: 3b20631d0704fe4f6bf4cf9a49fd19871ebaeffb
+5ec8022d2f6ecf35ce105eafaf28b73c46619207:
+  title: 'spi: lpspi: Switch to SPDX identifier'
+0ef61696a9fff3915fb5aa6f7bb9f89682d10ad9:
+  title: 'spi: lpspi: Replace all "master" with "controller"'
+  mainline: 07d71557494c05b0651def1651bf6d7e7f47bbbb
+  upstream: bebc69b574d6a3c54e8951dd891e78a20e2a3f54
+12bfab716ae4cd47449d7636a25326099daa10a9:
+  title: 'spi: lpspi: Add slave mode support'
+  mainline: bcd87317aae26b9ac497cbc1232783aaea1aeed4
+  upstream: b1b5a04eadd9b786dcd4bc82e726498a8f6fd50a
+6a6c19da1d3917fc8c51d2fd69b667a5e7b192ec:
+  title: 'spi: lpspi: Let watermark change with send data length'
+  mainline: cf86874bb9bdb99ba3620428b59b0408fbc703d0
+  upstream: 8f8b12339ef7cc8e15989f6445aad5a9bf8c00f5
+dc2d2de15c66a8e41275b4d59e6082955e477991:
+  title: 'spi: lpspi: Add i.MX8 boards support for lpspi'
+  mainline: f5e5afdb0e56e81123e02b6a64dd32adc19a90d4
+  upstream: 0b536d6c52a88b6a5a7f40d1ac91ffe170b8df87
+030b58b3539d0fdccf6284113c29f60c76b60916:
+  title: 'spi: lpspi: add the error info of transfer speed setting'
+  mainline: 77736a98b859e2c64aebbd0f90b2ce4b17682396
+  upstream: 3bb46e26783c3c86e67172f695908a066be69e12
+d859e0255cb169a2d7aa96b42defafd7c515df0c:
+  title: 'spi: fsl-lpspi: remove unneeded array'
+  mainline: 2fa98705a9289c758b6154a22174aa8d4041a285
+  upstream: da6cc32c245500f417e4b96d67722b8a0a07fd94
+dcde078eb1be234c810305963c845eaa63f20813:
+  title: 'spi: spi-fsl-lpspi: Fix scldiv calculation'
+  mainline: 730bbfaf7d4890bd99e637db7767dc68cfeb24e7
+  upstream: 81964823116357a636201afa4010fa30f050446e
+9ab8902f51b8ac3c51666922a9719c1e4d81f105:
+  title: 'ALSA: line6: Fix racy access to midibuf'
+  mainline: 15b7a03205b31bc5623378c190d22b7ff60026f1
+  upstream: 643293b68fbb6c03f5e907736498da17d43f0d81
+d41cf1c7bc4e9706d684d3fb2c24046f673ffb78:
+  title: 'usb: vhci-hcd: Do not drop references before new references are gained'
+  mainline: afdcfd3d6fcdeca2735ca8d994c5f2d24a368f0a
+  upstream: 5a3c473b28ae1c1f7c4dc129e30cb19ae6e96f89
+95314b1272d1d96f5737c5b1e208fabd1128db3c:
+  title: 'USB: serial: debug: do not echo input by default'
+  mainline: 00af4f3dda1461ec90d892edc10bec6d3c50c554
+  upstream: 1907ed1be026c771086e6adc560f38dc50e82382
+551fbbddb6f5ff52bdb1c0cdb3d096e359e088da:
+  title: 'usb: gadget: core: Check for unset descriptor'
+  mainline: 973a57891608a98e894db2887f278777f564de18
+  upstream: ba15815dd24cc5ec0d23e2170dc58c7db1e03b4a
+b41af170f9ad55d4780688b92c032579655218fe:
+  title: 'scsi: ufs: core: Fix hba->last_dme_cmd_tstamp timestamp updating logic'
+  mainline: ab9fd06cb8f0db0854291833fc40c789e43a361f
+  upstream: c4da5b5deb343346909920c41645ad85adff4c6c
+6fad54cc7a6c8c4750209bfcff1b54dd60b086db:
+  title: 'tick/broadcast: Move per CPU pointer access into the atomic section'
+  mainline: 6881e75237a84093d0986f56223db3724619f26e
+  upstream: f54abf332a2bc0413cfa8bd6a8511f7aa99faea0
+07f7f40df90538c4bacb06d64ededc68b6d6e9bf:
+  title: 'ntp: Clamp maxerror and esterror to operating range'
+  mainline: 87d571d6fb77ec342a985afa8744bb9bb75b3622
+  upstream: 9dfe2eef1ecfbb1f29e678700247de6010784eb9
+c72f8e96b8386d50894df2faed9718d7cbfc312d:
+  title: 'driver core: Fix uevent_show() vs driver detach race'
+  mainline: 15fffc6a5624b13b428bb1c6e9088e32a55eb82c
+  upstream: 49ea4e0d862632d51667da5e7a9c88a560e9c5a1
+53390d85b1f4fca100eca68612fe9ae736ef5caf:
+  title: 'ntp: Safeguard against time_constant overflow'
+  mainline: 06c03c8edce333b9ad9c6b207d93d3a5ae7c10c0
+  upstream: a13f8b269b6f4c9371ab149ecb65d2edb52e9669
+1d33b86b2b99774eae26926b2f5f4900f826638f:
+  title: 'serial: core: check uartclk for zero to avoid divide by zero'
+  mainline: 6eabce6608d6f3440f4c03aa3d3ef50a47a3d193
+  upstream: 3bbd90fca824e6fd61fb20f6dd2b0fa5f8b14bba
+d9b1fa9a24e5ba3115a289421d535abf954efd7a:
+  title: 'power: supply: axp288_charger: Fix constant_charge_voltage writes'
+  mainline: b34ce4a59cfe9cd0d6f870e6408e8ec88a964585
+  upstream: f1aa9f19da35f72ce8ec3196f0a7bc06e296aaeb
+bd9bfbcc05c1c7af22dfa9ca8b2ff1d6395db661:
+  title: 'power: supply: axp288_charger: Round constant_charge_voltage writes down'
+  mainline: 81af7f2342d162e24ac820c10e68684d9f927663
+  upstream: e3cb8400a72a9e5e25365d380b290cdd50ccdb5c
+b28271a4428daf3c20b71a8e7cf218a4c38c698b:
+  title: 'tracing: Fix overflow in get_free_elt()'
+  mainline: bcf86c01ca4676316557dd482c8416ece8c2e143
+  upstream: 302ceb625d7b990db205a15e371f9a71238de91c
+4f0b886693fe2a82d8896cd431eb529777e1bbdc:
+  title: 'x86/mtrr: Check if fixed MTRRs exist before saving them'
+  mainline: 919f18f961c03d6694aa726c514184f2311a4614
+  upstream: 34f36e6ee5bd7eff8b2adcd9fcaef369f752d82e
+d5775da332c5377cc22a6e497a9b324c1f2fe2a1:
+  title: 'drm/bridge: analogix_dp: Check AUX_EN status when doing AUX transfer'
+a413584fad9b551cb6e15f5e8a05f94d16871585:
+  title: 'drm/bridge: analogix_dp: Reset aux channel if an error occurred'
+9f77a8ee77d6ec538dbccfc03c463586323300d0:
+  title: 'drm/bridge: analogix_dp: Properly log AUX CH errors'
+5dfe0cc24eab4d1e640e3cfc7ef155216fb29f2a:
+  title: 'drm/bridge: analogix_dp: properly handle zero sized AUX transactions'
+  mainline: e82290a2e0e8ec5e836ecad1ca025021b3855c2d
+  upstream: 52f05898629b25fc382754d837be624205ce67f8
+e391c9f51faaf4a35bb29343af0d29164938363a:
+  title: 'drm/mgag200: Set DDC timeout in milliseconds'
+  mainline: ecde5db1598aecab54cc392282c15114f526f05f
+  upstream: 7db72e8e538e10afefe589d6203ffb4f5a1cbd9a
+6bd6cf1374f27ba771760e53caf8c276e794b638:
+  title: 'kbuild: Fix ''-S -c'' in x86 stack protector scripts'
+  mainline: 3415b10a03945b0da4a635e146750dfe5ce0f448
+  upstream: 9dd6e5296c8ad1bbb88933b8150383bc0eba9488
+9aee9974b20b6907210221aba005ec36135348a4:
+  title: 'netfilter: nf_tables: set element extended ACK reporting support'
+  mainline: b53c116642502b0c85ecef78bff4f826a7dd4145
+  upstream: 61fbbac22c8ce73d0c492caf45a286c3f021c0fd
+827a69923a6dddeb669678005299af5144147452:
+  title: 'drm/i915: Try GGTT mmapping whole object as partial'
+3ccfe379cab98c308e84733885655b1c7c956b80:
+  title: 'drm/i915/gem: Fix Virtual Memory mapping boundaries calculation'
+  mainline: 8bdd9ef7e9b1b2a73e394712b72b22055e0e26c3
+  upstream: 3e06073d24807f04b4694108a8474decb7b99e60
+02acb3b20db4e8372b854be6ce9846446def401c:
+  title: 'exec: Fix ToCToU between perm check and set-uid/gid usage'
+  mainline: f50733b45d865f91db90919f8311e2127ce5a0cb
+  upstream: d5c3c7e26275a2d83b894d30f7582a42853a958f
+92af3424a5a42e8014f39c82996fe01a8ba6aaf0:
+  title: 'nvme/pci: Add APST quirk for Lenovo N60z laptop'
+  mainline: ab091ec536cb7b271983c0c063b17f62f3591583
+  upstream: 9cc0878c7d7f12c10b3cc40197668816c918b465
+af183b69eaca031e9e4833d356ba1ef6c2adbaba:
+  title: 'Revert "selftests: make order checking verbose in msg_zerocopy selftest"'
+2cb49c145133dc3d8b38832afe4be57ffc94836a:
+  title: 'Revert "selftests: fix OOM in msg_zerocopy selftest"'
+d110d6dd927f5a2911fc5e697a14026eacc5da69:
+  title: 'Revert "selftests/net: reap zerocopy completions passed up as ancillary data."'
+2d49c59f9120bc00d0cf6f055311d8f9ab7bb90d:
+  title: 'selftests: fix OOM in msg_zerocopy selftest'
+  mainline: af2b7e5b741aaae9ffbba2c660def434e07aa241
+144aa689351646efa81ec2ad9f0ba41599d9ffc8:
+  title: 'selftests: make order checking verbose in msg_zerocopy selftest'
+  mainline: 7d6d8f0c8b700c9493f2839abccb6d29028b4219
+795faf9727a66039c7c80e011fe0bad5bd88dd83:
+  title: 'net: fix __dst_negative_advice() race'
+  mainline: 92f1655aa2b2294d0b49925f3b875a634bd3b59e

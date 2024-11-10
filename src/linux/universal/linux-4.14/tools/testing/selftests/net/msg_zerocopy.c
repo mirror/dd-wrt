@@ -309,53 +309,7 @@ static int do_setup_tx(int domain, int type, int protocol)
 	return fd;
 }
 
-static uint32_t do_process_zerocopy_cookies(struct rds_zcopy_cookies *ck)
-{
-	int i;
-
-	if (ck->num > RDS_MAX_ZCOOKIES)
-		error(1, 0, "Returned %d cookies, max expected %d\n",
-		      ck->num, RDS_MAX_ZCOOKIES);
-	for (i = 0; i < ck->num; i++)
-		if (cfg_verbose >= 2)
-			fprintf(stderr, "%d\n", ck->cookies[i]);
-	return ck->num;
-}
-
-static bool do_recvmsg_completion(int fd)
-{
-	char cmsgbuf[CMSG_SPACE(sizeof(struct rds_zcopy_cookies))];
-	struct rds_zcopy_cookies *ck;
-	struct cmsghdr *cmsg;
-	struct msghdr msg;
-	bool ret = false;
-
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_control = cmsgbuf;
-	msg.msg_controllen = sizeof(cmsgbuf);
-
-	if (recvmsg(fd, &msg, MSG_DONTWAIT))
-		return ret;
-
-	if (msg.msg_flags & MSG_CTRUNC)
-		error(1, errno, "recvmsg notification: truncated");
-
-	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-		if (cmsg->cmsg_level == SOL_RDS &&
-		    cmsg->cmsg_type == RDS_CMSG_ZCOPY_COMPLETION) {
-
-			ck = (struct rds_zcopy_cookies *)CMSG_DATA(cmsg);
-			completions += do_process_zerocopy_cookies(ck);
-			ret = true;
-			break;
-		}
-		error(0, 0, "ignoring cmsg at level %d type %d\n",
-			    cmsg->cmsg_level, cmsg->cmsg_type);
-	}
-	return ret;
-}
-
-static bool do_recv_completion(int fd, int domain)
+static bool do_recv_completion(int fd)
 {
 	struct sock_extended_err *serr;
 	struct msghdr msg = {};
@@ -363,9 +317,6 @@ static bool do_recv_completion(int fd, int domain)
 	uint32_t hi, lo, range;
 	int ret, zerocopy;
 	char control[100];
-
-	if (domain == PF_RDS)
-		return do_recvmsg_completion(fd);
 
 	msg.msg_control = control;
 	msg.msg_controllen = sizeof(control);
@@ -422,21 +373,21 @@ static bool do_recv_completion(int fd, int domain)
 }
 
 /* Read all outstanding messages on the errqueue */
-static void do_recv_completions(int fd, int domain)
+static void do_recv_completions(int fd)
 {
-	while (do_recv_completion(fd, domain)) {}
+	while (do_recv_completion(fd)) {}
 	sends_since_notify = 0;
 }
 
 /* Wait for all remaining completions on the errqueue */
-static void do_recv_remaining_completions(int fd, int domain)
+static void do_recv_remaining_completions(int fd)
 {
 	int64_t tstop = gettimeofday_ms() + cfg_waittime_ms;
 
 	while (completions < expected_completions &&
 	       gettimeofday_ms() < tstop) {
-		if (do_poll(fd, domain == PF_RDS ? POLLIN : POLLERR))
-			do_recv_completions(fd, domain);
+		if (do_poll(fd, POLLERR))
+			do_recv_completions(fd);
 	}
 
 	if (completions < expected_completions)
@@ -509,17 +460,17 @@ static void do_tx(int domain, int type, int protocol)
 			do_sendmsg(fd, &msg, cfg_zerocopy);
 
 		if (cfg_zerocopy && sends_since_notify >= cfg_notification_limit)
-			do_recv_completions(fd, domain);
+			do_recv_completions(fd);
 
 		while (!do_poll(fd, POLLOUT)) {
 			if (cfg_zerocopy)
-				do_recv_completions(fd, domain);
+				do_recv_completions(fd);
 		}
 
 	} while (gettimeofday_ms() < tstop);
 
 	if (cfg_zerocopy)
-		do_recv_remaining_completions(fd, domain);
+		do_recv_remaining_completions(fd);
 
 	if (close(fd))
 		error(1, errno, "close");

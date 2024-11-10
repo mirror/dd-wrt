@@ -1136,6 +1136,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
 	WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
 #endif
 
+	if (WARN_ON_ONCE(!timer->function))
+		return;
+
 	base = lock_hrtimer_base(timer, &flags);
 
 	if (__hrtimer_start_range_ns(timer, tim, delta_ns, mode, base))

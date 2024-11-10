@@ -97,8 +97,8 @@ static void rpf_configure(struct vsp1_entity *entity,
 		 * 'width' need to be adjusted.
 		 */
 		if (pipe->partitions > 1) {
-			crop.width = pipe->partition->rpf.width;
-			crop.left += pipe->partition->rpf.left;
+			crop.width = pipe->partition->rpf[rpf->entity.index].width;
+			crop.left += pipe->partition->rpf[rpf->entity.index].left;
 		}
 
 		vsp1_rpf_write(rpf, dl, VI6_RPF_SRC_BSIZE,
@@ -253,7 +253,9 @@ static void rpf_partition(struct vsp1_entity *entity,
 			  unsigned int partition_idx,
 			  struct vsp1_partition_window *window)
 {
-	partition->rpf = *window;
+	struct vsp1_rwpf *rpf = to_rwpf(&entity->subdev);
+
+	partition->rpf[rpf->entity.index] = *window;
 }
 
 static const struct vsp1_entity_operations rpf_entity_ops = {
