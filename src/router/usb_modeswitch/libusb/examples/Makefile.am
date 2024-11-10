@@ -1,21 +1,12 @@
-INCLUDES = -I$(top_srcdir)/libusb
-noinst_PROGRAMS = listdevs
+AM_CPPFLAGS = -I$(top_srcdir)/libusb
+LDADD = ../libusb/libusb-1.0.la
+LIBS =
 
-listdevs_SOURCES = listdevs.c
-listdevs_LDADD = ../libusb/libusb-1.0.la
+noinst_PROGRAMS = dpfp dpfp_threaded fxload hotplugtest listdevs sam3u_benchmark testlibusb xusb
 
-if HAVE_SIGACTION
-dpfp_SOURCES = dpfp.c
-dpfp_LDADD = ../libusb/libusb-1.0.la
-noinst_PROGRAMS += dpfp
-endif
+dpfp_threaded_CPPFLAGS = $(AM_CPPFLAGS) -DDPFP_THREADED
+dpfp_threaded_CFLAGS = $(AM_CFLAGS) $(THREAD_CFLAGS)
+dpfp_threaded_LDADD = $(LDADD) $(THREAD_LIBS)
+dpfp_threaded_SOURCES = dpfp.c
 
-if THREADS_POSIX
-if HAVE_SIGACTION
-dpfp_threaded_SOURCES = dpfp_threaded.c
-dpfp_threaded_CFLAGS = $(THREAD_CFLAGS) $(AM_CFLAGS)
-dpfp_threaded_LDADD = ../libusb/libusb-1.0.la
-noinst_PROGRAMS += dpfp_threaded
-endif
-endif
-
+fxload_SOURCES = ezusb.c ezusb.h fxload.c

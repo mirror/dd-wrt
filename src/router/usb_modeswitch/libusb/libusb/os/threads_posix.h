@@ -1,7 +1,7 @@
 /*
  * libusb synchronization using POSIX Threads
  *
- * Copyright (C) 2010 Peter Stuge <peter@stuge.se>
+ * Copyright © 2010 Peter Stuge <peter@stuge.se>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,26 +23,76 @@
 
 #include <pthread.h>
 
-#define usbi_mutex_static_t		pthread_mutex_t
-#define USBI_MUTEX_INITIALIZER		PTHREAD_MUTEX_INITIALIZER
-#define usbi_mutex_static_lock		pthread_mutex_lock
-#define usbi_mutex_static_unlock	pthread_mutex_unlock
+#define PTHREAD_CHECK(expression)	ASSERT_EQ(expression, 0)
 
-#define usbi_mutex_t			pthread_mutex_t
-#define usbi_mutex_init			pthread_mutex_init
-#define usbi_mutex_lock			pthread_mutex_lock
-#define usbi_mutex_unlock		pthread_mutex_unlock
-#define usbi_mutex_trylock		pthread_mutex_trylock
-#define usbi_mutex_destroy		pthread_mutex_destroy
+#define USBI_MUTEX_INITIALIZER	PTHREAD_MUTEX_INITIALIZER
+typedef pthread_mutex_t usbi_mutex_static_t;
+static inline void usbi_mutex_static_lock(usbi_mutex_static_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_lock(mutex));
+}
+static inline void usbi_mutex_static_unlock(usbi_mutex_static_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_unlock(mutex));
+}
 
-#define usbi_cond_t			pthread_cond_t
-#define usbi_cond_init			pthread_cond_init
-#define usbi_cond_wait			pthread_cond_wait
-#define usbi_cond_timedwait		pthread_cond_timedwait
-#define usbi_cond_broadcast		pthread_cond_broadcast
-#define usbi_cond_destroy		pthread_cond_destroy
-#define usbi_cond_signal		pthread_cond_signal
+typedef pthread_mutex_t usbi_mutex_t;
+static inline void usbi_mutex_init(usbi_mutex_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_init(mutex, NULL));
+}
+static inline void usbi_mutex_lock(usbi_mutex_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_lock(mutex));
+}
+static inline void usbi_mutex_unlock(usbi_mutex_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_unlock(mutex));
+}
+static inline int usbi_mutex_trylock(usbi_mutex_t *mutex)
+{
+	return pthread_mutex_trylock(mutex) == 0;
+}
+static inline void usbi_mutex_destroy(usbi_mutex_t *mutex)
+{
+	PTHREAD_CHECK(pthread_mutex_destroy(mutex));
+}
 
-extern int usbi_mutex_init_recursive(pthread_mutex_t *mutex, pthread_mutexattr_t *attr);
+typedef pthread_cond_t usbi_cond_t;
+void usbi_cond_init(pthread_cond_t *cond);
+static inline void usbi_cond_wait(usbi_cond_t *cond, usbi_mutex_t *mutex)
+{
+	PTHREAD_CHECK(pthread_cond_wait(cond, mutex));
+}
+int usbi_cond_timedwait(usbi_cond_t *cond,
+	usbi_mutex_t *mutex, const struct timeval *tv);
+static inline void usbi_cond_broadcast(usbi_cond_t *cond)
+{
+	PTHREAD_CHECK(pthread_cond_broadcast(cond));
+}
+static inline void usbi_cond_destroy(usbi_cond_t *cond)
+{
+	PTHREAD_CHECK(pthread_cond_destroy(cond));
+}
+
+typedef pthread_key_t usbi_tls_key_t;
+static inline void usbi_tls_key_create(usbi_tls_key_t *key)
+{
+	PTHREAD_CHECK(pthread_key_create(key, NULL));
+}
+static inline void *usbi_tls_key_get(usbi_tls_key_t key)
+{
+	return pthread_getspecific(key);
+}
+static inline void usbi_tls_key_set(usbi_tls_key_t key, void *ptr)
+{
+	PTHREAD_CHECK(pthread_setspecific(key, ptr));
+}
+static inline void usbi_tls_key_delete(usbi_tls_key_t key)
+{
+	PTHREAD_CHECK(pthread_key_delete(key));
+}
+
+unsigned int usbi_get_tid(void);
 
 #endif /* LIBUSB_THREADS_POSIX_H */
