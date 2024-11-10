@@ -1,0 +1,128 @@
+'\" t
+.\"     Title: victronups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "VICTRONUPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+victronups \- Driver for IMV/Victron UPS unit Match, Match Lite, NetUps
+.SH "SYNOPSIS"
+.sp
+\fBvictronups\fR \-h
+.sp
+\fBvictronups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the the victronups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The victronups driver should recognize all Victron models that use a serial protocol at 1200 bps\&. These include Match Lite, Match and the NetUps line\&.
+.sp
+The Match Lite line may only report a handful of variables\&. This is usually not a bug \- they just don\(cqt support anything else\&.
+.SH "CABLING"
+.sp
+If your Victron cable is broken or missing, use this diagram to build a clone:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+https://github\&.com/networkupstools/nut/blob/master/docs/cables/ge\-imv\-victron\&.txt
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+docs/cables/ge\-imv\-victron\&.txt
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional setting in the \fBups.conf\fR(5):
+.PP
+\fBmodelname\fR=\fIname\fR
+.RS 4
+Set model name
+.RE
+.PP
+\fBusd\fR=\fIdelay\fR
+.RS 4
+Set delay before shutdown on UPS
+.RE
+.SH "BUGS"
+.sp
+The protocol for this UPS is not officially documented\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Radek Benedikt <benedikt@lphard\&.cz>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Daniel Prynych <Daniel\&.Prynych@hornet\&.cz>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

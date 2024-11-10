@@ -1,0 +1,59 @@
+'\" t
+.\"     Title: upscli_readline
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_READLINE" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_readline, upscli_readline_timeout \- read a single response from a UPS
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+#include <time\&.h> /* or <sys/time\&.h> on some platforms */
+.fi
+.sp
+.nf
+int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
+.fi
+.sp
+.nf
+int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen,
+                               const time_t timeout);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_readline()\fR and \fBupscli_readline_timeout()\fR functions take the pointer \fIups\fR to a UPSCONN_t state structure, receive a single line from the server, and copy up to \fIbuflen\fR bytes of the response into the buffer \fIbuf\fR\&.
+.sp
+Some parsing of the string occurs during reception\&. In particular, ERR messages from \fBupsd\fR(8) are detected and will cause this function to return \-1\&.
+.sp
+The difference between the two functions is that \fBupscli_readline_timeout()\fR lets the caller decide the amount of time (\fItimeout\fR seconds) after which it should give up and return, whereas \fBupscli_readline()\fR does not offer this freedom, and uses NUT default network timeout (5 seconds)\&.
+.SH "RETURN VALUE"
+.sp
+The \fBupscli_readline()\fR and \fBupscli_readline_timeout()\fR functions return 0 on success, or \-1 if an error occurs\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_fd\fR(3), \fBupscli_get\fR(3), \fBupscli_readline\fR(3), \fBupscli_sendline\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

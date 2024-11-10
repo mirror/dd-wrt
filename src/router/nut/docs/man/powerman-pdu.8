@@ -1,0 +1,133 @@
+'\" t
+.\"     Title: powerman-pdu
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "POWERMAN\-PDU" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+powerman-pdu \- Driver for Powerman PDU
+.SH "SYNOPSIS"
+.sp
+\fBpowerman\-pdu\fR \-h
+.sp
+\fBpowerman\-pdu\fR \-a \fIPDU_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the powerman\-pdu driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports a wide range of PDUs through the Powerman project\&.
+.sp
+This includes various models from APC, Baytech, Cyclades, but also support IPMI and various blade management modules from HP, IBM and Sun\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver doesn\(cqt support any optional settings\&.
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by using "configure \-\-with\-powerman=yes"\&.
+.SH "UPS COMMANDS"
+.sp
+The following instant commands (see \fBupscmd\fR(8)) are available for each outlet of the PDU, with \fBX\fR standing for the outlet number:
+.PP
+\fBoutlet\&.X\&.load\&.on\fR
+.RS 4
+Power on the outlet\&.
+.RE
+.PP
+\fBoutlet\&.X\&.load\&.off\fR
+.RS 4
+Power off the outlet\&.
+.RE
+.PP
+\fBoutlet\&.X\&.load\&.cycle\fR
+.RS 4
+Cycle the outlet (power off then power on, possibly with a delay)\&.
+.RE
+.SH "IMPLEMENTATION"
+.sp
+The hostname of the Powerman server is specified using the "port" value in \fBups\&.conf\fR, i\&.e\&.:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[pdu]
+        driver = powerman\-pdu
+        port = host\&.example\&.com:port
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The port used to reach \fIpowermand\fR is optional if the default port is used\&.
+.SH "KNOWN ISSUES"
+.sp
+In the current NUT version as of this writing (2\&.4\&.1), ups\&.status is still exposed, with the value "WAIT"\&. Some other values from the ups collection are also exposed\&.
+.SH "AUTHOR"
+.sp
+Arnaud Quette <arnaud\&.quette@gmail\&.com>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The PowerMan home page:
+https://github\&.com/chaos/powerman
+.RE

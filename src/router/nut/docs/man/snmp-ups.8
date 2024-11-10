@@ -1,0 +1,321 @@
+'\" t
+.\"     Title: snmp-ups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "SNMP\-UPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+snmp-ups \- Multi\-MIB Driver for SNMP UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBsnmp\-ups\fR \-h
+.sp
+\fBsnmp\-ups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the snmp\-ups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The snmp\-ups driver automatically detects and supports a wide range of devices by loading various MIBS, such as:
+.PP
+\fBietf\fR
+.RS 4
+UPS that is RFC 1628 (UPS MIB) compliant, e\&.g\&. MGE UPS SYSTEMS, Liebert, perhaps others (default)
+.RE
+.PP
+\fBmge\fR
+.RS 4
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+.RE
+.PP
+\fBapcc\fR
+.RS 4
+APC AP9605, AP9606, AP9617, and AP9618 APC network management cards, as well as any others supporting the APC POWERNET MIB
+.RE
+.PP
+\fBnetvision\fR
+.RS 4
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+.RE
+.PP
+\fBeaton_pw_nm2\fR
+.RS 4
+Powerware devices with ConnectUPS SNMP cards, as well as UPSes with Eaton Gigabit Network Cards (Network\-M2) (renamed from pw)
+.RE
+.PP
+\fBeaton_pxg_ups\fR
+.RS 4
+Eaton devices with Power Xpert Gateway UPS Card (renamed from pxgx_ups)
+.RE
+.PP
+\fBaphel_genesisII\fR
+.RS 4
+Eaton Powerware ePDU Monitored
+.RE
+.PP
+\fBaphel_revelation\fR
+.RS 4
+Eaton Powerware ePDU Managed
+.RE
+.PP
+\fBraritan\fR
+.RS 4
+Various Raritan PDUs (Dominion PX, PM, RPC)
+.RE
+.PP
+\fBraritan\-px2\fR
+.RS 4
+Various Raritan PDUs (Dominion PX2)
+.RE
+.PP
+\fBbaytech\fR
+.RS 4
+Various BayTech PDUs
+.RE
+.PP
+\fBcpqpower\fR
+.RS 4
+HP/Compaq AF401A management card, perhaps others
+.RE
+.PP
+\fBcyberpower\fR
+.RS 4
+Cyberpower RMCARD201\&. Should also support RMCARD100 (net version), RMCARD202 and RMCARD301
+.RE
+.PP
+\fBhuawei\fR
+.RS 4
+Huawei UPS5000\-E, perhaps others
+.RE
+.PP
+\fBtripplite\fR
+.RS 4
+TrippLite UPSes; at this time this is the IETF MIB mapping with just the Tripplite entry point OID to verify the device vendor, and a real hardware\-specific configuration will be added in the future development\&.
+.RE
+.sp
+For a complete and up\-to\-date listing, you can query the driver by passing the \fBmibs=\-\-list\fR argument (see below)\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBport\fR=\fIhostname[:port]\fR
+.RS 4
+Set SNMP hostname, or IP address, and port number of the peer SNMP agent\&. There is no default for the hostname, but the default port is 161\&.
+.RE
+.PP
+\fBmibs\fR=\fI\-\-list\fR
+.RS 4
+A special option which allows to list the currently known MIB\-to\-NUT mappings and exit the driver binary, intended for command\-line usage like this:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ snmp\-ups \-a snmp\-test \-x mibs=\-\-list
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBmibs\fR=\fIname\fR
+.RS 4
+Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE above)\&.
+.sp
+With "auto", the driver will try a select set of SNMP objects until it finds one that the device responds to\&.
+.sp
+Note that since NUT 2\&.6\&.2, snmp\-ups has a new method that uses sysObjectID (which is a pointer to the preferred MIB of the device) to detect supported devices\&. This renders void the
+\fBrequirement\fR
+to use the "mibs" option\&.
+.RE
+.PP
+\fBcommunity\fR=\fIname\fR
+.RS 4
+Set community name (default = public)\&. Note that a RW community name is required to change UPS settings and send commands (as for a powerdown)\&.
+.RE
+.PP
+\fBsnmp_version\fR=\fIversion\fR
+.RS 4
+Set SNMP version (default = v1, allowed: v2c, v3)
+.RE
+.PP
+\fBsnmp_retries\fR=\fIretries\fR
+.RS 4
+Specifies the number of Net\-SNMP retries to be used in the requests (default=5)
+.RE
+.PP
+\fBsnmp_timeout\fR=\fItimeout\fR
+.RS 4
+Specifies the Net\-SNMP timeout in seconds between retries (default=1)
+.RE
+.PP
+\fBsymmetrathreephase\fR
+.RS 4
+Enable APCC three phase Symmetra quirks (use on APCC three phase Symmetras): Convert from three phase line\-to\-line voltage to line\-to\-neutral voltage (default: not enabled)
+.RE
+.PP
+\fBpollfreq\fR=\fInum\fR
+.RS 4
+Set polling interval for full updates, in seconds, to reduce SNMP network traffic relative to the quick updates performed every "pollinterval" (the latter option is described in
+\fBups.conf\fR(5))\&. The default value is 30 (in seconds)\&.
+.RE
+.PP
+\fBnotransferoids\fR
+.RS 4
+Disable the monitoring of the low and high voltage transfer OIDs in the hardware\&. This will remove input\&.transfer\&.low and input\&.transfer\&.high from the list of variables\&. This should only be used on APCC Symmetra equipment which has strangeness in the three\-phase power reporting\&.
+.RE
+.PP
+\fBsecLevel\fR=\fIvalue\fR
+.RS 4
+Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv, allowed: authNoPriv,authPriv) This parameter is mandatory if you use non\-trivial authentication\&.
+.RE
+.PP
+\fBsecName\fR=\fIvalue\fR
+.RS 4
+Set the securityName used for authenticated SNMPv3 messages (no default)
+.RE
+.PP
+\fBauthPassword\fR=\fIvalue\fR
+.RS 4
+Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)
+.RE
+.PP
+\fBprivPassword\fR=\fIvalue\fR
+.RS 4
+Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)
+.RE
+.PP
+\fBauthProtocol\fR=\fIvalue\fR
+.RS 4
+Set the authentication protocol (MD5, SHA, SHA256, SHA384 or SHA512) used for authenticated SNMPv3 messages (default=MD5)\&. Note that the exact protocol list depends on Net\-SNMP library capabilities; check help of the
+snmp\-ups
+binary program for the run\-time supported list\&.
+.RE
+.PP
+\fBprivProtocol\fR=\fIvalue\fR
+.RS 4
+Set the privacy protocol (DES, AES, AES192 or AES256) used for encrypted SNMPv3 messages (default=DES)\&. Note that the exact protocol list depends on Net\-SNMP library capabilities; check help of the
+snmp\-ups
+binary program for the run\-time supported list\&.
+.RE
+.SH "REQUIREMENTS"
+.sp
+You will need to install the Net\-SNMP package from http://www\&.net\-snmp\&.org/ before building this driver\&.
+.sp
+SNMP v3 also requires OpenSSL support from http://www\&.openssl\&.org\&.
+.SH "LIMITATIONS"
+.SS "Shutdown"
+.sp
+The shutdown sequence should be tested before relying on NUT to send a shutdown command to the UPS\&. The problem is that the host network stack may have been torn down by the time the driver is invoked to send the shutdown command\&. The driver attempts to send shutdown\&.return, shutdown\&.reboot, and load\&.off\&.delay commands to the UPS in sequence, stopping after the first supported command\&.
+.SH "INSTALLATION"
+.sp
+This driver is only built if the Net\-SNMP development files are present at configuration time\&. You can also force it to be built by using configure \-\-with\-snmp=yes before calling make\&.
+.SH "EXAMPLES"
+.sp
+The hostname of the UPS is specified with the "port" value in ups\&.conf, and may include a non\-standard (161) remote peer port:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+        [snmpv1]
+                driver = snmp\-ups
+                port = snmp\-ups\&.example\&.com
+                community = public
+                snmp_version = v1
+                pollfreq = 15
+                desc = "Example SNMP v1 device"
+
+        [snmpv3]
+                driver = snmp\-ups
+                port = 166\&.99\&.224\&.132:170
+                snmp_version = v3
+                secLevel = authPriv
+                secName = mysecurityname
+                authPassword = myauthenticationpassphrase
+                privPassword = myprivatepassphrase
+                desc = "Example SNMP v3 device, with the highest security level"
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arnaud Quette
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Dmitry Frolov
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Jim Klimov
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "NUT SNMP Protocols Library"
+.sp
+Available at: https://www\&.networkupstools\&.org/ups\-protocols\&.html#_snmp
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,254 @@
+'\" t
+.\"     Title: oneac
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "ONEAC" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+oneac \- Driver for Oneac UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBoneac\fR \-h
+.sp
+\fBoneac\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the oneac driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports various Oneac UPS families:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+EG (late 80s, early 90s, plug\-in serial interface card)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ON (early and mid\-90s, plug\-in serial interface card)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OZ (mid\-90s on, DB\-25 std\&., interface slot)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OB (early 2000\(cqs on, big cabinet, DB\-25 std\&., interface slot)
+.RE
+.sp
+If your UPS is equipped with the Basic Interface card, use the \fBgenericups\fR(8) driver\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.PP
+\fBtesttime\fR=\fInum\fR
+.RS 4
+Change battery test time from the 2 minute default\&.
+.RE
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Change shutdown delay time from 0 second default\&.
+.RE
+.SH "INSTANT COMMANDS"
+.sp
+This driver supports the following Instant Commands\&. (See \fBupscmd\fR(8))
+.SS "All UPS units"
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load possibly after a delay and return when power is back\&.
+.RE
+.PP
+\fBshutdown\&.stop\fR
+.RS 4
+Stop a shutdown in progress\&.
+.RE
+.PP
+\fBshutdown\&.reboot\fR
+.RS 4
+Shut down the load briefly while rebooting the UPS\&.
+.RE
+.PP
+\fBtest\&.failure\&.start\fR
+.RS 4
+Starts a 15 second long simulation of an input power failure\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\&.quick\fR
+.RS 4
+Start a "quick" battery test\&. The default time is 2 minutes\&. This time can be set in the
+\fBups\&.conf\fR
+file\&. See
+\fBtestime\fR
+above\&.
+.RE
+.PP
+\fBtest\&.battery\&.stop\fR
+.RS 4
+Stops a battery test that is in progress\&.
+.RE
+.SS "All ON UPS units"
+.PP
+\fBreset\&.input\&.minmax\fR
+.RS 4
+Reset the minimum and maximum input line voltage values seen since the last reset or power on\&.
+.RE
+.SS "Newer ON UPS units"
+.PP
+\fBtest\&.panel\&.start\fR
+.RS 4
+Start testing the UPS panel\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\&.deep\fR
+.RS 4
+Start a "deep" battery test\&. This test runs the UPS until the low battery point and then returns to the AC line\&.
+.RE
+.PP
+\fBreset\&.input\&.minmax\fR
+.RS 4
+Reset the minimum and maximum input line voltage values seen since the last reset or power on\&.
+.RE
+.PP
+\fBbeeper\&.enable\fR
+.RS 4
+Enable UPS beeper/buzzer\&.
+.RE
+.PP
+\fBbeeper\&.disable\fR
+.RS 4
+Disable UPS beeper/buzzer\&.
+.RE
+.PP
+\fBbeeper\&.mute\fR
+.RS 4
+Mutes the UPS beeper/buzzer for the current alarm condition(s)\&.
+.RE
+.SH "WRITABLE VARIABLES"
+.sp
+See \fBupsrw\fR(8) to see what variables are writable for the UPS\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+If your UPS supports writing battery\&.runtime\&.low, the new set value is to be entered in minutes (up to 99) but the reported value is reported in seconds (set value * 60)\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+If your UPS supports input\&.transfer\&.low and input\&.transfer\&.high, those values are used to create an allowable output range\&. The UPS will do what it can to keep the output voltage value within the defined range (for example: tap change or switch to inverter)\&.
+.sp .5v
+.RE
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Bill Elliot <bill@wreassoc\&.com>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Eric Lawson <elawson@inficad\&.com>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

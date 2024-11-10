@@ -1,0 +1,146 @@
+'\" t
+.\"     Title: upsc
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSC" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsc \- example lightweight UPS client
+.SH "SYNOPSIS"
+.sp
+\fBupsc\fR \-l | \-L [\fIhost\fR]
+.sp
+\fBupsc\fR \fIups\fR [\fIvariable\fR]
+.sp
+\fBupsc\fR \-c \fIups\fR
+.SH "DESCRIPTION"
+.sp
+\fBupsc\fR is provided as a quick way to poll the status of a UPS server\&. It can be used inside shell scripts and other programs that need UPS data but don\(cqt want to include the full interface\&.
+.SH "OPTIONS"
+.PP
+\fB\-l\fR \fIhost\fR
+.RS 4
+List all UPS names configured at
+\fIhost\fR, one name per line\&. The hostname defaults to "localhost"\&. You may optionally add a colon and a port number\&.
+.RE
+.PP
+\fB\-L\fR \fIhost\fR
+.RS 4
+As above, list all UPS names configured at
+\fIhost\fR, including their description provided by the remote upsd(8) from ups\&.conf(5)\&. The hostname defaults to "localhost"\&. You may optionally add a colon and a port number to override the default port\&.
+.RE
+.PP
+\fB\-c\fR \fIups\fR
+.RS 4
+Lists each client connected on
+\fIups\fR, one name per line\&.
+.RE
+.PP
+\fIups\fR
+.RS 4
+Display the status of that UPS\&. The format for this option is
+\fIupsname[@hostname[:port]]\fR\&. The default hostname is "localhost"\&.
+.RE
+.PP
+\fIvariable\fR
+.RS 4
+Display the value of this variable only\&. By default, upsc retrieves the list of variables from the server and then displays the value for each\&. This may be useful in shell scripts to save an additional pipe into grep\&.
+.RE
+.SH "EXAMPLES"
+.sp
+To list all variables on an UPS named "myups" on a host called "mybox", with upsd(8) running on port 1234:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ upsc myups@mybox:1234
+battery\&.charge: 100\&.0
+battery\&.voltage: 13\&.9
+battery\&.voltage\&.nominal: 13\&.6
+\&. \&. \&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To list the UPSes configured on this system, along with their descriptions:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ upsc \-L
+apc: Back\-UPS 500
+ppro2: Patriot Pro II
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To retrieve the status for all UPSes connected to mybox, using Bourne\-shell syntax:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ for UPS in `upsc \-l mybox:1234`; do
+    upsc $UPS ups\&.status
+done
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To list clients connected on "myups":
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ upsc \-c myups
+127\&.0\&.0\&.1
+::1
+192\&.168\&.1\&.2
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SCRIPTED MODE"
+.sp
+If you run this program inside a shell script or similar to get the list of devices and variables, you should only consider using output from stdout, not stderr\&.
+.SH "DIAGNOSTICS"
+.sp
+upsc will either print a list of UPS names, a list of all supported variables and their values on the UPS, or an error message\&. If you receive an error, make sure you have specified a valid UPS on the command line, that \fBupsd\fR(8) is really running on the other host and that no firewalls are blocking you\&.
+.SH "HISTORY"
+.sp
+Earlier versions of this program used the \fIupsfetch\fR library and UDP sockets to talk to upsd\&. This version of upsc uses the new \fIupsclient\fR library, which only talks TCP\&. This is why \fIupsct\fR no longer exists\&.
+.SH "SEE ALSO"
+.sp
+\fBupsd\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

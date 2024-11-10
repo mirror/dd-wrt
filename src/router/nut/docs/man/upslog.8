@@ -1,0 +1,174 @@
+'\" t
+.\"     Title: upslog
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSLOG" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upslog \- UPS status logger
+.SH "SYNOPSIS"
+.sp
+\fBupslog \-h\fR
+.sp
+\fBupslog\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+\fBupslog\fR is a daemon that will poll a UPS at periodic intervals, fetch the variables that interest you, format them, and write them to a file\&.
+.sp
+The default format string includes variables that are supported by many common UPS models\&. See the description below to make your own\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help message\&.
+.RE
+.PP
+\fB\-f\fR \fIformat\fR
+.RS 4
+Monitor the UPS using this format string\&. Be sure to enclose
+\fIformat\fR
+in quotes so your shell doesn\(cqt split it up\&. Valid escapes within this string are:
+.PP
+%%
+.RS 4
+Insert a single "%"
+.RE
+.PP
+%TIME format%
+.RS 4
+Insert the time with strftime formatting
+.RE
+.PP
+%ETIME%
+.RS 4
+Insert the number of seconds, ala time_t\&. This is now a 10 digit number\&.
+.RE
+.PP
+%HOST%
+.RS 4
+insert the local hostname
+.RE
+.PP
+%UPSHOST%
+.RS 4
+insert the host of the UPS being monitored
+.RE
+.PP
+%PID%
+.RS 4
+insert the pid of upslog
+.RE
+.PP
+%VAR varname%
+.RS 4
+insert the value of variable varname (see NUT developer documentation chapter "Variables" on\-line or in the
+docs/nut\-names\&.txt
+file in sources of the NUT version you have installed for more details)
+.RE
+.RE
+.sp
+The default format string is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+%TIME @Y@m@d @H@M@S% %VAR battery\&.charge% %VAR input\&.voltage%
+%VAR ups\&.load% [%VAR ups\&.status%] %VAR ups\&.temperature%
+%VAR input\&.frequency%
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fB\-i\fR \fIinterval\fR
+.RS 4
+Wait this many seconds between polls\&. This defaults to 30 seconds\&.
+.sp
+If you require tighter timing, you should write your own logger using the
+\fBupsclient\fR(3)
+library\&.
+.RE
+.PP
+\fB\-l\fR \fIlogfile\fR
+.RS 4
+Store the results in this file\&.
+.sp
+You can use "\-" for stdout, but upslog will remain in the foreground by default\&.
+.RE
+.PP
+\fB\-F\fR
+.RS 4
+upslog will run in the foreground, regardless of logging target\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+upslog will run in the background, regardless of logging target\&.
+.RE
+.PP
+\fB\-s\fR \fIups\fR
+.RS 4
+Monitor this UPS\&. The format for this option is
+upsname[@hostname[:port]]\&. The default hostname is "localhost"\&.
+.RE
+.PP
+\fB\-m\fR \fItuple\fR
+.RS 4
+Monitor multiple UPSs\&. The format for this option is a tuple of ups and logfile separated by commas\&. An example would be:
+upsname@hostname:9999,/var/log/nut/cps\&.log
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+If started as root, upslog will
+\fBsetuid\fR(2) to the user id associated with
+\fIusername\fR
+for security\&.
+.sp
+If
+\fIusername\fR
+is not defined, it will use the value that was compiled into the program\&. This defaults to "nobody", which is less than ideal\&.
+.RE
+.SH "SERVICE DELAYS"
+.sp
+The interval value is merely the number given to \fBsleep\fR(3) after running through the format string\&. Therefore, a query will actually take slightly longer than the interval, depending on the speed of your system\&.
+.SH "ON\-DEMAND LOGGING"
+.sp
+Sending a USR1 signal to a running \fBupslog\fR process makes it wake from the current sleep and log immediately\&. This is useful when triggered from a \fBupssched\fR event trigger (e\&.g\&. AT ONBATT or AT ONLINE) to ensure that an entry always exists, even if the power goes away for a period of time shorter than that specified by the \-i argument\&.
+.SH "LOG ROTATION"
+.sp
+\fBupslog\fR writes its PID to upslog\&.pid, and will reopen the log file if you send it a SIGHUP\&. This allows it to keep running when the log is rotated by an external program\&.
+.SH "SEE ALSO"
+.SS "Server:"
+.sp
+\fBupsd\fR(8)
+.SS "Clients:"
+.sp
+\fBupsc\fR(8), \fBupscmd\fR(8), \fBupsrw\fR(8), \fBupsmon\fR(8), \fBupssched\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

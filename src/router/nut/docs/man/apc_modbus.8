@@ -1,0 +1,490 @@
+'\" t
+.\"     Title: apc_modbus
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "APC_MODBUS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+apc_modbus \- Driver for APC Smart\-UPS Modbus protocol
+.SH "SYNOPSIS"
+.sp
+\fBapc_modbus\fR \-h
+.sp
+\fBapc_modbus\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.SH "SUPPORTED HARDWARE"
+.sp
+Generally this driver should work for all the APC Modbus UPS devices\&. Some devices might expose more than is currently supported, like multiple phases\&. A general rule of thumb is that APC devices (or firmware versions) released after 2010 are more likely to support Modbus than the USB HID standard\&.
+.sp
+Tested with the following hardware:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMT1500 (Smart\-UPS 1500, Firmware 9\&.6)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMX750 (Smart\-UPS X 750, Firmware 10\&.1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMX1500 (Smart\-UPS X 1500, Firmware 15\&.0)
+.RE
+.sp
+Note that you will have to enable Modbus communication\&. In the front panel of the UPS, go to Advanced Menu mode, under Configuration and enable Modbus\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver was tested with Serial, TCP and USB interfaces for Modbus\&. Notably, the Serial ports are not available on all devices nowadays; the TCP support may require a purchase of an additional network management card; and the USB support \fBcurrently\fR requires a non\-standard build of libmodbus (pull request against the upstream library is pending, as of at the time of this publication) as a pre\-requisite to building NUT with this part of the support\&. For more details (including how to build the custom library and NUT with it) please see NUT PR #2063
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+As currently published, this driver supports reading information from the UPS\&. Implementation of support to write (set modifiable variables or send commands) is expected with a later release\&. This can impact the host shutdown routines in particular (no ability to actively tell the UPS to power off or cycle in the end)\&. As a workaround, you can try integrating apctest (from the "apcupsd" project) with a "Test to kill power" into your late\-shutdown procedure, if needed\&.
+.sp .5v
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver also supports the following optional settings:
+.PP
+\fBport =\fR \fIstring\fR
+.RS 4
+Some
+\fIvalue\fR
+must be set, typically
+\fBauto\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+This could be a device filesystem path like
+/dev/usb/hiddev0
+but current use of libusb API precludes knowing and matching by such identifiers\&. They may also be inherently unreliable (dependent on re\-plugging and enumeration order)\&. At this time the actual
+\fIvalue\fR
+is ignored, but syntactically some
+\fIport\fR
+configuration must still be there\&.
+.sp .5v
+.RE
+.RE
+.sp
+It is possible to control multiple UPS units simultaneously by running several instances of this driver, provided they can be uniquely distinguished by setting some combination of the \fBvendor\fR, \fBproduct\fR, \fBvendorid\fR, \fBproductid\fR, \fBserial\fR, \fBbus\fR and/or \fBdevice\fR options detailed below\&. For devices or operating systems that do not provide sufficient information, the \fBallow_duplicates\fR option can be of use (limited and risky!)
+.PP
+\fBvendorid =\fR \fIregex\fR, \fBproductid =\fR \fIregex\fR, \fBvendor =\fR \fIregex\fR, \fBproduct =\fR \fIregex\fR, \fBserial =\fR \fIregex\fR
+.RS 4
+Select a specific UPS, in case there is more than one connected via USB\&. Each option specifies an extended regular expression (see
+\fBregex(7)\fR
+for more information on regular expressions), which must match the UPS\(cqs entire respective vendor/product/serial string (minus any surrounding whitespace), or the whole 4\-digit hexadecimal code for
+vendorid
+and
+productid\&.
+.sp
+Try
+\fBlsusb(8)\fR
+or running this NUT driver with
+\fB\-DD\fR
+command\-line argument for finding out the strings to match\&.
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendor="Foo\&.Corporation\&.*"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendorid="051d*"
+(APC)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x product="\&.*(Smart|Back)\-?UPS\&.*"
+.RE
+.RE
+.PP
+\fBbus =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB bus or group of buses\&. The argument is a regular expression that must match the bus name where the UPS is connected (e\&.g\&.
+bus="002"
+or
+bus="00[2\-3]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.RE
+.PP
+\fBdevice =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB device or group of devices\&. The argument is a regular expression that must match the device name where the UPS is connected (e\&.g\&.
+device="001"
+or
+device="00[1\-2]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+device numbers are not guaranteed by the OS to be stable across re\-boots or device re\-plugging\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBbusport =\fR \fIregex\fR
+.RS 4
+If supported by the hardware, OS and libusb on the particular deployment, this option should allow to specify physical port numbers on an USB hub, rather than logical
+device
+enumeration values, and in turn \(em this should be less volatile across reboots or re\-plugging\&. The value may be seen in the USB topology output of
+lsusb \-tv
+on systems with that tool, for example\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option is not practically supported by some NUT builds (it should be ignored with a warning then), and not by all systems that NUT can run on\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBallow_duplicates\fR
+.RS 4
+If you have several UPS devices which may not be uniquely identified by the options above (e\&.g\&. only VID:PID can be discovered there), this flag allows each driver instance where it is set to take the first match if available, or proceed to try another\&.
+.sp
+Normally the driver initialization would abort at this point claiming "Resource busy" or similar error, assuming that the otherwise properly matched device is unique \(em and some other process already handles it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This feature is inherently non\-deterministic! The association of driver instance name to actual device may vary between runs!
+.sp
+If you only care to know that
+\fBat least\fR
+one of your no\-name UPSes is online, this option can help\&.
+.sp
+If you must really know
+\fBwhich\fR
+one, it will not!
+.sp .5v
+.RE
+.RE
+.PP
+\fBusb_set_altinterface =\fR \fIbAlternateSetting\fR
+.RS 4
+Force redundant call to
+usb_set_altinterface(), especially if needed for devices serving multiple USB roles where the UPS is not represented by the interface number
+0
+(default)\&.
+.RE
+.PP
+\fBusb_config_index\fR, \fBusb_hid_rep_index\fR, \fBusb_hid_desc_index\fR, \fBusb_hid_ep_in\fR, \fBusb_hid_ep_out\fR
+.RS 4
+Force use of specific interface, endpoint, descriptor index etc\&. numbers, rather than defaulting to 0 (rarely other values in certain drivers for some devices known to use non\-zero numbers)\&. Specified as a hexadecimal number\&.
+.sp
+As a rule of thumb for
+usb_hid_desc_index
+discovery, you can see larger
+wDescriptorLength
+values (roughly 600+ bytes) in reports of
+lsusb
+or similar tools\&.
+.RE
+.PP
+\fBporttype\fR=\fIvalue\fR
+.RS 4
+Set the type of the port used\&. Available values are serial for RS232/485 based connections, tcp for TCP/IP connections and usb for USB connections\&.
+.RE
+.PP
+\fBport\fR=\fIvalue\fR
+.RS 4
+Depending on the port type you can select a port here\&. For usb only auto is supported, for serial you can pass a device path like /dev/ttyS0 and for tcp you can pass a hostname with optional port like example\&.com:502\&.
+.RE
+.PP
+\fBbaudrate\fR=\fInum\fR
+.RS 4
+Set the speed of the serial connection\&. The default baudrate is 9600\&.
+.RE
+.PP
+\fBparity\fR=\fIvalue\fR
+.RS 4
+Set the parity of the serial connection\&. Available values are N for none, E for even and O for odd\&. The default parity is N (none)\&.
+.RE
+.PP
+\fBdatabits\fR=\fInum\fR
+.RS 4
+Set the data bits of the serial connection\&. The default databits is 8\&.
+.RE
+.PP
+\fBstopbits\fR=\fInum\fR
+.RS 4
+Set the stop bits of the serial connection\&. The default stopbits is 1\&.
+.RE
+.PP
+\fBslaveid\fR=\fInum\fR
+.RS 4
+Set the Modbus slave id\&. The default slave id is 1\&.
+.RE
+.PP
+\fBresponse_timeout_ms\fR=\fInum\fR
+.RS 4
+Set the Modbus response timeout\&. The default timeout is set by libmodbus\&. It can be good to set a higher timeout on TCP connections with high latency\&.
+.RE
+.SH "BUGS"
+.sp
+This driver relies on advanced features of libmodbus to talk Modbus protocol over USB specifically (Serial and TCP are part of common library codebase)\&. At the time of this writing, the common library project is just expecting a merge of the pull request with this ability\&.
+.sp
+For the time being, if your OS distribution does not ship the required feature set, you may have to build your own libmodbus and subsequently (re\-)build NUT against this library, as detailed in the NUT GitHub Wiki at https://github\&.com/networkupstools/nut/wiki/APC\-UPS\-with\-Modbus\-protocol
+.sp
+The short sequence may be like follows:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+cd ~/
+git clone \-b rtu_usb https://github\&.com/networkupstools/libmodbus
+cd libmodbus
+\&./autogen\&.sh
+\&./configure \-\-with\-libusb \-\-prefix=/path/to/prefix
+make install
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+you may need to \(oqmake && sudo make install` if you want to place this library files\(cq variant into a system path (like
+\-\-prefix=/usr/local/ups
+to match NUT defaults \(em this activity would need privilege elevation via
+sudo), and not into your home directory or some
+/tmp
+location\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+conversely, you may want to
+\&./configure \-\-with\-libusb \-\-enable\-static \-\-disable\-shared \-\-prefix=/path/to/prefix
+and only build and install a static
+libmodbus\&.a
+(can well be installed into
+/tmp
+or similarly short\-lived location), so that the customized Modbus+USB logic gets built directly into
+apc_modbus
+binary program and there would be no potential run\-time conflict with a dynamic library file available elsewhere in the system\&.
+.RE
+.sp .5v
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+cd ~/
+git clone https://github\&.com/networkupstools/nut
+cd nut
+\&./autogen\&.sh
+\&./configure \-\-with\-drivers=apc_modbus \-\-with\-usb \-\-with\-modbus \e
+   \-\-with\-modbus\-includes=\-I/path/to/prefix/include/modbus \e
+   \-\-with\-modbus\-libs="\-L/path/to/prefix/lib \-lmodbus"
+make
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Other NUT
+configure
+options may be needed for proper behavior, such as
+\-\-prefix,
+\-\-with\-sysconfdir,
+\-\-with\-user
+and
+\-\-with\-group
+to match your packaged or otherwise preceding NUT installation\&.
+.RE
+.sp .5v
+.RE
+.sp
+The \&./configure \-\-enable\-inplace\-runtime may be a good start to inherit build configuration from an existing NUT deployment, as further detailed at https://github\&.com/networkupstools/nut/wiki/Building\-NUT\-for\-in%E2%80%90place\-upgrades\-or\-non%E2%80%90disruptive\-tests
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Axel Gembe <axel@gembe\&.net>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver"
+.sp
+\fBnutupsdrv\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

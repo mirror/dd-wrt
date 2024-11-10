@@ -1,0 +1,312 @@
+# This file is generated and installed by the Network UPS Tools package.
+
+ACTION=="remove", GOTO="nut-usbups_rules_end"
+SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"
+SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"
+GOTO="nut-usbups_rules_end"
+
+LABEL="nut-usbups_rules_real"
+#  SNR-UPS-LID-XXXX UPSes  - blazer_usb nutdrv_atcl_usb nutdrv_qx
+ATTR{idVendor}=="0001", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Hewlett Packard
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  T500  - bcmxcp_usb
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f01", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  T750  - bcmxcp_usb
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f02", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T750 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f06", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T1000 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f08", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T1500 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f09", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP R/T 2200 INTL (like SMART2200RMXL2U)  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1f0a", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP R1500 G2 and G3 INTL  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe0", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T750 G2  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe1", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe2", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  HP T1500 G3  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe3", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  R/T3000  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe5", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  R/T3000  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe6", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various models  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe7", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various models  - usbhid-ups
+ATTR{idVendor}=="03f0", ATTR{idProduct}=="1fe8", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Eaton
+#  various models  - usbhid-ups
+ATTR{idVendor}=="0463", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various models  - usbhid-ups
+ATTR{idVendor}=="0463", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Dell
+#  various models  - usbhid-ups
+ATTR{idVendor}=="047c", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# ST Microelectronics
+#  TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs  - nutdrv_qx
+ATTR{idVendor}=="0483", ATTR{idProduct}=="0035", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  USB IDs device table  - usbhid-ups
+ATTR{idVendor}=="0483", ATTR{idProduct}=="a113", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Cyber Energy branded devices by CPS  - usbhid-ups
+ATTR{idVendor}=="0483", ATTR{idProduct}=="a430", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# IBM
+#  6000 VA LCD 4U Rack UPS; 5396-1Kx  - usbhid-ups
+ATTR{idVendor}=="04b3", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Riello (Cypress Semiconductor Corp.)
+#  various models  - riello_usb
+ATTR{idVendor}=="04b4", ATTR{idProduct}=="5500", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Minibox
+#  openUPS Intelligent UPS (minimum required firmware 1.4)  - usbhid-ups
+ATTR{idVendor}=="04d8", ATTR{idProduct}=="d004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  openUPS Intelligent UPS (minimum required firmware 1.4)  - usbhid-ups
+ATTR{idVendor}=="04d8", ATTR{idProduct}=="d005", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Belkin
+#  F6H375-USB  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0375", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C550-AVR  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0551", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C1250-TW-RK  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0750", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C1500-TW-RK  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0751", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C900-UNV  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0900", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C100-UNV  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0910", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C120-UNV  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0912", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C800-UNV  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0980", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Regulator PRO-USB  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="0f51", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  F6C1100-UNV, F6C1200-UNV  - usbhid-ups
+ATTR{idVendor}=="050d", ATTR{idProduct}=="1100", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# APC
+#  APC AP9584 Serial->USB kit  - usbhid-ups
+ATTR{idVendor}=="051d", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various models  - usbhid-ups
+ATTR{idVendor}=="051d", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  USB IDs device table  - usbhid-ups apc_modbus
+ATTR{idVendor}=="051d", ATTR{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  various 5G models  - usbhid-ups
+ATTR{idVendor}=="051d", ATTR{idProduct}=="0004", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Powerware
+#  various models  - bcmxcp_usb
+ATTR{idVendor}=="0592", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PW 9140  - usbhid-ups
+ATTR{idVendor}=="0592", ATTR{idProduct}=="0004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Agiler UPS  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="05b8", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Delta UPS
+#  Delta UPS Amplon R Series, Single Phase UPS, 1/2/3 kVA  - usbhid-ups
+ATTR{idVendor}=="05dd", ATTR{idProduct}=="041b", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Delta/Minuteman Enterprise Plus E1500RM2U  - usbhid-ups
+ATTR{idVendor}=="05dd", ATTR{idProduct}=="a011", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Delta/Minuteman PRO1500RT2U  - usbhid-ups
+ATTR{idVendor}=="05dd", ATTR{idProduct}=="a0a0", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Belkin F6C1200-UNV/Voltronic Power UPSes  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="0665", ATTR{idProduct}=="5161", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Phoenixtec Power Co., Ltd
+#  Online Yunto YQ450  - bcmxcp_usb blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Mustek Powermust  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0003", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Phoenixtec Innova 3/1 T  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Phoenixtec Innova RT  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Phoenixtec Innova T  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0201", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Online Zinto A  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="06da", ATTR{idProduct}=="0601", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PROTECT B / NAS  - usbhid-ups usbhid-ups
+ATTR{idVendor}=="06da", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# iDowell
+#  iDowell  - usbhid-ups
+ATTR{idVendor}=="075d", ATTR{idProduct}=="0300", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Cyber Power Systems
+#  900AVR/BC900D  - usbhid-ups
+ATTR{idVendor}=="0764", ATTR{idProduct}=="0005", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Dynex DX-800U?, CP1200AVR/BC1200D, CP825AVR-G, CP1000AVRLCD, CP1000PFCLCD, CP1500C, CP550HG, etc.  - usbhid-ups
+ATTR{idVendor}=="0764", ATTR{idProduct}=="0501", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U  - usbhid-ups
+ATTR{idVendor}=="0764", ATTR{idProduct}=="0601", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Sweex 1000VA  - nutdrv_qx richcomm_usb
+ATTR{idVendor}=="0925", ATTR{idProduct}=="1234", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# TrippLite
+#  e.g. OMNIVS1000, SMART550USB, ...  - tripplite_usb
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite AVR550U  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1003", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite AVR750U  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1007", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1010", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SU3000LCD2UHV  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="1330", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite OMNI1000LCD  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2005", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite OMNI900LCD  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2007", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite Smart1000LCD  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2010", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2011", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2012", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2013", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="2014", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3009", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3010", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3011", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite smart2200RMXL2U  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3012", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3013", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3014", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3015", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite Smart1500LCD (newer unit)  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3016", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite AVR750U (newer unit)  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="3024", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?)  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU6000RT4U?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4003", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. TrippLite SmartOnline SU1000XLA  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4005", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4006", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4007", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  e.g. ?  - usbhid-ups
+ATTR{idVendor}=="09ae", ATTR{idProduct}=="4008", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# PowerCOM
+#  PowerCOM Vanguard and BNT-xxxAP  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM Vanguard and BNT-xxxAP  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="0004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM IMP - IMPERIAL Series  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a2", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM SKP - Smart KING Pro (all Smart series)  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a3", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM WOW  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a4", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM VGD - Vanguard  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a5", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  PowerCOM BNT - Black Knight Pro  - usbhid-ups
+ATTR{idVendor}=="0d9f", ATTR{idProduct}=="00a6", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Unitek Alpha 1200Sx  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="0f03", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Liebert
+#  Liebert GXT4 UPS  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Liebert PowerSure PSA UPS  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0001", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Liebert PowerSure PST UPS  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Liebert PowerSure PSI 1440  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0004", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Liebert GXT3  - usbhid-ups
+ATTR{idVendor}=="10af", ATTR{idProduct}=="0008", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  GE EP series  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="14f0", ATTR{idProduct}=="00c9", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Legrand
+#  Legrand Keor SP  - usbhid-ups
+ATTR{idVendor}=="1cb0", ATTR{idProduct}=="0032", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Legrand Daker DK / DK Plus  - nutdrv_qx
+ATTR{idVendor}=="1cb0", ATTR{idProduct}=="0035", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Legrand Keor PDU  - usbhid-ups
+ATTR{idVendor}=="1cb0", ATTR{idProduct}=="0038", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Arduino
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2341", ATTR{idProduct}=="0036", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2341", ATTR{idProduct}=="8036", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Arduino
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2a03", ATTR{idProduct}=="0036", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2a03", ATTR{idProduct}=="0040", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2a03", ATTR{idProduct}=="8036", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+ATTR{idVendor}=="2a03", ATTR{idProduct}=="8040", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# AEG
+#  PROTECT B / NAS  - usbhid-ups
+ATTR{idVendor}=="2b2d", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Ever
+#  USB IDs device table  - usbhid-ups
+ATTR{idVendor}=="2e51", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  USB IDs device table  - usbhid-ups
+ATTR{idVendor}=="2e51", ATTR{idProduct}=="ffff", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Salicru
+#  https://www.salicru.com/sps-3000-adv-rt2.html  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0101", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0201", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0202", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0203", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  https://www.salicru.com/sps-home.html  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0300", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  https://www.salicru.com/sps-850-adv-t.html  - usbhid-ups
+ATTR{idVendor}=="2e66", ATTR{idProduct}=="0302", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+# Powervar
+#  Powervar  - usbhid-ups
+ATTR{idVendor}=="4234", ATTR{idProduct}=="0002", MODE="664", GROUP="@RUN_AS_GROUP@"
+#  Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135)  - blazer_usb nutdrv_qx
+ATTR{idVendor}=="ffff", ATTR{idProduct}=="0000", MODE="664", GROUP="@RUN_AS_GROUP@"
+
+LABEL="nut-usbups_rules_end"

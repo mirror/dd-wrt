@@ -1,0 +1,266 @@
+'\" t
+.\"     Title: mge-utalk
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "MGE\-UTALK" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+mge-utalk \- Driver for MGE UPS SYSTEMS UTalk protocol equipment
+.SH "SYNOPSIS"
+.sp
+\fBmge\-utalk\fR \-h
+.sp
+\fBmge\-utalk\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the mge\-utalk driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+mge\-utalk supports the following legacy units, using the MGE UTalk protocol:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Pulsar ESV+
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Pulsar ES+
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Pulsar EL
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Pulsar EX
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Pulsar EXtreme
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Comet EXtreme
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Comet (Utalk Serial Card, ref 66060)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Galaxy (Utalk Serial Card, ref 66060)
+.RE
+.sp
+This driver also support some newer models with backward UTalk compatibility, such as Pulsar Evolution and Pulsar EXtreme C\&. As these models also support the SHUT protocol, prefer mge\-shut for serial communication, or use the USB port, if available, with the usbhid\-ups driver\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBlowbatt\fR=\fInum\fR
+.RS 4
+Set the low battery warning threshold at which shutdown is initiated by
+\fBupsmon\fR(8)\&.
+.sp
+The factory default value is 30 (in percent), and can be settable depending on the exact model\&.
+.RE
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Set the timer before the UPS is turned off after the kill power command is sent (via the
+\fB\-k\fR
+switch)\&.
+.sp
+The default value is 20 (in seconds)\&.
+.RE
+.PP
+\fBondelay\fR=\fInum\fR
+.RS 4
+Set the delay before the UPS is turned on, after the power returns\&.
+.sp
+The default value is 1 (in minutes)\&.
+.RE
+.PP
+\fBoldmac\fR
+.RS 4
+Set this flag if you are running Linux on an Oldworld Macintosh box (all beige Apple Macintosh)\&. This might also be needed for other OSs (like *BSD) running on PowerMac\&.
+.RE
+.SH "KNOWN ISSUES"
+.SS "Repetitive timeout and staleness"
+.sp
+Older models, such as ES/ESV ones, might report repetitive "data stale" errors\&. This is due to the fact that these models don\(cqt support too much polling\&. To solve this problem, add "pollinterval=20" in ups\&.conf, and change the value of MAXAGE to 25 in upsd\&.conf, and DEADTIME to 25 in upsmon\&.conf\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Hans Ekkehard Plesser
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arnaud Quette
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Martin Loyer
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Patrick Agrain
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Nicholas Reilly
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Dave Abbott
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Marek Kralewski
+.RE
+.SH "SEE ALSO"
+.SS "The core driver"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

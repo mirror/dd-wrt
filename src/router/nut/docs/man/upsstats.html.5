@@ -1,0 +1,370 @@
+'\" t
+.\"     Title: upsstats.html
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSSTATS\&.HTML" "5" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsstats.html \- HTML template for Network UPS Tools upsstats
+.SH "DESCRIPTION"
+.sp
+This file is used by \fBupsstats.cgi\fR(8) to generate status pages\&. Certain commands are recognized, and will be replaced with various status elements on the fly\&.
+.SH "FORMATTING"
+.sp
+Commands can be placed anywhere on a line, but must start and end with @\&. Any extra characters before or after the commands will be passed through unchanged\&. It is allowed to use more than one command on a single line, as long as each command has its own start and end character\&. If you need to use the @ sign, use @ to prevent it from being treated as a start character\&.
+.SH "BLOCK CONTROL"
+.sp
+Some commands begin blocks \- sections of the template that will be included, excluded, or repeated depending on certain parameters\&.
+.SS "BLOCK CONTROL \- ITERATION"
+.PP
+\fB@FOREACHUPS@\fR
+.RS 4
+Starts a block that will be repeated for each MONITOR directive in the
+\fBhosts.conf\fR(5)\&. This is how you can generate pages that monitor all of your systems simultaneously\&.
+.RE
+.PP
+\fB@ENDFOR@\fR
+.RS 4
+Ends a FOREACHUPS block\&.
+.RE
+.SS "BLOCK CONTROL \- MATCHING SPECIFIC CASES"
+.PP
+\fB@IFSUPP \fR\fB\fIvar\fR\fR@*
+.RS 4
+Starts a block that will only be printed if the variable var is supported by the current UPS\&. This is generally used to suppress "not supported" messages by avoiding the label and variable call entirely\&.
+.RE
+.PP
+\fB@IFEQ\fR \fIvar\fR \fIvalue\fR\fB@\fR
+.RS 4
+Starts a block if the value returned from the variable
+\fIvar\fR
+matches
+\fIvalue\fR\&.
+.RE
+.PP
+\fB@IFBETWEEN\fR \fIvarlow\fR \fIvarhigh\fR \fIvarvalue\fR\fB@\fR
+.RS 4
+Starts a block if the value returned by the variable
+\fIvarvalue\fR
+is between the values returned by the variables
+\fIvarlow\fR
+and
+\fIvarhigh\fR\&.
+.RE
+.PP
+\fB@ELSE@\fR
+.RS 4
+If the previous IF\-command did not match, perform this instead\&.
+.RE
+.PP
+\fB@ENDIF@\fR
+.RS 4
+Ends an IF/ELSE\-block\&.
+.RE
+.SS "BLOCK CONTROL \- ADVANCED EXPRESSIONS"
+.sp
+Even though the parser is pretty limited, it\(cqs still possible to create rather advanced expressions\&. The key to this is the fact that multiple block control commands are AND:ed\&. This is illustrated with an example (more examples are available in upsstats\&.html)\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+@IFSUPP ambient\&.humidity@
+@IFSUPP ambient\&.temperature@
+This UPS knows both ambient temperature and humidity\&.
+@ELSE@
+@IFSUPP ambient\&.humidity@
+This UPS only knows ambient humidity\&.
+@ELSE@
+@IFSUPP ambient\&.temperature@
+This UPS only knows ambient temperature\&.
+@ELSE@
+This UPS knows nothing, how annoying\&.
+@ENDIF@
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OTHER COMMANDS"
+.PP
+\fB@AMBTEMP@\fR
+.RS 4
+Insert the ambient temperature in the current temperature scale\&.
+.RE
+.PP
+\fB@DATE\fR \fIformat\fR\fB@\fR
+.RS 4
+Insert the current date and time\&. The format string is passed to strftime, so almost anything is possible\&. See
+\fBstrftime\fR(3) for possible values\&.
+.RE
+.PP
+\fB@DEGREES@\fR
+.RS 4
+Insert the entity for degrees (\(de) and either C or F depending on the current temperature scale\&.
+.RE
+.PP
+\fB@HOST@\fR
+.RS 4
+Insert the designation of the host being monitored, like
+myups@localhost\&.
+.RE
+.PP
+\fB@HOSTDESC@\fR
+.RS 4
+Insert the host\(cqs description from
+\fBhosts.conf\fR(5)\&.
+.RE
+.PP
+\fB@HOSTLINK@\fR
+.RS 4
+Insert a link to upsstats\&.cgi with the "host" variable set to the current UPS\&. This is only useful within a FOREACHUPS block\&.
+.RE
+.PP
+\fB@IMG\fR \fIvarname\fR \fB@\fR
+.RS 4
+Insert an IMG SRC to
+\fBupsimage.cgi\fR(8)
+for one of these status variables:
+.PP
+battery\&.charge
+.RS 4
+Battery charge \- a percentage
+.RE
+.PP
+battery\&.voltage
+.RS 4
+The charge on the battery in volts
+.RE
+.PP
+input\&.frequency
+.RS 4
+Incoming utility frequency (Hz)
+.RE
+.PP
+input\&.voltage
+.RS 4
+Incoming utility voltage
+.RE
+.PP
+input\&.L1\-L2\&.voltage
+.RS 4
+Incoming voltage, L1\-L2 (3phase)
+.RE
+.PP
+input\&.L2\-L3\&.voltage
+.RS 4
+Incoming voltage, L2\-L3 (3phase)
+.RE
+.PP
+input\&.L3\-L1\&.voltage
+.RS 4
+Incoming voltage, L3\-L1 (3phase)
+.RE
+.PP
+output\&.frequency
+.RS 4
+Outgoing utility frequency (Hz)
+.RE
+.PP
+output\&.voltage
+.RS 4
+Outgoing voltage (from the UPS)
+.RE
+.PP
+output\&.L1\-L2\&.voltage
+.RS 4
+Outgoing voltage, L1\-L2 (3phase)
+.RE
+.PP
+output\&.L2\-L3\&.voltage
+.RS 4
+Outgoing voltage, L2\-L3 (3phase)
+.RE
+.PP
+output\&.L3\-L1\&.voltage
+.RS 4
+Outgoing voltage, L3\-L1 (3phase)
+.RE
+.PP
+output\&.L1\&.power\&.percent
+.RS 4
+UPS load, L1 (3phase)
+.RE
+.PP
+output\&.L2\&.power\&.percent
+.RS 4
+UPS load, L2 (3phase)
+.RE
+.PP
+output\&.L3\&.power\&.percent
+.RS 4
+UPS load, L3 (3phase)
+.RE
+.PP
+ups\&.load
+.RS 4
+UPS load \- percentage
+.RE
+.PP
+ups\&.temperature
+.RS 4
+UPS temperature
+.RE
+.RE
+.sp
+\fIextra\fR is where you can put additional definitions\&. Right now the valid definitions are colors for various parts of the bars drawn by upsimage\&.cgi\&. Possible color names are:
+.PP
+back_col
+.RS 4
+background color
+.RE
+.PP
+scale_num_col
+.RS 4
+scale number color
+.RE
+.PP
+summary_col
+.RS 4
+summary color (number at the bottom)
+.RE
+.PP
+ok_zone_maj_col
+.RS 4
+major scale color for the normal ("ok") zone
+.RE
+.PP
+ok_zone_min_col
+.RS 4
+minor scale color for the normal ("ok") zone
+.RE
+.PP
+neutral_zone_maj_col
+.RS 4
+major scale color for the neutral zone
+.RE
+.PP
+neutral_zone_min_col
+.RS 4
+minor scale color for the neutral zone
+.RE
+.PP
+warn_zone_maj_col
+.RS 4
+major scale color for the warning zone
+.RE
+.PP
+warn_zone_min_col
+.RS 4
+minor scale color for the warning zone
+.RE
+.PP
+bar_col
+.RS 4
+the color of the bar in the middle
+.RE
+.sp
+All colors are hex triplets \- 0xff0000 is red, 0x00ff00 is green, and 0x0000ff is blue\&.
+.sp
+Examples:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+@IMG battery\&.charge@
+@IMG battery\&.charge back_col=0xff00ff bar_col=0xaabbcc@
+@IMG input\&.voltage ok_zone_maj_col=0x123456@
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fB@REFRESH@\fR
+.RS 4
+Insert the META header magic for refreshing the page if that variable has been set by the browser\&. This needs to be in the HEAD section of the page\&.
+.RE
+.PP
+\fB@STATUS@\fR
+.RS 4
+Expand the abbreviations in the ups\&.status variable \- OL becomes "On line", OB becomes "On battery", and so on\&.
+.RE
+.PP
+\fB@STATUSCOLOR@\fR
+.RS 4
+Insert red, green, or yellow color triplets depending on the severity of the current UPS status\&. Normal operations are green, warnings like voltage trim/boost or "off" are yellow, and other events like being on battery or having a low battery are red\&.
+.RE
+.PP
+\fB@VAR\fR \fIvarname\fR\fB@\fR
+.RS 4
+Insert the current value of the status variable varname on the host being monitored, or "Not supported"\&.
+.RE
+.PP
+\fB@RUNTIME@\fR
+.RS 4
+Inserts the current runtime, in
+hh:mm:ss
+format\&.
+.RE
+.PP
+\fB@TEMPC@\fR
+.RS 4
+Use the Celsius scale for temperature data (default)\&.
+.RE
+.PP
+\fB@TEMPF@\fR
+.RS 4
+Use the Fahrenheit scale for temperature data\&.
+.RE
+.PP
+\fB@UPSTEMP@\fR
+.RS 4
+Insert the UPS temperature in the current scale\&.
+.RE
+.PP
+\fB@BATTTEMP@\fR
+.RS 4
+Insert the battery temperature in the current scale\&.
+.RE
+.PP
+\fB@UTILITYCOLOR@\fR
+.RS 4
+Obsoleted\&. Use IFBETWEEN instead (see example in upsstats\&.html)\&.
+.RE
+.PP
+\fB@VERSION@\fR
+.RS 4
+Insert the version number of the software\&.
+.RE
+.SH "OTHER TEMPLATES"
+.sp
+\fBupsstats.cgi\fR(8) will also open a file called upsstats\-single\&.html if you call it with "host=" set in the URL\&. That file uses the same rules and techniques documented here\&.
+.SH "SEE ALSO"
+.sp
+\fBupsstats.cgi\fR(8), \fBupsimage.cgi\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

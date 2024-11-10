@@ -1,0 +1,257 @@
+'\" t
+.\"     Title: upsd.conf
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSD\&.CONF" "5" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsd.conf \- Configuration for Network UPS Tools upsd
+.SH "DESCRIPTION"
+.sp
+upsd uses this file to control access to the server and set some other miscellaneous configuration values\&. This file contains details on access controls, so keep it secure\&. Ideally, only the upsd process should be able to read it\&.
+.SH "CONFIGURATION DIRECTIVES"
+.PP
+"MAXAGE \fIseconds\fR"
+.RS 4
+upsd usually allows a driver to stop responding for up to 15 seconds before declaring the data "stale"\&. If your driver takes a very long time to process updates but is otherwise operational, you can use MAXAGE to make upsd wait longer\&.
+.sp
+Most users should leave this at the default value\&.
+.RE
+.PP
+"TRACKINGDELAY \fIseconds\fR"
+.RS 4
+When instant commands and variables setting status tracking is enabled, status execution information are kept during this amount of time, and then cleaned up\&. This defaults to 3600 (1 hour)\&.
+.RE
+.PP
+"ALLOW_NO_DEVICE \fIBoolean\fR"
+.RS 4
+Normally upsd requires that at least one device section is defined in ups\&.conf when the daemon starts, to serve its data\&. For automatically managed services it may be preferred to have upsd always running, and reload the configuration when power devices become defined\&.
+.sp
+Boolean values
+\fItrue\fR,
+\fIyes\fR,
+\fIon\fR
+and
+\fI1\fR
+mean that the server would not refuse to start with zero device sections found in ups\&.conf\&.
+.sp
+Boolean values
+\fIfalse\fR,
+\fIno\fR,
+\fIoff\fR
+and
+\fI0\fR
+mean that the server should refuse to start if zero device sections were found in ups\&.conf\&. This is the default, unless the calling environment sets a same\-named variable to enforce a value for the current run\&. One way this can happen is somebody un\-commenting it in the
+\fInut\&.conf\fR
+file used by init\-scripts and service unit method scripts\&.
+.RE
+.PP
+"ALLOW_NOT_ALL_LISTENERS \fIBoolean\fR"
+.RS 4
+Normally upsd requires that all
+LISTEN
+directives can be honoured at the moment the daemon starts\&. If your LAN IP address (or host name) used in one of the
+LISTEN
+directives may be not always accessible, and for some reason do not want to just
+LISTEN *
+on the wildcard interface, but e\&.g\&. you still want to use
+upsmon
+on
+localhost, this option can help\&. Note you would have to restart
+upsd
+to pick up the `LISTEN`ed IP address if it appears later\&.
+.sp
+Boolean values
+\fItrue\fR,
+\fIyes\fR,
+\fIon\fR
+and
+\fI1\fR
+mean that the server would not refuse to start if it can listen on at least one interface\&.
+.sp
+Boolean values
+\fIfalse\fR,
+\fIno\fR,
+\fIoff\fR
+and
+\fI0\fR
+mean that the server should refuse to start if it can not LISTEN on each and every (non\-localhost) interface found in upsd\&.conf\&. This is the default, unless the calling environment sets a same\-named variable to enforce a value for the current run\&. One way this can happen is somebody un\-commenting it in the
+\fInut\&.conf\fR
+file used by init\-scripts and service unit method scripts\&.
+.RE
+.PP
+"STATEPATH \fIpath\fR"
+.RS 4
+Tell upsd to look for the driver state sockets in
+\fIpath\fR
+rather than the default that was compiled into the program\&.
+.RE
+.PP
+"LISTEN \fIinterface\fR \fIport\fR"
+.RS 4
+Bind a listening port to the interface specified by its Internet address or name\&. This may be useful on hosts with multiple interfaces\&. You should not rely exclusively on this for security, as it can be subverted on many systems\&.
+.sp
+Optionally listen on TCP port
+\fIport\fR
+instead of the default value which was compiled into the code\&. This overrides any value you may have set with
+\fIconfigure \-\-with\-port\fR\&. If you don\(cqt change it with configure or this value, upsd will listen on port 3493 for this interface\&.
+.sp
+Multiple LISTEN addresses may be specified\&. The default is to bind to
+127\&.0\&.0\&.1
+if no LISTEN addresses are specified (and also
+::1
+if IPv6 support is compiled in)\&.
+.sp
+To listen on all available interfaces and configured IP addresses of your system, you may also use
+::
+for IPv6 and
+0\&.0\&.0\&.0
+for IPv4, respectively\&. As a special case, a single
+LISTEN * <port>
+directive (with an asterisk) will try to listen on both IPv6 (::0) and IPv4 (0\&.0\&.0\&.0) wild\-card IP addresses, subject to
+upsd
+command\-line arguments or system configuration\&. Note that if the system supports IPv4\-mapped IPv6 addressing per RFC\-3493, and does not allow to disable this mode, then there may be one listening socket to handle both address families\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+LISTEN 127\&.0\&.0\&.1
+LISTEN 192\&.168\&.50\&.1
+LISTEN myhostname\&.mydomain
+LISTEN ::1
+LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This parameter will only be read at startup\&. You\(cqll need to restart (rather than reload) upsd to apply any changes made here\&.
+.sp
+Please note that older NUT releases could have been using the IPv4\-mapped IPv6 addressing (sometimes also known as "dual\-stack") mode, if provided by the system\&. Current versions (since NUT v2\&.8\&.1 release) explicitly try to restrict their listening sockets to only support one address family on each socket, and so avoid IPv4\-mapped mode where possible\&.
+.RE
+.PP
+"MAXCONN \fIconnections\fR"
+.RS 4
+This defaults to maximum number allowed on your system\&. Each UPS, each LISTEN address and each client count as one connection\&. If the server runs out of connections, it will no longer accept new incoming client connections\&. Only set this if you know exactly what you\(cqre doing\&.
+.RE
+.PP
+"CERTFILE \fIcertificate file\fR"
+.RS 4
+When compiled with SSL support with OpenSSL backend, you can enter the certificate file here\&.
+.sp
+The certificates must be in PEM format and must be sorted starting with the subject\(cqs certificate (server certificate), followed by intermediate CA certificates (if applicable_ and the highest level (root) CA\&. It should end with the server key\&. See
+\fIdocs/security\&.txt\fR
+or the Security chapter of NUT user manual for more information on the SSL support in NUT\&.
+.RE
+.PP
+"CERTPATH \fIcertificate database\fR"
+.RS 4
+When compiled with SSL support with NSS backend, you can enter the certificate path here\&.
+.sp
+Certificates are stored in a dedicated database (data split in 3 files)\&. Specify the path of the database directory\&.
+.RE
+.PP
+"CERTIDENT \fIcertificate name\fR \fIdatabase password\fR"
+.RS 4
+When compiled with SSL support with NSS backend, you can specify the certificate name to retrieve from database to authenticate itself and the password required to access certificate related private key\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Be sure to enclose "certificate name" in double\-quotes if you are using a value with spaces in it\&.
+.sp .5v
+.RE
+.RE
+.PP
+"CERTREQUEST \fIcertificate request level\fR"
+.RS 4
+When compiled with SSL support with NSS backend and client certificate validation (disabled by default, see
+\fIdocs/security\&.txt\fR), you can specify if upsd requests or requires client\(cqs\*(Aq certificates\&.
+.sp
+Possible values are : \-
+\fI0\fR
+to not request to clients to provide any certificate \-
+\fI1\fR
+to require to all clients a certificate \-
+\fI2\fR
+to require to all clients a valid certificate
+.RE
+.PP
+"DISABLE_WEAK_SSL \fIBOOLEAN\fR"
+.RS 4
+Tell upsd to disable older/weak SSL/TLS protocols and ciphers\&. With relatively recent versions of OpenSSL or NSS it will be restricted to TLSv1\&.2 or better\&.
+.sp
+Unless you have really ancient clients, you probably want to enable this\&. Currently disabled by default to ensure compatibility with existing setups\&.
+.RE
+.PP
+"DEBUG_MIN \fIINTEGER\fR"
+.RS 4
+Optionally specify a minimum debug level for
+upsd
+data daemon, e\&.g\&. for troubleshooting a deployment, without impacting foreground or background running mode directly\&. Command\-line option
+\-D
+can only increase this verbosity level\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+if the running daemon receives a
+reload
+command, presence of the
+DEBUG_MIN NUMBER
+value in the configuration file can be used to tune debugging verbosity in the running service daemon (it is recommended to comment it away or set the minimum to explicit zero when done, to avoid huge journals and I/O system abuse)\&. Keep in mind that for this run\-time tuning, the
+DEBUG_MIN
+value
+\fBpresent\fR
+in
+\fBreloaded\fR
+configuration files is applied instantly and overrides any previously set value, from file or CLI options, regardless of older logging level being higher or lower than the newly found number; a missing (or commented away) value however does not change the previously active logging verbosity\&.
+.sp .5v
+.RE
+.RE
+.SH "SEE ALSO"
+.sp
+\fBupsd\fR(8), \fBnutupsdrv\fR(8), \fBupsd.users\fR(5)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

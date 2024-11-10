@@ -1,0 +1,110 @@
+'\" t
+.\"     Title: libnutclient_misc
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBNUTCLIENT_MISC" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnutclient_misc, nutclient_authenticate, nutclient_logout, nutclient_device_login, nutclient_get_device_num_logins, nutclient_device_master, nutclient_device_forced_shutdown \- Miscellaneous functions in Network UPS Tools high\-level client access library
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nutclient\&.h>
+.fi
+.sp
+.nf
+typedef void* NUTCLIENT_t;
+.fi
+.sp
+.nf
+void nutclient_authenticate(
+        NUTCLIENT_t client,
+        const char* login, const char* passwd);
+.fi
+.sp
+.nf
+void nutclient_logout(NUTCLIENT_t client);
+.fi
+.sp
+.nf
+void nutclient_device_login(NUTCLIENT_t client, const char* dev);
+.fi
+.sp
+.nf
+int nutclient_get_device_num_logins(NUTCLIENT_t client, const char* dev);
+.fi
+.sp
+.nf
+void nutclient_device_primary(NUTCLIENT_t client, const char* dev);
+/* OBSOLETED name: */
+void nutclient_device_master(NUTCLIENT_t client, const char* dev);
+.fi
+.sp
+.nf
+void nutclient_device_forced_shutdown(NUTCLIENT_t client, const char* dev);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutclient_authenticate()\fR function authenticates the user\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIlogin\fR
+is the user name\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpasswd\fR
+is the user password\&.
+.RE
+.sp
+The \fBnutclient_logout()\fR function disconnects gracefully from the server\&.
+.sp
+The \fBnutclient_device_login()\fR function logs the fact that a system is drawing power from this UPS\&.
+.sp
+The \fBnutclient_get_device_num_logins()\fR function retrieves the number of clients which have been logged for this device\&.
+.sp
+The \fBnutclient_device_master()\fR and \fBnutclient_device_primary()\fR (note: the former is obsoleted since NUT v2\&.8\&.0 in favor of the latter) functions make sure that primary\-mode functions like FSD are available if necessary\&.
+.sp
+The \fBnutclient_device_forced_shutdown()\fR function sets the "forced shutdown" flag on the device\&.
+.sp
+\fIdev\fR is the device name\&.
+.SH "SEE ALSO"
+.sp
+\fBlibnutclient\fR(3)

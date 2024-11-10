@@ -1,0 +1,216 @@
+Creating new client
+===================
+
+NUT provides bindings for several common languages that are
+presented below. All these are released under the same license as
+NUT (the GNU General Public License).
+
+If none of these suits you for technical or legal reasons, you can
+implement one easily using the <<net-protocol,Network protocol information>>.
+
+The latter approach has been used to create the Python 'PyNUT' module, the
+Nagios 'check_ups' plugin (and probably others), which can serve as a
+reference.
+
+C / C++
+-------
+
+Client access library
+~~~~~~~~~~~~~~~~~~~~~
+
+`libupsclient` and `libnutclient` libraries can be linked into other programs
+to give access to upsd and UPS status information.
+Both static and shared versions are provided.
+
+These library files and associated header files are not installed by
+default.  You must `./configure --with-dev` to enable building and
+installing these files. The libraries can then be built and installed
+with `make` and `make install` as usual. This must be done before
+building other (non-NUT) programs which depend on them.
+
+Low-level library: libupsclient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`libupsclient` provides a low-level interface to directly dialog with upsd.
+It is a wrapper around the NUT network protocol.
+
+For more information, refer to the linkman:upsclient[3],
+manual page and the various link:../man/index.html#devclient[upscli_*(3)]
+functions documentation referenced in the same file.
+
+Clients like upsc are provided as examples of how to retrieve data using the
+upsclient functions.
+link:https://www.networkupstools.org/projects.html[Other programs] not included
+in this package may also use this library, such as wmnut.
+
+High level library: libnutclient
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`libnutclient` provides a high-level interface representing devices, variables
+and commands with an object-oriented API in C++ and C.
+
+For more information, refer to the linkman:libnutclient[3] manual page.
+
+------
+  #include <iostream>
+  #include <unistd.h>
+  #include <stdlib.h>
+
+  #include <nutclient.h>
+
+  using namespace nut;
+  using namespace std;
+
+  /* argv[1] is the mandatory NUT device name (@localhost),
+   *    used to list variables from
+   * argv[2] is an optional command. When provided, it will be
+   *    executed and possibly with status tracking enabled
+   */
+  int main(int argc, char **argv)
+  {
+    Client *client;
+    try
+    {
+      // Connection
+      client = new TcpClient("localhost", 3493);
+
+      if (argc >= 2)
+      {
+        // Reading data from device
+        Device mydev = client->getDevice(argv[1]);
+        cout << "Description: " << mydev.getDescription() << endl;
+        Variable var = mydev.getVariable("device.model");
+        cout << "Model: " <<  var.getValue()[0] << endl;
+
+        if (argc >= 3)
+        {
+          // Authenticate to NUT server
+          const char *user = getenv("NUT_USER");
+          const char *password = getenv("NUT_PASSWD");
+          client->authenticate(user ? user : "", password ? password : "");
+
+          // Enable command tracking, if available
+          if (client->hasFeature(Client::TRACKING))
+          {
+            cout << "Server can do command tracking" << std::endl;
+            client->setFeature(Client::TRACKING, true);
+          }
+          else
+          {
+            std::cout << "Server can't do command tracking" << std::endl;
+          }
+
+          // Perform an asynchronous command
+          TrackingID id = mydev.executeCommand(argv[2]);
+          TrackingResult result;
+          do
+          {
+            sleep(1);
+            result = client->getTrackingResult(id);
+          }
+          while (result == PENDING);
+
+          // Display result of command
+          const char *output = "<UNRECOGNIZED>";
+          switch (result)
+          {
+            case SUCCESS: output = "SUCCESS"; break;
+            case FAILURE: output = "FAILURE"; break;
+            case UNKNOWN: output = "UNKNOWN"; break;
+          }
+          cout << "Command sent, result=" << output << endl;
+        }
+      }
+    }
+    catch (NutException &ex)
+    {
+      cerr << "Unexpected problem : " << ex.str() << endl;
+    }
+    delete client;
+    return 0;
+  }
+------
+
+
+Configuration helpers
+~~~~~~~~~~~~~~~~~~~~~
+
+NUT provides helper scripts to ease the configuration step of your program, by
+detecting the right compilation and link flags.
+
+For more information, refer to a
+<<lib-info,Appendix B: NUT libraries complementary information>>.
+
+Python
+------
+
+The PyNUT module, contributed by David Goncalves, can be used for connecting a
+Python script to `upsd`. Note that this code (and the accompanying NUT-Monitor
+application, later separated into NUT-Monitor-py2gtk2 and NUT-Monitor-py3qt5,
+suitable for two generations of Python ecosystem) is licensed under the GPL v3.
+
+The `PyNUTClient` class abstracts the connection to the server. In order to
+list the status variables for `ups1` on the local `upsd`, the following
+commands could be used:
+
+  $ cd scripts/python/module
+  $ python
+  ...
+  >>> import PyNUT
+  >>> from pprint import pprint
+  >>> client = PyNUT.PyNUTClient()
+  >>> vars = client.GetUPSVars('ups1')
+  >>> pprint(vars)
+  {'battery.charge': '90',
+   'battery.charge.low': '30',
+   'battery.runtime': '3690',
+   'battery.voltage': '230.0',
+  ...
+
+Further examples are given in the `test_nutclient.py` file. To see the entire
+API, you can run `pydoc` from the `module` directory.
+
+If you wish to make the module available to everyone on the system, you will
+probably want to install it in the `site-packages` directory for your Python
+interpreter. (This is usually one of the last items in `sys.path`.)
+
+Perl
+----
+
+The old Perl bindings from CPAN have recently been updated and merged into the
+NUT source code. These operate in a similar fashion to the Python bindings,
+with the addition of access to single variables, and additional interpretation
+of the results. The Perl class instance encapsulates a single UPS, where the
+Python class instance represents a connection to the server (which may service
+multiple UPS units).
+
+------
+ use UPS::Nut;
+
+ $ups = new UPS::Nut( NAME => "myups",
+                      HOST => "somemachine.somewhere.com",
+                      PORT => "3493",
+                      USERNAME => "upsuser",
+                      PASSWORD => "upspasswd",
+                      TIMEOUT => 30,
+                      DEBUG => 1,
+                      DEBUGOUT => "/some/file/somewhere",
+                    );
+ if ($ups->Status() =~ /OB/) {
+    print "Oh, no!  Power failure!\n";
+ }
+
+ tie %other_ups, 'UPS::Nut',
+     NAME => "myups",
+     HOST => "somemachine.somewhere.com",
+     ... # same options as new();
+ ;
+
+ print $other_ups{MFR}, " ", $other_ups{MODEL}, "\n";
+------
+
+Java
+----
+
+The NUT Java support has been externalized.
+It is available at https://github.com/networkupstools/jnut

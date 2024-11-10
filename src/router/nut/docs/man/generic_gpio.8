@@ -1,0 +1,222 @@
+'\" t
+.\"     Title: generic gpio
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "GENERIC GPIO" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+generic_gpio \- Driver for GPIO connected UPSes
+.SH "SYNOPSIS"
+.sp
+\fBgeneric_gpio\fR \-h
+.sp
+\fBgeneric_gpio\fR \-a \fIgpiochip0\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the \fBgeneric_gpio\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This is the driver for GPIO attached UPS devices\&.
+.sp
+The driver has been tested against CyberPower CyberShield CSN27U12V attached to Orange Pi Zero GPIO\&.
+.PP
+More information about this UPS can be found here:
+.RS 4
+https://www\&.cyberpowersystems\&.com/resources/csn27u12v\-um/
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.SS "Driver control:"
+.PP
+\fBrules\fR=\fIvalue\fR
+.RS 4
+A string consisting of sub\-strings\&. Each sub\-string describes GPIO line states conversion formula to specific NUT state, like
+nut_state=[^]line_num[logical_operation[^]line_num]\&.\&.\&.;\&. Not (^) , and (&) , or (|)operations are supported for now\&. nut_state should correspond to NUT state, line_num to GPIO line number connected to UPS open collector pin\&. CyberShield CSN27U12V describes pins as:
+.RE
+.TS
+allbox tab(:);
+lt lt lt
+lt lt lt
+lt lt lt
+lt lt lt
+lt lt lt.
+T{
+.sp
+Battery state
+T}:T{
+.sp
+State details
+T}:T{
+.sp
+GPIO line
+T}
+T{
+.sp
+ON BATTERY
+T}:T{
+.sp
+\fBLow\fR when operating from utility line
+.sp
+\fBOpen\fR when operating from battery
+T}:T{
+.sp
+0
+T}
+T{
+.sp
+REPLACE BATTERY
+T}:T{
+.sp
+\fBLow\fR when battery is charged
+.sp
+\fBOpen\fR when battery fails the Self Test
+T}:T{
+.sp
+1
+T}
+T{
+.sp
+BATTERY MISSING
+T}:T{
+.sp
+\fBLow\fR when battery is present
+.sp
+\fBOpen\fR when battery is missing
+T}:T{
+.sp
+6
+T}
+T{
+.sp
+LOW BATTERY
+T}:T{
+.sp
+\fBLow\fR when battery is near full charge capacity
+.sp
+\fBOpen\fR when operating from a battery with < 20% capacity
+T}:T{
+.sp
+3
+T}
+.TE
+.sp 1
+.sp
+and rules might be defined as
+.sp
+rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
+.sp
+assuming battery pin connection to GPIO lines as listed in table\&. Expecting simple formula to be used for each state, extra may increase state reliability and may need to be checked on each specific UPS\&.
+.SS "Battery Charge:"
+.PP
+\fBdefault\&.battery\&.charge\&.low\fR=\fIvalue\fR
+.RS 4
+An integer specifying the battery charge level reported in LB case\&.
+.RE
+.SH "CONFIGURATION"
+.sp
+Here is an example of GPIO driver configuration in \fBups\&.conf\fR file:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[CyberPower12v]
+  driver = GENERIC_GPIO
+  port = gpiochip0
+  desc = "Modem and DNS server UPS"
+  mfr = CyberPower
+  model = "CyberShield CSN27U12V"
+  rules = "OL=^0;OB=0;LB=3;RB=1;DISCHRG=0&^6;BYPASS=6;"
+  default\&.battery\&.charge\&.low = 20
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SHUTDOWN COMMAND"
+.sp
+This driver does not support shutdown command\&.
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by installing libgpiod and running configure \-\-with\-gpio=yes\&.
+.sp
+You also need to give proper permissions on the local serial device file (/dev/gpiochip0 for example) to allow the run\-time NUT driver user account to access it, like by adding the following rule to Linux rules\&.d directory:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SUBSYSTEM=="gpio*", PROGRAM="/bin/sh \-c \*(Aq\e
+chown \-R nut:nut /dev/gpiochip0 && chmod \-R 700 /dev/gpiochip0\e
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.sp
+Modris Berzonis <modrisb@apollo\&.lv>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+libgpiod home page:
+https://git\&.kernel\&.org/pub/scm/libs/libgpiod/libgpiod\&.git/
+.RE

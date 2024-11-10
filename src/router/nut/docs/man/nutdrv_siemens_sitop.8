@@ -1,0 +1,289 @@
+'\" t
+.\"     Title: nutdrv_siemens_sitop
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTDRV_SIEMENS_SITOP" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutdrv_siemens_sitop \- driver for the Siemens SITOP UPS500 series UPS
+.SH "SYNOPSIS"
+.sp
+\fBnutdrv_siemens_sitop\fR \-h
+.sp
+\fBnutdrv_siemens_sitop\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the \fBnutdrv_siemens_sitop\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+\fBnutdrv_siemens_sitop\fR supports Siemens UPS models from the SITOP UPS500 series\&. Some models have a serial port, others have a USB port\&. The models with USB port actually contain a serial\-over\-USB chip, so as far as this driver is concerned, all models are serial models\&. This driver should work with all models in the SITOP UPS500 series, as long as your kernel has support for the serial port device (see section \fBUSB driver\fR below)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver has only been tested with the SITOP UPS500S\-2\&.5 with USB port (Siemens product number 6EP1933\-2EC41)\&.
+.sp .5v
+.RE
+.SH "DEVICE SETTINGS"
+.sp
+The UPS is configured via DIP\-switches\&. For correct functioning in combination with NUT, set the DIP\-switches to the following:
+.PP
+\fBswitch 1\-4\fR
+.RS 4
+Choose whatever suits your situation\&. Any combination will work with NUT\&.
+.RE
+.PP
+\fBswitch 5\fR (⇒ / t)
+.RS 4
+Set to OFF (t)\&. This ensures that the UPS will not cut power unless NUT tells it to do so (or unless the batteries are exhausted)\&.
+.RE
+.PP
+\fBswitch 6\-10\fR (delay)
+.RS 4
+Set to OFF (minimum delay)\&. Setting a higher delay will actually also work, but any command from NUT will be delayed as well before being executed by the UPS\&. With the minimum setting, it will already take 5 seconds before a command from NUT is executed\&.
+.RE
+.PP
+\fBswitch 11\fR (INTERR\&.)
+.RS 4
+Set to ON (interrupt the output after the timer expires)\&. This ensures that the UPS briefly interrupts the output power in response to the shutdown\&.return command\&. See the section
+\fBInstant Commands\fR
+below\&.
+.RE
+.PP
+\fBswitch 12\fR (ON/OFF)
+.RS 4
+set to ON (enable the UPS functionality)\&. Without this, the UPS will never supply power from its batteries\&.
+.RE
+.SH "USB DRIVER"
+.sp
+The USB\-versions of the UPS contain an FTDI USB\-to\-serial converter chip\&. It is programmed with a non\-standard product ID (for example \fI0403:e0e3\fR), but can still be used with the normal ftdi_sio driver\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+The following hints may be specific to GNU/Linux\&.
+.sp .5v
+.RE
+.sp
+Use \fBlsusb\fR to figure out which product ID is used in your model, and replace all occurrences of \fIe0e3\fR in the following examples with the actual Product ID\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+modprobe ftdi_sio
+echo 0403 e0e3 > /sys/bus/usb\-serial/drivers/ftdi_sio/new_id
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+If your system uses \fBudev\fR, this can be automated via a udev rule:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \e
+  RUN+="/sbin/modprobe ftdi_sio", \e
+  RUN+="/bin/sh \-c \*(Aqecho 0403 e0e3 > /sys/bus/usb\-serial/drivers/ftdi_sio/new_id\*(Aq"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+You can use the following udev rule to obtain a predictable device name, for example \fI/dev/ttyUPS\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
+.fi
+.if n \{\
+.RE
+.\}
+.SH "POLLING"
+.sp
+The UPS does not have a special \fIget status\fR command\&. Instead, it continuously sends out status update messages (tens of messages per second)\&. Every \fBpollinterval\fR, these messages are read from the serial port buffer\&.
+.sp
+In order to react quickly on status changes from the UPS, and to prevent the serial buffer from overflowing, \fBpollinterval\fR should be set to a relatively low value\&. The recommended value is 1 (second)\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings:
+.PP
+\fBmax_polls_without_data\fR=\fInum\fR
+.RS 4
+The serial port is polled periodically for new data (see
+\fBPolling\fR)\&. If there is no valid new data after
+\fInum\fR
+polls, it is assumed that communication with the UPS is lost\&. The default value is 2\&. Lower values may cause spurious
+\fIData stale\fR
+messages, especially at startup\&.
+.RE
+.SH "INSTANT COMMANDS"
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+The behavior of this command depends on the line state:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBon line\fR: after 5 seconds (or longer, if DIP switches 6\-10 are not OFF), the UPS will shut off its output\&. After another 5 seconds, the output is activated again\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBon battery\fR: after 5 seconds (or longer, if DIP switches 6\-10 are not OFF), the UPS will shut off its output\&. The output will stay off, until the line voltage has returned\&.
+.RE
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+The behavior of this command depends on the line state:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBon line\fR: after 5 seconds (or longer, if DIP switches 6\-10 are not OFF), the UPS will shut off its output\&. The output stays off, until the line voltage has been removed for at least 1 second, and has been re\-applied\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBon battery\fR: this command behaves the same as
+\fBshutdown\&.return\fR\&.
+.RE
+.RE
+.SH "INSTALLATION"
+.sp
+Make sure that your operating system has created a serial device for the UPS\&. See the section \fBUSB driver\fR for more information\&.
+.sp
+Next, make sure that NUT has access rights to this device file\&. For example, by creating a udev rule that grants permission to the NUT user, or by adding the NUT user to a user group that can access serial devices (e\&.g\&. the \fBdialout\fR group on Debian\-based systems)\&.
+.SH "DIAGNOSTICS"
+.sp
+You can verify the correct functioning of the hardware, by monitoring the serial port with a terminal program, for example picocom:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+picocom \-b 9600 \-d 8 \-p n /dev/ttyUPS
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+NUT must not be running when you do this\&. You should now see a continuous stream of 5\-character texts coming in, for example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+BUFRD
+BA>85
+DC_OK
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To exit picocom, use Ctrl\-A Ctrl\-X\&.
+.SH "KNOWN ISSUES AND BUGS"
+.PP
+\fBUntested models\fR
+.RS 4
+As mentioned under
+\fBSupported hardware\fR, this driver has not been tested with all models in the SITOP UPS500 series\&.
+.RE
+.PP
+\fBData stale messages\fR
+.RS 4
+The firmware in these UPSes is quite buggy\&. After sending data to the UPS, it sometimes stops sending status updates\&. This driver tries to prevent this (e\&.g\&. by sending commands twice, and by sending additional LF characters after each command)\&. Once the UPS is in this state, communication can only be restored by rebooting the UPS, or by unplugging and reconnecting the USB cable\&. During normal operation, no commands are sent to the UPS at all (only at shutdown), so this issue is expected to have little impact on usability\&. It is not sure if the serial models are affected by this issue as well\&.
+.RE
+.SH "AUTHOR"
+.sp
+Matthijs H\&. ten Berge
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

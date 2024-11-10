@@ -1,0 +1,153 @@
+'\" t
+.\"     Title: safenet
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "SAFENET" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+safenet \- Driver for SafeNet compatible UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBsafenet\fR \-h
+.sp
+\fBsafenet\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the safenet driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports UPS equipment which can be controlled via SafeNet v1\&.0 for Windows (serial interface only)\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.PP
+\fBmanufacturer=\fR\fIvalue\fR
+.RS 4
+Autodetection of this parameter is not possible yet (and it probably never will be)\&. Therefore, this user\-defined string accepts any name\&. The default is
+\fIunknown\fR\&.
+.RE
+.PP
+\fBmodelname=\fR\fIvalue\fR
+.RS 4
+Like manufacturer above\&. The default is
+\fIunknown\fR\&.
+.RE
+.PP
+\fBserialnumber=\fR\fIvalue\fR
+.RS 4
+Like manufacturer above\&. The default is
+\fIunknown\fR\&.
+.RE
+.PP
+\fBondelay=\fR\fIvalue\fR
+.RS 4
+Time to wait before switching on the UPS (minutes)\&. Defaults to 1 minute\&.
+.RE
+.PP
+\fBoffdelay=\fR\fIvalue\fR
+.RS 4
+Time to wait before shutting down the UPS (seconds)\&. Defaults to 30 seconds\&.
+.RE
+.SH "INSTANT COMMANDS"
+.sp
+This driver supports some instant commands (see \fBupscmd\fR(8)):
+.PP
+\fBtest\&.battery\&.start\fR
+.RS 4
+Start UPS self test
+.RE
+.PP
+\fBtest\&.battery\&.stop\fR
+.RS 4
+Cancel UPS self test
+.RE
+.PP
+\fBtest\&.failure\&.start\fR
+.RS 4
+Start simulated power failure
+.RE
+.PP
+\fBtest\&.failure\&.stop\fR
+.RS 4
+Cancel simulated power failure
+.RE
+.PP
+\fBbeeper\&.enable\fR
+.RS 4
+Enable the UPS beeper
+.RE
+.PP
+\fBbeeper\&.mute\fR
+.RS 4
+Temporarily mute the UPS beeper
+.RE
+.PP
+\fBbeeper\&.toggle\fR
+.RS 4
+Toggle the UPS beeper
+.RE
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load and wait for the power to return\&. Uses the timer defined by
+\fBoffdelay\fR\&.
+.RE
+.PP
+\fBshutdown\&.reboot\fR
+.RS 4
+Turn off the load and return\&. Uses the timers defined by
+\fBoffdelay\fR
+and
+\fBondelay\fR\&.
+.RE
+.SH "KNOWN PROBLEMS"
+.sp
+If you run the \fBshutdown\&.return\fR command with mains present, the output may stay on or switch off and not back on again\&. The \fBshutdown\&.reboot\fR command will unconditionally switch on the load again (with or without mains present)\&.
+.sp
+If the driver is called with the \fI\-k\fR option (or through \fBupsdrvctl shutdown\fR) it tries to detect which command should be used in an attempt to stay off until mains is present again or to cycle the output if the power returned in the mean time\&. This isn\(cqt bullet\-proof, and you should be prepared that the power will either not be shutdown, or that it doesn\(cqt return when the power comes back\&.
+.SH "AUTHOR"
+.sp
+Arjen de Korte <adkorte\-guest at alioth\&.debian\&.org>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

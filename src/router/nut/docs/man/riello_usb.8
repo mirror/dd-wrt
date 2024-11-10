@@ -1,0 +1,341 @@
+'\" t
+.\"     Title: riello_usb
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "RIELLO_USB" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+riello_usb \- Driver for Riello UPS Protocol UPS equipment via USB
+.SH "SYNOPSIS"
+.sp
+\fBriello_usb\fR \-h
+.sp
+\fBriello_usb\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the riello_usb driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+riello_usb supports all recent Riello UPS with USB\&.
+.sp
+Older Riello UPS products are not supported\&.
+.SH "EXTRA ARGUMENTS"
+.PP
+\fBport =\fR \fIstring\fR
+.RS 4
+Some
+\fIvalue\fR
+must be set, typically
+\fBauto\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+This could be a device filesystem path like
+/dev/usb/hiddev0
+but current use of libusb API precludes knowing and matching by such identifiers\&. They may also be inherently unreliable (dependent on re\-plugging and enumeration order)\&. At this time the actual
+\fIvalue\fR
+is ignored, but syntactically some
+\fIport\fR
+configuration must still be there\&.
+.sp .5v
+.RE
+.RE
+.sp
+It is possible to control multiple UPS units simultaneously by running several instances of this driver, provided they can be uniquely distinguished by setting some combination of the \fBvendor\fR, \fBproduct\fR, \fBvendorid\fR, \fBproductid\fR, \fBserial\fR, \fBbus\fR and/or \fBdevice\fR options detailed below\&. For devices or operating systems that do not provide sufficient information, the \fBallow_duplicates\fR option can be of use (limited and risky!)
+.PP
+\fBvendorid =\fR \fIregex\fR, \fBproductid =\fR \fIregex\fR, \fBvendor =\fR \fIregex\fR, \fBproduct =\fR \fIregex\fR, \fBserial =\fR \fIregex\fR
+.RS 4
+Select a specific UPS, in case there is more than one connected via USB\&. Each option specifies an extended regular expression (see
+\fBregex(7)\fR
+for more information on regular expressions), which must match the UPS\(cqs entire respective vendor/product/serial string (minus any surrounding whitespace), or the whole 4\-digit hexadecimal code for
+vendorid
+and
+productid\&.
+.sp
+Try
+\fBlsusb(8)\fR
+or running this NUT driver with
+\fB\-DD\fR
+command\-line argument for finding out the strings to match\&.
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendor="Foo\&.Corporation\&.*"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendorid="051d*"
+(APC)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x product="\&.*(Smart|Back)\-?UPS\&.*"
+.RE
+.RE
+.PP
+\fBbus =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB bus or group of buses\&. The argument is a regular expression that must match the bus name where the UPS is connected (e\&.g\&.
+bus="002"
+or
+bus="00[2\-3]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.RE
+.PP
+\fBdevice =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB device or group of devices\&. The argument is a regular expression that must match the device name where the UPS is connected (e\&.g\&.
+device="001"
+or
+device="00[1\-2]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+device numbers are not guaranteed by the OS to be stable across re\-boots or device re\-plugging\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBbusport =\fR \fIregex\fR
+.RS 4
+If supported by the hardware, OS and libusb on the particular deployment, this option should allow to specify physical port numbers on an USB hub, rather than logical
+device
+enumeration values, and in turn \(em this should be less volatile across reboots or re\-plugging\&. The value may be seen in the USB topology output of
+lsusb \-tv
+on systems with that tool, for example\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option is not practically supported by some NUT builds (it should be ignored with a warning then), and not by all systems that NUT can run on\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBallow_duplicates\fR
+.RS 4
+If you have several UPS devices which may not be uniquely identified by the options above (e\&.g\&. only VID:PID can be discovered there), this flag allows each driver instance where it is set to take the first match if available, or proceed to try another\&.
+.sp
+Normally the driver initialization would abort at this point claiming "Resource busy" or similar error, assuming that the otherwise properly matched device is unique \(em and some other process already handles it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This feature is inherently non\-deterministic! The association of driver instance name to actual device may vary between runs!
+.sp
+If you only care to know that
+\fBat least\fR
+one of your no\-name UPSes is online, this option can help\&.
+.sp
+If you must really know
+\fBwhich\fR
+one, it will not!
+.sp .5v
+.RE
+.RE
+.PP
+\fBusb_set_altinterface =\fR \fIbAlternateSetting\fR
+.RS 4
+Force redundant call to
+usb_set_altinterface(), especially if needed for devices serving multiple USB roles where the UPS is not represented by the interface number
+0
+(default)\&.
+.RE
+.PP
+\fBusb_config_index\fR, \fBusb_hid_rep_index\fR, \fBusb_hid_desc_index\fR, \fBusb_hid_ep_in\fR, \fBusb_hid_ep_out\fR
+.RS 4
+Force use of specific interface, endpoint, descriptor index etc\&. numbers, rather than defaulting to 0 (rarely other values in certain drivers for some devices known to use non\-zero numbers)\&. Specified as a hexadecimal number\&.
+.sp
+As a rule of thumb for
+usb_hid_desc_index
+discovery, you can see larger
+wDescriptorLength
+values (roughly 600+ bytes) in reports of
+lsusb
+or similar tools\&.
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+You may need to tweak some settings, depending on the make and model of your UPS (see \fBups.conf\fR(5)):
+.PP
+\fBlocalcalculation\fR
+.RS 4
+When enabled, driver will calculate values of
+battery\&.runtime
+and
+battery\&.charge
+"locally" in the driver\&. This is for some Riello models (iPlug and iDialog series) which provide incorrect values in hardware readings\&. This "local calculation" is done according to nominal battery capacity, nominal battery voltage, actual battery charge, maximum and actual UPS load\&.
+.sp
+You may want to also configure
+\fIdefault\&.battery\&.voltage\&.low\fR
+and
+\fIdefault\&.battery\&.voltage\&.high\fR
+in case the built\-in default range (from 10\&.7V to 12\&.9V) does not match your hardware, or give a shot to
+\fIdefault\&.battery\&.voltage\&.nominal\fR
+(e\&.g\&.
+\fI24\fR) if your device does not serve that either\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Lead (PbAc) battery charge graph is not linear, so guesstimated charge value may not be perfectly accurate\&. However it should be good enough to determine battery actual status and roughly estimate the time it can power the system\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This keyword may be deprecated in future releases of the driver, in favor of
+runtimecal
+and other settings which it requires (as seen in
+\fBnutdrv_qx\fR(8),
+\fBblazer_ser\fR(8)
+and
+\fBblazer_usb\fR(8)
+drivers)\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+In this release, such an option is not offered for the sibling
+\fBriello_ser\fR(8)
+driver\&.
+.sp .5v
+.RE
+.RE
+.SH "AUTHOR"
+.sp
+Massimo Zampieri
+.SH "SEE ALSO"
+.SS "Related drivers"
+.sp
+\fBriello_ser\fR(8)
+.SS "The core driver"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

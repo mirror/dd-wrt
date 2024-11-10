@@ -1,0 +1,128 @@
+'\" t
+.\"     Title: apcsmart-old
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "APCSMART\-OLD" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+apcsmart-old \- Driver for American Power Conversion Smart Protocol UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBapcsmart\-old\fR \-h
+.sp
+\fBapcsmart\-old\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the apcsmart\-old driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+apcsmart\-old should recognize all recent APC models that use a serial protocol at 2400 bps\&. This is primarily the Smart\-UPS, Matrix\-UPS and Back\-UPS Pro lines\&.
+.sp
+The driver attempts to support every bell and whistle of the APC reporting interface, whether or not this is strictly sensible\&.
+.sp
+Some older hardware may only report a handful of variables\&. This is usually not a bug\(emthey just don\(cqt support anything else\&.
+.SH "CABLING"
+.sp
+This driver expects to see a 940\-0024C cable or a clone by default\&. You can switch to the 940\-0095B dual\-mode cable support with the cable= definition described below\&.
+.sp
+If your 940\-0024C cable is broken or missing, use this diagram to build a clone:
+.sp
+https://www\&.networkupstools\&.org/cables/940\-0024C\&.jpg
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBcable=940\-0095B\fR
+.RS 4
+Configure the serial port for the APC 940\-0095B dual\-mode cable\&.
+.RE
+.PP
+\fBsdtype=\fR\fInum\fR
+.RS 4
+Use shutdown type
+\fInum\fR, according to this table:
+.PP
+0
+.RS 4
+soft shutdown or powerdown, depending on battery status
+.RE
+.PP
+1
+.RS 4
+soft shutdown followed by powerdown
+.RE
+.PP
+2
+.RS 4
+instant power off
+.RE
+.PP
+3
+.RS 4
+power off with grace period
+.RE
+.PP
+4
+.RS 4
+"force OB" hack method for CS 350
+.RE
+.RE
+.sp
+Modes 0 and 1 will power up the load when power returns\&. Modes 2 and 3 will keep the load turned off when the power returns\&.
+.sp
+Mode 4 exploits an oddity in the CS 350 models since they only seem to support the S command, but then only when running on battery\&. As a result, the driver will force the UPS to go on battery if necessary before sending the shutdown command\&. This ensures that the load gets reset\&.
+.SH "BUGS"
+.sp
+Some older APC UPS models return bogus data in the status register during a front panel test\&. This is usually detected and discarded, but some other unexpected values have occasionally slipped through\&.
+.sp
+APC UPS models with both USB and serial ports require a power cycle when switching from USB communication to serial, and perhaps vice versa\&.
+.SH "AUTHORS AND HISTORY"
+.sp
+Nigel Metheringham <Nigel\&.Metheringham@Intechnology\&.co\&.uk> (drawing heavily on the original apcsmart driver by Russell Kroll)\&.
+.sp
+This driver was called newapc for a time and was renamed in the 1\&.5 series\&.
+.sp
+In 2\&.6\&.2 the driver was renamed to apcsmart\-old, being superseded by updated version with new features\&.
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

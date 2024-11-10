@@ -1,0 +1,196 @@
+'\" t
+.\"     Title: socomec_jbus
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "SOCOMEC_JBUS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+socomec_jbus \- Driver for Socomec JBUS UPS with RS\-232 serial Modbus connection\&.
+.SH "SYNOPSIS"
+.sp
+\fBsocomec_jbus\fR \-h
+.sp
+\fBsocomec_jbus\fR \-a \fIDEVICE_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the socomec_jbus driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports Socomec JBUS series, online (double conversion) UPS with the following characteristics\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Single phase and 3\-phase UPS
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Connection: RS\-232
+.RE
+.sp
+These are typically provided with a Netvision WEB/SNMP management card / external box that would be better served by the \fBsnmp-ups\fR(8) driver\&. In case netvision isn\(cqt available, you can hook up the UPS directly via the serial port and use this driver\&.
+.sp
+Currently, it has only been tested on the following model\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+DIGYS 3/3 15kVA
+.RE
+.sp
+In theory, any Socomec JBUS model should work\&. It should be discovered as \(lqUnknown Socomec JBUS\(rq with a numeric id that I\(cqll need to add it to the list of supported UPSs\&.
+.sp
+Sadly, Socomec document only mentions DELPHYS MX and DELPHYS MX elite and I have the id of my own DIGYS, so chances are, your model will not be recognized but will probably mostly work\&. Please report successful or unsuccessful results to the bug tracker or the mailing list\&. Make sure to include the full model number of your UPS manually in your report\&.
+.sp
+socomec_jbus uses the libmodbus project, for Modbus implementation\&.
+.SH "CABLING"
+.sp
+The UPS has an RS\-232 port which should be connected with a NULL\-modem cable to a PC serial port\&. The UPS tested has a female DB9 connector, so if you construct the cable yourself, make note of the connector type to avoid using gender changers\&.
+.sp
+RS\-232 is supported on all operating systems, either via a built\-in serial port on your computer, or by using an external USB\-to\-RS\-232 converter\&. If you plan to use an USB\-to\-RS\-232 converter, make sure it\(cqs supported by your operating system\&.
+.SH "INSTALLATION"
+.sp
+This driver should be built by default if libmodbus and development headers are available\&. You can force the configure script to build it with the following arguments:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+configure \-\-with\-serial=yes \-\-with\-modbus=yes
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+You also need to give proper (R/W) permissions on the local serial device file to allow the NUT driver run\-time user to access it\&. This may need additional setup for start\-up scripting, udev or upower rules, to apply the rights on every boot \(em especially if your device nodes are tracked by a virtual filesystem\&.
+.sp
+For example, a USB\-to\-serial converter can be identified as /dev/ttyACM0 or /dev/ttyUSB0 on Linux, or /dev/ttyU0 on FreeBSD (note the capital "U")\&. A built\-in serial port can be identified as /dev/ttyS0 on Linux or one of /dev/cua* names on FreeBSD\&.
+.SH "INSTANT COMMANDS"
+.sp
+This driver does not (yet?) support sending commands to the UPS\&.
+.SH "VARIABLES"
+.sp
+This driver does not support writable runtime variables (see \fBupsrw\fR(8)): for the same reasons\&. Both should be trivial to implement, but since I\(cqve already found one or two inconsistencies in the documentation, I\(cqm withholding from trying them\&.
+.SH "KNOWN ISSUES AND BUGS"
+.sp
+Well, it is an alpha release at best, but so far appears to report the UPS status reliably\&. Mostly based on the work of Yifeng Li <tomli@tomli\&.me> on the huawei\-ups2000 in that very same source tree\&.
+.SS "Read failure on some JBUS addresses"
+.sp
+The driver polls all documented JBUS addresses and it is quite possible that your UPS model does not support one of them (e\&.g\&. the Digys does not support address 0x1020 which should provide the current UPS status)\&. This should be logged with LOG_ERR from modbus_read_input_registers() along with the address that produced the error\&.
+.SS "Data stale"
+.sp
+Under certain circumstances, some registers can return invalid values and trigger a "data stale" error\&. Once a data stale error has occurred, you should see error messages similar to the example below in the system log\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+socomec_jbus: modbus_read_input_registers(addr:XXXX, count:Z):
+    Illegal data address
+upsd: Data for UPS [socomec] is stale \- check driver
+upsd: UPS [socomec] data is no longer stale
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+So far all known problems have been fixed by the author, but an unknown one cannot be ruled out\&. If you have encountered "data stale" problems during normal uses, please file a bug report with full logs attached\&.
+.sp
+Before troubleshooting or reporting a problem, it\(cqs important to check your \fBdmesg\fR log for USB connect and disconnect events to avoid wasting time on the NUT driver when the actual problem is USB\&. For example, if someone yanks the cable out of the USB port, or if a new USB device is plugged into a USB host/hub that is struggling to power its ports (common on single\-board computers like Raspberry Pi), or if you have flaky cabling or EMI noise, the serial converter can get disconnected from USB, at least briefly\&. This creates a permanent data stale, the driver must be restarted (plugging the USB back won\(cqt fix it, since the driver is still using the nonexistent serial device)\&. These USB problems usually have nothing to do with NUT\&. If it\(cqs the case, you should solve the underlying USB problem \- check the cable, check the converter, try a powered USB hub, try a full\-speed USB isolator, etc\&.
+.SH "AUTHOR"
+.sp
+Thanos Chatziathanassiou <tchatzi@arx\&.net>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Socomec JBUS/Modbus Reference Guide:
+https://www\&.socomec\&.com/files/live/sites/systemsite/files/GB\-JBUS\-MODBUS\-for\-Delphys\-MP\-and\-Delphys\-MX\-operating\-manual\&.pdf
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+libmodbus home page:
+http://libmodbus\&.org
+.RE

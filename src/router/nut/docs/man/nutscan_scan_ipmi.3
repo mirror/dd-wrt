@@ -1,0 +1,61 @@
+'\" t
+.\"     Title: nutscan_scan_ipmi
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_SCAN_IPMI" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_scan_ipmi \- Scan local IPMI devices\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+.fi
+.sp
+.nf
+nutscan_device_t * nutscan_scan_ipmi(
+      const char * startIP,
+      const char * stopIP,
+      nutscan_ipmi_t * sec);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutscan_scan_ipmi()\fR function tries to detect IPMI manageable devices\&.
+.sp
+If \fIstart_ip\fR is NULL, the function searches for a local PSU\&.
+.sp
+Otherwise, it searches for remote hosts that would serve IPMI protocols, and would try to authenticate using the data in \fIsec\fR structure\&. It issues a NUT request on every IP ranging from \fIstartIP\fR to \fIstopIP\fR, where \fIstopIP\fR is optional\&. Those IP arguments may be either IPv4 or IPv6 addresses or host names\&.
+.sp
+You MUST call \fBnutscan_init\fR(3) before using this function\&.
+.SH "BUGS"
+.sp
+Design or implementation of this function may be incomplete: until recently, this man page stated that it was not implemented yet\&. Source code is present, although some blocks are commented away or hidden with #if 0\&.
+.SH "RETURN VALUE"
+.sp
+The \fBnutscan_scan_ipmi()\fR function is not implemented yet\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_init\fR(3), \fBnutscan_scan_usb\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_display_sanity_check\fR(3), \fBnutscan_display_sanity_check_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_option_to_device\fR(3), \fBnutscan_add_device_to_device\fR(3), \fBnutscan_scan_eaton_serial\fR(3), \fBnutscan_cidr_to_ip\fR(3)

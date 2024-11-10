@@ -1,0 +1,101 @@
+'\" t
+.\"     Title: upsset.conf
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSSET\&.CONF" "5" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsset.conf \- Configuration for Network UPS Tools upsset\&.cgi
+.SH "DESCRIPTION"
+.sp
+This file only does one job\(emit lets you convince \fBupsset.cgi\fR(8) that your system\(cqs CGI directory is secure\&. The program will not run until this file has been properly defined\&.
+.SH "SECURITY REQUIREMENTS"
+.sp
+\fBupsset.cgi\fR(8) allows you to try login name and password combinations\&. There is no rate limiting, as the program shuts down between every request\&. Such is the nature of CGI programs\&.
+.sp
+Normally, attackers would not be able to access your \fBupsd\fR(8) server directly as it would be protected by the LISTEN directives in your \fBupsd.conf\fR(5) file, tcp\-wrappers (if available when NUT was built), and hopefully local firewall settings in your OS\&.
+.sp
+\fBupsset\fR runs on your web server, so upsd will see it as a connection from a host on an internal network\&. It doesn\(cqt know that the connection is actually coming from someone on the outside\&. This is why you must secure it\&.
+.sp
+On Apache, you can use the \&.htaccess file or put the directives in your httpd\&.conf\&. It looks something like this, assuming the \&.htaccess method for older Apache releases:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<Files upsset\&.cgi>
+deny from all
+allow from your\&.network\&.addresses
+</Files>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+You will probably have to set "AllowOverride Limit" for this directory in your server\-level configuration file as well\&.
+.sp
+Modern Apache enjoys a more detailed syntax, like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ScriptAlias /upsstats\&.cgi /usr/share/nut/cgi/upsstats\&.cgi
+ScriptAlias /upsset\&.cgi /usr/share/nut/cgi/upsset\&.cgi
+<Directory "/usr/share/nut/cgi">
+      Options +Includes +ExecCGI
+      AllowOverride Limit
+      <RequireAny>
+          Require local
+          Require ip aa\&.bb\&.cc\&.dd/nn
+      </RequireAny>
+</Directory>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+If this doesn\(cqt make sense, then stop reading and leave this program alone\&. It\(cqs not something you absolutely need to have anyway\&.
+.sp
+Assuming you have all this done, and it actually works (test it!), then you may add the following directive to this file:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+I_HAVE_SECURED_MY_CGI_DIRECTORY
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+If you lie to the program and someone beats on your upsd through your web server, don\(cqt blame me\&.
+.SH "SEE ALSO"
+.sp
+\fBupsset.cgi\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,254 @@
+'\" t
+.\"     Title: phoenixcontact_modbus
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "PHOENIXCONTACT_MODBU" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+phoenixcontact_modbus \- Driver for Phoenix Contact
+.SH "SYNOPSIS"
+.sp
+\fBphoenixcontact_modbus\fR \-h
+.sp
+\fBphoenixcontact_modbus\fR \-a \fIDEVICE_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the phoenixcontact_modbus driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should support the PhoenixContact QUINT\-UPS industrial DC UPS, model 2320461 and all compatible models\&. More information about this UPS can be found here: https://www\&.phoenixcontact\&.com/online/portal/us?uri=pxc\-oc\-itemdetail:pid=2320461
+.sp
+phoenixcontact_modbus uses the libmodbus project, for Modbus implementation\&.
+.SH "HOW TO CONFIGURE THE UPS"
+.sp
+Note: this UPS and its manual refers to Low\-Batt as "Shutdown Event"\&.
+.sp
+You need the "IFS\-RS232\-DATACABLE" to communicate with the UPS in Linux as the IFS\-USB cable doesn\(cqt seem to be supported\&. FYI communication parameters are: 115200,E,8,1\&.
+.sp
+You also need the UPS\-CONF Windows software (free; download from their site), to configure the UPS signals and timers\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Run the UPS\-CONF
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Go to Settings→Time Setting
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Choose "state of charge shutdown delay"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Choose Remote starts PC\-Shutdown in Mains and Battery mode
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+On the PC\-Shutdown enter the maximum value (5 minutes)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+On the PC\-Restart delay enter the time you want the UPS to leave the output power off before restarting (e\&.g\&. 60 seconds), after mains power is restored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+On the UPS, turn the screw to the "PC\-MODE" position
+.RE
+.sp
+Configuring the above way ensures that:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When power is lost, UPS constantly calculates remaining battery time
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When remaining battery time is less than 5 minutes (PC\-Shutdown setting), it will raise the "Shutdown" event (seen as LOW\-BATT in NUT)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+From that moment even if input power is restored, the UPS will cut the output power to its load after 5 minutes
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When the input power is restored, the UPS will restore output power after 60 seconds (PC\-RESTART delay setting)\&.
+.RE
+.sp
+Meaning of settings:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+PC\-Shutdown: How long before output cutoff the UPS will raise the "shutdown event" signal\&. Max value for this is 5 minutes\&. So PC should be able to shutdown within 5 minutes\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+PC\-Restart: How long to delay output power after power is restored\&. Max is 60 seconds\&.
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver doesn\(cqt support any optional settings\&.
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by installing libmodbus and running configure \-\-with\-modbus=yes\&.
+.sp
+You also need to give proper permissions on the local serial device file (/dev/ttyS0 for example) to allow the NUT user to access it\&.
+.SH "INSTANT COMMANDS"
+.sp
+This driver doesn\(cqt support any instant commands\&.
+.SH "AUTHOR"
+.sp
+Spiros Ioannou <sivann@gmail\&.com>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+libmodbus home page:
+http://libmodbus\&.org
+.RE

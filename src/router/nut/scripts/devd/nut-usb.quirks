@@ -1,0 +1,308 @@
+# This file is generated and installed by the Network UPS Tools package.
+# Homepage: https://www.networkupstools.org/
+# Contents should be added to /boot/loader.conf.local (watch out for unique quirk numbers!)
+# Inspired by 'Notes on USB quirks' under https://forum.netgate.com/topic/183961/nut-package-2-8-1-and-above
+# and https://github.com/freebsd/freebsd-src/blob/main/sys/dev/usb/quirk/usb_quirk.c
+
+#  SNR-UPS-LID-XXXX UPSes  - blazer_usb nutdrv_atcl_usb nutdrv_qx
+hw.usb.quirk.0="0x0001 0x0000 0x0000 0xffff UQ_HID_IGNORE"
+
+# Hewlett Packard
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.1="0x03f0 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+#  T500  - bcmxcp_usb
+hw.usb.quirk.2="0x03f0 0x1f01 0x0000 0xffff UQ_HID_IGNORE"
+#  T750  - bcmxcp_usb
+hw.usb.quirk.3="0x03f0 0x1f02 0x0000 0xffff UQ_HID_IGNORE"
+#  HP T750 INTL  - usbhid-ups
+hw.usb.quirk.4="0x03f0 0x1f06 0x0000 0xffff UQ_HID_IGNORE"
+#  HP T1000 INTL  - usbhid-ups
+hw.usb.quirk.5="0x03f0 0x1f08 0x0000 0xffff UQ_HID_IGNORE"
+#  HP T1500 INTL  - usbhid-ups
+hw.usb.quirk.6="0x03f0 0x1f09 0x0000 0xffff UQ_HID_IGNORE"
+#  HP R/T 2200 INTL (like SMART2200RMXL2U)  - usbhid-ups
+hw.usb.quirk.7="0x03f0 0x1f0a 0x0000 0xffff UQ_HID_IGNORE"
+#  HP R1500 G2 and G3 INTL  - usbhid-ups
+hw.usb.quirk.8="0x03f0 0x1fe0 0x0000 0xffff UQ_HID_IGNORE"
+#  HP T750 G2  - usbhid-ups
+hw.usb.quirk.9="0x03f0 0x1fe1 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.10="0x03f0 0x1fe2 0x0000 0xffff UQ_HID_IGNORE"
+#  HP T1500 G3  - usbhid-ups
+hw.usb.quirk.11="0x03f0 0x1fe3 0x0000 0xffff UQ_HID_IGNORE"
+#  R/T3000  - usbhid-ups
+hw.usb.quirk.12="0x03f0 0x1fe5 0x0000 0xffff UQ_HID_IGNORE"
+#  R/T3000  - usbhid-ups
+hw.usb.quirk.13="0x03f0 0x1fe6 0x0000 0xffff UQ_HID_IGNORE"
+#  various models  - usbhid-ups
+hw.usb.quirk.14="0x03f0 0x1fe7 0x0000 0xffff UQ_HID_IGNORE"
+#  various models  - usbhid-ups
+hw.usb.quirk.15="0x03f0 0x1fe8 0x0000 0xffff UQ_HID_IGNORE"
+
+# Eaton
+#  various models  - usbhid-ups
+hw.usb.quirk.16="0x0463 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+#  various models  - usbhid-ups
+hw.usb.quirk.17="0x0463 0xffff 0x0000 0xffff UQ_HID_IGNORE"
+
+# Dell
+#  various models  - usbhid-ups
+hw.usb.quirk.18="0x047c 0xffff 0x0000 0xffff UQ_HID_IGNORE"
+
+# ST Microelectronics
+#  TS Shara UPSes; vendor ID 0x0483 is from ST Microelectronics - with product IDs delegated to different OEMs  - nutdrv_qx
+hw.usb.quirk.19="0x0483 0x0035 0x0000 0xffff UQ_HID_IGNORE"
+#  USB IDs device table  - usbhid-ups
+hw.usb.quirk.20="0x0483 0xa113 0x0000 0xffff UQ_HID_IGNORE"
+#  Cyber Energy branded devices by CPS  - usbhid-ups
+hw.usb.quirk.21="0x0483 0xa430 0x0000 0xffff UQ_HID_IGNORE"
+
+# IBM
+#  6000 VA LCD 4U Rack UPS; 5396-1Kx  - usbhid-ups
+hw.usb.quirk.22="0x04b3 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+
+# Riello (Cypress Semiconductor Corp.)
+#  various models  - riello_usb
+hw.usb.quirk.23="0x04b4 0x5500 0x0000 0xffff UQ_HID_IGNORE"
+
+# Minibox
+#  openUPS Intelligent UPS (minimum required firmware 1.4)  - usbhid-ups
+hw.usb.quirk.24="0x04d8 0xd004 0x0000 0xffff UQ_HID_IGNORE"
+#  openUPS Intelligent UPS (minimum required firmware 1.4)  - usbhid-ups
+hw.usb.quirk.25="0x04d8 0xd005 0x0000 0xffff UQ_HID_IGNORE"
+
+# Belkin
+#  F6H375-USB  - usbhid-ups
+hw.usb.quirk.26="0x050d 0x0375 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C550-AVR  - usbhid-ups
+hw.usb.quirk.27="0x050d 0x0551 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C1250-TW-RK  - usbhid-ups
+hw.usb.quirk.28="0x050d 0x0750 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C1500-TW-RK  - usbhid-ups
+hw.usb.quirk.29="0x050d 0x0751 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C900-UNV  - usbhid-ups
+hw.usb.quirk.30="0x050d 0x0900 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C100-UNV  - usbhid-ups
+hw.usb.quirk.31="0x050d 0x0910 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C120-UNV  - usbhid-ups
+hw.usb.quirk.32="0x050d 0x0912 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C800-UNV  - usbhid-ups
+hw.usb.quirk.33="0x050d 0x0980 0x0000 0xffff UQ_HID_IGNORE"
+#  Regulator PRO-USB  - usbhid-ups
+hw.usb.quirk.34="0x050d 0x0f51 0x0000 0xffff UQ_HID_IGNORE"
+#  F6C1100-UNV, F6C1200-UNV  - usbhid-ups
+hw.usb.quirk.35="0x050d 0x1100 0x0000 0xffff UQ_HID_IGNORE"
+
+# APC
+#  APC AP9584 Serial->USB kit  - usbhid-ups
+hw.usb.quirk.36="0x051d 0x0000 0x0000 0xffff UQ_HID_IGNORE"
+#  various models  - usbhid-ups
+hw.usb.quirk.37="0x051d 0x0002 0x0000 0xffff UQ_HID_IGNORE"
+#  USB IDs device table  - usbhid-ups apc_modbus
+hw.usb.quirk.38="0x051d 0x0003 0x0000 0xffff UQ_HID_IGNORE"
+#  various 5G models  - usbhid-ups
+hw.usb.quirk.39="0x051d 0x0004 0x0000 0xffff UQ_HID_IGNORE"
+
+# Powerware
+#  various models  - bcmxcp_usb
+hw.usb.quirk.40="0x0592 0x0002 0x0000 0xffff UQ_HID_IGNORE"
+#  PW 9140  - usbhid-ups
+hw.usb.quirk.41="0x0592 0x0004 0x0000 0xffff UQ_HID_IGNORE"
+#  Agiler UPS  - blazer_usb nutdrv_qx
+hw.usb.quirk.42="0x05b8 0x0000 0x0000 0xffff UQ_HID_IGNORE"
+
+# Delta UPS
+#  Delta UPS Amplon R Series, Single Phase UPS, 1/2/3 kVA  - usbhid-ups
+hw.usb.quirk.43="0x05dd 0x041b 0x0000 0xffff UQ_HID_IGNORE"
+#  Delta/Minuteman Enterprise Plus E1500RM2U  - usbhid-ups
+hw.usb.quirk.44="0x05dd 0xa011 0x0000 0xffff UQ_HID_IGNORE"
+#  Delta/Minuteman PRO1500RT2U  - usbhid-ups
+hw.usb.quirk.45="0x05dd 0xa0a0 0x0000 0xffff UQ_HID_IGNORE"
+#  Belkin F6C1200-UNV/Voltronic Power UPSes  - blazer_usb nutdrv_qx
+hw.usb.quirk.46="0x0665 0x5161 0x0000 0xffff UQ_HID_IGNORE"
+
+# Phoenixtec Power Co., Ltd
+#  Online Yunto YQ450  - bcmxcp_usb blazer_usb nutdrv_qx
+hw.usb.quirk.47="0x06da 0x0002 0x0000 0xffff UQ_HID_IGNORE"
+#  Mustek Powermust  - blazer_usb nutdrv_qx
+hw.usb.quirk.48="0x06da 0x0003 0x0000 0xffff UQ_HID_IGNORE"
+#  Phoenixtec Innova 3/1 T  - blazer_usb nutdrv_qx
+hw.usb.quirk.49="0x06da 0x0004 0x0000 0xffff UQ_HID_IGNORE"
+#  Phoenixtec Innova RT  - blazer_usb nutdrv_qx
+hw.usb.quirk.50="0x06da 0x0005 0x0000 0xffff UQ_HID_IGNORE"
+#  Phoenixtec Innova T  - blazer_usb nutdrv_qx
+hw.usb.quirk.51="0x06da 0x0201 0x0000 0xffff UQ_HID_IGNORE"
+#  Online Zinto A  - blazer_usb nutdrv_qx
+hw.usb.quirk.52="0x06da 0x0601 0x0000 0xffff UQ_HID_IGNORE"
+#  PROTECT B / NAS  - usbhid-ups usbhid-ups
+hw.usb.quirk.53="0x06da 0xffff 0x0000 0xffff UQ_HID_IGNORE"
+
+# iDowell
+#  iDowell  - usbhid-ups
+hw.usb.quirk.54="0x075d 0x0300 0x0000 0xffff UQ_HID_IGNORE"
+
+# Cyber Power Systems
+#  900AVR/BC900D  - usbhid-ups
+hw.usb.quirk.55="0x0764 0x0005 0x0000 0xffff UQ_HID_IGNORE"
+#  Dynex DX-800U?, CP1200AVR/BC1200D, CP825AVR-G, CP1000AVRLCD, CP1000PFCLCD, CP1500C, CP550HG, etc.  - usbhid-ups
+hw.usb.quirk.56="0x0764 0x0501 0x0000 0xffff UQ_HID_IGNORE"
+#  OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U  - usbhid-ups
+hw.usb.quirk.57="0x0764 0x0601 0x0000 0xffff UQ_HID_IGNORE"
+#  Sweex 1000VA  - nutdrv_qx richcomm_usb
+hw.usb.quirk.58="0x0925 0x1234 0x0000 0xffff UQ_HID_IGNORE"
+
+# TrippLite
+#  e.g. OMNIVS1000, SMART550USB, ...  - tripplite_usb
+hw.usb.quirk.59="0x09ae 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite AVR550U  - usbhid-ups
+hw.usb.quirk.60="0x09ae 0x1003 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite AVR750U  - usbhid-ups
+hw.usb.quirk.61="0x09ae 0x1007 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+hw.usb.quirk.62="0x09ae 0x1008 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+hw.usb.quirk.63="0x09ae 0x1009 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite ECO550UPS  - usbhid-ups
+hw.usb.quirk.64="0x09ae 0x1010 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite SU3000LCD2UHV  - usbhid-ups
+hw.usb.quirk.65="0x09ae 0x1330 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite OMNI1000LCD  - usbhid-ups
+hw.usb.quirk.66="0x09ae 0x2005 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite OMNI900LCD  - usbhid-ups
+hw.usb.quirk.67="0x09ae 0x2007 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.68="0x09ae 0x2008 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite Smart1000LCD  - usbhid-ups
+hw.usb.quirk.69="0x09ae 0x2009 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.70="0x09ae 0x2010 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.71="0x09ae 0x2011 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.72="0x09ae 0x2012 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.73="0x09ae 0x2013 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.74="0x09ae 0x2014 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.75="0x09ae 0x3008 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.76="0x09ae 0x3009 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.77="0x09ae 0x3010 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.78="0x09ae 0x3011 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite smart2200RMXL2U  - usbhid-ups
+hw.usb.quirk.79="0x09ae 0x3012 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.80="0x09ae 0x3013 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.81="0x09ae 0x3014 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.82="0x09ae 0x3015 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite Smart1500LCD (newer unit)  - usbhid-ups
+hw.usb.quirk.83="0x09ae 0x3016 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite AVR750U (newer unit)  - usbhid-ups
+hw.usb.quirk.84="0x09ae 0x3024 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?)  - usbhid-ups
+hw.usb.quirk.85="0x09ae 0x4001 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite SmartOnline SU6000RT4U?  - usbhid-ups
+hw.usb.quirk.86="0x09ae 0x4002 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite SmartOnline SU1500RTXL2ua  - usbhid-ups
+hw.usb.quirk.87="0x09ae 0x4003 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. TrippLite SmartOnline SU1000XLA  - usbhid-ups
+hw.usb.quirk.88="0x09ae 0x4004 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.89="0x09ae 0x4005 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.90="0x09ae 0x4006 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.91="0x09ae 0x4007 0x0000 0xffff UQ_HID_IGNORE"
+#  e.g. ?  - usbhid-ups
+hw.usb.quirk.92="0x09ae 0x4008 0x0000 0xffff UQ_HID_IGNORE"
+
+# PowerCOM
+#  PowerCOM Vanguard and BNT-xxxAP  - usbhid-ups
+hw.usb.quirk.93="0x0d9f 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM Vanguard and BNT-xxxAP  - usbhid-ups
+hw.usb.quirk.94="0x0d9f 0x0004 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM IMP - IMPERIAL Series  - usbhid-ups
+hw.usb.quirk.95="0x0d9f 0x00a2 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM SKP - Smart KING Pro (all Smart series)  - usbhid-ups
+hw.usb.quirk.96="0x0d9f 0x00a3 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM WOW  - usbhid-ups
+hw.usb.quirk.97="0x0d9f 0x00a4 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM VGD - Vanguard  - usbhid-ups
+hw.usb.quirk.98="0x0d9f 0x00a5 0x0000 0xffff UQ_HID_IGNORE"
+#  PowerCOM BNT - Black Knight Pro  - usbhid-ups
+hw.usb.quirk.99="0x0d9f 0x00a6 0x0000 0xffff UQ_HID_IGNORE"
+#  Unitek Alpha 1200Sx  - blazer_usb nutdrv_qx
+hw.usb.quirk.100="0x0f03 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+
+# Liebert
+#  Liebert GXT4 UPS  - usbhid-ups
+hw.usb.quirk.101="0x10af 0x0000 0x0000 0xffff UQ_HID_IGNORE"
+#  Liebert PowerSure PSA UPS  - usbhid-ups
+hw.usb.quirk.102="0x10af 0x0001 0x0000 0xffff UQ_HID_IGNORE"
+#  Liebert PowerSure PST UPS  - usbhid-ups
+hw.usb.quirk.103="0x10af 0x0002 0x0000 0xffff UQ_HID_IGNORE"
+#  Liebert PowerSure PSI 1440  - usbhid-ups
+hw.usb.quirk.104="0x10af 0x0004 0x0000 0xffff UQ_HID_IGNORE"
+#  Liebert GXT3  - usbhid-ups
+hw.usb.quirk.105="0x10af 0x0008 0x0000 0xffff UQ_HID_IGNORE"
+#  GE EP series  - blazer_usb nutdrv_qx
+hw.usb.quirk.106="0x14f0 0x00c9 0x0000 0xffff UQ_HID_IGNORE"
+
+# Legrand
+#  Legrand Keor SP  - usbhid-ups
+hw.usb.quirk.107="0x1cb0 0x0032 0x0000 0xffff UQ_HID_IGNORE"
+#  Legrand Daker DK / DK Plus  - nutdrv_qx
+hw.usb.quirk.108="0x1cb0 0x0035 0x0000 0xffff UQ_HID_IGNORE"
+#  Legrand Keor PDU  - usbhid-ups
+hw.usb.quirk.109="0x1cb0 0x0038 0x0000 0xffff UQ_HID_IGNORE"
+
+# Arduino
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.110="0x2341 0x0036 0x0000 0xffff UQ_HID_IGNORE"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.111="0x2341 0x8036 0x0000 0xffff UQ_HID_IGNORE"
+
+# Arduino
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.112="0x2a03 0x0036 0x0000 0xffff UQ_HID_IGNORE"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.113="0x2a03 0x0040 0x0000 0xffff UQ_HID_IGNORE"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.114="0x2a03 0x8036 0x0000 0xffff UQ_HID_IGNORE"
+#  Arduino Leonardo, Leonardo ETH and Pro Micro - usbhid-ups
+hw.usb.quirk.115="0x2a03 0x8040 0x0000 0xffff UQ_HID_IGNORE"
+
+# AEG
+#  PROTECT B / NAS  - usbhid-ups
+hw.usb.quirk.116="0x2b2d 0xffff 0x0000 0xffff UQ_HID_IGNORE"
+
+# Ever
+#  USB IDs device table  - usbhid-ups
+hw.usb.quirk.117="0x2e51 0x0000 0x0000 0xffff UQ_HID_IGNORE"
+#  USB IDs device table  - usbhid-ups
+hw.usb.quirk.118="0x2e51 0xffff 0x0000 0xffff UQ_HID_IGNORE"
+
+# Salicru
+#  https://www.salicru.com/sps-3000-adv-rt2.html  - usbhid-ups
+hw.usb.quirk.119="0x2e66 0x0101 0x0000 0xffff UQ_HID_IGNORE"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+hw.usb.quirk.120="0x2e66 0x0201 0x0000 0xffff UQ_HID_IGNORE"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+hw.usb.quirk.121="0x2e66 0x0202 0x0000 0xffff UQ_HID_IGNORE"
+#  SLC TWIN PRO2<=3KVA per https://github.com/networkupstools/nut/issues/450  - usbhid-ups
+hw.usb.quirk.122="0x2e66 0x0203 0x0000 0xffff UQ_HID_IGNORE"
+#  https://www.salicru.com/sps-home.html  - usbhid-ups
+hw.usb.quirk.123="0x2e66 0x0300 0x0000 0xffff UQ_HID_IGNORE"
+#  https://www.salicru.com/sps-850-adv-t.html  - usbhid-ups
+hw.usb.quirk.124="0x2e66 0x0302 0x0000 0xffff UQ_HID_IGNORE"
+
+# Powervar
+#  Powervar  - usbhid-ups
+hw.usb.quirk.125="0x4234 0x0002 0x0000 0xffff UQ_HID_IGNORE"
+#  Ablerex 625L USB (Note: earlier best-fit was "krauler_subdriver" before PR #1135)  - blazer_usb nutdrv_qx
+hw.usb.quirk.126="0xffff 0x0000 0x0000 0xffff UQ_HID_IGNORE"

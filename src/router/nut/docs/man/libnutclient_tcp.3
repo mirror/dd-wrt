@@ -1,0 +1,111 @@
+'\" t
+.\"     Title: libnutclient_tcp
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBNUTCLIENT_TCP" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnutclient_tcp, nutclient_tcp_create_client, nutclient_tcp_is_connected, nutclient_tcp_disconnect, nutclient_tcp_reconnect, nutclient_tcp_set_timeout, nutclient_tcp_get_timeout \- TCP protocol related function for Network UPS Tools high\-level client access library
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nutclient\&.h>
+#include <cstdint> /* uint16_t */
+#include <ctime> /* time_t */
+.fi
+.sp
+.nf
+typedef NUTCLIENT_t NUTCLIENT_TCP_t;
+.fi
+.sp
+.nf
+NUTCLIENT_TCP_t nutclient_tcp_create_client(
+        const char* host, uint16_t port);
+.fi
+.sp
+.nf
+int nutclient_tcp_is_connected(NUTCLIENT_TCP_t client);
+.fi
+.sp
+.nf
+void nutclient_tcp_disconnect(NUTCLIENT_TCP_t client);
+.fi
+.sp
+.nf
+int nutclient_tcp_reconnect(NUTCLIENT_TCP_t client);
+.fi
+.sp
+.nf
+void nutclient_tcp_set_timeout(NUTCLIENT_TCP_t client, time_t timeout);
+.fi
+.sp
+.nf
+time_t nutclient_tcp_get_timeout(NUTCLIENT_TCP_t client);
+.fi
+.SH "DESCRIPTION"
+.sp
+These functions allow to manage connections to \fBupsd\fR(8) using NUT TCP protocol\&.
+.sp
+The \fBnutclient_tcp_create_client()\fR function create the \fINUTCLIENT_TCP_t\fR context and intend to connect to upsd at \fIhost\fR and \fIport\fR\&. The context must be freed by \fInutclient_destroy()\fR
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIhost\fR
+can be a sever name or a valid IPv4 or IPv6 address like "localhost", "127\&.0\&.0\&.1" or "::1"\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIport\fR
+is a valid TCP port, generally 3493\&.
+.RE
+.sp
+The \fBnutclient_tcp_is_connected()\fR function test if the connection is valid\&.
+.sp
+The \fBnutclient_tcp_disconnect()\fR function force to disconnect the specified connection\&.
+.sp
+The \fBnutclient_tcp_reconnect()\fR function force to reconnect a connection, disconnecting it if needed\&.
+.sp
+The \fBnutclient_tcp_set_timeout()\fR function set the timeout duration for I/O operations\&.
+.sp
+The \fBnutclient_tcp_get_timeout()\fR function retrieve the timeout duration for I/O operations\&.
+.sp
+\fItimeout\fR values are specified in seconds, negatives values for blocking\&.
+.SH "SEE ALSO"
+.sp
+\fBlibnutclient\fR(3) \fBlibnutclient_general\fR(3)

@@ -1,0 +1,55 @@
+'\" t
+.\"     Title: libnutclient
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBNUTCLIENT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnutclient \- Network UPS Tools high\-level client access library
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nutclient\&.h>
+.fi
+.sp
+.nf
+Refer to this file for more information\&.
+.fi
+.SH "DESCRIPTION"
+.sp
+The Network UPS Tools (NUT) \fBnutclient\fR library provides a number of useful functions for programs to use when communicating with \fBupsd\fR(8)\&. It provides high\-level representation of NUT data through client connection, devices, variables and commands\&. Unlike \fBupsclient\fR(3), all low\-level protocol details are hidden\&.
+.sp
+State is maintained across calls in an opaque structure called NUTCLIENT_t\&. Callers are expected to create one per client connection\&. These will be provided to most of the \fBnutclient\fR functions\&. The format of this structure is subject to change, and client programs must not reference elements within it directly\&.
+.sp
+NUTCLIENT_t represents the common connection information\&. Derived versions exist for each connection type (NUTCLIENT_TCP_t for TCP connection; actually the unique connection type, NUTCLIENT_TCP_t can be passed as NUTCLIENT_t parameter)\&.
+.sp
+See the nutclient\&.h header for more information\&.
+.SH "ERROR HANDLING"
+.sp
+There is currently no specific mechanism around error handling\&.
+.SH "SEE ALSO"
+.sp
+\fBlibnutclient_devices\fR(3) \fBlibnutclient_commands\fR(3) \fBlibnutclient_general\fR(3) \fBlibnutclient_misc\fR(3) \fBlibnutclient_tcp\fR(3) \fBlibnutclient_variables\fR(3)

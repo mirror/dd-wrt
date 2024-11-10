@@ -1,0 +1,147 @@
+'\" t
+.\"     Title: optiups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "OPTIUPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+optiups \- Driver for Opti\-UPS (Viewsonic) UPS and Zinto D (ONLINE\-USV) equipment
+.SH "SYNOPSIS"
+.sp
+\fBoptiups\fR \-h
+.sp
+\fBoptiups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the optiups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+\fBoptiups\fR was originally written against a PowerES 280es in nut\-0\&.45\&. It was revised for nut\-2\&.0\&.1 and tested against a PowerES 420E\&. It is expected to work with at least the PowerES, PowerPS, and PowerVS models\&.
+.sp
+This driver additionally supports a Zinto D from ONLINE USV\-Systeme AG because of their very similar commands, but it is unknown if it also works with other UPS from them\&.
+.sp
+This driver will not work with the PowerES stock serial cable\&. You will need to construct your own three conductor cable:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+UPS 6 \-> PC 3
+UPS 9 \-> PC 2
+UPS 4 \-> PC 5
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The cable for Online\-USV uses pin UPS 7 (not UPS 4) → PC 5\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.PP
+\fBstatus_only\fR
+.RS 4
+Only poll for critical status information\&. Without this,
+\fBoptiups\fR
+(and all NUT drivers) poll all sorts of information from the UPS fairly often\&. It is probably not often enough to hurt anything, so this option probably is not very useful, unless you have a flaky serial connection or a highly loaded machine\&.
+.RE
+.PP
+\fBnowarn_noimp\fR
+.RS 4
+Does not print warnings when the UPS reports that a variable is not implemented or not pollable\&. Without the option you will get a message sent to your system logs each time NUT polls the UPS\&. If you specify
+\fBnowarn_noimp\fR, this message will only be logged once\&.
+.RE
+.PP
+\fBfake_lowbatt\fR
+.RS 4
+This forces the low battery flag true\&. Without it, if you want to test your UPS, you will have to unplug it and wait until the battery drops to a low/critical voltage level before NUT will respond and power down your system\&. With the flag, NUT should power down the system soon after you pull the plug\&. When you are done testing, you should remove this flag\&.
+.sp
+For basic shutdown configuration testing, the command
+\fIupsmon \-c fsd\fR
+is preferred\&.
+.RE
+.PP
+\fBpowerup\fR
+.RS 4
+Zinto D from ONLINE\-USV cannot be identified when switched to standby\&. Set this flag to allow the driver to power\-up your Zinto UPS\&. This will also power\-up your equipment connected to the UPS!
+.RE
+.SH "BUGS"
+.sp
+On the 420E, ups\&.serial and ups\&.temperature are unsupported features\&. This is not a bug in NUT or the NUT driver, just the way things are with this UPS\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Russell Kroll
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Scott Heavner
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Matthias Goebl
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,53 @@
+'\" t
+.\"     Title: nutscan_scan_eaton_serial
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_SCAN_EATON_S" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_scan_eaton_serial \- Scan serial ports for Eaton devices (XCP, SHUT and Q1)\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+.fi
+.sp
+.nf
+nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutscan_scan_eaton_serial()\fR function tries to detect NUT devices which are compatible with Eaton\(cqs serial device protocols (SHUT, XCP and Q1 (aka blazer))\&.
+.sp
+\fIports_list\fR is a NULL terminated array of pointers to strings containing serial device name (/dev/ttyS0, COM1, /dev/ttya\&...)
+.sp
+You MUST call \fBnutscan_init\fR(3) before using this function\&.
+.SH "RETURN VALUE"
+.sp
+The \fBnutscan_scan_eaton_serial()\fR function returns a pointer to a nutscan_device_t structure containing all found devices or NULL if an error occurs or no device is found\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_init\fR(3), \fBnutscan_scan_usb\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_display_sanity_check\fR(3), \fBnutscan_display_sanity_check_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_option_to_device\fR(3), \fBnutscan_add_device_to_device\fR(3), \fBnutscan_get_serial_ports_list\fR(3)

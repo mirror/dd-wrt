@@ -1,0 +1,70 @@
+'\" t
+.\"     Title: upscli_splitname
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_SPLITNAME" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_splitname \- split a UPS definition into its components
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+.fi
+.sp
+.nf
+int upscli_splitname(const char *buf, char **upsname,
+                               char **hostname, int *port)
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_splitname()\fR function takes a pointer to the raw UPS definition \fIbuf\fR and returns pointers to dynamically allocated memory in \fIupsname\fR and \fIhostname\fR\&. It also copies the port number into \fIport\fR\&.
+.SH "FORMATTING"
+.sp
+A UPS definition is specified according to this format:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<upsname>[@<hostname>[:<port>]]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+When the UPS name is not given, this function will print an error to stderr and return \-1 without changing anything\&.
+.sp
+Definitions without an explicit port value receive the default value of 3493\&. The default hostname is "localhost"\&.
+.SH "MEMORY USAGE"
+.sp
+You must \fBfree\fR(3) the pointers to \fIupsname\fR and \fIhostname\fR when you are done with them to avoid memory leaks\&.
+.SH "RETURN VALUE"
+.sp
+The \fBupscli_splitname()\fR function returns 0 on success, or \-1 if an error occurs\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_fd\fR(3), \fBupscli_get\fR(3), \fBupscli_readline\fR(3), \fBupscli_sendline\fR(3), \fBupscli_splitaddr\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

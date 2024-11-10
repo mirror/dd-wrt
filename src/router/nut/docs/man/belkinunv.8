@@ -1,0 +1,390 @@
+'\" t
+.\"     Title: belkinunv
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BELKINUNV" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+belkinunv \- Driver for Belkin "Universal UPS" and compatible
+.SH "SYNOPSIS"
+.sp
+\fBbelkinunv\fR \-h
+.sp
+\fBbelkinunv\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the belkin driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver only supports serial connections\&. If your UPS has a USB port, please consult the Hardware Compatibility List (HCL) to see which of the USB drivers you should use\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The belkinunv driver is known to work with the Belkin Universal UPS models F6C800\-UNV and F6C120\-UNV, and is expected to work with other Belkin Universal UPS models\&. The driver only supports serial communication, not USB\&.
+.sp
+The Trust UPS and older Belkin units are not supported by this driver, and neither are the Belkin Home Office models (F6H500\-SER and so forth)\&. However, some Belkin models, such as the Regulator Pro, are supported by the \fBbelkin\fR(8) driver, and the Home Office models are supported using the \fBgenericups\fR(8) driver with upstype=7\&.
+.SH "SOFT SHUTDOWN WORKAROUND"
+.sp
+One problem with the Belkin Universal UPS is that it cannot enter a soft shutdown (shut down the load until AC power returns) unless the batteries are completely depleted\&. Thus, one cannot just shut off the UPS after operating system shutdown; it will not come back on when the power comes back on\&. Therefore, the belkinunv driver should never be used with the \fB\-k\fR option\&. Instead, the \fB\-x wait\fR option is provided as a workaround\&.
+.sp
+When called with the \fB\-x wait\fR option, \fBbelkinunv\fR behaves as a standalone program (i\&.e\&., it does not fork into the background)\&. It performs one simple task: it connects to the UPS, waits for AC power to return, and then exits with status 0\&.
+.sp
+This is meant to be used in a shutdown script as follows: during a shutdown, after all filesystems have been remounted read\-only, and just before the system would normally be halted: check /etc/killpower (or similar) to see if this shutdown was caused by \fBupsmon\fR(8), and if yes, call \fBbelkinunv \-x wait\fR\&. If AC power comes back on, \fBbelkinunv\fR exits, and things should be arranged so that the system reboots in this case\&. If AC power does not come back on, the UPS will eventually run out of batteries, kill the computer\(cqs power supply, and go into soft shutdown mode, which means everything will reboot properly when the power returns\&. In either case, a deadlock is avoided\&.
+.sp
+In addition, if an optional integer argument is given to the \fB\-x wait\fR option, this causes \fBbelkinunv\fR to wait not only for AC power to be present, but also for the battery charge to reach the given level\&. I use this as part of my startup scripts, to ensure that the batteries are sufficiently charged before the computer continues booting\&. This should be put very early in the startup script, before any filesystems are mounted read/write, and before any filesystem checks are performed\&.
+.sp
+Several other \fB\-x\fR options are provided to fine\-tune this behavior\&. See the options below for detailed descriptions\&. See the examples below for examples of how to use \fBbelkinunv\fR in shutdown and startup scripts\&.
+.SH "OPTIONS"
+.sp
+See also \fBnutupsdrv\fR(8) for generic options\&. Never use the \fB\-k\fR option with this driver; it does not work properly\&.
+.PP
+\fB\-x wait\fR[=\fIlevel\fR]
+.RS 4
+When this option is used,
+\fBbelkinunv\fR
+does not fork into the background, but behaves as a standalone program\&. It connects to the UPS and waits until AC power is present\&. If
+\fIlevel\fR
+is specified, it also waits until the battery charge reaches at least the given level in percent\&. Then, and only then,
+\fBbelkinunv\fR
+exits\&. In addition, while
+\fBbelkinunv\fR
+runs in this mode, it displays a status line with information on the UPS status and battery level\&. This is intended for use in the computer\(cqs shutdown and startup scripts, as described under
+Soft Shutdown Workaround
+above\&.
+.RE
+.PP
+\fB\-x nohang\fR
+.RS 4
+This option only has an effect when used in conjunction with the
+\fB\-x wait\fR
+option\&. It causes
+\fBbelkinunv\fR
+to exit if a connection with the UPS cannot be established or is lost, instead of retrying forever, which is the default behavior\&. The
+\fB\-x nohang\fR
+option should be used in a startup script, to ensure the computer remains bootable even if the UPS has been disconnected during the power failure (for instance, you attached your computer to a generator, carried it to a neighbor\(cqs house, or whatever)\&.
+.RE
+.PP
+\fB\-x flash\fR
+.RS 4
+This option only has an effect when used in conjunction with the
+\fB\-x wait\fR
+option\&. It causes the UPS load to be shut off for a short time ("flashed") just after the AC power has returned and the requested battery level (if any) has been attained\&. This is useful if slaves are attached to this UPS; the flash will cause all of them to reboot\&. Note that, due to the design of the Belkin UPS hardware, the load shutdown lasts ca\&. 1\(em2 minutes; a shorter flash cannot be performed reliably\&. Also, the computers will reboot at the scheduled time, on battery power if necessary, even if AC power fails again in the meantime\&. This should not be a problem, as your startup scripts can catch this situation\&.
+.RE
+.PP
+\fB\-x silent\fR
+.RS 4
+This option only has an effect when used in conjunction with the
+\fB\-x wait\fR
+option\&. It suppresses the status line which
+\fBbelkinunv\fR
+would normally print\&.
+.RE
+.PP
+\fB\-x dumbterm\fR
+.RS 4
+This option only has an effect when used in conjunction with the
+\fB\-x wait\fR
+option\&. It changes the way in which
+\fBbelkinunv\fR
+prints its status line\&. Normally, terminal control sequences are used to overwrite the same line with new status information, each time the status is updated\&. This may not work on all terminals\&. If the
+\fB\-x dumbterm\fR
+option is given, each status update is written on a new line\&.
+.RE
+.SH "VARIABLES"
+.PP
+\fBbattery\&.charge\fR, \fBbattery\&.runtime\fR
+.RS 4
+not supported by all hardware\&.
+.RE
+.PP
+\fBbattery\&.voltage\fR, \fBbattery\&.voltage\&.nominal\fR, \fBinput\&.frequency\fR, \fBinput\&.frequency\&.nominal\fR
+.RS 4
+e\&.g\&. 60 for 60Hz
+.RE
+.PP
+\fBinput\&.sensitivity\fR
+.RS 4
+writable: normal/medium/low
+.RE
+.PP
+\fBinput\&.transfer\&.high\fR
+.RS 4
+writable: high transfer voltage point in V
+.RE
+.PP
+\fBinput\&.transfer\&.low\fR
+.RS 4
+writable: low transfer voltage point in V
+.RE
+.PP
+\fBinput\&.voltage\fR, \fBinput\&.voltage\&.maximum\fR, \fBinput\&.voltage\&.minimum\fR, \fBinput\&.voltage\&.nominal\fR, \fBoutput\&.frequency\fR, \fBoutput\&.voltage\fR, \fBups\&.beeper\&.status\fR
+.RS 4
+writable\&. Values: enabled/disabled/muted\&. This variable controls the state of the panel beeper\&. Enabled means sound when the alarm is present, disabled means never sound, and muted means the sound is temporarily disabled until the alarm would normally stop sounding\&. In the muted state, the beeper is automatically turned back on at the next event (AC failure, battery test, etc)\&. Also, the beeper can\(cqt be turned off during a critical event (low battery)\&. Note that not all UPS models support the "disabled" state\&.
+.RE
+.PP
+\fBups\&.firmware\fR, \fBups\&.load\fR, \fBups\&.model\fR, \fBups\&.power\&.nominal\fR
+.RS 4
+e\&.g\&. 800 for an 800VA system
+.RE
+.PP
+\fBups\&.status\fR
+.RS 4
+a list of flags; see the
+status flags
+below\&.
+.RE
+.PP
+\fBups\&.temperature\fR
+.RS 4
+not supported by all hardware\&.
+.RE
+.PP
+\fBups\&.test\&.result\fR, \fBups\&.delay\&.restart\fR
+.RS 4
+time to restart (read only)
+.RE
+.PP
+\fBups\&.delay\&.shutdown\fR
+.RS 4
+time to shutdown (read only)\&. This is always a multiple of 60 seconds\&.
+.RE
+.PP
+\fBups\&.type\fR
+.RS 4
+ONLINE/OFFLINE/LINEINT\&. This describes the basic layout of this UPS (for GUI clients which want to draw an animated picture of power flow)\&. An offline UPS has a direct connection from AC input to AC output, and also a connection from AC input to the battery, and from the battery to AC output\&. An online UPS lacks the direct connection from AC input to AC output, whereas a line interactive UPS lacks the connection from AC input to the battery\&.
+.RE
+.SH "COMMANDS"
+.PP
+\fBbeeper\&.enable, beeper\&.disable, beeper\&.mute\fR
+.RS 4
+Enable, disable or mute the panel beeper\&. Note that if the beeper is muted, it is automatically turned back on at the next event (AC failure, battery test, etc)\&. Also, the beeper can\(cqt be turned muted during a critical event (low battery)\&.
+.RE
+.PP
+\fBreset\&.input\&.minmax\fR
+.RS 4
+Reset the variables
+\fBinput\&.voltage\&.minimum\fR
+and
+\fBinput\&.voltage\&.maximum\fR\&.
+.RE
+.PP
+\fBshutdown\&.reboot\fR
+.RS 4
+Shut down load immediately for about 1\(em2 minutes\&.
+.RE
+.PP
+\fBshutdown\&.reboot\&.graceful\fR
+.RS 4
+After 40 second delay, shut down load for about 1\(em2 minutes\&.
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+Shut down load immediately and stay off\&. The only way it can be turned back on is by manually pressing the front panel button\&.
+.RE
+.PP
+\fBtest\&.battery\&.start, test\&.battery\&.stop\fR
+.RS 4
+Start/stop 10 second battery test\&.
+.RE
+.PP
+\fBtest\&.failure\&.start, test\&.failure\&.stop\fR
+.RS 4
+Start/stop "deep" battery test\&.
+.RE
+.SH "STATUS FLAGS"
+.PP
+\fBOB\fR
+.RS 4
+load is on battery, including during tests
+.RE
+.PP
+\fBOFF\fR
+.RS 4
+load is off
+.RE
+.PP
+\fBOL\fR
+.RS 4
+load is online
+.RE
+.PP
+\fBACFAIL\fR
+.RS 4
+AC failure\&. Note that this refers to the AC input, and thus it is not the same as "OB"\&. An AC failure can occur at any time, for instance, during a battery test, or when the UPS load is off\&.
+.RE
+.PP
+\fBOVER\fR
+.RS 4
+overload
+.RE
+.PP
+\fBOVERHEAT\fR
+.RS 4
+overheat
+.RE
+.PP
+\fBCOMMFAULT\fR
+.RS 4
+UPS fault
+.RE
+.PP
+\fBLB\fR
+.RS 4
+low battery
+.RE
+.PP
+\fBCHRG\fR
+.RS 4
+charging
+.RE
+.PP
+\fBDEPLETED\fR
+.RS 4
+the battery is depleted\&. When the UPS raises this flag, it simultaneously switches off the load\&.
+.RE
+.PP
+\fBRB\fR
+.RS 4
+replace battery
+.RE
+.SH "EXAMPLES"
+.sp
+Here is an example for how \fBbelkinunv\fR should be used in a computer\(cqs shutdown script\&. These commands should go in the very last part of the shutdown script, after all file systems have been mounted read\-only, and just before the computer halts\&. Note that \fBbelkinunv\fR must be installed in a directory which is still readable at that point\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# NEAR END OF SHUTDOWN SCRIPT:
+# if shutdown was caused by UPS, perform Belkin UPS workaround\&.
+if [ \-f /etc/killpower ] || /usr/sbin/upsmon \-K ; then
+   echo "Waiting for AC power, or for UPS batteries to run out\&.\&.\&."
+   /usr/bin/belkinunv \-x wait /dev/ttyS1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+   # we get here if the power came back on\&. Reboot\&.
+   echo "Power is back\&. Rebooting\&.\&.\&."
+   reboot
+fi
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+And here is an example of how to use \fBbelkinunv\fR in the startup script\&. These commands should go near the beginning of the startup script, before any file systems are mounted read/write, and before any file system integrity checks are done\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# NEAR BEGINNING OF STARTUP SCRIPT:
+# if we are recovering from a power failure, wait for the UPS to
+# charge to a comfortable level before writing anything to disk
+if [ \-f /etc/killpower ] || /usr/sbin/upsmon \-K ; then
+   echo "Waiting for UPS battery charge to reach 60%\&.\&.\&."
+   /usr/bin/belkinunv \-x wait=60 \-x nohang /dev/ttyS1
+fi
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXIT STATUS"
+.sp
+When used normally, \fBbelkinunv\fR forks into the background and its diagnostics are the same as for all NUT drivers, see \fBnutupsdrv\fR(8)\&.
+.sp
+When used with the \fB\-x wait\fR option, the exit status is normally \fB0\fR\&. If the \fB\-x nohang\fR option has also been specified, an exit status of \fB1\fR indicates that communication with the UPS was lost\&. If the \fB\-x flash\fR option has been specified, an exit status of \fB2\fR indicates that the timed shutdown has failed\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver does not support any extra settings in \fBups.conf\fR(5)\&.
+.SH "AUTHOR"
+.sp
+Peter Selinger <selinger@users\&.sourceforge\&.net>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Other Belkin drivers:"
+.sp
+\fBbelkinunv\fR(8), \fBblazer_ser\fR(8), \fBblazer_usb\fR(8), \fBusbhid-ups\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The documentation for the protocol used by this UPS:
+belkin\-universal\-ups\&.html
+(replica on NUT site)
+.RE

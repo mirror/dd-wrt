@@ -1,0 +1,104 @@
+'\" t
+.\"     Title: nut-recorder
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUT\-RECORDER" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nut-recorder \- utility to record device status and values changes
+.SH "SYNOPSIS"
+.sp
+\fBnut\-recorder\fR \fIdevice\-name\fR [output\-file] [interval]
+.SH "DESCRIPTION"
+.sp
+\fBnut\-recorder\fR is an utility to record sequences from running devices (such as power failures, or any other value changes) from upsd, and dump it in a \&.seq format\&.
+.sp
+The \&.seq file can then be used by the \fBdummy-ups\fR(8) driver to replay the sequence\&.
+.SH "OPTIONS"
+.PP
+\fIdevice\-name\fR
+.RS 4
+Record the changes of this device\&. The format for this option is
+\fIdevname[@hostname[:port]]\fR\&. The default hostname is "localhost"\&.
+.RE
+.PP
+\fIoutput\-file\fR
+.RS 4
+Optional\&. Data will be saved to this file\&. The default is
+\fIdummy\-device\&.seq\fR\&.
+.RE
+.PP
+\fIinterval\fR
+.RS 4
+Optional\&. The status of the device will be checked every
+\fIinterval\fR\&. The default is 5 seconds\&.
+.RE
+.SH "EXAMPLES"
+.sp
+To record data from \fIups1@host1\fR every 10 seconds:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ nut\-recorder ups1@host1\*(Aq ups1\-output\&.seq 10
+\&. \&. \&.
+battery\&.charge: 100\&.0
+battery\&.voltage: 13\&.9
+battery\&.voltage\&.nominal: 13\&.6
+ups\&.status: OL
+\&. \&. \&.
+battery\&.charge: 90\&.0
+ups\&.status: OB
+\&. \&. \&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+You can then define a dummy device in \fBups.conf\fR(5):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[ups\-test]
+        driver = dummy\-ups
+        port = ups1\-output\&.seq
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.sp
+Arnaud Quette
+.SH "SEE ALSO"
+.SS "The dummy\-ups driver:"
+.sp
+\fBdummy-ups\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

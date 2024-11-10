@@ -1,0 +1,321 @@
+'\" t
+.\"     Title: blazer_ser
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BLAZER_SER" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+blazer_ser \- Driver for Megatec/Q1 protocol serial based UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBblazer_ser\fR \-h
+.sp
+\fBblazer_ser\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.SH "NOTE"
+.sp
+This man page only documents the hardware\-specific features of the blazer driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.SH "NOTE"
+.sp
+Please note that this driver is deprecated and will not receive new development\&. If it works for managing your devices \(em fine, but if you are running it to try setting up a new device, please consider the newer \fBnutdrv_qx\fR(8) instead, which should handle all \fIQ*\fR protocol variants for NUT\&.
+.sp
+Please do also report if your device works with this driver, but \fBnutdrv_qx\fR(8) would not actually support it with any subdriver!
+.SH "SUPPORTED HARDWARE"
+.sp
+The blazer driver is known to work with various UPSes from Blazer, Energy Sistem, Fenton Technologies, General Electric, Mustek and many others\&. The NUT compatibility table lists all the known supported models\&. Keep in mind, however, that other models not listed there may also be supported, but haven\(cqt been tested\&.
+.sp
+All devices with a serial interface (use the \fBblazer_ser\fR driver) and many with a USB interface (use the \fBblazer_usb\fR driver) are supported\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+You may need to override or provide defaults for some values, depending on the make and model of your UPS\&. The following are the ones that most likely will need changing (see \fBups.conf\fR(5)):
+.PP
+\fBdefault\&.battery\&.voltage\&.high =\fR \fIvalue\fR
+.RS 4
+Maximum battery voltage that is reached after about 12 to 24 hours charging\&. If you want the driver to report a guesstimated
+\fBbattery\&.charge\fR, you need to specify this (see
+BATTERY CHARGE GUESSTIMATION)\&.
+.RE
+.PP
+\fBdefault\&.battery\&.voltage\&.low =\fR \fIvalue\fR
+.RS 4
+Minimum battery voltage just before the UPS automatically shuts down\&. If you want the driver to report a guesstimated
+\fBbattery\&.charge\fR, you need to specify this (see
+BATTERY CHARGE GUESSTIMATION)\&.
+.RE
+.PP
+\fBdefault\&.battery\&.voltage\&.nominal =\fR \fIvalue\fR, \fBoverride\&.battery\&.voltage\&.nominal =\fR \fIvalue\fR
+.RS 4
+Some devices show a wrong nominal battery voltage (or none at all), so you may need to override or set a default value\&.
+.RE
+.PP
+\fBoverride\&.battery\&.packs =\fR \fIvalue\fR
+.RS 4
+Some devices report a part of the total battery voltage\&. For instance, if
+\fBbattery\&.voltage\&.nominal\fR
+is 24 V, but it reports a
+\fBbattery\&.voltage\fR
+of around 2 V, the number of
+\fBbattery\&.packs\fR
+to correct this reading would be 12\&. The driver will attempt to detect this automatically, but if this fails somehow, you may want to override this value\&.
+.RE
+.PP
+\fBondelay =\fR \fIvalue\fR
+.RS 4
+Time to wait before switching on the UPS (minutes)\&. Note that a value below 3 minutes, may cause earlier firmware versions to not switch on automatically, so it defaults to 3 minutes\&. The acceptable range is
+0\&.\&.9999
+minutes\&.
+.RE
+.PP
+\fBoffdelay =\fR \fIvalue\fR
+.RS 4
+Time to wait before shutting down the UPS (seconds)\&. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds)\&. Defaults to 30 seconds\&. The acceptable range is
+12\&.\&.600
+seconds\&.
+.RE
+.PP
+\fBnorating\fR
+.RS 4
+Some UPSes will lock up if you attempt to read rating information from them\&. Setting this flag will make the driver skip this step\&.
+.RE
+.PP
+\fBnovendor\fR
+.RS 4
+Some UPSes will lock up if you attempt to read vendor information from them\&. Setting this flag will make the driver skip this step\&.
+.RE
+.PP
+\fBprotocol =\fR \fIstring\fR
+.RS 4
+Skip autodetection of the protocol to use and only use the one specified\&. Supported values
+\fImegatec\fR,
+\fImegatec/old\fR,
+\fImustek\fR
+and
+\fIzinto\fR\&.
+.RE
+.PP
+\fBruntimecal =\fR \fIvalue,value,value,value\fR
+.RS 4
+Parameter used in the (optional) runtime estimation\&. This takes two runtimes at different loads\&. Typically, this uses the runtime at full load and the runtime at half load\&. For instance, if your UPS has a rated runtime of 240 seconds at full load and 720 seconds at half load, you would enter
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+runtimecal = 240,100,720,50
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The first load should always be higher than the second\&. If you have values available for loads other than 100 and 50 % respectively, you can use those too, but keep them spaced apart as far as reasonably possible\&. Just don\(cqt get too close to no load (prediction of runtime depends more on idle load for the battery then)\&.
+.RE
+.PP
+\fBchargetime =\fR \fIvalue\fR
+.RS 4
+The time needed to fully recharge the battery after being fully discharged\&. If not specified, the driver defaults to 43200 seconds (12 hours)\&. Only used if
+\fBruntimecal\fR
+is also specified\&.
+.RE
+.PP
+\fBidleload =\fR \fIvalue\fR
+.RS 4
+Minimum battery load used by the driver to estimate the runtime\&. If not specified, the driver defaults to 10%\&. Only used if
+\fBruntimecal\fR
+is also specified\&.
+.RE
+.SS "SERIAL INTERFACE ONLY"
+.PP
+\fBcablepower =\fR \fIstring\fR
+.RS 4
+By default the driver will set DTR and clear RTS (\fInormal\fR)\&. If you find that your UPS isn\(cqt detected or the communication with the UPS is unreliable, you may try if clear DTR and set RTS (\fIreverse\fR), set DTR and RTS (\fIboth\fR) or clear DTR and RTS (\fInone\fR) improves this situation\&.
+.RE
+.SH "UPS COMMANDS"
+.sp
+This driver supports some instant commands (see \fBupscmd\fR(8)):
+.PP
+\fBbeeper\&.toggle\fR
+.RS 4
+Toggle the UPS beeper\&. (Not available on some hardware\&.)
+.RE
+.PP
+\fBload\&.on\fR
+.RS 4
+Turn on the load immediately\&.
+.RE
+.PP
+\fBload\&.off\fR
+.RS 4
+Turn off the load immediately (see
+KNOWN PROBLEMS)\&.
+.RE
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load and return when power is back\&. Uses the timers defined by
+\fBondelay\fR
+and
+\fBoffdelay\fR\&.
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+Turn off the load and remain off (see
+KNOWN PROBLEMS)\&. Uses the timer defined by
+\fBoffdelay\fR\&.
+.RE
+.PP
+\fBshutdown\&.stop\fR
+.RS 4
+Stop a shutdown in progress\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\&.deep\fR
+.RS 4
+Perform a long battery test (Not available on some hardware\&.)
+.RE
+.PP
+\fBtest\&.battery\&.start\&.quick\fR
+.RS 4
+Perform a (10 second) battery test\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+Perform a battery test for the duration of
+\fIvalue\fR
+minutes\&.
+.RE
+.PP
+\fBtest\&.battery\&.stop\fR
+.RS 4
+Stop a running battery test (not available on some hardware\&.)
+.RE
+.SH "BATTERY CHARGE GUESSTIMATION"
+.sp
+Due to popular demand, this driver will report a guesstimated \fBbattery\&.charge\fR value and optionally \fBbattery\&.runtime\fR, provided you specified a couple of the EXTRA ARGUMENTS listed above\&.
+.sp
+If you specify both \fBbattery\&.voltage\&.high\fR and \fBbattery\&.voltage\&.low\fR in \fBups.conf\fR(5), but don\(cqt enter \fBruntimecal\fR, it will guesstimate the state of charge by looking at the battery voltage alone\&. This is not reliable under load, as this only gives reasonably accurate readings if you disconnect the load, let the battery rest for a couple of minutes and then measure the open cell voltage\&. This just isn\(cqt practical if the power went out and the UPS is providing power for your systems\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+                     battery\&.voltage \- battery\&.voltage\&.low
+battery\&.charge =  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- x 100 %
+                  battery\&.voltage\&.high \- battery\&.voltage\&.low
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+There is a way to get better readings without disconnecting the load, but this requires one to keep track on how much (and how fast) current is going in\- and out of the battery\&. If you specified the \fBruntimecal\fR, the driver will attempt to do this\&. Note however, that this heavily relies on the values you enter and that the UPS must be able to report the load as well\&. There are quite a couple of devices that report 0% (or any other fixed value) at all times, in which case this obviously doesn\(cqt work\&.
+.sp
+The driver also has no way of determining the degradation of the battery capacity over time, so you\(cqll have to deal with this yourself (by adjusting the values in \fBruntimecal\fR)\&. Also note that the driver guesses the initial state of charge based on the battery voltage, so this may be less than 100%, even when you are certain that they are full\&. There is just no way to reliably measure this between 0 and 100% full charge\&.
+.sp
+This is better than nothing (but not by much)\&. If any of the above calculations are giving you incorrect readings, remember that you are the one who put in the values in \fBups.conf\fR(5), so don\(cqt complain to the author\&. If you need something better, consider buy an UPS that reports \fBbattery\&.charge\fR and \fBbattery\&.runtime\fR all by itself without the help of a NUT driver\&.
+.SH "NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS"
+.sp
+The blazer drivers having replaced the megatec ones, some configuration changes may be required by users switching to blazer\&.
+.sp
+Part of this, the following megatec options, in ups\&.conf, have to be changed:
+.PP
+\fBbattvolts\fR
+.RS 4
+You need to use
+\fIdefault\&.battery\&.voltage\&.high\fR
+and
+\fIdefault\&.battery\&.voltage\&.low\fR
+.RE
+.PP
+\fBdtr and rts\fR
+.RS 4
+You need to use
+\fIcablepower\fR
+.RE
+.PP
+\fBignoreoff\fR
+.RS 4
+This parameter can simply be discarded, since it was a wrong understanding of the specification\&.
+.RE
+.SH "KNOWN PROBLEMS"
+.sp
+Some UPS commands aren\(cqt supported by all models\&. In most cases, the driver will send a message to the system log when the user tries to execute an unsupported command\&. Unfortunately, some models don\(cqt even provide a way for the driver to check for this, so the unsupported commands will silently fail\&.
+.sp
+Both the \fBload\&.off\fR and \fBshutdown\&.stayoff\fR instant commands are meant to turn the load off indefinitely\&. However, some UPS models don\(cqt allow this\&.
+.sp
+Some models report a bogus value for the beeper status (will always be \fIenabled\fR or \fIdisabled\fR)\&. So, the \fBbeeper\&.toggle\fR command may appear to have no effect in the status reported by the driver when, in fact, it is working fine\&.
+.sp
+The temperature and load value is known to be bogus in some models\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arjen de Korte <adkorte\-guest at alioth\&.debian\&.org>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Alexander Gordeev <lasaine at lvk\&.cs\&.msu\&.su>
+.RE
+.SH "SEE ALSO"
+.sp
+\fBblazer_usb\fR(8), \fBnutupsdrv\fR(8), \fBupsc\fR(8), \fBupscmd\fR(8), \fBupsrw\fR(8)
+.SS "Internet Resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT HCL:
+https://www\&.networkupstools\&.org/stable\-hcl\&.html
+.RE

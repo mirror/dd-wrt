@@ -1,0 +1,91 @@
+'\" t
+.\"     Title: belkin
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BELKIN" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+belkin \- Driver for Belkin serial UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBbelkin\fR \-h
+.sp
+\fBbelkin\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the belkin driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The \fBbelkin\fR driver is known to support the Regulator Pro 525 (F6C525\-SER)\&. Other similar models such as the 425 and 625 should also work\&.
+.sp
+The Trust UPS and older Belkin units are not supported\&.
+.sp
+This driver only supports serial connections\&. If your UPS has a USB port, please consult the Hardware Compatibility List (HCL) to see which of the USB drivers you should use\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver does not support any extra settings in the \fBups.conf\fR(5)\&.
+.SH "BUGS"
+.sp
+There are dragons lurking within the protocol to this UPS\&. I have one that essentially behaves like a glorified power strip due to some invasive probing on my part\&. Don\(cqt mess with it directly\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+the driver doesn\(cqt go anywhere near these character sequences, so it won\(cqt zap your UPS\&. I only mention this here as yet another reminder of the perils of closed hardware\&.
+.sp .5v
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Other Belkin drivers:"
+.sp
+\fBbelkinunv\fR(8), \fBblazer_ser\fR(8), \fBblazer_usb\fR(8), \fBusbhid-ups\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

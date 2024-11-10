@@ -1,0 +1,137 @@
+'\" t
+.\"     Title: mge-shut
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "MGE\-SHUT" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+mge-shut \- Driver for SHUT Protocol UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBmge\-shut\fR \-h
+.sp
+\fBmge\-shut\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the mge\-shut driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+mge\-shut supports all recent Eaton, MGE and Dell UPS models which use the SHUT (Serial HID UPS Transfer) protocol\&.
+.sp
+Older MGE models, such as Pulsar ESV+, Pulsar EX and Pulsar ES+, use the U\-Talk protocol and should use the mge\-utalk driver\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver also supports the following optional settings:
+.PP
+\fBlowbatt\fR=\fInum\fR
+.RS 4
+Set the low battery warning threshold at which shutdown is initiated by
+\fBupsmon\fR(8)\&.
+.sp
+The factory default value is 30 (in percent), and can be settable depending on the exact model\&.
+.RE
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Set the timer before the UPS is turned off after the kill power command is sent (via the
+\fB\-k\fR
+switch)\&.
+.sp
+The default value is 20 (in seconds)\&. Usually this
+\fBmust be lower\fR
+than
+\fIondelay\fR, but the driver will
+\fBnot\fR
+warn you upon startup if it isn\(cqt\&.
+.RE
+.PP
+\fBondelay\fR=\fInum\fR
+.RS 4
+Set the timer for the UPS to switch on in case the power returns after the kill power command had been sent but before the actual switch off\&. This ensures the machines connected to the UPS are, in all cases, rebooted after a power failure\&.
+.sp
+The default value is 30 (in seconds)\&. Usually this
+\fBmust be greater\fR
+than offdelay, but the driver will
+\fBnot\fR
+warn you upon startup if it isn\(cqt\&. Some UPSes will restart no matter what, even if the power is (still) out at the moment this timer elapses\&. In that case, you could try if setting
+\fIondelay = \-1\fR
+in
+\fBups\&.conf\fR
+helps\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+ondelay parameter was set in ten seconds unit in the legacy mge\-shut driver ( 3 for 30 seconds) \&. It is now set in seconds ( 30 for 30 seconds)\&. Make sure you use the correct unit in your configuration\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBnotification\fR=\fInum\fR
+.RS 4
+Set notification type to 1 (no), 2 (light) or 3 (yes)\&.
+.sp
+This argument is ignored\&. It is only here for backward compatibility\&.
+.RE
+.SH "KNOWN ISSUES"
+.SS "Repetitive timeout and staleness"
+.sp
+Some models tends to be unresponsive with the default polling frequency\&. The result is that you have some "data stale" errors in your system log\&.
+.sp
+In this case, simply modify the general parameter "pollinterval" to a higher value (like 10 for 10 seconds)\&. This should solve the issue\&.
+.sp
+Using \fInotification=3\fR might also help\&.
+.SH "AUTHOR"
+.sp
+Arnaud Quette
+.SH "SEE ALSO"
+.SS "The core driver"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

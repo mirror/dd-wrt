@@ -1,0 +1,199 @@
+'\" t
+.\"     Title: netxml-ups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NETXML\-UPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+netxml-ups \- Driver for Eaton / MGE Network Management Card / Proxy (XML/HTTP Protocol) equipment
+.SH "SYNOPSIS"
+.sp
+\fBnetxml\-ups\fR \-h
+.sp
+\fBnetxml\-ups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the netxml\-ups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+netxml\-ups supports all recent Eaton / MGE models which use a Network Management Card or Proxy (MGE XML/HTTP protocol based)\&. This applies to both Eaton (previously MGE Office Protection Systems) and to MGE UPS SYSTEMS\&. Supported card and proxy models are:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NMC Minislot (Ref 66102, firmware EA or newer),
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SNMP/Web Minislot card (Ref 66244)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NMC Transverse (Ref 66074),
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NMC & Modbus/JBus (Ref 66103),
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Network Management Proxy,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ePDU Monitored (newer version)\&.
+.RE
+.sp
+Older models, such as SNMP card (Ref 66062 and Ref 66045), use the SNMP protocol and should use the \fBsnmp-ups\fR(8) driver with the "mibs=mge" parameter\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBtimeout\fR=\fIvalue\fR
+.RS 4
+The timeout for connecting to and reading from the UPS\&. Defaults to 5 seconds\&. Don\(cqt change this value unless you know exactly what you\(cqre doing\&.
+.RE
+.sp
+This value \fBmust never\fR be higher than half the MAXAGE value specified in \fBupsd.conf\fR(5), otherwise you run the risk that \fBupsd\fR(8) declares the driver stale while it is waiting for a connection to timeout\&.
+.PP
+\fBsubscribe\fR
+.RS 4
+Connect to the NMC in subscribed mode\&. This allows to receive notifications and alarms more quickly, beside from the standard polling requests\&.
+.RE
+.PP
+\fBlogin\fR=\fIvalue\fR
+.RS 4
+Set the login value for authenticated mode\&. This feature also needs the
+\fBpassword\fR
+argument, and allows value settings in the card\&. This feature is not used yet\&.
+.RE
+.PP
+\fBpassword\fR=\fIvalue\fR
+.RS 4
+Set the password value, needed with the login for authenticated mode\&. This feature is not used yet\&.
+.RE
+.PP
+\fBshutdown_duration\fR=\fIvalue\fR
+.RS 4
+Set the shutdown duration of the operating system, in seconds\&. This represents the amount of time needed by the system to operate a clean shutdown\&. Defaults to 120 seconds\&.
+.RE
+.PP
+\fBshutdown_timer\fR=\fIvalue\fR
+.RS 4
+Set the shutdown timer, in seconds\&. After
+\fIvalue\fR
+seconds running on battery, the local system will receive a notification to shutdown\&. Defaults to "none" (disabled)\&.
+.RE
+.PP
+\fBdo_convert_deci\fR
+.RS 4
+If this flag value is present, the driver assumes you have a very old MGE networked UPS (or rather an old network management card firmware) which serves certain measurements spelled 10x too big in the XML markup\&. Originally such measurements were decimated by the driver \(em but this is wrong for newer, more sane, devices \(em so this behavior was deprecated and is now disabled by default\&. Enabling this flag in configuration of a particular driver instance restores the old behavior for those measurements\&.
+.RE
+.SH "IMPLEMENTATION"
+.sp
+The hostname of the UPS is specified with the "port" value in \fBups\&.conf\fR, i\&.e\&.:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[mgexml]
+        driver = netxml\-ups
+        port = http://netxml\-ups\&.example\&.com:80
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Specifying the method to connect to the UPS (http, https) is mandatory\&. If the port is equal to the default for the method specified (80 for http, 443 for https) it may be omitted\&.
+.sp
+In order not to overload older NMCs by polling them too frequently, it is recommended to increase the "pollinterval" (see \fBnutupsdrv\fR(8)) and \fBups.conf\fR(5)) to at least 5 seconds\&.
+.SH "KNOWN ISSUES"
+.sp
+Don\(cqt connect to the UPS through a proxy\&. Although it would be trivial to add support for proxies, this is not recommended and don\(cqt ask for it\&. Not only because it will prevent the driver to make a persistent connection to the UPS, but also it adds an additional failure mode\&. If the proxy goes down (for whatever reason), the driver will no longer be able to reach the UPS\&.
+.SH "AUTHORS"
+.sp
+Arjen de Korte <adkorte\-guest@alioth\&.debian\&.org>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

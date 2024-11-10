@@ -1,0 +1,211 @@
+'\" t
+.\"     Title: upsdrvsvcctl
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSDRVSVCCTL" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsdrvsvcctl \- UPS driver service instance controller
+.SH "SYNOPSIS"
+.sp
+\fBupsdrvsvcctl\fR \-h
+.sp
+\fBupsdrvsvcctl\fR [\fIOPTIONS\fR] {start | stop } [\fIups\fR]
+.SH "DESCRIPTION"
+.sp
+\fBupsdrvsvcctl\fR provides a uniform interface for controlling your UPS drivers wrapped into service instances on platforms which support that (currently this covers Linux distributions with systemd and systems derived from Solaris 10 codebase, including proprietary Sun/Oracle Solaris and numerous open\-source illumos distributions with SMF)\&. It may be not installed in packaging for other operating systems\&.
+.sp
+When used properly, upsdrvsvcctl lets you maintain identical startup scripts across multiple systems with different UPS configurations\&.
+.sp
+The goal of this solution is to allow the services of \fBupsd\fR data server to start up even if some of the power devices are currently not accessible, and for NUT drivers to be automatically restarted by the system in case of problems (driver bug, startup failure)\&. It also allows for faster startup of systems which monitor several devices, by letting each driver to start in parallel with others, and not with a sequential loop like was done previously\&.
+.sp
+Independent service instances for each NUT driver also allow one to configure further dependencies, such as that networking must be available for SNMP and similar drivers (but is not needed for local\-medium drivers such as serial or USB)\&.
+.sp
+The old monolithic "all or nothing" solution requiring that all drivers must be running, which sufficed for deployments with a few UPSes, did not really work well for monitoring larger deployments\&. It was also not easy to strike a pre\-packaged balance between early UPS protection for USB/serial home setups vs\&. waiting for network on larger ones\&.
+.sp
+\fBupsdrvsvcctl\fR is a script which mimics the operation of \fBupsdrvctl\fR program (where possible) to provide similar end\-user experience when manipulating drivers wrapped into service instances rather than as directly executed daemons\&. It relies on \fBnut\-driver\-enumerator\&.sh\fR for a large part of actual operations\&.
+.sp
+You should use upsdrvsvcctl instead of direct calls to the drivers and daemon\-based management with \fBupsdrvctl\fR whenever possible (that is, for "production" use on compatible OSes)\&. Otherwise (testing, other OSes) the \fBupsdrvctl\fR is a recommended option\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help text\&.
+.RE
+.PP
+\fB\-t\fR
+.RS 4
+Enable testing mode\&. Testing mode makes upsdrvsvcctl display the actions it would execute without actually doing them\&.
+.RE
+.PP
+\fB\-\-timeout\-cmd <prog>\fR and \fB\-\-timeout\-args <arg>\fR
+.RS 4
+Service management calls will be time\-limited by calling the specified program with its args\&. By default, if coreutils timeout is found, it would be used to limit service calls by 90 sec, to avoid/work around certain hangs that happen in some systemd version under stress\&.
+.RE
+.SH "OPTIONS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL"
+.sp
+Options like \fI\-r\fR, \fI\-u\fR or \fI\-D\fR could be handled by properties of the service instances themselves, with this script helping to configure them (assuming proper privileges of the user who called it)\&. This is not a "production" use case, though, to change such options on a configured system \(em so for experiments and troubleshooting, it may be better to stop the service instance and play with \fBupsdrvctl\fR directly\&.
+.PP
+\fB\-r\fR \fIdirectory\fR
+.RS 4
+If starting a driver, this value will direct it to
+\fBchroot\fR(2) into
+\fIdirectory\fR\&. This can be useful when securing systems\&.
+.RE
+.sp
+This may be set in the ups\&.conf with "chroot" in the global section\&.
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+If starting a driver, this value will direct it to
+\fBsetuid\fR(2) to the user id associated with
+\fIusername\fR\&.
+.RE
+.sp
+If the driver is started as root without specifying this value, it will use the username that was compiled into the binary\&. This defaults to "nobody", and is far from ideal\&.
+.sp
+This may be set in ups\&.conf with "user" in the global section\&.
+.PP
+\fB\-D\fR
+.RS 4
+Raise the driver debug level\&. Use this multiple times for additional details\&.
+.RE
+.SH "COMMANDS"
+.sp
+\fBupsdrvsvcctl\fR supports three of the commands processed by \fBupsdrvctl\fR \(em start, stop and shutdown\&. They take an optional argument which is a UPS name from \fBups.conf\fR(5)\&. Without that argument, they operate on every UPS that is currently configured\&.
+.sp
+Note: shutdown is currently supported by stopping the driver service instances to release the potentially held ports etc\&., calling the \fBupsdrvctl\fR directly for issuing the shutdown command, and restarting the driver service instances to reconnect when the device comes back online\&.
+.PP
+\fBstart\fR
+.RS 4
+Start the UPS driver(s)\&. In case of failure, further attempts may be executed by using the
+\fImaxretry\fR
+and
+\fIretrydelay\fR
+options \- see
+\fBups.conf\fR(5)\&.
+.RE
+.PP
+\fBstop\fR
+.RS 4
+Stop the UPS driver(s)\&.
+.RE
+.sp
+\fBupsdrvsvcctl\fR also supports further operations for troubleshooting the mapping of NUT driver section names to the service instance names (which may differ due to limitations of various systems)\&.
+.PP
+\fBlist\fR
+.RS 4
+list the currently active mapping of service instances to device sections
+.RE
+.PP
+\fBresync\fR
+.RS 4
+update the mapping of service instances for NUT drivers to device section names used in
+\fIups\&.conf\fR
+(register new instances, tear down obsoleted ones)\&.
+.RE
+.SH "COMMANDS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL"
+.PP
+\fBshutdown\fR
+.RS 4
+Command the UPS driver(s) to run their shutdown sequence\&. Drivers are stopped according to their sdorder value \- see
+\fBups.conf\fR(5)\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+this will probably power off your computers, so don\(cqt play around with this option\&. Only use it when your systems are prepared to lose power\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+refer to \fBups.conf\fR(5) for using the \fBnowait\fR parameter\&. It can be overridden by NUT_IGNORE_NOWAIT environment variable (e\&.g\&. used to work around certain issues with systemd otherwise)\&.
+.sp .5v
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBNUT_CONFPATH\fR is the path name of the directory that contains upsd\&.conf and other configuration files\&. If this variable is not set, \fBupsdrvsvcctl\fR (or rather \fBnut\-driver\-enumerator\&.sh\fR) would use a built\-in default, which is often /usr/local/ups/etc\&.
+.SH "DIAGNOSTICS"
+.sp
+upsdrvsvcctl will return a nonzero exit code if it encounters an error while performing the desired operation\&. This will also happen if a driver takes longer than the \fImaxstartdelay\fR period to enter the background\&.
+.sp
+Any messages issued by the \fBupsdrvctl\fR program used to start the NUT drivers as part of the service instances\*(Aq implementations, or by the drivers themselves, will be logged by the service management framework facilities and will not appear in your interactive terminal used to manage the driver\&.
+.sp
+Use upsdrvsvcctl list or upsdrvsvcctl list NUT\-device to find out the service instance name for the NUT driver (section name) you are interested in\&. Then look up the service logs (where the outputs of the service implementation program as well as the framework messages about this service are stored), as suggested below:
+.PP
+\fBLinux systemd\fR
+.RS 4
+Messages will normally be kept in the service journal, so:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+journalctl \-lu nut\-driver@instance\-name
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+Note that your local system configuration may be impacted by such nuances as passing the journal data to a standard syslog server, and/or by having a small cache for locally stored journal messages (so older entries would disappear)\&. There may also be or not be a copy of the journals stored in the filesystem\&.
+.PP
+\fBSolaris SMF\fR
+.RS 4
+Look for
+/var/svc/log/system\-power\-nut\-driver:instance\-name\&.log
+file\&.
+.RE
+.SH "AUTHOR"
+.sp
+Jim Klimov <jimklimov+nut@gmail\&.com>
+.SH "SEE ALSO"
+.sp
+\fBupsdrvctl\fR(8), \fBnutupsdrv\fR(8), \fBupsd\fR(8), \fBnut-driver-enumerator\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,58 @@
+'\" t
+.\"     Title: upsclient
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLIENT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsclient \- Network UPS Tools client access library
+.SH "DESCRIPTION"
+.sp
+The Network UPS Tools (NUT) \fBupsclient\fR library provides a number of useful functions for programs to use when communicating with \fBupsd\fR(8)\&. Many of the low\-level socket and protocol details are handled automatically when using this interface\&.
+.sp
+State is maintained across calls in an opaque structure called UPSCONN_t\&. Callers are expected to create one per connection\&. These will be provided to most of the \fBupsclient\fR functions\&. The format of this structure is subject to change, and client programs must not reference elements within it directly\&.
+.SH "INITIALIZATION AND CLEANUP"
+.sp
+Before creating any connection, and in general using any upscli function, you must call \fBupscli_init\fR(3) with proper parameters to initialize upscli module\&.
+.sp
+To register specific host security policy, you must call \fBupscli_add_host_cert\fR(3) before initialize connection to it\&.
+.sp
+In the same way, just before exiting, and after all upscli usage, you must call \fBupscli_cleanup\fR(3) to flush cache files and perform other cleanup\&.
+.SH "NETWORK FUNCTIONS"
+.sp
+To create a new connection, use \fBupscli_connect\fR(3)\&. This will also initialize the UPSCONN_t structure\&. To verify that a connection has been established later, \fBupscli_fd\fR(3) can be used to return the file descriptor\&. Clients wishing to check for the presence and operation of SSL on a connection may call \fBupscli_ssl\fR(3)\&.
+.sp
+The majority of clients will use \fBupscli_get\fR(3) to retrieve single items from the server\&. To retrieve a list, use \fBupscli_list_start\fR(3) to get it started, then call \fBupscli_list_next\fR(3) for each element\&.
+.sp
+Raw lines of text may be sent to \fBupsd\fR(8) with \fBupscli_sendline\fR(3)\&. Reading raw lines is possible with \fBupscli_readline\fR(3)\&. Client programs are expected to format these lines according to the protocol, as no checking will be performed before transmission\&.
+.sp
+At the end of a connection, you must call \fBupsclient_disconnect\fR(3) to disconnect from \fBupsd\fR and release any dynamic memory associated with the UPSCONN_t structure\&. Failure to call this function will result in memory and file descriptor leaks in your program\&.
+.SH "ERROR HANDLING"
+.sp
+In the event of an error, \fBupscli_strerror\fR(3) will provide human\-readable details on what happened\&. \fBupscli_upserror\fR(3) may also be used to retrieve the error number\&. These numbers are defined in \fBupsclient\&.h\fR as \fIUPSCLI_ERR_*\fR\&.
+.SH "SEE ALSO"
+.sp
+\fBlibupsclient-config\fR(1), \fBupscli_init\fR(3), \fBupscli_cleanup\fR(3), \fBupscli_add_host_cert\fR(3), \fBupscli_connect\fR(3), \fBupscli_disconnect\fR(3), \fBupscli_fd\fR(3), \fBupscli_getvar\fR(3), \fBupscli_list_next\fR(3), \fBupscli_list_start\fR(3), \fBupscli_readline\fR(3), \fBupscli_sendline\fR(3), \fBupscli_splitaddr\fR(3), \fBupscli_splitname\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

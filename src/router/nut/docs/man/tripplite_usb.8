@@ -1,0 +1,525 @@
+'\" t
+.\"     Title: tripplite_usb
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "TRIPPLITE_USB" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+tripplite_usb \- Driver for older Tripp Lite USB UPSes (not PDC HID)
+.SH "SYNOPSIS"
+.sp
+\fBtripplite_usb\fR \-h
+.sp
+\fBtripplite_usb\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should work with older Tripp Lite UPSes which are detected as USB HID\-class devices, but are not true HID Power\-Device Class devices\&. So far, the devices supported by tripplite_usb have product ID 0001, and the newer units (such as those with "LCD" in the model name) with product ID 2001 require the \fBusbhid-ups\fR(8) driver instead\&.
+.sp
+Please report success or failure to the nut\-upsuser mailing list\&. A key piece of information is the protocol number, returned in ups\&.firmware\&.aux\&. Also, be sure to turn on debugging (\fI\-DDD\fR) for more informative log messages\&.
+.sp
+If your Tripp Lite UPS uses a serial port, you may wish to investigate the \fBtripplite\fR(8) or \fBtripplitesu\fR(8) drivers\&.
+.sp
+This driver has been tested with the following models:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+INTERNETOFFICE700
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OMNIVS1000
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+OMNIVS1500XL (some warnings)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMART700USB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMART1500RM2U
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMART2200RMXL2U
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+SMART3000RM2U
+.RE
+.sp
+If you have used Tripp Lite\(cqs PowerAlert software to connect to your UPS, there is a good chance that \fItripplite_usb\fR will work if it uses one of the following protocols:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Protocol 0004
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Protocol 1001
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Protocol 2001
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Protocol 3003
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Protocol 3005
+.RE
+.sp
+On the other hand, if the web page for your UPS on the Tripp\-Lite website says "HID\-compliant USB port also enables direct integration with built\-in power management and auto\-shutdown features of Windows and MAC OS X", then you should use the \fBusbhid-ups\fR(8) driver instead\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file (or with \fI\-x\fR on the command line):
+.PP
+\fBport =\fR \fIstring\fR
+.RS 4
+Some
+\fIvalue\fR
+must be set, typically
+\fBauto\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+This could be a device filesystem path like
+/dev/usb/hiddev0
+but current use of libusb API precludes knowing and matching by such identifiers\&. They may also be inherently unreliable (dependent on re\-plugging and enumeration order)\&. At this time the actual
+\fIvalue\fR
+is ignored, but syntactically some
+\fIport\fR
+configuration must still be there\&.
+.sp .5v
+.RE
+.RE
+.sp
+It is possible to control multiple UPS units simultaneously by running several instances of this driver, provided they can be uniquely distinguished by setting some combination of the \fBvendor\fR, \fBproduct\fR, \fBvendorid\fR, \fBproductid\fR, \fBserial\fR, \fBbus\fR and/or \fBdevice\fR options detailed below\&. For devices or operating systems that do not provide sufficient information, the \fBallow_duplicates\fR option can be of use (limited and risky!)
+.PP
+\fBvendorid =\fR \fIregex\fR, \fBproductid =\fR \fIregex\fR, \fBvendor =\fR \fIregex\fR, \fBproduct =\fR \fIregex\fR, \fBserial =\fR \fIregex\fR
+.RS 4
+Select a specific UPS, in case there is more than one connected via USB\&. Each option specifies an extended regular expression (see
+\fBregex(7)\fR
+for more information on regular expressions), which must match the UPS\(cqs entire respective vendor/product/serial string (minus any surrounding whitespace), or the whole 4\-digit hexadecimal code for
+vendorid
+and
+productid\&.
+.sp
+Try
+\fBlsusb(8)\fR
+or running this NUT driver with
+\fB\-DD\fR
+command\-line argument for finding out the strings to match\&.
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendor="Foo\&.Corporation\&.*"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendorid="051d*"
+(APC)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x product="\&.*(Smart|Back)\-?UPS\&.*"
+.RE
+.RE
+.PP
+\fBbus =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB bus or group of buses\&. The argument is a regular expression that must match the bus name where the UPS is connected (e\&.g\&.
+bus="002"
+or
+bus="00[2\-3]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.RE
+.PP
+\fBdevice =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB device or group of devices\&. The argument is a regular expression that must match the device name where the UPS is connected (e\&.g\&.
+device="001"
+or
+device="00[1\-2]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+device numbers are not guaranteed by the OS to be stable across re\-boots or device re\-plugging\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBbusport =\fR \fIregex\fR
+.RS 4
+If supported by the hardware, OS and libusb on the particular deployment, this option should allow to specify physical port numbers on an USB hub, rather than logical
+device
+enumeration values, and in turn \(em this should be less volatile across reboots or re\-plugging\&. The value may be seen in the USB topology output of
+lsusb \-tv
+on systems with that tool, for example\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option is not practically supported by some NUT builds (it should be ignored with a warning then), and not by all systems that NUT can run on\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBallow_duplicates\fR
+.RS 4
+If you have several UPS devices which may not be uniquely identified by the options above (e\&.g\&. only VID:PID can be discovered there), this flag allows each driver instance where it is set to take the first match if available, or proceed to try another\&.
+.sp
+Normally the driver initialization would abort at this point claiming "Resource busy" or similar error, assuming that the otherwise properly matched device is unique \(em and some other process already handles it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This feature is inherently non\-deterministic! The association of driver instance name to actual device may vary between runs!
+.sp
+If you only care to know that
+\fBat least\fR
+one of your no\-name UPSes is online, this option can help\&.
+.sp
+If you must really know
+\fBwhich\fR
+one, it will not!
+.sp .5v
+.RE
+.RE
+.PP
+\fBusb_set_altinterface =\fR \fIbAlternateSetting\fR
+.RS 4
+Force redundant call to
+usb_set_altinterface(), especially if needed for devices serving multiple USB roles where the UPS is not represented by the interface number
+0
+(default)\&.
+.RE
+.PP
+\fBusb_config_index\fR, \fBusb_hid_rep_index\fR, \fBusb_hid_desc_index\fR, \fBusb_hid_ep_in\fR, \fBusb_hid_ep_out\fR
+.RS 4
+Force use of specific interface, endpoint, descriptor index etc\&. numbers, rather than defaulting to 0 (rarely other values in certain drivers for some devices known to use non\-zero numbers)\&. Specified as a hexadecimal number\&.
+.sp
+As a rule of thumb for
+usb_hid_desc_index
+discovery, you can see larger
+wDescriptorLength
+values (roughly 600+ bytes) in reports of
+lsusb
+or similar tools\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x upsid="12345"
+.RE
+.RE
+.sp
+Select a specific UPS by its unique UPS ID\&. The argument is a regular expression that must match the UPS ID string\&. This allows for precise identification of UPS devices when multiple devices of the same make and model are connected\&. See below regarding how to read and write the ups id (unit id) using \fBupsrw\fR(8)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNotes for tripplite_usb driver handling of common USB matching settings:\fR
+.ps -1
+.br
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBproduct\fR
+is a regular expression to match the product string for the UPS\&. This would be useful if you have two different Tripp Lite UPS models connected to the same monitoring system, and you want to be sure that you shut them down in the correct order\&.
+.sp
+This regex is matched against the full USB product string as seen in lsusb(8)\&. The
+ups\&.model
+in the
+\fBupsc\fR(1)
+output only lists the name after
+TRIPP LITE, so to match a SMART2200RMXL2U, you could use the regex
+\&.*SMART2200\&.*\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The
+\fBproductid\fR
+is a regular expression which matches the UPS PID as four hexadecimal digits\&. So far, the only known devices that work with this driver have PID
+0001\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The
+\fBserial\fR
+option may be or not be helpful: it does not appear that these particular Tripp Lite UPSes supported by this driver use the
+iSerial
+descriptor field to return a serial number\&. However, in case your unit does, you may specify it here\&.
+.RE
+.sp .5v
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+This setting controls the delay between receiving the "kill" command (\fI\-k\fR) and actually cutting power to the computer\&.
+.RE
+.PP
+\fBbattery_min\fR, \fBbattery_max\fR
+.RS 4
+These floating\-point values correspond to the "empty" (10%) and "full" (100%) voltages of the battery\&. They are used for an approximation of the battery state\-of\-charge\&. The calculated battery\&.charge value will be clamped to the range of 10% through 100%, so the resting voltage of the charged battery can be used for
+\fBbattery_max\fR, and the higher float charge voltage should not cause problems\&.
+.RE
+.SH "RUNTIME VARIABLES"
+.PP
+\fBups\&.delay\&.shutdown\fR
+.RS 4
+This variable is the same as the
+\fIoffdelay\fR
+setting, but it can be changed at runtime by
+\fBupsrw\fR(8)\&.
+.RE
+.PP
+\fBups\&.id\fR
+.RS 4
+Some SMARTPRO models feature an Unit ID (ups\&.id) that can be set and retrieved\&. If your UPS supports this feature, this variable will be listed in the output of
+\fBupsrw\fR(8)\&.
+.RE
+.PP
+\fBoutlet\&.1\&.switch\fR
+.RS 4
+Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be turned on and off by writing
+\fI1\fR
+or
+\fI0\fR, respectively, to
+outlet\&.1\&.switch
+with
+\fBupsrw\fR(8)\&.
+.sp
+If your unit has multiple switchable outlets, substitute the outlet number for
+\fI1\fR
+in the variable name\&. Be sure to test this first \(em there is no other way to be certain that the number used by the driver matches the label on the unit\&.
+.RE
+.SH "KNOWN ISSUES AND BUGS"
+.sp
+The driver was not developed with any official documentation from Tripp Lite, so certain events may confuse the driver\&. If you observe any strange behavior, please re\-run the driver with \-DDD to increase the verbosity\&.
+.sp
+So far, the Tripp Lite UPSes do not seem to have a serial number or other globally unique identifier accessible through USB\&. Thus, when monitoring several Tripp Lite USB UPSes, you should use either the \fIbus\fR, \fIdevice\fR or \fIproduct\fR configuration options to uniquely specify which UPS a given driver instance should control\&.
+.sp
+For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the same time, since they have different USB Product ID strings\&. If you have two SMART1500RM2U units, you would have to find which USB bus and device number each unit is on (via lsusb(8))\&.
+.sp
+Some of the SMART*2U models have a configurable Unit ID number, and you can now use the upsid config argument to uniquely specify which UPS a given driver instance should control\&. This allows for precise identification of UPS devices when multiple devices are connected\&. To retrieve or set the upsid use the \fBupsrw\fR(8) utility\&.
+.SH "AUTHORS"
+.sp
+Written by Charles Lepple, based on the \fBtripplite\fR(8) driver by Rickard E\&. (Rik) Faith and Nicholas Kain\&.
+.sp
+Please do not email the authors directly \- use the nut\-upsdev mailing list\&.
+.sp
+A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by Bradley Feldman (http://www\&.bradleyloritheo\&.com)
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Other drivers for Tripp\-Lite hardware:"
+.sp
+\fBtripplite\fR(8), \fBtripplitesu\fR(8), \fBusbhid-ups\fR(8)
+.SS "Other tools:"
+.sp
+regex(7), lsusb(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

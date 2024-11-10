@@ -1,0 +1,149 @@
+'\" t
+.\"     Title: libnutclient_variables
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBNUTCLIENT_VARIABL" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnutclient_variables, nutclient_get_device_variables, nutclient_get_device_rw_variables, nutclient_has_device_variable, nutclient_get_device_variable_description, nutclient_get_device_variable_values, nutclient_set_device_variable_value, nutclient_set_device_variable_values \- Variable related functions in Network UPS Tools high\-level client access library
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nutclient\&.h>
+.fi
+.sp
+.nf
+typedef void* NUTCLIENT_t;
+.fi
+.sp
+.nf
+typedef char** strarr;
+.fi
+.sp
+.nf
+strarr nutclient_get_device_variables(NUTCLIENT_t client,
+        const char* dev);
+.fi
+.sp
+.nf
+strarr nutclient_get_device_rw_variables(NUTCLIENT_t client,
+        const char* dev);
+.fi
+.sp
+.nf
+int nutclient_has_device_variable(NUTCLIENT_t client,
+        const char* dev, const char* var);
+.fi
+.sp
+.nf
+char* nutclient_get_device_variable_description(NUTCLIENT_t client,
+        const char* dev, const char* var);
+.fi
+.sp
+.nf
+strarr nutclient_get_device_variable_values(NUTCLIENT_t client,
+        const char* dev, const char* var);
+.fi
+.sp
+.nf
+void nutclient_set_device_variable_value(NUTCLIENT_t client,
+        const char* dev, const char* var, const char* value);
+.fi
+.sp
+.nf
+void nutclient_set_device_variable_values(NUTCLIENT_t client,
+        const char* dev, const char* var, const strarr values);
+.fi
+.SH "DESCRIPTION"
+.sp
+These functions allow to manage variables of devices\&.
+.sp
+The \fBnutclient_get_device_variables()\fR function retrieves the list of variables names for a device\&. The returned strarr must be freed by \fIstrarr_free\fR\&.
+.sp
+The \fBnutclient_get_device_rw_variables\fR function retrieves the list of read\-write variables names for a device\&. The returned strarr must be freed by \fIstrarr_free\fR\&.
+.sp
+The \fBnutclient_has_device_variable\fR function tests if the specified variable is supported by the device\&. Return 1 is supported and 0 if not\&.
+.sp
+The \fBnutclient_get_device_variable_description\fR function retrieves the variable description, if any\&. The returned string must be freed\&.
+.sp
+The \fBnutclient_get_device_variable_values\fR returns variable values (generally only one)\&. The returned strarr must be freed by \fIstrarr_free\fR\&.
+.sp
+The \fBnutclient_set_device_variable_value\fR intends to set the value of the specified variable\&.
+.sp
+The \fBnutclient_set_device_variable_values\fR intends to set multiple values of the specified variable\&.
+.sp
+Common arguments:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIdev\fR
+is the device name\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIvar\fR
+is the variable name\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIvalue\fR
+is the variable value\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIvalues\fR
+is the variable array of values\&.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBlibnutclient\fR(3) \fBlibnutclient_devices\fR(3) \fBlibnutclient_general\fR(3)

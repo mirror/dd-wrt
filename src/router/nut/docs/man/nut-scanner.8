@@ -1,0 +1,606 @@
+'\" t
+.\"     Title: nut-scanner
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUT\-SCANNER" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nut-scanner \- scan communication buses for NUT devices
+.SH "SYNOPSIS"
+.sp
+\fBnut\-scanner\fR \-h
+.sp
+\fBnut\-scanner\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+\fBnut\-scanner\fR scans available communication buses and displays any NUT\-compatible devices it has found\&.
+.sp
+\fBnut\-scanner\fR can also display the detected devices in various formats, including ups\&.conf, and ensures that the generated devices name are unique across buses\&.
+.SH "INSTALLATION"
+.sp
+\fBnut\-scanner\fR is only built if libltdl (part of libtool development suite) is available\&. Available options (USB, SNMP, IPMI, \&...) will vary according to the available compile time and runtime dependencies\&. For example, if Net\-SNMP is installed, thus providing libsnmp (\&.so or \&.dll) and headers, both during compilation and runtime, then SNMP discovery will be available\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help text\&.
+.RE
+.SH "DISPLAY OPTIONS"
+.PP
+\fB\-Q\fR | \fB\-\-disp_nut_conf_with_sanity_check\fR
+.RS 4
+Display result in the
+\fIups\&.conf\fR
+format with sanity\-check warnings (if any) as comments (default)\&.
+.RE
+.PP
+\fB\-N\fR | \fB\-\-disp_nut_conf\fR
+.RS 4
+Display result in the
+\fIups\&.conf\fR
+format\&.
+.RE
+.PP
+\fB\-P\fR | \fB\-\-disp_parsable\fR
+.RS 4
+Display result in a parsable format\&.
+.RE
+.SH "BUS OPTIONS"
+.PP
+\fB\-C\fR | \fB\-\-complete_scan\fR
+.RS 4
+Scan all available communication buses (default behavior)
+.RE
+.PP
+\fB\-U\fR | \fB\-\-usb_scan\fR
+.RS 4
+List all NUT\-compatible USB devices currently plugged in\&.
+.sp
+This option can be specified several times, for more hardware link\-specific details; these can be counter\-productive in case of USB enumeration changes over time:
+.sp
+|
+\-U
+| do not report any bus/device/busport details | |
+\-UU
+| report bus and busport, if available | |
+\-UUU
+| report bus/device/busport details | |
+\-UUUU
+| report bus/device/busport details, and bcdDevice (limited use and benefit) |
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+For reliability, it is preferable to match just by vendor and product identification, and a serial number if available and unique\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fB\-S\fR | \fB\-\-snmp_scan\fR
+.RS 4
+Scan SNMP devices\&. Requires at least a
+\fIstart IP\fR, and optionally, an
+\fIend IP\fR\&. See specific SNMP OPTIONS for community and security settings\&.
+.RE
+.PP
+\fB\-M\fR | \fB\-\-xml_scan\fR
+.RS 4
+Scan XML/HTTP devices\&. Can broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices\&. No IP required in this mode\&.
+.RE
+.PP
+\fB\-O\fR | \fB\-\-oldnut_scan\fR
+.RS 4
+Scan NUT devices (i\&.e\&. upsd daemon) on IP ranging from
+\fIstart IP\fR
+to
+\fIend IP\fR\&.
+.RE
+.PP
+\fB\-n\fR | \fB\-\-nut_simulation_scan\fR
+.RS 4
+Scan NUT simulated devices (\&.dev files in $CONFPATH)\&.
+.RE
+.PP
+\fB\-A\fR | \fB\-\-avahi_scan\fR
+.RS 4
+Scan NUT servers using Avahi request on the current network interfaces\&. No IP required\&.
+.RE
+.PP
+\fB\-I\fR | \fB\-\-ipmi_scan\fR
+.RS 4
+Scan NUT compatible power supplies available via IPMI on the current host, or over the network\&.
+.RE
+.PP
+\fB\-E\fR | \fB\-\-eaton_serial\fR \fIserial ports\fR
+.RS 4
+Scan Eaton devices (XCP and SHUT) available via serial bus on the current host\&. This option must be requested explicitly, even for a complete scan\&.
+\fIserial ports\fR
+can be expressed in various forms:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIauto\fR
+to scan all serial ports\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a single character indicating a port number (\fI0\fR
+(zero) for /dev/ttyS0 and /dev/ttyUSB0 on Linux,
+\fI1\fR
+for COM1 on Windows,
+\fIa\fR
+for /dev/ttya on Solaris\&...)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a range of N characters, hyphen separated, describing the range of ports using
+\fIX\-Y\fR, where X and Y are characters referring to the port number\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a single port name\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a list of ports name, coma separated, like
+\fI/dev/ttyS1,/dev/ttyS4\fR\&.
+.RE
+.RE
+.SH "NETWORK OPTIONS"
+.PP
+\fB\-t\fR | \fB\-\-timeout\fR \fItimeout\fR
+.RS 4
+Set the network timeout in seconds\&. Default timeout is 5 seconds\&.
+.RE
+.PP
+\fB\-s\fR | \fB\-\-start_ip\fR \fIstart IP\fR
+.RS 4
+Set the first IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut) or optional (XML/HTTP)\&.
+.RE
+.PP
+\fB\-e\fR | \fB\-\-end_ip\fR \fIend IP\fR
+.RS 4
+Set the last IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut) or optional (XML/HTTP)\&. If this parameter is omitted, only the
+\fIstart IP\fR
+is scanned\&. If
+\fIend IP\fR
+is less than
+\fIstart IP\fR, both parameters are internally permuted\&.
+.RE
+.PP
+\fB\-m\fR | \fB\-\-mask_cidr\fR \fIIP address/mask\fR
+.RS 4
+Set a range of IP using CIDR notation\&.
+.RE
+.SH "NUT DEVICE OPTION"
+.PP
+\fB\-p\fR | \fB\-\-port\fR \fIport number\fR
+.RS 4
+Set the port number of scanned NUT devices (default 3493)\&.
+.RE
+.SH "SNMP V1 OPTION"
+.PP
+\fB\-c\fR | \fB\-\-community\fR \fIcommunity\fR
+.RS 4
+Set SNMP v1 community name (default = public)\&.
+.RE
+.SH "SNMP V3 OPTIONS"
+.PP
+\fB\-l\fR | \fB\-\-secLevel\fR \fIsecurity level\fR
+.RS 4
+Set the
+\fIsecurity level\fR
+used for SNMPv3 messages\&. Allowed values are: noAuthNoPriv, authNoPriv and authPriv\&. This parameter is mandatory if you use non\-trivial authentication\&.
+.RE
+.PP
+\fB\-u\fR | \fB\-\-secName\fR \fIsecurity name\fR
+.RS 4
+Set the
+\fIsecurity name\fR
+used for authenticated SNMPv3 messages\&. This parameter is mandatory if you set
+\fIsecurity level\fR\&.
+.RE
+.PP
+\fB\-w\fR | \fB\-\-authProtocol\fR \fIauthentication protocol\fR
+.RS 4
+Set the
+\fIauthentication protocol\fR
+used for authenticated SNMPv3 messages\&. Allowed values are MD5, SHA, SHA256, SHA384 or SHA512 (depending on Net\-SNMP library capabilities; check help of the
+nut\-scanner
+binary program for the run\-time supported list)\&. Default value is MD5\&.
+.RE
+.PP
+\fB\-W\fR | \fB\-\-authPassword\fR \fIauthentication pass phrase\fR
+.RS 4
+Set the
+\fIauthentication pass phrase\fR
+used for authenticated SNMPv3 messages\&. This parameter is mandatory if you set
+\fIsecurity level\fR
+to authNoPriv or authPriv\&.
+.RE
+.PP
+\fB\-x\fR | \fB\-\-privProtocol\fR \fIprivacy protocol\fR
+.RS 4
+Set the
+\fIprivacy protocol\fR
+used for encrypted SNMPv3 messages\&. Allowed values are DES, AES, AES192 or AES256 (depending on Net\-SNMP library capabilities; check help of the
+nut\-scanner
+binary program for the run\-time supported list)\&. Default value is DES\&.
+.RE
+.PP
+\fB\-X\fR | \fB\-\-privPassword\fR \fIprivacy pass phrase\fR
+.RS 4
+Set the
+\fIprivacy pass phrase\fR
+used for encrypted SNMPv3 messages\&. This parameter is mandatory if you set
+\fIsecurity level\fR
+to authPriv\&.
+.RE
+.SH "IPMI OPTIONS"
+.PP
+\fB\-b\fR | \fB\-\-username\fR \fIusername\fR
+.RS 4
+Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN\&. No default)\&.
+.RE
+.PP
+\fB\-B\fR | \fB\-\-password\fR \fIpassword\fR
+.RS 4
+Specify the password to use when authenticating with the remote host (mandatory for IPMI over LAN\&. No default)\&.
+.RE
+.PP
+\fB\-d\fR | \fB\-\-authType\fR \fIauthentication type\fR
+.RS 4
+Specify the IPMI 1\&.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\&. This forces connection through the
+\fIlan\fR
+IPMI interface , thus in IPMI 1\&.5 mode\&.
+.RE
+.PP
+\fB\-L\fR | \fB\-\-cipher_suite_id\fR \fIcipher suite identifier\fR
+.RS 4
+Specify the IPMI 2\&.0 cipher suite ID to use\&. The Cipher Suite ID identifies a set of authentication, integrity, and confidentiality algorithms to use for IPMI 2\&.0 communication\&.
+.sp
+The authentication algorithm identifies the algorithm to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the confidentiality algorithm identifies the algorithm to use for payload encryption (default=3)\&.
+.sp
+The following cipher suite ids are currently supported (Authentication; Integrity; Confidentiality):
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB0\fR: None; None; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB1\fR: HMAC\-SHA1; None; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB2\fR: HMAC\-SHA1; HMAC\-SHA1\-96; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB3\fR: HMAC\-SHA1; HMAC\-SHA1\-96; AES\-CBC\-128
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB6\fR: HMAC\-MD5; None; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB7\fR: HMAC\-MD5; HMAC\-MD5\-128; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB8\fR: HMAC\-MD5; HMAC\-MD5\-128; AES\-CBC\-128
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB11\fR: HMAC\-MD5; MD5\-128; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB12\fR: HMAC\-MD5; MD5\-128; AES\-CBC\-128
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB15\fR: HMAC\-SHA256; None; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB16\fR: HMAC\-SHA256; HMAC_SHA256_128; None
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fB17\fR: HMAC\-SHA256; HMAC_SHA256_128; AES\-CBC\-128
+.RE
+.RE
+.SH "MISCELLANEOUS OPTIONS"
+.PP
+\fB\-V\fR | \fB\-\-version\fR
+.RS 4
+Display NUT version\&.
+.RE
+.PP
+\fB\-a\fR | \fB\-\-available\fR
+.RS 4
+Display available buses that can be scanned, depending on how the nut\-scanner binary program has been compiled\&. (e\&.g\&. OLDNUT, USB, SNMP, XML, AVAHI, IPMI)\&.
+.RE
+.PP
+\fB\-q\fR | \fB\-\-quiet\fR
+.RS 4
+Display only scan result\&. No information on currently scanned bus is displayed\&.
+.RE
+.PP
+\fB\-D\fR | \fB\-\-nut_debug_level\fR
+.RS 4
+Raise the debugging level\&. Use this multiple times to see more details\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+The level of debugging needed depends both on nut\-scanner and the problem you\(cqre trying to diagnose\&. Therefore, first explain the problem you have with nut\-scanner to a developer/maintainer, before sending them debugging output\&. More often than not, if you just pick a level, the output may be either too limited or too verbose to be of any use\&.
+.sp .5v
+.RE
+.SH "EXAMPLES"
+.sp
+To scan USB devices only:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-U
+
+[nutdev\-usb1]
+        driver = "snmp\-ups"
+        port = "192\&.168\&.0\&.42"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To scan SNMP v1 device with public community on address range 192\&.168\&.0\&.0 to 192\&.168\&.0\&.255:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-S \-s 192\&.168\&.0\&.0 \-e 192\&.168\&.0\&.255
+
+[nutdev\-snmp1]
+        driver = "snmp\-ups"
+        port = "192\&.168\&.0\&.42"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The same using CIDR notation:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-S \-m 192\&.168\&.0\&.0/24
+
+[nutdev\-snmp1]
+        driver = "snmp\-ups"
+        port = "192\&.168\&.0\&.42"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To scan NUT servers with a timeout of 10 seconds on IP range 192\&.168\&.0\&.0 to 192\&.168\&.0\&.127 using CIDR notation:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-O \-t 10 \-m 192\&.168\&.0\&.0/25
+
+[nutdev\-nut1]
+        driver = "dummy\-ups"
+        port = "dummy\-test@192\&.168\&.1\&.28"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To scan for power supplies, through IPMI (1\&.5 mode) over the network, on address range 192\&.168\&.0\&.0 to 192\&.168\&.0\&.255 using CIDR notation:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-I \-m 192\&.168\&.0\&.0/24 \-b username \-B password
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To scan for Eaton serial devices on ports 0 and 1 (/dev/ttyS0, /dev/ttyUSB0, /dev/ttyS1 and /dev/ttyUSB1 on Linux):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-\-eaton_serial 0\-1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+To scan for Eaton serial devices on ports 1 and 2 (COM1 and COM2 on Windows):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+:; nut\-scanner \-\-eaton_serial 1\-2
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SEE ALSO"
+.sp
+\fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

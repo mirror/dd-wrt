@@ -1,0 +1,74 @@
+'\" t
+.\"     Title: nutscan_add_device_to_device
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_ADD_DEVICE_T" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_add_device_to_device \- Concatenate two devices structure\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+.fi
+.sp
+.nf
+nutscan_device_t * nutscan_add_device_to_device(
+      nutscan_device_t * first,
+      nutscan_device_t * second);
+.fi
+.SH "DESCRIPTION"
+.sp
+The nutscan_device_t contains the following variables:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+nutscan_device_type_t   type;
+char *          driver;
+char *          alt_driver_names;
+char *          port;
+nutscan_options_t       opt;
+struct nutscan_device * prev;
+struct nutscan_device * next;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This is a double linked list of device\&. Each device is described by its type, its driver name, its port and any number of optional data\&.
+.sp
+The \fBnutscan_add_device_to_device()\fR concatenates \fIfirst\fR and \fIsecond\fR devices to a unique device\&. No new device is created, the two linked lists are simply linked to each other\&. So \fIfirst\fR and \fIsecond\fR devices are likely to be modified by this function\&.
+.SH "RETURN VALUE"
+.sp
+The \fBnutscan_add_device_to_device()\fR functions returns a pointer to a device containing both passed devices\&. Note that it\(cqs not a new device, so it is either \fIfirst\fR or \fIsecond\fR which is returned\&.
+.SH "NOTES"
+.sp
+Technically, the function is currently defined in \fInutscan\-device\&.h\fR file\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_scan_usb\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_option_to_device\fR(3)

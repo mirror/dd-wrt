@@ -1,0 +1,117 @@
+'\" t
+.\"     Title: macosx-ups
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "MACOSX\-UPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+macosx-ups \- monitor for Mac OS X built\-in UPS and battery driver
+.SH "SYNOPSIS"
+.sp
+\fBmacosx\-ups\fR \-h
+.sp
+\fBmacosx\-ups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the \fBmacosx\-ups\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+\fBmacosx\-ups\fR supports any USB HID Power Device Class (PDC) UPS which is matched by the Mac OS X built\-in drivers\&. It also can monitor a laptop internal battery as though it were an UPS\&.
+.sp
+If the UPS is visible in the Energy Saver preferences pane of System Preferences, this driver should be able to monitor it\&.
+.SH "EXTRA ARGUMENTS"
+.PP
+\fBport\fR=auto
+.RS 4
+Due to changes in the way that Mac OS X lists power sources, the
+\fBport\fR
+parameter no longer has any effect\&. The rest of NUT still requires a value here, and our traditional "don\(cqt care" value is
+auto\&.
+.RE
+.PP
+\fBmodel\fR=\fIregex\fR
+.RS 4
+Likewise, if you have more than one UPS, it may be necessary to specify a
+\fBmodel\fR
+name to match against\&. This parameter is also a case\-insensitive extended regular expression\&.
+.RE
+.SH "DIAGNOSTICS"
+.sp
+If the driver cannot find an UPS, first open System Preferences and see if there is an "UPS" tab on the Energy Saver panel\&. If so, re\-run the driver with the \fB\-D\fR flag to list the names of the power sources found\&.
+.SH "KNOWN ISSUES AND BUGS"
+.sp
+This driver is a monitoring\-only driver, and cannot shut down an UPS on its own\&. However, this should not be a problem in practice: it is monitoring the built\-in Mac OS X UPS driver, which has configuration options for several shutdown scenarios\&. Consult the Energy Saver control panel or \fBpmset\fR(8) for more information\&.
+.sp
+The default distribution of \fBapcupsd\fR installs a kernel extension which prevents Mac OS X from attaching to the UPS\&. In order to use this driver after installing apcupsd, you must first run the apcupsd\-uninstall script and reboot\&.
+.sp
+Note that other UPS monitoring solutions may show more detail than what is provided by the built\-in Mac OS X driver\&. In particular, voltages other than the battery voltage, as well as current and frequency, are typically not shown\&. It may be possible to monitor these values with \fBapcupsd\fR (for APC hardware only) or \fBusbhid-ups\fR(8)\&.
+.SH "AUTHOR"
+.sp
+Charles Lepple <clepple+nut at gmail\&.com>
+.SH "SEE ALSO"
+.sp
+\fBusbhid-ups\fR(8), \fBpmset\fR(8), \fBregex\fR(3)
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The apcupsd home page:
+http://www\&.apcupsd\&.org/
+.RE

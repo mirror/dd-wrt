@@ -1,0 +1,98 @@
+'\" t
+.\"     Title: nutscan_get_serial_ports_list
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_GET_SERIAL_P" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_get_serial_ports_list \- Get a port list name from a range of port\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+.fi
+.sp
+.nf
+char ** nutscan_get_serial_ports_list(const char *ports_range);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutscan_get_serial_ports_list()\fR function returns a null terminated array of strings generated from a port range\&. \fIports_range\fR may be one of:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a single character from 0 to 9 or a to z representing a serial communication port depending on the operating system\&. For instance "0" is converted to /dev/ttyS0 and /dev/ttyUSB0 on Linux; "1" is converted to COM1 on Windows; "c" is converted to /dev/ttyc on Solaris\&...
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a range of character in the form "X\-Y"\&. For instance "0\-1" will be converted to /dev/ttyS0, /dev/ttyS1, /dev/ttyUSB0 and /dev/ttyUSB1 on Linux; "1\-3" will be converted to COM1, COM2 and COM3 on Windows; "a\-c" will be converted to /dev/ttya, /dev/ttyb and /dev/ttyc on Solaris\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a single port name (/dev/ttyS5, COM4\&...)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+a list of port names separated with commas: "/dev/ttyS0,/dev/ttyS2,/dev/ttyS4" or "COM1,COM3"\&...
+.RE
+.sp
+The returned array can be used in a call to \fBnutscan_scan_eaton_serial\fR to get the serial device on a system\&.
+.SH "RETURN VALUE"
+.sp
+The \fBnutscan_get_serial_ports_list()\fR function returns NULL if an error occurred (invalid port range) or a pointer to a null terminated array of strings on success\&.
+.SH "NOTES"
+.sp
+Technically, the function is currently defined in \fInutscan\-serial\&.h\fR file\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_scan_usb\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_scan_eaton_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_display_ups_conf\fR(3)

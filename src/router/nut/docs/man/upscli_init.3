@@ -1,0 +1,74 @@
+'\" t
+.\"     Title: upscli_init
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_INIT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_init \- Initialize upsclient module specifying security properties\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+.fi
+.sp
+.nf
+int upscli_init(int certverify, const char *certpath,
+                       const char *certname, const char *certpasswd);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_init()\fR function initialize upsclient module and set many TLS/SSL\-related properties: \fIcertverify\fR to 1 makes certificate verification required for all SSL connections and \fIcertpath\fR is the location of certificate database\&.
+.sp
+If compiled with OpenSSL, certpath refers to directory containing certificates where the certificates must be named according to their hash values ending in a "\&.0" extension\&. If two certificates result in the same hash value (thus file name), the "\&.0" can be incremented to "\&.1" and so on, as needed\&. The bash command for creating links in this manner would be:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+ln \-s ca\&.pem \&./$(openssl x509 \-hash \-noout \-in ca\&.pem)\&.0
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Alternatively, the c_rehash utility (provided by openssl\-perl) can take a directory and iterate it to link all certificates found in that directory, in the manner described above\&.
+.sp
+If compiled with NSS, certpath refers to a directory containing database files\&.
+.sp
+If compiled with NSS and using SSL, you can specify \fIcertname\fR the name of the certificate to send to upsd and \fIcertpasswd\fR the password used to decrypt certificate private key\&.
+.sp
+If compiled with NSS, it would normally log either the infamous message "Init SSL without certificate database" if no \fIcertpath\fR was provided, or "Init SSL with certificate database located at %s" otherwise\&. Since some programmatic consumers become confused by such extra text on the stderr of tools they call (such as monitoring systems doing upsc queries), you can export an environment variable NUT_QUIET_INIT_SSL with string values "true", "TRUE" or "1", to avoid logging these messages and just emit them as debug stream (at verbosity 1 or higher)\&.
+.sp
+You can call \fBupscli_add_host_cert\fR(3) to register specific host security policy before initialize connections to them\&.
+.sp
+You must call \fBupscli_cleanup\fR(3) when exiting application\&.
+.SH "RETURN VALUE"
+.sp
+The \fBupscli_init()\fR function returns 1 on success, or \-1 if an error occurs\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_add_host_cert\fR(3), \fBupscli_cleanup\fR(3), \fBupscli_disconnect\fR(3), \fBupscli_fd\fR(3), \fBupscli_splitaddr\fR(3), \fBupscli_splitname\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

@@ -1,0 +1,146 @@
+'\" t
+.\"     Title: bcmxcp
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BCMXCP" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+bcmxcp \- Driver for UPSes supporting the serial BCM/XCP protocol
+.SH "SYNOPSIS"
+.sp
+\fBbcmxcp\fR \-h
+.sp
+\fBbcmxcp\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the bcmxcp driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should recognize all serial BCM/XCP\-compatible UPSes\&. It has been developed and tested on Powerware PW5115 and PW9120 hardware\&. If your UPS has a USB connection, you may also consult the \fBbcmxcp_usb\fR(8) driver documentation\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5)\&.
+.PP
+\fBshutdown_delay=\fR\fIdelay\fR
+.RS 4
+The number of seconds that the UPS should wait between receiving the shutdown command (upsdrvctl shutdown) and actually shutting off\&.
+.RE
+.PP
+\fBbaud_rate=\fR\fIrate\fR
+.RS 4
+Communication speed for the UPS\&. If this is set to 9600, it tries to connect to the UPS at 9600bps\&. If it fails to communicate, it will go into baud\-hunting\&. It starts at 1200 and goes up to 19200\&. If it succeeds, it tell you the speed it connected with\&. If not included in the config, it defaults to baud\-hunting\&.
+.RE
+.SH "DEFAULT VALUES FOR THE EXTRA ARGUMENTS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBshutdown_delay =\fR
+\fI120\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbaud_rate =\fR
+\fInone\fR
+.RE
+.SH "INSTANT COMMANDS"
+.sp
+This driver supports the following Instant Commands:
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load and return when power is back\&.
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+Turn off the load and remain off\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\fR
+.RS 4
+Start a battery test\&.
+.RE
+.PP
+\fBoutlet\&.n\&.shutdown\&.return\fR
+.RS 4
+Turn off the load on outlet
+\fIn\fR
+and return when power is back\&. (\fIn\fR
+is the outlet number reported by the upsc command)
+.RE
+.SH "TODO LIST"
+.PP
+Report UPS statistics information
+.RS 4
+BCM/XCP supports reporting of UPS statistics data\&.
+.RE
+.PP
+Change settings
+.RS 4
+Access the config register to change settings\&.
+.RE
+.SH "BUGS"
+.sp
+None known\&.
+.SH "AUTHOR"
+.sp
+Tore Ørpetveit <tore@orpetveit\&.net>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "The USB BCM/XCP driver:"
+.sp
+\fBbcmxcp_usb\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

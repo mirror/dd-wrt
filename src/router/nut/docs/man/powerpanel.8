@@ -1,0 +1,195 @@
+'\" t
+.\"     Title: powerpanel
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "POWERPANEL" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+powerpanel \- Driver for serial PowerPanel Plus compatible UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBpowerpanel\fR \-h
+.sp
+\fBpowerpanel\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the powerpanel driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports CyberPower BC1200, PR2200 and many other similar devices, both for the text and binary protocols\&. The driver will autodetect which protocol is used\&.
+.sp
+If your Cyber Power Systems UPS has a USB port, you may wish to use the \fBusbhid-ups\fR(8) driver\&. The \fBsnmp-ups\fR(8) driver supports several network cards via SNMP\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in \fBups.conf\fR(5):
+.PP
+\fBprotocol=\fR[\fItext,binary\fR]
+.RS 4
+Override the default autodetection of the protocol\&.
+.RE
+.PP
+\fBmanufacturer=\fR\fIvalue\fR
+.RS 4
+If you don\(cqt like the autodetected value, you can override this by setting it here\&.
+.RE
+.PP
+\fBmodel=\fR\fIvalue\fR
+.RS 4
+Like manufacturer above\&.
+.RE
+.PP
+\fBserial=\fR\fIvalue\fR
+.RS 4
+Like manufacturer above\&.
+.RE
+.PP
+\fBondelay=\fR\fIvalue\fR
+.RS 4
+Time to wait before switching on the UPS (1 \- 9999 minutes, 0=indefinite)\&. Only available with the text protocol driver (see
+Support Status)\&.
+.RE
+.PP
+\fBoffdelay=\fR\fIvalue\fR
+.RS 4
+Time to wait before shutting down the UPS (6 \- 600 seconds)\&. Values below 60 seconds will be truncated to 6 seconds intervals, values above 60 seconds to 60 seconds intervals\&. Only available with the text protocol driver (see
+Support Status)\&.
+.RE
+.SH "VARIABLES"
+.sp
+Depending on the type of your UPS unit, some of the following variables may be changed with \fBupsrw\fR(8)\&. If the driver can\(cqt read a variable from the UPS, it will not be made available\&.
+.PP
+\fBinput\&.transfer\&.high\fR
+.RS 4
+writable: high transfer voltage point in V
+.RE
+.PP
+\fBinput\&.transfer\&.low\fR
+.RS 4
+writable: low transfer voltage point in V
+.RE
+.PP
+\fBbattery\&.charge\&.low\fR
+.RS 4
+writable: remaining battery charge percentage for low battery warning
+.RE
+.PP
+\fBoutput\&.voltage\&.nominal\fR
+.RS 4
+writable: nominal output voltage in V
+.RE
+.PP
+\fBups\&.start\&.battery\fR
+.RS 4
+writable: allow cold start from battery
+.RE
+.SH "COMMANDS"
+.sp
+Depending on the type of your UPS unit, some of the following commands may be available\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+test\&.battery\&.start\&.quick, test\&.battery\&.stop
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+beeper\&.enable, beeper\&.disable, beeper\&.toggle
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+shutdown\&.return, shutdown\&.reboot, shutdown\&.stayoff
+.RE
+.sp
+On many devices, these commands are unreliable, so before using them you must verify that these work as expected (see Shutdown Issues)\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+shutdown\&.stop
+.RE
+.SH "SUPPORT STATUS"
+.sp
+Vendor support is absent for this driver, so if you need some features that are currently not available, provide ample documentation on what the driver should sent to the UPS in order to make this work\&. If more information would be available on the binary protocol, it would probably be possible to make \fIondelay\fR and \fIoffdelay\fR configurable\&. So far, nobody has taken the time to investigate what we should tell the UPS to make this work, and CyberPower isn\(cqt willing to share this with us\&.
+.SH "SHUTDOWN ISSUES"
+.sp
+If the \fBshutdown\&.return\fR command on your UPS doesn\(cqt seem to work, chances are that your UPS is an older model\&. Try a couple of different settings for \fIoffdelay\fR\&. If no value in the range 6\&.\&.600 works, your UPS likely doesn\(cqt support this\&. In order to get the expected behaviour, it requires \fBshutdown\&.stayoff\fR (when on battery) and \fBshutdown\&.reboot\fR (when on mains)\&. The driver will automatically fallback to these commands if \fBshutdown\&.return\fR fails, and tries to detect which one should be used when called with the \fI\-k\fR option (or through \fBupsdrvctl shutdown\fR)\&.
+.sp
+This isn\(cqt bullet\-proof, however, and you should be prepared that the power will either not be shutdown or that it doesn\(cqt return when the power comes back\&. All models supported by the binary protocol and many supported through the text protocol are affected by this\&.
+.SH "KNOWN PROBLEMS"
+.sp
+The CyberPower OP series don\(cqt offer direct voltage, charge, frequency and temperature readings\&. Instead, they will return a binary value that needs conversion to the actual value\&.
+.sp
+The exact conversion needed is unknown at the time of this writing, hence an estimation was made based om readings from actual devices\&. This may (probably will) be off, possibly a lot\&. Unless you can tell us the exact mapping between values from the UPS and actual readings, don\(cqt bother to complain\&. We\(cqve done the best we can based on the limited information available\&. Remember, a UPS isn\(cqt a measuring instrument\&.
+.SH "AUTHORS"
+.sp
+Arjen de Korte <arjen@de\-korte\&.org>, Doug Reynolds <mav@wastegate\&.net>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Other drivers:"
+.sp
+\fBusbhid-ups\fR(8), \fBsnmp-ups\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

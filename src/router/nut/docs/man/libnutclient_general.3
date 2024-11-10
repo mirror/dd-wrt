@@ -1,0 +1,70 @@
+'\" t
+.\"     Title: libnutclient_general
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBNUTCLIENT_GENERAL" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libnutclient_general, nutclient_destroy, strarr_alloc, strarr_free \- General and utility functions in Network UPS Tools high\-level client access library
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nutclient\&.h>
+.fi
+.sp
+.nf
+typedef void* NUTCLIENT_t;
+.fi
+.sp
+.nf
+void nutclient_destroy(NUTCLIENT_t client);
+.fi
+.sp
+.nf
+typedef char** strarr;
+.fi
+.sp
+.nf
+strarr strarr_alloc(unsigned short count);
+.fi
+.sp
+.nf
+void strarr_free(strarr arr);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutclient_destroy()\fR function destroys a \fINUTCLIENT_t\fR or derived (like \fINUTCLIENT_TCP_t\fR) connection object, and frees allocated memory\&.
+.sp
+The \fBstrarr\fR type represents an array of C strings (array of char pointer)\&. The array must always be terminated by a NULL pointer\&. Pointed strings must be allocated by (x)calloc or (x)strdup\&.
+.sp
+The \fBstrarr_alloc()\fR function allocates a \fIstrarr\fR array with the specified number of (non\-initialized) string pointers\&. Another additional pointer set to 0 is added at the end of the array\&.
+.sp
+The \fBstrarr_free\fR function frees a \fIstrarr\fR array\&. It also frees all pointed strings\&.
+.sp
+\fIdev\fR is the device name\&.
+.SH "SEE ALSO"
+.sp
+\fBlibnutclient\fR(3)

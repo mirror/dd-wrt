@@ -1,0 +1,148 @@
+'\" t
+.\"     Title: bestups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BESTUPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+bestups \- Driver for Best Power / SOLA (Phoenixtec protocol) UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBbestups\fR \-h
+.sp
+\fBbestups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the bestups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "NOTE"
+.sp
+Please note that this driver is deprecated and will not receive new development\&. If it works for managing your devices \(em fine, but if you are running it to try setting up a new device, please consider the newer \fBnutdrv_qx\fR(8) instead, which should handle all \fIQ*\fR protocol variants for NUT\&.
+.sp
+If your device works with this driver, but does not work with \fBnutdrv_qx\fR(8), please report this via the mailing list or issue tracker\&.
+.SH "SUPPORTED HARDWARE"
+.sp
+\fBbestups\fR was designed to monitor Best Power UPS hardware like the Fortress, Fortress Telecom, Axxium Rackmount and Patriot Pro\&. It also recognizes and supports SOLA units such as the 325, 520 and 620\&. In addition, the Best 610 is supported using the \(oqID\(cq option\&.
+.sp
+Other UPS hardware using the Phoenixtec protocol should also work, but they will generate a warning since their battery information is not known\&.
+.sp
+This driver does not support some older Best/SOLA units\&. (For older Fortress units, see \fBbestfortress\fR(8)\&.)
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBnombattvolt=\fR\fInum\fR
+.RS 4
+Override the battery float voltage which is normally determined by asking the hardware\&. This is useful if your UPS constantly reports
+battery\&.charge
+values just below 100% even when it\(cqs completely charged\&.
+.sp
+If you have this problem, set this to whatever
+battery\&.voltage
+reports when the UPS is known to be completely charged with a good battery\&.
+.sp
+The author\(cqs Best Fortress 750 uses
+nombattvolt=27\&.4\&.
+.RE
+.PP
+\fBbattvoltmult=\fR\fInum\fR
+.RS 4
+Multiply the reported battery voltage by this number\&. Some devices report only a fraction of the total battery voltage\&.
+.sp
+For example, the SOLA 610 700VA UPS (with a 24V battery) reports the single cell voltage (about 2\&.27V when fully charged)\&. In this particular case you can set
+battvoltmult = 12
+in
+\fBups.conf\fR(8)
+to fix this\&.
+.RE
+.PP
+\fBID=\fR\fIstring\fR
+.RS 4
+Set the Identification response string\&. This should only be used with hardware that supports the Phoenixtec protocol status inquiry commands, but not the "ID" command, such as the Best/SOLA 610\&. Format of the ID string is: AAA,BBBB,CCC,DDD,EE\&.E,FF\&.F
+.sp
+AAA is the three\-character identification for the UPS model\&.
+.sp
+BBBB is the output power in VA (volt amperes)\&. B is an integer number ranging from 0 to 9\&.
+.sp
+CCC is the Nominal Input Voltage\&. C is an integer number ranging from 0 to 9\&. The unit is Volts AC\&.
+.sp
+DDD is the Nominal Output Voltage\&. D is an integer number ranging from 0 to 9\&. The unit is Volts AC\&.
+.sp
+EE\&.E is the Battery Voltage that will cause the UPS to shut itself off\&. E is an integer number ranging from 0 to 9\&. Then unit is Volts DC and a decimal point is present\&.
+.sp
+FF\&.F or FFF\&.F is the Battery Voltage at full charge\&. F is an integer number ranging from 0 to 9\&. Then unit is Volts DC\&. Typically, for 700VA, 1KVA and 1\&.5KVA units, the format is FF\&.F\&. For 2KVA and 3KVA units, the format is FFF\&.F\&.
+.sp
+Example: a Best 610 1\&.5KVA unit would use the string "610,1500,120,120,10\&.0,48\&.0"\&.
+.RE
+.SH "BUGS"
+.sp
+The battery charge percentage value (in battery\&.charge) is derived from the voltage data that the UPS returns, since the UPS doesn\(cqt return that value directly\&. On some hardware, the charge will remain at 100% for a long time and then drops quickly shortly before the battery runs out\&. You can confirm from the battery\&.voltage readings that this is a problem with the UPS and not this driver\&.
+.sp
+Similarly, the float from the charger in some models forces the battery charge percentage back up to 100% immediately after the UPS goes back on\-line, so you can\(cqt tell when it is really recharged\&.
+.sp
+Finally, some models give one value for the battery\(cqs nominal voltage and yet actually have a nominal voltage slightly below that\&. This leads to things such as the perpetual 98\&.7% charge on the author\(cqs Fortress 750, even when it\(cqs been charging for weeks\&. You can use nombattvolt= in \fBups.conf\fR(8) to fix this\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Russell Kroll
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Jason White
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

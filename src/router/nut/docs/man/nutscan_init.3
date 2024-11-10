@@ -1,0 +1,71 @@
+'\" t
+.\"     Title: nutscan_init
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_INIT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_init \- Initialize the nutscan library\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+.fi
+.sp
+.nf
+void nutscan_init(void);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutscan_init()\fR function must be called at least once before using any other function of the nutscan library\&.
+.sp
+It updates the following global variables which can be used by nutscan library user to know which scan methods are available at run\-time\&.
+.sp
+This depends on the libraries installed on the system:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+nutscan_avail_avahi = 1 : AVAHI scan is available
+nutscan_avail_ipmi = 1 : IPMI scan is available
+nutscan_avail_nut = 1 : Old NUT method is available
+nutscan_avail_nut_simulation = 1 : NUT simulation devices method is available
+nutscan_avail_snmp = 1 : SNMP method is available
+nutscan_avail_usb = 1 : USB method is available
+nutscan_avail_xml_http = 1 : XML HTTP method is available
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Note that if a method is reported as unavailable by those variables, the call to the corresponding nutscan_scan_* function will always return NULL\&.
+.SH "NOTES"
+.sp
+Technically, the function is currently defined in \fInutscan\-init\&.h\fR file\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_init\fR(3), \fBnutscan_scan_usb\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_nut_simulation\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_display_sanity_check\fR(3), \fBnutscan_display_sanity_check_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_option_to_device\fR(3), \fBnutscan_add_device_to_device\fR(3)

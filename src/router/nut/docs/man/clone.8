@@ -1,0 +1,152 @@
+'\" t
+.\"     Title: clone
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "CLONE" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+clone \- UPS driver clone
+.SH "SYNOPSIS"
+.sp
+\fBclone\fR \-h
+.sp
+\fBclone\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the clone driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "DESCRIPTION"
+.sp
+This driver, which sits on top of another driver socket, allows users to group clients to a particular outlet of a device and deal with this output as if it was a normal UPS\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following settings:
+.PP
+\fBload\&.off\fR=\fIcommand\fR
+.RS 4
+Recommended\&. Set the command on the "real" UPS driver that will be used to switch off the outlet\&. You need both
+\fBload\&.off\fR
+and
+\fBload\&.on\fR
+in order to power cycle the outlet\&. Otherwise, shutting down the clients powered by an outlet is a one way street (see
+IMPORTANT)\&.
+.RE
+.PP
+\fBload\&.on\fR=\fIcommand\fR
+.RS 4
+Recommended\&. Set the command on the "real" UPS driver that will be used to switch on the outlet\&. You need both
+\fBload\&.off\fR
+and
+\fBload\&.on\fR
+in order to power cycle the outlet\&. Otherwise, shutting down the clients powered by an outlet is a one way street (see
+IMPORTANT)\&.
+.RE
+.PP
+\fBload\&.status\fR=\fIvalue\fR
+.RS 4
+Recommended\&. Set the variable on the "real" UPS driver that will be used to indicate the outlet status (i\&.e\&. on/off)\&. If not specified, the clone driver will attempt to keep track of the outlet status, but this is less reliable\&.
+.RE
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Set the timer (in seconds) before the outlet is turned off after the shutdown condition (OB LB) for this outlet is met or a command to shutdown was issued\&. Defaults to 120 seconds\&.
+.RE
+.PP
+\fBondelay\fR=\fInum\fR
+.RS 4
+Set the timer (in seconds) for the outlet to switch on in case the power returns after the outlet has been switched off\&. Defaults to 30 seconds\&.
+.RE
+.PP
+\fBmincharge\fR=\fIvalue\fR
+.RS 4
+Set the remaining battery level when the clone UPS switches to LB (percent)\&.
+.RE
+.PP
+\fBminruntime\fR=\fIvalue\fR
+.RS 4
+Set the remaining battery runtime when the clone UPS switches to LB (seconds)\&.
+.RE
+.SH "IMPLEMENTATION"
+.sp
+The port specification in the \fBups.conf\fR(5) reference the driver socket that the "real" UPS driver is using\&. For example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+  [realups]
+     driver = usbhid\-ups
+     port = auto
+
+  [clone\-outlet\-1]
+     driver = clone
+     port = usbhid\-ups\-realups
+     load\&.on = outlet\&.1\&.load\&.on
+     load\&.off = outlet\&.1\&.load\&.off
+     load\&.status = outlet\&.1\&.status
+     [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.SH "IMPORTANT"
+.sp
+Unlike a real UPS, you should \fBnot\fR configure a upsmon primary mode for this driver\&. When a upsmon primary sees the OB LB flags and tells the upsd server it is OK to initiate the shutdown sequence, the server will latch the FSD status and it will not be possible to restart the systems connected without restarting the upsd server\&.
+.sp
+This will be a problem if the power returns after the clone UPS initiated the shutdown sequence on it\(cqs outlet, but returns before the real UPS begins shutting down\&. The solution is in the clone driver, that will insert the FSD flag if needed without the help of a upsmon primary\&.
+.SH "CAVEATS"
+.sp
+The clone UPS will follow the status on the real UPS driver\&. You can only make the clone UPS shutdown earlier than the real UPS driver, not later\&. If the real UPS driver initiates a shutdown, the clone UPS driver will immediately follow\&.
+.sp
+Be aware that the commands to shutdown/restart an outlet on the real UPS drivers are not affected, so if you tell the real UPS driver to shutdown the outlet of the clone UPS driver, your clients will lose power without warning\&.
+.sp
+If you use service management frameworks like systemd or SMF to manage the dependencies between driver instances and other units, then you may have to set up special dependencies (e\&.g\&. with systemd "drop\-in" snippet files) to queue your clone drivers to start after the "real" device drivers\&.
+.SH "AUTHOR"
+.sp
+Arjen de Korte <adkorte\-guest@alioth\&.debian\&.org>
+.SH "SEE ALSO"
+.sp
+\fBupscmd\fR(1), \fBupsrw\fR(1), \fBups.conf\fR(5), \fBnutupsdrv\fR(8)
+.SS "Dummy driver:"
+.sp
+The "repeater" mode of \fIdummy\-ups\fR driver is in some ways similar to the \fIclone\fR driver, by relaying information from a locally or remotely running "real" device driver (and NUT data server)\&.
+.sp
+\fBdummy-ups\fR(8)
+.SS "Internet Resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

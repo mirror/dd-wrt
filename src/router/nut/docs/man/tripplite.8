@@ -1,0 +1,109 @@
+'\" t
+.\"     Title: tripplite
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "TRIPPLITE" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+tripplite \- Driver for Tripp\-Lite SmartPro UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBtripplite\fR \-h
+.sp
+\fBtripplite\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the tripplite driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should work on the SmartPro line, including the SMART700 and SMART700SER\&. It only supports SmartPro models that communicate using the serial port\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5):
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Time to wait before the UPS is turned off after the kill power command is sent\&. The default value is 64 (in seconds)\&.
+.RE
+.PP
+\fBrebootdelay\fR=\fInum\fR
+.RS 4
+Set the timer before the UPS is cycled after the reboot command is sent\&. The default value is 64 (in seconds)\&.
+.RE
+.PP
+\fBstartdelay\fR=\fInum\fR
+.RS 4
+Set the time that the UPS waits before it turns itself back on after a reboot command\&. The default value is 60 (in seconds)\&.
+.RE
+.SH "KNOWN ISSUES AND BUGS"
+.sp
+Battery charge information may not be correct for all UPSes\&. It is tuned to be correct for a SMART700SER\&. Other models may not provide correct information\&. Information from the manufacturer would be helpful\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Rickard E\&. (Rik) Faith
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Nicholas Kain
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Other drivers for Tripp\-Lite hardware:"
+.sp
+\fBtripplitesu\fR(8), \fBtripplite_usb\fR(8), \fBusbhid-ups\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

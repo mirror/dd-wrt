@@ -1,0 +1,135 @@
+'\" t
+.\"     Title: asem
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "ASEM" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+asem \- driver for UPS in ASEM PB1300
+.SH "SYNOPSIS"
+.sp
+\fBasem\fR \-h
+.sp
+\fBasem\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the \fBasem\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The \fBasem\fR driver supports the UPS in ASEM PB1300 embedded PCs\&. Likely other I2C devices from the same manufacturer will work too, since this is a "custom" charger\&.
+.sp
+Seems that there are two versions of the charger\&. Older one is based on Max1667, newer one is a custom solution\&. Both are on I2C address 0x09\&. To be compatible with both versions, the driver just reads bit 15 of address 0x13 which yields online/on battery status\&. Battery monitor is a BQ2060 at address 0x0B\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+The required parameter for this driver is the I2C bus name:
+.PP
+\fBport\fR=\fIdev\-node\fR
+.RS 4
+On the Asem PB1300, this should be
+/dev/i2c\-7
+for the i801 SMBUS adapter\&.
+.RE
+.sp
+This driver also supports the following optional settings:
+.PP
+\fBlb\fR=\fInum\fR
+.RS 4
+Set the low battery threshold to
+\fInum\fR
+volts\&.
+.RE
+.PP
+\fBhb\fR=\fInum\fR
+.RS 4
+Set the high battery threshold to
+\fInum\fR
+volts\&.
+.RE
+.SH "INSTALLATION"
+.sp
+This driver is specific to the Linux I2C API, and requires the lm_sensors libi2c\-dev or its equivalent to compile\&.
+.sp
+Beware that the SystemIO memory used by the I2C controller is reserved by ACPI\&. If only a native I2C driver (e\&.g\&. i2c_i801, as of 3\&.5\&.X Linux kernels) is available, then you\(cqll need to relax the ACPI resources check\&. For example, you can boot with the acpi_enforce_resources=lax option\&.
+.SH "KNOWN ISSUES AND BUGS"
+.sp
+The driver shutdown function is not implemented, so other arrangements must be made to turn off the UPS\&.
+.SH "AUTHOR"
+.sp
+Giuseppe Corbelli <giuseppe\&.corbelli@copanitalia\&.com>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+PB1300 specifications:
+http://www\&.asem\&.it/en/products/industrial\-automation/box\-pcs/performance/pb1300/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+BQ2060 datasheet:
+http://www\&.ti\&.com/lit/ds/symlink/bq2060\&.pdf
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE

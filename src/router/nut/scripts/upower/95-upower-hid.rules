@@ -1,0 +1,2 @@
+# Copy some attributes from the USB device to the hiddev device
+SUBSYSTEM=="usbmisc", SUBSYSTEMS=="usb", KERNEL=="hiddev*", IMPORT{parent}="UPOWER_*", IMPORT{parent}="ID_VENDOR", IMPORT{parent}="ID_PRODUCT"

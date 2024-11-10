@@ -1,0 +1,160 @@
+'\" t
+.\"     Title: adelsystem_cbi
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "ADELSYSTEM_CBI" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+adelsystem_cbi \- Driver for the ADELSYSTEM CB/CBI DC\-UPS
+.SH "SYNOPSIS"
+.sp
+\fBadelsystem_cbi\fR \-h
+.sp
+\fBadelsystem_cbi\fR \-a \fIDEVICE_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the \fBadelsystem_cbi\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This is the driver for the adelsystem cb/cbi dc\-ups devices\&.
+.sp
+The driver has been tested against CBI2801224A, all in one 12/24Vdc DC\-UPS\&.
+.PP
+More information about this UPS can be found here:
+.RS 4
+https://www\&.adelsystem\&.com/en/products/dc\-ups\-/
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.SS "Serial:"
+.PP
+\fBser_baud_rate\fR=\fIvalue\fR
+.RS 4
+A integer specifying the serial port baud rate (default 9600)\&.
+.RE
+.PP
+\fBser_data_bit\fR=\fIvalue\fR
+.RS 4
+A integer specifying the serial port data bit (default 8)\&.
+.RE
+.PP
+\fBser_parity\fR=\fIvalue\fR
+.RS 4
+A character specifying the serial port parity (default N)\&.
+.RE
+.PP
+\fBser_stop_bit\fR=\fIvalue\fR
+.RS 4
+An integer specifying the serial port stop bit (default 1)\&.
+.RE
+.SS "Modbus:"
+.PP
+\fBdev_slave_id\fR=\fIvalue\fR
+.RS 4
+An integer specifying the device modbus slave ID (default 1)\&.
+.RE
+.SH "CONFIGURATION"
+.sp
+Here is an example of adelsystem_cbi driver configuration in \fBups\&.conf\fR file:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[adelsystem_cbi]
+  driver = adelsystem_cbi
+  port = /dev/ttyUSB0
+  desc = "adelsystem cb/cbi ups driver"
+  # serial settings
+  ser_baud_rate = 9600
+  ser_parity = N
+  ser_data_bit = 8
+  ser_stop_bit = 1
+  # modbus slave id
+  dev_slave_id = 5
+.fi
+.if n \{\
+.RE
+.\}
+.SH "INSTANT COMMANDS"
+.sp
+This driver support the following instant commands:
+.PP
+load\&.off
+.RS 4
+executes "instant poweroff"
+.RE
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by installing libmodbus and running configure \-\-with\-modbus=yes\&.
+.sp
+You also need to give proper permissions on the local serial device file (/dev/ttyUSB0 for example) to allow the run\-time NUT driver user account to access it\&.
+.SH "AUTHOR"
+.sp
+Dimitris Economou <dimitris\&.s\&.economou@gmail\&.com>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+libmodbus home page:
+http://libmodbus\&.org
+.RE

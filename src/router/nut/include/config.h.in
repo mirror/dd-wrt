@@ -1,0 +1,1223 @@
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* NUT build directory when the build was configured */
+#undef ABS_TOP_BUILDDIR
+
+/* NUT source directory when the build was configured */
+#undef ABS_TOP_SRCDIR
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* Path for pid files of processes not running as root */
+#undef ALTPIDPATH
+
+/* host env spec we built on */
+#undef AUTOTOOLS_BUILD_ALIAS
+
+/* host OS short spec we built on */
+#undef AUTOTOOLS_BUILD_SHORT_ALIAS
+
+/* host env spec we run on */
+#undef AUTOTOOLS_HOST_ALIAS
+
+/* host OS short spec we run on */
+#undef AUTOTOOLS_HOST_SHORT_ALIAS
+
+/* host env spec we built for */
+#undef AUTOTOOLS_TARGET_ALIAS
+
+/* host OS short spec we built for */
+#undef AUTOTOOLS_TARGET_SHORT_ALIAS
+
+/* Default path for user executables */
+#undef BINDIR
+
+/* ccache namespace tag (if ccache is used and new enough) */
+#undef CCACHE_NAMESPACE
+
+/* Compact version of C compiler */
+#undef CC_VERSION
+
+/* Default path for CGI programs */
+#undef CGIPATH
+
+/* Flags passed to configure script */
+#undef CONFIG_FLAGS
+
+/* Default path for configuration files */
+#undef CONFPATH
+
+/* Compact version of C preprocessor */
+#undef CPP_VERSION
+
+/* Define processor type */
+#undef CPU_TYPE
+
+/* Define to 1 if your C++ compiler doesn't accept -c and -o together. */
+#undef CXX_NO_MINUS_C_MINUS_O
+
+/* Compact version of C++ compiler */
+#undef CXX_VERSION
+
+/* Default path for UPS drivers */
+#undef DRVPATH
+
+/* Define to nothing if C supports flexible array members, and to 1 if it does
+   not. That way, with a declaration like `struct s { int n; double
+   d[FLEXIBLE_ARRAY_MEMBER]; };', the struct hack can be used with pre-C99
+   compilers. When computing the size of such an object, don't use 'sizeof
+   (struct s)' as it overestimates the size. Use 'offsetof (struct s, d)'
+   instead. Don't use 'offsetof (struct s, d[0])', as this doesn't work with
+   MSVC and with C++ compilers. */
+#undef FLEXIBLE_ARRAY_MEMBER
+
+/* Define to the type of arg 1 for getnameinfo. */
+#undef GETNAMEINFO_TYPE_ARG1
+
+/* Define to the type of arg 2 for getnameinfo. */
+#undef GETNAMEINFO_TYPE_ARG2
+
+/* Define to the type of args 4 and 6 for getnameinfo. */
+#undef GETNAMEINFO_TYPE_ARG46
+
+/* Define to the type of arg 7 for getnameinfo. */
+#undef GETNAMEINFO_TYPE_ARG7
+
+/* Define to 1 if you have the `abs' function. */
+#undef HAVE_ABS
+
+/* Define to 1 if you have the `abs_val' function. */
+#undef HAVE_ABS_VAL
+
+/* Define to 1 if you have the `atexit' function. */
+#undef HAVE_ATEXIT
+
+/* Define to 1 if you have the <avahi-client/client.h> header file. */
+#undef HAVE_AVAHI_CLIENT_CLIENT_H
+
+/* Define to 1 if you have the `avahi_client_new' function. */
+#undef HAVE_AVAHI_CLIENT_NEW
+
+/* Define to 1 if you have the <avahi-common/malloc.h> header file. */
+#undef HAVE_AVAHI_COMMON_MALLOC_H
+
+/* Define to 1 if you have the `avahi_free' function. */
+#undef HAVE_AVAHI_FREE
+
+/* Define to 1 if you have the `cfsetispeed' function. */
+#undef HAVE_CFSETISPEED
+
+/* defined if standard library has, and C standard allows, the
+   clock_gettime(clkid,ts) method */
+#undef HAVE_CLOCK_GETTIME
+
+/* defined if standard library has, and C standard allows, the CLOCK_MONOTONIC
+   macro or token */
+#undef HAVE_CLOCK_MONOTONIC
+
+/* Define to enable CPPUNIT tests */
+#undef HAVE_CPPUNIT
+
+/* Define to enable C++11 support */
+#undef HAVE_CXX11
+
+/* Define to 1 if C supports variable-length arrays. */
+#undef HAVE_C_VARARRAYS
+
+/* Define to 1 if you have the declaration of `fabs', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FABS
+
+/* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FABSF
+
+/* Define to 1 if you have the declaration of `fabsl', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FABSL
+
+/* Define to 1 if you have the declaration of `i2c_smbus_access', and to 0 if
+   you don't. */
+#undef HAVE_DECL_I2C_SMBUS_ACCESS
+
+/* Define to 1 if you have the declaration of `i2c_smbus_read_block_data', and
+   to 0 if you don't. */
+#undef HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
+
+/* Define to 1 if you have the declaration of `i2c_smbus_read_byte_data', and
+   to 0 if you don't. */
+#undef HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
+
+/* Define to 1 if you have the declaration of `i2c_smbus_read_word_data', and
+   to 0 if you don't. */
+#undef HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
+
+/* Define to 1 if you have the declaration of `i2c_smbus_write_byte_data', and
+   to 0 if you don't. */
+#undef HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
+
+/* Define to 1 if you have the declaration of `i2c_smbus_write_word_data', and
+   to 0 if you don't. */
+#undef HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
+
+/* Define to 1 if you have the declaration of `LOG_UPTO', and to 0 if you
+   don't. */
+#undef HAVE_DECL_LOG_UPTO
+
+/* Define to 1 if you have the declaration of `optind', and to 0 if you don't.
+   */
+#undef HAVE_DECL_OPTIND
+
+/* Define to 1 if you have the declaration of `pow10', and to 0 if you don't.
+   */
+#undef HAVE_DECL_POW10
+
+/* Define to 1 if you have the declaration of `realpath', and to 0 if you
+   don't. */
+#undef HAVE_DECL_REALPATH
+
+/* Define to 1 if you have the declaration of `regcomp', and to 0 if you
+   don't. */
+#undef HAVE_DECL_REGCOMP
+
+/* Define to 1 if you have the declaration of `regexec', and to 0 if you
+   don't. */
+#undef HAVE_DECL_REGEXEC
+
+/* Define to 1 if you have the declaration of `round', and to 0 if you don't.
+   */
+#undef HAVE_DECL_ROUND
+
+/* Define to 1 if you have the declaration of `uu_lock', and to 0 if you
+   don't. */
+#undef HAVE_DECL_UU_LOCK
+
+/* Define to 1 if you have the declaration of `__FUNCTION__', and to 0 if you
+   don't. */
+#undef HAVE_DECL___FUNCTION__
+
+/* Define to 1 if you have the declaration of `__func__', and to 0 if you
+   don't. */
+#undef HAVE_DECL___FUNC__
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `dup' function. */
+#undef HAVE_DUP
+
+/* Define to 1 if you have the `dup2' function. */
+#undef HAVE_DUP2
+
+/* Define to 1 if you have the `fcvt' function. */
+#undef HAVE_FCVT
+
+/* Define to 1 if you have the `fcvtl' function. */
+#undef HAVE_FCVTL
+
+/* Define to 1 if you have the `fileno' function. */
+#undef HAVE_FILENO
+
+/* Define to 1 if you have <float.h>. */
+#undef HAVE_FLOAT_H
+
+/* Define to 1 if you have the `flock' function. */
+#undef HAVE_FLOCK
+
+/* Define if FreeIPMI support is available */
+#undef HAVE_FREEIPMI
+
+/* Define if FreeIPMI 1.1.X / 1.2.X support is available */
+#undef HAVE_FREEIPMI_11X_12X
+
+/* Define to 1 if you have the <freeipmi/freeipmi.h> header file. */
+#undef HAVE_FREEIPMI_FREEIPMI_H
+
+/* Define if FreeIPMI monitoring support is available */
+#undef HAVE_FREEIPMI_MONITORING
+
+/* Define to 1 if you have the <gdfontmb.h> header file. */
+#undef HAVE_GDFONTMB_H
+
+/* Define to 1 if you have the <gd.h> header file. */
+#undef HAVE_GD_H
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the `getpassphrase' function. */
+#undef HAVE_GETPASSPHRASE
+
+/* Define to 1 if you have the `gmtime_r' function. */
+#undef HAVE_GMTIME_R
+
+/* Define to 1 if you have the `gmtime_s' function. */
+#undef HAVE_GMTIME_S
+
+/* Define to 1 if you have the `gpiod_chip_close' function. */
+#undef HAVE_GPIOD_CHIP_CLOSE
+
+/* Define to 1 if you have the `gpiod_chip_open_by_name' function. */
+#undef HAVE_GPIOD_CHIP_OPEN_BY_NAME
+
+/* Define to 1 if you have the <gpiod.h> header file. */
+#undef HAVE_GPIOD_H
+
+/* defined if system has the inet_ntop() method */
+#undef HAVE_INET_NTOP
+
+/* defined if system has the inet_pton() method */
+#undef HAVE_INET_PTON
+
+/* Define to 1 if you have the `init_snmp' function. */
+#undef HAVE_INIT_SNMP
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <ipmi_monitoring.h> header file. */
+#undef HAVE_IPMI_MONITORING_H
+
+/* Define if you have Boutell's libgd installed */
+#undef HAVE_LIBGD
+
+/* Define to enable libltdl support */
+#undef HAVE_LIBLTDL
+
+/* Define to 1 if you have the <libpowerman.h> header file. */
+#undef HAVE_LIBPOWERMAN_H
+
+/* Define to 1 for build where we can support general regex matching. */
+#undef HAVE_LIBREGEX
+
+/* Define to 1 if you have the `libusb_detach_kernel_driver' function. */
+#undef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+
+/* Define to 1 if you have the `libusb_detach_kernel_driver_np' function. */
+#undef HAVE_LIBUSB_DETACH_KERNEL_DRIVER_NP
+
+/* Define to 1 if you have the `libusb_get_port_number' function. */
+#undef HAVE_LIBUSB_GET_PORT_NUMBER
+
+/* Define to 1 if you have the <libusb.h> header file. */
+#undef HAVE_LIBUSB_H
+
+/* Define to 1 if you have the `libusb_init' function. */
+#undef HAVE_LIBUSB_INIT
+
+/* Define to 1 if you have the `libusb_kernel_driver_active' function. */
+#undef HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE
+
+/* Define to 1 if you have the `libusb_set_auto_detach_kernel_driver'
+   function. */
+#undef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
+
+/* Define to 1 if you have the `libusb_strerror' function. */
+#undef HAVE_LIBUSB_STRERROR
+
+/* Define to 1 if you have <limits.h>. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have <linux/i2c-dev.h>. */
+#undef HAVE_LINUX_I2C_DEV_H
+
+/* Define to 1 if you have <i2c/smbus.h>. */
+#undef HAVE_LINUX_SMBUS_H
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the `localtime_s' function. */
+#undef HAVE_LOCALTIME_S
+
+/* Define to 1 if you have the `lockf' function. */
+#undef HAVE_LOCKF
+
+/* Define to 1 if the system has the type `long double'. */
+#undef HAVE_LONG_DOUBLE
+
+/* Define to 1 if the system has the type `long long int'. */
+#undef HAVE_LONG_LONG_INT
+
+/* Define to 1 if you have the <ltdl.h> header file. */
+#undef HAVE_LTDL_H
+
+/* Define to 1 if you have the <lusb0_usb.h> header file. */
+#undef HAVE_LUSB0_USB_H
+
+/* Define to 1 if you have <math.h>. */
+#undef HAVE_MATH_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <modbus.h> header file. */
+#undef HAVE_MODBUS_H
+
+/* Define to 1 if you have the `modbus_new_rtu' function. */
+#undef HAVE_MODBUS_NEW_RTU
+
+/* Define to 1 if you have the `modbus_new_rtu_usb' function. */
+#undef HAVE_MODBUS_NEW_RTU_USB
+
+/* Define to 1 if you have the `modbus_new_tcp' function. */
+#undef HAVE_MODBUS_NEW_TCP
+
+/* Define to 1 if you have the `modbus_set_byte_timeout' function. */
+#undef HAVE_MODBUS_SET_BYTE_TIMEOUT
+
+/* Define to 1 if you have the `modbus_set_response_timeout' function. */
+#undef HAVE_MODBUS_SET_RESPONSE_TIMEOUT
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <net-snmp/net-snmp-config.h> header file. */
+#undef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+
+/* Define to 1 if you have the `ne_set_connect_timeout' function. */
+#undef HAVE_NE_SET_CONNECT_TIMEOUT
+
+/* Define to 1 if you have the `ne_sock_connect_timeout' function. */
+#undef HAVE_NE_SOCK_CONNECT_TIMEOUT
+
+/* Define to 1 if you have the <ne_xmlreq.h> header file. */
+#undef HAVE_NE_XMLREQ_H
+
+/* Define to 1 if you have the `ne_xml_dispatch_request' function. */
+#undef HAVE_NE_XML_DISPATCH_REQUEST
+
+/* Define to 1 if you have the <nss.h> header file. */
+#undef HAVE_NSS_H
+
+/* Define to 1 if you have the `NSS_Init' function. */
+#undef HAVE_NSS_INIT
+
+/* Define to 1 if you have the `on_exit' function. */
+#undef HAVE_ON_EXIT
+
+/* Define to 1 if you have the <openssl/ssl.h> header file. */
+#undef HAVE_OPENSSL_SSL_H
+
+/* Define to 1 if you have the `pm_connect' function. */
+#undef HAVE_PM_CONNECT
+
+/* Define to 1 if you have <poll.h>. */
+#undef HAVE_POLL_H
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wc++98-compat(-pedantic)" and for push-pop support */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wc++98-compat(-pedantic)" and for push-pop support (outside function
+   bodies) */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_BESIDEFUNC
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wformat-nonliteral" or "-Wformat-security" and for push-pop support */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wformat-nonliteral" or "-Wformat-security" and for push-pop support
+   (outside function bodies) */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL_BESIDEFUNC
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wformat-truncation" or "-Werror=stringop-truncation" and for push-pop
+   support */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wformat-truncation" or "-Werror=stringop-truncation" and for push-pop
+   support (outside function bodies) */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION_BESIDEFUNC
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wunreachable-code(-break)" and for push-pop support */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+
+/* define if your compiler has pragmas for GCC diagnostic ignored
+   "-Wunreachable-code(-break)" and for push-pop support (outside function
+   bodies) */
+#undef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BESIDEFUNC
+
+/* define if your compiler has #pragma clang diagnostic ignored
+   "-Wunreachable-code-return" */
+#undef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+
+/* define if your compiler has #pragma clang diagnostic ignored
+   "-Wunreachable-code-return" (outside functions) */
+#undef HAVE_PRAGMA_CLANG_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN_BESIDEFUNC
+
+/* define if your compiler has #pragma clang diagnostic push and pop */
+#undef HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP
+
+/* define if your compiler has #pragma clang diagnostic push and pop outside
+   function bodies */
+#undef HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP_BESIDEFUNC
+
+/* define if your compiler has #pragma clang diagnostic push and pop inside
+   function bodies */
+#undef HAVE_PRAGMA_CLANG_DIAGNOSTIC_PUSH_POP_INSIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Warray-bounds"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Warray-bounds"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ARRAY_BOUNDS_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wassign-enum"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wassign-enum"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_ASSIGN_ENUM_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wcast-align"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_ALIGN_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wcast-function-type-strict" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wcast-function-type-strict" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CAST_FUNCTION_TYPE_STRICT_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wcovered-switch-default" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wcovered-switch-default" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_COVERED_SWITCH_DEFAULT_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wc++98-compat"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wc++98-compat"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wc++98-compat-pedantic" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_PEDANTIC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wc++98-compat-pedantic" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_CXX98_COMPAT_PEDANTIC_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wdeprecated-declarations" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_DEPRECATED_DECLARATIONS
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wexit-time-destructors" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wexit-time-destructors" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXIT_TIME_DESTRUCTORS_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wextra-semi-stmt" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wextra-semi-stmt" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_EXTRA_SEMI_STMT_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-nonliteral" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-nonliteral" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-overflow" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-overflow" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_OVERFLOW_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-security" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-security" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-truncation" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wformat-truncation" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_TRUNCATION_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wglobal-constructors" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wglobal-constructors" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_GLOBAL_CONSTRUCTORS_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wsign-compare"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wsign-compare"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_COMPARE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wsign-conversion" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wsign-conversion" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_SIGN_CONVERSION_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wstrict-prototypes" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wstrict-prototypes" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wstringop-truncation" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wstringop-truncation" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRINGOP_TRUNCATION_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-compare" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-compare" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_COMPARE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-constant-out-of-range-compare" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-constant-out-of-range-compare" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_CONSTANT_OUT_OF_RANGE_COMPARE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-type-limit-compare" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-type-limit-compare" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_TYPE_LIMIT_COMPARE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-unsigned-zero-compare" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wtautological-unsigned-zero-compare" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TAUTOLOGICAL_UNSIGNED_ZERO_COMPARE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wtype-limits"
+   */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS
+
+/* define if your compiler has #pragma GCC diagnostic ignored "-Wtype-limits"
+   (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_TYPE_LIMITS_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code-break" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code-break" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_BREAK_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code-return" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunreachable-code-return" (outside functions) */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE_RETURN_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic ignored
+   "-Wunused-function" */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNUSED_FUNCTION
+
+/* define if your compiler has #pragma GCC diagnostic push and pop */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP
+
+/* define if your compiler has #pragma GCC diagnostic push and pop outside
+   function bodies */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_BESIDEFUNC
+
+/* define if your compiler has #pragma GCC diagnostic push and pop inside
+   function bodies */
+#undef HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP_INSIDEFUNC
+
+/* Define to enable pthread support code */
+#undef HAVE_PTHREAD
+
+/* Define to enable pthread_tryjoin support code */
+#undef HAVE_PTHREAD_TRYJOIN
+
+/* Define to 1 if you have <regex.h>. */
+#undef HAVE_REGEX_H
+
+/* Define to 1 if you have the `sd_booted' function. */
+#undef HAVE_SD_BOOTED
+
+/* Define to 1 if you have the `sd_notify' function. */
+#undef HAVE_SD_NOTIFY
+
+/* Define to 1 if you have the `sd_notify_barrier' function. */
+#undef HAVE_SD_NOTIFY_BARRIER
+
+/* Define to 1 if you have the `sd_watchdog_enabled' function. */
+#undef HAVE_SD_WATCHDOG_ENABLED
+
+/* Define to 1 if you have <sys/semaphore.h> with usable sem_t sem_init() and
+   sem_destroy(). */
+#undef HAVE_SEMAPHORE
+
+/* Define to 1 if you have <sys/semaphore.h>. */
+#undef HAVE_SEMAPHORE_H
+
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
+/* Define to 1 if you have the `seteuid' function. */
+#undef HAVE_SETEUID
+
+/* Define to 1 if you have the `setlogmask' function. */
+#undef HAVE_SETLOGMASK
+
+/* Define to 1 if you have the `setsid' function. */
+#undef HAVE_SETSID
+
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
+/* Define to 1 if you have the `sigemptyset' function. */
+#undef HAVE_SIGEMPTYSET
+
+/* Define to 1 if you have <signal.h>. */
+#undef HAVE_SIGNAL_H
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the `SSL_CTX_new' function. */
+#undef HAVE_SSL_CTX_NEW
+
+/* Define to 1 if you have the <ssl.h> header file. */
+#undef HAVE_SSL_H
+
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have <stdlib.h>. */
+#undef HAVE_STDLIB_H
+
+/* defined if standard library has, and C standard allows, the
+   strcasecmp(s1,s2) method */
+#undef HAVE_STRCASECMP
+
+/* defined if standard library has, and C standard allows, the
+   strcasestr(s1,s2) method */
+#undef HAVE_STRCASESTR
+
+/* defined if standard library has, and C standard allows, the strdup(s)
+   method */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have <strings.h>. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have <string.h>. */
+#undef HAVE_STRING_H
+
+/* defined if standard library has, and C standard allows, the strlwr(s1,s2)
+   method */
+#undef HAVE_STRLWR
+
+/* defined if standard library has, and C standard allows, the
+   strncasecmp(s1,s2,n) method */
+#undef HAVE_STRNCASECMP
+
+/* defined if standard library has, and C standard allows, the strnlen(s1,s2)
+   method */
+#undef HAVE_STRNLEN
+
+/* defined if standard library has, and C standard allows, the
+   strptime(s1,s2,tm) method */
+#undef HAVE_STRPTIME
+
+/* defined if standard library has, and C standard allows, the strsep(s1,s2)
+   method */
+#undef HAVE_STRSEP
+
+/* defined if standard library has, and C standard allows, the strstr(s1,s2)
+   method */
+#undef HAVE_STRSTR
+
+/* Define to 1 if you have the `strtok_r' function. */
+#undef HAVE_STRTOK_R
+
+/* defined if system has the struct pollfd type */
+#undef HAVE_STRUCT_POLLFD
+
+/* defined if standard library has, and C standard allows, the suseconds_t
+   type */
+#undef HAVE_SUSECONDS_T
+
+/* Define to consider basic systemd support (provide units and configuration
+   files) */
+#undef HAVE_SYSTEMD
+
+/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
+#undef HAVE_SYSTEMD_SD_DAEMON_H
+
+/* Define to 1 if you have the <sys/modem.h> header file. */
+#undef HAVE_SYS_MODEM_H
+
+/* Define to 1 if you have <sys/resource.h> with usable struct rlimit and
+   getrlimit(). */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have <sys/select.h>. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have <sys/signal.h>. */
+#undef HAVE_SYS_SIGNAL_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/termios.h> header file. */
+#undef HAVE_SYS_TERMIOS_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <tcpd.h> header file. */
+#undef HAVE_TCPD_H
+
+/* Define to 1 if you have the `tcsendbreak' function. */
+#undef HAVE_TCSENDBREAK
+
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
+/* Define to 1 if you have the `timegm' function. */
+#undef HAVE_TIMEGM
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type `unsigned long long int'. */
+#undef HAVE_UNSIGNED_LONG_LONG_INT
+
+/* Define to 1 if you have the `usb_detach_kernel_driver_np' function. */
+#undef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+
+/* Define to 1 if you have the <usb.h> header file. */
+#undef HAVE_USB_H
+
+/* Define to 1 if you have the `usb_init' function. */
+#undef HAVE_USB_INIT
+
+/* defined if standard library has, and C standard allows, the useconds_t type
+   */
+#undef HAVE_USECONDS_T
+
+/* defined if standard library has, and C standard allows, the usleep(us)
+   method */
+#undef HAVE_USLEEP
+
+/* Use uu_lock for locking (FreeBSD) */
+#undef HAVE_UU_LOCK
+
+/* Define to 1 if you have the <varargs.h> header file. */
+#undef HAVE_VARARGS_H
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the windows.h header file. */
+#undef HAVE_WINDOWS_H
+
+/* Define to 1 if you have the <winsock2.h> header file. */
+#undef HAVE_WINSOCK2_H
+
+/* Define to enable libwrap support */
+#undef HAVE_WRAP
+
+/* Define to 1 if you have the <ws2tcpip.h> header file. */
+#undef HAVE_WS2TCPIP_H
+
+/* Define to 1 if you have the `_mkgmtime' function. */
+#undef HAVE__MKGMTIME
+
+/* define if your compiler has __attribute__ */
+#undef HAVE___ATTRIBUTE__
+
+/* define if your compiler has __attribute__((noreturn)) */
+#undef HAVE___ATTRIBUTE__NORETURN
+
+/* define if your compiler has __attribute__((unused)) for function arguments
+   */
+#undef HAVE___ATTRIBUTE__UNUSED_ARG
+
+/* define if your compiler has __attribute__((unused)) for functions */
+#undef HAVE___ATTRIBUTE__UNUSED_FUNC
+
+/* Default path for HTML files (CGI templates) */
+#undef HTMLPATH
+
+/* Default path for system libraries */
+#undef LIBDIR
+
+/* Default path for system exec-libraries */
+#undef LIBEXECDIR
+
+/* Desired syslog facility - see syslog(3) */
+#undef LOG_FACILITY
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* host multiarch spec we build for (as suggested by compiler being used) */
+#undef MULTIARCH_TARGET_ALIAS
+
+/* Define to use explicit getopt declarations */
+#undef NEED_GETOPT_DECLS
+
+/* Define if getopt.h is needed */
+#undef NEED_GETOPT_H
+
+/* Default path for data files */
+#undef NUT_DATADIR
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_DRAFT_BLUMENTHAL_AES_04
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmAES128PrivProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmAES192PrivProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmAES256PrivProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmDESPrivProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmHMAC192SHA256AuthProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmHMAC256SHA384AuthProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmHMAC384SHA512AuthProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmHMACMD5AuthProtocol
+
+/* Variable or macro by this name is not resolvable */
+#undef NUT_HAVE_LIBNETSNMP_usmHMACSHA1AuthProtocol
+
+/* Define to use libmodbus USB backend */
+#undef NUT_MODBUS_HAS_USB
+
+/* ${COMMENT} */
+#undef NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32
+
+/* ${COMMENT} */
+#undef NUT_MODBUS_TIMEOUT_ARG_sec_usec_uint32_cast_timeval_fields
+
+/* ${COMMENT} */
+#undef NUT_MODBUS_TIMEOUT_ARG_timeval
+
+/* ${COMMENT} */
+#undef NUT_MODBUS_TIMEOUT_ARG_timeval_numeric_fields
+
+/* NUT network protocol version */
+#undef NUT_NETVERSION
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Path for pid files of processes running as root */
+#undef PIDPATH
+
+/* Port for network communications */
+#undef PORT
+
+/* Default installation prefix path */
+#undef PREFIX
+
+/* Define to 0 if your libc can printf("%s", NULL) sanely, or to 1 if your
+   libc requires workarounds to print NULL values. */
+#undef REQUIRE_NUT_STRARG
+
+/* Group membership of user to switch to if started as root */
+#undef RUN_AS_GROUP
+
+/* User to switch to if started as root */
+#undef RUN_AS_USER
+
+/* Default path for system executables */
+#undef SBINDIR
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
+/* Path for UPS driver state files */
+#undef STATEPATH
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 for Sun version of the libusb. */
+#undef SUN_LIBUSB
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. This
+   macro is deemed obsolete by autotools. */
+#undef TIME_WITH_SYS_TIME
+
+/* NUT tree version */
+#undef TREE_VERSION
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Version number of package */
+#undef VERSION
+
+/* Define if WSAStartup is needed. */
+#undef WINDOWS_SOCKETS
+
+/* Define to enable Asciidoc support */
+#undef WITH_ASCIIDOC
+
+/* Define to enable Avahi support */
+#undef WITH_AVAHI
+
+/* Define to enable CGI (HTTP) support */
+#undef WITH_CGI
+
+/* Define to enable development files support */
+#undef WITH_DEV
+
+/* Define to enable overall documentation generation */
+#undef WITH_DOCS
+
+/* Define to enable IPMI support using FreeIPMI */
+#undef WITH_FREEIPMI
+
+/* Define to enable GPIO support */
+#undef WITH_GPIO
+
+/* Define to enable IPMI support */
+#undef WITH_IPMI
+
+/* Define to enable libltdl (Libtool dlopen abstraction) support */
+#undef WITH_LIBLTDL
+
+/* Define to enable Powerman PDU support */
+#undef WITH_LIBPOWERMAN
+
+/* Define to build with tighter systemd support (sd_notify etc) */
+#undef WITH_LIBSYSTEMD
+
+/* Define to 1 for version 0.1 of the libusb (via pkg-config or
+   libusb-config). */
+#undef WITH_LIBUSB_0_1
+
+/* Define to 1 for version 1.0 of the libusb (via pkg-config). */
+#undef WITH_LIBUSB_1_0
+
+/* Define to enable I2C support */
+#undef WITH_LINUX_I2C
+
+/* Define to enable Mac OS X meta-driver */
+#undef WITH_MACOSX
+
+/* Define to enable Modbus support */
+#undef WITH_MODBUS
+
+/* Define to enable Neon HTTP support */
+#undef WITH_NEON
+
+/* Define to enable SSL support using Mozilla NSS */
+#undef WITH_NSS
+
+/* Define to enable nutconf tool support */
+#undef WITH_NUTCONF
+
+/* Define to enable NUT-Monitor desktop application installation */
+#undef WITH_NUT_MONITOR
+
+/* Define to enable nut-scanner tool support */
+#undef WITH_NUT_SCANNER
+
+/* Define to enable SSL support using OpenSSL */
+#undef WITH_OPENSSL
+
+/* Define to enable PyNUT module installation */
+#undef WITH_PYNUT
+
+/* Define to enable serial support */
+#undef WITH_SERIAL
+
+/* Define to enable SNMP support */
+#undef WITH_SNMP
+
+/* Define to use SNMP support with a statically linked libnetsnmp */
+#undef WITH_SNMP_STATIC
+
+/* Define to enable SSL */
+#undef WITH_SSL
+
+/* Define to enable data points discovered during subdriver generation but not
+   mapped to nut-names yet */
+#undef WITH_UNMAPPED_DATA_POINTS
+
+/* Define to enable USB support */
+#undef WITH_USB
+
+/* Define to 1 for libusb versions where we can support "busport" USB matching
+   value. */
+#undef WITH_USB_BUSPORT
+
+/* Define to enable libwrap (tcp-wrappers) support */
+#undef WITH_WRAP
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
+
+/* Replace missing __func__ declaration */
+#undef __func__
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* type to use in place of socklen_t if not defined */
+#undef socklen_t

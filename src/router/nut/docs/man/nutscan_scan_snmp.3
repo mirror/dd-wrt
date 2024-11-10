@@ -1,0 +1,94 @@
+'\" t
+.\"     Title: nutscan_scan_snmp
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN_SCAN_SNMP" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan_scan_snmp \- Scan network for SNMP devices\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <nut\-scan\&.h>
+#include <unistd\&.h> /* useconds_t */
+.fi
+.sp
+.nf
+nutscan_device_t * nutscan_scan_snmp(
+       const char * start_ip,
+       const char * stop_ip,
+       useconds_t timeout,
+       nutscan_snmp_t * sec);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBnutscan_scan_snmp()\fR function try to detect NUT compatible SNMP devices\&. It tries SNMP queries on every IP ranging from \fIstart_ip\fR to \fIstop_ip\fR\&. Those IP arguments may be either IPv4 or IPv6 addresses or host names\&.
+.sp
+You MUST call \fBnutscan_init\fR(3) before using this function\&.
+.sp
+This function waits up to \fItimeout\fR microseconds before considering an IP address does not respond to SNMP queries\&.
+.sp
+A valid nutscan_snmp_t structure must be passed to this function\&.
+.sp
+The nutscan_snmp_t structure contains the following members which must be filled as described below:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+char * \*(Aqcommunity\*(Aq;
+char * \*(AqsecLevel\*(Aq;
+char * \*(AqsecName\*(Aq;
+char * \*(AqauthPassword\*(Aq;
+char * \*(AqprivPassword\*(Aq;
+char * \*(AqauthProtocol\*(Aq;
+char * \*(AqprivProtocol\*(Aq;
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+If \fIcommunity\fR is not NULL, SNMP v1 request are sent using this \fIcommunity\fR\&.
+.sp
+If \fIcommunity\fR is NULL and \fIsecLevel\fR is NULL, SNMP v1 is selected and \fIcommunity\fR is set to "public"\&.
+.sp
+In the other cases, SNMP v3 is used\&. \fIsecLevel\fR may be one of SNMP_SEC_LEVEL_NOAUTH, SNMP_SEC_LEVEL_AUTHNOPRIV or SNMP_SEC_LEVEL_AUTHPRIV\&. \fIsecName\fR is the security name and must be non NULL\&.
+.sp
+If \fIsecLevel\fR is set to SNMP_SEC_LEVEL_AUTHNOPRIV, \fIauthPassword\fR must be non NULL\&.
+.sp
+If \fIsecLevel\fR is set to SNMP_SEC_LEVEL_AUTHPRIV, \fIauthPassword\fR and \fIprivPassword\fR must be non NULL\&.
+.sp
+If \fIauthProtocol\fR is NULL, MD5 protocol is used\&. Else you can set \fIauthProtocol\fR to either "MD5" or "SHA"\&.
+.sp
+If \fIprivProtocol\fR is NULL, DES protocol is used\&. Else you can set \fIprivProtocol\fR to either "AES" or "DES"\&.
+.sp
+\fIpeername\fR and \fIhandle\fR are used internally and do not need any initialization\&.
+.SH "RETURN VALUE"
+.sp
+The \fBnutscan_scan_snmp()\fR function returns a pointer to a nutscan_device_t structure containing all found devices or NULL if an error occurs or no device is found\&.
+.SH "SEE ALSO"
+.sp
+\fBnutscan_init\fR(3), \fBnutscan_scan_usb\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_display_sanity_check\fR(3), \fBnutscan_display_sanity_check_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_option_to_device\fR(3), \fBnutscan_add_device_to_device\fR(3), \fBnutscan_scan_eaton_serial\fR(3), \fBnutscan_cidr_to_ip\fR(3)

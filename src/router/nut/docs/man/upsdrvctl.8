@@ -1,0 +1,238 @@
+'\" t
+.\"     Title: upsdrvctl
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSDRVCTL" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsdrvctl \- UPS driver controller
+.SH "SYNOPSIS"
+.sp
+\fBupsdrvctl\fR \-h
+.sp
+\fBupsdrvctl\fR [\fIOPTIONS\fR] {start | stop | shutdown} [\fIups\fR]
+.sp
+\fBupsdrvctl\fR [\fIOPTIONS\fR] \-c COMMAND [\fIups\fR]
+.SH "DESCRIPTION"
+.sp
+\fBupsdrvctl\fR provides a uniform interface for controlling your UPS drivers\&. You should use upsdrvctl instead of direct calls to the drivers whenever possible\&.
+.sp
+When used properly, upsdrvctl lets you maintain identical startup scripts across multiple systems with different UPS configurations\&.
+.sp
+Note: For operating systems with service management frameworks, such as Solaris SMF or Linux systemd, the \fBupsdrvsvcctl\fR may be a better choice\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help text\&.
+.RE
+.PP
+\fB\-r\fR \fIdirectory\fR
+.RS 4
+If starting a driver, this value will direct it to
+\fBchroot\fR(2) into
+\fIdirectory\fR\&. This can be useful when securing systems\&.
+.RE
+.sp
+This may be set in the ups\&.conf with "chroot" in the global section\&.
+.PP
+\fB\-t\fR
+.RS 4
+Enable testing mode\&. This also enables debug mode\&. Testing mode makes upsdrvctl display the actions it would execute without actually doing them\&. Use this to test out your configuration without actually doing anything to your UPS drivers\&. This may be helpful when defining the
+\fIsdorder\fR
+directive in your
+\fBups.conf\fR(5)\&.
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+If starting a driver, this value will direct it to
+\fBsetuid\fR(2) to the user id associated with
+\fIusername\fR\&.
+.RE
+.sp
+If the driver is started as root without specifying this value, it will use the username that was compiled into the binary\&. This defaults to "nobody", and is far from ideal\&.
+.sp
+This may be set in ups\&.conf with "user" in the global section\&.
+.PP
+\fB\-D\fR
+.RS 4
+Raise the debug level\&. Use this multiple times for additional details\&. Note that this does not preclude the
+upsdrvctl
+tool from exiting after its job is done (however an explicit
+\fB\-F\fR
+option does)\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Pass the selected debug level from
+upsdrvctl
+to launched drivers\&. Note that by default for NUT daemons, enabled debugging means running in foreground mode; you can specify
+\fB\-B\fR
+additionally to avoid that\&.
+.RE
+.PP
+\fB\-F\fR
+.RS 4
+Driver will run in the foreground (not fork away from the
+upsdrvctl
+process), regardless of debugging settings\&. It would also keep the tool program itself foregrounded with driver daemons running as its children (in case of a single driver startup, it would not even fork)\&. It would also not wait for drivers to complete initialization, so
+upsdrvctl
+will warn about such situations\&. Specify twice (\-FF
+or
+\-F \-F) to save the driver PID file even in this mode (not saved by default when staying in foreground)\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+Drivers will run in the background, regardless of debugging settings, as set by
+\fB\-D\fR
+and passed\-through by
+\fB\-d\fR
+options\&.
+.RE
+.SH "COMMANDS"
+.sp
+upsdrvctl supports three commands \- start, stop and shutdown\&. It also supports passing requests to running drivers using \-c COMMAND syntax, similar to that in some other daemons\&.
+.sp
+They all can take an optional argument which is a UPS name from \fBups.conf\fR(5)\&. Without that argument, they operate on every UPS that is currently configured\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+upsdrvctl can not manage devices not listed in ups\&.conf (such as test drivers started with \-s TMP option)\&.
+.sp .5v
+.RE
+.PP
+\fBstart\fR
+.RS 4
+Start the UPS driver(s)\&. In case of failure, further attempts may be executed by using the
+\fImaxretry\fR
+and
+\fIretrydelay\fR
+options \- see
+\fBups.conf\fR(5)\&.
+.RE
+.PP
+\fBstop\fR
+.RS 4
+Stop the UPS driver(s)\&. This does not send commands to the UPS\&.
+.RE
+.PP
+\fBshutdown\fR
+.RS 4
+Command the UPS driver(s) to run their shutdown sequence\&. This assumes that the driver is no longer running, and starts a fresh instance via "driver \-k"\&. It is intended to be used as the last step in system shutdown, after the filesystems are no longer mounted rw\&. Drivers are stopped according to their sdorder value \- see
+\fBups.conf\fR(5)\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+this will probably power off your computers, so don\(cqt play around with this option\&. Only use it when your systems are prepared to lose power\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+refer to \fBups.conf\fR(5) for using the \fBnowait\fR parameter\&. It can be overridden by NUT_IGNORE_NOWAIT environment variable (e\&.g\&. used to work around certain issues with systemd otherwise)\&.
+.sp .5v
+.RE
+.PP
+\fB\-c\fR \fIcommand\fR
+.RS 4
+Send
+\fIcommand\fR
+to the background process as a signal\&. Valid commands are:
+.PP
+\fBdump\fR
+.RS 4
+tell the driver(s) to dump currently known state information to their
+stdout
+(if attached anywhere)
+.RE
+.PP
+\fBreload\fR
+.RS 4
+reread configuration files, ignoring modified settings which can not be applied "on the fly"
+.RE
+.PP
+\fBreload\-or\-error\fR
+.RS 4
+reread configuration files, ignoring but counting changed values which require a driver restart (can not be changed on the fly), and return a success/fail code based on that count, so the caller can decide the fate of the currently running driver instance
+.RE
+.PP
+\fBreload\-or\-exit\fR
+.RS 4
+reread configuration files, exiting the old driver process if it encounters modified settings which can not be applied "on the fly" (so caller like systemd can launch another copy of the driver)
+.RE
+.RE
+.sp
+If the upsdrvctl was launched to remain in memory and manage NUT driver processes, it can receive supported signals and pass them to those drivers\&.
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBNUT_DEBUG_LEVEL\fR sets default debug verbosity if no \fB\-D\fR arguments were provided on command line, but does not request that the daemon runs in foreground mode\&.
+.sp
+\fBNUT_CONFPATH\fR is the path name of the directory that contains ups\&.conf and other configuration files\&. If this variable is not set, \fBupsdrvctl\fR (and the drivers) use a built\-in default, which is often /usr/local/ups/etc\&.
+.sp
+\fBNUT_ALTPIDPATH\fR is the path name of the directory in which \fBupsd\fR and drivers store \&.pid files\&. If this variable is not set, \fBupsd\fR and drivers use either \fBNUT_STATEPATH\fR if set, or ALTPIDPATH if set, or otherwise the built\-in default \fBSTATEPATH\fR\&.
+.SH "DIAGNOSTICS"
+.sp
+upsdrvctl will return a nonzero exit code if it encounters an error while performing the desired operation\&. This will also happen if a driver takes longer than the \fImaxstartdelay\fR period to enter the background\&.
+.SH "SEE ALSO"
+.sp
+\fBupsdrvsvcctl\fR(8), \fBnutupsdrv\fR(8), \fBupsd\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

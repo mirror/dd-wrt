@@ -1,0 +1,355 @@
+'\" t
+.\"     Title: generic_modbus
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "GENERIC_MODBUS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+generic_modbus \- Driver for contact (direct) signal UPS devices connected via modbus remote I/O gateways
+.SH "SYNOPSIS"
+.sp
+\fBgeneric_modbus\fR \-h
+.sp
+\fBgeneric_modbus\fR \-a \fIDEVICE_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the \fBgeneric_modbus\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This is a generic modbus driver expected to work with contact (direct) signal UPS devices, connected via modbus RIO (remote I/O) either serial or TCP/IP\&.
+.sp
+The driver has been tested against PULS UPS (model UB40\&.241) via MOXA ioLogikR1212 (RS485) and ioLogikE1212 (TCP/IP)\&.
+.PP
+More information about this UPS can be found here:
+.RS 4
+https://products\&.pulspower\&.com/ca/ubc10\-241\-n1\&.html
+.RE
+.PP
+More information about Moxa ioLogik R1212, E1212 can be found here:
+.RS 4
+https://www\&.moxa\&.com/en/products/industrial\-edge\-connectivity/controllers\-and\-ios
+.RE
+.sp
+The PULS UPS UB40\&.241 supports the following signals:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Ready contact      (DO) <\-\-> HB
+Buffering contact  (DO) <\-\-> OL | OB
+Battery\-low        (DO) <\-\-> LB
+Replace Battery    (DO) <\-\-> RB
+Inhibit            (DI) <\-\-> FSD
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Digital port direction (DI/DO) assumes the device perspective
+.sp
+The driver\(cqs concept is to map the UPS states (as defined in NUT) onto UPS contacts\*(Aq states\&. The driver has an extended configuration interface implemented using variables defined in ups\&.conf\&.
+.SH "HARDWARE INTERCONNECTION"
+.sp
+The commission of modbus remote I/O server as well as UPS device is carried out following the corresponding instruction manuals\&. The following figure depicts the anticipated communication path and hardware interconnection:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
++\-\-\-\-\-\-+       +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+       +\-\-\-\-\-\-\-\-\-\-\-\-+       +\-\-\-\-\-\-\-\-\-\-\-\-+
+| UPSD | <\-\-\-> | GENERIC_MODBUS | <\-\-\-> | MODBUS RIO | <\-\-\-> | UPS DEVICE |
++\-\-\-\-\-\-+  (1)  +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+  (2)  +\-\-\-\-\-\-\-\-\-\-\-\-+  (3)  +\-\-\-\-\-\-\-\-\-\-\-\-+
+   |                   |
+   +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+      HOST CONTROLLER
+
+(1) Unix IPC
+(2) RS232 | TCP/IP
+(3) contacts
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.SS "Generic:"
+.PP
+\fBdevice_mfr\fR=\fIvalue\fR
+.RS 4
+A string specifying the manufacturer of the UPS device (default UNKNOWN)\&.
+.RE
+.PP
+\fBdevice_model\fR=\fIvalue\fR
+.RS 4
+A string specifying the model of the UPS device (default UNKNOWN)\&.
+.RE
+.SS "Serial:"
+.PP
+\fBser_baud_rate\fR=\fIvalue\fR
+.RS 4
+A integer specifying the serial port baud rate (default 9600)\&.
+.RE
+.PP
+\fBser_data_bit\fR=\fIvalue\fR
+.RS 4
+A integer specifying the serial port data bit (default 8)\&.
+.RE
+.PP
+\fBser_parity\fR=\fIvalue\fR
+.RS 4
+A character specifying the serial port parity (default N)\&.
+.RE
+.PP
+\fBser_stop_bit\fR=\fIvalue\fR
+.RS 4
+An integer specifying the serial port stop bit (default 1)\&.
+.RE
+.SS "Modbus:"
+.PP
+\fBrio_slave_id\fR=\fIvalue\fR
+.RS 4
+An integer specifying the RIO modbus slave ID (default 1)\&.
+.RE
+.SS "States (X = OL, OB, LB, HB, RB, CHRG, DISCHRG, FSD)"
+.PP
+\fB<X>_addr\fR=\fIvalue\fR
+.RS 4
+A number specifying the modbus address for the X state\&.
+.RE
+.PP
+\fB<X>_regtype\fR=\fIvalue\fR
+.RS 4
+A number specifying the modbus register type for the X state
+.RE
+.PP
+Default values:
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+1 for X = OL, OB, LB ,HB, RB, CHRG, DISCHRG
+0 for X = FSD
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+Valid values:
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+0:COIL, 1:INPUT_B, 2:INPUT_R, 3:HOLDING
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fB<X>_noro\fR=\fIvalue\fR
+.RS 4
+A number specifying the contact configuration for the X state (default 1)\&.
+.RE
+.PP
+Valid values:
+.RS 4
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+0:NC, 1:NO
+.fi
+.if n \{\
+.RE
+.\}
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+NO stands for normally open and NC for normally closed contact
+.sp .5v
+.RE
+.RE
+.SS "Shutdown"
+.PP
+\fBFSD_pulse_duration\fR=\fIvalue\fR
+.RS 4
+A number specifying the duration in ms for the inhibit pulse\&. If it\(cqs not defined, signal has only one transition depending on FSD_noro configuration\&.
+.sp
+Examples for FSD signal configuration:
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+FSD_noro = 1
+FSD_pulse_duration = 150
+
+                     +\-\-\-\-\-+
+                     |     |
+inhibit pulse  >\-\-\-\-\-+     +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\->
+                      <\-\-\->
+                      150ms
+
+
+FSD_noro = 0
+
+inhibit pulse  >\-\-\-\-\-+
+                     |
+                     +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\->
+.fi
+.if n \{\
+.RE
+.\}
+.SH "CONFIGURATION"
+.sp
+Here is an example of generic_modbus driver configuration in \fBups\&.conf\fR file:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[generic_modbus]
+  driver = generic_modbus
+  port = /dev/ttyUSB0
+  desc = "generic ups driver"
+  # device info
+  device_mfr = "PULS"
+  device_model = "UB40\&.241"
+  # serial settings
+  ser_baud_rate = 9600
+  ser_parity = N
+  ser_data_bit = 8
+  ser_stop_bit = 1
+  # modbus slave id
+  rio_slave_id = 5
+  # UPS signal state attributes
+  OB_addr = 0x0
+  OB_regtype = 1
+  OB_noro = 0
+  LB_addr = 0x1
+  LB_regtype = 1
+  HB_addr = 0x2
+  HB_regtype = 1
+  RB_addr = 0x3
+  RB_regtype = 1
+  FSD_addr = 0x0
+  FSD_regtype = 0
+  FSD_pulse_duration = 150
+.fi
+.if n \{\
+.RE
+.\}
+.SH "INSTANT COMMANDS"
+.sp
+This driver support the following instant commands:
+.PP
+load\&.off
+.RS 4
+executes "instant poweroff"
+.RE
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by installing libmodbus and running configure \-\-with\-modbus=yes\&.
+.sp
+You also need to give proper permissions on the local serial device file (/dev/ttyUSB0 for example) to allow the run\-time NUT driver user account to access it\&.
+.SH "OTHER NOTES"
+.sp
+The generic_modbus driver intends to support generic UPS devices with contact signals through modbus TCP/RTU gateways (also known as RIO \(em remote I/Os)\&. The data and signal path looks like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[UPSD] <\-\-\- IPC \-\-\-> [GENERIC_UPS] <\-\-\- modbus TCP/RTU \-\-\-> MODBUS\-RIO <\-\-\- contacts \-\-\-> [UPS DEVICE]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+On the other hand, you can setup any kind of modbus server, and configure the generic_modbus driver to connect and read or write specific registers\&. Your application / modbus server could then drive NUT statuses (e\&.g\&. OL, OB, HB etc) by writing over those registers\&.
+.SH "AUTHOR"
+.sp
+Dimitris Economou <dimitris\&.s\&.economou@gmail\&.com>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8), \fBups.conf\fR(5)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+libmodbus home page:
+http://libmodbus\&.org
+.RE

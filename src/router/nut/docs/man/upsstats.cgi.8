@@ -1,0 +1,74 @@
+'\" t
+.\"     Title: upsstats.cgi
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSSTATS\&.CGI" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsstats.cgi \- Web\-based UPS status viewer
+.SH "SYNOPSIS"
+.sp
+\fBupsstats\&.cgi\fR
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+As a CGI program, this should be invoked through your web server\&. If you run it from the command line, it will either complain about unauthorized access or spew a bunch of HTML at you\&.
+.sp .5v
+.RE
+.SH "DESCRIPTION"
+.sp
+\fBupsstats\&.cgi\fR uses template files to build web pages containing status information from UPS hardware\&. It can repeat sections of those template files to monitor several UPSes simultaneously, or focus on a single UPS\&.
+.sp
+These templates can also include references to \fBupsimage.cgi\fR(8) for graphical displays of battery charge levels, voltage readings, and the UPS load\&.
+.SH "ACCESS CONTROL"
+.sp
+upsstats will only talk to \fBupsd\fR(8) servers that have been defined in your \fBhosts.conf\fR(5)\&. If it complains that "Access to that host is not authorized", check that file first\&.
+.SH "TEMPLATES"
+.sp
+The web page that is displayed is actually a template containing commands to upsstats which are replaced by status information\&. The default file used for the overview is upsstats\&.html\&.
+.sp
+When monitoring a single UPS, the file displayed is upsstats\-single\&.html\&.
+.sp
+The format of these files, including the possible commands, is documented in \fBupsstats.html\fR(5)\&.
+.SH "FILES"
+.sp
+\fBhosts.conf\fR(5), \fBupsstats.html\fR(5), upsstats\-single\&.html
+.SH "SEE ALSO"
+.sp
+\fBupsimage.cgi\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,1122 @@
+'\" t
+.\"     Title: nutupsdrv
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTUPSDRV" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutupsdrv \- generic manual for unified NUT drivers
+.SH "SYNOPSIS"
+.sp
+\fBnutupsdrv\fR \fI\-h\fR
+.sp
+\fBnutupsdrv\fR [OPTIONS]
+.SH "DESCRIPTION"
+.sp
+\fBnutupsdrv\fR is not actually a driver\&. This is a combined man page for the shared code that is the core of many drivers within the Network UPS Tools package\&.
+.sp
+For information on the specific drivers, see their individual man pages\&.
+.sp
+UPS drivers provide a communication channel between the physical UPS hardware and the \fBupsd\fR(8) server\&. The driver is responsible for translating the native protocol of the UPS to the common format used by the rest of this package\&.
+.sp
+The core has three modes of operation which are determined by the command line switches\&. In the normal mode, the driver will periodically poll the UPS for its state and parameters, as per the \fBpollinterval\fR parameter in \fBups.conf\fR(5)\&. The results of this command are presented to upsd\&. The driver will also handle setting variables and instant commands if available\&.
+.sp
+In the second mode, using \fB\-k\fR, the driver can instruct the UPS to shut down the load, possibly after some delay\&. This mode of operation is intended for cases when it is known that the UPS is running out of battery power and the systems attached must be turned off to ensure a proper reboot when power returns\&.
+.sp
+In the third mode, using \fB\-d\fR, the driver will exit after some update loops, dumping the data tree (in upsc\-like format) to stdout\&. This can be useful to complement the nut\-scanner to discover devices, along with in\-depth data\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+You probably don\(cqt want to use any of these options directly\&. You should use \fBupsdrvctl\fR(8) to control your drivers, and \fBups.conf\fR(5) to configure them\&. The rest of this manual describes options and parameters that generally are not needed by normal users\&.
+.sp .5v
+.RE
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display a help message without doing anything else\&. This will also list possible values for
+\fI\-x\fR
+in that driver, and other help text that the driver\(cqs author may have provided\&.
+.RE
+.PP
+\fB\-a\fR \fIid\fR
+.RS 4
+Autoconfigure this driver using the
+\fIid\fR
+section of
+\fBups.conf\fR(5)\&.
+\fBThis argument is mandatory when calling the driver directly\&.\fR
+.RE
+.PP
+\fB\-s\fR \fIid\fR
+.RS 4
+Configure this driver only with command line arguments instead of reading
+\fBups.conf\fR(5)\&. To be used instead of
+\fB\-a\fR
+option when need to run a driver not present in driver configuration file\&. Instead, driver configuration have to be set with
+\fB\-x\fR
+options directly in the command line\&. As the driver instance cannot be controlled by
+\fBupsdrvctl\fR(8), this option should be used for specific needs only\&.
+.RE
+.PP
+\fB\-D\fR
+.RS 4
+Raise the debugging level\&. Use this multiple times to see more details\&. Running a driver in debug mode will (by default) prevent it from backgrounding after startup\&. It will keep on logging information to the console until it receives a SIGINT (usually Ctrl\-C) or SIGTERM signal\&.
+.sp
+The level of debugging needed depends both on the driver and the problem you\(cqre trying to diagnose\&. Therefore, first explain the problem you have with a driver to a developer/maintainer, before sending them debugging output\&. More often than not, if you just pick a level, the output may be either too limited or too verbose to be of any use\&.
+.RE
+.PP
+\fB\-d\fR \fIupdate_count\fR
+.RS 4
+Dump the data tree (in upsc\-like format) to stdout after running the driver update loop for
+\fIupdate_count\fR
+times and exit\&. By default this prevents the driver process from backgrounding after startup\&. Note that the driver banner will be printed too, so when using this option in scripts, don\(cqt forget to trim the first line\&.
+.RE
+.PP
+\fB\-q\fR
+.RS 4
+Raise log level threshold\&. Use this multiple times to log more details\&.
+.sp
+The debugging comment above also applies here\&.
+.RE
+.PP
+\fB\-c\fR \fIcommand\fR
+.RS 4
+Send
+\fIcommand\fR
+to the background process as a signal\&. Valid commands are:
+.PP
+\fBreload\fR
+.RS 4
+reread configuration files, ignoring modified settings which can not be applied "on the fly"
+.RE
+.PP
+\fBreload\-or\-error\fR
+.RS 4
+reread configuration files, ignoring but counting changed values which require a driver restart (can not be changed on the fly), and return a success/fail code based on that count, so the caller can decide the fate of the currently running driver instance
+.RE
+.PP
+\fBreload\-or\-exit\fR
+.RS 4
+reread configuration files, exiting the old driver process if it encounters modified settings which can not be applied "on the fly" (so caller like systemd can launch another copy of the driver)
+.RE
+.RE
+.PP
+\fB\-P\fR \fIpid\fR
+.RS 4
+Send the command signal above using specified PID number, rather than consulting the PID file\&. This can help define service units which start each NUT driver as a foreground process so it does not create a PID file\&. See also
+\-FF
+option as an alternative\&.
+.RE
+.PP
+\fB\-F\fR
+.RS 4
+Enforce running the driver as a foreground process, regardless of debugging or data\-dumping settings\&. Specify twice (\-FF
+or
+\-F \-F) to save the PID file even in this mode\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+Enforce running the driver as a background process, regardless of debugging or data\-dumping settings\&.
+.RE
+.PP
+\fB\-i\fR \fIinterval\fR
+.RS 4
+Set the poll interval for the device\&. The default value is 2 (in seconds)\&.
+.RE
+.PP
+\fB\-V\fR
+.RS 4
+Print only version information, then exit\&.
+.RE
+.PP
+\fB\-L\fR
+.RS 4
+Print a parsable list of driver variables\&. Mostly useful for configuration wizard programs\&.
+.RE
+.PP
+\fB\-k\fR
+.RS 4
+("Kill" power) Forced shutdown mode\&. The UPS will power off the attached load, if possible\&.
+.sp
+You should use
+upsdrvctl shutdown
+whenever possible instead of calling this directly\&.
+.RE
+.PP
+\fB\-r\fR \fIdirectory\fR
+.RS 4
+The driver will chroot(2) to
+\fIdirectory\fR
+during initialization\&. This can be useful when securing systems\&.
+.sp
+In addition to the state path, many systems will require /dev/null to exist within
+\fIdirectory\fR
+for this to work\&. The serial ports are opened before the chroot call, so you do not need to create them inside the jail\&. In fact, it is somewhat safer if you do not\&.
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+Override the unprivileged username that the driver may use after startup\&. If started as root, after opening configuration files (and optionally calling chroot(2), as described in the previous option), the driver will look up
+\fIusername\fR
+in the
+passwd
+database, then change to the user and group identities associated with
+\fIusername\fR\&. (If started with a nonzero UID or effective UID, the driver will silently ignore this option\&.)
+.sp
+When compiling NUT from source, the default username is typically
+nobody, and this may cause permission errors when the driver opens the UPS device node\&. You can use this option to temporarily override the defaults\&. For testing purposes, you can set this option to
+root
+to bypass permission errors, especially with USB\-based drivers\&. However, you will want to remove this option later in order to avoid permission conflicts between the driver and the unprivileged copy of
+\fBupsd\fR(8)\&.
+.RE
+.PP
+\fB\-g\fR \fIgroupname\fR
+.RS 4
+Override the unprivileged group name that the driver may use after startup to set permissions for the filesystem socket so
+upsd
+may still access it if the run\-time
+user
+of the driver normally would deny that access\&.
+.RE
+.PP
+\fB\-x\fR \fIvar\fR=\fIval\fR
+.RS 4
+Define a variable called
+\fIvar\fR
+with the value of
+\fIvar\fR
+in the driver\&. This varies from driver to driver \- see the specific man pages for more information\&.
+.sp
+This is like setting
+\fIvar\fR=\fIval\fR
+in
+\fBups.conf\fR(5), but
+\fB\-x\fR
+overrides any settings from that file\&.
+.RE
+.SH "DIAGNOSTICS"
+.sp
+Information about the startup process is printed to stdout\&. Additional messages after that point are available in the syslog\&. After \fBupsd\fR(8) starts, the UPS clients such as \fBupsc\fR(8) can be used to query the status of an UPS\&.
+.SH "PROGRAM CONTROL"
+.sp
+You should always use \fBupsdrvctl\fR(8) to control the drivers\&. While drivers can be started by hand for testing purposes, it is not recommended for production use\&.
+.SH "FILES"
+.PP
+ups\&.conf
+.RS 4
+Required configuration file\&. This contains all details on which drivers to start and where the hardware is attached\&.
+.RE
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBNUT_DEBUG_LEVEL\fR sets default debug verbosity if no \fB\-D\fR arguments were provided on command line, but does not request that the daemon runs in foreground mode\&.
+.sp
+\fBNUT_CONFPATH\fR is the path name of the directory that contains ups\&.conf and other configuration files\&. If this variable is not set, drivers use a built\-in default, which is often /usr/local/ups/etc\&.
+.sp
+\fBNUT_STATEPATH\fR is the path name of the directory in which \fBupsd\fR and drivers keep shared state information\&. If this variable is not set, \fBupsd\fR and drivers use a built\-in default, which is often /var/state/ups\&. The \fBSTATEPATH\fR directive in \fBupsd.conf\fR(5) overrides this variable\&.
+.sp
+\fBNUT_ALTPIDPATH\fR is the path name of the directory in which \fBupsd\fR and drivers store \&.pid files\&. If this variable is not set, \fBupsd\fR and drivers use either \fBNUT_STATEPATH\fR if set, or ALTPIDPATH if set, or otherwise the built\-in default \fBSTATEPATH\fR\&.
+.SH "BUGS"
+.sp
+Some of the drivers may have bugs\&. See their manuals for more information\&.
+.SH "SEE ALSO"
+.SS "Server:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsd\fR(8)
+.RE
+.SS "Clients:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsc\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupscmd\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsrw\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupslog\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsmon\fR(8)
+.RE
+.SS "CGI programs:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsset.cgi\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsstats.cgi\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsimage.cgi\fR(8)
+.RE
+.SS "Driver control:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnut-driver-enumerator\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsdrvctl\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupsdrvsvcctl\fR(8)
+.RE
+.SS "Drivers:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBadelsystem_cbi\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBal175\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBapc_modbus\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBapcsmart-old\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBapcsmart\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBapcupsd-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBasem\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbcmxcp\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbcmxcp_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbelkin\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbelkinunv\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbestfcom\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbestfortress\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbestuferrups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBbestups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBblazer-common\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBblazer_ser\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBblazer_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBclone\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBdummy-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBetapro\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBeverups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgamatronic\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgeneric_gpio\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgeneric_modbus\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBgenericups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBhuawei-ups2000\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBisbmex\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBivtscd\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBliebert-esp2\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBliebert\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmacosx-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmasterguard\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmetasys\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmge-shut\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmge-utalk\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmicrodowell\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBmicrosol-apc\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnetxml-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnut-ipmipsu\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnut_usb_addvars\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutdrv_atcl_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutdrv_qx\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutdrv_siemens_sitop\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBoneac\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBoptiups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBphoenixcontact_modbus\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpijuice\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpowercom\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpowerman-pdu\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpowerpanel\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBrhino\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBrichcomm_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBriello_ser\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBriello_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsafenet\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsms_ser\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsnmp-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsocomec_jbus\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsolis\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtripplite\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtripplite_usb\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBtripplitesu\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBupscode2\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBusbhid-ups\fR(8)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBvictronups\fR(8)
+.RE
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

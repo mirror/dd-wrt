@@ -1,0 +1,54 @@
+'\" t
+.\"     Title: upscli_add_host_cert
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_ADD_HOST_CERT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_add_host_cert \- Register a security rule for an host\&.
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+.fi
+.sp
+.nf
+void upscli_add_host_cert(const char* hostname, const char* certname,
+                       int certverify, int forcessl);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_add_host_cert()\fR function register a security rule associated to the \fIhostname\fR\&. All connections to this host use this rule\&.
+.sp
+The rule is composed of the certificate name \fIcertname \*(Aqexpected for the host, \*(Aqcertverify\fR if the certificate must be validated for the host and \fIforcessl\fR if a secured connection must be used to connect to the host\&.
+.sp
+Note: This call only functions if upsclient has been compiled with NSS support\&. If instead it was compiled with OpenSSL support, this function contains an empty definition and will take no action when called\&.
+.SH "RETURN VALUE"
+.sp
+\fBupscli_add_host_cert()\fR returns no value\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_init\fR(3), \fBupscli_connect\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

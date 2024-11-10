@@ -1,0 +1,138 @@
+'\" t
+.\"     Title: upsd.users
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSD\&.USERS" "5" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsd.users \- Administrative user definitions for NUT upsd
+.SH "DESCRIPTION"
+.sp
+Administrative commands such as setting variables and the instant commands are powerful, and access to them needs to be restricted\&. This file defines who may access them, and what is available\&.
+.sp
+Each user gets its own section\&. The fields in that section set the parameters associated with that user\(cqs privileges\&. The section begins with the name of the user in brackets, and continues until the next user name in brackets or EOF\&. These users are independent of /etc/passwd\&.
+.sp
+Here are some examples to get you started:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[admin]
+        password = mypass
+        actions = set
+        actions = fsd
+        instcmds = all
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[pfy]
+        password = duh
+        instcmds = test\&.panel\&.start
+        instcmds = test\&.panel\&.stop
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[upswired]
+        password = blah
+        upsmon primary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[observer]
+        password = abcd
+        upsmon secondary
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FIELDS"
+.PP
+\fBpassword\fR
+.RS 4
+Set the password for this user\&.
+.RE
+.PP
+\fBactions\fR
+.RS 4
+Allow the user to do certain things with upsd\&. To specify multiple actions, use multiple instances of the
+\fBactions\fR
+field\&. Valid actions are:
+.PP
+SET
+.RS 4
+change the value of certain variables in the UPS
+.RE
+.PP
+FSD
+.RS 4
+set the forced shutdown flag in the UPS\&. This is equivalent to an "on battery + low battery" situation for the purposes of monitoring\&.
+.RE
+.RE
+.sp
+The list of actions is expected to grow in the future\&.
+.PP
+\fBinstcmds\fR
+.RS 4
+Let a user initiate specific instant commands\&. Use "ALL" to grant all commands automatically\&. To specify multiple commands, use multiple instances of the
+\fBinstcmds\fR
+field\&. For the full list of what your UPS supports, use "upscmd \-l"\&.
+.sp
+The
+cmdvartab
+file supplied with the distribution contains a list of most of the known command names\&.
+.RE
+.PP
+\fBupsmon\fR
+.RS 4
+Add the necessary actions for a upsmon process to work\&. This is either set to "primary" or "secondary"\&.
+.sp
+Do not attempt to assign actions to upsmon by hand, as you may miss something important\&. This method of designating a "upsmon user" was created so internal capabilities could be changed later on without breaking existing installations\&.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBupsd\fR(8), \fBupsd.conf\fR(5)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

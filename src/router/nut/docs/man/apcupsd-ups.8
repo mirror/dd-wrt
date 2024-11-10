@@ -1,0 +1,395 @@
+'\" t
+.\"     Title: apcupsd-ups
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "APCUPSD\-UPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+apcupsd-ups \- Driver for apcupsd client access
+.SH "SYNOPSIS"
+.sp
+\fBapcupsd\-ups\fR \-h
+.sp
+\fBapcupsd\-ups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the \fBapcupsd\-ups\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "DESCRIPTION"
+.sp
+This driver is a client to \fBapcupsd\fR (another UPS monitoring project)\&.
+.sp
+\fBapcupsd\-ups\fR acts as an \fBapcupsd\fR client, simply forwarding data\&. This can be useful in cases where both protocols are required in a network, or in case apcupsd has a required UPS access mode missing from NUT\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in \fBnut.conf\fR(5):
+.PP
+\fBport\fR=<hostname>[:<port>]
+.RS 4
+This is the name of a remote host running apcupsd (plus an optional port)\&.
+.RE
+.sp
+For instance:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[apcupsd]
+            driver = apcupsd\-ups
+            port = localhost
+            desc = "apcupsd client"
+.fi
+.if n \{\
+.RE
+.\}
+.SH "BACKGROUND"
+.sp
+This driver was originally written in one evening to allow interoperating with \fBapcupsd\fR\&.
+.SH "SUPPORTED VARIABLES"
+.sp
+The following variables are translated from \fBapcupsd\fR to NUT\&. All times should be converted to seconds (please file a bug if you notice a mismatch in units)\&.
+.TS
+allbox tab(:);
+ltB ltB.
+T{
+apcupsd variable
+T}:T{
+NUT variable(s)
+T}
+.T&
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt.
+T{
+.sp
+BCHARGE
+T}:T{
+.sp
+battery\&.charge
+T}
+T{
+.sp
+MBATTCHG
+T}:T{
+.sp
+battery\&.charge\&.low
+T}
+T{
+.sp
+RETPCT
+T}:T{
+.sp
+battery\&.charge\&.restart
+T}
+T{
+.sp
+BATTDATE
+T}:T{
+.sp
+battery\&.date
+T}
+T{
+.sp
+TIMELEFT
+T}:T{
+.sp
+battery\&.runtime
+T}
+T{
+.sp
+MINTIMEL
+T}:T{
+.sp
+battery\&.runtime\&.low
+T}
+T{
+.sp
+BATTV
+T}:T{
+.sp
+battery\&.voltage
+T}
+T{
+.sp
+NOMBATTV
+T}:T{
+.sp
+battery\&.voltage\&.nominal
+T}
+T{
+.sp
+LINEFREQ
+T}:T{
+.sp
+input\&.frequency
+T}
+T{
+.sp
+SENSE
+T}:T{
+.sp
+input\&.sensitivity
+T}
+T{
+.sp
+HITRANS
+T}:T{
+.sp
+input\&.transfer\&.high
+T}
+T{
+.sp
+LOTRANS
+T}:T{
+.sp
+input\&.transfer\&.low
+T}
+T{
+.sp
+LASTXFER
+T}:T{
+.sp
+input\&.transfer\&.reason
+T}
+T{
+.sp
+LINEV
+T}:T{
+.sp
+input\&.voltage
+T}
+T{
+.sp
+MAXLINEV
+T}:T{
+.sp
+input\&.voltage\&.maximum
+T}
+T{
+.sp
+MINLINEV
+T}:T{
+.sp
+input\&.voltage\&.minimum
+T}
+T{
+.sp
+NOMINV
+T}:T{
+.sp
+input\&.voltage\&.nominal
+T}
+T{
+.sp
+LINEFREQ
+T}:T{
+.sp
+output\&.frequency
+T}
+T{
+.sp
+OUTPUTV
+T}:T{
+.sp
+output\&.voltage
+T}
+T{
+.sp
+NOMOUTV
+T}:T{
+.sp
+output\&.voltage\&.nominal
+T}
+T{
+.sp
+DATE
+T}:T{
+.sp
+ups\&.date, ups\&.time
+T}
+T{
+.sp
+DSHUTD
+T}:T{
+.sp
+ups\&.delay\&.shutdown
+T}
+T{
+.sp
+DWAKE
+T}:T{
+.sp
+ups\&.delay\&.start
+T}
+T{
+.sp
+FIRMWARE
+T}:T{
+.sp
+ups\&.firmware, ups\&.firmware\&.aux
+T}
+T{
+.sp
+UPSNAME
+T}:T{
+.sp
+ups\&.id
+T}
+T{
+.sp
+LOADPCT
+T}:T{
+.sp
+ups\&.load
+T}
+T{
+.sp
+MANDATE
+T}:T{
+.sp
+ups\&.mfr\&.date
+T}
+T{
+.sp
+NOMPOWER
+T}:T{
+.sp
+ups\&.realpower\&.nominal
+T}
+T{
+.sp
+SERIALNO
+T}:T{
+.sp
+ups\&.serial
+T}
+T{
+.sp
+STATUS
+T}:T{
+.sp
+ups\&.status
+T}
+T{
+.sp
+ITEMP
+T}:T{
+.sp
+ups\&.temperature
+T}
+T{
+.sp
+STESTI
+T}:T{
+.sp
+ups\&.test\&.interval
+T}
+T{
+.sp
+SELFTEST
+T}:T{
+.sp
+ups\&.test\&.result
+T}
+.TE
+.sp 1
+.SH "LIMITATIONS"
+.sp
+Access to \fBapcupsd\fR is strictly read only: no commands can be issued\&. This stems from the design of \fBapcupsd\fR, where the settings are changed in \fBapctest\fR\&. In order to run \fBapctest\fR, \fBapcupsd\fR must be stopped (and it is \fBapcupsd\fR exposes the UPS to the network and to this NUT driver as its client)\&.
+.SH "AUTHOR"
+.sp
+Andreas Steinmetz
+.SH "SEE ALSO"
+.sp
+\fBups.conf\fR(5), \fBnutupsdrv\fR(8)
+.SS "Internet Resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The apcupsd home page:
+http://www\&.apcupsd\&.org/
+.RE

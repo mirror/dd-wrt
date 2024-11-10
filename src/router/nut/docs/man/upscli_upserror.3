@@ -1,0 +1,53 @@
+'\" t
+.\"     Title: upscli_upserror
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_UPSERROR" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_upserror \- Get current error number for connection
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+.fi
+.sp
+.nf
+int upscli_upserror(UPSCONN_t *ups);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_upserror\fR() function takes the pointer \fIups\fR to a UPSCONN_t state structure and returns the value of the internal error number, if any\&.
+.sp
+This is typically used to check for certain error values like UPSCLI_ERR_UNKCOMMAND\&. That specific error can be used for detecting older versions of \fBupsd\fR(8) which might not support a given command\&.
+.sp
+Some error messages have additional meanings, so you should use \fBupscli_strerror\fR(3) to obtain readable error messages\&.
+.SH "RETURN VALUE"
+.sp
+The \fBupscli_upserror\fR() function returns one of the UPSCLI_ERR_* values from upsclient\&.h, or 0 if no error has occurred\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_readline\fR(3), \fBupscli_sendline\fR(3), \fBupscli_strerror\fR(3)

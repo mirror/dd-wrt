@@ -1,0 +1,93 @@
+'\" t
+.\"     Title: richcomm_usb
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "RICHCOMM_USB" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+richcomm_usb \- Driver UPS equipment using Richcomm dry\-contact to USB solution
+.SH "SYNOPSIS"
+.sp
+\fBrichcomm_usb\fR \-h
+.sp
+\fBrichcomm_usb\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the specific features of the richcomm_usb driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The Richcomm dry\-contact to USB solution is a generic interface that is used to upgrade an existing (RS\-232) contact closure UPS interface to USB\&. As such, all the limitations of the underlying contact closure interface apply\&. This means that you will only get the essentials in ups\&.status: OL, OB, and LB\&. See also \fBgenericups\fR(8)\&.
+.SH "BUGS"
+.sp
+Most contact\-closure UPSes will not power down the load if the line power is present\&. This can create a race when using secondary \fBupsmon\fR(8) systems\&. See the \fBupsmon\fR(8) man page for more information\&.
+.sp
+The solution to both of these problems is to upgrade to a smart protocol UPS of some kind that allows detection and proper load cycling on command\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Peter van Valderen <p\&.v\&.valderen at probu\&.nl>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Dirk Teurlings <dirk at upexia\&.nl>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "The generic serial driver:"
+.sp
+\fBgenericups\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

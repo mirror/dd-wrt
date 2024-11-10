@@ -1,0 +1,57 @@
+'\" t
+.\"     Title: upscli_connect
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCLI_CONNECT" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscli_connect \- Open a connection to a NUT upsd
+.SH "SYNOPSIS"
+.sp
+.nf
+#include <upsclient\&.h>
+.fi
+.sp
+.nf
+int upscli_connect(UPSCONN_t *ups, const char *host, uint16_t port, int flags);
+.fi
+.SH "DESCRIPTION"
+.sp
+The \fBupscli_connect()\fR function takes the pointer \fIups\fR to a UPSCONN_t state structure and opens a TCP connection to the \fIhost\fR on the given \fIport\fR\&.
+.sp
+\fIflags\fR may be either UPSCLI_CONN_TRYSSL to try a SSL connection, or UPSCLI_CONN_REQSSL to require a SSL connection\&.
+.sp
+Introduced in version 2\&.7, an additional flag UPSCLI_CONN_CERTVERIF now exists to verify the signature offered during the SSL handshake\&. This flag should be used in conjunction with \fBupscli_init\fR(3) and/or \fBupscli_add_host_cert\fR(3) calls before connecting in order to define a CA certificate with which to verify\&.
+.sp
+If SSL mode is required, this function will only return successfully if it is able to establish a SSL connection with the server\&. Possible reasons for failure include no SSL support on the server, and if \fBupsclient\fR itself hasn\(cqt been compiled with SSL support\&.
+.sp
+You must call \fBupscli_disconnect\fR(3) when finished with a connection, or your program will slowly leak memory and file descriptors\&.
+.SH "RETURN VALUE"
+.sp
+The \fBupscli_connect()\fR function modifies the UPSCONN_t structure and returns 0 on success, or \-1 if an error occurs\&.
+.SH "SEE ALSO"
+.sp
+\fBupscli_disconnect\fR(3), \fBupscli_fd\fR(3), \fBupscli_splitaddr\fR(3), \fBupscli_splitname\fR(3), \fBupscli_ssl\fR(3), \fBupscli_strerror\fR(3), \fBupscli_upserror\fR(3)

@@ -1,0 +1,2026 @@
+'\" t
+.\"     Title: nutdrv_qx
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTDRV_QX" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutdrv_qx \- Driver for Q* protocol serial and USB based UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBnutdrv_qx\fR \-h
+.sp
+\fBnutdrv_qx\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the \fBnutdrv_qx\fR driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+The \fBnutdrv_qx\fR driver is known to work with various UPSes from \fIArmac\fR, \fIBlazer\fR, \fIEnergy Sistem\fR, \fIFenton Technologies\fR, \fIGeneral Electric\fR, \fIHunnox\fR, \fIMasterguard\fR, \fIMustek\fR, \fIPowercool\fR, \fIVoltronic Power\fR, \fISKE\fR (rebranded by many, many \- have I said many? \- others\&...
+.sp
+Long story short: if your UPS came with a software called \fIViewpower\fR, chances are high that it works with this driver with one of the \fIvoltronic*\fR protocols or with the \fImecer\fR one), and many others\&.
+.sp
+The NUT compatibility table lists all the known supported models\&. Keep in mind, however, that other models not listed there may also be supported, but haven\(cqt been tested or reported back\&.
+.sp
+All devices with a serial interface and many with a USB interface are supported\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+You may need to override or provide defaults for some values, depending on the make and model of your UPS\&.
+.sp
+The following are the ones that most likely will need changing (see \fBups.conf\fR(5)):
+.PP
+\fBondelay =\fR \fIvalue\fR
+.RS 4
+Time to wait before switching on the UPS (seconds)\&. This value is truncated to units of 60 seconds\&.
+.sp
+Note that a value below 3 minutes, may cause earlier firmware versions to not switch on automatically, so it defaults to 3 minutes (i\&.e\&. 180 seconds)\&.
+.sp
+This option provides a default value for
+\fBups\&.delay\&.start\fR
+that will then be used by the driver in the automatic shutdown sequence (i\&.e\&. calling the driver with the
+\fB\-k\fR
+option, calling
+\fBupsdrvctl\fR(8)
+with the
+\fBshutdown\fR
+option or when the
+FSD
+flag is set and
+\fBupsmon\fR(8)
+enters its shutdown sequence): however you can change this value \(oqon the fly\(cq for the actual session, only for the use with instant commands, setting
+\fBups\&.delay\&.start\fR
+with
+\fBupsrw\fR(8)\&.
+.RE
+.PP
+\fBoffdelay =\fR \fIvalue\fR
+.RS 4
+Time to wait before shutting down the UPS (seconds)\&. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds)\&. Defaults to 30 seconds\&.
+.sp
+This option provides a default value for
+\fBups\&.delay\&.shutdown\fR
+that will then be used by the driver in the automatic shutdown sequence (i\&.e\&. calling the driver with the
+\fB\-k\fR
+option, calling
+\fBupsdrvctl\fR(8)
+with the
+\fBshutdown\fR
+option or when the
+FSD
+flag is set and
+\fBupsmon\fR(8)
+enters its shutdown sequence): however you can change this value \(oqon the fly\(cq for the actual session, only for the use with instant commands, setting
+\fBups\&.delay\&.shutdown\fR
+with
+\fBupsrw\fR(8)\&.
+.RE
+.PP
+\fBstayoff\fR
+.RS 4
+If you set stayoff in
+\fBups.conf\fR(5)
+when FSD arises the UPS will call a
+\fBshutdown\&.stayoff\fR
+shutting down after
+\fBups\&.delay\&.shutdown\fR
+seconds and won\(cqt return (see
+KNOWN PROBLEMS), otherwise (standard behaviour) the UPS will call
+\fBshutdown\&.return\fR
+shutting down after
+\fBups\&.delay\&.shutdown\fR
+seconds and then turn on after
+\fBups\&.delay\&.start\fR
+seconds (if mains meanwhile returned)\&.
+.RE
+.PP
+\fBprotocol =\fR \fIstring\fR
+.RS 4
+Skip autodetection of the protocol to use and only use the one specified\&. Supported values:
+\fIbestups\fR,
+\fIhunnox\fR,
+\fImasterguard\fR,
+\fImecer\fR,
+\fImegatec\fR,
+\fImegatec/old\fR,
+\fImustek\fR,
+\fIq1\fR,
+\fIvoltronic\fR,
+\fIvoltronic\-qs\fR,
+\fIvoltronic\-qs\-hex\fR
+and
+\fIzinto\fR\&.
+.sp
+Run the driver program with the
+\-\-help
+option to see the exact list of
+protocol
+values it would currently recognize\&.
+.sp
+Note that if you end up using the
+\fIq1\fR
+protocol, you may want to give a try to the
+\fImecer\fR,
+\fImegatec\fR
+and
+\fIzinto\fR
+ones setting the
+\fBnovendor\fR/\fBnorating\fR flags
+(only one, or both)\&.
+.RE
+.PP
+\fBpollfreq =\fR \fInum\fR
+.RS 4
+Set polling interval for full updates, in seconds, to reduce the message traffic\&. Between two polling requests, the driver will do
+\fIquick polls\fR
+dealing just with
+\fBups\&.status\fR
+at an interval specified by the
+\fBpollinterval\fR
+driver option (details in
+\fBups.conf\fR(5))\&. The default value is 30 (in seconds)\&.
+.RE
+.sp
+If your UPS doesn\(cqt report either \fBbattery\&.charge\fR or \fBbattery\&.runtime\fR you may want to add the following ones in order to have guesstimated values:
+.PP
+\fBdefault\&.battery\&.voltage\&.high =\fR \fIvalue\fR
+.RS 4
+Maximum battery voltage that is reached after about 12 to 24 hours charging\&. If you want the driver to report a guesstimated
+\fBbattery\&.charge\fR, you need to specify this (see
+BATTERY CHARGE GUESSTIMATION)\&.
+.RE
+.PP
+\fBdefault\&.battery\&.voltage\&.low =\fR \fIvalue\fR
+.RS 4
+Minimum battery voltage just before the UPS automatically shuts down\&. If you want the driver to report a guesstimated
+\fBbattery\&.charge\fR, you need to specify this (see
+BATTERY CHARGE GUESSTIMATION)\&.
+.RE
+.PP
+\fBdefault\&.battery\&.voltage\&.nominal =\fR \fIvalue\fR, \fBoverride\&.battery\&.voltage\&.nominal =\fR \fIvalue\fR
+.RS 4
+Some devices show a wrong nominal battery voltage (or none at all), so you may need to override or set a default value\&.
+.RE
+.PP
+\fBoverride\&.battery\&.packs =\fR \fIvalue\fR
+.RS 4
+Some devices "natively" report just a part of the total battery voltage (see also
+\fBbattery_voltage_reports_one_pack\fR
+below)\&.
+.sp
+For instance, if
+\fBbattery\&.voltage\&.nominal\fR
+is 24 V, but it reports a
+\fBbattery\&.voltage\fR
+of around 2 V, the number of
+\fBbattery\&.packs\fR
+to correct this reading would be 12\&.
+.sp
+The driver will attempt to detect this number automatically, but if this fails somehow, you may want to override this value\&.
+.sp
+Note that this is primarily useful for "guesstimation" of
+battery\&.charge
+and/or
+battery\&.runtime
+(with
+runtimecal
+setting), if those readings are not provided by the device directly\&.
+.RE
+.PP
+\fBbattery_voltage_reports_one_pack\fR
+.RS 4
+Some devices "natively" report just report a part of the total battery voltage (see also
+\fBoverride\&.battery\&.packs\fR
+above, if that value is not reported by the device or properly guessed by the driver otherwise)\&.
+.sp
+If this flag is set, most of the subdrivers (except those which know about more complicated device\-specific nuances, currently:
+\fBablerex\fR,
+\fBmasterguard\fR
+and
+\fBvoltronic\-qs\-hex\fR) adjust their ultimately reported
+\fBbattery\&.voltage\fR
+value as a multiple of
+\fBbattery\&.packs\fR
+and "native"
+\fBbattery\&.voltage\fR)\&.
+.sp
+Note this is primarily useful for consistent diagnostics and graphing of the numbers, and should not impact the "guesstimation" of
+battery\&.charge
+and/or
+battery\&.runtime
+\- so rather a cosmetic adjustment, than critical\&.
+.RE
+.PP
+\fBruntimecal =\fR \fIvalue,value,value,value\fR
+.RS 4
+Parameter used in the (optional) runtime estimation\&. This takes two runtimes at different loads\&. Typically, this uses the runtime at full load and the runtime at half load\&. For instance, if your UPS has a rated runtime of 240 seconds at full load and 720 seconds at half load, you would enter
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+runtimecal = 240,100,720,50
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The first load should always be higher than the second\&. If you have values available for loads other than 100 and 50 % respectively, you can use those too, but keep them spaced apart as far as reasonably possible\&. Just don\(cqt get too close to no load (prediction of runtime depends more on idle load for the battery then)\&.
+.RE
+.PP
+\fBchargetime =\fR \fIvalue\fR
+.RS 4
+The time needed to fully recharge the battery after being fully discharged\&. If not specified, the driver defaults to 43200 seconds (12 hours)\&. Only used if
+\fBruntimecal\fR
+is also specified\&.
+.RE
+.PP
+\fBidleload =\fR \fIvalue\fR
+.RS 4
+Minimum battery load used by the driver to estimate the runtime\&. If not specified, the driver defaults to 10%\&. Only used if
+\fBruntimecal\fR
+is also specified\&.
+.RE
+.SS "BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC\-QS, VOLTRONIC\-QS\-HEX, ZINTO PROTOCOLS"
+.PP
+\fBignoresab\fR
+.RS 4
+Some UPSes incorrectly report the \(oqShutdown Active\(cq bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups\&.status always contains
+FSD\&... and you know what this means)\&. Setting this flag will make the driver ignore the \(oqShutdown Active\(cq bit\&.
+.RE
+.SS "MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS"
+.PP
+\fBondelay\fR
+.RS 4
+The acceptable range is
+0\&.\&.599940
+seconds\&.
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+The acceptable range is
+12\&.\&.600
+seconds\&.
+.RE
+.PP
+\fBnorating\fR
+.RS 4
+Some UPSes will lock up if you attempt to read rating information from them\&. Setting this flag will make the driver skip this step\&.
+.RE
+.PP
+\fBnovendor\fR
+.RS 4
+Some UPSes will lock up if you attempt to read vendor information from them\&. Setting this flag will make the driver skip this step\&.
+.RE
+.SS "BESTUPS PROTOCOL"
+.PP
+\fBondelay\fR
+.RS 4
+The acceptable range is
+60\&.\&.599940
+seconds\&.
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+The acceptable range is
+12\&.\&.5940
+seconds\&.
+.RE
+.PP
+\fBpins_shutdown_mode =\fR \fIvalue\fR
+.RS 4
+Set
+shutdown mode functionality of Pin 1 and Pin 7
+on the UPS DB9 communication port (Per Best Power\(cqs EPS\-0059) to
+\fIvalue\fR
+[0\&.\&.6]\&.
+.RE
+.SS "MASTERGUARD PROTOCOL"
+.PP
+\fBslave_addr =\fR \fIvalue\fR
+.RS 4
+Make the claim function verify it\(cqs talking to the specified
+\fIslave address\fR
+(\fBups\&.id\fR)\&. Safeguard against talking to the wrong one of several identical UPSes on the same USB bus\&. Note that when changing
+\fBups\&.id\fR
+(through
+\fBupsrw\fR(8)) the driver will continue to talk to the UPS with the new
+\fIslave address\fR, but won\(cqt claim it again on restart until the
+\fBslave_addr\fR
+parameter is adjusted\&.
+.RE
+.SS "Q1 PROTOCOL"
+.PP
+\fBondelay\fR
+.RS 4
+The acceptable range is
+0\&.\&.599940
+seconds\&.
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+The acceptable range is
+12\&.\&.600
+seconds\&.
+.RE
+.SS "VOLTRONIC\-QS, VOLTRONIC\-QS\-HEX PROTOCOLS"
+.PP
+\fBondelay\fR
+.RS 4
+The acceptable range is
+60\&.\&.599940
+seconds\&.
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+The acceptable range is
+12\&.\&.540
+seconds\&.
+.RE
+.SS "VOLTRONIC PROTOCOL"
+.sp
+The following options are supported only by the \fIvoltronic\fR protocol\&. Not all of them are available on all the UPSes supported by this protocol\&.
+.PP
+\fBondelay\fR
+.RS 4
+The acceptable range is
+0\&.\&.599940
+seconds\&.
+.RE
+.PP
+\fBoffdelay\fR
+.RS 4
+The acceptable range is
+12\&.\&.5940
+seconds\&.
+.RE
+.PP
+\fBbattery_number =\fR \fIvalue\fR
+.RS 4
+Set number of batteries that make a pack to
+\fIvalue\fR
+[1\&.\&.9]\&. This setting will change the charge and runtime estimation reported by the UPS\&.
+.RE
+.PP
+\fBoutput_phase_angle =\fR \fIvalue\fR
+.RS 4
+Changes output phase angle to the provided value [000,
+120,
+180,
+240]\(de\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBUPS CAPABILITY SETTINGS\fR
+.RS 4
+.PP
+\fBreset_to_default\fR
+.RS 4
+Reset capability options and their voltage and frequency limits to safe default values\&. (\fBDoable only when the UPS is in Standby Mode\fR)
+.sp
+Note that setting this option will reset also
+\fBups\&.start\&.auto\fR,
+\fBbattery\&.protection\fR,
+\fBbattery\&.energysave\fR,
+\fBups\&.start\&.battery\fR,
+\fBoutlet\&.0\&.switchable\fR,
+\fBinput\&.transfer\&.high\fR,
+\fBinput\&.transfer\&.low\fR,
+\fBinput\&.frequency\&.high\fR
+and
+\fBinput\&.frequency\&.low\fR\&.
+.RE
+.sp
+These UPSes can be fine\-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup: the settable ones will be reported either are \fIenabled\fR or \fIdisabled\fR in the logs):
+.PP
+\fBalarm_control =\fR \fIstring\fR
+.RS 4
+Enable or disable alarm (BEEP!) [enabled/disabled]\&. Settable also \(oqon the fly\(cq with
+\fBbeeper\&.enable\fR
+and
+\fBbeeper\&.disable\fR
+instant commands\&.
+.RE
+.PP
+\fBbypass_alarm =\fR \fIstring\fR
+.RS 4
+Enable or disable alarm (BEEP!) at Bypass Mode [enabled/disabled]\&.
+.RE
+.PP
+\fBbattery_alarm =\fR \fIstring\fR
+.RS 4
+Enable or disable alarm (BEEP!) at Battery Mode [enabled/disabled]\&.
+.RE
+.PP
+\fBbypass_when_off =\fR \fIstring\fR
+.RS 4
+Enable or disable bypass when the UPS is Off [enabled/disabled]\&. If enabled, AC will directly provide power to connected devices when the UPS is off\&.
+.RE
+.PP
+\fBbypass_forbidding =\fR \fIstring\fR
+.RS 4
+Enable or disable Bypass Forbidding [enabled/disabled]\&. If enabled, the UPS will not transfer to bypass mode under any condition\&.
+.RE
+.PP
+\fBconverter_mode =\fR \fIstring\fR
+.RS 4
+Enable or disable Converter Mode [enabled/disabled]\&. When input frequency is within 40 Hz to 70 Hz, the UPS can be set at a constant output frequency, 50 Hz or 60 Hz\&. The UPS will still charge battery under this mode\&.
+.RE
+.PP
+\fBeco_mode =\fR \fIstring\fR
+.RS 4
+Enable or disable ECO Mode [enabled/disabled]\&. When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving\&. PFC and INVERTER are still active at this mode\&. Settable also \(oqon the fly\(cq with
+\fBbypass\&.start\fR
+and
+\fBbypass\&.stop\fR
+instant commands\&.
+.RE
+.PP
+\fBadvanced_eco_mode =\fR \fIstring\fR
+.RS 4
+Enable or disable Advanced ECO Mode [enabled/disabled]\&. When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving\&. PFC and INVERTER are off at this mode\&.
+.RE
+.PP
+\fBbattery_open_status_check =\fR \fIstring\fR
+.RS 4
+Enable or disable Battery Open Status Check [enabled/disabled]\&. If enabled, when the UPS is turned on, it will check if the battery is connected or not\&.
+.RE
+.PP
+\fBsite_fault_detection =\fR \fIstring\fR
+.RS 4
+Enable or disable site fault detection [enabled/disabled]\&. If enabled, the UPS will beep when the input neutral and hot wires are reversed\&.
+.RE
+.PP
+\fBconstant_phase_angle =\fR \fIstring\fR
+.RS 4
+Enable or disable Constant Phase Angle Function (output and input phase angles are not equal) [enabled/disabled]\&.
+.RE
+.PP
+\fBlimited_runtime_on_battery =\fR \fIstring\fR
+.RS 4
+Enable or disable limited runtime on battery mode [enabled/disabled]\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBBYPASS MODE VOLTAGE/FREQUENCY LIMITS\fR
+.RS 4
+.sp
+Variables to fine\-tune voltage and frequency limits for Bypass mode\&. These limits are reset to safe default values by \fBreset_to_default\fR\&.
+.sp
+If AC voltage and frequency are within acceptable range, Bypass mode will be used (If the UPS is capable of and it\(cqs enabled)\&.
+.sp
+Since these values are device\-specific, if your UPS support them, you will get their settable limits printed in the logs on startup\&.
+.PP
+\fBmax_bypass_volt =\fR \fIvalue\fR
+.RS 4
+Maximum voltage for Bypass Mode (V)\&.
+.RE
+.PP
+\fBmin_bypass_volt =\fR \fIvalue\fR
+.RS 4
+Minimum voltage for Bypass Mode (V)\&.
+.RE
+.PP
+\fBmax_bypass_freq =\fR \fIvalue\fR
+.RS 4
+Maximum frequency for Bypass Mode (Hz)\&.
+.RE
+.PP
+\fBmin_bypass_freq =\fR \fIvalue\fR
+.RS 4
+Minimum frequency for Bypass Mode (Hz)\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBOPTIONS SPECIFIC FOR P31 UPSES\fR
+.RS 4
+.sp
+The following options are available only on P31 UPSes\&.
+.PP
+\fBwork_range_type =\fR \fIstring\fR
+.RS 4
+Device grid working range for P31 UPSes [Appliance/UPS]\&.
+.RE
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTESTING\fR
+.RS 4
+.sp
+This protocol comes with a couple of functions that are not enabled by default because of the lack of knowledge of some part of the communication protocol used by these UPSes by your friendly neighborhood developer\&. Since these functions are supposed to be queries to the UPS for some kind of information, they \fIshould\fR not make your UPS go boom\&. So if you are brave enough to risk your UPS and attached devices\*(Aq life to help the developers, this will be very appreciated\&.\&. \fBDo it at your own risk\fR\&.
+.PP
+\fBtesting\fR
+.RS 4
+If invoked the driver will exec also commands that still need testing\&.
+.RE
+.RE
+.SS "SERIAL INTERFACE ONLY"
+.PP
+\fBcablepower =\fR \fIstring\fR
+.RS 4
+By default the driver will set DTR and clear RTS (\fInormal\fR)\&. If you find that your UPS isn\(cqt detected or the communication with the UPS is unreliable, you may try if clear DTR and set RTS (\fIreverse\fR), set DTR and RTS (\fIboth\fR) or clear DTR and RTS (\fInone\fR) improves this situation\&.
+.RE
+.SS "USB INTERFACE ONLY"
+.PP
+\fBport =\fR \fIstring\fR
+.RS 4
+Some
+\fIvalue\fR
+must be set, typically
+\fBauto\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+This could be a device filesystem path like
+/dev/usb/hiddev0
+but current use of libusb API precludes knowing and matching by such identifiers\&. They may also be inherently unreliable (dependent on re\-plugging and enumeration order)\&. At this time the actual
+\fIvalue\fR
+is ignored, but syntactically some
+\fIport\fR
+configuration must still be there\&.
+.sp .5v
+.RE
+.RE
+.sp
+It is possible to control multiple UPS units simultaneously by running several instances of this driver, provided they can be uniquely distinguished by setting some combination of the \fBvendor\fR, \fBproduct\fR, \fBvendorid\fR, \fBproductid\fR, \fBserial\fR, \fBbus\fR and/or \fBdevice\fR options detailed below\&. For devices or operating systems that do not provide sufficient information, the \fBallow_duplicates\fR option can be of use (limited and risky!)
+.PP
+\fBvendorid =\fR \fIregex\fR, \fBproductid =\fR \fIregex\fR, \fBvendor =\fR \fIregex\fR, \fBproduct =\fR \fIregex\fR, \fBserial =\fR \fIregex\fR
+.RS 4
+Select a specific UPS, in case there is more than one connected via USB\&. Each option specifies an extended regular expression (see
+\fBregex(7)\fR
+for more information on regular expressions), which must match the UPS\(cqs entire respective vendor/product/serial string (minus any surrounding whitespace), or the whole 4\-digit hexadecimal code for
+vendorid
+and
+productid\&.
+.sp
+Try
+\fBlsusb(8)\fR
+or running this NUT driver with
+\fB\-DD\fR
+command\-line argument for finding out the strings to match\&.
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendor="Foo\&.Corporation\&.*"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendorid="051d*"
+(APC)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x product="\&.*(Smart|Back)\-?UPS\&.*"
+.RE
+.RE
+.PP
+\fBbus =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB bus or group of buses\&. The argument is a regular expression that must match the bus name where the UPS is connected (e\&.g\&.
+bus="002"
+or
+bus="00[2\-3]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.RE
+.PP
+\fBdevice =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB device or group of devices\&. The argument is a regular expression that must match the device name where the UPS is connected (e\&.g\&.
+device="001"
+or
+device="00[1\-2]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+device numbers are not guaranteed by the OS to be stable across re\-boots or device re\-plugging\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBbusport =\fR \fIregex\fR
+.RS 4
+If supported by the hardware, OS and libusb on the particular deployment, this option should allow to specify physical port numbers on an USB hub, rather than logical
+device
+enumeration values, and in turn \(em this should be less volatile across reboots or re\-plugging\&. The value may be seen in the USB topology output of
+lsusb \-tv
+on systems with that tool, for example\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option is not practically supported by some NUT builds (it should be ignored with a warning then), and not by all systems that NUT can run on\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBallow_duplicates\fR
+.RS 4
+If you have several UPS devices which may not be uniquely identified by the options above (e\&.g\&. only VID:PID can be discovered there), this flag allows each driver instance where it is set to take the first match if available, or proceed to try another\&.
+.sp
+Normally the driver initialization would abort at this point claiming "Resource busy" or similar error, assuming that the otherwise properly matched device is unique \(em and some other process already handles it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This feature is inherently non\-deterministic! The association of driver instance name to actual device may vary between runs!
+.sp
+If you only care to know that
+\fBat least\fR
+one of your no\-name UPSes is online, this option can help\&.
+.sp
+If you must really know
+\fBwhich\fR
+one, it will not!
+.sp .5v
+.RE
+.RE
+.PP
+\fBusb_set_altinterface =\fR \fIbAlternateSetting\fR
+.RS 4
+Force redundant call to
+usb_set_altinterface(), especially if needed for devices serving multiple USB roles where the UPS is not represented by the interface number
+0
+(default)\&.
+.RE
+.PP
+\fBusb_config_index\fR, \fBusb_hid_rep_index\fR, \fBusb_hid_desc_index\fR, \fBusb_hid_ep_in\fR, \fBusb_hid_ep_out\fR
+.RS 4
+Force use of specific interface, endpoint, descriptor index etc\&. numbers, rather than defaulting to 0 (rarely other values in certain drivers for some devices known to use non\-zero numbers)\&. Specified as a hexadecimal number\&.
+.sp
+As a rule of thumb for
+usb_hid_desc_index
+discovery, you can see larger
+wDescriptorLength
+values (roughly 600+ bytes) in reports of
+lsusb
+or similar tools\&.
+.RE
+.PP
+\fBsubdriver =\fR \fIstring\fR
+.RS 4
+Select a serial\-over\-USB subdriver to use\&. You have a choice between
+\fBcypress\fR,
+\fBfabula\fR,
+\fBfuji\fR,
+\fBhunnox\fR,
+\fBippon\fR,
+\fBkrauler\fR,
+\fBphoenix\fR,
+\fBphoenixtec\fR,
+\fBsgs\fR,
+\fBsnr\fR,
+\fBarmac\fR
+and
+\fBablerex\fR\&.
+.sp
+Run the driver program with the
+\-\-help
+option to see the exact list of
+subdriver
+values it would currently recognize\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+When using this option, it is mandatory to also specify the
+\fBvendorid\fR
+and
+\fBproductid\fR
+matching parameters\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBlangid_fix =\fR \fIvalue\fR
+.RS 4
+Apply the language ID workaround to the
+\fBkrauler\fR
+subdriver\&. This is mandatory for some devices to work (LDLC, Dynamix and others)\&. You must provide
+\fBvalue\fR
+(0x409
+or
+0x4095), according to your device entry in NUT hardware compatibility list (HCL)\&.
+.RE
+.PP
+\fBnoscanlangid\fR
+.RS 4
+If this flag is set, don\(cqt autoscan valid range for langid\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBIMPLEMENTATION NOTES\fR
+.RS 4
+.PP
+\fB\fIarmac\fR\fR\fB subdriver\fR
+.RS 4
+The Armac communication subdriver reproduces a communication protocol used by an old release of "PowerManagerII" software, which doesn\(cqt seem to be Armac specific: its banner is "2004 Richcomm Technologies, Inc\&. Dec 27 2005 ver 1\&.1\&." Maybe other Richcomm UPSes would work with this \(em maybe better than with the older standalone
+richcomm_usb
+driver\&.
+.RE
+.PP
+\fB\fIfabula\fR\fR\fB subdriver\fR
+.RS 4
+This subdriver, meant to be used with the
+\fImegatec\fR
+protocol, does
+\fBnot\fR
+support the various
+\fBtest\&.battery\fR
+commands\&. Plus, the
+\fBshutdown\&.return\fR
+command ignores the values set in
+\fIups\&.delay\&.start\fR/\fBondelay\fR
+and makes the UPS turn on the load as soon as power is back\&.
+.RE
+.PP
+\fB\fIhunnox\fR\fR\fB subdriver\fR
+.RS 4
+This protocol subdriver is closely related to
+\fIfabula\fR
+one, with a few tweaks for devices not directly supported by that driver\&.
+.RE
+.PP
+\fB\fIfuji\fR\fR\fB subdriver\fR
+.RS 4
+This subdriver, meant to be used with the
+\fImegatec\fR
+protocol, does
+\fBnot\fR
+support the
+\fBshutdown\&.stayoff\fR
+and
+\fBload\&.off\fR
+commands\&. Plus, the
+\fBshutdown\&.return\fR
+command ignores the values set in
+\fIups\&.delay\&.start\fR/\fBondelay\fR
+and makes the UPS turn on the load as soon as power is back\&.
+.RE
+.PP
+\fB\fIkrauler\fR\fR\fB subdriver\fR
+.RS 4
+This subdriver, meant to be used with the
+\fImegatec\fR
+protocol, does
+\fBnot\fR
+support the shutdown commands, i\&.e\&.:
+\fBshutdown\&.return\fR,
+\fBshutdown\&.stayoff\fR
+and
+\fBload\&.off\fR\&.
+.RE
+.PP
+\fB\fIsnr\fR\fR\fB subdriver\fR
+.RS 4
+This subdriver, meant to be used with the
+\fImegatec\fR
+protocol, does
+\fBnot\fR
+support the shutdown commands, i\&.e\&.:
+\fBshutdown\&.return\fR,
+\fBshutdown\&.stayoff\fR
+and
+\fBload\&.off\fR\&.
+.RE
+.RE
+.SH "UPS COMMANDS"
+.sp
+This driver supports some instant commands (see \fBupscmd\fR(8)):
+.PP
+\fBbeeper\&.toggle\fR
+.RS 4
+Toggle the UPS beeper\&. (Not available on some hardware)
+.RE
+.PP
+\fBload\&.on\fR
+.RS 4
+Turn on the load immediately\&. (Not available on some hardware)
+.RE
+.PP
+\fBload\&.off\fR
+.RS 4
+Turn off the load immediately (see
+KNOWN PROBLEMS)\&.
+.RE
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load and return when power is back\&. Uses the timers defined by
+\fBups\&.delay\&.start\fR
+and
+\fBups\&.delay\&.shutdown\fR\&.
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+Turn off the load and remain off (see
+KNOWN PROBLEMS)\&. Uses the timer defined by
+\fBups\&.delay\&.shutdown\fR\&.
+.RE
+.PP
+\fBshutdown\&.stop\fR
+.RS 4
+Stop a shutdown in progress\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\&.deep\fR
+.RS 4
+Perform a long battery test\&. (Not available on some hardware)
+.RE
+.PP
+\fBtest\&.battery\&.start\&.quick\fR
+.RS 4
+Perform a quick (10 second) battery test\&.
+.RE
+.PP
+\fBtest\&.battery\&.stop\fR
+.RS 4
+Stop a running battery test\&. (Not available on some hardware)
+.RE
+.SS "BESTUPS, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS"
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+Perform a battery test for the duration of
+\fIvalue\fR
+seconds (truncated to 60 seconds) [60\&.\&.5940]\&.
+.RE
+.SS "MASTERGUARD PROTOCOL"
+.PP
+\fBbeeper\&.enable\fR
+.RS 4
+Enable the UPS beeper\&.
+.RE
+.PP
+\fBbeeper\&.disable\fR
+.RS 4
+Disable the UPS beeper\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+Perform a battery test for the duration of
+\fIvalue\fR
+seconds (truncated to 60 seconds) [0\&.\&.5940]\&. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds)\&.
+.RE
+.PP
+\fBbypass\&.start\fR
+.RS 4
+Put the UPS in bypass mode
+.RE
+.PP
+\fBbypass\&.stop\fR
+.RS 4
+Take the UPS in normal mode
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBVOLTRONIC POWER P98 UNITS (WITH MECER PROTOCOL)\fR
+.RS 4
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+Perform a battery test for the duration of
+\fIvalue\fR
+seconds (truncated to 60 seconds) [12\&.\&.5940]\&. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds)\&.
+.RE
+.RE
+.SS "VOLTRONIC PROTOCOL"
+.sp
+The following instant commands are available for the \fIvoltronic\fR protocol\&. Not all of them are available on all the UPSes supported by this protocol\&.
+.PP
+\fBbeeper\&.enable\fR
+.RS 4
+Enable the UPS beeper\&.
+.RE
+.PP
+\fBbeeper\&.disable\fR
+.RS 4
+Disable the UPS beeper\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+Perform a battery test for the duration of
+\fIvalue\fR
+seconds [12\&.\&.5940]\&. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds)\&.
+.RE
+.PP
+\fBoutlet\&.1\&.load\&.off\fR
+.RS 4
+Turn off outlet 1 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.1\&.load\&.on\fR
+.RS 4
+Turn on outlet 1 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.2\&.load\&.off\fR
+.RS 4
+Turn off outlet 2 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.2\&.load\&.on\fR
+.RS 4
+Turn on outlet 2 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.3\&.load\&.off\fR
+.RS 4
+Turn off outlet 3 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.3\&.load\&.on\fR
+.RS 4
+Turn on outlet 3 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.4\&.load\&.off\fR
+.RS 4
+Turn off outlet 4 load immediately\&.
+.RE
+.PP
+\fBoutlet\&.4\&.load\&.on\fR
+.RS 4
+Turn on outlet 4 load immediately\&.
+.RE
+.PP
+\fBbypass\&.start\fR
+.RS 4
+Put the UPS in ECO Mode\&.
+.RE
+.PP
+\fBbypass\&.stop\fR
+.RS 4
+Take the UPS out of ECO Mode\&.
+.RE
+.SH "BATTERY CHARGE GUESSTIMATION"
+.sp
+Due to popular demand, this driver will report a guesstimated \fBbattery\&.charge\fR and optionally \fBbattery\&.runtime\fR, provided you specified a couple of the EXTRA ARGUMENTS listed above\&.
+.sp
+If you specify both \fBbattery\&.voltage\&.high\fR and \fBbattery\&.voltage\&.low\fR in \fBups.conf\fR(5), but don\(cqt enter \fBruntimecal\fR, it will guesstimate the state of charge by looking at the battery voltage alone\&. This is not reliable under load, as this only gives reasonably accurate readings if you disconnect the load, let the battery rest for a couple of minutes and then measure the open cell voltage\&. This just isn\(cqt practical if the power went out and the UPS is providing power for your systems\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+                     battery\&.voltage \- battery\&.voltage\&.low
+battery\&.charge =  \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\- x 100 %
+                  battery\&.voltage\&.high \- battery\&.voltage\&.low
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+There is a way to get better readings without disconnecting the load but this requires one to keep track on how much (and how fast) current is going in and out of the battery\&. If you specified the \fBruntimecal\fR, the driver will attempt to do this\&. Note however, that this heavily relies on the values you enter and that the UPS must be able to report the load as well\&. There are quite a couple of devices that report 0 % (or any other fixed value) at all times, in which case this obviously doesn\(cqt work\&.
+.sp
+The driver also has no way of determining the degradation of the battery capacity over time, so you\(cqll have to deal with this yourself (by adjusting the values in \fBruntimecal\fR)\&. Also note that the driver guesses the initial state of charge based on the battery voltage, so this may be less than 100 %, even when you are certain that they are full\&. There is just no way to reliably measure this between 0 and 100 % full charge\&.
+.sp
+This is better than nothing (but not by much)\&. If any of the above calculations is giving you incorrect readings, you are the one that put in the values in \fBups.conf\fR(5), so don\(cqt complain with the author\&. If you need something better, buy a UPS that reports \fBbattery\&.charge\fR and \fBbattery\&.runtime\fR all by itself without the help of a NUT driver\&.
+.SH "NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS"
+.sp
+The \fBnutdrv_qx\fR driver having replaced the megatec ones, some configuration changes may be required by users switching to \fBnutdrv_qx\fR\&.
+.sp
+Part of this, the following megatec options, in \fBups.conf\fR(5), have to be changed:
+.PP
+\fBbattvolts\fR
+.RS 4
+You need to use
+\fIdefault\&.battery\&.voltage\&.high\fR
+and
+\fIdefault\&.battery\&.voltage\&.low\fR
+.RE
+.PP
+\fBdtr\fR and \fBrts\fR
+.RS 4
+You need to use
+\fIcablepower\fR
+.RE
+.PP
+\fBignoreoff\fR
+.RS 4
+This parameter can simply be discarded, since it was a wrong understanding of the specification\&.
+.RE
+.SH "NOTES FOR THE PREVIOUS USER OF BLAZER DRIVERS"
+.sp
+The \fBnutdrv_qx\fR driver having replaced the blazer ones, some configuration changes may be required by users switching to \fBnutdrv_qx\fR\&.
+.sp
+Part of this, the following blazer options, in \fBups.conf\fR(5), have to be changed:
+.PP
+\fBondelay\fR
+.RS 4
+While the previous blazer drivers expected minutes, the new
+\fBnutdrv_qx\fR
+driver wants seconds\&.
+.RE
+.sp
+The following instant command has also been changed:
+.PP
+\fBtest\&.battery\&.start\fR \fIvalue\fR
+.RS 4
+While the old blazer drivers expected a
+\fIvalue\fR
+in minutes, the
+\fBnutdrv_qx\fR
+driver wants a
+\fIvalue\fR
+in seconds\&.
+.RE
+.SH "NOTES FOR THE PREVIOUS USER OF BESTUPS DRIVER"
+.sp
+The \fBnutdrv_qx\fR driver having replaced the bestups one, some configuration changes may be required by users switching to \fBnutdrv_qx\fR\&.
+.sp
+Part of this, the following bestups options, in \fBups.conf\fR(5), are no longer supported by this driver:
+.PP
+\fBnombattvolt\fR, \fBbattvoltmult\fR
+.RS 4
+See
+BATTERY CHARGE GUESSTIMATION\&.
+.RE
+.PP
+\fBID\fR
+.RS 4
+Discarded\&.
+.RE
+.SH "NOTES FOR THE PREVIOUS USER OF VOLTRONIC DRIVERS"
+.sp
+The \fBnutdrv_qx\fR driver having replaced the voltronic ones, some configuration changes may be required by users switching to \fBnutdrv_qx\fR\&.
+.sp
+Part of this, the following voltronic options, in \fBups.conf\fR(5), have to be changed:
+.PP
+\fBondelay\fR
+.RS 4
+While the previous voltronic drivers expected minutes, the new
+\fBnutdrv_qx\fR
+driver wants seconds\&. It no longer defaults to 0 minutes but to 3 minutes (i\&.e\&. 180 seconds) for compatibility with the users switching from the old blazer drivers\&.
+.RE
+.PP
+\fBbattnumb\fR
+.RS 4
+This option has been renamed to
+\fBbattery_number\fR\&.
+.RE
+.sp
+The following options are no longer supported by this driver, you can now change them more conveniently \(oqon the fly\(cq calling \fBupsrw\fR(8) with the appropriate NUT variable \- provided that your UPS supports them\&.
+.TS
+tab(:);
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt
+lt lt.
+T{
+.sp
+\fBbattpacks\fR
+T}:T{
+.sp
+→ \fBbattery\&.packs\fR
+.sp
+Set number of battery packs in parallel [1\&.\&.99]\&. This setting will change the charge and runtime estimation reported by the UPS\&.
+T}
+T{
+.sp
+\fBbattlow\fR
+T}:T{
+.sp
+→ \fBbattery\&.voltage\&.low\fR
+.sp
+Set minimum battery voltage just before the UPS automatically shuts down\&. This setting will change the charge and runtime estimation reported by the UPS\&.
+T}
+T{
+.sp
+\fBauto_reboot\fR
+T}:T{
+.sp
+→ \fBups\&.start\&.auto\fR
+.sp
+Enable or disable auto reboot [enabled/disabled]\&. If enabled, the UPS will auto recover when AC power returns\&.
+T}
+T{
+.sp
+\fBbattery_protection\fR
+T}:T{
+.sp
+→ \fBbattery\&.protection\fR
+.sp
+Enable or disable battery deep discharge protection [enabled/disabled]\&.
+T}
+T{
+.sp
+\fBenergy_saving\fR
+T}:T{
+.sp
+→ \fBbattery\&.energysave\fR
+.sp
+Enable or disable Green power function [enabled/disabled]\&. If enabled, for energy saving, the UPS will auto off when there is no load\&.
+T}
+T{
+.sp
+\fBcold_start\fR
+T}:T{
+.sp
+→ \fBups\&.start\&.battery\fR
+.sp
+Enable or disable Cold Start [enabled/disabled]\&. If enabled, the UPS can be turned on also if AC is not connected to the UPS\&.
+T}
+T{
+.sp
+\fBoutlet_control\fR
+T}:T{
+.sp
+→ \fBoutlet\&.0\&.switchable\fR
+.sp
+Enable or disable programmable outlets control at battery mode [enabled/disabled]\&. If enabled, the UPS will cut off programmable outlets after backup time (set through \fBoutlet\&.\fR{\fB1\fR,\fB2\fR,\fB3\fR,\fB4\fR}\fB\&.delay\&.shutdown\fR) arrives\&. If disabled, the UPS will provide continuous power to programmable outlets until the battery is running out\&.
+T}
+T{
+.sp
+\fBmax_eco_volt\fR
+T}:T{
+.sp
+→ \fBinput\&.transfer\&.high\fR
+.sp
+Maximum voltage for ECO Mode (V)\&. If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it\(cqs enabled)\&.
+T}
+T{
+.sp
+\fBmin_eco_volt\fR
+T}:T{
+.sp
+→ \fBinput\&.transfer\&.low\fR
+.sp
+Minimum voltage for ECO Mode (V)\&. If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it\(cqs enabled)\&.
+T}
+T{
+.sp
+\fBmax_eco_freq\fR
+T}:T{
+.sp
+→ \fBinput\&.frequency\&.high\fR
+.sp
+Maximum frequency for ECO Mode (Hz)\&. If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it\(cqs enabled)\&.
+T}
+T{
+.sp
+\fBmin_eco_freq\fR
+T}:T{
+.sp
+→ \fBinput\&.frequency\&.low\fR
+.sp
+Minimum frequency for ECO Mode (Hz)\&. If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it\(cqs enabled)\&.
+T}
+T{
+.sp
+\fBoutlet1_delay\fR
+T}:T{
+.sp
+→ \fBoutlet\&.1\&.delay\&.shutdown\fR
+.sp
+Delay time before programmable outlet 1 shuts down the load when on battery mode [0\&.\&.59940] (seconds)\&.
+T}
+T{
+.sp
+\fBoutlet2_delay\fR
+T}:T{
+.sp
+→ \fBoutlet\&.2\&.delay\&.shutdown\fR
+.sp
+Delay time before programmable outlet 2 shuts down the load when on battery mode [0\&.\&.59940] (seconds)\&.
+T}
+T{
+.sp
+\fBoutlet3_delay\fR
+T}:T{
+.sp
+→ \fBoutlet\&.3\&.delay\&.shutdown\fR
+.sp
+Delay time before programmable outlet 3 shuts down the load when on battery mode [0\&.\&.59940] (seconds)\&.
+T}
+T{
+.sp
+\fBoutlet4_delay\fR
+T}:T{
+.sp
+→ \fBoutlet\&.4\&.delay\&.shutdown\fR
+.sp
+Delay time before programmable outlet 4 shuts down the load when on battery mode [0\&.\&.59940] (seconds)\&.
+T}
+T{
+.sp
+\fBbatt_type\fR
+T}:T{
+.sp
+→ \fBbattery\&.type\fR
+.sp
+Battery type (for P31 UPSes only) [Li/Flooded/AGM]\&.
+T}
+.TE
+.sp 1
+.SH "KNOWN PROBLEMS"
+.sp
+Some UPS commands aren\(cqt supported by all models\&. In most cases, the driver will send a message to the system log when the user tries to execute an unsupported command\&. Unfortunately, some models don\(cqt even provide a way for the driver to check for this, so the unsupported commands will silently fail\&.
+.sp
+Both the \fBload\&.off\fR and \fBshutdown\&.stayoff\fR instant commands are meant to turn the load off indefinitely\&. However, some UPS models don\(cqt allow this\&.
+.sp
+Some models report a bogus value for the beeper status (will always be \fIenabled\fR or \fIdisabled\fR)\&. So, the \fBbeeper\&.toggle\fR command may appear to have no effect in the status reported by the driver when, in fact, it is working fine\&.
+.sp
+The temperature and load value is known to be bogus in some models\&.
+.SS "MASTERGUARD UNITS"
+.sp
+The driver is supposed to support both "new" A series (A700/1000/2000/3000 and their \-19 cousins) and E series (E60/100/200) but was tested only on A due to lack of E hardware\&.
+.SS "VOLTRONIC\-QS UNITS"
+.sp
+Both \fBload\&.off\fR and \fBshutdown\&.stayoff\fR instant commands are known to work as expected (i\&.e\&. turn the load off indefinitely) only if mains is present, otherwise, as soon as mains returns the load will be powered\&.
+.sp
+After issuing a \fBshutdown\&.return\fR instant command, the UPS won\(cqt wait \fBondelay\fR before powering on the load, provided the following conditions are met:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+if the load has been previously (no matter how long before) powered off through
+\fBload\&.off\fR/\fBshutdown\&.stayoff\fR
+\fIand\fR
+powered on through
+\fBload\&.on\fR/\fBshutdown\&.stop\fR
+\fIand\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+if AC wasn\(cqt cut after issuing the
+\fBload\&.off\fR/\fBshutdown\&.stayoff\fR
+(i\&.e\&. the UPS didn\(cqt turn itself off)
+\fIand\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+if there\(cqs a power outage after issuing the
+\fBshutdown\&.return\fR
+command
+.RE
+.sp
+In this case, as soon as mains returns the load will be powered\&.
+.SS "VOLTRONIC\-QS\-HEX UNITS"
+.sp
+\fBshutdown\&.return\fR, \fBload\&.off\fR, and \fBshutdown\&.stayoff\fR instant commands are known to work as expected only if mains is present, otherwise, as soon as mains returns the load will be powered\&.
+.SH "UPS WARNINGS (VOLTRONIC PROTOCOL)"
+.sp
+The UPSes supported by \fIvoltronic\fR protocol report warnings through a 64bit flag (bit1bit2\&...bit63bit64) where 1 means that a warning arose, while 0 means no warning\&. Since more than one warning at a time can be signaled, and because of the limited space in the ups\&.alarm variable, if the length of the warnings exceeds that of ups\&.alarms variable, they will be reported as bits\&. If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings)\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.B Table\ \&1.\ \&UPS Warnings for \fIvoltronic\fR UPSes
+.TS
+allbox tab(:);
+rtB ltB.
+T{
+#
+T}:T{
+Corresponding Warning
+T}
+.T&
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt
+rt lt.
+T{
+.sp
+1
+T}:T{
+.sp
+Battery disconnected
+T}
+T{
+.sp
+2
+T}:T{
+.sp
+Neutral not connected
+T}
+T{
+.sp
+3
+T}:T{
+.sp
+Site fault
+T}
+T{
+.sp
+4
+T}:T{
+.sp
+Phase sequence incorrect
+T}
+T{
+.sp
+5
+T}:T{
+.sp
+Phase sequence incorrect in bypass
+T}
+T{
+.sp
+6
+T}:T{
+.sp
+Input frequency unstable in bypass
+T}
+T{
+.sp
+7
+T}:T{
+.sp
+Battery overcharged
+T}
+T{
+.sp
+8
+T}:T{
+.sp
+Low battery
+T}
+T{
+.sp
+9
+T}:T{
+.sp
+Overload alarm
+T}
+T{
+.sp
+10
+T}:T{
+.sp
+Fan alarm
+T}
+T{
+.sp
+11
+T}:T{
+.sp
+EPO enabled
+T}
+T{
+.sp
+12
+T}:T{
+.sp
+Unable to turn on UPS
+T}
+T{
+.sp
+13
+T}:T{
+.sp
+Over temperature alarm
+T}
+T{
+.sp
+14
+T}:T{
+.sp
+Charger alarm
+T}
+T{
+.sp
+15
+T}:T{
+.sp
+Remote auto shutdown
+T}
+T{
+.sp
+16
+T}:T{
+.sp
+L1 input fuse not working
+T}
+T{
+.sp
+17
+T}:T{
+.sp
+L2 input fuse not working
+T}
+T{
+.sp
+18
+T}:T{
+.sp
+L3 input fuse not working
+T}
+T{
+.sp
+19
+T}:T{
+.sp
+Positive PFC abnormal in L1
+T}
+T{
+.sp
+20
+T}:T{
+.sp
+Negative PFC abnormal in L1
+T}
+T{
+.sp
+21
+T}:T{
+.sp
+Positive PFC abnormal in L2
+T}
+T{
+.sp
+22
+T}:T{
+.sp
+Negative PFC abnormal in L2
+T}
+T{
+.sp
+23
+T}:T{
+.sp
+Positive PFC abnormal in L3
+T}
+T{
+.sp
+24
+T}:T{
+.sp
+Negative PFC abnormal in L3
+T}
+T{
+.sp
+25
+T}:T{
+.sp
+Abnormal in CAN\-bus communication
+T}
+T{
+.sp
+26
+T}:T{
+.sp
+Abnormal in synchronous signal circuit
+T}
+T{
+.sp
+27
+T}:T{
+.sp
+Abnormal in synchronous pulse signal circuit
+T}
+T{
+.sp
+28
+T}:T{
+.sp
+Abnormal in host signal circuit
+T}
+T{
+.sp
+29
+T}:T{
+.sp
+Male connector of parallel cable not connected well
+T}
+T{
+.sp
+30
+T}:T{
+.sp
+Female connector of parallel cable not connected well
+T}
+T{
+.sp
+31
+T}:T{
+.sp
+Parallel cable not connected well
+T}
+T{
+.sp
+32
+T}:T{
+.sp
+Battery connection not consistent in parallel systems
+T}
+T{
+.sp
+33
+T}:T{
+.sp
+AC connection not consistent in parallel systems
+T}
+T{
+.sp
+34
+T}:T{
+.sp
+Bypass connection not consistent in parallel systems
+T}
+T{
+.sp
+35
+T}:T{
+.sp
+UPS model types not consistent in parallel systems
+T}
+T{
+.sp
+36
+T}:T{
+.sp
+Capacity of UPSs not consistent in parallel systems
+T}
+T{
+.sp
+37
+T}:T{
+.sp
+Auto restart setting not consistent in parallel systems
+T}
+T{
+.sp
+38
+T}:T{
+.sp
+Battery cell over charge
+T}
+T{
+.sp
+39
+T}:T{
+.sp
+Battery protection setting not consistent in parallel systems
+T}
+T{
+.sp
+40
+T}:T{
+.sp
+Battery detection setting not consistent in parallel systems
+T}
+T{
+.sp
+41
+T}:T{
+.sp
+Bypass not allowed setting not consistent in parallel systems
+T}
+T{
+.sp
+42
+T}:T{
+.sp
+Converter setting not consistent in parallel systems
+T}
+T{
+.sp
+43
+T}:T{
+.sp
+High loss point for frequency in bypass mode not consistent in parallel systems
+T}
+T{
+.sp
+44
+T}:T{
+.sp
+Low loss point for frequency in bypass mode not consistent in parallel systems
+T}
+T{
+.sp
+45
+T}:T{
+.sp
+High loss point for voltage in bypass mode not consistent in parallel systems
+T}
+T{
+.sp
+46
+T}:T{
+.sp
+Low loss point for voltage in bypass mode not consistent in parallel systems
+T}
+T{
+.sp
+47
+T}:T{
+.sp
+High loss point for frequency in AC mode not consistent in parallel systems
+T}
+T{
+.sp
+48
+T}:T{
+.sp
+Low loss point for frequency in AC mode not consistent in parallel systems
+T}
+T{
+.sp
+49
+T}:T{
+.sp
+High loss point for voltage in AC mode not consistent in parallel systems
+T}
+T{
+.sp
+50
+T}:T{
+.sp
+Low loss point for voltage in AC mode not consistent in parallel systems
+T}
+T{
+.sp
+51
+T}:T{
+.sp
+Warning for locking in bypass mode after 3 consecutive overloads within 30 min
+T}
+T{
+.sp
+52
+T}:T{
+.sp
+Warning for three\-phase AC input current unbalance
+T}
+T{
+.sp
+53
+T}:T{
+.sp
+Warning for a three\-phase input current unbalance detected in battery mode
+T}
+T{
+.sp
+54
+T}:T{
+.sp
+Warning for Inverter inter\-current unbalance
+T}
+T{
+.sp
+55
+T}:T{
+.sp
+Programmable outlets cut off pre\-alarm
+T}
+T{
+.sp
+56
+T}:T{
+.sp
+Warning for Battery replace
+T}
+T{
+.sp
+57
+T}:T{
+.sp
+Abnormal warning on input phase angle
+T}
+T{
+.sp
+58
+T}:T{
+.sp
+Warning!! Cover of maintain switch is open
+T}
+T{
+.sp
+62
+T}:T{
+.sp
+EEPROM operation error
+T}
+.TE
+.sp 1
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Daniele Pezzini <hyouko@gmail\&.com>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arnaud Quette <arnaud\&.quette@gmail\&.com>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+John Stamp <kinsayder@hotmail\&.com>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Peter Selinger <selinger@users\&.sourceforge\&.net>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arjen de Korte <adkorte\-guest@alioth\&.debian\&.org>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Alexander Gordeev <lasaine@lvk\&.cs\&.msu\&.su>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Edgar Fuß <ef@math\&.uni\-bonn\&.de>
+.RE
+.SH "SEE ALSO"
+.sp
+\fBblazer_ser\fR(8), \fBblazer_usb\fR(8), \fBnutupsdrv\fR(8), \fBups.conf\fR(5), \fBupsc\fR(8), \fBupscmd\fR(8), \fBupsdrvctl\fR(8), \fBupsmon\fR(8), \fBupsrw\fR(8)
+.SS "Internet Resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT HCL:
+https://www\&.networkupstools\&.org/stable\-hcl\&.html
+.RE

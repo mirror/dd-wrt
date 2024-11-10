@@ -1,0 +1,17 @@
+BLAZER_SER(8)
+=============
+:blazer_usb!:
+
+NAME
+----
+
+blazer_ser - Driver for Megatec/Q1 protocol serial based UPS equipment
+
+SYNOPSIS
+--------
+
+*blazer_ser* -h
+
+*blazer_ser* -a 'UPS_NAME' ['OPTIONS']
+
+include::blazer-common.txt[]

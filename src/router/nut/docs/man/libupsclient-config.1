@@ -1,0 +1,70 @@
+'\" t
+.\"     Title: libupsclient-config
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "LIBUPSCLIENT\-CONFIG" "1" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libupsclient-config \- script to get information about the installed version of libupsclient
+.SH "SYNOPSIS"
+.sp
+\fBlibupsclient\-config\fR [\-\-version] [\-\-libs] [\-\-cflags]
+.SH "DESCRIPTION"
+.sp
+\fBlibupsclient\-config\fR is a tool that is used to determine the compiler and linker flags that should be used to compile and link programs that use \fBlibupsclient\fR from the Network UPS Tools project\&.
+.SH "OPTIONS"
+.sp
+\fBlibupsclient\-config\fR accepts the following options:
+.PP
+\fB\-\-version\fR
+.RS 4
+Print the currently installed version of
+\fBlibupsclient\fR
+on the standard output\&.
+.RE
+.PP
+\fB\-\-libs\fR
+.RS 4
+Print the linker flags that are necessary to link a
+\fBlibupsclient\fR
+program\&.
+.RE
+.PP
+\fB\-\-cflags\fR
+.RS 4
+Print the compiler flags that are necessary to compile a
+\fBlibupsclient\fR
+program\&.
+.RE
+.SH "AUTHORS"
+.sp
+This manual page was written by Arnaud Quette <aquette\&.dev@gmail\&.com>\&.
+.SH "SEE ALSO"
+.sp
+\fBupsclient\fR(3)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

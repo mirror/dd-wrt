@@ -1,0 +1,248 @@
+'\" t
+.\"     Title: nut-ipmipsu
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUT\-IPMIPSU" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nut-ipmipsu \- Driver for IPMI Power Supply Units (PSU)
+.SH "SYNOPSIS"
+.sp
+\fBnut\-ipmipsu\fR \-h
+.sp
+\fBnut\-ipmipsu\fR \-a \fIPSU_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver is experimental, and still a work\-in\-progress\&. Feedback is encouraged\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the nut\-ipmipsu driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should support a wide range of PSUs through local IPMI interface\&.
+.sp
+nut\-ipmipsu currently use the GNU FreeIPMI project, for IPMI implementation\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver doesn\(cqt support any optional settings\&.
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by using "configure \-\-with\-ipmi=yes"\&.
+.sp
+You also need to give proper permissions on the local IPMI device file (/dev/ipmi0 for example) to allow the NUT user to access it\&.
+.sp
+An udev rules file (nut\-ipmipsu\&.rules) is provided and automatically installed on udev enabled system\&. This file is generally installed in /etc/udev/rules\&.d/ or /lib/udev/rules\&.d/ on newer systems, to address the permission settings problem\&. For more information, refer to nut/scripts/udev/README\&.
+.SH "INSTANT COMMANDS"
+.sp
+This driver doesn\(cqt support any instant commands\&.
+.SH "IMPLEMENTATION"
+.sp
+The "port" value is used to identify the PSU\&. For instance, to target FRU 0x2, use the following in \fBups\&.conf\fR:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[pdu]
+        driver = nut\-ipmipsu
+        port = id2
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This driver will report various information related to a PSU, including:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+manufacturer, model, serial and part numbers,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+nominal voltage and frequency,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+actual current and voltage,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+status of the PSU:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIOL\fR
+means that the PSU is present and providing power,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIOFF\fR
+means that the PSU is present but not providing power (power cable removed),
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIstale\fR
+(no data) means that the PSU is not present (i\&.e\&. physically removed)\&.
+.RE
+.RE
+.sp
+Here is an example output for a Dell r610 server:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+device\&.mfr: DELL
+device\&.mfr\&.date: 01/05/11 \- 08:51:00
+device\&.model: PWR SPLY,717W,RDNT
+device\&.part: 0RN442A01
+device\&.serial: CN179721130031
+device\&.type: psu
+driver\&.name: nut\-ipmipsu
+driver\&.parameter\&.pollinterval: 2
+driver\&.parameter\&.port: id2
+driver\&.version: 2\&.6\&.1\-3139M
+driver\&.version\&.data: IPMI PSU driver
+driver\&.version\&.internal: 0\&.01
+input\&.current: 0\&.20
+input\&.frequency\&.high: 63
+input\&.frequency\&.low: 47
+input\&.voltage: 232\&.00
+input\&.voltage\&.maximum: 264
+input\&.voltage\&.minimum: 90
+ups\&.id: 2
+ups\&.realpower\&.nominal: 717
+ups\&.status: OL
+ups\&.voltage: 12
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.sp
+Arnaud Quette <arnaud\&.quette@free\&.fr>
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The NUT (Network UPS Tools) home page:
+https://www\&.networkupstools\&.org/
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+GNU FreeIPMI home page:
+http://www\&.gnu\&.org/software/freeipmi/
+.RE

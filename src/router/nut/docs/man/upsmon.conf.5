@@ -1,0 +1,687 @@
+'\" t
+.\"     Title: upsmon.conf
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSMON\&.CONF" "5" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsmon.conf \- Configuration for Network UPS Tools upsmon
+.SH "DESCRIPTION"
+.sp
+This file\(cqs primary job is to define the systems that \fBupsmon\fR(8) will monitor and to tell it how to shut down the system when necessary\&. It will contain passwords, so keep it secure\&. Ideally, only the upsmon process should be able to read it\&.
+.sp
+Additionally, other optional configuration values can be set in this file\&.
+.SH "CONFIGURATION DIRECTIVES"
+.PP
+\fBDEADTIME\fR \fIseconds\fR
+.RS 4
+upsmon allows a UPS to go missing for this many seconds before declaring it "dead"\&. The default is 15 seconds\&.
+.sp
+upsmon requires a UPS to provide status information every few seconds (see POLLFREQ and POLLFREQALERT) to keep things updated\&. If the status fetch fails, the UPS is marked stale\&. If it stays stale for more than DEADTIME seconds, the UPS is marked dead\&.
+.sp
+A dead UPS that was last known to be on battery is assumed to have changed to a low battery condition\&. This may force a shutdown if it is providing a critical amount of power to your system\&. This seems disruptive, but the alternative is barreling ahead into oblivion and crashing when you run out of power\&.
+.sp
+Note: DEADTIME should be a multiple of POLLFREQ and POLLFREQALERT\&. Otherwise, you\(cqll have "dead" UPSes simply because upsmon isn\(cqt polling them quickly enough\&. Rule of thumb: take the larger of the two POLLFREQ values, and multiply by 3\&.
+.RE
+.PP
+\fBFINALDELAY\fR \fIseconds\fR
+.RS 4
+When running in primary mode, upsmon waits this long after sending the NOTIFY_SHUTDOWN to warn the users\&. After the timer elapses, it then runs your SHUTDOWNCMD\&. By default this is set to 5 seconds\&.
+.sp
+If you need to let your users do something in between those events, increase this number\&. Remember, at this point your UPS battery is almost depleted, so don\(cqt make this too big\&.
+.sp
+Alternatively, you can set this very low so you don\(cqt wait around when it\(cqs time to shut down\&. Some UPSes don\(cqt give much warning for low battery and will require a value of 0 here for a safe shutdown\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+If FINALDELAY on the secondary is greater than HOSTSYNC on the primary, the primary will give up waiting for that secondary upsmon to disconnect\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBHOSTSYNC\fR \fIseconds\fR
+.RS 4
+upsmon will wait up to this many seconds in primary mode for the secondaries to disconnect during a shutdown situation\&. By default, this is 15 seconds\&.
+.sp
+When a UPS goes critical (on battery + low battery, or "FSD": forced shutdown), the secondary systems are supposed to disconnect and shut down right away\&. The HOSTSYNC timer keeps the primary upsmon from sitting there forever if one of the secondaries gets stuck\&.
+.sp
+This value is also used to keep secondary systems from getting stuck if the primary fails to respond in time\&. After a UPS becomes critical, the secondary will wait up to HOSTSYNC seconds for the primary to set the FSD flag\&. If that timer expires, the secondary upsmon will assume that the primary (or communications path to it) is broken and will shut down anyway\&.
+.sp
+This keeps the secondaries from shutting down during a short\-lived status change to "OB LB" and back that the secondaries see but the primary misses\&.
+.RE
+.PP
+\fBMINSUPPLIES\fR \fInum\fR
+.RS 4
+Set the number of power supplies that must be receiving power to keep this system running\&. Normal computers have just one power supply, so the default value of 1 is acceptable\&.
+.sp
+Large/expensive server type systems usually have more, and can run with a few missing\&. The HP NetServer LH4 can run with 2 out of 4, for example, so you\(cqd set it to 2\&. The idea is to keep the box running as long as possible, right?
+.sp
+Obviously you have to put the redundant supplies on different UPS circuits for this to make sense! See big\-servers\&.txt in the docs subdirectory for more information and ideas on how to use this feature\&.
+.sp
+Also see the section on "power values" in
+\fBupsmon\fR(8)\&.
+.RE
+.PP
+\fBMONITOR\fR \fIsystem\fR \fIpowervalue\fR \fIusername\fR \fIpassword\fR \fItype\fR
+.RS 4
+Each UPS that you need to be monitor should have a MONITOR line\&. Not all of these need supply power to the system that is running upsmon\&. You may monitor other systems if you want to be able to send notifications about status changes on them\&.
+.sp
+You must have at least one MONITOR directive in
+upsmon\&.conf\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIsystem\fR
+is a UPS identifier\&. It is in this form:
+.sp
+<upsname>[@<hostname>[:<port>]]
+.sp
+The default hostname is "localhost"\&. Some examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"su700@mybox" means a UPS called "su700" on a system called "mybox"\&. This is the normal form\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"fenton@bigbox:5678" is a UPS called "fenton" on a system called "bigbox" which runs
+\fBupsd\fR(8)
+on port "5678"\&.
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIpowervalue\fR
+is an integer representing the number of power supplies that the UPS feeds on this system\&. Most normal computers have one power supply, and the UPS feeds it, so this value will be 1\&. You need a very large or special system to have anything higher here\&.
+.sp
+You can set the
+\fIpowervalue\fR
+to 0 if you want to monitor a UPS that doesn\(cqt actually supply power to this system\&. This is useful when you want to have upsmon do notifications about status changes on a UPS without shutting down when it goes critical\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The
+\fIusername\fR
+and
+\fIpassword\fR
+on this line must match an entry in the
+upsd
+server system\(cqs
+\fBupsd.users\fR(5)
+file\&.
+.sp
+If your username is "observer" and your password is "abcd", the MONITOR line might look like this (likely on a remote secondary system):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+MONITOR myups@bigserver 1 observer abcd secondary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Meanwhile, the
+upsd\&.users
+on
+bigserver
+would look like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[observer]
+        password = abcd
+        upsmon secondary
+
+[upswired]
+        password = blah
+        upsmon primary
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+And the copy of upsmon on that bigserver would run with the primary configuration:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+MONITOR myups@bigserver 1 upswired blah primary
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+The
+\fItype\fR
+refers to the relationship with
+\fBupsd\fR(8)\&. It can be either "primary" or "secondary"\&. See
+\fBupsmon\fR(8)
+for more information on the meaning of these modes\&. The mode you pick here also goes in the
+upsd\&.users
+file, as seen in the example above\&.
+.RE
+.RE
+.PP
+\fBNOCOMMWARNTIME\fR \fIseconds\fR
+.RS 4
+upsmon will trigger a NOTIFY_NOCOMM after this many seconds if it can\(cqt reach any of the UPS entries in this configuration file\&. It keeps warning you until the situation is fixed\&. By default this is 300 seconds\&.
+.RE
+.PP
+\fBPOLLFAIL_LOG_THROTTLE_MAX\fR \fIcount\fR
+.RS 4
+upsmon normally reports polling failures for each device that are in place for each POLLFREQ loop (e\&.g\&. "Data stale" or "Driver not connected") to system log as configured\&. If your devices are expected to be AWOL for an extended timeframe, you can use this throttle to reduce the stress on syslog traffic and storage, by posting these messages only once in every several loop cycles, and when the error condition has changed or cleared\&.
+.sp
+A negative value means standard behavior (log on every loop, effectively same as when
+max=1), and a zero value means to never repeat the message (log only on start and end/change of the failure state)\&.
+.sp
+Note that this throttle only applies to one latest\-active error state per monitored device\&.
+.RE
+.PP
+\fBNOTIFYCMD\fR \fIcommand\fR
+.RS 4
+upsmon calls this to send messages when things happen\&.
+.sp
+This command is called with the full text of the message as one argument\&. The environment string NOTIFYTYPE will contain the type string of whatever caused this event to happen\&.
+.sp
+If you need to use
+\fBupssched\fR(8), then you must make it your NOTIFYCMD by listing it here\&.
+.sp
+Note that this is only called for NOTIFY events that have EXEC set with NOTIFYFLAG\&. See NOTIFYFLAG below for more details\&.
+.sp
+Making this some sort of shell script might not be a bad idea\&. For more information and ideas, see docs/scheduling\&.txt
+.sp
+Remember, this command also needs to be one element in the configuration file, so if your command has spaces, then wrap it in quotes\&.
+.sp
+NOTIFYCMD "/path/to/script \-\-foo \-\-bar"
+.sp
+This script is run in the background\(emthat is, upsmon forks before it calls out to start it\&. This means that your NOTIFYCMD may have multiple instances running simultaneously if a lot of stuff happens all at once\&. Keep this in mind when designing complicated notifiers\&.
+.RE
+.PP
+\fBNOTIFYMSG\fR \fItype\fR \fImessage\fR
+.RS 4
+upsmon comes with a set of stock messages for various events\&. You can change them if you like\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NOTIFYMSG ONLINE "UPS %s is getting line power"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NOTIFYMSG ONBATT "Someone pulled the plug on %s"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Note that
+%s
+is replaced with the identifier of the UPS in question\&.
+.sp
+The message must be one element in the configuration file, so if it contains spaces, you must wrap it in quotes\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NOTIFYMSG NOCOMM "Someone stole UPS %s"
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Possible values for
+\fItype\fR:
+.PP
+ONLINE
+.RS 4
+UPS is back online
+.RE
+.PP
+ONBATT
+.RS 4
+UPS is on battery
+.RE
+.PP
+LOWBATT
+.RS 4
+UPS is on battery and has a low battery (is critical)
+.RE
+.PP
+FSD
+.RS 4
+UPS is being shutdown by the primary (FSD = "Forced Shutdown")
+.RE
+.PP
+COMMOK
+.RS 4
+Communications established with the UPS
+.RE
+.PP
+COMMBAD
+.RS 4
+Communications lost to the UPS
+.RE
+.PP
+SHUTDOWN
+.RS 4
+The system is being shutdown
+.RE
+.PP
+REPLBATT
+.RS 4
+The UPS battery is bad and needs to be replaced
+.RE
+.PP
+NOCOMM
+.RS 4
+A UPS is unavailable (can\(cqt be contacted for monitoring)
+.RE
+.PP
+NOPARENT
+.RS 4
+upsmon
+parent process died \- shutdown impossible
+.RE
+.PP
+CAL
+.RS 4
+UPS calibration in progress
+.RE
+.PP
+NOTCAL
+.RS 4
+UPS calibration finished
+.RE
+.PP
+OFF
+.RS 4
+UPS administratively OFF or asleep
+.RE
+.PP
+NOTOFF
+.RS 4
+UPS no longer administratively OFF or asleep
+.RE
+.PP
+BYPASS
+.RS 4
+UPS on bypass (powered, not protecting)
+.RE
+.PP
+NOTBYPASS
+.RS 4
+UPS no longer on bypass
+.RE
+.RE
+.PP
+\fBNOTIFYFLAG\fR \fItype\fR \fIflag\fR[+\fIflag\fR]\&...
+.RS 4
+By default, upsmon sends walls global messages to all logged in users) via
+/bin/wall
+and writes to the syslog when things happen\&. Except for Windows where upsmon only writes to the syslog by default\&. You can change this\&.
+.sp
+Examples:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+NOTIFYFLAG ONLINE SYSLOG
+NOTIFYFLAG ONBATT SYSLOG+WALL+EXEC
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Possible values for the flags:
+.PP
+SYSLOG
+.RS 4
+Write the message to the syslog
+.RE
+.PP
+WALL
+.RS 4
+Write the message to all users with /bin/wall
+.RE
+.PP
+EXEC
+.RS 4
+Execute NOTIFYCMD (see above) with the message
+.RE
+.PP
+IGNORE
+.RS 4
+Don\(cqt do anything
+.sp
+If you use IGNORE, don\(cqt use any other flags on the same line\&.
+.RE
+.RE
+.PP
+\fBPOLLFREQ\fR \fIseconds\fR
+.RS 4
+Normally upsmon polls the
+\fBupsd\fR(8)
+server every 5 seconds\&. If this is flooding your network with activity, you can make it higher\&. You can also make it lower to get faster updates in some cases\&.
+.sp
+There are some catches\&. First, if you set the POLLFREQ too high, you may miss short\-lived power events entirely\&. You also risk triggering the DEADTIME (see above) if you use a very large number\&.
+.sp
+Second, there is a point of diminishing returns if you set it too low\&. While upsd normally has all of the data available to it instantly, most drivers only refresh the UPS status once every 2 seconds\&. Polling any more than that usually doesn\(cqt get you the information any faster\&.
+.RE
+.PP
+\fBPOLLFREQALERT\fR \fIseconds\fR
+.RS 4
+This is the interval that upsmon waits between polls if any of its UPSes are on battery\&. You can use this along with POLLFREQ above to slow down polls during normal behavior, but get quicker updates when something bad happens\&.
+.sp
+This should always be equal to or lower than the POLLFREQ value\&. By default it is also set 5 seconds\&.
+.sp
+The warnings from the POLLFREQ entry about too\-high and too\-low values also apply here\&.
+.RE
+.PP
+\fBPOWERDOWNFLAG\fR \fIfilename\fR
+.RS 4
+upsmon creates this file when running in primary mode when the UPS needs to be powered off\&. You should check for this file in your shutdown scripts and call
+upsdrvctl shutdown
+if it exists\&.
+.sp
+This is done to forcibly reset the secondary systems, so they don\(cqt get stuck at the "halted" stage even if the power returns during the shutdown process\&. This usually does not work well on contact\-closure UPSes that use the genericups driver\&.
+.sp
+See the config\-notes\&.txt file in the docs subdirectory for more information\&. Refer to the section:
+
+"Configuring automatic shutdowns for low battery events", or refer to the online version\&.
+.RE
+.PP
+\fBOFFDURATION\fR \fIseconds\fR
+.RS 4
+NUT supports an "administrative OFF" for power devices which can be managed to turn off their application workload, while the UPS or ePDU remains accessible for monitoring and management\&. This toggle allows to delay propagation of such state into a known loss of a feed (possibly triggering FSD on
+upsmon
+clients which
+MONITOR
+the device and are in fact still alive \(em e\&.g\&. with multiple power sources or because they as the load are not really turned off), because when some devices begin battery calibration, they report "OFF" for a few seconds and only then they might report "CAL" after switching all the power relays \(em thus causing false\-positives for
+upsmon
+FSD trigger\&.
+.sp
+A negative value means to disable decreasing the counter of working power supplies in such cases, and a zero makes the effect of detected "OFF" state immediate\&. Built\-in default value is 30 (seconds), to put an "OFF" state into effect (decrease known\-fed supplies count) if it persists for this many seconds\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+so far we support the device reporting an "OFF" state which usually means completely un\-powering the load; a bug\-tracker issue was logged to design similar support for just some manageable outlets or outlet groups\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBRBWARNTIME\fR \fIseconds\fR
+.RS 4
+When a UPS says that it needs to have its battery replaced, upsmon will generate a NOTIFY_REPLBATT event\&. By default, this happens every 43200 seconds (12 hours)\&.
+.sp
+If you need another value, set it here\&.
+.RE
+.PP
+\fBRUN_AS_USER\fR \fIusername\fR
+.RS 4
+upsmon normally runs the bulk of the monitoring duties under another user ID after dropping root privileges\&. On most systems this means it runs as "nobody", since that\(cqs the default from compile\-time\&.
+.sp
+The catch is that "nobody" can\(cqt read your upsmon\&.conf, since by default it is installed so that only root can open it\&. This means you won\(cqt be able to reload the configuration file, since it will be unavailable\&.
+.sp
+The solution is to create a new user just for upsmon, then make it run as that user\&. I suggest "nutmon", but you can use anything that isn\(cqt already taken on your system\&. Just create a regular user with no special privileges and an impossible password\&.
+.sp
+Then, tell upsmon to run as that user, and make
+upsmon\&.conf
+readable by it\&. Your reloads will work, and your config file will stay secure\&.
+.sp
+This file should not be writable by the upsmon user, as it would be possible to exploit a hole, change the SHUTDOWNCMD to something malicious, then wait for upsmon to be restarted\&.
+.RE
+.PP
+\fBSHUTDOWNCMD\fR \fIcommand\fR
+.RS 4
+upsmon runs this command when the system needs to be brought down\&. If it is a secondary, it will do that immediately whenever the current overall power value drops below the MINSUPPLIES value above\&.
+.sp
+When upsmon is a primary, it will allow any secondaries to log out before starting the local shutdown procedure\&.
+.sp
+Note that the command needs to be one element in the config file\&. If your shutdown command includes spaces, then put it in quotes to keep it together, i\&.e\&.:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+SHUTDOWNCMD "/sbin/shutdown \-h +0"
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBSHUTDOWNEXIT\fR \fIboolean|number\fR
+.RS 4
+After initiating shutdown, should this upsmon daemon itself exit? By doing so NUT secondary systems can tell the NUT primary that it can proceed with its own shutdown and eventually tell the UPS to cut power for the load\&. ("Yes" by default)
+.sp
+Some "secondary" systems with workloads that take considerable time to stop (e\&.g\&. virtual machines or large databases) can benefit from reporting (by virtue of logging off the data server) that they are ready for the "primary" system to begin its own shutdown and eventually to tell the UPS to cut the power \- not as soon as they have triggered their own shutdown, but at a later point (e\&.g\&. when the upsmon service is stopped AFTER the heavier workloads)\&.
+.sp
+Note that the actual ability to complete such shutdown depends on the remaining battery run\-time at the moment when UPS power state becomes considered critical and the shutdowns begin\&. You may also have to tune
+HOSTSYNC
+on the NUT primary to be long enough for those secondaries to stop their services\&. In practice, it may be worthwhile to investigate ways to trigger shutdowns earlier on these systems, e\&.g\&. by setting up
+upssched
+integration, or
+dummy\-ups
+driver with overrides for stricter
+battery\&.charge
+or
+battery\&.runtime
+triggers than used by the rest of your servers\&.
+.sp
+This option supports Boolean\-style strings (yes/on/true or no/off/false) or numbers to define a delay (in seconds) between calling
+SHUTDOWNCMD
+and exiting the daemon\&. Zero means immediate exit (default), negative values mean never exiting on its own accord\&.
+.RE
+.PP
+\fBCERTPATH\fR \fIcertificate file or database\fR
+.RS 4
+When compiled with SSL support, you can enter the certificate path here\&.
+.PP
+With NSS:
+.RS 4
+Certificates are stored in a dedicated database (data split in 3 files)\&. Specify the path of the database directory\&.
+.RE
+.PP
+With OpenSSL:
+.RS 4
+Directory containing CA certificates in PEM format, used to verify the server certificate presented by the upsd server\&. The files each contain one CA certificate\&. The files are looked up by the CA subject name hash value, which must hence be available\&.
+.RE
+.RE
+.PP
+\fBCERTIDENT\fR \fIcertificate name\fR \fIdatabase password\fR
+.RS 4
+When compiled with SSL support with NSS, you can specify the certificate name to retrieve from database to authenticate itself and the password required to access certificate related private key\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Be sure to enclose "certificate name" in double\-quotes if you are using a value with spaces in it\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBCERTHOST\fR \fIhostname\fR \fIcertificate name\fR \fIcertverify\fR \fIforcessl\fR
+.RS 4
+When compiled with SSL support with NSS, you can specify security directive for each server you can contact\&.
+.sp
+Each entry maps server name with the expected certificate name and flags indicating if the server certificate is verified and if the connection must be secure\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Be sure to enclose "certificate name" in double\-quotes if you are using a value with spaces in it\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBCERTVERIFY\fR \fI0 | 1\fR
+.RS 4
+When compiled with SSL support, make upsmon verify all connections with certificates\&.
+.sp
+Without this, there is no guarantee that the upsd is the right host\&. Enabling this greatly reduces the risk of man\-in\-the\-middle attacks\&. This effectively forces the use of SSL, so don\(cqt use this unless all of your upsd hosts are ready for SSL and have their certificates in order\&.
+.sp
+When compiled with NSS support of SSL, can be overridden for host specified with a CERTHOST directive\&.
+.RE
+.PP
+\fBFORCESSL\fR \fI0 | 1\fR
+.RS 4
+When compiled with SSL, specify that a secured connection must be used to communicate with upsd\&.
+.sp
+If you don\(cqt use
+\fICERTVERIFY 1\fR, then this will at least make sure that nobody can sniff your sessions without a large effort\&. Setting this will make upsmon drop connections if the remote upsd doesn\(cqt support SSL, so don\(cqt use it unless all of them have it running\&.
+.sp
+When compiled with NSS support of SSL, can be overridden for host specified with a CERTHOST directive\&.
+.RE
+.PP
+\fBDEBUG_MIN\fR \fIINTEGER\fR
+.RS 4
+Optionally specify a minimum debug level for
+upsmon
+daemon, e\&.g\&. for troubleshooting a deployment, without impacting foreground or background running mode directly\&. Command\-line option
+\-D
+can only increase this verbosity level\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+if the running daemon receives a
+reload
+command, presence of the
+DEBUG_MIN NUMBER
+value in the configuration file can be used to tune debugging verbosity in the running service daemon (it is recommended to comment it away or set the minimum to explicit zero when done, to avoid huge journals and I/O system abuse)\&. Keep in mind that for this run\-time tuning, the
+DEBUG_MIN
+value
+\fBpresent\fR
+in
+\fBreloaded\fR
+configuration files is applied instantly and overrides any previously set value, from file or CLI options, regardless of older logging level being higher or lower than the newly found number; a missing (or commented away) value however does not change the previously active logging verbosity\&.
+.sp .5v
+.RE
+.RE
+.SH "SEE ALSO"
+.sp
+\fBupsmon\fR(8), \fBupsd\fR(8), \fBnutupsdrv\fR(8)\&.
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

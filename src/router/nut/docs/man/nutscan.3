@@ -1,0 +1,172 @@
+'\" t
+.\"     Title: nutscan
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "NUTSCAN" "3" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nutscan \- Network UPS Tools (NUT) device discovery library
+.SH "DESCRIPTION"
+.sp
+The Network UPS Tools (NUT) \fBnutscan\fR library provides the same discovery related features that are also offered by \fBnut-scanner\fR(8)\&.
+.sp
+It enables the discovery of supported NUT devices (USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (either using Avahi, or the classic connection method)\&.
+.SH "DISCOVERY FUNCTIONS"
+.sp
+First, include the required header file:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+#include <nut\-scan\&.h>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Then, to discover new devices, use the appropriate function:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_usb\fR(3)
+for supported USB devices,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_snmp\fR(3)
+for supported SNMP agents,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_xml_http_range\fR(3)
+for Eaton Network Management Card,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_nut\fR(3)
+for NUT servers (upsd), using the classic method (search for port),
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_avahi\fR(3)
+for NUT servers (upsd), using the mDNS (Avahi) method,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_scan_ipmi\fR(3)
+for supported IPMI PSU\&.
+.RE
+.sp
+All of these functions return a list of devices found, using the nutscan_device_t structure\&. This structure is described in \fBnutscan_add_device_to_device\fR(3)\&.
+.sp
+Helper functions are also provided to output data using standard formats:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_display_parsable\fR(3)
+for parsable output,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_display_ups_conf\fR(3)
+for ups\&.conf style,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBnutscan_display_ups_conf_with_sanity_check\fR(3)
+for ups\&.conf style with comments for warnings about possible configuration problems (if any)\&.
+.RE
+.SH "ERROR HANDLING"
+.sp
+There is currently no specific mechanism for error handling\&.
+.SH "SEE ALSO"
+.sp
+\fBnut-scanner\fR(8), \fBnutscan_scan_usb\fR(3), \fBnutscan_scan_snmp\fR(3), \fBnutscan_scan_xml_http_range\fR(3), \fBnutscan_scan_nut\fR(3), \fBnutscan_scan_avahi\fR(3), \fBnutscan_scan_ipmi\fR(3), \fBnutscan_display_sanity_check\fR(3), \fBnutscan_display_sanity_check_serial\fR(3), \fBnutscan_display_ups_conf_with_sanity_check\fR(3), \fBnutscan_display_parsable\fR(3), \fBnutscan_display_ups_conf\fR(3), \fBnutscan_new_device\fR(3), \fBnutscan_free_device\fR(3), \fBnutscan_add_device_to_device\fR(3), \fBnutscan_add_option_to_device\fR(3), \fBnutscan_cidr_to_ip\fR(3)
+.SS "Internet resources:"
+.sp
+http://avahi\&.org/

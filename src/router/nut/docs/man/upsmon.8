@@ -1,0 +1,522 @@
+'\" t
+.\"     Title: upsmon
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSMON" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upsmon \- UPS monitor and shutdown controller
+.SH "SYNOPSIS"
+.sp
+\fBupsmon\fR \-h
+.sp
+\fBupsmon\fR \-c \fIcommand\fR [\-P \fIpid\fR]
+.sp
+\fBupsmon\fR [\-D] [\-F | \-B] [\-K] [\-p] [\-u \fIuser\fR]
+.SH "DESCRIPTION"
+.sp
+\fBupsmon\fR is the client process that is responsible for the most important part of UPS monitoring\(emshutting down the system when the power goes out\&. It can call out to other helper programs for notification purposes during power events\&.
+.sp
+upsmon can monitor multiple systems using a single process\&. Every UPS that is defined in the \fBupsmon.conf\fR(5) configuration file is assigned a power value and a type (\fBprimary\fR or \fBsecondary\fR)\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help message\&.
+.RE
+.PP
+\fB\-c\fR \fIcommand\fR
+.RS 4
+Send the command
+\fIcommand\fR
+to the existing upsmon process\&. Valid commands are:
+.PP
+\fBfsd\fR
+.RS 4
+shutdown all primary\-mode UPSes (use with caution)
+.RE
+.PP
+\fBstop\fR
+.RS 4
+stop monitoring and exit
+.RE
+.PP
+\fBreload\fR
+.RS 4
+reread
+\fBupsmon.conf\fR(5)
+configuration file\&. See "reloading nuances" below if this doesn\(cqt work\&.
+.RE
+.RE
+.PP
+\fB\-P\fR \fIpid\fR
+.RS 4
+Send the command signal above using specified PID number, rather than consulting the PID file\&. This can help define service units which start main
+upsmon
+as a foreground process so it does not have to rely on a PID file\&.
+.RE
+.PP
+\fB\-D\fR
+.RS 4
+Raise the debugging level\&. upsmon will run in the foreground by default, and will print information on stdout about the monitoring process\&. Use this option multiple times for more details\&.
+.RE
+.PP
+\fB\-F\fR
+.RS 4
+upsmon will run in the foreground, regardless of debugging settings\&.
+.RE
+.PP
+\fB\-B\fR
+.RS 4
+upsmon will run in the background, regardless of debugging settings\&.
+.RE
+.PP
+\fB\-K\fR
+.RS 4
+Test for the shutdown flag\&. If it exists and contains the magic string from upsmon, then upsmon will exit with
+EXIT_SUCCESS\&. Any other condition will make upsmon exit with
+EXIT_FAILURE\&.
+.sp
+You can test for a successful exit from
+upsmon \-K
+in your shutdown scripts to know when to call
+\fBupsdrvctl\fR(8)
+to shut down the UPS\&.
+.RE
+.PP
+\fB\-p\fR
+.RS 4
+Run privileged all the time\&. Normally upsmon will split into two processes\&. The majority of the code runs as an unprivileged user, and only a tiny stub runs as root\&. This switch will disable that mode, and run the old "all root all the time" system\&.
+.sp
+This is not the recommended mode, and you should not use this unless you have a very good reason\&.
+.RE
+.PP
+\fB\-u\fR \fIuser\fR
+.RS 4
+Set the user for the unprivileged monitoring process\&. This has no effect when using \-p\&.
+.sp
+The default user is set at configure time with
+\fIconfigure \-\-with\-user=\&...\fR\&. Typically this is
+\fInobody\fR, but other distributions will probably have a specific
+\fInut\fR
+user for this task\&. If your notification scripts need to run as a specific user, set it here\&.
+.sp
+You can also set this in the
+\fBupsmon.conf\fR(5)
+file with the RUN_AS_USER directive\&.
+.RE
+.SH "UPS DEFINITIONS"
+.sp
+In the \fBupsmon.conf\fR(5), you must specify at least one UPS that will be monitored\&. Use the MONITOR directive\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+MONITOR \*(Aqsystem\*(Aq \*(Aqpowervalue\*(Aq \*(Aqusername\*(Aq \*(Aqpassword\*(Aq \*(Aqtype\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The \fIsystem\fR refers to a \fBupsd\fR(8) server, in the form upsname[@hostname[:port]]\&. The default hostname is "localhost"\&. Some examples follow:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"su700@mybox" means a UPS called "su700" on a system called "mybox"\&. This is the normal form\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+"fenton@bigbox:5678" is a UPS called "fenton" on a system called "bigbox" which runs
+\fBupsd\fR(8)
+on port "5678"\&.
+.RE
+.sp
+The \fIpowervalue\fR refers to how many power supplies on this system are being driven this UPS\&. This is typically set to 1, but see the section on power values below\&.
+.sp
+The \fIusername\fR is a section in your \fBupsd.users\fR(5) file\&. Whatever password you set in that section must match the \fIpassword\fR set in this file\&.
+.sp
+The type set in that section must also match the \fItype\fR here \(em \fBprimary\fR or \fBsecondary\fR\&. In general, a primary process is one running on the system with the UPS actually plugged into a serial port, and a secondary is drawing power from the UPS but can\(cqt talk to it directly\&. See the section on UPS types for more\&.
+.SH "NOTIFY EVENTS"
+.sp
+\fBupsmon\fR senses several events as it monitors each UPS\&. They are called notify events as they can be used to tell the users and admins about the change in status\&. See the additional NOTIFY\-related sections below for information on customizing the delivery of these messages\&.
+.PP
+\fBONLINE\fR
+.RS 4
+The UPS is back on line\&.
+.RE
+.PP
+\fBONBATT\fR
+.RS 4
+The UPS is on battery\&.
+.RE
+.PP
+\fBLOWBATT\fR
+.RS 4
+The UPS battery is low (as determined by the driver)\&.
+.RE
+.PP
+\fBFSD\fR
+.RS 4
+The UPS has been commanded into the "forced shutdown" mode\&.
+.RE
+.PP
+\fBCOMMOK\fR
+.RS 4
+Communication with the UPS has been established\&.
+.RE
+.PP
+\fBCOMMBAD\fR
+.RS 4
+Communication with the UPS was just lost\&.
+.RE
+.PP
+\fBSHUTDOWN\fR
+.RS 4
+The local system is being shut down\&.
+.RE
+.PP
+\fBREPLBATT\fR
+.RS 4
+The UPS needs to have its battery replaced\&.
+.RE
+.PP
+\fBNOCOMM\fR
+.RS 4
+The UPS can\(cqt be contacted for monitoring\&.
+.RE
+.PP
+\fBNOPARENT\fR
+.RS 4
+upsmon
+parent process died \- shutdown impossible\&.
+.RE
+.PP
+\fBCAL\fR
+.RS 4
+UPS calibration in progress\&.
+.RE
+.PP
+\fBNOTCAL\fR
+.RS 4
+UPS calibration finished\&.
+.RE
+.PP
+\fBOFF\fR
+.RS 4
+UPS administratively OFF or asleep\&.
+.RE
+.PP
+\fBNOTOFF\fR
+.RS 4
+UPS no longer administratively OFF or asleep\&.
+.RE
+.PP
+\fBBYPASS\fR
+.RS 4
+UPS on bypass (powered, not protecting)\&.
+.RE
+.PP
+\fBNOTBYPASS\fR
+.RS 4
+UPS no longer on bypass\&.
+.RE
+.SH "NOTIFY COMMAND"
+.sp
+In \fBupsmon.conf\fR(5), you can configure a program called the NOTIFYCMD that will handle events that occur\&.
+.sp
+NOTIFYCMD "\fIpath to program\fR"
+.sp
+NOTIFYCMD "/usr/local/bin/notifyme"
+.sp
+Remember to wrap the path in "quotes" if it contains any spaces\&.
+.sp
+The program you run as your NOTIFYCMD can use the environment variables NOTIFYTYPE and UPSNAME to know what has happened and on which UPS\&. It also receives the notification message (see below) as the first (and only) argument, so you can deliver a pre\-formatted message too\&.
+.sp
+Note that the NOTIFYCMD will only be called for a given event when you set the EXEC flag by using the notify flags, as detailed below\&.
+.SH "NOTIFY FLAGS"
+.sp
+By default, all notify events (see above) generate a global message (wall) to all users, plus they are logged via the syslog\&. Except for Windows where upsmon only writes to the syslog by default\&. You can change this with the NOTIFYFLAG directive in the configuration file:
+.sp
+NOTIFYFLAG \fInotifytype\fR \fIflags\fR
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NOTIFYFLAG ONLINE SYSLOG
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NOTIFYFLAG ONBATT SYSLOG+WALL
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NOTIFYFLAG LOWBATT SYSLOG+WALL+EXEC
+.RE
+.sp
+The flags that can be set on a given notify event are:
+.PP
+\fBSYSLOG\fR
+.RS 4
+Write this message to the syslog\&.
+.RE
+.PP
+\fBWALL\fR
+.RS 4
+Send this message to all users on the system via
+\fBwall\fR(1)\&.
+.RE
+.PP
+\fBEXEC\fR
+.RS 4
+Execute the NOTIFYCMD\&.
+.RE
+.PP
+\fBIGNORE\fR
+.RS 4
+Don\(cqt do anything\&. If you use this, don\(cqt use any of the other flags\&.
+.RE
+.sp
+You can mix these flags\&. "SYSLOG+WALL+EXEC" does all three for a given event\&.
+.SH "NOTIFY MESSAGES"
+.sp
+upsmon comes with default messages for each of the NOTIFY events\&. These can be changed with the NOTIFYMSG directive\&.
+.sp
+NOTIFYMSG \fItype\fR "\fImessage\fR"
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+NOTIFYMSG ONLINE "UPS %s is getting line power"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+` NOTIFYMSG ONBATT "Someone pulled the plug on %s"`
+.RE
+.sp
+The first instance of %s is replaced with the identifier of the UPS that generated the event\&. These messages are used when sending walls to the users directly from upsmon, and are also passed to the NOTIFYCMD\&.
+.SH "POWER VALUES"
+.sp
+The "current overall power value" is the sum of all UPSes that are currently able to supply power to the system hosting upsmon\&. Any UPS that is either on line or just on battery contributes to this number\&. If a UPS is critical (on battery and low battery) or has been put into "forced shutdown" mode, it no longer contributes\&.
+.sp
+A "power value" on a MONITOR line in the config file is the number of power supplies that the UPS runs on the current system\&.
+.sp
+MONITOR \fIupsname\fR \fIpowervalue\fR \fIusername\fR \fIpassword\fR \fItype\fR
+.sp
+Normally, you only have one power supply, so it will be set to 1\&.
+.sp
+MONITOR myups@myhost 1 username mypassword primary
+.sp
+On a large server with redundant power supplies, the power value for a UPS may be greater than 1\&. You may also have more than one of them defined\&.
+.sp
+MONITOR ups\-alpha@myhost 2 username mypassword primary
+.sp
+MONITOR ups\-beta@myhost 2 username mypassword primary
+.sp
+You can also set the power value for a UPS to 0 if it does not supply any power to that system\&. This is generally used when you want to use the upsmon notification features for a UPS even though it\(cqs not actually running the system that hosts upsmon\&. Don\(cqt set this to "primary" unless you really want to power this UPS off when this instance of upsmon needs to shut down for its own reasons\&.
+.sp
+MONITOR faraway@anotherbox 0 username mypassword secondary
+.sp
+The "minimum power value" is the number of power supplies that must be receiving power in order to keep the computer running\&.
+.sp
+MINSUPPLIES \fIvalue\fR
+.sp
+Typical PCs only have 1, so most users will leave this at the default\&.
+.sp
+MINSUPPLIES 1
+.sp
+If you have a server or similar system with redundant power, then this value will usually be set higher\&. One that requires three power supplies to be running at all times would simply set it to 3\&.
+.sp
+MINSUPPLIES 3
+.sp
+When the current overall power value drops below the minimum power value, upsmon starts the shutdown sequence\&. This design allows you to lose some of your power supplies in a redundant power environment without bringing down the entire system while still working properly for smaller systems\&.
+.SH "UPS TYPES"
+.sp
+\fBupsmon\fR and \fBupsd\fR(8) don\(cqt always run on the same system\&. When they do, any UPSes that are directly attached to the upsmon host should be monitored in "primary" mode\&. This makes upsmon take charge of that equipment, and it will wait for the "secondary" systems to disconnect before shutting down the local system\&. This allows the distant systems (monitoring over the network) to shut down cleanly before upsdrvctl shutdown runs and turns them all off\&.
+.sp
+When upsmon runs as a secondary, it is relying on the distant system to tell it about the state of the UPS\&. When that UPS goes critical (on battery and low battery), it immediately invokes the local shutdown command\&. This needs to happen quickly\&. Once all secondaries disconnect from the distant \fBupsd\fR(8) server, its primary\-mode upsmon will start its own shutdown process\&. Your secondary systems must all quiesce and shut down before the primary turns off the shared power source, or filesystem damage may result\&.
+.sp
+upsmon deals with secondaries that get wedged, hang, or otherwise fail to disconnect from \fBupsd\fR(8) in a timely manner with the HOSTSYNC timer\&. During a shutdown situation, the primary upsmon will give up after this interval and it will shut down anyway\&. This keeps the primary from sitting there forever (which would endanger that host) if a secondary should break somehow\&. This defaults to 15 seconds\&.
+.sp
+If your primary system is shutting down too quickly, set the FINALDELAY interval to something greater than the default 15 seconds\&. Don\(cqt set this too high, or your UPS battery may run out of power before the primary upsmon process shuts down that system\&.
+.SH "TIMED SHUTDOWNS"
+.sp
+For those rare situations where the shutdown process can\(cqt be completed between the time that low battery is signalled and the UPS actually powers off the load, use the \fBupssched\fR(8) helper program\&. You can use it along with upsmon to schedule a shutdown based on the "on battery" event\&. upssched can then come back to upsmon to initiate the shutdown once it has run on battery too long\&.
+.sp
+This can be complicated and messy, so stick to the default critical UPS handling if you can\&.
+.SH "REDUNDANT POWER SUPPLIES"
+.sp
+If you have more than one power supply for redundant power, you may also have more than one UPS feeding your computer\&. upsmon can handle this\&. Be sure to set the UPS power values appropriately and the MINSUPPLIES value high enough so that it keeps running until it really does need to shut down\&.
+.sp
+For example, the HP NetServer LH4 by default has 3 power supplies installed, with one bay empty\&. It has two power cords, one per side of the box\&. This means that one power cord powers two power supply bays, and that you can only have two UPSes supplying power\&.
+.sp
+Connect UPS "alpha" to the cord feeding two power supplies, and UPS "beta" to the cord that feeds the third and the empty slot\&. Define alpha as a powervalue of 2, and beta as a powervalue of 1\&. Set the MINSUPPLIES to 2\&.
+.sp
+When alpha goes on battery, your current overall power value will stay at 3, as it\(cqs still supplying power\&. However, once it goes critical (on battery and low battery), it will stop contributing to the current overall power value\&. That means the value will be 1 (beta alone), which is less than 2\&. That is insufficient to run the system, and upsmon will invoke the shutdown sequence\&.
+.sp
+However, if beta goes critical, subtracting its contribution will take the current overall value from 3 to 2\&. This is just high enough to satisfy the minimum, so the system will continue running as before\&. If beta returns later, it will be re\-added and the current value will go back to 3\&. This allows you to swap out UPSes, change a power configuration, or whatever, as long as you maintain the minimum power value at all times\&.
+.SH "MIXED OPERATIONS"
+.sp
+Besides being able to monitor multiple UPSes, upsmon can also monitor them as different roles\&. If you have a system with multiple power supplies serviced by separate UPS batteries, it\(cqs possible to be a primary on one UPS and a secondary on the other\&. This usually happens when you run out of serial or USB ports and need to do the monitoring through another system nearby\&.
+.sp
+This is also complicated, especially when it comes time to power down a UPS that has gone critical but doesn\(cqt supply the local system\&. You can do this with some scripting magic in your notify command script, but it\(cqs beyond the scope of this manual\&.
+.SH "FORCED SHUTDOWNS"
+.sp
+When upsmon is forced to bring down the local system, it sets the "FSD" (forced shutdown) flag on any UPSes that it is running in primary mode\&. This is used to synchronize secondary systems in the event that a primary which is otherwise OK needs to be brought down due to some pressing event on the UPS manager system\&.
+.sp
+You can manually invoke this mode on the system with primary\-mode upsmon by starting another copy of the program with \-c fsd command line argument\&. This is useful when you want to initiate a shutdown before the critical stage through some external means, such as \fBupssched\fR(8)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+Please note that by design, since we require power\-cycling the load and don\(cqt want some systems to be powered off while others remain running if the "wall power" returns at the wrong moment as usual, the "FSD" flag can not be removed from the data server unless its daemon is restarted\&. If we do take the first step in critical mode, then we normally intend to go all the way \(em shut down all the servers gracefully, and power down the UPS\&.
+.sp .5v
+.RE
+.sp
+Keep in mind that some UPS devices and corresponding drivers would also latch or otherwise resurface the "FSD" state again even if "wall power" is available, but the remaining battery charge is below a threshold configured as "safe" in the device (usually if you manually power on the UPS after a long power outage)\&. This is by design of respective UPS vendors, since in such situation they can not guarantee that if a new power outage happens, their UPS would safely shut down your systems again\&. So it is deemed better and safer to stay dark until batteries become sufficiently charged\&.
+.sp
+When it is time to shut down, upsmon creates POWERDOWNFLAG to communicate to the operating system that the UPS should be commanded off late in the shutdown sequence\&. This file is removed if present when upsmon starts, so that the next normal shutdown does not cause the UPS to be turned off\&. (The file can\(cqt in general be removed during shutdown because the filesystem might be read only\&. If the file is in a RAM\-backed filesystem, the it won\(cqt be present and the check to remove it won\(cqt fire\&.)
+.SH "SIMULATING POWER FAILURES"
+.sp
+To test a synchronized shutdown without pulling the plug on your UPS(es), you need only set the forced shutdown (FSD) flag on them\&. You can do this by calling upsmon again to set the flag, i\&.e\&.:
+.sp
+upsmon \-c fsd
+.sp
+After that, the primary and the secondary will do their usual shutdown sequence as if the battery had gone critical, while you can time how long it takes for them\&. This is much easier on your UPS equipment, and it beats crawling under a desk to find the plug\&.
+.sp
+Note you can also use a dummy SHUTDOWNCMD setting to just report that the systems would shut down at this point, without actually disrupting their work\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+after such "dummy" experiments you may have to restart the NUT data server upsd to clear its "FSD" flag for the devices and clients involved, and make sure no files named by POWERDOWNFLAG option (e\&.g\&. /etc/killpower) remain on the upsmon primary systems under test\&.
+.sp .5v
+.RE
+.SH "DEAD UPSES"
+.sp
+In the event that upsmon can\(cqt reach \fBupsd\fR(8), it declares that UPS "dead" after some interval controlled by DEADTIME in the \fBupsmon.conf\fR(5)\&. If this happens while that UPS was last known to be on battery, it is assumed to have gone critical and no longer contributes to the overall power value\&.
+.sp
+upsmon will alert you to a UPS that can\(cqt be contacted for monitoring with a "NOCOMM" notifier by default every 300 seconds\&. This can be changed with the NOCOMMWARNTIME setting\&.
+.sp
+Also upsmon normally reports polling failures for each device that are in place for each POLLFREQ loop (e\&.g\&. "Data stale" or "Driver not connected") to system log as configured\&. If your devices are expected to be AWOL for an extended timeframe, you can use POLLFAIL_LOG_THROTTLE_MAX to reduce the stress on syslog traffic and storage, by posting these messages only once in every several loop cycles, and when the error condition has changed or cleared\&. A negative value means standard behavior (log on every loop, effectively same as when max=1), and a zero value means to never repeat the message (log only on start and end/change of the failure state)\&.
+.sp
+Note that this throttle only applies to one latest\-active error state per monitored device\&.
+.SH "RELOADING NUANCES"
+.sp
+upsmon usually gives up root powers for the process that does most of the work, including handling signals like SIGHUP to reload the configuration file\&. This means your \fBupsmon.conf\fR(8) file must be readable by the non\-root account that upsmon switches to\&.
+.sp
+If you want reloads to work, upsmon must run as some user that has permissions to read the configuration file\&. I recommend making a new user just for this purpose, as making the file readable by "nobody" (the default user) would be a bad idea\&.
+.sp
+See the RUN_AS_USER section in \fBupsmon.conf\fR(8) for more on this topic\&.
+.sp
+Additionally, you can\(cqt change the SHUTDOWNCMD or POWERDOWNFLAG definitions with a reload due to the split\-process model\&. If you change those values, you \fBmust\fR stop upsmon and start it back up\&. upsmon will warn you in the syslog if you make changes to either of those values during a reload\&.
+.SH "ENVIRONMENT VARIABLES"
+.sp
+\fBNUT_DEBUG_LEVEL\fR sets default debug verbosity if no \fB\-D\fR arguments were provided on command line, but does not request that the daemon runs in foreground mode\&.
+.sp
+\fBNUT_CONFPATH\fR is the path name of the directory that contains upsmon\&.conf and other configuration files\&. If this variable is not set, \fBupsmon\fR uses a built\-in default, which is often /usr/local/ups/etc\&.
+.SH "FILES"
+.sp
+\fBupsmon.conf\fR(5)
+.SH "SEE ALSO"
+.SS "Server:"
+.sp
+\fBupsd\fR(8)
+.SS "Clients:"
+.sp
+\fBupsc\fR(8), \fBupscmd\fR(8), \fBupsrw\fR(8), \fBupsmon\fR(8)
+.SS "CGI programs:"
+.sp
+\fBupsset.cgi\fR(8), \fBupsstats.cgi\fR(8), \fBupsimage.cgi\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

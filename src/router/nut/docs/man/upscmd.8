@@ -1,0 +1,108 @@
+'\" t
+.\"     Title: upscmd
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "UPSCMD" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upscmd \- UPS administration program for instant commands
+.SH "SYNOPSIS"
+.sp
+\fBupscmd\fR \-h
+.sp
+\fBupscmd\fR \-l \fIups\fR
+.sp
+\fBupscmd\fR [\-u \fIusername\fR] [\-p \fIpassword\fR] [\-w] [\-t <timeout>] \fIups\fR \fIcommand\fR
+.SH "DESCRIPTION"
+.sp
+\fBupscmd\fR allows you to invoke "instant commands" in your UPS hardware\&. Not all hardware supports this, so check the list with \-l to see if anything will work on your equipment\&.
+.sp
+On hardware that supports it, you can use this program to start and stop battery tests, invoke a front panel test (beep!), turn the load on or off, and more\&.
+.SH "OPTIONS"
+.PP
+\fB\-h\fR
+.RS 4
+Display the help message\&.
+.RE
+.PP
+\fB\-l\fR \fIups\fR
+.RS 4
+Show the list of supported instant commands on that UPS\&. Some hardware may not support any of them\&.
+.RE
+.PP
+\fB\-u\fR \fIusername\fR
+.RS 4
+Set the username for the connection to the server\&. This is optional, and you will be prompted for this when invoking a command if \-u is not used\&.
+.RE
+.PP
+\fB\-p\fR \fIpassword\fR
+.RS 4
+Set the password to authenticate to the server\&. This is also optional like \-u, and you will be prompted for it if necessary\&.
+.RE
+.PP
+\fB\-w\fR
+.RS 4
+Wait for the completion of command execution by the driver and return its actual result from the device\&. Note that this feature requires that both upsd and the driver support TRACKING (NUT version 2\&.8\&.0 or higher) or it will otherwise fail\&. The command will also block until an actual result is provided from the driver, or the timeout is reached (see
+\fB\-t\fR)\&.
+.RE
+.PP
+\fB\-t\fR \fIseconds\fR
+.RS 4
+Set a timeout when using
+\fB\-w\fR\&. Defaults to 10 seconds\&.
+.RE
+.PP
+\fIups\fR
+.RS 4
+Connect to this UPS\&. The format is
+upsname[@hostname[:port]]\&. The default hostname is "localhost"\&.
+.RE
+.SH "UNATTENDED MODE"
+.sp
+If you run this program inside a shell script or similar to invoke a command, you will need to specify all of the information on the command line\&. This means using \-u and \-p\&. Otherwise it will put up a prompt and your program will hang\&.
+.sp
+This is not necessary when displaying the list, as the username and password are not required for read\-only mode\&.
+.sp
+Moreover, if you run this program inside a shell script or similar, you should only consider using output from stdout, not stderr\&.
+.SH "DANGEROUS COMMANDS"
+.sp
+Some drivers like \fBapcsmart\fR(8) have built\-in paranoia for the dangerous commands like load\&.off\&. To make them actually turn off the load, you will have to send the command twice within a short window\&. That is, you will have to send it once, then send it again after 3 seconds elapse but before 15 seconds pass\&.
+.sp
+This paranoia is entirely defined within the driver\&. upsd and upscmd have no control over the timing\&.
+.SH "DIAGNOSTICS"
+.sp
+upscmd won\(cqt work unless you provide a valid username and password\&. If you get "access denied" errors, make sure that your \fBupsd.users\fR(5) has an entry for you, and that the username you are using has permissions to SET variables\&.
+.SH "BUGS"
+.sp
+There is currently no way to tell the user when the driver requires confirmation to invoke a command such as load\&.off\&.
+.sp
+This is on the list of things to fix in the future, so don\(cqt despair\&. It involves magic cookies\&.
+.SH "SEE ALSO"
+.sp
+\fBupsd\fR(8), \fBupsrw\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

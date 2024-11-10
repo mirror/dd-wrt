@@ -1,0 +1,351 @@
+'\" t
+.\"     Title: powercom
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "POWERCOM" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+powercom \- UPS driver for serial Powercom/Trust/Advice UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBpowercom\fR \-h
+.sp
+\fBpowercom\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the powercom driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver supports many similar kinds of serial UPS hardware (as well as a few USB UPS models with USB\-to\-serial adapters)\&. The most common ones are the Trust 425/625, Powercom, and Advice Partner/King PR750\&. Others using the same protocol may also work\&. For USB connections, you might need \fBusbhid-ups\fR(8)\&.
+.sp
+For more specific guidance on which driver is applicable for a USB connection, see the NUT Hardware Compatibility List (HCL)\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5) file:
+.PP
+\fBlinevoltage\fR=\fIvalue\fR
+.RS 4
+An integer specifying the line voltage\&. It can\(cqt be auto detected\&. Acceptable values are in the range of 110\-120 or 220\-240\&. The default is
+\fI230\fR\&.
+.RE
+.PP
+\fBmanufacturer\fR=\fIname\fR
+.RS 4
+Specify the manufacturer name, which also can\(cqt be auto detected\&. This is a user defined string, so any name is acceptable\&. The default is
+\fIPowerCom\fR\&.
+.RE
+.PP
+\fBmodelname\fR=\fIname\fR
+.RS 4
+Specify the model name, which also can\(cqt be auto detected\&. This is a user defined string, so any name is acceptable\&. The default is
+\fIUnknown\fR\&.
+.RE
+.PP
+\fBserialnumber\fR=\fIvalue\fR
+.RS 4
+Like modelname above, but for the serial number\&. The default is
+\fIUnknown\fR\&.
+.RE
+.PP
+\fBtype\fR=\fIname\fR
+.RS 4
+The exact type of the communication protocol within the powercom family, that will be used to communicate with the UPS\&. The type is named after the first modelname that was coded with that protocol\&. The acceptable names are
+\fITrust\fR,
+\fIEgys\fR,
+\fIKP625AP\fR,
+\fIIMP\fR,
+\fIKIN\fR,
+\fIBNT\fR,
+\fIBNT\-other\fR
+and
+\fIOPTI\fR\&. The default is
+\fITrust\fR\&.
+.sp
+\fIBNT\-other\fR
+is a special type for other BNT models (such as the 1500A at 120V and can be used to override ALL models using ALL of the following values\&.
+.RE
+.PP
+\fBshutdownArguments\fR={{\fIminutes\fR,\fIseconds\fR},\fIwhether_minutes_should_be_used\fR}
+.RS 4
+The minutes and seconds that the UPS should wait between receiving the shutdown command and actually shutting off\&. The other argument should be set to the character
+\fIn\fR
+only when the minutes value should be skipped and not sent to the UPS\&. The default is type\-dependent and is given below\&. The braces and commas are mandatory\&. Note that there should be no whitespace characters\&.
+.RE
+.PP
+\fBnumOfBytesFromUPS\fR=\fIvalue\fR
+.RS 4
+The number of bytes in a UPS frame: 16 is common, 11 for
+\fITrust\fR\&. The default is type\-dependent and is given below\&.
+.RE
+.PP
+\fBmethodOfFlowControl\fR=\fIname\fR
+.RS 4
+The method of serial communication flow control that is engaged by the UPS\&. The default is type\-dependent and is given below\&. Acceptable names are
+\fIdtr0rts1\fR,
+\fIdtr1\fR
+or
+\fIno_flow_control\fR\&.
+.RE
+.PP
+\fBvalidationSequence\fR={{\fIindex1\fR,\fIvalue1\fR},{\fIindex2\fR,\fIvalue2\fR},{\fIindex3\fR,\fIvalue3\fR}}
+.RS 4
+(Only for types KP625AP, Trust, Egys\&.) 3 pairs to be used for validating the UPS by comparing bytes of the raw data with constant values\&. The index selects the byte from the UPS (see numOfBytesFromUPS) and the value is for matching to the byte\&. The default is type\-dependent and is given below\&. The braces and commas are mandatory, as the lack of white space characters\&.
+.RE
+.PP
+\fBfrequency\fR={\fIA\fR,\fIB\fR}
+.RS 4
+(Only for types KP625AP, Trust, Egys\&.) A pair to convert the raw frequency data to a human\-readable frequency reading using the function 1/(A*x+B)\&. If the raw value x IS the frequency, then set A=1/(x^2) and B=0\&. The default is type\-dependent and is given below\&. Do note that the braces and commas are mandatory as well, as the lack of whitespace characters\&.
+.RE
+.PP
+\fBloadPercentage\fR={\fIBatteryA\fR,\fIBatteryB\fR,\fILineA\fR,\fILineB\fR}
+.RS 4
+(Only for types KP625AP, Trust, Egys\&.) A quad to convert the raw load data to human readable load percentage reading using the function A*x+B\&. If the raw value x IS the Load Percent, then set A=1 and B=0\&. The default is type\-dependent and is given below\&. Do note that the braces and commas are mandatory, as the lack of white space characters\&.
+.RE
+.PP
+\fBbatteryPercentage\fR={\fIBattery1\fR,\fIBattery2\fR,\fIBattery3\fR,\fILine4\fR,\fILine5\fR}
+.RS 4
+(Only for KP625AP, Trust, Egys\&.) A 5 tuple to convert the raw battery and line data to a human\-readable battery and line percentage reading using the functions (Battery) A*x+B*y+C and (Line) D*x+E\&. If the raw value x IS the Battery Percent, then set A=1, B=0, C=0, D=1, E=0\&. The default is type\-dependent and is given below\&. Do note that the braces and commas are mandatory, as the lack of white space characters\&.
+.RE
+.PP
+\fBvoltage\fR={\fI240A\fR,\fI240B\fR,\fI120A\fR,\fI120B\fR}
+.RS 4
+(Only for types KP625AP, Trust, Egys\&.) A quad that is used convert the raw voltage data to a human\-readable voltage reading using the function A*x+B\&. If the raw value x IS HALF the Voltage, then set A=2, B=0\&. The default is type\-dependent and is given below\&. Do note that the braces and commas are mandatory, as well as the lack of whitespace characters\&.
+.RE
+.PP
+\fBnobt\fR
+.RS 4
+If this flag is present, the battery check on startup is skipped\&. This is useful for systems that tend to overload the UPS when testing the battery on system startup \(em just when the power consumption tends to be high\&.
+.RE
+.SH "DEFAULT VALUES FOR THE EXTRA ARGUMENTS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+linevoltage = 230
+manufacturer = PowerCom
+modelname = Unknown
+serialnumber = Unknown
+type = Trust
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The rest of the default values for the extra arguments are type\-dependent\&. However, \fIBNT\-other\fR is a special type that can be used to override ALL values for ALL models\&.
+.SS "Trust"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 11
+methodOfFlowControl = dtr0rts1
+validationSequence = {{5,0},{7,0},{8,0}}
+shutdownArguments = {{0,10},n}
+frequency = {0\&.00020997,0\&.00020928}
+loadPercentage = {6\&.1343,\-0\&.3808,4\&.3110,0\&.1811}
+batteryPercentage = {5\&.0000,0\&.3268,\-825\&.00,4\&.5639,\-835\&.82}
+voltage = {1\&.9216,\-0\&.0977,0\&.9545,0\&.0000}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "KP625AP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = dtr0rts1
+validationSequence = {{5,0x80},{7,0},{8,0}}
+shutdownArguments = {{0,10},n}
+frequency = {0\&.00020997,0\&.00020928}
+loadPercentage = {6\&.1343,\-0\&.3808,4\&.3110,0\&.1811}
+batteryPercentage = {5\&.0000,0\&.3268,\-825\&.00,4\&.5639,\-835\&.82}
+voltage = {1\&.9216,\-0\&.0977,0\&.9545,0\&.0000}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "Egys"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{5,0x80},{7,0},{8,0}}
+shutdownArguments = {{0,10},n}
+frequency = {0\&.00020997,0\&.00020928}
+loadPercentage = {6\&.1343,\-0\&.3808,1\&.3333,0\&.6667}
+batteryPercentage = {5\&.0000,0\&.3268,\-825\&.00,2\&.2105,\-355\&.37}
+voltage = {1\&.9216,\-0\&.0977,0\&.9545,0\&.0000}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "IMP"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{5,0xFF},{7,0},{8,0}}
+shutdownArguments = {{1,30},y}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "KIN"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{11,0x4b},{8,0},{8,0}}
+shutdownArguments = {{1,30},y}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "BNT"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{11,0x42},{8,0},{8,0}}
+shutdownArguments = {{1,30},y}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "BNT\-other"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{8,0},{8,0},{8,0}}
+shutdownArguments = {{1,30},y}
+frequency = {0\&.00027778,0\&.0000}
+loadPercentage = {1\&.0000,0\&.0,1\&.0000,0\&.0}
+batteryPercentage = {1\&.0000,0\&.0000,0\&.0000,1\&.0000,0\&.0000}
+voltage = {2\&.0000,0\&.0000,2\&.0000,0\&.0000}
+.fi
+.if n \{\
+.RE
+.\}
+.SS "OPTI"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+numOfBytesFromUPS = 16
+methodOfFlowControl = no_flow_control
+validationSequence = {{5,0xFF},{7,0},{8,0}}
+shutdownArguments = {{1,30},y}
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Peter Bieringer <pb@bieringer\&.de>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Alexey Sidorov <alexsid@altlinux\&.org>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Keven L\&. Ates <atescomp@gmail\&.com>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Rouben Tchakhmakhtchian <rouben@rouben\&.net>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

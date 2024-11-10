@@ -1,0 +1,763 @@
+'\" t
+.\"     Title: usbhid-ups
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "USBHID\-UPS" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+usbhid-ups \- Driver for USB/HID UPS equipment
+.SH "SYNOPSIS"
+.sp
+\fBusbhid\-ups\fR \-h
+.sp
+\fBusbhid\-ups\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the usbhid\-ups driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+\fBusbhid\-ups\fR brings USB/HID UPS monitoring to NUT on all platforms supporting USB through libusb\&. It should detect any UPS that uses the HID Power Device Class, but the amount of data will vary depending on the manufacturer and model\&.
+.sp
+At the present time, usbhid\-ups supports:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+the newer Eaton USB models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+all MGE USB models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+all Dell USB models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+all AMETEK Powervar UPM models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some APC models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some Belkin models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some Cyber Power Systems models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some Powercom models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some PowerWalker models,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+some TrippLite models\&.
+.RE
+.sp
+For a more complete list, refer to the NUT hardware compatibility list, available in the source distribution as data/driver\&.list, or on the NUT website\&. You may use the "explore" driver option to gather information from HID UPSes which are not yet supported; see below for details\&.
+.sp
+This driver is known to work on:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+most Linux systems,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+FreeBSD (beta stage) and maybe other *BSD,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Darwin / Mac OS X,
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Solaris 10 and illumos\-based distributions\&.
+.RE
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver also supports the following optional settings:
+.PP
+\fBport =\fR \fIstring\fR
+.RS 4
+Some
+\fIvalue\fR
+must be set, typically
+\fBauto\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+This could be a device filesystem path like
+/dev/usb/hiddev0
+but current use of libusb API precludes knowing and matching by such identifiers\&. They may also be inherently unreliable (dependent on re\-plugging and enumeration order)\&. At this time the actual
+\fIvalue\fR
+is ignored, but syntactically some
+\fIport\fR
+configuration must still be there\&.
+.sp .5v
+.RE
+.RE
+.sp
+It is possible to control multiple UPS units simultaneously by running several instances of this driver, provided they can be uniquely distinguished by setting some combination of the \fBvendor\fR, \fBproduct\fR, \fBvendorid\fR, \fBproductid\fR, \fBserial\fR, \fBbus\fR and/or \fBdevice\fR options detailed below\&. For devices or operating systems that do not provide sufficient information, the \fBallow_duplicates\fR option can be of use (limited and risky!)
+.PP
+\fBvendorid =\fR \fIregex\fR, \fBproductid =\fR \fIregex\fR, \fBvendor =\fR \fIregex\fR, \fBproduct =\fR \fIregex\fR, \fBserial =\fR \fIregex\fR
+.RS 4
+Select a specific UPS, in case there is more than one connected via USB\&. Each option specifies an extended regular expression (see
+\fBregex(7)\fR
+for more information on regular expressions), which must match the UPS\(cqs entire respective vendor/product/serial string (minus any surrounding whitespace), or the whole 4\-digit hexadecimal code for
+vendorid
+and
+productid\&.
+.sp
+Try
+\fBlsusb(8)\fR
+or running this NUT driver with
+\fB\-DD\fR
+command\-line argument for finding out the strings to match\&.
+.sp
+Examples:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendor="Foo\&.Corporation\&.*"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x vendorid="051d*"
+(APC)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-x product="\&.*(Smart|Back)\-?UPS\&.*"
+.RE
+.RE
+.PP
+\fBbus =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB bus or group of buses\&. The argument is a regular expression that must match the bus name where the UPS is connected (e\&.g\&.
+bus="002"
+or
+bus="00[2\-3]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.RE
+.PP
+\fBdevice =\fR \fIregex\fR
+.RS 4
+Select a UPS on a specific USB device or group of devices\&. The argument is a regular expression that must match the device name where the UPS is connected (e\&.g\&.
+device="001"
+or
+device="00[1\-2]") as seen on Linux in
+/sys/bus/usb/devices
+or
+\fBlsusb(8)\fR; including leading zeroes\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+device numbers are not guaranteed by the OS to be stable across re\-boots or device re\-plugging\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBbusport =\fR \fIregex\fR
+.RS 4
+If supported by the hardware, OS and libusb on the particular deployment, this option should allow to specify physical port numbers on an USB hub, rather than logical
+device
+enumeration values, and in turn \(em this should be less volatile across reboots or re\-plugging\&. The value may be seen in the USB topology output of
+lsusb \-tv
+on systems with that tool, for example\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option is not practically supported by some NUT builds (it should be ignored with a warning then), and not by all systems that NUT can run on\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBallow_duplicates\fR
+.RS 4
+If you have several UPS devices which may not be uniquely identified by the options above (e\&.g\&. only VID:PID can be discovered there), this flag allows each driver instance where it is set to take the first match if available, or proceed to try another\&.
+.sp
+Normally the driver initialization would abort at this point claiming "Resource busy" or similar error, assuming that the otherwise properly matched device is unique \(em and some other process already handles it\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+This feature is inherently non\-deterministic! The association of driver instance name to actual device may vary between runs!
+.sp
+If you only care to know that
+\fBat least\fR
+one of your no\-name UPSes is online, this option can help\&.
+.sp
+If you must really know
+\fBwhich\fR
+one, it will not!
+.sp .5v
+.RE
+.RE
+.PP
+\fBusb_set_altinterface =\fR \fIbAlternateSetting\fR
+.RS 4
+Force redundant call to
+usb_set_altinterface(), especially if needed for devices serving multiple USB roles where the UPS is not represented by the interface number
+0
+(default)\&.
+.RE
+.PP
+\fBusb_config_index\fR, \fBusb_hid_rep_index\fR, \fBusb_hid_desc_index\fR, \fBusb_hid_ep_in\fR, \fBusb_hid_ep_out\fR
+.RS 4
+Force use of specific interface, endpoint, descriptor index etc\&. numbers, rather than defaulting to 0 (rarely other values in certain drivers for some devices known to use non\-zero numbers)\&. Specified as a hexadecimal number\&.
+.sp
+As a rule of thumb for
+usb_hid_desc_index
+discovery, you can see larger
+wDescriptorLength
+values (roughly 600+ bytes) in reports of
+lsusb
+or similar tools\&.
+.RE
+.PP
+\fBsubdriver\fR=\fIregex\fR
+.RS 4
+Select the USB HID subdriver for the device manually, where automatic match by device attributes alone does not suffice (e\&.g\&. new devices for which no
+vendorid/productid
+pair was built into any driver \(em but common USB HID support is anticipated, or for different\-capability devices with same interface chips, notably "phoenixtec/liebert" and "mge")\&.
+.sp
+Run the driver program with the
+\-\-help
+option to see the exact list of
+subdriver
+values it would currently recognize\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+this option first checks for exact matches to subdriver identification strings, such as
+"TrippLite HID 0\&.85"
+(which are prone to bit\-rot), and if there was no exact match \(em retries with a case\-insensitive extended regular expression\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+When using this option, it is mandatory to also specify the
+\fBvendorid\fR
+and
+\fBproductid\fR
+matching parameters\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBoffdelay\fR=\fInum\fR
+.RS 4
+Set the timer before the UPS is turned off after the kill power command is sent (via the
+\fB\-k\fR
+switch)\&.
+.sp
+The default value is 20 (in seconds)\&. Usually this
+\fBmust be lower\fR
+than
+\fIondelay\fR, but the driver will
+\fBnot\fR
+warn you upon startup if it isn\(cqt\&.
+.sp
+Note that many Cyber Power Systems (CPS) models tend to divide this delay by 60 and round down, so the minimum advisable value is 60 to avoid powering off immediately after NUT sends the shutdown command to the UPS\&.
+.RE
+.PP
+\fBondelay\fR=\fInum\fR
+.RS 4
+Set the timer for the UPS to switch on in case the power returns after the kill power command had been sent, but before the actual switch off\&. This ensures the machines connected to the UPS are, in all cases, rebooted after a power failure\&.
+.sp
+The default value is 30 (in seconds)\&. Usually this
+\fBmust be greater\fR
+than offdelay, but the driver will
+\fBnot\fR
+warn you upon startup if it isn\(cqt\&. Some UPSes will restart no matter what, even if the power is (still) out at the moment this timer elapses\&. In that case, you could see whether setting
+ondelay = \-1
+in
+\fBups\&.conf\fR
+helps\&.
+.sp
+Note that many CPS models tend to divide this delay by 60 and round down, so the minimum advisable value is 120 to allow a short delay between when the UPS shuts down, and when the power returns\&.
+.RE
+.PP
+\fBpollfreq\fR=\fInum\fR
+.RS 4
+Set polling frequency for full updates, in seconds\&. Compared to the quick updates performed every "pollinterval" (the latter option is described in
+\fBups.conf\fR(5)), the "pollfreq" interval is for polling the less\-critical variables\&. The default value is 30 (in seconds)\&.
+.RE
+.PP
+\fBpollonly\fR
+.RS 4
+If this flag is set, the driver will not use Interrupt In transfers during the shorter "pollinterval" cycles (not recommended, but needed if these reports are broken on your UPS)\&.
+.RE
+.PP
+\fBonlinedischarge_battery\fR
+.RS 4
+If this flag is set, the driver will treat
+OL+DISCHRG
+status as offline/on\-battery\&.
+.sp
+For most devices this combination means calibration or similar maintenance; however some UPS models (e\&.g\&. CyberPower UT series) emit
+OL+DISCHRG
+when wall power is lost \(em and need this option to handle shutdowns\&.
+.RE
+.PP
+\fBonlinedischarge\fR
+.RS 4
+DEPRECATED, old name for
+onlinedischarge_battery
+described above\&.
+.RE
+.PP
+\fBonlinedischarge_calibration\fR
+.RS 4
+If this flag is set, the driver will treat
+OL+DISCHRG
+status as calibration\&. Some UPS models (e\&.g\&. APC were seen to do so) report
+OL+DISCHRG
+when they are in calibration mode\&. This usually happens after a few seconds reporting an
+OFF
+state as well, while the hardware is switching to on\-battery mode\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+If it takes so long on your device that a shutdown gets issued, you may want to look at
+upsmon
+option
+OFFDURATION
+used to filter out temporary values of "administrative OFF" as not a loss of a feed for the powered load\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBonlinedischarge_log_throttle_sec\fR=\fInum\fR
+.RS 4
+Set the minimum frequency (in seconds) at which warnings would be emitted for an otherwise not handled
+OL+DISCHRG
+device status combination\&. Negative values disable sequentially repeated messages (when this state appears and persists)\&.
+.sp
+If the device does not report
+battery\&.charge, the default value is 30 seconds (fairly frequent, in case the UPS\-reported state combination does reflect a bad power condition and so the situation is urgent)\&.
+.sp
+If it does report
+battery\&.charge, by default the repeated notifications would only be logged if this charge is different from when the message was emitted previously (e\&.g\&. when the battery is really discharging)\&.
+.sp
+If both this option is set, and
+battery\&.charge
+is correctly reported, either of these rules allow the notification to be logged\&.
+.RE
+.PP
+\fBonlinedischarge_log_throttle_hovercharge\fR=\fInum\fR
+.RS 4
+See details in
+onlinedischarge_log_throttle_sec
+and
+battery\&.charge
+based log message throttling description above\&. This option adds a concept of UPS "hovering" a battery charge at some level deemed safe for its chemistry, and not forcing it to be fully charged all the time\&. As long as the current value of
+battery\&.charge
+remains at or above this threshold percentage (default 100), the
+OL+DISCHRG
+message logging is not triggered by variations of the charge\&.
+.RE
+.PP
+\fBdisable_fix_report_desc\fR
+.RS 4
+Set to disable fix\-ups for broken USB encoding, etc\&. which we apply by default on certain models (vendors/products) which were reported as not following the protocol strictly\&. This flag allows to disable the feature in particular device configurations\&.
+.sp
+It is always possible that the vendors eventually release fixed firmware, or re\-use identifiers by which we match suspected broken devices for unrelated products, so processing these fix\-ups would be a waste of time there\&.
+.sp
+It is also always possible that NUT fix\-ups cause issues on some devices, whether due to NUT bugs or because the vendor protocol implementation is broken in more than one place\&.
+.RE
+.PP
+\fBexplore\fR
+.RS 4
+With this option, the driver will connect to any device, including ones that are not yet supported\&. This must always be combined with the "vendorid" option\&. In this mode, the driver will not do anything useful except for printing debugging information (typically used with \-DD)\&.
+.RE
+.PP
+\fBmaxreport\fR
+.RS 4
+With this option, the driver activates a tweak to workaround buggy firmware returning invalid HID report length\&. Some APC Back\-UPS units are known to have this bug\&.
+.RE
+.PP
+\fBinterruptonly\fR
+.RS 4
+If this flag is set, the driver will not poll UPS\&. This also implies using of INPUT flagged objects\&. Some Powercom units need this option\&.
+.RE
+.PP
+\fBinterruptsize\fR=\fInum\fR
+.RS 4
+Limit the number of bytes to read from interrupt pipe\&. For some Powercom units this option should be equal to 8\&.
+.RE
+.PP
+\fBwaitbeforereconnect\fR=\fInum\fR
+.RS 4
+The driver automatically tries to reconnect to the UPS on unexpected error\&. This parameter (in seconds) allows it to wait before attempting the reconnection\&. The default value is 0\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+for instance, it was found that Eaton MGE Ellipse Max 1500 FR UPS firmware stops responding every few hours, which causes usbhid\-ups driver to detect an libusb insufficient memory error; in this case, when the usbhid\-ups driver tries to reconnect too early, the activity sometimes led the UPS firmware to crash and turn off the load immediately! Setting this parameter to 30 seconds solved this problem (while 20 seconds were not enough)\&.
+.sp .5v
+.RE
+.RE
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by using "configure \-\-with\-usb=yes"\&. Note that it will also install other USB drivers\&.
+.sp
+You also need to install manually the legacy hotplug files (libhidups and libhid\&.usermap, generally in /etc/hotplug/usb/), or the udev file (nut\-usbups\&.rules, generally in /etc/udev/rules\&.d/) to address the permission settings problem\&. For more information, refer to the README file in nut/scripts/hotplug or nut/scripts/udev\&.
+.SH "IMPLEMENTATION"
+.SS "Selecting a specific UPS"
+.sp
+As mentioned above, the driver ignores the "port" value in \fBups\&.conf\fR\&. Unlike previous versions of this driver, it is now possible to control multiple UPS units simultaneously with this driver, provided they can be distinguished by setting some combination of the device\-matching options\&. For instance:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[mge]
+        driver = usbhid\-ups
+        port = auto
+        vendorid = 0463
+[tripplite]
+        driver = usbhid\-ups
+        port = auto
+        vendorid = 09ae
+.fi
+.if n \{\
+.RE
+.\}
+.SS "USB Polling and Interrupt Transfers"
+.sp
+The \fBusbhid\-ups\fR driver has two polling intervals\&. The "pollinterval" configuration option controls what can be considered the "inner loop", where the driver polls and waits briefly for "interrupt" reports\&. The "pollfreq" option is for less frequent updates of a larger set of values, and as such, we recommend setting that interval to several times the value of "pollinterval"\&.
+.sp
+Many UPSes will respond to a USB Interrupt In transfer with HID reports corresponding to values which have changed\&. This saves the driver from having to poll each value individually with USB Control transfers\&. Since the OB and LB status flags are important for a clean shutdown, the driver also explicitly polls the HID paths corresponding to those status bits during the inner "pollinterval" time period\&. The "pollonly" option can be used to skip the Interrupt In transfers if they are known not to work\&.
+.SH "KNOWN ISSUES AND BUGS"
+.SS "Repetitive timeout and staleness"
+.sp
+Some models tends to be unresponsive with the default polling frequency\&. The result is that your system log will have lots of messages like:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+usb 2\-1: control timeout on ep0in
+usb 2\-1: usbfs: USBDEVFS_CONTROL failed cmd usbhid\-ups rqt 128 rq 6 len 256
+ret \-110
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In this case, simply modify the general parameter "pollinterval" to a higher value (such as 10 seconds)\&. This should solve the issue\&.
+.sp
+Note that if you increase "pollinterval" beyond 10 or 15 seconds, you might also want to increase "pollfreq" by the same factor\&.
+.SS "Got EPERM: Operation not permitted upon driver startup"
+.sp
+You have forgotten to install the hotplug files, as explained in the INSTALLATION section above\&. Don\(cqt forget to restart hotplug so that it applies these changes\&.
+.SS "Unattended shutdowns"
+.sp
+The hardware which was used for development of this driver is almost certainly different from what you have, and not all manufacturers follow the USB HID Power Device Class specifications to the letter\&. You don\(cqt want to find out that yours has issues here when a power failure hits your server room and you\(cqre not around to manually restart your servers\&.
+.sp
+If you rely on the UPS to shutdown your systems in case of mains failure and to restart them when the power returns, you \fBmust\fR test this\&. You can do so by running \fIupsmon \-c fsd\fR\&. With the mains present, this should bring your systems down and then cycle the power to restart them again\&. If you do the same without mains present, it should do the same, but in this case, the outputs shall remain off until mains power is applied again\&.
+.SS "UPS cuts power too soon"
+.sp
+Note that many Cyber Power Systems (CPS) models tend to divide offdelay by 60 and round down, so the minimum advisable value is 60 (seconds) to avoid powering off immediately after NUT sends the shutdown command to the UPS\&.
+.SS "UPS does not set battery\&.charge\&.low but says OK"
+.sp
+Note that many Cyber Power Systems (CPS) models tend to allow only certain values for battery\&.charge\&.low and anything outside of the set of allowed values are rounded or ignored\&.
+.sp
+A shell loop like this can help you map out the allowed values:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+for i in `seq 90 \-1 0`; do echo "set to $i"; \e
+    upsrw \-s battery\&.charge\&.low=$i \-u * \-p * cps\-big; \e
+    sleep 1; upsc cps\-big battery\&.charge\&.low; echo ""; \e
+done
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For example, for CPS PR1000LCDRTXL2U model, the only allowed values are [60,55,50,45,40,35,30,25,20] and in some cases, your UPS may effectively not support a value of 10 for the battery\&.charge\&.low setting\&.
+.SH "HISTORY"
+.sp
+This driver, formerly called \fInewhidups\fR, replaces the legacy \fIhidups\fR driver, which only supported Linux systems\&.
+.SH "AUTHORS"
+.sp
+Originally sponsored by MGE UPS SYSTEMS\&.
+.sp
+Now sponsored by Eaton http://opensource\&.eaton\&.com
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arnaud Quette
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Peter Selinger
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Arjen de Korte
+.RE
+.SH "SEE ALSO"
+.SS "The core driver"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

@@ -1,0 +1,184 @@
+'\" t
+.\"     Title: bcmxcp_usb
+.\"    Author: [see the "AUTHORS" section]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 04/02/2024
+.\"    Manual: NUT Manual
+.\"    Source: Network UPS Tools 2.8.2
+.\"  Language: English
+.\"
+.TH "BCMXCP_USB" "8" "04/02/2024" "Network UPS Tools 2\&.8\&.2" "NUT Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+bcmxcp_usb \- Experimental driver for UPSes supporting the BCM/XCP protocol over USB
+.SH "SYNOPSIS"
+.sp
+\fBbcmxcp_usb\fR \-h
+.sp
+\fBbcmxcp_usb\fR \-a \fIUPS_NAME\fR [\fIOPTIONS\fR]
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This man page only documents the hardware\-specific features of the bcmxcp_usb driver\&. For information about the core driver, see \fBnutupsdrv\fR(8)\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver is a variant of the serial driver \fBbcmxcp\fR(8) and uses the same core code\&.
+.sp .5v
+.RE
+.SH "SUPPORTED HARDWARE"
+.sp
+This driver should recognize all BCM/XCP\-compatible UPSes that are connected via USB\&. It has been developed and tested on Powerware PW3501 hardware\&. It also has been tested on PW5110 hardware\&.
+.SH "EXTRA ARGUMENTS"
+.sp
+This driver supports the following optional settings in the \fBups.conf\fR(5)\&.
+.PP
+\fBshutdown_delay =\fR \fIdelay\fR
+.RS 4
+The number of seconds that the UPS should wait between receiving the shutdown command and actually shutting off\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This driver does not currently support USB\-matching settings common to other drivers, such as \fBvendor\fR, \fBvendorid\fR, \fBproduct\fR, \fBproductid\fR, \fBserial\fR, \fBdevice\fR or \fBbus\fR\&.
+.sp .5v
+.RE
+.SH "DEFAULT VALUES FOR THE EXTRA ARGUMENTS"
+.sp
+\fBshutdown_delay =\fR\fI120\fR
+.SH "INSTANT COMMANDS"
+.sp
+This driver supports the following Instant Commands:
+.PP
+\fBshutdown\&.return\fR
+.RS 4
+Turn off the load and return when power is back\&.
+.RE
+.PP
+\fBshutdown\&.stayoff\fR
+.RS 4
+Turn off the load and remain off\&.
+.RE
+.PP
+\fBtest\&.battery\&.start\fR
+.RS 4
+Start a battery test\&.
+.RE
+.SH "TODO LIST"
+.PP
+\fBReport UPS alarm status\fR
+.RS 4
+BCM/XCP supports reporting a wide range of UPS alarm conditions\&.
+.RE
+.PP
+\fBReport UPS statistics information\fR
+.RS 4
+BCM/XCP supports reporting of UPS statistics data\&.
+.RE
+.SH "EXPERIMENTAL DRIVER"
+.sp
+This driver has been tagged experimental, even if it has been reported to be stable\&. Thus it is not suitable for production systems and it is not built by default\&. This is mainly due to the fact that it is a new driver\&.
+.SH "INSTALLATION"
+.sp
+This driver is not built by default\&. You can build it by using "configure \-\-with\-usb=yes"\&. Note that it will also install other USB drivers\&.
+.sp
+You also need to install manually the hotplug files (libhidups and libhid\&.usermap), generally in etc/hotplug/usb/, to address the permission settings problem\&. Lastly note that the libhidups file must have execution flag set (ie using chmod +x \&...)\&.
+.SH "IMPLEMENTATION"
+.sp
+bcmxcp_usb only supports 1 UPS at this time\&. You can put the "auto" value for port in ups\&.conf, i\&.e\&.:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[pw3105]
+        driver = bcmxcp_usb
+        port = auto
+.fi
+.if n \{\
+.RE
+.\}
+.SH "KNOWN ISSUES AND BUGS"
+.SS ""Got EPERM: Operation not permitted upon driver startup""
+.sp
+You have forgotten to install the hotplug files, as explained in the INSTALLATION section above\&. Don\(cqt forget to restart hotplug so that it applies these changes\&.
+.SH "AUTHORS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Tore Ørpetveit <tore@orpetveit\&.net>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Wolfgang Ocker <weo@weo1\&.de>
+.RE
+.SH "SEE ALSO"
+.SS "The core driver:"
+.sp
+\fBnutupsdrv\fR(8)
+.SS "Internet resources:"
+.sp
+The NUT (Network UPS Tools) home page: https://www\&.networkupstools\&.org/

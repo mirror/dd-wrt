@@ -1,0 +1,70 @@
+#!/sbin/sh
+
+#init.d script to start nut services
+
+NUT_DIR="@prefix@"
+NUT_SBIN_DIR="${NUT_DIR}/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
+CONFIG="@CONFPATH@/nut.conf"
+
+# We anticipate some tighter integration with SMF later:
+#NUT_QUIET_INIT_UPSNOTIFY=true
+#export NUT_QUIET_INIT_UPSNOTIFY
+
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
+fi
+
+ups_stop () {
+	pkill -n upsmon
+	pkill -n upsd
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsdrvctl" stop > /dev/null 2>&1
+}
+
+ups_start () {
+	if [ "$MODE" = "none" ];then
+		echo "No NUT mode set, not starting anything" >&2
+		exit 1
+	fi
+
+	if [ "$MODE" != "netclient" ] ; then
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsdrvctl" start #> /dev/null 2>&1
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsd" #> /dev/null 2>&1
+	fi
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsmon" #> /dev/null 2>&1
+}
+
+case $1 in
+'start')
+	ups_start
+	;;
+
+'stop')
+	ups_stop
+	;;
+
+'restart')
+	ups_stop
+	while pgrep upsd > /dev/null
+	do
+		sleep 1
+	done
+	ups_start
+	;;
+'poweroff')
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsmon" -K  >/dev/null 2>&1
+	if [ $? = 0 ]; then
+		echo "Shutting down the UPS(es) ..."
+		echo "WARNING: UPS shutdown is currently disabled, please uncomment it in the init-script if desired" >&2
+		#${NUT_SBIN_DIR}/upsdrvctl shutdown
+	fi
+	;;
+*)
+	echo ""
+	echo "Usage: '$0' {start | stop | restart }"
+	echo ""
+	exit 64
+	;;
+
+esac
+exit $?
