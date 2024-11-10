@@ -52,7 +52,7 @@ dispatcher.h: usb_modeswitch_dispatcher.tcl
 
 configure:
 	cd libusb && autoreconf -ivf
-	cd libusb && ./configure --prefix=/usr --host=$(ARCH)-linux --disable-log --disable-udev CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include"
+	cd libusb && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux --disable-log --disable-udev CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include"
 	make -C libusb
 	cd libusb-compat && autoreconf -ivf
 	cd libusb-compat && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -DNEED_PRINTF -fPIC" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fPIC" CPPFLAGS="$(COPTS) -DNEED_PRINTF -fPIC" LIBUSB_1_0_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a" LIBUSB_1_0_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb"
