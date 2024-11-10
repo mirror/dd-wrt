@@ -1,4 +1,4 @@
-nut-configure:
+nut-configure: usb_modeswitch
 	cd nut && rm -f config.cache
 	cd nut && libtoolize
 	cd nut && aclocal
@@ -18,7 +18,7 @@ nut-configure:
 	LIBUSB_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb" \
 	LIBUSB_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a"
 
-nut: pciutils
+nut: usb_modeswitch
 	$(MAKE) -C nut
 
 nut-clean:
