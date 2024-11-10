@@ -378,7 +378,6 @@ int nss_hal_probe(struct platform_device *nss_dev)
 	 */
 	init_dummy_netdev(&nss_ctx->napi_ndev);
 	strcpy(nss_ctx->napi_ndev.name, "nss");
-	nss_ctx->napi_ndev.threaded = 1;
 
 	for (i = 0; i < npd->num_irq; i++) {
 		err = nss_hal_register_irq(nss_ctx, npd, &nss_ctx->napi_ndev, i);
