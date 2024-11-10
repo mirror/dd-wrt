@@ -12,6 +12,9 @@ nut-configure: comgt
 	--without-python \
 	--without-python2 \
 	--without-python3 \
+	--with-openssl \
+	--with-openssl-includes="-I$(SSLPATH)/include" \
+	--with-openssl-libs="-L$(SSLPATH) -lcrypto -lssl" \
 	CC="$(CC)" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -32,6 +35,7 @@ nut-install:
 	rm -rf $(INSTALLDIR)/nut/usr/local
 	rm -f $(INSTALLDIR)/nut/usr/lib/*.la
 	rm -f $(INSTALLDIR)/nut/usr/lib/*.a
+	rm -rf $(INSTALLDIR)/nut/usr/include
 	rm -rf $(INSTALLDIR)/nut/usr/lib/systemd
 	rm -rf $(INSTALLDIR)/nut/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/nut/usr/lib/tmpfiles.d
