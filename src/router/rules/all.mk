@@ -394,6 +394,7 @@ include rules/opennds.mk
 include rules/btop.mk
 include rules/envtools.mk
 include rules/apfree-wifidog.mk
+include rules/nut.mk
 
 #
 # Generic rules

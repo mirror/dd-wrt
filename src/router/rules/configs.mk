@@ -556,6 +556,7 @@ obj-$(CONFIG_GETCONF) += getconf
 obj-$(CONFIG_IPQ6018) += cryptodev
 obj-$(CONFIG_IPQ806X) += cryptodev
 obj-$(CONFIG_MVEBU) += cryptodev
+obj-$(CONFIG_NUT) += nut
 
 ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon
