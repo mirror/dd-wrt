@@ -413,8 +413,31 @@ static void set_memprofile(int cpus, int cores, int profile)
 	sysprintf("echo %d > /proc/sys/dev/nss/rps/hash_bitmap", (1 << cpus) - 1);
 }
 
+static void init_skb(int profile, int maple) 
+{
+int max_skbs=1024;
+int max_spare_skbs=256;
+int skb_recycler_enable=1;
+
+if (maple && profile==512)
+    {
+    max_skbs=512;
+    max_spare_skbs=128;
+    skb_recycler_enable=0;
+    }
+sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
+sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
+sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
+if (!skb_recycler_enable)
+	sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
+	
+}
+
+
+
 static void load_nss_ipq60xx(int profile)
 {
+	init_skb(profile,0);
 	insmod("qca-ssdk-ipq60xx");
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
@@ -459,8 +482,8 @@ static void load_nss_ipq60xx(int profile)
 
 static void load_nss_ipq50xx(int profile)
 {
+	init_skb(profile,1);
 	insmod("qca-ssdk-ipq50xx");
-
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
 	else if (profile == 512)
@@ -501,6 +524,7 @@ static void load_nss_ipq50xx(int profile)
 }
 static void load_nss_ipq807x(int profile)
 {
+	init_skb(profile,0);
 	insmod("qca-ssdk-ipq807x");
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
@@ -1438,6 +1462,7 @@ void start_wifi_drivers(void)
 		start_setup_affinity();
 		start_initvlans();
 	}
+
 }
 
 int check_cfe_nv(void)
