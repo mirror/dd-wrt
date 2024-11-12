@@ -413,31 +413,27 @@ static void set_memprofile(int cpus, int cores, int profile)
 	sysprintf("echo %d > /proc/sys/dev/nss/rps/hash_bitmap", (1 << cpus) - 1);
 }
 
-static void init_skb(int profile, int maple) 
+static void init_skb(int profile, int maple)
 {
-int max_skbs=1024;
-int max_spare_skbs=256;
-int skb_recycler_enable=1;
+	int max_skbs = 1024;
+	int max_spare_skbs = 256;
+	int skb_recycler_enable = 1;
 
-if (maple && profile==512)
-    {
-    max_skbs=512;
-    max_spare_skbs=128;
-    skb_recycler_enable=0;
-    }
-sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
-sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
-sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
-if (!skb_recycler_enable)
-	sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
-	
+	if (maple && profile == 512) {
+		max_skbs = 512;
+		max_spare_skbs = 128;
+		skb_recycler_enable = 0;
+	}
+	sysprintf("echo %d > /proc/net/skb_recycler/max_skbs", max_skbs);
+	sysprintf("echo %d > /proc/net/skb_recycler/max_spare_skbs", max_spare_skbs);
+	sysprintf("echo %d > /proc/net/skb_recycler/skb_recycler_enable", skb_recycler_enable);
+	if (!skb_recycler_enable)
+		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
 }
-
-
 
 static void load_nss_ipq60xx(int profile)
 {
-	init_skb(profile,0);
+	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq60xx");
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
@@ -482,7 +478,7 @@ static void load_nss_ipq60xx(int profile)
 
 static void load_nss_ipq50xx(int profile)
 {
-	init_skb(profile,1);
+	init_skb(profile, 1);
 	insmod("qca-ssdk-ipq50xx");
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
@@ -524,7 +520,7 @@ static void load_nss_ipq50xx(int profile)
 }
 static void load_nss_ipq807x(int profile)
 {
-	init_skb(profile,0);
+	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq807x");
 	if (profile == 256)
 		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
@@ -1150,13 +1146,14 @@ void start_sysinit(void)
 			for (i = 0; i < 6; i++)
 				putc(getc(fp), out);
 			unsigned int newmac2[6];
-			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac2[0], &newmac2[1], &newmac2[2], &newmac2[3], &newmac2[4], &newmac2[5]);
+			sscanf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", &newmac2[0], &newmac2[1], &newmac2[2], &newmac2[3],
+			       &newmac2[4], &newmac2[5]);
 			for (i = 0; i < 6; i++)
 				putc(newmac2[i], out);
 			for (i = 0; i < 2104; i++)
 				putc(getc(fp), out);
 			fclose(out);
-			eval("cp","-f","/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin","/tmp/ath10k_board1.bin");
+			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_board1.bin");
 		}
 		fclose(fp);
 	} else {
@@ -1450,9 +1447,9 @@ void start_wifi_drivers(void)
 			break;
 		case ROUTER_FORTINET_FAP231F:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0"));
-//			insmod("ath");
-//			insmod("ath10k_core");
-//			insmod("ath10k_pci");
+			//			insmod("ath");
+			//			insmod("ath10k_core");
+			//			insmod("ath10k_pci");
 			break;
 		default:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0"));
@@ -1462,7 +1459,6 @@ void start_wifi_drivers(void)
 		start_setup_affinity();
 		start_initvlans();
 	}
-
 }
 
 int check_cfe_nv(void)
