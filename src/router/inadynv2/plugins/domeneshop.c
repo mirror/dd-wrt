@@ -1,6 +1,6 @@
-/* Plugin for dnshome.de
+/* Plugin for domene.shop
  *
- * Copyright (C) 2023 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (C) 2024 Kenan Amundsen Elkoca <kenan@elkoca.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,54 +21,32 @@
 
 #include "plugin.h"
 
-#define DNSHOME_UPDATE_IP_REQUEST					\
+/* https://api.domeneshop.no/docs/#tag/ddns/paths/~1dyndns~1update/get */
+#define DOMENESHOP_UPDATE_IP_REQUEST						\
 	"GET %s?"							\
-	"u=%s&"							        \
-	"ip=%s "							\
-	"HTTP/1.0\r\n"							\
+	"hostname=%s&"							\
+	"myip=%s "							\
+	"HTTP/1.1\r\n"							\
 	"Host: %s\r\n"							\
-	"Authorization: Basic %s\r\n"					\
+	"Authorization: Basic %s\r\n"							\
 	"User-Agent: %s\r\n\r\n"
-
-#define DNSHOME_UPDATE_IP6_REQUEST					\
-	"GET %s?"							\
-	"u=%s&"		  		  	 	 	        \
-	"ip6=%s "							\
-	"HTTP/1.0\r\n"							\
-	"Host: %s\r\n"							\
-	"Authorization: Basic %s\r\n"					\
-	"User-Agent: %s\r\n\r\n"
-
 
 static int request  (ddns_t       *ctx,   ddns_info_t *info, ddns_alias_t *alias);
 static int response (http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias);
+static int check_response_code (int status);
 
-static ddns_system_t plugin = {
-	.name         = "default@dnshome.de",
+static ddns_system_t domeneshop = {
+	.name         = "default@domene.shop",
 
 	.request      = (req_fn_t)request,
 	.response     = (rsp_fn_t)response,
 
-	.checkip_name = "ip4.dnshome.de",
-	.checkip_url  = "/",
+	.checkip_name = DYNDNS_MY_IP_SERVER,
+	.checkip_url  = DYNDNS_MY_CHECKIP_URL,
 	.checkip_ssl  = DYNDNS_MY_IP_SSL,
 
-	.server_name  = "www.dnshome.de",
-	.server_url   =  "/dyndns.php"
-};
-
-static ddns_system_t plugin_v6 = {
-	.name         = "ipv6@dnshome.de",
-
-	.request      = (req_fn_t)request,
-	.response     = (rsp_fn_t)response,
-
-	.checkip_name = "ip6.dnshome.de",
-	.checkip_url  = "/",
-	.checkip_ssl  = DDNS_CHECKIP_SSL_SUPPORTED,
-
-	.server_name  = "www.dnshome.de",
-	.server_url   =  "/dyndns.php"
+	.server_name  = "api.domeneshop.no",
+	.server_url   = "/v0/dyndns/update"
 };
 
 static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
@@ -83,25 +61,38 @@ static int request(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias)
 			info->user_agent);
 }
 
+static int check_response_code(int status)
+{
+    if (status == 204)
+        return RC_OK;
+        
+    return http_status_valid(status);
+}
+
 static int response(http_trans_t *trans, ddns_info_t *info, ddns_alias_t *alias)
 {
+	int rc;
+	char *body = trans->rsp_body;
+
 	(void)info;
 	(void)alias;
 
-	DO(http_status_valid(trans->status));
+	rc = check_response_code(trans->status);
 
-	return 0;
+	if (rc == RC_OK && !strstr(body, ""))
+		rc = RC_DDNS_RSP_NOTOK;
+
+	return rc;
 }
 
 PLUGIN_INIT(plugin_init)
 {
-	plugin_register(&plugin, DNSHOME_UPDATE_IP_REQUEST);
-	plugin_register(&plugin_v6, DNSHOME_UPDATE_IP6_REQUEST);
+	plugin_register(&domeneshop, DOMENESHOP_UPDATE_IP_REQUEST);
 }
 
 PLUGIN_EXIT(plugin_exit)
 {
-	plugin_unregister(&plugin);
+	plugin_unregister(&domeneshop);
 }
 
 /**

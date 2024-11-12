@@ -95,6 +95,7 @@ providers, ordered by the plugin that support them:
   * <https://www.goip.de>
   * <https://www.dnshome.de>
   * <https://ipv64.net>
+  * <https://domene.shop>
 
 For the complete list, see `inadyn -L`, for machine friendly JSON
 output, use `inadyn -L -j`.
@@ -487,6 +488,14 @@ To run the latest version from the master branch, install the git tap instead:
     brew install --HEAD troglobit/inadyn/inadyn
 
 Either of these will install all dependencies.
+
+### MacPorts (macOS)
+
+You can also install In-A-Dyn on macOS using [MacPorts](https://www.macports.org):
+
+    sudo port install inadyn
+
+You can find more information at In-A-Dyn's [ports page](https://ports.macports.org/port/inadyn/).
 
 ### Building from Source
 
