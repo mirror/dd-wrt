@@ -189,6 +189,10 @@ void start_sysinit(void)
 	setSwitchLED(14, 0x4);
 	setSwitchLED(15, 0x8);
 	setSwitchLED(16, 0x10);
+	nvram_seti("sw_lan1", 4);
+	nvram_seti("sw_lan2", 3);
+	nvram_seti("sw_lan3", 2);
+	nvram_seti("sw_lan4", 1);
 #elif HAVE_WA860RE
 	setEthLED(20, "eth0");
 #elif HAVE_WA850RE
