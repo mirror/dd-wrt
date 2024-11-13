@@ -1202,8 +1202,13 @@ circuit_predict_and_launch_new(void)
   int flags = 0;
 
   /* Attempt to launch predicted conflux circuits. This is outside the HS or
-   * Exit preemptive circuit set. */
-  conflux_predict_new(now);
+   * Exit preemptive circuit set.
+   * As with the other types of preemptive circuits, we only want to
+   * launch them if we have predicted ports. (If we haven't needed a
+   * circuit for a while, maybe we won't need one soon either.) */
+  if (predicted_ports_prediction_time_remaining(now)) {
+    conflux_predict_new(now);
+  }
 
   /* Count how many of each type of circuit we currently have. */
   SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {

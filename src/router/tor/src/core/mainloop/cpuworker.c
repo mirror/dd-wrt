@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2021, The Tor Project, Inc. */
+ * Copyright (c) 2007-2024, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -74,7 +74,6 @@ worker_state_free_void(void *arg)
   worker_state_free_(arg);
 }
 
-static replyqueue_t *replyqueue = NULL;
 static threadpool_t *threadpool = NULL;
 
 static uint32_t total_pending_tasks = 0;
@@ -120,29 +119,31 @@ cpuworker_consensus_has_changed(const networkstatus_t *ns)
 void
 cpuworker_init(void)
 {
-  if (!replyqueue) {
-    replyqueue = replyqueue_new(0);
-  }
-  if (!threadpool) {
-    /*
-      In our threadpool implementation, half the threads are permissive and
-      half are strict (when it comes to running lower-priority tasks). So we
-      always make sure we have at least two threads, so that there will be at
-      least one thread of each kind.
-    */
-    const int n_threads = MAX(get_num_cpus(get_options()), 2);
-    threadpool = threadpool_new(n_threads,
-                                replyqueue,
-                                worker_state_new,
-                                worker_state_free_void,
-                                NULL);
+  /*
+    In our threadpool implementation, half the threads are permissive and
+    half are strict (when it comes to running lower-priority tasks). So we
+    always make sure we have at least two threads, so that there will be at
+    least one thread of each kind.
+  */
+  const int n_threads = MAX(get_num_cpus(get_options()), 2);
+  threadpool = threadpool_new(n_threads,
+                              replyqueue_new(0),
+                              worker_state_new,
+                              worker_state_free_void,
+                              NULL);
 
-    int r = threadpool_register_reply_event(threadpool, NULL);
+  int r = threadpool_register_reply_event(threadpool, NULL);
 
-    tor_assert(r == 0);
-  }
+  tor_assert(r == 0);
 
   set_max_pending_tasks(NULL);
+}
+
+/** Free all resources allocated by cpuworker. */
+void
+cpuworker_free_all(void)
+{
+  threadpool_free(threadpool);
 }
 
 /** Return the number of threads configured for our CPU worker. */

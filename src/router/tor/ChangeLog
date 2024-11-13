@@ -1,3 +1,43 @@
+Changes in version 0.4.8.13 - 2024-10-24
+  This is minor release fixing an important client circuit building (Conflux
+  related) bug which lead to performance degradation and extra load on the
+  network. Some minor memory leaks fixes as well as an important minor feature
+  for pluggable transports. We strongly recommend to update as soon as possible
+  for clients in order to neutralize this conflux bug.
+
+  o Major bugfixes (circuit building):
+    - Conflux circuit building was ignoring the "predicted ports"
+      feature, which aims to make Tor stop building circuits if there
+      have been no user requests lately. This bug led to every idle Tor
+      on the network building and discarding circuits every 30 seconds,
+      which added overall load to the network, used bandwidth and
+      battery from clients that weren't actively using their Tor, and
+      kept sockets open on guards which added connection padding
+      essentially forever. Fixes bug 40981; bugfix on 0.4.8.1-alpha;
+
+  o Minor feature (bridges, pluggable transport):
+    - Add STATUS TYPE=version handler for Pluggable Transport. This
+      allows us to gather version statistics on Pluggable Transport
+      usage from bridge servers on our metrics portal. Closes
+      ticket 11101.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 24, 2024.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2024/10/24.
+
+  o Minor bugfixes (memleak, authority):
+    - Fix a small memleak when computing a new consensus. This only
+      affects directory authorities. Fixes bug 40966; bugfix
+      on 0.3.5.1-alpha.
+
+  o Minor bugfixes (memory):
+    - Fix memory leaks of the CPU worker code during shutdown. Fixes bug
+      833; bugfix on 0.3.5.1-alpha.
+
+
 Changes in version 0.4.8.12 - 2024-06-06
   This is a minor release with couple bugfixes affecting conflux and logging.
   We also have the return of faravahar directory authority with new keys and

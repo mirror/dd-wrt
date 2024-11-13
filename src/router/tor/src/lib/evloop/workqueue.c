@@ -1,5 +1,5 @@
 
-/* copyright (c) 2013-2015, The Tor Project, Inc. */
+/* copyright (c) 2013-2024, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -143,6 +143,8 @@ typedef struct workerthread_t {
 } workerthread_t;
 
 static void queue_reply(replyqueue_t *queue, workqueue_entry_t *work);
+static void workerthread_free(workerthread_t *thread);
+static void replyqueue_free(replyqueue_t *queue);
 
 /** Allocate and return a new workqueue_entry_t, set up to run the function
  * <b>fn</b> in the worker thread, and <b>reply_fn</b> in the main
@@ -355,12 +357,21 @@ workerthread_new(int32_t lower_priority_chance,
     //LCOV_EXCL_START
     tor_assert_nonfatal_unreached();
     log_err(LD_GENERAL, "Can't launch worker thread.");
-    tor_free(thr);
+    workerthread_free(thr);
     return NULL;
     //LCOV_EXCL_STOP
   }
 
   return thr;
+}
+
+/**
+ * Free up the resources allocated by a worker thread.
+ */
+static void
+workerthread_free(workerthread_t *thread)
+{
+  tor_free(thread);
 }
 
 /**
@@ -566,12 +577,45 @@ threadpool_new(int n_threads,
     tor_assert_nonfatal_unreached();
     tor_cond_uninit(&pool->condition);
     tor_mutex_uninit(&pool->lock);
-    tor_free(pool);
+    threadpool_free(pool);
     return NULL;
     //LCOV_EXCL_STOP
   }
 
   return pool;
+}
+
+/**
+ * Free up the resources allocated by worker threads, worker thread pool, ...
+ */
+void
+threadpool_free(threadpool_t *pool)
+{
+  if (!pool)
+    return;
+
+  if (pool->threads) {
+    for (int i = 0; i != pool->n_threads; ++i)
+      workerthread_free(pool->threads[i]);
+
+    tor_free(pool->threads);
+  }
+
+  if (pool->update_args)
+    pool->free_update_arg_fn(pool->update_args);
+
+  if (pool->reply_event) {
+    tor_event_del(pool->reply_event);
+    tor_event_free(pool->reply_event);
+  }
+
+  if (pool->reply_queue)
+    replyqueue_free(pool->reply_queue);
+
+  if (pool->new_thread_state_arg)
+    pool->free_thread_state_fn(pool->new_thread_state_arg);
+
+  tor_free(pool);
 }
 
 /** Return the reply queue associated with a given thread pool. */
@@ -593,7 +637,7 @@ replyqueue_new(uint32_t alertsocks_flags)
   rq = tor_malloc_zero(sizeof(replyqueue_t));
   if (alert_sockets_create(&rq->alert, alertsocks_flags) < 0) {
     //LCOV_EXCL_START
-    tor_free(rq);
+    replyqueue_free(rq);
     return NULL;
     //LCOV_EXCL_STOP
   }
@@ -602,6 +646,26 @@ replyqueue_new(uint32_t alertsocks_flags)
   TOR_TAILQ_INIT(&rq->answers);
 
   return rq;
+}
+
+/**
+ * Free up the resources allocated by a reply queue.
+ */
+static void
+replyqueue_free(replyqueue_t *queue)
+{
+  if (!queue)
+    return;
+
+  workqueue_entry_t *work;
+
+  while (!TOR_TAILQ_EMPTY(&queue->answers)) {
+    work = TOR_TAILQ_FIRST(&queue->answers);
+    TOR_TAILQ_REMOVE(&queue->answers, work, next_work);
+    workqueue_entry_free(work);
+  }
+
+  tor_free(queue);
 }
 
 /** Internal: Run from the libevent mainloop when there is work to handle in
