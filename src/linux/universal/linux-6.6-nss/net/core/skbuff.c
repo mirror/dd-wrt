@@ -804,7 +804,8 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev,
 	unsigned int len = length;
 
 #ifdef CONFIG_SKB_RECYCLER
-	skb = skb_recycler_alloc(dev, length);
+	bool reset_skb = true;
+	skb = skb_recycler_alloc(dev, length, reset_skb);
 	if (likely(skb))
 		return skb;
 
