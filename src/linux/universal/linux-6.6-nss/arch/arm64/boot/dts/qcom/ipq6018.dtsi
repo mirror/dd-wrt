@@ -1122,6 +1122,7 @@
 				      "axi_m_sticky",
 				      "axi_s_sticky";
 			msi-parent = <&v2m0>;
+			msi-map = <0x0 &v2m0 0x0 0xff8>;
 
 			perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
