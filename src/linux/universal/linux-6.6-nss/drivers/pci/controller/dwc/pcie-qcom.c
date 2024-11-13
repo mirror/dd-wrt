@@ -282,6 +282,7 @@ struct qcom_pcie {
 	const struct qcom_pcie_cfg *cfg;
 	struct dentry *debugfs;
 	bool suspended;
+	uint32_t axi_wr_addr_halt;
 };
 
 #define to_qcom_pcie(x)		dev_get_drvdata((x)->dev)
@@ -1250,6 +1251,15 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 
 	writel(0, pcie->parf + PARF_Q2A_FLUSH);
 
+	if (pcie->axi_wr_addr_halt) {
+		val = readl(pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
+		val &= ~PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2_MASK;
+		writel(val | pcie->axi_wr_addr_halt,
+			pcie->parf + PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT_V2);
+	}
+
+	writel(BUS_MASTER_EN, pci->dbi_base + PCIE20_COMMAND_STATUS);
+
 	dw_pcie_dbi_ro_wr_en(pci);
 
 	writel(PCIE_CAP_SLOT_VAL, pci->dbi_base + offset + PCI_EXP_SLTCAP);
@@ -1261,10 +1271,27 @@ static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
 	writel(PCI_EXP_DEVCTL2_COMP_TMOUT_DIS, pci->dbi_base + offset +
 			PCI_EXP_DEVCTL2);
 
+	writel(PCIE_CAP_CURR_DEEMPHASIS | SPEED_GEN3, pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
+
 	dw_pcie_dbi_ro_wr_dis(pci);
 
 	for (i = 0; i < 256; i++)
 		writel(0, pcie->parf + PARF_BDF_TO_SID_TABLE_N + (4 * i));
+
+	writel(0x4, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_6_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_6_GEN3);
+	writel(0x00107FFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_6_GEN3);
+	writel(0x5, pci->atu_base + PCIE_ATU_CR1_OUTBOUND_7_GEN3);
+	writel(0x90000000, pci->atu_base + PCIE_ATU_CR2_OUTBOUND_7_GEN3);
+	writel(0x200000, pci->atu_base + PCIE_ATU_LOWER_BASE_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_BASE_OUTBOUND_7_GEN3);
+	writel(0x7FFFFF, pci->atu_base + PCIE_ATU_LIMIT_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_LOWER_TARGET_OUTBOUND_7_GEN3);
+	writel(0x0, pci->atu_base + PCIE_ATU_UPPER_TARGET_OUTBOUND_7_GEN3);
 
 	return 0;
 }
@@ -1601,6 +1628,9 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	pcie->pci = pci;
 
 	pcie->cfg = pcie_cfg;
+
+	of_property_read_u32(pdev->dev.of_node, "axi-halt-val",
+			     &pcie->axi_wr_addr_halt);
 
 	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_HIGH);
 	if (IS_ERR(pcie->reset)) {

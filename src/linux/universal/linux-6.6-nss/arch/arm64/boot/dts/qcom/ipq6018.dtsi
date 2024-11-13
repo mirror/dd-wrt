@@ -10,6 +10,7 @@
 #include <dt-bindings/reset/qcom,gcc-ipq6018.h>
 #include <dt-bindings/clock/qcom,apss-ipq.h>
 #include <dt-bindings/thermal/thermal.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <2>;
@@ -801,7 +802,7 @@
 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 			ranges = <0 0 0 0xb00a000 0 0xffd>;
 
-			v2m@0 {
+			v2m0: v2m@0 {
 				compatible = "arm,gic-v2m-frame";
 				msi-controller;
 				reg = <0x0 0x0 0x0 0xffd>;
@@ -1075,6 +1076,7 @@
 			max-link-speed = <3>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
 
 			phys = <&pcie_phy0>;
 			phy-names = "pciephy";
@@ -1082,8 +1084,8 @@
 			ranges = <0x81000000 0x0 0x00000000 0x0 0x20200000 0x0 0x10000>,
 				 <0x82000000 0x0 0x20220000 0x0 0x20220000 0x0 0xfde0000>;
 
-			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "global_irq";
+			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "msi";
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
@@ -1119,6 +1121,9 @@
 				      "ahb",
 				      "axi_m_sticky",
 				      "axi_s_sticky";
+			msi-parent = <&v2m0>;
+
+			perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
 			status = "disabled";
 		};

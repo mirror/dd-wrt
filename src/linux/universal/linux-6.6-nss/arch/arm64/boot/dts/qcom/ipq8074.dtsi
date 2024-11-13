@@ -1059,6 +1059,7 @@
 			max-link-speed = <2>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
 
 			phys = <&pcie_phy1>;
 			phy-names = "pciephy";
