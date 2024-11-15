@@ -1768,10 +1768,10 @@ int __sched rt_mutex_slowlock_locked(struct rt_mutex *lock, int state,
 
 	if (unlikely(ret)) {
 		__set_current_state(TASK_RUNNING);
-		remove_waiter(lock, &waiter);
+		remove_waiter(lock, waiter);
 		/* ww_mutex want to report EDEADLK/EALREADY, let them */
 		if (!ww_ctx)
-			rt_mutex_handle_deadlock(ret, chwalk, lock, &waiter);
+			rt_mutex_handle_deadlock(ret, chwalk, lock, waiter);
 	} else if (ww_ctx) {
 		ww_mutex_account_lock(lock, ww_ctx);
 	}
