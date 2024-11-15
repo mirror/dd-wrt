@@ -491,7 +491,7 @@ EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	char *base[32];
+	char base[32];
 	strncpy(base, prefix, 32);
 	strchr(base, '.');
 	int channel = wifi_getchannel(base);
