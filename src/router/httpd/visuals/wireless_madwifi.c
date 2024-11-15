@@ -491,18 +491,21 @@ EJ_VISIBLE void ej_get_currate(webs_t wp, int argc, char_t **argv)
 EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	int channel = wifi_getchannel(prefix);
+	char *base[32];
+	strncpy(base, prefix, 32);
+	strchr(base, '.');
+	int channel = wifi_getchannel(base);
 	if (channel >= 0 && channel < 1000) {
-		struct wifi_interface *interface = wifi_getfreq(prefix);
-		int width = nvram_ngeti("%s_channelbw", prefix);
+		struct wifi_interface *interface = wifi_getfreq(base);
+		int width = nvram_ngeti("%s_channelbw", base);
 		if (!interface) {
 			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
 		}
 
-		int freq = get_wififreq(prefix,
+		int freq = get_wififreq(base,
 					interface->freq); // translation for special frequency devices
-		if (is_mac80211(prefix)) {
+		if (is_mac80211(base)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center1));
@@ -513,12 +516,13 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		}
 		websWrite(wp, " (%d MHz", freq);
 		char *vht = "HT";
-		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if (has_qam256(prefix) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", prefix)) {
+
+		char *netmode = nvram_nget("%s_net_mode", base);
+		if (has_qam256(base) && freq < 4000 && nvram_nmatch("1", "%s_turbo_qam", base)) {
 			vht = "VHT";
 		} else if (freq < 4000) {
 			vht = "HT";
-		} else if (has_ac(prefix)) {
+		} else if (has_ac(base)) {
 			if (!strcmp(netmode, "acn-mixed") || //
 			    !strcmp(netmode, "ac-only") || //
 			    !strcmp(netmode, "ax-only") || //
@@ -528,7 +532,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 			}
 		}
 
-		if (has_ax(prefix)) {
+		if (has_ax(base)) {
 			if (!strcmp(netmode, "xacn-mixed") || //
 			    !strcmp(netmode, "ax-only") || //
 			    !strcmp(netmode, "axg-only") || //
@@ -537,8 +541,8 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 			}
 		}
 
-		if (is_mac80211(prefix)) {
-			int ht = has_ht(prefix);
+		if (is_mac80211(base)) {
+			int ht = has_ht(base);
 			switch (interface->width) {
 			case 10:
 			case 5:
