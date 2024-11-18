@@ -31,10 +31,6 @@ static void hci_cmd_sync_complete(struct hci_dev *hdev, u8 result, u16 opcode,
 	hdev->req_result = result;
 	hdev->req_status = HCI_REQ_DONE;
 
-	/* Free the request command so it is not used as response */
-	kfree_skb(hdev->req_skb);
-	hdev->req_skb = NULL;
-
 	if (skb) {
 		struct sock *sk = hci_skb_sk(skb);
 
@@ -42,7 +38,7 @@ static void hci_cmd_sync_complete(struct hci_dev *hdev, u8 result, u16 opcode,
 		if (sk)
 			sock_put(sk);
 
-		hdev->req_rsp = skb_get(skb);
+		hdev->req_skb = skb_get(skb);
 	}
 
 	wake_up_interruptible(&hdev->req_wait_q);
@@ -190,8 +186,8 @@ struct sk_buff *__hci_cmd_sync_sk(struct hci_dev *hdev, u16 opcode, u32 plen,
 
 	hdev->req_status = 0;
 	hdev->req_result = 0;
-	skb = hdev->req_rsp;
-	hdev->req_rsp = NULL;
+	skb = hdev->req_skb;
+	hdev->req_skb = NULL;
 
 	bt_dev_dbg(hdev, "end: err %d", err);
 
@@ -4941,11 +4937,6 @@ int hci_dev_open_sync(struct hci_dev *hdev)
 			hdev->sent_cmd = NULL;
 		}
 
-		if (hdev->req_skb) {
-			kfree_skb(hdev->req_skb);
-			hdev->req_skb = NULL;
-		}
-
 		clear_bit(HCI_RUNNING, &hdev->flags);
 		hci_sock_dev_event(hdev, HCI_DEV_CLOSE);
 
@@ -5105,12 +5096,6 @@ int hci_dev_close_sync(struct hci_dev *hdev)
 		cancel_delayed_work_sync(&hdev->cmd_timer);
 		kfree_skb(hdev->sent_cmd);
 		hdev->sent_cmd = NULL;
-	}
-
-	/* Drop last request */
-	if (hdev->req_skb) {
-		kfree_skb(hdev->req_skb);
-		hdev->req_skb = NULL;
 	}
 
 	clear_bit(HCI_RUNNING, &hdev->flags);
@@ -5308,27 +5293,22 @@ static int hci_disconnect_sync(struct hci_dev *hdev, struct hci_conn *conn,
 }
 
 static int hci_le_connect_cancel_sync(struct hci_dev *hdev,
-				      struct hci_conn *conn, u8 reason)
+				      struct hci_conn *conn)
 {
-	/* Return reason if scanning since the connection shall probably be
-	 * cleanup directly.
-	 */
 	if (test_bit(HCI_CONN_SCANNING, &conn->flags))
-		return reason;
+		return 0;
 
-	if (conn->role == HCI_ROLE_SLAVE ||
-	    test_and_set_bit(HCI_CONN_CANCEL, &conn->flags))
+	if (test_and_set_bit(HCI_CONN_CANCEL, &conn->flags))
 		return 0;
 
 	return __hci_cmd_sync_status(hdev, HCI_OP_LE_CREATE_CONN_CANCEL,
 				     0, NULL, HCI_CMD_TIMEOUT);
 }
 
-static int hci_connect_cancel_sync(struct hci_dev *hdev, struct hci_conn *conn,
-				   u8 reason)
+static int hci_connect_cancel_sync(struct hci_dev *hdev, struct hci_conn *conn)
 {
 	if (conn->type == LE_LINK)
-		return hci_le_connect_cancel_sync(hdev, conn, reason);
+		return hci_le_connect_cancel_sync(hdev, conn);
 
 	if (hdev->hci_ver < BLUETOOTH_VER_1_2)
 		return 0;
@@ -5381,11 +5361,9 @@ int hci_abort_conn_sync(struct hci_dev *hdev, struct hci_conn *conn, u8 reason)
 	case BT_CONFIG:
 		return hci_disconnect_sync(hdev, conn, reason);
 	case BT_CONNECT:
-		err = hci_connect_cancel_sync(hdev, conn, reason);
+		err = hci_connect_cancel_sync(hdev, conn);
 		/* Cleanup hci_conn object if it cannot be cancelled as it
-		 * likelly means the controller and host stack are out of sync
-		 * or in case of LE it was still scanning so it can be cleanup
-		 * safely.
+		 * likelly means the controller and host stack are out of sync.
 		 */
 		if (err) {
 			hci_dev_lock(hdev);
@@ -6300,7 +6278,7 @@ int hci_le_create_conn_sync(struct hci_dev *hdev, struct hci_conn *conn)
 
 done:
 	if (err == -ETIMEDOUT)
-		hci_le_connect_cancel_sync(hdev, conn, 0x00);
+		hci_le_connect_cancel_sync(hdev, conn);
 
 	/* Re-enable advertising after the connection attempt is finished. */
 	hci_resume_advertising_sync(hdev);
