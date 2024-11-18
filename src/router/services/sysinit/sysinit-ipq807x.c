@@ -1476,7 +1476,13 @@ void start_overclocking(void)
 {
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
-		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", oclock);
+		if (nvram_match("freq_fixed", "1")) {
+			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "userspace");
+			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", oclock);
+		} else {
+			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", oclock);
+		}
 	}
 }
 
