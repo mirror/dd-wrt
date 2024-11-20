@@ -1,0 +1,1058 @@
+{
+  "MediaContainer": {
+    "librarySectionID": "home",
+    "librarySectionTitle": "Metadata",
+    "offset": 0,
+    "totalSize": 1,
+    "identifier": "tv.plex.provider.metadata",
+    "size": 1,
+    "Metadata": [
+      {
+        "art": "https://metadata-static.plex.tv/6/gracenote/6efa5ad3b4ef2e527fcc578ca0e8d819.jpg",
+        "banner": "http://assets.fanart.tv/fanart/movies/19995/moviebanner/avatar-51290dcc6bb5b.jpg",
+        "guid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d",
+        "rating": 8.1,
+        "ratingKey": "5d776d057a53e9001e74ed5d",
+        "studio": "Dune Entertainment",
+        "summary": "A paraplegic Marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting the world he feels is his home.",
+        "tagline": "Enter the world of Pandora.",
+        "type": "movie",
+        "thumb": "https://metadata-static.plex.tv/5/gracenote/5dc2aa2b05ba04888b4d57f27033e4ed.jpg",
+        "addedAt": 1260921600,
+        "duration": 9720000,
+        "publicPagesURL": "https://watch.plex.tv/movie/avatar",
+        "slug": "avatar",
+        "userState": false,
+        "title": "Avatar",
+        "contentRating": "PG-13",
+        "originallyAvailableAt": "2009-12-16",
+        "year": 2009,
+        "audienceRating": 8.2,
+        "audienceRatingImage": "rottentomatoes://image.rating.upright",
+        "ratingImage": "rottentomatoes://image.rating.ripe",
+        "imdbRatingCount": 1400028,
+        "Image": [
+          {
+            "alt": "Avatar",
+            "type": "background",
+            "url": "https://metadata-static.plex.tv/6/gracenote/6efa5ad3b4ef2e527fcc578ca0e8d819.jpg"
+          },
+          {
+            "alt": "Avatar",
+            "type": "banner",
+            "url": "http://assets.fanart.tv/fanart/movies/19995/moviebanner/avatar-51290dcc6bb5b.jpg"
+          },
+          {
+            "alt": "Avatar",
+            "type": "clearLogo",
+            "url": "https://metadata-static.plex.tv/4/683a142553/4d9f82ee6e12b93409516bad548b697a.png"
+          },
+          {
+            "alt": "Avatar",
+            "type": "clearLogoWide",
+            "url": "https://metadata-static.plex.tv/4/683a142553/4d9f82ee6e12b93409516bad548b697a.png"
+          },
+          {
+            "alt": "Avatar",
+            "type": "coverArt",
+            "url": "https://metadata-static.plex.tv/7/gracenote/7c48eaccbd2d06e99e7c23686fa49ddd.jpg"
+          },
+          {
+            "alt": "Avatar",
+            "type": "coverPoster",
+            "url": "https://metadata-static.plex.tv/5/gracenote/5dc2aa2b05ba04888b4d57f27033e4ed.jpg"
+          },
+          {
+            "alt": "Avatar",
+            "type": "coverSquare",
+            "url": "https://metadata-static.plex.tv/5/gracenote/5842d8fe537926eac4c28249c17f33b8.jpg"
+          },
+          {
+            "alt": "Avatar",
+            "type": "snapshot",
+            "url": "https://metadata-static.plex.tv/f/gracenote/fbc4c3e18c8ac5e602469055868572e8.jpg"
+          }
+        ],
+        "Genre": [
+          {
+            "filter": "genre=5d9c046c2192ba001f2ff6c2",
+            "id": "5d9c046c2192ba001f2ff6c2",
+            "key": "/library/sections/home/all?genre=5d9c046c2192ba001f2ff6c2",
+            "ratingKey": "genre_5d9c046c2192ba001f2ff6c2",
+            "slug": "action",
+            "tag": "Action",
+            "directory": true,
+            "context": "tag.genre"
+          },
+          {
+            "filter": "genre=5d9c046c2192ba001f2ff6c3",
+            "id": "5d9c046c2192ba001f2ff6c3",
+            "key": "/library/sections/home/all?genre=5d9c046c2192ba001f2ff6c3",
+            "ratingKey": "genre_5d9c046c2192ba001f2ff6c3",
+            "slug": "adventure",
+            "tag": "Adventure",
+            "directory": true,
+            "context": "tag.genre"
+          },
+          {
+            "filter": "genre=5d9c046c2192ba001f2ff6c4",
+            "id": "5d9c046c2192ba001f2ff6c4",
+            "key": "/library/sections/home/all?genre=5d9c046c2192ba001f2ff6c4",
+            "ratingKey": "genre_5d9c046c2192ba001f2ff6c4",
+            "slug": "sci-fi",
+            "tag": "Science Fiction",
+            "originalTag": "Sci-Fi",
+            "directory": true,
+            "context": "tag.genre"
+          },
+          {
+            "filter": "genre=5d9c046c705e7a001e6c8daa",
+            "id": "5d9c046c705e7a001e6c8daa",
+            "key": "/library/sections/home/all?genre=5d9c046c705e7a001e6c8daa",
+            "ratingKey": "genre_5d9c046c705e7a001e6c8daa",
+            "slug": "fantasy",
+            "tag": "Fantasy",
+            "directory": true,
+            "context": "tag.genre"
+          }
+        ],
+        "Guid": [
+          {
+            "id": "imdb://tt0499549"
+          },
+          {
+            "id": "tmdb://19995"
+          },
+          {
+            "id": "tvdb://165"
+          }
+        ],
+        "Rating": [
+          {
+            "image": "imdb://image.rating",
+            "type": "audience",
+            "value": 7.9
+          },
+          {
+            "image": "rottentomatoes://image.rating.ripe",
+            "type": "critic",
+            "value": 8.1
+          },
+          {
+            "image": "rottentomatoes://image.rating.upright",
+            "type": "audience",
+            "value": 8.2
+          },
+          {
+            "image": "themoviedb://image.rating",
+            "type": "audience",
+            "value": 7.582
+          }
+        ],
+        "Collection": [
+          {
+            "art": "https://image.tmdb.org/t/p/original/gxnvX9kF7RRUQYvB52dMLPgeJkt.jpg",
+            "guid": "plex://collection/5ec2fdb768742a00415b9917",
+            "key": "/library/collections/5ec2fdb768742a00415b9917/children",
+            "summary": "The Avatar Collection tells the story of the world of Pandora, inhabited by the indigenous humanoids, the Na'vi. The main protagonist, Jake Sully (Sam Worthington), is sent to Pandora as an avatar—a hybrid of human and Na'vi. During his mission, Jake discovers the beauty and complexity of the Na'vi world and forms a deep connection with the planet's inhabitants. The collection focuses on the conflict between humans and the Na'vi and the struggle to save the world of Pandora.",
+            "thumb": "https://image.tmdb.org/t/p/original/uO2yU3QiGHvVp0L5e5IatTVRkYk.jpg",
+            "tag": "Avatar Collection"
+          }
+        ],
+        "Country": [
+          {
+            "tag": "United States of America"
+          },
+          {
+            "tag": "United Kingdom"
+          }
+        ],
+        "Role": [
+          {
+            "key": "/library/sections/home/all?actor=5d7768268718ba001e311c30&type=99&availabilityType=free",
+            "id": "5d7768268718ba001e311c30",
+            "order": 1,
+            "slug": "sam-worthington",
+            "tag": "Sam Worthington",
+            "thumb": "https://metadata-static.plex.tv/7/people/758b4e28c0266718241d9de86f62d650.jpg",
+            "role": "Jake Sully",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776825999c64001ec2bff1&type=99&availabilityType=free",
+            "id": "5d776825999c64001ec2bff1",
+            "order": 2,
+            "slug": "zoe-saldana",
+            "tag": "Zoe Saldaña",
+            "thumb": "https://metadata-static.plex.tv/1/people/1a763f658196c01b4c797149ecfae674.jpg",
+            "role": "Neytiri",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768253c3c2a001fbcac3f&type=99&availabilityType=free",
+            "id": "5d7768253c3c2a001fbcac3f",
+            "order": 3,
+            "slug": "sigourney-weaver",
+            "tag": "Sigourney Weaver",
+            "thumb": "https://metadata-static.plex.tv/3/people/3bfa42322031e68229215b50abb7dcc2.jpg",
+            "role": "Dr. Grace Augustine",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682d54c0f0001f3028f3&type=99&availabilityType=free",
+            "id": "5d77682d54c0f0001f3028f3",
+            "order": 4,
+            "slug": "stephen-lang",
+            "tag": "Stephen Lang",
+            "thumb": "https://metadata-static.plex.tv/f/people/fe0830268363616247c741671e112f84.jpg",
+            "role": "Colonel Miles Quaritch",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682a3c3c2a001fbcbd15&type=99&availabilityType=free",
+            "id": "5d77682a3c3c2a001fbcbd15",
+            "order": 5,
+            "slug": "michelle-rodriguez",
+            "tag": "Michelle Rodriguez",
+            "thumb": "https://metadata-static.plex.tv/d/people/d3a5ea9c8055b83df9dd531d9dd60b59.jpg",
+            "role": "Trudy Chacon",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776825151a60001f24a404&type=99&availabilityType=free",
+            "id": "5d776825151a60001f24a404",
+            "order": 6,
+            "slug": "giovanni-ribisi",
+            "tag": "Giovanni Ribisi",
+            "thumb": "https://metadata-static.plex.tv/a/people/a492cd3d471515fdfa81696cf01b261b.jpg",
+            "role": "Parker Selfridge",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77683485719b001f3a3693&type=99&availabilityType=free",
+            "id": "5d77683485719b001f3a3693",
+            "order": 7,
+            "slug": "joel-david-moore",
+            "tag": "Joel David Moore",
+            "thumb": "https://metadata-static.plex.tv/b/people/be68d2d75ccdb77d3e728b1dc7b1cdb6.jpg",
+            "role": "Norm Spellman",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776828151a60001f24ae5b&type=99&availabilityType=free",
+            "id": "5d776828151a60001f24ae5b",
+            "order": 8,
+            "slug": "cch-pounder",
+            "tag": "CCH Pounder",
+            "thumb": "https://metadata-static.plex.tv/3/people/3a3618dd3116e3ee3cf29528d6ea1822.jpg",
+            "role": "Mo'at",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776828a091de001f2e63f9&type=99&availabilityType=free",
+            "id": "5d776828a091de001f2e63f9",
+            "order": 9,
+            "slug": "wes-studi",
+            "tag": "Wes Studi",
+            "thumb": "https://metadata-static.plex.tv/a/people/ae199c26abee40ca0200f547212b3cc2.jpg",
+            "role": "Eytukan",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768262ec6b5001f6ba297&type=99&availabilityType=free",
+            "id": "5d7768262ec6b5001f6ba297",
+            "order": 10,
+            "slug": "laz-alonso",
+            "tag": "Laz Alonso",
+            "thumb": "https://metadata-static.plex.tv/4/people/493b7317d38bf5469a2b601db06da889.jpg",
+            "role": "Tsu'Tey",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776840e6d55c002040ed42&type=99&availabilityType=free",
+            "id": "5d776840e6d55c002040ed42",
+            "order": 11,
+            "slug": "dileep-rao",
+            "tag": "Dileep Rao",
+            "thumb": "https://metadata-static.plex.tv/6/people/6a22d24a245a70a326b9961d07b3830f.jpg",
+            "role": "Dr. Max Patel",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776833103a2d001f5671f1&type=99&availabilityType=free",
+            "id": "5d776833103a2d001f5671f1",
+            "order": 12,
+            "slug": "matt-gerald",
+            "tag": "Matt Gerald",
+            "thumb": "https://metadata-static.plex.tv/5/people/5cd9e85018260c96da50c500ac9ec5eb.jpg",
+            "role": "Corporal Lyle Wainfleet",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768468a7581001f12f8b8&type=99&availabilityType=free",
+            "id": "5d7768468a7581001f12f8b8",
+            "order": 13,
+            "slug": "sean-anthony-moran",
+            "tag": "Sean Anthony Moran",
+            "thumb": "https://metadata-static.plex.tv/4/people/4565ab8f734cef18db882fb0fda8552e.jpg",
+            "role": "Private Fike",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768468a7581001f12f8b9&type=99&availabilityType=free",
+            "id": "5d7768468a7581001f12f8b9",
+            "order": 14,
+            "slug": "jason-whyte",
+            "tag": "Jason Whyte",
+            "thumb": "https://metadata-static.plex.tv/f/people/fc2ec747996bc4681311fcfdacbcde6e.jpg",
+            "role": "Cryo Vault Med Tech",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77683154c0f0001f303001&type=99&availabilityType=free",
+            "id": "5d77683154c0f0001f303001",
+            "order": 15,
+            "slug": "scott-lawrence",
+            "tag": "Scott Lawrence",
+            "thumb": "https://metadata-static.plex.tv/people/5d77683154c0f0001f303001.jpg",
+            "role": "Venture Star Crew Chief",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77689bebdf2200209c379b&type=99&availabilityType=free",
+            "id": "5d77689bebdf2200209c379b",
+            "order": 16,
+            "slug": "kelly-kilgour",
+            "tag": "Kelly Kilgour",
+            "thumb": "https://metadata-static.plex.tv/people/5d77689bebdf2200209c379b.jpg",
+            "role": "Lock Up Trooper",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74eda7&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74eda7",
+            "order": 17,
+            "slug": "james-patrick-pitt",
+            "tag": "James Patrick Pitt",
+            "thumb": "https://metadata-static.plex.tv/2/people/239c20d2274290bb865799c46b057c0f.jpg",
+            "role": "Shuttle Pilot",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776833e6d55c002040cbc8&type=99&availabilityType=free",
+            "id": "5d776833e6d55c002040cbc8",
+            "order": 18,
+            "slug": "sean-patrick-murphy",
+            "tag": "Sean Patrick Murphy",
+            "thumb": "https://metadata-static.plex.tv/people/5d776833e6d55c002040cbc8.jpg",
+            "role": "Shuttle Co-Pilot",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74eda8&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74eda8",
+            "order": 19,
+            "slug": "peter-dillon",
+            "tag": "Peter Dillon",
+            "thumb": "https://metadata-static.plex.tv/b/people/b131a583ab5101bf184f3afe6d822703.jpg",
+            "role": "Shuttle Crew Chief",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682c61141d001fb1426d&type=99&availabilityType=free",
+            "id": "5d77682c61141d001fb1426d",
+            "order": 20,
+            "slug": "kevin-dorman",
+            "tag": "Kevin Dorman",
+            "thumb": "https://metadata-static.plex.tv/0/people/0d8caa61a5de24a683621f61cdccb81c.jpg",
+            "role": "Tractor Operator",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682e2e80df001ebdd87e&type=99&availabilityType=free",
+            "id": "5d77682e2e80df001ebdd87e",
+            "order": 21,
+            "slug": "kelson-henderson",
+            "tag": "Kelson Henderson",
+            "thumb": "https://metadata-static.plex.tv/6/people/6adaeccb13c89963443eb7f5297631b9.jpg",
+            "role": "Dragon Gunship Pilot",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77683b961905001eb951a0&type=99&availabilityType=free",
+            "id": "5d77683b961905001eb951a0",
+            "order": 22,
+            "slug": "david-van-horn",
+            "tag": "David Van Horn",
+            "thumb": "https://metadata-static.plex.tv/people/5d77683b961905001eb951a0.jpg",
+            "role": "Dragon Gunship Gunner",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682e2e80df001ebdd888&type=99&availabilityType=free",
+            "id": "5d77682e2e80df001ebdd888",
+            "order": 23,
+            "slug": "jacob-tomuri",
+            "tag": "Jacob Tomuri",
+            "thumb": "https://metadata-static.plex.tv/people/5d77682e2e80df001ebdd888.jpg",
+            "role": "Dragon Gunship Navigator",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776846eb5d26001f1e468d&type=99&availabilityType=free",
+            "id": "5d776846eb5d26001f1e468d",
+            "order": 24,
+            "slug": "michael-blain-rozgay",
+            "tag": "Michael Blain-Rozgay",
+            "thumb": "https://metadata-static.plex.tv/people/5d776846eb5d26001f1e468d.jpg",
+            "role": "Suit #1",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776b2dad5437001f7962a2&type=99&availabilityType=free",
+            "id": "5d776b2dad5437001f7962a2",
+            "order": 25,
+            "slug": "jon-curry",
+            "tag": "Jon Curry",
+            "thumb": "https://metadata-static.plex.tv/6/people/64e03f0e4de4add35a422424b6596077.jpg",
+            "role": "Suit #2",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682c61141d001fb14267&type=99&availabilityType=free",
+            "id": "5d77682c61141d001fb14267",
+            "order": 26,
+            "slug": "julene-renee",
+            "tag": "Julene Renee",
+            "thumb": "https://metadata-static.plex.tv/0/people/0f0e45909ee7fa147c13666099a86d6f.jpg",
+            "role": "Ambient Room Tech / Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768b01999bc0020dcde86&type=99&availabilityType=free",
+            "id": "5d7768b01999bc0020dcde86",
+            "order": 27,
+            "slug": "luke-hawker",
+            "tag": "Luke Hawker",
+            "thumb": "https://metadata-static.plex.tv/b/people/b9fb7e229a4099bf3f1ebf7964481663.jpg",
+            "role": "Ambient Room Tech",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682c61141d001fb14269&type=99&availabilityType=free",
+            "id": "5d77682c61141d001fb14269",
+            "order": 28,
+            "slug": "woody-schultz",
+            "tag": "Woody Schultz",
+            "role": "Ambient Room Tech / Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768296f4521001ea99a56&type=99&availabilityType=free",
+            "id": "5d7768296f4521001ea99a56",
+            "order": 29,
+            "slug": "peter-mensah",
+            "tag": "Peter Mensah",
+            "thumb": "https://metadata-static.plex.tv/7/people/717e52f58a9ed9ce91d8247a35af69f0.jpg",
+            "role": "Horse Clan Leader",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74eda9&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74eda9",
+            "order": 30,
+            "slug": "sonia-yee",
+            "tag": "Sonia Yee",
+            "role": "Link Room Tech",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768660ab244002006cf5d&type=99&availabilityType=free",
+            "id": "5d7768660ab244002006cf5d",
+            "order": 31,
+            "slug": "jahnel-curfman",
+            "tag": "Jahnel Curfman",
+            "role": "Basketball Avatar / Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77684b103a2d001f56c416&type=99&availabilityType=free",
+            "id": "5d77684b103a2d001f56c416",
+            "order": 32,
+            "slug": "ilram-choi",
+            "tag": "Ilram Choi",
+            "role": "Basketball Avatar",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edaa&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edaa",
+            "order": 33,
+            "slug": "kyla-warren",
+            "tag": "Kyla Warren",
+            "role": "Na'vi Child",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776a68ad5437001f77d27b&type=99&availabilityType=free",
+            "id": "5d776a68ad5437001f77d27b",
+            "order": 34,
+            "slug": "lisa-roumain",
+            "tag": "Lisa Roumain",
+            "thumb": "https://metadata-static.plex.tv/e/people/e3548f6b8d1c4d89fb6e27c1041efa90.jpg",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768326f4521001ea9b9fa&type=99&availabilityType=free",
+            "id": "5d7768326f4521001ea9b9fa",
+            "order": 35,
+            "slug": "debra-wilson",
+            "tag": "Debra Wilson",
+            "thumb": "https://metadata-static.plex.tv/c/people/cd80cfa6b48be62b64e6f74040a03ab6.jpg",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edac&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edac",
+            "order": 36,
+            "slug": "taylor-kibby",
+            "tag": "Taylor Kibby",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edad&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edad",
+            "order": 37,
+            "slug": "jodie-landau",
+            "tag": "Jodie Landau",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edab&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edab",
+            "order": 38,
+            "slug": "chris-mala",
+            "tag": "Chris Mala",
+            "thumb": "https://metadata-static.plex.tv/people/5d776d057a53e9001e74edab.jpg",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edae&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edae",
+            "order": 39,
+            "slug": "julie-lamm",
+            "tag": "Julie Lamm",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edaf&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edaf",
+            "order": 40,
+            "slug": "cullen-b-madden",
+            "tag": "Cullen B. Madden",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edb0&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edb0",
+            "order": 41,
+            "slug": "joseph-brady-madden",
+            "tag": "Joseph Brady Madden",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5f9074e363e1d9002db13427&type=99&availabilityType=free",
+            "id": "5f9074e363e1d9002db13427",
+            "order": 42,
+            "slug": "frankie-torres-3",
+            "tag": "Frankie Torres",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=65a290248b6a15cbb9f65e45&type=99&availabilityType=free",
+            "id": "65a290248b6a15cbb9f65e45",
+            "order": 43,
+            "slug": "austin-wilson-18",
+            "tag": "Austin Wilson",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=65a290248dfba58540bae493&type=99&availabilityType=free",
+            "id": "65a290248dfba58540bae493",
+            "order": 44,
+            "slug": "sara-wilson-20",
+            "tag": "Sara Wilson",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=65a29024fda146b00576e8e4&type=99&availabilityType=free",
+            "id": "65a29024fda146b00576e8e4",
+            "order": 45,
+            "slug": "tamica-washington-miller-2",
+            "tag": "Tamica Washington-Miller",
+            "role": "Troupe",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776ab447dd6e001f6d6205&type=99&availabilityType=free",
+            "id": "5d776ab447dd6e001f6d6205",
+            "order": 46,
+            "slug": "lucy-briant",
+            "tag": "Lucy Briant",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682d880197001ec920ea&type=99&availabilityType=free",
+            "id": "5d77682d880197001ec920ea",
+            "order": 47,
+            "slug": "nathan-meister",
+            "tag": "Nathan Meister",
+            "thumb": "https://metadata-static.plex.tv/people/5d77682d880197001ec920ea.jpg",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edb6&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edb6",
+            "order": 48,
+            "slug": "gerry-blair",
+            "tag": "Gerry Blair",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776829880197001ec91190&type=99&availabilityType=free",
+            "id": "5d776829880197001ec91190",
+            "order": 49,
+            "slug": "matthew-chamberlain",
+            "tag": "Matthew Chamberlain",
+            "thumb": "https://metadata-static.plex.tv/d/people/df68591e6157d1efbcced2ed6650f331.jpg",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7769e87a53e9001e6f42f7&type=99&availabilityType=free",
+            "id": "5d7769e87a53e9001e6f42f7",
+            "order": 50,
+            "slug": "paul-yates",
+            "tag": "Paul Yates",
+            "thumb": "https://metadata-static.plex.tv/5/people/51e9c5836019965ca08cbd2bb6c4bf68.jpg",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edb7&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edb7",
+            "order": 51,
+            "slug": "wray-wilson",
+            "tag": "Wray Wilson",
+            "role": "Op Center Duty Officer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776829151a60001f24b110&type=99&availabilityType=free",
+            "id": "5d776829151a60001f24b110",
+            "order": 52,
+            "slug": "james-gaylyn",
+            "tag": "James Gaylyn",
+            "thumb": "https://metadata-static.plex.tv/people/5d776829151a60001f24b110.jpg",
+            "role": "Op Center Staff",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edb8&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edb8",
+            "order": 53,
+            "slug": "melvin-leno-clark-iii",
+            "tag": "Melvin Leno Clark III",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edb9&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edb9",
+            "order": 54,
+            "slug": "carvon-futrell",
+            "tag": "Carvon Futrell",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edba&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edba",
+            "order": 55,
+            "slug": "brandon-jelkes",
+            "tag": "Brandon Jelkes",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edbb&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edbb",
+            "order": 56,
+            "slug": "micah-moch",
+            "tag": "Micah Moch",
+            "thumb": "https://metadata-static.plex.tv/people/5d776d057a53e9001e74edbb.jpg",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edbc&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edbc",
+            "order": 57,
+            "slug": "hanniyah-muhammad",
+            "tag": "Haniyyah Tahirah",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=65a29024b17bcca733a0f649&type=99&availabilityType=free",
+            "id": "65a29024b17bcca733a0f649",
+            "order": 58,
+            "slug": "christopher-nolen-7",
+            "tag": "Christopher Nolen",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edbd&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edbd",
+            "order": 59,
+            "slug": "christa-oliver",
+            "tag": "Christa Oliver",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edbe&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edbe",
+            "order": 60,
+            "slug": "april-marie-thomas",
+            "tag": "April Marie Thomas",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776d057a53e9001e74edbf&type=99&availabilityType=free",
+            "id": "5d776d057a53e9001e74edbf",
+            "order": 61,
+            "slug": "bravita-a-threatt",
+            "tag": "Bravita A. Threatt",
+            "role": "Dancer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d7768b33ab0e7001f5083c5&type=99&availabilityType=free",
+            "id": "5d7768b33ab0e7001f5083c5",
+            "order": 62,
+            "slug": "alicia-vela-bailey",
+            "tag": "Alicia Vela-Bailey",
+            "thumb": "https://metadata-static.plex.tv/1/people/11326c6c902885e091a418f0fd56b4e6.jpg",
+            "role": "Ikran Clan Leader (uncredited)",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776b4b9ab5440021509b86&type=99&availabilityType=free",
+            "id": "5d776b4b9ab5440021509b86",
+            "order": 63,
+            "slug": "larry-rew",
+            "tag": "Larry Rew",
+            "thumb": "https://metadata-static.plex.tv/2/people/2aee474273573921c3a48fffe99b03cc.jpg",
+            "role": "Crematorium Tech (uncredited)",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d77682f151a60001f24c64d&type=99&availabilityType=free",
+            "id": "5d77682f151a60001f24c64d",
+            "order": 64,
+            "slug": "dina-morrone",
+            "tag": "Dina Morrone",
+            "thumb": "https://metadata-static.plex.tv/0/people/06c3473d47eb676e8cace6a9499d09b9.jpg",
+            "role": "TV Voice Over Announcer (voice) (uncredited)",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?actor=5d776a8c594b2b001e6bf37a&type=99&availabilityType=free",
+            "id": "5d776a8c594b2b001e6bf37a",
+            "order": 65,
+            "slug": "rodney-cook",
+            "tag": "Rodney Cook",
+            "thumb": "https://metadata-static.plex.tv/8/people/88c7036caa19d12fa2258a9f7c794255.jpg",
+            "role": "Trooper (uncredited)",
+            "directory": true
+          }
+        ],
+        "Director": [
+          {
+            "key": "/library/sections/home/all?director=5d776824151a60001f24a3bc&type=99&availabilityType=free",
+            "id": "5d776824151a60001f24a3bc",
+            "slug": "james-cameron",
+            "tag": "James Cameron",
+            "thumb": "https://metadata-static.plex.tv/2/people/2cd0c7b1e5201e54cd9cca57a4b15f3f.jpg",
+            "role": "Director",
+            "directory": true
+          }
+        ],
+        "Producer": [
+          {
+            "key": "/library/sections/home/all?producer=5d776824151a60001f24a3bc&type=99&availabilityType=free",
+            "id": "5d776824151a60001f24a3bc",
+            "slug": "james-cameron",
+            "tag": "James Cameron",
+            "thumb": "https://metadata-static.plex.tv/2/people/2cd0c7b1e5201e54cd9cca57a4b15f3f.jpg",
+            "role": "Producer",
+            "directory": true
+          },
+          {
+            "key": "/library/sections/home/all?producer=62fb7cbae0fd83affa30fa17&type=99&availabilityType=free",
+            "id": "62fb7cbae0fd83affa30fa17",
+            "slug": "jon-landau-2",
+            "tag": "Jon Landau",
+            "thumb": "https://metadata-static.plex.tv/d/people/ddb5b6248dda8b3dce30b5d5ec47c20a.jpg",
+            "role": "Producer",
+            "directory": true
+          }
+        ],
+        "Writer": [
+          {
+            "key": "/library/sections/home/all?writer=5d776824151a60001f24a3bc&type=99&availabilityType=free",
+            "id": "5d776824151a60001f24a3bc",
+            "slug": "james-cameron",
+            "tag": "James Cameron",
+            "thumb": "https://metadata-static.plex.tv/2/people/2cd0c7b1e5201e54cd9cca57a4b15f3f.jpg",
+            "role": "Writer",
+            "directory": true
+          }
+        ],
+        "Similar": [
+          {
+            "guid": "plex://movie/5d7768462e80df001ebe06a5",
+            "tag": "Despicable Me"
+          },
+          {
+            "guid": "plex://movie/5d77684d61141d001fb181b9",
+            "tag": "The Avengers"
+          },
+          {
+            "guid": "plex://movie/5d77685333f255001e852e11",
+            "tag": "Inception"
+          },
+          {
+            "guid": "plex://movie/5d77686c2e80df001ebe38b3",
+            "tag": "Skyfall"
+          },
+          {
+            "guid": "plex://movie/5d7768883ab0e7001f503bc0",
+            "tag": "The Dark Knight Rises"
+          },
+          {
+            "guid": "plex://movie/5d776d10ad5437001f7cc065",
+            "tag": "Titanic"
+          },
+          {
+            "guid": "plex://movie/5d7768adebdf2200209c5d46",
+            "tag": "Django Unchained"
+          },
+          {
+            "guid": "plex://movie/5d7768ad3ab0e7001f50786e",
+            "tag": "Iron Man 3"
+          },
+          {
+            "guid": "plex://movie/5d7768b051dd69001fe0f92c",
+            "tag": "The Hunger Games"
+          },
+          {
+            "guid": "plex://movie/5d7768ba96b655001fdc0408",
+            "tag": "Avatar: The Way of Water"
+          }
+        ],
+        "Studio": [
+          {
+            "tag": "Dune Entertainment"
+          },
+          {
+            "tag": "Lightstorm Entertainment"
+          },
+          {
+            "tag": "20th Century Fox"
+          },
+          {
+            "tag": "Ingenious Media"
+          }
+        ],
+        "Summary": [
+          {
+            "size": 100,
+            "tag": "A former Marine (Sam Worthington) falls in love with a native (Zoe Saldana) of a lush alien world.",
+            "type": "default"
+          },
+          {
+            "size": 250,
+            "tag": "On an alien planet, a former Marine (Sam Worthington) falls in love with a blue-skinned warrior (Zoe Saldana) and sides with her people against humankind's encroachment on their lush world.",
+            "type": "default"
+          },
+          {
+            "size": 500,
+            "tag": "On the lush alien world of Pandora live the Na'vi, beings who appear primitive but are highly evolved. Because the planet's environment is poisonous, human/Na'vi hybrids, called Avatars, must link to human minds to allow for free movement on Pandora. Jake Sully (Sam Worthington), a paralyzed former Marine, becomes mobile again through one such Avatar and falls in love with a Na'vi woman (Zoe Saldana). As a bond with her grows, he is drawn into a battle for the survival of her world.",
+            "type": "default"
+          },
+          {
+            "size": 250,
+            "tag": "In a lush, alien world, a paraplegic Marine inhabits a Na'vi avatar, navigating a conflict between humans and the indigenous species. Torn between loyalty and love for Pandora, he must choose between his mission and the planet's survival.",
+            "type": "custom"
+          }
+        ],
+        "Review": [
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "source": "Denver Post",
+            "tag": "Lisa Kennedy",
+            "text": "Cameron and his legion of CGI experts and skilled craftspeople have delivered a lovely, misty, dangerous world."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.sfgate.com/cgi-bin/article.cgi?file=/c/a/2009/12/17/DDUR1B4K4H.DTL",
+            "source": "San Francisco Chronicle",
+            "tag": "Amy Biancolli",
+            "text": "The most-hyped movie of the year just about merits it."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "source": "indieWire",
+            "tag": "Anne Thompson",
+            "text": "Avatar is a joyous celebration of story craft and the visual possibilities of cinema. Cameron had set his sights on taking the technology of film where no one had gone before. And he delivers. Avatar is stunning. Cameron and Peter Jackson's Weta Digital h"
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.detnews.com/article/20091217/OPINION03/912170318/1034/ent02/Review---Avatar--sets-a-new-standard-for-blockbusters",
+            "source": "Detroit News",
+            "tag": "Tom Long",
+            "text": "I have seen the future of movies, and it is Avatar."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://moviefreak.com/avatar-2009-movie-review/",
+            "source": "MovieFreak.com",
+            "tag": "Sara Michelle Fetters",
+            "text": "Even with its simplistic plot, Avatar is a stunning achievement in next-level cinematic bravado. Watch it on the biggest screen possible. Prepare to be blown away."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.reeltalkonline.org/2009/12/avatar.html",
+            "source": "Reel Talk Online",
+            "tag": "Candice Frederick",
+            "text": "Overall, Avatar was really about the jaw-dropping visual effects--that's the great thing about it."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.autostraddle.com/julie-brandy-in-your-box-office-episode-one-avatar-33301/",
+            "source": "Autostraddle",
+            "tag": "Julie and Brandy",
+            "text": "Five hundred million dollars [wasted]."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://datebook.sfchronicle.com/movies-tv/avatar-was-a-major-hit-10-years-ago-so-why-arent-we-still-talking-about-it",
+            "source": "San Francisco Chronicle",
+            "tag": "Zaki Hasan",
+            "text": "Rewatching it with fresh eyes 10 years later, the movie's pluses and minuses both rise into much starker relief. The verdict: It's...fine."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.theatlantic.com/entertainment/archive/2009/12/cowboys-vs-indians-in-space/32429/",
+            "source": "The Atlantic",
+            "tag": "Ed Koch",
+            "text": "In my opinion, Avatar has been hyped beyond the point of forgiveness."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://mubi.com/notebook/posts/james-camerons-avatar",
+            "source": "MUBI",
+            "tag": "Glenn Kenny",
+            "text": "Learning your visuals from Jack Kirby is one thing, but too often it sounds like Cameron learned to write dialogue from the guy too."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "http://www.slantmagazine.com/house/2009/12/avatar-take-2/",
+            "source": "House Next Door",
+            "tag": "Simon Abrams",
+            "text": "Cameron knows the viewer will recognize Avatar's story from elsewhere, whether as the love affair between John Smith and Pocahontas or almost all of Ferngully and so tries to dazzle the viewer with \"shock and awe.\""
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://nymag.com/movies/reviews/62895/",
+            "source": "New York Magazine/Vulture",
+            "tag": "David Edelstein",
+            "text": "The narrative would be ho-hum without the spectacle. But what spectacle! Avatar is dizzying, enveloping, vertiginous ... I ran out of adjectives an hour into its 161 minutes."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "source": "At the Movies",
+            "tag": "A.O. Scott",
+            "text": "I had the feeling coming out of this movie that I haven't felt since maybe I was eleven years old in 1977 and I saw Star Wars for the first time."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "source": "Salon.com",
+            "tag": "Stephanie Zacharek",
+            "text": "It's a remote-control movie experience, a high-tech \"wish you were here\" scribbled on a very expensive postcard."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://www.vulture.com/article/avatar-is-back-in-theaters-and-its-still-great.html?utm_source=flipboard.com&utm_medium=social_acct&utm_campaign=feed-part",
+            "source": "New York Magazine/Vulture",
+            "tag": "Bilge Ebiri",
+            "text": "Cameron and his artists have so lovingly imagined the moon of Pandora that every shot of the film contains new wonders."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.dallasnews.com/sharedcontent/dws/ent/movies/reviews/stories/DN-avatar_1218gd.State.Edition1.24be9b2.html",
+            "source": "Dallas Morning News",
+            "tag": "Tom Maurstad",
+            "text": "It is cool. But all this \"change the way you look at films\" hype is just that. While Avatar is impressively seamless, you're never fooled. This doesn't look like a documentary film; it looks like a video game."
+          },
+          {
+            "image": "rottentomatoes://image.review.rotten",
+            "link": "https://www.filmspotting.net/episodes-archive/2010/1/1/fs-fix-avatar-nine",
+            "source": "Filmspotting",
+            "tag": "Adam Kempenaar",
+            "text": "It's not just that we've seen the tale before… it's that every aspect of the screenplay is terrible.\n"
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "https://moviemom.com/avatar-the-way-of-water/#:~:text=The%20story%20is%20just%20a,and%20intense%20peril%20and%20violence.",
+            "source": "Movie Mom",
+            "tag": "Nell Minow",
+            "text": "The story is just a scaffolding for the world-building. That may make it more of an experience than a movie, but the experience is a fun place to visit."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "link": "http://www.csmonitor.com/The-Culture/Movies/2009/1217/Avatar-movie-review",
+            "source": "Christian Science Monitor",
+            "tag": "Peter Rainer",
+            "text": "Pandora is still a good place to park yourself for three hours."
+          },
+          {
+            "image": "rottentomatoes://image.review.fresh",
+            "source": "Boxoffice Magazine",
+            "tag": "Amy Nicholson",
+            "text": "Not only does Cameron blur the line between reality and CGI, he's at once jingoistic and anti-hawk. Right-wingers will feel welcomed in the first half, the left-brained will be vindicated by the climax."
+          }
+        ]
+      }
+    ]
+  }
+}

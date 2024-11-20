@@ -1,0 +1,62 @@
+{
+  "MediaProvider": {
+    "icon": "https://provider-static.plex.tv/icons/metadata-560.svg",
+    "identifier": "tv.plex.provider.metadata",
+    "protocols": [
+      "stream"
+    ],
+    "title": "Metadata",
+    "version": "1.3.0",
+    "Feature": [
+      {
+        "type": "metadata",
+        "key": "/library/metadata"
+      },
+      {
+        "type": "actions",
+        "Action": [
+          {
+            "id": "addToWatchlist",
+            "key": "/actions/addToWatchlist",
+            "reverseKey": "/actions/removeFromWatchlist"
+          },
+          {
+            "id": "rate",
+            "key": "/actions/rate"
+          },
+          {
+            "id": "scrobble",
+            "key": "/actions/scrobble",
+            "reverseKey": "/actions/unscrobble"
+          }
+        ]
+      },
+      {
+        "type": "collection",
+        "key": "/library/collections"
+      },
+      {
+        "type": "location",
+        "key": "/location"
+      },
+      {
+        "type": "markers",
+        "key": "/markers"
+      },
+      {
+        "public": true,
+        "type": "imagetranscoder",
+        "key": "https://images.plex.tv/photo"
+      },
+      {
+        "flavor": "universal",
+        "type": "playqueue",
+        "key": "https://play.provider.plex.tv/playQueues"
+      },
+      {
+        "type": "match",
+        "key": "/library/metadata/matches"
+      }
+    ]
+  }
+}
