@@ -76,7 +76,7 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #endif
 #endif
 
-static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 15120000, 1800000, 0 };
+static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 1512000, 1800000, 0 };
 static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000, 0 };
 
 EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
@@ -168,15 +168,20 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	int cclk = atoi(oclk);
 
 	int i = 0;
-	int in_clock_array = 0;
 
 	//check if cpu clock list contains current clkfreq
+#if defined(HAVE_IPQ6018) || defined(HAVE_HABANERO) || defined(HAVE_ALPINE)
+	int in_clock_array = 1;
+#else
+	int in_clock_array = 0;
+
 	while (c[i] != 0) {
 		if (c[i] == cclk) {
 			in_clock_array = 1;
 		}
 		i++;
 	}
+#endif
 
 	if (in_clock_array && nvram_exists("clkfreq")) {
 		show_caption(wp, "label", "management.clock_frq", NULL);
