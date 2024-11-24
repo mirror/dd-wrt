@@ -98,8 +98,11 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	char *defclock = "2208000";
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
-	case ROUTER_FORTINET_FAP231F:
 		defclock = "1440000";
+		c = ipq6018_clocks;
+		break;
+	case ROUTER_FORTINET_FAP231F:
+		defclock = "1800000";
 		c = ipq6018_clocks;
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
