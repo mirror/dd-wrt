@@ -477,6 +477,7 @@ static const struct platform_device_id bcm63xx_spi_dev_match[] = {
 	{
 	},
 };
+MODULE_DEVICE_TABLE(platform, bcm63xx_spi_dev_match);
 
 static int bcm63xx_spi_probe(struct platform_device *pdev)
 {

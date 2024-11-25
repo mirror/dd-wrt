@@ -532,8 +532,8 @@ static void scl_vop_cal_scl_fac(struct vop *vop, const struct vop_win_data *win,
 	uint32_t val;
 	int vskiplines;
 
-	if (dst_w > 3840) {
-		DRM_ERROR("Maximum destination width (3840) exceeded\n");
+	if (dst_w > 4096) {
+		DRM_ERROR("Maximum destination width (4096) exceeded\n");
 		return;
 	}
 

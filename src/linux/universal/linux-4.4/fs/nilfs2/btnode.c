@@ -59,7 +59,7 @@ nilfs_btnode_create_block(struct address_space *btnc, __u64 blocknr)
 		 * used to manage its allocation state (if not, the buffer
 		 * clearing of an abandoned b-tree node is missing somewhere).
 		 */
-		nilfs_error(inode->i_sb,
+		nilfs_error(inode->i_sb, __func__,
 			    "state inconsistency probably due to duplicate use of b-tree node block address %llu (ino=%lu)",
 			    (unsigned long long)blocknr, inode->i_ino);
 		goto failed;

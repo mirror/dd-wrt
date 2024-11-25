@@ -56,6 +56,7 @@ static const struct platform_device_id ntc_thermistor_id[] = {
 	{ "ncp03wf104", TYPE_NCPXXWF104 },
 	{ },
 };
+MODULE_DEVICE_TABLE(platform, ntc_thermistor_id);
 
 /*
  * A compensation table should be sorted by the values of .ohm

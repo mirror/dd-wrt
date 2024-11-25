@@ -6393,8 +6393,10 @@ static int sctp_listen_start(struct sock *sk, int backlog)
 	 */
 	sk->sk_state = SCTP_SS_LISTENING;
 	if (!ep->base.bind_addr.port) {
-		if (sctp_autobind(sk))
+		if (sctp_autobind(sk)) {
+			sk->sk_state = SCTP_SS_CLOSED;
 			return -EAGAIN;
+		}
 	} else {
 		if (sctp_get_port(sk, inet_sk(sk)->inet_num)) {
 			sk->sk_state = SCTP_SS_CLOSED;

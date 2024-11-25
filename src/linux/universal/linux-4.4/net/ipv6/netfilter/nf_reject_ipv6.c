@@ -120,6 +120,7 @@ void nf_reject_ip6_tcphdr_put(struct sk_buff *nskb,
 	tcph->window = 0;
 	tcph->urg_ptr = 0;
 	tcph->check = 0;
+	tcph->res1 = 0;
 
 	/* Adjust TCP checksum */
 	tcph->check = csum_ipv6_magic(&ipv6_hdr(nskb)->saddr,

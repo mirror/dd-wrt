@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/nospec.h>
 #include <linux/spinlock.h>
 #include <linux/list.h>
 #include <linux/device.h>
@@ -97,7 +98,7 @@ struct gpio_desc *gpiochip_get_desc(struct gpio_chip *chip,
 	if (hwnum >= chip->ngpio)
 		return ERR_PTR(-EINVAL);
 
-	return &chip->desc[hwnum];
+	return &chip->desc[array_index_nospec(hwnum, chip->ngpio)];
 }
 
 /**

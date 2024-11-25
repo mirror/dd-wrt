@@ -2289,6 +2289,7 @@ int is_console_locked(void)
 {
 	return console_locked;
 }
+EXPORT_SYMBOL(is_console_locked);
 
 static void console_cont_flush(char *text, size_t size)
 {

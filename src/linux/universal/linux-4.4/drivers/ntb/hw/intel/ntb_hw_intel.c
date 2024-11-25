@@ -784,7 +784,7 @@ static void ndev_init_debugfs(struct intel_ntb_dev *ndev)
 	} else {
 		ndev->debugfs_dir =
 			debugfs_create_dir(ndev_name(ndev), debugfs_dir);
-		if (!ndev->debugfs_dir)
+		if (IS_ERR(ndev->debugfs_dir))
 			ndev->debugfs_info = NULL;
 		else
 			ndev->debugfs_info =

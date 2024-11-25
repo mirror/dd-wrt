@@ -581,7 +581,7 @@ static int mal_probe(struct platform_device *ofdev)
 		printk(KERN_ERR "%s: Support for 405EZ not enabled!\n",
 				ofdev->dev.of_node->full_name);
 		err = -ENODEV;
-		goto fail;
+		goto fail_unmap;
 #endif
 	}
 
