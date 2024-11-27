@@ -464,6 +464,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "natpmp", NDPI_ONLY, 0, NULL },
 	{ "nats", NDPI_ONLY, 0, NULL },
+	{ "naver", NDPI_ONLY, 0, NULL },
 #endif
 	{ "nbns", L7_ONLY, 0, NULL },
 	{ "ncp", L7_ONLY, 0, NULL },
@@ -507,6 +508,7 @@ l7filters filters_list[] = {
 	{ "oracle", NDPI_ONLY, 0, NULL },
 	{ "ospf", NDPI_ONLY, 0, NULL },
 	{ "outlook", NDPI_ONLY, 0, NULL },
+	{ "paltalk", NDPI_ONLY, 0, NULL },
 	{ "pandora", NDPI_ONLY, 0, NULL },
 	{ "pastebin", NDPI_ONLY, 0, NULL },
 	{ "path_of_exile", NDPI_ONLY, 0, NULL },
