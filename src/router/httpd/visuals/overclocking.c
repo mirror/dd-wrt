@@ -187,7 +187,11 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 #endif
 
 	if (in_clock_array && nvram_exists("clkfreq")) {
-		show_caption(wp, "label", "management.clock_frq", NULL);
+#if defined(HAVE_IPQ6018)		
+		show_caption(wp, "label", "share.max_frequency", NULL);
+#else
+		show_caption(wp, "label", "share.clock_frq", NULL);
+#endif
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
@@ -197,6 +201,12 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 			i++;
 		}
 		websWrite(wp, "</select>\n</div>\n");
+#if defined(HAVE_IPQ6018)		
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.fix_frequency", NULL);
+		websWrite(wp,"<input type=\"checkbox\" value=\"1\" name=\"_fix_freq\" /></dev>\n");
+#endif
+
 	} else {
 		show_caption(wp, NULL, "management.clock_support", "</div>\n");
 		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
