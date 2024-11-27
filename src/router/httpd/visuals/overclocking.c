@@ -204,7 +204,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 #if defined(HAVE_IPQ6018)		
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.fix_frequency", NULL);
-		websWrite(wp,"<input type=\"checkbox\" value=\"1\" name=\"_fix_freq\" /></dev>\n");
+		websWrite(wp,"<input type=\"checkbox\" value=\"1\" name=\"_freq_fixed\" %s/></dev>\n",(nvram_default_matchi("freq_fixed", 1, 0) ? "checked=\"checked\"" : ""));
 #endif
 
 	} else {
