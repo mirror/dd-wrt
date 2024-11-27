@@ -97,6 +97,7 @@ static char ipdef_name[]="ip_proto";
 static char ip6def_name[]="ip6_proto";
 static char hostdef_name[]="host_proto";
 static char flow_name[]="flows";
+static char magic_ct_name[]="magic_ct";
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 static char info6_name[]="info6";
 #endif
@@ -221,11 +222,12 @@ MODULE_ALIAS("ipt_NDPI");
 #include "ndpi_proc_flow.h"
 #include "ndpi_proc_hostdef.h"
 #include "ndpi_proc_ipdef.h"
+#include "ndpi_proc_magic_ct.h"
 
 #include "../libre/regexp.h"
 
 #define NDPI_ID 0x44504900ul
-#define MAGIC_CT 0xa55a
+
 struct nf_ct_ext_labels { /* max size 128 bit */
 	/* words must be first byte for compatible with NF_CONNLABELS
 	 * kernels 3.8-4.7 has variable size of nf_ext_labels
@@ -285,6 +287,8 @@ static inline int flow_have_info( struct nf_ct_ext_ndpi *c) {
 }
 
 static ndpi_protocol_nf proto_null = {NDPI_PROTOCOL_UNKNOWN , NDPI_PROTOCOL_UNKNOWN};
+
+static unsigned short MAGIC_CT = 0xa55a;
 
 static unsigned long int ndpi_flow_limit=10000000; // 4.3Gb
 static unsigned long int ndpi_enable_flow=0;
@@ -348,6 +352,9 @@ static unsigned long  ndpi_p_ndpi_match=0;
 static unsigned long  ndpi_p_free_magic=0;
 
 static unsigned long  ndpi_btp_tm[20]={0,};
+
+module_param_named(set_magic_ct, MAGIC_CT, ushort, 0400);
+MODULE_PARM_DESC(set_magic_ct, "Set new MAGIC_CT value. Default: 0xa55a. Set 0 for random MAGIC_CT");
 
 module_param_named(xt_debug,   ndpi_log_debug, ulong, 0600);
 MODULE_PARM_DESC(xt_debug,"Debug level for xt_ndpi (bitmap).");
@@ -678,22 +685,22 @@ static inline void *nf_ct_ext_add_ndpi(struct nf_conn * ct)
 }
 #endif
 
-static inline struct nf_ct_ext_ndpi *nf_ct_get_ext_ndpi(struct nf_ct_ext_labels *ext_l) {
+static inline struct nf_ct_ext_ndpi *nf_ct_get_ext_ndpi(struct nf_ct_ext_labels *ext_l, unsigned short magic_ct) {
 	if(!ext_l) COUNTER(ndpi_p_ct_nolabel);
 	  else
-	    if(ext_l->magic != 0 && ext_l->magic != MAGIC_CT)
+	    if(ext_l->magic != 0 && ext_l->magic != magic_ct)
 		COUNTER(ndpi_p_free_magic);
-	return ext_l && ext_l->magic == MAGIC_CT ? ext_l->ndpi_ext:NULL;
+	return ext_l && ext_l->magic == magic_ct ? ext_l->ndpi_ext:NULL;
 }
 
-static inline struct nf_ct_ext_ndpi *nf_ct_ext_find_ndpi(const struct nf_conn * ct)
+static inline struct nf_ct_ext_ndpi *nf_ct_ext_find_ndpi(const struct nf_conn * ct, unsigned short magic_ct)
 {
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 	struct nf_ct_ext_labels *l = (struct nf_ct_ext_labels *)nf_ct_ext_find(ct,nf_ct_ext_id_ndpi);
 #else /* < 5.19 */
 	struct nf_ct_ext_labels *l = (struct nf_ct_ext_labels *)__nf_ct_ext_find(ct,nf_ct_ext_id_ndpi);
 #endif
-	return nf_ct_get_ext_ndpi(l);
+	return nf_ct_get_ext_ndpi(l, magic_ct);
 }
 
 static inline struct nf_ct_ext_labels *nf_ct_ext_find_label(const struct nf_conn * ct)
@@ -834,7 +841,7 @@ ct_ndpi_free_flow (struct ndpi_net *n,
 {
 	int delete = 0,x_flow=0,x_info=0,x_ndpiflow=0;
 
-	if(xchg(&ext_l->magic, 0) != MAGIC_CT)
+	if(xchg(&ext_l->magic, 0) != n->magic_ct)
 		COUNTER(ndpi_p_free_magic);
 	(void *)xchg(&ext_l->ndpi_ext, NULL);
 	smp_wmb();
@@ -872,8 +879,8 @@ ct_ndpi_free_flow (struct ndpi_net *n,
 static int
 ndpi_cleanup_flow (struct nf_conn * ct,void *data) {
 	struct nf_ct_ext_labels *ext_l = nf_ct_ext_find_label(ct);
-	struct nf_ct_ext_ndpi *ct_ndpi = nf_ct_get_ext_ndpi(ext_l);
 	struct ndpi_net *n = (struct ndpi_net *)data;
+	struct nf_ct_ext_ndpi *ct_ndpi = nf_ct_get_ext_ndpi(ext_l, n->magic_ct);
 
 	if(!ct_ndpi) return 1;
 
@@ -886,13 +893,10 @@ static void
 nf_ndpi_free_flow (struct nf_conn * ct)
 {
 	struct nf_ct_ext_labels *ext_l = nf_ct_ext_find_label(ct);
-
-	struct nf_ct_ext_ndpi *ct_ndpi = nf_ct_get_ext_ndpi(ext_l);
+	struct ndpi_net *n = ndpi_pernet(nf_ct_net(ct));
+	struct nf_ct_ext_ndpi *ct_ndpi = nf_ct_get_ext_ndpi(ext_l, n->magic_ct);
 
 	if(ct_ndpi) {
-	    struct ndpi_net *n;
-	    n = ndpi_pernet(nf_ct_net(ct));
-
 	    ct_ndpi_free_flow(n,ext_l,ct_ndpi,FLOW_FREE_NORM,ct);
 	}
 }
@@ -1654,7 +1658,7 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	{
 	    struct nf_ct_ext_labels *ct_label = nf_ct_ext_find_label(ct);
             if (info->untracked) {
-                    untracked = !ct_label || !ct_label->magic || ct_label->magic != MAGIC_CT;
+                    untracked = !ct_label || !ct_label->magic || ct_label->magic != n->magic_ct;
                     break;
             }
 #ifdef NF_CT_CUSTOM
@@ -1673,14 +1677,14 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 			ct_ndpi = kmem_cache_zalloc (ct_info_cache, GFP_ATOMIC);
 			if(ct_ndpi) {
 				(void *)xchg(&ct_label->ndpi_ext, ct_ndpi);
-				(void)xchg(&ct_label->magic, MAGIC_CT);
+				(void)xchg(&ct_label->magic, n->magic_ct);
 	    			ct_create = true;
 				ndpi_init_ct_struct(n,ct_ndpi,l4_proto,ct,is_ipv6,tm.tv_sec);
 				ct_ndpi->flinfo.ifidx = get_in_if(xt_in(par));
 				ct_ndpi->flinfo.ofidx = get_in_if(xt_out(par));
 			}
 		} else {
-			if(ct_label->magic == MAGIC_CT)
+			if(ct_label->magic == n->magic_ct)
 				ct_ndpi = ct_label->ndpi_ext;
                            else
 				COUNTER(ndpi_p_err_add_ndpi);
@@ -2279,7 +2283,7 @@ ndpi_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		if(ctinfo == IP_CT_UNTRACKED) break;
 #endif
 		ct_dir = CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL;
-		ct_ndpi = nf_ct_ext_find_ndpi(ct);
+		ct_ndpi = nf_ct_ext_find_ndpi(ct, n->magic_ct);
 		if(_DBG_TRACE_PKT)
 		    packet_trace(skb,ct,ct_ndpi,ct_dir,"target    pkt",NULL);
 		if(!ct_ndpi) break;
@@ -2393,6 +2397,7 @@ static unsigned int ndpi_nat_do_chain(void *priv,
     enum ip_conntrack_info ctinfo = IP_CT_UNTRACKED;
     struct nf_ct_ext_ndpi *ct_ndpi=NULL;
     struct ndpi_cb *c_proto;
+	struct ndpi_net *n = NULL;
     const char *nat_info = "skip";
     int ct_dir = 0;
 
@@ -2416,8 +2421,11 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 #else
 	if(ctinfo == IP_CT_UNTRACKED) break;
 #endif
+	n = ndpi_pernet(nf_ct_net(ct));
+	pr_info("ndpi_pernet result: %p", n);
+	if (n == NULL) break;
 	ct_dir = CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL;
-	ct_ndpi = nf_ct_ext_find_ndpi(ct);
+	ct_ndpi = nf_ct_ext_find_ndpi(ct, n->magic_ct);
 	if( !ct_ndpi ) break;
 	spin_lock_bh (&ct_ndpi->lock);
 	if(!test_nat_done(ct_ndpi)) {
@@ -2970,6 +2978,7 @@ PROC_OPS(nrisk_proc_fops, nrisk_proc_open,nrisk_proc_read,nrisk_proc_write,noop_
 PROC_OPS(ncfg_proc_fops,  ncfg_proc_open, ncfg_proc_read, ncfg_proc_write, noop_llseek,ncfg_proc_close);
 PROC_OPS(ninfo_proc_fops, ninfo_proc_open,ninfo_proc_read,ninfo_proc_write,noop_llseek,ninfo_proc_close);
 PROC_OPS(nflow_proc_fops, nflow_proc_open,nflow_proc_read,nflow_proc_write,nflow_proc_llseek,nflow_proc_close);
+PROC_OPS(nmagic_ct_proc_fops, nmagic_ct_proc_open,nmagic_ct_proc_read,nmagic_ct_proc_write,noop_llseek,nmagic_ct_proc_close);
 
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 PROC_OPS(ninfo6_proc_fops, ninfo_proc_open,ninfo6_proc_read,ninfo_proc_write,noop_llseek,ninfo_proc_close);
@@ -3090,6 +3099,8 @@ static void __net_exit ndpi_net_exit(struct net *net)
 			remove_proc_entry(proto_name, n->pde);
 		if(n->pe_flow)
 			remove_proc_entry(flow_name, n->pde);
+		if(n->pe_magic_ct)
+			remove_proc_entry(magic_ct_name, n->pde);
 #ifdef BT_ANNOUNCE
 		if(n->pe_ann)
 			remove_proc_entry(ann_name, n->pde);
@@ -3121,6 +3132,8 @@ static int __net_init ndpi_net_init(struct net *net)
 
 	n = ndpi_pernet(net);
 	snprintf(n->ns_name,sizeof(n->ns_name)-1,"ns%d",net_ns_id);
+
+	n->magic_ct = MAGIC_CT + net_ns_id;
 
 	rwlock_init(&n->ndpi_busy);
 	atomic_set(&n->ndpi_ready,0);
@@ -3234,6 +3247,7 @@ static int __net_init ndpi_net_init(struct net *net)
 
 		n->pe_info = NULL;
 		n->pe_flow = NULL;
+		n->pe_magic_ct = NULL;
 		n->pe_proto = NULL;
 #ifdef BT_ANNOUNCE
 		n->pe_ann = NULL;
@@ -3318,6 +3332,13 @@ static int __net_init ndpi_net_init(struct net *net)
 			pr_err("xt_ndpi: cant create net/%s/%s\n",dir_name,hostdef_name);
 			break;
 		}
+
+		n->pe_magic_ct = proc_create_data(magic_ct_name, S_IRUGO | S_IWUSR,
+					 n->pde, &nmagic_ct_proc_fops, n);
+		if(!n->pe_magic_ct) {
+			pr_err("xt_ndpi: cant create net/%s/%s\n",dir_name,magic_ct_name);
+			break;
+		}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
 		init_timer(&n->gc);
 		n->gc.data = (unsigned long)n;
@@ -3381,7 +3402,8 @@ static int __net_init ndpi_net_init(struct net *net)
 		remove_proc_entry(info_name,n->pde);
 	if(n->pe_flow)
 		remove_proc_entry(flow_name,n->pde);
-
+	if(n->pe_magic_ct)
+		remove_proc_entry(magic_ct_name,n->pde);
 	PROC_REMOVE(n->pde,net);
 	if(n->risk_names)
 		kfree(n->risk_names);
@@ -3444,9 +3466,33 @@ static struct pernet_operations ndpi_net_ops = {
         .size   = sizeof(struct ndpi_net),
 };
 
+static inline
+void ndpi_gen_magic_ct(void) {
+	unsigned short new_magic_ct;
+	do {
+		get_random_bytes(&new_magic_ct, sizeof(new_magic_ct));
+	} while(new_magic_ct == 0);
+
+	MAGIC_CT = new_magic_ct;
+}
+
+static void ndpi_conf_magic_ct(void) {
+	pr_info("Note: indentical MAGIC_CT on clusters with conntrackd sync cause kernel panic\n"
+			"Different MAGIC_CT disables nDPI conntrack syncronization\n");
+	if (MAGIC_CT == 0) {
+		pr_info("set_magic_ct is zero. Generate new MAGIC_CT value\n");
+		ndpi_gen_magic_ct();
+	}
+
+	pr_info("Current MAGIC_CT value is %d\n", MAGIC_CT);
+}
+
+
 static int __init ndpi_mt_init(void)
 {
         int ret;
+
+	ndpi_conf_magic_ct();
 
 	ndpi_size_flow_struct = ndpi_detection_get_sizeof_ndpi_flow_struct();
 	set_ndpi_malloc(malloc_wrapper);
@@ -3640,5 +3686,6 @@ MODULE_INFO(livepatch, "Y");
 #include "ndpi_proc_flow.c" 
 #include "ndpi_proc_hostdef.c"
 #include "ndpi_proc_ipdef.c"
+#include "ndpi_proc_magic_ct.c"
 #include "../libre/regexp.c"
 #include "../../src/lib/ndpi_main.c"

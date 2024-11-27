@@ -30,7 +30,7 @@
 #include "ndpi_private.h"
 #include "ahocorasick.h"
 
-#define JA4R_DECIMAL 1 
+//#define JA4R_DECIMAL 1 
 
 static void ndpi_search_tls_wrapper(struct ndpi_detection_module_struct *ndpi_struct,
 				    struct ndpi_flow_struct *flow);
@@ -280,6 +280,7 @@ static int check_set(struct ndpi_detection_module_struct* ndpi_struct,
   return 0;
 }
 #endif
+
 static int tls_obfuscated_heur_search(struct ndpi_detection_module_struct* ndpi_struct,
                                       struct ndpi_flow_struct* flow) {
   struct ndpi_packet_struct* packet = ndpi_get_packet_struct(ndpi_struct);
@@ -421,6 +422,20 @@ static int tls_obfuscated_heur_search(struct ndpi_detection_module_struct* ndpi_
 #endif	    
       {
         /* Heuristic match */
+
+        /* Export the matching set as metadata */
+        flow->tls_quic.obfuscated_heur_matching_set = ndpi_calloc(1, sizeof(struct ndpi_tls_obfuscated_heuristic_matching_set));
+        if(flow->tls_quic.obfuscated_heur_matching_set) {
+          flow->tls_quic.obfuscated_heur_matching_set->bytes[0] = set->bytes[0];
+          flow->tls_quic.obfuscated_heur_matching_set->bytes[1] = set->bytes[1];
+          flow->tls_quic.obfuscated_heur_matching_set->bytes[2] = set->bytes[2];
+          flow->tls_quic.obfuscated_heur_matching_set->bytes[3] = set->bytes[3];
+          flow->tls_quic.obfuscated_heur_matching_set->pkts[0] = set->pkts[0];
+          flow->tls_quic.obfuscated_heur_matching_set->pkts[1] = set->pkts[1];
+          flow->tls_quic.obfuscated_heur_matching_set->pkts[2] = set->pkts[2];
+          flow->tls_quic.obfuscated_heur_matching_set->pkts[3] = set->pkts[3];
+        }
+
         return 2; /* Found */
       } else {
         /* Close this set and open a new one... */
@@ -439,9 +454,10 @@ static int tls_obfuscated_heur_search(struct ndpi_detection_module_struct* ndpi_
   return 0; /* Continue */
 }
 
+/* **************************************** */
+
 static int tls_obfuscated_heur_search_again(struct ndpi_detection_module_struct* ndpi_struct,
-                                            struct ndpi_flow_struct* flow)
-{
+					    struct ndpi_flow_struct* flow) {
   int rc;
 
   NDPI_LOG_DBG2(ndpi_struct, "TLS-Obf-Heur: extra dissection\n");
@@ -1368,7 +1384,7 @@ static void ndpi_looks_like_tls(struct ndpi_detection_module_struct *ndpi_struct
 
 /* **************************************** */
 
-static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 			       struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int8_t something_went_wrong = 0;
@@ -1427,7 +1443,6 @@ static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
       break;
     }
-
 
 #ifdef DEBUG_TLS_MEMORY
     printf("[TLS Mem] Processing %u bytes message\n", len);
@@ -1943,10 +1958,18 @@ static void ndpi_int_tls_add_connection(struct ndpi_detection_module_struct *ndp
   printf("[TLS] %s()\n", __FUNCTION__);
 #endif
 
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_RDP) {
+    /* RDP over TLS */
+    ndpi_set_detected_protocol(ndpi_struct, flow,
+			       NDPI_PROTOCOL_RDP, NDPI_PROTOCOL_TLS, NDPI_CONFIDENCE_DPI);
+    return;
+  }
+  
   if((flow->detected_protocol_stack[0] != NDPI_PROTOCOL_UNKNOWN) ||
      (flow->detected_protocol_stack[1] != NDPI_PROTOCOL_UNKNOWN)) {
     if(!flow->extra_packets_func)
       tlsInitExtraPacketProcessing(ndpi_struct, flow);
+    
     return;
   }
 
@@ -2116,7 +2139,9 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
     _
     (sha256 hash of the list of cipher hex codes sorted in hex order, truncated to 12 characters)
     _
-    (sha256 hash of (the list of extension hex codes sorted in hex order)_(the list of signature algorithms), truncated to 12 characters)
+    (sha256 hash of (the list of extension hex codes sorted in hex order)
+    _
+    (the list of signature algorithms), truncated to 12 characters)
   */
   ja_str[0] = is_dtls ? 'd' : ((quic_version != 0) ? 'q' : 't');
 
@@ -2189,7 +2214,7 @@ static void ndpi_compute_ja4(struct ndpi_detection_module_struct *ndpi_struct,
   rc = ndpi_snprintf(&ja_str[ja_str_len], ja_max_len - ja_str_len, "%02u%02u%c%c_",
 		     ja->client.num_ciphers, ja->client.num_tls_extensions,
 		     (ja->client.alpn[0] == '\0') ? '0' : ja->client.alpn[0],
-		     (ja->client.alpn[0] == '\0') ? '0' : ja->client.alpn[1]);
+		     (ja->client.alpn[1] == '\0') ? '0' : ja->client.alpn[1]);
   if((rc > 0) && (ja_str_len + rc < JA_STR_LEN)) ja_str_len += rc;
 
   /* Sort ciphers and extensions */
@@ -2591,7 +2616,7 @@ static int _processClientServerHello(struct ndpi_detection_module_struct *ndpi_s
       ja->client.num_signature_algorithms = 0;
       ja->client.num_supported_versions = 0;
       ja->client.signature_algorithms_str[0] = '\0';
-      ja->client.alpn[0] = '\0';
+      ja->client.alpn[0] = '\0', ja->client.alpn[1] = '\0' /* used by JA4 */;;
 
       flow->protos.tls_quic.ssl_version = ja->client.tls_handshake_version = tls_version;
       if(flow->protos.tls_quic.ssl_version < 0x0303) /* < TLSv1.2 */ {

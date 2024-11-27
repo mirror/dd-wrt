@@ -172,6 +172,12 @@ enum info_type {
     INFO_NATPMP,
 };
 
+typedef struct {
+  ndpi_address_port *aps;
+  unsigned int num_aps;
+  unsigned int num_aps_allocated;
+} ndpi_address_port_list;
+
 // flow tracking
 typedef struct ndpi_flow_info {
   u_int32_t flow_id;
@@ -212,6 +218,8 @@ typedef struct ndpi_flow_info {
   struct ndpi_fpc_info fpc;
   u_int16_t num_dissector_calls;
   u_int16_t dpi_packets;
+  u_int8_t monitoring_state;
+  u_int16_t num_packets_before_monitoring;
 
   // Flow data analysis
   pkt_timeval src2dst_last_pkt_time, dst2src_last_pkt_time, flow_last_pkt_time;
@@ -276,7 +284,7 @@ typedef struct ndpi_flow_info {
       client_hassh[33], server_hassh[33], *server_names,
       *advertised_alpns, *negotiated_alpn, *tls_supported_versions,
       *tls_issuerDN, *tls_subjectDN,
-      ja3_client[33], ja3_server[33], ja4_client[37],
+      ja3_client[33], ja3_server[33], ja4_client[37], *ja4_client_raw,
       sha1_cert_fingerprint[20];
     u_int8_t sha1_cert_fingerprint_set;
     struct tls_heuristics browser_heuristics;
@@ -295,16 +303,18 @@ typedef struct ndpi_flow_info {
     ndpi_cipher_weakness client_unsafe_cipher, server_unsafe_cipher;
 
     u_int32_t quic_version;
+
+    struct ndpi_tls_obfuscated_heuristic_matching_set obfuscated_heur_matching_set;
   } ssh_tls;
 
   struct {
     char url[256], request_content_type[64], content_type[64],
-      user_agent[256], server[128], nat_ip[32], filename[256];
+      user_agent[256], server[128], nat_ip[32], username[64], password[64], filename[256];
     u_int response_status_code;
   } http;
 
   struct {
-    ndpi_address_port mapped_address, peer_address,
+    ndpi_address_port_list mapped_address, peer_address,
       relayed_address, response_origin, other_address;
   } stun;
   
@@ -319,7 +329,7 @@ typedef struct ndpi_flow_info {
   ndpi_multimedia_flow_type multimedia_flow_type;
   
   void *src_id, *dst_id;
-
+  char *tcp_fingerprint;
   struct ndpi_entropy *entropy;
   struct ndpi_entropy *last_entropy;
 

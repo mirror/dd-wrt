@@ -76,11 +76,17 @@ void *ndpi_malloc(size_t size) {
 
 void *ndpi_calloc(unsigned long count, size_t size) {
   size_t len = count * size;
-  void *p = ndpi_malloc(len);
+#ifndef __KERNEL__
+  void *p = _ndpi_malloc ? _ndpi_malloc(len) : malloc(len);
+#else
+  void *p = _ndpi_malloc(len);
+#endif
 
   if(p) {
     memset(p, 0, len);
-    atomic_fetch_add(size, &ndpi_tot_allocated_memory);
+#ifndef __KERNEL__
+    __sync_fetch_and_add(&ndpi_tot_allocated_memory, len);
+#endif
   }
 
   return(p);

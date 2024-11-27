@@ -229,6 +229,7 @@ struct ndpi_detection_module_config_struct {
   int guess_ip_before_port;
   int use_client_ip_in_guess;
   int use_client_port_in_guess;
+  int tcp_fingerprint_enabled;
   
   char filename_config[CFG_MAX_LEN];
 
@@ -311,6 +312,7 @@ struct ndpi_detection_module_config_struct {
 
   NDPI_PROTOCOL_BITMASK debug_bitmask;
   NDPI_PROTOCOL_BITMASK ip_list_bitmask;
+  NDPI_PROTOCOL_BITMASK monitoring;
 
   int flow_risk_lists_enabled;
   int risk_anonymous_subscriber_list_icloudprivaterelay_enabled;
@@ -687,6 +689,8 @@ NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_st
 			ndpi_ip_addr_t ip_addr, char *hostname,
 			u_int32_t epoch_now, u_int32_t ttl);
 
+NDPI_STATIC int is_monitoring_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
+
 /* TLS */
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow, uint32_t quic_version);
@@ -840,6 +844,7 @@ NDPI_STATIC void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_snmp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_socrates_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_socks_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_sonos_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_spotify_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_ssh_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_tls_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -1012,6 +1017,7 @@ NDPI_STATIC void init_atg_dissector(struct ndpi_detection_module_struct *ndpi_st
 NDPI_STATIC void init_trdp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_lustre_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_dingtalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_paltalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

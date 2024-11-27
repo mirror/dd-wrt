@@ -77,6 +77,7 @@ static int is_subclassification_real_by_proto(u_int16_t proto)
   if(proto == NDPI_PROTOCOL_UNKNOWN ||
      proto == NDPI_PROTOCOL_STUN ||
      proto == NDPI_PROTOCOL_RTP ||
+     proto == NDPI_PROTOCOL_RTCP ||
      proto == NDPI_PROTOCOL_SRTP ||
      proto == NDPI_PROTOCOL_DTLS)
     return 0;
@@ -187,7 +188,8 @@ static void add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_length,
-                                    int off, u_int16_t real_len,ndpi_address_port *ap)
+                                    int off, u_int16_t real_len, ndpi_address_port *ap,
+                                    ndpi_address_port *ap_monit)
 {
   if(off + 4 + real_len <= payload_length &&
      (real_len == 8 || real_len == 20)) {
@@ -198,9 +200,18 @@ static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_l
       u_int16_t port = ntohs(*((u_int16_t*)&payload[off+6]));
       u_int32_t ip   = ntohl(*((u_int32_t*)&payload[off+8]));
 
-      ap->port = port;
-      ap->address.v4 = htonl(ip);
-      ap->is_ipv6 = 0;
+      /* Only the first attribute ever in the flow */
+      if(ap->port == 0) {
+        ap->port = port;
+        ap->address.v4 = htonl(ip);
+        ap->is_ipv6 = 0;
+      }
+
+      if(ap_monit) {
+        ap_monit->port = port;
+        ap_monit->address.v4 = htonl(ip);
+        ap_monit->is_ipv6 = 0;
+      }
     } else if(protocol_family == 0x02 /* IPv6 */ &&
               real_len == 20) {
       u_int16_t port = ntohs(*((u_int16_t*)&payload[off+6]));
@@ -211,9 +222,18 @@ static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_l
       ip[2] = *((u_int32_t *)&payload[off + 16]);
       ip[3] = *((u_int32_t *)&payload[off + 20]);
 
-      ap->port = port;
-      memcpy(&ap->address, &ip, 16);
-      ap->is_ipv6 = 1;
+      /* Only the first attribute ever in the flow */
+      if(ap->port == 0) {
+        ap->port = port;
+        memcpy(&ap->address, &ip, 16);
+        ap->is_ipv6 = 1;
+      }
+
+      if(ap_monit) {
+        ap_monit->port = port;
+        memcpy(&ap_monit->address, &ip, 16);
+        ap_monit->is_ipv6 = 1;
+      }
     }
   }
 }
@@ -221,7 +241,8 @@ static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_l
 static void parse_xor_ip_port_attribute(struct ndpi_detection_module_struct *ndpi_struct,
                                         struct ndpi_flow_struct *flow,
                                         const u_int8_t *payload, u_int16_t payload_length,
-                                        int off, u_int16_t real_len,ndpi_address_port *ap,
+                                        int off, u_int16_t real_len,
+                                        ndpi_address_port *ap, ndpi_address_port *ap_monit,
                                         u_int32_t transaction_id[3], u_int32_t magic_cookie,
                                         int add_to_cache)
 {
@@ -241,9 +262,18 @@ static void parse_xor_ip_port_attribute(struct ndpi_detection_module_struct *ndp
       port = ntohs(*((u_int16_t *)&payload[off + 6])) ^ (magic_cookie >> 16);
       ip = *((u_int32_t *)&payload[off + 8]) ^ htonl(magic_cookie);
 
-      ap->port = port;
-      ap->address.v4 = ip;
-      ap->is_ipv6 = 0;
+      /* Only the first attribute ever in the flow */
+      if(ap->port == 0) {
+        ap->port = port;
+        ap->address.v4 = ip;
+        ap->is_ipv6 = 0;
+      }
+
+      if(ap_monit) {
+          ap_monit->port = port;
+          ap_monit->address.v4 = ip;
+          ap_monit->is_ipv6 = 0;
+      }
 
       if(add_to_cache) {
         NDPI_LOG_DBG(ndpi_struct, "Peer %s:%d [proto %d]\n",
@@ -273,9 +303,18 @@ static void parse_xor_ip_port_attribute(struct ndpi_detection_module_struct *ndp
       ip[2] = *((u_int32_t *)&payload[off + 16]) ^ htonl(transaction_id[1]);
       ip[3] = *((u_int32_t *)&payload[off + 20]) ^ htonl(transaction_id[2]);
 
-      ap->port = port;
-      memcpy(&ap->address, &ip, 16);
-      ap->is_ipv6 = 1;
+      /* Only the first attribute ever in the flow */
+      if(ap->port == 0) {
+        ap->port = port;
+        memcpy(&ap->address, &ip, 16);
+        ap->is_ipv6 = 1;
+      }
+
+      if(ap_monit) {
+        ap_monit->port = port;
+        memcpy(&ap_monit->address, &ip, 16);
+        ap_monit->is_ipv6 = 1;
+      }
 
       if(add_to_cache) {
         NDPI_LOG_DBG(ndpi_struct, "Peer %s:%d [proto %d]\n",
@@ -407,6 +446,10 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 
   /* STUN */
 
+  if(flow->monit == NULL &&
+     is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN))
+    flow->monit = ndpi_calloc(1, sizeof(struct ndpi_metadata_monitoring));
+
   if(msg_type == 0x0800 || msg_type == 0x0801 || msg_type == 0x0802) {
     *app_proto = NDPI_PROTOCOL_WHATSAPP_CALL;
     return 1;
@@ -440,19 +483,22 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
     switch(attribute) {
     case 0x0001: /* MAPPED-ADDRESS */
       if(ndpi_struct->cfg.stun_mapped_address_enabled) {
-        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.mapped_address);
+        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.mapped_address,
+                                flow->monit ? &flow->monit->protos.dtls_stun_rtp.mapped_address : NULL);
       }
       break;
 
     case 0x802b: /* RESPONSE-ORIGIN */
       if(ndpi_struct->cfg.stun_response_origin_enabled) {
-        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.response_origin);
+        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.response_origin,
+                                flow->monit ? &flow->monit->protos.dtls_stun_rtp.response_origin : NULL);
       }
       break;
 
     case 0x802c: /* OTHER-ADDRESS */
       if(ndpi_struct->cfg.stun_other_address_enabled) {
-        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.other_address);
+        parse_ip_port_attribute(payload, payload_length, off, real_len, &flow->stun.other_address,
+                                flow->monit ? &flow->monit->protos.dtls_stun_rtp.other_address : NULL);
       }
       break;
 
@@ -461,6 +507,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
         parse_xor_ip_port_attribute(ndpi_struct, flow,
                                     payload, payload_length, off, real_len,
                                     &flow->stun.peer_address,
+                                    flow->monit ? &flow->monit->protos.dtls_stun_rtp.peer_address : NULL,
                                     transaction_id, magic_cookie, 1);
       }
       break;
@@ -555,6 +602,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
         parse_xor_ip_port_attribute(ndpi_struct, flow,
                                     payload, payload_length, off, real_len,
                                     &flow->stun.mapped_address,
+                                    flow->monit ? &flow->monit->protos.dtls_stun_rtp.mapped_address : NULL,
                                     transaction_id, magic_cookie, 0);
       }
       break;
@@ -564,6 +612,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
         parse_xor_ip_port_attribute(ndpi_struct, flow,
                                     payload, payload_length, off, real_len,
                                     &flow->stun.relayed_address,
+                                    flow->monit ? &flow->monit->protos.dtls_stun_rtp.relayed_address : NULL,
                                     transaction_id, magic_cookie, 0);
       }
       break;
@@ -593,13 +642,24 @@ static int keep_extra_dissection_stun(struct ndpi_detection_module_struct *ndpi_
          * for the other protocols, we stop after we have all metadata (if enabled)
          * for some specific protocol, we might know that some attributes
            are never used
+
+     **After** extra dissection is ended, we might move to monitoring. Note that:
+     * classification doesn't change while in monitoring!
   */
+
+  if(flow->monitoring)
+    return 1;
+
+  if(flow->num_extra_packets_checked + 1 == flow->max_extra_packets_to_check) {
+    if(is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN)) {
+      NDPI_LOG_DBG(ndpi_struct, "Enabling monitoring (end extra dissection)\n");
+      flow->monitoring = 1;
+      return 1;
+    }
+  }
 
   if(!is_subclassification_real(flow))
     return 1;
-
-  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_ZOOM)
-    return 0;
 
   if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_TELEGRAM_VOIP &&
      ndpi_struct->cfg.stun_peer_address_enabled)
@@ -610,14 +670,37 @@ static int keep_extra_dissection_stun(struct ndpi_detection_module_struct *ndpi_
      (flow->stun.peer_address.port || !ndpi_struct->cfg.stun_peer_address_enabled) &&
      (flow->stun.relayed_address.port || !ndpi_struct->cfg.stun_relayed_address_enabled) &&
      (flow->stun.response_origin.port || !ndpi_struct->cfg.stun_response_origin_enabled) &&
-     (flow->stun.other_address.port || !ndpi_struct->cfg.stun_other_address_enabled))
+     (flow->stun.other_address.port || !ndpi_struct->cfg.stun_other_address_enabled)) {
+    if(is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN)) {
+      NDPI_LOG_DBG(ndpi_struct, "Enabling monitoring (found all metadata)\n");
+      flow->monitoring = 1;
+      return 1;
+    }
     return 0;
+  }
 
-  /* Exception WA: only relayed and mapped address attributes */
+  /* Exception WA: only relayed and mapped address attributes but we keep looking for RTP packets */
   if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_WHATSAPP_CALL &&
+     flow->detected_protocol_stack[1] == NDPI_PROTOCOL_SRTP &&
      (flow->stun.mapped_address.port || !ndpi_struct->cfg.stun_mapped_address_enabled) &&
-     (flow->stun.relayed_address.port || !ndpi_struct->cfg.stun_relayed_address_enabled))
+     (flow->stun.relayed_address.port || !ndpi_struct->cfg.stun_relayed_address_enabled)) {
+    if(is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN)) {
+      NDPI_LOG_DBG(ndpi_struct, "Enabling monitor (found all metadata; wa case)\n");
+      flow->monitoring = 1;
+      return 1;
+    }
     return 0;
+  }
+
+  /* Exception Zoom: no metadata */
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_ZOOM) {
+    if(is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN)) {
+      NDPI_LOG_DBG(ndpi_struct, "Enabling monitor (zoom case)\n");
+      flow->monitoring = 1;
+      return 1;
+    }
+    return 0;
+  }
 
   return 1;
 }
@@ -642,15 +725,17 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
   int first_dtls_pkt = 0;
   u_int16_t old_proto_stack[2] = {NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_UNKNOWN};
 
-  NDPI_LOG_DBG2(ndpi_struct, "Packet counter %d protos %d/%d\n", flow->packet_counter,
-                flow->detected_protocol_stack[0], flow->detected_protocol_stack[1]);
+  NDPI_LOG_DBG2(ndpi_struct, "Packet counter %d protos %d/%d Monitoring? %d\n",
+                flow->packet_counter,
+                flow->detected_protocol_stack[0], flow->detected_protocol_stack[1],
+                flow->monitoring);
 
   /* TODO: check TCP support. We need to pay some attention because:
      * multiple msg in the same TCP segment
      * same msg split across multiple segments */
 
   if(packet->payload_packet_len == 0)
-    return 1;
+    return keep_extra_dissection(ndpi_struct, flow);
 
   first_byte = packet->payload[0];
 
@@ -694,7 +779,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
       if(flow->tls_quic.certificate_processed == 1) {
         NDPI_LOG_DBG(ndpi_struct, "Interesting DTLS stuff already processed. Ignoring\n");
-      } else {
+      } else if(!flow->monitoring) {
         NDPI_LOG_DBG(ndpi_struct, "Switch to DTLS (%d/%d)\n",
                      flow->detected_protocol_stack[0], flow->detected_protocol_stack[1]);
 
@@ -746,6 +831,8 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
         NDPI_LOG_DBG(ndpi_struct, "(%d/%d)\n",
                      flow->detected_protocol_stack[0], flow->detected_protocol_stack[1]);
+      } else {
+        NDPI_LOG_DBG(ndpi_struct, "Skip DTLS packet because in monitoring\n");
       }
     }
   } else if(first_byte <= 79) {
@@ -815,7 +902,10 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
                 flow->detected_protocol_stack[1] == NDPI_PROTOCOL_UNKNOWN) {
         /* From RTP dissector; if we have RTP and RTCP multiplexed together (but not STUN, yet) we always
 	   use RTP, as we do in RTP dissector */
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_RTP, NDPI_CONFIDENCE_DPI);
+        if(!flow->monitoring)
+          ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_RTP, NDPI_CONFIDENCE_DPI);
+        else
+          NDPI_LOG_DBG(ndpi_struct, "Skip RTP packet because in monitoring\n");
       }
     } else if(rtp_rtcp == IS_RTCP) {
       NDPI_LOG_DBG(ndpi_struct, "RTCP\n");
@@ -900,6 +990,10 @@ static void ndpi_int_stun_add_connection(struct ndpi_detection_module_struct *nd
 					 u_int16_t master_proto) {
   ndpi_confidence_t confidence = NDPI_CONFIDENCE_DPI;
   u_int16_t new_app_proto;
+
+  /* In monitoring the classification can't change again */
+  if(flow->monitoring)
+    return;
 
   NDPI_LOG_DBG(ndpi_struct, "Wanting %d/%d\n", master_proto, app_proto);
 

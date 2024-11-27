@@ -112,6 +112,7 @@ extern "C" {
   NDPI_STATIC void * ndpi_calloc(unsigned long count, size_t size);
   NDPI_STATIC void * ndpi_realloc(void *ptr, size_t old_size, size_t new_size);
   NDPI_STATIC char * ndpi_strdup(const char *s);
+  NDPI_STATIC char * ndpi_strndup(const char *s, size_t size);
   NDPI_STATIC void   ndpi_free(void *ptr);
   NDPI_STATIC void * ndpi_flow_malloc(size_t size);
   NDPI_STATIC void   ndpi_flow_free(void *ptr);
@@ -1240,6 +1241,7 @@ extern "C" {
   NDPI_STATIC void ndpi_ptree_destroy(ndpi_ptree_t *tree);
 
   /* General purpose utilities */
+  NDPI_STATIC u_int8_t ndpi_is_public_ipv4(u_int32_t a /* host byte order */);
   NDPI_STATIC u_int64_t ndpi_htonll(u_int64_t v);
   NDPI_STATIC u_int64_t ndpi_ntohll(u_int64_t v);
   NDPI_STATIC u_int8_t ndpi_is_valid_protoId(u_int16_t protoId);
@@ -2347,6 +2349,7 @@ extern "C" {
   NDPI_STATIC int ndpi_snprintf(char * str, size_t size, char const * format, ...);
   NDPI_STATIC struct tm *ndpi_gmtime_r(const time_t *timep, struct tm *result);
   NDPI_STATIC char* ndpi_strrstr(const char *haystack, const char *needle);
+  NDPI_STATIC int ndpi_str_endswith(const char *s, const char *suffix);
 
   /* ******************************* */
 
@@ -2371,7 +2374,10 @@ extern "C" {
 			   u_int16_t encrypted_msg_len,
 			   u_int16_t *decrypted_msg_len,
 			   u_char decrypt_key[64]);
- 
+  /* ******************************* */
+
+  NDPI_STATIC const char* ndpi_print_os_hint(u_int8_t os_hint);
+
   /* ******************************* */
 
   NDPI_STATIC bool ndpi_serialize_flow_fingerprint(struct ndpi_detection_module_struct *ndpi_str,
@@ -2382,13 +2388,22 @@ extern "C" {
   /* Address cache API */
   NDPI_STATIC struct ndpi_address_cache* ndpi_init_address_cache(u_int32_t max_num_entries);
   NDPI_STATIC void ndpi_term_address_cache(struct ndpi_address_cache *cache);
-  NDPI_STATIC u_int ndpi_address_cache_flush_expired(struct ndpi_address_cache *cache, u_int32_t epoch_now);
+  NDPI_STATIC u_int32_t ndpi_address_cache_flush_expired(struct ndpi_address_cache *cache, u_int32_t epoch_now);
   NDPI_STATIC struct ndpi_address_cache_item* ndpi_address_cache_find(struct ndpi_address_cache *cache, ndpi_ip_addr_t ip_addr, u_int32_t epoch_now);
   NDPI_STATIC bool ndpi_address_cache_insert(struct ndpi_address_cache *cache, ndpi_ip_addr_t ip_addr, char *hostname,
 				 u_int32_t epoch_now, u_int32_t ttl);
 
-  NDPI_STATIC struct ndpi_address_cache_item* ndpi_cache_address_find(struct ndpi_detection_module_struct *ndpi_struct,
-							  ndpi_ip_addr_t ip_addr);
+  NDPI_STATIC bool ndpi_address_cache_dump(struct ndpi_address_cache *cache, char *path, u_int32_t epoch_now);
+  NDPI_STATIC u_int32_t ndpi_address_cache_restore(struct ndpi_address_cache *cache, char *path, u_int32_t epoch_now);
+
+
+  NDPI_STATIC bool ndpi_cache_address(struct ndpi_detection_module_struct *ndpi_struct,
+			ndpi_ip_addr_t ip_addr, char *hostname,
+			  u_int32_t epoch_now, u_int32_t ttl);
+  NDPI_STATIC struct ndpi_address_cache_item* ndpi_cache_address_find(struct ndpi_detection_module_struct *ndpi_struct, ndpi_ip_addr_t ip_addr);
+  NDPI_STATIC bool ndpi_cache_address_dump(struct ndpi_detection_module_struct *ndpi_struct, char *path, u_int32_t epoch_now);
+  NDPI_STATIC u_int32_t ndpi_cache_address_restore(struct ndpi_detection_module_struct *ndpi_struct, char *path, u_int32_t epoch_now);
+  NDPI_STATIC u_int32_t ndpi_cache_address_flush_expired(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t epoch_now);
   
   /* ******************************* */
   NDPI_STATIC const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx);

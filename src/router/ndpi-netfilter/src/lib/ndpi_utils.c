@@ -843,7 +843,6 @@ const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
 
 char* ndpi_ssl_version2str(char *buf, int buf_len,
                            u_int16_t version, u_int8_t *unknown_tls_version) {
-
   if(unknown_tls_version)
     *unknown_tls_version = 0;
 
@@ -940,11 +939,12 @@ static const unsigned char base64_table[65] =
  * base64_decode - Base64 decode
  * @src: Data to be decoded
  * @len: Length of the data to be decoded
- * @out_len: Pointer to output length variable
+ * @out_len: Pointer to output length variable (NULL character at the end is ignored)
  * Returns: Allocated buffer of out_len bytes of decoded data,
  * or %NULL on failure
  *
  * Caller is responsible for freeing the returned buffer.
+ * The returned buffer is always NULL terminated
  */
 NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *out_len) {
   u_char dtable[256], *out, *pos, block[4], tmp;
@@ -965,8 +965,8 @@ NDPI_STATIC u_char* ndpi_base64_decode(const u_char *src, size_t len, size_t *ou
   if(count == 0 || count % 4)
     return NULL;
 
-  olen = count / 4 * 3;
-  pos = out = ndpi_malloc(olen);
+  olen = count / 4 * 3 + 1; /* out is always NULL terminated */
+  pos = out = ndpi_calloc(1, olen);
   if(out == NULL)
     return NULL;
 
@@ -1274,6 +1274,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
   char buf[64];
   char const *host_server_name;
   char quic_version[16];
+  u_int i;
 
   if(flow == NULL) return(-1);
 
@@ -1281,9 +1282,10 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
   ndpi_serialize_proto(ndpi_struct, serializer, flow->risk, flow->confidence, l7_protocol);
 
   host_server_name = ndpi_get_flow_info(flow, &l7_protocol);
-  if (host_server_name != NULL)
-  {
+
+  if (host_server_name != NULL) {
     ndpi_serialize_string_string(serializer, "hostname", host_server_name);
+    ndpi_serialize_string_string(serializer, "domainame", ndpi_get_host_domain(ndpi_struct, host_server_name));
   }
 
   switch(l7_protocol.proto.master_protocol ? l7_protocol.proto.master_protocol : l7_protocol.proto.app_protocol) {
@@ -1336,8 +1338,25 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_string_uint32(serializer, "query_type",  flow->protos.dns.query_type);
     ndpi_serialize_string_uint32(serializer, "rsp_type",    flow->protos.dns.rsp_type);
 
-    inet_ntop(AF_INET, &flow->protos.dns.rsp_addr, buf, sizeof(buf));
-    ndpi_serialize_string_string(serializer, "rsp_addr",    buf);
+    ndpi_serialize_start_of_list(serializer, "rsp_addr");
+
+    for(i=0; i<flow->protos.dns.num_rsp_addr; i++) {
+      char buf[64];
+      u_int len;
+
+      if(flow->protos.dns.is_rsp_addr_ipv6[i] == 0) {
+	inet_ntop(AF_INET, &flow->protos.dns.rsp_addr[i].ipv4, buf, sizeof(buf));
+      } else {
+	inet_ntop(AF_INET6, &flow->protos.dns.rsp_addr[i].ipv6, buf, sizeof(buf));
+      }
+
+      len = strlen(buf);
+      snprintf(&buf[len], sizeof(buf)-len, ",ttl=%u", flow->protos.dns.rsp_addr_ttl[i]);
+      ndpi_serialize_string_string(serializer, "addr", buf);
+    }
+
+    ndpi_serialize_end_of_list(serializer);
+
     ndpi_serialize_end_of_block(serializer);
     break;
 
@@ -1665,7 +1684,11 @@ int ndpi_flow2json(struct ndpi_detection_module_struct *ndpi_struct,
 
   ndpi_serialize_string_uint32(serializer, "ip", ip_version);
 
-  ndpi_serialize_string_string(serializer, "proto", ndpi_get_ip_proto_name(l4_protocol, l4_proto_name, sizeof(l4_proto_name)));
+  if(flow->tcp.fingerprint)
+    ndpi_serialize_string_string(serializer, "tcp_fingerprint", flow->tcp.fingerprint);
+
+  ndpi_serialize_string_string(serializer, "proto",
+			       ndpi_get_ip_proto_name(l4_protocol, l4_proto_name, sizeof(l4_proto_name)));
 
   return(ndpi_dpi2json(ndpi_struct, flow, l7_protocol, serializer));
 }
@@ -3530,6 +3553,15 @@ char* ndpi_strrstr(const char *haystack, const char *needle) {
   return (char*) last_occurrence;
 }
 
+/* ************************************************************** */
+
+int ndpi_str_endswith(const char *s, const char *suffix) {
+  size_t slen = strlen(s);
+  size_t suffixlen = strlen(suffix);
+
+  return((slen >= suffixlen) && (!memcmp(&s[slen - suffixlen], suffix, suffixlen)));
+}
+
 /* ******************************************* */
 
 const char *ndpi_lru_cache_idx_to_name(lru_cache_type idx)
@@ -3749,7 +3781,7 @@ NDPI_STATIC u_int ndpi_hex2bin(u_char *out, u_int out_len, u_char* in, u_int in_
 
   if(((in_len+1) / 2) > out_len)
     return(0);
-	   
+
   for(i=0, j=0; i<in_len; i += 2, j++) {
     char buf[3];
 
@@ -3824,8 +3856,9 @@ char* ndpi_quick_encrypt(const char *cleartext_msg,
   encoded = ndpi_base64_encode((const unsigned char *)encoded_buf, encoded_len);
   ndpi_free(encoded_buf);
 
-  *encrypted_msg_len = strlen(encoded);
-  
+  if(encoded)
+    *encrypted_msg_len = strlen(encoded);
+
   return(encoded);
 }
 
@@ -3844,7 +3877,7 @@ char* ndpi_quick_decrypt(const char *encrypted_msg,
   struct AES_ctx ctx;
 
   *decrypted_msg_len = 0;
-  
+
   if(decoded_string == NULL) {
     /* Allocation failure */
     return(NULL);
@@ -3856,12 +3889,14 @@ char* ndpi_quick_decrypt(const char *encrypted_msg,
 
   if((content == NULL) || (content_len == 0)) {
     /* Base64 decoding error */
+    ndpi_free(decoded_string);
     ndpi_free(content);
     return(NULL);
   }
 
   if(allocated_decoded_string < (content_len+1)) {
     /* Buffer size failure */
+    ndpi_free(decoded_string);
     ndpi_free(content);
     return(NULL);
   }
@@ -3880,9 +3915,36 @@ char* ndpi_quick_decrypt(const char *encrypted_msg,
   }
 
   *decrypted_msg_len = content_len;
-    
+
   ndpi_free(content);
 
   return(decoded_string);
 }
 
+/* ************************************************************** */
+
+const char* ndpi_print_os_hint(u_int8_t os_hint) {
+  switch(os_hint) {
+  case os_hint_windows:          return("Windows");
+  case os_hint_macos:            return("macOS");
+  case os_hint_ios_ipad_os:      return("iOS/iPad");
+  case os_hint_android:          return("Android");
+  case os_hint_linux:            return("Linux");
+  case os_hint_freebsd:          return("FreeBSD");
+  }
+
+  return("Unknown");
+}
+
+/* ************************************************************** */
+
+char* ndpi_strndup(const char *s, size_t size) {
+  char *ret = (char*)ndpi_malloc(size+1);
+
+  if(ret == NULL) return(NULL);
+
+  memcpy(ret, s, size);
+  ret[size] = '\0';
+
+  return(ret);
+}

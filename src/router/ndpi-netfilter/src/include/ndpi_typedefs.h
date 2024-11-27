@@ -1319,6 +1319,39 @@ struct ndpi_risk_information {
   char *info;  
 };
 
+struct ndpi_metadata_monitoring {
+  union {
+    struct {
+      ndpi_address_port mapped_address;
+      ndpi_address_port peer_address;
+      ndpi_address_port relayed_address;
+      ndpi_address_port response_origin;
+      ndpi_address_port other_address;
+    } dtls_stun_rtp;
+  } protos;
+};
+
+enum operating_system_hint {
+  os_hint_unknown     = 0,
+  os_hint_windows     = 1,
+  os_hint_macos       = 2,
+  os_hint_ios_ipad_os = 3,
+  os_hint_android     = 4,
+  os_hint_linux       = 5,
+  os_hint_freebsd     = 6,
+  os_hint_unused2     = 7
+};
+
+struct os_fingerprint {
+  const char *fingerprint;
+  enum operating_system_hint os;
+};
+
+struct ndpi_tls_obfuscated_heuristic_matching_set {
+  u_int32_t bytes[4];
+  u_int32_t pkts[4];
+};
+
 struct ndpi_flow_struct {
   u_int16_t detected_protocol_stack[NDPI_PROTOCOL_SIZE];
 
@@ -1326,6 +1359,7 @@ struct ndpi_flow_struct {
   u_int16_t guessed_protocol_id, guessed_protocol_id_by_ip, guessed_category, guessed_header_category;
   u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
     init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1, skip_entropy_check: 1;
+  u_int8_t monitoring: 1, _pad:7;
 
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
@@ -1388,6 +1422,11 @@ struct ndpi_flow_struct {
   ndpi_risk risk, risk_shadow; /* Issues found with this flow [bitmask of ndpi_risk] */
   struct ndpi_risk_information risk_infos[MAX_NUM_RISK_INFOS]; /* String that contains information about the risks found */
   u_int8_t num_risk_infos;
+
+  struct {
+    char *fingerprint;
+    u_int8_t os_hint;
+  } tcp;
   
   /*
     This structure below will not not stay inside the protos
@@ -1399,12 +1438,13 @@ struct ndpi_flow_struct {
   struct {
     ndpi_http_method method;
     u_int8_t request_version; /* 0=1.0 and 1=1.1. Create an enum for this? */
-    u_int8_t websocket:1, _pad:7;
+    u_int8_t websocket:1, request_header_observed:1, first_payload_after_header_observed:1, is_form:1, _pad:4;
     u_int16_t response_status_code; /* 200, 404, etc. */
     char *url, *content_type /* response */, *request_content_type /* e.g. for POST */, *user_agent, *server;
     char *detected_os; /* Via HTTP/QUIC User-Agent */
     char *nat_ip; /* Via HTTP X-Forwarded-For */
     char *filename; /* Via HTTP Content-Disposition */
+    char *username, *password;
   } http;
 
   ndpi_multimedia_flow_type flow_multimedia_type;
@@ -1428,6 +1468,7 @@ struct ndpi_flow_struct {
     message_t message[2]; /* Directions */
     u_int8_t certificate_processed:1, change_cipher_from_client:1, change_cipher_from_server:1, from_opportunistic_tls:1, pad:4;
     struct tls_obfuscated_heuristic_state *obfuscated_heur_state;
+    struct ndpi_tls_obfuscated_heuristic_matching_set *obfuscated_heur_matching_set;
   } tls_quic; /* Used also by DTLS and POPS/IMAPS/SMTPS/FTPS */
 
   union {
@@ -1575,7 +1616,8 @@ struct ndpi_flow_struct {
     } slp;
   } protos;
 
-  /*** ALL protocol specific 64 bit variables here ***/
+  /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
+  struct ndpi_metadata_monitoring *monit;
 
   /* protocols which have marked a connection as this connection cannot be protocol XXX, multiple u_int64_t */
   NDPI_PROTOCOL_BITMASK excluded_protocol_bitmask;
@@ -1666,8 +1708,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
                "Size of the struct member protocols increased to more than 264 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1160,
-               "Size of the flow struct increased to more than 1160 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1216,
+               "Size of the flow struct increased to more than 1216 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1705,7 +1747,8 @@ typedef enum {
   ndpi_serialization_format_tlv,
   ndpi_serialization_format_json,
   ndpi_serialization_format_csv,
-  ndpi_serialization_format_multiline_json
+  ndpi_serialization_format_multiline_json, /* new-line separated records */
+  ndpi_serialization_format_inner_json /* no outer braces */
 } ndpi_serialization_format;
 
 /* Note:
@@ -1746,6 +1789,7 @@ typedef enum {
 #define NDPI_SERIALIZER_STATUS_LIST      (1 << 5)
 #define NDPI_SERIALIZER_STATUS_SOL       (1 << 6)
 #define NDPI_SERIALIZER_STATUS_HDR_DONE  (1 << 7)
+#define NDPI_SERIALIZER_STATUS_CEOB      (1 << 8)
 
 typedef struct {
   u_int32_t size_used;
@@ -1771,6 +1815,7 @@ typedef struct {
   char csv_separator[2];
   u_int8_t has_snapshot;
   u_int8_t multiline_json_array;
+  u_int8_t inner_json;
   ndpi_private_serializer_status snapshot;
 } ndpi_private_serializer;
 

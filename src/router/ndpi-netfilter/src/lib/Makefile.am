@@ -188,6 +188,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/openwire.c \
 		     protocols/ookla.c \
 		     protocols/oracle.c \
+		     protocols/paltalk.c \
 		     protocols/path_of_exile.c \
 		     protocols/pfcp.c \
 		     protocols/postgres.c \
@@ -224,6 +225,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/soap.c \
 		     protocols/socks45.c \
 		     protocols/softether.c \
+		     protocols/sonos.c \
 		     protocols/source_engine.c \
 		     protocols/spotify.c \
 		     protocols/ssdp.c \
