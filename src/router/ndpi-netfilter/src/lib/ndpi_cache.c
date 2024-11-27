@@ -348,7 +348,6 @@ bool ndpi_address_cache_insert(struct ndpi_address_cache *cache,
   u_int32_t hash_id = ndpi_quick_hash((const unsigned char *)&ip_addr, sizeof(ip_addr)) % cache->num_root_nodes;
   struct ndpi_address_cache_item *ret;
   u_int32_t epoch_valid_until;
-
   if(epoch_now == 0) {
   	struct timespec64 tp;
 	gettimeofday64(&tp,NULL);
@@ -401,7 +400,6 @@ bool ndpi_address_cache_insert(struct ndpi_address_cache *cache,
       }
     }
   }
-
   cache->num_entries++;
   return(true);
 }

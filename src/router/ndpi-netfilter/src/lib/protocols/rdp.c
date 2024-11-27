@@ -47,10 +47,10 @@ static void ndpi_int_rdp_add_connection(struct ndpi_detection_module_struct *ndp
 /* **************************************** */
 
 /* tls.c */
-extern int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_search_tls_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 			       struct ndpi_flow_struct *flow);
 
-int ndpi_search_tls_over_rdp(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_search_tls_over_rdp(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow) {
   const struct ndpi_packet_struct * const packet = ndpi_get_packet_struct(ndpi_struct);
   
