@@ -187,7 +187,8 @@ ifeq ($(CONFIG_MADWIFI),y)
 libnvram.so: nvram_linux.o backup.o
 else
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
-endif	@echo "[LD] $@"
+endif	
+	@echo "[LD] $@"
 	echo $(LDFLAGS) > libnvram_ld
 	@$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 	@$(AR) cr libnvram.a $^
