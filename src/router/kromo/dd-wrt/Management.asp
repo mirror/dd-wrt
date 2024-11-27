@@ -109,7 +109,13 @@ function submitcheck(F) {
 		if(!ChangePasswd(F))
 			return false;
 	}
-
+	if(F._fix_freq) {
+	    if (F._fix_freq.checked == true) {
+		    F.fix_freq.value = 1;
+	    } else {
+		    F.fix_freq.value = 0;
+	    }
+	}
 	if(F._remote_mgt_https) {
 		if(F.http_enable.checked == true && F.https_enable.checked == false) {
 			F._remote_mgt_https.checked == false;
@@ -226,6 +232,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="PasswdModify" value="<% nvem("http_passwd", "admin", "1", "0"); %>" />
 							<input type="hidden" name="remote_mgt_https" />
 							<input type="hidden" name="http_enable" />
+							<input type="hidden" name="fix_freq" />
 							<input type="hidden" name="info_passwd" />
 							<input type="hidden" name="https_enable" />
 							<h2><% tran("management.h2"); %></h2>
