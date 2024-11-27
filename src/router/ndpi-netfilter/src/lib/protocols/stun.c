@@ -735,7 +735,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
      * same msg split across multiple segments */
 
   if(packet->payload_packet_len == 0)
-    return keep_extra_dissection(ndpi_struct, flow);
+    return keep_extra_dissection_stun(ndpi_struct, flow);
 
   first_byte = packet->payload[0];
 

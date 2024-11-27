@@ -507,3 +507,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/dingtalk.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/sonos.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/paltalk.c"
+#undef NDPI_CURRENT_PROTO

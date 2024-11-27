@@ -2173,10 +2173,13 @@ static unsigned int seq_print_ndpi(struct seq_file *s,
 
        struct nf_ct_ext_ndpi *ct_ndpi;
        char res_str[64];
+       struct ndpi_net *n = NULL;
        ndpi_mod_str_t *ndpi_str;
        if(dir != IP_CT_DIR_REPLY) return 0;
+        n = ndpi_pernet(nf_ct_net(ct));
+	if (n == NULL) return 0;
 
-       ct_ndpi = nf_ct_ext_find_ndpi(ct);
+       ct_ndpi = nf_ct_ext_find_ndpi(ct, n->magic_ct);
        ndpi_str = ndpi_pernet(nf_ct_net(ct))->ndpi_struct;
        if(ct_ndpi && (ct_ndpi->proto.app_protocol || ct_ndpi->proto.master_protocol))
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
