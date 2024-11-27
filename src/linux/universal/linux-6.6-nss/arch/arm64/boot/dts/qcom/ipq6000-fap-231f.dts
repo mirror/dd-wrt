@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include "ipq6018-512m.dtsi"
+#include "ipq6018.dtsi"
 #include "ipq6018-thermal.dtsi"
 #include "ipq6018-cp-cpu.dtsi"
 #include "ipq6018-ess.dtsi"
@@ -22,7 +22,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " console=ttyMSM0,115200n8 mitigations=off root=/dev/ubiblock0_1";
+		bootargs-override = "console=null ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait mitigations=off root=/dev/ubiblock0_1
 	};
 
 	keys {
