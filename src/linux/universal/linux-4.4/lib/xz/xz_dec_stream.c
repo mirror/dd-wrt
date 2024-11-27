@@ -14,6 +14,13 @@
 #else
 #	define IS_CRC64(check_type) false
 #endif
+#ifndef fallthrough
+#if __has_attribute(__fallthrough__)
+# define fallthrough                    __attribute__((__fallthrough__))
+#else
+# define fallthrough                    do {} while (0)  /* fallthrough */
+#endif
+#endif
 
 /* Hash used to validate the Index field */
 struct xz_dec_hash {

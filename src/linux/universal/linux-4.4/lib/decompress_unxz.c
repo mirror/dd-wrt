@@ -119,19 +119,35 @@
  */
 #define XZ_INTERNAL_CRC32 1
 
+#ifdef __powerpc__
+static inline void put_unaligned_be32(u32 val, void *p)
+{
+	*((u32 *)p) = val;
+}
+
+static inline u32 get_unaligned_be32(const void *p)
+{
+	return *(u32 *)p;
+}
+
+
+#endif
 /*
  * For boot time use, we enable only the BCJ filter of the current
  * architecture or none if no BCJ filter is available for the architecture.
  */
+#ifndef __powerpc__
 #	define XZ_DEC_X86
+#endif
 #	define XZ_DEC_POWERPC
 #	define XZ_DEC_ARMTHUMB
 #	define XZ_DEC_ARM
+#ifndef __powerpc__
 #	define XZ_DEC_ARM64
 #	define XZ_DEC_RISCV
+#endif
 #	define XZ_DEC_SPARC
 #	define XZ_DEC_DELTA
-
 /*
  * This will get the basic headers so that memeq() and others
  * can be defined.
