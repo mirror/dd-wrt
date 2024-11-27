@@ -492,6 +492,8 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"windscribe",
 	"sonos",
 	"dingtalk",
+	"paltalk",
+	"naver",
 	NULL,
 };
 
