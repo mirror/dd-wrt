@@ -397,7 +397,7 @@ action_GetGenericPortMappingEntry
     
     map = upnp_portmap_with_index(context, ARG_UI2(in_NewPortMappingIndex));
     if (!map) {
-        return SOAP_INVALID_ARGS;
+        return SOAP_SPECIFIED_ARRAY_INDEX_INVALID;
     }
     strcpy(ARG_STR(out_NewRemoteHost), map->remote_host);
     strcpy(ARG_STR(out_NewProtocol), map->protocol);
@@ -457,7 +457,7 @@ action_GetSpecificPortMappingEntry
 							ARG_STR(in_NewProtocol));
 	
 	if (!map) {
-		return SOAP_INVALID_ARGS;
+		return SOAP_NO_SUCH_ENTRY_IN_ARRAY;
 	}
     
 	strcpy(ARG_STR(out_NewInternalClient), map->internal_client);
