@@ -54,9 +54,9 @@ BUILD_LTO_INFO;
  * They are compiled with __weak first, and without __weak later.
  */
 
-struct uts_namespace init_uts_ns __weak;
-const char linux_banner[] __weak;
+extern  struct uts_namespace init_uts_ns;
+extern const char linux_banner[];
 
-#include "version-timestamp.c"
+//#include "version-timestamp.c"
 
 EXPORT_SYMBOL_GPL(init_uts_ns);
