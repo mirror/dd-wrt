@@ -301,6 +301,7 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 	struct menucontext *m = init_menu(wp);
 	int i, j;
 
+	websWrite (wp, "<script type=\"text/javascript\" src=\"snow.js\"></script>\n");
 	websWrite(wp, "<div id=\"menu\">\n");
 	websWrite(wp, "<div id=\"menuMain\">\n");
 	websWrite(wp, "<ul id=\"menuMainList\">\n");
