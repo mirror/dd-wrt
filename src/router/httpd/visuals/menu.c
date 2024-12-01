@@ -300,8 +300,10 @@ EJ_VISIBLE void ej_do_menu(webs_t wp, int argc, char_t **argv)
 
 	struct menucontext *m = init_menu(wp);
 	int i, j;
-
-	websWrite (wp, "<script type=\"text/javascript\" src=\"snow.js\"></script>\n");
+	time_t t = time(NULL);
+	struct tm *local = localtime(&t);
+	if (local->tm_mon == 12 && local->tm_mday >= 24 && local->tm_mday <= 31)
+		websWrite(wp, "<script type=\"text/javascript\" src=\"snow.js\"></script>\n");
 	websWrite(wp, "<div id=\"menu\">\n");
 	websWrite(wp, "<div id=\"menuMain\">\n");
 	websWrite(wp, "<ul id=\"menuMainList\">\n");
