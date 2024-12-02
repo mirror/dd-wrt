@@ -1,0 +1,79 @@
+This repository includes microcode container files for family 15h, 16h,
+17h, and 19h AMD CPUs. Microcode patches for families earlier than 15h are
+included in the microcode_amd.bin microcode container file. The microcode
+patches included in an AMD CPU microcode container file can be listed using
+the script in the following git repository:
+https://github.com/AMDESE/amd_ucode_info
+
+The microcode patches included in the container files in this directory are
+listed below:
+
+Microcode patches in microcode_amd.bin:
+  Family=0x10 Model=0x02 Stepping=0x02: Patch=0x01000083 Length=960 bytes
+  Family=0x10 Model=0x02 Stepping=0x0a: Patch=0x01000084 Length=960 bytes
+  Family=0x10 Model=0x06 Stepping=0x02: Patch=0x010000c7 Length=960 bytes
+  Family=0x10 Model=0x05 Stepping=0x03: Patch=0x010000c8 Length=960 bytes
+  Family=0x10 Model=0x09 Stepping=0x01: Patch=0x010000d9 Length=960 bytes
+  Family=0x10 Model=0x08 Stepping=0x00: Patch=0x010000da Length=960 bytes
+  Family=0x10 Model=0x05 Stepping=0x02: Patch=0x010000db Length=960 bytes
+  Family=0x10 Model=0x0a Stepping=0x00: Patch=0x010000dc Length=960 bytes
+  Family=0x11 Model=0x03 Stepping=0x01: Patch=0x02000032 Length=512 bytes
+  Family=0x12 Model=0x01 Stepping=0x00: Patch=0x03000027 Length=960 bytes
+  Family=0x14 Model=0x01 Stepping=0x00: Patch=0x05000029 Length=1568 bytes
+  Family=0x14 Model=0x02 Stepping=0x00: Patch=0x05000119 Length=1568 bytes
+
+Microcode patches in microcode_amd_fam15h.bin:
+  Family=0x15 Model=0x01 Stepping=0x02: Patch=0x0600063e Length=2592 bytes
+  Family=0x15 Model=0x02 Stepping=0x00: Patch=0x06000852 Length=2592 bytes
+  Family=0x15 Model=0x10 Stepping=0x01: Patch=0x06001119 Length=2592 bytes
+
+Microcode patches in microcode_amd_fam16h.bin:
+  Family=0x16 Model=0x00 Stepping=0x01: Patch=0x0700010f Length=3458 bytes
+
+
+Microcode patches in microcode_amd_fam17h.bin:
+  Family=0x17 Model=0x71 Stepping=0x00: Patch=0x08701034 Length=3200 bytes
+  Family=0x17 Model=0x01 Stepping=0x02: Patch=0x0800126f Length=3200 bytes
+  Family=0x17 Model=0x31 Stepping=0x00: Patch=0x0830107c Length=3200 bytes
+  Family=0x17 Model=0x60 Stepping=0x01: Patch=0x0860010d Length=3200 bytes
+  Family=0x17 Model=0x08 Stepping=0x02: Patch=0x0800820d Length=3200 bytes
+  Family=0x17 Model=0xa0 Stepping=0x00: Patch=0x08a0000a Length=3200 bytes
+  Family=0x17 Model=0x68 Stepping=0x01: Patch=0x08608108 Length=3200 bytes
+
+Microcode patches in microcode_amd_fam19h.bin:
+  Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a00107a Length=5568 bytes
+  Family=0x19 Model=0x7c Stepping=0x00: Patch=0x0a70c005 Length=5568 bytes
+  Family=0x19 Model=0x75 Stepping=0x02: Patch=0x0a705206 Length=5568 bytes
+  Family=0x19 Model=0x08 Stepping=0x02: Patch=0x0a00820c Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a101248 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00215 Length=5568 bytes
+  Family=0x19 Model=0x44 Stepping=0x01: Patch=0x0a404107 Length=5568 bytes
+  Family=0x19 Model=0x78 Stepping=0x00: Patch=0x0a708007 Length=5568 bytes
+  Family=0x19 Model=0x21 Stepping=0x00: Patch=0x0a20102d Length=5568 bytes
+  Family=0x19 Model=0x74 Stepping=0x01: Patch=0x0a704107 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001238 Length=5568 bytes
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a101148 Length=5568 bytes
+  Family=0x19 Model=0x61 Stepping=0x02: Patch=0x0a601209 Length=5568 bytes
+  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d5 Length=5568 bytes
+  Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116 Length=5568 bytes
+  Family=0x19 Model=0x18 Stepping=0x01: Patch=0x0a108108 Length=5568 bytes
+  Family=0x19 Model=0x50 Stepping=0x00: Patch=0x0a500011 Length=5568 bytes
+  Family=0x19 Model=0x21 Stepping=0x02: Patch=0x0a201210 Length=5568 bytes
+
+NOTE: For Genoa (Family=0x19 Model=0x11) and Bergamo (Family=0x19 Model=0xa0),
+either AGESA version >= 1.0.0.8 OR a kernel with the following commit is
+required:
+a32b0f0db3f3 ("x86/microcode/AMD: Load late on both threads too")
+
+When late loading the patches for Genoa or Bergamo, there may be one spurious
+NMI observed per physical core. These NMIs are benign and don't cause any
+functional issue but will result in kernel messages being logged.
+
+NOTE: When running 5.19+ kernels on Genoa or Bergamo systems, some microcode
+patches are known to trigger warnings in the PMI handler. The following are
+the required minimum patch levels to address this problem:
+
+  Family=0x19 Model=0x11 Stepping=0x01: Patch=0x0a10113e
+  Family=0x19 Model=0x11 Stepping=0x02: Patch=0x0a10123e
+  Family=0x19 Model=0xa0 Stepping=0x01: Patch=0x0aa00116
+  Family=0x19 Model=0xa0 Stepping=0x02: Patch=0x0aa00212
