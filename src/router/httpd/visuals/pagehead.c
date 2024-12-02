@@ -170,7 +170,7 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 	time_t t = time(NULL);
 	struct tm *local = localtime(&t);
 	if (local->tm_mon == 11 && local->tm_mday >= 24 && local->tm_mday <= 31)
-		show_snowflakes(wp);
+		show_snowflakes_alt(wp);
 }
 
 EJ_VISIBLE void ej_do_style(webs_t stream, int argc, char_t **argv)
