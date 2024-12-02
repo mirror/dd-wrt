@@ -75,7 +75,14 @@ static void show_snowflakes(webs_t wp)
 static void show_snowflakes_alt(webs_t wp)
 {
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"snow.css\" />\n");
-	websWrite(wp, "<div class=\"snow\"></div>\n");
+websWrite(wp, "<div class=\"wrapper\">\n");
+websWrite(wp, "     <div class=\"snow layer1 a\"></div>\n");
+websWrite(wp, "     <div class=\"snow layer1\"></div>\n");
+websWrite(wp, "     <div class=\"snow layer2 a\"></div>\n");
+websWrite(wp, "     <div class=\"snow layer2"></div>\n");
+websWrite(wp, "     <div class=\"snow layer3 a\"></div>\n");
+websWrite(wp, "     <div class=\"snow layer3\"></div>\n");
+websWrite(wp, "</div>\n");
 }
 static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 {
