@@ -75,11 +75,11 @@ static void show_snowflakes(webs_t wp)
 static void show_snowflakes_alt(webs_t wp)
 {
 	websWrite(wp, "<link type=\"text/css\" rel=\"stylesheet\" href=\"snow.css\" />\n");
-websWrite(wp, "<div class=\"wrapper\">\n");
+websWrite(wp, "<div class=\"wrapper\" aria-hidden=\"true\">\n");
 websWrite(wp, "     <div class=\"snow layer1 a\"></div>\n");
 websWrite(wp, "     <div class=\"snow layer1\"></div>\n");
 websWrite(wp, "     <div class=\"snow layer2 a\"></div>\n");
-websWrite(wp, "     <div class=\"snow layer2"></div>\n");
+websWrite(wp, "     <div class=\"snow layer2\"></div>\n");
 websWrite(wp, "     <div class=\"snow layer3 a\"></div>\n");
 websWrite(wp, "     <div class=\"snow layer3\"></div>\n");
 websWrite(wp, "</div>\n");
@@ -170,7 +170,7 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 	time_t t = time(NULL);
 	struct tm *local = localtime(&t);
 	if (local->tm_mon == 11 && local->tm_mday >= 24 && local->tm_mday <= 31)
-		show_snowflakes_alt(wp);
+		show_snowflakes(wp);
 }
 
 EJ_VISIBLE void ej_do_style(webs_t stream, int argc, char_t **argv)
