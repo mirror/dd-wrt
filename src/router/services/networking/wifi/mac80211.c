@@ -1298,8 +1298,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 	MAC80211DEBUG();
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
-	if (!has_ad(prefix))
-		fprintf(fp, "frequency=%d\n", freq);
+//	if (!has_ad(prefix))
+	fprintf(fp, "frequency=%d\n", freq);
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
 #ifdef HAVE_ATH9K
