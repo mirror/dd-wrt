@@ -14,17 +14,12 @@
 
 #include <upnp.h>
 
-
 /* Find a statevar with a given name */
-UPNP_STATE_VAR	*
-find_state_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
+UPNP_STATE_VAR *find_state_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
 {
 	UPNP_STATE_VAR *statevar;
 
-	for (statevar = service->statevar_table;
-		 statevar->name;
-		 statevar++) {
-
+	for (statevar = service->statevar_table; statevar->name; statevar++) {
 		if (strcmp(name, statevar->name) == 0)
 			break;
 	}
@@ -38,8 +33,7 @@ find_state_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
  * Return token before and character pointer after the delimiter.
  * Specially developed for UPnP SOAP.
  */
-static char *
-strtok_n(char *s, char *delim, char **endp)
+static char *strtok_n(char *s, char *delim, char **endp)
 {
 	char *p = s;
 	char *token = NULL;
@@ -90,15 +84,14 @@ strtok_n(char *s, char *delim, char **endp)
 }
 
 /* Convertmpare two strings ignore case */
-static int
-struppercmp(char *s1, char *s2)
+static int struppercmp(char *s1, char *s2)
 {
 	int i;
 	int len = strlen(s1);
 	char x = 0, y = 0;
 
 	/* To upper case */
-	for (i = 0; i < len+1; i++) {
+	for (i = 0; i < len + 1; i++) {
 		x = toupper(s1[i]);
 		y = toupper(s2[i]);
 		if (x != y)
@@ -109,8 +102,7 @@ struppercmp(char *s1, char *s2)
 }
 
 /* Parse version line in an XML file */
-static char *
-parse_version(char *str)
+static char *parse_version(char *str)
 {
 	char *ptr = str;
 	char *start;
@@ -118,11 +110,7 @@ parse_version(char *str)
 	int span;
 
 	/* eat leading white space */
-	while (*ptr &&
-		(*ptr == ' ' ||
-		*ptr == '\t' ||
-		*ptr == '\r' ||
-		*ptr == '\n')) {
+	while (*ptr && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
 		ptr++;
 	}
 
@@ -145,8 +133,7 @@ parse_version(char *str)
 }
 
 /* Parse elments in an XML file */
-static char *
-parse_element(char *str, char **tag, char **name, char **attr, char **next)
+static char *parse_element(char *str, char **tag, char **name, char **attr, char **next)
 {
 	char *ptr = str;
 	char *start;
@@ -157,11 +144,7 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 	char *next_element;
 
 	/* eat leading white space */
-	while (*ptr &&
-		(*ptr == ' ' ||
-		*ptr == '\t' ||
-		*ptr == '\r' ||
-		*ptr == '\n')) {
+	while (*ptr && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
 		ptr++;
 	}
 
@@ -180,10 +163,9 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 	/* parse "<s:element" and convert to "/s:element" */
 	ptr = strchr(start, ':');
 	if (!ptr) {
-		element = start+1;
-	}
-	else {
-		element = ptr+1;
+		element = start + 1;
+	} else {
+		element = ptr + 1;
 	}
 
 	*start = '/';
@@ -196,20 +178,19 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 	/* value can be 0 */
 	if (value) {
 		ptr = strstr(value, start);
-	}
-	else {
+	} else {
 		ptr = 0;
 	}
 
 	if (ptr) {
 		/* Check "<" */
-		if (*(ptr-1) != '<')
+		if (*(ptr - 1) != '<')
 			return NULL;
 
-		*(ptr-1) = '\0';
+		*(ptr - 1) = '\0';
 
 		/* save value end for eat white space */
-		value_end = ptr-2;
+		value_end = ptr - 2;
 
 		/* Check ">" */
 		ptr += strlen(start);
@@ -221,24 +202,17 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 
 		/* consume leading white spaces */
 		while (value <= value_end) {
-			if (*value == ' ' ||
-			    *value == '\t' ||
-			    *value == '\r' ||
-			    *value == '\n') {
+			if (*value == ' ' || *value == '\t' || *value == '\r' || *value == '\n') {
 				/* Skip it */
 				value++;
-			}
-			else {
+			} else {
 				break;
 			}
 		}
 
 		/* consume tailing white spaces */
 		while (value_end >= value) {
-			if (*value_end == ' ' ||
-			    *value_end == '\t' ||
-			    *value_end == '\r' ||
-			    *value_end == '\n') {
+			if (*value_end == ' ' || *value_end == '\t' || *value_end == '\r' || *value_end == '\n') {
 				/*
 				 * Null ending the white space,
 				 * and moving backward to do
@@ -246,24 +220,21 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 				 */
 				*value_end = '\0';
 				value_end--;
-			}
-			else {
+			} else {
 				break;
 			}
 		}
-	}
-	else {
+	} else {
 		next_element = NULL;
 	}
 
 	/* output values */
 	if (tag) {
-		if (element == start+1) {
+		if (element == start + 1) {
 			*tag = NULL;
-		}
-		else {
-			*tag = start+1;        /* Skip < */
-			*(element-1) = 0;      /* Set ":" to NULL */
+		} else {
+			*tag = start + 1; /* Skip < */
+			*(element - 1) = 0; /* Set ":" to NULL */
 		}
 	}
 
@@ -280,8 +251,7 @@ parse_element(char *str, char **tag, char **name, char **attr, char **next)
 }
 
 /* Send SOAP error response */
-void
-soap_send_error(UPNP_CONTEXT *context, int error)
+void soap_send_error(UPNP_CONTEXT *context, int error)
 {
 	char time_buf[64];
 	char *err_str;
@@ -316,42 +286,37 @@ soap_send_error(UPNP_CONTEXT *context, int error)
 
 	/* format body */
 	body_len = sprintf(context->body_buffer,
-			"<s:Envelope "
-			"xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
-			"s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">"
-			"<s:Body>"
-			"<s:Fault>"
-			"<faultcode>s:Client</faultcode>"
-			"<faultstring>UPnPError</faultstring>"
-			"<detail>"
-			"<UPnPError xmlns=\"urn:schemas-upnp-org:control-1-0\">"
-			"<errorCode>%d</errorCode>"
-			"<errorDescription>%s</errorDescription>"
-			"</UPnPError>"
-			"</detail>"
-			"</s:Fault>"
-			"</s:Body>"
-			"</s:Envelope>",
-			error,
-			err_str);
+			   "<s:Envelope "
+			   "xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+			   "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">"
+			   "<s:Body>"
+			   "<s:Fault>"
+			   "<faultcode>s:Client</faultcode>"
+			   "<faultstring>UPnPError</faultstring>"
+			   "<detail>"
+			   "<UPnPError xmlns=\"urn:schemas-upnp-org:control-1-0\">"
+			   "<errorCode>%d</errorCode>"
+			   "<errorDescription>%s</errorDescription>"
+			   "</UPnPError>"
+			   "</detail>"
+			   "</s:Fault>"
+			   "</s:Body>"
+			   "</s:Envelope>",
+			   error, err_str);
 
 	/* format header */
-	gmt_time(time_buf);  /* get GMT time */
+	gmt_time(time_buf); /* get GMT time */
 	len = sprintf(context->head_buffer,
-			"HTTP/1.1 500 Internal Server Error\r\n"
-			"Content-Length: %d\r\n"
-			"Content-Type: text/xml; charset=\"utf-8\"\r\n"
-			"Date: %s\r\n"
-			"EXT: \r\n"
-			"Server: POSIX, UPnP/1.0 %s/%s\r\n"
-			"Connection: close\r\n"
-			"\r\n"
-			"%s",
-			body_len,
-			time_buf,
-			context->config.os_name,
-			context->config.os_ver,
-			context->body_buffer);
+		      "HTTP/1.1 500 Internal Server Error\r\n"
+		      "Content-Length: %d\r\n"
+		      "Content-Type: text/xml; charset=\"utf-8\"\r\n"
+		      "Date: %s\r\n"
+		      "EXT: \r\n"
+		      "Server: POSIX, UPnP/1.0 %s/%s\r\n"
+		      "Connection: close\r\n"
+		      "\r\n"
+		      "%s",
+		      body_len, time_buf, context->config.os_name, context->config.os_ver, context->body_buffer);
 
 	/* send error message */
 	if (send(context->fd, context->head_buffer, len, 0) == -1) {
@@ -362,8 +327,7 @@ soap_send_error(UPNP_CONTEXT *context, int error)
 }
 
 /* Send SOAP response to the peer */
-void
-soap_send(UPNP_CONTEXT *context)
+void soap_send(UPNP_CONTEXT *context)
 {
 	char time_buf[64];
 	int head_len;
@@ -377,41 +341,35 @@ soap_send(UPNP_CONTEXT *context)
 
 	/* Print String */
 	head_len = sprintf(context->head_buffer,
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Length: %d\r\n"
-			"Content-Type: text/xml; charset=\"utf-8\"\r\n"
-			"Date: %s\r\n"
-			"EXT: \r\n"
-			"Server: POSIX, UPnP/1.0 %s/%s\r\n"
-			"Connection: close\r\n"
-			"\r\n"
-			"%s",
-			body_len,
-			time_buf,
-			context->config.os_name,
-			context->config.os_ver,
-			context->body_buffer);
+			   "HTTP/1.1 200 OK\r\n"
+			   "Content-Length: %d\r\n"
+			   "Content-Type: text/xml; charset=\"utf-8\"\r\n"
+			   "Date: %s\r\n"
+			   "EXT: \r\n"
+			   "Server: POSIX, UPnP/1.0 %s/%s\r\n"
+			   "Connection: close\r\n"
+			   "\r\n"
+			   "%s",
+			   body_len, time_buf, context->config.os_name, context->config.os_ver, context->body_buffer);
 
 	send(context->fd, context->head_buffer, head_len, 0);
 	return;
 }
 
 /* Compose action response message and send */
-void
-send_action_response(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
+void send_action_response(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
 {
 	char *p = context->body_buffer;
 	OUT_ARGUMENT *temp = context->out_arguments;
 	int len;
 
 	len = sprintf(context->body_buffer,
-			"<s:Envelope "
-			"xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
-			"s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\r\n"
-			"<s:Body>\r\n"
-			"<u:%sResponse xmlns:u=\"%s:1\">\r\n",
-			action->name,
-			service->name);
+		      "<s:Envelope "
+		      "xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+		      "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\r\n"
+		      "<s:Body>\r\n"
+		      "<u:%sResponse xmlns:u=\"%s:1\">\r\n",
+		      action->name, service->name);
 	p += len;
 
 	/* concatenate output values */
@@ -419,11 +377,7 @@ send_action_response(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *
 		/* Traslate the value to output string */
 		translate_value(context, &temp->value);
 
-		len = sprintf(p,
-			"<%s>%s</%s>\r\n",
-			temp->name,
-			temp->value.val.str,
-			temp->name);
+		len = sprintf(p, "<%s>%s</%s>\r\n", temp->name, temp->value.val.str, temp->name);
 
 		p += len;
 		temp = temp->next;
@@ -447,8 +401,7 @@ send_action_response(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *
  *  (3) invoke action function
  *  (4) send back soap action response
  */
-int
-soap_control(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
+int soap_control(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
 {
 	int error = SOAP_INVALID_ARGS;
 	int i;
@@ -462,8 +415,7 @@ soap_control(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
 		while (in_temp) {
 			if (strcmp(in_temp->name, action->in_argument[i].name) == 0) {
 				/* Get the related state variable */
-				in_temp->statevar = service->statevar_table +
-					action->in_argument[i].related_id;
+				in_temp->statevar = service->statevar_table + action->in_argument[i].related_id;
 
 				/* convert types */
 				in_temp->value.type = action->in_argument[i].type;
@@ -496,16 +448,13 @@ soap_control(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ACTION *action)
 		/* append to out_argument list */
 		temp->next = 0;
 		if (i > 0)
-			(temp-1)->next = temp;
+			(temp - 1)->next = temp;
 	}
 
 	/* invoke action */
 	context->in_arguments = action->in_num ? context->in_args : 0;
 	context->out_arguments = action->out_num ? context->out_args : 0;
-	error = (*action->action)(context,
-		service,
-		context->in_arguments,
-		context->out_arguments);
+	error = (*action->action)(context, service, context->in_arguments, context->out_arguments);
 	if (error == 0) {
 		send_action_response(context, service, action);
 		return 0;
@@ -520,8 +469,7 @@ err_out:
  * Parse the elements and get the action name and argument lists,
  * then invoke SOAP action.
  */
-int
-action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+int action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	char *p = context->content;
 	UPNP_ACTION *action;
@@ -533,8 +481,7 @@ action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 
 	IN_ARGUMENT *temp;
 
-	while (*p &&
-		(*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) {
+	while (*p && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) {
 		p++;
 	}
 
@@ -574,7 +521,6 @@ action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 	temp = context->in_args;
 	next = p;
 	while (next) {
-
 		arg_value = parse_element(next, 0, &arg_name, 0, &next);
 		if (!arg_value)
 			break;
@@ -590,7 +536,7 @@ action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 		/* append to in argument list */
 		temp->next = 0;
 		if (temp != context->in_args)
-			(temp-1)->next = temp;
+			(temp - 1)->next = temp;
 
 		temp++;
 	}
@@ -619,8 +565,7 @@ action_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Send SOAP query response */
-void
-send_query_response(UPNP_CONTEXT *context, char *value)
+void send_query_response(UPNP_CONTEXT *context, char *value)
 {
 	sprintf(context->body_buffer,
 		"<s:Envelope "
@@ -641,8 +586,7 @@ send_query_response(UPNP_CONTEXT *context, char *value)
 }
 
 /* Invoke statevar query function */
-int
-soap_query(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar)
+int soap_query(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar)
 {
 	UPNP_VALUE value;
 	int rc = 0;
@@ -658,8 +602,7 @@ soap_query(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *stateva
 
 		/* translate value to string */
 		translate_value(context, &value);
-	}
-	else {
+	} else {
 		/* Should not be here, send null string */
 		value.val.str[0] = 0;
 	}
@@ -672,15 +615,13 @@ soap_query(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *stateva
  * Parse the elements and get the statevar name,
  * then invoke query.
  */
-int
-query_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+int query_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	UPNP_STATE_VAR *statevar;
 	char *p = context->content;
 	char *element;
 
-	while (*p &&
-		(*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) {
+	while (*p && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) {
 		p++;
 	}
 
@@ -721,8 +662,7 @@ query_process(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Get statevar called by upnp request */
-int
-soap_get_state_var(UPNP_CONTEXT *context, char *url, char *name, UPNP_VALUE *value)
+int soap_get_state_var(UPNP_CONTEXT *context, char *url, char *name, UPNP_VALUE *value)
 {
 	UPNP_SERVICE *service;
 	UPNP_STATE_VAR *statevar;
@@ -759,8 +699,7 @@ soap_get_state_var(UPNP_CONTEXT *context, char *url, char *name, UPNP_VALUE *val
  * Parse header and decide which control function
  * to go.
  */
-int
-soap_process(UPNP_CONTEXT *context)
+int soap_process(UPNP_CONTEXT *context)
 {
 	char *action_field;
 	UPNP_SERVICE *service;
@@ -775,11 +714,10 @@ soap_process(UPNP_CONTEXT *context)
 		return R_BAD_REQUEST;
 
 	if (strcmp(action_field, "\"urn:schemas-upnp-org:control-1-0#QueryStateVariable\"") == 0 ||
-		strcmp(action_field, "urn:schemas-upnp-org:control-1-0#QueryStateVariable") == 0) {
+	    strcmp(action_field, "urn:schemas-upnp-org:control-1-0#QueryStateVariable") == 0) {
 		/* query control */
 		return query_process(context, service);
-	}
-	else {
+	} else {
 		/* action control */
 		char *action_name;
 		int pos, name_len;
@@ -790,9 +728,9 @@ soap_process(UPNP_CONTEXT *context)
 		/* compare the service name */
 		name_len = strlen(service->name);
 		if (memcmp(action_field, service->name, name_len) == 0) {
-			 /* get action name */
+			/* get action name */
 			pos = strcspn(action_field, "#");
-			action_field += pos+1;
+			action_field += pos + 1;
 
 			action_name = action_field;
 			pos = strcspn(action_field, "\"\t ");
@@ -801,27 +739,21 @@ soap_process(UPNP_CONTEXT *context)
 			context->SOAPACTION = action_name;
 
 			return action_process(context, service);
-		}
-		else {
+		} else {
 			return R_BAD_REQUEST;
 		}
 	}
 }
 
 /* Search the service table for the target control URL */
-UPNP_SERVICE *
-get_service(UPNP_CONTEXT *context, char *url)
+UPNP_SERVICE *get_service(UPNP_CONTEXT *context, char *url)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_DEVCHAIN	*chain;
-	UPNP_SERVICE	*service;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_DEVCHAIN *chain;
+	UPNP_SERVICE *service;
 
-	for (chain = ifp->device_chain;
-	     chain;
-	     chain = chain->next) {
-		for (service = chain->device->service_table;
-		     service && service->control_url;
-		     service++) {
+	for (chain = ifp->device_chain; chain; chain = chain->next) {
+		for (service = chain->device->service_table; service && service->control_url; service++) {
 			if (strcmp(url, service->control_url) == 0) {
 				ifp->focus_devchain = chain;
 				return service;
@@ -833,19 +765,14 @@ get_service(UPNP_CONTEXT *context, char *url)
 }
 
 /* Search the advertise table for the target name */
-UPNP_ADVERTISE *
-get_advertise(UPNP_CONTEXT *context, char *name)
+UPNP_ADVERTISE *get_advertise(UPNP_CONTEXT *context, char *name)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_DEVCHAIN	*chain;
-	UPNP_ADVERTISE	*advertise;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_DEVCHAIN *chain;
+	UPNP_ADVERTISE *advertise;
 
-	for (chain = ifp->device_chain;
-	     chain;
-	     chain = chain->next) {
-		for (advertise = chain->device->advertise_table;
-		     advertise && advertise->name;
-		     advertise++) {
+	for (chain = ifp->device_chain; chain; chain = chain->next) {
+		for (advertise = chain->device->advertise_table; advertise && advertise->name; advertise++) {
 			if (strcmp(name, advertise->name) == 0) {
 				ifp->focus_devchain = chain;
 				return advertise;

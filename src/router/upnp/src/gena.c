@@ -16,19 +16,15 @@
 /*
  * Variables
  */
-static  unsigned int    unique_id_count = 1;
-
+static unsigned int unique_id_count = 1;
 
 /* Get the subscriber chain of the focus interface */
-UPNP_SCBRCHAIN *
-get_subscriber_chain(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+UPNP_SCBRCHAIN *get_subscriber_chain(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
-	UPNP_SCBRCHAIN	*scbrchain;
+	UPNP_SCBRCHAIN *scbrchain;
 
 	/* Search the subscriber chain of the focused interface */
-	for (scbrchain = service->scbrchain;
-	     scbrchain;
-	     scbrchain = scbrchain->next) {
+	for (scbrchain = service->scbrchain; scbrchain; scbrchain = scbrchain->next) {
 		if (scbrchain->ifp == context->focus_ifp)
 			break;
 	}
@@ -37,14 +33,11 @@ get_subscriber_chain(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Get the evented state variable's value of the focus interface */
-UPNP_EVALUE	*
-get_evalue(UPNP_CONTEXT *context, UPNP_STATE_VAR *state_var)
+UPNP_EVALUE *get_evalue(UPNP_CONTEXT *context, UPNP_STATE_VAR *state_var)
 {
-	UPNP_EVALUE	*evalue;
+	UPNP_EVALUE *evalue;
 
-	for (evalue = state_var->evalue;
-	     evalue;
-	     evalue = evalue->next) {
+	for (evalue = state_var->evalue; evalue; evalue = evalue->next) {
 		if (evalue->ifp == context->focus_ifp)
 			break;
 	}
@@ -53,14 +46,11 @@ get_evalue(UPNP_CONTEXT *context, UPNP_STATE_VAR *state_var)
 }
 
 /* Search GENA event lists for a target event */
-UPNP_STATE_VAR	*
-find_event_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
+UPNP_STATE_VAR *find_event_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
 {
 	UPNP_STATE_VAR *statevar;
 
-	for (statevar = service->event_var_list;
-	     statevar;
-	     statevar = statevar->next) {
+	for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 		if (strcmp(statevar->name, name) == 0)
 			break;
 	}
@@ -69,23 +59,18 @@ find_event_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *name)
 }
 
 /* Sarch GENA event lists for a target event */
-UPNP_SERVICE *
-find_event(UPNP_CONTEXT *context, char *event_url)
+UPNP_SERVICE *find_event(UPNP_CONTEXT *context, char *event_url)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_DEVCHAIN	*chain;
-	UPNP_SERVICE	*service;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_DEVCHAIN *chain;
+	UPNP_SERVICE *service;
 
 	/*
 	 * Loop for all the UPnP device, and find out the
 	 * UPnP service matches the event_url.
 	 */
-	for (chain = ifp->device_chain;
-	     chain;
-	     chain = chain->next) {
-		for (service = chain->device->service_table;
-		     service && service->event_url;
-		     service++) {
+	for (chain = ifp->device_chain; chain; chain = chain->next) {
+		for (service = chain->device->service_table; service && service->event_url; service++) {
 			if (strcmp(service->event_url, event_url) == 0) {
 				ifp->focus_devchain = chain;
 				return service;
@@ -97,14 +82,12 @@ find_event(UPNP_CONTEXT *context, char *event_url)
 }
 
 /* Remove subscriber from list */
-void
-delete_subscriber(UPNP_SCBRCHAIN *scbrchain, UPNP_SUBSCRIBER *subscriber)
+void delete_subscriber(UPNP_SCBRCHAIN *scbrchain, UPNP_SUBSCRIBER *subscriber)
 {
 	/* Remove from queue */
 	if (subscriber->prev) {
 		subscriber->prev->next = subscriber->next;
-	}
-	else {
+	} else {
 		/* first node, re-configure the list pointer */
 		scbrchain->subscriberlist = subscriber->next;
 	}
@@ -117,8 +100,7 @@ delete_subscriber(UPNP_SCBRCHAIN *scbrchain, UPNP_SUBSCRIBER *subscriber)
 }
 
 /* Parse the header, CALLBACK, to get host address (ip, port) and uri */
-char *
-parse_callback(char *callback, struct in_addr *ipaddr, unsigned short *port)
+char *parse_callback(char *callback, struct in_addr *ipaddr, unsigned short *port)
 {
 	char *p;
 	int pos;
@@ -142,7 +124,7 @@ parse_callback(char *callback, struct in_addr *ipaddr, unsigned short *port)
 	/* Locate uri */
 	p = callback + 8;
 	pos = strcspn(p, "/");
-	if (pos > sizeof(host)-1)
+	if (pos > sizeof(host) - 1)
 		return 0;
 
 	if (p[pos] != '/')
@@ -177,18 +159,17 @@ parse_callback(char *callback, struct in_addr *ipaddr, unsigned short *port)
 }
 
 /* Consume the input buffer after sending the notification */
-static int
-gena_read_sock(int s, char *buf, int len, int flags)
+static int gena_read_sock(int s, char *buf, int len, int flags)
 {
-	long     rc;
-	fd_set   ibits;
-	struct   timeval tv = {1, 0};   /* wait for at most 1 seconds */
-	int      n_read;
+	long rc;
+	fd_set ibits;
+	struct timeval tv = { 1, 0 }; /* wait for at most 1 seconds */
+	int n_read;
 
 	FD_ZERO(&ibits);
 	FD_SET(s, &ibits);
 
-	rc = select(s+1, &ibits, 0, 0, &tv);
+	rc = select(s + 1, &ibits, 0, 0, &tv);
 	if (rc <= 0)
 		return -1;
 
@@ -201,8 +182,7 @@ gena_read_sock(int s, char *buf, int len, int flags)
 }
 
 /* Send out property event changes message */
-void
-notify_prop_change(UPNP_CONTEXT *context, UPNP_SUBSCRIBER *subscriber)
+void notify_prop_change(UPNP_CONTEXT *context, UPNP_SUBSCRIBER *subscriber)
 {
 	struct sockaddr_in sin;
 
@@ -227,7 +207,7 @@ notify_prop_change(UPNP_CONTEXT *context, UPNP_SUBSCRIBER *subscriber)
 
 #if defined(__ECOS)
 	sin.sin_len = sizeof(sin);
-#endif	
+#endif
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(subscriber->port);
 	sin.sin_addr = subscriber->ipaddr;
@@ -241,12 +221,12 @@ notify_prop_change(UPNP_CONTEXT *context, UPNP_SUBSCRIBER *subscriber)
 		FD_ZERO(&fds);
 		FD_SET(s, &fds);
 
-#define	GENA_NOTIFY_SELECT_MAX	20
+#define GENA_NOTIFY_SELECT_MAX 20
 		/* timeout after 3 seconds */
 		for (i = 0; i < GENA_NOTIFY_SELECT_MAX; i++) {
 			tv.tv_sec = 0;
 			tv.tv_usec = 500000;
-			if (select(s+1, 0, &fds, 0, &tv) > 0) {
+			if (select(s + 1, 0, &fds, 0, &tv) > 0) {
 				if (FD_ISSET(s, &fds))
 					break;
 			}
@@ -284,9 +264,7 @@ error_out:
 }
 
 /* Construct property event changes message */
-void
-submit_prop_event_message(UPNP_CONTEXT *context,
-	UPNP_SERVICE *service, UPNP_SUBSCRIBER *subscriber)
+void submit_prop_event_message(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_SUBSCRIBER *subscriber)
 {
 	UPNP_STATE_VAR *statevar = service->event_var_list;
 	UPNP_VALUE value;
@@ -297,13 +275,10 @@ submit_prop_event_message(UPNP_CONTEXT *context,
 
 	/* construct body */
 	p = context->body_buffer;
-	len = sprintf(context->body_buffer,
-		"<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">\r\n");
+	len = sprintf(context->body_buffer, "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">\r\n");
 	p += len;
 
-	for (statevar = service->event_var_list;
-	     statevar;
-	     statevar = statevar->next) {
+	for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 		UPNP_EVALUE *evalue;
 
 		evalue = get_evalue(context, statevar);
@@ -323,20 +298,13 @@ submit_prop_event_message(UPNP_CONTEXT *context,
 
 		/* new subscription */
 		if (subscriber->seq == 0) {
-			len = sprintf(p,
-				"<e:property><e:%s>%s</e:%s></e:property>\r\n",
-				statevar->name,
-				value.val.str,
-				statevar->name);
+			len = sprintf(p, "<e:property><e:%s>%s</e:%s></e:property>\r\n", statevar->name, value.val.str,
+				      statevar->name);
 			p += len;
-		}
-		else if (evalue->changed) {
+		} else if (evalue->changed) {
 			/* state changed */
-			len = sprintf(p,
-				"<e:property><e:%s>%s</e:%s></e:property>\r\n",
-				statevar->name,
-				value.val.str,
-				statevar->name);
+			len = sprintf(p, "<e:property><e:%s>%s</e:%s></e:property>\r\n", statevar->name, value.val.str,
+				      statevar->name);
 			p += len;
 		}
 	}
@@ -359,12 +327,7 @@ submit_prop_event_message(UPNP_CONTEXT *context,
 		"SEQ: %d\r\n"
 		"Connection: close\r\n\r\n"
 		"%s",
-		subscriber->uri,
-		host,
-		(int)strlen(context->body_buffer),
-		subscriber->sid,
-		subscriber->seq,
-		context->body_buffer);
+		subscriber->uri, host, (int)strlen(context->body_buffer), subscriber->sid, subscriber->seq, context->body_buffer);
 
 	/* Send out */
 	notify_prop_change(context, subscriber);
@@ -372,11 +335,10 @@ submit_prop_event_message(UPNP_CONTEXT *context,
 }
 
 /* Submit property events to subscribers */
-void
-gena_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *sid)
+void gena_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *sid)
 {
-	UPNP_SCBRCHAIN	*scbrchain;
-	UPNP_SUBSCRIBER	*subscriber;
+	UPNP_SCBRCHAIN *scbrchain;
+	UPNP_SUBSCRIBER *subscriber;
 
 	/* walk through the subscribers */
 	scbrchain = get_subscriber_chain(context, service);
@@ -394,8 +356,7 @@ gena_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *sid)
 				subscriber->seq++;
 				break;
 			}
-		}
-		else {
+		} else {
 			/* for all */
 			submit_prop_event_message(context, service, subscriber);
 			subscriber->seq++;
@@ -408,15 +369,12 @@ gena_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service, char *sid)
 }
 
 /* Completion function after gena_notify */
-void
-gena_notify_complete(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+void gena_notify_complete(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	UPNP_STATE_VAR *statevar;
 	UPNP_EVALUE *evalue;
 
-	for (statevar = service->event_var_list;
-	     statevar;
-	     statevar = statevar->next) {
+	for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 		evalue = get_evalue(context, statevar);
 
 		/* 
@@ -432,9 +390,7 @@ gena_notify_complete(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Update the event value of an event variable */
-int
-gena_update_event_var(UPNP_CONTEXT *context,
-	UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
+int gena_update_event_var(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_EVALUE *evalue;
 
@@ -449,8 +405,7 @@ gena_update_event_var(UPNP_CONTEXT *context,
 	 * The evalue will be updated, only when the old value is different from
 	 * the new one, or it would cause unnessary notification sent out.
 	 */
-	if (evalue->init == FALSE ||
-	    evalue->value.len != value->len ||
+	if (evalue->init == FALSE || evalue->value.len != value->len ||
 	    memcmp(evalue->value.val.str, value->val.str, value->len) != 0) {
 		/* Update this value */
 		evalue->value = *value;
@@ -467,8 +422,7 @@ gena_update_event_var(UPNP_CONTEXT *context,
 }
 
 /* GENA unusubscription process routine */
-int
-unsubscribe(UPNP_CONTEXT *context)
+int unsubscribe(UPNP_CONTEXT *context)
 {
 	UPNP_SERVICE *service;
 	UPNP_SUBSCRIBER *subscriber;
@@ -503,10 +457,9 @@ unsubscribe(UPNP_CONTEXT *context)
 	delete_subscriber(scbrchain, subscriber);
 
 	/* send reply */
-	strcpy(context->head_buffer,
-		"HTTP/1.1 200 OK\r\n"
-		"Connection: close\r\n"
-		"\r\n");
+	strcpy(context->head_buffer, "HTTP/1.1 200 OK\r\n"
+				     "Connection: close\r\n"
+				     "\r\n");
 
 	send(context->fd, context->head_buffer, strlen(context->head_buffer), 0);
 
@@ -519,12 +472,11 @@ unsubscribe(UPNP_CONTEXT *context)
 }
 
 /* Get a unique id string */
-int
-get_unique_id(char *unique_id, unsigned int size)
+int get_unique_id(char *unique_id, unsigned int size)
 {
 	time_t curr_time;
-	unsigned int	id = ++unique_id_count;
-	unsigned long	pid = upnp_pid();
+	unsigned int id = ++unique_id_count;
+	unsigned long pid = upnp_pid();
 
 	if (size < 8)
 		return FALSE;
@@ -540,11 +492,9 @@ get_unique_id(char *unique_id, unsigned int size)
 	 */
 	if (size < 17) {
 		sprintf(unique_id, "%lux", (u_long)curr_time);
-	}
-	else if (size < 26) {
+	} else if (size < 26) {
 		sprintf(unique_id, "%lux-%lux", (u_long)curr_time, (u_long)pid);
-	}
-	else {
+	} else {
 		sprintf(unique_id, "%lux-%lux-%lux", (u_long)curr_time, (u_long)pid, (u_long)id);
 	}
 
@@ -552,8 +502,7 @@ get_unique_id(char *unique_id, unsigned int size)
 }
 
 /* GENA subscription process routine */
-int
-subscribe(UPNP_CONTEXT *context)
+int subscribe(UPNP_CONTEXT *context)
 {
 	UPNP_SERVICE *service;
 	UPNP_SUBSCRIBER *subscriber;
@@ -566,7 +515,7 @@ subscribe(UPNP_CONTEXT *context)
 	char time_buf[64];
 	char timeout[64];
 
-	char *gena_timeout  = context->TIMEOUT;
+	char *gena_timeout = context->TIMEOUT;
 	char *gena_sid = context->SID;
 	char *gena_callback = context->CALLBACK;
 
@@ -590,15 +539,13 @@ subscribe(UPNP_CONTEXT *context)
 		ptr = gena_timeout + 7;
 		if (strcmp(ptr, "infinite") == 0) {
 			infinite = TRUE;
-		}
-		else {
+		} else {
 			/* Convert the value to subscriber time */
 			interval = atoi(ptr);
 			if (interval == 0)
 				interval = context->config.sub_time;
 		}
-	}
-	else {
+	} else {
 		/* No TIMEOUT header, use the default value */
 		sprintf(timeout, "Second-%d", context->config.sub_time);
 		gena_timeout = timeout;
@@ -625,10 +572,8 @@ subscribe(UPNP_CONTEXT *context)
 		/* Find exist subscriber and free it */
 		subscriber = scbrchain->subscriberlist;
 		while (subscriber) {
-			if (subscriber->ipaddr.s_addr == ipaddr.s_addr &&
-				subscriber->port == port &&
-				strcmp(subscriber->uri, uri) == 0) {
-
+			if (subscriber->ipaddr.s_addr == ipaddr.s_addr && subscriber->port == port &&
+			    strcmp(subscriber->uri, uri) == 0) {
 				delete_subscriber(scbrchain, subscriber);
 				break;
 			}
@@ -653,7 +598,7 @@ subscribe(UPNP_CONTEXT *context)
 		strcpy(subscriber->uri, uri);
 
 		strcpy(subscriber->sid, "uuid:");
-		get_unique_id(subscriber->sid+5, sizeof(subscriber->sid)-5-1);
+		get_unique_id(subscriber->sid + 5, sizeof(subscriber->sid) - 5 - 1);
 
 		/* insert queue */
 		subscriber->next = scbrchain->subscriberlist;
@@ -664,8 +609,7 @@ subscribe(UPNP_CONTEXT *context)
 
 		/* set sequence number */
 		subscriber->seq = 0;
-	}
-	else {
+	} else {
 		/*
 		 * This is the case, the subscriber wants to
 		 * extend the subscription time.
@@ -685,8 +629,7 @@ subscribe(UPNP_CONTEXT *context)
 	/* update expiration time */
 	if (infinite) {
 		subscriber->expire_time = 0;
-	}
-	else {
+	} else {
 		now = time(0);
 
 		subscriber->expire_time = now + interval;
@@ -705,11 +648,7 @@ subscribe(UPNP_CONTEXT *context)
 		"Timeout: %s\r\n"
 		"Connection: close\r\n"
 		"\r\n",
-		context->config.os_name,
-		context->config.os_ver,
-		time_buf,
-		subscriber->sid,
-		gena_timeout);
+		context->config.os_name, context->config.os_ver, time_buf, subscriber->sid, gena_timeout);
 
 	send(context->fd, context->head_buffer, strlen(context->head_buffer), 0);
 
@@ -729,8 +668,7 @@ subscribe(UPNP_CONTEXT *context)
 }
 
 /* GENA process entry */
-int
-gena_process(UPNP_CONTEXT *context)
+int gena_process(UPNP_CONTEXT *context)
 {
 	char *nt = context->NT;
 	char *sid = context->SID;
@@ -746,16 +684,14 @@ gena_process(UPNP_CONTEXT *context)
 		if (sid == 0) {
 			if (nt == 0 || strcmp(nt, "upnp:event") != 0 || callback == 0)
 				return R_BAD_REQUEST;
-		}
-		else {
+		} else {
 			/* Got SID, NT and CALLBACK must be null */
 			if (nt || callback)
 				return R_BAD_REQUEST;
 		}
 
 		return subscribe(context);
-	}
-	else {
+	} else {
 		/*
 		 * Process unsubscribe request.
 		 * We must have SID, meanwhile the NT and CALLBACK
@@ -763,8 +699,7 @@ gena_process(UPNP_CONTEXT *context)
 		 */
 		if (sid == 0) {
 			return R_PRECONDITION_FAIL;
-		}
-		else {
+		} else {
 			if (nt || callback)
 				return R_BAD_REQUEST;
 		}
@@ -774,14 +709,13 @@ gena_process(UPNP_CONTEXT *context)
 }
 
 /* Check and remove expired subscribers */
-void
-gena_timeout(UPNP_CONTEXT *context)
+void gena_timeout(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_SERVICE	*service;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_SERVICE *service;
 	UPNP_SUBSCRIBER *subscriber;
 	UPNP_SUBSCRIBER *temp;
-	UPNP_SCBRCHAIN	*scbrchain;
+	UPNP_SCBRCHAIN *scbrchain;
 	time_t now;
 
 	now = time(0);
@@ -790,9 +724,7 @@ gena_timeout(UPNP_CONTEXT *context)
 	 * Check all services of the focus device
 	 * with the give interface.
 	 */
-	for (service = ifp->focus_devchain->device->service_table;
-	     service && service->event_url;
-	     service++) {
+	for (service = ifp->focus_devchain->device->service_table; service && service->event_url; service++) {
 		/* Find the subscriber list of this service */
 		scbrchain = get_subscriber_chain(context, service);
 		if (scbrchain == 0)
@@ -804,8 +736,7 @@ gena_timeout(UPNP_CONTEXT *context)
 			temp = subscriber->next;
 
 			/* If timed-out, remove this subscriber */
-			if (subscriber->expire_time &&
-				(now > subscriber->expire_time)) {
+			if (subscriber->expire_time && (now > subscriber->expire_time)) {
 				delete_subscriber(scbrchain, subscriber);
 			}
 
@@ -815,8 +746,7 @@ gena_timeout(UPNP_CONTEXT *context)
 }
 
 /* Alarm function called by UPnP request functions */
-void
-gena_event_alarm(UPNP_CONTEXT *context, char *event_url, int num, UPNP_EVAR *evar)
+void gena_event_alarm(UPNP_CONTEXT *context, char *event_url, int num, UPNP_EVAR *evar)
 {
 	UPNP_SERVICE *service;
 	UPNP_STATE_VAR *statevar;
@@ -843,13 +773,9 @@ gena_event_alarm(UPNP_CONTEXT *context, char *event_url, int num, UPNP_EVAR *eva
 			evalue->init = TRUE;
 			evalue->changed = TRUE;
 		}
-	}
-	else {
+	} else {
 		/* Reset the state variables to unread state */
-		for (statevar = service->event_var_list;
-		     statevar;
-		     statevar = statevar->next) {
-
+		for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 			evalue = get_evalue(context, statevar);
 			if (evalue == 0)
 				continue;
@@ -867,10 +793,9 @@ gena_event_alarm(UPNP_CONTEXT *context, char *event_url, int num, UPNP_EVAR *eva
 }
 
 /* Initialize the subscriber chain */
-void
-subscriber_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+void subscriber_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
-	UPNP_SCBRCHAIN	*scbrchain;
+	UPNP_SCBRCHAIN *scbrchain;
 
 	/* Check if the interface subscriber initialized */
 	scbrchain = get_subscriber_chain(context, service);
@@ -894,16 +819,12 @@ subscriber_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Clear all the the subscribers */
-void
-subscriber_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+void subscriber_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
-	UPNP_SCBRCHAIN	*scbrchain, *prev;
+	UPNP_SCBRCHAIN *scbrchain, *prev;
 
 	/* Find the sscbr_chain */
-	for (prev = 0, scbrchain = service->scbrchain;
-	     scbrchain;
-	     prev = scbrchain, scbrchain = scbrchain->next) {
-
+	for (prev = 0, scbrchain = service->scbrchain; scbrchain; prev = scbrchain, scbrchain = scbrchain->next) {
 		if (scbrchain->ifp == context->focus_ifp)
 			break;
 	}
@@ -926,16 +847,13 @@ subscriber_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Initialize the Gena event list */
-void
-event_vars_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+void event_vars_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	UPNP_STATE_VAR *statevar, *tail;
 
 	/* Chain all the evented variable together */
 	if (service->event_var_list == 0) {
-		for (tail = 0, statevar = service->statevar_table;
-		     statevar->name;
-		     statevar++) {
+		for (tail = 0, statevar = service->statevar_table; statevar->name; statevar++) {
 			/* Do event variable prepend */
 			if (statevar->eflag) {
 				statevar->next = 0;
@@ -955,16 +873,12 @@ event_vars_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 	}
 
 	/* Intialize evalue for the focus interface */
-	for (statevar = service->event_var_list;
-	     statevar;
-	     statevar = statevar->next) {
-
+	for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 		UPNP_EVALUE *evalue;
 
 		evalue = get_evalue(context, statevar);
 		if (evalue) {
-			upnp_syslog(LOG_INFO, "service %s - statevar %s is not clean",
-				service->name, statevar->name);
+			upnp_syslog(LOG_INFO, "service %s - statevar %s is not clean", service->name, statevar->name);
 			continue;
 		}
 
@@ -988,21 +902,15 @@ event_vars_init(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Clear the Gena event list */
-void
-event_vars_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+void event_vars_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	UPNP_STATE_VAR *statevar;
 
-	for (statevar = service->event_var_list;
-		 statevar;
-		 statevar = statevar->next)
-	{
+	for (statevar = service->event_var_list; statevar; statevar = statevar->next) {
 		UPNP_EVALUE *evalue;
 		UPNP_EVALUE *prev;
 
-		for (prev = 0, evalue = statevar->evalue;
-		     evalue;
-		     prev = evalue, evalue = evalue->next) {
+		for (prev = 0, evalue = statevar->evalue; evalue; prev = evalue, evalue = evalue->next) {
 			/* If this interface had been initialized, do nothing */
 			if (evalue->ifp == context->focus_ifp) {
 				if (prev == 0)
@@ -1017,15 +925,12 @@ event_vars_shutdown(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 }
 
 /* Initialize GENA subscribers and event sources */
-int
-gena_init(UPNP_CONTEXT *context)
+int gena_init(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_SERVICE	*service;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_SERVICE *service;
 
-	for (service = ifp->focus_devchain->device->service_table;
-	     service && service->event_url;
-	     service++) {
+	for (service = ifp->focus_devchain->device->service_table; service && service->event_url; service++) {
 		event_vars_init(context, service);
 		subscriber_init(context, service);
 	}
@@ -1034,15 +939,12 @@ gena_init(UPNP_CONTEXT *context)
 }
 
 /* Do GEAN subscribers and event variables clean up */
-int
-gena_shutdown(UPNP_CONTEXT *context)
+int gena_shutdown(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_SERVICE	*service;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_SERVICE *service;
 
-	for (service = ifp->focus_devchain->device->service_table;
-	     service && service->event_url;
-	     service++) {
+	for (service = ifp->focus_devchain->device->service_table; service && service->event_url; service++) {
 		subscriber_shutdown(context, service);
 		event_vars_shutdown(context, service);
 	}

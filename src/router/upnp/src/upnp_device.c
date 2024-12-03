@@ -15,18 +15,15 @@
 #include <upnp.h>
 #include <md5.h>
 
-int
-upnp_device_attach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
+int upnp_device_attach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_DEVCHAIN	*chain;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_DEVCHAIN *chain;
 
 	upnp_syslog(LOG_INFO, "%s: attach %s", ifp->ifname, device->root_device_xml);
 
 	/* Check if the device has already attached? */
-	for (chain = ifp->device_chain;
-	     chain;
-	     chain = chain->next) {
+	for (chain = ifp->device_chain; chain; chain = chain->next) {
 		/* Attached, do nothing */
 		if (chain->device == device)
 			return 0;
@@ -69,18 +66,15 @@ upnp_device_attach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 	return 0;
 }
 
-void
-upnp_device_detach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
+void upnp_device_detach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
-	UPNP_DEVCHAIN	*chain, *prev;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
+	UPNP_DEVCHAIN *chain, *prev;
 
 	upnp_syslog(LOG_INFO, "%s: detach %s", ifp->ifname, device->root_device_xml);
 
 	/* Locate the device chain */
-	for (prev = 0, chain = ifp->device_chain;
-	     chain;
-	     prev = chain, chain = chain->next) {
+	for (prev = 0, chain = ifp->device_chain; chain; prev = chain, chain = chain->next) {
 		if (chain->device == device)
 			break;
 	}
@@ -110,8 +104,7 @@ upnp_device_detach(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 }
 
 /* Synchonize advertise table uuid */
-static int
-sync_advertise_uuid(UPNP_DEVICE *device, char *new_uuid, char *name)
+static int sync_advertise_uuid(UPNP_DEVICE *device, char *new_uuid, char *name)
 {
 	UPNP_ADVERTISE *advertise;
 
@@ -126,8 +119,7 @@ sync_advertise_uuid(UPNP_DEVICE *device, char *new_uuid, char *name)
 }
 
 /* Generate the UUID for a UPnPdevice */
-void
-upnp_gen_uuid(char *uuid, char *deviceType)
+void upnp_gen_uuid(char *uuid, char *deviceType)
 {
 	unsigned char new_uuid[16];
 	unsigned char mac[6];
@@ -138,24 +130,20 @@ upnp_gen_uuid(char *uuid, char *deviceType)
 
 	/* Generate hash */
 	dd_md5_begin(&mdContext);
-	dd_md5_hash(mac, sizeof(mac),&mdContext);
-	dd_md5_hash((unsigned char *)deviceType, strlen(deviceType),&mdContext);
+	dd_md5_hash(mac, sizeof(mac), &mdContext);
+	dd_md5_hash((unsigned char *)deviceType, strlen(deviceType), &mdContext);
 	dd_md5_end(new_uuid, &mdContext);
 
-	sprintf(uuid,
-		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-		new_uuid[0],  new_uuid[1],  new_uuid[2],  new_uuid[3],
-		new_uuid[4],  new_uuid[5],  new_uuid[6],  new_uuid[7],
-		new_uuid[8],  new_uuid[9],  new_uuid[10], new_uuid[11],
-		new_uuid[12], new_uuid[13], new_uuid[14], new_uuid[15]);
+	sprintf(uuid, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X", new_uuid[0], new_uuid[1], new_uuid[2],
+		new_uuid[3], new_uuid[4], new_uuid[5], new_uuid[6], new_uuid[7], new_uuid[8], new_uuid[9], new_uuid[10],
+		new_uuid[11], new_uuid[12], new_uuid[13], new_uuid[14], new_uuid[15]);
 
 	uuid[36] = '\0';
 	return;
 }
 
 /* Give a unique uuid to this rootdevice */
-int
-upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
+int upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 {
 	char *s, *p;
 	char deviceType[256];
@@ -166,7 +154,7 @@ upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 
 	/* Find root device */
 	for (desc = device->description_table; desc; desc++) {
-		if (strcmp(device->root_device_xml, desc->name+1) == 0)
+		if (strcmp(device->root_device_xml, desc->name + 1) == 0)
 			break;
 	}
 	if (desc == 0) {
@@ -183,20 +171,18 @@ upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 	for (p = desc->xml; *p != 0; p++) {
 		/* Search for <deviceType> */
 		if (strncmp(p, DEVICE_BTAG, strlen(DEVICE_BTAG)) == 0) {
-
 			p += strlen(DEVICE_BTAG);
 
 			/* Find the balanced </deviceType> */
 			s = strstr(p, DEVICE_ETAG);
-			if (s == 0 || (s-p) > sizeof(deviceType)-1) {
-				upnp_syslog(LOG_ERR,
-					"Parse format:<deviceType>...</deviceType> error.\n");
+			if (s == 0 || (s - p) > sizeof(deviceType) - 1) {
+				upnp_syslog(LOG_ERR, "Parse format:<deviceType>...</deviceType> error.\n");
 				return -1;
 			}
 
 			/* Save deviceType */
-			memcpy(deviceType, p, s-p);
-			deviceType[s-p] = '\0';
+			memcpy(deviceType, p, s - p);
+			deviceType[s - p] = '\0';
 			p = s + strlen(DEVICE_ETAG);
 		}
 
@@ -208,18 +194,17 @@ upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 		 * By generate the same UUID size, we don't have to do memory ajustment.
 		 */
 		if (strncmp(p, UDN_BTAG, strlen(UDN_BTAG)) == 0) {
-
 			p += strlen(UDN_BTAG);
 
 			/* Find the balanced </UDN> */
 			s = strstr(p, UDN_ETAG);
-			if (s == 0 || (s-p) > sizeof(deviceType)-1) {
+			if (s == 0 || (s - p) > sizeof(deviceType) - 1) {
 				upnp_syslog(LOG_ERR, "Parse format:<UDN>...</UDN> error.\n");
 				return -1;
 			}
 
 			p += 5; /* "uuid:" is 5 char */
-			if ((s-p) != 36) {
+			if ((s - p) != 36) {
 				upnp_syslog(LOG_ERR, "UUID length is not 36.\n");
 				return -1;
 			}
@@ -227,8 +212,8 @@ upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 			/* Replace uuid */
 			upnp_gen_uuid(new_uuid, deviceType);
 
-			memcpy(p, new_uuid, 36);  /* uuid is 36 characters. */
-			p = p + 36;				  /* 46 = 10 + 36 */
+			memcpy(p, new_uuid, 36); /* uuid is 36 characters. */
+			p = p + 36; /* 46 = 10 + 36 */
 
 			/*
 			 * Afert the UUID of device in description XML is changed,
@@ -246,20 +231,18 @@ upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device)
 		 * advertisement table
 		 */
 		if (strncmp(p, SERVICE_BTAG, strlen(SERVICE_BTAG)) == 0) {
-
 			p += strlen(SERVICE_BTAG);
 
 			/* Find the balanced </serviceType> */
 			s = strstr(p, SERVICE_ETAG);
-			if (s == 0 || (s-p) > sizeof(serviceType)-1) {
-				upnp_syslog(LOG_ERR,
-					"Parse format:<serviceType>...</serviceType> error.\n");
+			if (s == 0 || (s - p) > sizeof(serviceType) - 1) {
+				upnp_syslog(LOG_ERR, "Parse format:<serviceType>...</serviceType> error.\n");
 				return -1;
 			}
 
 			/* Save serviceType */
-			strncpy(serviceType, p, s-p);
-			serviceType[s-p] = '\0';
+			strncpy(serviceType, p, s - p);
+			serviceType[s - p] = '\0';
 			p = s + strlen(SERVICE_ETAG);
 
 			/*

@@ -14,7 +14,6 @@
 
 #include <upnp.h>
 
-
 /*
  * Declarations for upnp_http engine
  */
@@ -22,43 +21,32 @@
 /*
  * method parsing lookup table
  */
-struct upnp_method upnp_http_methods[] =
-{
-	{"GET ",            sizeof("GET ")-1,           METHOD_GET,         description_process },
-	{"POST ",           sizeof("POST ")-1,          METHOD_POST,        soap_process        },
-	{"M-POST ",         sizeof("M-POST ")-1,        METHOD_MPOST,       soap_process        },
-	{"SUBSCRIBE ",      sizeof("SUBSCRIBE ")-1,     METHOD_SUBSCRIBE,   gena_process        },
-	{"UNSUBSCRIBE ",    sizeof("UNSUBSCRIBE ")-1,   METHOD_UNSUBSCRIBE, gena_process        },
-	{0, 0, 0}
-};
+struct upnp_method upnp_http_methods[] = { { "GET ", sizeof("GET ") - 1, METHOD_GET, description_process },
+					   { "POST ", sizeof("POST ") - 1, METHOD_POST, soap_process },
+					   { "M-POST ", sizeof("M-POST ") - 1, METHOD_MPOST, soap_process },
+					   { "SUBSCRIBE ", sizeof("SUBSCRIBE ") - 1, METHOD_SUBSCRIBE, gena_process },
+					   { "UNSUBSCRIBE ", sizeof("UNSUBSCRIBE ") - 1, METHOD_UNSUBSCRIBE, gena_process },
+					   { 0, 0, 0 } };
 
 static int read_header(UPNP_CONTEXT *, struct upnp_method *);
 static int read_body(UPNP_CONTEXT *, struct upnp_method *);
 
-static struct upnp_state upnp_http_fsm[] =
-{
-	{upnp_http_fsm_init,		0},
-	{read_header,			0},
-	{parse_method,			upnp_http_methods},
-	{parse_uri,			0},
-	{parse_msghdr,			0},
-	{read_body,			0},
-	{upnp_http_fsm_dispatch,	upnp_http_methods},
-	{0,				0}
+static struct upnp_state upnp_http_fsm[] = {
+	{ upnp_http_fsm_init, 0 }, { read_header, 0 }, { parse_method, upnp_http_methods },	      { parse_uri, 0 },
+	{ parse_msghdr, 0 },	   { read_body, 0 },   { upnp_http_fsm_dispatch, upnp_http_methods }, { 0, 0 }
 };
 
 /* Read the UPnP http socket */
-static int
-read_sock(int s, char *buf, int len, int flags)
+static int read_sock(int s, char *buf, int len, int flags)
 {
-	long     rc;
-	fd_set   ibits;
-	struct   timeval tv = {5, 0};   /* wait for at most 5 seconds */
+	long rc;
+	fd_set ibits;
+	struct timeval tv = { 5, 0 }; /* wait for at most 5 seconds */
 
 	FD_ZERO(&ibits);
 	FD_SET(s, &ibits);
 
-	rc = select(s+1, &ibits, 0, 0, &tv);
+	rc = select(s + 1, &ibits, 0, 0, &tv);
 	if (rc > 0) {
 		if (FD_ISSET(s, &ibits))
 			return recv(s, buf, len, flags);
@@ -68,8 +56,7 @@ read_sock(int s, char *buf, int len, int flags)
 }
 
 /* Send error reply messages to clients */
-static int
-send_error_reply(UPNP_CONTEXT *req)
+static int send_error_reply(UPNP_CONTEXT *req)
 {
 	int len;
 	char *buf = req->head_buffer;
@@ -108,14 +95,12 @@ send_error_reply(UPNP_CONTEXT *req)
 	/*
 	 * Only POST need to send Content-Type and title
 	 */
-	if (req->method == METHOD_POST ||
-	    req->method == METHOD_MPOST) {
-		len += sprintf(buf+len,
-			"Content-Type: text/xml\r\n\r\n"
-			"<title>%s</title>"
-			"<body>%s</body>\r\n",
-			err_msg,
-			err_msg);
+	if (req->method == METHOD_POST || req->method == METHOD_MPOST) {
+		len += sprintf(buf + len,
+			       "Content-Type: text/xml\r\n\r\n"
+			       "<title>%s</title>"
+			       "<body>%s</body>\r\n",
+			       err_msg, err_msg);
 	}
 
 	if (send(req->fd, buf, len, 0) == -1)
@@ -125,8 +110,7 @@ send_error_reply(UPNP_CONTEXT *req)
 }
 
 /* Read body data from socket */
-static int
-read_body(UPNP_CONTEXT *context, struct upnp_method *methods)
+static int read_body(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	char *content_len_p;
 	int len;
@@ -139,18 +123,14 @@ read_body(UPNP_CONTEXT *context, struct upnp_method *methods)
 	if (content_len_p == 0) {
 		/* body could be empty */
 		return 0;
-	}
-	else {
+	} else {
 		len = atoi(content_len_p);
 		if (len == 0) {
 			return 0;
-		}
-		else if (len < 0) {
+		} else if (len < 0) {
 			context->status = R_BAD_REQUEST;
 			return -1;
-		}
-		else if (context->content + len >=
-			context->buf + sizeof(context->buf)) {
+		} else if (context->content + len >= context->buf + sizeof(context->buf)) {
 			context->status = R_ERROR;
 			return -1;
 		}
@@ -158,8 +138,7 @@ read_body(UPNP_CONTEXT *context, struct upnp_method *methods)
 
 	/* Receive remainder */
 	while ((diff = len - context->content_len) > 0) {
-		n = read_sock(context->fd,
-			&context->content[context->content_len], diff, 0);
+		n = read_sock(context->fd, &context->content[context->content_len], diff, 0);
 		if (n <= 0) {
 			context->status = R_ERROR;
 			return -2;
@@ -174,8 +153,7 @@ read_body(UPNP_CONTEXT *context, struct upnp_method *methods)
 }
 
 /* Parse the URI */
-int
-parse_uri(UPNP_CONTEXT *context, struct upnp_method *methods)
+int parse_uri(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	char *p = context->url;
 	int pos;
@@ -196,13 +174,12 @@ parse_uri(UPNP_CONTEXT *context, struct upnp_method *methods)
 	}
 
 	/* skip URL and white spaces */
-	p += pos+1;
+	p += pos + 1;
 	while (*p == ' ' || *p == '\t')
 		p++;
 
 	/* also check HTTP version */
-	if (memcmp(p, "HTTP/1.0", 8) != 0 &&
-	    memcmp(p, "HTTP/1.1", 8) != 0) {
+	if (memcmp(p, "HTTP/1.0", 8) != 0 && memcmp(p, "HTTP/1.1", 8) != 0) {
 		return -1;
 	}
 
@@ -218,8 +195,7 @@ parse_uri(UPNP_CONTEXT *context, struct upnp_method *methods)
  * (4) SUBSCRIBE
  * (5) UNSUBSCRIBE
  */
-int
-parse_method(UPNP_CONTEXT *context, struct upnp_method *methods)
+int parse_method(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	int i = 0;
 	char *p = context->msghdrs[0];
@@ -245,8 +221,7 @@ parse_method(UPNP_CONTEXT *context, struct upnp_method *methods)
 }
 
 /* Invoke method handling function */
-int
-upnp_http_fsm_dispatch(UPNP_CONTEXT *context, struct upnp_method *methods)
+int upnp_http_fsm_dispatch(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	context->status = (*methods[context->method_id].dispatch)(context);
 	if (context->status != 0)
@@ -255,44 +230,33 @@ upnp_http_fsm_dispatch(UPNP_CONTEXT *context, struct upnp_method *methods)
 	return 0;
 }
 
-static void
-save_header(UPNP_CONTEXT *context, char *name, char *value)
+static void save_header(UPNP_CONTEXT *context, char *name, char *value)
 {
 	if (strcmp(name, "CONTENT-LENGTH") == 0) {
 		context->CONTENT_LENGTH = value;
-	}
-	else if (strcmp(name, "SOAPACTION") == 0) {
+	} else if (strcmp(name, "SOAPACTION") == 0) {
 		context->SOAPACTION = value;
-	}
-	else if (strcmp(name, "SID") == 0) {
+	} else if (strcmp(name, "SID") == 0) {
 		context->SID = value;
-	}
-	else if (strcmp(name, "CALLBACK") == 0) {
+	} else if (strcmp(name, "CALLBACK") == 0) {
 		context->CALLBACK = value;
-	}
-	else if (strcmp(name, "TIMEOUT") == 0) {
+	} else if (strcmp(name, "TIMEOUT") == 0) {
 		context->TIMEOUT = value;
-	}
-	else if (strcmp(name, "NT") == 0) {
+	} else if (strcmp(name, "NT") == 0) {
 		context->NT = value;
-	}
-	else if (strcmp(name, "HOST") == 0) {
+	} else if (strcmp(name, "HOST") == 0) {
 		context->HOST = value;
-	}
-	else if (strcmp(name, "MAN") == 0) {
+	} else if (strcmp(name, "MAN") == 0) {
 		context->MAN = value;
-	}
-	else if (strcmp(name, "ST") == 0) {
+	} else if (strcmp(name, "ST") == 0) {
 		context->ST = value;
 	}
 
 	return;
 }
 
-
 /* Parse HTTP header and set appropriate env variables */
-int
-parse_msghdr(UPNP_CONTEXT *context, struct upnp_method *methods)
+int parse_msghdr(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	char *token, *value;
 	char *p;
@@ -316,8 +280,7 @@ parse_msghdr(UPNP_CONTEXT *context, struct upnp_method *methods)
 				*p = toupper(*p);
 
 			save_header(context, token, value);
-		}
-		else {
+		} else {
 			upnp_syslog(LOG_ERR, "Null value in parse_msghdr()");
 			goto error_out;
 		}
@@ -331,18 +294,17 @@ error_out:
 }
 
 /* Disassemble header and record the message headers */
-static int
-record_msghdr(UPNP_CONTEXT *context, char *ptr, int eol, int eoh)
+static int record_msghdr(UPNP_CONTEXT *context, char *ptr, int eol, int eoh)
 {
 	int i;
 
 	/* clear end of line characters */
 	for (i = 0; i < eol; i++)
-		context->buf[context->index-i-1] = 0;
+		context->buf[context->index - i - 1] = 0;
 
 	/* clear end of header characters */
 	for (i = 0; i < eoh; i++)
-		context->buf[context->index+i] = 0;
+		context->buf[context->index + i] = 0;
 
 	if (context->header_num == MAX_HEADERS) {
 		upnp_syslog(LOG_ERR, "Too many header to handle!");
@@ -355,8 +317,7 @@ record_msghdr(UPNP_CONTEXT *context, char *ptr, int eol, int eoh)
 }
 
 /* Find end of a message header */
-int
-get_msghdr(UPNP_CONTEXT *context)
+int get_msghdr(UPNP_CONTEXT *context)
 {
 	int i = context->index;
 	int end = context->end;
@@ -370,26 +331,21 @@ get_msghdr(UPNP_CONTEXT *context)
 		/* end of line */
 		c = context->buf[i++];
 		if (c == '\n') {
-			if (i < end &&
-			    context->buf[i] != '\r' &&
-			    context->buf[i] != '\n') {
+			if (i < end && context->buf[i] != '\r' && context->buf[i] != '\n') {
 				/*
 				* PC style, the end of line is
 				* \r\n
 				*/
-				if (i > 1 && context->buf[i-2] == '\r')
-					eol = 2;  /* \r\n */
+				if (i > 1 && context->buf[i - 2] == '\r')
+					eol = 2; /* \r\n */
 				else
-					eol = 1;  /* \n */
-			}
-			else if (i < end && context->buf[i] == '\n') {
+					eol = 1; /* \n */
+			} else if (i < end && context->buf[i] == '\n') {
 				/* end of headers: \n\n */
 				eol = 1;
 				eoh = 1;
-			}
-			else if (i > 1 && i+1 < end &&
-				context->buf[i-2] == '\r' &&
-				context->buf[i] == '\r' && context->buf[i+1] == '\n') {
+			} else if (i > 1 && i + 1 < end && context->buf[i - 2] == '\r' && context->buf[i] == '\r' &&
+				   context->buf[i + 1] == '\n') {
 				/* end of headers: \r\n\r\n */
 				eol = 2;
 				eoh = 2;
@@ -409,8 +365,7 @@ get_msghdr(UPNP_CONTEXT *context)
 			if (eoh) {
 				context->index += eoh;
 				return 0;
-			}
-			else {
+			} else {
 				eol = 0;
 			}
 		}
@@ -420,8 +375,7 @@ get_msghdr(UPNP_CONTEXT *context)
 }
 
 /* Read data from socket until end of header of error occurs */
-static int
-read_header(UPNP_CONTEXT *context, struct upnp_method *methods)
+static int read_header(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	int buf_size;
 	int n;
@@ -455,13 +409,12 @@ read_header(UPNP_CONTEXT *context, struct upnp_method *methods)
 }
 
 /* Initialize the upnp_http context */
-int
-upnp_http_fsm_init(UPNP_CONTEXT *context, struct upnp_method *methods)
+int upnp_http_fsm_init(UPNP_CONTEXT *context, struct upnp_method *methods)
 {
 	context->header_num = 0;
 	context->status = 0;
-	context->index  = 0;
-	context->end    = 0;
+	context->index = 0;
+	context->end = 0;
 
 	context->CONTENT_LENGTH = 0;
 	context->SOAPACTION = 0;
@@ -477,8 +430,7 @@ upnp_http_fsm_init(UPNP_CONTEXT *context, struct upnp_method *methods)
 }
 
 /* Do finite state machine to process client (control point) requests */
-int
-upnp_http_fsm_engine(UPNP_CONTEXT *context, struct upnp_state *fsm)
+int upnp_http_fsm_engine(UPNP_CONTEXT *context, struct upnp_state *fsm)
 {
 	int i;
 	int ret = 0;
@@ -493,8 +445,7 @@ upnp_http_fsm_engine(UPNP_CONTEXT *context, struct upnp_state *fsm)
 }
 
 /* Process client (control point) requests */
-void
-upnp_http_process(UPNP_CONTEXT *context, int s)
+void upnp_http_process(UPNP_CONTEXT *context, int s)
 {
 	context->fd = s;
 
@@ -508,10 +459,9 @@ upnp_http_process(UPNP_CONTEXT *context, int s)
 }
 
 /* Close the upnp_http socket */
-void
-upnp_http_shutdown(UPNP_CONTEXT *context)
+void upnp_http_shutdown(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
 
 	if (ifp->http_sock != -1) {
 		close(ifp->http_sock);
@@ -522,10 +472,9 @@ upnp_http_shutdown(UPNP_CONTEXT *context)
 }
 
 /* Open the upnp_http socket */
-int
-upnp_http_init(UPNP_CONTEXT *context)
+int upnp_http_init(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
 
 	ifp->http_sock = oslib_tcp_socket(ifp->ipaddr, context->config.http_port);
 	if (ifp->http_sock == -1)

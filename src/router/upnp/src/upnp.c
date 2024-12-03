@@ -20,20 +20,16 @@
 int upnp_flag;
 UPNP_CONTEXT upnp_context;
 
-
 /* Shutdown all the UPnP interfaces */
-void
-upnp_shutdown(UPNP_CONTEXT *context)
+void upnp_shutdown(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp;
+	UPNP_INTERFACE *ifp;
 
 	while ((ifp = context->iflist) != 0) {
-
 		context->focus_ifp = ifp;
 
 		/* Unhook device database */
 		while (ifp->device_chain) {
-
 			ifp->focus_devchain = ifp->device_chain;
 
 			upnp_device_detach(context, ifp->device_chain->device);
@@ -61,8 +57,7 @@ upnp_shutdown(UPNP_CONTEXT *context)
 /*
  * Get interface IP addresses and netmasks from interface names
  */
-static int
-get_if_ipaddr(UPNP_INTERFACE *ifp)
+static int get_if_ipaddr(UPNP_INTERFACE *ifp)
 {
 	char mac[6];
 
@@ -72,18 +67,16 @@ get_if_ipaddr(UPNP_INTERFACE *ifp)
 	if (oslib_netmask(ifp->ifname, &ifp->netmask) != 0)
 		return -1;
 
-	if ((oslib_hwaddr(ifp->ifname, mac) != 0) ||
-		memcmp(mac, "\0\0\0\0\0\0", 6) == 0)
+	if ((oslib_hwaddr(ifp->ifname, mac) != 0) || memcmp(mac, "\0\0\0\0\0\0", 6) == 0)
 		return -1;
 
 	return 0;
 }
 
 /* Do UPnP interface initialization */
-UPNP_INTERFACE *
-upnp_ifinit(UPNP_CONTEXT *context, char *idxname)
+UPNP_INTERFACE *upnp_ifinit(UPNP_CONTEXT *context, char *idxname)
 {
-	UPNP_INTERFACE	*ifp;
+	UPNP_INTERFACE *ifp;
 	char *name;
 
 	ifp = (UPNP_INTERFACE *)malloc(sizeof(*ifp));
@@ -117,19 +110,18 @@ extern char xml_InternetGatewayDevice[];
 extern char xml_InternetGatewayDevice_real[];
 
 /* UPnP module initialization */
-int
-upnp_init(UPNP_CONTEXT *context)
+int upnp_init(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = 0;
-	UPNP_DEVICE		*device;
-	int	i;
+	UPNP_INTERFACE *ifp = 0;
+	UPNP_DEVICE *device;
+	int i;
 
 	char ifname_list[256];
-	
-	
+
 	char *name, *p, *next;
 
-	sprintf(xml_InternetGatewayDevice_real,xml_InternetGatewayDevice,nvram_safe_get("DD_BOARD"),nvram_safe_get("router_name"),nvram_safe_get("DD_BOARD"));
+	sprintf(xml_InternetGatewayDevice_real, xml_InternetGatewayDevice, nvram_safe_get("DD_BOARD"),
+		nvram_safe_get("router_name"), nvram_safe_get("DD_BOARD"));
 	/* Clear flag */
 	upnp_flag = 0;
 
@@ -158,9 +150,7 @@ upnp_init(UPNP_CONTEXT *context)
 	if (ssdp_init(context) != 0)
 		goto error_out;
 
-	for (name = ifname_list, p = name;
-	     name && name[0];
-	     name = next, p = 0) {
+	for (name = ifname_list, p = name; name && name[0]; name = next, p = 0) {
 		strtok_r(p, " ", &next);
 
 		ifp = upnp_ifinit(context, name);
@@ -212,29 +202,22 @@ error_out:
 }
 
 /* Time out handler of SSDP, GEAN and all the devices */
-void
-upnp_timeout(UPNP_CONTEXT *context)
+void upnp_timeout(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp;
-	UPNP_DEVCHAIN	*chain;
+	UPNP_INTERFACE *ifp;
+	UPNP_DEVCHAIN *chain;
 
 	time_t now = time(0);
-	int	update_ssdp = ((u_long)(now - context->adv_seconds) > context->config.adv_time);
+	int update_ssdp = ((u_long)(now - context->adv_seconds) > context->config.adv_time);
 	int update_gena = ((u_long)(now - context->gena_last_check) >= GENA_TIMEOUT);
 
 	/* Add device timer here */
-	for (ifp = context->iflist;
-		 ifp;
-		 ifp = ifp->next) {
-
+	for (ifp = context->iflist; ifp; ifp = ifp->next) {
 		/* Set the focus inteface for further reference */
 		context->focus_ifp = ifp;
 
 		/* loop for each device to check timeout */
-		for (chain = ifp->device_chain;
-			 chain;
-			 chain = chain->next) {
-
+		for (chain = ifp->device_chain; chain; chain = chain->next) {
 			ifp->focus_devchain = chain;
 
 			/* check for advertisement interval */
@@ -264,8 +247,7 @@ upnp_timeout(UPNP_CONTEXT *context)
 /*
  * Accept a connection and to handle the new http connection.
  */
-static void
-upnp_http_accept(UPNP_CONTEXT *context)
+static void upnp_http_accept(UPNP_CONTEXT *context)
 {
 	struct sockaddr_in addr;
 	socklen_t addr_len;
@@ -282,13 +264,12 @@ upnp_http_accept(UPNP_CONTEXT *context)
 }
 
 /* Dispatch UPnP incoming messages. */
-int
-upnp_dispatch(UPNP_CONTEXT *context)
+int upnp_dispatch(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp;
-	struct timeval tv = {1, 0};    /* timed out every second */
+	UPNP_INTERFACE *ifp;
+	struct timeval tv = { 1, 0 }; /* timed out every second */
 	int n;
-	fd_set  fds;
+	fd_set fds;
 
 	FD_ZERO(&fds);
 
@@ -334,8 +315,7 @@ upnp_dispatch(UPNP_CONTEXT *context)
  * It initializes the UPnP protocol and event variables.
  * And loop handler the UPnP incoming requests.
  */
-void
-upnp_mainloop()
+void upnp_mainloop()
 {
 	UPNP_CONTEXT *context = &upnp_context;
 
@@ -368,16 +348,12 @@ upnp_mainloop()
 	return;
 }
 
-
-void
-upnp_stop_handler()
+void upnp_stop_handler()
 {
 	upnp_flag = UPNP_FLAG_SHUTDOWN;
 }
 
-
-void
-upnp_restart_handler()
+void upnp_restart_handler()
 {
 	upnp_flag = UPNP_FLAG_RESTART;
 }

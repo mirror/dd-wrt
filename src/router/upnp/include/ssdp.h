@@ -17,20 +17,17 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 /*
  * Constants & Definitions
  */
-#define SSDP_ADVTIME    1800
-#define SSDP_ADDR       "239.255.255.250"
-#define SSDP_PORT       1900
-#define SSDP_MAXLEN     2048    /* SSDP response and advertise buffer size */
+#define SSDP_ADVTIME 1800
+#define SSDP_ADDR "239.255.255.250"
+#define SSDP_PORT 1900
+#define SSDP_MAXLEN 2048 /* SSDP response and advertise buffer size */
 
-enum SSDP_TYPE_E {
-	SSDP_BYEBYE,
-	SSDP_ALIVE
-};
+enum SSDP_TYPE_E { SSDP_BYEBYE, SSDP_ALIVE };
 
 enum MSEARCH_TYPE_E {
 	MSEARCH_NONE,
@@ -44,12 +41,7 @@ enum MSEARCH_TYPE_E {
 	MSEARCH_OTHER
 };
 
-enum ADVERTISE_TYPE_E {
-	ADVERTISE_DEVICE,
-	ADVERTISE_SERVICE,
-	ADVERTISE_UUID,
-	ADVERTISE_ROOTDEVICE
-};
+enum ADVERTISE_TYPE_E { ADVERTISE_DEVICE, ADVERTISE_SERVICE, ADVERTISE_UUID, ADVERTISE_ROOTDEVICE };
 
 /*
  * Functions

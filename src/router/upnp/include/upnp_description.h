@@ -17,25 +17,24 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 /* Constants */
-#define UPNP_DESC_MAXLEN 2048    /* maximum length per send */
+#define UPNP_DESC_MAXLEN 2048 /* maximum length per send */
 
-#define DEVICE_BTAG		"<deviceType>"
-#define DEVICE_ETAG		"</deviceType>"
-#define SERVICE_BTAG		"<serviceType>"
-#define SERVICE_ETAG		"</serviceType>"
-#define UDN_BTAG		"<UDN>"
-#define UDN_ETAG		"</UDN>"
-#define URL_BTAG		"<presentationURL>"
-#define URL_ETAG		"</presentationURL>"
+#define DEVICE_BTAG "<deviceType>"
+#define DEVICE_ETAG "</deviceType>"
+#define SERVICE_BTAG "<serviceType>"
+#define SERVICE_ETAG "</serviceType>"
+#define UDN_BTAG "<UDN>"
+#define UDN_ETAG "</UDN>"
+#define URL_BTAG "<presentationURL>"
+#define URL_ETAG "</presentationURL>"
 
 /*
  * Functions
  */
 int description_process(UPNP_CONTEXT *context);
-
 
 #ifdef __cplusplus
 }

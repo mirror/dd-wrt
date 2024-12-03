@@ -32,12 +32,11 @@
 #include <utils.h>
 #include <upnp.h>
 
-#define BCMUPMP_PID_FILE_PATH	"/tmp/bcmupnp.pid"
+#define BCMUPMP_PID_FILE_PATH "/tmp/bcmupnp.pid"
 
 char g_wandevs[32];
 
-static void
-reap(int sig)
+static void reap(int sig)
 {
 	pid_t pid;
 
@@ -48,12 +47,11 @@ reap(int sig)
 		printf("Reaped %d\n", (int)pid);
 }
 
-static int
-wan_primary_ifunit(void)
+static int wan_primary_ifunit(void)
 {
 	int unit;
 
-	for (unit = 0; unit < 10; unit ++) {
+	for (unit = 0; unit < 10; unit++) {
 		char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 		if (nvram_match(strcat_r(prefix, "primary", tmp), "1"))
@@ -63,8 +61,7 @@ wan_primary_ifunit(void)
 	return 0;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	char wan_if_buffer[33];
 	char **argp = &argv[1];
@@ -89,8 +86,7 @@ main(int argc, char *argv[])
 	if ((pidfile = fopen(BCMUPMP_PID_FILE_PATH, "w"))) {
 		fprintf(pidfile, "%d\n", getpid());
 		fclose(pidfile);
-	}
-	else {
+	} else {
 		perror("pidfile");
 		exit(errno);
 	}
@@ -103,11 +99,9 @@ main(int argc, char *argv[])
 	while (argp < &argv[argc]) {
 		if (strcasecmp(*argp, "-W") == 0) {
 			wanif = *++argp;
-		}
-		else if (strcasecmp(*argp, "-D") == 0) {
+		} else if (strcasecmp(*argp, "-D") == 0) {
 			daemonize = 1;
-		}
-		else {
+		} else {
 			usage = 1;
 		}
 		argp++;
@@ -159,12 +153,10 @@ main(int argc, char *argv[])
 	return 0;
 }
 
-void
-upnp_lock()
+void upnp_lock()
 {
 }
 
-void
-upnp_unlock()
+void upnp_unlock()
 {
 }

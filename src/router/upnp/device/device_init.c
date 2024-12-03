@@ -22,12 +22,10 @@
  */
 
 #ifdef __BCMIGD__
-extern UPNP_DEVICE	InternetGatewayDevice;
+extern UPNP_DEVICE InternetGatewayDevice;
 #endif /* __BCMIGD__ */
 
-
-UPNP_DEVICE *upnp_device_table[] =
-{
+UPNP_DEVICE *upnp_device_table[] = {
 #ifdef __BCMIGD__
 	&InternetGatewayDevice,
 #endif /* __BCMIGD__ */

@@ -16,11 +16,10 @@
 #include <eap_defs.h>
 #include <ap_upnp_sm.h>
 
-extern UPNP_SCBRCHAIN * get_subscriber_chain(UPNP_CONTEXT *context, UPNP_SERVICE *service);
+extern UPNP_SCBRCHAIN *get_subscriber_chain(UPNP_CONTEXT *context, UPNP_SERVICE *service);
 
 /* Send data to WPS */
-int
-wfa_WriteToWPS(UPNP_CONTEXT *context, char *databuf, int datalen, int type)
+int wfa_WriteToWPS(UPNP_CONTEXT *context, char *databuf, int datalen, int type)
 {
 	UPNP_WFACTRL *wfactrl = (UPNP_WFACTRL *)context->focus_ifp->focus_devchain->devctrl;
 	UPNP_WPS_CMD cmd;
@@ -57,14 +56,13 @@ wfa_WriteToWPS(UPNP_CONTEXT *context, char *databuf, int datalen, int type)
 }
 
 /* Read data from WPS */
-int
-wfa_ReadFromWPS(UPNP_CONTEXT *context, char *databuf, int *datalen, int type)
+int wfa_ReadFromWPS(UPNP_CONTEXT *context, char *databuf, int *datalen, int type)
 {
 	UPNP_WFACTRL *wfactrl = (UPNP_WFACTRL *)context->focus_ifp->focus_devchain->devctrl;
 	UPNP_WPS_CMD cmd;
 
 	struct timeval tv;
-	fd_set  fds;
+	fd_set fds;
 	int n;
 	int bytes;
 
@@ -73,8 +71,8 @@ wfa_ReadFromWPS(UPNP_CONTEXT *context, char *databuf, int *datalen, int type)
 	struct msghdr msg;
 
 	time_t end_time;
-	int	remain;
-	int	len;
+	int remain;
+	int len;
 
 retry:
 	len = *datalen;
@@ -89,7 +87,7 @@ retry:
 		FD_ZERO(&fds);
 		FD_SET(wfactrl->m_read, &fds);
 
-		n = select(wfactrl->m_read+1, &fds, 0, 0, &tv);
+		n = select(wfactrl->m_read + 1, &fds, 0, 0, &tv);
 		if (n > 0) {
 			/* Selected */
 			if (FD_ISSET(wfactrl->m_read, &fds)) {
@@ -121,7 +119,6 @@ retry:
 	}
 
 	if (bytes <= UPNP_WPS_CMD_SIZE) {
-
 		WFA_DBG("Read error!");
 		*datalen = 0;
 		return 0;
@@ -139,36 +136,25 @@ retry:
 }
 
 /* Perform the SetSelectedRegistrar action */
-int
-wfa_SetSelectedRegistrar(UPNP_CONTEXT *context,	UPNP_VALUE *NewMessage)
+int wfa_SetSelectedRegistrar(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage)
 {
-	wfa_WriteToWPS(context,
-			NewMessage->val.str,
-			NewMessage->len,
-			UPNP_WPS_TYPE_SSR);
+	wfa_WriteToWPS(context, NewMessage->val.str, NewMessage->len, UPNP_WPS_TYPE_SSR);
 
 	return 0;
 }
 
 /* Perform the PutMessage action */
-int
-wfa_PutMessage(UPNP_CONTEXT *context, UPNP_VALUE *NewInMessage, UPNP_VALUE *NewOutMessage)
+int wfa_PutMessage(UPNP_CONTEXT *context, UPNP_VALUE *NewInMessage, UPNP_VALUE *NewOutMessage)
 {
-	int	rc;
+	int rc;
 
 	/* Send PutMessage request to WPS module */
-	wfa_WriteToWPS(context, 
-			NewInMessage->val.str,
-			NewInMessage->len,
-			UPNP_WPS_TYPE_PMR);
+	wfa_WriteToWPS(context, NewInMessage->val.str, NewInMessage->len, UPNP_WPS_TYPE_PMR);
 
 	/* Read PugMessage response from WPS Module */
 	NewOutMessage->len = sizeof(NewOutMessage->val.str);
 
-	rc = wfa_ReadFromWPS(context,
-				NewOutMessage->val.str,
-				&NewOutMessage->len,
-				UPNP_WPS_TYPE_PMR);
+	rc = wfa_ReadFromWPS(context, NewOutMessage->val.str, &NewOutMessage->len, UPNP_WPS_TYPE_PMR);
 	if (rc <= 0)
 		NewOutMessage->len = 0;
 
@@ -176,27 +162,21 @@ wfa_PutMessage(UPNP_CONTEXT *context, UPNP_VALUE *NewInMessage, UPNP_VALUE *NewO
 }
 
 /* Perform the GetDeviceInfo action */
-int
-wfa_GetDeviceInfo(UPNP_CONTEXT *context, UPNP_VALUE *NewDeviceInfo)
+int wfa_GetDeviceInfo(UPNP_CONTEXT *context, UPNP_VALUE *NewDeviceInfo)
 {
 	int rc;
 	UPNP_WFACTRL *wfactrl = (UPNP_WFACTRL *)context->focus_ifp->focus_devchain->devctrl;
 
-
 	if (wfactrl->m_devInfo && wfactrl->m_devInfoLen > 0) {
 		memcpy(NewDeviceInfo->val.str, wfactrl->m_devInfo, wfactrl->m_devInfoLen);
 		NewDeviceInfo->len = wfactrl->m_devInfoLen;
-	}
-	else {
+	} else {
 		/* Send GetDeviceInfo request to WPS module */
 		wfa_WriteToWPS(context, NULL, 0, UPNP_WPS_TYPE_GDIR);
 
 		/* Read GetDeviceInfo response from WPS Module */
 		NewDeviceInfo->len = sizeof(NewDeviceInfo->val.str);
-		rc = wfa_ReadFromWPS(context,
-					NewDeviceInfo->val.str,
-					&NewDeviceInfo->len,
-					UPNP_WPS_TYPE_GDIR);
+		rc = wfa_ReadFromWPS(context, NewDeviceInfo->val.str, &NewDeviceInfo->len, UPNP_WPS_TYPE_GDIR);
 		if (rc <= 0)
 			NewDeviceInfo->len = 0;
 	}
@@ -205,20 +185,15 @@ wfa_GetDeviceInfo(UPNP_CONTEXT *context, UPNP_VALUE *NewDeviceInfo)
 }
 
 /* Perform the PutWLANResponse action */
-int
-wfa_PutWLANResponse(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage)
+int wfa_PutWLANResponse(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage)
 {
-	wfa_WriteToWPS(context,
-			NewMessage->val.str,
-			NewMessage->len,
-			UPNP_WPS_TYPE_PWR);
+	wfa_WriteToWPS(context, NewMessage->val.str, NewMessage->len, UPNP_WPS_TYPE_PWR);
 
 	return 0;
 }
 
 /* Close wfa socket */
-int
-wfa_free(UPNP_CONTEXT *context)
+int wfa_free(UPNP_CONTEXT *context)
 {
 	UPNP_WFACTRL *wfactrl = (UPNP_WFACTRL *)context->focus_ifp->focus_devchain->devctrl;
 
@@ -240,14 +215,13 @@ wfa_free(UPNP_CONTEXT *context)
 }
 
 /* Open wfa socket */
-int
-wfa_init(UPNP_CONTEXT *context)
+int wfa_init(UPNP_CONTEXT *context)
 {
-	UPNP_DEVCHAIN	*devchain;
-	UPNP_WFACTRL 	*wfactrl = 0;
+	UPNP_DEVCHAIN *devchain;
+	UPNP_WFACTRL *wfactrl = 0;
 	unsigned short port;
 	struct in_addr addr;
-	
+
 	/* Allocate soft control for WFA */
 	devchain = context->focus_ifp->focus_devchain;
 	devchain->devctrl = malloc(sizeof(*wfactrl));
@@ -283,7 +257,6 @@ err:
 	return -1;
 }
 
-
 /*
  * WARNNING: PLEASE IMPLEMENT YOUR CODES AFTER 
  *          "<< USER CODE START >>"
@@ -294,10 +267,7 @@ err:
  */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_common_init() */
-int WFADevice_common_init
-(
-	UPNP_CONTEXT *context
-)
+int WFADevice_common_init(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	WFADevice.attach_mode = DEVICE_ATTACH_DYNAMICALLY;
@@ -306,8 +276,7 @@ int WFADevice_common_init
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_open() */
-int
-WFADevice_open(UPNP_CONTEXT *context)
+int WFADevice_open(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	if (wfa_init(context) != 0)
@@ -318,8 +287,7 @@ WFADevice_open(UPNP_CONTEXT *context)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_close() */
-int
-WFADevice_close(UPNP_CONTEXT *context)
+int WFADevice_close(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	wfa_free(context);
@@ -328,8 +296,7 @@ WFADevice_close(UPNP_CONTEXT *context)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_request() */
-int
-WFADevice_request(UPNP_CONTEXT *context, void *cmd)
+int WFADevice_request(UPNP_CONTEXT *context, void *cmd)
 {
 	/* << USER CODE START >> */
 	UPNP_REQUEST *request = (UPNP_REQUEST *)cmd;
@@ -359,8 +326,7 @@ WFADevice_request(UPNP_CONTEXT *context, void *cmd)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_timeout() */
-int
-WFADevice_timeout(UPNP_CONTEXT *context, time_t now)
+int WFADevice_timeout(UPNP_CONTEXT *context, time_t now)
 {
 	/* << USER CODE START >> */
 	return 0;
@@ -368,8 +334,7 @@ WFADevice_timeout(UPNP_CONTEXT *context, time_t now)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: WFADevice_notify() */
-int
-WFADevice_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+int WFADevice_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	/* << USER CODE START >> */
 	UPNP_SUBSCRIBER *subscriber;
@@ -382,7 +347,7 @@ WFADevice_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 		subscriber = scbrchain->subscriberlist;
 		while (subscriber) {
 			subscriber = subscriber->next;
-			num ++;
+			num++;
 		}
 	}
 

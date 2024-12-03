@@ -30,7 +30,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-
 /* Linux/eCos/NetBSD specific headers */
 #if defined(linux) || defined(__ECOS) || defined(__NetBSD__)
 #include <sys/time.h>
@@ -44,7 +43,6 @@
 
 void DEBUGF(char *, ...);
 
-
 /*
  * udp_open()
  *
@@ -55,25 +53,24 @@ void DEBUGF(char *, ...);
  */
 int udp_open()
 {
-	int        new_sock;     /* temporary socket handle */
+	int new_sock; /* temporary socket handle */
 #ifdef _WIN32_REAL
-	int           retval;
-	WSADATA       wsa_data;
+	int retval;
+	WSADATA wsa_data;
 #endif // _WIN32_REAL
 
 	DEBUGF("Entered udp_open\n");
 
 #ifdef _WIN32_REAL
 	retval = WSAStartup(MAKEWORD(2, 0), &wsa_data);
-	if (retval != 0)
-	{
+	if (retval != 0) {
 		DEBUGF("WSAStartup call failed.\n");
 		return -1;
 	}
 #endif /*  _WIN32_REAL */
 
 	/* create INTERNET, udp datagram socket */
-	new_sock = (int) socket(AF_INET, SOCK_DGRAM, 0);
+	new_sock = (int)socket(AF_INET, SOCK_DGRAM, 0);
 
 	if (new_sock < 0) {
 		DEBUGF("socket call failed.\n");
@@ -84,7 +81,6 @@ int udp_open()
 
 	return new_sock;
 }
-
 
 /*
  * udp_bind(int fd, int portno)
@@ -105,8 +101,7 @@ int udp_bind(int fd, int portno)
 	binder.sin_port = htons(portno);
 
 	/* bind protocol to socket */
-	if (bind(fd, (struct sockaddr *)&binder, sizeof(binder)))
-	{
+	if (bind(fd, (struct sockaddr *)&binder, sizeof(binder))) {
 		DEBUGF("bind call for socket [%d] failed.\n", fd);
 		return -1;
 	}
@@ -115,7 +110,6 @@ int udp_bind(int fd, int portno)
 
 	return 1;
 }
-
 
 /*
  * udp_close(int fd)
@@ -133,11 +127,10 @@ void udp_close(int fd)
 
 #if defined(__linux__) || defined(__ECOS)
 	close(fd);
-#endif 
+#endif
 
 	return;
 }
-
 
 /*
  * udp_write(int fd, char * buf, int len, struct sockaddr_in * to)
@@ -151,22 +144,18 @@ void udp_close(int fd)
  *
  * Returns bytesSent if succeeded. If there is an error -1 is returned
  */
-int udp_write(int fd, char * buf, int len, struct sockaddr_in * to)
+int udp_write(int fd, char *buf, int len, struct sockaddr_in *to)
 {
-	int            bytes_sent;
+	int bytes_sent;
 
 	DEBUGF("Entered udp_write: len %d\n", len);
-	bytes_sent = sendto(fd, buf, len, 0,
-	                    (struct sockaddr *) to,
-	                    sizeof(struct sockaddr_in));
-	if (bytes_sent < 0)
-	{
+	bytes_sent = sendto(fd, buf, len, 0, (struct sockaddr *)to, sizeof(struct sockaddr_in));
+	if (bytes_sent < 0) {
 		DEBUGF("sendto on socket %d failed\n", fd);
 		return -1;
 	}
 	return bytes_sent;
 }
-
 
 /*
  * udp_read(int fd, char * buf, int len, struct sockaddr_in * from)
@@ -180,12 +169,12 @@ int udp_write(int fd, char * buf, int len, struct sockaddr_in * to)
  *
  * Returns bytes received if succeeded. If there is an error -1 is returned
  */
-int udp_read(int fd, char * buf, int len, struct sockaddr_in * from)
+int udp_read(int fd, char *buf, int len, struct sockaddr_in *from)
 {
 	int bytes_recd = 0;
 	unsigned int fromlen = 0;
-	fd_set        fdvar;
-	int            sel_ret;
+	fd_set fdvar;
+	int sel_ret;
 
 	DEBUGF("Entered udp_read\n");
 
@@ -193,11 +182,10 @@ int udp_read(int fd, char * buf, int len, struct sockaddr_in * from)
 	/* we have to wait for only one descriptor */
 	FD_SET(fd, &fdvar);
 
-	sel_ret = select(fd + 1, &fdvar, (fd_set *) 0, (fd_set *) 0, NULL);
+	sel_ret = select(fd + 1, &fdvar, (fd_set *)0, (fd_set *)0, NULL);
 
 	/* if select returns negative value, system error */
-	if (sel_ret < 0)
-	{
+	if (sel_ret < 0) {
 		DEBUGF("select call failed; system error\n");
 		return -1;
 	}
@@ -207,10 +195,8 @@ int udp_read(int fd, char * buf, int len, struct sockaddr_in * from)
 	   and read the packet
 	*/
 	fromlen = sizeof(struct sockaddr_in);
-	bytes_recd = recvfrom(fd, buf, len, 0,
-	                      (struct sockaddr *)from, &fromlen);
-	if (bytes_recd < 0)
-	{
+	bytes_recd = recvfrom(fd, buf, len, 0, (struct sockaddr *)from, &fromlen);
+	if (bytes_recd < 0) {
 		DEBUGF("recvfrom on socket %d failed\n", fd);
 		return -1;
 	}
@@ -235,13 +221,12 @@ int udp_read(int fd, char * buf, int len, struct sockaddr_in * from)
  * Returns bytes received if succeeded. If there is an error -1 is returned
  */
 
-int udp_read_timed(int fd, char * buf, int len,
-                   struct sockaddr_in * from, int timeout)
+int udp_read_timed(int fd, char *buf, int len, struct sockaddr_in *from, int timeout)
 {
 	int bytes_recd = 0;
 	unsigned int fromlen = 0;
-	fd_set        fdvar;
-	int            sel_ret;
+	fd_set fdvar;
+	int sel_ret;
 	struct timeval tv;
 
 	DEBUGF("Entered udp_read\n");
@@ -252,15 +237,12 @@ int udp_read_timed(int fd, char * buf, int len,
 	FD_ZERO(&fdvar);
 	/* we have to wait for only one descriptor */
 	FD_SET(fd, &fdvar);
-	sel_ret = select(fd + 1, &fdvar, (fd_set *) 0, (fd_set *) 0, &tv);
+	sel_ret = select(fd + 1, &fdvar, (fd_set *)0, (fd_set *)0, &tv);
 	/* if select returns negative value, system error */
-	if (sel_ret < 0)
-	{
+	if (sel_ret < 0) {
 		DEBUGF("select call failed; system error\n");
 		return -1;
-	}
-	else if (sel_ret == 0)
-	{
+	} else if (sel_ret == 0) {
 		DEBUGF("select call timed out\n");
 		return -1;
 	}
@@ -270,10 +252,8 @@ int udp_read_timed(int fd, char * buf, int len,
 	   and read the packet
 	*/
 	fromlen = sizeof(struct sockaddr_in);
-	bytes_recd = recvfrom(fd, buf, len, 0,
-	                      (struct sockaddr *)from, &fromlen);
-	if (bytes_recd < 0)
-	{
+	bytes_recd = recvfrom(fd, buf, len, 0, (struct sockaddr *)from, &fromlen);
+	if (bytes_recd < 0) {
 		DEBUGF("recvfrom on socket %d failed\n", fd);
 		return -1;
 	}
@@ -283,11 +263,11 @@ int udp_read_timed(int fd, char * buf, int len,
 	return bytes_recd;
 }
 
-void DEBUGF(char * strFormat, ...)
+void DEBUGF(char *strFormat, ...)
 {
 #ifdef U_DEBUG
-	char     szTraceMsg[1000];
-	va_list  lpArgv;
+	char szTraceMsg[1000];
+	va_list lpArgv;
 
 	va_start(lpArgv, strFormat);
 	vsprintf(szTraceMsg, strFormat, lpArgv);

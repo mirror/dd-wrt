@@ -20,10 +20,9 @@
 //#endif /* __CONFIG_NAT__ */
 
 /* Close the UPnP request socket */
-void
-upnp_request_shutdown(UPNP_CONTEXT *context)
+void upnp_request_shutdown(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
 
 	if (ifp->req_sock != -1) {
 		close(ifp->req_sock);
@@ -34,10 +33,9 @@ upnp_request_shutdown(UPNP_CONTEXT *context)
 }
 
 /* Open the UPnP request socket */
-int
-upnp_request_init(UPNP_CONTEXT *context)
+int upnp_request_init(UPNP_CONTEXT *context)
 {
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
 	struct in_addr addr;
 
 	addr.s_addr = inet_addr(UPNP_REQ_ADDR);
@@ -49,36 +47,32 @@ upnp_request_init(UPNP_CONTEXT *context)
 }
 
 /* Send request response to peer */
-int
-upnp_request_response(UPNP_CONTEXT *context, UPNP_REQUEST *request)
+int upnp_request_response(UPNP_CONTEXT *context, UPNP_REQUEST *request)
 {
 	/* Send the response out */
-	sendto(context->focus_ifp->req_sock, (void *)request, sizeof(*request), 0,
-		(struct sockaddr *)&context->dst_addr, sizeof(context->dst_addr));
+	sendto(context->focus_ifp->req_sock, (void *)request, sizeof(*request), 0, (struct sockaddr *)&context->dst_addr,
+	       sizeof(context->dst_addr));
 
 	return 0;
 }
 
 /* Read request message */
-static int
-read_request(UPNP_CONTEXT *context)
+static int read_request(UPNP_CONTEXT *context)
 {
 	socklen_t size = sizeof(struct sockaddr);
 	int len;
 
-	len = recvfrom(context->focus_ifp->req_sock, context->buf, sizeof(context->buf),
-		0, (struct sockaddr *)&context->dst_addr, &size);
+	len = recvfrom(context->focus_ifp->req_sock, context->buf, sizeof(context->buf), 0, (struct sockaddr *)&context->dst_addr,
+		       &size);
 
 	/* sizeof message */
 	context->end = len;
 	return len;
 }
 
-static int
-get_device_from_reqcmd(int cmd)
+static int get_device_from_reqcmd(int cmd)
 {
-	switch (cmd)
-	{
+	switch (cmd) {
 	case UPNP_REQ_GET_STATE_VAR:
 	case UPNP_REQ_SET_EVENT_VAR:
 	case UPNP_REQ_GENA_NOTIFY:
@@ -94,8 +88,7 @@ get_device_from_reqcmd(int cmd)
 }
 
 /* Process the UPnP request message */
-void
-upnp_request_handler(UPNP_CONTEXT *context)
+void upnp_request_handler(UPNP_CONTEXT *context)
 {
 	int len;
 	UPNP_REQUEST *request;
@@ -121,8 +114,7 @@ upnp_request_handler(UPNP_CONTEXT *context)
 	}
 
 	/* Switch the operation */
-	switch (request->cmd)
-	{
+	switch (request->cmd) {
 	case UPNP_REQ_DEV_ADD:
 		upnp_syslog(LOG_INFO, "UPNP_CMD_DEV_ADD");
 
@@ -136,11 +128,7 @@ upnp_request_handler(UPNP_CONTEXT *context)
 		break;
 
 	case UPNP_REQ_GET_STATE_VAR:
-		request->status = soap_get_state_var(
-				context,
-				request->url,
-				request->var[0].statevar,
-				&request->var[0].value);
+		request->status = soap_get_state_var(context, request->url, request->var[0].statevar, &request->var[0].value);
 		upnp_request_response(context, request);
 		break;
 
@@ -154,9 +142,7 @@ upnp_request_handler(UPNP_CONTEXT *context)
 
 	default:
 		upnp_syslog(LOG_INFO, "Device command.");
-		for (chain = ifp->device_chain;
-			chain;
-			chain = chain->next) {
+		for (chain = ifp->device_chain; chain; chain = chain->next) {
 			if (chain->device == device) {
 				ifp->focus_devchain = chain;
 				device->request(context, request);

@@ -19,11 +19,11 @@
 extern "C" {
 #endif /* __cplusplus */
 
-extern	UPNP_DEVICE *upnp_device_table[];
+extern UPNP_DEVICE *upnp_device_table[];
 
-int  upnp_device_attach(UPNP_CONTEXT *context, UPNP_DEVICE *device);
+int upnp_device_attach(UPNP_CONTEXT *context, UPNP_DEVICE *device);
 void upnp_device_detach(UPNP_CONTEXT *context, UPNP_DEVICE *device);
-int  upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device);
+int upnp_device_renew_uuid(UPNP_CONTEXT *context, UPNP_DEVICE *device);
 
 #ifdef __cplusplus
 }

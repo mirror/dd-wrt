@@ -20,8 +20,7 @@
 /*
  * Change PresentationURL to specific interface IP address.
  */
-static int
-set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *data_len)
+static int set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *data_len)
 {
 	char *s, *p;
 	char buf[32];
@@ -29,7 +28,7 @@ set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *dat
 	int tail_len;
 	unsigned char myaddr[sizeof("255.255.255.255:65535")];
 
-	UPNP_INTERFACE	*ifp = context->focus_ifp;
+	UPNP_INTERFACE *ifp = context->focus_ifp;
 	char *root_device_xml = ifp->focus_devchain->device->root_device_xml;
 	char *name = descr->name;
 
@@ -38,7 +37,7 @@ set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *dat
 	 * If yes, replace the <presentationURL>,
 	 * else return the data buffer length.
 	 */
-	if (strcmp(root_device_xml, name+1) != 0) {
+	if (strcmp(root_device_xml, name + 1) != 0) {
 		*data_len = strlen(data_buf);
 		return 0;
 	}
@@ -55,29 +54,24 @@ set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *dat
 	/* Find the balanced </presentationURL> */
 	p = strstr(s, URL_ETAG);
 	if (p == 0) {
-		upnp_syslog(LOG_ERR,
-			"No balanced %s, should correct it and recomile the image.\n",
-			URL_ETAG);
+		upnp_syslog(LOG_ERR, "No balanced %s, should correct it and recomile the image.\n", URL_ETAG);
 		return -1;
 	}
 
 	tail_len = strlen(p);
 
 	/* Get new presentationURL length */
-	
-	if( nvram_match( "https_enable", "1" ) && !nvram_match( "http_enable", "1" ) )
-		{
+
+	if (nvram_match("https_enable", "1") && !nvram_match("http_enable", "1")) {
 		upnp_host_addr(myaddr, ifp->ipaddr, 80);
-		buf_len = sprintf(buf, "https://%s", myaddr );
-		}
-	else
-		{
-		upnp_host_addr(myaddr, ifp->ipaddr, atoi( nvram_safe_get( "http_lanport" ) ) );
+		buf_len = sprintf(buf, "https://%s", myaddr);
+	} else {
+		upnp_host_addr(myaddr, ifp->ipaddr, atoi(nvram_safe_get("http_lanport")));
 		buf_len = sprintf(buf, "http://%s", myaddr);
-		}
+	}
 
 	/* Pull up tail, including the null end */
-	memmove(s + buf_len, p, tail_len+1);
+	memmove(s + buf_len, p, tail_len + 1);
 
 	/* Replace http://255.255.255.255 with interface address (http://192.168.1.1) */
 	memcpy(s, buf, buf_len);
@@ -87,8 +81,7 @@ set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *dat
 }
 
 /* Send description XML file */
-static int
-description_send(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr)
+static int description_send(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr)
 {
 	char *p;
 	int len;
@@ -97,18 +90,16 @@ description_send(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr)
 
 	set_url(context, descr, data_buf, &data_len);
 	len = sprintf(context->buf,
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/xml\r\n"
-			"Content-Length: %d\r\n"
-			"Connection: close\r\n"
-			"Pragma: no-cache\r\n"
-			"\r\n",
-			data_len);
+		      "HTTP/1.1 200 OK\r\n"
+		      "Content-Type: text/xml\r\n"
+		      "Content-Length: %d\r\n"
+		      "Connection: close\r\n"
+		      "Pragma: no-cache\r\n"
+		      "\r\n",
+		      data_len);
 
 	if (send(context->fd, context->buf, len, 0) == -1) {
-		upnp_syslog(LOG_ERR,
-			"description_process() send failed! fd=%d, buf=%s\n",
-			context->fd, context->buf);
+		upnp_syslog(LOG_ERR, "description_process() send failed! fd=%d, buf=%s\n", context->fd, context->buf);
 		return R_ERROR;
 	}
 
@@ -129,20 +120,15 @@ description_send(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr)
 }
 
 /* Description lookup and sending routine */
-int
-description_process(UPNP_CONTEXT *context)
+int description_process(UPNP_CONTEXT *context)
 {
 	UPNP_INTERFACE *ifp = context->focus_ifp;
 	UPNP_DEVCHAIN *chain;
 	UPNP_DESCRIPTION *descr = 0;
 
-	for (chain = ifp->device_chain;
-	     chain;
-	     chain = chain->next) {
+	for (chain = ifp->device_chain; chain; chain = chain->next) {
 		/* search the table for target url */
-		for (descr = chain->device->description_table;
-		     descr && descr->xml;
-		     descr++) {
+		for (descr = chain->device->description_table; descr && descr->xml; descr++) {
 			/* Matched, set the focus device chain */
 			if (strcmp(context->url, descr->name) == 0) {
 				ifp->focus_devchain = chain;

@@ -17,35 +17,33 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
-#define UPNP_WFA_PORT			40040			/* WFA wlan receive port */
-#define UPNP_WFA_ADDR			"127.0.0.1"
+#define UPNP_WFA_PORT 40040 /* WFA wlan receive port */
+#define UPNP_WFA_ADDR "127.0.0.1"
 
-#define UPNP_WFA_DATA_MAX_LENGTH	1024
-#define UPNP_WFA_READ_WPS_TIMEOUT	2
+#define UPNP_WFA_DATA_MAX_LENGTH 1024
+#define UPNP_WFA_READ_WPS_TIMEOUT 2
 
-#define WFA_DBG(a...)			upnp_syslog(LOG_INFO, ##a)
+#define WFA_DBG(a...) upnp_syslog(LOG_INFO, ##a)
 
 /*
  * WFA soft contorl
  */
-typedef	struct upnp_wfactrl
-{
-	int m_write;			/* for write to UPnPDev */
-	int m_read;			/* for read from UPnPDev */
-	char *m_devInfo;		/* device information */
+typedef struct upnp_wfactrl {
+	int m_write; /* for write to UPnPDev */
+	int m_read; /* for read from UPnPDev */
+	char *m_devInfo; /* device information */
 	int m_devInfoLen;
-}
-UPNP_WFACTRL;
+} UPNP_WFACTRL;
 
 /*
  * Function protocol type
  */
-int	wfa_SetSelectedRegistrar(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage);
-int	wfa_PutMessage			(UPNP_CONTEXT *context, UPNP_VALUE *NewInMessage, UPNP_VALUE *NewOutMessage);
-int	wfa_GetDeviceInfo		(UPNP_CONTEXT *context, UPNP_VALUE *NewDeviceInfo);
-int	wfa_PutWLANResponse		(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage);
+int wfa_SetSelectedRegistrar(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage);
+int wfa_PutMessage(UPNP_CONTEXT *context, UPNP_VALUE *NewInMessage, UPNP_VALUE *NewOutMessage);
+int wfa_GetDeviceInfo(UPNP_CONTEXT *context, UPNP_VALUE *NewDeviceInfo);
+int wfa_PutWLANResponse(UPNP_CONTEXT *context, UPNP_VALUE *NewMessage);
 
 /* OSL dependent function */
 extern void upnp_osl_update_wfa_subc_num(int if_instance, int num);

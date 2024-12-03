@@ -34,8 +34,8 @@ extern "C" {
 /*
  * Declaration
  */
-#define	UPNP_FLAG_SHUTDOWN	1
-#define	UPNP_FLAG_RESTART	2
+#define UPNP_FLAG_SHUTDOWN 1
+#define UPNP_FLAG_RESTART 2
 
 /*
  * Functions
@@ -44,9 +44,9 @@ extern int upnp_osl_primary_lanmac(char *mac);
 extern int upnp_osl_read_config(UPNP_CONFIG *config);
 extern int upnp_osl_ifname_list(char *ifname_list);
 
-void 	upnp_mainloop();
-void 	upnp_stop_handler();
-void 	upnp_restart_handler();
+void upnp_mainloop();
+void upnp_stop_handler();
+void upnp_restart_handler();
 
 #ifdef __cplusplus
 }

@@ -26,42 +26,28 @@ extern UPNP_ACTION action_x_wfawlanconfig[];
 
 extern UPNP_STATE_VAR statevar_x_wfawlanconfig[];
 
-static UPNP_SERVICE WFADevice_service [] =
-{
-	{"/control?WFAWLANConfig",	"/event?WFAWLANConfig",	"urn:schemas-wifialliance-org:service:WFAWLANConfig",	"WFAWLANConfig1",	action_x_wfawlanconfig,	statevar_x_wfawlanconfig},
-	{0,							0,						0,														0,					0,						0}
+static UPNP_SERVICE WFADevice_service[] = { { "/control?WFAWLANConfig", "/event?WFAWLANConfig",
+					      "urn:schemas-wifialliance-org:service:WFAWLANConfig", "WFAWLANConfig1",
+					      action_x_wfawlanconfig, statevar_x_wfawlanconfig },
+					    { 0, 0, 0, 0, 0, 0 } };
+static UPNP_ADVERTISE WFADevice_advertise[] = {
+	{ "urn:schemas-wifialliance-org:device:WFADevice", "00010203-0405-0607-0809-0a0b0c0d0ebb", ADVERTISE_ROOTDEVICE },
+	{ "urn:schemas-wifialliance-org:service:WFAWLANConfig", "00010203-0405-0607-0809-0a0b0c0d0ebb", ADVERTISE_SERVICE },
+	{
+		0,
+		"",
+	}
 };
-static UPNP_ADVERTISE WFADevice_advertise [] =
-{
-	{"urn:schemas-wifialliance-org:device:WFADevice",		"00010203-0405-0607-0809-0a0b0c0d0ebb",	ADVERTISE_ROOTDEVICE},
-	{"urn:schemas-wifialliance-org:service:WFAWLANConfig",	"00010203-0405-0607-0809-0a0b0c0d0ebb",	ADVERTISE_SERVICE},
-	{0,														"",										}
-};
-
 
 extern char xml_WFADevice[];
 extern char xml_x_wfawlanconfig[];
 
-static UPNP_DESCRIPTION WFADevice_description [] =
-{
-	{"/WFADevice.xml",                          xml_WFADevice},
-	{"/x_wfawlanconfig.xml",                    xml_x_wfawlanconfig},
-	{0,                                         0}
-};
+static UPNP_DESCRIPTION WFADevice_description[] = { { "/WFADevice.xml", xml_WFADevice },
+						    { "/x_wfawlanconfig.xml", xml_x_wfawlanconfig },
+						    { 0, 0 } };
 
-
-UPNP_DEVICE WFADevice =
-{
-	NULL,
-	"WFADevice.xml",
-	WFADevice_service,
-	WFADevice_advertise,
-	WFADevice_description,
-	WFADevice_common_init,
-	WFADevice_open,
-	WFADevice_close,
-	WFADevice_request,
-	WFADevice_timeout,
-	WFADevice_notify
+UPNP_DEVICE WFADevice = {
+	NULL,		"WFADevice.xml", WFADevice_service, WFADevice_advertise, WFADevice_description, WFADevice_common_init,
+	WFADevice_open, WFADevice_close, WFADevice_request, WFADevice_timeout,	 WFADevice_notify
 };
 /* >> TABLE END */

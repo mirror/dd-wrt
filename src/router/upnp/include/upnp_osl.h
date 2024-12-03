@@ -26,4 +26,4 @@
 
 #include <bcmnvram.h>
 
-#endif	/* __UPNP_OSL_H__ */
+#endif /* __UPNP_OSL_H__ */

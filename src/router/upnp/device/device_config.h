@@ -11,19 +11,19 @@
  *
  * $Id: device_config.h,v 1.6 2008/06/19 06:19:42 Exp $
  */
-#ifndef	__DEVICE_CONFIG_H__
-#define	__DEVICE_CONFIG_H__
+#ifndef __DEVICE_CONFIG_H__
+#define __DEVICE_CONFIG_H__
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 #define UPNP_MAX_IN_ARG 8
 #define UPNP_MAX_OUT_ARG 8
-#define	UPNP_TOTAL_EVENTED_VAR 14
+#define UPNP_TOTAL_EVENTED_VAR 14
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif	/* __DEVICE_CONFIG_H__ */
+#endif /* __DEVICE_CONFIG_H__ */

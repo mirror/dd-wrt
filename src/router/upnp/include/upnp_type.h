@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif	/* __cplusplus */
+#endif /* __cplusplus */
 
 #include <device_config.h>
 
@@ -25,30 +25,30 @@ extern "C" {
  * Definitions
  */
 #if !defined(OK) || !defined(ERROR)
-#define OK     0
+#define OK 0
 #define ERROR -1
 #endif
 
 #if !defined(TRUE) || !defined(FALSE)
-#define TRUE   1
-#define FALSE  0
+#define TRUE 1
+#define FALSE 0
 #endif
 
-#define	UPNP_VALUE_SIZE		1024
+#define UPNP_VALUE_SIZE 1024
 
 /* Forward definition */
-typedef	struct upnp_evalue          UPNP_EVALUE;
-typedef	struct upnp_state_var       UPNP_STATE_VAR;
-typedef struct upnp_evar            UPNP_EVAR;	
-typedef struct upnp_service         UPNP_SERVICE;
-typedef struct upnp_device          UPNP_DEVICE;
-typedef	struct upnp_devchain        UPNP_DEVCHAIN;
-typedef struct upnp_subscriber      UPNP_SUBSCRIBER;
-typedef	struct upnp_scbrchain       UPNP_SCBRCHAIN;
-typedef struct in_argument          IN_ARGUMENT;
-typedef struct out_argument         OUT_ARGUMENT;
-typedef	struct upnp_if              UPNP_INTERFACE;
-typedef struct upnp_context         UPNP_CONTEXT;
+typedef struct upnp_evalue UPNP_EVALUE;
+typedef struct upnp_state_var UPNP_STATE_VAR;
+typedef struct upnp_evar UPNP_EVAR;
+typedef struct upnp_service UPNP_SERVICE;
+typedef struct upnp_device UPNP_DEVICE;
+typedef struct upnp_devchain UPNP_DEVCHAIN;
+typedef struct upnp_subscriber UPNP_SUBSCRIBER;
+typedef struct upnp_scbrchain UPNP_SCBRCHAIN;
+typedef struct in_argument IN_ARGUMENT;
+typedef struct out_argument OUT_ARGUMENT;
+typedef struct upnp_if UPNP_INTERFACE;
+typedef struct upnp_context UPNP_CONTEXT;
 
 /* UPNP type definition */
 enum UPNP_DATA_TYPE_E {
@@ -63,25 +63,25 @@ enum UPNP_DATA_TYPE_E {
 	UPNP_TYPE_BIN_BASE64
 };
 
-typedef	struct upnp_value {
+typedef struct upnp_value {
 	int type;
 	int len;
 	union {
 		char i1;
 		short i2;
 		long i4;
-		unsigned char	ui1;
-		unsigned short	ui2;
-		unsigned long	ui4;
-		unsigned int	bool2;
+		unsigned char ui1;
+		unsigned short ui2;
+		unsigned long ui4;
+		unsigned int bool2;
 		char str[UPNP_VALUE_SIZE];
 		char data[UPNP_VALUE_SIZE];
 	} val;
 } UPNP_VALUE;
 
 /* Service XML */
-typedef int  (*ACTION_FUNC)(UPNP_CONTEXT *, UPNP_SERVICE *, IN_ARGUMENT *, OUT_ARGUMENT *);
-typedef int  (*QUERY_FUNC)(UPNP_CONTEXT *, UPNP_SERVICE *, UPNP_STATE_VAR *, UPNP_VALUE *);
+typedef int (*ACTION_FUNC)(UPNP_CONTEXT *, UPNP_SERVICE *, IN_ARGUMENT *, OUT_ARGUMENT *);
+typedef int (*QUERY_FUNC)(UPNP_CONTEXT *, UPNP_SERVICE *, UPNP_STATE_VAR *, UPNP_VALUE *);
 
 /* State variables */
 struct upnp_evalue {
@@ -140,20 +140,20 @@ struct upnp_service {
 
 /* UPnP advertise */
 typedef struct upnp_advertise {
-    char *name;
-    char uuid[40];
-    int type;
+	char *name;
+	char uuid[40];
+	int type;
 } UPNP_ADVERTISE;
 
 /* UPnP description */
 typedef struct upnp_description {
-    char *name;
-    char *xml;
+	char *name;
+	char *xml;
 } UPNP_DESCRIPTION;
 
 /* UPnP device */
-#define	DEVICE_ATTACH_ALWAYS		0
-#define	DEVICE_ATTACH_DYNAMICALLY	1
+#define DEVICE_ATTACH_ALWAYS 0
+#define DEVICE_ATTACH_DYNAMICALLY 1
 
 struct upnp_device {
 	UPNP_DEVICE *next;
@@ -180,7 +180,7 @@ struct upnp_devchain {
 };
 
 /* UPNP GENA protocol */
-#define UPNP_MAX_SID				32
+#define UPNP_MAX_SID 32
 
 struct upnp_subscriber {
 	UPNP_SUBSCRIBER *next;
@@ -223,18 +223,17 @@ struct out_argument {
 /*
  * UPnP interface
  */
-#define IFF_IPCHANGED		0x01    /* interface IP address changed */
-#define IFF_MJOINED		0x02    /* SSDP multicast group joined */
+#define IFF_IPCHANGED 0x01 /* interface IP address changed */
+#define IFF_MJOINED 0x02 /* SSDP multicast group joined */
 
 struct upnp_if {
+	UPNP_INTERFACE *next; /* pointer to next if */
 
-	UPNP_INTERFACE *next;	/* pointer to next if */
-
-	char ifname[IFNAMSIZ];	/* interface name */
-	int if_instance;	/* interface instance index */
-	int flag;		/* ip changed, multicast joined? */
-	int http_sock;		/* upnp_http socket */
-	int req_sock;		/* Per interface request socket */
+	char ifname[IFNAMSIZ]; /* interface name */
+	int if_instance; /* interface instance index */
+	int flag; /* ip changed, multicast joined? */
+	int http_sock; /* upnp_http socket */
+	int req_sock; /* Per interface request socket */
 	struct in_addr ipaddr;
 	struct in_addr netmask;
 
@@ -245,22 +244,20 @@ struct upnp_if {
 /*
  * UPnP context
  */
-#define MAX_HEADERS		64	/* default message header num */
-#define MAX_HEADER_LEN		4096
-#define MAX_BUF_LEN		2048
+#define MAX_HEADERS 64 /* default message header num */
+#define MAX_HEADER_LEN 4096
+#define MAX_BUF_LEN 2048
 
-typedef	struct upnp_config {
-
-	unsigned int http_port;		/* upnp_http port number */
-	unsigned int adv_time;		/* ssdp advertising time interval */
-	unsigned int sub_time;		/* gena subscription time interval */
+typedef struct upnp_config {
+	unsigned int http_port; /* upnp_http port number */
+	unsigned int adv_time; /* ssdp advertising time interval */
+	unsigned int sub_time; /* gena subscription time interval */
 
 	char os_name[32];
 	char os_ver[32];
 } UPNP_CONFIG;
 
 struct upnp_context {
-
 	/* Configuration */
 	UPNP_CONFIG config;
 
@@ -270,29 +267,29 @@ struct upnp_context {
 	time_t adv_seconds;
 	time_t gena_last_check;
 
-	int ssdp_sock;			/* Socket to recive ssdp multicast packets */
+	int ssdp_sock; /* Socket to recive ssdp multicast packets */
 
 	/* Status */
-	int method;                     /* M_GET, M_POST, ... */
-	int method_id;                  /* method index */
+	int method; /* M_GET, M_POST, ... */
+	int method_id; /* method index */
 	int fd;
 
 	/* client socket descriptor */
-	int status;                     /* R_OK, R_ERROR, R_BAD_REQUEST... */
+	int status; /* R_OK, R_ERROR, R_BAD_REQUEST... */
 
-	char buf[MAX_HEADER_LEN * 2];       /* upnp_http input buffer */
-	char *msghdrs[MAX_HEADERS];	/* delimited headers */
-	int header_num;                 /* num of headers */
+	char buf[MAX_HEADER_LEN * 2]; /* upnp_http input buffer */
+	char *msghdrs[MAX_HEADERS]; /* delimited headers */
+	int header_num; /* num of headers */
 
-	char head_buffer[MAX_HEADER_LEN];	/* output header buffer */
-	char body_buffer[MAX_BUF_LEN];  /* outout body buffer */
+	char head_buffer[MAX_HEADER_LEN]; /* output header buffer */
+	char body_buffer[MAX_BUF_LEN]; /* outout body buffer */
 
-	int index;                      /* index to next unread char */
-	int end;                        /* index to one char past last */
+	int index; /* index to next unread char */
+	int end; /* index to one char past last */
 
 	char *url;
 	char *content;
-	int  content_len;
+	int content_len;
 
 	char *CONTENT_LENGTH;
 	char *SOAPACTION;
@@ -310,10 +307,9 @@ struct upnp_context {
 	IN_ARGUMENT in_args[UPNP_MAX_IN_ARG];
 	OUT_ARGUMENT out_args[UPNP_MAX_OUT_ARG];
 
-	struct sockaddr_in *dst;	/* client address, for SSDP MSEARCH */
+	struct sockaddr_in *dst; /* client address, for SSDP MSEARCH */
 	struct sockaddr_in dst_addr;
 };
-
 
 #ifdef __cplusplus
 }
