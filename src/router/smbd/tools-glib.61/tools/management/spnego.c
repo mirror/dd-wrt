@@ -303,6 +303,7 @@ static int encode_negTokenTarg(char *in_blob, int in_len,
 
 	g_free(sup_oid);
 	g_free(krb5_oid);
+	return 0;
 }
 
 int spnego_handle_authen_request(struct ksmbd_spnego_authen_request *req,

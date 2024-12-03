@@ -27,6 +27,8 @@ struct ksmbd_user {
 	int		state;
 	GRWLock		update_lock;
 	unsigned int	failed_login_count;
+	int		ngroups;
+	gid_t		*sgid;
 };
 
 static inline void set_user_flag(struct ksmbd_user *user, int bit)
@@ -61,10 +63,13 @@ void usm_iter_users(user_cb cb, void *data);
 
 struct ksmbd_login_request;
 struct ksmbd_login_response;
+struct ksmbd_login_response_ext;
 struct ksmbd_logout_request;
 
 int usm_handle_login_request(struct ksmbd_login_request *req,
 			     struct ksmbd_login_response *resp);
 int usm_handle_logout_request(struct ksmbd_logout_request *req);
+int usm_handle_login_request_ext(struct ksmbd_login_request *req,
+			     struct ksmbd_login_response_ext *resp);
 
 #endif /* __MANAGEMENT_USER_H__ */

@@ -17,7 +17,7 @@ ksmbd.control \- control ksmbd.mountd and ksmbd daemons
 .B ksmbd.control
 [\-v] \-c
 .SH DESCRIPTION
-\fBksmbd.control\fR controls \fBksmbd.mountd\fP(8) user mode and \fBksmbd\fR kernel mode daemons.
+\fBksmbd.control\fR controls \fBksmbd.mountd\fR(8) user mode and \fBksmbd\fR kernel mode daemons.
 .SH OPTIONS
 .TP
 \fB\-s\fR, \fB\-\-shutdown\fR
@@ -58,6 +58,6 @@ For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-to
 .SH "SEE ALSO"
 .TP
 \fBUtilities\fR
-\fBksmbd.addshare\fP(8),
-\fBksmbd.adduser\fP(8),
-\fBksmbd.mountd\fP(8)
+\fBksmbd.addshare\fR(8),
+\fBksmbd.adduser\fR(8),
+\fBksmbd.mountd\fR(8)

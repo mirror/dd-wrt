@@ -8,6 +8,7 @@
 #define _GNU_SOURCE
 #include <fcntl.h>
 
+#include <unistd.h>
 #include <getopt.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -143,6 +144,15 @@ static int control_list(void)
 	    fcntl(fd, F_SETOWN, getpid()) < 0) {
 		ret = -errno;
 		pr_debug("Can't control `%s': %m\n", fifo_path);
+		goto out_close;
+	}
+
+	if (isatty(STDOUT_FILENO) &&
+	    fcntl(STDOUT_FILENO,
+		  F_SETFL,
+		  fcntl(STDOUT_FILENO, F_GETFL) & ~O_APPEND) < 0) {
+		ret = -errno;
+		pr_debug("Can't control terminal: %m\n");
 		goto out_close;
 	}
 

@@ -6,8 +6,8 @@ ksmbd.mountd \- start ksmbd.mountd and ksmbd daemons
 [\-v] [\-p \fI\,PORT\/\fR] [\-n[\fI\,WAY\/\fR]] [\-C \fI\,CONF\/\fR] [\-P \fI\,PWDDB\/\fR]
 .SH DESCRIPTION
 \fBksmbd.mountd\fR starts \fBksmbd.mountd\fR user mode and \fBksmbd\fR kernel mode daemons.
-\fBksmbd.mountd\fR has to parse \fBksmbd.conf\fP(5) configuration file in order to start.
-\fBksmbd.mountd\fR can parse \fBksmbdpwd.db\fP(5) user database so as to support non-guest sessions.
+\fBksmbd.mountd\fR has to parse \fBksmbd.conf\fR(5) configuration file in order to start.
+\fBksmbd.mountd\fR can parse \fBksmbdpwd.db\fR(5) user database so as to support non-guest sessions.
 .SH OPTIONS
 .TP
 \fB\-p\fR, \fB\-\-port\fR=\fI\,PORT\/\fR
@@ -49,12 +49,12 @@ For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-to
 .SH "SEE ALSO"
 .TP
 \fBConfiguration File\fR
-\fBksmbd.conf\fP(5)
+\fBksmbd.conf\fR(5)
 .TP
 \fBUser Database\fR
-\fBksmbdpwd.db\fP(5)
+\fBksmbdpwd.db\fR(5)
 .TP
 \fBUtilities\fR
-\fBksmbd.addshare\fP(8),
-\fBksmbd.adduser\fP(8),
-\fBksmbd.control\fP(8)
+\fBksmbd.addshare\fR(8),
+\fBksmbd.adduser\fR(8),
+\fBksmbd.control\fR(8)

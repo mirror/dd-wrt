@@ -25,7 +25,7 @@ extern struct smbconf_parser parser;
 static inline int cp_printable(unsigned char *p)
 {
 	/* eighth bit is ok due to utf-8 mb */
-	return *p >= 0x20 && *p != 0x7F;
+	return (*p >= 0x20 && *p != 0x7F) || *p == '\t';
 }
 
 static inline int cp_smbconf_eol(char *p)
@@ -58,5 +58,6 @@ unsigned long cp_get_group_kv_long(char *v);
 int cp_get_group_kv_config_opt(char *v);
 char **cp_get_group_kv_list(char *v);
 void cp_group_kv_list_free(char **list);
+int cp_group_kv_steal(GHashTable *kv, const char *lookup, char **k, char **v);
 
 #endif /* __KSMBD_CONFIG_H__ */

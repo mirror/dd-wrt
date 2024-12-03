@@ -76,7 +76,17 @@ struct ksmbd_login_response {
 	__u16	status;
 	__u16	hash_sz;
 	__s8	hash[KSMBD_REQ_MAX_HASH_SZ];
-	__u32   reserved[16];		/* Reserved room */
+	__u32	reserved[16];			/* Reserved room */
+};
+
+/*
+ * IPC user login response extension.
+ */
+struct ksmbd_login_response_ext {
+	__u32	handle;
+	__s32	ngroups;			/* supplementary group count */
+	__s8   reserved[128];			/* Reserved room */
+	__s8   ____payload[];
 };
 
 struct ksmbd_share_config_request {
@@ -195,6 +205,9 @@ enum ksmbd_event {
 	KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST,
 	KSMBD_EVENT_SPNEGO_AUTHEN_RESPONSE	= 15,
 
+	KSMBD_EVENT_LOGIN_REQUEST_EXT,
+	KSMBD_EVENT_LOGIN_RESPONSE_EXT,
+
 	KSMBD_EVENT_MAX
 };
 
@@ -221,6 +234,7 @@ enum KSMBD_TREE_CONN_STATUS {
 #define KSMBD_USER_FLAG_BAD_USER	(1 << 3)
 #define KSMBD_USER_FLAG_GUEST_ACCOUNT	(1 << 4)
 #define KSMBD_USER_FLAG_DELAY_SESSION	(1 << 5)
+#define KSMBD_USER_FLAG_EXTENSION	(1 << 6)
 
 /*
  * Share config flags.

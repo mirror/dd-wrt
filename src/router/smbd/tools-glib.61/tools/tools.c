@@ -298,10 +298,10 @@ int load_config(char *pwddb, char *smbconf)
 
 	if (TOOL_IS_MOUNTD) {
 		sm_init();
-		wp_init();
 		rpc_init();
 		ipc_init();
 		spnego_init();
+		wp_init();
 	}
 
 	return ret;
@@ -310,10 +310,10 @@ int load_config(char *pwddb, char *smbconf)
 void remove_config(void)
 {
 	if (TOOL_IS_MOUNTD) {
+		wp_destroy();
 		spnego_destroy();
 		ipc_destroy();
 		rpc_destroy();
-		wp_destroy();
 		sm_destroy();
 	} else if (TOOL_IS_ADDSHARE) {
 		cp_smbconf_parser_destroy();

@@ -5,9 +5,9 @@ ksmbd.addshare \- configure shares for ksmbd.conf of ksmbd.mountd
 .B ksmbd.addshare
 [\-v] [\-C \fI\,CONF\/\fR] [\-P \fI\,PWDDB\/\fR] [\-a | \-u | \-d] [\-o \fI\,OPT\/\fR]... \fI\,SHARE\/\fR
 .SH DESCRIPTION
-\fBksmbd.addshare\fR configures shares for \fBksmbd.conf\fP(5) configuration file of \fBksmbd.mountd\fP(8) user mode daemon.
+\fBksmbd.addshare\fR configures shares for \fBksmbd.conf\fR(5) configuration file of \fBksmbd.mountd\fR(8) user mode daemon.
 \fBksmbd.addshare\fR modifies \fBksmbd.conf\fR such that its existing formatting is not retained.
-\fBksmbd.addshare\fR can parse \fBksmbdpwd.db\fP(5) user database so as to provide completions when prompting.
+\fBksmbd.addshare\fR can parse \fBksmbdpwd.db\fR(5) user database so as to provide completions when prompting.
 \fBksmbd.addshare\fR notifies \fBksmbd.mountd\fR of changes if it had made any.
 \fBksmbd.addshare\fR will only make changes that do not require restarting \fBksmbd.mountd\fR and \fBksmbd\fR to take effect.
 .SH OPTIONS
@@ -57,12 +57,12 @@ For bug reports, use the issue tracker at https://github.com/cifsd-team/ksmbd-to
 .SH "SEE ALSO"
 .TP
 \fBConfiguration File\fR
-\fBksmbd.conf\fP(5)
+\fBksmbd.conf\fR(5)
 .TP
 \fBUser Database\fR
-\fBksmbdpwd.db\fP(5)
+\fBksmbdpwd.db\fR(5)
 .TP
 \fBUtilities\fR
-\fBksmbd.adduser\fP(8),
-\fBksmbd.control\fP(8),
-\fBksmbd.mountd\fP(8)
+\fBksmbd.adduser\fR(8),
+\fBksmbd.control\fR(8),
+\fBksmbd.mountd\fR(8)

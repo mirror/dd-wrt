@@ -66,7 +66,8 @@ const char *KSMBD_SHARE_CONF[KSMBD_SHARE_CONF_MAX] = {
  * WARNING:
  *
  * Same as above.
- * Know that entries may have COUPLING, e.g. they may be synonyms or antonyms.
+ * Know that entries may have COUPLING, i.e. they may affect the same feature.
+ * Trailing comments are supported ONLY if the value is empty.
  */
 const char *KSMBD_SHARE_DEFCONF[KSMBD_SHARE_CONF_MAX] = {
 /*0*/	"",
@@ -357,7 +358,8 @@ struct ksmbd_share *shm_lookup_share(char *name)
 
 static void add_users_map(struct ksmbd_share *share,
 			  enum share_users map,
-			  char **names)
+			  char **names,
+			  int grc)
 {
 	char **pp;
 
@@ -369,16 +371,36 @@ static void add_users_map(struct ksmbd_share *share,
 
 		if (**pp == 0x00)
 			continue;
-		if (**pp == '@') {
-			struct group *e = getgrnam(*pp + 1);
+		if (**pp == grc) {
+			struct group *ge = getgrnam(*pp + 1);
+			g_autoptr(GPtrArray) ge_gid_users =
+				g_ptr_array_new_with_free_func(g_free);
+			struct passwd *pe;
 
-			if (!e) {
+			if (!ge) {
 				pr_err("Can't get group file entry for `%s'\n",
 				       *pp + 1);
 				continue;
 			}
 
-			add_users_map(share, map, g_strdupv(e->gr_mem));
+			setpwent();
+			while ((pe = getpwent()))
+				if (pe->pw_gid == ge->gr_gid)
+					gptrarray_printf(ge_gid_users,
+							 "%s",
+							 pe->pw_name);
+			endpwent();
+
+			add_users_map(share,
+				      map,
+				      gptrarray_to_strv(ge_gid_users),
+				      0x00);
+			ge_gid_users = NULL;
+
+			add_users_map(share,
+				      map,
+				      g_strdupv(ge->gr_mem),
+				      0x00);
 			continue;
 		}
 
@@ -499,36 +521,54 @@ static int force_user(struct ksmbd_share *share, char *name)
 	return 0;
 }
 
-static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
+static int group_kv_steal(GHashTable *kv,
+			  enum KSMBD_SHARE_CONF c,
+			  char **k,
+			  char **v)
 {
-	if (shm_share_config(k, KSMBD_SHARE_CONF_COMMENT)) {
+	int is_steal = !KSMBD_SHARE_CONF_IS_BROKEN(c);
+
+	if (is_steal) {
+		is_steal = cp_group_kv_steal(kv, KSMBD_SHARE_CONF[c], k, v);
+	} else {
+		g_free(*k);
+		g_free(*v);
+		*k = NULL;
+		*v = NULL;
+	}
+	return is_steal;
+}
+
+static int process_share_conf_kv(struct ksmbd_share *share, GHashTable *kv)
+{
+	g_autofree char *k = NULL, *v = NULL;
+	int has_read_only;
+
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_COMMENT, &k, &v)) {
 		share->comment = cp_get_group_kv_string(v);
 		if (validate_comment(share))
-			set_share_flag(share, KSMBD_SHARE_FLAG_INVALID);
-		return;
+			return -EINVAL;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_PATH)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_PATH, &k, &v)) {
 		share->path = cp_get_group_kv_string(v);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_GUEST_OK)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_GUEST_OK, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(share, KSMBD_SHARE_FLAG_GUEST_OK);
 		else
 			clear_share_flag(share, KSMBD_SHARE_FLAG_GUEST_OK);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_GUEST_ACCOUNT)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_GUEST_ACCOUNT, &k, &v)) {
 		share->guest_account = cp_get_group_kv_string(v);
 		if (usm_add_guest_account(share->guest_account))
-			set_share_flag(share, KSMBD_SHARE_FLAG_INVALID);
-		return;
+			return -EINVAL;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_READ_ONLY)) {
+	if ((has_read_only =
+	     group_kv_steal(kv, KSMBD_SHARE_CONF_READ_ONLY, &k, &v))) {
 		if (cp_get_group_kv_bool(v)) {
 			set_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
 			clear_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
@@ -536,20 +576,19 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
 			set_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
 		}
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_BROWSEABLE)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_BROWSEABLE, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(share, KSMBD_SHARE_FLAG_BROWSEABLE);
 		else
 			clear_share_flag(share, KSMBD_SHARE_FLAG_BROWSEABLE);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_WRITE_OK) ||
-	    shm_share_config(k, KSMBD_SHARE_CONF_WRITEABLE) ||
-	    shm_share_config(k, KSMBD_SHARE_CONF_WRITABLE)) {
+	if (!has_read_only &&
+	    (group_kv_steal(kv, KSMBD_SHARE_CONF_WRITABLE, &k, &v) ||
+	     group_kv_steal(kv, KSMBD_SHARE_CONF_WRITEABLE, &k, &v) ||
+	     group_kv_steal(kv, KSMBD_SHARE_CONF_WRITE_OK, &k, &v))) {
 		if (cp_get_group_kv_bool(v)) {
 			set_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
 			clear_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
@@ -557,10 +596,9 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(share, KSMBD_SHARE_FLAG_WRITEABLE);
 			set_share_flag(share, KSMBD_SHARE_FLAG_READONLY);
 		}
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_STORE_DOS_ATTRIBUTES)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_STORE_DOS_ATTRIBUTES, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(
 				share,
@@ -569,50 +607,42 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(
 				share,
 				KSMBD_SHARE_FLAG_STORE_DOS_ATTRS);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_OPLOCKS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_OPLOCKS, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(share, KSMBD_SHARE_FLAG_OPLOCKS);
 		else
 			clear_share_flag(share, KSMBD_SHARE_FLAG_OPLOCKS);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_CREATE_MASK)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_CREATE_MASK, &k, &v)) {
 		share->create_mask = cp_get_group_kv_long_base(v, 8);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_DIRECTORY_MASK)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_DIRECTORY_MASK, &k, &v)) {
 		share->directory_mask = cp_get_group_kv_long_base(v, 8);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_FORCE_CREATE_MODE)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_FORCE_CREATE_MODE, &k, &v)) {
 		share->force_create_mode = cp_get_group_kv_long_base(v, 8);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_FORCE_DIRECTORY_MODE)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_FORCE_DIRECTORY_MODE, &k, &v)) {
 		share->force_directory_mode = cp_get_group_kv_long_base(v, 8);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_FORCE_GROUP)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_FORCE_GROUP, &k, &v)) {
 		if (force_group(share, v))
-			set_share_flag(share, KSMBD_SHARE_FLAG_INVALID);
-		return;
+			return -EINVAL;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_FORCE_USER)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_FORCE_USER, &k, &v)) {
 		if (force_user(share, v))
-			set_share_flag(share, KSMBD_SHARE_FLAG_INVALID);
-		return;
+			return -EINVAL;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_HIDE_DOT_FILES)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_HIDE_DOT_FILES, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(
 				share,
@@ -621,74 +651,70 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(
 				share,
 				KSMBD_SHARE_FLAG_HIDE_DOT_FILES);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_VALID_USERS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_VALID_USERS, &k, &v)) {
 		add_users_map(share,
 			      KSMBD_SHARE_VALID_USERS_MAP,
-			      cp_get_group_kv_list(v));
-		return;
+			      cp_get_group_kv_list(v),
+			      '@');
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_INVALID_USERS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_INVALID_USERS, &k, &v)) {
 		add_users_map(share,
 			      KSMBD_SHARE_INVALID_USERS_MAP,
-			      cp_get_group_kv_list(v));
-		return;
+			      cp_get_group_kv_list(v),
+			      '@');
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_READ_LIST)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_READ_LIST, &k, &v)) {
 		add_users_map(share,
 			      KSMBD_SHARE_READ_LIST_MAP,
-			      cp_get_group_kv_list(v));
-		return;
+			      cp_get_group_kv_list(v),
+			      '@');
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_WRITE_LIST)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_WRITE_LIST, &k, &v)) {
 		add_users_map(share,
 			      KSMBD_SHARE_WRITE_LIST_MAP,
-			      cp_get_group_kv_list(v));
-		return;
+			      cp_get_group_kv_list(v),
+			      '@');
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_ADMIN_USERS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_ADMIN_USERS, &k, &v)) {
 		add_users_map(share,
 			      KSMBD_SHARE_ADMIN_USERS_MAP,
-			      cp_get_group_kv_list(v));
-		return;
+			      cp_get_group_kv_list(v),
+			      '@');
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_HOSTS_ALLOW)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_HOSTS_ALLOW, &k, &v)) {
 		add_hosts_map(share,
 			      KSMBD_SHARE_HOSTS_ALLOW_MAP,
 			      cp_get_group_kv_list(v));
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_HOSTS_DENY)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_HOSTS_DENY, &k, &v)) {
 		add_hosts_map(share,
 			      KSMBD_SHARE_HOSTS_DENY_MAP,
 			      cp_get_group_kv_list(v));
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_MAX_CONNECTIONS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_MAX_CONNECTIONS, &k, &v)) {
 		share->max_connections = cp_memparse(v);
 		if (share->max_connections <= 0 ||
 		    share->max_connections > KSMBD_CONF_MAX_CONNECTIONS)
 			share->max_connections = KSMBD_CONF_MAX_CONNECTIONS;
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_VETO_FILES)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_VETO_FILES, &k, &v) &&
+	    !test_share_flag(share, KSMBD_SHARE_FLAG_PIPE)) {
 		share->veto_list = cp_get_group_kv_string(v + 1);
 		share->veto_list_sz = strlen(share->veto_list);
 		make_veto_list(share);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_INHERIT_OWNER)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_INHERIT_OWNER, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(
 				share,
@@ -697,10 +723,9 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(
 				share,
 				KSMBD_SHARE_FLAG_INHERIT_OWNER);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_FOLLOW_SYMLINKS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_FOLLOW_SYMLINKS, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(
 				share,
@@ -709,10 +734,9 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 			clear_share_flag(
 				share,
 				KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_VFS_OBJECTS)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_VFS_OBJECTS, &k, &v)) {
 		char **objects = cp_get_group_kv_list(v), **pp = objects;
 
 		clear_share_flag(share, KSMBD_SHARE_FLAG_ACL_XATTR);
@@ -726,31 +750,27 @@ static void process_share_conf_kv(struct ksmbd_share *share, char *k, char *v)
 				set_share_flag(share, KSMBD_SHARE_FLAG_STREAMS);
 		}
 		cp_group_kv_list_free(objects);
-		return;
 	}
 
-	if (shm_share_config(k, KSMBD_SHARE_CONF_CROSSMNT)) {
+	if (group_kv_steal(kv, KSMBD_SHARE_CONF_CROSSMNT, &k, &v)) {
 		if (cp_get_group_kv_bool(v))
 			set_share_flag(share, KSMBD_SHARE_FLAG_CROSSMNT);
 		else
 			clear_share_flag(share, KSMBD_SHARE_FLAG_CROSSMNT);
-		return;
 	}
+
+	return 0;
 }
 
-static void init_share_from_group(struct ksmbd_share *share,
-				  struct smbconf_group *group)
+static int init_share_from_group(struct ksmbd_share *share,
+				 struct smbconf_group *group)
 {
-	char *k, *v;
-	GHashTableIter iter;
-
 	share->name = g_strdup(group->name);
 
 	if (group == parser.ipc)
 		set_share_flag(share, KSMBD_SHARE_FLAG_PIPE);
 
-	ghash_for_each(k, v, group->kv, iter)
-		process_share_conf_kv(share, k, v);
+	return process_share_conf_kv(share, group->kv);
 }
 
 int shm_add_new_share(struct smbconf_group *group)
@@ -761,13 +781,14 @@ int shm_add_new_share(struct smbconf_group *group)
 	if (!share)
 		return -ENOMEM;
 
-	init_share_from_group(share, group);
-	if (test_share_flag(share, KSMBD_SHARE_FLAG_INVALID)) {
+	if (init_share_from_group(share, group)) {
 		pr_err("Invalid new share `%s' [0x%" PRIXPTR "]\n",
 		       share->name,
 		       (uintptr_t)share);
+		if (test_share_flag(share, KSMBD_SHARE_FLAG_PIPE))
+			ret = -EINVAL;
 		kill_ksmbd_share(share);
-		return 0;
+		return ret;
 	}
 
 	g_rw_lock_writer_lock(&shares_table_lock);

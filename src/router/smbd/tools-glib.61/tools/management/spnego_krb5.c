@@ -164,6 +164,7 @@ static krb5_error_code acquire_creds_from_keytab(krb5_context context,
 		goto out_err;
 	}
 
+	krb5_free_principal(context, sprinc);
 	g_free(host_name);
 	g_free(service_name);
 	return 0;
@@ -330,7 +331,7 @@ static int setup_krb5_ctx(struct spnego_mech_ctx *mech_ctx)
 	struct spnego_krb5_ctx *krb5_ctx;
 	krb5_error_code krb_retval;
 
-	if (mech_ctx->private)
+	if (!global_conf.krb5_support || mech_ctx->private)
 		return 0;
 
 	krb5_ctx = g_try_malloc0(sizeof(*krb5_ctx));

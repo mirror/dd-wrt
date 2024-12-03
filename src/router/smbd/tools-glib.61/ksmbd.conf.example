@@ -9,6 +9,7 @@
 	ipc timeout = 0
 	kerberos keytab file = 
 	kerberos service name = 
+	kerberos support = no
 	map to guest = never
 	max active sessions = 1024
 	max connections = 128

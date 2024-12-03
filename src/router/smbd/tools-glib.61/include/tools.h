@@ -58,6 +58,7 @@ struct smbconf_global {
 	unsigned int		gen_subauth[3];
 	char			*krb5_keytab_file;
 	char			*krb5_service_name;
+	int			krb5_support;
 	char			*pwddb;
 	char			*smbconf;
 	pid_t			pid;

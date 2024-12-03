@@ -20,7 +20,7 @@ include_dirs = include_directories(
 
 glib_dep = dependency(
   'glib-2.0',
-  version: '>= 2.44',
+  version: '>= 2.58',
 )
 libnl_dep = dependency(
   'libnl-genl-3.0',

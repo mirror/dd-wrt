@@ -58,6 +58,52 @@ out:
 	return 0;
 }
 
+static int login_response_payload_sz(char *account)
+{
+	int payload_sz;
+	struct ksmbd_user *user;
+
+	if (account[0] == '\0')
+		return 0;
+
+	user = usm_lookup_user(account);
+	if (!user)
+		return 0;
+
+	payload_sz = sizeof(gid_t) * user->ngroups;
+
+	put_ksmbd_user(user);
+	return payload_sz;
+}
+
+static int login_request_ext(struct ksmbd_ipc_msg *msg)
+{
+	struct ksmbd_login_request *req;
+	struct ksmbd_login_response_ext *resp;
+	struct ksmbd_ipc_msg *resp_msg;
+	int payload_sz;
+
+	req = KSMBD_IPC_MSG_PAYLOAD(msg);
+
+	payload_sz = login_response_payload_sz(req->account);
+	resp_msg = ipc_msg_alloc(sizeof(*resp) + payload_sz);
+	if (!resp_msg)
+		goto out;
+
+	resp = KSMBD_IPC_MSG_PAYLOAD(resp_msg);
+
+	if (VALID_IPC_MSG(msg, struct ksmbd_login_request))
+		usm_handle_login_request_ext(req, resp);
+
+	resp_msg->type = KSMBD_EVENT_LOGIN_RESPONSE_EXT;
+	resp->handle = req->handle;
+
+	ipc_msg_send(resp_msg);
+out:
+	ipc_msg_free(resp_msg);
+	return 0;
+}
+
 static int spnego_authen_request(struct ksmbd_ipc_msg *msg)
 {
 	struct ksmbd_spnego_authen_request *req;
@@ -302,6 +348,10 @@ static void worker_pool_fn(gpointer event, gpointer user_data)
 
 	case KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST:
 		spnego_authen_request(msg);
+		break;
+
+	case KSMBD_EVENT_LOGIN_REQUEST_EXT:
+		login_request_ext(msg);
 		break;
 
 	default:
