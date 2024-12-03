@@ -167,6 +167,7 @@ typedef struct _netconf_filter_t {
  */
 typedef struct _netconf_nat_t {
 	NETCONF_FW_COMMON;
+	int type;
 	struct in_addr ipaddr; /* Address to map packet to */
 	uint16 ports[2]; /* Port(s) to map packet to (network order) */
 } netconf_nat_t;
