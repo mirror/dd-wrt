@@ -182,4 +182,4 @@ char xml_InternetGatewayDevice[] =
 	"</root>\r\n"
 	"\r\n";
 
-char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice)+128];
+char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice) + 128];

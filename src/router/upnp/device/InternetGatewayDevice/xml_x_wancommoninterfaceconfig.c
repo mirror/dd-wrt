@@ -13,7 +13,7 @@
  */
 #include <upnp.h>
 
-char xml_x_wancommoninterfaceconfig[]=
+char xml_x_wancommoninterfaceconfig[] =
 	"<?xml version=\"1.0\"?>\r\n"
 	"<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">\r\n"
 	"\t<specVersion>\r\n"

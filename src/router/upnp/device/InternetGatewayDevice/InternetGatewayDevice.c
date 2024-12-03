@@ -15,17 +15,13 @@
 #include <soap.h>
 #include <InternetGatewayDevice.h>
 
-void
-upnp_portmap_reload(UPNP_CONTEXT *context)
+void upnp_portmap_reload(UPNP_CONTEXT *context)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	UPNP_PORTMAP *map;
 
 	portmap_ctrl = (UPNP_PORTMAP_CTRL *)(context->focus_ifp->focus_devchain->devctrl);
-	for (map = portmap_ctrl->pmlist;
-		 map < portmap_ctrl->pmlist + portmap_ctrl->num;
-		 map++)
-	{
+	for (map = portmap_ctrl->pmlist; map < portmap_ctrl->pmlist + portmap_ctrl->num; map++) {
 		/* Set to NAT kernel */
 		if (map->enable)
 			upnp_osl_nat_config(map);
@@ -35,8 +31,7 @@ upnp_portmap_reload(UPNP_CONTEXT *context)
 }
 
 /* Find a port mapping entry with index */
-UPNP_PORTMAP *
-upnp_portmap_with_index(UPNP_CONTEXT *context, int index)
+UPNP_PORTMAP *upnp_portmap_with_index(UPNP_CONTEXT *context, int index)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 
@@ -44,12 +39,11 @@ upnp_portmap_with_index(UPNP_CONTEXT *context, int index)
 	if (index >= portmap_ctrl->num)
 		return 0;
 
-	return (portmap_ctrl->pmlist+index);
+	return (portmap_ctrl->pmlist + index);
 }
 
 /* Get number of port mapping entries */
-unsigned short
-upnp_portmap_num(UPNP_CONTEXT *context)
+unsigned short upnp_portmap_num(UPNP_CONTEXT *context)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 
@@ -58,23 +52,16 @@ upnp_portmap_num(UPNP_CONTEXT *context)
 }
 
 /* Find a port mapping entry */
-UPNP_PORTMAP *
-upnp_portmap_find(UPNP_CONTEXT *context, char *remote_host,
-	unsigned short external_port, char *protocol)
+UPNP_PORTMAP *upnp_portmap_find(UPNP_CONTEXT *context, char *remote_host, unsigned short external_port, char *protocol)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	UPNP_PORTMAP *map;
 
 	portmap_ctrl = (UPNP_PORTMAP_CTRL *)(context->focus_ifp->focus_devchain->devctrl);
-	for (map = portmap_ctrl->pmlist;
-		 map < portmap_ctrl->pmlist + portmap_ctrl->num;
-		 map++) {
-
+	for (map = portmap_ctrl->pmlist; map < portmap_ctrl->pmlist + portmap_ctrl->num; map++) {
 		/* Find the entry fits for the required paramters */
-		if (strcmp(map->remote_host, remote_host) == 0 &&
-			map->external_port == external_port &&
-			strcmp(map->protocol, protocol) == 0) {
-
+		if (strcmp(map->remote_host, remote_host) == 0 && map->external_port == external_port &&
+		    strcmp(map->protocol, protocol) == 0) {
 			return map;
 		}
 	}
@@ -83,8 +70,7 @@ upnp_portmap_find(UPNP_CONTEXT *context, char *remote_host,
 }
 
 /* Description: Delete a port mapping entry */
-static void
-upnp_portmap_purge(UPNP_CONTEXT *context, UPNP_PORTMAP *map)
+static void upnp_portmap_purge(UPNP_CONTEXT *context, UPNP_PORTMAP *map)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	int index;
@@ -99,17 +85,15 @@ upnp_portmap_purge(UPNP_CONTEXT *context, UPNP_PORTMAP *map)
 
 	/* Pull up remainder */
 	index = map - portmap_ctrl->pmlist;
-	remainder = portmap_ctrl->num - (index+1);
+	remainder = portmap_ctrl->num - (index + 1);
 	if (remainder)
-		memcpy(map, map+1, sizeof(*map)*remainder);
+		memcpy(map, map + 1, sizeof(*map) * remainder);
 
 	portmap_ctrl->num--;
 	return;
 }
 
-int
-upnp_portmap_del(UPNP_CONTEXT *context, char *remote_host,
-	unsigned short external_port, char *protocol)
+int upnp_portmap_del(UPNP_CONTEXT *context, char *remote_host, unsigned short external_port, char *protocol)
 {
 	UPNP_PORTMAP *map;
 
@@ -123,19 +107,9 @@ upnp_portmap_del(UPNP_CONTEXT *context, char *remote_host,
 }
 
 /* Add a new port mapping entry */
-int
-upnp_portmap_add
-(
-	UPNP_CONTEXT	*context,
-	char            *remote_host,
-	unsigned short  external_port,
-	char            *protocol,
-	unsigned short  internal_port,
-	char            *internal_client,
-	unsigned int    enable,
-	char            *description,
-	unsigned long   duration
-)
+int upnp_portmap_add(UPNP_CONTEXT *context, char *remote_host, unsigned short external_port, char *protocol,
+		     unsigned short internal_port, char *internal_client, unsigned int enable, char *description,
+		     unsigned long duration)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	UPNP_PORTMAP *map;
@@ -144,8 +118,7 @@ upnp_portmap_add
 	portmap_ctrl = (UPNP_PORTMAP_CTRL *)(context->focus_ifp->focus_devchain->devctrl);
 
 	/* data validation */
-	if (strcasecmp(protocol, "TCP") != 0 &&
-		strcasecmp(protocol, "UDP") != 0) {
+	if (strcasecmp(protocol, "TCP") != 0 && strcasecmp(protocol, "UDP") != 0) {
 		upnp_syslog(LOG_ERR, "add_portmap:: Invalid protocol");
 		return SOAP_ARGUMENT_VALUE_INVALID;
 	}
@@ -157,18 +130,14 @@ upnp_portmap_add
 			return SOAP_CONFLICT_IN_MAPPING_ENTRY;
 
 		/* Argus, make it looked like shutdown */
-		if (enable != map->enable ||
-			internal_port != map->internal_port) {
-
+		if (enable != map->enable || internal_port != map->internal_port) {
 			if (map->enable) {
 				map->enable = 0;
 				upnp_osl_nat_config(map);
 			}
 		}
-	}
-	else {
+	} else {
 		if (portmap_ctrl->num == portmap_ctrl->limit) {
-
 			UPNP_PORTMAP_CTRL *new_portmap_ctrl;
 
 			int old_limit = portmap_ctrl->limit;
@@ -204,16 +173,16 @@ upnp_portmap_add
 	}
 
 	/* Update database */
-	map->external_port  = external_port;
-	map->internal_port  = internal_port;
-	map->enable         = enable;
-	map->duration		= duration;
-	map->book_time		= time(0);
+	map->external_port = external_port;
+	map->internal_port = internal_port;
+	map->enable = enable;
+	map->duration = duration;
+	map->book_time = time(0);
 
-	strlcpy(map->remote_host,        remote_host, sizeof(map->remote_host));
-	strlcpy(map->protocol,           protocol, sizeof(map->protocol));
-	strlcpy(map->internal_client,    internal_client, sizeof(map->internal_client));
-	strlcpy(map->description,        description, sizeof(map->description));
+	strlcpy(map->remote_host, remote_host, sizeof(map->remote_host));
+	strlcpy(map->protocol, protocol, sizeof(map->protocol));
+	strlcpy(map->internal_client, internal_client, sizeof(map->internal_client));
+	strlcpy(map->description, description, sizeof(map->description));
 
 	/* Set to NAT kernel */
 	if (map->enable)
@@ -223,8 +192,7 @@ upnp_portmap_add
 }
 
 /* Timed-out a port mapping entry */
-void
-upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
+void upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	UPNP_PORTMAP *map;
@@ -239,7 +207,6 @@ upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
 
 	map = portmap_ctrl->pmlist;
 	while (map < portmap_ctrl->pmlist + portmap_ctrl->num) {
-
 		/* Purge the expired one */
 		if (map->duration == 0 && now >= map->book_time + 604800) { // infinite entry requests should remain 7 days max
 			upnp_portmap_purge(context, map);
@@ -255,8 +222,7 @@ upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
 			 * Keep the map pointer because after purging,
 			 * the remainders will be pulled up
 			 */
-		}
-		else {
+		} else {
 			map++;
 		}
 	}
@@ -266,8 +232,7 @@ upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
 }
 
 /* Free port mapping list */
-void
-upnp_portmap_free(UPNP_CONTEXT *context)
+void upnp_portmap_free(UPNP_CONTEXT *context)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	UPNP_PORTMAP *map;
@@ -292,8 +257,7 @@ upnp_portmap_free(UPNP_CONTEXT *context)
 }
 
 /* Initialize port mapping list */
-int
-upnp_portmap_init(UPNP_CONTEXT *context)
+int upnp_portmap_init(UPNP_CONTEXT *context)
 {
 	UPNP_PORTMAP_CTRL *portmap_ctrl;
 	int size = UPNP_PORTMAP_CTRL_SIZE + UPNP_PM_SIZE * sizeof(UPNP_PORTMAP);
@@ -327,8 +291,7 @@ upnp_portmap_init(UPNP_CONTEXT *context)
  */
 
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_common_init() */
-int
-InternetGatewayDevice_common_init(UPNP_CONTEXT *context)
+int InternetGatewayDevice_common_init(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	return 0;
@@ -336,8 +299,7 @@ InternetGatewayDevice_common_init(UPNP_CONTEXT *context)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_open() */
-int
-InternetGatewayDevice_open(UPNP_CONTEXT *context)
+int InternetGatewayDevice_open(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	/* Check whether the IGD is okay */
@@ -352,10 +314,8 @@ InternetGatewayDevice_open(UPNP_CONTEXT *context)
 }
 /* >> AUTO GENERATED FUNCTION */
 
-
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_close() */
-int
-InternetGatewayDevice_close(UPNP_CONTEXT *context)
+int InternetGatewayDevice_close(UPNP_CONTEXT *context)
 {
 	/* << USER CODE START >> */
 	/* cleanup NAT traversal structures */
@@ -365,8 +325,7 @@ InternetGatewayDevice_close(UPNP_CONTEXT *context)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_request() */
-int
-InternetGatewayDevice_request(UPNP_CONTEXT *context, void *cmd)
+int InternetGatewayDevice_request(UPNP_CONTEXT *context, void *cmd)
 {
 	/* << USER CODE START >> */
 	UPNP_REQUEST *request = (UPNP_REQUEST *)cmd;
@@ -385,8 +344,7 @@ InternetGatewayDevice_request(UPNP_CONTEXT *context, void *cmd)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_timeout() */
-int
-InternetGatewayDevice_timeout(UPNP_CONTEXT *context, time_t now)
+int InternetGatewayDevice_timeout(UPNP_CONTEXT *context, time_t now)
 {
 	/* << USER CODE START >> */
 	upnp_portmap_timeout(context, now);
@@ -395,8 +353,7 @@ InternetGatewayDevice_timeout(UPNP_CONTEXT *context, time_t now)
 /* >> AUTO GENERATED FUNCTION */
 
 /* << AUTO GENERATED FUNCTION: InternetGatewayDevice_notify() */
-int
-InternetGatewayDevice_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service)
+int InternetGatewayDevice_notify(UPNP_CONTEXT *context, UPNP_SERVICE *service)
 {
 	/* << USER CODE START >> */
 	return 0;
