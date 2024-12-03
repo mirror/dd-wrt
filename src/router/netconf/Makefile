@@ -14,11 +14,15 @@
 include $(TOP)/.config
 
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
-CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
+#CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
+CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables-new/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall -I.
 CFLAGS += $(COPTS) $(LTO) -DLINUX26 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Wno-incompatible-pointer-types
-CFLAGS += $(MIPS16_OPT)  -DIPTCSTATIC= 
+CFLAGS += $(MIPS16_OPT)  -DIPTCSTATIC= -DNEED_PRINTF
 
-LDFLAGS = -L. -L$(TOP)/iptables/libiptc/
+CFLAGS += -DLINUX_2_6_36
+
+#LDFLAGS = -L. -L$(TOP)/iptables/libiptc/ -liptc
+LDFLAGS = -L. -L$(TOP)/iptables-new/libiptc/ -lip4tc
 
 all: libnetconf.a 
 

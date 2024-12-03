@@ -1,15 +1,21 @@
 /*
  * Network configuration layer (Linux)
  *
- * Copyright 2004, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: netconf_linux.c,v 1.6 2004/04/12 05:42:39 honor Exp $
+ * $Id: netconf_linux.c 358182 2012-09-21 13:59:26Z $
  */
 
 #include <stdio.h>
@@ -33,6 +39,15 @@
 #include <netconf.h>
 #include <netconf_linux.h>
 
+#ifndef LINUX_2_6_36
+typedef struct ipt_time_info time_info_t;
+#define TIME_INFO_EXTRA_BYTES 8
+#else
+typedef struct xt_time_info time_info_t;
+#define TIME_INFO_EXTRA_BYTES 0
+#define IPT_ALIGN XT_ALIGN
+#endif
+
 /* Loops over each match in the ipt_entry */
 #define for_each_ipt_match(match, entry)                                                                                     \
 	for ((match) = (struct ipt_entry_match *)&(entry)->elems[0]; (long)(match) < (long)(entry) + (entry)->target_offset; \
@@ -48,6 +63,7 @@ static const char *ipt_table_name[] = { "filter", "filter", "filter", "filter", 
 static const char *ipt_target_name[] = { "DROP", "ACCEPT", "logdrop", "logaccept", "SNAT", "DNAT", "MASQUERADE", "autofw" };
 
 /* ipt target data size (indexed by netconf_fw_t.target) */
+#ifndef LINUX_2_6_36
 static const size_t ipt_target_size[] = { sizeof(int),
 					  sizeof(int),
 					  sizeof(int),
@@ -56,6 +72,17 @@ static const size_t ipt_target_size[] = { sizeof(int),
 					  sizeof(struct ip_nat_multi_range),
 					  sizeof(struct ip_nat_multi_range),
 					  sizeof(struct ip_autofw_info) };
+#else /* linux-2.6.36 */
+/* ipt target data size (indexed by netconf_fw_t.target) */
+static const size_t ipt_target_size[] = { sizeof(int),
+					  sizeof(int),
+					  sizeof(int),
+					  sizeof(int),
+					  sizeof(struct nf_nat_ipv4_multi_range_compat),
+					  sizeof(struct nf_nat_ipv4_multi_range_compat),
+					  sizeof(struct nf_nat_ipv4_multi_range_compat),
+					  sizeof(struct ip_autofw_info) };
+#endif /* linux-2.6.36 */
 
 /* ipt filter chain name appropriate for direction (indexed by netconf_filter_t.dir) */
 static const char *ipt_filter_chain_name[] = { "INPUT", "FORWARD", "OUTPUT", "upnp" };
@@ -79,7 +106,12 @@ static int filter_dir(const char *name)
 }
 
 /* Returns a netconf_target index */
-static int target_num(const struct ipt_entry *entry, iptc_handle_t *handle)
+static int
+#ifndef LINUX_2_6_36
+target_num(const struct ipt_entry *entry, iptc_handle_t *handle)
+#else /* linux-2.6.36 */
+target_num(const struct ipt_entry *entry, struct iptc_handle *handle)
+#endif /* linux-2.6.36 */
 {
 	const char *name = iptc_get_target(entry, handle);
 
@@ -106,6 +138,77 @@ static int target_num(const struct ipt_entry *entry, iptc_handle_t *handle)
 		return -1;
 }
 
+#ifdef LINUX_2_6_36
+/* User: match.day, SUN/0~MON/1 ~ SAT/6 */
+/* Kernel: MON/1 ~ SAT/6~SUN/7 */
+/* Need special handle for Sunday */
+/* Be aware: we steal the flags bit 1 ~ 7 to store the begin day */
+static void get_days(unsigned int *days, time_info_t *time)
+{
+	int i, j;
+	char weekdays_map[7] = { 0 };
+
+	/* Translate from Kernel to User */
+	for (i = 1; i <= 7; i++) {
+		if (time->weekdays_match & (1 << i)) {
+			if (i == 7)
+				weekdays_map[0] = 1;
+			else
+				weekdays_map[i] = 1;
+		}
+	}
+
+	/* Begin day */
+	for (i = 1; i <= 7; i++) {
+		if (time->flags & (1 << i)) {
+			if (i == 7)
+				days[0] = 0;
+			else
+				days[0] = i;
+			break;
+		}
+	}
+
+	/* End day */
+	for (i = days[0], j = 0; j < 7; i = (i + 1) % 7, j++) {
+		if (weekdays_map[i])
+			days[1] = i;
+		else
+			break;
+	}
+}
+
+/* User: match.day, SUN/0~MON/1 ~ SAT/6 */
+/* Kernel: MON/1 ~ SAT/6~SUN/7 */
+/* Need special handle for Sunday */
+/* Be aware: we steal the flags bit 1 ~ 7 to store the begin day */
+static void set_days(unsigned int *days, time_info_t *time)
+{
+	int i;
+
+	for (i = days[0]; i != days[1]; i = (i + 1) % 7) {
+		if (!i)
+			time->weekdays_match |= (1 << 7);
+		else
+			time->weekdays_match |= (1 << i);
+	}
+
+	if (!days[1])
+		time->weekdays_match |= (1 << 7);
+	else
+		time->weekdays_match |= (1 << days[1]);
+
+	/* Use local time */
+	time->flags = XT_TIME_LOCAL_TZ;
+
+	/* Steal flags to store the begin day */
+	if (days[0] == 0)
+		time->flags |= (1 << 7);
+	else
+		time->flags |= (1 << days[0]);
+}
+#endif /* LINUX_2_6_36 */
+
 /*
  * Get a list of the current firewall entries
  * @param	fw_list	list of firewall entries
@@ -116,7 +219,11 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 	const char **table;
 	const char *chain;
 	const struct ipt_entry *entry;
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle = NULL;
+#else /* linux-2.6.36 */
+	struct iptc_handle *handle = NULL;
+#endif /* linux-2.6.36 */
 
 	/* Initialize list */
 	netconf_list_init(fw_list);
@@ -132,14 +239,23 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 		}
 
 		/* Search all default chains */
+#ifndef LINUX_2_6_36
 		for (chain = iptc_first_chain(&handle); chain; chain = iptc_next_chain(&handle)) {
-			if (strcmp(chain, "INPUT") && strcmp(chain, "upnp") && strcmp(chain, "FORWARD") &&
+#else /* linux-2.6.36 */
+		for (chain = iptc_first_chain(handle); chain; chain = iptc_next_chain(handle)) {
+#endif /* linux-2.6.36 */
+			if (strcmp(chain, "INPUT") && strcmp(chain, "FORWARD") && strcmp(chain, "upnp") &&
 			    strcmp(chain, "OUTPUT") && strcmp(chain, "PREROUTING") && strcmp(chain, "POSTROUTING"))
 				continue;
 
-			/* Search all entries */
+				/* Search all entries */
+#ifndef LINUX_2_6_36
 			for (entry = iptc_first_rule(chain, &handle); entry; entry = iptc_next_rule(entry, &handle)) {
 				int num = target_num(entry, &handle);
+#else /* linux-2.6.36 */
+			for (entry = iptc_first_rule(chain, handle); entry; entry = iptc_next_rule(entry, handle)) {
+				int num = target_num(entry, handle);
+#endif /* linux-2.6.36 */
 				netconf_fw_t *fw = NULL;
 				netconf_filter_t *filter = NULL;
 				netconf_nat_t *nat = NULL;
@@ -149,7 +265,7 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 				const struct ipt_entry_target *target;
 				struct ipt_mac_info *mac = NULL;
 				struct ipt_state_info *state = NULL;
-				struct ipt_time_info *time = NULL;
+				time_info_t *time = NULL;
 
 				/* Only know about TCP/UDP */
 				if (!netconf_valid_ipproto(entry->ip.proto))
@@ -161,13 +277,16 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 					continue;
 
 				/* Only know about specified target types */
-				if (netconf_valid_filter(num))
-					fw = filter = calloc(1, sizeof(netconf_filter_t));
-				else if (netconf_valid_nat(num))
-					fw = nat = calloc(1, sizeof(netconf_nat_t));
-				else if (num == NETCONF_APP)
-					fw = app = calloc(1, sizeof(netconf_app_t));
-				else
+				if (netconf_valid_filter(num)) {
+					filter = calloc(1, sizeof(netconf_filter_t));
+					fw = (netconf_fw_t *)filter;
+				} else if (netconf_valid_nat(num)) {
+					nat = calloc(1, sizeof(netconf_nat_t));
+					fw = (netconf_fw_t *)nat;
+				} else if (num == NETCONF_APP) {
+					app = calloc(1, sizeof(netconf_app_t));
+					fw = (netconf_fw_t *)app;
+				} else
 					continue;
 
 				if (!fw) {
@@ -279,19 +398,26 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 
 					/* We added 8 bytes of day range at the end */
 					if (match->u.match_size < (IPT_ALIGN(sizeof(struct ipt_entry_match)) +
-								   IPT_ALIGN(sizeof(struct ipt_time_info) + 8)))
+								   IPT_ALIGN(sizeof(time_info_t) + TIME_INFO_EXTRA_BYTES)))
 						continue;
 
-					time = (struct ipt_time_info *)&match->data[0];
+					time = (time_info_t *)&match->data[0];
 					break;
 				}
 				if (time) {
+#ifndef LINUX_2_6_36
 					unsigned int *days = (unsigned int *)&time[1];
 
 					fw->match.days[0] = days[0];
 					fw->match.days[1] = days[1];
 					fw->match.secs[0] = time->time_start;
 					fw->match.secs[1] = time->time_stop;
+#else
+					/* Get days from weekdays_match and flags */
+					get_days(fw->match.days, time);
+					fw->match.secs[0] = time->daytime_start;
+					fw->match.secs[1] = time->daytime_stop;
+#endif
 				}
 
 				/* Set target type */
@@ -306,9 +432,15 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 
 				/* Get NAT target information */
 				else if (nat) {
+#ifndef LINUX_2_6_36
 					struct ip_nat_multi_range *mr = (struct ip_nat_multi_range *)&target->data[0];
 					struct ip_nat_range *range = (struct ip_nat_range *)&mr->range[0];
+#else /* linux-2.6.36 */
+					struct nf_nat_ipv4_multi_range_compat *mr =
+						(struct nf_nat_ipv4_multi_range_compat *)&target->data[0];
+					struct nf_nat_ipv4_range *range = (struct nf_nat_ipv4_range *)&mr->range[0];
 
+#endif /* linux-2.6.36 */
 					/* Get mapped IP address */
 					nat->ipaddr.s_addr = range->min_ip;
 
@@ -338,18 +470,36 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 			}
 		}
 
+#ifndef LINUX_2_6_36
 		if (!iptc_commit(&handle)) {
+#else /* linux-2.6.36 */
+		if (!iptc_commit(handle)) {
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+			iptc_free(handle);
+#endif
 			fprintf(stderr, "%s\n", iptc_strerror(errno));
 			handle = NULL;
 			goto err;
 		}
 	}
 
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	return 0;
 
 err:
 	if (handle)
+#ifndef LINUX_2_6_36
 		iptc_commit(&handle);
+#else /* linux-2.6.36 */
+		iptc_commit(handle);
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+	if (handle)
+		iptc_free(handle);
+#endif
 	netconf_list_free(fw_list);
 	return errno;
 }
@@ -370,7 +520,12 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 	const char **table;
 	const char *chain;
 	const struct ipt_entry *entry = NULL;
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle = NULL;
+#else /* linux-2.6.36 */
+	struct iptc_handle *handle = NULL;
+#endif /* linux-2.6.36 */
+
 	int ret = 0;
 
 	if (!netconf_valid_ipproto(fw->match.ipproto)) {
@@ -406,7 +561,12 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 		}
 
 		/* Search all default chains */
+#ifndef LINUX_2_6_36
 		for (chain = iptc_first_chain(&handle); chain; chain = iptc_next_chain(&handle)) {
+#else /* linux-2.6.36 */
+		for (chain = iptc_first_chain(handle); chain; chain = iptc_next_chain(handle)) {
+#endif /* linux-2.6.36 */
+
 			/* Only consider specified chains */
 			if (filter && strncmp(chain, ipt_filter_chain_name[filter->dir], sizeof(ipt_chainlabel)) != 0)
 				continue;
@@ -415,14 +575,18 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 			else if (app && strncmp(chain, "PREROUTING", sizeof(ipt_chainlabel)) != 0)
 				continue;
 
-			/* Search all entries */
+				/* Search all entries */
+#ifndef LINUX_2_6_36
 			for (ret = 0, entry = iptc_first_rule(chain, &handle); entry;
 			     ret++, entry = iptc_next_rule(entry, &handle)) {
+#else /* linux-2.6.36 */
+			for (ret = 0, entry = iptc_first_rule(chain, handle); entry; ret++, entry = iptc_next_rule(entry, handle)) {
+#endif /* linux-2.6.36 */
 				const struct ipt_entry_match *match;
 				const struct ipt_entry_target *target;
 				struct ipt_mac_info *mac = NULL;
 				struct ipt_state_info *state = NULL;
-				struct ipt_time_info *time = NULL;
+				time_info_t *time = NULL;
 
 				/* Only know about TCP/UDP */
 				if (entry->ip.proto != fw->match.ipproto)
@@ -541,33 +705,54 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 
 						/* We added 8 bytes of day range at the end */
 						if (match->u.match_size < (IPT_ALIGN(sizeof(struct ipt_entry_match)) +
-									   IPT_ALIGN(sizeof(struct ipt_time_info) + 8)))
+									   IPT_ALIGN(sizeof(time_info_t) + TIME_INFO_EXTRA_BYTES)))
 							continue;
 
-						time = (struct ipt_time_info *)&match->data[0];
+						time = (time_info_t *)&match->data[0];
 						break;
 					}
 
 					if (!time)
 						continue;
 					else {
+						unsigned int time_start, time_stop;
+#ifndef LINUX_2_6_36
 						unsigned int *days = (unsigned int *)&time[1];
 
+						time_start = time->time_start;
+						time_stop = time->time_stop;
+#else
+						unsigned int days[2];
+
+						time_start = time->daytime_start;
+						time_stop = time->daytime_stop;
+						get_days(days, time);
+#endif
 						if (fw->match.days[0] != days[0] || fw->match.days[1] != days[1] ||
-						    fw->match.secs[0] != time->time_start || fw->match.secs[1] != time->time_stop)
+						    fw->match.secs[0] != time_start || fw->match.secs[1] != time_stop)
 							continue;
 					}
 				}
 
 				/* Compare target type */
+#ifndef LINUX_2_6_36
 				if (fw->target != target_num(entry, &handle))
+#else
+				if (fw->target != target_num(entry, handle))
+#endif /* linux-2.6.36 */
 					continue;
 				target = (struct ipt_entry_target *)((long)entry + entry->target_offset);
 
 				/* Compare NAT target information */
 				if (nat) {
+#ifndef LINUX_2_6_36
 					struct ip_nat_multi_range *mr = (struct ip_nat_multi_range *)&target->data[0];
 					struct ip_nat_range *range = (struct ip_nat_range *)&mr->range[0];
+#else
+					struct nf_nat_ipv4_multi_range_compat *mr =
+						(struct nf_nat_ipv4_multi_range_compat *)&target->data[0];
+					struct nf_nat_ipv4_range *range = (struct nf_nat_ipv4_range *)&mr->range[0];
+#endif /* linux-2.6.36 */
 
 					/* Compare mapped IP address */
 					if (range->min_ip != nat->ipaddr.s_addr)
@@ -603,11 +788,21 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 				break;
 		}
 
+#ifndef LINUX_2_6_36
 		if (!iptc_commit(&handle)) {
+#else
+		if (!iptc_commit(handle)) {
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+			iptc_free(handle);
+#endif
 			fprintf(stderr, "%s\n", iptc_strerror(errno));
 			return -errno;
 		}
 
+#ifdef LINUX_2_6_36
+		iptc_free(handle);
+#endif
 		if (entry)
 			break;
 	}
@@ -651,7 +846,7 @@ static struct ipt_entry_match *netconf_append_match(struct ipt_entry **pentry, c
 	entry->target_offset += match_size;
 	memset(match, 0, match_size);
 
-	strncpy(match->u.user.name, name, IPT_FUNCTION_MAXNAMELEN);
+	strncpy(match->u.user.name, name, IPT_FUNCTION_MAXNAMELEN - 1);
 	match->u.match_size = match_size;
 
 	*pentry = entry;
@@ -683,7 +878,7 @@ static struct ipt_entry_target *netconf_append_target(struct ipt_entry **pentry,
 	entry->next_offset += target_size;
 	memset(target, 0, target_size);
 
-	strncpy(target->u.user.name, name, IPT_FUNCTION_MAXNAMELEN);
+	strncpy(target->u.user.name, name, IPT_FUNCTION_MAXNAMELEN - 1);
 	target->u.target_size = target_size;
 
 	*pentry = entry;
@@ -699,7 +894,11 @@ static struct ipt_entry_target *netconf_append_target(struct ipt_entry **pentry,
  */
 static int
 #ifdef LINUX26
+#ifndef LINUX_2_6_36
 insert_entry(const char *chain, const char *target_name, struct ipt_entry *entry, iptc_handle_t *handle)
+#else
+insert_entry(const char *chain, const char *target_name, struct ipt_entry *entry, struct iptc_handle *handle)
+#endif /* linux-2.6.36 */
 #else /* LINUX26 */
 insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
 #endif /* LINUX26 */
@@ -721,15 +920,12 @@ insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
 	if (!strcmp(target_name, "DROP") || !strcmp(target_name, "logdrop"))
 		return iptc_insert_entry(chain, entry, 0, handle);
 	/* If accepting insert after the last drop but before the first default policy */
-	else if (!strcmp(target_name, "ACCEPT") || !strcmp(target_name, "DNAT") || // by honor, let UPnP Forwarding is prior to DMZ
-		 !strcmp(target_name, "logaccept")) {
+	else if (!strcmp(target_name, "ACCEPT") || !strcmp(target_name, "logaccept")) {
 #else /* LINUX26 */
 	if (!strcmp(iptc_get_target(entry, handle), "DROP") || !strcmp(iptc_get_target(entry, handle), "logdrop"))
 		return iptc_insert_entry(chain, entry, 0, handle);
 	/* If accepting insert after the last drop but before the first default policy */
-	else if (!strcmp(iptc_get_target(entry, handle), "ACCEPT") ||
-		 !strcmp(iptc_get_target(entry, handle), "DNAT") || // by honor, let UPnP Forwarding is prior to DMZ
-		 !strcmp(iptc_get_target(entry, handle), "logaccept")) {
+	else if (!strcmp(iptc_get_target(entry, handle), "ACCEPT") || !strcmp(iptc_get_target(entry, handle), "logaccept")) {
 #endif /* LINUX26 */
 		for (i = 0, rule = iptc_first_rule(chain, handle); rule; i++, rule = iptc_next_rule(rule, handle)) {
 			if ((strcmp(iptc_get_target(rule, handle), "DROP") && strcmp(iptc_get_target(rule, handle), "logdrop")) ||
@@ -743,36 +939,6 @@ insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
 	else
 		return iptc_append_entry(chain, entry, handle);
 }
-
-#ifndef NFC_IP_SRC
-/* IP Cache bits. */
-/* Src IP address. */
-#define NFC_IP_SRC 0x0001
-/* Dest IP address. */
-#define NFC_IP_DST 0x0002
-/* Input device. */
-#define NFC_IP_IF_IN 0x0004
-/* Output device. */
-#define NFC_IP_IF_OUT 0x0008
-/* TOS. */
-#define NFC_IP_TOS 0x0010
-/* Protocol. */
-#define NFC_IP_PROTO 0x0020
-/* IP options. */
-#define NFC_IP_OPTIONS 0x0040
-/* Frag & flags. */
-#define NFC_IP_FRAG 0x0080
-
-/* Per-protocol information: only matters if proto match. */
-/* TCP flags. */
-#define NFC_IP_TCPFLAGS 0x0100
-/* Source port. */
-#define NFC_IP_SRC_PT 0x0200
-/* Dest port. */
-#define NFC_IP_DST_PT 0x0400
-/* Something else about the proto */
-#define NFC_IP_PROTO_UNKNOWN 0x2000
-#endif
 
 /*
  * Add a firewall entry
@@ -788,7 +954,11 @@ int netconf_add_fw(netconf_fw_t *fw)
 	struct ipt_entry *entry;
 	struct ipt_entry_match *match;
 	struct ipt_entry_target *target;
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle = NULL;
+#else
+	struct iptc_handle *handle = NULL;
+#endif
 
 	if (!netconf_valid_ipproto(fw->match.ipproto)) {
 		fprintf(stderr, "invalid IP protocol %d\n", fw->match.ipproto);
@@ -819,6 +989,9 @@ int netconf_add_fw(netconf_fw_t *fw)
 	/* Initialize entry parameters */
 	entry->nfcache |= NFC_UNKNOWN;
 	entry->next_offset = entry->target_offset = sizeof(struct ipt_entry);
+
+	if (nat && (nat->type == NETCONF_CONE_NAT))
+		entry->nfcache |= NETCONF_CONE_NAT;
 
 	/* Match by IP address(es) */
 	if (fw->match.src.ipaddr.s_addr & fw->match.src.netmask.s_addr) {
@@ -926,10 +1099,11 @@ int netconf_add_fw(netconf_fw_t *fw)
 
 	/* Match by local time */
 	if (fw->match.secs[0] || fw->match.secs[1]) {
-		struct ipt_time_info *time;
+		time_info_t *time;
+#ifndef LINUX_2_6_36
 		unsigned int *days;
 		int i;
-
+#endif
 		if (fw->match.secs[0] >= (24 * 60 * 60) || fw->match.secs[1] >= (24 * 60 * 60) || fw->match.days[0] >= 7 ||
 		    fw->match.days[1] >= 7) {
 			fprintf(stderr, "invalid time %d-%d:%d-%d\n", fw->match.days[0], fw->match.days[1], fw->match.secs[0],
@@ -937,9 +1111,11 @@ int netconf_add_fw(netconf_fw_t *fw)
 			goto err;
 		}
 
-		if (!(match = netconf_append_match(&entry, "time", sizeof(struct ipt_time_info) + 8)))
+		if (!(match = netconf_append_match(&entry, "time", sizeof(time_info_t) + TIME_INFO_EXTRA_BYTES)))
 			goto err;
-		time = (struct ipt_time_info *)&match->data[0];
+		time = (time_info_t *)&match->data[0];
+
+#ifndef LINUX_2_6_36
 		days = (unsigned int *)&time[1];
 		days[0] = fw->match.days[0];
 		days[1] = fw->match.days[1];
@@ -949,6 +1125,18 @@ int netconf_add_fw(netconf_fw_t *fw)
 		time->days_match |= (1 << fw->match.days[1]);
 		time->time_start = fw->match.secs[0];
 		time->time_stop = fw->match.secs[1];
+#else
+		/* We don't need absolute date match */
+		time->date_start = 0;
+		time->date_stop = ~0U;
+		/* Seconds per day */
+		time->daytime_start = fw->match.secs[0];
+		time->daytime_stop = fw->match.secs[1];
+		/* We don't need month days match */
+		time->monthdays_match = XT_TIME_ALL_MONTHDAYS;
+		/* Week days match */
+		set_days(fw->match.days, time);
+#endif
 	}
 
 	/* Allocate target */
@@ -968,7 +1156,11 @@ int netconf_add_fw(netconf_fw_t *fw)
 		}
 
 #ifdef LINUX26
+#ifndef LINUX_2_6_36
 		if (!insert_entry(ipt_filter_chain_name[filter->dir], ipt_target_name[fw->target], entry, &handle)) {
+#else
+		if (!insert_entry(ipt_filter_chain_name[filter->dir], ipt_target_name[fw->target], entry, handle)) {
+#endif
 #else /* LINUX26 */
 		if (!insert_entry(ipt_filter_chain_name[filter->dir], entry, &handle)) {
 #endif /* LINUX26 */
@@ -979,33 +1171,53 @@ int netconf_add_fw(netconf_fw_t *fw)
 
 	/* Set NAT target information */
 	else if (nat) {
+#ifndef LINUX_2_6_36
 		struct ip_nat_multi_range *mr = (struct ip_nat_multi_range *)&target->data[0];
 		struct ip_nat_range *range = (struct ip_nat_range *)&mr->range[0];
+#else
+		struct nf_nat_ipv4_multi_range_compat *mr = (struct nf_nat_ipv4_multi_range_compat *)&target->data[0];
+		struct nf_nat_ipv4_range *range = (struct nf_nat_ipv4_range *)&mr->range[0];
+#endif /* linux-2.6.36 */
 
 		mr->rangesize = 1;
-
 		/* Map to IP address */
 		if (nat->ipaddr.s_addr) {
 			range->min_ip = range->max_ip = nat->ipaddr.s_addr;
+#ifndef LINUX_2_6_36
 			range->flags |= IP_NAT_RANGE_MAP_IPS;
+#else
+			range->flags |= NF_NAT_RANGE_MAP_IPS;
+#endif
 		}
 
 		/* Map to TCP port(s) */
 		if (nat->match.ipproto == IPPROTO_TCP) {
 			range->min.tcp.port = nat->ports[0];
 			range->max.tcp.port = nat->ports[1];
+#ifndef LINUX_2_6_36
 			range->flags |= IP_NAT_RANGE_PROTO_SPECIFIED;
+#else
+			range->flags |= NF_NAT_RANGE_PROTO_SPECIFIED;
+#endif
 		}
 
 		/* Map to UDP port(s) */
 		else if (nat->match.ipproto == IPPROTO_UDP) {
 			range->min.udp.port = nat->ports[0];
 			range->max.udp.port = nat->ports[1];
+#ifndef LINUX_2_6_36
 			range->flags |= IP_NAT_RANGE_PROTO_SPECIFIED;
+#else
+			range->flags |= NF_NAT_RANGE_PROTO_SPECIFIED;
+#endif
 		}
 
 #ifdef LINUX26
+#ifndef LINUX_2_6_36
 		if (!insert_entry(ipt_nat_chain_name[fw->target], ipt_target_name[fw->target], entry, &handle)) {
+#else
+		if (!insert_entry(ipt_nat_chain_name[fw->target], ipt_target_name[fw->target], entry, handle)) {
+#endif /* linux-2.6.36 */
 #else /* LINUX26 */
 		if (!insert_entry(ipt_nat_chain_name[fw->target], entry, &handle)) {
 #endif /* LINUX26 */
@@ -1024,7 +1236,11 @@ int netconf_add_fw(netconf_fw_t *fw)
 		info->to[1] = app->to[1];
 
 #ifdef LINUX26
+#ifndef LINUX_2_6_36
 		if (!insert_entry("PREROUTING", ipt_target_name[fw->target], entry, &handle)) {
+#else
+		if (!insert_entry("PREROUTING", ipt_target_name[fw->target], entry, handle)) {
+#endif /* linux-2.6.36 */
 #else /* LINUX26 */
 		if (!insert_entry("PREROUTING", entry, &handle)) {
 #endif /* LINUX26 */
@@ -1033,17 +1249,32 @@ int netconf_add_fw(netconf_fw_t *fw)
 		}
 	}
 
+#ifndef LINUX_2_6_36
 	if (!iptc_commit(&handle)) {
+#else
+	if (!iptc_commit(handle)) {
+#endif /* linux-2.6.36 */
 		fprintf(stderr, "%s\n", iptc_strerror(errno));
 		goto err;
 	}
 
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	free(entry);
 	return 0;
 
 err:
 	if (handle)
+#ifndef LINUX_2_6_36
 		iptc_commit(&handle);
+#else
+		iptc_commit(handle);
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+	if (handle)
+		iptc_free(handle);
+#endif
 	free(entry);
 	return errno;
 }
@@ -1057,7 +1288,11 @@ int netconf_del_fw(netconf_fw_t *fw)
 {
 	int num;
 	const char *chain;
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle;
+#else
+	struct iptc_handle *handle;
+#endif /* linux-2.6.36 */
 
 	/* netconf_fw_index() sanity checks fw */
 	if ((num = netconf_fw_index(fw)) < 0)
@@ -1074,12 +1309,23 @@ int netconf_del_fw(netconf_fw_t *fw)
 		return EINVAL;
 
 	/* Commit changes */
-	if (!(handle = iptc_init(ipt_table_name[fw->target])) || !iptc_delete_num_entry(chain, num, &handle) ||
-	    !iptc_commit(&handle)) {
+	if (!(handle = iptc_init(ipt_table_name[fw->target])) ||
+#ifndef LINUX_2_6_36
+	    !iptc_delete_num_entry(chain, num, &handle) || !iptc_commit(&handle)) {
+#else
+	    !iptc_delete_num_entry(chain, num, handle) || !iptc_commit(handle)) {
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+		if (handle)
+			iptc_free(handle);
+#endif
 		fprintf(stderr, "%s\n", iptc_strerror(errno));
 		return errno;
 	}
 
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	return 0;
 }
 
@@ -1095,9 +1341,8 @@ static int netconf_manip_fw(netconf_fw_t *fw_list, bool del)
 	int ret;
 
 	/* Single firewall entry */
-	if (netconf_list_empty(fw_list) || !fw_list->next) {
+	if (netconf_list_empty(fw_list) || !fw_list->next)
 		return (del ? netconf_del_fw(fw_list) : netconf_add_fw(fw_list));
-	}
 
 	/* List of firewall entries */
 	netconf_list_for_each(fw, fw_list)
@@ -1258,7 +1503,11 @@ err:
 
 static int netconf_reset_chain(char *table, char *chain)
 {
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle = NULL;
+#else
+	struct iptc_handle *handle = NULL;
+#endif /* linux-2.6.36 */
 
 	/* Get handle to table */
 	if (!(handle = iptc_init(table)))
@@ -1266,18 +1515,37 @@ static int netconf_reset_chain(char *table, char *chain)
 
 	/* Create chain if necessary */
 	if (!iptc_is_chain(chain, handle))
+#ifndef LINUX_2_6_36
 		if (!iptc_create_chain(chain, &handle))
+#else
+		if (!iptc_create_chain(chain, handle))
+#endif /* linux-2.6.36 */
 			goto err;
 
-	/* Flush entries and commit */
+			/* Flush entries and commit */
+#ifndef LINUX_2_6_36
 	if (!iptc_flush_entries(chain, &handle) || !iptc_commit(&handle))
+#else
+	if (!iptc_flush_entries(chain, handle) || !iptc_commit(handle))
+#endif /* linux-2.6.36 */
 		goto err;
 
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	return 0;
 
 err:
 	if (handle)
+#ifndef LINUX_2_6_36
 		iptc_commit(&handle);
+#else
+		iptc_commit(handle);
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+	if (handle)
+		iptc_free(handle);
+#endif
 	fprintf(stderr, "%s\n", iptc_strerror(errno));
 	return errno;
 }
@@ -1288,7 +1556,11 @@ err:
  */
 int netconf_reset_fw(void)
 {
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle = NULL;
+#else
+	struct iptc_handle *handle = NULL;
+#endif /* linux-2.6.36 */
 	struct ipt_entry *entry = NULL;
 	struct ipt_state_info state;
 	struct ipt_log_info log;
@@ -1296,7 +1568,7 @@ int netconf_reset_fw(void)
 
 	/* Reset default chains */
 	if ((ret = netconf_reset_chain("filter", "INPUT")) || (ret = netconf_reset_chain("filter", "FORWARD")) ||
-	    (ret = netconf_reset_chain("filter", "OUTPUT")) || (ret = netconf_reset_chain("filter", "upnp")) ||
+	    (ret = netconf_reset_chain("filter", "upnp")) || (ret = netconf_reset_chain("filter", "OUTPUT")) ||
 	    (ret = netconf_reset_chain("nat", "PREROUTING")) || (ret = netconf_reset_chain("nat", "POSTROUTING")) ||
 	    (ret = netconf_reset_chain("nat", "OUTPUT")))
 		return ret;
@@ -1319,16 +1591,32 @@ int netconf_reset_fw(void)
 	if (!(entry = netconf_generate_entry("state", &state, sizeof(state), "LOG", &log, sizeof(log))))
 		return ENOMEM;
 	entry->nfcache |= NFC_UNKNOWN;
-	if (!(handle = iptc_init("filter")) || !iptc_insert_entry("logdrop", entry, 0, &handle) || !iptc_commit(&handle))
+	if (!(handle = iptc_init("filter")) ||
+#ifndef LINUX_2_6_36
+	    !iptc_insert_entry("logdrop", entry, 0, &handle) || !iptc_commit(&handle))
+#else
+	    !iptc_insert_entry("logdrop", entry, 0, handle) || !iptc_commit(handle))
+#endif /* linux-2.6.36 */
 		goto err;
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	free(entry);
 
 	/* Drop packet */
 	if (!(entry = netconf_generate_entry(NULL, NULL, 0, "DROP", &unused, sizeof(unused))))
 		return ENOMEM;
 	entry->nfcache |= NFC_UNKNOWN;
-	if (!(handle = iptc_init("filter")) || !iptc_insert_entry("logdrop", entry, 1, &handle) || !iptc_commit(&handle))
+	if (!(handle = iptc_init("filter")) ||
+#ifndef LINUX_2_6_36
+	    !iptc_insert_entry("logdrop", entry, 1, &handle) || !iptc_commit(&handle))
+#else
+	    !iptc_insert_entry("logdrop", entry, 1, handle) || !iptc_commit(handle))
+#endif /* linux-2.6.36 */
 		goto err;
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	free(entry);
 
 	/* Log packet */
@@ -1336,21 +1624,41 @@ int netconf_reset_fw(void)
 	if (!(entry = netconf_generate_entry("state", &state, sizeof(state), "LOG", &log, sizeof(log))))
 		return ENOMEM;
 	entry->nfcache |= NFC_UNKNOWN;
-	if (!(handle = iptc_init("filter")) || !iptc_insert_entry("logaccept", entry, 0, &handle) || !iptc_commit(&handle))
+	if (!(handle = iptc_init("filter")) ||
+#ifndef LINUX_2_6_36
+	    !iptc_insert_entry("logaccept", entry, 0, &handle) || !iptc_commit(&handle))
+#else
+	    !iptc_insert_entry("logaccept", entry, 0, handle) || !iptc_commit(handle))
+#endif /* linux-2.6.36 */
 		goto err;
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	free(entry);
 
 	/* Accept packet */
 	if (!(entry = netconf_generate_entry(NULL, NULL, 0, "ACCEPT", &unused, sizeof(unused))))
 		return ENOMEM;
 	entry->nfcache |= NFC_UNKNOWN;
-	if (!(handle = iptc_init("filter")) || !iptc_insert_entry("logaccept", entry, 1, &handle) || !iptc_commit(&handle))
+	if (!(handle = iptc_init("filter")) ||
+#ifndef LINUX_2_6_36
+	    !iptc_insert_entry("logaccept", entry, 1, &handle) || !iptc_commit(&handle))
+#else
+	    !iptc_insert_entry("logaccept", entry, 1, handle) || !iptc_commit(handle))
+#endif /* linux-2.6.36 */
 		goto err;
+#ifdef LINUX_2_6_36
+	iptc_free(handle);
+#endif
 	free(entry);
 
 	return 0;
 
 err:
+#ifdef LINUX_2_6_36
+	if (handle)
+		iptc_free(handle);
+#endif
 	if (entry)
 		free(entry);
 	fprintf(stderr, "%s\n", iptc_strerror(errno));
@@ -1369,7 +1677,11 @@ err:
 int netconf_clamp_mss_to_pmtu(void)
 {
 	struct ipt_entry *entry;
+#ifndef LINUX_2_6_36
 	iptc_handle_t handle;
+#else
+	struct iptc_handle *handle = NULL;
+#endif /* linux-2.6.36 */
 	struct ipt_tcp tcp;
 	struct ipt_tcpmss_info tcpmss;
 
@@ -1390,12 +1702,25 @@ int netconf_clamp_mss_to_pmtu(void)
 	entry->nfcache |= NFC_IP_PROTO | NFC_IP_TCPFLAGS;
 
 	/* Do it */
-	if (!(handle = iptc_init("filter")) || !iptc_insert_entry("FORWARD", entry, 0, &handle) || !iptc_commit(&handle)) {
+	if (!(handle = iptc_init("filter")) ||
+#ifndef LINUX_2_6_36
+	    !iptc_insert_entry("FORWARD", entry, 0, &handle) || !iptc_commit(&handle)) {
+#else
+	    !iptc_insert_entry("FORWARD", entry, 0, handle) || !iptc_commit(handle)) {
+#endif /* linux-2.6.36 */
+#ifdef LINUX_2_6_36
+		if (handle)
+			iptc_free(handle);
+#endif
 		fprintf(stderr, "%s\n", iptc_strerror(errno));
 		free(entry);
 		return errno;
 	}
 
+#ifdef LINUX_2_6_36
+	if (handle)
+		iptc_free(handle);
+#endif
 	free(entry);
 	return 0;
 }
