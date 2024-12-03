@@ -15,7 +15,7 @@ include $(TOP)/.config
 
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 #CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
-CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables-new/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall -I.
+CFLAGS += -I. -I$(TOP)/shared -I$(TOP)/iptables-new/include -I$(SRCBASE)/include.v24  -Wall -I.
 CFLAGS += $(COPTS) $(LTO) -DLINUX26 -ffunction-sections -fdata-sections -Wl,--gc-sections  -Wno-incompatible-pointer-types
 CFLAGS += $(MIPS16_OPT)  -DIPTCSTATIC= -DNEED_PRINTF
 
@@ -38,7 +38,7 @@ libnetconf.so: netconf_linux.o
 	$(LD) -shared -o $@ $^ $(LDFLAGS) -liptc
 
 libnetconf.a: netconf_linux.o
-	 $(AR) rcu -o $@ $^
+	 $(AR) rcu  $(LTOPLUGIN) -o $@ $^
 
 netconf: main.o libnetconf.a
 	$(CC) -o $@ $< $(LDFLAGS) -lnetconf

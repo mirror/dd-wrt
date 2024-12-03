@@ -30,7 +30,7 @@
 /* iptables definitions */
 #include <libiptc/libiptc.h>
 #include <iptables.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
+#if 1 //(LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
@@ -40,7 +40,7 @@
 #endif /* linux-2.6.36 */
 #include <linux/netfilter_ipv4/ip_tables.h>
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
+#if 1//(LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
 #include <linux/netfilter/nf_conntrack_common.h>
 #include <linux/netfilter/nf_nat.h>
 #elif (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22))
@@ -52,7 +52,7 @@
 #define ETH_ALEN ETHER_ADDR_LEN
 #include <linux/netfilter_ipv4/ipt_mac.h>
 #include <linux/netfilter_ipv4/ipt_state.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
+#if 1 //(LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36))
 #include <linux/netfilter/xt_time.h>
 #else
 #include <linux/netfilter_ipv4/ipt_time.h>
