@@ -241,7 +241,14 @@ upnp_portmap_timeout(UPNP_CONTEXT *context, time_t now)
 	while (map < portmap_ctrl->pmlist + portmap_ctrl->num) {
 
 		/* Purge the expired one */
-		if (map->duration != 0 && now >= map->book_time) {
+		if (map->duration == 0 && now >= map->book_time + 604800) { // infinite entry requests should remain 7 days max
+			upnp_portmap_purge(context, map);
+
+			/*
+			 * Keep the map pointer because after purging,
+			 * the remainders will be pulled up
+			 */
+		} else if (map->duration != 0 && now >= map->book_time + map->duration) {
 			upnp_portmap_purge(context, map);
 
 			/*
