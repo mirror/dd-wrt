@@ -72,6 +72,14 @@
  */
 #define NETCONF_DISABLED 0x80000000
 
+/* Cone NAT, Otherwise Symmetric NAT */
+/* Please remember, the value 0x800 is in continuation with
+ * the NFC_IP_XXX codes defined in linux/linux/inxlude/linux/netfilter_ipv4.h.
+ * So, we need to keep both NETCONF_CONE_NAT here and NFC_IP_CONE_NAT
+ * in netfilter_ipv4.h in sync.
+ */
+#define NETCONF_CONE_NAT 0x0800
+
 /*
  * Match description 
  */
