@@ -191,7 +191,7 @@ static struct ksmbd_inode *ksmbd_inode_get(struct ksmbd_file *fp)
 	if (ci)
 		return ci;
 
-	ci = kmalloc(sizeof(struct ksmbd_inode), GFP_KERNEL);
+	ci = kmalloc(sizeof(struct ksmbd_inode), KSMBD_DEFAULT_GFP);
 	if (!ci)
 		return NULL;
 
@@ -560,7 +560,7 @@ struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work, char *filen
 	unsigned int		id;
 	char			*pathname;
 
-	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
+	pathname = kmalloc(PATH_MAX, KSMBD_DEFAULT_GFP);
 	if (!pathname)
 		return NULL;
 
@@ -631,7 +631,7 @@ static int __open_id(struct ksmbd_file_table *ft, struct ksmbd_file *fp,
 		return -EMFILE;
 	}
 
-	idr_preload(GFP_KERNEL);
+	idr_preload(KSMBD_DEFAULT_GFP);
 	write_lock(&ft->lock);
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	ret = idr_alloc_cyclic(ft->idr, fp, 0,
@@ -665,7 +665,7 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work, struct file *filp)
 	struct ksmbd_file *fp;
 	int ret;
 
-	fp = kmem_cache_zalloc(filp_cache, GFP_KERNEL);
+	fp = kmem_cache_zalloc(filp_cache, KSMBD_DEFAULT_GFP);
 	if (!fp) {
 		pr_err("Failed to allocate memory\n");
 		return ERR_PTR(-ENOMEM);
@@ -999,7 +999,7 @@ int ksmbd_validate_name_reconnect(struct ksmbd_share_config *share,
 	char *pathname, *ab_pathname;
 	int ret = 0;
 
-	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
+	pathname = kmalloc(PATH_MAX, KSMBD_DEFAULT_GFP);
 	if (!pathname)
 		return -EACCES;
 
@@ -1059,7 +1059,7 @@ int ksmbd_reopen_durable_fd(struct ksmbd_work *work, struct ksmbd_file *fp)
 
 int ksmbd_init_file_table(struct ksmbd_file_table *ft)
 {
-	ft->idr = kzalloc(sizeof(struct idr), GFP_KERNEL);
+	ft->idr = kzalloc(sizeof(struct idr), KSMBD_DEFAULT_GFP);
 	if (!ft->idr)
 		return -ENOMEM;
 

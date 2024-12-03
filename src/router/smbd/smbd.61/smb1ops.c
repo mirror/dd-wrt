@@ -31,6 +31,7 @@ static struct smb_version_values smb1_server_values = {
 	.cap_large_files = CAP_LARGE_FILES,
 	.signing_enabled = SECMODE_SIGN_ENABLED,
 	.signing_required = SECMODE_SIGN_REQUIRED,
+	.max_credits = SMB2_MAX_CREDITS,
 };
 
 static struct smb_version_ops smb1_server_ops = {

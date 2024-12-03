@@ -68,7 +68,7 @@ static bool asn1_oid_decode(const unsigned char *value, size_t vlen,
 	if (vlen < 2 || vlen > UINT_MAX / sizeof(unsigned long))
 		goto fail_nullify;
 
-	*oid = kmalloc(vlen * sizeof(unsigned long), GFP_KERNEL);
+	*oid = kmalloc(vlen * sizeof(unsigned long), KSMBD_DEFAULT_GFP);
 	if (!*oid)
 		return false;
 
@@ -194,7 +194,7 @@ int build_spnego_ntlmssp_neg_blob(unsigned char **pbuffer, u16 *buflen,
 			oid_len + ntlmssp_len) * 2 +
 			neg_result_len + oid_len + ntlmssp_len;
 
-	buf = kmalloc(total_len, GFP_KERNEL);
+	buf = kmalloc(total_len, KSMBD_DEFAULT_GFP);
 	if (!buf)
 		return -ENOMEM;
 
@@ -230,7 +230,7 @@ int build_spnego_ntlmssp_auth_blob(unsigned char **pbuffer, u16 *buflen,
 	int total_len = 4 + compute_asn_hdr_len_bytes(neg_result_len) * 2 +
 		neg_result_len;
 
-	buf = kmalloc(total_len, GFP_KERNEL);
+	buf = kmalloc(total_len, KSMBD_DEFAULT_GFP);
 	if (!buf)
 		return -ENOMEM;
 
@@ -321,7 +321,7 @@ static int ksmbd_neg_token_alloc(void *context, size_t hdrlen,
 	if (!vlen)
 		return -EINVAL;
 
-	conn->mechToken = kmemdup_nul(value, vlen, GFP_KERNEL);
+	conn->mechToken = kmemdup_nul(value, vlen, KSMBD_DEFAULT_GFP);
 	if (!conn->mechToken)
 		return -ENOMEM;
 

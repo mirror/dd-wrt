@@ -55,4 +55,6 @@ extern void ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode);
 #define LOOKUP_NO_SYMLINKS 0
 #endif
 
+#define KSMBD_DEFAULT_GFP	GFP_KERNEL | __GFP_RETRY_MAYFAIL
+
 #endif /* __KSMBD_GLOB_H */

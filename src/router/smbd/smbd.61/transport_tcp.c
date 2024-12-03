@@ -104,7 +104,7 @@ static struct tcp_transport *alloc_transport(struct socket *client_sk)
 	struct tcp_transport *t;
 	struct ksmbd_conn *conn;
 
-	t = kzalloc(sizeof(*t), GFP_KERNEL);
+	t = kzalloc(sizeof(*t), KSMBD_DEFAULT_GFP);
 	if (!t)
 		return NULL;
 	t->sock = client_sk;
@@ -179,7 +179,7 @@ static struct kvec *get_conn_iovec(struct tcp_transport *t, unsigned int nr_segs
 		return t->iov;
 
 	/* not big enough -- allocate a new one and release the old */
-	new_iov = kmalloc_array(nr_segs, sizeof(*new_iov), GFP_KERNEL);
+	new_iov = kmalloc_array(nr_segs, sizeof(*new_iov), KSMBD_DEFAULT_GFP);
 	if (new_iov) {
 		kfree(t->iov);
 		t->iov = new_iov;
@@ -561,6 +561,8 @@ static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
 				found = 1;
 				if (iface->state != IFACE_STATE_DOWN)
 					break;
+				ksmbd_debug(CONN, "netdev-up event: netdev(%s) is going up\n",
+					    iface->name);
 				ret = create_socket(iface);
 				if (ret)
 					return NOTIFY_OK;
@@ -568,9 +570,11 @@ static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
 			}
 		}
 		if (!found && bind_additional_ifaces) {
-			iface = alloc_iface(kstrdup(netdev->name, GFP_KERNEL));
+			iface = alloc_iface(kstrdup(netdev->name, KSMBD_DEFAULT_GFP));
 			if (!iface)
 				return NOTIFY_OK;
+			ksmbd_debug(CONN, "netdev-up event: netdev(%s) is going up\n",
+				    iface->name);
 			ret = create_socket(iface);
 			if (ret)
 				break;
@@ -580,6 +584,8 @@ static int ksmbd_netdev_event(struct notifier_block *nb, unsigned long event,
 		list_for_each_entry(iface, &iface_list, entry) {
 			if (!strcmp(iface->name, netdev->name) &&
 			    iface->state == IFACE_STATE_CONFIGURED) {
+				ksmbd_debug(CONN, "netdev-down event: netdev(%s) is going down\n",
+						iface->name);
 				tcp_stop_kthread(iface->ksmbd_kthread);
 				iface->ksmbd_kthread = NULL;
 				mutex_lock(&iface->sock_release_lock);
@@ -640,7 +646,7 @@ static struct interface *alloc_iface(char *ifname)
 	if (!ifname)
 		return NULL;
 
-	iface = kzalloc(sizeof(struct interface), GFP_KERNEL);
+	iface = kzalloc(sizeof(struct interface), KSMBD_DEFAULT_GFP);
 	if (!iface) {
 		kfree(ifname);
 		return NULL;
@@ -667,7 +673,7 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
 			    !is_valid_ether_addr(netdev->dev_addr))
 				continue;
-			if (!alloc_iface(kstrdup(netdev->name, GFP_KERNEL))) {
+			if (!alloc_iface(kstrdup(netdev->name, KSMBD_DEFAULT_GFP))) {
 				rtnl_unlock();
 				return -ENOMEM;
 			}
@@ -678,7 +684,7 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 	}
 
 	while (ifc_list_sz > 0) {
-		if (!alloc_iface(kstrdup(ifc_list, GFP_KERNEL)))
+		if (!alloc_iface(kstrdup(ifc_list, KSMBD_DEFAULT_GFP)))
 			return -ENOMEM;
 
 		sz = strlen(ifc_list);
