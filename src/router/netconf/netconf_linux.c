@@ -71,7 +71,8 @@ static const size_t ipt_target_size[] = { sizeof(int),
 					  sizeof(struct ip_nat_multi_range),
 					  sizeof(struct ip_nat_multi_range),
 					  sizeof(struct ip_nat_multi_range),
-					  sizeof(struct ip_autofw_info) };
+					  sizeof(struct ip_autofw_info),
+					  sizeof(struct ip_nat_multi_range)};
 #else /* linux-2.6.36 */
 /* ipt target data size (indexed by netconf_fw_t.target) */
 static const size_t ipt_target_size[] = { sizeof(int),
@@ -81,7 +82,8 @@ static const size_t ipt_target_size[] = { sizeof(int),
 					  sizeof(struct nf_nat_ipv4_multi_range_compat),
 					  sizeof(struct nf_nat_ipv4_multi_range_compat),
 					  sizeof(struct nf_nat_ipv4_multi_range_compat),
-					  sizeof(struct ip_autofw_info) };
+					  sizeof(struct ip_autofw_info),
+					  sizeof(struct nf_nat_ipv4_multi_range_compat)};
 #endif /* linux-2.6.36 */
 
 /* ipt filter chain name appropriate for direction (indexed by netconf_filter_t.dir) */
@@ -1140,7 +1142,6 @@ int netconf_add_fw(netconf_fw_t *fw)
 		set_days(fw->match.days, time);
 #endif
 	}
-
 	/* Allocate target */
 	if (!(target = netconf_append_target(&entry, ipt_target_name[fw->target], ipt_target_size[fw->target])))
 		goto err;
@@ -1490,7 +1491,6 @@ static struct ipt_entry *netconf_generate_entry(const char *match_name, const vo
 			goto err;
 		memcpy(&match->data[0], match_data, match_data_size);
 	}
-
 	/* Allocate space for and copy target data */
 	if (!(target = netconf_append_target(&entry, target_name, target_data_size)))
 		goto err;
