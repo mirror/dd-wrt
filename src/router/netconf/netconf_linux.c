@@ -88,7 +88,7 @@ static const size_t ipt_target_size[] = { sizeof(int),
 static const char *ipt_filter_chain_name[] = { "INPUT", "FORWARD", "OUTPUT", "upnp" };
 
 /* ipt nat chain name appropriate for target (indexed by netconf_nat_t.target) */
-static const char *ipt_nat_chain_name[] = { NULL, NULL, NULL, NULL, "POSTROUTING", "PREROUTING", "POSTROUTING" };
+static const char *ipt_nat_chain_name[] = { NULL, NULL, NULL, NULL, "POSTROUTING", "PREROUTING", "POSTROUTING", "upnp" };
 
 /* Returns a netconf_dir index */
 static int filter_dir(const char *name)
@@ -1569,7 +1569,7 @@ int netconf_reset_fw(void)
 	/* Reset default chains */
 	if ((ret = netconf_reset_chain("filter", "INPUT")) || (ret = netconf_reset_chain("filter", "FORWARD")) ||
 	    (ret = netconf_reset_chain("filter", "upnp")) || (ret = netconf_reset_chain("filter", "OUTPUT")) ||
-	    (ret = netconf_reset_chain("nat", "PREROUTING")) || (ret = netconf_reset_chain("nat", "POSTROUTING")) ||
+	    (ret = netconf_reset_chain("nat", "PREROUTING")) || (ret = netconf_reset_chain("nat", "POSTROUTING")) || (ret = netconf_reset_chain("nat", "upnp")) ||
 	    (ret = netconf_reset_chain("nat", "OUTPUT")))
 		return ret;
 
