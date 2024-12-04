@@ -85,12 +85,12 @@ int upnp_osl_read_config(UPNP_CONFIG *config)
 	if ((value = nvram_get("upnp_ad_time")))
 		config->adv_time = atoi(value);
 	else
-		config->adv_time = 300;
+		config->adv_time = 1800;
 
 	if ((value = nvram_get("upnp_sub_timeout")))
 		config->sub_time = atoi(value);
 	else
-		config->sub_time = 300;
+		config->sub_time = 1800;
 
 	return 0;
 }
