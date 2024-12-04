@@ -179,6 +179,14 @@ static void save2file_A_prerouting(const char *fmt, ...)
 	va_end(args);
 }
 
+static void save2file_A_upnp(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	va_save2file("-A upnp", fmt, args);
+	va_end(args);
+}
+
 static void save2file_A_postrouting(const char *fmt, ...)
 {
 	va_list args;
@@ -540,7 +548,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
 			if (flag_dis == 0) {
-				save2file_A_prerouting("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
+				save2file_A_upnp("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
 						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
@@ -549,7 +557,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			if (flag_dis == 0) {
-				save2file_A_prerouting("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
+				save2file_A_upnp("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
 						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
@@ -931,6 +939,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
+		save2file_A_prerouting("-d %s -j upnp", wanaddr);
 		save2file_A_prerouting("-d %s -j TRIGGER --trigger-type dnat", wanaddr);
 		/*
 		 * DD-WRT addition end 
@@ -3040,7 +3049,11 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet,
 		      int remotemanage, char *vifs)
 {
-	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
+	save2file("*nat\n"
+		    ":PREROUTING ACCEPT [0:0]\n"
+		    ":POSTROUTING ACCEPT [0:0]\n"
+		    ":OUTPUT ACCEPT [0:0]"
+		    ":upnp [0:0]");
 	if (wanactive(wanaddr)) {
 		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage, vifs);
 		nat_postrouting(wanface, wanaddr, vifs);
