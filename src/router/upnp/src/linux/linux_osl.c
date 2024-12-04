@@ -680,7 +680,7 @@ void upnp_osl_nat_config(UPNP_PORTMAP *map)
 	}
 
 	/* parse the specification of the internal NAT client. */
-	entry->target = NETCONF_DNAT;
+	entry->target = NETCONF_UPNP_DNAT;
 
 	if (IntIP && IntPort != 0) {
 		/* parse the internal ip address. */
