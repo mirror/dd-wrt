@@ -88,7 +88,7 @@ static const size_t ipt_target_size[] = { sizeof(int),
 static const char *ipt_filter_chain_name[] = { "INPUT", "FORWARD", "OUTPUT", "upnp" };
 
 /* ipt nat chain name appropriate for target (indexed by netconf_nat_t.target) */
-static const char *ipt_nat_chain_name[] = { NULL, NULL, NULL, NULL, "POSTROUTING", "PREROUTING", "POSTROUTING", "upnp" };
+static const char *ipt_nat_chain_name[] = { NULL, NULL, NULL, NULL, "POSTROUTING", "PREROUTING", "POSTROUTING", NULL, "upnp" };
 
 /* Returns a netconf_dir index */
 static int filter_dir(const char *name)
@@ -130,6 +130,8 @@ target_num(const struct ipt_entry *entry, struct iptc_handle *handle)
 		return NETCONF_SNAT;
 	else if (strncmp(name, "DNAT", IPT_FUNCTION_MAXNAMELEN) == 0)
 		return NETCONF_DNAT;
+	else if (strncmp(name, "upnp", IPT_FUNCTION_MAXNAMELEN) == 0)
+		return NETCONF_UPNP_DNAT;
 	else if (strncmp(name, "MASQUERADE", IPT_FUNCTION_MAXNAMELEN) == 0)
 		return NETCONF_MASQ;
 	else if (strncmp(name, "autofw", IPT_FUNCTION_MAXNAMELEN) == 0)
