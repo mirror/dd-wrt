@@ -936,10 +936,10 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 #endif
 		parse_spec_forward(wanface, wanaddr, nvram_safe_get("forward_spec"));
 		parse_port_forward(wanface, wanaddr, lan_cclass, nvram_safe_get("forward_port"), dmzenable);
+		save2file_A_prerouting("-j upnp", wanaddr);
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
-		save2file_A_prerouting("-d %s -j upnp", wanaddr);
 		save2file_A_prerouting("-d %s -j TRIGGER --trigger-type dnat", wanaddr);
 		/*
 		 * DD-WRT addition end 
