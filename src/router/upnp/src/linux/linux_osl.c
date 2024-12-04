@@ -45,7 +45,7 @@
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
-static int get_lan_mac(unsigned char *mac);
+static int get_lan_mac(char *mac);
 
 extern char g_wandevs[];
 
@@ -729,9 +729,9 @@ void upnp_osl_update_wfa_subc_num(int if_instance, int num)
 	return;
 }
 
-static int get_lan_mac(unsigned char *mac)
+static int get_lan_mac(char *mac)
 {
-	unsigned char *lanmac_str = nvram_get("lan_hwaddr");
+	const char *lanmac_str = nvram_get("lan_hwaddr");
 
 	if (mac)
 		memset(mac, 0, 6);
