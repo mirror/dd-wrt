@@ -117,13 +117,14 @@ enum netconf_target {
 	NETCONF_DNAT, /* Destination NAT (nat) */
 	NETCONF_MASQ, /* IP masquerade (nat) */
 	NETCONF_APP, /* Application specific port forward (app) */
+	NETCONF_UPNP_DNAT, /* Destination NAT (nat) */
 	NETCONF_TARGET_MAX
 };
 
 #define netconf_valid_filter(target) \
 	((target) == NETCONF_DROP || (target) == NETCONF_ACCEPT || (target) == NETCONF_LOG_DROP || (target) == NETCONF_LOG_ACCEPT)
 
-#define netconf_valid_nat(target) ((target) == NETCONF_SNAT || (target) == NETCONF_DNAT || (target) == NETCONF_MASQ)
+#define netconf_valid_nat(target) ((target) == NETCONF_SNAT || (target) == NETCONF_DNAT || (target) == NETCONF_UPNP_DNAT || (target) == NETCONF_MASQ)
 
 #define netconf_valid_target(target) ((target) >= 0 && (target) < NETCONF_TARGET_MAX)
 
