@@ -3052,8 +3052,9 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 	save2file("*nat\n"
 		    ":PREROUTING ACCEPT [0:0]\n"
 		    ":POSTROUTING ACCEPT [0:0]\n"
-		    ":OUTPUT ACCEPT [0:0]"
-		    ":upnp [0:0]");
+		    ":OUTPUT ACCEPT [0:0]\n"
+		    "\n"
+		    ":upnp - [0:0]");
 	if (wanactive(wanaddr)) {
 		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage, vifs);
 		nat_postrouting(wanface, wanaddr, vifs);
