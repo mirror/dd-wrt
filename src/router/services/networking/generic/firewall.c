@@ -1690,8 +1690,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	 */
 	// services = fw_get_filter_services ();
 	// //nvram_safe_get("filter_services");
-	nvram_seti("dnsmasq_ms_telemetry", 0);
-	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
 	services = get_filter_services();
 
@@ -2053,6 +2051,8 @@ static void lan2wan_chains(char *lan_cclass)
 
 	fclose(cfd);
 	fclose(ifd);
+	nvram_seti("dnsmasq_ms_telemetry", 0);
+	nvram_seti("dnsmasq_ubnt_telemetry", 0);
 
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		data = nvram_nget("filter_rule%d", seq);
