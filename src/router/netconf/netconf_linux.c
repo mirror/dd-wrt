@@ -57,10 +57,10 @@ typedef struct xt_time_info time_info_t;
 static const char *ipt_table_names[] = { "filter", "nat", NULL };
 
 /* ipt table name appropriate for target (indexed by netconf_fw_t.target) */
-static const char *ipt_table_name[] = { "filter", "filter", "filter", "filter", "nat", "nat", "nat", "nat" };
+static const char *ipt_table_name[] = { "filter", "filter", "filter", "filter", "nat", "nat", "nat", "nat", "nat" };
 
 /* ipt target name (indexed by netconf_fw_t.target) */
-static const char *ipt_target_name[] = { "DROP", "ACCEPT", "logdrop", "logaccept", "SNAT", "DNAT", "MASQUERADE", "autofw" };
+static const char *ipt_target_name[] = { "DROP", "ACCEPT", "logdrop", "logaccept", "SNAT", "DNAT", "MASQUERADE", "autofw", "DNAT" };
 
 /* ipt target data size (indexed by netconf_fw_t.target) */
 #ifndef LINUX_2_6_36
@@ -1224,7 +1224,7 @@ int netconf_add_fw(netconf_fw_t *fw)
 #else /* LINUX26 */
 		if (!insert_entry(ipt_nat_chain_name[fw->target], entry, &handle)) {
 #endif /* LINUX26 */
-			fprintf(stderr, "%s\n", iptc_strerror(errno));
+			fprintf(stderr, "%s:%d %s (%s:%s)\n", __func__,__LINE__,iptc_strerror(errno), ipt_nat_chain_name[fw->target], ipt_target_name[fw->target]);
 			goto err;
 		}
 	}
@@ -1322,7 +1322,7 @@ int netconf_del_fw(netconf_fw_t *fw)
 		if (handle)
 			iptc_free(handle);
 #endif
-		fprintf(stderr, "%s\n", iptc_strerror(errno));
+		fprintf(stderr, "%s:%d %s (%s:%d)\n", __func__, __LINE__, iptc_strerror(errno), ipt_table_name[fw->target], num);
 		return errno;
 	}
 
