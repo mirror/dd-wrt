@@ -1081,11 +1081,14 @@
 			phys = <&pcie_phy0>;
 			phy-names = "pciephy";
 
+/*			ranges = <0x81000000 0x0 0x20200000 0x0 0x20200000 0x0 0x100000>,
+				 <0x82000000 0x0 0x20300000 0x0 0x20300000 0x0 0x10000000>;*/
+
 			ranges = <0x81000000 0x0 0x00000000 0x0 0x20200000 0x0 0x10000>,
 				 <0x82000000 0x0 0x20220000 0x0 0x20220000 0x0 0xfde0000>;
 
 			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "msi";
+			interrupt-names = "global_irq";
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
@@ -1121,7 +1124,7 @@
 				      "ahb",
 				      "axi_m_sticky",
 				      "axi_s_sticky";
-			msi-parent = <&v2m0>;
+/*			msi-parent = <&v2m0>;*/
 			perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 			status = "disabled";
 

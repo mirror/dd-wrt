@@ -346,7 +346,7 @@ static int dw_pcie_msi_host_init(struct dw_pcie_rp *pp)
 		}
 	}
 
-	dev_dbg(dev, "Using %d MSI vectors\n", pp->num_vectors);
+	dev_info(dev, "Using %d MSI vectors\n", pp->num_vectors);
 
 	pp->msi_irq_chip = &dw_pci_msi_bottom_irq_chip;
 
