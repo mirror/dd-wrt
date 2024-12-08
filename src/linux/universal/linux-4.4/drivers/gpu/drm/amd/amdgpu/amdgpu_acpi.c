@@ -129,8 +129,8 @@ static union acpi_object *amdgpu_atif_call(acpi_handle handle, int function,
 	status = acpi_evaluate_object(handle, "ATIF", &atif_arg, &buffer);
 	obj = (union acpi_object *)buffer.pointer;
 
-	/* Fail if calling the method fails and ATIF is supported */
-	if (ACPI_FAILURE(status) && status != AE_NOT_FOUND) {
+	/* Fail if calling the method fails */
+	if (ACPI_FAILURE(status)) {
 		DRM_DEBUG_DRIVER("failed to evaluate ATIF got %s\n",
 				 acpi_format_exception(status));
 		kfree(obj);
