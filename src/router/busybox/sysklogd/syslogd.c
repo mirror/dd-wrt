@@ -1055,8 +1055,10 @@ static int NOINLINE syslogd_init(char **argv)
 	//if (opts & OPT_outfile) // -O
 	if (opts & OPT_loglevel) // -l
 		G.logLevel = xatou_range(opt_l, 1, 8);
-	if (opts & OPT_adjusttz) // -Z
+	if (opts & OPT_adjusttz) { // -Z
 		G.adjustTimezone = 1;
+		tzset();
+	}
 
 	//if (opts & OPT_small) // -S
 #if ENABLE_FEATURE_ROTATE_LOGFILE
