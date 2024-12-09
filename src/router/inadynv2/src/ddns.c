@@ -140,7 +140,7 @@ static int server_transaction(ddns_t *ctx, ddns_info_t *provider)
 #else
 	client->ssl_enabled = 0;
 #endif
-	DO(http_init(client, "Checking for IP# change", strstr(provider->system->name, "ipv6") ? TCP_FORCE_IPV6 : TCP_FORCE_IPV4));
+	DO(http_init(client, "Checking for IP# change", strstr(provider->system->name, "ipv6@") ? TCP_FORCE_IPV6 : TCP_FORCE_IPV4));
 
 	/* Prepare request for IP server */
 	memset(ctx->work_buf, 0, ctx->work_buflen);
@@ -622,7 +622,7 @@ static int send_update(ddns_t *ctx, ddns_info_t *info, ddns_alias_t *alias, int 
 		DO(info->system->setup(ctx, info, alias));
 
 	client->ssl_enabled = info->ssl_enabled;
-	rc = http_init(client, "Sending IP# update to DDNS server", strstr(info->system->name, "ipv6") ? TCP_FORCE_IPV6 : TCP_FORCE_IPV4);
+	rc = http_init(client, "Sending IP# update to DDNS server", strstr(info->system->name, "ipv6@") ? TCP_FORCE_IPV6 : TCP_FORCE_IPV4);
 	if (rc) {
 		/* Update failed, force update again in ctx->cmd_check_period seconds */
 		alias->force_addr_update = 1;

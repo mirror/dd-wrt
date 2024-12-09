@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libconfuse 2.6\n"
 "Report-Msgid-Bugs-To: https://github.com/libconfuse/libconfuse/issues\n"
-"POT-Creation-Date: 2020-06-22 11:38+0200\n"
+"POT-Creation-Date: 2024-08-12 01:54+0700\n"
 "PO-Revision-Date: 2003-01-26 14:10+0100\n"
 "Last-Translator: Matthieu Sion <matt@flandrescartouches.com>\n"
 "Language-Team: None <martin@bzero.se>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/confuse.c:326 src/confuse.c:347 src/confuse.c:2295
+#: src/confuse.c:326 src/confuse.c:347 src/confuse.c:2329
 #, c-format
 msgid "no such option '%s'"
 msgstr "il n'y a pas d'option '%s'"
@@ -43,94 +43,94 @@ msgstr "l'option '%s' en double n'est pas autorisée"
 msgid "found duplicate title '%s'"
 msgstr "titre '%s' trouvé en double"
 
-#: src/confuse.c:951
+#: src/confuse.c:972
 #, c-format
 msgid "invalid integer value for option '%s'"
 msgstr "valeur entière non valide pour l'option '%s'"
 
-#: src/confuse.c:955
+#: src/confuse.c:977
 #, c-format
 msgid "integer value for option '%s' is out of range"
 msgstr "valeur entière de l'option '%s' en dehors des limites"
 
-#: src/confuse.c:973
+#: src/confuse.c:995
 #, c-format
 msgid "invalid floating point value for option '%s'"
 msgstr ""
 "la valeur de l'option '%s' est un nombre à virgule flottante non valide"
 
-#: src/confuse.c:977
+#: src/confuse.c:999
 #, c-format
 msgid "floating point value for option '%s' is out of range"
 msgstr ""
 "la valeur de l'option '%s' est un nombre à virgule flottante en dehors des "
 "limites"
 
-#: src/confuse.c:1063
+#: src/confuse.c:1085
 #, c-format
 msgid "invalid boolean value for option '%s'"
 msgstr "valeur booléenne incorrecte pour l'option '%s'"
 
-#: src/confuse.c:1262
+#: src/confuse.c:1285
 #, c-format
 msgid "dropping deprecated configuration option '%s'"
 msgstr ""
 
-#: src/confuse.c:1265
+#: src/confuse.c:1288
 #, c-format
 msgid "found deprecated option '%s', please update configuration file."
 msgstr ""
 
-#: src/confuse.c:1296
+#: src/confuse.c:1320
 msgid "premature end of file"
 msgstr "fin de fichier prématurée"
 
-#: src/confuse.c:1317
+#: src/confuse.c:1341
 msgid "unexpected closing brace"
 msgstr "accolade fermante inattendue"
 
-#: src/confuse.c:1338 src/confuse.c:1418 src/confuse.c:1445 src/confuse.c:1468
-#: src/confuse.c:1583 src/confuse.c:1627
+#: src/confuse.c:1362 src/confuse.c:1442 src/confuse.c:1469 src/confuse.c:1492
+#: src/confuse.c:1607 src/confuse.c:1651
 #, c-format
 msgid "unexpected token '%s'"
 msgstr "mot inattendu '%s'"
 
-#: src/confuse.c:1380
+#: src/confuse.c:1404
 #, c-format
 msgid "attempt to append to non-list option '%s'"
 msgstr "tentative d'ajout à une option qui n'est pas une liste ('%s')"
 
-#: src/confuse.c:1393
+#: src/confuse.c:1417
 #, c-format
 msgid "missing equal sign after option '%s'"
 msgstr "signe égal manquant après l'option '%s'"
 
-#: src/confuse.c:1475
+#: src/confuse.c:1499
 #, c-format
 msgid "missing opening brace for section '%s'"
 msgstr "accolade ouvrante manquante à la section '%s'"
 
-#: src/confuse.c:1502
+#: src/confuse.c:1526
 #, c-format
 msgid "missing title for section '%s'"
 msgstr "titre manquant à la section '%s'"
 
-#: src/confuse.c:1514
+#: src/confuse.c:1538
 #, c-format
 msgid "missing parenthesis for function '%s'"
 msgstr "parenthèses manquantes à la fonction '%s'"
 
-#: src/confuse.c:1536 src/confuse.c:1549
+#: src/confuse.c:1560 src/confuse.c:1573
 #, c-format
 msgid "syntax error in call of function '%s'"
 msgstr "erreur de syntaxe dans l'appel de la fonction '%s'"
 
-#: src/confuse.c:1643
+#: src/confuse.c:1667
 #, c-format
 msgid "Internal error in cfg_parse_internal(), unknown state %d"
 msgstr ""
 
-#: src/confuse.c:2007
+#: src/confuse.c:2041
 msgid "wrong number of arguments to cfg_include()"
 msgstr "nombre d'arguments incorrect à cfg_include()"
 
