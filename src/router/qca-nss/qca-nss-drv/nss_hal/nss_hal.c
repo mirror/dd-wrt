@@ -45,21 +45,33 @@
 #include <linux/fab_scaling.h>
 #endif
 
+static int mesh = 0;
+module_param(mesh, int, S_IRUGO);
+MODULE_PARM_DESC(mesh, "use 11.4 fw instead of 12.5 for mesh support");
+
 /*
  * Macros
  */
 #if defined(NSS_HAL_IPQ807x_SUPPORT)
 #define NSS_AP0_IMAGE "qca-nss0-hawkeye.bin"
 #define NSS_AP1_IMAGE "qca-nss1-hawkeye.bin"
+#define NSS_AP0_IMAGE_ALT "qca-nss0-hawkeye-12.5.bin"
+#define NSS_AP1_IMAGE_ALT "qca-nss1-hawkeye-12.5.bin"
 #elif defined(NSS_HAL_IPQ60XX_SUPPORT)
 #define NSS_AP0_IMAGE "qca-nss0-cypress.bin"
 #define NSS_AP1_IMAGE "qca-nss1-cypress.bin"
+#define NSS_AP0_IMAGE_ALT "qca-nss0-cypress-12.5.bin"
+#define NSS_AP1_IMAGE_ALT "qca-nss1-cypress-12.5.bin"
 #elif defined(NSS_HAL_IPQ50XX_SUPPORT)
 #define NSS_AP0_IMAGE "qca-nss0-maple.bin"
 #define NSS_AP1_IMAGE "qca-nss1-maple.bin"
+#define NSS_AP0_IMAGE_ALT "qca-nss0-maple.bin"
+#define NSS_AP1_IMAGE_ALT "qca-nss1-maple.bin"
 #else
 #define NSS_AP0_IMAGE "qca-nss0.bin"
 #define NSS_AP1_IMAGE "qca-nss1.bin"
+#define NSS_AP0_IMAGE_ALT "qca-nss0.bin"
+#define NSS_AP1_IMAGE_ALT "qca-nss1.bin"
 #endif
 #define BUFFER_SIZE 8192
 
@@ -126,9 +138,9 @@ int nss_hal_firmware_load(struct nss_ctx_instance *nss_ctx, struct platform_devi
 	int rc;
 
 	if (nss_ctx->id == 0) {
-		rc = request_firmware(&nss_fw, NSS_AP0_IMAGE, &(nss_dev->dev));
+		rc = request_firmware(&nss_fw, mesh ? NSS_AP0_IMAGE : NSS_AP0_IMAGE_ALT, &(nss_dev->dev));
 	} else if (nss_ctx->id == 1) {
-		rc = request_firmware(&nss_fw, NSS_AP1_IMAGE, &(nss_dev->dev));
+		rc = request_firmware(&nss_fw, mesh ? NSS_AP1_IMAGE : NSS_AP1_IMAGE_ALT, &(nss_dev->dev));
 	} else {
 		nss_warning("%px: Invalid nss dev: %d\n", nss_ctx, nss_ctx->id);
 		return -EINVAL;
