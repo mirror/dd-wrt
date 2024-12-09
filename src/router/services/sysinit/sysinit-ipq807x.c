@@ -58,6 +58,10 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+#define sys_reboot()  \
+	eval("sync"); \
+	eval("event", "3", "1", "15")
+
 #define ALT_PART_NAME_LENGTH 16
 struct per_part_info {
 	char name[ALT_PART_NAME_LENGTH];
@@ -430,17 +434,40 @@ static void init_skb(int profile, int maple)
 	if (!skb_recycler_enable)
 		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
 }
-
+static int use_mesh(void)
+{
+	int count;
+	char *next;
+	char var[80];
+	char *vifs;
+	nvram_set("cur_nss", "11.4");
+	for (count = 0; count < 3; count++) {
+		char wifivifs[32];
+		sprintf(wifivifs, "wlan%d_vifs", count);
+		if (nvram_nmatch("mesh", "wlan%d_mode", count) && !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+			return 1;
+		vifs = nvram_safe_get(wifivifs);
+		if (vifs != NULL && *vifs) {
+			foreach(var, vifs, next)
+			{
+				if (nvram_nmatch("mesh", "%s_mode", var) && !nvram_nmatch("disabled", "%s_net_mode", var))
+					return 1;
+			}
+		}
+	}
+	nvram_set("cur_nss", "12.5");
+	return 0;
+}
 static void load_nss_ipq60xx(int profile)
 {
 	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq60xx");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -481,11 +508,11 @@ static void load_nss_ipq50xx(int profile)
 	init_skb(profile, 1);
 	insmod("qca-ssdk-ipq50xx");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -523,11 +550,11 @@ static void load_nss_ipq807x(int profile)
 	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq807x");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
+		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=1");
+		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0");
+		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -1422,6 +1449,10 @@ static void load_ath11k(int profile, int pci, int nss)
 void start_wifi_drivers(void)
 {
 	int notloaded = 0;
+	if (use_mesh() && nvram_match("cur_nss", "12.5"))
+		sys_reboot();
+	if (!use_mesh() && nvram_match("cur_nss", "11.4"))
+		sys_reboot();
 
 	notloaded = insmod("compat");
 	if (!notloaded) {
