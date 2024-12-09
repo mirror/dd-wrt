@@ -23,6 +23,7 @@
 #include "sha1.h"
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+#include "md5base.c"
 
 /* Calculate the MD5 hash checksum of the given input */
 void md5(const unsigned char *input, size_t ilen, unsigned char output[16])

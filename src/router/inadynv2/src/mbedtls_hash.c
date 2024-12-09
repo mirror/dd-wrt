@@ -2,6 +2,7 @@
 #include "sha1.h"
 #include <mbedtls/md5.h>
 #include <mbedtls/sha1.h>
+#include "md5base.c"
 
 /* Calculate the MD5 hash checksum of the given input */
 void md5(const unsigned char *input, size_t ilen, unsigned char output[16]) { mbedtls_md5(input, ilen, output); }
