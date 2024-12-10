@@ -58,9 +58,10 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-#define sys_reboot()  \
+#define sys_reboot() {  \
 	eval("sync"); \
-	eval("event", "3", "1", "15")
+	eval("event", "3", "1", "15") \
+	}
 
 #define ALT_PART_NAME_LENGTH 16
 struct per_part_info {
