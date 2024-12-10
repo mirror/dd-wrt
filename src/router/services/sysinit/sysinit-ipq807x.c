@@ -463,15 +463,15 @@ static void load_nss_ipq60xx(int profile)
 	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq60xx");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
-		insmod("qca-nss-drv-ipq60xx");
+		eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh() ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq60xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
@@ -508,15 +508,15 @@ static void load_nss_ipq50xx(int profile)
 	init_skb(profile, 1);
 	insmod("qca-ssdk-ipq50xx");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
-		insmod("qca-nss-drv-ipq50xx");
+		eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh() ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq50xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
@@ -550,11 +550,11 @@ static void load_nss_ipq807x(int profile)
 	init_skb(profile, 0);
 	insmod("qca-ssdk-ipq807x");
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=1", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=1");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
@@ -565,7 +565,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("l2tp_core");
 		insmod("pptp");
 		insmod("vxlan");
-		insmod("qca-nss-drv-ipq807x");
+		eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh() ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq807x");
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
