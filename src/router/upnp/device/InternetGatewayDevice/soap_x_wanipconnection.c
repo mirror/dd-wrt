@@ -29,7 +29,7 @@ static int statevar_ConnectionType(UPNP_CONTEXT *context, UPNP_SERVICE *service,
 	UPNP_USE_HINT(UPNP_STR(value))
 	if (!value)
 		return SOAP_DEVICE_INTERNAL_ERROR;
-	
+
 	/* << USER CODE START >> */
 	strcpy(UPNP_STR(value), "IP_Routed");
 	return OK;

@@ -28,7 +28,7 @@ static int statevar_WANAccessType(UPNP_CONTEXT *context, UPNP_SERVICE *service, 
 {
 	UPNP_USE_HINT(UPNP_STR(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_CONST_HINT(char *pDSL = "DSL";)
 	UPNP_CONST_HINT(char *pPOTS = "POTS";)
@@ -48,7 +48,7 @@ static int statevar_Layer1UpstreamMaxBitRate(UPNP_CONTEXT *context, UPNP_SERVICE
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	unsigned long tx, rx;
@@ -66,7 +66,7 @@ static int statevar_Layer1DownstreamMaxBitRate(UPNP_CONTEXT *context, UPNP_SERVI
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	unsigned long rx, tx;
@@ -83,7 +83,7 @@ static int statevar_PhysicalLinkStatus(UPNP_CONTEXT *context, UPNP_SERVICE *serv
 {
 	UPNP_USE_HINT(UPNP_STR(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_CONST_HINT(char *pUp = "Up";)
 	UPNP_CONST_HINT(char *pDown = "Down";)
@@ -105,7 +105,7 @@ static int statevar_EnabledForInternet(UPNP_CONTEXT *context, UPNP_SERVICE *serv
 {
 	UPNP_USE_HINT(UPNP_BOOL(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	/*
@@ -124,7 +124,7 @@ static int statevar_MaximumActiveConnections(UPNP_CONTEXT *context, UPNP_SERVICE
 {
 	UPNP_USE_HINT(UPNP_UI2(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_UI2(value) = 1;
@@ -138,7 +138,7 @@ static int statevar_NumberOfActiveConnections(UPNP_CONTEXT *context, UPNP_SERVIC
 {
 	UPNP_USE_HINT(UPNP_UI2(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_UI2(value) = 1;
@@ -151,7 +151,7 @@ static int statevar_TotalBytesSent(UPNP_CONTEXT *context, UPNP_SERVICE *service,
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	if_stats_t stats;
@@ -168,7 +168,7 @@ static int statevar_TotalBytesReceived(UPNP_CONTEXT *context, UPNP_SERVICE *serv
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	if_stats_t stats;
@@ -185,7 +185,7 @@ static int statevar_TotalPacketsSent(UPNP_CONTEXT *context, UPNP_SERVICE *servic
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	if_stats_t stats;
@@ -202,7 +202,7 @@ static int statevar_TotalPacketsReceived(UPNP_CONTEXT *context, UPNP_SERVICE *se
 {
 	UPNP_USE_HINT(UPNP_UI4(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	if_stats_t stats;
@@ -220,7 +220,7 @@ static int statevar_ActiveConnectionDeviceContainer(UPNP_CONTEXT *context, UPNP_
 {
 	UPNP_USE_HINT(UPNP_STR(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_SERVICE *wan_service = 0;
@@ -246,7 +246,7 @@ static int statevar_ActiveConnectionServiceID(UPNP_CONTEXT *context, UPNP_SERVIC
 {
 	UPNP_USE_HINT(UPNP_STR(value))
 	if (!value)
-	    return SOAP_DEVICE_INTERNAL_ERROR;
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_SERVICE *wan_service = 0;
