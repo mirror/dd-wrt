@@ -73,6 +73,8 @@ static int action_GetDefaultConnectionService(UPNP_CONTEXT *context, UPNP_SERVIC
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewDefaultConnectionService = UPNP_OUT_ARG("NewDefaultConnectionService");
+	if (!out_NewDefaultConnectionService)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_DefaultConnectionService(context, service, out_NewDefaultConnectionService->statevar,
 						 ARG_VALUE(out_NewDefaultConnectionService));

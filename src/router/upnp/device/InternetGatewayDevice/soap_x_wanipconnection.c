@@ -27,7 +27,9 @@
 static int statevar_ConnectionType(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
-
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	
 	/* << USER CODE START >> */
 	strcpy(UPNP_STR(value), "IP_Routed");
 	return OK;
@@ -39,6 +41,8 @@ static int statevar_PossibleConnectionTypes(UPNP_CONTEXT *context, UPNP_SERVICE 
 					    UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_CONST_HINT(char *pUnconfigured = "Unconfigured";)
 	UPNP_CONST_HINT(char *pIP_Routed = "IP_Routed";)
@@ -54,6 +58,8 @@ static int statevar_PossibleConnectionTypes(UPNP_CONTEXT *context, UPNP_SERVICE 
 static int statevar_ConnectionStatus(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_CONST_HINT(char *pUnconfigured = "Unconfigured";)
 	UPNP_CONST_HINT(char *pConnected = "Connected";)
@@ -80,6 +86,8 @@ static int statevar_Uptime(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_ST
 static int statevar_LastConnectionError(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_CONST_HINT(char *pERROR_NONE = "ERROR_NONE";)
 	UPNP_CONST_HINT(char *pERROR_UNKNOWN = "ERROR_UNKNOWN";)
@@ -94,6 +102,8 @@ static int statevar_LastConnectionError(UPNP_CONTEXT *context, UPNP_SERVICE *ser
 static int statevar_RSIPAvailable(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_BOOL(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	/* FALSE */
@@ -106,6 +116,8 @@ static int statevar_RSIPAvailable(UPNP_CONTEXT *context, UPNP_SERVICE *service, 
 static int statevar_NATEnabled(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_BOOL(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	/* We have to check router mode settings */
@@ -119,6 +131,8 @@ static int statevar_PortMappingNumberOfEntries(UPNP_CONTEXT *context, UPNP_SERVI
 					       UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_UI2(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_UI2(value) = upnp_portmap_num(context);
@@ -130,6 +144,8 @@ static int statevar_PortMappingNumberOfEntries(UPNP_CONTEXT *context, UPNP_SERVI
 static int statevar_ExternalIPAddress(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	struct in_addr inaddr = { 0 };
@@ -150,6 +166,8 @@ static int action_SetConnectionType(UPNP_CONTEXT *context, UPNP_SERVICE *service
 
 	/* << USER CODE START >> */
 	IN_ARGUMENT *in_NewConnectionType = UPNP_IN_ARG("NewConnectionType");
+	if (!in_NewConnectionType)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	if (strcmp(ARG_STR(in_NewConnectionType), "IP_Routed") != 0)
 		return SOAP_INVALID_ARGS;
@@ -171,6 +189,10 @@ static int action_GetConnectionTypeInfo(UPNP_CONTEXT *context, UPNP_SERVICE *ser
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewConnectionType = UPNP_OUT_ARG("NewConnectionType");
 	OUT_ARGUMENT *out_NewPossibleConnectionTypes = UPNP_OUT_ARG("NewPossibleConnectionTypes");
+	if (!out_NewConnectionType)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewPossibleConnectionTypes)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	strcpy(ARG_STR(out_NewConnectionType), "IP_Routed");
 	strcpy(ARG_STR(out_NewPossibleConnectionTypes), "IP_Routed");
@@ -220,6 +242,13 @@ static int action_GetStatusInfo(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN
 	OUT_ARGUMENT *out_NewLastConnectionError = UPNP_OUT_ARG("NewLastConnectionError");
 	OUT_ARGUMENT *out_NewUptime = UPNP_OUT_ARG("NewUptime");
 
+	if (!out_NewConnectionStatus)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewLastConnectionError)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewUptime)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+
 	int ret;
 
 	ret = statevar_ConnectionStatus(context, service, out_NewConnectionStatus->statevar, ARG_VALUE(out_NewConnectionStatus));
@@ -248,6 +277,11 @@ static int action_GetNATRSIPStatus(UPNP_CONTEXT *context, UPNP_SERVICE *service,
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewRSIPAvailable = UPNP_OUT_ARG("NewRSIPAvailable");
 	OUT_ARGUMENT *out_NewNATEnabled = UPNP_OUT_ARG("NewNATEnabled");
+
+	if (!out_NewRSIPAvailable)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewNATEnabled)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	ARG_BOOL(out_NewRSIPAvailable) = 0; /* FALSE */
 	ARG_BOOL(out_NewNATEnabled) = 1; /* ??? TRUE */
@@ -289,6 +323,25 @@ static int action_GetGenericPortMappingEntry(UPNP_CONTEXT *context, UPNP_SERVICE
 	OUT_ARGUMENT *out_NewEnabled = UPNP_OUT_ARG("NewEnabled");
 	OUT_ARGUMENT *out_NewPortMappingDescription = UPNP_OUT_ARG("NewPortMappingDescription");
 	OUT_ARGUMENT *out_NewLeaseDuration = UPNP_OUT_ARG("NewLeaseDuration");
+
+	if (!in_NewPortMappingIndex)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewRemoteHost)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewExternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewProtocol)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewInternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewInternalClient)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewEnabled)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewPortMappingDescription)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewLeaseDuration)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_PORTMAP *map;
 
@@ -341,6 +394,23 @@ static int action_GetSpecificPortMappingEntry(UPNP_CONTEXT *context, UPNP_SERVIC
 	OUT_ARGUMENT *out_NewPortMappingDescription = UPNP_OUT_ARG("NewPortMappingDescription");
 	OUT_ARGUMENT *out_NewLeaseDuration = UPNP_OUT_ARG("NewLeaseDuration");
 
+	if (!in_NewRemoteHost)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewExternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewProtocol)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewInternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewInternalClient)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewEnabled)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewPortMappingDescription)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewLeaseDuration)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+
 	UPNP_PORTMAP *map;
 	map = upnp_portmap_find(context, ARG_STR(in_NewRemoteHost), ARG_UI2(in_NewExternalPort), ARG_STR(in_NewProtocol));
 
@@ -389,6 +459,23 @@ static int action_AddPortMapping(UPNP_CONTEXT *context, UPNP_SERVICE *service, I
 	IN_ARGUMENT *in_NewPortMappingDescription = UPNP_IN_ARG("NewPortMappingDescription");
 	IN_ARGUMENT *in_NewLeaseDuration = UPNP_IN_ARG("NewLeaseDuration");
 
+	if (!in_NewRemoteHost)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewExternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewProtocol)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewInternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewInternalClient)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewEnabled)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewPortMappingDescription)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewLeaseDuration)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+
 	UPNP_STATE_VAR *statevar;
 	UPNP_VALUE value = { UPNP_TYPE_UI2, 2 };
 
@@ -426,6 +513,12 @@ static int action_DeletePortMapping(UPNP_CONTEXT *context, UPNP_SERVICE *service
 	IN_ARGUMENT *in_NewRemoteHost = UPNP_IN_ARG("NewRemoteHost");
 	IN_ARGUMENT *in_NewExternalPort = UPNP_IN_ARG("NewExternalPort");
 	IN_ARGUMENT *in_NewProtocol = UPNP_IN_ARG("NewProtocol");
+	if (!in_NewRemoteHost)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewExternalPort)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!in_NewProtocol)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	UPNP_STATE_VAR *statevar;
 	UPNP_VALUE value = { UPNP_TYPE_UI2, 2 };
@@ -456,6 +549,8 @@ static int action_GetExternalIPAddress(UPNP_CONTEXT *context, UPNP_SERVICE *serv
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewExternalIPAddress = UPNP_OUT_ARG("NewExternalIPAddress");
+	if (!out_NewExternalIPAddress)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_ExternalIPAddress(context, service, out_NewExternalIPAddress->statevar,
 					  ARG_VALUE(out_NewExternalIPAddress));

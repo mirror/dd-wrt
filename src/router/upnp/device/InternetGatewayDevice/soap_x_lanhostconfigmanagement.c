@@ -29,6 +29,8 @@ static int statevar_DHCPServerConfigurable(UPNP_CONTEXT *context, UPNP_SERVICE *
 {
 	UPNP_USE_HINT(UPNP_BOOL(value))
 
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 	/* << USER CODE START >> */
 	int ifid = context->focus_ifp->if_instance;
 	char name[32];
@@ -49,6 +51,8 @@ static int statevar_DHCPServerConfigurable(UPNP_CONTEXT *context, UPNP_SERVICE *
 static int statevar_DHCPRelay(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_BOOL(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	/* We don't support DHCP relay */
@@ -61,6 +65,8 @@ static int statevar_DHCPRelay(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP
 static int statevar_SubnetMask(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	int ifid = context->focus_ifp->if_instance;
@@ -81,6 +87,8 @@ static int statevar_SubnetMask(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 static int statevar_IPRouters(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	int ifid = context->focus_ifp->if_instance;
@@ -101,6 +109,8 @@ static int statevar_IPRouters(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP
 static int statevar_DNSServers(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	//	int	ifid = context->focus_ifp->if_instance;
@@ -152,6 +162,8 @@ static int statevar_DNSServers(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 static int statevar_DomainName(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	strlcpy(UPNP_STR(value), nvram_safe_get("wan_domain"), sizeof(UPNP_STR(value)));
@@ -163,6 +175,8 @@ static int statevar_DomainName(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 static int statevar_MinAddress(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	int ifid = context->focus_ifp->if_instance;
@@ -183,6 +197,8 @@ static int statevar_MinAddress(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 static int statevar_MaxAddress(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	int ifid = context->focus_ifp->if_instance;
@@ -203,6 +219,8 @@ static int statevar_MaxAddress(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPN
 static int statevar_ReservedAddresses(UPNP_CONTEXT *context, UPNP_SERVICE *service, UPNP_STATE_VAR *statevar, UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	strcpy(UPNP_STR(value), "");
@@ -261,6 +279,8 @@ static int action_GetDHCPRelay(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN_
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewDHCPRelay = UPNP_OUT_ARG("NewDHCPRelay");
+	if (!out_NewDHCPRelay)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_DHCPRelay(context, service, out_NewDHCPRelay->statevar, ARG_VALUE(out_NewDHCPRelay));
 }
@@ -288,6 +308,8 @@ static int action_GetSubnetMask(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewSubnetMask = UPNP_OUT_ARG("NewSubnetMask");
+	if (!out_NewSubnetMask)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_SubnetMask(context, service, out_NewSubnetMask->statevar, ARG_VALUE(out_NewSubnetMask));
 }
@@ -329,6 +351,8 @@ static int action_GetIPRoutersList(UPNP_CONTEXT *context, UPNP_SERVICE *service,
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewIPRouters = UPNP_OUT_ARG("NewIPRouters");
+	if (!out_NewIPRouters)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_IPRouters(context, service, out_NewIPRouters->statevar, ARG_VALUE(out_NewIPRouters));
 }
@@ -356,6 +380,8 @@ static int action_GetDomainName(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewDomainName = UPNP_OUT_ARG("NewDomainName");
+	if (!out_NewDomainName)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_DomainName(context, service, out_NewDomainName->statevar, ARG_VALUE(out_NewDomainName));
 }
@@ -390,6 +416,10 @@ static int action_GetAddressRange(UPNP_CONTEXT *context, UPNP_SERVICE *service, 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewMinAddress = UPNP_OUT_ARG("NewMinAddress");
 	OUT_ARGUMENT *out_NewMaxAddress = UPNP_OUT_ARG("NewMaxAddress");
+	if (!out_NewMinAddress)
+		return SOAP_DEVICE_INTERNAL_ERROR;
+	if (!out_NewMaxAddress)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	statevar_MinAddress(context, service, out_NewMinAddress->statevar, ARG_VALUE(out_NewMinAddress));
 	statevar_MaxAddress(context, service, out_NewMaxAddress->statevar, ARG_VALUE(out_NewMaxAddress));
@@ -436,6 +466,8 @@ static int action_GetReservedAddresses(UPNP_CONTEXT *context, UPNP_SERVICE *serv
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewReservedAddresses = UPNP_OUT_ARG("out_NewReservedAddresses");
+	if (!out_NewReservedAddresses)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_ReservedAddresses(context, service, out_NewReservedAddresses->statevar,
 					  ARG_VALUE(out_NewReservedAddresses));
@@ -478,6 +510,8 @@ static int action_GetDNSServers(UPNP_CONTEXT *context, UPNP_SERVICE *service, IN
 
 	/* << USER CODE START >> */
 	OUT_ARGUMENT *out_NewDNSServers = UPNP_OUT_ARG("NewDNSServers");
+	if (!out_NewDNSServers)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	return statevar_DNSServers(context, service, out_NewDNSServers->statevar, ARG_VALUE(out_NewDNSServers));
 }
