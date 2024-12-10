@@ -60,7 +60,7 @@
 
 #define sys_reboot() {  \
 	eval("sync"); \
-	eval("event", "3", "1", "15") \
+	eval("event", "3", "1", "15"); \
 	}
 
 #define ALT_PART_NAME_LENGTH 16
