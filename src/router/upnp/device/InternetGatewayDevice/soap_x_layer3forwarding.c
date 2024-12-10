@@ -28,6 +28,8 @@ static int statevar_DefaultConnectionService(UPNP_CONTEXT *context, UPNP_SERVICE
 					     UPNP_VALUE *value)
 {
 	UPNP_USE_HINT(UPNP_STR(value))
+	if (!value)
+		return SOAP_DEVICE_INTERNAL_ERROR;
 
 	/* << USER CODE START >> */
 	UPNP_SERVICE *wan_service = 0;
