@@ -12,7 +12,7 @@
  "openvpncl_remoteip5" "OpenVPN IP5" "NULL" "FALSE" "0"
  "openvpncl_remoteport5" "OpenVPN PORT5" "NULL" "FALSE" "0"
  "openvpncl_randomsrv" "OpenVPN choose Random Server address" "CHOICE" "2" "0" "1" "FALSE" "0"
- "openvpncl_lzo"  "lzo compression enabled" "CHOICE" "7" "yes" "adaptive" "no" "compress" "compress lz4" "compress lz4-v2" "off" "FALSE" "0"
+ "openvpncl_lzo"  "lzo compression enabled" "CHOICE" "5" "yes" "adaptive" "no" "compress" "off" "FALSE" "0"
  "openvpncl_ca"  "OpenVPN Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_client"  "Client Public Key"  "NULL"   "FALSE" "0"
  "openvpncl_key"  "Client Private Key"  "NULL"   "FALSE" "0"

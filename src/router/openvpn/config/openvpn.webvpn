@@ -201,8 +201,6 @@
 					<option value="adaptive" <% nvram_selected("openvpn_lzo","adaptive"); %>><% tran("service.vpnd_lzoadaptive"); %></option>
 					<option value="no" <% nvram_selected("openvpn_lzo","no"); %>><% tran("service.vpnd_lzono"); %></option>
 					<option value="compress" <% nvram_selected("openvpn_lzo","compress"); %>><% tran("service.vpnd_lzocompress"); %></option>
-					<option value="compress lz4" <% nvram_selected("openvpn_lzo","compress lz4"); %>><% tran("service.vpnd_lzocompress"); %> lz4</option>
-					<option value="compress lz4-v2" <% nvram_selected("openvpn_lzo","compress lz4-v2"); %>><% tran("service.vpnd_lzocompress"); %> lz4-v2</option>
 					</select>
 				</div>
 				<div class="setting">

@@ -8,7 +8,7 @@
  "openvpn_startip"  "OpenVPN pool start ip"  "NULL"   "FALSE" "0"
  "openvpn_endip"  "OpenVPN pool end ip"  "NULL"   "FALSE" "0"
  "openvpn_port"  "OpenVPN PORT" "RANGE"  "1"  "65535"  "FALSE" "0"
- "openvpn_lzo"  "lzo compression enabled" "CHOICE" "7" "yes" "adaptive" "no" "compress" "compress lz4" "compress lz4-v2" "off" "FALSE" "0"
+ "openvpn_lzo"  "lzo compression enabled" "CHOICE" "5" "yes" "adaptive" "no" "compress" "off" "FALSE" "0"
  "openvpn_ca"  "OpenVPN CA Cert"  "NULL"   "FALSE" "0"
  "openvpn_crl"  "OpenVPN Certificate Revoke List"  "NULL"   "FALSE" "0"
  "openvpn_crt"  "OpenVPN Public Cert"  "NULL"   "FALSE" "0"
