@@ -68,9 +68,12 @@ void start_jffs2(void)
 		ax89 = 1;
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
-	case ROUTER_FORTINET_FAP231F:
 		ubidev = 0;
 		rwpart = "rootfs_data";
+		break;
+	case ROUTER_FORTINET_FAP231F:
+		ubidev = 1;
+		mtd = getMTD("fap_data");
 		break;
 	case ROUTER_TRENDNET_TEW827:
 	case ROUTER_ASROCK_G10:
