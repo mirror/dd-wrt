@@ -174,7 +174,7 @@ void *get_deviceinfo_mr7350(char *var)
 }
 void *get_deviceinfo_fap(char *var)
 {
-	return get_deviceinfo("/dev/mtd15", var);
+	return get_deviceinfo("/dev/mtd16", var);
 }
 void *get_deviceinfo_mr5500(char *var)
 {
