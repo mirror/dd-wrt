@@ -628,6 +628,16 @@ static void delete_nat_entry(netconf_nat_t *entry)
 		nat.ipaddr.s_addr |= (0xffffffff & ~netmask.s_addr);
 	}
 
+	/* We want to match destination ip address */
+	if (nvram_match("wan_proto", "pptp")) {
+		inet_aton(nvram_safe_get("pptp_get_ip"), &nat.match.dst.ipaddr);
+	} else if (nvram_match("wan_proto", "l2tp")) {
+		inet_aton(nvram_safe_get("l2tp_get_ip"), &nat.match.dst.ipaddr);
+	} else {
+		inet_aton(nvram_safe_get("wan_ipaddr"), &nat.match.dst.ipaddr);
+	}
+	nat.match.dst.netmask.s_addr = htonl(0xffffffff);
+
 	/* Set up LAN side match */
 	memset(&filter, 0, sizeof(filter));
 	filter.match.ipproto = nat.match.ipproto;
