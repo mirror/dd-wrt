@@ -110,9 +110,9 @@ static int filter_dir(const char *name)
 /* Returns a netconf_target index */
 static int
 #ifndef LINUX_2_6_36
-target_num(const struct ipt_entry *entry, iptc_handle_t *handle)
+target_num(const struct ipt_entry *entry, iptc_handle_t *handle, char *chain)
 #else /* linux-2.6.36 */
-target_num(const struct ipt_entry *entry, struct iptc_handle *handle)
+target_num(const struct ipt_entry *entry, struct iptc_handle *handle, char *chain)
 #endif /* linux-2.6.36 */
 {
 	const char *name = iptc_get_target(entry, handle);
@@ -130,9 +130,9 @@ target_num(const struct ipt_entry *entry, struct iptc_handle *handle)
 		return NETCONF_LOG_ACCEPT;
 	else if (strncmp(name, "SNAT", IPT_FUNCTION_MAXNAMELEN) == 0)
 		return NETCONF_SNAT;
-	else if (strncmp(name, "DNAT", IPT_FUNCTION_MAXNAMELEN) == 0)
+	else if (strncmp(name, "DNAT", IPT_FUNCTION_MAXNAMELEN) == 0 && strcmp(chain, "upnp"))
 		return NETCONF_DNAT;
-	else if (strncmp(name, "upnp", IPT_FUNCTION_MAXNAMELEN) == 0)
+	else if (strncmp(name, "DNAT", IPT_FUNCTION_MAXNAMELEN) == 0 && !strcmp(chain, "upnp"))
 		return NETCONF_UPNP_DNAT;
 	else if (strncmp(name, "MASQUERADE", IPT_FUNCTION_MAXNAMELEN) == 0)
 		return NETCONF_MASQ;
@@ -255,10 +255,10 @@ int netconf_get_fw(netconf_fw_t *fw_list)
 				/* Search all entries */
 #ifndef LINUX_2_6_36
 			for (entry = iptc_first_rule(chain, &handle); entry; entry = iptc_next_rule(entry, &handle)) {
-				int num = target_num(entry, &handle);
+				int num = target_num(entry, &handle, chain);
 #else /* linux-2.6.36 */
 			for (entry = iptc_first_rule(chain, handle); entry; entry = iptc_next_rule(entry, handle)) {
-				int num = target_num(entry, handle);
+				int num = target_num(entry, handle, chain);
 #endif /* linux-2.6.36 */
 				netconf_fw_t *fw = NULL;
 				netconf_filter_t *filter = NULL;
@@ -740,9 +740,9 @@ static int netconf_fw_index(const netconf_fw_t *fw)
 
 				/* Compare target type */
 #ifndef LINUX_2_6_36
-				if (fw->target != target_num(entry, &handle))
+				if (fw->target != target_num(entry, &handle, chain))
 #else
-				if (fw->target != target_num(entry, handle))
+				if (fw->target != target_num(entry, handle, chain))
 #endif /* linux-2.6.36 */
 					continue;
 				target = (struct ipt_entry_target *)((long)entry + entry->target_offset);
