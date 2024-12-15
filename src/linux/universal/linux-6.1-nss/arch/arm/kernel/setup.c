@@ -717,6 +717,7 @@ static void __init setup_processor(void)
 		 list->arch_name, ENDIANNESS);
 	snprintf(elf_platform, ELF_PLATFORM_SIZE, "%s%c",
 		 list->elf_name, ENDIANNESS);
+	printk(KERN_INFO "arch name %s, elf name %s\n", init_utsname()->machine, elf_platform);
 	elf_hwcap = list->elf_hwcap;
 
 	cpuid_init_hwcaps();
