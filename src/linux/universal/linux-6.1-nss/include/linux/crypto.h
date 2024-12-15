@@ -811,6 +811,7 @@ struct compress_tfm {
 #define crt_compress	crt_u.compress
 
 struct crypto_tfm {
+	refcount_t refcnt;
 
 	u32 crt_flags;
 
