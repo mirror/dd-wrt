@@ -121,6 +121,9 @@ hostapd2-clean:
 
 hostapd2-install:
 	install -D hostapd-$(HOSTAPDVERSION)/wpad $(INSTALLDIR)/hostapd2/usr/sbin/wpad
+ifeq ($(CONFIG_WPA_CLI),y)
+	install -D hostapd-$(HOSTAPDVERSION)/wpa_supplicant/wpa_cli $(INSTALLDIR)/hostapd2/usr/sbin/wpa_cli
+endif
 ifeq ($(CONFIG_WPS),y)
 	install -D hostapd-$(HOSTAPDVERSION)/hostapd/hostapd_cli $(INSTALLDIR)/hostapd2/usr/sbin/hostapd_cli
 endif
