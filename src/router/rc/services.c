@@ -669,6 +669,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_ZEROIP
 	FORK(eval("/etc/config/shat.startup"));
 #endif
+#ifdef HAVE_MULTICAST
+	restart_f("igmprt");
+#endif
 }
 
 static void handle_pptp(void)
@@ -1328,6 +1331,10 @@ static void handle_wireless(void)
 #ifdef HAVE_SMBD
 	restart_f("samba3");
 #endif
+#ifdef HAVE_MULTICAST
+	restart_f("igmprt");
+#endif
+
 }
 
 static void handle_wireless_2(void)
@@ -1447,6 +1454,9 @@ static void handle_wireless_2(void)
 #endif
 #ifdef HAVE_SMBD
 	restart_f("samba3");
+#endif
+#ifdef HAVE_MULTICAST
+	restart_f("igmprt");
 #endif
 }
 
