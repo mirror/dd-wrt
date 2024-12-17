@@ -1,23 +1,19 @@
 /*
- * runsuite.c: C program to run libxml2 againts published testsuites
+ * runxmlconf.c: C program to run XML W3C conformance testsuites
  *
  * See Copyright for the status of this software.
  *
  * daniel@veillard.com
  */
 
-#include "libxml.h"
+#include "config.h"
 #include <stdio.h>
+#include <libxml/xmlversion.h>
 
-#ifdef LIBXML_XPATH_ENABLED
+#if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_VALID_ENABLED)
 
-#if !defined(_WIN32) || defined(__CYGWIN__)
-#include <unistd.h>
-#endif
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>
@@ -53,7 +49,7 @@ static int checkTestFile(const char *filename) {
     if (stat(filename, &buf) == -1)
         return(0);
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32)
     if (!(buf.st_mode & _S_IFREG))
         return(0);
 #else
@@ -126,7 +122,7 @@ static void test_log(const char *msg, ...) {
 }
 
 static void
-testErrorHandler(void *userData ATTRIBUTE_UNUSED, xmlErrorPtr error) {
+testErrorHandler(void *userData ATTRIBUTE_UNUSED, const xmlError *error) {
     int res;
 
     if (testErrorsSize >= 32768)
@@ -153,9 +149,6 @@ static xmlXPathContextPtr ctxtXPath;
 
 static void
 initializeLibxml2(void) {
-    xmlGetWarningsDefaultValue = 0;
-    xmlPedanticParserDefault(0);
-
     xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
     xmlInitParser();
     xmlSetExternalEntityLoader(testExternalEntityLoader);
@@ -164,13 +157,12 @@ initializeLibxml2(void) {
     * Deactivate the cache if created; otherwise we have to create/free it
     * for every test, since it will confuse the memory leak detection.
     * Note that normally this need not be done, since the cache is not
-    * created until set explicitely with xmlXPathContextSetCache();
-    * but for test purposes it is sometimes usefull to activate the
+    * created until set explicitly with xmlXPathContextSetCache();
+    * but for test purposes it is sometimes useful to activate the
     * cache by default for the whole library.
     */
     if (ctxtXPath->cache != NULL)
 	xmlXPathContextSetCache(ctxtXPath, 0, -1, 0);
-    xmlSetStructuredErrorFunc(NULL, testErrorHandler);
 }
 
 /************************************************************************
@@ -191,6 +183,7 @@ xmlconfTestInvalid(const char *id, const char *filename, int options) {
 	         id, filename);
         return(0);
     }
+    xmlCtxtSetErrorHandler(ctxt, testErrorHandler, NULL);
     doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
     if (doc == NULL) {
         test_log("test %s : %s invalid document turned not well-formed too\n",
@@ -221,6 +214,7 @@ xmlconfTestValid(const char *id, const char *filename, int options) {
 	         id, filename);
         return(0);
     }
+    xmlCtxtSetErrorHandler(ctxt, testErrorHandler, NULL);
     doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
     if (doc == NULL) {
         test_log("test %s : %s failed to parse a valid document\n",
@@ -243,22 +237,27 @@ xmlconfTestValid(const char *id, const char *filename, int options) {
 
 static int
 xmlconfTestNotNSWF(const char *id, const char *filename, int options) {
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     int ret = 1;
 
+    ctxt = xmlNewParserCtxt();
+    xmlCtxtSetErrorHandler(ctxt, testErrorHandler, NULL);
     /*
      * In case of Namespace errors, libxml2 will still parse the document
-     * but log a Namesapce error.
+     * but log a Namespace error.
      */
-    doc = xmlReadFile(filename, NULL, options);
+    doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
     if (doc == NULL) {
         test_log("test %s : %s failed to parse the XML\n",
 	         id, filename);
         nb_errors++;
 	ret = 0;
     } else {
-	if ((xmlLastError.code == XML_ERR_OK) ||
-	    (xmlLastError.domain != XML_FROM_NAMESPACE)) {
+        const xmlError *error = xmlGetLastError();
+
+	if ((error->code == XML_ERR_OK) ||
+	    (error->domain != XML_FROM_NAMESPACE)) {
 	    test_log("test %s : %s failed to detect namespace error\n",
 		     id, filename);
 	    nb_errors++;
@@ -266,15 +265,19 @@ xmlconfTestNotNSWF(const char *id, const char *filename, int options) {
 	}
 	xmlFreeDoc(doc);
     }
+    xmlFreeParserCtxt(ctxt);
     return(ret);
 }
 
 static int
 xmlconfTestNotWF(const char *id, const char *filename, int options) {
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     int ret = 1;
 
-    doc = xmlReadFile(filename, NULL, options);
+    ctxt = xmlNewParserCtxt();
+    xmlCtxtSetErrorHandler(ctxt, testErrorHandler, NULL);
+    doc = xmlCtxtReadFile(ctxt, filename, NULL, options);
     if (doc != NULL) {
         test_log("test %s : %s failed to detect not well formedness\n",
 	         id, filename);
@@ -282,6 +285,7 @@ xmlconfTestNotWF(const char *id, const char *filename, int options) {
 	xmlFreeDoc(doc);
 	ret = 0;
     }
+    xmlFreeParserCtxt(ctxt);
     return(ret);
 }
 
@@ -411,7 +415,6 @@ xmlconfTestItem(xmlDocPtr doc, xmlNodePtr cur) {
         test_log("test %s : %s leaked %d bytes\n",
 	         id, filename, final - mem);
         nb_leaks++;
-	xmlMemDisplayLast(logfile, final - mem);
     }
     nb_tests++;
 
@@ -507,7 +510,7 @@ xmlconfInfo(void) {
     fprintf(stderr, "  you need to fetch and extract the\n");
     fprintf(stderr, "  latest XML Conformance Test Suites\n");
     fprintf(stderr, "  http://www.w3.org/XML/Test/xmlts20080827.tar.gz\n");
-    fprintf(stderr, "  see http://www.w3.org/XML/Test/ for informations\n");
+    fprintf(stderr, "  see http://www.w3.org/XML/Test/ for information\n");
 }
 
 static int
@@ -591,7 +594,6 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
     }
     xmlXPathFreeContext(ctxtXPath);
     xmlCleanupParser();
-    xmlMemoryDump();
 
     if (logfile != NULL)
         fclose(logfile);
@@ -599,9 +601,9 @@ main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED) {
 }
 
 #else /* ! LIBXML_XPATH_ENABLED */
-#include <stdio.h>
 int
-main(int argc, char **argv) {
-    fprintf(stderr, "%s need XPath support\n", argv[0]);
+main(int argc ATTRIBUTE_UNUSED, char **argv) {
+    fprintf(stderr, "%s need XPath and validation support\n", argv[0]);
+    return(0);
 }
 #endif

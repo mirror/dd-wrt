@@ -13,31 +13,13 @@
 
 #ifdef LIBXML_XPTR_ENABLED
 #include <string.h> /* for memset() only */
-#ifdef HAVE_CTYPE_H
 #include <ctype.h>
-#endif
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_ZLIB_H
-#include <zlib.h>
-#endif
 
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <libxml/valid.h>
 #include <libxml/xlink.h>
-#include <libxml/globals.h>
 
 #define XLINK_NAMESPACE (BAD_CAST "http://www.w3.org/1999/xlink/namespace/")
 #define XHTML_NAMESPACE (BAD_CAST "http://www.w3.org/1999/xhtml/")
@@ -150,7 +132,7 @@ xlinkIsLink	(xmlDocPtr doc, xmlNodePtr node) {
     if (type != NULL) {
 	if (xmlStrEqual(type, BAD_CAST "simple")) {
             ret = XLINK_TYPE_SIMPLE;
-	} if (xmlStrEqual(type, BAD_CAST "extended")) {
+	} else if (xmlStrEqual(type, BAD_CAST "extended")) {
 	    role = xmlGetNsProp(node, BAD_CAST "role", XLINK_NAMESPACE);
 	    if (role != NULL) {
 		xmlNsPtr xlink;
@@ -179,5 +161,3 @@ xlinkIsLink	(xmlDocPtr doc, xmlNodePtr node) {
     return(ret);
 }
 #endif /* LIBXML_XPTR_ENABLED */
-#define bottom_xlink
-#include "elfgcchack.h"

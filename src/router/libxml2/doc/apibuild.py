@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 #
 # This is the API builder, it parses the C sources and build the
 # API formal description in XML.
@@ -19,32 +19,11 @@ debugsym=None
 # C parser analysis code
 #
 ignored_files = {
-  "trio": "too many non standard macros",
-  "trio.c": "too many non standard macros",
-  "trionan.c": "too many non standard macros",
-  "triostr.c": "too many non standard macros",
-  "acconfig.h": "generated portability layer",
   "config.h": "generated portability layer",
   "libxml.h": "internal only",
-  "testOOM.c": "out of memory tester",
-  "testOOMlib.h": "out of memory tester",
-  "testOOMlib.c": "out of memory tester",
   "rngparser.c": "not yet integrated",
-  "rngparser.h": "not yet integrated",
-  "elfgcchack.h": "not a normal header",
-  "testHTML.c": "test tool",
-  "testReader.c": "test tool",
-  "testSchemas.c": "test tool",
-  "testXPath.c": "test tool",
-  "testAutomata.c": "test tool",
   "testModule.c": "test tool",
-  "testRegexp.c": "test tool",
   "testThreads.c": "test tool",
-  "testC14N.c": "test tool",
-  "testRelax.c": "test tool",
-  "testThreadsWin32.c": "test tool",
-  "testSAX.c": "test tool",
-  "testURI.c": "test tool",
   "testapi.c": "generated regression tests",
   "runtest.c": "regression tests program",
   "runsuite.c": "regression tests program",
@@ -52,10 +31,6 @@ ignored_files = {
   "test.c": "not part of the library",
   "testdso.c": "test for dynamid shared libraries",
   "testrecurse.c": "test for entities recursions",
-  "xzlib.h": "Internal API only 2.8.0",
-  "buf.h": "Internal API only 2.9.0",
-  "enc.h": "Internal API only 2.9.0",
-  "/save.h": "Internal API only 2.9.0",
   "timsort.h": "Internal header only for xpath.c 2.9.0",
 }
 
@@ -68,19 +43,27 @@ ignored_words = {
   "XMLPUBFUN": (0, "Special macro for extern funcs for win32"),
   "XSLTPUBFUN": (0, "Special macro for extern funcs for win32"),
   "EXSLTPUBFUN": (0, "Special macro for extern funcs for win32"),
-  "XMLCALL": (0, "Special macro for win32 calls"),
   "XSLTCALL": (0, "Special macro for win32 calls"),
-  "XMLCDECL": (0, "Special macro for win32 calls"),
   "EXSLTCALL": (0, "Special macro for win32 calls"),
   "__declspec": (3, "Windows keyword"),
   "__stdcall": (0, "Windows keyword"),
   "ATTRIBUTE_UNUSED": (0, "macro keyword"),
+  "ATTRIBUTE_DESTRUCTOR": (0, "macro keyword"),
   "LIBEXSLT_PUBLIC": (0, "macro keyword"),
   "X_IN_Y": (5, "macro function builder"),
   "ATTRIBUTE_ALLOC_SIZE": (3, "macro for gcc checking extension"),
   "ATTRIBUTE_PRINTF": (5, "macro for gcc printf args checking extension"),
   "LIBXML_ATTR_FORMAT": (5, "macro for gcc printf args checking extension"),
   "LIBXML_ATTR_ALLOC_SIZE": (3, "macro for gcc checking extension"),
+  "ATTRIBUTE_NO_SANITIZE": (3, "macro keyword"),
+  "ATTRIBUTE_NO_SANITIZE_INTEGER": (0, "macro keyword"),
+  "XML_DEPRECATED": (0, "macro keyword"),
+  "XML_GLOBALS_ALLOC": (0, "macro keyword"),
+  "XML_GLOBALS_ERROR": (0, "macro keyword"),
+  "XML_GLOBALS_IO": (0, "macro keyword"),
+  "XML_GLOBALS_PARSER": (0, "macro keyword"),
+  "XML_GLOBALS_TREE": (0, "macro keyword"),
+  "XML_THREAD_LOCAL": (0, "macro keyword"),
 }
 
 def escape(raw):
@@ -90,12 +73,6 @@ def escape(raw):
     raw = raw.replace("'", '&apos;')
     raw = raw.replace('"', '&quot;')
     return raw
-
-def uniq(items):
-    d = {}
-    for item in items:
-        d[item]=1
-    return list(d.keys())
 
 class identifier:
     def __init__(self, name, header=None, module=None, type=None, lineno = 0,
@@ -206,10 +183,10 @@ class index:
         if name[0:2] == '__':
             return None
         d = None
-        try:
+        if name in self.identifiers:
            d = self.identifiers[name]
-           d.update(header, module, type, lineno, info, extra, conditionals)
-        except:
+           d.update(header, module, type, info, extra, conditionals)
+        else:
            d = identifier(name, header, module, type, lineno, info, extra, conditionals)
            self.identifiers[name] = d
 
@@ -228,10 +205,10 @@ class index:
         if name[0:2] == '__':
             return None
         d = None
-        try:
+        if name in self.identifiers:
            d = self.identifiers[name]
-           d.update(header, module, type, lineno, info, extra, conditionals)
-        except:
+           d.update(header, module, type, info, extra, conditionals)
+        else:
            d = identifier(name, header, module, type, lineno, info, extra, conditionals)
            self.identifiers[name] = d
 
@@ -315,7 +292,7 @@ class index:
                  continue
              if id in self.enums:
                  continue
-             if id in self.macros:
+             if id in self.macros and id != 'XML_OP':
                  print("macro %s from %s redeclared in %s" % (
                     id, self.macros[id].header, idx.macros[id].header))
              else:
@@ -344,7 +321,19 @@ class index:
          #     else:
          #         print "Function %s from %s is not declared in headers" % (
          #                id, idx.functions[id].module)
-         # TODO: do the same for variables.
+
+        for id in list(idx.variables.keys()):
+            if id in self.variables:
+                # check that variable condition agrees with header
+                # TODO: produces many false positives
+                #if idx.variables[id].conditionals != \
+                #   self.variables[id].conditionals:
+                #    print("Header condition differs from Variable for %s:" \
+                #       % id)
+                #    print("  H: %s" % self.variables[id].conditionals)
+                #    print("  C: %s" % idx.variables[id].conditionals)
+                up = idx.variables[id]
+                self.variables[id].update(None, up.module, up.type, up.info, up.extra)
 
     def analyze_dict(self, type, dict):
         count = 0
@@ -591,23 +580,25 @@ class CParser:
         self.last_comment = ""
         self.comment = None
         self.collect_ref = 0
-        self.no_error = 0
+        self.doc_disable = 0
         self.conditionals = []
         self.defines = []
 
     def collect_references(self):
         self.collect_ref = 1
 
-    def stop_error(self):
-        self.no_error = 1
+    def disable(self):
+        self.doc_disable = 1
 
-    def start_error(self):
-        self.no_error = 0
+    def enable(self):
+        self.doc_disable = 0
 
     def lineno(self):
         return self.lexer.getlineno()
 
     def index_add(self, name, module, static, type, info=None, extra = None):
+        if self.doc_disable:
+            return
         if self.is_header == 1:
             self.index.add(name, module, module, static, type, self.lineno(),
                            info, extra, self.conditionals)
@@ -625,12 +616,12 @@ class CParser:
                                info, extra, self.conditionals)
 
     def warning(self, msg):
-        if self.no_error:
+        if self.doc_disable:
             return
         print(msg)
 
     def error(self, msg, token=-1):
-        if self.no_error:
+        if self.doc_disable:
             return
 
         print("Parse Error: " + msg)
@@ -683,17 +674,17 @@ class CParser:
         token = self.lexer.token()
 
         if self.comment.find("DOC_DISABLE") != -1:
-            self.stop_error()
+            self.disable()
 
         if self.comment.find("DOC_ENABLE") != -1:
-            self.start_error()
+            self.enable()
 
         return token
 
     #
-    # Parse a comment block associate to a typedef
+    # Parse a simple comment block for typedefs or global variables
     #
-    def parseTypeComment(self, name, quiet = 0):
+    def parseSimpleComment(self, name, quiet = False):
         if name[0:2] == '__':
             quiet = 1
 
@@ -702,20 +693,20 @@ class CParser:
 
         if self.comment == None:
             if not quiet:
-                self.warning("Missing comment for type %s" % (name))
-            return((args, desc))
+                self.warning("Missing comment for %s" % (name))
+            return(None)
         if self.comment[0] != '*':
             if not quiet:
-                self.warning("Missing * in type comment for %s" % (name))
-            return((args, desc))
+                self.warning("Missing * in comment for %s" % (name))
+            return(None)
         lines = self.comment.split('\n')
         if lines[0] == '*':
             del lines[0]
         if lines[0] != "* %s:" % (name):
             if not quiet:
-                self.warning("Misformatted type comment for %s" % (name))
+                self.warning("Misformatted comment for %s" % (name))
                 self.warning("  Expecting '* %s:' got '%s'" % (name, lines[0]))
-            return((args, desc))
+            return(None)
         del lines[0]
         while len(lines) > 0 and lines[0] == '*':
             del lines[0]
@@ -732,7 +723,7 @@ class CParser:
 
         if quiet == 0:
             if desc == "":
-                self.warning("Type comment for %s lack description of the macro" % (name))
+                self.warning("Comment for %s lacks description" % (name))
 
         return(desc)
     #
@@ -807,7 +798,7 @@ class CParser:
         return((args, desc))
 
      #
-     # Parse a comment block and merge the informations found in the
+     # Parse a comment block and merge the information found in the
      # parameters descriptions, finally returns a block as complete
      # as possible
      #
@@ -914,7 +905,7 @@ class CParser:
                 i = i + 1
             if retdesc == "" and ret[0] != "void":
                 self.warning("Function comment for %s lacks description of return value" % (name))
-            if desc == "":
+            if desc == "" and retdesc == "":
                 self.warning("Function comment for %s lacks description of the function" % (name))
 
         return(((ret[0], retdesc), args, desc))
@@ -949,7 +940,7 @@ class CParser:
                     name = name.split('(') [0]
                 except:
                     pass
-                info = self.parseMacroComment(name, not self.is_header)
+                info = self.parseMacroComment(name, True)
                 self.index_add(name, self.filename, not self.is_header,
                                 "macro", info)
                 return token
@@ -1082,7 +1073,7 @@ class CParser:
                         base_type = "struct " + name
                     else:
                         # TODO report missing or misformatted comments
-                        info = self.parseTypeComment(name, 1)
+                        info = self.parseSimpleComment(name, True)
                         self.index_add(name, self.filename, not self.is_header,
                                     "typedef", type, info)
                 token = self.token()
@@ -1117,7 +1108,6 @@ class CParser:
                 token = self.token()
                 token = self.parseBlock(token)
             elif token[0] == "sep" and token[1] == "}":
-                self.comment = None
                 token = self.token()
                 return token
             else:
@@ -1274,26 +1264,29 @@ class CParser:
         if token == None:
             return token
 
+        have_sign = 0
+        done = 0
+
         while token[0] == "name" and (
               token[1] == "const" or \
               token[1] == "unsigned" or \
               token[1] == "signed"):
+            if token[1] == "unsigned" or token[1] == "signed":
+                have_sign = 1
             if self.type == "":
                 self.type = token[1]
             else:
                 self.type = self.type + " " + token[1]
             token = self.token()
 
-        if token[0] == "name" and (token[1] == "long" or token[1] == "short"):
+        if token[0] == "name" and token[1] in ("char", "short", "int", "long"):
             if self.type == "":
                 self.type = token[1]
             else:
                 self.type = self.type + " " + token[1]
-            if token[0] == "name" and token[1] == "int":
-                if self.type == "":
-                    self.type = tmp[1]
-                else:
-                    self.type = self.type + " " + tmp[1]
+
+        elif have_sign:
+            done = 1
 
         elif token[0] == "name" and token[1] == "struct":
             if self.type == "":
@@ -1362,7 +1355,8 @@ class CParser:
             self.error("parsing type %s: expecting a name" % (self.type),
                        token)
             return token
-        token = self.token()
+        if not done:
+            token = self.token()
         while token != None and (token[0] == "op" or
               token[0] == "name" and token[1] == "const"):
             self.type = self.type + " " + token[1]
@@ -1532,25 +1526,24 @@ class CParser:
                     token = self.token()
                     token = self.parseBlock(token)
                 else:
-                    self.comment = None
                     while token != None and (token[0] != "sep" or \
                           (token[1] != ';' and token[1] != ',')):
                             token = self.token()
-                self.comment = None
                 if token == None or token[0] != "sep" or (token[1] != ';' and
                    token[1] != ','):
                     self.error("missing ';' or ',' after value")
 
             if token != None and token[0] == "sep":
                 if token[1] == ";":
-                    self.comment = None
-                    token = self.token()
                     if type == "struct":
                         self.index_add(self.name, self.filename,
                              not self.is_header, "struct", self.struct_fields)
                     else:
+                        info = self.parseSimpleComment(self.name, True)
                         self.index_add(self.name, self.filename,
-                             not self.is_header, "variable", type)
+                             not self.is_header, "variable", type, info)
+                    self.comment = None
+                    token = self.token()
                     break
                 elif token[1] == "(":
                     token = self.token()
@@ -1562,18 +1555,20 @@ class CParser:
                                 ((type, None), self.signature), 1)
                         self.index_add(self.name, self.filename, static,
                                         "function", d)
+                        self.comment = None
                         token = self.token()
                     elif token[0] == "sep" and token[1] == "{":
                         d = self.mergeFunctionComment(self.name,
                                 ((type, None), self.signature), static)
                         self.index_add(self.name, self.filename, static,
                                         "function", d)
+                        self.comment = None
                         token = self.token()
                         token = self.parseBlock(token);
                 elif token[1] == ',':
-                    self.comment = None
                     self.index_add(self.name, self.filename, static,
                                     "variable", type)
+                    self.comment = None
                     type = type_orig
                     token = self.token()
                     while token != None and token[0] == "sep":
@@ -1611,50 +1606,11 @@ class docBuilder:
         self.modules = {}
         self.headers = {}
         self.idx = index()
-        self.xref = {}
         self.index = {}
         if name == 'libxml2':
             self.basename = 'libxml'
         else:
             self.basename = name
-
-    def indexString(self, id, str):
-        if str == None:
-            return
-        str = str.replace("'", ' ')
-        str = str.replace('"', ' ')
-        str = str.replace("/", ' ')
-        str = str.replace('*', ' ')
-        str = str.replace("[", ' ')
-        str = str.replace("]", ' ')
-        str = str.replace("(", ' ')
-        str = str.replace(")", ' ')
-        str = str.replace("<", ' ')
-        str = str.replace('>', ' ')
-        str = str.replace("&", ' ')
-        str = str.replace('#', ' ')
-        str = str.replace(",", ' ')
-        str = str.replace('.', ' ')
-        str = str.replace(';', ' ')
-        tokens = str.split()
-        for token in tokens:
-            try:
-                c = token[0]
-                if string.ascii_letters.find(c) < 0:
-                    pass
-                elif len(token) < 3:
-                    pass
-                else:
-                    lower = token.lower()
-                    # TODO: generalize this a bit
-                    if lower == 'and' or lower == 'the':
-                        pass
-                    elif token in self.xref:
-                        self.xref[token].append(id)
-                    else:
-                        self.xref[token] = [id]
-            except:
-                pass
 
     def analyze(self):
         print("Project %s : %d headers, %d modules" % (self.name, len(list(self.headers.keys())), len(list(self.modules.keys()))))
@@ -1735,13 +1691,11 @@ class docBuilder:
                 (args, desc) = id.info
                 if desc != None and desc != "":
                     output.write("      <info>%s</info>\n" % (escape(desc)))
-                    self.indexString(name, desc)
                 for arg in args:
                     (name, desc) = arg
                     if desc != None and desc != "":
                         output.write("      <arg name='%s' info='%s'/>\n" % (
                                      name, escape(desc)))
-                        self.indexString(name, desc)
                     else:
                         output.write("      <arg name='%s'/>\n" % (name))
             except:
@@ -1761,7 +1715,6 @@ class docBuilder:
                 try:
                     for field in self.idx.structs[name].info:
                         desc = field[2]
-                        self.indexString(name, desc)
                         if desc == None:
                             desc = ''
                         else:
@@ -1788,11 +1741,17 @@ class docBuilder:
     def serialize_variable(self, output, name):
         id = self.idx.variables[name]
         if id.info != None:
-            output.write("    <variable name='%s' file='%s' type='%s'/>\n" % (
+            output.write("    <variable name='%s' file='%s' type='%s'" % (
                     name, self.modulename_file(id.header), id.info))
         else:
-            output.write("    <variable name='%s' file='%s'/>\n" % (
+            output.write("    <variable name='%s' file='%s'" % (
                     name, self.modulename_file(id.header)))
+        desc = id.extra
+        if desc != None and desc != "":
+            output.write(">\n      <info>%s</info>\n" % (escape(desc)))
+            output.write("    </variable>\n")
+        else:
+            output.write("/>\n")
 
     def serialize_function(self, output, name):
         id = self.idx.functions[name]
@@ -1815,19 +1774,18 @@ class docBuilder:
         try:
             (ret, params, desc) = id.info
             if (desc == None or desc == '') and \
-               name[0:9] != "xmlThrDef" and name != "xmlDllMain":
+               name[0:9] != "xmlThrDef" and name != "xmlDllMain" and \
+               ret[1] == '':
                 print("%s %s from %s has no description" % (id.type, name,
                        self.modulename_file(id.module)))
 
             output.write("      <info>%s</info>\n" % (escape(desc)))
-            self.indexString(name, desc)
             if ret[0] != None:
                 if ret[0] == "void":
                     output.write("      <return type='void'/>\n")
                 else:
                     output.write("      <return type='%s' info='%s'/>\n" % (
                              ret[0], escape(ret[1])))
-                    self.indexString(name, ret[1])
             for param in params:
                 if param[0] == 'void':
                     continue
@@ -1835,7 +1793,6 @@ class docBuilder:
                     output.write("      <arg name='%s' type='%s' info=''/>\n" % (param[1], param[0]))
                 else:
                     output.write("      <arg name='%s' type='%s' info='%s'/>\n" % (param[1], param[0], escape(param[2])))
-                    self.indexString(name, param[2])
         except:
             print("Failed to save function %s info: " % name, repr(id.info))
         output.write("    </%s>\n" % (id.type))
@@ -1852,7 +1809,8 @@ class docBuilder:
                                  escape(dict.info[data]),
                                  data.lower()))
                 except:
-                    print("Header %s lacks a %s description" % (module, data))
+                    if data != 'Author':
+                        print("Header %s lacks a %s description" % (module, data))
             if 'Description' in dict.info:
                 desc = dict.info['Description']
                 if desc.find("DEPRECATED") != -1:
@@ -1860,7 +1818,7 @@ class docBuilder:
 
         ids = list(dict.macros.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             # Macros are sometime used to masquerade other types.
             if id in dict.functions:
                 continue
@@ -1875,191 +1833,25 @@ class docBuilder:
             output.write("     <exports symbol='%s' type='macro'/>\n" % (id))
         ids = list(dict.enums.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             output.write("     <exports symbol='%s' type='enum'/>\n" % (id))
         ids = list(dict.typedefs.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             output.write("     <exports symbol='%s' type='typedef'/>\n" % (id))
         ids = list(dict.structs.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             output.write("     <exports symbol='%s' type='struct'/>\n" % (id))
         ids = list(dict.variables.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             output.write("     <exports symbol='%s' type='variable'/>\n" % (id))
         ids = list(dict.functions.keys())
         ids.sort()
-        for id in uniq(ids):
+        for id in ids:
             output.write("     <exports symbol='%s' type='function'/>\n" % (id))
         output.write("    </file>\n")
-
-    def serialize_xrefs_files(self, output):
-        headers = list(self.headers.keys())
-        headers.sort()
-        for file in headers:
-            module = self.modulename_file(file)
-            output.write("    <file name='%s'>\n" % (module))
-            dict = self.headers[file]
-            ids = uniq(list(dict.functions.keys()) + list(dict.variables.keys()) + \
-                  list(dict.macros.keys()) + list(dict.typedefs.keys()) + \
-                  list(dict.structs.keys()) + list(dict.enums.keys()))
-            ids.sort()
-            for id in ids:
-                output.write("      <ref name='%s'/>\n" % (id))
-            output.write("    </file>\n")
-        pass
-
-    def serialize_xrefs_functions(self, output):
-        funcs = {}
-        for name in list(self.idx.functions.keys()):
-            id = self.idx.functions[name]
-            try:
-                (ret, params, desc) = id.info
-                for param in params:
-                    if param[0] == 'void':
-                        continue
-                    if param[0] in funcs:
-                        funcs[param[0]].append(name)
-                    else:
-                        funcs[param[0]] = [name]
-            except:
-                pass
-        typ = list(funcs.keys())
-        typ.sort()
-        for type in typ:
-            if type == '' or type == 'void' or type == "int" or \
-               type == "char *" or type == "const char *" :
-                continue
-            output.write("    <type name='%s'>\n" % (type))
-            ids = funcs[type]
-            ids.sort()
-            pid = ''        # not sure why we have dups, but get rid of them!
-            for id in ids:
-                if id != pid:
-                    output.write("      <ref name='%s'/>\n" % (id))
-                    pid = id
-            output.write("    </type>\n")
-
-    def serialize_xrefs_constructors(self, output):
-        funcs = {}
-        for name in list(self.idx.functions.keys()):
-            id = self.idx.functions[name]
-            try:
-                (ret, params, desc) = id.info
-                if ret[0] == "void":
-                    continue
-                if ret[0] in funcs:
-                    funcs[ret[0]].append(name)
-                else:
-                    funcs[ret[0]] = [name]
-            except:
-                pass
-        typ = list(funcs.keys())
-        typ.sort()
-        for type in typ:
-            if type == '' or type == 'void' or type == "int" or \
-               type == "char *" or type == "const char *" :
-                continue
-            output.write("    <type name='%s'>\n" % (type))
-            ids = funcs[type]
-            ids.sort()
-            for id in ids:
-                output.write("      <ref name='%s'/>\n" % (id))
-            output.write("    </type>\n")
-
-    def serialize_xrefs_alpha(self, output):
-        letter = None
-        ids = list(self.idx.identifiers.keys())
-        ids.sort()
-        for id in ids:
-            if id[0] != letter:
-                if letter != None:
-                    output.write("    </letter>\n")
-                letter = id[0]
-                output.write("    <letter name='%s'>\n" % (letter))
-            output.write("      <ref name='%s'/>\n" % (id))
-        if letter != None:
-            output.write("    </letter>\n")
-
-    def serialize_xrefs_references(self, output):
-        typ = list(self.idx.identifiers.keys())
-        typ.sort()
-        for id in typ:
-            idf = self.idx.identifiers[id]
-            module = idf.header
-            output.write("    <reference name='%s' href='%s'/>\n" % (id,
-                         'html/' + self.basename + '-' +
-                         self.modulename_file(module) + '.html#' +
-                         id))
-
-    def serialize_xrefs_index(self, output):
-        index = self.xref
-        typ = list(index.keys())
-        typ.sort()
-        letter = None
-        count = 0
-        chunk = 0
-        chunks = []
-        for id in typ:
-            if len(index[id]) > 30:
-                continue
-            if id[0] != letter:
-                if letter == None or count > 200:
-                    if letter != None:
-                        output.write("      </letter>\n")
-                        output.write("    </chunk>\n")
-                        count = 0
-                        chunks.append(["chunk%s" % (chunk -1), first_letter, letter])
-                    output.write("    <chunk name='chunk%s'>\n" % (chunk))
-                    first_letter = id[0]
-                    chunk = chunk + 1
-                elif letter != None:
-                    output.write("      </letter>\n")
-                letter = id[0]
-                output.write("      <letter name='%s'>\n" % (letter))
-            output.write("        <word name='%s'>\n" % (id))
-            tokens = index[id];
-            tokens.sort()
-            tok = None
-            for token in tokens:
-                if tok == token:
-                    continue
-                tok = token
-                output.write("          <ref name='%s'/>\n" % (token))
-                count = count + 1
-            output.write("        </word>\n")
-        if letter != None:
-            output.write("      </letter>\n")
-            output.write("    </chunk>\n")
-            if count != 0:
-                chunks.append(["chunk%s" % (chunk -1), first_letter, letter])
-            output.write("    <chunks>\n")
-            for ch in chunks:
-                output.write("      <chunk name='%s' start='%s' end='%s'/>\n" % (
-                             ch[0], ch[1], ch[2]))
-            output.write("    </chunks>\n")
-
-    def serialize_xrefs(self, output):
-        output.write("  <references>\n")
-        self.serialize_xrefs_references(output)
-        output.write("  </references>\n")
-        output.write("  <alpha>\n")
-        self.serialize_xrefs_alpha(output)
-        output.write("  </alpha>\n")
-        output.write("  <constructors>\n")
-        self.serialize_xrefs_constructors(output)
-        output.write("  </constructors>\n")
-        output.write("  <functions>\n")
-        self.serialize_xrefs_functions(output)
-        output.write("  </functions>\n")
-        output.write("  <files>\n")
-        self.serialize_xrefs_files(output)
-        output.write("  </files>\n")
-        output.write("  <index>\n")
-        self.serialize_xrefs_index(output)
-        output.write("  </index>\n")
 
     def serialize(self):
         filename = "%s-api.xml" % self.name
@@ -2098,26 +1890,17 @@ class docBuilder:
         output.write("</api>\n")
         output.close()
 
-        filename = "%s-refs.xml" % self.name
-        print("Saving XML Cross References %s" % (filename))
-        output = open(filename, "w")
-        output.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
-        output.write("<apirefs name='%s'>\n" % self.name)
-        self.serialize_xrefs(output)
-        output.write("</apirefs>\n")
-        output.close()
-
 
 def rebuild():
     builder = None
     if glob.glob("parser.c") != [] :
         print("Rebuilding API description for libxml2")
         builder = docBuilder("libxml2", [".", "."],
-                             ["xmlwin32version.h", "tst.c"])
+                             ["tst.c"])
     elif glob.glob("../parser.c") != [] :
         print("Rebuilding API description for libxml2")
         builder = docBuilder("libxml2", ["..", "../include/libxml"],
-                             ["xmlwin32version.h", "tst.c"])
+                             ["tst.c"])
     elif glob.glob("../libxslt/transform.c") != [] :
         print("Rebuilding API description for libxslt")
         builder = docBuilder("libxslt", ["../libxslt"],

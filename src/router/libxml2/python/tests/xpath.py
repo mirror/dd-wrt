@@ -1,9 +1,10 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 #
 # this test exercise the XPath basic engine, parser, etc, and
 # allows to detect memory leaks
 #
 import sys
+import setup_test
 import libxml2
 
 # Memory debug specific
@@ -48,4 +49,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

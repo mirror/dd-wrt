@@ -1,7 +1,7 @@
 devhelpdir = $(datadir)/gtk-doc/html/libxml2
 
 dist_devhelp_DATA =			\
-	libxml2.devhelp			\
+	libxml2.devhelp2		\
 	$(HTML_FILES)			\
 	$(EXTRA_FORMAT)
 
@@ -16,7 +16,6 @@ HTML_MODULES=				\
 	libxml2-chvalid.html		\
 	libxml2-debugXML.html		\
 	libxml2-dict.html		\
-	libxml2-DOCBparser.html		\
 	libxml2-encoding.html		\
 	libxml2-entities.html		\
 	libxml2-globals.html		\
@@ -66,14 +65,7 @@ EXTRA_FORMAT=				\
 	up.png				\
 	style.css
 
-EXTRA_DIST = devhelp.xsl html.xsl
+EXTRA_DIST = devhelp2.xsl html.xsl meson.build
 
-if REBUILD_DOCS
-rebuild: libxml2.devhelp $(HTML_FILES)
-.PHONY: rebuild
-
-libxml2.devhelp $(HTML_FILES): devhelp.xsl html.xsl $(top_srcdir)/doc/libxml2-api.xml
-	-@(if [ -x $(XSLTPROC) ] ; then \
-	  echo Rebuilding devhelp files ; \
-	  $(XSLTPROC) --nonet -o $(srcdir)/libxml2.devhelp $(srcdir)/devhelp.xsl $(top_srcdir)/doc/libxml2-api.xml ; fi );
-endif
+rebuild:
+	(cd $(srcdir) && $(XSLTPROC) -o libxml2.devhelp2 devhelp2.xsl ../libxml2-api.xml)

@@ -1,15 +1,16 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 #
 # This test exercise the redirection of error messages with a
 # functions defined in Python.
 #
 import sys
+import setup_test
 import libxml2
 
 # Memory debug specific
 libxml2.debugMemory(1)
 
-expect='--> I/O --> warning : --> failed to load external entity "missing.xml"\n'
+expect='--> I/O --> warning : --> failed to load "missing.xml": No such file or directory\n'
 err=""
 def callback(ctx, str):
      global err
@@ -48,4 +49,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

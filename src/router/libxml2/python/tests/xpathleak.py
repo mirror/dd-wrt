@@ -1,28 +1,20 @@
-#!/usr/bin/python
-import sys, libxml2
+#!/usr/bin/env python3
+import setup_test
+import libxml2
+import sys
 
 libxml2.debugMemory(True)
 
 expect="""--> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 --> Invalid expression
---> xmlXPathEval: evaluation failed
 """
 err=""
 def callback(ctx, str):
@@ -61,5 +53,3 @@ if leakedbytes == 0:
 	print("OK")
 else:
 	print("Memory leak", leakedbytes, "bytes")
-	# drop file to .memdump file in cwd, but won't work if not compiled in
-	libxml2.dumpMemory()

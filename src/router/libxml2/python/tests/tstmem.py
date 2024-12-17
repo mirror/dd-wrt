@@ -1,6 +1,12 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
+import setup_test
 import libxml2
-import libxml2mod
+
+try:
+    import libxml2mod
+except ModuleNotFoundError:
+    from libxmlmods import libxml2mod
+
 import sys
 
 def error(msg, data):
@@ -33,4 +39,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

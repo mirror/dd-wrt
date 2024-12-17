@@ -1,6 +1,7 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 import sys, unittest
 
+import setup_test
 import libxml2
 
 class TestCase(unittest.TestCase):
@@ -15,7 +16,6 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         libxml2.cleanupParser()
         if libxml2.debugMemory(1) != 0:
-            libxml2.dumpMemory() 
             self.fail("Memory leak %d bytes" % (libxml2.debugMemory(1),))
         else:
             print("OK")
@@ -25,7 +25,10 @@ class TestCase(unittest.TestCase):
         when the exception is raised, check the libxml2.lastError for
         expected values."""
         # disable the default error handler
-        libxml2.registerErrorHandler(None,None)
+        def noerr(ctx, str):
+            pass
+        # None is not acceptable as function.
+        libxml2.registerErrorHandler(noerr,None)
         try:
             f(*args)
         except exc:
@@ -40,12 +43,12 @@ class TestCase(unittest.TestCase):
                 print("file =",e.file())
                 print("line =",e.line())
                 print()
-            self.failUnlessEqual(domain,e.domain())
-            self.failUnlessEqual(code,e.code())
-            self.failUnlessEqual(message,e.message())
-            self.failUnlessEqual(level,e.level())
-            self.failUnlessEqual(file,e.file())
-            self.failUnlessEqual(line,e.line())
+            self.assertEqual(domain,e.domain())
+            self.assertEqual(code,e.code())
+            self.assertEqual(message,e.message())
+            self.assertEqual(level,e.level())
+            self.assertEqual(file,e.file())
+            self.assertEqual(line,e.line())
         else:
             self.fail("exception %s should have been raised" % exc)
 
@@ -55,8 +58,8 @@ class TestCase(unittest.TestCase):
                         ("dummy.xml",None,0),
                         libxml2.treeError,
                         domain=libxml2.XML_FROM_IO,
-                        code=libxml2.XML_IO_LOAD_ERROR,
-                        message='failed to load external entity "dummy.xml"\n',
+                        code=libxml2.XML_IO_ENOENT,
+                        message='failed to load "dummy.xml": No such file or directory\n',
                         level=libxml2.XML_ERR_WARNING,
                         file=None,
                         line=0)
@@ -68,8 +71,8 @@ class TestCase(unittest.TestCase):
                         (s,len(s),"dummy.xml",None,0),
                         libxml2.treeError,
                         domain=libxml2.XML_FROM_PARSER,
-                        code=libxml2.XML_ERR_TAG_NOT_FINISHED,
-                        message='Premature end of data in tag x line 1\n',
+                        code=libxml2.XML_ERR_TAG_NAME_MISMATCH,
+                        message='Opening and ending tag mismatch: a line 2 and x\n',
                         level=libxml2.XML_ERR_FATAL,
                         file='dummy.xml',
                         line=3)

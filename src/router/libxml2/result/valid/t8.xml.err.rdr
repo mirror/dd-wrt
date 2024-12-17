@@ -1,13 +1,6 @@
-Entity: line 1: parser error : internal error: xmlParseInternalSubset: error detected in Markup declaration
-
- %defroot; 
-          ^
-Entity: line 1: 
-&lt;!ELEMENT root (middle) >
-^
-Entity: line 1: parser error : DOCTYPE improperly terminated
- %defroot; 
-          ^
+./test/valid/t8.xml:6: parser error : Content error in the internal subset
+%defroot; %defmiddle; %deftest;
+         ^
 Entity: line 1: 
 &lt;!ELEMENT root (middle) >
 ^

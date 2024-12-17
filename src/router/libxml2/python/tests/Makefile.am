@@ -1,6 +1,3 @@
-exampledir = $(datadir)/doc/libxml2-python-$(LIBXML_VERSION)/examples
-dist_example_DATA = $(PYTESTS) $(XMLS)
-
 PYTESTS=	\
     build.py	\
     attribs.py	\
@@ -56,20 +53,24 @@ XMLS=		\
     invalid.xml	\
     test.dtd
 
+EXTRA_DIST = $(PYTESTS) $(XMLS) setup_test.py meson.build
+
 CLEANFILES = core tmp.xml *.pyc
 
 if WITH_PYTHON
-tests: $(PYTESTS)
+check-local:
 	@for f in $(XMLS) ; do test -f $$f || $(LN_S) $(srcdir)/$$f . ; done
 	@echo "## running Python regression tests"
-	-@(PYTHONPATH="..:../.libs:$(srcdir)/..:$$PYTHONPATH" ; \
-	   export PYTHONPATH; \
-	   LD_LIBRARY_PATH="$(top_builddir)/.libs:$$LD_LIBRARY_PATH" ; \
-	   export LD_LIBRARY_PATH; \
-	   for test in $(PYTESTS) ; \
-	   do log=`$(PYTHON) $(srcdir)/$$test` ; \
-	   if [ "`echo $$log | grep OK`" = "" ] ; then \
-	   echo "-- $$test" ; echo "$$log" ; fi ; done)
-else
-tests:
+	@(export PYTHONPATH="..:../.libs:$(srcdir)/..:$$PYTHONPATH" ; \
+	  export LD_LIBRARY_PATH="$(top_builddir)/.libs:$$LD_LIBRARY_PATH" ; \
+	  export DYLD_LIBRARY_PATH="$(top_builddir)/.libs:$$DYLD_LIBRARY_PATH" ; \
+	  export PATH="$(top_builddir)/.libs:$$PATH" ; \
+	  for test in $(PYTESTS) ; do \
+	    log=`$(PYTHON) $(srcdir)/$$test` ; \
+	    if [ "$$?" -ne 0 ] ; then \
+	      echo "-- $$test" ; \
+	      echo "$$log" ; \
+	      exit 1 ; \
+	    fi ; \
+	  done)
 endif

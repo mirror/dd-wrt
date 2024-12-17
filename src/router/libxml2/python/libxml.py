@@ -392,7 +392,7 @@ class xmlCore:
         last = property(get_last, None, None, "Last sibling node")
         next = property(get_next, None, None, "Next sibling node")
         prev = property(get_prev, None, None, "Previous sibling node")
-        properties = property(get_properties, None, None, "List of properies")
+        properties = property(get_properties, None, None, "List of properties")
         content = property(get_content, None, None, "Content of this node")
         name = property(get_name, None, None, "Node name")
         type = property(get_type, None, None, "Node type")
@@ -530,7 +530,7 @@ class xmlCoreDepthFirstItertor:
         self.parents = []
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         while 1:
             if self.node:
                 ret = self.node
@@ -542,6 +542,7 @@ class xmlCoreDepthFirstItertor:
             except IndexError:
                 raise StopIteration
             self.node = parent.next
+    next = __next__
 
 #
 # implements the breadth-first iterator for libxml2 DOM tree
@@ -552,7 +553,7 @@ class xmlCoreBreadthFirstItertor:
         self.parents = []
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         while 1:
             if self.node:
                 ret = self.node
@@ -564,6 +565,7 @@ class xmlCoreBreadthFirstItertor:
             except IndexError:
                 raise StopIteration
             self.node = parent.children
+    next = __next__
 
 #
 # converters to present a nicer view of the XPath returns
@@ -776,6 +778,12 @@ def popInputCallbacks():
         __input_callbacks.pop()
     if len(__input_callbacks) == 0:
         libxml2mod.xmlUnregisterInputCallback()
+
+#
+# Deprecated
+#
+def dumpMemory():
+    """DEPRECATED: This feature was removed."""
 
 # WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 #

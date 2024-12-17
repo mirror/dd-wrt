@@ -1,9 +1,10 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 #
 # this test exercise the XPath basic engine, parser, etc, and
 # allows to detect memory leaks
 #
 import sys
+import setup_test
 import libxml2
 
 instance="""<?xml version="1.0"?>
@@ -42,7 +43,7 @@ checkNamespaceDefs(node, 0)
 ns.freeNsList()
 doc.freeDoc()
 
-# Remove a namespace refered to by a child
+# Remove a namespace referred to by a child
 doc = libxml2.newDoc("1.0")
 root = doc.newChild(None, "root", None)
 namespace = root.newNs("http://example.com/sample", "s")
@@ -59,4 +60,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

@@ -1,16 +1,17 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 #
 # This test exercise the redirection of error messages with a
 # functions defined in Python.
 #
 import sys
+import setup_test
 import libxml2
 
 # Memory debug specific
 libxml2.debugMemory(1)
 
 expect="""--> (3) xmlns: URI foo is not absolute
---> (4) Opening and ending tag mismatch: x line 0 and y
+--> (4) Opening and ending tag mismatch: x line 1 and y
 """
 
 err=""
@@ -53,4 +54,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()

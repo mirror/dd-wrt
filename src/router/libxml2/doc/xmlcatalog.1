@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: xmlcatalog
 .\"    Author: John Fleck <jfleck@inkstain.net>
-.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: $Date$
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 06/12/2024
 .\"    Manual: xmlcatalog Manual
 .\"    Source: libxml2
 .\"  Language: English
 .\"
-.TH "XMLCATALOG" "1" "$Date$" "libxml2" "xmlcatalog Manual"
+.TH "XMLCATALOG" "1" "06/12/2024" "libxml2" "xmlcatalog Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,10 +31,9 @@
 xmlcatalog \- Command line tool to parse and manipulate XML or SGML catalog files\&.
 .SH "SYNOPSIS"
 .HP \w'\fBxmlcatalog\fR\ 'u
-\fBxmlcatalog\fR [\fB\-\-sgml\fR | \fB\-\-shell\fR | \fB\-\-create\fR | \fB\-\-del\ \fR\fB\fIVALUE(S)\fR\fR | [\ \fB\-\-add\ \fR\fB\fITYPE\fR\fR\fB\ \fR\fB\fIORIG\fR\fR\fB\ \fR\fB\fIREPLACE\fR\fR\fB\ \fR\ |\ \fB\-\-add\ \fR\fB\fIFILENAME\fR\fR] | \fB\-\-noout\fR | \fB\-\-no\-super\-update\fR | [\fB\-v\fR\ |\ \fB\-\-verbose\fR]] {\fICATALOGFILE\fR} {\fIENTITIES\fR...}
+\fBxmlcatalog\fR [\fB\-\-sgml\fR | \fB\-\-shell\fR | \fB\-\-convert\fR | \fB\-\-create\fR | \fB\-\-del\ \fR\fB\fIVALUE(S)\fR\fR | [\ \fB\-\-add\ \fR\fB\fITYPE\fR\fR\fB\ \fR\fB\fIORIG\fR\fR\fB\ \fR\fB\fIREPLACE\fR\fR\fB\ \fR\ |\ \fB\-\-add\ \fR\fB\fIFILENAME\fR\fR] | \fB\-\-noout\fR | \fB\-\-no\-super\-update\fR | [\fB\-v\fR\ |\ \fB\-\-verbose\fR]] {\fICATALOGFILE\fR} {\fIENTITIES\fR...}
 .SH "DESCRIPTION"
 .PP
-
 \fBxmlcatalog\fR
 is a command line application allowing users to monitor and manipulate
 XML
@@ -50,7 +49,6 @@ SGML
 files\&.
 .SH "OPTIONS"
 .PP
-
 \fBxmlcatalog\fR
 accepts the following options (in alphabetical order):
 .PP
@@ -91,6 +89,11 @@ SGML
 supercatalog, a file that contains references to other included
 SGML
 catalog files\&.
+.RE
+.PP
+\fB\-\-convert\fR
+.RS 4
+Convert SGML catalog to XML\&.
 .RE
 .PP
 \fB\-\-create\fR
@@ -155,6 +158,19 @@ options\&.
 .RS 4
 Output debugging information\&.
 .RE
+.PP
+Invoking
+\fBxmlcatalog\fR
+non\-interactively without a designated action (imposed with options like
+\fB\-\-add\fR) will result in a lookup of the catalog entry for
+\fIENTITIES\fR
+in the catalog denoted with
+\fICATALOGFILE\fR\&. The corresponding entries will be output to the command line\&. This mode of operation, together with
+\fB\-\-shell\fR
+mode and non\-modifying (i\&.e\&. without
+\fB\-\-noout\fR) direct actions, allows for a special shortcut of the void
+\fICATALOGFILE\fR
+specification (possibly expressed as "" in the shell environment) appointing the default system catalog\&. That simplifies the handling when its exact location is irrelevant but the respective built\-in still needs to be consulted\&.
 .SH "SHELL COMMANDS"
 .PP
 Invoking
@@ -213,7 +229,7 @@ Quit the shell\&.
 .PP
 \fBpublic \fR\fB\fIPUBLIC\-ID\fR\fR
 .RS 4
-Execute a Formal Public Identifier look\-up of the catalog entry for
+Execute a Formal Public Identifier lookup of the catalog entry for
 \fIPUBLIC\-ID\fR\&. The corresponding entry will be output to the command line\&.
 .RE
 .PP
@@ -224,7 +240,7 @@ Stop printing debugging statements\&.
 .PP
 \fBsystem \fR\fB\fISYSTEM\-ID\fR\fR
 .RS 4
-Execute a Formal Public Identifier look\-up of the catalog entry for
+Execute a Formal Public Identifier lookup of the catalog entry for
 \fISYSTEM\-ID\fR\&. The corresponding entry will be output to the command line\&.
 .RE
 .SH "ENVIRONMENT"
@@ -234,13 +250,13 @@ Execute a Formal Public Identifier look\-up of the catalog entry for
 XML
 catalog behavior can be changed by redirecting queries to the user\*(Aqs own set of catalogs\&. This can be done by setting the
 \fBXML_CATALOG_FILES\fR
-environment variable to a list of catalogs\&. An empty one should deactivate loading the default
+environment variable to a space\-separated list of catalogs\&. Use percent\-encoding to escape spaces or other characters\&. An empty variable should deactivate loading the default catalog from
 /etc/xml/catalog
-catalog\&.
+or, more specifically,
+${sysconfdir}/xml/catalog\&.
 .RE
 .SH "DIAGNOSTICS"
 .PP
-
 \fBxmlcatalog\fR
 return codes provide information that can be used when calling it from scripts\&.
 .PP
@@ -284,7 +300,7 @@ More information can be found at
 .\}
 \fBlibxml\fR(3)
 web page
-\m[blue]\fB\%http://www.xmlsoft.org/\fR\m[]
+\m[blue]\fB\%https://gitlab.gnome.org/GNOME/libxml2\fR\m[]
 .RE
 .sp
 .RS 4
@@ -297,7 +313,7 @@ web page
 .\}
 \fBlibxml\fR(3)
 catalog support web page at
-\m[blue]\fB\%http://www.xmlsoft.org/catalog.html\fR\m[]
+\m[blue]\fB\%https://gitlab.gnome.org/GNOME/libxml2/-/wikis/Catalog-support\fR\m[]
 .RE
 .sp
 .RS 4

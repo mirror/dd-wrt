@@ -1,5 +1,6 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 import sys
+import setup_test
 import libxml2
 try:
     import StringIO
@@ -107,4 +108,3 @@ if __name__ == '__main__':
         print("OK")
     else:
         print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-        libxml2.dumpMemory()

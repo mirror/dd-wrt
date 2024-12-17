@@ -1,5 +1,6 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 import sys
+import setup_test
 import libxml2
 
 # Memory debug specific
@@ -36,7 +37,7 @@ while i > 0:
         sys.exit(1)
     i = i - 1
 
-#desactivate error messages from the validation
+#deactivate error messages from the validation
 def noerr(ctx, str):
     pass
 
@@ -79,4 +80,3 @@ if libxml2.debugMemory(1) == 0:
     print("OK")
 else:
     print("Memory leak %d bytes" % (libxml2.debugMemory(1)))
-    libxml2.dumpMemory()
