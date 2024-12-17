@@ -58,9 +58,10 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-#define sys_reboot() {  \
-	eval("sync"); \
-	eval("event", "3", "1", "15"); \
+#define sys_reboot()                           \
+	{                                      \
+		eval("sync");                  \
+		eval("event", "3", "1", "15"); \
 	}
 
 #define ALT_PART_NAME_LENGTH 16
@@ -435,13 +436,14 @@ static void init_skb(int profile, int maple)
 	if (!skb_recycler_enable)
 		sysprintf("echo %d > /proc/net/skb_recycler/flush", 1);
 }
-static int use_mesh(void)
+static int use_mesh(int setcur)
 {
 	int count;
 	char *next;
 	char var[80];
 	char *vifs;
-	nvram_set("cur_nss", "11.4");
+	if (setcur)
+		nvram_set("cur_nss", "11.4");
 	for (count = 0; count < 3; count++) {
 		char wifivifs[32];
 		sprintf(wifivifs, "wlan%d_vifs", count);
@@ -456,7 +458,8 @@ static int use_mesh(void)
 			}
 		}
 	}
-	nvram_set("cur_nss", "12.5");
+	if (setcur)
+		nvram_set("cur_nss", "12.5");
 	return 0;
 }
 static void load_nss_ipq60xx(int profile)
@@ -472,7 +475,7 @@ static void load_nss_ipq60xx(int profile)
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
-		eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh(1) ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq60xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 		insmod("qca-nss-netlink-ipq60xx");
@@ -517,7 +520,7 @@ static void load_nss_ipq50xx(int profile)
 
 	nvram_default_get("nss", "1");
 	if (nvram_match("nss", "1")) {
-		eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh(1) ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq50xx");
 		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 		insmod("qca-nss-netlink-ipq50xx");
@@ -566,7 +569,7 @@ static void load_nss_ipq807x(int profile)
 		insmod("l2tp_core");
 		insmod("pptp");
 		insmod("vxlan");
-		eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh() ? "mesh=1" : "mesh=0");
+		eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh(1) ? "mesh=1" : "mesh=0");
 		insmod("qca-nss-crypto-ipq807x");
 		insmod("qca-nss-cfi-cryptoapi-ipq807x");
 		insmod("qca-nss-netlink-ipq807x");
@@ -1450,9 +1453,9 @@ static void load_ath11k(int profile, int pci, int nss)
 void start_wifi_drivers(void)
 {
 	int notloaded = 0;
-	if (use_mesh() && nvram_match("cur_nss", "12.5"))
+	if (use_mesh(0) && nvram_match("cur_nss", "12.5"))
 		sys_reboot();
-	if (!use_mesh() && nvram_match("cur_nss", "11.4"))
+	if (!use_mesh(0) && nvram_match("cur_nss", "11.4"))
 		sys_reboot();
 
 	notloaded = insmod("compat");
