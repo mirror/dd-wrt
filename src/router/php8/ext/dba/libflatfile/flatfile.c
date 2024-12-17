@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 7fa995b7bd21d527a78003f309ad0190b8e6fd95 $ */
+/* $Id: bd76ecfdd0aefe633c7f7cbdcce7aaf0e0263575 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -278,6 +278,6 @@ datum flatfile_nextkey(flatfile *dba) {
 /* {{{ flatfile_version */
 const char *flatfile_version(void)
 {
-	return "1.0, $Id: 7fa995b7bd21d527a78003f309ad0190b8e6fd95 $";
+	return "1.0, $Id: bd76ecfdd0aefe633c7f7cbdcce7aaf0e0263575 $";
 }
 /* }}} */

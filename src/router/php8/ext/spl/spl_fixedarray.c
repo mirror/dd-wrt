@@ -16,29 +16,21 @@
 */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
+#include "zend_interfaces.h"
 #include "zend_exceptions.h"
+#include "zend_attributes.h"
 
-#include "php_spl.h"
 #include "spl_fixedarray_arginfo.h"
-#include "spl_functions.h"
-#include "spl_engine.h"
 #include "spl_fixedarray.h"
 #include "spl_exceptions.h"
-#include "spl_iterators.h"
-#include "ext/json/php_json.h"
+#include "ext/json/php_json.h" /* For php_json_serializable_ce */
 
-zend_object_handlers spl_handler_SplFixedArray;
+static zend_object_handlers spl_handler_SplFixedArray;
 PHPAPI zend_class_entry *spl_ce_SplFixedArray;
-
-#ifdef COMPILE_DL_SPL_FIXEDARRAY
-ZEND_GET_MODULE(spl_fixedarray)
-#endif
 
 /* Check if the object is an instance of a subclass of SplFixedArray that overrides method's implementation.
  * Expect subclassing SplFixedArray to be rare and check that first. */
@@ -377,8 +369,7 @@ static zval *spl_fixedarray_object_read_dimension_helper(spl_fixedarray_object *
 	}
 
 	if (index < 0 || index >= intern->array.size) {
-		// TODO Change error message and use OutOfBound SPL Exception?
-		zend_throw_exception(spl_ce_RuntimeException, "Index invalid or out of range", 0);
+		zend_throw_exception(spl_ce_OutOfBoundsException, "Index invalid or out of range", 0);
 		return NULL;
 	} else {
 		return &intern->array.elements[index];
@@ -426,8 +417,7 @@ static void spl_fixedarray_object_write_dimension_helper(spl_fixedarray_object *
 	}
 
 	if (index < 0 || index >= intern->array.size) {
-		// TODO Change error message and use OutOfBound SPL Exception?
-		zend_throw_exception(spl_ce_RuntimeException, "Index invalid or out of range", 0);
+		zend_throw_exception(spl_ce_OutOfBoundsException, "Index invalid or out of range", 0);
 		return;
 	} else {
 		/* Fix #81429 */
@@ -466,12 +456,13 @@ static void spl_fixedarray_object_unset_dimension_helper(spl_fixedarray_object *
 	}
 
 	if (index < 0 || index >= intern->array.size) {
-		// TODO Change error message and use OutOfBound SPL Exception?
-		zend_throw_exception(spl_ce_RuntimeException, "Index invalid or out of range", 0);
+		zend_throw_exception(spl_ce_OutOfBoundsException, "Index invalid or out of range", 0);
 		return;
 	} else {
-		zval_ptr_dtor(&(intern->array.elements[index]));
+		zval garbage;
+		ZVAL_COPY_VALUE(&garbage, &intern->array.elements[index]);
 		ZVAL_NULL(&intern->array.elements[index]);
+		zval_ptr_dtor(&garbage);
 	}
 }
 
@@ -744,7 +735,7 @@ PHP_METHOD(SplFixedArray, fromArray)
 		}
 		spl_fixedarray_init(&array, tmp);
 
-		ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(data), num_index, str_index, element) {
+		ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARRVAL_P(data), num_index, element) {
 			ZVAL_COPY_DEREF(&array.elements[num_index], element);
 		} ZEND_HASH_FOREACH_END();
 
@@ -899,7 +890,7 @@ static void spl_fixedarray_it_rewind(zend_object_iterator *iter)
 	((spl_fixedarray_it*)iter)->current = 0;
 }
 
-static int spl_fixedarray_it_valid(zend_object_iterator *iter)
+static zend_result spl_fixedarray_it_valid(zend_object_iterator *iter)
 {
 	spl_fixedarray_it     *iterator = (spl_fixedarray_it*)iter;
 	spl_fixedarray_object *object   = Z_SPLFIXEDARRAY_P(&iter->data);

@@ -135,6 +135,16 @@ function mb_strtoupper(string $string, ?string $encoding = null): string {}
 /** @refcount 1 */
 function mb_strtolower(string $string, ?string $encoding = null): string {}
 
+function mb_ucfirst(string $string, ?string $encoding = null): string {}
+
+function mb_lcfirst(string $string, ?string $encoding = null): string {}
+
+function mb_trim(string $string, ?string $characters = null, ?string $encoding = null): string {}
+
+function mb_ltrim(string $string, ?string $characters = null, ?string $encoding = null): string {}
+
+function mb_rtrim(string $string, ?string $characters = null, ?string $encoding = null): string {}
+
 /** @refcount 1 */
 function mb_detect_encoding(string $string, array|string|null $encodings = null, bool $strict = false): string|false {}
 

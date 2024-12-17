@@ -246,6 +246,7 @@ static zend_always_inline void zend_ffi_object_init(zend_object *object, zend_cl
 {
 	GC_SET_REFCOUNT(object, 1);
 	GC_TYPE_INFO(object) = GC_OBJECT | (IS_OBJ_DESTRUCTOR_CALLED << GC_FLAGS_SHIFT);
+	object->extra_flags = 0;
 	object->ce = ce;
 	object->handlers = ce->default_object_handlers;
 	object->properties = NULL;
@@ -913,7 +914,7 @@ typedef struct _zend_ffi_callback_data {
 	ffi_cif                cif;
 	uint32_t               arg_count;
 	ffi_type              *ret_type;
-	ffi_type              *arg_types[0];
+	ffi_type              *arg_types[] ZEND_ELEMENT_COUNT(arg_count);
 } zend_ffi_callback_data;
 
 static void zend_ffi_callback_hash_dtor(zval *zv) /* {{{ */
@@ -978,7 +979,7 @@ static void zend_ffi_callback_trampoline(ffi_cif* cif, void* ret, void** args, v
 	free_alloca(fci.params, use_heap);
 
 	if (EG(exception)) {
-		zend_error(E_ERROR, "Throwing from FFI callbacks is not allowed");
+		zend_error_noreturn(E_ERROR, "Throwing from FFI callbacks is not allowed");
 	}
 
 	ret_type = ZEND_FFI_TYPE(callback_data->type->func.ret_type);
@@ -1501,8 +1502,7 @@ static bool zend_ffi_ctype_name_append(zend_ffi_ctype_name_buf *buf, const char 
 	if (buf->end + len > buf->buf + MAX_TYPE_NAME_LEN) {
 		return 0;
 	}
-	memcpy(buf->end, str, len);
-	buf->end += len;
+	buf->end = zend_mempcpy(buf->end, str, len);
 	return 1;
 }
 /* }}} */
@@ -1934,7 +1934,7 @@ static void zend_ffi_cdata_it_dtor(zend_object_iterator *iter) /* {{{ */
 }
 /* }}} */
 
-static int zend_ffi_cdata_it_valid(zend_object_iterator *it) /* {{{ */
+static zend_result zend_ffi_cdata_it_valid(zend_object_iterator *it) /* {{{ */
 {
 	zend_ffi_cdata_iterator *iter = (zend_ffi_cdata_iterator*)it;
 	zend_ffi_cdata *cdata = (zend_ffi_cdata*)Z_OBJ(iter->it.data);
@@ -2176,6 +2176,7 @@ static zend_result zend_ffi_cdata_get_closure(zend_object *obj, zend_class_entry
 	func->common.arg_info = NULL;
 	func->internal_function.handler = ZEND_FN(ffi_trampoline);
 	func->internal_function.module = NULL;
+	func->internal_function.doc_comment = NULL;
 
 	func->internal_function.reserved[0] = type;
 	func->internal_function.reserved[1] = *(void**)cdata->ptr;
@@ -2928,6 +2929,7 @@ static zend_function *zend_ffi_get_func(zend_object **obj, zend_string *name, co
 	func->common.arg_info = NULL;
 	func->internal_function.handler = ZEND_FN(ffi_trampoline);
 	func->internal_function.module = NULL;
+	func->internal_function.doc_comment = NULL;
 
 	func->internal_function.reserved[0] = type;
 	func->internal_function.reserved[1] = sym->addr;
@@ -2935,6 +2937,12 @@ static zend_function *zend_ffi_get_func(zend_object **obj, zend_string *name, co
 	return func;
 }
 /* }}} */
+
+static int zend_fake_compare_objects(zval *o1, zval *o2)
+{
+	zend_throw_error(zend_ffi_exception_ce, "Cannot compare FFI objects");
+	return ZEND_UNCOMPARABLE;
+}
 
 static zend_never_inline int zend_ffi_disabled(void) /* {{{ */
 {
@@ -5391,6 +5399,11 @@ static zend_result ffi_fixup_temporaries(void) {
 		++zend_ffi_cast_fn.T;
 		++zend_ffi_type_fn.T;
 	}
+#ifndef ZTS
+	ZEND_MAP_PTR(zend_ffi_new_fn.run_time_cache) = ZEND_MAP_PTR(((zend_internal_function *)zend_hash_str_find_ptr(&zend_ffi_ce->function_table, "new", sizeof("new")-1))->run_time_cache);
+	ZEND_MAP_PTR(zend_ffi_cast_fn.run_time_cache) = ZEND_MAP_PTR(((zend_internal_function *)zend_hash_str_find_ptr(&zend_ffi_ce->function_table, "cast", sizeof("cast")-1))->run_time_cache);
+	ZEND_MAP_PTR(zend_ffi_type_fn.run_time_cache) = ZEND_MAP_PTR(((zend_internal_function *)zend_hash_str_find_ptr(&zend_ffi_ce->function_table, "type", sizeof("type")-1))->run_time_cache);
+#endif
 	if (prev_zend_post_startup_cb) {
 		return prev_zend_post_startup_cb();
 	}
@@ -5436,7 +5449,7 @@ ZEND_MINIT_FUNCTION(ffi)
 	zend_ffi_handlers.has_dimension        = zend_fake_has_dimension;
 	zend_ffi_handlers.unset_dimension      = zend_fake_unset_dimension;
 	zend_ffi_handlers.get_method           = zend_ffi_get_func;
-	zend_ffi_handlers.compare              = NULL;
+	zend_ffi_handlers.compare              = zend_fake_compare_objects;
 	zend_ffi_handlers.cast_object          = zend_fake_cast_object;
 	zend_ffi_handlers.get_debug_info       = NULL;
 	zend_ffi_handlers.get_closure          = NULL;

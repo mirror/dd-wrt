@@ -236,7 +236,7 @@ class Response extends BaseResponse
     /**
      * Expect error pattern in the response.
      *
-     * @param string $errorMessagePattern Expected error message RegExp patter.
+     * @param string $errorMessagePattern Expected error message RegExp pattern.
      *
      * @return Response
      */

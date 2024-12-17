@@ -93,9 +93,6 @@ int __riscosify_control = __RISCOSIFY_STRICT_UNIX_SPECS;
 #include "fpm_log.h"
 #include "zlog.h"
 
-/* XXX this will need to change later when threaded fastcgi is implemented.  shane */
-struct sigaction act, old_term, old_quit, old_int;
-
 static void (*php_php_import_environment_variables)(zval *array_ptr);
 
 /* these globals used for forking children on unix systems */
@@ -291,8 +288,11 @@ static void sapi_cgibin_flush(void *server_context) /* {{{ */
 	/* fpm has started, let use fcgi instead of stdout */
 	if (fpm_is_running) {
 		fcgi_request *request = (fcgi_request*) server_context;
-		if (!parent && request && !fcgi_flush(request, 0)) {
-			php_handle_aborted_connection();
+		if (!parent && request) {
+			sapi_send_headers();
+			if (!fcgi_flush(request, 0)) {
+				php_handle_aborted_connection();
+			}
 		}
 		return;
 	}
@@ -603,7 +603,7 @@ static void sapi_cgi_register_variables(zval *track_vars_array) /* {{{ */
  *
  * Ignore level, we want to send all messages through fastcgi
  */
-void sapi_cgi_log_fastcgi(int level, char *message, size_t len)
+static void sapi_cgi_log_fastcgi(int level, char *message, size_t len)
 {
 
 	fcgi_request *request = (fcgi_request*) SG(server_context);
@@ -1705,11 +1705,7 @@ int main(int argc, char *argv[])
 				SG(headers_sent) = 1;
 				SG(request_info).no_headers = 1;
 
-#if ZEND_DEBUG
-				php_printf("PHP %s (%s) (built: %s %s) (DEBUG)\nCopyright (c) The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__,        __TIME__, get_zend_version());
-#else
-				php_printf("PHP %s (%s) (built: %s %s)\nCopyright (c) The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__,      get_zend_version());
-#endif
+				php_print_version(&sapi_module);
 				php_request_shutdown((void *) 0);
 				fcgi_shutdown();
 				exit_status = FPM_EXIT_OK;

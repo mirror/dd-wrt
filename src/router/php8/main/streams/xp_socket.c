@@ -44,10 +44,10 @@
 
 const php_stream_ops php_stream_generic_socket_ops;
 PHPAPI const php_stream_ops php_stream_socket_ops;
-const php_stream_ops php_stream_udp_socket_ops;
+static const php_stream_ops php_stream_udp_socket_ops;
 #ifdef AF_UNIX
-const php_stream_ops php_stream_unix_socket_ops;
-const php_stream_ops php_stream_unixdg_socket_ops;
+static const php_stream_ops php_stream_unix_socket_ops;
+static const php_stream_ops php_stream_unixdg_socket_ops;
 #endif
 
 
@@ -173,7 +173,7 @@ static ssize_t php_sockop_read(php_stream *stream, char *buf, size_t count)
 		bool dont_wait = has_buffered_data ||
 				(sock->timeout.tv_sec == 0 && sock->timeout.tv_usec == 0);
 		/* Set MSG_DONTWAIT if no wait is needed or there is unlimited timeout which was
-		 * added by fix for #41984 commited in 9343c5404. */
+		 * added by fix for #41984 committed in 9343c5404. */
 		if (dont_wait || sock->timeout.tv_sec != -1) {
 			recv_flags = MSG_DONTWAIT;
 		}
@@ -373,13 +373,17 @@ static int php_sockop_set_option(php_stream *stream, int option, int value, void
 #else
 					ssize_t ret;
 #endif
-					int err;
 
 					ret = recv(sock->socket, &buf, sizeof(buf), MSG_PEEK|MSG_DONTWAIT);
-					err = php_socket_errno();
-					if (0 == ret || /* the counterpart did properly shutdown*/
-						(0 > ret && err != EWOULDBLOCK && err != EAGAIN && err != EMSGSIZE)) { /* there was an unrecoverable error */
+					if (0 == ret) {
+						/* the counterpart did properly shutdown */
 						alive = 0;
+					} else if (0 > ret) {
+						int err = php_socket_errno();
+						if (err != EWOULDBLOCK && err != EMSGSIZE && err != EAGAIN) {
+							/* there was an unrecoverable error */
+							alive = 0;
+						}
 					}
 				}
 				return alive ? PHP_STREAM_OPTION_RETURN_OK : PHP_STREAM_OPTION_RETURN_ERR;
@@ -546,7 +550,7 @@ const php_stream_ops php_stream_socket_ops = {
 	php_tcp_sockop_set_option,
 };
 
-const php_stream_ops php_stream_udp_socket_ops = {
+static const php_stream_ops php_stream_udp_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"udp_socket",
@@ -557,7 +561,7 @@ const php_stream_ops php_stream_udp_socket_ops = {
 };
 
 #ifdef AF_UNIX
-const php_stream_ops php_stream_unix_socket_ops = {
+static const php_stream_ops php_stream_unix_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"unix_socket",
@@ -566,7 +570,7 @@ const php_stream_ops php_stream_unix_socket_ops = {
 	php_sockop_stat,
 	php_tcp_sockop_set_option,
 };
-const php_stream_ops php_stream_unixdg_socket_ops = {
+static const php_stream_ops php_stream_unixdg_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"udg_socket",

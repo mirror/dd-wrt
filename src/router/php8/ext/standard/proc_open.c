@@ -15,18 +15,17 @@
  */
 
 #include "php.h"
-#include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include "php_string.h"
-#include "ext/standard/head.h"
 #include "ext/standard/basic_functions.h"
 #include "ext/standard/file.h"
 #include "exec.h"
-#include "php_globals.h"
 #include "SAPI.h"
 #include "main/php_network.h"
 #include "zend_smart_str.h"
+#ifdef PHP_WIN32
+# include "win32/sockets.h"
+#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
@@ -203,13 +202,11 @@ static php_process_env _php_array_to_envp(zval *environment)
 #endif
 
 		if (key) {
-			memcpy(p, ZSTR_VAL(key), ZSTR_LEN(key));
-			p += ZSTR_LEN(key);
+			p = zend_mempcpy(p, ZSTR_VAL(key), ZSTR_LEN(key));
 			*p++ = '=';
 		}
 
-		memcpy(p, ZSTR_VAL(str), ZSTR_LEN(str));
-		p += ZSTR_LEN(str);
+		p = zend_mempcpy(p, ZSTR_VAL(str), ZSTR_LEN(str));
 		*p++ = '\0';
 		zend_string_release_ex(str, 0);
 	} ZEND_HASH_FOREACH_END();
@@ -238,7 +235,7 @@ static void _php_free_envp(php_process_env env)
 }
 /* }}} */
 
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 static pid_t waitpid_cached(php_process_handle *proc, int *wait_status, int options)
 {
 	if (proc->has_cached_exit_wait_status) {
@@ -550,7 +547,7 @@ static bool is_special_character_present(const zend_string *arg)
 	return false;
 }
 
-/* See https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments and 
+/* See https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments and
  * https://learn.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way */
 static void append_win_escaped_arg(smart_str *str, zend_string *arg, bool is_cmd_argument)
 {
@@ -1320,7 +1317,9 @@ PHP_FUNCTION(proc_open)
 	if (newprocok == FALSE) {
 		DWORD dw = GetLastError();
 		close_all_descriptors(descriptors, ndesc);
-		php_error_docref(NULL, E_WARNING, "CreateProcess failed, error code: %u", dw);
+		char *msg = php_win32_error_to_msg(dw);
+		php_error_docref(NULL, E_WARNING, "CreateProcess failed: %s", msg);
+		php_win32_error_msg_free(msg);
 		goto exit_fail;
 	}
 
@@ -1358,7 +1357,7 @@ PHP_FUNCTION(proc_open)
 		php_error_docref(NULL, E_WARNING, "posix_spawn() failed: %s", strerror(r));
 		goto exit_fail;
 	}
-#elif HAVE_FORK
+#elif defined(HAVE_FORK)
 	/* the Unix way */
 	child = fork();
 
@@ -1420,7 +1419,7 @@ PHP_FUNCTION(proc_open)
 	proc->childHandle = childHandle;
 #endif
 	proc->env = env;
-#if HAVE_SYS_WAIT_H
+#ifdef HAVE_SYS_WAIT_H
 	proc->has_cached_exit_wait_status = false;
 #endif
 

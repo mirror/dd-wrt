@@ -382,7 +382,7 @@ void php_filter_float(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
 
 	if (thousand_set) {
 		if (thousand_len < 1) {
-			zend_value_error("%s(): \"thousand\" option cannot be empty", get_active_function_name());
+			zend_value_error("%s(): \"thousand\" option must not be empty", get_active_function_name());
 			RETURN_VALIDATION_FAILED
 		} else {
 			tsd_sep = thousand;
@@ -542,7 +542,7 @@ static int _php_filter_validate_domain(char * domain, size_t len, zend_long flag
 			/* Reset label length counter */
 			i = 1;
 		} else {
-			if (i > 63 || (hostname && *s != '-' && !isalnum((int)*(unsigned char *)s))) {
+			if (i > 63 || (hostname && (*s != '-' || *(s + 1) == '\0') && !isalnum((int)*(unsigned char *)s))) {
 				return 0;
 			}
 

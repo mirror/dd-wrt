@@ -38,6 +38,7 @@
 #include "zend_inheritance.h"
 #include "zend_observer.h"
 #include "zend_call_stack.h"
+#include "zend_frameless_function.h"
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -170,6 +171,7 @@ void init_executor(void) /* {{{ */
 	zend_stack_init(&EG(user_exception_handlers), sizeof(zval));
 
 	zend_objects_store_init(&EG(objects_store), 1024);
+	zend_lazy_objects_init(&EG(lazy_objects_store));
 
 	EG(full_tables_cleanup) = 0;
 	ZEND_ATOMIC_BOOL_INIT(&EG(vm_interrupt), false);
@@ -240,7 +242,7 @@ static ZEND_COLD void zend_throw_or_error(int fetch_type, zend_class_entry *exce
 	if (fetch_type & ZEND_FETCH_CLASS_EXCEPTION) {
 		zend_throw_error(exception_ce, "%s", message);
 	} else {
-		zend_error(E_ERROR, "%s", message);
+		zend_error_noreturn(E_ERROR, "%s", message);
 	}
 
 	efree(message);
@@ -370,6 +372,29 @@ ZEND_API void zend_shutdown_executor_values(bool fast_shutdown)
 						}
 					}
 				} ZEND_HASH_FOREACH_END();
+
+				if (ce->num_hooked_props) {
+					zend_property_info *prop_info;
+					ZEND_HASH_MAP_FOREACH_PTR(&ce->properties_info, prop_info) {
+						if (prop_info->ce == ce) {
+							if (prop_info->hooks) {
+								for (uint32_t i = 0; i < ZEND_PROPERTY_HOOK_COUNT; i++) {
+									if (prop_info->hooks[i]) {
+										ZEND_ASSERT(ZEND_USER_CODE(prop_info->hooks[i]->type));
+										op_array = &prop_info->hooks[i]->op_array;
+										if (ZEND_MAP_PTR(op_array->static_variables_ptr)) {
+											HashTable *ht = ZEND_MAP_PTR_GET(op_array->static_variables_ptr);
+											if (ht) {
+												zend_array_destroy(ht);
+												ZEND_MAP_PTR_SET(op_array->static_variables_ptr, NULL);
+											}
+										}
+									}
+								}
+							}
+						}
+					} ZEND_HASH_FOREACH_END();
+				}
 			}
 		} ZEND_HASH_FOREACH_END();
 
@@ -468,6 +493,7 @@ void shutdown_executor(void) /* {{{ */
 		zend_stack_destroy(&EG(user_error_handlers_error_reporting));
 		zend_stack_destroy(&EG(user_error_handlers));
 		zend_stack_destroy(&EG(user_exception_handlers));
+		zend_lazy_objects_destroy(&EG(lazy_objects_store));
 		zend_objects_store_destroy(&EG(objects_store));
 		if (EG(in_autoload)) {
 			zend_hash_destroy(EG(in_autoload));
@@ -506,7 +532,7 @@ ZEND_API const char *get_active_class_name(const char **space) /* {{{ */
 		return "";
 	}
 
-	func = EG(current_execute_data)->func;
+	func = zend_active_function();
 
 	switch (func->type) {
 		case ZEND_USER_FUNCTION:
@@ -536,7 +562,7 @@ ZEND_API const char *get_active_function_name(void) /* {{{ */
 		return NULL;
 	}
 
-	func = EG(current_execute_data)->func;
+	func = zend_active_function();
 
 	switch (func->type) {
 		case ZEND_USER_FUNCTION: {
@@ -558,11 +584,26 @@ ZEND_API const char *get_active_function_name(void) /* {{{ */
 }
 /* }}} */
 
+ZEND_API zend_function *zend_active_function_ex(zend_execute_data *execute_data)
+{
+	zend_function *func = EX(func);
+
+	/* Resolve function if op is a frameless call. */
+	if (ZEND_USER_CODE(func->type)) {
+		const zend_op *op = EX(opline);
+		if (ZEND_OP_IS_FRAMELESS_ICALL(op->opcode)) {
+			func = ZEND_FLF_FUNC(op);
+		}
+	}
+
+	return func;
+}
+
 ZEND_API zend_string *get_active_function_or_method_name(void) /* {{{ */
 {
 	ZEND_ASSERT(zend_is_executing());
 
-	return get_function_or_method_name(EG(current_execute_data)->func);
+	return get_function_or_method_name(zend_active_function());
 }
 /* }}} */
 
@@ -578,13 +619,11 @@ ZEND_API zend_string *get_function_or_method_name(const zend_function *func) /* 
 
 ZEND_API const char *get_active_function_arg_name(uint32_t arg_num) /* {{{ */
 {
-	zend_function *func;
-
 	if (!zend_is_executing()) {
 		return NULL;
 	}
 
-	func = EG(current_execute_data)->func;
+	zend_function *func = zend_active_function();
 
 	return get_function_arg_name(func, arg_num);
 }
@@ -774,7 +813,7 @@ zend_result zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_
 		if (fci_cache) {
 			zend_release_fcall_info_cache(fci_cache);
 		}
-		return SUCCESS; /* we would result in an instable executor otherwise */
+		return SUCCESS; /* we would result in an unstable executor otherwise */
 	}
 
 	ZEND_ASSERT(fci->size == sizeof(zend_fcall_info));
@@ -1613,7 +1652,7 @@ void zend_unset_timeout(void) /* {{{ */
 		}
 		tq_timer = NULL;
 	}
-#elif ZEND_MAX_EXECUTION_TIMERS
+#elif defined(ZEND_MAX_EXECUTION_TIMERS)
 	zend_max_execution_timer_settime(0);
 #elif defined(HAVE_SETITIMER)
 	if (EG(timeout_seconds)) {

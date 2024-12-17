@@ -15,14 +15,14 @@
 */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
-#include "pdo/php_pdo.h"
-#include "pdo/php_pdo_driver.h"
+#include "ext/pdo/php_pdo.h"
+#include "ext/pdo/php_pdo_driver.h"
 #include "php_pdo_odbc.h"
 #include "php_pdo_odbc_int.h"
 
@@ -689,11 +689,12 @@ static int odbc_stmt_get_col(pdo_stmt_t *stmt, int colno, zval *result, enum pdo
 				/* read block. 256 bytes => 255 bytes are actually read, the last 1 is NULL */
 				rc = SQLGetData(S->stmt, colno+1, C->is_unicode ? SQL_C_BINARY : SQL_C_CHAR, buf2, 256, &C->fetched_len);
 
-				/* adjust `used` in case we have length info from the driver */
+				/* adjust `used` in case we have proper length info from the driver */
 				if (orig_fetched_len >= 0 && C->fetched_len >= 0) {
 					SQLLEN fixed_used = orig_fetched_len - C->fetched_len;
-					ZEND_ASSERT(fixed_used <= used + 1);
-					used = fixed_used;
+					if (fixed_used <= used + 1) {
+						used = fixed_used;
+					}
 				}
 
 				/* resize output buffer and reassemble block */

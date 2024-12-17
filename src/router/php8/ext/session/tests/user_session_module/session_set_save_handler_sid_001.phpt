@@ -65,12 +65,15 @@ session_unset();
 
 session_start();
 var_dump($_SESSION);
+?>
 --CLEAN--
 <?php
 @unlink(session_save_path().'/u_sess_PHPSESSIDsession_set_save_handler_sid_001');
 ?>
---EXPECT--
+--EXPECTF--
 *** Testing session_set_save_handler() function: create_sid ***
+
+Deprecated: session_set_save_handler(): Providing individual callbacks instead of an object implementing SessionHandlerInterface is deprecated in %s on line %d
 string(32) "session_set_save_handler_sid_001"
 string(4) "user"
 array(1) {

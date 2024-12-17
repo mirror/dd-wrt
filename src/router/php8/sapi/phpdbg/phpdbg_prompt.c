@@ -343,8 +343,8 @@ void phpdbg_init(char *init_file, size_t init_file_len, bool use_default) /* {{{
 		char *sys_ini;
 		int i;
 
-		ZEND_IGNORE_VALUE(asprintf(&sys_ini, "%s/" PHPDBG_INIT_FILENAME, PHP_CONFIG_FILE_PATH));
-		phpdbg_try_file_init(sys_ini, strlen(sys_ini), 0);
+		size_t sys_ini_length = asprintf(&sys_ini, "%s/" PHPDBG_INIT_FILENAME, PHP_CONFIG_FILE_PATH);
+		phpdbg_try_file_init(sys_ini, sys_ini_length, 0);
 		free(sys_ini);
 
 		if (!scan_dir) {
@@ -363,7 +363,7 @@ void phpdbg_init(char *init_file, size_t init_file_len, bool use_default) /* {{{
 			}
 
 			ZEND_IGNORE_VALUE(asprintf(&init_file, "%s/%s", scan_dir, PHPDBG_INIT_FILENAME));
-			phpdbg_try_file_init(init_file, strlen(init_file), 0);
+			phpdbg_try_file_init(init_file, init_file_len, 0);
 			free(init_file);
 			if (i == -1) {
 				break;
@@ -608,7 +608,6 @@ int phpdbg_skip_line_helper(void) /* {{{ */ {
 		 || opline->opcode == ZEND_RETURN
 		 || opline->opcode == ZEND_FAST_RET
 		 || opline->opcode == ZEND_GENERATOR_RETURN
-		 || opline->opcode == ZEND_EXIT
 		 || opline->opcode == ZEND_YIELD
 		 || opline->opcode == ZEND_YIELD_FROM
 		) {
@@ -652,7 +651,6 @@ static void phpdbg_seek_to_end(void) /* {{{ */ {
 			case ZEND_RETURN:
 			case ZEND_FAST_RET:
 			case ZEND_GENERATOR_RETURN:
-			case ZEND_EXIT:
 			case ZEND_YIELD:
 			case ZEND_YIELD_FROM:
 				zend_hash_index_update_ptr(&PHPDBG_G(seek), (zend_ulong) opline, (void *) opline);
@@ -906,7 +904,7 @@ free_cmd:
 				}
 			} zend_end_try();
 
-			if (EG(exception)) {
+			if (EG(exception) && !zend_is_unwind_exit(EG(exception))) {
 				phpdbg_handle_exception();
 			}
 		}
@@ -1316,15 +1314,13 @@ PHPDBG_API const char *phpdbg_load_module_or_extension(char **path, const char *
 			goto quit;
 		}
 
-		module_entry->type = MODULE_PERSISTENT;
-		module_entry->module_number = zend_next_free_module();
-		module_entry->handle = handle;
-
-		if ((module_entry = zend_register_module_ex(module_entry)) == NULL) {
+		if ((module_entry = zend_register_module_ex(module_entry, MODULE_PERSISTENT)) == NULL) {
 			phpdbg_error("Unable to register module %s", *name);
 
 			goto quit;
 		}
+
+		module_entry->handle = handle;
 
 		if (zend_startup_module_ex(module_entry) == FAILURE) {
 			phpdbg_error("Unable to startup module %s", module_entry->name);
@@ -1419,7 +1415,7 @@ PHPDBG_COMMAND(register) /* {{{ */
 {
 	zend_function *function;
 	char *lcname = zend_str_tolower_dup(param->str, param->len);
-	size_t lcname_len = strlen(lcname);
+	size_t lcname_len = param->len;
 
 	if (!zend_hash_str_exists(&PHPDBG_G(registered), lcname, lcname_len)) {
 		if ((function = zend_hash_str_find_ptr(EG(function_table), lcname, lcname_len))) {
@@ -1655,6 +1651,15 @@ void phpdbg_execute_ex(zend_execute_data *execute_data) /* {{{ */
 	}
 
 	PHPDBG_G(in_execution) = 1;
+
+#ifdef ZEND_CHECK_STACK_LIMIT
+	if (UNEXPECTED(zend_call_stack_overflowed(EG(stack_limit)))) {
+		zend_call_stack_size_error();
+		/* No opline was executed before exception */
+		EG(opline_before_exception) = NULL;
+		/* Fall through to handle exception below. */
+	}
+#endif /* ZEND_CHECK_STACK_LIMIT */
 
 	while (1) {
 		zend_object *exception = EG(exception);

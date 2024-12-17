@@ -720,6 +720,7 @@ void zend_optimizer_migrate_jump(zend_op_array *op_array, zend_op *new_opline, z
 		case ZEND_ASSERT_CHECK:
 		case ZEND_JMP_NULL:
 		case ZEND_BIND_INIT_STATIC_OR_JMP:
+		case ZEND_JMP_FRAMELESS:
 			ZEND_SET_OP_JMP_ADDR(new_opline, new_opline->op2, ZEND_OP2_JMP_ADDR(opline));
 			break;
 		case ZEND_FE_FETCH_R:
@@ -764,6 +765,7 @@ void zend_optimizer_shift_jump(zend_op_array *op_array, zend_op *opline, uint32_
 		case ZEND_ASSERT_CHECK:
 		case ZEND_JMP_NULL:
 		case ZEND_BIND_INIT_STATIC_OR_JMP:
+		case ZEND_JMP_FRAMELESS:
 			ZEND_SET_OP_JMP_ADDR(opline, opline->op2, ZEND_OP2_JMP_ADDR(opline) - shiftlist[ZEND_OP2_JMP_ADDR(opline) - op_array->opcodes]);
 			break;
 		case ZEND_CATCH:
@@ -790,6 +792,42 @@ void zend_optimizer_shift_jump(zend_op_array *op_array, zend_op *opline, uint32_
 	}
 }
 
+static bool zend_optimizer_ignore_class(zval *ce_zv, zend_string *filename)
+{
+	zend_class_entry *ce = Z_PTR_P(ce_zv);
+
+	if (ce->ce_flags & ZEND_ACC_PRELOADED) {
+		Bucket *ce_bucket = (Bucket*)((uintptr_t)ce_zv - XtOffsetOf(Bucket, val));
+		size_t offset = ce_bucket - EG(class_table)->arData;
+		if (offset < EG(persistent_classes_count)) {
+			return false;
+		}
+	}
+	return ce->type == ZEND_USER_CLASS
+		&& (!ce->info.user.filename || ce->info.user.filename != filename);
+}
+
+static bool zend_optimizer_ignore_function(zval *fbc_zv, zend_string *filename)
+{
+	zend_function *fbc = Z_PTR_P(fbc_zv);
+
+	if (fbc->type == ZEND_INTERNAL_FUNCTION) {
+		return false;
+	} else if (fbc->type == ZEND_USER_FUNCTION) {
+		if (fbc->op_array.fn_flags & ZEND_ACC_PRELOADED) {
+			Bucket *fbc_bucket = (Bucket*)((uintptr_t)fbc_zv - XtOffsetOf(Bucket, val));
+			size_t offset = fbc_bucket - EG(function_table)->arData;
+			if (offset < EG(persistent_functions_count)) {
+				return false;
+			}
+		}
+		return !fbc->op_array.filename || fbc->op_array.filename != filename;
+	} else {
+		ZEND_ASSERT(fbc->type == ZEND_EVAL_CODE);
+		return true;
+	}
+}
+
 zend_class_entry *zend_optimizer_get_class_entry(
 		const zend_script *script, const zend_op_array *op_array, zend_string *lcname) {
 	zend_class_entry *ce = script ? zend_hash_find_ptr(&script->class_table, lcname) : NULL;
@@ -797,11 +835,9 @@ zend_class_entry *zend_optimizer_get_class_entry(
 		return ce;
 	}
 
-	ce = zend_hash_find_ptr(CG(class_table), lcname);
-	if (ce
-	 && (ce->type == ZEND_INTERNAL_CLASS
-	  || (op_array && ce->info.user.filename == op_array->filename))) {
-		return ce;
+	zval *ce_zv = zend_hash_find(CG(class_table), lcname);
+	if (ce_zv && !zend_optimizer_ignore_class(ce_zv, op_array ? op_array->filename : NULL)) {
+		return Z_PTR_P(ce_zv);
 	}
 
 	if (op_array && op_array->scope && zend_string_equals_ci(op_array->scope->name, lcname)) {
@@ -820,10 +856,64 @@ zend_class_entry *zend_optimizer_get_class_entry_from_op1(
 		}
 	} else if (opline->op1_type == IS_UNUSED && op_array->scope
 			&& !(op_array->scope->ce_flags & ZEND_ACC_TRAIT)
-			&& (opline->op1.num & ZEND_FETCH_CLASS_MASK) == ZEND_FETCH_CLASS_SELF) {
+			&& ((opline->op1.num & ZEND_FETCH_CLASS_MASK) == ZEND_FETCH_CLASS_SELF
+				|| ((opline->op1.num & ZEND_FETCH_CLASS_MASK) == ZEND_FETCH_CLASS_STATIC
+					&& (op_array->scope->ce_flags & ZEND_ACC_FINAL)))) {
 		return op_array->scope;
 	}
 	return NULL;
+}
+
+const zend_class_constant *zend_fetch_class_const_info(
+	const zend_script *script, const zend_op_array *op_array, const zend_op *opline, bool *is_prototype) {
+	const zend_class_entry *ce = NULL;
+	bool is_static_reference = false;
+
+	if (!opline || !op_array || opline->op2_type != IS_CONST || Z_TYPE_P(CRT_CONSTANT(opline->op2)) != IS_STRING) {
+		return NULL;
+	}
+	if (opline->op1_type == IS_CONST) {
+		zval *op1 = CRT_CONSTANT(opline->op1);
+		if (Z_TYPE_P(op1) == IS_STRING) {
+			if (script) {
+				ce = zend_optimizer_get_class_entry(script, op_array, Z_STR_P(op1 + 1));
+			} else {
+				zval *ce_zv = zend_hash_find(EG(class_table), Z_STR_P(op1 + 1));
+				if (ce_zv && !zend_optimizer_ignore_class(ce_zv, op_array->filename)) {
+					ce = Z_PTR_P(ce_zv);
+				}
+			}
+		}
+	} else if (opline->op1_type == IS_UNUSED
+		&& op_array->scope && !(op_array->scope->ce_flags & ZEND_ACC_TRAIT)
+		&& !(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
+		int fetch_type = opline->op1.num & ZEND_FETCH_CLASS_MASK;
+		if (fetch_type == ZEND_FETCH_CLASS_SELF) {
+			ce = op_array->scope;
+		} else if (fetch_type == ZEND_FETCH_CLASS_STATIC) {
+			ce = op_array->scope;
+			is_static_reference = true;
+		} else if (fetch_type == ZEND_FETCH_CLASS_PARENT) {
+			if (op_array->scope->ce_flags & ZEND_ACC_LINKED) {
+				ce = op_array->scope->parent;
+			}
+		}
+	}
+	if (!ce || (ce->ce_flags & ZEND_ACC_TRAIT)) {
+		return NULL;
+	}
+	zend_class_constant *const_info = zend_hash_find_ptr(&ce->constants_table, Z_STR_P(CRT_CONSTANT(opline->op2)));
+	if (!const_info) {
+		return NULL;
+	}
+	if ((ZEND_CLASS_CONST_FLAGS(const_info) & ZEND_ACC_DEPRECATED)
+		|| ((ZEND_CLASS_CONST_FLAGS(const_info) & ZEND_ACC_PPP_MASK) != ZEND_ACC_PUBLIC && const_info->ce != op_array->scope)) {
+		return NULL;
+	}
+	*is_prototype = is_static_reference
+		&& !(const_info->ce->ce_flags & ZEND_ACC_FINAL) && !(ZEND_CLASS_CONST_FLAGS(const_info) & ZEND_ACC_FINAL);
+
+	return const_info;
 }
 
 zend_function *zend_optimizer_get_called_func(
@@ -835,15 +925,12 @@ zend_function *zend_optimizer_get_called_func(
 		{
 			zend_string *function_name = Z_STR_P(CRT_CONSTANT(opline->op2));
 			zend_function *func;
+			zval *func_zv;
 			if (script && (func = zend_hash_find_ptr(&script->function_table, function_name)) != NULL) {
 				return func;
-			} else if ((func = zend_hash_find_ptr(EG(function_table), function_name)) != NULL) {
-				if (func->type == ZEND_INTERNAL_FUNCTION) {
-					return func;
-				} else if (func->type == ZEND_USER_FUNCTION &&
-				           func->op_array.filename &&
-				           func->op_array.filename == op_array->filename) {
-					return func;
+			} else if ((func_zv = zend_hash_find(EG(function_table), function_name)) != NULL) {
+				if (!zend_optimizer_ignore_function(func_zv, op_array->filename)) {
+					return Z_PTR_P(func_zv);
 				}
 			}
 			break;
@@ -853,15 +940,12 @@ zend_function *zend_optimizer_get_called_func(
 			if (opline->op2_type == IS_CONST && Z_TYPE_P(CRT_CONSTANT(opline->op2)) == IS_STRING) {
 				zval *function_name = CRT_CONSTANT(opline->op2) + 1;
 				zend_function *func;
+				zval *func_zv;
 				if (script && (func = zend_hash_find_ptr(&script->function_table, Z_STR_P(function_name)))) {
 					return func;
-				} else if ((func = zend_hash_find_ptr(EG(function_table), Z_STR_P(function_name))) != NULL) {
-					if (func->type == ZEND_INTERNAL_FUNCTION) {
-						return func;
-					} else if (func->type == ZEND_USER_FUNCTION &&
-					           func->op_array.filename &&
-					           func->op_array.filename == op_array->filename) {
-						return func;
+				} else if ((func_zv = zend_hash_find(EG(function_table), Z_STR_P(function_name))) != NULL) {
+					if (!zend_optimizer_ignore_function(func_zv, op_array->filename)) {
+						return Z_PTR_P(func_zv);
 					}
 				}
 			}
@@ -911,6 +995,28 @@ zend_function *zend_optimizer_get_called_func(
 				}
 			}
 			break;
+		case ZEND_INIT_PARENT_PROPERTY_HOOK_CALL: {
+			zend_class_entry *scope = op_array->scope;
+			ZEND_ASSERT(scope != NULL);
+			if ((scope->ce_flags & ZEND_ACC_LINKED) && scope->parent) {
+				zend_class_entry *parent_scope = scope->parent;
+				zend_string *prop_name = Z_STR_P(CRT_CONSTANT(opline->op1));
+				zend_property_hook_kind hook_kind = opline->op2.num;
+				zend_property_info *prop_info = zend_get_property_info(parent_scope, prop_name, /* silent */ true);
+
+				if (prop_info
+					&& prop_info != ZEND_WRONG_PROPERTY_INFO
+					&& !(prop_info->flags & ZEND_ACC_PRIVATE)
+					&& prop_info->hooks) {
+					zend_function *fbc = prop_info->hooks[hook_kind];
+					if (fbc) {
+						*is_prototype = false;
+						return fbc;
+					}
+				}
+			}
+			break;
+		}
 		case ZEND_NEW:
 		{
 			zend_class_entry *ce = zend_optimizer_get_class_entry_from_op1(
@@ -1157,6 +1263,7 @@ static void zend_redo_pass_two(zend_op_array *op_array)
 			case ZEND_ASSERT_CHECK:
 			case ZEND_JMP_NULL:
 			case ZEND_BIND_INIT_STATIC_OR_JMP:
+			case ZEND_JMP_FRAMELESS:
 				opline->op2.jmp_addr = &op_array->opcodes[opline->op2.jmp_addr - old_opcodes];
 				break;
 			case ZEND_CATCH:
@@ -1278,6 +1385,7 @@ static void zend_redo_pass_two_ex(zend_op_array *op_array, zend_ssa *ssa)
 			case ZEND_ASSERT_CHECK:
 			case ZEND_JMP_NULL:
 			case ZEND_BIND_INIT_STATIC_OR_JMP:
+			case ZEND_JMP_FRAMELESS:
 				opline->op2.jmp_addr = &op_array->opcodes[opline->op2.jmp_addr - old_opcodes];
 				break;
 			case ZEND_CATCH:
@@ -1327,6 +1435,26 @@ static void zend_redo_pass_two_ex(zend_op_array *op_array, zend_ssa *ssa)
 				}
 				break;
 		}
+#ifdef ZEND_VERIFY_TYPE_INFERENCE
+		if (ssa_op->op1_use >= 0) {
+			opline->op1_use_type = ssa->var_info[ssa_op->op1_use].type;
+		}
+		if (ssa_op->op2_use >= 0) {
+			opline->op2_use_type = ssa->var_info[ssa_op->op2_use].type;
+		}
+		if (ssa_op->result_use >= 0) {
+			opline->result_use_type = ssa->var_info[ssa_op->result_use].type;
+		}
+		if (ssa_op->op1_def >= 0) {
+			opline->op1_def_type = ssa->var_info[ssa_op->op1_def].type;
+		}
+		if (ssa_op->op2_def >= 0) {
+			opline->op2_def_type = ssa->var_info[ssa_op->op2_def].type;
+		}
+		if (ssa_op->result_def >= 0) {
+			opline->result_def_type = ssa->var_info[ssa_op->result_def].type;
+		}
+#endif
 		zend_vm_set_opcode_handler_ex(opline, op1_info, op2_info, res_info);
 		opline++;
 	}
@@ -1440,6 +1568,19 @@ void zend_foreach_op_array(zend_script *script, zend_op_array_func_t func, void 
 					&& !(op_array->fn_flags & ZEND_ACC_ABSTRACT)
 					&& !(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
 				zend_foreach_op_array_helper(op_array, func, context);
+			}
+		} ZEND_HASH_FOREACH_END();
+
+		zend_property_info *property;
+		ZEND_HASH_MAP_FOREACH_PTR(&ce->properties_info, property) {
+			zend_function **hooks = property->hooks;
+			if (property->ce == ce && property->hooks) {
+				for (uint32_t i = 0; i < ZEND_PROPERTY_HOOK_COUNT; i++) {
+					zend_function *hook = hooks[i];
+					if (hook && hook->common.scope == ce) {
+						zend_foreach_op_array_helper(&hooks[i]->op_array, func, context);
+					}
+				}
 			}
 		} ZEND_HASH_FOREACH_END();
 	} ZEND_HASH_FOREACH_END();

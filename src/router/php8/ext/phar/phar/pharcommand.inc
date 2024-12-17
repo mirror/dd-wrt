@@ -630,15 +630,15 @@ class PharCommand extends CLICommand
      * This function will take a directory and iterate through
      * it and get the files to insert into the Phar archive.
      *
-     * @param Phar        $phar      The phar object.
-     * @param string      $input     The input directory
-     * @param string      $regex     The regex used in RegexIterator.
-     * @param string      $invregex  The InvertedRegexIterator expression.
-     * @param SplFileInfo $stub Stub file object
-     * @param mixed       $compress  Compression algorithm or NULL
-     * @param boolean     $noloader  Whether to prevent adding the loader
+     * @param Phar         $phar      The phar object.
+     * @param string       $input     The input directory
+     * @param string       $regex     The regex used in RegexIterator.
+     * @param string       $invregex  The InvertedRegexIterator expression.
+     * @param ?SplFileInfo $stub Stub file object
+     * @param mixed        $compress  Compression algorithm or NULL
+     * @param boolean      $noloader  Whether to prevent adding the loader
      */
-    static function phar_add(Phar $phar, $level, $input, $regex, $invregex, SplFileInfo $stub = NULL, $compress = NULL, $noloader = false)
+    static function phar_add(Phar $phar, $level, $input, $regex, $invregex, ?SplFileInfo $stub, $compress = NULL, $noloader = false)
     {
         if ($input && is_file($input) && !is_dir($input)) {
             return self::phar_add_file($phar, $level, $input, $input, $compress);
@@ -1578,7 +1578,7 @@ class PharCommand extends CLICommand
         $use_ext = extension_loaded('phar');
         $version = array(
             'PHP Version' => phpversion(),
-            'phar.phar version' => '$Id: 17c5c6051fafe1e675ff9f6b7fc98afd448b8521 $',
+            'phar.phar version' => '$Id: fee6c069ab085376ce8b4d48727a0db8e8b30c57 $',
             'Phar EXT version' => $use_ext ? phpversion('phar') : 'Not available',
             'Phar API version' => Phar::apiVersion(),
             'Phar-based phar archives' => true,

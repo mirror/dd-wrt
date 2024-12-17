@@ -19,7 +19,9 @@
 #ifndef ZEND_STRING_H
 #define ZEND_STRING_H
 
-#include "zend.h"
+#include "zend_types.h"
+#include "zend_gc.h"
+#include "zend_alloc.h"
 
 BEGIN_EXTERN_C()
 
@@ -570,6 +572,7 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_ARGS,                   "args") \
 	_(ZEND_STR_UNKNOWN,                "unknown") \
 	_(ZEND_STR_UNKNOWN_CAPITALIZED,    "Unknown") \
+	_(ZEND_STR_EXIT,                   "exit") \
 	_(ZEND_STR_EVAL,                   "eval") \
 	_(ZEND_STR_INCLUDE,                "include") \
 	_(ZEND_STR_REQUIRE,                "require") \
@@ -631,6 +634,10 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_COUNT,                  "count") \
 	_(ZEND_STR_SENSITIVEPARAMETER,     "SensitiveParameter") \
 	_(ZEND_STR_CONST_EXPR_PLACEHOLDER, "[constant expression]") \
+	_(ZEND_STR_DEPRECATED_CAPITALIZED, "Deprecated") \
+	_(ZEND_STR_SINCE,                  "since") \
+	_(ZEND_STR_GET,                    "get") \
+	_(ZEND_STR_SET,                    "set") \
 
 
 typedef enum _zend_known_string_id {

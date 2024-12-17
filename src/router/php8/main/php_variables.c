@@ -25,10 +25,11 @@
 #include "php_content_types.h"
 #include "SAPI.h"
 #include "zend_globals.h"
+#include "zend_exceptions.h"
 
 /* for systems that need to override reading of environment variables */
-void _php_import_environment_variables(zval *array_ptr);
-void _php_load_environment_variables(zval *array_ptr);
+static void _php_import_environment_variables(zval *array_ptr);
+static void _php_load_environment_variables(zval *array_ptr);
 PHPAPI void (*php_import_environment_variables)(zval *array_ptr) = _php_import_environment_variables;
 PHPAPI void (*php_load_environment_variables)(zval *array_ptr) = _php_load_environment_variables;
 
@@ -391,7 +392,7 @@ static bool add_post_var(zval *arr, post_var_data_t *var, bool eof)
 
 static inline int add_post_vars(zval *arr, post_var_data_t *vars, bool eof)
 {
-	uint64_t max_vars = PG(max_input_vars);
+	uint64_t max_vars = REQUEST_PARSE_BODY_OPTION_GET(max_input_vars, PG(max_input_vars));
 
 	vars->ptr = ZSTR_VAL(vars->str.s);
 	vars->end = ZSTR_VAL(vars->str.s) + ZSTR_LEN(vars->str.s);
@@ -551,8 +552,9 @@ SAPI_API SAPI_TREAT_DATA_FUNC(php_default_treat_data)
 			}
 		}
 
-		if (++count > PG(max_input_vars)) {
-			php_error_docref(NULL, E_WARNING, "Input variables exceeded " ZEND_LONG_FMT ". To increase the limit change max_input_vars in php.ini.", PG(max_input_vars));
+		zend_long max_input_vars = REQUEST_PARSE_BODY_OPTION_GET(max_input_vars, PG(max_input_vars));
+		if (++count > max_input_vars) {
+			php_error_docref(NULL, E_WARNING, "Input variables exceeded " ZEND_LONG_FMT ". To increase the limit change max_input_vars in php.ini.", max_input_vars);
 			break;
 		}
 
@@ -624,7 +626,7 @@ static zend_always_inline void import_environment_variable(HashTable *ht, char *
 	}
 }
 
-void _php_import_environment_variables(zval *array_ptr)
+static void _php_import_environment_variables(zval *array_ptr)
 {
 	tsrm_env_lock();
 
@@ -647,15 +649,9 @@ void _php_import_environment_variables(zval *array_ptr)
 	tsrm_env_unlock();
 }
 
-void _php_load_environment_variables(zval *array_ptr)
+static void _php_load_environment_variables(zval *array_ptr)
 {
 	php_import_environment_variables(array_ptr);
-}
-
-bool php_std_auto_global_callback(char *name, uint32_t name_len)
-{
-	zend_printf("%s\n", name);
-	return 0; /* don't rearm */
 }
 
 /* {{{ php_build_argv */
@@ -897,6 +893,7 @@ static bool php_auto_globals_create_server(zend_string *name)
 	} else {
 		zval_ptr_dtor_nogc(&PG(http_globals)[TRACK_VARS_SERVER]);
 		array_init(&PG(http_globals)[TRACK_VARS_SERVER]);
+		zend_hash_real_init_mixed(Z_ARRVAL(PG(http_globals)[TRACK_VARS_SERVER]));
 	}
 
 	check_http_proxy(Z_ARRVAL(PG(http_globals)[TRACK_VARS_SERVER]));

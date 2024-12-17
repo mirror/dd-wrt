@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -29,6 +30,10 @@
 
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
+
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
 #ifndef YY_PHPDBG_SAPI_PHPDBG_PHPDBG_PARSER_H_INCLUDED
 # define YY_PHPDBG_SAPI_PHPDBG_PHPDBG_PARSER_H_INCLUDED
@@ -49,7 +54,6 @@ extern int phpdbg_debug;
 #endif
 /* "%code requires" blocks.  */
 
-
 #include "phpdbg.h"
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T
@@ -57,34 +61,37 @@ typedef void* yyscan_t;
 #endif
 
 
-
-/* Token type.  */
+/* Token kinds.  */
 #ifndef PHPDBG_TOKENTYPE
 # define PHPDBG_TOKENTYPE
   enum phpdbg_tokentype
   {
-    END = 0,
-    T_EVAL = 258,
-    T_RUN = 259,
-    T_SHELL = 260,
-    T_IF = 261,
-    T_TRUTHY = 262,
-    T_FALSY = 263,
-    T_STRING = 264,
-    T_COLON = 265,
-    T_DCOLON = 266,
-    T_POUND = 267,
-    T_SEPARATOR = 268,
-    T_PROTO = 269,
-    T_DIGITS = 270,
-    T_LITERAL = 271,
-    T_ADDR = 272,
-    T_OPCODE = 273,
-    T_ID = 274,
-    T_INPUT = 275,
-    T_UNEXPECTED = 276,
-    T_REQ_ID = 277
+    PHPDBG_EMPTY = -2,
+    END = 0,                       /* "end of command"  */
+    PHPDBG_error = 256,            /* error  */
+    PHPDBG_UNDEF = 257,            /* "invalid token"  */
+    T_EVAL = 258,                  /* "eval"  */
+    T_RUN = 259,                   /* "run"  */
+    T_SHELL = 260,                 /* "shell"  */
+    T_IF = 261,                    /* "if (condition)"  */
+    T_TRUTHY = 262,                /* "truthy (true, on, yes or enabled)"  */
+    T_FALSY = 263,                 /* "falsy (false, off, no or disabled)"  */
+    T_STRING = 264,                /* "string (some input, perhaps)"  */
+    T_COLON = 265,                 /* ": (colon)"  */
+    T_DCOLON = 266,                /* ":: (double colon)"  */
+    T_POUND = 267,                 /* "# (pound sign followed by digits)"  */
+    T_SEPARATOR = 268,             /* "# (pound sign)"  */
+    T_PROTO = 269,                 /* "protocol (file://)"  */
+    T_DIGITS = 270,                /* "digits (numbers)"  */
+    T_LITERAL = 271,               /* "literal (string)"  */
+    T_ADDR = 272,                  /* "address"  */
+    T_OPCODE = 273,                /* "opcode"  */
+    T_ID = 274,                    /* "identifier (command or function name)"  */
+    T_INPUT = 275,                 /* "input (input string or data)"  */
+    T_UNEXPECTED = 276,            /* "input"  */
+    T_REQ_ID = 277                 /* "request id (-r %d)"  */
   };
+  typedef enum phpdbg_tokentype phpdbg_token_kind_t;
 #endif
 
 /* Value type.  */
@@ -96,6 +103,8 @@ typedef phpdbg_param_t PHPDBG_STYPE;
 
 
 
+
 int phpdbg_parse (void);
+
 
 #endif /* !YY_PHPDBG_SAPI_PHPDBG_PHPDBG_PARSER_H_INCLUDED  */

@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: bb00b98fa4a14dfc9555fb285175d1c7acbaac4f $ */
+/* $Id: c5467396d4bfe62513fab439a836d384a4652b26 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -40,7 +40,7 @@
 /* {{{ inifile_version */
 const char *inifile_version(void)
 {
-	return "1.0, $Id: bb00b98fa4a14dfc9555fb285175d1c7acbaac4f $";
+	return "1.0, $Id: c5467396d4bfe62513fab439a836d384a4652b26 $";
 }
 /* }}} */
 

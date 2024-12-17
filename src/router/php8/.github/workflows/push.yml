@@ -10,15 +10,12 @@ on:
       - CONTRIBUTING.md
       - CODING_STANDARDS.md
       - .cirrus.yml
-      - .travis.yml
-      - travis/**
       - .circleci/**
     branches:
-      - PHP-7.4
-      - PHP-8.0
       - PHP-8.1
       - PHP-8.2
       - PHP-8.3
+      - PHP-8.4
       - master
   pull_request:
     paths-ignore:
@@ -30,11 +27,10 @@ on:
       - CONTRIBUTING.md
       - CODING_STANDARDS.md
       - .cirrus.yml
-      - .travis.yml
-      - travis/**
       - .circleci/**
     branches:
       - '**'
+  workflow_dispatch: ~
 permissions:
   contents: read
 concurrency:
@@ -62,6 +58,15 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test
+      firebird:
+        image: jacobalberty/firebird
+        ports:
+          - 3050:3050
+        env:
+          ISC_PASSWORD: test
+          FIREBIRD_DATABASE: test.fdb
+          FIREBIRD_USER: test
+          FIREBIRD_PASSWORD: test
     strategy:
       fail-fast: false
       matrix:
@@ -73,9 +78,7 @@ jobs:
             zts: true
             asan: true
     name: "LINUX_X64_${{ matrix.debug && 'DEBUG' || 'RELEASE' }}_${{ matrix.zts && 'ZTS' || 'NTS' }}${{ matrix.asan && '_ASAN' || '' }}"
-    runs-on: ubuntu-${{ !matrix.asan && '22' || '20' }}.04
-    container:
-      image: ${{ matrix.asan && 'ubuntu:23.04' || null }}
+    runs-on: ubuntu-${{ !matrix.asan && '22' || '24' }}.04
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -92,9 +95,6 @@ jobs:
       - name: Create MSSQL container
         if: ${{ !matrix.asan }}
         uses: ./.github/actions/setup-mssql
-      - name: Create Oracle container
-        if: ${{ !matrix.asan }}
-        uses: ./.github/actions/setup-oracle
       - name: Setup Caddy server
         uses: ./.github/actions/setup-caddy
       - name: ccache
@@ -112,7 +112,7 @@ jobs:
           configurationParameters: >-
             --${{ matrix.debug && 'enable' || 'disable' }}-debug
             --${{ matrix.zts && 'enable' || 'disable' }}-zts
-            ${{ matrix.asan && 'CFLAGS="-fsanitize=undefined,address -DZEND_TRACK_ARENA_ALLOC" LDFLAGS="-fsanitize=undefined,address" CC=clang CXX=clang++ --disable-opcache-jit' || '' }}
+            ${{ matrix.asan && 'CFLAGS="-fsanitize=undefined,address -fno-sanitize=function -DZEND_TRACK_ARENA_ALLOC" LDFLAGS="-fsanitize=undefined,address -fno-sanitize=function" CC=clang CXX=clang++' || '' }}
           skipSlow: ${{ matrix.asan }}
       - name: make
         run: make -j$(/usr/bin/nproc) >/dev/null
@@ -124,10 +124,10 @@ jobs:
       - name: Test
         if: matrix.asan == false
         uses: ./.github/actions/test-linux
-      - name: Test ${{ matrix.asan && 'OpCache' || 'Tracing JIT' }}
+      - name: Test Tracing JIT
         uses: ./.github/actions/test-linux
         with:
-          jitType: ${{ matrix.asan && 'disable' || 'tracing' }}
+          jitType: tracing
           runTestsParameters: >-
             -d zend_extension=opcache.so
             -d opcache.enable_cli=1
@@ -182,7 +182,16 @@ jobs:
             -d opcache.enable_cli=1
   MACOS_DEBUG_NTS:
     if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
-    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: 13
+            arch: X64
+          - os: 14
+            arch: ARM64
+    name: MACOS_${{ matrix.arch }}_DEBUG_NTS
+    runs-on: macos-${{ matrix.os }}
     steps:
       - name: git checkout
         uses: actions/checkout@v4
@@ -191,7 +200,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: "${{github.job}}-${{hashFiles('main/php_version.h')}}"
+          key: "${{github.job}}-${{matrix.os}}-${{hashFiles('main/php_version.h')}}"
           append-timestamp: false
           save: ${{ github.event_name != 'pull_request' }}
       - name: ./configure
@@ -200,7 +209,7 @@ jobs:
           configurationParameters: --enable-debug --disable-zts
       - name: make
         run: |-
-          export PATH="/usr/local/opt/bison/bin:$PATH"
+          export PATH="$(brew --prefix)/opt/bison/bin:$PATH"
           make -j$(sysctl -n hw.logicalcpu) >/dev/null
       - name: make install
         run: sudo make install
@@ -211,19 +220,18 @@ jobs:
           runTestsParameters: >-
             -d zend_extension=opcache.so
             -d opcache.enable_cli=1
-            -d opcache.protect_memory=1
       - name: Verify generated files are up to date
         uses: ./.github/actions/verify-generated-files
   WINDOWS:
     if: github.repository == 'php/php-src' || github.event_name == 'pull_request'
     name: WINDOWS_X64_ZTS
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       PHP_BUILD_CACHE_BASE_DIR: C:\build-cache
       PHP_BUILD_OBJ_DIR: C:\obj
       PHP_BUILD_CACHE_SDK_DIR: C:\build-cache\sdk
       PHP_BUILD_SDK_BRANCH: php-sdk-2.3.0
-      PHP_BUILD_CRT: vs16
+      PHP_BUILD_CRT: vs17
       PLATFORM: x64
       THREAD_SAFE: "1"
       INTRINSICS: AVX2
@@ -249,6 +257,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # ASLR can cause a lot of noise due to missed sse opportunities for memcpy
+      # and other operations, so we disable it during benchmarking.
+      - name: Disable ASLR
+        run: echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
       - name: apt
         run: |
           set -x
@@ -337,3 +349,8 @@ jobs:
             ${{ github.sha }} \
             $(git merge-base ${{ github.event.pull_request.base.sha }} ${{ github.sha }}) \
             > $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profiles
+          path: ${{ github.workspace }}/benchmark/profiles
+          retention-days: 30

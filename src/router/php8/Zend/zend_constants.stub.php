@@ -71,6 +71,8 @@ const E_USER_NOTICE = UNKNOWN;
 /**
  * @var int
  * @cvalue E_STRICT
+ * @deprecated
+ * @todo Remove in PHP 9.0
  */
 const E_STRICT = UNKNOWN;
 
@@ -121,9 +123,18 @@ const ZEND_DEBUG_BUILD = UNKNOWN;
 
 /* Special constants true/false/null.  */
 
-/** @var bool */
+/**
+ * @var bool
+ * @undocumentable
+ */
 const TRUE = true;
-/** @var bool */
+/**
+ * @var bool
+ * @undocumentable
+ */
 const FALSE = false;
-/** @var null */
+/**
+ * @var null
+ * @undocumentable
+ */
 const NULL = null;

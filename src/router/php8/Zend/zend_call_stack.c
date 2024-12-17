@@ -36,10 +36,11 @@
 # endif
 #endif /* ZEND_WIN32 */
 #if (defined(HAVE_PTHREAD_GETATTR_NP) && defined(HAVE_PTHREAD_ATTR_GETSTACK)) || \
-    defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__)
+    defined(__FreeBSD__) || defined(__APPLE__) || defined(__OpenBSD__) || \
+    defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun)
 # include <pthread.h>
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 # include <pthread_np.h>
 # include <sys/mman.h>
 # include <sys/sysctl.h>
@@ -52,8 +53,28 @@ typedef int boolean_t;
 # include <sys/sysctl.h>
 # include <sys/user.h>
 #endif
+#ifdef __NetBSD__
+# include <sys/sysctl.h>
+# include <sys/syscall.h>
+#endif
+#ifdef __HAIKU__
+# include <kernel/OS.h>
+#endif
 #ifdef __linux__
 #include <sys/syscall.h>
+#endif
+#ifdef __sun
+# include <sys/lwp.h>
+# ifdef HAVE_LIBPROC_H
+#  define _STRUCTURED_PROC 1
+#  include <sys/procfs.h>
+#  include <libproc.h>
+# endif
+#include <thread.h>
+#endif
+
+#ifdef HAVE_VALGRIND
+# include <valgrind/valgrind.h>
 #endif
 
 #ifdef ZEND_CHECK_STACK_LIMIT
@@ -118,12 +139,12 @@ static bool zend_call_stack_get_linux_pthread(zend_call_stack *stack)
 	ZEND_ASSERT(!zend_call_stack_is_main_thread());
 
 	error = pthread_getattr_np(pthread_self(), &attr);
-	if (error) {
+	if (UNEXPECTED(error)) {
 		return false;
 	}
 
 	error = pthread_attr_getstack(&attr, &addr, &max_size);
-	if (error) {
+	if (UNEXPECTED(error)) {
 		pthread_attr_destroy(&attr);
 		return false;
 	}
@@ -133,7 +154,7 @@ static bool zend_call_stack_get_linux_pthread(zend_call_stack *stack)
 		size_t guard_size;
 		/* In glibc prior to 2.8, addr and size include the guard pages */
 		error = pthread_attr_getguardsize(&attr, &guard_size);
-		if (error) {
+		if (UNEXPECTED(error)) {
 			pthread_attr_destroy(&attr);
 			return false;
 		}
@@ -161,7 +182,7 @@ static bool zend_call_stack_get_linux_proc_maps(zend_call_stack *stack)
 {
 	FILE *f;
 	char buffer[4096];
-	uintptr_t addr_on_stack = (uintptr_t)&buffer;
+	uintptr_t addr_on_stack = (uintptr_t) zend_call_stack_position();
 	uintptr_t start, end, prev_end = 0;
 	size_t max_size;
 	bool found = false;
@@ -223,6 +244,13 @@ static bool zend_call_stack_get_linux_proc_maps(zend_call_stack *stack)
 
 	max_size = rlim.rlim_cur;
 
+#ifdef HAVE_VALGRIND
+	/* Under Valgrind, the last page is not useable */
+	if (RUNNING_ON_VALGRIND) {
+		max_size -= zend_get_page_size();
+	}
+#endif
+
 	/* Previous mapping may prevent the stack from growing */
 	if (end - max_size < prev_end) {
 		max_size = prev_end - end;
@@ -249,7 +277,7 @@ static bool zend_call_stack_get_linux(zend_call_stack *stack)
 }
 #endif /* __linux__ */
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 static bool zend_call_stack_is_main_thread(void)
 {
 	int is_main = pthread_main_np();
@@ -302,6 +330,7 @@ static bool zend_call_stack_get_freebsd_sysctl(zend_call_stack *stack)
 	int mib[2] = {CTL_KERN, KERN_USRSTACK};
 	size_t len = sizeof(stack_base);
 	struct rlimit rlim;
+	size_t numguards = 0;
 
 	/* This method is relevant only for the main thread */
 	ZEND_ASSERT(zend_call_stack_is_main_thread());
@@ -318,7 +347,13 @@ static bool zend_call_stack_get_freebsd_sysctl(zend_call_stack *stack)
 		return false;
 	}
 
-	size_t guard_size = getpagesize();
+	len = sizeof(numguards);
+	/* For most of the cases, we do not necessarily need to do so as, by default, it is `1` page, but is user writable */
+	if (sysctlbyname("security.bsd.stack_guard_page", &numguards, &len, NULL, 0) != 0) {
+		return false;
+	}
+
+	size_t guard_size = numguards * getpagesize();
 
 	stack->base = stack_base;
 	stack->max_size = rlim.rlim_cur - guard_size;
@@ -417,7 +452,9 @@ static bool zend_call_stack_get_macos(zend_call_stack *stack)
 	void *base = pthread_get_stackaddr_np(pthread_self());
 	size_t max_size;
 
-	if (pthread_main_np()) {
+#if !defined(__aarch64__)
+	if (pthread_main_np())
+	{
 		/* pthread_get_stacksize_np() returns a too low value for the main
 		 * thread in OSX 10.9, 10.10:
 		 * https://mail.openjdk.org/pipermail/hotspot-dev/2013-October/011353.html
@@ -427,7 +464,10 @@ static bool zend_call_stack_get_macos(zend_call_stack *stack)
 		/* Stack size is 8MiB by default for main threads
 		 * https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/CreatingThreads/CreatingThreads.html */
 		max_size = 8 * 1024 * 1024;
-	} else {
+	}
+	else
+#endif
+	{
 		max_size = pthread_get_stacksize_np(pthread_self());
 	}
 
@@ -508,6 +548,247 @@ static bool zend_call_stack_get_openbsd(zend_call_stack *stack)
 	return false;
 }
 #endif /* defined(__OpenBSD__) */
+#if defined(__HAIKU__)
+static bool zend_call_stack_get_haiku(zend_call_stack *stack)
+{
+	thread_id id;
+	thread_info ti;
+	size_t guard_size;
+
+	// unlikely, main thread ought to be always available but we never know
+	if ((id = find_thread(NULL)) == B_NAME_NOT_FOUND || get_thread_info(id, &ti) != B_OK) {
+		return false;
+	}
+
+	// USER_STACK_GUARD_SIZE
+	guard_size = sysconf(_SC_PAGESIZE) * 4;
+
+	stack->base = ti.stack_end;
+	stack->max_size = ((size_t)ti.stack_end - (size_t)ti.stack_base) - guard_size;
+
+	return true;
+}
+#else
+static bool zend_call_stack_get_haiku(zend_call_stack *stack)
+{
+	return false;
+}
+#endif /* defined(__HAIKU__) */
+
+#if defined(__NetBSD__)
+# ifdef HAVE_PTHREAD_GETATTR_NP
+static bool zend_call_stack_get_netbsd_pthread(zend_call_stack *stack)
+{
+	pthread_attr_t attr;
+	int error;
+	void *addr;
+	size_t max_size, guard_size;
+
+	error = pthread_getattr_np(pthread_self(), &attr);
+	if (error) {
+		return false;
+	}
+
+	error = pthread_attr_getstack(&attr, &addr, &max_size);
+	if (error) {
+		return false;
+	}
+
+	error = pthread_attr_getguardsize(&attr, &guard_size);
+	if (error) {
+		return false;
+	}
+
+	addr = (char *)addr + guard_size;
+	max_size -= guard_size;
+
+	stack->base = (char *)addr + max_size;
+	stack->max_size = max_size;
+
+	return true;
+}
+# else
+static bool zend_call_stack_get_netbsd_pthread(zend_call_stack *stack)
+{
+	return false;
+}
+# endif /* HAVE_PTHREAD_GETATTR_NP */
+static bool zend_call_stack_get_netbsd_vm(zend_call_stack *stack, void **ptr)
+{
+	/**
+	 * NetBSD supports procfs in a similar fashion as Linux
+	 * however NetBSD's mid/long term plan is to remove it completely.
+	 */
+	char *start, *end;
+	struct kinfo_vmentry *entry;
+	size_t len, max_size;
+	uintptr_t addr_on_stack = (uintptr_t) zend_call_stack_position();
+	int mib[5] = { CTL_VM, VM_PROC, VM_PROC_MAP, getpid(), sizeof(struct kinfo_vmentry) };
+	bool found = false;
+	struct rlimit rlim;
+
+	if (sysctl(mib, 5, NULL, &len, NULL, 0) != 0) {
+		return false;
+	}
+
+	// kinfo_getvmmap uses the same formula, only we do not want to rely on libkvm
+	len = len * 4 / 3 ;
+	*ptr = malloc(len);
+
+	if (sysctl(mib, 5, *ptr, &len, NULL, 0) != 0) {
+		return false;
+	}
+
+	start = (char *)*ptr;
+	end = start + len;
+
+	while (start < end) {
+		entry = (struct kinfo_vmentry *)start;
+		if (entry->kve_start <= addr_on_stack && entry->kve_end >= addr_on_stack) {
+			found = true;
+			break;
+		}
+
+		start += sizeof(struct kinfo_vmentry);
+	}
+
+	if (!found) {
+		return false;
+	}
+
+	if (getrlimit(RLIMIT_STACK, &rlim) || rlim.rlim_cur == RLIM_INFINITY) {
+		return false;
+	}
+
+	max_size = rlim.rlim_cur;
+
+	stack->base = (void *)entry->kve_end;
+	stack->max_size = max_size;
+
+	return true;
+}
+
+
+static bool zend_call_stack_get_netbsd(zend_call_stack *stack)
+{
+	if (syscall(SYS__lwp_self) == 1) {
+		void *ptr = NULL;
+		bool r = zend_call_stack_get_netbsd_vm(stack, &ptr);
+		free(ptr);
+		return r;
+	}
+
+	return zend_call_stack_get_netbsd_pthread(stack);
+}
+#else
+static bool zend_call_stack_get_netbsd(zend_call_stack *stack)
+{
+	return false;
+}
+#endif /* defined(__NetBSD__) */
+
+#if defined(__sun)
+static bool zend_call_stack_get_solaris_pthread(zend_call_stack *stack)
+{
+	stack_t s;
+	if (thr_stksegment(&s) < 0) {
+		return false;
+	}
+
+	stack->max_size = s.ss_size;
+	stack->base = s.ss_sp;
+	return true;
+}
+
+#ifdef HAVE_LIBPROC_H
+static bool zend_call_stack_get_solaris_proc_maps(zend_call_stack *stack)
+{
+	uintptr_t addr_on_stack = (uintptr_t) zend_call_stack_position();
+	bool found = false, r = false;
+	struct ps_prochandle *proc;
+	prmap_t *map, *orig;
+	struct rlimit rlim;
+	char path[PATH_MAX];
+	size_t size;
+	ssize_t len = -1;
+	pid_t pid;
+	int error, fd;
+
+	pid = getpid();
+	proc = Pgrab(pid, PGRAB_RDONLY, &error);
+	if (!proc) {
+		return false;
+	}
+
+	size = (1 << 20);
+	snprintf(path, sizeof(path), "/proc/%d/map", (int)pid);
+
+	if ((fd = open(path, O_RDONLY)) == -1) {
+		Prelease(proc, 0);
+		return false;
+	}
+
+	orig = malloc(size);
+	if (!orig) {
+		Prelease(proc, 0);
+		close(fd);
+		return false;
+	}
+
+	while (size > 0 && (len = pread(fd, orig, size, 0)) == size) {
+		prmap_t *tmp;
+		size <<= 1;
+		tmp = realloc(orig, size);
+		if (!tmp) {
+			goto end;
+		}
+		orig = tmp;
+	}
+
+	for (map = orig; len > 0; ++map) {
+		if ((uintptr_t)map->pr_vaddr <= addr_on_stack && (uintptr_t)map->pr_vaddr + map->pr_size >= addr_on_stack) {
+			found = true;
+			break;
+		}
+		len -= sizeof(*map);
+	}
+
+	if (!found) {
+		goto end;
+	}
+
+	error = getrlimit(RLIMIT_STACK, &rlim);
+	if (error || rlim.rlim_cur == RLIM_INFINITY) {
+		goto end;
+	}
+
+	stack->base = (void *)map->pr_vaddr + map->pr_size;
+	stack->max_size = rlim.rlim_cur;
+	r = true;
+
+end:
+	free(orig);
+	Prelease(proc, 0);
+	close(fd);
+	return r;
+}
+#endif
+
+static bool zend_call_stack_get_solaris(zend_call_stack *stack)
+{
+#ifdef HAVE_LIBPROC_H
+	if (_lwp_self() == 1) {
+		return zend_call_stack_get_solaris_proc_maps(stack);
+	}
+#endif
+	return zend_call_stack_get_solaris_pthread(stack);
+}
+#else
+static bool zend_call_stack_get_solaris(zend_call_stack *stack)
+{
+	return false;
+}
+#endif /* defined(__sun) */
 
 /** Get the stack information for the calling thread */
 ZEND_API bool zend_call_stack_get(zend_call_stack *stack)
@@ -529,6 +810,18 @@ ZEND_API bool zend_call_stack_get(zend_call_stack *stack)
 	}
 
 	if (zend_call_stack_get_openbsd(stack)) {
+		return true;
+	}
+
+	if (zend_call_stack_get_netbsd(stack)) {
+		return true;
+	}
+
+	if (zend_call_stack_get_haiku(stack)) {
+		return true;
+	}
+
+	if (zend_call_stack_get_solaris(stack)) {
 		return true;
 	}
 

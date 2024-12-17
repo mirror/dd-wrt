@@ -3,11 +3,11 @@ PostgreSQL pg_insert() - test for CVE-2015-1532
 --EXTENSIONS--
 pgsql
 --SKIPIF--
-<?php include("skipif.inc"); ?>
+<?php include("inc/skipif.inc"); ?>
 --FILE--
 <?php
 
-include('config.inc');
+include('inc/config.inc');
 
 $conn = pg_connect($conn_str);
 
@@ -21,7 +21,7 @@ foreach (array('', '.', '..') as $table) {
 ?>
 Done
 --EXPECTF--
-pg_insert(): Argument #2 ($table_name) cannot be empty
+pg_insert(): Argument #2 ($table_name) must not be empty
 pg_insert(): Argument #2 ($table_name) must be specified (.)
 pg_insert(): Argument #2 ($table_name) must be specified (..)
 Done

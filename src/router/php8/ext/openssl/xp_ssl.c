@@ -18,7 +18,7 @@
 */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "php.h"
@@ -76,7 +76,7 @@
 #define HAVE_TLS12 1
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(OPENSSL_NO_TLS1_3)
+#ifndef OPENSSL_NO_TLS1_3
 #define HAVE_TLS13 1
 #endif
 
@@ -89,7 +89,7 @@
 #define HAVE_TLS_ALPN 1
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#ifndef LIBRESSL_VERSION_NUMBER
 #define HAVE_SEC_LEVEL 1
 #endif
 
@@ -130,7 +130,7 @@
 #define PHP_X509_NAME_ENTRY_TO_UTF8(ne, i, out) \
 	ASN1_STRING_to_UTF8(&out, X509_NAME_ENTRY_get_data(X509_NAME_get_entry(ne, i)))
 
-#if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
+#ifdef HAVE_IPV6
 /* Used for IPv6 Address peer verification */
 #define EXPAND_IPV6_ADDRESS(_str, _bytes) \
 	do { \
@@ -159,7 +159,7 @@ static struct timeval php_openssl_subtract_timeval(struct timeval a, struct time
 static int php_openssl_compare_timeval(struct timeval a, struct timeval b);
 static ssize_t php_openssl_sockop_io(int read, php_stream *stream, char *buf, size_t count);
 
-const php_stream_ops php_openssl_socket_ops;
+static const php_stream_ops php_openssl_socket_ops;
 
 /* Certificate contexts used for server-side SNI selection */
 typedef struct _php_openssl_sni_cert_t {
@@ -498,7 +498,7 @@ static bool php_openssl_matches_san_list(X509 *peer, const char *subject_name) /
 			OPENSSL_free(cert_name);
 		} else if (san->type == GEN_IPADD) {
 			if (san->d.iPAddress->length == 4) {
-				sprintf(ipbuffer, "%d.%d.%d.%d",
+				snprintf(ipbuffer, sizeof(ipbuffer), "%d.%d.%d.%d",
 					san->d.iPAddress->data[0],
 					san->d.iPAddress->data[1],
 					san->d.iPAddress->data[2],
@@ -676,11 +676,7 @@ static int php_openssl_win_cert_verify_callback(X509_STORE_CTX *x509_store_ctx, 
 {
 	PCCERT_CONTEXT cert_ctx = NULL;
 	PCCERT_CHAIN_CONTEXT cert_chain_ctx = NULL;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	X509 *cert = x509_store_ctx->cert;
-#else
 	X509 *cert = X509_STORE_CTX_get0_cert(x509_store_ctx);
-#endif
 
 	php_stream *stream;
 	php_openssl_netstream_data_t *sslsock;
@@ -1654,7 +1650,7 @@ static int php_openssl_server_alpn_callback(SSL *ssl_handle,
 
 #endif
 
-zend_result php_openssl_setup_crypto(php_stream *stream,
+static zend_result php_openssl_setup_crypto(php_stream *stream,
 		php_openssl_netstream_data_t *sslsock,
 		php_stream_xport_crypto_param *cparam) /* {{{ */
 {
@@ -2581,13 +2577,17 @@ static int php_openssl_sockop_set_option(php_stream *stream, int option, int val
 #else
 						ssize_t ret;
 #endif
-						int err;
 
 						ret = recv(sslsock->s.socket, &buf, sizeof(buf), MSG_PEEK|MSG_DONTWAIT);
-						err = php_socket_errno();
-						if (0 == ret || /* the counterpart did properly shutdown */
-							(0 > ret && err != EWOULDBLOCK && err != EAGAIN && err != EMSGSIZE)) { /* there was an unrecoverable error */
+						if (0 == ret) {
+							/* the counterpart did properly shutdown */
 							alive = 0;
+						} else if (0 > ret) {
+							int err = php_socket_errno();
+							if (err != EWOULDBLOCK && err != EMSGSIZE && err != EAGAIN) {
+								/* there was an unrecoverable error */
+								alive = 0;
+							}
 						}
 					}
 				}
@@ -2701,7 +2701,7 @@ static int php_openssl_sockop_cast(php_stream *stream, int castas, void **ret)  
 }
 /* }}} */
 
-const php_stream_ops php_openssl_socket_ops = {
+static const php_stream_ops php_openssl_socket_ops = {
 	php_openssl_sockop_write, php_openssl_sockop_read,
 	php_openssl_sockop_close, php_openssl_sockop_flush,
 	"tcp_socket/ssl",

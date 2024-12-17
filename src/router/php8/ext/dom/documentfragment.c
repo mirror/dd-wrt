@@ -16,7 +16,7 @@
 */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "php.h"
@@ -43,7 +43,7 @@ PHP_METHOD(DOMDocumentFragment, __construct)
 	nodep = xmlNewDocFragment(NULL);
 
 	if (!nodep) {
-		php_dom_throw_error(INVALID_STATE_ERR, 1);
+		php_dom_throw_error(INVALID_STATE_ERR, true);
 		RETURN_THROWS();
 	}
 
@@ -80,7 +80,7 @@ PHP_METHOD(DOMDocumentFragment, appendXML) {
 
 	if (data) {
 		PHP_LIBXML_SANITIZE_GLOBALS(parse);
-		err = xmlParseBalancedChunkMemory(nodep->doc, NULL, NULL, 0, (xmlChar *) data, &lst);
+		err = xmlParseBalancedChunkMemory(nodep->doc, NULL, NULL, 0, BAD_CAST data, &lst);
 		PHP_LIBXML_RESTORE_GLOBALS(parse);
 		if (err != 0) {
 			RETURN_FALSE;
@@ -90,63 +90,6 @@ PHP_METHOD(DOMDocumentFragment, appendXML) {
 	}
 
 	RETURN_TRUE;
-}
-/* }}} */
-
-/* {{{ URL: https://dom.spec.whatwg.org/#dom-parentnode-append
-Since: DOM Living Standard (DOM4)
-*/
-PHP_METHOD(DOMDocumentFragment, append)
-{
-	uint32_t argc = 0;
-	zval *args;
-	dom_object *intern;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "*", &args, &argc) == FAILURE) {
-		RETURN_THROWS();
-	}
-
-	DOM_GET_THIS_INTERN(intern);
-
-	dom_parent_node_append(intern, args, argc);
-}
-/* }}} */
-
-/* {{{ URL: https://dom.spec.whatwg.org/#dom-parentnode-prepend
-Since: DOM Living Standard (DOM4)
-*/
-PHP_METHOD(DOMDocumentFragment, prepend)
-{
-	uint32_t argc = 0;
-	zval *args;
-	dom_object *intern;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "*", &args, &argc) == FAILURE) {
-		RETURN_THROWS();
-	}
-
-	DOM_GET_THIS_INTERN(intern);
-
-	dom_parent_node_prepend(intern, args, argc);
-}
-/* }}} */
-
-/* {{{ URL: https://dom.spec.whatwg.org/#dom-parentnode-replacechildren
-Since:
-*/
-PHP_METHOD(DOMDocumentFragment, replaceChildren)
-{
-	uint32_t argc = 0;
-	zval *args;
-	dom_object *intern;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "*", &args, &argc) == FAILURE) {
-		RETURN_THROWS();
-	}
-
-	DOM_GET_THIS_INTERN(intern);
-
-	dom_parent_node_replace_children(intern, args, argc);
 }
 /* }}} */
 
