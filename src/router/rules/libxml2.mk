@@ -16,6 +16,7 @@ libxml2-clean:
 	$(MAKE) -C libxml2 clean
 
 libxml2-configure: zlib
+	cd libxml2 && ./autogen.sh
 	cd libxml2 && ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" --without-python 
 	CFLAGS="$(COPTS) $(MIPS16_OPT) $(THUMB) -DOLD_LIBC_MODE -ffunction-sections -fdata-sections -Wl,--gc-section"
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
