@@ -1714,11 +1714,8 @@ static unsigned long getmeminfo(int line)
 		while (line--) {
 			fgets(line, sizeof(line), fmem);
 		}
-		if (sscanf(line, "%*s %lu", &msize) == 1) {
-			if (msize > (8 * 1024 * 1024)) {
-				nvram_seti("ip_conntrack_max", 4096);
-				nvram_seti("ip_conntrack_tcp_timeouts", 3600);
-			}
+		if (sscanf(line, "%*s %lu", &msize) != 1) {
+		    msize = 0;
 		}
 		fclose(fmem);
 	}
