@@ -82,15 +82,3 @@ if test x$OBJ_DIR != x; then
     mkdir -p "$OBJ_DIR"
     cd "$OBJ_DIR"
 fi
-
-if test -z "$NOCONFIGURE"; then
-    $srcdir/configure $EXTRA_ARGS "$@"
-    if test "$?" -ne 0; then
-        echo
-        echo "Configure script failed, check config.log for more info."
-        exit 1
-    else
-        echo
-        echo "Now type 'make' to compile libxml2."
-    fi
-fi
