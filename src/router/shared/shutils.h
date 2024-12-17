@@ -194,6 +194,9 @@ void *mymalloc(int size, char *func, int line);
 void myfree(void *mem, char *func, int line);
 void showmemdebugstat();
 
+long getmemfree(void);
+long getmemtotal(void);
+
 #define safe_malloc(size) mymalloc(size, __func__, __LINE__)
 #define safe_free(mem) myfree(mem, __func__, __LINE__)
 #define free(mem) myfree(mem, __func__, __LINE__)

@@ -1702,6 +1702,37 @@ int check_blocklist_sock(const char *service, int conn_fd)
 	return check_blocklist(service, ip);
 }
 #endif
+
+static unsigned long getmeminfo(int line)
+{
+	FILE *fmem = fopen("/proc/meminfo", "r");
+	char line[128];
+	unsigned long msize = 0;
+	int i;
+	if (fmem != NULL) {
+		fgets(line, sizeof(line), fmem);
+		while (line--) {
+			fgets(line, sizeof(line), fmem);
+		}
+		if (sscanf(line, "%*s %lu", &msize) == 1) {
+			if (msize > (8 * 1024 * 1024)) {
+				nvram_seti("ip_conntrack_max", 4096);
+				nvram_seti("ip_conntrack_tcp_timeouts", 3600);
+			}
+		}
+		fclose(fmem);
+	}
+	return msize;
+}
+long getmemfree(void)
+{
+	getmeminfo(1);
+}
+long getmemtotal(void)
+{
+	getmeminfo(0);
+}
+
 #ifdef MEMDEBUG
 /* some special code for memory leak tracking */
 
