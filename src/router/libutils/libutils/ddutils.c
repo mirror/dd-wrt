@@ -475,7 +475,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 		while (fgets(line, sizeof(line) - 1, fp)) {
 			if (sscanf(line, "%s 0x%x 0x%x %49s %49s %49s\n", ipa, &type, &flags, hwa, mask, dev) != 6)
 				continue;
-			if (strcmp(ipcopy, ipa))
+			if (strcmp(check, ipa))
 				continue;
 			strncpy(mac, hwa, 17);
 			fclose(fp);
