@@ -367,6 +367,8 @@
 
 &qusb_phy_0 {
 	status = "okay";
+	
+	vdd-supply = <&reg_usb_vbus>;
 };
 
 &ssphy_0 {
