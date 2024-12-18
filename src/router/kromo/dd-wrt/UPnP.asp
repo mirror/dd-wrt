@@ -157,11 +157,11 @@ addEvent(window, "unload", function() {
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tbody>
 									<tr>
-										<th><% tran("share.ip"); %></th>
-										<th><% tran("share.from2"); %>&nbsp;(WAN)</th>
-										<th><% tran("share.to2"); %>&nbsp;(LAN)</th>
-										<th><% tran("share.proto"); %></th>
-										<th width="30%"><% tran("share.descr"); %></th>
+										<th width="10%" class="center"><% tran("share.ip"); %></th>
+										<th width="5%" class="center"><% tran("share.from2"); %>&nbsp;(WAN)</th>
+										<th width="5%" class="center"><% tran("share.to2"); %>&nbsp;(LAN)</th>
+										<th width="5%" class="center"><% tran("share.proto"); %></th>
+										<th width="30%" class="center"><% tran("share.descr"); %></th>
 										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
 									</tbody>
