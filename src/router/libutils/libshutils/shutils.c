@@ -1703,7 +1703,7 @@ int check_blocklist_sock(const char *service, int conn_fd)
 }
 #endif
 
-static unsigned long getmeminfo(int line)
+static unsigned long getmeminfo(int linenr)
 {
 	FILE *fmem = fopen("/proc/meminfo", "r");
 	char line[128];
@@ -1711,7 +1711,7 @@ static unsigned long getmeminfo(int line)
 	int i;
 	if (fmem != NULL) {
 		fgets(line, sizeof(line), fmem);
-		while (line--) {
+		while (linenr--) {
 			fgets(line, sizeof(line), fmem);
 		}
 		if (sscanf(line, "%*s %lu", &msize) != 1) {
