@@ -91,7 +91,7 @@ void ssdp_response(UPNP_CONTEXT *context, UPNP_ADVERTISE *advertise, int type)
 		      "Ext: \r\n"
 		      "Location: http://%s/%s\r\n"
 		      "Server: POSIX UPnP/1.0 %s/%s\r\n",
-		      context->config.adv_time / 2, time_buf, myaddr, device->root_device_xml, context->config.os_name,
+		      context->config.adv_time * 2, time_buf, myaddr, device->root_device_xml, context->config.os_name,
 		      context->config.os_ver);
 
 	p = buf + len;
@@ -160,7 +160,7 @@ void ssdp_notify(UPNP_CONTEXT *context, UPNP_ADVERTISE *advertise, int adv_type,
 			      "Location: http://%s/%s\r\n"
 			      "NTS: ssdp:alive\r\n"
 			      "Server: POSIX, UPnP/1.0 %s/%s\r\n",
-			      context->config.adv_time / 2, myaddr, ifp->focus_devchain->device->root_device_xml,
+			      context->config.adv_time * 2, myaddr, ifp->focus_devchain->device->root_device_xml,
 			      context->config.os_name, context->config.os_ver);
 	} else {
 		/* SSDP_BYEBYE */
