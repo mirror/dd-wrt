@@ -334,6 +334,7 @@ void shutdown_system(void)
 		start_service("sysshutdown");
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
+		sleep(5);
 	}
 }
 
