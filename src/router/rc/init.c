@@ -411,7 +411,7 @@ void fatal_signal(int sig)
 #endif
 	reboot(RB_AUTOBOOT);
 #ifndef HAVE_VENTANA
-	sleep(10);
+	sleep(50);
 	writeproc("/proc/sysrq-trigger", "b");
 #endif
 	loop_forever();
