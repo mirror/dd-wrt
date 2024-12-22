@@ -316,13 +316,14 @@ void shutdown_system(void)
 		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
 		int i;
 		while (deadcount++ < 10) {
-			sleep(1);
 			for (i = 0; i < sizeof(critical_programs) / sizeof(char *); i++) {
 				if (pidof(critical_programs[i]) > 0) {
 					dd_loginfo("init", "waiting for %s to stop", critical_programs[i]);
-					continue;
+					goto wait;
 				}
 			}
+			wait:;
+			sleep(1);
 		}
 		sync();
 		dd_loginfo("init", "Sending SIGKILL to all processes");
