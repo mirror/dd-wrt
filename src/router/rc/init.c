@@ -285,11 +285,11 @@ static void unmount_fs(void)
 	}
 #endif
 }
-static char *critical_programs[] = { "upnpd",	   "transmissiond", "process_monitor", "cron",	  "proftpd",
-				     "dnsmasq",	   "ksmbd.mountd",  "hotplug2",	       "ubusd",	  "rpcbind",
-				     "rpc.mountd", "httpd",	    "minidlna",	       "rsyncd",  "dropbear",
-				     "wland",	   "smartd",	    "rpc.statd",       "/bin/sh", "telnetd",
-				     "mactelnetd", "syslogd",	    "klogd",	       "wsdd2",	  "udhcpc" };
+static char *critical_programs[] = { "upnpd",	     "transmissiond", "process_monitor", "cron",    "proftpd",	  "dnsmasq",
+				     "ksmbd.mountd", "hotplug2",      "ubusd",		 "rpcbind", "rpc.mountd", "httpd",
+				     "minidlna",     "rsyncd",	      "dropbear",	 "wland",   "smartd",	  "rpc.statd",
+				     "/bin/sh",	     "telnetd",	      "mactelnetd",	 "syslogd", "klogd",	  "wsdd2",
+				     "udhcpc",	     "async_commit" };
 void shutdown_system(void)
 {
 	int sig;
@@ -322,21 +322,14 @@ void shutdown_system(void)
 					goto wait;
 				}
 			}
-			wait:;
+wait:;
 			sleep(1);
 		}
 		sync();
 		dd_loginfo("init", "Sending SIGKILL to all processes");
 		kill(-1, SIGKILL);
 		sync();
-		unmount_fs(); // try it a second time, but consider that kill already could have reached init process
-		deadcount = 0;
-		while (pidof("async_commit") > 0 && (deadcount++) < 10) // wait for any process of this type to finish
-		{
-			dd_loginfo("init", "wait for nvram write to finish");
-			sleep(1);
-		}
-		unmount_fs(); // try to unmount a first time
+		unmount_fs(); // try to unmount
 #if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
