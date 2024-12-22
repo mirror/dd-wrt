@@ -3225,6 +3225,7 @@ void start_nvram(void)
 	nvram_set("upnp_wan_proto", "");
 	// clean orphan upnp entries
 	for (i = 0; i < 1000; ++i) {
+		char name[32];
 		sprintf(name, "forward_port%d", i);
 		nvram_unset(name);
 	}
