@@ -450,16 +450,6 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 	if (nvram_invmatchi("upnp_enable", 1))
 		return;
 
-	if (nvram_matchi("upnp_clear", 1)) { // tofu10
-		nvram_unset("upnp_clear");
-		for (i = 0; i < 1000; ++i) {
-			sprintf(name, "forward_port%d", i);
-			nvram_unset(name);
-		}
-		nvram_seti("forward_cur", 0);
-		return;
-	}
-
 	/*
 	 * Set
 	 * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc 
@@ -548,8 +538,8 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
 			if (flag_dis == 0) {
-				save2file_A_upnp("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
-						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+				save2file_A_upnp("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface, wanaddr,
+						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p tcp -m tcp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
 				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
@@ -557,8 +547,8 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			if (flag_dis == 0) {
-				save2file_A_upnp("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface,
-						       wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+				save2file_A_upnp("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface, wanaddr,
+						 wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 			}
 			snprintf(buff, sizeof(buff), "-A upnp -i %s -p udp -m udp -d %s%d --dport %s -j %s\n", wanface, lan_cclass,
 				 get_single_ip(lan_ipaddr, 3), lan_port0, flag_dis ? log_accept : log_drop);
@@ -1499,7 +1489,8 @@ static struct TELEMETRY ubnt_telemetry[] = {
 	{ 54, 187, 15, 73, 32 },   { 54, 201, 77, 117, 32 },  { 54, 202, 181, 132, 32 },
 };
 
-static struct TELEMETRY ad_telemetry[] = { // CRITEO
+static struct TELEMETRY ad_telemetry[] = {
+	// CRITEO
 	{ 185, 235, 84, 0, 22 },
 	{ 178, 250, 0, 0, 21 },
 	{ 91, 199, 242, 0, 24 },
@@ -1766,7 +1757,7 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 				for (i = 0; i < sizeof(ubnt_telemetry) / sizeof(ubnt_telemetry[0]); i++)
 					save2file_A("advgrp_%d -d %d.%d.%d.%d -j %s", seq, ubnt_telemetry[i].ip1,
 						    ubnt_telemetry[i].ip2, ubnt_telemetry[i].ip3, ubnt_telemetry[i].ip4, log_drop);
-			} 
+			}
 #ifndef HAVE_OPENDPI
 			else if (!strcmp(protocol, "l7")) {
 				int i;
@@ -3050,11 +3041,11 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 		      int remotemanage, char *vifs)
 {
 	save2file("*nat\n"
-		    ":PREROUTING ACCEPT [0:0]\n"
-		    ":POSTROUTING ACCEPT [0:0]\n"
-		    ":OUTPUT ACCEPT [0:0]\n"
-		    "\n"
-		    ":upnp - [0:0]");
+		  ":PREROUTING ACCEPT [0:0]\n"
+		  ":POSTROUTING ACCEPT [0:0]\n"
+		  ":OUTPUT ACCEPT [0:0]\n"
+		  "\n"
+		  ":upnp - [0:0]");
 	if (wanactive(wanaddr)) {
 		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage, vifs);
 		nat_postrouting(wanface, wanaddr, vifs);

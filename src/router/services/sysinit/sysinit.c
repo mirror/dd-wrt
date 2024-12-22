@@ -2023,7 +2023,7 @@ void start_restore_defaults(void)
 		nvram_unset("wl_vifs");
 		nvram_unset("wl0_vifs");
 	}
-	
+
 	// }
 
 	/*
@@ -3222,21 +3222,14 @@ void start_nvram(void)
 #endif
 
 #ifdef HAVE_UPNP
-	if ((nvram_matchi("restore_defaults", 1)) || (nvram_matchi("upnpcas", 1))) {
-		nvram_seti("upnp_clear", 1);
-	} else {
-		char s[32];
-		char *nv;
-
-		for (i = 0; i < MAX_NVPARSE; ++i) {
-			sprintf(s, "forward_port%d", i);
-			if (*(nv = nvram_safe_get(s))) {
-				if (strstr(nv, "msmsgs"))
-					nvram_unset(s);
-			}
-		}
-	}
 	nvram_set("upnp_wan_proto", "");
+	// clean orphan upnp entries
+	for (i = 0; i < 1000; ++i) {
+		sprintf(name, "forward_port%d", i);
+		nvram_unset(name);
+	}
+	nvram_seti("forward_cur", 0);
+
 #endif
 
 	/*
