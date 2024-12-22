@@ -6769,6 +6769,7 @@ void tf_upnp(webs_t wp)
 	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
 		if (strcmp(v, "all") == 0) {
 			for (i = 0; i < 1000; ++i) {
+				char name[32];
 				sprintf(name, "forward_port%d", i);
 				nvram_unset(name);
 			}
