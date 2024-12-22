@@ -285,7 +285,11 @@ static void unmount_fs(void)
 	}
 #endif
 }
-
+static char *critical_programs[] = { "upnpd",	   "transmissiond", "process_monitor", "cron",	  "proftpd",
+				     "dnsmasq",	   "ksmbd.mountd",  "hotplug2",	       "ubusd",	  "rpcbind",
+				     "rpc.mountd", "httpd",	    "minidlna",	       "rsyncd",  "dropbear",
+				     "wland",	   "smartd",	    "rpc.statd",       "/bin/sh", "telnetd",
+				     "mactelnetd", "syslogd",	    "klogd",	       "wsdd2",	  "udhcpc" };
 void shutdown_system(void)
 {
 	int sig;
@@ -309,10 +313,17 @@ void shutdown_system(void)
 		sleep(1);
 		dd_loginfo("init", "Sending SIGTERM to all processes");
 		kill(-1, SIGTERM);
-#ifdef HAVE_TRANSMISSION
 		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
-		sleep(10);
-#endif
+		int i;
+		while (deadcount++ < 10) {
+			sleep(1);
+			for (i = 0; i < sizeof(critical_programs) / sizeof(char *); i++) {
+				if (pidof(critical_programs[i]) > 0) {
+					dd_loginfo("init", "waiting for %s to stop", critical_programs[i]);
+					continue;
+				}
+			}
+		}
 		sync();
 		dd_loginfo("init", "Sending SIGKILL to all processes");
 		kill(-1, SIGKILL);
