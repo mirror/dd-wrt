@@ -66,8 +66,6 @@
  "http_username"  "Router Username"  "PASSWORD"  "63"  "TRUE" "3"
  "http_passwd"  "Router Password"  "PASSWORD"  "63"  "TRUE"  "2"
  "upnp_enable"  "UPnP"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "upnpcas"  "UPnP Clear at Startup"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "upnpmnp"  "UPnP Send Presentation URL"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "wl0_web_filter"  "Wireless Access Web"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "wl1_web_filter"  "Wireless Access Web"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "wl2_web_filter"  "Wireless Access Web"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
