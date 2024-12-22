@@ -6764,10 +6764,15 @@ void tf_upnp(webs_t wp)
 {
 	char *v;
 	char s[64];
+	int i;
 
 	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
 		if (strcmp(v, "all") == 0) {
-			nvram_seti("upnp_clear", 1);
+			for (i = 0; i < 1000; ++i) {
+				sprintf(name, "forward_port%d", i);
+				nvram_unset(name);
+			}
+			nvram_seti("forward_cur", 0);
 		} else {
 			int which = nvram_default_geti("forward_cur", 0);
 			int i = atoi(v);
@@ -6788,8 +6793,7 @@ void tf_upnp(webs_t wp)
 			sprintf(val, "%d", which);
 			nvram_set("forward_cur", val);
 		}
-		eval("stopservice", "firewall");
-		eval("startservice", "firewall"); //restart firewall
+		eval("restart", "firewall");
 	}
 }
 
