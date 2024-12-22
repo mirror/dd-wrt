@@ -157,11 +157,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{ "upnp_enable", "0" },	/* 0:Disable 1:Enable */
 #endif
-	{ "upnp_config", "1" },	/* Allow Users to Configure. 0:Disable 1:Enable */
-	{ "upnp_internet_dis", "0" },	/* Allow Users to Disable Internet Access. 0:Disable 1:Enable */
-	{ "upnp_ssdp_interval", "60" },	/* SSDP interval */
-	{ "upnp_max_age", "180" },	/* MAX age time */
-	{ "upnpcas", "0" },	/* UPnP clear at startup */
 #endif
 
 	{ "ezc_enable", "1" },	/* Enable EZConfig updates */
