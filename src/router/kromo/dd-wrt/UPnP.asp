@@ -98,10 +98,6 @@ function deleteForward(x) {
 	apply(fupnp);
 }
 
-function setUPnP(val) {
-	setElementActive("upnpcas", val == "1");
-}
-
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
@@ -116,7 +112,6 @@ var update;
 
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
-	setUPnP("<% nvg("upnp_enable"); %>");
 	setUPnPTable(new Array(<% tf_upnp(); %>));
 
 	update = new StatusUpdate("UPnP.live.asp", <% nvg("refresh_time"); %>);
@@ -180,11 +175,6 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("upnp.serv"); %></div>
 									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvc("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvc("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><% tran("share.disable"); %>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("upnp.clear"); %></div>
-									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvc("upnpcas","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvc("upnpcas","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
 							<div id="footer" class="submitFooter">
