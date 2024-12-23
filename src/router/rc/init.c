@@ -496,81 +496,6 @@ int do_timer(void)
 
 static int noconsole = 0;
 
-// this code cannot work yet on x86 since nvram is non operational at startup. we need to fix the x86 nvram code first
-static void reset_bootfails(void)
-{
-	int failcnt = nvram_geti("boot_fails");
-	if (failcnt) {
-		// all went well, reset to zero
-		nvram_seti("boot_fails", 0);
-		nvram_async_commit();
-	}
-	start_service_force("resetbc");
-}
-
-static void check_bootfails(void)
-{
-	int failcnt = nvram_geti("boot_fails");
-	if (nvram_match("no_bootfails", "1")) {
-		failcnt = 0;
-	} else if (!failcnt) {
-		dd_loginfo("init", "no previous bootfails detected! (all ok)");
-		failcnt++;
-		nvram_seti("boot_fails", failcnt);
-		nvram_async_commit();
-	} else {
-		if (failcnt < 5)
-			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts", failcnt++);
-		if (failcnt > 5)
-			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore");
-		if (failcnt == 5) {
-			dd_loginfo("init", "boot failed %d times, do reset and reboot", failcnt++);
-			char *s_ip = nvram_safe_get("lan_ipaddr");
-			char *s_nm = nvram_safe_get("lan_netmask");
-			char *s_gw = nvram_safe_get("lan_gateway");
-			int open = nvram_geti("boot_fail_open");
-			int keepip = nvram_geti("boot_fail_keepip");
-			char ip[32], nm[32], gw[32];
-			int ifcount = 4;
-			int wlifcount = 4;
-
-			strcpy(ip, s_ip);
-			strcpy(nm, s_nm);
-			strcpy(gw, s_gw);
-			nvram_clear();
-			nvram_seti("boot_last_fail", failcnt);
-			nvram_seti("boot_fails", failcnt);
-			if (!open) {
-				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
-				int i = 0;
-				while (ifcount--) {
-					nvram_nset("disabled", "wlan%d_net_mode", i);
-					i++;
-				}
-				i = 0;
-				while (wlifcount--) {
-					nvram_nset("disabled", "wl%d_net_mode", i);
-					i++;
-				}
-			}
-			if (keepip) {
-				nvram_set("lan_ipaddr", ip);
-				nvram_set("lan_netmask", nm);
-				nvram_set("lan_gateway", gw);
-			}
-			nvram_commit();
-			kill(1, SIGTERM);
-			sleep(20);
-			return;
-		}
-		if (failcnt < 5) {
-			nvram_seti("boot_last_fail", failcnt);
-			nvram_seti("boot_fails", failcnt);
-			nvram_async_commit();
-		}
-	}
-}
-
 /* 
  * Main loop 
  */
@@ -603,7 +528,7 @@ int main(int argc, char **argv)
 	dd_loginfo("init", "starting devinit");
 	start_service("devinit"); //init /dev /proc etc.
 	writeproc("/proc/sys/kernel/sysrq", "1");
-	check_bootfails();
+	start_service("check_bootfails");
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 	FILE *out = fopen("/tmp/.nvram_done", "wb");
 	putc(1, out);
@@ -694,7 +619,6 @@ int main(int argc, char **argv)
 			       "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
 			start_service_force("init_start");
-			reset_bootfails();
 
 			/* 
 			 * Fall through 

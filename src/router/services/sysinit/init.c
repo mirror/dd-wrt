@@ -347,6 +347,80 @@ void start_init_stop(void)
 	}
 }
 
+void start_reset_bootfails(void)
+{
+	int failcnt = nvram_geti("boot_fails");
+	if (failcnt) {
+		// all went well, reset to zero
+		nvram_seti("boot_fails", 0);
+		nvram_async_commit();
+	}
+	start_service_force("resetbc");
+}
+
+void start_check_bootfails(void)
+{
+	int failcnt = nvram_geti("boot_fails");
+	if (nvram_match("no_bootfails", "1")) {
+		failcnt = 0;
+	} else if (!failcnt) {
+		dd_loginfo("init", "no previous bootfails detected! (all ok)");
+		failcnt++;
+		nvram_seti("boot_fails", failcnt);
+		nvram_async_commit();
+	} else {
+		if (failcnt < 5)
+			dd_loginfo("init", "boot failed %d times, will reset after 5 attempts", failcnt++);
+		if (failcnt > 5)
+			dd_loginfo("init", "boot still failed after reset. hopeless. do not alter count anymore");
+		if (failcnt == 5) {
+			dd_loginfo("init", "boot failed %d times, do reset and reboot", failcnt++);
+			char *s_ip = nvram_safe_get("lan_ipaddr");
+			char *s_nm = nvram_safe_get("lan_netmask");
+			char *s_gw = nvram_safe_get("lan_gateway");
+			int open = nvram_geti("boot_fail_open");
+			int keepip = nvram_geti("boot_fail_keepip");
+			char ip[32], nm[32], gw[32];
+			int ifcount = 4;
+			int wlifcount = 4;
+
+			strcpy(ip, s_ip);
+			strcpy(nm, s_nm);
+			strcpy(gw, s_gw);
+			nvram_clear();
+			nvram_seti("boot_last_fail", failcnt);
+			nvram_seti("boot_fails", failcnt);
+			if (!open) {
+				// to avoid security breaches by controling the main fuse of a building, we disable wifi by default
+				int i = 0;
+				while (ifcount--) {
+					nvram_nset("disabled", "wlan%d_net_mode", i);
+					i++;
+				}
+				i = 0;
+				while (wlifcount--) {
+					nvram_nset("disabled", "wl%d_net_mode", i);
+					i++;
+				}
+			}
+			if (keepip) {
+				nvram_set("lan_ipaddr", ip);
+				nvram_set("lan_netmask", nm);
+				nvram_set("lan_gateway", gw);
+			}
+			nvram_commit();
+			kill(1, SIGTERM);
+			sleep(20);
+			return;
+		}
+		if (failcnt < 5) {
+			nvram_seti("boot_last_fail", failcnt);
+			nvram_seti("boot_fails", failcnt);
+			nvram_async_commit();
+		}
+	}
+}
+
 void start_init_start(void)
 {
 	set_tcp_params();
@@ -445,10 +519,11 @@ void start_init_start(void)
 	restart_service(resetbutton);
 #endif
 	load_drivers(1);
-	eval("startservice_f", "modules_wait");
+	start_reset_bootfails();
 #ifdef HAVE_X86
 	eval("service", "bootconfig", "restart");
 #endif
+	eval("startservice_f", "modules_wait");
 }
 
 void start_modules_wait(void)
