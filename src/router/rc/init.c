@@ -299,6 +299,7 @@ void shutdown_system(void)
 		dd_loginfo("init", "wait for nvram write to finish");
 		sleep(1);
 	}
+	deadcount = 0;
 
 	/* 
 	 * Disable signal handlers 
@@ -308,9 +309,12 @@ void shutdown_system(void)
 	if (!nvram_match("shutdown", "fast")) {
 		start_service("run_rc_shutdown");
 
-		dd_loginfo("init", "send dhcp lease release signal");
-		killall("udhcpc", SIGUSR2);
-		sleep(1);
+		if (pidof("udhcpc") > 0) {
+			dd_loginfo("init", "send dhcp lease release signal");
+			killall("udhcpc", SIGUSR2);
+			sleep(1);
+		}
+
 		dd_loginfo("init", "Sending SIGTERM to all processes");
 		kill(-1, SIGTERM);
 		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
@@ -339,7 +343,6 @@ wait:;
 		start_service("sysshutdown");
 		nvram_seti("end_time", time(NULL));
 		nvram_commit();
-		sleep(5);
 	}
 }
 
@@ -416,7 +419,7 @@ void fatal_signal(int sig)
 #endif
 	reboot(RB_AUTOBOOT);
 #ifndef HAVE_VENTANA
-	sleep(50);
+	sleep(10);
 	writeproc("/proc/sysrq-trigger", "b");
 #endif
 	loop_forever();
