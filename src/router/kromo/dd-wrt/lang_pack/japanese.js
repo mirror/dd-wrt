@@ -1554,7 +1554,6 @@ upnp.h2="UPnP設定";
 upnp.legend="ポート変換リスト";
 upnp.legend2="UPnP 設定";
 upnp.serv="UPnP サービス";
-upnp.clear="起動時に全ての変換リストを消去する";
 upnp.url="Presentation URLを送る";
 upnp.msg1="消去";
 upnp.msg2="すべて消去してもよろしいですか？";

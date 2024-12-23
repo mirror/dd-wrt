@@ -1307,7 +1307,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Listes redirections UPnP";
 upnp.legend2="Configuration UPnP";
 upnp.serv="Service UPnP";
-upnp.clear="Réinitialiser au démarrage";
 upnp.url="Présentation URL";
 upnp.msg1="Cliquez pour supprimer la redirection";
 upnp.msg2="Êtes-vous sûr de vouloir effacer toutes les règles UPNP ?";

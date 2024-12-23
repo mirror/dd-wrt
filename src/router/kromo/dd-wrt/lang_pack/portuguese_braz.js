@@ -1742,7 +1742,6 @@ upnp.h2="Plug and Play Universal (UPnP)";
 upnp.legend="Encaminhamentos";
 upnp.legend2="Configurações UPnP";
 upnp.serv="Serviço UPnP";
-upnp.clear="Limpar a lista UPnP na inicialização";
 upnp.url="Enviar URL de apresentação";
 upnp.msg1="Clique para apagar a entrada";
 upnp.msg2="Remover todas as entradas?";

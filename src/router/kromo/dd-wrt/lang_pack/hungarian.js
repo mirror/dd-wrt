@@ -1258,7 +1258,6 @@ upnp.h2="Univerzális Plug and Play (UPnP)";
 upnp.legend="Továbbítások";
 upnp.legend2="UPnP beállítása";
 upnp.serv="UPnP szolgáltatás";
-upnp.clear="Indításkor a port fordítások törlése";
 upnp.url="Bemutató (Presentation) URL küldése";
 upnp.msg1="Kattintson ide a bejegyzés törléséhez!";
 upnp.msg2="Törli az összes bejegyzést?";

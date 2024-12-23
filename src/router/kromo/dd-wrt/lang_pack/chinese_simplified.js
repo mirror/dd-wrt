@@ -1838,7 +1838,6 @@ upnp.h2="通用即插即用（UPnP）";
 upnp.legend="转发";
 upnp.legend2="UPnP配置";
 upnp.serv="UPnP服务";
-upnp.clear="启动时清除端口转发";
 upnp.url="发送网络发现URL";
 upnp.msg1="点击删除条目";
 upnp.msg2="删除所有条目？";

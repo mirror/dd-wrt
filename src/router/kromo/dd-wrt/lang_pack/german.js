@@ -2273,7 +2273,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Weiterleitungen";
 upnp.legend2="UPnP-Konfiguration";
 upnp.serv="UPnP-Dienst";
-upnp.clear="Löscht die Port-Weiterleitungen beim Start";
 upnp.url="Sende Präsentations-URL";
 upnp.msg1="Klicken Sie hier, um die Lease zu löschen";
 upnp.msg2="Alle Einträge löschen?";

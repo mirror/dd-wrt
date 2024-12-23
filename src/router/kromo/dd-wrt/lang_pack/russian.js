@@ -1681,7 +1681,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Перенаправления";
 upnp.legend2="Конфигурация UPnP";
 upnp.serv="Служба UPnP";
-upnp.clear="Очистка перенаправлений при старте";
 upnp.url="Послать презентационный URL";
 upnp.msg1="Щелкните здесь для удаления записи";
 upnp.msg2="Удалить все записи?";

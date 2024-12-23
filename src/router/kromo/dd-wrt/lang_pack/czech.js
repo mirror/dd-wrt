@@ -2297,7 +2297,6 @@ upnp.h2="Universální Plug & Play (UPnP)";
 upnp.legend="Předávání";
 upnp.legend2="UPnP Konfigurace";
 upnp.serv="Služba UPnP";
-upnp.clear="Vymazat předávání portů při spuštění";
 upnp.url="Odeslat prezentační URL";
 upnp.msg1="Kliknutím odeberte položku";
 upnp.msg2="Odebrat všechny položky?";

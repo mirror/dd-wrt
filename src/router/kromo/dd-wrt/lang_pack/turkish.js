@@ -1588,7 +1588,6 @@ upnp.h2="Evrensel Tak ve Kullan (UPnP)";
 upnp.legend="Yönlendirmeler";
 upnp.legend2="UPnP Yapılandırması";
 upnp.serv="UPnP Servisi";
-upnp.clear="Başlangıçta port yönlendirmelerini temizle";
 upnp.url="Sunum URL'si gönder";
 upnp.msg1="Girişi silmek için tıkla";
 upnp.msg2="Tüm girişler silinsin mi?";

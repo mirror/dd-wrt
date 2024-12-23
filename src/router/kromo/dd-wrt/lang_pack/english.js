@@ -2576,7 +2576,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
-upnp.clear="Clear Port Forwards at Startup";
 upnp.url="Send presentation URL";
 upnp.msg1="Click to delete entry";
 upnp.msg2="Delete all entries?";

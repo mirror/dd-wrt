@@ -1985,7 +1985,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forward";
 upnp.legend2="Configurazione UPnP";
 upnp.serv="Servizio UPnP";
-upnp.clear="Pulisci le porte forward all'avvio";
 upnp.url="Invia la presentazione dell' URL";
 upnp.msg1="Clicca per cancellare la riga";
 upnp.msg2="Cancella tutte le righe?";

@@ -1629,7 +1629,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Reenviaments";
 upnp.legend2="Configuració UPnP";
 upnp.serv="Servei UPnP";
-upnp.clear="Neteja els reenviaments de port al reiniciar";
 upnp.url="Envia el URL de presentació";
 upnp.msg1="Feu clic per suprimir una entrada";
 upnp.msg2="Suprimir totes les entrades?";

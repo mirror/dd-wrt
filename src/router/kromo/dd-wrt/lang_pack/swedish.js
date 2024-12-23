@@ -1501,7 +1501,6 @@ upnp.h2="Universell Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Konfig";
 upnp.serv="UPnP Tjänst";
-upnp.clear="Rensa Portforwards Vid Uppstart";
 upnp.url="Sänd Presentations URL";
 upnp.msg1="Klicka för att radera ";
 upnp.msg2="Radera alla rader?";

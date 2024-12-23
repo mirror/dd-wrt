@@ -1557,7 +1557,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Redirección";
 upnp.legend2="Configuración UPnP";
 upnp.serv="Servicio UPnP";
-upnp.clear="Limpiar puertos redireccionados al arrancar";
 upnp.url="Enviar URL de Presentación";
 upnp.msg1="Clic para borrar Lease";
 upnp.msg2="¿Borrar Entradas?";

@@ -2328,7 +2328,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Przekierowania";
 upnp.legend2="Konfiguracja UPnP";
 upnp.serv="Usługa UPnP";
-upnp.clear="Wyczyść przekierowania portów przy starcie";
 upnp.url="Prześlij adres URL prezentacji";
 upnp.msg1="Kliknij, aby usunąć wpis";
 upnp.msg2="Usunąć wszystkie wpisy?";

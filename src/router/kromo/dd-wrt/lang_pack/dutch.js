@@ -1530,7 +1530,6 @@ upnp.h2="Universal Plug en Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuratie";
 upnp.serv="UPnP Service";
-upnp.clear="Poorten wissen tijdens opstarten";
 upnp.url="Presentatie URL zenden";
 upnp.msg1="Klik om de waarde te verwijderen";
 upnp.msg2="Alle waarden verwijderen?";

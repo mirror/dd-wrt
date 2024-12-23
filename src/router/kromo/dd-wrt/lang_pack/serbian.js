@@ -1747,7 +1747,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Прослеђивања";
 upnp.legend2="UPnP Конфигурација";
 upnp.serv="UPnP Услуга";
-upnp.clear="Очисти прослеђивања портова на почетку";
 upnp.url="Пошаљи URL за представљање";
 upnp.msg1="Кликните да бисте обрисали унос";
 upnp.msg2="Обрисати све уносе?";

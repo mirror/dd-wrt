@@ -1547,7 +1547,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Prosljeđivanje";
 upnp.legend2="Konfiguracija UPnP";
 upnp.serv="UPnP Usluga";
-upnp.clear="Ukloni prosljeđivanje vrata na početku";
 upnp.url="Šalji prezentacijski URL";
 upnp.msg1="Klikni za brisanje unosa";
 upnp.msg2="Brisati sve unose?";

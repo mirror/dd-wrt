@@ -1745,7 +1745,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="포워드 리스트";
 upnp.legend2="UPnP 설정";
 upnp.serv="UPnP 서비스";
-upnp.clear="기동시 모든 포트 포워드 리스트 삭제";
 upnp.url="프레젠테이션 URL 전송";
 upnp.msg1="클릭하면 포워드 리스트가 삭제됩니다";
 upnp.msg2="모든 포워드 리스트를 삭제할까요?";

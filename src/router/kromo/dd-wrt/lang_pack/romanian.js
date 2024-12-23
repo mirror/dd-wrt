@@ -1680,7 +1680,6 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Înaintări";
 upnp.legend2="Configurare UPnP";
 upnp.serv="Serviciu UPnP";
-upnp.clear="Șterge înaintările la pornire";
 upnp.url="Trimite URL de prezentare";
 upnp.msg1="Clic pentru a șterge intrarea";
 upnp.msg2="Ștergeți toate intrările?";

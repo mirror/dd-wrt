@@ -12,8 +12,6 @@
 				<% tran("hupnp.page2"); %>
 				<dt><% tran("upnp.serv"); %></dt>
 				<% tran("hupnp.page3"); %>
-				<dt><% tran("upnp.clear"); %></dt>
-				<% tran("hupnp.page4"); %>
 			</dl>
 		</div>
 		<div class="also">
