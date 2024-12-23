@@ -52,17 +52,17 @@ function setUPnPTable(forwards) {
 		//IP
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanIP;
-		cell.align="right";
+		cell.align="left";
 
 		//wan port
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].wanPorts;
-		cell.align="right";
+		cell.align="left";
 
 		//lan port
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].lanPorts;
-		cell.align="right";
+		cell.align="left";
 
 		//proto
 		var cell = row.insertCell(-1);
