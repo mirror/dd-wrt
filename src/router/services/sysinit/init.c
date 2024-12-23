@@ -355,7 +355,10 @@ void start_reset_bootfails(void)
 		nvram_seti("boot_fails", 0);
 		nvram_async_commit();
 	}
-	start_service_force("resetbc");
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+	void start_resetbc(void);
+	start_resetbc();
+#endif
 }
 
 void start_check_bootfails(void)
