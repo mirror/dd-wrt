@@ -355,7 +355,7 @@ void start_reset_bootfails(void)
 		nvram_seti("boot_fails", 0);
 		nvram_async_commit();
 	}
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018)
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) && !defined(HAVE_ALPINE)
 	void start_resetbc(void);
 	start_resetbc();
 #endif
