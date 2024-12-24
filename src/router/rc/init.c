@@ -326,6 +326,7 @@ void shutdown_system(void)
 					goto wait;
 				}
 			}
+			break;
 wait:;
 			sleep(1);
 		}
