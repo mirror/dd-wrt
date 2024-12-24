@@ -190,7 +190,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 #if defined(HAVE_IPQ6018)		
 		show_caption(wp, "label", "share.max_frequency", NULL);
 #else
-		show_caption(wp, "label", "share.clock_frq", NULL);
+		show_caption(wp, "label", "management.clock_frq", NULL);
 #endif
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
