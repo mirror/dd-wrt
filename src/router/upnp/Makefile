@@ -20,7 +20,7 @@ endif
 CFG_BCMIGD ?= 1
 
 UPNP	:= $(TOP)/upnp/src/linux
-CFLAGS += $(COPTS) -s -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += $(COPTS) -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(strip $(CFG_BCMIGD)),1)
 CFLAGS  += -D__BCMIGD__
 endif
@@ -54,7 +54,7 @@ all: upnp
 
 install: all
 	install -d $(INSTALLDIR)/upnp/usr/sbin
-	install -m 755 bcmupnp $(INSTALLDIR)/upnp/usr/sbin/upnp
+	install -m 755 bcmupnp $(INSTALLDIR)/upnp/usr/sbin/upnpd
 
 clean:
 	make -C $(UPNP) clean
