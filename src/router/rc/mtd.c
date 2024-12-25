@@ -536,7 +536,7 @@ rewrite:;
 	stop_service("olsrd");
 #endif
 #ifdef HAVE_UPNP
-	stop_service("upnp");
+	stop_service("upnpd");
 #endif
 #ifdef HAVE_FREERADIUS
 	stop_service("freeradius");

@@ -226,7 +226,7 @@ static int start_services_main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_UPNP
-	start_service_f("upnp");
+	start_service_f("upnpd");
 #endif
 
 #ifdef HAVE_OPENVPN
@@ -307,7 +307,7 @@ static int stop_services_main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_UPNP
-	stop_service_f("upnp");
+	stop_service_f("upnpd");
 #endif
 #ifdef HAVE_UNBOUND
 	stop_service_f("unbound");
@@ -1088,11 +1088,11 @@ static void handle_forward(void)
 {
 	stop_service("wland");
 #ifdef HAVE_UPNP
-//    stop_service( "upnp");
+//    stop_service( "upnpd");
 #endif
 	restart("firewall");
 #ifdef HAVE_UPNP
-//    start_service( "upnp");
+//    start_service( "upnpd");
 #endif
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
@@ -1119,11 +1119,11 @@ static void handle_qos(void)
 static void handle_forwardupnp(void)
 {
 #ifdef HAVE_UPNP
-	stop_service("upnp");
+	stop_service("upnpd");
 #endif
 	restart("firewall");
 #ifdef HAVE_UPNP
-	start_service_f("upnp");
+	start_service_f("upnpd");
 #endif
 	stop_service("wland");
 	start_service_f("wland");
@@ -1195,7 +1195,7 @@ static void handle_upgrade(void)
 	stop_service_f("olsrd");
 #endif
 #ifdef HAVE_UPNP
-	stop_service_f("upnp");
+	stop_service_f("upnpd");
 #endif
 #ifndef HAVE_MICRO
 	stop_service_f("cron");

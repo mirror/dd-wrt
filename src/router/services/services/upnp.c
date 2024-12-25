@@ -28,9 +28,9 @@
 #include <signal.h>
 #include <services.h>
 
-void stop_upnp(void);
+void stop_upnpd(void);
 
-void start_upnp(void)
+void start_upnpd(void)
 {
 	char wan_if_buffer[33];
 	if (nvram_match("wan_proto", "disabled"))
@@ -45,26 +45,26 @@ void start_upnp(void)
 	/*
 	 * Make sure its not running first 
 	 */
-	ret = killall("upnp", SIGUSR1);
+	ret = killall("upnpd", SIGUSR1);
 	if (ret != 0) {
-		log_eval("upnp", "-D", "-W", wan_ifname);
+		log_eval("upnpd", "-D", "-W", wan_ifname);
 	}
 
 	cprintf("done\n");
 	return;
 }
 
-void stop_upnp(void)
+void stop_upnpd(void)
 {
-	stop_process("upnp",
+	stop_process("upnpd",
 		     "daemon"); // we dont need to take care about SIGUSR1 anymore
 	unlink("/tmp/bcmupnp.pid"); // remove pid file if it exists, otherwise upnp wont restart if killed with SIGKILL
 	return;
 }
 
-int reinit_upnp(void)
+int reinit_upnpd(void)
 {
-	int ret = eval("killall", "-USR1", "upnp");
+	int ret = eval("killall", "-USR1", "upnpd");
 
 	return ret;
 }

@@ -4523,7 +4523,7 @@ void wan_done(char *wan_ifname)
 	cprintf("routes done\n");
 
 #ifdef HAVE_UPNP
-	stop_upnp();
+	stop_upnpd();
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_zebra();
@@ -4534,7 +4534,7 @@ void wan_done(char *wan_ifname)
 #endif
 	cprintf("start upnp\n");
 #ifdef HAVE_UPNP
-	start_upnp();
+	start_upnpd();
 #endif
 	// cprintf ("start cron\n");
 	// start_OAcron ();
