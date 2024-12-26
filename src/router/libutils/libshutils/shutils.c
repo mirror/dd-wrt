@@ -870,11 +870,27 @@ size_t strlcpy_compat(register char *dst, register const char *src, size_t n)
 
 int f_read_string(const char *path, char *buffer, int max);
 
+int getpsstate(int pid) {
+	char buf[512];
+	char path[64];
+	char *p;
+	char *c;
+	sprintf(path, "/proc/%d/stat", pid);
+	if ((f_read_string(path, buf, sizeof(buf)) > 4) && ((p = strrchr(buf, ')')) != NULL)) {
+		c = p + 2;
+		unsigned char state;
+		sscanf(c, "%c", &state);
+		return state;
+	}
+	return 0;
+}
+
 char *psname(int pid, char *buffer, int maxlen)
 {
 	char buf[512];
 	char path[64];
 	char *p;
+	char *c;
 
 	if (maxlen <= 0)
 		return NULL;
@@ -993,7 +1009,7 @@ static int _pidof(const char *name, pid_t **pids)
 	struct dirent *de;
 	pid_t i;
 	int count;
-	char buf[256];
+	char buf[256]={0};
 
 	count = 0;
 	if (pids)
@@ -1006,6 +1022,8 @@ static int _pidof(const char *name, pid_t **pids)
 			if (*e != 0)
 				continue;
 			if (strncmp(name, psname(i, buf, sizeof(buf)), 15) == 0) {
+				if (getpsstate(i) == 'Z')
+					return -1;
 				if (pids) {
 					if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
 						closedir(dir);

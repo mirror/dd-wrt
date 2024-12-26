@@ -1198,6 +1198,7 @@ void get_broadcast(char *ipaddr, size_t len, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+extern int psstate(int pid);
 extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
