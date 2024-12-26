@@ -715,14 +715,17 @@
 };
 
 &usb {
+	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
 &usbphy0 {
+	vdd-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
 &usbphy1 {
+	vdd-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 

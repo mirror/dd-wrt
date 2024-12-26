@@ -201,6 +201,7 @@
 };
 
 &qusb_phy_0 {
+	vdd-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
@@ -209,6 +210,7 @@
 };
 
 &usb3 {
+	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
