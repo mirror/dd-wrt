@@ -78,6 +78,7 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 
 static unsigned int ipq6018_clocks[] = { 864000, 1056000, 1320000, 1440000, 1512000, 1800000, 0 };
 static unsigned int ipq807x_clocks[] = { 1017600, 1382400, 1651200, 1843200, 1920000, 2208000, 0 };
+static unsigned int ipq5018_clocks[] = { 800000, 1008000, 0 };
 
 EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 {
@@ -109,6 +110,11 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
 		defclock = "1382400";
+		break;
+	case ROUTER_LINKSYS_MR5500:
+	case ROUTER_LINKSYS_MX5500:
+		defclock = "1008000";
+		c = ipq5018_clocks;
 		break;
 	}
 	if (!*oclk) {
