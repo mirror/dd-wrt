@@ -351,12 +351,17 @@
 
 			partition@6e0000 {
 				label = "reserved";
-				reg = <0x6e0000 0xe0000>;
+				reg = <0x006e0000 0x000a0000>;
 			};
-			
+
+			partition@780000 {
+				label = "nvram";
+				reg = <0x00780000 0x00040000>;
+			};
+
 			partition@7c0000 {
 				label = "oops";
-				reg = <0x7c0000 0x40000>;
+				reg = <0x007c0000 0x00040000>;
 			};
 		};
 	};
@@ -410,14 +415,8 @@
 
 			partition@10000000 {
 				label = "fap_data";
-				reg = <0x10000000 0x7f00000>;
+				reg = <0x10000000 0x10000000>;
 			};
-
-			partition@17f00000 {
-				label = "nvram";
-				reg = <0x17f00000 0x100000>;
-			};
-			
 		};
 	};
 };
