@@ -39,7 +39,7 @@ void start_upnpd(void)
 	int ret;
 
 	if (nvram_matchi("upnp_enable", 0)) {
-		stop_upnp();
+		stop_upnpd();
 		return;
 	}
 	/*
