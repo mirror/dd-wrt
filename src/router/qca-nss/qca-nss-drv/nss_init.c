@@ -609,7 +609,7 @@ extern int max_ipv6_conn; // NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv6_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv4_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 
-extern int nss_disabled;
+extern int disable_nss;
 
 /*
  * nss_init()
