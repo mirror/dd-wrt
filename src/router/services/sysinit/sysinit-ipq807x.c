@@ -474,37 +474,36 @@ static void load_nss_ipq60xx(int profile)
 		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
-	if (nvram_match("nss", "1")) {
-		eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh(1) ? "mesh=1" : "mesh=0");
-		insmod("qca-nss-crypto-ipq60xx");
-		insmod("qca-nss-cfi-cryptoapi-ipq60xx");
-		insmod("qca-nss-netlink-ipq60xx");
-		insmod("cryptodev");
+	eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh(1) ? "mesh=1" : "mesh=0",
+		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+	insmod("qca-nss-crypto-ipq60xx");
+	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
+	insmod("qca-nss-netlink-ipq60xx");
+	insmod("cryptodev");
 
-		set_memprofile(4, 1, profile);
+	set_memprofile(4, 1, profile);
 
-		eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe-ipq60xx");
-		insmod("qca-nss-vlan-ipq60xx");
-		insmod("qca-nss-qdisc-ipq60xx");
-		insmod("pptp");
-		insmod("qca-nss-pptp-ipq60xx");
-		insmod("udp_tunnel");
-		insmod("ip6_udp_tunnel");
-		insmod("l2tp_core");
-		insmod("qca-nss-l2tpv2-ipq60xx");
-		insmod("vxlan");
-		insmod("qca-nss-vxlanmgr-ipq60xx");
-		insmod("tunnel6");
-		insmod("ip6_tunnel");
-		insmod("qca-nss-tunipip6-ipq60xx");
-		insmod("qca-nss-tlsmgr-ipq60xx");
-		insmod("qca-mcs");
-		insmod("nss-ifb");
-		insmod("qca-nss-netlink-ipq60xx");
-		insmod("qca-nss-bridge-mgr-ipq60xx");
-		insmod("qca-nss-wifi-meshmgr");
-	}
+	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+	insmod("qca-nss-pppoe-ipq60xx");
+	insmod("qca-nss-vlan-ipq60xx");
+	insmod("qca-nss-qdisc-ipq60xx");
+	insmod("pptp");
+	insmod("qca-nss-pptp-ipq60xx");
+	insmod("udp_tunnel");
+	insmod("ip6_udp_tunnel");
+	insmod("l2tp_core");
+	insmod("qca-nss-l2tpv2-ipq60xx");
+	insmod("vxlan");
+	insmod("qca-nss-vxlanmgr-ipq60xx");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
+	insmod("qca-nss-tunipip6-ipq60xx");
+	insmod("qca-nss-tlsmgr-ipq60xx");
+	insmod("qca-mcs");
+	insmod("nss-ifb");
+	insmod("qca-nss-netlink-ipq60xx");
+	insmod("qca-nss-bridge-mgr-ipq60xx");
+	insmod("qca-nss-wifi-meshmgr");
 }
 
 static void load_nss_ipq50xx(int profile)
@@ -519,35 +518,34 @@ static void load_nss_ipq50xx(int profile)
 		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
-	if (nvram_match("nss", "1")) {
-		eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh(1) ? "mesh=1" : "mesh=0");
-		insmod("qca-nss-crypto-ipq50xx");
-		insmod("qca-nss-cfi-cryptoapi-ipq50xx");
-		insmod("qca-nss-netlink-ipq50xx");
-		insmod("cryptodev");
-		set_memprofile(2, 1, profile);
+	eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh(1) ? "mesh=1" : "mesh=0",
+		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+	insmod("qca-nss-crypto-ipq50xx");
+	insmod("qca-nss-cfi-cryptoapi-ipq50xx");
+	insmod("qca-nss-netlink-ipq50xx");
+	insmod("cryptodev");
+	set_memprofile(2, 1, profile);
 
-		eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe-ipq50xx");
-		insmod("qca-nss-vlan-ipq50xx");
-		insmod("qca-nss-qdisc-ipq50xx");
-		insmod("pptp");
-		insmod("qca-nss-pptp-ipq50xx");
-		insmod("udp_tunnel");
-		insmod("ip6_udp_tunnel");
-		insmod("l2tp_core");
-		insmod("qca-nss-l2tpv2-ipq50xx");
-		insmod("vxlan");
-		insmod("qca-nss-vxlanmgr-ipq50xx");
-		insmod("tunnel6");
-		insmod("ip6_tunnel");
-		insmod("qca-nss-tunipip6-ipq50xx");
-		insmod("qca-nss-tlsmgr-ipq50xx");
-		insmod("qca-mcs");
-		insmod("nss-ifb");
-		insmod("qca-nss-bridge-mgr-ipq50xx");
-		insmod("qca-nss-wifi-meshmgr");
-	}
+	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+	insmod("qca-nss-pppoe-ipq50xx");
+	insmod("qca-nss-vlan-ipq50xx");
+	insmod("qca-nss-qdisc-ipq50xx");
+	insmod("pptp");
+	insmod("qca-nss-pptp-ipq50xx");
+	insmod("udp_tunnel");
+	insmod("ip6_udp_tunnel");
+	insmod("l2tp_core");
+	insmod("qca-nss-l2tpv2-ipq50xx");
+	insmod("vxlan");
+	insmod("qca-nss-vxlanmgr-ipq50xx");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
+	insmod("qca-nss-tunipip6-ipq50xx");
+	insmod("qca-nss-tlsmgr-ipq50xx");
+	insmod("qca-mcs");
+	insmod("nss-ifb");
+	insmod("qca-nss-bridge-mgr-ipq50xx");
+	insmod("qca-nss-wifi-meshmgr");
 }
 static void load_nss_ipq807x(int profile)
 {
@@ -561,44 +559,43 @@ static void load_nss_ipq807x(int profile)
 		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0");
 
 	nvram_default_get("nss", "1");
-	if (nvram_match("nss", "1")) {
-		insmod("udp_tunnel");
-		insmod("ip6_udp_tunnel");
-		insmod("tunnel6");
-		insmod("ip6_tunnel");
-		insmod("l2tp_core");
-		insmod("pptp");
-		insmod("vxlan");
-		eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh(1) ? "mesh=1" : "mesh=0");
-		insmod("qca-nss-crypto-ipq807x");
-		insmod("qca-nss-cfi-cryptoapi-ipq807x");
-		insmod("qca-nss-netlink-ipq807x");
-		insmod("cryptodev");
+	insmod("udp_tunnel");
+	insmod("ip6_udp_tunnel");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
+	insmod("l2tp_core");
+	insmod("pptp");
+	insmod("vxlan");
+	eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh(1) ? "mesh=1" : "mesh=0",
+		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+	insmod("qca-nss-crypto-ipq807x");
+	insmod("qca-nss-cfi-cryptoapi-ipq807x");
+	insmod("qca-nss-netlink-ipq807x");
+	insmod("cryptodev");
 
-		set_memprofile(4, 2, profile);
+	set_memprofile(4, 2, profile);
 
-		eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-		insmod("qca-nss-pppoe-ipq807x");
-		insmod("qca-nss-vlan-ipq807x");
-		insmod("qca-nss-qdisc-ipq807x");
-		insmod("pptp");
-		insmod("qca-nss-pptp-ipq807x");
-		insmod("udp_tunnel");
-		insmod("ip6_udp_tunnel");
-		insmod("l2tp_core");
-		insmod("qca-nss-l2tpv2-ipq807x");
-		insmod("vxlan");
-		insmod("qca-nss-vxlanmgr-ipq807x");
-		insmod("tunnel6");
-		insmod("ip6_tunnel");
-		insmod("qca-nss-tunipip6-ipq807x");
-		insmod("qca-nss-tlsmgr-ipq807x");
-		insmod("qca-mcs");
-		insmod("nss-ifb");
-		insmod("qca-nss-netlink-ipq807x");
-		insmod("qca-nss-bridge-mgr-ipq807x");
-		insmod("qca-nss-wifi-meshmgr");
-	}
+	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
+	insmod("qca-nss-pppoe-ipq807x");
+	insmod("qca-nss-vlan-ipq807x");
+	insmod("qca-nss-qdisc-ipq807x");
+	insmod("pptp");
+	insmod("qca-nss-pptp-ipq807x");
+	insmod("udp_tunnel");
+	insmod("ip6_udp_tunnel");
+	insmod("l2tp_core");
+	insmod("qca-nss-l2tpv2-ipq807x");
+	insmod("vxlan");
+	insmod("qca-nss-vxlanmgr-ipq807x");
+	insmod("tunnel6");
+	insmod("ip6_tunnel");
+	insmod("qca-nss-tunipip6-ipq807x");
+	insmod("qca-nss-tlsmgr-ipq807x");
+	insmod("qca-mcs");
+	insmod("nss-ifb");
+	insmod("qca-nss-netlink-ipq807x");
+	insmod("qca-nss-bridge-mgr-ipq807x");
+	insmod("qca-nss-wifi-meshmgr");
 }
 
 void start_setup_affinity(void)
