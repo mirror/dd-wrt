@@ -73,6 +73,11 @@ static atomic_t max_reuse = ATOMIC_INIT(PAGE_SIZE);
 
 #endif /* NSS_SKB_REUSE_SUPPORT */
 
+int disable_nss = 0;
+module_param(disable_nss, int, S_IRUGO);
+MODULE_PARM_DESC(disable_nss, "disable nss and use driver as dummy");
+
+
 int max_ipv4_conn = 0; // NSS_DEFAULT_NUM_CONN;
 module_param(max_ipv4_conn, int, S_IRUGO);
 MODULE_PARM_DESC(max_ipv4_conn, "Max number of IPv4 connections");

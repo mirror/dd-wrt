@@ -3,7 +3,9 @@
 # ###################################################
 
 obj-m += qca-nss-drv-$(SoC).o
+#obj-m += qca-nss-dummy.o
 
+#qca-nss-dummy-obj := qca_nss_dummy.os
 #
 # Regular NSS path
 #

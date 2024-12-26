@@ -609,6 +609,8 @@ extern int max_ipv6_conn; // NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv6_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 extern int nss_ipv4_conn_cfg; // = NSS_DEFAULT_NUM_CONN;
 
+extern int nss_disabled;
+
 /*
  * nss_init()
  *	Registers nss driver
@@ -624,7 +626,8 @@ static int __init nss_init(void)
 	struct device_node *cmn = NULL;
 #endif
 
-
+	if (disable_nss)
+	    return;
 	if (mem_profile==2) {
 	NSS_DEFAULT_NUM_CONN=512;
 #if defined (NSS_DRV_IPV6_ENABLE)
@@ -951,6 +954,9 @@ nss_info("Init NSS driver");
  */
 static void __exit nss_cleanup(void)
 {
+	if (disable_nss)
+	    return;
+
 	nss_info("Exit NSS driver");
 
 	if (nss_general_header)
