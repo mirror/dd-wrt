@@ -627,7 +627,7 @@ static int __init nss_init(void)
 #endif
 
 	if (disable_nss)
-	    return;
+	    return 0;
 	if (mem_profile==2) {
 	NSS_DEFAULT_NUM_CONN=512;
 #if defined (NSS_DRV_IPV6_ENABLE)
