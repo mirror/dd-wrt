@@ -870,7 +870,8 @@ size_t strlcpy_compat(register char *dst, register const char *src, size_t n)
 
 int f_read_string(const char *path, char *buffer, int max);
 
-int getpsstate(int pid) {
+int getpsstate(int pid)
+{
 	char buf[512];
 	char path[64];
 	char *p;
@@ -1009,7 +1010,7 @@ static int _pidof(const char *name, pid_t **pids)
 	struct dirent *de;
 	pid_t i;
 	int count;
-	char buf[256]={0};
+	char buf[256] = { 0 };
 
 	count = 0;
 	if (pids)
@@ -1733,7 +1734,7 @@ static unsigned long getmeminfo(int linenr)
 			fgets(line, sizeof(line), fmem);
 		}
 		if (sscanf(line, "%*s %lu", &msize) != 1) {
-		    msize = 0;
+			msize = 0;
 		}
 		fclose(fmem);
 	}
