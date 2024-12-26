@@ -144,10 +144,12 @@ void set_envtools(int mtd, char *offset, char *envsize, char *blocksize, int num
 	}
 }
 
-void *get_deviceinfo(char *mtd, char *var)
+void *get_deviceinfo(char *partname, char *var)
 {
+	char mtd[64];
 	static char res[256];
 	bzero(res, sizeof(res));
+	sprintf(mtd, "/dev/mtd%d", getMTD(partname));
 	FILE *fp = fopen(mtd, "rb");
 	if (!fp)
 		return NULL;
@@ -171,23 +173,23 @@ void *get_deviceinfo(char *mtd, char *var)
 }
 void *get_deviceinfo_mr7350(char *var)
 {
-	return get_deviceinfo("/dev/mtd13", var);
+	return get_deviceinfo("devinfo", var);
 }
 void *get_deviceinfo_fap(char *var)
 {
-	return get_deviceinfo("/dev/mtd15", var);
+	return get_deviceinfo("APPSBLENV", var);
 }
 void *get_deviceinfo_mr5500(char *var)
 {
-	return get_deviceinfo("/dev/mtd11", var);
+	return get_deviceinfo("devinfo", var);
 }
 void *get_deviceinfo_mx4200(char *var)
 {
-	return get_deviceinfo("/dev/mtd20", var);
+	return get_deviceinfo("devinfo", var);
 }
 void *get_deviceinfo_wxr(char *var)
 {
-	return get_deviceinfo("/dev/mtd14", var);
+	return get_deviceinfo("appsblenv", var);
 }
 
 void calcchecksum(void *caldata, int offset, int size)
