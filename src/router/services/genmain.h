@@ -187,7 +187,8 @@ int check_arguments(int argc, char *argv[])
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 			stop = functiontable[i].stop;
 			char *name = functiontable[i].name;
-			if (strcmp(name, "lan") && strcmp(name, "wan") && strcmp(name, "syslog")) {
+			if (strcmp(name, "lan") && strcmp(name, "wan") && strcmp(name, "bridging") && strcmp(name, "bridgesif") &&
+			    strcmp(name, "vlantagging") && strcmp(name, "syslog")) {
 				if (stop)
 					stop();
 			}
@@ -196,6 +197,11 @@ int check_arguments(int argc, char *argv[])
 		stop_syslog();
 #endif
 		stop_wan();
+#ifdef HAVE_VLANTAGGING
+		stop_vlantagging();
+		stop_bridgesif();
+		stop_bridging();
+#endif
 		stop_lan();
 	} else {
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
