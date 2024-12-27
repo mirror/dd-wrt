@@ -193,14 +193,14 @@ int check_arguments(int argc, char *argv[])
 					stop();
 			}
 		}
-#ifdef HAVE_SYSLOG
-		stop_syslog();
-#endif
 		stop_wan();
 #ifdef HAVE_VLANTAGGING
 		stop_vlantagging();
 		stop_bridgesif();
 		stop_bridging();
+#endif
+#ifdef HAVE_SYSLOG
+		stop_syslog();
 #endif
 		stop_lan();
 	} else {
