@@ -32,7 +32,7 @@
 #include <utils.h>
 #include <upnp.h>
 
-#define BCMUPMP_PID_FILE_PATH "/tmp/bcmupnp.pid"
+#define BCMUPMP_PID_FILE_PATH "/var/run/upnpd.pid"
 
 char g_wandevs[32];
 
