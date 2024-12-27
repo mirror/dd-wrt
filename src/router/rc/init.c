@@ -56,20 +56,21 @@ int isregistered_real(void);
 #define SHELL "/bin/login"
 #define _PATH_CONSOLE "/dev/console"
 
-#define start_service(a) eval("startservice", a);
-#define start_service_force(a) eval("startservice", a, "-f");
-#define start_service_f(a) eval("startservice_f", a);
-#define start_service_force_f(a) eval("startservice_f", a, "-f");
-#define start_services() eval("startservices");
-#define stop_service(a) eval("stopservice", a);
-#define stop_service_force(a) eval("stopservice", "-f", a);
-#define stop_running(a) eval("stop_running");
-#define stop_service_f(a) eval("stopservice_f", a);
-#define stop_service_force_f(a) eval("stopservice_f", a, "-f");
-#define stop_services() eval("stopservices");
-#define restart(a) eval("restart", a);
-#define restart_f(a) eval("restart_f", a);
-#define start_single_service() eval("start_single_service");
+#define start_service(a) eval("startservice", a)
+#define start_service_force(a) eval("startservice", a, "-f")
+#define start_service_f(a) eval("startservice_f", a)
+#define start_service_force_f(a) eval("startservice_f", a, "-f")
+#define start_services() eval("startservices")
+#define stop_service(a) eval("stopservice", a)
+#define stop_service_force(a) eval("stopservice", "-f", a)
+#define stop_running(a) eval("stop_running")
+#define stop_service_f(a) eval("stopservice_f", a)
+#define stop_service_force_f(a) eval("stopservice_f", a, "-f")
+#define stop_services() eval("stopservices")
+#define service_shutdown() eval("service","shutdown")
+#define restart(a) eval("restart", a)
+#define restart_f(a) eval("restart_f", a)
+#define start_single_service() eval("start_single_service")
 
 static void set_term(int fd)
 {
@@ -308,7 +309,7 @@ void shutdown_system(void)
 		signal(sig, SIG_DFL);
 	if (!nvram_match("shutdown", "fast")) {
 		start_service("run_rc_shutdown");
-
+		service_shutdown();
 		if (pidof("udhcpc") > 0) {
 			dd_loginfo("init", "send dhcp lease release signal");
 			killall("udhcpc", SIGUSR2);
