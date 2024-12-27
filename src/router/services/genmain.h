@@ -186,9 +186,16 @@ int check_arguments(int argc, char *argv[])
 	if (!strcmp(argv[1], "shutdown")) {
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 			stop = functiontable[i].stop;
-			if (stop)
-				stop();
+			char *name = functiontable[i].name;
+			if (strcmp(name, "lan") && strcmp(name, "syslog")) {
+				if (stop)
+					stop();
+			}
 		}
+#ifdef HAVE_SYSLOG
+		stop_syslog();
+#endif
+		stop_lan();
 	} else {
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 			if (!strcmp(functiontable[i].name, argv[1])) {
@@ -234,4 +241,4 @@ int check_arguments(int argc, char *argv[])
 	end(argv);
 	fprintf(stderr, "method %s not found\n", argv[1]);
 	return -1;
-	}
+}
