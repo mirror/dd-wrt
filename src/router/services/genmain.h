@@ -127,8 +127,14 @@ void end(char *argv[])
 int check_arguments(int argc, char *argv[])
 {
 	airbag_init();
-	if (argc < 3) {
-		fprintf(stdout, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
+
+	if (argc < 2 || (strcmp(argv[1], "shutdown") && argc < 3)) {
+		fprintf(stdout, "%s servicename start|stop|restart|shutdown|main args... [-f]\n", argv[0]);
+		fprintf(stdout, "commands:\n");
+		fprintf(stdout, "start    : starts a registered service\n");
+		fprintf(stdout, "stop     : stops a registered service\n");
+		fprintf(stdout, "restart  : stops a registered service\n");
+		fprintf(stdout, "shutdown : shutdown all service\n\n");
 		fprintf(stdout, "options:\n");
 		fprintf(stdout, "-f : force start of service, no matter if neccessary\n");
 		fprintf(stdout, "List of services:\n");
@@ -177,47 +183,55 @@ int check_arguments(int argc, char *argv[])
 	if (argc > 3 && !strcmp(argv[3], "-f"))
 		force = 1;
 	airbag_setpostinfo(argv[1]);
-	for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
-		if (!strcmp(functiontable[i].name, argv[1])) {
-			deps_func = functiontable[i].deps;
-			proc_func = functiontable[i].proc;
-			start = functiontable[i].start;
+	if (!strcmp(argv[1], "shutdown")) {
+		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 			stop = functiontable[i].stop;
-			restart = functiontable[i].restart;
-			if (!strcmp(argv[2], "start") && start) {
-				dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[1]);
-				if (deps_func || proc_func) {
-					handle_procdeps();
-				} else
-					start();
-				return 0;
-			}
-			if (!strcmp(argv[2], "stop") && stop) {
-				dd_debug(DEBUG_SERVICE, "call stop for %s\n", argv[1]);
+			if (stop)
 				stop();
-				return 0;
-			}
-			if (!strcmp(argv[2], "restart") && ((stop && start) || restart)) {
-				dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
-				if (restart)
-					restart();
-				else {
-					stop();
-					start();
+		}
+	} else {
+		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+			if (!strcmp(functiontable[i].name, argv[1])) {
+				deps_func = functiontable[i].deps;
+				proc_func = functiontable[i].proc;
+				start = functiontable[i].start;
+				stop = functiontable[i].stop;
+				restart = functiontable[i].restart;
+				if (!strcmp(argv[2], "start") && start) {
+					dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[1]);
+					if (deps_func || proc_func) {
+						handle_procdeps();
+					} else
+						start();
+					return 0;
 				}
-				return 0;
+				if (!strcmp(argv[2], "stop") && stop) {
+					dd_debug(DEBUG_SERVICE, "call stop for %s\n", argv[1]);
+					stop();
+					return 0;
+				}
+				if (!strcmp(argv[2], "restart") && ((stop && start) || restart)) {
+					dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
+					if (restart)
+						restart();
+					else {
+						stop();
+						start();
+					}
+					return 0;
+				}
+				if (!strcmp(argv[2], "main") && functiontable[i].main) {
+					dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
+					char **args = buildargs(argc, argv);
+					int ret = functiontable[i].main(argc - 2, args);
+					return ret;
+				}
+				end(argv);
+				return -1;
 			}
-			if (!strcmp(argv[2], "main") && functiontable[i].main) {
-				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
-				char **args = buildargs(argc, argv);
-				int ret = functiontable[i].main(argc - 2, args);
-				return ret;
-			}
-			end(argv);
-			return -1;
 		}
 	}
 	end(argv);
 	fprintf(stderr, "method %s not found\n", argv[1]);
 	return -1;
-}
+	}
