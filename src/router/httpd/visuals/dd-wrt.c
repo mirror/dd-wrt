@@ -3199,7 +3199,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(cell_density, "%s_cell_density", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
-	showOptions_trans(wp, , cell_density, "0 1 2 3",
+	showOptions_trans(wp, cell_density, "0 1 2 3",
 			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
 			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
@@ -5058,7 +5058,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(cell_density, "%s_cell_density", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
-	showOptions_trans(wp, , cell_density, "0 1 2 3",
+	showOptions_trans(wp, cell_density, "0 1 2 3",
 			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
 			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
