@@ -1224,6 +1224,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 
 	int density = nvram_ngeti("%s_cell_density", prefix);
+	int legacy = nvram_ngeti("%s_legacy", prefix);
 	if (has_ad(prefix)) {
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
@@ -1244,13 +1245,22 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			switch (density) {
 			case 0:
 			case 1:
-
-				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=55 110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=55 110\n");
+				} else {
+					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=60 120 240\n");
+				}
 				break;
 			case 2:
-				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=110\n");
+				} else {
+					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=120 240\n");
+				}
 				break;
 			default:
 				fprintf(fp, "supported_rates=240 360 480 540\n");
@@ -1306,17 +1316,25 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 			}
 			fprintf(fp, "hw_mode=g\n");
-
 			switch (density) {
 			case 0:
 			case 1:
-
-				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=55 110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=55 110\n");
+				} else {
+					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=60 120 240\n");
+				}
 				break;
 			case 2:
-				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=110\n");
+				} else {
+					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=120 240\n");
+				}
 				break;
 			default:
 				fprintf(fp, "supported_rates=240 360 480 540\n");
@@ -1326,16 +1344,26 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 		} else {
 			fprintf(fp, "hw_mode=g\n");
+
 			switch (density) {
 			case 0:
 			case 1:
-
-				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=55 110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=55 110\n");
+				} else {
+					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=60 120 240\n");
+				}
 				break;
 			case 2:
-				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-				fprintf(fp, "basic_rates=110\n");
+				if (legacy) {
+					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=110\n");
+				} else {
+					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
+					fprintf(fp, "basic_rates=120 240\n");
+				}
 				break;
 			default:
 				fprintf(fp, "supported_rates=240 360 480 540\n");
@@ -1368,7 +1396,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
 	}
-
 
 	MAC80211DEBUG();
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
