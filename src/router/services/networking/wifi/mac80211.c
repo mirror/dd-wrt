@@ -1222,7 +1222,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 		}
 	}
-
+	nvram_default_nget("0", "%s_cell_density", prefix);
+	nvram_default_nget("1", "%s_legacy", prefix);
 	int density = nvram_ngeti("%s_cell_density", prefix);
 	int legacy = nvram_ngeti("%s_legacy", prefix);
 	if (has_ad(prefix)) {
