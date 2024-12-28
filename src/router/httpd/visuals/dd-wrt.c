@@ -3199,9 +3199,15 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
 			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
 			 nvram_default_get("cell_density", "0"));
-	sprintf(legacy, "%s_legacy", prefix);
-	nvram_default_get(legacy, "1");
-	showRadio(wp, "wl_basic.legacy", legacy);
+
+	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
+	     nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
+		sprintf(legacy, "%s_legacy", prefix);
+		nvram_default_get(legacy, "1");
+		showRadio(wp, "wl_basic.legacy", legacy);
+	}
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
@@ -5051,9 +5057,14 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
 			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
 			 nvram_default_get("cell_density", "0"));
-	sprintf(legacy, "%s_legacy", prefix);
-	nvram_default_get(legacy, "1");
-	showRadio(wp, "wl_basic.legacy", legacy);
+	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
+	     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
+	     nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
+		sprintf(legacy, "%s_legacy", prefix);
+		nvram_default_get(legacy, "1");
+		showRadio(wp, "wl_basic.legacy", legacy);
+	}
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
