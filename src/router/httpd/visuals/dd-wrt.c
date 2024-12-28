@@ -3201,7 +3201,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
 	showOptions_trans(wp, , cell_density, "0 1 2 3",
 			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			  nvram_default_get("cell_density", "0"));
+			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
 
 	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
@@ -5063,7 +5063,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
 	showOptions_trans(wp, , cell_density, "0 1 2 3",
 			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			  nvram_default_get("cell_density", "0"));
+			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
 	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
