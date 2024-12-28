@@ -108,6 +108,7 @@ var update;
 addEvent(window, "load", function() {
 	stickControl(<% nvg("sticky_footer"); %>);
 	set_disable_state(document.setup.sshd_enable, 'idssh_keyready', <% nvem("sshd_keyready", "1", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.chronyd_enable, 'idchronyd', <% nvem("chronyd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.tor_enable, 'idtor', <% nvem("tor_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.mdns_enable, 'idmdns', <% nvem("mdns_enable", "1", "1", "0"); %> == 1);
