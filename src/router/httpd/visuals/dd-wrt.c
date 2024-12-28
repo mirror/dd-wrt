@@ -3196,7 +3196,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	// cell density
 	char cell_density[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
-	showOptionsLabel(wp, "wl_basic.cell_density", cell_density, "1 2 3", nvram_default_get("cell_density", "1"));
+	showOptionsLabel(wp, "wl_basic.cell_density", cell_density, "0 1 2 3", nvram_default_get("cell_density", "0"));
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
@@ -5043,7 +5043,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	char cell_density[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
-	showOptionsLabel(wp, "wl_basic.cell_density", cell_density, "1 2 3", nvram_default_get("cell_density", "1"));
+	showOptionsLabel(wp, "wl_basic.cell_density", cell_density, "0 1 2 3", nvram_default_get("cell_density", "0"));
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") ||
