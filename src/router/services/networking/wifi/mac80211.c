@@ -1071,7 +1071,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 	caps = mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0,
 				    (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0,
-				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF), nvram_default_matchi(mubf, 1, DEFAULT_BF));
+				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
+				    nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
@@ -1222,16 +1223,40 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 	}
 
+	int density = nvram_ngeti("%s_cell_density", prefix);
 	if (has_ad(prefix)) {
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
-			fprintf(fp, "supported_rates=10 20 55 110\n");
+
+			if (density == 1) {
+				fprintf(fp, "supported_rates=55 110\n");
+				fprintf(fp, "basic_rates=55 110\n");
+			} else if (density > 2) {
+				fprintf(fp, "supported_rates=110\n");
+				fprintf(fp, "basic_rates=110\n");
+			}
+
 		} else if (!strcmp(netmode, "bg-mixed")) {
 			fprintf(fp, "hw_mode=g\n");
-			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
-			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+
+			switch (density) {
+			case 0:
+			case 1:
+
+				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=55 110\n");
+				break;
+			case 2:
+				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=110\n");
+				break;
+			default:
+				fprintf(fp, "supported_rates=240 360 480 540\n");
+				fprintf(fp, "basic_rates=240\n");
+				break;
+			}
 		} else if (!strcmp(netmode, "mixed") || !strcmp(netmode, "axg-only")) {
 			if (has_ax(prefix)) {
 				if (!strcmp(netmode, "ax-only")) {
@@ -1281,24 +1306,73 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 			}
 			fprintf(fp, "hw_mode=g\n");
-			fprintf(fp, "basic_rates=10 20 55 60 110 120 240\n");
-			fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+
+			switch (density) {
+			case 0:
+			case 1:
+
+				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=55 110\n");
+				break;
+			case 2:
+				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=110\n");
+				break;
+			default:
+				fprintf(fp, "supported_rates=240 360 480 540\n");
+				fprintf(fp, "basic_rates=240\n");
+				break;
+			}
+
 		} else {
-			fprintf(fp, "basic_rates=60 110 120 240\n");
-			fprintf(fp, "supported_rates=60 90 110 120 180 240 360 480 540\n");
 			fprintf(fp, "hw_mode=g\n");
+			switch (density) {
+			case 0:
+			case 1:
+
+				fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=55 110\n");
+				break;
+			case 2:
+				fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
+				fprintf(fp, "basic_rates=110\n");
+				break;
+			default:
+				fprintf(fp, "supported_rates=240 360 480 540\n");
+				fprintf(fp, "basic_rates=240\n");
+				break;
+			}
 		}
 	} else {
 		fprintf(fp, "hw_mode=a\n");
+
+		switch (density) {
+		case 1:
+			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+			fprintf(fp, "basic_rates=60 120 240\n");
+			break;
+
+		case 2:
+			fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
+			fprintf(fp, "basic_rates=120 240\n");
+			break;
+
+		case 3:
+			fprintf(fp, "supported_rates=240 360 480 540\n");
+			fprintf(fp, "basic_rates=240\n");
+			break;
+		}
+
 		fprintf(fp, "basic_rates=60 120 240\n");
 		if (!strcmp(netmode, "a-only")) {
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
 	}
 
+
 	MAC80211DEBUG();
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
-//	if (!has_ad(prefix))
+	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
@@ -1415,7 +1489,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(ifname, "%s", maininterface);
 	} else {
 		sprintf(ifname, "%s.%d", maininterface, vapid);
-		if (!nvram_nmatch("mesh","%s_mode", maininterface))
+		if (!nvram_nmatch("mesh", "%s_mode", maininterface))
 			isrepeater = 1;
 	}
 #ifdef HAVE_WZRHPAG300NH
@@ -1451,11 +1525,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fp = fopen(fstr, "ab");
 		fprintf(fp, "bss=%s\n", ifname);
 	}
-	if (nvram_default_nmatchi(1,0, "%s_m2u", ifname))
+	if (nvram_default_nmatchi(1, 0, "%s_m2u", ifname))
 		fprintf(fp, "multicast_to_unicast=1\n");
 	else
 		fprintf(fp, "multicast_to_unicast=0\n");
-		
+
 	char bw[32];
 	sprintf(bw, "%s_channelbw", maininterface);
 	int usebw = 20;
@@ -2073,7 +2147,7 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tdisable_ht=1\n");
 		} else {
 			if (!is_ath5k(prefix))
-				fprintf(fp, "\tsmps=%d\n", nvram_default_ngeti(0, "%s_smps",prefix));
+				fprintf(fp, "\tsmps=%d\n", nvram_default_ngeti(0, "%s_smps", prefix));
 		}
 		if (atoi(channelbw) < 40) {
 			fprintf(fp, "\tdisable_ht40=1\n");
