@@ -292,6 +292,9 @@ share.down="down";
 share.excluded="Excluded";
 share.not_prefered="Not prefered";
 share.prefered="Prefered";
+share.normal="Normal";
+share.high="High";
+share.veryhigh="Very High";
 
 var sbutton=new Object();
 sbutton.save="Save";

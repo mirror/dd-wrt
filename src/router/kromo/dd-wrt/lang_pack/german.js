@@ -289,6 +289,8 @@ share.hide="Verstecke";
 share.excluded="Ausgeschlossen";
 share.not_prefered="Nicht Bevorzugt";
 share.prefered="Bevorzugt";
+share.high="Hoch";
+share.veryhigh="Sehr Hoch";
 
 
 
