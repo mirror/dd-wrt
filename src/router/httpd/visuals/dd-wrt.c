@@ -3204,10 +3204,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
 
-	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
-	     nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
+	if (has_2ghz(prefix)&& !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
 		sprintf(legacy, "%s_legacy", prefix);
 		nvram_default_get(legacy, "1");
 		showRadio(wp, "wl_basic.legacy", legacy);
@@ -5065,10 +5062,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
 			  nvram_default_get(cell_density, "0"));
 	websWrite(wp, "</div>\n");
-	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
-	     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
-	     nvram_nmatch("axg-only", "%s_net_mode", prefix))) {
+
+	if (has_2ghz(prefix)&& !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
 		sprintf(legacy, "%s_legacy", prefix);
 		nvram_default_get(legacy, "1");
 		showRadio(wp, "wl_basic.legacy", legacy);
