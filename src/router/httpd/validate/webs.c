@@ -4107,6 +4107,7 @@ static char *vapsettings[] = {
 	"time_advertisement",
 	"time_zone",
 	"usteer",
+	"cell_density",
 	"bss_color",
 	"bss_partial",
 	"twt_required",
@@ -5511,6 +5512,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv_prefix(wp, "antgain", prefix);
+	copytonv_prefix(wp, "cell_density", prefix);
 	copytonv_prefix(wp, "bss_color", prefix);
 	copytonv_prefix(wp, "bss_color_partial", prefix);
 	copytonv_prefix(wp, "twt_required", prefix);
