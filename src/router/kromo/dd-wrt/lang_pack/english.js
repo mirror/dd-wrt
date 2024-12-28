@@ -3324,6 +3324,7 @@ wl_basic.mesh_connected_to_as="Announce Connected to Auth-Server";
 wl_basic.mesh_header_cache_size="Header Cache Size";
 wl_basic.bss_color="BSS Color";
 wl_basic.bss_color_partial="BSS Color Partial";
+wl_basic.cell_density="Cell Density";
 
 //help container
 var hwl_basic=new Object();
