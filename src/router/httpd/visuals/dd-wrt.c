@@ -3197,9 +3197,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char cell_density[32];
 	char legacy[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
-	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
-			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			 nvram_default_get("cell_density", "0"));
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
+	showOptions_trans(wp, , cell_density, "0 1 2 3",
+			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
+			  nvram_default_get("cell_density", "0"));
+	websWrite(wp, "</div>\n");
 
 	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
@@ -5056,9 +5059,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	char cell_density[32];
 	char legacy[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
-	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
-			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			 nvram_default_get("cell_density", "0"));
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
+	showOptions_trans(wp, , cell_density, "0 1 2 3",
+			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
+			  nvram_default_get("cell_density", "0"));
+	websWrite(wp, "</div>\n");
 	if ((nvram_nmatch("n-only", "%s_net_mode", prefix) || nvram_nmatch("ng-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("g-only", "%s_net_mode", prefix) || nvram_nmatch("n2-only", "%s_net_mode", prefix) ||
 	     nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("bg-mixed", "%s_net_mode", prefix) ||
