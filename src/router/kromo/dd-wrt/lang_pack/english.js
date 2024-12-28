@@ -3328,6 +3328,7 @@ wl_basic.mesh_header_cache_size="Header Cache Size";
 wl_basic.bss_color="BSS Color";
 wl_basic.bss_color_partial="BSS Color Partial";
 wl_basic.cell_density="Cell Density";
+wl_basic.legacy="Legacy Rates (11b)";
 
 //help container
 var hwl_basic=new Object();
