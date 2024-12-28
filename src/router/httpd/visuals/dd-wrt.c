@@ -3195,6 +3195,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	// cell density
 	char cell_density[32];
+	char legacy[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
 	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
 			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
@@ -5053,6 +5054,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 	char cell_density[32];
+	char legacy[32];
 	sprintf(cell_density, "%s_cell_density", prefix);
 	showOptionsNames(wp, "wl_basic.cell_density", cell_density, "0 1 2 3",
 			 (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
