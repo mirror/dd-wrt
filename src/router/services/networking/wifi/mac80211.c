@@ -1391,11 +1391,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "basic_rates=240\n");
 			break;
 		}
-
-		fprintf(fp, "basic_rates=60 120 240\n");
-		if (!strcmp(netmode, "a-only")) {
-			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-		}
 	}
 
 	MAC80211DEBUG();
