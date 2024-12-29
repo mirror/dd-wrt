@@ -2700,7 +2700,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 
 		if (is_mac80211(var)) {
-			if (is_ap(var) || is_vap_ap(var)) {
+			if (is_ap(var)) {
 				websWrite(
 					wp,
 					"<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -4202,7 +4202,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 	if (is_mac80211(prefix)) {
-		if (is_ap(prefix) || ís_vap_ap(prefix)) {
+		if (is_ap(prefix)) {
 			char signal[32];
 			websWrite(
 				wp,
@@ -5474,7 +5474,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 	if (is_mac80211(prefix)) {
-		if (is_ap(prefix) || is_vap_ap(prefix)) {
+		if (is_ap(prefix)) {
 			char signal[32];
 			websWrite(
 				wp,
