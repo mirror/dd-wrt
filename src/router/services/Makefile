@@ -84,7 +84,8 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 BCFLAGS  += -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
-BCFLAGS += -DARCH_$(ARCHITECTURE)
+BCFLAGS  += -DARCH_$(ARCHITECTURE)
+BCFLAGS  += -DBUILD_YEAR="\"$(shell date +%Y)\""
 
 ifeq ($(CONFIG_DIST),"micro")
 #BCFLAGS += -DNEED_NOPRINTF
@@ -2030,7 +2031,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking networking/wifi ne
 
 %.o : %.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 all: services_main
 ifeq ($(CONFIG_RT2880),y)
