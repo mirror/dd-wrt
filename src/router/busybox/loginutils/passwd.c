@@ -187,6 +187,10 @@ int passwd_main(int argc UNUSED_PARAM, char **argv)
 		if (!newp) {
 			logmode = LOGMODE_STDIO;
 			bb_error_msg_and_die("password for %s is unchanged", name);
+		} else if (newp[0] == 0) {
+			logmode = LOGMODE_STDIO;
+			free(newp);
+			bb_perror_msg_and_die("password encryption failed");
 		}
 	} else if (opt & OPT_lock) {
 		if (!c)
