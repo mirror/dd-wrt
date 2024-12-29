@@ -878,8 +878,8 @@ static void timestamp_and_log(int pri, char *msg, int len)
 			timestamp = ctime(&now) + 4; /* skip day of week */
 		}
 	}
-#endif
 	timestamp[15] = '\0';
+#endif
 
 	if (option_mask32 & OPT_kmsg) {
 		log_to_kmsg(pri, msg);
