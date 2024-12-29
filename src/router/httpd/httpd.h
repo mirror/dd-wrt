@@ -220,7 +220,6 @@ void showOptionsChoose(webs_t wp, char *propname, char *names, char **trans, cha
 void showOptionsLabel(webs_t wp, char *labelname, char *propname, char *names, char *select);
 void show_inputlabel(webs_t wp, char *labelname, char *propertyname, int propertysize, char *inputclassname, int inputmaxlength);
 void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char *property, int propertysize);
-void show_bgscan_options(webs_t wp, char *prefix);
 #ifdef HAVE_ATH9K
 #define ATH9K_ENABLED() 1
 #else
