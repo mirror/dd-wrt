@@ -112,6 +112,22 @@ int is_ap(const char *prefix)
 	return nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup");
 }
 
+int is_vap_ap(const char *prefix)
+{
+	char *next;
+	char var[80];
+
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	foreach(var, vifs, next)
+	{
+		char ap[16];
+		sprintf(ap, "%s_mode", var);
+		if (nvram_match(ap, "ap") || nvram_match(ap, "wdsap") || nvram_match(ap, "apup"))
+			return 1;
+	}
+	return 0;
+}
+
 int is_station(const char *prefix)
 {
 	char sta[16];
@@ -2632,6 +2648,15 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (has_uapsd(prefix)) {
 			showRadio(wp, "wl_basic.uapsd", uapsd);
 		}
+		char wl_lowack[32];
+		sprintf(wl_lowack, "%s_d_lowack", var);
+		if (is_ap(prefix))
+#ifdef HAVE_MVEBU
+			showRadioDefaultOff(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#else
+			showRadioDefaultOn(wp, "wl_basic.disassoc_low_ack", wl_lowack);
+#endif
+
 #endif
 
 #endif // end BUFFALO
@@ -2675,7 +2700,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 
 		if (is_mac80211(var)) {
-			if (is_ap(var)) {
+			if (is_ap(var) || is_vap_ap(var)) {
 				websWrite(
 					wp,
 					"<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -3193,7 +3218,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (is_ap(prefix)) {
+	if (is_ap(prefix) || is_vap_ap(prefix)) {
 		// cell density
 		char cell_density[32];
 		char legacy[32];
@@ -4177,7 +4202,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 	if (is_mac80211(prefix)) {
-		if (is_ap(prefix)) {
+		if (is_ap(prefix) || ís_vap_ap(prefix)) {
 			char signal[32];
 			websWrite(
 				wp,
@@ -5052,7 +5077,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (is_ap(prefix)) {
+	if (is_ap(prefix) || is_vap_ap(prefix)) {
 		char cell_density[32];
 		char legacy[32];
 		sprintf(cell_density, "%s_cell_density", prefix);
@@ -5449,7 +5474,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 	}
 	if (is_mac80211(prefix)) {
-		if (is_ap(prefix)) {
+		if (is_ap(prefix) || is_vap_ap(prefix)) {
 			char signal[32];
 			websWrite(
 				wp,
