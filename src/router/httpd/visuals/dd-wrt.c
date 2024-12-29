@@ -3193,21 +3193,24 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	// cell density
-	char cell_density[32];
-	char legacy[32];
-	sprintf(cell_density, "%s_cell_density", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
-	showOptions_trans(wp, cell_density, "0 1 2 3",
-			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			  nvram_default_get(cell_density, "0"));
-	websWrite(wp, "</div>\n");
+	if (is_ap(prefix)) {
+		// cell density
+		char cell_density[32];
+		char legacy[32];
+		sprintf(cell_density, "%s_cell_density", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
+		showOptions_trans(wp, cell_density, "0 1 2 3",
+				  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
+				  nvram_default_get(cell_density, "0"));
+		websWrite(wp, "</div>\n");
 
-	if (has_2ghz(prefix)&& !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
-		sprintf(legacy, "%s_legacy", prefix);
-		nvram_default_get(legacy, "1");
-		showRadio(wp, "wl_basic.legacy", legacy);
+		if (has_2ghz(prefix) && !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
+			sprintf(legacy, "%s_legacy", prefix);
+			nvram_default_get(legacy, "1");
+			showRadio(wp, "wl_basic.legacy", legacy);
+		}
 	}
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
@@ -5053,20 +5056,23 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	char cell_density[32];
-	char legacy[32];
-	sprintf(cell_density, "%s_cell_density", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
-	showOptions_trans(wp, cell_density, "0 1 2 3",
-			  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
-			  nvram_default_get(cell_density, "0"));
-	websWrite(wp, "</div>\n");
+	if (is_ap(prefix)) {
+		char cell_density[32];
+		char legacy[32];
+		sprintf(cell_density, "%s_cell_density", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp,
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cell_density)</script></div>\n");
+		showOptions_trans(wp, cell_density, "0 1 2 3",
+				  (char *[]){ "share.disabled", "share.normal", "share.high", "share.veryhigh" },
+				  nvram_default_get(cell_density, "0"));
+		websWrite(wp, "</div>\n");
 
-	if (has_2ghz(prefix)&& !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
-		sprintf(legacy, "%s_legacy", prefix);
-		nvram_default_get(legacy, "1");
-		showRadio(wp, "wl_basic.legacy", legacy);
+		if (has_2ghz(prefix) && !nvram_nmatch("b-only", "%s_net_mode", prefix)) {
+			sprintf(legacy, "%s_legacy", prefix);
+			nvram_default_get(legacy, "1");
+			showRadio(wp, "wl_basic.legacy", legacy);
+		}
 	}
 	if (has_ax(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
