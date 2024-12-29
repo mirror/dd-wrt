@@ -1370,6 +1370,10 @@ int nslookup_main(int argc UNUSED_PARAM, char **argv)
 		}
 	}
 
+	/* Ensure the Transaction IDs are unique */
+	for (rc = 1; rc < G.query_count; rc++)
+		G.query[rc].query[1] = G.query[rc - 1].query[1] + 1;
+
 	for (rc = 0; rc < G.serv_count;) {
 		int c;
 
