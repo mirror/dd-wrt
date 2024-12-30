@@ -698,6 +698,9 @@ endif
 	echo "# CONFIG_GETFATTR is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_IP_LINK_CAN is not set" >> busybox/.config
 	echo "# CONFIG_TIME64 is not set" >> busybox/.config
+	sed -i 's/\CONFIG_FEATURE_EDITING_HISTORY=15/CONFIG_FEATURE_EDITING_HISTORY=30/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_EDITING_SAVEHISTORY is not set/CONFIG_FEATURE_EDITING_SAVEHISTORY=y/g' busybox/.config
+
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
