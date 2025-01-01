@@ -675,3 +675,6 @@ div.bulle, table.bulle, td.bulle {
   margin-right: -.4rem;
   line-height: 1.6;
 }
+#upnp_table tr td:not(:last-child) {
+  padding-left: 0.543em;
+}
