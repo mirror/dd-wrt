@@ -567,15 +567,6 @@ static int rule_sfe(char *name)
 	return !rule_ctf(name);
 }
 
-static int rule_nss(char *name)
-{
-#if defined(HAVE_QCA_NSS)
-	return 1;
-#else
-	return 0;
-#endif
-}
-
 static int rule_afterburner(char *name)
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -764,7 +755,12 @@ static struct defrule s_conditions[] = {
 	{ "FA", rule_fa },
 	{ "CTF", rule_ctf },
 	{ "SFE", rule_sfe },
-	{ "NSS", rule_nss },
+#if defined(HAVE_QCA_NSS)
+	{ "NSS", NULL },
+#endif
+#endif
+#if defined(HAVE_IPQ6018)
+	{ "IPQ6018", NULL },
 #endif
 	{ NULL, NULL }
 };
