@@ -66,6 +66,7 @@ enum opcode {
 	insn_srav, insn_srl, insn_srlv, insn_subu, insn_sw, insn_sync,
 	insn_syscall, insn_tlbp, insn_tlbr, insn_tlbwi, insn_tlbwr, insn_wait,
 	insn_wsbh, insn_xor, insn_xori, insn_yield,
+	insn_zcb, insn_zcbt,
 	insn_invalid /* insn_invalid must be last */
 };
 
@@ -389,6 +390,8 @@ I_u3u1u2(_lwx)
 I_u3u1u2(_ldx)
 I_u1u2(_ldpte)
 I_u2u1u3(_lddir)
+I_u1(_zcb);
+I_u1(_zcbt);
 
 #ifdef CONFIG_CPU_CAVIUM_OCTEON
 #include <asm/octeon/octeon.h>

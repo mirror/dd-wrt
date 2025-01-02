@@ -2,6 +2,7 @@
 #
 # Makefile for HW Random Number Generator (RNG) device drivers.
 #
+ccflags-y := -DCVMX_BUILD_FOR_LINUX_KERNEL -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=0 -DOCTEON_MODEL=OCTEON_CN70XX -DCVMX_ENABLE_PARAMETER_CHECKING=0
 
 obj-$(CONFIG_HW_RANDOM) += rng-core.o
 rng-core-y := core.o

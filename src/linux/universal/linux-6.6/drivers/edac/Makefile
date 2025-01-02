@@ -5,6 +5,7 @@
 # This file may be distributed under the terms of the
 # GNU General Public License.
 #
+ccflags-y := -DCVMX_BUILD_FOR_LINUX_KERNEL -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=0 -DOCTEON_MODEL=OCTEON_CN70XX -DCVMX_ENABLE_PARAMETER_CHECKING=0
 
 obj-$(CONFIG_EDAC)			:= edac_core.o
 

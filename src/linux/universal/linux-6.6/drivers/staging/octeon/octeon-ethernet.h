@@ -64,8 +64,8 @@ struct octeon_ethernet {
 	phy_interface_t phy_mode;
 	/* List of outstanding tx buffers per queue */
 	struct sk_buff_head tx_free_list[16];
-	unsigned int last_speed;
 	unsigned int last_link;
+	unsigned int last_speed;
 	/* Last negotiated link state */
 	u64 link_info;
 	/* Called periodically to check link status */

@@ -1200,6 +1200,7 @@
 #define FPU_CSR_RU	0x2	/* towards +Infinity */
 #define FPU_CSR_RD	0x3	/* towards -Infinity */
 
+#define CAVIUM_OCTEON_SCRATCH_OFFSET (2 * 128 - 16 - 32768)
 
 #ifndef __ASSEMBLY__
 
@@ -1987,6 +1988,9 @@ do {									\
 
 #define read_octeon_c0_dcacheerr()	__read_64bit_c0_register($27, 1)
 #define write_octeon_c0_dcacheerr(val)	__write_64bit_c0_register($27, 1, val)
+
+#define read_octeon_c0_errctl()		__read_64bit_c0_register($26, 0)
+#define write_octeon_c0_errctl(val)	__write_64bit_c0_register($26, 0, val)
 
 /* BMIPS3300 */
 #define read_c0_brcm_config_0()		__read_32bit_c0_register($22, 0)

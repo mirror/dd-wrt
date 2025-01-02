@@ -70,9 +70,9 @@ void octeon_init_cvmcount(void)
 	u64 clk_reg;
 	unsigned long flags;
 	unsigned loops = 2;
+	bool has_fpa_clk_cnt = current_cpu_type() == CPU_CAVIUM_OCTEON3 && !OCTEON_IS_MODEL(OCTEON_CN70XX);
 
-	clk_reg = octeon_has_feature(OCTEON_FEATURE_FPA3) ?
-		CVMX_FPA_CLK_COUNT : CVMX_IPD_CLK_COUNT;
+	clk_reg = has_fpa_clk_cnt ? CVMX_FPA_CLK_COUNT : CVMX_IPD_CLK_COUNT;
 
 	/* Clobber loops so GCC will not unroll the following while loop. */
 	asm("" : "+r" (loops));
@@ -95,6 +95,12 @@ void octeon_init_cvmcount(void)
 			}
 		}
 		write_c0_cvmcount(clk_count);
+		/*
+		 * cn70XX-P1 core-19049 requires synchronized Count for
+		 * KVM guest timers to report with required GTOffset
+		 * of 0.
+		 */
+		write_c0_count((u32)clk_count);
 	}
 	local_irq_restore(flags);
 }

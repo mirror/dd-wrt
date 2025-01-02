@@ -66,6 +66,7 @@ enum spec_op {
 enum spec2_op {
 	madd_op, maddu_op, mul_op, spec2_3_unused_op,
 	msub_op, msubu_op, /* more unused ops */
+	cvm_op = 0x1f,
 	clz_op = 0x20, clo_op,
 	dclz_op = 0x24, dclo_op,
 	sdbpp_op = 0x3f
@@ -247,6 +248,13 @@ enum cop1x_func {
 enum mad_func {
 	madd_fp_op	= 0x08, msub_fp_op	= 0x0a,
 	nmadd_fp_op	= 0x0c, nmsub_fp_op	= 0x0e
+};
+
+/*
+ * func field for special2 cavium opcodes.
+ */
+enum cvm_func {
+	zcb_op = 0x1c, zcbt_op = 0x1d
 };
 
 /*

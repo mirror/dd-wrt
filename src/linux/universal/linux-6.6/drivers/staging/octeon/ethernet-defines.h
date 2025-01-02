@@ -27,7 +27,7 @@
 #define REUSE_SKBUFFS_WITHOUT_FREE	1
 #endif
 
-#define USE_ASYNC_IOBDMA		(CONFIG_CAVIUM_OCTEON_CVMSEG_SIZE > 0)
+#define USE_ASYNC_IOBDMA		1
 
 /* Maximum number of SKBs to try to free per xmit packet. */
 #define MAX_OUT_QUEUE_DEPTH		1000

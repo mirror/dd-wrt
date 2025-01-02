@@ -71,7 +71,7 @@ pcibios_align_resource(void *data, const struct resource *res,
 
 static void pcibios_scanbus(struct pci_controller *hose)
 {
-	static int next_busno;
+	int next_busno = 0;
 	static int need_domain_info;
 	LIST_HEAD(resources);
 	struct pci_bus *bus;
@@ -234,6 +234,8 @@ static int __init pcibios_init(void)
 	list_for_each_entry(hose, &controllers, list)
 		pcibios_scanbus(hose);
 
+	pci_fixup_irqs(pci_common_swizzle, pcibios_map_irq);
+
 	pci_initialized = 1;
 
 	return 0;
@@ -282,6 +284,8 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 
 	if (err < 0)
 		return err;
+
+	pci_fixup_irqs(pci_common_swizzle, pcibios_map_irq);
 
 	return pcibios_plat_dev_init(dev);
 }

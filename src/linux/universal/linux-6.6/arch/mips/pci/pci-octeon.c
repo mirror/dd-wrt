@@ -23,6 +23,12 @@
 
 #define USE_OCTEON_INTERNAL_ARBITER
 
+#ifdef __BIG_ENDIAN_BITFIELD	/* A Linux compatible proxy for __BIG_ENDIAN */
+#define _CVMX_PCIE_ES 1
+#else
+#define _CVMX_PCIE_ES 0
+#endif
+
 /*
  * Octeon's PCI controller uses did=3, subdid=2 for PCI IO
  * addresses. Use PCI endian swapping 1 so no address swapping is
@@ -202,7 +208,7 @@ const char *octeon_get_pci_interrupts(void)
 	if (of_machine_is_compatible("dlink,dsr-500n"))
 		return "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 	switch (octeon_bootinfo->board_type) {
-	case CVMX_BOARD_TYPE_NAO38:
+	case CVMX_BOARD_TYPE_NAC38:
 		/* This is really the NAC38 */
 		return "AAAAADABAAAAAAAAAAAAAAAAAAAAAAAA";
 	case CVMX_BOARD_TYPE_EBH3100:
@@ -211,8 +217,8 @@ const char *octeon_get_pci_interrupts(void)
 		return "AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 	case CVMX_BOARD_TYPE_BBGW_REF:
 		return "AABCD";
-	case CVMX_BOARD_TYPE_CUST_DSR1000N:
-		return "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
+//	case CVMX_BOARD_TYPE_ITUS_SHIELD:
+//		return "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC";
 	case CVMX_BOARD_TYPE_THUNDER:
 	case CVMX_BOARD_TYPE_EBH3000:
 	default:
@@ -555,6 +561,7 @@ static void octeon_pci_initialize(void)
 	octeon_npi_write32(CVMX_NPI_PCI_READ_CMD_E, 0x31);
 }
 
+extern void octeon_pci_dma_init(void);
 
 /*
  * Initialize the Octeon PCI controller
@@ -578,8 +585,7 @@ static int __init octeon_pci_setup(void)
 
 	/* Only use the big bars on chips that support it */
 	if (OCTEON_IS_MODEL(OCTEON_CN31XX) ||
-	    OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2) ||
-	    OCTEON_IS_MODEL(OCTEON_CN38XX_PASS1))
+	    OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2))
 		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_SMALL;
 	else
 		octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_BIG;
@@ -596,8 +602,8 @@ static int __init octeon_pci_setup(void)
 	octeon_pci_initialize();
 
 	mem_access.u64 = 0;
-	mem_access.s.esr = 1;	/* Endian-Swap on read. */
-	mem_access.s.esw = 1;	/* Endian-Swap on write. */
+	mem_access.s.esr = _CVMX_PCIE_ES;	/* Endian-Swap on read. */
+	mem_access.s.esw = _CVMX_PCIE_ES;	/* Endian-Swap on write. */
 	mem_access.s.nsr = 0;	/* No-Snoop on read. */
 	mem_access.s.nsw = 0;	/* No-Snoop on write. */
 	mem_access.s.ror = 0;	/* Relax Read on read. */
@@ -640,7 +646,7 @@ static int __init octeon_pci_setup(void)
 			/* Don't put PCI accesses in L2. */
 			bar1_index.s.ca = 1;
 			/* Endian Swap Mode */
-			bar1_index.s.end_swp = 1;
+			bar1_index.s.end_swp = _CVMX_PCIE_ES;
 			/* Set '1' when the selected address range is valid. */
 			bar1_index.s.addr_v = 1;
 			octeon_npi_write32(CVMX_NPI_PCI_BAR1_INDEXX(index),
@@ -676,7 +682,7 @@ static int __init octeon_pci_setup(void)
 			/* Don't put PCI accesses in L2. */
 			bar1_index.s.ca = 1;
 			/* Endian Swap Mode */
-			bar1_index.s.end_swp = 1;
+			bar1_index.s.end_swp = _CVMX_PCIE_ES;
 			/* Set '1' when the selected address range is valid. */
 			bar1_index.s.addr_v = 1;
 			octeon_npi_write32(CVMX_NPI_PCI_BAR1_INDEXX(index),

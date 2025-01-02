@@ -139,4 +139,9 @@ static inline int pci_proc_domain(struct pci_bus *bus)
 /* Do platform specific device initialization at pci_enable_device() time */
 extern int pcibios_plat_dev_init(struct pci_dev *dev);
 
+#ifdef CONFIG_CAVIUM_OCTEON_SOC
+/* MSI arch hook */
+#define arch_setup_msi_irqs arch_setup_msi_irqs
+#endif
+
 #endif /* _ASM_PCI_H */

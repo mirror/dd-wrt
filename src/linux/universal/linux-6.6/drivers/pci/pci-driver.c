@@ -450,18 +450,22 @@ static int pci_device_probe(struct device *dev)
 	if (!pci_device_can_probe(pci_dev))
 		return -ENODEV;
 
+
+	pci_dev_get(pci_dev);
+
 	pci_assign_irq(pci_dev);
 
 	error = pcibios_alloc_irq(pci_dev);
+
 	if (error < 0)
 		return error;
-
-	pci_dev_get(pci_dev);
 	error = __pci_device_probe(drv, pci_dev);
+
 	if (error) {
 		pcibios_free_irq(pci_dev);
 		pci_dev_put(pci_dev);
 	}
+
 
 	return error;
 }

@@ -19,8 +19,6 @@
 #include <asm/octeon/octeon.h>
 #include "cavium.h"
 
-#define CVMX_MIO_BOOT_CTL CVMX_ADD_IO_SEG(0x00011800000000D0ull)
-
 /*
  * The l2c* functions below are used for the EMMC-17978 workaround.
  *

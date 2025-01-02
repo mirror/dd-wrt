@@ -18,7 +18,6 @@ int pci_msi_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 
 	return pci_msi_legacy_setup_msi_irqs(dev, nvec, type);
 }
-
 void pci_msi_teardown_msi_irqs(struct pci_dev *dev)
 {
 	struct irq_domain *domain;

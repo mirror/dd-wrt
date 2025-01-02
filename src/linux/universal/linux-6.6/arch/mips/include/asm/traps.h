@@ -17,6 +17,15 @@
 extern void (*board_be_init)(void);
 void mips_set_be_handler(int (*handler)(struct pt_regs *reg, int is_fixup));
 
+/*
+ * Possible status responses for a board_mcheck_handler backend.
+ */
+#define MIPS_MC_DISCARD	0		/* return with no action */
+#define MIPS_MC_NOT_HANDLED	1	/* default handling */
+#define MIPS_MC_FATAL	2		/* treat as an unrecoverable error */
+
+extern int (*board_mcheck_handler)(struct pt_regs *regs);
+
 extern void (*board_nmi_handler_setup)(void);
 extern void (*board_ejtag_handler_setup)(void);
 extern void (*board_bind_eic_interrupt)(int irq, int regset);

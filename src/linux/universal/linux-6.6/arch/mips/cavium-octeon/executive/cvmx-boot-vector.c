@@ -1,10 +1,36 @@
-/*
- * This file is subject to the terms and conditions of the GNU General Public
- * License.  See the file "COPYING" in the main directory of this archive
- * for more details.
+/************************license start***************
+ * Copyright (c) 2014 Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Copyright (C) 2004-2017 Cavium, Inc.
- */
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *
+ *     * Neither the name of Cavium Inc. nor the names of
+ *       its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written
+ *       permission.
+ *
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS
+ * OR WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH
+ * RESPECT TO THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY
+ * REPRESENTATION OR DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT
+ * DEFECTS, AND CAVIUM SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES
+ * OF TITLE, MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR
+ * PURPOSE, LACK OF VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET
+ * POSSESSION OR CORRESPONDENCE TO DESCRIPTION.  THE ENTIRE RISK ARISING OUT
+ * OF USE OR PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
+ ***********************license end**************************************/
 
 
 /*
@@ -20,20 +46,17 @@ reset_vector:
 	mfc0	$k0, $12, 0	# Status
 	mfc0	$k1, $15, 1	# Ebase
 
-	ori	$k0, 0x84	# Enable 64-bit addressing, set
-				# ERL (should already be set)
+	ori	$k0, 0x84	# Enable 64-bit addressing, set ERL (should already be set)
 	andi	$k1, 0x3ff	# mask out core ID
 
 	mtc0	$k0, $12, 0	# Status
 	sll	$k1, 5
 
 	lui	$k0, 0xbfc0
-	cache	17, 0($0)	# Core-14345, clear L1 Dcache virtual
-				# tags if the core hit an NMI
+	cache	17, 0($0)	# Core-14345, clear L1 Dcache virtual tags if the core hit an NMI
 
 	ld	$k0, 0x78($k0)	# k0 <- (bfc00078) pointer to the reset vector
-	synci	0($0)		# Invalidate ICache to get coherent
-				# view of target code.
+	synci	0($0)		# Invalidate ICache to get coherent view of target code.
 
 	daddu	$k0, $k0, $k1
 	nop
@@ -72,13 +95,13 @@ wait_loop:
   14:	337b03ff	andi	k1,k1,0x3ff
 
   18:	409a6000	mtc0	k0,c0_status
-  1c:	001bd940	sll	k1,k1,0x5
+  1c:	001bd940 	sll	k1,k1,0x5
 
   20:	3c1abfc0	lui	k0,0xbfc0
   24:	bc110000	cache	0x11,0(zero)
 
   28:	df5a0078	ld	k0,120(k0)
-  2c:	041f0000	synci	0(zero)
+  2c:	041f0000 	synci	0(zero)
 
   30:	035bd02d	daddu	k0,k0,k1
   34:	00000000	nop
@@ -107,9 +130,13 @@ wait_loop:
 
  */
 
+#ifdef CVMX_BUILD_FOR_LINUX_KERNEL
 #include <asm/octeon/cvmx-boot-vector.h>
+#else
+#include "cvmx-boot-vector.h"
+#endif
 
-static unsigned long long _cvmx_bootvector_data[16] = {
+static CVMX_SHARED unsigned long long _cvmx_bootvector_data[16] = {
 	0x40baf80040bbf803ull,  /* patch low order 8-bits if no KScratch*/
 	0x401a6000401b7801ull,
 	0x375a0084337b03ffull,
@@ -135,13 +162,11 @@ static void cvmx_boot_vector_init(void *mem)
 {
 	uint64_t kseg0_mem;
 	int i;
-
 	memset(mem, 0, VECTOR_TABLE_SIZE);
 	kseg0_mem = cvmx_ptr_to_phys(mem) | 0x8000000000000000ull;
 
 	for (i = 0; i < 15; i++) {
 		uint64_t v = _cvmx_bootvector_data[i];
-
 		if (OCTEON_IS_OCTEON1PLUS() && (i == 0 || i == 7))
 			v &= 0xffffffff00000000ull; /* KScratch not availble. */
 		cvmx_write_csr(CVMX_MIO_BOOT_LOC_ADR, i * 8);
@@ -158,10 +183,10 @@ static void cvmx_boot_vector_init(void *mem)
  */
 struct cvmx_boot_vector_element *cvmx_boot_vector_get(void)
 {
-	struct cvmx_boot_vector_element *ret;
+	struct cvmx_boot_vector_element*ret;
 
-	ret = cvmx_bootmem_alloc_named_range_once(VECTOR_TABLE_SIZE, 0,
-		(1ull << 32) - 1, 8, "__boot_vector1__", cvmx_boot_vector_init);
+	ret = cvmx_bootmem_alloc_named_range_once(VECTOR_TABLE_SIZE, 0, (1ull << 32) - 1, 8,
+						  "__boot_vector1__", cvmx_boot_vector_init);
 	return ret;
 }
 EXPORT_SYMBOL(cvmx_boot_vector_get);

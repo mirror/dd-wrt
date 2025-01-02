@@ -444,6 +444,14 @@
 		RESTORE_SP \docfi
 		.endm
 
+		.macro	RESTORE_ALL_AND_RET docfi=0
+		RESTORE_TEMP \docfi
+		RESTORE_STATIC \docfi
+		RESTORE_AT \docfi
+		RESTORE_SOME \docfi
+		RESTORE_SP_AND_RET \docfi
+		.endm
+
 /*
  * Move to kernel mode and disable interrupts.
  * Set cp0 enable bit as sign that we're running on the kernel stack

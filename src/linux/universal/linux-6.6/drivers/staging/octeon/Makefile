@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2005-2009 Cavium Networks
 #
+ccflags-y := -DCVMX_BUILD_FOR_LINUX_KERNEL -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=0 -DOCTEON_MODEL=OCTEON_CN70XX -DCVMX_ENABLE_PARAMETER_CHECKING=0
 
 #
 # Makefile for Cavium OCTEON on-board ethernet driver

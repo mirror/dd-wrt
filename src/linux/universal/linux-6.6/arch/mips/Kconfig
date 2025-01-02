@@ -955,6 +955,7 @@ config CAVIUM_OCTEON_SOC
 	select MTD_COMPLEX_MAPPINGS
 	select SWIOTLB
 	select SYS_SUPPORTS_RELOCATABLE
+	select HAVE_EFFICIENT_UNALIGNED_ACCESS
 	help
 	  This option supports all of the Octeon reference boards from Cavium
 	  Networks. It builds a kernel that dynamically determines the Octeon
@@ -2681,6 +2682,7 @@ config RANDOMIZE_BASE_MAX_OFFSET
 
 config NODES_SHIFT
 	int
+	default "1" if CAVIUM_OCTEON_SOC
 	default "6"
 	depends on NUMA
 

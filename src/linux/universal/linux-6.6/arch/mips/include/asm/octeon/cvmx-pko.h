@@ -40,7 +40,8 @@
  * generic code while CVMX_PKO_LOCK_CMD_QUEUE should be used
  * with hand tuned fast path code.
  *
- * Some of other SDK differences visible to the command queuing:
+ * Some of other SDK differences visible to the command command
+ * queuing:
  * - PKO indexes are no longer stored in the FAU. A large
  *   percentage of the FAU register block used to be tied up
  *   maintaining PKO queue pointers. These are now stored in a
@@ -80,7 +81,7 @@
 #define CVMX_PKO_ILLEGAL_QUEUE	0xFFFF
 #define CVMX_PKO_MAX_QUEUE_DEPTH 0
 
-typedef enum {
+/* typedef */ enum {
 	CVMX_PKO_SUCCESS,
 	CVMX_PKO_INVALID_PORT,
 	CVMX_PKO_INVALID_QUEUE,
@@ -88,7 +89,7 @@ typedef enum {
 	CVMX_PKO_NO_MEMORY,
 	CVMX_PKO_PORT_ALREADY_SETUP,
 	CVMX_PKO_CMD_QUEUE_INIT_ERROR
-} cvmx_pko_status_t;
+} /*cvmx_pko_status_t */;
 
 /**
  * This enumeration represents the differnet locking modes supported by PKO.
@@ -168,7 +169,7 @@ typedef union {
 /**
  * Structure of the first packet output command word.
  */
-union cvmx_pko_command_word0 {
+typedef union {
 	uint64_t u64;
 	struct {
 #ifdef __BIG_ENDIAN_BITFIELD
@@ -260,7 +261,7 @@ union cvmx_pko_command_word0 {
 	        uint64_t size1:2;
 #endif
 	} s;
-};
+} cvmx_pko_command_word0_t;
 
 /* CSR typedefs have been moved to cvmx-csr-*.h */
 
@@ -277,6 +278,7 @@ typedef struct {
  * output system.
  */
 extern void cvmx_pko_initialize_global(void);
+extern int cvmx_pko_initialize_local(void);
 
 /**
  * Enables the packet output hardware. It must already be
@@ -306,7 +308,7 @@ extern void cvmx_pko_shutdown(void);
  *		     of a value of 1. There must be num_queues elements in the
  *		     array.
  */
-extern cvmx_pko_status_t cvmx_pko_config_port(uint64_t port,
+extern int cvmx_pko_config_port(uint64_t port,
 					      uint64_t base_queue,
 					      uint64_t num_queues,
 					      const uint64_t priority[]);
@@ -392,7 +394,7 @@ static inline void cvmx_pko_send_packet_prepare(uint64_t port, uint64_t queue,
 		    CVMX_TAG_SW_BITS_INTERNAL << CVMX_TAG_SW_SHIFT |
 		    CVMX_TAG_SUBGROUP_PKO << CVMX_TAG_SUBGROUP_SHIFT |
 		    (CVMX_TAG_SUBGROUP_MASK & queue);
-		cvmx_pow_tag_sw_full((struct cvmx_wqe *) cvmx_phys_to_ptr(0x80), tag,
+		cvmx_pow_tag_sw_full((cvmx_wqe_t *) cvmx_phys_to_ptr(0x80), tag,
 				     CVMX_POW_TAG_TYPE_ATOMIC, 0);
 	}
 }
@@ -411,13 +413,13 @@ static inline void cvmx_pko_send_packet_prepare(uint64_t port, uint64_t queue,
  * @use_locking: CVMX_PKO_LOCK_NONE, CVMX_PKO_LOCK_ATOMIC_TAG, or
  *		 CVMX_PKO_LOCK_CMD_QUEUE
  *
- * Returns: CVMX_PKO_SUCCESS on success, or error code on
+ * Returns returns CVMX_PKO_SUCCESS on success, or error code on
  * failure of output
  */
-static inline cvmx_pko_status_t cvmx_pko_send_packet_finish(
+static inline int cvmx_pko_send_packet_finish(
 	uint64_t port,
 	uint64_t queue,
-	union cvmx_pko_command_word0 pko_command,
+	cvmx_pko_command_word0_t pko_command,
 	union cvmx_buf_ptr packet,
 	cvmx_pko_lock_t use_locking)
 {
@@ -454,13 +456,13 @@ static inline cvmx_pko_status_t cvmx_pko_send_packet_finish(
  * @use_locking: CVMX_PKO_LOCK_NONE, CVMX_PKO_LOCK_ATOMIC_TAG, or
  *		 CVMX_PKO_LOCK_CMD_QUEUE
  *
- * Returns: CVMX_PKO_SUCCESS on success, or error code on
+ * Returns returns CVMX_PKO_SUCCESS on success, or error code on
  * failure of output
  */
-static inline cvmx_pko_status_t cvmx_pko_send_packet_finish3(
+static inline int cvmx_pko_send_packet_finish3(
 	uint64_t port,
 	uint64_t queue,
-	union cvmx_pko_command_word0 pko_command,
+	cvmx_pko_command_word0_t pko_command,
 	union cvmx_buf_ptr packet,
 	uint64_t addr,
 	cvmx_pko_lock_t use_locking)
@@ -609,7 +611,7 @@ static inline void cvmx_pko_get_port_status(uint64_t port_num, uint64_t clear,
 		pko_reg_read_idx.s.index = cvmx_pko_get_base_queue(port_num);
 		cvmx_write_csr(CVMX_PKO_REG_READ_IDX, pko_reg_read_idx.u64);
 		debug8.u64 = cvmx_read_csr(CVMX_PKO_MEM_DEBUG8);
-		status->doorbell = debug8.cn50xx.doorbell;
+		status->doorbell = debug8.cn58xx.doorbell;
 	}
 }
 

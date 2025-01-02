@@ -3652,7 +3652,7 @@ static bool pci_acs_flags_enabled(struct pci_dev *pdev, u16 acs_flags)
 bool pci_acs_enabled(struct pci_dev *pdev, u16 acs_flags)
 {
 	int ret;
-
+	printk(KERN_INFO "pci acs enabled\n");
 	ret = pci_dev_specific_acs_enabled(pdev, acs_flags);
 	if (ret >= 0)
 		return ret > 0;

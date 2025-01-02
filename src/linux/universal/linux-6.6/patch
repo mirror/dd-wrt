@@ -1,4 +1,4 @@
 #!/bin/sh
-for i in patches/*; do
+for i in patches-6.6/*; do
   patch -p1<$i
 done

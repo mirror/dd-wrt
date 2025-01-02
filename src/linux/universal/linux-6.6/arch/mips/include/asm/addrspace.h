@@ -51,8 +51,7 @@
  * Returns the physical address of a CKSEGx / XKPHYS address
  */
 #define CPHYSADDR(a)		((_ACAST32_(a)) & 0x1fffffff)
-#define XPHYSADDR(a)		((_ACAST64_(a)) &			\
-				 _CONST64_(0x0000ffffffffffff))
+#define XPHYSADDR(a)		((_ACAST64_(a)) & TO_PHYS_MASK)
 
 #ifdef CONFIG_64BIT
 

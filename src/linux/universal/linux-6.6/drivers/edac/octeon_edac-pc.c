@@ -17,13 +17,8 @@
 
 #include "edac_module.h"
 
-#include <asm/octeon/cvmx.h>
+#include <asm/octeon/octeon.h>
 #include <asm/mipsregs.h>
-
-extern int register_co_cache_error_notifier(struct notifier_block *nb);
-extern int unregister_co_cache_error_notifier(struct notifier_block *nb);
-
-extern unsigned long long cache_err_dcache[NR_CPUS];
 
 struct co_cache_error {
 	struct notifier_block notifier;
@@ -46,11 +41,36 @@ static int  co_cache_error_event(struct notifier_block *this,
 	u64 icache_err = read_octeon_c0_icacheerr();
 	u64 dcache_err;
 
-	if (event) {
-		dcache_err = cache_err_dcache[core];
-		cache_err_dcache[core] = 0;
-	} else {
-		dcache_err = read_octeon_c0_dcacheerr();
+	switch (event) {
+	case CO_CACHE_ERROR_UNRECOVERABLE:
+		if (current_cpu_type() == CPU_CAVIUM_OCTEON3) {
+			dcache_err = read_octeon_c0_errctl();
+		} else {
+			dcache_err = cache_err_dcache[core];
+			cache_err_dcache[core] = 0;
+		}
+		break;
+	case CO_CACHE_ERROR_RECOVERABLE:
+		if (current_cpu_type() == CPU_CAVIUM_OCTEON3)
+			dcache_err = read_octeon_c0_errctl();
+		else
+			dcache_err = read_octeon_c0_dcacheerr();
+		break;
+	case CO_CACHE_ERROR_WB_PARITY:
+		edac_device_printk(p->ed, KERN_ERR,
+				   "CacheErr (WB Parity): core %d/cpu %d\n",
+				   core, cpu);
+		edac_device_handle_ue(p->ed, cpu, 2, "write-buffer");
+		return NOTIFY_STOP;
+	case CO_CACHE_ERROR_TLB_PARITY:
+		edac_device_printk(p->ed, KERN_ERR,
+				   "TLB parity error: core %d/cpu %d\n",
+				   core, cpu);
+		edac_device_handle_ue(p->ed, cpu, 3, "TLB-parity");
+		return NOTIFY_STOP;
+	default:
+		WARN(1, "Unknown event: %lu\n", event);
+		return NOTIFY_BAD;
 	}
 
 	if (icache_err & 1) {
@@ -72,7 +92,11 @@ static int  co_cache_error_event(struct notifier_block *this,
 			edac_device_handle_ce(p->ed, cpu, 0, "dcache");
 
 		/* Clear the error indication */
-		if (OCTEON_IS_OCTEON2())
+		if (current_cpu_type() == CPU_CAVIUM_OCTEON3) {
+			u64 errctl = read_octeon_c0_errctl();
+			errctl |= 1;
+			write_octeon_c0_errctl(errctl);
+		} else if (current_cpu_type() == CPU_CAVIUM_OCTEON2)
 			write_octeon_c0_dcacheerr(1);
 		else
 			write_octeon_c0_dcacheerr(0);
@@ -92,7 +116,7 @@ static int co_cache_error_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, p);
 
 	p->ed = edac_device_alloc_ctl_info(0, "cpu", num_possible_cpus(),
-					   "cache", 2, 0, NULL, 0,
+					   "cache", 4, 0, NULL, 0,
 					   edac_device_alloc_index());
 	if (!p->ed)
 		goto err;

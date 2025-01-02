@@ -203,6 +203,8 @@ static const struct insn insn_table[insn_invalid] = {
 	[insn_xor]	= {M(spec_op, 0, 0, 0, 0, xor_op),  RS | RT | RD},
 	[insn_xori]	= {M(xori_op, 0, 0, 0, 0, 0),  RS | RT | UIMM},
 	[insn_yield]	= {M(spec3_op, 0, 0, 0, 0, yield_op), RS | RD},
+	[insn_zcb]	= {M(spec2_op, 0, 0, 0, zcb_op, cvm_op),  RS },
+	[insn_zcbt]	= {M(spec2_op, 0, 0, 0, zcbt_op, cvm_op),  RS },
 };
 
 #undef M

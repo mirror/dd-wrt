@@ -1,4396 +1,12319 @@
 /***********************license start***************
- * Author: Cavium Networks
+ * Copyright (c) 2003-2017  Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Contact: support@caviumnetworks.com
- * This file is part of the OCTEON SDK
  *
- * Copyright (c) 2003-2012 Cavium Networks
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * This file is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, Version 2, as
- * published by the Free Software Foundation.
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
  *
- * This file is distributed in the hope that it will be useful, but
- * AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or
- * NONINFRINGEMENT.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this file; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
- * or visit http://www.gnu.org/licenses/.
- *
- * This file may also be available under a different license from Cavium.
- * Contact Cavium Networks for more information
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+
+ *   * Neither the name of Cavium Inc. nor the names of
+ *     its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written
+ *     permission.
+
+ * This Software, including technical data, may be subject to U.S. export  control
+ * laws, including the U.S. Export Administration Act and its  associated
+ * regulations, and may be subject to export or import  regulations in other
+ * countries.
+
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS OR
+ * WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH RESPECT TO
+ * THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY REPRESENTATION OR
+ * DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT DEFECTS, AND CAVIUM
+ * SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES OF TITLE,
+ * MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF
+ * VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. THE ENTIRE  RISK ARISING OUT OF USE OR
+ * PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
  ***********************license end**************************************/
 
+
+/**
+ * cvmx-mio-defs.h
+ *
+ * Configuration and status register (CSR) type definitions for
+ * Octeon mio.
+ *
+ * This file is auto generated. Do not edit.
+ *
+ * <hr>$Revision$<hr>
+ *
+ */
 #ifndef __CVMX_MIO_DEFS_H__
 #define __CVMX_MIO_DEFS_H__
 
 #define CVMX_MIO_BOOT_BIST_STAT (CVMX_ADD_IO_SEG(0x00011800000000F8ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_BOOT_COMP CVMX_MIO_BOOT_COMP_FUNC()
+static inline uint64_t CVMX_MIO_BOOT_COMP_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN50XX) || OCTEON_IS_MODEL(OCTEON_CN52XX) || OCTEON_IS_MODEL(OCTEON_CN56XX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_BOOT_COMP not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000000B8ull);
+}
+#else
 #define CVMX_MIO_BOOT_COMP (CVMX_ADD_IO_SEG(0x00011800000000B8ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_BOOT_CTL CVMX_MIO_BOOT_CTL_FUNC()
+static inline uint64_t CVMX_MIO_BOOT_CTL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN70XX)))
+		cvmx_warn("CVMX_MIO_BOOT_CTL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000000D0ull);
+}
+#else
+#define CVMX_MIO_BOOT_CTL (CVMX_ADD_IO_SEG(0x00011800000000D0ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_ADRX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_ADRX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000110ull) + ((offset) & 1) * 8;
+}
+#else
+#define CVMX_MIO_BOOT_DMA_ADRX(offset) (CVMX_ADD_IO_SEG(0x0001180000000110ull) + ((offset) & 1) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_CFGX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_CFGX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000100ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_DMA_CFGX(offset) (CVMX_ADD_IO_SEG(0x0001180000000100ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_INTX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_INTX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000138ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_DMA_INTX(offset) (CVMX_ADD_IO_SEG(0x0001180000000138ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_INT_ENX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_INT_ENX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000150ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_DMA_INT_ENX(offset) (CVMX_ADD_IO_SEG(0x0001180000000150ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_INT_W1SX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_INT_W1SX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000150ull) + ((offset) & 1) * 8;
+}
+#else
+#define CVMX_MIO_BOOT_DMA_INT_W1SX(offset) (CVMX_ADD_IO_SEG(0x0001180000000150ull) + ((offset) & 1) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_DMA_TIMX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_DMA_TIMX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000120ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_DMA_TIMX(offset) (CVMX_ADD_IO_SEG(0x0001180000000120ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_BOOT_ECO CVMX_MIO_BOOT_ECO_FUNC()
+static inline uint64_t CVMX_MIO_BOOT_ECO_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_BOOT_ECO not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000001F8ull);
+}
+#else
+#define CVMX_MIO_BOOT_ECO (CVMX_ADD_IO_SEG(0x00011800000001F8ull))
+#endif
 #define CVMX_MIO_BOOT_ERR (CVMX_ADD_IO_SEG(0x00011800000000A0ull))
 #define CVMX_MIO_BOOT_INT (CVMX_ADD_IO_SEG(0x00011800000000A8ull))
 #define CVMX_MIO_BOOT_LOC_ADR (CVMX_ADD_IO_SEG(0x0001180000000090ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_LOC_CFGX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_BOOT_LOC_CFGX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000080ull) + ((offset) & 1) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_LOC_CFGX(offset) (CVMX_ADD_IO_SEG(0x0001180000000080ull) + ((offset) & 1) * 8)
+#endif
 #define CVMX_MIO_BOOT_LOC_DAT (CVMX_ADD_IO_SEG(0x0001180000000098ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_BOOT_PIN_DEFS CVMX_MIO_BOOT_PIN_DEFS_FUNC()
+static inline uint64_t CVMX_MIO_BOOT_PIN_DEFS_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX) || OCTEON_IS_MODEL(OCTEON_CN56XX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_BOOT_PIN_DEFS not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000000C0ull);
+}
+#else
 #define CVMX_MIO_BOOT_PIN_DEFS (CVMX_ADD_IO_SEG(0x00011800000000C0ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_REG_CFGX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 7)))))
+		cvmx_warn("CVMX_MIO_BOOT_REG_CFGX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000000ull) + ((offset) & 7) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_REG_CFGX(offset) (CVMX_ADD_IO_SEG(0x0001180000000000ull) + ((offset) & 7) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_BOOT_REG_TIMX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 7))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 7)))))
+		cvmx_warn("CVMX_MIO_BOOT_REG_TIMX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000040ull) + ((offset) & 7) * 8;
+}
+#else
 #define CVMX_MIO_BOOT_REG_TIMX(offset) (CVMX_ADD_IO_SEG(0x0001180000000040ull) + ((offset) & 7) * 8)
+#endif
 #define CVMX_MIO_BOOT_THR (CVMX_ADD_IO_SEG(0x00011800000000B0ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_ACCESS_WDOG CVMX_MIO_EMM_ACCESS_WDOG_FUNC()
+static inline uint64_t CVMX_MIO_EMM_ACCESS_WDOG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_ACCESS_WDOG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000020F0ull);
+}
+#else
+#define CVMX_MIO_EMM_ACCESS_WDOG (CVMX_ADD_IO_SEG(0x00011800000020F0ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_BUF_DAT CVMX_MIO_EMM_BUF_DAT_FUNC()
+static inline uint64_t CVMX_MIO_EMM_BUF_DAT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_BUF_DAT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000020E8ull);
+}
+#else
 #define CVMX_MIO_EMM_BUF_DAT (CVMX_ADD_IO_SEG(0x00011800000020E8ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_BUF_IDX CVMX_MIO_EMM_BUF_IDX_FUNC()
+static inline uint64_t CVMX_MIO_EMM_BUF_IDX_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_BUF_IDX not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000020E0ull);
+}
+#else
 #define CVMX_MIO_EMM_BUF_IDX (CVMX_ADD_IO_SEG(0x00011800000020E0ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_CFG CVMX_MIO_EMM_CFG_FUNC()
+static inline uint64_t CVMX_MIO_EMM_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002000ull);
+}
+#else
 #define CVMX_MIO_EMM_CFG (CVMX_ADD_IO_SEG(0x0001180000002000ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_CMD CVMX_MIO_EMM_CMD_FUNC()
+static inline uint64_t CVMX_MIO_EMM_CMD_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_CMD not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002058ull);
+}
+#else
 #define CVMX_MIO_EMM_CMD (CVMX_ADD_IO_SEG(0x0001180000002058ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA CVMX_MIO_EMM_DMA_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002050ull);
+}
+#else
 #define CVMX_MIO_EMM_DMA (CVMX_ADD_IO_SEG(0x0001180000002050ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_ADR CVMX_MIO_EMM_DMA_ADR_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_ADR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_ADR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000188ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_ADR (CVMX_ADD_IO_SEG(0x0001180000000188ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_CFG CVMX_MIO_EMM_DMA_CFG_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000180ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_CFG (CVMX_ADD_IO_SEG(0x0001180000000180ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_FIFO_ADR CVMX_MIO_EMM_DMA_FIFO_ADR_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_FIFO_ADR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_FIFO_ADR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000170ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_FIFO_ADR (CVMX_ADD_IO_SEG(0x0001180000000170ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_FIFO_CFG CVMX_MIO_EMM_DMA_FIFO_CFG_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_FIFO_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_FIFO_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000160ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_FIFO_CFG (CVMX_ADD_IO_SEG(0x0001180000000160ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_FIFO_CMD CVMX_MIO_EMM_DMA_FIFO_CMD_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_FIFO_CMD_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_FIFO_CMD not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000178ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_FIFO_CMD (CVMX_ADD_IO_SEG(0x0001180000000178ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_INT CVMX_MIO_EMM_DMA_INT_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000190ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_INT (CVMX_ADD_IO_SEG(0x0001180000000190ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_DMA_INT_W1S CVMX_MIO_EMM_DMA_INT_W1S_FUNC()
+static inline uint64_t CVMX_MIO_EMM_DMA_INT_W1S_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_DMA_INT_W1S not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000198ull);
+}
+#else
+#define CVMX_MIO_EMM_DMA_INT_W1S (CVMX_ADD_IO_SEG(0x0001180000000198ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_INT CVMX_MIO_EMM_INT_FUNC()
+static inline uint64_t CVMX_MIO_EMM_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002078ull);
+}
+#else
 #define CVMX_MIO_EMM_INT (CVMX_ADD_IO_SEG(0x0001180000002078ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_INT_EN CVMX_MIO_EMM_INT_EN_FUNC()
+static inline uint64_t CVMX_MIO_EMM_INT_EN_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_EMM_INT_EN not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002080ull);
+}
+#else
 #define CVMX_MIO_EMM_INT_EN (CVMX_ADD_IO_SEG(0x0001180000002080ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_INT_W1S CVMX_MIO_EMM_INT_W1S_FUNC()
+static inline uint64_t CVMX_MIO_EMM_INT_W1S_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_INT_W1S not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002080ull);
+}
+#else
+#define CVMX_MIO_EMM_INT_W1S (CVMX_ADD_IO_SEG(0x0001180000002080ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_EMM_MODEX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 3)))))
+		cvmx_warn("CVMX_MIO_EMM_MODEX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000002008ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_EMM_MODEX(offset) (CVMX_ADD_IO_SEG(0x0001180000002008ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_RCA CVMX_MIO_EMM_RCA_FUNC()
+static inline uint64_t CVMX_MIO_EMM_RCA_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_RCA not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000020A0ull);
+}
+#else
 #define CVMX_MIO_EMM_RCA (CVMX_ADD_IO_SEG(0x00011800000020A0ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_RSP_HI CVMX_MIO_EMM_RSP_HI_FUNC()
+static inline uint64_t CVMX_MIO_EMM_RSP_HI_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_RSP_HI not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002070ull);
+}
+#else
 #define CVMX_MIO_EMM_RSP_HI (CVMX_ADD_IO_SEG(0x0001180000002070ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_RSP_LO CVMX_MIO_EMM_RSP_LO_FUNC()
+static inline uint64_t CVMX_MIO_EMM_RSP_LO_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_RSP_LO not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002068ull);
+}
+#else
 #define CVMX_MIO_EMM_RSP_LO (CVMX_ADD_IO_SEG(0x0001180000002068ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_RSP_STS CVMX_MIO_EMM_RSP_STS_FUNC()
+static inline uint64_t CVMX_MIO_EMM_RSP_STS_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_RSP_STS not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002060ull);
+}
+#else
 #define CVMX_MIO_EMM_RSP_STS (CVMX_ADD_IO_SEG(0x0001180000002060ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_SAMPLE CVMX_MIO_EMM_SAMPLE_FUNC()
+static inline uint64_t CVMX_MIO_EMM_SAMPLE_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_SAMPLE not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002090ull);
+}
+#else
 #define CVMX_MIO_EMM_SAMPLE (CVMX_ADD_IO_SEG(0x0001180000002090ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_STS_MASK CVMX_MIO_EMM_STS_MASK_FUNC()
+static inline uint64_t CVMX_MIO_EMM_STS_MASK_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_STS_MASK not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002098ull);
+}
+#else
 #define CVMX_MIO_EMM_STS_MASK (CVMX_ADD_IO_SEG(0x0001180000002098ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_SWITCH CVMX_MIO_EMM_SWITCH_FUNC()
+static inline uint64_t CVMX_MIO_EMM_SWITCH_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_SWITCH not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002048ull);
+}
+#else
 #define CVMX_MIO_EMM_SWITCH (CVMX_ADD_IO_SEG(0x0001180000002048ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_EMM_WDOG CVMX_MIO_EMM_WDOG_FUNC()
+static inline uint64_t CVMX_MIO_EMM_WDOG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_EMM_WDOG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000002088ull);
+}
+#else
 #define CVMX_MIO_EMM_WDOG (CVMX_ADD_IO_SEG(0x0001180000002088ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_FUS_BNK_DATX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_FUS_BNK_DATX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001520ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_FUS_BNK_DATX(offset) (CVMX_ADD_IO_SEG(0x0001180000001520ull) + ((offset) & 3) * 8)
+#endif
 #define CVMX_MIO_FUS_DAT0 (CVMX_ADD_IO_SEG(0x0001180000001400ull))
 #define CVMX_MIO_FUS_DAT1 (CVMX_ADD_IO_SEG(0x0001180000001408ull))
 #define CVMX_MIO_FUS_DAT2 (CVMX_ADD_IO_SEG(0x0001180000001410ull))
 #define CVMX_MIO_FUS_DAT3 (CVMX_ADD_IO_SEG(0x0001180000001418ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_DAT4 CVMX_MIO_FUS_DAT4_FUNC()
+static inline uint64_t CVMX_MIO_FUS_DAT4_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_DAT4 not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001420ull);
+}
+#else
+#define CVMX_MIO_FUS_DAT4 (CVMX_ADD_IO_SEG(0x0001180000001420ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_EMA CVMX_MIO_FUS_EMA_FUNC()
+static inline uint64_t CVMX_MIO_FUS_EMA_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN5XXX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_FUS_EMA not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001550ull);
+}
+#else
 #define CVMX_MIO_FUS_EMA (CVMX_ADD_IO_SEG(0x0001180000001550ull))
-#define CVMX_MIO_FUS_PDF (CVMX_ADD_IO_SEG(0x0001180000001420ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_INT CVMX_MIO_FUS_INT_FUNC()
+static inline uint64_t CVMX_MIO_FUS_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001548ull);
+}
+#else
+#define CVMX_MIO_FUS_INT (CVMX_ADD_IO_SEG(0x0001180000001548ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_PDF CVMX_MIO_FUS_PDF_FUNC()
+static inline uint64_t CVMX_MIO_FUS_PDF_FUNC(void)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+					return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+					return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			break;
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001420ull);
+			break;
+	}
+	cvmx_warn("CVMX_MIO_FUS_PDF not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+}
+#else
+#define CVMX_MIO_FUS_PDF CVMX_MIO_FUS_PDF_FUNC()
+static inline uint64_t CVMX_MIO_FUS_PDF_FUNC(void)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001420ull);
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_PLL CVMX_MIO_FUS_PLL_FUNC()
+static inline uint64_t CVMX_MIO_FUS_PLL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN5XXX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_PLL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001580ull);
+}
+#else
 #define CVMX_MIO_FUS_PLL (CVMX_ADD_IO_SEG(0x0001180000001580ull))
+#endif
 #define CVMX_MIO_FUS_PROG (CVMX_ADD_IO_SEG(0x0001180000001510ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_PROG_TIMES CVMX_MIO_FUS_PROG_TIMES_FUNC()
+static inline uint64_t CVMX_MIO_FUS_PROG_TIMES_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN5XXX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_PROG_TIMES not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001518ull);
+}
+#else
 #define CVMX_MIO_FUS_PROG_TIMES (CVMX_ADD_IO_SEG(0x0001180000001518ull))
+#endif
 #define CVMX_MIO_FUS_RCMD (CVMX_ADD_IO_SEG(0x0001180000001500ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_READ_TIMES CVMX_MIO_FUS_READ_TIMES_FUNC()
+static inline uint64_t CVMX_MIO_FUS_READ_TIMES_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_READ_TIMES not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001570ull);
+}
+#else
 #define CVMX_MIO_FUS_READ_TIMES (CVMX_ADD_IO_SEG(0x0001180000001570ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_REPAIR_RES0 CVMX_MIO_FUS_REPAIR_RES0_FUNC()
+static inline uint64_t CVMX_MIO_FUS_REPAIR_RES0_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_FUS_REPAIR_RES0 not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001558ull);
+}
+#else
 #define CVMX_MIO_FUS_REPAIR_RES0 (CVMX_ADD_IO_SEG(0x0001180000001558ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_REPAIR_RES1 CVMX_MIO_FUS_REPAIR_RES1_FUNC()
+static inline uint64_t CVMX_MIO_FUS_REPAIR_RES1_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_FUS_REPAIR_RES1 not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001560ull);
+}
+#else
 #define CVMX_MIO_FUS_REPAIR_RES1 (CVMX_ADD_IO_SEG(0x0001180000001560ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_REPAIR_RES2 CVMX_MIO_FUS_REPAIR_RES2_FUNC()
+static inline uint64_t CVMX_MIO_FUS_REPAIR_RES2_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_FUS_REPAIR_RES2 not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001568ull);
+}
+#else
 #define CVMX_MIO_FUS_REPAIR_RES2 (CVMX_ADD_IO_SEG(0x0001180000001568ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_FUS_RPR_DATX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_FUS_RPR_DATX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001530ull) + ((offset) & 1) * 8;
+}
+#else
+#define CVMX_MIO_FUS_RPR_DATX(offset) (CVMX_ADD_IO_SEG(0x0001180000001530ull) + ((offset) & 1) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_SOFT_REPAIR CVMX_MIO_FUS_SOFT_REPAIR_FUNC()
+static inline uint64_t CVMX_MIO_FUS_SOFT_REPAIR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_FUS_SOFT_REPAIR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001540ull);
+}
+#else
+#define CVMX_MIO_FUS_SOFT_REPAIR (CVMX_ADD_IO_SEG(0x0001180000001540ull))
+#endif
 #define CVMX_MIO_FUS_SPR_REPAIR_RES (CVMX_ADD_IO_SEG(0x0001180000001548ull))
 #define CVMX_MIO_FUS_SPR_REPAIR_SUM (CVMX_ADD_IO_SEG(0x0001180000001540ull))
-#define CVMX_MIO_FUS_TGG (CVMX_ADD_IO_SEG(0x0001180000001428ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_TGG CVMX_MIO_FUS_TGG_FUNC()
+static inline uint64_t CVMX_MIO_FUS_TGG_FUNC(void)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+					return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+					return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+			return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+			break;
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+			break;
+	}
+	cvmx_warn("CVMX_MIO_FUS_TGG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+}
+#else
+#define CVMX_MIO_FUS_TGG CVMX_MIO_FUS_TGG_FUNC()
+static inline uint64_t CVMX_MIO_FUS_TGG_FUNC(void)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+			return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001428ull);
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001430ull);
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_FUS_UNLOCK CVMX_MIO_FUS_UNLOCK_FUNC()
+static inline uint64_t CVMX_MIO_FUS_UNLOCK_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN30XX) || OCTEON_IS_MODEL(OCTEON_CN31XX)))
+		cvmx_warn("CVMX_MIO_FUS_UNLOCK not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001578ull);
+}
+#else
 #define CVMX_MIO_FUS_UNLOCK (CVMX_ADD_IO_SEG(0x0001180000001578ull))
+#endif
 #define CVMX_MIO_FUS_WADR (CVMX_ADD_IO_SEG(0x0001180000001508ull))
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_GPIO_COMP CVMX_MIO_GPIO_COMP_FUNC()
+static inline uint64_t CVMX_MIO_GPIO_COMP_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_GPIO_COMP not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x00011800000000C8ull);
+}
+#else
 #define CVMX_MIO_GPIO_COMP (CVMX_ADD_IO_SEG(0x00011800000000C8ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_NDF_DMA_CFG CVMX_MIO_NDF_DMA_CFG_FUNC()
+static inline uint64_t CVMX_MIO_NDF_DMA_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_NDF_DMA_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000168ull);
+}
+#else
 #define CVMX_MIO_NDF_DMA_CFG (CVMX_ADD_IO_SEG(0x0001180000000168ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_NDF_DMA_INT CVMX_MIO_NDF_DMA_INT_FUNC()
+static inline uint64_t CVMX_MIO_NDF_DMA_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_NDF_DMA_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000170ull);
+}
+#else
 #define CVMX_MIO_NDF_DMA_INT (CVMX_ADD_IO_SEG(0x0001180000000170ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_NDF_DMA_INT_EN CVMX_MIO_NDF_DMA_INT_EN_FUNC()
+static inline uint64_t CVMX_MIO_NDF_DMA_INT_EN_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX) || OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_NDF_DMA_INT_EN not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000178ull);
+}
+#else
 #define CVMX_MIO_NDF_DMA_INT_EN (CVMX_ADD_IO_SEG(0x0001180000000178ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PLL_CTL CVMX_MIO_PLL_CTL_FUNC()
+static inline uint64_t CVMX_MIO_PLL_CTL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN30XX) || OCTEON_IS_MODEL(OCTEON_CN31XX)))
+		cvmx_warn("CVMX_MIO_PLL_CTL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001448ull);
+}
+#else
 #define CVMX_MIO_PLL_CTL (CVMX_ADD_IO_SEG(0x0001180000001448ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PLL_SETTING CVMX_MIO_PLL_SETTING_FUNC()
+static inline uint64_t CVMX_MIO_PLL_SETTING_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN30XX) || OCTEON_IS_MODEL(OCTEON_CN31XX)))
+		cvmx_warn("CVMX_MIO_PLL_SETTING not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001440ull);
+}
+#else
 #define CVMX_MIO_PLL_SETTING (CVMX_ADD_IO_SEG(0x0001180000001440ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CKOUT_HI_INCR CVMX_MIO_PTP_CKOUT_HI_INCR_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CKOUT_HI_INCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CKOUT_HI_INCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F40ull);
+}
+#else
 #define CVMX_MIO_PTP_CKOUT_HI_INCR (CVMX_ADD_IO_SEG(0x0001070000000F40ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CKOUT_LO_INCR CVMX_MIO_PTP_CKOUT_LO_INCR_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CKOUT_LO_INCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CKOUT_LO_INCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F48ull);
+}
+#else
 #define CVMX_MIO_PTP_CKOUT_LO_INCR (CVMX_ADD_IO_SEG(0x0001070000000F48ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CKOUT_THRESH_HI CVMX_MIO_PTP_CKOUT_THRESH_HI_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CKOUT_THRESH_HI_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CKOUT_THRESH_HI not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F38ull);
+}
+#else
 #define CVMX_MIO_PTP_CKOUT_THRESH_HI (CVMX_ADD_IO_SEG(0x0001070000000F38ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CKOUT_THRESH_LO CVMX_MIO_PTP_CKOUT_THRESH_LO_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CKOUT_THRESH_LO_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CKOUT_THRESH_LO not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F30ull);
+}
+#else
 #define CVMX_MIO_PTP_CKOUT_THRESH_LO (CVMX_ADD_IO_SEG(0x0001070000000F30ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CLOCK_CFG CVMX_MIO_PTP_CLOCK_CFG_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CLOCK_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CLOCK_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F00ull);
+}
+#else
 #define CVMX_MIO_PTP_CLOCK_CFG (CVMX_ADD_IO_SEG(0x0001070000000F00ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CLOCK_COMP CVMX_MIO_PTP_CLOCK_COMP_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CLOCK_COMP_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CLOCK_COMP not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F18ull);
+}
+#else
 #define CVMX_MIO_PTP_CLOCK_COMP (CVMX_ADD_IO_SEG(0x0001070000000F18ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CLOCK_HI CVMX_MIO_PTP_CLOCK_HI_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CLOCK_HI_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CLOCK_HI not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F10ull);
+}
+#else
 #define CVMX_MIO_PTP_CLOCK_HI (CVMX_ADD_IO_SEG(0x0001070000000F10ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_CLOCK_LO CVMX_MIO_PTP_CLOCK_LO_FUNC()
+static inline uint64_t CVMX_MIO_PTP_CLOCK_LO_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_CLOCK_LO not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F08ull);
+}
+#else
 #define CVMX_MIO_PTP_CLOCK_LO (CVMX_ADD_IO_SEG(0x0001070000000F08ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_DPLL_ERR_INT CVMX_MIO_PTP_DPLL_ERR_INT_FUNC()
+static inline uint64_t CVMX_MIO_PTP_DPLL_ERR_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_DPLL_ERR_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F90ull);
+}
+#else
+#define CVMX_MIO_PTP_DPLL_ERR_INT (CVMX_ADD_IO_SEG(0x0001070000000F90ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_DPLL_ERR_THRESH CVMX_MIO_PTP_DPLL_ERR_THRESH_FUNC()
+static inline uint64_t CVMX_MIO_PTP_DPLL_ERR_THRESH_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_DPLL_ERR_THRESH not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F88ull);
+}
+#else
+#define CVMX_MIO_PTP_DPLL_ERR_THRESH (CVMX_ADD_IO_SEG(0x0001070000000F88ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_DPLL_INCR CVMX_MIO_PTP_DPLL_INCR_FUNC()
+static inline uint64_t CVMX_MIO_PTP_DPLL_INCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_DPLL_INCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F80ull);
+}
+#else
+#define CVMX_MIO_PTP_DPLL_INCR (CVMX_ADD_IO_SEG(0x0001070000000F80ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_EVT_CNT CVMX_MIO_PTP_EVT_CNT_FUNC()
+static inline uint64_t CVMX_MIO_PTP_EVT_CNT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_EVT_CNT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F28ull);
+}
+#else
 #define CVMX_MIO_PTP_EVT_CNT (CVMX_ADD_IO_SEG(0x0001070000000F28ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_EVT_INT CVMX_MIO_PTP_EVT_INT_FUNC()
+static inline uint64_t CVMX_MIO_PTP_EVT_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_EVT_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F70ull);
+}
+#else
+#define CVMX_MIO_PTP_EVT_INT (CVMX_ADD_IO_SEG(0x0001070000000F70ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_PHY_1PPS_IN CVMX_MIO_PTP_PHY_1PPS_IN_FUNC()
+static inline uint64_t CVMX_MIO_PTP_PHY_1PPS_IN_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_PTP_PHY_1PPS_IN not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F70ull);
+}
+#else
 #define CVMX_MIO_PTP_PHY_1PPS_IN (CVMX_ADD_IO_SEG(0x0001070000000F70ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_PPS_HI_INCR CVMX_MIO_PTP_PPS_HI_INCR_FUNC()
+static inline uint64_t CVMX_MIO_PTP_PPS_HI_INCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_PPS_HI_INCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F60ull);
+}
+#else
 #define CVMX_MIO_PTP_PPS_HI_INCR (CVMX_ADD_IO_SEG(0x0001070000000F60ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_PPS_LO_INCR CVMX_MIO_PTP_PPS_LO_INCR_FUNC()
+static inline uint64_t CVMX_MIO_PTP_PPS_LO_INCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_PPS_LO_INCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F68ull);
+}
+#else
 #define CVMX_MIO_PTP_PPS_LO_INCR (CVMX_ADD_IO_SEG(0x0001070000000F68ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_PPS_THRESH_HI CVMX_MIO_PTP_PPS_THRESH_HI_FUNC()
+static inline uint64_t CVMX_MIO_PTP_PPS_THRESH_HI_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_PPS_THRESH_HI not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F58ull);
+}
+#else
 #define CVMX_MIO_PTP_PPS_THRESH_HI (CVMX_ADD_IO_SEG(0x0001070000000F58ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_PPS_THRESH_LO CVMX_MIO_PTP_PPS_THRESH_LO_FUNC()
+static inline uint64_t CVMX_MIO_PTP_PPS_THRESH_LO_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_PPS_THRESH_LO not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F50ull);
+}
+#else
 #define CVMX_MIO_PTP_PPS_THRESH_LO (CVMX_ADD_IO_SEG(0x0001070000000F50ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_PTP_TIMESTAMP CVMX_MIO_PTP_TIMESTAMP_FUNC()
+static inline uint64_t CVMX_MIO_PTP_TIMESTAMP_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CN70XX) || OCTEON_IS_MODEL(OCTEON_CN73XX) || OCTEON_IS_MODEL(OCTEON_CN78XX) || OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) || OCTEON_IS_MODEL(OCTEON_CNF71XX) || OCTEON_IS_MODEL(OCTEON_CNF75XX)))
+		cvmx_warn("CVMX_MIO_PTP_TIMESTAMP not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001070000000F20ull);
+}
+#else
 #define CVMX_MIO_PTP_TIMESTAMP (CVMX_ADD_IO_SEG(0x0001070000000F20ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_QLMX_CFG(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 2))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 4))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_QLMX_CFG(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001590ull) + ((offset) & 7) * 8;
+}
+#else
 #define CVMX_MIO_QLMX_CFG(offset) (CVMX_ADD_IO_SEG(0x0001180000001590ull) + ((offset) & 7) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_BOOT CVMX_MIO_RST_BOOT_FUNC()
+static inline uint64_t CVMX_MIO_RST_BOOT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_BOOT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001600ull);
+}
+#else
 #define CVMX_MIO_RST_BOOT (CVMX_ADD_IO_SEG(0x0001180000001600ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_CFG CVMX_MIO_RST_CFG_FUNC()
+static inline uint64_t CVMX_MIO_RST_CFG_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_CFG not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001610ull);
+}
+#else
 #define CVMX_MIO_RST_CFG (CVMX_ADD_IO_SEG(0x0001180000001610ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_CKILL CVMX_MIO_RST_CKILL_FUNC()
+static inline uint64_t CVMX_MIO_RST_CKILL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_CKILL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001638ull);
+}
+#else
 #define CVMX_MIO_RST_CKILL (CVMX_ADD_IO_SEG(0x0001180000001638ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_RST_CNTLX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 3))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_RST_CNTLX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001648ull) + ((offset) & 3) * 8;
+}
+#else
 #define CVMX_MIO_RST_CNTLX(offset) (CVMX_ADD_IO_SEG(0x0001180000001648ull) + ((offset) & 3) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_RST_CTLX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_RST_CTLX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001618ull) + ((offset) & 1) * 8;
+}
+#else
 #define CVMX_MIO_RST_CTLX(offset) (CVMX_ADD_IO_SEG(0x0001180000001618ull) + ((offset) & 1) * 8)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_DELAY CVMX_MIO_RST_DELAY_FUNC()
+static inline uint64_t CVMX_MIO_RST_DELAY_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_DELAY not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001608ull);
+}
+#else
 #define CVMX_MIO_RST_DELAY (CVMX_ADD_IO_SEG(0x0001180000001608ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_INT CVMX_MIO_RST_INT_FUNC()
+static inline uint64_t CVMX_MIO_RST_INT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_INT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001628ull);
+}
+#else
 #define CVMX_MIO_RST_INT (CVMX_ADD_IO_SEG(0x0001180000001628ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_RST_INT_EN CVMX_MIO_RST_INT_EN_FUNC()
+static inline uint64_t CVMX_MIO_RST_INT_EN_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN61XX) || OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX) || OCTEON_IS_MODEL(OCTEON_CN68XX) || OCTEON_IS_MODEL(OCTEON_CNF71XX)))
+		cvmx_warn("CVMX_MIO_RST_INT_EN not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000001630ull);
+}
+#else
 #define CVMX_MIO_RST_INT_EN (CVMX_ADD_IO_SEG(0x0001180000001630ull))
-#define CVMX_MIO_TWSX_INT(offset) (CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 1) * 512)
-#define CVMX_MIO_TWSX_SW_TWSI(offset) (CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 1) * 512)
-#define CVMX_MIO_TWSX_SW_TWSI_EXT(offset) (CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 1) * 512)
-#define CVMX_MIO_TWSX_TWSI_SW(offset) (CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 1) * 512)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_TWSX_INT(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 1) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 1) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 1))
+				return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 1) * 512;
+			break;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			if ((offset == 0))
+				return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 0) * 512;
+			break;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 2))
+				return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 3) * 256;
+			break;
+	}
+	cvmx_warn("CVMX_MIO_TWSX_INT (offset = %lu) not supported on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001010ull) + ((offset) & 3) * 256;
+}
+#else
+static inline uint64_t CVMX_MIO_TWSX_INT(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 512;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 512;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 256;
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001010ull) + (offset) * 256;
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_TWSX_INT_W1S(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001020ull) + ((offset) & 1) * 512;
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 1))
+				return CVMX_ADD_IO_SEG(0x0001180000001020ull) + ((offset) & 1) * 512;
+			break;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 2))
+				return CVMX_ADD_IO_SEG(0x0001180000001020ull) + ((offset) & 3) * 256;
+			break;
+	}
+	cvmx_warn("CVMX_MIO_TWSX_INT_W1S (offset = %lu) not supported on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001020ull) + ((offset) & 3) * 256;
+}
+#else
+static inline uint64_t CVMX_MIO_TWSX_INT_W1S(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001020ull) + (offset) * 512;
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001020ull) + (offset) * 512;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001020ull) + (offset) * 256;
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001020ull) + (offset) * 256;
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_TWSX_SW_TWSI(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 1) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 1) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 1))
+				return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 1) * 512;
+			break;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			if ((offset == 0))
+				return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 0) * 512;
+			break;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 2))
+				return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 3) * 256;
+			break;
+	}
+	cvmx_warn("CVMX_MIO_TWSX_SW_TWSI (offset = %lu) not supported on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001000ull) + ((offset) & 3) * 256;
+}
+#else
+static inline uint64_t CVMX_MIO_TWSX_SW_TWSI(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 512;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 512;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 256;
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001000ull) + (offset) * 256;
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_TWSX_SW_TWSI_EXT(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 1) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 1) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 1))
+				return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 1) * 512;
+			break;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			if ((offset == 0))
+				return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 0) * 512;
+			break;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 2))
+				return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 3) * 256;
+			break;
+	}
+	cvmx_warn("CVMX_MIO_TWSX_SW_TWSI_EXT (offset = %lu) not supported on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001018ull) + ((offset) & 3) * 256;
+}
+#else
+static inline uint64_t CVMX_MIO_TWSX_SW_TWSI_EXT(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 512;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 512;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 256;
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001018ull) + (offset) * 256;
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_TWSX_TWSI_SW(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 1) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				if ((offset <= 1))
+					return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 1) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 1))
+				return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 1) * 512;
+			break;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			if ((offset == 0))
+				return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 0) * 512;
+			break;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			if ((offset <= 2))
+				return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 3) * 256;
+			break;
+	}
+	cvmx_warn("CVMX_MIO_TWSX_TWSI_SW (offset = %lu) not supported on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000001008ull) + ((offset) & 3) * 256;
+}
+#else
+static inline uint64_t CVMX_MIO_TWSX_TWSI_SW(unsigned long offset)
+{
+	switch(cvmx_get_octeon_family()) {
+		case OCTEON_CN70XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CNF71XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN73XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN61XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN56XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN66XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN52XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN78XX & OCTEON_FAMILY_MASK:
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX))
+				return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 512;
+			if (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X))
+				return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 512;
+		case OCTEON_CN63XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN68XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 512;
+		case OCTEON_CN30XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN50XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN38XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN31XX & OCTEON_FAMILY_MASK:
+		case OCTEON_CN58XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 512;
+		case OCTEON_CNF75XX & OCTEON_FAMILY_MASK:
+			return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 256;
+	}
+	return CVMX_ADD_IO_SEG(0x0001180000001008ull) + (offset) * 256;
+}
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_DLH CVMX_MIO_UART2_DLH_FUNC()
+static inline uint64_t CVMX_MIO_UART2_DLH_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_DLH not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000488ull);
+}
+#else
 #define CVMX_MIO_UART2_DLH (CVMX_ADD_IO_SEG(0x0001180000000488ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_DLL CVMX_MIO_UART2_DLL_FUNC()
+static inline uint64_t CVMX_MIO_UART2_DLL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_DLL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000480ull);
+}
+#else
 #define CVMX_MIO_UART2_DLL (CVMX_ADD_IO_SEG(0x0001180000000480ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_FAR CVMX_MIO_UART2_FAR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_FAR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_FAR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000520ull);
+}
+#else
 #define CVMX_MIO_UART2_FAR (CVMX_ADD_IO_SEG(0x0001180000000520ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_FCR CVMX_MIO_UART2_FCR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_FCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_FCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000450ull);
+}
+#else
 #define CVMX_MIO_UART2_FCR (CVMX_ADD_IO_SEG(0x0001180000000450ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_HTX CVMX_MIO_UART2_HTX_FUNC()
+static inline uint64_t CVMX_MIO_UART2_HTX_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_HTX not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000708ull);
+}
+#else
 #define CVMX_MIO_UART2_HTX (CVMX_ADD_IO_SEG(0x0001180000000708ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_IER CVMX_MIO_UART2_IER_FUNC()
+static inline uint64_t CVMX_MIO_UART2_IER_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_IER not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000408ull);
+}
+#else
 #define CVMX_MIO_UART2_IER (CVMX_ADD_IO_SEG(0x0001180000000408ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_IIR CVMX_MIO_UART2_IIR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_IIR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_IIR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000410ull);
+}
+#else
 #define CVMX_MIO_UART2_IIR (CVMX_ADD_IO_SEG(0x0001180000000410ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_LCR CVMX_MIO_UART2_LCR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_LCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_LCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000418ull);
+}
+#else
 #define CVMX_MIO_UART2_LCR (CVMX_ADD_IO_SEG(0x0001180000000418ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_LSR CVMX_MIO_UART2_LSR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_LSR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_LSR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000428ull);
+}
+#else
 #define CVMX_MIO_UART2_LSR (CVMX_ADD_IO_SEG(0x0001180000000428ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_MCR CVMX_MIO_UART2_MCR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_MCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_MCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000420ull);
+}
+#else
 #define CVMX_MIO_UART2_MCR (CVMX_ADD_IO_SEG(0x0001180000000420ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_MSR CVMX_MIO_UART2_MSR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_MSR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_MSR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000430ull);
+}
+#else
 #define CVMX_MIO_UART2_MSR (CVMX_ADD_IO_SEG(0x0001180000000430ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_RBR CVMX_MIO_UART2_RBR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_RBR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_RBR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000400ull);
+}
+#else
 #define CVMX_MIO_UART2_RBR (CVMX_ADD_IO_SEG(0x0001180000000400ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_RFL CVMX_MIO_UART2_RFL_FUNC()
+static inline uint64_t CVMX_MIO_UART2_RFL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_RFL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000608ull);
+}
+#else
 #define CVMX_MIO_UART2_RFL (CVMX_ADD_IO_SEG(0x0001180000000608ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_RFW CVMX_MIO_UART2_RFW_FUNC()
+static inline uint64_t CVMX_MIO_UART2_RFW_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_RFW not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000530ull);
+}
+#else
 #define CVMX_MIO_UART2_RFW (CVMX_ADD_IO_SEG(0x0001180000000530ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SBCR CVMX_MIO_UART2_SBCR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SBCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SBCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000620ull);
+}
+#else
 #define CVMX_MIO_UART2_SBCR (CVMX_ADD_IO_SEG(0x0001180000000620ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SCR CVMX_MIO_UART2_SCR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SCR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SCR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000438ull);
+}
+#else
 #define CVMX_MIO_UART2_SCR (CVMX_ADD_IO_SEG(0x0001180000000438ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SFE CVMX_MIO_UART2_SFE_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SFE_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SFE not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000630ull);
+}
+#else
 #define CVMX_MIO_UART2_SFE (CVMX_ADD_IO_SEG(0x0001180000000630ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SRR CVMX_MIO_UART2_SRR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SRR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SRR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000610ull);
+}
+#else
 #define CVMX_MIO_UART2_SRR (CVMX_ADD_IO_SEG(0x0001180000000610ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SRT CVMX_MIO_UART2_SRT_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SRT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SRT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000638ull);
+}
+#else
 #define CVMX_MIO_UART2_SRT (CVMX_ADD_IO_SEG(0x0001180000000638ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_SRTS CVMX_MIO_UART2_SRTS_FUNC()
+static inline uint64_t CVMX_MIO_UART2_SRTS_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_SRTS not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000618ull);
+}
+#else
 #define CVMX_MIO_UART2_SRTS (CVMX_ADD_IO_SEG(0x0001180000000618ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_STT CVMX_MIO_UART2_STT_FUNC()
+static inline uint64_t CVMX_MIO_UART2_STT_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_STT not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000700ull);
+}
+#else
 #define CVMX_MIO_UART2_STT (CVMX_ADD_IO_SEG(0x0001180000000700ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_TFL CVMX_MIO_UART2_TFL_FUNC()
+static inline uint64_t CVMX_MIO_UART2_TFL_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_TFL not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000600ull);
+}
+#else
 #define CVMX_MIO_UART2_TFL (CVMX_ADD_IO_SEG(0x0001180000000600ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_TFR CVMX_MIO_UART2_TFR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_TFR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_TFR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000528ull);
+}
+#else
 #define CVMX_MIO_UART2_TFR (CVMX_ADD_IO_SEG(0x0001180000000528ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_THR CVMX_MIO_UART2_THR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_THR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_THR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000440ull);
+}
+#else
 #define CVMX_MIO_UART2_THR (CVMX_ADD_IO_SEG(0x0001180000000440ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+#define CVMX_MIO_UART2_USR CVMX_MIO_UART2_USR_FUNC()
+static inline uint64_t CVMX_MIO_UART2_USR_FUNC(void)
+{
+	if (!(OCTEON_IS_MODEL(OCTEON_CN52XX)))
+		cvmx_warn("CVMX_MIO_UART2_USR not supported on this chip\n");
+	return CVMX_ADD_IO_SEG(0x0001180000000538ull);
+}
+#else
 #define CVMX_MIO_UART2_USR (CVMX_ADD_IO_SEG(0x0001180000000538ull))
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_DLH(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_DLH(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000888ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_DLH(offset) (CVMX_ADD_IO_SEG(0x0001180000000888ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_DLL(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_DLL(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000880ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_DLL(offset) (CVMX_ADD_IO_SEG(0x0001180000000880ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_FAR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_FAR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000920ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_FAR(offset) (CVMX_ADD_IO_SEG(0x0001180000000920ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_FCR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_FCR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000850ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_FCR(offset) (CVMX_ADD_IO_SEG(0x0001180000000850ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_HTX(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_HTX(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000B08ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_HTX(offset) (CVMX_ADD_IO_SEG(0x0001180000000B08ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_IER(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_IER(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000808ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_IER(offset) (CVMX_ADD_IO_SEG(0x0001180000000808ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_IIR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_IIR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000810ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_IIR(offset) (CVMX_ADD_IO_SEG(0x0001180000000810ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_LCR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_LCR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000818ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_LCR(offset) (CVMX_ADD_IO_SEG(0x0001180000000818ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_LSR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_LSR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000828ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_LSR(offset) (CVMX_ADD_IO_SEG(0x0001180000000828ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_MCR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_MCR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000820ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_MCR(offset) (CVMX_ADD_IO_SEG(0x0001180000000820ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_MSR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_MSR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000830ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_MSR(offset) (CVMX_ADD_IO_SEG(0x0001180000000830ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_RBR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_RBR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000800ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_RBR(offset) (CVMX_ADD_IO_SEG(0x0001180000000800ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_RFL(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_RFL(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A08ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_RFL(offset) (CVMX_ADD_IO_SEG(0x0001180000000A08ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_RFW(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_RFW(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000930ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_RFW(offset) (CVMX_ADD_IO_SEG(0x0001180000000930ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SBCR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SBCR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A20ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SBCR(offset) (CVMX_ADD_IO_SEG(0x0001180000000A20ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SCR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SCR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000838ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SCR(offset) (CVMX_ADD_IO_SEG(0x0001180000000838ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SFE(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SFE(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A30ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SFE(offset) (CVMX_ADD_IO_SEG(0x0001180000000A30ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SRR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SRR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A10ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SRR(offset) (CVMX_ADD_IO_SEG(0x0001180000000A10ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SRT(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SRT(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A38ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SRT(offset) (CVMX_ADD_IO_SEG(0x0001180000000A38ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_SRTS(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_SRTS(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A18ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_SRTS(offset) (CVMX_ADD_IO_SEG(0x0001180000000A18ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_STT(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_STT(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000B00ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_STT(offset) (CVMX_ADD_IO_SEG(0x0001180000000B00ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_TFL(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_TFL(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000A00ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_TFL(offset) (CVMX_ADD_IO_SEG(0x0001180000000A00ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_TFR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_TFR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000928ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_TFR(offset) (CVMX_ADD_IO_SEG(0x0001180000000928ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_THR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_THR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000840ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_THR(offset) (CVMX_ADD_IO_SEG(0x0001180000000840ull) + ((offset) & 1) * 1024)
+#endif
+#if CVMX_ENABLE_CSR_ADDRESS_CHECKING
+static inline uint64_t CVMX_MIO_UARTX_USR(unsigned long offset)
+{
+	if (!(
+	      (OCTEON_IS_MODEL(OCTEON_CN30XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN31XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN38XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN50XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN52XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN56XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN58XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN61XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN63XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN66XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN68XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN70XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN73XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CN78XX_PASS1_X) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF71XX) && ((offset <= 1))) ||
+	      (OCTEON_IS_MODEL(OCTEON_CNF75XX) && ((offset <= 1)))))
+		cvmx_warn("CVMX_MIO_UARTX_USR(%lu) is invalid on this chip\n", offset);
+	return CVMX_ADD_IO_SEG(0x0001180000000938ull) + ((offset) & 1) * 1024;
+}
+#else
 #define CVMX_MIO_UARTX_USR(offset) (CVMX_ADD_IO_SEG(0x0001180000000938ull) + ((offset) & 1) * 1024)
+#endif
 
+/**
+ * cvmx_mio_boot_bist_stat
+ *
+ * The boot BIST status register contains the BIST status for the MIO boot memories: 0 = pass, 1
+ * = fail.
+ */
 union cvmx_mio_boot_bist_stat {
 	uint64_t u64;
 	struct cvmx_mio_boot_bist_stat_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_0_63:64;
+	uint64_t reserved_0_63                : 64;
 #else
-		uint64_t reserved_0_63:64;
+	uint64_t reserved_0_63                : 64;
 #endif
 	} s;
 	struct cvmx_mio_boot_bist_stat_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_4_63:60;
-		uint64_t ncbo_1:1;
-		uint64_t ncbo_0:1;
-		uint64_t loc:1;
-		uint64_t ncbi:1;
+	uint64_t reserved_4_63                : 60;
+	uint64_t ncbo_1                       : 1;  /**< NCB output FIFO 1 BIST status */
+	uint64_t ncbo_0                       : 1;  /**< NCB output FIFO 0 BIST status */
+	uint64_t loc                          : 1;  /**< Local memory BIST status */
+	uint64_t ncbi                         : 1;  /**< NCB input FIFO BIST status */
 #else
-		uint64_t ncbi:1;
-		uint64_t loc:1;
-		uint64_t ncbo_0:1;
-		uint64_t ncbo_1:1;
-		uint64_t reserved_4_63:60;
+	uint64_t ncbi                         : 1;
+	uint64_t loc                          : 1;
+	uint64_t ncbo_0                       : 1;
+	uint64_t ncbo_1                       : 1;
+	uint64_t reserved_4_63                : 60;
 #endif
 	} cn30xx;
+	struct cvmx_mio_boot_bist_stat_cn30xx cn31xx;
 	struct cvmx_mio_boot_bist_stat_cn38xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_3_63:61;
-		uint64_t ncbo_0:1;
-		uint64_t loc:1;
-		uint64_t ncbi:1;
+	uint64_t reserved_3_63                : 61;
+	uint64_t ncbo_0                       : 1;  /**< NCB output FIFO BIST status */
+	uint64_t loc                          : 1;  /**< Local memory BIST status */
+	uint64_t ncbi                         : 1;  /**< NCB input FIFO BIST status */
 #else
-		uint64_t ncbi:1;
-		uint64_t loc:1;
-		uint64_t ncbo_0:1;
-		uint64_t reserved_3_63:61;
+	uint64_t ncbi                         : 1;
+	uint64_t loc                          : 1;
+	uint64_t ncbo_0                       : 1;
+	uint64_t reserved_3_63                : 61;
 #endif
 	} cn38xx;
+	struct cvmx_mio_boot_bist_stat_cn38xx cn38xxp2;
 	struct cvmx_mio_boot_bist_stat_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_6_63:58;
-		uint64_t pcm_1:1;
-		uint64_t pcm_0:1;
-		uint64_t ncbo_1:1;
-		uint64_t ncbo_0:1;
-		uint64_t loc:1;
-		uint64_t ncbi:1;
+	uint64_t reserved_6_63                : 58;
+	uint64_t pcm_1                        : 1;  /**< PCM memory 1 BIST status */
+	uint64_t pcm_0                        : 1;  /**< PCM memory 0 BIST status */
+	uint64_t ncbo_1                       : 1;  /**< NCB output FIFO 1 BIST status */
+	uint64_t ncbo_0                       : 1;  /**< NCB output FIFO 0 BIST status */
+	uint64_t loc                          : 1;  /**< Local memory region BIST status */
+	uint64_t ncbi                         : 1;  /**< NCB input FIFO BIST status */
 #else
-		uint64_t ncbi:1;
-		uint64_t loc:1;
-		uint64_t ncbo_0:1;
-		uint64_t ncbo_1:1;
-		uint64_t pcm_0:1;
-		uint64_t pcm_1:1;
-		uint64_t reserved_6_63:58;
+	uint64_t ncbi                         : 1;
+	uint64_t loc                          : 1;
+	uint64_t ncbo_0                       : 1;
+	uint64_t ncbo_1                       : 1;
+	uint64_t pcm_0                        : 1;
+	uint64_t pcm_1                        : 1;
+	uint64_t reserved_6_63                : 58;
 #endif
 	} cn50xx;
 	struct cvmx_mio_boot_bist_stat_cn52xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_6_63:58;
-		uint64_t ndf:2;
-		uint64_t ncbo_0:1;
-		uint64_t dma:1;
-		uint64_t loc:1;
-		uint64_t ncbi:1;
+	uint64_t reserved_6_63                : 58;
+	uint64_t ndf                          : 2;  /**< NAND flash BIST status */
+	uint64_t ncbo_0                       : 1;  /**< NCB output FIFO BIST status */
+	uint64_t dma                          : 1;  /**< DMA memory BIST status */
+	uint64_t loc                          : 1;  /**< Local memory region BIST status */
+	uint64_t ncbi                         : 1;  /**< NCB input FIFO BIST status */
 #else
-		uint64_t ncbi:1;
-		uint64_t loc:1;
-		uint64_t dma:1;
-		uint64_t ncbo_0:1;
-		uint64_t ndf:2;
-		uint64_t reserved_6_63:58;
+	uint64_t ncbi                         : 1;
+	uint64_t loc                          : 1;
+	uint64_t dma                          : 1;
+	uint64_t ncbo_0                       : 1;
+	uint64_t ndf                          : 2;
+	uint64_t reserved_6_63                : 58;
 #endif
 	} cn52xx;
 	struct cvmx_mio_boot_bist_stat_cn52xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_4_63:60;
-		uint64_t ncbo_0:1;
-		uint64_t dma:1;
-		uint64_t loc:1;
-		uint64_t ncbi:1;
+	uint64_t reserved_4_63                : 60;
+	uint64_t ncbo_0                       : 1;  /**< NCB output FIFO BIST status */
+	uint64_t dma                          : 1;  /**< DMA memory BIST status */
+	uint64_t loc                          : 1;  /**< Local memory region BIST status */
+	uint64_t ncbi                         : 1;  /**< NCB input FIFO BIST status */
 #else
-		uint64_t ncbi:1;
-		uint64_t loc:1;
-		uint64_t dma:1;
-		uint64_t ncbo_0:1;
-		uint64_t reserved_4_63:60;
+	uint64_t ncbi                         : 1;
+	uint64_t loc                          : 1;
+	uint64_t dma                          : 1;
+	uint64_t ncbo_0                       : 1;
+	uint64_t reserved_4_63                : 60;
 #endif
 	} cn52xxp1;
+	struct cvmx_mio_boot_bist_stat_cn52xxp1 cn56xx;
+	struct cvmx_mio_boot_bist_stat_cn52xxp1 cn56xxp1;
+	struct cvmx_mio_boot_bist_stat_cn38xx cn58xx;
+	struct cvmx_mio_boot_bist_stat_cn38xx cn58xxp1;
 	struct cvmx_mio_boot_bist_stat_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t stat:12;
+	uint64_t reserved_12_63               : 52;
+	uint64_t stat                         : 12; /**< BIST status */
 #else
-		uint64_t stat:12;
-		uint64_t reserved_12_63:52;
+	uint64_t stat                         : 12;
+	uint64_t reserved_12_63               : 52;
 #endif
 	} cn61xx;
 	struct cvmx_mio_boot_bist_stat_cn63xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_9_63:55;
-		uint64_t stat:9;
+	uint64_t reserved_9_63                : 55;
+	uint64_t stat                         : 9;  /**< BIST status */
 #else
-		uint64_t stat:9;
-		uint64_t reserved_9_63:55;
+	uint64_t stat                         : 9;
+	uint64_t reserved_9_63                : 55;
 #endif
 	} cn63xx;
+	struct cvmx_mio_boot_bist_stat_cn63xx cn63xxp1;
 	struct cvmx_mio_boot_bist_stat_cn66xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t stat:10;
+	uint64_t reserved_10_63               : 54;
+	uint64_t stat                         : 10; /**< BIST status */
 #else
-		uint64_t stat:10;
-		uint64_t reserved_10_63:54;
+	uint64_t stat                         : 10;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn66xx;
+	struct cvmx_mio_boot_bist_stat_cn66xx cn68xx;
+	struct cvmx_mio_boot_bist_stat_cn66xx cn68xxp1;
+	struct cvmx_mio_boot_bist_stat_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_14_63               : 50;
+	uint64_t stat                         : 14; /**< BIST status */
+#else
+	uint64_t stat                         : 14;
+	uint64_t reserved_14_63               : 50;
+#endif
+	} cn70xx;
+	struct cvmx_mio_boot_bist_stat_cn70xx cn70xxp1;
+	struct cvmx_mio_boot_bist_stat_cn70xx cn73xx;
+	struct cvmx_mio_boot_bist_stat_cn78xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_8_63                : 56;
+	uint64_t stat                         : 8;  /**< BIST status. */
+#else
+	uint64_t stat                         : 8;
+	uint64_t reserved_8_63                : 56;
+#endif
+	} cn78xx;
+	struct cvmx_mio_boot_bist_stat_cn78xx cn78xxp1;
+	struct cvmx_mio_boot_bist_stat_cn61xx cnf71xx;
+	struct cvmx_mio_boot_bist_stat_cn70xx cnf75xx;
 };
+typedef union cvmx_mio_boot_bist_stat cvmx_mio_boot_bist_stat_t;
 
+/**
+ * cvmx_mio_boot_comp
+ *
+ * This register sets the output impedance of boot-bus output pins.
+ *
+ */
 union cvmx_mio_boot_comp {
 	uint64_t u64;
 	struct cvmx_mio_boot_comp_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_0_63:64;
+	uint64_t reserved_0_63                : 64;
 #else
-		uint64_t reserved_0_63:64;
+	uint64_t reserved_0_63                : 64;
 #endif
 	} s;
 	struct cvmx_mio_boot_comp_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t pctl:5;
-		uint64_t nctl:5;
+	uint64_t reserved_10_63               : 54;
+	uint64_t pctl                         : 5;  /**< Boot bus PCTL */
+	uint64_t nctl                         : 5;  /**< Boot bus NCTL */
 #else
-		uint64_t nctl:5;
-		uint64_t pctl:5;
-		uint64_t reserved_10_63:54;
+	uint64_t nctl                         : 5;
+	uint64_t pctl                         : 5;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn50xx;
+	struct cvmx_mio_boot_comp_cn50xx      cn52xx;
+	struct cvmx_mio_boot_comp_cn50xx      cn52xxp1;
+	struct cvmx_mio_boot_comp_cn50xx      cn56xx;
+	struct cvmx_mio_boot_comp_cn50xx      cn56xxp1;
 	struct cvmx_mio_boot_comp_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t pctl:6;
-		uint64_t nctl:6;
+	uint64_t reserved_12_63               : 52;
+	uint64_t pctl                         : 6;  /**< Boot bus PCTL */
+	uint64_t nctl                         : 6;  /**< Boot bus NCTL */
 #else
-		uint64_t nctl:6;
-		uint64_t pctl:6;
-		uint64_t reserved_12_63:52;
+	uint64_t nctl                         : 6;
+	uint64_t pctl                         : 6;
+	uint64_t reserved_12_63               : 52;
 #endif
 	} cn61xx;
+	struct cvmx_mio_boot_comp_cn61xx      cn63xx;
+	struct cvmx_mio_boot_comp_cn61xx      cn63xxp1;
+	struct cvmx_mio_boot_comp_cn61xx      cn66xx;
+	struct cvmx_mio_boot_comp_cn61xx      cn68xx;
+	struct cvmx_mio_boot_comp_cn61xx      cn68xxp1;
+	struct cvmx_mio_boot_comp_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_11_63               : 53;
+	uint64_t pctl                         : 3;  /**< Boot bus PCTL */
+	uint64_t reserved_3_7                 : 5;
+	uint64_t nctl                         : 3;  /**< Boot bus NCTL */
+#else
+	uint64_t nctl                         : 3;
+	uint64_t reserved_3_7                 : 5;
+	uint64_t pctl                         : 3;
+	uint64_t reserved_11_63               : 53;
+#endif
+	} cn70xx;
+	struct cvmx_mio_boot_comp_cn70xx      cn70xxp1;
+	struct cvmx_mio_boot_comp_cn70xx      cn73xx;
+	struct cvmx_mio_boot_comp_cn70xx      cn78xx;
+	struct cvmx_mio_boot_comp_cn70xx      cn78xxp1;
+	struct cvmx_mio_boot_comp_cn61xx      cnf71xx;
+	struct cvmx_mio_boot_comp_cn70xx      cnf75xx;
 };
+typedef union cvmx_mio_boot_comp cvmx_mio_boot_comp_t;
 
+/**
+ * cvmx_mio_boot_ctl
+ *
+ * The hardware allows only one controller to use the BootBus and the MIO_NDF_DMA engine
+ * at a time.  The SEL field determines the owner.
+ * This field should be changed only when the current controller operations are complete.
+ * Here are several situations.
+ *    1.  If eMMC/SD is currently doing a read or write command without a DMA then the
+ *        MIO_EMM_INT[CMD_DONE] should occur before SEL is changed.
+ *    2.  If eMMC/SD is currently doing a dma operation with the device then the
+ *        MIO_EMM_INT[DMA_DONE] should occur before SEL is changed.  Care must be taken not to
+ *        reprogram the MIO_NDF_DMA_CFG register until both the previous MIO_NDF_DMA_INT[DONE]
+ *        has occurred and the new SEL has been set.
+ *    3.  If NAND is currently doing one or more operations to the external device without using
+ *        the DMA then the NDF_INT[EMPTY] should occur to guarantee all commands are executed
+ *        before changing the SEL value.
+ *    4.  If NAND is currently doing one or more operations to the external device which includes
+ *        DMAs then the SEL should not change until both the last MIO_NDF_DMA_INT[DONE] and
+ *        NDF_INT[EMPTY] have occurred.
+ */
+union cvmx_mio_boot_ctl {
+	uint64_t u64;
+	struct cvmx_mio_boot_ctl_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_1_63                : 63;
+	uint64_t sel                          : 1;  /**< Controller Selection.
+                                                         0 = eMMC/SD,
+                                                         1 = NAND */
+#else
+	uint64_t sel                          : 1;
+	uint64_t reserved_1_63                : 63;
+#endif
+	} s;
+	struct cvmx_mio_boot_ctl_s            cn70xx;
+	struct cvmx_mio_boot_ctl_s            cn70xxp1;
+};
+typedef union cvmx_mio_boot_ctl cvmx_mio_boot_ctl_t;
+
+/**
+ * cvmx_mio_boot_dma_adr#
+ *
+ * This is the DMA engine n address register (one register for each of two engines).
+ *
+ */
+union cvmx_mio_boot_dma_adrx {
+	uint64_t u64;
+	struct cvmx_mio_boot_dma_adrx_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_42_63               : 22;
+	uint64_t adr                          : 42; /**< DMA engine 0-1 address. This value must be aligned to the bus width (i.e. 16-bit aligned
+                                                         if WIDTH=0, 32-bit aligned if WIDTH=1). */
+#else
+	uint64_t adr                          : 42;
+	uint64_t reserved_42_63               : 22;
+#endif
+	} s;
+	struct cvmx_mio_boot_dma_adrx_s       cn73xx;
+	struct cvmx_mio_boot_dma_adrx_s       cn78xx;
+	struct cvmx_mio_boot_dma_adrx_s       cn78xxp1;
+	struct cvmx_mio_boot_dma_adrx_s       cnf75xx;
+};
+typedef union cvmx_mio_boot_dma_adrx cvmx_mio_boot_dma_adrx_t;
+
+/**
+ * cvmx_mio_boot_dma_cfg#
+ *
+ * This is the DMA engine n configuration register (one register for each of two engines).
+ * Care must be taken to insure that the DMA duration not exceed the processor timeout of 2^29
+ * core clocks or the RML timeout specified in SLI_WINDOW_CTL[TIME] coprocessor clocks if
+ * accesses to the boot bus occur while DMA operations are in progress.
+ * The DMA operation duration in coprocessor clocks as:
+ * MIO_BOOT_DMA_CFG()[SIZE] * MIO_BOOT_DMA_TIM()[TIM_MULT] * CYCLE_TIME.
+ * Where:
+ * CYCLE_TIME = MIO_BOOT_DMA_TIM()[RD_DLY+PAUSE+DMACK_H+WE_N+WE_A+OE_N+OE_A+DMACK_S].
+ * Coprocessor clocks can be converted to core clocks by multiplying the value by the clock ratio
+ * RST_BOOT[C_MUL] / RST_BOOT[PNR_MUL].
+ */
 union cvmx_mio_boot_dma_cfgx {
 	uint64_t u64;
 	struct cvmx_mio_boot_dma_cfgx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t en:1;
-		uint64_t rw:1;
-		uint64_t clr:1;
-		uint64_t reserved_60_60:1;
-		uint64_t swap32:1;
-		uint64_t swap16:1;
-		uint64_t swap8:1;
-		uint64_t endian:1;
-		uint64_t size:20;
-		uint64_t adr:36;
+	uint64_t en                           : 1;  /**< DMA engine 0-1 enable. */
+	uint64_t rw                           : 1;  /**< DMA engine 0-1 R/W bit (0 = read, 1 = write). */
+	uint64_t clr                          : 1;  /**< DMA engine 0-1 clear EN on device terminated burst. */
+	uint64_t reserved_60_60               : 1;
+	uint64_t swap32                       : 1;  /**< DMA engine 0-1 32-bit swap. */
+	uint64_t swap16                       : 1;  /**< DMA engine 0-1 16-bit swap. */
+	uint64_t swap8                        : 1;  /**< DMA engine 0-1 8-bit swap. */
+	uint64_t endian                       : 1;  /**< DMA engine 0-1 IOB endian mode (0 = big, 1 = little). */
+	uint64_t size                         : 20; /**< DMA engine 0-1 size. SIZE is specified in number of bus transfers, where one transfer is
+                                                         equal to the following number of bytes, dependent on MIO_BOOT_DMA_TIM()[WIDTH] and
+                                                         MIO_BOOT_DMA_TIM()[DDR]:
+                                                         _ If WIDTH=0, DDR=0, then transfer is 2 bytes.
+                                                         _ If WIDTH=0, DDR=1, then transfer is 4 bytes.
+                                                         _ If WIDTH=1, DDR=0, then transfer is 4 bytes.
+                                                         _ If WIDTH=1, DDR=1, then transfer is 8 bytes. */
+	uint64_t adr                          : 36; /**< DMA Engine X address */
 #else
-		uint64_t adr:36;
-		uint64_t size:20;
-		uint64_t endian:1;
-		uint64_t swap8:1;
-		uint64_t swap16:1;
-		uint64_t swap32:1;
-		uint64_t reserved_60_60:1;
-		uint64_t clr:1;
-		uint64_t rw:1;
-		uint64_t en:1;
+	uint64_t adr                          : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_60               : 1;
+	uint64_t clr                          : 1;
+	uint64_t rw                           : 1;
+	uint64_t en                           : 1;
 #endif
 	} s;
+	struct cvmx_mio_boot_dma_cfgx_s       cn52xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn52xxp1;
+	struct cvmx_mio_boot_dma_cfgx_s       cn56xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn56xxp1;
+	struct cvmx_mio_boot_dma_cfgx_s       cn61xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn63xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn63xxp1;
+	struct cvmx_mio_boot_dma_cfgx_s       cn66xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn68xx;
+	struct cvmx_mio_boot_dma_cfgx_s       cn68xxp1;
+	struct cvmx_mio_boot_dma_cfgx_cn73xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t en                           : 1;  /**< DMA engine 0-1 enable. */
+	uint64_t rw                           : 1;  /**< DMA engine 0-1 R/W bit (0 = read, 1 = write). */
+	uint64_t clr                          : 1;  /**< DMA engine 0-1 clear EN on device terminated burst. */
+	uint64_t reserved_60_60               : 1;
+	uint64_t swap32                       : 1;  /**< DMA engine 0-1 32-bit swap. */
+	uint64_t swap16                       : 1;  /**< DMA engine 0-1 16-bit swap. */
+	uint64_t swap8                        : 1;  /**< DMA engine 0-1 8-bit swap. */
+	uint64_t endian                       : 1;  /**< DMA engine 0-1 IOB endian mode (0 = big, 1 = little). */
+	uint64_t size                         : 20; /**< DMA engine 0-1 size. SIZE is specified in number of bus transfers, where one transfer is
+                                                         equal to the following number of bytes, dependent on MIO_BOOT_DMA_TIM()[WIDTH] and
+                                                         MIO_BOOT_DMA_TIM()[DDR]:
+                                                         _ If WIDTH=0, DDR=0, then transfer is 2 bytes.
+                                                         _ If WIDTH=0, DDR=1, then transfer is 4 bytes.
+                                                         _ If WIDTH=1, DDR=0, then transfer is 4 bytes.
+                                                         _ If WIDTH=1, DDR=1, then transfer is 8 bytes. */
+	uint64_t reserved_0_35                : 36;
+#else
+	uint64_t reserved_0_35                : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_60               : 1;
+	uint64_t clr                          : 1;
+	uint64_t rw                           : 1;
+	uint64_t en                           : 1;
+#endif
+	} cn73xx;
+	struct cvmx_mio_boot_dma_cfgx_cn73xx  cn78xx;
+	struct cvmx_mio_boot_dma_cfgx_cn73xx  cn78xxp1;
+	struct cvmx_mio_boot_dma_cfgx_s       cnf71xx;
+	struct cvmx_mio_boot_dma_cfgx_cn73xx  cnf75xx;
 };
+typedef union cvmx_mio_boot_dma_cfgx cvmx_mio_boot_dma_cfgx_t;
 
+/**
+ * cvmx_mio_boot_dma_int#
+ *
+ * This is the DMA engine n interrupt register (one register for each of two engines).
+ *
+ */
 union cvmx_mio_boot_dma_intx {
 	uint64_t u64;
 	struct cvmx_mio_boot_dma_intx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t dmarq:1;
-		uint64_t done:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t dmarq                        : 1;  /**< DMA engine DMARQ asserted interrupt. Throws MIO_BOOT_INTSN_E::MIO_BOOT_DMA(0..1)_DMARQ. */
+	uint64_t done                         : 1;  /**< DMA engine request completion interrupt. Throws MIO_BOOT_INTSN_E::MIO_BOOT_DMA(0..1)_DONE. */
 #else
-		uint64_t done:1;
-		uint64_t dmarq:1;
-		uint64_t reserved_2_63:62;
+	uint64_t done                         : 1;
+	uint64_t dmarq                        : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_boot_dma_intx_s       cn52xx;
+	struct cvmx_mio_boot_dma_intx_s       cn52xxp1;
+	struct cvmx_mio_boot_dma_intx_s       cn56xx;
+	struct cvmx_mio_boot_dma_intx_s       cn56xxp1;
+	struct cvmx_mio_boot_dma_intx_s       cn61xx;
+	struct cvmx_mio_boot_dma_intx_s       cn63xx;
+	struct cvmx_mio_boot_dma_intx_s       cn63xxp1;
+	struct cvmx_mio_boot_dma_intx_s       cn66xx;
+	struct cvmx_mio_boot_dma_intx_s       cn68xx;
+	struct cvmx_mio_boot_dma_intx_s       cn68xxp1;
+	struct cvmx_mio_boot_dma_intx_s       cn73xx;
+	struct cvmx_mio_boot_dma_intx_s       cn78xx;
+	struct cvmx_mio_boot_dma_intx_s       cn78xxp1;
+	struct cvmx_mio_boot_dma_intx_s       cnf71xx;
+	struct cvmx_mio_boot_dma_intx_s       cnf75xx;
 };
+typedef union cvmx_mio_boot_dma_intx cvmx_mio_boot_dma_intx_t;
 
+/**
+ * cvmx_mio_boot_dma_int_en#
+ *
+ * MIO_BOOT_DMA_INT_EN = MIO Boot DMA Interrupt Enable Register (1 per engine * 2 engines)
+ *
+ */
 union cvmx_mio_boot_dma_int_enx {
 	uint64_t u64;
 	struct cvmx_mio_boot_dma_int_enx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t dmarq:1;
-		uint64_t done:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t dmarq                        : 1;  /**< DMA Engine X DMARQ asserted interrupt enable */
+	uint64_t done                         : 1;  /**< DMA Engine X request completion interrupt enable */
 #else
-		uint64_t done:1;
-		uint64_t dmarq:1;
-		uint64_t reserved_2_63:62;
+	uint64_t done                         : 1;
+	uint64_t dmarq                        : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_boot_dma_int_enx_s    cn52xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn52xxp1;
+	struct cvmx_mio_boot_dma_int_enx_s    cn56xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn56xxp1;
+	struct cvmx_mio_boot_dma_int_enx_s    cn61xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn63xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn63xxp1;
+	struct cvmx_mio_boot_dma_int_enx_s    cn66xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn68xx;
+	struct cvmx_mio_boot_dma_int_enx_s    cn68xxp1;
+	struct cvmx_mio_boot_dma_int_enx_s    cnf71xx;
 };
+typedef union cvmx_mio_boot_dma_int_enx cvmx_mio_boot_dma_int_enx_t;
 
+/**
+ * cvmx_mio_boot_dma_int_w1s#
+ *
+ * This register sets MIO_BOOT_DMA_INT() interrupts.
+ *
+ */
+union cvmx_mio_boot_dma_int_w1sx {
+	uint64_t u64;
+	struct cvmx_mio_boot_dma_int_w1sx_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t dmarq                        : 1;  /**< Reads MIO_BOOT_DMA_INT()[DMARQ]. */
+	uint64_t done                         : 1;  /**< Reads or sets MIO_BOOT_DMA_INT()[DONE]. */
+#else
+	uint64_t done                         : 1;
+	uint64_t dmarq                        : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} s;
+	struct cvmx_mio_boot_dma_int_w1sx_s   cn73xx;
+	struct cvmx_mio_boot_dma_int_w1sx_s   cn78xx;
+	struct cvmx_mio_boot_dma_int_w1sx_s   cnf75xx;
+};
+typedef union cvmx_mio_boot_dma_int_w1sx cvmx_mio_boot_dma_int_w1sx_t;
+
+/**
+ * cvmx_mio_boot_dma_tim#
+ *
+ * This is the DMA engine n timing register (one register for each of two engines).
+ *
+ */
 union cvmx_mio_boot_dma_timx {
 	uint64_t u64;
 	struct cvmx_mio_boot_dma_timx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t dmack_pi:1;
-		uint64_t dmarq_pi:1;
-		uint64_t tim_mult:2;
-		uint64_t rd_dly:3;
-		uint64_t ddr:1;
-		uint64_t width:1;
-		uint64_t reserved_48_54:7;
-		uint64_t pause:6;
-		uint64_t dmack_h:6;
-		uint64_t we_n:6;
-		uint64_t we_a:6;
-		uint64_t oe_n:6;
-		uint64_t oe_a:6;
-		uint64_t dmack_s:6;
-		uint64_t dmarq:6;
+	uint64_t dmack_pi                     : 1;  /**< DMA acknowledgment polarity inversion. [DMACK_PI] inverts the assertion level of
+                                                         BOOT_DMACKn. The default polarity of BOOT_DMACK<1:0> is selected on the first deassertion
+                                                         of reset by the values on BOOT_AD<12:11>, where 0 specifies active high and 1 specifies
+                                                         active low. (See MIO_BOOT_PIN_DEFS for a read-only copy of the default polarity.)
+                                                         BOOT_AD<12:11> have internal pull-down resistors, so place a pull-up resistor on
+                                                         BOOT_AD<n+11> for active low default polarity on engine n. To interface with CF cards in
+                                                         True IDE Mode, either a pull-up resistor should be placed on BOOT_AD<n+11> OR the
+                                                         corresponding DMACK_PI<n> should be set. */
+	uint64_t dmarq_pi                     : 1;  /**< DMA request polarity inversion. [DMARQ_PI] inverts the assertion level of BOOT_DMARQn. The
+                                                         default polarity of BOOT_DMARQ<1:0> is active high, so that setting the polarity inversion
+                                                         bits changes the polarity to active low. To interface with CF cards in True IDE Mode, the
+                                                         corresponding DMARQ_PI<n> should be clear. */
+	uint64_t tim_mult                     : 2;  /**< Timing multiplier. This field specifies the timing multiplier for an engine. The timing
+                                                         multiplier applies to all timing parameters, except for [DMARQ] and [RD_DLY], which simply
+                                                         count coprocessor-clock cycles. [TIM_MULT] is encoded as follows:
+                                                         0x0 = 4*.
+                                                         0x1 = 1*.
+                                                         0x2 = 2*.
+                                                         0x3 = 8*. */
+	uint64_t rd_dly                       : 3;  /**< Read sample delay. This field specifies the read sample delay in coprocessor-clock cycles
+                                                         for an engine. For read operations, the data bus is normally sampled on the same
+                                                         coprocessor-clock edge that drives BOOT_OE_L high (and also low in DDR mode). This
+                                                         parameter can delay that sampling edge by up to seven coprocessor-clock cycles.
+                                                         The number of coprocessor-clock cycles counted by the [OE_A] and [DMACK_H] + [PAUSE]
+                                                         timing
+                                                         parameters must be greater than [RD_DLY]. */
+	uint64_t ddr                          : 1;  /**< DDR mode. If DDR is set, then [WE_N] must be less than [WE_A]. */
+	uint64_t width                        : 1;  /**< Bus width (0 = 16 bits, 1 = 32 bits). */
+	uint64_t reserved_48_54               : 7;
+	uint64_t pause                        : 6;  /**< Pause count. */
+	uint64_t dmack_h                      : 6;  /**< DMA acknowledgment hold count. */
+	uint64_t we_n                         : 6;  /**< Write enable negated count. */
+	uint64_t we_a                         : 6;  /**< Write enable asserted count. */
+	uint64_t oe_n                         : 6;  /**< Output enable negated count. */
+	uint64_t oe_a                         : 6;  /**< Output enable asserted count. */
+	uint64_t dmack_s                      : 6;  /**< DMA acknowledgment setup count. */
+	uint64_t dmarq                        : 6;  /**< DMA request count. (Must be nonzero.) */
 #else
-		uint64_t dmarq:6;
-		uint64_t dmack_s:6;
-		uint64_t oe_a:6;
-		uint64_t oe_n:6;
-		uint64_t we_a:6;
-		uint64_t we_n:6;
-		uint64_t dmack_h:6;
-		uint64_t pause:6;
-		uint64_t reserved_48_54:7;
-		uint64_t width:1;
-		uint64_t ddr:1;
-		uint64_t rd_dly:3;
-		uint64_t tim_mult:2;
-		uint64_t dmarq_pi:1;
-		uint64_t dmack_pi:1;
+	uint64_t dmarq                        : 6;
+	uint64_t dmack_s                      : 6;
+	uint64_t oe_a                         : 6;
+	uint64_t oe_n                         : 6;
+	uint64_t we_a                         : 6;
+	uint64_t we_n                         : 6;
+	uint64_t dmack_h                      : 6;
+	uint64_t pause                        : 6;
+	uint64_t reserved_48_54               : 7;
+	uint64_t width                        : 1;
+	uint64_t ddr                          : 1;
+	uint64_t rd_dly                       : 3;
+	uint64_t tim_mult                     : 2;
+	uint64_t dmarq_pi                     : 1;
+	uint64_t dmack_pi                     : 1;
 #endif
 	} s;
+	struct cvmx_mio_boot_dma_timx_s       cn52xx;
+	struct cvmx_mio_boot_dma_timx_s       cn52xxp1;
+	struct cvmx_mio_boot_dma_timx_s       cn56xx;
+	struct cvmx_mio_boot_dma_timx_s       cn56xxp1;
+	struct cvmx_mio_boot_dma_timx_s       cn61xx;
+	struct cvmx_mio_boot_dma_timx_s       cn63xx;
+	struct cvmx_mio_boot_dma_timx_s       cn63xxp1;
+	struct cvmx_mio_boot_dma_timx_s       cn66xx;
+	struct cvmx_mio_boot_dma_timx_s       cn68xx;
+	struct cvmx_mio_boot_dma_timx_s       cn68xxp1;
+	struct cvmx_mio_boot_dma_timx_s       cn73xx;
+	struct cvmx_mio_boot_dma_timx_s       cn78xx;
+	struct cvmx_mio_boot_dma_timx_s       cn78xxp1;
+	struct cvmx_mio_boot_dma_timx_s       cnf71xx;
+	struct cvmx_mio_boot_dma_timx_s       cnf75xx;
 };
+typedef union cvmx_mio_boot_dma_timx cvmx_mio_boot_dma_timx_t;
 
+/**
+ * cvmx_mio_boot_eco
+ */
+union cvmx_mio_boot_eco {
+	uint64_t u64;
+	struct cvmx_mio_boot_eco_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_32_63               : 32;
+	uint64_t eco_rw                       : 32; /**< ECO flops. */
+#else
+	uint64_t eco_rw                       : 32;
+	uint64_t reserved_32_63               : 32;
+#endif
+	} s;
+	struct cvmx_mio_boot_eco_s            cn73xx;
+	struct cvmx_mio_boot_eco_s            cn78xx;
+	struct cvmx_mio_boot_eco_s            cnf75xx;
+};
+typedef union cvmx_mio_boot_eco cvmx_mio_boot_eco_t;
+
+/**
+ * cvmx_mio_boot_err
+ *
+ * The boot-error register contains the address decode error and wait mode error bits.
+ *
+ */
 union cvmx_mio_boot_err {
 	uint64_t u64;
 	struct cvmx_mio_boot_err_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t wait_err:1;
-		uint64_t adr_err:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t wait_err                     : 1;  /**< Wait mode error. This bit is set when wait mode is enabled and the external wait signal is
+                                                         not deasserted after 32K coprocessor-clock cycles. Throws
+                                                         MIO_BOOT_INTSN_E::MIO_BOOT_ERR_WAIT_ERR. */
+	uint64_t adr_err                      : 1;  /**< Address decode error. This bit is set when a boot-bus access does not hit in any of the
+                                                         eight remote regions or two local regions. Throws MIO_BOOT_INTSN_E::MIO_BOOT_ERR_ADR_ERR. */
 #else
-		uint64_t adr_err:1;
-		uint64_t wait_err:1;
-		uint64_t reserved_2_63:62;
+	uint64_t adr_err                      : 1;
+	uint64_t wait_err                     : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_boot_err_s            cn30xx;
+	struct cvmx_mio_boot_err_s            cn31xx;
+	struct cvmx_mio_boot_err_s            cn38xx;
+	struct cvmx_mio_boot_err_s            cn38xxp2;
+	struct cvmx_mio_boot_err_s            cn50xx;
+	struct cvmx_mio_boot_err_s            cn52xx;
+	struct cvmx_mio_boot_err_s            cn52xxp1;
+	struct cvmx_mio_boot_err_s            cn56xx;
+	struct cvmx_mio_boot_err_s            cn56xxp1;
+	struct cvmx_mio_boot_err_s            cn58xx;
+	struct cvmx_mio_boot_err_s            cn58xxp1;
+	struct cvmx_mio_boot_err_s            cn61xx;
+	struct cvmx_mio_boot_err_s            cn63xx;
+	struct cvmx_mio_boot_err_s            cn63xxp1;
+	struct cvmx_mio_boot_err_s            cn66xx;
+	struct cvmx_mio_boot_err_s            cn68xx;
+	struct cvmx_mio_boot_err_s            cn68xxp1;
+	struct cvmx_mio_boot_err_s            cn70xx;
+	struct cvmx_mio_boot_err_s            cn70xxp1;
+	struct cvmx_mio_boot_err_s            cn73xx;
+	struct cvmx_mio_boot_err_s            cn78xx;
+	struct cvmx_mio_boot_err_s            cn78xxp1;
+	struct cvmx_mio_boot_err_s            cnf71xx;
+	struct cvmx_mio_boot_err_s            cnf75xx;
 };
+typedef union cvmx_mio_boot_err cvmx_mio_boot_err_t;
 
+/**
+ * cvmx_mio_boot_int
+ *
+ * Contains the interrupt enable bits for address decode error and wait mode error.
+ *
+ */
 union cvmx_mio_boot_int {
 	uint64_t u64;
 	struct cvmx_mio_boot_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t wait_int:1;
-		uint64_t adr_int:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t wait_int                     : 1;  /**< Wait mode error interrupt enable */
+	uint64_t adr_int                      : 1;  /**< Address decode error interrupt enable */
 #else
-		uint64_t adr_int:1;
-		uint64_t wait_int:1;
-		uint64_t reserved_2_63:62;
+	uint64_t adr_int                      : 1;
+	uint64_t wait_int                     : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_boot_int_s            cn30xx;
+	struct cvmx_mio_boot_int_s            cn31xx;
+	struct cvmx_mio_boot_int_s            cn38xx;
+	struct cvmx_mio_boot_int_s            cn38xxp2;
+	struct cvmx_mio_boot_int_s            cn50xx;
+	struct cvmx_mio_boot_int_s            cn52xx;
+	struct cvmx_mio_boot_int_s            cn52xxp1;
+	struct cvmx_mio_boot_int_s            cn56xx;
+	struct cvmx_mio_boot_int_s            cn56xxp1;
+	struct cvmx_mio_boot_int_s            cn58xx;
+	struct cvmx_mio_boot_int_s            cn58xxp1;
+	struct cvmx_mio_boot_int_s            cn61xx;
+	struct cvmx_mio_boot_int_s            cn63xx;
+	struct cvmx_mio_boot_int_s            cn63xxp1;
+	struct cvmx_mio_boot_int_s            cn66xx;
+	struct cvmx_mio_boot_int_s            cn68xx;
+	struct cvmx_mio_boot_int_s            cn68xxp1;
+	struct cvmx_mio_boot_int_s            cn70xx;
+	struct cvmx_mio_boot_int_s            cn70xxp1;
+	struct cvmx_mio_boot_int_s            cnf71xx;
 };
+typedef union cvmx_mio_boot_int cvmx_mio_boot_int_t;
 
+/**
+ * cvmx_mio_boot_loc_adr
+ *
+ * The local-region memory-address register specifies the address for reading or writing the
+ * local memory. This address post-increments following an access to the MIO boot local-memory
+ * data register.
+ *
+ * Local-memory region 0 is addresses 0x00-0x78.
+ *
+ * Local-memory region 1 is addresses 0x80-0xF8.
+ */
 union cvmx_mio_boot_loc_adr {
 	uint64_t u64;
 	struct cvmx_mio_boot_loc_adr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t adr:5;
-		uint64_t reserved_0_2:3;
+	uint64_t reserved_8_63                : 56;
+	uint64_t adr                          : 5;  /**< Local memory address. */
+	uint64_t reserved_0_2                 : 3;
 #else
-		uint64_t reserved_0_2:3;
-		uint64_t adr:5;
-		uint64_t reserved_8_63:56;
+	uint64_t reserved_0_2                 : 3;
+	uint64_t adr                          : 5;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_boot_loc_adr_s        cn30xx;
+	struct cvmx_mio_boot_loc_adr_s        cn31xx;
+	struct cvmx_mio_boot_loc_adr_s        cn38xx;
+	struct cvmx_mio_boot_loc_adr_s        cn38xxp2;
+	struct cvmx_mio_boot_loc_adr_s        cn50xx;
+	struct cvmx_mio_boot_loc_adr_s        cn52xx;
+	struct cvmx_mio_boot_loc_adr_s        cn52xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn56xx;
+	struct cvmx_mio_boot_loc_adr_s        cn56xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn58xx;
+	struct cvmx_mio_boot_loc_adr_s        cn58xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn61xx;
+	struct cvmx_mio_boot_loc_adr_s        cn63xx;
+	struct cvmx_mio_boot_loc_adr_s        cn63xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn66xx;
+	struct cvmx_mio_boot_loc_adr_s        cn68xx;
+	struct cvmx_mio_boot_loc_adr_s        cn68xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn70xx;
+	struct cvmx_mio_boot_loc_adr_s        cn70xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cn73xx;
+	struct cvmx_mio_boot_loc_adr_s        cn78xx;
+	struct cvmx_mio_boot_loc_adr_s        cn78xxp1;
+	struct cvmx_mio_boot_loc_adr_s        cnf71xx;
+	struct cvmx_mio_boot_loc_adr_s        cnf75xx;
 };
+typedef union cvmx_mio_boot_loc_adr cvmx_mio_boot_loc_adr_t;
 
+/**
+ * cvmx_mio_boot_loc_cfg#
+ *
+ * The local-region configuration register (one for each of two regions) contains local-region
+ * enable and local-region base-address parameters. Each local region is 128 bytes organized as
+ * 16 entries * 8 bytes.
+ */
 union cvmx_mio_boot_loc_cfgx {
 	uint64_t u64;
 	struct cvmx_mio_boot_loc_cfgx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t en:1;
-		uint64_t reserved_28_30:3;
-		uint64_t base:25;
-		uint64_t reserved_0_2:3;
+	uint64_t reserved_32_63               : 32;
+	uint64_t en                           : 1;  /**< Local region 0/1 enable. */
+	uint64_t reserved_28_30               : 3;
+	uint64_t base                         : 25; /**< Local region 0/1 base address, specifying address bits <31:7> of the region. */
+	uint64_t reserved_0_2                 : 3;
 #else
-		uint64_t reserved_0_2:3;
-		uint64_t base:25;
-		uint64_t reserved_28_30:3;
-		uint64_t en:1;
-		uint64_t reserved_32_63:32;
+	uint64_t reserved_0_2                 : 3;
+	uint64_t base                         : 25;
+	uint64_t reserved_28_30               : 3;
+	uint64_t en                           : 1;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_boot_loc_cfgx_s       cn30xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn31xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn38xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn38xxp2;
+	struct cvmx_mio_boot_loc_cfgx_s       cn50xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn52xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn52xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn56xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn56xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn58xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn58xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn61xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn63xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn63xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn66xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn68xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn68xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn70xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn70xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cn73xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn78xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cn78xxp1;
+	struct cvmx_mio_boot_loc_cfgx_s       cnf71xx;
+	struct cvmx_mio_boot_loc_cfgx_s       cnf75xx;
 };
+typedef union cvmx_mio_boot_loc_cfgx cvmx_mio_boot_loc_cfgx_t;
 
+/**
+ * cvmx_mio_boot_loc_dat
+ *
+ * This is a pseudo-register that reads/writes the local memory at the address specified by the
+ * MIO boot local-memory address register when accessed.
+ */
 union cvmx_mio_boot_loc_dat {
 	uint64_t u64;
 	struct cvmx_mio_boot_loc_dat_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t data:64;
+	uint64_t data                         : 64; /**< Local memory data. */
 #else
-		uint64_t data:64;
+	uint64_t data                         : 64;
 #endif
 	} s;
+	struct cvmx_mio_boot_loc_dat_s        cn30xx;
+	struct cvmx_mio_boot_loc_dat_s        cn31xx;
+	struct cvmx_mio_boot_loc_dat_s        cn38xx;
+	struct cvmx_mio_boot_loc_dat_s        cn38xxp2;
+	struct cvmx_mio_boot_loc_dat_s        cn50xx;
+	struct cvmx_mio_boot_loc_dat_s        cn52xx;
+	struct cvmx_mio_boot_loc_dat_s        cn52xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn56xx;
+	struct cvmx_mio_boot_loc_dat_s        cn56xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn58xx;
+	struct cvmx_mio_boot_loc_dat_s        cn58xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn61xx;
+	struct cvmx_mio_boot_loc_dat_s        cn63xx;
+	struct cvmx_mio_boot_loc_dat_s        cn63xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn66xx;
+	struct cvmx_mio_boot_loc_dat_s        cn68xx;
+	struct cvmx_mio_boot_loc_dat_s        cn68xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn70xx;
+	struct cvmx_mio_boot_loc_dat_s        cn70xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cn73xx;
+	struct cvmx_mio_boot_loc_dat_s        cn78xx;
+	struct cvmx_mio_boot_loc_dat_s        cn78xxp1;
+	struct cvmx_mio_boot_loc_dat_s        cnf71xx;
+	struct cvmx_mio_boot_loc_dat_s        cnf75xx;
 };
+typedef union cvmx_mio_boot_loc_dat cvmx_mio_boot_loc_dat_t;
 
+/**
+ * cvmx_mio_boot_pin_defs
+ *
+ * This register reflects the value of the BOOT_AD<31:0> pins, sampled when the internal reset
+ * signal first deasserts following a cold reset.
+ */
 union cvmx_mio_boot_pin_defs {
 	uint64_t u64;
 	struct cvmx_mio_boot_pin_defs_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t user1:16;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t dmack_p2:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p0:1;
-		uint64_t term:2;
-		uint64_t nand:1;
-		uint64_t user0:8;
+	uint64_t reserved_16_63               : 48;
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode. */
+	uint64_t width                        : 1;  /**< Region 0 default bus width. */
+	uint64_t reserved_0_13                : 14;
 #else
-		uint64_t user0:8;
-		uint64_t nand:1;
-		uint64_t term:2;
-		uint64_t dmack_p0:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p2:1;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t user1:16;
-		uint64_t reserved_32_63:32;
+	uint64_t reserved_0_13                : 14;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t reserved_16_63               : 48;
 #endif
 	} s;
 	struct cvmx_mio_boot_pin_defs_cn52xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_16_63:48;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t reserved_13_13:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p0:1;
-		uint64_t term:2;
-		uint64_t nand:1;
-		uint64_t reserved_0_7:8;
+	uint64_t reserved_16_63               : 48;
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode */
+	uint64_t width                        : 1;  /**< Region 0 default bus width */
+	uint64_t reserved_13_13               : 1;
+	uint64_t dmack_p1                     : 1;  /**< boot_dmack[1] default polarity */
+	uint64_t dmack_p0                     : 1;  /**< boot_dmack[0] default polarity */
+	uint64_t term                         : 2;  /**< Selects default driver termination */
+	uint64_t nand                         : 1;  /**< Region 0 is NAND flash */
+	uint64_t reserved_0_7                 : 8;
 #else
-		uint64_t reserved_0_7:8;
-		uint64_t nand:1;
-		uint64_t term:2;
-		uint64_t dmack_p0:1;
-		uint64_t dmack_p1:1;
-		uint64_t reserved_13_13:1;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t reserved_16_63:48;
+	uint64_t reserved_0_7                 : 8;
+	uint64_t nand                         : 1;
+	uint64_t term                         : 2;
+	uint64_t dmack_p0                     : 1;
+	uint64_t dmack_p1                     : 1;
+	uint64_t reserved_13_13               : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t reserved_16_63               : 48;
 #endif
 	} cn52xx;
 	struct cvmx_mio_boot_pin_defs_cn56xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_16_63:48;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t dmack_p2:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p0:1;
-		uint64_t term:2;
-		uint64_t reserved_0_8:9;
+	uint64_t reserved_16_63               : 48;
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode */
+	uint64_t width                        : 1;  /**< Region 0 default bus width */
+	uint64_t dmack_p2                     : 1;  /**< boot_dmack[2] default polarity */
+	uint64_t dmack_p1                     : 1;  /**< boot_dmack[1] default polarity */
+	uint64_t dmack_p0                     : 1;  /**< boot_dmack[0] default polarity */
+	uint64_t term                         : 2;  /**< Selects default driver termination */
+	uint64_t reserved_0_8                 : 9;
 #else
-		uint64_t reserved_0_8:9;
-		uint64_t term:2;
-		uint64_t dmack_p0:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p2:1;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t reserved_16_63:48;
+	uint64_t reserved_0_8                 : 9;
+	uint64_t term                         : 2;
+	uint64_t dmack_p0                     : 1;
+	uint64_t dmack_p1                     : 1;
+	uint64_t dmack_p2                     : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t reserved_16_63               : 48;
 #endif
 	} cn56xx;
 	struct cvmx_mio_boot_pin_defs_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t user1:16;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t reserved_13_13:1;
-		uint64_t dmack_p1:1;
-		uint64_t dmack_p0:1;
-		uint64_t term:2;
-		uint64_t nand:1;
-		uint64_t user0:8;
+	uint64_t reserved_32_63               : 32;
+	uint64_t user1                        : 16; /**< BOOT_AD [31:16] latched during power up */
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode */
+	uint64_t width                        : 1;  /**< Region 0 default bus width */
+	uint64_t reserved_13_13               : 1;
+	uint64_t dmack_p1                     : 1;  /**< boot_dmack[1] default polarity */
+	uint64_t dmack_p0                     : 1;  /**< boot_dmack[0] default polarity */
+	uint64_t term                         : 2;  /**< Selects default driver termination */
+	uint64_t nand                         : 1;  /**< Region 0 is NAND flash */
+	uint64_t user0                        : 8;  /**< BOOT_AD [7:0] latched during power up */
 #else
-		uint64_t user0:8;
-		uint64_t nand:1;
-		uint64_t term:2;
-		uint64_t dmack_p0:1;
-		uint64_t dmack_p1:1;
-		uint64_t reserved_13_13:1;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t user1:16;
-		uint64_t reserved_32_63:32;
+	uint64_t user0                        : 8;
+	uint64_t nand                         : 1;
+	uint64_t term                         : 2;
+	uint64_t dmack_p0                     : 1;
+	uint64_t dmack_p1                     : 1;
+	uint64_t reserved_13_13               : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t user1                        : 16;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} cn61xx;
+	struct cvmx_mio_boot_pin_defs_cn52xx  cn63xx;
+	struct cvmx_mio_boot_pin_defs_cn52xx  cn63xxp1;
+	struct cvmx_mio_boot_pin_defs_cn52xx  cn66xx;
+	struct cvmx_mio_boot_pin_defs_cn52xx  cn68xx;
+	struct cvmx_mio_boot_pin_defs_cn52xx  cn68xxp1;
+	struct cvmx_mio_boot_pin_defs_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_33_63               : 31;
+	uint64_t dlm_supply                   : 1;  /**< DLM Power Supply Setting based on DLMC_VPH_SELECT_18 pin 1 = 1.8V. All others = Reserved. */
+	uint64_t rgm_supply                   : 2;  /**< RGMii Power Supply Setting based on VDD_RGM_SUPPLY_SELECT pin 10 = 2.5V All
+                                                         others = Reserved */
+	uint64_t smi_supply                   : 3;  /**< SMI Power Supply Setting based on VDD_SMI_SUPPLY_SELECT pin 010 = 2.5V 100 =
+                                                         3.3V All others = Reserved */
+	uint64_t io_supply                    : 3;  /**< I/O Power Supply Setting based on VDD_IO_SUPPLY_SELECT pin 010 = 2.5V 100 =
+                                                         3.3V All others = Reserved */
+	uint64_t reserved_17_23               : 7;
+	uint64_t ref_sel                      : 1;  /**< Reference Clock Selection based on UART0_RTS_N pin at powerup 0 = DLM_REF_CLK[1] pins div
+                                                         2, must be set to 100Mhz 1 = PLL_REF_CLK pin (default), must be set to 50Mhz */
+	uint64_t ale                          : 1;  /**< Set to 1 for backward compatability */
+	uint64_t width                        : 1;  /**< Set to 0 for backward compatability */
+	uint64_t vrm_disable                  : 1;  /**< VRM disable based on BOOT_DIR pin at powerup */
+	uint64_t device                       : 3;  /**< Boot Device based on BOOT_ALE[3:1] pins at power up 0   = Parallel NOR 1   = Parallel NOR
+                                                         via int bootrom (reserved) 2   = EMMC/SD 3   = reserved 4   = SPI Boot 16bit Address 5   =
+                                                         SPI Boot 24bit Address 6   = SPI Boot 32bit Address (reserved) 7   = SPI NAND Boot 32bit
+                                                         Address (reserved) */
+	uint64_t term                         : 2;  /**< Selects default driver termination latched from BOOT_ALE[0], BOOT_CLE pins at powerup */
+	uint64_t user0                        : 8;  /**< BOOT_AD [7:0] pins latched at powerup */
+#else
+	uint64_t user0                        : 8;
+	uint64_t term                         : 2;
+	uint64_t device                       : 3;
+	uint64_t vrm_disable                  : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t ref_sel                      : 1;
+	uint64_t reserved_17_23               : 7;
+	uint64_t io_supply                    : 3;
+	uint64_t smi_supply                   : 3;
+	uint64_t rgm_supply                   : 2;
+	uint64_t dlm_supply                   : 1;
+	uint64_t reserved_33_63               : 31;
+#endif
+	} cn70xx;
+	struct cvmx_mio_boot_pin_defs_cn70xx  cn70xxp1;
+	struct cvmx_mio_boot_pin_defs_cn73xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_56_63               : 8;
+	uint64_t rgm_supply                   : 2;  /**< RGMII power supply setting based on VDD_RGM_SUPPLY_SELECT pin:
+                                                         0x2 = 2.5V.
+                                                         _ All other values reserved. */
+	uint64_t smi_supply                   : 3;  /**< SMI power supply setting based on VDD_SMI_SUPPLY_SELECT pin:
+                                                         0x2 = 2.5V.
+                                                         0x4 = 3.3V.
+                                                         _ All other values reserved. */
+	uint64_t io_supply                    : 3;  /**< I/O power supply setting based on VDD_IO_SUPPLY_SELECT pin:
+                                                         0x2 = 2.5V.
+                                                         0x4 = 3.3V.
+                                                         _ All other values reserved. */
+	uint64_t reserved_33_47               : 15;
+	uint64_t vrm_disable                  : 1;  /**< VRM disabled. */
+	uint64_t user1                        : 13; /**< BOOT_AD<31:19> latched during power up. */
+	uint64_t device                       : 3;  /**< BOOT_AD<18:16> latched during power up. Indicates boot device:
+                                                         0x0 = Parallel NOR.
+                                                         0x1 = Reserved.
+                                                         0x2 = eMMC/SD.
+                                                         0x3 = Reserved.
+                                                         0x4 = SPI Boot (16-bit address).
+                                                         0x5 = SPI Boot (24-bit address).
+                                                         0x6 = SPI Boot (32-bit address).
+                                                         0x7 = Reserved. */
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode. */
+	uint64_t width                        : 1;  /**< Region 0 default bus width. */
+	uint64_t pcie2_dlm5                   : 1;  /**< PCIe2 QLM/DLM Selection at powerup:
+                                                         0 = PCIe2 is mapped to QLM2 (default).
+                                                         1 = PCIe2 is mapped to DLM5. */
+	uint64_t dmack_p1                     : 1;  /**< BOOT_DMACK<1> default polarity. */
+	uint64_t dmack_p0                     : 1;  /**< BOOT_DMACK<0> default polarity. */
+	uint64_t term                         : 2;  /**< Selects default boot-bus driver termination (output impedance).
+                                                         0x0 = 40 ohm (full strength).
+                                                         0x1 = 30 ohm.
+                                                         0x2 = 60 ohm.
+                                                         0x3 = 60 ohm. */
+	uint64_t user0                        : 9;  /**< BOOT_AD<8:0> latched during power up. */
+#else
+	uint64_t user0                        : 9;
+	uint64_t term                         : 2;
+	uint64_t dmack_p0                     : 1;
+	uint64_t dmack_p1                     : 1;
+	uint64_t pcie2_dlm5                   : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t device                       : 3;
+	uint64_t user1                        : 13;
+	uint64_t vrm_disable                  : 1;
+	uint64_t reserved_33_47               : 15;
+	uint64_t io_supply                    : 3;
+	uint64_t smi_supply                   : 3;
+	uint64_t rgm_supply                   : 2;
+	uint64_t reserved_56_63               : 8;
+#endif
+	} cn73xx;
+	struct cvmx_mio_boot_pin_defs_cn78xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_54_63               : 10;
+	uint64_t smi_supply                   : 3;  /**< SMI power supply setting based on VDD_SMI_SUPPLY_SELECT pin:
+                                                         0x2 = 2.5V.
+                                                         0x4 = 3.3V.
+                                                         _ All other values reserved. */
+	uint64_t io_supply                    : 3;  /**< I/O power supply setting based on VDD_IO_SUPPLY_SELECT pin:
+                                                         0x2 = 2.5V.
+                                                         0x4 = 3.3V.
+                                                         _ All other values reserved. */
+	uint64_t reserved_33_47               : 15;
+	uint64_t vrm_disable                  : 1;  /**< VRM disabled. */
+	uint64_t user1                        : 13; /**< BOOT_AD<31:19> latched during power up. */
+	uint64_t device                       : 3;  /**< BOOT_AD<18:16> latched during power up. Indicates boot device:
+                                                         0x0 = Parallel NOR.
+                                                         0x1 = Reserved.
+                                                         0x2 = eMMC/SD.
+                                                         0x3 = Reserved.
+                                                         0x4 = SPI Boot (16-bit address).
+                                                         0x5 = SPI Boot (24-bit address).
+                                                         0x6 = SPI Boot (32-bit address).
+                                                         0x7 = Reserved. */
+	uint64_t ale                          : 1;  /**< Region 0 default ALE mode. */
+	uint64_t width                        : 1;  /**< Region 0 default bus width. */
+	uint64_t user13                       : 1;  /**< BOOT_AD<13> latched during power up. */
+	uint64_t dmack_p1                     : 1;  /**< BOOT_DMACK<1> default polarity. */
+	uint64_t dmack_p0                     : 1;  /**< BOOT_DMACK<0> default polarity. */
+	uint64_t term                         : 2;  /**< Selects default boot-bus driver termination (output impedance).
+                                                         0x0 = 40 ohm (full strength).
+                                                         0x1 = 30 ohm.
+                                                         0x2 = 60 ohm.
+                                                         0x3 = 60 ohm. */
+	uint64_t user0                        : 9;  /**< BOOT_AD<8:0> latched during power up. */
+#else
+	uint64_t user0                        : 9;
+	uint64_t term                         : 2;
+	uint64_t dmack_p0                     : 1;
+	uint64_t dmack_p1                     : 1;
+	uint64_t user13                       : 1;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t device                       : 3;
+	uint64_t user1                        : 13;
+	uint64_t vrm_disable                  : 1;
+	uint64_t reserved_33_47               : 15;
+	uint64_t io_supply                    : 3;
+	uint64_t smi_supply                   : 3;
+	uint64_t reserved_54_63               : 10;
+#endif
+	} cn78xx;
+	struct cvmx_mio_boot_pin_defs_cn78xx  cn78xxp1;
+	struct cvmx_mio_boot_pin_defs_cn61xx  cnf71xx;
+	struct cvmx_mio_boot_pin_defs_cn73xx  cnf75xx;
 };
+typedef union cvmx_mio_boot_pin_defs cvmx_mio_boot_pin_defs_t;
 
+/**
+ * cvmx_mio_boot_reg_cfg#
+ *
+ * The region n configuration register (one register for each of seven regions) contains
+ * configuration parameters for boot region n.
+ */
 union cvmx_mio_boot_reg_cfgx {
 	uint64_t u64;
 	struct cvmx_mio_boot_reg_cfgx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_44_63:20;
-		uint64_t dmack:2;
-		uint64_t tim_mult:2;
-		uint64_t rd_dly:3;
-		uint64_t sam:1;
-		uint64_t we_ext:2;
-		uint64_t oe_ext:2;
-		uint64_t en:1;
-		uint64_t orbit:1;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t size:12;
-		uint64_t base:16;
+	uint64_t reserved_44_63               : 20;
+	uint64_t dmack                        : 2;  /**< Region 1-7 DMACK. If nonzero, this field asserts the corresponding BOOT_DMACK<n> pin when
+                                                         an access to this region is performed. DMACK is encoded as follows:
+                                                         0x0 = disabled.
+                                                         0x1 = BOOT_DMACK<0>.
+                                                         0x2 = BOOT_DMACK<1>.
+                                                         0x3 = BOOT_DMACK<2>.
+                                                         This is useful for CF cards in PC card memory mode that support DMA because the -REG and
+                                                         -DMACK pins are shared.
+                                                         The assertion level of BOOT_DMACK is specified by MIO_BOOT_DMA_TIM()[DMACK_PI]. */
+	uint64_t tim_mult                     : 2;  /**< Region 1-7 timing multiplier. Specifies the timing multiplier for a region. The timing
+                                                         multiplier applies to all timing parameters, except for WAIT and RD_DLY, which simply
+                                                         count coprocessor-clock cycles. TIM_MULT is encoded as follows:
+                                                         0x0 = 4*.
+                                                         0x1 = 1*.
+                                                         0x2 = 2*.
+                                                         0x3 = 8*. */
+	uint64_t rd_dly                       : 3;  /**< Region 1-7 read sample delay. Specifies the read sample delay in coprocessor-clock cycles
+                                                         for a region. For read operations, the data bus is normally sampled on the same
+                                                         coprocessor-clock edge that drives BOOT_OE_L to the inactive state (or the coprocessor-
+                                                         clock edge that toggles the lower address bits in page mode). This parameter can delay
+                                                         that sampling edge by up to seven coprocessor-clock cycles.
+                                                         The number of coprocessor-clock cycles counted by the PAGE and RD_HLD timing parameters
+                                                         must be greater than or equal to RD_DLY. */
+	uint64_t sam                          : 1;  /**< Region 1-7 strobe AND mode. Internally combines the output-enable and write-enable strobes
+                                                         into a single strobe that is then driven onto both BOOT_OE_L and BOOT_WE_L.
+                                                         This is useful for parts that use a single strobe along with a read/write bit (the
+                                                         read/write bit can be driven from an address pin). */
+	uint64_t we_ext                       : 2;  /**< Region 1-7 write-enable count extension. */
+	uint64_t oe_ext                       : 2;  /**< Region 1-7 output-enable count extension. */
+	uint64_t en                           : 1;  /**< Region 1-7 enable. */
+	uint64_t orbit                        : 1;  /**< Region 1-7 ORBIT bit. Asserts the given region's chip enable when there is an address hit
+                                                         in the previous region.
+                                                         This is useful for CF cards because it allows the use of 2 separate timing configurations
+                                                         for common memory and attribute memory. */
+	uint64_t ale                          : 1;  /**< Region 1-7 address-latch-enable mode. Enables the multiplexed address/data bus mode. The
+                                                         reset value for region 0 is the value of BOOT_AD[15] on the deassertion of reset. */
+	uint64_t width                        : 1;  /**< Region 1-7 bus width:
+                                                         0 = 8 bits.
+                                                         1 = 16 bits.
+                                                         The reset value for region 0 is the value of BOOT_AD<14> on the deassertion of reset. */
+	uint64_t size                         : 12; /**< Region 1-7 size. Region size is specified in 64K blocks and in 'block-1' notation (i.e.
+                                                         0x0 = one 64K block, 0x1 = two 64K blocks, etc.). */
+	uint64_t base                         : 16; /**< Region 1-7 base address. Specifies address bits <31:16> of the first 64K block of the
+                                                         region. */
 #else
-		uint64_t base:16;
-		uint64_t size:12;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t orbit:1;
-		uint64_t en:1;
-		uint64_t oe_ext:2;
-		uint64_t we_ext:2;
-		uint64_t sam:1;
-		uint64_t rd_dly:3;
-		uint64_t tim_mult:2;
-		uint64_t dmack:2;
-		uint64_t reserved_44_63:20;
+	uint64_t base                         : 16;
+	uint64_t size                         : 12;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t orbit                        : 1;
+	uint64_t en                           : 1;
+	uint64_t oe_ext                       : 2;
+	uint64_t we_ext                       : 2;
+	uint64_t sam                          : 1;
+	uint64_t rd_dly                       : 3;
+	uint64_t tim_mult                     : 2;
+	uint64_t dmack                        : 2;
+	uint64_t reserved_44_63               : 20;
 #endif
 	} s;
 	struct cvmx_mio_boot_reg_cfgx_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_37_63:27;
-		uint64_t sam:1;
-		uint64_t we_ext:2;
-		uint64_t oe_ext:2;
-		uint64_t en:1;
-		uint64_t orbit:1;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t size:12;
-		uint64_t base:16;
+	uint64_t reserved_37_63               : 27;
+	uint64_t sam                          : 1;  /**< Region X SAM mode */
+	uint64_t we_ext                       : 2;  /**< Region X write enable count extension */
+	uint64_t oe_ext                       : 2;  /**< Region X output enable count extension */
+	uint64_t en                           : 1;  /**< Region X enable */
+	uint64_t orbit                        : 1;  /**< Region X or bit */
+	uint64_t ale                          : 1;  /**< Region X ALE mode */
+	uint64_t width                        : 1;  /**< Region X bus width */
+	uint64_t size                         : 12; /**< Region X size */
+	uint64_t base                         : 16; /**< Region X base address */
 #else
-		uint64_t base:16;
-		uint64_t size:12;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t orbit:1;
-		uint64_t en:1;
-		uint64_t oe_ext:2;
-		uint64_t we_ext:2;
-		uint64_t sam:1;
-		uint64_t reserved_37_63:27;
+	uint64_t base                         : 16;
+	uint64_t size                         : 12;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t orbit                        : 1;
+	uint64_t en                           : 1;
+	uint64_t oe_ext                       : 2;
+	uint64_t we_ext                       : 2;
+	uint64_t sam                          : 1;
+	uint64_t reserved_37_63               : 27;
 #endif
 	} cn30xx;
+	struct cvmx_mio_boot_reg_cfgx_cn30xx  cn31xx;
 	struct cvmx_mio_boot_reg_cfgx_cn38xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t en:1;
-		uint64_t orbit:1;
-		uint64_t reserved_28_29:2;
-		uint64_t size:12;
-		uint64_t base:16;
+	uint64_t reserved_32_63               : 32;
+	uint64_t en                           : 1;  /**< Region X enable */
+	uint64_t orbit                        : 1;  /**< Region X or bit */
+	uint64_t reserved_28_29               : 2;
+	uint64_t size                         : 12; /**< Region X size */
+	uint64_t base                         : 16; /**< Region X base address */
 #else
-		uint64_t base:16;
-		uint64_t size:12;
-		uint64_t reserved_28_29:2;
-		uint64_t orbit:1;
-		uint64_t en:1;
-		uint64_t reserved_32_63:32;
+	uint64_t base                         : 16;
+	uint64_t size                         : 12;
+	uint64_t reserved_28_29               : 2;
+	uint64_t orbit                        : 1;
+	uint64_t en                           : 1;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} cn38xx;
+	struct cvmx_mio_boot_reg_cfgx_cn38xx  cn38xxp2;
 	struct cvmx_mio_boot_reg_cfgx_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_42_63:22;
-		uint64_t tim_mult:2;
-		uint64_t rd_dly:3;
-		uint64_t sam:1;
-		uint64_t we_ext:2;
-		uint64_t oe_ext:2;
-		uint64_t en:1;
-		uint64_t orbit:1;
-		uint64_t ale:1;
-		uint64_t width:1;
-		uint64_t size:12;
-		uint64_t base:16;
+	uint64_t reserved_42_63               : 22;
+	uint64_t tim_mult                     : 2;  /**< Region X timing multiplier */
+	uint64_t rd_dly                       : 3;  /**< Region X read sample delay */
+	uint64_t sam                          : 1;  /**< Region X SAM mode */
+	uint64_t we_ext                       : 2;  /**< Region X write enable count extension */
+	uint64_t oe_ext                       : 2;  /**< Region X output enable count extension */
+	uint64_t en                           : 1;  /**< Region X enable */
+	uint64_t orbit                        : 1;  /**< Region X or bit */
+	uint64_t ale                          : 1;  /**< Region X ALE mode */
+	uint64_t width                        : 1;  /**< Region X bus width */
+	uint64_t size                         : 12; /**< Region X size */
+	uint64_t base                         : 16; /**< Region X base address */
 #else
-		uint64_t base:16;
-		uint64_t size:12;
-		uint64_t width:1;
-		uint64_t ale:1;
-		uint64_t orbit:1;
-		uint64_t en:1;
-		uint64_t oe_ext:2;
-		uint64_t we_ext:2;
-		uint64_t sam:1;
-		uint64_t rd_dly:3;
-		uint64_t tim_mult:2;
-		uint64_t reserved_42_63:22;
+	uint64_t base                         : 16;
+	uint64_t size                         : 12;
+	uint64_t width                        : 1;
+	uint64_t ale                          : 1;
+	uint64_t orbit                        : 1;
+	uint64_t en                           : 1;
+	uint64_t oe_ext                       : 2;
+	uint64_t we_ext                       : 2;
+	uint64_t sam                          : 1;
+	uint64_t rd_dly                       : 3;
+	uint64_t tim_mult                     : 2;
+	uint64_t reserved_42_63               : 22;
 #endif
 	} cn50xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn52xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn52xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cn56xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn56xxp1;
+	struct cvmx_mio_boot_reg_cfgx_cn30xx  cn58xx;
+	struct cvmx_mio_boot_reg_cfgx_cn30xx  cn58xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cn61xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn63xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn63xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cn66xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn68xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn68xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cn70xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn70xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cn73xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn78xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cn78xxp1;
+	struct cvmx_mio_boot_reg_cfgx_s       cnf71xx;
+	struct cvmx_mio_boot_reg_cfgx_s       cnf75xx;
 };
+typedef union cvmx_mio_boot_reg_cfgx cvmx_mio_boot_reg_cfgx_t;
 
+/**
+ * cvmx_mio_boot_reg_tim#
+ *
+ * The region n timing register (one register for each of seven regions) contains page-mode,
+ * wait-mode, and timing parameters for region n.
+ */
 union cvmx_mio_boot_reg_timx {
 	uint64_t u64;
 	struct cvmx_mio_boot_reg_timx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t pagem:1;
-		uint64_t waitm:1;
-		uint64_t pages:2;
-		uint64_t ale:6;
-		uint64_t page:6;
-		uint64_t wait:6;
-		uint64_t pause:6;
-		uint64_t wr_hld:6;
-		uint64_t rd_hld:6;
-		uint64_t we:6;
-		uint64_t oe:6;
-		uint64_t ce:6;
-		uint64_t adr:6;
+	uint64_t pagem                        : 1;  /**< Region 1-7 page mode. */
+	uint64_t waitm                        : 1;  /**< Region 1-7 wait mode. */
+	uint64_t pages                        : 2;  /**< Region 1-7 page size:
+                                                         0x0 = 8 bytes.
+                                                         0x1 = 2 bytes.
+                                                         0x2 = 4 bytes.
+                                                         0x3 = 8 bytes. */
+	uint64_t ale                          : 6;  /**< Region 1-7 ALE count. Must be nonzero to ensure legal transitions on the corresponding
+                                                         boot bus outputs. */
+	uint64_t page                         : 6;  /**< Region 1-7 page count. Must be nonzero to ensure legal transitions on the corresponding
+                                                         boot bus outputs. */
+	uint64_t wait                         : 6;  /**< Region 1-7 wait count, must be nonzero when WAITM is set to 1. */
+	uint64_t pause                        : 6;  /**< Region 1-7 pause count. */
+	uint64_t wr_hld                       : 6;  /**< Region 1-7 write-hold count. */
+	uint64_t rd_hld                       : 6;  /**< Region 1-7 read-hold count. */
+	uint64_t we                           : 6;  /**< Region 1-7 write-enable count. Must be nonzero to ensure legal transitions on the
+                                                         corresponding boot bus outputs. */
+	uint64_t oe                           : 6;  /**< Region 1-7 output-enable count. Must be nonzero to ensure legal transitions on the
+                                                         corresponding boot bus outputs. */
+	uint64_t ce                           : 6;  /**< Region 1-7 chip-enable count. */
+	uint64_t adr                          : 6;  /**< Region 1-7 address count. */
 #else
-		uint64_t adr:6;
-		uint64_t ce:6;
-		uint64_t oe:6;
-		uint64_t we:6;
-		uint64_t rd_hld:6;
-		uint64_t wr_hld:6;
-		uint64_t pause:6;
-		uint64_t wait:6;
-		uint64_t page:6;
-		uint64_t ale:6;
-		uint64_t pages:2;
-		uint64_t waitm:1;
-		uint64_t pagem:1;
+	uint64_t adr                          : 6;
+	uint64_t ce                           : 6;
+	uint64_t oe                           : 6;
+	uint64_t we                           : 6;
+	uint64_t rd_hld                       : 6;
+	uint64_t wr_hld                       : 6;
+	uint64_t pause                        : 6;
+	uint64_t wait                         : 6;
+	uint64_t page                         : 6;
+	uint64_t ale                          : 6;
+	uint64_t pages                        : 2;
+	uint64_t waitm                        : 1;
+	uint64_t pagem                        : 1;
 #endif
 	} s;
+	struct cvmx_mio_boot_reg_timx_s       cn30xx;
+	struct cvmx_mio_boot_reg_timx_s       cn31xx;
 	struct cvmx_mio_boot_reg_timx_cn38xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t pagem:1;
-		uint64_t waitm:1;
-		uint64_t pages:2;
-		uint64_t reserved_54_59:6;
-		uint64_t page:6;
-		uint64_t wait:6;
-		uint64_t pause:6;
-		uint64_t wr_hld:6;
-		uint64_t rd_hld:6;
-		uint64_t we:6;
-		uint64_t oe:6;
-		uint64_t ce:6;
-		uint64_t adr:6;
+	uint64_t pagem                        : 1;  /**< Region X page mode */
+	uint64_t waitm                        : 1;  /**< Region X wait mode */
+	uint64_t pages                        : 2;  /**< Region X page size (NOT IN PASS 1) */
+	uint64_t reserved_54_59               : 6;
+	uint64_t page                         : 6;  /**< Region X page count */
+	uint64_t wait                         : 6;  /**< Region X wait count */
+	uint64_t pause                        : 6;  /**< Region X pause count */
+	uint64_t wr_hld                       : 6;  /**< Region X write hold count */
+	uint64_t rd_hld                       : 6;  /**< Region X read hold count */
+	uint64_t we                           : 6;  /**< Region X write enable count */
+	uint64_t oe                           : 6;  /**< Region X output enable count */
+	uint64_t ce                           : 6;  /**< Region X chip enable count */
+	uint64_t adr                          : 6;  /**< Region X address count */
 #else
-		uint64_t adr:6;
-		uint64_t ce:6;
-		uint64_t oe:6;
-		uint64_t we:6;
-		uint64_t rd_hld:6;
-		uint64_t wr_hld:6;
-		uint64_t pause:6;
-		uint64_t wait:6;
-		uint64_t page:6;
-		uint64_t reserved_54_59:6;
-		uint64_t pages:2;
-		uint64_t waitm:1;
-		uint64_t pagem:1;
+	uint64_t adr                          : 6;
+	uint64_t ce                           : 6;
+	uint64_t oe                           : 6;
+	uint64_t we                           : 6;
+	uint64_t rd_hld                       : 6;
+	uint64_t wr_hld                       : 6;
+	uint64_t pause                        : 6;
+	uint64_t wait                         : 6;
+	uint64_t page                         : 6;
+	uint64_t reserved_54_59               : 6;
+	uint64_t pages                        : 2;
+	uint64_t waitm                        : 1;
+	uint64_t pagem                        : 1;
 #endif
 	} cn38xx;
+	struct cvmx_mio_boot_reg_timx_cn38xx  cn38xxp2;
+	struct cvmx_mio_boot_reg_timx_s       cn50xx;
+	struct cvmx_mio_boot_reg_timx_s       cn52xx;
+	struct cvmx_mio_boot_reg_timx_s       cn52xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn56xx;
+	struct cvmx_mio_boot_reg_timx_s       cn56xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn58xx;
+	struct cvmx_mio_boot_reg_timx_s       cn58xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn61xx;
+	struct cvmx_mio_boot_reg_timx_s       cn63xx;
+	struct cvmx_mio_boot_reg_timx_s       cn63xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn66xx;
+	struct cvmx_mio_boot_reg_timx_s       cn68xx;
+	struct cvmx_mio_boot_reg_timx_s       cn68xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn70xx;
+	struct cvmx_mio_boot_reg_timx_s       cn70xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cn73xx;
+	struct cvmx_mio_boot_reg_timx_s       cn78xx;
+	struct cvmx_mio_boot_reg_timx_s       cn78xxp1;
+	struct cvmx_mio_boot_reg_timx_s       cnf71xx;
+	struct cvmx_mio_boot_reg_timx_s       cnf75xx;
 };
+typedef union cvmx_mio_boot_reg_timx cvmx_mio_boot_reg_timx_t;
 
+/**
+ * cvmx_mio_boot_thr
+ *
+ * The boot-threshold register contains MIO boot-threshold values.
+ *
+ */
 union cvmx_mio_boot_thr {
 	uint64_t u64;
 	struct cvmx_mio_boot_thr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_22_63:42;
-		uint64_t dma_thr:6;
-		uint64_t reserved_14_15:2;
-		uint64_t fif_cnt:6;
-		uint64_t reserved_6_7:2;
-		uint64_t fif_thr:6;
+	uint64_t reserved_22_63               : 42;
+	uint64_t dma_thr                      : 6;  /**< DMA threshold. When non-DMA accesses are pending, perform a DMA access after this value of
+                                                         non-DMA accesses have completed. If set to zero, only perform a DMA access when non-DMA
+                                                         accesses are not pending. */
+	uint64_t reserved_14_15               : 2;
+	uint64_t fif_cnt                      : 6;  /**< Current IOI FIFO count. */
+	uint64_t reserved_6_7                 : 2;
+	uint64_t fif_thr                      : 6;  /**< IOI busy threshold. Should always read 0x19 (the only legal value). */
 #else
-		uint64_t fif_thr:6;
-		uint64_t reserved_6_7:2;
-		uint64_t fif_cnt:6;
-		uint64_t reserved_14_15:2;
-		uint64_t dma_thr:6;
-		uint64_t reserved_22_63:42;
+	uint64_t fif_thr                      : 6;
+	uint64_t reserved_6_7                 : 2;
+	uint64_t fif_cnt                      : 6;
+	uint64_t reserved_14_15               : 2;
+	uint64_t dma_thr                      : 6;
+	uint64_t reserved_22_63               : 42;
 #endif
 	} s;
 	struct cvmx_mio_boot_thr_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_14_63:50;
-		uint64_t fif_cnt:6;
-		uint64_t reserved_6_7:2;
-		uint64_t fif_thr:6;
+	uint64_t reserved_14_63               : 50;
+	uint64_t fif_cnt                      : 6;  /**< Current NCB FIFO count */
+	uint64_t reserved_6_7                 : 2;
+	uint64_t fif_thr                      : 6;  /**< NCB busy threshold */
 #else
-		uint64_t fif_thr:6;
-		uint64_t reserved_6_7:2;
-		uint64_t fif_cnt:6;
-		uint64_t reserved_14_63:50;
+	uint64_t fif_thr                      : 6;
+	uint64_t reserved_6_7                 : 2;
+	uint64_t fif_cnt                      : 6;
+	uint64_t reserved_14_63               : 50;
 #endif
 	} cn30xx;
+	struct cvmx_mio_boot_thr_cn30xx       cn31xx;
+	struct cvmx_mio_boot_thr_cn30xx       cn38xx;
+	struct cvmx_mio_boot_thr_cn30xx       cn38xxp2;
+	struct cvmx_mio_boot_thr_cn30xx       cn50xx;
+	struct cvmx_mio_boot_thr_s            cn52xx;
+	struct cvmx_mio_boot_thr_s            cn52xxp1;
+	struct cvmx_mio_boot_thr_s            cn56xx;
+	struct cvmx_mio_boot_thr_s            cn56xxp1;
+	struct cvmx_mio_boot_thr_cn30xx       cn58xx;
+	struct cvmx_mio_boot_thr_cn30xx       cn58xxp1;
+	struct cvmx_mio_boot_thr_s            cn61xx;
+	struct cvmx_mio_boot_thr_s            cn63xx;
+	struct cvmx_mio_boot_thr_s            cn63xxp1;
+	struct cvmx_mio_boot_thr_s            cn66xx;
+	struct cvmx_mio_boot_thr_s            cn68xx;
+	struct cvmx_mio_boot_thr_s            cn68xxp1;
+	struct cvmx_mio_boot_thr_s            cn70xx;
+	struct cvmx_mio_boot_thr_s            cn70xxp1;
+	struct cvmx_mio_boot_thr_s            cn73xx;
+	struct cvmx_mio_boot_thr_s            cn78xx;
+	struct cvmx_mio_boot_thr_s            cn78xxp1;
+	struct cvmx_mio_boot_thr_s            cnf71xx;
+	struct cvmx_mio_boot_thr_s            cnf75xx;
 };
+typedef union cvmx_mio_boot_thr cvmx_mio_boot_thr_t;
 
+/**
+ * cvmx_mio_emm_access_wdog
+ */
+union cvmx_mio_emm_access_wdog {
+	uint64_t u64;
+	struct cvmx_mio_emm_access_wdog_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_32_63               : 32;
+	uint64_t clk_cnt                      : 32; /**< Number of coprocessor-clock cycles to allow for a store operation to the device
+                                                         to complete before hardware will halt the operation.
+                                                         Hardware will inject an error on the next 512-byte block boundary.   The pending DMA
+                                                         operation can be resumed or terminated. A value of zero disables timer. */
+#else
+	uint64_t clk_cnt                      : 32;
+	uint64_t reserved_32_63               : 32;
+#endif
+	} s;
+	struct cvmx_mio_emm_access_wdog_s     cn73xx;
+	struct cvmx_mio_emm_access_wdog_s     cn78xx;
+	struct cvmx_mio_emm_access_wdog_s     cn78xxp1;
+	struct cvmx_mio_emm_access_wdog_s     cnf75xx;
+};
+typedef union cvmx_mio_emm_access_wdog cvmx_mio_emm_access_wdog_t;
+
+/**
+ * cvmx_mio_emm_buf_dat
+ *
+ * MIO_EMM_BUF_DAT = MIO EMMC Data buffer access Register
+ *
+ */
 union cvmx_mio_emm_buf_dat {
 	uint64_t u64;
 	struct cvmx_mio_emm_buf_dat_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t dat:64;
+	uint64_t dat                          : 64; /**< Direct access to the 1 KB data buffer memory. Address specified by MIO_EMM_BUF_IDX. */
 #else
-		uint64_t dat:64;
+	uint64_t dat                          : 64;
 #endif
 	} s;
+	struct cvmx_mio_emm_buf_dat_s         cn61xx;
+	struct cvmx_mio_emm_buf_dat_s         cn70xx;
+	struct cvmx_mio_emm_buf_dat_s         cn70xxp1;
+	struct cvmx_mio_emm_buf_dat_s         cn73xx;
+	struct cvmx_mio_emm_buf_dat_s         cn78xx;
+	struct cvmx_mio_emm_buf_dat_s         cn78xxp1;
+	struct cvmx_mio_emm_buf_dat_s         cnf71xx;
+	struct cvmx_mio_emm_buf_dat_s         cnf75xx;
 };
+typedef union cvmx_mio_emm_buf_dat cvmx_mio_emm_buf_dat_t;
 
+/**
+ * cvmx_mio_emm_buf_idx
+ *
+ * MIO_EMM_BUF_IDX = MIO EMMC Data buffer address Register
+ *
+ */
 union cvmx_mio_emm_buf_idx {
 	uint64_t u64;
 	struct cvmx_mio_emm_buf_idx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_17_63:47;
-		uint64_t inc:1;
-		uint64_t reserved_7_15:9;
-		uint64_t buf_num:1;
-		uint64_t offset:6;
+	uint64_t reserved_17_63               : 47;
+	uint64_t inc                          : 1;  /**< Automatically advance [BUF_NUM]/[OFFSET] after each access to
+                                                         MIO_EMM_BUF_DAT. Wraps after the last offset of the last data buffer. */
+	uint64_t reserved_7_15                : 9;
+	uint64_t buf_num                      : 1;  /**< Specify the data buffer for the next access to MIO_EMM_BUF_DAT. */
+	uint64_t offset                       : 6;  /**< Specify the 8B data buffer offset for the next access to MIO_EMM_BUF_DAT. */
 #else
-		uint64_t offset:6;
-		uint64_t buf_num:1;
-		uint64_t reserved_7_15:9;
-		uint64_t inc:1;
-		uint64_t reserved_17_63:47;
+	uint64_t offset                       : 6;
+	uint64_t buf_num                      : 1;
+	uint64_t reserved_7_15                : 9;
+	uint64_t inc                          : 1;
+	uint64_t reserved_17_63               : 47;
 #endif
 	} s;
+	struct cvmx_mio_emm_buf_idx_s         cn61xx;
+	struct cvmx_mio_emm_buf_idx_s         cn70xx;
+	struct cvmx_mio_emm_buf_idx_s         cn70xxp1;
+	struct cvmx_mio_emm_buf_idx_s         cn73xx;
+	struct cvmx_mio_emm_buf_idx_s         cn78xx;
+	struct cvmx_mio_emm_buf_idx_s         cn78xxp1;
+	struct cvmx_mio_emm_buf_idx_s         cnf71xx;
+	struct cvmx_mio_emm_buf_idx_s         cnf75xx;
 };
+typedef union cvmx_mio_emm_buf_idx cvmx_mio_emm_buf_idx_t;
 
+/**
+ * cvmx_mio_emm_cfg
+ *
+ * MIO_EMM_CFG = MIO EMMC Configuration Register
+ *
+ */
 union cvmx_mio_emm_cfg {
 	uint64_t u64;
 	struct cvmx_mio_emm_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_17_63:47;
-		uint64_t boot_fail:1;
-		uint64_t reserved_4_15:12;
-		uint64_t bus_ena:4;
+	uint64_t reserved_17_63               : 47;
+	uint64_t boot_fail                    : 1;  /**< Software should set BOOT_FAIL when an unrecoverable error occurs while attempting to boot
+                                                         from eMMC or NOR Flash. When set, the following pattern will be output:
+                                                         * BOOT_AD<31:0> driven to 0.
+                                                         * BOOT_CE_<7:0>_L driven to 1.
+                                                         * BOOT_ALE driven to 1.
+                                                         * BOOT_OE_L driven to 0.
+                                                         * BOOT_WE_L driven to 0. */
+	uint64_t reserved_4_15                : 12;
+	uint64_t bus_ena                      : 4;  /**< eMMC bus enable mask.
+                                                         Setting bits 0..2 enable the corresponding EMMC bus by allowing EMMC_CMD[BUS_ENA]
+                                                         operation. Bit 3 is reserved.
+                                                         Clearing all bits of this field will reset the other MIO_EMM_* registers.  It might be
+                                                         necessary
+                                                         to set and and clear the bits several times to ensure the MIO_EMM_* registers have been
+                                                         reset properly.
+                                                         Setting one or more bits will enable EMMC_CLK operation. */
 #else
-		uint64_t bus_ena:4;
-		uint64_t reserved_4_15:12;
-		uint64_t boot_fail:1;
-		uint64_t reserved_17_63:47;
+	uint64_t bus_ena                      : 4;
+	uint64_t reserved_4_15                : 12;
+	uint64_t boot_fail                    : 1;
+	uint64_t reserved_17_63               : 47;
 #endif
 	} s;
+	struct cvmx_mio_emm_cfg_s             cn61xx;
+	struct cvmx_mio_emm_cfg_s             cn70xx;
+	struct cvmx_mio_emm_cfg_s             cn70xxp1;
+	struct cvmx_mio_emm_cfg_s             cn73xx;
+	struct cvmx_mio_emm_cfg_s             cn78xx;
+	struct cvmx_mio_emm_cfg_s             cn78xxp1;
+	struct cvmx_mio_emm_cfg_s             cnf71xx;
+	struct cvmx_mio_emm_cfg_s             cnf75xx;
 };
+typedef union cvmx_mio_emm_cfg cvmx_mio_emm_cfg_t;
 
+/**
+ * cvmx_mio_emm_cmd
+ *
+ * MIO_EMM_CMD = MIO EMMC Command Register
+ *
+ */
 union cvmx_mio_emm_cmd {
 	uint64_t u64;
 	struct cvmx_mio_emm_cmd_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t cmd_val:1;
-		uint64_t reserved_56_58:3;
-		uint64_t dbuf:1;
-		uint64_t offset:6;
-		uint64_t reserved_43_48:6;
-		uint64_t ctype_xor:2;
-		uint64_t rtype_xor:3;
-		uint64_t cmd_idx:6;
-		uint64_t arg:32;
+	uint64_t reserved_63_63               : 1;
+	uint64_t skip_busy                    : 1;  /**< Controls when command is completed.
+                                                         0 = Command doesn't complete until card has dropped the BUSY signal.
+                                                         1 = Complete command regardless of the BUSY signal. Status of signal can be read in
+                                                         MIO_EMM_RSP_STS[RSP_BUSYBIT]. */
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus. */
+	uint64_t cmd_val                      : 1;  /**< Request valid. Software writes this bit to a 1. Hardware clears it when the operation completes. */
+	uint64_t reserved_56_58               : 3;
+	uint64_t dbuf                         : 1;  /**< Specify the data buffer to be used for a block transfer. */
+	uint64_t offset                       : 6;  /**< Debug only. Specify the number of 8-byte transfers used in the command. Value is
+                                                         64-OFFSET. The block transfer still starts at the first byte in the 512 B data buffer.
+                                                         Software must ensure CMD16 has updated the card block length. */
+	uint64_t reserved_43_48               : 6;
+	uint64_t ctype_xor                    : 2;  /**< Command type override; typically zero. Value is XOR'd with the default command type. See
+                                                         Command and Response Types for command types per command index. Types are:
+                                                         0x0 = No data.
+                                                         0x1 = Read data into Dbuf.
+                                                         0x2 = Write data from Dbuf.
+                                                         0x3 = Reserved. */
+	uint64_t rtype_xor                    : 3;  /**< Response type override; typically zero. Value is XOR'd with default response type. See
+                                                         Command and Response Types for response types per command index. Types are:
+                                                         0x0 = No Response.
+                                                         0x1 = R1, 48 bits.
+                                                         0x2 = R2, 136 bits.
+                                                         0x3 = R3, 48 bits.
+                                                         0x4 = R4, 48 bits.
+                                                         0x5 = R5, 48 bits.
+                                                         0x6, 0x7 = Reserved. */
+	uint64_t cmd_idx                      : 6;  /**< eMMC command. */
+	uint64_t arg                          : 32; /**< eMMC command argument. */
 #else
-		uint64_t arg:32;
-		uint64_t cmd_idx:6;
-		uint64_t rtype_xor:3;
-		uint64_t ctype_xor:2;
-		uint64_t reserved_43_48:6;
-		uint64_t offset:6;
-		uint64_t dbuf:1;
-		uint64_t reserved_56_58:3;
-		uint64_t cmd_val:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t arg                          : 32;
+	uint64_t cmd_idx                      : 6;
+	uint64_t rtype_xor                    : 3;
+	uint64_t ctype_xor                    : 2;
+	uint64_t reserved_43_48               : 6;
+	uint64_t offset                       : 6;
+	uint64_t dbuf                         : 1;
+	uint64_t reserved_56_58               : 3;
+	uint64_t cmd_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t skip_busy                    : 1;
+	uint64_t reserved_63_63               : 1;
 #endif
 	} s;
+	struct cvmx_mio_emm_cmd_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus */
+	uint64_t cmd_val                      : 1;  /**< Request valid.  SW writes this bit to a 1.   HW clears it when
+                                                         the operation completes. */
+	uint64_t reserved_56_58               : 3;
+	uint64_t dbuf                         : 1;  /**< Specify the data buffer to be used for a block transfer. */
+	uint64_t offset                       : 6;  /**< Debug only.  Specify the number of 8 byte transfers in the
+                                                         used in the command.  Value is 64-OFFSET.  The block transfer
+                                                         will still start at the first btye in the 512B data buffer.
+                                                         SW must ensure CMD16 has updated the card block length. */
+	uint64_t reserved_43_48               : 6;
+	uint64_t ctype_xor                    : 2;  /**< Command Type Override.  Typically Zero.  Value is XOR'd with
+                                                         default command type.  See table of Command Types per CMD#.
+                                                          Types are:  00 = No Data
+                                                                      01 = Read data into Dbuf
+                                                                      10 = Write data from Dbuf
+                                                                      11 = Reserved */
+	uint64_t rtype_xor                    : 3;  /**< Response Type Override.  Typically Zero.  Value is XOR'd with
+                                                         default response type.  See table of Response Types per CMD#.
+                                                          Types are 000 = No Response
+                                                                    001 = R1, 48 bits,
+                                                                    010 = R2, 136 bits
+                                                                    011 = R3, 48 bits,
+                                                                    100 = R4, 48 bits,
+                                                                    101 = R5, 48 bits,
+                                                                    110, 111 = Reserved */
+	uint64_t cmd_idx                      : 6;  /**< eMMC command */
+	uint64_t arg                          : 32; /**< eMMC command argument */
+#else
+	uint64_t arg                          : 32;
+	uint64_t cmd_idx                      : 6;
+	uint64_t rtype_xor                    : 3;
+	uint64_t ctype_xor                    : 2;
+	uint64_t reserved_43_48               : 6;
+	uint64_t offset                       : 6;
+	uint64_t dbuf                         : 1;
+	uint64_t reserved_56_58               : 3;
+	uint64_t cmd_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
+#endif
+	} cn61xx;
+	struct cvmx_mio_emm_cmd_cn61xx        cn70xx;
+	struct cvmx_mio_emm_cmd_cn61xx        cn70xxp1;
+	struct cvmx_mio_emm_cmd_s             cn73xx;
+	struct cvmx_mio_emm_cmd_s             cn78xx;
+	struct cvmx_mio_emm_cmd_s             cn78xxp1;
+	struct cvmx_mio_emm_cmd_cn61xx        cnf71xx;
+	struct cvmx_mio_emm_cmd_s             cnf75xx;
 };
+typedef union cvmx_mio_emm_cmd cvmx_mio_emm_cmd_t;
 
+/**
+ * cvmx_mio_emm_dma
+ *
+ * MIO_EMM_DMA = MIO EMMC DMA config Register
+ *
+ */
 union cvmx_mio_emm_dma {
 	uint64_t u64;
 	struct cvmx_mio_emm_dma_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t dma_val:1;
-		uint64_t sector:1;
-		uint64_t dat_null:1;
-		uint64_t thres:6;
-		uint64_t rel_wr:1;
-		uint64_t rw:1;
-		uint64_t multi:1;
-		uint64_t block_cnt:16;
-		uint64_t card_addr:32;
+	uint64_t reserved_63_63               : 1;
+	uint64_t skip_busy                    : 1;  /**< Controls when DMA is completed.
+                                                         0 = DMA doesn't complete until card has dropped the BUSY signal.
+                                                         1 = Complete DMA after last transfer regardless of the BUSY signal. Status of signal can
+                                                         be read in MIO_EMM_RSP_STS[RSP_BUSYBIT]. */
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus. */
+	uint64_t dma_val                      : 1;  /**< Software writes this bit to a 1 to indicate that hardware should perform the DMA transfer.
+                                                         Hardware clears this bit when the DMA operation completes or is terminated. */
+	uint64_t sector                       : 1;  /**< Specify CARD_ADDR and eMMC are using sector (512 B) addressing. */
+	uint64_t dat_null                     : 1;  /**< Do not perform any eMMC commands. A DMA read returns all 0s. A DMA write tosses the data.
+                                                         In the case of a failure, this can be used to unwind the DMA engine. */
+	uint64_t thres                        : 6;  /**< Number of 8-byte blocks of data that must exist in the DBUF before starting the 512-byte
+                                                         block transfer. Zero indicates to wait for the entire block. */
+	uint64_t rel_wr                       : 1;  /**< Set the reliable write parameter when performing CMD23 (SET_BLOCK_COUNT) for a multiple block. */
+	uint64_t rw                           : 1;  /**< Read/write bit (0 = read, 1 = write). */
+	uint64_t multi                        : 1;  /**< Perform operation using a multiple-block command instead of a series of single-block commands. */
+	uint64_t block_cnt                    : 16; /**< Number of blocks to read/write. Hardware decrements the block count after each successful
+                                                         block transfer. */
+	uint64_t card_addr                    : 32; /**< Data address for media <= 2 GB is a 32-bit byte address, and data address for media > 2 GB
+                                                         is a 32-bit sector (512 B) address. Hardware advances the card address after each
+                                                         successful block transfer by 512 for byte addressing and by 1 for sector addressing. */
 #else
-		uint64_t card_addr:32;
-		uint64_t block_cnt:16;
-		uint64_t multi:1;
-		uint64_t rw:1;
-		uint64_t rel_wr:1;
-		uint64_t thres:6;
-		uint64_t dat_null:1;
-		uint64_t sector:1;
-		uint64_t dma_val:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t card_addr                    : 32;
+	uint64_t block_cnt                    : 16;
+	uint64_t multi                        : 1;
+	uint64_t rw                           : 1;
+	uint64_t rel_wr                       : 1;
+	uint64_t thres                        : 6;
+	uint64_t dat_null                     : 1;
+	uint64_t sector                       : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t skip_busy                    : 1;
+	uint64_t reserved_63_63               : 1;
 #endif
 	} s;
+	struct cvmx_mio_emm_dma_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus */
+	uint64_t dma_val                      : 1;  /**< SW writes this bit to a 1 to indicate that HW should perform
+                                                         the DMA transfer.   HW clears when DMA operation completes or
+                                                         is terminated. */
+	uint64_t sector                       : 1;  /**< Specify CARD_ADDR and eMMC are using sector (512B) addressing. */
+	uint64_t dat_null                     : 1;  /**< Do not perform any eMMC commands.   A DMA read will return all
+                                                         0s.  A DMA write tosses the data.  In the case of a failure,
+                                                         this can be used to unwind the DMA engine. */
+	uint64_t thres                        : 6;  /**< Number of 8B blocks of data that must exist in the DBUF before
+                                                         the starting the 512B block transfer.  0 indicates to wait for
+                                                         the entire block. */
+	uint64_t rel_wr                       : 1;  /**< Set the reliable write parameter when performing CMD23
+                                                         (SET_BLOCK_COUNT) for a multiple block */
+	uint64_t rw                           : 1;  /**< R/W bit (0 = read, 1 = write) */
+	uint64_t multi                        : 1;  /**< Perform operation using a multiple block command instead of a
+                                                         series of single block commands. */
+	uint64_t block_cnt                    : 16; /**< Number of blocks to read/write.  Hardware decrements the block
+                                                         count after each successful block transfer. */
+	uint64_t card_addr                    : 32; /**< Data address for media =<2GB is a 32bit byte address and data
+                                                         address for media > 2GB is a 32bit sector (512B) address.
+                                                         Hardware advances the card address after each successful block
+                                                         transfer by 512 for byte addressing and by 1 for sector
+                                                         addressing. */
+#else
+	uint64_t card_addr                    : 32;
+	uint64_t block_cnt                    : 16;
+	uint64_t multi                        : 1;
+	uint64_t rw                           : 1;
+	uint64_t rel_wr                       : 1;
+	uint64_t thres                        : 6;
+	uint64_t dat_null                     : 1;
+	uint64_t sector                       : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
+#endif
+	} cn61xx;
+	struct cvmx_mio_emm_dma_cn61xx        cn70xx;
+	struct cvmx_mio_emm_dma_cn61xx        cn70xxp1;
+	struct cvmx_mio_emm_dma_s             cn73xx;
+	struct cvmx_mio_emm_dma_s             cn78xx;
+	struct cvmx_mio_emm_dma_s             cn78xxp1;
+	struct cvmx_mio_emm_dma_cn61xx        cnf71xx;
+	struct cvmx_mio_emm_dma_s             cnf75xx;
 };
+typedef union cvmx_mio_emm_dma cvmx_mio_emm_dma_t;
 
+/**
+ * cvmx_mio_emm_dma_adr
+ *
+ * This register sets the address for eMMC/SD flash transfers to/from memory. Sixty-four-bit
+ * operations must be used to access this register. This register is updated by the DMA
+ * hardware and can be reloaded by the values placed in the MIO_EMM_DMA_FIFO_ADR.
+ */
+union cvmx_mio_emm_dma_adr {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_adr_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_42_63               : 22;
+	uint64_t adr                          : 42; /**< DMA engine address. Must be 64-bit aligned. */
+#else
+	uint64_t adr                          : 42;
+	uint64_t reserved_42_63               : 22;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_adr_s         cn73xx;
+	struct cvmx_mio_emm_dma_adr_s         cn78xx;
+	struct cvmx_mio_emm_dma_adr_s         cn78xxp1;
+	struct cvmx_mio_emm_dma_adr_s         cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_adr cvmx_mio_emm_dma_adr_t;
+
+/**
+ * cvmx_mio_emm_dma_cfg
+ *
+ * This register controls the internal DMA engine used with the eMMC/SD flash controller. Sixty-
+ * four-bit operations must be used to access this register. This register is updated by the
+ * hardware DMA engine and can also be reloaded by writes to the MIO_EMM_DMA_FIFO_CMD register.
+ */
+union cvmx_mio_emm_dma_cfg {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_cfg_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t en                           : 1;  /**< DMA engine enable. */
+	uint64_t rw                           : 1;  /**< DMA engine R/W bit: 0 = read, 1 = write. */
+	uint64_t clr                          : 1;  /**< DMA engine abort. When set to 1, DMA is aborted and [EN] is cleared on completion. */
+	uint64_t reserved_60_60               : 1;
+	uint64_t swap32                       : 1;  /**< DMA engine 32-bit swap. */
+	uint64_t swap16                       : 1;  /**< DMA engine enable 16-bit swap. */
+	uint64_t swap8                        : 1;  /**< DMA engine enable 8-bit swap. */
+	uint64_t endian                       : 1;  /**< DMA engine endian mode: 0 = big-endian, 1 = little-endian. */
+	uint64_t size                         : 20; /**< DMA engine size. Specified in the number of 64-bit transfers (encoded in -1 notation). For
+                                                         example, to transfer 512 bytes, SIZE = 64 - 1 = 63. */
+	uint64_t reserved_0_35                : 36;
+#else
+	uint64_t reserved_0_35                : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_60               : 1;
+	uint64_t clr                          : 1;
+	uint64_t rw                           : 1;
+	uint64_t en                           : 1;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_cfg_s         cn73xx;
+	struct cvmx_mio_emm_dma_cfg_s         cn78xx;
+	struct cvmx_mio_emm_dma_cfg_s         cn78xxp1;
+	struct cvmx_mio_emm_dma_cfg_s         cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_cfg cvmx_mio_emm_dma_cfg_t;
+
+/**
+ * cvmx_mio_emm_dma_fifo_adr
+ *
+ * This register specifies the internal address that is loaded into the eMMC internal DMA FIFO.
+ * The FIFO is used to queue up operations for the MIO_EMM_DMA_CFG/MIO_EMM_DMA_ADR when the DMA
+ * completes successfully.
+ */
+union cvmx_mio_emm_dma_fifo_adr {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_fifo_adr_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_42_63               : 22;
+	uint64_t adr                          : 39; /**< DMA engine address. Must be 64-bit aligned. */
+	uint64_t reserved_0_2                 : 3;
+#else
+	uint64_t reserved_0_2                 : 3;
+	uint64_t adr                          : 39;
+	uint64_t reserved_42_63               : 22;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_fifo_adr_s    cn73xx;
+	struct cvmx_mio_emm_dma_fifo_adr_s    cn78xx;
+	struct cvmx_mio_emm_dma_fifo_adr_s    cn78xxp1;
+	struct cvmx_mio_emm_dma_fifo_adr_s    cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_fifo_adr cvmx_mio_emm_dma_fifo_adr_t;
+
+/**
+ * cvmx_mio_emm_dma_fifo_cfg
+ *
+ * This register controls DMA FIFO operations.
+ *
+ */
+union cvmx_mio_emm_dma_fifo_cfg {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_fifo_cfg_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_17_63               : 47;
+	uint64_t clr                          : 1;  /**< DMA FIFO clear. When set, erases all commands in the DMA FIFO. Must be zero for normal operation. */
+	uint64_t reserved_13_15               : 3;
+	uint64_t int_lvl                      : 5;  /**< Interrupt threshold indicating the number of entries remaining in the
+                                                         DMA FIFO.  An interrupt occurs if the FIFO is read at the level specified.
+                                                         A value of 0 disables the interrupt.  A value of 17 or greater causes an
+                                                         interrupt only if the FIFO is overflowed.
+                                                         See MIO_EMM_DMA_INT[FIFO]. */
+	uint64_t reserved_5_7                 : 3;
+	uint64_t count                        : 5;  /**< Number of entries in the DMA FIFO. This count is incremented by writes to
+                                                         MIO_EMM_DMA_FIFO_CMD and decremented each time the internal DMA engine completes
+                                                         the previous command successfully.
+                                                         Up to 16 entries can be placed in the FIFO. Entries written to a full FIFO will
+                                                         potentially corrupt existing entries.  Care must be taken by software to ensure
+                                                         that this condition does not occur. */
+#else
+	uint64_t count                        : 5;
+	uint64_t reserved_5_7                 : 3;
+	uint64_t int_lvl                      : 5;
+	uint64_t reserved_13_15               : 3;
+	uint64_t clr                          : 1;
+	uint64_t reserved_17_63               : 47;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_fifo_cfg_s    cn73xx;
+	struct cvmx_mio_emm_dma_fifo_cfg_s    cn78xx;
+	struct cvmx_mio_emm_dma_fifo_cfg_s    cn78xxp1;
+	struct cvmx_mio_emm_dma_fifo_cfg_s    cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_fifo_cfg cvmx_mio_emm_dma_fifo_cfg_t;
+
+/**
+ * cvmx_mio_emm_dma_fifo_cmd
+ *
+ * This register specifies a command that is loaded into the eMMC internal DMA FIFO.  The FIFO is
+ * used to queue up operations for the MIO_EMM_DMA_CFG/MIO_EMM_DMA_ADR when the DMA completes
+ * successfully. Writes to this register store both the MIO_EMM_DMA_FIFO_CMD and the
+ * MIO_EMM_DMA_FIFO_ADR contents into the FIFO and increment the MIO_EMM_DMA_FIFO_CFG[COUNT]
+ * field.
+ *
+ * Note: This register has a similar format to MIO_EMM_DMA_CFG with the exception
+ * that the EN and CLR fields are absent. These are supported in MIO_EMM_DMA_FIFO_CFG.
+ */
+union cvmx_mio_emm_dma_fifo_cmd {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_fifo_cmd_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_63_63               : 1;
+	uint64_t rw                           : 1;  /**< DMA engine R/W bit: 0 = read, 1 = write. */
+	uint64_t reserved_61_61               : 1;
+	uint64_t intdis                       : 1;  /**< DMA command interrupt disable.  When set, the DMA command being submitted will
+                                                         not generate a MIO_EMM_DMA_INT[DONE] interrupt when it completes.  When cleared
+                                                         the command will generate the interrupt.
+                                                         For example, this field can be set for all the DMA commands submitted to the
+                                                         DMA FIFO in the case of a write to the eMMC device because the MIO_EMM_INT[DONE]
+                                                         interrupt would signify the end of the operation. It could be cleared on the last
+                                                         DMA command being submitted to the DMA FIFO and the MIO_EMM_DMA_INT[DONE] would
+                                                         occur when the read from the eMMC device was available in local memory. */
+	uint64_t swap32                       : 1;  /**< DMA engine 32-bit swap. */
+	uint64_t swap16                       : 1;  /**< DMA engine enable 16-bit swap. */
+	uint64_t swap8                        : 1;  /**< DMA engine enable 8-bit swap. */
+	uint64_t endian                       : 1;  /**< DMA engine endian mode: 0 = big-endian, 1 = little-endian. */
+	uint64_t size                         : 20; /**< DMA engine size. Specified in the number of 64-bit transfers (encoded in -1 notation). For
+                                                         example, to transfer 512 bytes, SIZE = 64 - 1 = 63. */
+	uint64_t reserved_0_35                : 36;
+#else
+	uint64_t reserved_0_35                : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t intdis                       : 1;
+	uint64_t reserved_61_61               : 1;
+	uint64_t rw                           : 1;
+	uint64_t reserved_63_63               : 1;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_fifo_cmd_s    cn73xx;
+	struct cvmx_mio_emm_dma_fifo_cmd_s    cn78xx;
+	struct cvmx_mio_emm_dma_fifo_cmd_cn78xxp1 {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_63_63               : 1;
+	uint64_t rw                           : 1;  /**< DMA engine R/W bit: 0 = read, 1 = write. */
+	uint64_t reserved_60_61               : 2;
+	uint64_t swap32                       : 1;  /**< DMA engine 32-bit swap. */
+	uint64_t swap16                       : 1;  /**< DMA engine enable 16-bit swap. */
+	uint64_t swap8                        : 1;  /**< DMA engine enable 8-bit swap. */
+	uint64_t endian                       : 1;  /**< DMA engine endian mode: 0 = big-endian, 1 = little-endian. */
+	uint64_t size                         : 20; /**< DMA engine size. Specified in the number of 64-bit transfers (encoded in -1 notation). For
+                                                         example, to transfer 512 bytes, SIZE = 64 - 1 = 63. */
+	uint64_t reserved_0_35                : 36;
+#else
+	uint64_t reserved_0_35                : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_61               : 2;
+	uint64_t rw                           : 1;
+	uint64_t reserved_63_63               : 1;
+#endif
+	} cn78xxp1;
+	struct cvmx_mio_emm_dma_fifo_cmd_s    cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_fifo_cmd cvmx_mio_emm_dma_fifo_cmd_t;
+
+/**
+ * cvmx_mio_emm_dma_int
+ *
+ * Sixty-four-bit operations must be used to access this register.
+ *
+ */
+union cvmx_mio_emm_dma_int {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_int_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t fifo                         : 1;  /**< Internal DMA FIFO has dropped to level specified by MIO_EMM_DMA_FIFO_CFG[INT_LVL]. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_DMA_FIFO. */
+	uint64_t done                         : 1;  /**< Internal DMA engine request completion interrupt. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_DMA_DONE. */
+#else
+	uint64_t done                         : 1;
+	uint64_t fifo                         : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_int_s         cn73xx;
+	struct cvmx_mio_emm_dma_int_s         cn78xx;
+	struct cvmx_mio_emm_dma_int_s         cn78xxp1;
+	struct cvmx_mio_emm_dma_int_s         cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_int cvmx_mio_emm_dma_int_t;
+
+/**
+ * cvmx_mio_emm_dma_int_w1s
+ */
+union cvmx_mio_emm_dma_int_w1s {
+	uint64_t u64;
+	struct cvmx_mio_emm_dma_int_w1s_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t fifo                         : 1;  /**< Internal DMA FIFO has dropped to level specified by MIO_EMM_DMA_FIFO_CFG[INT_LVL]. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_DMA_FIFO. */
+	uint64_t done                         : 1;  /**< Internal DMA engine request completion interrupt. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_DMA_DONE. */
+#else
+	uint64_t done                         : 1;
+	uint64_t fifo                         : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} s;
+	struct cvmx_mio_emm_dma_int_w1s_s     cn73xx;
+	struct cvmx_mio_emm_dma_int_w1s_s     cn78xx;
+	struct cvmx_mio_emm_dma_int_w1s_s     cn78xxp1;
+	struct cvmx_mio_emm_dma_int_w1s_s     cnf75xx;
+};
+typedef union cvmx_mio_emm_dma_int_w1s cvmx_mio_emm_dma_int_w1s_t;
+
+/**
+ * cvmx_mio_emm_int
+ *
+ * MIO_EMM_INT = MIO EMMC Interrupt Register
+ *
+ */
 union cvmx_mio_emm_int {
 	uint64_t u64;
 	struct cvmx_mio_emm_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t switch_err:1;
-		uint64_t switch_done:1;
-		uint64_t dma_err:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_done:1;
-		uint64_t buf_done:1;
+	uint64_t reserved_7_63                : 57;
+	uint64_t switch_err                   : 1;  /**< Switch operation encountered an error. Throws MIO_EMM_INTSN_E::MIO_EMM_INT_SWITCH_ERR. */
+	uint64_t switch_done                  : 1;  /**< Switch operation completed successfully. Throws MIO_EMM_INTSN_E::MIO_EMM_INT_SWITCH_DONE. */
+	uint64_t dma_err                      : 1;  /**< External DMA transfer encountered an error. See MIO_EMM_RSP_STS. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_DMA_ERR. */
+	uint64_t cmd_err                      : 1;  /**< Operation specified by MIO_EMM_CMD encountered an error. See MIO_EMM_RSP_STS. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_CMD_ERR. */
+	uint64_t dma_done                     : 1;  /**< External DMA transfer specified by MIO_EMM_DMA completed successfully. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_DMA_DONE. */
+	uint64_t cmd_done                     : 1;  /**< Operation specified by MIO_EMM_CMD completed successfully. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_CMD_DONE. */
+	uint64_t buf_done                     : 1;  /**< The next 512B block transfer of a multiblock transfer has completed. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_BUF_DONE. */
 #else
-		uint64_t buf_done:1;
-		uint64_t cmd_done:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_err:1;
-		uint64_t switch_done:1;
-		uint64_t switch_err:1;
-		uint64_t reserved_7_63:57;
+	uint64_t buf_done                     : 1;
+	uint64_t cmd_done                     : 1;
+	uint64_t dma_done                     : 1;
+	uint64_t cmd_err                      : 1;
+	uint64_t dma_err                      : 1;
+	uint64_t switch_done                  : 1;
+	uint64_t switch_err                   : 1;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_emm_int_s             cn61xx;
+	struct cvmx_mio_emm_int_s             cn70xx;
+	struct cvmx_mio_emm_int_s             cn70xxp1;
+	struct cvmx_mio_emm_int_s             cn73xx;
+	struct cvmx_mio_emm_int_s             cn78xx;
+	struct cvmx_mio_emm_int_s             cn78xxp1;
+	struct cvmx_mio_emm_int_s             cnf71xx;
+	struct cvmx_mio_emm_int_s             cnf75xx;
 };
+typedef union cvmx_mio_emm_int cvmx_mio_emm_int_t;
 
+/**
+ * cvmx_mio_emm_int_en
+ *
+ * MIO_EMM_INT_EN = MIO EMMC Interrupt enable Register
+ *
+ */
 union cvmx_mio_emm_int_en {
 	uint64_t u64;
 	struct cvmx_mio_emm_int_en_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t switch_err:1;
-		uint64_t switch_done:1;
-		uint64_t dma_err:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_done:1;
-		uint64_t buf_done:1;
+	uint64_t reserved_7_63                : 57;
+	uint64_t switch_err                   : 1;  /**< Switch operation encountered an error. */
+	uint64_t switch_done                  : 1;  /**< Switch operation completed. */
+	uint64_t dma_err                      : 1;  /**< DMA transfer encountered an error.   See MIO_EMM_RSP_STS. */
+	uint64_t cmd_err                      : 1;  /**< Operation specified by MIO_EMM_CMD encountered an error.  See
+                                                         MIO_EMM_RSP_STS. */
+	uint64_t dma_done                     : 1;  /**< DMA transfer completed */
+	uint64_t cmd_done                     : 1;  /**< Operation specified by MIO_EMM_CMD completed */
+	uint64_t buf_done                     : 1;  /**< The next 512B block transfer of a multi-block transfer has
+                                                         completed. */
 #else
-		uint64_t buf_done:1;
-		uint64_t cmd_done:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_err:1;
-		uint64_t switch_done:1;
-		uint64_t switch_err:1;
-		uint64_t reserved_7_63:57;
+	uint64_t buf_done                     : 1;
+	uint64_t cmd_done                     : 1;
+	uint64_t dma_done                     : 1;
+	uint64_t cmd_err                      : 1;
+	uint64_t dma_err                      : 1;
+	uint64_t switch_done                  : 1;
+	uint64_t switch_err                   : 1;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_emm_int_en_s          cn61xx;
+	struct cvmx_mio_emm_int_en_s          cn70xx;
+	struct cvmx_mio_emm_int_en_s          cn70xxp1;
+	struct cvmx_mio_emm_int_en_s          cnf71xx;
 };
+typedef union cvmx_mio_emm_int_en cvmx_mio_emm_int_en_t;
 
+/**
+ * cvmx_mio_emm_int_w1s
+ */
+union cvmx_mio_emm_int_w1s {
+	uint64_t u64;
+	struct cvmx_mio_emm_int_w1s_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_7_63                : 57;
+	uint64_t switch_err                   : 1;  /**< Switch operation encountered an error. Throws MIO_EMM_INTSN_E::MIO_EMM_INT_SWITCH_ERR. */
+	uint64_t switch_done                  : 1;  /**< Switch operation completed successfully. Throws MIO_EMM_INTSN_E::MIO_EMM_INT_SWITCH_DONE. */
+	uint64_t dma_err                      : 1;  /**< External DMA transfer encountered an error. See MIO_EMM_RSP_STS. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_DMA_ERR. */
+	uint64_t cmd_err                      : 1;  /**< Operation specified by MIO_EMM_CMD encountered an error. See MIO_EMM_RSP_STS. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_CMD_ERR. */
+	uint64_t dma_done                     : 1;  /**< External DMA transfer specified by MIO_EMM_DMA completed successfully. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_DMA_DONE. */
+	uint64_t cmd_done                     : 1;  /**< Operation specified by MIO_EMM_CMD completed successfully. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_CMD_DONE. */
+	uint64_t buf_done                     : 1;  /**< The next 512B block transfer of a multiblock transfer has completed. Throws
+                                                         MIO_EMM_INTSN_E::MIO_EMM_INT_BUF_DONE. */
+#else
+	uint64_t buf_done                     : 1;
+	uint64_t cmd_done                     : 1;
+	uint64_t dma_done                     : 1;
+	uint64_t cmd_err                      : 1;
+	uint64_t dma_err                      : 1;
+	uint64_t switch_done                  : 1;
+	uint64_t switch_err                   : 1;
+	uint64_t reserved_7_63                : 57;
+#endif
+	} s;
+	struct cvmx_mio_emm_int_w1s_s         cn73xx;
+	struct cvmx_mio_emm_int_w1s_s         cnf75xx;
+};
+typedef union cvmx_mio_emm_int_w1s cvmx_mio_emm_int_w1s_t;
+
+/**
+ * cvmx_mio_emm_mode#
+ *
+ * MIO_EMM_MODE = MIO EMMC Operating mode Register
+ *
+ */
 union cvmx_mio_emm_modex {
 	uint64_t u64;
 	struct cvmx_mio_emm_modex_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_49_63:15;
-		uint64_t hs_timing:1;
-		uint64_t reserved_43_47:5;
-		uint64_t bus_width:3;
-		uint64_t reserved_36_39:4;
-		uint64_t power_class:4;
-		uint64_t clk_hi:16;
-		uint64_t clk_lo:16;
+	uint64_t reserved_49_63               : 15;
+	uint64_t hs_timing                    : 1;  /**< Current high-speed timing mode. Required when CLK frequency is higher than 20 MHz. */
+	uint64_t reserved_43_47               : 5;
+	uint64_t bus_width                    : 3;  /**< Current card bus mode. Out of reset, the card is in 1-bit data bus mode. Select bus width.
+                                                         0x0 = 1-bit data bus (power on).
+                                                         0x1 = 4-bit data bus.
+                                                         0x2 = 8-bit data bus.
+                                                         0x3 = Reserved.
+                                                         0x4 = Reserved.
+                                                         0x5 = 4-bit data bus (dual data rate).
+                                                         0x6 = 8-bit data bus (dual data rate).
+                                                         0x7 = Reserved.
+                                                         0x8 = Reserved. */
+	uint64_t reserved_36_39               : 4;
+	uint64_t power_class                  : 4;  /**< Out of reset, the card power class is 0, which is the minimum current consumption class
+                                                         for the card. EXT_CSD bytes [203:200] and [239:238] contain the power class for different
+                                                         BUS_WITDH and CLK frequencies. Software should write this field with the 4-bit field from
+                                                         the EXT_CSD bytes corresponding to the selected operating mode. */
+	uint64_t clk_hi                       : 16; /**< Current number of coprocessor-clocks to hold the eMMC CLK pin high.  Minimum value is 4. */
+	uint64_t clk_lo                       : 16; /**< Current number of coprocessor-clocks to hold the eMMC CLK pin low.  Minimum value is 4. */
 #else
-		uint64_t clk_lo:16;
-		uint64_t clk_hi:16;
-		uint64_t power_class:4;
-		uint64_t reserved_36_39:4;
-		uint64_t bus_width:3;
-		uint64_t reserved_43_47:5;
-		uint64_t hs_timing:1;
-		uint64_t reserved_49_63:15;
+	uint64_t clk_lo                       : 16;
+	uint64_t clk_hi                       : 16;
+	uint64_t power_class                  : 4;
+	uint64_t reserved_36_39               : 4;
+	uint64_t bus_width                    : 3;
+	uint64_t reserved_43_47               : 5;
+	uint64_t hs_timing                    : 1;
+	uint64_t reserved_49_63               : 15;
 #endif
 	} s;
+	struct cvmx_mio_emm_modex_s           cn61xx;
+	struct cvmx_mio_emm_modex_s           cn70xx;
+	struct cvmx_mio_emm_modex_s           cn70xxp1;
+	struct cvmx_mio_emm_modex_s           cn73xx;
+	struct cvmx_mio_emm_modex_s           cn78xx;
+	struct cvmx_mio_emm_modex_s           cn78xxp1;
+	struct cvmx_mio_emm_modex_s           cnf71xx;
+	struct cvmx_mio_emm_modex_s           cnf75xx;
 };
+typedef union cvmx_mio_emm_modex cvmx_mio_emm_modex_t;
 
+/**
+ * cvmx_mio_emm_rca
+ */
 union cvmx_mio_emm_rca {
 	uint64_t u64;
 	struct cvmx_mio_emm_rca_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_16_63:48;
-		uint64_t card_rca:16;
+	uint64_t reserved_16_63               : 48;
+	uint64_t card_rca                     : 16; /**< Whenever software performs CMD7, hardware updates [CARD_RCA] with the relative card
+                                                         address
+                                                         from the MIO_EMM_CMD[ARG], unless the operation encounters an error. */
 #else
-		uint64_t card_rca:16;
-		uint64_t reserved_16_63:48;
+	uint64_t card_rca                     : 16;
+	uint64_t reserved_16_63               : 48;
 #endif
 	} s;
+	struct cvmx_mio_emm_rca_s             cn61xx;
+	struct cvmx_mio_emm_rca_s             cn70xx;
+	struct cvmx_mio_emm_rca_s             cn70xxp1;
+	struct cvmx_mio_emm_rca_s             cn73xx;
+	struct cvmx_mio_emm_rca_s             cn78xx;
+	struct cvmx_mio_emm_rca_s             cn78xxp1;
+	struct cvmx_mio_emm_rca_s             cnf71xx;
+	struct cvmx_mio_emm_rca_s             cnf75xx;
 };
+typedef union cvmx_mio_emm_rca cvmx_mio_emm_rca_t;
 
+/**
+ * cvmx_mio_emm_rsp_hi
+ *
+ * MIO_EMM_RSP_HI = MIO EMMC Response data high Register
+ *
+ */
 union cvmx_mio_emm_rsp_hi {
 	uint64_t u64;
 	struct cvmx_mio_emm_rsp_hi_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t dat:64;
+	uint64_t dat                          : 64; /**< Command response (as per JEDEC eMMC spec and SD Specifications):
+                                                         _ RSP_TYPE = 1: DAT[63:0] = 0x0.
+                                                         _ RSP_TYPE = 2: DAT[63:0] = CID[127:64] or CSD[127:64].
+                                                         _ RSP_TYPE = 3: DAT[63:0] = 0x0.
+                                                         _ RSP_TYPE = 4: DAT[63:0] = 0x0.
+                                                         _ RSP_TYPE = 5: DAT[63:0] = 0x0. */
 #else
-		uint64_t dat:64;
+	uint64_t dat                          : 64;
 #endif
 	} s;
+	struct cvmx_mio_emm_rsp_hi_s          cn61xx;
+	struct cvmx_mio_emm_rsp_hi_s          cn70xx;
+	struct cvmx_mio_emm_rsp_hi_s          cn70xxp1;
+	struct cvmx_mio_emm_rsp_hi_s          cn73xx;
+	struct cvmx_mio_emm_rsp_hi_s          cn78xx;
+	struct cvmx_mio_emm_rsp_hi_s          cn78xxp1;
+	struct cvmx_mio_emm_rsp_hi_s          cnf71xx;
+	struct cvmx_mio_emm_rsp_hi_s          cnf75xx;
 };
+typedef union cvmx_mio_emm_rsp_hi cvmx_mio_emm_rsp_hi_t;
 
+/**
+ * cvmx_mio_emm_rsp_lo
+ *
+ * MIO_EMM_RSP_LO = MIO EMMC Response data low Register
+ *
+ */
 union cvmx_mio_emm_rsp_lo {
 	uint64_t u64;
 	struct cvmx_mio_emm_rsp_lo_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t dat:64;
+	uint64_t dat                          : 64; /**< Command response (as per JEDEC eMMC spec and SD Specifications).
+                                                         <pre>
+                                                         RSP_TYPE = 1:
+                                                         DAT[63:46] = 0x0
+                                                         DAT[45:40] = Command index
+                                                         DAT[39: 8] = Card status
+                                                         DAT[ 7: 1] = CRC7
+                                                         DAT[    0] = End bit
+                                                         RSP_TYPE = 2:
+                                                         DAT[63: 1] = CID[63:1] or CSD[63:1] including CRC
+                                                         DAT[    0] = End bit
+                                                         RSP_TYPE = 3:
+                                                         DAT[63:46] = 0x0
+                                                         DAT[45:40] = Check bits (0x3F)
+                                                         DAT[39: 8] = OCR register
+                                                         DAT[ 7: 1] = Check bits (0x7F)
+                                                         DAT[    0] = End bit
+                                                         RSP_TYPE = 4:
+                                                         DAT[63:46] = 0x0
+                                                         DAT[45:40] = CMD39 ('10111')
+                                                         DAT[39:24] = RCA[31:16]
+                                                         DAT[   23] = Status
+                                                         DAT[22:16] = Register address
+                                                         DAT[15: 8] = Register contents
+                                                         DAT[ 7: 1] = CRC7
+                                                         DAT[    0] = End bit
+                                                         RSP_TYPE = 5:
+                                                         DAT[63:46] = 0x0
+                                                         DAT[45:40] = CMD40 ('10100')
+                                                         DAT[39:24] = RCA[31:16]
+                                                         DAT[   23] = Status
+                                                         DAT[22:16] = Register address
+                                                         DAT[15: 8] = Not defined. May be used for IRQ data
+                                                         DAT[ 7: 1] = CRC7
+                                                         DAT[    0] = End bit
+                                                         </pre> */
 #else
-		uint64_t dat:64;
+	uint64_t dat                          : 64;
 #endif
 	} s;
+	struct cvmx_mio_emm_rsp_lo_s          cn61xx;
+	struct cvmx_mio_emm_rsp_lo_s          cn70xx;
+	struct cvmx_mio_emm_rsp_lo_s          cn70xxp1;
+	struct cvmx_mio_emm_rsp_lo_s          cn73xx;
+	struct cvmx_mio_emm_rsp_lo_s          cn78xx;
+	struct cvmx_mio_emm_rsp_lo_s          cn78xxp1;
+	struct cvmx_mio_emm_rsp_lo_s          cnf71xx;
+	struct cvmx_mio_emm_rsp_lo_s          cnf75xx;
 };
+typedef union cvmx_mio_emm_rsp_lo cvmx_mio_emm_rsp_lo_t;
 
+/**
+ * cvmx_mio_emm_rsp_sts
+ *
+ * MIO_EMM_RSP_STS = MIO EMMC Response status Register
+ *
+ */
 union cvmx_mio_emm_rsp_sts {
 	uint64_t u64;
 	struct cvmx_mio_emm_rsp_sts_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t cmd_val:1;
-		uint64_t switch_val:1;
-		uint64_t dma_val:1;
-		uint64_t dma_pend:1;
-		uint64_t reserved_29_55:27;
-		uint64_t dbuf_err:1;
-		uint64_t reserved_24_27:4;
-		uint64_t dbuf:1;
-		uint64_t blk_timeout:1;
-		uint64_t blk_crc_err:1;
-		uint64_t rsp_busybit:1;
-		uint64_t stp_timeout:1;
-		uint64_t stp_crc_err:1;
-		uint64_t stp_bad_sts:1;
-		uint64_t stp_val:1;
-		uint64_t rsp_timeout:1;
-		uint64_t rsp_crc_err:1;
-		uint64_t rsp_bad_sts:1;
-		uint64_t rsp_val:1;
-		uint64_t rsp_type:3;
-		uint64_t cmd_type:2;
-		uint64_t cmd_idx:6;
-		uint64_t cmd_done:1;
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< eMMC bus ID to which the response status corresponds. */
+	uint64_t cmd_val                      : 1;  /**< Read-only copy of MIO_EMM_CMD[CMD_VAL]. [CMD_VAL] = 1 indicates that a direct operation is
+                                                         in progress. */
+	uint64_t switch_val                   : 1;  /**< Read-only copy of MIO_EMM_SWITCH[SWITCH_EXE]. [SWITCH_VAL] = 1 indicates that a switch
+                                                         operation is in progress. */
+	uint64_t dma_val                      : 1;  /**< Read-only copy of MIO_EMM_DMA[DMA_VAL]. [DMA_VAL] = 1 indicates that a DMA operation is in
+                                                         progress. */
+	uint64_t dma_pend                     : 1;  /**< The DMA engine has a pending transfer resulting from an error. Software can resume the
+                                                         transfer by writing MIO_EMM_DMA[DMA_VAL] = 1.
+                                                         Software can terminate the transfer by writing MIO_EMM_DMA[DMA_VAL] = 1 and
+                                                         MIO_EMM_DMA[DAT_NULL] = 1. Hardware will then clear [DMA_PEND] and perform the DMA
+                                                         operation. */
+	uint64_t acc_timeout                  : 1;  /**< The store operation to the device took longer than MIO_EMM_ACCESS_WDOG[CLK_CNT]
+                                                         coprocessor-clock cycles to complete.
+                                                         Valid when [DMA_PEND] is set. */
+	uint64_t reserved_29_54               : 26;
+	uint64_t dbuf_err                     : 1;  /**< For [CMD_TYPE] = 1, indicates that a DMA read data arrived from the card without a free
+                                                         DBUF. For [CMD_TYPE] = 2, indicates a DBUF underflow occurred during a DMA write. See
+                                                         MIO_EMM_DMA[THRES]. */
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf                         : 1;  /**< DBUF corresponding to the most recently attempted block transfer. */
+	uint64_t blk_timeout                  : 1;  /**< Timeout waiting for read data or 3-bit CRC token. */
+	uint64_t blk_crc_err                  : 1;  /**< For [CMD_TYPE] = 1, indicates a card read data CRC mismatch. MIO_EMM_RSP_STS[DBUF]
+                                                         indicates
+                                                         the failing data buffer.
+                                                         For [CMD_TYPE] = 2, indicates card returned 3-bit CRC status token indicating that the
+                                                         card
+                                                         encountered a write data CRC check mismatch. MIO_EMM_RSP_STS[DBUF] indicates the failing
+                                                         data buffer. */
+	uint64_t rsp_busybit                  : 1;  /**< Debug only. eMMC protocol utilizes DAT0 as a busy signal during block writes and R1b
+                                                         responses. This bit should read zero before any DMA or Command with data is executed. */
+	uint64_t stp_timeout                  : 1;  /**< Stop transmission response timeout. */
+	uint64_t stp_crc_err                  : 1;  /**< Stop transmission response had a CRC error. */
+	uint64_t stp_bad_sts                  : 1;  /**< Stop transmission response had bad status. */
+	uint64_t stp_val                      : 1;  /**< Stop transmission response valid. */
+	uint64_t rsp_timeout                  : 1;  /**< Response timeout. */
+	uint64_t rsp_crc_err                  : 1;  /**< Response CRC error. */
+	uint64_t rsp_bad_sts                  : 1;  /**< Response bad status. */
+	uint64_t rsp_val                      : 1;  /**< Response ID. See MIO_EMM_RSP_HI/MIO_EMM_RSP_LO. */
+	uint64_t rsp_type                     : 3;  /**< Indicates the response type. See MIO_EMM_RSP_HI/MIO_EMM_RSP_LO. */
+	uint64_t cmd_type                     : 2;  /**< eMMC command type.
+                                                         0x0 = No data.
+                                                         0x1 = Read.
+                                                         0x2 = Write. */
+	uint64_t cmd_idx                      : 6;  /**< eMMC command index most recently attempted. */
+	uint64_t cmd_done                     : 1;  /**< eMMC command completed. Once the command has completed, the status is final and can be
+                                                         examined by software. */
 #else
-		uint64_t cmd_done:1;
-		uint64_t cmd_idx:6;
-		uint64_t cmd_type:2;
-		uint64_t rsp_type:3;
-		uint64_t rsp_val:1;
-		uint64_t rsp_bad_sts:1;
-		uint64_t rsp_crc_err:1;
-		uint64_t rsp_timeout:1;
-		uint64_t stp_val:1;
-		uint64_t stp_bad_sts:1;
-		uint64_t stp_crc_err:1;
-		uint64_t stp_timeout:1;
-		uint64_t rsp_busybit:1;
-		uint64_t blk_crc_err:1;
-		uint64_t blk_timeout:1;
-		uint64_t dbuf:1;
-		uint64_t reserved_24_27:4;
-		uint64_t dbuf_err:1;
-		uint64_t reserved_29_55:27;
-		uint64_t dma_pend:1;
-		uint64_t dma_val:1;
-		uint64_t switch_val:1;
-		uint64_t cmd_val:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t cmd_done                     : 1;
+	uint64_t cmd_idx                      : 6;
+	uint64_t cmd_type                     : 2;
+	uint64_t rsp_type                     : 3;
+	uint64_t rsp_val                      : 1;
+	uint64_t rsp_bad_sts                  : 1;
+	uint64_t rsp_crc_err                  : 1;
+	uint64_t rsp_timeout                  : 1;
+	uint64_t stp_val                      : 1;
+	uint64_t stp_bad_sts                  : 1;
+	uint64_t stp_crc_err                  : 1;
+	uint64_t stp_timeout                  : 1;
+	uint64_t rsp_busybit                  : 1;
+	uint64_t blk_crc_err                  : 1;
+	uint64_t blk_timeout                  : 1;
+	uint64_t dbuf                         : 1;
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf_err                     : 1;
+	uint64_t reserved_29_54               : 26;
+	uint64_t acc_timeout                  : 1;
+	uint64_t dma_pend                     : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t switch_val                   : 1;
+	uint64_t cmd_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
 #endif
 	} s;
-};
+	struct cvmx_mio_emm_rsp_sts_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< eMMC bus id to which the response status corresponds. */
+	uint64_t cmd_val                      : 1;  /**< Read-only copy of MIO_EMM_CMD[CMD_VAL].  CMD_VAL=1 indicates a
+                                                         direct operation is in progress. */
+	uint64_t switch_val                   : 1;  /**< Read-only copy of MIO_EMM_SWITCH[SWITCH_EXE].   SWITCH_VAL=1
+                                                         indicates a switch operation is in progress. */
+	uint64_t dma_val                      : 1;  /**< Read-only copy of MIO_EMM_DMA[DMA_VAL].   DMA_VAL=1 indicates a
+                                                         DMA operation is in progress. */
+	uint64_t dma_pend                     : 1;  /**< The DMA engine has a pending transfer resulting from an error.
+                                                         SW can resume the transfer by writing MIO_EMM_DMA[DMA_VAL]=1.
+                                                         SW can terminate the transfer by writing MIO_EMM_DMA[DMA_VAL]=1
+                                                         and MIO_EMM_DMA[DAT_NULL]=1.   HW will clear DMA_PEND and
+                                                         perform the DMA operation. */
+	uint64_t reserved_29_55               : 27;
+	uint64_t dbuf_err                     : 1;  /**< For CMD_TYPE=1, indicates a DMA read data arrived from card
+                                                         without a free DBUF.
 
+                                                         For CMD_TYPE=2, indicates a DBUF underflow occurred during a
+                                                         DMA write.    See MIO_EMM_DMA[THRES]. */
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf                         : 1;  /**< DBUF corresponding to the most recently attempted block
+                                                         transfer. */
+	uint64_t blk_timeout                  : 1;  /**< Timeout waiting for read data or 3bit CRC token */
+	uint64_t blk_crc_err                  : 1;  /**< For CMD_TYPE=1, indicates a card read data CRC mismatch.
+                                                         MIO_EMM_RSP_STS[DBUF] indicates the failing data buffer.
+
+                                                         For CMD_TYPE=2, indicates card returned 3-bit CRC status token
+                                                         indicating the card encountered a write data CRC check
+                                                         mismatch.  MIO_EMM_RSP_STS[DBUF] indicates the failing data
+                                                         buffer. */
+	uint64_t rsp_busybit                  : 1;  /**< Debug only.  eMMC protocol utilizes DAT0 as a busy signal
+                                                         during block writes and R1b responses. */
+	uint64_t stp_timeout                  : 1;  /**< Stop transmission response timeout. */
+	uint64_t stp_crc_err                  : 1;  /**< Stop transmission response had a CRC error */
+	uint64_t stp_bad_sts                  : 1;  /**< Stop transmission response had bad status. */
+	uint64_t stp_val                      : 1;  /**< Stop transmission response valid. */
+	uint64_t rsp_timeout                  : 1;  /**< Response timeout */
+	uint64_t rsp_crc_err                  : 1;  /**< Response CRC error */
+	uint64_t rsp_bad_sts                  : 1;  /**< Response bad status */
+	uint64_t rsp_val                      : 1;  /**< Response id.   See MIO_EMM_RSP_HI/LO */
+	uint64_t rsp_type                     : 3;  /**< Indicates the response type. See MIO_EMM_RSP_HI/LO */
+	uint64_t cmd_type                     : 2;  /**< eMMC command type (0=no data, 1=read, 2=write) */
+	uint64_t cmd_idx                      : 6;  /**< eMMC command index most recently attempted */
+	uint64_t cmd_done                     : 1;  /**< eMMC command completed.   Once the command has complete, the
+                                                         status is final and can be examined by SW. */
+#else
+	uint64_t cmd_done                     : 1;
+	uint64_t cmd_idx                      : 6;
+	uint64_t cmd_type                     : 2;
+	uint64_t rsp_type                     : 3;
+	uint64_t rsp_val                      : 1;
+	uint64_t rsp_bad_sts                  : 1;
+	uint64_t rsp_crc_err                  : 1;
+	uint64_t rsp_timeout                  : 1;
+	uint64_t stp_val                      : 1;
+	uint64_t stp_bad_sts                  : 1;
+	uint64_t stp_crc_err                  : 1;
+	uint64_t stp_timeout                  : 1;
+	uint64_t rsp_busybit                  : 1;
+	uint64_t blk_crc_err                  : 1;
+	uint64_t blk_timeout                  : 1;
+	uint64_t dbuf                         : 1;
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf_err                     : 1;
+	uint64_t reserved_29_55               : 27;
+	uint64_t dma_pend                     : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t switch_val                   : 1;
+	uint64_t cmd_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
+#endif
+	} cn61xx;
+	struct cvmx_mio_emm_rsp_sts_cn61xx    cn70xx;
+	struct cvmx_mio_emm_rsp_sts_cn61xx    cn70xxp1;
+	struct cvmx_mio_emm_rsp_sts_s         cn73xx;
+	struct cvmx_mio_emm_rsp_sts_s         cn78xx;
+	struct cvmx_mio_emm_rsp_sts_s         cn78xxp1;
+	struct cvmx_mio_emm_rsp_sts_cn61xx    cnf71xx;
+	struct cvmx_mio_emm_rsp_sts_s         cnf75xx;
+};
+typedef union cvmx_mio_emm_rsp_sts cvmx_mio_emm_rsp_sts_t;
+
+/**
+ * cvmx_mio_emm_sample
+ */
 union cvmx_mio_emm_sample {
 	uint64_t u64;
 	struct cvmx_mio_emm_sample_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_26_63:38;
-		uint64_t cmd_cnt:10;
-		uint64_t reserved_10_15:6;
-		uint64_t dat_cnt:10;
+	uint64_t reserved_26_63               : 38;
+	uint64_t cmd_cnt                      : 10; /**< Number of coprocessor-clocks before the eMMC clock rising edge to sample the command pin. */
+	uint64_t reserved_10_15               : 6;
+	uint64_t dat_cnt                      : 10; /**< Number of coprocessor-clocks before the eMMC clock edge to sample the data pin. */
 #else
-		uint64_t dat_cnt:10;
-		uint64_t reserved_10_15:6;
-		uint64_t cmd_cnt:10;
-		uint64_t reserved_26_63:38;
+	uint64_t dat_cnt                      : 10;
+	uint64_t reserved_10_15               : 6;
+	uint64_t cmd_cnt                      : 10;
+	uint64_t reserved_26_63               : 38;
 #endif
 	} s;
+	struct cvmx_mio_emm_sample_s          cn61xx;
+	struct cvmx_mio_emm_sample_s          cn70xx;
+	struct cvmx_mio_emm_sample_s          cn70xxp1;
+	struct cvmx_mio_emm_sample_s          cn73xx;
+	struct cvmx_mio_emm_sample_s          cn78xx;
+	struct cvmx_mio_emm_sample_s          cn78xxp1;
+	struct cvmx_mio_emm_sample_s          cnf71xx;
+	struct cvmx_mio_emm_sample_s          cnf75xx;
 };
+typedef union cvmx_mio_emm_sample cvmx_mio_emm_sample_t;
 
+/**
+ * cvmx_mio_emm_sts_mask
+ */
 union cvmx_mio_emm_sts_mask {
 	uint64_t u64;
 	struct cvmx_mio_emm_sts_mask_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t sts_msk:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t sts_msk                      : 32; /**< Any bit set in [STS_MSK] causes the corresponding bit in the card status to be
+                                                         considered when computing response bad status. */
 #else
-		uint64_t sts_msk:32;
-		uint64_t reserved_32_63:32;
+	uint64_t sts_msk                      : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_emm_sts_mask_s        cn61xx;
+	struct cvmx_mio_emm_sts_mask_s        cn70xx;
+	struct cvmx_mio_emm_sts_mask_s        cn70xxp1;
+	struct cvmx_mio_emm_sts_mask_s        cn73xx;
+	struct cvmx_mio_emm_sts_mask_s        cn78xx;
+	struct cvmx_mio_emm_sts_mask_s        cn78xxp1;
+	struct cvmx_mio_emm_sts_mask_s        cnf71xx;
+	struct cvmx_mio_emm_sts_mask_s        cnf75xx;
 };
+typedef union cvmx_mio_emm_sts_mask cvmx_mio_emm_sts_mask_t;
 
+/**
+ * cvmx_mio_emm_switch
+ *
+ * MIO_EMM_SWITCH = MIO EMMC Operating mode switch Register
+ *
+ */
 union cvmx_mio_emm_switch {
 	uint64_t u64;
 	struct cvmx_mio_emm_switch_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t switch_exe:1;
-		uint64_t switch_err0:1;
-		uint64_t switch_err1:1;
-		uint64_t switch_err2:1;
-		uint64_t reserved_49_55:7;
-		uint64_t hs_timing:1;
-		uint64_t reserved_43_47:5;
-		uint64_t bus_width:3;
-		uint64_t reserved_36_39:4;
-		uint64_t power_class:4;
-		uint64_t clk_hi:16;
-		uint64_t clk_lo:16;
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< Specifies the eMMC bus ID. */
+	uint64_t switch_exe                   : 1;  /**< When clear, the operating modes are updated directly without performing any
+                                                         SWITCH operations. This allows software to perform the SWITCH operations manually, then
+                                                         update the hardware.
+                                                         Software writes this bit to a 1 to indicate that hardware should perform the necessary
+                                                         SWITCH operations.
+                                                         * First, the POWER_CLASS switch is performed. If it fails, [SWITCH_ERR0] is set and the
+                                                         remaining SWITCH operations are not performed. If it succeeds, [POWER_CLASS] is
+                                                         updated and the HS_TIMING switch is performed.
+                                                         * If the HS_TIMING switch fails, [SWITCH_ERR1] is set and the remaining SWITCH operations
+                                                         are not performed. If it succeeds, [HS_TIMING] is updated and the BUS_WIDTH switch
+                                                         operation is performed.
+                                                         * If the BUS_WIDTH switch operation fails, [SWITCH_ERR2] is set. If it succeeds, the
+                                                         BUS_WITDH is updated.
+                                                         Changes to CLK_HI and CLK_LO are discarded if any SWITCH_ERR occurs. */
+	uint64_t switch_err0                  : 1;  /**< Error encountered while performing POWER_CLASS switch. See MIO_EMM_RSP_STS. */
+	uint64_t switch_err1                  : 1;  /**< Error encountered while performing HS_TIMING switch. See MIO_EMM_RSP_STS. */
+	uint64_t switch_err2                  : 1;  /**< Error encountered while performing BUS_WIDTH switch. See MIO_EMM_RSP_STS. */
+	uint64_t reserved_49_55               : 7;
+	uint64_t hs_timing                    : 1;  /**< Requested update to HS_TIMING. */
+	uint64_t reserved_43_47               : 5;
+	uint64_t bus_width                    : 3;  /**< Requested update to BUS_WIDTH. */
+	uint64_t reserved_36_39               : 4;
+	uint64_t power_class                  : 4;  /**< Requested update to POWER_CLASS. */
+	uint64_t clk_hi                       : 16; /**< Requested update to CLK_HI. */
+	uint64_t clk_lo                       : 16; /**< Requested update to CLK_LO. */
 #else
-		uint64_t clk_lo:16;
-		uint64_t clk_hi:16;
-		uint64_t power_class:4;
-		uint64_t reserved_36_39:4;
-		uint64_t bus_width:3;
-		uint64_t reserved_43_47:5;
-		uint64_t hs_timing:1;
-		uint64_t reserved_49_55:7;
-		uint64_t switch_err2:1;
-		uint64_t switch_err1:1;
-		uint64_t switch_err0:1;
-		uint64_t switch_exe:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t clk_lo                       : 16;
+	uint64_t clk_hi                       : 16;
+	uint64_t power_class                  : 4;
+	uint64_t reserved_36_39               : 4;
+	uint64_t bus_width                    : 3;
+	uint64_t reserved_43_47               : 5;
+	uint64_t hs_timing                    : 1;
+	uint64_t reserved_49_55               : 7;
+	uint64_t switch_err2                  : 1;
+	uint64_t switch_err1                  : 1;
+	uint64_t switch_err0                  : 1;
+	uint64_t switch_exe                   : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
 #endif
 	} s;
+	struct cvmx_mio_emm_switch_s          cn61xx;
+	struct cvmx_mio_emm_switch_s          cn70xx;
+	struct cvmx_mio_emm_switch_s          cn70xxp1;
+	struct cvmx_mio_emm_switch_s          cn73xx;
+	struct cvmx_mio_emm_switch_s          cn78xx;
+	struct cvmx_mio_emm_switch_s          cn78xxp1;
+	struct cvmx_mio_emm_switch_s          cnf71xx;
+	struct cvmx_mio_emm_switch_s          cnf75xx;
 };
+typedef union cvmx_mio_emm_switch cvmx_mio_emm_switch_t;
 
+/**
+ * cvmx_mio_emm_wdog
+ *
+ * MIO_EMM_WDOG = MIO EMMC Watchdog Register
+ *
+ */
 union cvmx_mio_emm_wdog {
 	uint64_t u64;
 	struct cvmx_mio_emm_wdog_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_26_63:38;
-		uint64_t clk_cnt:26;
+	uint64_t reserved_26_63               : 38;
+	uint64_t clk_cnt                      : 26; /**< Maximum number of CLK_CNT cycles to wait for the card to return a response, read data, or
+                                                         the 3-bit CRC status token following write data. The following timeouts are detected:
+                                                         Expected response to a command doesn't occur causing MIO_EMM_RSP_STS[RSP_TIMEOUT].
+                                                         On a read command, expected data isn't returned causing MIO_EMM_RSP_STS[BLK_TIMEOUT].
+                                                         On a multi read command, expected data isn't returned causing
+                                                         MIO_EMM_RSP_STS[BLK_TIMEOUT].
+                                                         On a write command, expected token to a write block isn't received causing
+                                                         MIO_EMM_RSP_STS[BLK_TIMEOUT].
+                                                         If a stop command is issued by the hardware and no response is returned causing
+                                                         MIO_EMM_RSP_STS[STP_TIMEOUT].
+                                                         Issues this timeout doesn't cover are stalls induced by the card which are not limited by
+                                                         the specifications.
+                                                         For example, when a write multi command is issued to the card and a block (not the last)
+                                                         is transferred the card can "stall" the CNXXXX by forcing emmc_data<0> low for as long as
+                                                         it wants to free up buffer space.
+                                                         The second case is when the last block of a write or multi write is being transferred and
+                                                         the card elects to perform some background tasks. The same stall mechanism with
+                                                         EMMC_DAT<0> is used, but this can last for an extended time period. */
 #else
-		uint64_t clk_cnt:26;
-		uint64_t reserved_26_63:38;
+	uint64_t clk_cnt                      : 26;
+	uint64_t reserved_26_63               : 38;
 #endif
 	} s;
+	struct cvmx_mio_emm_wdog_s            cn61xx;
+	struct cvmx_mio_emm_wdog_s            cn70xx;
+	struct cvmx_mio_emm_wdog_s            cn70xxp1;
+	struct cvmx_mio_emm_wdog_s            cn73xx;
+	struct cvmx_mio_emm_wdog_s            cn78xx;
+	struct cvmx_mio_emm_wdog_s            cn78xxp1;
+	struct cvmx_mio_emm_wdog_s            cnf71xx;
+	struct cvmx_mio_emm_wdog_s            cnf75xx;
 };
+typedef union cvmx_mio_emm_wdog cvmx_mio_emm_wdog_t;
 
+/**
+ * cvmx_mio_fus_bnk_dat#
+ *
+ * The initial state of MIO_FUS_BNK_DAT0/1 is as if bank6 were just read,
+ * i.e. DAT* = fus[895:768].
+ */
 union cvmx_mio_fus_bnk_datx {
 	uint64_t u64;
 	struct cvmx_mio_fus_bnk_datx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t dat:64;
+	uint64_t dat                          : 64; /**< Efuse bank store. For read operations, the DAT gets the fus bank last read. For write
+                                                         operations, the DAT determines which fuses to blow. */
 #else
-		uint64_t dat:64;
+	uint64_t dat                          : 64;
 #endif
 	} s;
+	struct cvmx_mio_fus_bnk_datx_s        cn50xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn52xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn52xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn56xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn56xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn58xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn58xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn61xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn63xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn63xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn66xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn68xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn68xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn70xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn70xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cn73xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn78xx;
+	struct cvmx_mio_fus_bnk_datx_s        cn78xxp1;
+	struct cvmx_mio_fus_bnk_datx_s        cnf71xx;
+	struct cvmx_mio_fus_bnk_datx_s        cnf75xx;
 };
+typedef union cvmx_mio_fus_bnk_datx cvmx_mio_fus_bnk_datx_t;
 
+/**
+ * cvmx_mio_fus_dat0
+ */
 union cvmx_mio_fus_dat0 {
 	uint64_t u64;
 	struct cvmx_mio_fus_dat0_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t man_info:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t man_info                     : 32; /**< Fuse information - manufacturing info [31:0]. */
 #else
-		uint64_t man_info:32;
-		uint64_t reserved_32_63:32;
+	uint64_t man_info                     : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_fus_dat0_s            cn30xx;
+	struct cvmx_mio_fus_dat0_s            cn31xx;
+	struct cvmx_mio_fus_dat0_s            cn38xx;
+	struct cvmx_mio_fus_dat0_s            cn38xxp2;
+	struct cvmx_mio_fus_dat0_s            cn50xx;
+	struct cvmx_mio_fus_dat0_s            cn52xx;
+	struct cvmx_mio_fus_dat0_s            cn52xxp1;
+	struct cvmx_mio_fus_dat0_s            cn56xx;
+	struct cvmx_mio_fus_dat0_s            cn56xxp1;
+	struct cvmx_mio_fus_dat0_s            cn58xx;
+	struct cvmx_mio_fus_dat0_s            cn58xxp1;
+	struct cvmx_mio_fus_dat0_s            cn61xx;
+	struct cvmx_mio_fus_dat0_s            cn63xx;
+	struct cvmx_mio_fus_dat0_s            cn63xxp1;
+	struct cvmx_mio_fus_dat0_s            cn66xx;
+	struct cvmx_mio_fus_dat0_s            cn68xx;
+	struct cvmx_mio_fus_dat0_s            cn68xxp1;
+	struct cvmx_mio_fus_dat0_s            cn70xx;
+	struct cvmx_mio_fus_dat0_s            cn70xxp1;
+	struct cvmx_mio_fus_dat0_s            cn73xx;
+	struct cvmx_mio_fus_dat0_s            cn78xx;
+	struct cvmx_mio_fus_dat0_s            cn78xxp1;
+	struct cvmx_mio_fus_dat0_s            cnf71xx;
+	struct cvmx_mio_fus_dat0_s            cnf75xx;
 };
+typedef union cvmx_mio_fus_dat0 cvmx_mio_fus_dat0_t;
 
+/**
+ * cvmx_mio_fus_dat1
+ */
 union cvmx_mio_fus_dat1 {
 	uint64_t u64;
 	struct cvmx_mio_fus_dat1_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t man_info:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t man_info                     : 32; /**< Fuse information - manufacturing info [63:32]. */
 #else
-		uint64_t man_info:32;
-		uint64_t reserved_32_63:32;
+	uint64_t man_info                     : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_fus_dat1_s            cn30xx;
+	struct cvmx_mio_fus_dat1_s            cn31xx;
+	struct cvmx_mio_fus_dat1_s            cn38xx;
+	struct cvmx_mio_fus_dat1_s            cn38xxp2;
+	struct cvmx_mio_fus_dat1_s            cn50xx;
+	struct cvmx_mio_fus_dat1_s            cn52xx;
+	struct cvmx_mio_fus_dat1_s            cn52xxp1;
+	struct cvmx_mio_fus_dat1_s            cn56xx;
+	struct cvmx_mio_fus_dat1_s            cn56xxp1;
+	struct cvmx_mio_fus_dat1_s            cn58xx;
+	struct cvmx_mio_fus_dat1_s            cn58xxp1;
+	struct cvmx_mio_fus_dat1_s            cn61xx;
+	struct cvmx_mio_fus_dat1_s            cn63xx;
+	struct cvmx_mio_fus_dat1_s            cn63xxp1;
+	struct cvmx_mio_fus_dat1_s            cn66xx;
+	struct cvmx_mio_fus_dat1_s            cn68xx;
+	struct cvmx_mio_fus_dat1_s            cn68xxp1;
+	struct cvmx_mio_fus_dat1_s            cn70xx;
+	struct cvmx_mio_fus_dat1_s            cn70xxp1;
+	struct cvmx_mio_fus_dat1_s            cn73xx;
+	struct cvmx_mio_fus_dat1_s            cn78xx;
+	struct cvmx_mio_fus_dat1_s            cn78xxp1;
+	struct cvmx_mio_fus_dat1_s            cnf71xx;
+	struct cvmx_mio_fus_dat1_s            cnf75xx;
 };
+typedef union cvmx_mio_fus_dat1 cvmx_mio_fus_dat1_t;
 
+/**
+ * cvmx_mio_fus_dat2
+ *
+ * Notes:
+ * CHIP_ID is consumed in several places within Octeon.
+ *
+ *    * Core COP0 ProcessorIdentification[Revision]
+ *    * Core EJTAG DeviceIdentification[Version]
+ *    * PCI_CFG02[RID]
+ *    * JTAG controller
+ *
+ * Note: The JTAG controller gets CHIP_ID[3:0] solely from the laser fuses.
+ * Modification to the efuses will not change what the JTAG controller reports
+ * for CHIP_ID.
+ */
 union cvmx_mio_fus_dat2 {
 	uint64_t u64;
 	struct cvmx_mio_fus_dat2_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_59_63:5;
-		uint64_t run_platform:3;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_30_31:2;
-		uint64_t nokasu:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t reserved_0_15:16;
+	uint64_t reserved_59_63               : 5;
+	uint64_t run_platform                 : 3;  /**< Fuses to indicate the run platform. Not to be blown in actual hardware.
+                                                         Provides software a means of determining the platform at run time.
+                                                         0x0 = Hardware.
+                                                         0x1 = Emulator.
+                                                         0x2 = RTL simulator.
+                                                         0x3 = ASIM.
+                                                         0x4-0x7 = Reserved. */
+	uint64_t gbl_pwr_throttle             : 8;  /**< Reserved. */
+	uint64_t fus118                       : 1;  /**< Fuse information - Ignore Authentik disable. */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info. */
+	uint64_t power_limit                  : 2;  /**< Reserved. */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant encryption enable. See NOCRYPTO. */
+	uint64_t fus318                       : 1;  /**< Reserved. */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled. */
+	uint64_t reserved_30_31               : 2;
+	uint64_t nokasu                       : 1;  /**< Fuse information - Disable Kasumi */
+	uint64_t nodfa_cp2                    : 1;  /**< Reserved. */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable. */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO together select one of four mutually-exclusive
+                                                         modes:
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 0 AES/DES/HASH enabled.
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 1 AES/DES/HASH disabled.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 0 Dormant encryption enable.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 1 Authentik mode. */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - chip ID. */
+	uint64_t reserved_0_15                : 16;
 #else
-		uint64_t reserved_0_15:16;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nokasu:1;
-		uint64_t reserved_30_31:2;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t run_platform:3;
-		uint64_t reserved_59_63:5;
+	uint64_t reserved_0_15                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t nokasu                       : 1;
+	uint64_t reserved_30_31               : 2;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t gbl_pwr_throttle             : 8;
+	uint64_t run_platform                 : 3;
+	uint64_t reserved_59_63               : 5;
 #endif
 	} s;
 	struct cvmx_mio_fus_dat2_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_29_63:35;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t pll_off:4;
-		uint64_t reserved_1_11:11;
-		uint64_t pp_dis:1;
+	uint64_t reserved_29_63               : 35;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t pll_off                      : 4;  /**< Fuse information - core pll offset
+                                                         Used to compute the base offset for the core pll.
+                                                         the offset will be (PLL_OFF ^ 8)
+                                                         Note, these fuses can only be set from laser fuse */
+	uint64_t reserved_1_11                : 11;
+	uint64_t pp_dis                       : 1;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:1;
-		uint64_t reserved_1_11:11;
-		uint64_t pll_off:4;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_63:35;
+	uint64_t pp_dis                       : 1;
+	uint64_t reserved_1_11                : 11;
+	uint64_t pll_off                      : 4;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_63               : 35;
 #endif
 	} cn30xx;
 	struct cvmx_mio_fus_dat2_cn31xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_29_63:35;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t pll_off:4;
-		uint64_t reserved_2_11:10;
-		uint64_t pp_dis:2;
+	uint64_t reserved_29_63               : 35;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t pll_off                      : 4;  /**< Fuse information - core pll offset
+                                                         Used to compute the base offset for the core pll.
+                                                         the offset will be (PLL_OFF ^ 8)
+                                                         Note, these fuses can only be set from laser fuse */
+	uint64_t reserved_2_11                : 10;
+	uint64_t pp_dis                       : 2;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:2;
-		uint64_t reserved_2_11:10;
-		uint64_t pll_off:4;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_63:35;
+	uint64_t pp_dis                       : 2;
+	uint64_t reserved_2_11                : 10;
+	uint64_t pll_off                      : 4;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_63               : 35;
 #endif
 	} cn31xx;
 	struct cvmx_mio_fus_dat2_cn38xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_29_63:35;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t pp_dis:16;
+	uint64_t reserved_29_63               : 35;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2)
+                                                         (PASS2 Only) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable
+                                                         (PASS2 Only) */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable
+                                                         (PASS2 Only) */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t pp_dis                       : 16; /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:16;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_63:35;
+	uint64_t pp_dis                       : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_63               : 35;
 #endif
 	} cn38xx;
+	struct cvmx_mio_fus_dat2_cn38xx       cn38xxp2;
 	struct cvmx_mio_fus_dat2_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_34_63:30;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_30_31:2;
-		uint64_t nokasu:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t reserved_2_15:14;
-		uint64_t pp_dis:2;
+	uint64_t reserved_34_63               : 30;
+	uint64_t fus318                       : 1;  /**< Fuse information - a copy of fuse318 */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled
+                                                         (5020 does not have RAID co-processor) */
+	uint64_t reserved_30_31               : 2;
+	uint64_t nokasu                       : 1;  /**< Fuse information - Disable Kasumi */
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2)
+                                                         (5020 does not have DFA co-processor) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_2_15                : 14;
+	uint64_t pp_dis                       : 2;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:2;
-		uint64_t reserved_2_15:14;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nokasu:1;
-		uint64_t reserved_30_31:2;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t reserved_34_63:30;
+	uint64_t pp_dis                       : 2;
+	uint64_t reserved_2_15                : 14;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t nokasu                       : 1;
+	uint64_t reserved_30_31               : 2;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t reserved_34_63               : 30;
 #endif
 	} cn50xx;
 	struct cvmx_mio_fus_dat2_cn52xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_34_63:30;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_30_31:2;
-		uint64_t nokasu:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t reserved_4_15:12;
-		uint64_t pp_dis:4;
+	uint64_t reserved_34_63               : 30;
+	uint64_t fus318                       : 1;  /**< Fuse information - a copy of fuse318 */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_30_31               : 2;
+	uint64_t nokasu                       : 1;  /**< Fuse information - Disable Kasumi */
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_4_15                : 12;
+	uint64_t pp_dis                       : 4;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:4;
-		uint64_t reserved_4_15:12;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nokasu:1;
-		uint64_t reserved_30_31:2;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t reserved_34_63:30;
+	uint64_t pp_dis                       : 4;
+	uint64_t reserved_4_15                : 12;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t nokasu                       : 1;
+	uint64_t reserved_30_31               : 2;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t reserved_34_63               : 30;
 #endif
 	} cn52xx;
+	struct cvmx_mio_fus_dat2_cn52xx       cn52xxp1;
 	struct cvmx_mio_fus_dat2_cn56xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_34_63:30;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_30_31:2;
-		uint64_t nokasu:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t reserved_12_15:4;
-		uint64_t pp_dis:12;
+	uint64_t reserved_34_63               : 30;
+	uint64_t fus318                       : 1;  /**< Fuse information - a copy of fuse318 */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_30_31               : 2;
+	uint64_t nokasu                       : 1;  /**< Fuse information - Disable Kasumi */
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_12_15               : 4;
+	uint64_t pp_dis                       : 12; /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:12;
-		uint64_t reserved_12_15:4;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nokasu:1;
-		uint64_t reserved_30_31:2;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t reserved_34_63:30;
+	uint64_t pp_dis                       : 12;
+	uint64_t reserved_12_15               : 4;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t nokasu                       : 1;
+	uint64_t reserved_30_31               : 2;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t reserved_34_63               : 30;
 #endif
 	} cn56xx;
+	struct cvmx_mio_fus_dat2_cn56xx       cn56xxp1;
 	struct cvmx_mio_fus_dat2_cn58xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_30_63:34;
-		uint64_t nokasu:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t rst_sht:1;
-		uint64_t bist_dis:1;
-		uint64_t chip_id:8;
-		uint64_t pp_dis:16;
+	uint64_t reserved_30_63               : 34;
+	uint64_t nokasu                       : 1;  /**< Fuse information - Disable Kasumi */
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t rst_sht                      : 1;  /**< Fuse information - When set, use short reset count */
+	uint64_t bist_dis                     : 1;  /**< Fuse information - BIST Disable */
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t pp_dis                       : 16; /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:16;
-		uint64_t chip_id:8;
-		uint64_t bist_dis:1;
-		uint64_t rst_sht:1;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t nokasu:1;
-		uint64_t reserved_30_63:34;
+	uint64_t pp_dis                       : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t bist_dis                     : 1;
+	uint64_t rst_sht                      : 1;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t nokasu                       : 1;
+	uint64_t reserved_30_63               : 34;
 #endif
 	} cn58xx;
+	struct cvmx_mio_fus_dat2_cn58xx       cn58xxp1;
 	struct cvmx_mio_fus_dat2_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_48_63:16;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_29_31:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_24_25:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_4_15:12;
-		uint64_t pp_dis:4;
+	uint64_t reserved_48_63               : 16;
+	uint64_t fus118                       : 1;  /**< Ignore Authentik disable */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info */
+	uint64_t power_limit                  : 2;  /**< Fuse information - Power limit */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - See NOCRYPTO */
+	uint64_t fus318                       : 1;  /**< Reserved */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_29_31               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO
+                                                         together to select 1 of 4 mutually-exclusive
+                                                         modes:
+
+                                                         DORM_CRYPT=0,NOCRYPTO=0 AES/DES/HASH enabled
+                                                         DORM_CRYPT=0,NOCRYPTO=1 AES/DES/HASH disable
+                                                         DORM_CRYPT=1,NOCRYPTO=0 Dormant Encryption enable
+                                                         DORM_CRYPT=1,NOCRYPTO=1 Authenik mode */
+	uint64_t reserved_24_25               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_4_15                : 12;
+	uint64_t pp_dis                       : 4;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:4;
-		uint64_t reserved_4_15:12;
-		uint64_t chip_id:8;
-		uint64_t reserved_24_25:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_31:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t reserved_48_63:16;
+	uint64_t pp_dis                       : 4;
+	uint64_t reserved_4_15                : 12;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_24_25               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_31               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t reserved_48_63               : 16;
 #endif
 	} cn61xx;
 	struct cvmx_mio_fus_dat2_cn63xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_35_63:29;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_29_31:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_24_25:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_6_15:10;
-		uint64_t pp_dis:6;
+	uint64_t reserved_35_63               : 29;
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant Encryption enable */
+	uint64_t fus318                       : 1;  /**< Reserved */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_29_31               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t reserved_24_25               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_6_15                : 10;
+	uint64_t pp_dis                       : 6;  /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:6;
-		uint64_t reserved_6_15:10;
-		uint64_t chip_id:8;
-		uint64_t reserved_24_25:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_31:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t reserved_35_63:29;
+	uint64_t pp_dis                       : 6;
+	uint64_t reserved_6_15                : 10;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_24_25               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_31               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t reserved_35_63               : 29;
 #endif
 	} cn63xx;
+	struct cvmx_mio_fus_dat2_cn63xx       cn63xxp1;
 	struct cvmx_mio_fus_dat2_cn66xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_48_63:16;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_29_31:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_24_25:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_10_15:6;
-		uint64_t pp_dis:10;
+	uint64_t reserved_48_63               : 16;
+	uint64_t fus118                       : 1;  /**< Ignore Authentik disable */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info */
+	uint64_t power_limit                  : 2;  /**< Fuse information - Power limit */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - See NOCRYPTO */
+	uint64_t fus318                       : 1;  /**< Reserved */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_29_31               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO
+                                                         together to select 1 of 4 mutually-exclusive
+                                                         modes:
+
+                                                         DORM_CRYPT=0,NOCRYPTO=0 AES/DES/HASH enabled
+                                                         DORM_CRYPT=0,NOCRYPTO=1 AES/DES/HASH disable
+                                                         DORM_CRYPT=1,NOCRYPTO=0 Dormant Encryption enable
+                                                         DORM_CRYPT=1,NOCRYPTO=1 Authenik mode */
+	uint64_t reserved_24_25               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_10_15               : 6;
+	uint64_t pp_dis                       : 10; /**< Fuse information - PP_DISABLES */
 #else
-		uint64_t pp_dis:10;
-		uint64_t reserved_10_15:6;
-		uint64_t chip_id:8;
-		uint64_t reserved_24_25:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_31:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t reserved_48_63:16;
+	uint64_t pp_dis                       : 10;
+	uint64_t reserved_10_15               : 6;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_24_25               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_31               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t reserved_48_63               : 16;
 #endif
 	} cn66xx;
 	struct cvmx_mio_fus_dat2_cn68xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_37_63:27;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_29_31:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_24_25:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_0_15:16;
+	uint64_t reserved_37_63               : 27;
+	uint64_t power_limit                  : 2;  /**< Fuse information - Power limit */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant Encryption enable */
+	uint64_t fus318                       : 1;  /**< Reserved */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled */
+	uint64_t reserved_29_31               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - DFA Disable (CP2) */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - AES/DES/HASH disable */
+	uint64_t reserved_24_25               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - CHIP_ID */
+	uint64_t reserved_0_15                : 16;
 #else
-		uint64_t reserved_0_15:16;
-		uint64_t chip_id:8;
-		uint64_t reserved_24_25:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_29_31:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t reserved_37_63:27;
+	uint64_t reserved_0_15                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_24_25               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_29_31               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t reserved_37_63               : 27;
 #endif
 	} cn68xx;
+	struct cvmx_mio_fus_dat2_cn68xx       cn68xxp1;
 	struct cvmx_mio_fus_dat2_cn70xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_48_63:16;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_31_29:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_25_24:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_15_0:16;
+	uint64_t reserved_48_63               : 16;
+	uint64_t fus118                       : 1;  /**< Fuse information - Ignore Authentik disable. */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info. */
+	uint64_t power_limit                  : 2;  /**< Reserved. */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant encryption enable. */
+	uint64_t fus318                       : 1;  /**< Reserved. */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled. */
+	uint64_t reserved_31_29               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - HFA disable (CP2). */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable. */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO together select one of four mutually-exclusive
+                                                         modes:
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 0 AES/DES/HASH enabled.
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 1 AES/DES/HASH disabled.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 0 Dormant encryption enable.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 1 Authentik mode. */
+	uint64_t reserved_25_24               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - chip ID. */
+	uint64_t reserved_15_0                : 16;
 #else
-		uint64_t reserved_15_0:16;
-		uint64_t chip_id:8;
-		uint64_t reserved_25_24:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_31_29:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t reserved_48_63:16;
+	uint64_t reserved_15_0                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_25_24               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_31_29               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t reserved_48_63               : 16;
 #endif
 	} cn70xx;
+	struct cvmx_mio_fus_dat2_cn70xx       cn70xxp1;
 	struct cvmx_mio_fus_dat2_cn73xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_59_63:5;
-		uint64_t run_platform:3;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_31_29:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_25_24:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_15_0:16;
+	uint64_t reserved_59_63               : 5;
+	uint64_t run_platform                 : 3;  /**< Fuses to indicate the run platform. Not to be blown in actual hardware.
+                                                         Provides software a means of determining the platform at run time.
+                                                         0x0 = Hardware.
+                                                         0x1 = Emulator.
+                                                         0x2 = RTL simulator.
+                                                         0x3 = ASIM.
+                                                         0x4-0x7 = Reserved. */
+	uint64_t gbl_pwr_throttle             : 8;  /**< Reserved. */
+	uint64_t fus118                       : 1;  /**< Fuse information - Ignore Authentik disable. */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info. */
+	uint64_t power_limit                  : 2;  /**< Reserved. */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant encryption enable. See NOCRYPTO. */
+	uint64_t fus318                       : 1;  /**< Reserved. */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled. */
+	uint64_t reserved_31_29               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - HFA disable (CP2). */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable. */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO together select one of four mutually-exclusive
+                                                         modes:
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 0 AES/DES/HASH enabled.
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 1 AES/DES/HASH disabled.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 0 Dormant encryption enable.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 1 Authentik mode. */
+	uint64_t reserved_25_24               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - chip ID. */
+	uint64_t reserved_15_0                : 16;
 #else
-		uint64_t reserved_15_0:16;
-		uint64_t chip_id:8;
-		uint64_t reserved_25_24:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_31_29:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t run_platform:3;
-		uint64_t reserved_59_63:5;
+	uint64_t reserved_15_0                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_25_24               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_31_29               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t gbl_pwr_throttle             : 8;
+	uint64_t run_platform                 : 3;
+	uint64_t reserved_59_63               : 5;
 #endif
 	} cn73xx;
 	struct cvmx_mio_fus_dat2_cn78xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_59_63:5;
-		uint64_t run_platform:3;
-		uint64_t reserved_48_55:8;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_31_29:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_25_24:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_0_15:16;
+	uint64_t reserved_59_63               : 5;
+	uint64_t run_platform                 : 3;  /**< Fuses to indicate the run platform. Not to be blown in actual hardware.
+                                                         Provides software a means of determining the platform at run time.
+                                                         0x0 = Hardware.
+                                                         0x1 = Emulator.
+                                                         0x2 = RTL simulator.
+                                                         0x3 = ASIM.
+                                                         0x4-0x7 = Reserved. */
+	uint64_t gbl_pwr_throttle             : 8;  /**< Controls global power throttling. MSB is a spare, and lower 7 bits indicate
+                                                         N/128 power reduction. Small values have less throttling and higher
+                                                         performance. 0x0 disables throttling. */
+	uint64_t fus118                       : 1;  /**< Fuse information - Ignore Authentik disable. */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info. */
+	uint64_t power_limit                  : 2;  /**< Reserved. */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant encryption enable. See NOCRYPTO. */
+	uint64_t fus318                       : 1;  /**< Reserved. */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled. */
+	uint64_t reserved_31_29               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - HFA disable (CP2). */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable. */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO together select one of four mutually-exclusive
+                                                         modes:
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 0 AES/DES/HASH enabled.
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 1 AES/DES/HASH disabled.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 0 Dormant encryption enable.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 1 Authentik mode. */
+	uint64_t reserved_25_24               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - chip ID. */
+	uint64_t reserved_0_15                : 16;
 #else
-		uint64_t reserved_0_15:16;
-		uint64_t chip_id:8;
-		uint64_t reserved_25_24:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_31_29:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t reserved_48_55:8;
-		uint64_t run_platform:3;
-		uint64_t reserved_59_63:5;
+	uint64_t reserved_0_15                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_25_24               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_31_29               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t gbl_pwr_throttle             : 8;
+	uint64_t run_platform                 : 3;
+	uint64_t reserved_59_63               : 5;
 #endif
 	} cn78xx;
-	struct cvmx_mio_fus_dat2_cn78xxp2 {
+	struct cvmx_mio_fus_dat2_cn78xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_59_63:5;
-		uint64_t run_platform:3;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t fus118:1;
-		uint64_t rom_info:10;
-		uint64_t power_limit:2;
-		uint64_t dorm_crypto:1;
-		uint64_t fus318:1;
-		uint64_t raid_en:1;
-		uint64_t reserved_31_29:3;
-		uint64_t nodfa_cp2:1;
-		uint64_t nomul:1;
-		uint64_t nocrypto:1;
-		uint64_t reserved_25_24:2;
-		uint64_t chip_id:8;
-		uint64_t reserved_0_15:16;
+	uint64_t reserved_59_63               : 5;
+	uint64_t run_platform                 : 3;  /**< Fuses to indicate the run platform. Not to be blown in actual hardware.
+                                                         Provides software a means of determining the platform at run time.
+                                                         0x0 = Hardware.
+                                                         0x1 = Emulator.
+                                                         0x2 = RTL simulator.
+                                                         0x3 = ASIM.
+                                                         0x4-0x7 = Reserved. */
+	uint64_t reserved_48_55               : 8;
+	uint64_t fus118                       : 1;  /**< Fuse information - Ignore Authentik disable. */
+	uint64_t rom_info                     : 10; /**< Fuse information - ROM info. */
+	uint64_t power_limit                  : 2;  /**< Reserved. */
+	uint64_t dorm_crypto                  : 1;  /**< Fuse information - Dormant encryption enable. See NOCRYPTO. */
+	uint64_t fus318                       : 1;  /**< Reserved. */
+	uint64_t raid_en                      : 1;  /**< Fuse information - RAID enabled. */
+	uint64_t reserved_31_29               : 3;
+	uint64_t nodfa_cp2                    : 1;  /**< Fuse information - HFA disable (CP2). */
+	uint64_t nomul                        : 1;  /**< Fuse information - VMUL disable. */
+	uint64_t nocrypto                     : 1;  /**< Fuse information - DORM_CRYPTO and NOCRYPTO together select one of four mutually-exclusive
+                                                         modes:
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 0 AES/DES/HASH enabled.
+                                                         _ DORM_CRYPTO = 0, NOCRYPTO = 1 AES/DES/HASH disabled.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 0 Dormant encryption enable.
+                                                         _ DORM_CRYPTO = 1, NOCRYPTO = 1 Authentik mode. */
+	uint64_t reserved_25_24               : 2;
+	uint64_t chip_id                      : 8;  /**< Fuse information - chip ID. */
+	uint64_t reserved_0_15                : 16;
 #else
-		uint64_t reserved_0_15:16;
-		uint64_t chip_id:8;
-		uint64_t reserved_25_24:2;
-		uint64_t nocrypto:1;
-		uint64_t nomul:1;
-		uint64_t nodfa_cp2:1;
-		uint64_t reserved_31_29:3;
-		uint64_t raid_en:1;
-		uint64_t fus318:1;
-		uint64_t dorm_crypto:1;
-		uint64_t power_limit:2;
-		uint64_t rom_info:10;
-		uint64_t fus118:1;
-		uint64_t gbl_pwr_throttle:8;
-		uint64_t run_platform:3;
-		uint64_t reserved_59_63:5;
+	uint64_t reserved_0_15                : 16;
+	uint64_t chip_id                      : 8;
+	uint64_t reserved_25_24               : 2;
+	uint64_t nocrypto                     : 1;
+	uint64_t nomul                        : 1;
+	uint64_t nodfa_cp2                    : 1;
+	uint64_t reserved_31_29               : 3;
+	uint64_t raid_en                      : 1;
+	uint64_t fus318                       : 1;
+	uint64_t dorm_crypto                  : 1;
+	uint64_t power_limit                  : 2;
+	uint64_t rom_info                     : 10;
+	uint64_t fus118                       : 1;
+	uint64_t reserved_48_55               : 8;
+	uint64_t run_platform                 : 3;
+	uint64_t reserved_59_63               : 5;
 #endif
-	} cn78xxp2;
+	} cn78xxp1;
+	struct cvmx_mio_fus_dat2_cn61xx       cnf71xx;
+	struct cvmx_mio_fus_dat2_cn73xx       cnf75xx;
 };
+typedef union cvmx_mio_fus_dat2 cvmx_mio_fus_dat2_t;
 
+/**
+ * cvmx_mio_fus_dat3
+ */
 union cvmx_mio_fus_dat3 {
 	uint64_t u64;
 	struct cvmx_mio_fus_dat3_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t pll_alt_matrix:1;
-		uint64_t reserved_38_39:2;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t reserved_28_31:4;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t reserved_0_23:24;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Reserved. */
+	uint64_t dfa_info_clm                 : 4;  /**< Reserved. */
+	uint64_t pll_alt_matrix               : 1;  /**< Fuse information - Select alternate PLL matrix. */
+	uint64_t reserved_38_39               : 2;
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (16-way, 16 MB).
+                                                         0x1 = 3/4 ways (12-way, 12 MB).
+                                                         0x2 = 1/2 ways (8-way, 8 MB).
+                                                         0x3 = 1/4 ways (4-way, 4MB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t reserved_28_31               : 4;
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Reserved. */
+	uint64_t nodfa_dte                    : 1;  /**< Reserved. */
+	uint64_t reserved_0_23                : 24;
 #else
-		uint64_t reserved_0_23:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t reserved_28_31:4;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t reserved_38_39:2;
-		uint64_t pll_alt_matrix:1;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t reserved_0_23                : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t reserved_28_31               : 4;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t reserved_38_39               : 2;
+	uint64_t pll_alt_matrix               : 1;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
 	} s;
 	struct cvmx_mio_fus_dat3_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t pll_div4:1;
-		uint64_t reserved_29_30:2;
-		uint64_t bar2_en:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t icache:24;
+	uint64_t reserved_32_63               : 32;
+	uint64_t pll_div4                     : 1;  /**< Fuse information - PLL DIV4 mode
+                                                         (laser fuse only) */
+	uint64_t reserved_29_30               : 2;
+	uint64_t bar2_en                      : 1;  /**< Fuse information - BAR2 Enable (when blown '1') */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore
+                                                         This bit only has side effects when blown in
+                                                         the laser fuses.  It is ignore if only set in
+                                                         efuse store. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - DFA Disable (DTE) */
+	uint64_t icache                       : 24; /**< Fuse information - ICACHE Hard Repair Data */
 #else
-		uint64_t icache:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_en:1;
-		uint64_t reserved_29_30:2;
-		uint64_t pll_div4:1;
-		uint64_t reserved_32_63:32;
+	uint64_t icache                       : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_en                      : 1;
+	uint64_t reserved_29_30               : 2;
+	uint64_t pll_div4                     : 1;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} cn30xx;
 	struct cvmx_mio_fus_dat3_cn31xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t pll_div4:1;
-		uint64_t zip_crip:2;
-		uint64_t bar2_en:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t icache:24;
+	uint64_t reserved_32_63               : 32;
+	uint64_t pll_div4                     : 1;  /**< Fuse information - PLL DIV4 mode
+                                                         (laser fuse only) */
+	uint64_t zip_crip                     : 2;  /**< Fuse information - Zip Cripple
+                                                         (O2P Only) */
+	uint64_t bar2_en                      : 1;  /**< Fuse information - BAR2 Enable (when blown '1') */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore
+                                                         This bit only has side effects when blown in
+                                                         the laser fuses.  It is ignore if only set in
+                                                         efuse store. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - DFA Disable (DTE) */
+	uint64_t icache                       : 24; /**< Fuse information - ICACHE Hard Repair Data */
 #else
-		uint64_t icache:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_en:1;
-		uint64_t zip_crip:2;
-		uint64_t pll_div4:1;
-		uint64_t reserved_32_63:32;
+	uint64_t icache                       : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_en                      : 1;
+	uint64_t zip_crip                     : 2;
+	uint64_t pll_div4                     : 1;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} cn31xx;
 	struct cvmx_mio_fus_dat3_cn38xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_31_63:33;
-		uint64_t zip_crip:2;
-		uint64_t bar2_en:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t icache:24;
+	uint64_t reserved_31_63               : 33;
+	uint64_t zip_crip                     : 2;  /**< Fuse information - Zip Cripple
+                                                         (PASS3 Only) */
+	uint64_t bar2_en                      : 1;  /**< Fuse information - BAR2 Enable (when blown '1')
+                                                         (PASS2 Only) */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown
+                                                         (PASS2 Only) */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore
+                                                         This bit only has side effects when blown in
+                                                         the laser fuses.  It is ignore if only set in
+                                                         efuse store.
+                                                         (PASS2 Only) */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable
+                                                         (PASS2 Only) */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - DFA Disable (DTE)
+                                                         (PASS2 Only) */
+	uint64_t icache                       : 24; /**< Fuse information - ICACHE Hard Repair Data */
 #else
-		uint64_t icache:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_en:1;
-		uint64_t zip_crip:2;
-		uint64_t reserved_31_63:33;
+	uint64_t icache                       : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_en                      : 1;
+	uint64_t zip_crip                     : 2;
+	uint64_t reserved_31_63               : 33;
 #endif
 	} cn38xx;
 	struct cvmx_mio_fus_dat3_cn38xxp2 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_29_63:35;
-		uint64_t bar2_en:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t icache:24;
+	uint64_t reserved_29_63               : 35;
+	uint64_t bar2_en                      : 1;  /**< Fuse information - BAR2 Enable (when blown '1')
+                                                         (PASS2 Only) */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown
+                                                         (PASS2 Only) */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore
+                                                         This bit only has side effects when blown in
+                                                         the laser fuses.  It is ignore if only set in
+                                                         efuse store.
+                                                         (PASS2 Only) */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable
+                                                         (PASS2 Only) */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - DFA Disable (DTE)
+                                                         (PASS2 Only) */
+	uint64_t icache                       : 24; /**< Fuse information - ICACHE Hard Repair Data */
 #else
-		uint64_t icache:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_en:1;
-		uint64_t reserved_29_63:35;
+	uint64_t icache                       : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_en                      : 1;
+	uint64_t reserved_29_63               : 35;
 #endif
 	} cn38xxp2;
+	struct cvmx_mio_fus_dat3_cn38xx       cn50xx;
+	struct cvmx_mio_fus_dat3_cn38xx       cn52xx;
+	struct cvmx_mio_fus_dat3_cn38xx       cn52xxp1;
+	struct cvmx_mio_fus_dat3_cn38xx       cn56xx;
+	struct cvmx_mio_fus_dat3_cn38xx       cn56xxp1;
+	struct cvmx_mio_fus_dat3_cn38xx       cn58xx;
+	struct cvmx_mio_fus_dat3_cn38xx       cn58xxp1;
 	struct cvmx_mio_fus_dat3_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_58_63:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t reserved_40_40:1;
-		uint64_t ema:2;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t reserved_31_31:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_en:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t reserved_0_23:24;
+	uint64_t reserved_58_63               : 6;
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control */
+	uint64_t dfa_info_dte                 : 3;  /**< Fuse information - DFA information (DTE) */
+	uint64_t dfa_info_clm                 : 4;  /**< Fuse information - DFA information (Cluster mask) */
+	uint64_t reserved_40_40               : 1;
+	uint64_t ema                          : 2;  /**< Fuse information - EMA */
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - RCLK PLL control */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C Cripple (1/8, 1/4, 1/2) */
+	uint64_t reserved_31_31               : 1;
+	uint64_t zip_info                     : 2;  /**< Fuse information - Zip information */
+	uint64_t bar2_en                      : 1;  /**< Fuse information - BAR2 Present (when blown '1') */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - DFA Disable (DTE) */
+	uint64_t reserved_0_23                : 24;
 #else
-		uint64_t reserved_0_23:24;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_en:1;
-		uint64_t zip_info:2;
-		uint64_t reserved_31_31:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t ema:2;
-		uint64_t reserved_40_40:1;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t reserved_58_63:6;
+	uint64_t reserved_0_23                : 24;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_en                      : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t reserved_31_31               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t ema                          : 2;
+	uint64_t reserved_40_40               : 1;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t reserved_58_63               : 6;
 #endif
 	} cn61xx;
+	struct cvmx_mio_fus_dat3_cn61xx       cn63xx;
+	struct cvmx_mio_fus_dat3_cn61xx       cn63xxp1;
+	struct cvmx_mio_fus_dat3_cn61xx       cn66xx;
+	struct cvmx_mio_fus_dat3_cn61xx       cn68xx;
+	struct cvmx_mio_fus_dat3_cn61xx       cn68xxp1;
 	struct cvmx_mio_fus_dat3_cn70xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t pll_alt_matrix:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t use_int_refclk:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_sz_conf:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t ema1:6;
-		uint64_t reserved_0_17:18;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Fuse information - HFA information (HTE). */
+	uint64_t dfa_info_clm                 : 4;  /**< Fuse information - HFA information (cluster mask). */
+	uint64_t pll_alt_matrix               : 1;  /**< Select alternate PLL matrix. Added in pass 2. */
+	uint64_t pll_bwadj_denom              : 2;  /**< Select CLKF denominator for BWADJ value. Added in pass 2.
+                                                         0x0 = Selects CLKF/4.
+                                                         0x1 = Selects CLKF/2.
+                                                         0x2 = Selects CLKF/8. */
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (4-way 512 KB).
+                                                         0x1 = 3/4 ways (3-way 384 KB).
+                                                         0x2 = 1/2 ways (2-way 256 KB).
+                                                         0x3 = 1/4 ways (1-way 128 KB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t use_int_refclk               : 1;  /**< If set use the PLL output as the low-jitter reference clock to the rclk DLLs. Default is
+                                                         to use the external input reference clock.
+                                                         Added in pass 2. */
+	uint64_t zip_info                     : 2;  /**< Fuse information - ZIP information. */
+	uint64_t bar2_sz_conf                 : 1;  /**< Fuse information - When 0, BAR2 size conforms to PCIE specification. */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable. */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - HFA disable (HTE). */
+	uint64_t ema1                         : 6;  /**< Fuse information - EMA1. */
+	uint64_t reserved_0_17                : 18;
 #else
-		uint64_t reserved_0_17:18;
-		uint64_t ema1:6;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_sz_conf:1;
-		uint64_t zip_info:2;
-		uint64_t use_int_refclk:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t pll_alt_matrix:1;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t reserved_0_17                : 18;
+	uint64_t ema1                         : 6;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_sz_conf                 : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t use_int_refclk               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t pll_bwadj_denom              : 2;
+	uint64_t pll_alt_matrix               : 1;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
 	} cn70xx;
 	struct cvmx_mio_fus_dat3_cn70xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t reserved_38_40:3;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t reserved_31_31:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_sz_conf:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t ema1:6;
-		uint64_t reserved_0_17:18;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Fuse information - HFA information (HTE). */
+	uint64_t dfa_info_clm                 : 4;  /**< Fuse information - HFA information (cluster mask). */
+	uint64_t reserved_38_40               : 3;
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (4-way 512 KB).
+                                                         0x1 = 3/4 ways (3-way 384 KB).
+                                                         0x2 = 1/2 ways (2-way 256 KB).
+                                                         0x3 = 1/4 ways (1-way 128 KB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t reserved_31_31               : 1;
+	uint64_t zip_info                     : 2;  /**< Fuse information - ZIP information. */
+	uint64_t bar2_sz_conf                 : 1;  /**< Fuse information - When 0, BAR2 size conforms to PCIE specification. */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable. */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - HFA disable (HTE). */
+	uint64_t ema1                         : 6;  /**< Fuse information - EMA1. */
+	uint64_t reserved_0_17                : 18;
 #else
-		uint64_t reserved_0_17:18;
-		uint64_t ema1:6;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_sz_conf:1;
-		uint64_t zip_info:2;
-		uint64_t reserved_31_31:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t reserved_38_40:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t reserved_0_17                : 18;
+	uint64_t ema1                         : 6;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_sz_conf                 : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t reserved_31_31               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t reserved_38_40               : 3;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
 	} cn70xxp1;
 	struct cvmx_mio_fus_dat3_cn73xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t pll_alt_matrix:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t use_int_refclk:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_sz_conf:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t ema1:6;
-		uint64_t nohna_dte:1;
-		uint64_t hna_info_dte:3;
-		uint64_t hna_info_clm:4;
-		uint64_t reserved_9_9:1;
-		uint64_t core_pll_mul:5;
-		uint64_t pnr_pll_mul:4;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Fuse information - HFA information (HTE). */
+	uint64_t dfa_info_clm                 : 4;  /**< Fuse information - HFA information (cluster mask). */
+	uint64_t pll_alt_matrix               : 1;  /**< Fuse information - Select alternate PLL matrix. */
+	uint64_t pll_bwadj_denom              : 2;  /**< Select CLKF denominator for BWADJ value.
+                                                         0x0 = Selects CLKF/4.
+                                                         0x1 = Selects CLKF/2.
+                                                         0x2 = Selects CLKF/8. */
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (16-way, 16 MB).
+                                                         0x1 = 3/4 ways (12-way, 12 MB).
+                                                         0x2 = 1/2 ways (8-way, 8 MB).
+                                                         0x3 = 1/4 ways (4-way, 4MB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t use_int_refclk               : 1;  /**< If set, use the PLL output as the low-jitter reference clock to the rclk DLLs. Default is
+                                                         to use the internal input reference clock. */
+	uint64_t zip_info                     : 2;  /**< Fuse information - ZIP information. */
+	uint64_t bar2_sz_conf                 : 1;  /**< Fuse information - When 0, BAR2 size conforms to PCIe specification. */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable. */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - HFA disable (HTE). */
+	uint64_t ema1                         : 6;  /**< Fuse information - EMA1. */
+	uint64_t nohna_dte                    : 1;  /**< Fuse information - HNA disable (DTE). */
+	uint64_t hna_info_dte                 : 3;  /**< Fuse information - HNA information (DTE). */
+	uint64_t hna_info_clm                 : 4;  /**< Fuse information - HNA information (cluster mask). */
+	uint64_t reserved_9_9                 : 1;
+	uint64_t core_pll_mul                 : 5;  /**< Core-clock PLL multiplier hardware limit. Indicates maximum
+                                                         value for PLL_MUL[5:1] straps.  Any strap setting above this
+                                                         value will be ignored.  A value of 0 indicates no hardware limit. */
+	uint64_t pnr_pll_mul                  : 4;  /**< Coprocessor-clock PLL multiplier hardware limit.  Indicates maximum
+                                                         value for PNR_MUL[5:1] straps.  Any strap setting above this
+                                                         value will be ignored.  A value of 0 indicates no hardware limit. */
 #else
-		uint64_t pnr_pll_mul:4;
-		uint64_t core_pll_mul:5;
-		uint64_t reserved_9_9:1;
-		uint64_t hna_info_clm:4;
-		uint64_t hna_info_dte:3;
-		uint64_t nohna_dte:1;
-		uint64_t ema1:6;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_sz_conf:1;
-		uint64_t zip_info:2;
-		uint64_t use_int_refclk:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t pll_alt_matrix:1;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t pnr_pll_mul                  : 4;
+	uint64_t core_pll_mul                 : 5;
+	uint64_t reserved_9_9                 : 1;
+	uint64_t hna_info_clm                 : 4;
+	uint64_t hna_info_dte                 : 3;
+	uint64_t nohna_dte                    : 1;
+	uint64_t ema1                         : 6;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_sz_conf                 : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t use_int_refclk               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t pll_bwadj_denom              : 2;
+	uint64_t pll_alt_matrix               : 1;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
 	} cn73xx;
-	struct cvmx_mio_fus_dat3_cn78xx {
+	struct cvmx_mio_fus_dat3_cn73xx       cn78xx;
+	struct cvmx_mio_fus_dat3_cn78xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t reserved_38_40:3;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t reserved_31_31:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_sz_conf:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t ema1:6;
-		uint64_t nohna_dte:1;
-		uint64_t hna_info_dte:3;
-		uint64_t hna_info_clm:4;
-		uint64_t reserved_0_9:10;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Fuse information - HFA information (HTE). */
+	uint64_t dfa_info_clm                 : 4;  /**< Fuse information - HFA information (cluster mask). */
+	uint64_t reserved_38_40               : 3;
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (16-way, 16 MB).
+                                                         0x1 = 3/4 ways (12-way, 12 MB).
+                                                         0x2 = 1/2 ways (8-way, 8 MB).
+                                                         0x3 = 1/4 ways (4-way, 4MB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t reserved_31_31               : 1;
+	uint64_t zip_info                     : 2;  /**< Fuse information - ZIP information. */
+	uint64_t bar2_sz_conf                 : 1;  /**< Fuse information - When 0, BAR2 size conforms to PCIe specification. */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Fuse information - ZIP disable. */
+	uint64_t nodfa_dte                    : 1;  /**< Fuse information - HFA disable (HTE). */
+	uint64_t ema1                         : 6;  /**< Fuse information - EMA1. */
+	uint64_t nohna_dte                    : 1;  /**< Fuse information - HNA disable (DTE). */
+	uint64_t hna_info_dte                 : 3;  /**< Fuse information - HNA information (DTE). */
+	uint64_t hna_info_clm                 : 4;  /**< Fuse information - HNA information (cluster mask). */
+	uint64_t reserved_0_9                 : 10;
 #else
-		uint64_t reserved_0_9:10;
-		uint64_t hna_info_clm:4;
-		uint64_t hna_info_dte:3;
-		uint64_t nohna_dte:1;
-		uint64_t ema1:6;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_sz_conf:1;
-		uint64_t zip_info:2;
-		uint64_t reserved_31_31:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t reserved_38_40:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t reserved_0_9                 : 10;
+	uint64_t hna_info_clm                 : 4;
+	uint64_t hna_info_dte                 : 3;
+	uint64_t nohna_dte                    : 1;
+	uint64_t ema1                         : 6;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_sz_conf                 : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t reserved_31_31               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t reserved_38_40               : 3;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
-	} cn78xx;
+	} cn78xxp1;
+	struct cvmx_mio_fus_dat3_cn61xx       cnf71xx;
 	struct cvmx_mio_fus_dat3_cnf75xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t ema0:6;
-		uint64_t pll_ctl:10;
-		uint64_t dfa_info_dte:3;
-		uint64_t dfa_info_clm:4;
-		uint64_t pll_alt_matrix:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t efus_lck_rsv:1;
-		uint64_t efus_lck_man:1;
-		uint64_t pll_half_dis:1;
-		uint64_t l2c_crip:3;
-		uint64_t use_int_refclk:1;
-		uint64_t zip_info:2;
-		uint64_t bar2_sz_conf:1;
-		uint64_t efus_lck:1;
-		uint64_t efus_ign:1;
-		uint64_t nozip:1;
-		uint64_t nodfa_dte:1;
-		uint64_t ema1:6;
-		uint64_t reserved_9_17:9;
-		uint64_t core_pll_mul:5;
-		uint64_t pnr_pll_mul:4;
+	uint64_t ema0                         : 6;  /**< Fuse information - EMA0. */
+	uint64_t pll_ctl                      : 10; /**< Fuse information - PLL control. */
+	uint64_t dfa_info_dte                 : 3;  /**< Reserved. */
+	uint64_t dfa_info_clm                 : 4;  /**< Reserved. */
+	uint64_t pll_alt_matrix               : 1;  /**< Fuse information - Select alternate PLL matrix. */
+	uint64_t pll_bwadj_denom              : 2;  /**< Select CLKF denominator for BWADJ value.
+                                                         0x0 = Selects CLKF/4.
+                                                         0x1 = Selects CLKF/2.
+                                                         0x2 = Selects CLKF/8. */
+	uint64_t efus_lck_rsv                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_lck_man                 : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t pll_half_dis                 : 1;  /**< Fuse information - coprocessor-clock PLL control. */
+	uint64_t l2c_crip                     : 3;  /**< Fuse information - L2C cripple:
+                                                         0x0 = Full cache (16-way, 16 MB).
+                                                         0x1 = 3/4 ways (12-way, 12 MB).
+                                                         0x2 = 1/2 ways (8-way, 8 MB).
+                                                         0x3 = 1/4 ways (4-way, 4MB).
+                                                         0x4-0x7 = Reserved. */
+	uint64_t use_int_refclk               : 1;  /**< If set, use the PLL output as the low-jitter reference clock to the rclk DLLs. Default is
+                                                         to use the internal input reference clock. */
+	uint64_t zip_info                     : 2;  /**< Reserved. */
+	uint64_t bar2_sz_conf                 : 1;  /**< Fuse information - When 0, BAR2 size conforms to PCIe specification. */
+	uint64_t efus_lck                     : 1;  /**< Fuse information - efuse lockdown. */
+	uint64_t efus_ign                     : 1;  /**< Fuse information - efuse ignore. */
+	uint64_t nozip                        : 1;  /**< Reserved. */
+	uint64_t nodfa_dte                    : 1;  /**< Reserved. */
+	uint64_t ema1                         : 6;  /**< Fuse information - EMA1. */
+	uint64_t reserved_9_17                : 9;
+	uint64_t core_pll_mul                 : 5;  /**< Core-clock PLL multiplier hardware limit. Indicates maximum
+                                                         value for PLL_MUL[5:1] straps.  Any strap setting above this
+                                                         value will be ignored.  A value of 0 indicates no hardware limit. */
+	uint64_t pnr_pll_mul                  : 4;  /**< Coprocessor-clock PLL multiplier hardware limit.  Indicates maximum
+                                                         value for PNR_MUL[5:1] straps.  Any strap setting above this
+                                                         value will be ignored.  A value of 0 indicates no hardware limit. */
 #else
-		uint64_t pnr_pll_mul:4;
-		uint64_t core_pll_mul:5;
-		uint64_t reserved_9_17:9;
-		uint64_t ema1:6;
-		uint64_t nodfa_dte:1;
-		uint64_t nozip:1;
-		uint64_t efus_ign:1;
-		uint64_t efus_lck:1;
-		uint64_t bar2_sz_conf:1;
-		uint64_t zip_info:2;
-		uint64_t use_int_refclk:1;
-		uint64_t l2c_crip:3;
-		uint64_t pll_half_dis:1;
-		uint64_t efus_lck_man:1;
-		uint64_t efus_lck_rsv:1;
-		uint64_t pll_bwadj_denom:2;
-		uint64_t pll_alt_matrix:1;
-		uint64_t dfa_info_clm:4;
-		uint64_t dfa_info_dte:3;
-		uint64_t pll_ctl:10;
-		uint64_t ema0:6;
+	uint64_t pnr_pll_mul                  : 4;
+	uint64_t core_pll_mul                 : 5;
+	uint64_t reserved_9_17                : 9;
+	uint64_t ema1                         : 6;
+	uint64_t nodfa_dte                    : 1;
+	uint64_t nozip                        : 1;
+	uint64_t efus_ign                     : 1;
+	uint64_t efus_lck                     : 1;
+	uint64_t bar2_sz_conf                 : 1;
+	uint64_t zip_info                     : 2;
+	uint64_t use_int_refclk               : 1;
+	uint64_t l2c_crip                     : 3;
+	uint64_t pll_half_dis                 : 1;
+	uint64_t efus_lck_man                 : 1;
+	uint64_t efus_lck_rsv                 : 1;
+	uint64_t pll_bwadj_denom              : 2;
+	uint64_t pll_alt_matrix               : 1;
+	uint64_t dfa_info_clm                 : 4;
+	uint64_t dfa_info_dte                 : 3;
+	uint64_t pll_ctl                      : 10;
+	uint64_t ema0                         : 6;
 #endif
 	} cnf75xx;
 };
+typedef union cvmx_mio_fus_dat3 cvmx_mio_fus_dat3_t;
 
+/**
+ * cvmx_mio_fus_dat4
+ */
+union cvmx_mio_fus_dat4 {
+	uint64_t u64;
+	struct cvmx_mio_fus_dat4_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t global_rclk_byp_select       : 1;  /**< Reserved. */
+	uint64_t global_rclk_byp_setting      : 11; /**< Bits<11:1>. Reserved. */
+	uint64_t east_rclk_byp_select         : 1;  /**< Reserved. */
+	uint64_t east_rclk_byp_setting        : 12; /**< Reserved. */
+	uint64_t cmb_rclk_byp_select          : 1;  /**< Reserved. */
+	uint64_t cmb_rclk_byp_setting         : 12; /**< Reserved. */
+	uint64_t pp_rclk_byp_select           : 1;  /**< Reserved. */
+	uint64_t pp_rclk_byp_setting          : 12; /**< Reserved. */
+	uint64_t tad_rclk_byp_select          : 1;  /**< Reserved. */
+	uint64_t tad_rclk_byp_setting         : 12; /**< Reserved. */
+#else
+	uint64_t tad_rclk_byp_setting         : 12;
+	uint64_t tad_rclk_byp_select          : 1;
+	uint64_t pp_rclk_byp_setting          : 12;
+	uint64_t pp_rclk_byp_select           : 1;
+	uint64_t cmb_rclk_byp_setting         : 12;
+	uint64_t cmb_rclk_byp_select          : 1;
+	uint64_t east_rclk_byp_setting        : 12;
+	uint64_t east_rclk_byp_select         : 1;
+	uint64_t global_rclk_byp_setting      : 11;
+	uint64_t global_rclk_byp_select       : 1;
+#endif
+	} s;
+	struct cvmx_mio_fus_dat4_s            cn70xx;
+	struct cvmx_mio_fus_dat4_s            cn70xxp1;
+	struct cvmx_mio_fus_dat4_s            cn73xx;
+	struct cvmx_mio_fus_dat4_s            cn78xx;
+	struct cvmx_mio_fus_dat4_s            cn78xxp1;
+	struct cvmx_mio_fus_dat4_s            cnf75xx;
+};
+typedef union cvmx_mio_fus_dat4 cvmx_mio_fus_dat4_t;
+
+/**
+ * cvmx_mio_fus_ema
+ *
+ * DON'T PUT IN HRM*
+ *
+ */
 union cvmx_mio_fus_ema {
 	uint64_t u64;
 	struct cvmx_mio_fus_ema_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t eff_ema:3;
-		uint64_t reserved_3_3:1;
-		uint64_t ema:3;
+	uint64_t reserved_7_63                : 57;
+	uint64_t eff_ema                      : 3;  /**< Reserved */
+	uint64_t reserved_3_3                 : 1;
+	uint64_t ema                          : 3;  /**< Reserved */
 #else
-		uint64_t ema:3;
-		uint64_t reserved_3_3:1;
-		uint64_t eff_ema:3;
-		uint64_t reserved_7_63:57;
+	uint64_t ema                          : 3;
+	uint64_t reserved_3_3                 : 1;
+	uint64_t eff_ema                      : 3;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_fus_ema_s             cn50xx;
+	struct cvmx_mio_fus_ema_s             cn52xx;
+	struct cvmx_mio_fus_ema_s             cn52xxp1;
+	struct cvmx_mio_fus_ema_s             cn56xx;
+	struct cvmx_mio_fus_ema_s             cn56xxp1;
 	struct cvmx_mio_fus_ema_cn58xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t ema:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t ema                          : 2;  /**< EMA Settings */
 #else
-		uint64_t ema:2;
-		uint64_t reserved_2_63:62;
+	uint64_t ema                          : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} cn58xx;
+	struct cvmx_mio_fus_ema_cn58xx        cn58xxp1;
+	struct cvmx_mio_fus_ema_s             cn61xx;
+	struct cvmx_mio_fus_ema_s             cn63xx;
+	struct cvmx_mio_fus_ema_s             cn63xxp1;
+	struct cvmx_mio_fus_ema_s             cn66xx;
+	struct cvmx_mio_fus_ema_s             cn68xx;
+	struct cvmx_mio_fus_ema_s             cn68xxp1;
+	struct cvmx_mio_fus_ema_s             cnf71xx;
 };
+typedef union cvmx_mio_fus_ema cvmx_mio_fus_ema_t;
 
+/**
+ * cvmx_mio_fus_int
+ */
+union cvmx_mio_fus_int {
+	uint64_t u64;
+	struct cvmx_mio_fus_int_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t rpr_dbe                      : 1;  /**< N/A */
+	uint64_t rpr_sbe                      : 1;  /**< N/A */
+#else
+	uint64_t rpr_sbe                      : 1;
+	uint64_t rpr_dbe                      : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} s;
+	struct cvmx_mio_fus_int_s             cn70xx;
+	struct cvmx_mio_fus_int_s             cn70xxp1;
+	struct cvmx_mio_fus_int_s             cn73xx;
+	struct cvmx_mio_fus_int_s             cn78xx;
+	struct cvmx_mio_fus_int_s             cn78xxp1;
+	struct cvmx_mio_fus_int_s             cnf75xx;
+};
+typedef union cvmx_mio_fus_int cvmx_mio_fus_int_t;
+
+/**
+ * cvmx_mio_fus_pdf
+ */
 union cvmx_mio_fus_pdf {
 	uint64_t u64;
 	struct cvmx_mio_fus_pdf_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t pdf:64;
+	uint64_t pdf                          : 64; /**< Fuse information--product definition field. */
 #else
-		uint64_t pdf:64;
+	uint64_t pdf                          : 64;
 #endif
 	} s;
+	struct cvmx_mio_fus_pdf_s             cn50xx;
+	struct cvmx_mio_fus_pdf_s             cn52xx;
+	struct cvmx_mio_fus_pdf_s             cn52xxp1;
+	struct cvmx_mio_fus_pdf_s             cn56xx;
+	struct cvmx_mio_fus_pdf_s             cn56xxp1;
+	struct cvmx_mio_fus_pdf_s             cn58xx;
+	struct cvmx_mio_fus_pdf_s             cn61xx;
+	struct cvmx_mio_fus_pdf_s             cn63xx;
+	struct cvmx_mio_fus_pdf_s             cn63xxp1;
+	struct cvmx_mio_fus_pdf_s             cn66xx;
+	struct cvmx_mio_fus_pdf_s             cn68xx;
+	struct cvmx_mio_fus_pdf_s             cn68xxp1;
+	struct cvmx_mio_fus_pdf_s             cn70xx;
+	struct cvmx_mio_fus_pdf_s             cn70xxp1;
+	struct cvmx_mio_fus_pdf_s             cn73xx;
+	struct cvmx_mio_fus_pdf_s             cn78xx;
+	struct cvmx_mio_fus_pdf_s             cn78xxp1;
+	struct cvmx_mio_fus_pdf_s             cnf71xx;
+	struct cvmx_mio_fus_pdf_s             cnf75xx;
 };
+typedef union cvmx_mio_fus_pdf cvmx_mio_fus_pdf_t;
 
+/**
+ * cvmx_mio_fus_pll
+ *
+ * This register contains PLL Status and controls for the MSC_CLKOUT and
+ * MSC_SYS_CLKOUT pins.  The fields are reset to zero on a cold reset.
+ * the values are preserved on both a warm and soft reset for pass 2.
+ */
 union cvmx_mio_fus_pll {
 	uint64_t u64;
 	struct cvmx_mio_fus_pll_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_48_63:16;
-		uint64_t rclk_align_r:8;
-		uint64_t rclk_align_l:8;
-		uint64_t reserved_8_31:24;
-		uint64_t c_cout_rst:1;
-		uint64_t c_cout_sel:2;
-		uint64_t pnr_cout_rst:1;
-		uint64_t pnr_cout_sel:2;
-		uint64_t rfslip:1;
-		uint64_t fbslip:1;
+	uint64_t reserved_48_63               : 16;
+	uint64_t rclk_align_r                 : 8;  /**< RCLK right alignment settings */
+	uint64_t rclk_align_l                 : 8;  /**< RCLK left alignment settings */
+	uint64_t reserved_15_31               : 17;
+	uint64_t core_status                  : 3;  /**< Core-clock PLL status information. */
+	uint64_t reserved_11_11               : 1;
+	uint64_t pnr_status                   : 3;  /**< Coprocessor-clock PLL status information. */
+	uint64_t c_cout_rst                   : 1;  /**< Core clockout postscaler reset. The core clockout postscaler should be placed in reset at
+                                                         least 10 reference-clock cycles prior to changing C_COUT_SEL. The core clockout postscaler
+                                                         should remain under reset for at least 10 reference-clock cycles after C_COUT_SEL changes. */
+	uint64_t c_cout_sel                   : 2;  /**< Core-clock output select:
+                                                         0x0 = Core clock.
+                                                         0x1 = PS output.
+                                                         0x2 = PLL output.
+                                                         0x3 = Undivided core clock. */
+	uint64_t pnr_cout_rst                 : 1;  /**< SYS clockout postscaler reset. The PNR clockout postscaler should be placed in reset at
+                                                         least 10 reference-clock cycles prior to changing PNR_COUT_SEL. The SYS clockout
+                                                         postscaler
+                                                         should remain under reset for at least 10 reference-clock cycles after PNR_COUT_SEL
+                                                         changes. */
+	uint64_t pnr_cout_sel                 : 2;  /**< Coprocessor-clock output select:
+                                                         0x0 = Coprocessor clock.
+                                                         0x1 = PS output.
+                                                         0x2 = PLL output.
+                                                         0x3 = Undivided core clock. */
+	uint64_t rfslip                       : 1;  /**< Reserved */
+	uint64_t fbslip                       : 1;  /**< Reserved */
 #else
-		uint64_t fbslip:1;
-		uint64_t rfslip:1;
-		uint64_t pnr_cout_sel:2;
-		uint64_t pnr_cout_rst:1;
-		uint64_t c_cout_sel:2;
-		uint64_t c_cout_rst:1;
-		uint64_t reserved_8_31:24;
-		uint64_t rclk_align_l:8;
-		uint64_t rclk_align_r:8;
-		uint64_t reserved_48_63:16;
+	uint64_t fbslip                       : 1;
+	uint64_t rfslip                       : 1;
+	uint64_t pnr_cout_sel                 : 2;
+	uint64_t pnr_cout_rst                 : 1;
+	uint64_t c_cout_sel                   : 2;
+	uint64_t c_cout_rst                   : 1;
+	uint64_t pnr_status                   : 3;
+	uint64_t reserved_11_11               : 1;
+	uint64_t core_status                  : 3;
+	uint64_t reserved_15_31               : 17;
+	uint64_t rclk_align_l                 : 8;
+	uint64_t rclk_align_r                 : 8;
+	uint64_t reserved_48_63               : 16;
 #endif
 	} s;
 	struct cvmx_mio_fus_pll_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t rfslip:1;
-		uint64_t fbslip:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t rfslip                       : 1;  /**< PLL reference clock slip */
+	uint64_t fbslip                       : 1;  /**< PLL feedback clock slip */
 #else
-		uint64_t fbslip:1;
-		uint64_t rfslip:1;
-		uint64_t reserved_2_63:62;
+	uint64_t fbslip                       : 1;
+	uint64_t rfslip                       : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} cn50xx;
+	struct cvmx_mio_fus_pll_cn50xx        cn52xx;
+	struct cvmx_mio_fus_pll_cn50xx        cn52xxp1;
+	struct cvmx_mio_fus_pll_cn50xx        cn56xx;
+	struct cvmx_mio_fus_pll_cn50xx        cn56xxp1;
+	struct cvmx_mio_fus_pll_cn50xx        cn58xx;
+	struct cvmx_mio_fus_pll_cn50xx        cn58xxp1;
 	struct cvmx_mio_fus_pll_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t c_cout_rst:1;
-		uint64_t c_cout_sel:2;
-		uint64_t pnr_cout_rst:1;
-		uint64_t pnr_cout_sel:2;
-		uint64_t rfslip:1;
-		uint64_t fbslip:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t c_cout_rst                   : 1;  /**< Core clkout postscaler reset */
+	uint64_t c_cout_sel                   : 2;  /**< Core clkout select
+                                                         0=RCLK,1=PS output,2=PLL output,3=undivided RCLK |   $PR
+                                                         (***Pass 1.x: 3=GND) */
+	uint64_t pnr_cout_rst                 : 1;  /**< PNR  clkout postscaler reset */
+	uint64_t pnr_cout_sel                 : 2;  /**< PNR  clkout select
+                                                         0=SCLK,1=PS output,2=PLL output,3=undivided RCLK |   $PR
+                                                         (***Pass 1.x: 3=GND) */
+	uint64_t rfslip                       : 1;  /**< Reserved */
+	uint64_t fbslip                       : 1;  /**< Reserved */
 #else
-		uint64_t fbslip:1;
-		uint64_t rfslip:1;
-		uint64_t pnr_cout_sel:2;
-		uint64_t pnr_cout_rst:1;
-		uint64_t c_cout_sel:2;
-		uint64_t c_cout_rst:1;
-		uint64_t reserved_8_63:56;
+	uint64_t fbslip                       : 1;
+	uint64_t rfslip                       : 1;
+	uint64_t pnr_cout_sel                 : 2;
+	uint64_t pnr_cout_rst                 : 1;
+	uint64_t c_cout_sel                   : 2;
+	uint64_t c_cout_rst                   : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} cn61xx;
+	struct cvmx_mio_fus_pll_cn61xx        cn63xx;
+	struct cvmx_mio_fus_pll_cn61xx        cn63xxp1;
+	struct cvmx_mio_fus_pll_cn61xx        cn66xx;
+	struct cvmx_mio_fus_pll_cn68xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_48_63               : 16;
+	uint64_t rclk_align_r                 : 8;  /**< RCLK right alignment settings */
+	uint64_t rclk_align_l                 : 8;  /**< RCLK left alignment settings */
+	uint64_t reserved_8_31                : 24;
+	uint64_t c_cout_rst                   : 1;  /**< Core clkout postscaler reset */
+	uint64_t c_cout_sel                   : 2;  /**< Core clkout select
+                                                         0=RCLK,1=PS output,2=PLL output,3=undivided RCLK |   $PR */
+	uint64_t pnr_cout_rst                 : 1;  /**< PNR  clkout postscaler reset */
+	uint64_t pnr_cout_sel                 : 2;  /**< PNR  clkout select
+                                                         0=SCLK,1=PS output,2=PLL output,3=undivided RCLK |   $PR */
+	uint64_t rfslip                       : 1;  /**< Reserved */
+	uint64_t fbslip                       : 1;  /**< Reserved */
+#else
+	uint64_t fbslip                       : 1;
+	uint64_t rfslip                       : 1;
+	uint64_t pnr_cout_sel                 : 2;
+	uint64_t pnr_cout_rst                 : 1;
+	uint64_t c_cout_sel                   : 2;
+	uint64_t c_cout_rst                   : 1;
+	uint64_t reserved_8_31                : 24;
+	uint64_t rclk_align_l                 : 8;
+	uint64_t rclk_align_r                 : 8;
+	uint64_t reserved_48_63               : 16;
+#endif
+	} cn68xx;
+	struct cvmx_mio_fus_pll_cn68xx        cn68xxp1;
+	struct cvmx_mio_fus_pll_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_15_63               : 49;
+	uint64_t core_status                  : 3;  /**< Core clock PLL status information. */
+	uint64_t reserved_11_11               : 1;
+	uint64_t pnr_status                   : 3;  /**< PNR clock PLL status information. */
+	uint64_t c_cout_rst                   : 1;  /**< Core clockout postscaler reset. The core clockout postscaler should be placed in reset at
+                                                         least 10 ref-clock cycles prior to changing C_COUT_SEL. The core clockout postscaler
+                                                         should remain under reset for at least 10 ref-clock cycles after C_COUT_SEL changes. */
+	uint64_t c_cout_sel                   : 2;  /**< Core clockout select:
+                                                         0x0 = Core clock.
+                                                         0x1 = PS output.
+                                                         0x2 = PLL output.
+                                                         0x3 = Undivided core clock. */
+	uint64_t pnr_cout_rst                 : 1;  /**< PNR clockout postscaler reset. The PNR clockout postscaler should be placed in reset at
+                                                         least 10 ref-clock cycles prior to changing PNR_COUT_SEL. The PNR clockout postscaler
+                                                         should remain under reset for at least 10 ref-clock cycles after PNR_COUT_SEL changes. */
+	uint64_t pnr_cout_sel                 : 2;  /**< PNR clockout select:
+                                                         0x0 = Coprocessor clock.
+                                                         0x1 = PS output.
+                                                         0x2 = PLL output.
+                                                         0x3 = Undivided core clock. */
+	uint64_t reserved_0_1                 : 2;
+#else
+	uint64_t reserved_0_1                 : 2;
+	uint64_t pnr_cout_sel                 : 2;
+	uint64_t pnr_cout_rst                 : 1;
+	uint64_t c_cout_sel                   : 2;
+	uint64_t c_cout_rst                   : 1;
+	uint64_t pnr_status                   : 3;
+	uint64_t reserved_11_11               : 1;
+	uint64_t core_status                  : 3;
+	uint64_t reserved_15_63               : 49;
+#endif
+	} cn70xx;
+	struct cvmx_mio_fus_pll_cn70xx        cn70xxp1;
+	struct cvmx_mio_fus_pll_cn70xx        cn73xx;
+	struct cvmx_mio_fus_pll_cn70xx        cn78xx;
+	struct cvmx_mio_fus_pll_cn70xx        cn78xxp1;
+	struct cvmx_mio_fus_pll_cn61xx        cnf71xx;
+	struct cvmx_mio_fus_pll_cn70xx        cnf75xx;
 };
+typedef union cvmx_mio_fus_pll cvmx_mio_fus_pll_t;
 
+/**
+ * cvmx_mio_fus_prog
+ *
+ * DON'T PUT IN HRM*
+ *
+ *
+ * Notes:
+ * This CSR is not present in the HRM.
+ *
+ * To write a bank of fuses, SW must set MIO_FUS_WADR[ADDR] to the bank to be
+ * programmed and then set each bit within MIO_FUS_BNK_DATX to indicate which
+ * fuses to blow.  Once ADDR, and DAT are setup, SW can write to
+ * MIO_FUS_PROG[PROG] to start the bank write and poll on PROG.  Once PROG is
+ * clear, the bank write is complete.
+ *
+ * A soft blow is still subject to lockdown fuses.  After a soft/warm reset, the
+ * chip will behave as though the fuses were actually blown.  A cold reset restores
+ * the actual fuse valuse.
+ */
 union cvmx_mio_fus_prog {
 	uint64_t u64;
 	struct cvmx_mio_fus_prog_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t soft:1;
-		uint64_t prog:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t prog                         : 1;  /**< N/A */
 #else
-		uint64_t prog:1;
-		uint64_t soft:1;
-		uint64_t reserved_2_63:62;
+	uint64_t prog                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
-	struct cvmx_mio_fus_prog_cn30xx {
+	struct cvmx_mio_fus_prog_s            cn30xx;
+	struct cvmx_mio_fus_prog_s            cn31xx;
+	struct cvmx_mio_fus_prog_s            cn38xx;
+	struct cvmx_mio_fus_prog_s            cn38xxp2;
+	struct cvmx_mio_fus_prog_s            cn50xx;
+	struct cvmx_mio_fus_prog_s            cn52xx;
+	struct cvmx_mio_fus_prog_s            cn52xxp1;
+	struct cvmx_mio_fus_prog_s            cn56xx;
+	struct cvmx_mio_fus_prog_s            cn56xxp1;
+	struct cvmx_mio_fus_prog_s            cn58xx;
+	struct cvmx_mio_fus_prog_s            cn58xxp1;
+	struct cvmx_mio_fus_prog_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t prog:1;
+	uint64_t reserved_2_63                : 62;
+	uint64_t soft                         : 1;  /**< When set with PROG, causes only the local storeage
+                                                         to change.  Will not really blow any fuses.  HW
+                                                         will clear when the program operation is complete */
+	uint64_t prog                         : 1;  /**< Blow the fuse bank
+                                                         SW will set PROG, and then the HW will clear
+                                                         when the program operation is complete */
 #else
-		uint64_t prog:1;
-		uint64_t reserved_1_63:63;
+	uint64_t prog                         : 1;
+	uint64_t soft                         : 1;
+	uint64_t reserved_2_63                : 62;
 #endif
-	} cn30xx;
+	} cn61xx;
+	struct cvmx_mio_fus_prog_cn61xx       cn63xx;
+	struct cvmx_mio_fus_prog_cn61xx       cn63xxp1;
+	struct cvmx_mio_fus_prog_cn61xx       cn66xx;
+	struct cvmx_mio_fus_prog_cn61xx       cn68xx;
+	struct cvmx_mio_fus_prog_cn61xx       cn68xxp1;
+	struct cvmx_mio_fus_prog_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t sft                          : 1;  /**< N/A */
+	uint64_t prog                         : 1;  /**< N/A */
+#else
+	uint64_t prog                         : 1;
+	uint64_t sft                          : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} cn70xx;
+	struct cvmx_mio_fus_prog_cn70xx       cn70xxp1;
+	struct cvmx_mio_fus_prog_cn70xx       cn73xx;
+	struct cvmx_mio_fus_prog_cn70xx       cn78xx;
+	struct cvmx_mio_fus_prog_cn70xx       cn78xxp1;
+	struct cvmx_mio_fus_prog_cn61xx       cnf71xx;
+	struct cvmx_mio_fus_prog_cn70xx       cnf75xx;
 };
+typedef union cvmx_mio_fus_prog cvmx_mio_fus_prog_t;
 
+/**
+ * cvmx_mio_fus_prog_times
+ *
+ * DON'T PUT IN HRM*
+ *
+ *
+ * Notes:
+ * This CSR is not present in the HRM.
+ *
+ * All values must be > 0 for correct electrical operation.
+ *
+ * IFB fuses are 0..1791
+ * L6G fuses are 1792 to 2047
+ *
+ * The reset values are for IFB fuses for ref_clk of 100MHZ
+ */
 union cvmx_mio_fus_prog_times {
 	uint64_t u64;
 	struct cvmx_mio_fus_prog_times_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_35_63:29;
-		uint64_t vgate_pin:1;
-		uint64_t fsrc_pin:1;
-		uint64_t prog_pin:1;
-		uint64_t reserved_6_31:26;
-		uint64_t setup:6;
+	uint64_t reserved_35_63               : 29;
+	uint64_t vgate_pin                    : 1;  /**< N/A */
+	uint64_t fsrc_pin                     : 1;  /**< N/A */
+	uint64_t prog_pin                     : 1;  /**< N/A */
+	uint64_t reserved_6_31                : 26;
+	uint64_t setup                        : 6;  /**< efuse timing param
+
+                                                         SETUP = (tWRS/refclk period)-1
+
+                                                         For IFB: tWRS =  20ns
+                                                         For L6G: tWRS =  20ns */
 #else
-		uint64_t setup:6;
-		uint64_t reserved_6_31:26;
-		uint64_t prog_pin:1;
-		uint64_t fsrc_pin:1;
-		uint64_t vgate_pin:1;
-		uint64_t reserved_35_63:29;
+	uint64_t setup                        : 6;
+	uint64_t reserved_6_31                : 26;
+	uint64_t prog_pin                     : 1;
+	uint64_t fsrc_pin                     : 1;
+	uint64_t vgate_pin                    : 1;
+	uint64_t reserved_35_63               : 29;
 #endif
 	} s;
 	struct cvmx_mio_fus_prog_times_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_33_63:31;
-		uint64_t prog_pin:1;
-		uint64_t out:8;
-		uint64_t sclk_lo:4;
-		uint64_t sclk_hi:12;
-		uint64_t setup:8;
+	uint64_t reserved_33_63               : 31;
+	uint64_t prog_pin                     : 1;  /**< efuse program pin */
+	uint64_t out                          : 8;  /**< efuse timing param (ref_clks to delay 10ns) */
+	uint64_t sclk_lo                      : 4;  /**< efuse timing param (ref_clks to delay 5ns) */
+	uint64_t sclk_hi                      : 12; /**< efuse timing param (ref_clks to delay 1000ns) */
+	uint64_t setup                        : 8;  /**< efuse timing param (ref_clks to delay 10ns) */
 #else
-		uint64_t setup:8;
-		uint64_t sclk_hi:12;
-		uint64_t sclk_lo:4;
-		uint64_t out:8;
-		uint64_t prog_pin:1;
-		uint64_t reserved_33_63:31;
+	uint64_t setup                        : 8;
+	uint64_t sclk_hi                      : 12;
+	uint64_t sclk_lo                      : 4;
+	uint64_t out                          : 8;
+	uint64_t prog_pin                     : 1;
+	uint64_t reserved_33_63               : 31;
 #endif
 	} cn50xx;
+	struct cvmx_mio_fus_prog_times_cn50xx cn52xx;
+	struct cvmx_mio_fus_prog_times_cn50xx cn52xxp1;
+	struct cvmx_mio_fus_prog_times_cn50xx cn56xx;
+	struct cvmx_mio_fus_prog_times_cn50xx cn56xxp1;
+	struct cvmx_mio_fus_prog_times_cn50xx cn58xx;
+	struct cvmx_mio_fus_prog_times_cn50xx cn58xxp1;
 	struct cvmx_mio_fus_prog_times_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_35_63:29;
-		uint64_t vgate_pin:1;
-		uint64_t fsrc_pin:1;
-		uint64_t prog_pin:1;
-		uint64_t out:7;
-		uint64_t sclk_lo:4;
-		uint64_t sclk_hi:15;
-		uint64_t setup:6;
+	uint64_t reserved_35_63               : 29;
+	uint64_t vgate_pin                    : 1;  /**< efuse vgate pin (L6G) */
+	uint64_t fsrc_pin                     : 1;  /**< efuse fsource pin (L6G) */
+	uint64_t prog_pin                     : 1;  /**< efuse program pin (IFB) */
+	uint64_t out                          : 7;  /**< efuse timing param
+
+                                                         OUT = (tOUT/refclk period)-1
+
+                                                         For IFB: tOUT =  20ns
+                                                         For L6G: tOUT =  20ns */
+	uint64_t sclk_lo                      : 4;  /**< efuse timing param
+
+                                                         SCLK_LO=(tSLO/refclk period)-1
+
+                                                         For IFB: tSLO =  20ns
+                                                         For L6G: tSLO =  20ns */
+	uint64_t sclk_hi                      : 15; /**< efuse timing param
+                                                         ***NOTE: Pass 1.x reset value is 20000
+
+                                                         SCLK_HI=(tSHI/refclk period)-1
+
+                                                         For IFB: tSHI =  200us
+                                                         For L6G: tSHI =  25us */
+	uint64_t setup                        : 6;  /**< efuse timing param
+
+                                                         SETUP = (tWRS/refclk period)-1
+
+                                                         For IFB: tWRS =  20ns
+                                                         For L6G: tWRS =  20ns */
 #else
-		uint64_t setup:6;
-		uint64_t sclk_hi:15;
-		uint64_t sclk_lo:4;
-		uint64_t out:7;
-		uint64_t prog_pin:1;
-		uint64_t fsrc_pin:1;
-		uint64_t vgate_pin:1;
-		uint64_t reserved_35_63:29;
+	uint64_t setup                        : 6;
+	uint64_t sclk_hi                      : 15;
+	uint64_t sclk_lo                      : 4;
+	uint64_t out                          : 7;
+	uint64_t prog_pin                     : 1;
+	uint64_t fsrc_pin                     : 1;
+	uint64_t vgate_pin                    : 1;
+	uint64_t reserved_35_63               : 29;
 #endif
 	} cn61xx;
+	struct cvmx_mio_fus_prog_times_cn61xx cn63xx;
+	struct cvmx_mio_fus_prog_times_cn61xx cn63xxp1;
+	struct cvmx_mio_fus_prog_times_cn61xx cn66xx;
+	struct cvmx_mio_fus_prog_times_cn61xx cn68xx;
+	struct cvmx_mio_fus_prog_times_cn61xx cn68xxp1;
+	struct cvmx_mio_fus_prog_times_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_35_63               : 29;
+	uint64_t vgate_pin                    : 1;  /**< N/A */
+	uint64_t fsrc_pin                     : 1;  /**< N/A */
+	uint64_t prog_pin                     : 1;  /**< N/A */
+	uint64_t reserved_0_31                : 32;
+#else
+	uint64_t reserved_0_31                : 32;
+	uint64_t prog_pin                     : 1;
+	uint64_t fsrc_pin                     : 1;
+	uint64_t vgate_pin                    : 1;
+	uint64_t reserved_35_63               : 29;
+#endif
+	} cn70xx;
+	struct cvmx_mio_fus_prog_times_cn70xx cn70xxp1;
+	struct cvmx_mio_fus_prog_times_cn70xx cn73xx;
+	struct cvmx_mio_fus_prog_times_cn70xx cn78xx;
+	struct cvmx_mio_fus_prog_times_cn70xx cn78xxp1;
+	struct cvmx_mio_fus_prog_times_cn61xx cnf71xx;
+	struct cvmx_mio_fus_prog_times_cn70xx cnf75xx;
 };
+typedef union cvmx_mio_fus_prog_times cvmx_mio_fus_prog_times_t;
 
+/**
+ * cvmx_mio_fus_rcmd
+ *
+ * To read an efuse, software writes MIO_FUS_RCMD[ADDR,PEND] with the byte address of the fuse in
+ * question, then software can poll MIO_FUS_RCMD[PEND]. When PEND is clear, then
+ * MIO_FUS_RCMD[DAT] is valid. In addition, if the efuse read went to the efuse banks (e.g.
+ * (ADDR/16) not [0,1,7] || EFUSE), software can read MIO_FUS_BNK_DAT() which contains all 128
+ * fuses in the bank associated in ADDR.  Fuses 1023..960 are not accessible if
+ * MIO_FUS_DAT2[DORM_CRYPTO] is enabled.
+ */
 union cvmx_mio_fus_rcmd {
 	uint64_t u64;
 	struct cvmx_mio_fus_rcmd_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_24_63:40;
-		uint64_t dat:8;
-		uint64_t reserved_13_15:3;
-		uint64_t pend:1;
-		uint64_t reserved_9_11:3;
-		uint64_t efuse:1;
-		uint64_t addr:8;
+	uint64_t reserved_24_63               : 40;
+	uint64_t dat                          : 8;  /**< 8 bits of fuse data. */
+	uint64_t reserved_13_15               : 3;
+	uint64_t pend                         : 1;  /**< Software sets this bit on a write to start FUSE read operation. Hardware clears when read
+                                                         is complete and the DAT is valid. */
+	uint64_t reserved_11_11               : 1;
+	uint64_t addr_hi                      : 2;  /**< Upper fuse address bits to extend space beyond 2k fuses. Valid range is 0x0-0x2. */
+	uint64_t efuse                        : 1;  /**< When set, return data from the efuse storage rather than the local storage. */
+	uint64_t addr                         : 8;  /**< The byte address of the fuse to read. */
 #else
-		uint64_t addr:8;
-		uint64_t efuse:1;
-		uint64_t reserved_9_11:3;
-		uint64_t pend:1;
-		uint64_t reserved_13_15:3;
-		uint64_t dat:8;
-		uint64_t reserved_24_63:40;
+	uint64_t addr                         : 8;
+	uint64_t efuse                        : 1;
+	uint64_t addr_hi                      : 2;
+	uint64_t reserved_11_11               : 1;
+	uint64_t pend                         : 1;
+	uint64_t reserved_13_15               : 3;
+	uint64_t dat                          : 8;
+	uint64_t reserved_24_63               : 40;
 #endif
 	} s;
 	struct cvmx_mio_fus_rcmd_cn30xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_24_63:40;
-		uint64_t dat:8;
-		uint64_t reserved_13_15:3;
-		uint64_t pend:1;
-		uint64_t reserved_9_11:3;
-		uint64_t efuse:1;
-		uint64_t reserved_7_7:1;
-		uint64_t addr:7;
+	uint64_t reserved_24_63               : 40;
+	uint64_t dat                          : 8;  /**< 8bits of fuse data */
+	uint64_t reserved_13_15               : 3;
+	uint64_t pend                         : 1;  /**< SW sets this bit on a write to start FUSE read
+                                                         operation.  HW clears when read is complete and
+                                                         the DAT is valid */
+	uint64_t reserved_9_11                : 3;
+	uint64_t efuse                        : 1;  /**< When set, return data from the efuse storage
+                                                         rather than the local storage for the 320 HW fuses */
+	uint64_t reserved_7_7                 : 1;
+	uint64_t addr                         : 7;  /**< The byte address of the fuse to read */
 #else
-		uint64_t addr:7;
-		uint64_t reserved_7_7:1;
-		uint64_t efuse:1;
-		uint64_t reserved_9_11:3;
-		uint64_t pend:1;
-		uint64_t reserved_13_15:3;
-		uint64_t dat:8;
-		uint64_t reserved_24_63:40;
+	uint64_t addr                         : 7;
+	uint64_t reserved_7_7                 : 1;
+	uint64_t efuse                        : 1;
+	uint64_t reserved_9_11                : 3;
+	uint64_t pend                         : 1;
+	uint64_t reserved_13_15               : 3;
+	uint64_t dat                          : 8;
+	uint64_t reserved_24_63               : 40;
 #endif
 	} cn30xx;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn31xx;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn38xx;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn38xxp2;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn50xx;
+	struct cvmx_mio_fus_rcmd_cn52xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_24_63               : 40;
+	uint64_t dat                          : 8;  /**< 8bits of fuse data */
+	uint64_t reserved_13_15               : 3;
+	uint64_t pend                         : 1;  /**< SW sets this bit on a write to start FUSE read
+                                                         operation.  HW clears when read is complete and
+                                                         the DAT is valid */
+	uint64_t reserved_9_11                : 3;
+	uint64_t efuse                        : 1;  /**< When set, return data from the efuse storage
+                                                         rather than the local storage for the 320 HW fuses */
+	uint64_t addr                         : 8;  /**< The byte address of the fuse to read */
+#else
+	uint64_t addr                         : 8;
+	uint64_t efuse                        : 1;
+	uint64_t reserved_9_11                : 3;
+	uint64_t pend                         : 1;
+	uint64_t reserved_13_15               : 3;
+	uint64_t dat                          : 8;
+	uint64_t reserved_24_63               : 40;
+#endif
+	} cn52xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn52xxp1;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn56xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn56xxp1;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn58xx;
+	struct cvmx_mio_fus_rcmd_cn30xx       cn58xxp1;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn61xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn63xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn63xxp1;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn66xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn68xx;
+	struct cvmx_mio_fus_rcmd_cn52xx       cn68xxp1;
+	struct cvmx_mio_fus_rcmd_s            cn70xx;
+	struct cvmx_mio_fus_rcmd_s            cn70xxp1;
+	struct cvmx_mio_fus_rcmd_s            cn73xx;
+	struct cvmx_mio_fus_rcmd_s            cn78xx;
+	struct cvmx_mio_fus_rcmd_s            cn78xxp1;
+	struct cvmx_mio_fus_rcmd_cn52xx       cnf71xx;
+	struct cvmx_mio_fus_rcmd_s            cnf75xx;
 };
+typedef union cvmx_mio_fus_rcmd cvmx_mio_fus_rcmd_t;
 
+/**
+ * cvmx_mio_fus_read_times
+ *
+ * IFB fuses are 0 to 1791. The reset values are for IFB fuses for PLL_REF_CLK up to 100MHz when
+ * core PLL is engaged. If any of the formulas below result in a value less than zero, the
+ * corresponding timing parameter should be set to zero.
+ *
+ * Prior to issuing a read to the fuse banks (via MIO_FUS_RCMD), this register should be written
+ * with the timing parameters that will be read.
+ * This register should not be written while MIO_FUS_RCMD[PEND] = 1.
+ */
 union cvmx_mio_fus_read_times {
 	uint64_t u64;
 	struct cvmx_mio_fus_read_times_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_26_63:38;
-		uint64_t sch:4;
-		uint64_t fsh:4;
-		uint64_t prh:4;
-		uint64_t sdh:4;
-		uint64_t setup:10;
+	uint64_t reserved_32_63               : 32;
+	uint64_t done                         : 4;  /**< Hold time of CSB, PGENB, and LOAD with respect to falling edge of STROBE for read and
+                                                         write mode in PLL_REF_CLK + 1 cycles. Timing specs are th_CS = 6ns, th_PG = 10ns, th_LD_p
+                                                         = 7ns. Default of 0x0 yields 20ns for a PLL_REF_CLK of 50 MHz, 10ns at 100MHz. */
+	uint64_t reserved_0_27                : 28;
 #else
-		uint64_t setup:10;
-		uint64_t sdh:4;
-		uint64_t prh:4;
-		uint64_t fsh:4;
-		uint64_t sch:4;
-		uint64_t reserved_26_63:38;
+	uint64_t reserved_0_27                : 28;
+	uint64_t done                         : 4;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
-};
+	struct cvmx_mio_fus_read_times_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_26_63               : 38;
+	uint64_t sch                          : 4;  /**< Hold CS for (SCH+1) refclks after FSET desserts
 
+                                                         SCH = (tSCH/refclk period)-1
+
+                                                         For IFB: tSCH = 160ns
+                                                         For L6G: tSCH =  10ns */
+	uint64_t fsh                          : 4;  /**< Hold FSET for (FSH+1) refclks after PRCHG deasserts
+
+                                                         FSH = (tFSH/refclk period)-1
+
+                                                         For IFB: tFSH = 160ns
+                                                         For L6G: tFSH =  10ns */
+	uint64_t prh                          : 4;  /**< Assert PRCHG (PRH+1) refclks after SIGDEV deasserts
+
+                                                         PRH = (tPRH/refclk period)-1
+
+                                                         For IFB: tPRH =  70ns
+                                                         For L6G: tPRH =  10ns */
+	uint64_t sdh                          : 4;  /**< Hold SIGDEV for (SDH+1) refclks after FSET asserts
+
+                                                         SDH = (tSDH/refclk period)-1
+
+                                                         For IFB: tPRH =  10ns
+                                                         For L6G: tPRH =  10ns */
+	uint64_t setup                        : 10; /**< Assert CS for (SETUP+1) refclks before asserting
+                                                         SIGDEV, FSET, or PRCHG
+
+                                                         SETUP=(tRDS/refclk period)-1
+
+                                                         For IFB: tRDS = 10000ns
+                                                         For L6G: tRDS = max(tSCS,tSDS,tPRS)
+                                                           where tSCS   = 10ns
+                                                                 tSDS   = 10ns
+                                                                 tPRS   = 10ns */
+#else
+	uint64_t setup                        : 10;
+	uint64_t sdh                          : 4;
+	uint64_t prh                          : 4;
+	uint64_t fsh                          : 4;
+	uint64_t sch                          : 4;
+	uint64_t reserved_26_63               : 38;
+#endif
+	} cn61xx;
+	struct cvmx_mio_fus_read_times_cn61xx cn63xx;
+	struct cvmx_mio_fus_read_times_cn61xx cn63xxp1;
+	struct cvmx_mio_fus_read_times_cn61xx cn66xx;
+	struct cvmx_mio_fus_read_times_cn61xx cn68xx;
+	struct cvmx_mio_fus_read_times_cn61xx cn68xxp1;
+	struct cvmx_mio_fus_read_times_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_32_63               : 32;
+	uint64_t done                         : 4;  /**< Hold time of CSB, PGENB, and LOAD with respect to falling edge of STROBE for read and
+                                                         write mode in PLL_REF_CLK + 1 cycles. Timing specs are th_CS = 6ns, th_PG = 10ns, th_LD_p
+                                                         = 7ns. Default of 0x0 yields 20ns for a PLL_REF_CLK of 50 MHz, 10ns at 100MHz. */
+	uint64_t ahd                          : 4;  /**< Hold time of A with respect to falling edge of STROBE for read and write modes in
+                                                         PLL_REF_CLK + 2 cycles. Timing spec of tsu_A_r and tsu_A_p is 3ns min. Default of 0x0
+                                                         yields 40ns for a PLL_REF_CLK of 50 MHz, 20ns at 100MHz. */
+	uint64_t wrstb_wh                     : 12; /**< Pulse width high of STROBE in write mode in PLL_REF_CLK + 1 cycles. Timing spec of
+                                                         twh_SB_p is 9.8us max. Default of 0x1F3 yields 10 us at PLL_REF_CLK of 50 MHz. */
+	uint64_t rdstb_wh                     : 4;  /**< Pulse width high of STROBE in read mode in PLL_REF_CLK + 1 cycles. Timing spec of twh_SB_p
+                                                         is 20ns min. Default of 0x1 yields 40 ns at PLL_REF_CLK of 50 MHz, 20ns at 100MHz. */
+	uint64_t asu                          : 4;  /**< Setup time of A to rising edge of STROBE for read and write modes in PLL_REF_CLK cycles.
+                                                         Timing spec of tsu_A_r and tsu_A_p is 12 ns min. Default of 0x1 yields 40 ns at
+                                                         PLL_REF_CLK of 50 MHz, 20ns at 100MHz. */
+	uint64_t setup                        : 4;  /**< Setup of CSB, PGENB, LOAD to rising edge of STROBE in read and write modes in PLL_REF_CLK
+                                                         + 1 cycles. tsu_CS = 16ns, tsu_PG = 14ns, tsu_LD_r = 10ns. Default of 0x0 yields 20 ns
+                                                         plus ASU cycles at PLL_REF_CLK of 50 MHz, 10ns + ASU at 100MHz. */
+#else
+	uint64_t setup                        : 4;
+	uint64_t asu                          : 4;
+	uint64_t rdstb_wh                     : 4;
+	uint64_t wrstb_wh                     : 12;
+	uint64_t ahd                          : 4;
+	uint64_t done                         : 4;
+	uint64_t reserved_32_63               : 32;
+#endif
+	} cn70xx;
+	struct cvmx_mio_fus_read_times_cn70xx cn70xxp1;
+	struct cvmx_mio_fus_read_times_cn70xx cn73xx;
+	struct cvmx_mio_fus_read_times_cn70xx cn78xx;
+	struct cvmx_mio_fus_read_times_cn70xx cn78xxp1;
+	struct cvmx_mio_fus_read_times_cn61xx cnf71xx;
+	struct cvmx_mio_fus_read_times_cn70xx cnf75xx;
+};
+typedef union cvmx_mio_fus_read_times cvmx_mio_fus_read_times_t;
+
+/**
+ * cvmx_mio_fus_repair_res0
+ */
 union cvmx_mio_fus_repair_res0 {
 	uint64_t u64;
 	struct cvmx_mio_fus_repair_res0_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_55_63:9;
-		uint64_t too_many:1;
-		uint64_t repair2:18;
-		uint64_t repair1:18;
-		uint64_t repair0:18;
+	uint64_t reserved_55_63               : 9;
+	uint64_t too_many                     : 1;  /**< Too many defects */
+	uint64_t repair2                      : 18; /**< BISR Results */
+	uint64_t repair1                      : 18; /**< BISR Results */
+	uint64_t repair0                      : 18; /**< BISR Results */
 #else
-		uint64_t repair0:18;
-		uint64_t repair1:18;
-		uint64_t repair2:18;
-		uint64_t too_many:1;
-		uint64_t reserved_55_63:9;
+	uint64_t repair0                      : 18;
+	uint64_t repair1                      : 18;
+	uint64_t repair2                      : 18;
+	uint64_t too_many                     : 1;
+	uint64_t reserved_55_63               : 9;
 #endif
 	} s;
+	struct cvmx_mio_fus_repair_res0_s     cn61xx;
+	struct cvmx_mio_fus_repair_res0_s     cn63xx;
+	struct cvmx_mio_fus_repair_res0_s     cn63xxp1;
+	struct cvmx_mio_fus_repair_res0_s     cn66xx;
+	struct cvmx_mio_fus_repair_res0_s     cn68xx;
+	struct cvmx_mio_fus_repair_res0_s     cn68xxp1;
+	struct cvmx_mio_fus_repair_res0_s     cnf71xx;
 };
+typedef union cvmx_mio_fus_repair_res0 cvmx_mio_fus_repair_res0_t;
 
+/**
+ * cvmx_mio_fus_repair_res1
+ */
 union cvmx_mio_fus_repair_res1 {
 	uint64_t u64;
 	struct cvmx_mio_fus_repair_res1_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_54_63:10;
-		uint64_t repair5:18;
-		uint64_t repair4:18;
-		uint64_t repair3:18;
+	uint64_t reserved_54_63               : 10;
+	uint64_t repair5                      : 18; /**< BISR Results */
+	uint64_t repair4                      : 18; /**< BISR Results */
+	uint64_t repair3                      : 18; /**< BISR Results */
 #else
-		uint64_t repair3:18;
-		uint64_t repair4:18;
-		uint64_t repair5:18;
-		uint64_t reserved_54_63:10;
+	uint64_t repair3                      : 18;
+	uint64_t repair4                      : 18;
+	uint64_t repair5                      : 18;
+	uint64_t reserved_54_63               : 10;
 #endif
 	} s;
+	struct cvmx_mio_fus_repair_res1_s     cn61xx;
+	struct cvmx_mio_fus_repair_res1_s     cn63xx;
+	struct cvmx_mio_fus_repair_res1_s     cn63xxp1;
+	struct cvmx_mio_fus_repair_res1_s     cn66xx;
+	struct cvmx_mio_fus_repair_res1_s     cn68xx;
+	struct cvmx_mio_fus_repair_res1_s     cn68xxp1;
+	struct cvmx_mio_fus_repair_res1_s     cnf71xx;
 };
+typedef union cvmx_mio_fus_repair_res1 cvmx_mio_fus_repair_res1_t;
 
+/**
+ * cvmx_mio_fus_repair_res2
+ */
 union cvmx_mio_fus_repair_res2 {
 	uint64_t u64;
 	struct cvmx_mio_fus_repair_res2_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_18_63:46;
-		uint64_t repair6:18;
+	uint64_t reserved_18_63               : 46;
+	uint64_t repair6                      : 18; /**< BISR Results */
 #else
-		uint64_t repair6:18;
-		uint64_t reserved_18_63:46;
+	uint64_t repair6                      : 18;
+	uint64_t reserved_18_63               : 46;
 #endif
 	} s;
+	struct cvmx_mio_fus_repair_res2_s     cn61xx;
+	struct cvmx_mio_fus_repair_res2_s     cn63xx;
+	struct cvmx_mio_fus_repair_res2_s     cn63xxp1;
+	struct cvmx_mio_fus_repair_res2_s     cn66xx;
+	struct cvmx_mio_fus_repair_res2_s     cn68xx;
+	struct cvmx_mio_fus_repair_res2_s     cn68xxp1;
+	struct cvmx_mio_fus_repair_res2_s     cnf71xx;
 };
+typedef union cvmx_mio_fus_repair_res2 cvmx_mio_fus_repair_res2_t;
 
+/**
+ * cvmx_mio_fus_rpr_dat#
+ */
+union cvmx_mio_fus_rpr_datx {
+	uint64_t u64;
+	struct cvmx_mio_fus_rpr_datx_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t dat                          : 64; /**< N/A */
+#else
+	uint64_t dat                          : 64;
+#endif
+	} s;
+	struct cvmx_mio_fus_rpr_datx_s        cn70xx;
+	struct cvmx_mio_fus_rpr_datx_s        cn70xxp1;
+	struct cvmx_mio_fus_rpr_datx_s        cn73xx;
+	struct cvmx_mio_fus_rpr_datx_s        cn78xx;
+	struct cvmx_mio_fus_rpr_datx_s        cn78xxp1;
+	struct cvmx_mio_fus_rpr_datx_s        cnf75xx;
+};
+typedef union cvmx_mio_fus_rpr_datx cvmx_mio_fus_rpr_datx_t;
+
+/**
+ * cvmx_mio_fus_soft_repair
+ */
+union cvmx_mio_fus_soft_repair {
+	uint64_t u64;
+	struct cvmx_mio_fus_soft_repair_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_20_63               : 44;
+	uint64_t rpr_flip_synd                : 2;  /**< N/A */
+	uint64_t autoblow                     : 1;  /**< N/A */
+	uint64_t too_many                     : 1;  /**< N/A */
+	uint64_t numdefects                   : 8;  /**< N/A */
+	uint64_t numrepairs                   : 8;  /**< N/A */
+#else
+	uint64_t numrepairs                   : 8;
+	uint64_t numdefects                   : 8;
+	uint64_t too_many                     : 1;
+	uint64_t autoblow                     : 1;
+	uint64_t rpr_flip_synd                : 2;
+	uint64_t reserved_20_63               : 44;
+#endif
+	} s;
+	struct cvmx_mio_fus_soft_repair_s     cn70xx;
+	struct cvmx_mio_fus_soft_repair_s     cn70xxp1;
+	struct cvmx_mio_fus_soft_repair_s     cn73xx;
+	struct cvmx_mio_fus_soft_repair_s     cn78xx;
+	struct cvmx_mio_fus_soft_repair_s     cn78xxp1;
+	struct cvmx_mio_fus_soft_repair_s     cnf75xx;
+};
+typedef union cvmx_mio_fus_soft_repair cvmx_mio_fus_soft_repair_t;
+
+/**
+ * cvmx_mio_fus_spr_repair_res
+ *
+ * DON'T PUT IN HRM*
+ *
+ */
 union cvmx_mio_fus_spr_repair_res {
 	uint64_t u64;
 	struct cvmx_mio_fus_spr_repair_res_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_42_63:22;
-		uint64_t repair2:14;
-		uint64_t repair1:14;
-		uint64_t repair0:14;
+	uint64_t reserved_42_63               : 22;
+	uint64_t repair2                      : 14; /**< Reserved (see  MIO_FUS_REPAIR_RES*) */
+	uint64_t repair1                      : 14; /**< Reserved (see  MIO_FUS_REPAIR_RES*) */
+	uint64_t repair0                      : 14; /**< Reserved (see  MIO_FUS_REPAIR_RES*) */
 #else
-		uint64_t repair0:14;
-		uint64_t repair1:14;
-		uint64_t repair2:14;
-		uint64_t reserved_42_63:22;
+	uint64_t repair0                      : 14;
+	uint64_t repair1                      : 14;
+	uint64_t repair2                      : 14;
+	uint64_t reserved_42_63               : 22;
 #endif
 	} s;
+	struct cvmx_mio_fus_spr_repair_res_s  cn30xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn31xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn38xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn50xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn52xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn52xxp1;
+	struct cvmx_mio_fus_spr_repair_res_s  cn56xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn56xxp1;
+	struct cvmx_mio_fus_spr_repair_res_s  cn58xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn58xxp1;
+	struct cvmx_mio_fus_spr_repair_res_s  cn61xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn63xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn63xxp1;
+	struct cvmx_mio_fus_spr_repair_res_s  cn66xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn68xx;
+	struct cvmx_mio_fus_spr_repair_res_s  cn68xxp1;
+	struct cvmx_mio_fus_spr_repair_res_s  cnf71xx;
 };
+typedef union cvmx_mio_fus_spr_repair_res cvmx_mio_fus_spr_repair_res_t;
 
+/**
+ * cvmx_mio_fus_spr_repair_sum
+ *
+ * DON'T PUT IN HRM*
+ *
+ */
 union cvmx_mio_fus_spr_repair_sum {
 	uint64_t u64;
 	struct cvmx_mio_fus_spr_repair_sum_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t too_many:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t too_many                     : 1;  /**< Reserved (see  MIO_FUS_REPAIR_RES*) */
 #else
-		uint64_t too_many:1;
-		uint64_t reserved_1_63:63;
+	uint64_t too_many                     : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn30xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn31xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn38xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn50xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn52xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn52xxp1;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn56xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn56xxp1;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn58xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn58xxp1;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn61xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn63xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn63xxp1;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn66xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn68xx;
+	struct cvmx_mio_fus_spr_repair_sum_s  cn68xxp1;
+	struct cvmx_mio_fus_spr_repair_sum_s  cnf71xx;
 };
+typedef union cvmx_mio_fus_spr_repair_sum cvmx_mio_fus_spr_repair_sum_t;
 
+/**
+ * cvmx_mio_fus_tgg
+ *
+ * This register exists to support Authentik. Authentik code should read this register, then
+ * clear VAL to prevent other software from observing the value of the TGG fuses.
+ */
 union cvmx_mio_fus_tgg {
 	uint64_t u64;
 	struct cvmx_mio_fus_tgg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t val:1;
-		uint64_t dat:63;
+	uint64_t val                          : 1;  /**< Software may write VAL to zero, but cannot write VAL to a one. When VAL is a 1, DAT reads
+                                                         the corresponding TGG fuses. When VAL is a zero, DAT reads as zeros. The reset value of
+                                                         this VAL bit is normally its fuse setting (i.e. TGG<63>). */
+	uint64_t dat                          : 63; /**< When VAL is clear, DAT will always read as zero, regardless of the value of the TGG<62:0>
+                                                         fuses. When VAL is set, DAT will return the value of the TGG<62:0> fuses. */
 #else
-		uint64_t dat:63;
-		uint64_t val:1;
+	uint64_t dat                          : 63;
+	uint64_t val                          : 1;
 #endif
 	} s;
+	struct cvmx_mio_fus_tgg_s             cn61xx;
+	struct cvmx_mio_fus_tgg_s             cn66xx;
+	struct cvmx_mio_fus_tgg_s             cn70xx;
+	struct cvmx_mio_fus_tgg_s             cn70xxp1;
+	struct cvmx_mio_fus_tgg_s             cn73xx;
+	struct cvmx_mio_fus_tgg_s             cn78xx;
+	struct cvmx_mio_fus_tgg_s             cn78xxp1;
+	struct cvmx_mio_fus_tgg_s             cnf71xx;
+	struct cvmx_mio_fus_tgg_s             cnf75xx;
 };
+typedef union cvmx_mio_fus_tgg cvmx_mio_fus_tgg_t;
 
+/**
+ * cvmx_mio_fus_unlock
+ */
 union cvmx_mio_fus_unlock {
 	uint64_t u64;
 	struct cvmx_mio_fus_unlock_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_24_63:40;
-		uint64_t key:24;
+	uint64_t reserved_24_63               : 40;
+	uint64_t key                          : 24; /**< When set to the typical value, allows SW to
+                                                         program the efuses */
 #else
-		uint64_t key:24;
-		uint64_t reserved_24_63:40;
+	uint64_t key                          : 24;
+	uint64_t reserved_24_63               : 40;
 #endif
 	} s;
+	struct cvmx_mio_fus_unlock_s          cn30xx;
+	struct cvmx_mio_fus_unlock_s          cn31xx;
 };
+typedef union cvmx_mio_fus_unlock cvmx_mio_fus_unlock_t;
 
+/**
+ * cvmx_mio_fus_wadr
+ */
 union cvmx_mio_fus_wadr {
 	uint64_t u64;
 	struct cvmx_mio_fus_wadr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t addr:10;
+	uint64_t reserved_10_63               : 54;
+	uint64_t addr                         : 10; /**< Indicates which of the banks of 128 fuses to blow. */
 #else
-		uint64_t addr:10;
-		uint64_t reserved_10_63:54;
+	uint64_t addr                         : 10;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} s;
+	struct cvmx_mio_fus_wadr_s            cn30xx;
+	struct cvmx_mio_fus_wadr_s            cn31xx;
+	struct cvmx_mio_fus_wadr_s            cn38xx;
+	struct cvmx_mio_fus_wadr_s            cn38xxp2;
 	struct cvmx_mio_fus_wadr_cn50xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t addr:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t addr                         : 2;  /**< Which of the four banks of 256 fuses to blow */
 #else
-		uint64_t addr:2;
-		uint64_t reserved_2_63:62;
+	uint64_t addr                         : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} cn50xx;
 	struct cvmx_mio_fus_wadr_cn52xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_3_63:61;
-		uint64_t addr:3;
+	uint64_t reserved_3_63                : 61;
+	uint64_t addr                         : 3;  /**< Which of the four banks of 256 fuses to blow */
 #else
-		uint64_t addr:3;
-		uint64_t reserved_3_63:61;
+	uint64_t addr                         : 3;
+	uint64_t reserved_3_63                : 61;
 #endif
 	} cn52xx;
+	struct cvmx_mio_fus_wadr_cn52xx       cn52xxp1;
+	struct cvmx_mio_fus_wadr_cn52xx       cn56xx;
+	struct cvmx_mio_fus_wadr_cn52xx       cn56xxp1;
+	struct cvmx_mio_fus_wadr_cn50xx       cn58xx;
+	struct cvmx_mio_fus_wadr_cn50xx       cn58xxp1;
 	struct cvmx_mio_fus_wadr_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_4_63:60;
-		uint64_t addr:4;
+	uint64_t reserved_4_63                : 60;
+	uint64_t addr                         : 4;  /**< Which of the banks of 128 fuses to blow */
 #else
-		uint64_t addr:4;
-		uint64_t reserved_4_63:60;
+	uint64_t addr                         : 4;
+	uint64_t reserved_4_63                : 60;
 #endif
 	} cn61xx;
+	struct cvmx_mio_fus_wadr_cn61xx       cn63xx;
+	struct cvmx_mio_fus_wadr_cn61xx       cn63xxp1;
+	struct cvmx_mio_fus_wadr_cn61xx       cn66xx;
+	struct cvmx_mio_fus_wadr_cn61xx       cn68xx;
+	struct cvmx_mio_fus_wadr_cn61xx       cn68xxp1;
+	struct cvmx_mio_fus_wadr_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_6_63                : 58;
+	uint64_t addr                         : 6;  /**< Indicates which of the banks of 128 fuses to blow. */
+#else
+	uint64_t addr                         : 6;
+	uint64_t reserved_6_63                : 58;
+#endif
+	} cn70xx;
+	struct cvmx_mio_fus_wadr_cn70xx       cn70xxp1;
+	struct cvmx_mio_fus_wadr_cn70xx       cn73xx;
+	struct cvmx_mio_fus_wadr_cn70xx       cn78xx;
+	struct cvmx_mio_fus_wadr_cn70xx       cn78xxp1;
+	struct cvmx_mio_fus_wadr_cn61xx       cnf71xx;
+	struct cvmx_mio_fus_wadr_cn70xx       cnf75xx;
 };
+typedef union cvmx_mio_fus_wadr cvmx_mio_fus_wadr_t;
 
+/**
+ * cvmx_mio_gpio_comp
+ *
+ * suggested values                          PCTL=6, NCTL=6 (50 ohm termination)
+ * PCTL=7, NCTL=7 (40 ohm termination)
+ * PCTL=4, NCTL=4 (75 ohm termination)
+ */
 union cvmx_mio_gpio_comp {
 	uint64_t u64;
 	struct cvmx_mio_gpio_comp_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t pctl:6;
-		uint64_t nctl:6;
+	uint64_t reserved_6_63                : 58;
+	uint64_t nctl                         : 6;  /**< GPIO bus NCTL */
 #else
-		uint64_t nctl:6;
-		uint64_t pctl:6;
-		uint64_t reserved_12_63:52;
+	uint64_t nctl                         : 6;
+	uint64_t reserved_6_63                : 58;
 #endif
 	} s;
+	struct cvmx_mio_gpio_comp_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_12_63               : 52;
+	uint64_t pctl                         : 6;  /**< GPIO bus PCTL */
+	uint64_t nctl                         : 6;  /**< GPIO bus NCTL */
+#else
+	uint64_t nctl                         : 6;
+	uint64_t pctl                         : 6;
+	uint64_t reserved_12_63               : 52;
+#endif
+	} cn61xx;
+	struct cvmx_mio_gpio_comp_cn61xx      cn63xx;
+	struct cvmx_mio_gpio_comp_cn61xx      cn63xxp1;
+	struct cvmx_mio_gpio_comp_cn61xx      cn66xx;
+	struct cvmx_mio_gpio_comp_cn61xx      cn68xx;
+	struct cvmx_mio_gpio_comp_cn61xx      cn68xxp1;
+	struct cvmx_mio_gpio_comp_cn70xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_11_63               : 53;
+	uint64_t pctl                         : 3;  /**< GPIO bus PCTL */
+	uint64_t reserved_3_7                 : 5;
+	uint64_t nctl                         : 3;  /**< GPIO bus NCTL */
+#else
+	uint64_t nctl                         : 3;
+	uint64_t reserved_3_7                 : 5;
+	uint64_t pctl                         : 3;
+	uint64_t reserved_11_63               : 53;
+#endif
+	} cn70xx;
+	struct cvmx_mio_gpio_comp_cn70xx      cn70xxp1;
+	struct cvmx_mio_gpio_comp_cn61xx      cnf71xx;
 };
+typedef union cvmx_mio_gpio_comp cvmx_mio_gpio_comp_t;
 
+/**
+ * cvmx_mio_ndf_dma_cfg
+ *
+ * SIZE is specified in number of 64 bit transfers (encoded in -1 notation).
+ * ADR must be 64 bit aligned.
+ */
 union cvmx_mio_ndf_dma_cfg {
 	uint64_t u64;
 	struct cvmx_mio_ndf_dma_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t en:1;
-		uint64_t rw:1;
-		uint64_t clr:1;
-		uint64_t reserved_60_60:1;
-		uint64_t swap32:1;
-		uint64_t swap16:1;
-		uint64_t swap8:1;
-		uint64_t endian:1;
-		uint64_t size:20;
-		uint64_t adr:36;
+	uint64_t en                           : 1;  /**< DMA Engine enable */
+	uint64_t rw                           : 1;  /**< DMA Engine R/W bit (0 = read, 1 = write) */
+	uint64_t clr                          : 1;  /**< DMA Engine clear EN on device terminated burst */
+	uint64_t reserved_60_60               : 1;
+	uint64_t swap32                       : 1;  /**< DMA Engine 32 bit swap */
+	uint64_t swap16                       : 1;  /**< DMA Engine 16 bit swap */
+	uint64_t swap8                        : 1;  /**< DMA Engine 8 bit swap */
+	uint64_t endian                       : 1;  /**< DMA Engine NCB endian mode (0 = big, 1 = little) */
+	uint64_t size                         : 20; /**< DMA Engine size */
+	uint64_t adr                          : 36; /**< DMA Engine address */
 #else
-		uint64_t adr:36;
-		uint64_t size:20;
-		uint64_t endian:1;
-		uint64_t swap8:1;
-		uint64_t swap16:1;
-		uint64_t swap32:1;
-		uint64_t reserved_60_60:1;
-		uint64_t clr:1;
-		uint64_t rw:1;
-		uint64_t en:1;
+	uint64_t adr                          : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_60               : 1;
+	uint64_t clr                          : 1;
+	uint64_t rw                           : 1;
+	uint64_t en                           : 1;
 #endif
 	} s;
+	struct cvmx_mio_ndf_dma_cfg_s         cn52xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn61xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn63xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn63xxp1;
+	struct cvmx_mio_ndf_dma_cfg_s         cn66xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn68xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn68xxp1;
+	struct cvmx_mio_ndf_dma_cfg_s         cn70xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn70xxp1;
+	struct cvmx_mio_ndf_dma_cfg_s         cnf71xx;
 };
+typedef union cvmx_mio_ndf_dma_cfg cvmx_mio_ndf_dma_cfg_t;
 
+/**
+ * cvmx_mio_ndf_dma_int
+ *
+ * MIO_NDF_DMA_INT = MIO NAND Flash DMA Interrupt Register
+ *
+ */
 union cvmx_mio_ndf_dma_int {
 	uint64_t u64;
 	struct cvmx_mio_ndf_dma_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t done:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t done                         : 1;  /**< DMA Engine request completion interrupt */
 #else
-		uint64_t done:1;
-		uint64_t reserved_1_63:63;
+	uint64_t done                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_ndf_dma_int_s         cn52xx;
+	struct cvmx_mio_ndf_dma_int_s         cn61xx;
+	struct cvmx_mio_ndf_dma_int_s         cn63xx;
+	struct cvmx_mio_ndf_dma_int_s         cn63xxp1;
+	struct cvmx_mio_ndf_dma_int_s         cn66xx;
+	struct cvmx_mio_ndf_dma_int_s         cn68xx;
+	struct cvmx_mio_ndf_dma_int_s         cn68xxp1;
+	struct cvmx_mio_ndf_dma_int_s         cn70xx;
+	struct cvmx_mio_ndf_dma_int_s         cn70xxp1;
+	struct cvmx_mio_ndf_dma_int_s         cnf71xx;
 };
+typedef union cvmx_mio_ndf_dma_int cvmx_mio_ndf_dma_int_t;
 
+/**
+ * cvmx_mio_ndf_dma_int_en
+ *
+ * MIO_NDF_DMA_INT_EN = MIO NAND Flash DMA Interrupt Enable Register
+ *
+ */
 union cvmx_mio_ndf_dma_int_en {
 	uint64_t u64;
 	struct cvmx_mio_ndf_dma_int_en_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t done:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t done                         : 1;  /**< DMA Engine request completion interrupt enable */
 #else
-		uint64_t done:1;
-		uint64_t reserved_1_63:63;
+	uint64_t done                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_ndf_dma_int_en_s      cn52xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn61xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn63xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn63xxp1;
+	struct cvmx_mio_ndf_dma_int_en_s      cn66xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn68xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn68xxp1;
+	struct cvmx_mio_ndf_dma_int_en_s      cn70xx;
+	struct cvmx_mio_ndf_dma_int_en_s      cn70xxp1;
+	struct cvmx_mio_ndf_dma_int_en_s      cnf71xx;
 };
+typedef union cvmx_mio_ndf_dma_int_en cvmx_mio_ndf_dma_int_en_t;
 
+/**
+ * cvmx_mio_pll_ctl
+ */
 union cvmx_mio_pll_ctl {
 	uint64_t u64;
 	struct cvmx_mio_pll_ctl_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_5_63:59;
-		uint64_t bw_ctl:5;
+	uint64_t reserved_5_63                : 59;
+	uint64_t bw_ctl                       : 5;  /**< Core PLL bandwidth control */
 #else
-		uint64_t bw_ctl:5;
-		uint64_t reserved_5_63:59;
+	uint64_t bw_ctl                       : 5;
+	uint64_t reserved_5_63                : 59;
 #endif
 	} s;
+	struct cvmx_mio_pll_ctl_s             cn30xx;
+	struct cvmx_mio_pll_ctl_s             cn31xx;
 };
+typedef union cvmx_mio_pll_ctl cvmx_mio_pll_ctl_t;
 
+/**
+ * cvmx_mio_pll_setting
+ */
 union cvmx_mio_pll_setting {
 	uint64_t u64;
 	struct cvmx_mio_pll_setting_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_17_63:47;
-		uint64_t setting:17;
+	uint64_t reserved_17_63               : 47;
+	uint64_t setting                      : 17; /**< Core PLL setting */
 #else
-		uint64_t setting:17;
-		uint64_t reserved_17_63:47;
+	uint64_t setting                      : 17;
+	uint64_t reserved_17_63               : 47;
 #endif
 	} s;
+	struct cvmx_mio_pll_setting_s         cn30xx;
+	struct cvmx_mio_pll_setting_s         cn31xx;
 };
+typedef union cvmx_mio_pll_setting cvmx_mio_pll_setting_t;
 
+/**
+ * cvmx_mio_ptp_ckout_hi_incr
+ *
+ * This register contains the PTP CKOUT threshold increment on pre-inverted PTP_CKOUT rising
+ * edge. See MIO_PTP_CKOUT_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_ckout_hi_incr {
 	uint64_t u64;
 	struct cvmx_mio_ptp_ckout_hi_incr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:32;
-		uint64_t frnanosec:32;
+	uint64_t nanosec                      : 32; /**< Nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t nanosec:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn61xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn66xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn68xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn70xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn70xxp1;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn73xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn78xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cn78xxp1;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cnf71xx;
+	struct cvmx_mio_ptp_ckout_hi_incr_s   cnf75xx;
 };
+typedef union cvmx_mio_ptp_ckout_hi_incr cvmx_mio_ptp_ckout_hi_incr_t;
 
+/**
+ * cvmx_mio_ptp_ckout_lo_incr
+ *
+ * This register contains the PTP CKOUT threshold increment on pre-inverted PTP_CKOUT falling
+ * edge. See MIO_PTP_CKOUT_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_ckout_lo_incr {
 	uint64_t u64;
 	struct cvmx_mio_ptp_ckout_lo_incr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:32;
-		uint64_t frnanosec:32;
+	uint64_t nanosec                      : 32; /**< Nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t nanosec:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn61xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn66xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn68xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn70xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn70xxp1;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn73xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn78xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cn78xxp1;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cnf71xx;
+	struct cvmx_mio_ptp_ckout_lo_incr_s   cnf75xx;
 };
+typedef union cvmx_mio_ptp_ckout_lo_incr cvmx_mio_ptp_ckout_lo_incr_t;
 
+/**
+ * cvmx_mio_ptp_ckout_thresh_hi
+ *
+ * This register contains the high bytes of the PTP CKOUT threshold.
+ * Writes to MIO_PTP_CKOUT_THRESH_HI also clear MIO_PTP_CKOUT_THRESH_LO; in order to update all
+ * 96 bits, writes MIO_PTP_CKOUT_THRESH_HI followed by MIO_PTP_CKOUT_THRESH_LO.
+ * This threshold [MIO_PTP_CKOUT_THRESH_HI,  MIO_PTP_CKOUT_THRESH_LO] is a rolling threshold that
+ * will be updated by hardware:
+ *   When current PTP_CKOUT before inversion (defined by MIO_PTP_CLOCK_CFG[CKOUT_INV]) is zero,
+ *   and [MIO_PTP_CLOCK_HI/LO] >= [MIO_PTP_CKOUT_THRESH_HI/LO], the pre-inverted PTP_CKOUT will
+ *   update to one, and [MIO_PTP_CKOUT_THRESH_HI/LO] will increment by MIO_PTP_CKOUT_HI_INCR.
+ *   When current PTP_CKOUT before inversion (defined by MIO_PTP_CLOCK_CFG[CKOUT_INV]) is one,
+ *   and [MIO_PTP_CLOCK_HI/LO] >= [MIO_PTP_CKOUT_THRESH_HI/LO], the pre-inverted PTP_CKOUT will
+ *   update to zero, and [MIO_PTP_CKOUT_THRESH_HI/LO] will increment by MIO_PTP_CKOUT_LO_INCR.
+ */
 union cvmx_mio_ptp_ckout_thresh_hi {
 	uint64_t u64;
 	struct cvmx_mio_ptp_ckout_thresh_hi_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64; /**< Nanoseconds. */
 #else
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64;
 #endif
 	} s;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn61xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn66xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn68xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn70xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn70xxp1;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn73xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn78xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cn78xxp1;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cnf71xx;
+	struct cvmx_mio_ptp_ckout_thresh_hi_s cnf75xx;
 };
+typedef union cvmx_mio_ptp_ckout_thresh_hi cvmx_mio_ptp_ckout_thresh_hi_t;
 
+/**
+ * cvmx_mio_ptp_ckout_thresh_lo
+ *
+ * This register contains the low bytes of the PTP CKOUT threshold,
+ * See MIO_PTP_CKOUT_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_ckout_thresh_lo {
 	uint64_t u64;
 	struct cvmx_mio_ptp_ckout_thresh_lo_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t frnanosec:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t reserved_32_63:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn61xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn66xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn68xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn70xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn70xxp1;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn73xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn78xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cn78xxp1;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cnf71xx;
+	struct cvmx_mio_ptp_ckout_thresh_lo_s cnf75xx;
 };
+typedef union cvmx_mio_ptp_ckout_thresh_lo cvmx_mio_ptp_ckout_thresh_lo_t;
 
+/**
+ * cvmx_mio_ptp_clock_cfg
+ *
+ * This register configures the timestamp architecture.
+ *
+ */
 union cvmx_mio_ptp_clock_cfg {
 	uint64_t u64;
 	struct cvmx_mio_ptp_clock_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_42_63:22;
-		uint64_t pps:1;
-		uint64_t ckout:1;
-		uint64_t ext_clk_edge:2;
-		uint64_t ckout_out4:1;
-		uint64_t pps_out:5;
-		uint64_t pps_inv:1;
-		uint64_t pps_en:1;
-		uint64_t ckout_out:4;
-		uint64_t ckout_inv:1;
-		uint64_t ckout_en:1;
-		uint64_t evcnt_in:6;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_en:1;
-		uint64_t tstmp_in:6;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t ext_clk_en:1;
-		uint64_t ptp_en:1;
+	uint64_t reserved_40_63               : 24;
+	uint64_t ext_clk_edge                 : 2;  /**< External clock input edge:
+                                                         0x0 = Rising edge.
+                                                         0x1 = Falling edge.
+                                                         0x2 = Both rising and falling edge.
+                                                         0x3 = Reserved. */
+	uint64_t ckout_out4                   : 1;  /**< Destination for PTP Clock Out output
+                                                         See CKOUT_OUT */
+	uint64_t pps_out                      : 5;  /**< Destination for PTP PPS output to GPIO
+                                                         0-19 : GPIO[PPS_OUT[4:0]]
+                                                         - 20:30: Reserved
+                                                         31   : Disabled
+                                                         This should be different from CKOUT_OUT */
+	uint64_t pps_inv                      : 1;  /**< Invert PTP PPS.
+                                                         0 = Don't invert.
+                                                         1 = Invert. */
+	uint64_t pps_en                       : 1;  /**< Enable PTP PPS. (For output pin selection see GPIO_BIT_CFG().) */
+	uint64_t ckout_out                    : 4;  /**< Destination for PTP Clock Out output to GPIO
+                                                         0-19 : GPIO[[CKOUT_OUT4,CKOUT_OUT[3:0]]]
+                                                         - 20:30: Reserved
+                                                         31   : Disabled
+                                                         This should be different from PPS_OUT */
+	uint64_t ckout_inv                    : 1;  /**< Invert PTP CKOUT.
+                                                         0 = Don't invert.
+                                                         1 = Invert. */
+	uint64_t ckout_en                     : 1;  /**< Enable PTP CKOUT. (For output pin selection see GPIO_BIT_CFG().) */
+	uint64_t evcnt_in                     : 6;  /**< Source for event counter input:
+                                                         Enumerated by MIO_PTP_EXT_SEL_E. */
+	uint64_t evcnt_edge                   : 1;  /**< Event counter input edge: 0 = falling edge, 1 = rising edge. */
+	uint64_t evcnt_en                     : 1;  /**< Enable event counter. */
+	uint64_t tstmp_in                     : 6;  /**< Source for timestamp input:
+                                                         Enumerated by MIO_PTP_EXT_SEL_E. */
+	uint64_t tstmp_edge                   : 1;  /**< External timestamp input edge: 0 = falling edge, 1 = rising edge. */
+	uint64_t tstmp_en                     : 1;  /**< Enable external timestamp. */
+	uint64_t ext_clk_in                   : 6;  /**< Source for external clock when [EXT_CLK_EN] is set:
+                                                         Enumerated by MIO_PTP_EXT_SEL_E. */
+	uint64_t ext_clk_en                   : 1;  /**< Use external clock for PTP clock. */
+	uint64_t ptp_en                       : 1;  /**< Enable PTP module. */
 #else
-		uint64_t ptp_en:1;
-		uint64_t ext_clk_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t tstmp_en:1;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_in:6;
-		uint64_t evcnt_en:1;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_in:6;
-		uint64_t ckout_en:1;
-		uint64_t ckout_inv:1;
-		uint64_t ckout_out:4;
-		uint64_t pps_en:1;
-		uint64_t pps_inv:1;
-		uint64_t pps_out:5;
-		uint64_t ckout_out4:1;
-		uint64_t ext_clk_edge:2;
-		uint64_t ckout:1;
-		uint64_t pps:1;
-		uint64_t reserved_42_63:22;
+	uint64_t ptp_en                       : 1;
+	uint64_t ext_clk_en                   : 1;
+	uint64_t ext_clk_in                   : 6;
+	uint64_t tstmp_en                     : 1;
+	uint64_t tstmp_edge                   : 1;
+	uint64_t tstmp_in                     : 6;
+	uint64_t evcnt_en                     : 1;
+	uint64_t evcnt_edge                   : 1;
+	uint64_t evcnt_in                     : 6;
+	uint64_t ckout_en                     : 1;
+	uint64_t ckout_inv                    : 1;
+	uint64_t ckout_out                    : 4;
+	uint64_t pps_en                       : 1;
+	uint64_t pps_inv                      : 1;
+	uint64_t pps_out                      : 5;
+	uint64_t ckout_out4                   : 1;
+	uint64_t ext_clk_edge                 : 2;
+	uint64_t reserved_40_63               : 24;
 #endif
 	} s;
+	struct cvmx_mio_ptp_clock_cfg_cn61xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_42_63               : 22;
+	uint64_t pps                          : 1;  /**< PTP PPS Output
+                                                         reflects ptp__pps after PPS_INV inverter */
+	uint64_t ckout                        : 1;  /**< PTP Clock Output
+                                                         reflects ptp__ckout after CKOUT_INV inverter */
+	uint64_t ext_clk_edge                 : 2;  /**< External Clock input edge
+                                                         00 = rising edge
+                                                         01 = falling edge
+                                                         10 = both rising & falling edge
+                                                         11 = reserved */
+	uint64_t ckout_out4                   : 1;  /**< Destination for PTP Clock Out output
+                                                         0-19 : GPIO[[CKOUT_OUT4,CKOUT_OUT[3:0]]]
+                                                         This should be different from PPS_OUT */
+	uint64_t pps_out                      : 5;  /**< Destination for PTP PPS output
+                                                         0-19 : GPIO[PPS_OUT[4:0]]
+                                                         This should be different from CKOUT_OUT */
+	uint64_t pps_inv                      : 1;  /**< Invert PTP PPS
+                                                         0 = don't invert
+                                                         1 = invert */
+	uint64_t pps_en                       : 1;  /**< Enable PTP PPS */
+	uint64_t ckout_out                    : 4;  /**< Destination for PTP Clock Out output
+                                                         0-19 : GPIO[[CKOUT_OUT4,CKOUT_OUT[3:0]]]
+                                                         This should be different from PPS_OUT */
+	uint64_t ckout_inv                    : 1;  /**< Invert PTP Clock Out
+                                                         0 = don't invert
+                                                         1 = invert */
+	uint64_t ckout_en                     : 1;  /**< Enable PTP Clock Out */
+	uint64_t evcnt_in                     : 6;  /**< Source for event counter input
+                                                         0x00-0x0f : GPIO[EVCNT_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : QLM0_REF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t evcnt_edge                   : 1;  /**< Event counter input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t evcnt_en                     : 1;  /**< Enable event counter */
+	uint64_t tstmp_in                     : 6;  /**< Source for timestamp input
+                                                         0x00-0x0f : GPIO[TSTMP_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : QLM0_REF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t tstmp_edge                   : 1;  /**< External timestamp input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t tstmp_en                     : 1;  /**< Enable external timestamp */
+	uint64_t ext_clk_in                   : 6;  /**< Source for external clock
+                                                         0x00-0x0f : GPIO[EXT_CLK_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : QLM0_EF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t ext_clk_en                   : 1;  /**< Use external clock */
+	uint64_t ptp_en                       : 1;  /**< Enable PTP Module */
+#else
+	uint64_t ptp_en                       : 1;
+	uint64_t ext_clk_en                   : 1;
+	uint64_t ext_clk_in                   : 6;
+	uint64_t tstmp_en                     : 1;
+	uint64_t tstmp_edge                   : 1;
+	uint64_t tstmp_in                     : 6;
+	uint64_t evcnt_en                     : 1;
+	uint64_t evcnt_edge                   : 1;
+	uint64_t evcnt_in                     : 6;
+	uint64_t ckout_en                     : 1;
+	uint64_t ckout_inv                    : 1;
+	uint64_t ckout_out                    : 4;
+	uint64_t pps_en                       : 1;
+	uint64_t pps_inv                      : 1;
+	uint64_t pps_out                      : 5;
+	uint64_t ckout_out4                   : 1;
+	uint64_t ext_clk_edge                 : 2;
+	uint64_t ckout                        : 1;
+	uint64_t pps                          : 1;
+	uint64_t reserved_42_63               : 22;
+#endif
+	} cn61xx;
 	struct cvmx_mio_ptp_clock_cfg_cn63xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_24_63:40;
-		uint64_t evcnt_in:6;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_en:1;
-		uint64_t tstmp_in:6;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t ext_clk_en:1;
-		uint64_t ptp_en:1;
+	uint64_t reserved_24_63               : 40;
+	uint64_t evcnt_in                     : 6;  /**< Source for event counter input
+                                                         0x00-0x0f : GPIO[EVCNT_IN[3:0]]
+                                                         0x10      : QLM0_REF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x3f : Reserved */
+	uint64_t evcnt_edge                   : 1;  /**< Event counter input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t evcnt_en                     : 1;  /**< Enable event counter */
+	uint64_t tstmp_in                     : 6;  /**< Source for timestamp input
+                                                         0x00-0x0f : GPIO[TSTMP_IN[3:0]]
+                                                         0x10      : QLM0_REF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x3f : Reserved */
+	uint64_t tstmp_edge                   : 1;  /**< External timestamp input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t tstmp_en                     : 1;  /**< Enable external timestamp */
+	uint64_t ext_clk_in                   : 6;  /**< Source for external clock
+                                                         0x00-0x0f : GPIO[EXT_CLK_IN[3:0]]
+                                                         0x10      : QLM0_REF_CLK
+                                                         0x11      : QLM1_REF_CLK
+                                                         0x12      : QLM2_REF_CLK
+                                                         0x13-0x3f : Reserved */
+	uint64_t ext_clk_en                   : 1;  /**< Use positive edge of external clock */
+	uint64_t ptp_en                       : 1;  /**< Enable PTP Module */
 #else
-		uint64_t ptp_en:1;
-		uint64_t ext_clk_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t tstmp_en:1;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_in:6;
-		uint64_t evcnt_en:1;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_in:6;
-		uint64_t reserved_24_63:40;
+	uint64_t ptp_en                       : 1;
+	uint64_t ext_clk_en                   : 1;
+	uint64_t ext_clk_in                   : 6;
+	uint64_t tstmp_en                     : 1;
+	uint64_t tstmp_edge                   : 1;
+	uint64_t tstmp_in                     : 6;
+	uint64_t evcnt_en                     : 1;
+	uint64_t evcnt_edge                   : 1;
+	uint64_t evcnt_in                     : 6;
+	uint64_t reserved_24_63               : 40;
 #endif
 	} cn63xx;
-	struct cvmx_mio_ptp_clock_cfg_cn66xx {
+	struct cvmx_mio_ptp_clock_cfg_cn63xx  cn63xxp1;
+	struct cvmx_mio_ptp_clock_cfg_s       cn66xx;
+	struct cvmx_mio_ptp_clock_cfg_cn61xx  cn68xx;
+	struct cvmx_mio_ptp_clock_cfg_cn63xx  cn68xxp1;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_40_63:24;
-		uint64_t ext_clk_edge:2;
-		uint64_t ckout_out4:1;
-		uint64_t pps_out:5;
-		uint64_t pps_inv:1;
-		uint64_t pps_en:1;
-		uint64_t ckout_out:4;
-		uint64_t ckout_inv:1;
-		uint64_t ckout_en:1;
-		uint64_t evcnt_in:6;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_en:1;
-		uint64_t tstmp_in:6;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t ext_clk_en:1;
-		uint64_t ptp_en:1;
+	uint64_t reserved_42_63               : 22;
+	uint64_t ckout                        : 1;  /**< PTP CKOUT output
+                                                         reflects ptp__ckout after CKOUT_INV inverter */
+	uint64_t pps                          : 1;  /**< PTP PPS Output
+                                                         reflects ptp__pps after PPS_INV inverter */
+	uint64_t ext_clk_edge                 : 2;  /**< External Clock input edge
+                                                         00 = rising edge
+                                                         01 = falling edge
+                                                         10 = both rising & falling edge
+                                                         11 = reserved */
+	uint64_t reserved_32_37               : 6;
+	uint64_t pps_inv                      : 1;  /**< Invert PTP PPS
+                                                         0 = don't invert
+                                                         1 = invert */
+	uint64_t pps_en                       : 1;  /**< Enable PTP PPS */
+	uint64_t reserved_26_29               : 4;
+	uint64_t ckout_inv                    : 1;  /**< Invert PTP CKOUT
+                                                         0 = don't invert
+                                                         1 = invert */
+	uint64_t ckout_en                     : 1;  /**< Enable PTP CKOUT */
+	uint64_t evcnt_in                     : 6;  /**< Source for event counter input
+                                                         0x00-0x0f : GPIO[EVCNT_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : DLM0_REF_CLK
+                                                         0x11      : DLM1_REF_CLK
+                                                         0x12      : DLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t evcnt_edge                   : 1;  /**< Event counter input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t evcnt_en                     : 1;  /**< Enable event counter */
+	uint64_t tstmp_in                     : 6;  /**< Source for timestamp input
+                                                         0x00-0x0f : GPIO[TSTMP_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : DLM0_REF_CLK
+                                                         0x11      : DLM1_REF_CLK
+                                                         0x12      : DLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t tstmp_edge                   : 1;  /**< External timestamp input edge
+                                                         0 = falling edge
+                                                         1 = rising edge */
+	uint64_t tstmp_en                     : 1;  /**< Enable external timestamp */
+	uint64_t ext_clk_in                   : 6;  /**< Source for external clock
+                                                         0x00-0x0f : GPIO[EXT_CLK_IN[3:0]]
+                                                         0x20      : GPIO[16]
+                                                         0x21      : GPIO[17]
+                                                         0x22      : GPIO[18]
+                                                         0x23      : GPIO[19]
+                                                         0x10      : DLM0_REF_CLK
+                                                         0x11      : DLM1_REF_CLK
+                                                         0x12      : DLM2_REF_CLK
+                                                         0x13-0x1f : Reserved
+                                                         0x24-0x3f : Reserved */
+	uint64_t ext_clk_en                   : 1;  /**< Use external clock */
+	uint64_t ptp_en                       : 1;  /**< Enable PTP Module */
 #else
-		uint64_t ptp_en:1;
-		uint64_t ext_clk_en:1;
-		uint64_t ext_clk_in:6;
-		uint64_t tstmp_en:1;
-		uint64_t tstmp_edge:1;
-		uint64_t tstmp_in:6;
-		uint64_t evcnt_en:1;
-		uint64_t evcnt_edge:1;
-		uint64_t evcnt_in:6;
-		uint64_t ckout_en:1;
-		uint64_t ckout_inv:1;
-		uint64_t ckout_out:4;
-		uint64_t pps_en:1;
-		uint64_t pps_inv:1;
-		uint64_t pps_out:5;
-		uint64_t ckout_out4:1;
-		uint64_t ext_clk_edge:2;
-		uint64_t reserved_40_63:24;
+	uint64_t ptp_en                       : 1;
+	uint64_t ext_clk_en                   : 1;
+	uint64_t ext_clk_in                   : 6;
+	uint64_t tstmp_en                     : 1;
+	uint64_t tstmp_edge                   : 1;
+	uint64_t tstmp_in                     : 6;
+	uint64_t evcnt_en                     : 1;
+	uint64_t evcnt_edge                   : 1;
+	uint64_t evcnt_in                     : 6;
+	uint64_t ckout_en                     : 1;
+	uint64_t ckout_inv                    : 1;
+	uint64_t reserved_26_29               : 4;
+	uint64_t pps_en                       : 1;
+	uint64_t pps_inv                      : 1;
+	uint64_t reserved_32_37               : 6;
+	uint64_t ext_clk_edge                 : 2;
+	uint64_t pps                          : 1;
+	uint64_t ckout                        : 1;
+	uint64_t reserved_42_63               : 22;
 #endif
-	} cn66xx;
+	} cn70xx;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx  cn70xxp1;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx  cn73xx;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx  cn78xx;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx  cn78xxp1;
+	struct cvmx_mio_ptp_clock_cfg_cn61xx  cnf71xx;
+	struct cvmx_mio_ptp_clock_cfg_cn70xx  cnf75xx;
 };
+typedef union cvmx_mio_ptp_clock_cfg cvmx_mio_ptp_clock_cfg_t;
 
+/**
+ * cvmx_mio_ptp_clock_comp
+ *
+ * This register provides the amount to increment the PTP clock [MIO_PTP_CLOCK_HI,
+ * MIO_PTP_CLOCK_LO]
+ * on PTP events defined by MIO_PTP_CLOCK_CFG[EXT_CLK_EN/EXT_CLK_IN/EXT_CLK_EDGE].
+ * MIO_PTP_CLOCK_CFG[PTP_EN] needs to be enabled before writing this register.
+ */
 union cvmx_mio_ptp_clock_comp {
 	uint64_t u64;
 	struct cvmx_mio_ptp_clock_comp_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:32;
-		uint64_t frnanosec:32;
+	uint64_t nanosec                      : 32; /**< Compensation value in nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t nanosec:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_clock_comp_s      cn61xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn63xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn63xxp1;
+	struct cvmx_mio_ptp_clock_comp_s      cn66xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn68xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn68xxp1;
+	struct cvmx_mio_ptp_clock_comp_s      cn70xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn70xxp1;
+	struct cvmx_mio_ptp_clock_comp_s      cn73xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn78xx;
+	struct cvmx_mio_ptp_clock_comp_s      cn78xxp1;
+	struct cvmx_mio_ptp_clock_comp_s      cnf71xx;
+	struct cvmx_mio_ptp_clock_comp_s      cnf75xx;
 };
+typedef union cvmx_mio_ptp_clock_comp cvmx_mio_ptp_clock_comp_t;
 
+/**
+ * cvmx_mio_ptp_clock_hi
+ *
+ * This register provides bits <95:32> of the PTP clock. Writes to MIO_PTP_CLOCK_HI also clear
+ * MIO_PTP_CLOCK_LO. To update all 96 bits, write MIO_PTP_CLOCK_HI followed by MIO_PTP_CLOCK_LO.
+ * MIO_PTP_CLOCK_CFG[PTP_EN] needs to be enabled before writing this register.
+ */
 union cvmx_mio_ptp_clock_hi {
 	uint64_t u64;
 	struct cvmx_mio_ptp_clock_hi_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64; /**< Clock value in nanoseconds. Bits<95:32> of the PTP clock. */
 #else
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64;
 #endif
 	} s;
+	struct cvmx_mio_ptp_clock_hi_s        cn61xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn63xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn63xxp1;
+	struct cvmx_mio_ptp_clock_hi_s        cn66xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn68xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn68xxp1;
+	struct cvmx_mio_ptp_clock_hi_s        cn70xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn70xxp1;
+	struct cvmx_mio_ptp_clock_hi_s        cn73xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn78xx;
+	struct cvmx_mio_ptp_clock_hi_s        cn78xxp1;
+	struct cvmx_mio_ptp_clock_hi_s        cnf71xx;
+	struct cvmx_mio_ptp_clock_hi_s        cnf75xx;
 };
+typedef union cvmx_mio_ptp_clock_hi cvmx_mio_ptp_clock_hi_t;
 
+/**
+ * cvmx_mio_ptp_clock_lo
+ *
+ * This register provides bits <31:0> of the PTP clock.  MIO_PTP_CLOCK_CFG[PTP_EN] needs to be
+ * enabled before writing this register.
+ */
 union cvmx_mio_ptp_clock_lo {
 	uint64_t u64;
 	struct cvmx_mio_ptp_clock_lo_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t frnanosec:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. Bits<31:0> of the PTP clock. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t reserved_32_63:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_clock_lo_s        cn61xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn63xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn63xxp1;
+	struct cvmx_mio_ptp_clock_lo_s        cn66xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn68xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn68xxp1;
+	struct cvmx_mio_ptp_clock_lo_s        cn70xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn70xxp1;
+	struct cvmx_mio_ptp_clock_lo_s        cn73xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn78xx;
+	struct cvmx_mio_ptp_clock_lo_s        cn78xxp1;
+	struct cvmx_mio_ptp_clock_lo_s        cnf71xx;
+	struct cvmx_mio_ptp_clock_lo_s        cnf75xx;
 };
+typedef union cvmx_mio_ptp_clock_lo cvmx_mio_ptp_clock_lo_t;
 
+/**
+ * cvmx_mio_ptp_dpll_err_int
+ *
+ * This register contains the Digital PLL error event interrupt.
+ *
+ */
+union cvmx_mio_ptp_dpll_err_int {
+	uint64_t u64;
+	struct cvmx_mio_ptp_dpll_err_int_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t n_sclk                       : 32; /**< Latest number of coprocessor clocks in one external reference signal compensation period
+                                                         (MIO_PTP_CLOCK_COMP). */
+	uint64_t reserved_2_31                : 30;
+	uint64_t dpll_int_w1s                 : 1;  /**< Reads or sets [DPLL_INT]. */
+	uint64_t dpll_int                     : 1;  /**< Digital PLL error. Throws MIO_PTP_INTSN_E::MIO_PTP_DPLL_INT. */
+#else
+	uint64_t dpll_int                     : 1;
+	uint64_t dpll_int_w1s                 : 1;
+	uint64_t reserved_2_31                : 30;
+	uint64_t n_sclk                       : 32;
+#endif
+	} s;
+	struct cvmx_mio_ptp_dpll_err_int_s    cn73xx;
+	struct cvmx_mio_ptp_dpll_err_int_s    cn78xx;
+	struct cvmx_mio_ptp_dpll_err_int_cn78xxp1 {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t n_sclk                       : 32; /**< Latest number of coprocessor clocks in one external reference signal compensation period
+                                                         (MIO_PTP_CLOCK_COMP). */
+	uint64_t reserved_1_31                : 31;
+	uint64_t dpll_int                     : 1;  /**< Digital PLL error. Throws MIO_PTP_INTSN_E::MIO_PTP_DPLL_INT. */
+#else
+	uint64_t dpll_int                     : 1;
+	uint64_t reserved_1_31                : 31;
+	uint64_t n_sclk                       : 32;
+#endif
+	} cn78xxp1;
+	struct cvmx_mio_ptp_dpll_err_int_s    cnf75xx;
+};
+typedef union cvmx_mio_ptp_dpll_err_int cvmx_mio_ptp_dpll_err_int_t;
+
+/**
+ * cvmx_mio_ptp_dpll_err_thresh
+ *
+ * This register configures the digital PLL error interrupt.
+ *
+ */
+union cvmx_mio_ptp_dpll_err_thresh {
+	uint64_t u64;
+	struct cvmx_mio_ptp_dpll_err_thresh_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t max                          : 32; /**< Highest acceptable value of MIO_PTP_DPLL_ERR_INT[N_SCLK] without asserting
+                                                         MIO_PTP_INT[DPLL_INT] interrupt. */
+	uint64_t min                          : 32; /**< Lowest acceptable value of MIO_PTP_DPLL_ERR_INT[N_SCLK] without asserting
+                                                         MIO_PTP_INT[DPLL_INT] interrupt. */
+#else
+	uint64_t min                          : 32;
+	uint64_t max                          : 32;
+#endif
+	} s;
+	struct cvmx_mio_ptp_dpll_err_thresh_s cn73xx;
+	struct cvmx_mio_ptp_dpll_err_thresh_s cn78xx;
+	struct cvmx_mio_ptp_dpll_err_thresh_s cn78xxp1;
+	struct cvmx_mio_ptp_dpll_err_thresh_s cnf75xx;
+};
+typedef union cvmx_mio_ptp_dpll_err_thresh cvmx_mio_ptp_dpll_err_thresh_t;
+
+/**
+ * cvmx_mio_ptp_dpll_incr
+ *
+ * This register contains the digital PLL increment on each coprocessor clock rising edge.
+ * Zero disables the digital PLL.
+ */
+union cvmx_mio_ptp_dpll_incr {
+	uint64_t u64;
+	struct cvmx_mio_ptp_dpll_incr_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t nanosec                      : 32; /**< Nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
+#else
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
+#endif
+	} s;
+	struct cvmx_mio_ptp_dpll_incr_s       cn73xx;
+	struct cvmx_mio_ptp_dpll_incr_s       cn78xx;
+	struct cvmx_mio_ptp_dpll_incr_s       cn78xxp1;
+	struct cvmx_mio_ptp_dpll_incr_s       cnf75xx;
+};
+typedef union cvmx_mio_ptp_dpll_incr cvmx_mio_ptp_dpll_incr_t;
+
+/**
+ * cvmx_mio_ptp_evt_cnt
+ *
+ * This register contains the PTP event counter.
+ *
+ */
 union cvmx_mio_ptp_evt_cnt {
 	uint64_t u64;
 	struct cvmx_mio_ptp_evt_cnt_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t cntr:64;
+	uint64_t cntr                         : 64; /**< PTP event counter. Writing to this register increments this register by the value of the
+                                                         write data. The register counts down by 1 for every MIO_PTP_CLOCK_CFG[EVCNT_EDGE] edge of
+                                                         MIO_PTP_CLOCK_CFG[EVCNT_IN]. When this register equals 0, an interrupt is generated.
+                                                         When this register equals 0 and PTP Event still enabled (MIO_PTP_CLOCK_CFG[EVCNT_EN]),
+                                                         the counter will rollover to negative to continue counting down whenever new event comes. */
 #else
-		uint64_t cntr:64;
+	uint64_t cntr                         : 64;
 #endif
 	} s;
+	struct cvmx_mio_ptp_evt_cnt_s         cn61xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn63xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn63xxp1;
+	struct cvmx_mio_ptp_evt_cnt_s         cn66xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn68xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn68xxp1;
+	struct cvmx_mio_ptp_evt_cnt_s         cn70xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn70xxp1;
+	struct cvmx_mio_ptp_evt_cnt_s         cn73xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn78xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cn78xxp1;
+	struct cvmx_mio_ptp_evt_cnt_s         cnf71xx;
+	struct cvmx_mio_ptp_evt_cnt_s         cnf75xx;
 };
+typedef union cvmx_mio_ptp_evt_cnt cvmx_mio_ptp_evt_cnt_t;
 
+/**
+ * cvmx_mio_ptp_evt_int
+ *
+ * This register contains the PTP event interrupt. See MIO_PTP_EVT_CNT for details.
+ *
+ */
+union cvmx_mio_ptp_evt_int {
+	uint64_t u64;
+	struct cvmx_mio_ptp_evt_int_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_2_63                : 62;
+	uint64_t evt_int_w1s                  : 1;  /**< Reads or sets [EVT_INT]. */
+	uint64_t evt_int                      : 1;  /**< PTP event observed. Throws MIO_PTP_INTSN_E::MIO_PTP_EVT_INT. */
+#else
+	uint64_t evt_int                      : 1;
+	uint64_t evt_int_w1s                  : 1;
+	uint64_t reserved_2_63                : 62;
+#endif
+	} s;
+	struct cvmx_mio_ptp_evt_int_s         cn73xx;
+	struct cvmx_mio_ptp_evt_int_s         cn78xx;
+	struct cvmx_mio_ptp_evt_int_cn78xxp1 {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_1_63                : 63;
+	uint64_t evt_int                      : 1;  /**< PTP event observed. Throws MIO_PTP_INTSN_E::MIO_PTP_EVT_INT. */
+#else
+	uint64_t evt_int                      : 1;
+	uint64_t reserved_1_63                : 63;
+#endif
+	} cn78xxp1;
+	struct cvmx_mio_ptp_evt_int_s         cnf75xx;
+};
+typedef union cvmx_mio_ptp_evt_int cvmx_mio_ptp_evt_int_t;
+
+/**
+ * cvmx_mio_ptp_phy_1pps_in
+ *
+ * MIO_PTP_PHY_1PPS_IN = PHY 1PPS input mux selection
+ *
+ */
 union cvmx_mio_ptp_phy_1pps_in {
 	uint64_t u64;
 	struct cvmx_mio_ptp_phy_1pps_in_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_5_63:59;
-		uint64_t sel:5;
+	uint64_t reserved_5_63                : 59;
+	uint64_t sel                          : 5;  /**< Source for PHY 1pps input signal
+                                                         0-19 : GPIO[SEL[4:0]], for AGPS_1PPS
+                                                         24   : PPS_OUT (Enabled by PPS_EN and PPS_INV,
+                                                                reflects ptp_pps after PPS_INV inverter)
+                                                         - 20-23: Reserved
+                                                         - 25-30: Reserved
+                                                         31   : Disabled */
 #else
-		uint64_t sel:5;
-		uint64_t reserved_5_63:59;
+	uint64_t sel                          : 5;
+	uint64_t reserved_5_63                : 59;
 #endif
 	} s;
+	struct cvmx_mio_ptp_phy_1pps_in_s     cnf71xx;
 };
+typedef union cvmx_mio_ptp_phy_1pps_in cvmx_mio_ptp_phy_1pps_in_t;
 
+/**
+ * cvmx_mio_ptp_pps_hi_incr
+ *
+ * This register contains the PTP PPS threshold increment on pre-inverted PTP_PPS rising edge.
+ * See MIO_PTP_PPS_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_pps_hi_incr {
 	uint64_t u64;
 	struct cvmx_mio_ptp_pps_hi_incr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:32;
-		uint64_t frnanosec:32;
+	uint64_t nanosec                      : 32; /**< Nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t nanosec:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn61xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn66xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn68xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn70xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn70xxp1;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn73xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn78xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cn78xxp1;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cnf71xx;
+	struct cvmx_mio_ptp_pps_hi_incr_s     cnf75xx;
 };
+typedef union cvmx_mio_ptp_pps_hi_incr cvmx_mio_ptp_pps_hi_incr_t;
 
+/**
+ * cvmx_mio_ptp_pps_lo_incr
+ *
+ * This register contains the PTP PPS threshold increment on pre-inverted PTP_PPS falling edge.
+ * See MIO_PTP_PPS_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_pps_lo_incr {
 	uint64_t u64;
 	struct cvmx_mio_ptp_pps_lo_incr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:32;
-		uint64_t frnanosec:32;
+	uint64_t nanosec                      : 32; /**< Nanoseconds. */
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t nanosec:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t nanosec                      : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn61xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn66xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn68xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn70xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn70xxp1;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn73xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn78xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cn78xxp1;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cnf71xx;
+	struct cvmx_mio_ptp_pps_lo_incr_s     cnf75xx;
 };
+typedef union cvmx_mio_ptp_pps_lo_incr cvmx_mio_ptp_pps_lo_incr_t;
 
+/**
+ * cvmx_mio_ptp_pps_thresh_hi
+ *
+ * This register contains the high bytes of the PTP PPS threshold.
+ * Writes to MIO_PTP_PPS_THRESH_HI also clear MIO_PTP_PPS_THRESH_LO; in order to update all 96
+ * bits, writes MIO_PTP_PPS_THRESH_HI followed by MIO_PTP_PPS_THRESH_LO.
+ * This threshold [MIO_PTP_PPS_THRESH_HI,  MIO_PTP_PPS_THRESH_LO]  is a rolling threshold that
+ * will be updated by hardware:
+ *   When current PTP_PPS before inversion (defined by MIO_PTP_CLOCK_CFG[PPS_INV]) is zero,
+ *   and [MIO_PTP_CLOCK_HI/LO] >=  [MIO_PTP_PPS_THRESH_HI/LO], the pre-inverted PTP_PPS will
+ *   update to one, and [MIO_PTP_PPS_THRESH_HI/LO] will increment by MIO_PTP_PPS_HI_INCR.
+ *   When current PTP_PPS before inversion (defined by MIO_PTP_CLOCK_CFG[PPS_INV]) is one,
+ *   and [MIO_PTP_CLOCK_HI/LO] >=  [MIO_PTP_PPS_THRESH_HI/LO], the pre-inverted PTP_PPS will
+ *   update to zero, and [MIO_PTP_PPS_THRESH_HI/LO] will increment by MIO_PTP_PPS_LO_INCR.
+ */
 union cvmx_mio_ptp_pps_thresh_hi {
 	uint64_t u64;
 	struct cvmx_mio_ptp_pps_thresh_hi_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64; /**< Nanoseconds. */
 #else
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64;
 #endif
 	} s;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn61xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn66xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn68xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn70xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn70xxp1;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn73xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn78xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cn78xxp1;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cnf71xx;
+	struct cvmx_mio_ptp_pps_thresh_hi_s   cnf75xx;
 };
+typedef union cvmx_mio_ptp_pps_thresh_hi cvmx_mio_ptp_pps_thresh_hi_t;
 
+/**
+ * cvmx_mio_ptp_pps_thresh_lo
+ *
+ * This register contains the low bytes of the PTP PPS threshold.
+ * See MIO_PTP_PPS_THRESH_HI for details.
+ */
 union cvmx_mio_ptp_pps_thresh_lo {
 	uint64_t u64;
 	struct cvmx_mio_ptp_pps_thresh_lo_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t frnanosec:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t frnanosec                    : 32; /**< Fractions of nanoseconds. */
 #else
-		uint64_t frnanosec:32;
-		uint64_t reserved_32_63:32;
+	uint64_t frnanosec                    : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn61xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn66xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn68xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn70xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn70xxp1;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn73xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn78xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cn78xxp1;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cnf71xx;
+	struct cvmx_mio_ptp_pps_thresh_lo_s   cnf75xx;
 };
+typedef union cvmx_mio_ptp_pps_thresh_lo cvmx_mio_ptp_pps_thresh_lo_t;
 
+/**
+ * cvmx_mio_ptp_timestamp
+ *
+ * This register contains the timestamp latched on MIO_PTP_CLOCK_CFG[TSTMP_EDGE] edge of
+ * MIO_PTP_CLOCK_CFG[TSTMP_IN].
+ */
 union cvmx_mio_ptp_timestamp {
 	uint64_t u64;
 	struct cvmx_mio_ptp_timestamp_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64; /**< Timestamp in nanoseconds. */
 #else
-		uint64_t nanosec:64;
+	uint64_t nanosec                      : 64;
 #endif
 	} s;
+	struct cvmx_mio_ptp_timestamp_s       cn61xx;
+	struct cvmx_mio_ptp_timestamp_s       cn63xx;
+	struct cvmx_mio_ptp_timestamp_s       cn63xxp1;
+	struct cvmx_mio_ptp_timestamp_s       cn66xx;
+	struct cvmx_mio_ptp_timestamp_s       cn68xx;
+	struct cvmx_mio_ptp_timestamp_s       cn68xxp1;
+	struct cvmx_mio_ptp_timestamp_s       cn70xx;
+	struct cvmx_mio_ptp_timestamp_s       cn70xxp1;
+	struct cvmx_mio_ptp_timestamp_s       cn73xx;
+	struct cvmx_mio_ptp_timestamp_s       cn78xx;
+	struct cvmx_mio_ptp_timestamp_s       cn78xxp1;
+	struct cvmx_mio_ptp_timestamp_s       cnf71xx;
+	struct cvmx_mio_ptp_timestamp_s       cnf75xx;
 };
+typedef union cvmx_mio_ptp_timestamp cvmx_mio_ptp_timestamp_t;
 
+/**
+ * cvmx_mio_qlm#_cfg
+ *
+ * Notes:
+ * Certain QLM_SPD is valid only for certain QLM_CFG configuration, refer to HRM for valid
+ * combinations.  These csrs are reset only on COLD_RESET.  The Reset values for QLM_SPD and QLM_CFG
+ * are as follows:               MIO_QLM0_CFG  SPD=F, CFG=2 SGMII (AGX0)
+ *                               MIO_QLM1_CFG  SPD=0, CFG=1 PCIE 2x1 (PEM0/PEM1)
+ */
 union cvmx_mio_qlmx_cfg {
 	uint64_t u64;
 	struct cvmx_mio_qlmx_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_15_63:49;
-		uint64_t prtmode:1;
-		uint64_t reserved_12_13:2;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_4_7:4;
-		uint64_t qlm_cfg:4;
+	uint64_t reserved_15_63               : 49;
+	uint64_t prtmode                      : 1;  /**< Port Mode, value of MIO_RST_CNTLX.PRTMODE[0]
+                                                         0 = port is EP mode
+                                                         1 = port is RC mode */
+	uint64_t reserved_12_13               : 2;
+	uint64_t qlm_spd                      : 4;  /**< QLM0 speed for SGMii
+                                                            0   = 5     Gbaud   100.00 MHz Ref
+                                                            1   = 2.5   Gbaud   100.00 MHz Ref
+                                                            2   = 2.5   Gbaud   100.00 MHz Ref
+                                                            3   = 1.25  Gbaud   100.00 MHz Ref
+                                                            4   = 1.25  Gbaud   156.25 MHz Ref
+                                                            5   = 6.25  Gbaud   125.00 MHz Ref
+                                                            6   = 5     Gbaud   125.00 MHz Ref
+                                                            7   = 2.5   Gbaud   156.25 MHz Ref
+                                                            8   = 3.125 Gbaud   125.00 MHz Ref
+                                                            9   = 2.5   Gbaud   125.00 MHz Ref
+                                                            10  = 1.25  Gbaud   125.00 MHz Ref
+                                                            11  = 5     Gbaud   156.25 MHz Ref
+                                                            12  = 6.25  Gbaud   156.25 MHz Ref
+                                                            13  = 3.75  Gbaud   156.25 MHz Ref
+                                                            14  = 3.125 Gbaud   156.25 MHz Ref
+                                                            15  = QLM Disabled
+
+                                                         QLM1 speed PEM0   PEM1
+                                                            0   =  2.5/5  2.5/5 Gbaud  100.00 MHz Ref
+                                                            1   =  2.5    2.5/5 Gbaud  100.00 MHz Ref
+                                                            2   =  2.5/5  2.5   Gbaud  100.00 MHz Ref
+                                                            3   =  2.5    2.5   Gbaud  100.00 MHz Ref
+                                                            4   =  2.5/5  2.5/5 Gbaud  125.00 MHz Ref
+                                                            6   =  2.5/5  2.5   Gbaud  125.00 MHz Ref
+                                                            7   =  2.5    2.5   Gbaud  125.00 MHz Ref
+                                                            9   =  2.5    2.5/5 Gbaud  125.00 MHz Ref
+                                                            15  =  QLM Disabled
+                                                            5,8,10-14 are reserved */
+	uint64_t reserved_4_7                 : 4;
+	uint64_t qlm_cfg                      : 4;  /**< QLM configuration mode
+                                                         For Interface 0:
+                                                            00 Reserved
+                                                            01 Reserved
+                                                            10 SGMII (AGX0)
+                                                            11 Reserved
+                                                         For Interface 1:
+                                                            00 PCIE 1x2 (PEM1)
+                                                            01 PCIE 2x1 (PEM0/PEM1)
+                                                            1x Reserved */
 #else
-		uint64_t qlm_cfg:4;
-		uint64_t reserved_4_7:4;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_12_13:2;
-		uint64_t prtmode:1;
-		uint64_t reserved_15_63:49;
+	uint64_t qlm_cfg                      : 4;
+	uint64_t reserved_4_7                 : 4;
+	uint64_t qlm_spd                      : 4;
+	uint64_t reserved_12_13               : 2;
+	uint64_t prtmode                      : 1;
+	uint64_t reserved_15_63               : 49;
 #endif
 	} s;
 	struct cvmx_mio_qlmx_cfg_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_15_63:49;
-		uint64_t prtmode:1;
-		uint64_t reserved_12_13:2;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_2_7:6;
-		uint64_t qlm_cfg:2;
+	uint64_t reserved_15_63               : 49;
+	uint64_t prtmode                      : 1;  /**< Port Mode, value of MIO_RST_CNTLX.PRTMODE[0]
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                         For QLM2, HOST_MODE is always '0' because PCIe
+                                                         is not supported. */
+	uint64_t reserved_12_13               : 2;
+	uint64_t qlm_spd                      : 4;  /**< QLM speed for SGMii/XAUI
+                                                            0   = 5     Gbaud   100.00 MHz Ref
+                                                            1   = 2.5   Gbaud   100.00 MHz Ref
+                                                            2   = 2.5   Gbaud   100.00 MHz Ref
+                                                            3   = 1.25  Gbaud   100.00 MHz Ref
+                                                            4   = 1.25  Gbaud   156.25 MHz Ref
+                                                            5   = 6.25  Gbaud   125.00 MHz Ref
+                                                            6   = 5     Gbaud   125.00 MHz Ref
+                                                            7   = 2.5   Gbaud   156.25 MHz Ref
+                                                            8   = 3.125 Gbaud   125.00 MHz Ref
+                                                            9   = 2.5   Gbaud   125.00 MHz Ref
+                                                            10  = 1.25  Gbaud   125.00 MHz Ref
+                                                            11  = 5     Gbaud   156.25 MHz Ref
+                                                            12  = 6.25  Gbaud   156.25 MHz Ref
+                                                            13  = 3.75  Gbaud   156.25 MHz Ref
+                                                            14  = 3.125 Gbaud   156.25 MHz Ref
+                                                            15  = QLM Disabled
+
+                                                         QLM speed PEM0   PEM1
+                                                            0   =  2.5/5  2.5/5 Gbaud  100.00 MHz Ref
+                                                            1   =  2.5    2.5/5 Gbaud  100.00 MHz Ref
+                                                            2   =  2.5/5  2.5   Gbaud  100.00 MHz Ref
+                                                            3   =  2.5    2.5   Gbaud  100.00 MHz Ref
+                                                            4   =  2.5/5  2.5/5 Gbaud  125.00 MHz Ref
+                                                            6   =  2.5/5  2.5   Gbaud  125.00 MHz Ref
+                                                            7   =  2.5    2.5   Gbaud  125.00 MHz Ref
+                                                            9   =  2.5    2.5/5 Gbaud  125.00 MHz Ref
+                                                            15  =  QLM Disabled
+                                                            5,8,10-14 are reserved */
+	uint64_t reserved_2_7                 : 6;
+	uint64_t qlm_cfg                      : 2;  /**< QLM configuration mode
+                                                         For Interface 0:
+                                                            00 PCIE 1x4 (PEM0)
+                                                            01 Reserved
+                                                            10 SGMII (AGX1)
+                                                            11 XAUI (AGX1)
+                                                         For Interface 1:
+                                                            00 PCIE 1x2 (PEM1)
+                                                            01 PCIE 2x1 (PEM0/PEM1)
+                                                            10 Reserved
+                                                            11 Reserved
+                                                         For Interface 2:
+                                                            00 Reserved
+                                                            01 Reserved
+                                                            10 SGMII (AGX0)
+                                                            11 XAUI (AGX0) */
 #else
-		uint64_t qlm_cfg:2;
-		uint64_t reserved_2_7:6;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_12_13:2;
-		uint64_t prtmode:1;
-		uint64_t reserved_15_63:49;
+	uint64_t qlm_cfg                      : 2;
+	uint64_t reserved_2_7                 : 6;
+	uint64_t qlm_spd                      : 4;
+	uint64_t reserved_12_13               : 2;
+	uint64_t prtmode                      : 1;
+	uint64_t reserved_15_63               : 49;
 #endif
 	} cn61xx;
 	struct cvmx_mio_qlmx_cfg_cn66xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_4_7:4;
-		uint64_t qlm_cfg:4;
+	uint64_t reserved_12_63               : 52;
+	uint64_t qlm_spd                      : 4;  /**< QLM speed
+                                                         0   = 5     Gbaud   100.00 MHz Ref
+                                                         1   = 2.5   Gbaud   100.00 MHz Ref
+                                                         2   = 2.5   Gbaud   100.00 MHz Ref
+                                                         3   = 1.25  Gbaud   100.00 MHz Ref
+                                                         4   = 1.25  Gbaud   156.25 MHz Ref
+                                                         5   = 6.25  Gbaud   125.00 MHz Ref
+                                                         6   = 5     Gbaud   125.00 MHz Ref
+                                                         7   = 2.5   Gbaud   156.25 MHz Ref
+                                                         8   = 3.125 Gbaud   125.00 MHz Ref
+                                                         9   = 2.5   Gbaud   125.00 MHz Ref
+                                                         10  = 1.25  Gbaud   125.00 MHz Ref
+                                                         11  = 5     Gbaud   156.25 MHz Ref
+                                                         12  = 6.25  Gbaud   156.25 MHz Ref
+                                                         13  = 3.75  Gbaud   156.25 MHz Ref
+                                                         14  = 3.125 Gbaud   156.25 MHz Ref
+                                                         15  = QLM Disabled */
+	uint64_t reserved_4_7                 : 4;
+	uint64_t qlm_cfg                      : 4;  /**< QLM configuration mode
+                                                            0000 PCIE gen2
+                                                            0001 SRIO 1x4 short
+                                                            0010 PCIE gen1 only
+                                                            0011 SRIO 1x4 long
+                                                            0100 SRIO 2x2 short
+                                                            0101 SRIO 4x1 short
+                                                            0110 SRIO 2x2 long
+                                                            0111 SRIO 4x1 long
+                                                            1000 PCIE gen2 (alias)
+                                                            1001 SGMII
+                                                            1010 PCIE gen1 only (alias)
+                                                            1011 XAUI
+                                                            1100 RESERVED
+                                                            1101 RESERVED
+                                                            1110 RESERVED
+                                                            1111 RESERVED
+                                                         NOTE: Internal encodings differ from QLM_MODE
+                                                               pins encodings */
 #else
-		uint64_t qlm_cfg:4;
-		uint64_t reserved_4_7:4;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_12_63:52;
+	uint64_t qlm_cfg                      : 4;
+	uint64_t reserved_4_7                 : 4;
+	uint64_t qlm_spd                      : 4;
+	uint64_t reserved_12_63               : 52;
 #endif
 	} cn66xx;
 	struct cvmx_mio_qlmx_cfg_cn68xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_3_7:5;
-		uint64_t qlm_cfg:3;
+	uint64_t reserved_12_63               : 52;
+	uint64_t qlm_spd                      : 4;  /**< QLM speed
+                                                         0   = 5     Gbaud   100.00 MHz Ref
+                                                         1   = 2.5   Gbaud   100.00 MHz Ref
+                                                         2   = 2.5   Gbaud   100.00 MHz Ref
+                                                         3   = 1.25  Gbaud   100.00 MHz Ref
+                                                         4   = 1.25  Gbaud   156.25 MHz Ref
+                                                         5   = 6.25  Gbaud   125.00 MHz Ref
+                                                         6   = 5     Gbaud   125.00 MHz Ref
+                                                         7   = 2.5   Gbaud   156.25 MHz Ref
+                                                         8   = 3.125 Gbaud   125.00 MHz Ref
+                                                         9   = 2.5   Gbaud   125.00 MHz Ref
+                                                         10  = 1.25  Gbaud   125.00 MHz Ref
+                                                         11  = 5     Gbaud   156.25 MHz Ref
+                                                         12  = 6.25  Gbaud   156.25 MHz Ref
+                                                         13  = 3.75  Gbaud   156.25 MHz Ref
+                                                         14  = 3.125 Gbaud   156.25 MHz Ref
+                                                         15  = QLM Disabled */
+	uint64_t reserved_3_7                 : 5;
+	uint64_t qlm_cfg                      : 3;  /**< QLM configuration mode
+                                                            000 = PCIE
+                                                            001 = ILK
+                                                            010 = SGMII
+                                                            011 = XAUI
+                                                            100 = RESERVED
+                                                            101 = RESERVED
+                                                            110 = RESERVED
+                                                            111 = RXAUI
+                                                         NOTE: Internal encodings differ from QLM_MODE
+                                                               pins encodings */
 #else
-		uint64_t qlm_cfg:3;
-		uint64_t reserved_3_7:5;
-		uint64_t qlm_spd:4;
-		uint64_t reserved_12_63:52;
+	uint64_t qlm_cfg                      : 3;
+	uint64_t reserved_3_7                 : 5;
+	uint64_t qlm_spd                      : 4;
+	uint64_t reserved_12_63               : 52;
 #endif
 	} cn68xx;
+	struct cvmx_mio_qlmx_cfg_cn68xx       cn68xxp1;
+	struct cvmx_mio_qlmx_cfg_cn61xx       cnf71xx;
 };
+typedef union cvmx_mio_qlmx_cfg cvmx_mio_qlmx_cfg_t;
 
+/**
+ * cvmx_mio_rst_boot
+ *
+ * Notes:
+ * JTCSRDIS, EJTAGDIS, ROMEN reset to 1 in authentik mode; in all other modes they reset to 0.
+ *
+ */
 union cvmx_mio_rst_boot {
 	uint64_t u64;
 	struct cvmx_mio_rst_boot_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t chipkill:1;
-		uint64_t jtcsrdis:1;
-		uint64_t ejtagdis:1;
-		uint64_t romen:1;
-		uint64_t ckill_ppdis:1;
-		uint64_t jt_tstmode:1;
-		uint64_t reserved_50_57:8;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_44_47:4;
-		uint64_t qlm4_spd:4;
-		uint64_t qlm3_spd:4;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t chipkill                     : 1;  /**< A 0->1 transition of CHIPKILL starts the CHIPKILL
+                                                         timer.  When CHIPKILL=1 and the timer expires,
+                                                         internal chip reset is asserted forever until the
+                                                         next chip reset.  The CHIPKILL timer can be
+                                                         stopped only by a chip (cold, warm, soft) reset.
+                                                         The length of the CHIPKILL timer is specified by
+                                                         MIO_RST_CKILL[TIMER]. */
+	uint64_t jtcsrdis                     : 1;  /**< If JTCSRDIS=1, internal CSR access via JTAG TAP
+                                                         controller is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t ejtagdis                     : 1;  /**< If EJTAGDIS=1, external EJTAG access is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t romen                        : 1;  /**< If ROMEN=1, Authentik/eMMC boot ROM is visible
+                                                         in the boot bus address space.
+                                                         This field resets to 1 in an Authentik part or
+                                                         when booting from eMMC. Else, resets to 0. */
+	uint64_t ckill_ppdis                  : 1;  /**< If CK_PPDIS=1, PPs other than 0 are disabled
+                                                         during a CHIPKILL.  Writes have no effect when
+                                                         MIO_RST_BOOT[CHIPKILL]=1. */
+	uint64_t jt_tstmode                   : 1;  /**< JTAG test mode */
+	uint64_t reserved_50_57               : 8;
+	uint64_t lboot_ext                    : 2;  /**< Reserved */
+	uint64_t reserved_44_47               : 4;
+	uint64_t qlm4_spd                     : 4;  /**< QLM4_SPD pins sampled at DCOK assertion */
+	uint64_t qlm3_spd                     : 4;  /**< QLM3_SPD pins sampled at DCOK assertion */
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock speed" should always be 50MHz.
+                                                         If PLL_QLM_REF_CLK_EN=0, "ref clock" comes
+                                                              from PLL_REF_CLK pin.
+                                                         If PLL_QLM_REF_CLK_EN=1, "ref clock" is
+                                                              1/2 speed of QLMC_REF_CLK_* pins. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed) /
+                                                                           (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD, report MIO_QLM2_CFG[SPD] */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD, report MIO_QLM1_CFG[SPD] */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD, report MIO_QLM0_CFG[SPD] */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dcok.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t qlm3_spd:4;
-		uint64_t qlm4_spd:4;
-		uint64_t reserved_44_47:4;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_50_57:8;
-		uint64_t jt_tstmode:1;
-		uint64_t ckill_ppdis:1;
-		uint64_t romen:1;
-		uint64_t ejtagdis:1;
-		uint64_t jtcsrdis:1;
-		uint64_t chipkill:1;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t qlm3_spd                     : 4;
+	uint64_t qlm4_spd                     : 4;
+	uint64_t reserved_44_47               : 4;
+	uint64_t lboot_ext                    : 2;
+	uint64_t reserved_50_57               : 8;
+	uint64_t jt_tstmode                   : 1;
+	uint64_t ckill_ppdis                  : 1;
+	uint64_t romen                        : 1;
+	uint64_t ejtagdis                     : 1;
+	uint64_t jtcsrdis                     : 1;
+	uint64_t chipkill                     : 1;
 #endif
 	} s;
 	struct cvmx_mio_rst_boot_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t chipkill:1;
-		uint64_t jtcsrdis:1;
-		uint64_t ejtagdis:1;
-		uint64_t romen:1;
-		uint64_t ckill_ppdis:1;
-		uint64_t jt_tstmode:1;
-		uint64_t reserved_50_57:8;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_36_47:12;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t chipkill                     : 1;  /**< A 0->1 transition of CHIPKILL starts the CHIPKILL
+                                                         timer.  When CHIPKILL=1 and the timer expires,
+                                                         internal chip reset is asserted forever until the
+                                                         next chip reset.  The CHIPKILL timer can be
+                                                         stopped only by a chip (cold, warm, soft) reset.
+                                                         The length of the CHIPKILL timer is specified by
+                                                         MIO_RST_CKILL[TIMER]. */
+	uint64_t jtcsrdis                     : 1;  /**< If JTCSRDIS=1, internal CSR access via JTAG TAP
+                                                         controller is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t ejtagdis                     : 1;  /**< If EJTAGDIS=1, external EJTAG access is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t romen                        : 1;  /**< If ROMEN=1, Authentik/eMMC boot ROM is visible
+                                                         in the boot bus address space.
+                                                         This field resets to 1 in an Authentik part or
+                                                         when booting from eMMC. Else, resets to 0. */
+	uint64_t ckill_ppdis                  : 1;  /**< If CK_PPDIS=1, PPs other than 0 are disabled
+                                                         during a CHIPKILL.  Writes have no effect when
+                                                         MIO_RST_BOOT[CHIPKILL]=1. */
+	uint64_t jt_tstmode                   : 1;  /**< JTAG test mode */
+	uint64_t reserved_50_57               : 8;
+	uint64_t lboot_ext                    : 2;  /**< Reserved */
+	uint64_t reserved_36_47               : 12;
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock speed" should always be 50MHz.
+                                                         If PLL_QLM_REF_CLK_EN=0, "ref clock" comes
+                                                              from PLL_REF_CLK pin.
+                                                         If PLL_QLM_REF_CLK_EN=1, "ref clock" is
+                                                              1/2 speed of QLMC_REF_CLK_* pins. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed) /
+                                                                           (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD, report MIO_QLM2_CFG[SPD] */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD, report MIO_QLM1_CFG[SPD] */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD, report MIO_QLM0_CFG[SPD] */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dcok.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t reserved_36_47:12;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_50_57:8;
-		uint64_t jt_tstmode:1;
-		uint64_t ckill_ppdis:1;
-		uint64_t romen:1;
-		uint64_t ejtagdis:1;
-		uint64_t jtcsrdis:1;
-		uint64_t chipkill:1;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t reserved_36_47               : 12;
+	uint64_t lboot_ext                    : 2;
+	uint64_t reserved_50_57               : 8;
+	uint64_t jt_tstmode                   : 1;
+	uint64_t ckill_ppdis                  : 1;
+	uint64_t romen                        : 1;
+	uint64_t ejtagdis                     : 1;
+	uint64_t jtcsrdis                     : 1;
+	uint64_t chipkill                     : 1;
 #endif
 	} cn61xx;
 	struct cvmx_mio_rst_boot_cn63xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_36_63:28;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t reserved_36_63               : 28;
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock speed" should always be 50MHz.
+                                                         If PLL_QLM_REF_CLK_EN=0, "ref clock" comes
+                                                              from PLL_REF_CLK pin.
+                                                         If PLL_QLM_REF_CLK_EN=1, "ref clock" is
+                                                              1/2 speed of QLMC_REF_CLK_* pins. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed) /
+                                                                           (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD pins sampled at DCOK assertion */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD pins sampled at DCOK assertion */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD pins sampled at DCOK assertion */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dock.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t reserved_36_63:28;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t reserved_36_63               : 28;
 #endif
 	} cn63xx;
+	struct cvmx_mio_rst_boot_cn63xx       cn63xxp1;
 	struct cvmx_mio_rst_boot_cn66xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t chipkill:1;
-		uint64_t jtcsrdis:1;
-		uint64_t ejtagdis:1;
-		uint64_t romen:1;
-		uint64_t ckill_ppdis:1;
-		uint64_t reserved_50_58:9;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_36_47:12;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t chipkill                     : 1;  /**< A 0->1 transition of CHIPKILL starts the CHIPKILL
+                                                         timer.  When CHIPKILL=1 and the timer expires,
+                                                         internal chip reset is asserted forever until the
+                                                         next chip reset.  The CHIPKILL timer can be
+                                                         stopped only by a chip (cold, warm, soft) reset.
+                                                         The length of the CHIPKILL timer is specified by
+                                                         MIO_RST_CKILL[TIMER]. */
+	uint64_t jtcsrdis                     : 1;  /**< If JTCSRDIS=1, internal CSR access via JTAG TAP
+                                                         controller is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t ejtagdis                     : 1;  /**< If EJTAGDIS=1, external EJTAG access is disabled
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t romen                        : 1;  /**< If ROMEN=1, Authentik ROM is visible in the boot
+                                                         bus address space.
+                                                         This field resets to 1 in Authentik mode, else 0. */
+	uint64_t ckill_ppdis                  : 1;  /**< If CK_PPDIS=1, PPs other than 0 are disabled
+                                                         during a CHIPKILL.  Writes have no effect when
+                                                         MIO_RST_BOOT[CHIPKILL]=1. */
+	uint64_t reserved_50_58               : 9;
+	uint64_t lboot_ext                    : 2;  /**< Extended Last boot cause mask, resets only with
+                                                         dock.
+
+                                                           bit1 - Warm reset due to cntl3 link-down or
+                                                                  hot-reset
+                                                           bit0 - Warm reset due to cntl2 link-down or
+                                                                  hot-reset */
+	uint64_t reserved_36_47               : 12;
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock speed" should always be 50MHz.
+                                                         If PLL_QLM_REF_CLK_EN=0, "ref clock" comes
+                                                              from PLL_REF_CLK pin.
+                                                         If PLL_QLM_REF_CLK_EN=1, "ref clock" is
+                                                              1/2 speed of QLMC_REF_CLK_* pins. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed) /
+                                                                           (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD pins sampled at DCOK assertion */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD pins sampled at DCOK assertion */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD pins sampled at DCOK assertion */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dock.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t reserved_36_47:12;
-		uint64_t lboot_ext:2;
-		uint64_t reserved_50_58:9;
-		uint64_t ckill_ppdis:1;
-		uint64_t romen:1;
-		uint64_t ejtagdis:1;
-		uint64_t jtcsrdis:1;
-		uint64_t chipkill:1;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t reserved_36_47               : 12;
+	uint64_t lboot_ext                    : 2;
+	uint64_t reserved_50_58               : 9;
+	uint64_t ckill_ppdis                  : 1;
+	uint64_t romen                        : 1;
+	uint64_t ejtagdis                     : 1;
+	uint64_t jtcsrdis                     : 1;
+	uint64_t chipkill                     : 1;
 #endif
 	} cn66xx;
 	struct cvmx_mio_rst_boot_cn68xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_59_63:5;
-		uint64_t jt_tstmode:1;
-		uint64_t reserved_44_57:14;
-		uint64_t qlm4_spd:4;
-		uint64_t qlm3_spd:4;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t reserved_59_63               : 5;
+	uint64_t jt_tstmode                   : 1;  /**< JTAG test mode */
+	uint64_t reserved_44_57               : 14;
+	uint64_t qlm4_spd                     : 4;  /**< QLM4_SPD pins sampled at DCOK assertion */
+	uint64_t qlm3_spd                     : 4;  /**< QLM3_SPD pins sampled at DCOK assertion */
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock" is PLL_REF_CLK pin, which should
+                                                         always be 50 MHz. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed)
+                                                                         (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD pins sampled at DCOK assertion */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD pins sampled at DCOK assertion */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD pins sampled at DCOK assertion */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dock.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t qlm3_spd:4;
-		uint64_t qlm4_spd:4;
-		uint64_t reserved_44_57:14;
-		uint64_t jt_tstmode:1;
-		uint64_t reserved_59_63:5;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t qlm3_spd                     : 4;
+	uint64_t qlm4_spd                     : 4;
+	uint64_t reserved_44_57               : 14;
+	uint64_t jt_tstmode                   : 1;
+	uint64_t reserved_59_63               : 5;
 #endif
 	} cn68xx;
 	struct cvmx_mio_rst_boot_cn68xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_44_63:20;
-		uint64_t qlm4_spd:4;
-		uint64_t qlm3_spd:4;
-		uint64_t c_mul:6;
-		uint64_t pnr_mul:6;
-		uint64_t qlm2_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm0_spd:4;
-		uint64_t lboot:10;
-		uint64_t rboot:1;
-		uint64_t rboot_pin:1;
+	uint64_t reserved_44_63               : 20;
+	uint64_t qlm4_spd                     : 4;  /**< QLM4_SPD pins sampled at DCOK assertion */
+	uint64_t qlm3_spd                     : 4;  /**< QLM3_SPD pins sampled at DCOK assertion */
+	uint64_t c_mul                        : 6;  /**< Core clock multiplier:
+                                                           C_MUL = (core clk speed) / (ref clock speed)
+                                                         "ref clock" is PLL_REF_CLK pin, which should
+                                                         always be 50 MHz. */
+	uint64_t pnr_mul                      : 6;  /**< Coprocessor clock multiplier:
+                                                           PNR_MUL = (coprocessor clk speed)
+                                                                         (ref clock speed)
+                                                         See C_MUL comments about ref clock. */
+	uint64_t qlm2_spd                     : 4;  /**< QLM2_SPD pins sampled at DCOK assertion */
+	uint64_t qlm1_spd                     : 4;  /**< QLM1_SPD pins sampled at DCOK assertion */
+	uint64_t qlm0_spd                     : 4;  /**< QLM0_SPD pins sampled at DCOK assertion */
+	uint64_t lboot                        : 10; /**< Last boot cause mask, resets only with dock.
+
+                                                         bit9 - Soft reset due to watchdog
+                                                         bit8 - Soft reset due to CIU_SOFT_RST write
+                                                         bit7 - Warm reset due to cntl0 link-down or
+                                                                hot-reset
+                                                         bit6 - Warm reset due to cntl1 link-down or
+                                                                hot-reset
+                                                         bit5 - Cntl1 reset due to PERST1_L pin
+                                                         bit4 - Cntl0 reset due to PERST0_L pin
+                                                         bit3 - Warm reset due to PERST1_L pin
+                                                         bit2 - Warm reset due to PERST0_L pin
+                                                         bit1 - Warm reset due to CHIP_RESET_L pin
+                                                         bit0 - Cold reset due to DCOK pin */
+	uint64_t rboot                        : 1;  /**< Determines whether core 0 remains in reset after
+                                                         after chip cold/warm/soft reset. */
+	uint64_t rboot_pin                    : 1;  /**< Read-only access to REMOTE_BOOT pin */
 #else
-		uint64_t rboot_pin:1;
-		uint64_t rboot:1;
-		uint64_t lboot:10;
-		uint64_t qlm0_spd:4;
-		uint64_t qlm1_spd:4;
-		uint64_t qlm2_spd:4;
-		uint64_t pnr_mul:6;
-		uint64_t c_mul:6;
-		uint64_t qlm3_spd:4;
-		uint64_t qlm4_spd:4;
-		uint64_t reserved_44_63:20;
+	uint64_t rboot_pin                    : 1;
+	uint64_t rboot                        : 1;
+	uint64_t lboot                        : 10;
+	uint64_t qlm0_spd                     : 4;
+	uint64_t qlm1_spd                     : 4;
+	uint64_t qlm2_spd                     : 4;
+	uint64_t pnr_mul                      : 6;
+	uint64_t c_mul                        : 6;
+	uint64_t qlm3_spd                     : 4;
+	uint64_t qlm4_spd                     : 4;
+	uint64_t reserved_44_63               : 20;
 #endif
 	} cn68xxp1;
+	struct cvmx_mio_rst_boot_cn61xx       cnf71xx;
 };
+typedef union cvmx_mio_rst_boot cvmx_mio_rst_boot_t;
 
+/**
+ * cvmx_mio_rst_cfg
+ *
+ * Notes:
+ * Cold reset will always performs a full bist.
+ *
+ */
 union cvmx_mio_rst_cfg {
 	uint64_t u64;
 	struct cvmx_mio_rst_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_3_63:61;
-		uint64_t cntl_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t soft_clr_bist:1;
+	uint64_t reserved_3_63                : 61;
+	uint64_t cntl_clr_bist                : 1;  /**< Peform clear bist during cntl only reset,
+                                                         instead of a full bist. A warm/soft reset will
+                                                         not change this field. */
+	uint64_t warm_clr_bist                : 1;  /**< Peform clear bist during warm reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
+	uint64_t soft_clr_bist                : 1;  /**< Peform clear bist during soft reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
 #else
-		uint64_t soft_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t cntl_clr_bist:1;
-		uint64_t reserved_3_63:61;
+	uint64_t soft_clr_bist                : 1;
+	uint64_t warm_clr_bist                : 1;
+	uint64_t cntl_clr_bist                : 1;
+	uint64_t reserved_3_63                : 61;
 #endif
 	} s;
 	struct cvmx_mio_rst_cfg_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t bist_delay:58;
-		uint64_t reserved_3_5:3;
-		uint64_t cntl_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t soft_clr_bist:1;
+	uint64_t bist_delay                   : 58; /**< Reserved */
+	uint64_t reserved_3_5                 : 3;
+	uint64_t cntl_clr_bist                : 1;  /**< Peform clear bist during cntl only reset,
+                                                         instead of a full bist. A warm/soft reset will
+                                                         not change this field. */
+	uint64_t warm_clr_bist                : 1;  /**< Peform clear bist during warm reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
+	uint64_t soft_clr_bist                : 1;  /**< Peform clear bist during soft reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
 #else
-		uint64_t soft_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t cntl_clr_bist:1;
-		uint64_t reserved_3_5:3;
-		uint64_t bist_delay:58;
+	uint64_t soft_clr_bist                : 1;
+	uint64_t warm_clr_bist                : 1;
+	uint64_t cntl_clr_bist                : 1;
+	uint64_t reserved_3_5                 : 3;
+	uint64_t bist_delay                   : 58;
 #endif
 	} cn61xx;
+	struct cvmx_mio_rst_cfg_cn61xx        cn63xx;
 	struct cvmx_mio_rst_cfg_cn63xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t bist_delay:58;
-		uint64_t reserved_2_5:4;
-		uint64_t warm_clr_bist:1;
-		uint64_t soft_clr_bist:1;
+	uint64_t bist_delay                   : 58; /**< Reserved */
+	uint64_t reserved_2_5                 : 4;
+	uint64_t warm_clr_bist                : 1;  /**< Peform clear bist during warm reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
+	uint64_t soft_clr_bist                : 1;  /**< Peform clear bist during soft reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
 #else
-		uint64_t soft_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t reserved_2_5:4;
-		uint64_t bist_delay:58;
+	uint64_t soft_clr_bist                : 1;
+	uint64_t warm_clr_bist                : 1;
+	uint64_t reserved_2_5                 : 4;
+	uint64_t bist_delay                   : 58;
 #endif
 	} cn63xxp1;
+	struct cvmx_mio_rst_cfg_cn61xx        cn66xx;
 	struct cvmx_mio_rst_cfg_cn68xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t bist_delay:56;
-		uint64_t reserved_3_7:5;
-		uint64_t cntl_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t soft_clr_bist:1;
+	uint64_t bist_delay                   : 56; /**< Reserved */
+	uint64_t reserved_3_7                 : 5;
+	uint64_t cntl_clr_bist                : 1;  /**< Peform clear bist during cntl only reset,
+                                                         instead of a full bist. A warm/soft reset will
+                                                         not change this field. */
+	uint64_t warm_clr_bist                : 1;  /**< Peform clear bist during warm reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
+	uint64_t soft_clr_bist                : 1;  /**< Peform clear bist during soft reset, instead
+                                                         of a full bist. A warm/soft reset will not
+                                                         change this field. */
 #else
-		uint64_t soft_clr_bist:1;
-		uint64_t warm_clr_bist:1;
-		uint64_t cntl_clr_bist:1;
-		uint64_t reserved_3_7:5;
-		uint64_t bist_delay:56;
+	uint64_t soft_clr_bist                : 1;
+	uint64_t warm_clr_bist                : 1;
+	uint64_t cntl_clr_bist                : 1;
+	uint64_t reserved_3_7                 : 5;
+	uint64_t bist_delay                   : 56;
 #endif
 	} cn68xx;
+	struct cvmx_mio_rst_cfg_cn68xx        cn68xxp1;
+	struct cvmx_mio_rst_cfg_cn61xx        cnf71xx;
 };
+typedef union cvmx_mio_rst_cfg cvmx_mio_rst_cfg_t;
 
+/**
+ * cvmx_mio_rst_ckill
+ *
+ * MIO_RST_CKILL = MIO Chipkill Timer Register
+ *
+ */
 union cvmx_mio_rst_ckill {
 	uint64_t u64;
 	struct cvmx_mio_rst_ckill_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_47_63:17;
-		uint64_t timer:47;
+	uint64_t reserved_47_63               : 17;
+	uint64_t timer                        : 47; /**< CHIPKILL timer measured in SCLKs.  Reads return
+                                                         the current CHIPKILL timer.   Writes have no
+                                                         effect when MIO_RST_BOOT[CHIPKILL]=1. */
 #else
-		uint64_t timer:47;
-		uint64_t reserved_47_63:17;
+	uint64_t timer                        : 47;
+	uint64_t reserved_47_63               : 17;
 #endif
 	} s;
+	struct cvmx_mio_rst_ckill_s           cn61xx;
+	struct cvmx_mio_rst_ckill_s           cn66xx;
+	struct cvmx_mio_rst_ckill_s           cnf71xx;
 };
+typedef union cvmx_mio_rst_ckill cvmx_mio_rst_ckill_t;
 
+/**
+ * cvmx_mio_rst_cntl#
+ *
+ * Notes:
+ * GEN1_Only mode is enabled for PEM0 when QLM1_SPD[0] is set or when sclk < 550Mhz.
+ * GEN1_Only mode is enabled for PEM1 when QLM1_SPD[1] is set or when sclk < 550Mhz.
+ */
 union cvmx_mio_rst_cntlx {
 	uint64_t u64;
 	struct cvmx_mio_rst_cntlx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_13_63:51;
-		uint64_t in_rev_ln:1;
-		uint64_t rev_lanes:1;
-		uint64_t gen1_only:1;
-		uint64_t prst_link:1;
-		uint64_t rst_done:1;
-		uint64_t rst_link:1;
-		uint64_t host_mode:1;
-		uint64_t prtmode:2;
-		uint64_t rst_drv:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_val:1;
+	uint64_t reserved_13_63               : 51;
+	uint64_t in_rev_ln                    : 1;  /**< RO access to corresponding pin PCIE*_REV_LANES
+                                                         which is used for initial value for REV_LANES
+                                                         For INT0/CNTL0: pin PCIE0_REV_LANES
+                                                         For INT1/CNTL1: always zero as no PCIE1 pin */
+	uint64_t rev_lanes                    : 1;  /**< Reverse the lanes for INT*.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to
+                                                         IN_REVLANE value.
+                                                         When QLM1_CFG=1, INT0(PEM0) REV_LANES internal
+                                                         setting will be always forced to '0', INT1(PEM1)
+                                                         will be forced to '1' regardless CSR value. */
+	uint64_t gen1_only                    : 1;  /**< Disable PCIE GEN2 Capability.  This bit is
+                                                         always unpredictable whenever the controller
+                                                         is not attached to any SerDes lanes, and is
+                                                         otherwise always set when SCLK is slower than
+                                                         550Mhz.
+                                                         The MIO_RST_CNTL*[GEN1_ONLY] value is based on
+                                                         the MIO_QLM1_CFG[QLM_SPD] value. */
+	uint64_t prst_link                    : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes the assertion of
+                                                         CIU_SOFT_PRST*[SOFT_PRST]
+
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0 */
+	uint64_t rst_done                     : 1;  /**< Read-only access to controller reset status
+
+                                                         RESET_DONE is always zero (i.e. the controller
+                                                         is held in reset) when:
+                                                           - CIU_SOFT_PRST*[SOFT_PRST]=1, or
+                                                           - RST_RCV==1 and PERST*_L pin is asserted */
+	uint64_t rst_link                     : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes a warm chip reset
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding HOST_MODE=1
+                                                            1 = when corresponding HOST_MODE=0
+
+                                                         Note that a link-down or hot-reset event can
+                                                         never cause a warm chip reset when the
+                                                         controller is in reset (i.e. can never cause a
+                                                         warm reset when RST_DONE==0). */
+	uint64_t host_mode                    : 1;  /**< RO access to corresponding strap PCIE*_HOST_MODE
+                                                         For CNTL1/INT1, HOST_MODE is always '1' because
+                                                         there is no PCIE1_HOST_MODE pin. */
+	uint64_t prtmode                      : 2;  /**< Port mode
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                            2,3 = Reserved
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized as
+                                                         HOST_MODE (corresponding strap PCIE*_HOST_MODE) */
+	uint64_t rst_drv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is driven by the OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding HOST_MODE=0
+                                                          1 = when corresponding HOST_MODE=1
+
+                                                         When set, OCTEON drives the corresponding
+                                                         PERST*_L pin. Otherwise, OCTEON does not drive
+                                                         the corresponding PERST*_L pin. */
+	uint64_t rst_rcv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is recieved by OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding HOST_MODE=1
+                                                          1 = when corresponding HOST_MODE=0
+
+                                                         When RST_RCV==1, the PERST*_L value is
+                                                         received and may be used to reset the
+                                                         controller and (optionally, based on RST_CHIP)
+                                                         warm reset the chip.
+
+                                                         When RST_RCV==1 (and RST_CHIP=0),
+                                                         MIO_RST_INT[PERST*] gets set when the PERST*_L
+                                                         pin asserts. (This interrupt can alert SW
+                                                         whenever the external reset pin initiates a
+                                                         controller reset sequence.)
+
+                                                         RST_VAL gives the PERST*_L pin value when
+                                                         RST_RCV==1.
+
+                                                         When RST_RCV==0, the PERST*_L pin value is
+                                                         ignored. */
+	uint64_t rst_chip                     : 1;  /**< Controls whether corresponding PERST*_L chip
+                                                         pin causes a chip warm reset like CHIP_RESET_L.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0.
+
+                                                         RST_CHIP is not used when RST_RCV==0.
+
+                                                         When RST_RCV==0, RST_CHIP is ignored.
+
+                                                         When RST_RCV==1, RST_CHIP==1, and PERST*_L
+                                                         asserts, a chip warm reset will be generated. */
+	uint64_t rst_val                      : 1;  /**< Read-only access to corresponding PERST*_L pin
+                                                         Unpredictable when RST_RCV==0. Reads as 1 when
+                                                         RST_RCV==1 and the PERST*_L pin is asserted.
+                                                         Reads as 0 when RST_RCV==1 and the PERST*_L
+                                                         pin is not asserted. */
 #else
-		uint64_t rst_val:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_drv:1;
-		uint64_t prtmode:2;
-		uint64_t host_mode:1;
-		uint64_t rst_link:1;
-		uint64_t rst_done:1;
-		uint64_t prst_link:1;
-		uint64_t gen1_only:1;
-		uint64_t rev_lanes:1;
-		uint64_t in_rev_ln:1;
-		uint64_t reserved_13_63:51;
+	uint64_t rst_val                      : 1;
+	uint64_t rst_chip                     : 1;
+	uint64_t rst_rcv                      : 1;
+	uint64_t rst_drv                      : 1;
+	uint64_t prtmode                      : 2;
+	uint64_t host_mode                    : 1;
+	uint64_t rst_link                     : 1;
+	uint64_t rst_done                     : 1;
+	uint64_t prst_link                    : 1;
+	uint64_t gen1_only                    : 1;
+	uint64_t rev_lanes                    : 1;
+	uint64_t in_rev_ln                    : 1;
+	uint64_t reserved_13_63               : 51;
 #endif
 	} s;
+	struct cvmx_mio_rst_cntlx_s           cn61xx;
 	struct cvmx_mio_rst_cntlx_cn66xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t prst_link:1;
-		uint64_t rst_done:1;
-		uint64_t rst_link:1;
-		uint64_t host_mode:1;
-		uint64_t prtmode:2;
-		uint64_t rst_drv:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_val:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t prst_link                    : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes the assertion of
+                                                         CIU_SOFT_PRST*[SOFT_PRST]
+
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0 */
+	uint64_t rst_done                     : 1;  /**< Read-only access to controller reset status
+
+                                                         RESET_DONE is always zero (i.e. the controller
+                                                         is held in reset) when:
+                                                           - CIU_SOFT_PRST*[SOFT_PRST]=1, or
+                                                           - RST_RCV==1 and PERST*_L pin is asserted */
+	uint64_t rst_link                     : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes a warm chip reset
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=1
+                                                            1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is initialized to 1 on cold reset.
+
+                                                         Note that a link-down or hot-reset event can
+                                                         never cause a warm chip reset when the
+                                                         controller is in reset (i.e. can never cause a
+                                                         warm reset when RST_DONE==0). */
+	uint64_t host_mode                    : 1;  /**< RO access to corresponding strap QLM*_HOST_MODE
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is reserved/RAZ.
+
+                                                         QLM0_HOST_MODE corresponds to PCIe0/sRIO0
+                                                         QLM1_HOST_MODE corresponds to PCIe1/sRIO1 */
+	uint64_t prtmode                      : 2;  /**< Port mode
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                            2,3 = Reserved
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=0
+                                                            1 = when corresponding strap QLM*_HOST_MODE=1
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is initialized to 0 on cold reset. */
+	uint64_t rst_drv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                           is driven by the OCTEON.  A warm/soft reset
+                                                           will not change this field.  On cold reset,
+                                                           this field is initialized as follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=0
+                                                            1 = when corresponding strap QLM*_HOST_MODE=1
+
+                                                           When set, OCTEON drives the corresponding
+                                                           PERST*_L pin. Otherwise, OCTEON does not drive
+                                                           the corresponding PERST*_L pin.
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is reserved/RAZ. */
+	uint64_t rst_rcv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                           is recieved by OCTEON.  A warm/soft reset
+                                                           will not change this field.  On cold reset,
+                                                           this field is initialized as follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=1
+                                                            1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                           When RST_RCV==1, the PERST*_L value is
+                                                           received and may be used to reset the
+                                                           controller and (optionally, based on RST_CHIP)
+                                                           warm reset the chip.
+
+                                                           When RST_RCV==1 (and RST_CHIP=0),
+                                                           MIO_RST_INT[PERST*] gets set when the PERST*_L
+                                                           pin asserts. (This interrupt can alert SW
+                                                           whenever the external reset pin initiates a
+                                                           controller reset sequence.)
+
+                                                           RST_VAL gives the PERST*_L pin value when
+                                                           RST_RCV==1.
+
+                                                           When RST_RCV==0, the PERST*_L pin value is
+                                                           ignored.
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is reserved/RAZ. */
+	uint64_t rst_chip                     : 1;  /**< Controls whether corresponding PERST*_L chip
+                                                           pin causes a chip warm reset like CHIP_RESET_L.
+                                                           A warm/soft reset will not change this field.
+                                                           On cold reset, this field is initialized to 0.
+
+                                                           RST_CHIP is not used when RST_RCV==0.
+
+                                                           When RST_RCV==0, RST_CHIP is ignored.
+
+                                                           When RST_RCV==1, RST_CHIP==1, and PERST*_L
+                                                           asserts, a chip warm reset will be generated.
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is reserved/RAZ. */
+	uint64_t rst_val                      : 1;  /**< Read-only access to corresponding PERST*_L pin
+                                                           Unpredictable when RST_RCV==0. Reads as 1 when
+                                                           RST_RCV==1 and the PERST*_L pin is asserted.
+                                                           Reads as 0 when RST_RCV==1 and the PERST*_L
+                                                           pin is not asserted.
+
+                                                         For MIO_RST_CNTL2 and MIO_RST_CNTL3, this field
+                                                         is reserved/RAZ. */
 #else
-		uint64_t rst_val:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_drv:1;
-		uint64_t prtmode:2;
-		uint64_t host_mode:1;
-		uint64_t rst_link:1;
-		uint64_t rst_done:1;
-		uint64_t prst_link:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_val                      : 1;
+	uint64_t rst_chip                     : 1;
+	uint64_t rst_rcv                      : 1;
+	uint64_t rst_drv                      : 1;
+	uint64_t prtmode                      : 2;
+	uint64_t host_mode                    : 1;
+	uint64_t rst_link                     : 1;
+	uint64_t rst_done                     : 1;
+	uint64_t prst_link                    : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn66xx;
+	struct cvmx_mio_rst_cntlx_cn66xx      cn68xx;
+	struct cvmx_mio_rst_cntlx_s           cnf71xx;
 };
+typedef union cvmx_mio_rst_cntlx cvmx_mio_rst_cntlx_t;
 
+/**
+ * cvmx_mio_rst_ctl#
+ *
+ * Notes:
+ * GEN1_Only mode is enabled for PEM0 when QLM1_SPD[0] is set or when sclk < 550Mhz.
+ * GEN1_Only mode is enabled for PEM1 when QLM1_SPD[1] is set or when sclk < 550Mhz.
+ */
 union cvmx_mio_rst_ctlx {
 	uint64_t u64;
 	struct cvmx_mio_rst_ctlx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_13_63:51;
-		uint64_t in_rev_ln:1;
-		uint64_t rev_lanes:1;
-		uint64_t gen1_only:1;
-		uint64_t prst_link:1;
-		uint64_t rst_done:1;
-		uint64_t rst_link:1;
-		uint64_t host_mode:1;
-		uint64_t prtmode:2;
-		uint64_t rst_drv:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_val:1;
+	uint64_t reserved_13_63               : 51;
+	uint64_t in_rev_ln                    : 1;  /**< RO access to corresponding pin PCIE*_REV_LANES
+                                                         which is used for initial value for REV_LANES
+                                                         For INT0/CNTL0: pin PCIE0_REV_LANES
+                                                         For INT1/CNTL1: always zero as no PCIE1 pin */
+	uint64_t rev_lanes                    : 1;  /**< Reverse the lanes for INT*.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to
+                                                         IN_REVLANE value.
+                                                         When QLM1_CFG=1, INT0(PEM0) REV_LANES internal
+                                                         setting will be always forced to '0', INT1(PEM1)
+                                                         will be forced to '1' regardless CSR value. */
+	uint64_t gen1_only                    : 1;  /**< Disable PCIE GEN2 Capability.  This bit is
+                                                         always unpredictable whenever the controller
+                                                         is not attached to any SerDes lanes, and is
+                                                         otherwise always set when SCLK is slower than
+                                                         550Mhz.
+                                                         The MIO_RST_CNTL*[GEN1_ONLY] value is based on
+                                                         the MIO_QLM1_CFG[QLM_SPD] value. */
+	uint64_t prst_link                    : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes the assertion of
+                                                         CIU_SOFT_PRST*[SOFT_PRST]
+
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0 */
+	uint64_t rst_done                     : 1;  /**< Read-only access to controller reset status
+
+                                                         RESET_DONE is always zero (i.e. the controller
+                                                         is held in reset) when:
+                                                           - CIU_SOFT_PRST*[SOFT_PRST]=1, or
+                                                           - RST_RCV==1 and PERST*_L pin is asserted */
+	uint64_t rst_link                     : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes a warm chip reset
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding HOST_MODE=1
+                                                            1 = when corresponding HOST_MODE=0
+
+                                                         Note that a link-down or hot-reset event can
+                                                         never cause a warm chip reset when the
+                                                         controller is in reset (i.e. can never cause a
+                                                         warm reset when RST_DONE==0). */
+	uint64_t host_mode                    : 1;  /**< RO access to corresponding strap PCIE*_HOST_MODE
+                                                         For CNTL1/INT1, HOST_MODE is always '1' because
+                                                         there is no PCIE1_HOST_MODE pin. */
+	uint64_t prtmode                      : 2;  /**< Port mode
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                            2,3 = Reserved
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized as
+                                                         HOST_MODE (corresponding strap PCIE*_HOST_MODE) */
+	uint64_t rst_drv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is driven by the OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding HOST_MODE=0
+                                                          1 = when corresponding HOST_MODE=1
+
+                                                         When set, OCTEON drives the corresponding
+                                                         PERST*_L pin. Otherwise, OCTEON does not drive
+                                                         the corresponding PERST*_L pin. */
+	uint64_t rst_rcv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is recieved by OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding HOST_MODE=1
+                                                          1 = when corresponding HOST_MODE=0
+
+                                                         When RST_RCV==1, the PERST*_L value is
+                                                         received and may be used to reset the
+                                                         controller and (optionally, based on RST_CHIP)
+                                                         warm reset the chip.
+
+                                                         When RST_RCV==1 (and RST_CHIP=0),
+                                                         MIO_RST_INT[PERST*] gets set when the PERST*_L
+                                                         pin asserts. (This interrupt can alert SW
+                                                         whenever the external reset pin initiates a
+                                                         controller reset sequence.)
+
+                                                         RST_VAL gives the PERST*_L pin value when
+                                                         RST_RCV==1.
+
+                                                         When RST_RCV==0, the PERST*_L pin value is
+                                                         ignored. */
+	uint64_t rst_chip                     : 1;  /**< Controls whether corresponding PERST*_L chip
+                                                         pin causes a chip warm reset like CHIP_RESET_L.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0.
+
+                                                         RST_CHIP is not used when RST_RCV==0.
+
+                                                         When RST_RCV==0, RST_CHIP is ignored.
+
+                                                         When RST_RCV==1, RST_CHIP==1, and PERST*_L
+                                                         asserts, a chip warm reset will be generated. */
+	uint64_t rst_val                      : 1;  /**< Read-only access to corresponding PERST*_L pin
+                                                         Unpredictable when RST_RCV==0. Reads as 1 when
+                                                         RST_RCV==1 and the PERST*_L pin is asserted.
+                                                         Reads as 0 when RST_RCV==1 and the PERST*_L
+                                                         pin is not asserted. */
 #else
-		uint64_t rst_val:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_drv:1;
-		uint64_t prtmode:2;
-		uint64_t host_mode:1;
-		uint64_t rst_link:1;
-		uint64_t rst_done:1;
-		uint64_t prst_link:1;
-		uint64_t gen1_only:1;
-		uint64_t rev_lanes:1;
-		uint64_t in_rev_ln:1;
-		uint64_t reserved_13_63:51;
+	uint64_t rst_val                      : 1;
+	uint64_t rst_chip                     : 1;
+	uint64_t rst_rcv                      : 1;
+	uint64_t rst_drv                      : 1;
+	uint64_t prtmode                      : 2;
+	uint64_t host_mode                    : 1;
+	uint64_t rst_link                     : 1;
+	uint64_t rst_done                     : 1;
+	uint64_t prst_link                    : 1;
+	uint64_t gen1_only                    : 1;
+	uint64_t rev_lanes                    : 1;
+	uint64_t in_rev_ln                    : 1;
+	uint64_t reserved_13_63               : 51;
 #endif
 	} s;
+	struct cvmx_mio_rst_ctlx_s            cn61xx;
 	struct cvmx_mio_rst_ctlx_cn63xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t prst_link:1;
-		uint64_t rst_done:1;
-		uint64_t rst_link:1;
-		uint64_t host_mode:1;
-		uint64_t prtmode:2;
-		uint64_t rst_drv:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_val:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t prst_link                    : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes the assertion of
+                                                         CIU_SOFT_PRST*[SOFT_PRST]
+
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0
+
+                                                         ***NOTE: Added in pass 2.0 */
+	uint64_t rst_done                     : 1;  /**< Read-only access to controller reset status
+
+                                                         RESET_DONE is always zero (i.e. the controller
+                                                         is held in reset) when:
+                                                           - CIU_SOFT_PRST*[SOFT_PRST]=1, or
+                                                           - RST_RCV==1 and PERST*_L pin is asserted */
+	uint64_t rst_link                     : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes a warm chip reset
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=1
+                                                            1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                         Note that a link-down or hot-reset event can
+                                                         never cause a warm chip reset when the
+                                                         controller is in reset (i.e. can never cause a
+                                                         warm reset when RST_DONE==0). */
+	uint64_t host_mode                    : 1;  /**< RO access to corresponding strap QLM*_HOST_MODE */
+	uint64_t prtmode                      : 2;  /**< Port mode
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                            2,3 = Reserved
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=0
+                                                            1 = when corresponding strap QLM*_HOST_MODE=1 */
+	uint64_t rst_drv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is driven by the OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding strap QLM*_HOST_MODE=0
+                                                          1 = when corresponding strap QLM*_HOST_MODE=1
+
+                                                         When set, OCTEON drives the corresponding
+                                                         PERST*_L pin. Otherwise, OCTEON does not drive
+                                                         the corresponding PERST*_L pin. */
+	uint64_t rst_rcv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is recieved by OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding strap QLM*_HOST_MODE=1
+                                                          1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                         When RST_RCV==1, the PERST*_L value is
+                                                         received and may be used to reset the
+                                                         controller and (optionally, based on RST_CHIP)
+                                                         warm reset the chip.
+
+                                                         When RST_RCV==1 (and RST_CHIP=0),
+                                                         MIO_RST_INT[PERST*] gets set when the PERST*_L
+                                                         pin asserts. (This interrupt can alert SW
+                                                         whenever the external reset pin initiates a
+                                                         controller reset sequence.)
+
+                                                         RST_VAL gives the PERST*_L pin value when
+                                                         RST_RCV==1.
+
+                                                         When RST_RCV==0, the PERST*_L pin value is
+                                                         ignored. */
+	uint64_t rst_chip                     : 1;  /**< Controls whether corresponding PERST*_L chip
+                                                         pin causes a chip warm reset like CHIP_RESET_L.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0.
+
+                                                         RST_CHIP is not used when RST_RCV==0.
+
+                                                         When RST_RCV==0, RST_CHIP is ignored.
+
+                                                         When RST_RCV==1, RST_CHIP==1, and PERST*_L
+                                                         asserts, a chip warm reset will be generated. */
+	uint64_t rst_val                      : 1;  /**< Read-only access to corresponding PERST*_L pin
+                                                         Unpredictable when RST_RCV==0. Reads as 1 when
+                                                         RST_RCV==1 and the PERST*_L pin is asserted.
+                                                         Reads as 0 when RST_RCV==1 and the PERST*_L
+                                                         pin is not asserted. */
 #else
-		uint64_t rst_val:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_drv:1;
-		uint64_t prtmode:2;
-		uint64_t host_mode:1;
-		uint64_t rst_link:1;
-		uint64_t rst_done:1;
-		uint64_t prst_link:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_val                      : 1;
+	uint64_t rst_chip                     : 1;
+	uint64_t rst_rcv                      : 1;
+	uint64_t rst_drv                      : 1;
+	uint64_t prtmode                      : 2;
+	uint64_t host_mode                    : 1;
+	uint64_t rst_link                     : 1;
+	uint64_t rst_done                     : 1;
+	uint64_t prst_link                    : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn63xx;
 	struct cvmx_mio_rst_ctlx_cn63xxp1 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_9_63:55;
-		uint64_t rst_done:1;
-		uint64_t rst_link:1;
-		uint64_t host_mode:1;
-		uint64_t prtmode:2;
-		uint64_t rst_drv:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_val:1;
+	uint64_t reserved_9_63                : 55;
+	uint64_t rst_done                     : 1;  /**< Read-only access to controller reset status
+
+                                                         RESET_DONE is always zero (i.e. the controller
+                                                         is held in reset) when:
+                                                           - CIU_SOFT_PRST*[SOFT_PRST]=1, or
+                                                           - RST_RCV==1 and PERST*_L pin is asserted */
+	uint64_t rst_link                     : 1;  /**< Controls whether corresponding controller
+                                                         link-down or hot-reset causes a warm chip reset
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=1
+                                                            1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                         Note that a link-down or hot-reset event can
+                                                         never cause a warm chip reset when the
+                                                         controller is in reset (i.e. can never cause a
+                                                         warm reset when RST_DONE==0). */
+	uint64_t host_mode                    : 1;  /**< RO access to corresponding strap QLM*_HOST_MODE */
+	uint64_t prtmode                      : 2;  /**< Port mode
+                                                            0 = port is EP mode
+                                                            1 = port is RC mode
+                                                            2,3 = Reserved
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized as
+                                                         follows:
+                                                            0 = when corresponding strap QLM*_HOST_MODE=0
+                                                            1 = when corresponding strap QLM*_HOST_MODE=1 */
+	uint64_t rst_drv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is driven by the OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding strap QLM*_HOST_MODE=0
+                                                          1 = when corresponding strap QLM*_HOST_MODE=1
+
+                                                         When set, OCTEON drives the corresponding
+                                                         PERST*_L pin. Otherwise, OCTEON does not drive
+                                                         the corresponding PERST*_L pin. */
+	uint64_t rst_rcv                      : 1;  /**< Controls whether corresponding PERST*_L chip pin
+                                                         is recieved by OCTEON.  A warm/soft reset
+                                                         will not change this field.  On cold reset,
+                                                         this field is initialized as follows:
+                                                          0 = when corresponding strap QLM*_HOST_MODE=1
+                                                          1 = when corresponding strap QLM*_HOST_MODE=0
+
+                                                         When RST_RCV==1, the PERST*_L value is
+                                                         received and may be used to reset the
+                                                         controller and (optionally, based on RST_CHIP)
+                                                         warm reset the chip.
+
+                                                         When RST_RCV==1 (and RST_CHIP=0),
+                                                         MIO_RST_INT[PERST*] gets set when the PERST*_L
+                                                         pin asserts. (This interrupt can alert SW
+                                                         whenever the external reset pin initiates a
+                                                         controller reset sequence.)
+
+                                                         RST_VAL gives the PERST*_L pin value when
+                                                         RST_RCV==1.
+
+                                                         When RST_RCV==0, the PERST*_L pin value is
+                                                         ignored. */
+	uint64_t rst_chip                     : 1;  /**< Controls whether corresponding PERST*_L chip
+                                                         pin causes a chip warm reset like CHIP_RESET_L.
+                                                         A warm/soft reset will not change this field.
+                                                         On cold reset, this field is initialized to 0.
+
+                                                         RST_CHIP is not used when RST_RCV==0.
+
+                                                         When RST_RCV==0, RST_CHIP is ignored.
+
+                                                         When RST_RCV==1, RST_CHIP==1, and PERST*_L
+                                                         asserts, a chip warm reset will be generated. */
+	uint64_t rst_val                      : 1;  /**< Read-only access to corresponding PERST*_L pin
+                                                         Unpredictable when RST_RCV==0. Reads as 1 when
+                                                         RST_RCV==1 and the PERST*_L pin is asserted.
+                                                         Reads as 0 when RST_RCV==1 and the PERST*_L
+                                                         pin is not asserted. */
 #else
-		uint64_t rst_val:1;
-		uint64_t rst_chip:1;
-		uint64_t rst_rcv:1;
-		uint64_t rst_drv:1;
-		uint64_t prtmode:2;
-		uint64_t host_mode:1;
-		uint64_t rst_link:1;
-		uint64_t rst_done:1;
-		uint64_t reserved_9_63:55;
+	uint64_t rst_val                      : 1;
+	uint64_t rst_chip                     : 1;
+	uint64_t rst_rcv                      : 1;
+	uint64_t rst_drv                      : 1;
+	uint64_t prtmode                      : 2;
+	uint64_t host_mode                    : 1;
+	uint64_t rst_link                     : 1;
+	uint64_t rst_done                     : 1;
+	uint64_t reserved_9_63                : 55;
 #endif
 	} cn63xxp1;
+	struct cvmx_mio_rst_ctlx_cn63xx       cn66xx;
+	struct cvmx_mio_rst_ctlx_cn63xx       cn68xx;
+	struct cvmx_mio_rst_ctlx_cn63xx       cn68xxp1;
+	struct cvmx_mio_rst_ctlx_s            cnf71xx;
 };
+typedef union cvmx_mio_rst_ctlx cvmx_mio_rst_ctlx_t;
 
+/**
+ * cvmx_mio_rst_delay
+ */
 union cvmx_mio_rst_delay {
 	uint64_t u64;
 	struct cvmx_mio_rst_delay_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t warm_rst_dly:16;
-		uint64_t soft_rst_dly:16;
+	uint64_t reserved_32_63               : 32;
+	uint64_t warm_rst_dly                 : 16; /**< A warm reset immediately causes an early warm
+                                                         reset notification.  However, the assertion of
+                                                         warm reset will be delayed this many sclks.
+                                                         A warm/soft reset will not change this field.
+                                                         NOTE: This must be at least 500 dclks */
+	uint64_t soft_rst_dly                 : 16; /**< A soft reset immediately causes an early soft
+                                                         reset notification.  However, the assertion of
+                                                         soft reset will be delayed this many sclks.
+                                                         A warm/soft reset will not change this field.
+                                                         NOTE: This must be at least 500 dclks */
 #else
-		uint64_t soft_rst_dly:16;
-		uint64_t warm_rst_dly:16;
-		uint64_t reserved_32_63:32;
+	uint64_t soft_rst_dly                 : 16;
+	uint64_t warm_rst_dly                 : 16;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
+	struct cvmx_mio_rst_delay_s           cn61xx;
+	struct cvmx_mio_rst_delay_s           cn63xx;
+	struct cvmx_mio_rst_delay_s           cn63xxp1;
+	struct cvmx_mio_rst_delay_s           cn66xx;
+	struct cvmx_mio_rst_delay_s           cn68xx;
+	struct cvmx_mio_rst_delay_s           cn68xxp1;
+	struct cvmx_mio_rst_delay_s           cnf71xx;
 };
+typedef union cvmx_mio_rst_delay cvmx_mio_rst_delay_t;
 
+/**
+ * cvmx_mio_rst_int
+ *
+ * MIO_RST_INT = MIO Reset Interrupt Register
+ *
+ */
 union cvmx_mio_rst_int {
 	uint64_t u64;
 	struct cvmx_mio_rst_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t perst1:1;
-		uint64_t perst0:1;
-		uint64_t reserved_4_7:4;
-		uint64_t rst_link3:1;
-		uint64_t rst_link2:1;
-		uint64_t rst_link1:1;
-		uint64_t rst_link0:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t perst1                       : 1;  /**< PERST1_L asserted while MIO_RST_CTL1[RST_RCV]=1
+                                                         and MIO_RST_CTL1[RST_CHIP]=0 */
+	uint64_t perst0                       : 1;  /**< PERST0_L asserted while MIO_RST_CTL0[RST_RCV]=1
+                                                         and MIO_RST_CTL0[RST_CHIP]=0 */
+	uint64_t reserved_4_7                 : 4;
+	uint64_t rst_link3                    : 1;  /**< A controller3 link-down/hot-reset occurred while
+                                                         MIO_RST_CNTL3[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST3[SOFT_PRST] */
+	uint64_t rst_link2                    : 1;  /**< A controller2 link-down/hot-reset occurred while
+                                                         MIO_RST_CNTL2[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST2[SOFT_PRST] */
+	uint64_t rst_link1                    : 1;  /**< A controller1 link-down/hot-reset occurred while
+                                                         MIO_RST_CTL1[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST1[SOFT_PRST] */
+	uint64_t rst_link0                    : 1;  /**< A controller0 link-down/hot-reset occurred while
+                                                         MIO_RST_CTL0[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST[SOFT_PRST] */
 #else
-		uint64_t rst_link0:1;
-		uint64_t rst_link1:1;
-		uint64_t rst_link2:1;
-		uint64_t rst_link3:1;
-		uint64_t reserved_4_7:4;
-		uint64_t perst0:1;
-		uint64_t perst1:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_link0                    : 1;
+	uint64_t rst_link1                    : 1;
+	uint64_t rst_link2                    : 1;
+	uint64_t rst_link3                    : 1;
+	uint64_t reserved_4_7                 : 4;
+	uint64_t perst0                       : 1;
+	uint64_t perst1                       : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} s;
 	struct cvmx_mio_rst_int_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t perst1:1;
-		uint64_t perst0:1;
-		uint64_t reserved_2_7:6;
-		uint64_t rst_link1:1;
-		uint64_t rst_link0:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t perst1                       : 1;  /**< PERST1_L asserted while MIO_RST_CTL1[RST_RCV]=1
+                                                         and MIO_RST_CTL1[RST_CHIP]=0 */
+	uint64_t perst0                       : 1;  /**< PERST0_L asserted while MIO_RST_CTL0[RST_RCV]=1
+                                                         and MIO_RST_CTL0[RST_CHIP]=0 */
+	uint64_t reserved_2_7                 : 6;
+	uint64_t rst_link1                    : 1;  /**< A controller1 link-down/hot-reset occurred while
+                                                         MIO_RST_CTL1[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST1[SOFT_PRST] */
+	uint64_t rst_link0                    : 1;  /**< A controller0 link-down/hot-reset occurred while
+                                                         MIO_RST_CTL0[RST_LINK]=0.  Software must assert
+                                                         then de-assert CIU_SOFT_PRST[SOFT_PRST] */
 #else
-		uint64_t rst_link0:1;
-		uint64_t rst_link1:1;
-		uint64_t reserved_2_7:6;
-		uint64_t perst0:1;
-		uint64_t perst1:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_link0                    : 1;
+	uint64_t rst_link1                    : 1;
+	uint64_t reserved_2_7                 : 6;
+	uint64_t perst0                       : 1;
+	uint64_t perst1                       : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn61xx;
+	struct cvmx_mio_rst_int_cn61xx        cn63xx;
+	struct cvmx_mio_rst_int_cn61xx        cn63xxp1;
+	struct cvmx_mio_rst_int_s             cn66xx;
+	struct cvmx_mio_rst_int_cn61xx        cn68xx;
+	struct cvmx_mio_rst_int_cn61xx        cn68xxp1;
+	struct cvmx_mio_rst_int_cn61xx        cnf71xx;
 };
+typedef union cvmx_mio_rst_int cvmx_mio_rst_int_t;
 
+/**
+ * cvmx_mio_rst_int_en
+ *
+ * MIO_RST_INT_EN = MIO Reset Interrupt Enable Register
+ *
+ */
 union cvmx_mio_rst_int_en {
 	uint64_t u64;
 	struct cvmx_mio_rst_int_en_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t perst1:1;
-		uint64_t perst0:1;
-		uint64_t reserved_4_7:4;
-		uint64_t rst_link3:1;
-		uint64_t rst_link2:1;
-		uint64_t rst_link1:1;
-		uint64_t rst_link0:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t perst1                       : 1;  /**< Controller1 PERST reset interrupt enable */
+	uint64_t perst0                       : 1;  /**< Controller0 PERST reset interrupt enable */
+	uint64_t reserved_4_7                 : 4;
+	uint64_t rst_link3                    : 1;  /**< Controller3 link-down/hot reset interrupt enable */
+	uint64_t rst_link2                    : 1;  /**< Controller2 link-down/hot reset interrupt enable */
+	uint64_t rst_link1                    : 1;  /**< Controller1 link-down/hot reset interrupt enable */
+	uint64_t rst_link0                    : 1;  /**< Controller0 link-down/hot reset interrupt enable */
 #else
-		uint64_t rst_link0:1;
-		uint64_t rst_link1:1;
-		uint64_t rst_link2:1;
-		uint64_t rst_link3:1;
-		uint64_t reserved_4_7:4;
-		uint64_t perst0:1;
-		uint64_t perst1:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_link0                    : 1;
+	uint64_t rst_link1                    : 1;
+	uint64_t rst_link2                    : 1;
+	uint64_t rst_link3                    : 1;
+	uint64_t reserved_4_7                 : 4;
+	uint64_t perst0                       : 1;
+	uint64_t perst1                       : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} s;
 	struct cvmx_mio_rst_int_en_cn61xx {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t perst1:1;
-		uint64_t perst0:1;
-		uint64_t reserved_2_7:6;
-		uint64_t rst_link1:1;
-		uint64_t rst_link0:1;
+	uint64_t reserved_10_63               : 54;
+	uint64_t perst1                       : 1;  /**< Controller1 PERST reset interrupt enable */
+	uint64_t perst0                       : 1;  /**< Controller0 PERST reset interrupt enable */
+	uint64_t reserved_2_7                 : 6;
+	uint64_t rst_link1                    : 1;  /**< Controller1 link-down/hot reset interrupt enable */
+	uint64_t rst_link0                    : 1;  /**< Controller0 link-down/hot reset interrupt enable */
 #else
-		uint64_t rst_link0:1;
-		uint64_t rst_link1:1;
-		uint64_t reserved_2_7:6;
-		uint64_t perst0:1;
-		uint64_t perst1:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rst_link0                    : 1;
+	uint64_t rst_link1                    : 1;
+	uint64_t reserved_2_7                 : 6;
+	uint64_t perst0                       : 1;
+	uint64_t perst1                       : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} cn61xx;
+	struct cvmx_mio_rst_int_en_cn61xx     cn63xx;
+	struct cvmx_mio_rst_int_en_cn61xx     cn63xxp1;
+	struct cvmx_mio_rst_int_en_s          cn66xx;
+	struct cvmx_mio_rst_int_en_cn61xx     cn68xx;
+	struct cvmx_mio_rst_int_en_cn61xx     cn68xxp1;
+	struct cvmx_mio_rst_int_en_cn61xx     cnf71xx;
 };
+typedef union cvmx_mio_rst_int_en cvmx_mio_rst_int_en_t;
 
+/**
+ * cvmx_mio_tws#_int
+ *
+ * This register contains the TWSI interrupt-source and SDA/SCL override bits.
+ *
+ */
 union cvmx_mio_twsx_int {
 	uint64_t u64;
 	struct cvmx_mio_twsx_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_12_63:52;
-		uint64_t scl:1;
-		uint64_t sda:1;
-		uint64_t scl_ovr:1;
-		uint64_t sda_ovr:1;
-		uint64_t reserved_7_7:1;
-		uint64_t core_en:1;
-		uint64_t ts_en:1;
-		uint64_t st_en:1;
-		uint64_t reserved_3_3:1;
-		uint64_t core_int:1;
-		uint64_t ts_int:1;
-		uint64_t st_int:1;
+	uint64_t reserved_12_63               : 52;
+	uint64_t scl                          : 1;  /**< SCL signal. */
+	uint64_t sda                          : 1;  /**< SDA signal. */
+	uint64_t scl_ovr                      : 1;  /**< SCL testing override:
+                                                         0 = Normal operation, SCL bus controlled by TWSI core.
+                                                         1 = Pull SCL low. */
+	uint64_t sda_ovr                      : 1;  /**< SDA testing override:
+                                                         0 = Normal operation, SDA bus controlled by TWSI core.
+                                                         1 = Pull SDA low. */
+	uint64_t reserved_7_7                 : 1;
+	uint64_t core_en                      : 1;  /**< TWSI core interrupt enable */
+	uint64_t ts_en                        : 1;  /**< MIO_TWS_TWSI_SW register update interrupt enable */
+	uint64_t st_en                        : 1;  /**< MIO_TWS_SW_TWSI register update interrupt enable */
+	uint64_t reserved_3_3                 : 1;
+	uint64_t core_int                     : 1;  /**< TWSI core interrupt. Ignored when the HLC is enabled.
+                                                         Throws TWS_INTSN_E::MIO_TWS()_INT_CORE.
+                                                         Writes 0 to TWSI control registers IFLG (TWSI_CTL bit 3) to clear
+                                                         TWS_INTSN_E::MIO_TWS()_INT_CORE interrupt.
+                                                         TWSI control registers (TWSI_CTL) can be accessible by MIO_TWS()_SW_TWSI, with
+                                                         OP=0x6 and EOP_IA = 0x2, see MIO_TWS()_SW_TWSI for details. */
+	uint64_t ts_int                       : 1;  /**< MIO_TWS()_TWSI_SW register-update interrupt. Ignored when the HLC is disabled. Throws
+                                                         TWS_INTSN_E::MIO_TWS()_INT_TS. */
+	uint64_t st_int                       : 1;  /**< MIO_TWS()_SW_TWSI register-update interrupt. Ignored when the HLC is disabled. Throws
+                                                         TWS_INTSN_E::MIO_TWS()_INT_ST. */
 #else
-		uint64_t st_int:1;
-		uint64_t ts_int:1;
-		uint64_t core_int:1;
-		uint64_t reserved_3_3:1;
-		uint64_t st_en:1;
-		uint64_t ts_en:1;
-		uint64_t core_en:1;
-		uint64_t reserved_7_7:1;
-		uint64_t sda_ovr:1;
-		uint64_t scl_ovr:1;
-		uint64_t sda:1;
-		uint64_t scl:1;
-		uint64_t reserved_12_63:52;
+	uint64_t st_int                       : 1;
+	uint64_t ts_int                       : 1;
+	uint64_t core_int                     : 1;
+	uint64_t reserved_3_3                 : 1;
+	uint64_t st_en                        : 1;
+	uint64_t ts_en                        : 1;
+	uint64_t core_en                      : 1;
+	uint64_t reserved_7_7                 : 1;
+	uint64_t sda_ovr                      : 1;
+	uint64_t scl_ovr                      : 1;
+	uint64_t sda                          : 1;
+	uint64_t scl                          : 1;
+	uint64_t reserved_12_63               : 52;
 #endif
 	} s;
+	struct cvmx_mio_twsx_int_s            cn30xx;
+	struct cvmx_mio_twsx_int_s            cn31xx;
+	struct cvmx_mio_twsx_int_s            cn38xx;
 	struct cvmx_mio_twsx_int_cn38xxp2 {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t core_en:1;
-		uint64_t ts_en:1;
-		uint64_t st_en:1;
-		uint64_t reserved_3_3:1;
-		uint64_t core_int:1;
-		uint64_t ts_int:1;
-		uint64_t st_int:1;
+	uint64_t reserved_7_63                : 57;
+	uint64_t core_en                      : 1;  /**< TWSI core interrupt enable */
+	uint64_t ts_en                        : 1;  /**< MIO_TWS_TWSI_SW register update interrupt enable */
+	uint64_t st_en                        : 1;  /**< MIO_TWS_SW_TWSI register update interrupt enable */
+	uint64_t reserved_3_3                 : 1;
+	uint64_t core_int                     : 1;  /**< TWSI core interrupt */
+	uint64_t ts_int                       : 1;  /**< MIO_TWS_TWSI_SW register update interrupt */
+	uint64_t st_int                       : 1;  /**< MIO_TWS_SW_TWSI register update interrupt */
 #else
-		uint64_t st_int:1;
-		uint64_t ts_int:1;
-		uint64_t core_int:1;
-		uint64_t reserved_3_3:1;
-		uint64_t st_en:1;
-		uint64_t ts_en:1;
-		uint64_t core_en:1;
-		uint64_t reserved_7_63:57;
+	uint64_t st_int                       : 1;
+	uint64_t ts_int                       : 1;
+	uint64_t core_int                     : 1;
+	uint64_t reserved_3_3                 : 1;
+	uint64_t st_en                        : 1;
+	uint64_t ts_en                        : 1;
+	uint64_t core_en                      : 1;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} cn38xxp2;
+	struct cvmx_mio_twsx_int_s            cn50xx;
+	struct cvmx_mio_twsx_int_s            cn52xx;
+	struct cvmx_mio_twsx_int_s            cn52xxp1;
+	struct cvmx_mio_twsx_int_s            cn56xx;
+	struct cvmx_mio_twsx_int_s            cn56xxp1;
+	struct cvmx_mio_twsx_int_s            cn58xx;
+	struct cvmx_mio_twsx_int_s            cn58xxp1;
+	struct cvmx_mio_twsx_int_s            cn61xx;
+	struct cvmx_mio_twsx_int_s            cn63xx;
+	struct cvmx_mio_twsx_int_s            cn63xxp1;
+	struct cvmx_mio_twsx_int_s            cn66xx;
+	struct cvmx_mio_twsx_int_s            cn68xx;
+	struct cvmx_mio_twsx_int_s            cn68xxp1;
+	struct cvmx_mio_twsx_int_s            cn70xx;
+	struct cvmx_mio_twsx_int_s            cn70xxp1;
+	struct cvmx_mio_twsx_int_cn73xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_12_63               : 52;
+	uint64_t scl                          : 1;  /**< SCL signal. */
+	uint64_t sda                          : 1;  /**< SDA signal. */
+	uint64_t scl_ovr                      : 1;  /**< SCL testing override:
+                                                         0 = Normal operation, SCL bus controlled by TWSI core.
+                                                         1 = Pull SCL low. */
+	uint64_t sda_ovr                      : 1;  /**< SDA testing override:
+                                                         0 = Normal operation, SDA bus controlled by TWSI core.
+                                                         1 = Pull SDA low. */
+	uint64_t reserved_3_7                 : 5;
+	uint64_t core_int                     : 1;  /**< TWSI core interrupt. Ignored when the HLC is enabled.
+                                                         Throws TWS_INTSN_E::MIO_TWS()_INT_CORE.
+                                                         Writes 0 to TWSI control registers IFLG (TWSI_CTL bit 3) to clear
+                                                         TWS_INTSN_E::MIO_TWS()_INT_CORE interrupt.
+                                                         TWSI control registers (TWSI_CTL) can be accessible by MIO_TWS()_SW_TWSI, with
+                                                         OP=0x6 and EOP_IA = 0x2, see MIO_TWS()_SW_TWSI for details. */
+	uint64_t ts_int                       : 1;  /**< MIO_TWS()_TWSI_SW register-update interrupt. Ignored when the HLC is disabled. Throws
+                                                         TWS_INTSN_E::MIO_TWS()_INT_TS. */
+	uint64_t st_int                       : 1;  /**< MIO_TWS()_SW_TWSI register-update interrupt. Ignored when the HLC is disabled. Throws
+                                                         TWS_INTSN_E::MIO_TWS()_INT_ST. */
+#else
+	uint64_t st_int                       : 1;
+	uint64_t ts_int                       : 1;
+	uint64_t core_int                     : 1;
+	uint64_t reserved_3_7                 : 5;
+	uint64_t sda_ovr                      : 1;
+	uint64_t scl_ovr                      : 1;
+	uint64_t sda                          : 1;
+	uint64_t scl                          : 1;
+	uint64_t reserved_12_63               : 52;
+#endif
+	} cn73xx;
+	struct cvmx_mio_twsx_int_cn73xx       cn78xx;
+	struct cvmx_mio_twsx_int_cn73xx       cn78xxp1;
+	struct cvmx_mio_twsx_int_s            cnf71xx;
+	struct cvmx_mio_twsx_int_cn73xx       cnf75xx;
 };
+typedef union cvmx_mio_twsx_int cvmx_mio_twsx_int_t;
 
+/**
+ * cvmx_mio_tws#_int_w1s
+ */
+union cvmx_mio_twsx_int_w1s {
+	uint64_t u64;
+	struct cvmx_mio_twsx_int_w1s_s {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_3_63                : 61;
+	uint64_t core_int                     : 1;  /**< Reads MIO_TWS()_INT[CORE_INT]. */
+	uint64_t ts_int                       : 1;  /**< Reads or sets MIO_TWS()_INT[TS_INT]. */
+	uint64_t st_int                       : 1;  /**< Reads or sets MIO_TWS()_INT[ST_INT]. */
+#else
+	uint64_t st_int                       : 1;
+	uint64_t ts_int                       : 1;
+	uint64_t core_int                     : 1;
+	uint64_t reserved_3_63                : 61;
+#endif
+	} s;
+	struct cvmx_mio_twsx_int_w1s_s        cn73xx;
+	struct cvmx_mio_twsx_int_w1s_s        cn78xx;
+	struct cvmx_mio_twsx_int_w1s_s        cnf75xx;
+};
+typedef union cvmx_mio_twsx_int_w1s cvmx_mio_twsx_int_w1s_t;
+
+/**
+ * cvmx_mio_tws#_sw_twsi
+ *
+ * This register allows software to:
+ * * Initiate master-mode operations with a write operation, and read the result with a
+ * read operation.
+ * * Load four bytes for later retrieval (slave mode) with a write operation and check validity
+ * with a read operation.
+ * * Launch a configuration read/write operation with a write operation and read the result with
+ * a read operation.
+ *
+ * This register should be read or written by software, and read by the TWSI device. The TWSI
+ * device can use either two-byte or five-byte read operations to reference this register.
+ * The TWSI device considers this register valid when [V] = 1 and [SLONLY] = 1.
+ */
 union cvmx_mio_twsx_sw_twsi {
 	uint64_t u64;
 	struct cvmx_mio_twsx_sw_twsi_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t v:1;
-		uint64_t slonly:1;
-		uint64_t eia:1;
-		uint64_t op:4;
-		uint64_t r:1;
-		uint64_t sovr:1;
-		uint64_t size:3;
-		uint64_t scr:2;
-		uint64_t a:10;
-		uint64_t ia:5;
-		uint64_t eop_ia:3;
-		uint64_t d:32;
+	uint64_t v                            : 1;  /**< Valid bit. Set on a write operation (should always be written with a 1). Cleared when a
+                                                         TWSI master-mode operation completes, a TWSI configuration register access completes, or
+                                                         when the TWSI device reads the register if [SLONLY] = 1. */
+	uint64_t slonly                       : 1;  /**< Slave only mode.
+                                                         When this bit is set, no operations are initiated with a write operation. Only the D field
+                                                         is updated in this case.
+                                                         When this bit is clear, a write operation initiates either a master-mode operation or a
+                                                         TWSI configuration register access. */
+	uint64_t eia                          : 1;  /**< Extended internal address. Sends an additional internal address byte (the MSB of [IA] is
+                                                         from MIO_TWS()_SW_TWSI_EXT[IA]). */
+	uint64_t op                           : 4;  /**< Opcode field. When the register is written with [SLONLY] = 0, this field initiates one of
+                                                         the following read or write operations:
+                                                         0x0 = 7-bit byte master-mode operation.
+                                                         0x1 = 7-bit byte combined-read master-mode operation, 7-bit byte write-with-IA master-mode
+                                                         operation.
+                                                         0x2 = 10-bit byte master-mode operation.
+                                                         0x3 = 10-bit byte combined-read master-mode operation, 10-bit byte write-with-IA master-
+                                                         mode operation.
+                                                         0x4 = TWSI master-clock register, TWSI_CLK in TWSI Master Clock Register.
+                                                         0x6 = See [EOP_IA] field.
+                                                         0x8 = 7-bit 4-byte master-mode operation.
+                                                         0x9 = 7-bit 4-byte combined-read master-mode operation, 7-bit 4-byte write-with-IA master-
+                                                         mode operation.
+                                                         0xA = 10-bit 4-byte master-mode operation.
+                                                         0xB = 10-bit 4-byte combined-read master-mode operation, 10-bit 4-byte write-with-IA
+                                                         master-mode operation. */
+	uint64_t r                            : 1;  /**< Read bit or result. If this bit is set on a CSR write when [SLONLY] = 0, the
+                                                         operation is a read operation (if clear, it is a write operation).
+                                                         On a CSR read, this bit returns the result indication for the most recent
+                                                         master-mode operation, 1 = success, 0 = failure. */
+	uint64_t sovr                         : 1;  /**< Size override. If this bit is set, use the SIZE field to determine the master-mode
+                                                         operation size rather than what OP specifies. For operations greater than four bytes, the
+                                                         additional data is contained in MIO_TWS()_SW_TWSI_EXT[DATA]. */
+	uint64_t size                         : 3;  /**< Size minus one. Specifies the size in bytes of the master-mode operation if SOVR = 1. (0 =
+                                                         1 byte, 1 = 2 bytes, ... 7 = 8 bytes). */
+	uint64_t scr                          : 2;  /**< Scratch. Unused, but retain state. */
+	uint64_t a                            : 10; /**< Address field. The address of the remote device for a master-mode operation. ADDR<9:7> are
+                                                         only used for 10-bit addressing.
+                                                         Note that when mastering a 7-bit OP, ADDR<6:0> should not take any of the values 0x78,
+                                                         0x79, 0x7A nor 0x7B. (These 7-bit addresses are reserved to extend to 10-bit addressing). */
+	uint64_t ia                           : 5;  /**< Internal address. Used when launching a combined master-mode operation. The lower 3
+                                                         address bits are contained in [EOP_IA]. */
+	uint64_t eop_ia                       : 3;  /**< Extra opcode, used when OP<3:0> = 0x6 and [SLONLY] = 0.
+                                                         0x0 = TWSI slave address register (TWSI_SLAVE_ADD).
+                                                         0x1 = TWSI data register (TWSI_DATA).
+                                                         0x2 = TWSI control register (TWSI_CTL).
+                                                         0x3 = (when [R] = 0) TWSI clock control register (TWSI_CLKCTL).
+                                                         0x3 = (when [R] = 1) TWSI status register (TWSI_STAT).
+                                                         0x4 = TWSI extended slave register (TWSI_SLAVE_ADD_EXT).
+                                                         0x7 = TWSI soft reset register (TWSI_RST).
+                                                         Also provides the lower three bits of internal address when launching a combined master-mode
+                                                         operation. */
+	uint64_t d                            : 32; /**< Data field.
+                                                         Used on a write operation when:
+                                                         * Initiating a master-mode write operation ([SLONLY] = 0).
+                                                         * Writing a TWSI configuration register ([SLONLY] = 0).
+                                                         * A slave-mode write operation ([SLONLY] = 1).
+                                                         The read value is updated by:
+                                                         * A write operation to this register.
+                                                         * Master-mode completion (contains error code).
+                                                         * TWSI configuration-register read (contains result). */
 #else
-		uint64_t d:32;
-		uint64_t eop_ia:3;
-		uint64_t ia:5;
-		uint64_t a:10;
-		uint64_t scr:2;
-		uint64_t size:3;
-		uint64_t sovr:1;
-		uint64_t r:1;
-		uint64_t op:4;
-		uint64_t eia:1;
-		uint64_t slonly:1;
-		uint64_t v:1;
+	uint64_t d                            : 32;
+	uint64_t eop_ia                       : 3;
+	uint64_t ia                           : 5;
+	uint64_t a                            : 10;
+	uint64_t scr                          : 2;
+	uint64_t size                         : 3;
+	uint64_t sovr                         : 1;
+	uint64_t r                            : 1;
+	uint64_t op                           : 4;
+	uint64_t eia                          : 1;
+	uint64_t slonly                       : 1;
+	uint64_t v                            : 1;
 #endif
 	} s;
+	struct cvmx_mio_twsx_sw_twsi_s        cn30xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn31xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn38xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn38xxp2;
+	struct cvmx_mio_twsx_sw_twsi_s        cn50xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn52xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn52xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn56xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn56xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn58xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn58xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn61xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn63xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn63xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn66xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn68xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn68xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn70xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn70xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cn73xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn78xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cn78xxp1;
+	struct cvmx_mio_twsx_sw_twsi_s        cnf71xx;
+	struct cvmx_mio_twsx_sw_twsi_s        cnf75xx;
 };
+typedef union cvmx_mio_twsx_sw_twsi cvmx_mio_twsx_sw_twsi_t;
 
+/**
+ * cvmx_mio_tws#_sw_twsi_ext
+ *
+ * This register contains an additional byte of internal address and four additional bytes of
+ * data to be used with TWSI master-mode operations.
+ *
+ * The IA field is sent as the first byte of internal address when performing master-mode
+ * combined-read/write-with-IA operations and MIO_TWS()_SW_TWSI[EIA] is set. The D field
+ * extends the data field of MIO_TWS()_SW_TWSI for a total of 8 bytes (SOVR must be set to
+ * perform operations greater than four bytes).
+ */
 union cvmx_mio_twsx_sw_twsi_ext {
 	uint64_t u64;
 	struct cvmx_mio_twsx_sw_twsi_ext_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_40_63:24;
-		uint64_t ia:8;
-		uint64_t d:32;
+	uint64_t reserved_40_63               : 24;
+	uint64_t ia                           : 8;  /**< Extended internal address. Sent as the first byte of internal address when performing
+                                                         master-mode combined-read/write-with-IA operations and MIO_TWS()_SW_TWSI[EIA] is set. */
+	uint64_t d                            : 32; /**< Extended data. Extends the data field of MIO_TWS()_SW_TWSI for a total of eight bytes
+                                                         (MIO_TWS()_SW_TWSI[SOVR] must be set to 1 to perform operations greater than four
+                                                         bytes). */
 #else
-		uint64_t d:32;
-		uint64_t ia:8;
-		uint64_t reserved_40_63:24;
+	uint64_t d                            : 32;
+	uint64_t ia                           : 8;
+	uint64_t reserved_40_63               : 24;
 #endif
 	} s;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn30xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn31xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn38xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn38xxp2;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn50xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn52xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn52xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn56xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn56xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn58xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn58xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn61xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn63xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn63xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn66xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn68xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn68xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn70xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn70xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn73xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn78xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cn78xxp1;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cnf71xx;
+	struct cvmx_mio_twsx_sw_twsi_ext_s    cnf75xx;
 };
+typedef union cvmx_mio_twsx_sw_twsi_ext cvmx_mio_twsx_sw_twsi_ext_t;
 
+/**
+ * cvmx_mio_tws#_twsi_sw
+ *
+ * This register allows the TWSI device to transfer data to software and later check that
+ * software has received the information.
+ *
+ * This register should be read or written by the TWSI device, and read by software. The TWSI
+ * device can use one-byte or four-byte payload write operations, and two-byte payload read
+ * operations. The TWSI device considers this register valid when V = 1.
+ */
 union cvmx_mio_twsx_twsi_sw {
 	uint64_t u64;
 	struct cvmx_mio_twsx_twsi_sw_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t v:2;
-		uint64_t reserved_32_61:30;
-		uint64_t d:32;
+	uint64_t v                            : 2;  /**< Valid bits. These bits are not directly writable. They are set to 11 on any write
+                                                         operation by the TWSI device. They are cleared to 00 on any read operation by software. */
+	uint64_t reserved_0_61                : 62;
 #else
-		uint64_t d:32;
-		uint64_t reserved_32_61:30;
-		uint64_t v:2;
+	uint64_t reserved_0_61                : 62;
+	uint64_t v                            : 2;
 #endif
 	} s;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t v                            : 2;  /**< Valid Bits
+                                                         - Not directly writable
+                                                         - Set to 1 on any write by the TWSI device
+                                                         - Cleared on any read by software */
+	uint64_t reserved_32_61               : 30;
+	uint64_t d                            : 32; /**< Data Field - updated on a write by the TWSI device */
+#else
+	uint64_t d                            : 32;
+	uint64_t reserved_32_61               : 30;
+	uint64_t v                            : 2;
+#endif
+	} cn30xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn31xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn38xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn38xxp2;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn50xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn52xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn52xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn56xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn56xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn58xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn58xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn61xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn63xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn63xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn66xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn68xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn68xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn70xx;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cn70xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn73xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t v                            : 2;  /**< Valid bits. These bits are not directly writable. They are set to 11 on any write
+                                                         operation by the TWSI device. They are cleared to 00 on any read operation by software. */
+	uint64_t reserved_32_61               : 30;
+	uint64_t data                         : 32; /**< Data field. Updated on a write operation by the TWSI device. */
+#else
+	uint64_t data                         : 32;
+	uint64_t reserved_32_61               : 30;
+	uint64_t v                            : 2;
+#endif
+	} cn73xx;
+	struct cvmx_mio_twsx_twsi_sw_cn73xx   cn78xx;
+	struct cvmx_mio_twsx_twsi_sw_cn73xx   cn78xxp1;
+	struct cvmx_mio_twsx_twsi_sw_cn30xx   cnf71xx;
+	struct cvmx_mio_twsx_twsi_sw_cn73xx   cnf75xx;
 };
+typedef union cvmx_mio_twsx_twsi_sw cvmx_mio_twsx_twsi_sw_t;
 
+/**
+ * cvmx_mio_uart#_dlh
+ *
+ * The 8-bit divisor latch high register in conjunction with the 8-bit divisor latch low
+ * (MIO_UART(0..1)_DLL) register form a 16-bit, read/write, Divisor Latch register that contains
+ * the baud-rate divisor for the UART. It is accessed by first setting MIO_UART(0..1)_LCR[DLAB]
+ * (bit 7) (refer to MIO UART Line Control Register). The output baud rate is equal to the
+ * coprocessor-clock frequency divided by sixteen times the value of the baud-rate divisor, as
+ * follows:
+ * baud rate = coprocessor-clock frequency / (16 * divisor).
+ * Note that once both divisor latch registers are set, at least eight coprocessor-clock cycles
+ * should be allowed to pass before transmitting or receiving data.
+ */
 union cvmx_mio_uartx_dlh {
 	uint64_t u64;
 	struct cvmx_mio_uartx_dlh_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dlh:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dlh                          : 8;  /**< Divisor latch high register. */
 #else
-		uint64_t dlh:8;
-		uint64_t reserved_8_63:56;
+	uint64_t dlh                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_dlh_s           cn30xx;
+	struct cvmx_mio_uartx_dlh_s           cn31xx;
+	struct cvmx_mio_uartx_dlh_s           cn38xx;
+	struct cvmx_mio_uartx_dlh_s           cn38xxp2;
+	struct cvmx_mio_uartx_dlh_s           cn50xx;
+	struct cvmx_mio_uartx_dlh_s           cn52xx;
+	struct cvmx_mio_uartx_dlh_s           cn52xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn56xx;
+	struct cvmx_mio_uartx_dlh_s           cn56xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn58xx;
+	struct cvmx_mio_uartx_dlh_s           cn58xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn61xx;
+	struct cvmx_mio_uartx_dlh_s           cn63xx;
+	struct cvmx_mio_uartx_dlh_s           cn63xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn66xx;
+	struct cvmx_mio_uartx_dlh_s           cn68xx;
+	struct cvmx_mio_uartx_dlh_s           cn68xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn70xx;
+	struct cvmx_mio_uartx_dlh_s           cn70xxp1;
+	struct cvmx_mio_uartx_dlh_s           cn73xx;
+	struct cvmx_mio_uartx_dlh_s           cn78xx;
+	struct cvmx_mio_uartx_dlh_s           cn78xxp1;
+	struct cvmx_mio_uartx_dlh_s           cnf71xx;
+	struct cvmx_mio_uartx_dlh_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_dlh cvmx_mio_uartx_dlh_t;
+typedef cvmx_mio_uartx_dlh_t cvmx_uart_dlh_t;
 
+/**
+ * cvmx_mio_uart#_dll
+ *
+ * The 8-bit divisor latch high register in conjunction with the 8-bit divisor latch low
+ * (MIO_UART(0..1)_DLL) register form a 16-bit, read/write, Divisor Latch register that contains
+ * the baud-rate divisor for the UART. It is accessed by first setting MIO_UART(0..1)_LCR[DLAB]
+ * (bit 7) (refer to MIO UART Line Control Register). The output baud rate is equal to the
+ * coprocessor-clock frequency divided by sixteen times the value of the baud-rate divisor, as
+ * follows:
+ * baud rate = coprocessor-clock frequency / (16 * divisor).
+ * Note that once both divisor latch registers are set, at least eight coprocessor-clock cycles
+ * should be allowed to pass before transmitting or receiving data.
+ */
 union cvmx_mio_uartx_dll {
 	uint64_t u64;
 	struct cvmx_mio_uartx_dll_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dll:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dll                          : 8;  /**< Divisor latch low register. */
 #else
-		uint64_t dll:8;
-		uint64_t reserved_8_63:56;
+	uint64_t dll                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_dll_s           cn30xx;
+	struct cvmx_mio_uartx_dll_s           cn31xx;
+	struct cvmx_mio_uartx_dll_s           cn38xx;
+	struct cvmx_mio_uartx_dll_s           cn38xxp2;
+	struct cvmx_mio_uartx_dll_s           cn50xx;
+	struct cvmx_mio_uartx_dll_s           cn52xx;
+	struct cvmx_mio_uartx_dll_s           cn52xxp1;
+	struct cvmx_mio_uartx_dll_s           cn56xx;
+	struct cvmx_mio_uartx_dll_s           cn56xxp1;
+	struct cvmx_mio_uartx_dll_s           cn58xx;
+	struct cvmx_mio_uartx_dll_s           cn58xxp1;
+	struct cvmx_mio_uartx_dll_s           cn61xx;
+	struct cvmx_mio_uartx_dll_s           cn63xx;
+	struct cvmx_mio_uartx_dll_s           cn63xxp1;
+	struct cvmx_mio_uartx_dll_s           cn66xx;
+	struct cvmx_mio_uartx_dll_s           cn68xx;
+	struct cvmx_mio_uartx_dll_s           cn68xxp1;
+	struct cvmx_mio_uartx_dll_s           cn70xx;
+	struct cvmx_mio_uartx_dll_s           cn70xxp1;
+	struct cvmx_mio_uartx_dll_s           cn73xx;
+	struct cvmx_mio_uartx_dll_s           cn78xx;
+	struct cvmx_mio_uartx_dll_s           cn78xxp1;
+	struct cvmx_mio_uartx_dll_s           cnf71xx;
+	struct cvmx_mio_uartx_dll_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_dll cvmx_mio_uartx_dll_t;
+typedef cvmx_mio_uartx_dll_t cvmx_uart_dll_t;
 
+/**
+ * cvmx_mio_uart#_far
+ *
+ * The FIFO access register is used to enable a FIFO-access mode for testing, so that the receive
+ * FIFO can be written by software and the transmit FIFO can be read by software when the FIFOs
+ * are enabled. When FIFOs are not enabled it allows the MIO_UART(0..1)_RBR to be written by
+ * software and the MIO_UART(0..1)_THR to be read by software. Note, that when the FIFO-access
+ * mode is enabled/disabled, the control portion of the receive FIFO and transmit FIFO is reset
+ * and the FIFOs are treated as empty.
+ */
 union cvmx_mio_uartx_far {
 	uint64_t u64;
 	struct cvmx_mio_uartx_far_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t far:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t far                          : 1;  /**< FIFO-access mode enable. */
 #else
-		uint64_t far:1;
-		uint64_t reserved_1_63:63;
+	uint64_t far                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uartx_far_s           cn30xx;
+	struct cvmx_mio_uartx_far_s           cn31xx;
+	struct cvmx_mio_uartx_far_s           cn38xx;
+	struct cvmx_mio_uartx_far_s           cn38xxp2;
+	struct cvmx_mio_uartx_far_s           cn50xx;
+	struct cvmx_mio_uartx_far_s           cn52xx;
+	struct cvmx_mio_uartx_far_s           cn52xxp1;
+	struct cvmx_mio_uartx_far_s           cn56xx;
+	struct cvmx_mio_uartx_far_s           cn56xxp1;
+	struct cvmx_mio_uartx_far_s           cn58xx;
+	struct cvmx_mio_uartx_far_s           cn58xxp1;
+	struct cvmx_mio_uartx_far_s           cn61xx;
+	struct cvmx_mio_uartx_far_s           cn63xx;
+	struct cvmx_mio_uartx_far_s           cn63xxp1;
+	struct cvmx_mio_uartx_far_s           cn66xx;
+	struct cvmx_mio_uartx_far_s           cn68xx;
+	struct cvmx_mio_uartx_far_s           cn68xxp1;
+	struct cvmx_mio_uartx_far_s           cn70xx;
+	struct cvmx_mio_uartx_far_s           cn70xxp1;
+	struct cvmx_mio_uartx_far_s           cn73xx;
+	struct cvmx_mio_uartx_far_s           cn78xx;
+	struct cvmx_mio_uartx_far_s           cn78xxp1;
+	struct cvmx_mio_uartx_far_s           cnf71xx;
+	struct cvmx_mio_uartx_far_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_far cvmx_mio_uartx_far_t;
+typedef cvmx_mio_uartx_far_t cvmx_uart_far_t;
 
+/**
+ * cvmx_mio_uart#_fcr
+ *
+ * The FIFO control register is a write-only register that controls the read- and write-data FIFO
+ * operation. When FIFOs and programmable-THRE-interrupt mode are enabled, this register also
+ * controls the THRE interrupt-empty threshold level.
+ */
 union cvmx_mio_uartx_fcr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_fcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t rxtrig:2;
-		uint64_t txtrig:2;
-		uint64_t reserved_3_3:1;
-		uint64_t txfr:1;
-		uint64_t rxfr:1;
-		uint64_t en:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t rxtrig                       : 2;  /**< RX trigger.If FIFOs are enabled (i.e. EN = 1), this field is active and set the trigger
+                                                         level in the receiver FIFO for the enable received-data-available interrupt (ERBFI). In
+                                                         autoflow-control mode, the trigger is used to determine when the rts_n signal will be
+                                                         deasserted. The trigger values are:
+                                                         0x0 = 1 character in FIFO.
+                                                         0x1 = FIFO 1/4 full.
+                                                         0x2 = FIFO 1/2 full.
+                                                         0x3 = FIFO is two characters less than full. */
+	uint64_t txtrig                       : 2;  /**< TX trigger. If the FIFOs and programmable-THRE-interrupt mode are enabled, the values in
+                                                         this field control the empty threshold level at which THRE interrupts are generated when
+                                                         the mode is active.
+                                                         0x0 = empty FIFO.
+                                                         0x1 = 2 characters in FIFO.
+                                                         0x2 = FIFO 1/4 full.
+                                                         0x3 = FIFO 1/2 full. */
+	uint64_t reserved_3_3                 : 1;
+	uint64_t txfr                         : 1;  /**< TX FIFO reset. Writing a 1 to this bit resets and flushes data in the transmit FIFO. This
+                                                         bit is self-clearing, so it is not necessary to clear this bit. */
+	uint64_t rxfr                         : 1;  /**< RX FIFO reset. Writing a 1 to this bit resets and flushes data in the receive FIFO. This
+                                                         bit is self-clearing, so it is not necessary to clear this bit. */
+	uint64_t en                           : 1;  /**< FIFO enable. Writing a 1 to this bit enables the transmit and receive FIFOs. Whenever the
+                                                         value of this bit is changed both the TX and RX FIFOs are reset. */
 #else
-		uint64_t en:1;
-		uint64_t rxfr:1;
-		uint64_t txfr:1;
-		uint64_t reserved_3_3:1;
-		uint64_t txtrig:2;
-		uint64_t rxtrig:2;
-		uint64_t reserved_8_63:56;
+	uint64_t en                           : 1;
+	uint64_t rxfr                         : 1;
+	uint64_t txfr                         : 1;
+	uint64_t reserved_3_3                 : 1;
+	uint64_t txtrig                       : 2;
+	uint64_t rxtrig                       : 2;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_fcr_s           cn30xx;
+	struct cvmx_mio_uartx_fcr_s           cn31xx;
+	struct cvmx_mio_uartx_fcr_s           cn38xx;
+	struct cvmx_mio_uartx_fcr_s           cn38xxp2;
+	struct cvmx_mio_uartx_fcr_s           cn50xx;
+	struct cvmx_mio_uartx_fcr_s           cn52xx;
+	struct cvmx_mio_uartx_fcr_s           cn52xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn56xx;
+	struct cvmx_mio_uartx_fcr_s           cn56xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn58xx;
+	struct cvmx_mio_uartx_fcr_s           cn58xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn61xx;
+	struct cvmx_mio_uartx_fcr_s           cn63xx;
+	struct cvmx_mio_uartx_fcr_s           cn63xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn66xx;
+	struct cvmx_mio_uartx_fcr_s           cn68xx;
+	struct cvmx_mio_uartx_fcr_s           cn68xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn70xx;
+	struct cvmx_mio_uartx_fcr_s           cn70xxp1;
+	struct cvmx_mio_uartx_fcr_s           cn73xx;
+	struct cvmx_mio_uartx_fcr_s           cn78xx;
+	struct cvmx_mio_uartx_fcr_s           cn78xxp1;
+	struct cvmx_mio_uartx_fcr_s           cnf71xx;
+	struct cvmx_mio_uartx_fcr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_fcr cvmx_mio_uartx_fcr_t;
+typedef cvmx_mio_uartx_fcr_t cvmx_uart_fcr_t;
 
+/**
+ * cvmx_mio_uart#_htx
+ *
+ * The halt TX register is used to halt transmissions for testing, so that the transmit FIFO can
+ * be filled by software when FIFOs are enabled. If FIFOs are not enabled, setting the HTX
+ * register will have no effect.
+ */
 union cvmx_mio_uartx_htx {
 	uint64_t u64;
 	struct cvmx_mio_uartx_htx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t htx:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t htx                          : 1;  /**< Halt TX. */
 #else
-		uint64_t htx:1;
-		uint64_t reserved_1_63:63;
+	uint64_t htx                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uartx_htx_s           cn30xx;
+	struct cvmx_mio_uartx_htx_s           cn31xx;
+	struct cvmx_mio_uartx_htx_s           cn38xx;
+	struct cvmx_mio_uartx_htx_s           cn38xxp2;
+	struct cvmx_mio_uartx_htx_s           cn50xx;
+	struct cvmx_mio_uartx_htx_s           cn52xx;
+	struct cvmx_mio_uartx_htx_s           cn52xxp1;
+	struct cvmx_mio_uartx_htx_s           cn56xx;
+	struct cvmx_mio_uartx_htx_s           cn56xxp1;
+	struct cvmx_mio_uartx_htx_s           cn58xx;
+	struct cvmx_mio_uartx_htx_s           cn58xxp1;
+	struct cvmx_mio_uartx_htx_s           cn61xx;
+	struct cvmx_mio_uartx_htx_s           cn63xx;
+	struct cvmx_mio_uartx_htx_s           cn63xxp1;
+	struct cvmx_mio_uartx_htx_s           cn66xx;
+	struct cvmx_mio_uartx_htx_s           cn68xx;
+	struct cvmx_mio_uartx_htx_s           cn68xxp1;
+	struct cvmx_mio_uartx_htx_s           cn70xx;
+	struct cvmx_mio_uartx_htx_s           cn70xxp1;
+	struct cvmx_mio_uartx_htx_s           cn73xx;
+	struct cvmx_mio_uartx_htx_s           cn78xx;
+	struct cvmx_mio_uartx_htx_s           cn78xxp1;
+	struct cvmx_mio_uartx_htx_s           cnf71xx;
+	struct cvmx_mio_uartx_htx_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_htx cvmx_mio_uartx_htx_t;
+typedef cvmx_mio_uartx_htx_t cvmx_uart_htx_t;
 
+/**
+ * cvmx_mio_uart#_ier
+ *
+ * The interrupt-enable register is a read/write register that contains four bits that enable the
+ * generation of interrupts:
+ * * enable received data available interrupt (ERBFI).
+ * * enable transmitter holding register empty interrupt (ETBEI).
+ * * enable receiver line status interrupt (ELSI).
+ * enable modem status interrupt (EDSSI).
+ * The IER also contains the enable bit for the programmable transmit holding register empty
+ * (THRE) interrupt mode (PTIME).
+ */
 union cvmx_mio_uartx_ier {
 	uint64_t u64;
 	struct cvmx_mio_uartx_ier_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t ptime:1;
-		uint64_t reserved_4_6:3;
-		uint64_t edssi:1;
-		uint64_t elsi:1;
-		uint64_t etbei:1;
-		uint64_t erbfi:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t ptime                        : 1;  /**< Programmable THRE interrupt-mode enable. */
+	uint64_t reserved_4_6                 : 3;
+	uint64_t edssi                        : 1;  /**< Enable modem status interrupt. */
+	uint64_t elsi                         : 1;  /**< Enable receiver line status interrupt. */
+	uint64_t etbei                        : 1;  /**< Enable transmitter holding register empty interrupt. */
+	uint64_t erbfi                        : 1;  /**< Enable received data available interrupt. */
 #else
-		uint64_t erbfi:1;
-		uint64_t etbei:1;
-		uint64_t elsi:1;
-		uint64_t edssi:1;
-		uint64_t reserved_4_6:3;
-		uint64_t ptime:1;
-		uint64_t reserved_8_63:56;
+	uint64_t erbfi                        : 1;
+	uint64_t etbei                        : 1;
+	uint64_t elsi                         : 1;
+	uint64_t edssi                        : 1;
+	uint64_t reserved_4_6                 : 3;
+	uint64_t ptime                        : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_ier_s           cn30xx;
+	struct cvmx_mio_uartx_ier_s           cn31xx;
+	struct cvmx_mio_uartx_ier_s           cn38xx;
+	struct cvmx_mio_uartx_ier_s           cn38xxp2;
+	struct cvmx_mio_uartx_ier_s           cn50xx;
+	struct cvmx_mio_uartx_ier_s           cn52xx;
+	struct cvmx_mio_uartx_ier_s           cn52xxp1;
+	struct cvmx_mio_uartx_ier_s           cn56xx;
+	struct cvmx_mio_uartx_ier_s           cn56xxp1;
+	struct cvmx_mio_uartx_ier_s           cn58xx;
+	struct cvmx_mio_uartx_ier_s           cn58xxp1;
+	struct cvmx_mio_uartx_ier_s           cn61xx;
+	struct cvmx_mio_uartx_ier_s           cn63xx;
+	struct cvmx_mio_uartx_ier_s           cn63xxp1;
+	struct cvmx_mio_uartx_ier_s           cn66xx;
+	struct cvmx_mio_uartx_ier_s           cn68xx;
+	struct cvmx_mio_uartx_ier_s           cn68xxp1;
+	struct cvmx_mio_uartx_ier_s           cn70xx;
+	struct cvmx_mio_uartx_ier_s           cn70xxp1;
+	struct cvmx_mio_uartx_ier_cn73xx {
+#ifdef __BIG_ENDIAN_BITFIELD
+	uint64_t reserved_8_63                : 56;
+	uint64_t ptime                        : 1;  /**< Programmable THRE interrupt-mode enable. */
+	uint64_t reserved_6_4                 : 3;
+	uint64_t edssi                        : 1;  /**< Enable modem status interrupt. */
+	uint64_t elsi                         : 1;  /**< Enable receiver line status interrupt. */
+	uint64_t etbei                        : 1;  /**< Enable transmitter holding register empty interrupt. */
+	uint64_t erbfi                        : 1;  /**< Enable received data available interrupt. */
+#else
+	uint64_t erbfi                        : 1;
+	uint64_t etbei                        : 1;
+	uint64_t elsi                         : 1;
+	uint64_t edssi                        : 1;
+	uint64_t reserved_6_4                 : 3;
+	uint64_t ptime                        : 1;
+	uint64_t reserved_8_63                : 56;
+#endif
+	} cn73xx;
+	struct cvmx_mio_uartx_ier_cn73xx      cn78xx;
+	struct cvmx_mio_uartx_ier_cn73xx      cn78xxp1;
+	struct cvmx_mio_uartx_ier_s           cnf71xx;
+	struct cvmx_mio_uartx_ier_cn73xx      cnf75xx;
 };
+typedef union cvmx_mio_uartx_ier cvmx_mio_uartx_ier_t;
+typedef cvmx_mio_uartx_ier_t cvmx_uart_ier_t;
 
+/**
+ * cvmx_mio_uart#_iir
+ *
+ * The interrupt identity register is a read-only register that identifies the source of an interrupt.
+ *
+ */
 union cvmx_mio_uartx_iir {
 	uint64_t u64;
 	struct cvmx_mio_uartx_iir_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t fen:2;
-		uint64_t reserved_4_5:2;
-		uint64_t iid:4;
+	uint64_t reserved_8_63                : 56;
+	uint64_t fen                          : 2;  /**< FIFO-enabled.
+                                                         0x0 = FIFOs disabled, 0x1 = reserved, 0x2 = reserved, 0x3 = FIFOs enabled. */
+	uint64_t reserved_4_5                 : 2;
+	cvmx_uart_iid_t iid                   : 4;  /**< Interrupt ID. Identifies the highest priority pending interrupt. Assertion of any
+                                                         interrupt throws MIO_UART_INTSN_E::MIO_UART(0..1)_IID. The interrupt-source decoding,
+                                                         interrupt priority, and interrupt-reset control are shown in Interrupt-ID Parameters. */
 #else
-		uint64_t iid:4;
-		uint64_t reserved_4_5:2;
-		uint64_t fen:2;
-		uint64_t reserved_8_63:56;
+	cvmx_uart_iid_t iid                   : 4;
+	uint64_t reserved_4_5                 : 2;
+	uint64_t fen                          : 2;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_iir_s           cn30xx;
+	struct cvmx_mio_uartx_iir_s           cn31xx;
+	struct cvmx_mio_uartx_iir_s           cn38xx;
+	struct cvmx_mio_uartx_iir_s           cn38xxp2;
+	struct cvmx_mio_uartx_iir_s           cn50xx;
+	struct cvmx_mio_uartx_iir_s           cn52xx;
+	struct cvmx_mio_uartx_iir_s           cn52xxp1;
+	struct cvmx_mio_uartx_iir_s           cn56xx;
+	struct cvmx_mio_uartx_iir_s           cn56xxp1;
+	struct cvmx_mio_uartx_iir_s           cn58xx;
+	struct cvmx_mio_uartx_iir_s           cn58xxp1;
+	struct cvmx_mio_uartx_iir_s           cn61xx;
+	struct cvmx_mio_uartx_iir_s           cn63xx;
+	struct cvmx_mio_uartx_iir_s           cn63xxp1;
+	struct cvmx_mio_uartx_iir_s           cn66xx;
+	struct cvmx_mio_uartx_iir_s           cn68xx;
+	struct cvmx_mio_uartx_iir_s           cn68xxp1;
+	struct cvmx_mio_uartx_iir_s           cn70xx;
+	struct cvmx_mio_uartx_iir_s           cn70xxp1;
+	struct cvmx_mio_uartx_iir_s           cn73xx;
+	struct cvmx_mio_uartx_iir_s           cn78xx;
+	struct cvmx_mio_uartx_iir_s           cn78xxp1;
+	struct cvmx_mio_uartx_iir_s           cnf71xx;
+	struct cvmx_mio_uartx_iir_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_iir cvmx_mio_uartx_iir_t;
+typedef cvmx_mio_uartx_iir_t cvmx_uart_iir_t;
 
+/**
+ * cvmx_mio_uart#_lcr
+ *
+ * The line control register controls the format of the data that is transmitted and received by
+ * the UART. It is always readable and writable.
+ */
 union cvmx_mio_uartx_lcr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_lcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dlab:1;
-		uint64_t brk:1;
-		uint64_t reserved_5_5:1;
-		uint64_t eps:1;
-		uint64_t pen:1;
-		uint64_t stop:1;
-		uint64_t cls:2;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dlab                         : 1;  /**< Divisor latch address bit. Setting this bit enables reading and writing of the divisor
+                                                         latch register (MIO_UART(0..1)_DLL and MIO_UART(0..1)_DLH) to set the baud rate of the
+                                                         UART. This bit must be cleared after initial baud-rate setup in order to access other
+                                                         registers. */
+	uint64_t brk                          : 1;  /**< Break control bit. Setting this bit when not in loopback mode (i.e.
+                                                         MIO_UART(0..1)_MCR[LOOP] = 0) sends a break signal by holding the UART0/1_SOUT line low.
+                                                         When in loopback mode, the break condition is internally looped back to the receiver. */
+	uint64_t reserved_5_5                 : 1;
+	uint64_t eps                          : 1;  /**< Even parity select bit. Selects between even and odd parity.
+                                                         1 = an even number of ones is transmitted or checked.
+                                                         0 = an odd number of ones is transmitted or checked. */
+	uint64_t pen                          : 1;  /**< Parity enable bit. Enables and disables parity generation and detection in transmitted and
+                                                         received serial character respectively. */
+	uint64_t stop                         : 1;  /**< Stop control bit. Controls the number of stop bits transmitted.
+                                                         0 = one stop bit is transmitted in the serial data.
+                                                         1 = two stop bits are generated and transmitted in the serial data out,
+                                                         UNLESS CLS = 00, then one and a half stop bits are generated.
+                                                         Note that, regardless of the number of stop bits selected, the receiver only checks the
+                                                         first stop bit. */
+	cvmx_uart_bits_t cls                  : 2;  /**< Character length select field. Selects the number of data bits per character that are
+                                                         transmitted and received.
+                                                         0x0 = 5 bits (bits 0-4 sent).
+                                                         0x1 = 6 bits (bits 0-5 sent).
+                                                         0x2 = 7 bits (bits 0-6 sent).
+                                                         0x3 = 8 bits (all bits sent). */
 #else
-		uint64_t cls:2;
-		uint64_t stop:1;
-		uint64_t pen:1;
-		uint64_t eps:1;
-		uint64_t reserved_5_5:1;
-		uint64_t brk:1;
-		uint64_t dlab:1;
-		uint64_t reserved_8_63:56;
+	cvmx_uart_bits_t cls                  : 2;
+	uint64_t stop                         : 1;
+	uint64_t pen                          : 1;
+	uint64_t eps                          : 1;
+	uint64_t reserved_5_5                 : 1;
+	uint64_t brk                          : 1;
+	uint64_t dlab                         : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_lcr_s           cn30xx;
+	struct cvmx_mio_uartx_lcr_s           cn31xx;
+	struct cvmx_mio_uartx_lcr_s           cn38xx;
+	struct cvmx_mio_uartx_lcr_s           cn38xxp2;
+	struct cvmx_mio_uartx_lcr_s           cn50xx;
+	struct cvmx_mio_uartx_lcr_s           cn52xx;
+	struct cvmx_mio_uartx_lcr_s           cn52xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn56xx;
+	struct cvmx_mio_uartx_lcr_s           cn56xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn58xx;
+	struct cvmx_mio_uartx_lcr_s           cn58xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn61xx;
+	struct cvmx_mio_uartx_lcr_s           cn63xx;
+	struct cvmx_mio_uartx_lcr_s           cn63xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn66xx;
+	struct cvmx_mio_uartx_lcr_s           cn68xx;
+	struct cvmx_mio_uartx_lcr_s           cn68xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn70xx;
+	struct cvmx_mio_uartx_lcr_s           cn70xxp1;
+	struct cvmx_mio_uartx_lcr_s           cn73xx;
+	struct cvmx_mio_uartx_lcr_s           cn78xx;
+	struct cvmx_mio_uartx_lcr_s           cn78xxp1;
+	struct cvmx_mio_uartx_lcr_s           cnf71xx;
+	struct cvmx_mio_uartx_lcr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_lcr cvmx_mio_uartx_lcr_t;
+typedef cvmx_mio_uartx_lcr_t cvmx_uart_lcr_t;
 
+/**
+ * cvmx_mio_uart#_lsr
+ *
+ * The line status register contains status of the receiver and transmitter data transfers. This
+ * status can be read by the user at anytime.
+ */
 union cvmx_mio_uartx_lsr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_lsr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t ferr:1;
-		uint64_t temt:1;
-		uint64_t thre:1;
-		uint64_t bi:1;
-		uint64_t fe:1;
-		uint64_t pe:1;
-		uint64_t oe:1;
-		uint64_t dr:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t ferr                         : 1;  /**< Error in receiver FIFO bit. This bit is active only when FIFOs are enabled. It is set when
+                                                         there is at least one parity error, framing error, or break indication in the FIFO. This
+                                                         bit is cleared when MIO_UART(0..1)_LSR is read and the character with the error is at the
+                                                         top of the receiver FIFO and there are no subsequent errors in the FIFO. */
+	uint64_t temt                         : 1;  /**< Transmitter empty bit. In FIFO mode, this bit is set whenever
+                                                         MIO_UART(0..1)_TSR and the FIFO are both empty. In nonFIFO mode, this bit is set whenever
+                                                         MIO_UART(0..1)_THR and MIO_UART(0..1)_TSR are both empty. This bit is typically used to
+                                                         make sure it is safe to change control registers. Changing control registers while the
+                                                         transmitter is busy can result in corrupt data being transmitted. */
+	uint64_t thre                         : 1;  /**< Transmitter holding register empty bit. When programmable THRE interrupt mode is disabled,
+                                                         this bit indicates that the UART can accept a new character for transmission. This bit is
+                                                         set whenever data is transferred from MIO_UART(0..1)_THR to the transmitter shift register
+                                                         and no new data has been written to MIO_UART(0..1)_THR. This also causes a THRE interrupt
+                                                         to occur, if the THRE interrupt is enabled.
+                                                         When FIFOs and programmable THRE Interrupt mode are enabled, this bit's functionality is
+                                                         switched to indicate the transmitter FIFO is full, and no longer controls THRE Interrupts,
+                                                         which are then controlled by the MIO_UART(0..1)_FCR[TXTRIG] threshold setting. */
+	uint64_t bi                           : 1;  /**< Break interrupt bit. */
+	uint64_t fe                           : 1;  /**< Framing error bit. This bit is set whenever there is a framing error in the receiver. A
+                                                         framing error occurs when the receiver does not detect a valid STOP bit in the received
+                                                         data. In FIFO mode, since the framing error is associated with a character received, it is
+                                                         revealed when the character with the framing error is at the top of the FIFO. This bit is
+                                                         reset when a reset of the MIO_UART(0..1) is performed. */
+	uint64_t pe                           : 1;  /**< Parity error bit. This bit is set whenever there is a parity error in the receiver if the
+                                                         parity-enable bit (MIO_UART(0..1)_LCR[PEN]) is set. In FIFO mode, since the parity error
+                                                         is associated with a character received, it is revealed when the character with the parity
+                                                         error arrives at the top of the FIFO. This bit is reset when a reset of the MIO_UART(0..1)
+                                                         is performed. */
+	uint64_t oe                           : 1;  /**< Overrun error bit. When set, this bit indicates an overrun error has occurred because a
+                                                         new data character was received before the previous data was read. In nonFIFO mode, this
+                                                         bit is set when a new character arrives in the receiver before the previous character was
+                                                         read from MIO_UART(0..1)_RBR. When this happens, the data in MIO_UART(0..1)_RBR is
+                                                         overwritten. In FIFO mode, an overrun error occurs when the FIFO is full and a new
+                                                         character arrives at the receiver. The data in the FIFO is retained and the data in the
+                                                         receive shift register is lost. This bit is reset when a reset of the MIO_UART(0..1) is
+                                                         performed. */
+	uint64_t dr                           : 1;  /**< Data ready bit. When set, this bit indicates the receiver contains at least one character
+                                                         in the MIO_UART(0..1)_RBR or the receiver FIFO. This bit is cleared when the
+                                                         MIO_UART(0..1)_RBR is read in nonFIFO mode, or when the receiver FIFO is empty in FIFO
+                                                         mode. */
 #else
-		uint64_t dr:1;
-		uint64_t oe:1;
-		uint64_t pe:1;
-		uint64_t fe:1;
-		uint64_t bi:1;
-		uint64_t thre:1;
-		uint64_t temt:1;
-		uint64_t ferr:1;
-		uint64_t reserved_8_63:56;
+	uint64_t dr                           : 1;
+	uint64_t oe                           : 1;
+	uint64_t pe                           : 1;
+	uint64_t fe                           : 1;
+	uint64_t bi                           : 1;
+	uint64_t thre                         : 1;
+	uint64_t temt                         : 1;
+	uint64_t ferr                         : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_lsr_s           cn30xx;
+	struct cvmx_mio_uartx_lsr_s           cn31xx;
+	struct cvmx_mio_uartx_lsr_s           cn38xx;
+	struct cvmx_mio_uartx_lsr_s           cn38xxp2;
+	struct cvmx_mio_uartx_lsr_s           cn50xx;
+	struct cvmx_mio_uartx_lsr_s           cn52xx;
+	struct cvmx_mio_uartx_lsr_s           cn52xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn56xx;
+	struct cvmx_mio_uartx_lsr_s           cn56xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn58xx;
+	struct cvmx_mio_uartx_lsr_s           cn58xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn61xx;
+	struct cvmx_mio_uartx_lsr_s           cn63xx;
+	struct cvmx_mio_uartx_lsr_s           cn63xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn66xx;
+	struct cvmx_mio_uartx_lsr_s           cn68xx;
+	struct cvmx_mio_uartx_lsr_s           cn68xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn70xx;
+	struct cvmx_mio_uartx_lsr_s           cn70xxp1;
+	struct cvmx_mio_uartx_lsr_s           cn73xx;
+	struct cvmx_mio_uartx_lsr_s           cn78xx;
+	struct cvmx_mio_uartx_lsr_s           cn78xxp1;
+	struct cvmx_mio_uartx_lsr_s           cnf71xx;
+	struct cvmx_mio_uartx_lsr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_lsr cvmx_mio_uartx_lsr_t;
+typedef cvmx_mio_uartx_lsr_t cvmx_uart_lsr_t;
 
+/**
+ * cvmx_mio_uart#_mcr
+ *
+ * The lower four bits of the modem-control register directly manipulate the outputs of the UART.
+ * The DTR, RTS, OUT1, and OUT2 bits are inverted and then drive the corresponding UART outputs:
+ * dtr_n, rts_n (UART0/1_RTS_L), out1_n, and out2_n.
+ */
 union cvmx_mio_uartx_mcr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_mcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_6_63:58;
-		uint64_t afce:1;
-		uint64_t loop:1;
-		uint64_t out2:1;
-		uint64_t out1:1;
-		uint64_t rts:1;
-		uint64_t dtr:1;
+	uint64_t reserved_6_63                : 58;
+	uint64_t afce                         : 1;  /**< Autoflow-control enable (AFCE) bit. When FIFOs are enabled and this bit is set,
+                                                         16750-compatible autoRTS and autoCTS serial data flow control features are enabled. */
+	uint64_t loop                         : 1;  /**< Loopback bit. When set, data on the UART0/1_SOUT line is held high, while serial data
+                                                         output is looped back to the UART0/1_SIN line, internally. In this mode all the interrupts
+                                                         are fully functional. This feature is used for diagnostic purposes.
+                                                         Also, in loopback mode, the modem-control inputs (dsr_n, cts_n, ri_n, dcd_n) are
+                                                         disconnected and the four modem-control outputs (dtr_n, rts_n, out1_n, out1_n) are looped
+                                                         back to the inputs, internally */
+	uint64_t out2                         : 1;  /**< OUT2 output bit. This bit is inverted and drives the out2_n signal */
+	uint64_t out1                         : 1;  /**< OUT1 output bit. This bit is inverted and drives the out1_n signal */
+	uint64_t rts                          : 1;  /**< RTS output bit. This bit is inverted and drives the rts_n signal.6 */
+	uint64_t dtr                          : 1;  /**< DTR output bit. This bit is inverted and drives the dtr_n signal. */
 #else
-		uint64_t dtr:1;
-		uint64_t rts:1;
-		uint64_t out1:1;
-		uint64_t out2:1;
-		uint64_t loop:1;
-		uint64_t afce:1;
-		uint64_t reserved_6_63:58;
+	uint64_t dtr                          : 1;
+	uint64_t rts                          : 1;
+	uint64_t out1                         : 1;
+	uint64_t out2                         : 1;
+	uint64_t loop                         : 1;
+	uint64_t afce                         : 1;
+	uint64_t reserved_6_63                : 58;
 #endif
 	} s;
+	struct cvmx_mio_uartx_mcr_s           cn30xx;
+	struct cvmx_mio_uartx_mcr_s           cn31xx;
+	struct cvmx_mio_uartx_mcr_s           cn38xx;
+	struct cvmx_mio_uartx_mcr_s           cn38xxp2;
+	struct cvmx_mio_uartx_mcr_s           cn50xx;
+	struct cvmx_mio_uartx_mcr_s           cn52xx;
+	struct cvmx_mio_uartx_mcr_s           cn52xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn56xx;
+	struct cvmx_mio_uartx_mcr_s           cn56xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn58xx;
+	struct cvmx_mio_uartx_mcr_s           cn58xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn61xx;
+	struct cvmx_mio_uartx_mcr_s           cn63xx;
+	struct cvmx_mio_uartx_mcr_s           cn63xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn66xx;
+	struct cvmx_mio_uartx_mcr_s           cn68xx;
+	struct cvmx_mio_uartx_mcr_s           cn68xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn70xx;
+	struct cvmx_mio_uartx_mcr_s           cn70xxp1;
+	struct cvmx_mio_uartx_mcr_s           cn73xx;
+	struct cvmx_mio_uartx_mcr_s           cn78xx;
+	struct cvmx_mio_uartx_mcr_s           cn78xxp1;
+	struct cvmx_mio_uartx_mcr_s           cnf71xx;
+	struct cvmx_mio_uartx_mcr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_mcr cvmx_mio_uartx_mcr_t;
+typedef cvmx_mio_uartx_mcr_t cvmx_uart_mcr_t;
 
+/**
+ * cvmx_mio_uart#_msr
+ *
+ * The modem status register contains the current status of the modem-control input lines and if
+ * they changed.
+ */
 union cvmx_mio_uartx_msr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_msr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dcd:1;
-		uint64_t ri:1;
-		uint64_t dsr:1;
-		uint64_t cts:1;
-		uint64_t ddcd:1;
-		uint64_t teri:1;
-		uint64_t ddsr:1;
-		uint64_t dcts:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dcd                          : 1;  /**< Data-carrier-detect input bit. This bit is the complement of the modem-control line dcd_n.
+                                                         In loopback mode, this bit is the same as
+                                                         MIO_UART(0..1)_MCR[OUT2]. */
+	uint64_t ri                           : 1;  /**< Ring indicator input bit. This bit is the complement of the modem-control line ri_n. In
+                                                         loopback mode, this bit is the same as MIO_UART(0..1)_MCR[OUT1]. */
+	uint64_t dsr                          : 1;  /**< Data-set-ready input bit. This bit is the complement of the modem-control line dsr_n. In
+                                                         loopback mode, this bit is the same as MIO_UART(0..1)_MCR[DTR]. */
+	uint64_t cts                          : 1;  /**< Clear-to-send input bit. This bit is the complement of the modem-control line cts_n. In
+                                                         loopback mode, this bit is the same as MIO_UART(0..1)_MCR[RTS]. */
+	uint64_t ddcd                         : 1;  /**< Delta data-carrier-detect. Records whether the dcd_n line has changed since the last time
+                                                         the user read the MIO_UART(0..1)_MSR. In loopback mode, reflects changes in
+                                                         MIO_UART(0..1)_MCR[OUT2]. */
+	uint64_t teri                         : 1;  /**< Trailing edge of ring indicator. Indicates ri_n has changed from an active-low, to an
+                                                         inactive-high state since the last time the user read the
+                                                         MIO_UART(0..1)_MSR. In loopback mode, reflects state changes from high to low in
+                                                         MIO_UART(0..1)_MCR[OUT1]. */
+	uint64_t ddsr                         : 1;  /**< Delta data-set-ready. Records whether the dsr_n line has changed since the last time the
+                                                         user read the MIO_UART(0..1)_MSR. In loopback mode, reflects changes in
+                                                         MIO_UART(0..1)_MCR[DTR]. */
+	uint64_t dcts                         : 1;  /**< Delta clear-to-send. Records whether the cts_n line has changed since the last time the
+                                                         user read the MIO_UART(0..1)_MSR. In loopback mode, reflects changes in
+                                                         MIO_UART(0..1)_MCR[RTS]. */
 #else
-		uint64_t dcts:1;
-		uint64_t ddsr:1;
-		uint64_t teri:1;
-		uint64_t ddcd:1;
-		uint64_t cts:1;
-		uint64_t dsr:1;
-		uint64_t ri:1;
-		uint64_t dcd:1;
-		uint64_t reserved_8_63:56;
+	uint64_t dcts                         : 1;
+	uint64_t ddsr                         : 1;
+	uint64_t teri                         : 1;
+	uint64_t ddcd                         : 1;
+	uint64_t cts                          : 1;
+	uint64_t dsr                          : 1;
+	uint64_t ri                           : 1;
+	uint64_t dcd                          : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_msr_s           cn30xx;
+	struct cvmx_mio_uartx_msr_s           cn31xx;
+	struct cvmx_mio_uartx_msr_s           cn38xx;
+	struct cvmx_mio_uartx_msr_s           cn38xxp2;
+	struct cvmx_mio_uartx_msr_s           cn50xx;
+	struct cvmx_mio_uartx_msr_s           cn52xx;
+	struct cvmx_mio_uartx_msr_s           cn52xxp1;
+	struct cvmx_mio_uartx_msr_s           cn56xx;
+	struct cvmx_mio_uartx_msr_s           cn56xxp1;
+	struct cvmx_mio_uartx_msr_s           cn58xx;
+	struct cvmx_mio_uartx_msr_s           cn58xxp1;
+	struct cvmx_mio_uartx_msr_s           cn61xx;
+	struct cvmx_mio_uartx_msr_s           cn63xx;
+	struct cvmx_mio_uartx_msr_s           cn63xxp1;
+	struct cvmx_mio_uartx_msr_s           cn66xx;
+	struct cvmx_mio_uartx_msr_s           cn68xx;
+	struct cvmx_mio_uartx_msr_s           cn68xxp1;
+	struct cvmx_mio_uartx_msr_s           cn70xx;
+	struct cvmx_mio_uartx_msr_s           cn70xxp1;
+	struct cvmx_mio_uartx_msr_s           cn73xx;
+	struct cvmx_mio_uartx_msr_s           cn78xx;
+	struct cvmx_mio_uartx_msr_s           cn78xxp1;
+	struct cvmx_mio_uartx_msr_s           cnf71xx;
+	struct cvmx_mio_uartx_msr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_msr cvmx_mio_uartx_msr_t;
+typedef cvmx_mio_uartx_msr_t cvmx_uart_msr_t;
 
+/**
+ * cvmx_mio_uart#_rbr
+ *
+ * The receive buffer register is a read-only register that contains the data byte received on
+ * the serial input port (SIN). The data in this register is valid only if the
+ * MIO_UART(0..1)_LSR[DR] bit is set (
+ */
 union cvmx_mio_uartx_rbr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_rbr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t rbr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t rbr                          : 8;  /**< Receive buffer register. Contains the data byte received on the serial input port. */
 #else
-		uint64_t rbr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t rbr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_rbr_s           cn30xx;
+	struct cvmx_mio_uartx_rbr_s           cn31xx;
+	struct cvmx_mio_uartx_rbr_s           cn38xx;
+	struct cvmx_mio_uartx_rbr_s           cn38xxp2;
+	struct cvmx_mio_uartx_rbr_s           cn50xx;
+	struct cvmx_mio_uartx_rbr_s           cn52xx;
+	struct cvmx_mio_uartx_rbr_s           cn52xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn56xx;
+	struct cvmx_mio_uartx_rbr_s           cn56xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn58xx;
+	struct cvmx_mio_uartx_rbr_s           cn58xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn61xx;
+	struct cvmx_mio_uartx_rbr_s           cn63xx;
+	struct cvmx_mio_uartx_rbr_s           cn63xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn66xx;
+	struct cvmx_mio_uartx_rbr_s           cn68xx;
+	struct cvmx_mio_uartx_rbr_s           cn68xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn70xx;
+	struct cvmx_mio_uartx_rbr_s           cn70xxp1;
+	struct cvmx_mio_uartx_rbr_s           cn73xx;
+	struct cvmx_mio_uartx_rbr_s           cn78xx;
+	struct cvmx_mio_uartx_rbr_s           cn78xxp1;
+	struct cvmx_mio_uartx_rbr_s           cnf71xx;
+	struct cvmx_mio_uartx_rbr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_rbr cvmx_mio_uartx_rbr_t;
+typedef cvmx_mio_uartx_rbr_t cvmx_uart_rbr_t;
 
+/**
+ * cvmx_mio_uart#_rfl
+ *
+ * The receive FIFO level register indicates the number of data entries in the receive FIFO.
+ *
+ */
 union cvmx_mio_uartx_rfl {
 	uint64_t u64;
 	struct cvmx_mio_uartx_rfl_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t rfl:7;
+	uint64_t reserved_7_63                : 57;
+	uint64_t rfl                          : 7;  /**< Receive FIFO level. Indicates the number of data entries in the receive FIFO. */
 #else
-		uint64_t rfl:7;
-		uint64_t reserved_7_63:57;
+	uint64_t rfl                          : 7;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_uartx_rfl_s           cn30xx;
+	struct cvmx_mio_uartx_rfl_s           cn31xx;
+	struct cvmx_mio_uartx_rfl_s           cn38xx;
+	struct cvmx_mio_uartx_rfl_s           cn38xxp2;
+	struct cvmx_mio_uartx_rfl_s           cn50xx;
+	struct cvmx_mio_uartx_rfl_s           cn52xx;
+	struct cvmx_mio_uartx_rfl_s           cn52xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn56xx;
+	struct cvmx_mio_uartx_rfl_s           cn56xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn58xx;
+	struct cvmx_mio_uartx_rfl_s           cn58xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn61xx;
+	struct cvmx_mio_uartx_rfl_s           cn63xx;
+	struct cvmx_mio_uartx_rfl_s           cn63xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn66xx;
+	struct cvmx_mio_uartx_rfl_s           cn68xx;
+	struct cvmx_mio_uartx_rfl_s           cn68xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn70xx;
+	struct cvmx_mio_uartx_rfl_s           cn70xxp1;
+	struct cvmx_mio_uartx_rfl_s           cn73xx;
+	struct cvmx_mio_uartx_rfl_s           cn78xx;
+	struct cvmx_mio_uartx_rfl_s           cn78xxp1;
+	struct cvmx_mio_uartx_rfl_s           cnf71xx;
+	struct cvmx_mio_uartx_rfl_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_rfl cvmx_mio_uartx_rfl_t;
+typedef cvmx_mio_uartx_rfl_t cvmx_uart_rfl_t;
 
+/**
+ * cvmx_mio_uart#_rfw
+ *
+ * The receive FIFO write register is only valid when FIFO-access mode is enabled (i.e.
+ * MIO_UART(0..1)_FAR[FAR] = 1).
+ */
 union cvmx_mio_uartx_rfw {
 	uint64_t u64;
 	struct cvmx_mio_uartx_rfw_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t rffe:1;
-		uint64_t rfpe:1;
-		uint64_t rfwd:8;
+	uint64_t reserved_10_63               : 54;
+	uint64_t rffe                         : 1;  /**< Receive FIFO framing error. */
+	uint64_t rfpe                         : 1;  /**< Receive FIFO parity error. */
+	uint64_t rfwd                         : 8;  /**< Receive FIFO write data.
+                                                         When FIFOs are enabled, this field provides write data to the receive FIFO. Each
+                                                         consecutive write pushes the new data to the next write location in the receive FIFO.
+                                                         When FIFOs are not enabled, this field provides write data to the MIO_UART(0..1)_RBR. */
 #else
-		uint64_t rfwd:8;
-		uint64_t rfpe:1;
-		uint64_t rffe:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rfwd                         : 8;
+	uint64_t rfpe                         : 1;
+	uint64_t rffe                         : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} s;
+	struct cvmx_mio_uartx_rfw_s           cn30xx;
+	struct cvmx_mio_uartx_rfw_s           cn31xx;
+	struct cvmx_mio_uartx_rfw_s           cn38xx;
+	struct cvmx_mio_uartx_rfw_s           cn38xxp2;
+	struct cvmx_mio_uartx_rfw_s           cn50xx;
+	struct cvmx_mio_uartx_rfw_s           cn52xx;
+	struct cvmx_mio_uartx_rfw_s           cn52xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn56xx;
+	struct cvmx_mio_uartx_rfw_s           cn56xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn58xx;
+	struct cvmx_mio_uartx_rfw_s           cn58xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn61xx;
+	struct cvmx_mio_uartx_rfw_s           cn63xx;
+	struct cvmx_mio_uartx_rfw_s           cn63xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn66xx;
+	struct cvmx_mio_uartx_rfw_s           cn68xx;
+	struct cvmx_mio_uartx_rfw_s           cn68xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn70xx;
+	struct cvmx_mio_uartx_rfw_s           cn70xxp1;
+	struct cvmx_mio_uartx_rfw_s           cn73xx;
+	struct cvmx_mio_uartx_rfw_s           cn78xx;
+	struct cvmx_mio_uartx_rfw_s           cn78xxp1;
+	struct cvmx_mio_uartx_rfw_s           cnf71xx;
+	struct cvmx_mio_uartx_rfw_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_rfw cvmx_mio_uartx_rfw_t;
+typedef cvmx_mio_uartx_rfw_t cvmx_uart_rfw_t;
 
+/**
+ * cvmx_mio_uart#_sbcr
+ *
+ * The shadow break control register is a shadow register for the
+ * MIO_UART(0..1)_LCR[BRK] bit that can be used to remove the burden of having to perform a read-
+ * modify-write on MIO_UART(0..1)_LCR.
+ */
 union cvmx_mio_uartx_sbcr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_sbcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t sbcr:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t sbcr                         : 1;  /**< Shadow break control. */
 #else
-		uint64_t sbcr:1;
-		uint64_t reserved_1_63:63;
+	uint64_t sbcr                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uartx_sbcr_s          cn30xx;
+	struct cvmx_mio_uartx_sbcr_s          cn31xx;
+	struct cvmx_mio_uartx_sbcr_s          cn38xx;
+	struct cvmx_mio_uartx_sbcr_s          cn38xxp2;
+	struct cvmx_mio_uartx_sbcr_s          cn50xx;
+	struct cvmx_mio_uartx_sbcr_s          cn52xx;
+	struct cvmx_mio_uartx_sbcr_s          cn52xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn56xx;
+	struct cvmx_mio_uartx_sbcr_s          cn56xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn58xx;
+	struct cvmx_mio_uartx_sbcr_s          cn58xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn61xx;
+	struct cvmx_mio_uartx_sbcr_s          cn63xx;
+	struct cvmx_mio_uartx_sbcr_s          cn63xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn66xx;
+	struct cvmx_mio_uartx_sbcr_s          cn68xx;
+	struct cvmx_mio_uartx_sbcr_s          cn68xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn70xx;
+	struct cvmx_mio_uartx_sbcr_s          cn70xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cn73xx;
+	struct cvmx_mio_uartx_sbcr_s          cn78xx;
+	struct cvmx_mio_uartx_sbcr_s          cn78xxp1;
+	struct cvmx_mio_uartx_sbcr_s          cnf71xx;
+	struct cvmx_mio_uartx_sbcr_s          cnf75xx;
 };
+typedef union cvmx_mio_uartx_sbcr cvmx_mio_uartx_sbcr_t;
+typedef cvmx_mio_uartx_sbcr_t cvmx_uart_sbcr_t;
 
+/**
+ * cvmx_mio_uart#_scr
+ *
+ * The scratchpad register is an 8-bit read/write register for programmers to use as a temporary
+ * storage space.
+ */
 union cvmx_mio_uartx_scr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_scr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t scr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t scr                          : 8;  /**< Scratchpad register. */
 #else
-		uint64_t scr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t scr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_scr_s           cn30xx;
+	struct cvmx_mio_uartx_scr_s           cn31xx;
+	struct cvmx_mio_uartx_scr_s           cn38xx;
+	struct cvmx_mio_uartx_scr_s           cn38xxp2;
+	struct cvmx_mio_uartx_scr_s           cn50xx;
+	struct cvmx_mio_uartx_scr_s           cn52xx;
+	struct cvmx_mio_uartx_scr_s           cn52xxp1;
+	struct cvmx_mio_uartx_scr_s           cn56xx;
+	struct cvmx_mio_uartx_scr_s           cn56xxp1;
+	struct cvmx_mio_uartx_scr_s           cn58xx;
+	struct cvmx_mio_uartx_scr_s           cn58xxp1;
+	struct cvmx_mio_uartx_scr_s           cn61xx;
+	struct cvmx_mio_uartx_scr_s           cn63xx;
+	struct cvmx_mio_uartx_scr_s           cn63xxp1;
+	struct cvmx_mio_uartx_scr_s           cn66xx;
+	struct cvmx_mio_uartx_scr_s           cn68xx;
+	struct cvmx_mio_uartx_scr_s           cn68xxp1;
+	struct cvmx_mio_uartx_scr_s           cn70xx;
+	struct cvmx_mio_uartx_scr_s           cn70xxp1;
+	struct cvmx_mio_uartx_scr_s           cn73xx;
+	struct cvmx_mio_uartx_scr_s           cn78xx;
+	struct cvmx_mio_uartx_scr_s           cn78xxp1;
+	struct cvmx_mio_uartx_scr_s           cnf71xx;
+	struct cvmx_mio_uartx_scr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_scr cvmx_mio_uartx_scr_t;
+typedef cvmx_mio_uartx_scr_t cvmx_uart_scr_t;
 
+/**
+ * cvmx_mio_uart#_sfe
+ *
+ * The shadow FIFO enable register is a shadow register for MIO_UART(0..1)_FCR[EN] that can be
+ * used to remove the burden of having to store the previously written value to
+ * MIO_UART(0..1)_FCR in memory and having to mask this value so that only the FIFO enable bit
+ * gets updated.
+ */
 union cvmx_mio_uartx_sfe {
 	uint64_t u64;
 	struct cvmx_mio_uartx_sfe_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t sfe:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t sfe                          : 1;  /**< Shadow FIFO enable. */
 #else
-		uint64_t sfe:1;
-		uint64_t reserved_1_63:63;
+	uint64_t sfe                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uartx_sfe_s           cn30xx;
+	struct cvmx_mio_uartx_sfe_s           cn31xx;
+	struct cvmx_mio_uartx_sfe_s           cn38xx;
+	struct cvmx_mio_uartx_sfe_s           cn38xxp2;
+	struct cvmx_mio_uartx_sfe_s           cn50xx;
+	struct cvmx_mio_uartx_sfe_s           cn52xx;
+	struct cvmx_mio_uartx_sfe_s           cn52xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn56xx;
+	struct cvmx_mio_uartx_sfe_s           cn56xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn58xx;
+	struct cvmx_mio_uartx_sfe_s           cn58xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn61xx;
+	struct cvmx_mio_uartx_sfe_s           cn63xx;
+	struct cvmx_mio_uartx_sfe_s           cn63xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn66xx;
+	struct cvmx_mio_uartx_sfe_s           cn68xx;
+	struct cvmx_mio_uartx_sfe_s           cn68xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn70xx;
+	struct cvmx_mio_uartx_sfe_s           cn70xxp1;
+	struct cvmx_mio_uartx_sfe_s           cn73xx;
+	struct cvmx_mio_uartx_sfe_s           cn78xx;
+	struct cvmx_mio_uartx_sfe_s           cn78xxp1;
+	struct cvmx_mio_uartx_sfe_s           cnf71xx;
+	struct cvmx_mio_uartx_sfe_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_sfe cvmx_mio_uartx_sfe_t;
+typedef cvmx_mio_uartx_sfe_t cvmx_uart_sfe_t;
 
+/**
+ * cvmx_mio_uart#_srr
+ *
+ * The software reset register is a write-only register that resets the UART and/or the receive
+ * FIFO and/or the transmit FIFO.
+ */
 union cvmx_mio_uartx_srr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_srr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_3_63:61;
-		uint64_t stfr:1;
-		uint64_t srfr:1;
-		uint64_t usr:1;
+	uint64_t reserved_3_63                : 61;
+	uint64_t stfr                         : 1;  /**< Shadow copy of the TX FIFO reset bit (MIO_UART(0..1)_FCR[TXFR]). This bit can be used to
+                                                         remove the burden on software having to store previously written FCR values (which are
+                                                         pretty static) just to reset the transmit FIFO */
+	uint64_t srfr                         : 1;  /**< Shadow copy of the RX FIFO reset bit (MIO_UART(0..1)_FCR[RXFR]). This can be used to
+                                                         remove the burden on software having to store previously written FCR values (which are
+                                                         pretty static) just to reset the receive FIFO. */
+	uint64_t usr                          : 1;  /**< UART soft reset. Setting this bit resets the UART. */
 #else
-		uint64_t usr:1;
-		uint64_t srfr:1;
-		uint64_t stfr:1;
-		uint64_t reserved_3_63:61;
+	uint64_t usr                          : 1;
+	uint64_t srfr                         : 1;
+	uint64_t stfr                         : 1;
+	uint64_t reserved_3_63                : 61;
 #endif
 	} s;
+	struct cvmx_mio_uartx_srr_s           cn30xx;
+	struct cvmx_mio_uartx_srr_s           cn31xx;
+	struct cvmx_mio_uartx_srr_s           cn38xx;
+	struct cvmx_mio_uartx_srr_s           cn38xxp2;
+	struct cvmx_mio_uartx_srr_s           cn50xx;
+	struct cvmx_mio_uartx_srr_s           cn52xx;
+	struct cvmx_mio_uartx_srr_s           cn52xxp1;
+	struct cvmx_mio_uartx_srr_s           cn56xx;
+	struct cvmx_mio_uartx_srr_s           cn56xxp1;
+	struct cvmx_mio_uartx_srr_s           cn58xx;
+	struct cvmx_mio_uartx_srr_s           cn58xxp1;
+	struct cvmx_mio_uartx_srr_s           cn61xx;
+	struct cvmx_mio_uartx_srr_s           cn63xx;
+	struct cvmx_mio_uartx_srr_s           cn63xxp1;
+	struct cvmx_mio_uartx_srr_s           cn66xx;
+	struct cvmx_mio_uartx_srr_s           cn68xx;
+	struct cvmx_mio_uartx_srr_s           cn68xxp1;
+	struct cvmx_mio_uartx_srr_s           cn70xx;
+	struct cvmx_mio_uartx_srr_s           cn70xxp1;
+	struct cvmx_mio_uartx_srr_s           cn73xx;
+	struct cvmx_mio_uartx_srr_s           cn78xx;
+	struct cvmx_mio_uartx_srr_s           cn78xxp1;
+	struct cvmx_mio_uartx_srr_s           cnf71xx;
+	struct cvmx_mio_uartx_srr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_srr cvmx_mio_uartx_srr_t;
+typedef cvmx_mio_uartx_srr_t cvmx_uart_srr_t;
 
+/**
+ * cvmx_mio_uart#_srt
+ *
+ * The shadow RX trigger register is a shadow register for the RX trigger bits
+ * (MIO_UART(0..1)_FCR[RXTRIG]) that can be used to remove the burden of having to store the
+ * previously written value to MIO_UART(0..1)_FCR in memory and having to mask this value so that
+ * only the RX trigger bits get updated.
+ */
 union cvmx_mio_uartx_srt {
 	uint64_t u64;
 	struct cvmx_mio_uartx_srt_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t srt:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t srt                          : 2;  /**< Shadow RX trigger. */
 #else
-		uint64_t srt:2;
-		uint64_t reserved_2_63:62;
+	uint64_t srt                          : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_uartx_srt_s           cn30xx;
+	struct cvmx_mio_uartx_srt_s           cn31xx;
+	struct cvmx_mio_uartx_srt_s           cn38xx;
+	struct cvmx_mio_uartx_srt_s           cn38xxp2;
+	struct cvmx_mio_uartx_srt_s           cn50xx;
+	struct cvmx_mio_uartx_srt_s           cn52xx;
+	struct cvmx_mio_uartx_srt_s           cn52xxp1;
+	struct cvmx_mio_uartx_srt_s           cn56xx;
+	struct cvmx_mio_uartx_srt_s           cn56xxp1;
+	struct cvmx_mio_uartx_srt_s           cn58xx;
+	struct cvmx_mio_uartx_srt_s           cn58xxp1;
+	struct cvmx_mio_uartx_srt_s           cn61xx;
+	struct cvmx_mio_uartx_srt_s           cn63xx;
+	struct cvmx_mio_uartx_srt_s           cn63xxp1;
+	struct cvmx_mio_uartx_srt_s           cn66xx;
+	struct cvmx_mio_uartx_srt_s           cn68xx;
+	struct cvmx_mio_uartx_srt_s           cn68xxp1;
+	struct cvmx_mio_uartx_srt_s           cn70xx;
+	struct cvmx_mio_uartx_srt_s           cn70xxp1;
+	struct cvmx_mio_uartx_srt_s           cn73xx;
+	struct cvmx_mio_uartx_srt_s           cn78xx;
+	struct cvmx_mio_uartx_srt_s           cn78xxp1;
+	struct cvmx_mio_uartx_srt_s           cnf71xx;
+	struct cvmx_mio_uartx_srt_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_srt cvmx_mio_uartx_srt_t;
+typedef cvmx_mio_uartx_srt_t cvmx_uart_srt_t;
 
+/**
+ * cvmx_mio_uart#_srts
+ *
+ * The shadow request to send register is a shadow register for the
+ * MIO_UART(0..1)_MCR[RTS] bit that can be used to remove the burden of having to perform a read-
+ * modify-write on MIO_UART(0..1)_MCR.
+ */
 union cvmx_mio_uartx_srts {
 	uint64_t u64;
 	struct cvmx_mio_uartx_srts_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t srts:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t srts                         : 1;  /**< Shadow request to send. */
 #else
-		uint64_t srts:1;
-		uint64_t reserved_1_63:63;
+	uint64_t srts                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uartx_srts_s          cn30xx;
+	struct cvmx_mio_uartx_srts_s          cn31xx;
+	struct cvmx_mio_uartx_srts_s          cn38xx;
+	struct cvmx_mio_uartx_srts_s          cn38xxp2;
+	struct cvmx_mio_uartx_srts_s          cn50xx;
+	struct cvmx_mio_uartx_srts_s          cn52xx;
+	struct cvmx_mio_uartx_srts_s          cn52xxp1;
+	struct cvmx_mio_uartx_srts_s          cn56xx;
+	struct cvmx_mio_uartx_srts_s          cn56xxp1;
+	struct cvmx_mio_uartx_srts_s          cn58xx;
+	struct cvmx_mio_uartx_srts_s          cn58xxp1;
+	struct cvmx_mio_uartx_srts_s          cn61xx;
+	struct cvmx_mio_uartx_srts_s          cn63xx;
+	struct cvmx_mio_uartx_srts_s          cn63xxp1;
+	struct cvmx_mio_uartx_srts_s          cn66xx;
+	struct cvmx_mio_uartx_srts_s          cn68xx;
+	struct cvmx_mio_uartx_srts_s          cn68xxp1;
+	struct cvmx_mio_uartx_srts_s          cn70xx;
+	struct cvmx_mio_uartx_srts_s          cn70xxp1;
+	struct cvmx_mio_uartx_srts_s          cn73xx;
+	struct cvmx_mio_uartx_srts_s          cn78xx;
+	struct cvmx_mio_uartx_srts_s          cn78xxp1;
+	struct cvmx_mio_uartx_srts_s          cnf71xx;
+	struct cvmx_mio_uartx_srts_s          cnf75xx;
 };
+typedef union cvmx_mio_uartx_srts cvmx_mio_uartx_srts_t;
+typedef cvmx_mio_uartx_srts_t cvmx_uart_srts_t;
 
+/**
+ * cvmx_mio_uart#_stt
+ *
+ * The shadow TX trigger register is a shadow register for the TX trigger bits
+ * (MIO_UART(0..1)_FCR[TXTRIG]) that can be used to remove the burden of having to store the
+ * previously written value to MIO_UART(0..1)_FCR in memory and having to mask this value so that
+ * only the TX trigger bits get updated.
+ */
 union cvmx_mio_uartx_stt {
 	uint64_t u64;
 	struct cvmx_mio_uartx_stt_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t stt:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t stt                          : 2;  /**< Shadow TX trigger. */
 #else
-		uint64_t stt:2;
-		uint64_t reserved_2_63:62;
+	uint64_t stt                          : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_uartx_stt_s           cn30xx;
+	struct cvmx_mio_uartx_stt_s           cn31xx;
+	struct cvmx_mio_uartx_stt_s           cn38xx;
+	struct cvmx_mio_uartx_stt_s           cn38xxp2;
+	struct cvmx_mio_uartx_stt_s           cn50xx;
+	struct cvmx_mio_uartx_stt_s           cn52xx;
+	struct cvmx_mio_uartx_stt_s           cn52xxp1;
+	struct cvmx_mio_uartx_stt_s           cn56xx;
+	struct cvmx_mio_uartx_stt_s           cn56xxp1;
+	struct cvmx_mio_uartx_stt_s           cn58xx;
+	struct cvmx_mio_uartx_stt_s           cn58xxp1;
+	struct cvmx_mio_uartx_stt_s           cn61xx;
+	struct cvmx_mio_uartx_stt_s           cn63xx;
+	struct cvmx_mio_uartx_stt_s           cn63xxp1;
+	struct cvmx_mio_uartx_stt_s           cn66xx;
+	struct cvmx_mio_uartx_stt_s           cn68xx;
+	struct cvmx_mio_uartx_stt_s           cn68xxp1;
+	struct cvmx_mio_uartx_stt_s           cn70xx;
+	struct cvmx_mio_uartx_stt_s           cn70xxp1;
+	struct cvmx_mio_uartx_stt_s           cn73xx;
+	struct cvmx_mio_uartx_stt_s           cn78xx;
+	struct cvmx_mio_uartx_stt_s           cn78xxp1;
+	struct cvmx_mio_uartx_stt_s           cnf71xx;
+	struct cvmx_mio_uartx_stt_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_stt cvmx_mio_uartx_stt_t;
+typedef cvmx_mio_uartx_stt_t cvmx_uart_stt_t;
 
+/**
+ * cvmx_mio_uart#_tfl
+ *
+ * The transmit FIFO level register indicates the number of data entries in the transmit FIFO.
+ *
+ */
 union cvmx_mio_uartx_tfl {
 	uint64_t u64;
 	struct cvmx_mio_uartx_tfl_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t tfl:7;
+	uint64_t reserved_7_63                : 57;
+	uint64_t tfl                          : 7;  /**< Transmit FIFO level. Indicates the number of data entries in the transmit FIFO. */
 #else
-		uint64_t tfl:7;
-		uint64_t reserved_7_63:57;
+	uint64_t tfl                          : 7;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_uartx_tfl_s           cn30xx;
+	struct cvmx_mio_uartx_tfl_s           cn31xx;
+	struct cvmx_mio_uartx_tfl_s           cn38xx;
+	struct cvmx_mio_uartx_tfl_s           cn38xxp2;
+	struct cvmx_mio_uartx_tfl_s           cn50xx;
+	struct cvmx_mio_uartx_tfl_s           cn52xx;
+	struct cvmx_mio_uartx_tfl_s           cn52xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn56xx;
+	struct cvmx_mio_uartx_tfl_s           cn56xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn58xx;
+	struct cvmx_mio_uartx_tfl_s           cn58xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn61xx;
+	struct cvmx_mio_uartx_tfl_s           cn63xx;
+	struct cvmx_mio_uartx_tfl_s           cn63xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn66xx;
+	struct cvmx_mio_uartx_tfl_s           cn68xx;
+	struct cvmx_mio_uartx_tfl_s           cn68xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn70xx;
+	struct cvmx_mio_uartx_tfl_s           cn70xxp1;
+	struct cvmx_mio_uartx_tfl_s           cn73xx;
+	struct cvmx_mio_uartx_tfl_s           cn78xx;
+	struct cvmx_mio_uartx_tfl_s           cn78xxp1;
+	struct cvmx_mio_uartx_tfl_s           cnf71xx;
+	struct cvmx_mio_uartx_tfl_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_tfl cvmx_mio_uartx_tfl_t;
+typedef cvmx_mio_uartx_tfl_t cvmx_uart_tfl_t;
 
+/**
+ * cvmx_mio_uart#_tfr
+ *
+ * The transmit FIFO read register is only valid when FIFO-access mode is enabled (i.e.
+ * MIO_UART(0..1)_FAR[FAR] = 1).
+ */
 union cvmx_mio_uartx_tfr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_tfr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t tfr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t tfr                          : 8;  /**< Transmit FIFO data.
+                                                         When FIFOs are enabled, this field gives the data at the top of the transmit FIFO. Each
+                                                         consecutive read pops the transmit FIFO and gives the next data value that is currently at
+                                                         the top of the FIFO.
+                                                         When FIFOs are not enabled, this field gives the data in
+                                                         MIO_UART(0..1)_THR. */
 #else
-		uint64_t tfr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t tfr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_tfr_s           cn30xx;
+	struct cvmx_mio_uartx_tfr_s           cn31xx;
+	struct cvmx_mio_uartx_tfr_s           cn38xx;
+	struct cvmx_mio_uartx_tfr_s           cn38xxp2;
+	struct cvmx_mio_uartx_tfr_s           cn50xx;
+	struct cvmx_mio_uartx_tfr_s           cn52xx;
+	struct cvmx_mio_uartx_tfr_s           cn52xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn56xx;
+	struct cvmx_mio_uartx_tfr_s           cn56xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn58xx;
+	struct cvmx_mio_uartx_tfr_s           cn58xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn61xx;
+	struct cvmx_mio_uartx_tfr_s           cn63xx;
+	struct cvmx_mio_uartx_tfr_s           cn63xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn66xx;
+	struct cvmx_mio_uartx_tfr_s           cn68xx;
+	struct cvmx_mio_uartx_tfr_s           cn68xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn70xx;
+	struct cvmx_mio_uartx_tfr_s           cn70xxp1;
+	struct cvmx_mio_uartx_tfr_s           cn73xx;
+	struct cvmx_mio_uartx_tfr_s           cn78xx;
+	struct cvmx_mio_uartx_tfr_s           cn78xxp1;
+	struct cvmx_mio_uartx_tfr_s           cnf71xx;
+	struct cvmx_mio_uartx_tfr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_tfr cvmx_mio_uartx_tfr_t;
+typedef cvmx_mio_uartx_tfr_t cvmx_uart_tfr_t;
 
+/**
+ * cvmx_mio_uart#_thr
+ *
+ * The transmit holding register is a write-only register that contains data to be transmitted on
+ * the serial output port (UART0/1_SOUT). Data can be written to MIO_UART(0..1)_THR any time that
+ * MIO_UART(0..1)_LSR[THRE] = 1.
+ */
 union cvmx_mio_uartx_thr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_thr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t thr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t thr                          : 8;  /**< Transmit holding register. */
 #else
-		uint64_t thr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t thr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uartx_thr_s           cn30xx;
+	struct cvmx_mio_uartx_thr_s           cn31xx;
+	struct cvmx_mio_uartx_thr_s           cn38xx;
+	struct cvmx_mio_uartx_thr_s           cn38xxp2;
+	struct cvmx_mio_uartx_thr_s           cn50xx;
+	struct cvmx_mio_uartx_thr_s           cn52xx;
+	struct cvmx_mio_uartx_thr_s           cn52xxp1;
+	struct cvmx_mio_uartx_thr_s           cn56xx;
+	struct cvmx_mio_uartx_thr_s           cn56xxp1;
+	struct cvmx_mio_uartx_thr_s           cn58xx;
+	struct cvmx_mio_uartx_thr_s           cn58xxp1;
+	struct cvmx_mio_uartx_thr_s           cn61xx;
+	struct cvmx_mio_uartx_thr_s           cn63xx;
+	struct cvmx_mio_uartx_thr_s           cn63xxp1;
+	struct cvmx_mio_uartx_thr_s           cn66xx;
+	struct cvmx_mio_uartx_thr_s           cn68xx;
+	struct cvmx_mio_uartx_thr_s           cn68xxp1;
+	struct cvmx_mio_uartx_thr_s           cn70xx;
+	struct cvmx_mio_uartx_thr_s           cn70xxp1;
+	struct cvmx_mio_uartx_thr_s           cn73xx;
+	struct cvmx_mio_uartx_thr_s           cn78xx;
+	struct cvmx_mio_uartx_thr_s           cn78xxp1;
+	struct cvmx_mio_uartx_thr_s           cnf71xx;
+	struct cvmx_mio_uartx_thr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_thr cvmx_mio_uartx_thr_t;
+typedef cvmx_mio_uartx_thr_t cvmx_uart_thr_t;
 
+/**
+ * cvmx_mio_uart#_usr
+ *
+ * The receive FIFO write register is only valid when FIFO-access mode is enabled (i.e.
+ * MIO_UART(0..1)_FAR[FAR] = 1).
+ */
 union cvmx_mio_uartx_usr {
 	uint64_t u64;
 	struct cvmx_mio_uartx_usr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_5_63:59;
-		uint64_t rff:1;
-		uint64_t rfne:1;
-		uint64_t tfe:1;
-		uint64_t tfnf:1;
-		uint64_t busy:1;
+	uint64_t reserved_5_63                : 59;
+	uint64_t rff                          : 1;  /**< RX FIFO full. */
+	uint64_t rfne                         : 1;  /**< RX FIFO not empty. */
+	uint64_t tfe                          : 1;  /**< TX FIFO empty. */
+	uint64_t tfnf                         : 1;  /**< TX FIFO not full. */
+	uint64_t busy                         : 1;  /**< Busy. This bit is always clear. */
 #else
-		uint64_t busy:1;
-		uint64_t tfnf:1;
-		uint64_t tfe:1;
-		uint64_t rfne:1;
-		uint64_t rff:1;
-		uint64_t reserved_5_63:59;
+	uint64_t busy                         : 1;
+	uint64_t tfnf                         : 1;
+	uint64_t tfe                          : 1;
+	uint64_t rfne                         : 1;
+	uint64_t rff                          : 1;
+	uint64_t reserved_5_63                : 59;
 #endif
 	} s;
+	struct cvmx_mio_uartx_usr_s           cn30xx;
+	struct cvmx_mio_uartx_usr_s           cn31xx;
+	struct cvmx_mio_uartx_usr_s           cn38xx;
+	struct cvmx_mio_uartx_usr_s           cn38xxp2;
+	struct cvmx_mio_uartx_usr_s           cn50xx;
+	struct cvmx_mio_uartx_usr_s           cn52xx;
+	struct cvmx_mio_uartx_usr_s           cn52xxp1;
+	struct cvmx_mio_uartx_usr_s           cn56xx;
+	struct cvmx_mio_uartx_usr_s           cn56xxp1;
+	struct cvmx_mio_uartx_usr_s           cn58xx;
+	struct cvmx_mio_uartx_usr_s           cn58xxp1;
+	struct cvmx_mio_uartx_usr_s           cn61xx;
+	struct cvmx_mio_uartx_usr_s           cn63xx;
+	struct cvmx_mio_uartx_usr_s           cn63xxp1;
+	struct cvmx_mio_uartx_usr_s           cn66xx;
+	struct cvmx_mio_uartx_usr_s           cn68xx;
+	struct cvmx_mio_uartx_usr_s           cn68xxp1;
+	struct cvmx_mio_uartx_usr_s           cn70xx;
+	struct cvmx_mio_uartx_usr_s           cn70xxp1;
+	struct cvmx_mio_uartx_usr_s           cn73xx;
+	struct cvmx_mio_uartx_usr_s           cn78xx;
+	struct cvmx_mio_uartx_usr_s           cn78xxp1;
+	struct cvmx_mio_uartx_usr_s           cnf71xx;
+	struct cvmx_mio_uartx_usr_s           cnf75xx;
 };
+typedef union cvmx_mio_uartx_usr cvmx_mio_uartx_usr_t;
+typedef cvmx_mio_uartx_usr_t cvmx_uart_usr_t;
 
+/**
+ * cvmx_mio_uart2_dlh
+ */
 union cvmx_mio_uart2_dlh {
 	uint64_t u64;
 	struct cvmx_mio_uart2_dlh_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dlh:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dlh                          : 8;  /**< Divisor Latch High Register */
 #else
-		uint64_t dlh:8;
-		uint64_t reserved_8_63:56;
+	uint64_t dlh                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_dlh_s           cn52xx;
+	struct cvmx_mio_uart2_dlh_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_dlh cvmx_mio_uart2_dlh_t;
 
+/**
+ * cvmx_mio_uart2_dll
+ */
 union cvmx_mio_uart2_dll {
 	uint64_t u64;
 	struct cvmx_mio_uart2_dll_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dll:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dll                          : 8;  /**< Divisor Latch Low Register */
 #else
-		uint64_t dll:8;
-		uint64_t reserved_8_63:56;
+	uint64_t dll                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_dll_s           cn52xx;
+	struct cvmx_mio_uart2_dll_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_dll cvmx_mio_uart2_dll_t;
 
+/**
+ * cvmx_mio_uart2_far
+ */
 union cvmx_mio_uart2_far {
 	uint64_t u64;
 	struct cvmx_mio_uart2_far_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t far:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t far                          : 1;  /**< FIFO Access Register */
 #else
-		uint64_t far:1;
-		uint64_t reserved_1_63:63;
+	uint64_t far                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uart2_far_s           cn52xx;
+	struct cvmx_mio_uart2_far_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_far cvmx_mio_uart2_far_t;
 
+/**
+ * cvmx_mio_uart2_fcr
+ */
 union cvmx_mio_uart2_fcr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_fcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t rxtrig:2;
-		uint64_t txtrig:2;
-		uint64_t reserved_3_3:1;
-		uint64_t txfr:1;
-		uint64_t rxfr:1;
-		uint64_t en:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t rxtrig                       : 2;  /**< RX Trigger */
+	uint64_t txtrig                       : 2;  /**< TX Trigger */
+	uint64_t reserved_3_3                 : 1;
+	uint64_t txfr                         : 1;  /**< TX FIFO reset */
+	uint64_t rxfr                         : 1;  /**< RX FIFO reset */
+	uint64_t en                           : 1;  /**< FIFO enable */
 #else
-		uint64_t en:1;
-		uint64_t rxfr:1;
-		uint64_t txfr:1;
-		uint64_t reserved_3_3:1;
-		uint64_t txtrig:2;
-		uint64_t rxtrig:2;
-		uint64_t reserved_8_63:56;
+	uint64_t en                           : 1;
+	uint64_t rxfr                         : 1;
+	uint64_t txfr                         : 1;
+	uint64_t reserved_3_3                 : 1;
+	uint64_t txtrig                       : 2;
+	uint64_t rxtrig                       : 2;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_fcr_s           cn52xx;
+	struct cvmx_mio_uart2_fcr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_fcr cvmx_mio_uart2_fcr_t;
 
+/**
+ * cvmx_mio_uart2_htx
+ */
 union cvmx_mio_uart2_htx {
 	uint64_t u64;
 	struct cvmx_mio_uart2_htx_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t htx:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t htx                          : 1;  /**< Halt TX */
 #else
-		uint64_t htx:1;
-		uint64_t reserved_1_63:63;
+	uint64_t htx                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uart2_htx_s           cn52xx;
+	struct cvmx_mio_uart2_htx_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_htx cvmx_mio_uart2_htx_t;
 
+/**
+ * cvmx_mio_uart2_ier
+ */
 union cvmx_mio_uart2_ier {
 	uint64_t u64;
 	struct cvmx_mio_uart2_ier_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t ptime:1;
-		uint64_t reserved_4_6:3;
-		uint64_t edssi:1;
-		uint64_t elsi:1;
-		uint64_t etbei:1;
-		uint64_t erbfi:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t ptime                        : 1;  /**< Programmable THRE Interrupt mode enable */
+	uint64_t reserved_4_6                 : 3;
+	uint64_t edssi                        : 1;  /**< Enable Modem Status Interrupt */
+	uint64_t elsi                         : 1;  /**< Enable Receiver Line Status Interrupt */
+	uint64_t etbei                        : 1;  /**< Enable Transmitter Holding Register Empty Interrupt */
+	uint64_t erbfi                        : 1;  /**< Enable Received Data Available Interrupt */
 #else
-		uint64_t erbfi:1;
-		uint64_t etbei:1;
-		uint64_t elsi:1;
-		uint64_t edssi:1;
-		uint64_t reserved_4_6:3;
-		uint64_t ptime:1;
-		uint64_t reserved_8_63:56;
+	uint64_t erbfi                        : 1;
+	uint64_t etbei                        : 1;
+	uint64_t elsi                         : 1;
+	uint64_t edssi                        : 1;
+	uint64_t reserved_4_6                 : 3;
+	uint64_t ptime                        : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_ier_s           cn52xx;
+	struct cvmx_mio_uart2_ier_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_ier cvmx_mio_uart2_ier_t;
 
+/**
+ * cvmx_mio_uart2_iir
+ */
 union cvmx_mio_uart2_iir {
 	uint64_t u64;
 	struct cvmx_mio_uart2_iir_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t fen:2;
-		uint64_t reserved_4_5:2;
-		uint64_t iid:4;
+	uint64_t reserved_8_63                : 56;
+	uint64_t fen                          : 2;  /**< FIFO-enabled bits */
+	uint64_t reserved_4_5                 : 2;
+	uint64_t iid                          : 4;  /**< Interrupt ID */
 #else
-		uint64_t iid:4;
-		uint64_t reserved_4_5:2;
-		uint64_t fen:2;
-		uint64_t reserved_8_63:56;
+	uint64_t iid                          : 4;
+	uint64_t reserved_4_5                 : 2;
+	uint64_t fen                          : 2;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_iir_s           cn52xx;
+	struct cvmx_mio_uart2_iir_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_iir cvmx_mio_uart2_iir_t;
 
+/**
+ * cvmx_mio_uart2_lcr
+ */
 union cvmx_mio_uart2_lcr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_lcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dlab:1;
-		uint64_t brk:1;
-		uint64_t reserved_5_5:1;
-		uint64_t eps:1;
-		uint64_t pen:1;
-		uint64_t stop:1;
-		uint64_t cls:2;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dlab                         : 1;  /**< Divisor Latch Address bit */
+	uint64_t brk                          : 1;  /**< Break Control bit */
+	uint64_t reserved_5_5                 : 1;
+	uint64_t eps                          : 1;  /**< Even Parity Select bit */
+	uint64_t pen                          : 1;  /**< Parity Enable bit */
+	uint64_t stop                         : 1;  /**< Stop Control bit */
+	uint64_t cls                          : 2;  /**< Character Length Select */
 #else
-		uint64_t cls:2;
-		uint64_t stop:1;
-		uint64_t pen:1;
-		uint64_t eps:1;
-		uint64_t reserved_5_5:1;
-		uint64_t brk:1;
-		uint64_t dlab:1;
-		uint64_t reserved_8_63:56;
+	uint64_t cls                          : 2;
+	uint64_t stop                         : 1;
+	uint64_t pen                          : 1;
+	uint64_t eps                          : 1;
+	uint64_t reserved_5_5                 : 1;
+	uint64_t brk                          : 1;
+	uint64_t dlab                         : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_lcr_s           cn52xx;
+	struct cvmx_mio_uart2_lcr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_lcr cvmx_mio_uart2_lcr_t;
 
+/**
+ * cvmx_mio_uart2_lsr
+ */
 union cvmx_mio_uart2_lsr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_lsr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t ferr:1;
-		uint64_t temt:1;
-		uint64_t thre:1;
-		uint64_t bi:1;
-		uint64_t fe:1;
-		uint64_t pe:1;
-		uint64_t oe:1;
-		uint64_t dr:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t ferr                         : 1;  /**< Error in Receiver FIFO bit */
+	uint64_t temt                         : 1;  /**< Transmitter Empty bit */
+	uint64_t thre                         : 1;  /**< Transmitter Holding Register Empty bit */
+	uint64_t bi                           : 1;  /**< Break Interrupt bit */
+	uint64_t fe                           : 1;  /**< Framing Error bit */
+	uint64_t pe                           : 1;  /**< Parity Error bit */
+	uint64_t oe                           : 1;  /**< Overrun Error bit */
+	uint64_t dr                           : 1;  /**< Data Ready bit */
 #else
-		uint64_t dr:1;
-		uint64_t oe:1;
-		uint64_t pe:1;
-		uint64_t fe:1;
-		uint64_t bi:1;
-		uint64_t thre:1;
-		uint64_t temt:1;
-		uint64_t ferr:1;
-		uint64_t reserved_8_63:56;
+	uint64_t dr                           : 1;
+	uint64_t oe                           : 1;
+	uint64_t pe                           : 1;
+	uint64_t fe                           : 1;
+	uint64_t bi                           : 1;
+	uint64_t thre                         : 1;
+	uint64_t temt                         : 1;
+	uint64_t ferr                         : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_lsr_s           cn52xx;
+	struct cvmx_mio_uart2_lsr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_lsr cvmx_mio_uart2_lsr_t;
 
+/**
+ * cvmx_mio_uart2_mcr
+ */
 union cvmx_mio_uart2_mcr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_mcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_6_63:58;
-		uint64_t afce:1;
-		uint64_t loop:1;
-		uint64_t out2:1;
-		uint64_t out1:1;
-		uint64_t rts:1;
-		uint64_t dtr:1;
+	uint64_t reserved_6_63                : 58;
+	uint64_t afce                         : 1;  /**< Auto Flow Control Enable bit */
+	uint64_t loop                         : 1;  /**< Loopback bit */
+	uint64_t out2                         : 1;  /**< OUT2 output bit */
+	uint64_t out1                         : 1;  /**< OUT1 output bit */
+	uint64_t rts                          : 1;  /**< Request To Send output bit */
+	uint64_t dtr                          : 1;  /**< Data Terminal Ready output bit */
 #else
-		uint64_t dtr:1;
-		uint64_t rts:1;
-		uint64_t out1:1;
-		uint64_t out2:1;
-		uint64_t loop:1;
-		uint64_t afce:1;
-		uint64_t reserved_6_63:58;
+	uint64_t dtr                          : 1;
+	uint64_t rts                          : 1;
+	uint64_t out1                         : 1;
+	uint64_t out2                         : 1;
+	uint64_t loop                         : 1;
+	uint64_t afce                         : 1;
+	uint64_t reserved_6_63                : 58;
 #endif
 	} s;
+	struct cvmx_mio_uart2_mcr_s           cn52xx;
+	struct cvmx_mio_uart2_mcr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_mcr cvmx_mio_uart2_mcr_t;
 
+/**
+ * cvmx_mio_uart2_msr
+ */
 union cvmx_mio_uart2_msr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_msr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t dcd:1;
-		uint64_t ri:1;
-		uint64_t dsr:1;
-		uint64_t cts:1;
-		uint64_t ddcd:1;
-		uint64_t teri:1;
-		uint64_t ddsr:1;
-		uint64_t dcts:1;
+	uint64_t reserved_8_63                : 56;
+	uint64_t dcd                          : 1;  /**< Data Carrier Detect input bit */
+	uint64_t ri                           : 1;  /**< Ring Indicator input bit */
+	uint64_t dsr                          : 1;  /**< Data Set Ready input bit */
+	uint64_t cts                          : 1;  /**< Clear To Send input bit */
+	uint64_t ddcd                         : 1;  /**< Delta Data Carrier Detect bit */
+	uint64_t teri                         : 1;  /**< Trailing Edge of Ring Indicator bit */
+	uint64_t ddsr                         : 1;  /**< Delta Data Set Ready bit */
+	uint64_t dcts                         : 1;  /**< Delta Clear To Send bit */
 #else
-		uint64_t dcts:1;
-		uint64_t ddsr:1;
-		uint64_t teri:1;
-		uint64_t ddcd:1;
-		uint64_t cts:1;
-		uint64_t dsr:1;
-		uint64_t ri:1;
-		uint64_t dcd:1;
-		uint64_t reserved_8_63:56;
+	uint64_t dcts                         : 1;
+	uint64_t ddsr                         : 1;
+	uint64_t teri                         : 1;
+	uint64_t ddcd                         : 1;
+	uint64_t cts                          : 1;
+	uint64_t dsr                          : 1;
+	uint64_t ri                           : 1;
+	uint64_t dcd                          : 1;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_msr_s           cn52xx;
+	struct cvmx_mio_uart2_msr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_msr cvmx_mio_uart2_msr_t;
 
+/**
+ * cvmx_mio_uart2_rbr
+ */
 union cvmx_mio_uart2_rbr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_rbr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t rbr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t rbr                          : 8;  /**< Receive Buffer Register */
 #else
-		uint64_t rbr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t rbr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_rbr_s           cn52xx;
+	struct cvmx_mio_uart2_rbr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_rbr cvmx_mio_uart2_rbr_t;
 
+/**
+ * cvmx_mio_uart2_rfl
+ */
 union cvmx_mio_uart2_rfl {
 	uint64_t u64;
 	struct cvmx_mio_uart2_rfl_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t rfl:7;
+	uint64_t reserved_7_63                : 57;
+	uint64_t rfl                          : 7;  /**< Receive FIFO Level Register */
 #else
-		uint64_t rfl:7;
-		uint64_t reserved_7_63:57;
+	uint64_t rfl                          : 7;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_uart2_rfl_s           cn52xx;
+	struct cvmx_mio_uart2_rfl_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_rfl cvmx_mio_uart2_rfl_t;
 
+/**
+ * cvmx_mio_uart2_rfw
+ */
 union cvmx_mio_uart2_rfw {
 	uint64_t u64;
 	struct cvmx_mio_uart2_rfw_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_10_63:54;
-		uint64_t rffe:1;
-		uint64_t rfpe:1;
-		uint64_t rfwd:8;
+	uint64_t reserved_10_63               : 54;
+	uint64_t rffe                         : 1;  /**< Receive FIFO Framing Error */
+	uint64_t rfpe                         : 1;  /**< Receive FIFO Parity Error */
+	uint64_t rfwd                         : 8;  /**< Receive FIFO Write Data */
 #else
-		uint64_t rfwd:8;
-		uint64_t rfpe:1;
-		uint64_t rffe:1;
-		uint64_t reserved_10_63:54;
+	uint64_t rfwd                         : 8;
+	uint64_t rfpe                         : 1;
+	uint64_t rffe                         : 1;
+	uint64_t reserved_10_63               : 54;
 #endif
 	} s;
+	struct cvmx_mio_uart2_rfw_s           cn52xx;
+	struct cvmx_mio_uart2_rfw_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_rfw cvmx_mio_uart2_rfw_t;
 
+/**
+ * cvmx_mio_uart2_sbcr
+ */
 union cvmx_mio_uart2_sbcr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_sbcr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t sbcr:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t sbcr                         : 1;  /**< Shadow Break Control */
 #else
-		uint64_t sbcr:1;
-		uint64_t reserved_1_63:63;
+	uint64_t sbcr                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uart2_sbcr_s          cn52xx;
+	struct cvmx_mio_uart2_sbcr_s          cn52xxp1;
 };
+typedef union cvmx_mio_uart2_sbcr cvmx_mio_uart2_sbcr_t;
 
+/**
+ * cvmx_mio_uart2_scr
+ */
 union cvmx_mio_uart2_scr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_scr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t scr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t scr                          : 8;  /**< Scratchpad Register */
 #else
-		uint64_t scr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t scr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_scr_s           cn52xx;
+	struct cvmx_mio_uart2_scr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_scr cvmx_mio_uart2_scr_t;
 
+/**
+ * cvmx_mio_uart2_sfe
+ */
 union cvmx_mio_uart2_sfe {
 	uint64_t u64;
 	struct cvmx_mio_uart2_sfe_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t sfe:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t sfe                          : 1;  /**< Shadow FIFO Enable */
 #else
-		uint64_t sfe:1;
-		uint64_t reserved_1_63:63;
+	uint64_t sfe                          : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uart2_sfe_s           cn52xx;
+	struct cvmx_mio_uart2_sfe_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_sfe cvmx_mio_uart2_sfe_t;
 
+/**
+ * cvmx_mio_uart2_srr
+ */
 union cvmx_mio_uart2_srr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_srr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_3_63:61;
-		uint64_t stfr:1;
-		uint64_t srfr:1;
-		uint64_t usr:1;
+	uint64_t reserved_3_63                : 61;
+	uint64_t stfr                         : 1;  /**< Shadow TX FIFO Reset */
+	uint64_t srfr                         : 1;  /**< Shadow RX FIFO Reset */
+	uint64_t usr                          : 1;  /**< UART Soft Reset */
 #else
-		uint64_t usr:1;
-		uint64_t srfr:1;
-		uint64_t stfr:1;
-		uint64_t reserved_3_63:61;
+	uint64_t usr                          : 1;
+	uint64_t srfr                         : 1;
+	uint64_t stfr                         : 1;
+	uint64_t reserved_3_63                : 61;
 #endif
 	} s;
+	struct cvmx_mio_uart2_srr_s           cn52xx;
+	struct cvmx_mio_uart2_srr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_srr cvmx_mio_uart2_srr_t;
 
+/**
+ * cvmx_mio_uart2_srt
+ */
 union cvmx_mio_uart2_srt {
 	uint64_t u64;
 	struct cvmx_mio_uart2_srt_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t srt:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t srt                          : 2;  /**< Shadow RX Trigger */
 #else
-		uint64_t srt:2;
-		uint64_t reserved_2_63:62;
+	uint64_t srt                          : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_uart2_srt_s           cn52xx;
+	struct cvmx_mio_uart2_srt_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_srt cvmx_mio_uart2_srt_t;
 
+/**
+ * cvmx_mio_uart2_srts
+ */
 union cvmx_mio_uart2_srts {
 	uint64_t u64;
 	struct cvmx_mio_uart2_srts_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t srts:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t srts                         : 1;  /**< Shadow Request To Send */
 #else
-		uint64_t srts:1;
-		uint64_t reserved_1_63:63;
+	uint64_t srts                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
+	struct cvmx_mio_uart2_srts_s          cn52xx;
+	struct cvmx_mio_uart2_srts_s          cn52xxp1;
 };
+typedef union cvmx_mio_uart2_srts cvmx_mio_uart2_srts_t;
 
+/**
+ * cvmx_mio_uart2_stt
+ */
 union cvmx_mio_uart2_stt {
 	uint64_t u64;
 	struct cvmx_mio_uart2_stt_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_2_63:62;
-		uint64_t stt:2;
+	uint64_t reserved_2_63                : 62;
+	uint64_t stt                          : 2;  /**< Shadow TX Trigger */
 #else
-		uint64_t stt:2;
-		uint64_t reserved_2_63:62;
+	uint64_t stt                          : 2;
+	uint64_t reserved_2_63                : 62;
 #endif
 	} s;
+	struct cvmx_mio_uart2_stt_s           cn52xx;
+	struct cvmx_mio_uart2_stt_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_stt cvmx_mio_uart2_stt_t;
 
+/**
+ * cvmx_mio_uart2_tfl
+ */
 union cvmx_mio_uart2_tfl {
 	uint64_t u64;
 	struct cvmx_mio_uart2_tfl_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t tfl:7;
+	uint64_t reserved_7_63                : 57;
+	uint64_t tfl                          : 7;  /**< Transmit FIFO Level Register */
 #else
-		uint64_t tfl:7;
-		uint64_t reserved_7_63:57;
+	uint64_t tfl                          : 7;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
+	struct cvmx_mio_uart2_tfl_s           cn52xx;
+	struct cvmx_mio_uart2_tfl_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_tfl cvmx_mio_uart2_tfl_t;
 
+/**
+ * cvmx_mio_uart2_tfr
+ */
 union cvmx_mio_uart2_tfr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_tfr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t tfr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t tfr                          : 8;  /**< Transmit FIFO Read Register */
 #else
-		uint64_t tfr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t tfr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_tfr_s           cn52xx;
+	struct cvmx_mio_uart2_tfr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_tfr cvmx_mio_uart2_tfr_t;
 
+/**
+ * cvmx_mio_uart2_thr
+ */
 union cvmx_mio_uart2_thr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_thr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_8_63:56;
-		uint64_t thr:8;
+	uint64_t reserved_8_63                : 56;
+	uint64_t thr                          : 8;  /**< Transmit Holding Register */
 #else
-		uint64_t thr:8;
-		uint64_t reserved_8_63:56;
+	uint64_t thr                          : 8;
+	uint64_t reserved_8_63                : 56;
 #endif
 	} s;
+	struct cvmx_mio_uart2_thr_s           cn52xx;
+	struct cvmx_mio_uart2_thr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_thr cvmx_mio_uart2_thr_t;
 
+/**
+ * cvmx_mio_uart2_usr
+ */
 union cvmx_mio_uart2_usr {
 	uint64_t u64;
 	struct cvmx_mio_uart2_usr_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_5_63:59;
-		uint64_t rff:1;
-		uint64_t rfne:1;
-		uint64_t tfe:1;
-		uint64_t tfnf:1;
-		uint64_t busy:1;
+	uint64_t reserved_5_63                : 59;
+	uint64_t rff                          : 1;  /**< RX FIFO Full */
+	uint64_t rfne                         : 1;  /**< RX FIFO Not Empty */
+	uint64_t tfe                          : 1;  /**< TX FIFO Empty */
+	uint64_t tfnf                         : 1;  /**< TX FIFO Not Full */
+	uint64_t busy                         : 1;  /**< Busy bit (always 0 in PASS3) */
 #else
-		uint64_t busy:1;
-		uint64_t tfnf:1;
-		uint64_t tfe:1;
-		uint64_t rfne:1;
-		uint64_t rff:1;
-		uint64_t reserved_5_63:59;
+	uint64_t busy                         : 1;
+	uint64_t tfnf                         : 1;
+	uint64_t tfe                          : 1;
+	uint64_t rfne                         : 1;
+	uint64_t rff                          : 1;
+	uint64_t reserved_5_63                : 59;
 #endif
 	} s;
+	struct cvmx_mio_uart2_usr_s           cn52xx;
+	struct cvmx_mio_uart2_usr_s           cn52xxp1;
 };
+typedef union cvmx_mio_uart2_usr cvmx_mio_uart2_usr_t;
 
 #endif

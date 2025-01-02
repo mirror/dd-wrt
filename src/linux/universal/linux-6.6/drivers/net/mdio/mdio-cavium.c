@@ -103,7 +103,7 @@ int cavium_mdiobus_read_c45(struct mii_bus *bus, int phy_id, int devad,
 	smi_cmd.u64 = 0;
 	smi_cmd.s.phy_op = 3; /* MDIO_CLAUSE_45_READ */
 	smi_cmd.s.phy_adr = phy_id;
-	smi_cmd.s.reg_adr = regnum;
+	smi_cmd.s.reg_adr = devad;
 	oct_mdio_writeq(smi_cmd.u64, p->register_base + SMI_CMD);
 
 	do {

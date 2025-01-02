@@ -501,7 +501,7 @@ static int gpy_config_aneg(struct phy_device *phydev)
 	 *    initiate SGMII AN.
 	 */
 
-	if (phydev->state != PHY_UP)
+/*	if (phydev->state != PHY_UP)
 		return 0;
 
 	ret = phy_read_poll_timeout(phydev, MII_BMSR, ret, ret & BMSR_LSTATUS,
@@ -509,7 +509,7 @@ static int gpy_config_aneg(struct phy_device *phydev)
 	if (ret == -ETIMEDOUT)
 		return 0;
 	else if (ret < 0)
-		return ret;
+		return ret;*/
 
 	/* Trigger SGMII AN. */
 	return phy_modify_mmd(phydev, MDIO_MMD_VEND1, VSPEC1_SGMII_CTRL,

@@ -783,7 +783,7 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 	 * we have to use the HIT-type alternative as IPI cannot be used
 	 * here due to interrupts possibly being disabled.
 	 */
-	if (!r4k_op_needs_ipi(R4K_INDEX) && size >= dcache_size) {
+	if (size >= dcache_size) {
 		r4k_blast_dcache();
 	} else {
 		R4600_HIT_CACHEOP_WAR_IMPL;
@@ -853,7 +853,7 @@ static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 		return;
 	}
 
-	if (!r4k_op_needs_ipi(R4K_INDEX) && size >= dcache_size) {
+	if (size >= dcache_size) {
 		r4k_blast_dcache();
 	} else {
 		R4600_HIT_CACHEOP_WAR_IMPL;

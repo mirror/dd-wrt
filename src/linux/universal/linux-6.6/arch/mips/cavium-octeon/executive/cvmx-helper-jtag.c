@@ -1,40 +1,57 @@
 
 /***********************license start***************
- * Author: Cavium Networks
+ * Copyright (c) 2003-2010  Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Contact: support@caviumnetworks.com
- * This file is part of the OCTEON SDK
  *
- * Copyright (c) 2003-2008 Cavium Networks
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * This file is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, Version 2, as
- * published by the Free Software Foundation.
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
  *
- * This file is distributed in the hope that it will be useful, but
- * AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or
- * NONINFRINGEMENT.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this file; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
- * or visit http://www.gnu.org/licenses/.
- *
- * This file may also be available under a different license from Cavium.
- * Contact Cavium Networks for more information
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+
+ *   * Neither the name of Cavium Inc. nor the names of
+ *     its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written
+ *     permission.
+
+ * This Software, including technical data, may be subject to U.S. export  control
+ * laws, including the U.S. Export Administration Act and its  associated
+ * regulations, and may be subject to export or import  regulations in other
+ * countries.
+
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS OR
+ * WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH RESPECT TO
+ * THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY REPRESENTATION OR
+ * DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT DEFECTS, AND CAVIUM
+ * SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES OF TITLE,
+ * MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF
+ * VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. THE ENTIRE  RISK ARISING OUT OF USE OR
+ * PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
  ***********************license end**************************************/
 
 /**
+ * @file
  *
  * Helper utilities for qlm_jtag.
  *
+ * <hr>$Revision: 42480 $<hr>
  */
-
-#include <asm/octeon/octeon.h>
+#ifdef CVMX_BUILD_FOR_LINUX_KERNEL
+#include <asm/octeon/cvmx.h>
+#include <asm/octeon/cvmx-clock.h>
 #include <asm/octeon/cvmx-helper-jtag.h>
-
+#else
+#include "cvmx.h"
+#endif
 
 /**
  * Initialize the internal QLM JTAG logic to allow programming
@@ -46,17 +63,20 @@
 void cvmx_helper_qlm_jtag_init(void)
 {
 	union cvmx_ciu_qlm_jtgc jtgc;
-	uint32_t clock_div = 0;
-	uint32_t divisor = cvmx_sysinfo_get()->cpu_clock_hz / (25 * 1000000);
+	int clock_div = 0;
+	int divisor;
+
+	divisor = cvmx_clock_get_rate(CVMX_CLOCK_SCLK) / (1000000 * (OCTEON_IS_MODEL(OCTEON_CN68XX) ? 10 : 25));
+
 	divisor = (divisor - 1) >> 2;
 	/* Convert the divisor into a power of 2 shift */
 	while (divisor) {
 		clock_div++;
-		divisor = divisor >> 1;
+		divisor >>= 1;
 	}
 
 	/*
-	 * Clock divider for QLM JTAG operations.  eclk is divided by
+	 * Clock divider for QLM JTAG operations.  sclk is divided by
 	 * 2^(CLK_DIV + 2)
 	 */
 	jtgc.u64 = 0;
@@ -64,8 +84,12 @@ void cvmx_helper_qlm_jtag_init(void)
 	jtgc.s.mux_sel = 0;
 	if (OCTEON_IS_MODEL(OCTEON_CN52XX))
 		jtgc.s.bypass = 0x3;
+	else if (OCTEON_IS_MODEL(OCTEON_CN63XX) || OCTEON_IS_MODEL(OCTEON_CN66XX))
+		jtgc.s.bypass = 0x7;
 	else
 		jtgc.s.bypass = 0xf;
+	if (OCTEON_IS_MODEL(OCTEON_CN68XX))
+		jtgc.s.bypass_ext = 1;
 	cvmx_write_csr(CVMX_CIU_QLM_JTGC, jtgc.u64);
 	cvmx_read_csr(CVMX_CIU_QLM_JTGC);
 }
@@ -73,20 +97,30 @@ void cvmx_helper_qlm_jtag_init(void)
 /**
  * Write up to 32bits into the QLM jtag chain. Bits are shifted
  * into the MSB and out the LSB, so you should shift in the low
- * order bits followed by the high order bits. The JTAG chain is
- * 4 * 268 bits long, or 1072.
+ * order bits followed by the high order bits. The JTAG chain for
+ * CN52XX and CN56XX is 4 * 268 bits long, or 1072. The JTAG chain
+ * for CN63XX is 4 * 300 bits long, or 1200.
  *
- * @qlm:    QLM to shift value into
- * @bits:   Number of bits to shift in (1-32).
- * @data:   Data to shift in. Bit 0 enters the chain first, followed by
- *		 bit 1, etc.
+ * @param qlm    QLM to shift value into
+ * @param bits   Number of bits to shift in (1-32).
+ * @param data   Data to shift in. Bit 0 enters the chain first, followed by
+ *               bit 1, etc.
  *
- * Returns The low order bits of the JTAG chain that shifted out of the
- *	   circle.
+ * @return The low order bits of the JTAG chain that shifted out of the
+ *         circle.
  */
 uint32_t cvmx_helper_qlm_jtag_shift(int qlm, int bits, uint32_t data)
 {
+	union cvmx_ciu_qlm_jtgc jtgc;
 	union cvmx_ciu_qlm_jtgd jtgd;
+
+	jtgc.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGC);
+	jtgc.s.mux_sel = qlm;
+	if (OCTEON_IS_OCTEON1PLUS())
+		jtgc.s.bypass = 1 << qlm;
+	cvmx_write_csr(CVMX_CIU_QLM_JTGC, jtgc.u64);
+	cvmx_read_csr(CVMX_CIU_QLM_JTGC);
+
 	jtgd.u64 = 0;
 	jtgd.s.shift = 1;
 	jtgd.s.shft_cnt = bits - 1;
@@ -107,8 +141,8 @@ uint32_t cvmx_helper_qlm_jtag_shift(int qlm, int bits, uint32_t data)
  * cvmx_helper_qlm_jtag_shift() to shift more than 32 bits of
  * zeros at a time.
  *
- * @qlm:    QLM to shift zeros into
- * @bits:
+ * @param qlm    QLM to shift zeros into
+ * @param bits
  */
 void cvmx_helper_qlm_jtag_shift_zeros(int qlm, int bits)
 {
@@ -123,14 +157,23 @@ void cvmx_helper_qlm_jtag_shift_zeros(int qlm, int bits)
 
 /**
  * Program the QLM JTAG chain into all lanes of the QLM. You must
- * have already shifted in 268*4, or 1072 bits into the JTAG
- * chain. Updating invalid values can possibly cause chip damage.
+ * have already shifted in the proper number of bits into the
+ * JTAG chain. Updating invalid values can possibly cause chip damage.
  *
- * @qlm:    QLM to program
+ * @param qlm    QLM to program
  */
 void cvmx_helper_qlm_jtag_update(int qlm)
 {
+	union cvmx_ciu_qlm_jtgc jtgc;
 	union cvmx_ciu_qlm_jtgd jtgd;
+
+	jtgc.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGC);
+	jtgc.s.mux_sel = qlm;
+	if (OCTEON_IS_OCTEON1PLUS())
+		jtgc.s.bypass = 1 << qlm;
+
+	cvmx_write_csr(CVMX_CIU_QLM_JTGC, jtgc.u64);
+	cvmx_read_csr(CVMX_CIU_QLM_JTGC);
 
 	/* Update the new data */
 	jtgd.u64 = 0;
@@ -141,4 +184,32 @@ void cvmx_helper_qlm_jtag_update(int qlm)
 	do {
 		jtgd.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGD);
 	} while (jtgd.s.update);
+}
+
+/**
+ * Load the QLM JTAG chain with data from all lanes of the QLM.
+ *
+ * @param qlm    QLM to program
+ */
+void cvmx_helper_qlm_jtag_capture(int qlm)
+{
+	union cvmx_ciu_qlm_jtgc jtgc;
+	union cvmx_ciu_qlm_jtgd jtgd;
+
+	jtgc.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGC);
+	jtgc.s.mux_sel = qlm;
+	if (OCTEON_IS_OCTEON1PLUS())
+		jtgc.s.bypass = 1 << qlm;
+
+	cvmx_write_csr(CVMX_CIU_QLM_JTGC, jtgc.u64);
+	cvmx_read_csr(CVMX_CIU_QLM_JTGC);
+
+	jtgd.u64 = 0;
+	jtgd.s.capture = 1;
+	if (!OCTEON_IS_MODEL(OCTEON_CN56XX_PASS1_X))
+		jtgd.s.select = 1 << qlm;
+	cvmx_write_csr(CVMX_CIU_QLM_JTGD, jtgd.u64);
+	do {
+		jtgd.u64 = cvmx_read_csr(CVMX_CIU_QLM_JTGD);
+	} while (jtgd.s.capture);
 }

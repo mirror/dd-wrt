@@ -41,15 +41,45 @@
 	andi	k1, k1, ST0_EXL
 	beqz	k1, 1f
 	 nop
-	j	cache_parity_error_octeon_non_recoverable
+	dla	k0, cache_parity_error_octeon_non_recoverable
+	jr	k0
 	 nop
 
 	/* exception is recoverable */
-1:	j	handle_cache_err
+1:	dla	k0, handle_cache_err
+	jr	k0
 	 nop
 
 	.set	pop
 	END(except_vec2_octeon)
+
+  /* Handle cache error for OCTEON3. */
+	LEAF(except_vec2_octeon3)
+
+	.set	push
+	.set	mips64r2
+	.set	noreorder
+	.set	noat
+
+	/* Invalidate the DCache */
+	cache	1, 0($0)
+
+	/* check whether this is a nested exception */
+	mfc0	k1, CP0_STATUS
+	andi	k1, k1, ST0_EXL
+	beqz	k1, 2f
+	 nop
+	dla	k0, cache_parity_error_octeon_non_recoverable
+	jr	k0
+	 nop
+
+	/* exception is recoverable */
+2:	dla	k0, handle_cache_err
+	jr	k0
+	 nop
+
+	.set	pop
+	END(except_vec2_octeon3)
 
  /* We need to jump to handle_cache_err so that the previous handler
   * can fit within 0x80 bytes. We also move from 0xFFFFFFFFAXXXXXXX
@@ -60,11 +90,9 @@
 	.set	noat
 
 	SAVE_ALL
-	KMODE
+	CLI
 	jal	cache_parity_error_octeon_recoverable
-	nop
-	j	ret_from_exception
-	nop
-
+	 nop
+	RESTORE_ALL_AND_RET
 	.set pop
 	END(handle_cache_err)

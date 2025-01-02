@@ -138,14 +138,14 @@
  * the first couple of pages so NULL pointer dereferences will still
  * reliably trap.
  */
-#define VMALLOC_START		(MAP_BASE + (2 * PAGE_SIZE))
 #define VMALLOC_END	\
 	(MAP_BASE + \
 	 min(PTRS_PER_PGD * PTRS_PER_PUD * PTRS_PER_PMD * PTRS_PER_PTE * PAGE_SIZE, \
 	     (1UL << cpu_vmbits)) - (1UL << 32))
 
-#if defined(CONFIG_MODULES) && defined(KBUILD_64BIT_SYM32) && \
-	VMALLOC_START != CKSSEG
+#define VMALLOC_START		((MAP_BASE / 2 + VMALLOC_END / 2) & PAGE_MASK)
+
+#if defined(CONFIG_MODULES) && defined(KBUILD_64BIT_SYM32)
 /* Load modules into 32bit-compatible segment. */
 #define MODULE_START	CKSSEG
 #define MODULE_END	(FIXADDR_START-2*PAGE_SIZE)

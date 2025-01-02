@@ -104,6 +104,7 @@ extern void tlb_do_page_fault_0(void);
 
 void (*board_be_init)(void);
 static int (*board_be_handler)(struct pt_regs *regs, int is_fixup);
+int (*board_mcheck_handler)(struct pt_regs *regs);
 void (*board_nmi_handler_setup)(void);
 void (*board_ejtag_handler_setup)(void);
 void (*board_bind_eic_interrupt)(int irq, int regset);
@@ -413,14 +414,15 @@ void __noreturn die(const char *str, struct pt_regs *regs)
 
 	oops_exit();
 
+	if (regs && kexec_should_crash(current))
+		crash_kexec(regs);
+
 	if (in_interrupt())
 		panic("Fatal exception in interrupt");
 
 	if (panic_on_oops)
 		panic("Fatal exception");
 
-	if (regs && kexec_should_crash(current))
-		crash_kexec(regs);
 
 	make_task_dead(sig);
 }
@@ -1588,6 +1590,14 @@ asmlinkage void do_mcheck(struct pt_regs *regs)
 {
 	int multi_match = regs->cp0_status & ST0_TS;
 	enum ctx_state prev_state;
+
+	if (board_mcheck_handler) {
+		int resp = board_mcheck_handler(regs);
+		if (resp == MIPS_MC_DISCARD)
+			return;
+		if (resp == MIPS_MC_FATAL)
+			multi_match = 0;
+	}
 
 	prev_state = exception_enter();
 	show_regs(regs);

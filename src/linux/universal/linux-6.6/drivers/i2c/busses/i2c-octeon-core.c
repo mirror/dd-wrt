@@ -654,6 +654,18 @@ out:
 	return (ret != 0) ? ret : num;
 }
 
+static int octeon_i2c_cvmx_map[3] = {-ENODEV, -ENODEV, -ENODEV};
+
+int octeon_i2c_cvmx2i2c(unsigned int cvmx_twsi_bus_num)
+{
+	if (cvmx_twsi_bus_num < ARRAY_SIZE(octeon_i2c_cvmx_map))
+		return octeon_i2c_cvmx_map[cvmx_twsi_bus_num];
+	else
+		return -ENODEV;
+}
+EXPORT_SYMBOL(octeon_i2c_cvmx2i2c);
+
+
 /* calculate and set clock divisors */
 void octeon_i2c_set_clock(struct octeon_i2c *i2c)
 {

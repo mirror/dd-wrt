@@ -141,7 +141,7 @@ static void cvm_oct_periodic_worker(struct work_struct *work)
 static void cvm_oct_configure_common_hw(void)
 {
 	/* Setup the FPA */
-	cvmx_fpa_enable();
+	cvmx_fpa1_enable();
 	cvm_oct_mem_fill_fpa(CVMX_FPA_PACKET_POOL, CVMX_FPA_PACKET_POOL_SIZE,
 			     num_packet_buffers);
 	cvm_oct_mem_fill_fpa(CVMX_FPA_WQE_POOL, CVMX_FPA_WQE_POOL_SIZE,
@@ -173,7 +173,7 @@ static void cvm_oct_configure_common_hw(void)
  */
 int cvm_oct_free_work(void *work_queue_entry)
 {
-	struct cvmx_wqe *work = work_queue_entry;
+	cvmx_wqe_t *work = work_queue_entry;
 
 	int segments = work->word2.s.bufs;
 	union cvmx_buf_ptr segment_ptr = work->packet_ptr;
@@ -683,7 +683,6 @@ static int cvm_oct_probe(struct platform_device *pdev)
 	int interface;
 	int fau = FAU_NUM_PACKET_BUFFERS_TO_FREE;
 	int qos;
-	int i;
 	struct device_node *pip;
 	int mtu_overhead = ETH_HLEN + ETH_FCS_LEN;
 
@@ -805,19 +804,13 @@ static int cvm_oct_probe(struct platform_device *pdev)
 	}
 
 	num_interfaces = cvmx_helper_get_number_of_interfaces();
-	for (i = 0; i < num_interfaces; i++) {
-		cvmx_helper_interface_mode_t imode;
-		int interface;
-		int num_ports;
+	for (interface = 0; interface < num_interfaces; interface++) {
+		cvmx_helper_interface_mode_t imode =
+		    cvmx_helper_interface_get_mode(interface);
+		int num_ports = cvmx_helper_ports_on_interface(interface);
 		int port;
 		int port_index;
 
-		interface = i;
-		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E200)
-			interface = num_interfaces - (i + 1);
-
-		num_ports = cvmx_helper_ports_on_interface(interface);
-		imode = cvmx_helper_interface_get_mode(interface);
 		for (port_index = 0,
 		     port = cvmx_helper_get_ipd_port(interface, 0);
 		     port < cvmx_helper_get_ipd_port(interface, num_ports);
@@ -971,7 +964,7 @@ static void cvm_oct_remove(struct platform_device *pdev)
 
 	cvmx_pko_shutdown();
 
-	cvmx_ipd_free_ptr();
+	__cvmx_ipd_free_ptr();
 
 	/* Free the HW pools */
 	cvm_oct_mem_empty_fpa(CVMX_FPA_PACKET_POOL, CVMX_FPA_PACKET_POOL_SIZE,

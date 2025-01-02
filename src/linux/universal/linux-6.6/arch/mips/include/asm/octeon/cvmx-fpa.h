@@ -1,28 +1,40 @@
 /***********************license start***************
- * Author: Cavium Networks
+ * Copyright (c) 2003-2010  Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Contact: support@caviumnetworks.com
- * This file is part of the OCTEON SDK
  *
- * Copyright (c) 2003-2008 Cavium Networks
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * This file is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, Version 2, as
- * published by the Free Software Foundation.
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
  *
- * This file is distributed in the hope that it will be useful, but
- * AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or
- * NONINFRINGEMENT.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this file; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
- * or visit http://www.gnu.org/licenses/.
- *
- * This file may also be available under a different license from Cavium.
- * Contact Cavium Networks for more information
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+
+ *   * Neither the name of Cavium Inc. nor the names of
+ *     its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written
+ *     permission.
+
+ * This Software, including technical data, may be subject to U.S. export  control
+ * laws, including the U.S. Export Administration Act and its  associated
+ * regulations, and may be subject to export or import  regulations in other
+ * countries.
+
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS OR
+ * WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH RESPECT TO
+ * THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY REPRESENTATION OR
+ * DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT DEFECTS, AND CAVIUM
+ * SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES OF TITLE,
+ * MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF
+ * VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. THE ENTIRE  RISK ARISING OUT OF USE OR
+ * PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
  ***********************license end**************************************/
 
 /**
@@ -30,259 +42,243 @@
  *
  * Interface to the hardware Free Pool Allocator.
  *
+ * <hr>$Revision: 120123 $<hr>
  *
  */
 
 #ifndef __CVMX_FPA_H__
 #define __CVMX_FPA_H__
 
-#include <linux/delay.h>
+#include "cvmx-scratch.h"
+#include "cvmx.h"
 
-#include <asm/octeon/cvmx-address.h>
-#include <asm/octeon/cvmx-fpa-defs.h>
+#include "cvmx-fpa-defs.h"
+#include "cvmx-fpa1.h"
+#include "cvmx-fpa3.h"
 
-#define CVMX_FPA_NUM_POOLS	8
 #define CVMX_FPA_MIN_BLOCK_SIZE 128
-#define CVMX_FPA_ALIGNMENT	128
+#define CVMX_FPA_ALIGNMENT      128
+#define CVMX_FPA_POOL_NAME_LEN  16
 
-/**
- * Structure describing the data format used for stores to the FPA.
- */
-typedef union {
-	uint64_t u64;
-	struct {
-#ifdef __BIG_ENDIAN_BITFIELD
-		/*
-		 * the (64-bit word) location in scratchpad to write
-		 * to (if len != 0)
-		 */
-		uint64_t scraddr:8;
-		/* the number of words in the response (0 => no response) */
-		uint64_t len:8;
-		/* the ID of the device on the non-coherent bus */
-		uint64_t did:8;
-		/*
-		 * the address that will appear in the first tick on
-		 * the NCB bus.
-		 */
-		uint64_t addr:40;
-#else
-		uint64_t addr:40;
-		uint64_t did:8;
-		uint64_t len:8;
-		uint64_t scraddr:8;
+/* On CN78XX in backward-compatible mode, pool is mapped to AURA */
+#define CVMX_FPA_NUM_POOLS (octeon_has_feature(OCTEON_FEATURE_FPA3) ? \
+			cvmx_fpa3_num_auras() : CVMX_FPA1_NUM_POOLS)
+
+#ifdef	__cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
 #endif
-	} s;
-} cvmx_fpa_iobdma_data_t;
 
 /**
- * Structure describing the current state of a FPA pool.
+ * Structure to store FPA pool configuration parameters.
  */
-typedef struct {
-	/* Name it was created under */
-	const char *name;
-	/* Size of each block */
-	uint64_t size;
-	/* The base memory address of whole block */
-	void *base;
-	/* The number of elements in the pool at creation */
-	uint64_t starting_element_count;
-} cvmx_fpa_pool_info_t;
-
-/**
- * Current state of all the pools. Use access functions
- * instead of using it directly.
- */
-extern cvmx_fpa_pool_info_t cvmx_fpa_pool_info[CVMX_FPA_NUM_POOLS];
-
-/* CSR typedefs have been moved to cvmx-csr-*.h */
+struct cvmx_fpa_pool_config {
+	int64_t pool_num;
+	uint64_t buffer_size;
+	uint64_t buffer_count;
+};
+typedef struct cvmx_fpa_pool_config cvmx_fpa_pool_config_t;
 
 /**
  * Return the name of the pool
  *
- * @pool:   Pool to get the name of
- * Returns The name
+ * @param pool_num   Pool to get the name of
+ * @return The name
  */
-static inline const char *cvmx_fpa_get_name(uint64_t pool)
-{
-	return cvmx_fpa_pool_info[pool].name;
-}
+const char *cvmx_fpa_get_name(int pool_num);
 
 /**
- * Return the base of the pool
- *
- * @pool:   Pool to get the base of
- * Returns The base
+ * Initialize FPA per node
  */
-static inline void *cvmx_fpa_get_base(uint64_t pool)
-{
-	return cvmx_fpa_pool_info[pool].base;
-}
+int cvmx_fpa_global_init_node(int node);
 
 /**
- * Check if a pointer belongs to an FPA pool. Return non-zero
- * if the supplied pointer is inside the memory controlled by
- * an FPA pool.
- *
- * @pool:   Pool to check
- * @ptr:    Pointer to check
- * Returns Non-zero if pointer is in the pool. Zero if not
- */
-static inline int cvmx_fpa_is_member(uint64_t pool, void *ptr)
-{
-	return ((ptr >= cvmx_fpa_pool_info[pool].base) &&
-		((char *)ptr <
-		 ((char *)(cvmx_fpa_pool_info[pool].base)) +
-		 cvmx_fpa_pool_info[pool].size *
-		 cvmx_fpa_pool_info[pool].starting_element_count));
-}
-
-/**
- * Enable the FPA for use. Must be performed after any CSR
- * configuration but before any other FPA functions.
+ * Enable the FPA
  */
 static inline void cvmx_fpa_enable(void)
 {
-	union cvmx_fpa_ctl_status status;
+	if (!octeon_has_feature(OCTEON_FEATURE_FPA3))
+		cvmx_fpa1_enable();
+	else
+		cvmx_fpa_global_init_node(cvmx_get_node_num());
+}
 
-	status.u64 = cvmx_read_csr(CVMX_FPA_CTL_STATUS);
-	if (status.s.enb) {
-		cvmx_dprintf
-		    ("Warning: Enabling FPA when FPA already enabled.\n");
+/**
+ * Disable the FPA
+ */
+static inline void cvmx_fpa_disable(void)
+{
+	if (!octeon_has_feature(OCTEON_FEATURE_FPA3))
+		cvmx_fpa1_disable();
+	/* FPA3 does not have a disable funcion */
+}
+
+/**
+ * @INTERNAL
+ * @deprecated OBSOLETE
+ *
+ * Kept for transition assistance only
+ */
+static inline void cvmx_fpa_global_initialize(void)
+{
+	cvmx_fpa_global_init_node(cvmx_get_node_num());
+}
+
+
+/**
+ * @INTERNAL
+ *
+ * Convert FPA1 style POOL into FPA3 AURA in
+ * backward compatibility mode.
+ */
+static inline cvmx_fpa3_gaura_t
+cvmx_fpa1_pool_to_fpa3_aura(cvmx_fpa1_pool_t pool)
+{
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3))) {
+		unsigned node = cvmx_get_node_num();
+		cvmx_fpa3_gaura_t aura = __cvmx_fpa3_gaura(node, pool);
+		return aura;
 	}
-
-	/*
-	 * Do runtime check as we allow pass1 compiled code to run on
-	 * pass2 chips.
-	 */
-	if (cvmx_octeon_is_pass1()) {
-		union cvmx_fpa_fpfx_marks marks;
-		int i;
-		for (i = 1; i < 8; i++) {
-			marks.u64 =
-			    cvmx_read_csr(CVMX_FPA_FPF1_MARKS + (i - 1) * 8ull);
-			marks.s.fpf_wr = 0xe0;
-			cvmx_write_csr(CVMX_FPA_FPF1_MARKS + (i - 1) * 8ull,
-				       marks.u64);
-		}
-
-		/* Enforce a 10 cycle delay between config and enable */
-		__delay(10);
-	}
-
-	/* FIXME: CVMX_FPA_CTL_STATUS read is unmodelled */
-	status.u64 = 0;
-	status.s.enb = 1;
-	cvmx_write_csr(CVMX_FPA_CTL_STATUS, status.u64);
+	return CVMX_FPA3_INVALID_GAURA;
 }
 
 /**
  * Get a new block from the FPA
  *
- * @pool:   Pool to get the block from
- * Returns Pointer to the block or NULL on failure
+ * @param pool   Pool to get the block from
+ * @return Pointer to the block or NULL on failure
  */
 static inline void *cvmx_fpa_alloc(uint64_t pool)
 {
-	uint64_t address =
-	    cvmx_read_csr(CVMX_ADDR_DID(CVMX_FULL_DID(CVMX_OCT_DID_FPA, pool)));
-	if (address)
-		return cvmx_phys_to_ptr(address);
-	else
-		return NULL;
+	/* FPA3 is handled differently */
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3))) {
+		return cvmx_fpa3_alloc(
+			cvmx_fpa1_pool_to_fpa3_aura(pool));
+	} else
+		return cvmx_fpa1_alloc(pool);
 }
 
 /**
  * Asynchronously get a new block from the FPA
  *
- * @scr_addr: Local scratch address to put response in.	 This is a byte address,
- *		    but must be 8 byte aligned.
- * @pool:      Pool to get the block from
+ * The result of cvmx_fpa_async_alloc() may be retrieved using
+ * cvmx_fpa_async_alloc_finish().
+ *
+ * @param scr_addr Local scratch address to put response in.  This is a byte
+ *		   address but must be 8 byte aligned.
+ * @param pool      Pool to get the block from
  */
 static inline void cvmx_fpa_async_alloc(uint64_t scr_addr, uint64_t pool)
 {
-	cvmx_fpa_iobdma_data_t data;
-
-	/*
-	 * Hardware only uses 64 bit aligned locations, so convert
-	 * from byte address to 64-bit index
-	 */
-	data.s.scraddr = scr_addr >> 3;
-	data.s.len = 1;
-	data.s.did = CVMX_FULL_DID(CVMX_OCT_DID_FPA, pool);
-	data.s.addr = 0;
-	cvmx_send_single(data.u64);
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3))) {
+		return cvmx_fpa3_async_alloc(scr_addr,
+			cvmx_fpa1_pool_to_fpa3_aura(pool));
+	} else
+		return cvmx_fpa1_async_alloc(scr_addr, pool);
 }
 
 /**
- * Free a block allocated with a FPA pool.  Does NOT provide memory
- * ordering in cases where the memory block was modified by the core.
+ * Retrieve the result of cvmx_fpa_async_alloc
  *
- * @ptr:    Block to free
- * @pool:   Pool to put it in
- * @num_cache_lines:
- *		 Cache lines to invalidate
+ * @param scr_addr The Local scratch address.  Must be the same value
+ * passed to cvmx_fpa_async_alloc().
+ *
+ * @param pool Pool the block came from.  Must be the same value
+ * passed to cvmx_fpa_async_alloc.
+ *
+ * @return Pointer to the block or NULL on failure
+ */
+static inline void *cvmx_fpa_async_alloc_finish(uint64_t scr_addr, uint64_t pool)
+{
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3)))
+		return cvmx_fpa3_async_alloc_finish(
+			scr_addr, cvmx_fpa1_pool_to_fpa3_aura(pool));
+	else
+		return cvmx_fpa1_async_alloc_finish(
+			scr_addr, pool);
+}
+
+/**
+ * Free a block allocated with a FPA pool.
+ * Does NOT provide memory ordering in cases where the memory block was
+ * modified by the core.
+ *
+ * @param ptr    Block to free
+ * @param pool   Pool to put it in
+ * @param num_cache_lines
+ *               Cache lines to invalidate
  */
 static inline void cvmx_fpa_free_nosync(void *ptr, uint64_t pool,
 					uint64_t num_cache_lines)
 {
-	cvmx_addr_t newptr;
-	newptr.u64 = cvmx_ptr_to_phys(ptr);
-	newptr.sfilldidspace.didspace =
-	    CVMX_ADDR_DIDSPACE(CVMX_FULL_DID(CVMX_OCT_DID_FPA, pool));
-	/* Prevent GCC from reordering around free */
-	barrier();
-	/* value written is number of cache lines not written back */
-	cvmx_write_io(newptr.u64, num_cache_lines);
+	/* FPA3 is handled differently */
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3)))
+		cvmx_fpa3_free_nosync(ptr, cvmx_fpa1_pool_to_fpa3_aura(pool),
+			num_cache_lines);
+	else
+		cvmx_fpa1_free_nosync(ptr, pool, num_cache_lines);
 }
 
 /**
  * Free a block allocated with a FPA pool.  Provides required memory
  * ordering in cases where memory block was modified by core.
  *
- * @ptr:    Block to free
- * @pool:   Pool to put it in
- * @num_cache_lines:
- *		 Cache lines to invalidate
+ * @param ptr    Block to free
+ * @param pool   Pool to put it in
+ * @param num_cache_lines
+ *               Cache lines to invalidate
  */
 static inline void cvmx_fpa_free(void *ptr, uint64_t pool,
 				 uint64_t num_cache_lines)
 {
-	cvmx_addr_t newptr;
-	newptr.u64 = cvmx_ptr_to_phys(ptr);
-	newptr.sfilldidspace.didspace =
-	    CVMX_ADDR_DIDSPACE(CVMX_FULL_DID(CVMX_OCT_DID_FPA, pool));
-	/*
-	 * Make sure that any previous writes to memory go out before
-	 * we free this buffer.	 This also serves as a barrier to
-	 * prevent GCC from reordering operations to after the
-	 * free.
-	 */
-	CVMX_SYNCWS;
-	/* value written is number of cache lines not written back */
-	cvmx_write_io(newptr.u64, num_cache_lines);
+	if ((octeon_has_feature(OCTEON_FEATURE_FPA3)))
+		cvmx_fpa3_free(ptr, cvmx_fpa1_pool_to_fpa3_aura(pool),
+			num_cache_lines);
+	else
+		cvmx_fpa1_free(ptr, pool, num_cache_lines);
 }
 
-/**
- * Shutdown a Memory pool and validate that it had all of
- * the buffers originally placed in it. This should only be
- * called by one processor after all hardware has finished
- * using the pool.
- *
- * @pool:   Pool to shutdown
- * Returns Zero on success
- *	   - Positive is count of missing buffers
- *	   - Negative is too many buffers or corrupted pointers
- */
-extern uint64_t cvmx_fpa_shutdown_pool(uint64_t pool);
 
 /**
- * Get the size of blocks controlled by the pool
- * This is resolved to a constant at compile time.
+ * Setup a FPA pool to control a new block of memory.
+ * This can only be called once per pool. Make sure proper
+ * locking enforces this.
  *
- * @pool:   Pool to access
- * Returns Size of the block in bytes
+ * @param pool       Pool to initialize
+ * @param name       Constant character string to name this pool.
+ *                   String is not copied.
+ * @param buffer     Pointer to the block of memory to use. This must be
+ *                   accessable by all processors and external hardware.
+ * @param block_size Size for each block controlled by the FPA
+ * @param num_blocks Number of blocks
+ *
+ * @return the pool number on Success,
+ *         -1 on failure
  */
-uint64_t cvmx_fpa_get_block_size(uint64_t pool);
+extern int cvmx_fpa_setup_pool(int pool, const char *name, void *buffer,
+			       uint64_t block_size, uint64_t num_blocks);
+
+extern int cvmx_fpa_shutdown_pool(int pool);
+
+/**
+ * Gets the block size of buffer in specified pool
+ * @param pool	 Pool to get the block size from
+ * @return       Size of buffer in specified pool
+ */
+extern unsigned cvmx_fpa_get_block_size(int pool);
+
+extern int cvmx_fpa_is_pool_available(int pool_num);
+extern uint64_t cvmx_fpa_get_pool_owner(int pool_num);
+extern int cvmx_fpa_get_max_pools(void);
+extern int cvmx_fpa_get_current_count(int pool_num);
+extern int cvmx_fpa_validate_pool(int pool);
+
+
+#ifdef	__cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif /*  __CVM_FPA_H__ */

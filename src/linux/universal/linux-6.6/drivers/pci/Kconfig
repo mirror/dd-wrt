@@ -51,6 +51,10 @@ config PCI_MSI
 
 	   If you don't know what to do here, say Y.
 
+config PCI_MSI_IRQ_DOMAIN
+	def_bool ARC || ARM || ARM64 || X86
+	depends on PCI_MSI
+
 config PCI_MSI_ARCH_FALLBACKS
 	bool
 

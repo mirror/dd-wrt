@@ -78,7 +78,6 @@ static void octeon_lmc_edac_poll_o2(struct mem_ctl_info *mci)
 	if (!pvt->inject)
 		int_reg.u64 = cvmx_read_csr(CVMX_LMCX_INT(mci->mc_idx));
 	else {
-		int_reg.u64 = 0;
 		if (pvt->error_type == 1)
 			int_reg.s.sec_err = 1;
 		if (pvt->error_type == 2)
@@ -96,10 +95,16 @@ static void octeon_lmc_edac_poll_o2(struct mem_ctl_info *mci)
 			fadr.cn61xx.frow = pvt->row;
 			fadr.cn61xx.fcol = pvt->col;
 		}
-		snprintf(msg, sizeof(msg),
-			 "DIMM %d rank %d bank %d row %d col %d",
-			 fadr.cn61xx.fdimm, fadr.cn61xx.fbunk,
-			 fadr.cn61xx.fbank, fadr.cn61xx.frow, fadr.cn61xx.fcol);
+		if (OCTEON_IS_OCTEON3())
+			snprintf(msg, sizeof(msg),
+				"DIMM %d rank %d bank %d row %d col %d",
+				fadr.cn70xx.fdimm, fadr.cn70xx.fbunk,
+				fadr.cn70xx.fbank, fadr.cn70xx.frow, fadr.cn70xx.fcol);
+		else
+			snprintf(msg, sizeof(msg),
+				"DIMM %d rank %d bank %d row %d col %d",
+				fadr.cn61xx.fdimm, fadr.cn61xx.fbunk,
+				fadr.cn61xx.fbank, fadr.cn61xx.frow, fadr.cn61xx.fcol);
 	}
 
 	if (int_reg.s.sec_err) {
@@ -113,6 +118,14 @@ static void octeon_lmc_edac_poll_o2(struct mem_ctl_info *mci)
 		edac_mc_handle_error(HW_EVENT_ERR_UNCORRECTED, mci, 1, 0, 0, 0,
 				     -1, -1, -1, msg, "");
 		int_reg.s.ded_err = -1;	/* Done, re-arm */
+		do_clear = true;
+	}
+
+	if (int_reg.s.nxm_wr_err) {
+		snprintf(msg, sizeof(msg), "NXM_WR_ERR: Write to non-existent memory");
+		edac_mc_handle_error(HW_EVENT_ERR_CORRECTED, mci, 1, 0, 0, 0,
+				     -1, -1, -1, msg, "");
+		int_reg.s.nxm_wr_err = -1;	/* Done, re-arm */
 		do_clear = true;
 	}
 
@@ -234,10 +247,24 @@ static int octeon_lmc_edac_probe(struct platform_device *pdev)
 	layers[0].size = 1;
 	layers[0].is_virt_csrow = false;
 
+	edac_op_state = EDAC_OPSTATE_POLL;
+
 	if (OCTEON_IS_OCTEON1PLUS()) {
 		union cvmx_lmcx_mem_cfg0 cfg0;
+		cvmx_l2c_cfg_t l2c_cfg;
+		int present = 0;
 
-		cfg0.u64 = cvmx_read_csr(CVMX_LMCX_MEM_CFG0(0));
+		l2c_cfg.u64 = cvmx_read_csr(CVMX_L2C_CFG);
+
+		if (mc == 0)
+			present = l2c_cfg.s.dpres0;
+		else
+			present = l2c_cfg.s.dpres1;
+
+		if (!present)
+			return -ENXIO;
+
+		cfg0.u64 = cvmx_read_csr(CVMX_LMCX_MEM_CFG0(mc));
 		if (!cfg0.s.ecc_ena) {
 			dev_info(&pdev->dev, "Disabled (ECC not enabled)\n");
 			return 0;
@@ -268,8 +295,17 @@ static int octeon_lmc_edac_probe(struct platform_device *pdev)
 		/* OCTEON II */
 		union cvmx_lmcx_int_en en;
 		union cvmx_lmcx_config config;
+		union cvmx_lmcx_dll_ctl2 ctl2;
 
-		config.u64 = cvmx_read_csr(CVMX_LMCX_CONFIG(0));
+		/* Check if LMC controller is enabled. */
+		ctl2.u64 = cvmx_read_csr(CVMX_LMCX_DLL_CTL2(mc));
+		if ((OCTEON_IS_OCTEON3() && ctl2.cn70xx.quad_dll_ena == 0) ||
+		    (OCTEON_IS_OCTEON2() && ctl2.cn63xx.quad_dll_ena == 0)) {
+			dev_info(&pdev->dev, "Disabled (LMC not present)\n");
+			return 0;
+		}
+
+		config.u64 = cvmx_read_csr(CVMX_LMCX_CONFIG(mc));
 		if (!config.s.ecc_ena) {
 			dev_info(&pdev->dev, "Disabled (ECC not enabled)\n");
 			return 0;
@@ -292,10 +328,10 @@ static int octeon_lmc_edac_probe(struct platform_device *pdev)
 			return -ENXIO;
 		}
 
-		en.u64 = cvmx_read_csr(CVMX_LMCX_MEM_CFG0(mc));
+		en.u64 = cvmx_read_csr(CVMX_LMCX_INT_EN(mc));
 		en.s.intr_ded_ena = 0;	/* We poll */
 		en.s.intr_sec_ena = 0;
-		cvmx_write_csr(CVMX_LMCX_MEM_CFG0(mc), en.u64);
+		cvmx_write_csr(CVMX_LMCX_INT_EN(mc), en.u64);
 	}
 	platform_set_drvdata(pdev, mci);
 
@@ -306,8 +342,11 @@ static int octeon_lmc_edac_remove(struct platform_device *pdev)
 {
 	struct mem_ctl_info *mci = platform_get_drvdata(pdev);
 
+	if (mci == NULL)
+		goto out;
 	edac_mc_del_mc(&pdev->dev);
 	edac_mc_free(mci);
+out:
 	return 0;
 }
 

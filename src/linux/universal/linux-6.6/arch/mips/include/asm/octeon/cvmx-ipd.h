@@ -1,339 +1,301 @@
 /***********************license start***************
- * Author: Cavium Networks
+ * Copyright (c) 2003-2010  Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Contact: support@caviumnetworks.com
- * This file is part of the OCTEON SDK
  *
- * Copyright (c) 2003-2008 Cavium Networks
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * This file is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, Version 2, as
- * published by the Free Software Foundation.
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
  *
- * This file is distributed in the hope that it will be useful, but
- * AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or
- * NONINFRINGEMENT.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this file; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
- * or visit http://www.gnu.org/licenses/.
- *
- * This file may also be available under a different license from Cavium.
- * Contact Cavium Networks for more information
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+
+ *   * Neither the name of Cavium Inc. nor the names of
+ *     its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written
+ *     permission.
+
+ * This Software, including technical data, may be subject to U.S. export  control
+ * laws, including the U.S. Export Administration Act and its  associated
+ * regulations, and may be subject to export or import  regulations in other
+ * countries.
+
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS OR
+ * WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH RESPECT TO
+ * THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY REPRESENTATION OR
+ * DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT DEFECTS, AND CAVIUM
+ * SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES OF TITLE,
+ * MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF
+ * VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. THE ENTIRE  RISK ARISING OUT OF USE OR
+ * PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
  ***********************license end**************************************/
 
 /**
+ * @file
  *
  * Interface to the hardware Input Packet Data unit.
+ *
+ * <hr>$Revision: 116854 $<hr>
  */
 
 #ifndef __CVMX_IPD_H__
 #define __CVMX_IPD_H__
 
-#include <asm/octeon/octeon-feature.h>
-
+#ifdef CVMX_BUILD_FOR_LINUX_KERNEL
+#include <asm/octeon/cvmx.h>
+#include <asm/octeon/cvmx-fpa.h>
 #include <asm/octeon/cvmx-ipd-defs.h>
-#include <asm/octeon/cvmx-pip-defs.h>
-
-enum cvmx_ipd_mode {
-   CVMX_IPD_OPC_MODE_STT = 0LL,	  /* All blocks DRAM, not cached in L2 */
-   CVMX_IPD_OPC_MODE_STF = 1LL,	  /* All blocks into  L2 */
-   CVMX_IPD_OPC_MODE_STF1_STT = 2LL,   /* 1st block L2, rest DRAM */
-   CVMX_IPD_OPC_MODE_STF2_STT = 3LL    /* 1st, 2nd blocks L2, rest DRAM */
-};
-
-#ifndef CVMX_ENABLE_LEN_M8_FIX
-#define CVMX_ENABLE_LEN_M8_FIX 0
+#include <asm/octeon/cvmx-pki.h>
+#else
+#include "cvmx-pki.h"
 #endif
 
-/* CSR typedefs have been moved to cvmx-csr-*.h */
-typedef union cvmx_ipd_1st_mbuff_skip cvmx_ipd_mbuff_first_skip_t;
-typedef union cvmx_ipd_1st_next_ptr_back cvmx_ipd_first_next_ptr_back_t;
+#ifdef	__cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
 
-typedef cvmx_ipd_mbuff_first_skip_t cvmx_ipd_mbuff_not_first_skip_t;
-typedef cvmx_ipd_first_next_ptr_back_t cvmx_ipd_second_next_ptr_back_t;
+/* CSR typedefs have been moved to cvmx-ipd-defs.h */
+
+typedef cvmx_ipd_1st_mbuff_skip_t cvmx_ipd_mbuff_not_first_skip_t;
+typedef cvmx_ipd_1st_next_ptr_back_t cvmx_ipd_second_next_ptr_back_t;
+
+typedef struct cvmx_ipd_tag_fields
+{
+	uint64_t ipv6_src_ip:1;
+	uint64_t ipv6_dst_ip:1;
+	uint64_t ipv6_src_port:1;
+	uint64_t ipv6_dst_port:1;
+	uint64_t ipv6_next_header:1;
+	uint64_t ipv4_src_ip:1;
+	uint64_t ipv4_dst_ip:1;
+	uint64_t ipv4_src_port:1;
+	uint64_t ipv4_dst_port:1;
+	uint64_t ipv4_protocol:1;
+	uint64_t input_port:1;
+} cvmx_ipd_tag_fields_t;
+
+typedef struct cvmx_pip_port_config
+{
+	uint64_t parse_mode;
+	uint64_t tag_type;
+	uint64_t tag_mode;
+	cvmx_ipd_tag_fields_t tag_fields;
+}cvmx_pip_port_config_t;
+
+typedef struct cvmx_ipd_config_struct
+{
+	uint64_t first_mbuf_skip;
+	uint64_t not_first_mbuf_skip;
+	uint64_t ipd_enable;
+	uint64_t enable_len_M8_fix;
+	uint64_t cache_mode;
+	cvmx_fpa_pool_config_t packet_pool;
+	cvmx_fpa_pool_config_t wqe_pool;
+	cvmx_pip_port_config_t port_config;
+}cvmx_ipd_config_t;
+
+extern CVMX_SHARED cvmx_ipd_config_t cvmx_ipd_cfg;
+/**
+ * Gets the fpa pool number of packet pool
+ */
+static inline int64_t cvmx_fpa_get_packet_pool(void)
+{
+	return (cvmx_ipd_cfg.packet_pool.pool_num);
+}
+
+/**
+ * Gets the buffer size of packet pool buffer
+ */
+static inline uint64_t cvmx_fpa_get_packet_pool_block_size(void)
+{
+	return (cvmx_ipd_cfg.packet_pool.buffer_size);
+}
+
+/**
+ * Gets the buffer count of packet pool
+ */
+static inline uint64_t cvmx_fpa_get_packet_pool_buffer_count(void)
+{
+	return (cvmx_ipd_cfg.packet_pool.buffer_count);
+}
+
+/**
+ * Gets the fpa pool number of wqe pool
+ */
+static inline int64_t cvmx_fpa_get_wqe_pool(void)
+{
+	return (cvmx_ipd_cfg.wqe_pool.pool_num);
+}
+
+/**
+ * Gets the buffer size of wqe pool buffer
+ */
+static inline uint64_t cvmx_fpa_get_wqe_pool_block_size(void)
+{
+	return (cvmx_ipd_cfg.wqe_pool.buffer_size);
+}
+
+/**
+ * Gets the buffer count of wqe pool
+ */
+static inline uint64_t cvmx_fpa_get_wqe_pool_buffer_count(void)
+{
+	return (cvmx_ipd_cfg.wqe_pool.buffer_count);
+}
+
+/**
+ * Sets the ipd related configuration in internal structure which is then used
+ * for seting IPD hardware block
+ */
+int cvmx_ipd_set_config(cvmx_ipd_config_t ipd_config);
+
+/**
+ * Gets the ipd related configuration from internal structure.
+ */
+void cvmx_ipd_get_config(cvmx_ipd_config_t* ipd_config);
+
+/**
+ * Sets the internal FPA pool data structure for packet buffer pool.
+ * @param pool	fpa pool number yo use
+ * @param buffer_size	buffer size of pool
+ * @param buffer_count	number of buufers to allocate to pool
+ */
+void cvmx_ipd_set_packet_pool_config(int64_t pool, uint64_t buffer_size,
+				       uint64_t buffer_count);
+
+/**
+ * Sets the internal FPA pool data structure for wqe pool.
+ * @param pool	fpa pool number yo use
+ * @param buffer_size	buffer size of pool
+ * @param buffer_count	number of buufers to allocate to pool
+ */
+void cvmx_ipd_set_wqe_pool_config(int64_t pool, uint64_t buffer_size,
+				       uint64_t buffer_count);
+
+/**
+ * Gets the FPA packet buffer pool parameters.
+ */
+static inline void cvmx_fpa_get_packet_pool_config(int64_t *pool,
+						uint64_t *buffer_size, uint64_t *buffer_count)
+{
+	if (pool != NULL)
+		*pool = cvmx_ipd_cfg.packet_pool.pool_num;
+	if (buffer_size != NULL)
+		*buffer_size = cvmx_ipd_cfg.packet_pool.buffer_size;
+	if (buffer_count != NULL)
+		*buffer_count = cvmx_ipd_cfg.packet_pool.buffer_count;
+}
+
+/**
+ * Sets the FPA packet buffer pool parameters.
+ */
+static inline void cvmx_fpa_set_packet_pool_config(int64_t pool,
+						uint64_t buffer_size, uint64_t buffer_count)
+{
+	cvmx_ipd_set_packet_pool_config(pool, buffer_size, buffer_count);
+}
+
+/**
+ * Gets the FPA WQE pool parameters.
+ */
+static inline void cvmx_fpa_get_wqe_pool_config(int64_t *pool,
+						uint64_t *buffer_size, uint64_t *buffer_count)
+{
+	if (pool != NULL)
+		*pool = cvmx_ipd_cfg.wqe_pool.pool_num;
+	if (buffer_size != NULL)
+		*buffer_size = cvmx_ipd_cfg.wqe_pool.buffer_size;
+	if (buffer_count != NULL)
+		*buffer_count = cvmx_ipd_cfg.wqe_pool.buffer_count;
+}
+
+/**
+ * Sets the FPA WQE pool parameters.
+ */
+static inline void cvmx_fpa_set_wqe_pool_config(int64_t pool,
+						uint64_t buffer_size, uint64_t buffer_count)
+{
+	cvmx_ipd_set_wqe_pool_config(pool, buffer_size, buffer_count);
+}
 
 /**
  * Configure IPD
  *
- * @mbuff_size: Packets buffer size in 8 byte words
- * @first_mbuff_skip:
- *		     Number of 8 byte words to skip in the first buffer
- * @not_first_mbuff_skip:
- *		     Number of 8 byte words to skip in each following buffer
- * @first_back: Must be same as first_mbuff_skip / 128
- * @second_back:
- *		     Must be same as not_first_mbuff_skip / 128
- * @wqe_fpa_pool:
- *		     FPA pool to get work entries from
- * @cache_mode:
- * @back_pres_enable_flag:
- *		     Enable or disable port back pressure
+ * @param mbuff_size Packets buffer size in 8 byte words
+ * @param first_mbuff_skip
+ *                   Number of 8 byte words to skip in the first buffer
+ * @param not_first_mbuff_skip
+ *                   Number of 8 byte words to skip in each following buffer
+ * @param first_back Must be same as first_mbuff_skip / 128
+ * @param second_back
+ *                   Must be same as not_first_mbuff_skip / 128
+ * @param wqe_fpa_pool
+ *                   FPA pool to get work entries from
+ * @param cache_mode
+ * @param back_pres_enable_flag
+ *                   Enable or disable port back pressure at a global level.
+ *                   This should always be 1 as more accurate control can be
+ *                   found in IPD_PORTX_BP_PAGE_CNT[BP_ENB].
  */
-static inline void cvmx_ipd_config(uint64_t mbuff_size,
-				   uint64_t first_mbuff_skip,
-				   uint64_t not_first_mbuff_skip,
-				   uint64_t first_back,
-				   uint64_t second_back,
-				   uint64_t wqe_fpa_pool,
-				   enum cvmx_ipd_mode cache_mode,
-				   uint64_t back_pres_enable_flag)
-{
-	cvmx_ipd_mbuff_first_skip_t first_skip;
-	cvmx_ipd_mbuff_not_first_skip_t not_first_skip;
-	union cvmx_ipd_packet_mbuff_size size;
-	cvmx_ipd_first_next_ptr_back_t first_back_struct;
-	cvmx_ipd_second_next_ptr_back_t second_back_struct;
-	union cvmx_ipd_wqe_fpa_queue wqe_pool;
-	union cvmx_ipd_ctl_status ipd_ctl_reg;
-
-	first_skip.u64 = 0;
-	first_skip.s.skip_sz = first_mbuff_skip;
-	cvmx_write_csr(CVMX_IPD_1ST_MBUFF_SKIP, first_skip.u64);
-
-	not_first_skip.u64 = 0;
-	not_first_skip.s.skip_sz = not_first_mbuff_skip;
-	cvmx_write_csr(CVMX_IPD_NOT_1ST_MBUFF_SKIP, not_first_skip.u64);
-
-	size.u64 = 0;
-	size.s.mb_size = mbuff_size;
-	cvmx_write_csr(CVMX_IPD_PACKET_MBUFF_SIZE, size.u64);
-
-	first_back_struct.u64 = 0;
-	first_back_struct.s.back = first_back;
-	cvmx_write_csr(CVMX_IPD_1st_NEXT_PTR_BACK, first_back_struct.u64);
-
-	second_back_struct.u64 = 0;
-	second_back_struct.s.back = second_back;
-	cvmx_write_csr(CVMX_IPD_2nd_NEXT_PTR_BACK, second_back_struct.u64);
-
-	wqe_pool.u64 = 0;
-	wqe_pool.s.wqe_pool = wqe_fpa_pool;
-	cvmx_write_csr(CVMX_IPD_WQE_FPA_QUEUE, wqe_pool.u64);
-
-	ipd_ctl_reg.u64 = cvmx_read_csr(CVMX_IPD_CTL_STATUS);
-	ipd_ctl_reg.s.opc_mode = cache_mode;
-	ipd_ctl_reg.s.pbp_en = back_pres_enable_flag;
-	cvmx_write_csr(CVMX_IPD_CTL_STATUS, ipd_ctl_reg.u64);
-
-	/* Note: the example RED code that used to be here has been moved to
-	   cvmx_helper_setup_red */
-}
-
+void cvmx_ipd_config(uint64_t mbuff_size, uint64_t first_mbuff_skip,
+		     uint64_t not_first_mbuff_skip, uint64_t first_back,
+		     uint64_t second_back, uint64_t wqe_fpa_pool,
+		     cvmx_ipd_mode_t cache_mode, uint64_t back_pres_enable_flag);
 /**
  * Enable IPD
  */
-static inline void cvmx_ipd_enable(void)
-{
-	union cvmx_ipd_ctl_status ipd_reg;
-	ipd_reg.u64 = cvmx_read_csr(CVMX_IPD_CTL_STATUS);
-	if (ipd_reg.s.ipd_en) {
-		cvmx_dprintf
-		    ("Warning: Enabling IPD when IPD already enabled.\n");
-	}
-	ipd_reg.s.ipd_en = 1;
-#if  CVMX_ENABLE_LEN_M8_FIX
-	if (!OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2))
-		ipd_reg.s.len_m8 = TRUE;
-#endif
-	cvmx_write_csr(CVMX_IPD_CTL_STATUS, ipd_reg.u64);
-}
+void cvmx_ipd_enable(void);
 
 /**
  * Disable IPD
  */
-static inline void cvmx_ipd_disable(void)
-{
-	union cvmx_ipd_ctl_status ipd_reg;
-	ipd_reg.u64 = cvmx_read_csr(CVMX_IPD_CTL_STATUS);
-	ipd_reg.s.ipd_en = 0;
-	cvmx_write_csr(CVMX_IPD_CTL_STATUS, ipd_reg.u64);
-}
+void cvmx_ipd_disable(void);
+
+void __cvmx_ipd_free_ptr(void);
+
+void cvmx_ipd_set_packet_pool_buffer_count(uint64_t buffer_count);
+void cvmx_ipd_set_wqe_pool_buffer_count(uint64_t buffer_count);
 
 /**
- * Supportive function for cvmx_fpa_shutdown_pool.
+ * Setup Random Early Drop on a specific input queue
+ *
+ * @param queue  Input queue to setup RED on (0-7)
+ * @param pass_thresh
+ *               Packets will begin slowly dropping when there are less than
+ *               this many packet buffers free in FPA 0.
+ * @param drop_thresh
+ *               All incomming packets will be dropped when there are less
+ *               than this many free packet buffers in FPA 0.
+ * @return Zero on success. Negative on failure
  */
-static inline void cvmx_ipd_free_ptr(void)
-{
-	/* Only CN38XXp{1,2} cannot read pointer out of the IPD */
-	if (!OCTEON_IS_MODEL(OCTEON_CN38XX_PASS1)
-	    && !OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2)) {
-		int no_wptr = 0;
-		union cvmx_ipd_ptr_count ipd_ptr_count;
-		ipd_ptr_count.u64 = cvmx_read_csr(CVMX_IPD_PTR_COUNT);
+extern int cvmx_ipd_setup_red_queue(int queue, int pass_thresh, int drop_thresh);
 
-		/* Handle Work Queue Entry in cn56xx and cn52xx */
-		if (octeon_has_feature(OCTEON_FEATURE_NO_WPTR)) {
-			union cvmx_ipd_ctl_status ipd_ctl_status;
-			ipd_ctl_status.u64 = cvmx_read_csr(CVMX_IPD_CTL_STATUS);
-			if (ipd_ctl_status.s.no_wptr)
-				no_wptr = 1;
-		}
+/**
+ * Setup Random Early Drop to automatically begin dropping packets.
+ *
+ * @param pass_thresh
+ *               Packets will begin slowly dropping when there are less than
+ *               this many packet buffers free in FPA 0.
+ * @param drop_thresh
+ *               All incomming packets will be dropped when there are less
+ *               than this many free packet buffers in FPA 0.
+ * @return Zero on success. Negative on failure
+ */
+extern int cvmx_ipd_setup_red(int pass_thresh, int drop_thresh);
 
-		/* Free the prefetched WQE */
-		if (ipd_ptr_count.s.wqev_cnt) {
-			union cvmx_ipd_wqe_ptr_valid ipd_wqe_ptr_valid;
-			ipd_wqe_ptr_valid.u64 =
-			    cvmx_read_csr(CVMX_IPD_WQE_PTR_VALID);
-			if (no_wptr)
-				cvmx_fpa_free(cvmx_phys_to_ptr
-					      ((uint64_t) ipd_wqe_ptr_valid.s.
-					       ptr << 7), CVMX_FPA_PACKET_POOL,
-					      0);
-			else
-				cvmx_fpa_free(cvmx_phys_to_ptr
-					      ((uint64_t) ipd_wqe_ptr_valid.s.
-					       ptr << 7), CVMX_FPA_WQE_POOL, 0);
-		}
-
-		/* Free all WQE in the fifo */
-		if (ipd_ptr_count.s.wqe_pcnt) {
-			int i;
-			union cvmx_ipd_pwp_ptr_fifo_ctl ipd_pwp_ptr_fifo_ctl;
-			ipd_pwp_ptr_fifo_ctl.u64 =
-			    cvmx_read_csr(CVMX_IPD_PWP_PTR_FIFO_CTL);
-			for (i = 0; i < ipd_ptr_count.s.wqe_pcnt; i++) {
-				ipd_pwp_ptr_fifo_ctl.s.cena = 0;
-				ipd_pwp_ptr_fifo_ctl.s.raddr =
-				    ipd_pwp_ptr_fifo_ctl.s.max_cnts +
-				    (ipd_pwp_ptr_fifo_ctl.s.wraddr +
-				     i) % ipd_pwp_ptr_fifo_ctl.s.max_cnts;
-				cvmx_write_csr(CVMX_IPD_PWP_PTR_FIFO_CTL,
-					       ipd_pwp_ptr_fifo_ctl.u64);
-				ipd_pwp_ptr_fifo_ctl.u64 =
-				    cvmx_read_csr(CVMX_IPD_PWP_PTR_FIFO_CTL);
-				if (no_wptr)
-					cvmx_fpa_free(cvmx_phys_to_ptr
-						      ((uint64_t)
-						       ipd_pwp_ptr_fifo_ctl.s.
-						       ptr << 7),
-						      CVMX_FPA_PACKET_POOL, 0);
-				else
-					cvmx_fpa_free(cvmx_phys_to_ptr
-						      ((uint64_t)
-						       ipd_pwp_ptr_fifo_ctl.s.
-						       ptr << 7),
-						      CVMX_FPA_WQE_POOL, 0);
-			}
-			ipd_pwp_ptr_fifo_ctl.s.cena = 1;
-			cvmx_write_csr(CVMX_IPD_PWP_PTR_FIFO_CTL,
-				       ipd_pwp_ptr_fifo_ctl.u64);
-		}
-
-		/* Free the prefetched packet */
-		if (ipd_ptr_count.s.pktv_cnt) {
-			union cvmx_ipd_pkt_ptr_valid ipd_pkt_ptr_valid;
-			ipd_pkt_ptr_valid.u64 =
-			    cvmx_read_csr(CVMX_IPD_PKT_PTR_VALID);
-			cvmx_fpa_free(cvmx_phys_to_ptr
-				      (ipd_pkt_ptr_valid.s.ptr << 7),
-				      CVMX_FPA_PACKET_POOL, 0);
-		}
-
-		/* Free the per port prefetched packets */
-		if (1) {
-			int i;
-			union cvmx_ipd_prc_port_ptr_fifo_ctl
-			    ipd_prc_port_ptr_fifo_ctl;
-			ipd_prc_port_ptr_fifo_ctl.u64 =
-			    cvmx_read_csr(CVMX_IPD_PRC_PORT_PTR_FIFO_CTL);
-
-			for (i = 0; i < ipd_prc_port_ptr_fifo_ctl.s.max_pkt;
-			     i++) {
-				ipd_prc_port_ptr_fifo_ctl.s.cena = 0;
-				ipd_prc_port_ptr_fifo_ctl.s.raddr =
-				    i % ipd_prc_port_ptr_fifo_ctl.s.max_pkt;
-				cvmx_write_csr(CVMX_IPD_PRC_PORT_PTR_FIFO_CTL,
-					       ipd_prc_port_ptr_fifo_ctl.u64);
-				ipd_prc_port_ptr_fifo_ctl.u64 =
-				    cvmx_read_csr
-				    (CVMX_IPD_PRC_PORT_PTR_FIFO_CTL);
-				cvmx_fpa_free(cvmx_phys_to_ptr
-					      ((uint64_t)
-					       ipd_prc_port_ptr_fifo_ctl.s.
-					       ptr << 7), CVMX_FPA_PACKET_POOL,
-					      0);
-			}
-			ipd_prc_port_ptr_fifo_ctl.s.cena = 1;
-			cvmx_write_csr(CVMX_IPD_PRC_PORT_PTR_FIFO_CTL,
-				       ipd_prc_port_ptr_fifo_ctl.u64);
-		}
-
-		/* Free all packets in the holding fifo */
-		if (ipd_ptr_count.s.pfif_cnt) {
-			int i;
-			union cvmx_ipd_prc_hold_ptr_fifo_ctl
-			    ipd_prc_hold_ptr_fifo_ctl;
-
-			ipd_prc_hold_ptr_fifo_ctl.u64 =
-			    cvmx_read_csr(CVMX_IPD_PRC_HOLD_PTR_FIFO_CTL);
-
-			for (i = 0; i < ipd_ptr_count.s.pfif_cnt; i++) {
-				ipd_prc_hold_ptr_fifo_ctl.s.cena = 0;
-				ipd_prc_hold_ptr_fifo_ctl.s.raddr =
-				    (ipd_prc_hold_ptr_fifo_ctl.s.praddr +
-				     i) % ipd_prc_hold_ptr_fifo_ctl.s.max_pkt;
-				cvmx_write_csr(CVMX_IPD_PRC_HOLD_PTR_FIFO_CTL,
-					       ipd_prc_hold_ptr_fifo_ctl.u64);
-				ipd_prc_hold_ptr_fifo_ctl.u64 =
-				    cvmx_read_csr
-				    (CVMX_IPD_PRC_HOLD_PTR_FIFO_CTL);
-				cvmx_fpa_free(cvmx_phys_to_ptr
-					      ((uint64_t)
-					       ipd_prc_hold_ptr_fifo_ctl.s.
-					       ptr << 7), CVMX_FPA_PACKET_POOL,
-					      0);
-			}
-			ipd_prc_hold_ptr_fifo_ctl.s.cena = 1;
-			cvmx_write_csr(CVMX_IPD_PRC_HOLD_PTR_FIFO_CTL,
-				       ipd_prc_hold_ptr_fifo_ctl.u64);
-		}
-
-		/* Free all packets in the fifo */
-		if (ipd_ptr_count.s.pkt_pcnt) {
-			int i;
-			union cvmx_ipd_pwp_ptr_fifo_ctl ipd_pwp_ptr_fifo_ctl;
-			ipd_pwp_ptr_fifo_ctl.u64 =
-			    cvmx_read_csr(CVMX_IPD_PWP_PTR_FIFO_CTL);
-
-			for (i = 0; i < ipd_ptr_count.s.pkt_pcnt; i++) {
-				ipd_pwp_ptr_fifo_ctl.s.cena = 0;
-				ipd_pwp_ptr_fifo_ctl.s.raddr =
-				    (ipd_pwp_ptr_fifo_ctl.s.praddr +
-				     i) % ipd_pwp_ptr_fifo_ctl.s.max_cnts;
-				cvmx_write_csr(CVMX_IPD_PWP_PTR_FIFO_CTL,
-					       ipd_pwp_ptr_fifo_ctl.u64);
-				ipd_pwp_ptr_fifo_ctl.u64 =
-				    cvmx_read_csr(CVMX_IPD_PWP_PTR_FIFO_CTL);
-				cvmx_fpa_free(cvmx_phys_to_ptr
-					      ((uint64_t) ipd_pwp_ptr_fifo_ctl.
-					       s.ptr << 7),
-					      CVMX_FPA_PACKET_POOL, 0);
-			}
-			ipd_pwp_ptr_fifo_ctl.s.cena = 1;
-			cvmx_write_csr(CVMX_IPD_PWP_PTR_FIFO_CTL,
-				       ipd_pwp_ptr_fifo_ctl.u64);
-		}
-
-		/* Reset the IPD to get all buffers out of it */
-		{
-			union cvmx_ipd_ctl_status ipd_ctl_status;
-			ipd_ctl_status.u64 = cvmx_read_csr(CVMX_IPD_CTL_STATUS);
-			ipd_ctl_status.s.reset = 1;
-			cvmx_write_csr(CVMX_IPD_CTL_STATUS, ipd_ctl_status.u64);
-		}
-
-		/* Reset the PIP */
-		{
-			union cvmx_pip_sft_rst pip_sft_rst;
-			pip_sft_rst.u64 = cvmx_read_csr(CVMX_PIP_SFT_RST);
-			pip_sft_rst.s.rst = 1;
-			cvmx_write_csr(CVMX_PIP_SFT_RST, pip_sft_rst.u64);
-		}
-	}
+#ifdef	__cplusplus
+/* *INDENT-OFF* */
 }
+/* *INDENT-ON* */
+#endif
 
 #endif /*  __CVMX_IPD_H__ */

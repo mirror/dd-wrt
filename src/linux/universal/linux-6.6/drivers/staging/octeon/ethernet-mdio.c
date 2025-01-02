@@ -85,8 +85,6 @@ void cvm_oct_adjust_link(struct net_device *dev)
 
 	link_info.u64		= 0;
 	link_info.s.link_up	= dev->phydev->link ? 1 : 0;
-	link_info.s.full_duplex = dev->phydev->duplex ? 1 : 0;
-	link_info.s.speed	= dev->phydev->speed;
 	priv->link_info		= link_info.u64;
 
 	/*
@@ -97,6 +95,8 @@ void cvm_oct_adjust_link(struct net_device *dev)
 
 	if (priv->last_link != dev->phydev->link) {
 		priv->last_link = dev->phydev->link;
+		link_info.s.full_duplex = DUPLEX_FULL;
+		link_info.s.speed = SPEED_1000;
 		cvmx_helper_link_set(priv->port, link_info);
 		cvm_oct_note_carrier(priv, link_info);
 	}

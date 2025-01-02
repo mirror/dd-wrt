@@ -1,27 +1,40 @@
 /***********************license start***************
- * Author: Cavium Networks
+ * Copyright (c) 2003-2010  Cavium Inc. (support@cavium.com). All rights
+ * reserved.
  *
- * Contact: support@caviumnetworks.com
- * This file is part of the OCTEON SDK
  *
- * Copyright (c) 2003-2008 Cavium Networks
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * This file is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, Version 2, as published by
- * the Free Software Foundation.
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
  *
- * This file is distributed in the hope that it will be useful,
- * but AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or NONINFRINGEMENT.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this file; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
- * or visit http://www.gnu.org/licenses/.
- *
- * This file may also be available under a different license from Cavium.
- * Contact Cavium Networks for more information
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+
+ *   * Neither the name of Cavium Inc. nor the names of
+ *     its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written
+ *     permission.
+
+ * This Software, including technical data, may be subject to U.S. export  control
+ * laws, including the U.S. Export Administration Act and its  associated
+ * regulations, and may be subject to export or import  regulations in other
+ * countries.
+
+ * TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+ * AND WITH ALL FAULTS AND CAVIUM INC. MAKES NO PROMISES, REPRESENTATIONS OR
+ * WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH RESPECT TO
+ * THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY REPRESENTATION OR
+ * DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT DEFECTS, AND CAVIUM
+ * SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES OF TITLE,
+ * MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF
+ * VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
+ * CORRESPONDENCE TO DESCRIPTION. THE ENTIRE  RISK ARISING OUT OF USE OR
+ * PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
  ***********************license end**************************************/
 
 /**
@@ -30,31 +43,34 @@
  * Functions for LOOP initialization, configuration,
  * and monitoring.
  *
+ * <hr>$Revision: 115656 $<hr>
  */
 #ifndef __CVMX_HELPER_LOOP_H__
 #define __CVMX_HELPER_LOOP_H__
 
 /**
+ * @INTERNAL
  * Probe a LOOP interface and determine the number of ports
  * connected to it. The LOOP interface should still be down after
  * this call.
  *
- * @interface: Interface to probe
+ * @param xiface Interface to probe
  *
- * Returns Number of ports on the interface. Zero to disable.
+ * @return Number of ports on the interface. Zero to disable.
  */
-extern int __cvmx_helper_loop_probe(int interface);
-static inline int __cvmx_helper_loop_enumerate(int interface) {return 4; }
+extern int __cvmx_helper_loop_probe(int xiface);
+extern int __cvmx_helper_loop_enumerate(int xiface);
 
 /**
+ * @INTERNAL
  * Bringup and enable a LOOP interface. After this call packet
  * I/O should be fully functional. This is called with IPD
  * enabled but PKO disabled.
  *
- * @interface: Interface to bring up
+ * @param xiface Interface to bring up
  *
- * Returns Zero on success, negative on failure
+ * @return Zero on success, negative on failure
  */
-extern int __cvmx_helper_loop_enable(int interface);
+extern int __cvmx_helper_loop_enable(int xiface);
 
 #endif

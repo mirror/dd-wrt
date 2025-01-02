@@ -8,8 +8,22 @@
 #ifndef __OCTEON_IRQ_H__
 #define __OCTEON_IRQ_H__
 
-#define NR_IRQS OCTEON_IRQ_LAST
+#ifdef CONFIG_NUMA
+	/* We need 256 per node for MSI */
+#define NR_IRQS 767
+#else
+#define NR_IRQS 511
+#endif
+
 #define MIPS_CPU_IRQ_BASE OCTEON_IRQ_SW0
+
+/*
+ * 0    - unused.
+ * 1..8 - MIPS
+ *
+ * For a total of 9
+ */
+#define NR_IRQS_LEGACY 9
 
 enum octeon_irq {
 /* 1 - 8 represent the 8 MIPS standard interrupt sources */
@@ -42,17 +56,11 @@ enum octeon_irq {
 	OCTEON_IRQ_TIMER1,
 	OCTEON_IRQ_TIMER2,
 	OCTEON_IRQ_TIMER3,
-#ifndef CONFIG_PCI_MSI
-	OCTEON_IRQ_LAST = 127
-#endif
+	OCTEON_IRQ_SRIO0,
+	OCTEON_IRQ_SRIO1,
+	OCTEON_IRQ_SRIO2,
+	OCTEON_IRQ_SRIO3,
+	OCTEON_IRQ_TDM,
 };
-
-#ifdef CONFIG_PCI_MSI
-/* 256 - 511 represent the MSI interrupts 0-255 */
-#define OCTEON_IRQ_MSI_BIT0	(256)
-
-#define OCTEON_IRQ_MSI_LAST	 (OCTEON_IRQ_MSI_BIT0 + 255)
-#define OCTEON_IRQ_LAST		 (OCTEON_IRQ_MSI_LAST + 1)
-#endif
 
 #endif

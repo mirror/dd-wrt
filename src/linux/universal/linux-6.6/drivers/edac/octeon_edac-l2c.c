@@ -61,8 +61,57 @@ static void _octeon_l2c_poll_oct2(struct edac_device_ctl_info *l2c, int tad)
 {
 	union cvmx_l2c_err_tdtx err_tdtx, err_tdtx_reset;
 	union cvmx_l2c_err_ttgx err_ttgx, err_ttgx_reset;
+	union cvmx_l2c_int_reg l2c_int_reg;
+	bool l2c_clear = false;
 	char buf1[64];
 	char buf2[80];
+
+	/* Poll for L2C bigrd/bigwr/holewr/holerd */
+	l2c_int_reg.u64 = cvmx_read_csr(CVMX_L2C_INT_REG);
+	if (l2c_int_reg.s.bigrd) {
+		snprintf(buf1, sizeof(buf1),
+			"Read reference past L2C_BIG_CTL[MAXDRAM] occurred:");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.bigwr) {
+		snprintf(buf1, sizeof(buf1),
+			"Write reference past L2C_BIG_CTL[MAXDRAM] occurred:");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.vrtpe) {
+		snprintf(buf1, sizeof(buf1),
+			"L2C_VRT_MEM read found a parity error");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.vrtadrng) {
+		snprintf(buf1, sizeof(buf1),
+			"Address outside of virtualization range");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.vrtidrng) {
+		snprintf(buf1, sizeof(buf1),
+			"Virtualization ID out of range");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.vrtwr) {
+		snprintf(buf1, sizeof(buf1),
+			"Virtualization ID prevented a write");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.holewr) {
+		snprintf(buf1, sizeof(buf1),
+			"Write reference to 256MB hole occurred:");
+		l2c_clear = true;
+	}
+	if (l2c_int_reg.s.holerd) {
+		snprintf(buf1, sizeof(buf1),
+			"Read reference to 256MB hole occurred:");
+		l2c_clear = true;
+	}
+	if (l2c_clear) {
+		edac_device_handle_ce(l2c, tad, 1, buf1);
+		cvmx_write_csr(CVMX_L2C_INT_REG, l2c_int_reg.u64);
+	}
 
 	err_tdtx_reset.u64 = 0;
 	err_tdtx.u64 = cvmx_read_csr(CVMX_L2C_ERR_TDTX(tad));
@@ -130,6 +179,117 @@ static void octeon_l2c_poll_oct2(struct edac_device_ctl_info *l2c)
 		_octeon_l2c_poll_oct2(l2c, i);
 }
 
+static void _octeon_l2c_poll_oct3(struct edac_device_ctl_info *l2c, int tad)
+{
+	union cvmx_l2c_tqdx_err tqdx_err;
+	union cvmx_l2c_ttgx_err ttgx_err;
+	union cvmx_l2c_tadx_err l2c_err;
+	union cvmx_l2c_tadx_int l2c_reset;
+	int way, l2idx;
+
+	char buf1[64];
+	char buf2[80];
+
+	l2c_reset.u64 = 0;
+
+	tqdx_err.u64 = cvmx_read_csr(CVMX_L2C_TQDX_ERR(tad));
+	if (tqdx_err.s.l2ddbe || tqdx_err.s.l2dsbe ||
+	    tqdx_err.s.sbfdbe || tqdx_err.s.sbfsbe ||
+	    tqdx_err.s.fbfdbe || tqdx_err.s.fbfsbe)
+		snprintf(buf1, sizeof(buf1),
+			 "L2D: syn:0x%x, quad:%d, index:%d",
+			 tqdx_err.s.syn, tqdx_err.s.qdnum, tqdx_err.s.l2didx);
+
+	if (tqdx_err.s.l2ddbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "L2D Double bit error (detected):%s", buf1);
+		l2c_reset.cn70xx.l2ddbe = 1;
+		edac_device_handle_ue(l2c, tad, 1, buf2);
+	}
+	if (tqdx_err.s.l2dsbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "L2D Single bit error (corrected):%s", buf1);
+		l2c_reset.cn70xx.l2dsbe = 1;
+		edac_device_handle_ce(l2c, tad, 1, buf2);
+	}
+	if (tqdx_err.s.sbfdbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "SBF Double bit error (detected):%s", buf1);
+		l2c_reset.cn70xx.sbfdbe = 1;
+		edac_device_handle_ue(l2c, tad, 1, buf2);
+	}
+	if (tqdx_err.s.sbfsbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "SBF Single bit error (corrected):%s", buf1);
+		l2c_reset.cn70xx.sbfsbe = 1;
+		edac_device_handle_ce(l2c, tad, 1, buf2);
+	}
+	if (tqdx_err.s.fbfdbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "FBF Double bit error (detected):%s", buf1);
+		l2c_reset.cn70xx.fbfdbe = 1;
+		edac_device_handle_ue(l2c, tad, 1, buf2);
+	}
+	if (tqdx_err.s.fbfsbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "FBF Single bit error (corrected):%s", buf1);
+		l2c_reset.cn70xx.fbfsbe = 1;
+		edac_device_handle_ce(l2c, tad, 1, buf2);
+	}
+
+	ttgx_err.u64 = cvmx_read_csr(CVMX_L2C_TTGX_ERR(tad));
+	if (OCTEON_IS_MODEL(OCTEON_CN70XX)) {
+		way = ttgx_err.cn70xx.way;
+		l2idx = ttgx_err.cn70xx.l2idx;
+	} else if (OCTEON_IS_MODEL(OCTEON_CN78XX)) {
+		way = ttgx_err.cn78xx.way;
+		l2idx = ttgx_err.cn78xx.l2idx;
+	} else {
+		way = ttgx_err.cn73xx.way;
+		l2idx = ttgx_err.cn73xx.l2idx;
+	}
+
+	if (ttgx_err.s.tagdbe || ttgx_err.s.tagsbe)
+		snprintf(buf1, sizeof(buf1),
+			 "tag type error: syn:0x%x, way:%d, index:%d",
+			 ttgx_err.s.syn, way, l2idx);
+
+	if (ttgx_err.s.tagdbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "Tag Double bit error (detected):%s", buf1);
+		l2c_reset.cn70xx.tagdbe = 1;
+		edac_device_handle_ue(l2c, tad, 0, buf2);
+	}
+	if (ttgx_err.s.tagsbe) {
+		snprintf(buf2, sizeof(buf2),
+			 "Tag Single bit error (corrected):%s", buf1);
+		l2c_reset.cn70xx.tagsbe = 1;
+		edac_device_handle_ce(l2c, tad, 0, buf2);
+	}
+
+	l2c_err.u64 = cvmx_read_csr(CVMX_L2C_TADX_ERR(tad));
+	if (l2c_err.s.bigrd) {
+		snprintf(buf1, sizeof(buf1),
+			"Read reference past L2C_BIG_CTL[MAXDRAM] occurred:");
+		l2c_reset.cn70xx.bigrd = true;
+	}
+	if (l2c_err.s.bigwr) {
+		snprintf(buf1, sizeof(buf1),
+			"Write reference past L2C_BIG_CTL[MAXDRAM] occurred:");
+		l2c_reset.cn70xx.bigwr = true;
+	}
+
+	if (l2c_reset.u64)
+		cvmx_write_csr(CVMX_L2C_TADX_INT(tad), l2c_reset.u64);
+}
+
+static void octeon_l2c_poll_oct3(struct edac_device_ctl_info *l2c)
+{
+	int i;
+	for (i = 0; i < l2c->nr_instances; i++)
+		_octeon_l2c_poll_oct3(l2c, i);
+}
+
 static int octeon_l2c_probe(struct platform_device *pdev)
 {
 	struct edac_device_ctl_info *l2c;
@@ -165,9 +325,12 @@ static int octeon_l2c_probe(struct platform_device *pdev)
 		cvmx_write_csr(CVMX_L2T_ERR, l2d_err.u64);
 
 		l2c->edac_check = octeon_l2c_poll_oct1;
-	} else {
+	} else if (OCTEON_IS_OCTEON2()) {
 		/* OCTEON II */
 		l2c->edac_check = octeon_l2c_poll_oct2;
+	} else {
+		/* OCTEON III */
+		l2c->edac_check = octeon_l2c_poll_oct3;
 	}
 
 	if (edac_device_add_device(l2c) > 0) {

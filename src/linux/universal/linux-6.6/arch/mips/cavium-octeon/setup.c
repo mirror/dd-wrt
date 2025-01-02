@@ -45,6 +45,8 @@
 #include <asm/octeon/octeon.h>
 #include <asm/octeon/pci-octeon.h>
 #include <asm/octeon/cvmx-rst-defs.h>
+#include <asm/octeon/cvmx-sso-defs.h>
+#include <asm/octeon/cvmx-qlm.h>
 
 /*
  * TRUE for devices having registers with little-endian byte
@@ -71,6 +73,8 @@ extern void pci_console_init(const char *arg);
 
 static unsigned long long max_memory = ULLONG_MAX;
 static unsigned long long reserve_low_mem;
+
+u32 octeon_cvmseg_lines = 2;
 
 DEFINE_SEMAPHORE(octeon_bootbus_sem, 1);
 EXPORT_SYMBOL(octeon_bootbus_sem);
@@ -353,7 +357,7 @@ EXPORT_SYMBOL(octeon_get_io_clock_rate);
  * This display exists on most Cavium evaluation boards. If it doesn't exist,
  * then this function doesn't do anything.
  */
-static void octeon_write_lcd(const char *s)
+void octeon_write_lcd(const char *s)
 {
 	if (octeon_bootinfo->led_display_base_addr) {
 		void __iomem *lcd_address =
@@ -375,7 +379,7 @@ static void octeon_write_lcd(const char *s)
  *
  * Return: uart number (0 or 1)
  */
-static int octeon_get_boot_uart(void)
+int octeon_get_boot_uart(void)
 {
 	return (octeon_boot_desc_ptr->flags & OCTEON_BL_FLAG_CONSOLE_UART1) ?
 		1 : 0;
@@ -407,7 +411,10 @@ void octeon_check_cpu_bist(void)
 		pr_err("Core%d BIST Failure: CacheErr(icache) = 0x%llx\n",
 		       coreid, bist_val);
 
-	bist_val = read_octeon_c0_dcacheerr();
+	if (current_cpu_type() == CPU_CAVIUM_OCTEON3)
+		bist_val = read_octeon_c0_errctl();
+	else
+		bist_val = read_octeon_c0_dcacheerr();
 	if (bist_val & 1)
 		pr_err("Core%d L1 Dcache parity error: "
 		       "CacheErr(dcache) = 0x%llx\n",
@@ -419,8 +426,16 @@ void octeon_check_cpu_bist(void)
 		pr_err("Core%d BIST Failure: COP0_CVM_MEM_CTL = 0x%llx\n",
 		       coreid, bist_val);
 
-	write_octeon_c0_dcacheerr(0);
+	if (current_cpu_type() == CPU_CAVIUM_OCTEON3) {
+		bist_val = read_octeon_c0_errctl();
+		bist_val |= 1;
+		write_octeon_c0_errctl(bist_val);
+	} else
+		write_octeon_c0_dcacheerr(0);
 }
+
+#define ACKSYS_GPIO_BP_RESET 2
+extern void octeon_wdt_disable_interrupt(int cpu);
 
 /**
  * octeon_restart - Reboot Octeon
@@ -429,6 +444,7 @@ void octeon_check_cpu_bist(void)
  */
 static void octeon_restart(char *command)
 {
+	uint64_t MS = octeon_get_clock_rate() / 1000;
 	/* Disable all watchdogs before soft reset. They don't get cleared */
 #ifdef CONFIG_SMP
 	int cpu;
@@ -440,10 +456,23 @@ static void octeon_restart(char *command)
 
 	mb();
 	while (1)
+	{
+		//gpio_direction_output(ACKSYS_GPIO_BP_RESET, 1);
+		cvmx_write_csr(CVMX_GPIO_BIT_CFGX(ACKSYS_GPIO_BP_RESET), 1);
+		cvmx_write_csr(CVMX_GPIO_TX_SET, 1<<ACKSYS_GPIO_BP_RESET);
+		cvmx_wait(200 * MS);
+		//gpio_set_value(ACKSYS_GPIO_BP_RESET, 0);
+		cvmx_write_csr(CVMX_GPIO_TX_CLR, 1<<ACKSYS_GPIO_BP_RESET);
+		cvmx_wait(4000 * MS);
+	}
+
+/*
+	while (1)
 		if (OCTEON_IS_OCTEON3())
 			cvmx_write_csr(CVMX_RST_SOFT_RST, 1);
 		else
 			cvmx_write_csr(CVMX_CIU_SOFT_RST, 1);
+*/
 }
 
 
@@ -475,7 +504,7 @@ static void octeon_halt(void)
 	smp_call_function(octeon_kill_core, NULL, 0);
 
 	switch (octeon_bootinfo->board_type) {
-	case CVMX_BOARD_TYPE_NAO38:
+	case CVMX_BOARD_TYPE_NAC38:
 		/* Driving a 1 to GPIO 12 shuts off this board */
 		cvmx_write_csr(CVMX_GPIO_BIT_CFGX(12), 1);
 		cvmx_write_csr(CVMX_GPIO_TX_SET, 0x1000);
@@ -523,9 +552,55 @@ const char *octeon_board_type_string(void)
 const char *get_system_type(void)
 	__attribute__ ((alias("octeon_board_type_string")));
 
+/* Try for a DIDTO of about 250 mS */
+static unsigned int calc_didto(void)
+{
+	unsigned int bit = 0;
+	u64 clk = octeon_get_clock_rate();
+
+	clk >>= 2; /* cycles in 250mS */
+	do {
+		clk >>= 1;
+		if (clk)
+			bit++;
+	} while (clk);
+
+	if (bit > 31)
+		return 0;
+
+	if (OCTEON_IS_OCTEON1PLUS()) {
+		switch (bit) {
+		case 31:
+			return 0;
+		case 30:
+			return 1;
+		default:
+			return 2;
+		}
+	} else {
+		switch (bit) {
+		case 31:
+			return 0;
+		case 30:
+			return 1;
+		case 29:
+			return 2;
+		case 28:
+			return 4;
+		case 27:
+			return 5;
+		case 26:
+			return 6;
+		default:
+			return 7;
+		}
+	}
+}
+
 void octeon_user_io_init(void)
 {
 	union octeon_cvmemctl cvmmemctl;
+	unsigned int v;
 
 	/* Get the current settings for CP0_CVMMEMCTL_REG */
 	cvmmemctl.u64 = read_c0_cvmmemctl();
@@ -579,7 +654,9 @@ void octeon_user_io_init(void)
 	 * = 231, 1 = 230, 2 = 229, 3 = 214. Actual time-out is
 	 * between 1x and 2x this interval. For example, with
 	 * DIDTTO=3, expiration interval is between 16K and 32K. */
-	cvmmemctl.s.didtto = 0;
+	v = calc_didto();
+	cvmmemctl.s.didtto = v & 3;
+	cvmmemctl.s.didtto2 = (v >> 2) & 1;
 	/* R/W If set, the (mem) CSR clock never turns off. */
 	cvmmemctl.s.csrckalwys = 0;
 	/* R/W If set, mclk never turns off. */
@@ -607,11 +684,14 @@ void octeon_user_io_init(void)
 
 	/* R/W If set, CVMSEG is available for loads/stores in
 	 * kernel/debug mode. */
-#if CONFIG_CAVIUM_OCTEON_CVMSEG_SIZE > 0
 	cvmmemctl.s.cvmsegenak = 1;
-#else
-	cvmmemctl.s.cvmsegenak = 0;
-#endif
+	if (octeon_has_feature(OCTEON_FEATURE_PKO3)) {
+		/* Enable LMTDMA */
+		cvmmemctl.s.lmtena = 1;
+		/* Scratch line to use for LMT operation */
+		cvmmemctl.s.lmtline = 2;
+	}
+
 	/* R/W If set, CVMSEG is available for loads/stores in
 	 * supervisor mode. */
 	cvmmemctl.s.cvmsegenas = 0;
@@ -619,15 +699,23 @@ void octeon_user_io_init(void)
 	 * mode. */
 	cvmmemctl.s.cvmsegenau = 0;
 
+	if (octeon_has_feature(OCTEON_FEATURE_PKO3)) {
+		/* Enable LMTDMA */
+		cvmmemctl.s.lmtena = 1;
+		/* Scratch line to use for LMT operation */
+		cvmmemctl.s.lmtline = 2;
+	}
+
 	write_c0_cvmmemctl(cvmmemctl.u64);
 
 	/* Setup of CVMSEG is done in kernel-entry-init.h */
 	if (smp_processor_id() == 0)
-		pr_notice("CVMSEG size: %d cache lines (%d bytes)\n",
-			  CONFIG_CAVIUM_OCTEON_CVMSEG_SIZE,
-			  CONFIG_CAVIUM_OCTEON_CVMSEG_SIZE * 128);
+		pr_notice("CVMSEG size: %u cache lines (%u bytes)\n",
+			  octeon_cvmseg_lines,
+			  octeon_cvmseg_lines * 128);
 
-	if (octeon_has_feature(OCTEON_FEATURE_FAU)) {
+	if (current_cpu_type() != CPU_CAVIUM_OCTEON3 ||
+	    OCTEON_IS_MODEL(OCTEON_CN70XX)) {
 		union cvmx_iob_fau_timeout fau_timeout;
 
 		/* Set a default for the hardware timeouts */
@@ -638,9 +726,14 @@ void octeon_user_io_init(void)
 		cvmx_write_csr(CVMX_IOB_FAU_TIMEOUT, fau_timeout.u64);
 	}
 
-	if ((!OCTEON_IS_MODEL(OCTEON_CN68XX) &&
-	     !OCTEON_IS_MODEL(OCTEON_CN7XXX)) ||
-	    OCTEON_IS_MODEL(OCTEON_CN70XX)) {
+	if (OCTEON_IS_MODEL(OCTEON_CN68XX) || octeon_has_feature(OCTEON_FEATURE_CIU3)) {
+		union cvmx_sso_nw_tim nm_tim;
+
+		nm_tim.u64 = 0;
+		/* 4096 cycles */
+		nm_tim.s.nw_tim = 3;
+		cvmx_write_csr(CVMX_SSO_NW_TIM, nm_tim.u64);
+	} else {
 		union cvmx_pow_nw_tim nm_tim;
 
 		nm_tim.u64 = 0;
@@ -651,6 +744,26 @@ void octeon_user_io_init(void)
 
 	write_octeon_c0_icacheerr(0);
 	write_c0_derraddr1(0);
+}
+
+static void octeon_soc_scache_init(void)
+{
+	struct cpuinfo_mips *c = &current_cpu_data;
+	unsigned long scache_size = cvmx_l2c_get_cache_size_bytes();
+
+	c->scache.sets = cvmx_l2c_get_num_sets();
+	c->scache.ways = cvmx_l2c_get_num_assoc();
+	c->scache.waybit = ffs(scache_size / c->scache.ways) - 1;
+	c->scache.waysize = scache_size / c->scache.ways;
+	c->scache.linesz = 128;
+	c->scache.flags |= MIPS_CPU_PREFETCH;
+
+	c->tcache.flags |= MIPS_CACHE_NOT_PRESENT;
+
+	if (smp_processor_id() == 0)
+		pr_notice("Secondary unified cache %ldkB, %d-way, %d sets, linesize %d bytes.\n",
+			  scache_size >> 10, c->scache.ways,
+			  c->scache.sets, c->scache.linesz);
 }
 
 /**
@@ -664,6 +777,8 @@ void __init prom_init(void)
 	int i;
 	u64 t;
 	int argc;
+
+	octeon_scache_init = octeon_soc_scache_init;
 	/*
 	 * The bootloader passes a pointer to the boot descriptor in
 	 * $a3, this is available as fw_arg3.
@@ -671,7 +786,7 @@ void __init prom_init(void)
 	octeon_boot_desc_ptr = (struct octeon_boot_descriptor *)fw_arg3;
 	octeon_bootinfo =
 		cvmx_phys_to_ptr(octeon_boot_desc_ptr->cvmx_desc_vaddr);
-	cvmx_bootmem_init(cvmx_phys_to_ptr(octeon_bootinfo->phy_mem_desc_addr));
+	cvmx_bootmem_init(octeon_bootinfo->phy_mem_desc_addr);
 
 	sysinfo = cvmx_sysinfo_get();
 	memset(sysinfo, 0, sizeof(*sysinfo));
@@ -712,12 +827,12 @@ void __init prom_init(void)
 	sysinfo->dfa_ref_clock_hz = octeon_bootinfo->dfa_ref_clock_hz;
 	sysinfo->bootloader_config_flags = octeon_bootinfo->config_flags;
 
-	if (OCTEON_IS_OCTEON2()) {
+	if (current_cpu_type() == CPU_CAVIUM_OCTEON2) {
 		/* I/O clock runs at a different rate than the CPU. */
 		union cvmx_mio_rst_boot rst_boot;
 		rst_boot.u64 = cvmx_read_csr(CVMX_MIO_RST_BOOT);
 		octeon_io_clock_rate = 50000000 * rst_boot.s.pnr_mul;
-	} else if (OCTEON_IS_OCTEON3()) {
+	} else if (current_cpu_type() == CPU_CAVIUM_OCTEON3) {
 		/* I/O clock runs at a different rate than the CPU. */
 		union cvmx_rst_boot rst_boot;
 		rst_boot.u64 = cvmx_read_csr(CVMX_RST_BOOT);
@@ -762,6 +877,8 @@ void __init prom_init(void)
 		}
 	}
 
+	/* init octeon feature map */
+	octeon_feature_init();
 	/*
 	 * Only enable the LED controller if we're running on a CN38XX, CN58XX,
 	 * or CN56XX. The CN30XX and CN31XX don't have an LED controller.
@@ -848,7 +965,7 @@ void __init prom_init(void)
 	if (OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2) ||
 	    OCTEON_IS_MODEL(OCTEON_CN31XX))
 		cvmx_write_csr(CVMX_CIU_SOFT_BIST, 0);
-	else
+	else if (!octeon_has_feature(OCTEON_FEATURE_CIU3))
 		cvmx_write_csr(CVMX_CIU_SOFT_BIST, 1);
 
 	/* Default to 64MB in the simulator to speed things up */
@@ -859,7 +976,7 @@ void __init prom_init(void)
 	if (arg) {
 		max_memory = memparse(arg + 4, &p);
 		if (max_memory == 0)
-			max_memory = 32ull << 30;
+			max_memory = 2ull << 49;
 		if (*p == '@')
 			reserve_low_mem = memparse(p + 1, &p);
 	}
@@ -921,6 +1038,21 @@ void __init prom_init(void)
 
 	octeon_user_io_init();
 	octeon_setup_smp();
+
+#ifdef CONFIG_PCI
+	if (octeon_has_feature(OCTEON_FEATURE_PCIE)) {
+		if (octeon_has_feature(OCTEON_FEATURE_NPEI))
+			octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE;
+		else
+			octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_PCIE2;
+	} else {
+		if (OCTEON_IS_MODEL(OCTEON_CN31XX) ||
+		    OCTEON_IS_MODEL(OCTEON_CN38XX_PASS2))
+			octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_SMALL;
+		else
+			octeon_dma_bar_type = OCTEON_DMA_BAR_TYPE_BIG;
+	}
+#endif
 }
 
 /* Exclude a single page from the regions obtained in plat_mem_setup. */
@@ -1138,6 +1270,9 @@ void __init prom_free_prom_memory(void)
 }
 
 void __init octeon_fill_mac_addresses(void);
+int octeon_prune_device_tree(void);
+extern const char __dtb_octeon_3xxx_begin;
+extern const char __dtb_octeon_68xx_begin;
 
 void __init device_tree_init(void)
 {
@@ -1215,8 +1350,11 @@ static int __init edac_devinit(void)
 		}
 	}
 
-	num_lmc = OCTEON_IS_MODEL(OCTEON_CN68XX) ? 4 :
-		(OCTEON_IS_MODEL(OCTEON_CN56XX) ? 2 : 1);
+	num_lmc = (OCTEON_IS_MODEL(OCTEON_CN68XX)
+		   || OCTEON_IS_MODEL(OCTEON_CN78XX)) ? 4 :
+		((OCTEON_IS_MODEL(OCTEON_CN56XX)
+		  || OCTEON_IS_MODEL(OCTEON_CN73XX)
+		  || OCTEON_IS_MODEL(OCTEON_CNF75XX)) ? 2 : 1);
 	for (i = 0; i < num_lmc; i++) {
 		dev = platform_device_register_simple("octeon_lmc_edac",
 						      i, NULL, 0);

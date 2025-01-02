@@ -841,6 +841,7 @@ static struct irq_domain *pci_host_bridge_msi_domain(struct pci_bus *bus)
 	if (!d)
 		d = pci_host_bridge_acpi_msi_domain(bus);
 
+#ifdef CONFIG_PCI_MSI_IRQ_DOMAIN
 	/*
 	 * If no IRQ domain was found via the OF tree, try looking it up
 	 * directly through the fwnode_handle.
@@ -852,6 +853,7 @@ static struct irq_domain *pci_host_bridge_msi_domain(struct pci_bus *bus)
 			d = irq_find_matching_fwnode(fwnode,
 						     DOMAIN_BUS_PCI_MSI);
 	}
+#endif
 
 	return d;
 }
@@ -1275,7 +1277,7 @@ static int pci_scan_bridge_extend(struct pci_bus *bus, struct pci_dev *dev,
 	secondary = (buses >> 8) & 0xFF;
 	subordinate = (buses >> 16) & 0xFF;
 
-	pci_dbg(dev, "scanning [bus %02x-%02x] behind bridge, pass %d\n",
+	pci_info(dev, "scanning [bus %02x-%02x] behind bridge, pass %d\n",
 		secondary, subordinate, pass);
 
 	if (!primary && (primary != bus->number) && secondary && subordinate) {

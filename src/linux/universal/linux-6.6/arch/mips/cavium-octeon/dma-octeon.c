@@ -199,7 +199,9 @@ void __init plat_swiotlb_setup(void)
 
 	for_each_mem_range(i, &start, &end) {
 		/* These addresses map low for PCI. */
-		if (start > 0x410000000ull && !OCTEON_IS_OCTEON2())
+		if (start > 0x410000000ull &&
+		    current_cpu_type() != CPU_CAVIUM_OCTEON2 &&
+		    current_cpu_type() != CPU_CAVIUM_OCTEON3)
 			continue;
 
 		addr_size += (end - start);

@@ -907,7 +907,7 @@ struct notifier_block gpio_of_notifier = {
  * GPIO chips. This function performs only one sanity check: whether GPIO
  * is less than ngpios (that is specified in the gpio_chip).
  */
-static int of_gpio_simple_xlate(struct gpio_chip *gc,
+int of_gpio_simple_xlate(struct gpio_chip *gc,
 				const struct of_phandle_args *gpiospec,
 				u32 *flags)
 {
