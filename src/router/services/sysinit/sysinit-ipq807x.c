@@ -477,7 +477,7 @@ static void load_nss_ipq60xx(int profile)
 
 	nvram_default_get("nss", "1");
 	eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
 	insmod("qca-nss-crypto-ipq60xx");
 	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
 	insmod("qca-nss-netlink-ipq60xx");
@@ -521,7 +521,7 @@ static void load_nss_ipq50xx(int profile)
 
 	nvram_default_get("nss", "1");
 	eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
 	insmod("qca-nss-crypto-ipq50xx");
 	insmod("qca-nss-cfi-cryptoapi-ipq50xx");
 	insmod("qca-nss-netlink-ipq50xx");
@@ -569,7 +569,7 @@ static void load_nss_ipq807x(int profile)
 	insmod("pptp");
 	insmod("vxlan");
 	eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "nss_disable=1" : "nss_disable=0");
+		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
 	insmod("qca-nss-crypto-ipq807x");
 	insmod("qca-nss-cfi-cryptoapi-ipq807x");
 	insmod("qca-nss-netlink-ipq807x");
