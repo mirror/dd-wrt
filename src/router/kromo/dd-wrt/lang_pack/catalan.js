@@ -430,7 +430,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Reenviament de Rang de Ports";
 bmenu.applicationspforwarding="Reenviament de Ports";
 bmenu.applicationsptriggering="Disparament de Ports";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1624,12 +1624,11 @@ hupgrad.right2="Feu clic en el botó <em>Navega...</em> per sel·lecionar el fit
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Servei UPnP IGD";
 upnp.legend="Reenviaments";
 upnp.legend2="Configuració UPnP";
-upnp.serv="Servei UPnP";
-upnp.url="Envia el URL de presentació";
+upnp.serv="Servei UPnP IGD";
 upnp.msg1="Feu clic per suprimir una entrada";
 upnp.msg2="Suprimir totes les entrades?";
 

@@ -433,7 +433,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Прослеђивање портова";
 bmenu.applicationspforwarding="Прослеђивање порта";
 bmenu.applicationsptriggering="Активирање порта";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1742,12 +1742,11 @@ hupgrad.right2="Кликните на <em>Претражи...</em> тастер 
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Услуга";
 upnp.legend="Прослеђивања";
 upnp.legend2="UPnP Конфигурација";
-upnp.serv="UPnP Услуга";
-upnp.url="Пошаљи URL за представљање";
+upnp.serv="UPnP IGD Услуга";
 upnp.msg1="Кликните да бисте обрисали унос";
 upnp.msg2="Обрисати све уносе?";
 

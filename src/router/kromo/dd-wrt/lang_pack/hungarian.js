@@ -325,7 +325,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Porttartomány továbbitás";
 bmenu.applicationspforwarding="Port továbbitás (forwarding)";
 bmenu.applicationsptriggering="Port triggerelés";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
@@ -1253,12 +1253,11 @@ hupgrad.right2="Kattintson a <em>Tallózás...</em> gombra, a firmware-fájl kiv
 
 // **************************************************************** UPnP.asp **********************************************************************//
 
-upnp.titl="UPnP";
-upnp.h2="Univerzális Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD szolgáltatás";
 upnp.legend="Továbbítások";
 upnp.legend2="UPnP beállítása";
-upnp.serv="UPnP szolgáltatás";
-upnp.url="Bemutató (Presentation) URL küldése";
+upnp.serv="UPnP IGD szolgáltatás";
 upnp.msg1="Kattintson ide a bejegyzés törléséhez!";
 upnp.msg2="Törli az összes bejegyzést?";
 

@@ -422,7 +422,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Aralığı Yönlendirmesi";
 bmenu.applicationspforwarding="Port Yönlendirmesi";
 bmenu.applicationsptriggering="Port Tetiklemesi";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1583,12 +1583,11 @@ hupgrad.right2="Yönlendiriciye yüklenecek ürün yazılımı dosyasını seçm
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Evrensel Tak ve Kullan (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Servisi";
 upnp.legend="Yönlendirmeler";
 upnp.legend2="UPnP Yapılandırması";
-upnp.serv="UPnP Servisi";
-upnp.url="Sunum URL'si gönder";
+upnp.serv="UPnP IGD Servisi";
 upnp.msg1="Girişi silmek için tıkla";
 upnp.msg2="Tüm girişler silinsin mi?";
 

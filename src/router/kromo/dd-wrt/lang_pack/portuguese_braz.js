@@ -433,7 +433,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Encaminhamento de Faixa de Portas";
 bmenu.applicationspforwarding="Encaminhamento de Portas";
 bmenu.applicationsptriggering="Disparo de Portas";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1737,12 +1737,11 @@ hupgrad.right2="Clique no botão <em>Selecionar arquivo...</em> para escolher o 
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Plug and Play Universal (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Serviço UPnP IGD";
 upnp.legend="Encaminhamentos";
 upnp.legend2="Configurações UPnP";
-upnp.serv="Serviço UPnP";
-upnp.url="Enviar URL de apresentação";
+upnp.serv="Serviço UPnP IGD";
 upnp.msg1="Clique para apagar a entrada";
 upnp.msg2="Remover todas as entradas?";
 

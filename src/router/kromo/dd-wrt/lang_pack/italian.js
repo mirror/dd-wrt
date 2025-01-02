@@ -439,7 +439,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Intervallo Forwarding Porte";
 bmenu.applicationspforwarding="Forwarding Porte";
 bmenu.applicationsptriggering="Triggering Porte";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1980,12 +1980,11 @@ hupgrad.right2="Clicca sul pulsante <em>Sfoglia...</em> per selezionare il file 
 
 // ** UPnP.asp **//
 //var upnp=new Object();
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Servizio UPnP IGD";
 upnp.legend="Forward";
 upnp.legend2="Configurazione UPnP";
-upnp.serv="Servizio UPnP";
-upnp.url="Invia la presentazione dell' URL";
+upnp.serv="Servizio UPnP IGD";
 upnp.msg1="Clicca per cancellare la riga";
 upnp.msg2="Cancella tutte le righe?";
 

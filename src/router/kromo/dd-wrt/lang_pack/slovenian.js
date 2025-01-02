@@ -435,7 +435,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Posredovanje obsega vrat";
 bmenu.applicationspforwarding="Posredovanje vrat";
 bmenu.applicationsptriggering="Proženje vrat";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1728,12 +1728,11 @@ hupgrad.right2="Kliknite na gumb <em>Browse... (Prebrskaj...)</em> za izbiro dat
 
 // ** UPnP.asp **//
 
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD storitev";
 upnp.legend="Posredovanja";
 upnp.legend2="Konfiguracija UPnP";
-upnp.serv="UPnP storitev";
-upnp.url="Pošlji predstavitveni URL";
+upnp.serv="UPnP IGD storitev";
 upnp.msg1="Kliknite za izbris vnosa";
 upnp.msg2="Izbrišem vse vnose?";
 

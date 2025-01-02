@@ -413,7 +413,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Intervall Forwarding";
 bmenu.applicationspforwarding="Port Forwarding";
 bmenu.applicationsptriggering="Port Triggning";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1496,12 +1496,11 @@ hupgrad.right2="Klicka på <em>Bläddra...</em> knappen för att välja firmware
 
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universell Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="UPnP IGD Tjänst";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Konfig";
-upnp.serv="UPnP Tjänst";
-upnp.url="Sänd Presentations URL";
+upnp.serv="UPnP IGD Tjänst";
 upnp.msg1="Klicka för att radera ";
 upnp.msg2="Radera alla rader?";
 

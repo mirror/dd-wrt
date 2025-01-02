@@ -67,7 +67,7 @@ function setUPnPTable(forwards) {
 		//proto
 		var cell = row.insertCell(-1);
 		cell.innerHTML = data[i].proto;
-		cell.align = "center";
+		cell.align = "left";
 
 		row.style.height = "15px";
 		row.className = (data[i].enabled ? '' : 'disabled');
@@ -84,7 +84,7 @@ function setUPnPTable(forwards) {
 function deleteForward(x) {
 	if (x != 'all') {
 		var e = data[x];
-		if (!confirm(share.del + " " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
+		if (!confirm(share.del + " " + e.lanIP + ":" + e.lanPorts + "/" + e.proto + " (" + e.desc + ")?")) return;
 	}
 	else {
 		if (!confirm(upnp.msg2)) return;
@@ -152,11 +152,11 @@ addEvent(window, "unload", function() {
 								<table class="table" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tbody>
 									<tr>
-										<th width="10%" class="center"><% tran("share.ip"); %></th>
-										<th width="5%" class="center"><% tran("share.from2"); %>&nbsp;(WAN)</th>
-										<th width="5%" class="center"><% tran("share.to2"); %>&nbsp;(LAN)</th>
-										<th width="5%" class="center"><% tran("share.proto"); %></th>
-										<th width="30%" class="center"><% tran("share.descr"); %></th>
+										<th width="10%"><% tran("share.ip"); %></th>
+										<th width="7%"><% tran("pforward.from"); %></th>
+										<th width="7%"><% tran("pforward.to"); %></th>
+										<th width="5%"><% tran("share.proto"); %></th>
+										<th width="30%"><% tran("share.descr"); %></th>
 										<th width="10%" class="center"><% tran("share.del"); %></th>
 									</tr>
 									</tbody>

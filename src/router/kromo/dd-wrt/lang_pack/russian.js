@@ -434,7 +434,7 @@ bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Перенаправление групп портов";
 bmenu.applicationspforwarding="Перенаправление портов";
 bmenu.applicationsptriggering="Запуск портов";
-bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsUpnp="UPnP IGD";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
@@ -1676,12 +1676,11 @@ upgrad.mess1="Обновление прошивки может занять не
 hupgrad.right2="Нажмите кнопку <em>Обзор...</em>, чтобы выбрать файл прошивки для загрузки в роутер.<br /><br /> Нажмите кнопку <em>Обновить</em>, чтобы начать обновление. Процесс обновления нельзя прерывать.";
 
 // ** UPnP.asp **//
-upnp.titl="UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
+upnp.titl="UPnP IGD";
+upnp.h2="Служба UPnP IGD";
 upnp.legend="Перенаправления";
 upnp.legend2="Конфигурация UPnP";
-upnp.serv="Служба UPnP";
-upnp.url="Послать презентационный URL";
+upnp.serv="Служба UPnP IGD";
 upnp.msg1="Щелкните здесь для удаления записи";
 upnp.msg2="Удалить все записи?";
 //help container
