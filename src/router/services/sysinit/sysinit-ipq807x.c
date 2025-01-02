@@ -464,141 +464,76 @@ static int use_mesh(int setcur)
 		nvram_set("cur_nss", "12.5");
 	return 0;
 }
-static void load_nss_ipq60xx(int profile)
+
+void loadnss(const char *module, const char *type)
 {
-	init_skb(profile, 0);
-	insmod("qca-ssdk-ipq60xx");
+	char driver[64];
+	snprintf(driver, sizeof(driver), "%s-%s", module, type);
+	insmod(driver);
+}
+
+static void load_nss(int profile, int maple, int cores, char *type)
+{
+	init_skb(profile, maple);
+	loadnss("qca-ssdk", type);
+
+	char driver[64];
+	snprintf(driver, sizeof(driver), "qca-nss-dp-%s", type);
+
 	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=2");
+		eval_silence("insmod", driver, "mem_profile=2");
 	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=1");
+		eval_silence("insmod", driver, "mem_profile=1");
 	else
-		eval_silence("insmod", "qca-nss-dp-ipq60xx", "mem_profile=0");
+		eval_silence("insmod", driver, "mem_profile=0");
 
 	nvram_default_get("nss", "1");
-	eval_silence("insmod", "qca-nss-drv-ipq60xx", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
-	insmod("qca-nss-crypto-ipq60xx");
-	insmod("qca-nss-cfi-cryptoapi-ipq60xx");
-	insmod("qca-nss-netlink-ipq60xx");
-	insmod("cryptodev");
+	snprintf(driver, sizeof(driver), "qca-nss-drv-%s", type);
 
-	set_memprofile(4, 1, profile);
+	eval_silence("insmod", driver, use_mesh(1) ? "mesh=1" : "mesh=0",
+		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
+	if (nvram_match("nss", "1")) {
+		loadnss("qca-nss-crypto", type);
+		loadnss("qca-nss-cfi-cryptoapi", type);
+		loadnss("qca-nss-netlink", type);
+	}
+	insmod("cryptodev");
+	set_memprofile(cores, 1, profile);
 
 	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-	insmod("qca-nss-pppoe-ipq60xx");
-	insmod("qca-nss-vlan-ipq60xx");
-	insmod("qca-nss-qdisc-ipq60xx");
+	if (nvram_match("nss", "1")) {
+		loadnss("qca-nss-pppoe", type);
+		loadnss("qca-nss-vlan", type);
+		loadnss("qca-nss-qdisc", type);
+	}
 	insmod("pptp");
-	insmod("qca-nss-pptp-ipq60xx");
+	if (nvram_match("nss", "1"))
+		loadnss("qca-nss-pptp", type);
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
 	insmod("l2tp_core");
-	insmod("qca-nss-l2tpv2-ipq60xx");
+	if (nvram_match("nss", "1"))
+		loadnss("qca-nss-l2tpv2", type);
 	insmod("vxlan");
-	insmod("qca-nss-vxlanmgr-ipq60xx");
+	if (nvram_match("nss", "1"))
+		loadnss("qca-nss-vxlanmgr", type);
 	insmod("tunnel6");
 	insmod("ip6_tunnel");
-	insmod("qca-nss-tunipip6-ipq60xx");
-	insmod("qca-nss-tlsmgr-ipq60xx");
-	insmod("qca-mcs");
-	insmod("nss-ifb");
-	insmod("qca-nss-netlink-ipq60xx");
-	insmod("qca-nss-bridge-mgr-ipq60xx");
+	if (nvram_match("nss", "1")) {
+		loadnss("qca-nss-tunipip6", type);
+		loadnss("qca-nss-tlsmgr", type);
+		insmod("qca-mcs");
+		insmod("nss-ifb");
+		loadnss("qca-nss-bridge-mgr", type);
+	}
 	insmod("qca-nss-wifi-meshmgr");
 }
 
-static void load_nss_ipq50xx(int profile)
-{
-	init_skb(profile, 1);
-	insmod("qca-ssdk-ipq50xx");
-	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=2");
-	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=1");
-	else
-		eval_silence("insmod", "qca-nss-dp-ipq50xx", "mem_profile=0");
+#define load_nss_ipq60xx(profile) load_nss(profile, 0, 4, "ipq60xx")
 
-	nvram_default_get("nss", "1");
-	eval_silence("insmod", "qca-nss-drv-ipq50xx", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
-	insmod("qca-nss-crypto-ipq50xx");
-	insmod("qca-nss-cfi-cryptoapi-ipq50xx");
-	insmod("qca-nss-netlink-ipq50xx");
-	insmod("cryptodev");
-	set_memprofile(2, 1, profile);
+#define load_nss_ipq50xx(profile) load_nss(profile, 1, 2, "ipq50xx");
 
-	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-	insmod("qca-nss-pppoe-ipq50xx");
-	insmod("qca-nss-vlan-ipq50xx");
-	insmod("qca-nss-qdisc-ipq50xx");
-	insmod("pptp");
-	insmod("qca-nss-pptp-ipq50xx");
-	insmod("udp_tunnel");
-	insmod("ip6_udp_tunnel");
-	insmod("l2tp_core");
-	insmod("qca-nss-l2tpv2-ipq50xx");
-	insmod("vxlan");
-	insmod("qca-nss-vxlanmgr-ipq50xx");
-	insmod("tunnel6");
-	insmod("ip6_tunnel");
-	insmod("qca-nss-tunipip6-ipq50xx");
-	insmod("qca-nss-tlsmgr-ipq50xx");
-	insmod("qca-mcs");
-	insmod("nss-ifb");
-	insmod("qca-nss-bridge-mgr-ipq50xx");
-	insmod("qca-nss-wifi-meshmgr");
-}
-static void load_nss_ipq807x(int profile)
-{
-	init_skb(profile, 0);
-	insmod("qca-ssdk-ipq807x");
-	if (profile == 256)
-		eval_silence("insmod", "qca-nss-dp-ipq807", "mem_profile=2");
-	else if (profile == 512)
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=1");
-	else
-		eval_silence("insmod", "qca-nss-dp-ipq807x", "mem_profile=0");
-
-	nvram_default_get("nss", "1");
-	insmod("udp_tunnel");
-	insmod("ip6_udp_tunnel");
-	insmod("tunnel6");
-	insmod("ip6_tunnel");
-	insmod("l2tp_core");
-	insmod("pptp");
-	insmod("vxlan");
-	eval_silence("insmod", "qca-nss-drv-ipq807x", use_mesh(1) ? "mesh=1" : "mesh=0",
-		     nvram_match("nss", "0") ? "disable_nss=1" : "disable_nss=0");
-	insmod("qca-nss-crypto-ipq807x");
-	insmod("qca-nss-cfi-cryptoapi-ipq807x");
-	insmod("qca-nss-netlink-ipq807x");
-	insmod("cryptodev");
-
-	set_memprofile(4, 2, profile);
-
-	eval_silence("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
-	insmod("qca-nss-pppoe-ipq807x");
-	insmod("qca-nss-vlan-ipq807x");
-	insmod("qca-nss-qdisc-ipq807x");
-	insmod("pptp");
-	insmod("qca-nss-pptp-ipq807x");
-	insmod("udp_tunnel");
-	insmod("ip6_udp_tunnel");
-	insmod("l2tp_core");
-	insmod("qca-nss-l2tpv2-ipq807x");
-	insmod("vxlan");
-	insmod("qca-nss-vxlanmgr-ipq807x");
-	insmod("tunnel6");
-	insmod("ip6_tunnel");
-	insmod("qca-nss-tunipip6-ipq807x");
-	insmod("qca-nss-tlsmgr-ipq807x");
-	insmod("qca-mcs");
-	insmod("nss-ifb");
-	insmod("qca-nss-netlink-ipq807x");
-	insmod("qca-nss-bridge-mgr-ipq807x");
-	insmod("qca-nss-wifi-meshmgr");
-}
+#define load_nss_ipq807x(profile) load_nss(profile, 0, 4, "ipq807x");
 
 void start_setup_affinity(void)
 {
@@ -1409,7 +1344,7 @@ void start_sysinit(void)
 	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
-	nvram_set("old_nss",nvram_safe_get("nss"));
+	nvram_set("old_nss", nvram_safe_get("nss"));
 	detect_usbdrivers();
 
 	return;
@@ -1443,7 +1378,9 @@ static void load_ath11k(int profile, int pci, int nss)
 		if (nvram_match("ath11k_frame_mode", "1"))
 			eval_silence("insmod", driver_ath11k, "nss_offload=0", "frame_mode=1", overdrive);
 		else
-			eval_silence("insmod", driver_ath11k, "nss_offload=0", overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+			eval_silence(
+				"insmod", driver_ath11k, "nss_offload=0",
+				overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
 	insmod(driver_ath11k_ahb);
@@ -1457,7 +1394,7 @@ void start_wifi_drivers(void)
 		sys_reboot();
 	if (!use_mesh(0) && nvram_match("cur_nss", "11.4"))
 		sys_reboot();
-	if (!nvram_match("nss",nvram_safe_get("old_nss")))
+	if (!nvram_match("nss", nvram_safe_get("old_nss")))
 		sys_reboot();
 	notloaded = insmod("compat");
 	if (!notloaded) {
