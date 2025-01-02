@@ -596,8 +596,8 @@ cmd_exec(a_ulong_t *arg_val, int cmd_index, int cmd_index_sub)
 
     if(rtn != SW_OK)
         cmd_print_error(rtn);
-    else
-        dprintf("\noperation done.\n\n");
+//    else
+//        dprintf("\noperation done.\n\n");
 
     return 0;
 }
@@ -622,7 +622,7 @@ cmd_socket_init(int dev_id)
     rv = ssdk_init(dev_id, &init_cfg);
     if (SW_OK == rv)
     {
-        dprintf("\n %s Init OK!", SSDK_STR);
+        //dprintf("\n %s Init OK!", SSDK_STR);
     }
     else
     {
