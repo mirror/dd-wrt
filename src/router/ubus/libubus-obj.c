@@ -57,12 +57,13 @@ ubus_process_invoke(struct ubus_context *ctx, struct ubus_msghdr *hdr,
 		.fd = -1,
 		.req_fd = fd,
 	};
-
+	ubus_handler_t handler;
 	int method;
 	int ret;
 	bool no_reply = false;
 
-	if (!obj) {
+	if ((!obj && !ubus_context_is_channel(ctx)) ||
+	    (!ctx->request_handler && ubus_context_is_channel(ctx))) {
 		ret = UBUS_STATUS_NOT_FOUND;
 		goto send;
 	}
@@ -77,6 +78,12 @@ ubus_process_invoke(struct ubus_context *ctx, struct ubus_msghdr *hdr,
 
 	req.peer = hdr->peer;
 	req.seq = hdr->seq;
+
+	if (ubus_context_is_channel(ctx)) {
+		handler = ctx->request_handler;
+		goto found;
+	}
+
 	req.object = obj->id;
 	if (attrbuf[UBUS_ATTR_USER] && attrbuf[UBUS_ATTR_GROUP]) {
 		req.acl.user = blobmsg_get_string(attrbuf[UBUS_ATTR_USER]);
@@ -86,8 +93,10 @@ ubus_process_invoke(struct ubus_context *ctx, struct ubus_msghdr *hdr,
 	for (method = 0; method < obj->n_methods; method++)
 		if (!obj->methods[method].name ||
 		    !strcmp(obj->methods[method].name,
-		            blob_data(attrbuf[UBUS_ATTR_METHOD])))
+		            blob_data(attrbuf[UBUS_ATTR_METHOD]))) {
+			handler = obj->methods[method].handler;
 			goto found;
+		}
 
 	/* not found */
 	ret = UBUS_STATUS_METHOD_NOT_FOUND;
@@ -99,9 +108,8 @@ found:
 		goto send;
 	}
 
-	ret = obj->methods[method].handler(ctx, obj, &req,
-					   blob_data(attrbuf[UBUS_ATTR_METHOD]),
-					   attrbuf[UBUS_ATTR_DATA]);
+	ret = handler(ctx, obj, &req, blob_data(attrbuf[UBUS_ATTR_METHOD]),
+		      attrbuf[UBUS_ATTR_DATA]);
 	if (req.req_fd >= 0)
 		close(req.req_fd);
 	if (req.deferred || no_reply)
@@ -211,6 +219,9 @@ int ubus_add_object(struct ubus_context *ctx, struct ubus_object *obj)
 	struct ubus_request req;
 	int ret;
 
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	blob_buf_init(&b, 0);
 
 	if (obj->name && obj->type) {
@@ -257,6 +268,9 @@ int ubus_remove_object(struct ubus_context *ctx, struct ubus_object *obj)
 {
 	struct ubus_request req;
 	int ret;
+
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	blob_buf_init(&b, 0);
 	blob_put_int32(&b, UBUS_ATTR_OBJID, obj->id);

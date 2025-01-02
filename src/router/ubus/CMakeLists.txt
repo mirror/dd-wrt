@@ -1,13 +1,14 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.13)
 
 PROJECT(ubus C)
 
-ADD_DEFINITIONS(-Wall -Werror)
+ADD_COMPILE_OPTIONS(-Wall -Werror)
 IF(CMAKE_C_COMPILER_VERSION VERSION_GREATER 6)
-	ADD_DEFINITIONS(-Wextra -Werror=implicit-function-declaration)
-	ADD_DEFINITIONS(-Wformat -Werror=format-security -Werror=format-nonliteral)
+  ADD_COMPILE_OPTIONS(-Wextra -Wformat -Werror=format-security -Werror=format-nonliteral)
+  ADD_COMPILE_OPTIONS($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
 ENDIF()
-ADD_DEFINITIONS(-Os -std=gnu99 -g3 -Wmissing-declarations -Wno-unused-parameter)
+ADD_COMPILE_OPTIONS(-Os -g3 -Wmissing-declarations -Wno-unused-parameter)
+ADD_COMPILE_OPTIONS($<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
 
 OPTION(BUILD_LUA "build Lua plugin" ON)
 OPTION(BUILD_EXAMPLES "build examples" ON)

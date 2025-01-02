@@ -69,41 +69,44 @@ typedef bool (*ubus_new_object_handler_t)(struct ubus_context *ctx, struct ubus_
 	{						\
 		.name = _name,				\
 		.id = 0,				\
-		.n_methods = ARRAY_SIZE(_methods),	\
-		.methods = _methods			\
+		.methods = _methods,			\
+		.n_methods = ARRAY_SIZE(_methods)	\
 	}
 
-#define __UBUS_METHOD_NOARG(_name, _handler, _tags)	\
-	.name = _name,					\
-	.handler = _handler,				\
+#define __UBUS_METHOD_BASE(_name, _handler, _mask, _tags)	\
+	.name = _name,						\
+	.handler = _handler,					\
+	.mask = _mask,						\
 	.tags = _tags
 
-#define __UBUS_METHOD(_name, _handler, _policy, _tags)	\
-	__UBUS_METHOD_NOARG(_name, _handler, _tags),	\
-	.policy = _policy,				\
+#define __UBUS_METHOD_NOARG(_name, _handler, _mask, _tags)	\
+	__UBUS_METHOD_BASE(_name, _handler, _mask, _tags),	\
+	.policy = NULL,						\
+	.n_policy = 0
+
+#define __UBUS_METHOD(_name, _handler, _mask, _policy, _tags)	\
+	__UBUS_METHOD_BASE(_name, _handler, _mask, _tags),	\
+	.policy = _policy,					\
 	.n_policy = ARRAY_SIZE(_policy)
 
 #define UBUS_METHOD(_name, _handler, _policy)		\
-	{ __UBUS_METHOD(_name, _handler, _policy, 0) }
+	{ __UBUS_METHOD(_name, _handler, 0, _policy, 0) }
 
 #define UBUS_METHOD_TAG(_name, _handler, _policy, _tags)\
-	{ __UBUS_METHOD(_name, _handler, _policy, _tags) }
+	{ __UBUS_METHOD(_name, _handler, 0, _policy, _tags) }
 
 #define UBUS_METHOD_MASK(_name, _handler, _policy, _mask) \
-	{						\
-		__UBUS_METHOD(_name, _handler, _policy, 0),\
-		.mask = _mask				\
-	}
+	{ __UBUS_METHOD(_name, _handler, _mask, _policy, 0) }
 
 #define UBUS_METHOD_NOARG(_name, _handler)		\
-	{ __UBUS_METHOD_NOARG(_name, _handler, 0) }
+	{ __UBUS_METHOD_NOARG(_name, _handler, 0, 0) }
 
 #define UBUS_METHOD_TAG_NOARG(_name, _handler, _tags)	\
-	{ __UBUS_METHOD_NOARG(_name, _handler, _tags) }
+	{ __UBUS_METHOD_NOARG(_name, _handler, 0, _tags) }
 
-#define UBUS_TAG_STATUS		BIT(0)
-#define UBUS_TAG_ADMIN		BIT(1)
-#define UBUS_TAG_PRIVATE	BIT(2)
+#define UBUS_TAG_STATUS		(1ul << 0)
+#define UBUS_TAG_ADMIN		(1ul << 1)
+#define UBUS_TAG_PRIVATE	(1ul << 2)
 
 struct ubus_method {
 	const char *name;
@@ -174,8 +177,15 @@ struct ubus_context {
 	uint32_t msgbuf_data_len;
 	int msgbuf_reduction_counter;
 
-	struct list_head auto_subscribers;
-	struct ubus_event_handler auto_subscribe_event_handler;
+	union {
+		struct {
+			struct list_head auto_subscribers;
+			struct ubus_event_handler auto_subscribe_event_handler;
+		};
+		struct {
+			ubus_handler_t request_handler;
+		};
+	};
 };
 
 struct ubus_object_data {
@@ -250,6 +260,16 @@ struct ubus_context *ubus_connect(const char *path);
 int ubus_connect_ctx(struct ubus_context *ctx, const char *path);
 void ubus_auto_connect(struct ubus_auto_conn *conn);
 int ubus_reconnect(struct ubus_context *ctx, const char *path);
+int ubus_channel_connect(struct ubus_context *ctx, int fd,
+			 ubus_handler_t handler);
+int ubus_channel_create(struct ubus_context *ctx, int *remote_fd,
+			ubus_handler_t handler);
+
+static inline bool
+ubus_context_is_channel(struct ubus_context *ctx)
+{
+    return ctx->local_id == UBUS_CLIENT_ID_CHANNEL;
+}
 
 /* call this only for struct ubus_context pointers returned by ubus_connect() */
 void ubus_free(struct ubus_context *ctx);

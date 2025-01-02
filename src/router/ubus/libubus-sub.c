@@ -79,6 +79,9 @@ int ubus_register_subscriber(struct ubus_context *ctx, struct ubus_subscriber *s
 	struct ubus_object *obj = &s->obj;
 	int ret;
 
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	INIT_LIST_HEAD(&s->list);
 	obj->methods = &watch_method;
 	obj->n_methods = 1;
@@ -103,6 +106,9 @@ static int
 __ubus_subscribe_request(struct ubus_context *ctx, struct ubus_object *obj, uint32_t id, int type)
 {
 	struct ubus_request req;
+
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	blob_buf_init(&b, 0);
 	blob_put_int32(&b, UBUS_ATTR_OBJID, obj->id);

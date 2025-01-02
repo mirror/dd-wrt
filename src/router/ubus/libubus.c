@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <libubox/blob.h>
 #include <libubox/blobmsg.h>
@@ -98,9 +99,12 @@ ubus_process_msg(struct ubus_context *ctx, struct ubus_msghdr_buf *buf, int fd)
 		ubus_process_req_msg(ctx, buf, fd);
 		break;
 
-	case UBUS_MSG_INVOKE:
 	case UBUS_MSG_UNSUBSCRIBE:
 	case UBUS_MSG_NOTIFY:
+		if (ubus_context_is_channel(ctx))
+			break;
+		/* fallthrough */
+	case UBUS_MSG_INVOKE:
 		if (ctx->stack_depth) {
 			ubus_queue_msg(ctx, buf);
 			break;
@@ -111,6 +115,9 @@ ubus_process_msg(struct ubus_context *ctx, struct ubus_msghdr_buf *buf, int fd)
 		ctx->stack_depth--;
 		break;
 	case UBUS_MSG_MONITOR:
+		if (ubus_context_is_channel(ctx))
+			break;
+
 		if (ctx->monitor_cb)
 			ctx->monitor_cb(ctx, buf->hdr.seq, buf->data);
 		break;
@@ -163,6 +170,9 @@ int ubus_lookup(struct ubus_context *ctx, const char *path,
 {
 	struct ubus_lookup_request lookup;
 
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	blob_buf_init(&b, 0);
 	if (path)
 		blob_put_string(&b, UBUS_ATTR_OBJPATH, path);
@@ -192,6 +202,9 @@ static void ubus_lookup_id_cb(struct ubus_request *req, int type, struct blob_at
 int ubus_lookup_id(struct ubus_context *ctx, const char *path, uint32_t *id)
 {
 	struct ubus_request req;
+
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	blob_buf_init(&b, 0);
 	if (path)
@@ -229,6 +242,9 @@ int ubus_register_event_handler(struct ubus_context *ctx,
 	struct ubus_object *obj = &ev->obj;
 	struct blob_buf b2 = {};
 	int ret;
+
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	if (!obj->id) {
 		obj->methods = &event_method;
@@ -281,7 +297,8 @@ static void ubus_default_connection_lost(struct ubus_context *ctx)
 		uloop_end();
 }
 
-int ubus_connect_ctx(struct ubus_context *ctx, const char *path)
+static int
+__ubus_ctx_init(struct ubus_context *ctx)
 {
 	uloop_init();
 	memset(ctx, 0, sizeof(*ctx));
@@ -298,13 +315,64 @@ int ubus_connect_ctx(struct ubus_context *ctx, const char *path)
 
 	INIT_LIST_HEAD(&ctx->requests);
 	INIT_LIST_HEAD(&ctx->pending);
-	INIT_LIST_HEAD(&ctx->auto_subscribers);
 	avl_init(&ctx->objects, ubus_cmp_id, false, NULL);
+	return 0;
+}
+
+int ubus_connect_ctx(struct ubus_context *ctx, const char *path)
+{
+	if (__ubus_ctx_init(ctx))
+	    return -1;
+
+	INIT_LIST_HEAD(&ctx->auto_subscribers);
 	if (ubus_reconnect(ctx, path)) {
 		free(ctx->msgbuf.data);
 		ctx->msgbuf.data = NULL;
 		return -1;
 	}
+
+	return 0;
+}
+
+int ubus_channel_connect(struct ubus_context *ctx, int fd,
+			 ubus_handler_t handler)
+{
+	if (__ubus_ctx_init(ctx))
+	    return -1;
+
+	if (ctx->sock.fd >= 0) {
+		if (ctx->sock.registered)
+			uloop_fd_delete(&ctx->sock);
+
+		close(ctx->sock.fd);
+	}
+
+	ctx->sock.eof = false;
+	ctx->sock.error = false;
+	ctx->sock.fd = fd;
+	ctx->local_id = UBUS_CLIENT_ID_CHANNEL;
+	ctx->request_handler = handler;
+
+	fcntl(ctx->sock.fd, F_SETFL, fcntl(ctx->sock.fd, F_GETFL) | O_NONBLOCK | O_CLOEXEC);
+
+	return 0;
+}
+
+int ubus_channel_create(struct ubus_context *ctx, int *remote_fd,
+			ubus_handler_t handler)
+{
+	int sfd[2];
+
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sfd))
+		return -1;
+
+	if (ubus_channel_connect(ctx, sfd[0], handler) < 0) {
+		close(sfd[0]);
+		close(sfd[1]);
+		return -1;
+	}
+
+	*remote_fd = sfd[1];
 
 	return 0;
 }

@@ -192,6 +192,8 @@ void ubus_complete_deferred_request(struct ubus_context *ctx, struct ubus_reques
 	blob_put_int32(&b, UBUS_ATTR_STATUS, ret);
 	blob_put_int32(&b, UBUS_ATTR_OBJID, req->object);
 	ubus_send_msg(ctx, req->seq, b.head, UBUS_MSG_STATUS, req->peer, req->fd);
+	if (req->fd >= 0)
+		close(req->fd);
 }
 
 static void ubus_put_data(struct blob_buf *buf, struct blob_attr *msg)
@@ -278,6 +280,9 @@ __ubus_notify_async(struct ubus_context *ctx, struct ubus_object *obj,
 		    const char *type, struct blob_attr *msg,
 		    struct ubus_notify_request *req, bool reply)
 {
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	memset(req, 0, sizeof(*req));
 
 	blob_buf_init(&b, 0);
@@ -494,6 +499,9 @@ void __hidden ubus_process_req_msg(struct ubus_context *ctx, struct ubus_msghdr_
 
 int __ubus_monitor(struct ubus_context *ctx, const char *type)
 {
+	if (ubus_context_is_channel(ctx))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
 	blob_buf_init(&b, 0);
 	return ubus_invoke(ctx, UBUS_SYSTEM_OBJECT_MONITOR, type, b.head, NULL, NULL, 1000);
 }

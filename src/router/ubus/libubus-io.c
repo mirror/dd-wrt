@@ -401,6 +401,9 @@ int ubus_reconnect(struct ubus_context *ctx, const char *path)
 	struct blob_attr *buf;
 	int ret = UBUS_STATUS_UNKNOWN_ERROR;
 
+	if (ubus_context_is_channel(ctx))
+		return -1;
+
 	if (!path)
 		path = UBUS_UNIX_SOCKET;
 
@@ -435,7 +438,7 @@ int ubus_reconnect(struct ubus_context *ctx, const char *path)
 		goto out_free;
 
 	ctx->local_id = hdr.hdr.peer;
-	if (!ctx->local_id)
+	if (ctx->local_id <= UBUS_CLIENT_ID_CHANNEL)
 		goto out_free;
 
 	ret = UBUS_STATUS_OK;
