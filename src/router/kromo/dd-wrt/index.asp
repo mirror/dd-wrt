@@ -431,7 +431,7 @@ addEvent(window, "unload", function() {
 							<% ifndef("IPQ6018", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("idx.nss"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="nss" <% nvc("nss", "1"); %> /><% tran("share.enable"); %>
+									<input class="spaceradio" type="radio" value="1" name="nss" <% nvc("nss", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="nss" <% nvc("nss", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							<% ifndef("IPQ6018", "-->"); %>
