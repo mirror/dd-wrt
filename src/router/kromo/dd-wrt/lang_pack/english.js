@@ -1240,6 +1240,7 @@ idx.conn_type="Connection Type";
 idx.ignore_wan_dns="Ignore WAN DNS";
 idx.stp="STP";
 idx.sfe="Shortcut Forwarding Engine";
+idx.nss="QCA NSS Subsystem";
 idx.fa="Flow Acceleration";
 idx.stp_mess="(disable for COMCAST ISP)";
 idx.optional="Optional Settings";
