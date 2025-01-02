@@ -1409,7 +1409,7 @@ void start_sysinit(void)
 	//	sysprintf("echo warm > /sys/kernel/reboot/mode");
 	nvram_unset("sw_cpuport");
 	nvram_unset("sw_wancpuport");
-
+	nvram_set("old_nss",nvram_safe_get("nss"));
 	detect_usbdrivers();
 
 	return;
@@ -1457,7 +1457,8 @@ void start_wifi_drivers(void)
 		sys_reboot();
 	if (!use_mesh(0) && nvram_match("cur_nss", "11.4"))
 		sys_reboot();
-
+	if (!nvram_match("nss",nvram_safe_get("old_nss")))
+		sys_reboot();
 	notloaded = insmod("compat");
 	if (!notloaded) {
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
