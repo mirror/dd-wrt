@@ -427,6 +427,13 @@ addEvent(window, "unload", function() {
 										<option value="2" <% nvs("ctf_fa_mode", "2"); %>>CTF & FA</option>
 									</select>
 								</div>
+							<% ifdef("IPQ6018", "<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("idx.nss"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="sfe" <% nvc("sfe", "1"); %> /><% tran("share.enable"); %>
+									<input class="spaceradio" type="radio" value="0" name="sfe" <% nvc("sfe", "0"); %> /><% tran("share.disable"); %>
+								</div>
+							<% ifdef("IPQ6018", "-->"); %>
 								<% ifndef("FA", "-->"); %>
 								<% ifdef("NSS", "<!--"); %>
 								<% ifndef("SFE", "<!--"); %>
