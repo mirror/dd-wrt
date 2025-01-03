@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2019 Douglas Gilbert.
+ * Copyright (c) 1999-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -927,23 +927,6 @@ sg_ll_log_select(int sg_fd, bool pcr, bool sp, int pc, int pg_code,
     return ret;
 }
 
-int
-sg_ll_start_stop_unit(int sg_fd, bool immed, int pc_mod__fl_num,
-                      int power_cond, bool noflush__fl, bool loej, bool start,
-                      bool noisy, int verbose)
-{
-    int ret;
-    struct sg_pt_base * ptvp;
-
-    ptvp = construct_scsi_pt_obj_with_fd(sg_fd, verbose);
-    if (NULL == ptvp)
-        return sg_convert_errno(ENOMEM);
-    ret = sg_ll_start_stop_unit_pt(ptvp, immed, pc_mod__fl_num, power_cond,
-                                   noflush__fl, loej, start, noisy, verbose);
-    destruct_scsi_pt_obj(ptvp);
-    return ret;
-}
-
 /* Invokes a SCSI START STOP UNIT command (SBC + MMC).
  * Return of 0 -> success,
  * various SG_LIB_CAT_* positive values or -1 -> other errors.
@@ -952,12 +935,15 @@ sg_ll_start_stop_unit(int sg_fd, bool immed, int pc_mod__fl_num,
  * and fl(mmc) one bit field. This is the cause of the awkardly named
  * pc_mod__fl_num and noflush__fl arguments to this function.
  *  */
-int
-sg_ll_start_stop_unit_pt(struct sg_pt_base * ptvp, bool immed,
-                         int pc_mod__fl_num, int power_cond, bool noflush__fl,
-                         bool loej, bool start, bool noisy, int verbose)
+static int
+sg_ll_start_stop_unit_com(struct sg_pt_base * ptvp, int sg_fd, bool immed,
+                          int pc_mod__fl_num, int power_cond, bool noflush__fl,
+                          bool loej, bool start, bool noisy, int verbose)
 {
     static const char * const cdb_s = "start stop unit";
+    bool ptvp_given = false;
+    bool local_sense = true;
+    bool local_cdb = true;
     int res, ret, sense_cat;
     uint8_t ssuBlk[START_STOP_CMDLEN] = {START_STOP_CMD, 0, 0, 0, 0, 0};
     uint8_t sense_b[SENSE_BUFF_LEN];
@@ -979,10 +965,24 @@ sg_ll_start_stop_unit_pt(struct sg_pt_base * ptvp, bool immed,
               sg_get_command_str(ssuBlk, sizeof(ssuBlk), false,
                                  sizeof(b), b));
     }
-
-    clear_scsi_pt_obj(ptvp);
-    set_scsi_pt_cdb(ptvp, ssuBlk, sizeof(ssuBlk));
-    set_scsi_pt_sense(ptvp, sense_b, sizeof(sense_b));
+    if (ptvp) {
+        ptvp_given = true;
+        partial_clear_scsi_pt_obj(ptvp);
+        if (get_scsi_pt_cdb_buf(ptvp))
+            local_cdb = false; /* N.B. Ignores locally built cdb */
+        else
+            set_scsi_pt_cdb(ptvp, ssuBlk, sizeof(ssuBlk));
+        if (get_scsi_pt_sense_buf(ptvp))
+            local_sense = false;
+        else
+            set_scsi_pt_sense(ptvp, sense_b, sizeof(sense_b));
+    } else {
+        ptvp = construct_scsi_pt_obj_with_fd(sg_fd, verbose);
+        if (NULL == ptvp)
+            return sg_convert_errno(ENOMEM);
+        set_scsi_pt_cdb(ptvp, ssuBlk, sizeof(ssuBlk));
+        set_scsi_pt_sense(ptvp, sense_b, sizeof(sense_b));
+    }
     res = do_scsi_pt(ptvp, -1, START_PT_TIMEOUT, verbose);
     ret = sg_cmds_process_resp(ptvp, cdb_s, res, noisy, verbose, &sense_cat);
     if (-1 == ret)
@@ -999,7 +999,36 @@ sg_ll_start_stop_unit_pt(struct sg_pt_base * ptvp, bool immed,
         }
     } else
             ret = 0;
+    if (ptvp_given) {
+        if (local_sense)    /* stop caller trying to access local sense */
+            set_scsi_pt_sense(ptvp, NULL, 0);
+        if (local_cdb)
+            set_scsi_pt_cdb(ptvp, NULL, 0);
+    } else {
+        if (ptvp)
+            destruct_scsi_pt_obj(ptvp);
+    }
     return ret;
+}
+
+int
+sg_ll_start_stop_unit(int sg_fd, bool immed, int pc_mod__fl_num,
+                      int power_cond, bool noflush__fl, bool loej, bool start,
+                      bool noisy, int verbose)
+{
+    return sg_ll_start_stop_unit_com(NULL, sg_fd, immed, pc_mod__fl_num,
+                                     power_cond, noflush__fl, loej, start,
+                                     noisy, verbose);
+}
+
+int
+sg_ll_start_stop_unit_pt(struct sg_pt_base * ptvp, bool immed,
+                         int pc_mod__fl_num, int power_cond, bool noflush__fl,
+                         bool loej, bool start, bool noisy, int verbose)
+{
+    return sg_ll_start_stop_unit_com(ptvp, -1, immed, pc_mod__fl_num,
+                                     power_cond, noflush__fl, loej, start,
+                                     noisy, verbose);
 }
 
 /* Invokes a SCSI PREVENT ALLOW MEDIUM REMOVAL command

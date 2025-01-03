@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2019 Douglas Gilbert.
+ * Copyright (c) 2005-2021 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-/* sg_pt_linux version 1.47 20190612 */
+/* sg_pt_linux version 1.51 20210102 */
 
 
 #include <stdio.h>
@@ -471,10 +471,29 @@ clear_scsi_pt_obj(struct sg_pt_base * vp)
         ptp->is_sg = is_sg;
         ptp->is_bsg = is_bsg;
         ptp->is_nvme = is_nvme;
-        ptp->nvme_direct = false;
+        ptp->nvme_our_sntl = false;
         ptp->nvme_nsid = nvme_nsid;
         ptp->dev_stat = dev_stat;
     }
+}
+
+void
+partial_clear_scsi_pt_obj(struct sg_pt_base * vp)
+{
+    struct sg_pt_linux_scsi * ptp = &vp->impl;
+
+    if (NULL == ptp)
+        return;
+    ptp->in_err = 0;
+    ptp->os_err = 0;
+    ptp->io_hdr.device_status = 0;
+    ptp->io_hdr.transport_status = 0;
+    ptp->io_hdr.driver_status = 0;
+    ptp->io_hdr.din_xferp = 0;
+    ptp->io_hdr.din_xfer_len = 0;
+    ptp->io_hdr.dout_xferp = 0;
+    ptp->io_hdr.dout_xfer_len = 0;
+    ptp->nvme_result = 0;
 }
 
 #ifndef SG_SET_GET_EXTENDED
@@ -588,7 +607,7 @@ set_pt_file_handle(struct sg_pt_base * vp, int dev_fd, int verbose)
         ptp->is_sg = false;
         ptp->is_bsg = false;
         ptp->is_nvme = false;
-        ptp->nvme_direct = false;
+        ptp->nvme_our_sntl = false;
         ptp->nvme_nsid = 0;
         ptp->os_err = 0;
     }
@@ -619,10 +638,24 @@ set_scsi_pt_cdb(struct sg_pt_base * vp, const uint8_t * cdb,
 {
     struct sg_pt_linux_scsi * ptp = &vp->impl;
 
-    if (ptp->io_hdr.request)
-        ++ptp->in_err;
     ptp->io_hdr.request = (__u64)(sg_uintptr_t)cdb;
     ptp->io_hdr.request_len = cdb_len;
+}
+
+int
+get_scsi_pt_cdb_len(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_linux_scsi * ptp = &vp->impl;
+
+    return ptp->io_hdr.request_len;
+}
+
+uint8_t *
+get_scsi_pt_cdb_buf(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_linux_scsi * ptp = &vp->impl;
+
+    return (uint8_t *)(sg_uintptr_t)ptp->io_hdr.request;
 }
 
 void
@@ -631,9 +664,10 @@ set_scsi_pt_sense(struct sg_pt_base * vp, uint8_t * sense,
 {
     struct sg_pt_linux_scsi * ptp = &vp->impl;
 
-    if (ptp->io_hdr.response)
-        ++ptp->in_err;
-    memset(sense, 0, max_sense_len);
+    if (sense) {
+        if (max_sense_len > 0)
+            memset(sense, 0, max_sense_len);
+    }
     ptp->io_hdr.response = (__u64)(sg_uintptr_t)sense;
     ptp->io_hdr.max_response_len = max_sense_len;
 }
@@ -686,7 +720,7 @@ set_scsi_pt_packet_id(struct sg_pt_base * vp, int pack_id)
 {
     struct sg_pt_linux_scsi * ptp = &vp->impl;
 
-    ptp->io_hdr.request_extra = pack_id;        /* was place in spare_in */
+    ptp->io_hdr.request_extra = pack_id;        /* was placed in spare_in */
 }
 
 void
@@ -760,7 +794,7 @@ get_scsi_pt_resid(const struct sg_pt_base * vp)
 {
     const struct sg_pt_linux_scsi * ptp = &vp->impl;
 
-    if ((NULL == ptp) || (ptp->nvme_direct))
+    if ((NULL == ptp) || (ptp->is_nvme && ! ptp->nvme_our_sntl))
         return 0;
     else if ((ptp->io_hdr.din_xfer_len > 0) &&
              (ptp->io_hdr.dout_xfer_len > 0))
@@ -819,8 +853,8 @@ get_scsi_pt_status_response(const struct sg_pt_base * vp)
 
     if (NULL == ptp)
         return 0;
-    return (int)(ptp->nvme_direct ? ptp->nvme_status :
-                                    ptp->io_hdr.device_status);
+    return (int)((ptp->is_nvme && ! ptp->nvme_our_sntl) ?
+                         ptp->nvme_status : ptp->io_hdr.device_status);
 }
 
 uint32_t
@@ -830,8 +864,8 @@ get_pt_result(const struct sg_pt_base * vp)
 
     if (NULL == ptp)
         return 0;
-    return ptp->nvme_direct ? ptp->nvme_result :
-                              ptp->io_hdr.device_status;
+    return (ptp->is_nvme && ! ptp->nvme_our_sntl) ?
+                        ptp->nvme_result : ptp->io_hdr.device_status;
 }
 
 int
@@ -847,7 +881,7 @@ get_scsi_pt_sense_buf(const struct sg_pt_base * vp)
 {
     const struct sg_pt_linux_scsi * ptp = &vp->impl;
 
-    return (uint8_t *)ptp->io_hdr.response;
+    return (uint8_t *)(sg_uintptr_t)ptp->io_hdr.response;
 }
 
 int
@@ -1119,6 +1153,9 @@ do_scsi_pt(struct sg_pt_base * vp, int fd, int time_secs, int verbose)
     }
     if (ptp->os_err)
         return -ptp->os_err;
+    if (verbose > 5)
+        pr2ws("%s:  is_nvme=%d, is_sg=%d, is_bsg=%d\n", __func__,
+              (int)ptp->is_nvme, (int)ptp->is_sg, (int)ptp->is_bsg);
     if (ptp->is_nvme)
         return sg_do_nvme_pt(vp, -1, time_secs, verbose);
     else if (ptp->is_sg) {

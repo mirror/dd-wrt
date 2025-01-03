@@ -2,6 +2,22 @@ The version number is hardcoded into sdparm.c (in a C string);
 the rpm spec file: sdparm.spec ; the debian/changelog file;
 and the configure.ac file (in the AC_INIT item).
 
+ChangeLog for released sdparm-1.12 [20210421] [svn: r347]
+  - add Command duration limits T2A and T2B mpages
+  - add Sequestered command fields in Control extension mpage
+  - SAS/SPL disconnect-reconnect mpage: BILUNIT and CTLUNIT
+    fields added (21-021r3)
+  - vpd: SCSI Feature Sets [0x92]: add ZBC feature sets
+  - add SAT ATA Feature control mpage (20-085r4)
+  - block device char vpd page: add zoned strings
+  - expand Out of band management control mpage (spl5r08)
+  - vpd: add Format presets and Concurrent positioning
+    ranges pages
+  - vpd: standard inquiry: add hot_pluggable field
+  - sg_lib: allows access to cache mpage's WCE for nvme
+  - start using autoconf 2.70
+  - point svn:externals to sg3_utils release 1.46 (rev 891)
+
 ChangeLog for sdparm-1.11 [20200303] [svn: r334]
   - Allow ZBC mode pages to use existing SBC mpages
     as permitted by zbc2r04 chapter 6.4.1 table 70
@@ -11,7 +27,7 @@ ChangeLog for sdparm-1.11 [20200303] [svn: r334]
   - add Out of band management control mpage (spl5r01)
   - expand SAS configure port mode page [0x19,0x2] with
     configure port mode fields (spl5r07)
-  - accept additional tansport acronyms (e.g. ib for srp)
+  - accept additional transport acronyms (e.g. ib for srp)
   - power condition mpage: rename fields IDLE->IDLE_A;
     STANDBY->STANDBY_Z; ICT->IACT and SCT->SZCT
   - device configuration extension mpage: expand PEWS

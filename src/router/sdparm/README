@@ -40,7 +40,7 @@ commands). It can be accessed with "man sdparm" once this package is
 installed. Prior to installation the man page can be viewed from this
 package's main directory with "man doc/sdparm.8".
 
-There is a web page about this utility at http://sg.danny.cz/sg/sdparm.html .
+There is a web page about this utility at https://sg.danny.cz/sg/sdparm.html .
 
 Build infrastructure
 --------------------
@@ -79,9 +79,9 @@ is that both open source and commercial entities can re-use this code.
 Naturally credit and improvement/bug feedback are encouraged. The part
 of this code that others may be able to re-use is the information in
 the tables in sdparm_data.c , sg_lib.c and sg_lib_data.c . This is
-information garnered from SCSI drafts and standards at http://www.t10.org
+information garnered from SCSI drafts and standards at https://www.t10.org
 (plus some information from the ATA drafts and standards at
-http://www.t13.org ). Vendor specific mode page information is found in the
+https://www.t13.org ). Vendor specific mode page information is found in the
 sdparm_data_vendor.c file and is derived from vendor product manuals.
 
 Notes
@@ -267,4 +267,4 @@ SCSI5:0,112,0 claimed=0 pdt=10h         LSI       PSEUDO DEVICE     2.34
 
 
 Douglas Gilbert
-5th November 2017
+16th April 2021

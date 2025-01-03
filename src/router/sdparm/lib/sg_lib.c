@@ -75,6 +75,20 @@ pr2ws(const char * fmt, ...)
     return n;
 }
 
+/* Users of the sg_pr2serr.h header need this function definition */
+int
+pr2serr(const char * fmt, ...)
+{
+    va_list args;
+    int n;
+
+    va_start(args, fmt);
+    n = vfprintf(stderr, fmt, args);
+    va_end(args);
+    return n;
+}
+
+
 /* Want safe, 'n += snprintf(b + n, blen - n, ...)' style sequence of
  * functions. Returns number of chars placed in cp excluding the
  * trailing null char. So for cp_max_len > 0 the return value is always
@@ -2529,7 +2543,7 @@ sg_get_sfs_str(uint16_t sfs_code, int peri_type, int buff_len, char * buff,
 
     }
     if (verbose > 4)
-        pr2serr("%s: length of returned string (n) %d\n", __func__, n);
+        pr2ws("%s: length of returned string (n) %d\n", __func__, n);
     return buff;
 }
 
@@ -3473,8 +3487,10 @@ sg_f2hex_arr(const char * fname, bool as_binary, bool no_space,
     char line[512];
     char carry_over[4];
 
-    if ((NULL == fname) || (NULL == mp_arr) || (NULL == mp_arr_len))
+    if ((NULL == fname) || (NULL == mp_arr) || (NULL == mp_arr_len)) {
+        pr2ws("%s: bad arguments\n", __func__);
         return SG_LIB_LOGIC_ERROR;
+    }
     fn_len = strlen(fname);
     if (0 == fn_len)
         return SG_LIB_SYNTAX_ERROR;
@@ -3486,7 +3502,7 @@ sg_f2hex_arr(const char * fname, bool as_binary, bool no_space,
             fd = open(fname, O_RDONLY);
             if (fd < 0) {
                 err = errno;
-                pr2serr("unable to open binary file %s: %s\n", fname,
+                pr2ws("unable to open binary file %s: %s\n", fname,
                          safe_strerror(err));
                 return sg_convert_errno(err);
             }
@@ -3495,10 +3511,10 @@ sg_f2hex_arr(const char * fname, bool as_binary, bool no_space,
         if (k <= 0) {
             if (0 == k) {
                 ret = SG_LIB_SYNTAX_ERROR;
-                pr2serr("read 0 bytes from binary file %s\n", fname);
+                pr2ws("read 0 bytes from binary file %s\n", fname);
             } else {
                 ret = sg_convert_errno(errno);
-                pr2serr("read from binary file %s: %s\n", fname,
+                pr2ws("read from binary file %s: %s\n", fname,
                         safe_strerror(errno));
             }
             goto bin_fini;
@@ -3511,7 +3527,7 @@ sg_f2hex_arr(const char * fname, bool as_binary, bool no_space,
                    break;
                 if (m < 0) {
                     err = errno;
-                    pr2serr("read from binary pipe %s: %s\n", fname,
+                    pr2ws("read from binary pipe %s: %s\n", fname,
                             safe_strerror(err));
                     ret = sg_convert_errno(err);
                     goto bin_fini;
@@ -3521,7 +3537,7 @@ sg_f2hex_arr(const char * fname, bool as_binary, bool no_space,
         }
         *mp_arr_len = k;
 bin_fini:
-        if (! has_stdin)
+        if ((fd >= 0) && (! has_stdin))
             close(fd);
         return ret;
     }
@@ -3533,7 +3549,7 @@ bin_fini:
         fp = fopen(fname, "r");
         if (NULL == fp) {
             err = errno;
-            pr2serr("Unable to open %s for reading: %s\n", fname,
+            pr2ws("Unable to open %s for reading: %s\n", fname,
                     safe_strerror(err));
             ret = sg_convert_errno(err);
             goto fini;
@@ -3564,7 +3580,7 @@ bin_fini:
                 if (1 == sscanf(carry_over, "%4x", &h))
                     mp_arr[off - 1] = h;       /* back up and overwrite */
                 else {
-                    pr2serr("%s: carry_over error ['%s'] around line %d\n",
+                    pr2ws("%s: carry_over error ['%s'] around line %d\n",
                             __func__, carry_over, j + 1);
                     ret = SG_LIB_SYNTAX_ERROR;
                     goto fini;
@@ -3586,7 +3602,7 @@ bin_fini:
             continue;
         k = strspn(lcp, "0123456789aAbBcCdDeEfF ,\t");
         if ((k < in_len) && ('#' != lcp[k]) && ('\r' != lcp[k])) {
-            pr2serr("%s: syntax error at line %d, pos %d\n", __func__,
+            pr2ws("%s: syntax error at line %d, pos %d\n", __func__,
                     j + 1, m + k + 1);
             ret = SG_LIB_SYNTAX_ERROR;
             goto fini;
@@ -3595,13 +3611,13 @@ bin_fini:
             for (k = 0; isxdigit(*lcp) && isxdigit(*(lcp + 1));
                  ++k, lcp += 2) {
                 if (1 != sscanf(lcp, "%2x", &h)) {
-                    pr2serr("%s: bad hex number in line %d, pos %d\n",
+                    pr2ws("%s: bad hex number in line %d, pos %d\n",
                             __func__, j + 1, (int)(lcp - line + 1));
                     ret = SG_LIB_SYNTAX_ERROR;
                     goto fini;
                 }
                 if ((off + k) >= max_arr_len) {
-                    pr2serr("%s: array length exceeded\n", __func__);
+                    pr2ws("%s: array length exceeded\n", __func__);
                     *mp_arr_len = max_arr_len;
                     ret = SG_LIB_LBA_OUT_OF_RANGE;
                     goto fini;
@@ -3615,7 +3631,7 @@ bin_fini:
             for (k = 0; k < 1024; ++k) {
                 if (1 == sscanf(lcp, "%10x", &h)) {
                     if (h > 0xff) {
-                        pr2serr("%s: hex number larger than 0xff in line "
+                        pr2ws("%s: hex number larger than 0xff in line "
                                 "%d, pos %d\n", __func__, j + 1,
                                 (int)(lcp - line + 1));
                         ret = SG_LIB_SYNTAX_ERROR;
@@ -3626,7 +3642,7 @@ bin_fini:
                         carry_over[0] = *lcp;
                     }
                     if ((off + k) >= max_arr_len) {
-                        pr2serr("%s: array length exceeded\n", __func__);
+                        pr2ws("%s: array length exceeded\n", __func__);
                         ret = SG_LIB_LBA_OUT_OF_RANGE;
                         *mp_arr_len = max_arr_len;
                         goto fini;
@@ -3643,7 +3659,7 @@ bin_fini:
                         --k;
                         break;
                     }
-                    pr2serr("%s: error in line %d, at pos %d\n", __func__,
+                    pr2ws("%s: error in line %d, at pos %d\n", __func__,
                             j + 1, (int)(lcp - line + 1));
                     ret = SG_LIB_SYNTAX_ERROR;
                     goto fini;
@@ -3657,7 +3673,7 @@ bin_fini:
         fclose(fp);
     return 0;
 fini:
-    if (stdin != fp)
+    if (fp && (stdin != fp))
         fclose(fp);
     return ret;
 }
@@ -3692,18 +3708,6 @@ sg_ata_get_chars(const uint16_t * word_arr, int start_word,
         *op++ = b;
     }
     return op - ochars;
-}
-
-int
-pr2serr(const char * fmt, ...)
-{
-    va_list args;
-    int n;
-
-    va_start(args, fmt);
-    n = vfprintf(stderr, fmt, args);
-    va_end(args);
-    return n;
 }
 
 #ifdef SG_LIB_FREEBSD

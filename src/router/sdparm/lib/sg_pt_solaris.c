@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2019 Douglas Gilbert.
+ * Copyright (c) 2007-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-/* sg_pt_solaris version 1.11 20190113 */
+/* sg_pt_solaris version 1.14 20200724 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,8 +103,10 @@ construct_scsi_pt_obj_with_fd(int dev_fd, int verbose)
         ptp->dev_fd = (dev_fd < 0) ? -1 : dev_fd;
         ptp->is_nvme = false;
         ptp->uscsi.uscsi_timeout = DEF_TIMEOUT;
-        ptp->uscsi.uscsi_flags = USCSI_READ | USCSI_ISOLATE | USCSI_RQENABLE;
-        ptp->uscsi.uscsi_timeout = DEF_TIMEOUT;
+        /* Comment in Illumos suggest USCSI_ISOLATE and USCSI_DIAGNOSE (both)
+         * seem to mean "don't retry" which is what we want. */
+        ptp->uscsi.uscsi_flags = USCSI_ISOLATE | USCSI_DIAGNOSE |
+                                 USCSI_RQENABLE;
     } else if (verbose)
         fprintf(sg_warnings_strm ? sg_warnings_strm : stderr,
                 "%s: calloc() out of memory\n", __func__);
@@ -129,13 +131,35 @@ destruct_scsi_pt_obj(struct sg_pt_base * vp)
 void
 clear_scsi_pt_obj(struct sg_pt_base * vp)
 {
+    bool is_nvme;
+    int dev_fd;
     struct sg_pt_solaris_scsi * ptp = &vp->impl;
 
     if (ptp) {
+        is_nvme = ptp->is_nvme;
+        dev_fd = ptp->dev_fd;
         memset(ptp, 0, sizeof(struct sg_pt_solaris_scsi));
+        ptp->dev_fd = dev_fd;
+        ptp->is_nvme = is_nvme;
         ptp->uscsi.uscsi_timeout = DEF_TIMEOUT;
-        ptp->uscsi.uscsi_flags = USCSI_READ | USCSI_ISOLATE | USCSI_RQENABLE;
-        ptp->uscsi.uscsi_timeout = DEF_TIMEOUT;
+        ptp->uscsi.uscsi_flags = USCSI_ISOLATE | USCSI_DIAGNOSE |
+                                 USCSI_RQENABLE;
+    }
+}
+
+void
+partial_clear_scsi_pt_obj(struct sg_pt_base * vp)
+{
+    struct sg_pt_solaris_scsi * ptp = &vp->impl;
+
+    if (ptp) {
+        ptp->in_err = 0;
+        ptp->os_err = 0;
+        ptp->uscsi.uscsi_status = 0;
+        ptp->uscsi.uscsi_bufaddr = NULL;
+        ptp->uscsi.uscsi_buflen = 0;
+        ptp->uscsi.uscsi_flags = USCSI_ISOLATE | USCSI_DIAGNOSE |
+                                 USCSI_RQENABLE;
     }
 }
 
@@ -145,10 +169,24 @@ set_scsi_pt_cdb(struct sg_pt_base * vp, const uint8_t * cdb,
 {
     struct sg_pt_solaris_scsi * ptp = &vp->impl;
 
-    if (ptp->uscsi.uscsi_cdb)
-        ++ptp->in_err;
     ptp->uscsi.uscsi_cdb = (char *)cdb;
     ptp->uscsi.uscsi_cdblen = cdb_len;
+}
+
+int
+get_scsi_pt_cdb_len(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_solaris_scsi * ptp = &vp->impl;
+
+    return ptp->uscsi.uscsi_cdblen;
+}
+
+uint8_t *
+get_scsi_pt_cdb_buf(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_solaris_scsi * ptp = &vp->impl;
+
+    return (uint8_t *)ptp->uscsi.uscsi_cdb;
 }
 
 void
@@ -157,9 +195,8 @@ set_scsi_pt_sense(struct sg_pt_base * vp, uint8_t * sense,
 {
     struct sg_pt_solaris_scsi * ptp = &vp->impl;
 
-    if (ptp->uscsi.uscsi_rqbuf)
-        ++ptp->in_err;
-    memset(sense, 0, max_sense_len);
+    if (sense && (max_sense_len > 0))
+        memset(sense, 0, max_sense_len);
     ptp->uscsi.uscsi_rqbuf = (char *)sense;
     ptp->uscsi.uscsi_rqlen = max_sense_len;
     ptp->max_sense_len = max_sense_len;
@@ -177,7 +214,8 @@ set_scsi_pt_data_in(struct sg_pt_base * vp, uint8_t * dxferp,
     if (dxfer_len > 0) {
         ptp->uscsi.uscsi_bufaddr = (char *)dxferp;
         ptp->uscsi.uscsi_buflen = dxfer_len;
-        ptp->uscsi.uscsi_flags = USCSI_READ | USCSI_ISOLATE | USCSI_RQENABLE;
+        ptp->uscsi.uscsi_flags = USCSI_READ | USCSI_ISOLATE | USCSI_DIAGNOSE |
+                                 USCSI_RQENABLE;
     }
 }
 
@@ -193,7 +231,8 @@ set_scsi_pt_data_out(struct sg_pt_base * vp, const uint8_t * dxferp,
     if (dxfer_len > 0) {
         ptp->uscsi.uscsi_bufaddr = (char *)dxferp;
         ptp->uscsi.uscsi_buflen = dxfer_len;
-        ptp->uscsi.uscsi_flags = USCSI_WRITE | USCSI_ISOLATE | USCSI_RQENABLE;
+        ptp->uscsi.uscsi_flags = USCSI_WRITE | USCSI_ISOLATE | USCSI_DIAGNOSE |
+                                 USCSI_RQENABLE;
     }
 }
 
@@ -335,8 +374,8 @@ void
 get_pt_req_lengths(const struct sg_pt_base * vp, int * req_dinp,
                    int * req_doutp)
 {
-    const struct sg_pt_freebsd_scsi * ptp = &vp->impl;
-    int dxfer_len = ptp->uscsi.uscsi_buflen
+    const struct sg_pt_solaris_scsi * ptp = &vp->impl;
+    int dxfer_len = ptp->uscsi.uscsi_buflen;
     int flags = ptp->uscsi.uscsi_flags;
 
     if (req_dinp) {
@@ -357,8 +396,8 @@ void
 get_pt_actual_lengths(const struct sg_pt_base * vp, int * act_dinp,
                       int * act_doutp)
 {
-    const struct sg_pt_freebsd_scsi * ptp = &vp->impl;
-    int dxfer_len = ptp->uscsi.uscsi_buflen
+    const struct sg_pt_solaris_scsi * ptp = &vp->impl;
+    int dxfer_len = ptp->uscsi.uscsi_buflen;
     int flags = ptp->uscsi.uscsi_flags;
 
     if (act_dinp) {
@@ -415,7 +454,7 @@ get_scsi_pt_duration_ms(const struct sg_pt_base * vp)
 
 /* If not available return 0 otherwise return number of nanoseconds that the
  * lower layers (and hardware) took to execute the command just completed. */
-uint64_t 
+uint64_t
 get_pt_duration_ns(const struct sg_pt_base * vp __attribute__ ((unused)))
 {
     return 0;
@@ -479,4 +518,14 @@ get_scsi_pt_os_err_str(const struct sg_pt_base * vp, int max_b_len, char * b)
     if ((int)strlen(cp) >= max_b_len)
         b[max_b_len - 1] = '\0';
     return b;
+}
+
+int
+do_nvm_pt(struct sg_pt_base * vp, int submq, int timeout_secs, int verbose)
+{
+    if (vp) { }
+    if (submq) { }
+    if (timeout_secs) { }
+    if (verbose) { }
+    return SCSI_PT_DO_NOT_SUPPORTED;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2018 Douglas Gilbert.
+ * Copyright (c) 1999-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -24,7 +24,7 @@
 #include "sg_pr2serr.h"
 
 
-/* Version 1.10 20180613 */
+/* Version 1.11 20200401 */
 
 
 void
@@ -62,7 +62,7 @@ sg_print_host_status(int host_status)
 static const char * linux_driver_bytes[] = {
     "DRIVER_OK", "DRIVER_BUSY", "DRIVER_SOFT", "DRIVER_MEDIA",
     "DRIVER_ERROR", "DRIVER_INVALID", "DRIVER_TIMEOUT", "DRIVER_HARD",
-    "DRIVER_SENSE"
+    "DRIVER_SENSE",
 };
 
 #if 0
@@ -72,7 +72,7 @@ static const char * linux_driver_bytes[] = {
 static const char * linux_driver_suggests[] = {
     "SUGGEST_OK", "SUGGEST_RETRY", "SUGGEST_ABORT", "SUGGEST_REMAP",
     "SUGGEST_DIE", "UNKNOWN","UNKNOWN","UNKNOWN",
-    "SUGGEST_SENSE"
+    "SUGGEST_SENSE",
 };
 #endif
 

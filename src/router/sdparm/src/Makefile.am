@@ -21,6 +21,7 @@ AM_CFLAGS = -Wall -W $(DBG_CFLAGS)
 # AM_CFLAGS = -Wall -W -Werror=misleading-indentation
 # AM_CFLAGS = -Wall -W -pedantic -std=c11
 # AM_CFLAGS = -Wall -W -pedantic -std=c++14
+# AM_CFLAGS = -Wall -W -pedantic -std=c++20
 
 sdparm_SOURCES =	sdparm.c	\
 			sdparm.h	\
@@ -74,3 +75,6 @@ EXTRA_sdparm_SOURCES =	../lib/sg_pt_linux.c	\
 			../include/sg_pt_win32.h	\
 			getopt_long.c	\
 			port_getopt.h
+
+distclean-local:
+	rm -rf .deps

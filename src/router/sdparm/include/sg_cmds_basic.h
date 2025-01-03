@@ -2,7 +2,7 @@
 #define SG_CMDS_BASIC_H
 
 /*
- * Copyright (c) 2004-2019 Douglas Gilbert.
+ * Copyright (c) 2004-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -33,7 +33,13 @@ extern "C" {
  * sg_pt_base rather than an open file descriptor as their first argument.
  * That object is assumed to be constructed and have a device file descriptor
  * associated with it. clear_scsi_pt_obj() is called at the start of each
- * "_pt" function. Caller is responsible for lifetime of ptp. */
+ * "_pt" function. Caller is responsible for lifetime of ptp.
+ * If the sense buffer is accessed outside the "_pt" function then the caller
+ * must invoke set_scsi_pt_sense() _prior_ to the "_pt" function. Otherwise
+ * a sense buffer local to "_pt" function is used.
+ * Usually the cdb pointer will be NULL going into the "_pt" functions but
+ * could be given by the caller in which case it will used rather than a
+ * locally generated one. */
 
 struct sg_pt_base;
 

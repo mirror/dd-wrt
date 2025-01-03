@@ -5,7 +5,7 @@ libsgutils2_la_SOURCES = \
 	sg_cmds_basic2.c \
 	sg_cmds_extra.c \
 	sg_cmds_mmc.c \
-	sg_pt_common.c 
+	sg_pt_common.c
 
 if OS_LINUX
 libsgutils2_la_SOURCES += \
@@ -46,8 +46,9 @@ endif
 
 # For C++/clang testing
 ## CC = gcc-9
-## CC = g++
+## CXX = g++
 ## CC = clang
+## CXX = clang++
 ## CC = clang++
 ## CC = powerpc64-linux-gnu-gcc
 
@@ -60,6 +61,7 @@ AM_CFLAGS = -Wall -W $(DBG_CFLAGS)
 # AM_CFLAGS = -Wall -W -pedantic -std=c11 --analyze
 # AM_CFLAGS = -Wall -W -pedantic -std=c++14
 # AM_CFLAGS = -Wall -W -pedantic -std=c++1z
+# AM_CFLAGS = -Wall -W -pedantic -std=c++20
 
 lib_LTLIBRARIES = libsgutils2.la
 

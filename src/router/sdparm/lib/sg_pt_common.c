@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 Douglas Gilbert.
+ * Copyright (c) 2009-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -31,7 +31,7 @@
 #include "sg_pt_nvme.h"
 #endif
 
-static const char * scsi_pt_version_str = "3.12 20190612";
+static const char * scsi_pt_version_str = "3.16 20200722";
 
 
 const char *
@@ -72,14 +72,51 @@ static struct sg_opcode_info_t sg_opcode_info_arr[] =
       0xe1, 0, 0, 0xff, 0xc7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
     {0x12, 0, 0, {6,            /* INQUIRY */
       0xe3, 0xff, 0xff, 0xff, 0xc7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
+    {0x1b, 0, 0, {6,            /* START STOP UNIT */
+      0x1, 0, 0xf, 0xf7, 0xc7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
     {0x1c, 0, 0, {6,            /* RECEIVE DIAGNOSTIC RESULTS */
       0x1, 0xff, 0xff, 0xff, 0xc7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
     {0x1d, 0, 0, {6,            /* SEND DIAGNOSTIC */
       0xf7, 0x0, 0xff, 0xff, 0xc7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0} },
+    {0x25, 0, 0, {10,            /* READ CAPACITY(10) */
+      0x1, 0xff, 0xff, 0xff, 0xff, 0, 0, 0x1, 0xc7, 0, 0, 0, 0, 0, 0} },
+    {0x28, 0, 0, {10,            /* READ(10) */
+      0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xc7, 0, 0, 0, 0,
+      0, 0} },
+    {0x2a, 0, 0, {10,            /* WRITE(10) */
+      0xfb, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xc7, 0, 0, 0, 0,
+      0, 0} },
+    {0x2f, 0, 0, {10,            /* VERIFY(10) */
+      0xf6, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xc7, 0, 0, 0, 0,
+      0, 0} },
+    {0x35, 0, 0, {10,            /* SYNCHRONIZE CACHE(10) */
+      0x7, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xc7, 0, 0, 0, 0,
+      0, 0} },
+    {0x41, 0, 0, {10,            /* WRITE SAME(10) */
+      0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xc7, 0, 0, 0, 0,
+      0, 0} },
     {0x55, 0, 0, {10,           /* MODE SELECT(10) */
       0x13, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc7, 0, 0, 0, 0, 0, 0} },
     {0x5a, 0, 0, {10,           /* MODE SENSE(10) */
       0x18, 0xff, 0xff, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc7, 0, 0, 0, 0, 0, 0} },
+    {0x88, 0, 0, {16,            /* READ(16) */
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xc7} },
+    {0x8a, 0, 0, {16,            /* WRITE(16) */
+      0xfb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xc7} },
+    {0x8f, 0, 0, {16,            /* VERIFY(16) */
+      0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0x3f, 0xc7} },
+    {0x91, 0, 0, {16,            /* SYNCHRONIZE CACHE(16) */
+      0x7, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0x3f, 0xc7} },
+    {0x93, 0, 0, {16,            /* WRITE SAME(16) */
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0x3f, 0xc7} },
+    {0x9e, 0x10, F_SA_LOW, {16,  /* READ CAPACITY(16) [service action in] */
+      0x10, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0x1, 0xc7} },
     {0xa0, 0, 0, {12,           /* REPORT LUNS */
       0xe3, 0xff, 0, 0, 0, 0xff, 0xff, 0xff, 0xff, 0, 0xc7, 0, 0, 0, 0} },
     {0xa3, 0xc, F_SA_LOW, {12,  /* REPORT SUPPORTED OPERATION CODES */
@@ -218,6 +255,45 @@ resp_disconnect_pg(uint8_t * p, int pcontrol)
     return sizeof(disconnect_pg);
 }
 
+static uint8_t caching_m_pg[] = {0x8, 18, 0x14, 0, 0xff, 0xff, 0, 0,
+                                 0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0, 0,
+                                 0, 0, 0, 0};
+
+/* Control mode page (SBC) for mode_sense */
+static int
+resp_caching_m_pg(unsigned char *p, int pcontrol, bool wce)
+{       /* Caching page for mode_sense */
+        uint8_t ch_caching_m_pg[] = {/* 0x8, 18, */ 0x4, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        uint8_t d_caching_m_pg[] = {0x8, 18, 0x14, 0, 0xff, 0xff, 0, 0,
+                0xff, 0xff, 0xff, 0xff, 0x80, 0x14, 0, 0,     0, 0, 0, 0};
+
+        // if (SDEBUG_OPT_N_WCE & sdebug_opts)
+                caching_m_pg[2] &= ~0x4;  /* set WCE=0 (default WCE=1) */
+        if ((0 == pcontrol) || (3 == pcontrol)) {
+            if (wce)
+                caching_m_pg[2] |= 0x4;
+            else
+                caching_m_pg[2] &= ~0x4;
+        }
+        memcpy(p, caching_m_pg, sizeof(caching_m_pg));
+        if (1 == pcontrol) {
+            if (wce)
+                ch_caching_m_pg[2] |= 0x4;
+            else
+                ch_caching_m_pg[2] &= ~0x4;
+            memcpy(p + 2, ch_caching_m_pg, sizeof(ch_caching_m_pg));
+        }
+        else if (2 == pcontrol) {
+            if (wce)
+                d_caching_m_pg[2] |= 0x4;
+            else
+                d_caching_m_pg[2] &= ~0x4;
+            memcpy(p, d_caching_m_pg, sizeof(d_caching_m_pg));
+        }
+        return sizeof(caching_m_pg);
+}
+
 static uint8_t ctrl_m_pg[] = {0xa, 10, 2, 0, 0, 0, 0, 0,
                               0, 0, 0x2, 0x4b};
 
@@ -335,7 +411,7 @@ sntl_resp_mode_sense10(const struct sg_sntl_dev_state_t * dsp,
     pcode = cdbp[2] & 0x3f;
     subpcode = cdbp[3];
     llbaa = !!(cdbp[1] & 0x10);
-    is_disk = (dsp->pdt == PDT_DISK);
+    is_disk = ((dsp->pdt == PDT_DISK) || (dsp->pdt == PDT_ZBC));
     if (is_disk && !dbd)
         bd_len = llbaa ? 16 : 8;
     else
@@ -381,6 +457,18 @@ sntl_resp_mode_sense10(const struct sg_sntl_dev_state_t * dsp,
         }
         offset += len;
         break;
+    case 0x8:       /* Caching Mode page, disk (like) devices */
+        if (! is_disk) {
+            len = 0;
+            bad_pcode = true;
+        } else if (0x0 == subpcode)
+            len = resp_caching_m_pg(ap, pcontrol, dsp->wce);
+        else {
+            len = 0;
+            bad_pcode = true;
+        }
+        offset += len;
+        break;
     case 0xa:       /* Control Mode page, all devices */
         if (0x0 == subpcode)
             len = resp_ctrl_m_pg(ap, pcontrol);
@@ -405,6 +493,8 @@ sntl_resp_mode_sense10(const struct sg_sntl_dev_state_t * dsp,
         if ((0 == subpcode) || (0xff == subpcode)) {
             len = 0;
             len = resp_disconnect_pg(ap + len, pcontrol);
+            if (is_disk)
+                len += resp_caching_m_pg(ap + len, pcontrol, dsp->wce);
             len += resp_ctrl_m_pg(ap + len, pcontrol);
             if (0xff == subpcode)
                 len += resp_ctrl_ext_m_pg(ap + len, pcontrol);
@@ -504,6 +594,17 @@ sntl_resp_mode_select10(struct sg_sntl_dev_state_t * dsp,
         goto err_out;
     }
     switch (mpage) {
+    case 0x8:      /* Caching Mode page */
+        if (0x0 == sub_mpage) {
+            if (caching_m_pg[1] == arr[off + 1]) {
+                memcpy(caching_m_pg + 2, arr + off + 2,
+                       sizeof(caching_m_pg) - 2);
+                dsp->wce = !!(caching_m_pg[2] & 0x4);
+                dsp->wce_changed = true;
+                break;
+            }
+        }
+        goto def_case;
     case 0xa:      /* Control Mode page */
         if (0x0 == sub_mpage) {
             if (ctrl_m_pg[1] == arr[off + 1]) {

@@ -2,7 +2,7 @@
 #define SG_LIB_H
 
 /*
- * Copyright (c) 2004-2019 Douglas Gilbert.
+ * Copyright (c) 2004-2021 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -117,6 +117,9 @@ extern "C" {
 #define SCSI_FS_SBC_BASE_2016 0x101
 #define SCSI_FS_SBC_BASIC_PROV_2016 0x103
 #define SCSI_FS_SBC_DRIVE_MAINT_2016 0x104
+#define SCSI_FS_ZBC_HOST_AWARE_2020 0x300
+#define SCSI_FS_ZBC_HOST_MANAGED_2020 0x301
+#define SCSI_FS_ZBC_DOMAINS_REALMS_2020 0x302
 
 /* Often SCSI responses use the highest integer that can fit in a field
  * to indicate "unbounded" or limit does not apply. Sometimes represented

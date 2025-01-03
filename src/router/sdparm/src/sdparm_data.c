@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2020, Douglas Gilbert
+ * Copyright (c) 2005-2021, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,6 +99,7 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
         NULL},
     {ADC_MP, MSP_ADC_TD_SN, PDT_ADC, 0, "adts",
         "Target device serial number (ADC)", NULL},
+    {CONTROL_MP, MSP_SAT_AFC, -1, 0, "afc", "SAT ATA Feature control", NULL},
     {POWER_MP, MSP_SAT_POWER, -1, 0, "apo", "SAT ATA Power condition", NULL},
     {CONTROL_MP, MSP_SBC_APP_TAG, PDT_DISK_ZBC, 0, "atag", "Application tag "
         "(SBC)", &sbc_atag_desc},
@@ -111,10 +112,10 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
         &spc_cdl_desc},
     {CONTROL_MP, MSP_SPC_CDLB, -1, 0, "cdlb", "Command duration limit B",
         &spc_cdl_desc},
-    {CONTROL_MP, MSP_SPC_CDT2A, -1, 0, "cdt2a", "Command duration limit T2A",
-        NULL /* spc6r? */ },
-    {CONTROL_MP, MSP_SPC_CDT2B, -1, 0, "cdt2b", "Command duration limit T2B",
-        NULL /* spc6r? */ },
+    {CONTROL_MP, MSP_SPC_CDLT2A, -1, 0, "cdt2a", "Command duration limit T2A",
+        NULL /* spc6r01 */ },
+    {CONTROL_MP, MSP_SPC_CDLT2B, -1, 0, "cdt2b", "Command duration limit T2B",
+        NULL /* spc6r01 */ },
     {MMCMS_MP, 0, PDT_MMC, 1, "cms", "CD/DVD (MM) capabilities and "
         "mechanical status (MMC)", NULL},        /* read only */
     {CONTROL_MP, 0, -1, 0, "co", "Control", NULL},
@@ -168,7 +169,7 @@ struct sdparm_mode_page_t sdparm_gen_mode_pg[] = {
     {XOR_MP, 0, PDT_DISK, 0, "xo", "XOR control (SBC)", NULL},
         /* XOR control mode page made obsolete in sbc3r32 */
     {CONTROL_MP, MSP_ZB_D_CTL, PDT_DISK_ZBC, 0, "zbdct",
-	"Zoned block device control (ZBC)", NULL},
+        "Zoned block device control (ZBC)", NULL},
     {0, 0, 0, 0, NULL, NULL, NULL},
 };
 
@@ -247,6 +248,8 @@ static struct sdparm_mode_descriptor_t sas_e_phy_desc = {  /* desc SAS/SPL */
     7, 1, 0, 8, -1, 2, 2, false, "Enhanced phy"
 };
 
+/* This one has a strange format, no number of descriptors and each
+ * descriptor can have a variable size. */
 static struct sdparm_mode_descriptor_t sas_oob_m_c_desc = { /* desc SAS/SPL */
     -1, -1, 0, 8, -1, 2, 2, true, "Attribute control"
 };
@@ -287,6 +290,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
     {VPD_BLOCK_LIMITS_EXT, 0, PDT_DISK, "ble",
      "Block limits extension (SBC)"},
     {VPD_CFA_PROFILE_INFO, 0, -1, "cfa", "CFA profile information"},
+    {VPD_CON_POS_RANGE, 0, 0, "cpr", "Concurrent positioning ranges (SBC)"},
     {VPD_DEVICE_CONSTITUENTS, 0, -1, "dc", "Device constituents"},
     {VPD_DEVICE_ID, 0, -1, "di", "Device identification"},
     {VPD_DEVICE_ID, VPD_DI_SEL_AS_IS, -1, "di_asis", "Like 'di' "
@@ -300,7 +304,7 @@ struct sdparm_vpd_page_t sdparm_vpd_pg[] = {
     {VPD_DTDE_ADDRESS, 0, 1, "dtde",
      "Data transfer device element address (SSC)"},
     {VPD_EXT_INQ, 0, -1, "ei", "Extended inquiry data"},
-    {VPD_FORMAT_PRESETS, 0, 0, "fp", "Format presets"},
+    {VPD_FORMAT_PRESETS, 0, 0, "fp", "Format presets (SBC)"},
     {VPD_IMP_OP_DEF, 0, -1, "iod",
      "Implemented operating definition (obs)"},
     {VPD_LB_PROTECTION, 0, PDT_TAPE, "lbpro", "Logical block protection "
@@ -496,7 +500,7 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Multi session",
         "0: next session not allowed (no BO pointer)\t"
         "1: next session not allowed\t"
-        "3: next seesion allowed (indicated by BO pointer)"},
+        "3: next session allowed (indicated by BO pointer)"},
     {"FP", WRITE_PARAM_MP, 0, PDT_MMC, 3, 5, 1, 0,
         "Fixed packet type", NULL},
     {"COPY", WRITE_PARAM_MP, 0, PDT_MMC, 3, 4, 1, 0,
@@ -688,6 +692,11 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "15: lowest"},
     {"MSDL", CONTROL_MP, MSP_SPC_CE, -1, 6, 7, 8, 0,  /* spc4r34 */
         "Maximum sense data length", "0: unlimited"},
+    {"NSQCC", CONTROL_MP, MSP_SPC_CE, -1, 7, 7, 8, 0, /* spc6r05 */
+        "Non-sequestered command count", NULL},
+    {"SQCO", CONTROL_MP, MSP_SPC_CE, -1, 8, 7, 8, 0,  /* spc6r05 */
+        "Sequestered command order",
+        "0: oldest\t1: best IOPS\t2: IOPS and other sources"},
 
     /* Application tag mode subpage: atag [0xa,0x2] sbc3r25 */
     /* descriptor starts here, <start_byte> is relative to start of mode
@@ -771,6 +780,79 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "0: suspended during IO\t"
         "1: continue during IO"},
 
+    /* Command duration limit T2A mode subpage: cdt2a [0xa,0x7] spc6 */
+    {"PVCDG", CONTROL_MP, MSP_SPC_CDLT2A, -1, 7, 7, 4, 0,
+        "Perf versus command duration guidelines",
+        "Maximium percentage increase in average command completion times:\t"
+        "0: 0%\t1: 0.5%\t...\t6: 3%\t7: 4%\t8: 5%\t9: 8%\t10: 10%"
+        "11: 15%\t12: 20%"},
+    /* descriptor starts here, <start_byte> is relative to start of mode
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
+    {"T2CDLU", CONTROL_MP, MSP_SPC_CDLT2A, -1, 8, 3, 4, MF_CLASH_OK,
+        "T2 command duration limit units", "0: none\t6: 500 nanoseconds\t"
+        "8: 1 microsecond\t10: 10 milliseconds\t14: 500 milliseconds"},
+    {"MXINATI", CONTROL_MP, MSP_SPC_CDLT2A, -1, 10, 7, 16, MF_CLASH_OK,
+        "Max inactive time", NULL},
+    {"MXACTTI", CONTROL_MP, MSP_SPC_CDLT2A, -1, 12, 7, 16, MF_CLASH_OK,
+        "Max active time", NULL},
+    {"MXINATP", CONTROL_MP, MSP_SPC_CDLT2A, -1, 14, 7, 4, MF_CLASH_OK,
+        "Max inactive time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"MXACTTP", CONTROL_MP, MSP_SPC_CDLT2A, -1, 14, 3, 4, MF_CLASH_OK,
+        "Max active time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "14: as per 15, may report largest LBA processed"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"CDGUID", CONTROL_MP, MSP_SPC_CDLT2A, -1, 18, 7, 16, MF_CLASH_OK,
+        "Command duration guideline",
+        "0: ignore\t>0: preferred command duration"},
+    {"CDGUPOL", CONTROL_MP, MSP_SPC_CDLT2A, -1, 22, 7, 16, MF_CLASH_OK,
+        "Command duration guideline policy", "0: asap\t"
+        "1: next highest CDL descriptor\t"
+        "2: continue as if no CDL\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"BYP_SEQ", CONTROL_MP, MSP_SPC_CDLT2A, -1, 23, 0, 1, MF_CLASH_OK,
+        "Bypass sequestration", NULL},
+
+    /* Command duration limit T2B mode subpage: cdt2b [0xa,0x8] spc6 */
+    {"PVLC", CONTROL_MP, MSP_SPC_CDLT2B, -1, 7, 3, 4, 0,
+        "Perf versus latency control",
+        "This field is not defined in SPC6r05??\t"
+        "Maximium percentage increase in average command completion times:\t"
+        "0: 0%\t1: 0.5%\t...\t6: 3%\t7: 4%\t8: 5%\t9: 8%\t10: 10%"
+        "11: 15%\t12: 20%"},
+    /* descriptor starts here, <start_byte> is relative to start of mode
+     * page (i.e. 8 more than shown in t10's descriptor format table) */
+    {"T2CDLU", CONTROL_MP, MSP_SPC_CDLT2B, -1, 8, 3, 4, MF_CLASH_OK,
+        "T2 command duration limit units", "0: none\t6: 500 nanoseconds\t"
+        "8: 1 microsecond\t10: 10 milliseconds\t14: 500 milliseconds"},
+    {"MXINATI", CONTROL_MP, MSP_SPC_CDLT2B, -1, 10, 7, 16, MF_CLASH_OK,
+        "Max inactive time", NULL},
+    {"MXACTTI", CONTROL_MP, MSP_SPC_CDLT2B, -1, 12, 7, 16, MF_CLASH_OK,
+        "Max active time", NULL},
+    {"MXINATP", CONTROL_MP, MSP_SPC_CDLT2B, -1, 14, 7, 4, MF_CLASH_OK,
+        "Max inactive time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"MXACTTP", CONTROL_MP, MSP_SPC_CDLT2B, -1, 14, 3, 4, MF_CLASH_OK,
+        "Max active time policy", "0: asap\t"
+        "13: good, completed, data currently unavailable\t"
+        "14: as per 15, may report largest LBA processed"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"CDGUID", CONTROL_MP, MSP_SPC_CDLT2B, -1, 18, 7, 16, MF_CLASH_OK,
+        "Command duration guideline",
+        "0: ignore\t>0: preferred command duration"},
+    {"CDGUPOL", CONTROL_MP, MSP_SPC_CDLT2B, -1, 22, 7, 16, MF_CLASH_OK,
+        "Command duration guideline policy", "0: asap\t"
+        "1: next highest CDL descriptor\t"
+        "2: continue as if no CDL\t"
+        "13: good, completed, data currently unavailable\t"
+        "15: terminate, aborted command, command timeout before processing"},
+    {"BYP_SEQ", CONTROL_MP, MSP_SPC_CDLT2B, -1, 23, 0, 1, MF_CLASH_OK,
+        "Bypass sequestration", NULL},
+
     /* Zoned Block device Control mode subpage: zbcc [0xa,0x9] zbc2r04a */
     /* Probably only applies to host-managed ZBC (pdt=0x14) but set pdt=-1
      * in these entries in case it could apply to host-aware (pdt=0x0) */
@@ -823,6 +905,14 @@ struct sdparm_mode_page_item sdparm_mitem_arr[] = {
         "Ultra DMA bit 1", NULL},
     {"UDMA0", CONTROL_MP, MSP_SAT_PATA, -1, 5, 0, 1, 0,
         "Ultra DMA bit 0", NULL},
+
+    /* SAT: ATA feature control mode subpage: afc [0xa,0xf2] 20-085r4 */
+    /* treat as spc since could be disk or ATAPI */
+    {"CDL_CTRL", CONTROL_MP, MSP_SAT_AFC, -1, 4, 1, 2, 0,
+        "Command duration limits control",
+        "0: ATA 0->cdl_action, no CDL mpages supported\t"
+        "1: ATA 0->cdl_action, CDL A mpage supported, maybe CDL B\t"
+        "2: ATA 1->cdl_action, CDL T2A mpage supported, maybe CDL T2B"},
 
     /* Notch and partition mode page [0xc] sbc2 (obsolete in sbc2r14) */
     {"ND", NOTCH_MP, 0, PDT_DISK, 2, 7, 1, 0,
@@ -1626,6 +1716,7 @@ static struct sdparm_mode_page_item sdparm_mitem_spi_arr[] = {
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
 
+/* SRP == SCSI RDMA protocol */
 static struct sdparm_mode_page_item sdparm_mitem_srp_arr[] = {
     /* disconnect-reconnect mode page [0x2] srp */
     {"MBS", DISCONNECT_MP, 0, -1, 10, 7, 16, MF_COMMON | MF_CLASH_OK,
@@ -1638,15 +1729,16 @@ static struct sdparm_mode_page_item sdparm_mitem_srp_arr[] = {
     {NULL, 0, 0, 0, 0, 0, 0, 0, NULL, NULL},
 };
 
+/* SAS == Serial Attached SCSI */
 static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
     /* disconnect-reconnect mode page [0x2] sas/spl */
     /* spl3r6 dropped the "time" from the name of BITL, keep acronym */
     {"BITL", DISCONNECT_MP, 0, -1, 4, 7, 16, MF_COMMON,
-        "Bus inactivity (time) limit (100us)",
+        "Bus inactivity (time) limit (100us or see BILUNIT)",
         "0: no bus inactivity time limit\t"
         "1-65535: limit in units of 100 us"},
     {"MCTL", DISCONNECT_MP, 0, -1, 8, 7, 16, MF_COMMON,
-        "Connect time limit (100us)",
+        "Connect time limit (100us or see CTLUNIT)",
         "0: no maximum connection time limit\t"
         "1-65535: limit in units of 100 us"},
     {"MBS", DISCONNECT_MP, 0, -1, 10, 7, 16, MF_COMMON | MF_CLASH_OK,
@@ -1655,7 +1747,15 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
         "1-65535: limit in units of 512 bytes\t"
         "Ignored by persistent connections"},
         /* obsoleted spl3r2, re-instated spl3r3 */
-    {"FBS", DISCONNECT_MP, 0, -1, 14, 7, 16, MF_CLASH_OK,
+    {"CTLUNIT", DISCONNECT_MP, 0, -1, 13, 3, 2, MF_CLASH_OK,
+        "Connect time limit unit",
+        "0: 100 microsecond unit\t"
+        "1: 1 microsecond unit\t"},
+    {"BILUNIT", DISCONNECT_MP, 0, -1, 13, 1, 2, MF_CLASH_OK,    /* 21-021r3 */
+        "Bus inactivity (time) limit unit",
+        "0: 100 microsecond unit\t"
+        "1: 1 microsecond unit\t"},
+    {"FBS", DISCONNECT_MP, 0, -1, 14, 7, 16, MF_CLASH_OK,       /* 21-021r3 */
         "First burst size (512 bytes)",
         "0: no first burst size (no data-out before xfer_ready)\t"
         "1-65535: maximum first burst size in units of 512 bytes"},
@@ -1847,6 +1947,12 @@ static struct sdparm_mode_page_item sdparm_mitem_sas_arr[] = {
         "Temperature attribute, temperature reporting enabled", NULL},
     {"TA_RI", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 13, 7, 8, MF_CLASH_OK,
         "Temperature attribute, reporting interval (seconds)", NULL},
+    {"TA_MRI", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 14, 7, 8, MF_CLASH_OK,
+        "Temperature attribute, minimum reporting interval (seconds)", NULL},
+    {"TA_C_UP", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 15, 7, 4, MF_CLASH_OK,
+        "Temperature attribute, change up (Celsius)", NULL},
+    {"TA_C_DO", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 15, 3, 4, MF_CLASH_OK,
+        "Temperature attribute, change down (Celsius)", NULL},
     {"TA_TM", PROT_SPEC_PORT_MP, MSP_SAS_OOB_M_C, -1, 16, 1, 2, MF_CLASH_OK,
         "Temperature attribute, test mode",
         "0: test mode disabled, transfer actual temperature\t"

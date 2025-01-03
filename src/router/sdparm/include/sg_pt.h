@@ -2,7 +2,7 @@
 #define SG_PT_H
 
 /*
- * Copyright (c) 2005-2019 Douglas Gilbert.
+ * Copyright (c) 2005-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -96,18 +96,23 @@ int get_pt_file_handle(const struct sg_pt_base * objp);
  * Use set_pt_file_handle() to change dev_fd. */
 void clear_scsi_pt_obj(struct sg_pt_base * objp);
 
+/* Partially clear state information held in *objp . Any error settings and
+ * the data-in and data-out settings are cleared. So dev_fd, cdb and sense
+ * settings are kept. */
+void partial_clear_scsi_pt_obj(struct sg_pt_base * objp);
+
 /* Set the CDB (command descriptor block). May also be a NVMe Admin command
  * which will be 64 bytes long.
  *
  * Note that the sg_cmds_is_nvme() function found in sg_cmds_basic.h can be
  * called after this function to "guess" which command set the given command
- * belongs to. */
+ * belongs to. It is valid to supply a cdb value of NULL. */
 void set_scsi_pt_cdb(struct sg_pt_base * objp, const uint8_t * cdb,
                      int cdb_len);
 
 /* Set the sense buffer and the maximum length of that buffer. For NVMe
  * commands this "sense" buffer will receive the 4 DWORDs of from the
- * completion queue. */
+ * completion queue. It is valid to supply a sense value of NULL. */
 void set_scsi_pt_sense(struct sg_pt_base * objp, uint8_t * sense,
                        int max_sense_len);
 
@@ -145,6 +150,7 @@ void set_scsi_pt_flags(struct sg_pt_base * objp, int flags);
 #define SCSI_PT_DO_START_OK 0
 #define SCSI_PT_DO_BAD_PARAMS 1
 #define SCSI_PT_DO_TIMEOUT 2
+#define SCSI_PT_DO_NOT_SUPPORTED 4
 #define SCSI_PT_DO_NVME_STATUS 48       /* == SG_LIB_NVME_STATUS */
 /* If OS error prior to or during command submission then returns negated
  * error value (e.g. Unix '-errno'). This includes interrupted system calls
@@ -156,6 +162,19 @@ void set_scsi_pt_flags(struct sg_pt_base * objp, int flags);
  * given 'fd' can be -1 or the same value as given to the constructor. */
 int do_scsi_pt(struct sg_pt_base * objp, int fd, int timeout_secs,
                int verbose);
+
+/* NVMe Admin commands can be sent directly to do_scsi_pt(). Unfortunately
+ * NVMe has at least one other command set: "NVM" to access user data and
+ * the opcodes in the NVM command set overlap with the Admin command set.
+ * So NVMe Admin commands should be sent do_scsi_pt() while NVMe "NVM"
+ * commands should be sent to this function. No SCSI commands should be
+ * sent to this function. Currently submq is not implemented and all
+ * submitted NVM commands are sent on queue 0, the same queue use for
+ * Admin commands. The return values follow the same pattern as do_scsi_pt(),
+ * with 0 returned being good.  The NVMe device file descriptor must either
+ * be given to the obj constructor, or a prior set_pt_file_handle() call. */
+int do_nvm_pt(struct sg_pt_base * objp, int submq, int timeout_secs,
+              int verbose);
 
 #define SCSI_PT_RESULT_GOOD 0
 #define SCSI_PT_RESULT_STATUS 1 /* other than GOOD and CHECK CONDITION */
@@ -189,6 +208,12 @@ int get_scsi_pt_status_response(const struct sg_pt_base * objp);
  * then returns NVMe result (i.e. DWord(0) from completion queue). If
  * 'objp' is NULL then returns 0xffffffff. */
 uint32_t get_pt_result(const struct sg_pt_base * objp);
+
+/* These two get functions should just echo what has been given to
+ * set_scsi_pt_cdb(). If it has not been called or clear_scsi_pt_obj()
+ * has been called then return 0 and NULL respectively. */
+int get_scsi_pt_cdb_len(const struct sg_pt_base * objp);
+uint8_t * get_scsi_pt_cdb_buf(const struct sg_pt_base * objp);
 
 /* Actual sense length returned. If sense data is present but
    actual sense length is not known, return 'max_sense_len' */

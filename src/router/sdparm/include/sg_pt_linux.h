@@ -117,8 +117,8 @@ struct sg_pt_linux_scsi {
     /* Leave io_hdr in first place of this structure */
     bool is_sg;
     bool is_bsg;
-    bool is_nvme;       /* OS device type, if false ignore nvme_direct */
-    bool nvme_direct;   /* false: our SNTL; true: received NVMe command */
+    bool is_nvme;       /* OS device type, if false ignore nvme_our_sntl */
+    bool nvme_our_sntl; /* true: our SNTL; false: received NVMe command */
     bool nvme_stat_dnr; /* Do No Retry, part of completion status field */
     bool nvme_stat_more; /* More, part of completion status field */
     bool mdxfer_out;    /* direction of metadata xfer, true->data-out */
@@ -170,6 +170,13 @@ struct sg_pt_base {
 #endif
 #ifndef NVME_IOCTL_SUBSYS_RESET
 #define NVME_IOCTL_SUBSYS_RESET _IO('N', 0x45)
+#endif
+#ifndef NVME_IOCTL_RESCAN
+#define NVME_IOCTL_RESCAN       _IO('N', 0x46)
+#endif
+#if 0
+#define NVME_IOCTL_ADMIN64_CMD  _IOWR('N', 0x47, struct nvme_passthru_cmd64)
+#define NVME_IOCTL_IO64_CMD     _IOWR('N', 0x48, struct nvme_passthru_cmd64)
 #endif
 
 extern bool sg_bsg_nvme_char_major_checked;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2020 Douglas Gilbert.
+ * Copyright (c) 2007-2021 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -19,8 +19,8 @@
 #include "sg_lib_data.h"
 
 
-const char * sg_lib_version_str = "2.72 20200125";
-/* spc5r22, sbc4r17, zbc2r04 */
+const char * sg_lib_version_str = "2.79 20210304";
+/* spc6r05, sbc4r22, zbc2r09 */
 
 
 /* indexed by pdt; those that map to own index do not decay */
@@ -363,6 +363,8 @@ struct sg_lib_value_name_t sg_lib_serv_in16_arr[] = {
     {0x16, 0, "Get stream status"},
     {0x17, 0, "Get physical element status"},   /* added sbc4r13 */
     {0x18, 0, "Remove element and truncate"},   /* added sbc4r13 */
+    {0x19, 0, "Restore elements and rebuild"},  /* added sbc4r19 */
+    {0x1a, 0, "Remove element and modify zones"},   /* added zbc2r07 */
     {0xffff, 0, NULL},
 };
 
@@ -634,7 +636,7 @@ struct sg_lib_value_name_t sg_lib_read_attr_arr[] = {
 
 /* A conveniently formatted list of SCSI ASC/ASCQ codes and their
  * corresponding text can be found at: www.t10.org/lists/asc-num.txt
- * The following should match asc-num.txt dated 20191014 */
+ * The following should match asc-num.txt dated 20200817 */
 
 #ifdef SG_SCSI_STRINGS
 struct sg_lib_asc_ascq_range_t sg_lib_asc_ascq_range[] =
@@ -725,6 +727,7 @@ struct sg_lib_asc_ascq_t sg_lib_asc_ascq[] =
     {0x04,0x22,"Logical unit not ready, power cycle required"},
     {0x04,0x23,"Logical unit not ready, affiliation required"},
     {0x04,0x24,"Depopulation in progress"},             /* spc5r15 */
+    {0x04,0x25,"Depopulation restoration in progress"}, /* spc6r02 */
     {0x05,0x00,"Logical unit does not respond to selection"},
     {0x06,0x00,"No reference position found"},
     {0x07,0x00,"Multiple peripheral devices selected"},
@@ -1003,6 +1006,7 @@ struct sg_lib_asc_ascq_t sg_lib_asc_ascq[] =
     {0x2C,0x10,"Unwritten data in zone"},
     {0x2C,0x11,"Descriptor format sense data required"},
     {0x2C,0x12,"Zone is inactive"},
+    {0x2C,0x13,"Well known logical unit access required"},      /* spc6r02 */
     {0x2D,0x00,"Overwrite error on update in place"},
     {0x2E,0x00,"Insufficient time for operation"},
     {0x2E,0x01,"Command timeout before processing"},
@@ -1034,7 +1038,8 @@ struct sg_lib_asc_ascq_t sg_lib_asc_ascq[] =
     {0x31,0x01,"Format command failed"},
     {0x31,0x02,"Zoned formatting failed due to spare linking"},
     {0x31,0x03,"Sanitize command failed"},
-    {0x31,0x04,"Depopulation failed"},          /* spc5r15 */
+    {0x31,0x04,"Depopulation failed"},               /* spc5r15 */
+    {0x31,0x05,"Depopulation restoration failed"},   /* spc6r02 */
     {0x32,0x00,"No defect spare location available"},
     {0x32,0x01,"Defect list update failure"},
     {0x33,0x00,"Tape length error"},
@@ -1052,6 +1057,7 @@ struct sg_lib_asc_ascq_t sg_lib_asc_ascq[] =
     {0x38,0x04,"Esn - media class event"},
     {0x38,0x06,"Esn - device busy class event"},
     {0x38,0x07,"Thin provisioning soft threshold reached"},
+    {0x38,0x08,"Depopulation interrupted"},     /* spc6r03 */
     {0x39,0x00,"Saving parameters not supported"},
     {0x3A,0x00,"Medium not present"},
     {0x3A,0x01,"Medium not present - tray closed"},
@@ -1086,6 +1092,7 @@ struct sg_lib_asc_ascq_t sg_lib_asc_ascq[] =
     {0x3B,0x1a,"Data transfer device removed"},
     {0x3B,0x1b,"Data transfer device inserted"},
     {0x3B,0x1c,"Too many logical objects on partition to support operation"},
+    {0x3B,0x20,"Element static information changed"},
     {0x3D,0x00,"Invalid bits in identify message"},
     {0x3E,0x00,"Logical unit has not self-configured yet"},
     {0x3E,0x01,"Logical unit failure"},
@@ -1531,6 +1538,9 @@ struct sg_lib_value_name_t sg_lib_scsi_feature_sets[] =
     {SCSI_FS_SBC_BASE_2016, PDT_DISK, "SBC Base 2016"},
     {SCSI_FS_SBC_BASIC_PROV_2016, PDT_DISK, "Basic provisioning 2016"},
     {SCSI_FS_SBC_DRIVE_MAINT_2016, PDT_DISK, "Drive maintenance 2016"},
+    {SCSI_FS_ZBC_HOST_AWARE_2020, PDT_ZBC, "Host Aware 2020"},
+    {SCSI_FS_ZBC_HOST_MANAGED_2020, PDT_ZBC, "Host Managed 2020"},
+    {SCSI_FS_ZBC_DOMAINS_REALMS_2020, PDT_ZBC, "Domains and Realms 2020"},
     {0x0, 0, NULL},     /* 0x0 is reserved sfs; trailing sentinel */
 };
 

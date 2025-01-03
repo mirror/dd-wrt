@@ -1,5 +1,5 @@
 %define	name	sdparm
-%define	version	1.11
+%define	version	1.12
 %define	release	1
 
 Summary:	List or change SCSI disk parameters
@@ -8,8 +8,8 @@ Version:	%{version}
 Release:	%{release}
 License:	FreeBSD
 Group:		Utilities/System
-URL:		http://sg.danny.cz/sg/sdparm.html
-Source0:	http://sg.danny.cz/sg/p/%{name}-%{version}.tgz
+URL:		https://sg.danny.cz/sg/sdparm.html
+Source0:	https://sg.danny.cz/sg/p/%{name}-%{version}.tgz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 Packager:	Douglas Gilbert <dgilbert at interlog dot com>
 
@@ -56,6 +56,9 @@ fi
 %{_mandir}/man8/*
 
 %changelog
+* Wed Apr 21 2021 - dgilbert at interlog dot com
+- track recent spc6 and sbc4 drafts
+  * sdparm-1.12
 * Sun Mar 01 2020 - dgilbert at interlog dot com
 - track recent spc6 and sbc4 drafts
   * sdparm-1.11

@@ -121,6 +121,8 @@ struct sg_sntl_dev_state_t {
     uint8_t pdt;        /* 6 bit value in INQUIRY response */
     uint8_t enc_serv;   /* single bit in INQUIRY response */
     uint8_t id_ctl253;  /* NVMSR field of Identify controller (byte 253) */
+    bool wce;		/* Write Cache Enable (WCE) setting */
+    bool wce_changed;	/* WCE setting has been changed */
 };
 
 struct sg_sntl_result_t {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2020, Douglas Gilbert
+ * Copyright (c) 2005-2021, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ static int map_if_lk24(int sg_fd, const char * device_name, bool rw,
 #include "sg_pr2serr.h"
 #include "sdparm.h"
 
-static const char * version_str = "1.11 20200303 [svn: r334]";
+static const char * version_str = "1.12 20210421 [svn: r347]";
 
 
 #define MAX_DEV_NAMES 256
@@ -460,7 +460,7 @@ enumerate_mitems(int pn, int spn, int pdt,
         return;
 
     for ( ; mpi->acron; ++mpi) {
-        if ((pdt >= 0) && (mpi->pdt_s >= 0) && !pdt_s_eq(pdt, mpi->pdt_s))
+        if (! pdt_s_eq(pdt, mpi->pdt_s))
             continue;
         if ((t_pn == mpi->pg_num) && (t_spn == mpi->subpg_num) &&
             pdt_s_eq(t_pdt_s, mpi->pdt_s)) {
@@ -472,7 +472,7 @@ enumerate_mitems(int pn, int spn, int pdt,
             t_pdt_s = mpi->pdt_s;
             if ((pn >= 0) && ((pn != t_pn) || (spn != t_spn)))
                 continue;
-            if ((pdt >= 0) && !pdt_s_eq(pdt, t_pdt_s))
+            if (! pdt_s_eq(pdt, t_pdt_s))
                 continue;
             mpp = sdp_get_mpt_with_str(t_pn, t_spn, t_pdt_s, transp,
                                        vendor_id, long_o, true, sizeof(d), d);
@@ -509,6 +509,8 @@ enumerate_mitems(int pn, int spn, int pdt,
         pr2serr("%s mode page: no items found\n", d);
     }
     if (found && have_desc && (long_o || (e_num > 1))) {
+        if ((-1 == mdp->num_descs_off) && (-1 == mdp->num_descs_bytes))
+            return;     /* Nothing to warn about in this case */
         if (mdp->name)
             printf("  <<%s mode descriptor>>\n", mdp->name);
         else
@@ -1089,8 +1091,7 @@ print_mode_pages(int sg_fd, int pn, int spn, int pdt,
         fetch_pg = true;
         for ( ; mpi->acron; ++mpi) {
             if ((pn == mpi->pg_num) && (spn == mpi->subpg_num)) {
-                if ((pdt < 0) || (mpi->pdt_s < 0) ||
-                    pdt_s_eq(pdt, mpi->pdt_s) || op->flexible)
+                if (pdt_s_eq(pdt, mpi->pdt_s) || op->flexible)
                     break;
             }
         }
@@ -1129,8 +1130,7 @@ print_mode_pages(int sg_fd, int pn, int spn, int pdt,
     for (smask = 0, warned = false ; mpi->acron; ++mpi, fetch_pg = false) {
         if (! fetch_pg) {
             if ((pn == mpi->pg_num) && (spn == mpi->subpg_num)) {
-                if ((pdt >=0) && (mpi->pdt_s >= 0) &&
-                    !pdt_s_eq(pdt, mpi->pdt_s) && (! op->flexible))
+                if (! pdt_s_eq(pdt, mpi->pdt_s) && ! op->flexible)
                     continue;
                 if (! (((orig_pn >= 0) ? 1 : op->do_all) ||
                        (MF_COMMON & mpi->flags)))
@@ -1148,6 +1148,8 @@ print_mode_pages(int sg_fd, int pn, int spn, int pdt,
                 }
                 if (single_pg)
                     break;
+                if (! pdt_s_eq(pdt, mpi->pdt_s))
+                    continue;   /* ... but pdt_s didn't match */
                 fetch_pg = true;
                 pn = mpi->pg_num;
                 spn = mpi->subpg_num;
@@ -1374,8 +1376,7 @@ now_try_generic:
     last_mpi = mpi;
     for ( ; mpi->acron; ++mpi) {
         if ((pn == mpi->pg_num) && (spn == mpi->subpg_num)) {
-            if ((op->pdt < 0) || (mpi->pdt_s < 0) ||
-                pdt_s_eq(op->pdt, mpi->pdt_s) || op->flexible)
+            if (pdt_s_eq(op->pdt, mpi->pdt_s) || op->flexible)
                 break;
         }
     }
@@ -1446,8 +1447,7 @@ now_try_generic:
             check_mode_page(pg_p, pn, pg_len, op);
         } else {        /* if not first_time */
             if ((pn == mpi->pg_num) && (spn == mpi->subpg_num)) {
-                if ((op->pdt >=0) && (mpi->pdt_s >= 0) &&
-                    !pdt_s_eq(op->pdt, mpi->pdt_s) && (! op->flexible))
+                if (! pdt_s_eq(op->pdt, mpi->pdt_s) && ! op->flexible)
                     continue;
                 if (! (((orig_pn >= 0) ? true : op->do_all) ||
                        (MF_COMMON & mpi->flags)))
@@ -1714,8 +1714,7 @@ print_mitems(int sg_fd, const struct sdparm_mode_page_settings * mps,
                 goto out;
             }
         }
-        if ((pdt >= 0) && (! warned) && mpi->acron &&
-            (mpi->pdt_s >= 0) && !pdt_s_eq(pdt, mpi->pdt_s)) {
+        if (! warned && mpi->acron && ! pdt_s_eq(pdt, mpi->pdt_s)) {
             warned = true;
             pr2serr(">> warning: peripheral device type (pdt) is 0x%x but "
                     "acronym %s\n   is associated with pdt 0x%x.\n", pdt,
@@ -1817,8 +1816,7 @@ change_mode_page(int sg_fd, int pdt,
         /* sanity check: check acronym's pdt matches device's pdt */
         for (k = 0; k < mps->num_it_vals; ++k) {
             ivp = &mps->it_vals[k];
-            if (ivp->mpi.acron && (ivp->mpi.pdt_s >= 0) &&
-                !pdt_s_eq(pdt, ivp->mpi.pdt_s)) {
+            if (ivp->mpi.acron && ! pdt_s_eq(pdt, ivp->mpi.pdt_s)) {
                 pr2serr("%s: peripheral device type (pdt) is 0x%x but "
                         "acronym %s\n  is associated with pdt 0x%x. To "
                         "bypass use numeric addressing mode.\n", __func__,
@@ -2440,7 +2438,7 @@ open_and_simple_inquiry(const char * device_name, bool rw, int * pdt,
     }
     l_pdt = sir.peripheral_type;
     if ((PDT_WO == l_pdt) || (PDT_OPTICAL == l_pdt))
-        *pdt = PDT_DISK;       /* map disk-like pdt's to PDT_DOSK */
+        *pdt = PDT_DISK;       /* map disk-like pdt's to PDT_DISK */
     else
         *pdt = l_pdt;
     if (protect)
@@ -2482,8 +2480,7 @@ process_mode_page(int sg_fd, const struct sdparm_mode_page_settings * mps,
         mpp = sdp_get_mpage_t(pn, spn, pdt, op->transport, op->vendor_id);
         if (NULL == mpp)
             mpp = sdp_get_mpage_t(pn, spn, -1, op->transport, op->vendor_id);
-        if (mpp && mpp->name && (mpp->pdt_s >= 0) &&
-            !pdt_s_eq(pdt, mpp->pdt_s)) {
+        if (mpp && mpp->name && ! pdt_s_eq(pdt, mpp->pdt_s)) {
             pr2serr(">> Warning: %s mode page associated with\n", mpp->name);
             pr2serr("   peripheral device type 0x%x but device pdt is 0x%x\n",
                     mpp->pdt_s, pdt);

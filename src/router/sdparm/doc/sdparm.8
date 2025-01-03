@@ -1,4 +1,4 @@
-.TH SDPARM "8" "March 2020" "sdparm\-1.11" SDPARM
+.TH SDPARM "8" "April 2021" "sdparm\-1.12" SDPARM
 .SH NAME
 sdparm \- access SCSI modes pages; read VPD pages; send simple SCSI commands.
 .SH SYNOPSIS
@@ -930,7 +930,7 @@ error.
 .TP
 .B 40
 the command sent to \fIDEVICE\fR has received an "aborted command" sense
-key with an additional sense code of 0x10. This group is related to
+key with an additional sense code of 0x10. This value is related to
 problems with protection information (PI or DIF). For example this error
 may occur when reading a block on a drive that has never been written (or
 is unmapped) if that drive was formatted with type 1, 2 or 3 protection.
@@ -992,13 +992,13 @@ Written by Douglas Gilbert.
 .SH "REPORTING BUGS"
 Report bugs to <dgilbert at interlog dot com>.
 .SH COPYRIGHT
-Copyright \(co 2005\-2020 Douglas Gilbert
+Copyright \(co 2005\-2021 Douglas Gilbert
 .br
 This software is distributed under a FreeBSD license. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 .SH WEB SITE
 There is a web page discussing this package at
-http://sg.danny.cz/sg/sdparm.html .
+https://sg.danny.cz/sg/sdparm.html .
 .SH "SEE ALSO"
 .B hdparm(hdparm),
 .B sg_modes, sg_wr_mode, sginfo, sg_inq, sg_vpd(all in sg3_utils),

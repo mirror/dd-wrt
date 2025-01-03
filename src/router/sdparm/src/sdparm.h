@@ -70,8 +70,9 @@ extern "C" {
 #define MSP_SAS_E_PHY 3
 #define MSP_SAS_OOB_M_C 4       /* OOB Management Control */
 #define MSP_BACK_CTL 1
-#define MSP_SAT_PATA 0xf1       /* SAT PATA Control */
-#define MSP_SAT_POWER 0xf1      /* SAT ATA Power condition */
+#define MSP_SAT_AFC 0xf2        /* SAT ATA Feature Control [a,f2] */
+#define MSP_SAT_PATA 0xf1       /* SAT PATA Control [a,f1] */
+#define MSP_SAT_POWER 0xf1      /* SAT ATA Power condition [1a,f1] */
 #define MSP_DEV_CONF_EXT 1      /* device conf extension (ssc) */
 #define MSP_EXT_DEV_CAP 0x41    /* extended device capabilities (smc) */
 #define MSP_ADC_TGT_DEV 0x1
@@ -84,11 +85,11 @@ extern "C" {
 #define MSP_SPC_PS 0x1          /* power consumption */
 #define MSP_SPC_CDLA 0x3
 #define MSP_SPC_CDLB 0x4
-#define MSP_SPC_CDT2A 0x7       /* spc6r ? */
-#define MSP_SPC_CDT2B 0x8       /* spc6r ? */
+#define MSP_SPC_CDLT2A 0x7      /* spc6r01 */
+#define MSP_SPC_CDLT2B 0x8      /* spc6r01 */
 #define MSP_SBC_IO_ADVI 0x5
 #define MSP_SBC_BACK_OP 0x6
-#define MSP_ZB_D_CTL 0xf	/* zbc2r04a */
+#define MSP_ZB_D_CTL 0xf        /* zbc2r04a */
 
 #define MODE_DATA_OVERHEAD 128
 #define EBUFF_SZ 256
@@ -133,6 +134,7 @@ extern "C" {
 #define VPD_ZBC_DEV_CHARS 0xb6          /* zbc-r01b */
 #define VPD_BLOCK_LIMITS_EXT 0xb7       /* sbc4r08 */
 #define VPD_FORMAT_PRESETS 0xb8         /* sbc4r18 */
+#define VPD_CON_POS_RANGE 0xb9          /* 20-089r2 */
 #define VPD_NOT_STD_INQ -2      /* request for standard inquiry */
 
 #define VPD_ASSOC_LU 0
@@ -196,7 +198,7 @@ extern "C" {
 #define CMD_SPEED 10
 #define CMD_PROFILE 11
 
-/* squeeze two PDTs into one field */
+/* squeeze two PDTs into one field, must not use PDT_DISK as upper */
 #define PDT_DISK_ZBC (PDT_DISK | (PDT_ZBC << 8))
 
 
@@ -288,9 +290,11 @@ struct sdparm_mode_descriptor_t {
 struct sdparm_mode_page_t {
     int page;
     int subpage;
-    int pdt_s;       /* peripheral device type id, -1 is the default */
-                     /* can have two, most common is:   */
-                     /*    PDT_DISK | (PDT_ZBC << 8)    */
+    int pdt_s;       /* compound peripheral device type id, -1 is the default
+                      * for fields defined in SPC (common to all PDTs).
+                      * Compound pdt_s may hold two PDTs. The most common
+                      * example is:
+                      *    PDT_DISK | (PDT_ZBC << 8)    */
     int ro;          /* read-only */
     const char * acron;
     const char * name;
@@ -302,9 +306,7 @@ struct sdparm_mode_page_t {
 struct sdparm_vpd_page_t {
     int vpd_num;
     int subvalue;
-    int pdt_s;       /* peripheral device type id, -1 is the default */
-                     /* can have two, most common is:   */
-                     /*    PDT_DISK | (PDT_ZBC << 8)    */
+    int pdt_s;       /* see pdt_s explanation above */
     const char * acron;
     const char * name;
 };
@@ -324,9 +326,7 @@ struct sdparm_mode_page_item {
     const char * acron;
     int pg_num;
     int subpg_num;
-    int pdt_s;       /* peripheral device type or -1 (default) if not */
-                     /* can have two, most common is:   */
-                     /*    PDT_DISK | (PDT_ZBC << 8)    */
+    int pdt_s;       /* see pdt_s explanation above */
     int start_byte;
     int start_bit;
     int num_bits;
@@ -462,29 +462,18 @@ void sdp_enumerate_commands();
 int sdp_process_cmd(int sg_fd, const struct sdparm_command_t * scmdp,
                     int cmd_arg, int pdt, const struct sdparm_opt_coll * opts);
 
+/* Must not have PDT_DISK as upper byte of mask */
 #define PDT_LOWER_MASK 0xff
 #define PDT_UPPER_MASK (~PDT_LOWER_MASK)
 
-/* If PDT_DISK is present in l_pdt_s or r_pdt_s, then it must be the lower
- * byte. For example: want PDT_DISK_ZBC [0x1400] to match either PDT_DISK
- * [0x0] or PDT_ZBC [0x14]. */
-static inline bool
-pdt_s_eq(int l_pdt_s, int r_pdt_s)
-{
-    bool upper_l = !!(l_pdt_s & PDT_UPPER_MASK);
-    bool upper_r = !!(r_pdt_s & PDT_UPPER_MASK);
-
-    if (!upper_l && !upper_r)
-        return l_pdt_s == r_pdt_s;
-    else if (upper_l && upper_r)
-        return (((PDT_UPPER_MASK & l_pdt_s) == (PDT_UPPER_MASK & r_pdt_s)) ||
-                ((PDT_LOWER_MASK & l_pdt_s) == (PDT_LOWER_MASK & r_pdt_s)));
-    else if (upper_l)
-        return (((PDT_LOWER_MASK & l_pdt_s) == r_pdt_s) ||
-                ((PDT_UPPER_MASK & l_pdt_s) >> 8) == r_pdt_s);
-    return (((PDT_LOWER_MASK & r_pdt_s) == l_pdt_s) ||
-            ((PDT_UPPER_MASK & r_pdt_s) >> 8) == l_pdt_s);
-}
+/* Returns true if left argument is "equal" to the right argument. l_pdt_s
+ * is a compound PDT (SCSI Peripheral Device Type) or a negative number
+ * which represents a wildcard (i.e. match anything). r_pdt_s has a similar
+ * form. PDT values are 5 bits long (0 to 31) and a compound pdt_s is
+ * formed by shifting the second (upper) PDT by eight bits to the left and
+ * OR-ing it with the first PDT. The pdt_s values must be defined so
+ * PDT_DISK (0) is _not_ the upper value in a compound pdt_s. */
+bool pdt_s_eq(int l_pdt_s, int r_pdt_s);
 
 /*
  * Declarations for functions that are port dependent

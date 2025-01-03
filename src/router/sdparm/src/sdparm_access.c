@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2020, Douglas Gilbert
+ * Copyright (c) 2005-2021, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,10 +41,38 @@
 #include "sdparm.h"
 #include "sg_lib.h"
 #include "sg_unaligned.h"
+#include "sg_pr2serr.h"
 
 /* sdparm_access.c : helpers for sdparm to access tables in
  * sdparm_data.c
  */
+
+/* Returns true if left argument is "equal" to the right argument. l_pdt_s
+ * is a compound PDT (SCSI Peripheral Device Type) or a negative number
+ * which represents a wildcard (i.e. match anything). r_pdt_s has a similar
+ * form. PDT values are 5 bits long (0 to 31) and a compound pdt_s is
+ * formed by shifting the second (upper) PDT by eight bits to the left and
+ * OR-ing it with the first PDT. The pdt_s values must be defined so
+ * PDT_DISK (0) is _not_ the upper value in a compound pdt_s. */
+bool
+pdt_s_eq(int l_pdt_s, int r_pdt_s)
+{
+    bool upper_l = !!(l_pdt_s & PDT_UPPER_MASK);
+    bool upper_r = !!(r_pdt_s & PDT_UPPER_MASK);
+
+    if ((l_pdt_s < 0) || (r_pdt_s < 0))
+        return true;
+    if (!upper_l && !upper_r)
+        return l_pdt_s == r_pdt_s;
+    else if (upper_l && upper_r)
+        return (((PDT_UPPER_MASK & l_pdt_s) == (PDT_UPPER_MASK & r_pdt_s)) ||
+                ((PDT_LOWER_MASK & l_pdt_s) == (PDT_LOWER_MASK & r_pdt_s)));
+    else if (upper_l)
+        return (((PDT_LOWER_MASK & l_pdt_s) == r_pdt_s) ||
+                ((PDT_UPPER_MASK & l_pdt_s) >> 8) == r_pdt_s);
+    return (((PDT_LOWER_MASK & r_pdt_s) == l_pdt_s) ||
+            ((PDT_UPPER_MASK & r_pdt_s) >> 8) == l_pdt_s);
+}
 
 /* Returns 1 if strings equal (same length, characters same or only differ
  * by case), else returns 0. Assumes 7 bit ASCII (English alphabet). */

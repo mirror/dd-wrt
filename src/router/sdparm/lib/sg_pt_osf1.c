@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2019 Douglas Gilbert.
+ * Copyright (c) 2005-2020 Douglas Gilbert.
  * All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the BSD_LICENSE file.
@@ -30,9 +30,13 @@
 #include "sg_lib.h"
 #include "sg_pr2serr.h"
 
-/* Version 2.00 20190113 */
+/* Version 2.03 20200722 */
 
 #define OSF1_MAXDEV 64
+
+#ifndef CAM_DIR_BOTH
+#define CAM_DIR_BOTH 0x0        /* copy value from FreeBSD */
+#endif
 
 struct osf1_dev_channel {
     int bus;
@@ -200,12 +204,34 @@ destruct_scsi_pt_obj(struct sg_pt_base * vp)
 void
 clear_scsi_pt_obj(struct sg_pt_base * vp)
 {
+    bool is_nvme;
+    int dev_fd;
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
     if (ptp) {
+        is_nvme = ptp->is_nvme;
+        dev_fd = ptp->dev_fd;
         bzero(ptp, sizeof(struct sg_pt_osf1_scsi));
+        ptp->dev_fd = dev_fd;
+        ptp->is_nvme = is_nvme;
         ptp->dxfer_dir = CAM_DIR_NONE;
     }
+}
+
+void
+partial_clear_scsi_pt_obj(struct sg_pt_base * vp)
+{
+    struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    if (NULL == ptp)
+        return;
+    ptp->in_err = 0;
+    ptp->os_err = 0;
+    ptp->transport_err = 0;
+    ptp->scsi_status = 0;
+    ptp->dxfer_dir = CAM_DIR_NONE;
+    ptp->dxferp = NULL;
+    ptp->dxfer_len = 0;
 }
 
 void
@@ -214,10 +240,24 @@ set_scsi_pt_cdb(struct sg_pt_base * vp, const uint8_t * cdb,
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
-    if (ptp->cdb)
-        ++ptp->in_err;
     ptp->cdb = (uint8_t *)cdb;
     ptp->cdb_len = cdb_len;
+}
+
+int
+get_scsi_pt_cdb_len(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp->cdb_len;
+}
+
+uint8_t *
+get_scsi_pt_cdb_buf(const struct sg_pt_base * vp)
+{
+    const struct sg_pt_osf1_scsi * ptp = &vp->impl;
+
+    return ptp->cdb;
 }
 
 void
@@ -226,9 +266,10 @@ set_scsi_pt_sense(struct sg_pt_base * vp, uint8_t * sense,
 {
     struct sg_pt_osf1_scsi * ptp = &vp->impl;
 
-    if (ptp->sense)
-        ++ptp->in_err;
-    bzero(sense, max_sense_len);
+    if (sense) {
+        if (max_sense_len > 0)
+            bzero(sense, max_sense_len);
+    }
     ptp->sense = sense;
     ptp->sense_len = max_sense_len;
 }
@@ -541,7 +582,7 @@ get_scsi_pt_duration_ms(const struct sg_pt_base * vp)
 
 /* If not available return 0 otherwise return number of nanoseconds that the
  * lower layers (and hardware) took to execute the command just completed. */
-uint64_t 
+uint64_t
 get_pt_duration_ns(const struct sg_pt_base * vp __attribute__ ((unused)))
 {
     return 0;
@@ -598,4 +639,14 @@ get_scsi_pt_os_err_str(const struct sg_pt_base * vp, int max_b_len, char * b)
     if ((int)strlen(cp) >= max_b_len)
         b[max_b_len - 1] = '\0';
     return b;
+}
+
+int
+do_nvm_pt(struct sg_pt_base * vp, int submq, int timeout_secs, int verbose)
+{
+    if (vp) { }
+    if (submq) { }
+    if (timeout_secs) { }
+    if (verbose) { }
+    return SCSI_PT_DO_NOT_SUPPORTED;
 }

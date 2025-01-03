@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2020, Douglas Gilbert
+ * Copyright (c) 2005-2021, Douglas Gilbert
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1485,10 +1485,18 @@ static const char * product_type_arr[] =
     "Universal Flash Storage Card (UFS)",
 };
 
+static const char * zoned_strs[] = {
+    "",
+    "  [host-aware]",
+    "  [host-managed]",
+    "",
+};
+
 /* VPD_BLOCK_DEV_CHARS  0xb1 */
 static int
 decode_block_dev_chars_vpd(uint8_t * buff, int len)
 {
+    int zoned;
     unsigned int u, k;
 
     if (len < 64) {
@@ -1541,7 +1549,8 @@ decode_block_dev_chars_vpd(uint8_t * buff, int len)
         printf(": reserved\n");
         break;
     }
-    printf("  ZONED=%d\n", (buff[8] >> 4) & 0x3);       /* sbc4r04 */
+    zoned = (buff[8] >> 4) & 0x3;       /* added sbc4r04 */
+    printf("  ZONED=%d%s\n", zoned, zoned_strs[zoned]);
     printf("  BOCS=%d\n", !!(buff[8] & 0x4));
     printf("  FUAB=%d\n", !!(buff[8] & 0x2));
     printf("  VBULS=%d\n", !!(buff[8] & 0x1));
@@ -1815,6 +1824,74 @@ decode_lb_protection_vpd(uint8_t * buff, int len)
     return 0;
 }
 
+/* VPD_FORMAT_PRESETS  0xb8 (added sbc4r18) */
+static int
+decode_format_presets_vpd(uint8_t * buff, int len)
+{
+    int k;
+    unsigned int sch_type;
+    uint8_t * bp;
+
+    len -= 4;
+    bp = buff + 4;
+    for (k = 0; k < len; k += 64, bp += 64) {
+        printf("  Preset identifier: 0x%x\n", sg_get_unaligned_be32(bp));
+        sch_type = bp[4];
+        printf("    schema type: %u\n", sch_type);
+        printf("    logical blocks per physical block exponent type: %u\n",
+               0xf & bp[7]);
+        printf("    logical block length: %u\n",
+               sg_get_unaligned_be32(bp + 8));
+        printf("    designed last LBA: 0x%" PRIx64 "\n",
+               sg_get_unaligned_be64(bp + 16));
+        printf("    FMPT_INFO: %u\n", (bp[38] >> 6) & 0x3);
+        printf("    protection field usage: %u\n", bp[38] & 0x7);
+        printf("    protection interval exponent: %u\n", bp[39] & 0xf);
+        if (2 == sch_type)
+            printf("    Defines zones for host aware device:\n");
+        else if (3 == sch_type)
+            printf("    Defines zones for host managed device:\n");
+        if ((2 == sch_type) || (3 == sch_type)) {
+            unsigned int u = bp[40 + 0];
+
+            printf("        low LBA conventional zones percentage: "
+                   "%u.%u %%\n", u / 10, u % 10);
+            u = bp[40 + 1];
+            printf("        high LBA conventional zones percentage: "
+                   "%u.%u %%\n", u / 10, u % 10);
+            printf("        logical blocks per zone: %u\n",
+                   sg_get_unaligned_be32(bp + 40 + 12));
+        }
+    }
+    return 0;
+}
+
+/* VPD_CON_POS_RANGE  0xb9 (added 20-089r2) */
+static int
+decode_con_pos_range_vpd(uint8_t * buff, int len)
+{
+    int k;
+    uint64_t u;
+    uint8_t * bp;
+
+    if (len < 64) {
+        pr2serr("Concurrent position ranges VPD page length too short=%d\n",
+                len);
+        return SG_LIB_CAT_MALFORMED;
+    }
+    len -= 64;
+    bp = buff + 64;
+    for (k = 0; k < len; k += 32, bp += 32) {
+        printf("  LBA range number: %u\n", bp[0]);
+        printf("    number of storage elements: %u\n", bp[1]);
+        printf("    starting LBA: 0x%" PRIx64 "\n",
+               sg_get_unaligned_be64(bp + 8));
+        u = sg_get_unaligned_be64(bp + 16);
+        printf("    number of LBAs: 0x%" PRIx64 " [%" PRIu64 "]\n", u, u);
+    }
+    return 0;
+}
+
 /* VPD_ZBC_DEV_CHARS  sbc or zbc */
 static int
 decode_zbdc_vpd(uint8_t * b, int len)
@@ -1962,9 +2039,9 @@ decode_std_inq(int sg_fd, const struct sdparm_opt_coll * op)
         hex2stdout(b, len, 0);
         return 0;
     }
-    printf("  PQual=%d  Device_type=%d  RMB=%d  LU_CONG=%d  version=0x%02x ",
-           pqual, b[0] & 0x1f, !!(b[1] & 0x80), !!(b[1] & 0x40),
-           (unsigned int)b[2]);
+    printf("  PQual=%d  PDT=%d  RMB=%d  LU_CONG=%d  hot_pluggable=%d  "
+           "version=0x%02x ", pqual, b[0] & 0x1f, !!(b[1] & 0x80),
+           !!(b[1] & 0x40), (b[1] >> 4) & 0x3, (unsigned int)b[2]);
     printf(" [%s]\n", sg_ansi_version_arr[b[2] & 0xf]);
     printf("  [AERC=%d]  [TrmTsk=%d]  NormACA=%d  HiSUP=%d "
            " Resp_data_format=%d\n  SCCS=%d  ",
@@ -2754,7 +2831,7 @@ try_larger:
         len = sg_get_unaligned_be16(b + 2);
         switch (pdt) {
         case PDT_DISK: case PDT_WO: case PDT_OPTICAL: case PDT_ZBC:
-            vpd_name = "Block limits extension";
+            vpd_name = "Block limits extension (SBC)";
             sbc = true;
             break;
         default:
@@ -2772,6 +2849,64 @@ try_larger:
         ret = 0;
         if (sbc)       /* added in sbc4r07 */
             ret = decode_block_limits_ext_vpd(b, len + 4);
+        else
+            hex2stdout(b, len + 4, 0);
+        if (ret)
+            goto fini;
+        break;
+    case 0xb8:          /* VPD page depends on pdt */
+        if (b[1] != pn)
+            goto dumb_inq;
+        len = sg_get_unaligned_be16(b + 2);
+        switch (pdt) {
+        case PDT_DISK: case PDT_WO: case PDT_OPTICAL: case PDT_ZBC:
+            vpd_name = "Format presets (SBC)";
+            sbc = true;
+            break;
+        default:
+            vpd_name = "unexpected pdt for B8h";
+            break;
+        }
+        if (op->do_long)
+            printf("%s [0xb8] VPD page:\n", vpd_name);
+        else
+            printf("%s VPD page:\n", vpd_name);
+        if (op->do_hex) {
+            hex2stdout(b, len + 4, hex_format);
+            goto fini;
+        }
+        ret = 0;
+        if (sbc)       /* added in sbc4r18 */
+            ret = decode_format_presets_vpd(b, len + 4);
+        else
+            hex2stdout(b, len + 4, 0);
+        if (ret)
+            goto fini;
+        break;
+    case 0xb9:          /* VPD page depends on pdt */
+        if (b[1] != pn)
+            goto dumb_inq;
+        len = sg_get_unaligned_be16(b + 2);
+        switch (pdt) {
+        case PDT_DISK: case PDT_WO: case PDT_OPTICAL: case PDT_ZBC:
+            vpd_name = "Concurrent positioning ranges (SBC)";
+            sbc = true;
+            break;
+        default:
+            vpd_name = "unexpected pdt for B9h";
+            break;
+        }
+        if (op->do_long)
+            printf("%s [0xb9] VPD page:\n", vpd_name);
+        else
+            printf("%s VPD page:\n", vpd_name);
+        if (op->do_hex) {
+            hex2stdout(b, len + 4, hex_format);
+            goto fini;
+        }
+        ret = 0;
+        if (sbc)
+            ret = decode_con_pos_range_vpd(b, len + 4);
         else
             hex2stdout(b, len + 4, 0);
         if (ret)
