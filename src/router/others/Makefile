@@ -57,6 +57,9 @@ install:
 	install -d $(INSTALLDIR)/usr/lib/firmware	
 	install -d $(INSTALLDIR)/lib
 	install services $(INSTALLDIR)/etc
+ifdef CONFIG_USB
+	install tune.sh $(INSTALLDIR)/usr/sbin
+endif
 ifdef CONFIG_NORTHSTAR
 	install -d $(INSTALLDIR)/etc/cfe
 	install cfe/cfe_600.bin $(INSTALLDIR)/etc/cfe
