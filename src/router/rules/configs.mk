@@ -384,6 +384,7 @@ obj-$(CONFIG_USB_ADVANCED) += hdparm
 ifeq ($(CONFIG_X86),y)
 obj-$(CONFIG_USB_ADVANCED) += sdparm
 endif
+obj-$(CONFIG_SDPARM) += sdparm
 obj-$(CONFIG_ASTERISK) += editline zlib ncurses util-linux jansson sqlite asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
