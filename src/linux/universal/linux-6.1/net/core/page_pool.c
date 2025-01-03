@@ -838,11 +838,22 @@ static void page_pool_release_retry(struct work_struct *wq)
 {
 	struct delayed_work *dwq = to_delayed_work(wq);
 	struct page_pool *pool = container_of(dwq, typeof(*pool), release_dw);
-	int inflight;
+	int cpu, inflight;
 
 	inflight = page_pool_release(pool);
 	if (!inflight)
 		return;
+
+	/* Run NET_RX_SOFTIRQ in order to free pending skbs in softnet_data
+	 * defer_list that can stay in the list until we have enough queued
+	 * traffic.
+	 */
+	for_each_online_cpu(cpu) {
+		struct softnet_data *sd = &per_cpu(softnet_data, cpu);
+
+		if (!cmpxchg(&sd->defer_ipi_scheduled, 0, 1))
+			smp_call_function_single_async(cpu, &sd->defer_csd);
+	}
 
 	/* Periodic warning */
 	if (time_after_eq(jiffies, pool->defer_warn)) {
