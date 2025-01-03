@@ -17,6 +17,15 @@
 #include <string.h>
 #include <stdio.h>
 
+
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+#endif
+
+#ifndef unlikely
+#define unlikely(cond) __builtin_expect(0, !!(cond))
+#endif
+
 #define MAX_NVPARSE 256
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
