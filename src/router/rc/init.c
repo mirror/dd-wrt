@@ -289,7 +289,7 @@ static void unmount_fs(void)
 static char *critical_programs[] = { "upnpd",	     "transmissiond", "process_monitor", "cron",    "proftpd",	  "dnsmasq",
 				     "ksmbd.mountd", "hotplug2",      "ubusd",		 "rpcbind", "rpc.mountd", "httpd",
 				     "minidlna",     "rsyncd",	      "dropbear",	 "wland",   "smartd",	  "rpc.statd",
-				     "/bin/sh",	     "telnetd",	      "mactelnetd",	 "syslogd", "klogd",	  "wsdd2",
+				     "sh",	     "telnetd",	      "mactelnetd",	 "syslogd", "klogd",	  "wsdd2",
 				     "udhcpc",	     "async_commit" };
 void shutdown_system(void)
 {
@@ -321,14 +321,14 @@ void shutdown_system(void)
 		dd_loginfo("init", "Waiting some seconds to give programs time to flush");
 		int i;
 		while (deadcount++ < 10) {
-			for (i = 0; i < sizeof(critical_programs) / sizeof(char *); i++) {
+			for (i = 0; i < ARRAY_SIZE(critical_programs); i++) {
 				if (pidof(critical_programs[i]) > 0) {
 					dd_loginfo("init", "waiting for %s to stop", critical_programs[i]);
-					goto wait;
+					break;
 				}
 			}
-			break;
-wait:;
+			if (i == ARRAY_SIZE(critical_programs))
+				break;
 			sleep(1);
 		}
 		sync();
