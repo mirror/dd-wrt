@@ -1040,7 +1040,7 @@ static int _pidof(const char *name, pid_t **pids)
 			i = strtol(de->d_name, &e, 10);
 			if (*e != 0)
 				continue;
-			if (strncmp(altname, psname(i, buf, sizeof(buf)), 15) == 0 || strncmp(name, psname_argv0(i, buf, sizeof(buf)), 15) == 0) {
+			if (strncmp(altname, psname(i, buf, sizeof(buf)), 15) == 0 || strcmp(name, psname_argv0(i, buf, sizeof(buf))) == 0) {
 				if (getpsstate(i) == 'Z')
 					return -1;
 				if (pids) {
