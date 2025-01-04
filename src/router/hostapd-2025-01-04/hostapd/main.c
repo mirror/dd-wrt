@@ -39,6 +39,8 @@ struct hapd_global {
 };
 
 static struct hapd_global global;
+static int daemonize = 0;
+static char *pid_file = NULL;
 
 extern int radius_main(int argc, char **argv);
 
@@ -147,6 +149,14 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 }
 #endif /* CONFIG_NO_HOSTAPD_LOGGER */
 
+static void hostapd_setup_complete_cb(void *ctx)
+{
+	if (daemonize && os_daemonize(pid_file)) {
+		perror("daemon");
+		return;
+	}
+	daemonize = 0;
+}
 
 /**
  * hostapd_driver_init - Preparate driver interface
@@ -168,6 +178,8 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 		wpa_printf(MSG_ERROR, "No hostapd driver wrapper available");
 		return -1;
 	}
+
+	hapd->setup_complete_cb = hostapd_setup_complete_cb;
 
 #ifdef CONFIG_IEEE80211BE
 	if (conf->mld_ap) {
@@ -550,8 +562,6 @@ static void hostapd_global_deinit(const char *pid_file, int eloop_initialized)
 #endif /* CONFIG_NATIVE_WINDOWS */
 
 	eap_server_unregister_methods();
-
-	os_daemonize_terminate(pid_file);
 }
 
 
@@ -576,18 +586,6 @@ static int hostapd_global_run(struct hapd_interfaces *ifaces, int daemonize,
 		return -1;
 	}
 #endif /* EAP_SERVER_TNC */
-
-	if (daemonize) {
-		if (os_daemonize(pid_file)) {
-			wpa_printf(MSG_ERROR, "daemon: %s", strerror(errno));
-			return -1;
-		}
-		if (eloop_sock_requeue()) {
-			wpa_printf(MSG_ERROR, "eloop_sock_requeue: %s",
-				   strerror(errno));
-			return -1;
-		}
-	}
 
 	eloop_run();
 
@@ -816,8 +814,7 @@ int main(int argc, char *argv[])
 	struct hapd_interfaces interfaces;
 	int ret = 1;
 	size_t i, j;
-	int c, debug = 0, daemonize = 0;
-	char *pid_file = NULL;
+	int c, debug = 0;
 	const char *log_file = NULL;
 	const char *entropy_file = NULL;
 	char **bss_config = NULL, **tmp_bss;
@@ -831,6 +828,8 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_DPP
 	struct dpp_global_config dpp_conf;
 #endif /* CONFIG_DPP */
+	int airbag_init(void);
+	airbag_init();
 
 	if (os_program_init())
 		return -1;

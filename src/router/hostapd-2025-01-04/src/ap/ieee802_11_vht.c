@@ -83,6 +83,7 @@ u8 * hostapd_eid_vht_capabilities(struct hostapd_data *hapd, u8 *eid, u32 nsts)
 	return pos;
 }
 
+int ieee80211_frequency_to_channel(int freq);
 
 u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 {
@@ -119,8 +120,20 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 	 * So index 42 gives center freq 5.210 GHz
 	 * which is channel 42 in 5G band
 	 */
-	oper->vht_op_info_chan_center_freq_seg0_idx = seg0;
-	oper->vht_op_info_chan_center_freq_seg1_idx = seg1;
+	if (hapd->iconf->vht_oper_centr_freq_seg0_idx_freq) {
+		oper->vht_op_info_chan_center_freq_seg0_idx = ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg0_idx_freq);
+	} else{
+		oper->vht_op_info_chan_center_freq_seg0_idx =
+			hapd->iconf->vht_oper_centr_freq_seg0_idx;
+	}
+
+	if (hapd->iconf->vht_oper_centr_freq_seg1_idx_freq) {
+		oper->vht_op_info_chan_center_freq_seg1_idx = 
+			ieee80211_frequency_to_channel(hapd->iconf->vht_oper_centr_freq_seg1_idx_freq);
+	} else {
+		oper->vht_op_info_chan_center_freq_seg1_idx =
+			hapd->iconf->vht_oper_centr_freq_seg1_idx;
+	}
 
 	oper->vht_op_info_chwidth = oper_chwidth;
 	vht_capabilities_info = host_to_le32(hapd->iface->current_mode->vht_capab);
@@ -132,12 +145,19 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 		oper->vht_op_info_chwidth = CHANWIDTH_80MHZ;
 		oper->vht_op_info_chan_center_freq_seg1_idx =
 			oper->vht_op_info_chan_center_freq_seg0_idx;
+		if (hapd->iconf->vht_oper_centr_freq_seg0_idx_freq) {
+		if (hapd->iconf->frequency <
+		    hapd->iconf->vht_oper_centr_freq_seg0_idx_freq)
+			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
+		else
+			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
+		} else {
 		if (hapd->iconf->channel <
 		    hapd->iconf->vht_oper_centr_freq_seg0_idx)
 			oper->vht_op_info_chan_center_freq_seg0_idx -= 8;
 		else
 			oper->vht_op_info_chan_center_freq_seg0_idx += 8;
-
+		}
 		if (vht_capabilities_info & VHT_CAP_EXTENDED_NSS_BW_SUPPORT)
 			oper->vht_op_info_chan_center_freq_seg1_idx = 0;
 	} else if (oper_chwidth == CONF_OPER_CHWIDTH_80P80MHZ) {

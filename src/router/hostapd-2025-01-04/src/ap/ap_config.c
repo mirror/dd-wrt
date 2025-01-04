@@ -96,6 +96,11 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->eapol_version = EAPOL_VERSION;
 
 	bss->max_listen_interval = 65535;
+	bss->signal_auth_min = -128;  /* this is lower than any real signal, so all stations will be accepted */
+	bss->signal_stay_min = -128;
+	bss->signal_strikes = 3;
+	bss->signal_poll_time = 10;
+	bss->signal_drop_reason = 3; /* "Local choice" */
 
 	bss->pwd_group = 19; /* ECC: GF(p=256) */
 

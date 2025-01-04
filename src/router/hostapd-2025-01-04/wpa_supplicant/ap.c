@@ -78,7 +78,7 @@ static void wpas_conf_ap_vht(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_P2P */
 	u8 freq_seg_idx;
 
-	if (!conf->secondary_channel)
+	if (!conf->secondary_channel && !conf->secondary_channel_freq)
 		goto no_vht;
 
 	/* Use the maximum oper channel width if it's given. */
@@ -96,17 +96,18 @@ static void wpas_conf_ap_vht(struct wpa_supplicant *wpa_s,
 		hostapd_set_oper_centr_freq_seg1_idx(conf, freq_seg_idx);
 	}
 
+	hostapd_set_oper_centr_freq_seg1_idx_freq(conf, ssid->vht_center_freq2);
+
 	if (!ssid->p2p_group) {
 		if (!ssid->vht_center_freq1)
 			goto no_vht;
 		ieee80211_freq_to_chan(ssid->vht_center_freq1,
 				       &freq_seg_idx);
 		hostapd_set_oper_centr_freq_seg0_idx(conf, freq_seg_idx);
+		hostapd_set_oper_centr_freq_seg0_idx_freq(conf, ssid->vht_center_freq1);
 
-		wpa_printf(MSG_DEBUG,
-			   "VHT seg0 index %d and seg1 index %d for AP",
-			   hostapd_get_oper_centr_freq_seg0_idx(conf),
-			   hostapd_get_oper_centr_freq_seg1_idx(conf));
+		wpa_printf(MSG_DEBUG, "VHT seg0 index %d/%d for AP",
+			   hostapd_get_oper_centr_freq_seg0_idx(conf),hostapd_get_oper_centr_freq_seg0_idx_freq(conf));
 		return;
 	}
 
@@ -174,6 +175,8 @@ no_vht:
 		   conf->channel);
 	hostapd_set_oper_centr_freq_seg0_idx(
 		conf, conf->channel + conf->secondary_channel * 2);
+	hostapd_set_oper_centr_freq_seg0_idx_freq(
+		conf, conf->channel + conf->secondary_channel * 10);
 	hostapd_set_oper_chwidth(conf, CONF_OPER_CHWIDTH_USE_HT);
 	ieee80211_freq_to_channel_ext(ssid->frequency, 0,
 				      conf->vht_oper_chwidth,
@@ -418,6 +421,17 @@ int wpa_supplicant_conf_ap_ht(struct wpa_supplicant *wpa_s,
 				 HT_CAP_INFO_RX_STBC_MASK |
 				 HT_CAP_INFO_TX_STBC |
 				 HT_CAP_INFO_MAX_AMSDU_SIZE);
+
+			conf->ht_capab &= ~HT_CAP_INFO_SMPS_DISABLED;
+			if (ssid->smps == 0) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_DISABLED;
+			}
+			if (ssid->smps == 1) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_STATIC;
+			}
+			if (ssid->smps == 2) {
+				conf->ht_capab |= HT_CAP_INFO_SMPS_DYNAMIC;
+			}
 
 			/* check this before VHT, because setting oper chan
 			 * width and friends is the same call for HE and VHT
@@ -1878,6 +1892,7 @@ int ap_ctrl_iface_chanswitch(struct wpa_supplicant *wpa_s, const char *pos)
 	ret = __ap_ctrl_iface_chanswitch(wpa_s->ap_iface, &settings);
 	if (ret)
 		return ret;
+
 
 	return __ap_ctrl_iface_chanswitch(wpa_s->ifmsh, &settings);
 }

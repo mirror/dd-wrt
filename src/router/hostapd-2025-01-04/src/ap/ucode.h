@@ -32,6 +32,10 @@ void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta
 void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
 #endif // def CONFIG_APUP
 
+#ifdef CONFIG_APUP
+void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
+#endif // def CONFIG_APUP
+
 #else
 
 static inline int hostapd_ucode_init(struct hapd_interfaces *ifaces)

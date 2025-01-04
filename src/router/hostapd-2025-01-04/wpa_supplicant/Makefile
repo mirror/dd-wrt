@@ -47,6 +47,14 @@ export INCDIR ?= /usr/local/include
 export BINDIR ?= /usr/local/sbin
 PKG_CONFIG ?= pkg-config
 
+CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) $(LTO) -Wall 
+LDFLAGS +=  $(MIPS16_OPT) $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -g3
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections -g3
+CFLAGS+=-I$(TOP)/libnl-tiny/include\
+	-DCONFIG_LIBNL20 \
+	-D_GNU_SOURCE
+LDFLAGS+=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
+
 CFLAGS += $(EXTRA_CFLAGS)
 CFLAGS += -I$(abspath ../src)
 CFLAGS += -I$(abspath ../src/utils)
@@ -124,6 +132,7 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
 OBJS_c += ../src/utils/wpa_debug.o
 OBJS_c += ../src/utils/common.o
 OBJS_c += ../src/common/cli.o
+OBJS += ../src/common/wpa_ctrl.o
 
 ifndef CONFIG_OS
 ifdef CONFIG_NATIVE_WINDOWS
@@ -345,6 +354,7 @@ endif
 ifdef CONFIG_FILS
 CFLAGS += -DCONFIG_FILS
 NEED_SHA384=y
+NEED_HMAC_SHA384_KDF=y
 NEED_AES_SIV=y
 ifdef CONFIG_FILS_SK_PFS
 CFLAGS += -DCONFIG_FILS_SK_PFS
@@ -1260,7 +1270,7 @@ endif
 ifndef CONFIG_TLS_DEFAULT_CIPHERS
 CONFIG_TLS_DEFAULT_CIPHERS = "DEFAULT:!EXP:!LOW"
 endif
-CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONFIG_TLS_DEFAULT_CIPHERS)\"
+CFLAGS += -DTLS_DEFAULT_CIPHERS=\"\\\"$(CONFIG_TLS_DEFAULT_CIPHERS)\\\"\"
 endif
 
 ifeq ($(CONFIG_TLS), mbedtls)
@@ -2115,7 +2125,7 @@ wpa_supplicant_multi.a: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
 	$(Q)$(CC) -c -o wpa_supplicant_multi.o -Dmain=wpa_supplicant_main $(CFLAGS) main.c
 	@$(E) "  CC " $<
 	@rm -f $@
-	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
+	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS) $(LTOPLUGIN)
 
 wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
 	+$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)

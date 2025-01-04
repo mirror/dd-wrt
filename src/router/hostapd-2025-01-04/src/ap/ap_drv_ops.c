@@ -680,7 +680,6 @@ int hostapd_set_freq(struct hostapd_data *hapd, enum hostapd_hw_mode mode,
 {
 	struct hostapd_freq_params data;
 	struct hostapd_hw_modes *cmode = hapd->iface->current_mode;
-
 	if (hostapd_set_freq_params(&data, mode, freq, channel, edmg,
 				    edmg_channel, ht_enabled,
 				    vht_enabled, he_enabled, eht_enabled,
@@ -708,7 +707,6 @@ int hostapd_set_freq(struct hostapd_data *hapd, enum hostapd_hw_mode mode,
 			   "hostapd_set_freq: link_id=%d", data.link_id);
 	}
 #endif /* CONFIG_IEEE80211BE */
-
 	return hapd->driver->set_freq(hapd->drv_priv, &data);
 }
 

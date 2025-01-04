@@ -355,6 +355,12 @@ struct hostapd_bss_config {
 	int wds_sta;
 	int isolate;
 	int start_disabled;
+	int	signal_auth_min;    /* Minimum signal a STA needs to authenticate */
+	int signal_stay_min;    /* Minimum signal needed to stay connected. */
+	int signal_poll_time;   /* Time in seconds between checks of connected STAs */
+	int signal_strikes;     /* Number of consecutive times signal can be low
+								before dropping the STA.  */
+	int signal_drop_reason; /* IEEE802.11 reason code transmitted when dropping a STA.  */
 
 	int auth_algs; /* bitfield of allowed IEEE 802.11 authentication
 			* algorithms, WPA_AUTH_ALG_{OPEN,SHARED,LEAP} */
@@ -504,6 +510,7 @@ struct hostapd_bss_config {
 #ifdef CONFIG_WPS
 	int wps_independent;
 	int ap_setup_locked;
+	int dualband;
 	u8 uuid[16];
 	char *wps_pin_requests;
 	char *device_name;
@@ -1027,6 +1034,7 @@ struct hostapd_bss_config {
 	 */
 	char apup_peer_ifname_prefix[IFNAMSIZ + 1];
 #endif /* CONFIG_APUP */
+	int beacon_tx_mode;
 };
 
 /**
@@ -1079,6 +1087,7 @@ struct eht_phy_capabilities_info {
  */
 struct hostapd_config {
 	struct hostapd_bss_config **bss, *last_bss;
+	int no_country_ie;
 	size_t num_bss;
 
 	u16 beacon_int;
@@ -1086,6 +1095,8 @@ struct hostapd_config {
 	int fragm_threshold;
 	u8 op_class;
 	u8 channel;
+	u16 frequency;
+	int *chanlist;
 	int enable_edmg;
 	u8 edmg_channel;
 	u8 acs;
@@ -1160,8 +1171,10 @@ struct hostapd_config {
 	int no_ht_coex;
 	int ieee80211n;
 	int secondary_channel;
+	int secondary_channel_freq;
 	int no_pri_sec_switch;
 	int require_ht;
+	int dynamic_ht40;
 	int obss_interval;
 	u32 vht_capab;
 	int ieee80211ac;
@@ -1169,6 +1182,8 @@ struct hostapd_config {
 	enum oper_chan_width vht_oper_chwidth;
 	u8 vht_oper_centr_freq_seg0_idx;
 	u8 vht_oper_centr_freq_seg1_idx;
+	u16 vht_oper_centr_freq_seg0_idx_freq;
+	u16 vht_oper_centr_freq_seg1_idx_freq;
 	u8 ht40_plus_minus_allowed;
 
 	/* Use driver-generated interface addresses when adding multiple BSSs */
@@ -1214,6 +1229,8 @@ struct hostapd_config {
 	enum oper_chan_width he_oper_chwidth;
 	u8 he_oper_centr_freq_seg0_idx;
 	u8 he_oper_centr_freq_seg1_idx;
+	u16 he_oper_centr_freq_seg0_idx_freq;
+	u16 he_oper_centr_freq_seg1_idx_freq;
 	u8 he_6ghz_max_mpdu;
 	u8 he_6ghz_max_ampdu_len_exp;
 	u8 he_6ghz_rx_ant_pat;
@@ -1265,6 +1282,7 @@ struct hostapd_config {
 #ifdef CONFIG_IEEE80211BE
 	enum oper_chan_width eht_oper_chwidth;
 	u8 eht_oper_centr_freq_seg0_idx;
+	u16 eht_oper_centr_freq_seg0_idx_freq;
 	struct eht_phy_capabilities_info eht_phy_capab;
 	u16 punct_bitmap; /* a bitmap of disabled 20 MHz channels */
 	u8 punct_acs_threshold;
@@ -1323,6 +1341,20 @@ hostapd_set_oper_chwidth(struct hostapd_config *conf,
 	conf->vht_oper_chwidth = oper_chwidth;
 }
 
+static inline u16
+hostapd_get_oper_centr_freq_seg0_idx_freq(struct hostapd_config *conf)
+{
+#ifdef CONFIG_IEEE80211BE
+	if (conf->ieee80211be)
+		return conf->eht_oper_centr_freq_seg0_idx_freq;
+#endif /* CONFIG_IEEE80211BE */
+#ifdef CONFIG_IEEE80211AX
+	if (conf->ieee80211ax)
+		return conf->he_oper_centr_freq_seg0_idx_freq;
+#endif /* CONFIG_IEEE80211AX */
+	return conf->vht_oper_centr_freq_seg0_idx_freq;
+}
+
 static inline u8
 hostapd_get_oper_centr_freq_seg0_idx(struct hostapd_config *conf)
 {
@@ -1356,6 +1388,24 @@ hostapd_set_oper_centr_freq_seg0_idx(struct hostapd_config *conf,
 	conf->vht_oper_centr_freq_seg0_idx = oper_centr_freq_seg0_idx;
 }
 
+static inline void
+hostapd_set_oper_centr_freq_seg0_idx_freq(struct hostapd_config *conf,
+				     u16 oper_centr_freq_seg0_idx)
+{
+#ifdef CONFIG_IEEE80211BE
+	if (conf->ieee80211be)
+		conf->eht_oper_centr_freq_seg0_idx_freq = oper_centr_freq_seg0_idx;
+	if (center_idx_to_bw_6ghz(oper_centr_freq_seg0_idx) == 4)
+		oper_centr_freq_seg0_idx +=
+			conf->frequency > oper_centr_freq_seg0_idx ? 16*5 : -16*5;
+#endif /* CONFIG_IEEE80211BE */
+#ifdef CONFIG_IEEE80211AX
+	if (conf->ieee80211ax)
+		conf->he_oper_centr_freq_seg0_idx_freq = oper_centr_freq_seg0_idx;
+#endif /* CONFIG_IEEE80211AX */
+	conf->vht_oper_centr_freq_seg0_idx_freq = oper_centr_freq_seg0_idx;
+}
+
 static inline u8
 hostapd_get_oper_centr_freq_seg1_idx(struct hostapd_config *conf)
 {
@@ -1375,6 +1425,27 @@ hostapd_set_oper_centr_freq_seg1_idx(struct hostapd_config *conf,
 		conf->he_oper_centr_freq_seg1_idx = oper_centr_freq_seg1_idx;
 #endif /* CONFIG_IEEE80211AX */
 	conf->vht_oper_centr_freq_seg1_idx = oper_centr_freq_seg1_idx;
+}
+
+static inline u16
+hostapd_get_oper_centr_freq_seg1_idx_freq(struct hostapd_config *conf)
+{
+#ifdef CONFIG_IEEE80211AX
+	if (conf->ieee80211ax)
+		return conf->he_oper_centr_freq_seg1_idx_freq;
+#endif /* CONFIG_IEEE80211AX */
+	return conf->vht_oper_centr_freq_seg1_idx_freq;
+}
+
+static inline void
+hostapd_set_oper_centr_freq_seg1_idx_freq(struct hostapd_config *conf,
+				     u16 oper_centr_freq_seg1_idx)
+{
+#ifdef CONFIG_IEEE80211AX
+	if (conf->ieee80211ax)
+		conf->he_oper_centr_freq_seg1_idx_freq = oper_centr_freq_seg1_idx;
+#endif /* CONFIG_IEEE80211AX */
+	conf->vht_oper_centr_freq_seg1_idx_freq = oper_centr_freq_seg1_idx;
 }
 
 static inline u8

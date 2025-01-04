@@ -1149,7 +1149,7 @@ static u8 * wpa_driver_wext_giwscan(struct wpa_driver_wext_data *drv,
 	u8 *res_buf;
 	size_t res_buf_len;
 
-	res_buf_len = IW_SCAN_MAX_DATA;
+	res_buf_len = 65535;
 	for (;;) {
 		res_buf = os_malloc(res_buf_len);
 		if (res_buf == NULL)
@@ -1162,21 +1162,10 @@ static u8 * wpa_driver_wext_giwscan(struct wpa_driver_wext_data *drv,
 		if (ioctl(drv->ioctl_sock, SIOCGIWSCAN, &iwr) == 0)
 			break;
 
-		if (errno == E2BIG && res_buf_len < 65535) {
-			os_free(res_buf);
-			res_buf = NULL;
-			res_buf_len *= 2;
-			if (res_buf_len > 65535)
-				res_buf_len = 65535; /* 16-bit length field */
-			wpa_printf(MSG_DEBUG, "Scan results did not fit - "
-				   "trying larger buffer (%lu bytes)",
-				   (unsigned long) res_buf_len);
-		} else {
-			wpa_printf(MSG_ERROR, "ioctl[SIOCGIWSCAN]: %s",
-				   strerror(errno));
-			os_free(res_buf);
-			return NULL;
-		}
+		wpa_printf(MSG_ERROR, "ioctl[SIOCGIWSCAN]: %s",
+			   strerror(errno));
+		os_free(res_buf);
+		return NULL;
 	}
 
 	if (iwr.u.data.length > res_buf_len) {

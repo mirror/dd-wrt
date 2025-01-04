@@ -450,6 +450,7 @@ static int hapd_wps_reconfig_in_memory(struct hostapd_data *hapd,
 	return 0;
 }
 
+extern int nvram_set(const char *name, const char *value);
 
 static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 {
@@ -526,6 +527,65 @@ static int hapd_wps_cred_cb(struct hostapd_data *hapd, void *ctx)
 		os_memcpy(hapd->wps->network_key, cred->key, cred->key_len);
 	}
 	hapd->wps->wps_state = WPS_STATE_CONFIGURED;
+
+	nvram_set("wps_status", "1");
+	char ifname[32];
+	strcpy(ifname, hapd->conf->iface);
+	ifname[4] = 0;
+	char akm[32];
+	sprintf(akm, "%s_akm", ifname);
+	char smode[32];
+	sprintf(smode, "%s_security_mode", ifname);
+	char psk[32];
+	sprintf(psk, "%s_wpa_psk", ifname);
+	char crypto[32];
+	sprintf(crypto, "%s_crypto", ifname);
+	char ssid[32];
+	sprintf(ssid, "%s_ssid", ifname);
+	int storekey = 0;
+	if ((cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) && (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK))) {
+		nvram_set(akm, "psk psk2");
+		nvram_set(smode, "psk psk2");
+		storekey = 1;
+	} else if (cred->auth_type & (WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)) {
+		nvram_set(akm, "psk2");
+		nvram_set(smode, "psk2");
+		storekey = 1;
+	} else if (cred->auth_type & (WPS_AUTH_WPA | WPS_AUTH_WPAPSK)) {
+		nvram_set(akm, "psk");
+		nvram_set(smode, "psk");
+		storekey = 1;
+	} else {
+		nvram_set(akm, "disabled");
+		nvram_set(smode, "disabled");
+	}
+
+	if (storekey) {
+		char newkey[65];
+		strlcpy(newkey, cred->key, sizeof(newkey) - 1);
+		if (cred->key_len > 2 * PMK_LEN) {
+			wpa_printf(MSG_INFO, "BUG: %s:%d something wrong here", __func__, __LINE__);
+		} else {
+			newkey[cred->key_len < sizeof(newkey) ? cred->key_len : sizeof(newkey) - 1] = 0;
+			nvram_set(psk, newkey);
+		}
+	}
+	if (cred->encr_type & (WPS_ENCR_AES | WPS_ENCR_TKIP)) {
+		nvram_set(crypto, "tkip+aes");
+	} else if (cred->encr_type & (WPS_ENCR_AES)) {
+		nvram_set(crypto, "aes");
+	} else if (cred->encr_type & (WPS_ENCR_TKIP)) {
+		nvram_set(crypto, "tkip");
+	}
+	char str_ssid[40];
+	if (cred->ssid_len <= 32) {
+		memcpy(str_ssid, cred->ssid, cred->ssid_len);
+		str_ssid[cred->ssid_len] = 0;
+		nvram_set(ssid, str_ssid);
+	}
+
+	nvram_commit();
+	sysprintf("echo done > /tmp/.wpsdone");
 
 	if (hapd->iface->config_fname == NULL)
 		return hapd_wps_reconfig_in_memory(hapd, cred);
@@ -1185,7 +1245,6 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 			wpa_printf(MSG_INFO, "WPS: TKIP not supported");
 			goto fail;
 #else /* CONFIG_NO_TKIP */
-			wps->encr_types |= WPS_ENCR_TKIP;
 			wps->encr_types_rsn |= WPS_ENCR_TKIP;
 #endif /* CONFIG_NO_TKIP */
 		}
@@ -1309,6 +1368,8 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 	if ((wps->dev.rf_bands & (WPS_RF_50GHZ | WPS_RF_24GHZ)) ==
 	    (WPS_RF_50GHZ | WPS_RF_24GHZ))
 		cfg.dualband = 1;
+	if (hapd->conf->dualband)
+	    cfg.dualband = 1;
 	if (cfg.dualband)
 		wpa_printf(MSG_DEBUG, "WPS: Dualband AP");
 	cfg.force_per_enrollee_psk = conf->force_per_enrollee_psk;

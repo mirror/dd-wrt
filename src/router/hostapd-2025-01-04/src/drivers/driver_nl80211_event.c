@@ -184,6 +184,7 @@ static const char * nl80211_command_to_string(enum nl80211_commands cmd)
 	C2S(NL80211_CMD_ADD_LINK_STA)
 	C2S(NL80211_CMD_MODIFY_LINK_STA)
 	C2S(NL80211_CMD_REMOVE_LINK_STA)
+	C2S(NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS)
 	C2S(NL80211_CMD_SET_HW_TIMESTAMP)
 	C2S(NL80211_CMD_LINKS_REMOVED)
 	C2S(NL80211_CMD_SET_TID_TO_LINK_MAPPING)
@@ -3656,7 +3657,38 @@ static void nl80211_external_auth(struct wpa_driver_nl80211_data *drv,
 		   MAC2STR(event.external_auth.bssid), mld_addr);
 	wpa_supplicant_event(drv->ctx, EVENT_EXTERNAL_AUTH, &event);
 }
+#ifdef CONFIG_IEEE80211AX
 
+static void nl80211_update_muedca_params_event(struct wpa_driver_nl80211_data *drv,
+					    struct nlattr **tb)
+{
+	struct host_update_muedca {
+		u8 mu_qos_info;
+		u8 ac_be[3];
+		u8 ac_bk[3];
+		u8 ac_vi[3];
+		u8 ac_vo[3];
+	};
+
+	struct host_update_muedca *rx_muedca_params;
+	union wpa_event_data ed;
+	int i;
+
+	if (!tb[NL80211_ATTR_HE_MUEDCA_PARAMS])
+		return;
+
+	rx_muedca_params = nla_data(tb[NL80211_ATTR_HE_MUEDCA_PARAMS]);
+
+	for (i = 0; i< 3; i++) {
+		ed.update_muedca.he_mu_ac_be_param[i] = rx_muedca_params->ac_be[i];
+		ed.update_muedca.he_mu_ac_bk_param[i] = rx_muedca_params->ac_bk[i];
+		ed.update_muedca.he_mu_ac_vi_param[i] = rx_muedca_params->ac_vi[i];
+		ed.update_muedca.he_mu_ac_vo_param[i] = rx_muedca_params->ac_vo[i];
+	}
+
+	wpa_supplicant_event(drv->ctx, EVENT_UPDATE_MUEDCA_PARAMS, &ed);
+}
+#endif
 
 static void nl80211_port_authorized(struct wpa_driver_nl80211_data *drv,
 				    struct nlattr **tb)
@@ -4225,6 +4257,9 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
 	case NL80211_CMD_COLOR_CHANGE_ABORTED:
 	case NL80211_CMD_COLOR_CHANGE_COMPLETED:
 		nl80211_obss_color_event(bss, cmd, tb);
+		break;
+	case NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS:
+		nl80211_update_muedca_params_event(drv, tb);
 		break;
 #endif /* CONFIG_IEEE80211AX */
 	case NL80211_CMD_LINKS_REMOVED:

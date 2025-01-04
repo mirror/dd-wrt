@@ -2513,6 +2513,70 @@ static char * wpa_config_write_rates(const struct parse_data *data,
 }
 #endif /* NO_CONFIG_WRITE */
 
+static int wpa_config_parse_htmode(const struct parse_data *data,
+				   struct wpa_ssid *ssid, int line,
+				   const char *value)
+{
+	int i;
+	static const struct {
+		const char *name;
+		unsigned int val;
+	} htmap[] = {
+		{ .name = "HT20", .val = NL80211_CHAN_HT20, },
+		{ .name = "HT40+", .val = NL80211_CHAN_HT40PLUS, },
+		{ .name = "HT40-", .val = NL80211_CHAN_HT40MINUS, },
+		{ .name = "NOHT", .val = NL80211_CHAN_NO_HT, },
+	};
+	ssid->ht_set = 0;;
+	for (i = 0; i < 4; i++) {
+		if (strcasecmp(htmap[i].name, value) == 0) {
+			ssid->htmode = htmap[i].val;
+			ssid->ht_set = 1;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+#ifndef NO_CONFIG_WRITE
+static char * wpa_config_write_htmode(const struct parse_data *data,
+				      struct wpa_ssid *ssid)
+{
+	char *value;
+	int res;
+
+	value = os_malloc(6); /* longest: HT40+ */
+	if (value == NULL)
+		return NULL;
+
+	switch(ssid->htmode) {
+		case NL80211_CHAN_HT20:
+			res = os_snprintf(value, 4, "HT20");
+			break;
+		case NL80211_CHAN_HT40PLUS:
+			res = os_snprintf(value, 5, "HT40+");
+			break;
+		case NL80211_CHAN_HT40MINUS:
+			res = os_snprintf(value, 5, "HT40-");
+			break;
+		case NL80211_CHAN_NO_HT:
+			res = os_snprintf(value, 4, "NOHT");
+			break;
+		default:
+			os_free(value);
+			return NULL;
+	}
+
+	if (res < 0) {
+		os_free(value);
+		return NULL;
+	}
+
+	return value;
+}
+#endif /* NO_CONFIG_WRITE */
+
 /* Helper macros for network block parser */
 
 #ifdef OFFSET
@@ -2808,6 +2872,7 @@ static const struct parse_data ssid_fields[] = {
 	{ INT(beacon_int) },
 	{ FUNC(rates) },
 	{ FUNC(mcast_rate) },
+	{ FUNC(htmode) },
 #ifdef CONFIG_MACSEC
 	{ INT_RANGE(macsec_policy, 0, 1) },
 	{ INT_RANGE(macsec_integ_only, 0, 1) },
@@ -2853,6 +2918,8 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(max_idle, 0, 65535)},
 	{ INT_RANGE(ssid_protection, 0, 1)},
 	{ INT_RANGE(rsn_overriding, 0, 2)},
+	{ INT_RANGE(beacon_tx_mode, 1, 2)},
+	{ INT_RANGE(smps, 0, 2)},
 };
 
 #undef OFFSET
@@ -3389,6 +3456,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->mac_addr = WPAS_MAC_ADDR_STYLE_NOT_SET;
 	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
 	ssid->rsn_overriding = RSN_OVERRIDING_NOT_SET;
+	ssid->beacon_tx_mode = DEFAULT_BEACON_TX_MODE;
 }
 
 

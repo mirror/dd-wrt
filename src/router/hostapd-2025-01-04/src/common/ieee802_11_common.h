@@ -210,6 +210,9 @@ typedef enum { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 } ParseRes;
 ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
 				struct ieee802_11_elems *elems,
 				int show_errors);
+ParseRes ieee802_11_parse_elems_log(void *ctx, const u8 *start, size_t len,
+				struct ieee802_11_elems *elems,
+				int show_errors);
 void ieee802_11_elems_clear_ids(struct ieee802_11_elems *elems,
 				const u8 *ids, size_t num);
 void ieee802_11_elems_clear_ext_ids(struct ieee802_11_elems *elems,
@@ -303,9 +306,16 @@ u8 country_to_global_op_class(const char *country, u8 op_class);
 const struct oper_class_map * get_oper_class(const char *country, u8 op_class);
 int oper_class_bw_to_int(const struct oper_class_map *map);
 int center_idx_to_bw_6ghz(u8 idx);
+#ifdef CONFIG_IEEE80211AX
 bool is_6ghz_freq(int freq);
 bool is_6ghz_op_class(u8 op_class);
 bool is_6ghz_psc_frequency(int freq);
+#else
+static inline bool is_6ghz_freq(int freq) { return false; }
+static inline bool is_6ghz_op_class(u8 op_class) { return false; }
+static inline bool is_6ghz_psc_frequency(int freq) { return false; }
+
+#endif
 int get_6ghz_sec_channel(int channel);
 
 bool is_same_band(int freq1, int freq2);

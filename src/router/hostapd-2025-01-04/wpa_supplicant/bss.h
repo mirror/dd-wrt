@@ -94,6 +94,13 @@ struct wpa_bss {
 	u8 ssid[SSID_MAX_LEN];
 	/** Length of SSID */
 	size_t ssid_len;
+	
+	u8 has_vht;
+	struct ieee80211_vht_operation vht_oper;
+	/** HT capabilities */
+	u16 ht_capab;
+	/* Five octets of HT Operation Information */
+	u8 ht_param;
 	/** Frequency of the channel in MHz (e.g., 2412 = channel 1) */
 	int freq;
 	/** The max channel width supported by both the AP and the STA */

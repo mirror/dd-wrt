@@ -309,11 +309,17 @@ struct ft_remote_seq {
 int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 		     const u8 *pmkid);
 int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len);
+
+#ifndef CONFIG_NO_WPA_MSG
 void wpa_auth_logger(struct wpa_authenticator *wpa_auth, const u8 *addr,
 		     logger_level level, const char *txt);
 void wpa_auth_vlogger(struct wpa_authenticator *wpa_auth, const u8 *addr,
 		      logger_level level, const char *fmt, ...)
 	PRINTF_FORMAT(4, 5);
+#else
+#define wpa_auth_logger(auth,addr,level,txt) do { } while(0)
+#define wpa_auth_vlogger(auth,addr,level,...) do { } while(0)
+#endif
 void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm, int key_info,
 		      const u8 *key_rsc, const u8 *nonce,

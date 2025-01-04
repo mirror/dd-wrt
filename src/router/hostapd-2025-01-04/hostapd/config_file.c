@@ -1201,6 +1201,8 @@ static int hostapd_config_vht_capab(struct hostapd_config *conf,
 		conf->vht_capab |= (3 << VHT_CAP_SOUNDING_DIMENSION_OFFSET);
 	if (os_strstr(capab, "[MU-BEAMFORMER]"))
 		conf->vht_capab |= VHT_CAP_MU_BEAMFORMER_CAPABLE;
+	if (os_strstr(capab, "[MU-BEAMFORMEE]"))
+		conf->vht_capab |= VHT_CAP_MU_BEAMFORMEE_CAPABLE;
 	if (os_strstr(capab, "[VHT-TXOP-PS]"))
 		conf->vht_capab |= VHT_CAP_VHT_TXOP_PS;
 	if (os_strstr(capab, "[HTC-VHT]"))
@@ -3459,6 +3461,21 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->edmg_channel = atoi(pos);
 	} else if (os_strcmp(buf, "enable_edmg") == 0) {
 		conf->enable_edmg = atoi(pos);
+	} else if (os_strcmp(buf, "frequency") == 0) {
+		conf->frequency = atoi(pos);
+		if (os_strcmp(pos, "acs_survey") == 0) {
+#ifndef CONFIG_ACS
+			wpa_printf(MSG_ERROR, "Line %d: tries to enable ACS but CONFIG_ACS disabled",
+				   line);
+			return 1;
+#else /* CONFIG_ACS */
+			conf->acs = 1;
+			conf->frequency = 0;
+#endif /* CONFIG_ACS */
+		} else {
+			conf->frequency = atoi(pos);
+			conf->acs = conf->frequency == 0;
+		}
 	} else if (os_strcmp(buf, "chanlist") == 0) {
 		if (hostapd_parse_chanlist(conf, pos)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid channel list",
@@ -3572,6 +3589,24 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 		bss->send_probe_response = val;
+	} else if (os_strcmp(buf, "signal_connect") == 0) {
+		bss->signal_auth_min = atoi(pos);
+	} else if (os_strcmp(buf, "signal_stay") == 0) {
+		bss->signal_stay_min = atoi(pos);
+	} else if (os_strcmp(buf, "signal_poll_time") == 0) {
+		bss->signal_poll_time = atoi(pos);
+		if (bss->signal_poll_time < 2) {
+			wpa_printf(MSG_ERROR, "Line %d: invalid signal poll time", line);
+			return 1;
+		}
+	} else if (os_strcmp(buf, "signal_strikes") == 0) {
+		bss->signal_strikes = atoi(pos);
+	} else if (os_strcmp(buf, "signal_drop_reason") == 0) {
+		bss->signal_drop_reason = atoi(pos);
+		if (bss->signal_drop_reason < 1 || bss->signal_drop_reason > 54) {
+			wpa_printf(MSG_ERROR, "Line %d: invalid signal drop reason", line);
+			return 1;
+		}
 	} else if (os_strcmp(buf, "supported_rates") == 0) {
 		if (hostapd_parse_intlist(&conf->supported_rates, pos)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid rate list",
@@ -3657,6 +3692,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 #endif /* CONFIG_WEP */
+	} else if (os_strcmp(buf, "no_country_ie") == 0) {
+		conf->no_country_ie = atoi(pos);
 #ifndef CONFIG_NO_VLAN
 	} else if (os_strcmp(buf, "dynamic_vlan") == 0) {
 		bss->ssid.dynamic_vlan = atoi(pos);
@@ -3767,6 +3804,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->noscan = atoi(pos);
 	} else if (os_strcmp(buf, "ht_coex") == 0) {
 		conf->no_ht_coex = !atoi(pos);
+	} else if (os_strcmp(buf, "noscan") == 0) {
+		conf->noscan = atoi(pos);
 	} else if (os_strcmp(buf, "ieee80211n") == 0) {
 		conf->ieee80211n = atoi(pos);
 	} else if (os_strcmp(buf, "ht_capab") == 0) {
@@ -3775,6 +3814,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "dynamic_ht40") == 0) {
+		conf->dynamic_ht40 = atoi(pos);
 	} else if (os_strcmp(buf, "require_ht") == 0) {
 		conf->require_ht = atoi(pos);
 	} else if (os_strcmp(buf, "ht_vht_twt_responder") == 0) {
@@ -3798,6 +3839,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->vht_oper_centr_freq_seg0_idx = atoi(pos);
 	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg1_idx") == 0) {
 		conf->vht_oper_centr_freq_seg1_idx = atoi(pos);
+	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg0_idx_freq") == 0) {
+		conf->vht_oper_centr_freq_seg0_idx_freq = atoi(pos);
+	} else if (os_strcmp(buf, "vht_oper_centr_freq_seg1_idx_freq") == 0) {
+		conf->vht_oper_centr_freq_seg1_idx_freq = atoi(pos);
 	} else if (os_strcmp(buf, "vendor_vht") == 0) {
 		bss->vendor_vht = atoi(pos);
 	} else if (os_strcmp(buf, "use_sta_nsts") == 0) {
@@ -3961,6 +4006,10 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->he_oper_centr_freq_seg0_idx = atoi(pos);
 	} else if (os_strcmp(buf, "he_oper_centr_freq_seg1_idx") == 0) {
 		conf->he_oper_centr_freq_seg1_idx = atoi(pos);
+	} else if (os_strcmp(buf, "he_oper_centr_freq_seg0_idx_freq") == 0) {
+		conf->he_oper_centr_freq_seg0_idx_freq = atoi(pos);
+	} else if (os_strcmp(buf, "he_oper_centr_freq_seg1_idx_freq") == 0) {
+		conf->he_oper_centr_freq_seg1_idx_freq = atoi(pos);
 	} else if (os_strcmp(buf, "he_6ghz_max_mpdu") == 0) {
 		conf->he_6ghz_max_mpdu = atoi(pos);
 	} else if (os_strcmp(buf, "he_6ghz_max_ampdu_len_exp") == 0) {
@@ -4011,6 +4060,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->wps_independent = atoi(pos);
 	} else if (os_strcmp(buf, "ap_setup_locked") == 0) {
 		bss->ap_setup_locked = atoi(pos);
+	} else if (os_strcmp(buf, "dualband") == 0) {
+		bss->dualband = atoi(pos);
 	} else if (os_strcmp(buf, "uuid") == 0) {
 		if (uuid_str2bin(pos, bss->uuid)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid UUID", line);
@@ -5121,6 +5172,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->disable_11ax = !!atoi(pos);
 	} else if (os_strcmp(buf, "disable_11be") == 0) {
 		bss->disable_11be = !!atoi(pos);
+	} else if (os_strcmp(buf, "beacon_tx_mode") == 0) {
+		int val = atoi(pos);
+
+		if (val < 0 || val > 2) {
+			wpa_printf(MSG_ERROR, "Line %d: invalid beacon_tx_mode %d",
+				   line, val);
+			return 1;
+		}
+		bss->beacon_tx_mode = val;
 #ifdef CONFIG_PASN
 #ifdef CONFIG_TESTING_OPTIONS
 	} else if (os_strcmp(buf, "force_kdk_derivation") == 0) {
@@ -5167,6 +5227,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->eht_oper_chwidth = atoi(pos);
 	} else if (os_strcmp(buf, "eht_oper_centr_freq_seg0_idx") == 0) {
 		conf->eht_oper_centr_freq_seg0_idx = atoi(pos);
+	} else if (os_strcmp(buf, "eht_oper_centr_freq_seg0_idx_freq") == 0) {
+		conf->eht_oper_centr_freq_seg0_idx_freq = atoi(pos);
 	} else if (os_strcmp(buf, "eht_su_beamformer") == 0) {
 		conf->eht_phy_capab.su_beamformer = atoi(pos);
 	} else if (os_strcmp(buf, "eht_su_beamformee") == 0) {

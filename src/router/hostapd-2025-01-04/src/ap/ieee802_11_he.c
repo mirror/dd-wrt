@@ -19,6 +19,7 @@
 #include "sta_info.h"
 #include "ieee802_11.h"
 #include "dfs.h"
+#include "wmm.h"
 
 static u8 ieee80211_he_ppet_size(u8 ppe_thres_hdr, const u8 *phy_cap_info)
 {
@@ -291,8 +292,15 @@ u8 * hostapd_eid_he_operation(struct hostapd_data *hapd, u8 *eid)
 u8 * hostapd_eid_he_mu_edca_parameter_set(struct hostapd_data *hapd, u8 *eid)
 {
 	struct ieee80211_he_mu_edca_parameter_set *edca;
+	struct hostapd_wmm_ac_params wmmp[WMM_AC_NUM];
 	u8 *pos;
 	size_t i;
+
+	 /* Updating WME Parameter Set Count to avoid mismatch */
+	 os_memset(wmmp, 0, sizeof(wmmp));
+
+	 if (hapd->conf->wmm_enabled)
+		 wmm_calc_regulatory_limit(hapd, wmmp);
 
 	pos = (u8 *) &hapd->iface->conf->he_mu_edca;
 	for (i = 0; i < sizeof(*edca); i++) {

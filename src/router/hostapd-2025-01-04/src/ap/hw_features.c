@@ -71,6 +71,35 @@ static char * dfs_info(struct hostapd_channel_data *chan)
 }
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
+int ieee80211_frequency_to_channel(int freq)
+{
+	/* see 802.11-2007 17.3.8.3.2 and Annex J */
+	if (freq == 2484)
+		return 14;
+	// boes hack...
+	else if (freq == 2407)
+		return 0;
+	else if (freq < 2412)
+		return (freq - 2407) / 5 + 256;
+	else if (freq < 2484)
+		return (freq - 2407) / 5;
+	else if (freq < 2502 && freq > 2484)
+		return 14;
+	else if (freq < 2512 && freq > 2484)
+		return 15;
+	else if (freq > 2484 && freq < 4000 )
+		return (15 + ((freq - 2512) / 20)) & 0xff;
+	else if (freq < 4990 && freq > 4940)
+		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	else if (freq > 4800 && freq < 5005)
+		return (freq - 4000) / 5;
+	else if (freq <= 45000) /* DMG band lower limit */
+		return ((freq - 5000) / 5) & 0xff;
+	else if (freq >= 58320 && freq <= 64800)
+		return (freq - 56160) / 2160;
+	else
+		return 0;
+}
 
 int hostapd_get_hw_features(struct hostapd_iface *iface)
 {
@@ -155,6 +184,7 @@ int hostapd_get_hw_features(struct hostapd_iface *iface)
 			if (feature->channels[j].flag & HOSTAPD_CHAN_DISABLED)
 				continue;
 
+			feature->channels[j].chan = ieee80211_frequency_to_channel(feature->channels[j].freq);
 			wpa_printf(MSG_MSGDUMP, "Allowed channel: mode=%d "
 				   "chan=%d freq=%d MHz max_tx_power=%d dBm%s",
 				   feature->mode,
@@ -302,10 +332,12 @@ static void ieee80211n_switch_pri_sec(struct hostapd_iface *iface)
 	if (iface->conf->secondary_channel > 0) {
 		iface->conf->channel += 4;
 		iface->freq += 20;
+		iface->conf->frequency += 20;
 		iface->conf->secondary_channel = -1;
 	} else {
 		iface->conf->channel -= 4;
 		iface->freq -= 20;
+		iface->conf->frequency -= 20;
 		iface->conf->secondary_channel = 1;
 	}
 }
@@ -332,7 +364,7 @@ static int ieee80211n_check_40mhz_5g(struct hostapd_iface *iface,
 
 	res = check_40mhz_5g(scan_res, pri_chan, sec_chan);
 
-	if (res == 2) {
+	if (res == 2 && iface->conf->dynamic_ht40) {
 		if (iface->conf->no_pri_sec_switch) {
 			wpa_printf(MSG_DEBUG,
 				   "Cannot switch PRI/SEC channels due to local constraint");
@@ -382,7 +414,7 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 	wpa_scan_results_free(scan_res);
 
 	iface->secondary_ch = iface->conf->secondary_channel;
-	if (!oper40) {
+	if (!oper40 && iface->conf->dynamic_ht40) {
 		wpa_printf(MSG_INFO, "20/40 MHz operation not permitted on "
 			   "channel pri=%d sec=%d based on overlapping BSSes",
 			   iface->conf->channel,
@@ -420,6 +452,8 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 		iface->conf->secondary_channel = 0;
 		hostapd_set_oper_centr_freq_seg0_idx(iface->conf, 0);
 		hostapd_set_oper_centr_freq_seg1_idx(iface->conf, 0);
+		hostapd_set_oper_centr_freq_seg0_idx_freq(iface->conf, 0);
+		hostapd_set_oper_centr_freq_seg1_idx_freq(iface->conf, 0);
 		hostapd_set_oper_chwidth(iface->conf, CONF_OPER_CHWIDTH_USE_HT);
 		res = 1;
 		wpa_printf(MSG_INFO, "Fallback to 20 MHz");
@@ -590,7 +624,7 @@ static int ieee80211n_check_40mhz(struct hostapd_iface *iface)
 		iface->num_ht40_scan_tries = 1;
 		eloop_cancel_timeout(ap_ht40_scan_retry, iface, NULL);
 		eloop_register_timeout(1, 0, ap_ht40_scan_retry, iface, NULL);
-		return 1;
+		return 0;
 	}
 
 	if (ret < 0) {
@@ -1025,23 +1059,24 @@ static int hostapd_is_usable_chans(struct hostapd_iface *iface)
 	int secondary_freq;
 	struct hostapd_channel_data *pri_chan;
 	int err, err2;
-
 	if (!iface->current_mode)
 		return 0;
 	pri_chan = hw_get_channel_freq(iface->current_mode->mode,
 				       iface->freq, NULL,
 				       iface->hw_features,
 				       iface->num_hw_features);
-	if (!pri_chan) {
-		wpa_printf(MSG_ERROR, "Primary frequency not present");
-		return 0;
-	}
+//	if (!pri_chan) {
+//		wpa_printf(MSG_ERROR, "Primary frequency not present");
+//		return 0;
+//	}
 
 	err = hostapd_is_usable_chan(iface, pri_chan->freq, 1);
+//	if (!pri_chan) {
 	if (err <= 0) {
 		wpa_printf(MSG_ERROR, "Primary frequency not allowed");
 		return err;
 	}
+//	if (!pri_chan) {
 	err = hostapd_is_usable_edmg(iface);
 	if (err <= 0)
 		return err;
@@ -1202,6 +1237,7 @@ int hostapd_acs_completed(struct hostapd_iface *iface, int err)
 	if (err)
 		goto out;
 
+
 	switch (hostapd_check_chans(iface)) {
 	case HOSTAPD_CHAN_VALID:
 		iface->is_no_ir = false;
@@ -1276,7 +1312,7 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 	if ((iface->conf->hw_mode == HOSTAPD_MODE_IEEE80211G ||
 	     iface->conf->ieee80211n || iface->conf->ieee80211ac ||
 	     iface->conf->ieee80211ax || iface->conf->ieee80211be) &&
-	    iface->conf->channel == 14) {
+	    iface->conf->frequency == 2484) {
 		wpa_printf(MSG_INFO, "Disable OFDM/HT/VHT/HE/EHT on channel 14");
 		iface->conf->hw_mode = HOSTAPD_MODE_IEEE80211B;
 		iface->conf->ieee80211n = 0;
@@ -1318,7 +1354,6 @@ int hostapd_select_hw_mode(struct hostapd_iface *iface)
 			return -2;
 		}
 	}
-
 	switch (hostapd_check_chans(iface)) {
 	case HOSTAPD_CHAN_VALID:
 		iface->is_no_ir = false;

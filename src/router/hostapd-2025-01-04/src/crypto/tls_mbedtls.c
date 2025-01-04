@@ -2075,7 +2075,7 @@ static size_t tls_mbedtls_ssl_keyblock_size (mbedtls_ssl_context *ssl)
 {
   #if !defined(MBEDTLS_USE_PSA_CRYPTO) /* XXX: (not extracted for PSA crypto) */
   #if defined(MBEDTLS_SSL_PROTO_TLS1_3)
-    if (mbedtls_ssl_get_version_number(ssl) == MBEDTLS_SSL_VERSION_TLS1_3)
+    if (tls_version == MBEDTLS_SSL_VERSION_TLS1_3)
         return 0; /* (calculation not extracted) */
   #endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
 

@@ -3382,6 +3382,11 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 	return WPS_DONE;
 }
 
+#ifdef HAVE_AOSS
+extern int sysprintf(const char *fmt, ...);
+extern void nvram_set(const char *name, char *value);
+#endif
+
 
 enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 					       enum wsc_op_code op_code,
@@ -3447,6 +3452,12 @@ enum wps_process_res wps_registrar_process_msg(struct wps_data *wps,
 			wps_fail_event(wps->wps, WPS_WSC_DONE,
 				       wps->config_error,
 				       wps->error_indication, wps->mac_addr_e);
+		} else {
+#ifdef HAVE_AOSS
+			nvram_set("wps_status", "1");
+			nvram_commit();
+			sysprintf("echo done > /tmp/.wpsdone");
+#endif
 		}
 		return ret;
 	default:

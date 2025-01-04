@@ -75,6 +75,11 @@ void hostapd_ubus_notify_apup_newpeer(
 	struct hostapd_data *hapd, const u8 *addr, const char *ifname);
 #endif // def CONFIG_APUP
 
+#ifdef CONFIG_APUP
+void hostapd_ubus_notify_apup_newpeer(
+	struct hostapd_data *hapd, const u8 *addr, const char *ifname);
+#endif // def CONFIG_APUP
+
 #else
 
 struct hostapd_ubus_bss {};

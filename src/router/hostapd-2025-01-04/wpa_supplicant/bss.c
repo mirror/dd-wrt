@@ -347,6 +347,10 @@ void calculate_update_time(const struct os_reltime *fetch_time,
 static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
 			     struct os_reltime *fetch_time)
 {
+	struct ieee80211_ht_capabilities *capab;
+	struct ieee80211_ht_operation *oper;
+	struct ieee80211_vht_operation *vht_oper;
+	struct ieee802_11_elems elems;
 	dst->flags = src->flags;
 	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
 	dst->freq = src->freq;
@@ -360,6 +364,22 @@ static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
 	dst->beacon_newer = src->beacon_newer;
 	dst->est_throughput = src->est_throughput;
 	dst->snr = src->snr;
+
+	memset(&elems, 0, sizeof(elems));
+	ieee802_11_parse_elems((u8 *) (src + 1), src->ie_len, &elems, 0);
+	capab = (struct ieee80211_ht_capabilities *) elems.ht_capabilities;
+	oper = (struct ieee80211_ht_operation *) elems.ht_operation;
+	vht_oper = (struct ieee80211_vht_operation *) elems.vht_operation;
+
+	if (capab)
+		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
+	if (oper)
+		dst->ht_param = oper->ht_param;
+	dst->has_vht = 0;
+	if (vht_oper) {
+		dst->has_vht = 1;
+		memcpy(&dst->vht_oper, vht_oper, sizeof(*vht_oper));
+	}
 
 	calculate_update_time(fetch_time, src->age, &dst->last_update);
 }

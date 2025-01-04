@@ -98,6 +98,7 @@ const char * event_to_string(enum wpa_event_type event)
 	E2S(PASN_AUTH);
 	E2S(LINK_CH_SWITCH);
 	E2S(LINK_CH_SWITCH_STARTED);
+	E2S(UPDATE_MUEDCA_PARAMS);
 	E2S(TID_LINK_MAP);
 	E2S(LINK_RECONFIG);
 	E2S(MLD_INTERFACE_FREED);

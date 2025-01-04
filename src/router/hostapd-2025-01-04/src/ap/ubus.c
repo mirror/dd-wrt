@@ -359,6 +359,7 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 	char phy_name[17];
 	size_t ssid_len = SSID_MAX_LEN;
 	u8 channel = 0, op_class = 0;
+	int cw = 20;
 
 	if (hapd->conf->ssid.ssid_len < SSID_MAX_LEN)
 		ssid_len = hapd->conf->ssid.ssid_len;
@@ -387,6 +388,38 @@ hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 #else
 	blobmsg_add_u32(&b, "bss_color", -1);
 #endif
+
+#ifdef CONFIG_IEEE80211AX
+	blobmsg_add_u32(&b, "he", hapd->iface->conf->ieee80211ax);
+#endif
+#ifdef CONFIG_IEEE80211AC
+	blobmsg_add_u32(&b, "vht", hapd->iface->conf->ieee80211ac);
+#endif
+#ifdef CONFIG_IEEE80211N
+	blobmsg_add_u32(&b, "n", hapd->iface->conf->ieee80211n);
+#endif
+
+
+	switch (hostapd_get_oper_chwidth(hapd->iconf)) {
+	case CONF_OPER_CHWIDTH_USE_HT:
+		if (hapd->iconf->secondary_channel == 0) {
+			cw = 20;
+		} else {
+			cw = 40;
+		}
+		break;
+	case CONF_OPER_CHWIDTH_80MHZ:
+		cw = 80;
+		break;
+	case CONF_OPER_CHWIDTH_80P80MHZ:
+	case CONF_OPER_CHWIDTH_160MHZ:
+		cw = 160;
+		break;
+	default:
+		cw = 20;
+	}
+
+	blobmsg_add_u32(&b, "cw", cw);
 
 	snprintf(phy_name, 17, "%s", hapd->iface->phy);
 	blobmsg_add_string(&b, "phy", phy_name);

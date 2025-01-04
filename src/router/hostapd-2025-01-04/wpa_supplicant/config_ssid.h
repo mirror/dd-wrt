@@ -10,8 +10,10 @@
 #define CONFIG_SSID_H
 
 #include "common/defs.h"
+#include "ap/sta_info.h"
 #include "utils/list.h"
 #include "eap_peer/eap_config.h"
+#include "drivers/nl80211_copy.h"
 
 
 #define DEFAULT_EAP_WORKAROUND ((unsigned int) -1)
@@ -45,6 +47,7 @@
 #define DEFAULT_AMPDU_DENSITY -1 /* no change */
 #define DEFAULT_USER_SELECTED_SIM 1
 #define DEFAULT_MAX_OPER_CHWIDTH -1
+#define DEFAULT_BEACON_TX_MODE 0
 
 /* Consider global sae_pwe for SAE mechanism for PWE derivation */
 #define DEFAULT_SAE_PWE SAE_PWE_NOT_SET
@@ -852,6 +855,8 @@ struct wpa_ssid {
 	int disable_he;
 #endif /* CONFIG_HE_OVERRIDES */
 
+	int smps; // 0 = disabled, 1 = static, 2 = dynamic
+
 	/**
 	 * ap_max_inactivity - Timeout in seconds to detect STA's inactivity
 	 *
@@ -900,6 +905,8 @@ struct wpa_ssid {
 
 	unsigned char rates[WLAN_SUPP_RATES_MAX];
 	double mcast_rate;
+	int ht_set;
+	unsigned int htmode;
 
 #ifdef CONFIG_MACSEC
 	/**
@@ -1318,6 +1325,13 @@ struct wpa_ssid {
 	 * p2p_mode - P2P R1 only, P2P R2 only, or PCC mode
 	 */
 	enum wpa_p2p_mode p2p_mode;
+
+	/**
+	 * beacon_tx_mode - Beacon Tx mode
+	 * 1 = STAGGERED MODE
+	 * 2 = BURST MODE
+	 */
+	int beacon_tx_mode;
 };
 
 #endif /* CONFIG_SSID_H */

@@ -372,8 +372,8 @@ static int dfs_get_start_chan_idx(struct hostapd_iface *iface, int *seg1_start)
 		channel_no -= 4;
 
 	/* VHT/HE/EHT */
-	if (iface->conf->ieee80211ac || iface->conf->ieee80211ax ||
-	    iface->conf->ieee80211be) {
+	if ((iface->conf->ieee80211ac || iface->conf->ieee80211ax ||
+	    iface->conf->ieee80211be) && 0) {
 		switch (hostapd_get_oper_chwidth(iface->conf)) {
 		case CONF_OPER_CHWIDTH_USE_HT:
 			break;

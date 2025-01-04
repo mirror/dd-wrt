@@ -154,7 +154,7 @@ int allowed_ht40_channel_pair(enum hostapd_hw_mode mode,
 	 * 2.4 GHz rules allow all cases where the secondary channel fits into
 	 * the list of allowed channels (already checked above).
 	 */
-	if (mode != HOSTAPD_MODE_IEEE80211A)
+//	if (mode != HOSTAPD_MODE_IEEE80211A)
 		return 1;
 
 	first = pri_chan < sec_chan ? pri_chan : sec_chan;
@@ -503,7 +503,11 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	data->he_enabled = he_enabled;
 	data->eht_enabled = eht_enabled;
 	data->sec_channel_offset = sec_channel_offset;
-	data->center_freq1 = freq + sec_channel_offset * 10;
+	if (center_segment0 > 255) {
+		data->center_freq1 = center_segment0;
+	}else {
+		data->center_freq1 = freq + sec_channel_offset * 10;
+	}
 	data->center_freq2 = 0;
 	data->punct_bitmap = punct_bitmap;
 	if (oper_chwidth == CONF_OPER_CHWIDTH_80MHZ)
@@ -687,6 +691,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	if (data->eht_enabled || data->he_enabled ||
 	    data->vht_enabled) switch (oper_chwidth) {
 	case CONF_OPER_CHWIDTH_USE_HT:
+		if (center_segment0 < 256) {
 		if (center_segment1 ||
 		    (center_segment0 != 0 &&
 		     5000 + center_segment0 * 5 != data->center_freq1 &&
@@ -696,15 +701,21 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				   center_segment0, data->center_freq1);
 			return -1;
 		}
+		}
 		break;
 	case CONF_OPER_CHWIDTH_80P80MHZ:
-		if (center_segment1 == center_segment0 + 4 ||
-		    center_segment1 == center_segment0 - 4) {
-			wpa_printf(MSG_ERROR,
-				   "80+80 MHz: center segment 1 only 20 MHz apart");
-			return -1;
+		if (center_segment0 > 255 && center_segment1 > 255 ) {
+			if (center_segment1 == center_segment0 + 20 ||
+			    center_segment1 == center_segment0 - 20)
+				return -1;
+			data->center_freq2 = center_segment1;
+		}else{
+
+			if (center_segment1 == center_segment0 + 4 ||
+			    center_segment1 == center_segment0 - 4)
+				return -1;
+			data->center_freq2 = 5000 + center_segment1 * 5;
 		}
-		data->center_freq2 = 5000 + center_segment1 * 5;
 		/* fall through */
 	case CONF_OPER_CHWIDTH_80MHZ:
 		data->bandwidth = 80;
@@ -748,16 +759,23 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			 * HT40 channel band is in VHT80 Pri channel band
 			 * configuration.
 			 */
-			if (center_segment0 == channel + 6 ||
-			    center_segment0 == channel + 2 ||
-			    center_segment0 == channel - 2 ||
-			    center_segment0 == channel - 6)
-				data->center_freq1 = 5000 + center_segment0 * 5;
-			else {
-				wpa_printf(MSG_ERROR,
-					   "Wrong coupling between HT and VHT/HE channel setting");
-				return -1;
-			}
+			if (center_segment0 > 255) {
+				if (center_segment0 == freq + (6*5) ||
+				    center_segment0 == freq + (2*5) ||
+				    center_segment0 == freq - (2*5) ||
+				    center_segment0 == freq - (6*5))
+					data->center_freq1 = center_segment0;
+				else 
+					return -1;
+			}else{	
+				if (center_segment0 == channel + 6 ||
+				    center_segment0 == channel + 2 ||
+				    center_segment0 == channel - 2 ||
+				    center_segment0 == channel - 6)
+					data->center_freq1 = 5000 + center_segment0 * 5;
+				else
+					return -1;
+				}
 		}
 		break;
 	case CONF_OPER_CHWIDTH_160MHZ:
@@ -777,19 +795,37 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		 * Note: HT/VHT config and params are coupled. Check if
 		 * HT40 channel band is in VHT160 channel band configuration.
 		 */
-		if (center_segment0 == channel + 14 ||
-		    center_segment0 == channel + 10 ||
-		    center_segment0 == channel + 6 ||
-		    center_segment0 == channel + 2 ||
-		    center_segment0 == channel - 2 ||
-		    center_segment0 == channel - 6 ||
-		    center_segment0 == channel - 10 ||
-		    center_segment0 == channel - 14)
-			data->center_freq1 = 5000 + center_segment0 * 5;
-		else {
-			wpa_printf(MSG_ERROR,
-				   "160 MHz: HT40 channel band is not in 160 MHz band");
-			return -1;
+		if (center_segment0 > 255) {
+			if (center_segment0 == freq + (14*5) ||
+			    center_segment0 == freq + (10*5) ||
+			    center_segment0 == freq + (6*5) ||
+			    center_segment0 == freq + (2*5) ||
+			    center_segment0 == freq - (2*5) ||
+			    center_segment0 == freq - (6*5) ||
+			    center_segment0 == freq - (10*5) ||
+			    center_segment0 == freq - (14*5)) {
+					data->center_freq1 = center_segment0;
+			    } else {
+				wpa_printf(MSG_ERROR,
+					   "conflict with ht40 band config (center freq %d == freq %d) ",center_segment0, freq);
+				return -1;
+			    
+			    }
+		} else {
+			if (center_segment0 == channel + 14 ||
+			    center_segment0 == channel + 10 ||
+			    center_segment0 == channel + 6 ||
+			    center_segment0 == channel + 2 ||
+			    center_segment0 == channel - 2 ||
+			    center_segment0 == channel - 6 ||
+			    center_segment0 == channel - 10 ||
+			    center_segment0 == channel - 14) {
+				data->center_freq1 = 5000 + center_segment0 * 5;
+			} else {
+				wpa_printf(MSG_ERROR,
+					   "conflict with ht40 band config (center %d == channel %d) ",center_segment0, channel);
+				return -1;
+			}
 		}
 		break;
 	case CONF_OPER_CHWIDTH_320MHZ:

@@ -203,8 +203,12 @@ struct eap_sm {
 
 int eap_user_get(struct eap_sm *sm, const u8 *identity, size_t identity_len,
 		 int phase2);
+#ifndef CONFIG_NO_WPA_MSG
 void eap_log_msg(struct eap_sm *sm, const char *fmt, ...)
 PRINTF_FORMAT(2, 3);
+#else
+#define eap_log_msg(sm,fmt,...) do { } while(0)
+#endif
 void eap_sm_process_nak(struct eap_sm *sm, const u8 *nak_list, size_t len);
 
 #endif /* EAP_I_H */

@@ -989,9 +989,13 @@ int hostapd_ctrl_iface_status(struct hostapd_data *hapd, char *buf,
 				  "he_oper_chwidth=%d\n"
 				  "he_oper_centr_freq_seg0_idx=%d\n"
 				  "he_oper_centr_freq_seg1_idx=%d\n",
+				  "he_oper_centr_freq_seg0_idx_freq=%d\n"
+				  "he_oper_centr_freq_seg1_idx_freq=%d\n",
 				  iface->conf->he_oper_chwidth,
 				  iface->conf->he_oper_centr_freq_seg0_idx,
-				  iface->conf->he_oper_centr_freq_seg1_idx);
+				  iface->conf->he_oper_centr_freq_seg1_idx,
+				  iface->conf->he_oper_centr_freq_seg0_idx_freq,
+				  iface->conf->he_oper_centr_freq_seg1_idx_freq);
 		if (os_snprintf_error(buflen - len, ret))
 			return len;
 		len += ret;
@@ -1013,10 +1017,14 @@ int hostapd_ctrl_iface_status(struct hostapd_data *hapd, char *buf,
 				  "vht_oper_chwidth=%d\n"
 				  "vht_oper_centr_freq_seg0_idx=%d\n"
 				  "vht_oper_centr_freq_seg1_idx=%d\n"
+				  "vht_oper_centr_freq_seg0_idx_freq=%d\n"
+				  "vht_oper_centr_freq_seg1_idx_freq=%d\n"
 				  "vht_caps_info=%08x\n",
 				  iface->conf->vht_oper_chwidth,
 				  iface->conf->vht_oper_centr_freq_seg0_idx,
 				  iface->conf->vht_oper_centr_freq_seg1_idx,
+				  iface->conf->vht_oper_centr_freq_seg0_idx_freq,
+				  iface->conf->vht_oper_centr_freq_seg1_idx_freq,
 				  iface->conf->vht_capab);
 		if (os_snprintf_error(buflen - len, ret))
 			return len;
@@ -1174,7 +1182,13 @@ int hostapd_parse_csa_settings(const char *pos,
 
 int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 {
-	return hostapd_drv_stop_ap(hapd);
+	struct hostapd_iface *iface = hapd->iface;
+	int i;
+
+	for (i = 0; i < iface->num_bss; i++)
+		hostapd_drv_stop_ap(iface->bss[i]);
+
+	return 0;
 }
 
 

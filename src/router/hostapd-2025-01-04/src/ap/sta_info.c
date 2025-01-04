@@ -877,6 +877,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	sta_track_claim_taxonomy_info(hapd->iface, addr,
 				      &sta->probe_ie_taxonomy);
 #endif /* CONFIG_TAXONOMY */
+	sta->sig_drop_strikes = 0;
 
 	if (!(hapd->conf->mesh & MESH_ENABLED))
 		eloop_register_timeout(60, 0, ap_sta_assoc_timeout, hapd, sta);

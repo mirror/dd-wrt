@@ -49,6 +49,8 @@
 #define WLAN_STA_PENDING_DEAUTH_CB BIT(30)
 #define WLAN_STA_NONERP BIT(31)
 
+/* Maximum number of supported rates (from both Supported Rates and Extended
+ * Supported Rates IEs). */
 struct hostapd_data;
 
 struct mbo_non_pref_chan_info {
@@ -320,6 +322,7 @@ struct sta_info {
 
 	u16 max_idle_period; /* if nonzero, the granted BSS max idle period in
 			      * units of 1000 TUs */
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 

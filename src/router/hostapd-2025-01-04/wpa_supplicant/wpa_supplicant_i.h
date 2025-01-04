@@ -57,6 +57,9 @@ struct wpas_binder_priv;
  * struct wpa_interface - Parameters for wpa_supplicant_add_iface()
  */
 struct wpa_interface {
+
+	const char *hostapd_ctrl;
+
 	/**
 	 * confname - Configuration name (file or profile) name
 	 *
@@ -321,7 +324,9 @@ struct wpa_global {
 
 	struct psk_list_entry *add_psk; /* From group formation */
 
+#ifdef UBUS_SUPPORT
 	struct ubus_object ubus_global;
+#endif
 };
 
 
@@ -723,6 +728,7 @@ struct wpa_supplicant {
 	const void *binder_object_key;
 #endif /* CONFIG_CTRL_IFACE_BINDER */
 	char bridge_ifname[16];
+	struct wpa_ctrl *hostapd;
 
 	char *confname;
 	char *confanother;
@@ -2058,4 +2064,5 @@ bool wpas_ap_supports_rsn_overriding_2(struct wpa_supplicant *wpa_s,
 int wpas_get_owe_trans_network(const u8 *owe_ie, const u8 **bssid,
 			       const u8 **ssid, size_t *ssid_len);
 
+int wpa_supplicant_daemon(const char *pid_file);
 #endif /* WPA_SUPPLICANT_I_H */

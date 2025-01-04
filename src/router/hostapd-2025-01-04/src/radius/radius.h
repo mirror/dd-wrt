@@ -237,6 +237,15 @@ enum {
 #define RADIUS_WISPR_AV_BW_UP	7
 #define RADIUS_WISPR_AV_BW_DOWN	8
 
+#define RADIUS_VENDOR_ID_WISPR 14122
+
+enum {
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_UP = 5,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_DOWN = 6,
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP = 7,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN = 8,
+};
+
 #ifdef _MSC_VER
 #pragma pack(pop)
 #endif /* _MSC_VER */
@@ -334,6 +343,7 @@ int radius_msg_get_vlanid(struct radius_msg *msg, int *untagged, int numtagged,
 char * radius_msg_get_tunnel_password(struct radius_msg *msg, int *keylen,
 				      const u8 *secret, size_t secret_len,
 				      struct radius_msg *sent_msg, size_t n);
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,u8 subtype, size_t *alen);
 
 static inline int radius_msg_add_attr_int32(struct radius_msg *msg, u8 type,
 					    u32 value)

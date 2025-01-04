@@ -273,6 +273,9 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		       HOSTAPD_LEVEL_DEBUG, "hostapd_public_action - action=%d",
 		       mgmt->u.action.u.public_action.action);
 
+	if (!iface->conf->dynamic_ht40)
+		return;
+
 	if (!(iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET)) {
 		wpa_printf(MSG_DEBUG,
 			   "Ignore 20/40 BSS Coexistence Management frame since 40 MHz capability is not enabled");
@@ -515,7 +518,7 @@ static void update_sta_ht(struct hostapd_data *hapd, struct sta_info *sta)
 			   hapd->iface->num_sta_ht_20mhz);
 	}
 
-	if (ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT)
+	if ((ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT) && hapd->iface->conf->dynamic_ht40)
 		ht40_intolerant_add(hapd->iface, sta);
 }
 

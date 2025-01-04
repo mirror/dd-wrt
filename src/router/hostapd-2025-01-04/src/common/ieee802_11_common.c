@@ -222,7 +222,7 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			   "information element ignored (vendor OUI "
 			   "%02x:%02x:%02x len=%lu)",
 			   pos[0], pos[1], pos[2], (unsigned long) elen);
-		return -1;
+		return 0;
 	}
 
 	return 0;
@@ -442,7 +442,7 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 }
 
 
-static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
+static ParseRes __ieee802_11_parse_elems(void *ctx, const u8 *start, size_t len,
 					 struct ieee802_11_elems *elems,
 					 int show_errors)
 {
@@ -466,7 +466,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 		switch (id) {
 		case WLAN_EID_SSID:
 			if (elen > SSID_MAX_LEN) {
-				wpa_printf(MSG_DEBUG,
+				wpa_printf(MSG_INFO,
 					   "Ignored too long SSID element (elen=%u)",
 					   elen);
 				break;
@@ -507,8 +507,14 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 		case WLAN_EID_VENDOR_SPECIFIC:
 			if (ieee802_11_parse_vendor_specific(pos, elen,
 							     elems,
-							     show_errors))
+							     show_errors)) {
 				unknown++;
+//			   if (ctx) {
+//			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+//			       HOSTAPD_LEVEL_INFO,"parse vendor failed (id=%d elen=%d)",
+//				   id, elen);
+//			    }
+			}
 			break;
 		case WLAN_EID_RSN:
 			elems->rsn_ie = pos;
@@ -701,13 +707,19 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 	}
 
 	if (!for_each_element_completed(elem, start, len)) {
-		if (show_errors) {
-			wpa_printf(MSG_DEBUG,
-				   "IEEE 802.11 element parse failed @%d",
-				   (int) (start + len - (const u8 *) elem));
-			wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
-		}
-		return ParseFailed;
+		wpa_printf(MSG_INFO,
+			   "IEEE 802.11 element (%d) parse failed @%d",
+			   elem->id, (int) (start + len - (const u8 *) elem));
+//			   if (ctx) {
+//			   	hostapd_logger(ctx, NULL, HOSTAPD_MODULE_IEEE80211,
+//			       HOSTAPD_LEVEL_INFO,
+//			   "IEEE 802.11 element (%d) parse failed @%d",
+//			   elem->id, (int) (start + len - (const u8 *) elem));
+//			    }
+
+		//wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
+//		return ParseFailed;
+		return ParseOK;
 	}
 
 done:
@@ -729,7 +741,17 @@ ParseRes ieee802_11_parse_elems(const u8 *start, size_t len,
 {
 	os_memset(elems, 0, sizeof(*elems));
 
-	return __ieee802_11_parse_elems(start, len, elems, show_errors);
+	return __ieee802_11_parse_elems(NULL, start, len, elems, show_errors);
+}
+
+
+ParseRes ieee802_11_parse_elems_log(void *ctx, const u8 *start, size_t len,
+				struct ieee802_11_elems *elems,
+				int show_errors)
+{
+	os_memset(elems, 0, sizeof(*elems));
+
+	return __ieee802_11_parse_elems(ctx, start, len, elems, show_errors);
 }
 
 
@@ -1129,7 +1151,7 @@ ParseRes ieee802_11_parse_link_assoc_req(struct ieee802_11_elems *elems,
 			   sub_elem_len);
 
 		if (sub_elem_len)
-			res = __ieee802_11_parse_elems(pos, sub_elem_len,
+			res = __ieee802_11_parse_elems(NULL, pos, sub_elem_len,
 						       elems, show_errors);
 		else
 			res = ParseOK;
@@ -1419,19 +1441,15 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			      u8 *op_class, u8 *channel)
 {
 	u8 vht_opclass;
+	int chan;
+	int fcast = freq;
 
 	/* TODO: more operating classes */
 
 	if (sec_channel > 1 || sec_channel < -1)
 		return NUM_HOSTAPD_MODES;
 
-	if (freq >= 2412 && freq <= 2472) {
-		if ((freq - 2407) % 5)
-			return NUM_HOSTAPD_MODES;
-
-		if (chanwidth)
-			return NUM_HOSTAPD_MODES;
-
+	if (fcast >= 2412 && fcast <= 2484) {
 		/* 2.407 GHz, channels 1..13 */
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -1440,25 +1458,122 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 81;
 
-		*channel = (freq - 2407) / 5;
+		*channel = (fcast - 2407) / 5;
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq == 2484) {
-		if (sec_channel || chanwidth)
-			return NUM_HOSTAPD_MODES;
+	if (fcast == 2484) {
 
 		*op_class = 82; /* channel 14 */
 		*channel = 14;
 
 		return HOSTAPD_MODE_IEEE80211B;
 	}
+	if (fcast == 2407) {
 
-	if (freq >= 4900 && freq < 5000) {
-		if ((freq - 4000) % 5)
-			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 4000) / 5;
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 0;
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+	if (fcast < 2412) {
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+	if (fcast < 2502 && fcast > 2484) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 14;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast < 2512 && fcast > 2484) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = 15;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast > 2484 && fcast < 4000 ) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = (15 + ((fcast - 2512) / 20)) & 0xff;
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast > 2484 && fcast < 4000) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		*channel = (fcast - 2414) / 5;
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+	if (fcast < 2412) {
+
+		if (sec_channel == 1)
+			*op_class = 83;
+		else if (sec_channel == -1)
+			*op_class = 84;
+		else
+			*op_class = 81;
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
+
+		return HOSTAPD_MODE_IEEE80211G;
+	}
+
+
+
+	if (fcast >= 4940 && fcast < 4990) {
+		*channel = (fcast - 4940) * 2 + !!((fcast % 5) == 2);
+		*op_class = 0;
+		return HOSTAPD_MODE_IEEE80211A;
+	}
+
+	if (fcast >= 4800 && fcast < 5005) {
+		*channel = (fcast - 4000) / 5;
+		*op_class = 0; /* TODO */
+		return HOSTAPD_MODE_IEEE80211A;
+	}
+
+
+	if (fcast >= 4900 && fcast < 5000) {
+		*channel = (fcast - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
@@ -1479,9 +1594,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 5 GHz, channels 36..48 */
-	if (freq >= 5180 && freq <= 5240) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5180 && fcast <= 5240) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1498,9 +1611,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 5 GHz, channels 52..64 */
-	if (freq >= 5260 && freq <= 5320) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5260 && fcast <= 5320) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1511,15 +1622,13 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 118;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 149..177 */
-	if (freq >= 5745 && freq <= 5885) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5745 && fcast <= 5845) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1527,18 +1636,17 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			*op_class = 126;
 		else if (sec_channel == -1)
 			*op_class = 127;
+		else if (fcast <= 5805)
+ 			*op_class = 124;
 		else
 			*op_class = 125;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	/* 5 GHz, channels 100..144 */
-	if (freq >= 5500 && freq <= 5720) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 5000 && fcast <= 5700) {
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -1549,15 +1657,13 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 		else
 			*op_class = 121;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	if (freq >= 5000 && freq < 5900) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 5000) / 5;
+	if (fcast >= 5000 && fcast < 7000) {
+		*channel = ((fcast - 5000) / 5) & 0xff;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
@@ -1598,14 +1704,12 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 	}
 
 	/* 56.16 GHz, channel 1..6 */
-	if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 6) {
-		if (sec_channel)
-			return NUM_HOSTAPD_MODES;
+	if (fcast >= 56160 + 2160 * 1 && fcast <= 56160 + 2160 * 4) {
 
 		switch (chanwidth) {
 		case CONF_OPER_CHWIDTH_USE_HT:
 		case CONF_OPER_CHWIDTH_2160MHZ:
-			*channel = (freq - 56160) / 2160;
+			*channel = (fcast - 56160) / 2160;
 			*op_class = 180;
 			break;
 		case CONF_OPER_CHWIDTH_4320MHZ:
@@ -1613,7 +1717,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 5)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 8;
+			*channel = (fcast - 56160) / 2160 + 8;
 			*op_class = 181;
 			break;
 		case CONF_OPER_CHWIDTH_6480MHZ:
@@ -1621,7 +1725,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 4)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 16;
+			*channel = (fcast - 56160) / 2160 + 16;
 			*op_class = 182;
 			break;
 		case CONF_OPER_CHWIDTH_8640MHZ:
@@ -1629,7 +1733,7 @@ ieee80211_freq_to_channel_ext(unsigned int freq, int sec_channel,
 			if (freq > 56160 + 2160 * 3)
 				return NUM_HOSTAPD_MODES;
 
-			*channel = (freq - 56160) / 2160 + 24;
+			*channel = (fcast - 56160) / 2160 + 24;
 			*op_class = 183;
 			break;
 		default:
@@ -2943,6 +3047,7 @@ int center_idx_to_bw_6ghz(u8 idx)
 }
 
 
+#ifdef CONFIG_IEEE80211AX
 bool is_6ghz_freq(int freq)
 {
 	if (freq < 5935 || freq > 7115)
@@ -2954,7 +3059,7 @@ bool is_6ghz_freq(int freq)
 	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
 		return false;
 
-	return true;
+	return false;
 }
 
 
@@ -2983,6 +3088,7 @@ bool is_6ghz_psc_frequency(int freq)
 	return false;
 }
 
+#endif
 
 /**
  * get_6ghz_sec_channel - Get the relative position of the secondary channel

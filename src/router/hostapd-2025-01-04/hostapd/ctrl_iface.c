@@ -81,6 +81,8 @@
 #define HOSTAPD_GLOBAL_CTRL_IFACE_PORT_LIMIT	50
 #endif /* CONFIG_CTRL_IFACE_UDP */
 
+static char *reload_opts = NULL;
+
 static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 				    enum wpa_msg_type type,
 				    const char *buf, size_t len);
@@ -136,6 +138,90 @@ static int hostapd_ctrl_iface_new_sta(struct hostapd_data *hapd,
 	return 0;
 }
 
+static char *get_option(char *opt, char *str)
+{
+	int len = strlen(str);
+
+	if (!strncmp(opt, str, len))
+		return opt + len;
+	else
+		return NULL;
+}
+
+static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
+{
+	struct hostapd_config *conf;
+	char *opt, *val;
+
+	conf = hostapd_config_read(fname);
+	if (!conf)
+		return NULL;
+
+	for (opt = strtok(reload_opts, " ");
+	     opt;
+		 opt = strtok(NULL, " ")) {
+
+		if ((val = get_option(opt, "channel="))) {
+			conf->channel = atoi(val);
+			if (conf->vht_oper_chwidth == 2) {
+			if (conf->channel < 100)			
+				conf->vht_oper_centr_freq_seg0_idx = 50;
+			    else
+				conf->vht_oper_centr_freq_seg0_idx = 114;
+			} else {			
+			if (conf->secondary_channel==1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel + 6;
+			if (conf->secondary_channel==-1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
+			}
+		} else if ((val = get_option(opt, "frequency=")))
+			conf->frequency = atoi(val);
+		else if ((val = get_option(opt, "ht_capab=")))
+			conf->ht_capab = atoi(val);
+		else if ((val = get_option(opt, "ht_capab_mask=")))
+			conf->ht_capab &= atoi(val);
+		else if ((val = get_option(opt, "chwidth=")))
+			conf->vht_oper_chwidth = atoi(val);
+		else if ((val = get_option(opt, "sec_chan="))) {
+			conf->secondary_channel = atoi(val);
+			if (conf->secondary_channel==1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel + 6;
+			if (conf->secondary_channel==-1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
+		} else if ((val = get_option(opt, "sec_idx0_freq="))) {
+			conf->vht_oper_centr_freq_seg0_idx_freq = atoi(val);
+		} else if ((val = get_option(opt, "sec_idx1_freq="))) {
+			conf->vht_oper_centr_freq_seg1_idx_freq = atoi(val);
+		} else if ((val = get_option(opt, "sec_idx0="))) {
+			conf->vht_oper_centr_freq_seg0_idx_freq = 0;
+			conf->vht_oper_centr_freq_seg0_idx = atoi(val);
+		} else if ((val = get_option(opt, "sec_idx1="))) {
+			conf->vht_oper_centr_freq_seg1_idx_freq = 0;
+			conf->vht_oper_centr_freq_seg1_idx = atoi(val);
+		} else if ((val = get_option(opt, "hw_mode=")))
+			conf->hw_mode = atoi(val);
+		else if ((val = get_option(opt, "ieee80211n=")))
+			conf->ieee80211n = atoi(val);
+		else
+			break;
+	}
+
+	return conf;
+}
+
+static int hostapd_ctrl_iface_update(struct hostapd_data *hapd, char *txt)
+{
+	struct hostapd_config * (*config_read_cb)(const char *config_fname);
+	struct hostapd_iface *iface = hapd->iface;
+
+	config_read_cb = iface->interfaces->config_read_cb;
+	iface->interfaces->config_read_cb = hostapd_ctrl_iface_config_read;
+	reload_opts = txt;
+
+	hostapd_reload_config(iface);
+
+	iface->interfaces->config_read_cb = config_read_cb;
+}
 
 #ifdef NEED_AP_MLME
 static int hostapd_ctrl_iface_sa_query(struct hostapd_data *hapd,
@@ -158,6 +244,8 @@ static int hostapd_ctrl_iface_sa_query(struct hostapd_data *hapd,
 
 
 #ifdef CONFIG_WPS
+extern int sysprintf(const char *fmt, ...);
+
 static int hostapd_ctrl_iface_wps_pin(struct hostapd_data *hapd, char *txt)
 {
 	char *pin = os_strchr(txt, ' ');
@@ -183,6 +271,10 @@ static int hostapd_ctrl_iface_wps_pin(struct hostapd_data *hapd, char *txt)
 	} else
 		timeout = 0;
 
+	sysprintf("killall wpswatcher");
+	sysprintf("wpswatcher %d",timeout);
+	sysprintf("killall ledtool");
+	sysprintf("ledtool %d 2",timeout);
 	return hostapd_wps_add_pin(hapd, addr, txt, pin, timeout);
 }
 
@@ -454,6 +546,9 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 	char *pos;
 	const char *pin_txt;
 
+	if (!hapd->wps)
+		return -1;
+
 	pos = os_strchr(txt, ' ');
 	if (pos)
 		*pos++ = '\0';
@@ -491,6 +586,10 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 		}
 		if (os_strlen(pin) > buflen)
 			return -1;
+		sysprintf("killall wpswatcher");
+		sysprintf("wpswatcher %d",timeout);
+		sysprintf("killall ledtool");
+		sysprintf("ledtool %d 2",timeout);
 		if (hostapd_wps_ap_pin_set(hapd, pin, timeout) < 0)
 			return -1;
 		return os_snprintf(buf, buflen, "%s", pin);
@@ -1314,6 +1413,13 @@ static int hostapd_ctrl_iface_set(struct hostapd_data *hapd, char *cmd)
 		} else if (os_strncmp(cmd, "wme_ac_", 7) == 0 ||
 			   os_strncmp(cmd, "wmm_ac_", 7) == 0) {
 			hapd->parameter_set_count++;
+#ifdef CONFIG_IEEE80211AX
+			 /* Incrementing MU-EDCA Parameter Set Update Count*/
+			 hapd->iface->conf->he_mu_edca.he_qos_info =
+			  (hapd->iface->conf->he_mu_edca.he_qos_info & 0xf0) |
+			  ((hapd->iface->conf->he_mu_edca.he_qos_info + 1) &
+			   0xf);
+#endif
 			if (ieee802_11_update_beacons(hapd->iface))
 				wpa_printf(MSG_DEBUG,
 					   "Failed to update beacons with WMM parameters");
@@ -4357,6 +4463,8 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 	} else if (os_strncmp(buf, "VENDOR ", 7) == 0) {
 		reply_len = hostapd_ctrl_iface_vendor(hapd, buf + 7, reply,
 						      reply_size);
+	} else if (os_strncmp(buf, "UPDATE ", 7) == 0) {
+		hostapd_ctrl_iface_update(hapd, buf + 7);
 	} else if (os_strcmp(buf, "ERP_FLUSH") == 0) {
 		ieee802_1x_erp_flush(hapd);
 #ifdef RADIUS_SERVER

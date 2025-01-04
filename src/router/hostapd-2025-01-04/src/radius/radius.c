@@ -1077,7 +1077,7 @@ int radius_msg_make_authenticator(struct radius_msg *msg)
  * The returned payload is allocated with os_malloc() and caller must free it
  * by calling os_free().
  */
-static u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
 				      u8 subtype, size_t *alen)
 {
 	u8 *data, *pos;

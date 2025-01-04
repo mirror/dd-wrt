@@ -23,6 +23,10 @@ enum {
 	MSG_EXCESSIVE, MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR
 };
 
+#ifndef CONFIG_MSG_MIN_PRIORITY
+#define CONFIG_MSG_MIN_PRIORITY 0
+#endif
+
 #ifdef CONFIG_NO_STDOUT_DEBUG
 
 #define wpa_debug_print_timestamp() do { } while (0)
@@ -59,9 +63,6 @@ void _wpa_hexdump_ascii(int level, const char *title, const void *buf,
 			size_t len, int show);
 extern int wpa_debug_show_keys;
 
-#ifndef CONFIG_MSG_MIN_PRIORITY
-#define CONFIG_MSG_MIN_PRIORITY 0
-#endif
 
 /**
  * wpa_debug_printf_timestamp - Print timestamp for debug output
@@ -356,6 +357,7 @@ void hostapd_logger_register_cb(hostapd_logger_cb_func func);
 #define HOSTAPD_MODULE_RADIUS		0x00000004
 #define HOSTAPD_MODULE_WPA		0x00000008
 #define HOSTAPD_MODULE_DRIVER		0x00000010
+#define HOSTAPD_MODULE_IAPP		0x00000020
 #define HOSTAPD_MODULE_MLME		0x00000040
 
 enum hostapd_logger_level {

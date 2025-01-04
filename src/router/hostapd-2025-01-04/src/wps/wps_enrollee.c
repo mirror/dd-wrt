@@ -1458,6 +1458,14 @@ static enum wps_process_res wps_process_wsc_nack(struct wps_data *wps,
 	wpa_printf(MSG_DEBUG, "WPS: Registrar terminated negotiation with "
 		   "Configuration Error %d", config_error);
 
+	if (!config_error) {
+#ifdef HAVE_AOSS
+		nvram_set("wps_status", "1");
+		nvram_commit();
+		sysprintf("echo done > /tmp/.wpsdone");
+#endif
+	}
+
 	switch (wps->state) {
 	case RECV_M4:
 		wps_fail_event(wps->wps, WPS_M3, config_error,
