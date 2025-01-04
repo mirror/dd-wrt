@@ -16,7 +16,7 @@ HOSTAPDVERSION=2018-07-08
 endif
 ifeq ($(CONFIG_ATH11K),y)
 ifndef $(HOSTAPDVERSION)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 endif
 else
@@ -25,23 +25,23 @@ HOSTAPDVERSION=2017-08-24
 endif
 endif
 ifeq ($(KERNELVERSION),6.1)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 ifeq ($(KERNELVERSION),6.6-nss)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2024-01-04
 endif
 ifeq ($(KERNELVERSION),6.6)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 ifeq ($(KERNELVERSION),4.9)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 ifndef $(HOSTAPDVERSION)
-HOSTAPDVERSION=2024-03-09
+HOSTAPDVERSION=2025-01-04
 endif
 endif
 
@@ -55,7 +55,7 @@ ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
 else
 ifeq ($(KERNELVERSION),6.1)
-ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
+ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 ifeq ($(CONFIG_OPENSSL),y)
 ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
@@ -64,7 +64,7 @@ ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
 else
 ifeq ($(KERNELVERSION),4.9)
-ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include 
+ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/_staging/usr/include
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/_staging/usr/lib -lubox -lubus
 ifeq ($(CONFIG_OPENSSL),y)
 ATH9K_LDFLAGS += -L$(SSLPATH) -lcrypto -lssl -L$(TOP)/libucontext -lucontext
@@ -77,11 +77,11 @@ else
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ATH9K_LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_USTEER),y)
-ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include 
+ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include
 ATH9K_LDFLAGS += -L$(TOP)/_staging/usr/lib -lubox -lubus
 endif
 ifeq ($(CONFIG_WPA3),y)
-ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include 
+ATH9K_CFLAGS += -I$(TOP)/_staging/usr/include
 ATH9K_LDFLAGS += -L$(TOP)/_staging/usr/lib -lubox -lubus
 endif
 endif
@@ -94,7 +94,7 @@ endif
 endif
 endif
 endif
-ATH9K_CFLAGS += $(THUMB)
+ATH9K_CFLAGS += $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 ATH9K_LDFLAGS +=  $(THUMB)
 
 hostapd2: $(TINY) nvram ubus
