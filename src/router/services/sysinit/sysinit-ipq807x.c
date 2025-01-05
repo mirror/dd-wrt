@@ -487,7 +487,6 @@ static void load_nss(int profile, int maple, int cores, char *type)
 	else
 		eval_silence("insmod", driver, "mem_profile=0");
 
-	nvram_default_get("nss", "1");
 	snprintf(driver, sizeof(driver), "qca-nss-drv-%s", type);
 
 	eval_silence("insmod", driver, use_mesh(1) ? "mesh=1" : "mesh=0",
@@ -529,11 +528,23 @@ static void load_nss(int profile, int maple, int cores, char *type)
 	insmod("qca-nss-wifi-meshmgr");
 }
 
-#define load_nss_ipq60xx(profile) load_nss(profile, 0, 4, "ipq60xx")
+static void load_nss_ipq60xx(profile)
+{
+	nvram_default_get("nss", "1");
+	load_nss(profile, 0, 4, "ipq60xx");
+}
 
-#define load_nss_ipq50xx(profile) load_nss(profile, 1, 2, "ipq50xx");
+static void load_nss_ipq50xx(profile)
+{
+	nvram_default_get("nss", "0");
+	load_nss(profile, 1, 2, "ipq50xx");
+}
 
-#define load_nss_ipq807x(profile) load_nss(profile, 0, 4, "ipq807x");
+static void load_nss_ipq807x(profile)
+{
+	nvram_default_get("nss", "1");
+	load_nss(profile, 0, 4, "ipq807x");
+}
 
 void start_setup_affinity(void)
 {
