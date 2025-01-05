@@ -1349,12 +1349,13 @@ void start_sysinit(void)
 
 	return;
 }
-static void load_ath11k(int profile, int pci, int nss)
+static void load_ath11k(int profile, int pci, int nss, int frame_mode)
 {
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
 	char driver_ath11k_ahb[32];
 	char driver_ath11k_pci[32];
+	char driver_frame_mode[32];
 
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
@@ -1365,22 +1366,14 @@ static void load_ath11k(int profile, int pci, int nss)
 	sprintf(driver_ath11k, "ath11k%s", postfix);
 	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
-
+	sprintf(driver_frame_mode, "frame_node=%d", frame_mode);
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
-		if (nvram_match("ath11k_frame_mode", "1"))
-			eval_silence("insmod", driver_ath11k, "frame_mode=1", overdrive);
-		else
-			eval_silence("insmod", driver_ath11k, overdrive);
+		eval_silence("insmod", driver_ath11k, driver_frame_mode, overdrive);
 	} else {
 		eval_silence("insmod", "mac80211", "nss_redirect=0");
-		if (nvram_match("ath11k_frame_mode", "1"))
-			eval_silence("insmod", driver_ath11k, "nss_offload=0", "frame_mode=1", overdrive);
-		else
-			eval_silence(
-				"insmod", driver_ath11k, "nss_offload=0",
-				overdrive); // the only working nss firmware for qca5018 on mx5500/mr5500 does not work with nss offload for ath11k
+		eval_silence("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive);
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
 	insmod(driver_ath11k_ahb);
@@ -1397,6 +1390,12 @@ void start_wifi_drivers(void)
 	if (!nvram_match("nss", nvram_safe_get("old_nss")))
 		sys_reboot();
 	notloaded = insmod("compat");
+	char *fm = nvram_safe_get("ath11k_frame_mode");
+	int frame_mode = 2;
+	if (*fm)
+		frame_node = atoi(fm);
+	if (frame_mode > 2 || frame_mode < 0)
+		frame_mode = 2;
 	if (!notloaded) {
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
 		int brand = getRouterBrand();
@@ -1416,16 +1415,18 @@ void start_wifi_drivers(void)
 		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
-			load_ath11k(profile, 1, 0);
+			if (frame_mode == 2)
+				frame_mode = 1;
+			load_ath11k(profile, 1, 0, frame_mode);
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"));
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode);
 			//			insmod("ath");
 			//			insmod("ath10k_core");
 			//			insmod("ath10k_pci");
 			break;
 		default:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"));
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode);
 			break;
 		}
 		wait_for_wifi();
