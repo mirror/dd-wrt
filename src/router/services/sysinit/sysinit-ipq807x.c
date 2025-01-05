@@ -1407,6 +1407,9 @@ void start_wifi_drivers(void)
 		frame_mode = atoi(fm);
 	if (frame_mode > 2 || frame_mode < 0)
 		frame_mode = 2;
+	if (nvram_match("nss","0") && frame_mode == 2)
+		frame_mode = 1;
+		
 	if (!notloaded) {
 		dd_loginfo("sysinit", "load ATH/QCA 802.11ax Driver");
 		int brand = getRouterBrand();
