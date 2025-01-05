@@ -528,19 +528,19 @@ static void load_nss(int profile, int maple, int cores, char *type)
 	insmod("qca-nss-wifi-meshmgr");
 }
 
-static void load_nss_ipq60xx(profile)
+static void load_nss_ipq60xx(int profile)
 {
 	nvram_default_get("nss", "1");
 	load_nss(profile, 0, 4, "ipq60xx");
 }
 
-static void load_nss_ipq50xx(profile)
+static void load_nss_ipq50xx(int profile)
 {
 	nvram_default_get("nss", "0");
 	load_nss(profile, 1, 2, "ipq50xx");
 }
 
-static void load_nss_ipq807x(profile)
+static void load_nss_ipq807x(int profile)
 {
 	nvram_default_get("nss", "1");
 	load_nss(profile, 0, 4, "ipq807x");
@@ -1377,7 +1377,7 @@ static void load_ath11k(int profile, int pci, int nss, int frame_mode)
 	sprintf(driver_ath11k, "ath11k%s", postfix);
 	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
-	sprintf(driver_frame_mode, "frame_node=%d", frame_mode);
+	sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
@@ -1404,7 +1404,7 @@ void start_wifi_drivers(void)
 	char *fm = nvram_safe_get("ath11k_frame_mode");
 	int frame_mode = 2;
 	if (*fm)
-		frame_node = atoi(fm);
+		frame_mode = atoi(fm);
 	if (frame_mode > 2 || frame_mode < 0)
 		frame_mode = 2;
 	if (!notloaded) {
