@@ -1330,7 +1330,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "basic_rates=120 240\n");
 			break;
 
-		case 3:
+		default:
 			fprintf(fp, "supported_rates=240 360 480 540\n");
 			fprintf(fp, "basic_rates=240\n");
 			break;
