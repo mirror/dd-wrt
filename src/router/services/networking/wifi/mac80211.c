@@ -1248,16 +1248,16 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			case 1:
 				if (legacy) {
 					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=55 110\n");
+					fprintf(fp, "basic_rates=55 60 110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=60 120 240\n");
+					fprintf(fp, "basic_rates=60 90 120 240\n");
 				}
 				break;
 			case 2:
 				if (legacy) {
 					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=110\n");
+					fprintf(fp, "basic_rates=110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
 					fprintf(fp, "basic_rates=120 240\n");
@@ -1322,16 +1322,16 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			case 1:
 				if (legacy) {
 					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=55 110\n");
+					fprintf(fp, "basic_rates=55 60 110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=60 120 240\n");
+					fprintf(fp, "basic_rates=60 90 120 240\n");
 				}
 				break;
 			case 2:
 				if (legacy) {
 					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=110\n");
+					fprintf(fp, "basic_rates=110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
 					fprintf(fp, "basic_rates=120 240\n");
@@ -1351,16 +1351,16 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			case 1:
 				if (legacy) {
 					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=55 110\n");
+					fprintf(fp, "basic_rates=55 60 110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=60 120 240\n");
+					fprintf(fp, "basic_rates=60 90 120 240\n");
 				}
 				break;
 			case 2:
 				if (legacy) {
 					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=110\n");
+					fprintf(fp, "basic_rates=110 120 240\n");
 				} else {
 					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
 					fprintf(fp, "basic_rates=120 240\n");
