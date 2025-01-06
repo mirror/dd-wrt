@@ -1231,7 +1231,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
-
 			if (density == 1) {
 				fprintf(fp, "supported_rates=55 110\n");
 				fprintf(fp, "basic_rates=55 110\n");
@@ -1240,34 +1239,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "basic_rates=110\n");
 			}
 
-		} else if (!strcmp(netmode, "bg-mixed")) {
-			fprintf(fp, "hw_mode=g\n");
-
-			switch (density) {
-			case 0:
-			case 1:
-				if (legacy) {
-					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=55 60 110 120 240\n");
-				} else {
-					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=60 90 120 240\n");
-				}
-				break;
-			case 2:
-				if (legacy) {
-					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=110 120 240\n");
-				} else {
-					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=120 240\n");
-				}
-				break;
-			default:
-				fprintf(fp, "supported_rates=240 360 480 540\n");
-				fprintf(fp, "basic_rates=240\n");
-				break;
-			}
 		} else if (!strcmp(netmode, "mixed") || !strcmp(netmode, "axg-only")) {
 			if (has_ax(prefix)) {
 				if (!strcmp(netmode, "ax-only")) {
@@ -1316,36 +1287,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
 				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 			}
+		}
+		if (strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=g\n");
-			switch (density) {
-			case 0:
-			case 1:
-				if (legacy) {
-					fprintf(fp, "supported_rates=10 20 55 60 90 110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=55 60 110 120 240\n");
-				} else {
-					fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=60 90 120 240\n");
-				}
-				break;
-			case 2:
-				if (legacy) {
-					fprintf(fp, "supported_rates=110 120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=110 120 240\n");
-				} else {
-					fprintf(fp, "supported_rates=120 180 240 360 480 540\n");
-					fprintf(fp, "basic_rates=120 240\n");
-				}
-				break;
-			default:
-				fprintf(fp, "supported_rates=240 360 480 540\n");
-				fprintf(fp, "basic_rates=240\n");
-				break;
-			}
-
-		} else {
-			fprintf(fp, "hw_mode=g\n");
-
 			switch (density) {
 			case 0:
 			case 1:
@@ -2319,8 +2263,8 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "}\n");
 		if (ispsk3) {
 #ifdef HAVE_SSID_PROTECTION
-		if (nvram_nmatch("1","%s_ssid_protection",prefix))
-			fprintf(fp, "ssid_protection=1");
+			if (nvram_nmatch("1", "%s_ssid_protection", prefix))
+				fprintf(fp, "ssid_protection=1");
 #endif
 		}
 		char extra[32];
