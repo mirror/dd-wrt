@@ -1962,16 +1962,59 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	char sb[32];
 	char bw[32];
 	int freq;
-	if (ismesh) {
-		fprintf(fp, "\tmode=5\n");
-		sprintf(fwd, "%s_mesh_fwding", prefix);
-		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
-	} else
-		fprintf(fp, "\tmode=1\n");
 	// autochannel
 	sprintf(nfreq, "%s_channel", prefix);
 	sprintf(nfreq2, "%s_channel2", prefix);
 	freq = atoi(nvram_default_get(nfreq, "0"));
+	if (ismesh) {
+		fprintf(fp, "\tmode=5\n");
+		sprintf(fwd, "%s_mesh_fwding", prefix);
+		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
+
+		nvram_default_nget("0", "%s_cell_density", prefix);
+		nvram_default_nget("1", "%s_legacy", prefix);
+		int density = nvram_ngeti("%s_cell_density", prefix);
+		int legacy = nvram_ngeti("%s_legacy", prefix);
+		if (freq < 4000) {
+			switch (density) {
+			case 0:
+			case 1:
+				if (legacy) {
+					fprintf(fp, "mesh_basic_rates=55 60 110 120 240\n");
+				} else {
+					fprintf(fp, "mesh_basic_rates=60 90 120 240\n");
+				}
+				break;
+			case 2:
+				if (legacy) {
+					fprintf(fp, "mesh_basic_rates=110 120 240\n");
+				} else {
+					fprintf(fp, "mesh_basic_rates=120 240\n");
+				}
+				break;
+			default:
+				fprintf(fp, "supported_rates=240 360 480 540\n");
+				fprintf(fp, "mesh_basic_rates=240\n");
+				break;
+			}
+		} else {
+			switch (density) {
+			case 1:
+				fprintf(fp, "mesh_basic_rates=60 120 240\n");
+				break;
+
+			case 2:
+				fprintf(fp, "mesh_basic_rates=120 240\n");
+				break;
+
+			default:
+				fprintf(fp, "mesh_basic_rates=240\n");
+				break;
+			}
+		}
+
+	} else
+		fprintf(fp, "\tmode=1\n");
 	fprintf(fp, "\tfixed_freq=1\n");
 	fprintf(fp, "\tfrequency=%d\n", freq);
 	sprintf(bw, "%s_channelbw", prefix);
