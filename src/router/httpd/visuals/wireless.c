@@ -692,6 +692,16 @@ void show_owe(webs_t wp, char *prefix);
 void show_80211X(webs_t wp, char *prefix);
 void show_addconfig(webs_t wp, char *prefix);
 
+static int has_ssid_protection(const char *akm, const char *security_mode) {
+#ifdef HAVE_SSID_PROTECTION
+//	if ((strstr(security_mode, "wep")) || (strstr(security_mode, "wpa") && (strstr(akm,"psk3") || strstr(akm,"wpa3"))))
+	if ((strstr(security_mode, "wpa") && (strstr(akm,"psk3"))))
+	    return 1;
+	return 0;
+#else
+return 0;
+#endif
+}
 void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix)
 {
 	char *type, *security_mode;
@@ -803,6 +813,12 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 		show_80211X(wp, prefix);
 	}
 #endif
+#endif
+#ifdef HAVE_SSID_PROTECTION
+	if (has_ssid_protection(akm, security_mode)) {
+		sprintf(var, "%s_ssid_protection", prefix);
+		showRadioDefaultOff(wp, "wpa.ssid_protection", var);
+	}
 #endif
 	if (v_show_preshared || v_show_owe || v_show_wparadius)
 		show_addconfig(wp, prefix);

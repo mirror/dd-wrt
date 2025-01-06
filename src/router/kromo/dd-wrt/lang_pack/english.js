@@ -2802,6 +2802,7 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistic Wireless Encryption";
 wpa.owe_ifname="OWE Transition Interface";
+wpa.ssid_protection="SSID protection in 4-way handshake";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";

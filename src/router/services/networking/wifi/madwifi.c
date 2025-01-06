@@ -1417,6 +1417,10 @@ void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
 	if (nvram_default_matchi(eap_key_retries, 1, 0)) {
 		fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
 	}
+#ifdef HAVE_SSID_PROTECTION
+	if (nvram_nmatch("1","%s_ssid_protection",prefix))
+		fprintf(fp, "ssid_protection=1");
+#endif
 	int wpamask = 0;
 	if (ispsk || iswpa)
 		wpamask |= 1;

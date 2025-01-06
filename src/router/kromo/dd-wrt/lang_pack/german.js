@@ -2468,6 +2468,7 @@ wpa.tls="EAP-TLS";
 wpa.ttls="EAP-TTLS";
 wpa.owe="OWE Opportunistische WLAN Verschlüsselung";
 wpa.owe_ifname="OWE Übergangs Interface";
+wpa.ssid_protection="SSID Schutz in 4-wege aushandlung";
 
 aoss.titl="AOSS Sicherheit";
 aoss.aoss="AOSS";

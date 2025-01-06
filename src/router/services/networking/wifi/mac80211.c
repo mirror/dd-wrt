@@ -2317,6 +2317,12 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
 		}
 		fprintf(fp, "}\n");
+		if (ispsk3) {
+#ifdef HAVE_SSID_PROTECTION
+		if (nvram_nmatch("1","%s_ssid_protection",prefix))
+			fprintf(fp, "ssid_protection=1");
+#endif
+		}
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
 		fwritenvram(extra, fp);

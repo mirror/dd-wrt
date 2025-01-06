@@ -1135,6 +1135,9 @@ _8021xprv
 	copytonv_prefix(wp, "sae_key", prefix);
 #endif
 	copytonv_prefix(wp, "disable_eapol_key_retries", prefix);
+#ifdef HAVE_SSID_PROTECTION
+	copytonv_prefix(wp, "ssid_protection", prefix);
+#endif
 #ifdef HAVE_80211W
 	copytonv_prefix(wp, "mfp", prefix);
 #endif
@@ -4112,6 +4115,7 @@ static char *vapsettings[] = {
 	"bss_color",
 	"bss_partial",
 	"twt_required",
+	"ssid_protection",
 };
 
 static void movevap(const char *prefix, int source, int target, int bonly)

@@ -1380,6 +1380,9 @@ ifeq ($(CONFIG_DAP3662),y)
   CFLAGS += -DHAVE_DAP3662
 endif
 
+ifeq ($(CONFIG_SSID_PROTECTION),y)
+  CFLAGS += -DHAVE_SSID_PROTECTION 
+endif
 
 ifeq ($(CONFIG_TIEXTRA1),y)
 WEBSCFLAGS += -DHAVE_TIEXTRA1 -Wl,-rpath,$(TOP)/jansson/src/.libs
