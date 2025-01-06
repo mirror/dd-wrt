@@ -68,20 +68,12 @@ nilfs_lookup(struct inode *dir, struct dentry *dentry, unsigned int flags)
 {
 	struct inode *inode;
 	ino_t ino;
-	int res;
 
 	if (dentry->d_name.len > NILFS_NAME_LEN)
 		return ERR_PTR(-ENAMETOOLONG);
 
-	res = nilfs_inode_by_name(dir, &dentry->d_name, &ino);
-	if (res) {
-		if (res != -ENOENT)
-			return ERR_PTR(res);
-		inode = NULL;
-	} else {
-		inode = nilfs_iget(dir->i_sb, NILFS_I(dir)->i_root, ino);
-	}
-
+	ino = nilfs_inode_by_name(dir, &dentry->d_name);
+	inode = ino ? nilfs_iget(dir->i_sb, NILFS_I(dir)->i_root, ino) : NULL;
 	return d_splice_alias(inode, dentry);
 }
 
@@ -281,11 +273,10 @@ static int nilfs_do_unlink(struct inode *dir, struct dentry *dentry)
 	struct page *page;
 	int err;
 
+	err = -ENOENT;
 	de = nilfs_find_entry(dir, &dentry->d_name, &page);
-	if (IS_ERR(de)) {
-		err = PTR_ERR(de);
+	if (!de)
 		goto out;
-	}
 
 	inode = d_inode(dentry);
 	err = -EIO;
@@ -375,11 +366,10 @@ static int nilfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	if (unlikely(err))
 		return err;
 
+	err = -ENOENT;
 	old_de = nilfs_find_entry(old_dir, &old_dentry->d_name, &old_page);
-	if (IS_ERR(old_de)) {
-		err = PTR_ERR(old_de);
+	if (!old_de)
 		goto out;
-	}
 
 	if (S_ISDIR(old_inode->i_mode)) {
 		err = -EIO;
@@ -396,12 +386,10 @@ static int nilfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 		if (dir_de && !nilfs_empty_dir(new_inode))
 			goto out_dir;
 
-		new_de = nilfs_find_entry(new_dir, &new_dentry->d_name,
-					  &new_page);
-		if (IS_ERR(new_de)) {
-			err = PTR_ERR(new_de);
+		err = -ENOENT;
+		new_de = nilfs_find_entry(new_dir, &new_dentry->d_name, &new_page);
+		if (!new_de)
 			goto out_dir;
-		}
 		nilfs_set_link(new_dir, new_de, new_page, old_inode);
 		nilfs_mark_inode_dirty(new_dir);
 		new_inode->i_ctime = CURRENT_TIME;
@@ -455,15 +443,14 @@ out:
  */
 static struct dentry *nilfs_get_parent(struct dentry *child)
 {
-	ino_t ino;
-	int res;
+	unsigned long ino;
 	struct inode *inode;
 	struct qstr dotdot = QSTR_INIT("..", 2);
 	struct nilfs_root *root;
 
-	res = nilfs_inode_by_name(d_inode(child), &dotdot, &ino);
-	if (res)
-		return ERR_PTR(res);
+	ino = nilfs_inode_by_name(d_inode(child), &dotdot);
+	if (!ino)
+		return ERR_PTR(-ENOENT);
 
 	root = NILFS_I(d_inode(child))->i_root;
 
