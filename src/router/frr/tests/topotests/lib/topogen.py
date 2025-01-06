@@ -492,7 +492,16 @@ class Topogen(object):
                 "Errors found post shutdown - details follow: {}".format(errors)
             )
 
-        self.net.stop()
+        try:
+            self.net.stop()
+
+        except OSError as error:
+            # OSError exception is raised when mininet tries to stop switch
+            # though switch is stopped once but mininet tries to stop same
+            # switch again, where it ended up with exception
+
+            logger.info(error)
+            logger.info("Exception ignored: switch is already stopped")
 
     def get_exabgp_cmd(self):
         if not self.exabgp_cmd:
@@ -824,6 +833,8 @@ class TopoRouter(TopoGear):
         Loads the unified configuration file source
         Start the daemons in the list
         If daemons is None, try to infer daemons from the config file
+        `daemons` is a tuple (daemon, param) of daemons to start, e.g.:
+        (TopoRouter.RD_ZEBRA, "-s 90000000").
         """
         source_path = self.load_config(self.RD_FRR, source)
         if not daemons:
@@ -832,16 +843,17 @@ class TopoRouter(TopoGear):
             for daemon in self.RD:
                 # This will not work for all daemons
                 daemonstr = self.RD.get(daemon).rstrip("d")
-                if daemonstr == "pim":
-                    grep_cmd = "grep 'ip {}' {}".format(daemonstr, source_path)
+                if daemonstr == "path":
+                    grep_cmd = "grep 'candidate-path' {}".format(source_path)
                 else:
-                    grep_cmd = "grep 'router {}' {}".format(daemonstr, source_path)
+                    grep_cmd = "grep -w '{}' {}".format(daemonstr, source_path)
                 result = self.run(grep_cmd, warn=False).strip()
                 if result:
                     self.load_config(daemon, "")
         else:
-            for daemon in daemons:
-                self.load_config(daemon, "")
+            for item in daemons:
+                daemon, param = item
+                self.load_config(daemon, "", param)
 
     def load_config(self, daemon, source=None, param=None):
         """Loads daemon configuration from the specified source

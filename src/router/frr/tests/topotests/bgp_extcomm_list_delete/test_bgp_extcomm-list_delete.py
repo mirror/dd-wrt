@@ -25,7 +25,6 @@ sys.path.append(os.path.join(CWD, "../"))
 
 # pylint: disable=C0413
 from lib.topogen import Topogen, TopoRouter, get_topogen
-from lib.topolog import logger
 from lib import topotest
 
 
@@ -47,7 +46,7 @@ def setup_module(mod):
 
     router_list = tgen.routers()
 
-    for i, (rname, router) in enumerate(router_list.items(), 1):
+    for _, (rname, router) in enumerate(router_list.items(), 1):
         router.load_config(
             TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
         )

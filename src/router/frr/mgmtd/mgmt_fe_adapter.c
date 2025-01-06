@@ -43,6 +43,7 @@ struct mgmt_fe_session_ctx {
 	uint64_t txn_id;
 	uint64_t cfg_txn_id;
 	uint8_t ds_locked[MGMTD_DS_MAX_ID];
+	const char **notify_xpaths;
 	struct event *proc_cfg_txn_clnp;
 	struct event *proc_show_txn_clnp;
 
@@ -487,6 +488,26 @@ static int fe_adapter_send_get_reply(struct mgmt_fe_session_ctx *session,
 					       MGMTD_FE_SESSION_SHOW_TXN_CLNUP);
 
 	return fe_adapter_send_msg(session->adapter, &fe_msg, false);
+}
+
+static int fe_adapter_conn_send_error(struct msg_conn *conn,
+				      uint64_t session_id, uint64_t req_id,
+				      bool short_circuit_ok, int16_t error,
+				      const char *errfmt, ...) PRINTFRR(6, 7);
+static int fe_adapter_conn_send_error(struct msg_conn *conn, uint64_t session_id,
+				      uint64_t req_id, bool short_circuit_ok,
+				      int16_t error, const char *errfmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, errfmt);
+
+	ret = vmgmt_msg_native_send_error(conn, session_id, req_id,
+					  short_circuit_ok, error, errfmt, ap);
+	va_end(ap);
+
+	return ret;
 }
 
 static int fe_adapter_send_error(struct mgmt_fe_session_ctx *session,
@@ -1143,7 +1164,9 @@ done:
 }
 
 static int fe_adapter_send_edit_reply(struct mgmt_fe_session_ctx *session,
-				      uint64_t req_id, const char *xpath)
+				      uint64_t req_id, bool changed,
+				      bool created, const char *xpath,
+				      const char *data)
 {
 	struct mgmt_msg_edit_reply *msg;
 	int ret;
@@ -1152,14 +1175,19 @@ static int fe_adapter_send_edit_reply(struct mgmt_fe_session_ctx *session,
 					MTYPE_MSG_NATIVE_EDIT_REPLY);
 	msg->refer_id = session->session_id;
 	msg->req_id = req_id;
+	msg->changed = changed;
+	msg->created = created;
 	msg->code = MGMT_MSG_CODE_EDIT_REPLY;
 
 	mgmt_msg_native_xpath_encode(msg, xpath);
 
+	if (data)
+		mgmt_msg_native_append(msg, data, strlen(data) + 1);
+
 	__dbg("Sending edit-reply from adapter %s to session-id %" PRIu64
-	      " req-id %" PRIu64 " len %u",
-	      session->adapter->name, session->session_id, req_id,
-	      mgmt_msg_native_get_msg_len(msg));
+	      " req-id %" PRIu64 " changed %u created %u len %u",
+	      session->adapter->name, session->session_id, req_id, changed,
+	      created, mgmt_msg_native_get_msg_len(msg));
 
 	ret = fe_adapter_send_native_msg(session->adapter, msg,
 					 mgmt_msg_native_get_msg_len(msg),
@@ -1167,6 +1195,88 @@ static int fe_adapter_send_edit_reply(struct mgmt_fe_session_ctx *session,
 	mgmt_msg_native_free_msg(msg);
 
 	return ret;
+}
+
+static int
+fe_adapter_native_send_session_reply(struct mgmt_fe_client_adapter *adapter,
+				     uint64_t req_id, uint64_t session_id,
+				     bool created)
+{
+	struct mgmt_msg_session_reply *msg;
+	int ret;
+
+	msg = mgmt_msg_native_alloc_msg(struct mgmt_msg_session_reply, 0,
+					MTYPE_MSG_NATIVE_SESSION_REPLY);
+	msg->refer_id = session_id;
+	msg->req_id = req_id;
+	msg->code = MGMT_MSG_CODE_SESSION_REPLY;
+	msg->created = created;
+
+	__dbg("Sending session-reply from adapter %s to session-id %" PRIu64
+	      " req-id %" PRIu64 " len %u",
+	      adapter->name, session_id, req_id,
+	      mgmt_msg_native_get_msg_len(msg));
+
+	ret = fe_adapter_send_native_msg(adapter, msg,
+					 mgmt_msg_native_get_msg_len(msg),
+					 false);
+	mgmt_msg_native_free_msg(msg);
+
+	return ret;
+}
+
+/**
+ * fe_adapter_handle_session_req() - Handle a session-req message from a FE client.
+ * @msg_raw: the message data.
+ * @msg_len: the length of the message data.
+ */
+static void fe_adapter_handle_session_req(struct mgmt_fe_client_adapter *adapter,
+					  void *__msg, size_t msg_len)
+{
+	struct mgmt_msg_session_req *msg = __msg;
+	struct mgmt_fe_session_ctx *session;
+	uint64_t client_id;
+
+	__dbg("Got session-req creating: %u for refer-id %" PRIu64 " from '%s'",
+	      msg->refer_id == 0, msg->refer_id, adapter->name);
+
+	if (msg->refer_id) {
+		uint64_t session_id = msg->refer_id;
+
+		session = mgmt_session_id2ctx(session_id);
+		if (!session) {
+			fe_adapter_conn_send_error(
+				adapter->conn, session_id, msg->req_id, false,
+				-EINVAL,
+				"No session to delete for session-id: %" PRIu64,
+				session_id);
+			return;
+		}
+		fe_adapter_native_send_session_reply(adapter, msg->req_id,
+						     session_id, false);
+		mgmt_fe_cleanup_session(&session);
+		return;
+	}
+
+	client_id = msg->req_id;
+
+	/* See if we have a client name to register */
+	if (msg_len > sizeof(*msg)) {
+		if (!MGMT_MSG_VALIDATE_NUL_TERM(msg, msg_len)) {
+			fe_adapter_conn_send_error(
+				adapter->conn, client_id, msg->req_id, false,
+				-EINVAL,
+				"Corrupt session-req message rcvd from client-id: %" PRIu64,
+				client_id);
+			return;
+		}
+		__dbg("Set client-name to '%s'", msg->client_name);
+		strlcpy(adapter->name, msg->client_name, sizeof(adapter->name));
+	}
+
+	session = mgmt_fe_create_session(adapter, client_id);
+	fe_adapter_native_send_session_reply(adapter, client_id,
+					     session->session_id, true);
 }
 
 /**
@@ -1179,8 +1289,7 @@ static void fe_adapter_handle_get_data(struct mgmt_fe_session_ctx *session,
 				       void *__msg, size_t msg_len)
 {
 	struct mgmt_msg_get_data *msg = __msg;
-	struct lysc_node **snodes = NULL;
-	char *xpath_resolved = NULL;
+	const struct lysc_node **snodes = NULL;
 	uint64_t req_id = msg->req_id;
 	Mgmtd__DatastoreId ds_id;
 	uint64_t clients;
@@ -1225,6 +1334,31 @@ static void fe_adapter_handle_get_data(struct mgmt_fe_session_ctx *session,
 		fe_adapter_send_error(session, req_id, false, -EINVAL,
 				      "Invalid defaults value %u for session-id: %" PRIu64,
 				      msg->defaults, session->session_id);
+		goto done;
+	}
+
+	/* Check for yang-library shortcut */
+	if (nb_oper_is_yang_lib_query(msg->xpath)) {
+		struct lyd_node *ylib = NULL;
+		LY_ERR err;
+
+		err = ly_ctx_get_yanglib_data(ly_native_ctx, &ylib, "%u",
+					      ly_ctx_get_change_count(
+						      ly_native_ctx));
+		if (err) {
+			fe_adapter_send_error(session, req_id, false, err,
+					      "Error getting yang-library data, session-id: %" PRIu64
+					      " error: %s",
+					      session->session_id,
+					      ly_last_errmsg());
+		} else {
+			yang_lyd_trim_xpath(&ylib, msg->xpath);
+			(void)fe_adapter_send_tree_data(session, req_id, false,
+							msg->result_type,
+							wd_options, ylib, 0);
+		}
+		if (ylib)
+			lyd_free_all(ylib);
 		goto done;
 	}
 
@@ -1292,7 +1426,6 @@ static void fe_adapter_handle_get_data(struct mgmt_fe_session_ctx *session,
 	}
 done:
 	darr_free(snodes);
-	darr_free(xpath_resolved);
 }
 
 static void fe_adapter_handle_edit(struct mgmt_fe_session_ctx *session,
@@ -1305,7 +1438,12 @@ static void fe_adapter_handle_edit(struct mgmt_fe_session_ctx *session,
 	bool lock, commit;
 	int ret;
 
-	if (msg->datastore != MGMT_MSG_DATASTORE_CANDIDATE) {
+	lock = CHECK_FLAG(msg->flags, EDIT_FLAG_IMPLICIT_LOCK);
+	commit = CHECK_FLAG(msg->flags, EDIT_FLAG_IMPLICIT_COMMIT);
+
+	if (lock && commit && msg->datastore == MGMT_MSG_DATASTORE_RUNNING)
+		;
+	else if (msg->datastore != MGMT_MSG_DATASTORE_CANDIDATE) {
 		fe_adapter_send_error(session, msg->req_id, false, -EINVAL,
 				      "Unsupported datastore");
 		return;
@@ -1325,9 +1463,6 @@ static void fe_adapter_handle_edit(struct mgmt_fe_session_ctx *session,
 	rds_id = MGMTD_DS_RUNNING;
 	rds_ctx = mgmt_ds_get_ctx_by_id(mm, rds_id);
 	assert(rds_ctx);
-
-	lock = CHECK_FLAG(msg->flags, EDIT_FLAG_IMPLICIT_LOCK);
-	commit = CHECK_FLAG(msg->flags, EDIT_FLAG_IMPLICIT_COMMIT);
 
 	if (lock) {
 		if (mgmt_fe_session_write_lock_ds(ds_id, ds_ctx, session)) {
@@ -1402,9 +1537,43 @@ static void fe_adapter_handle_edit(struct mgmt_fe_session_ctx *session,
 }
 
 /**
+ * fe_adapter_handle_notify_select() - Handle an Notify Select message.
+ * @session: the client session.
+ * @__msg: the message data.
+ * @msg_len: the length of the message data.
+ */
+static void fe_adapter_handle_notify_select(struct mgmt_fe_session_ctx *session,
+					    void *__msg, size_t msg_len)
+{
+	struct mgmt_msg_notify_select *msg = __msg;
+	uint64_t req_id = msg->req_id;
+	const char **selectors = NULL;
+	const char **new;
+
+	if (msg_len >= sizeof(*msg)) {
+		selectors = mgmt_msg_native_strings_decode(msg, msg_len,
+							   msg->selectors);
+		if (!selectors) {
+			fe_adapter_send_error(session, req_id, false, -EINVAL,
+					      "Invalid message");
+			return;
+		}
+	}
+	if (msg->replace) {
+		darr_free_free(session->notify_xpaths);
+		session->notify_xpaths = selectors;
+	} else if (selectors) {
+		new = darr_append_nz(session->notify_xpaths,
+				     darr_len(selectors));
+		memcpy(new, selectors, darr_len(selectors) * sizeof(*selectors));
+		darr_free(selectors);
+	}
+}
+
+/**
  * fe_adapter_handle_rpc() - Handle an RPC message from an FE client.
  * @session: the client session.
- * @msg_raw: the message data.
+ * @__msg: the message data.
  * @msg_len: the length of the message data.
  */
 static void fe_adapter_handle_rpc(struct mgmt_fe_session_ctx *session,
@@ -1493,6 +1662,28 @@ static void fe_adapter_handle_native_msg(struct mgmt_fe_client_adapter *adapter,
 					 size_t msg_len)
 {
 	struct mgmt_fe_session_ctx *session;
+	size_t min_size = mgmt_msg_get_min_size(msg->code);
+
+	if (msg_len < min_size) {
+		if (!min_size)
+			__log_err("adapter %s: recv msg refer-id %" PRIu64
+				  " unknown message type %u",
+				  adapter->name, msg->refer_id, msg->code);
+		else
+			__log_err("adapter %s: recv msg refer-id %" PRIu64
+				  " short (%zu<%zu) msg for type %u",
+				  adapter->name, msg->refer_id, msg_len,
+				  min_size, msg->code);
+		return;
+	}
+
+	if (msg->code == MGMT_MSG_CODE_SESSION_REQ) {
+		__dbg("adapter %s: session-id %" PRIu64
+		      " received SESSION_REQ message",
+		      adapter->name, msg->refer_id);
+		fe_adapter_handle_session_req(adapter, msg, msg_len);
+		return;
+	}
 
 	session = mgmt_session_id2ctx(msg->refer_id);
 	if (!session) {
@@ -1503,13 +1694,26 @@ static void fe_adapter_handle_native_msg(struct mgmt_fe_client_adapter *adapter,
 	assert(session->adapter == adapter);
 
 	switch (msg->code) {
-	case MGMT_MSG_CODE_GET_DATA:
-		fe_adapter_handle_get_data(session, msg, msg_len);
-		break;
 	case MGMT_MSG_CODE_EDIT:
+		__dbg("adapter %s: session-id %" PRIu64 " received EDIT message",
+		      adapter->name, msg->refer_id);
 		fe_adapter_handle_edit(session, msg, msg_len);
 		break;
+	case MGMT_MSG_CODE_NOTIFY_SELECT:
+		__dbg("adapter %s: session-id %" PRIu64
+		      " received NOTIFY_SELECT message",
+		      adapter->name, msg->refer_id);
+		fe_adapter_handle_notify_select(session, msg, msg_len);
+		break;
+	case MGMT_MSG_CODE_GET_DATA:
+		__dbg("adapter %s: session-id %" PRIu64
+		      " received GET_DATA message",
+		      adapter->name, msg->refer_id);
+		fe_adapter_handle_get_data(session, msg, msg_len);
+		break;
 	case MGMT_MSG_CODE_RPC:
+		__dbg("adapter %s: session-id %" PRIu64 " received RPC message",
+		      adapter->name, msg->refer_id);
 		fe_adapter_handle_rpc(session, msg, msg_len);
 		break;
 	default:
@@ -1554,14 +1758,48 @@ void mgmt_fe_adapter_send_notify(struct mgmt_msg_notify_data *msg, size_t msglen
 {
 	struct mgmt_fe_client_adapter *adapter;
 	struct mgmt_fe_session_ctx *session;
+	struct nb_node *nb_node;
+	const char **xpath_prefix;
+	const char *notif;
+	bool sendit;
+	uint len;
 
 	assert(msg->refer_id == 0);
 
+	notif = mgmt_msg_native_xpath_decode(msg, msglen);
+	if (!notif) {
+		__log_err("Corrupt notify msg");
+		return;
+	}
+
+	/*
+	 * We need the nb_node to obtain a path which does not include any
+	 * specific list entry selectors
+	 */
+	nb_node = nb_node_find(notif);
+	if (!nb_node) {
+		__log_err("No schema found for notification: %s", notif);
+		return;
+	}
+
 	FOREACH_ADAPTER_IN_LIST (adapter) {
 		FOREACH_SESSION_IN_LIST (adapter, session) {
-			msg->refer_id = session->session_id;
-			(void)fe_adapter_send_native_msg(adapter, msg, msglen,
-							 false);
+			/* If no selectors then always send */
+			sendit = !session->notify_xpaths;
+			darr_foreach_p (session->notify_xpaths, xpath_prefix) {
+				len = strlen(*xpath_prefix);
+				if (!strncmp(*xpath_prefix, notif, len) ||
+				    !strncmp(*xpath_prefix, nb_node->xpath,
+					     len)) {
+					sendit = true;
+					break;
+				}
+			}
+			if (sendit) {
+				msg->refer_id = session->session_id;
+				(void)fe_adapter_send_native_msg(adapter, msg,
+								 msglen, false);
+			}
 		}
 	}
 	msg->refer_id = 0;
@@ -1771,8 +2009,8 @@ int mgmt_fe_adapter_send_rpc_reply(uint64_t session_id, uint64_t txn_id,
 
 int mgmt_fe_adapter_send_edit_reply(uint64_t session_id, uint64_t txn_id,
 				    uint64_t req_id, bool unlock, bool commit,
-				    const char *xpath, int16_t error,
-				    const char *errstr)
+				    bool created, const char *xpath,
+				    int16_t error, const char *errstr)
 {
 	struct mgmt_fe_session_ctx *session;
 	Mgmtd__DatastoreId ds_id, rds_id;
@@ -1803,11 +2041,12 @@ int mgmt_fe_adapter_send_edit_reply(uint64_t session_id, uint64_t txn_id,
 		}
 	}
 
-	if (error)
+	if (error != 0 && error != -EALREADY)
 		ret = fe_adapter_send_error(session, req_id, false, error, "%s",
 					    errstr);
 	else
-		ret = fe_adapter_send_edit_reply(session, req_id, xpath);
+		ret = fe_adapter_send_edit_reply(session, req_id, created,
+						 !error, xpath, errstr);
 
 	if (session->cfg_txn_id != MGMTD_TXN_ID_NONE && !commit)
 		mgmt_destroy_txn(&session->cfg_txn_id);

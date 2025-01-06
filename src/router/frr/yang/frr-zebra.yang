@@ -626,6 +626,7 @@ module frr-zebra {
 
         leaf table-id {
           type uint32;
+	  default "254";
           description
             "Routing Table id (default id - 254).";
         }
@@ -2853,6 +2854,16 @@ module frr-zebra {
               "The last table to use.";
           }
         }
+      }
+
+      container mpls {
+        description
+          "MPLS Configuration.";
+          leaf fec-nexthop-resolution {
+            type boolean;
+            description
+              "Authorise nexthop resolution over all labeled routes.";
+          }
       }
 
       uses ribs;

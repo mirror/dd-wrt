@@ -56,7 +56,7 @@ def setup_module(mod):
         )
         tgen.gears["r{}".format(rtr)].run("sysctl -w net.mpls.conf.vrf1.input=1")
 
-    for i, (rname, router) in enumerate(router_list.items(), 1):
+    for _, (rname, router) in enumerate(router_list.items(), 1):
         router.load_config(
             TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
         )
@@ -146,7 +146,7 @@ def check_mpls_table(label, protocol):
 
     if label == "auto" and protocol:
         output_copy = deepcopy(output)
-        for key, data in output_copy.items():
+        for _, data in output_copy.items():
             for nexthop in data.get("nexthops", []):
                 if nexthop.get("type", None) != protocol:
                     continue

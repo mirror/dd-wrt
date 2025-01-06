@@ -251,7 +251,7 @@ route_match_peer(void *rule, const struct prefix *prefix, void *object)
 	peer = ((struct bgp_path_info *)object)->peer;
 
 	if (pc->interface) {
-		if (!peer->conf_if || !peer->group)
+		if (!peer->conf_if && !peer->group)
 			return RMAP_NOMATCH;
 
 		if (peer->conf_if && strcmp(peer->conf_if, pc->interface) == 0)
@@ -680,9 +680,8 @@ route_match_address_prefix_list(void *rule, afi_t afi,
 	plist = prefix_list_lookup(afi, (char *)rule);
 	if (plist == NULL) {
 		if (unlikely(CHECK_FLAG(rmap_debug, DEBUG_ROUTEMAP_DETAIL)))
-			zlog_debug(
-				"%s: Prefix List %s specified does not exist defaulting to NO_MATCH",
-				__func__, (char *)rule);
+			zlog_debug("%s: Prefix List %s (%s) specified does not exist defaulting to NO_MATCH",
+				   __func__, (char *)rule, afi2str(afi));
 		return RMAP_NOMATCH;
 	}
 
@@ -1237,6 +1236,8 @@ route_set_evpn_gateway_ip(void *rule, const struct prefix *prefix, void *object)
 	struct ipaddr *gw_ip = rule;
 	struct bgp_path_info *path;
 	struct prefix_evpn *evp;
+	struct bgp_route_evpn *bre = XCALLOC(MTYPE_BGP_EVPN_OVERLAY,
+					     sizeof(struct bgp_route_evpn));
 
 	if (prefix->family != AF_EVPN)
 		return RMAP_OKAY;
@@ -1252,9 +1253,9 @@ route_set_evpn_gateway_ip(void *rule, const struct prefix *prefix, void *object)
 	path = object;
 
 	/* Set gateway-ip value. */
-	path->attr->evpn_overlay.type = OVERLAY_INDEX_GATEWAY_IP;
-	memcpy(&path->attr->evpn_overlay.gw_ip, &gw_ip->ip.addr,
-	       IPADDRSZ(gw_ip));
+	bre->type = OVERLAY_INDEX_GATEWAY_IP;
+	memcpy(&bre->gw_ip, &gw_ip->ip.addr, IPADDRSZ(gw_ip));
+	bgp_attr_set_evpn_overlay(path->attr, bre);
 
 	return RMAP_OKAY;
 }
@@ -1991,10 +1992,9 @@ route_set_ip_nexthop(void *rule, const struct prefix *prefix, void *object)
 		SET_FLAG(path->attr->rmap_change_flags,
 			 BATTR_RMAP_NEXTHOP_UNCHANGED);
 	} else if (rins->peer_address) {
-		if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)
-		     || CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IMPORT))
-		    && peer->su_remote
-		    && sockunion_family(peer->su_remote) == AF_INET) {
+		if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) &&
+		    peer->su_remote &&
+		    sockunion_family(peer->su_remote) == AF_INET) {
 			path->attr->nexthop.s_addr =
 				sockunion2ip(peer->su_remote);
 			path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP);
@@ -3220,7 +3220,7 @@ route_set_ecommunity_lb(void *rule, const struct prefix *prefix, void *object)
 			return RMAP_OKAY;
 
 		bw_bytes = (peer->bgp->lb_ref_bw * 1000 * 1000) / 8;
-		mpath_count = bgp_path_info_mpath_count(path) + 1;
+		mpath_count = bgp_path_info_mpath_count(path);
 		bw_bytes *= mpath_count;
 	}
 
@@ -3451,19 +3451,15 @@ route_set_aigp_metric(void *rule, const struct prefix *pfx, void *object)
 {
 	const char *aigp_metric = rule;
 	struct bgp_path_info *path = object;
-	uint32_t aigp = 0;
+	uint32_t aigp;
 
-	if (strmatch(aigp_metric, "igp-metric")) {
-		if (!path->nexthop)
-			return RMAP_NOMATCH;
-
-		bgp_attr_set_aigp_metric(path->attr, path->nexthop->metric);
-	} else {
+	/* Note: the metric is stored as MED for a locally redistributed. */
+	if (strmatch(aigp_metric, "igp-metric"))
+		aigp = path->nexthop ? path->nexthop->metric : path->attr->med;
+	else
 		aigp = atoi(aigp_metric);
-		bgp_attr_set_aigp_metric(path->attr, aigp);
-	}
 
-	path->attr->flag |= ATTR_FLAG_BIT(BGP_ATTR_AIGP);
+	bgp_attr_set_aigp_metric(path->attr, aigp);
 
 	return RMAP_OKAY;
 }
@@ -3949,8 +3945,7 @@ route_set_ipv6_nexthop_prefer_global(void *rule, const struct prefix *prefix,
 	path = object;
 	peer = path->peer;
 
-	if (CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)
-	    || CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IMPORT)) {
+	if (CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) {
 		/* Set next hop preference to global */
 		SET_FLAG(path->attr->nh_flags, BGP_ATTR_NH_MP_PREFER_GLOBAL);
 		SET_FLAG(path->attr->rmap_change_flags,
@@ -4076,10 +4071,8 @@ route_set_ipv6_nexthop_peer(void *rule, const struct prefix *pfx, void *object)
 	path = object;
 	peer = path->peer;
 
-	if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)
-	     || CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IMPORT))
-	    && peer->su_remote
-	    && sockunion_family(peer->su_remote) == AF_INET6) {
+	if ((CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_IN)) &&
+	    peer->su_remote && sockunion_family(peer->su_remote) == AF_INET6) {
 		peer_address = peer->su_remote->sin6.sin6_addr;
 		/* Set next hop value and length in attribute. */
 		if (IN6_IS_ADDR_LINKLOCAL(&peer_address)) {
@@ -4094,7 +4087,6 @@ route_set_ipv6_nexthop_peer(void *rule, const struct prefix *pfx, void *object)
 				path->attr->mp_nexthop_len =
 					BGP_ATTR_NHLEN_IPV6_GLOBAL;
 		}
-
 	} else if (CHECK_FLAG(peer->rmap_type, PEER_RMAP_TYPE_OUT)) {
 		/* The next hop value will be set as part of packet
 		 * rewrite.
@@ -7144,7 +7136,7 @@ DEFUN_YANG (no_set_atomic_aggregate,
 
 DEFPY_YANG (set_aigp_metric,
 	    set_aigp_metric_cmd,
-	    "set aigp-metric <igp-metric|(1-4294967295)>$aigp_metric",
+	    "set aigp-metric <igp-metric|(0-4294967295)>$aigp_metric",
 	    SET_STR
 	    "BGP AIGP attribute (AIGP Metric TLV)\n"
 	    "AIGP Metric value from IGP protocol\n"
@@ -7164,7 +7156,7 @@ DEFPY_YANG (set_aigp_metric,
 
 DEFPY_YANG (no_set_aigp_metric,
 	    no_set_aigp_metric_cmd,
-	    "no set aigp-metric [<igp-metric|(1-4294967295)>]",
+	    "no set aigp-metric [<igp-metric|(0-4294967295)>]",
 	    NO_STR
 	    SET_STR
 	    "BGP AIGP attribute (AIGP Metric TLV)\n"
@@ -7236,43 +7228,6 @@ DEFUN_YANG (no_set_aggregator_as,
 	return nb_cli_apply_changes(vty, NULL);
 }
 
-DEFUN_YANG (match_ipv6_next_hop,
-	    match_ipv6_next_hop_cmd,
-	    "match ipv6 next-hop ACCESSLIST6_NAME",
-	    MATCH_STR
-	    IPV6_STR
-	    "Match IPv6 next-hop address of route\n"
-	    "IPv6 access-list name\n")
-{
-	const char *xpath =
-		"./match-condition[condition='frr-route-map:ipv6-next-hop-list']";
-	char xpath_value[XPATH_MAXLEN];
-
-	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
-	snprintf(xpath_value, sizeof(xpath_value),
-		 "%s/rmap-match-condition/list-name", xpath);
-	nb_cli_enqueue_change(vty, xpath_value, NB_OP_MODIFY,
-			      argv[argc - 1]->arg);
-
-	return nb_cli_apply_changes(vty, NULL);
-}
-
-DEFUN_YANG (no_match_ipv6_next_hop,
-	    no_match_ipv6_next_hop_cmd,
-	    "no match ipv6 next-hop [ACCESSLIST6_NAME]",
-	    NO_STR
-	    MATCH_STR
-	    IPV6_STR
-	    "Match IPv6 next-hop address of route\n"
-	    "IPv6 access-list name\n")
-{
-	const char *xpath =
-		"./match-condition[condition='frr-route-map:ipv6-next-hop-list']";
-
-	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
-	return nb_cli_apply_changes(vty, NULL);
-}
-
 DEFUN_YANG (match_ipv6_next_hop_address,
 	    match_ipv6_next_hop_address_cmd,
 	    "match ipv6 next-hop address X:X::X:X",
@@ -7329,45 +7284,6 @@ ALIAS_HIDDEN (no_match_ipv6_next_hop_address,
 	      IPV6_STR
 	      "Match IPv6 next-hop address of route\n"
 	      "IPv6 address of next hop\n")
-
-DEFUN_YANG (match_ipv6_next_hop_prefix_list,
-	    match_ipv6_next_hop_prefix_list_cmd,
-	    "match ipv6 next-hop prefix-list PREFIXLIST_NAME",
-	    MATCH_STR
-	    IPV6_STR
-	    "Match IPv6 next-hop address of route\n"
-	    "Match entries by prefix-list\n"
-	    "IPv6 prefix-list name\n")
-{
-	const char *xpath =
-		"./match-condition[condition='frr-route-map:ipv6-next-hop-prefix-list']";
-	char xpath_value[XPATH_MAXLEN];
-
-	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
-	snprintf(xpath_value, sizeof(xpath_value),
-		 "%s/rmap-match-condition/list-name", xpath);
-	nb_cli_enqueue_change(vty, xpath_value, NB_OP_MODIFY,
-			      argv[argc - 1]->arg);
-
-	return nb_cli_apply_changes(vty, NULL);
-}
-
-DEFUN_YANG (no_match_ipv6_next_hop_prefix_list,
-	    no_match_ipv6_next_hop_prefix_list_cmd,
-	    "no match ipv6 next-hop prefix-list [PREFIXLIST_NAME]",
-	    NO_STR
-	    MATCH_STR
-	    IPV6_STR
-	    "Match IPv6 next-hop address of route\n"
-	    "Match entries by prefix-list\n"
-	    "IPv6 prefix-list name\n")
-{
-	const char *xpath =
-		"./match-condition[condition='frr-route-map:ipv6-next-hop-prefix-list']";
-
-	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
-	return nb_cli_apply_changes(vty, NULL);
-}
 
 DEFPY_YANG (match_ipv4_next_hop,
        match_ipv4_next_hop_cmd,
@@ -8041,12 +7957,8 @@ void bgp_route_map_init(void)
 	route_map_install_set(&route_set_ipv6_nexthop_peer_cmd);
 	route_map_install_match(&route_match_rpki_extcommunity_cmd);
 
-	install_element(RMAP_NODE, &match_ipv6_next_hop_cmd);
 	install_element(RMAP_NODE, &match_ipv6_next_hop_address_cmd);
-	install_element(RMAP_NODE, &match_ipv6_next_hop_prefix_list_cmd);
-	install_element(RMAP_NODE, &no_match_ipv6_next_hop_cmd);
 	install_element(RMAP_NODE, &no_match_ipv6_next_hop_address_cmd);
-	install_element(RMAP_NODE, &no_match_ipv6_next_hop_prefix_list_cmd);
 	install_element(RMAP_NODE, &match_ipv6_next_hop_old_cmd);
 	install_element(RMAP_NODE, &no_match_ipv6_next_hop_old_cmd);
 	install_element(RMAP_NODE, &match_ipv4_next_hop_cmd);

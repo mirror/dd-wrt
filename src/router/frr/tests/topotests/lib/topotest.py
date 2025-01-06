@@ -396,6 +396,9 @@ def run_and_expect(func, what, count=20, wait=3):
     waiting `wait` seconds between tries. By default it tries 20 times with
     3 seconds delay between tries.
 
+    Changing default count/wait values, please change them below also for
+    `minimum_wait`, and `minimum_count`.
+
     Returns (True, func-return) on success or
     (False, func-return) on failure.
 
@@ -414,13 +417,18 @@ def run_and_expect(func, what, count=20, wait=3):
 
     # Just a safety-check to avoid running topotests with very
     # small wait/count arguments.
+    # If too low count/wait values are defined, override them
+    # with the minimum values.
+    minimum_count = 20
+    minimum_wait = 3
+    minimum_wait_time = 15  # The overall minimum seconds for the test to wait
     wait_time = wait * count
-    if wait_time < 5:
-        assert (
-            wait_time >= 5
-        ), "Waiting time is too small (count={}, wait={}), adjust timer values".format(
-            count, wait
+    if wait_time < minimum_wait_time:
+        logger.warning(
+            f"Waiting time is too small (count={count}, wait={wait}), using default values (count={minimum_count}, wait={minimum_wait})"
         )
+        count = minimum_count
+        wait = minimum_wait
 
     logger.debug(
         "'{}' polling started (interval {} secs, maximum {} tries)".format(
@@ -599,6 +607,30 @@ def is_linux():
 
     if os.uname()[0] == "Linux":
         return True
+    return False
+
+
+def iproute2_is_json_capable():
+    """
+    Checks if the iproute2 version installed on the system is capable of
+    handling JSON outputss
+
+    Returns True if capability can be detected, returns False otherwise.
+    """
+    if is_linux():
+        try:
+            subp = subprocess.Popen(
+                ["ip", "-json", "route", "show"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+            )
+            iproute2_err = subp.communicate()[1].splitlines()[0].split()[0]
+
+            if iproute2_err != "Error:":
+                return True
+        except Exception:
+            pass
     return False
 
 
@@ -1212,8 +1244,8 @@ def _sysctl_assure(commander, variable, value):
 def sysctl_atleast(commander, variable, min_value, raises=False):
     try:
         if commander is None:
-            logger = logging.getLogger("topotest")
-            commander = micronet.Commander("sysctl", logger=logger)
+            topotest_logger = logging.getLogger("topotest")
+            commander = micronet.Commander("sysctl", logger=topotest_logger)
 
         return _sysctl_atleast(commander, variable, min_value)
     except subprocess.CalledProcessError as error:
@@ -1230,8 +1262,8 @@ def sysctl_atleast(commander, variable, min_value, raises=False):
 def sysctl_assure(commander, variable, value, raises=False):
     try:
         if commander is None:
-            logger = logging.getLogger("topotest")
-            commander = micronet.Commander("sysctl", logger=logger)
+            topotest_logger = logging.getLogger("topotest")
+            commander = micronet.Commander("sysctl", logger=topotest_logger)
         return _sysctl_assure(commander, variable, value)
     except subprocess.CalledProcessError as error:
         logger.warning(
@@ -1406,7 +1438,7 @@ class Router(Node):
         self.daemondir = None
         self.hasmpls = False
         self.routertype = "frr"
-        self.unified_config = None
+        self.unified_config = False
         self.daemons = {
             "zebra": 0,
             "ripd": 0,
@@ -1629,7 +1661,7 @@ class Router(Node):
         # print "Daemons before:", self.daemons
         if daemon in self.daemons.keys() or daemon == "frr":
             if daemon == "frr":
-                self.unified_config = 1
+                self.unified_config = True
             else:
                 self.daemons[daemon] = 1
             if param is not None:

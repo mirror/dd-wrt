@@ -12,9 +12,9 @@ r7 sets aigp-metric for 10.0.0.71/32 to 71, and 72 for 10.0.0.72/32.
 r6 receives those routes with aigp-metric TLV.
 
 r2 and r3 receives those routes with aigp-metric TLV increased by 20,
-and 30 appropriately.
+and 10 appropriately.
 
-r1 receives routes with aigp-metric TLV 111,131 and 112,132 appropriately.
+r1 receives routes with aigp-metric TLV 81, 91 and 82, 92 respectively.
 """
 
 import os
@@ -29,7 +29,6 @@ sys.path.append(os.path.join(CWD, "../"))
 # pylint: disable=C0413
 from lib import topotest
 from lib.topogen import Topogen, TopoRouter, get_topogen
-from lib.common_config import step
 
 pytestmark = [pytest.mark.bgpd]
 
@@ -73,7 +72,7 @@ def setup_module(mod):
 
     router_list = tgen.routers()
 
-    for i, (rname, router) in enumerate(router_list.items(), 1):
+    for _, (rname, router) in enumerate(router_list.items(), 1):
         router.load_config(
             TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
         )
@@ -109,15 +108,29 @@ def test_bgp_aigp():
         expected = {
             "paths": [
                 {
-                    "aigpMetric": 111,
+                    "aigpMetric": 81,
                     "valid": True,
-                    "nexthops": [{"hostname": "r3", "accessible": True}],
+                    "nexthops": [
+                        {
+                            "ip": "10.0.0.3",
+                            "hostname": "r3",
+                            "metric": 30,
+                            "accessible": True,
+                        }
+                    ],
                 },
                 {
-                    "aigpMetric": 131,
+                    "aigpMetric": 91,
                     "valid": True,
-                    "bestpath": {"selectionReason": "Neighbor IP"},
-                    "nexthops": [{"hostname": "r2", "accessible": True}],
+                    "bestpath": {"selectionReason": "IGP Metric"},
+                    "nexthops": [
+                        {
+                            "ip": "10.0.0.2",
+                            "hostname": "r2",
+                            "metric": 10,
+                            "accessible": True,
+                        }
+                    ],
                 },
             ]
         }
@@ -141,30 +154,58 @@ def test_bgp_aigp():
                 "10.0.0.71/32": {
                     "paths": [
                         {
-                            "aigpMetric": 111,
-                            "bestpath": {"selectionReason": "AIGP"},
+                            "aigpMetric": 81,
                             "valid": True,
-                            "nexthops": [{"hostname": "r3", "accessible": True}],
+                            "nexthops": [
+                                {
+                                    "ip": "10.0.0.3",
+                                    "hostname": "r3",
+                                    "metric": 30,
+                                    "accessible": True,
+                                }
+                            ],
                         },
                         {
-                            "aigpMetric": 131,
+                            "aigpMetric": 91,
                             "valid": True,
-                            "nexthops": [{"hostname": "r2", "accessible": True}],
+                            "bestpath": {"selectionReason": "AIGP"},
+                            "nexthops": [
+                                {
+                                    "ip": "10.0.0.2",
+                                    "hostname": "r2",
+                                    "metric": 10,
+                                    "accessible": True,
+                                }
+                            ],
                         },
                     ],
                 },
                 "10.0.0.72/32": {
                     "paths": [
                         {
-                            "aigpMetric": 112,
-                            "bestpath": {"selectionReason": "AIGP"},
+                            "aigpMetric": 82,
                             "valid": True,
-                            "nexthops": [{"hostname": "r3", "accessible": True}],
+                            "nexthops": [
+                                {
+                                    "ip": "10.0.0.3",
+                                    "hostname": "r3",
+                                    "metric": 30,
+                                    "accessible": True,
+                                }
+                            ],
                         },
                         {
-                            "aigpMetric": 132,
+                            "aigpMetric": 92,
                             "valid": True,
-                            "nexthops": [{"hostname": "r2", "accessible": True}],
+                            "bestpath": {"selectionReason": "AIGP"},
+                            "nexthops": [
+                                {
+                                    "ip": "10.0.0.2",
+                                    "hostname": "r2",
+                                    "metric": 10,
+                                    "accessible": True,
+                                }
+                            ],
                         },
                     ],
                 },
@@ -186,6 +227,11 @@ def test_bgp_aigp():
     """
     )
 
+    # r4, 10.0.6.6/32 with aigp-metric 20
+    test_func = functools.partial(_bgp_check_aigp_metric, r4, "10.0.6.6/32", 20)
+    _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
+    assert result is None, "aigp-metric for 10.0.6.6/32 is not 20"
+
     # r4, 10.0.0.71/32 with aigp-metric 71
     test_func = functools.partial(_bgp_check_aigp_metric, r4, "10.0.0.71/32", 71)
     _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
@@ -196,17 +242,17 @@ def test_bgp_aigp():
     _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
     assert result is None, "aigp-metric for 10.0.0.72/32 is not 72"
 
-    # r2, 10.0.0.71/32 with aigp-metric 101 (71 + 30)
-    test_func = functools.partial(_bgp_check_aigp_metric, r2, "10.0.0.71/32", 101)
+    # r2, 10.0.0.71/32 with aigp-metric 101 (71 + 20)
+    test_func = functools.partial(_bgp_check_aigp_metric, r2, "10.0.0.71/32", 91)
     _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
-    assert result is None, "aigp-metric for 10.0.0.71/32 is not 101"
+    assert result is None, "aigp-metric for 10.0.0.71/32 is not 91"
 
-    # r3, 10.0.0.72/32 with aigp-metric 92 (72 + 20)
-    test_func = functools.partial(_bgp_check_aigp_metric, r3, "10.0.0.72/32", 92)
+    # r3, 10.0.0.72/32 with aigp-metric 92 (72 + 10)
+    test_func = functools.partial(_bgp_check_aigp_metric, r3, "10.0.0.72/32", 82)
     _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
-    assert result is None, "aigp-metric for 10.0.0.72/32 is not 92"
+    assert result is None, "aigp-metric for 10.0.0.72/32 is not 82"
 
-    # r1, check if AIGP is considered in best-path selection (lowest wins)
+    # r1, check if AIGP is considered in best-path selection (lowest wins: aigp + nexthop-metric)
     test_func = functools.partial(_bgp_check_aigp_metric_bestpath)
     _, result = topotest.run_and_expect(test_func, None, count=60, wait=1)
     assert result is None, "AIGP attribute is not considered in best-path selection"

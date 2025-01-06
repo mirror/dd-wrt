@@ -9,7 +9,6 @@
 #
 
 import os
-import re
 import sys
 import json
 import functools
@@ -56,7 +55,8 @@ def setup_module(mod):
     tgen = Topogen(build_topo, mod.__name__)
     tgen.start_topology()
     for rname, router in tgen.routers().items():
-        router.run("/bin/bash {}/{}/setup.sh".format(CWD, rname))
+        if os.path.exists("{}/{}/setup.sh".format(CWD, rname)):
+            router.run("/bin/bash {}/{}/setup.sh".format(CWD, rname))
         router.load_config(
             TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
         )
@@ -109,7 +109,7 @@ def check_rib(name, cmd, expected_file):
     logger.info('[+] check {} "{}" {}'.format(name, cmd, expected_file))
     tgen = get_topogen()
     func = functools.partial(_check, name, cmd, expected_file)
-    success, result = topotest.run_and_expect(func, None, count=10, wait=0.5)
+    _, result = topotest.run_and_expect(func, None, count=10, wait=0.5)
     assert result is None, "Failed"
 
 

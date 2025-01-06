@@ -36,13 +36,11 @@
 #include "zebra/zebra_dplane.h"
 #include "zebra/zebra_mpls.h"
 #include "zebra/zebra_router.h"
-#include "zebra/interface.h"
 #include "zebra/zebra_vxlan_private.h"
 #include "zebra/zebra_evpn.h"
 #include "zebra/zebra_evpn_mac.h"
 #include "zebra/kernel_netlink.h"
 #include "zebra/rt_netlink.h"
-#include "zebra/debug.h"
 #include "fpm/fpm.h"
 
 #include "zebra/dplane_fpm_nl_clippy.c"
@@ -136,8 +134,6 @@ struct fpm_nl_ctx {
 
 		/* Amount of data plane context processed. */
 		_Atomic uint32_t dplane_contexts;
-		/* Amount of data plane contexts enqueued. */
-		_Atomic uint32_t ctxqueue_len;
 		/* Peak amount of data plane contexts enqueued. */
 		_Atomic uint32_t ctxqueue_len_peak;
 
@@ -385,7 +381,7 @@ DEFPY(fpm_show_status,
 
 		out = ttable_dump(table, "\n");
 		vty_out(vty, "%s\n", out);
-		XFREE(MTYPE_TMP, out);
+		XFREE(MTYPE_TMP_TTABLE, out);
 
 		ttable_del(table);
 	}
@@ -399,6 +395,12 @@ DEFUN(fpm_show_counters, fpm_show_counters_cmd,
       FPM_STR
       "FPM statistic counters\n")
 {
+	uint32_t curr_queue_len;
+
+	frr_with_mutex (&gfnc->ctxqueue_mutex) {
+		curr_queue_len = dplane_ctx_queue_count(&gfnc->ctxqueue);
+	}
+
 	vty_out(vty, "%30s\n%30s\n", "FPM counters", "============");
 
 #define SHOW_COUNTER(label, counter) \
@@ -412,8 +414,7 @@ DEFUN(fpm_show_counters, fpm_show_counters_cmd,
 	SHOW_COUNTER("Connection errors", gfnc->counters.connection_errors);
 	SHOW_COUNTER("Data plane items processed",
 		     gfnc->counters.dplane_contexts);
-	SHOW_COUNTER("Data plane items enqueued",
-		     gfnc->counters.ctxqueue_len);
+	SHOW_COUNTER("Data plane items enqueued", curr_queue_len);
 	SHOW_COUNTER("Data plane items queue peak",
 		     gfnc->counters.ctxqueue_len_peak);
 	SHOW_COUNTER("Buffer full hits", gfnc->counters.buffer_full);
@@ -432,6 +433,12 @@ DEFUN(fpm_show_counters_json, fpm_show_counters_json_cmd,
       "FPM statistic counters\n"
       JSON_STR)
 {
+	uint32_t curr_queue_len;
+
+	frr_with_mutex (&gfnc->ctxqueue_mutex) {
+		curr_queue_len = dplane_ctx_queue_count(&gfnc->ctxqueue);
+	}
+
 	struct json_object *jo;
 
 	jo = json_object_new_object();
@@ -445,8 +452,7 @@ DEFUN(fpm_show_counters_json, fpm_show_counters_json_cmd,
 			    gfnc->counters.connection_errors);
 	json_object_int_add(jo, "data-plane-contexts",
 			    gfnc->counters.dplane_contexts);
-	json_object_int_add(jo, "data-plane-contexts-queue",
-			    gfnc->counters.ctxqueue_len);
+	json_object_int_add(jo, "data-plane-contexts-queue", curr_queue_len);
 	json_object_int_add(jo, "data-plane-contexts-queue-peak",
 			    gfnc->counters.ctxqueue_len_peak);
 	json_object_int_add(jo, "buffer-full-hits", gfnc->counters.buffer_full);
@@ -1330,7 +1336,7 @@ static void fpm_enqueue_l3vni_table(struct hash_bucket *bucket, void *arg)
 	struct zebra_l3vni *zl3vni = bucket->data;
 
 	fra->zl3vni = zl3vni;
-	hash_iterate(zl3vni->rmac_table, fpm_enqueue_rmac_table, zl3vni);
+	hash_iterate(zl3vni->rmac_table, fpm_enqueue_rmac_table, fra);
 }
 
 static void fpm_rmac_send(struct event *t)
@@ -1495,8 +1501,6 @@ static void fpm_process_queue(struct event *t)
 
 		/* Account the processed entries. */
 		processed_contexts++;
-		atomic_fetch_sub_explicit(&fnc->counters.ctxqueue_len, 1,
-					  memory_order_relaxed);
 
 		dplane_ctx_set_status(ctx, ZEBRA_DPLANE_REQUEST_SUCCESS);
 		dplane_provider_enqueue_out_ctx(fnc->prov, ctx);
@@ -1670,10 +1674,29 @@ static int fpm_nl_process(struct zebra_dplane_provider *prov)
 	struct zebra_dplane_ctx *ctx;
 	struct fpm_nl_ctx *fnc;
 	int counter, limit;
-	uint64_t cur_queue, peak_queue = 0, stored_peak_queue;
+	uint64_t cur_queue = 0, peak_queue = 0, stored_peak_queue;
 
 	fnc = dplane_provider_get_data(prov);
 	limit = dplane_provider_get_work_limit(prov);
+
+	frr_with_mutex (&fnc->ctxqueue_mutex) {
+		cur_queue = dplane_ctx_queue_count(&fnc->ctxqueue);
+	}
+
+	if (cur_queue >= (uint64_t)limit) {
+		if (IS_ZEBRA_DEBUG_FPM)
+			zlog_debug("%s: Already at a limit(%" PRIu64
+				   ") of internal work, hold off",
+				   __func__, cur_queue);
+		limit = 0;
+	} else if (cur_queue != 0) {
+		if (IS_ZEBRA_DEBUG_FPM)
+			zlog_debug("%s: current queue is %" PRIu64
+				   ", limiting to lesser amount of %" PRIu64,
+				   __func__, cur_queue, limit - cur_queue);
+		limit -= cur_queue;
+	}
+
 	for (counter = 0; counter < limit; counter++) {
 		ctx = dplane_provider_dequeue_in_ctx(prov);
 		if (ctx == NULL)
@@ -1684,25 +1707,27 @@ static int fpm_nl_process(struct zebra_dplane_provider *prov)
 		 * anyway.
 		 */
 		if (fnc->socket != -1 && fnc->connecting == false) {
+			enum dplane_op_e op = dplane_ctx_get_op(ctx);
+
 			/*
-			 * Update the number of queued contexts *before*
-			 * enqueueing, to ensure counter consistency.
+			 * Just skip multicast routes and let them flow through
 			 */
-			atomic_fetch_add_explicit(&fnc->counters.ctxqueue_len,
-						  1, memory_order_relaxed);
+			if ((op == DPLANE_OP_ROUTE_DELETE || op == DPLANE_OP_ROUTE_INSTALL ||
+			     op == DPLANE_OP_ROUTE_UPDATE) &&
+			    dplane_ctx_get_safi(ctx) == SAFI_MULTICAST)
+				goto skip;
 
 			frr_with_mutex (&fnc->ctxqueue_mutex) {
 				dplane_ctx_enqueue_tail(&fnc->ctxqueue, ctx);
+				cur_queue =
+					dplane_ctx_queue_count(&fnc->ctxqueue);
 			}
 
-			cur_queue = atomic_load_explicit(
-				&fnc->counters.ctxqueue_len,
-				memory_order_relaxed);
 			if (peak_queue < cur_queue)
 				peak_queue = cur_queue;
 			continue;
 		}
-
+skip:
 		dplane_ctx_set_status(ctx, ZEBRA_DPLANE_REQUEST_SUCCESS);
 		dplane_provider_enqueue_out_ctx(prov, ctx);
 	}
@@ -1714,9 +1739,7 @@ static int fpm_nl_process(struct zebra_dplane_provider *prov)
 		atomic_store_explicit(&fnc->counters.ctxqueue_len_peak,
 				      peak_queue, memory_order_relaxed);
 
-	if (atomic_load_explicit(&fnc->counters.ctxqueue_len,
-				 memory_order_relaxed)
-	    > 0)
+	if (cur_queue > 0)
 		event_add_event(fnc->fthread->master, fpm_process_queue, fnc, 0,
 				&fnc->t_dequeue);
 

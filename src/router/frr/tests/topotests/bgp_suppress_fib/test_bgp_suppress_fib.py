@@ -15,7 +15,6 @@ import sys
 import json
 import pytest
 from functools import partial
-from time import sleep
 from lib.topolog import logger
 
 CWD = os.path.dirname(os.path.realpath(__file__))
@@ -47,7 +46,7 @@ def setup_module(mod):
 
     router_list = tgen.routers()
 
-    for i, (rname, router) in enumerate(router_list.items(), 1):
+    for _, (rname, router) in enumerate(router_list.items(), 1):
         router.load_config(
             TopoRouter.RD_ZEBRA, os.path.join(CWD, "{}/zebra.conf".format(rname))
         )

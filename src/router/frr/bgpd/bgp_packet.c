@@ -651,6 +651,7 @@ void bgp_open_send(struct peer_connection *connection)
 	uint16_t send_holdtime;
 	as_t local_as;
 	struct peer *peer = connection->peer;
+	bool ext_opt_params = false;
 
 	if (CHECK_FLAG(peer->flags, PEER_FLAG_TIMER))
 		send_holdtime = peer->holdtime;
@@ -677,15 +678,17 @@ void bgp_open_send(struct peer_connection *connection)
 
 	/* Set capabilities */
 	if (CHECK_FLAG(peer->flags, PEER_FLAG_EXTENDED_OPT_PARAMS)) {
-		(void)bgp_open_capability(s, peer, true);
+		ext_opt_params = true;
+		(void)bgp_open_capability(s, peer, ext_opt_params);
 	} else {
 		struct stream *tmp = stream_new(STREAM_SIZE(s));
 
 		stream_copy(tmp, s);
-		if (bgp_open_capability(tmp, peer, false)
-		    > BGP_OPEN_NON_EXT_OPT_LEN) {
+		if (bgp_open_capability(tmp, peer, ext_opt_params) >
+		    BGP_OPEN_NON_EXT_OPT_LEN) {
 			stream_free(tmp);
-			(void)bgp_open_capability(s, peer, true);
+			ext_opt_params = true;
+			(void)bgp_open_capability(s, peer, ext_opt_params);
 		} else {
 			stream_copy(s, tmp);
 			stream_free(tmp);
@@ -696,10 +699,10 @@ void bgp_open_send(struct peer_connection *connection)
 	bgp_packet_set_size(s);
 
 	if (bgp_debug_neighbor_events(peer))
-		zlog_debug(
-			"%s sending OPEN, version %d, my as %u, holdtime %d, id %pI4",
-			peer->host, BGP_VERSION_4, local_as, send_holdtime,
-			&peer->local_id);
+		zlog_debug("%pBP fd %d sending OPEN%s, version %d, my as %u, holdtime %d, id %pI4",
+			   peer, peer->connection->fd,
+			   ext_opt_params ? " (Extended)" : "", BGP_VERSION_4,
+			   local_as, send_holdtime, &peer->local_id);
 
 	/* Dump packet if debug option is set. */
 	/* bgp_packet_dump (s); */
@@ -982,6 +985,7 @@ static void bgp_notify_send_internal(struct peer_connection *connection,
 		peer->notify.code = bgp_notify.code;
 		peer->notify.subcode = bgp_notify.subcode;
 		peer->notify.length = bgp_notify.length;
+		peer->notify.hard_reset = hard_reset;
 
 		if (bgp_notify.length && data) {
 			bgp_notify.data = XMALLOC(MTYPE_BGP_NOTIFICATION,
@@ -1112,10 +1116,10 @@ void bgp_route_refresh_send(struct peer *peer, afi_t afi, safi_t safi,
 	s = stream_new(peer->max_packet_size);
 
 	/* Make BGP update packet. */
-	if (CHECK_FLAG(peer->cap, PEER_CAP_REFRESH_RCV))
-		bgp_packet_set_marker(s, BGP_MSG_ROUTE_REFRESH_NEW);
-	else
-		bgp_packet_set_marker(s, BGP_MSG_ROUTE_REFRESH_OLD);
+	if (!CHECK_FLAG(peer->cap, PEER_CAP_REFRESH_RCV))
+		return;
+
+	bgp_packet_set_marker(s, BGP_MSG_ROUTE_REFRESH_NEW);
 
 	/* Encode Route Refresh message. */
 	stream_putw(s, pkt_afi);
@@ -1295,7 +1299,7 @@ void bgp_capability_send(struct peer *peer, afi_t afi, safi_t safi,
 		stream_putc(s, 0);
 		gr_restart_time = peer->bgp->restart_time;
 
-		if (peer->bgp->t_startup) {
+		if (peer->bgp->t_startup || bgp_in_graceful_restart()) {
 			SET_FLAG(gr_restart_time, GRACEFUL_RESTART_R_BIT);
 			SET_FLAG(peer->cap, PEER_CAP_GRACEFUL_RESTART_R_BIT_ADV);
 		}
@@ -1800,6 +1804,23 @@ static int bgp_open_receive(struct peer_connection *connection,
 	mp_capability = 0;
 	optlen = stream_getc(peer->curr);
 
+	/* If we previously had some more capabilities e.g.:
+	 *   FQDN, SOFT_VERSION, we MUST clear the values we used
+	 *   before, to avoid using stale data.
+	 * Checking peer->cap is enough before checking for the real
+	 * data, but we don't have this check everywhere in the code,
+	 * thus let's clear the data here too before parsing the
+	 * capabilities.
+	 */
+	if (peer->hostname)
+		XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
+
+	if (peer->domainname)
+		XFREE(MTYPE_BGP_PEER_HOST, peer->domainname);
+
+	if (peer->soft_version)
+		XFREE(MTYPE_BGP_SOFT_VERSION, peer->soft_version);
+
 	/* Extended Optional Parameters Length for BGP OPEN Message */
 	if (optlen == BGP_OPEN_NON_EXT_OPT_LEN
 	    || CHECK_FLAG(peer->flags, PEER_FLAG_EXTENDED_OPT_PARAMS)) {
@@ -1977,6 +1998,14 @@ static int bgp_open_receive(struct peer_connection *connection,
 					  BGP_NOTIFY_OPEN_BAD_PEER_AS,
 					  notify_data_remote_as, 2);
 		return BGP_Stop;
+	} else if (peer->as_type == AS_AUTO) {
+		if (remote_as == peer->bgp->as) {
+			peer->as = peer->local_as;
+			SET_FLAG(peer->as_type, AS_INTERNAL);
+		} else {
+			peer->as = remote_as;
+			SET_FLAG(peer->as_type, AS_EXTERNAL);
+		}
 	} else if (peer->as_type == AS_INTERNAL) {
 		if (remote_as != peer->bgp->as) {
 			if (bgp_debug_neighbor_events(peer))
@@ -2378,13 +2407,13 @@ static int bgp_update_receive(struct peer_connection *connection,
 		ret = bgp_dump_attr(&attr, peer->rcvd_attr_str,
 				    sizeof(peer->rcvd_attr_str));
 
-		peer->stat_upd_7606++;
-
-		if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW)
+		if (attr_parse_ret == BGP_ATTR_PARSE_WITHDRAW) {
+			peer->stat_upd_7606++;
 			flog_err(
 				EC_BGP_UPDATE_RCV,
 				"%pBP rcvd UPDATE with errors in attr(s)!! Withdrawing route.",
 				peer);
+		}
 
 		if (ret && bgp_debug_update(peer, NULL, NULL, 1) &&
 		    BGP_DEBUG(update, UPDATE_DETAIL)) {
@@ -2672,6 +2701,19 @@ static int bgp_notify_receive(struct peer_connection *connection,
 	if (inner.code == BGP_NOTIFY_OPEN_ERR &&
 	    inner.subcode == BGP_NOTIFY_OPEN_UNSUP_PARAM)
 		UNSET_FLAG(peer->sflags, PEER_STATUS_CAPABILITY_OPEN);
+
+	/* Resend the next OPEN message with a global AS number if we received
+	 * a `Bad Peer AS` notification. This is only valid if `dual-as` is
+	 * configured.
+	 */
+	if (inner.code == BGP_NOTIFY_OPEN_ERR &&
+	    inner.subcode == BGP_NOTIFY_OPEN_BAD_PEER_AS &&
+	    CHECK_FLAG(peer->flags, PEER_FLAG_DUAL_AS)) {
+		if (peer->change_local_as != peer->bgp->as)
+			peer->change_local_as = peer->bgp->as;
+		else
+			peer->change_local_as = peer->local_as;
+	}
 
 	/* If Graceful-Restart N-bit (Notification) is exchanged,
 	 * and it's not a Hard Reset, let's retain the routes.

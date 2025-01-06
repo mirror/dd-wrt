@@ -934,9 +934,8 @@ static struct stream *bmp_update(const struct prefix *p, struct prefix_rd *prd,
 	stream_putw(s, 0);
 
 	/* 5: Encode all the attributes, except MP_REACH_NLRI attr. */
-	total_attr_len =
-		bgp_packet_attribute(NULL, peer, s, attr, &vecarr, NULL, afi,
-				     safi, peer, NULL, NULL, 0, 0, 0, NULL);
+	total_attr_len = bgp_packet_attribute(NULL, peer, s, attr, &vecarr, NULL, afi, safi, peer,
+					      NULL, NULL, 0, 0, 0);
 
 	/* space check? */
 
@@ -1047,7 +1046,7 @@ static void bmp_monitor(struct bmp *bmp, struct peer *peer, uint8_t flags,
 
 static bool bmp_wrsync(struct bmp *bmp, struct pullwr *pullwr)
 {
-	uint8_t bpi_num_labels;
+	uint8_t bpi_num_labels, adjin_num_labels;
 	afi_t afi;
 	safi_t safi;
 
@@ -1241,11 +1240,12 @@ afibreak:
 			    bpi_num_labels ? bpi->extra->labels->label : NULL,
 			    bpi_num_labels);
 
-	if (adjin)
-		/* TODO: set label here when adjin supports labels */
-		bmp_monitor(bmp, adjin->peer, 0, BMP_PEER_TYPE_GLOBAL_INSTANCE,
-			    bn_p, prd, adjin->attr, afi, safi, adjin->uptime,
-			    NULL, 0);
+	if (adjin) {
+		adjin_num_labels = adjin->labels ? adjin->labels->num_labels : 0;
+		bmp_monitor(bmp, adjin->peer, 0, BMP_PEER_TYPE_GLOBAL_INSTANCE, bn_p, prd,
+			    adjin->attr, afi, safi, adjin->uptime,
+			    adjin_num_labels ? &adjin->labels->label[0] : NULL, adjin_num_labels);
+	}
 
 	if (bn)
 		bgp_dest_unlock_node(bn);
@@ -1382,7 +1382,7 @@ static bool bmp_wrqueue(struct bmp *bmp, struct pullwr *pullwr)
 	struct peer *peer;
 	struct bgp_dest *bn = NULL;
 	bool written = false;
-	uint8_t bpi_num_labels;
+	uint8_t bpi_num_labels, adjin_num_labels;
 
 	bqe = bmp_pull(bmp);
 	if (!bqe)
@@ -1453,10 +1453,11 @@ static bool bmp_wrqueue(struct bmp *bmp, struct pullwr *pullwr)
 			if (adjin->peer == peer)
 				break;
 		}
-		/* TODO: set label here when adjin supports labels */
-		bmp_monitor(bmp, peer, 0, BMP_PEER_TYPE_GLOBAL_INSTANCE,
-			    &bqe->p, prd, adjin ? adjin->attr : NULL, afi, safi,
-			    adjin ? adjin->uptime : monotime(NULL), NULL, 0);
+		adjin_num_labels = adjin && adjin->labels ? adjin->labels->num_labels : 0;
+		bmp_monitor(bmp, peer, 0, BMP_PEER_TYPE_GLOBAL_INSTANCE, &bqe->p, prd,
+			    adjin ? adjin->attr : NULL, afi, safi,
+			    adjin ? adjin->uptime : monotime(NULL),
+			    adjin_num_labels ? &adjin->labels->label[0] : NULL, adjin_num_labels);
 		written = true;
 	}
 
@@ -2543,9 +2544,9 @@ DEFPY(bmp_monitor_cfg, bmp_monitor_cmd,
 
 	prev = bt->afimon[afi][safi];
 	if (no)
-		bt->afimon[afi][safi] &= ~flag;
+		UNSET_FLAG(bt->afimon[afi][safi], flag);
 	else
-		bt->afimon[afi][safi] |= flag;
+		SET_FLAG(bt->afimon[afi][safi], flag);
 
 	if (prev == bt->afimon[afi][safi])
 		return CMD_SUCCESS;
@@ -2743,7 +2744,7 @@ DEFPY(show_bmp,
 			}
 			out = ttable_dump(tt, "\n");
 			vty_out(vty, "%s", out);
-			XFREE(MTYPE_TMP, out);
+			XFREE(MTYPE_TMP_TTABLE, out);
 			ttable_del(tt);
 
 			vty_out(vty, "\n    %zu connected clients:\n",
@@ -2770,7 +2771,7 @@ DEFPY(show_bmp,
 			}
 			out = ttable_dump(tt, "\n");
 			vty_out(vty, "%s", out);
-			XFREE(MTYPE_TMP, out);
+			XFREE(MTYPE_TMP_TTABLE, out);
 			ttable_del(tt);
 			vty_out(vty, "\n");
 		}
@@ -2828,8 +2829,7 @@ static int bmp_config_write(struct bgp *bgp, struct vty *vty)
 					afi2str_lower(afi), safi2str(safi));
 		}
 		frr_each (bmp_listeners, &bt->listeners, bl)
-			vty_out(vty, " \n  bmp listener %pSU port %d\n",
-				&bl->addr, bl->port);
+			vty_out(vty, "   bmp listener %pSU port %d\n", &bl->addr, bl->port);
 
 		frr_each (bmp_actives, &bt->actives, ba) {
 			vty_out(vty, "  bmp connect %s port %u min-retry %u max-retry %u",

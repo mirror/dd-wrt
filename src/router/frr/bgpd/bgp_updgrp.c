@@ -343,7 +343,12 @@ static unsigned int updgrp_hash_key_make(const void *p)
 
 	key = 0;
 
-	key = jhash_1word(peer->sort, key); /* EBGP or IBGP */
+	/* `remote-as auto` technically uses identical peer->sort.
+	 * After OPEN message is parsed, this is updated accordingly, but
+	 * we need to call the peer_sort() here also to properly create
+	 * separate subgroups.
+	 */
+	key = jhash_1word(peer_sort((struct peer *)peer), key);
 	key = jhash_1word(peer->sub_sort, key); /* OAD */
 	key = jhash_1word((peer->flags & PEER_UPDGRP_FLAGS), key);
 	key = jhash_1word((flags & PEER_UPDGRP_AF_FLAGS), key);
@@ -778,8 +783,11 @@ static int update_group_show_walkcb(struct update_group *updgrp, void *arg)
 				json_updgrp, "replaceLocalAs",
 				CHECK_FLAG(updgrp->conf->flags,
 					   PEER_FLAG_LOCAL_AS_REPLACE_AS));
+			json_object_boolean_add(json_updgrp, "dualAs",
+						CHECK_FLAG(updgrp->conf->flags,
+							   PEER_FLAG_DUAL_AS));
 		} else {
-			vty_out(vty, "  Local AS %u%s%s\n",
+			vty_out(vty, "  Local AS %u%s%s%s\n",
 				updgrp->conf->change_local_as,
 				CHECK_FLAG(updgrp->conf->flags,
 					   PEER_FLAG_LOCAL_AS_NO_PREPEND)
@@ -788,6 +796,10 @@ static int update_group_show_walkcb(struct update_group *updgrp, void *arg)
 				CHECK_FLAG(updgrp->conf->flags,
 					   PEER_FLAG_LOCAL_AS_REPLACE_AS)
 					? " replace-as"
+					: "",
+				CHECK_FLAG(updgrp->conf->flags,
+					   PEER_FLAG_DUAL_AS)
+					? " dual-as"
 					: "");
 		}
 	}
@@ -2010,6 +2022,8 @@ int update_group_adjust_soloness(struct peer *peer, int set)
 {
 	struct peer_group *group;
 	struct listnode *node, *nnode;
+
+	peer_flag_set(peer, PEER_FLAG_LONESOUL);
 
 	if (!CHECK_FLAG(peer->sflags, PEER_STATUS_GROUP)) {
 		peer_lonesoul_or_not(peer, set);

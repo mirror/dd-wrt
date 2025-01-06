@@ -32,7 +32,6 @@
 #include "zebra/zebra_ptm.h"
 #include "zebra/rt_netlink.h"
 #include "zebra/if_netlink.h"
-#include "zebra/interface.h"
 #include "zebra/zebra_vxlan.h"
 #include "zebra/zebra_errors.h"
 #include "zebra/zebra_evpn_mh.h"
@@ -1059,6 +1058,8 @@ void if_down(struct interface *ifp)
 
 	/* Delete all neighbor addresses learnt through IPv6 RA */
 	if_down_del_nbr_connected(ifp);
+
+	rib_update_handle_vrf_all(RIB_UPDATE_INTERFACE_DOWN, ZEBRA_ROUTE_KERNEL);
 }
 
 void if_refresh(struct interface *ifp)

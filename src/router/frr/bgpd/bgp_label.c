@@ -38,7 +38,7 @@ static void *bgp_labels_hash_alloc(void *p)
 	struct bgp_labels *new;
 	uint8_t i;
 
-	new = XMALLOC(MTYPE_BGP_LABELS, sizeof(struct bgp_labels));
+	new = XCALLOC(MTYPE_BGP_LABELS, sizeof(struct bgp_labels));
 
 	new->num_labels = labels->num_labels;
 	for (i = 0; i < labels->num_labels; i++)
@@ -576,7 +576,7 @@ int bgp_nlri_parse_label(struct peer *peer, struct attr *attr,
 		} else {
 			bgp_withdraw(peer, &p, addpath_id, packet->afi,
 				     SAFI_UNICAST, ZEBRA_ROUTE_BGP,
-				     BGP_ROUTE_NORMAL, NULL, &label, 1, NULL);
+				     BGP_ROUTE_NORMAL, NULL, &label, 1);
 		}
 	}
 

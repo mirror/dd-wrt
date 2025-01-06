@@ -62,7 +62,6 @@ static void gm_sg_timer_start(struct gm_if *gm_ifp, struct gm_sg *sg,
 		sg->iface->ifp->name, &sg->sgaddr
 
 /* clang-format off */
-#if PIM_IPV == 6
 static const pim_addr gm_all_hosts = {
 	.s6_addr = {
 		0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -84,13 +83,6 @@ static const pim_addr gm_dummy_untracked = {
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	},
 };
-#else
-/* 224.0.0.1 */
-static const pim_addr gm_all_hosts = { .s_addr = htonl(0xe0000001), };
-/* 224.0.0.22 */
-static const pim_addr gm_all_routers = { .s_addr = htonl(0xe0000016), };
-static const pim_addr gm_dummy_untracked = { .s_addr = 0xffffffff, };
-#endif
 /* clang-format on */
 
 #define IPV6_MULTICAST_SCOPE_LINK 2
@@ -2537,7 +2529,7 @@ static void gm_show_if_vrf(struct vty *vty, struct vrf *vrf, const char *ifname,
 	if (!js && !detail) {
 		table = ttable_dump(tt, "\n");
 		vty_out(vty, "%s\n", table);
-		XFREE(MTYPE_TMP, table);
+		XFREE(MTYPE_TMP_TTABLE, table);
 		ttable_del(tt);
 	}
 }
@@ -3021,7 +3013,7 @@ static void gm_show_groups(struct vty *vty, struct vrf *vrf, bool uj)
 		/* Dump the generated table. */
 		table = ttable_dump(tt, "\n");
 		vty_out(vty, "%s\n", table);
-		XFREE(MTYPE_TMP, table);
+		XFREE(MTYPE_TMP_TTABLE, table);
 		ttable_del(tt);
 	}
 }

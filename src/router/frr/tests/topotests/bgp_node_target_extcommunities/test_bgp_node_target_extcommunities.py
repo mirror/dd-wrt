@@ -24,7 +24,7 @@ sys.path.append(os.path.join(CWD, "../"))
 
 # pylint: disable=C0413
 from lib import topotest
-from lib.topogen import Topogen, TopoRouter, get_topogen
+from lib.topogen import Topogen, get_topogen
 
 pytestmark = [pytest.mark.bgpd]
 
@@ -46,7 +46,7 @@ def setup_module(mod):
 
     router_list = tgen.routers()
 
-    for i, (rname, router) in enumerate(router_list.items(), 1):
+    for _, (rname, router) in enumerate(router_list.items(), 1):
         router.load_frr_config(os.path.join(CWD, "{}/frr.conf".format(rname)))
 
     tgen.start_router()

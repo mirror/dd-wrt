@@ -83,7 +83,7 @@ be specified (:ref:`common-invocation-options`).
    be done to see if this is helping or not at the scale you are running
    at.
 
-.. option:: --v6-with-v4-nexthops
+.. option:: -x, --v6-with-v4-nexthops
 
    Allow BGP to peer in the V6 afi, when the interface only has v4 addresses.
    This allows bgp to install the v6 routes with a v6 nexthop that has the
@@ -91,6 +91,12 @@ be specified (:ref:`common-invocation-options`).
    overrides the bgp setting.  This setting is only really usable when
    the operator has turned off communication to zebra and is running bgpd
    as a complete standalone process.
+
+.. option:: -K, --graceful_restart
+
+   Bgpd will use this option to denote either a planned FRR graceful
+   restart or a bgpd-only graceful restart, and this will drive the BGP
+   GR restarting router procedures.
 
 LABEL MANAGER
 -------------
@@ -154,15 +160,15 @@ bottom until one of the factors can be used.
 
    Prefer higher local preference routes to lower.
 
+3. **Local route check**
+
+   Prefer local routes (statics, aggregates, redistributed) to received routes.
+
    If ``bgp bestpath aigp`` is enabled, and both paths that are compared have
    AIGP attribute, BGP uses AIGP tie-breaking unless both of the paths have the
    AIGP metric attribute. This means that the AIGP attribute is not evaluated
    during the best path selection process between two paths when one path does
    not have the AIGP attribute.
-
-3. **Local route check**
-
-   Prefer local routes (statics, aggregates, redistributed) to received routes.
 
 4. **AS path length check**
 
@@ -1080,6 +1086,52 @@ Default global mode is helper and default peer per mode is inherit from global.
 If per peer mode is configured, the GR mode of this particular peer will
 override the global mode.
 
+.. _bgp-GR-config-mode-cmd:
+
+BGP GR Config Mode Commands
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. clicmd:: bgp graceful-restart
+
+   This command will enable BGP graceful restart functionality for all BGP instances.
+
+.. clicmd:: bgp graceful-restart-disable
+
+   This command will disable both the functionality graceful restart and helper
+   mode for all BGP instances
+
+.. clicmd:: bgp graceful-restart select-defer-time (0-3600)
+
+   This is command, will set deferral time to value specified.
+
+.. clicmd:: bgp graceful-restart rib-stale-time (1-3600)
+
+   This is command, will set the time for which stale routes are kept in RIB.
+
+.. clicmd:: bgp graceful-restart restart-time (0-4095)
+
+   Set the time to wait to delete stale routes before a BGP open message
+   is received.
+
+   Using with Long-lived Graceful Restart capability, this is recommended
+   setting this timer to 0 and control stale routes with
+   ``bgp long-lived-graceful-restart stale-time``.
+
+   Default value is 120.
+
+.. clicmd:: bgp graceful-restart stalepath-time (1-4095)
+
+   This is command, will set the max time (in seconds) to hold onto
+   restarting peer's stale paths.
+
+   It also controls Enhanced Route-Refresh timer.
+
+   If this command is configured and the router does not receive a Route-Refresh EoRR
+   message, the router removes the stale routes from the BGP table after the timer
+   expires. The stale path timer is started when the router receives a Route-Refresh
+   BoRR message
+
+
 .. _bgp-GR-global-mode-cmd:
 
 BGP GR Global Mode Commands
@@ -1229,6 +1281,13 @@ IPv6 Support
    Using the ``bgp default ipv6-unicast`` configuration, IPv6 unicast
    address family is enabled by default for all new neighbors.
 
+
+.. clicmd:: bgp ipv6-auto-ra
+
+   By default, bgpd can ask Zebra to enable sending IPv6 router advertisement
+   messages on interfaces. For example, this happens for unnumbered peers
+   support or when extended-nexthop capability is used. The ``no`` form of this
+   command disables such behaviour.
 
 .. _bgp-route-aggregation:
 
@@ -1509,6 +1568,10 @@ Defining Peers
    peers ASN is the same as mine as specified under the :clicmd:`router bgp ASN`
    command the connection will be denied.
 
+.. clicmd:: neighbor PEER remote-as auto
+
+   The neighbor's ASN is detected automatically from the OPEN message.
+
 .. clicmd:: neighbor PEER oad
 
    Mark a peer belonging to the One Administrative Domain.
@@ -1647,7 +1710,7 @@ Configuring Peers
    IPv4 session addresses, see the ``neighbor PEER update-source`` command
    below.
 
-.. clicmd:: neighbor PEER interface remote-as <internal|external|ASN>
+.. clicmd:: neighbor PEER interface remote-as <internal|external|auto|ASN>
 
    Configure an unnumbered BGP peer. ``PEER`` should be an interface name. The
    session will be established via IPv6 link locals. Use ``internal`` for iBGP
@@ -1762,7 +1825,7 @@ Configuring Peers
    Since sent prefix count is managed by update-groups, this option
    creates a separate update-group for outgoing updates.
 
-.. clicmd:: neighbor PEER local-as AS-NUMBER [no-prepend] [replace-as]
+.. clicmd:: neighbor PEER local-as AS-NUMBER [no-prepend [replace-as [dual-as]]]
 
    Specify an alternate AS for this BGP process when interacting with the
    specified peer. With no modifiers, the specified local-as is prepended to
@@ -1777,6 +1840,10 @@ Configuring Peers
    prepended to the AS_PATH when transmitting local-route updates to this peer.
 
    Note that replace-as can only be specified if no-prepend is.
+
+   The ``dual-as`` keyword is used to configure the neighbor to establish a peering
+   session using the real autonomous-system number (``router bgp ASN``) or by using
+   the autonomous system number configured with the ``local-as``.
 
    This command is only allowed for eBGP peers.
 
@@ -1916,11 +1983,13 @@ Configuring Peers
    and will not be displayed as part of a `show run`.  The no form
    of the command turns off this ability.
 
-.. clicmd:: bgp default-originate timer (0-3600)
+.. clicmd:: bgp default-originate timer (0-65535)
 
    Set the period to rerun the default-originate route-map scanner process. The
    default is 5 seconds. With a full routing table, it might be useful to increase
    this setting to avoid scanning the whole BGP table aggressively.
+
+   Setting to 0 turns off the scanning at all.
 
 .. clicmd:: bgp default ipv4-unicast
 
@@ -2135,8 +2204,7 @@ and will share updates.
 .. clicmd:: neighbor PEER solo
 
    This command is used to indicate that routes advertised by the peer
-   should not be reflected back to the peer.  This command only is only
-   meaningful when there is a single peer defined in the peer-group.
+   should not be reflected back to the peer.
 
 .. clicmd:: show [ip] bgp peer-group [json]
 
@@ -2426,7 +2494,7 @@ is 4 octet long. The following format is used to define the community value.
 ``blackhole``
    ``blackhole`` represents well-known communities value ``BLACKHOLE``
    ``0xFFFF029A`` ``65535:666``. :rfc:`7999` documents sending prefixes to
-   EBGP peers and upstream for the purpose of blackholing traffic.
+   peers and upstream for the purpose of blackholing traffic.
    Prefixes tagged with the this community should normally not be
    re-advertised from neighbors of the originating network. Upon receiving
    ``BLACKHOLE`` community from a BGP speaker, ``NO_ADVERTISE`` community

@@ -238,10 +238,10 @@ void isis_lfa_excluded_ifaces_init(struct isis_circuit *circuit, int level)
  *
  * @param nodes		List of SPF nodes
  */
-void isis_lfa_excluded_ifaces_clear(struct isis_circuit *circuit, int level)
+void isis_lfa_excluded_ifaces_delete(struct isis_circuit *circuit, int level)
 {
-	hash_clean(circuit->lfa_excluded_ifaces[level - 1],
-		   lfa_excl_interface_hash_free);
+	hash_clean_and_free(&circuit->lfa_excluded_ifaces[level - 1],
+			    lfa_excl_interface_hash_free);
 }
 
 /**
@@ -1064,7 +1064,7 @@ static void lfa_calc_reach_nodes(struct isis_spftree *spftree,
 	for (ALL_QUEUE_ELEMENTS_RO(&spftree->paths, node, vertex)) {
 		char buf[VID2STR_BUFFER];
 
-		if (!VTYPE_IS(vertex->type))
+		if (vertex->type != VTYPE_NONPSEUDO_IS && vertex->type != VTYPE_NONPSEUDO_TE_IS)
 			continue;
 
 		/* Skip root node. */
