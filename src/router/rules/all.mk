@@ -87,6 +87,16 @@ INSTALL_CONF:=install -m0600
 export SSLPATH=$(TOP)/openssl
 
 include rules/_cmake.mk
+include rules/hostapd.mk
+ifeq ($(CONFIG_MADWIFI),y)
+include rules/hostapd-wps.mk
+#include rules/hostapd2.mk
+#include rules/wpa_supplicant2.mk
+else
+include rules/hostapd2.mk
+include rules/wpa_supplicant2.mk
+endif
+
 include rules/matrixssl.mk
 include rules/ntpd.mk
 include rules/chrony.mk
@@ -195,15 +205,6 @@ include rules/igmp-proxy.mk
 include rules/udpxy.mk
 include rules/parprouted.mk
 
-include rules/hostapd.mk
-ifeq ($(CONFIG_MADWIFI),y)
-include rules/hostapd-wps.mk
-#include rules/hostapd2.mk
-#include rules/wpa_supplicant2.mk
-else
-include rules/hostapd2.mk
-include rules/wpa_supplicant2.mk
-endif
 include rules/madwifi.mk
 #include rules/sputnik.mk
 include rules/openvpn.mk

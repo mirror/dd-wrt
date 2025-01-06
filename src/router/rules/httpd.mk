@@ -1,6 +1,6 @@
 
 httpd: nvram shared hsiab matrixssl wolfssl www wireless-tools
-	make -C httpd
+	make -C httpd CONFIG_SSID_PROTECTION=$(CONFIG_SSID_PROTECTION)
 
 httpd-clean:
 	make -C httpd clean
