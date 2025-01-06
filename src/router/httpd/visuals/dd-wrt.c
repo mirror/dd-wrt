@@ -142,6 +142,13 @@ int is_supplicant(const char *prefix)
 	return is_station(prefix) || nvram_match(sta, "mesh");
 }
 
+int is_mesh(const char *prefix)
+{
+	char sta[16];
+	sprintf(sta, "%s_mode", prefix);
+	return nvram_match(sta, "mesh");
+}
+
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
 {
 	char *buf;
@@ -3222,7 +3229,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (is_ap(prefix) || is_vap_ap(prefix)) {
+	if (is_ap(prefix) || is_vap_ap(prefix) || is_mesh(prefix)) {
 		// cell density
 		char cell_density[32];
 		char legacy[32];
@@ -5040,7 +5047,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	if (is_ap(prefix) || is_vap_ap(prefix)) {
+	if (is_ap(prefix) || is_vap_ap(prefix) || is_mesh(prefix)) {
 		char cell_density[32];
 		char legacy[32];
 		sprintf(cell_density, "%s_cell_density", prefix);
