@@ -66,8 +66,8 @@ static struct list_head *zstd_alloc_workspace(void)
 		return ERR_PTR(-ENOMEM);
 
 	workspace->size = max_t(size_t,
-			ZSTD_CStreamWorkspaceBound(params.cParams),
-			ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
+			zstd_cstream_workspace_bound(&params.cParams),
+			zstd_dstream_workspace_bound(ZSTD_BTRFS_MAX_INPUT));
 	workspace->mem = kvmalloc(workspace->size, GFP_KERNEL);
 	workspace->buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
 	if (!workspace->mem || !workspace->buf)
@@ -93,21 +93,21 @@ static int zstd_compress_pages(struct list_head *ws,
 
 {
 	struct workspace *workspace = list_entry(ws, struct workspace, list);
-	ZSTD_CStream *stream;
+	zstd_cstream *stream;
 	int ret = 0;
 	int nr_pages = 0;
 	struct page *in_page = NULL;  /* The current page to read */
 	struct page *out_page = NULL; /* The current page to write to */
 	unsigned long tot_in = 0;
 	unsigned long tot_out = 0;
-	ZSTD_parameters params = zstd_get_btrfs_parameters(len);
+	zstd_parameters params = zstd_get_btrfs_parameters(len);
 
 	*out_pages = 0;
 	*total_out = 0;
 	*total_in = 0;
 
 	/* Initialize the stream */
-	stream = ZSTD_initCStream(params, len, workspace->mem,
+	stream = zstd_init_cstream(&params, len, workspace->mem,
 			workspace->size);
 	if (!stream) {
 		pr_warn("BTRFS: ZSTD_initCStream failed\n");
@@ -269,7 +269,7 @@ static int zstd_decompress_biovec(struct list_head *ws, struct page **pages_in,
 				  size_t srclen)
 {
 	struct workspace *workspace = list_entry(ws, struct workspace, list);
-	ZSTD_DStream *stream;
+	zstd_dstream *stream;
 	int ret = 0;
 	unsigned long page_in_index = 0;
 	unsigned long page_out_index = 0;
@@ -278,7 +278,7 @@ static int zstd_decompress_biovec(struct list_head *ws, struct page **pages_in,
 	unsigned long total_out = 0;
 	unsigned long pg_offset = 0;
 
-	stream = ZSTD_initDStream(
+	stream = zstd_init_dstream(
 			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
 	if (!stream) {
 		pr_debug("BTRFS: ZSTD_initDStream failed\n");
@@ -351,14 +351,14 @@ static int zstd_decompress(struct list_head *ws, unsigned char *data_in,
 		size_t srclen, size_t destlen)
 {
 	struct workspace *workspace = list_entry(ws, struct workspace, list);
-	ZSTD_DStream *stream;
+	zstd_dstream *stream;
 	int ret = 0;
 	size_t ret2;
 	unsigned long total_out = 0;
 	unsigned long pg_offset = 0;
 	char *kaddr;
 
-	stream = ZSTD_initDStream(
+	stream = zstd_init_dstream(
 			ZSTD_BTRFS_MAX_INPUT, workspace->mem, workspace->size);
 	if (!stream) {
 		pr_warn("BTRFS: ZSTD_initDStream failed\n");
