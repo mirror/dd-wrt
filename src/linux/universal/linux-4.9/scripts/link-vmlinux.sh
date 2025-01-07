@@ -85,7 +85,7 @@ vmlinux_link()
 		if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
 			objects="${KBUILD_VMLINUX_HEAD} --whole-archive built-in.o ${1}"
 		else
-			objects="${KBUILD_VMLINUX_HEAD} ${KBUILD_VMLINUX_INIT}			\
+			objects="${KBUILD_VMLINUX_HEAD} --whole-archive ${KBUILD_VMLINUX_INIT} --no-whole-archive			\
 				--start-group				\
 				${KBUILD_VMLINUX_MAIN}			\
 				--end-group				\

@@ -124,6 +124,7 @@
  * architecture or none if no BCJ filter is available for the architecture.
  */
 #	define XZ_DEC_X86
+#	define XZ_DEC_IA64
 #	define XZ_DEC_POWERPC
 #	define XZ_DEC_ARMTHUMB
 #	define XZ_DEC_ARM
