@@ -3022,3 +3022,4 @@ CONFIG_SBITMAP=y
 # Accelerated Cryptographic Algorithms for CPU (mips)
 #
 CONFIG_CRYPTO_POLY1305_MIPS=y
+# CONFIG_CRYPTO_ZSTD is not set
