@@ -28,11 +28,7 @@
 #include <utils.h>
 #include <sys/mount.h>
 
-#if defined(HAVE_R9000)
-#define DEFAULT_UBIFS_COMPR "xz"
-#else
 #define DEFAULT_UBIFS_COMPR "zstd"
-#endif
 
 void stop_jffs2(void)
 {
