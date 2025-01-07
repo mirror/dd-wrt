@@ -13,6 +13,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/crypto.h>
+#include <crypto/algapi.h>
 #include <linux/xz.h>
 #include <linux/interrupt.h>
 #include <linux/mm.h>
