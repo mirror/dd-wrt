@@ -22,7 +22,7 @@ LIBS_s := $(LIBS)
 endif
 endif
 
-CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) $(LTO) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -g3
+CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) $(LTO) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += $(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS+=-I$(TOP)/libnl-tiny/include\
