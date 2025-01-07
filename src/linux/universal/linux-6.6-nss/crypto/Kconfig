@@ -1216,6 +1216,13 @@ config CRYPTO_LZ4HC
 
 	  See https://github.com/lz4/lz4 for further information.
 
+config CRYPTO_XZ
+	tristate "XZ compression algorithm"
+	select CRYPTO_ALGAPI
+	select XZ_DEC
+	help
+	  This is the XZ algorithm. Only decompression is supported for now.
+
 config CRYPTO_ZSTD
 	tristate "Zstd"
 	select CRYPTO_ALGAPI
