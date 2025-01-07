@@ -1671,6 +1671,16 @@ config CRYPTO_XZ
 	help
 	  This is the XZ algorithm. Only decompression is supported for now.
 
+config CRYPTO_ZSTD
+	tristate "Zstd"
+	select CRYPTO_ALGAPI
+	select ZSTD_COMPRESS
+	select ZSTD_DECOMPRESS
+	help
+	  zstd compression algorithm
+
+	  See https://github.com/facebook/zstd for further information.
+
 comment "Random Number Generation"
 
 config CRYPTO_ANSI_CPRNG
