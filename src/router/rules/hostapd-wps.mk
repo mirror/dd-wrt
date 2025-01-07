@@ -12,7 +12,8 @@ ATH9K_LDFLAGS +=-L$(TOP)/libnetfilter_log/src/.libs -lnetfilter_log
 endif
 ifeq ($(CONFIG_WPA3),y)
 ifndef $(HOSTAPDVERSION)
-HOSTAPDVERSION=2018-07-08
+HOSTAPDVERSION=2025-01-04
+CONFIG_SSID_PROTECTION=y
 endif
 ifeq ($(CONFIG_ATH11K),y)
 ifndef $(HOSTAPDVERSION)
