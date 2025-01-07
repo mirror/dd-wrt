@@ -5,9 +5,11 @@ config UBIFS_FS
 	select CRYPTO if UBIFS_FS_ADVANCED_COMPR
 	select CRYPTO if UBIFS_FS_LZO
 	select CRYPTO if UBIFS_FS_ZLIB
+	select CRYPTO if UBIFS_FS_ZSTD
 	select CRYPTO if UBIFS_FS_XZ
 	select CRYPTO_LZO if UBIFS_FS_LZO
 	select CRYPTO_DEFLATE if UBIFS_FS_ZLIB
+	select CRYPTO_ZSTD if UBIFS_FS_ZSTD
 	select CRYPTO_XZ if UBIFS_FS_XZ
 	depends on MTD_UBI
 	help
@@ -45,6 +47,14 @@ config UBIFS_FS_XZ
 	help
 	  XZ compresses better the ZLIB but it is slower..
 	  Say 'Y' if unsure.
+
+config UBIFS_FS_ZSTD
+	bool "ZSTD compression support" if UBIFS_FS_ADVANCED_COMPR
+	depends on UBIFS_FS
+	default y
+	help
+	  ZSTD compresses is a big win in speed over Zlib and
+	  in compression ratio over LZO. Say 'Y' if unsure.
 
 config UBIFS_ATIME_SUPPORT
 	bool "Access time support" if UBIFS_FS
