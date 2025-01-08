@@ -253,12 +253,12 @@ endif
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 kernel-relink-prep:
-#	rm -rf $(LINUXDIR)/include/ksym
-#	rm -f $(LINUXDIR)/include/generated/autoksyms.h
-##	rm -f $(LINUXDIR)/mod_symtab.txt
-#	rm -f $(LINUXDIR)/sym_include.txt
-#	rm -f $(LINUXDIR)/kernel_symtab.txt.tmp
-#	touch $(LINUXDIR)/mod_symtab.txt
+	rm -rf $(LINUXDIR)/include/ksym
+	rm -f $(LINUXDIR)/include/generated/autoksyms.h
+#	rm -f $(LINUXDIR)/mod_symtab.txt
+	rm -f $(LINUXDIR)/sym_include.txt
+	rm -f $(LINUXDIR)/kernel_symtab.txt.tmp
+	touch $(LINUXDIR)/mod_symtab.txt
 	@true
 
 kernel-relink-phase:
@@ -408,18 +408,18 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	#rm -f $(LINUXDIR)/vmlinux
-#	touch $(LINUXDIR)/include/generated/autoksyms.h
-#	touch $(LINUXDIR)/include/linux/exports.h
-#	touch $(LINUXDIR)/include/asm-generic/exports.h
-#	rm -f $(LINUXDIR)/vmlinux
-#	rm -f $(LINUXDIR)/vmlinux.o
+	touch $(LINUXDIR)/include/generated/autoksyms.h
+	touch $(LINUXDIR)/include/linux/exports.h
+	touch $(LINUXDIR)/include/asm-generic/exports.h
+	rm -f $(LINUXDIR)/vmlinux
+	rm -f $(LINUXDIR)/vmlinux.o
 	make -j 4 -C $(LINUXDIR) modules MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 	make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
 
 kernel-relink:
-#	touch $(LINUXDIR)/include/generated/autoksyms.h
-#	touch $(LINUXDIR)/include/linux/exports.h
-#	touch $(LINUXDIR)/include/asm-generic/exports.h
+	touch $(LINUXDIR)/include/generated/autoksyms.h
+	touch $(LINUXDIR)/include/linux/exports.h
+	touch $(LINUXDIR)/include/asm-generic/exports.h
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    make -j 4 -C $(LINUXDIR) $(KBUILD_TARGETS) MAKE=make CFLAGS= ARCH=$(KERNEL_HEADER_ARCH) CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"; \
 	fi
@@ -428,5 +428,21 @@ kernel-relink:
 	fi
 ifneq ($(KERNELVERSION),4.9)
 	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
-#	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+ifneq ($(KERNELVERSION),3.10)
+ifneq ($(KERNELVERSION),3.2)
+ifneq ($(KERNELVERSION),3.18)
+ifneq ($(KERNELVERSION),4.4)
+ifneq ($(KERNELVERSION),4.14)
+ifneq ($(KERNELVERSION),6.6)
+ifneq ($(KERNELVERSION),6.6-nss)
+ifeq ($(CONFIG_KERNELLTO),y)
+	$(MAKE) -f Makefile.$(MAKEEXT) kernel-relink-phase
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 endif
