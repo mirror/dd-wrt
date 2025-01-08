@@ -1966,19 +1966,20 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	sprintf(nfreq, "%s_channel", prefix);
 	sprintf(nfreq2, "%s_channel2", prefix);
 	freq = atoi(nvram_default_get(nfreq, "0"));
+	char bcn[32];
+	sprintf(bcn, "%s_bcn", prefix);
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	int intval = atoi(nvram_default_get(bcn, "100"));
+	if (*vifs && has_beacon_limit(prefix)) {
+		if (intval < 100)
+			intval = 100;
+	}
+	fprintf(fp, "\tbeacon_int=%d\n", intval);
+	char dtim[32];
+	sprintf(dtim, "%s_dtim", ifname);
+	fprintf(fp, "\tdtim_period=%s\n", nvram_default_get(dtim, "2"));
+
 	if (ismesh) {
-		char bcn[32];
-		sprintf(bcn, "%s_bcn", prefix);
-		char *vifs = nvram_nget("%s_vifs", prefix);
-		int intval = atoi(nvram_default_get(bcn, "100"));
-		if (*vifs && has_beacon_limit(prefix)) {
-			if (intval < 100)
-				intval = 100;
-		}
-		fprintf(fp, "\tbeacon_int=%d\n", intval);
-		char dtim[32];
-		sprintf(dtim, "%s_dtim", ifname);
-		fprintf(fp, "\tdtim_period=%s\n", nvram_default_get(dtim, "2"));
 		fprintf(fp, "\tmode=5\n");
 		sprintf(fwd, "%s_mesh_fwding", prefix);
 		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
