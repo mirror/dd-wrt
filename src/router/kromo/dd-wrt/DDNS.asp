@@ -202,7 +202,7 @@ addEvent(window, "unload", function() {
 									<input type="checkbox" value="1" name="ddns_wildcard" <% ddns_checked("ddns_wildcard", "1"); %> />
 								</div>
 								<% nvlsm("ddns_enable","0 2 4 5 11 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 35 36 47 48 49 50 51 52 53 56 57 58 60","-->"); %>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54 56 58 59 62 63 64","<!--"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 49 51 52 53 54 56 58 59 62 63 64","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.ipv6_srv"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="ddns_ipv6" <% nvc("ddns_ipv6", "1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
@@ -219,7 +219,7 @@ addEvent(window, "unload", function() {
 								show_layer_ext(document.dyndns.ddns_ipv6,'idipv6', <% nvem("ddns_ipv6", "1", "1", "0"); %> == 1);
 								//]]>
 								</script>
-								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 42 49 51 52 53 54 56 58 59 62 63 64","-->"); %>
+								<% nvlsmn6("ddns_enable","0 1 5 15 18 22 23 28 30 31 35 49 51 52 53 54 56 58 59 62 63 64","-->"); %>
 								<% nvlsm("ddns_enable","0 1 2 3 4 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
