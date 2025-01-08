@@ -1231,7 +1231,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
-			if (density == 1) {
+			if (density == 1 || density == 0) {
 				fprintf(fp, "supported_rates=55 110\n");
 				fprintf(fp, "basic_rates=55 110\n");
 			} else if (density > 2) {
