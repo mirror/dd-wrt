@@ -1976,7 +1976,7 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	}
 	fprintf(fp, "\tbeacon_int=%d\n", intval);
 	char dtim[32];
-	sprintf(dtim, "%s_dtim", ifname);
+	sprintf(dtim, "%s_dtim", prefix);
 	fprintf(fp, "\tdtim_period=%s\n", nvram_default_get(dtim, "2"));
 
 	if (ismesh) {
