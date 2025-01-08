@@ -544,6 +544,7 @@ PLUGIN_INIT(plugin_init)
 	plugin_register(&opendns, DYNDNS_UPDATE_IP_HTTP_REQUEST);
 	plugin_register_v6(&opendns, DYNDNS_UPDATE_IP_HTTP_REQUEST);
 	plugin_register(&joker, DYNDNS_UPDATE_IP_HTTP_REQUEST);
+	plugin_register_v6(&joker, DYNDNS_UPDATE_IP_HTTP_REQUEST);
 	plugin_register(&schokokeks, DYNDNS_UPDATE_IP_HTTP_REQUEST);
 	plugin_register_v6(&schokokeks, DYNDNS_UPDATE_IP_HTTP_REQUEST);
 	plugin_register(&variomedia, DYNDNS_UPDATE_IP_HTTP_REQUEST);
