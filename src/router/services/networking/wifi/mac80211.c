@@ -1980,35 +1980,35 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 			case 0:
 			case 1:
 				if (legacy) {
-					fprintf(fp, "mesh_basic_rates=55 60 110 120 240\n");
+					fprintf(fp, "\tmesh_basic_rates=55 60 110 120 240\n");
 				} else {
-					fprintf(fp, "mesh_basic_rates=60 90 120 240\n");
+					fprintf(fp, "\tmesh_basic_rates=60 90 120 240\n");
 				}
 				break;
 			case 2:
 				if (legacy) {
-					fprintf(fp, "mesh_basic_rates=110 120 240\n");
+					fprintf(fp, "\tmesh_basic_rates=110 120 240\n");
 				} else {
-					fprintf(fp, "mesh_basic_rates=120 240\n");
+					fprintf(fp, "\tmesh_basic_rates=120 240\n");
 				}
 				break;
 			default:
-				fprintf(fp, "supported_rates=240 360 480 540\n");
-				fprintf(fp, "mesh_basic_rates=240\n");
+				fprintf(fp, "\tmesh_basic_rates=240\n");
 				break;
 			}
 		} else {
 			switch (density) {
+			case 0:
 			case 1:
-				fprintf(fp, "mesh_basic_rates=60 120 240\n");
+				fprintf(fp, "\tmesh_basic_rates=60 120 240\n");
 				break;
 
 			case 2:
-				fprintf(fp, "mesh_basic_rates=120 240\n");
+				fprintf(fp, "\tmesh_basic_rates=120 240\n");
 				break;
 
 			default:
-				fprintf(fp, "mesh_basic_rates=240\n");
+				fprintf(fp, "\tmesh_basic_rates=240\n");
 				break;
 			}
 		}
