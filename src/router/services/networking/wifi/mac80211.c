@@ -1341,17 +1341,17 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
+#ifdef HAVE_ATH9K
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
-#ifdef HAVE_ATH9K
 	char *vifs = nvram_nget("%s_vifs", prefix);
 	int intval = atoi(nvram_default_get(bcn, "100"));
 	if (*vifs && has_beacon_limit(prefix)) {
 		if (intval < 100)
 			intval = 100;
 	}
-#endif
 	fprintf(fp, "beacon_int=%d\n", intval);
+#endif
 #ifdef HAVE_WPA3
 	char airtime[32];
 	sprintf(airtime, "%s_at_policy", prefix);
@@ -1967,6 +1967,18 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	sprintf(nfreq2, "%s_channel2", prefix);
 	freq = atoi(nvram_default_get(nfreq, "0"));
 	if (ismesh) {
+		char bcn[32];
+		sprintf(bcn, "%s_bcn", prefix);
+		char *vifs = nvram_nget("%s_vifs", prefix);
+		int intval = atoi(nvram_default_get(bcn, "100"));
+		if (*vifs && has_beacon_limit(prefix)) {
+			if (intval < 100)
+				intval = 100;
+		}
+		fprintf(fp, "\tbeacon_int=%d\n", intval);
+		char dtim[32];
+		sprintf(dtim, "%s_dtim", ifname);
+		fprintf(fp, "\tdtim_period=%s\n", nvram_default_get(dtim, "2"));
 		fprintf(fp, "\tmode=5\n");
 		sprintf(fwd, "%s_mesh_fwding", prefix);
 		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
