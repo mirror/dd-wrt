@@ -176,7 +176,7 @@ static int init_ddns(FILE *fp)
 		"ipv6@domopoli.de",
 		"ipv6@inwx.com",
 		"ipv6@itsdns.de",
-		NULL,
+		"ipv6@joker.com",
 		"ipv6@opendns.com",
 		"ipv6@schokokeks.org",
 		"ipv6@variomedia.de",
