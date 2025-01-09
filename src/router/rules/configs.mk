@@ -489,7 +489,22 @@ obj-$(CONFIG_SPEEDCHECKER) +=  json-c libubox speedchecker shownf
 obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
 obj-$(CONFIG_BKM) += multisim
 obj-$(CONFIG_TMK) += multisim
+
+ifneq ($(KERNELVERSION),3.18)
+ifneq ($(KERNELVERSION),3.10)
+ifneq ($(KERNELVERSION),3.5)
+ifneq ($(KERNELVERSION),3.2)
+ifneq ($(KERNELVERSION),4.4)
+ifneq ($(KERNELVERSION),4.9)
+ifneq ($(KERNELVERSION),4.14)
 obj-$(CONFIG_ZFS) += util-linux zlib libtirpc libudev curl zfs
+endif
+endif
+endif
+endif
+endif
+endif
+endif
 obj-$(CONFIG_NFS) += util-linux sqlite lvm2 keyutils libtirpc rpcbind krb5 libevent nfs-utils
 obj-$(CONFIG_SCREEN) += ncurses screen
 obj-$(CONFIG_DDRESCUE) += ddrescue
