@@ -269,7 +269,7 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 
 const char *getifaddr_any(char *buf, char *ifname, int family)
 {
-	char *ip = getifaddr(buf, ifname, family, 0);
+	const char *ip = getifaddr(buf, ifname, family, 0);
 	if (!ip)
 		ip = getifaddr(buf, ifname, family, GIF_LINKLOCAL);
 	return ip;
@@ -1625,7 +1625,7 @@ char *getUUID(char *buf)
 	return NULL;
 }
 
-unsigned char *zencrypt(unsigned char *passwd, unsigned char *passout)
+char *zencrypt(char *passwd, char *passout)
 {
 	char salt[sizeof("$N$XXXXXXXX")]; /* "$N$XXXXXXXX" or "XX" */
 
@@ -2011,7 +2011,7 @@ static void s_mac_add(char *m, int inc)
 static void s_MAC_ADD(char *mac, int inc)
 {
 	int i, j;
-	unsigned char m[6];
+	char m[6];
 	for (j = 0, i = 0; i < PER_MAC_LEN; i += 3, j++) {
 		if (mac[i] >= 'A' && mac[i] <= 'F')
 			mac[i] = mac[i] - 55;
