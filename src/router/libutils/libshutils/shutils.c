@@ -1192,6 +1192,7 @@ char *strattach(char *src, char *attach, char *delimiter)
 		strcat(src, delimiter);
 		strcat(src, attach);
 	}
+	return src;
 }
 
 char *strspcattach(char *src, char *attach)
@@ -1439,7 +1440,7 @@ int nvram_commit(void)
 int nvram_async_commit(void)
 {
 	precommit();
-	eval("async_commit");
+	return eval("async_commit");
 }
 
 int writeproc(char *path, char *value)
@@ -1760,11 +1761,11 @@ static unsigned long getmeminfo(int linenr)
 }
 long getmemfree(void)
 {
-	getmeminfo(1);
+	return getmeminfo(1);
 }
 long getmemtotal(void)
 {
-	getmeminfo(0);
+	return getmeminfo(0);
 }
 
 #ifdef MEMDEBUG
