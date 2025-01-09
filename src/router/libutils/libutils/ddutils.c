@@ -1752,8 +1752,8 @@ char *get_filter_services(void)
 	{
 #ifdef HAVE_OPENDPI
 		if (filters->protocol == L7_ONLY) {
-		    filters++;
-		    continue;
+			filters++;
+			continue;
 		}
 #endif
 		sprintf(temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", strlen(filters->name), filters->name,

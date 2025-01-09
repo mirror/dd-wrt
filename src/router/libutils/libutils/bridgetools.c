@@ -330,13 +330,11 @@ int br_add_interface(const char *br, const char *dev)
 	strncpy(mainif, dev, 31);
 	if (!strncmp(dev, "wlan", 4) && (sep = strstr(mainif, ".sta"))) {
 		*sep = 0;
-		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", mainif),
-			  dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", mainif), dev);
 		if (nvram_nmatch("1", "%s_usteer", mainif))
 			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
 	} else {
-		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", dev),
-			  dev);
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_default_ngeti(0, "%s_m2u", dev), dev);
 		if (nvram_nmatch("1", "%s_usteer", dev))
 			sysprintf("echo 1 > /sys/class/net/%s/brport/multicast_to_unicast", dev);
 	}

@@ -437,8 +437,8 @@ int br_set_port_prio(const char *bridge, char *port, int prio)
 int br_set_filterbpdu(const char *bridge, const char *port, int on)
 {
 	int ret = port_set(bridge, port, "block_bpdu", on, BRCTL_SET_FILTERBPDU);
-	if (ret) 
-	    ret = port_set(bridge, port, "bpdu_filter", on, BRCTL_SET_FILTERBPDU);
+	if (ret)
+		ret = port_set(bridge, port, "bpdu_filter", on, BRCTL_SET_FILTERBPDU);
 	return ret;
 }
 
