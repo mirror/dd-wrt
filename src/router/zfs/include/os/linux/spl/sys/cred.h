@@ -42,26 +42,13 @@ extern struct task_struct init_task;
 #define	GROUP_AT(gi, i)	((gi)->gid[i])
 #endif
 
-extern zidmap_t *zfs_get_init_idmap(void);
-
-#ifdef HAVE_KUIDGID_T
-
 #define	KUID_TO_SUID(x)		(__kuid_val(x))
 #define	KGID_TO_SGID(x)		(__kgid_val(x))
 #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
 #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
 #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
 
-
-#else /* HAVE_KUIDGID_T */
-
-#define	KUID_TO_SUID(x)		(x)
-#define	KGID_TO_SGID(x)		(x)
-#define	SUID_TO_KUID(x)		(x)
-#define	SGID_TO_KGID(x)		(x)
-#define	KGIDP_TO_SGIDP(x)	(x)
-
-#endif /* HAVE_KUIDGID_T */
+extern zidmap_t *zfs_get_init_idmap(void);
 
 /* Check if the user ns is the initial one */
 static inline boolean_t
@@ -183,7 +170,6 @@ static inline gid_t zfs_vfsgid_to_gid(zidmap_t *mnt_userns,
 		return (gid);
 	return (__kgid_val(make_kgid(fs_userns, gid)));
 }
-
 
 extern void crhold(cred_t *cr);
 extern void crfree(cred_t *cr);

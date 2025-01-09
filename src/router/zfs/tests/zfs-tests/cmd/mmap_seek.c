@@ -45,11 +45,6 @@
 #endif
 #endif
 
-#ifndef SEEK_DATA
-#define SEEK_DATA 3
-#define SEEK_HOLE 4
-#endif
-
 static void
 seek_data(int fd, off_t offset, off_t expected)
 {
