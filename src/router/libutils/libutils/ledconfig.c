@@ -2102,14 +2102,11 @@ static int diag_led_4704(int type, int act)
 
 		if (act == STOP_LED) { // stop blinking
 			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x83);
-			// cprintf("tallest:=====( DIAG STOP_LED !!)=====\n");
 		} else if (act == START_LED) { // start blinking
 			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x81);
-			// cprintf("tallest:=====( DIAG START_LED !!)=====\n");
 		} else if (act == MALFUNCTION_LED) { // start blinking
 			write_gpio("/dev/gpio/out", (out & 0x7c));
 			hw_error = 1;
-			// cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
 		}
 		break;
 	}
@@ -2146,10 +2143,8 @@ static int diag_led_4712(int type, int act)
 	write_gpio("/dev/gpio/outen", outen | out_mask);
 
 	if (act == STOP_LED) { // stop blinking
-		// cprintf("%s: Stop GPIO %d\n", __FUNCTION__, type);
 		write_gpio("/dev/gpio/out", out | out_mask);
 	} else if (act == START_LED) { // start blinking
-		// cprintf("%s: Start GPIO %d\n", __FUNCTION__, type);
 		write_gpio("/dev/gpio/out", out & ctr_mask);
 	}
 

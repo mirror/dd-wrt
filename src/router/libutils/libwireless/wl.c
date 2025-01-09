@@ -4242,7 +4242,6 @@ int wlconf_up(char *name)
 		return -1;
 #ifdef HAVE_ONLYCLIENT
 	if (nvram_match("wl_mode", "ap")) {
-		cprintf("this version does only support the client mode\n");
 		nvram_set("wl_mode", "sta");
 		nvram_async_commit();
 	}
@@ -4975,7 +4974,6 @@ struct wl_assoc_mac *get_wl_assoc_mac(const char *ifname, int *c)
 				m[3] & 0xff, m[4] & 0xff, m[5] & 0xff);
 		}
 		count += cnt;
-		// cprintf("Count of wl assoclist mac is %d\n", count);
 		*c = count;
 		free(buf);
 		return wlmac;

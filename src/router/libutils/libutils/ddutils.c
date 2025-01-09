@@ -847,12 +847,10 @@ int *find_all_pid_by_ps(char *pidName)
 	int *pidList = NULL;
 	int i = 0;
 
-	cprintf("Search for %s\n", pidName);
 	if ((fp = popen("ps", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, pidName)) {
 				sscanf(line, "%d", &pid);
-				cprintf("%s pid is %d\n", pidName, pid);
 				pidList = realloc(pidList, sizeof(int) * (i + 2));
 				pidList[i++] = pid;
 			}
@@ -865,7 +863,6 @@ int *find_all_pid_by_ps(char *pidName)
 		pidList = realloc(pidList, sizeof(int));
 		pidList[0] = -1;
 	}
-	cprintf("Search done...\n");
 
 	return pidList;
 }
@@ -925,22 +922,17 @@ int check_now_boot(void)
 	// for 4712
 	// The boot_ver value is lower v2.0 (no included)
 	if (!strncmp(ver, "PMON", 4)) {
-		cprintf("The boot is PMON\n");
 		return PMON_BOOT;
 	}
 	// for 4712
 	// The boot_ver value is higher v2.0 (included)
 	else if (!strncmp(ver, "CFE", 3)) {
-		cprintf("The boot is CFE\n");
 		return CFE_BOOT;
 	} else if (!strncmp(ver, "2", 1)) {
-		cprintf("The boot is CFE %s\n", ver);
 		return CFE_BOOT;
 	} else if (!strncmp(cfe, "MotoWR", 6)) {
-		cprintf("The boot is Motorola CFE\n");
 		return CFE_BOOT;
 	} else {
-		cprintf("The boot is UNKNOWN\n");
 		return UNKNOWN_BOOT;
 	}
 }
@@ -1042,7 +1034,6 @@ static int sockets_open(int domain, int type, int protocol)
 	int fd = socket(domain, type, protocol);
 
 	if (fd < 0)
-		cprintf("sockets_open: no usable address was found.\n");
 	return fd;
 }
 
@@ -1053,7 +1044,6 @@ int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd, struct ifre
 	if ((s = socket) < 0) {
 		if ((s = sockets_open(family, family == AF_PACKET ? SOCK_PACKET : SOCK_DGRAM,
 				      family == AF_PACKET ? htons(ETH_P_ALL) : 0)) < 0) {
-			cprintf("sys_netdev_ioctl: failed\n");
 			return -1;
 		}
 	}

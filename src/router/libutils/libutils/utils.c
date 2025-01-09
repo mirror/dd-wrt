@@ -200,7 +200,6 @@ int count_processes(char *pidName)
 	sprintf(zombie, "Z   [%s]", pidName); // do not count zombies
 	int i = 0;
 
-	cprintf("Search for %s\n", pidName);
 	if ((fp = popen("ps", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			int len = strlen(line);
@@ -214,7 +213,6 @@ int count_processes(char *pidName)
 		}
 		pclose(fp);
 	}
-	cprintf("Search done... %d\n", i);
 
 	return i;
 }

@@ -30,9 +30,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	// char *down="down";
 	// if (flags == IFUP)
 	// down = "up";
-	cprintf("ifconfig %s = %s/%s\n", name, addr, netmask);
 	if (!ifexists(name)) {
-		cprintf("interface %s does not exists, ignoring\n", name);
 		return -1;
 	}
 	// if (addr==NULL)
@@ -49,20 +47,16 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 	struct ifreq ifr;
 	struct in_addr in_addr, in_netmask, in_broadaddr;
 
-	cprintf("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name, flags == IFUP ? "IFUP" : "0", addr, netmask);
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		goto err2; // override socket close
-	cprintf("ifconfig(): socket opened\n");
 
 	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
-	cprintf("ifconfig(): set interface name\n");
 	if (flags) {
 		ifr.ifr_flags = flags;
 		if (ioctl(s, SIOCSIFFLAGS, &ifr) < 0)
 			goto err;
 	}
-	cprintf("ifconfig(): interface flags configured\n");
 	if (addr) {
 		inet_aton(addr, &in_addr);
 		sin_addr(&ifr.ifr_addr).s_addr = in_addr.s_addr;
@@ -70,7 +64,6 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 		if (ioctl(s, SIOCSIFADDR, &ifr) < 0)
 			goto err;
 	}
-	cprintf("ifconfig() ip configured\n");
 
 	if (addr && netmask) {
 		inet_aton(netmask, &in_netmask);
@@ -85,14 +78,11 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 		if (ioctl(s, SIOCSIFBRDADDR, &ifr) < 0)
 			goto err;
 	}
-	cprintf("ifconfig() mask configured\n");
 
 	close(s);
-	cprintf("ifconfig() done()\n");
 	return 0;
 
 err:
-	cprintf("ifconfig() done with error\n");
 	close(s);
 err2:
 #ifndef HAVE_SILENCE

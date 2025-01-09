@@ -192,7 +192,6 @@ void setRouter(char *name)
 #elif HAVE_NDTRADE
 	nvram_set(NVROUTER_ALT, "KT412H-8000");
 #endif
-	cprintf("router is %s\n", getRouter());
 }
 
 char *getRouter()
