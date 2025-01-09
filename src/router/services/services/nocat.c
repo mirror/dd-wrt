@@ -237,7 +237,6 @@ void start_splashd(void)
 	system("/tmp/start_splashd.sh&");
 	dd_loginfo("splashd", "nocatsplash daemon successfully started");
 
-	cprintf("done\n");
 	return;
 }
 
@@ -249,7 +248,6 @@ void stop_splashd(void)
 		stop_wland();
 		start_firewall();
 		start_wland();
-		cprintf("done\n");
 	}
 	return;
 }

@@ -1901,7 +1901,6 @@ static void set_netmode(char *wif, char *dev, char *use)
 	char *netmode = nvram_default_get(net, "mixed");
 #endif
 	// fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
-	cprintf("configure net mode %s\n", netmode);
 
 	{
 #ifdef HAVE_WHRAG108
@@ -2104,7 +2103,6 @@ static void configure_single(int count)
 	sprintf(athmac, "wlan%d_hwaddr", count);
 
 	// create base device
-	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
 	if (nvram_match(net, "disabled")) {
 		sysprintf("touch /tmp/wlan%d_configured", count);
@@ -2184,7 +2182,6 @@ static void configure_single(int count)
 	}
 #if 0
 #endif
-	cprintf("detect maxpower\n");
 	apm = nvram_default_get(wl, "ap");
 	char maxp[16];
 
@@ -2243,7 +2240,6 @@ static void configure_single(int count)
 	getMacAddr(dev, macaddr, sizeof(macaddr));
 	nvram_set(athmac, macaddr);
 
-	cprintf("adjust sensitivity\n");
 
 	int distance = nvram_default_geti(sens, 500); // to meter
 	if (nvram_nmatch("1", "%s_pollingmode", var)) {
@@ -2447,7 +2443,6 @@ static void configure_single(int count)
 			setRTS(var);
 			eval("iwpriv", var, "bgscan", "0");
 			if (strcmp(mvap, "sta") && strcmp(mvap, "wdssta") && strcmp(mvap, "wdssta_mtik") && strcmp(mvap, "wet")) {
-				cprintf("set channel\n");
 				char *ch = nvram_default_get(channel, "0");
 
 				if (strcmp(ch, "0") == 0) {
@@ -2498,7 +2493,6 @@ static void configure_single(int count)
 #endif
 				eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "dd-wrt_vap"));
 #endif
-			cprintf("set broadcast flag vif %s\n",
 				var); // hide ssid
 			sprintf(broadcast, "%s_closed", var);
 			eval("iwpriv", var, "hide_ssid", nvram_default_get(broadcast, "0"));
@@ -2563,7 +2557,6 @@ static void configure_single(int count)
 
 	bzero(var, 80);
 
-	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
 	eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "default"));
@@ -2598,7 +2591,6 @@ static void configure_single(int count)
 #endif
 		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "dd-wrt"));
 #endif
-	cprintf("set broadcast flag\n"); // hide ssid
 	eval("iwpriv", dev, "hide_ssid", nvram_default_get(broadcast, "0"));
 	eval("iwpriv", dev, "bgscan", "0");
 	apm = nvram_default_get(wl, "ap");
@@ -2613,7 +2605,6 @@ static void configure_single(int count)
 
 	if (strcmp(apm, "sta") == 0 || strcmp(apm, "infra") == 0 || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0 ||
 	    strcmp(apm, "wdssta_mtik") == 0) {
-		cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
 		eval("iwconfig", dev, "essid", "--", nvram_default_get(ssid, "default"));
@@ -2645,16 +2636,13 @@ static void configure_single(int count)
 #endif
 	}
 
-	cprintf("adjust power\n");
 
 	int newpower = nvram_default_geti(power, 16);
 	char s_dbm[32];
 	sprintf(s_dbm, "%ddBm", newpower);
 	eval("iwconfig", dev, "txpower", s_dbm);
 
-	cprintf("done()\n");
 
-	cprintf("setup encryption");
 	// @todo ifup
 	// netconfig
 
@@ -2677,7 +2665,6 @@ static void configure_single(int count)
 
 	apm = nvram_default_get(wl, "ap");
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet")) {
-		cprintf("set channel\n");
 		char *ch = nvram_default_get(channel, "0");
 
 		if (strcmp(ch, "0") == 0) {

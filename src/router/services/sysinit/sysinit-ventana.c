@@ -86,9 +86,7 @@ void start_sysinit(void)
 	eval("mount", "-o", "remount,rw", "/");
 	eval("mkdir", "-p", "/usr/local/nvram");
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 

@@ -303,7 +303,6 @@ void stop_pppoe_dual()
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "pppoe daemon");
 
-	cprintf("done\n");
 	return;
 }
 #endif

@@ -284,7 +284,6 @@ static int update_bitmap(int mode, int seq)
 	 * Read active-rule bitmap 
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "r")) == NULL) {
-		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		return -1;
 	}
 	fgets(buf, sizeof(buf), fd);
@@ -321,7 +320,6 @@ static int update_bitmap(int mode, int seq)
 	 * Write back active-rule bitmap 
 	 */
 	if ((fd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
-		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		return -1;
 	}
 	for (k = 1; k < i; k++)
@@ -621,7 +619,6 @@ static void parse_spec_forward(char *wan_iface, char *wanaddr, char *wordlist)
 		GETENTRYBYIDX(src, var, 6);
 		if (!name || !enable || !proto || !from || !to || !ip)
 			continue;
-		// cprintf("%s %s %s %s %s\n",enable,proto,from,ip,to);
 
 		/*
 		 * skip if it's disabled 
@@ -1673,7 +1670,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	char *services, srv[1024], *next2;
 	char delim[] = "<&nbsp;>";
 
-	cprintf("add advgrp_chain\n");
 
 	/*
 	 * filter_services=$NAME:006:My
@@ -1730,7 +1726,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 			strncpy(ports, port + sizeof("$PORT:nnn:") - 1, len);
 			ports[len] = '\0';
 
-			cprintf("match:: name=%s, protocol=%s, ports=%s\n", word, protocol, ports);
 			if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both"))
 				save2file_A("advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "udp") || !strcmp(protocol, "both"))
@@ -2012,7 +2007,6 @@ static void lan2wan_chains(char *lan_cclass)
 	 * keep the status using bitmap 
 	 */
 	if ((ifd = fopen(IPTABLES_RULE_STAT, "w")) == NULL) {
-		cprintf("Can't open %s\n", IPTABLES_RULE_STAT);
 		return;
 	}
 
@@ -2020,7 +2014,6 @@ static void lan2wan_chains(char *lan_cclass)
 	 * Open the crontab file for modification 
 	 */
 	if ((cfd = fopen(CRONTAB, "w")) == NULL) {
-		cprintf("Can't open %s\n", CRONTAB);
 		return;
 	}
 	// fprintf (cfd, "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n");
@@ -2145,7 +2138,6 @@ static int update_filter(int mode, int seq)
 		eval_silence("iptables", "-D", "lan2wan", "-j", target_ip);
 	}
 	unlock();
-	cprintf("done\n");
 	return 0;
 }
 
@@ -3830,7 +3822,6 @@ void start_firewall(void)
 	/*
 	 * run rc_firewall script 
 	 */
-	cprintf("Exec RC Filewall\n");
 	int runfw = 0;
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
@@ -3845,7 +3836,6 @@ void start_firewall(void)
 			system("/tmp/.rc_firewall");
 		}
 	}
-	cprintf("Ready\n");
 	/*
 	 * end Sveasoft add 
 	 */
@@ -3854,15 +3844,12 @@ void start_firewall(void)
 	/*
 	 * Turn on the DMZ-LED, if enabled.(from service.c) 
 	 */
-	cprintf("enable DMZ\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if (dmzenable)
 		diag_led(DMZ, START_LED);
 	else
 		diag_led(DMZ, STOP_LED);
 #endif
-	cprintf("done");
-	cprintf("Start firewall\n");
 	/*
 	 * We don't forward packet until those policies are set. 
 	 */
@@ -3872,7 +3859,6 @@ void start_firewall(void)
 		fclose(fp);
 	} else
 		perror("/proc/sys/net/ipv4/ip_forward");
-	cprintf("start ipv6\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
 		writeprocsysnet("ipv6/conf/all/forwarding", nvram_default_get("net.ipv6.conf.all.forwarding", "1"));
@@ -3934,8 +3920,6 @@ void start_firewall(void)
 	start_splashd();
 #endif
 
-	cprintf("ready");
-	cprintf("done\n");
 #ifdef HAVE_SYSCTL_EDIT
 	start_sysctl_config();
 #endif
@@ -3993,7 +3977,6 @@ void stop_firewall(void)
 		rmmod("xt_mac");
 	}
 	destroy_ip_forward(safe_get_wan_face(wan_if_buffer));
-	cprintf("done\n");
 #ifdef HAVE_IPV6
 	halt_firewall6();
 #endif

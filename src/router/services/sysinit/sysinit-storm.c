@@ -65,9 +65,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 
@@ -108,7 +106,6 @@ void start_sysinit(void)
 	eval("hwclock", "-s", "-u");
 
 	return;
-	cprintf("done\n");
 }
 
 int check_cfe_nv(void)

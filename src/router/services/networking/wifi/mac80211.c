@@ -354,7 +354,6 @@ void configure_single_ath9k(int count)
 	sprintf(rxantenna, "wlan%d_rxantenna", count);
 	sprintf(txantenna, "wlan%d_txantenna", count);
 	// create base device
-	cprintf("configure base interface %d / %s\n", count, dev);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strncmp(dev, "wlan0", 4)) {
@@ -516,7 +515,6 @@ void configure_single_ath9k(int count)
 				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg, farg2);
 			else
 				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg);
-			cprintf("handle ibss join");
 		}
 	}
 #ifdef HAVE_IPQ6018
@@ -559,10 +557,8 @@ void configure_single_ath9k(int count)
 	eval("iw", "dev", dev, "set", "power_save", "off");
 	setRTS(dev);
 
-	cprintf("done()\n");
 
 	MAC80211DEBUG();
-	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet") &&

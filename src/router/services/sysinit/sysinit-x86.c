@@ -81,15 +81,12 @@ void start_sysinit(void)
 	}
 #endif
 
-	cprintf("sysinit() setup console\n");
 
 	/*
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	/*	modprobe("nouveau");
 	modprobe("i915");
@@ -315,7 +312,6 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	eval("hwclock", "-s", "-u");
-	cprintf("done\n");
 	return;
 }
 

@@ -52,12 +52,10 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
 	/*
 	 * /proc 
 	 */
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
 
 	/*
 	 * /tmp 
@@ -88,7 +86,6 @@ void start_sysinit(void)
 	eval("mount", "/usr/local", "-o", "remount,ro");
 
 	// eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-	cprintf("sysinit() var\n");
 
 	/*
 	 * /var 
@@ -98,15 +95,12 @@ void start_sysinit(void)
 	mkdir("/var/log", 0777);
 	mkdir("/var/run", 0777);
 	mkdir("/var/tmp", 0777);
-	cprintf("sysinit() setup console\n");
 
 	/*
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 
@@ -124,7 +118,6 @@ void start_sysinit(void)
 	nvram_seti("use_crypto", 0);
 	nvram_set("wl0_ifname", "wlan0");
 
-	cprintf("done\n");
 	return;
 }
 

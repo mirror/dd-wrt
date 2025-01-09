@@ -203,7 +203,6 @@ void restart_freeradius(void)
 
 void stop_freeradius(void)
 {
-	cprintf("done\n");
 	stop_process("radiusd", "daemon");
 	return;
 }

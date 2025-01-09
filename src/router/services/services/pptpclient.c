@@ -276,7 +276,6 @@ void run_pptp(int status)
 	stop_firewall();
 	start_firewall();
 	start_wland();
-	cprintf("done\n");
 	return;
 }
 
@@ -289,7 +288,6 @@ void stop_pptp(void)
 	stop_process("pptp", "daemon");
 	stop_process("listen", "activity daemon");
 
-	cprintf("done\n");
 	return;
 }
 

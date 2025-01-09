@@ -227,7 +227,6 @@ void start_usteer(void)
 	free(config);
 	free(ssid_list);
 
-	cprintf("done\n");
 	return;
 }
 

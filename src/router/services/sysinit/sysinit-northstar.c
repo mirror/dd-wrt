@@ -5237,9 +5237,7 @@ void start_sysinit(void)
 			fclose(fp);
 		}
 	}
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	//for extension board
 	struct ifreq ifr;
@@ -6722,7 +6720,6 @@ int check_pmon_nv(void)
 void start_overclocking(void)
 {
 #ifdef HAVE_OVERCLOCKING
-	cprintf("Overclocking started\n");
 
 	int rev = cpu_plltype();
 
@@ -6750,7 +6747,6 @@ void start_overclocking(void)
 	int cclk = atoi(dup);
 
 	if (clk == cclk) {
-		cprintf("clkfreq %d MHz identical with new setting\n", clk);
 		return; // clock already set
 	}
 	int set = 1;
@@ -6811,7 +6807,6 @@ void start_overclocking(void)
 		}
 	}
 	if (set) {
-		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
 		nvram_seti("clkfreq", clk);
 		nvram_commit();
 		fprintf(stderr, "Overclocking done, rebooting...\n");

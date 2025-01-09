@@ -33,7 +33,6 @@ void start_antaira_agent(void)
 
 	_log_evalpid(antaira_agent_argv, NULL, 0, NULL);
 
-	cprintf("done\n");
 	return;
 }
 
@@ -43,7 +42,6 @@ void stop_antaira_agent(void)
 
 	nvram_delstates(antaira_agent_deps());
 
-	cprintf("done\n");
 	return;
 }
 

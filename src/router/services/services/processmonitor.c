@@ -62,7 +62,6 @@ void start_process_monitor(void)
 	char *argv[] = { "process_monitor", NULL };
 	_log_evalpid(argv, NULL, 0, NULL);
 
-	cprintf("done");
 
 	return;
 }
@@ -70,7 +69,6 @@ void start_process_monitor(void)
 void stop_process_monitor(void)
 {
 	stop_process("process_monitor", "daemon");
-	cprintf("done\n");
 
 	return;
 }

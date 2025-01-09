@@ -63,9 +63,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 	insmod("lzo_compress");
 	insmod("lzo_decompress");
 	insmod("xxhash");
@@ -120,7 +118,6 @@ void start_sysinit(void)
 	eval("hwclock", "-s", "-u");
 
 	return;
-	cprintf("done\n");
 }
 
 int check_cfe_nv(void)

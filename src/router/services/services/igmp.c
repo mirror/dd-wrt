@@ -92,14 +92,12 @@ void start_igmprt(void)
 		}
 	}
 
-	cprintf("done\n");
 	return;
 }
 
 void stop_igmprt(void)
 {
 	stop_process("igmprt", "multicast daemon");
-	cprintf("done\n");
 	return;
 }
 #endif

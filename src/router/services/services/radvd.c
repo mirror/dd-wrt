@@ -162,7 +162,6 @@ void start_radvd(void)
 	if (reload_process("radvd")) {
 		log_eval("radvd", "-C", "/tmp/radvd.conf");
 	}
-	cprintf("done\n");
 	return;
 }
 
@@ -176,7 +175,6 @@ void stop_radvd(void)
 	stop_process("radvd", "daemon");
 	unlink("/var/run/radvd.pid");
 
-	cprintf("done\n");
 	return;
 }
 #endif

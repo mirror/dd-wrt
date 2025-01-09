@@ -78,7 +78,6 @@ void start_mkfiles(void)
 	FILE *fp;
 	struct stat buf;
 
-	cprintf("%s:%d", __func__, __LINE__);
 #ifdef HAVE_SKYTRON
 	char *http_passwd = nvram_safe_get("skyhttp_passwd");
 #elif HAVE_34TELECOM
@@ -86,18 +85,15 @@ void start_mkfiles(void)
 #else
 	char *http_passwd = nvram_safe_get("http_passwd");
 #endif
-	cprintf("%s:%d", __func__, __LINE__);
 	if (stat(HOME_DIR, &buf) != 0) {
 		mkdir(HOME_DIR, 0700);
 	}
-	cprintf("%s:%d", __func__, __LINE__);
 
 #ifdef HAVE_SSHD
 	if (stat(SSH_DIR, &buf) != 0) {
 		mkdir(SSH_DIR, 0700);
 	}
 #endif
-	cprintf("%s:%d", __func__, __LINE__);
 
 	/*
 	 * Create password's and group's database directory 
@@ -105,7 +101,6 @@ void start_mkfiles(void)
 	if (stat(PASSWD_DIR, &buf) != 0) {
 		mkdir(PASSWD_DIR, 0700);
 	}
-	cprintf("%s:%d", __func__, __LINE__);
 
 	/*
 	 * Write password file with username root and password 
@@ -114,7 +109,6 @@ void start_mkfiles(void)
 		perror(PASSWD_FILE);
 		return;
 	}
-	cprintf("%s:%d", __func__, __LINE__);
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 	//      http_passwd);
@@ -137,7 +131,6 @@ void start_mkfiles(void)
 #endif
 	fprintf(fp, "nobody:x:99:99:Nobody:/:/bin/false\n");
 	fclose(fp);
-	cprintf("%s:%d", __func__, __LINE__);
 	/*
 	 * Write group file with group 'root' 
 	 */
@@ -145,7 +138,6 @@ void start_mkfiles(void)
 		perror(GROUP_FILE);
 		return;
 	}
-	cprintf("%s:%d", __func__, __LINE__);
 	fprintf(fp, "root:x:0:\n");
 	fprintf(fp, "nobody:x:99:\n");
 	fclose(fp);
@@ -162,12 +154,9 @@ void start_mkfiles(void)
 	mkdir("/var/tmp", 0700);
 	mkdir("/var/log", 0700);
 	eval("touch", "/var/log/messages");
-	cprintf("%s:%d", __func__, __LINE__);
 	chmod("/tmp", 0777);
-	cprintf("%s:%d", __func__, __LINE__);
 
 	dns_to_resolv();
-	cprintf("%s:%d", __func__, __LINE__);
 	if (nvram_matchi("unblock", 1)) {
 		nvram_unset("unblock");
 #ifdef HAVE_TELNET

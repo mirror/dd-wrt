@@ -86,7 +86,6 @@ static int deconfig(void)
 	unlink("/tmp/get_lease_time");
 	unlink("/tmp/lease_time");
 
-	cprintf("done\n");
 	return 0;
 }
 
@@ -155,10 +154,8 @@ static int update_value(void)
 static int mbim(void)
 {
 	stop_firewall();
-	cprintf("start wan done\n");
 	wan_done(nvram_safe_get("wan_ifname"));
 	nvram_set("dhcpc_done", "1");
-	cprintf("done\n");
 	return 0;
 }
 
@@ -400,11 +397,9 @@ static int bound(void)
 	}
 #endif
 	else {
-		cprintf("start wan done\n");
 		wan_done(wan_ifname);
 	}
 	nvram_seti("dhcpc_done", 1);
-	cprintf("done\n");
 	return 0;
 }
 
@@ -419,7 +414,6 @@ static int renew(void)
 {
 	bound();
 
-	cprintf("done\n");
 	return 0;
 }
 

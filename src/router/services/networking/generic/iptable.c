@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <shutils.h>
 
-#ifndef cprintf
-#define cprintf(fmt, ...) ;
 #endif
 
 #define sameaddr(sin, ein) *((unsigned int *)sin) == *((unsigned int *)ein)
@@ -104,11 +102,9 @@ static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf, si
 
 	if (bitlen == 32) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/32 ", sin[0], sin[1], sin[2], sin[3]);
-		cprintf("%u.%u.%u.%u/32\n", sin[0], sin[1], sin[2], sin[3]);
 		return;
 	} else if (bitlen == 31) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/31 ", sin[0], sin[1], sin[2], sin[3]);
-		cprintf("%u.%u.%u.%u/31\n", sin[0], sin[1], sin[2], sin[3]);
 		return;
 	}
 
@@ -119,7 +115,6 @@ static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf, si
 	if (sameaddr(sin, nets) && sameaddr(ein, nete)) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2],
 			 nets[3], bitlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], bitlen);
 		return;
 	}
 
@@ -127,11 +122,9 @@ static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf, si
 
 	if (sameaddr(sin, nete)) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/32 ", sin[0], sin[1], sin[2], sin[3]);
-		cprintf("%u.%u.%u.%u/32\n", sin[0], sin[1], sin[2], sin[3]);
 	} else if (sameaddr(sin, nets)) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2],
 			 nets[3], nextlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else // continue check
 		subrange(sin, nete, range_buf, len);
 
@@ -139,11 +132,9 @@ static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf, si
 
 	if (sameaddr(ein, nets)) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/32 ", ein[0], ein[1], ein[2], ein[3]);
-		cprintf("%u.%u.%u.%u/32\n", ein[0], ein[1], ein[2], ein[3]);
 	} else if (sameaddr(ein, nete)) {
 		snprintf(range_buf + strlen(range_buf), len - strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2],
 			 nets[3], nextlen);
-		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else // continue check
 		subrange(nets, ein, range_buf, len);
 }
@@ -156,7 +147,6 @@ char *range(char *start, char *end, char *range_buf, size_t len)
 	int retcount = 0;
 	int i;
 
-	cprintf("start=[%s] end=[%s]\n", start, end);
 
 	bzero(range_buf, 1024);
 
@@ -178,7 +168,6 @@ char *range(char *start, char *end, char *range_buf, size_t len)
 
 	subrange(startipc, endipc, range_buf, len);
 
-	cprintf("range_buf=[%s]\n", range_buf);
 
 	return (char *)range_buf;
 }

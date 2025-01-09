@@ -93,7 +93,6 @@ static void check_brcm_cpu_type(void)
 	fcpu = fopen("/proc/cpuinfo", "r");
 
 	if (fcpu == NULL)
-		cprintf("Open /proc/cpuinfo fail...0\n");
 	else {
 		char buf[500];
 
@@ -124,13 +123,10 @@ static void check_brcm_cpu_type(void)
 		// fprintf(stderr, "cpu_type : %s\n", cpu_type);
 		fclose(fcpu);
 		if (!strcmp(cpu_type, "BCM4710") || !strcmp(cpu_type, "BCM4702")) {
-			cprintf("We got BCM4702 board...\n");
 			nvram_set("cpu_type", cpu_type);
 		} else if (!strcmp(cpu_type, "BCM3302") || !strcmp(cpu_type, "BCM4712")) {
-			cprintf("We got BCM4712 board...\n");
 			nvram_set("cpu_type", cpu_type);
 		} else {
-			cprintf("We got unknown board...\n");
 			nvram_set("cpu_type", cpu_type);
 		}
 	}
@@ -412,7 +408,6 @@ static void setup_4712(void)
 
 	if (nvram_match("cpu_type", BCM4712_CPUTYPE) || nvram_match("cpu_type", "BCM3302") || nvram_match("cpu_type", "BCM4712")) {
 		if (boardflags & BFL_ENETVLAN) {
-			cprintf("setup_4712(): Enable VLAN\n");
 			// nvram_set("setup_4712","1");
 			strcpy(wanifname, "vlan1");
 			strcpy(wlifname, "eth1");
@@ -433,13 +428,11 @@ static void setup_4712(void)
 		} // VLAN enabled
 		else {
 			// nvram_set("setup_4712","2");
-			cprintf("setup_4712(): Disable VLAN, it must be in bridge mode\n");
 			nvram_set("lan_ifnames", "eth0 eth1");
 			strcpy(wlifname, "eth1");
 			nvram_set("wl0_ifname", "eth1");
 		}
 	} else { // 4702, 4704
-		cprintf("setup_4712(): It's a 4702 or 4704 hardware, VLAN can't be used in these 2 boards\n");
 		strcpy(wanifname, "eth1");
 		strcpy(wlifname, "eth2");
 		nvram_set("wl0_ifname", "eth2");
@@ -459,11 +452,9 @@ static int check_nv(char *name, char *value)
 		return 0;
 
 	if (!nvram_exists(name)) {
-		cprintf("ERR: Cann't find %s !.......................\n", name);
 		nvram_set(name, value);
 		ret++;
 	} else if (nvram_invmatch(name, value)) {
-		cprintf("ERR: The %s is %s, not %s !.................\n", name, nvram_safe_get(name), value);
 		nvram_set(name, value);
 		ret++;
 	}
@@ -518,7 +509,6 @@ void start_sysinit(void)
 	mknod("/dev/crypto", S_IFCHR | 0644, makedev(10, 70));
 	mkdir("/dev/usb", 0700);
 #endif
-	cprintf("sysinit() setup console\n");
 	fprintf(stderr, "boardnum %s\n", nvram_safe_get("boardnum"));
 	fprintf(stderr, "boardtype %s\n", nvram_safe_get("boardtype"));
 	fprintf(stderr, "boardrev %s\n", nvram_safe_get("boardrev"));
@@ -533,9 +523,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 
@@ -3323,7 +3311,6 @@ void start_sysinit(void)
 		break;
 	}
 
-	cprintf("done\n");
 	return;
 }
 
@@ -3429,7 +3416,6 @@ int check_pmon_nv(void)
 void start_overclocking(void)
 {
 #ifdef HAVE_OVERCLOCKING
-	cprintf("Overclocking started\n");
 
 	int rev = cpu_plltype();
 
@@ -3457,7 +3443,6 @@ void start_overclocking(void)
 	int cclk = atoi(dup);
 
 	if (clk == cclk) {
-		cprintf("clkfreq %d MHz identical with new setting\n", clk);
 		return; // clock already set
 	}
 
@@ -3586,7 +3571,6 @@ void start_overclocking(void)
 	}
 
 	if (set) {
-		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
 		if (rev == 2 || rev == 8 || rev == 10)
 			sprintf(clkfr, "%d,%d,%d", clk, clk2_1, clk2_2);
 		else

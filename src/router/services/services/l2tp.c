@@ -276,7 +276,6 @@ void run_l2tp(int status)
 		sysprintf("echo \"c %s\" >  /var/run/xl2tpd/l2tp-control", nvram_safe_get("l2tp_server_name"));
 	}
 
-	cprintf("done\n");
 	return;
 }
 
@@ -300,7 +299,6 @@ void stop_l2tp(void)
 	stop_process("xl2tpd", "daemon");
 	stop_process("listen", "connectivity listener");
 
-	cprintf("done\n");
 	return;
 }
 #endif

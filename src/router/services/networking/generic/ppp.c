@@ -71,10 +71,8 @@ int ipup_main(int argc, char **argv)
 	// char *wan_proto = nvram_safe_get("wan_proto");
 	char buf[256];
 
-	cprintf("%s\n", argv[0]);
 	if (!strcmp(argv[1], "wwan0") && (!strcmp(argv[2], "fastpath"))) {
 		wan_done("wwan0");
-		cprintf("done (fastpath)\n");
 		return 0;
 	}
 
@@ -181,7 +179,6 @@ int ipup_main(int argc, char **argv)
 	if ((v = getenv("MTU")))
 		nvram_set("wan_run_mtu", v);
 	wan_done(wan_ifname);
-	cprintf("done\n");
 	return 0;
 }
 
@@ -320,7 +317,6 @@ int disconnected_pppoe_main(int argc, char **argv)
 	char ppp_demand[2][20] = { "ppp_demand", "ppp_demand_1" };
 
 	if (nvram_matchi(ppp_demand[pppoe_num], 1) && nvram_match("action_service", "")) {
-		cprintf("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
 		single_pppoe_stop(pppoe_num);
 		run_pppoe(pppoe_num);
 		dns_to_resolv();
@@ -337,7 +333,6 @@ int disconnected_pppoe_main(int argc, char **argv)
 
 		return 0;
 	}
-	cprintf("tallest:=====( PPPOE Dial On Demand Error!! )=====\n");
 	return 0;
 }
 

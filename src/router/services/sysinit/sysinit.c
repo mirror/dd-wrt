@@ -2000,7 +2000,6 @@ void start_restore_defaults(void)
 	}
 
 	if (restore_defaults) {
-		cprintf("Restoring defaults...\n");
 #ifdef HAVE_MICRO
 		/*
 		 * adjust ip_conntrack_max based on available memory size
@@ -2749,9 +2748,7 @@ void start_restore_defaults(void)
 
 		nvram_set("overclocking", dup);
 	}
-	cprintf("start overclocking\n");
 	start_overclocking();
-	cprintf("done()");
 	if (nvram_exists("http_username")) {
 		if (nvram_match("http_username", "")) {
 #ifdef HAVE_POWERNOC
@@ -2785,12 +2782,10 @@ void start_restore_defaults(void)
 		nvram_set("dhcp_start", merge);
 	}
 
-	cprintf("check CFE nv\n");
 	if (check_now_boot() == PMON_BOOT)
 		check_pmon_nv();
 	else
 		check_cfe_nv();
-	cprintf("restore defaults\n");
 
 	glob_t globbuf;
 	char globstring[1024];
@@ -2830,7 +2825,6 @@ void start_restore_defaults(void)
 		unset_nvram();
 		setWifiPass();
 		nvram_async_commit();
-		cprintf("done\n");
 		for (i = 0; i < MAX_NVPARSE; i++) {
 			del_wds_wsec(0, i);
 			del_wds_wsec(1, i);
@@ -2887,7 +2881,6 @@ void load_drivers(int boot)
 	 * server and ctorrent support in future modules = "usbcore usb-ohci
 	 * usb-uhci ehci-hcd scsi_mod usb-storage ide-core ide-detect
 	 * ide-disk ide-scsi cdrom ide-cd printer sd_mod sr_mod" foreach
-	 * (module, modules, next) { cprintf ("loading %s\n", module);
 	 * insmod(module); } #endif 
 	 */
 
@@ -2914,12 +2907,10 @@ void load_drivers(int boot)
 		}
 
 		if (nvram_matchi("usb_printer", 1)) {
-			cprintf("loading printer\n");
 			insmod("printer usblp");
 		}
 #ifdef HAVE_USBIP
 		if (nvram_matchi("usb_ip", 1)) {
-			cprintf("loading usb over ip drivers\n");
 			insmod("usbip_common_mod usbip usbip-core usbip-host vhci-hcd");
 			eval("usbipd", "-D");
 		}

@@ -41,7 +41,6 @@ void start_atm(void)
 	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
 	sysprintf("echo nas0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
 	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
-	cprintf("done\n");
 	return;
 }
 
@@ -51,7 +50,6 @@ void stop_atm(void)
 	sysprintf("echo netdev > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/trigger");
 	sysprintf("echo ppp0 > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/device_name");
 	sysprintf("echo \"rx tx\" > /sys/devices/platform/leds-gpio/leds/soc:green:adsl/mode");
-	cprintf("done\n");
 	return;
 }
 #endif

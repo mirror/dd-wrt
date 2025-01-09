@@ -65,22 +65,17 @@ static int adjust_dhcp_range(void)
 	legal_end_ip = legal_start_ip + legal_total_ip - 1;
 	dhcp_start_ip = atoi(dhcp_start);
 
-	cprintf("legal_total_ip=[%d] legal_start_ip=[%d] legal_end_ip=[%d] dhcp_start_ip=[%d]\n", legal_total_ip, legal_start_ip,
 		legal_end_ip, dhcp_start_ip);
 
 	if ((dhcp_start_ip > legal_end_ip) || (dhcp_start_ip < legal_start_ip)) {
-		cprintf("Illegal DHCP Start IP: We need to adjust DHCP Start ip.\n");
 		set_dhcp_start_ip = legal_start_ip;
 		adjust_ip = 1;
 		if (atoi(dhcp_num) > legal_total_ip) {
-			cprintf("DHCP num is exceed, we need to adjust.");
 			set_dhcp_num = legal_total_ip;
 			adjust_num = 1;
 		}
 	} else {
-		cprintf("Legal DHCP Start IP: We need to check DHCP num.\n");
 		if ((atoi(dhcp_num) + dhcp_start_ip) > legal_end_ip) {
-			cprintf("DHCP num is exceed, we need to adjust.\n");
 			set_dhcp_num = legal_end_ip - dhcp_start_ip + 1;
 			adjust_num = 1;
 		}
@@ -89,14 +84,12 @@ static int adjust_dhcp_range(void)
 	if (adjust_ip) {
 		char ip[20];
 
-		cprintf("set_dhcp_start_ip=[%d]\n", set_dhcp_start_ip);
 		snprintf(ip, sizeof(ip), "%d", set_dhcp_start_ip);
 		nvram_set("dhcp_start", ip);
 	}
 	if (adjust_num) {
 		char num[5];
 
-		cprintf("set_dhcp_num=[%d]\n", set_dhcp_num);
 		snprintf(num, sizeof(num), "%d", set_dhcp_num);
 		nvram_set("dhcp_num", num);
 	}
@@ -141,7 +134,6 @@ void start_udhcpd(void)
 	 */
 	adjust_dhcp_range();
 
-	cprintf("%s %d.%d.%d.%s %s %s\n", nvram_safe_get("lan_ifname"), get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
 		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
 		nvram_safe_get("dhcp_start"), nvram_safe_get("dhcp_end"), nvram_safe_get("lan_lease"));
 
@@ -314,7 +306,6 @@ void start_udhcpd(void)
 
 	log_eval("udhcpd", "/tmp/udhcpd.conf");
 
-	cprintf("done\n");
 	return;
 }
 

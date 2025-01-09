@@ -49,7 +49,6 @@ void start_plex(void)
 
 	dd_logstart("plex", _evalpid(plex_argv, NULL, 0, NULL));
 
-	cprintf("done\n");
 	return;
 }
 
@@ -58,7 +57,6 @@ void stop_plex(void)
 	stop_process("Plex Media Serv", "daemon");
 	stop_process("Plex Tuner Serv", "daemon");
 	nvram_delstates(plex_deps());
-	cprintf("done\n");
 	return;
 }
 #endif

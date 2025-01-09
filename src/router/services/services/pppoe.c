@@ -83,7 +83,6 @@ void run_tmp_ppp(int num)
 	struct ifreq ifr;
 	int s;
 
-	cprintf("start session %d\n", num);
 
 	sprintf(pppoeifname, "pppoe_ifname%d", num);
 
@@ -132,7 +131,6 @@ void run_tmp_ppp(int num)
 	}
 
 	close(s);
-	cprintf("done session %d\n", num);
 	return;
 }
 
@@ -161,7 +159,6 @@ void run_pppoe(int pppoe_num)
 	sprintf(pppoeifname, "pppoe_ifname%d", pppoe_num);
 	nvram_set(pppoeifname, "");
 
-	cprintf("start session %d\n", pppoe_num);
 	sprintf(idletime, "%d", nvram_geti("ppp_idletime") * 60);
 	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
@@ -265,7 +262,6 @@ void run_pppoe(int pppoe_num)
 		// "10.112.112.112",
 		// "0.0.0.0");
 	}
-	cprintf("done. session %d\n", pppoe_num);
 	return;
 }
 
@@ -278,7 +274,6 @@ void stop_pppoe(void)
 		eval("vconfig", "rem", nvram_safe_get("wan_iface"));
 	}
 
-	cprintf("done\n");
 	return;
 }
 
@@ -300,7 +295,6 @@ void start_dns_clear_resolv(void)
 	fprintf(fp_w, " ");
 	fclose(fp_w);
 
-	cprintf("done\n");
 	return;
 }
 

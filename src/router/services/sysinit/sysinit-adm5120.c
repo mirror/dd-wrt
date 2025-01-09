@@ -131,18 +131,14 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	cprintf("sysinit() proc\n");
 	/*
 	 * /proc 
 	 */
-	cprintf("sysinit() setup console\n");
 	/*
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	/*
 	 * load some netfilter stuff 

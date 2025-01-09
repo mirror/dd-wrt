@@ -233,7 +233,6 @@ void start_aoss(void)
 		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)");
 
 #endif
-	cprintf("done\n");
 	return;
 }
 

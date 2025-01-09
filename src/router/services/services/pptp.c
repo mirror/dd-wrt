@@ -52,7 +52,6 @@ void start_pptpd(void)
 	insmod("gre");
 	insmod("pptp");
 
-	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
 
 	//      copy existing peer data to /tmp
@@ -63,23 +62,19 @@ void start_pptpd(void)
 
 	// Create directory for use by pptpd daemon and its supporting files
 	mkdir("/tmp/pptpd", 0744);
-	cprintf("open options file\n");
 	// Create options file that will be unique to pptpd to avoid interference
 	// with pppoe and pptp
 	fp = fopen("/tmp/pptpd/options.pptpd", "w");
 	if (nvram_matchi("pptpd_radius", 1)) {
-		cprintf("adding radius plugin\n");
 		fprintf(fp, "plugin radius.so\nplugin radattr.so\n"
 			    "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
 	}
-	cprintf("check if wan_wins = zero\n");
 	int nowins = 0;
 
 	if (nvram_default_match("wan_wins", "0.0.0.0", "0.0.0.0")) {
 		nowins = 1;
 	}
 
-	cprintf("write config\n");
 	fprintf(fp, "lock\n"
 		    "name *\n"
 		    "nobsdcomp\n"

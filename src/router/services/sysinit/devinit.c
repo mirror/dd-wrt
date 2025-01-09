@@ -120,7 +120,6 @@ static void install_sdcard(void)
 void start_devinit(void)
 {
 	unlink("/etc/nvram/.lock");
-	cprintf("sysinit() proc\n");
 
 	/*
 	 * /proc 
@@ -128,7 +127,6 @@ void start_devinit(void)
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
 	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
-	cprintf("sysinit() tmp\n");
 	/*
 	 * /tmp 
 	 */

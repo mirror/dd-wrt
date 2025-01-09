@@ -160,18 +160,15 @@ void start_cron(void)
 	eval("cp", "-af", "/jffs/mycron.d/*", "/tmp/cron.d/");
 	eval("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
-	cprintf("starting cron\n");
 
 	log_eval("cron");
 
-	cprintf("done\n");
 	return;
 }
 
 void stop_cron(void)
 {
 	stop_process("cron", "daemon");
-	cprintf("done\n");
 	return;
 }
 #endif

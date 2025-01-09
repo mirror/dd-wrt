@@ -57,7 +57,6 @@
 void stop_redial(void)
 {
 	stop_process("redial", "ppp redial daemon");
-	cprintf("done\n");
 	return;
 }
 
@@ -74,6 +73,5 @@ void start_redial(void)
 
 	dd_logstart("ppp_redial", _evalpid(redial_argv, NULL, 0, NULL));
 
-	cprintf("done\n");
 	return;
 }

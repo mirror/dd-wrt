@@ -72,7 +72,6 @@ void start_radio_timer(void)
 	char *argv[] = { "radio_timer", NULL };
 	_log_evalpid(argv, NULL, 0, NULL);
 
-	cprintf("done");
 	return;
 #endif
 }
@@ -81,7 +80,6 @@ void stop_radio_timer(void)
 {
 #ifndef HAVE_NOWIFI
 	stop_process("radio_timer", "daemon");
-	cprintf("done\n");
 
 	return;
 #endif

@@ -78,14 +78,11 @@ void start_sysinit(void)
 		nvram_commit();
 	}
 
-	cprintf("sysinit() setup console\n");
 	/*
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	/*
 	 * network drivers 

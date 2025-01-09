@@ -140,7 +140,6 @@ void start_chilli(void)
 	start_mchilli();
 #endif
 
-	cprintf("done\n");
 	return;
 }
 
@@ -158,7 +157,6 @@ void stop_chilli(void)
 		unlink("/tmp/chilli/ip-down.sh");
 		unlink("/var/run/chilli1");
 	}
-	cprintf("done\n");
 	return;
 }
 

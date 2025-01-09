@@ -1006,7 +1006,6 @@ void start_dnsmasq(void)
 	chmod("/etc/lease_update.sh", 0700);
 	log_eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig("dnsmasq", path, sizeof(path), "dnsmasq.conf"));
 
-	cprintf("done\n");
 	return;
 }
 

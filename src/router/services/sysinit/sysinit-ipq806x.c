@@ -417,9 +417,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	char mtdpath[64];
 	int board = getRouterBrand();

@@ -142,9 +142,7 @@ void start_sysinit(void)
 	 */
 
 	fprintf(stderr, "set console loglevel\n");
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	/*
 	 * Modules 
@@ -492,7 +490,6 @@ void start_sysinit(void)
 	eval("hwclock", "-s", "-u");
 #endif
 	nvram_seti("use_crypto", 0);
-	cprintf("done\n");
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
 

@@ -66,18 +66,14 @@ void start_sysinit(void)
 
 	mknod("/dev/gpio", S_IFCHR | 0644, makedev(127, 0));
 
-	cprintf("sysinit() setup console\n");
 	eval("insmod", "ks8695_wdt",
 	     "wdt_time=30"); // load watchdog module with 30 seconds timeout
 	/*
 	 * Setup console 
 	 */
-	cprintf("sysinit() load 8250 driver\n");
 	eval("insmod", "8250.ko");
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 
@@ -108,7 +104,6 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "wlan0");
 	//disable led's
 	return;
-	cprintf("done\n");
 }
 
 int check_cfe_nv(void)

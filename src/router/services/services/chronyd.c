@@ -28,7 +28,6 @@ void stop_chronyd(void)
 {
 	stop_process("chronyd", "chronyd daemon");
 	nvram_delstates(chronyd_deps());
-	cprintf("done\n");
 
 	return;
 }

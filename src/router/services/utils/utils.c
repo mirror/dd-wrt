@@ -140,7 +140,6 @@ void getWANMac(char *newmac)
 			strcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
-		cprintf("getWANMAC returns %s from %s\n", newmac, nvram_safe_get("wan_ifname"));
 		return;
 	} else {
 		strcpy(newmac, nvram_safe_get("et0macaddr"));

@@ -83,9 +83,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 #ifdef HAVE_RTG32
 	insmod("slhc");
 	insmod("ppp_generic");

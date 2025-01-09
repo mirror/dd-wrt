@@ -89,7 +89,6 @@ void start_ipv6(void)
 	sysprintf("echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6");
 	dd_loginfo("ipv6", "successfully started");
 
-	cprintf("done\n");
 	return;
 }
 #endif

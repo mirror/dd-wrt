@@ -588,7 +588,6 @@ int site_survey_main(int argc, char *argv[])
 	fprintf(stderr, "buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen, scan_res->version, scan_res->count);
 
 	if (scan_res->count == 0) {
-		cprintf("Can't find any wireless device\n");
 		goto endss;
 	}
 

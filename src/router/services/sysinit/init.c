@@ -258,10 +258,8 @@ void start_init_restart(void)
 #ifdef HAVE_OVERCLOCKING
 	start_overclocking();
 #endif
-	cprintf("RESET NVRAM VARS\n");
 	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
-	cprintf("RESTART\n");
 #ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
 #ifdef HAVE_QTN
@@ -289,23 +287,19 @@ void start_init_restart(void)
 void start_init_stop(void)
 {
 	lcdmessage("STOPPING SERVICES");
-	cprintf("STOP\n");
 	killall("udhcpc", SIGKILL);
 
-	cprintf("STOP SERVICES\n");
 
 	stop_services();
 	stop_service(radio_timer);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service(nas);
 #endif
-	cprintf("STOP WAN\n");
 	stop_service(ttraff);
 	stop_service(wan);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service(wlconf);
 #endif
-	cprintf("STOP LAN\n");
 #ifdef HAVE_MADWIFI
 	stop_service(stabridge);
 #endif
@@ -479,18 +473,14 @@ void start_init_start(void)
 #ifdef HAVE_USTEER
 	start_service(usteer);
 #endif
-	cprintf("start services\n");
 	start_services();
 	nvram_seti("sysup", 1);
-	cprintf("start wan boot\n");
 	start_service(wan_boot);
 	start_service(ttraff);
 
-	cprintf("diag STOP LED\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	diag_led(DIAG, STOP_LED);
 #endif
-	cprintf("set led release wan control\n");
 
 	if (nvram_matchi("radiooff_button", 1) && nvram_matchi("radiooff_boot_off", 1)) {
 		start_service(radio_off);
@@ -513,7 +503,6 @@ void start_init_start(void)
 #ifdef HAVE_WIFIDOG
 	start_service(wifidog);
 #endif
-	cprintf("start syslog\n");
 	system("/etc/postinit&");
 	start_service(httpd);
 	led_control(LED_DIAG, LED_OFF);
@@ -531,7 +520,6 @@ void start_init_start(void)
 
 void start_modules_wait(void)
 {
-	cprintf("run rc file\n");
 #ifndef HAVE_MICRO
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
@@ -546,7 +534,6 @@ void start_modules_wait(void)
 		eval("/mmc/etc/init.d/rcS");
 		// startup script
 		// (siPath impl)
-		cprintf("start modules\n");
 		start_modules();
 #ifdef HAVE_MILKFISH
 		start_milkfish_boot();

@@ -50,7 +50,6 @@ void start_upnpd(void)
 		log_eval("upnpd", "-D", "-W", wan_ifname);
 	}
 
-	cprintf("done\n");
 	return;
 }
 

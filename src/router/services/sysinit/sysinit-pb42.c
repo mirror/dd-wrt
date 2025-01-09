@@ -63,9 +63,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	int brand = getRouterBrand();
 
@@ -88,7 +86,6 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "wlan0");
 
 	return;
-	cprintf("done\n");
 }
 
 int check_cfe_nv(void)

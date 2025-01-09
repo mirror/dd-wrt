@@ -77,7 +77,6 @@ void start_httpd(void)
 	}
 	chdir("/");
 
-	cprintf("done\n");
 	return;
 }
 

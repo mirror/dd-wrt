@@ -58,15 +58,12 @@ void start_sysinit(void)
 	eval("mknod", "/dev/crypto", "c", "10", "70");
 	eval("mount", "-o", "remount,rw", "/");
 
-	cprintf("sysinit() setup console\n");
 
 	/*
 	 * Setup console 
 	 */
 
-	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
-	cprintf("sysinit() get router\n");
 
 	nvram_seti("intel_eth", 0);
 
@@ -124,7 +121,6 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "wlan0");
 
 	nvram_seti("use_crypto", 0);
-	cprintf("done\n");
 	return;
 }
 

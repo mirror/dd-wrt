@@ -393,7 +393,6 @@ void start_ddns(void)
 		dd_logstart("ddns", eval("inadyn", "--cache-dir=/tmp/ddns", "-e", "ddns_success", "--exec-mode=compat", "-f",
 					 "/tmp/ddns/inadyn.conf", "-P", "/var/run/inadyn.pid", "-l", loglevel, "-C"));
 	}
-	cprintf("done\n");
 
 	return;
 }
@@ -411,7 +410,6 @@ void stop_ddns(void)
 	}
 	unlink("/tmp/ddns/ddns.log");
 
-	cprintf("done\n");
 
 	return;
 }
@@ -504,7 +502,6 @@ int ddns_success_main(int argc, char *argv[])
 
 	nvram_async_commit();
 
-	cprintf("done\n");
 
 	return 0;
 }

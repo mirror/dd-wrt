@@ -126,7 +126,6 @@ int usejffs = 0;
 void stop_ntpc(void)
 {
 	stop_process("ntpclient", "Network Time Protocol client");
-	cprintf("done\n");
 	return;
 }
 
@@ -137,14 +136,12 @@ void start_resetbutton(void)
 
 	log_eval("resetbutton");
 
-	cprintf("done\n");
 	return;
 }
 
 void stop_resetbutton(void)
 {
 	stop_process("resetbutton", "daemon");
-	cprintf("done\n");
 	return;
 }
 
@@ -157,14 +154,12 @@ void start_iptqueue(void)
 
 	log_eval("iptqueue");
 
-	cprintf("done\n");
 	return;
 }
 
 void stop_iptqueue(void)
 {
 	stop_process("iptqueue", "daemon");
-	cprintf("done\n");
 	return;
 }
 
@@ -173,7 +168,6 @@ void stop_3g(void)
 {
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "3g/umts/lte process");
-	cprintf("done\n");
 }
 
 void start_check_sierradirectip(void)
@@ -238,7 +232,6 @@ void stop_dhcpc(void)
 		sysprintf("echo 0 >/tmp/qmistatus\n");
 	}
 #endif
-	cprintf("done\n");
 	return;
 }
 

@@ -266,7 +266,6 @@ static char *getKey(const char *prefix)
  * { char *argv[] = { "/usr/sbin/nas", cfgfile, pidfile, type, NULL }; pid_t
  * pid;
  * 
- * _eval (argv, NULL, 0, &pid); cprintf ("done\n"); } } 
  */
 static void start_nas_lan(int c)
 {
@@ -350,7 +349,6 @@ static void stop_nas_process(void)
 		}
 	}
 
-	cprintf("done\n");
 	return;
 }
 
@@ -400,7 +398,6 @@ void start_nas(void)
 		sprintf(wlname, "wl%d", c);
 		if (nvram_nmatch("sta", "wl%d_mode", c) || nvram_nmatch("wet", "wl%d_mode", c) ||
 		    nvram_nmatch("apsta", "wl%d_mode", c) || nvram_nmatch("apstawet", "wl%d_mode", c)) {
-			cprintf("start nas wan\n");
 #ifdef HAVE_WPA_SUPPLICANT
 			if (nvram_nmatch("8021X", "wl%d_akm", c) && nvram_nmatch("sta", "wl%d_mode", c))
 				setupSupplicant(wlname);
@@ -666,7 +663,6 @@ static void start_nas_single(char *type, char *prefix)
 		fprintf(fp, "%d", pid);
 	fclose(fp);
 
-	cprintf("done\n");
 
 	return;
 }

@@ -119,7 +119,6 @@ void stop_sshd(void)
 {
 	stop_process("dropbear", "ssh daemon");
 	nvram_delstates(sshd_deps());
-	cprintf("done\n");
 
 	return;
 }
@@ -154,7 +153,6 @@ static int write_key_file(char *keyname, char *keyfile, int chmodval)
 	 * Update the named key file 
 	 */
 	if ((fd = fopen(keyfile, "wb")) == NULL) {
-		cprintf("Can't open %s\n", keyfile);
 		return -1;
 	}
 	fwritenvram(keyname, fd);

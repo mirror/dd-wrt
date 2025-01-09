@@ -45,7 +45,6 @@ void start_apserv(void)
 	 */
 	ret = killall("ap_serv", SIGUSR1);
 	log_eval("ap_serv", "-i", nvram_safe_get("lan_ifname"));
-	cprintf("done\n");
 	return;
 }
 

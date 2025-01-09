@@ -66,7 +66,6 @@ void start_mactelnetd(void)
 		return;
 #endif
 
-	cprintf("done\n");
 	return;
 }
 

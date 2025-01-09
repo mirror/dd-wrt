@@ -2044,9 +2044,6 @@ void start_lan(void)
 		nvram_async_commit();
 	}
 
-	cprintf("lan ifname = %s\n", lan_ifname);
-	cprintf("lan ifnames = %s\n", lan_ifnames);
-	cprintf("wan ifname = %s\n", wan_ifname);
 
 	// If running in client-mode, remove old WAN-configuration
 	if (getSTA()) {
@@ -2077,7 +2074,6 @@ void start_lan(void)
 	/*
 	 * you gotta bring it down before you can set its MAC 
 	 */
-	cprintf("configure wl_face %s\n", wl_face);
 	ifconfig(wl_face, 0, 0, 0);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
@@ -2099,7 +2095,6 @@ void start_lan(void)
 	/*
 	 * Write wireless mac 
 	 */
-	cprintf("Write wireless mac\n");
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy(ifr.ifr_name, wl_face, IFNAMSIZ);
 
@@ -2107,7 +2102,6 @@ void start_lan(void)
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 		perror("Write wireless mac fail : ");
 	else
-		cprintf("Write wireless mac successfully\n");
 	eval("wl", "-i", wl_face, "up");
 	config_macs(wl_face);
 #endif
@@ -2119,7 +2113,6 @@ void start_lan(void)
 		nvram_set("wan_hwaddr", mac);
 	}
 
-	cprintf("wl_face up %s\n", wl_face);
 	ifconfig(wl_face, IFUP, 0, 0);
 #ifdef HAVE_MICRO
 	br_init();
@@ -2225,7 +2218,6 @@ void start_lan(void)
 					strncpy(ifr.ifr_name, lan_ifname, IFNAMSIZ);
 					ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 					ioctl(s, SIOCSIFHWADDR, &ifr);
-					cprintf("=====> set %s hwaddr to %s\n", lan_ifname, realname);
 				} else
 					perror(lan_ifname);
 			} else
@@ -2273,7 +2265,6 @@ void start_lan(void)
 						if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 							perror("Write wireless mac fail : ");
 						else
-							cprintf("Write wireless mac successfully\n");
 						eval("wl", "-i", name, "up");
 						config_macs(name);
 					}
@@ -2526,7 +2517,6 @@ void start_lan(void)
 #endif
 	log_eval("gratarp", lan_ifname);
 
-	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
@@ -2853,7 +2843,6 @@ void stop_lan(void)
 	char *lan_ifname = nvram_safe_get("lan_ifname");
 	char name[80], *next;
 
-	cprintf("%s\n", lan_ifname);
 	/*
 	 * Bring down LAN interface 
 	 */
@@ -2908,7 +2897,6 @@ void stop_lan(void)
 	br_shutdown();
 #endif
 
-	cprintf("done\n");
 }
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
@@ -3099,7 +3087,6 @@ void run_wan(int status)
 				config_macs(ethname);
 			}
 #endif
-			cprintf("Write WAN mac successfully\n");
 		} else
 			perror("Write WAN mac fail : \n");
 	}
@@ -4203,7 +4190,6 @@ void run_wan(int status)
 		wan_done(wan_ifname);
 		log_eval("gratarp", wan_ifname);
 	}
-	cprintf("dhcp client ready\n");
 
 	/*
 	 * Get current WAN hardware address 
@@ -4212,7 +4198,6 @@ void run_wan(int status)
 		strncpy(ifr.ifr_name, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 	else
 		strncpy(ifr.ifr_name, wan_ifname, IFNAMSIZ);
-	cprintf("get current hardware adress");
 	{
 		char eabuf[32];
 		if (get_hwaddr(ifr.ifr_name, eabuf)) {
@@ -4233,7 +4218,6 @@ void run_wan(int status)
 	 * Disable wireless will cause diag led blink, so we want to stop it. 
 	 */
 
-	cprintf("diag led control\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if ((check_hw_type() == BCM4712_CHIP) || (check_hw_type() == BCM5325E_CHIP)) {
 		// Barry will put disable WLAN here
@@ -4254,7 +4238,6 @@ void run_wan(int status)
 	else
 		diag_led(DMZ, STOP_LED);
 #endif
-	cprintf("%s %s\n", nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
 	if (nvram_match("wan_proto", "l2tp")) {
 		/*
@@ -4263,8 +4246,6 @@ void run_wan(int status)
 		while (route_del(safe_get_wan_face(wan_if_buffer), 0, NULL, NULL, NULL) == 0)
 			;
 	}
-	cprintf("wep handling\n");
-	cprintf("disable stp if needed\n");
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -4277,7 +4258,6 @@ void run_wan(int status)
 	br_shutdown();
 #endif
 
-	cprintf("done()()()\n");
 }
 
 void start_wan_boot(void)
@@ -4294,9 +4274,7 @@ void start_wan_service(void)
 {
 	stop_process_monitor();
 	stop_ddns();
-	cprintf("start process monitor\n");
 	start_process_monitor();
-	cprintf("start ddns\n");
 	start_ddns();
 #ifdef HAVE_SPEEDCHECKER
 	stop_speedchecker();
@@ -4427,7 +4405,6 @@ void wan_done(char *wan_ifname)
 		return;
 	}
 
-	cprintf("%s %s\n", wan_ifname, nvram_safe_get("wan_proto"));
 
 	if (nvram_match("wan_proto", "l2tp")) {
 		/*
@@ -4498,29 +4475,24 @@ void wan_done(char *wan_ifname)
 	/*
 	 * save dns to resolv.conf 
 	 */
-	cprintf("dns to resolv\n");
 	dns_to_resolv();
 
-	cprintf("restart dhcp server\n");
 	/*
 	 * Restart DHCP server 
 	 */
 #ifdef HAVE_IPV6
 	start_wan6_done(wan_ifname);
 #endif
-	cprintf("restart dns proxy\n");
 	/*
 	 * Restart DNS proxy 
 	 */
 
-	cprintf("start firewall\n");
 
 	/*
 	 * Set additional wan static routes if need 
 	 */
 
 	start_set_routes();
-	cprintf("routes done\n");
 
 #ifdef HAVE_UPNP
 	stop_upnpd();
@@ -4528,17 +4500,13 @@ void wan_done(char *wan_ifname)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_zebra();
 #endif
-	cprintf("start zebra\n");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_zebra();
 #endif
-	cprintf("start upnp\n");
 #ifdef HAVE_UPNP
 	start_upnpd();
 #endif
-	// cprintf ("start cron\n");
 	// start_OAcron ();
-	cprintf("start wshaper\n");
 	stop_wland();
 	start_wland();
 	if (nvram_match("wan_proto", "pptp")) {
@@ -4554,7 +4522,6 @@ void wan_done(char *wan_ifname)
 			eval("/tmp/ppp/sh_pptp_customipup");
 		}
 	}
-	cprintf("std on\n");
 #ifdef HAVE_MICRO
 	br_init();
 #endif
@@ -4567,7 +4534,6 @@ void wan_done(char *wan_ifname)
 	br_shutdown();
 #endif
 
-	cprintf("check wan link\n");
 	if (check_wan_link(0))
 		SET_LED(GOT_IP);
 	else if ((!check_wan_link(0)) && nvram_match("wan_proto", "auto")) {
@@ -4602,9 +4568,7 @@ void wan_done(char *wan_ifname)
 	 * end 
 	 */
 
-	cprintf("running custom DD-WRT ipup scripts\n");
 	runStartup(".ipup");
-	cprintf("trigger gpio");
 
 	led_control(LED_CONNECTED, LED_OFF);
 	if (!nvram_match("wan_proto", "disabled")) {
@@ -4649,7 +4613,6 @@ void wan_done(char *wan_ifname)
 	fprintf(up, "%u", sys_uptime);
 	fclose(up);
 
-	cprintf("done\n");
 
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
 
@@ -4662,18 +4625,14 @@ void wan_done(char *wan_ifname)
 #endif
 
 #ifdef HAVE_OPENVPN
-	cprintf("starting openvpn\n");
 	stop_openvpn_wandone();
 	start_openvpn();
-	cprintf("done\n");
 
 #endif
 
 #ifdef HAVE_ANTAIRA_AGENT
-	cprintf("starting antaira-agent\n");
 	stop_antaira_agent();
 	start_antaira_agent();
-	cprintf("done\n");
 #endif
 
 #ifdef HAVE_STRONGSWAN
@@ -4690,7 +4649,6 @@ void wan_done(char *wan_ifname)
 #endif
 #ifdef HAVE_MILKFISH
 	if (nvram_matchi("milkfish_enabled", 1)) {
-		cprintf("starting milkfish netup script\n");
 		eval("/etc/config/milkfish.netup");
 	}
 #endif
@@ -4728,13 +4686,11 @@ void wan_done(char *wan_ifname)
 	start_hostapdwan();
 #endif
 #endif
-	cprintf("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
 	if ((!nvram_matchi("dtag_vlan8", 1) && !nvram_matchi("dtag_bng", 1)) || nvram_matchi("wan_vdsl", 0))
 		stop_igmprt();
 	start_igmprt();
 #endif
-	cprintf("ready\n");
 #ifdef HAVE_UDPXY
 	if (!nvram_matchi("udpxy_enable", 1))
 		stop_udpxy();
@@ -4785,7 +4741,6 @@ void stop_wan(void)
 	led_control(LED_CONNECTED, LED_OFF);
 	unlink("/tmp/.wanuptime");
 
-	cprintf("%s %s\n", wan_ifname, nvram_safe_get("wan_proto"));
 #ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
 	stop_openvpn_wandone();
@@ -4857,7 +4812,6 @@ void stop_wan(void)
 #ifdef HAVE_PPP
 #endif
 
-	cprintf("done\n");
 }
 
 static void apply_rules(char *method, char *pbr)
@@ -5305,7 +5259,6 @@ void start_hotplug_net(void)
 	if (strncmp(interface, "wds", 3))
 		return;
 
-	cprintf("action: %s\n", action);
 #ifdef HAVE_BCMMODERN
 	if (!strcmp(action, "add")) {
 #else
@@ -5343,7 +5296,6 @@ void start_hotplug_net(void)
 		br_shutdown();
 #endif
 	}
-	cprintf("config done()\n");
 	return;
 #endif
 }
