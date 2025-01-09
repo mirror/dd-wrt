@@ -453,10 +453,8 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t **argv)
 	char username[32];
 	char *o, *userlist;
 
-	cprintf("get collection\n");
 	char *u = nvram_get_collection("iradius");
 
-	cprintf("collection result %s", u);
 	if (u != NULL) {
 		userlist = strdup(u);
 		debug_free(u);
@@ -465,7 +463,6 @@ EJ_VISIBLE void ej_show_iradius(webs_t wp, int argc, char_t **argv)
 		userlist = NULL;
 		o = NULL;
 	}
-	cprintf("display = chain\n");
 	struct timeval now;
 
 	gettimeofday(&now, NULL);
@@ -610,21 +607,15 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t **argv)
 {
 	int i;
 
-	// cprintf("get static leasenum");
-
 	char *sln = nvram_safe_get("static_leasenum");
 
-	// cprintf("check null");
 	if (sln == NULL || *(sln) == 0)
 		return;
-	// cprintf("atoi");
 
 	int leasenum = atoi(sln);
 
-	// cprintf("leasenum==0");
 	if (leasenum == 0)
 		return;
-	// cprintf("get leases");
 	char *nvleases = nvram_safe_get("static_leases");
 	char *leases = strdup(nvleases);
 	char *originalpointer = leases; // strsep destroys the pointer by
@@ -788,7 +779,6 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefi
 	char buf[128];
 
 	// char p2[80];
-	cprintf("show security prefix\n");
 	sprintf(var, "%s_security_mode", prefix);
 	// strcpy(p2,prefix);
 	// rep(p2,'X','.');
@@ -905,7 +895,6 @@ static void show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefi
 
 	websWrite(wp, "</select></div>\n");
 	rep(prefix, 'X', '.');
-	cprintf("ej show wpa\n");
 	internal_ej_show_wpa_setting(wp, argc, argv, prefix);
 }
 
@@ -929,7 +918,6 @@ static void ej_show_security_single(webs_t wp, int argc, char_t **argv, char *pr
 	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) && !nvram_nmatch("disabled", "%s_mode", prefix)) {
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n", prefix);
 		websWrite(wp, "<fieldset>\n");
-		// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
 			  getNetworkLabel(wp, IFMAP(prefix)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
@@ -945,7 +933,6 @@ static void ej_show_security_single(webs_t wp, int argc, char_t **argv, char *pr
 
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
-		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 			  getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
@@ -6014,7 +6001,6 @@ void show_owe(webs_t wp, char *prefix)
 void show_preshared(webs_t wp, char *prefix)
 {
 	char var[80];
-	cprintf("show preshared");
 
 #ifndef HAVE_MADWIFI
 	sprintf(var, "%s_crypto", prefix);
@@ -6095,7 +6081,6 @@ void show_preshared(webs_t wp, char *prefix)
 void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 {
 	char var[80];
-	cprintf("show radius\n");
 	if (showmacformat) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "radius.label2", NULL);
@@ -6841,7 +6826,6 @@ void show_wep(webs_t wp, char *prefix)
 {
 	char var[80];
 	char *bit;
-	cprintf("show wep\n");
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 	char wl_authmode[16];
 	sprintf(wl_authmode, "%s_authmode", prefix);
@@ -6882,7 +6866,6 @@ void show_wep(webs_t wp, char *prefix)
 		"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script></div>");
 	sprintf(var, "%s_wep_bit", prefix);
 	bit = nvram_safe_get(var);
-	cprintf("bit %s\n", bit);
 	websWrite(wp, "<select name=\"%s_wep_bit\" size=\"1\" onchange=keyMode(this.form)>", prefix);
 	websWrite(wp, "<option value=\"64\" %s ><script type=\"text/javascript\">Capture(wep.opt_64);</script></option>",
 		  selmatch(var, "64", "selected=\"selected\""));

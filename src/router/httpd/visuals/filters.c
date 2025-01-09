@@ -841,7 +841,6 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 			if (sscanf(ports, "%d:%d", &from, &to) != 2)
 				continue;
 
-			// cprintf("match:: name=%s, protocol=%s, ports=%s\n",
 			// word, protocol, ports);
 
 			websWrite(wp, "services[%d]=new service(%d, \"%s\", %d, %d, %d, \"%s\");\n", count, count, name, from, to,

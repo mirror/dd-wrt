@@ -1055,9 +1055,6 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			int i = 0;
 			int offset = get_freqoffset(prefix);
 			while (chan[i].freq != -1) {
-				cprintf("%d\n", chan[i].channel);
-				cprintf("%d\n", chan[i].freq);
-
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
 				if (channelbw > 20 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu &&
@@ -1217,7 +1214,6 @@ void sas_show_security_single(webs_t wp, int argc, char_t **argv, char *prefix)
 	   "<h2 style=\"%s\"><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n",
 	   stage_visible_css, prefix); */
 	websWrite(wp, "<fieldset style=\"%s\">\n", stage_visible_css);
-	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
 	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wpa.h2)</script></legend>");
 	/*        "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
 	   IFMAP(prefix));
@@ -1229,7 +1225,6 @@ void sas_show_security_single(webs_t wp, int argc, char_t **argv, char *prefix)
 	/*foreach(var, vifs, next) {
 	   sprintf(ssid, "%s_ssid", var);
 	   websWrite(wp, "<fieldset>\n");
-	   // cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
 	   websWrite(wp,
 	   "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 	   IFMAP(var));
@@ -1249,7 +1244,6 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefix, 
 	static char spf[80];
 
 	// char p2[80];
-	cprintf("show security prefix\n");
 	sprintf(var, "%s_security_mode", prefix);
 	sprintf(spf, "disabled");
 	// strcpy(p2,prefix);
@@ -1344,7 +1338,6 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t **argv, char *prefix, 
 
 	websWrite(wp, "</select></div>\n");
 	rep(prefix, 'X', '.');
-	cprintf("ej show wpa\n");
 	sas_show_wpa_setting(wp, argc, argv, prefix, spf);
 }
 
@@ -1712,7 +1705,6 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix, char
 
 	fprintf(stderr, "[security prefix] %s\n", security_prefix);
 	sprintf(var, "%s_security_mode", prefix);
-	cprintf("show wpa setting\n");
 	type = argv[0];
 	rep(var, '.', 'X');
 	security_mode = GOZILA_GET(wp, var);
@@ -1723,7 +1715,6 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix, char
 		security_mode = security_prefix;
 	}
 	rep(var, 'X', '.');
-	cprintf("security mode %s = %s\n", security_mode, var);
 	fprintf(stderr, "security mode %s = %s\n", security_mode, var);
 	if (!strcmp(security_mode, "psk") || !strcmp(security_mode, "psk2") || !strcmp(security_mode, "psk psk2"))
 		sas_show_preshared(wp, prefix);
@@ -1806,7 +1797,6 @@ void sas_show_wep(webs_t wp, char *prefix)
 	char var[80];
 	char *bit;
 
-	cprintf("show wep\n");
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 	char wl_authmode[16];
 
@@ -1849,8 +1839,6 @@ void sas_show_wep(webs_t wp, char *prefix)
 	sprintf(var, "%s_wep_bit", prefix);
 	//bit = nvram_safe_get(var);
 	bit = nvram_selget(wp, var);
-
-	cprintf("bit %s\n", bit);
 
 	websWrite(wp, "<select name=\"%s_wep_bit\" size=\"1\" onchange=keyMode(this.form)>", prefix);
 	websWrite(wp, "<option value=\"64\" %s >64 bits 10 hex digits</option>", selmatch(wp, var, "64", "selected=\"selected\""));
@@ -1910,7 +1898,6 @@ void sas_show_preshared(webs_t wp, char *prefix)
 {
 	char var[80];
 
-	cprintf("show preshared");
 	sprintf(var, "%s_crypto", prefix);
 	websWrite(wp, "<div><div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
@@ -1954,7 +1941,6 @@ void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 {
 	char var[80];
 
-	cprintf("show radius\n");
 	if (showmacformat) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label2)</script></div>\n");

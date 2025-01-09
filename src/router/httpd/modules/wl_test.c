@@ -17,7 +17,6 @@
 #define PROC_DEV "/proc/net/dev"
 
 #if 1
-#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ##args)
 #else
 #define dprintf(fmt, args...)
 #endif
@@ -26,7 +25,6 @@ static int mysystem(char *cmd)
 {
 	FILE *fp = popen(cmd, "rb");
 	pclose(fp);
-	cprintf("cmd: [%s]\n", cmd);
 	return 0;
 }
 
@@ -194,10 +192,8 @@ int StartContinueTx(webs_t wp, char *value)
 
 				sscanf(line, "%27c%s", string, value);
 				if (!memcmp(string, patt1, strlen(patt1))) {
-					cprintf("Set [%s] to \"wl_cck_result\"\n", value);
 					nvram_set("wl_cck_result", value);
 				} else if (!memcmp(string, patt2, strlen(patt2))) {
-					cprintf("Set [%s] to \"wl_ofdm_result\"\n", value);
 					nvram_set("wl_ofdm_result", value);
 				}
 			}

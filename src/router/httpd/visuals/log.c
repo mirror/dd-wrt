@@ -67,7 +67,6 @@ EJ_VISIBLE void ej_dumplog(webs_t wp, int argc, char_t **argv)
 		debug_free(buf);
 		return;
 	}
-	cprintf("log: %s\n", buf);
 	for (next = buf; (line = strsep(&next, "\n"));) {
 		if (!strncmp(line, "<4>DROP", 7))
 			verdict = "Dropped";

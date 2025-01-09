@@ -443,10 +443,7 @@ static struct callmap gozila_map[] = {
 #endif
 };
 
-#define cprintf(fmt, args...)
 
-#ifndef cprintf
-#define cprintf(fmt, args...)                                                     \
 	do {                                                                      \
 		FILE *fp = fopen("/dev/console", "w");                            \
 		if (fp) {                                                         \
@@ -525,7 +522,6 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	else
 		dd_logdebug("httpd", "function %s not found", name);
 
-	cprintf("start_sevice done()\n");
 	return ret;
 }
 
@@ -554,7 +550,6 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **arg
 			break;
 		}
 	}
-	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();
 		if (fptr) {

@@ -40,7 +40,6 @@
 #include <dd_defs.h>
 #include <revision.h>
 
-#define cprintf(fmt, args...)
 
 //debug
 #include <syslog.h>

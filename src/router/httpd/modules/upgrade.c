@@ -227,7 +227,6 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	/*
 	 * Pipe the rest to the FIFO 
 	 */
-	cprintf("Upgrading\n");
 	int lastblock = 0;
 	while (total && *total) {
 		if (DO_SSL(stream)) {
@@ -612,7 +611,6 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 #else
 #ifdef HAVE_WRT160NL
 			if (memcmp(&buf[0], &CODE_PATTERN_WRT160NL, 4) && memcmp(&buf[0], &CODE_PATTERN_E2100L, 4)) {
-				cprintf("code pattern error!\n");
 				goto err; // must be there, otherwise fail here
 			}
 #else
@@ -623,25 +621,21 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 			    (brand == ROUTER_WRT610NV2 && nvram_match("boot_hw_model", "E300")) //E3000
 			    || brand == ROUTER_LINKSYS_E3200 || brand == ROUTER_LINKSYS_E4200) {
 				if (checkmagic(&buf[0], nv60k)) {
-					cprintf("image not compatible with nv60k router!\n");
 					goto err; // must be there, otherwise fail here
 				}
 			} else if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_R6200 ||
 				   brand == ROUTER_NETGEAR_WNDR3400 || brand == ROUTER_LINKSYS_E900 ||
 				   brand == ROUTER_LINKSYS_E800 || brand == ROUTER_LINKSYS_E1500) {
 				if (checkmagic(&buf[0], nv64k)) {
-					cprintf("image not compatible with nv64k router!\n");
 					goto err; // must be there, otherwise fail here
 				}
 			} else {
 				if (memcmp(&buf[0], &CODE_PATTERN_NV60K, 4) == 0 || memcmp(&buf[0], &CODE_PATTERN_NV64K, 4) == 0) {
-					cprintf("image not compatible with your router!\n");
 					goto err; // fail here
 				}
 			}
 #endif
 			if (checkmagic(&buf[0], allmagics)) {
-				cprintf("code pattern error!\n");
 				goto write_data;
 			}
 #endif
@@ -691,7 +685,6 @@ write_data:
 	 * Wait for write to terminate 
 	 */
 	waitpid(pid, &ret, 0);
-	cprintf("done\n");
 	if (!DO_SSL(stream)) {
 		/*
 		 * Reset nonblock on the socket 

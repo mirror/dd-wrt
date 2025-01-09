@@ -187,7 +187,6 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	/*
 	 * Pipe the rest to the FIFO 
 	 */
-	cprintf("Upgrading\n");
 	// while (total && *total)
 	{
 		wfread(&buf[0], 1, 5, stream);
@@ -234,7 +233,6 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	 */
 	// waitpid (pid, &ret, 0);
 #endif
-	cprintf("done\n");
 	ret = 0;
 err:
 	free(drv);

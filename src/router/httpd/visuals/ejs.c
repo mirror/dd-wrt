@@ -1185,9 +1185,7 @@ EJ_VISIBLE void ej_show_languages(webs_t wp, int argc, char_t **argv)
 	int i = 0;
 
 	while (websRomPageIndex[i].path != NULL) {
-		cprintf("checking %s\n", websRomPageIndex[i].path);
 		if (!strncmp(websRomPageIndex[i].path, "lang_pack/", (sizeof("lang_pack/") - 1))) {
-			cprintf("found language\n");
 			if (strlen(websRomPageIndex[i].path) < 14)
 				continue;
 			strcpy(buf, websRomPageIndex[i].path);

@@ -419,19 +419,15 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 	char *ip[4];
 	char *tmp;
 
-	// cprintf("ip addr\n");
 	strcpy(ipaddr, "");
-	// cprintf("safe get\n");
 	char *ipa = value;
 	if (!ipa)
 		ipa = nvram_safe_get(name);
 
-	// cprintf("strcpy\n");
 	if (ipa == NULL)
 		strcpy(buf, "0.0.0.0");
 	else
 		strcpy(buf, ipa);
-	// cprintf("strsep\n");
 	char *b = (char *)&buf;
 	ip[0] = strsep(&b, ".");
 	ip[1] = strsep(&b, ".");
@@ -453,7 +449,6 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 	}
 	unsigned int target = 0;
 	for (i = 0; i < 4; i++) {
-		// cprintf("merge %s_%d\n",name,i);
 		snprintf(ipname, sizeof(ipname), "%s_%d", name, i);
 		tmp = websGetVar(wp, ipname, ip[i]);
 		if (tmp == NULL)
@@ -2222,8 +2217,6 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 	leases = (char *)calloc((128 * leasenum) + 1, 1);
 	int leasen = 0;
 
-	cprintf("build mac list\n");
-
 	struct timeval now;
 
 	gettimeofday(&now, NULL);
@@ -2232,7 +2225,6 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 		snprintf(del, sizeof(del), "iradius%d_delete", i);
 		char *d = websGetVar(wp, del, "");
 
-		cprintf("radius delete = %s\n", d);
 		if (strcmp(d, "1") == 0)
 			continue;
 
@@ -2263,9 +2255,7 @@ EJ_VISIBLE void validate_iradius(webs_t wp, char *value, struct variable *v)
 		leasen++;
 	}
 
-	cprintf("done %s\n", leases);
 	nvram_store_collection("iradius", leases);
-	cprintf("stored\n");
 	char nr[16];
 
 	sprintf(nr, "%d", leasen);
@@ -2512,7 +2502,6 @@ EJ_VISIBLE void validate_wds(webs_t wp, char *value, struct variable *v)
 	nvram_set(wl0wds, "");
 	snprintf(wds, sizeof(wds), "%s_br1", interface);
 	snprintf(enabled_var, sizeof(enabled_var), "%s_enable", wds);
-	cprintf("wds_validate\n");
 	/*
 	 * validate separate br1 bridge params 
 	 */

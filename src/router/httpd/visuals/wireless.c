@@ -191,7 +191,6 @@ EJ_VISIBLE void ej_wireless_filter_table(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "</fieldset><br />\n");
 		websWrite(wp, "</div><br clear=\"all\" />\n");
 	}
-	// cprintf("%s():set wl_active_add_mac = 0\n",__FUNCTION__);
 	nvram_seti("wl_active_add_mac", 0);
 	return;
 }
@@ -481,14 +480,12 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
  * prefix); } else { snprintf (wl_wep, sizeof (wl_wep), "%s_wep_buf",
  * prefix); }
  * 
- * cprintf ("get %s from %s with bit %s and prefix %s\n", type, wl_wep, _bit,
  * prefix);
  * 
  * wordlist = nvram_safe_get (wl_wep);
  * 
  * if (!strcmp (wordlist, "")) return "";
  * 
- * cprintf ("wordlist = %s\n", wordlist);
  * 
  * strcpy(word, wordlist);
  * 
@@ -503,8 +500,6 @@ EJ_VISIBLE void ej_wireless_active_table(webs_t wp, int argc, char_t **argv)
  * wl_key_tx = wl_key4; wl_key4 = strsep (&wl_key_tx, ":");
  * 
  * 
- * cprintf ("key1 = %s\n", wl_key1); cprintf ("key2 = %s\n", wl_key2); cprintf 
- * ("key3 = %s\n", wl_key3); cprintf ("key4 = %s\n", wl_key4); cprintf ("pass
  * = %s\n", wl_passphrase);
  * 
  * 
@@ -571,7 +566,6 @@ EJ_VISIBLE void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 	char *value = "", new_value[50] = "";
 	char temp[256];
 	ejArgs(argc, argv, "%s", &type);
-	cprintf("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
 	bit = GOZILA_GET(wp, "wlan0_wep_bit");
 	if (bit == NULL)
@@ -582,12 +576,9 @@ EJ_VISIBLE void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 	bit = GOZILA_GET(wp, "wl_wep_bit");
 	if (bit == NULL)
 		bit = nvram_safe_get("wlan0_wep_bit");
-	cprintf("bit = %s\n", bit);
 	value = get_wep_value(wp, temp, type, bit, "wl");
 #endif
-	cprintf("value = %s\n", value);
 	httpd_filter_name(value, new_value, sizeof(new_value), GET);
-	cprintf("newvalue = %s\n", new_value);
 
 	websWrite(wp, "%s", new_value);
 }
@@ -692,14 +683,15 @@ void show_owe(webs_t wp, char *prefix);
 void show_80211X(webs_t wp, char *prefix);
 void show_addconfig(webs_t wp, char *prefix);
 
-static int has_ssid_protection(const char *akm, const char *security_mode) {
+static int has_ssid_protection(const char *akm, const char *security_mode)
+{
 #ifdef HAVE_SSID_PROTECTION
-//	if ((strstr(security_mode, "wep")) || (strstr(security_mode, "wpa") && (strstr(akm,"psk3") || strstr(akm,"wpa3"))))
-	if ((strstr(security_mode, "wpa") && (strstr(akm,"psk3"))))
-	    return 1;
+	//	if ((strstr(security_mode, "wep")) || (strstr(security_mode, "wpa") && (strstr(akm,"psk3") || strstr(akm,"wpa3"))))
+	if ((strstr(security_mode, "wpa") && (strstr(akm, "psk3"))))
+		return 1;
 	return 0;
 #else
-return 0;
+	return 0;
 #endif
 }
 void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *prefix)
@@ -708,14 +700,12 @@ void internal_ej_show_wpa_setting(webs_t wp, int argc, char_t **argv, char *pref
 	char var[80];
 
 	sprintf(var, "%s_security_mode", prefix);
-	cprintf("show wpa setting\n");
 	type = argv[0];
 	rep(var, '.', 'X');
 	security_mode = GOZILA_GET(wp, var);
 	if (security_mode == NULL)
 		security_mode = nvram_safe_get(var);
 	rep(var, 'X', '.');
-	cprintf("security mode %s = %s\n", security_mode, var);
 #ifdef HAVE_MADWIFI
 	char vakm[32];
 	sprintf(vakm, "%s_akm", prefix);

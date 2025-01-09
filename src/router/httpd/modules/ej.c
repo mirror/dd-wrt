@@ -319,7 +319,6 @@ FILE *_getWebsFile(webs_t wp, char *path2, size_t *len)
 	if (query)
 		*query++ = 0;
 	//      fprintf(stderr, "open %s\n", path);
-	cprintf("opening %s\n", path);
 	int i = 0;
 	size_t curoffset = 0;
 	size_t sensitive = -1;

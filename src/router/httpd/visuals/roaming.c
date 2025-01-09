@@ -311,7 +311,6 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 	if (!nvram_nmatch("disabled", "%s_net_mode", prefix) && !nvram_nmatch("disabled", "%s_mode", prefix)) {
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(roaming.roaming)</script> %s</h2>\n", prefix);
 		websWrite(wp, "<fieldset>\n");
-		// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
 			  getNetworkLabel(wp, IFMAP(prefix)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid
@@ -329,7 +328,6 @@ static int ej_show_roaming_single(webs_t wp, int argc, char_t **argv, char *pref
 			continue;
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
-		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 			  getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid); // fix for broken html page if ssid

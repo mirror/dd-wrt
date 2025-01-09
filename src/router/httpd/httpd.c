@@ -842,7 +842,6 @@ static int check_connect_type_vap(const char *prefix, webs_t wp, char *nvprefix)
 
 	for (i = 0; i < count_wl; i++) {
 		if (!strcasecmp(wlmac[i].mac, wp->http_client_mac)) {
-			cprintf("Can't accept wireless access\n");
 			debug_free(wlmac);
 			return -1;
 		}
@@ -1688,15 +1687,12 @@ int main(int argc, char **argv)
 		SSL_load_error_strings();
 		ctx = SSL_CTX_new(SSLv23_server_method());
 		if (SSL_CTX_use_certificate_file(ctx, certfile, SSL_FILETYPE_PEM) == 0) {
-			cprintf("Can't read %s\n", CERT_FILE);
 			exit(1);
 		}
 		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM) == 0) {
-			cprintf("Can't read %s\n", KEY_FILE);
 			exit(1);
 		}
 		if (SSL_CTX_check_private_key(ctx) == 0) {
-			cprintf("Check private key fail\n");
 			exit(1);
 		}
 #endif

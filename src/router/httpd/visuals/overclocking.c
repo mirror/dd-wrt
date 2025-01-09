@@ -193,7 +193,7 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 #endif
 
 	if (in_clock_array && nvram_exists("clkfreq")) {
-#if defined(HAVE_IPQ6018)		
+#if defined(HAVE_IPQ6018)
 		show_caption(wp, "label", "share.max_frequency", NULL);
 #else
 		show_caption(wp, "label", "management.clock_frq", NULL);
@@ -207,10 +207,11 @@ EJ_VISIBLE void ej_show_clocks(webs_t wp, int argc, char_t **argv)
 			i++;
 		}
 		websWrite(wp, "</select>\n</div>\n");
-#if defined(HAVE_IPQ6018)		
+#if defined(HAVE_IPQ6018)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.fix_frequency", NULL);
-		websWrite(wp,"<input type=\"checkbox\" value=\"1\" name=\"_freq_fixed\" %s/></dev>\n",(nvram_default_matchi("freq_fixed", 1, 0) ? "checked=\"checked\"" : ""));
+		websWrite(wp, "<input type=\"checkbox\" value=\"1\" name=\"_freq_fixed\" %s/></dev>\n",
+			  (nvram_default_matchi("freq_fixed", 1, 0) ? "checked=\"checked\"" : ""));
 #endif
 
 	} else {

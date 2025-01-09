@@ -40,7 +40,6 @@
 #include <dd_defs.h>
 #include <revision.h>
 
-#define cprintf(fmt, args...)
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp, int *eof);
@@ -50,7 +49,6 @@ static int wfclose(webs_t fp);
 int wfflush(webs_t fp);
 
 /*
- * #define cprintf(fmt, args...) do { \ FILE *fp = fopen("/dev/console",
  * "w"); \ if (fp) { \ fprintf(fp, fmt, ## args); \ fclose(fp); \ } \ } while 
  * (0) 
  */

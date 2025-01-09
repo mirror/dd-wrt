@@ -75,7 +75,6 @@ static void set_cgi(webs_t wp, char *name, char *value)
 {
 	ENTRY e, *ep;
 
-	//cprintf("\nIn set_cgi(), name = %s, value = %s\n", name, value);
 
 #if defined(__UCLIBC__) || defined(__GLIBC__)
 	if (!wp->htab.table)
@@ -88,10 +87,8 @@ static void set_cgi(webs_t wp, char *name, char *value)
 	e.key = name;
 	hsearch_r(e, FIND, &ep, &wp->htab);
 	if (ep) {
-		//cprintf("\nIn set_cgi(), ep = %s\n", ep);
 		ep->data = value;
 	} else {
-		//cprintf("\nIn set_cgi(), ep = %s(NULL)\n", ep);
 		e.data = value;
 		hsearch_r(e, ENTER, &ep, &wp->htab);
 	}
@@ -103,7 +100,6 @@ static void init_cgi(webs_t wp, char *query)
 	int len, nel;
 	char *q, *name, *value;
 
-	//cprintf("\nIn init_cgi(), query = %s\n", query);
 
 	/* Clear variables */
 	if (!query) {
@@ -118,7 +114,6 @@ static void init_cgi(webs_t wp, char *query)
 	while (strsep(&q, "&;"))
 		nel++;
 	hcreate_r(nel, &wp->htab);
-	//cprintf("\nIn init_cgi(), nel = %d\n", nel);
 
 	for (q = query; q < (query + len);) {
 		/* Unescape each assignment */
@@ -133,7 +128,6 @@ static void init_cgi(webs_t wp, char *query)
 		if (value)
 			set_cgi(wp, name, value);
 	}
-	//cprintf("\nIn init_cgi(), AFTER PROCESS query = %s\n", query);
 }
 
 static void deinit_cgi(webs_t wp)

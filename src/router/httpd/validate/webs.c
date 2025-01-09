@@ -858,7 +858,6 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 
 		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
-		cprintf("buf = %s\n", buf);
 		sprintf(var, "%s_wep_gen", prefix);
 
 		nvram_set(var, buf);
@@ -887,17 +886,10 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		for (i = 0; i < 13; i++)
 			snprintf(key4 + (i << 1), sizeof(key4) - (i << 1), "%02X", key128[3][i]);
 		key4[26] = 0;
-		// cprintf("passphrase[%s]\n", passphrase);
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
 		// SET);
-		// cprintf("new_passphrase[%s]\n", new_passphrase);
-		cprintf("key1 = %s\n", key1);
-		cprintf("key2 = %s\n", key2);
-		cprintf("key3 = %s\n", key3);
-		cprintf("key4 = %s\n", key4);
 
 		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
-		cprintf("buf = %s\n", buf);
 		// nvram_set("wl_wep_gen_128",buf);
 		sprintf(var, "%s_wep_gen", prefix);
 		nvram_set(var, buf);
@@ -928,7 +920,6 @@ void generate_wep_key(webs_t wp)
 	passphrase = websGetVar(wp, var, NULL);
 	snprintf(var, sizeof(var), "%s_key", prefix);
 	tx = websGetVar(wp, var, NULL);
-	cprintf("gen wep key: bits = %s\n", bit);
 
 	generate_wep_key_single(wp, prefix, passphrase, bit, tx);
 }
@@ -3069,20 +3060,16 @@ void qos_save(webs_t wp)
 
 static void macro_add(char *a)
 {
-	cprintf("adding %s\n", a);
-
 	char *count;
 	int c;
 	char buf[20];
 
 	count = nvram_safe_get(a);
-	cprintf("count = %s\n", count);
 	if (count != NULL && *(count)) {
 		c = atoi(count);
 		if (c > -1) {
 			c++;
 			sprintf(buf, "%d", c);
-			cprintf("set %s to %s\n", a, buf);
 			nvram_set(a, buf);
 		}
 	}
@@ -5465,7 +5452,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
-		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl) {
 			if (!strcmp(prefix, "wl0"))
 				nvram_set("wl_ssid", wl);
@@ -5774,7 +5760,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
-		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
 			nvram_set("wl_mode", wl);
 #ifndef HAVE_MADWIFI
@@ -5838,7 +5823,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
-		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
 			nvram_set("wl_channel", wl);
 		else if (wl && !strcmp(prefix, "wl1"))
@@ -5852,7 +5836,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
-		cprintf("copy value %s which is [%s] to nvram\n", n, wl);
 		if (wl && !strcmp(prefix, "wl0"))
 			nvram_set("wl_wchannel", wl);
 		else if (wl && !strcmp(prefix, "wl1"))

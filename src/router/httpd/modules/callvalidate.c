@@ -61,10 +61,7 @@
 
 static char *path_modules[] = { "/jffs/usr/lib", "/tmp/debug", "/usr/lib", "/lib", NULL };
 
-#define cprintf(fmt, args...)
 
-#ifndef cprintf
-#define cprintf(fmt, args...)                                                     \
 	do {                                                                      \
 		FILE *fp = fopen("/dev/console", "w");                            \
 		if (fp) {                                                         \
@@ -134,7 +131,6 @@ static void *s_service = NULL;
 static void start_gozila(char *name, webs_t wp)
 {
 	// lcdmessaged("Starting Service",name);
-	cprintf("start_gozila %s\n", name);
 	char service[64];
 	if (!s_service) {
 		s_service = load_service(name);
@@ -147,7 +143,6 @@ static void start_gozila(char *name, webs_t wp)
 
 	snprintf(service, sizeof(service), "%s", name);
 	dd_logdebug("httpd", "Start gozila %s", service);
-	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr)(wp);
@@ -157,13 +152,11 @@ static void start_gozila(char *name, webs_t wp)
 	dlclose(s_service);
 	s_service = NULL;
 #endif
-	cprintf("start_sevice done()\n");
 }
 
 static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
-	cprintf("start_validator %s\n", name);
 	char service[64];
 	if (!s_service) {
 		s_service = load_service(name);
@@ -177,7 +170,6 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 
 	snprintf(service, sizeof(service), "%s", name);
 	dd_logdebug("httpd", "Start validator %s", service);
-	cprintf("resolving %s\n", service);
 	fptr = (int (*)(webs_t wp, char *value, struct variable *v))dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr)(wp, value, v);
@@ -188,14 +180,12 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	s_service = NULL;
 #endif
 
-	cprintf("start_sevice done()\n");
 	return ret;
 }
 
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
-	cprintf("start_service_nofree %s\n", name);
 	char service[64];
 
 	if (!handle) {
@@ -207,14 +197,11 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	void (*fptr)(webs_t wp, char *value, struct variable *v);
 
 	snprintf(service, sizeof(service), "%s", name);
-	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, char *value, struct variable *v))dlsym(handle, service);
-	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
 		(*fptr)(wp, value, v);
 	else
 		dd_logdebug("httpd", "Function %s not found ", service);
-	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }
 
@@ -234,23 +221,18 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **arg
 	{
 		memdebug_enter();
 		if (!handle) {
-			cprintf("load visual_service\n");
 			handle = load_visual_service(name);
 		}
 		memdebug_leave_info("loadviz");
 	}
 	if (handle == NULL) {
-		cprintf("handle null\n");
 		return NULL;
 	}
-	cprintf("pointer init\n");
 	void (*fptr)(webs_t wp, int argc, char_t **argv);
 
 	snprintf(service, sizeof(service), "ej_%s", name);
-	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t **argv))dlsym(handle, service);
 
-	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();
 		if (fptr) {
@@ -266,6 +248,5 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t **arg
 		}
 		memdebug_leave_info(service);
 	}
-	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }

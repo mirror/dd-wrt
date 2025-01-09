@@ -40,7 +40,6 @@
 #include <dd_defs.h>
 #include <revision.h>
 
-#define cprintf(fmt, args...)
 
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp, int *eof);

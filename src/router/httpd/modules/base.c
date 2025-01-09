@@ -1094,10 +1094,8 @@ void validate_cgi(webs_t wp)
 			nvram_set(variables[i]->name, value);
 		else {
 			if (variables[i]->validatename) {
-				cprintf("call validator_nofree %s\n", variables[i]->validatename);
 				handle = start_validator_nofree(variables[i]->validatename, handle, wp, value, variables[i]);
 			} else if (variables[i]->validate2name) {
-				cprintf("call gozila %s\n", variables[i]->validate2name);
 				start_gozila(variables[i]->validate2name, wp);
 				// fprintf(stderr,"validating %s =
 				// %s\n",variables[i]->name,value);
@@ -1107,10 +1105,8 @@ void validate_cgi(webs_t wp)
 			}
 		}
 	}
-	cprintf("close handle\n");
 	if (handle)
 		dlclose(handle);
-	cprintf("all vars validated\n");
 }
 
 enum {
@@ -1621,7 +1617,6 @@ static struct apply_action *handle_apply_action(char *name)
 {
 	struct apply_action *v;
 
-	cprintf("apply name = \n", name);
 	if (!name)
 		return NULL;
 
@@ -1646,7 +1641,6 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	char *value;
 	char *submit_button, *next_page;
 
-	cprintf("need reboot\n");
 	int need_reboot = websGetVari(wp, "need_reboot", 0);
 #if defined(HAVE_QCA_NSS) && !defined(HAVE_IPQ6018)
 	int sfe = nvram_geti("sfe");
@@ -1695,12 +1689,10 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 				need_reboot = 1;
 		}
 	}
-	cprintf("apply");
 
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
 
 	value = websGetVar(wp, "change_action", "");
-	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
 		dd_logdebug("httpd", "[GOZILLA_APPLY] %s %s %s", websGetVar(wp, "submit_button", NULL),
@@ -1721,10 +1713,8 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	/**********   get all webs var **********/
 
 	submit_button = websGetVar(wp, "submit_button", "");
-	cprintf("get submit_button = %s\n", submit_button);
 
 	value = websGetVar(wp, "action", "");
-	cprintf("get action = %s\n", value);
 
 	/**********   check action to do **********/
 
@@ -1732,11 +1722,8 @@ static void apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, cha
 	if (!strcmp(value, "Apply") || !strcmp(value, "ApplyTake")) {
 		struct apply_action *act;
 
-		cprintf("validate cgi");
 		validate_cgi(wp);
-		cprintf("handle apply action\n");
 		act = handle_apply_action(submit_button);
-		cprintf("done\n");
 		// If web page configuration is changed, the EZC configuration
 		// function should be disabled.(2004-07-29)
 		nvram_seti("is_default", 0);
@@ -2318,10 +2305,8 @@ static char *getLanguageName()
 {
 	char *lang = nvram_safe_get("language");
 	char *l;
-	cprintf("get language %s\n", lang);
 
 	if (!*lang) {
-		cprintf("return default\n");
 		return strdup("lang_pack/english.js");
 	}
 	asprintf(&l, "lang_pack/%s.js", lang);
@@ -3156,7 +3141,6 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 {
 	int i, j, match;
 
-	cprintf("httpd_filter_name\n");
 
 	struct pattern {
 		char ch;
@@ -3183,7 +3167,6 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 					size_t slen = strlen(new_name);
 
 					if (slen + strlen(v->string) + 1 > size) { // avoid overflow
-						cprintf("%s(): overflow\n", __FUNCTION__);
 						new_name[size - 1] = '\0';
 						return 1;
 					}
@@ -3196,7 +3179,6 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 				// strlen() depends on NULL termination
 				size_t slen = strlen(new_name);
 				if (slen > size) {
-					cprintf("%s(): overflow\n",
 						__FUNCTION__); // avoid
 					// overflow
 					new_name[size - 1] = '\0';
@@ -3227,10 +3209,8 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 		*(new_name + i) = '\0';
 		break;
 	default:
-		cprintf("%s():Invalid type!\n", __FUNCTION__);
 		break;
 	}
-	// cprintf("%s():new_name=[%s]\n", __FUNCTION__, new_name);
 
 	return 1;
 }
