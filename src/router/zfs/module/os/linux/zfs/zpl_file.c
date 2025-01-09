@@ -309,6 +309,11 @@ zpl_direct_IO(struct kiocb *kiocb, struct iov_iter *iter)
 	return (0);
 }
 
+#ifndef SEEK_DATA
+#define SEEK_DATA 3
+#define SEEK_HOLE 4
+#endif
+
 static loff_t
 zpl_llseek(struct file *filp, loff_t offset, int whence)
 {

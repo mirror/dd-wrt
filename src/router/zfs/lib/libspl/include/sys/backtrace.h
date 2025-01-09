@@ -27,6 +27,10 @@
 #ifndef _LIBSPL_SYS_BACKTRACE_H
 #define	_LIBSPL_SYS_BACKTRACE_H
 
+#ifndef __maybe_unused
+#define	__maybe_unused __attribute__((unused))
+#endif
+
 void libspl_backtrace(int fd);
 
 #endif

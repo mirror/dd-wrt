@@ -17,7 +17,7 @@ libuutil_la_LIBADD = \
 
 libuutil_la_LIBADD += $(LTLIBINTL)
 
-libuutil_la_LDFLAGS = -pthread
+libuutil_la_LDFLAGS = -pthread -latomic
 
 if !ASAN_ENABLED
 libuutil_la_LDFLAGS += -Wl,-z,defs

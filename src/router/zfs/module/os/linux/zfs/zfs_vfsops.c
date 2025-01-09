@@ -1215,7 +1215,7 @@ zfs_prune(struct super_block *sb, unsigned long nr_to_scan, int *objects)
 	if ((error = zfs_enter(zfsvfs, FTAG)) != 0)
 		return (error);
 
-#ifdef SHRINKER_NUMA_AWARE
+#if defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
 	if (shrinker->flags & SHRINKER_NUMA_AWARE) {
 		long tc = 1;
 		for_each_online_node(sc.nid) {

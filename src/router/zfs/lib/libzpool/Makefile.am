@@ -202,7 +202,7 @@ libzpool_la_LIBADD = \
 
 libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
 
-libzpool_la_LDFLAGS = -pthread
+libzpool_la_LDFLAGS = -pthread -latomic
 
 if !ASAN_ENABLED
 libzpool_la_LDFLAGS += -Wl,-z,defs

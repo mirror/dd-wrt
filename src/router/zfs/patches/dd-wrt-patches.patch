@@ -1,8 +1,8 @@
 Index: cmd/zed/agents/fmd_api.c
 ===================================================================
---- cmd/zed/agents/fmd_api.c	(revision 51025)
+--- cmd/zed/agents/fmd_api.c	(revision 59079)
 +++ cmd/zed/agents/fmd_api.c	(working copy)
-@@ -36,7 +36,7 @@
+@@ -37,7 +37,7 @@
  
  #include <sys/types.h>
  #include <sys/fm/protocol.h>
@@ -13,7 +13,7 @@ Index: cmd/zed/agents/fmd_api.c
  #include <time.h>
 Index: cmd/zpool/os/linux/zpool_vdev_os.c
 ===================================================================
---- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 51025)
+--- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 59079)
 +++ cmd/zpool/os/linux/zpool_vdev_os.c	(working copy)
 @@ -82,8 +82,8 @@
  #include <sys/efi_partition.h>
@@ -28,7 +28,7 @@ Index: cmd/zpool/os/linux/zpool_vdev_os.c
  {
 Index: config/kernel-kuidgid.m4
 ===================================================================
---- config/kernel-kuidgid.m4	(revision 51025)
+--- config/kernel-kuidgid.m4	(revision 59079)
 +++ config/kernel-kuidgid.m4	(working copy)
 @@ -1,21 +1,28 @@
  dnl #
@@ -73,19 +73,28 @@ Index: config/kernel-kuidgid.m4
  ])
 Index: config/kernel.m4
 ===================================================================
---- config/kernel.m4	(revision 51025)
+--- config/kernel.m4	(revision 59079)
 +++ config/kernel.m4	(working copy)
-@@ -121,7 +121,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+@@ -94,7 +94,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
  	ZFS_AC_KERNEL_SRC_GENERIC_IO_ACCT
  	ZFS_AC_KERNEL_SRC_FPU
  	ZFS_AC_KERNEL_SRC_FMODE_T
 -	ZFS_AC_KERNEL_SRC_KUIDGID_T
  	ZFS_AC_KERNEL_SRC_KUID_HELPERS
  	ZFS_AC_KERNEL_SRC_RENAME
- 	ZFS_AC_KERNEL_SRC_CURRENT_TIME
+ 	ZFS_AC_KERNEL_SRC_TOTALRAM_PAGES_FUNC
+@@ -688,7 +687,7 @@ AC_DEFUN([ZFS_LINUX_COMPILE], [
+ 	    KBUILD_MODPOST_NOFINAL="$5" KBUILD_MODPOST_WARN="$6"
+ 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
+ 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
+-	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
++	    CONFIG_MODULES=y CFLAGS_MODULE="-DCONFIG_MODULES -fno-lto"
+ 	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+ 	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
+ 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/$1 >$1/build.log 2>&1])
 Index: config/user-libblkid.m4
 ===================================================================
---- config/user-libblkid.m4	(revision 51025)
+--- config/user-libblkid.m4	(revision 59079)
 +++ config/user-libblkid.m4	(working copy)
 @@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detec
  dnl # has existing in blkid since 2008.
@@ -104,7 +113,7 @@ Index: config/user-libblkid.m4
  ])
 Index: config/user-libuuid.m4
 ===================================================================
---- config/user-libuuid.m4	(revision 51025)
+--- config/user-libuuid.m4	(revision 59079)
 +++ config/user-libuuid.m4	(working copy)
 @@ -2,7 +2,17 @@ dnl #
  dnl # Check for libuuid
@@ -129,36 +138,40 @@ Index: config/user-libuuid.m4
  ])
 Index: include/os/linux/kernel/linux/vfs_compat.h
 ===================================================================
---- include/os/linux/kernel/linux/vfs_compat.h	(revision 51025)
+--- include/os/linux/kernel/linux/vfs_compat.h	(revision 59079)
 +++ include/os/linux/kernel/linux/vfs_compat.h	(working copy)
-@@ -146,6 +146,11 @@ zpl_bdi_destroy(struct super_block *sb)
- #define	clear_inode(ip)		end_writeback(ip)
- #endif /* HAVE_EVICT_INODE && !HAVE_CLEAR_INODE */
+@@ -60,6 +60,11 @@
+ #define	SB_NOATIME	MS_NOATIME
+ #endif
  
 +#ifndef SEEK_DATA
 +#define SEEK_DATA 3
 +#define SEEK_HOLE 4
 +#endif
 +
- #if defined(SEEK_HOLE) && defined(SEEK_DATA) && !defined(HAVE_LSEEK_EXECUTE)
+ #if defined(SEEK_HOLE) && defined(SEEK_DATA)
  static inline loff_t
  lseek_execute(
 Index: include/os/linux/spl/sys/cred.h
 ===================================================================
---- include/os/linux/spl/sys/cred.h	(revision 51025)
+--- include/os/linux/spl/sys/cred.h	(revision 59079)
 +++ include/os/linux/spl/sys/cred.h	(working copy)
-@@ -42,6 +42,8 @@ extern struct task_struct init_task;
+@@ -42,6 +42,10 @@ extern struct task_struct init_task;
  #define	GROUP_AT(gi, i)	((gi)->gid[i])
  #endif
  
++extern zidmap_t *zfs_get_init_idmap(void);
++
 +#ifdef HAVE_KUIDGID_T
 +
  #define	KUID_TO_SUID(x)		(__kuid_val(x))
  #define	KGID_TO_SGID(x)		(__kgid_val(x))
  #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
-@@ -48,6 +50,16 @@ extern struct task_struct init_task;
+@@ -48,8 +52,17 @@ extern struct task_struct init_task;
  #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
  #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
+ 
+-extern zidmap_t *zfs_get_init_idmap(void);
  
 +#else /* HAVE_KUIDGID_T */
 +
@@ -173,7 +186,7 @@ Index: include/os/linux/spl/sys/cred.h
  /* Check if the user ns is the initial one */
  static inline boolean_t
  zfs_is_init_userns(struct user_namespace *user_ns)
-@@ -124,6 +136,7 @@ static inline gid_t zfs_vfsgid_to_gid(struct user_
+@@ -171,6 +184,7 @@ static inline gid_t zfs_vfsgid_to_gid(zidmap_t *mn
  	return (__kgid_val(make_kgid(fs_userns, gid)));
  }
  
@@ -183,7 +196,7 @@ Index: include/os/linux/spl/sys/cred.h
  extern uid_t crgetuid(const cred_t *cr);
 Index: include/os/linux/spl/sys/mutex.h
 ===================================================================
---- include/os/linux/spl/sys/mutex.h	(revision 51025)
+--- include/os/linux/spl/sys/mutex.h	(revision 59079)
 +++ include/os/linux/spl/sys/mutex.h	(working copy)
 @@ -27,6 +27,7 @@
  #include <sys/types.h>
@@ -195,7 +208,7 @@ Index: include/os/linux/spl/sys/mutex.h
  
 Index: include/os/linux/spl/sys/vnode.h
 ===================================================================
---- include/os/linux/spl/sys/vnode.h	(revision 51025)
+--- include/os/linux/spl/sys/vnode.h	(revision 59079)
 +++ include/os/linux/spl/sys/vnode.h	(working copy)
 @@ -52,6 +52,10 @@
  
@@ -210,7 +223,7 @@ Index: include/os/linux/spl/sys/vnode.h
  #define	F_SEEK_DATA	SEEK_DATA
 Index: lib/libefi/rdwr_efi.c
 ===================================================================
---- lib/libefi/rdwr_efi.c	(revision 51025)
+--- lib/libefi/rdwr_efi.c	(revision 59079)
 +++ lib/libefi/rdwr_efi.c	(working copy)
 @@ -30,7 +30,7 @@
  #include <errno.h>
@@ -223,7 +236,7 @@ Index: lib/libefi/rdwr_efi.c
  #include <sys/types.h>
 Index: lib/libshare/os/linux/nfs.c
 ===================================================================
---- lib/libshare/os/linux/nfs.c	(revision 51025)
+--- lib/libshare/os/linux/nfs.c	(revision 59079)
 +++ lib/libshare/os/linux/nfs.c	(working copy)
 @@ -29,6 +29,7 @@
  #include <dirent.h>
@@ -233,176 +246,9 @@ Index: lib/libshare/os/linux/nfs.c
  #include <errno.h>
  #include <fcntl.h>
  #include <sys/file.h>
-Index: lib/libuutil/Makefile.am
-===================================================================
---- lib/libuutil/Makefile.am	(revision 51025)
-+++ lib/libuutil/Makefile.am	(working copy)
-@@ -17,7 +17,7 @@ libuutil_la_LIBADD = \
- 
- libuutil_la_LIBADD += $(LTLIBINTL)
- 
--libuutil_la_LDFLAGS = -pthread
-+libuutil_la_LDFLAGS = -pthread -latomic
- 
- if !ASAN_ENABLED
- libuutil_la_LDFLAGS += -Wl,-z,defs
-Index: lib/libzfs_core/Makefile.am
-===================================================================
---- lib/libzfs_core/Makefile.am	(revision 51025)
-+++ lib/libzfs_core/Makefile.am	(working copy)
-@@ -29,7 +29,7 @@ libzfs_core_la_LIBADD = \
- 
- libzfs_core_la_LIBADD += $(LTLIBINTL)
- 
--libzfs_core_la_LDFLAGS = -pthread
-+libzfs_core_la_LDFLAGS = -pthread -latomic
- 
- if !ASAN_ENABLED
- libzfs_core_la_LDFLAGS += -Wl,-z,defs
-Index: lib/libzpool/Makefile.am
-===================================================================
---- lib/libzpool/Makefile.am	(revision 51025)
-+++ lib/libzpool/Makefile.am	(working copy)
-@@ -195,7 +195,7 @@ libzpool_la_LIBADD = \
- 
- libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
- 
--libzpool_la_LDFLAGS = -pthread
-+libzpool_la_LDFLAGS = -pthread -latomic
- 
- if !ASAN_ENABLED
- libzpool_la_LDFLAGS += -Wl,-z,defs
-Index: lib/libzutil/os/linux/zutil_import_os.c
-===================================================================
---- lib/libzutil/os/linux/zutil_import_os.c	(revision 51025)
-+++ lib/libzutil/os/linux/zutil_import_os.c	(working copy)
-@@ -73,7 +73,7 @@
- #include <libudev.h>
- #include <sched.h>
- #endif
--#include <blkid/blkid.h>
-+#include <blkid.h>
- 
- #define	DEV_BYID_PATH	"/dev/disk/by-id/"
- 
-@@ -589,7 +589,7 @@ zfs_device_get_physical(struct udev_device *dev, c
- int
- zpool_label_disk_wait(const char *path, int timeout_ms)
- {
--#ifdef HAVE_LIBUDEV
-+#if 0 //def HAVE_LIBUDEV
- 	struct udev *udev;
- 	struct udev_device *dev = NULL;
- 	char nodepath[MAXPATHLEN];
-Index: module/Kbuild.in
-===================================================================
---- module/os/linux/zfs/zpl_file.c	(revision 51025)
-+++ module/os/linux/zfs/zpl_file.c	(working copy)
-@@ -552,6 +552,11 @@ zpl_direct_IO(int rw, struct kiocb *kiocb, struct
- 
- #endif /* HAVE_VFS_RW_ITERATE */
- 
-+#ifndef SEEK_DATA
-+#define SEEK_DATA 3
-+#define SEEK_HOLE 4
-+#endif
-+
- static loff_t
- zpl_llseek(struct file *filp, loff_t offset, int whence)
- {
-Index: module/zfs/zfs_vnops.c
-===================================================================
---- module/zfs/zfs_vnops.c	(revision 51025)
-+++ module/zfs/zfs_vnops.c	(working copy)
-@@ -80,6 +80,10 @@ out:
- 	return (error);
- }
- 
-+#ifndef SEEK_DATA
-+#define SEEK_DATA 3
-+#define SEEK_HOLE 4
-+#endif
- 
- #if defined(SEEK_HOLE) && defined(SEEK_DATA)
- /*
-Index: tests/zfs-tests/cmd/mmap_seek.c
-===================================================================
---- tests/zfs-tests/cmd/mmap_seek.c	(revision 51025)
-+++ tests/zfs-tests/cmd/mmap_seek.c	(working copy)
-@@ -35,6 +35,11 @@
- #include <linux/fs.h>
- #endif
- 
-+#ifndef SEEK_DATA
-+#define SEEK_DATA 3
-+#define SEEK_HOLE 4
-+#endif
-+
- static void
- seek_data(int fd, off_t offset, off_t expected)
- {
-Index: tests/zfs-tests/cmd/readmmap.c
-===================================================================
---- tests/zfs-tests/cmd/readmmap.c	(revision 51025)
-+++ tests/zfs-tests/cmd/readmmap.c	(working copy)
-@@ -45,6 +45,7 @@
- #include <errno.h>
- #include <sys/mman.h>
- #include <time.h>
-+#include <sys/types.h>
- 
- int
- main(int argc, char **argv)
-Index: include/os/linux/spl/sys/cred.h
-===================================================================
---- include/os/linux/spl/sys/cred.h	(revision 55236)
-+++ include/os/linux/spl/sys/cred.h	(revision 55237)
-@@ -42,6 +42,8 @@
- #define	GROUP_AT(gi, i)	((gi)->gid[i])
- #endif
- 
-+extern zidmap_t *zfs_get_init_idmap(void);
-+
- #ifdef HAVE_KUIDGID_T
- 
- #define	KUID_TO_SUID(x)		(__kuid_val(x))
-@@ -50,7 +52,6 @@
- #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
- #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
- 
--extern zidmap_t *zfs_get_init_idmap(void);
- 
- #else /* HAVE_KUIDGID_T */
- 
-Index: config/kernel.m4
-===================================================================
---- config/kernel.m4	(revision 55848)
-+++ config/kernel.m4	(working copy)
-@@ -712,7 +712,7 @@ AC_DEFUN([ZFS_LINUX_COMPILE], [
- 	    KBUILD_MODPOST_NOFINAL="$5" KBUILD_MODPOST_WARN="$6"
- 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
- 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
--	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
-+	    CONFIG_MODULES=y CFLAGS_MODULE="-DCONFIG_MODULES -fno-lto"
- 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/$1 >$1/build.log 2>&1])
- 	AS_IF([AC_TRY_COMMAND([$2])], [$3], [$4])
- ])
-Index: module/Kbuild.in
-===================================================================
---- module/Kbuild.in	(revision 55862)
-+++ module/Kbuild.in	(working copy)
-@@ -2,7 +2,7 @@
- # first.  This ensures its module initialization function is run before
- # any of the other module initialization functions which depend on it.
- 
--ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement
-+ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement -fno-lto
- ZFS_MODULE_CFLAGS += -Wmissing-prototypes
- ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
- 
 Index: lib/libspl/include/sys/backtrace.h
 ===================================================================
---- lib/libspl/include/sys/backtrace.h	(revision 56411)
+--- lib/libspl/include/sys/backtrace.h	(revision 59079)
 +++ lib/libspl/include/sys/backtrace.h	(working copy)
 @@ -27,6 +27,10 @@
  #ifndef _LIBSPL_SYS_BACKTRACE_H
@@ -415,16 +261,548 @@ Index: lib/libspl/include/sys/backtrace.h
  void libspl_backtrace(int fd);
  
  #endif
+Index: lib/libuutil/Makefile.am
+===================================================================
+--- lib/libuutil/Makefile.am	(revision 59079)
++++ lib/libuutil/Makefile.am	(working copy)
+@@ -17,7 +17,7 @@ libuutil_la_LIBADD = \
+ 
+ libuutil_la_LIBADD += $(LTLIBINTL)
+ 
+-libuutil_la_LDFLAGS = -pthread
++libuutil_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libuutil_la_LDFLAGS += -Wl,-z,defs
+Index: lib/libzfs_core/Makefile.am
+===================================================================
+--- lib/libzfs_core/Makefile.am	(revision 59079)
++++ lib/libzfs_core/Makefile.am	(working copy)
+@@ -29,7 +29,7 @@ libzfs_core_la_LIBADD = \
+ 
+ libzfs_core_la_LIBADD += $(LTLIBINTL)
+ 
+-libzfs_core_la_LDFLAGS = -pthread
++libzfs_core_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libzfs_core_la_LDFLAGS += -Wl,-z,defs
+Index: lib/libzpool/Makefile.am
+===================================================================
+--- lib/libzpool/Makefile.am	(revision 59079)
++++ lib/libzpool/Makefile.am	(working copy)
+@@ -202,7 +202,7 @@ libzpool_la_LIBADD = \
+ 
+ libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+ 
+-libzpool_la_LDFLAGS = -pthread
++libzpool_la_LDFLAGS = -pthread -latomic
+ 
+ if !ASAN_ENABLED
+ libzpool_la_LDFLAGS += -Wl,-z,defs
+Index: lib/libzutil/os/linux/zutil_import_os.c
+===================================================================
+--- lib/libzutil/os/linux/zutil_import_os.c	(revision 59079)
++++ lib/libzutil/os/linux/zutil_import_os.c	(working copy)
+@@ -73,7 +73,7 @@
+ #include <libudev.h>
+ #include <sched.h>
+ #endif
+-#include <blkid/blkid.h>
++#include <blkid.h>
+ 
+ #define	DEV_BYID_PATH	"/dev/disk/by-id/"
+ 
+@@ -580,7 +580,7 @@ zfs_device_get_physical(struct udev_device *dev, c
+ int
+ zpool_label_disk_wait(const char *path, int timeout_ms)
+ {
+-#ifdef HAVE_LIBUDEV
++#if 0 //def HAVE_LIBUDEV
+ 	struct udev *udev;
+ 	struct udev_device *dev = NULL;
+ 	char nodepath[MAXPATHLEN];
+Index: module/Kbuild.in
+===================================================================
+--- module/Kbuild.in	(revision 59079)
++++ module/Kbuild.in	(working copy)
+@@ -2,7 +2,7 @@
+ # first.  This ensures its module initialization function is run before
+ # any of the other module initialization functions which depend on it.
+ 
+-ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement
++ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement -fno-lto
+ ZFS_MODULE_CFLAGS += -Wmissing-prototypes
+ ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
+ 
 Index: module/os/linux/zfs/zfs_vfsops.c
 ===================================================================
---- module/os/linux/zfs/zfs_vfsops.c	(revision 57859)
+--- module/os/linux/zfs/zfs_vfsops.c	(revision 59079)
 +++ module/os/linux/zfs/zfs_vfsops.c	(working copy)
-@@ -1262,7 +1262,7 @@ zfs_prune(struct super_block *sb, unsigned long nr
+@@ -1215,7 +1215,7 @@ zfs_prune(struct super_block *sb, unsigned long nr
+ 	if ((error = zfs_enter(zfsvfs, FTAG)) != 0)
+ 		return (error);
  
- #if defined(HAVE_SPLIT_SHRINKER_CALLBACK) && \
- 	defined(SHRINK_CONTROL_HAS_NID) && \
--	defined(SHRINKER_NUMA_AWARE)
-+	defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
+-#ifdef SHRINKER_NUMA_AWARE
++#if defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
  	if (shrinker->flags & SHRINKER_NUMA_AWARE) {
  		long tc = 1;
  		for_each_online_node(sc.nid) {
+Index: module/os/linux/zfs/zpl_file.c
+===================================================================
+--- module/os/linux/zfs/zpl_file.c	(revision 59079)
++++ module/os/linux/zfs/zpl_file.c	(working copy)
+@@ -309,6 +309,11 @@ zpl_direct_IO(struct kiocb *kiocb, struct iov_iter
+ 	return (0);
+ }
+ 
++#ifndef SEEK_DATA
++#define SEEK_DATA 3
++#define SEEK_HOLE 4
++#endif
++
+ static loff_t
+ zpl_llseek(struct file *filp, loff_t offset, int whence)
+ {
+Index: module/zfs/zfs_vnops.c
+===================================================================
+--- module/zfs/zfs_vnops.c	(revision 59079)
++++ module/zfs/zfs_vnops.c	(working copy)
+@@ -110,6 +110,10 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
+ 	return (error);
+ }
+ 
++#ifndef SEEK_DATA
++#define SEEK_DATA 3
++#define SEEK_HOLE 4
++#endif
+ 
+ #if defined(SEEK_HOLE) && defined(SEEK_DATA)
+ /*
+Index: patches/dd-wrt-patches.patch
+===================================================================
+--- patches/dd-wrt-patches.patch	(revision 59073)
++++ patches/dd-wrt-patches.patch	(working copy)
+@@ -1,8 +1,8 @@
+ Index: cmd/zed/agents/fmd_api.c
+ ===================================================================
+---- cmd/zed/agents/fmd_api.c	(revision 51025)
++--- cmd/zed/agents/fmd_api.c	(revision 59079)
+ +++ cmd/zed/agents/fmd_api.c	(working copy)
+-@@ -36,7 +36,7 @@
++@@ -37,7 +37,7 @@
+  
+  #include <sys/types.h>
+  #include <sys/fm/protocol.h>
+@@ -13,7 +13,7 @@ Index: cmd/zed/agents/fmd_api.c
+  #include <time.h>
+ Index: cmd/zpool/os/linux/zpool_vdev_os.c
+ ===================================================================
+---- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 51025)
++--- cmd/zpool/os/linux/zpool_vdev_os.c	(revision 59079)
+ +++ cmd/zpool/os/linux/zpool_vdev_os.c	(working copy)
+ @@ -82,8 +82,8 @@
+  #include <sys/efi_partition.h>
+@@ -28,7 +28,7 @@ Index: cmd/zpool/os/linux/zpool_vdev_os.c
+  {
+ Index: config/kernel-kuidgid.m4
+ ===================================================================
+---- config/kernel-kuidgid.m4	(revision 51025)
++--- config/kernel-kuidgid.m4	(revision 59079)
+ +++ config/kernel-kuidgid.m4	(working copy)
+ @@ -1,21 +1,28 @@
+  dnl #
+@@ -73,9 +73,9 @@ Index: config/kernel-kuidgid.m4
+  ])
+ Index: config/kernel.m4
+ ===================================================================
+---- config/kernel.m4	(revision 51025)
++--- config/kernel.m4	(revision 59079)
+ +++ config/kernel.m4	(working copy)
+-@@ -121,7 +121,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
++@@ -94,7 +94,6 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+  	ZFS_AC_KERNEL_SRC_GENERIC_IO_ACCT
+  	ZFS_AC_KERNEL_SRC_FPU
+  	ZFS_AC_KERNEL_SRC_FMODE_T
+@@ -82,10 +82,19 @@ Index: config/kernel.m4
+ -	ZFS_AC_KERNEL_SRC_KUIDGID_T
+  	ZFS_AC_KERNEL_SRC_KUID_HELPERS
+  	ZFS_AC_KERNEL_SRC_RENAME
+- 	ZFS_AC_KERNEL_SRC_CURRENT_TIME
++ 	ZFS_AC_KERNEL_SRC_TOTALRAM_PAGES_FUNC
++@@ -688,7 +687,7 @@ AC_DEFUN([ZFS_LINUX_COMPILE], [
++ 	    KBUILD_MODPOST_NOFINAL="$5" KBUILD_MODPOST_WARN="$6"
++ 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
++ 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
++-	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+++	    CONFIG_MODULES=y CFLAGS_MODULE="-DCONFIG_MODULES -fno-lto"
++ 	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
++ 	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
++ 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/$1 >$1/build.log 2>&1])
+ Index: config/user-libblkid.m4
+ ===================================================================
+---- config/user-libblkid.m4	(revision 51025)
++--- config/user-libblkid.m4	(revision 59079)
+ +++ config/user-libblkid.m4	(working copy)
+ @@ -3,7 +3,11 @@ dnl # Check for libblkid.  Basic support for detec
+  dnl # has existing in blkid since 2008.
+@@ -104,7 +113,7 @@ Index: config/user-libblkid.m4
+  ])
+ Index: config/user-libuuid.m4
+ ===================================================================
+---- config/user-libuuid.m4	(revision 51025)
++--- config/user-libuuid.m4	(revision 59079)
+ +++ config/user-libuuid.m4	(working copy)
+ @@ -2,7 +2,17 @@ dnl #
+  dnl # Check for libuuid
+@@ -129,11 +138,11 @@ Index: config/user-libuuid.m4
+  ])
+ Index: include/os/linux/kernel/linux/vfs_compat.h
+ ===================================================================
+---- include/os/linux/kernel/linux/vfs_compat.h	(revision 51025)
++--- include/os/linux/kernel/linux/vfs_compat.h	(revision 59079)
+ +++ include/os/linux/kernel/linux/vfs_compat.h	(working copy)
+-@@ -146,6 +146,11 @@ zpl_bdi_destroy(struct super_block *sb)
+- #define	clear_inode(ip)		end_writeback(ip)
+- #endif /* HAVE_EVICT_INODE && !HAVE_CLEAR_INODE */
++@@ -60,6 +60,11 @@
++ #define	SB_NOATIME	MS_NOATIME
++ #endif
+  
+ +#ifndef SEEK_DATA
+ +#define SEEK_DATA 3
+@@ -140,26 +149,30 @@ Index: include/os/linux/kernel/linux/vfs_compat.h
+ +#define SEEK_HOLE 4
+ +#endif
+ +
+- #if defined(SEEK_HOLE) && defined(SEEK_DATA) && !defined(HAVE_LSEEK_EXECUTE)
++ #if defined(SEEK_HOLE) && defined(SEEK_DATA)
+  static inline loff_t
+  lseek_execute(
+ Index: include/os/linux/spl/sys/cred.h
+ ===================================================================
+---- include/os/linux/spl/sys/cred.h	(revision 51025)
++--- include/os/linux/spl/sys/cred.h	(revision 59079)
+ +++ include/os/linux/spl/sys/cred.h	(working copy)
+-@@ -42,6 +42,8 @@ extern struct task_struct init_task;
++@@ -42,6 +42,10 @@ extern struct task_struct init_task;
+  #define	GROUP_AT(gi, i)	((gi)->gid[i])
+  #endif
+  
+++extern zidmap_t *zfs_get_init_idmap(void);
+++
+ +#ifdef HAVE_KUIDGID_T
+ +
+  #define	KUID_TO_SUID(x)		(__kuid_val(x))
+  #define	KGID_TO_SGID(x)		(__kgid_val(x))
+  #define	SUID_TO_KUID(x)		(KUIDT_INIT(x))
+-@@ -48,6 +50,16 @@ extern struct task_struct init_task;
++@@ -48,8 +52,17 @@ extern struct task_struct init_task;
+  #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
+  #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
+  
++-extern zidmap_t *zfs_get_init_idmap(void);
++ 
+ +#else /* HAVE_KUIDGID_T */
+ +
+ +#define	KUID_TO_SUID(x)		(x)
+@@ -173,7 +186,7 @@ Index: include/os/linux/spl/sys/cred.h
+  /* Check if the user ns is the initial one */
+  static inline boolean_t
+  zfs_is_init_userns(struct user_namespace *user_ns)
+-@@ -124,6 +136,7 @@ static inline gid_t zfs_vfsgid_to_gid(struct user_
++@@ -171,6 +184,7 @@ static inline gid_t zfs_vfsgid_to_gid(zidmap_t *mn
+  	return (__kgid_val(make_kgid(fs_userns, gid)));
+  }
+  
+@@ -183,7 +196,7 @@ Index: include/os/linux/spl/sys/cred.h
+  extern uid_t crgetuid(const cred_t *cr);
+ Index: include/os/linux/spl/sys/mutex.h
+ ===================================================================
+---- include/os/linux/spl/sys/mutex.h	(revision 51025)
++--- include/os/linux/spl/sys/mutex.h	(revision 59079)
+ +++ include/os/linux/spl/sys/mutex.h	(working copy)
+ @@ -27,6 +27,7 @@
+  #include <sys/types.h>
+@@ -195,7 +208,7 @@ Index: include/os/linux/spl/sys/mutex.h
+  
+ Index: include/os/linux/spl/sys/vnode.h
+ ===================================================================
+---- include/os/linux/spl/sys/vnode.h	(revision 51025)
++--- include/os/linux/spl/sys/vnode.h	(revision 59079)
+ +++ include/os/linux/spl/sys/vnode.h	(working copy)
+ @@ -52,6 +52,10 @@
+  
+@@ -210,7 +223,7 @@ Index: include/os/linux/spl/sys/vnode.h
+  #define	F_SEEK_DATA	SEEK_DATA
+ Index: lib/libefi/rdwr_efi.c
+ ===================================================================
+---- lib/libefi/rdwr_efi.c	(revision 51025)
++--- lib/libefi/rdwr_efi.c	(revision 59079)
+ +++ lib/libefi/rdwr_efi.c	(working copy)
+ @@ -30,7 +30,7 @@
+  #include <errno.h>
+@@ -223,7 +236,7 @@ Index: lib/libefi/rdwr_efi.c
+  #include <sys/types.h>
+ Index: lib/libshare/os/linux/nfs.c
+ ===================================================================
+---- lib/libshare/os/linux/nfs.c	(revision 51025)
++--- lib/libshare/os/linux/nfs.c	(revision 59079)
+ +++ lib/libshare/os/linux/nfs.c	(working copy)
+ @@ -29,6 +29,7 @@
+  #include <dirent.h>
+@@ -233,9 +246,24 @@ Index: lib/libshare/os/linux/nfs.c
+  #include <errno.h>
+  #include <fcntl.h>
+  #include <sys/file.h>
++Index: lib/libspl/include/sys/backtrace.h
++===================================================================
++--- lib/libspl/include/sys/backtrace.h	(revision 59079)
+++++ lib/libspl/include/sys/backtrace.h	(working copy)
++@@ -27,6 +27,10 @@
++ #ifndef _LIBSPL_SYS_BACKTRACE_H
++ #define	_LIBSPL_SYS_BACKTRACE_H
++ 
+++#ifndef __maybe_unused
+++#define	__maybe_unused __attribute__((unused))
+++#endif
+++
++ void libspl_backtrace(int fd);
++ 
++ #endif
+ Index: lib/libuutil/Makefile.am
+ ===================================================================
+---- lib/libuutil/Makefile.am	(revision 51025)
++--- lib/libuutil/Makefile.am	(revision 59079)
+ +++ lib/libuutil/Makefile.am	(working copy)
+ @@ -17,7 +17,7 @@ libuutil_la_LIBADD = \
+  
+@@ -248,7 +276,7 @@ Index: lib/libuutil/Makefile.am
+  libuutil_la_LDFLAGS += -Wl,-z,defs
+ Index: lib/libzfs_core/Makefile.am
+ ===================================================================
+---- lib/libzfs_core/Makefile.am	(revision 51025)
++--- lib/libzfs_core/Makefile.am	(revision 59079)
+ +++ lib/libzfs_core/Makefile.am	(working copy)
+ @@ -29,7 +29,7 @@ libzfs_core_la_LIBADD = \
+  
+@@ -261,9 +289,9 @@ Index: lib/libzfs_core/Makefile.am
+  libzfs_core_la_LDFLAGS += -Wl,-z,defs
+ Index: lib/libzpool/Makefile.am
+ ===================================================================
+---- lib/libzpool/Makefile.am	(revision 51025)
++--- lib/libzpool/Makefile.am	(revision 59079)
+ +++ lib/libzpool/Makefile.am	(working copy)
+-@@ -195,7 +195,7 @@ libzpool_la_LIBADD = \
++@@ -202,7 +202,7 @@ libzpool_la_LIBADD = \
+  
+  libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+  
+@@ -274,7 +302,7 @@ Index: lib/libzpool/Makefile.am
+  libzpool_la_LDFLAGS += -Wl,-z,defs
+ Index: lib/libzutil/os/linux/zutil_import_os.c
+ ===================================================================
+---- lib/libzutil/os/linux/zutil_import_os.c	(revision 51025)
++--- lib/libzutil/os/linux/zutil_import_os.c	(revision 59079)
+ +++ lib/libzutil/os/linux/zutil_import_os.c	(working copy)
+ @@ -73,7 +73,7 @@
+  #include <libudev.h>
+@@ -285,7 +313,7 @@ Index: lib/libzutil/os/linux/zutil_import_os.c
+  
+  #define	DEV_BYID_PATH	"/dev/disk/by-id/"
+  
+-@@ -589,7 +589,7 @@ zfs_device_get_physical(struct udev_device *dev, c
++@@ -580,7 +580,7 @@ zfs_device_get_physical(struct udev_device *dev, c
+  int
+  zpool_label_disk_wait(const char *path, int timeout_ms)
+  {
+@@ -296,12 +324,38 @@ Index: lib/libzutil/os/linux/zutil_import_os.c
+  	char nodepath[MAXPATHLEN];
+ Index: module/Kbuild.in
+ ===================================================================
+---- module/os/linux/zfs/zpl_file.c	(revision 51025)
++--- module/Kbuild.in	(revision 59079)
+++++ module/Kbuild.in	(working copy)
++@@ -2,7 +2,7 @@
++ # first.  This ensures its module initialization function is run before
++ # any of the other module initialization functions which depend on it.
++ 
++-ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement
+++ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement -fno-lto
++ ZFS_MODULE_CFLAGS += -Wmissing-prototypes
++ ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
++ 
++Index: module/os/linux/zfs/zfs_vfsops.c
++===================================================================
++--- module/os/linux/zfs/zfs_vfsops.c	(revision 59079)
+++++ module/os/linux/zfs/zfs_vfsops.c	(working copy)
++@@ -1215,7 +1215,7 @@ zfs_prune(struct super_block *sb, unsigned long nr
++ 	if ((error = zfs_enter(zfsvfs, FTAG)) != 0)
++ 		return (error);
++ 
++-#ifdef SHRINKER_NUMA_AWARE
+++#if defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
++ 	if (shrinker->flags & SHRINKER_NUMA_AWARE) {
++ 		long tc = 1;
++ 		for_each_online_node(sc.nid) {
++Index: module/os/linux/zfs/zpl_file.c
++===================================================================
++--- module/os/linux/zfs/zpl_file.c	(revision 59079)
+ +++ module/os/linux/zfs/zpl_file.c	(working copy)
+-@@ -552,6 +552,11 @@ zpl_direct_IO(int rw, struct kiocb *kiocb, struct
++@@ -309,6 +309,11 @@ zpl_direct_IO(struct kiocb *kiocb, struct iov_iter
++ 	return (0);
++ }
+  
+- #endif /* HAVE_VFS_RW_ITERATE */
+- 
+ +#ifndef SEEK_DATA
+ +#define SEEK_DATA 3
+ +#define SEEK_HOLE 4
+@@ -312,9 +366,9 @@ Index: module/Kbuild.in
+  {
+ Index: module/zfs/zfs_vnops.c
+ ===================================================================
+---- module/zfs/zfs_vnops.c	(revision 51025)
++--- module/zfs/zfs_vnops.c	(revision 59079)
+ +++ module/zfs/zfs_vnops.c	(working copy)
+-@@ -80,6 +80,10 @@ out:
++@@ -110,6 +110,10 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
+  	return (error);
+  }
+  
+@@ -325,106 +379,3 @@ Index: module/zfs/zfs_vnops.c
+  
+  #if defined(SEEK_HOLE) && defined(SEEK_DATA)
+  /*
+-Index: tests/zfs-tests/cmd/mmap_seek.c
+-===================================================================
+---- tests/zfs-tests/cmd/mmap_seek.c	(revision 51025)
+-+++ tests/zfs-tests/cmd/mmap_seek.c	(working copy)
+-@@ -35,6 +35,11 @@
+- #include <linux/fs.h>
+- #endif
+- 
+-+#ifndef SEEK_DATA
+-+#define SEEK_DATA 3
+-+#define SEEK_HOLE 4
+-+#endif
+-+
+- static void
+- seek_data(int fd, off_t offset, off_t expected)
+- {
+-Index: tests/zfs-tests/cmd/readmmap.c
+-===================================================================
+---- tests/zfs-tests/cmd/readmmap.c	(revision 51025)
+-+++ tests/zfs-tests/cmd/readmmap.c	(working copy)
+-@@ -45,6 +45,7 @@
+- #include <errno.h>
+- #include <sys/mman.h>
+- #include <time.h>
+-+#include <sys/types.h>
+- 
+- int
+- main(int argc, char **argv)
+-Index: include/os/linux/spl/sys/cred.h
+-===================================================================
+---- include/os/linux/spl/sys/cred.h	(revision 55236)
+-+++ include/os/linux/spl/sys/cred.h	(revision 55237)
+-@@ -42,6 +42,8 @@
+- #define	GROUP_AT(gi, i)	((gi)->gid[i])
+- #endif
+- 
+-+extern zidmap_t *zfs_get_init_idmap(void);
+-+
+- #ifdef HAVE_KUIDGID_T
+- 
+- #define	KUID_TO_SUID(x)		(__kuid_val(x))
+-@@ -50,7 +52,6 @@
+- #define	SGID_TO_KGID(x)		(KGIDT_INIT(x))
+- #define	KGIDP_TO_SGIDP(x)	(&(x)->val)
+- 
+--extern zidmap_t *zfs_get_init_idmap(void);
+- 
+- #else /* HAVE_KUIDGID_T */
+- 
+-Index: config/kernel.m4
+-===================================================================
+---- config/kernel.m4	(revision 55848)
+-+++ config/kernel.m4	(working copy)
+-@@ -712,7 +712,7 @@ AC_DEFUN([ZFS_LINUX_COMPILE], [
+- 	    KBUILD_MODPOST_NOFINAL="$5" KBUILD_MODPOST_WARN="$6"
+- 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
+- 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
+--	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+-+	    CONFIG_MODULES=y CFLAGS_MODULE="-DCONFIG_MODULES -fno-lto"
+- 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/$1 >$1/build.log 2>&1])
+- 	AS_IF([AC_TRY_COMMAND([$2])], [$3], [$4])
+- ])
+-Index: module/Kbuild.in
+-===================================================================
+---- module/Kbuild.in	(revision 55862)
+-+++ module/Kbuild.in	(working copy)
+-@@ -2,7 +2,7 @@
+- # first.  This ensures its module initialization function is run before
+- # any of the other module initialization functions which depend on it.
+- 
+--ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement
+-+ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement -fno-lto
+- ZFS_MODULE_CFLAGS += -Wmissing-prototypes
+- ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
+- 
+-Index: lib/libspl/include/sys/backtrace.h
+-===================================================================
+---- lib/libspl/include/sys/backtrace.h	(revision 56411)
+-+++ lib/libspl/include/sys/backtrace.h	(working copy)
+-@@ -27,6 +27,10 @@
+- #ifndef _LIBSPL_SYS_BACKTRACE_H
+- #define	_LIBSPL_SYS_BACKTRACE_H
+- 
+-+#ifndef __maybe_unused
+-+#define	__maybe_unused __attribute__((unused))
+-+#endif
+-+
+- void libspl_backtrace(int fd);
+- 
+- #endif
+-Index: module/os/linux/zfs/zfs_vfsops.c
+-===================================================================
+---- module/os/linux/zfs/zfs_vfsops.c	(revision 57859)
+-+++ module/os/linux/zfs/zfs_vfsops.c	(working copy)
+-@@ -1262,7 +1262,7 @@ zfs_prune(struct super_block *sb, unsigned long nr
+- 
+- #if defined(HAVE_SPLIT_SHRINKER_CALLBACK) && \
+- 	defined(SHRINK_CONTROL_HAS_NID) && \
+--	defined(SHRINKER_NUMA_AWARE)
+-+	defined(SHRINKER_NUMA_AWARE) && defined(SHRINK_EMPTY)
+- 	if (shrinker->flags & SHRINKER_NUMA_AWARE) {
+- 		long tc = 1;
+- 		for_each_online_node(sc.nid) {
+Index: tests/zfs-tests/cmd/mmap_seek.c
+===================================================================
+--- tests/zfs-tests/cmd/mmap_seek.c	(revision 59079)
++++ tests/zfs-tests/cmd/mmap_seek.c	(working copy)
+@@ -45,6 +45,11 @@
+ #endif
+ #endif
+ 
++#ifndef SEEK_DATA
++#define SEEK_DATA 3
++#define SEEK_HOLE 4
++#endif
++
+ static void
+ seek_data(int fd, off_t offset, off_t expected)
+ {
+Index: tests/zfs-tests/cmd/readmmap.c
+===================================================================
+--- tests/zfs-tests/cmd/readmmap.c	(revision 59079)
++++ tests/zfs-tests/cmd/readmmap.c	(working copy)
+@@ -46,6 +46,7 @@
+ #include <sys/mman.h>
+ #include <sys/types.h>
+ #include <time.h>
++#include <sys/types.h>
+ 
+ int
+ main(int argc, char **argv)
