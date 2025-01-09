@@ -2009,6 +2009,15 @@ void start_restore_defaults(void)
 			nvram_seti("ip_conntrack_max", 4096);
 			nvram_seti("ip_conntrack_tcp_timeouts", 3600);
 		}
+#else
+		if (getmemfree() > (256 * 1024 * 1024)) {
+			nvram_seti("ip_conntrack_max", 65536);
+			nvram_seti("ip_conntrack_tcp_timeouts", 65536);
+		}
+		else if (getmemfree() > (64 * 1024 * 1024)) {
+			nvram_seti("ip_conntrack_max", 32768);
+			nvram_seti("ip_conntrack_tcp_timeouts", 32768);
+		}
 #endif
 		if (getmemtotal() > 128 * 1024 * 1024) {
 			nvram_seti("sshd_rw", 262144);
