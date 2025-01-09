@@ -55,21 +55,10 @@ struct nvramdb {
 
 static struct nvramdb values;
 
-#define cprintf(fmt, args...)
-
-/*#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
-} while (0)
-*/
 
 //simply sort algorithm
 void sort(void)
 {
-	cprintf("sort()\n");
 	int i, a;
 	for (i = 0; i < values.nov; i++)
 		for (a = i; a < values.nov; a++) {
@@ -81,7 +70,6 @@ void sort(void)
 				}
 			}
 		}
-	cprintf("sort done()\n");
 }
 
 void lock(void)
@@ -89,7 +77,6 @@ void lock(void)
 	FILE *in;
 	while ((in = fopen("/tmp/nvram/.lock", "rb")) != NULL) {
 		fclose(in);
-		cprintf("nvram lock, waiting....\n");
 		sleep(1);
 	}
 	in = fopen("/tmp/nvram/.lock", "wb");

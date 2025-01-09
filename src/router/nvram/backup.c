@@ -470,7 +470,6 @@ int nvram_restore(char *filename, int force)
 				fread(value, l, 1, fp);
 				len -= (l + 2);
 				value[l] = 0;
-				// cprintf("setting %s to %s\n",name,value);
 //                              if (!strcmp(name, "nvram_ver"))
 //                                      nvram_ver = value;
 				char *routername = getRouterName();
