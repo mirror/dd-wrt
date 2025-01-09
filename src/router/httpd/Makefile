@@ -580,7 +580,9 @@ WEBSLDFLAGS += -ldisc
 WEBSOBJS += websraid.o
 endif
 ifeq ($(CONFIG_ZFS),y)
+ifeq ($(CONFIG_SUPPORTS_ZFS),y)
 CFLAGS += -DHAVE_ZFS
+endif
 endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
