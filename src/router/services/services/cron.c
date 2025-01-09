@@ -160,7 +160,6 @@ void start_cron(void)
 	eval("cp", "-af", "/jffs/mycron.d/*", "/tmp/cron.d/");
 	eval("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
-
 	log_eval("cron");
 
 	return;

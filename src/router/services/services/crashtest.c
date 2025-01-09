@@ -54,10 +54,9 @@
 #include <syslog.h>
 #include <services.h>
 
-
 void start_crashtest(void)
 {
-char *dest = malloc(-1);
-strcpy(dest, "test");
-fprintf(stderr, "%s", dest);
+	char *dest = malloc(-1);
+	strcpy(dest, "test");
+	fprintf(stderr, "%s", dest);
 }

@@ -663,7 +663,6 @@ static void start_nas_single(char *type, char *prefix)
 		fprintf(fp, "%d", pid);
 	fclose(fp);
 
-
 	return;
 }
 

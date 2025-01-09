@@ -843,7 +843,7 @@ void start_dnsmasq(void)
 
 				if (dns_list6 && dns_list6->num_servers > 0) {
 					for (i = 0; i < dns_list6->num_servers; i++) {
-						//dd_loginfo("dnsipv6", "dns_list6-%d: %s", i, dns_list6->dns_server[i].ip); 
+						//dd_loginfo("dnsipv6", "dns_list6-%d: %s", i, dns_list6->dns_server[i].ip);
 						if (strchr(dns_list6->dns_server[i].ip, ':')) {
 							strlcat(buffdns6, ",[", sizeof(buffdns6));
 							strlcat(buffdns6, dns_list6->dns_server[i].ip, sizeof(buffdns6));
@@ -853,8 +853,8 @@ void start_dnsmasq(void)
 							strlcat(buffdns, dns_list6->dns_server[i].ip, sizeof(buffdns));
 						}
 					}
-					//dd_loginfo("dnsipv6", "buffdns6: %s", buffdns6); 
-					//dd_loginfo("dnsipv6", "buffdns: %s", buffdns); 
+					//dd_loginfo("dnsipv6", "buffdns6: %s", buffdns6);
+					//dd_loginfo("dnsipv6", "buffdns: %s", buffdns);
 					if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("dnsipv6_enable", 1) && buffdns6) {
 						fprintf(fp, "dhcp-option=option6:dns-server%s\n", buffdns6);
 					}

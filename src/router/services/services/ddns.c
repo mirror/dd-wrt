@@ -410,7 +410,6 @@ void stop_ddns(void)
 	}
 	unlink("/tmp/ddns/ddns.log");
 
-
 	return;
 }
 
@@ -501,7 +500,6 @@ int ddns_success_main(int argc, char *argv[])
 	nvram_set("ddns_path_buf", nvram_safe_get("ddns_path_5"));
 
 	nvram_async_commit();
-
 
 	return 0;
 }

@@ -20,15 +20,14 @@
  * $Id:
  */
 
-
 #ifndef SERVICES_H
 #define SERVICES_H
-#define DECLARE_SERVICE(name) \
-	extern void start_##name(); \
-	extern void stop_##name(); \
+#define DECLARE_SERVICE(name)         \
+	extern void start_##name();   \
+	extern void stop_##name();    \
 	extern void restart_##name(); \
-	extern char* name##_deps(); \
-	extern char* name##_proc();
+	extern char *name##_deps();   \
+	extern char *name##_proc();
 
 DECLARE_SERVICE(backup);
 DECLARE_SERVICE(bonding);
@@ -198,7 +197,6 @@ DECLARE_SERVICE(wifi_drivers);
 
 extern void run_pptp(int status);
 
-
 #ifdef HAVE_UNBOUND
 DECLARE_SERVICE(unbound);
 #else
@@ -210,7 +208,6 @@ static inline void stop_unbound(void)
 {
 }
 #endif
-
 
 extern void run_pptp(int status);
 extern void run_l2tp(int status);
@@ -278,9 +275,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask);
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-
 int wlconf_up(char *name);
-
 
 void runStartup(char *extension);
 char *set_wan_state(int state);

@@ -1670,7 +1670,6 @@ static void advgrp_chain(int seq, int urlenable, char *ifname)
 	char *services, srv[1024], *next2;
 	char delim[] = "<&nbsp;>";
 
-
 	/*
 	 * filter_services=$NAME:006:My
 	 * ICQ$PROT:002:17$PORT:009:5000:5010<&nbsp;>.. 

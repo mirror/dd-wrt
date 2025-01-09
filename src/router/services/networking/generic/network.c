@@ -2044,7 +2044,6 @@ void start_lan(void)
 		nvram_async_commit();
 	}
 
-
 	// If running in client-mode, remove old WAN-configuration
 	if (getSTA()) {
 		// #ifdef HAVE_SKYTRON
@@ -2102,7 +2101,7 @@ void start_lan(void)
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 		perror("Write wireless mac fail : ");
 	else
-	eval("wl", "-i", wl_face, "up");
+		eval("wl", "-i", wl_face, "up");
 	config_macs(wl_face);
 #endif
 	if (getSTA()) {
@@ -2265,7 +2264,7 @@ void start_lan(void)
 						if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 							perror("Write wireless mac fail : ");
 						else
-						eval("wl", "-i", name, "up");
+							eval("wl", "-i", name, "up");
 						config_macs(name);
 					}
 				}
@@ -2516,7 +2515,6 @@ void start_lan(void)
 	start_qtn(); //bootup quantenna firmware
 #endif
 	log_eval("gratarp", lan_ifname);
-
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
@@ -2896,7 +2894,6 @@ void stop_lan(void)
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
-
 }
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
@@ -4257,7 +4254,6 @@ void run_wan(int status)
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
-
 }
 
 void start_wan_boot(void)
@@ -4405,7 +4401,6 @@ void wan_done(char *wan_ifname)
 		return;
 	}
 
-
 	if (nvram_match("wan_proto", "l2tp")) {
 		/*
 		 * Delete all default routes 
@@ -4486,7 +4481,6 @@ void wan_done(char *wan_ifname)
 	/*
 	 * Restart DNS proxy 
 	 */
-
 
 	/*
 	 * Set additional wan static routes if need 
@@ -4612,7 +4606,6 @@ void wan_done(char *wan_ifname)
 	up = fopen("/tmp/.wanuptime", "w");
 	fprintf(up, "%u", sys_uptime);
 	fclose(up);
-
 
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
 
@@ -4811,7 +4804,6 @@ void stop_wan(void)
 	// take effect
 #ifdef HAVE_PPP
 #endif
-
 }
 
 static void apply_rules(char *method, char *pbr)
@@ -5210,8 +5202,8 @@ void start_hotplug_net(void)
 		return;
 
 	if (is_ath11k(interface) && nvram_nmatch("mesh", "%s_mode", interface)) {
-		dd_loginfo("hotplug","disable tx checksumming for %s\n", interface);
-		eval("ethtool","-K",interface, "tx-checksumming","off");
+		dd_loginfo("hotplug", "disable tx checksumming for %s\n", interface);
+		eval("ethtool", "-K", interface, "tx-checksumming", "off");
 	}
 
 	// try to parse
@@ -5252,7 +5244,7 @@ void start_hotplug_net(void)
 		if (nvram_matchi(bridged, 1))
 			br_del_interface(getBridge(ifname, tmp), interface);
 	}
-	
+
 	return;
 #else
 

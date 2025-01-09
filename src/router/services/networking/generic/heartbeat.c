@@ -135,7 +135,6 @@ void stop_heartbeat(void)
 	stop_process("bpalogin", "bpalogin");
 	unlink("/tmp/ppp/link");
 
-
 	return;
 }
 

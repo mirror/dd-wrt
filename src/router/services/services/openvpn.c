@@ -1251,7 +1251,8 @@ void start_openvpn(void)
 	run_openvpn("openvpn", "openvpncl");
 	//start openvpn-watchdog with control script to kill running
 	if (nvram_matchi("openvpncl_wdog", 1)) {
-		if (nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1) && nvram_matchi("openvpncl_nat", 0)) {
+		if (nvram_match("openvpncl_tuntap", "tap") && nvram_matchi("openvpncl_bridge", 1) &&
+		    nvram_matchi("openvpncl_nat", 0)) {
 			eval("/usr/bin/controlovpnwdog.sh", "1", "1"); // use br0 as interface to ping
 		} else {
 			eval("/usr/bin/controlovpnwdog.sh", "1", "0");

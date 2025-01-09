@@ -83,7 +83,6 @@ void run_tmp_ppp(int num)
 	struct ifreq ifr;
 	int s;
 
-
 	sprintf(pppoeifname, "pppoe_ifname%d", num);
 
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)

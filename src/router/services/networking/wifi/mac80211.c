@@ -557,7 +557,6 @@ void configure_single_ath9k(int count)
 	eval("iw", "dev", dev, "set", "power_save", "off");
 	setRTS(dev);
 
-
 	MAC80211DEBUG();
 	// setup encryption
 	int isfirst = 1;

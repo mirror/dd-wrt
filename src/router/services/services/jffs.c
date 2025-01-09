@@ -20,8 +20,6 @@
  * $Id:
  */
 
-
-
 #ifdef HAVE_JFFS2
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -144,7 +142,8 @@ void start_jffs2(void)
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			if (ax89) {
-				didntwork = mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
+				didntwork = mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
+						  "compr=" DEFAULT_UBIFS_COMPR);
 			} else if (classic) {
 				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));
 				didntwork = mount(dev, "/jffs", "jffs2", MS_MGC_VAL | MS_NOATIME, NULL);
@@ -165,7 +164,8 @@ void start_jffs2(void)
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 			didntwork = 0;
 			if (ax89) {
-				didntwork += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME, "compr=" DEFAULT_UBIFS_COMPR);
+				didntwork += mount("/dev/ubi0_5", "/jffs", "ubifs", MS_MGC_VAL | MS_NOATIME,
+						   "compr=" DEFAULT_UBIFS_COMPR);
 			} else if (classic) {
 				eval("mtd", "unlock", rwpart);
 				sprintf(dev, "/dev/mtdblock/%d", getMTD(rwpart));

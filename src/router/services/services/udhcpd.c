@@ -65,8 +65,6 @@ static int adjust_dhcp_range(void)
 	legal_end_ip = legal_start_ip + legal_total_ip - 1;
 	dhcp_start_ip = atoi(dhcp_start);
 
-		legal_end_ip, dhcp_start_ip);
-
 	if ((dhcp_start_ip > legal_end_ip) || (dhcp_start_ip < legal_start_ip)) {
 		set_dhcp_start_ip = legal_start_ip;
 		adjust_ip = 1;
@@ -133,9 +131,6 @@ void start_udhcpd(void)
 	 * changed 
 	 */
 	adjust_dhcp_range();
-
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
-		nvram_safe_get("dhcp_start"), nvram_safe_get("dhcp_end"), nvram_safe_get("lan_lease"));
 
 	/*
 	 * Touch leases file 

@@ -147,7 +147,6 @@ char *range(char *start, char *end, char *range_buf, size_t len)
 	int retcount = 0;
 	int i;
 
-
 	bzero(range_buf, 1024);
 
 	retcount = sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2], &startip[3]);
@@ -167,7 +166,6 @@ char *range(char *start, char *end, char *range_buf, size_t len)
 	}
 
 	subrange(startipc, endipc, range_buf, len);
-
 
 	return (char *)range_buf;
 }

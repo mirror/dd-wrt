@@ -2240,7 +2240,6 @@ static void configure_single(int count)
 	getMacAddr(dev, macaddr, sizeof(macaddr));
 	nvram_set(athmac, macaddr);
 
-
 	int distance = nvram_default_geti(sens, 500); // to meter
 	if (nvram_nmatch("1", "%s_pollingmode", var)) {
 		setdistance(wif, 100000, 20);
@@ -2493,7 +2492,6 @@ static void configure_single(int count)
 #endif
 				eval("iwconfig", var, "essid", "--", nvram_default_get(ssid, "dd-wrt_vap"));
 #endif
-				var); // hide ssid
 			sprintf(broadcast, "%s_closed", var);
 			eval("iwpriv", var, "hide_ssid", nvram_default_get(broadcast, "0"));
 			sprintf(wmm, "%s_wmm", var);
@@ -2636,12 +2634,10 @@ static void configure_single(int count)
 #endif
 	}
 
-
 	int newpower = nvram_default_geti(power, 16);
 	char s_dbm[32];
 	sprintf(s_dbm, "%ddBm", newpower);
 	eval("iwconfig", dev, "txpower", s_dbm);
-
 
 	// @todo ifup
 	// netconfig
