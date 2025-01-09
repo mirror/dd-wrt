@@ -1698,7 +1698,7 @@ char *getWPSEncrypType_qtn()
 		return "AES";
 }
 
-int getassoclist_qtn(char *name, unsigned char *list)
+int getassoclist_qtn(const char *name, unsigned char *list)
 {
 	qcsapi_unsigned_int count;
 	qcsapi_mac_addr the_mac_addr;
@@ -1724,7 +1724,7 @@ int getassoclist_qtn(char *name, unsigned char *list)
 	return cnt[0];
 }
 
-int getRssiIndex_qtn(char *name, int index)
+int getRssiIndex_qtn(const char *name, int index)
 {
 	unsigned int rssi;
 	if (!rpc_qtn_ready())
@@ -1737,7 +1737,7 @@ int getRssiIndex_qtn(char *name, int index)
 	return -rssi;
 }
 
-int getNoiseIndex_qtn(char *name, int index)
+int getNoiseIndex_qtn(const char *name, int index)
 {
 	int noise;
 	if (!rpc_qtn_ready())
@@ -1750,7 +1750,7 @@ int getNoiseIndex_qtn(char *name, int index)
 	return noise / 10;
 }
 
-int getTXRate_qtn(char *name, int index)
+int getTXRate_qtn(const char *name, int index)
 {
 	int rate;
 	if (!rpc_qtn_ready())
@@ -1759,7 +1759,7 @@ int getTXRate_qtn(char *name, int index)
 	return rate;
 }
 
-int getRXRate_qtn(char *name, int index)
+int getRXRate_qtn(const char *name, int index)
 {
 	int rate;
 	if (!rpc_qtn_ready())

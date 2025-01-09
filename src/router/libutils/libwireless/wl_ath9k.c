@@ -46,7 +46,7 @@
 #include <linux/nl80211.h>
 
 // dummy TBD
-int getassoclist_ath9k(char *ifname, unsigned char *list)
+int getassoclist_ath9k(const char *ifname, unsigned char *list)
 {
 	unsigned int *count = (unsigned int *)list;
 	struct mac80211_info *mac80211_info;
@@ -66,7 +66,7 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 }
 
 // dummy TBD
-int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field)
+int getWifiInfo_ath9k(const char *ifname, unsigned char *mac, int field)
 {
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;

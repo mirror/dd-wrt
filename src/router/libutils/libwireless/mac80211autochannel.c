@@ -264,6 +264,7 @@ out:
 
 nla_put_failure:
 	nlmsg_free(msg);
+	return -1;
 }
 
 struct sort_data {

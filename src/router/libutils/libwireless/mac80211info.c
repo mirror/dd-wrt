@@ -789,7 +789,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	return (NL_SKIP);
 }
 
-struct mac80211_info *mac80211_assoclist(char *interface)
+struct mac80211_info *mac80211_assoclist(const char *interface)
 {
 	mac80211_init();
 	struct nl_msg *msg;
@@ -2488,6 +2488,7 @@ int has_cmac(const char *prefix)
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac06);
 	EXITVALUECACHE();
+	return ret;
 }
 
 int has_gcmp_128(const char *prefix)

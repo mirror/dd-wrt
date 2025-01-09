@@ -1031,10 +1031,7 @@ char *strncpyz(char *dest, char const *src, size_t size)
 
 static int sockets_open(int domain, int type, int protocol)
 {
-	int fd = socket(domain, type, protocol);
-
-	if (fd < 0)
-	return fd;
+	return socket(domain, type, protocol);
 }
 
 int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd, struct ifreq *ifr)

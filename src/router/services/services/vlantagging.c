@@ -64,6 +64,7 @@
 static char *EGRESS(char *map, int class, char *prio)
 {
 	sprintf(map, "%d:%s", class, prio);
+	return map;
 }
 void start_vlantagging(void)
 {

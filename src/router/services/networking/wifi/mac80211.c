@@ -2453,6 +2453,7 @@ int vhtcaps_main(int argc, char *argv[])
 					  usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 					  nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	fprintf(stdout, "%s: caps = %s\n", argv[0], caps);
+	return 0;
 }
 
 extern void do_hostapd(char *fstr, char *prefix);

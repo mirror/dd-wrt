@@ -103,9 +103,9 @@ int getwdslist(char *name, unsigned char *list);
 
 #ifdef HAVE_QTN
 int rpc_qtn_ready(void);
-int getassoclist_qtn(char *name, unsigned char *list);
-int getNoiseIndex_qtn(char *ifname, int index);
-int getRssiIndex_qtn(char *ifname, int index);
+int getassoclist_qtn(const char *name, unsigned char *list);
+int getNoiseIndex_qtn(const char *ifname, int index);
+int getRssiIndex_qtn(const char *ifname, int index);
 #endif
 struct frequency {
 	struct dd_list_head list;
@@ -186,7 +186,7 @@ struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct ma
 int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range,
 		   int scans, int bw);
 
-int getassoclist(char *name, unsigned char *list);
+int getassoclist(const char *name, unsigned char *list);
 
 #ifdef HAVE_IPQ6018
 #define DEFAULT_BF 1
@@ -201,8 +201,8 @@ int getassoclist(char *name, unsigned char *list);
 #define INFO_RXRATE 3
 #define INFO_TXRATE 4
 
-int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field); // only used internal
-int getWifiInfo(char *ifname, unsigned char *mac, int field);
+int getWifiInfo_ath9k(const char *ifname, unsigned char *mac, int field); // only used internal
+int getWifiInfo(const char *ifname, unsigned char *mac, int field);
 
 #define getNoise(ifname, mac) getWifiInfo(ifname, mac, INFO_NOISE)
 #define getRssi(ifname, mac) getWifiInfo(ifname, mac, INFO_RSSI)
@@ -211,12 +211,12 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
 int getValueFromPath(char *path, int dev, char *fmt, int *err); // internal
 
-int getassoclist_11n(char *name, unsigned char *list);
-int getNoise_11n(char *ifname, unsigned char *mac);
-int getUptime_11n(char *ifname, unsigned char *mac);
-int getRssi_11n(char *ifname, unsigned char *mac);
+int getassoclist_11n(const char *name, unsigned char *list);
+int getNoise_11n(const char *ifname, unsigned char *mac);
+int getUptime_11n(const char *ifname, unsigned char *mac);
+int getRssi_11n(const char *ifname, unsigned char *mac);
 
-extern int getassoclist_ath9k(char *name, unsigned char *list);
+extern int getassoclist_ath9k(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
 extern int has_ac(const char *prefix);
@@ -370,7 +370,7 @@ struct site_survey_list {
 	char radioname[16]; /* in dd-wrt typically the router name from setup page */
 };
 
-struct site_survey_list *open_site_survey(char *name);
+struct site_survey_list *open_site_survey(const char *name);
 
 struct wifi_interface {
 	int freq;
@@ -409,7 +409,7 @@ extern int getdevicecount(void);
 
 extern int mac80211_get_maxpower(char *interface);
 extern int mac80211_get_coverageclass(char *interface);
-extern struct mac80211_info *mac80211_assoclist(char *interface);
+extern struct mac80211_info *mac80211_assoclist(const char *interface);
 extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps);
 extern int has_greenfield(const char *interface);
 #ifdef HAVE_ATH9K
@@ -591,7 +591,7 @@ void invalidate_channelcache(void);
 extern struct wifi_channels *list_channels(char *devnr);
 int get_radiostate(char *ifname);
 
-int isAssociated(char *ifname);
+int isAssociated(const char *ifname);
 
 unsigned int getRegDomain(char *country);
 unsigned int getCountry(char *country);

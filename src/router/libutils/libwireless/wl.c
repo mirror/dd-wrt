@@ -27,7 +27,7 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 
-struct site_survey_list *open_site_survey(char *name)
+struct site_survey_list *open_site_survey(const char *name)
 {
 	FILE *fp;
 
@@ -554,7 +554,7 @@ STAINFO *getRaStaInfo(char *ifname)
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE (SIOCIWFIRSTPRIV + 0x0F)
 
-int getassoclist(char *ifname, unsigned char *list)
+int getassoclist(const char *ifname, unsigned char *list)
 {
 	struct iwreq iwr;
 	unsigned int *count = (unsigned int *)list;
@@ -610,7 +610,7 @@ int getassoclist(char *ifname, unsigned char *list)
 	return count[0];
 }
 
-int getWifiInfo(char *ifname, unsigned char *mac, int field)
+int getWifiInfo(const char *ifname, unsigned char *mac, int field)
 {
 	struct iwreq iwr;
 	RT_802_11_MAC_TABLE table = { 0 };
@@ -1094,7 +1094,7 @@ int wl_getbssid(char *wl, char *mac)
 	return 0;
 }
 
-int getassoclist(char *name, unsigned char *list)
+int getassoclist(const char *name, unsigned char *list)
 {
 #ifdef HAVE_QTN
 	if (has_qtn(name))
@@ -1157,7 +1157,7 @@ typedef struct {
 	struct ether_addr ea;
 } rssi_val_t;
 
-int getWifiInfo(char *ifname, unsigned char *macname, int field)
+int getWifiInfo(const char *ifname, unsigned char *macname, int field)
 {
 	unsigned int noise, rssi;
 	rssi_val_t rssi_get;
@@ -1768,7 +1768,7 @@ static int iw_get_ext(int skfd, /* Socket to the kernel */
 	return (ioctl(skfd, request, pwrq));
 }
 
-int isAssociated(char *ifname)
+int isAssociated(const char *ifname)
 {
 	struct iwreq wrq;
 	int i;
@@ -1784,7 +1784,7 @@ int isAssociated(char *ifname)
 	return 0;
 }
 
-int getAssocMAC(char *ifname, char *mac)
+int getAssocMAC(const char *ifname, char *mac)
 {
 	struct iwreq wrq;
 	int i;
@@ -2094,7 +2094,7 @@ struct wifi_channels *list_channels(char *devnr)
 	 */
 }
 
-int getWifiInfo(char *ifname, unsigned char *mac, int field)
+int getWifiInfo(const char *ifname, unsigned char *mac, int field)
 {
 	if (is_mac80211(ifname)) {
 		return getWifiInfo_ath9k(ifname, mac, field);
@@ -2183,7 +2183,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 	return 0;
 }
 
-int getassoclist(char *ifname, unsigned char *list)
+int getassoclist(const char *ifname, unsigned char *list)
 {
 	if (is_mac80211(ifname)) {
 		return getassoclist_ath9k(ifname, list);
@@ -4945,12 +4945,11 @@ char *getWET()
 
 #endif
 
-struct wl_assoc_mac *get_wl_assoc_mac(const char *ifname, int *c)
+struct wl_assoc_mac *get_wl_assoc_mac(const char *prefix, int *c)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count;
 	char checkif[12];
-	char *prefix = ifname;
 	wlmac = NULL;
 	count = *c = 0;
 
