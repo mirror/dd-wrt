@@ -2798,49 +2798,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "mmc_clk", "0" },
 	{ "mmc_cs", "0" },
 #endif
-#ifdef HAVE_RB500
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_WRT300NV2
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_XSCALE
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_X86
-#ifdef HAVE_NOWIFI
-	{ "ip_conntrack_max", "4096" },
-#else
-	{ "ip_conntrack_max", "32768" },
-#endif
-#elif HAVE_MAGICBOX
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_NORTHSTAR
-	{ "ip_conntrack_max", "32768" },
-#elif HAVE_MVEBU
-	{ "ip_conntrack_max", "32768" },
-#elif HAVE_IPQ806X
-	{ "ip_conntrack_max", "32768" },
-#elif HAVE_LAGUNA
-	{ "ip_conntrack_max", "32768" },
-#elif HAVE_RB600
-	{ "ip_conntrack_max", "32768" },
-#elif HAVE_MERAKI
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_FONERA
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_BUFFALO
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_LS2
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_LS5
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_WHRAG108
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_TW6600
-	{ "ip_conntrack_max", "4096" },
-#elif HAVE_CA8
-	{ "ip_conntrack_max", "16384" },
-#elif HAVE_MICRO
-	{ "ip_conntrack_max", "1024" },
-#else
 	{ "ip_conntrack_max", "4096" },
 #endif
 #ifdef HAVE_80211AC

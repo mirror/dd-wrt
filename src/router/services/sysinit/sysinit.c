@@ -2000,6 +2000,7 @@ void start_restore_defaults(void)
 	}
 
 	if (restore_defaults) {
+		nvram_seti("ip_conntrack_tcp_timeouts", 3600);
 #ifdef HAVE_MICRO
 		/*
 		 * adjust ip_conntrack_max based on available memory size
@@ -2007,16 +2008,14 @@ void start_restore_defaults(void)
 		 */
 		if (getmemfree() > (8 * 1024 * 1024)) {
 			nvram_seti("ip_conntrack_max", 4096);
-			nvram_seti("ip_conntrack_tcp_timeouts", 3600);
+		} else {
+			nvram_seti("ip_conntrack_max", 1024);
 		}
 #else
 		if (getmemfree() > (256 * 1024 * 1024)) {
 			nvram_seti("ip_conntrack_max", 65536);
-			nvram_seti("ip_conntrack_tcp_timeouts", 65536);
-		}
-		else if (getmemfree() > (64 * 1024 * 1024)) {
+		} else if (getmemfree() > (64 * 1024 * 1024)) {
 			nvram_seti("ip_conntrack_max", 32768);
-			nvram_seti("ip_conntrack_tcp_timeouts", 32768);
 		}
 #endif
 		if (getmemtotal() > 128 * 1024 * 1024) {
