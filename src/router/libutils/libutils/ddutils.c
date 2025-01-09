@@ -1355,7 +1355,6 @@ int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char 
 	int s;
 	struct rtentry rt;
 
-	// dprintf("cmd=[%d] name=[%s] ipaddr=[%s] netmask=[%s] gateway=[%s]
 	// metric=[%d]\n",cmd,name,dst,genmask,gateway,metric);
 
 	/*

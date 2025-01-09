@@ -68,7 +68,6 @@ static int old_foreach_port(const char *brname, int (*iterator)(const char *br, 
 
 	err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	if (err < 0) {
-		dprintf("list ports for bridge:'%s' failed: %s\n", brname, strerror(errno));
 		return -errno;
 	}
 
@@ -78,7 +77,6 @@ static int old_foreach_port(const char *brname, int (*iterator)(const char *br, 
 			continue;
 
 		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("can't find name for ifindex:%d\n", ifindices[i]);
 			continue;
 		}
 
@@ -359,7 +357,6 @@ static int get_portno(const char *brname, const char *ifname)
 	ifr.ifr_data = (char *)&args;
 
 	if (ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr) < 0) {
-		dprintf("get_portno: get ports of %s failed: %s\n", brname, strerror(errno));
 		goto error;
 	}
 
@@ -368,7 +365,6 @@ static int get_portno(const char *brname, const char *ifname)
 			return i;
 	}
 
-	dprintf("%s is not a in bridge %s\n", ifname, brname);
 error:
 	return -1;
 }
@@ -494,7 +490,6 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
 	ifr.ifr_data = (char *)&args;
 
 	if (ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr) < 0) {
-		dprintf("%s: can't get info %s\n", bridge, strerror(errno));
 		return errno;
 	}
 
@@ -535,13 +530,11 @@ static int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 
 	dev = sysfs_get_class_device(br_class_net, bridge);
 	if (!dev) {
-		dprintf("get_class_device '%s' failed\n", bridge);
 		goto fallback;
 	}
 
 	snprintf(path, SYSFS_PATH_MAX, "%s/bridge", dev->path);
 	if (sysfs_path_is_dir(path)) {
-		dprintf("path '%s' is not a directory\n", path);
 		sysfs_close_class_device(dev);
 		goto fallback;
 	}
@@ -615,13 +608,11 @@ static int new_foreach_bridge(int (*iterator)(const char *name, void *), void *a
 	int count = 0;
 
 	if (!br_class_net) {
-		dprintf("no class /sys/class/net\n");
 		return -EOPNOTSUPP;
 	}
 
 	devlist = sysfs_get_class_devices(br_class_net);
 	if (!devlist) {
-		dprintf("Can't read devices from sysfs\n");
 		return -errno;
 	}
 
@@ -650,13 +641,11 @@ static int old_foreach_bridge(int (*iterator)(const char *, void *), void *iarg)
 
 	num = ioctl(br_socket_fd, SIOCGIFBR, args);
 	if (num < 0) {
-		dprintf("Get bridge indices failed: %s\n", strerror(errno));
 		return -errno;
 	}
 
 	for (i = 0; i < num; i++) {
 		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("get find name for ifindex %d\n", ifindices[i]);
 			return -errno;
 		}
 

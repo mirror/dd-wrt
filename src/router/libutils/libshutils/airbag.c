@@ -368,7 +368,6 @@ static const struct {
 
 static int log_fd = -1;
 static int log_facility = LOG_USER;
-static int log_opt;
 static char log_ident[32];
 
 static int is_lost_conn(int e)
@@ -397,23 +396,15 @@ static void slog(int priority, const char *message)
 	}
 	if (!(priority & LOG_FACMASK))
 		priority |= log_facility;
-	pid = (log_opt & LOG_PID) ? getpid() : 0;
+	pid =  0;
 	l = 0;
 	l = asprintf(&buf, "<%d>%n%s%s%.0d%s: %s", priority, &hlen, log_ident, "[" + !pid, pid, "]" + !pid, message);
 	errno = errno_save;
 	if (l >= 0) {
 		if (send(log_fd, buf, l, 0) < 0 &&
 		    (!is_lost_conn(errno) || connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0 ||
-		     send(log_fd, buf, l, 0) < 0) &&
-		    (log_opt & LOG_CONS)) {
-			fd = open("/dev/console", O_WRONLY | O_NOCTTY | O_CLOEXEC);
-			if (fd >= 0) {
-				dprintf(fd, "%.*s", l - hlen, buf + hlen);
-				close(fd);
-			}
-		}
-		if (log_opt & LOG_PERROR)
-			dprintf(2, "%.*s", l - hlen, buf + hlen);
+		     send(log_fd, buf, l, 0) < 0)) {
+		    }
 	}
 	if (buf)
 		free(buf);

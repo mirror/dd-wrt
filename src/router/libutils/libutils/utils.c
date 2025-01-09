@@ -238,7 +238,6 @@ const char *getifaddr(char *buf, char *ifname, int family, int linklocal)
 		return NULL;
 
 	if (getifaddrs(&ifap) != 0) {
-		dprintf("getifaddrs failed: %s\n", strerror(errno));
 		return NULL;
 	}
 

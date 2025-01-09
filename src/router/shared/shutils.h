@@ -265,16 +265,6 @@ char *chomp(char *s);
 /*
  * Print directly to the console 
  */
-#ifndef HAVE_SILENCE
-
-#define cprintf(fmt, args...)                 \
-	do {                                  \
-		fprintf(stderr, fmt, ##args); \
-		fflush(stderr);               \
-	} while (0)
-#else
-#define cprintf(fmt, args...)
-#endif
 
 char *foreach_first(char *foreachwordlist, char *word, char *delim, size_t len);
 
@@ -310,15 +300,6 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
  * Return NUL instead of NULL if undefined 
  */
 #define safe_getenv(s) (getenv(s) ?: "")
-
-/*
- * Debug print 
- */
-#ifdef DEBUG
-#define dprintf(fmt, args...) cprintf("%s: " fmt, __FUNCTION__, ##args)
-#else
-#define dprintf(fmt, args...)
-#endif
 
 #ifdef HAVE_MICRO
 #define FORK(a) a;

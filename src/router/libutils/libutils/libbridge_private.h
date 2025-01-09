@@ -29,8 +29,6 @@
 #define MAX_BRIDGES 1024
 #define MAX_PORTS 1024
 
-#define dprintf(fmt, arg...)
-
 #ifdef HAVE_LIBSYSFS
 #include <sysfs/libsysfs.h>
 
