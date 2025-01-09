@@ -500,7 +500,7 @@ usage_prop_cb(int prop, void *cb)
 {
 	FILE *fp = cb;
 
-	(void) fprintf(fp, "\t%-15s ", zfs_prop_to_name(prop));
+	(void) fprintf(fp, "\t%-22s ", zfs_prop_to_name(prop));
 
 	if (zfs_prop_readonly(prop))
 		(void) fprintf(fp, " NO    ");
@@ -561,40 +561,40 @@ usage(boolean_t requested)
 		(void) fprintf(fp, "%s",
 		    gettext("\nThe following properties are supported:\n"));
 
-		(void) fprintf(fp, "\n\t%-14s %s  %s   %s\n\n",
+		(void) fprintf(fp, "\n\t%-21s %s  %s   %s\n\n",
 		    "PROPERTY", "EDIT", "INHERIT", "VALUES");
 
 		/* Iterate over all properties */
 		(void) zprop_iter(usage_prop_cb, fp, B_FALSE, B_TRUE,
 		    ZFS_TYPE_DATASET);
 
-		(void) fprintf(fp, "\t%-15s ", "userused@...");
+		(void) fprintf(fp, "\t%-22s ", "userused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "groupused@...");
+		(void) fprintf(fp, "\t%-22s ", "groupused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "projectused@...");
+		(void) fprintf(fp, "\t%-22s ", "projectused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "userobjused@...");
+		(void) fprintf(fp, "\t%-22s ", "userobjused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "groupobjused@...");
+		(void) fprintf(fp, "\t%-22s ", "groupobjused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "projectobjused@...");
+		(void) fprintf(fp, "\t%-22s ", "projectobjused@...");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "userquota@...");
+		(void) fprintf(fp, "\t%-22s ", "userquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "groupquota@...");
+		(void) fprintf(fp, "\t%-22s ", "groupquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "projectquota@...");
+		(void) fprintf(fp, "\t%-22s ", "projectquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "userobjquota@...");
+		(void) fprintf(fp, "\t%-22s ", "userobjquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "groupobjquota@...");
+		(void) fprintf(fp, "\t%-22s ", "groupobjquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "projectobjquota@...");
+		(void) fprintf(fp, "\t%-22s ", "projectobjquota@...");
 		(void) fprintf(fp, "YES       NO   <size> | none\n");
-		(void) fprintf(fp, "\t%-15s ", "written@<snap>");
+		(void) fprintf(fp, "\t%-22s ", "written@<snap>");
 		(void) fprintf(fp, " NO       NO   <size>\n");
-		(void) fprintf(fp, "\t%-15s ", "written#<bookmark>");
+		(void) fprintf(fp, "\t%-22s ", "written#<bookmark>");
 		(void) fprintf(fp, " NO       NO   <size>\n");
 
 		(void) fprintf(fp, gettext("\nSizes are specified in bytes "
@@ -2162,6 +2162,7 @@ zfs_do_get(int argc, char **argv)
 	cb.cb_type = ZFS_TYPE_DATASET;
 
 	struct option long_options[] = {
+		{"json", no_argument, NULL, 'j'},
 		{"json-int", no_argument, NULL, ZFS_OPTION_JSON_NUMS_AS_INT},
 		{0, 0, 0, 0}
 	};
@@ -3760,8 +3761,13 @@ collect_dataset(zfs_handle_t *zhp, list_cbdata_t *cb)
 		if (cb->cb_json) {
 			if (pl->pl_prop == ZFS_PROP_NAME)
 				continue;
+			const char *prop_name;
+			if (pl->pl_prop != ZPROP_USERPROP)
+				prop_name = zfs_prop_to_name(pl->pl_prop);
+			else
+				prop_name = pl->pl_user_prop;
 			if (zprop_nvlist_one_property(
-			    zfs_prop_to_name(pl->pl_prop), propstr,
+			    prop_name, propstr,
 			    sourcetype, source, NULL, props,
 			    cb->cb_json_as_int) != 0)
 				nomem();
@@ -3852,6 +3858,7 @@ zfs_do_list(int argc, char **argv)
 	nvlist_t *data = NULL;
 
 	struct option long_options[] = {
+		{"json", no_argument, NULL, 'j'},
 		{"json-int", no_argument, NULL, ZFS_OPTION_JSON_NUMS_AS_INT},
 		{0, 0, 0, 0}
 	};
@@ -7436,9 +7443,15 @@ share_mount(int op, int argc, char **argv)
 	uint_t nthr;
 	jsobj = data = item = NULL;
 
+	struct option long_options[] = {
+		{"json", no_argument, NULL, 'j'},
+		{0, 0, 0, 0}
+	};
+
 	/* check options */
-	while ((c = getopt(argc, argv, op == OP_MOUNT ? ":ajRlvo:Of" : "al"))
-	    != -1) {
+	while ((c = getopt_long(argc, argv,
+	    op == OP_MOUNT ? ":ajRlvo:Of" : "al",
+	    op == OP_MOUNT ? long_options : NULL, NULL)) != -1) {
 		switch (c) {
 		case 'a':
 			do_all = 1;
@@ -8374,8 +8387,14 @@ zfs_do_channel_program(int argc, char **argv)
 	boolean_t sync_flag = B_TRUE, json_output = B_FALSE;
 	zpool_handle_t *zhp;
 
+	struct option long_options[] = {
+		{"json", no_argument, NULL, 'j'},
+		{0, 0, 0, 0}
+	};
+
 	/* check options */
-	while ((c = getopt(argc, argv, "nt:m:j")) != -1) {
+	while ((c = getopt_long(argc, argv, "nt:m:j", long_options,
+	    NULL)) != -1) {
 		switch (c) {
 		case 't':
 		case 'm': {
@@ -9083,7 +9102,13 @@ zfs_do_version(int argc, char **argv)
 	int c;
 	nvlist_t *jsobj = NULL, *zfs_ver = NULL;
 	boolean_t json = B_FALSE;
-	while ((c = getopt(argc, argv, "j")) != -1) {
+
+	struct option long_options[] = {
+		{"json", no_argument, NULL, 'j'},
+		{0, 0, 0, 0}
+	};
+
+	while ((c = getopt_long(argc, argv, "j", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'j':
 			json = B_TRUE;
@@ -9187,7 +9212,7 @@ main(int argc, char **argv)
 	 * Special case '-V|--version'
 	 */
 	if ((strcmp(cmdname, "-V") == 0) || (strcmp(cmdname, "--version") == 0))
-		return (zfs_do_version(argc, argv));
+		return (zfs_version_print() != 0);
 
 	/*
 	 * Special case 'help'

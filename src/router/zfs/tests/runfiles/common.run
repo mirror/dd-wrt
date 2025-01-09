@@ -82,7 +82,7 @@ tests = ['block_cloning_clone_mmap_cached',
     'block_cloning_copyfilerange_fallback_same_txg',
     'block_cloning_replay', 'block_cloning_replay_encrypted',
     'block_cloning_lwb_buffer_overflow', 'block_cloning_clone_mmap_write',
-    'block_cloning_rlimit_fsize']
+    'block_cloning_rlimit_fsize', 'block_cloning_large_offset']
 tags = ['functional', 'block_cloning']
 
 [tests/functional/bootfs]
@@ -387,8 +387,7 @@ tags = ['functional', 'cli_root', 'zpool']
 tests = ['zpool_add_001_pos', 'zpool_add_002_pos', 'zpool_add_003_pos',
     'zpool_add_004_pos', 'zpool_add_006_pos', 'zpool_add_007_neg',
     'zpool_add_008_neg', 'zpool_add_009_neg', 'zpool_add_010_pos',
-    'add-o_ashift', 'add_prop_ashift', 'zpool_add_dryrun_output',
-    'zpool_add--allow-ashift-mismatch']
+    'add-o_ashift', 'add_prop_ashift', 'zpool_add_dryrun_output']
 tags = ['functional', 'cli_root', 'zpool_add']
 
 [tests/functional/cli_root/zpool_attach]
@@ -544,7 +543,8 @@ tags = ['functional', 'cli_root', 'zpool_scrub']
 [tests/functional/cli_root/zpool_set]
 tests = ['zpool_set_001_pos', 'zpool_set_002_neg', 'zpool_set_003_neg',
     'zpool_set_ashift', 'zpool_set_features', 'vdev_set_001_pos',
-    'user_property_001_pos', 'user_property_002_neg']
+    'user_property_001_pos', 'user_property_002_neg',
+    'zpool_set_clear_userprop']
 tags = ['functional', 'cli_root', 'zpool_set']
 
 [tests/functional/cli_root/zpool_split]
@@ -676,8 +676,8 @@ post =
 tags = ['functional', 'deadman']
 
 [tests/functional/dedup]
-tests = ['dedup_legacy_create', 'dedup_fdt_create', 'dedup_fdt_import',
-    'dedup_legacy_create', 'dedup_legacy_import', 'dedup_legacy_fdt_upgrade',
+tests = ['dedup_fdt_create', 'dedup_fdt_import', 'dedup_legacy_create',
+    'dedup_legacy_import', 'dedup_legacy_fdt_upgrade',
     'dedup_legacy_fdt_mixed', 'dedup_quota']
 pre =
 post =
@@ -692,6 +692,14 @@ tests = ['zfs_allow_001_pos', 'zfs_allow_002_pos', 'zfs_allow_003_pos',
     'zfs_unallow_004_pos', 'zfs_unallow_005_pos', 'zfs_unallow_006_pos',
     'zfs_unallow_007_neg', 'zfs_unallow_008_neg']
 tags = ['functional', 'delegate']
+
+[tests/functional/direct]
+tests = ['dio_aligned_block', 'dio_async_always', 'dio_async_fio_ioengines',
+    'dio_compression', 'dio_dedup', 'dio_encryption', 'dio_grow_block',
+    'dio_max_recordsize', 'dio_mixed', 'dio_mmap', 'dio_overwrites',
+    'dio_property', 'dio_random', 'dio_read_verify', 'dio_recordsize',
+    'dio_unaligned_block', 'dio_unaligned_filesize']
+tags = ['functional', 'direct']
 
 [tests/functional/exec]
 tests = ['exec_001_pos', 'exec_002_neg']
@@ -735,7 +743,7 @@ pre =
 tags = ['functional', 'inheritance']
 
 [tests/functional/io]
-tests = ['sync', 'psync', 'posixaio', 'mmap']
+tests = ['mmap', 'posixaio', 'psync', 'sync']
 tags = ['functional', 'io']
 
 [tests/functional/inuse]

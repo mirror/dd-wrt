@@ -35,9 +35,7 @@
 #include <sys/time.h>
 #include <sys/atomic.h>
 #include <sys/kstat.h>
-#ifdef HAVE_CPU_HOTPLUG
 #include <linux/cpuhotplug.h>
-#endif
 
 typedef struct taskq_kstats {
 	/* static values, for completeness */
@@ -119,9 +117,7 @@ module_param(spl_taskq_thread_bind, int, 0644);
 MODULE_PARM_DESC(spl_taskq_thread_bind, "Bind taskq thread to CPU by default");
 
 static uint_t spl_taskq_thread_timeout_ms = 5000;
-/* BEGIN CSTYLED */
 module_param(spl_taskq_thread_timeout_ms, uint, 0644);
-/* END CSTYLED */
 MODULE_PARM_DESC(spl_taskq_thread_timeout_ms,
 	"Minimum idle threads exit interval for dynamic taskqs");
 
@@ -135,9 +131,7 @@ MODULE_PARM_DESC(spl_taskq_thread_priority,
 	"Allow non-default priority for taskq threads");
 
 static uint_t spl_taskq_thread_sequential = 4;
-/* BEGIN CSTYLED */
 module_param(spl_taskq_thread_sequential, uint, 0644);
-/* END CSTYLED */
 MODULE_PARM_DESC(spl_taskq_thread_sequential,
 	"Create new taskq threads after N sequential tasks");
 
@@ -156,10 +150,8 @@ EXPORT_SYMBOL(system_delay_taskq);
 static taskq_t *dynamic_taskq;
 static taskq_thread_t *taskq_thread_create(taskq_t *);
 
-#ifdef HAVE_CPU_HOTPLUG
 /* Multi-callback id for cpu hotplugging. */
 static int spl_taskq_cpuhp_state;
-#endif
 
 /* List of all taskqs */
 LIST_HEAD(tq_list);
@@ -351,7 +343,7 @@ task_expire_impl(taskq_ent_t *t)
 }
 
 static void
-task_expire(spl_timer_list_t tl)
+task_expire(struct timer_list *tl)
 {
 	struct timer_list *tmr = (struct timer_list *)tl;
 	taskq_ent_t *t = from_timer(t, tmr, tqent_timer);
@@ -1349,7 +1341,7 @@ taskq_create(const char *name, int threads_arg, pri_t pri,
 		return (NULL);
 
 	tq->tq_hp_support = B_FALSE;
-#ifdef HAVE_CPU_HOTPLUG
+
 	if (flags & TASKQ_THREADS_CPU_PCT) {
 		tq->tq_hp_support = B_TRUE;
 		if (cpuhp_state_add_instance_nocalls(spl_taskq_cpuhp_state,
@@ -1358,7 +1350,6 @@ taskq_create(const char *name, int threads_arg, pri_t pri,
 			return (NULL);
 		}
 	}
-#endif
 
 	spin_lock_init(&tq->tq_lock);
 	INIT_LIST_HEAD(&tq->tq_thread_list);
@@ -1447,12 +1438,11 @@ taskq_destroy(taskq_t *tq)
 	tq->tq_flags &= ~TASKQ_ACTIVE;
 	spin_unlock_irqrestore(&tq->tq_lock, flags);
 
-#ifdef HAVE_CPU_HOTPLUG
 	if (tq->tq_hp_support) {
 		VERIFY0(cpuhp_state_remove_instance_nocalls(
 		    spl_taskq_cpuhp_state, &tq->tq_hp_cb_node));
 	}
-#endif
+
 	/*
 	 * When TASKQ_ACTIVE is clear new tasks may not be added nor may
 	 * new worker threads be spawned for dynamic taskq.
@@ -1709,7 +1699,6 @@ module_param_call(spl_taskq_kick, param_set_taskq_kick, param_get_uint,
 MODULE_PARM_DESC(spl_taskq_kick,
 	"Write nonzero to kick stuck taskqs to spawn more threads");
 
-#ifdef HAVE_CPU_HOTPLUG
 /*
  * This callback will be called exactly once for each core that comes online,
  * for each dynamic taskq. We attempt to expand taskqs that have
@@ -1787,7 +1776,6 @@ out:
 	spin_unlock_irqrestore(&tq->tq_lock, flags);
 	return (0);
 }
-#endif
 
 int
 spl_taskq_init(void)
@@ -1795,10 +1783,8 @@ spl_taskq_init(void)
 	init_rwsem(&tq_list_sem);
 	tsd_create(&taskq_tsd, NULL);
 
-#ifdef HAVE_CPU_HOTPLUG
 	spl_taskq_cpuhp_state = cpuhp_setup_state_multi(CPUHP_AP_ONLINE_DYN,
 	    "fs/spl_taskq:online", spl_taskq_expand, spl_taskq_prepare_down);
-#endif
 
 	system_taskq = taskq_create("spl_system_taskq", MAX(boot_ncpus, 64),
 	    maxclsyspri, boot_ncpus, INT_MAX, TASKQ_PREPOPULATE|TASKQ_DYNAMIC);
@@ -1808,9 +1794,7 @@ spl_taskq_init(void)
 	system_delay_taskq = taskq_create("spl_delay_taskq", MAX(boot_ncpus, 4),
 	    maxclsyspri, boot_ncpus, INT_MAX, TASKQ_PREPOPULATE|TASKQ_DYNAMIC);
 	if (system_delay_taskq == NULL) {
-#ifdef HAVE_CPU_HOTPLUG
 		cpuhp_remove_multi_state(spl_taskq_cpuhp_state);
-#endif
 		taskq_destroy(system_taskq);
 		return (-ENOMEM);
 	}
@@ -1818,9 +1802,7 @@ spl_taskq_init(void)
 	dynamic_taskq = taskq_create("spl_dynamic_taskq", 1,
 	    maxclsyspri, boot_ncpus, INT_MAX, TASKQ_PREPOPULATE);
 	if (dynamic_taskq == NULL) {
-#ifdef HAVE_CPU_HOTPLUG
 		cpuhp_remove_multi_state(spl_taskq_cpuhp_state);
-#endif
 		taskq_destroy(system_taskq);
 		taskq_destroy(system_delay_taskq);
 		return (-ENOMEM);
@@ -1854,8 +1836,6 @@ spl_taskq_fini(void)
 
 	tsd_destroy(&taskq_tsd);
 
-#ifdef HAVE_CPU_HOTPLUG
 	cpuhp_remove_multi_state(spl_taskq_cpuhp_state);
 	spl_taskq_cpuhp_state = 0;
-#endif
 }

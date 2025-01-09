@@ -471,13 +471,15 @@ int
 zpool_get_userprop(zpool_handle_t *zhp, const char *propname, char *buf,
     size_t len, zprop_source_t *srctype)
 {
-	nvlist_t *nv, *nvl;
+	nvlist_t *nv;
 	uint64_t ival;
 	const char *value;
 	zprop_source_t source = ZPROP_SRC_LOCAL;
 
-	nvl = zhp->zpool_props;
-	if (nvlist_lookup_nvlist(nvl, propname, &nv) == 0) {
+	if (zhp->zpool_props == NULL)
+		zpool_get_all_props(zhp);
+
+	if (nvlist_lookup_nvlist(zhp->zpool_props, propname, &nv) == 0) {
 		if (nvlist_lookup_uint64(nv, ZPROP_SOURCE, &ival) == 0)
 			source = ival;
 		verify(nvlist_lookup_string(nv, ZPROP_VALUE, &value) == 0);
@@ -2796,7 +2798,7 @@ zpool_scan(zpool_handle_t *zhp, pool_scan_func_t func, pool_scrub_cmd_t cmd)
 	}
 
 	/*
-	 * With EBUSY, five cases are possible:
+	 * With EBUSY, six cases are possible:
 	 *
 	 * Current state		Requested
 	 * 1. Normal Scrub Running	Normal Scrub or Error Scrub
@@ -5340,7 +5342,8 @@ zpool_get_vdev_prop_value(nvlist_t *nvprop, vdev_prop_t prop, char *prop_name,
 			strval = fnvlist_lookup_string(nv, ZPROP_VALUE);
 		} else {
 			/* user prop not found */
-			return (-1);
+			src = ZPROP_SRC_DEFAULT;
+			strval = "-";
 		}
 		(void) strlcpy(buf, strval, len);
 		if (srctype)
@@ -5648,4 +5651,32 @@ zpool_set_vdev_prop(zpool_handle_t *zhp, const char *vdevname,
 		(void) zpool_standard_error(zhp->zpool_hdl, errno, errbuf);
 
 	return (ret);
+}
+
+/*
+ * Prune older entries from the DDT to reclaim space under the quota
+ */
+int
+zpool_ddt_prune(zpool_handle_t *zhp, zpool_ddt_prune_unit_t unit,
+    uint64_t amount)
+{
+	int error = lzc_ddt_prune(zhp->zpool_name, unit, amount);
+	if (error != 0) {
+		libzfs_handle_t *hdl = zhp->zpool_hdl;
+		char errbuf[ERRBUFLEN];
+
+		(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
+		    "cannot prune dedup table on '%s'"), zhp->zpool_name);
+
+		if (error == EALREADY) {
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "a prune operation is already in progress"));
+			(void) zfs_error(hdl, EZFS_BUSY, errbuf);
+		} else {
+			(void) zpool_standard_error(hdl, errno, errbuf);
+		}
+		return (-1);
+	}
+
+	return (0);
 }
