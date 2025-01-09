@@ -512,7 +512,6 @@ static int enable_dhcprelay(char *ifname)
 	int is_dhd;
 #endif /* __CONFIG_DHDAP__ */
 
-	dprintf("%s\n", ifname);
 
 	/*
 	 * WET interface is meaningful only in bridged environment 

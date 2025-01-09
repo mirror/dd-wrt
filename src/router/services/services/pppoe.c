@@ -306,7 +306,6 @@ void single_pppoe_stop(int pppoe_num)
 
 	sprintf(pppoe_pid, "pppoe_pid%d", pppoe_num);
 	sprintf(pppoe_ifname, "pppoe_ifname%d", pppoe_num);
-	dprintf("start! stop pppoe %d, pid %s \n", pppoe_num, nvram_safe_get(pppoe_pid));
 
 	ret = eval("kill", nvram_safe_get(pppoe_pid));
 	unlink(ppp_unlink[pppoe_num]);
@@ -315,7 +314,6 @@ void single_pppoe_stop(int pppoe_num)
 	nvram_set(ppp_wan_dns[pppoe_num], "");
 	stop_dns_clear_resolv();
 
-	dprintf("done\n");
 	return;
 }
 

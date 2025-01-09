@@ -305,7 +305,6 @@ int ipdown_main(int argc, char **argv)
  * "1")) { nvram_set ("pppoe_pid1", getenv ("PPPD_PID")); nvram_set
  * ("pppoe_ifname1", getenv ("IFNAME")); }
  * 
- * dprintf ("done.( IFNAME = %s DEVICE = %s )\n", getenv ("IFNAME"), getenv
  * ("DEVICE")); return 0; }
  */
 
