@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <shutils.h>
 
-#endif
-
 #define sameaddr(sin, ein) *((unsigned int *)sin) == *((unsigned int *)ein)
 
 void getse(unsigned char *ip, unsigned char *nets, unsigned char *nete, int bitlen)

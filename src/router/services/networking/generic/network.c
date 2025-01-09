@@ -2100,8 +2100,8 @@ void start_lan(void)
 	eval("wl", "-i", wl_face, "down");
 	if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 		perror("Write wireless mac fail : ");
-	else
-		eval("wl", "-i", wl_face, "up");
+
+	eval("wl", "-i", wl_face, "up");
 	config_macs(wl_face);
 #endif
 	if (getSTA()) {
@@ -2263,8 +2263,8 @@ void start_lan(void)
 						eval("wl", "-i", name, "down");
 						if (ioctl(s, SIOCSIFHWADDR, &ifr) == -1)
 							perror("Write wireless mac fail : ");
-						else
-							eval("wl", "-i", name, "up");
+
+						eval("wl", "-i", name, "up");
 						config_macs(name);
 					}
 				}
