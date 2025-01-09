@@ -16,11 +16,6 @@
 
 #define PROC_DEV "/proc/net/dev"
 
-#if 1
-#else
-#define dprintf(fmt, args...)
-#endif
-
 static int mysystem(char *cmd)
 {
 	FILE *fp = popen(cmd, "rb");
@@ -115,8 +110,6 @@ int StartContinueTx(webs_t wp, char *value)
 	char *tx_ant; // barry add 1117
 	FILE *fp;
 
-	dprintf("init, StartContinueTx=[%s]\n", value);
-
 	tx_gmode = websGetVar(wp, "wl_gmode", NULL);
 	tx_channel = websGetVar(wp, "wl_channel", NULL);
 	tx_rate = websGetVar(wp, "wl_rate", NULL);
@@ -134,10 +127,6 @@ int StartContinueTx(webs_t wp, char *value)
 		gmode = atoi(tx_gmode);
 	if (tx_ant)
 		txant = atoi(tx_ant);
-
-	dprintf("gmode=[%s](%d), channel=[%s](%d), rate=[%s](%d), rates=(%f), txant=[%s](%d)\n", tx_gmode ? tx_gmode : "NULL",
-		tx_gmode ? gmode : -1, tx_channel ? tx_channel : "NULL", tx_channel ? channel : -1, tx_rate ? tx_rate : "NULL",
-		tx_rate ? rate : -1, tx_rate ? rates : -1, tx_ant ? tx_ant : "NULL", tx_ant ? txant : -1);
 
 	printf("value=[%d]\n", atoi(value));
 	switch (atoi(value)) {
@@ -209,7 +198,6 @@ int StartContinueTx(webs_t wp, char *value)
 
 		break;
 	case 2:
-		dprintf("\nOnly set ANT!\n");
 		if (txant == 0) {
 			mysystem("wl antdiv 0");
 			mysystem("wl txant 3");
@@ -219,10 +207,8 @@ int StartContinueTx(webs_t wp, char *value)
 		}
 		break;
 	default:
-		dprintf("Illegal StartContinueTx parameter : [%s]\n", value);
 	}
 
-	dprintf("done\n");
 	return ret;
 }
 
@@ -230,8 +216,6 @@ int StopContinueTx(webs_t wp, char *value)
 {
 	int ret = 0;
 	char *type;
-
-	dprintf("init, StopContinueTx=[%s]\n", value);
 
 	type = websGetVar(wp, "StopContinueTx", "");
 	if (!strcmp(type, "0")) {
@@ -251,7 +235,6 @@ int StopContinueTx(webs_t wp, char *value)
 			mysystem("wlconf eth1 up");
 	}
 
-	dprintf("done\n");
 	return ret;
 }
 
@@ -277,8 +260,6 @@ int Check_TSSI(webs_t wp, char *value)
 	char buf3[80];
 	char cck[80], ofdm[80];
 
-	dprintf("init, Check_TSSI=[%s]\n", value);
-
 	wl_atten_radio = websGetVar(wp, "WL_atten_radio", NULL);
 	wl_atten_ctl = websGetVar(wp, "WL_atten_ctl", NULL);
 	// wl_tssi_check = websGetVar(wp, "WL_tssi_check", NULL);
@@ -296,8 +277,6 @@ int Check_TSSI(webs_t wp, char *value)
 	idelay = nvram_geti("wl_delay");
 	// tssi_check=nvram_geti("wl_tssi_check"));
 
-	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n", wl_atten_bb, wl_atten_radio, wl_atten_ctl);
-
 	bzero(buf, sizeof(buf));
 	sprintf(buf, "wl atten %s %s %s", value, wl_atten_radio, wl_atten_ctl);
 	mysystem(buf);
@@ -305,7 +284,6 @@ int Check_TSSI(webs_t wp, char *value)
 	/*
 	 * wait for a few seconds 
 	 */
-	dprintf("Will delay %d seconds\n", idelay);
 	if (idelay != 0)
 		sleep(idelay);
 
@@ -316,16 +294,12 @@ int Check_TSSI(webs_t wp, char *value)
 	if ((fp = fopen("/tmp/get_tssi", "r"))) {
 		fgets(buf, sizeof(buf), fp);
 		strcpy(ori, buf);
-		dprintf("\nGot:\n%s\nlen=%d\n", buf, strlen(buf));
-	} else
-		dprintf("\nFile error!\n");
-
+	}
 	bzero(buf2, sizeof(buf2));
 	strcpy(buf2, strtok(buf, ","));
 	bzero(buf3, sizeof(buf3));
 	strcpy(buf3, strtok(buf2, "CCK"));
 	strcpy(buf3, strtok(NULL, "CCK"));
-	dprintf("CCK:[%s]\n", buf3);
 	strcpy(cck, buf3);
 	icck = atoi(buf3);
 
@@ -335,12 +309,8 @@ int Check_TSSI(webs_t wp, char *value)
 	bzero(buf3, sizeof(buf3));
 	strcpy(buf3, strtok(buf2, "OFDM"));
 	strcpy(buf3, strtok(NULL, "OFDM"));
-	dprintf("OFDM:[%s]\n", buf3);
 	strcpy(ofdm, buf3);
 	iofdm = atoi(buf3);
-
-	dprintf("CCK=[%s](%d),OFDM=[%s](%d)\n", cck, icck, ofdm, iofdm);
-
 	fclose(fp);
 
 	nvram_set("wl_cck", cck);
@@ -359,8 +329,6 @@ int Check_TSSI(webs_t wp, char *value)
 	// nvram_set("wl_tssi_result","0");
 	// }
 
-	dprintf("done\n");
-
 	return 1;
 }
 
@@ -368,17 +336,11 @@ int Get_TSSI(char *value)
 {
 	char cck[80], ofdm[80];
 
-	dprintf("init, Get_TSSI=[%s]\n", value);
-
 	bzero(cck, sizeof(cck));
 	bzero(ofdm, sizeof(ofdm));
 
 	strcpy(cck, nvram_safe_get("wl_cck"));
 	strcpy(ofdm, nvram_safe_get("wl_ofdm"));
-
-	dprintf("\nCCK=[%s],OFDM=[%s]\n", cck, ofdm);
-
-	dprintf("done\n");
 
 	return 1;
 }
@@ -387,11 +349,8 @@ int Enable_TSSI(char *value)
 {
 	int ret;
 
-	dprintf("\ninit, value=[%s]\n", value);
-
 	ret = mysystem("wl txpwr1 -d -o 16.5"); // 2005-03-08
 
-	dprintf("done\n");
 	/*
 	 * int enabled; int atten_bb; int atten_radio; int atten_ctl; char
 	 * buf[80];
@@ -409,8 +368,6 @@ int Enable_TSSI(char *value)
 
 int Change_Ant(char *value)
 {
-	dprintf("init, Change_Ant=[%s]\n", value);
-
 	switch (atoi(value)) {
 	case 0:
 		mysystem("wl antdiv 0");
@@ -426,10 +383,7 @@ int Change_Ant(char *value)
 		mysystem("wl txant");
 		break;
 	default:
-		dprintf("Illegal ChangeANT parameter : [%s]\n", value);
 	}
-
-	dprintf("done\n");
 
 	return 0;
 }
