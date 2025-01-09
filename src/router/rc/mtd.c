@@ -372,8 +372,7 @@ static int write_main(int argc, char *argv[])
 		writeubiformat = 1;
 		mtd = "rootfs";
 		eval("startservice", "finishupgrade", "-f");
-		fprintf(stderr,
-			"set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
+		fprintf(stderr, "set fw env to mtdparts=mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)\n");
 		eval("fw_setenv", "mtdparts", "mtdparts=nand0:0x6100000@0x1000000(fs),0x6100000@0x7a00000(fs_1)");
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -643,7 +642,8 @@ rewrite:;
 		close(mtd_fd);
 		mtd_fd = -1;
 		char cmdline[64];
-		sprintf(cmdline, "ubiformat /dev/mtd%d -y -q -f - --image-size=%d",getMTD(mtd), ROUNDUP(trx.len, mtd_info.erasesize));
+		sprintf(cmdline, "ubiformat /dev/mtd%d -y -q -f - --image-size=%d", getMTD(mtd),
+			ROUNDUP(trx.len, mtd_info.erasesize));
 		p = popen(cmdline, "wb");
 	}
 

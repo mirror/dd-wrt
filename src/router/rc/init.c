@@ -67,7 +67,7 @@ int isregistered_real(void);
 #define stop_service_f(a) eval("stopservice_f", a)
 #define stop_service_force_f(a) eval("stopservice_f", a, "-f")
 #define stop_services() eval("stopservices")
-#define service_shutdown() eval("service","shutdown")
+#define service_shutdown() eval("service", "shutdown")
 #define restart(a) eval("restart", a)
 #define restart_f(a) eval("restart_f", a)
 #define start_single_service() eval("start_single_service")
@@ -178,7 +178,6 @@ pid_t ddrun_shell(int timeout, int nowait)
 	/* 
 	 * Wait for user input 
 	 */
-	// cprintf("Hit enter to continue...");
 	if (waitfor(STDIN_FILENO, timeout) <= 0)
 		return 0;
 
@@ -432,7 +431,7 @@ static void reap(int sig)
 	pid_t pid;
 
 	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0)
-		cprintf("Reaped %d\n", pid);
+		;
 }
 
 void signal_init(void)
@@ -516,9 +515,7 @@ int main(int argc, char **argv)
 	if (console_init())
 		noconsole = 1;
 #endif
-	cprintf("init lcd\n");
 	initlcd();
-	cprintf("first message\n");
 	lcdmessage("System Start");
 
 	signal_init();
@@ -546,7 +543,6 @@ int main(int argc, char **argv)
 	if (console_init())
 		noconsole = 1;
 #endif //HAVE_MICRO
-	cprintf("setup signals\n");
 	/* 
 	 * Setup signal handlers 
 	 */
@@ -560,7 +556,6 @@ int main(int argc, char **argv)
 
 	if (!noconsole)
 		ddrun_shell(1, 0);
-	cprintf("setup nvram\n");
 
 	/* 
 	 * Loop forever 
@@ -570,7 +565,6 @@ int main(int argc, char **argv)
 		case USER: // Restart single service from WEB of tftpd,
 			// by honor
 			lcdmessage("RESTART SERVICES");
-			cprintf("USER1\n");
 			start_single_service();
 			state = IDLE;
 			break;
@@ -609,7 +603,6 @@ int main(int argc, char **argv)
 			 * Fall through 
 			 */
 		case START:
-			cprintf("START\n");
 			setenv("PATH",
 			       "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/bin",
 			       1);
@@ -622,13 +615,11 @@ int main(int argc, char **argv)
 			 * Fall through 
 			 */
 		case TIMER:
-			cprintf("TIMER\n");
 			do_timer();
 			/* 
 			 * Fall through 
 			 */
 		case IDLE:
-			cprintf("IDLE\n");
 			state = IDLE;
 			/* 
 			 * Wait for user input or state change 
@@ -643,7 +634,6 @@ int main(int argc, char **argv)
 			signalled = -1;
 			break;
 		default:
-			cprintf("UNKNOWN\n");
 			return 0;
 		}
 	}

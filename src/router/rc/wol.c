@@ -73,8 +73,6 @@ static int wol_run(void)
 		sleep(interval);
 	}
 
-	cprintf("done\n");
-
 	return ret;
 }
 

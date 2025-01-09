@@ -94,7 +94,6 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 			close(fd);
 		return 0;
 	}
-	cprintf("connected!\n");
 
 	/* 
 	 * Send HTTP request 
@@ -116,9 +115,7 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	/* 
 	 * Check HTTP response 
 	 */
-	cprintf("HTTP request sent, awaiting response...\n");
 	if (fgets(line, sizeof(line), fp)) {
-		cprintf("%s", line);
 		for (s = line; *s && !isspace((int)*s); s++)
 			;
 		for (; isspace((int)*s); s++)
@@ -143,7 +140,6 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	 * Parse headers 
 	 */
 	while (fgets(line, sizeof(line), fp)) {
-		cprintf("%s", line);
 		for (s = line; *s == '\r'; s++)
 			;
 		if (*s == '\n')

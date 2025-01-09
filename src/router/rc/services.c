@@ -273,7 +273,6 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_MDNS
 	start_service_f("mdns");
 #endif
-	cprintf("done\n");
 	return 0;
 }
 
@@ -423,8 +422,6 @@ static int stop_services_main(int argc, char **argv)
 #endif
 
 	stop_running_main(0, NULL);
-
-	cprintf("done\n");
 	return 0;
 }
 
@@ -1334,7 +1331,6 @@ static void handle_wireless(void)
 #ifdef HAVE_MULTICAST
 	restart_f("igmprt");
 #endif
-
 }
 
 static void handle_wireless_2(void)
@@ -1586,7 +1582,6 @@ static int single_service_helper(void)
 		sprintf(message, "restart: %s", service);
 		lcdmessage(message);
 #endif
-		cprintf("Restart service=[%s]\n", service);
 		int servicecount = 0;
 
 		while (services_def[servicecount].servicename != NULL) {

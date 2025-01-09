@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 #define start_service(a) eval("startservice", a);
 #define start_service_force(a) eval("startservice", a, "-f");
 #define start_service_f(a) eval("startservice_f", a);

@@ -81,7 +81,6 @@ static int do_ap_watchdog(void)
 	if (s.st_size <= 0 && time(NULL) - last > interval && nvram_matchi("apwatchdog_enable", 1) &&
 	    nvram_invmatch("wl_net_mode", "disabled")) {
 		time(&last);
-		cprintf("resetting ap radio\n");
 		wlconf_down(get_wdev());
 
 		val = nvram_geti("wl0_channel") + 1;
@@ -226,7 +225,6 @@ static void do_aqos_check(void)
 	int cip;
 
 	if (arp == NULL) {
-		cprintf("/proc/net/arp missing, check kernel config\n");
 		return;
 	}
 	defaulup = nvram_geti("default_uplevel");

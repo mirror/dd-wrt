@@ -389,11 +389,11 @@ static int listen_main(int argc, char *argv[])
 	pid_t pid;
 
 	if (argc < 2) {
-		cprintf("Usage: %s <interface>\n", argv[0]);
+		fprintf(stdout, "Usage: %s <interface>\n", argv[0]);
 		return 0;
 	}
 
-	cprintf("Starting listen on %s\n", interface);
+	dd_loginfo("listen", "Starting listen on %s\n", interface);
 
 	pid = fork();
 	switch (pid) {

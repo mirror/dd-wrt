@@ -477,7 +477,7 @@ static int mtd_main(int argc, char **argv)
 		} else {
 			imagefile = argv[1];
 			if (!imagefile || !(imagefp = fopen(argv[1], "rb"))) {
-				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile?imagefile:"");
+				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile ? imagefile : "");
 				exit(1);
 			}
 		}
