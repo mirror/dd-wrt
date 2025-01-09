@@ -2042,7 +2042,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking networking/wifi ne
 
 %.o : %.c
 	@echo "[CC] $@"
-	$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 all: services_main
 ifeq ($(CONFIG_RT2880),y)

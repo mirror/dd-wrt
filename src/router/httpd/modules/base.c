@@ -3179,7 +3179,6 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 				// strlen() depends on NULL termination
 				size_t slen = strlen(new_name);
 				if (slen > size) {
-						__FUNCTION__); // avoid
 					// overflow
 					new_name[size - 1] = '\0';
 					return 1;

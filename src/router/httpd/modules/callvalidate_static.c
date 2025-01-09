@@ -443,16 +443,6 @@ static struct callmap gozila_map[] = {
 #endif
 };
 
-
-	do {                                                                      \
-		FILE *fp = fopen("/dev/console", "w");                            \
-		if (fp) {                                                         \
-			fprintf(fp, "%s (%d):%s ", __FILE__, __LINE__, __func__); \
-			fprintf(fp, fmt, ##args);                                 \
-			fclose(fp);                                               \
-		}                                                                 \
-	} while (0)
-#endif
 size_t websWrite(webs_t wp, char *fmt, ...);
 size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
 char *websGetVar(webs_t wp, char *var, char *d)
