@@ -17,18 +17,16 @@
 #if defined(HAVE_USABLE_CLMUL) && ((defined(__x86_64__) && defined(__SSSE3__) \
 			&& defined(__SSE4_1__) && defined(__PCLMUL__)) \
 		|| (defined(__e2k__) && __iset__ >= 6))
-#	define X86_CLMUL_NO_TABLE 1
-#endif
+#	define NO_CRC32_TABLE
 
-#if defined(HAVE_ARM64_CRC32) \
+#elif defined(HAVE_ARM64_CRC32) \
 		&& !defined(WORDS_BIGENDIAN) \
 		&& defined(__ARM_FEATURE_CRC32)
-#	define ARM64_CRC32_NO_TABLE 1
+#	define NO_CRC32_TABLE
 #endif
 
 
-#if !defined(HAVE_ENCODERS) && (defined(X86_CLMUL_NO_TABLE) \
-		|| defined(ARM64_CRC32_NO_TABLE_))
+#if !defined(HAVE_ENCODERS) && defined(NO_CRC32_TABLE)
 // No table needed. Use a typedef to avoid an empty translation unit.
 typedef void lzma_crc32_dummy;
 
@@ -36,9 +34,9 @@ typedef void lzma_crc32_dummy;
 // Having the declaration here silences clang -Wmissing-variable-declarations.
 extern const uint32_t lzma_crc32_table[8][256];
 
-#       ifdef WORDS_BIGENDIAN
-#       	include "crc32_table_be.h"
-#       else
-#       	include "crc32_table_le.h"
-#       endif
+#	ifdef WORDS_BIGENDIAN
+#		include "crc32_table_be.h"
+#	else
+#		include "crc32_table_le.h"
+#	endif
 #endif

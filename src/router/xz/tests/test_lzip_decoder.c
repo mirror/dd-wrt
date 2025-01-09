@@ -42,11 +42,11 @@ basic_lzip_decode(const char *src, const uint32_t expected_crc)
 	lzma_stream strm = LZMA_STREAM_INIT;
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT, 0), LZMA_OK);
 
-	uint8_t *output_buffer = tuktest_malloc(DECODE_CHUNK_SIZE);
+	uint8_t output_buffer[DECODE_CHUNK_SIZE];
 
 	strm.next_in = data;
 	strm.next_out = output_buffer;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_out = sizeof(output_buffer);
 
 	// Feed 1 byte at a time to the decoder to look for any bugs
 	// when switching between decoding sequences
@@ -58,12 +58,8 @@ basic_lzip_decode(const char *src, const uint32_t expected_crc)
 			checksum = lzma_crc32(output_buffer,
 				(size_t)(strm.next_out - output_buffer),
 				checksum);
-			// No need to free output_buffer because it will
-			// automatically be freed at the end of the test by
-			// tuktest.
-			output_buffer = tuktest_malloc(DECODE_CHUNK_SIZE);
 			strm.next_out = output_buffer;
-			strm.avail_out = DECODE_CHUNK_SIZE;
+			strm.avail_out = sizeof(output_buffer);
 		}
 	}
 
@@ -125,12 +121,12 @@ trailing_helper(const char *src, const uint32_t expected_data_checksum,
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED), LZMA_OK);
 
-	uint8_t *output_buffer = tuktest_malloc(DECODE_CHUNK_SIZE);
+	uint8_t output_buffer[DECODE_CHUNK_SIZE];
 
 	strm.next_in = data;
-	strm.next_out = output_buffer;
 	strm.avail_in = file_size;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	lzma_ret ret = LZMA_OK;
 	while (ret == LZMA_OK) {
@@ -139,12 +135,8 @@ trailing_helper(const char *src, const uint32_t expected_data_checksum,
 			checksum = lzma_crc32(output_buffer,
 				(size_t)(strm.next_out - output_buffer),
 				checksum);
-			// No need to free output_buffer because it will
-			// automatically be freed at the end of the test by
-			// tuktest.
-			output_buffer = tuktest_malloc(DECODE_CHUNK_SIZE);
 			strm.next_out = output_buffer;
-			strm.avail_out = DECODE_CHUNK_SIZE;
+			strm.avail_out = sizeof(output_buffer);
 		}
 	}
 
@@ -181,20 +173,18 @@ decode_expect_error(const char *src, lzma_ret expected_error)
 
 	strm.avail_in = file_size;
 	strm.next_in = data;
-	strm.avail_out = DECODE_CHUNK_SIZE;
-	strm.next_out = output_buffer;
 
 	lzma_ret ret = LZMA_OK;
 
-	while (ret == LZMA_OK) {
+	do {
 		// Discard output since we are only looking for errors
 		strm.next_out = output_buffer;
-		strm.avail_out = DECODE_CHUNK_SIZE;
+		strm.avail_out = sizeof(output_buffer);
 		if (strm.avail_in == 0)
 			ret = lzma_code(&strm, LZMA_FINISH);
 		else
 			ret = lzma_code(&strm, LZMA_RUN);
-	}
+	} while (ret == LZMA_OK);
 
 	assert_lzma_ret(ret, expected_error);
 	lzma_end(&strm);
@@ -237,21 +227,20 @@ test_concatenated(void)
 	// First test a file with one v0 member and one v1 member
 	// The first member should contain "Hello\n" and
 	// the second member should contain "World!\n"
-
 	lzma_stream strm = LZMA_STREAM_INIT;
 	size_t file_size;
 	uint8_t *v0_v1 = tuktest_file_from_srcdir("files/good-2-v0-v1.lz",
-		&file_size);
+			&file_size);
 
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED), LZMA_OK);
 
 	uint8_t output_buffer[DECODE_CHUNK_SIZE];
 
-	strm.avail_in = file_size;
 	strm.next_in = v0_v1;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_STREAM_END);
 
@@ -262,15 +251,15 @@ test_concatenated(void)
 
 	// The second file contains one v1 member and one v2 member
 	uint8_t *v1_v0 = tuktest_file_from_srcdir("files/good-2-v1-v0.lz",
-		&file_size);
+			&file_size);
 
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED), LZMA_OK);
 
-	strm.avail_in = file_size;
 	strm.next_in = v1_v0;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_STREAM_END);
 
@@ -280,15 +269,15 @@ test_concatenated(void)
 
 	// The third file contains 2 v1 members
 	uint8_t *v1_v1 = tuktest_file_from_srcdir("files/good-2-v1-v1.lz",
-		&file_size);
+			&file_size);
 
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED), LZMA_OK);
 
-	strm.avail_in = file_size;
 	strm.next_in = v1_v1;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_STREAM_END);
 
@@ -314,10 +303,10 @@ test_crc(void)
 
 	uint8_t output_buffer[DECODE_CHUNK_SIZE];
 
-	strm.avail_in = file_size;
 	strm.next_in = data;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_DATA_ERROR);
 
@@ -325,10 +314,10 @@ test_crc(void)
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED | LZMA_IGNORE_CHECK), LZMA_OK);
 
-	strm.avail_in = file_size;
 	strm.next_in = data;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_STREAM_END);
 	assert_uint_eq(strm.total_in, file_size);
@@ -337,10 +326,10 @@ test_crc(void)
 	assert_lzma_ret(lzma_lzip_decoder(&strm, MEMLIMIT,
 			LZMA_CONCATENATED | LZMA_TELL_ANY_CHECK), LZMA_OK);
 
-	strm.avail_in = file_size;
 	strm.next_in = data;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_GET_CHECK);
 	assert_uint_eq(lzma_get_check(&strm), LZMA_CHECK_CRC32);
@@ -366,7 +355,7 @@ test_invalid_magic_bytes(void)
 		strm.next_in = lzip_id_string;
 		strm.avail_in = sizeof(lzip_id_string);
 		strm.next_out = output_buffer;
-		strm.avail_out = DECODE_CHUNK_SIZE;
+		strm.avail_out = sizeof(output_buffer);
 
 		assert_lzma_ret(lzma_code(&strm, LZMA_RUN),
 				LZMA_FORMAT_ERROR);
@@ -392,10 +381,10 @@ test_invalid_version(void)
 static void
 test_invalid_dictionary_size(void)
 {
-	// First file has too small dictionary size field
+	// The first file has a too small dictionary size field.
 	decode_expect_error("files/bad-1-v1-dict-1.lz", LZMA_DATA_ERROR);
 
-	// Second file has too large dictionary size field
+	// The second file has a too large dictionary size field.
 	decode_expect_error("files/bad-1-v1-dict-2.lz", LZMA_DATA_ERROR);
 }
 
@@ -425,7 +414,7 @@ static void
 test_invalid_memlimit(void)
 {
 	// A very low memlimit should prevent decoding.
-	// Should be able to update the memlimit after failing
+	// It should be possible to update the memlimit after the error.
 	size_t file_size;
 	uint8_t *data = tuktest_file_from_srcdir("files/good-1-v1.lz",
 			&file_size);
@@ -439,12 +428,12 @@ test_invalid_memlimit(void)
 	strm.next_in = data;
 	strm.avail_in = file_size;
 	strm.next_out = output_buffer;
-	strm.avail_out = DECODE_CHUNK_SIZE;
+	strm.avail_out = sizeof(output_buffer);
 
 	assert_lzma_ret(lzma_code(&strm, LZMA_FINISH), LZMA_MEMLIMIT_ERROR);
 
-	// Up the memlimit so decoding can continue.
-	// First only increase by a small amount and expect an error
+	// Up the memlimit so that decoding can continue.
+	// First only increase by a small amount and expect an error.
 	assert_lzma_ret(lzma_memlimit_set(&strm, 100), LZMA_MEMLIMIT_ERROR);
 	assert_lzma_ret(lzma_memlimit_set(&strm, MEMLIMIT), LZMA_OK);
 
@@ -483,5 +472,4 @@ main(int argc, char **argv)
 	tuktest_run(test_invalid_memlimit);
 	return tuktest_end();
 #endif
-
 }

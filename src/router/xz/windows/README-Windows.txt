@@ -8,7 +8,7 @@ Introduction
     This package includes command line tools (xz.exe and a few
     others) and the liblzma compression library from XZ Utils.
     You can find the latest version and full source code from
-    <https://xz.tukaani.org/xz-utils/>.
+    <https://tukaani.org/xz/>.
 
     The parts of the XZ Utils source code, that are relevant to this
     binary package, are under the BSD Zero Clause License (0BSD).
@@ -68,9 +68,7 @@ Package contents
                       liblzma.def is in this directory too.
 
         doc/manuals   The manuals of the command line tools in
-                      plain text (TXT) and PDF formats.
-
-        doc/api       liblzma API documentation in HTML format.
+                      plain text (TXT) format.
 
         doc/examples  Example programs for basic liblzma usage.
 

@@ -17,7 +17,7 @@
 AC_PREREQ([2.69])
 
 AC_INIT([XZ Utils], m4_esyscmd([/bin/sh build-aux/version.sh]),
-	[xz@tukaani.org], [xz], [https://xz.tukaani.org/xz-utils/])
+	[xz@tukaani.org], [xz], [https://tukaani.org/xz/])
 AC_CONFIG_SRCDIR([src/liblzma/common/common.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -516,9 +516,17 @@ AM_CONDITIONAL([COND_SCRIPTS], [test x$enable_scripts != xno])
 
 AC_ARG_ENABLE([doc], [AS_HELP_STRING([--disable-doc],
 		[do not install documentation files to docdir
-		(man pages will still be installed)])],
+		(man pages are still installed and,
+		if --enable-doxygen is used,
+		liblzma API documentation is installed too)])],
 	[], [enable_doc=yes])
 AM_CONDITIONAL([COND_DOC], [test x$enable_doc != xno])
+
+AC_ARG_ENABLE([doxygen], [AS_HELP_STRING([--enable-doxygen],
+		[generate HTML version of the liblzma API documentation
+		using Doxygen and install the result to docdir])],
+	[], [enable_doxygen=no])
+AM_CONDITIONAL([COND_DOXYGEN], [test x$enable_doxygen != xno])
 
 
 ##############
@@ -624,7 +632,7 @@ AS_CASE([$enable_threads],
 		echo
 		echo "POSIX threading support:"
 		AX_PTHREAD([:]) dnl We don't need the HAVE_PTHREAD macro.
-		LIBS="$LIBS $PTHREAD_LIBS"
+		LIBS="$PTHREAD_LIBS $LIBS"
 		AM_CFLAGS="$AM_CFLAGS $PTHREAD_CFLAGS"
 
 		dnl NOTE: PTHREAD_CC is ignored. It would be useful on AIX,
@@ -709,61 +717,80 @@ fi
 # --with-pic and --without-pic though. As long as neither --with-pic nor
 # --without-pic is used then we can use #ifdef PIC to detect if the file is
 # being built for a shared library.
-if test "x$enable_symbol_versions" = xno ; then
+AS_IF([test "x$enable_symbol_versions" = xno], [
 	enable_symbol_versions=no
 	AC_MSG_RESULT([no])
-elif test "x$enable_shared" = xno ; then
+], [test "x$enable_shared" = xno], [
 	enable_symbol_versions=no
 	AC_MSG_RESULT([no (not building a shared library)])
-else
-	case "$host_cpu-$host_os" in
-		microblaze*)
-			# GCC 12 on MicroBlaze doesn't support __symver__
-			# attribute. It's simplest and safest to use the
-			# generic version on that platform since then only
-			# the linker script is needed. The RHEL/CentOS 7
-			# compatibility symbols don't matter on MicroBlaze.
-			enable_symbol_versions=generic
-			;;
-		*-linux*)
-			case "$pic_mode-$enable_static" in
-				default-*)
-					# Use symvers if PIC is defined.
-					have_symbol_versions_linux=2
-					;;
-				*-no)
-					# Not building static library.
-					# Use symvers unconditionally.
-					have_symbol_versions_linux=1
-					;;
-				*)
-					AC_MSG_RESULT([])
-					AC_MSG_ERROR([
+], [
+	# "yes" means that symbol version are to be used but we need to
+	# autodetect which variant to use.
+	if test "x$enable_symbol_versions" = xyes ; then
+		case "$host_cpu-$host_os" in
+			microblaze*)
+				# GCC 12 on MicroBlaze doesn't support
+				# __symver__ attribute. It's simplest and
+				# safest to use the generic version on that
+				# platform since then only the linker script
+				# is needed. The RHEL/CentOS 7 compatibility
+				# symbols don't matter on MicroBlaze.
+				enable_symbol_versions=generic
+				;;
+			*-linux*)
+				# NVIDIA HPC Compiler doesn't support symbol
+				# versioning but the linker script can still
+				# be used.
+				AC_EGREP_CPP([use_generic_symbol_versioning],
+					[#ifdef __NVCOMPILER
+					use_generic_symbol_versioning
+					#endif],
+					[enable_symbol_versions=generic],
+					[enable_symbol_versions=linux])
+				;;
+			*)
+				enable_symbol_versions=generic
+				;;
+		esac
+	fi
+
+	if test "x$enable_symbol_versions" = xlinux ; then
+		case "$pic_mode-$enable_static" in
+			default-*)
+				# Use symvers if PIC is defined.
+				have_symbol_versions_linux=2
+				;;
+			*-no)
+				# Not building static library.
+				# Use symvers unconditionally.
+				have_symbol_versions_linux=1
+				;;
+			*)
+				AC_MSG_RESULT([])
+				AC_MSG_ERROR([
     On GNU/Linux, building both shared and static library at the same time
     is not supported if --with-pic or --without-pic is used.
     Use either --disable-shared or --disable-static to build one type
     of library at a time. If both types are needed, build one at a time,
     possibly picking only src/liblzma/.libs/liblzma.a from the static build.])
-					;;
-			esac
-			enable_symbol_versions=linux
-			AC_DEFINE_UNQUOTED([HAVE_SYMBOL_VERSIONS_LINUX],
-				[$have_symbol_versions_linux],
-				[Define to 1 to if GNU/Linux-specific details
-				are unconditionally wanted for symbol
-				versioning. Define to 2 to if these are wanted
-				only if also PIC is defined (allows building
-				both shared and static liblzma at the same
-				time with Libtool if neither --with-pic nor
-				--without-pic is used). This define must be
-				used together with liblzma_linux.map.])
-			;;
-		*)
-			enable_symbol_versions=generic
-			;;
-	esac
+				;;
+		esac
+		AC_DEFINE_UNQUOTED([HAVE_SYMBOL_VERSIONS_LINUX],
+			[$have_symbol_versions_linux],
+			[Define to 1 to if GNU/Linux-specific details
+			are unconditionally wanted for symbol
+			versioning. Define to 2 to if these are wanted
+			only if also PIC is defined (allows building
+			both shared and static liblzma at the same
+			time with Libtool if neither --with-pic nor
+			--without-pic is used). This define must be
+			used together with liblzma_linux.map.])
+	elif test "x$enable_symbol_versions" != xgeneric ; then
+		AC_MSG_RESULT([])
+		AC_MSG_ERROR([unknown symbol versioning variant '$enable_symbol_versions'])
+	fi
 	AC_MSG_RESULT([yes ($enable_symbol_versions)])
-fi
+])
 
 AM_CONDITIONAL([COND_SYMVERS_LINUX],
 	[test "x$enable_symbol_versions" = xlinux])
@@ -791,12 +818,6 @@ AM_GNU_GETTEXT([external])
 
 echo
 echo "System headers and functions:"
-
-# There is currently no workarounds in this package if some of
-# these headers are missing.
-AC_CHECK_HEADERS([fcntl.h limits.h sys/time.h],
-	[],
-	[AC_MSG_ERROR([Required header file(s) are missing.])])
 
 # immintrin.h allows the use of the intrinsic functions if they are available.
 # cpuid.h may be used for detecting x86 processor features at runtime.
@@ -872,85 +893,6 @@ if test "x$enable_small$enable_threads$have_func_attribute_constructor" \
     --enable-threads=win95 and --enable-small cannot be used
     at the same time with a compiler that doesn't support
     __attribute__((__constructor__))])
-fi
-
-# __attribute__((__ifunc__())) can be used to choose between different
-# implementations of the same function at runtime. This is slightly more
-# efficient than using __attribute__((__constructor__)) and setting
-# a function pointer.
-AC_ARG_ENABLE([ifunc], [AS_HELP_STRING([--enable-ifunc],
-		[Use __attribute__((__ifunc__())). Enabled by default on
-		GNU/Linux (glibc) and FreeBSD.])],
-	[], [enable_ifunc=auto])
-
-# When enable_ifunc is 'auto', allow the use of __attribute__((__ifunc__()))
-# if compiler support is detected and we are building for GNU/Linux (glibc)
-# or FreeBSD. uClibc and musl don't support ifunc in their dynamic linkers
-# but some compilers still accept the attribute when compiling for these
-# C libraries, which results in broken binaries. That's why we need to
-# check which libc is being used.
-if test "x$enable_ifunc" = xauto ; then
-	OLD_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS -Werror"
-	AC_MSG_CHECKING([if __attribute__((__ifunc__())) can be used])
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-		/*
-		 * Force a compilation error when not using glibc on Linux
-		 * or if we are not using FreeBSD. uClibc will define
-		 * __GLIBC__ but does not support ifunc, so we must have
-		 * an extra check to disable with uClibc.
-		 */
-		#if defined(__linux__)
-		#	include <features.h>
-		#	if !defined(__GLIBC__) || defined(__UCLIBC__)
-				compile error
-		#	endif
-		#elif !defined(__FreeBSD__)
-			compile error
-		#endif
-
-		static void func(void) { return; }
-
-		/*
-		 * The attribute __no_profile_instrument_function__ is
-		 * needed with GCC to prevent improper instrumentation in
-		 * the ifunc resolver.
-		 */
-		__attribute__((__no_profile_instrument_function__))
-		static void (*resolve_func (void)) (void) { return func; }
-		void func_ifunc (void)
-				__attribute__((__ifunc__("resolve_func")));
-		/*
-		 * 'clang -Wall' incorrectly warns that resolve_func is
-		 * unused (-Wunused-function). Correct assembly output is
-		 * still produced. This problem exists at least in Clang
-		 * versions 4 to 17. The following silences the bogus warning:
-		 */
-		void make_clang_quiet(void);
-		void make_clang_quiet(void) { resolve_func()(); }
-	]])], [
-		enable_ifunc=yes
-	], [
-		enable_ifunc=no
-	])
-
-	AC_MSG_RESULT([$enable_ifunc])
-
-	CFLAGS="$OLD_CFLAGS"
-fi
-
-if test "x$enable_ifunc" = xyes ; then
-	AC_DEFINE([HAVE_FUNC_ATTRIBUTE_IFUNC], [1],
-			[Define to 1 if __attribute__((__ifunc__()))
-			is supported for functions.])
-
-	# ifunc explicitly does not work with -fsanitize=address.
-	# If configured, it will result in a liblzma build that will fail
-	# when liblzma is loaded at runtime (when the ifunc resolver
-	# executes).
-	AS_CASE([$CFLAGS], [*-fsanitize=*], [AC_MSG_ERROR([
-    CFLAGS contains '-fsanitize=' which is incompatible with ifunc.
-    Use --disable-ifunc when using '-fsanitize'.])])
 fi
 
 
@@ -1068,11 +1010,15 @@ AC_CHECK_DECL([_mm_movemask_epi8],
 #
 # If everything above is supported, runtime detection will be used to keep the
 # binaries working on systems that don't support the required extensions.
+#
+# NOTE: Use a check that links and not merely compiles to ensure that
+# missing intrinsics don't get accepted with compilers that allow
+# implicit function declarations.
 AC_MSG_CHECKING([if _mm_clmulepi64_si128 is usable])
 AS_IF([test "x$enable_clmul_crc" = xno], [
 	AC_MSG_RESULT([no, --disable-clmul-crc was used])
 ], [
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <immintrin.h>
 
 // CLMUL works on older E2K instruction set but it is slow due to emulation.
@@ -1086,10 +1032,11 @@ AS_IF([test "x$enable_clmul_crc" = xno], [
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(__EDG__)
 __attribute__((__target__("ssse3,sse4.1,pclmul")))
 #endif
-__m128i my_clmul(__m128i a)
+int main(void)
 {
-	const __m128i b = _mm_set_epi64x(1, 2);
-	return _mm_clmulepi64_si128(a, b, 0);
+	__m128i a = _mm_set_epi64x(1, 2);
+	a = _mm_clmulepi64_si128(a, a, 0);
+	return 0;
 }
 	]])], [
 		AC_DEFINE([HAVE_USABLE_CLMUL], [1],
@@ -1111,24 +1058,16 @@ AC_MSG_CHECKING([if ARM64 CRC32 instruction is usable])
 AS_IF([test "x$enable_arm64_crc32" = xno], [
 	AC_MSG_RESULT([no, --disable-arm64-crc32 was used])
 ], [
-	# Set -Werror here because some versions of Clang (14 and older)
-	# do not report the unsupported __attribute__((__target__("+crc")))
-	# or __crc32d() as an error, only as a warning. This does not need
-	# to be done with CMake because tests will attempt to link and the
-	# error will be reported then.
-	OLD_CFLAGS="$CFLAGS"
-	CFLAGS="$CFLAGS -Werror"
-
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	AC_LINK_IFELSE([AC_LANG_SOURCE([[
 #include <arm_acle.h>
 #include <stdint.h>
 
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(__EDG__)
 __attribute__((__target__("+crc")))
 #endif
-uint32_t my_crc(uint32_t a, uint64_t b)
+int main(void)
 {
-	return __crc32d(a, b);
+	return __crc32d(1, 2) != 0;
 }
 	]])], [
 		AC_DEFINE([HAVE_ARM64_CRC32], [1],
@@ -1139,19 +1078,22 @@ uint32_t my_crc(uint32_t a, uint64_t b)
 		enable_arm64_crc32=no
 	])
 	AC_MSG_RESULT([$enable_arm64_crc32])
-
-	CFLAGS="$OLD_CFLAGS"
 ])
 
 # Check for ARM64 CRC32 instruction runtime detection.
-# getauxval() is supported on Linux, elf_aux_info() on FreeBSD, and
-# sysctlbyname("hw.optional.armv8_crc32", ...) is supported on Darwin
-# (macOS, iOS, etc.). Note that sysctlbyname() is supported on FreeBSD,
-# NetBSD, and possibly others too but the string is specific to Apple OSes.
-# The C code is responsible for checking defined(__APPLE__) before using
-# sysctlbyname("hw.optional.armv8_crc32", ...).
+#
+#   - getauxval() is supported on Linux.
+#
+#   - elf_aux_info() is supported on FreeBSD and OpenBSD >= 7.6.
+#
+#   - sysctlbyname("hw.optional.armv8_crc32", ...) is supported on Darwin
+#     (macOS, iOS, etc.). Note that sysctlbyname() is supported on FreeBSD,
+#     NetBSD, and possibly others too but the string is specific to Apple
+#     OSes. The C code is responsible for checking defined(__APPLE__)
+#     before using sysctlbyname("hw.optional.armv8_crc32", ...).
+#
 AS_IF([test "x$enable_arm64_crc32" = xyes], [
-	AC_CHECK_FUNCS([getauxval elf_aux_info sysctlbyname])
+	AC_CHECK_FUNCS([getauxval elf_aux_info sysctlbyname], [break])
 ])
 
 
@@ -1184,18 +1126,18 @@ AS_CASE([$enable_sandbox],
 		# A compile check is done here because some systems have
 		# linux/landlock.h, but do not have the syscalls defined
 		# in order to actually use Linux Landlock.
-		AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+		AC_LINK_IFELSE([AC_LANG_SOURCE([[
 			#include <linux/landlock.h>
 			#include <sys/syscall.h>
 			#include <sys/prctl.h>
 
-			void my_sandbox(void)
+			int main(void)
 			{
 				(void)prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 				(void)SYS_landlock_create_ruleset;
 				(void)SYS_landlock_restrict_self;
 				(void)LANDLOCK_CREATE_RULESET_VERSION;
-				return;
+				return 0;
 			}
 		]])], [
 			enable_sandbox=found

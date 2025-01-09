@@ -14,7 +14,7 @@ subdir = po
 top_builddir = ..
 
 # These options get passed to xgettext.
-XGETTEXT_OPTIONS = --keyword=_ --keyword=N_ --no-wrap --package-name='XZ Utils'
+XGETTEXT_OPTIONS = --keyword=_ --keyword=N_ --add-location=file --no-wrap
 
 # This is the copyright holder that gets inserted into the header of the
 # $(DOMAIN).pot file.  Set this to the copyright holder of the surrounding
@@ -63,7 +63,7 @@ USE_MSGCTXT = no
 # Useful options are in particular:
 #   --previous            to keep previous msgids of translated messages,
 #   --quiet               to reduce the verbosity.
-MSGMERGE_OPTIONS = --no-wrap
+MSGMERGE_OPTIONS = --add-location=file --no-wrap
 
 # These options get passed to msginit.
 # If you want to disable line wrapping when writing PO files, add
@@ -84,4 +84,8 @@ PO_DEPENDS_ON_POT = yes
 # regenerate PO files on "make dist".  Possible values are "yes" and
 # "no".  Set this to no if the POT file and PO files are maintained
 # externally.
-DIST_DEPENDS_ON_UPDATE_PO = yes
+#
+# NOTE: The the custom "mydist" target in ../Makefile.am updates xz.pot.
+# An updated xz.pot will cause the .po files to be updated too but
+# only when updating would change more than the POT-Creation-Date line.
+DIST_DEPENDS_ON_UPDATE_PO = no

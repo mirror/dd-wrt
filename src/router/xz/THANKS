@@ -33,6 +33,7 @@ has been important. :-) In alphabetical order:
   - Tomer Chachamu
   - Vitaly Chikunov
   - Antoine Cœur
+  - Felix Collin
   - Gabi Davar
   - İhsan Doğan
   - Chris Donawa
@@ -46,6 +47,7 @@ has been important. :-) In alphabetical order:
   - Vincent Fazio
   - Michael Felt
   - Michael Fox
+  - Andres Freund
   - Mike Frysinger
   - Daniel Richard G.
   - Tomasz Gajc
@@ -68,14 +70,17 @@ has been important. :-) In alphabetical order:
   - Hans Jansen
   - Jouk Jansen
   - Jun I Jin
+  - Christoph Junghans
   - Kiyoshi Kanazawa
   - Joona Kannisto
   - Per Øyvind Karlsen
+  - Firas Khalil Khana
   - Iouri Kharon
   - Thomas Klausner
   - Richard Koch
   - Anton Kochkov
   - Ville Koskinen
+  - Sergey Kosukhin
   - Marcin Kowalczyk
   - Jan Kratochvil
   - Christian Kujau
@@ -90,6 +95,7 @@ has been important. :-) In alphabetical order:
   - Cary Lewis
   - Wim Lewis
   - Xin Li
+  - Yifeng Li
   - Eric Lindblad
   - Lorenzo De Liso
   - H.J. Lu
@@ -105,9 +111,11 @@ has been important. :-) In alphabetical order:
   - Nathan Moinvaziri
   - Étienne Mollier
   - Conley Moorhous
+  - Andrew Murray
   - Rafał Mużyło
   - Adrien Nader
   - Evan Nemerson
+  - Alexander Neumann
   - Hongbo Ni
   - Jonathan Nieder
   - Andre Noll
@@ -116,11 +124,13 @@ has been important. :-) In alphabetical order:
   - Daniel Packard
   - Filip Palian
   - Peter Pallinger
+  - Kai Pastor
   - Rui Paulo
   - Igor Pavlov
   - Diego Elio Pettenò
   - Elbert Pol
   - Mikko Pouru
+  - Frank Prochnow
   - Rich Prohaska
   - Trần Ngọc Quân
   - Pavel Raiskup
@@ -136,9 +146,12 @@ has been important. :-) In alphabetical order:
   - Stephen Sachs
   - Jukka Salmi
   - Agostino Sarubbo
+  - Vijay Sarvepalli
   - Alexandre Sauvé
   - Benno Schulenberg
   - Andreas Schwab
+  - Eli Schwartz
+  - Peter Seiderer
   - Bhargava Shastry
   - Dan Shechter
   - Stuart Shelton
@@ -147,15 +160,18 @@ has been important. :-) In alphabetical order:
   - Brad Smith
   - Bruce Stark
   - Pippijn van Steenhoven
+  - Tobias Stoeckmann
   - Martin Storsjö
   - Jonathan Stott
   - Dan Stromberg
-  - Jia Tan
+  - Douglas Thor
   - Vincent Torri
   - Alexey Tourbin
   - Paul Townsend
   - Mohammed Adnène Trojette
+  - Orange Tsai
   - Taiki Tsunekawa
+  - Mathieu Vachon
   - Maksym Vatsyk
   - Loganaden Velvindron
   - Patrick J. Volkerding
@@ -174,6 +190,10 @@ has been important. :-) In alphabetical order:
   - Chien Wong
   - Ryan Young
   - Andreas Zieringer
+
+Companies:
+  - Google
+  - Sandfly Security
 
 Also thanks to all the people who have participated in the Tukaani project.
 

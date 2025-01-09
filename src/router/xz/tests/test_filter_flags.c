@@ -50,6 +50,7 @@ static lzma_filter bcj_filters_encoders[] = {
 #ifdef HAVE_ENCODER_RISCV
 	{ LZMA_FILTER_RISCV, NULL },
 #endif
+	{ LZMA_VLI_UNKNOWN, NULL }
 };
 
 // HAVE_ENCODERS ifdef not terminated here because decoders are
@@ -82,6 +83,7 @@ static lzma_filter bcj_filters_decoders[] = {
 #ifdef HAVE_DECODER_RISCV
 	{ LZMA_FILTER_RISCV, NULL },
 #endif
+	{ LZMA_VLI_UNKNOWN, NULL }
 };
 #endif
 #endif
@@ -99,6 +101,7 @@ test_lzma_filter_flags_size(void)
 	// block header.
 	uint32_t size = 0;
 	if (lzma_filter_encoder_is_supported(LZMA_FILTER_LZMA1)) {
+		// LZMA1 isn't supported in .xz so we get LZMA_PROG_ERROR.
 		assert_lzma_ret(lzma_filter_flags_size(&size,
 				&lzma1_filter), LZMA_PROG_ERROR);
 	}
@@ -109,12 +112,8 @@ test_lzma_filter_flags_size(void)
 		assert_true(size != 0 && size < LZMA_BLOCK_HEADER_SIZE_MAX);
 	}
 
-	// Do not use macro ARRAY_SIZE() in the for loop condition directly.
-	// If the BCJ filters are not configured and built, then ARRAY_SIZE()
-	// will return 0 and cause a warning because the for loop will never
-	// execute since any unsigned number cannot be < 0 (-Werror=type-limits).
-	const uint32_t bcj_array_size = ARRAY_SIZE(bcj_filters_encoders);
-	for (uint32_t i = 0; i < bcj_array_size; i++) {
+	for (size_t i = 0; bcj_filters_encoders[i].id != LZMA_VLI_UNKNOWN;
+			++i) {
 		assert_lzma_ret(lzma_filter_flags_size(&size,
 				&bcj_filters_encoders[i]), LZMA_OK);
 		assert_true(size != 0 && size < LZMA_BLOCK_HEADER_SIZE_MAX);
@@ -158,7 +157,7 @@ verify_filter_flags_encode(lzma_filter *filter, bool should_encode)
 	// First calculate the size of Filter Flags to know how much
 	// memory to allocate to hold the encoded Filter Flags
 	assert_lzma_ret(lzma_filter_flags_size(&size, filter), LZMA_OK);
-	uint8_t *encoded_out = tuktest_malloc(size * sizeof(uint8_t));
+	uint8_t *encoded_out = tuktest_malloc(size);
 	size_t out_pos = 0;
 	if (!should_encode) {
 		assert_false(lzma_filter_flags_encode(filter, encoded_out,
@@ -225,8 +224,8 @@ test_lzma_filter_flags_encode(void)
 		.start_offset = 257
 	};
 
-	const uint32_t bcj_array_size = ARRAY_SIZE(bcj_filters_encoders);
-	for (uint32_t i = 0; i < bcj_array_size; i++) {
+	for (size_t i = 0; bcj_filters_encoders[i].id != LZMA_VLI_UNKNOWN;
+			++i) {
 		// NULL options should pass for bcj filters
 		verify_filter_flags_encode(&bcj_filters_encoders[i], true);
 		lzma_filter bcj_with_options = {
@@ -267,7 +266,6 @@ test_lzma_filter_flags_encode(void)
 	size_t out_pos = 0;
 	size_t out_size = LZMA_BLOCK_HEADER_SIZE_MAX;
 	uint8_t out[LZMA_BLOCK_HEADER_SIZE_MAX];
-
 
 	// Filter ID outside of valid range
 	assert_lzma_ret(lzma_filter_flags_encode(&bad_filter, out, &out_pos,
@@ -333,7 +331,8 @@ test_lzma_filter_flags_encode(void)
 // because it is agnostic to the type of options used in the call
 #if defined(HAVE_ENCODERS) && defined(HAVE_DECODERS)
 static void
-verify_filter_flags_decode(lzma_filter *filter_in, lzma_filter *filter_out)
+verify_filter_flags_decode(const lzma_filter *filter_in,
+		lzma_filter *filter_out)
 {
 	uint32_t total_size = 0;
 
@@ -388,8 +387,8 @@ test_lzma_filter_flags_decode(void)
 		free(decoded);
 	}
 
-	const uint32_t bcj_array_size = ARRAY_SIZE(bcj_filters_decoders);
-	for (uint32_t i = 0; i < bcj_array_size; i++) {
+	for (size_t i = 0; bcj_filters_decoders[i].id != LZMA_VLI_UNKNOWN;
+			++i) {
 		if (lzma_filter_encoder_is_supported(
 				bcj_filters_decoders[i].id)) {
 			lzma_filter bcj_decoded = {
@@ -403,7 +402,11 @@ test_lzma_filter_flags_decode(void)
 					&bcj_decoded);
 			assert_true(bcj_decoded.options == NULL);
 
-			// Next test with offset
+			// Next test with start_offset.
+			//
+			// NOTE: The encoder and decoder don't verify if
+			// the start_offset is valid for the filter. Only
+			// the encoder or decoder initialization does.
 			lzma_options_bcj options = {
 				.start_offset = 257
 			};
