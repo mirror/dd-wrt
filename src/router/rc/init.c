@@ -572,13 +572,6 @@ int main(int argc, char **argv)
 			lcdmessage("RESTART SERVICES");
 			cprintf("USER1\n");
 			start_single_service();
-#ifdef HAVE_CHILLI
-			start_service_force_f("chilli");
-#endif
-#ifdef HAVE_WIFIDOG
-			start_service_force_f("wifidog");
-#endif
-
 			state = IDLE;
 			break;
 
