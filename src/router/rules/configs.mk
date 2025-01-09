@@ -498,6 +498,7 @@ ifneq ($(KERNELVERSION),4.4)
 ifneq ($(KERNELVERSION),4.9)
 ifneq ($(KERNELVERSION),4.14)
 obj-$(CONFIG_ZFS) += util-linux zlib libtirpc libudev curl zfs
+CONFIG_ZFS_SUPPORT=y
 endif
 endif
 endif
