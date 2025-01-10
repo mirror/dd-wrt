@@ -92,8 +92,7 @@ static void check_brcm_cpu_type(void)
 
 	fcpu = fopen("/proc/cpuinfo", "r");
 
-	if (fcpu == NULL)
-	else {
+	if (fcpu) {
 		char buf[500];
 
 		fgets(buf, 500, fcpu);
