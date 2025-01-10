@@ -361,6 +361,7 @@ struct mtd_info {
 	struct device dev;
 	int usecount;
 	struct mtd_debug_info dbg;
+	loff_t fixup_offset;
 };
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,
