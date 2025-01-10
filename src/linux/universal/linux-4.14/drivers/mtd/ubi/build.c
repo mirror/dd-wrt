@@ -1328,15 +1328,25 @@ static void __init ubi_auto_attach(void)
 
 	if (!IS_ERR(mtd)) {
 		size_t len;
+		loff_t i;
 		char magic[4];
-
+		struct mtd_info *copy;
 		/* check for a valid ubi magic */
-		err = mtd_read(mtd, 0, 4, &len, (void *) magic);
-		if (!err && len == 4 && strncmp(magic, "UBI#", 4)) {
+		for (i = 0;i < mtd->size;i += mtd->erasesize) {
+			err = mtd_read(mtd, i, 4, &len, (void *) magic);
+			if (!err && len == 4 && !strncmp(magic, "UBI#", 4)) 
+			    break;
+		}
+		if (i == mtd->size) {
 			pr_err("no valid UBI magic found inside mtd%d", mtd->index);
 			put_mtd_device(mtd);
 			return;
 		}
+		pr_notice("found UBI with offset %ld\n", i);
+		copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
+		memcpy(copy, mtd, sizeof(*mtd));
+		mtd = copy;
+		mtd->fixup_offset = i;
 
 		/* auto-add only media types where UBI makes sense */
 		if (mtd->type == MTD_NANDFLASH ||
