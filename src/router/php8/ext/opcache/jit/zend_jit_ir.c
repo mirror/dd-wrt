@@ -1306,6 +1306,13 @@ static bool zend_jit_spilling_may_cause_conflict(zend_jit_ctx *jit, int var, ir_
 		 && (jit->ssa->cfg.blocks[jit->ssa->vars[jit->ssa->ops[jit->ssa->vars[var].definition].op1_use].definition_phi->block].flags & ZEND_BB_LOOP_HEADER)) {
 			/* Avoid moving spill store out of loop */
 			return 1;
+		} else if (jit->ssa->vars[var].definition >= 0
+		 && jit->ssa->ops[jit->ssa->vars[var].definition].op1_def == var
+		 && jit->ssa->ops[jit->ssa->vars[var].definition].op1_use >= 0
+		 && jit->ssa->ops[jit->ssa->vars[var].definition].op2_use >= 0
+		 && jit->ra[jit->ssa->ops[jit->ssa->vars[var].definition].op2_use].ref == val) {
+			/* Avoid spill conflict between of ASSIGN.op1_def and ASSIGN.op1_use */
+			return 1;
 		}
 		return 0;
 	}
@@ -3232,6 +3239,20 @@ static void zend_jit_setup(void)
 		tsrm_tls_offset = tlsdesc->offset;
 		/* Index is offset by 1 on FreeBSD (https://github.com/freebsd/freebsd-src/blob/22ca6db50f4e6bd75a141f57cf953d8de6531a06/lib/libc/gen/tls.c#L88) */
 		tsrm_tls_index = (tlsdesc->index + 1) * 8;
+	}
+# elif defined(__MUSL__)
+	if (tsrm_ls_cache_tcb_offset == 0) {
+		size_t **where;
+
+		__asm__(
+			"adrp %0, :tlsdesc:_tsrm_ls_cache\n"
+			"add %0, %0, :tlsdesc_lo12:_tsrm_ls_cache\n"
+			: "=r" (where));
+		/* See https://github.com/ARM-software/abi-aa/blob/2a70c42d62e9c3eb5887fa50b71257f20daca6f9/aaelf64/aaelf64.rst */
+		size_t *tlsdesc = where[1];
+
+		tsrm_tls_offset = tlsdesc[1];
+		tsrm_tls_index = tlsdesc[0] * 8;
 	}
 # else
 	ZEND_ASSERT(tsrm_ls_cache_tcb_offset != 0);
@@ -7183,9 +7204,9 @@ static int zend_jit_cmp(zend_jit_ctx   *jit,
 
 				while (n) {
 					n--;
-					ir_IF_TRUE(end_inputs->refs[n]);
+					jit_IF_TRUE_FALSE_ex(jit, end_inputs->refs[n], label);
 					ir_END_list(true_inputs);
-					ir_IF_FALSE(end_inputs->refs[n]);
+					jit_IF_TRUE_FALSE_ex(jit, end_inputs->refs[n], label2);
 					ir_END_list(false_inputs);
 				}
 				ir_MERGE_list(true_inputs);
@@ -11509,6 +11530,32 @@ static int zend_jit_rope(zend_jit_ctx *jit, const zend_op *opline, uint32_t op2_
 	return 1;
 }
 
+static int zend_jit_zval_copy_deref_reg(zend_jit_ctx *jit, zend_jit_addr res_addr, uint32_t res_info, zend_jit_addr val_addr, ir_ref type, ir_ref *values)
+{
+	ir_ref if_type, val;
+
+	if (res_info == MAY_BE_LONG) {
+		if_type = ir_IF(ir_EQ(type, ir_CONST_U32(IS_LONG)));
+		ir_IF_TRUE(if_type);
+		val = jit_ZVAL_ADDR(jit, val_addr);
+		ir_END_PHI_list(*values, val);
+		ir_IF_FALSE(if_type);
+		val = ir_ADD_OFFSET(jit_Z_PTR(jit, val_addr), offsetof(zend_reference, val));
+		ir_END_PHI_list(*values, val);
+	} else if (res_info == MAY_BE_DOUBLE) {
+		if_type = ir_IF(ir_EQ(type, ir_CONST_U32(IS_DOUBLE)));
+		ir_IF_TRUE(if_type);
+		val = jit_ZVAL_ADDR(jit, val_addr);
+		ir_END_PHI_list(*values, val);
+		ir_IF_FALSE(if_type);
+		val = ir_ADD_OFFSET(jit_Z_PTR(jit, val_addr), offsetof(zend_reference, val));
+		ir_END_PHI_list(*values, val);
+	} else {
+		ZEND_UNREACHABLE();
+	}
+	return 1;
+}
+
 static int zend_jit_zval_copy_deref(zend_jit_ctx *jit, zend_jit_addr res_addr, zend_jit_addr val_addr, ir_ref type)
 {
 	ir_ref if_refcounted, if_reference, if_refcounted2, ptr, val2, ptr2, type2;
@@ -14239,9 +14286,16 @@ static int zend_jit_fetch_obj(zend_jit_ctx         *jit,
 		}
 		ir_END_list(end_inputs);
 	} else {
-		if (((res_info & MAY_BE_GUARD) && JIT_G(current_frame) && prop_info)
-		 || Z_MODE(res_addr) == IS_REG) {
+		if ((res_info & MAY_BE_GUARD) && JIT_G(current_frame) && prop_info) {
 			ir_END_PHI_list(end_values, jit_ZVAL_ADDR(jit, prop_addr));
+		} else if ((res_info & MAY_BE_GUARD) && Z_MODE(res_addr) == IS_REG) {
+			ir_END_PHI_list(end_values, jit_ZVAL_ADDR(jit, prop_addr));
+		} else if (Z_MODE(res_addr) == IS_REG) {
+			prop_type_ref = jit_Z_TYPE_INFO(jit, prop_addr);
+
+			if (!zend_jit_zval_copy_deref_reg(jit, res_addr, res_info & ~MAY_BE_GUARD, prop_addr, prop_type_ref, &end_values)) {
+				return 0;
+			}
 		} else {
 			prop_type_ref = jit_Z_TYPE_INFO(jit, prop_addr);
 
@@ -17327,8 +17381,15 @@ static void jit_frameless_icall2(zend_jit_ctx *jit, const zend_op *opline, uint3
 
 	jit_FREE_OP(jit, opline->op1_type, opline->op1, op1_info, NULL);
 	/* Set OP1 to UNDEF in case FREE_OP2() throws. */
-	if ((opline->op1_type & (IS_VAR|IS_TMP_VAR)) != 0 && (opline->op2_type & (IS_VAR|IS_TMP_VAR)) != 0) {
+	if ((opline->op1_type & (IS_VAR|IS_TMP_VAR)) != 0
+	 && (opline->op2_type & (IS_VAR|IS_TMP_VAR)) != 0
+	 && (op2_info & MAY_BE_RC1)
+	 && (op2_info & (MAY_BE_OBJECT|MAY_BE_RESOURCE|MAY_BE_ARRAY_OF_OBJECT|MAY_BE_ARRAY_OF_RESOURCE|MAY_BE_ARRAY_OF_ARRAY))) {
 		jit_set_Z_TYPE_INFO(jit, op1_addr, IS_UNDEF);
+		if (JIT_G(current_frame)) {
+			SET_STACK_TYPE(JIT_G(current_frame)->stack,
+				EX_VAR_TO_NUM(opline->op1.var), IS_UNKNOWN, 1);
+		}
 	}
 	jit_FREE_OP(jit, opline->op2_type, opline->op2, op2_info, NULL);
 	zend_jit_check_exception(jit);
@@ -17401,18 +17462,34 @@ static void jit_frameless_icall3(zend_jit_ctx *jit, const zend_op *opline, uint3
 
 	jit_FREE_OP(jit, opline->op1_type, opline->op1, op1_info, NULL);
 	/* Set OP1 to UNDEF in case FREE_OP2() throws. */
+	bool op1_undef = false;
 	if ((opline->op1_type & (IS_VAR|IS_TMP_VAR))
-	 && ((opline->op2_type & (IS_VAR|IS_TMP_VAR))
-	  || (op_data_type & (IS_VAR|IS_TMP_VAR)))) {
+	 && (((opline->op2_type & (IS_VAR|IS_TMP_VAR))
+	   && (op2_info & MAY_BE_RC1)
+	   && (op2_info & (MAY_BE_OBJECT|MAY_BE_RESOURCE|MAY_BE_ARRAY_OF_OBJECT|MAY_BE_ARRAY_OF_RESOURCE|MAY_BE_ARRAY_OF_ARRAY)))
+	  || ((op_data_type & (IS_VAR|IS_TMP_VAR))
+	   && (op1_data_info & MAY_BE_RC1)
+	   && (op1_data_info & (MAY_BE_OBJECT|MAY_BE_RESOURCE|MAY_BE_ARRAY_OF_OBJECT|MAY_BE_ARRAY_OF_RESOURCE|MAY_BE_ARRAY_OF_ARRAY))))) {
+	    op1_undef = true;
 		jit_set_Z_TYPE_INFO(jit, op1_addr, IS_UNDEF);
+		if (JIT_G(current_frame)) {
+			SET_STACK_TYPE(JIT_G(current_frame)->stack,
+				EX_VAR_TO_NUM(opline->op1.var), IS_UNKNOWN, 1);
+		}
 	}
 	jit_FREE_OP(jit, opline->op2_type, opline->op2, op2_info, NULL);
-	/* If OP1 is a TMP|VAR, we don't need to set OP2 to UNDEF on free because
+	/* If OP1 is set to UNDEF, we don't need to set OP2 to UNDEF on free because
 	 * zend_fetch_debug_backtrace aborts when it encounters the first UNDEF TMP|VAR. */
-	if (!(opline->op1_type & (IS_VAR|IS_TMP_VAR))
+	if (!op1_undef
 	 && (opline->op2_type & (IS_VAR|IS_TMP_VAR)) != 0
-	 && (op_data_type & (IS_VAR|IS_TMP_VAR)) != 0) {
+	 && (op_data_type & (IS_VAR|IS_TMP_VAR)) != 0
+	 && (op1_data_info & MAY_BE_RC1)
+	 && (op1_data_info & (MAY_BE_OBJECT|MAY_BE_RESOURCE|MAY_BE_ARRAY_OF_OBJECT|MAY_BE_ARRAY_OF_RESOURCE|MAY_BE_ARRAY_OF_ARRAY))) {
 		jit_set_Z_TYPE_INFO(jit, op2_addr, IS_UNDEF);
+		if (JIT_G(current_frame)) {
+			SET_STACK_TYPE(JIT_G(current_frame)->stack,
+				EX_VAR_TO_NUM(opline->op2.var), IS_UNKNOWN, 1);
+		}
 	}
 	jit_FREE_OP(jit, (opline+1)->op1_type, (opline+1)->op1, op1_data_info, NULL);
 	zend_jit_check_exception(jit);

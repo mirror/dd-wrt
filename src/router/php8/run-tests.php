@@ -26,7 +26,7 @@
 /* Let there be no top-level code beyond this point:
  * Only functions and classes, thanks!
  *
- * Minimum required PHP version: 7.4.0
+ * Minimum required PHP version: 8.0.0
  */
 
 function show_usage(): void
@@ -601,7 +601,7 @@ function main(): void
                     $show_progress = false;
                     break;
                 case '--version':
-                    echo '$Id: 5587c6c0aeb1736f98f43af5aeb1f06067f4e9df $' . "\n";
+                    echo '$Id: 8d4c8340e0d41ea08fff4d5481679d6af3b0c7f9 $' . "\n";
                     exit(1);
 
                 default:

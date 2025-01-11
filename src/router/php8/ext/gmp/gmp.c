@@ -32,6 +32,10 @@
 #include "ext/random/php_random.h"
 #include "ext/random/php_random_csprng.h"
 
+#ifndef mpz_fits_si_p
+# define mpz_fits_si_p mpz_fits_slong_p
+#endif
+
 #define GMP_ROUND_ZERO      0
 #define GMP_ROUND_PLUSINF   1
 #define GMP_ROUND_MINUSINF  2
@@ -293,7 +297,7 @@ static zend_result gmp_cast_object(zend_object *readobj, zval *writeobj, int typ
 		return SUCCESS;
 	case _IS_NUMBER:
 		gmpnum = GET_GMP_OBJECT_FROM_OBJ(readobj)->num;
-		if (mpz_fits_slong_p(gmpnum)) {
+		if (mpz_fits_si_p(gmpnum)) {
 			ZVAL_LONG(writeobj, mpz_get_si(gmpnum));
 		} else {
 			ZVAL_DOUBLE(writeobj, mpz_get_d(gmpnum));
@@ -1360,26 +1364,13 @@ ZEND_FUNCTION(gmp_pow)
 		RETURN_THROWS();
 	}
 
-    double powmax = log((double)ZEND_LONG_MAX);
-
 	if (Z_TYPE_P(base_arg) == IS_LONG && Z_LVAL_P(base_arg) >= 0) {
 		INIT_GMP_RETVAL(gmpnum_result);
-		if ((log(Z_LVAL_P(base_arg)) * exp) > powmax) {
-			zend_value_error("base and exponent overflow");
-			RETURN_THROWS();
-		}
 		mpz_ui_pow_ui(gmpnum_result, Z_LVAL_P(base_arg), exp);
 	} else {
 		mpz_ptr gmpnum_base;
-		zend_ulong gmpnum;
 		FETCH_GMP_ZVAL(gmpnum_base, base_arg, temp_base, 1);
 		INIT_GMP_RETVAL(gmpnum_result);
-		gmpnum = mpz_get_ui(gmpnum_base);
-		if ((log(gmpnum) * exp) > powmax) {
-			FREE_GMP_TEMP(temp_base);
-			zend_value_error("base and exponent overflow");
-			RETURN_THROWS();
-		}
 		mpz_pow_ui(gmpnum_result, gmpnum_base, exp);
 		FREE_GMP_TEMP(temp_base);
 	}

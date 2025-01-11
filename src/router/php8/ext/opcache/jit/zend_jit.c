@@ -69,6 +69,8 @@ zend_jit_globals jit_globals;
 #define JIT_STUB_PREFIX "JIT$$"
 #define TRACE_PREFIX    "TRACE-"
 
+bool zend_jit_startup_ok = false;
+
 zend_ulong zend_jit_profile_counter = 0;
 int zend_jit_profile_counter_rid = -1;
 
@@ -723,6 +725,38 @@ ZEND_EXT_API void zend_jit_status(zval *ret)
 		add_assoc_long(&stats, "buffer_free", 0);
 	}
 	add_assoc_zval(ret, "jit", &stats);
+}
+
+static bool zend_jit_inc_call_level(uint8_t opcode)
+{
+	switch (opcode) {
+		case ZEND_INIT_FCALL:
+		case ZEND_INIT_FCALL_BY_NAME:
+		case ZEND_INIT_NS_FCALL_BY_NAME:
+		case ZEND_INIT_METHOD_CALL:
+		case ZEND_INIT_DYNAMIC_CALL:
+		case ZEND_INIT_STATIC_METHOD_CALL:
+		case ZEND_INIT_PARENT_PROPERTY_HOOK_CALL:
+		case ZEND_INIT_USER_CALL:
+		case ZEND_NEW:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool zend_jit_dec_call_level(uint8_t opcode)
+{
+	switch (opcode) {
+		case ZEND_DO_FCALL:
+		case ZEND_DO_ICALL:
+		case ZEND_DO_UCALL:
+		case ZEND_DO_FCALL_BY_NAME:
+		case ZEND_CALLABLE_CONVERT:
+			return true;
+		default:
+			return false;
+	}
 }
 
 static zend_string *zend_jit_func_name(const zend_op_array *op_array)
@@ -1461,17 +1495,8 @@ static int zend_jit(const zend_op_array *op_array, zend_ssa *ssa, const zend_op 
 		for (i = ssa->cfg.blocks[b].start; i <= end; i++) {
 			zend_ssa_op *ssa_op = ssa->ops ? &ssa->ops[i] : NULL;
 			opline = op_array->opcodes + i;
-			switch (opline->opcode) {
-				case ZEND_INIT_FCALL:
-				case ZEND_INIT_FCALL_BY_NAME:
-				case ZEND_INIT_NS_FCALL_BY_NAME:
-				case ZEND_INIT_METHOD_CALL:
-				case ZEND_INIT_DYNAMIC_CALL:
-				case ZEND_INIT_STATIC_METHOD_CALL:
-				case ZEND_INIT_PARENT_PROPERTY_HOOK_CALL:
-				case ZEND_INIT_USER_CALL:
-				case ZEND_NEW:
-					call_level++;
+			if (zend_jit_inc_call_level(opline->opcode)) {
+				call_level++;
 			}
 
 			if (JIT_G(opt_level) >= ZEND_JIT_LEVEL_INLINE) {
@@ -2574,7 +2599,19 @@ static int zend_jit(const zend_op_array *op_array, zend_ssa *ssa, const zend_op 
 					}
 					/* THROW and EXIT may be used in the middle of BB */
 					/* don't generate code for the rest of BB */
-					i = end;
+
+					/* Skip current opline for call_level computation
+					 * Don't include last opline because end of loop already checks call level of last opline */
+					i++;
+					for (; i < end; i++) {
+						opline = op_array->opcodes + i;
+						if (zend_jit_inc_call_level(opline->opcode)) {
+							call_level++;
+						} else if (zend_jit_dec_call_level(opline->opcode)) {
+							call_level--;
+						}
+					}
+					opline = op_array->opcodes + i;
 					break;
 				/* stackless execution */
 				case ZEND_INCLUDE_OR_EVAL:
@@ -2686,13 +2723,8 @@ static int zend_jit(const zend_op_array *op_array, zend_ssa *ssa, const zend_op 
 					}
 			}
 done:
-			switch (opline->opcode) {
-				case ZEND_DO_FCALL:
-				case ZEND_DO_ICALL:
-				case ZEND_DO_UCALL:
-				case ZEND_DO_FCALL_BY_NAME:
-				case ZEND_CALLABLE_CONVERT:
-					call_level--;
+			if (zend_jit_dec_call_level(opline->opcode)) {
+				call_level--;
 			}
 		}
 		zend_jit_bb_end(&ctx, b);
@@ -3634,6 +3666,13 @@ static void zend_jit_reset_counters(void)
 
 void zend_jit_activate(void)
 {
+#ifdef ZTS
+	if (!zend_jit_startup_ok) {
+		JIT_G(enabled) = 0;
+		JIT_G(on) = 0;
+		return;
+	}
+#endif
 	zend_jit_profile_counter = 0;
 	if (JIT_G(on)) {
 		if (JIT_G(trigger) == ZEND_JIT_ON_HOT_COUNTERS) {
