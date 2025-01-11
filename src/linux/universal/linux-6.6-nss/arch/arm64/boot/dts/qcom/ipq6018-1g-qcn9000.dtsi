@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "ipq6018.dtsi"
+
+&reserved_memory {
+		qcn9000_pcie0: qcn9000_pcie0@50200000 {
+			no-map;
+			reg = <0x0 0x50200000 0x0 0x03500000>;
+		};
+
+		mhi_region0: dma_pool0@53700000 {
+			compatible = "shared-dma-pool";
+			no-map;
+			reg = <0x0 0x53700000 0x0 0x00900000>;
+		};
+};
