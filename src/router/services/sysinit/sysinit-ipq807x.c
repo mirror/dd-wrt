@@ -1106,7 +1106,7 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
-		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX7500) {
+		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MR7500) {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
