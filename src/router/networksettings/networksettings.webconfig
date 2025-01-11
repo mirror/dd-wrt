@@ -4,7 +4,7 @@
 	<% show_congestion(); %>
 	<div class="setting">
 		<div class="label"><% tran("management.net_ipcontrkmax"); %></div>
-		<input class="num" size="5" maxlength="5" name="ip_conntrack_max" onblur="valid_range(this,256,4294967295,management.net_conn)" value="<% nvg("ip_conntrack_max"); %>" />&nbsp;
+		<input class="num" size="7" maxlength="7" name="ip_conntrack_max" onblur="valid_range(this,256,1048576,management.net_conn)" value="<% nvg("ip_conntrack_max"); %>" />&nbsp;
 		<span class="default"><script type="text/javascript">
 		//<![CDATA[
 		document.write("(" + share.deflt + ": <% nvram_default_get("ip_conntrack_max"); %>, " + share.range + ": 256 - 4294967295)");
