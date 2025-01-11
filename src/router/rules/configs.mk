@@ -604,17 +604,17 @@ configs-checkout:
 configs-update:
 #	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
 	svn update $(LINUXDIR)
-	if [ -d "$(LINUXDIR)/../linux-3.2" ]; svn update $(LINUXDIR)/../linux-3.2; fi
-	if [ -d "$(LINUXDIR)/../linux-3.5" ]; svn update $(LINUXDIR)/../linux-3.5; fi
-	if [ -d "$(LINUXDIR)/../linux-3.10" ]; svn update $(LINUXDIR)/../linux-3.10; fi
-	if [ -d "$(LINUXDIR)/../linux-3.18" ]; svn update $(LINUXDIR)/../linux-3.18; fi
-	if [ -d "$(LINUXDIR)/../linux-4.4" ]; svn update $(LINUXDIR)/../linux-4.4; fi
-	if [ -d "$(LINUXDIR)/../linux-4.9" ]; svn update $(LINUXDIR)/../linux-4.9; fi
-	if [ -d "$(LINUXDIR)/../linux-4.14" ]; svn update $(LINUXDIR)/../linux-4.14; fi
-	if [ -d "$(LINUXDIR)/../linux-6.1" ]; svn update $(LINUXDIR)/../linux-6.1; fi
-	if [ -d "$(LINUXDIR)/../linux-6.1-nss" ]; svn update $(LINUXDIR)/../linux-6.1-nss; fi
-	if [ -d "$(LINUXDIR)/../linux-6.6" ]; svn update $(LINUXDIR)/../linux-6.6; fi
-	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; svn update $(LINUXDIR)/../linux-6.6; fi
+	if [ -d "$(LINUXDIR)/../linux-3.2" ]; then svn update $(LINUXDIR)/../linux-3.2; fi
+	if [ -d "$(LINUXDIR)/../linux-3.5" ]; then svn update $(LINUXDIR)/../linux-3.5; fi
+	if [ -d "$(LINUXDIR)/../linux-3.10" ]; then svn update $(LINUXDIR)/../linux-3.10; fi
+	if [ -d "$(LINUXDIR)/../linux-3.18" ]; then svn update $(LINUXDIR)/../linux-3.18; fi
+	if [ -d "$(LINUXDIR)/../linux-4.4" ]; then svn update $(LINUXDIR)/../linux-4.4; fi
+	if [ -d "$(LINUXDIR)/../linux-4.9" ]; then svn update $(LINUXDIR)/../linux-4.9; fi
+	if [ -d "$(LINUXDIR)/../linux-4.14" ]; then svn update $(LINUXDIR)/../linux-4.14; fi
+	if [ -d "$(LINUXDIR)/../linux-6.1" ]; then svn update $(LINUXDIR)/../linux-6.1; fi
+	if [ -d "$(LINUXDIR)/../linux-6.1-nss" ]; then svn update $(LINUXDIR)/../linux-6.1-nss; fi
+	if [ -d "$(LINUXDIR)/../linux-6.6" ]; then svn update $(LINUXDIR)/../linux-6.6; fi
+	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; then svn update $(LINUXDIR)/../linux-6.6; fi
 
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
