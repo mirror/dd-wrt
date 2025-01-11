@@ -31,7 +31,7 @@ OBJMOD3  = showgeneric.o drawbar.o showlinux.o  showsys.o showprocs.o
 OBJMOD4  = atopsar.o  netatopif.o netatopbpfif.o gpucom.o  json.o utsnames.o
 ALLMODS  = $(OBJMOD0) $(OBJMOD1) $(OBJMOD2) $(OBJMOD3) $(OBJMOD4)
 
-VERS     = $(shell ./atop -V 2>/dev/null| sed -e 's/^[^ ]* //' -e 's/ .*//')
+VERS     = 2.11.0
 
 all: 		atop atopsar atopacctd atopconvert atopcat atophide
 
@@ -130,18 +130,18 @@ genericinstall:	atop atopacctd atopconvert atopcat atophide
 		cp atop   		$(DESTDIR)$(BINPATH)/atop
 		chmod 0711 		$(DESTDIR)$(BINPATH)/atop
 		ln -sf atop             $(DESTDIR)$(BINPATH)/atopsar
-		cp atopacctd  		$(DESTDIR)$(SBINPATH)/atopacctd
-		chmod 0700 		$(DESTDIR)$(SBINPATH)/atopacctd
-		cp atopgpud  		$(DESTDIR)$(SBINPATH)/atopgpud
-		chmod 0700 		$(DESTDIR)$(SBINPATH)/atopgpud
-		cp atop   		$(DESTDIR)$(BINPATH)/atop-$(VERS)
-		ln -sf atop-$(VERS)     $(DESTDIR)$(BINPATH)/atopsar-$(VERS)
-		cp atopconvert 		$(DESTDIR)$(BINPATH)/atopconvert
-		chmod 0711 		$(DESTDIR)$(BINPATH)/atopconvert
-		cp atopcat 		$(DESTDIR)$(BINPATH)/atopcat
-		chmod 0711 		$(DESTDIR)$(BINPATH)/atopcat
-		cp atophide 		$(DESTDIR)$(BINPATH)/atophide
-		chmod 0711 		$(DESTDIR)$(BINPATH)/atophide
+#		cp atopacctd  		$(DESTDIR)$(SBINPATH)/atopacctd
+#		chmod 0700 		$(DESTDIR)$(SBINPATH)/atopacctd
+#		cp atopgpud  		$(DESTDIR)$(SBINPATH)/atopgpud
+#		chmod 0700 		$(DESTDIR)$(SBINPATH)/atopgpud
+#		cp atop   		$(DESTDIR)$(BINPATH)/atop-$(VERS)
+#		ln -sf atop-$(VERS)     $(DESTDIR)$(BINPATH)/atopsar-$(VERS)
+#		cp atopconvert 		$(DESTDIR)$(BINPATH)/atopconvert
+#		chmod 0711 		$(DESTDIR)$(BINPATH)/atopconvert
+#		cp atopcat 		$(DESTDIR)$(BINPATH)/atopcat
+#		chmod 0711 		$(DESTDIR)$(BINPATH)/atopcat
+#		cp atophide 		$(DESTDIR)$(BINPATH)/atophide
+#		chmod 0711 		$(DESTDIR)$(BINPATH)/atophide
 
 ##########################################################################
 
