@@ -360,6 +360,8 @@ struct mtd_info {
 #ifdef CONFIG_BCM47XX
 	spinlock_t *mlock;
 #endif
+	loff_t fixup_offset;
+
 };
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,

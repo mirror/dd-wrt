@@ -957,6 +957,7 @@ EXPORT_SYMBOL_GPL(__put_mtd_device);
  */
 int mtd_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
+	instr->addr += mtd->fixup_offset;
 	if (instr->addr >= mtd->size || instr->len > mtd->size - instr->addr)
 		return -EINVAL;
 	if (!(mtd->flags & MTD_WRITEABLE))
@@ -980,6 +981,7 @@ int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 {
 	*retlen = 0;
 	*virt = NULL;
+	from += mtd->fixup_offset;
 	if (phys)
 		*phys = 0;
 	if (!mtd->_point)
@@ -995,6 +997,8 @@ EXPORT_SYMBOL_GPL(mtd_point);
 /* We probably shouldn't allow XIP if the unpoint isn't a NULL */
 int mtd_unpoint(struct mtd_info *mtd, loff_t from, size_t len)
 {
+	from += mtd->fixup_offset;
+
 	if (!mtd->_point)
 		return -EOPNOTSUPP;
 	if (from < 0 || from >= mtd->size || len > mtd->size - from)
@@ -1026,6 +1030,7 @@ int mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 {
 	int ret_code;
 	*retlen = 0;
+	from += mtd->fixup_offset;
 	if (from < 0 || from >= mtd->size || len > mtd->size - from)
 		return -EINVAL;
 	if (!len)
@@ -1050,6 +1055,7 @@ int mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 	      const u_char *buf)
 {
 	*retlen = 0;
+	to += mtd->fixup_offset;
 	if (to < 0 || to >= mtd->size || len > mtd->size - to)
 		return -EINVAL;
 	if (!mtd->_write || !(mtd->flags & MTD_WRITEABLE))
@@ -1071,6 +1077,7 @@ EXPORT_SYMBOL_GPL(mtd_write);
 int mtd_panic_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 		    const u_char *buf)
 {
+	to += mtd->fixup_offset;
 	*retlen = 0;
 	if (!mtd->_panic_write)
 		return -EOPNOTSUPP;
@@ -1087,6 +1094,8 @@ EXPORT_SYMBOL_GPL(mtd_panic_write);
 int mtd_read_oob(struct mtd_info *mtd, loff_t from, struct mtd_oob_ops *ops)
 {
 	int ret_code;
+	from += mtd->fixup_offset;
+
 	ops->retlen = ops->oobretlen = 0;
 	if (!mtd->_read_oob)
 		return -EOPNOTSUPP;
@@ -1612,6 +1621,7 @@ EXPORT_SYMBOL_GPL(mtd_block_isreserved);
 
 int mtd_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
+	ofs += mtd->fixup_offset;
 	if (ofs < 0 || ofs >= mtd->size)
 		return -EINVAL;
 	if (!mtd->_block_isbad)
@@ -1622,6 +1632,7 @@ EXPORT_SYMBOL_GPL(mtd_block_isbad);
 
 int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
+	ofs += mtd->fixup_offset;
 	if (!mtd->_block_markbad)
 		return -EOPNOTSUPP;
 	if (ofs < 0 || ofs >= mtd->size)
