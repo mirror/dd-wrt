@@ -118,7 +118,7 @@ extern "C" {
   NDPI_STATIC void   ndpi_flow_free(void *ptr);
   NDPI_STATIC u_int32_t ndpi_get_tot_allocated_memory(void);
 
-  char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) ;
+  NDPI_STATIC char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) ;
 
   /**
    * Search the first occurrence of substring -find- in -s-
