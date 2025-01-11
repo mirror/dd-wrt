@@ -1387,6 +1387,8 @@ static void __init ubi_auto_attach(void)
 	loff_t offset = 0;
 	size_t len;
 	char magic[4];
+	loff_t i;
+	struct mtd_info *copy;
 
 	/* try attaching mtd device named "ubi" or "data" */
 	int bootdevice = getbootdevice();
@@ -1422,17 +1424,26 @@ static void __init ubi_auto_attach(void)
 		}
 
 	/* check if the read from flash was successful */
-	err = mtd_read(mtd, offset, 4, &len, (void *) magic);
-	if ((err && !mtd_is_bitflip(err)) || len != 4) {
-		pr_err("UBI error: unable to read from mtd%d\n", mtd->index);
-		goto cleanup;
+	for (i = 0;i < mtd->size;i += mtd->erasesize) {
+		err = mtd_read(mtd, i, 4, &len, (void *) magic);
+		if ((err && !mtd_is_bitflip(err)) || len != 4) {
+			pr_err("UBI error: unable to read from mtd%d\n", mtd->index);
+			goto cleanup;
+		}
+		if (!strncmp(magic, "UBI#", 4)) 
+		    break;
 	}
 
-	/* check for a valid ubi magic */
-	if (strncmp(magic, "UBI#", 4)) {
+	if (i == mtd->size) {
 		pr_err("UBI error: no valid UBI magic found inside mtd%d\n", mtd->index);
 		goto cleanup;
 	}
+
+	pr_notice("found UBI with offset %ld\n", i);
+	copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
+	memcpy(copy, mtd, sizeof(*mtd));
+	mtd = copy;
+	mtd->fixup_offset = i;
 
 	/* don't auto-add media types where UBI doesn't makes sense */
 	if (mtd->type != MTD_NANDFLASH &&
