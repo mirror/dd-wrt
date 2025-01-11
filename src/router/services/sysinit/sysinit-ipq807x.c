@@ -1,3 +1,4 @@
+
 /*
  * sysinit-ipq807x.c
  *
@@ -1315,6 +1316,20 @@ void start_sysinit(void)
 		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		eval("fw_setenv", "bootcmd",
+		     "'aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi'");
+
+		//reload firmware
+/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+		sleep(1);
+		eval("ssdk_sh", "port", "autoneg", "restart", "5");
+		sleep(2);
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec430", "0xc0ef");
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
+		sleep(1);
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");*/
+
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		sysprintf("echo netdev > /sys/class/leds/eth1G/trigger");
@@ -1512,8 +1527,9 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
-	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MR5500 ||
+	    brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 ||
+	    brand == ROUTER_LINKSYS_MX4300) {
 		if (!nvram_match("nobcreset", "1"))
 			eval_silence("mtd", "resetbc", "s_env");
 	}
