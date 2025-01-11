@@ -750,8 +750,9 @@
 			/* QCN9074: ath11k lacks DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
-			memory-region = <&mhi_region1>;
 			hremote_node = <&qcn9000_pcie0>;
+			qcom,caldb-addr = <0x4E100000>;
+			qcom,ath11k-fw-memory-mode = <1>;
 
 /*			qcom,m3-dump-addr = <0x4d700000>;*/
 /*			base-addr = <0x4CB00000>;
