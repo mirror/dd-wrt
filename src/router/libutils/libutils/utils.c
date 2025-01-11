@@ -726,8 +726,10 @@ void *getUEnv(char *name)
 	FILE *fp;
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
-	case ROUTER_LINKSYS_MR7500:
 		fp = fopen("/dev/mtdblock/11", "rb");
+		break;
+	case ROUTER_LINKSYS_MR7500:
+		fp = fopen("/dev/mtdblock/10", "rb");
 		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
 	case ROUTER_DYNALINK_DLWRX36:
