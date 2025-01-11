@@ -161,6 +161,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "dhcpv6", NDPI_ONLY, 0, NULL },
 	{ "diameter", NDPI_ONLY, 0, NULL },
+	{ "dicom", NDPI_ONLY, 0, NULL },
 	{ "dingtalk", NDPI_ONLY, 0, NULL },
 	{ "directv", NDPI_ONLY, 0, NULL },
 #endif
@@ -427,6 +428,7 @@ l7filters filters_list[] = {
 	{ "mgcp", NDPI_ONLY, 0, NULL },
 	{ "microsoft", NDPI_ONLY, 0, NULL },
 	{ "microsoft365", NDPI_ONLY, 0, NULL },
+	{ "mikrotik", NDPI_ONLY, 0, NULL },
 	{ "mining", NDPI_ONLY, 0, NULL },
 	{ "minor issues", NDPI_RISK, 49, "dns" },
 	{ "missing sni tls extn", NDPI_RISK, 24, "tls" },
@@ -510,6 +512,7 @@ l7filters filters_list[] = {
 	{ "outlook", NDPI_ONLY, 0, NULL },
 	{ "paltalk", NDPI_ONLY, 0, NULL },
 	{ "pandora", NDPI_ONLY, 0, NULL },
+	{ "paramountplus", NDPI_ONLY, 0, NULL },
 	{ "pastebin", NDPI_ONLY, 0, NULL },
 	{ "path_of_exile", NDPI_ONLY, 0, NULL },
 #endif
@@ -628,6 +631,7 @@ l7filters filters_list[] = {
 	{ "sflow", NDPI_ONLY, 0, NULL },
 #endif
 #ifdef HAVE_OPENDPI
+	{ "shein", NDPI_ONLY, 0, NULL },
 	{ "showtime", NDPI_ONLY, 0, NULL },
 	{ "signal", NDPI_ONLY, 0, NULL },
 	{ "signalvoip", NDPI_ONLY, 0, NULL },
@@ -700,6 +704,7 @@ l7filters filters_list[] = {
 	{ "syncthing", NDPI_ONLY, 0, NULL },
 	{ "syslog", NDPI_ONLY, 0, NULL },
 	{ "tailscale", NDPI_ONLY, 0, NULL },
+	{ "taobao", NDPI_ONLY, 0, NULL },
 #endif
 	{ "tar", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -711,6 +716,9 @@ l7filters filters_list[] = {
 	{ "teams", NDPI_ONLY, 0, NULL },
 #endif
 	{ "teamspeak", DPI, 0, NULL },
+#ifdef HAVE_OPENDPI
+	{ "temu", NDPI_ONLY, 0, NULL },
+#endif
 	{ "teamviewer", DPI, 0, NULL },
 	{ "teamviewer1", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
@@ -874,6 +882,7 @@ l7filters filters_list[] = {
 	{ "yahoo_voice", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
 	{ "yandex", NDPI_ONLY, 0, NULL },
+	{ "yandex_alice", NDPI_ONLY, 0, NULL },
 	{ "yandex_cloud", NDPI_ONLY, 0, NULL },
 	{ "yandex_direct", NDPI_ONLY, 0, NULL },
 	{ "yandex_disk", NDPI_ONLY, 0, NULL },
