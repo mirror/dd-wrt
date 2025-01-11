@@ -1381,7 +1381,7 @@ static void __init ubi_auto_attach(void)
 			put_mtd_device(mtd);
 			return;
 		}
-		pr_notice("found UBI with offset %ld\n", i);
+		pr_notice("found UBI with offset %lld\n", i);
 		copy = kmalloc(sizeof(*mtd), GFP_KERNEL);
 		memcpy(copy, mtd, sizeof(*mtd));
 		mtd = copy;
