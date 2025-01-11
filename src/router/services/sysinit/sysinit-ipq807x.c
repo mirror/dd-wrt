@@ -1396,13 +1396,14 @@ void start_sysinit(void)
 
 	return;
 }
-static void load_ath11k(int profile, int pci, int nss, int frame_mode)
+static void load_ath11k(int profile, int pci, int nss, int frame_mode, char *cert_region)
 {
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
 	char driver_ath11k_ahb[32];
 	char driver_ath11k_pci[32];
 	char driver_frame_mode[32];
+	char driver_regionvariant[32];
 
 	int od = nvram_default_geti("power_overdrive", 0);
 	char overdrive[32];
@@ -1414,13 +1415,14 @@ static void load_ath11k(int profile, int pci, int nss, int frame_mode)
 	sprintf(driver_ath11k_ahb, "ath11k_ahb%s", postfix);
 	sprintf(driver_ath11k_pci, "ath11k_pci%s", postfix);
 	sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
+	sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
 	insmod("qmi_helpers");
 	if (nss) {
 		insmod("mac80211");
-		eval_silence("insmod", driver_ath11k, driver_frame_mode, overdrive);
+		eval_silence("insmod", driver_ath11k, driver_frame_mode, overdrive, driver_regionvariant);
 	} else {
 		eval_silence("insmod", "mac80211", "nss_redirect=0");
-		eval_silence("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive);
+		eval_silence("insmod", driver_ath11k, "nss_offload=0", driver_frame_mode, overdrive, driver_regionvariant);
 		sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 	}
 	insmod(driver_ath11k_ahb);
@@ -1467,16 +1469,23 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
 				frame_mode = 1;
-			load_ath11k(profile, 1, 0, frame_mode);
+			load_ath11k(profile, 1, 0, frame_mode, "");
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode);
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			//			insmod("ath");
 			//			insmod("ath10k_core");
 			//			insmod("ath10k_pci");
 			break;
+		case ROUTER_LINKSYS_MR7500:
+			char *cert_region = get_deviceinfo_mr7350("cert_region");
+			if (!cert_region)
+			    cert_region = "";
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, cert_region);
+			break;
+
 		default:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode);
+			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			break;
 		}
 		wait_for_wifi();
