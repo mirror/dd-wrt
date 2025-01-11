@@ -494,6 +494,13 @@ static char *prot_short_str[NDPI_NUM_BITS] = {
 	"dingtalk",
 	"paltalk",
 	"naver",
+	"shein",
+	"temu",
+	"taobao",
+	"mikrotik",
+	"dicom",
+	"paramountplus",
+	"yandex_alice",
 	NULL,
 };
 
