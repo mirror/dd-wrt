@@ -511,3 +511,7 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/paltalk.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/dicom.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/mikrotik.c"
+#undef NDPI_CURRENT_PROTO

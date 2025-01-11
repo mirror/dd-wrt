@@ -483,14 +483,16 @@ static int search_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 		    memcpy(&flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr], packet->payload + x, data_len);
 		    flow->protos.dns.is_rsp_addr_ipv6[flow->protos.dns.num_rsp_addr] = (data_len == 16) ? 1 : 0;
 		    flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr] = ttl;
-
-		    if(ndpi_struct->cfg.address_cache_size)
+		    
+		    if(ndpi_struct->cfg.address_cache_size) {
+		      c = packet->current_time_ms;
+		      do_div(c, 1000);
 		      ndpi_cache_address(ndpi_struct,
 				         flow->protos.dns.rsp_addr[flow->protos.dns.num_rsp_addr],
 				         flow->host_server_name,
-				         packet->current_time_ms/1000,
+				         c,
 				         flow->protos.dns.rsp_addr_ttl[flow->protos.dns.num_rsp_addr]);
-
+		    }
 		    ++flow->protos.dns.num_rsp_addr;
 		  }
 
