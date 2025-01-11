@@ -999,7 +999,9 @@ void start_sysinit(void)
 	int profile = 512;
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
+	case ROUTER_LINKSYS_MR7500:
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
+		fwlen = 0x20000;
 		load_nss_ipq60xx(512);
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1103,7 +1105,7 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
-		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500) {
+		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX7500) {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -1160,6 +1162,22 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
+		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
+		break;
+	case ROUTER_LINKSYS_MR7500:
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan2_hwaddr", ethaddr);
+		removeregdomain("/tmp/caldata.bin", IPQ6018);
+		removeregdomain("/tmp/board.bin", IPQ6018);
+		removeregdomain("/tmp/caldata2.bin", QCN9000);
+		removeregdomain("/tmp/board2.bin", QCN9000);
+		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1290,6 +1308,11 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7350:
 		setscaling(1440000);
+		disableportlearn();
+		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
+	case ROUTER_LINKSYS_MR7500:
+		setscaling(1800000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		break;
@@ -1489,7 +1512,7 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
 	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
 		if (!nvram_match("nobcreset", "1"))
 			eval_silence("mtd", "resetbc", "s_env");

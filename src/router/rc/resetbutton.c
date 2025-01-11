@@ -205,6 +205,8 @@ static int getbuttonstate()
 	switch (getRouterBrand()) {
 	case ROUTER_LINKSYS_MR7350:
 		return !get_gpio(57);
+	case ROUTER_LINKSYS_MR7500:
+		return !get_gpio(56);
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
@@ -1404,6 +1406,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_LINKSYS_MR7350:
 		sesgpio = 0x105;
 		val |= get_gpio(56) << 5;
+		break;
+	case ROUTER_LINKSYS_MR7500:
+		sesgpio = 0x105;
+		val |= get_gpio(57) << 5;
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 	case ROUTER_LINKSYS_MX4200V2:

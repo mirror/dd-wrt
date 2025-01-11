@@ -1073,6 +1073,13 @@ void start_restore_defaults(void)
 						{ "wan_ifnames", "eth4" },
 						{ "wan_default", "eth4" },
 						{ 0, 0 } };
+	struct nvram_param generic_mr7500[] = { { "lan_ifname", "br0" },
+						{ "lan_ifnames", "eth0 eth1 eth2 eth3 eth4 wlan0 wlan1 wlan2" },
+						{ "wan_ifname", "eth0" },
+						{ "wan_ifname2", "eth0" },
+						{ "wan_ifnames", "eth0" },
+						{ "wan_default", "eth0" },
+						{ 0, 0 } };
 	struct nvram_param generic_mx4200[] = { { "lan_ifname", "br0" },
 						{ "lan_ifnames", "eth0 eth1 eth2 eth3 wlan0 wlan1" },
 						{ "wan_ifname", "eth0" },
@@ -1111,6 +1118,8 @@ void start_restore_defaults(void)
 		generic = generic_mx5500;
 	else if (wrt_brand == ROUTER_ASUS_AX89X)
 		generic = generic_ax89;
+	else if (wrt_brand == ROUTER_LINKSYS_MR7500)
+		generic = generic_mr7500;
 	else
 		generic = generic_mx4200;
 #elif HAVE_VENTANA
