@@ -604,26 +604,18 @@ configs-checkout:
 configs-update:
 #	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
 	svn update $(LINUXDIR)
-	svn update $(LINUXDIR)/../linux-3.2
-	svn update $(LINUXDIR)/../linux-3.5
-	svn update $(LINUXDIR)/../linux-3.10
-	svn update $(LINUXDIR)/../linux-3.18
-	svn update $(LINUXDIR)/../linux-4.4
-	svn update $(LINUXDIR)/../linux-4.9
-	svn update $(LINUXDIR)/../linux-4.14
-#	svn update $(LINUXDIR)/../linux-6.1
-#	svn update $(LINUXDIR)/../linux-6.1-nss
-#	svn update $(LINUXDIR)/../linux-6.6
-#	rm -f $(LINUXDIR)/../linux-3.2/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.5/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.10/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-3.18/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.4/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.9/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-4.14/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-6.1/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-6.1-nss/scripts/squashfs/matrix.db
-#	rm -f $(LINUXDIR)/../linux-6.6/scripts/squashfs/matrix.db
+	if [ -d "$(LINUXDIR)/../linux-3.2" ]; svn update $(LINUXDIR)/../linux-3.2; fi
+	if [ -d "$(LINUXDIR)/../linux-3.5" ]; svn update $(LINUXDIR)/../linux-3.5; fi
+	if [ -d "$(LINUXDIR)/../linux-3.10" ]; svn update $(LINUXDIR)/../linux-3.10; fi
+	if [ -d "$(LINUXDIR)/../linux-3.18" ]; svn update $(LINUXDIR)/../linux-3.18; fi
+	if [ -d "$(LINUXDIR)/../linux-4.4" ]; svn update $(LINUXDIR)/../linux-4.4; fi
+	if [ -d "$(LINUXDIR)/../linux-4.9" ]; svn update $(LINUXDIR)/../linux-4.9; fi
+	if [ -d "$(LINUXDIR)/../linux-4.14" ]; svn update $(LINUXDIR)/../linux-4.14; fi
+	if [ -d "$(LINUXDIR)/../linux-6.1" ]; svn update $(LINUXDIR)/../linux-6.1; fi
+	if [ -d "$(LINUXDIR)/../linux-6.1-nss" ]; svn update $(LINUXDIR)/../linux-6.1-nss; fi
+	if [ -d "$(LINUXDIR)/../linux-6.6" ]; svn update $(LINUXDIR)/../linux-6.6; fi
+	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; svn update $(LINUXDIR)/../linux-6.6; fi
+
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 
