@@ -422,7 +422,7 @@ void set_gpio(int gpio, int value)
 			break;
 		}
 		break;
-	case ROUTER_LINKSYS_MX7500:
+	case ROUTER_LINKSYS_MR7500:
 		switch (gpio) {
 		case 0:
 			writeint("/sys/class/leds/red:system/brightness", value);
