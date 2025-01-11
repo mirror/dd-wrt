@@ -819,6 +819,8 @@
 
 #define ROUTER_BUFFALO_WXR5950AX12 0x11c136
 
+#define ROUTER_LINKSYS_MR7500 0x11d138
+
 
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
