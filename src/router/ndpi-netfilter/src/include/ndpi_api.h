@@ -118,6 +118,8 @@ extern "C" {
   NDPI_STATIC void   ndpi_flow_free(void *ptr);
   NDPI_STATIC u_int32_t ndpi_get_tot_allocated_memory(void);
 
+  char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) ;
+
   /**
    * Search the first occurrence of substring -find- in -s-
    * The search is limited to the first -slen- characters of the string
@@ -1160,6 +1162,7 @@ extern "C" {
                                  ndpi_protocol const * const l7_protocol);
   NDPI_STATIC char* ndpi_ssl_version2str(char *buf, int buf_len,
                              u_int16_t version, u_int8_t *unknown_tls_version);
+  NDPI_STATIC char *ndpi_multimedia_flowtype2str(char *buf, int buf_len, u_int8_t m_types);
   NDPI_STATIC char *ndpi_quic_version2str(char *buf, int buf_len, u_int32_t version);
   NDPI_STATIC int ndpi_netbios_name_interpret(u_char *in, u_int in_len, u_char *out, u_int out_len);
   NDPI_STATIC void ndpi_patchIPv6Address(char *str);

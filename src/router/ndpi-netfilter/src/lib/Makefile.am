@@ -79,6 +79,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/dhcp.c \
 		     protocols/dhcpv6.c \
 		     protocols/diameter.c \
+		     protocols/dicom.c \
 		     protocols/discord.c \
 		     protocols/dingtalk.c \
 		     protocols/dlep.c \
@@ -156,6 +157,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/megaco.c \
 		     protocols/memcached.c \
 		     protocols/merakicloud.c \
+		     protocols/mikrotik.c \
 		     protocols/mining.c \
 		     protocols/mgcp.c \
 		     protocols/modbus.c \

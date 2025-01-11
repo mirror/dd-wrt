@@ -284,6 +284,11 @@ struct ndpi_detection_module_config_struct {
 
   int ftp_opportunistic_tls_enabled;
 
+  int sip_attribute_from_enabled;
+  int sip_attribute_from_imsi_enabled;
+  int sip_attribute_to_enabled;
+  int sip_attribute_to_imsi_enabled;
+
   int stun_opportunistic_tls_enabled;
   int stun_max_packets_extra_dissection;
   int stun_mapped_address_enabled;
@@ -382,7 +387,7 @@ struct ndpi_detection_module_struct {
   /* *** If you add a new Patricia tree, please update ptree_type above! *** */
 
   struct {
-#ifdef USE_LEGACY_AHO_CORASICK
+#if defined(USE_LEGACY_AHO_CORASICK) || defined(__KERNEL__)
     ndpi_automa hostnames, hostnames_shadow;
 #else
     ndpi_domain_classify *sc_hostnames, *sc_hostnames_shadow;
@@ -665,6 +670,8 @@ NDPI_STATIC u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct
 
 NDPI_STATIC char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen);
 
+NDPI_STATIC char* ndpi_intoav6(struct ndpi_in6_addr *addr, char* buf, u_int16_t bufLen);
+
 NDPI_STATIC int is_flow_addr_informative(const struct ndpi_flow_struct *flow);
 
 NDPI_STATIC u_int16_t icmp4_checksum(u_int8_t const * const buf, size_t len);
@@ -735,7 +742,7 @@ NDPI_STATIC const uint8_t *get_crypto_data(struct ndpi_detection_module_struct *
 NDPI_STATIC int is_valid_rtp_payload_type(uint8_t type);
 NDPI_STATIC int is_rtp_or_rtcp(struct ndpi_detection_module_struct *ndpi_struct,
                    const u_int8_t *payload, u_int16_t payload_len, u_int16_t *seq);
-NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, ndpi_multimedia_flow_type *s_type);
+NDPI_STATIC u_int8_t rtp_get_stream_type(u_int8_t payloadType, u_int8_t *s_type, u_int16_t sub_proto);
 
 /* Bittorrent */
 NDPI_STATIC u_int64_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, int offset);
@@ -808,6 +815,7 @@ NDPI_STATIC void init_maplestory_dissector(struct ndpi_detection_module_struct *
 NDPI_STATIC void init_megaco_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_mgcp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_mining_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_mikrotik_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_mms_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_monero_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_nats_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
@@ -1018,6 +1026,7 @@ NDPI_STATIC void init_trdp_dissector(struct ndpi_detection_module_struct *ndpi_s
 NDPI_STATIC void init_lustre_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_dingtalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 NDPI_STATIC void init_paltalk_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
+NDPI_STATIC void init_dicom_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id);
 
 #endif
 

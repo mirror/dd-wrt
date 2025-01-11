@@ -84,6 +84,8 @@ static int is_subclassification_real_by_proto(u_int16_t proto)
   return 1;
 }
 
+/* ***************************************************** */
+
 static int is_subclassification_real(struct ndpi_flow_struct *flow)
 {
   /* No previous subclassification */
@@ -91,6 +93,8 @@ static int is_subclassification_real(struct ndpi_flow_struct *flow)
     return 0;
   return is_subclassification_real_by_proto(flow->detected_protocol_stack[0]);
 }
+
+/* ***************************************************** */
 
 static int is_new_subclassification_better(struct ndpi_detection_module_struct *ndpi_struct,
                                            struct ndpi_flow_struct *flow,
@@ -121,6 +125,7 @@ static int is_new_subclassification_better(struct ndpi_detection_module_struct *
   return 0;
 }
 
+/* ***************************************************** */
 
 static u_int16_t search_into_cache(struct ndpi_detection_module_struct *ndpi_struct,
 				   struct ndpi_flow_struct *flow)
@@ -167,6 +172,8 @@ static u_int16_t search_into_cache(struct ndpi_detection_module_struct *ndpi_str
   return NDPI_PROTOCOL_UNKNOWN;
 }
 
+/* ***************************************************** */
+
 static void add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
 			 struct ndpi_flow_struct *flow,
 			 u_int16_t app_proto)
@@ -186,6 +193,8 @@ static void add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
 #endif
   }
 }
+
+/* ***************************************************** */
 
 static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_length,
                                     int off, u_int16_t real_len, ndpi_address_port *ap,
@@ -237,6 +246,8 @@ static void parse_ip_port_attribute(const u_int8_t *payload, u_int16_t payload_l
     }
   }
 }
+
+/* ***************************************************** */
 
 static void parse_xor_ip_port_attribute(struct ndpi_detection_module_struct *ndpi_struct,
                                         struct ndpi_flow_struct *flow,
@@ -354,7 +365,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
   u_int32_t transaction_id[3];
 
   if(payload_length < STUN_HDR_LEN)
-    return(-1);  
+    return(-1);
 
   /* Some really old/legacy stuff */
   if(strncmp((const char *)payload, "RSP/", 4) == 0 &&
@@ -400,7 +411,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
   if(packet->tcp) {
     if(msg_len + STUN_HDR_LEN > payload_length)
       return 0;
-    
+
     payload_length = msg_len + STUN_HDR_LEN;
   }
 
@@ -412,7 +423,8 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 
   /* https://www.iana.org/assignments/stun-parameters/stun-parameters.xhtml */
   if(((msg_type & 0x3EEF) > 0x000B) &&
-     msg_type != 0x0800 && msg_type != 0x0801 && msg_type != 0x0802) {
+     msg_type != 0x0800 && msg_type != 0x0801 && msg_type != 0x0802 &&
+     msg_type != 0x0804 && msg_type != 0x0805) {
     NDPI_LOG_DBG(ndpi_struct, "Invalid msg_type = %04X\n", msg_type);
     return -1;
   }
@@ -450,7 +462,8 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
      is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN))
     flow->monit = ndpi_calloc(1, sizeof(struct ndpi_metadata_monitoring));
 
-  if(msg_type == 0x0800 || msg_type == 0x0801 || msg_type == 0x0802) {
+  if(msg_type == 0x0800 || msg_type == 0x0801 || msg_type == 0x0802 ||
+     msg_type == 0x0804 || msg_type == 0x0805) {
     *app_proto = NDPI_PROTOCOL_WHATSAPP_CALL;
     return 1;
   }
@@ -470,6 +483,14 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
     NDPI_LOG_DBG(ndpi_struct, "TURN flow (method %d)\n", method);
     flow->stun.is_turn = 1;
     break;
+  }
+
+  /* See https://support.signal.org/hc/en-us/articles/360007320291-Firewall-and-Internet-settings.
+     Since the check is quite weak, give time to other applications to kick in */
+  if(flow->packet_counter > 4 && !flow->stun.is_turn &&
+     !is_subclassification_real(flow) &&
+     (ntohs(flow->c_port) == 10000 || ntohs(flow->s_port) == 10000)) {
+     *app_proto = NDPI_PROTOCOL_SIGNAL_VOIP;
   }
 
   off = STUN_HDR_LEN;
@@ -531,7 +552,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
       if(flow->host_server_name[0] == '\0') {
 	int i;
 	bool valid = true;
-	
+
         ndpi_hostname_sni_set(flow, payload + off + 4, ndpi_min(len, payload_length - off - 4), NDPI_HOSTNAME_NORM_ALL);
         NDPI_LOG_DBG(ndpi_struct, "Realm [%s]\n", flow->host_server_name);
 
@@ -576,6 +597,20 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
       *app_proto = NDPI_PROTOCOL_SKYPE_TEAMS_CALL;
       break;
 
+    case 0x8029: /* ICE-CONTROLLED */
+      if(current_pkt_from_client_to_server(ndpi_struct, flow))
+        flow->stun.is_client_controlling = 0;
+      else
+        flow->stun.is_client_controlling = 1;
+      break;
+
+    case 0x802A: /* ICE-CONTROLLING */
+      if(current_pkt_from_client_to_server(ndpi_struct, flow))
+        flow->stun.is_client_controlling = 1;
+      else
+        flow->stun.is_client_controlling = 0;
+      break;
+
     case 0xFF03:
       *app_proto = NDPI_PROTOCOL_GOOGLE_CALL;
       break;
@@ -604,6 +639,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
                                     &flow->stun.mapped_address,
                                     flow->monit ? &flow->monit->protos.dtls_stun_rtp.mapped_address : NULL,
                                     transaction_id, magic_cookie, 0);
+	flow->stun.num_xor_mapped_addresses++;
       }
       break;
 
@@ -614,6 +650,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
                                     &flow->stun.relayed_address,
                                     flow->monit ? &flow->monit->protos.dtls_stun_rtp.relayed_address : NULL,
                                     transaction_id, magic_cookie, 0);
+	flow->stun.num_xor_relayed_addresses++;
       }
       break;
 
@@ -633,19 +670,49 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 static int keep_extra_dissection_stun(struct ndpi_detection_module_struct *ndpi_struct,
                                  struct ndpi_flow_struct *flow)
 {
-  /* We want extra dissection for:
-     * sub-classification
-     * metadata extraction (*-ADDRESS) or looking for RTP
-       At the moment:
-       * it seems ZOOM doens't have any meaningful attributes
-       * we want (all) XOR-PEER-ADDRESS only for Telegram.
-         * for the other protocols, we stop after we have all metadata (if enabled)
-         * for some specific protocol, we might know that some attributes
-           are never used
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
-     **After** extra dissection is ended, we might move to monitoring. Note that:
-     * classification doesn't change while in monitoring!
-  */
+  /* We want extra dissection for:
+   * sub-classification
+   * metadata extraction (*-ADDRESS) or looking for RTP
+   * At the moment:
+   * it seems ZOOM doens't have any meaningful attributes
+   * we want (all) XOR-PEER-ADDRESS only for Telegram.
+   * for the other protocols, we stop after we have all metadata (if enabled)
+   * for some specific protocol, we might know that some attributes are never used
+   * if monitoring is enabled, keep looking for (S)RTP anyway
+
+   **After** extra dissection is ended, we might move to monitoring. Note that:
+   * classification doesn't change while in monitoring!
+   */
+
+  if(packet->udp
+     && (ntohs(packet->udp->source) == 3478)
+     && (packet->payload_packet_len > 0)
+     && (packet->payload[0] != 0x0) && (packet->payload[0] != 0x1)) {
+    if(flow->stun.num_non_stun_pkt < 2) {
+      flow->stun.non_stun_pkt_len[flow->stun.num_non_stun_pkt++] = packet->payload_packet_len;
+
+#ifdef STUN_DEBUG
+      if(flow->stun.num_non_stun_pkt == 2)
+	printf("%d %d\n", flow->stun.non_stun_pkt_len[0], flow->stun.non_stun_pkt_len[1]);
+#endif
+    }
+  }
+
+  if(packet->payload_packet_len > 699) {
+    if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_TELEGRAM_VOIP) {
+      if((packet->payload[0] == 0x16) && (packet->payload[1] == 0xfe)
+	 && ((packet->payload[2] == 0xff) /* DTLS 1.0 */
+	     || (packet->payload[2] == 0xfd) /* DTLS 1.2 */ ))
+	; /* Skip DTLS */
+      else {
+	/* STUN or RTP */
+	/* This packet is too big to be audio: add video */
+	flow->flow_multimedia_types |= ndpi_multimedia_video_flow;
+      }
+    }
+  }
 
   if(flow->monitoring)
     return 1;
@@ -659,6 +726,11 @@ static int keep_extra_dissection_stun(struct ndpi_detection_module_struct *ndpi_
   }
 
   if(!is_subclassification_real(flow))
+    return 1;
+
+  if(is_monitoring_enabled(ndpi_struct, NDPI_PROTOCOL_STUN) &&
+     (flow->detected_protocol_stack[1] != NDPI_PROTOCOL_SRTP &&
+      flow->detected_protocol_stack[1] != NDPI_PROTOCOL_DTLS))
     return 1;
 
   if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_TELEGRAM_VOIP &&
@@ -714,13 +786,15 @@ static u_int32_t __get_master_stun(struct ndpi_flow_struct *flow) {
   return NDPI_PROTOCOL_STUN;
 }
 
+/* ***************************************************** */
+
 static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   int rtp_rtcp;
   u_int8_t first_byte;
-  u_int16_t app_proto = NDPI_PROTOCOL_UNKNOWN;
+  u_int16_t msg_type, app_proto = NDPI_PROTOCOL_UNKNOWN;
   u_int32_t unused;
   int first_dtls_pkt = 0;
   u_int16_t old_proto_stack[2] = {NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_UNKNOWN};
@@ -734,13 +808,18 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
      * multiple msg in the same TCP segment
      * same msg split across multiple segments */
 
-  if(packet->payload_packet_len == 0)
+  if(packet->payload_packet_len <= 1)
     return keep_extra_dissection_stun(ndpi_struct, flow);
 
   first_byte = packet->payload[0];
+  msg_type = ntohs(*((u_int16_t *)&packet->payload[0]));
 
   /* RFC9443 */
-  if(first_byte <= 3) {
+  if(first_byte <= 3 ||
+     /* Whatsapp special case */
+     (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_WHATSAPP_CALL &&
+      (msg_type == 0x0800 || msg_type == 0x0801 || msg_type == 0x0802 ||
+       msg_type == 0x0804 || msg_type == 0x0805))) {
     NDPI_LOG_DBG(ndpi_struct, "Still STUN\n");
     if(is_stun(ndpi_struct, flow, &app_proto) == 1) { /* To extract other metadata */
       if(is_new_subclassification_better(ndpi_struct, flow, app_proto)) {
@@ -874,10 +953,15 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
 
     rtp_rtcp = is_rtp_or_rtcp(ndpi_struct, packet->payload, packet->payload_packet_len, NULL);
     if(rtp_rtcp == IS_RTP) {
-      NDPI_LOG_DBG(ndpi_struct, "RTP (dir %d)\n", packet->packet_direction);
+
+      NDPI_LOG_DBG(ndpi_struct, "RTP (dir %d) [%d/%d]\n", packet->packet_direction,
+                                 flow->stun.rtp_counters[0], flow->stun.rtp_counters[1]);
+
+      flow->stun.rtp_counters[packet->packet_direction]++;
+
       NDPI_LOG_INFO(ndpi_struct, "Found RTP over STUN\n");
 
-      rtp_get_stream_type(packet->payload[1] & 0x7F, &flow->flow_multimedia_type);
+      rtp_get_stream_type(packet->payload[1] & 0x7F, &flow->flow_multimedia_types, flow->detected_protocol_stack[0]);
 
       if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_RTP &&
          flow->detected_protocol_stack[0] != NDPI_PROTOCOL_RTCP &&
@@ -909,6 +993,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
       }
     } else if(rtp_rtcp == IS_RTCP) {
       NDPI_LOG_DBG(ndpi_struct, "RTCP\n");
+      flow->stun.rtcp_seen = 1;
     } else {
       NDPI_LOG_DBG(ndpi_struct, "Unexpected\n");
     }
@@ -1093,7 +1178,7 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t app_proto;
   int rc;
-  
+
   NDPI_LOG_DBG(ndpi_struct, "search stun\n");
 
   app_proto = NDPI_PROTOCOL_UNKNOWN;
@@ -1106,7 +1191,7 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
   }
 
   rc = is_stun(ndpi_struct, flow, &app_proto);
-  
+
   if(rc == 1) {
     ndpi_int_stun_add_connection(ndpi_struct, flow, app_proto, __get_master_stun(flow));
     return;
@@ -1116,6 +1201,8 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
   if(flow->packet_counter > 5)
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 }
+
+/* ************************************************************ */
 
 void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id) {
   ndpi_set_bitmask_protocol_detection("STUN", ndpi_struct, *id,

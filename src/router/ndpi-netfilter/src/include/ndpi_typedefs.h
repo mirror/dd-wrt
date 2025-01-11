@@ -54,8 +54,6 @@
 #include "ndpi_patricia_typedefs.h"
 
 #ifndef __KERNEL__
-// #define USE_LEGACY_AHO_CORASICK
-
 #ifndef NDPI_CFFI_PREPROCESSING
 #ifndef u_char
 typedef unsigned char u_char;
@@ -86,10 +84,10 @@ typedef enum {
 } ndpi_log_level_t;
 
 typedef enum {
-  ndpi_multimedia_unknown_flow = 0,
-  ndpi_multimedia_audio_flow,
-  ndpi_multimedia_video_flow,
-  ndpi_multimedia_screen_sharing_flow,
+  ndpi_multimedia_unknown_flow          = 0x00,
+  ndpi_multimedia_audio_flow            = 0x01,
+  ndpi_multimedia_video_flow            = 0x02,
+  ndpi_multimedia_screen_sharing_flow   = 0x04,
 } ndpi_multimedia_flow_type;
 
 typedef enum {
@@ -287,7 +285,7 @@ typedef struct ndpi_protocol_bitmask_struct {
 struct ndpi_detection_module_struct;
 
 /* NDPI_DEBUG_FUNCTION_PTR (cast) */
-typedef void (*ndpi_debug_function_ptr) (u_int32_t protocol, struct ndpi_detection_module_struct *module_struct,
+typedef void (*ndpi_debug_function_ptr) (u_int16_t protocol, struct ndpi_detection_module_struct *module_struct,
 					 ndpi_log_level_t log_level, const char *file,
 					 const char *func, unsigned line,
 					 const char *format, ...);
@@ -1359,7 +1357,7 @@ struct ndpi_flow_struct {
   u_int16_t guessed_protocol_id, guessed_protocol_id_by_ip, guessed_category, guessed_header_category;
   u_int8_t l4_proto, protocol_id_already_guessed:1, fail_with_unknown:1, ip_port_finished:1,
     init_finished:1, client_packet_direction:1, packet_direction:1, is_ipv6:1, first_pkt_fully_encrypted:1, skip_entropy_check: 1;
-  u_int8_t monitoring: 1, _pad:7;
+  u_int8_t monitoring:1, _pad:7;
 
   u_int16_t num_dissector_calls;
   ndpi_confidence_t confidence; /* ndpi_confidence_t */
@@ -1447,7 +1445,7 @@ struct ndpi_flow_struct {
     char *username, *password;
   } http;
 
-  ndpi_multimedia_flow_type flow_multimedia_type;
+  u_int8_t flow_multimedia_types;
 
   /*
      Put outside of the union to avoid issues in case the protocol
@@ -1460,8 +1458,11 @@ struct ndpi_flow_struct {
   } kerberos_buf;
 
   struct {
-    u_int8_t maybe_dtls : 1, is_turn : 1, pad : 6;
+    u_int8_t maybe_dtls:1, rtcp_seen:1, is_turn : 1, is_client_controlling:1, pad : 4;
     ndpi_address_port mapped_address, peer_address, relayed_address, response_origin, other_address;
+    u_int8_t num_xor_relayed_addresses, num_xor_mapped_addresses;
+    u_int8_t num_non_stun_pkt, non_stun_pkt_len[2];
+    u_int16_t rtp_counters[2];
   } stun;
 
   struct {
@@ -1614,7 +1615,20 @@ struct ndpi_flow_struct {
       u_int8_t url_count;
       char url[4][48];
     } slp;
-  } protos;
+
+    struct {
+      char *from;
+      char from_imsi[16]; /* IMSI is 15 digit long, at most; + 1 for NULL terminator */
+      char *to;
+      char to_imsi[16];
+    } sip;
+
+    struct {
+      char mac_addr[6], identity[16], version[48], sw_id[16], board[32], iface_name[32];
+      u_int32_t ipv4_addr, uptime;
+      struct ndpi_in6_addr ipv6_addr;
+    } mikrotik;
+} protos;
 
   /* **Packet** metadata for flows where monitoring is enabled. It is reset after each packet! */
   struct ndpi_metadata_monitoring *monit;
@@ -1708,8 +1722,8 @@ struct ndpi_flow_struct {
 _Static_assert(sizeof(((struct ndpi_flow_struct *)0)->protos) <= 264,
                "Size of the struct member protocols increased to more than 264 bytes, "
                "please check if this change is necessary.");
-_Static_assert(sizeof(struct ndpi_flow_struct) <= 1216,
-               "Size of the flow struct increased to more than 1216 bytes, "
+_Static_assert(sizeof(struct ndpi_flow_struct) <= 1232,
+               "Size of the flow struct increased to more than 1232 bytes, "
                "please check if this change is necessary.");
 #endif
 #endif
@@ -1778,7 +1792,7 @@ typedef enum {
 } ndpi_serialization_type;
 
 #define NDPI_SERIALIZER_DEFAULT_HEADER_SIZE 1024
-#define NDPI_SERIALIZER_DEFAULT_BUFFER_SIZE 8192
+#define NDPI_SERIALIZER_DEFAULT_BUFFER_SIZE  256
 #define NDPI_SERIALIZER_DEFAULT_BUFFER_INCR 1024
 
 #define NDPI_SERIALIZER_STATUS_COMMA     (1 << 0)

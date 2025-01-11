@@ -1207,8 +1207,11 @@ static void process_ndpi_monitoring_info(struct ndpi_flow_info *flow) {
     add_to_address_port_list(&flow->stun.peer_address, &flow->ndpi_flow->monit->protos.dtls_stun_rtp.peer_address);
     add_to_address_port_list(&flow->stun.relayed_address, &flow->ndpi_flow->monit->protos.dtls_stun_rtp.relayed_address);
     add_to_address_port_list(&flow->stun.response_origin, &flow->ndpi_flow->monit->protos.dtls_stun_rtp.response_origin);
-  }
+    flow->multimedia_flow_types |= flow->ndpi_flow->flow_multimedia_types;
 
+    flow->stun.rtp_counters[0] = flow->ndpi_flow->stun.rtp_counters[0];
+    flow->stun.rtp_counters[1] = flow->ndpi_flow->stun.rtp_counters[1];
+  }
 }
 
 /* ****************************************************** */
@@ -1510,6 +1513,18 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
       ndpi_snprintf(flow->info, sizeof(flow->info), "Username: %s",
                     flow->ndpi_flow->protos.collectd.client_username);
   }
+  /* SIP */
+  else if(is_ndpi_proto(flow, NDPI_PROTOCOL_SIP)) {
+    flow->info_type = INFO_SIP;
+    if(flow->ndpi_flow->protos.sip.from)
+      ndpi_snprintf(flow->sip.from, sizeof(flow->sip.from), "%s", flow->ndpi_flow->protos.sip.from);
+    if(flow->ndpi_flow->protos.sip.from_imsi[0] != '\0')
+      ndpi_snprintf(flow->sip.from_imsi, sizeof(flow->sip.from_imsi), "%s", flow->ndpi_flow->protos.sip.from_imsi);
+    if(flow->ndpi_flow->protos.sip.to)
+      ndpi_snprintf(flow->sip.to, sizeof(flow->sip.to), "%s", flow->ndpi_flow->protos.sip.to);
+    if(flow->ndpi_flow->protos.sip.to_imsi[0] != '\0')
+      ndpi_snprintf(flow->sip.to_imsi, sizeof(flow->sip.to_imsi), "%s", flow->ndpi_flow->protos.sip.to_imsi);
+  }
   /* TELNET */
   else if(is_ndpi_proto(flow, NDPI_PROTOCOL_TELNET)) {
     if(flow->ndpi_flow->protos.telnet.username[0] != '\0')
@@ -1618,7 +1633,7 @@ void process_ndpi_collected_info(struct ndpi_workflow * workflow, struct ndpi_fl
     add_to_address_port_list(&flow->stun.other_address, &flow->ndpi_flow->stun.other_address);
   }
 
-  flow->multimedia_flow_type = flow->ndpi_flow->flow_multimedia_type;
+  flow->multimedia_flow_types |= flow->ndpi_flow->flow_multimedia_types;
 
   if(flow->ndpi_flow->tcp.fingerprint) {
     char buf[128];

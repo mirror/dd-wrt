@@ -67,7 +67,9 @@ ssize_t nmagic_ct_proc_write(struct file *file, const char __user *buffer,
 	if (kstrtouint(lbuf, 10, &new_magic_ct) != 0 || new_magic_ct == 0 || new_magic_ct > USHRT_MAX) {
 		return -EINVAL;
 	}
-
-	n->magic_ct = new_magic_ct;
-	return length;
+	if(atomic64_read(&n->protocols_cnt[0]) == 0) {
+		n->magic_ct = new_magic_ct;
+		return length;
+	}
+	return -EINVAL;
 }

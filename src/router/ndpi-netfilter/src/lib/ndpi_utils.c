@@ -841,6 +841,38 @@ const char* ndpi_get_flow_info(struct ndpi_flow_struct const * const flow,
 
 /* ********************************** */
 
+char *ndpi_multimedia_flowtype2str(char *buf, int buf_len, u_int8_t m_types)
+{
+  int rc, len = 0;
+
+  if(buf == NULL || buf_len <= 1)
+    return NULL;
+
+  buf[0] = '\0';
+
+  if(m_types == ndpi_multimedia_unknown_flow) {
+    rc = ndpi_snprintf(buf + len, buf_len - len, "Unknown", len > 0 ? ", " : "");
+    if(rc > 0 && len + rc < buf_len) len += rc; else return NULL;
+  }
+
+  if(m_types & ndpi_multimedia_audio_flow) {
+    rc = ndpi_snprintf(buf + len, buf_len - len, "%sAudio", len > 0 ? ", " : "");
+    if(rc > 0 && len + rc < buf_len) len += rc; else return NULL;
+  }
+  if(m_types & ndpi_multimedia_video_flow) {
+    rc = ndpi_snprintf(buf + len, buf_len - len, "%sVideo", len > 0 ? ", " : "");
+    if(rc > 0 && len + rc < buf_len) len += rc; else return NULL;
+  }
+  if(m_types & ndpi_multimedia_screen_sharing_flow) {
+    rc = ndpi_snprintf(buf + len, buf_len - len, "%sScreen Sharing", len > 0 ? ", " : "");
+    if(rc > 0 && len + rc < buf_len) len += rc; else return NULL;
+  }
+
+  return buf;
+}
+
+/* ********************************** */
+
 char* ndpi_ssl_version2str(char *buf, int buf_len,
                            u_int16_t version, u_int8_t *unknown_tls_version) {
   if(unknown_tls_version)
@@ -895,6 +927,9 @@ char* ndpi_ssl_version2str(char *buf, int buf_len,
 
 void ndpi_patchIPv6Address(char *str) {
   int i = 0, j = 0;
+
+  if (strstr(str, "::"))
+   return;
 
   while(str[i] != '\0') {
     if((str[i] == ':')
@@ -1274,6 +1309,7 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
   char buf[64];
   char const *host_server_name;
   char quic_version[16];
+  char content[64] = {0};
   u_int i;
 
   if(flow == NULL) return(-1);
@@ -1286,6 +1322,10 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
   if (host_server_name != NULL) {
     ndpi_serialize_string_string(serializer, "hostname", host_server_name);
     ndpi_serialize_string_string(serializer, "domainame", ndpi_get_host_domain(ndpi_struct, host_server_name));
+  }
+
+  if(flow->flow_multimedia_types != ndpi_multimedia_unknown_flow) {
+    ndpi_serialize_string_string(serializer, "stream_content", ndpi_multimedia_flowtype2str(content, sizeof(content), flow->flow_multimedia_types));
   }
 
   switch(l7_protocol.proto.master_protocol ? l7_protocol.proto.master_protocol : l7_protocol.proto.app_protocol) {
@@ -1525,6 +1565,52 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     ndpi_serialize_end_of_block(serializer);
     break;
 
+  case NDPI_PROTOCOL_MIKROTIK:
+    {
+      char buf[32];
+
+      ndpi_serialize_start_of_block(serializer, "mikrotik");
+
+      snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
+	       flow->protos.mikrotik.mac_addr[0] & 0xFF,
+	       flow->protos.mikrotik.mac_addr[1] & 0xFF,
+	       flow->protos.mikrotik.mac_addr[2] & 0xFF,
+	       flow->protos.mikrotik.mac_addr[3] & 0xFF,
+	       flow->protos.mikrotik.mac_addr[4] & 0xFF,
+	       flow->protos.mikrotik.mac_addr[5] & 0xFF);
+
+      ndpi_serialize_string_string(serializer, "mac_address", buf);
+
+      if(flow->protos.mikrotik.identity[0] != '\0')
+	ndpi_serialize_string_string(serializer, "identity", flow->protos.mikrotik.identity);
+
+      if(flow->protos.mikrotik.version[0] != '\0')
+	ndpi_serialize_string_string(serializer, "version", flow->protos.mikrotik.version);
+
+      if(flow->protos.mikrotik.sw_id[0] != '\0')
+	ndpi_serialize_string_string(serializer, "software_id", flow->protos.mikrotik.sw_id);
+
+      if(flow->protos.mikrotik.board[0] != '\0')
+	ndpi_serialize_string_string(serializer, "board", flow->protos.mikrotik.board);
+
+      if(flow->protos.mikrotik.iface_name[0] != '\0')
+	ndpi_serialize_string_string(serializer, "iface_name", flow->protos.mikrotik.iface_name);
+
+      if(flow->protos.mikrotik.ipv4_addr != 0)
+	ndpi_serialize_string_string(serializer, "ipv4_addr",
+				     ndpi_intoav4(flow->protos.mikrotik.ipv4_addr, buf, sizeof(buf)));
+
+      if(flow->protos.mikrotik.ipv6_addr.u6_addr.u6_addr64[0] != 0)
+	ndpi_serialize_string_string(serializer, "ipv6_addr",
+				     ndpi_intoav6(&flow->protos.mikrotik.ipv6_addr, buf, sizeof(buf)));
+
+      if(flow->protos.mikrotik.uptime != 0)
+	ndpi_serialize_string_uint32(serializer, "uptime", flow->protos.mikrotik.uptime);
+
+      ndpi_serialize_end_of_block(serializer);
+    }
+    break;
+
   case NDPI_PROTOCOL_DISCORD:
     if (l7_protocol.proto.master_protocol != NDPI_PROTOCOL_TLS) {
       ndpi_serialize_start_of_block(serializer, "discord");
@@ -1560,13 +1646,43 @@ int ndpi_dpi2json(struct ndpi_detection_module_struct *ndpi_struct,
     if(flow->stun.other_address.port)
       ndpi_serialize_string_string(serializer,  "other_address", print_ndpi_address_port(&flow->stun.other_address, buf, sizeof(buf)));
 
+    ndpi_serialize_string_string(serializer,  "multimedia_flow_types",
+				 ndpi_multimedia_flowtype2str(content, sizeof(content), flow->flow_multimedia_types));
+
+#ifdef CUSTOM_NDPI_PROTOCOLS
+#include "../../../nDPI-custom/ndpi_utils_dpi2json_stun.c"
+#endif
+
+    ndpi_serialize_end_of_block(serializer);
+    break;
+
+  case NDPI_PROTOCOL_SIP:
+    ndpi_serialize_start_of_block(serializer, "sip");
+    if(flow->protos.sip.from)
+      ndpi_serialize_string_string(serializer, "from", flow->protos.sip.from);
+    if(flow->protos.sip.from_imsi[0] != '\0')
+      ndpi_serialize_string_string(serializer, "from_imsi", flow->protos.sip.from_imsi);
+    if(flow->protos.sip.to)
+      ndpi_serialize_string_string(serializer, "to", flow->protos.sip.to);
+    if(flow->protos.sip.to_imsi[0] != '\0')
+      ndpi_serialize_string_string(serializer, "to_imsi", flow->protos.sip.to_imsi);
     ndpi_serialize_end_of_block(serializer);
     break;
 
   case NDPI_PROTOCOL_TLS:
-  case NDPI_PROTOCOL_DTLS:
     ndpi_tls2json(serializer, flow);
     break;
+
+  case NDPI_PROTOCOL_DTLS:
+    ndpi_tls2json(serializer, flow);
+#ifdef CUSTOM_NDPI_PROTOCOLS
+#include "../../../nDPI-custom/ndpi_utils_dpi2json_dtls.c"
+#endif
+    break;
+
+#ifdef CUSTOM_NDPI_PROTOCOLS
+#include "../../../nDPI-custom/ndpi_utils_dpi2json_protos.c"
+#endif
   } /* switch */
 
   ndpi_serialize_end_of_block(serializer); // "ndpi"
@@ -3386,8 +3502,7 @@ u_int8_t ndpi_check_flow_risk_exceptions(struct ndpi_detection_module_struct *nd
 #endif
 /* ******************************************* */
 
-int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len)
-{
+int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_int16_t *value_len) {
   unsigned int value, i;
 
   if(payload_len <= 0)
@@ -3416,6 +3531,7 @@ int64_t asn1_ber_decode_length(const unsigned char *payload, int payload_len, u_
   for (i = 1; i <= *value_len; i++) {
     value |= (unsigned int)payload[i] << ((*value_len) - i) * 8;
   }
+
   (*value_len) += 1;
   return value;
 }
@@ -3449,6 +3565,37 @@ char* ndpi_intoav4(unsigned int addr, char* buf, u_int16_t bufLen) {
   return(cp);
 }
 
+/* ****************************************************** */
+
+char* ndpi_intoav6(struct ndpi_in6_addr *addr, char* buf, u_int16_t bufLen) {
+  char *ret;
+  const u_int8_t use_brackets = 0;
+
+  if(use_brackets == 0) {
+    ret = (char*)inet_ntop(AF_INET6, (struct in6_addr *)addr, buf, bufLen);
+
+    if(ret == NULL) {
+      /* Internal error (buffer too short */
+      buf[0] = '\0';
+    }
+  } else {
+    ret = (char*)inet_ntop(AF_INET6, (struct in6_addr *)addr, &buf[1], bufLen-1);
+
+    if(ret == NULL) {
+      /* Internal error (buffer too short) */
+      buf[0] = '\0';
+    } else {
+      int len = strlen(ret);
+
+      buf[0] = '[';
+      buf[len+1] = ']';
+      buf[len+2] = '\0';
+    }
+  }
+
+  return(buf);
+}
+
 /* ******************************************* */
 
 /* Find the nearest (>=) value of x */
@@ -3467,8 +3614,7 @@ NDPI_STATIC u_int32_t ndpi_nearest_power_of_two(u_int32_t x) {
 
 /* ******************************************* */
 
-int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet)
-{
+int tpkt_verify_hdr(const struct ndpi_packet_struct * const packet) {
   return ((packet->tcp != NULL) && (packet->payload_packet_len > 4) &&
           (packet->payload[0] == 3) && (packet->payload[1] == 0) &&
           (get_u_int16_t(packet->payload,2) == htons(packet->payload_packet_len)));
@@ -3592,7 +3738,6 @@ size_t ndpi_compress_str(const char * in, size_t len, char * out, size_t bufsize
 
 size_t ndpi_decompress_str(const char * in, size_t len, char * out, size_t bufsize) {
   return(shoco_decompress(in, len, out, bufsize));
-
 }
 
 /* ******************************************* */
@@ -3947,4 +4092,26 @@ char* ndpi_strndup(const char *s, size_t size) {
   ret[size] = '\0';
 
   return(ret);
+}
+
+/* ************************************************************** */
+
+char *ndpi_strip_leading_trailing_spaces(char *ptr, int *ptr_len) {
+
+  /* Stripping leading spaces */
+  while(*ptr_len > 0 && ptr[0] == ' ') {
+    (*ptr_len)--;
+    ptr++;
+  }
+  if(*ptr_len == 0)
+    return NULL;
+
+  /* Stripping trailing spaces */
+  while(*ptr_len > 0 && ptr[*ptr_len - 1] == ' ') {
+    (*ptr_len)--;
+  }
+  if(*ptr_len == 0)
+    return NULL;
+
+  return ptr;
 }

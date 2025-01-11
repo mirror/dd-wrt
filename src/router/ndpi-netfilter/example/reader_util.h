@@ -170,6 +170,7 @@ enum info_type {
     INFO_TIVOCONNECT,
     INFO_FTP_IMAP_POP_SMTP,
     INFO_NATPMP,
+    INFO_SIP,
 };
 
 typedef struct {
@@ -263,6 +264,13 @@ typedef struct ndpi_flow_info {
       uint16_t external_port;
       char ip[16];
     } natpmp;
+
+    struct {
+      char from[256];
+      char from_imsi[16];
+      char to[256];
+      char to_imsi[16];
+    } sip;
   };
 
   ndpi_serializer ndpi_flow_serializer;
@@ -316,6 +324,7 @@ typedef struct ndpi_flow_info {
   struct {
     ndpi_address_port_list mapped_address, peer_address,
       relayed_address, response_origin, other_address;
+    u_int16_t rtp_counters[2];
   } stun;
   
   struct {
@@ -326,7 +335,7 @@ typedef struct ndpi_flow_info {
     char geolocation_iata_code[4];
   } dns;
 
-  ndpi_multimedia_flow_type multimedia_flow_type;
+  u_int8_t multimedia_flow_types;
   
   void *src_id, *dst_id;
   char *tcp_fingerprint;

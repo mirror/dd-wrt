@@ -298,6 +298,10 @@ ndpi_stun_cache: STUN cache control (0-1). Default 0.
 
 tls_buf_size: The maximum buffer size in kB for the TLS protocol. default 8, range 2-16
 
+set_magic_ct: Set new MAGIC_CT value. Default: 0xa55a. Set 0 for random MAGIC_CT
+	      If you use conntrackd to synchronize conntrack, you must load the module
+	      with the option "set_magic_ct=0" otherwise the kernel will crash.
+
 ---------------
 7. procfs files
 ---------------
@@ -436,3 +440,9 @@ Bittorrents-specific files:
   "cat /proc/net/xt_ndpi/cfg" - show current settings.
   "echo 'proto_name_or_id param_name value' >/proc/net/xt_ndpi/cfg" - change parameter for specified protocol
   "echo 'param_name value' >/proc/net/xt_ndpi/cfg" - change global parameter
+
+/proc/net/xt_ndpi/magic_ct - set or show "magic_ct".
+
+  Changing magic_ct can only be done before loading rules that use ndpi.
+  The magic_ct value must be in the range 0-65565.
+

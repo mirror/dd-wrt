@@ -518,7 +518,7 @@ static struct ndpi_flow_input_info input_info = {
 };
 
 /* debug functions */
-static void debug_printf(u_int32_t protocol, struct ndpi_detection_module_struct *id_struct,
+static void debug_printf(u_int16_t protocol, struct ndpi_detection_module_struct *id_struct,
 		ndpi_log_level_t log_level, const char *file_name,
 		const char *func_name, unsigned line_number,
 		const char * format, ...)
@@ -2425,7 +2425,6 @@ static unsigned int ndpi_nat_do_chain(void *priv,
 	if(ctinfo == IP_CT_UNTRACKED) break;
 #endif
 	n = ndpi_pernet(nf_ct_net(ct));
-	pr_info("ndpi_pernet result: %p", n);
 	if (n == NULL) break;
 	ct_dir = CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL;
 	ct_ndpi = nf_ct_ext_find_ndpi(ct, n->magic_ct);
