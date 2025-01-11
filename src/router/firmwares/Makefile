@@ -9,13 +9,18 @@ all:
 
 install:
 	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)
-	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
+ifeq ($(CONFIG_IPQ6018),y)
+	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)/marvell
+	cp -v aqr/* $(INSTALLDIR)$(FIRMWAREDIR)/marvell
+endif
 ifeq ($(ARCH),i386)
+	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr amd $(INSTALLDIR)$(FIRMWAREDIR)
 #	cp -vr amd-ucode $(INSTALLDIR)$(FIRMWAREDIR)
 #	cp -vr intel-ucode $(INSTALLDIR)$(FIRMWAREDIR)
 endif
 ifeq ($(ARCH),x86_64)
+	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr amd $(INSTALLDIR)$(FIRMWAREDIR)
 #	cp -vr amd-ucode $(INSTALLDIR)$(FIRMWAREDIR)
 #	cp -vr intel-ucode $(INSTALLDIR)$(FIRMWAREDIR)
