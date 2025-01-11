@@ -614,7 +614,7 @@ configs-update:
 	if [ -d "$(LINUXDIR)/../linux-6.1" ]; then svn update $(LINUXDIR)/../linux-6.1; fi
 	if [ -d "$(LINUXDIR)/../linux-6.1-nss" ]; then svn update $(LINUXDIR)/../linux-6.1-nss; fi
 	if [ -d "$(LINUXDIR)/../linux-6.6" ]; then svn update $(LINUXDIR)/../linux-6.6; fi
-	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; then svn update $(LINUXDIR)/../linux-6.6; fi
+	if [ -d "$(LINUXDIR)/../linux-6.6-nss" ]; then svn update $(LINUXDIR)/../linux-6.6-nss; fi
 
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
