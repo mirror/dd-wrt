@@ -349,7 +349,7 @@
 			pcie_phy0: phy@84200 {
 				reg = <0x0 0x00084200 0x0 0x16c>, /* Serdes Tx */
 				      <0x0 0x00084400 0x0 0x200>, /* Serdes Rx */
-				      <0x0 0x00084800 0x0 0x4f4>, /* PCS: Lane0, COM, PCIE */
+				      <0x0 0x00084800 0x0 0x1f0>, /* PCS: Lane0, COM, PCIE */
 				      <0x0 0x00084c00 0x0 0xf4>; /* pcs_misc */
 				#phy-cells = <0>;
 
@@ -1088,7 +1088,7 @@
 				 <0x82000000 0x0 0x20220000 0x0 0x20220000 0x0 0xfde0000>;
 
 			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "global_irq";
+			interrupt-names = "msi";
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;

@@ -632,7 +632,7 @@
 
 &pcie0 {
 	status = "okay";
-	bridge {
+	bridge@0,0 {
 		reg = <0x00000000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
