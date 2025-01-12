@@ -1000,26 +1000,52 @@ void start_sysinit(void)
 	int profile = 512;
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
+		maddr = get_deviceinfo_mr7350("hw_mac_addr");
+		fwlen = 0x20000;
+		load_nss_ipq60xx(512);
+		nvram_default_get("eth0_label", "lan1");
+		nvram_default_get("eth1_label", "lan2");
+		nvram_default_get("eth2_label", "lan3");
+		nvram_default_get("eth3_label", "lan4");
+		nvram_default_get("eth4_label", "wan");
+		break;
 	case ROUTER_LINKSYS_MR7500:
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		fwlen = 0x20000;
 		load_nss_ipq60xx(512);
+		nvram_default_get("eth0_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		maddr = get_deviceinfo_fap("ethaddr");
 		load_nss_ipq60xx(1024);
 		insmod("leds-gpio");
+		nvram_default_get("eth0_label", "lan1");
+		nvram_default_get("eth1_label", "wan");
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		profile = 1024;
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
+		nvram_default_get("eth0_label", "lan1");
+		nvram_default_get("eth1_label", "lan2");
+		nvram_default_get("eth2_label", "lan3");
+		nvram_default_get("eth3_label", "lan4");
+		nvram_default_get("eth4_label", "wan");
 		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
 		profile = 1024;
 		fwlen = 0x20000;
 		load_nss_ipq807x(1024);
 		insmod("leds-gpio");
+		nvram_default_get("eth1_label", "wan");
+		nvram_default_get("eth0_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
 		break;
 	case ROUTER_ASUS_AX89X:
 		profile = 1024;
@@ -1054,23 +1080,52 @@ void start_sysinit(void)
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
+		nvram_default_get("eth0_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
 		break;
 	case ROUTER_LINKSYS_MX4300:
 		profile = 1024;
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(1024);
+		nvram_default_get("eth0_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mx4200("hw_mac_addr");
 		load_nss_ipq807x(512);
 		break;
+		nvram_default_get("eth0_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
 	case ROUTER_LINKSYS_MR5500:
+		fwlen = 0x20000;
+		maddr = get_deviceinfo_mr5500("hw_mac_addr");
+		load_nss_ipq50xx(512);
+		nvram_default_get("eth5_label", "wan");
+		nvram_default_get("eth1_label", "lan1");
+		nvram_default_get("eth2_label", "lan2");
+		nvram_default_get("eth3_label", "lan3");
+		nvram_default_get("eth4_label", "lan4");
+		break;
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
 		maddr = get_deviceinfo_mr5500("hw_mac_addr");
 		load_nss_ipq50xx(512);
+		nvram_default_get("eth1_label", "wan");
+		nvram_default_get("eth2_label", "lan1");
+		nvram_default_get("eth3_label", "lan2");
+		nvram_default_get("eth4_label", "lan3");
+		nvram_default_get("eth5_label", "lan4");
 		break;
 	default:
 		fwlen = 0x20000;
