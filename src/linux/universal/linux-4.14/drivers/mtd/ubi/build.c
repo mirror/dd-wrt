@@ -1332,6 +1332,7 @@ static void __init ubi_auto_attach(void)
 		char magic[4];
 		struct mtd_info *copy;
 		/* check for a valid ubi magic */
+		pr_notice("scan for ubi\n");
 		for (i = 0;i < mtd->size;i += mtd->erasesize) {
 			err = mtd_read(mtd, i, 4, &len, (void *) magic);
 			if (!err && len == 4 && !strncmp(magic, "UBI#", 4)) 
