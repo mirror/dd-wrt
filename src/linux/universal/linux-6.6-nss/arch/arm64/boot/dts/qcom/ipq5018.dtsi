@@ -1114,7 +1114,6 @@
 
 			phys = <&pcie_x1phy>;
 			phy-names ="pciephy";
-			force_gen2 = <1>;
 
 			ranges = <0x81000000 0 0x80200000 0x80200000 0 0x00100000>,	/* I/O */
 				  	 <0x82000000 0 0x80300000 0x80300000 0 0x10000000>;	/* MEM */
@@ -1183,7 +1182,6 @@
 
 			phys = <&pcie_x2phy>;
 			phy-names ="pciephy";
-			force_gen2 = <1>;
 			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
 
 			ranges = <0x81000000 0 0xa0200000 0xa0200000 0 0x00100000>,	/* I/O */
