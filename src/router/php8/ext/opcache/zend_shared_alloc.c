@@ -19,12 +19,6 @@
    +----------------------------------------------------------------------+
 */
 
-#if defined(__linux__) && defined(HAVE_MEMFD_CREATE)
-# ifndef _GNU_SOURCE
-#  define _GNU_SOURCE
-# endif
-# include <sys/mman.h>
-#endif
 
 #include <errno.h>
 #include "ZendAccelerator.h"
@@ -42,6 +36,12 @@
 
 #ifdef HAVE_MPROTECT
 # include "sys/mman.h"
+#endif
+#if defined(__linux__) && defined(HAVE_MEMFD_CREATE)
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
+# include <sys/mman.h>
 #endif
 
 #define SEM_FILENAME_PREFIX ".ZendSem."
