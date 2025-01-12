@@ -2464,6 +2464,8 @@ static const struct qmp_phy_cfg ipq6018_pciephy_cfg = {
 
 	.pwrdn_ctrl		= SW_PWRDN | REFCLK_DRV_DSBL,
 	.phy_status		= PHYSTATUS,
+	.pipe_clock_rate	= 250000000,
+
 };
 
 static const struct qmp_phy_cfg sdm845_qmp_pciephy_cfg = {
@@ -3458,13 +3460,10 @@ static int phy_pipe_clk_register(struct qmp_pcie *qmp, struct device_node *np)
 	 * Controllers using QMP PHY-s use 125MHz pipe clock interface
 	 * unless other frequency is specified in the PHY config.
 	 */
-	if (of_property_read_bool(np, "gen3")) {
-		fixed->fixed_rate = 250000000;
-	} else if (qmp->cfg->pipe_clock_rate) {
+	if (qmp->cfg->pipe_clock_rate)
 		fixed->fixed_rate = qmp->cfg->pipe_clock_rate;
-	} else {
+	else
 		fixed->fixed_rate = 125000000;
-	}
 
 	fixed->hw.init = &init;
 
