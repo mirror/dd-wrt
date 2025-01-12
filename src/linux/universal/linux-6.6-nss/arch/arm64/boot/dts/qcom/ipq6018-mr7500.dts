@@ -559,7 +559,7 @@
 			};
 
 			partition@b80000 {
-				label = "kernel";
+				label = "linux";
 				reg = <0x000b80000 0x05200000>;
 			};
 
@@ -569,7 +569,7 @@
 			};
 
 			partition@5d80000 {
-				label = "alt_kernel";
+				label = "linux2";
 				reg = <0x005d80000 0x05200000>;
 			};
 
