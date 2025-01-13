@@ -1185,7 +1185,7 @@ void start_sysinit(void)
 			for (i = 0; i < 2104; i++)
 				putc(getc(fp), out);
 			fclose(out);
-			//			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_board1.bin");
+			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_precal.bin");
 		}
 		fclose(fp);
 	} else {
