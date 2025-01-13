@@ -108,7 +108,7 @@ static u8 clk_rcg2_get_parent(struct clk_hw *hw)
 	return __clk_rcg2_get_parent(hw, cfg);
 }
 
-static int update_config(struct clk_rcg2 *rcg)
+static int update_config(struct clk_rcg2 *rcg, bool check_update_clear)
 {
 	int count, ret;
 	u32 cmd;
@@ -119,6 +119,9 @@ static int update_config(struct clk_rcg2 *rcg)
 				 CMD_UPDATE, CMD_UPDATE);
 	if (ret)
 		return ret;
+
+	if (!check_update_clear)
+		return 0;
 
 	/* Wait for update to take effect */
 	for (count = 500; count > 0; count--) {
@@ -138,14 +141,19 @@ static int clk_rcg2_set_parent(struct clk_hw *hw, u8 index)
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	int ret;
+	bool check_update_clear = true;
 	u32 cfg = rcg->parent_map[index].cfg << CFG_SRC_SEL_SHIFT;
+
+	if ((rcg->flags & CLK_RCG2_HW_CONTROLLED) &&
+	    !clk_hw_is_enabled(clk_hw_get_parent_by_index(hw, index)))
+		check_update_clear = false;
 
 	ret = regmap_update_bits(rcg->clkr.regmap, RCG_CFG_OFFSET(rcg),
 				 CFG_SRC_SEL_MASK, cfg);
 	if (ret)
 		return ret;
 
-	return update_config(rcg);
+	return update_config(rcg, check_update_clear);
 }
 
 /*
@@ -388,6 +396,9 @@ static int __clk_rcg2_configure(struct clk_rcg2 *rcg, const struct freq_tbl *f,
 static int clk_rcg2_configure(struct clk_rcg2 *rcg, const struct freq_tbl *f)
 {
 	u32 cfg;
+	bool check_update_clear = true;
+	struct clk_hw *hw = &rcg->clkr.hw;
+	int index = qcom_find_src_index(hw, rcg->parent_map, f->src);
 	int ret;
 
 	ret = regmap_read(rcg->clkr.regmap, RCG_CFG_OFFSET(rcg), &cfg);
@@ -398,11 +409,15 @@ static int clk_rcg2_configure(struct clk_rcg2 *rcg, const struct freq_tbl *f)
 	if (ret)
 		return ret;
 
+	if ((rcg->flags & CLK_RCG2_HW_CONTROLLED) &&
+	    !clk_hw_is_enabled(clk_hw_get_parent_by_index(hw, index)))
+		check_update_clear = false;
+
 	ret = regmap_write(rcg->clkr.regmap, RCG_CFG_OFFSET(rcg), cfg);
 	if (ret)
 		return ret;
 
-	return update_config(rcg);
+	return update_config(rcg, check_update_clear);
 }
 
 static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
@@ -542,7 +557,7 @@ static int clk_rcg2_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 	if (ret)
 		return ret;
 
-	return update_config(rcg);
+	return update_config(rcg, true);
 }
 
 const struct clk_ops clk_rcg2_ops = {
@@ -1013,7 +1028,7 @@ static int clk_gfx3d_set_rate_and_parent(struct clk_hw *hw, unsigned long rate,
 	if (ret)
 		return ret;
 
-	return update_config(rcg);
+	return update_config(rcg, true);
 }
 
 static int clk_gfx3d_set_rate(struct clk_hw *hw, unsigned long rate,
@@ -1157,7 +1172,7 @@ static int clk_rcg2_shared_enable(struct clk_hw *hw)
 	if (ret)
 		return ret;
 
-	ret = update_config(rcg);
+	ret = update_config(rcg, true);
 	if (ret)
 		return ret;
 
@@ -1187,7 +1202,7 @@ static void clk_rcg2_shared_disable(struct clk_hw *hw)
 	regmap_write(rcg->clkr.regmap, rcg->cmd_rcgr + CFG_REG,
 		     rcg->safe_src_index << CFG_SRC_SEL_SHIFT);
 
-	update_config(rcg);
+	update_config(rcg, true);
 
 	clk_rcg2_clear_force_enable(hw);
 }
