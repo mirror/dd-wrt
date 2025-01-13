@@ -1185,7 +1185,7 @@ void start_sysinit(void)
 			for (i = 0; i < 2104; i++)
 				putc(getc(fp), out);
 			fclose(out);
-//			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_board1.bin");
+			//			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_board1.bin");
 		}
 		fclose(fp);
 	} else {
@@ -1375,7 +1375,7 @@ void start_sysinit(void)
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
-/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+		/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
 		sleep(1);
 		eval("ssdk_sh", "port", "autoneg", "restart", "5");
 		sleep(2);
@@ -1528,15 +1528,16 @@ void start_wifi_drivers(void)
 			break;
 		case ROUTER_FORTINET_FAP231F:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
-			//			insmod("ath");
-			//			insmod("ath10k_core");
-			//			insmod("ath10k_pci");
+			insmod("ath");
+			insmod("ath10k_core");
+			insmod("ath10k_pci");
 			break;
 		case ROUTER_LINKSYS_MR7500:
 			char *cert_region = get_deviceinfo_mr7350("cert_region");
 			if (!cert_region)
-			    cert_region = "";
-			load_ath11k(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, cert_region);
+				cert_region = "";
+			load_ath11k(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
+				    cert_region);
 			break;
 
 		default:
