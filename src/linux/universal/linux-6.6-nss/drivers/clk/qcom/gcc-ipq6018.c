@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2018,2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -8,7 +8,6 @@
 #include <linux/platform_device.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
 #include <linux/clk-provider.h>
 #include <linux/regmap.h>
 
@@ -60,7 +59,6 @@ static struct clk_alpha_pll gpll0_main = {
 			},
 			.num_parents = 1,
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -74,7 +72,6 @@ static struct clk_fixed_factor gpll0_out_main_div2 = {
 				&gpll0_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_fixed_factor_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -88,7 +85,6 @@ static struct clk_alpha_pll_postdiv gpll0 = {
 				&gpll0_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -149,7 +145,6 @@ static struct clk_alpha_pll gpll6_main = {
 			},
 			.num_parents = 1,
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -164,7 +159,6 @@ static struct clk_alpha_pll_postdiv gpll6 = {
 				&gpll6_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -181,7 +175,6 @@ static struct clk_alpha_pll gpll4_main = {
 			},
 			.num_parents = 1,
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -196,7 +189,6 @@ static struct clk_alpha_pll_postdiv gpll4 = {
 				&gpll4_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -212,7 +204,6 @@ static struct clk_rcg2 pcnoc_bfdcd_clk_src = {
 	.freq_tbl = ftbl_pcnoc_bfdcd_clk_src,
 	.hid_width = 5,
 	.parent_map = gcc_xo_gpll0_gpll0_out_main_div2_map,
-	.flags = CLK_RCG2_HW_CONTROLLED,
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "pcnoc_bfdcd_clk_src",
 		.parent_data = gcc_xo_gpll0_gpll0_out_main_div2,
@@ -247,7 +238,6 @@ static struct clk_alpha_pll gpll2_main = {
 			},
 			.num_parents = 1,
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -262,7 +252,6 @@ static struct clk_alpha_pll_postdiv gpll2 = {
 				&gpll2_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -293,7 +282,6 @@ static struct clk_alpha_pll_postdiv nss_crypto_pll = {
 				&nss_crypto_pll_main.clkr.hw },
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -385,7 +373,7 @@ static const struct freq_tbl ftbl_nss_ppe_clk_src[] = {
 
 static const struct clk_parent_data gcc_xo_bias_gpll0_gpll4_nss_ubi32[] = {
 	{ .fw_name = "xo" },
-	{ .fw_name = "bias_pll_cc_clk" },
+	{ .fw_name = "bias_pll_cc_clk", .name = "bias_pll_cc_clk" },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll4.clkr.hw },
 	{ .hw = &nss_crypto_pll.clkr.hw },
@@ -472,7 +460,6 @@ static struct clk_branch gcc_sleep_clk_src = {
 			},
 			.num_parents = 1,
 			.ops = &clk_branch2_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -992,7 +979,6 @@ static struct clk_rcg2 nss_crypto_clk_src = {
 	.mnd_width = 16,
 	.hid_width = 5,
 	.parent_map = gcc_xo_nss_crypto_pll_gpll0_map,
-	.flags = CLK_RCG2_HW_CONTROLLED,
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "nss_crypto_clk_src",
 		.parent_data = gcc_xo_nss_crypto_pll_gpll0,
@@ -1164,7 +1150,6 @@ static struct clk_rcg2 nss_ubi0_clk_src = {
 	.freq_tbl = ftbl_nss_ubi_clk_src,
 	.hid_width = 5,
 	.parent_map = gcc_xo_ubi32_gpll0_gpll2_gpll4_gpll6_map,
-	.flags = CLK_RCG2_HW_CONTROLLED,
 	.clkr.hw.init = &(struct clk_init_data){
 		.name = "nss_ubi0_clk_src",
 		.parent_data = gcc_xo_ubi32_pll_gpll0_gpll2_gpll4_gpll6,
@@ -1194,7 +1179,6 @@ static struct clk_rcg2 adss_pwm_clk_src = {
 };
 
 static const struct freq_tbl ftbl_blsp1_qup_i2c_apps_clk_src[] = {
-	F(9600000, P_XO, 2.5, 0, 0),
 	F(24000000, P_XO, 1, 0, 0),
 	F(25000000, P_GPLL0_DIV2, 16, 0, 0),
 	F(50000000, P_GPLL0, 16, 0, 0),
