@@ -1528,10 +1528,7 @@ void start_wifi_drivers(void)
 			break;
 		case ROUTER_FORTINET_FAP231F:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
-			insmod("ath");
-			insmod("ath10k");
-			insmod("ath10k_core");
-			insmod("ath10k_pci");
+			detect_wireless_devices(RADIO_ATH10K);
 			break;
 		case ROUTER_LINKSYS_MR7500:
 			char *cert_region = get_deviceinfo_mr7350("cert_region");
