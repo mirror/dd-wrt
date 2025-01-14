@@ -1185,7 +1185,8 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
-		break case ROUTER_FORTINET_FAP231F:
+			break;
+		case ROUTER_FORTINET_FAP231F:
 			fseek(fp, 0x33006, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
