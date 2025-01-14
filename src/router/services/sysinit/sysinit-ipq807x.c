@@ -1529,6 +1529,7 @@ void start_wifi_drivers(void)
 		case ROUTER_FORTINET_FAP231F:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			insmod("ath");
+			insmod("ath10k");
 			insmod("ath10k_core");
 			insmod("ath10k_pci");
 			break;
