@@ -117,6 +117,7 @@ ifeq ($(CONFIG_ATH11K),y)
   CPTCFG_ATH11K_DEBUGFS=y
   CPTCFG_ATH11K_THERMAL=y
   CPTCFG_ATH11K_SPECTRAL=y
+  CPTCFG_ATH11K_SMART_ANT_ALG=y
   CPTCFG_ATH11K_PCI=y
   CPTCFG_MHI_BUS=y
   CPTCFG_MHI_QRTR=y
@@ -128,6 +129,7 @@ ifeq ($(CONFIG_IPQ6018),y)
   CPTCFG_ATH11K_THERMAL=y
   CPTCFG_ATH11K_SPECTRAL=y
   CPTCFG_ATH11K_NSS_MESH_SUPPORT=y
+  CPTCFG_ATH11K_SMART_ANT_ALG=y
   CPTCFG_ATH11K_PCI=y
   CPTCFG_ATH11K_AHB=y
   CPTCFG_MHI_BUS=y
@@ -236,6 +238,7 @@ ifeq ($(CONFIG_ATH11K),y)
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_SMART_ANT_ALG=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_QRTR=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_QRTR_MHI=y" >>$(MAC80211_PATH)/.config_temp
@@ -245,6 +248,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_SPECTRAL=y" >>$(MAC80211_PATH)/.config_temp
+	echo "CPTCFG_ATH11K_SMART_ANT_ALG=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_AHB=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MHI_BUS=y" >>$(MAC80211_PATH)/.config_temp
@@ -259,11 +263,11 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_HTT_STATS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
-	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	cp -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
-	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
-	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
+	cp -uvf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	cp -uvf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+#	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
+#	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
+#	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
 	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
@@ -489,6 +493,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f cal-pci-0001:01:00.0.bin && ln -s /tmp/cal-pci-0001:01:00.0.bin cal-pci-0001:01:00.0.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f cal-pci-0000:01:00.0.bin && ln -s /tmp/cal-pci-0000:01:00.0.bin cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f caldata2.bin && ln -s /tmp/caldata2.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f board2.bin && ln -s /tmp/board2.bin board.bin 
 endif
@@ -529,6 +534,10 @@ ifneq ($(CONFIG_QCA9984),y)
 endif
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0 && ln -s /tmp/ath10k-board.bin board.bin 
+ifeq ($(CONFIG_IPQ6018),y)
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f cal-pci-0001:01:00.0.bin && ln -s /tmp/ath10k_cal.bin cal-pci-0000:01:00.0.bin
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/ath10k_precal.bin pre-cal-pci-0000:01:00.0.bin
+else
 ifeq ($(CONFIG_R9000),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0001:03:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:04:00.0.bin 
@@ -541,13 +550,20 @@ else
 endif
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:01:00.0.bin 
 endif
+endif
 ifeq ($(CONFIG_QCA9887),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/ath10k/board.bin
 ifeq ($(CONFIG_ARCHERC25),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X
 endif
+ifneq ($(CONFIG_IPQ6018),y)
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k-board.bin board.bin 
+else
+	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k_board1.bin board.bin 
+endif
+
 endif
 ifneq ($(CONFIG_QCA4019),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019
