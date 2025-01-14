@@ -1162,7 +1162,7 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
-		switch(brand) {
+		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			fseek(fp, 0x26800, SEEK_SET);
@@ -1174,7 +1174,7 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
-		break;
+			break;
 		case ROUTER_LINKSYS_MR7500:
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
@@ -1185,8 +1185,7 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
-		break
-		case ROUTER_FORTINET_FAP231F:
+		break case ROUTER_FORTINET_FAP231F:
 			fseek(fp, 0x33006, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
@@ -1200,7 +1199,7 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_precal.bin");
-		break;
+			break;
 		}
 		fclose(fp);
 	} else {
