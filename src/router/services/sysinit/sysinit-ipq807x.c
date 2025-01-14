@@ -392,6 +392,7 @@ void patchvht160(char *file, int phynum)
 		for (i = 0; i < 6; i++)                                                                                      \
 			binmac[i] = newmac[i];                                                                               \
 		patchmac("/tmp/cal-pci-0001:01:00.0.bin", offset, binmac);                                                   \
+		patchmac("/tmp/cal-pci-0000:01:00.0.bin", offset, binmac);                                                   \
 		patchmac("/tmp/caldata2.bin", offset, binmac);                                                               \
 		patchmac("/tmp/board2.bin", offset, binmac);                                                                 \
 	}
@@ -1161,7 +1162,9 @@ void start_sysinit(void)
 		for (i = 0; i < fwlen; i++)
 			putc(getc(fp), out);
 		fclose(out);
-		if (brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MR7500) {
+		switch(brand) {
+		case ROUTER_LINKSYS_MR5500:
+		case ROUTER_LINKSYS_MX5500:
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -1171,8 +1174,19 @@ void start_sysinit(void)
 			for (i = 0; i < fwlen; i++)
 				putc(getc(fp), out);
 			fclose(out);
-		}
-		if (brand == ROUTER_FORTINET_FAP231F) {
+		break;
+		case ROUTER_LINKSYS_MR7500:
+			fseek(fp, 0x26800, SEEK_SET);
+			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
+			out = fopen("/tmp/board2.bin", "wb");
+			for (i = 0; i < fwlen; i++)
+				putc(getc(fp), out);
+			fclose(out);
+		break
+		case ROUTER_FORTINET_FAP231F:
 			fseek(fp, 0x33006, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
@@ -1186,6 +1200,7 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_precal.bin");
+		break;
 		}
 		fclose(fp);
 	} else {
@@ -1233,7 +1248,7 @@ void start_sysinit(void)
 		removeregdomain("/tmp/board.bin", IPQ6018);
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
 		removeregdomain("/tmp/board2.bin", QCN9000);
-		removeregdomain("/tmp/cal-pci-0001:01:00.0.bin", QCN9000);
+		removeregdomain("/tmp/cal-pci-0000:01:00.0.bin", QCN9000);
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_FORTINET_FAP231F:
