@@ -1,9 +1,11 @@
 include $(TOP)/.config
+MAC80211_PATH=compat-wireless
 ifeq ($(CONFIG_IPQ6018),y)
 MAC80211_PATH=compat-wireless-nss
-else
-MAC80211_PATH=compat-wireless
 endif
+#ifeq ($(CONFIG_IPQ806X),y)
+#MAC80211_PATH=compat-wireless-nss
+#endif
 ifeq ($(wildcard $(TOP)/$(MAC80211_PATH)/config.mk),) 
 	include $(TOP)/mac80211-rules/ath9k-kconfig.mk	
 else
