@@ -1316,6 +1316,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 		switch (density) {
 		case 1:
+		case 0:
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 			fprintf(fp, "basic_rates=60 120 240\n");
 			break;
