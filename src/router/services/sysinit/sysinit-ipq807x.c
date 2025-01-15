@@ -999,6 +999,7 @@ void start_sysinit(void)
 	char *maddr = NULL;
 	int fwlen = 0x10000;
 	int profile = 512;
+	insmod("aquantia");
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
 		maddr = get_deviceinfo_mr7350("hw_mac_addr");
