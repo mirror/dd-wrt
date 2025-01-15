@@ -2798,7 +2798,6 @@ struct nvram_param srouter_defaults[] = {
 	{ "mmc_clk", "0" },
 	{ "mmc_cs", "0" },
 #endif
-	{ "ip_conntrack_max", "4096" },
 #ifdef HAVE_80211AC
 #ifndef HAVE_BUFFALO
 	{ "wl_regdomain", "UNITED_STATES" },

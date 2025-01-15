@@ -2010,27 +2010,6 @@ void start_restore_defaults(void)
 
 	if (restore_defaults) {
 		nvram_seti("ip_conntrack_tcp_timeouts", 3600);
-#ifdef HAVE_MICRO
-		/*
-		 * adjust ip_conntrack_max based on available memory size
-		 * some routers that can run micro only have 16MB memory
-		 */
-		if (getmemfree() > (8 * 1024 * 1024)) {
-			nvram_seti("ip_conntrack_max", 4096);
-		} else {
-			nvram_seti("ip_conntrack_max", 1024);
-		}
-#else
-		if (getmemfree() > (256 * 1024 * 1024)) {
-			nvram_seti("ip_conntrack_max", 65536);
-		} else if (getmemfree() > (64 * 1024 * 1024)) {
-			nvram_seti("ip_conntrack_max", 32768);
-		}
-#endif
-		if (getmemtotal() > 128 * 1024 * 1024) {
-			nvram_seti("sshd_rw", 262144);
-		}
-
 		/*
 		 * these unsets are important for routers where we can't erase nvram
 		 * and only software restore defaults 
@@ -2039,6 +2018,29 @@ void start_restore_defaults(void)
 		nvram_unset("wl_vifs");
 		nvram_unset("wl0_vifs");
 	}
+#ifdef HAVE_MICRO
+		/*
+		 * adjust ip_conntrack_max based on available memory size
+		 * some routers that can run micro only have 16MB memory
+		 */
+		if (getmemfree() > (8 * 1024 * 1024)) {
+			nvram_default_get("ip_conntrack_max", "4096");
+		} else {
+			nvram_default_get("ip_conntrack_max", "1024");
+		}
+#else
+		if (getmemfree() > (256 * 1024 * 1024)) {
+			nvram_default_get("ip_conntrack_max", "65536");
+		} else if (getmemfree() > (64 * 1024 * 1024)) {
+			default_default_get("ip_conntrack_max", "32768");
+		}
+#endif
+		if (getmemtotal() > 128 * 1024 * 1024) {
+			nvram_default_get("sshd_rw", "262144");
+		} else {
+			nvram_default_get("sshd_rw", "4096");
+		}
+
 
 	// }
 
