@@ -1128,7 +1128,7 @@
 			perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 			status = "disabled";
 
-			pcie@0 {
+/*			pcie@0 {
 				device_type = "pci";
 				reg = <0x0 0x0 0x0 0x0 0x0>;
 				bus-range = <0x01 0xff>;
@@ -1136,7 +1136,7 @@
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
-			};
+			};*/
 		};
 	};
 
