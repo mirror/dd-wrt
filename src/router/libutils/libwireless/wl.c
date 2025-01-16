@@ -1337,19 +1337,19 @@ long long wifi_getrate(char *ifname)
 		switch (interface->width) {
 		case 20:
 			if (vhtmcs == -1)
-				vhtmcs = 9;
+				vhtmcs = 39;
 			break;
 		case 40:
 			if (vhtmcs == -1)
-				vhtmcs = 19;
+				vhtmcs = 39;
 			break;
 		case 80:
 			if (vhtmcs == -1)
-				vhtmcs = 29;
+				vhtmcs = 39;
 			break;
 		case 160:
 			if (vhtmcs == -1)
-				vhtmcs = 39;
+				vhtmcs = 19;
 			break;
 		}
 
