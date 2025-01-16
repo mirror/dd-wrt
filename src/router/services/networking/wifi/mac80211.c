@@ -689,7 +689,7 @@ int is_6ghz_freq(char *prefix, int freq)
 	if (!is_ath11k(prefix))
 		return 0;
 		
-	if (freq >= 5955 || freq <= 7115)
+	if (freq >= 5955 && freq <= 7115)
 		return 1;
 
 	if (freq == 5935)
