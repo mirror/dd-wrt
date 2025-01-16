@@ -1333,6 +1333,25 @@ long long wifi_getrate(char *ifname)
 		if (is_ath10k(ifname) && has_2ghz(physical))
 			novht = nvram_nmatch("0", "%s_turbo_qam", physical);
 		sgi = sgi ? nvram_nmatch("1", "%s_shortgi", physical) : 0;
+
+		switch (interface->width) {
+		case 20:
+			if (vhtmcs == -1)
+				vhtmcs = 9;
+			break;
+		case 40:
+			if (vhtmcs == -1)
+				vhtmcs = 19;
+		break case 80:
+			if (vhtmcs == -1)
+				vhtmcs = 29;
+			break;
+		case 160:
+			if (vhtmcs == -1)
+				vhtmcs = 39;
+			break;
+		}
+
 		switch (interface->width) {
 		case 2:
 			rate = 54000;
