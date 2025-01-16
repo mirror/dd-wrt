@@ -165,6 +165,10 @@ void *get_deviceinfo(char *partname, char *var)
 	for (i = 0; i < s; i++) {
 		if (!strncmp(mem + i, newname, l)) {
 			strncpy(res, mem + i + l, 17);
+			int a;
+			for (a=0;a<17;a++)
+			    if (res[a]==0xa || res[a]==0xd)
+				res[a]=0;
 			free(mem);
 			return res;
 		}
@@ -1391,7 +1395,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7500:
 		setscaling(1800000);
-		disableportlearn();
+	//	disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		eval("fw_setenv", "bootcmd",
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
@@ -1576,7 +1580,7 @@ void start_wifi_drivers(void)
 int check_cfe_nv(void)
 {
 	nvram_seti("portprio_support", 0);
-	return 0;
+	    return 0;
 }
 
 int check_pmon_nv(void)
