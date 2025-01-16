@@ -29,7 +29,6 @@
 #ifndef AQ_RETURNCODES_TOKEN
 #define AQ_RETURNCODES_TOKEN
 
-
 /*! \defgroup ReturnCodes
   @{
 */
@@ -48,7 +47,6 @@ typedef unsigned int AQ_Retcode;
   @{ */
 #define AQ_RET_OK 0
 /*@}*/
-
 
 /*! \defgroup GeneralErrors 
   @{ */
@@ -109,5 +107,5 @@ typedef unsigned int AQ_Retcode;
 /*@}*/
 
 /*@}*/
- 
+
 #endif

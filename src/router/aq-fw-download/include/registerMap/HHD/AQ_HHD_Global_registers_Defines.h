@@ -39,11 +39,9 @@
 *
 ***********************************************************************/
 
-
 /*@{*/
 #ifndef AQ_HHD_GLOBAL_REGS_DEFINES_HEADER
 #define AQ_HHD_GLOBAL_REGS_DEFINES_HEADER
-
 
 /*-----------------------------------------------------------------------------*/
 /*Access macro definitions                                                     */

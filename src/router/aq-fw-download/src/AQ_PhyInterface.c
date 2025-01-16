@@ -82,8 +82,7 @@ void AQ_API_MDIO_Write(
 	memcpy(&ifr.ifr_data, &mii, sizeof(mii));
 
 	if (ioctl(sock, SIOCSMIIREG, &ifr) < 0) {
-		fprintf(stderr, "SIOCSMIIREG on %s failed: %s\n", ifr.ifr_name,
-			strerror(errno));
+		fprintf(stderr, "SIOCSMIIREG on %s failed: %s\n", ifr.ifr_name, strerror(errno));
 	}
 
 	return;
@@ -92,8 +91,7 @@ void AQ_API_MDIO_Write(
 /*! Provides generic synchronous PHY register read functionality. It is the
  * responsibility of the system designer to provide the specific MDIO address
  * pointer updates, etc. in order to accomplish this read operation.*/
-unsigned int AQ_API_MDIO_Read
-(
+unsigned int AQ_API_MDIO_Read(
 	/*! Uniquely identifies the port within the system. AQ_Port must be
 	 * defined to a whatever data type is suitable for the platform.*/
 	AQ_Port PHY_ID,
@@ -117,13 +115,11 @@ unsigned int AQ_API_MDIO_Read
 	memcpy(&ifr.ifr_data, &mii, sizeof(mii));
 
 	if (ioctl(sock, SIOCGMIIREG, &ifr) < 0) {
-		fprintf(stderr, "SIOCGMIIREG on %s failed: %s\n", ifr.ifr_name,
-			strerror(errno));
+		fprintf(stderr, "SIOCGMIIREG on %s failed: %s\n", ifr.ifr_name, strerror(errno));
 		return -1;
 	} else {
 		memcpy(&mii, &ifr.ifr_data, sizeof(mii));
 	}
-
 
 	return mii.val_out;
 }
@@ -132,10 +128,9 @@ unsigned int AQ_API_MDIO_Read
  *  * in a platform-approriate way. AQ_API functions will call this function to
  *   * block for the specified period of time. If necessary, PHY register reads
  *    * may be performed on port to busy-wait. */
-void AQ_API_Wait(
-	uint32_t milliseconds,     /*!< The delay in milliseconds */
-	AQ_API_Port* port          /*!< The PHY to use if delay reads are necessary*/ )
+void AQ_API_Wait(uint32_t milliseconds, /*!< The delay in milliseconds */
+		 AQ_API_Port *port /*!< The PHY to use if delay reads are necessary*/)
 {
-	unsigned long long  mirco = milliseconds *1000;
+	unsigned long long mirco = milliseconds * 1000;
 	usleep(mirco);
 }

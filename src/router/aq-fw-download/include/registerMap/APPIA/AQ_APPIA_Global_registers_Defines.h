@@ -39,11 +39,9 @@
 *
 ***********************************************************************/
 
-
 /*@{*/
 #ifndef AQ_APPIA_GLOBAL_REGS_DEFINES_HEADER
 #define AQ_APPIA_GLOBAL_REGS_DEFINES_HEADER
-
 
 /*-----------------------------------------------------------------------------*/
 /*Access macro definitions                                                     */

@@ -28,7 +28,6 @@
  * functions.  The platform integrator must provide the implementation of 
  * these functions. */
 
-
 #ifndef AQ_PHY_PLATFORMROUTINES_TOKEN
 #define AQ_PHY_PLATFORMROUTINES_TOKEN
 
@@ -42,7 +41,6 @@
 extern "C" {
 #endif
 
-
 /*******************************************************************
                          Time Delay
 *******************************************************************/
@@ -55,14 +53,11 @@ extern "C" {
  * in a platform-approriate way. AQ_API functions will call this function to 
  * block for the specified period of time. If necessary, PHY register reads
  * may be performed on port to busy-wait. */
-void AQ_API_Wait
-(
-  uint32_t milliseconds,     /*!< The delay in milliseconds */
-  AQ_API_Port* port          /*!< The PHY to use if delay reads are necessary*/
+void AQ_API_Wait(uint32_t milliseconds, /*!< The delay in milliseconds */
+		 AQ_API_Port *port /*!< The PHY to use if delay reads are necessary*/
 );
 
 /*@}*/
-
 
 #ifdef __cplusplus
 }

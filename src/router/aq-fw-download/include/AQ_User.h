@@ -34,17 +34,14 @@
 This module contains the definitions used to configure AQ_API behavior as desired. */
 /*@{*/
 
-
 /*! Specify the proper data type for AQ_Port. This will depend on the
  * platform-specific implementation of the PHY register read/write functions.*/
 typedef unsigned int AQ_Port;
-
 
 /*! If defined, AQ_API functions will print various error and info messages 
  * to stdout.  If not, nothing will be printed and AQ_API.c will NOT include
  * stdio.h. */
 #define AQ_VERBOSE
-
 
 /*! If defined, the PHY interface supports block (asynchronous) read/write 
  * operation. If AQ_PHY_SUPPORTS_BLOCK_READ_WRITE is defined, then 
@@ -53,14 +50,12 @@ typedef unsigned int AQ_Port;
  * defined, they will not be called, and need not be implemented. */
 #undef AQ_PHY_SUPPORTS_BLOCK_READ_WRITE
 
-
 /*! If defined, time.h exists, and so the associated functions wil be used to 
  * compute the elapsed time spent in a polling loop, to ensure that the 
  * maximum time-out period will not be exceeded.  If not defined, then 
  * AQ_MDIO_READS_PER_SECOND will be used to calculate the minimum possible 
  * elapsed time. */
 #define AQ_TIME_T_EXISTS
-
 
 /*! The maximum number of synchronous PHY register reads that can be performed 
  * per second. A worst case number can be derived as follows: 
@@ -76,13 +71,11 @@ typedef unsigned int AQ_Port;
  * defined.  If AQ_TIME_T_EXISTS is not defined, this must be defined. */
 #define AQ_MDIO_READS_PER_SECOND 78125
 
-
 /*! If defined, after writing to one of the registers that can trigger a 
  * processor-intensive MDIO operation, AQ_API functions will poll the 
  * the "processor intensive MDIO operation in progress" bit and wait for it
  * to be zero before proceeding. */
 #define AQ_ENABLE_UP_BUSY_CHECKS
-
 
 /*! If defined, the register map header files containing reverse-packed
  * structs will be included.  If not, the register map header files containing 
@@ -94,4 +87,3 @@ typedef unsigned int AQ_Port;
 
 /*@}*/
 #endif
-

@@ -33,7 +33,6 @@
 #include "AQ_User.h"
 #include "AQ_RegGroupMaxSizes.h"
 
-
 #ifndef AQ_REVERSED_BITFIELD_ORDERING
 /* 
  * Include non-reversed header files (bitfields ordered from LSbit to MSbit) 

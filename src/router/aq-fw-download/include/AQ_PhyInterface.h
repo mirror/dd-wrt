@@ -23,25 +23,20 @@
 *
 ***********************************************************************/
 
-
 /*! \file 
  * Declares the base PHY register read and write functions that are 
  * called by the API functions. The platform integrator must provide 
  * the implementation of these routines. */
 
-
 #ifndef AQ_PHY_INTERFACE_TOKEN
 #define AQ_PHY_INTERFACE_TOKEN
-
 
 #include "AQ_API.h"
 #include "AQ_User.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*******************************************************************
                         MDIO Access Functions
@@ -62,38 +57,33 @@ Thus these functions leave the MDIO optimization to the system engineer.
  */
 /*@{*/
 
-
 /*! Provides generic synchronous PHY register write functionality. It is the
  * responsibility of the system designer to provide the specific MDIO address 
  * pointer updates, etc. in order to accomplish this write operation. 
  * It will be assumed that the write has been completed by the time this 
  * function returns.*/
-void AQ_API_MDIO_Write
-(
-    /*! Uniquely identifies the port within the system. AQ_Port must be 
+void AQ_API_MDIO_Write(
+	/*! Uniquely identifies the port within the system. AQ_Port must be 
      * defined to a whatever data type is suitable for the platform.*/
-  AQ_Port PHY_ID,
-    /*! The address of the MMD within the target PHY. */
-  unsigned int MMD,
-    /*! The 16-bit address of the PHY register being written. */
-  unsigned int address,
-    /*! The 16-bits of data to write to the specified PHY register. */
-  unsigned int data
-);
+	AQ_Port PHY_ID,
+	/*! The address of the MMD within the target PHY. */
+	unsigned int MMD,
+	/*! The 16-bit address of the PHY register being written. */
+	unsigned int address,
+	/*! The 16-bits of data to write to the specified PHY register. */
+	unsigned int data);
 
 /*! Provides generic synchronous PHY register read functionality. It is the
  * responsibility of the system designer to provide the specific MDIO address 
  * pointer updates, etc. in order to accomplish this read operation.*/
-unsigned int AQ_API_MDIO_Read
-(
-    /*! Uniquely identifies the port within the system. AQ_Port must be 
+unsigned int AQ_API_MDIO_Read(
+	/*! Uniquely identifies the port within the system. AQ_Port must be 
      * defined to a whatever data type is suitable for the platform.*/
-  AQ_Port PHY_ID,
-    /*! The address of the MMD within the target PHY. */
-  unsigned int MMD,
-    /*! The 16-bit address of the PHY register being read. */
-  unsigned int address
-);
+	AQ_Port PHY_ID,
+	/*! The address of the MMD within the target PHY. */
+	unsigned int MMD,
+	/*! The 16-bit address of the PHY register being read. */
+	unsigned int address);
 
 #ifdef AQ_PHY_SUPPORTS_BLOCK_READ_WRITE
 
@@ -104,18 +94,16 @@ unsigned int AQ_API_MDIO_Read
  * this function returns.  All register reads and writes to a particular PHY_ID 
  * that are requested by calling AQ_API_MDIO_BlockWrite or AQ_API_MDIO_BlockRead
  * MUST be performed in the order that the calls are made. */
-void AQ_API_MDIO_BlockWrite
-(
-    /*! Uniquely identifies the port within the system. AQ_Port must be 
+void AQ_API_MDIO_BlockWrite(
+	/*! Uniquely identifies the port within the system. AQ_Port must be 
      * defined to a whatever data type is suitable for the platform.*/
-  AQ_Port PHY_ID,
-    /*! The address of the MMD within the target PHY. */
-  unsigned int MMD,
-    /*! The 16-bit address of the PHY register being written. */
-  unsigned int address,
-    /*! The 16-bits of data to write to the specified PHY register. */
-  unsigned int data
-);
+	AQ_Port PHY_ID,
+	/*! The address of the MMD within the target PHY. */
+	unsigned int MMD,
+	/*! The 16-bit address of the PHY register being written. */
+	unsigned int address,
+	/*! The 16-bits of data to write to the specified PHY register. */
+	unsigned int data);
 
 /*! Provides generic asynchronous/buffered PHY register read functionality. 
  * It is the responsibility of the system designer to provide the specific 
@@ -124,16 +112,14 @@ void AQ_API_MDIO_BlockWrite
  * are requested by calling AQ_API_MDIO_BlockWrite or AQ_API_MDIO_BlockRead 
  * MUST be performed in the order that the calls are made. The register value 
  * may subsequently be fetched by calling AQ_API_MDIO_BlockOperationExecute.*/
-void AQ_API_MDIO_BlockRead
-(
-    /*! Uniquely identifies the port within the system. AQ_Port must be 
+void AQ_API_MDIO_BlockRead(
+	/*! Uniquely identifies the port within the system. AQ_Port must be 
      * defined to a whatever data type is suitable for the platform.*/
-  AQ_Port PHY_ID,
-    /*! The address of the MMD within the target PHY. */
-  unsigned int MMD,
-    /*! The 16-bit address of the PHY register being read. */
-  unsigned int address
-);
+	AQ_Port PHY_ID,
+	/*! The address of the MMD within the target PHY. */
+	unsigned int MMD,
+	/*! The 16-bit address of the PHY register being read. */
+	unsigned int address);
 
 /* Retrieve the results of all PHY register reads to PHY_ID previously 
  * requested via calls to AQ_API_MDIO_BlockRead.  The read and write 
@@ -144,25 +130,20 @@ void AQ_API_MDIO_BlockRead
  * pending calls to AQ_API_MDIO_BlockRead, in the order that the calls 
  * were performed.  Callers should track the number of pending block
  * reads to determine the size of the returned array. */
-unsigned int * AQ_API_MDIO_BlockOperationExecute
-(
-    /*! Uniquely identifies the port within the system. AQ_Port must be 
+unsigned int *AQ_API_MDIO_BlockOperationExecute(
+	/*! Uniquely identifies the port within the system. AQ_Port must be 
      * defined to a whatever data type is suitable for the platform.*/
-  AQ_Port PHY_ID
-);
+	AQ_Port PHY_ID);
 
 /* Returns the maximum number of asynchronous/buffered PHY register 
  * read/write operations.  Callers will call AQ_API_MDIO_BlockOperationExecute 
  * before issuing additional calls to AQ_API_MDIO_BlockWrite or 
  * AQ_API_MDIO_BlockRead to avoid a buffer overflow. */
-unsigned int AQ_API_MDIO_MaxBlockOperations
-(
-);
+unsigned int AQ_API_MDIO_MaxBlockOperations();
 
 #endif
 
 /*@}*/
-
 
 #ifdef __cplusplus
 }
