@@ -449,7 +449,7 @@ obj-$(CONFIG_UNIWIP) += uniwip_gpio
 ifeq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_MACTELNET) += libucontext openssl openssl-shared openssl-apps mactelnet
 endif
-obj-$(CONFIG_IPQ6018) += firmwares
+obj-$(CONFIG_IPQ6018) += firmwares aq-fw-download
 obj-$(CONFIG_FIRMWARES) += firmwares
 obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
