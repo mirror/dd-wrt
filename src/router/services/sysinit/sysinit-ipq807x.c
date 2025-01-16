@@ -580,6 +580,45 @@ void start_setup_affinity(void)
 
 			sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 			break;
+		case ROUTER_LINKSYS_MR7500:
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 3);
+			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+			set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+
+			set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+
+			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
+
+			set_named_smp_affinity("edma_txcmpl", 3, 1);
+			set_named_smp_affinity("edma_rxfill", 3, 1);
+			set_named_smp_affinity("edma_rxdesc", 3, 1);
+			set_named_smp_affinity("edma_misc", 3, 1);
+
+			set_named_smp_affinity_list("nss_queue0", "0 1 2 3", 1);
+			set_named_smp_affinity("nss_queue1", 1, 1);
+			set_named_smp_affinity("nss_queue2", 2, 1);
+			set_named_smp_affinity("nss_queue3", 3, 1);
+
+			set_named_smp_affinity("nss_queue0", 3, 2);
+
+			set_named_smp_affinity_list("nss_empty_buf_sos", "1 2 3", 1);
+			set_named_smp_affinity_list("nss_empty_buf_queue", "2 3", 1);
+			set_named_smp_affinity("nss_empty_buf_sos", 3, 2);
+
+			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
+
+			sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
+		
+		break;
 		default:
 			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
