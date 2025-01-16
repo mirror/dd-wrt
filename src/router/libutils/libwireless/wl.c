@@ -94,6 +94,10 @@ int ieee80211_mhz2ieee(int freq)
 		return (freq - 4000) / 5;
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
+	if (freq == 5935)
+		return (freq - 5925) / 5;
+	if (freq > 5950 && freq <= 7115)
+		return (freq - 5950) / 5;
 	if (freq == 58320)
 		return 1;
 	if (freq == 60480)
@@ -150,6 +154,21 @@ int has_5ghz(const char *prefix)
 	}
 	if (is_mac80211(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 5));
+	}
+
+	RETURNVALUE(has_athmask(dn, 0x1));
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_6ghz(const char *prefix)
+{
+	INITVALUECACHE();
+	if (has_ad(prefix)) {
+		RETURNVALUE(0);
+	}
+	if (is_mac80211(prefix)) {
+		RETURNVALUE(mac80211_check_band(prefix, 6));
 	}
 
 	RETURNVALUE(has_athmask(dn, 0x1));
@@ -3814,7 +3833,7 @@ int HETxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int bw)
 	}
 	int sgi = 0;
 	mcs = vhtmcs;
-	
+
 #define SCALE 6144
 	unsigned long long mcs_divisors[14] = {
 		102399, /* 16.666666... */

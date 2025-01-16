@@ -131,7 +131,7 @@ void special_mac80211_init(void)
 	}
 	if (!unl.family) {
 		if (!unl_genl_init(&unl, "nl80211"))
-		    bunl = 1;
+			bunl = 1;
 	}
 }
 
@@ -660,11 +660,13 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED]) {
 		mac80211_info->wci->tx_compressed = nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]);
 	}
-	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo, sizeof(mac80211_info->wci->chaininfo));
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL], mac80211_info->wci->chaininfo,
+			 sizeof(mac80211_info->wci->chaininfo));
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG]) {
 		mac80211_info->wci->signal = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
 	}
-	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg, sizeof(mac80211_info->wci->chaininfo_avg));
+	get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], mac80211_info->wci->chaininfo_avg,
+			 sizeof(mac80211_info->wci->chaininfo_avg));
 
 	if (sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]) {
 		mac80211_info->wci->signal_avg = (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]);
@@ -920,8 +922,7 @@ static int cansuperchannel(const char *prefix)
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
-#if 0
-static char *mac80211_get_hecaps(const char *interface)
+/*static char *mac80211_get_hecaps(const char *interface)
 {
 	struct nlattr *tb_band;
 	struct nlattr *tb;
@@ -942,9 +943,6 @@ static char *mac80211_get_hecaps(const char *interface)
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-	nlmsg_hdr(msg)->nlmsg_flags |= NLM_F_DUMP;
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
 		unlock();
 		return strdup("");
@@ -955,29 +953,25 @@ static char *mac80211_get_hecaps(const char *interface)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
 		tb_band = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_IFTYPE_DATA);
-		fprintf(stderr, "%s:%d %X %d\n", __func__, __LINE__, nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_VHT_CAPA), nla_len(band));
-		fprintf(stderr, "%s:%d %X\n", __func__, __LINE__, nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_IFTYPE_DATA));
 		if (tb_band) {
 			struct nlattr *nl_iftype;
 			int rem_band;
-			fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 
 			nla_for_each_nested(nl_iftype, tb_band, rem_band) {
 				fprintf(stderr, "%s:%d\n", __func__, __LINE__);
 				tb = nla_find(nla_data(nl_iftype), nla_len(nl_iftype), NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY);
 				if (tb) {
 					len = nla_len(tb);
-					fprintf(stderr, "%s:%d len %d\n", __func__, __LINE__, len);
 
 					if (len > sizeof(phy_cap) - 1)
 						len = sizeof(phy_cap) - 1;
 					memcpy(&((__u8 *)phy_cap)[1], nla_data(tb), len);
 				}
-
 			}
 		}
 	}
-	asprintf(&capstring, "%s%s%s%s", phy_cap[0] & (1 << 10) ? "[HE80]" : "", phy_cap[0] & (1 << 10) ? "[HE40]" : "", phy_cap[0] & (1 << 11) ? "[HE160]" : "", phy_cap[0] & (1 << 12) ? "[HE160][HE80+80]" : "");
+	asprintf(&capstring, "%s%s%s%s", phy_cap[0] & (1 << 10) ? "[HE80]" : "", phy_cap[0] & (1 << 10) ? "[HE40]" : "",
+		 phy_cap[0] & (1 << 11) ? "[HE160]" : "", phy_cap[0] & (1 << 12) ? "[HE160][HE80+80]" : "");
 
 out:
 nla_put_failure:
@@ -986,8 +980,7 @@ nla_put_failure:
 	if (!capstring)
 		return strdup("");
 	return capstring;
-}
-#endif
+}*/
 
 static char *mac80211_get_hecaps(const char *interface)
 {
@@ -1123,7 +1116,7 @@ int has_vht160(const char *interface)
 #if defined(HAVE_ATH11K)
 int has_he160(const char *interface)
 {
-	return 0;
+	return has_6ghz(interface);
 #if 0
 	//if vht caps do not support vht160, he160 will not work anyway. we dont need this function
 	INITVALUECACHEi(interface);
@@ -1453,16 +1446,20 @@ int mac80211_check_band(const char *interface, int checkband)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
 		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
-		if (!freqlist)
+		if (!freqlist) {
 			continue;
+		}
 		nla_for_each_nested(freq, freqlist, rem2) {
 			nla_parse_nested(tb, NL80211_FREQUENCY_ATTR_MAX, freq, freq_policy);
-			if (!tb[NL80211_FREQUENCY_ATTR_FREQ])
+			if (!tb[NL80211_FREQUENCY_ATTR_FREQ]) {
 				continue;
+			}
 			if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
 				continue;
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 			if (checkband == 2 && freq_mhz < 3000)
+				bandfound = 1;
+			if (checkband == 6 && (freq_mhz >= 5950 || freq_mhz == 5935))
 				bandfound = 1;
 			if (checkband == 5 && freq_mhz > 3000)
 				bandfound = 1;
@@ -1792,7 +1789,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 					case 2:
 						startlowbound = 5350000;
 						starthighbound = 5500000;
-						stophighbound = 6200000;
+						stophighbound = 8000000;
 						stoplowbound = 5500000;
 						break;
 					}
