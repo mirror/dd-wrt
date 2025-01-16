@@ -689,16 +689,13 @@ int is_6ghz_freq(char *prefix, int freq)
 	if (!is_ath11k(prefix))
 		return 0;
 		
-	if (freq < 5935 || freq > 7115)
-		return 0;
+	if (freq >= 5955 || freq <= 7115)
+		return 1;
 
 	if (freq == 5935)
 		return 1;
 
-	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
-		return 0;
-
-	return 1;
+	return 0;
 }
 
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
