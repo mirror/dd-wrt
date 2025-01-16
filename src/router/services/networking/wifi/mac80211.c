@@ -688,7 +688,7 @@ int is_6ghz_freq(char *prefix, int freq)
 {
 	if (!is_ath11k(prefix))
 		return 0;
-		
+
 	if (freq >= 5955 && freq <= 7115)
 		return 1;
 
@@ -1055,7 +1055,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	     !strcmp(netmode, "acn-mixed") || //
 	     !strcmp(netmode, "xacn-mixed") || //
 	     !strcmp(netmode, "mixed")) &&
-	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq(prefix,freq)) {
+	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq(prefix, freq)) {
 		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") && strcmp(netmode, "na-only")) {
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
@@ -1072,7 +1072,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 
 	MAC80211DEBUG();
-	if (!isath5k && !has_ad(prefix) && !is_6ghz_freq(prefix,freq)) {
+	if (!isath5k && !has_ad(prefix) && !is_6ghz_freq(prefix, freq)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
@@ -1103,9 +1103,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		free(caps);
 	}
-	if (is_ath11k(prefix) && is_6ghz_freq(prefix,freq))
+	if (is_6ghz_freq(prefix, freq))
 		fprintf(fp, "ht_capab=[%s]\n", ht); // must be defined, otherwise hostapd will not work
-	    
+
 	MAC80211DEBUG();
 	cur_freq = freq;
 	cur_freq2 = freq2;
@@ -1127,13 +1127,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
 				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
 				     !strcmp(netmode, "xacn-mixed"))) {
-			if (!is_6ghz_freq(prefix,freq)) {
+			if (!is_6ghz_freq(prefix, freq)) {
 				if (*caps) {
 					fprintf(fp, "vht_capab=%s\n", caps);
 				}
 			}
 			if (!strcmp(netmode, "ac-only")) {
-				if (!is_6ghz_freq(prefix,freq)) {
+				if (!is_6ghz_freq(prefix, freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_vht=1\n");
 				}
@@ -1145,7 +1145,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 
 			if (!strcmp(netmode, "acn-mixed")) {
-				if (!is_6ghz_freq(prefix,freq)) {
+				if (!is_6ghz_freq(prefix, freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_ht=1\n");
 				}
@@ -1156,7 +1156,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			if (has_ax(prefix)) {
 				if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 					fprintf(fp, "ieee80211ax=1\n");
-					if (!is_6ghz_freq(prefix,freq)) {
+					if (!is_6ghz_freq(prefix, freq)) {
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
 					}
@@ -1164,7 +1164,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "ieee80211h=1\n");
 				}
 				if (!strcmp(netmode, "ax-only")) {
-					if (!is_6ghz_freq(prefix,freq)) {
+					if (!is_6ghz_freq(prefix, freq)) {
 						fprintf(fp, "require_vht=1\n");
 					}
 					fprintf(fp, "require_he=1\n");
@@ -1175,7 +1175,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				if (has_ax(prefix)) {
 					fprintf(fp, "ieee80211ax=1\n");
 				}
-				if (!is_6ghz_freq(prefix,freq))
+				if (!is_6ghz_freq(prefix, freq))
 					fprintf(fp, "ieee80211ac=1\n");
 				fprintf(fp, "ieee80211d=1\n");
 				fprintf(fp, "ieee80211h=1\n");
@@ -1229,7 +1229,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 			fprintf(fp, "no_country_ie=1\n");
 
-			if (!is_6ghz_freq(prefix,freq)) {
+			if (!is_6ghz_freq(prefix, freq)) {
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1401,7 +1401,26 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
+	if (is_6ghz_freq(prefix, freq)) {
+		switch (usebw) {
+		case 20:
+			fprintf(fp, "op_class=131\n");
+			break;
+		case 40:
+			fprintf(fp, "op_class=132\n");
+			break;
+		case 80:
+			fprintf(fp, "op_class=133\n");
+			break;
+		case 160:
+		case 8080:
+			fprintf(fp, "op_class=134\n");
+			break;
+		}
+	}
+
 #ifdef HAVE_ATH9K
+
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
 	char *vifs = nvram_nget("%s_vifs", prefix);
