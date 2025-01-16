@@ -660,6 +660,47 @@ void configure_single_ath9k(int count)
 	}
 }
 
+int center_idx_to_bw_6ghz(int idx)
+{
+	/* Channel: 2 */
+	if (idx == 2)
+		return 0; /* 20 MHz */
+	/* channels: 1, 5, 9, 13... */
+	if ((idx & 0x3) == 0x1)
+		return 0; /* 20 MHz */
+	/* channels 3, 11, 19... */
+	if ((idx & 0x7) == 0x3)
+		return 1; /* 40 MHz */
+	/* channels 7, 23, 39.. */
+	if ((idx & 0xf) == 0x7)
+		return 2; /* 80 MHz */
+	/* channels 15, 47, 79...*/
+	if ((idx & 0x1f) == 0xf)
+		return 3; /* 160 MHz */
+	/* channels 31, 63, 95, 127, 159, 191 */
+	if ((idx & 0x1f) == 0x1f && idx < 192)
+		return 4; /* 320 MHz */
+
+	return -1;
+}
+
+int is_6ghz_freq(char *prefix, int freq)
+{
+	if (!is_ath11k(prefix))
+		return 0;
+		
+	if (freq < 5935 || freq > 7115)
+		return 0;
+
+	if (freq == 5935)
+		return 1;
+
+	if (center_idx_to_bw_6ghz((freq - 5950) / 5) < 0)
+		return 0;
+
+	return 1;
+}
+
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
 void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss)
@@ -775,19 +816,6 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	     !strcmp(netmode, "xacn-mixed") || //
 	     !strcmp(netmode, "mixed")) &&
 	    strcmp(akm, "wep") && !aoss) {
-		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") && strcmp(netmode, "na-only")) {
-			if (!isath5k)
-				fprintf(fp, "require_ht=1\n");
-		}
-		if (!isath5k && !has_ad(prefix)) {
-			fprintf(fp, "ieee80211n=1\n");
-			if (nvram_matchi(bw, 2040)) {
-				fprintf(fp, "dynamic_ht40=1\n");
-			} else {
-				fprintf(fp, "noscan=1\n");
-				fprintf(fp, "dynamic_ht40=0\n");
-			}
-		}
 		char sb[32];
 		sprintf(sb, "%s_nctrlsb", prefix);
 		switch (usebw) {
@@ -1020,8 +1048,34 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 		}
 	}
+	if ((!strcmp(netmode, "ng-only") || //
+	     !strcmp(netmode, "na-only") || //
+	     !strcmp(netmode, "n2-only") || //
+	     !strcmp(netmode, "n5-only") || //
+	     !strcmp(netmode, "ac-only") || //
+	     !strcmp(netmode, "ax-only") || //
+	     !strcmp(netmode, "axg-only") || //
+	     !strcmp(netmode, "acn-mixed") || //
+	     !strcmp(netmode, "xacn-mixed") || //
+	     !strcmp(netmode, "mixed")) &&
+	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq(prefix,freq)) {
+		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") && strcmp(netmode, "na-only")) {
+			if (!isath5k)
+				fprintf(fp, "require_ht=1\n");
+		}
+		if (!isath5k && !has_ad(prefix)) {
+			fprintf(fp, "ieee80211n=1\n");
+			if (nvram_matchi(bw, 2040)) {
+				fprintf(fp, "dynamic_ht40=1\n");
+			} else {
+				fprintf(fp, "noscan=1\n");
+				fprintf(fp, "dynamic_ht40=0\n");
+			}
+		}
+	}
+
 	MAC80211DEBUG();
-	if (!isath5k && !has_ad(prefix)) {
+	if (!isath5k && !has_ad(prefix) && !is_6ghz_freq(prefix,freq)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
@@ -1052,6 +1106,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		free(caps);
 	}
+	if (is_ath11k(prefix) && is_6ghz_freq(prefix,freq))
+		fprintf(fp, "ht_capab=[%s]\n", ht); // must be defined, otherwise hostapd will not work
+	    
 	MAC80211DEBUG();
 	cur_freq = freq;
 	cur_freq2 = freq2;
@@ -1069,101 +1126,113 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 				    nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
-	if (has_ac(prefix) && has_5ghz(prefix)) {
+	if ((has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix)) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
 				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
 				     !strcmp(netmode, "xacn-mixed"))) {
-			if (*caps) {
-				fprintf(fp, "vht_capab=%s\n", caps);
-				if (!strcmp(netmode, "ac-only")) {
+			if (!is_6ghz_freq(prefix,freq)) {
+				if (*caps) {
+					fprintf(fp, "vht_capab=%s\n", caps);
+				}
+			}
+			if (!strcmp(netmode, "ac-only")) {
+				if (!is_6ghz_freq(prefix,freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_vht=1\n");
-					fprintf(fp, "ieee80211d=1\n");
-					fprintf(fp, "ieee80211h=1\n");
-					//might be needed for dfs
-					//fprintf(fp, "spectrum_mgmt_required=1\n");
-					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
+				fprintf(fp, "ieee80211d=1\n");
+				fprintf(fp, "ieee80211h=1\n");
+				//might be needed for dfs
+				//fprintf(fp, "spectrum_mgmt_required=1\n");
+				//fprintf(fp, "local_pwr_constraint=3\n");
+			}
 
-				if (!strcmp(netmode, "acn-mixed")) {
+			if (!strcmp(netmode, "acn-mixed")) {
+				if (!is_6ghz_freq(prefix,freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_ht=1\n");
-					fprintf(fp, "ieee80211d=1\n");
-					fprintf(fp, "ieee80211h=1\n");
 				}
+				fprintf(fp, "ieee80211d=1\n");
+				fprintf(fp, "ieee80211h=1\n");
+			}
 
-				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
-						fprintf(fp, "ieee80211ax=1\n");
+			if (has_ax(prefix)) {
+				if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+					fprintf(fp, "ieee80211ax=1\n");
+					if (!is_6ghz_freq(prefix,freq)) {
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
-						fprintf(fp, "ieee80211d=1\n");
-						fprintf(fp, "ieee80211h=1\n");
 					}
-					if (!strcmp(netmode, "ax-only")) {
-						fprintf(fp, "require_vht=1\n");
-						fprintf(fp, "require_he=1\n");
-					}
-				}
-
-				if (!strcmp(netmode, "mixed")) {
-					if (has_ax(prefix)) {
-						fprintf(fp, "ieee80211ax=1\n");
-					}
-					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
 				}
-				if (has_ax(prefix)) {
-					if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") ||
-					    !strcmp(netmode, "ax-only")) {
-						if (nvram_match(mubf, "1")) {
-							fprintf(fp, "he_mu_beamformer=1\n");
-						}
-						if (nvram_match(subf, "1")) {
-							fprintf(fp, "he_su_beamformer=1\n");
-							fprintf(fp, "he_su_beamformee=1\n");
-						}
-						fprintf(fp, "he_default_pe_duration=4\n");
-						fprintf(fp, "he_rts_threshold=1023\n");
-						fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_q_ack=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_queue_request=0\n");
-						fprintf(fp, "he_mu_edca_qos_info_txop_request=0\n");
-						fprintf(fp, "he_mu_edca_ac_be_aifsn=8\n");
-						fprintf(fp, "he_mu_edca_ac_be_aci=0\n");
-						fprintf(fp, "he_mu_edca_ac_be_ecwmin=9\n");
-						fprintf(fp, "he_mu_edca_ac_be_ecwmax=10\n");
-						fprintf(fp, "he_mu_edca_ac_be_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_bk_aifsn=15\n");
-						fprintf(fp, "he_mu_edca_ac_bk_aci=1\n");
-						fprintf(fp, "he_mu_edca_ac_bk_ecwmin=9\n");
-						fprintf(fp, "he_mu_edca_ac_bk_ecwmax=10\n");
-						fprintf(fp, "he_mu_edca_ac_bk_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_vi_ecwmin=5\n");
-						fprintf(fp, "he_mu_edca_ac_vi_ecwmax=7\n");
-						fprintf(fp, "he_mu_edca_ac_vi_aifsn=5\n");
-						fprintf(fp, "he_mu_edca_ac_vi_aci=2\n");
-						fprintf(fp, "he_mu_edca_ac_vi_timer=255\n");
-						fprintf(fp, "he_mu_edca_ac_vo_aifsn=5\n");
-						fprintf(fp, "he_mu_edca_ac_vo_aci=3\n");
-						fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
-						fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
-						fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
-						char color[32];
-						sprintf(color, "%s_bss_color", prefix);
-						int c = nvram_default_geti(color, 128);
-						if (c > 0) {
-							fprintf(fp, "he_bss_color=%d\n", c);
-						}
-						fprintf(fp, "he_bss_color_partial=%d\n",
-							nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
-						fprintf(fp, "he_twt_required=%d\n",
-							nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
+				if (!strcmp(netmode, "ax-only")) {
+					if (!is_6ghz_freq(prefix,freq)) {
+						fprintf(fp, "require_vht=1\n");
 					}
+					fprintf(fp, "require_he=1\n");
 				}
-				fprintf(fp, "no_country_ie=1\n");
+			}
 
+			if (!strcmp(netmode, "mixed")) {
+				if (has_ax(prefix)) {
+					fprintf(fp, "ieee80211ax=1\n");
+				}
+				if (!is_6ghz_freq(prefix,freq))
+					fprintf(fp, "ieee80211ac=1\n");
+				fprintf(fp, "ieee80211d=1\n");
+				fprintf(fp, "ieee80211h=1\n");
+			}
+
+			if (has_ax(prefix)) {
+				if (!strcmp(netmode, "mixed") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
+					if (nvram_match(mubf, "1")) {
+						fprintf(fp, "he_mu_beamformer=1\n");
+					}
+					if (nvram_match(subf, "1")) {
+						fprintf(fp, "he_su_beamformer=1\n");
+						fprintf(fp, "he_su_beamformee=1\n");
+					}
+					fprintf(fp, "he_default_pe_duration=4\n");
+					fprintf(fp, "he_rts_threshold=1023\n");
+					fprintf(fp, "he_mu_edca_qos_info_param_count=0\n");
+					fprintf(fp, "he_mu_edca_qos_info_q_ack=0\n");
+					fprintf(fp, "he_mu_edca_qos_info_queue_request=0\n");
+					fprintf(fp, "he_mu_edca_qos_info_txop_request=0\n");
+					fprintf(fp, "he_mu_edca_ac_be_aifsn=8\n");
+					fprintf(fp, "he_mu_edca_ac_be_aci=0\n");
+					fprintf(fp, "he_mu_edca_ac_be_ecwmin=9\n");
+					fprintf(fp, "he_mu_edca_ac_be_ecwmax=10\n");
+					fprintf(fp, "he_mu_edca_ac_be_timer=255\n");
+					fprintf(fp, "he_mu_edca_ac_bk_aifsn=15\n");
+					fprintf(fp, "he_mu_edca_ac_bk_aci=1\n");
+					fprintf(fp, "he_mu_edca_ac_bk_ecwmin=9\n");
+					fprintf(fp, "he_mu_edca_ac_bk_ecwmax=10\n");
+					fprintf(fp, "he_mu_edca_ac_bk_timer=255\n");
+					fprintf(fp, "he_mu_edca_ac_vi_ecwmin=5\n");
+					fprintf(fp, "he_mu_edca_ac_vi_ecwmax=7\n");
+					fprintf(fp, "he_mu_edca_ac_vi_aifsn=5\n");
+					fprintf(fp, "he_mu_edca_ac_vi_aci=2\n");
+					fprintf(fp, "he_mu_edca_ac_vi_timer=255\n");
+					fprintf(fp, "he_mu_edca_ac_vo_aifsn=5\n");
+					fprintf(fp, "he_mu_edca_ac_vo_aci=3\n");
+					fprintf(fp, "he_mu_edca_ac_vo_ecwmin=5\n");
+					fprintf(fp, "he_mu_edca_ac_vo_ecwmax=7\n");
+					fprintf(fp, "he_mu_edca_ac_vo_timer=255\n");
+					char color[32];
+					sprintf(color, "%s_bss_color", prefix);
+					int c = nvram_default_geti(color, 128);
+					if (c > 0) {
+						fprintf(fp, "he_bss_color=%d\n", c);
+					}
+					fprintf(fp, "he_bss_color_partial=%d\n",
+						nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
+					fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
+				}
+			}
+			fprintf(fp, "no_country_ie=1\n");
+
+			if (!is_6ghz_freq(prefix,freq)) {
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1186,37 +1255,35 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "vht_oper_chwidth=0\n");
 					break;
 				}
-				if (has_ax(prefix) &&
-				    (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed"))) {
-					switch (usebw) {
-					case 40:
-						fprintf(fp, "he_oper_chwidth=0\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
-						break;
-					case 80:
-						fprintf(fp, "he_oper_chwidth=1\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
-							freq + ((channeloffset * 5) * iht));
-						break;
-					case 160:
-						fprintf(fp, "he_oper_chwidth=2\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
-							freq + ((channeloffset * 5) * iht));
-						break;
-					case 8080:
-						fprintf(fp, "he_oper_chwidth=3\n");
-						fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n",
-							freq + ((channeloffset * 5) * iht));
-						fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
-						break;
-					default:
-						fprintf(fp, "he_oper_chwidth=0\n");
-						break;
-					}
+			}
+			if (has_ax(prefix) &&
+			    (!strcmp(netmode, "ax-only") || !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed"))) {
+				switch (usebw) {
+				case 40:
+					fprintf(fp, "he_oper_chwidth=0\n");
+					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + (10 * iht));
+					break;
+				case 80:
+					fprintf(fp, "he_oper_chwidth=1\n");
+					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					break;
+				case 160:
+					fprintf(fp, "he_oper_chwidth=2\n");
+					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					break;
+				case 8080:
+					fprintf(fp, "he_oper_chwidth=3\n");
+					fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=%d\n", freq + ((channeloffset * 5) * iht));
+					fprintf(fp, "he_oper_centr_freq_seg1_idx_freq=%d\n", freq2);
+					break;
+				default:
+					fprintf(fp, "he_oper_chwidth=0\n");
+					break;
 				}
 			}
 		}
 	}
+
 	nvram_default_nget("0", "%s_cell_density", prefix);
 	nvram_default_nget("1", "%s_legacy", prefix);
 	int density = nvram_ngeti("%s_cell_density", prefix);
