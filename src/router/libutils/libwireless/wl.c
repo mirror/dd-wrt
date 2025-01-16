@@ -1342,7 +1342,8 @@ long long wifi_getrate(char *ifname)
 		case 40:
 			if (vhtmcs == -1)
 				vhtmcs = 19;
-		break case 80:
+			break;
+		case 80:
 			if (vhtmcs == -1)
 				vhtmcs = 29;
 			break;
