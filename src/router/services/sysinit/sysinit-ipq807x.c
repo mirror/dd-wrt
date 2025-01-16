@@ -1245,6 +1245,12 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan2_hwaddr", ethaddr);
+		patch2(ethaddr, 14);
+		patch2(ethaddr, 20);
+		patch2(ethaddr, 26);
+		patch2(ethaddr, 32);
+		patch2(ethaddr, 38);
+		patch2(ethaddr, 44);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
@@ -1512,6 +1518,7 @@ void start_wifi_drivers(void)
 	notloaded = insmod("compat");
 	char *fm = nvram_safe_get("ath11k_frame_mode");
 	int frame_mode = 2;
+	int minif = 2;
 	if (*fm)
 		frame_mode = atoi(fm);
 	if (frame_mode > 2 || frame_mode < 0)
@@ -1545,6 +1552,7 @@ void start_wifi_drivers(void)
 		case ROUTER_FORTINET_FAP231F:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			detect_wireless_devices(RADIO_ATH10K);
+			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
 			char *cert_region = get_deviceinfo_mr7350("cert_region");
@@ -1552,13 +1560,14 @@ void start_wifi_drivers(void)
 				cert_region = "";
 			load_ath11k(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 				    cert_region);
+			minif = 3;
 			break;
 
 		default:
 			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			break;
 		}
-		wait_for_wifi();
+		wait_for_wifi(3);
 		start_setup_affinity();
 		start_initvlans();
 	}

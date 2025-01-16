@@ -233,6 +233,6 @@ void start_wifi_drivers(void)
 		insmod("bluetooth");
 		insmod("btmrvl");
 		insmod("btmrvl_sdio");
-		wait_for_wifi();
+		wait_for_wifi(1);
 	}
 }

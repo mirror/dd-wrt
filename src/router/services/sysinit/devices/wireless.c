@@ -61,10 +61,10 @@ static char *has_device(char *dev)
 	return "";
 }
 
-static void wait_for_wifi(void)
+static void wait_for_wifi(int min)
 {
 	int cnt = 0;
-	while ((cnt++) < 6 && !getdevicecount()) {
+	while ((cnt++) < 6 && getdevicecount()<min) {
 		sleep(1);
 	}
 }
@@ -525,6 +525,6 @@ static int detect_wireless_devices(int mask)
 	}*/
 #endif
 #endif
-	wait_for_wifi();
+	wait_for_wifi(1);
 	return 0;
 }

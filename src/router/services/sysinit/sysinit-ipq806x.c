@@ -1067,7 +1067,7 @@ void start_wifi_drivers(void)
 				rmmod("ath");
 			}
 		}
-		wait_for_wifi();
+		wait_for_wifi(1);
 		switch (board) {
 		case ROUTER_ASUS_AC58U:
 		case ROUTER_LINKSYS_EA8300:
