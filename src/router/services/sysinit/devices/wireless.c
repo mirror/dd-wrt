@@ -284,8 +284,7 @@ static int detect_wireless_devices(int mask)
 	{
 		if (loadath9k || loadath5k) {
 			dd_loginfo("sysinit","load ATH9K 802.11n Driver");
-			if (load_mac80211())
-				return 1;
+			load_mac80211();
 			// some are just for future use and not (yet) there
 			insmod("ath");
 #ifdef HAVE_ATH5K
