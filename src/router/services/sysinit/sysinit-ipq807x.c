@@ -166,9 +166,9 @@ void *get_deviceinfo(char *partname, char *var)
 		if (!strncmp(mem + i, newname, l)) {
 			strncpy(res, mem + i + l, 17);
 			int a;
-			for (a=0;a<17;a++)
-			    if (res[a]==0xa || res[a]==0xd)
-				res[a]=0;
+			for (a = 0; a < 17; a++)
+				if (res[a] == 0xa || res[a] == 0xd)
+					res[a] = 0;
 			free(mem);
 			return res;
 		}
@@ -617,8 +617,8 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("ppdu-end-interrupts-mac3", 2, 1);
 
 			sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
-		
-		break;
+
+			break;
 		default:
 			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
@@ -1434,13 +1434,15 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MR7500:
 		setscaling(1800000);
-	//	disableportlearn();
+		//	disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 		eval("fw_setenv", "bootcmd",
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
-		/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+		usleep(100 * 1000);
+		eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
 		sleep(1);
 		eval("ssdk_sh", "port", "autoneg", "restart", "5");
 		sleep(2);
@@ -1448,7 +1450,21 @@ void start_sysinit(void)
 		eval("ssdk_sh", "debug", "phy", "set", "8", "0x401ec431", "0xc0e0");
 		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070010", "0x9de1");
 		sleep(1);
-		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");*/
+		eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200");
+
+		/*
+		// for reference only 
+	if [ "1" = $wan25G_enable ] ; then
+		echo "wan25g_enable!!!"
+		echo `ssdk_sh debug phy set 8  0x4007c400 0x9454`
+		echo `ssdk_sh debug phy set 8  0x40070020 0x0e1`
+	else
+		if [ "0" = $wan25G_enable ] ; then
+		echo "wan25G_disable!!!!"
+		echo `ssdk_sh debug phy set 8  0x4007c400 0x9c54`
+		echo `ssdk_sh debug phy set 8  0x40070020 0x01e1`
+		fi
+	fi*/
 
 		break;
 	case ROUTER_FORTINET_FAP231F:
@@ -1619,7 +1635,7 @@ void start_wifi_drivers(void)
 int check_cfe_nv(void)
 {
 	nvram_seti("portprio_support", 0);
-	    return 0;
+	return 0;
 }
 
 int check_pmon_nv(void)
