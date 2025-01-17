@@ -1516,7 +1516,7 @@ void start_sysinit(void)
 
 	return;
 }
-static void load_ath11k(int profile, int pci, int nss, int frame_mode, char *cert_region)
+static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region)
 {
 	char postfix[32] = { 0 };
 	char driver_ath11k[32];
@@ -1590,24 +1590,24 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
 				frame_mode = 1;
-			load_ath11k(profile, 1, 0, frame_mode, "");
+			load_ath11k_internal(profile, 1, 0, frame_mode, "");
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
-			detect_wireless_devices(RADIO_ATH10K);
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
+			load_ath10k();
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
 			char *cert_region = get_deviceinfo_mr7350("cert_region");
 			if (!cert_region)
 				cert_region = "";
-			load_ath11k(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
+			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 				    cert_region);
 			minif = 3;
 			break;
 
 		default:
-			load_ath11k(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
 			break;
 		}
 		wait_for_wifi(3);
