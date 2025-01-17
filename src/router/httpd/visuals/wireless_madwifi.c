@@ -551,7 +551,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				break;
 			case 20:
 
-				if (ht) {
+				if (ht || vht) {
 					if (width == 2)
 						websWrite(wp, " %s2.5", vht);
 					else if (width == 5)
@@ -573,7 +573,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 				}
 				break;
 			case 40:
-				if (ht)
+				if (ht || vht)
 					websWrite(wp, " %s40", vht);
 				else
 					websWrite(wp,
