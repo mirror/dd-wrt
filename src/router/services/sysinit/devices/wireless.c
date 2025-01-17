@@ -337,44 +337,39 @@ int load_wil6210(void)
 	return 0;
 }
 
+int load_ath5k(void)
+{
+	dd_loginfo("sysinit", "load ATH5K 802.11 Driver");
+	insmod("ath5k");
+	if (!detectchange(NULL))
+		rmmod("ath5k");
+}
+
 int load_ath9k(void)
 {
 	dd_loginfo("sysinit", "load ATH9K 802.11n Driver");
-	load_mac80211();
-	// some are just for future use and not (yet) there
-	insmod("ath");
-#ifdef HAVE_ATH5K
-	if (loadath5k && (mask & RADIO_LEGACY)) {
-		dd_loginfo("sysinit", "load ATH5K 802.11 Driver");
-		insmod("ath5k");
-		if (!detectchange(NULL))
-			rmmod("ath5k");
-	}
-#endif
-	if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
-		int od = nvram_default_geti("power_overdrive", 0);
-		char overdrive[32];
-		sprintf(overdrive, "overdrive=%d", od);
+	int od = nvram_default_geti("power_overdrive", 0);
+	char overdrive[32];
+	sprintf(overdrive, "overdrive=%d", od);
 
 #ifdef HAVE_WZRG450
-		eval("insmod", "ath9k", overdrive, "blink=1");
+	eval("insmod", "ath9k", overdrive, "blink=1");
 #elif HAVE_PERU
-		char *dis = getUEnv("rndis");
-		if (dis && !strcmp(dis, "1"))
-			eval("insmod", "ath9k", overdrive, "no_ahb=1");
-		else
-			eval("insmod", "ath9k", overdrive);
+	char *dis = getUEnv("rndis");
+	if (dis && !strcmp(dis, "1"))
+		eval("insmod", "ath9k", overdrive, "no_ahb=1");
+	else
+		eval("insmod", "ath9k", overdrive);
 
 #else
-		eval("insmod", "ath9k", overdrive);
+	eval("insmod", "ath9k", overdrive);
 #endif
-		if (!detectchange(NULL))
-			rmmod("ath9k");
+	if (!detectchange(NULL))
+		rmmod("ath9k");
 
-		eval("insmod", "ath9k_htc");
-		if (!detectchange(NULL))
-			rmmod("ath9k_htc");
-	}
+	eval("insmod", "ath9k_htc");
+	if (!detectchange(NULL))
+		rmmod("ath9k_htc");
 	if (!totalwifi)
 		rmmod("ath");
 	delete_ath9k_devices(NULL);
@@ -518,6 +513,10 @@ static int detect_wireless_devices(int mask)
 	}
 #endif
 #ifndef HAVE_NOWIFI
+	load_mac80211();
+	// some are just for future use and not (yet) there
+	insmod("ath");
+
 	nvram_default_get("rate_control", "minstrel");
 #ifdef HAVE_MADWIFI
 	if (loadlegacy && (mask & RADIO_LEGACY)) {
@@ -525,8 +524,15 @@ static int detect_wireless_devices(int mask)
 	}
 #ifdef HAVE_ATH9K
 	{
-		if (loadath9k || loadath5k) {
-			load_ath9k();
+#ifdef HAVE_ATH5K
+		if (loadath5k && (mask & RADIO_LEGACY)) {
+			load_ath5k();
+		}
+#endif
+		if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
+			if (loadath9k || loadath5k) {
+				load_ath9k();
+			}
 		}
 	}
 #endif
