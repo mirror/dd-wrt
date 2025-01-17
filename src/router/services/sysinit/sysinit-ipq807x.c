@@ -1436,8 +1436,8 @@ void start_sysinit(void)
 		setscaling(1800000);
 		//	disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
-		eval("fw_setenv", "bootcmd",
-		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
+//		eval("fw_setenv", "bootcmd",
+//		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
 		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
