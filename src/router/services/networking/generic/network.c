@@ -2501,7 +2501,9 @@ void start_lan(void)
 	}
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	/* start mactelnet (if enabled) as early as possible to allow early access if anything bad happens */
+#ifdef HAVE_MACTELNET
 	start_mactelnetd();
+#endif
 	void configure_wifi(void);
 	configure_wifi();
 #endif
