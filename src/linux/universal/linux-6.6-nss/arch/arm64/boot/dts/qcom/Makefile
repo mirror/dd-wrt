@@ -22,6 +22,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-hk01.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-hk10-c1.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-hk10-c2.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-rt-ax89x.dtb
+dtb-$(CONFIG_ARCH_QCOM)	+= ipq8174-homewrk.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8174-mx4300.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8174-mx4200v1.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8174-mx4200v2.dtb
