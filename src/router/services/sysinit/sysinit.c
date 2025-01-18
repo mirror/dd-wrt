@@ -2036,12 +2036,11 @@ void start_restore_defaults(void)
 		nvram_default_get("ip_conntrack_max", "32768");
 	} else
 #endif
-		if (getmemtotal() > 128 * 1024 * 1024)
-	{
+		nvram_default_get("ip_conntrack_max", "4096");
+
+	if (getmemtotal() > 128 * 1024 * 1024) {
 		nvram_default_get("sshd_rw", "262144");
-	}
-	else
-	{
+	} else {
 		nvram_default_get("sshd_rw", "4096");
 	}
 
