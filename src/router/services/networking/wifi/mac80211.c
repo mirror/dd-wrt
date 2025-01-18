@@ -1417,6 +1417,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "op_class=134\n");
 			break;
 		}
+	fprintf(fp,"he_6ghz_reg_pwr_type=0\n");
+	fprintf(fp,"stationary_ap=1\n");
 	}
 
 #ifdef HAVE_ATH9K
