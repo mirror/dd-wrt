@@ -493,9 +493,7 @@ static inline int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *dev)
 }
 #endif
 
-#ifdef CONFIG_PM
 extern const struct dev_pm_ops usb_hcd_pci_pm_ops;
-#endif
 #endif /* CONFIG_USB_PCI */
 
 /* pci-ish (pdev null is ok) buffer alloc/mapping support */
