@@ -176,21 +176,13 @@ void *get_deviceinfo(char *partname, char *var)
 	free(mem);
 	return NULL;
 }
-void *get_deviceinfo_mr7350(char *var)
+void *get_deviceinfo_linksys(char *var)
 {
 	return get_deviceinfo("devinfo", var);
 }
 void *get_deviceinfo_fap(char *var)
 {
 	return get_deviceinfo("APPSBLENV", var);
-}
-void *get_deviceinfo_mr5500(char *var)
-{
-	return get_deviceinfo("devinfo", var);
-}
-void *get_deviceinfo_mx4200(char *var)
-{
-	return get_deviceinfo("devinfo", var);
 }
 void *get_deviceinfo_wxr(char *var)
 {
@@ -386,7 +378,7 @@ void patchvht160(char *file, int phynum)
 		setmacflag("/tmp/board.bin");                                                                                \
 	}
 
-#define patch2(ethaddr, offset)                                                                                              \
+#define patch_qcn9000(ethaddr, offset)                                                                                       \
 	{                                                                                                                    \
 		unsigned char binmac[6];                                                                                     \
 		int i;                                                                                                       \
@@ -1045,7 +1037,7 @@ void start_sysinit(void)
 	insmod("aquantia");
 	switch (brand) {
 	case ROUTER_LINKSYS_MR7350:
-		maddr = get_deviceinfo_mr7350("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		fwlen = 0x20000;
 		load_nss_ipq60xx(512);
 		nvram_default_get("eth0_label", "lan1");
@@ -1055,7 +1047,6 @@ void start_sysinit(void)
 		nvram_default_get("eth4_label", "wan");
 		break;
 	case ROUTER_LINKSYS_MR7500:
-		maddr = get_deviceinfo_mr7350("hw_mac_addr");
 		fwlen = 0x20000;
 		load_nss_ipq60xx(512);
 		nvram_default_get("eth0_label", "wan");
@@ -1063,6 +1054,25 @@ void start_sysinit(void)
 		nvram_default_get("eth2_label", "lan2");
 		nvram_default_get("eth3_label", "lan3");
 		nvram_default_get("eth4_label", "lan4");
+		nvram_default_get("wlan0_ssid", get_deviceinfo_linksys("default_ssid"));
+		nvram_default_get("wlan0_akm", "psk3");
+		nvram_default_get("wlan0_psk3", "1");
+		nvram_default_get("wlan0_ccmp", "1");
+		nvram_default_get("wlan0_security_mode", "wpa");
+		nvram_default_get("wlan0_sae_key", get_deviceinfo_linksys("default_passphrase"));
+		nvram_default_get("wlan1_ssid", get_deviceinfo_linksys("default_ssid"));
+		nvram_default_get("wlan1_akm", "psk3");
+		nvram_default_get("wlan1_psk3", "1");
+		nvram_default_get("wlan1_ccmp", "1");
+		nvram_default_get("wlan1_security_mode", "wpa");
+		nvram_default_get("wlan1_sae_key", get_deviceinfo_linksys("default_passphrase"));
+		nvram_default_get("wlan2_ssid", get_deviceinfo_linksys("default_ssid"));
+		nvram_default_get("wlan2_akm", "psk3");
+		nvram_default_get("wlan2_psk3", "1");
+		nvram_default_get("wlan2_ccmp", "1");
+		nvram_default_get("wlan2_security_mode", "wpa");
+		nvram_default_get("wlan2_sae_key", get_deviceinfo_linksys("default_passphrase"));
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_FORTINET_FAP231F:
 		maddr = get_deviceinfo_fap("ethaddr");
@@ -1123,7 +1133,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MX4200V2:
 		profile = 1024;
 		fwlen = 0x20000;
-		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		load_nss_ipq807x(1024);
 		nvram_default_get("eth0_label", "wan");
 		nvram_default_get("eth1_label", "lan1");
@@ -1134,7 +1144,7 @@ void start_sysinit(void)
 	case ROUTER_LINKSYS_MX4300:
 		profile = 1024;
 		fwlen = 0x20000;
-		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		load_nss_ipq807x(1024);
 		nvram_default_get("eth0_label", "wan");
 		nvram_default_get("eth1_label", "lan1");
@@ -1144,7 +1154,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MX4200V1:
 		fwlen = 0x20000;
-		maddr = get_deviceinfo_mx4200("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		load_nss_ipq807x(512);
 		break;
 		nvram_default_get("eth0_label", "wan");
@@ -1154,7 +1164,7 @@ void start_sysinit(void)
 		nvram_default_get("eth4_label", "lan4");
 	case ROUTER_LINKSYS_MR5500:
 		fwlen = 0x20000;
-		maddr = get_deviceinfo_mr5500("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		load_nss_ipq50xx(512);
 		nvram_default_get("eth5_label", "wan");
 		nvram_default_get("eth1_label", "lan1");
@@ -1164,7 +1174,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
-		maddr = get_deviceinfo_mr5500("hw_mac_addr");
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		load_nss_ipq50xx(512);
 		nvram_default_get("eth1_label", "wan");
 		nvram_default_get("eth2_label", "lan1");
@@ -1288,12 +1298,12 @@ void start_sysinit(void)
 		patch(ethaddr, 20);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan2_hwaddr", ethaddr);
-		patch2(ethaddr, 14);
-		patch2(ethaddr, 20);
-		patch2(ethaddr, 26);
-		patch2(ethaddr, 32);
-		patch2(ethaddr, 38);
-		patch2(ethaddr, 44);
+		patch_qcn9000(ethaddr, 14);
+		patch_qcn9000(ethaddr, 20);
+		patch_qcn9000(ethaddr, 26);
+		patch_qcn9000(ethaddr, 32);
+		patch_qcn9000(ethaddr, 38);
+		patch_qcn9000(ethaddr, 44);
 		removeregdomain("/tmp/caldata.bin", IPQ6018);
 		removeregdomain("/tmp/board.bin", IPQ6018);
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
@@ -1319,12 +1329,12 @@ void start_sysinit(void)
 		patch(ethaddr, 14);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan1_hwaddr", ethaddr);
-		patch2(ethaddr, 14);
-		patch2(ethaddr, 20);
-		patch2(ethaddr, 26);
-		patch2(ethaddr, 32);
-		patch2(ethaddr, 38);
-		patch2(ethaddr, 44);
+		patch_qcn9000(ethaddr, 14);
+		patch_qcn9000(ethaddr, 20);
+		patch_qcn9000(ethaddr, 26);
+		patch_qcn9000(ethaddr, 32);
+		patch_qcn9000(ethaddr, 38);
+		patch_qcn9000(ethaddr, 44);
 		removeregdomain("/tmp/caldata.bin", IPQ5018);
 		removeregdomain("/tmp/board.bin", IPQ5018);
 		removeregdomain("/tmp/caldata2.bin", QCN9000);
@@ -1440,7 +1450,7 @@ void start_sysinit(void)
 		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
-/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
+		/*		eval("ssdk_sh", "debug", "phy", "set", "0x8", "0x401e2680", "0x1");
 		usleep(100 * 1000);
 		eval("aq-fw-download", "/lib/firmware/marvell/AQR114C.cld", "eth0", "8");
 		sleep(1);
@@ -1609,24 +1619,26 @@ void start_wifi_drivers(void)
 			load_ath11k_internal(profile, 1, 0, frame_mode, "");
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
+					     "");
 			load_ath10k();
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MR7500:
-			char *cert_region = get_deviceinfo_mr7350("cert_region");
+			char *cert_region = get_deviceinfo_linksys("cert_region");
 			if (!cert_region)
 				cert_region = "";
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
-				    cert_region);
+					     cert_region);
 			minif = 3;
 			break;
 
 		default:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode, "");
+			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
+					     "");
 			break;
 		}
-		wait_for_wifi(3);
+		wait_for_wifi(minif);
 		start_setup_affinity();
 		start_initvlans();
 	}
