@@ -1253,6 +1253,7 @@ void start_sysinit(void)
 		nvram_default_get("wlan1_ccmp", "1");
 		nvram_default_get("wlan1_security_mode", "wpa");
 		nvram_default_get("wlan1_sae_key", get_deviceinfo_linksys("default_passphrase"));
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	case ROUTER_LINKSYS_MX5500:
 		fwlen = 0x20000;
@@ -1274,6 +1275,7 @@ void start_sysinit(void)
 		nvram_default_get("wlan1_ccmp", "1");
 		nvram_default_get("wlan1_security_mode", "wpa");
 		nvram_default_get("wlan1_sae_key", get_deviceinfo_linksys("default_passphrase"));
+		maddr = get_deviceinfo_linksys("hw_mac_addr");
 		break;
 	default:
 		fwlen = 0x20000;
