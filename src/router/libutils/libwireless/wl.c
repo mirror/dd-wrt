@@ -170,8 +170,7 @@ int has_6ghz(const char *prefix)
 	if (is_mac80211(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 6));
 	}
-
-	RETURNVALUE(has_athmask(dn, 0x1));
+	RETURNVALUE(0);
 	EXITVALUECACHE();
 	return ret;
 }

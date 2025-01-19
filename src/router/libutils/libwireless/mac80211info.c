@@ -1116,7 +1116,7 @@ int has_vht160(const char *interface)
 #if defined(HAVE_ATH11K)
 int has_he160(const char *interface)
 {
-	return has_6ghz(interface);
+	return has_6ghz(interface) || has_vht160(interface);
 #if 0
 	//if vht caps do not support vht160, he160 will not work anyway. we dont need this function
 	INITVALUECACHEi(interface);
@@ -1457,11 +1457,11 @@ int mac80211_check_band(const char *interface, int checkband)
 			if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
 				continue;
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
-			if (checkband == 2 && freq_mhz < 3000)
+			if (checkband == 2 && band == NL80211_BAND_2GHZ)
 				bandfound = 1;
-			if (checkband == 6 && (freq_mhz >= 5950 || freq_mhz == 5935))
+			if (checkband == 6 && band == NL80211_BAND_6GHZ)
 				bandfound = 1;
-			if (checkband == 5 && freq_mhz > 3000)
+			if (checkband == 5 && band == NL80211_BAND_5GHZ)
 				bandfound = 1;
 		}
 	}
@@ -1856,9 +1856,9 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							    nvram_default_match("region", "SA", ""))
 								continue;
 #endif
-							if (checkband == 2 && freq_mhz > 4000)
+							if (checkband == 2 && band != NL80211_BAND_2GHZ)
 								continue;
-							if (checkband == 5 && freq_mhz < 4000)
+							if (checkband == 5 && band != NL80211_BAND_5GHZ && band != NL80211_BAND_6GHZ)
 								continue;
 							if (max_bandwidth_khz > regmaxbw)
 								continue;

@@ -323,7 +323,13 @@ extern int has_athmask(int devnum, int mask);
 extern int has_2ghz(const char *prefix);
 extern int is_wrt3200(void);
 extern int has_5ghz(const char *prefix);
+#ifdef HAVE_MADWIFI
 extern int has_6ghz(const char *prefix);
+#else
+static inline int has_6ghz(const char *prefix); {
+	return 0;
+}
+#endif
 #ifdef HAVE_ATH9K
 extern int can_ht40(const char *prefix);
 extern int can_vht80(const char *prefix);
