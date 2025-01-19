@@ -326,7 +326,7 @@ extern int has_5ghz(const char *prefix);
 #ifdef HAVE_MADWIFI
 extern int has_6ghz(const char *prefix);
 #else
-static inline int has_6ghz(const char *prefix); {
+static inline int has_6ghz(const char *prefix) {
 	return 0;
 }
 #endif
