@@ -660,44 +660,6 @@ void configure_single_ath9k(int count)
 	}
 }
 
-int center_idx_to_bw_6ghz(int idx)
-{
-	/* Channel: 2 */
-	if (idx == 2)
-		return 0; /* 20 MHz */
-	/* channels: 1, 5, 9, 13... */
-	if ((idx & 0x3) == 0x1)
-		return 0; /* 20 MHz */
-	/* channels 3, 11, 19... */
-	if ((idx & 0x7) == 0x3)
-		return 1; /* 40 MHz */
-	/* channels 7, 23, 39.. */
-	if ((idx & 0xf) == 0x7)
-		return 2; /* 80 MHz */
-	/* channels 15, 47, 79...*/
-	if ((idx & 0x1f) == 0xf)
-		return 3; /* 160 MHz */
-	/* channels 31, 63, 95, 127, 159, 191 */
-	if ((idx & 0x1f) == 0x1f && idx < 192)
-		return 4; /* 320 MHz */
-
-	return -1;
-}
-
-int is_6ghz_freq(const char *prefix, int freq)
-{
-	if (!is_ath11k(prefix))
-		return 0;
-
-	if (freq >= 5955 && freq <= 7115)
-		return 1;
-
-	if (freq == 5935)
-		return 1;
-
-	return 0;
-}
-
 int has_hidden_ssid(const char *prefix)
 {
 	if (nvram_nmatch("1", "%s_closed", prefix))
@@ -712,6 +674,12 @@ int has_hidden_ssid(const char *prefix)
 	}
 
 	return 0;
+}
+int is_6ghz_freq_prefix(char *prefix, int freq) {
+
+    if (!is_ath11k(prefix))
+	return 0;
+    return is_6ghz_freq(freq)
 }
 
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
@@ -1074,7 +1042,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	     !strcmp(netmode, "acn-mixed") || //
 	     !strcmp(netmode, "xacn-mixed") || //
 	     !strcmp(netmode, "mixed")) &&
-	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq(prefix, freq)) {
+	    strcmp(akm, "wep") && !aoss && !is_6ghz_freq_prefix(prefix, freq)) {
 		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only") && strcmp(netmode, "na-only")) {
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
@@ -1091,7 +1059,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	}
 
 	MAC80211DEBUG();
-	if (!isath5k && !has_ad(prefix) && !is_6ghz_freq(prefix, freq)) {
+	if (!isath5k && !has_ad(prefix) && !is_6ghz_freq_prefix(prefix, freq)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
@@ -1122,7 +1090,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		}
 		free(caps);
 	}
-	if (is_6ghz_freq(prefix, freq))
+	if (is_6ghz_freq_prefix(prefix, freq))
 		fprintf(fp, "ht_capab=[%s]\n", ht); // must be defined, otherwise hostapd will not work
 
 	MAC80211DEBUG();
@@ -1146,13 +1114,13 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
 				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
 				     !strcmp(netmode, "xacn-mixed"))) {
-			if (!is_6ghz_freq(prefix, freq)) {
+			if (!is_6ghz_freq_prefix(prefix, freq)) {
 				if (*caps) {
 					fprintf(fp, "vht_capab=%s\n", caps);
 				}
 			}
 			if (!strcmp(netmode, "ac-only")) {
-				if (!is_6ghz_freq(prefix, freq)) {
+				if (!is_6ghz_freq_prefix(prefix, freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_vht=1\n");
 				}
@@ -1164,7 +1132,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 
 			if (!strcmp(netmode, "acn-mixed")) {
-				if (!is_6ghz_freq(prefix, freq)) {
+				if (!is_6ghz_freq_prefix(prefix, freq)) {
 					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_ht=1\n");
 				}
@@ -1175,7 +1143,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			if (has_ax(prefix)) {
 				if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only")) {
 					fprintf(fp, "ieee80211ax=1\n");
-					if (!is_6ghz_freq(prefix, freq)) {
+					if (!is_6ghz_freq_prefix(prefix, freq)) {
 						fprintf(fp, "ieee80211ac=1\n");
 						fprintf(fp, "require_ht=1\n");
 					}
@@ -1183,7 +1151,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					fprintf(fp, "ieee80211h=1\n");
 				}
 				if (!strcmp(netmode, "ax-only")) {
-					if (!is_6ghz_freq(prefix, freq)) {
+					if (!is_6ghz_freq_prefix(prefix, freq)) {
 						fprintf(fp, "require_vht=1\n");
 					}
 					fprintf(fp, "require_he=1\n");
@@ -1194,7 +1162,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				if (has_ax(prefix)) {
 					fprintf(fp, "ieee80211ax=1\n");
 				}
-				if (!is_6ghz_freq(prefix, freq))
+				if (!is_6ghz_freq_prefix(prefix, freq))
 					fprintf(fp, "ieee80211ac=1\n");
 				fprintf(fp, "ieee80211d=1\n");
 				fprintf(fp, "ieee80211h=1\n");
@@ -1248,7 +1216,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			}
 			fprintf(fp, "no_country_ie=1\n");
 
-			if (!is_6ghz_freq(prefix, freq)) {
+			if (!is_6ghz_freq_prefix(prefix, freq)) {
 				switch (usebw) {
 				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
@@ -1425,7 +1393,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	} else {
 		fprintf(fp, "mbssid=0\n");
 	}
-	if (is_6ghz_freq(prefix, freq)) {
+	if (is_6ghz_freq_prefix(prefix, freq)) {
 		switch (usebw) {
 		case 20:
 			fprintf(fp, "op_class=131\n");
