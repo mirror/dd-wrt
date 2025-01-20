@@ -766,6 +766,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	if (!country)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
+	if (has_ax(prefix) && has_6ghz(prefix))
+		fprintf(fp, "country3=0x49\n"); // 0x20 for all environments
+	
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 
 	if (isath5k || !strcmp(netmode, "ac-only") || !strcmp(netmode, "mixed") || !strcmp(netmode, "acn-mixed") ||
@@ -1743,6 +1746,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 
 	fprintf(fp, "ssid=%s\n", ssid);
+	fprintf(fp, "utf8_ssid=1\n");
 	int ispsk2 = nvhas(akm, "psk2");
 	int ispsk = nvhas(akm, "psk");
 	int ispsk3 = nvhas(akm, "psk3");
