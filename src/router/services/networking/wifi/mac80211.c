@@ -675,11 +675,11 @@ int has_hidden_ssid(const char *prefix)
 
 	return 0;
 }
-int is_6ghz_freq_prefix(char *prefix, int freq) {
+int is_6ghz_freq_prefix(const char *prefix, int freq) {
 
     if (!is_ath11k(prefix))
 	return 0;
-    return is_6ghz_freq(freq)
+    return is_6ghz_freq(freq);
 }
 
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
