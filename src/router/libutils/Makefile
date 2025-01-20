@@ -252,6 +252,7 @@ ATH9KCFLAGS += -DHAVE_IPQ6018
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
+ATH9KCFLAGS += -DHAVE_MADWIFI
 CFLAGS += -DHAVE_MADWIFI -I../services/networking/wifi -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
 WLDFLAGS = -L $(TOP)/wireless-tools -liw
 else
