@@ -1445,13 +1445,13 @@ int mac80211_check_band(const char *interface, int checkband)
 	if (!bands)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
-//			fprintf(stderr, "checkband %d band %d\n", checkband, band->nla_type);
-			if (checkband == 2 && band->nla_type == NL80211_BAND_2GHZ)
-				bandfound = 1;
-			if (checkband == 6 && band->nla_type == NL80211_BAND_6GHZ)
-				bandfound = 1;
-			if (checkband == 5 && band->nla_type == NL80211_BAND_5GHZ)
-				bandfound = 1;
+		//			fprintf(stderr, "checkband %d band %d\n", checkband, band->nla_type);
+		if (checkband == 2 && band->nla_type == NL80211_BAND_2GHZ)
+			bandfound = 1;
+		if (checkband == 6 && band->nla_type == NL80211_BAND_6GHZ)
+			bandfound = 1;
+		if (checkband == 5 && band->nla_type == NL80211_BAND_5GHZ)
+			bandfound = 1;
 
 #if 0
 		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
@@ -1862,7 +1862,8 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 #endif
 							if (checkband == 2 && band->nla_type != NL80211_BAND_2GHZ)
 								continue;
-							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ && band->nla_type != NL80211_BAND_6GHZ)
+							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ &&
+							    band->nla_type != NL80211_BAND_6GHZ)
 								continue;
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
