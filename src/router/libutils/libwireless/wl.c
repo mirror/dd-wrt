@@ -175,6 +175,11 @@ int has_6ghz(const char *prefix)
 	return ret;
 }
 
+int has_6ghz_only(const char *prefix)
+{
+	return has_6ghz(prefix) && !has_5ghz(prefix);
+}
+
 #endif
 
 #if !defined(HAVE_MADWIFI)

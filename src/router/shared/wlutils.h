@@ -194,7 +194,6 @@ int getassoclist(const char *name, unsigned char *list);
 #define DEFAULT_BF 0
 #endif
 
-
 #define INFO_UPTIME 0
 #define INFO_RSSI 1
 #define INFO_NOISE 2
@@ -325,8 +324,14 @@ extern int is_wrt3200(void);
 extern int has_5ghz(const char *prefix);
 #ifdef HAVE_MADWIFI
 extern int has_6ghz(const char *prefix);
+extern int has_6ghz_only(const char *prefix);
 #else
-static inline int has_6ghz(const char *prefix) {
+static inline int has_6ghz_only(const char *prefix)
+{
+	return 0;
+}
+static inline int has_6ghz(const char *prefix)
+{
 	return 0;
 }
 #endif
@@ -385,7 +390,7 @@ struct wifi_interface {
 	int center1;
 	int center2;
 	int txpower;
-	unsigned int he:1,vht:1,ht:1;
+	unsigned int he : 1, vht : 1, ht : 1;
 };
 
 typedef struct STAINFO {
