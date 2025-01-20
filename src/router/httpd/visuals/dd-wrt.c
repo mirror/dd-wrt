@@ -2984,11 +2984,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_6ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
-			" <script type=\"text/javascript\">document.write(\"/5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			" <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_6ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
-			" <script type=\"text/javascript\">document.write(\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			" <script type=\"text/javascript\">document.write(\"[6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
