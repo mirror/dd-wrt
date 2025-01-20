@@ -71,7 +71,6 @@ static void set_systunes(void)
 
 static void set_tcp_params(void)
 {
-	eval("/etc/preinit"); // sets default values for ip_conntrack
 	start_conntrack();
 
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
