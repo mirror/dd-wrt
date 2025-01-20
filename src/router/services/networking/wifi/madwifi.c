@@ -370,9 +370,10 @@ void addvhtcaps(const char *prefix, FILE *fp)
 	if (is_mt7615(prefix) || is_ath10k(prefix) || is_ath11k(prefix) || is_brcmfmac(prefix) || is_mt7915(prefix) ||
 	    is_mt7921(prefix) || is_mt7603(prefix) || is_mt76x0(prefix) || is_mt76x2(prefix)) {
 		char *netmode = nvram_nget("%s_net_mode", prefix);
-		if ((has_ac(prefix) || has_ax(prefix)) && (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") ||
-				       !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") ||
-				       (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
+		if ((has_ac(prefix) || has_ax(prefix)) &&
+		    (!strcmp(netmode, "ac-only") || strcmp(netmode, "ax-only") || !strcmp(netmode, "acn-mixed") ||
+		     !strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "mixed") ||
+		     (cansuperchannel(prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix)))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
@@ -952,9 +953,9 @@ void do_hostapd(char **fstr, const char *prefix)
 	int pid;
 
 	if (!prefix)
-	sprintf(fname, "/var/run/global_hostapd.pid", prefix);
+		sprintf(fname, "/var/run/global_hostapd.pid", prefix);
 	else
-	sprintf(fname, "/var/run/%s_hostapd.pid", prefix);
+		sprintf(fname, "/var/run/%s_hostapd.pid", prefix);
 
 	fp = fopen(fname, "rb");
 	if (fp) {
@@ -966,9 +967,9 @@ void do_hostapd(char **fstr, const char *prefix)
 	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	int argc = 4;
 	if (!prefix)
-	debug = nvram_ngeti("wpa_debug", prefix);
+		debug = nvram_ngeti("wpa_debug", prefix);
 	else
-	debug = nvram_ngeti("%s_wpa_debug", prefix);
+		debug = nvram_ngeti("%s_wpa_debug", prefix);
 	char file[64];
 	if (debug > 0 && debug < 4) {
 		if (debug == 1)
@@ -981,9 +982,9 @@ void do_hostapd(char **fstr, const char *prefix)
 		sprintf(file, "/tmp/%s_debug", prefix);
 		argv[argc++] = file;
 	}
-	int i=0;
+	int i = 0;
 	while (fstr[i]) {
-	    argv[argc++] = fstr[i++];
+		argv[argc++] = fstr[i++];
 	}
 
 	_log_evalpid(argv, NULL, 0, NULL);
@@ -1056,7 +1057,7 @@ static void checkhostapd(char *ifname, int force)
 					start_wan_boot();
 					return;
 				}
-				char *fstrarr[2]={fstr, NULL};
+				char *fstrarr[2] = { fstr, NULL };
 				do_hostapd(fstrarr, ifname);
 				char *next;
 				char var[80];
@@ -1721,7 +1722,7 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 		fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix, 1);
 		fclose(fp);
-		char *fstrarr[2]={fstr, NULL};
+		char *fstrarr[2] = { fstr, NULL };
 		do_hostapd(fstrarr, prefix);
 
 	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
@@ -1741,7 +1742,7 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 		if (v && *v)
 			fprintf(fp, "%s", v);
 		fclose(fp);
-		char *fstrarr[2]={fstr, NULL};
+		char *fstrarr[2] = { fstr, NULL };
 		do_hostapd(fstrarr, prefix);
 
 	} else if (nvram_match(akm, "radius")) {
@@ -3002,18 +3003,18 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		adjust_regulatory(i);
 	}
 	{
-	char *configs[32] = { NULL };
-	int configidx = 0;
-	for (i = 0; i < c; i++) {
-		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
-		sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
-		strcat(changestring, nvram_safe_get(fwtype_use));
-		configure_single((c - 1) - i, configs, &configidx);
+		char *configs[32] = { NULL };
+		int configidx = 0;
+		for (i = 0; i < c; i++) {
+			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
+			sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
+			strcat(changestring, nvram_safe_get(fwtype_use));
+			configure_single((c - 1) - i, configs, &configidx);
 
-		strcat(cmpstring, nvram_safe_get(fwtype_use));
-	}
-	if (configs[0])
-		do_hostapd(configs, NULL);
+			strcat(cmpstring, nvram_safe_get(fwtype_use));
+		}
+		if (configs[0])
+			do_hostapd(configs, NULL);
 	}
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
@@ -3052,8 +3053,8 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #ifdef HAVE_ATH10K
 	//      fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
 	if (strcmp(changestring, cmpstring)) {
-	char *configs[32] = { NULL };
-	int configidx = 0;
+		char *configs[32] = { NULL };
+		int configidx = 0;
 		/* we only need todo this if firmware has changed */
 		/* this sucks, we take it as workaround */
 		deconfigure_wifi();
@@ -3061,8 +3062,8 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 			configure_single((c - 1) - i, configs, &configidx);
 		}
-	if (configs[0])
-		do_hostapd(configs, NULL);
+		if (configs[0])
+			do_hostapd(configs, NULL);
 #ifdef HAVE_ATH9K
 		if (hasath9k) {
 			char regdomain[16];

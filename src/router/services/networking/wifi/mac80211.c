@@ -675,11 +675,11 @@ int has_hidden_ssid(const char *prefix)
 
 	return 0;
 }
-int is_6ghz_freq_prefix(const char *prefix, int freq) {
-
-    if (!is_ath11k(prefix))
-	return 0;
-    return is_6ghz_freq(freq);
+int is_6ghz_freq_prefix(const char *prefix, int freq)
+{
+	if (!is_ath11k(prefix))
+		return 0;
+	return is_6ghz_freq(freq);
 }
 
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
@@ -736,7 +736,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "country_code=%s\n", country);
 	if (has_ax(prefix) && has_6ghz(prefix))
 		fprintf(fp, "country3=0x49\n"); // 0x20 for all environments
-	
+
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 
 	if (isath5k || !strcmp(netmode, "ac-only") || !strcmp(netmode, "mixed") || !strcmp(netmode, "acn-mixed") ||
