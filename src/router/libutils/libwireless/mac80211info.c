@@ -1140,7 +1140,6 @@ int center_idx_to_bw_6ghz(int idx)
 
 int is_6ghz_freq(int freq)
 {
-
 	if (freq >= 5955 && freq <= 7115)
 		return 1;
 
@@ -1149,7 +1148,6 @@ int is_6ghz_freq(int freq)
 
 	return 0;
 }
-
 
 int is_6ghz_psc_frequency(int freq)
 {
@@ -1169,8 +1167,6 @@ int is_6ghz_psc_frequency(int freq)
 
 	return 0;
 }
-
-
 
 int has_he160(const char *interface)
 {
