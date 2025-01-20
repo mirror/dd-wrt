@@ -155,7 +155,7 @@ int gen_stateless_conf(void)
 		}
 	}
 
-	char *country = getIsoName(nvram_safe_get("wl_regdomain"));
+	const char *country = getIsoName(nvram_safe_get("wl_regdomain"));
 	if (!country)
 		country = "DE";
 	char lower[32];

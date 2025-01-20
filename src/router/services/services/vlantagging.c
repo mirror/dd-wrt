@@ -338,7 +338,7 @@ void start_bridging(void)
 
 extern char *getMTU(char *);
 
-char *getRealBridge(char *ifname, char *word)
+char *getRealBridge(const char *ifname, char *word)
 {
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
@@ -404,7 +404,7 @@ void stop_bridging(void)
 }
 
 #else
-char *getRealBridge(char *ifname, char *word)
+char *getRealBridge(const char *ifname, char *word)
 {
 	return NULL;
 }

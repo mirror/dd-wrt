@@ -276,7 +276,7 @@ void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadh
 	}
 }
 
-void eap_sta_key_mgmt(FILE *fp, char *prefix)
+void eap_sta_key_mgmt(FILE *fp, const char *prefix)
 {
 	char ft[16];
 	char mfp[16];
@@ -424,7 +424,7 @@ void addvhtcaps(const char *prefix, FILE *fp)
 #endif
 }
 
-void addbssid(FILE *fp, char *prefix)
+void addbssid(FILE *fp, const char *prefix)
 {
 	char *bssid = nvram_nget("%s_bssid", prefix);
 	char c_bssid[32];
@@ -442,7 +442,7 @@ void addbssid(FILE *fp, char *prefix)
 		fprintf(fp, "\tbssid=%s\n", c_bssid);
 }
 
-void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht)
+void eap_sta_config(FILE *fp, const char *prefix, char *ssidoverride, int addvht)
 {
 	char ath[64];
 	char psk[64];
@@ -944,13 +944,16 @@ void supplicant_main(int argc, char *argv[])
 	setupSupplicant(argv[1], argv[2]);
 }
 #endif
-void do_hostapd(char *fstr, char *prefix)
+void do_hostapd(char **fstr, const char *prefix)
 {
 	char fname[32];
 	int debug;
 	FILE *fp;
 	int pid;
 
+	if (!prefix)
+	sprintf(fname, "/var/run/global_hostapd.pid", prefix);
+	else
 	sprintf(fname, "/var/run/%s_hostapd.pid", prefix);
 
 	fp = fopen(fname, "rb");
@@ -960,8 +963,11 @@ void do_hostapd(char *fstr, char *prefix)
 		if (pid > 0)
 			kill(pid, SIGTERM);
 	}
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL };
+	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	int argc = 4;
+	if (!prefix)
+	debug = nvram_ngeti("wpa_debug", prefix);
+	else
 	debug = nvram_ngeti("%s_wpa_debug", prefix);
 	char file[64];
 	if (debug > 0 && debug < 4) {
@@ -975,8 +981,10 @@ void do_hostapd(char *fstr, char *prefix)
 		sprintf(file, "/tmp/%s_debug", prefix);
 		argv[argc++] = file;
 	}
-
-	argv[argc++] = fstr;
+	int i=0;
+	while (fstr[i]) {
+	    argv[argc++] = fstr[i++];
+	}
 
 	_log_evalpid(argv, NULL, 0, NULL);
 }
@@ -1048,7 +1056,8 @@ static void checkhostapd(char *ifname, int force)
 					start_wan_boot();
 					return;
 				}
-				do_hostapd(fstr, ifname);
+				char *fstrarr[2]={fstr, NULL};
+				do_hostapd(fstrarr, ifname);
 				char *next;
 				char var[80];
 				if (!nvram_nmatch("sta", "%s_mode", ifname)) {
@@ -1090,8 +1099,8 @@ static void s_checkhostapd(int force)
 		sprintf(athname, "wlan%d", i);
 		if (!nvram_nmatch("disabled", "%s_net_mode", athname)) {
 			//okay, these modes might run hostapd and may cause troubles if the radius gets unavailable
-			checkhostapd(athname, force);
 			if (!is_mac80211(athname)) {
+				checkhostapd(athname, force);
 				sprintf(wifivifs, "%s_vifs", athname);
 				vifs = nvram_safe_get(wifivifs);
 				if (vifs != NULL && *vifs) {
@@ -1232,7 +1241,7 @@ void setupHS20(FILE *fp, char *prefix)
 }
 #endif
 
-void addWPS(FILE *fp, char *prefix, int configured)
+void addWPS(FILE *fp, const char *prefix, int configured)
 {
 #ifdef HAVE_WPS
 	char *config_methods;
@@ -1357,7 +1366,7 @@ void start_ses_led_control(void)
 
 extern char *hostapd_eap_get_types(void);
 
-void setupHostAPPSK(FILE *fp, char *prefix, int isfirst)
+void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 {
 	char akm[16];
 	char mfp[16];
@@ -1712,7 +1721,8 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 		fprintf(fp, "wep_default_key=%d\n", atoi(nvram_nget("%s_key", prefix)) - 1);
 		addWPS(fp, prefix, 1);
 		fclose(fp);
-		do_hostapd(fstr, prefix);
+		char *fstrarr[2]={fstr, NULL};
+		do_hostapd(fstrarr, prefix);
 
 	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 ||
 		   iswpa2sha384 || ispsk2sha256) {
@@ -1731,12 +1741,13 @@ void setupHostAP(const char *prefix, char *driver, int iswan)
 		if (v && *v)
 			fprintf(fp, "%s", v);
 		fclose(fp);
-		do_hostapd(fstr, prefix);
+		char *fstrarr[2]={fstr, NULL};
+		do_hostapd(fstrarr, prefix);
 
 	} else if (nvram_match(akm, "radius")) {
 		// wrt-radauth $IFNAME $server $port $share $override $mackey $maxun
 		// &
-		char *ifname = prefix;
+		const char *ifname = prefix;
 		char *server = nvram_nget("%s_radius_ipaddr", prefix);
 		char *port = nvram_nget("%s_radius_port", prefix);
 		char *share = nvram_nget("%s_radius_key", prefix);
@@ -2040,7 +2051,7 @@ static void setMacFilter(char *iface)
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 int iscpe(void);
 
-static void configure_single(int count)
+static void configure_single(int count, char **configs, int *configidx)
 {
 	char *next;
 	char var[80];
@@ -2078,7 +2089,7 @@ static void configure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
-		ath9k_start_supplicant(count, dev);
+		ath9k_start_supplicant(count, dev, configs, configidx);
 		sysprintf("touch /tmp/wlan%d_configured", count);
 		return;
 	}
@@ -2975,7 +2986,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
+		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
@@ -2990,12 +3001,19 @@ void configure_wifi(void) // madwifi implementation for atheros based
 	for (i = 0; i < c; i++) {
 		adjust_regulatory(i);
 	}
+	{
+	char *configs[32] = { NULL };
+	int configidx = 0;
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
 		sprintf(fwtype_use, "wlan%d_fwtype_use", (c - 1) - i);
 		strcat(changestring, nvram_safe_get(fwtype_use));
-		configure_single((c - 1) - i);
+		configure_single((c - 1) - i, configs, &configidx);
+
 		strcat(cmpstring, nvram_safe_get(fwtype_use));
+	}
+	if (configs[0])
+		do_hostapd(configs, NULL);
 	}
 #ifdef HAVE_ATH9K
 	if (hasath9k) {
@@ -3004,7 +3022,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sprintf(regdomain, "wlan0_regdomain");
 		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "00");
-		char *iso = getIsoName(country);
+		const char *iso = getIsoName(country);
 		if (!iso)
 			iso = "DE";
 		eval("iw", "reg", "set", iso);
@@ -3034,13 +3052,17 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #ifdef HAVE_ATH10K
 	//      fprintf(stderr, "first attempt \"%s\", second attempt \"%s\"\n", changestring, cmpstring);
 	if (strcmp(changestring, cmpstring)) {
+	char *configs[32] = { NULL };
+	int configidx = 0;
 		/* we only need todo this if firmware has changed */
 		/* this sucks, we take it as workaround */
 		deconfigure_wifi();
 		for (i = 0; i < c; i++) {
 			sysprintf("rm -f /tmp/wlan%d_configured", (c - 1) - i);
-			configure_single((c - 1) - i);
+			configure_single((c - 1) - i, configs, &configidx);
 		}
+	if (configs[0])
+		do_hostapd(configs, NULL);
 #ifdef HAVE_ATH9K
 		if (hasath9k) {
 			char regdomain[16];
@@ -3048,7 +3070,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 			sprintf(regdomain, "wlan0_regdomain");
 			country = nvram_default_get(regdomain, "UNITED_STATES");
 			eval("iw", "reg", "set", "00");
-			char *iso = getIsoName(country);
+			const char *iso = getIsoName(country);
 			if (!iso)
 				iso = "DE";
 			eval("iw", "reg", "set", iso);

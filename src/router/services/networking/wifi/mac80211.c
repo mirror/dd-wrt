@@ -684,7 +684,7 @@ int center_idx_to_bw_6ghz(int idx)
 	return -1;
 }
 
-int is_6ghz_freq(char *prefix, int freq)
+int is_6ghz_freq(const char *prefix, int freq)
 {
 	if (!is_ath11k(prefix))
 		return 0;
@@ -1401,6 +1401,9 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
+	if (has_ax(prefix)){
+		fprintf(fp,"mbssid=1\n");
+	}
 	if (is_6ghz_freq(prefix, freq)) {
 		switch (usebw) {
 		case 20:
@@ -1504,9 +1507,9 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 }
 
 extern char *hostapd_eap_get_types(void);
-extern void addWPS(FILE *fp, char *prefix, int configured);
+extern void addWPS(FILE *fp, const char *prefix, int configured);
 extern void setupHS20(FILE *fp, char *prefix);
-void setupHostAPPSK(FILE *fp, char *prefix, int isfirst);
+void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
@@ -2033,7 +2036,7 @@ static char *makescanlist(const char *prefix, char *value)
 	return new;
 }
 
-static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
+static void supplicant_common_mesh(FILE *fp, const char *prefix, char *ssidoverride, int isadhoc, int ismesh)
 {
 	MAC80211DEBUG();
 	char nfreq[32];
@@ -2163,9 +2166,9 @@ static void supplicant_common_mesh(FILE *fp, char *prefix, char *ssidoverride, i
 	MAC80211DEBUG();
 }
 
-void addbssid(FILE *fp, char *prefix);
-void eap_sta_key_mgmt(FILE *fp, char *prefix);
-void eap_sta_config(FILE *fp, char *prefix, char *ssidoverride, int addvht);
+void addbssid(FILE *fp, const char *prefix);
+void eap_sta_key_mgmt(FILE *fp, const char *prefix);
+void eap_sta_config(FILE *fp, const char *prefix, char *ssidoverride, int addvht);
 
 void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 {
@@ -2542,8 +2545,8 @@ int vhtcaps_main(int argc, char *argv[])
 	return 0;
 }
 
-extern void do_hostapd(char *fstr, char *prefix);
-void ath9k_start_supplicant(int count, char *prefix)
+extern void do_hostapd(char **fstr, const char *prefix);
+void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx)
 {
 	// erst hostapd starten fuer repeater mode
 	// dann wpa_supplicant mit link zu hostapd
@@ -2640,7 +2643,9 @@ void ath9k_start_supplicant(int count, char *prefix)
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "infra") &&
 	    strcmp(apm, "mesh") && strcmp(apm, "tdma") && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-		do_hostapd(fstr, dev);
+		configs[*configidx] = strdup(fstr);
+		configidx[0]++;
+		configs[*configidx] = NULL;
 	} else {
 		if (*vifs) {
 			int ctrl = 0;
@@ -2660,7 +2665,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 			if (!nvram_match(wmode, "mesh")) {
 				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				do_hostapd(fstr, dev);
+				char *fstrarr[2]={fstr, NULL};
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
@@ -2684,7 +2689,8 @@ void ath9k_start_supplicant(int count, char *prefix)
 			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 				/* now start hostapd once wpa_supplicant has been started */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				do_hostapd(fstr, dev);
+				char *fstrarr[2]={fstr, NULL};
+				do_hostapd(fstrarr, dev);
 			}
 		} else {
 skip:;

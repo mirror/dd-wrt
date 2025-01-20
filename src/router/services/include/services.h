@@ -269,7 +269,7 @@ char *getMacAddr(char *ifname, char *mac, size_t len);
 #ifdef HAVE_ATH9K
 void deconfigure_single_ath9k(int count);
 void configure_single_ath9k(int count);
-void ath9k_start_supplicant(int count, char *prefix);
+void ath9k_start_supplicant(int count, char *prefix, char **configs, int *configidx);
 #endif
 int ifconfig(char *name, int flags, char *addr, char *netmask);
 
