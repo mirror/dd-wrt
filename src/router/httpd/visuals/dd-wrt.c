@@ -2976,6 +2976,18 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]%s%s - Max Vaps(%d)\");</script>",
 			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_2ghz(prefix) && has_6ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_6ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"/5 \"+wl_basic.ghz+\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
+	} else if (has_6ghz(prefix) && has_ax(prefix)) {
+		sprintf(frequencies,
+			" <script type=\"text/javascript\">document.write(\"/6 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
+			chipset ? " - " : "", chipset ? chipset : "", maxvaps);
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ax(prefix)) {
 		sprintf(frequencies,
 			" <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ax]%s%s - Max Vaps(%d)\");</script>",
@@ -3481,7 +3493,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_twt, "0");
 		showRadio(wp, "wl_basic.twt_required", wl_twt);
 	}
-	if ((has_5ghz(prefix) && has_ac(prefix)) || has_ax(prefix)) {
+	if (((has_5ghz(prefix) || has_6ghz(prefix))  && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix) || has_ax(prefix)) {
 			nvram_default_geti(wl_subf, DEFAULT_BF);
 			showRadio(wp, "wl_basic.subf", wl_subf);
@@ -3494,7 +3506,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (!is_mac80211(prefix)) {
-		if (has_5ghz(prefix)) {
+		if ((has_5ghz(prefix) || has_6ghz(prefix))) {
 			if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
@@ -3555,17 +3567,17 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		else if (canht40)
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 				  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		if ((is_ath11k(prefix) ||is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && ((has_5ghz(prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) && nvram_nmatch("mixed", "%s_net_mode", prefix)
+		if ((is_ath11k(prefix) ||is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && (((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) && nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam",prefix))) {
 			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-			if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && has_5ghz(prefix))
+			if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)))
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
-			if (has_vht80plus80(prefix) && canvht80 && has_5ghz(prefix))
+			if (has_vht80plus80(prefix) && canvht80 && (has_5ghz(prefix) || has_6ghz(prefix)))
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n",
@@ -3895,7 +3907,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				wp,
 				"<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n",
 				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			if ((has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix) &&
+			if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
 			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
@@ -4324,7 +4336,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_BUFFALO
 			if (!cpeonly && has_ibss(prefix))
 #else
-			if (!cpeonly && !has_5ghz(prefix) && has_ibss(prefix))
+			if (!cpeonly && !(has_5ghz(prefix) || has_6ghz(prefix)) && has_ibss(prefix))
 #endif
 				websWrite(
 					wp,
@@ -4482,7 +4494,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 			if ((is_ath11k(prefix) || is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) &&
-			    (has_5ghz(prefix) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
+			    ((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
 			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
@@ -4492,12 +4504,12 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
 						nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-				if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && has_5ghz(prefix))
+				if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
 						nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
-				if (has_vht80plus80(prefix) && canvht80 && has_5ghz(prefix))
+				if (has_vht80plus80(prefix) && canvht80 && (has_5ghz(prefix) || has_6ghz(prefix)))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n",
@@ -4551,7 +4563,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				wp,
 				"<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
 				nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\"selected\"" : "");
-			if ((has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix) &&
+			if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix)) &&
 			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix))) {
@@ -5172,7 +5184,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (!is_mac80211(prefix)) {
-		if (has_5ghz(prefix)) {
+		if ((has_5ghz(prefix) || has_6ghz(prefix))) {
 			if (nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
