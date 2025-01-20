@@ -1188,6 +1188,9 @@ An example nginx proxy setup is as follows:
 > }
 > ```
 
+If rsyncd should be accessible encrypted and unencrypted at the same time make
+the proxy listen on port 873 as well and let it handle both streams.
+
 ## DAEMON CONFIG EXAMPLES
 
 A simple rsyncd.conf file that allow anonymous rsync to a ftp area at
@@ -1260,7 +1263,7 @@ Rsync is distributed under the GNU General Public License.  See the file
 [COPYING](COPYING) for details.
 
 An rsync web site is available at <https://rsync.samba.org/> and its github
-project is <https://github.com/WayneD/rsync>.
+project is <https://github.com/RsyncProject/rsync>.
 
 ## THANKS
 
@@ -1270,8 +1273,7 @@ Thanks to Karsten Thygesen for his many suggestions and documentation!
 ## AUTHOR
 
 Rsync was originally written by Andrew Tridgell and Paul Mackerras.  Many
-people have later contributed to it. It is currently maintained by Wayne
-Davison.
+people from around the world have helped to maintain and improve it.
 
 Mailing lists for support and development are available at
 <https://lists.samba.org/>.

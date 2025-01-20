@@ -1,4 +1,4 @@
-.TH "rrsync" "1" "6 Apr 2024" "rrsync from rsync 3.3.0" "User Commands"
+.TH "rrsync" "1" "15 Jan 2025" "rrsync from rsync 3.4.1" "User Commands"
 .\" prefix=/usr
 .P
 .SH "NAME"
@@ -8,7 +8,7 @@ rrsync \- a script to setup restricted rsync users via ssh logins
 .SH "SYNOPSIS"
 .P
 .nf
-rrsync [-ro|-rw] [-munge] [-no-del] [-no-lock] [-no-overwrite]  DIR
+rrsync [-ro|-wo] [-munge] [-no-del] [-no-lock] [-no-overwrite]  DIR
 .fi
 .P
 The single non-option argument specifies the restricted \fIDIR\fP to use. It can be
@@ -155,7 +155,7 @@ command="rrsync -ro results" ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAmk...
 .P
 .SH "VERSION"
 .P
-This manpage is current for version 3.3.0 of rsync.
+This manpage is current for version 3.4.1 of rsync.
 .P
 .SH "CREDITS"
 .P
@@ -167,7 +167,7 @@ An rsync web site is available at
 .UE
 and its github
 project is
-.UR https://github.com/WayneD/rsync
+.UR https://github.com/RsyncProject/rsync
 .UE .
 .P
 .SH "AUTHOR"

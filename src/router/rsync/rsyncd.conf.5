@@ -1,4 +1,4 @@
-.TH "rsyncd.conf" "5" "6 Apr 2024" "rsyncd.conf from rsync 3.3.0" "User Commands"
+.TH "rsyncd.conf" "5" "15 Jan 2025" "rsyncd.conf from rsync 3.4.1" "User Commands"
 .\" prefix=/usr
 .P
 .SH "NAME"
@@ -1222,6 +1222,9 @@ stream {
 .fi
 .RE
 .P
+If rsyncd should be accessible encrypted and unencrypted at the same time make
+the proxy listen on port 873 as well and let it handle both streams.
+.P
 .SH "DAEMON CONFIG EXAMPLES"
 .P
 A simple rsyncd.conf file that allow anonymous rsync to a ftp area at
@@ -1295,7 +1298,7 @@ Please report bugs! The rsync bug tracking system is online at
 .P
 .SH "VERSION"
 .P
-This manpage is current for version 3.3.0 of rsync.
+This manpage is current for version 3.4.1 of rsync.
 .P
 .SH "CREDITS"
 .P
@@ -1307,7 +1310,7 @@ An rsync web site is available at
 .UE
 and its github
 project is
-.UR https://github.com/WayneD/rsync
+.UR https://github.com/RsyncProject/rsync
 .UE .
 .P
 .SH "THANKS"
@@ -1318,8 +1321,7 @@ Thanks to Karsten Thygesen for his many suggestions and documentation!
 .SH "AUTHOR"
 .P
 Rsync was originally written by Andrew Tridgell and Paul Mackerras.  Many
-people have later contributed to it. It is currently maintained by Wayne
-Davison.
+people from around the world have helped to maintain and improve it.
 .P
 Mailing lists for support and development are available at
 .UR https://lists.samba.org/

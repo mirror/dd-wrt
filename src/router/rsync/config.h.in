@@ -446,6 +446,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `stpcpy' function. */
+#undef HAVE_STPCPY
+
 /* Define to 1 if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
 
@@ -682,6 +685,9 @@
 /* True if symlinks do not support xattrs */
 #undef NO_SYMLINK_XATTRS
 
+/* package name for rsync */
+#undef PACKAGE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -699,6 +705,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* sysconfig dir for popt */
+#undef POPT_SYSCONFDIR
 
 /* location of configuration file for rsync server */
 #undef RSYNCD_SYSCONF

@@ -3731,7 +3731,7 @@ option (though the 2 commands behave differently if deletions are enabled):</p>
 </code></pre>
 </blockquote>
 <p>The following command does not need an include of the &quot;x&quot; directory because it
-is not a part of the transfer (note the traililng slash).  Running this command
+is not a part of the transfer (note the trailing slash).  Running this command
 would copy just &quot;<code>/tmp/x/file.txt</code>&quot; because the &quot;y&quot; and &quot;z&quot; dirs get excluded:</p>
 <blockquote>
 <pre><code>rsync -ai -f'+ file.txt' -f'- *' x/ host:/tmp/x/
@@ -4479,7 +4479,7 @@ the comments on the <a href="#opt--modify-window"><code>--modify-window</code></
 </ul>
 <p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
-<p>This manpage is current for version 3.3.0 of rsync.</p>
+<p>This manpage is current for version 3.4.1 of rsync.</p>
 <h2 id="INTERNAL_OPTIONS">INTERNAL OPTIONS<a href="#INTERNAL_OPTIONS" class="tgt"></a></h2>
 <p>The options <code>--server</code> and <code>--sender</code> are used internally by rsync, and should
 never be typed by a user under normal circumstances.  Some awareness of these
@@ -4493,7 +4493,7 @@ that can be used with a restricted ssh login.</p>
 <p>An rsync web site is available at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.  The site
 includes an FAQ-O-Matic which may cover questions unanswered by this manual
 page.</p>
-<p>The rsync github project is <a href="https://github.com/WayneD/rsync">https://github.com/WayneD/rsync</a>.</p>
+<p>The rsync github project is <a href="https://github.com/RsyncProject/rsync">https://github.com/RsyncProject/rsync</a>.</p>
 <p>We would be delighted to hear from you if you like this program.  Please
 contact the mailing-list at <a href="mailto:rsync@lists.samba.org">rsync@lists.samba.org</a>.</p>
 <p>This program uses the excellent zlib compression library written by Jean-loup
@@ -4506,9 +4506,8 @@ gone-but-not-forgotten compadre, J.W. Schultz.</p>
 David Bell.  I've probably missed some people, my apologies if I have.</p>
 <h2 id="AUTHOR">AUTHOR<a href="#AUTHOR" class="tgt"></a></h2>
 <p>Rsync was originally written by Andrew Tridgell and Paul Mackerras.  Many
-people have later contributed to it. It is currently maintained by Wayne
-Davison.</p>
+people from around the world have helped to maintain and improve it.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>6 Apr 2024</i></p></div>
+<div style="float: right"><p><i>15 Jan 2025</i></p></div>
 </body></html>

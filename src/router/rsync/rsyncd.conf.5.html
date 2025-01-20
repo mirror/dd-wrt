@@ -1134,6 +1134,8 @@ backend be_rsync
 }
 </code></pre>
 </blockquote>
+<p>If rsyncd should be accessible encrypted and unencrypted at the same time make
+the proxy listen on port 873 as well and let it handle both streams.</p>
 <h2 id="DAEMON_CONFIG_EXAMPLES">DAEMON CONFIG EXAMPLES<a href="#DAEMON_CONFIG_EXAMPLES" class="tgt"></a></h2>
 <p>A simple rsyncd.conf file that allow anonymous rsync to a ftp area at
 <code>/home/ftp</code> would be:</p>
@@ -1189,20 +1191,19 @@ susan:herpass
 <p>Please report bugs! The rsync bug tracking system is online at
 <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h2 id="VERSION">VERSION<a href="#VERSION" class="tgt"></a></h2>
-<p>This manpage is current for version 3.3.0 of rsync.</p>
+<p>This manpage is current for version 3.4.1 of rsync.</p>
 <h2 id="CREDITS">CREDITS<a href="#CREDITS" class="tgt"></a></h2>
 <p>Rsync is distributed under the GNU General Public License.  See the file
 <a href="COPYING">COPYING</a> for details.</p>
 <p>An rsync web site is available at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a> and its github
-project is <a href="https://github.com/WayneD/rsync">https://github.com/WayneD/rsync</a>.</p>
+project is <a href="https://github.com/RsyncProject/rsync">https://github.com/RsyncProject/rsync</a>.</p>
 <h2 id="THANKS">THANKS<a href="#THANKS" class="tgt"></a></h2>
 <p>Thanks to Warren Stanley for his original idea and patch for the rsync daemon.
 Thanks to Karsten Thygesen for his many suggestions and documentation!</p>
 <h2 id="AUTHOR">AUTHOR<a href="#AUTHOR" class="tgt"></a></h2>
 <p>Rsync was originally written by Andrew Tridgell and Paul Mackerras.  Many
-people have later contributed to it. It is currently maintained by Wayne
-Davison.</p>
+people from around the world have helped to maintain and improve it.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>6 Apr 2024</i></p></div>
+<div style="float: right"><p><i>15 Jan 2025</i></p></div>
 </body></html>
