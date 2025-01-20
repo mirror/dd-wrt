@@ -406,8 +406,24 @@ int wlconf_down(char *name);
 int wlconf_up(char *name);
 #if defined(HAVE_ATH11K)
 extern int has_he160(const char *interface);
+int center_idx_to_bw_6ghz(int idx);
+int is_6ghz_freq(int freq);
+int is_6ghz_psc_frequency(int freq);
+
 #else
 static inline int has_he160(const char *prefix)
+{
+	return 0;
+}
+static inline int center_idx_to_bw_6ghz(int idx)
+{
+	return 0;
+}
+static inline int is_6ghz_freq(int freq)
+{
+	return 0;
+}
+static inline int is_6ghz_psc_frequency(int freq)
 {
 	return 0;
 }
