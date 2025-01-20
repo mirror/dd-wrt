@@ -1997,8 +1997,8 @@ static void show_netmode(webs_t wp, char *prefix)
 	}
 	if (has_ax(prefix) && !is_ath10k(prefix)) {
 		if (has_5ghz(prefix))
-		websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
-			  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
+				  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 			  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
 	}
@@ -2042,8 +2042,10 @@ static void show_netmode(webs_t wp, char *prefix)
 		}
 		if (is_ath11k(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)) && !is_ath10k(prefix)) {
 			if (has_5ghz(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
-				  nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
+				websWrite(
+					wp,
+					"document.write(\"<option value=\\\"xacn-mixed\\\" %s>\" + wl_basic.xacn + \"</option>\");\n",
+					nvram_match(wl_net_mode, "xacn-mixed") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ax-only\\\" %s>\" + wl_basic.ax + \"</option>\");\n",
 				  nvram_match(wl_net_mode, "ax-only") ? "selected=\\\"selected\\\"" : "");
 		}
@@ -3493,7 +3495,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_twt, "0");
 		showRadio(wp, "wl_basic.twt_required", wl_twt);
 	}
-	if (((has_5ghz(prefix) || has_6ghz(prefix))  && has_ac(prefix)) || has_ax(prefix)) {
+	if (((has_5ghz(prefix) || has_6ghz(prefix)) && has_ac(prefix)) || has_ax(prefix)) {
 		if (has_subeamforming(prefix) || has_ax(prefix)) {
 			nvram_default_geti(wl_subf, DEFAULT_BF);
 			showRadio(wp, "wl_basic.subf", wl_subf);
@@ -3573,7 +3575,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			if (canvht80)
 				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-			if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)))
+			if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) &&
+			    (has_5ghz(prefix) || has_6ghz(prefix)))
 				websWrite(wp,
 					  "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
@@ -4494,7 +4497,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n",
 					  nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 			if ((is_ath11k(prefix) || is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) &&
-			    ((has_5ghz(prefix) || has_6ghz(prefix)) || (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
+			    ((has_5ghz(prefix) || has_6ghz(prefix)) ||
+			     (cansuperchannel(wp, prefix) && nvram_nmatch("1", "%s_turbo_qam", prefix))) &&
 			    (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("acn-mixed", "%s_net_mode", prefix) || nvram_nmatch("ax-only", "%s_net_mode", prefix) ||
 			     nvram_nmatch("xacn-mixed", "%s_net_mode", prefix) ||
@@ -4504,7 +4508,8 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 						wp,
 						"document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n",
 						nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-				if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) && (has_5ghz(prefix) || has_6ghz(prefix)))
+				if ((has_vht160(prefix) || has_he160(prefix)) && can_vht160(prefix) &&
+				    (has_5ghz(prefix) || has_6ghz(prefix)))
 					websWrite(
 						wp,
 						"document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n",
@@ -5842,32 +5847,36 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
 		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue, alwaystrue, alwaystrue},
+		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3, cantkip, alwaystrue },
 		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, alwaystrue, alwaystrue, suiteb },
 		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, alwaystrue, alwaystrue, suiteb192 },
 	};
 
-	struct pair s_authpair_wpa[] = { { "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue },
-					 { "wpa.wpa", "wpa", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
-					 { "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh, alwaystrue, alwaystrue },
-					 { "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh, alwaystrue, alwaystrue },
-					 { "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh, alwaystrue, alwaystrue },
-					 { "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible, alwaystrue, alwaystrue } };
-	struct pair s_authpair_80211x[] = { { "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
-					    { "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
-					    { "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
-					    { "wpa.wpa2_sha384", "wpa2-sha384", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
-					    { "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue },
-					    { "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue, alwaystrue, alwaystrue },
-					    { "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue, alwaystrue, alwaystrue },
-					    { "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz } };
+	struct pair s_authpair_wpa[] = {
+		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2_sha384", "wpa2-sha384", aponly_wpa3, is_mac80211, nomesh, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh, alwaystrue, alwaystrue },
+		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh, alwaystrue, alwaystrue },
+		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh, alwaystrue, alwaystrue },
+		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible, alwaystrue, alwaystrue }
+	};
+	struct pair s_authpair_80211x[] = {
+		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa2_sha384", "wpa2-sha384", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz },
+		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue, alwaystrue, alwaystrue },
+		{ "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz }
+	};
 	struct pair s_authmethod[] = {
 		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue, alwaystrue, alwaystrue, alwaystrue },
@@ -5909,13 +5918,15 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	if (!show80211x) {
 		for (i = 0; i < sizeof(s_authpair_wpa) / sizeof(struct pair); i++) {
 			if (s_authpair_wpa[i].valid(prefix) && s_authpair_wpa[i].valid2(prefix) &&
-			    s_authpair_wpa[i].valid3(prefix) && s_authpair_wpa[i].valid4(prefix) && s_authpair_wpa[i].valid5(prefix))
+			    s_authpair_wpa[i].valid3(prefix) && s_authpair_wpa[i].valid4(prefix) &&
+			    s_authpair_wpa[i].valid5(prefix))
 				memcpy(&authpair_wpa[cnt++], &s_authpair_wpa[i], sizeof(struct pair));
 		}
 	} else {
 		for (i = 0; i < sizeof(s_authpair_80211x) / sizeof(struct pair); i++) {
 			if (s_authpair_80211x[i].valid(prefix) && s_authpair_80211x[i].valid2(prefix) &&
-			    s_authpair_80211x[i].valid3(prefix) && s_authpair_80211x[i].valid4(prefix) && s_authpair_80211x[i].valid5(prefix))
+			    s_authpair_80211x[i].valid3(prefix) && s_authpair_80211x[i].valid4(prefix) &&
+			    s_authpair_80211x[i].valid5(prefix))
 				memcpy(&authpair_wpa[cnt++], &s_authpair_80211x[i], sizeof(struct pair));
 		}
 	}
