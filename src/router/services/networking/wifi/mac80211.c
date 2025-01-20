@@ -1123,7 +1123,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				    usebw == 8080 ? 1 : 0, nvram_default_matchi(subf, 1, DEFAULT_BF),
 				    nvram_default_matchi(mubf, 1, DEFAULT_BF));
 	cur_caps = caps;
-	if ((has_ac(prefix) || has_ax(prefix)) && has_5ghz(prefix)) {
+	if ((has_ac(prefix) || has_ax(prefix)) && (has_5ghz(prefix) || has_6ghz(prefix))) {
 		if (freq >= 4000 && (!strcmp(netmode, "mixed") || //
 				     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed") || !strcmp(netmode, "ax-only") ||
 				     !strcmp(netmode, "xacn-mixed"))) {

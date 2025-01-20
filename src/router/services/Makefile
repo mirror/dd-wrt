@@ -1203,6 +1203,8 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 MAD_FLAGS += -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+
+ATH9KCFLAGS+=-DHAVE_MADWIFI
 CFLAGS_EXTRA += -DHAVE_MADWIFI
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.o
