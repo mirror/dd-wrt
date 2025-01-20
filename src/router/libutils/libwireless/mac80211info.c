@@ -1445,6 +1445,15 @@ int mac80211_check_band(const char *interface, int checkband)
 	if (!bands)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
+//			fprintf(stderr, "checkband %d band %d\n", checkband, band->nla_type);
+			if (checkband == 2 && band->nla_type == NL80211_BAND_2GHZ)
+				bandfound = 1;
+			if (checkband == 6 && band->nla_type == NL80211_BAND_6GHZ)
+				bandfound = 1;
+			if (checkband == 5 && band->nla_type == NL80211_BAND_5GHZ)
+				bandfound = 1;
+
+#if 0
 		freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
 		if (!freqlist) {
 			continue;
@@ -1457,13 +1466,8 @@ int mac80211_check_band(const char *interface, int checkband)
 			if (tb[NL80211_FREQUENCY_ATTR_DISABLED])
 				continue;
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
-			if (checkband == 2 && band == NL80211_BAND_2GHZ)
-				bandfound = 1;
-			if (checkband == 6 && band == NL80211_BAND_6GHZ)
-				bandfound = 1;
-			if (checkband == 5 && band == NL80211_BAND_5GHZ)
-				bandfound = 1;
 		}
+#endif
 	}
 	nlmsg_free(msg);
 	unlock();
@@ -1795,7 +1799,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 					}
 					int flags = 0;
 					regmaxbw = 0;
-					int band = 0;
+					int newband = 0;
 					if (super) {
 						startfreq = 2200;
 						stopfreq = 6200;
@@ -1819,7 +1823,7 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							}
 							if (freq_mhz > regfreq.start_freq_khz / 1000 &&
 							    freq_mhz < regfreq.end_freq_khz / 1000) {
-								band = ccidx + bandcounter;
+								newband = ccidx + bandcounter;
 								flags = rd->reg_rules[cc].flags;
 								regpower = rd->reg_rules[cc].power_rule;
 								regmaxbw = regfreq.max_bandwidth_khz / 1000;
@@ -1856,16 +1860,16 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 							    nvram_default_match("region", "SA", ""))
 								continue;
 #endif
-							if (checkband == 2 && band != NL80211_BAND_2GHZ)
+							if (checkband == 2 && band->nla_type != NL80211_BAND_2GHZ)
 								continue;
-							if (checkband == 5 && band != NL80211_BAND_5GHZ && band != NL80211_BAND_6GHZ)
+							if (checkband == 5 && band->nla_type != NL80211_BAND_5GHZ && band->nla_type != NL80211_BAND_6GHZ)
 								continue;
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
 							if (nooverlap && max_bandwidth_khz > 40)
-								list[count].band = band;
+								list[count].band = newband;
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
 							list[count].max_eirp = regpower.max_eirp / 100;
