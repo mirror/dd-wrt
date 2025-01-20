@@ -275,7 +275,7 @@ const char *getifaddr_any(char *buf, char *ifname, int family)
 }
 #endif
 #ifdef HAVE_VLANTAGGING
-char *getBridge(char *ifname, char *word)
+char *getBridge(const char *ifname, char *word)
 {
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridgesif");
@@ -293,7 +293,7 @@ char *getBridge(char *ifname, char *word)
 	return nvram_safe_get("lan_ifname");
 }
 #else
-char *getBridge(char *ifname, char *word)
+char *getBridge(const char *ifname, char *word)
 {
 	return nvram_safe_get("lan_ifname");
 }

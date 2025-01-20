@@ -1182,7 +1182,7 @@ int getMTD(char *name)
 	return device;
 }
 
-char *strattach(char *src, char *attach, char *delimiter)
+char *strattach(char *src, const char *attach, const char *delimiter)
 {
 	if (!src || !delimiter)
 		return NULL;
@@ -1195,7 +1195,7 @@ char *strattach(char *src, char *attach, char *delimiter)
 	return src;
 }
 
-char *strspcattach(char *src, char *attach)
+char *strspcattach(char *src, const char *attach)
 {
 	return strattach(src, attach, " ");
 }
@@ -1536,7 +1536,7 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	return ret;
 }
 
-int set_hwaddr(const char *name, char *hwaddr)
+int set_hwaddr(const char *name, const char *hwaddr)
 {
 	unsigned char mac[6];
 	if (ether_atoe(hwaddr, mac)) {

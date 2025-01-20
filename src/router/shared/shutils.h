@@ -142,8 +142,8 @@ struct nvram_param {
 extern struct nvram_param *load_defaults(void);
 extern void free_defaults(struct nvram_param *);
 
-extern char *strattach(char *src, char *attach, char *delimiter);
-extern char *strspcattach(char *src, char *attach);
+extern char *strattach(char *src, const char *attach, const char *delimiter);
+extern char *strspcattach(char *src, const char *attach);
 
 extern int dd_system(const char *command);
 extern int sysprintf(const char *fmt, ...);

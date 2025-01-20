@@ -839,8 +839,8 @@ extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
 extern void setWifiPass();
-extern char *getBridge(char *ifname, char *word);
-extern char *getRealBridge(char *ifname, char *word);
+extern char *getBridge(const char *ifname, char *word);
+extern char *getRealBridge(const char *ifname, char *word);
 extern char *getWDSSTA(void);
 extern char *getSTA(void);
 extern char *getWET(void);
@@ -882,7 +882,7 @@ extern unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr);
 extern int set_ether_hwaddr(const char *name, unsigned char *hwaddr);
 
 extern char *get_hwaddr(const char *name, char *hwaddr);
-extern int set_hwaddr(const char *name, char *hwaddr);
+extern int set_hwaddr(const char *name, const char *hwaddr);
 
 extern int check_wan_link(int num);
 extern int wanactive(char *wanaddr);
