@@ -698,6 +698,22 @@ int is_6ghz_freq(const char *prefix, int freq)
 	return 0;
 }
 
+int has_hidden_ssid(const char *prefix)
+{
+	if (nvram_nmatch("1", "%s_closed", prefix))
+		return 1;
+	char vap[32];
+	char *next;
+	char *vifs = nvram_nget("%s_vifs", prefix);
+	foreach(vap, vifs, next)
+	{
+		if (nvram_nmatch("1", "%s_closed", vap))
+			return 1;
+	}
+
+	return 0;
+}
+
 void get_pairwise(const char *prefix, char *pwstring, char *grpstring, int isadhoc, int ismesh);
 
 void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int aoss)
@@ -1401,8 +1417,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	fprintf(fp, "channel=%d\n", ieee80211_mhz2ieee(freq));
 	//	if (!has_ad(prefix))
 	fprintf(fp, "frequency=%d\n", freq);
-	if (has_ax(prefix)){
-		fprintf(fp,"mbssid=1\n");
+	if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
+		fprintf(fp, "mbssid=2\n");
 	}
 	if (is_6ghz_freq(prefix, freq)) {
 		switch (usebw) {
@@ -1420,8 +1436,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 			fprintf(fp, "op_class=134\n");
 			break;
 		}
-	fprintf(fp,"he_6ghz_reg_pwr_type=0\n");
-	fprintf(fp,"stationary_ap=1\n");
+		fprintf(fp, "he_6ghz_reg_pwr_type=0\n");
+		fprintf(fp, "stationary_ap=1\n");
 	}
 
 #ifdef HAVE_ATH9K
@@ -1505,7 +1521,6 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 		mac[i] = addr[i] & 0xff;
 	return 0;
 }
-
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE *fp, const char *prefix, int configured);
 extern void setupHS20(FILE *fp, char *prefix);
@@ -2665,7 +2680,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 			if (!nvram_match(wmode, "mesh")) {
 				/* do not start hostapd before wpa_supplicant in mesh mode, it will fail to initialize the ap interface once mesh is running */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				char *fstrarr[2]={fstr, NULL};
+				char *fstrarr[2] = { fstr, NULL };
 			}
 			sprintf(ctrliface, "/var/run/hostapd/%s.%d", dev, ctrl);
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
@@ -2689,7 +2704,7 @@ void ath9k_start_supplicant(int count, char *prefix, char **configs, int *config
 			if (nvram_match(wmode, "mesh") || nvram_match(wmode, "infra")) {
 				/* now start hostapd once wpa_supplicant has been started */
 				sprintf(fstr, "/tmp/%s_hostap.conf", dev);
-				char *fstrarr[2]={fstr, NULL};
+				char *fstrarr[2] = { fstr, NULL };
 				do_hostapd(fstrarr, dev);
 			}
 		} else {
