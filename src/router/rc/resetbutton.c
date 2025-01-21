@@ -1409,7 +1409,7 @@ static void resetbtn_period_check(int sig)
 		sesgpio = 0x105;
 		val |= get_gpio(56) << 5;
 		break;
-	case ROUTER_LINKSYS_MX8500:
+	case ROUTER_LINKSYS_MR7500:
 		sesgpio = 0x105;
 		val |= get_gpio(57) << 5;
 		break;
