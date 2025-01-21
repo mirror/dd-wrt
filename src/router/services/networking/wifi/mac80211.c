@@ -1391,7 +1391,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 	if (has_ax(prefix) && !has_hidden_ssid(prefix)) {
 		fprintf(fp, "mbssid=2\n");
 	} else {
-		fprintf(fp, "mbssid=0\n");
+		if (has_ax(prefix))
+			fprintf(fp, "mbssid=0\n");
 	}
 	if (is_6ghz_freq_prefix(prefix, freq)) {
 		switch (usebw) {
