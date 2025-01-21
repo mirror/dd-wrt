@@ -1262,7 +1262,7 @@ void start_sysinit(void)
 		fclose(out);
 		switch (brand) {
 		case ROUTER_LINKSYS_MR5500:
-		case ROUTER_LINKSYS_MX5500:
+		case ROUTER_LINKSYS_MX5500: {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0001:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -1273,7 +1273,8 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			break;
-		case ROUTER_LINKSYS_MR7500:
+		}
+		case ROUTER_LINKSYS_MR7500: {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -1284,7 +1285,8 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			break;
-		case ROUTER_LINKSYS_MX8500:
+		}
+		case ROUTER_LINKSYS_MX8500: {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
 			for (i = 0; i < fwlen; i++)
@@ -1295,7 +1297,8 @@ void start_sysinit(void)
 				putc(getc(fp), out);
 			fclose(out);
 			break;
-		case ROUTER_LINKSYS_MX5300:
+		}
+		case ROUTER_LINKSYS_MX5300: {
 			fseek(fp, 0x33000, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
@@ -1310,7 +1313,8 @@ void start_sysinit(void)
 			for (i = 0; i < 12052; i++)
 				putc(getc(fp), out);
 			fclose(out);
-		case ROUTER_FORTINET_FAP231F:
+		}
+		case ROUTER_FORTINET_FAP231F: {
 			fseek(fp, 0x33000, SEEK_SET);
 			out = fopen("/tmp/ath10k_board1.bin", "wb");
 			for (i = 0; i < 6; i++)
@@ -1327,6 +1331,7 @@ void start_sysinit(void)
 			fclose(out);
 			eval("cp", "-f", "/lib/firmware/ath10k/QCA9887/hw1.0/boarddata_0.bin", "/tmp/ath10k_precal.bin");
 			break;
+		}
 		}
 		fclose(fp);
 	} else {
@@ -1817,9 +1822,9 @@ void start_devinit_arch(void)
 void start_resetbc(void)
 {
 	int brand = getRouterBrand();
-	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MX8500 || brand == ROUTER_LINKSYS_MX5300 ||
-	    brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 || brand == ROUTER_LINKSYS_MX4200V1 ||
-	    brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
+	if (brand == ROUTER_LINKSYS_MR7350 || brand == ROUTER_LINKSYS_MR7500 || brand == ROUTER_LINKSYS_MX8500 ||
+	    brand == ROUTER_LINKSYS_MX5300 || brand == ROUTER_LINKSYS_MR5500 || brand == ROUTER_LINKSYS_MX5500 ||
+	    brand == ROUTER_LINKSYS_MX4200V1 || brand == ROUTER_LINKSYS_MX4200V2 || brand == ROUTER_LINKSYS_MX4300) {
 		if (!nvram_match("nobcreset", "1"))
 			eval_silence("mtd", "resetbc", "s_env");
 	}

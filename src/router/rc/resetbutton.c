@@ -212,7 +212,7 @@ static int getbuttonstate()
 	case ROUTER_LINKSYS_MX4300:
 		return !get_gpio(52);
 	case ROUTER_LINKSYS_MX8500:
-	case ROUTER_LINKSYS_MX8300:
+	case ROUTER_LINKSYS_MX5300:
 		return !get_gpio(67);
 	case ROUTER_DYNALINK_DLWRX36:
 		return !get_gpio(34);
