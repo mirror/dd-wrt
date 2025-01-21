@@ -37,7 +37,7 @@
 		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 	};
 
-	keys {
+/*	keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
@@ -53,7 +53,7 @@
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
-	};
+	};*/
 };
 
 &tlmm {
