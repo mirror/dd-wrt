@@ -1679,6 +1679,7 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_LINKSYS_MX4200V2:
 	case ROUTER_LINKSYS_MX4300:
 	case ROUTER_LINKSYS_MX5500:
+	case ROUTER_LINKSYS_MX8500:
 		cfg->power_gpio = 0x1; // power led / green
 		cfg->diag_gpio = 0x0; // diag led / red
 		cfg->diag_gpio_disabled = 0x1;
