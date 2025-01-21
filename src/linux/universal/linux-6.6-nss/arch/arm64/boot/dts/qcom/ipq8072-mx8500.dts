@@ -38,7 +38,7 @@
 		};
 	};
 
-	keys {
+/*	keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
@@ -54,7 +54,7 @@
 			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
-	};
+	};*/
 };
 
 &tlmm {
@@ -443,35 +443,35 @@
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_0>;
-	label = "lan1";
+	label = "eth1";
 };
 
 &dp2 {
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_1>;
-	label = "lan2";
+	label = "eth2";
 };
 
 &dp3 {
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_2>;
-	label = "lan3";
+	label = "eth3";
 };
 
 &dp4 {
 	status = "okay";
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_3>;
-	label = "lan4";
+	label = "eth4";
 };
 
 &dp6_syn {
 	status = "okay";
 	phy-mode = "usxgmii";
 	phy-handle = <&aqr114c>;
-	label = "wan";
+	label = "eth0";
 };
 
 &ssphy_0 {
