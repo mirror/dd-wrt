@@ -263,10 +263,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	echo "CPTCFG_ATH11K_DEBUGFS_STA=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_DEBUGFS_HTT_STATS=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_ATH11K_THERMAL=y" >>$(MAC80211_PATH)/.config_temp
-	cp -uvf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-	cp -uvf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
-#	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
-#	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
+	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.c $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	cp -vf $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k/*.h $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.h
+	touch $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.c
 #	rm -f $(TOP)/compat-wireless-nss/drivers/net/wireless/ath/ath11k_512/*.o
 endif
 ifeq ($(CONFIG_IWLWIFI),y)
@@ -562,6 +562,8 @@ ifneq ($(CONFIG_IPQ6018),y)
 else
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k_board1.bin board.bin 
+	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0 && ln -s /tmp/ath10k_board1.bin board.bin 
 endif
 
 endif
