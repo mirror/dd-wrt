@@ -1657,6 +1657,7 @@ void start_wifi_drivers(void)
 	notloaded = insmod("compat");
 	char *fm = nvram_safe_get("ath11k_frame_mode");
 	int frame_mode = 2;
+	char *cert_region = "";
 	int minif = 2;
 	if (*fm)
 		frame_mode = atoi(fm);
@@ -1697,7 +1698,6 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MR7500:
 			//			char *cert_region = get_deviceinfo_linksys("cert_region");
 			//			if (!cert_region)
-			char *cert_region = "";
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     cert_region);
 			minif = 3;
@@ -1705,7 +1705,6 @@ void start_wifi_drivers(void)
 		case ROUTER_LINKSYS_MX8500:
 			//			char *cert_region = get_deviceinfo_linksys("cert_region");
 			//			if (!cert_region)
-			char *cert_region = "";
 			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nvram_match("nss", "0"), frame_mode,
 					     cert_region);
 			minif = 3;
