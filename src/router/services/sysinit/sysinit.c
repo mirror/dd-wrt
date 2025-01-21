@@ -1120,6 +1120,8 @@ void start_restore_defaults(void)
 		generic = generic_ax89;
 	else if (wrt_brand == ROUTER_LINKSYS_MR7500)
 		generic = generic_mr7500;
+	else if (wrt_brand == ROUTER_LINKSYS_MX8500)
+		generic = generic_mr7500;
 	else
 		generic = generic_mx4200;
 #elif HAVE_VENTANA
