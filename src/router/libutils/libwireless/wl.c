@@ -3452,7 +3452,9 @@ FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(wave2, WAVE2, 0);
 FLAGCHECK(vht160_2by2, VHT160_2BY2, 0);
 FLAGCHECK(ar900b, AR900B, 0);
+#if defined(HAVE_ATH11K) || defined(HAVE_IPQ6018)
 FLAGCHECK(ax, AX, 0);
+#endif
 FLAGCHECK(dualband_cap, DUALBAND, 0);
 FLAGCHECK(beacon_limit, BEACONVAP100, 0);
 FLAGCHECK(fwswitch, FWSWITCH, 0);

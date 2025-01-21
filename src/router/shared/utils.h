@@ -1248,6 +1248,14 @@ static inline int is_wil6210(const char *prefix)
 }
 #endif
 
+#if defined(HAVE_ATH11K) || defined(HAVE_IPQ6018)
+extern int has_ax(const char *prefix);
+#else
+static inline int has_ax(const char *prefix)
+{
+	return 0;
+}
+#endif
 #ifdef HAVE_ATH9K
 extern int is_mac80211(const char *prefix);
 extern int is_ap8x(const char *prefix);
@@ -1266,7 +1274,6 @@ extern int has_qam256(const char *prefix);
 extern int has_wave2(const char *prefix);
 extern int has_vht160_2by2(const char *prefix);
 extern int has_ar900b(const char *prefix);
-extern int has_ax(const char *prefix);
 extern int has_dualband(const char *prefix);
 extern int has_subquarter(const char *prefix);
 extern int has_fwswitch(const char *prefix);
@@ -1313,10 +1320,6 @@ static inline int has_ar900b(const char *prefix)
 	return 0;
 }
 
-static inline int has_ax(const char *prefix)
-{
-	return 0;
-}
 
 static inline int has_dualband(const char *prefix)
 {
